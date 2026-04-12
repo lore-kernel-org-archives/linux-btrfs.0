@@ -1,163 +1,219 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.16])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE1E21A6814
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 04:04:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AEA01286D5D;
+	Sun, 12 Apr 2026 04:08:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.16
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1775966674; cv=none; b=f2RmBOzPFXTOFbnBLsXkeccmIgalqNhbleq/Hsk7EAIW03wKqxXiUYzrdNxXQWlo/olUaIQpB9ditM/ZXNjbMwkQgNzVrrNJtWSSS6Lj4RttX+vBDtHhAsJURzenxSAHMmK87LN2UAdre4LuzMdn8Dr1mL4buHMXzy5L5OlBRZE=
+	t=1775966912; cv=none; b=ZonlHfyC59rftOTt3M6NUlSvqO0e0OtycUicABq0rZ71pHMs85axEfE9vELv8i7SIKLmPxGIcbDJq8m8BFoCFjmvC2xphChL734TuLxHHQIVH+mjK72qFzupIv3U4kMUpAdU3lJghPrCMye3JGM/MJkwQVkt6BRyAk+pTdkIaGs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1775966674; c=relaxed/simple;
-	bh=bB94bcJZQwuGgpc7hTHHJU0qfmBtPULFbwoiEfpF6Lg=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=ng6dQ1PVpBJGAT5gbzqTwYahUExhL0b5RGK7U6yCYn0lj6UJRJknusJVyiirnDwygCU3i3A7uSFH/WsrOD4UZsJm9Fp3iW0u/DDVPdkubTHiuzGyTjst1XVyNW9r/mgiWM5topYfy4wWb8IZ+p/W8iAHHusPX1bjyG4AQL9PP4s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=S4qn5JC0; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=STCCAO7h; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1775966912; c=relaxed/simple;
+	bh=EM3pY/4Lfp0D742+YWNWoAubitPxOLpCFDoZe6jYc30=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=K4Rq73lvGGmRzi8Ki49lKR++RHRjFjY2IVOlhOzQwoyQIAxaYGgOGNNB4RZ7mvg4Anqn50qVanZ3/UUvY4Gw02HGdKYhaO19gPDfInNU904Kob/2stQYiGdK7Bklpney1gBCYxwccb3DgSSpmBOCi5aa1ByU/rv+n0EyWt5EEsA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=VsOKizwN; arc=none smtp.client-ip=198.175.65.16
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="S4qn5JC0";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="STCCAO7h"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id E49D95BCDD
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 04:04:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775966664; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=pWCyQY4v3OdocDu2nCtGWvQ+ht/6wMZ3MLt1vA/CeBQ=;
-	b=S4qn5JC08Xb4lxObeCdK1bauT7XgNROQdUqGhOzyuE4X9k/1jmcYh3hk/7AzY0VdXmQks6
-	uEU0td9gWYUc76TuLWROsGKR0QdSNcd9Qzm5pt/V34p6UBeJEMDb2l/GZN+K4/6S6jlUSx
-	OLGH/JtS+x315imKiwY23XF+3FFX0Vo=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=STCCAO7h
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1775966663; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=pWCyQY4v3OdocDu2nCtGWvQ+ht/6wMZ3MLt1vA/CeBQ=;
-	b=STCCAO7hqa8EtSevW4tYorvE64lrD0VaQ/9LRm0zp+z3l0emtJExD9/uDFBDpHolhwEAd/
-	U5+Q2AuFij7bOOTgiYhLp4lBigYmJiPaOxBsjhS3Iouhuf+lpEpRmViSi+0hU7SU4/i6qM
-	+vjt440M0eFTbgV5SfIBzvJ+sG0zy9Q=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DEB0A4A715
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 04:04:22 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id D6t/IsYZ22mbRgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2026 04:04:22 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: fsck-tests: add the missing binary image for fsck/071
-Date: Sun, 12 Apr 2026 13:34:04 +0930
-Message-ID: <6a494c4c928cf8d711aec68e4339911a6122ec64.1775966626.git.wqu@suse.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="VsOKizwN"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1775966911; x=1807502911;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=EM3pY/4Lfp0D742+YWNWoAubitPxOLpCFDoZe6jYc30=;
+  b=VsOKizwNgpF8tD7YeiTt2oCOZEkrlWGBSvC2aCHWC4+O5+ozu9WzaVgx
+   39mS42UykCVeA9H8+ZlSznl7Qgb+wNXwttYWDLE3Eb0sPsRf4z2roDLRX
+   JDrNEJy8576BTE1a2qeWJABgtYBhIgJ8jTxW72ReUd1VUqxd0u0xYIDh0
+   dCxz2+pIFJ2HziMqxOZnKCxau6TIUq84UTev7BU0gz6JZw2u7zxi1AM8h
+   uKt+3Ova4cCxtK3V9kUCraK6pT39y4r73JLCRFvrm4wu+jq2jV95Q7v3r
+   zKf/M4dgp4FVdMbRKyxd6alu5qFYpTUOIHDyJd9fgsjFZ/NY66U4RSr+l
+   Q==;
+X-CSE-ConnectionGUID: VY7TZ1ItSkqaknTs1ksLXA==
+X-CSE-MsgGUID: 4x9dVDSvSAiKiYSvdlqSlQ==
+X-IronPort-AV: E=McAfee;i="6800,10657,11755"; a="77117063"
+X-IronPort-AV: E=Sophos;i="6.23,174,1770624000"; 
+   d="scan'208";a="77117063"
+Received: from fmviesa003.fm.intel.com ([10.60.135.143])
+  by orvoesa108.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Apr 2026 21:08:31 -0700
+X-CSE-ConnectionGUID: FCQ/uaR6R+qXU8jso7MvMQ==
+X-CSE-MsgGUID: P7PoNqgmTF+BvBTCfWvUdQ==
+X-ExtLoop1: 1
+Received: from igk-lkp-server01.igk.intel.com (HELO 9958d990ccf2) ([10.211.93.152])
+  by fmviesa003.fm.intel.com with ESMTP; 11 Apr 2026 21:08:27 -0700
+Received: from kbuild by 9958d990ccf2 with local (Exim 4.98.2)
+	(envelope-from <lkp@intel.com>)
+	id 1wBm7V-00000000BEj-1acY;
+	Sun, 12 Apr 2026 04:08:25 +0000
+Date: Sun, 12 Apr 2026 06:07:54 +0200
+From: kernel test robot <lkp@intel.com>
+To: ZhengYuan Huang <gality369@gmail.com>, dsterba@suse.com, clm@fb.com,
+	zheng.yan@oracle.com
+Cc: llvm@lists.linux.dev, oe-kbuild-all@lists.linux.dev,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com,
+	ZhengYuan Huang <gality369@gmail.com>
+Subject: Re: [PATCH v2] btrfs: reject empty non-root tree blocks at read time
+Message-ID: <202604120628.G64NL6IJ-lkp@intel.com>
+References: <20260409081140.3400650-1-gality369@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCPT_COUNT_ONE(0.00)[1];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[vudl_pq:email,p:email,2j:email,tk9r:email,z:email,hy:email,n:email,x8q:email,a_aplxvj:email,kmvv:email,sw:email,wrp2:email,ee:email,mssk:email,ukts:email,0.0.0.3:email]
-X-Rspamd-Queue-Id: E49D95BCDD
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260409081140.3400650-1-gality369@gmail.com>
 
-Surprisingly the test case fsck/071 contains no image file.
+Hi ZhengYuan,
 
-It looks like a merge error, as the patch I sent to the mailing list
-correctly shows the binary file:
+kernel test robot noticed the following build errors:
 
- https://lore.kernel.org/linux-btrfs/dd3a868f33762d907a1c8bfc99c14b47c917ba7b.1770335913.git.wqu@suse.com/
+[auto build test ERROR on kdave/for-next]
+[also build test ERROR on linus/master v7.0-rc7 next-20260410]
+[If your patch is applied to the wrong git tree, kindly drop us a note.
+And when submitting patch, we suggest to use '--base' as documented in
+https://git-scm.com/docs/git-format-patch#_base_tree_information]
 
-Anyway, add back the missing binary file, which is created by v6.16
-btrfs-progs, which has the orphan fst entries.
+url:    https://github.com/intel-lab-lkp/linux/commits/ZhengYuan-Huang/btrfs-reject-empty-non-root-tree-blocks-at-read-time/20260412-051345
+base:   https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
+patch link:    https://lore.kernel.org/r/20260409081140.3400650-1-gality369%40gmail.com
+patch subject: [PATCH v2] btrfs: reject empty non-root tree blocks at read time
+config: x86_64-kexec (https://download.01.org/0day-ci/archive/20260412/202604120628.G64NL6IJ-lkp@intel.com/config)
+compiler: clang version 20.1.8 (https://github.com/llvm/llvm-project 87f0227cb60147a26a1eeb4fb06e3b505e9c7261)
+reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20260412/202604120628.G64NL6IJ-lkp@intel.com/reproduce)
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- .../orphan_fst_entries.img.xz                    | Bin 0 -> 1864 bytes
- 1 file changed, 0 insertions(+), 0 deletions(-)
- create mode 100644 tests/fsck-tests/071-orphan-fst-entry/orphan_fst_entries.img.xz
+If you fix the issue in a separate patch/commit (i.e. not just a new version of
+the same patch/commit), kindly add following tags
+| Reported-by: kernel test robot <lkp@intel.com>
+| Closes: https://lore.kernel.org/oe-kbuild-all/202604120628.G64NL6IJ-lkp@intel.com/
 
-diff --git a/tests/fsck-tests/071-orphan-fst-entry/orphan_fst_entries.img.xz b/tests/fsck-tests/071-orphan-fst-entry/orphan_fst_entries.img.xz
-new file mode 100644
-index 0000000000000000000000000000000000000000..272412ebf847077c2be6afe69e6686cb904d6b27
-GIT binary patch
-literal 1864
-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
+All errors (new ones prefixed by >>):
 
-literal 0
-HcmV?d00001
+>> fs/btrfs/disk-io.c:431:9: error: use of undeclared label 'out'
+     431 |                         goto out;
+         |                              ^
+   1 error generated.
+
+
+vim +/out +431 fs/btrfs/disk-io.c
+
+   355	
+   356	/* Do basic extent buffer checks at read time */
+   357	int btrfs_validate_extent_buffer(struct extent_buffer *eb,
+   358					 const struct btrfs_tree_parent_check *check)
+   359	{
+   360		struct btrfs_fs_info *fs_info = eb->fs_info;
+   361		u64 found_start;
+   362		const u32 csum_size = fs_info->csum_size;
+   363		u8 found_level;
+   364		u8 result[BTRFS_CSUM_SIZE];
+   365		const u8 *header_csum;
+   366		int ret = 0;
+   367		const bool ignore_csum = btrfs_test_opt(fs_info, IGNOREMETACSUMS);
+   368	
+   369		ASSERT(check);
+   370	
+   371		found_start = btrfs_header_bytenr(eb);
+   372		if (unlikely(found_start != eb->start)) {
+   373			btrfs_err_rl(fs_info,
+   374				"bad tree block start, mirror %u want %llu have %llu",
+   375				     eb->read_mirror, eb->start, found_start);
+   376			return -EIO;
+   377		}
+   378		if (unlikely(check_tree_block_fsid(eb))) {
+   379			btrfs_err_rl(fs_info, "bad fsid on logical %llu mirror %u",
+   380				     eb->start, eb->read_mirror);
+   381			return -EIO;
+   382		}
+   383		found_level = btrfs_header_level(eb);
+   384		if (unlikely(found_level >= BTRFS_MAX_LEVEL)) {
+   385			btrfs_err(fs_info,
+   386				"bad tree block level, mirror %u level %d on logical %llu",
+   387				eb->read_mirror, btrfs_header_level(eb), eb->start);
+   388			return -EIO;
+   389		}
+   390	
+   391		csum_tree_block(eb, result);
+   392		header_csum = folio_address(eb->folios[0]) +
+   393			get_eb_offset_in_folio(eb, offsetof(struct btrfs_header, csum));
+   394	
+   395		if (memcmp(result, header_csum, csum_size) != 0) {
+   396			btrfs_warn_rl(fs_info,
+   397	"checksum verify failed on logical %llu mirror %u wanted " BTRFS_CSUM_FMT " found " BTRFS_CSUM_FMT " level %d%s",
+   398				      eb->start, eb->read_mirror,
+   399				      BTRFS_CSUM_FMT_VALUE(csum_size, header_csum),
+   400				      BTRFS_CSUM_FMT_VALUE(csum_size, result),
+   401				      btrfs_header_level(eb),
+   402				      ignore_csum ? ", ignored" : "");
+   403			if (unlikely(!ignore_csum))
+   404				return -EUCLEAN;
+   405		}
+   406	
+   407		if (unlikely(found_level != check->level)) {
+   408			btrfs_err(fs_info,
+   409			"level verify failed on logical %llu mirror %u wanted %u found %u",
+   410				  eb->start, eb->read_mirror, check->level, found_level);
+   411			return -EIO;
+   412		}
+   413		if (unlikely(check->transid &&
+   414			     btrfs_header_generation(eb) != check->transid)) {
+   415			btrfs_err_rl(eb->fs_info,
+   416	"parent transid verify failed on logical %llu mirror %u wanted %llu found %llu",
+   417					eb->start, eb->read_mirror, check->transid,
+   418					btrfs_header_generation(eb));
+   419			return -EIO;
+   420		}
+   421		if (check->has_first_key) {
+   422			const struct btrfs_key *expect_key = &check->first_key;
+   423			struct btrfs_key found_key;
+   424	
+   425			/* We have @first_key, so this @eb must have at least one item. */
+   426			if (unlikely(btrfs_header_nritems(eb) == 0)) {
+   427				btrfs_err(fs_info,
+   428					  "invalid tree nritems, bytenr=%llu nritems=0 expect >0",
+   429					  eb->start);
+   430				ret = -EUCLEAN;
+ > 431				goto out;
+   432			}
+   433	
+   434			if (found_level)
+   435				btrfs_node_key_to_cpu(eb, &found_key, 0);
+   436			else
+   437				btrfs_item_key_to_cpu(eb, &found_key, 0);
+   438			if (unlikely(btrfs_comp_cpu_keys(expect_key, &found_key))) {
+   439				btrfs_err(fs_info,
+   440	"tree first key mismatch detected, bytenr=%llu parent_transid=%llu key expected=(%llu,%u,%llu) has=(%llu,%u,%llu)",
+   441					  eb->start, check->transid,
+   442					  expect_key->objectid,
+   443					  expect_key->type, expect_key->offset,
+   444					  found_key.objectid, found_key.type,
+   445					  found_key.offset);
+   446				return -EUCLEAN;
+   447			}
+   448		}
+   449		if (check->owner_root) {
+   450			ret = btrfs_check_eb_owner(eb, check->owner_root);
+   451			if (ret < 0)
+   452				return ret;
+   453		}
+   454	
+   455		/* If this is a leaf block and it is corrupt, just return -EIO. */
+   456		if (found_level == 0 && btrfs_check_leaf(eb))
+   457			ret = -EIO;
+   458	
+   459		if (found_level > 0 && btrfs_check_node(eb))
+   460			ret = -EIO;
+   461	
+   462		if (ret)
+   463			btrfs_err(fs_info,
+   464			"read time tree block corruption detected on logical %llu mirror %u",
+   465				  eb->start, eb->read_mirror);
+   466		return ret;
+   467	}
+   468	
 
 -- 
-2.53.0
-
+0-DAY CI Kernel Test Service
+https://github.com/intel/lkp-tests/wiki

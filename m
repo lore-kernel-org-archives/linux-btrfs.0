@@ -1,33 +1,33 @@
 Received: from mail.synology.com (mail.synology.com [211.23.38.101])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EEF60392C57
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2026 06:53:04 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2761F3921D6
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2026 06:53:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776063186; cv=none; b=W+qPdZPWDMLa3V5nBCYtx7t7+j9FhGVWSfpODp3RhO8MelpUd16pXJ/UwHOAsi+5ozitxSzy7qoyW+igzsy/y9IR7AT2xS659H9WOiO7/lCVQAsGH374AFLka9yz1YHLGMNE2jsHw5GQ8wD1AIpi/GYfcpZUdLUCgJaR2Lf5I/s=
+	t=1776063187; cv=none; b=l+qPRjlpPf5WBla0b5UWrVjoU7hTWMPwRTXDpIMTz1gg67kucfFDq2GiU50mYSExAYbsHqa8MQUkndDRDuQq+nuJITEo/NDrMY4U6TNnwAxeMciS8NdEOrwAmS4UwvYRnCH3YO3TbX733Ir4IVugsPMxQd08GuCJc7GvdaBovL0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776063186; c=relaxed/simple;
-	bh=BIoIL+5cQKyZ0i/aifos+3FU8G2CcskqMlLGdX2k/Iw=;
+	s=arc-20240116; t=1776063187; c=relaxed/simple;
+	bh=vLExNXRNHZjLbeKKhFKoEbTczazmYmenYBsB5TW5ql4=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=oQs7ETCDQGRhuFan8yw3fxfJG8NeAivVYma8bFlEyoD33eb4hzEQxMhSMII8CicIdetGl9Q0HUC3JY4OqgffDxdPXiOypYFGXyWWe+0lK63nfRTmFw/XLX9WvGvr9oIK697xJNKJbmJ3Ep1VfeYsyvWyKrEixGBLAEVQcIYnng0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=dNpGPJQe; arc=none smtp.client-ip=211.23.38.101
+	 MIME-Version:Content-Type; b=Thx/ECPfn1CjefZYQaoWRZ5YGjwZLx4vP/vsFqD7Mv2NhoheSVxe4eBmmt31vL2b/rza9cwzCbyO+PGdSFHJHwhQTAI/XihAB3G+T4MAQ15JLpAgnKzftrhbCZV+H+ElXdhF8LTRIg8WLLs/cQQWHQn3k34yffdSE9SBzqiIejo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=AkMVZVN8; arc=none smtp.client-ip=211.23.38.101
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="dNpGPJQe"
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="AkMVZVN8"
 From: robbieko <robbieko@synology.com>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-	t=1776063182; bh=BIoIL+5cQKyZ0i/aifos+3FU8G2CcskqMlLGdX2k/Iw=;
+	t=1776063183; bh=vLExNXRNHZjLbeKKhFKoEbTczazmYmenYBsB5TW5ql4=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=dNpGPJQes2mAwz+i7OgKWHIUOUMEvT6wihWxk7lNYssbPf0uVzzYJ1uFaEQkybLL1
-	 QXVx+2d5fJ9N7Fglrwtt4zQFZ7tB14fqB2Os4UDz9Qb5vktrF6U+bKA4iMoOi73ii1
-	 l+WFptslemX7qXFe2HAvNaAbSPlwlydE/NJoHRUU=
+	b=AkMVZVN8CmTZEnkLAUDPQL7sRrnNj38fpIHhA6WzYthQap7lU8l6DRpddtM+pahnN
+	 1PT7mYfT4XV7wEDtokbMvl+KgXM3AIVQDSnNVPBTfiGDdrY9afYQfGuOqGAjanjhUz
+	 ML2sceEa+fwsWfSuDi1JQwIDQEWBDwrZAA9zdfCk=
 To: linux-btrfs@vger.kernel.org
 Cc: robbieko <robbieko@synology.com>
-Subject: [PATCH 5/6] btrfs: handle -EAGAIN from btrfs_duplicate_item and refresh stale leaf pointer
-Date: Mon, 13 Apr 2026 14:52:36 +0800
-Message-ID: <20260413065249.2320122-6-robbieko@synology.com>
+Subject: [PATCH 6/6] btrfs: check return value of btrfs_partially_delete_raid_extent()
+Date: Mon, 13 Apr 2026 14:52:37 +0800
+Message-ID: <20260413065249.2320122-7-robbieko@synology.com>
 In-Reply-To: <20260413065249.2320122-1-robbieko@synology.com>
 References: <20260413065249.2320122-1-robbieko@synology.com>
 Precedence: bulk
@@ -43,48 +43,64 @@ X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
 X-Synology-Spam-Flag: no
 Content-Type: text/plain
 
-In the 'punch a hole' case of btrfs_delete_raid_extent(),
-btrfs_duplicate_item() can return -EAGAIN when the leaf needs to be
-split and the path becomes invalid. The old code treats any error as
-fatal and breaks out of the loop.
+btrfs_partially_delete_raid_extent() returns an error code (e.g.
+-ENOMEM from kzalloc, or errors from btrfs_del_item/btrfs_insert_item),
+but all three call sites in btrfs_delete_raid_extent() discard the
+return value, silently losing errors and potentially leaving the stripe
+tree in an inconsistent state.
 
-Additionally, btrfs_duplicate_item() may trigger setup_leaf_for_split()
-which can reallocate the leaf node. The code continues using the old
-leaf pointer, leading to use-after-free or stale data access.
-
-Fix both issues by:
-- Handling -EAGAIN specifically: release the path and retry the loop.
-- Refreshing leaf = path->nodes[0] after successful duplication.
+Fix by capturing the return value into ret at all three call sites and
+breaking out of the loop on error where appropriate.
 
 Signed-off-by: robbieko <robbieko@synology.com>
 ---
- fs/btrfs/raid-stripe-tree.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ fs/btrfs/raid-stripe-tree.c | 19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index 5909ad35a1b0..1e8392a6c5a4 100644
+index 1e8392a6c5a4..22327f483311 100644
 --- a/fs/btrfs/raid-stripe-tree.c
 +++ b/fs/btrfs/raid-stripe-tree.c
-@@ -194,9 +194,19 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
+@@ -223,8 +223,9 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
+ 			/* The "left" item. */
+ 			path->slots[0]--;
+ 			btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
+-			btrfs_partially_delete_raid_extent(trans, path, &key,
+-							   diff_start, 0);
++			ret = btrfs_partially_delete_raid_extent(trans, path,
++								 &key,
++								 diff_start, 0);
+ 			break;
+ 		}
  
- 			/* The "right" item. */
- 			ret = btrfs_duplicate_item(trans, stripe_root, path, &newkey);
-+			if (ret == -EAGAIN) {
-+				btrfs_release_path(path);
-+				continue;
-+			}
- 			if (ret)
- 				break;
+@@ -240,8 +241,11 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
+ 		if (found_start < start) {
+ 			u64 diff_start = start - found_start;
  
-+			/*
-+			 * btrfs_duplicate_item() may have triggered a leaf
-+			 * split via setup_leaf_for_split(), so we must refresh
-+			 * our leaf pointer from the path.
-+			 */
-+			leaf = path->nodes[0];
- 			item_size = btrfs_item_size(leaf, path->slots[0]);
- 			extent = btrfs_item_ptr(leaf, path->slots[0],
- 						struct btrfs_stripe_extent);
+-			btrfs_partially_delete_raid_extent(trans, path, &key,
+-							   diff_start, 0);
++			ret = btrfs_partially_delete_raid_extent(trans, path,
++								 &key,
++								 diff_start, 0);
++			if (ret)
++				break;
+ 
+ 			start += (key.offset - diff_start);
+ 			length -= (key.offset - diff_start);
+@@ -264,9 +268,10 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
+ 		if (found_end > end) {
+ 			u64 diff_end = found_end - end;
+ 
+-			btrfs_partially_delete_raid_extent(trans, path, &key,
+-							   key.offset - length,
+-							   length);
++			ret = btrfs_partially_delete_raid_extent(trans, path,
++								 &key,
++								 key.offset - length,
++								 length);
+ 			ASSERT(key.offset - diff_end == length);
+ 			break;
+ 		}
 -- 
 2.43.0
 

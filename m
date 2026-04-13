@@ -1,49 +1,49 @@
 Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3764B2EFDAF
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3782A34DCE3
 	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2026 05:12:42 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.81.13.136
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776229963; cv=none; b=lTb/uLajUUqTyCJtp7c0VqhAovzXnSG7xcXtl3Ub5zJ2dCU71DoqbWMCIhJahM/NNXDMNizON2uMo1s/SAebpMZYI8kGOc+CXvxyWh/rgYyYsGNVj92L1D4JuM+RmSl5wua2HlSCxSEoXmk5GThEz1ndSm8HU1miUKk07Jy9KzE=
+	t=1776229963; cv=none; b=PTUwanNdzYm2XXMEbI02mBWc4UfqvF1Qe1vErdYZGJgQZFczUXEnoFmiQ/XgH5qVYdVal+bFtZtn5TajN7ZKv/mcJowjtl/ZnBH/u5LXo35lvxA3g5fu9Yrj9NgOh4CFjV1JDz57KPr+3KMcqqpD4SAjRXfkgkGR8pNBnwP10os=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1776229963; c=relaxed/simple;
-	bh=6oJjulsbPlur433Cv1b3qWmq5qREL6dVtRh4Nq/+a00=;
+	bh=iQmM+0EYE3y1uBbG4KceER9DRW5xBH4fDES5Aoz7Xho=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=FfhnYbdl3XBMP5l2ZqMN1VUB4nptsVpFJCO/IlzljV5tBNnLHSsfee2VtgJ3G2hA4bKy1dpXeKOrs5n/NQ2y+cZEqyEueDuZeic0lwWmgdUH44aj05GZLEDOSwnZP+sOZj+eJhNZlkNUlB0zv9gpeDdCiy3Q0AaSsSvWpD+dfXU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org; spf=pass smtp.mailfrom=merlins.org; dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b=LggkChSX; arc=none smtp.client-ip=209.81.13.136
+	 Content-Type:Content-Disposition:In-Reply-To; b=IaOH8qhqiOXwUd8ih/YgiE9rtWobJypX31vYihHNYMdPcaT2GA06ogo7ZKrvXNpHv/e21lgWQJVv6J0a1/LbmwVPba9PROtFOZKz8WHoZ6wa6acyCy5ITeSY2KaH11eHppRjvr0oN/Ip/yNPgm7Cl/FFw8h7UejgiYw/LWfeB50=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org; spf=pass smtp.mailfrom=merlins.org; dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b=avGLPFWO; arc=none smtp.client-ip=209.81.13.136
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=merlins.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b="LggkChSX"
+	dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b="avGLPFWO"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=merlins.org
 	; s=20251023; h=In-Reply-To:Content-Transfer-Encoding:Content-Type:
 	MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Resent-To:
 	Resent-Message-ID:Resent-Date:Resent-From:Sender:Reply-To:Content-ID:
 	Content-Description:Resent-Sender:Resent-Cc:List-Id:List-Help:
 	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=OECz+qyXEAwnkIFwQujhc6sgPXwjJYjF1sKPhWrUcn0=; b=LggkChSXNN/4pG9Hvt0q2NdPPV
-	+TR3DLIqDRTscZxH9YNabS395ydUtabjd2H9H4ImjPccoo7TfDafBx15wn8S9INku83CSPFi2u+dT
-	Pq+SpxB4Hf9v0PhlkEuuBTSrQa4E62E1ahnPJP0st0cTLmz3bHzr031EXoq4UshNI08EYCV+Xi448
-	S6gxciJI0fuyn6+Gg9cjMiy/p1kD+ijR+C6fxQ7KTQh7UHv829DRl3mMF1kQz9o68jUPvRnHuaeKZ
-	7cKdqylDZGmPmsKfdse9jOSHPlFHg7e5aDTS9BqMwzU0uC2u5fA1gUnlTZ8g7+i+BEGyvfWDMzTAu
-	edL6FMYw==;
-Received: from [24.6.49.44] (port=35822 helo=sauron.svh.merlins.org)
+	bh=T+i0R8P94kntkj0cy/ZSmMTMvCLwH1CXXA/2owoUkzk=; b=avGLPFWOzN+TRyzan9HIfS1KUI
+	o0QNMXtG53WFQ7GEi2uQ4zRtR3F3LZP2QiliBGkMl3nzJ7duYoqsvt1Lj9wkHWrOkv1jT5g/a26JU
+	TWJwJKhklx13X5AJfo916gOrF5Z9dqHXyLK+cnWT7ZRrgQGUHdYHZZ9s6a1ifyS58u7DWUyAJpp1Q
+	B2Yr3Q843GhX4eUuDqOP4cnVOb7+GESWidAaKcaoKbVkXFthpFXshzBCL/yyI15W0782cB63BPtPS
+	+GSUGnMm65Og4ateOCHCC/R94qPaSgr035ZayplC78R5ZnAYzQC6dYtDwiw6N/z1aUO339/ZxTppy
+	Lkb0FGlg==;
+Received: from [24.6.49.44] (port=35886 helo=sauron.svh.merlins.org)
 	by mail1.merlins.org with esmtpsa 
 	(Cipher TLS1.3:ECDHE_SECP256R1__ECDSA_SECP256R1_SHA256__AES_256_GCM:256) (Exim 4.98.2 #2)
-	id 1wCsYL-00000004AUA-3XKe by authid <merlins.org> with srv_auth_plain
+	id 1wCsYL-00000004AUF-3QMn by authid <merlins.org> with srv_auth_plain
 	for <linux-btrfs@vger.kernel.org>;
 	Tue, 14 Apr 2026 22:12:41 -0700
 Received: from merlin by sauron.svh.merlins.org with local (Exim 4.96)
 	(envelope-from <merlin@merlins.org>)
-	id 1wCsYK-006sZe-1H
+	id 1wCsYK-006sZy-1r
 	for linux-btrfs@vger.kernel.org;
 	Tue, 14 Apr 2026 22:12:40 -0700
 Resent-From: Marc MERLIN <marc@merlins.org>
 Resent-Date: Tue, 14 Apr 2026 22:12:40 -0700
-Resent-Message-ID: <ad8eSNy217egb7WZ@merlins.org>
+Resent-Message-ID: <ad8eSOQnsP0Q5uuo@merlins.org>
 Resent-To: linux-btrfs@vger.kernel.org
-Date: Sat, 11 Apr 2026 18:57:33 -0700
+Date: Mon, 13 Apr 2026 10:52:53 -0700
 From: Marc MERLIN <marc_btrfs@merlins.org>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>, Boris Burkov <boris@bur.io>,
 	Josef Bacik <josef@toxicpanda.com>, QuWenruo <wqu@suse.com>,
@@ -53,9 +53,10 @@ Cc: Chris Murphy <lists@colorremedies.com>,
 	Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
 	Roman Mamedov <rm@romanrm.net>, To: Su Yue <Damenly_Su@gmx.com>,
 	Su Yue <suy.fnst@cn.fujitsu.com>;
-Subject: Re: BTRFS discard crash: failed to run delayed ref for logical
- 15506102321152 num_bytes 16384 type 182 action 2 ref_mod 1: -2 6.11.2)
-Message-ID: <adr8DUbqkdFyvZsf@merlins.org>
+Subject: Simple quota unsafe? RIP:
+ 0010:__btrfs_free_extent.isra.0+0xc41/0x1020 [btrfs] /
+ do_free_extent_accounting:2999: errno=-2 No such entry
+Message-ID: <ad0tdWyavEngGlQ-@merlins.org>
 References: <adnBhWfJQ1n3hZC8@merlins.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -71,136 +72,161 @@ X-Sysadmin: BOFH
 X-URL: http://marc.merlins.org/
 X-SA-Exim-Connect-IP: 24.6.49.44
 X-SA-Exim-Mail-From: marc@merlins.org
-Message-ID: <20260412015733.kEBUYDzKF_rcFGmP_K_ORhRc1Wo7XsT58I7CCEbxKII@z>
+Message-ID: <20260413175253.CTXEtDDv_Aq3k9V2E83dI3cgfEnPpV2BtGvlT6Lq3rg@z>
 
-So, btrfs repair is weird. The "real one" just OOM's even if I give it
-64GB of swap, because I guess it wants gigabytes of RAM in huge chunks
-that can't be swapped.
+TL;DR: do I need to urgently disable simple quotas on all my fileystems
+until I can upgrade to a confirmed fixed kernel?
 
-moremagic:~# btrfs check --repair /dev/mapper/crypt_bcache0
-enabling repair mode
-WARNING:
+Oh no, now it's my 2nd system with a btrfs crash, just days after I
+enabled block-group-tree and simple quotas. This one is a simple
+laptop without raid, and its backup filesystem crashed overnight likely
+during balance (btrfs send/receive and snapshots, same than first one
+below) crashed overnight.
 
-        Do not use --repair unless you are advised to do so by a developer
-        or an experienced user, and then only after having accepted that no
-        fsck can successfully repair all types of filesystem corruption. E.=
-g.
-        some software or hardware bugs can fatally damage a volume.
-        The operation will start in 10 seconds.
-        Use Ctrl-C to stop it.
-10 9 8 7 6 5 4 3 2 1
-Starting repair.
-Opening filesystem to check...
-Checking filesystem on /dev/mapper/crypt_bcache0
-UUID: a97dec85-a0d5-42ab-a0ef-e9b7479fbe43
-[1/8] checking log skipped (none written)
-[2/8] checking root items
-Fixed 0 roots.
-[3/8] checking extents
-super bytes used 18659783561216 mismatches actual used 18659783544832
-super bytes used 18659783544832 mismatches actual used 18659783593984
-No device size related problem found
-[4/8] checking free space cache
-[5/8] checking fs roots
-Killed
+First kernel was 6.12 which I can't upgrade, it's an rPi5 with vendor
+kernels with special hardware support that's out of tree I think.
+This one is kernel is 6.17.11 whic I will upgrade to 6.19.11+deb14 now
+but I have no idea if it fixes anything.
 
-But this is strange lowmem is giving a totally different result, it may
-just be entirely trashing my FS as I write this, but if it doesn't
-succeed, I need to wipe it and start over anyway
-moremagic:~# btrfs check --mode lowmem /dev/mapper/crypt_bcache0
-Opening filesystem to check...
-Checking filesystem on /dev/mapper/crypt_bcache0
-UUID: a97dec85-a0d5-42ab-a0ef-e9b7479fbe43
-[1/8] checking log skipped (none written)
-[2/8] checking root items
-[3/8] checking extents
-ERROR: extent[16842752 168 4096] has unknown ref type: 172
-ERROR: extent[16855040 168 4096] has unknown ref type: 172
-ERROR: extent[1121296384 168 8192] has unknown ref type: 172
+I can't read the code or ooops outside of noticing the same exact
+do_free_extent_accounting which can't be a coincidence.
 
-Gemnini said that's the simple quotas not supported in lowmem
+I was able to rescue it with
+merlin:~# mount -o rw,enospc_debug,skip_balance  LABEL=3Dbtrfs_pool3 /mnt/b=
+trfs_pool3
+merlin:~# btrfs quota disable  /mnt/btrfs_pool3
+merlin:~# umount /mnt/btrfs_pool3
+merlin:~# mount /mnt/btrfs_pool3
 
-moremagic:~# btrfstune --remove-simple-quota /dev/mapper/crypt_bcache0
-bad eb member end: ptr 0x4000 start 15495212859392 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 16568940527616 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 16133001379840 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 15495296155648 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 15641227673600 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 16027774648320 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 16217827999744 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 16217830113280 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 15505949786112 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 16357413355520 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 15495414267904 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 3133210902528 member offset 16384 size 1
-bad eb member end: ptr 0x4000 start 16027775500288 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 16217837060096 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 15181688930304 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 15181689208832 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 16349905764352 member offset 16384 size=
- 1
-bad eb member end: ptr 0x4000 start 16349906010112 member offset 16384 size=
- 1
+I'll reboot with the new kernel now, but I'm also now scared of simple quot=
+as
+since it's 2 crashes in 3 days, one seems not posislbe to recover from and =
+a multi
+week restore.
+Suggestions welcome.
 
-So basically it looks like I'm kind of screwed unless I move the array
-(remote, can't get to it right now) to a system with 64GB of RAM or whatnot.
+Possible analysis (could be wrong):
+* __btrfs_free_extent & btrfs_qgroup_cleanup_dropped_subvolume:
+Your btrfs-cleaner thread was in the middle of deleting an old snapshot. As=
+ it
+was freeing the blocks (extents), it attempted to update the quota accounti=
+ng
+for that subvolume.
+* failed to cleanup qgroup 0/83288: -2: The kernel tried to find the quota
+group record for the subvolume being deleted, but the record was missing
+or corrupted. To protect the filesystem, Btrfs panicked and locked
+itself read-only.
 
-Back to the original point, this is kind of sad
-1) mdadm raid5 can't close the right hole while intent bitmaps are on
-2) native btrfs raid5 has never been stable enough to be used in production
-3) RST should eventually be, but nothing I read says it is today
-4) btrfs check --repair still apparently requires at least as much RAM
-as the filesystem size, which is "problematic"
-5) --lowmem is out of date and not usable.
+------------[ cut here ]------------
+BTRFS: Transaction aborted (error -2)
+WARNING: CPU: 7 PID: 2987 at fs/btrfs/extent-tree.c:2999 __btrfs_free_exten=
+t.isra.0+0xc41/0x1020 [btrfs
 
-So, am I pretty much screwed and need to wipe, restart, and speed
-probably weeks trying to resync all that data over the internet, or is
-there a way out?
+Modules linked in: ftdi_sio usbserial ufs qnx4 hfsplus hfs cdrom minix msdo=
+s jfs nls_ucs2_utils xfs rpc
+v4 dns_resolver nfs netfs rfcomm xt_tcpudp snd_seq_dummy snd_hrtimer xt_con=
+ntrack nf_conntrack_netlink=20
+lgo xt_addrtype br_netfilter bridge stp llc ccm qrtr overlay cmac algif_has=
+h algif_skcipher af_alg bnep
+JECT nf_reject_ipv4 xt_MASQUERADE xt_LOG nf_log_syslog nft_compat nft_chain=
+_nat nf_nat nf_conntrack nf_
+efrag_ipv4 nf_tables binfmt_misc nls_ascii nls_cp437 vfat fat snd_soc_sof_s=
+dw snd_soc_sdw_utils vboxdrv
+11_sdca snd_soc_rt715_sdca snd_soc_rt1316_sdw dell_pc regmap_sdw_mbq platfo=
+rm_profile snd_hda_codec_int
+mic regmap_sdw kvm snd_hda_intel btusb snd_sof_pci_intel_tgl iwlmvm snd_sof=
+_pci_intel_cnl btrtl irqbypa
+_hda_generic uvcvideo btintel soundwire_intel btbcm soundwire_generic_alloc=
+ation videobuf2_vmalloc snd_
+w_bpt btmtk uvc videobuf2_memops mac80211 snd_sof_intel_hda_common
+ videobuf2_v4l2 bluetooth snd_soc_hdac_hda videodev snd_sof_intel_hda_mlink=
+ videobuf2_common intel_uncore_frequency snd_sof_intel_hda libarc4 snd_hda_=
+codec_hdmi snd_sof_pci intel_uncore_frequency_common mc ecdh_generic mei_hd=
+cp soundwire_cadence snd_sof_xtensa_dsp mei_pxp ext4 x86_pkg_temp_thermal c=
+rc8 intel_rapl_msr processor_thermal_device_pci intel_powerclamp hid_sensor=
+_als dell_laptop iwlwifi soundwire_bus processor_thermal_device dell_wmi hi=
+d_sensor_trigger processor_thermal_wt_hint rapl hid_sensor_iio_common platf=
+orm_temperature_control snd_soc_avs industrialio_triggered_buffer crc16 snd=
+_sof_probes processor_thermal_rfim intel_cstate iTCO_wdt mbcache dell_smbio=
+s kfifo_buf squashfs jbd2 loop dcdbas intel_uncore cfg80211 dell_smm_hwmon =
+dell_wmi_sysman dell_wmi_ddv dell_wmi_descriptor firmware_attributes_class =
+pcspkr snd_sof processor_thermal_rapl industrialio intel_pmc_bxt wmi_bmof s=
+nd_soc_hda_codec ucsi_acpi mei_me spd5118 iTCO_vendor_support intel_rapl_co=
+mmon snd_hda_ext_core snd_sof_utils typec_ucsi
+ snd_intel_dspcfg watchdog mei processor_thermal_wt_req snd_intel_sdw_acpi =
+rfkill intel_pmc_core typec processor_thermal_power_floor snd_soc_skl_hda_d=
+sp igen6_edac processor_thermal_mbox roles int3403_thermal pmt_telemetry sn=
+d_soc_intel_sof_board_helpers int340x_thermal_zone snd_soc_acpi_intel_match=
+ pmt_discovery joydev snd_soc_acpi_intel_sdca_quirks pmt_class snd_soc_acpi=
+ int3400_thermal intel_hid intel_pmc_ssram_telemetry snd_soc_sdca acpi_ther=
+mal_rel sparse_keymap acpi_tad acpi_pad ac serio_raw snd_soc_core evdev snd=
+_compress snd_pcm_dmaengine snd_soc_intel_hda_dsp_common snd_hda_codec snd_=
+hda_core snd_hwdep snd_pcm_oss snd_mixer_oss snd_pcm snd_seq_midi snd_seq_m=
+idi_event snd_seq snd_timer snd_rawmidi snd_seq_device snd_ctl_led snd soun=
+dcore ac97_bus coretemp nfsd msr ecryptfs auth_rpcgss nvme_fabrics nfs_acl =
+lockd efi_pstore grace sunrpc nfnetlink ip_tables x_tables autofs4 crc32c_c=
+ryptoapi essiv authenc btrfs blake2b_generic dm_crypt dm_mod efivarfs raid1=
+0 raid456 async_raid6_recov async_memcpy
+ async_pq async_xor async_tx xor raid6_pq raid1 raid0 md_mod sata_sil24 lib=
+ata scsi_mod scsi_common e1000e r8169 realtek mdio_devres libphy mdio_bus m=
+ii xe configfs drm_gpusvm_helper drm_suballoc_helper hid_sensor_custom hid_=
+sensor_hub intel_ishtp_hid nouveau mxm_wmi drm_gpuvm i915 gpu_sched drm_bud=
+dy drm_ttm_helper hid_multitouch ttm drm_exec i2c_algo_bit hid_generic drm_=
+display_helper xhci_pci cec xhci_hcd rc_core nvme rtsx_pci_sdmmc i2c_hid_ac=
+pi intel_lpss_pci drm_client_lib i2c_hid nvme_core mmc_core intel_lpss usbc=
+ore video nvme_keyring i2c_i801 intel_ish_ipc drm_kms_helper hid ghash_clmu=
+lni_intel psmouse rtsx_pci thunderbolt intel_ishtp intel_vsec idma64 button=
+ usb_common i2c_smbus nvme_auth battery drm wmi aesni_intel
+CPU: 7 UID: 0 PID: 2987 Comm: btrfs-cleaner Tainted: G     U     OE       6=
+=2E17.11+deb14-amd64 #1 PREEMPT(lazy)  Debian 6.17.11-1=20
+Tainted: [U]=3DUSER, [O]=3DOOT_MODULE, [E]=3DUNSIGNED_MODULE
+Hardware name: Dell Inc. XPS 17 9730/0JP3YK, BIOS 1.23.0 09/04/2025
+RIP: 0010:__btrfs_free_extent.isra.0+0xc41/0x1020 [btrfs]
+Code: ff ff 48 c7 c7 d8 ac 98 c1 e8 ab 7a 6c e4 0f 0b c6 44 24 2f 01 e9 22 =
+8a 0e 00 8b 74 24 10 48 c7 c7 d8 ac 98 c1 e8 8f 7a 6c e4 <0f> 0b e9 50 ff f=
+f ff 48 8b 34 24 48 8b 76 60 48 89 74 24 08 48 8d
+RSP: 0000:ffffd372a10cfb40 EFLAGS: 00010246
+RAX: 0000000000000000 RBX: 00000124f8b48000 RCX: 0000000000000027
+RDX: ffff8d4d0f3dce48 RSI: 0000000000000001 RDI: ffff8d4d0f3dce40
+RBP: 0000000000004000 R08: 0000000000000000 R09: ffffd372a10cf9e0
+R10: ffff8d4d4f745068 R11: 00000000ffffdfff R12: 0000000000000000
+R13: 000000000000002b R14: 00000000000039c1 R15: ffff8d4b42451930
+FS:  0000000000000000(0000) GS:ffff8d4d669c8000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000563efa2028b8 CR3: 0000000ce5c2c006 CR4: 0000000000f70ef0
+PKRU: 55555554
+Call Trace:
+ <TASK>
+ __btrfs_run_delayed_refs+0x2dc/0xf70 [btrfs]
+ ? read_block_for_search+0x19e/0x400 [btrfs]
+ ? set_extent_buffer_dirty+0x26/0x200 [btrfs]
+ btrfs_run_delayed_refs+0x39/0x140 [btrfs]
+ btrfs_commit_transaction+0x6d/0xdf0 [btrfs]
+ btrfs_qgroup_cleanup_dropped_subvolume+0x49/0xb0 [btrfs]
+ btrfs_drop_snapshot+0x78e/0xcc0 [btrfs]
+ ? __pfx_cleaner_kthread+0x10/0x10 [btrfs]
+ btrfs_clean_one_deleted_snapshot+0xc2/0x130 [btrfs]
+ cleaner_kthread+0xdc/0x160 [btrfs]
+ ? __pfx_cleaner_kthread+0x10/0x10 [btrfs]
+ kthread+0xf9/0x240
+ ? __pfx_kthread+0x10/0x10
+ ret_from_fork+0x194/0x1c0
+ ? __pfx_kthread+0x10/0x10
+ ret_from_fork_asm+0x1a/0x30
+ </TASK>
+---[ end trace 0000000000000000 ]---
+BTRFS: error (device dm-4 state A) in do_free_extent_accounting:2999: errno=
+=3D-2 No such entry
+BTRFS info (device dm-4 state EA): forced readonly
+BTRFS error (device dm-4 state EA): failed to run delayed ref for logical 1=
+258303029248 num_bytes 16384 type 176 action 2 ref_mod 1: -2
+BTRFS: error (device dm-4 state EA) in btrfs_run_delayed_refs:2161: errno=
+=3D-2 No such entry
+BTRFS warning (device dm-4 state EA): failed to cleanup qgroup 0/83288: -2
 
-Thanks,
-Marc
+
 
 On Fri, Apr 10, 2026 at 08:35:33PM -0700, Marc MERLIN wrote:
-> [Is there a more appropriate way to report FS corruption? Looks like
-> Emails to just linux-btrfs@vger.kernel.org do not get seen amongst all
-> the patches hiding a normal Email]
->=20
-> Howdy,
->=20
-> I had btfrs filesystem on top of raid5 with 5 spinning drives.
-> I mistakenly enabled discard by mistake which caused a crash when the dis=
-card thread tried
-> to run (no discard on those drives)
-> Kernel 6.12
->=20
-> I worked on recovery using gemini 3.0 pro, mounting read only is fine, bu=
-t I need read write
-> or will waste days (probably weeks) recreating this entire 20TB+ backup o=
-ver the internet
->=20
-> I'm not qualified to say if everything Gemini said was correct, but I thi=
-nk summary is:
-> 1) discard can apparently kill a filesystem when it's hard drives below (=
-it did for me)
-> 2) -o skip_balance,usebackuproot didn't help
-> 3) no way to mount after space cache has been cleared and block-group-tre=
-e is enabled
-> 4) still no way to mount read write after removing block-group-tree
 >=20
 > It started with:
 > [23345.326321] BTRFS: error (device dm-0 state A) in do_free_extent_accou=

@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 15E41344031;
-	Tue, 14 Apr 2026 10:40:16 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 652283D75C3;
+	Tue, 14 Apr 2026 10:40:33 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776163217; cv=none; b=G1Q1/YpuIrq0/p3nXlHYI+SHDl2yW4W95W8UlJEGe9BkKkwswu6mPb07HuMisw20Ue+KDFftuMGUuvlesC4aYm7UnESEnudZm+gP+OHQ2SFZz4Jtv9eajc4Ds4OunO360M0mavm6kSC8hZUI3TA9A+bYy/96QnHtlBV/IOhCBRA=
+	t=1776163233; cv=none; b=XKR6D9uDwyODKxemKukqMlB7DwvUd3McaXXT9ext0NjhoKzA1mI4BYYyp98+jzozYZl2XOkGI0074eYlHGjLdLoPEC8IDRhhaZ1sC6cDpdrFA2EwQwMbEDmu6qxPy16IqPEWfQaUpFF4NDHdgfTG3uv5BrbS+DV0ZvNdiWo/ccc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776163217; c=relaxed/simple;
-	bh=uKJLbd7pobvSRa/otRYj8X+Wzu6HrAb79wzj4niEGrE=;
+	s=arc-20240116; t=1776163233; c=relaxed/simple;
+	bh=1A3OVVqVgKxNYzk0Y9ubnCiqCKbONv2qMUdyjMlJpdA=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=l01v4X+YC1QfHmXTXZ6jsQfvL1YgB49Xg9CiJddeB4EUAelO6BHFcQvT/jeqD07NkVhmtBFJBYbNdGpYN6hvrfVGi/I7MIRPpkowTK2zz6F1trEnUM7Q9cs6Y7M72OQ0YsZ6GWZuywh7abVuxPc5v8V80Znf76dRr6rWdHgM4Y0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=J8NQ/KTD; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=dv1Qqqw2TndROydg89XaOqFDqOlbLQtLWDSw3Zd8ksNueedi4cn//ce9FAgCK1qjpmZRUDyrve5Pzm5fh83LLi8Wshke+C+I8eUD/E26rYSCJ8mTP8NydBvbjpVPr8dWQTPzDKvzDK8/UtKmnKpzqSocjYPuNVHTJSznGK1+18M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=seAK4Xwk; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="J8NQ/KTD"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 06EACC2BCB6;
-	Tue, 14 Apr 2026 10:40:08 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="seAK4Xwk"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 67BE6C2BCB5;
+	Tue, 14 Apr 2026 10:40:25 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776163215;
-	bh=uKJLbd7pobvSRa/otRYj8X+Wzu6HrAb79wzj4niEGrE=;
+	s=k20201202; t=1776163232;
+	bh=1A3OVVqVgKxNYzk0Y9ubnCiqCKbONv2qMUdyjMlJpdA=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=J8NQ/KTD15PF30aYKZFqDJqw7jj3j0LYTvjQREa+tZC8LeENek7izk/BO4zMr2Gm5
-	 7oltj6BgbyyikIKcEFSrg/u2Cd1iHwJpQjvCi9gQ3wri7wzHY3t+5sDYG7Lbhv1hJV
-	 i7MUvcHrbrpjtHgP0sy303n5I4fLPAxeFTb9jeQaihype8YcB/zDllGv6hj/gytaTH
-	 W9BY3tJoBTlqTMteefrigEcn2MHoN1MguBCAVNwanOiWYFD31RSxqm86gzmHEVuoiy
-	 g+JQwp/Ik/NT78JpX6ZjIv60RMgQi5OeAD5h1EKCttVxsbmy4YBG7GPr2IE98tsLlH
-	 O4xJD+2UynarA==
-Message-ID: <47012a6e-f1ee-47c4-b614-3ca16bfc9e6f@kernel.org>
-Date: Tue, 14 Apr 2026 12:40:06 +0200
+	b=seAK4XwkqGwhd9CT0GkHtPXQqqJqDPbYjpYhuHG6y8x1byekuJHpgPRi7hVq1KoYy
+	 eQC6b9qeUXUTFLJijkyTocXAZKKN7K+U9JU8FI3iPntBUcPI84Sfx+L1E6SbGdiyq/
+	 OuVtFPoIfkiop7bgZ+dxcjoh35KCAr/3PkQ6YyS0TdzVV3PPcek+POQL6WMXopaYAc
+	 TLtdxHz6RgBtKB0zaE0D1qJCc3pLLqy9wnm+ovh/SMk22lbEbtpOUgTjXU764V6CUs
+	 HMigvu6M4AUceyIXVArzdYI/O3sGEqa49fnJzgt/e+yZKoBxZffIMT2YNlF+aeFwEl
+	 KCY5DJQhLEUow==
+Message-ID: <77d4d591-5e70-4ba9-bd0f-9674c2a74d6d@kernel.org>
+Date: Tue, 14 Apr 2026 12:40:22 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,8 +35,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 7.2 v2 03/12] mm/huge_memory: remove READ_ONLY_THP_FOR_FS
- from file_thp_enabled()
+Subject: Re: [PATCH 7.2 v2 04/12] mm: remove READ_ONLY_THP_FOR_FS Kconfig
+ option
 To: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  Song Liu <songliubraving@fb.com>
 Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
@@ -53,7 +53,7 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260413192030.3275825-1-ziy@nvidia.com>
- <20260413192030.3275825-4-ziy@nvidia.com>
+ <20260413192030.3275825-5-ziy@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -100,46 +100,22 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <20260413192030.3275825-4-ziy@nvidia.com>
+In-Reply-To: <20260413192030.3275825-5-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
 On 4/13/26 21:20, Zi Yan wrote:
-> Replace it with a check on the max folio order of the file's address space
-> mapping, making sure PMD_ORDER is supported.
+> After removing READ_ONLY_THP_FOR_FS check in file_thp_enabled(),
+> khugepaged and MADV_COLLAPSE can run on FSes with PMD THP pagecache
+> support even without READ_ONLY_THP_FOR_FS enabled. Remove the Kconfig first
+> so that no one can use READ_ONLY_THP_FOR_FS as upcoming commits remove
+> mapping->nr_thps, which its safe guard mechanism relies on.
 > 
+> Reviewed-by: Lorenzo Stoakes (Oracle) <ljs@kernel.org>
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
 > ---
->  mm/huge_memory.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/mm/huge_memory.c b/mm/huge_memory.c
-> index 970e077019b7..a22bb2364bdc 100644
-> --- a/mm/huge_memory.c
-> +++ b/mm/huge_memory.c
-> @@ -86,9 +86,6 @@ static inline bool file_thp_enabled(struct vm_area_struct *vma)
->  {
->  	struct inode *inode;
->  
-> -	if (!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS))
-> -		return false;
-> -
->  	if (!vma->vm_file)
->  		return false;
->  
-> @@ -97,6 +94,9 @@ static inline bool file_thp_enabled(struct vm_area_struct *vma)
->  	if (IS_ANON_FILE(inode))
->  		return false;
->  
-> +	if (mapping_max_folio_order(inode->i_mapping) < PMD_ORDER)
-> +		return false;
-> +
->  	return !inode_is_open_for_write(inode) && S_ISREG(inode->i_mode);
->  }
->  
 
-I assume this change itself should be sufficient and the SCAN_FAIL check
-in patch #1 is not required?
+Acked-by: David Hildenbrand (Arm) <david@kernel.org>
 
 -- 
 Cheers,

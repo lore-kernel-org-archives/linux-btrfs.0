@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AE2243C3BF3;
-	Tue, 14 Apr 2026 11:06:35 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51A6E39A04C;
+	Tue, 14 Apr 2026 11:07:04 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776164797; cv=none; b=iH6UroXaTGOu2o2rF7r/YW/G84EtewXQ/zOHfaF5jsKPQnI5FFbgLnpTGAghtUYzge/4Ed56MoSD0rOlijeG+uiKsacvefdh9FrU5fJ7/xxTx3s7sYHiDO3dqk5Y/M/bIqZIPKrcm1HBLbf679RBQWMxV34C9UTe4tSBFwwzZrM=
+	t=1776164824; cv=none; b=gXQjlj5w+k4STzKuh5pbpphK08RsrO5v0bJAjVY0TVkE6MgEaHQjeoGLJrjrCYZnSnwIb4eX7qxuwJjG1kGD5lsmYMUf+fpX1dAKrMIZdwxCPNjq4RzZEyrqhXPzMEs6Lgdx9l9d7ZIPLI4qQJUdDbOrxcv56ZAOma7qm8SCXKU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776164797; c=relaxed/simple;
-	bh=JGfefa1DoJ22jqYhuRyjdbGP25GphmZWxYCWiDFEfVo=;
+	s=arc-20240116; t=1776164824; c=relaxed/simple;
+	bh=LdH/VtABVvIZd1mcd+RsS8OArlVVXrW+GtEkqQ6K1ec=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=S0dFcwEM7sODEFNEZiJC1ioa1gYHc22UPMqOID2NMRL03rlTa7brpFcm6LlR+xEBV0zDaJbIV26WQwRc/V1HQHUZJXaS5wGi5e0Lmlq2y4peD44B0iz7RovZvY+yYCyM7kkmkpoZHR7kAOu5EDOWnnGyXITmep6QuW3fjbiJ5RE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ewjzQJq5; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=FvmdcupgLsG6Hz3nyRNZm6gLtbYHwlI19M3khQ+BwnvsMdF7+km4a9I8V94I8BLwKCuFVL/Ec5QHg6tf4P8/pcLHeCas0QGb04k28LdMxdV/N52m/q15TvTPF9kN0DHRcoJhGkjZ67FYHzVVuUNIcJspED35Ip+B7gLZHs+cNOE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LSft1JIj; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ewjzQJq5"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E4C6BC2BCB5;
-	Tue, 14 Apr 2026 11:06:27 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LSft1JIj"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AE3E0C19425;
+	Tue, 14 Apr 2026 11:06:56 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776164795;
-	bh=JGfefa1DoJ22jqYhuRyjdbGP25GphmZWxYCWiDFEfVo=;
+	s=k20201202; t=1776164823;
+	bh=LdH/VtABVvIZd1mcd+RsS8OArlVVXrW+GtEkqQ6K1ec=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=ewjzQJq5OTy5YsNSMVAMFmMgqOxtEFjCduZ91AkzvKD7QXqKPvhMpIVN0EDz60NAZ
-	 6hopk3tIRtasgG1qKnjJMYd8L0YDHuJBhiijXLijs0C4Mh83rCLr649tXOcnQ16tka
-	 30OHKmM5Jc36dZamTEy+vua7OHoiRMLzrt5FwLZa6PytQULW9icN8K5LPslr8wxs+X
-	 /V1ynud0OC2GG0Bd04s5XU+xmvVTsjjiWG50vAcFQ57YwkAykR27sBWtIOm/JYN8se
-	 6PExDjl68N1MB9A5X0WUv3bb/f4a4haUuHWt/Zs9sw8mU+rBFYxn65SBDjrdn/aNvs
-	 I1LEObs+N48SA==
-Message-ID: <f9e00b62-d798-4e9d-9474-d943b4634203@kernel.org>
-Date: Tue, 14 Apr 2026 13:06:24 +0200
+	b=LSft1JIjnltiWFUtp5Xi5+P7DrvpPEANm49SmeqMhIKIw8DNcil6I7P8KWJ51SBcq
+	 zpP1t3j+riqfMhUUp8ldFxvSyuy7E5onIlQznc1HvT4bRuc7FvUpbTeaTxte/o/E7l
+	 ThZvFbKq3a2M1ztzJJ64W0gCMBIV1IhfYYZEtsiFKlFPmspjzMaJE98AfEz8t6iWXk
+	 HKbpbdaqMgw8CGuhAcUMp9VH7ff0Xnmb/ga9/mcOwsSyOhT02B9dC2v2EquljSnDc3
+	 jeu9nCpzPqDMPLXjY/7tnpDDaFSQSQ31hIQ7XSDcKyxhRdAdwZihO3BI2iVFiDr5Z6
+	 z/+UVDwisnpmQ==
+Message-ID: <7dc98115-ed22-4643-aff3-fd0c4bdd3222@kernel.org>
+Date: Tue, 14 Apr 2026 13:06:53 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,8 +35,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 7.2 v2 10/12] fs/btrfs: remove a comment referring to
- READ_ONLY_THP_FOR_FS
+Subject: Re: [PATCH 7.2 v2 11/12] selftests/mm: remove READ_ONLY_THP_FOR_FS in
+ khugepaged
 To: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  Song Liu <songliubraving@fb.com>
 Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
@@ -53,7 +53,7 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260413192030.3275825-1-ziy@nvidia.com>
- <20260413192030.3275825-11-ziy@nvidia.com>
+ <20260413192030.3275825-12-ziy@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -100,33 +100,15 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <20260413192030.3275825-11-ziy@nvidia.com>
+In-Reply-To: <20260413192030.3275825-12-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
 On 4/13/26 21:20, Zi Yan wrote:
-> READ_ONLY_THP_FOR_FS is no longer present, remove related comment.
+> Change the requirement to a file system with large folio support and the
+> supported order needs to include PMD_ORDER.
 > 
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
-> Acked-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/defrag.c | 3 ---
->  1 file changed, 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
-> index 7e2db5d3a4d4..a8d49d9ca981 100644
-> --- a/fs/btrfs/defrag.c
-> +++ b/fs/btrfs/defrag.c
-> @@ -860,9 +860,6 @@ static struct folio *defrag_prepare_one_folio(struct btrfs_inode *inode, pgoff_t
->  		return folio;
->  
->  	/*
-> -	 * Since we can defragment files opened read-only, we can encounter
-> -	 * transparent huge pages here (see CONFIG_READ_ONLY_THP_FOR_FS).
-> -	 *
->  	 * The IO for such large folios is not fully tested, thus return
->  	 * an error to reject such folios unless it's an experimental build.
->  	 *
 
 Reviewed-by: David Hildenbrand (Arm) <david@kernel.org>
 

@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 832AC399032;
-	Tue, 14 Apr 2026 10:19:12 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 93ABB39A052;
+	Tue, 14 Apr 2026 10:20:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776161952; cv=none; b=UKwWu4dRbkeqpX/tnIYUcBN2wQ6xJWEIdFa6P8LyOOM8fBKpfp/FY5dTbKSlzPuMiuXB9RV74MGEnUvXxT/BHusYBWKwyLDFhrhJm2iuWQPQOOc8zqDsjtnAGx1LCcE7oQT8wOXaNwj3kJkhCgIvHQlrgrCikB4JbVK8SCRgIaI=
+	t=1776162029; cv=none; b=bnIaYB+o+KhBeKOhFfHp0GvTtDLupi9Z+qG4RkfKKHKdCDrR1/hH3VM9RuMK/bdq2lnBzihDGB+tyyDZLav8HiBzCNVo4zANmvdImoqI5JxMpP37kgI+/UBWYoVnj440rJHhvL8zAeBBFT1xeySHdmmWErFSKHX27b9Yx0bO2vs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776161952; c=relaxed/simple;
-	bh=MDxYDpGQmy5Oxh+Of/cJzn+fi3bCoNS15eBhroroskc=;
+	s=arc-20240116; t=1776162029; c=relaxed/simple;
+	bh=RGgiwNNKERTEHoOTPwB9B49AuENlAfKt7sU34JQ6brg=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=atW/b8dJ8Hz/VNJwhgZ4y5WSHPNhcOqghPumtQB6uzxa4FJS4g7UAleRh6Kb5OpNmi06/fz3SAKRbBR/DBF7v+RDVuwtADNb2oZkASJXjwJ4R7SxeV5zrKlqoFajBJegMSzy2dl7/rgLDrFfU5Q9xOWLOoVI2ltb21agJob3EFc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=tLRQLee1; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=Rbi4yFHN5i1bRG6MCb550CGn5V09kPK12TCYBaeFNA5TF63VhgrS2HqwNYOIqF/jaesad/HNoV6U5M1noAE8VsAKiFXCgni7Ri04X8RxnlNH0ezBbuk88lwDEcxs37eG4w1nCqgTu2B4kBUfc3zxxtUwJ9ypwEqEGkL4AZFy2DI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Za1ua/c2; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="tLRQLee1"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 09A33C19425;
-	Tue, 14 Apr 2026 10:19:04 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Za1ua/c2"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AADE4C19425;
+	Tue, 14 Apr 2026 10:20:22 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776161952;
-	bh=MDxYDpGQmy5Oxh+Of/cJzn+fi3bCoNS15eBhroroskc=;
+	s=k20201202; t=1776162029;
+	bh=RGgiwNNKERTEHoOTPwB9B49AuENlAfKt7sU34JQ6brg=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=tLRQLee1YgXHJrcPplFsAm3WeFn4fNmAKXn3Y0ZZK/SsNsEVHxwzCghZjXlMEgv8f
-	 +DJOuFeqgWrsZPRaEGTNra1MaJQ6+2eobv045cs5M/9tARoAebOa6WG1cxYcYeawOB
-	 SYrA4gak03seD0kMfx8kowEkI+xf2nreknYrJv6rAwubb4Fa0bF4sKhmQiGdDYP3bG
-	 HifW8OodnnvoALRlYyAgQDRcyJ097cJvSvrsTZDwnrxFGPNb7m7bvFY1lMJ1sDJ0ZQ
-	 rEnLYH7nJmpCl6bfi+BtsewOAGiE151lEakpDBZU1bcb3K1XIMkHaO7M6DcuH2ceyu
-	 QfUzWIi7Gvvfg==
-Message-ID: <d20a526f-49fa-4037-87a8-7ffec1391beb@kernel.org>
-Date: Tue, 14 Apr 2026 12:19:02 +0200
+	b=Za1ua/c2pBc2SFfHoE9LK94I5v2vvCEqP+T0fD3yg+NZGgSkqjcAQQxDo2PuyT0Oz
+	 7kSmatnHBwa1r7/ybCAH/w3+bmRIPw1+TfawF6oZs78YEU1C67uRFNC6NrS+8MJKST
+	 09IcwKF/jVZTrrrd8G6cO1uwfujb/jWnDqH9tBmvTRMN4N9zXYVYfHqjTwVAFSPH+F
+	 uqP1+HavbMfQufGK87I6hQNJp4AAFX4pxRtSjSbq3k/zBJjZ8CthPl/3tGhb2QAOUg
+	 LKkUF/rIlqdQsvMRkME8GYw7YHGfvaO7yVdIYxOiqU8wOYc+5HQ7lO/DNl/LzqSkBw
+	 syvj5qllWnvuw==
+Message-ID: <45d8e6d2-66f3-4ce9-8f01-7c47cd81e4e5@kernel.org>
+Date: Tue, 14 Apr 2026 12:20:19 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -105,22 +105,17 @@ In-Reply-To: <CD565023-4FA6-44C4-8E40-8B06CB09B59F@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 4/13/26 22:34, Zi Yan wrote:
-> On 13 Apr 2026, at 16:20, Matthew Wilcox wrote:
-> 
->> On Mon, Apr 13, 2026 at 03:20:19PM -0400, Zi Yan wrote:
->>> collapse_file() requires FSes supporting large folio with at least
->>> PMD_ORDER, so replace the READ_ONLY_THP_FOR_FS check with that.
->>> MADV_COLLAPSE ignores shmem huge config, so exclude the check for shmem.
->>>
->>> While at it, replace VM_BUG_ON with VM_WARN_ON_ONCE.
+>> huge=never       Do not allocate huge pages.  This is the default.
+>> huge=always      Attempt to allocate huge page every time a new page is needed.
+>> huge=within_size Only allocate huge page if it will be fully within i_size.
+>>                  Also respect madvise(2) hints.
+>> huge=advise      Only allocate huge page if requested with madvise(2).
 >>
->> Why?  These are bugs.  I don't think we gain anything from continuing.
+>> so what's the difference between huge=never and huge=madvise?
 > 
-> The goal is to catch these issues during development. VM_BUG_ON crashes
-> the system and that is too much for such issues in collapse_file().
+> I think madvise means MADV_HUGEPAGE for the region, not MADV_COLLAPSE.
 
-VM_BUG_ON should have never been added to the kernel.
+Yes, most likely. The doc is quite old.
 
 -- 
 Cheers,

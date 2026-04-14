@@ -1,134 +1,156 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1207420125F
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2026 02:45:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4AF42883F
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2026 03:35:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776134746; cv=none; b=DrqiAyMndHB14fD+CR3+d8qe733MLiB9U0NTruAQUAlMNOciD0RB6lF6dQZ7V7rr5dhoG2L2t78WEgUWxnHplpUwBfFSznA49UP6U8h0kgVbn15mHXLaUevgHYeLUA8x2UgDKhHyqNfA+QQuadLXRZF+gk5N2vjKGo5AWNr0iZo=
+	t=1776137758; cv=none; b=EzaUwGH/0CPTNwOIs+ORkl3HVMEwigUHIoSXhiZZlwbXvTpYWBEkAQiuhWcN47UoxbVrOCHKza6jEdZH+g51BY3ybbpgBvkxH8ETcJqnsrzQ6vZBCo3w0U8rFf/ONrF3/xk5M15QWdgKlnZXJuEJ96/1toMAXpctrnmkbWeMul8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776134746; c=relaxed/simple;
-	bh=2sszIlo6i9n5O7g5aZGL5P3UTcTyutgNumB6KRnmJS8=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=S8nglXOSjEGXVoHb3z7I9gbtXQmqqSqnbUeh58AxsSNEo3f2dBlkdqOUKtyZKPusopMHMSow6Uw5luwjOs4IMCFZDTfb1qbf29nQUoSwAfnw+U+FpNbl54ZLFtxzNGwRchII3fYEUlr3KN42bnr+vmXpXJlDkibXq9mrXhq1aII=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Wk/mvkXB; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=+13XL6l+; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Wk/mvkXB; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=+13XL6l+; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1776137758; c=relaxed/simple;
+	bh=lrN4vX27jcoV+H+QiB2WP8PLnSgEH1VVbGt1JOvwles=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=i2Y6P+IP4QdheBA7G8egJvvnY7R75ugJFwSpw5h+Q8ecErnyOv3SnbgO+KHUZH1m8WMQ5zp8I0IyG2pF5d0r8HVUFC2xHRtWB5fkPUq+URvy8NKD/RZ99Vrdwoa47PVaK1cPLLB7H8yiltnAQeHWD3/z3m/ZPtVK2i2/NQN7xpE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZwunbT2M; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZwunbT2M; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Wk/mvkXB";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="+13XL6l+";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Wk/mvkXB";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="+13XL6l+"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZwunbT2M";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZwunbT2M"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 450815BDF9;
-	Tue, 14 Apr 2026 02:45:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1776134743;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Kej4LVOBrlbxeDZrnYI8+j/J66lXlW2fq/t0IS29pSo=;
-	b=Wk/mvkXBK3+iaOAkIFaqtvg2I+yw3RJTwMe5yH7VeAdl5z/ivFU/QQIJetY9w8X+k4/6my
-	Gdwm3MGE+VpRw5FeobuY1s3jmuCmkLc1pY/Pd39ex83cWH2v/wYcp7WLwZkvYk1TR/YFIY
-	PQGB1175is/f9Wayd2ksoa5dFqnDpaE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1776134743;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Kej4LVOBrlbxeDZrnYI8+j/J66lXlW2fq/t0IS29pSo=;
-	b=+13XL6l+OFWcifjUxnMCT7fvvygdgqVkFbLkZEJ0mzCNdDu0VLyKrYsGhPwLmbl3Hqfcmb
-	ExPxiHUB+JWItpDg==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1776134743;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Kej4LVOBrlbxeDZrnYI8+j/J66lXlW2fq/t0IS29pSo=;
-	b=Wk/mvkXBK3+iaOAkIFaqtvg2I+yw3RJTwMe5yH7VeAdl5z/ivFU/QQIJetY9w8X+k4/6my
-	Gdwm3MGE+VpRw5FeobuY1s3jmuCmkLc1pY/Pd39ex83cWH2v/wYcp7WLwZkvYk1TR/YFIY
-	PQGB1175is/f9Wayd2ksoa5dFqnDpaE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1776134743;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Kej4LVOBrlbxeDZrnYI8+j/J66lXlW2fq/t0IS29pSo=;
-	b=+13XL6l+OFWcifjUxnMCT7fvvygdgqVkFbLkZEJ0mzCNdDu0VLyKrYsGhPwLmbl3Hqfcmb
-	ExPxiHUB+JWItpDg==
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5879F6A933
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2026 03:35:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1776137755; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=jXhdYbgeliJbKssHu7MxdxmEEeyw0YtckGClGLGk3uw=;
+	b=ZwunbT2Mb1/OfnUwj45iaxU84sv9VCHfNhHi86VWCCEBW3fk6rjtcGkScivLOQgEtjjn9X
+	5o49GgKTonUNM5G1a/RflUsUVjoIJya/E2bDlo4NcWg2tk6vXAnKLUeztxlb+XEusOydIX
+	3kPwAnQbAv0dPSq/K/wqeou6Eqqcd+k=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=ZwunbT2M
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1776137755; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=jXhdYbgeliJbKssHu7MxdxmEEeyw0YtckGClGLGk3uw=;
+	b=ZwunbT2Mb1/OfnUwj45iaxU84sv9VCHfNhHi86VWCCEBW3fk6rjtcGkScivLOQgEtjjn9X
+	5o49GgKTonUNM5G1a/RflUsUVjoIJya/E2bDlo4NcWg2tk6vXAnKLUeztxlb+XEusOydIX
+	3kPwAnQbAv0dPSq/K/wqeou6Eqqcd+k=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2C5224B1FC;
-	Tue, 14 Apr 2026 02:45:43 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 43F144B22E
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2026 03:35:53 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id viikCleq3WmGRAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 14 Apr 2026 02:45:43 +0000
-Date: Tue, 14 Apr 2026 04:45:41 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: enable shutdown ioctl for non-experimental builds
-Message-ID: <20260414024541.GM12792@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <f818123ba52a15913ea862aba75eacdbf4c06aeb.1776133240.git.wqu@suse.com>
+	id n1fmNhm23Wm+cgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2026 03:35:53 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/2] btrfs: remove COW fixup and checked folio flag
+Date: Tue, 14 Apr 2026 13:05:25 +0930
+Message-ID: <cover.1776137603.git.wqu@suse.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <f818123ba52a15913ea862aba75eacdbf4c06aeb.1776133240.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Score: -8.00
-X-Spam-Level: 
-X-Spamd-Result: default: False [-8.00 / 50.00];
-	REPLY(-4.00)[];
-	BAYES_HAM(-3.00)[99.99%];
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	MIME_GOOD(-0.10)[text/plain];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCPT_COUNT_TWO(0.00)[2];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	URIBL_BLOCKED(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo,suse.cz:replyto,twin.jikos.cz:mid];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
+	MX_GOOD(-0.01)[];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	ARC_NA(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo,suse.cz:replyto]
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_ONE(0.00)[1];
+	MIME_TRACE(0.00)[0:+];
+	FROM_HAS_DN(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:dkim,suse.com:mid];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Action: no action
 X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 5879F6A933
 
-On Tue, Apr 14, 2026 at 11:51:15AM +0930, Qu Wenruo wrote:
-> Although commit 304076527c38 ("btrfs: move shutdown and remove_bdev
-> callbacks out of experimental features") tries to move both shutdown and
-> remove_bdev out of experimental features, that commit has only addressed
-> the super block operation callback, the ioctl one is left untouched.
-> 
-> Fix that missing aspect by also moving shutdown ioctl out of
-> experimental features.
-> 
-> Since we're here, also add unknown flag detection to reject any
-> unsupported shutdown flags.
-> 
-> Fixes: 304076527c38 ("btrfs: move shutdown and remove_bdev callbacks out of experimental features")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Changelog:
+v3:
+- Open-code btrfs_writepage_cow_fixup()
+  The function is now only a folio_test_ordered() and error message.
+  There is no need to keep it as an dedicated function.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+v2:
+- Also remove the fixup worker
+
+- Slightly reword the cover letter
+
+- Remove COW fixup related comments
+
+- Update Kconfig to reflect this change.
+
+For experimental builds we're already rejecting dirty folios which
+don't have ordered flags since v6.15.
+
+Unfortunately we're not yet removing that COW fixup machanism for
+non-experimental builds even at v7.0, as we can still trigger the
+warning when we detect dirty folios without ordered extents.
+
+So far all those problems only happen when errors are injected into the
+IO path, e.g. generic/475, and I haven't yet seen it triggered without
+error handling.
+
+Although I prefer to remove the COW fixup after all error handling
+problems are fixed, I run out of ideas how those cases can happen, and
+the current handling of treating such cases as write errors is not
+going to make things any worse anyway.
+
+Furthermore for the future of huge folios (order 9, 2M page on 4K page
+size systems), we can not afford the extra bitmap for a huge folio.
+In that case, a huge folio will need 64 bytes per bitmap, which is no
+longer a small amount.
+
+I believe it's time to remove the COW fixup mechanism even for
+non-experimental builds, along with the checked folio flags.
+
+Qu Wenruo (2):
+  btrfs: remove the COW fixup mechanism
+  btrfs: remove folio checked subpage bitmap tracking
+
+ fs/btrfs/Kconfig            |   4 -
+ fs/btrfs/btrfs_inode.h      |   1 -
+ fs/btrfs/defrag.c           |   1 -
+ fs/btrfs/disk-io.c          |  16 +--
+ fs/btrfs/extent_io.c        |  23 ++--
+ fs/btrfs/file.c             |  12 +--
+ fs/btrfs/free-space-cache.c |   4 -
+ fs/btrfs/fs.h               |   7 --
+ fs/btrfs/inode.c            | 205 ------------------------------------
+ fs/btrfs/reflink.c          |   1 -
+ fs/btrfs/subpage.c          |  39 +------
+ fs/btrfs/subpage.h          |   5 +-
+ 12 files changed, 14 insertions(+), 304 deletions(-)
+
+-- 
+2.53.0
+

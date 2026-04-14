@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51A6E39A04C;
-	Tue, 14 Apr 2026 11:07:04 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 828E03D75CF;
+	Tue, 14 Apr 2026 11:07:36 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776164824; cv=none; b=gXQjlj5w+k4STzKuh5pbpphK08RsrO5v0bJAjVY0TVkE6MgEaHQjeoGLJrjrCYZnSnwIb4eX7qxuwJjG1kGD5lsmYMUf+fpX1dAKrMIZdwxCPNjq4RzZEyrqhXPzMEs6Lgdx9l9d7ZIPLI4qQJUdDbOrxcv56ZAOma7qm8SCXKU=
+	t=1776164856; cv=none; b=MwvppIiJMPSFirxGouV33+0ta2ZNqr/1iQMDqwRVsJAxGMVzAsYluFmP5taU/W+6NYxvtTxlV3NejyRyDgeyksnhC6KkUIk0kHZ9cCUQqOtbja8ZwoCUhMpFoJoaS/fVovyOlrmAJpbsa6kIJOMemzviBM60Xb+u9HpY4AtEeoM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776164824; c=relaxed/simple;
-	bh=LdH/VtABVvIZd1mcd+RsS8OArlVVXrW+GtEkqQ6K1ec=;
+	s=arc-20240116; t=1776164856; c=relaxed/simple;
+	bh=h6mc8jie8MzEoUPQ7I5cFnzZRgkEfbbKtBuB4QW0hdo=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=FvmdcupgLsG6Hz3nyRNZm6gLtbYHwlI19M3khQ+BwnvsMdF7+km4a9I8V94I8BLwKCuFVL/Ec5QHg6tf4P8/pcLHeCas0QGb04k28LdMxdV/N52m/q15TvTPF9kN0DHRcoJhGkjZ67FYHzVVuUNIcJspED35Ip+B7gLZHs+cNOE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LSft1JIj; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=gBof5dtvIQ9pB1H/MrOXGYf1jH7FAUQQoQ+Yh/VXL10ijyjbi/QARlcgNC7ND3WDCw+/o1JZMTsEl+k6CxoRU4cSRQLYO88gLCDtyI2cqFJFLvO17K/LSReqywD8yf/PKF912c2EYdykNJFtKdI0mMJcs5s7fMm4FMAejREe+BU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ATMBctj0; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LSft1JIj"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AE3E0C19425;
-	Tue, 14 Apr 2026 11:06:56 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ATMBctj0"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 75810C19425;
+	Tue, 14 Apr 2026 11:07:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776164823;
-	bh=LdH/VtABVvIZd1mcd+RsS8OArlVVXrW+GtEkqQ6K1ec=;
+	s=k20201202; t=1776164856;
+	bh=h6mc8jie8MzEoUPQ7I5cFnzZRgkEfbbKtBuB4QW0hdo=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=LSft1JIjnltiWFUtp5Xi5+P7DrvpPEANm49SmeqMhIKIw8DNcil6I7P8KWJ51SBcq
-	 zpP1t3j+riqfMhUUp8ldFxvSyuy7E5onIlQznc1HvT4bRuc7FvUpbTeaTxte/o/E7l
-	 ThZvFbKq3a2M1ztzJJ64W0gCMBIV1IhfYYZEtsiFKlFPmspjzMaJE98AfEz8t6iWXk
-	 HKbpbdaqMgw8CGuhAcUMp9VH7ff0Xnmb/ga9/mcOwsSyOhT02B9dC2v2EquljSnDc3
-	 jeu9nCpzPqDMPLXjY/7tnpDDaFSQSQ31hIQ7XSDcKyxhRdAdwZihO3BI2iVFiDr5Z6
-	 z/+UVDwisnpmQ==
-Message-ID: <7dc98115-ed22-4643-aff3-fd0c4bdd3222@kernel.org>
-Date: Tue, 14 Apr 2026 13:06:53 +0200
+	b=ATMBctj0z8nZzAlbXRzoxXf7mJ5bwP9C0BW2ZMnXcMCbybkluttXeTKiqejmyihIV
+	 VVRH3SfyueBNDK5NXhwU+fJKip4wxKsbqWHJrCKoi25JO1dg8/Cay6iiQmFokpPh3L
+	 T7wRiyoozKMcD5mTvV5q92GrJrQUVxmlkT/EaLJT62UDGHhG5wngwYDyHeoSIntN+V
+	 CEhcGCA0LEgjQFyIORw5/fekzZnL+LyLVPGCD+mm/dC1p4xPzeAhW+bj1Dq7MgPK0z
+	 u+LEmIZb6HnEfVdMeMTyUBQ8HrTYmeyOnZTdKLojLeBscrNlDrQlpuiF9wSCAKrpbZ
+	 ixqVEyj5ZKsVQ==
+Message-ID: <342ea75b-4b96-4f80-9e48-9c9a019081ea@kernel.org>
+Date: Tue, 14 Apr 2026 13:07:26 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,8 +35,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 7.2 v2 11/12] selftests/mm: remove READ_ONLY_THP_FOR_FS in
- khugepaged
+Subject: Re: [PATCH 7.2 v2 12/12] selftests/mm: remove READ_ONLY_THP_FOR_FS
+ from comments in guard-regions
 To: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  Song Liu <songliubraving@fb.com>
 Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
@@ -53,7 +53,7 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260413192030.3275825-1-ziy@nvidia.com>
- <20260413192030.3275825-12-ziy@nvidia.com>
+ <20260413192030.3275825-13-ziy@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -100,17 +100,45 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <20260413192030.3275825-12-ziy@nvidia.com>
+In-Reply-To: <20260413192030.3275825-13-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
 On 4/13/26 21:20, Zi Yan wrote:
-> Change the requirement to a file system with large folio support and the
-> supported order needs to include PMD_ORDER.
+> Any file system with large folio support and the supported orders include
+> PMD_ORDER can be used.
 > 
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
+> ---
+>  tools/testing/selftests/mm/guard-regions.c | 9 +++++----
+>  1 file changed, 5 insertions(+), 4 deletions(-)
+> 
+> diff --git a/tools/testing/selftests/mm/guard-regions.c b/tools/testing/selftests/mm/guard-regions.c
+> index 48e8b1539be3..13e77e48b6ef 100644
+> --- a/tools/testing/selftests/mm/guard-regions.c
+> +++ b/tools/testing/selftests/mm/guard-regions.c
+> @@ -2205,7 +2205,7 @@ TEST_F(guard_regions, collapse)
+>  
+>  	/*
+>  	 * We must close and re-open local-file backed as read-only for
+> -	 * CONFIG_READ_ONLY_THP_FOR_FS to work.
+> +	 * MADV_COLLAPSE to work.
+>  	 */
+>  	if (variant->backing == LOCAL_FILE_BACKED) {
+>  		ASSERT_EQ(close(self->fd), 0);
+> @@ -2237,9 +2237,10 @@ TEST_F(guard_regions, collapse)
+>  	/*
+>  	 * Now collapse the entire region. This should fail in all cases.
+>  	 *
+> -	 * The madvise() call will also fail if CONFIG_READ_ONLY_THP_FOR_FS is
+> -	 * not set for the local file case, but we can't differentiate whether
+> -	 * this occurred or if the collapse was rightly rejected.
+> +	 * The madvise() call will also fail if the file system does not support
+> +	 * large folio or the supported orders do not include PMD_ORDER for the
 
-Reviewed-by: David Hildenbrand (Arm) <david@kernel.org>
+"folios"
+
+Acked-by: David Hildenbrand (Arm) <david@kernel.org>
 
 -- 
 Cheers,

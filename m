@@ -1,169 +1,154 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9671839A052;
-	Tue, 14 Apr 2026 10:21:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.156.1
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 80C383D5244;
+	Tue, 14 Apr 2026 10:29:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776162085; cv=none; b=qFauu+XX9W0ZLIxSsI52lQ47+3hY0E1XbtPOyQSGeF4q1OaMgSXzeoXUnQYtKbt9H9deZ0OfRKkBdQmQDJ6gTF1Sd8ZeVpLh2smgjNBq3DP7l+v5dMNMMMqncGd3IOFR+ftjGRZ9t/Na21Fdn8v6jKKXa5i6TfGevReZFDcbflw=
+	t=1776162554; cv=none; b=C6+9tiVGKHbIniWlp0h74EyxGi+iPsKFDKZPBC//f4xwWwFg7xxrlIzebJ5pqMo+EA2l0Ftwh4KLbgPgDd3BWzlcjFG0O+1473BIojqFBtcQfwXJ5KaeJXF5IdU4x8bCe4cPisx+vBHcJGZJuqqVOzACVkMfChMgKSk942rVIG8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776162085; c=relaxed/simple;
-	bh=ZFwkzl/0vo3Jaa8tdWF8FRZg+SALo9SyR9lDZIQ2J2I=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=hcAbXgN+KSliZm+EpoeYz/MOexOMp3Pq2wP/bMW+f5ZJ/zj2UDpG4/d3p3d+nXVqDnXpE+N7eN4Waha3ThSgIqlEr8fyvjDNYkqiQlKh2VzbG4ih/f7mr/SDrJcAb570jO5o+ENGjhdrvMTiz2Ynu71CV+ccw+2sLNJlO6u4otQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=DSS2GpvA; arc=none smtp.client-ip=148.163.156.1
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
+	s=arc-20240116; t=1776162554; c=relaxed/simple;
+	bh=ZYDtelKL2OfCjSVMUx4BbWxlEg7+fhljEXXNDfDrb5s=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=NAkMbgRnDAVk//jP/Z567cghIiUWRFZWd1/mhJ4uFrM77b3Y+J3N7xHvzqY+jOvIi+Hh/v5AShpXLefKmsta5K56iNjAwHdgusl0vAdz6msCP9RYtWZuYwagg4SEK9LvOP3lIMns2boKewucPtU/CprZbROtnxaLm+yzciu161Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=f6jFSrqG; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="DSS2GpvA"
-Received: from pps.filterd (m0353729.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 63DLIOTx1842922;
-	Tue, 14 Apr 2026 10:21:15 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=cc
-	:content-transfer-encoding:date:from:in-reply-to:message-id
-	:mime-version:references:subject:to; s=pp1; bh=KA9kHtblM762cOGcI
-	jDIaUgMF6i5ctNB7X1etNKYuEQ=; b=DSS2GpvAmPNr2QG2uqZb0SiSz1jqyhPec
-	CTX4aRIX2DR4/y3DW3gOuN5R+Avu5RgBb7O9POjlAFCC6wJgmuGeFtZDuPxLjHkd
-	+ObIjoXS86oqyQ2GN6vOujgb2boayNmXPLAxHIwcwVw7lhHA1zU2+PgYn8d3GJdL
-	RlB7vOdM9xiKvKXGl98c8FN8G3rpbbgIzWogC+OenvKKDvhqW6CmXEoLAUGA1ftI
-	dR0LcGigy2QK+vbhmbRGF9qOvpNPJuT15uiy8Dd7I3vVWeS9DXni+MLjD1pcZho1
-	2FIObgvaekGx+OoNANJEb01500dzvBgn/OpcMKPUFWCRChOE36otQ==
-Received: from ppma12.dal12v.mail.ibm.com (dc.9e.1632.ip4.static.sl-reverse.com [50.22.158.220])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 4dh89mj5wh-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 14 Apr 2026 10:21:14 +0000 (GMT)
-Received: from pps.filterd (ppma12.dal12v.mail.ibm.com [127.0.0.1])
-	by ppma12.dal12v.mail.ibm.com (8.18.1.2/8.18.1.2) with ESMTP id 63E91Cl1015149;
-	Tue, 14 Apr 2026 10:21:13 GMT
-Received: from smtprelay03.fra02v.mail.ibm.com ([9.218.2.224])
-	by ppma12.dal12v.mail.ibm.com (PPS) with ESMTPS id 4dg0msh4md-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 14 Apr 2026 10:21:13 +0000
-Received: from smtpav05.fra02v.mail.ibm.com (smtpav05.fra02v.mail.ibm.com [10.20.54.104])
-	by smtprelay03.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 63EALA3x47513900
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Tue, 14 Apr 2026 10:21:10 GMT
-Received: from smtpav05.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 51F5B20040;
-	Tue, 14 Apr 2026 10:21:10 +0000 (GMT)
-Received: from smtpav05.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id A77EB2004B;
-	Tue, 14 Apr 2026 10:21:08 +0000 (GMT)
-Received: from localhost.localdomain (unknown [9.124.217.53])
-	by smtpav05.fra02v.mail.ibm.com (Postfix) with ESMTP;
-	Tue, 14 Apr 2026 10:21:08 +0000 (GMT)
-From: Disha Goel <disgoel@linux.ibm.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, ritesh.list@gmail.com, ojaswin@linux.ibm.com,
-        djwong@kernel.org, fdmanana@kernel.org, quwenruo.btrfs@gmx.com,
-        zlang@kernel.org, disgoel@linux.ibm.com
-Subject: [PATCH 2/2] btrfs/291: fix state transition logic and add size requirement
-Date: Tue, 14 Apr 2026 15:50:31 +0530
-Message-ID: <20260414102031.74527-2-disgoel@linux.ibm.com>
-X-Mailer: git-send-email 2.45.1
-In-Reply-To: <20260414102031.74527-1-disgoel@linux.ibm.com>
-References: <20260414102031.74527-1-disgoel@linux.ibm.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="f6jFSrqG"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 30B1FC19425;
+	Tue, 14 Apr 2026 10:29:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1776162553;
+	bh=ZYDtelKL2OfCjSVMUx4BbWxlEg7+fhljEXXNDfDrb5s=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=f6jFSrqGOuBTx2iHRnPdmBu93L1+G+u/OYlnmbru3CB5V+3U6W0umqj+sD8W86ONa
+	 c6xsH/dLKqC9ClNYd5vy9Ek2GSYBfZt03tHsrLWI19ljw7vv1nXiBDYGLsN/gId+YQ
+	 KvVcwvS9AB1ibwN1ejk+4okvwGNzCZkCf1OdupZSFPIXD2CtVTH6NG0eOKmEzYD0yw
+	 XAo5n8mPtgJT444/2EVF4RvZu0m0yTMOnUr00OgjCg3AoYYV2jajuNcD0isplvS7LE
+	 kq5GwtkxQjFQ47GL4gJcfcVXyEXkL/+EUVjBaIIas+88NqurYLXExL2fvtcGtOU6ej
+	 vlXxvTFECKcEQ==
+Message-ID: <a2632ace-1ffd-4e9c-8fcb-803b9835d8d4@kernel.org>
+Date: Tue, 14 Apr 2026 12:29:04 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-Reinject: loops=2 maxloops=12
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwNDE0MDA5NiBTYWx0ZWRfXzei9qZq6VEPi
- E5zIray++fKZ9nRm/Lkv0Wka62FkgMZJ8Kjp1auJOMmizIP25Zz3yBCGZwdcjPObZRMguk+fMBL
- v9d+7FOIlKVxYvLdjr9J9AstGBo2cf5uWmV4t7K2ZxrV7WYKTZaVjPoOiz77V9+C1PoGS12e5LQ
- RBuOIlmnVpsvBsbzCxeHgbPCQQRjYJ3Cq+ZJSeXSG1b/NdsyGikuEY3s78XKZDIBMyu+6m48jFM
- xFCA+EzcO1rWijDVSRD7Ynwh2wU2JprNKjetyR9qV295iuAQDts5WbGDD2uO0TbxIsl7OM6rT3r
- ToY/0IOnVUF2QWeEYS0/lSuydZgt6vqmlmatWvSfbEl8fV9bqllTBzz58VRgSHhVDfejHvTgEBO
- AquudXl1zg3wph0qoKx5gA3F6tBJi8vB/xJekwZFsGwPtAGF6dcVXEt0VEgx70F696qexTBbqer
- 6DPGHL/qGgjvR3PWTgA==
-X-Authority-Analysis: v=2.4 cv=eJ4jSnp1 c=1 sm=1 tr=0 ts=69de151b cx=c_pps
- a=bLidbwmWQ0KltjZqbj+ezA==:117 a=bLidbwmWQ0KltjZqbj+ezA==:17
- a=A5OVakUREuEA:10 a=VkNPw1HP01LnGYTKEx00:22 a=RnoormkPH1_aCDwRdu11:22
- a=uAbxVGIbfxUO_5tXvNgY:22 a=VnNF1IyMAAAA:8 a=mwbAGt0PX1LO7ssdYbAA:9
-X-Proofpoint-GUID: 7rgYaHDelfM8c_o_hfjZ_lxK5rpmRLrp
-X-Proofpoint-ORIG-GUID: gK-keISSti0-ybcn9skkJdlwLwnCuxNI
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1143,Hydra:6.1.51,FMLib:17.12.100.49
- definitions=2026-04-14_02,2026-04-13_04,2025-10-01_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- malwarescore=0 lowpriorityscore=0 adultscore=0 priorityscore=1501
- clxscore=1011 bulkscore=0 suspectscore=0 spamscore=0 impostorscore=0
- phishscore=0 classifier=typeunknown authscore=0 authtc= authcc=
- route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2604070000
- definitions=main-2604140096
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 7.2 v2 01/12] mm/khugepaged: remove READ_ONLY_THP_FOR_FS
+ check
+To: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+ Song Liu <songliubraving@fb.com>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+ Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
+ Andrew Morton <akpm@linux-foundation.org>, Lorenzo Stoakes <ljs@kernel.org>,
+ Baolin Wang <baolin.wang@linux.alibaba.com>,
+ "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
+ Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
+ Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
+ Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
+ Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
+ Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-mm@kvack.org, linux-kselftest@vger.kernel.org
+References: <20260413192030.3275825-1-ziy@nvidia.com>
+ <20260413192030.3275825-2-ziy@nvidia.com>
+From: "David Hildenbrand (Arm)" <david@kernel.org>
+Content-Language: en-US
+Autocrypt: addr=david@kernel.org; keydata=
+ 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
+ qIws/H2t
+In-Reply-To: <20260413192030.3275825-2-ziy@nvidia.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-This patch fixes two issues in btrfs/291:
+On 4/13/26 21:20, Zi Yan wrote:
+> collapse_file() requires FSes supporting large folio with at least
+> PMD_ORDER, so replace the READ_ONLY_THP_FOR_FS check with that.
+> MADV_COLLAPSE ignores shmem huge config, so exclude the check for shmem.
+> 
+> While at it, replace VM_BUG_ON with VM_WARN_ON_ONCE.
+> 
+> In collapse_scan_file(), add FS eligibility check to avoid redundant scans.
+> 
+> Signed-off-by: Zi Yan <ziy@nvidia.com>
+> ---
+>  mm/khugepaged.c | 12 ++++++++++--
+>  1 file changed, 10 insertions(+), 2 deletions(-)
+> 
+> diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+> index b8452dbdb043..d2f0acd2dac2 100644
+> --- a/mm/khugepaged.c
+> +++ b/mm/khugepaged.c
+> @@ -1892,8 +1892,9 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
+>  	int nr_none = 0;
+>  	bool is_shmem = shmem_file(file);
+>  
+> -	VM_BUG_ON(!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) && !is_shmem);
+> -	VM_BUG_ON(start & (HPAGE_PMD_NR - 1));
+> +	/* MADV_COLLAPSE ignores shmem huge config, so do not check shmem */
+> +	VM_WARN_ON_ONCE(!is_shmem && mapping_max_folio_order(mapping) < PMD_ORDER);
+> +	VM_WARN_ON_ONCE(start & (HPAGE_PMD_NR - 1));
+>  
+>  	result = alloc_charge_folio(&new_folio, mm, cc);
+>  	if (result != SCAN_SUCCEED)
+> @@ -2321,6 +2322,13 @@ static enum scan_result collapse_scan_file(struct mm_struct *mm,
+>  	int node = NUMA_NO_NODE;
+>  	enum scan_result result = SCAN_SUCCEED;
+>  
+> +	/*
+> +	 * skip files without PMD-order folio support
+> +	 * do not check shmem, since MADV_COLLAPSE ignores shmem huge config
+> +	 */
 
-1. Add minimum 9GB LOGWRITES_DEV size requirement
-   The test creates LVM snapshots at each FUA point during replay,
-   requiring significant space. Add _require_logwrites_size check
-   to ensure sufficient space is available before running the test.
+How is the !collapse path handled? Through thp_vma_allowable_order() in
+collapse_scan_mm_slot()?
 
-2. Fix state transition logic for verity enablement
-   The original test assumed orphan items would always be created
-   during verity enablement (state 0->1 transition). However, in
-   some cases verity completes without creating orphan items,
-   causing the test to fail with "expected to reach verity done state".
+Wouldn't it be better to have that check exactly there?
 
-   Fix by transitioning to state 1 when either orphan items exist
-   OR merkle items appear, handling both verity enablement paths.
-   Also improve state 1 validation to only check for cleared merkle
-   items when measurement actually fails.
-
-The test now correctly handles verity enablement with or without
-orphan items while maintaining crash consistency validation.
-
-Signed-off-by: Disha Goel <disgoel@linux.ibm.com>
----
- tests/btrfs/291 | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
-
-diff --git a/tests/btrfs/291 b/tests/btrfs/291
-index 122aeaa5..d29dc5dd 100755
---- a/tests/btrfs/291
-+++ b/tests/btrfs/291
-@@ -37,6 +37,7 @@ _require_scratch
- _require_test
- _require_loop
- _require_log_writes
-+_require_logwrites_size $((9 * 1024 * 1024))
- _require_dm_target snapshot
- _require_command $LVM_PROG lvm
- _require_scratch_verity
-@@ -129,9 +130,14 @@ do
- 	_udev_wait /dev/mapper/$vgname-$snapname
- 
- 	orphan=$(count_item $snap_dev ORPHAN)
--	[ $state -eq 0 ] && [ $orphan -gt 0 ] && state=1
--
- 	pre_mount=$(count_merkle_items $snap_dev)
-+
-+	if [ $state -eq 0 ]; then
-+		if [ $orphan -gt 0 ] || [ $pre_mount -gt 0 ]; then
-+			state=1
-+		fi
-+	fi
-+
- 	_mount $snap_dev $SCRATCH_MNT || _fail "mount failed at entry $cur"
- 	fsverity measure $SCRATCH_MNT/fsv >>$seqres.full 2>&1
- 	measured=$?
-@@ -143,8 +149,10 @@ do
- 	echo "entry: $cur, state: $state, orphan: $orphan, pre_mount: $pre_mount, post_mount: $post_mount" >> $seqres.full
- 
- 	if [ $state -eq 1 ]; then
--		[ $post_mount -eq 0 ] || \
--			_fail "mount failed to clear under-construction merkle items pre: $pre_mount, post: $post_mount at entry $cur";
-+		if [ $measured -ne 0 ]; then
-+			[ $post_mount -eq 0 ] || \
-+				_fail "mount failed to clear under-construction merkle items pre: $pre_mount, post: $post_mount at entry $cur";
-+		fi
- 	fi
- 	if [ $state -eq 2 ]; then
- 		[ $pre_mount -gt 0 ] || \
 -- 
-2.45.1
+Cheers,
 
+David

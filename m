@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C8DBA39657D;
-	Tue, 14 Apr 2026 11:03:49 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AE2243C3BF3;
+	Tue, 14 Apr 2026 11:06:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776164629; cv=none; b=SMLwUzsNIaCq+EoZT/1bB2E1NE5hmyfhOcci49D1BzPQamwhy/Ci9MYMwfbR8h4C6601s++4vJVhjomJROVd3QlCw53emE3YtWZFe1VGQCXcwMTvt5uJfFuUqE1OdTGMt+oUAvHGwG/fVbLGr1fZ1AENmNIpSbC5BdkzVYeR3lg=
+	t=1776164797; cv=none; b=iH6UroXaTGOu2o2rF7r/YW/G84EtewXQ/zOHfaF5jsKPQnI5FFbgLnpTGAghtUYzge/4Ed56MoSD0rOlijeG+uiKsacvefdh9FrU5fJ7/xxTx3s7sYHiDO3dqk5Y/M/bIqZIPKrcm1HBLbf679RBQWMxV34C9UTe4tSBFwwzZrM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776164629; c=relaxed/simple;
-	bh=SrWPhnGntZWEhwfx7DzHlkqjUcIXkV1FnkHFmTuU8zc=;
+	s=arc-20240116; t=1776164797; c=relaxed/simple;
+	bh=JGfefa1DoJ22jqYhuRyjdbGP25GphmZWxYCWiDFEfVo=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=lP2dW4HbkRRV1jbMW9F1yqQpkqJ1zo+yCCoom4zSudKuYUWTQI/e9rpC5DAyVuMoRlYkBepc+IZt15nrv11OJgv1ga1OqAA/41O00Acp1elreNfW4Iahd5pcSCIvgF8VaPStUWRmecK5P8yWXWvqlC8sVC62XWGQff2T03o2aiI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=G5Y/8fD8; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=S0dFcwEM7sODEFNEZiJC1ioa1gYHc22UPMqOID2NMRL03rlTa7brpFcm6LlR+xEBV0zDaJbIV26WQwRc/V1HQHUZJXaS5wGi5e0Lmlq2y4peD44B0iz7RovZvY+yYCyM7kkmkpoZHR7kAOu5EDOWnnGyXITmep6QuW3fjbiJ5RE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ewjzQJq5; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="G5Y/8fD8"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3EB2CC19425;
-	Tue, 14 Apr 2026 11:03:41 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ewjzQJq5"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E4C6BC2BCB5;
+	Tue, 14 Apr 2026 11:06:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776164629;
-	bh=SrWPhnGntZWEhwfx7DzHlkqjUcIXkV1FnkHFmTuU8zc=;
+	s=k20201202; t=1776164795;
+	bh=JGfefa1DoJ22jqYhuRyjdbGP25GphmZWxYCWiDFEfVo=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=G5Y/8fD8Y3ySpBce9Z9booc3YvxmpqO/2krLoBKNrMw8NezaR0DalOybg3Fub+6Rg
-	 yf5qTn7uuQYd7kQVmq9OD1vnheXF/UV9wYDl1BeKjpdZN18nM/dPz/Kml6AHNRwQsH
-	 keO3WJV6TtEghMhlv2r/lar6jqRWUYn4shDs9CG5I8oRWFYBgRTBw9IMaCFbSWjMS2
-	 Ddv4lr3Q3Q0OBSiEolfYw/m6FWEY7MRykTgHOKR/dB/hUJtNVJ3THauISF1GHPFpUx
-	 CXRAmoL4GrGQCFpsofvy6Px4HN37VscAX7eeiUog0y/oGcbjyiG6RW3y8c/EGHCgwb
-	 bucy8JBds9K3Q==
-Message-ID: <5a3aab32-e96a-4cf7-86f1-7991d924bcdf@kernel.org>
-Date: Tue, 14 Apr 2026 13:03:39 +0200
+	b=ewjzQJq5OTy5YsNSMVAMFmMgqOxtEFjCduZ91AkzvKD7QXqKPvhMpIVN0EDz60NAZ
+	 6hopk3tIRtasgG1qKnjJMYd8L0YDHuJBhiijXLijs0C4Mh83rCLr649tXOcnQ16tka
+	 30OHKmM5Jc36dZamTEy+vua7OHoiRMLzrt5FwLZa6PytQULW9icN8K5LPslr8wxs+X
+	 /V1ynud0OC2GG0Bd04s5XU+xmvVTsjjiWG50vAcFQ57YwkAykR27sBWtIOm/JYN8se
+	 6PExDjl68N1MB9A5X0WUv3bb/f4a4haUuHWt/Zs9sw8mU+rBFYxn65SBDjrdn/aNvs
+	 I1LEObs+N48SA==
+Message-ID: <f9e00b62-d798-4e9d-9474-d943b4634203@kernel.org>
+Date: Tue, 14 Apr 2026 13:06:24 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,11 +35,12 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 7.2 v2 08/12] mm/huge_memory: remove folio split check for
+Subject: Re: [PATCH 7.2 v2 10/12] fs/btrfs: remove a comment referring to
  READ_ONLY_THP_FOR_FS
-To: Zi Yan <ziy@nvidia.com>, Matthew Wilcox <willy@infradead.org>
-Cc: Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
+To: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+ Song Liu <songliubraving@fb.com>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+ Alexander Viro <viro@zeniv.linux.org.uk>,
  Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
  Andrew Morton <akpm@linux-foundation.org>, Lorenzo Stoakes <ljs@kernel.org>,
  Baolin Wang <baolin.wang@linux.alibaba.com>,
@@ -52,9 +53,7 @@ Cc: Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260413192030.3275825-1-ziy@nvidia.com>
- <20260413192030.3275825-9-ziy@nvidia.com>
- <ad1U_Z1b7hKlgnun@casper.infradead.org>
- <D29AD8D7-CEE9-415E-9218-87F07F3F9EBA@nvidia.com>
+ <20260413192030.3275825-11-ziy@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -101,27 +100,35 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <D29AD8D7-CEE9-415E-9218-87F07F3F9EBA@nvidia.com>
+In-Reply-To: <20260413192030.3275825-11-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 4/13/26 22:46, Zi Yan wrote:
-> On 13 Apr 2026, at 16:41, Matthew Wilcox wrote:
+On 4/13/26 21:20, Zi Yan wrote:
+> READ_ONLY_THP_FOR_FS is no longer present, remove related comment.
 > 
->> On Mon, Apr 13, 2026 at 03:20:26PM -0400, Zi Yan wrote:
->>> +	/* order-1 is not supported for anonymous THP. */
->>
->> It's also not supported for file folios, right?  Or do we just skip
->> adding order-1 file folios to the deferred split list?  Either way,
+> Signed-off-by: Zi Yan <ziy@nvidia.com>
+> Acked-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/defrag.c | 3 ---
+>  1 file changed, 3 deletions(-)
 > 
-> order <= 1 folios are not added to deferred split list. See
-> deferred_split_folio().
-> 
-> IIUC, we have order-1 file folios but not order-1 anon folios.
+> diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
+> index 7e2db5d3a4d4..a8d49d9ca981 100644
+> --- a/fs/btrfs/defrag.c
+> +++ b/fs/btrfs/defrag.c
+> @@ -860,9 +860,6 @@ static struct folio *defrag_prepare_one_folio(struct btrfs_inode *inode, pgoff_t
+>  		return folio;
+>  
+>  	/*
+> -	 * Since we can defragment files opened read-only, we can encounter
+> -	 * transparent huge pages here (see CONFIG_READ_ONLY_THP_FOR_FS).
+> -	 *
+>  	 * The IO for such large folios is not fully tested, thus return
+>  	 * an error to reject such folios unless it's an experimental build.
+>  	 *
 
-And only anon folios are ever added to the deferred split list.
-
-Acked-by: David Hildenbrand (Arm) <david@kernel.org>
+Reviewed-by: David Hildenbrand (Arm) <david@kernel.org>
 
 -- 
 Cheers,

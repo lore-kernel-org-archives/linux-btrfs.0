@@ -1,153 +1,128 @@
-Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 29F6D23BD1D;
-	Tue, 14 Apr 2026 13:45:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=68.232.143.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E97DD3E6DF3
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2026 13:53:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776174340; cv=none; b=t/+UdaX7UbDI0uZ2/grONeR3a0C5e4gT18kPkKx+EvmIUA8ECP/ZpVMnhQ1vwte4AGvSsR8Y2vykGWpkfY9+UPSJzmf4JRLmLhVHCLdZypbrRFVTyOOgGy982+4F8M7U+inwllI531HuOHikzCds/osBUyTQvSTDmR7tubvqcDg=
+	t=1776174825; cv=none; b=Hop12aqSHy4A8LNuTkw6lVI49+nFOmCbDmqrHSL1xQ1YZvYObxFwz3f+8ck2C0d8qdjXbm7KEXudXgrqrOzqgQaQQ1XYngP1LeEViqKqI7TS38E1/lX4DseuubCoFvUdFCIQWD0uwzenkXc1vM3VY8zZYTH9te9FxeeOEfXfJoA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776174340; c=relaxed/simple;
-	bh=RHqHUgMH9ohRH6jyJuuXMgIieHslvkyIy2AOU6SPmbM=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=bzp2DlsrffwYzAbmnKNAJc2dDhxkJo6Wwjyasy4hv+0977EWtdmLispmZjZDl9IPD9Dbz4vwezH8iyc4TGYlpd8aEXjUn5uHqAZByWz+fUyPuOCrovwrPbwbcKpQoxCXHuMQjC9Wdzbc59CJS+TIi8Oc5evDkvNx9m7IbUeRNL4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=KZ3SHgBl; arc=none smtp.client-ip=68.232.143.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	s=arc-20240116; t=1776174825; c=relaxed/simple;
+	bh=zqDrKV4/Tx3b7Hkm4HZGlLUnVsA7Xl9FQkWdRSU4yPE=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=i+xLWL7CF+gJ5aLbwTnCYqXbdUL4SFYnStvYyt0xhF+oNp33puezaujRsj57ujwL6E5BaQ2KDtvaMFB9o7uyW6bwxBkwWXWhA0OgtFs6wiz4YDSefx7RHieXios5ZBDZfgKAOU54TNFVXm1r30Wze5s7YahXG76ExuX/DX9toNE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=SBNKXcuu; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=CVoH5aN4; arc=none smtp.client-ip=170.10.129.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="KZ3SHgBl"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1776174338; x=1807710338;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=RHqHUgMH9ohRH6jyJuuXMgIieHslvkyIy2AOU6SPmbM=;
-  b=KZ3SHgBlKFRC5BNhEcU3ecVx0p1AFkxh/tSAkxxgBlKEoofI4TqS0P62
-   VsQp+kznY0sdUZm83ZwXrAO8IIrdegb4IC3MQlSLUyW0+Uheg7uWyutTQ
-   qASPb615XgymsEBWVynvhj3Fa9KSJtl+jaNHIoSM16xP1DKdaYTLOccA2
-   Kox9Jrc09Bik0vV4FyS+3jv0VHnZgrbzqDdlfvjdUwd5udir5MZ34YOx6
-   25vQyCDz9JFWLt9vc+4qkBhsIkqUldrRk7YQDIBF35daxe4JaQLgYU4FS
-   G4Ja1RGM+U/YL1mJTClZbNWwz26/kphqAxwHOCnvrBnFNmQP/aT2qo8pG
-   Q==;
-X-CSE-ConnectionGUID: 03N1WvwJRgGyDwQ+CWiHHg==
-X-CSE-MsgGUID: 1ZMaOfNTQFGdiMP/5JVdgQ==
-X-IronPort-AV: E=Sophos;i="6.23,179,1770566400"; 
-   d="scan'208";a="145632048"
-Received: from unknown (HELO uls-op-cesaep03.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 14 Apr 2026 21:45:32 +0800
-X-CSE-ConnectionGUID: EDkN4Oa2RCyxuS+ncKjFgw==
-X-CSE-MsgGUID: jwpJl22bQA2ZGblk90RTXw==
-IronPort-SDR: 69de44e4_ogs9Woov854trikUJd4x8zPrGgooRvwEdAMCOvJZ5kde6qR
- iq6mtQi4N7DQwmypJTL9DSaR6VV3nZ2L7DX1CSw==
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep03.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 14 Apr 2026 06:45:09 -0700
-X-CSE-ConnectionGUID: UVu0u6RyTxeAp0m9uULt1Q==
-X-CSE-MsgGUID: AeoVl0s6TMedCroqpk3s5w==
-WDCIronportException: Internal
-Received: from wdap-uxbjeij2ea.ad.shared (HELO neo.fritz.box) ([10.224.19.23])
-  by uls-op-cesaip01.wdc.com with ESMTP; 14 Apr 2026 06:45:07 -0700
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To: Zorro Lang <zlang@redhat.com>
-Cc: Naohiro Aota <naohiro.aota@wdc.com>,
-	fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org,
-	Christoph Hellwig <hch@lst.de>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v2] fstests: test premature ENOSPC in zoned garbage collection
-Date: Tue, 14 Apr 2026 15:44:58 +0200
-Message-ID: <20260414134458.153318-1-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="SBNKXcuu";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="CVoH5aN4"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1776174821;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=YY1Mbdcw/s+c+i+V6kA9q5Q93RsUlrrtxkE/+YiJlwM=;
+	b=SBNKXcuuXicvW3yBITJHxAHD0uZTxX2YPH8/wZAImg5DK3UOiC9qaZs+yRvvypbdqbwoxW
+	6TmsIIrvuL7WTloLVdi1ZDO2H3Tbu89T6ywkvT2YhoEmUaPj+zswo17Rhgym3pjNojguGy
+	td2LhwZCnqAy2GnvJcb5yHtO8S9ZioI=
+Received: from mail-wm1-f70.google.com (mail-wm1-f70.google.com
+ [209.85.128.70]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-367-2a9qqPnwNtOQShnuNfdNkA-1; Tue, 14 Apr 2026 09:53:40 -0400
+X-MC-Unique: 2a9qqPnwNtOQShnuNfdNkA-1
+X-Mimecast-MFC-AGG-ID: 2a9qqPnwNtOQShnuNfdNkA_1776174819
+Received: by mail-wm1-f70.google.com with SMTP id 5b1f17b1804b1-483786a09b1so59899445e9.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2026 06:53:39 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=redhat.com; s=google; t=1776174819; x=1776779619; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=YY1Mbdcw/s+c+i+V6kA9q5Q93RsUlrrtxkE/+YiJlwM=;
+        b=CVoH5aN4DpoqApDooihL61VKCQD7mFM41Zitzeq66vznwU7tOa1d0XKtW1LNO7l/D6
+         BD1tUII0Sn8Sx9hKw4JwImDScNyL7HvnQY7B5m96+UEnBoaYZhGh7BUN2r9rGIrVxwYT
+         xl/wAi88G9UPbLpmmTLE56vRZ0BflAYcrVNeQppN9jY7vE1RaMVCgAu3P16WXb11BA/p
+         UpdTomNoWia9jThlVsAodPz0nTh3Dti64QlGuXrjuevNS4YnONfP9+svmi9AsHEc51gG
+         8c6IoA9x/Y60mwKYHdTYrPobJgu2A8FYj/fii1Q6kKO+8/gNZ9DwAWxGohbvHqR0oqA9
+         OdRA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1776174819; x=1776779619;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=YY1Mbdcw/s+c+i+V6kA9q5Q93RsUlrrtxkE/+YiJlwM=;
+        b=ZAgu19NbAsDkrRv5h7A1GSJNe7iQCEik+B8j07U80O0xc7d4Levyse6NxuMjlUor29
+         147qp+Kv2fUm/7qXqykWJPJgOKNc6cU7XBLXSSlzPw6Ydrc+awMY+hkT+b1b4k90g8Ty
+         FIdn0GjzTGKfN2yKAiz37l+EXHLmmQbK7WQGvhd2MK1tJdFWT+x/cKwL24oePkV++VkE
+         cZjD59lADjs0D9hZdw3nf7dV/viFDoQyr4rq1unN1v0GToUoMXh4orTYN2Gh/GVw2ydM
+         xIP3PM5iYmv55eo/KMf8TBBhvku15SZv+aV7OTJuzj4RaWQ9BoGkwMZZOw7OGDR5pMl2
+         NVHA==
+X-Forwarded-Encrypted: i=1; AFNElJ+g/2dtuJoSHqMJY9IzxEJUHTdssm96Oeu3vYBlBPYnzoKNL04ol2c9c7rzc7CN3ICEi71BI3Edg6pDSQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwzFqYGxNaAj8L1EBx4AvYz2El+Mhn+QB+SwC7rUG+fiTPaTqLx
+	EmWVQ1edwZwU63fFaTO/l0eXwdyLXEi1qg43wSdo/ogVm5ZMvpxgACvGasjWCRjzNrniZ8QzJA/
+	aBIG06h9rGqMkifLvP0Nzpanqkxa+VBm/hLpsji4MCSQViPcbGcuxTlBlpSpxrU8=
+X-Gm-Gg: AeBDietINkwBkwBy32waEhoHsU9tUyW80P4FiEha025YedJms2OJCmlCLaC4QBrq5DA
+	1wIJEABWHuqEg17OP9RQwqcS/NNPt5ID8Ri39yyYdZXN+MRbnyNBcKvu961wAYENQcvy58HKiX0
+	2H3E1c3Pb7U0Jutr/2B2HZgi9hpY7c5b07Wa4diLtRcTpYjtAXQ5OR+WtIOASYZVLYfo9omEIwf
+	RCh/tLsbf6+j/d+r+Xoc+biz3AGCERQrhcBMePg1oGdUwdTMR/mRnDoASDokf6/T6jdXTCQ/nuY
+	wvLFQiFLJRnhx84qm3Z+mOfcIWJLo66FYTVijQ0F4bRtpWmipk6Z4N0sJzWOWJLJcQDWui57n7l
+	lOPPP/8M0nzmcUA==
+X-Received: by 2002:a05:600c:a109:b0:477:76bf:e1fb with SMTP id 5b1f17b1804b1-488d6843245mr171916515e9.16.1776174818758;
+        Tue, 14 Apr 2026 06:53:38 -0700 (PDT)
+X-Received: by 2002:a05:600c:a109:b0:477:76bf:e1fb with SMTP id 5b1f17b1804b1-488d6843245mr171916275e9.16.1776174818293;
+        Tue, 14 Apr 2026 06:53:38 -0700 (PDT)
+Received: from thinky ([91.245.205.131])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-488d5cfeb2dsm124119015e9.0.2026.04.14.06.53.37
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 14 Apr 2026 06:53:37 -0700 (PDT)
+Date: Tue, 14 Apr 2026 15:53:36 +0200
+From: Andrey Albershteyn <aalbersh@redhat.com>
+To: Christoph Hellwig <hch@lst.de>
+Cc: Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org, 
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, ebiggers@kernel.org, 
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
+	linux-btrfs@vger.kernel.org, djwong@kernel.org
+Subject: Re: [PATCH v7 03/22] ovl: use core fsverity ensure info interface
+Message-ID: <u3szxuhjrv7vyxwyrepuflwhzeucss7xj3cxj73mnpm5kal2da@jck24ig4oxxa>
+References: <20260409131404.1545834-1-aalbersh@kernel.org>
+ <20260409131404.1545834-4-aalbersh@kernel.org>
+ <20260414081301.GB11138@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260414081301.GB11138@lst.de>
 
-This test stresses garbage collection in zoned file systems by
-constantly overwriting the same file. It is inspired by a reproducer for
-a btrfs bugifx.
+On 2026-04-14 10:13:01, Christoph Hellwig wrote:
+> On Thu, Apr 09, 2026 at 03:13:35PM +0200, Andrey Albershteyn wrote:
+> > -	if (!fsverity_active(inode) && IS_VERITY(inode)) {
+> > -		/*
+> > -		 * If this inode was not yet opened, the verity info hasn't been
+> > -		 * loaded yet, so we need to do that here to force it into memory.
+> > -		 */
+> > -		filp = kernel_file_open(datapath, O_RDONLY, current_cred());
+> > -		if (IS_ERR(filp))
+> > -			return PTR_ERR(filp);
+> > -		fput(filp);
+> > -	}
+> > +	if (fsverity_active(inode))
+> > +		fsverity_ensure_verity_info(inode);
+> 
+> fsverity_ensure_verity_info already is a no-op for !fsverity_active,
+> so the check could be remove.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
-Changes to v1:
-- Rebased onto patches-in-queue
-- Use "generic/999" to avoid any conflicts
-- Change the number of loops to number of seq zones
-- Remove bogus "2>&1"
+I don't think it is. For non-fsverity inodes it will try to call into
+descriptor reading callback and fail.
 
-Link to v1:
-https://lore.kernel.org/all/20260210111103.265664-1-johannes.thumshirn@wdc.com/
+> Also we should probably propagate the
+> error return from fsverity_ensure_verity_info here.
 
+oh right, thanks!
 
- tests/generic/999     | 48 +++++++++++++++++++++++++++++++++++++++++++
- tests/generic/999.out |  2 ++
- 2 files changed, 50 insertions(+)
- create mode 100755 tests/generic/999
- create mode 100644 tests/generic/999.out
-
-diff --git a/tests/generic/999 b/tests/generic/999
-new file mode 100755
-index 000000000000..4ac6c0ff935c
---- /dev/null
-+++ b/tests/generic/999
-@@ -0,0 +1,48 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 Western Digital Corporation.  All Rights Reserved.
-+#
-+# FS QA Test 999
-+#
-+# This test stresses garbage collection in zoned file systems by constantly
-+# overwriting the same file. It is inspired by a reproducer for a btrfs bugifx.
-+
-+. ./common/preamble
-+_begin_fstest auto quick zone
-+
-+. ./common/filter
-+
-+_require_scratch_size $((16 * 1024 * 1024))
-+_require_zoned_device "$SCRATCH_DEV"
-+
-+# This test requires specific data space usage, skip if we have compression
-+# enabled.
-+_require_no_compress
-+
-+
-+_fixed_by_fs_commit XXXXXXXXXXXX \
-+	"btrfs: zoned: cap delayed refs metadata reservation to avoid overcommit"
-+_fixed_by_fs_commit XXXXXXXXXXXX \
-+	"btrfs: zoned: move partially zone_unusable block groups to reclaim list"
-+_fixed_by_fs_commit XXXXXXXXXXXX \
-+	"btrfs: zoned: add zone reclaim flush state for DATA space_info"
-+
-+
-+_scratch_mkfs_sized $((16 * 1024 * 1024 * 1024)) &>>$seqres.full
-+_scratch_mount
-+
-+blocks="$(df -TB 1G $SCRATCH_DEV |\
-+	$AWK_PROG -v fstyp="$FSTYP" 'match($2, fstyp) {print $3}')"
-+
-+loops=$(echo "$blocks * 4 - 2" | bc)
-+
-+for (( i = 0; i < $loops; i++)); do
-+	dd if=/dev/zero of=$SCRATCH_MNT/test bs=1M count=1024 status=none
-+	if [ $? -ne 0 ]; then
-+		_fail "Failed writing on iteration $i"
-+	fi
-+done
-+
-+echo "Silence is golden"
-+# success, all done
-+_exit 0
-diff --git a/tests/generic/999.out b/tests/generic/999.out
-new file mode 100644
-index 000000000000..3b276ca804fc
---- /dev/null
-+++ b/tests/generic/999.out
-@@ -0,0 +1,2 @@
-+QA output created by 999
-+Silence is golden
 -- 
-2.53.0
+- Andrey
 

@@ -1,544 +1,161 @@
-Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fout-a2-smtp.messagingengine.com (fout-a2-smtp.messagingengine.com [103.168.172.145])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EB3D93A168F
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2026 17:00:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D82153E5585
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2026 17:05:34 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.145
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776272408; cv=none; b=egsmYwpp3bjR1umEVN48fvlckN0hkIZFNArLosj05obTwWlhndWYHPI6AYo7rwqNYu7BtCe24qOxWDOwopKMwDYiM2hDHpSJlcEb/O4FsJ2I5TUA2iiCu3HtGNut2EqUn7PjpoTH7FKUjt//u70nZ2c410CMFpAqzXGwCYNPMlo=
+	t=1776272736; cv=none; b=uSPKX7PDkWmIv+Lur4uR/3cs8VwxW/WHWPoQlYJ65vlJCUcboCzywvwXB94DvPeDhyaS8J7WFCJnCvx/8kl++be0woBGwAzS6wlBIAYLPgT6XsJKVWUKvw+xDodBm+MUoL1fQj537hFrviXPoGtYPjcvIt/bAy9HMPLts9mtXQg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776272408; c=relaxed/simple;
-	bh=4vjhJhFRrohQaZU/BCQ04tWyZnfrfzw5gJqPLh2qNEY=;
-	h=From:To:Cc:Subject:Date:Message-ID:Mime-Version; b=WuAANxkZOTANoTblwQteXcBfH1q05p1pHiTj49jyH6NVPATkJXNovF76A6b6phdgrssuQq75jSC8HKj4b0gc0M7qhoaisHxCMtWVvfe5nelyMwxMsZEo/Bydqxahxl7UN6MS+TtgUyLRuE3Pg26gfkzcM4Qg68H8+lbbuwiGV/0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=3teKL+MC; arc=none smtp.client-ip=217.169.27.34
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
+	s=arc-20240116; t=1776272736; c=relaxed/simple;
+	bh=LDZNx4TcsiIoyThBFeig1TvJ2vWDSPg1C22l/1fIAjU=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=eqerOMgknQftU8u8PcN3QUNGMBW7LVmshUVFhdeNMIoGlSbnOl9PysQqlVh5uKBirEMfukFuOGISiiE3NioqRuTB0YLFulRsob6yvSSR4Z7J0ob4dFe2iV/DQORjpp7HrHls1RLoBLNHPNaPr3ZsZmeZ+vvO2j7hWBJkM0oKmCM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=NYgHWyTN; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=QP+zF6j1; arc=none smtp.client-ip=103.168.172.145
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="3teKL+MC"
-Received: from beren (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(Client did not present a certificate)
-	by mail.burntcomma.com (Postfix) with ESMTPSA id 4F18131DB15;
-	Wed, 15 Apr 2026 18:00:04 +0100 (BST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
-	s=mail; t=1776272404;
-	bh=RhPu43VXr4ibtZIOSBGa2B2RXjcq+aErrP79jJOXhO8=;
-	h=From:To:Cc:Subject:Date;
-	b=3teKL+MCg7q/s78tEialSdab40VekLRvtAvACSmWXR7R3wYl6GiriBMuwbls1XE2R
-	 ITLB1AB2NLg98O99OVQsXzlV8APiAm8VEWMeJJr5Ed9mSCRYeCvgrnCqajbNXuGO1A
-	 hfXy4wJ5/sWj2FQA4omqvVZLGtPlwE0mKmCeqDgU=
-From: Mark Harmstone <mark@harmstone.com>
-To: linux-btrfs@vger.kernel.org,
-	wqu@suse.com,
-	boris@bur.io,
-	dsterba@suse.cz
-Cc: Mark Harmstone <mark@harmstone.com>
-Subject: [PATCH v4] btrfs: add BTRFS_IOC_GET_CSUMS ioctl
-Date: Wed, 15 Apr 2026 17:59:38 +0100
-Message-ID: <20260415170001.109723-1-mark@harmstone.com>
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="NYgHWyTN";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="QP+zF6j1"
+Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
+	by mailfout.phl.internal (Postfix) with ESMTP id 21734EC00E7;
+	Wed, 15 Apr 2026 13:05:34 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-01.internal (MEProxy); Wed, 15 Apr 2026 13:05:34 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm3; t=1776272734; x=1776359134; bh=m3vC86yTaF
+	HTTVTEv4ocxlMrsy/2ZEfBrxKfj7fW44w=; b=NYgHWyTNLKcwOXOMkbxV5bvqcl
+	EQZsivqe61OLhbkOq0GxvGHrQf8weUltTq9Hj7ow7cDvcf+g910WLumLMz6v+onJ
+	/YsYuRevLkvwymOUvepfPstEJ7fhvoqRjqGXdZLUdhaL+ZSX57jAAc1yXvRx9dTl
+	bLfzqJm2dGFujEryBnKWILSswCe/aW/ziRejKzEWtuKnK5DyKYKNiSwKMzgha3ci
+	VkLQxxplKasXlIt7wBtv7JLMMeDJDC1Yk0bqeU790xoH8xSyJso3neXCCWnMrjF/
+	wzxzHp0jhFdpMb+p/brDIPpHLJ0RswTqt/WxWoJvznO1LDTBLxJybHWyZ26Q==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+	1776272734; x=1776359134; bh=m3vC86yTaFHTTVTEv4ocxlMrsy/2ZEfBrxK
+	fj7fW44w=; b=QP+zF6j1pnZ96+xN6L6zfoBMeYXMR42oZbIkB1oDlZDlfVfos7n
+	NEqinPWxY1azM1IJwoUzqx4IpTPJwonY4L025TD11R4MMXVIY/vzHTgpyXUPgiG7
+	ilw9S92raBoBzduQyHocJ9l1EhgvwWfMd2IQEO24NLKMh3EpqMrcOpkv0OSoaTt4
+	mq62SbWOhbj9X1kfOB7ZWN4wYIvLlIWNPLNIE6o5pwpo0q7VyGlMMmUjD1FhaccH
+	w7tiA50lPiR7Tvf4GQta/sCrsDic0M30kaGzzFeAcZxi8PlQNERn6MCP9cRrBW0C
+	QB9SjixuHcXF3ubzKvljQsBBWrbp910evkw==
+X-ME-Sender: <xms:XcXfaXRsow4uoGHX_mjc33o6kIZ3Gr5xz8Hmn28TLpmbPKOe5MVjZQ>
+    <xme:XcXfaUo42pgT93SXlMIHiwgJlc3Af7CZFNd2bP-u860ksFA-hpN9emm-C33rak58j
+    xxHObXyev-In2PCWyLGEflA0GLO-5FWXMjUCwSZ3_bf5EoQUSP3yjs>
+X-ME-Received: <xmr:XcXfaZ2OfwNVgb5WcvulO922Fo1IQF0HVd56GtoSuk5TVbW7IGM6ZyhNn3XeYPoWvkDRmLKAenMJpwtf3K6L8OLS9GY>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdeggeeihecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
+    ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
+    hrpeffhffvvefukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhrihhsuceu
+    uhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhepuedtvd
+    dtheegvddvteeugfevgffggedukeejhfeggfejkeeglefgieeggeduveehnecuffhomhgr
+    ihhnpehmvghrlhhinhhsrdhorhhgnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrg
+    hmpehmrghilhhfrhhomhepsghorhhishessghurhdrihhopdhnsggprhgtphhtthhopedu
+    uddpmhhouggvpehsmhhtphhouhhtpdhrtghpthhtohepmhgrrhgtpggsthhrfhhssehmvg
+    hrlhhinhhsrdhorhhgpdhrtghpthhtoheplhhinhhugidqsghtrhhfshesvhhgvghrrdhk
+    vghrnhgvlhdrohhrghdprhgtphhtthhopehjohhsvghfsehtohigihgtphgrnhgurgdrtg
+    homhdprhgtphhtthhopeifqhhusehsuhhsvgdrtghomhdprhgtphhtthhopehquhifvghn
+    rhhuohdrsghtrhhfshesghhmgidrtghomhdprhgtphhtthhopehfughmrghnrghnrgeskh
+    gvrhhnvghlrdhorhhgpdhrtghpthhtoheplhhishhtshestgholhhorhhrvghmvgguihgv
+    shdrtghomhdprhgtphhtthhopegtvgefghekjhgujhesuhhmrghilhdrfhhurhhrhihtvg
+    hrrhhorhdrohhrghdprhgtphhtthhopehrmhesrhhomhgrnhhrmhdrnhgvth
+X-ME-Proxy: <xmx:XcXfab4xXnM4Z34RiQB912CZc8F6bSjUxTJvvOugA_W2C9qpRicDsw>
+    <xmx:XcXfaVQbRScz4gh1Z50BeK9QfkwGMLrdWpPSCqzsweVecp9kV9EmCg>
+    <xmx:XcXfaQVYGAtIjigu9fMUUS12zTevbTRHIn9kv7Pzor_nBwW1VMcPJQ>
+    <xmx:XcXfaaGOmFlPOtI2EdQfFpoP0VLj4YC1l_9IUEKxuCNwoakl9shPug>
+    <xmx:XsXfaXd71o8UKaBUDSvfdrvGVpetlWZw2bvWY2PfFiFwTVMZ_ErNkjLz>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 15 Apr 2026 13:05:32 -0400 (EDT)
+Date: Wed, 15 Apr 2026 10:05:10 -0700
+From: Boris Burkov <boris@bur.io>
+To: Marc MERLIN <marc_btrfs@merlins.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@toxicpanda.com>, QuWenruo <wqu@suse.com>,
+	Qu Wenruo <quwenruo.btrfs@gmx.com>,
+	Filipe Manana <fdmanana@kernel.org>,
+	Chris Murphy <lists@colorremedies.com>,
+	Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+	Roman Mamedov <rm@romanrm.net>, To: Su Yue <Damenly_Su@gmx.com>,
+	Su Yue <suy.fnst@cn.fujitsu.com>;
+Subject: Re: Simple quota unsafe? RIP:
+ 0010:__btrfs_free_extent.isra.0+0xc41/0x1020 [btrfs] /
+ do_free_extent_accounting:2999: errno=-2 No such entry
+Message-ID: <20260415170510.GA780391@zen.localdomain>
+References: <adnBhWfJQ1n3hZC8@merlins.org>
+ <ad0tdWyavEngGlQ-@merlins.org>
+ <20260413184731.GA3448810@zen.localdomain>
+ <ad1GxXgWNBfgrRtN@merlins.org>
+ <ad8gcwTFOLUhBHGA@merlins.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ad8gcwTFOLUhBHGA@merlins.org>
 
-Add a new unprivileged BTRFS_IOC_GET_CSUMS ioctl, which can be used to
-query the on-disk csums for a file.
+On Tue, Apr 14, 2026 at 10:21:55PM -0700, Marc MERLIN wrote:
+> If you don't mind my asking, and even if it's just a guess:
+> 
+> 1) do you feel squotas are likely safe and I hit another bug?
 
-The ioctl is deliberately per-file rather than exposing raw csum tree
-lookups, to avoid leaking information to users about files they may not
-have access to.
+I actually think it is a squota bug and am trying to reproduce it. I
+think there may be a gap if we are deleting the qgroup in the same
+transaction as the last delayed ref in the qgroup.
 
-This is done by userspace passing a struct btrfs_ioctl_get_csums_args to
-the kernel, which details the offset and length we're interested in, and
-a buffer for the kernel to write its results into. The kernel writes a
-struct btrfs_ioctl_get_csums_entry into the buffer, followed by the
-csums if available.
+In meta production I have a carryover patch ignoring such enoents, which
+makes me super suspicious.
 
-If the extent is an uncompressed, non-nodatasum extent, the kernel sets
-the entry type to BTRFS_GET_CSUMS_HAS_CSUMS and follows it with the
-csums. If it is sparse, preallocated, or beyond the EOF, it sets the
-type to BTRFS_GET_CSUMS_ZEROED - this is so userspace knows it can use
-the precomputed hash of the zero sector. Otherwise, it sets the type to
-BTRFS_GET_CSUMS_NODATASUM, BTRFS_GET_CSUMS_COMPRESSED,
-BTRFS_GET_CSUM_ENCRYPTED, or BTRFS_GET_CSUM_INLINE.
+I have not reproduced it yet, though.
 
-For example, a file with a [0, 4K) hole and [4K, 12K) data extent would
-produce the following output buffer:
+The fact that the two stacks are in balance and qgroup deletion make me
+suspicious. On the other hand, the fact that the second stack is in the
+commit *before* the majority of the cleanup makes me less
+suspicious.
 
-  | [0, 4K) ZEROED | [4K, 12K) HAS_CSUMS | csum data |
+> 2) any chance it can be block-group-tree instead? Are those 
+>    considered reasonably safe? (I enabled due to the number of
+>    snapshots, 100+, and being told it's bad for perf to have that
+>    many, which block-group-tree is supposed to fix)
 
-We do store the csums of compressed extents, but we deliberately don't
-return them here: they're hashed over the compressed data, not the
-uncompressed data that's returned to userspace. Similarly for encrypted
-data, once encryption is supported, in which the csums will be on the
-ciphertext.
+I think that is relatively unlikely.
 
-The main use case for this is for speeding up mkfs.btrfs --rootdir. For
-the case when the source FS is btrfs and using the same csum algorithm,
-we can avoid having to recalculate the csums - in my synthetic
-benchmarks (16GB file on a spinning-rust drive), this resulted in a ~11%
-speed-up (218s to 196s).
+> 3) anyone still taking bugs for btrfs check --repair since it
+>    fixed nothing on an unmountable filesystem
 
-When using the --reflink option added in btrfs-progs v6.16.1, we can forgo
-reading the data entirely, resulting a ~2200% speed-up on the same test
-(128s to 6s).
+If my suspicion is correct and this does end up being a missing qgroup I
+think that I could likely have a useful fix for check --repair too.
 
-    # mkdir rootdir
-    # dd if=/dev/urandom of=rootdir/file bs=4096 count=4194304
+> 4) anything useful to anyone in my broken filesystem which might
+>    be easy to fix but not by me before I give up, delete it all
+>    and do the multi week restore?
 
-    (without ioctl)
-    # echo 3 > /proc/sys/vm/drop_caches
-    # time mkfs.btrfs --rootdir rootdir testimg
-    ...
-    real    3m37.965s
-    user    0m5.496s
-    sys     0m6.125s
+I think trying to dump the state of the tree on your laptop could be
+quite useful.
 
-    # echo 3 > /proc/sys/vm/drop_caches
-    # time mkfs.btrfs --rootdir rootdir --reflink testimg
-    ...
-    real    2m8.342s
-    user    0m5.472s
-    sys     0m1.667s
+1258303029248 is the logical address we were freeing so its backrefs in
+the extent tree will be interesting. As will whatever subvol tree it is
+in, as will the qgroup tree entry for that subvolid. If you can share a
+full dump then I can find all that myself.
 
-    (with ioctl)
-    # echo 3 > /proc/sys/vm/drop_caches
-    # time mkfs.btrfs --rootdir rootdir testimg
-    ...
-    real    3m15.865s
-    user    0m4.258s
-    sys     0m6.261s
+ditto for the logical address that broke on the rpi, but if that is a
+gigantic fs, maybe doing the dump will be pretty unwieldy..
 
-    # echo 3 > /proc/sys/vm/drop_caches
-    # time mkfs.btrfs --rootdir rootdir --reflink testimg
-    ...
-    real    0m5.847s
-    user    0m2.899s
-    sys     0m0.097s
+Thanks for your help with this,
+Boris
 
-Signed-off-by: Mark Harmstone <mark@harmstone.com>
----
-Changes since v3:
-* Changed type to bit flags, so we can have e.g. COMPRESSED | ENCRYPTED
-* Made minor changes as requested by David Sterba
-
- fs/btrfs/ioctl.c           | 341 +++++++++++++++++++++++++++++++++++++
- include/uapi/linux/btrfs.h |  25 +++
- 2 files changed, 366 insertions(+)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a39460bf68a778..610eba1fe76f80 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -56,6 +56,7 @@
- #include "uuid-tree.h"
- #include "ioctl.h"
- #include "file.h"
-+#include "file-item.h"
- #include "scrub.h"
- #include "super.h"
- 
-@@ -5140,6 +5141,344 @@ static int btrfs_ioctl_shutdown(struct btrfs_fs_info *fs_info, unsigned long arg
- 	return ret;
- }
- 
-+#define GET_CSUMS_BUF_MAX	SZ_16M
-+
-+static int copy_csums_to_user(struct btrfs_fs_info *fs_info, u64 disk_bytenr,
-+			      u64 len, u8 __user *buf)
-+{
-+	struct btrfs_root *csum_root;
-+	struct btrfs_ordered_sum *sums;
-+	LIST_HEAD(list);
-+	const u32 csum_size = fs_info->csum_size;
-+	int ret;
-+
-+	csum_root = btrfs_csum_root(fs_info, disk_bytenr);
-+
-+	ret = btrfs_lookup_csums_list(csum_root, disk_bytenr,
-+				      disk_bytenr + len - 1, &list, false);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = 0;
-+	while (!list_empty(&list)) {
-+		u64 offset;
-+		size_t copy_size;
-+
-+		sums = list_first_entry(&list, struct btrfs_ordered_sum, list);
-+		list_del(&sums->list);
-+
-+		offset = ((sums->logical - disk_bytenr) >> fs_info->sectorsize_bits) * csum_size;
-+		copy_size = (sums->len >> fs_info->sectorsize_bits) * csum_size;
-+
-+		if (copy_to_user(buf + offset, sums->sums, copy_size)) {
-+			kfree(sums);
-+			ret = -EFAULT;
-+			goto out;
-+		}
-+
-+		kfree(sums);
-+	}
-+
-+out:
-+	while (!list_empty(&list)) {
-+		sums = list_first_entry(&list, struct btrfs_ordered_sum, list);
-+		list_del(&sums->list);
-+		kfree(sums);
-+	}
-+	return ret;
-+}
-+
-+static int btrfs_ioctl_get_csums(struct file *file, void __user *argp)
-+{
-+	struct inode *vfs_inode = file_inode(file);
-+	struct btrfs_inode *inode = BTRFS_I(vfs_inode);
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	struct btrfs_root *root = inode->root;
-+	struct btrfs_ioctl_get_csums_args args;
-+	BTRFS_PATH_AUTO_FREE(path);
-+	const u64 ino = btrfs_ino(inode);
-+	const u32 sectorsize = fs_info->sectorsize;
-+	const u32 csum_size = fs_info->csum_size;
-+	u8 __user *ubuf;
-+	u64 buf_limit;
-+	u64 buf_used = 0;
-+	u64 cur_offset;
-+	u64 end_offset;
-+	u64 prev_extent_end;
-+	struct btrfs_key key;
-+	int ret;
-+
-+	if (!(file->f_mode & FMODE_READ))
-+		return -EBADF;
-+
-+	if (!S_ISREG(vfs_inode->i_mode))
-+		return -EINVAL;
-+
-+	if (copy_from_user(&args, argp, sizeof(args)))
-+		return -EFAULT;
-+
-+	if (!IS_ALIGNED(args.offset, sectorsize) ||
-+	    !IS_ALIGNED(args.length, sectorsize))
-+		return -EINVAL;
-+	if (args.length == 0)
-+		return -EINVAL;
-+	if (args.offset + args.length < args.offset)
-+		return -EOVERFLOW;
-+	if (args.flags != 0)
-+		return -EINVAL;
-+	if (args.buf_size < sizeof(struct btrfs_ioctl_get_csums_entry))
-+		return -EINVAL;
-+
-+	buf_limit = min_t(u64, args.buf_size, GET_CSUMS_BUF_MAX);
-+	ubuf = (u8 __user *)(argp + offsetof(struct btrfs_ioctl_get_csums_args, buf));
-+
-+	if (clear_user(ubuf, buf_limit))
-+		return -EFAULT;
-+
-+	cur_offset = args.offset;
-+	end_offset = args.offset + args.length;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	ret = btrfs_wait_ordered_range(inode, cur_offset, args.length);
-+	if (ret)
-+		return ret;
-+
-+	ret = down_read_interruptible(&vfs_inode->i_rwsem);
-+	if (ret)
-+		return ret;
-+
-+	ret = btrfs_wait_ordered_range(inode, cur_offset, args.length);
-+	if (ret)
-+		goto out_unlock;
-+
-+	/* NODATASUM early exit. */
-+	if (inode->flags & BTRFS_INODE_NODATASUM) {
-+		struct btrfs_ioctl_get_csums_entry entry = {
-+			.offset = cur_offset,
-+			.length = end_offset - cur_offset,
-+			.type = BTRFS_GET_CSUMS_NODATASUM,
-+		};
-+
-+		if (copy_to_user(ubuf, &entry, sizeof(entry))) {
-+			ret = -EFAULT;
-+			goto out_unlock;
-+		}
-+
-+		buf_used = sizeof(entry);
-+		cur_offset = end_offset;
-+		goto done;
-+	}
-+
-+	prev_extent_end = cur_offset;
-+
-+	while (cur_offset < end_offset) {
-+		struct btrfs_file_extent_item *ei;
-+		struct extent_buffer *leaf;
-+		struct btrfs_ioctl_get_csums_entry entry = { 0 };
-+		u64 extent_end;
-+		u64 disk_bytenr = 0;
-+		u64 extent_offset = 0;
-+		u64 range_start, range_len;
-+		u64 entry_csum_size;
-+		u64 key_offset;
-+		int extent_type;
-+		u8 compression;
-+		u8 encryption;
-+
-+		/* Search for the extent at or before cur_offset. */
-+		key.objectid = ino;
-+		key.type = BTRFS_EXTENT_DATA_KEY;
-+		key.offset = cur_offset;
-+
-+		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+		if (ret < 0)
-+			goto out_unlock;
-+
-+		if (ret > 0 && path->slots[0] > 0) {
-+			btrfs_item_key_to_cpu(path->nodes[0], &key,
-+					      path->slots[0] - 1);
-+			if (key.objectid == ino &&
-+			    key.type == BTRFS_EXTENT_DATA_KEY) {
-+				path->slots[0]--;
-+				if (btrfs_file_extent_end(path) <= cur_offset)
-+					path->slots[0]++;
-+			}
-+		}
-+
-+		if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
-+			ret = btrfs_next_leaf(root, path);
-+			if (ret < 0)
-+				goto out_unlock;
-+			if (ret > 0) {
-+				ret = 0;
-+				btrfs_release_path(path);
-+				break;
-+			}
-+		}
-+
-+		leaf = path->nodes[0];
-+
-+		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-+		if (key.objectid != ino || key.type != BTRFS_EXTENT_DATA_KEY) {
-+			btrfs_release_path(path);
-+			break;
-+		}
-+
-+		extent_end = btrfs_file_extent_end(path);
-+		key_offset = key.offset;
-+
-+		/* Read extent fields before releasing the path. */
-+		ei = btrfs_item_ptr(leaf, path->slots[0],
-+				    struct btrfs_file_extent_item);
-+		extent_type = btrfs_file_extent_type(leaf, ei);
-+		compression = btrfs_file_extent_compression(leaf, ei);
-+		encryption = btrfs_file_extent_encryption(leaf, ei);
-+
-+		if (extent_type != BTRFS_FILE_EXTENT_INLINE) {
-+			disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, ei);
-+			if (disk_bytenr && compression == BTRFS_COMPRESS_NONE)
-+				extent_offset = btrfs_file_extent_offset(leaf, ei);
-+		}
-+
-+		btrfs_release_path(path);
-+
-+		/* Implicit hole (NO_HOLES feature). */
-+		if (prev_extent_end < key_offset) {
-+			u64 hole_end = min(key_offset, end_offset);
-+			u64 hole_len = hole_end - prev_extent_end;
-+
-+			if (prev_extent_end >= cur_offset) {
-+				entry.offset = prev_extent_end;
-+				entry.length = hole_len;
-+				entry.type = BTRFS_GET_CSUMS_ZEROED;
-+
-+				if (buf_used + sizeof(entry) > buf_limit)
-+					goto done;
-+				if (copy_to_user(ubuf + buf_used, &entry,
-+						 sizeof(entry))) {
-+					ret = -EFAULT;
-+					goto out_unlock;
-+				}
-+				buf_used += sizeof(entry);
-+				cur_offset = hole_end;
-+			}
-+
-+			if (key_offset >= end_offset) {
-+				cur_offset = end_offset;
-+				break;
-+			}
-+		}
-+
-+		/* Clamp to our query range. */
-+		range_start = max(cur_offset, key_offset);
-+		range_len = min(extent_end, end_offset) - range_start;
-+
-+		entry.offset = range_start;
-+		entry.length = range_len;
-+
-+		if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
-+			entry.type = BTRFS_GET_CSUMS_INLINE;
-+			if (compression != BTRFS_COMPRESS_NONE)
-+				entry.type |= BTRFS_GET_CSUMS_COMPRESSED;
-+			if (encryption != 0)
-+				entry.type |= BTRFS_GET_CSUMS_ENCRYPTED;
-+			entry_csum_size = 0;
-+		} else if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
-+			entry.type = BTRFS_GET_CSUMS_ZEROED;
-+			entry_csum_size = 0;
-+		} else {
-+			/* BTRFS_FILE_EXTENT_REG */
-+			if (disk_bytenr == 0) {
-+				/* Explicit hole. */
-+				entry.type = BTRFS_GET_CSUMS_ZEROED;
-+				entry_csum_size = 0;
-+			} else if (encryption != 0 ||
-+				   compression != BTRFS_COMPRESS_NONE) {
-+				entry.type = 0;
-+				if (encryption != 0)
-+					entry.type |= BTRFS_GET_CSUMS_ENCRYPTED;
-+				if (compression != BTRFS_COMPRESS_NONE)
-+					entry.type |= BTRFS_GET_CSUMS_COMPRESSED;
-+				entry_csum_size = 0;
-+			} else {
-+				entry.type = BTRFS_GET_CSUMS_HAS_CSUMS;
-+				entry_csum_size = (range_len >> fs_info->sectorsize_bits) * csum_size;
-+			}
-+		}
-+
-+		/* Check if this entry (+ csum data) fits in the buffer. */
-+		if (buf_used + sizeof(entry) + entry_csum_size > buf_limit) {
-+			if (buf_used == 0) {
-+				ret = -EOVERFLOW;
-+				goto out_unlock;
-+			}
-+			goto done;
-+		}
-+
-+		if (copy_to_user(ubuf + buf_used, &entry, sizeof(entry))) {
-+			ret = -EFAULT;
-+			goto out_unlock;
-+		}
-+		buf_used += sizeof(entry);
-+
-+		if (entry.type == BTRFS_GET_CSUMS_HAS_CSUMS) {
-+			ret = copy_csums_to_user(fs_info,
-+				disk_bytenr + extent_offset + (range_start - key_offset),
-+				range_len, ubuf + buf_used);
-+			if (ret)
-+				goto out_unlock;
-+			buf_used += entry_csum_size;
-+		}
-+
-+		cur_offset = range_start + range_len;
-+		prev_extent_end = extent_end;
-+
-+		if (fatal_signal_pending(current)) {
-+			if (buf_used == 0) {
-+				ret = -EINTR;
-+				goto out_unlock;
-+			}
-+			goto done;
-+		}
-+
-+		cond_resched();
-+	}
-+
-+	/* Handle trailing implicit hole. */
-+	if (cur_offset < end_offset) {
-+		struct btrfs_ioctl_get_csums_entry entry = {
-+			.offset = prev_extent_end,
-+			.length = end_offset - prev_extent_end,
-+			.type = BTRFS_GET_CSUMS_ZEROED,
-+		};
-+
-+		if (buf_used + sizeof(entry) <= buf_limit) {
-+			if (copy_to_user(ubuf + buf_used, &entry,
-+					 sizeof(entry))) {
-+				ret = -EFAULT;
-+				goto out_unlock;
-+			}
-+			buf_used += sizeof(entry);
-+			cur_offset = end_offset;
-+		}
-+	}
-+
-+done:
-+	args.offset = cur_offset;
-+	args.length = (cur_offset < end_offset) ? end_offset - cur_offset : 0;
-+	args.buf_size = buf_used;
-+
-+	if (copy_to_user(argp, &args, sizeof(args)))
-+		ret = -EFAULT;
-+
-+out_unlock:
-+	up_read(&vfs_inode->i_rwsem);
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -5297,6 +5636,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_subvol_sync(fs_info, argp);
- 	case BTRFS_IOC_SHUTDOWN:
- 		return btrfs_ioctl_shutdown(fs_info, arg);
-+	case BTRFS_IOC_GET_CSUMS:
-+		return btrfs_ioctl_get_csums(file, argp);
- 	}
- 
- 	return -ENOTTY;
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 9165154a274d94..ddb7a8f2610d0e 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -1100,6 +1100,29 @@ enum btrfs_err_code {
- 	BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET,
- };
- 
-+/* Flags for struct btrfs_ioctl_get_csums_entry::type */
-+#define BTRFS_GET_CSUMS_HAS_CSUMS	(1 << 0)
-+#define BTRFS_GET_CSUMS_ZEROED		(1 << 1)
-+#define BTRFS_GET_CSUMS_NODATASUM	(1 << 2)
-+#define BTRFS_GET_CSUMS_COMPRESSED	(1 << 3)
-+#define BTRFS_GET_CSUMS_ENCRYPTED	(1 << 4)
-+#define BTRFS_GET_CSUMS_INLINE		(1 << 5)
-+
-+struct btrfs_ioctl_get_csums_entry {
-+	__u64 offset;		/* file offset of this range */
-+	__u64 length;		/* length in bytes */
-+	__u32 type;		/* BTRFS_GET_CSUMS_* type */
-+	__u32 reserved;		/* padding, must be 0 */
-+};
-+
-+struct btrfs_ioctl_get_csums_args {
-+	__u64 offset;		/* in/out: file offset */
-+	__u64 length;		/* in/out: range length */
-+	__u64 buf_size;		/* in/out: buffer capacity / bytes written */
-+	__u64 flags;		/* in: flags, must be 0 for now */
-+	__u8 buf[];		/* out: entries + csum data */
-+};
-+
- /* Flags for IOC_SHUTDOWN, must match XFS_FSOP_GOING_FLAGS_* flags. */
- #define BTRFS_SHUTDOWN_FLAGS_DEFAULT			0x0
- #define BTRFS_SHUTDOWN_FLAGS_LOGFLUSH			0x1
-@@ -1226,6 +1249,8 @@ enum btrfs_err_code {
- 				     struct btrfs_ioctl_encoded_io_args)
- #define BTRFS_IOC_SUBVOL_SYNC_WAIT _IOW(BTRFS_IOCTL_MAGIC, 65, \
- 					struct btrfs_ioctl_subvol_wait)
-+#define BTRFS_IOC_GET_CSUMS _IOWR(BTRFS_IOCTL_MAGIC, 66, \
-+				  struct btrfs_ioctl_get_csums_args)
- 
- /* Shutdown ioctl should follow XFS's interfaces, thus not using btrfs magic. */
- #define BTRFS_IOC_SHUTDOWN	_IOR('X', 125, __u32)
--- 
-2.52.0
-
+> 
+> Thanks,
+> Marc
+> -- 
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+>  
+> Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9013E3D5237
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2026 14:38:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7C1623CB2F0
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2026 14:38:24 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776263903; cv=none; b=SIAyZUbZrag8uAXJdgevYQqPiEVsTTuAKdQQ6UkpqWl1kkYMpbakwDe37MQ1iSpJ1FeSX3l8ZmfUiXRgn+RRbK2gHDXgL5SyafKjZgcX6uOEBdEoXxd/zuzLP4EXWyvGFaRb5BhODEl7lUX2BytbJMBtfOhGagDELidDZSWC+8c=
+	t=1776263904; cv=none; b=Enlgwrsj8lYW1upJLS1hHr2beA2KpJZZf7oGEWbtDuZJt/bMwVuVQq1niCItPPI9Qndo1enOHDcHttyddmD6WM8Vs1S+wTo2Hiankm5hgISk+p72UlIeZQQL101sQnz+vwlBqblajzwSBDcQoJ4anGDKzdfaoDPPVJ+VThMH1ao=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776263903; c=relaxed/simple;
-	bh=ACg4sO86UZKkSH7rJR8L356TbfbtR4wdJnyovKGYhcM=;
+	s=arc-20240116; t=1776263904; c=relaxed/simple;
+	bh=L35xvC3d1D4DY/+hHpLltYPOFUbHYJe/kDqB2B8mtTE=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Hse4HYyeu4RmFiGfMJwQEPuQEYdH5TSOoSOE7xW8bfu3rXi70xP8sUOZA8fbnFBSy7DVIPXuuMJa8jv1TVuat7tKKf5j2rIcBNSRzJJs/pHi0uVRc07ms/BfC0IoVCp7i/yqn3AVTkDYMokUleJNs8nggIvfisniCyXmw1GWU1s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=vQqWc5Zi; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=rx+DpESb9w/h0HfxXDhY5rPW2xcIjBNN6frA0sjBdaK5vsHgFsN1yTb/OoKTF1v1l2pTk3huj92F2Lxk2POe5hIfm46RhV+9gQ0BtDRKM3si+mLJxwZSB5CFA5wYkOGLACeFTZy0z+XDWelx0TsWrodzVe6QDqGt7nQC+pH6m+8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=AEo47sPB; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="vQqWc5Zi"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EDAE7C19424
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2026 14:38:22 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="AEo47sPB"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D84ABC19424
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2026 14:38:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776263903;
-	bh=ACg4sO86UZKkSH7rJR8L356TbfbtR4wdJnyovKGYhcM=;
+	s=k20201202; t=1776263904;
+	bh=L35xvC3d1D4DY/+hHpLltYPOFUbHYJe/kDqB2B8mtTE=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=vQqWc5Zi2pYrnS4Y3ZECxd39oDCSl6pIJHOfWp776gDabnHQnvUxPX61S1Zm6dJXl
-	 jOdrfD9Lj0TqJifhStqcnP4ytpu1krJ3QayVBXB+7Nk1wu5zAZ+D+nd1WeX+0Em9+s
-	 5c2EuY7+qYfASKJi+Sk6vO/8E8+K/rl4H/PiqJ50U/KiM8ieph7ULaeowgTElZp72D
-	 FPcFDesOiU7MNTxnaW5fkS3r/eTIeJxGMLvPTZIoxG10VndFQHVOnyzB0OpeyiT90I
-	 t+opVOYSD6JoO6I23by8xba12241OuaxTvqQ6CqQC2KX8iZnj3jTaoAWzvyXDNRYyK
-	 spGRotPwdVHOA==
+	b=AEo47sPBh5W7fUqCAkPQXmBZTbRIY2rygsXF9lDH/FUFhdCrQLtswGzV8+czxAXXm
+	 UN3HiMhobEWWoORwqNZfhwUWf7c55ekQHLr0mNgNtv/HB4WJuFIpFdhXjJJTv63WpR
+	 kpZMa+Mux4Mxx8iHc9jeMSpie/7MphNzSX2Zc6NXzmQruFVsy8vmdmfFzcxbWRlPZl
+	 C4SgKrN6x+AcaHhJkq0ZUlWKb1D31zX3zTmv2wL+yhGP+00ajBAltQv7COk0NACLC3
+	 EN79S4BMFvi+GxYlRgVgGlwaGlyOoH5UDG644sQ1xEzenWhzoUbeIirzXTXkZVBtFc
+	 RkiRFoWrqydSA==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 8/9] btrfs: remove unnecessary ctl argument from __btrfs_write_out_cache()
-Date: Wed, 15 Apr 2026 15:38:11 +0100
-Message-ID: <3b6afd9f4a23ff9f32767b95ba088951682d5d90.1776263553.git.fdmanana@suse.com>
+Subject: [PATCH 9/9] btrfs: remove unnecessary ctl argument from write_cache_extent_entries()
+Date: Wed, 15 Apr 2026 15:38:12 +0100
+Message-ID: <1645afa46f0e85b22bd4967d393d012781f344d4.1776263553.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1776263553.git.fdmanana@suse.com>
 References: <cover.1776263553.git.fdmanana@suse.com>
@@ -44,8 +44,8 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We can get the free space control structure from the given block group,
-so there is no need to pass it as an argument.
+There is no need to pass the free space control structure as an argument
+because we can grab it from the given block group.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
@@ -53,38 +53,33 @@ Signed-off-by: Filipe Manana <fdmanana@suse.com>
  1 file changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index b595ed793bda..bc39551ec6d5 100644
+index bc39551ec6d5..181af26b7209 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -1367,10 +1367,10 @@ int btrfs_wait_cache_io(struct btrfs_trans_handle *trans,
-  * or an errno if it was not.
-  */
- static int __btrfs_write_out_cache(struct inode *inode,
--				   struct btrfs_free_space_ctl *ctl,
- 				   struct btrfs_block_group *block_group,
- 				   struct btrfs_trans_handle *trans)
+@@ -1068,12 +1068,12 @@ int load_free_space_cache(struct btrfs_block_group *block_group)
+ 
+ static noinline_for_stack
+ int write_cache_extent_entries(struct btrfs_io_ctl *io_ctl,
+-			      struct btrfs_free_space_ctl *ctl,
+ 			      struct btrfs_block_group *block_group,
+ 			      int *entries, int *bitmaps,
+ 			      struct list_head *bitmap_list)
  {
+ 	int ret;
 +	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
- 	struct btrfs_io_ctl *io_ctl = &block_group->io_ctl;
- 	struct extent_state *cached_state = NULL;
- 	LIST_HEAD(bitmap_list);
-@@ -1516,7 +1516,6 @@ int btrfs_write_out_cache(struct btrfs_trans_handle *trans,
- 			  struct btrfs_path *path)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
- 	struct inode *inode;
- 	int ret = 0;
- 
-@@ -1531,7 +1530,7 @@ int btrfs_write_out_cache(struct btrfs_trans_handle *trans,
- 	if (IS_ERR(inode))
- 		return 0;
- 
--	ret = __btrfs_write_out_cache(inode, ctl, block_group, trans);
-+	ret = __btrfs_write_out_cache(inode, block_group, trans);
- 	if (ret) {
- 		btrfs_debug(fs_info,
- 	  "failed to write free space cache for block group %llu error %d",
+ 	struct btrfs_free_cluster *cluster = NULL;
+ 	struct btrfs_free_cluster *cluster_locked = NULL;
+ 	struct rb_node *node = rb_first(&ctl->free_space_offset);
+@@ -1416,8 +1416,7 @@ static int __btrfs_write_out_cache(struct inode *inode,
+ 	mutex_lock(&ctl->cache_writeout_mutex);
+ 	/* Write out the extent entries in the free space cache */
+ 	spin_lock(&ctl->tree_lock);
+-	ret = write_cache_extent_entries(io_ctl, ctl,
+-					 block_group, &entries, &bitmaps,
++	ret = write_cache_extent_entries(io_ctl, block_group, &entries, &bitmaps,
+ 					 &bitmap_list);
+ 	if (ret)
+ 		goto out_nospc_locked;
 -- 
 2.47.2
 

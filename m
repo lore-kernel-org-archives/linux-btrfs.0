@@ -1,162 +1,148 @@
-Received: from fout-b3-smtp.messagingengine.com (fout-b3-smtp.messagingengine.com [202.12.124.146])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3DEEC239E9A
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2026 18:44:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.146
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5F641383C9E
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2026 18:44:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776278695; cv=none; b=KeVwqlJha/YXYLpbkc/NDZ+IA6NvGHy7l+Z8wi7/2bq4TkVkc45RH/3XoqPucmpeeYVSxKcQh/Ry81IOpemI9iKz4HZasvXlemuvcCy+3wKW917aOu2RvKLP/0L3tUKj/VmekawE9Bwfqu3BKpov/KpKrTXUP2NiwXxucZsSoEM=
+	t=1776278696; cv=none; b=jUr82mlgrOdb0+RwJEAuVx3qwEEue1yEsTeEd4c6Xq7atmudr/DsF1IO9stqIgmpB2CISmNzH33lIHeOVXlb9JC/QkeHnkMhnNq4dfFNmPN+ZX18zhtOaWexg2neTcMMbAASs8Z1ElLNaI3co0TAD60SOF2tLgAYFFRML8Ftc5w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776278695; c=relaxed/simple;
-	bh=2YzokII3ou9Gok5vcdrWKVGxayBpnFkn6aNG+vfg1NE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Tymy4ARBcZgJutBuwwUmlyzzuFF7mms8pV9m1Llggo0Njg7hFosYvababiZOFbE57Lz4+IUvSQ+8b5Z4l0Fun7UpmTr1MBKzZOjPC1UWCc4yVfd9ljlcu480NwvJbIV9K7Gnj8Fwz4A5K5GgMNFtZ65ba26xwpNdC62+0/HZ6Bc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=i5dhh+Hx; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=JhhAUpH6; arc=none smtp.client-ip=202.12.124.146
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1776278696; c=relaxed/simple;
+	bh=qsCOeAdxL3qF9+F1/hYGoi4VGhfV1dfl6VtggCOEeQI=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=h1ejF6ZU7043USoJhK3Ug6uD+K+fXCVE6qpsxdMTqRoNaxtr3VevoezERLtlfe7cCXkAADXWS1F9xHATSuzwTbL7BLubpoosDllhX/Xfu7YZAzlh8paFsX8pjhCpZzkMjG8Y0xxj1EemEdlBuSxIidC0H25OcGjZkblbXHmDaR4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=TZ0B5QL0; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="i5dhh+Hx";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="JhhAUpH6"
-Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
-	by mailfout.stl.internal (Postfix) with ESMTP id BD2081D001C6;
-	Wed, 15 Apr 2026 14:44:52 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-06.internal (MEProxy); Wed, 15 Apr 2026 14:44:53 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1776278692; x=1776365092; bh=DWOyqd+E2I
-	ADa+P1TJsDq+fwx/nYC31L/vNIeT0O4EQ=; b=i5dhh+HxOfqWywi25feKSKztMN
-	D2uIl+5BiVqRNzDMRrKdoppk0m8h9i7xN3BVjnsk+VfECqoXlpMO10kio5HbHGEP
-	xDAvz3Ti7OY+LltdIZfDzb11JfbKMDsFhuHfoUt/NKja2oo6nfseVQ56kHbekG2/
-	dUXq0TGjefv9AhNLZCxlxLWGewSvccvfYYNwN53Dud1r1S2aeZYyT9Sp0WR2SKSi
-	LA2AnG7lwtEvrb1j0pWq0iFSU+hfoVSo6hLsP6B4y2bh2/HoUGXFBlD5a/ycSvhs
-	tqXXAtUHjfas7CW7wpZ+4fTJ4GLkD8yHq9sOjoD5iR8dHGOG96vWM65hTnRQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1776278692; x=1776365092; bh=DWOyqd+E2IADa+P1TJsDq+fwx/nYC31L/vN
-	IeT0O4EQ=; b=JhhAUpH6HdxDCoSyjJnw3m9Lgk4j1t38MPT5N4XUQYpJzdjPXRy
-	m3yWfOknVmtBhYB9krmZwi9F80THtxw3UYWxnh9b1u91PyNl4zuKIvhtshS1R6yK
-	hjuKdA3dWMCekPgOL+NyiK5tMrAamQ0C/fqVsSfKsgcM70c4f/eHpTfaZX7Ek0jv
-	OJvQt0vFu07kSnsnhOFXkcR7vxN7uk97dJT3/cazL0gPzPy4s+OP1Fe+z7FSWxBL
-	QuXROLkbE9745dFvteKpbEZBTHqtB7itN7djRaP9MUdnqGq8wgSQOUVvpaaAWa0a
-	B0xzueXJcgGsCqj6IC4W8U4M/Z7Y/p4TN+A==
-X-ME-Sender: <xms:o9zfaf6FWhmGH_wPLZRP3CA8hJFsAmvdmExYLLONq9H3MKkSakewfQ>
-    <xme:o9zfaa64F8MzavZKkLuhiYJ0iH1hSL1zj8M-_6OUbDHZYuL7aAkCyJ6dv_5lu2M50
-    dltUZyji2LXSu3q9U7Mbr53_Sp_mYfwnGiCT6DEyyoOzeR5XNK7AB83>
-X-ME-Received: <xmr:o9zfaRRfLhmB5x6U6kQpPZP1USxhcxCuRmOZqPlbFpKB99UfqQILeTH5UTx3pmvB6Fi-JzRfHlfpzFND94qAkUPlXI8>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdeggeekhecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
-    ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
-    hrpeffhffvvefukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhrihhsuceu
-    uhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhepuedtvd
-    dtheegvddvteeugfevgffggedukeejhfeggfejkeeglefgieeggeduveehnecuffhomhgr
-    ihhnpehmvghrlhhinhhsrdhorhhgnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrg
-    hmpehmrghilhhfrhhomhepsghorhhishessghurhdrihhopdhnsggprhgtphhtthhopedu
-    tddpmhhouggvpehsmhhtphhouhhtpdhrtghpthhtohepmhgrrhgtpggsthhrfhhssehmvg
-    hrlhhinhhsrdhorhhgpdhrtghpthhtoheplhhinhhugidqsghtrhhfshesvhhgvghrrdhk
-    vghrnhgvlhdrohhrghdprhgtphhtthhopehjohhsvghfsehtohigihgtphgrnhgurgdrtg
-    homhdprhgtphhtthhopeifqhhusehsuhhsvgdrtghomhdprhgtphhtthhopehquhifvghn
-    rhhuohdrsghtrhhfshesghhmgidrtghomhdprhgtphhtthhopehfughmrghnrghnrgeskh
-    gvrhhnvghlrdhorhhgpdhrtghpthhtoheplhhishhtshestgholhhorhhrvghmvgguihgv
-    shdrtghomhdprhgtphhtthhopegtvgefghekjhgujhesuhhmrghilhdrfhhurhhrhihtvg
-    hrrhhorhdrohhrghdprhgtphhtthhopehrmhesrhhomhgrnhhrmhdrnhgvth
-X-ME-Proxy: <xmx:o9zfaS-EDCM5n43lXGbq3fN0C8YqPjtP2SJnLi0tjKHNg8vt3OMOwQ>
-    <xmx:o9zfaSZE5VE4jm7L7kTQ-WjDrQizHF_B84KzBrpo7hkNfAPQkHUpKg>
-    <xmx:o9zfaTquWAMRrlrqvYcDS93w4dKEp8uC_qnqHF4pdwJdFhDfx5EWog>
-    <xmx:o9zfaWSOEPqWc3DkMts3v3s77arxmYmtyy9ulGQdEsX_wPaf-4soCA>
-    <xmx:pNzfab36hvV2Gydzw5RFDjUp_bRt-kSLrAAZ0Pdcw7JIJ4rgLo7PXQ_E>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 15 Apr 2026 14:44:51 -0400 (EDT)
-Date: Wed, 15 Apr 2026 11:44:27 -0700
-From: Boris Burkov <boris@bur.io>
-To: Marc MERLIN <marc_btrfs@merlins.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@toxicpanda.com>, QuWenruo <wqu@suse.com>,
-	Qu Wenruo <quwenruo.btrfs@gmx.com>,
-	Filipe Manana <fdmanana@kernel.org>,
-	Chris Murphy <lists@colorremedies.com>,
-	Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-	Roman Mamedov <rm@romanrm.net>, Su Yue <suy.fnst@cn.fujitsu.com>
-Subject: Re: Simple quota unsafe? RIP:
- 0010:__btrfs_free_extent.isra.0+0xc41/0x1020 [btrfs] /
- do_free_extent_accounting:2999: errno=-2 No such entry
-Message-ID: <20260415184427.GA842130@zen.localdomain>
-References: <adnBhWfJQ1n3hZC8@merlins.org>
- <ad0tdWyavEngGlQ-@merlins.org>
- <20260413184731.GA3448810@zen.localdomain>
- <ad1GxXgWNBfgrRtN@merlins.org>
- <ad8gcwTFOLUhBHGA@merlins.org>
- <20260415170510.GA780391@zen.localdomain>
- <ad_SEOvBQtzsxWkY@merlins.org>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="TZ0B5QL0"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9D7C8C2BCB5
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2026 18:44:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1776278696;
+	bh=qsCOeAdxL3qF9+F1/hYGoi4VGhfV1dfl6VtggCOEeQI=;
+	h=From:To:Subject:Date:In-Reply-To:References:From;
+	b=TZ0B5QL0fp3jVvhXEdz+WDkF3MCl8duyWsdhFk0rO2Jr0PlcUhkxJnkcL8APyhp6t
+	 /XCXk75DMr8d0xkiaa5/35D9wFeBCPHiNIJPdOFPjLa6WVsBmDQwqNnXK53pvE/Q5b
+	 OEqsoczPQ748w5HHj1Vhx0nfJUe5dKLF89pC4bopQBQD+yfG2pBH7XeJgBqKJM1j+Y
+	 NJ3rJrqCLQdpNPrbRgpUUCCnbhPSvYbC/z4DTFBTeSjP2BU8VYGMwZkYlGzueiKvst
+	 h2dvQw+nmr9kNmCYO7G+FjAQaNYUWxabsVeBUoMLZLEm9OdcipEWP4f62kbV9SSRaT
+	 yv7fDkLgvv3AA==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 01/10] btrfs: use a kmem_cache for block groups
+Date: Wed, 15 Apr 2026 19:44:39 +0100
+Message-ID: <ccd87d11a25c4fc5c4a52869fd57994a96029307.1776278490.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
+In-Reply-To: <cover.1776278490.git.fdmanana@suse.com>
+References: <cover.1776278490.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <ad_SEOvBQtzsxWkY@merlins.org>
+Content-Transfer-Encoding: 8bit
 
-On Wed, Apr 15, 2026 at 10:59:44AM -0700, Marc MERLIN wrote:
-> On Wed, Apr 15, 2026 at 10:05:10AM -0700, Boris Burkov wrote:
-> > 1258303029248 is the logical address we were freeing so its backrefs in
-> > the extent tree will be interesting. As will whatever subvol tree it is
-> > in, as will the qgroup tree entry for that subvolid. If you can share a
-> > full dump then I can find all that myself.
->  
-> Note that I fixed the laptop, thankfully didn't have to rebuild this
-> filesystem.  
-> 
-> Sorry, not very good with the debug tools. Was that the right command?
-> merlin:/mnt/btrfs_pool3# btrfs inspect-internal dump-tree -t 1258303029248 /dev/mapper/pool3
-> btrfs-progs v6.14
-> total bytes 4074040004608
-> bytes used 2415294197760
-> uuid 49741c78-3949-4d7d-b77a-160ce071dee0
-> merlin:/mnt/btrfs_pool3#
-> 
-> 
+From: Filipe Manana <fdmanana@suse.com>
 
-For a giant fs where we don't want to dump all the metadata or it would
-be difficult to share the resulting gigabytes of text, I would still get
-quite a bit of benefit from:
+We are currently allocating block groups using the generic slabs, and
+given that the size of btrfs_block_group structure is 672 bytes (on a
+release kernel), we end up using the kmalloc-1024 slab and therefore
+waste quite some memory since on a 4K page system we can only fit 4
+block groups per page. The block groups are also allocated and
+delallocated with some frequency, specially if we have auto reclaim
+enabled.
 
-btrfs inspect-internal dump-tree -t 2 /dev/tst/lol
-and
-btrfs inspect-internal dump-tree -t 8 /dev/tst/lol
+So use a kmem_cache for block groups, this way on a 4K page system we
+can fit 6 block groups per page instead of 4.
 
-which will dump the extent trees and quota trees respectively. The other
-useful thing is to find the extent in question in the extent tree and
-see which subvols refer to it via the backrefs and dump those trees. But
-that is relatively less important. If the extent tree dumps way too
-much, then doing a grep -C 50 for 15506102321152 would likely be enough
-to show us the relevant backrefs.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/block-group.c | 23 ++++++++++++++++++++---
+ fs/btrfs/block-group.h |  3 +++
+ fs/btrfs/super.c       |  3 +++
+ 3 files changed, 26 insertions(+), 3 deletions(-)
 
-> > ditto for the logical address that broke on the rpi, but if that is a
-> > gigantic fs, maybe doing the dump will be pretty unwieldy..
-> 
-> That's the bigger one indeed, still waiting read only until I'm told I
-> can wipe it, or should wait for debug data request. It's been too long
-> already and I had spare drives, so I started a full restore on a new
-> set of drives and will swap them in for the current one I can't mount
-> read/write but can keep it around for debugging / potential future 
-> check --repair patch
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index e6f5a17a13e3..a87f147aefa5 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -22,6 +22,23 @@
+ #include "accessors.h"
+ #include "extent-tree.h"
+ 
++static struct kmem_cache *block_group_cache;
++
++int __init btrfs_init_block_group(void)
++{
++	block_group_cache = kmem_cache_create("btrfs_block_group",
++					      sizeof(struct btrfs_block_group),
++					      0, 0, NULL);
++	if (!block_group_cache)
++		return -ENOMEM;
++	return 0;
++}
++
++void __cold btrfs_exit_block_group(void)
++{
++	kmem_cache_destroy(block_group_cache);
++}
++
+ #ifdef CONFIG_BTRFS_DEBUG
+ int btrfs_should_fragment_free_space(const struct btrfs_block_group *block_group)
+ {
+@@ -182,7 +199,7 @@ void btrfs_put_block_group(struct btrfs_block_group *cache)
+ 
+ 		kfree(cache->free_space_ctl);
+ 		btrfs_free_chunk_map(cache->physical_map);
+-		kfree(cache);
++		kmem_cache_free(block_group_cache, cache);
+ 	}
+ }
+ 
+@@ -2371,13 +2388,13 @@ static struct btrfs_block_group *btrfs_create_block_group(
+ {
+ 	struct btrfs_block_group *cache;
+ 
+-	cache = kzalloc_obj(*cache, GFP_NOFS);
++	cache = kmem_cache_zalloc(block_group_cache, GFP_NOFS);
+ 	if (!cache)
+ 		return NULL;
+ 
+ 	cache->free_space_ctl = kzalloc_obj(*cache->free_space_ctl, GFP_NOFS);
+ 	if (!cache->free_space_ctl) {
+-		kfree(cache);
++		kmem_cache_free(block_group_cache, cache);
+ 		return NULL;
+ 	}
+ 
+diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+index 0504cb357992..b414f4268d2d 100644
+--- a/fs/btrfs/block-group.h
++++ b/fs/btrfs/block-group.h
+@@ -320,6 +320,9 @@ static inline u64 btrfs_block_group_available_space(const struct btrfs_block_gro
+ int btrfs_should_fragment_free_space(const struct btrfs_block_group *block_group);
+ #endif
+ 
++int __init btrfs_init_block_group(void);
++void __cold btrfs_exit_block_group(void);
++
+ struct btrfs_block_group *btrfs_lookup_first_block_group(
+ 		struct btrfs_fs_info *info, u64 bytenr);
+ struct btrfs_block_group *btrfs_lookup_block_group(
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index b26aa9169e83..b5346f26ed87 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2604,6 +2604,9 @@ static const struct init_sequence mod_init_seq[] = {
+ 	}, {
+ 		.init_func = btrfs_init_compress,
+ 		.exit_func = btrfs_exit_compress,
++	}, {
++		.init_func = btrfs_init_block_group,
++		.exit_func = btrfs_exit_block_group,
+ 	}, {
+ 		.init_func = btrfs_init_cachep,
+ 		.exit_func = btrfs_destroy_cachep,
+-- 
+2.47.2
 
-If there is no rush to wipe it, then let's keep it around until I rule
-out whether a repair patch makes sense? Sorry if I misunderstood the
-state. If there *is* a rush to wipe it, then let's confirm we got what
-we needed out of tree dumping first, if possible.
-
-> 
-> Thanks,
-> Marc
-> -- 
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
->  
-> Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

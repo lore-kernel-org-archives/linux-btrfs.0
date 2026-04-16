@@ -1,292 +1,204 @@
-Received: from mail-wr1-f45.google.com (mail-wr1-f45.google.com [209.85.221.45])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E62501FECCD
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2026 09:48:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4BCBA54654
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2026 10:23:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776332940; cv=none; b=JBQYjzVDZ2hJvDJ1uO6xq8abgDpMb3kDRZj+crzp0OAcWIbvZnBSsoTmwx4oSvcszMzHohViIU88SjQdQC1U2GBvvwesf5QTioaJ4C9jKEGjuKufnUGvCNH4pwnVlEHFoSASDDezXOqkb0JfnKcDQkKEQJFmnFXtjWZCq7RDlLU=
+	t=1776334988; cv=none; b=Nzrai5xcgJYjadTZtRz9eoOUXpJ/8kZHlQwlgT1XqSYy/Icqzh70kuW6sw9mxCh9bdJl7mwcLDc+NewRLx5ixRBedVKT98SEsiZo02e0MyLZ0rSXaIrRid8sNmKaP28+xcIlS5IrkY0iX7NR9GJrUiMVNlbcAKgS3+95dGLfbXU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776332940; c=relaxed/simple;
-	bh=HT/21bzsAGe1dhx+1K1MfgwP90BZ/4xG1XzJAV8siHA=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:References:
-	 In-Reply-To:Content-Type; b=mkkO853yZrArEYMGBCdIFTLhyNkEq+9D/wPdzqCXEXjsrzwJYqFUh9TIlUbsYiRvSTU16SHEibSQ8/fuoE6TcazqjKHeJCQILsuuFl692NNQBmFFQmUjbYe/pL4TcHDVJpFnQ7pwT3YxGwRK6WZ2Eor72dRb0DwOaBs9x4iJZjw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Vj0MGOYg; arc=none smtp.client-ip=209.85.221.45
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1776334988; c=relaxed/simple;
+	bh=ZKiWKJ8SwdqvaKEqqbzM4V3ssnqSv8zG+SQ1rvnKAlE=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=SgKZgnVrVKq3gopRL9Ymft6He0XEXH9pg+0u3QLrWIosCM6nsIxC6mzN5IM7B89Zj3w96SUCL38FXMqFlrbwnDQANt775grENV3P48Wf/1Uw/TBySkpXTBtMH4S4DuqhO3SQmjfBxXqi8gNO/yHTOKRszGjKX67VAVrz9xEPzbQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QVvAOeoM; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Vj0MGOYg"
-Received: by mail-wr1-f45.google.com with SMTP id ffacd0b85a97d-43cfd1f9fd1so4973992f8f.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2026 02:48:58 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1776332937; x=1776937737; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
-         :references:to:from:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=1f/ekMgV/f5c3g93km/i/6lghd+MCSWPb0VwMykC5xU=;
-        b=Vj0MGOYgvq1e26dkaQSJ6lhk/A0KBrl9ePcDUJSJFD/I5hmG2uNihpuc+Ery9bqsdO
-         HdJ5y1xfvbWy7uqwLWtw17lGMU9SI2cHGlEdO7Be86EyunrdsPiq8mHHlbmdcl74VJFZ
-         ABxfTsXHcfBSFdf79Oh3r3btS1d6a3vSg7Pidd20VgBvYjAtmGhQcHH4TpjK6pX2V04t
-         TpUGVjaNPQJvHJGa6GnCfI82L87dgbjOLMJGKufl2Lb2J8PsoGCfAyQ/IrdpU+DOaldA
-         Q+PNsxmvaKQatH4CLz1nCajWq93lCYNBKr6vmdIq19HRa2wXHOCeHBgeWVo1avgBziEo
-         sjXQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1776332937; x=1776937737;
-        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
-         :references:to:from:subject:user-agent:mime-version:date:message-id
-         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=1f/ekMgV/f5c3g93km/i/6lghd+MCSWPb0VwMykC5xU=;
-        b=Ky7gLDBUyMqsWoH4XW/5H+Id3tAFE6ZjzDe5AGO+QAl3yV0/FelwSRdEGMvepc4+rx
-         hgrPZsz6arW2Df2LR8rqZcT5Auaz/Tg0vH+SOn4ap7A6dIJ/5cSVD7/fGhlq4OJPIzbf
-         PF7ykVkIFm5Cov4xCv14Xmn2NsyCKpPSui7qMPmVbCldaRFrH7ST2zzPiui3axuIZtRt
-         PLNGVeHICLdbkC3E5b9Mo6tbxsSHC34UuQnhwQpsQj2u0kj3kJY0ek+zpJuMxQDOiW7d
-         6quhXRB5lrx3veGNF5tISUY+ezCCOXAoL5hhaZKhJKEF1/Ftj+xT+OKhN0dW9S5WRQPo
-         yNnw==
-X-Gm-Message-State: AOJu0YxEKkeVxVIPip6CFYKK8UOHa9M6AVedg0b+OBJoUA8g2fmtvELI
-	HRqm1DA8CZTgAnC2Mz7DqQv9lLeIQIjrOazZCU01wiMo88q2OeRG9uIAuc6lTkRQauUh0So+saf
-	GBAx/ePQ=
-X-Gm-Gg: AeBDiesoqkpb0UFHIwR2essK13HvfB1Otd3nNCYmmXo22zRiW1Vo6eRmT90K0bYw8+z
-	ySF5mKjFrYBM3gbzFrN4TzcMDRsECoX/QvrXTioi/BUeZiLmYX70kTMtHAGcOkQPthhxcS1a5V4
-	s8hnY3UpWSvgr9ivWfXQE3iXDoOTIR7DQzXqR3xpY82lroQmMaDgQNndry6uIleLSIbKCj7YatC
-	TT2TjAUO5ihA1cEG5EK5SaZ6YzcEmzXx8OwW02vZfBDChpPSDkQzTcNvt23GRbynCbOTO/n71JQ
-	WJuKshdHX06Fd3iQ3yIrICavCJyOdvF9hhlglaPG3Eo7xSIDzwXmckH1mRgkwjFvrrh8GyhrbWX
-	STupDNamozUrCxtPhV+PlgR6VRhqXB43rB8qKDQhhE8AZcINzJ0YbQ6MS9di9AuaVpXeSwqbHPu
-	Y7wU3HjRGxossIjbW5B1X1MOkrHfJRNBhv6rCSiIE3bSzTCMv1rBBb8onVcLCfpg==
-X-Received: by 2002:a05:600c:45c6:b0:488:a797:f0ac with SMTP id 5b1f17b1804b1-488d6ac2226mr307652165e9.28.1776332936929;
-        Thu, 16 Apr 2026 02:48:56 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-82f6702f936sm4612290b3a.6.2026.04.16.02.48.54
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 16 Apr 2026 02:48:55 -0700 (PDT)
-Message-ID: <13ec4d41-49c0-4a09-a030-331457e43e17@suse.com>
-Date: Thu, 16 Apr 2026 19:18:51 +0930
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QVvAOeoM"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F2DD9C2BCB0
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2026 10:23:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1776334988;
+	bh=ZKiWKJ8SwdqvaKEqqbzM4V3ssnqSv8zG+SQ1rvnKAlE=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+	b=QVvAOeoM4Vk9wa+8d7XG5bJw+hdMfj4JyKL4c2j0uszTSWzNZK7a0ern020P/fX9F
+	 C4E8V7sr99SJQf4c0wzGLppEiqcXxnN2jKvHSWbN/nw2UEPrnYNbSb+myUzKo5zyV0
+	 qVQUXNsD29A14PP6purelbdc45HjWkDDUBHGNWDM9acIAgbKuw0JY3fBTjwzKOd6rB
+	 W0rG7jAyMfWh9URfSRSvPnqMprMROxeiSZ/7zDDGiRzfqwX98W2c6GNgRAFvF61LsS
+	 X32Hl5FcbOyvH9hf4N+xMxZCmUAnMRGg8VXw7ape4cE5KIICq0sVbEA2q1r5AQZh1F
+	 YjRhjjI0I2jzw==
+Received: by mail-ej1-f49.google.com with SMTP id a640c23a62f3a-b9d6c8871c7so1188353966b.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2026 03:23:07 -0700 (PDT)
+X-Gm-Message-State: AOJu0Yzf25Httv2P9fy79fvR8QZcgeZ0AgtZ5nAmp+OJO2iw51PrwYZ3
+	a6u371foEhaS53HkVUIUl4bQH2tQBkB3VcX8b/fMy+ceVyN55EqrDI+nqUaholosbNrfdbJrI+G
+	TRUeg3IYg6moMh0yqIRUfa5Gw50TNv0Q=
+X-Received: by 2002:a17:907:3e04:b0:b9e:f58:c581 with SMTP id
+ a640c23a62f3a-b9e0f58c5c2mr622785366b.45.1776334986493; Thu, 16 Apr 2026
+ 03:23:06 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: cleanup the ebs when the metadata writeback range
- failed
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-References: <81a6ca07ec1309239e263151a353ef9aa6703469.1776331057.git.wqu@suse.com>
-Content-Language: en-US
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <81a6ca07ec1309239e263151a353ef9aa6703469.1776331057.git.wqu@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+References: <1c3a439e1e21c4ee32575b264ac0bc3935ea4f53.1775364843.git.wqu@suse.com>
+ <CAL3q7H45KF=ptRmAEE32J07oeewV3h-Zq8k_-LhO15PnReL+2Q@mail.gmail.com> <ec6a7a95-28d2-41bc-85a7-ef36e58ff9bd@suse.com>
+In-Reply-To: <ec6a7a95-28d2-41bc-85a7-ef36e58ff9bd@suse.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Thu, 16 Apr 2026 11:22:27 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H5EoAZes0kfyTE_8G=idD-V_NmAGGuR_vu90+HBb6dTsQ@mail.gmail.com>
+X-Gm-Features: AQROBzCIihvlLbpV7PYNJGAtBKK1usc52cbygkmJ6unvrOoTyTURFvRauF-GQMQ
+Message-ID: <CAL3q7H5EoAZes0kfyTE_8G=idD-V_NmAGGuR_vu90+HBb6dTsQ@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: warn about extent buffer that can not be released
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, AHN SEOK-YOUNG <iamsyahn@gmail.com>, 
+	Teng Liu <27rabbitlt@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
+On Thu, Apr 16, 2026 at 12:02=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+>
+>
+>
+> =E5=9C=A8 2026/4/15 20:55, Filipe Manana =E5=86=99=E9=81=93:
+> > On Sun, Apr 5, 2026 at 5:56=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+> >>
+> >> When we unmount the fs or during mount failures, btrfs will call
+> >> invalidate_inode_pages() to release all btree inode folios.
+> >>
+> >> However that function can return -EBUSY if any folios can not be
+> >> invalidated.
+> >> This can be caused by:
+> >>
+> >> - Some extent buffers are still held by btrfs
+> >>    This is a logic error, as we should release all tree root nodes
+> >>    during unmount and mount failure handling.
+> >>
+> >> - Some extent buffers are under readahead and haven't yet finished
+> >>    This is much rarer but valid cases.
+> >>    In that case we should wait for those extent buffers.
+> >>
+> >> Introduce a new helper invalidate_btree_folios() which will:
+> >>
+> >> - Call invalidate_inode_pages2() and catch its return value
+> >>    If it returned 0 as expected, that's great and we can call it a day=
+.
+> >>
+> >> - Otherwise go through each extent buffer in buffer_tree
+> >>    For eb that still has EXTENT_BUFFER_READING flag, wait for them to
+> >>    finish first.
+> >>
+> >>    Then check if the refs of the eb is greater than 1, if so it means
+> >>    it's still held by someone, give it a warning.
+> >>
+> >> Link: https://bugzilla.kernel.org/show_bug.cgi?id=3D221270
+> >> Reported-by: AHN SEOK-YOUNG <iamsyahn@gmail.com>
+> >> Cc: Teng Liu <27rabbitlt@gmail.com>
+> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> >> ---
+> >> This new debug feature has exposed some problems, e.g. generic/648,
+> >> after an injected failure for device barrier, transaction is aborted b=
+ut
+> >> we have a lot of dirty tree blocks unreleased and triggered the new
+> >> warning.
+> >>
+> >> We still need to fix these corner cases.
+> >>
+> >> Meanwhile if Ahn or Teng can give this patch a try for the existing
+> >> use-after-free problem, it would be appreciated a lot.
+> >> ---
+> >>   fs/btrfs/disk-io.c   | 52 ++++++++++++++++++++++++++++++++++++++++++=
+--
+> >>   fs/btrfs/extent_io.c |  6 -----
+> >>   fs/btrfs/extent_io.h |  6 +++++
+> >>   3 files changed, 56 insertions(+), 8 deletions(-)
+> >>
+> >> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> >> index b8ac3275d8f8..d450bfc6d89b 100644
+> >> --- a/fs/btrfs/disk-io.c
+> >> +++ b/fs/btrfs/disk-io.c
+> >> @@ -3276,6 +3276,54 @@ static bool fs_is_full_ro(const struct btrfs_fs=
+_info *fs_info)
+> >>          return false;
+> >>   }
+> >>
+> >> +static void invalidate_btree_folios(struct btrfs_fs_info *fs_info)
+> >> +{
+> >> +       XA_STATE(xas, &fs_info->buffer_tree, 0);
+> >> +       unsigned int checked =3D 0;
+> >> +       void *tmp;
+> >> +       int ret;
+> >> +
+> >> +       ret =3D invalidate_inode_pages2(fs_info->btree_inode->i_mappin=
+g);
+> >> +       if (likely(ret =3D=3D 0))
+> >> +               return;
+> >> +
+> >> +       /*
+> >> +        * Some btree pages can not be invalidated, this happens when =
+some
+> >> +        * tree blocks are still held (either by some pointer or reada=
+head).
+> >> +        */
+> >> +       xas_lock_irq(&xas);
+> >> +       xas_for_each(&xas, tmp, ULONG_MAX) {
+> >> +               struct extent_buffer *eb =3D tmp;
+> >
+> > Why use the tmp variable? We can pass 'eb' to xas_for_each().
+> >
+> >> +
+> >> +               /* Wait for any readahead first. */
+> >> +               if (test_bit(EXTENT_BUFFER_READING, &eb->bflags)) {
+> >> +                       xas_pause(&xas);
+> >> +                       xas_unlock_irq(&xas);
+> >> +                       wait_on_bit_io(&eb->bflags, EXTENT_BUFFER_READ=
+ING,
+> >> +                                      TASK_UNINTERRUPTIBLE);
+> >> +                       xas_lock_irq(&xas);
+> >> +               }
+> >> +
+> >> +               spin_lock(&eb->refs_lock);
+> >> +               if (refcount_read(&eb->refs) > 1 || extent_buffer_unde=
+r_io(eb)) {
+> >> +                       btrfs_warn(fs_info,
+> >> +                       "unbale to release extent buffer %llu owner %l=
+lu flags 0x%lx",
+> >
+> > unbale -> unable
+> >
+> >> +                                  eb->start, btrfs_header_owner(eb), =
+eb->bflags);
+> >> +                       if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
+> >> +                               WARN_ON_ONCE(true);
+> >
+> > Pointless if, just do DEBUG_WARN();
+>
+> The problem is we do not have DEBUG_WARN_ON_ONCE().
+>
+> We already have cases triggering this during fstests, and there were a
+> lot of ebs that are dirty in that case.
+>
+> DEBUG_WARN() will flood the dmesg with the same call trace for each
+> dirty eb.
+>
+> I can add a new DEBUG_WARN_ON_ONCE() for this particular call site though=
+.
 
+No need just for one case IMO.
 
-在 2026/4/16 18:49, Qu Wenruo 写道:
-> [WARNING]
-> With the recent warning added by commit "btrfs: warn about extent buffer
-> that can not be released", test case generic/388 can trigger the
-> following warning:
-> 
->   BTRFS: device fsid afbe908d-e199-4cd5-858c-a52800fed6f2 devid 1 transid 3940 /dev/mapper/test-scratch1 (253:2) scanned by mount (66844)
->   BTRFS info (device dm-2): first mount of filesystem afbe908d-e199-4cd5-858c-a52800fed6f2
->   BTRFS info (device dm-2): using crc32c checksum algorithm
->   BTRFS info (device dm-2): turning on async discard
->   BTRFS info (device dm-2): enabling free space tree
->   BTRFS critical (device dm-2 state E): emergency shutdown
->   BTRFS error (device dm-2 state E): error while writing out transaction: -30
->   BTRFS warning (device dm-2 state E): Skipping commit of aborted transaction.
->   BTRFS error (device dm-2 state EA): Transaction aborted (error -30)
->   BTRFS: error (device dm-2 state EA) in cleanup_transaction:2068: errno=-30 Readonly filesystem
->   BTRFS info (device dm-2 state EA): forced readonly
->   BTRFS warning (device dm-2 state EA): Skipping commit of aborted transaction.
->   BTRFS info (device dm-2 state EA): last unmount of filesystem afbe908d-e199-4cd5-858c-a52800fed6f2
->   ------------[ cut here ]------------
->   WARNING: fs/btrfs/disk-io.c:3304 at invalidate_btree_folios+0xd5/0x1a6 [btrfs], CPU#6: umount/66872
->   CPU: 6 UID: 0 PID: 66872 Comm: umount Tainted: G        W           7.0.0-rc6-custom+ #365 PREEMPT(full)  5804053f02137e627472d94b5128cc9fcb110e88
->   Tainted: [W]=WARN
->   Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 02/02/2022
->   Call Trace:
->    <TASK>
->    close_ctree+0x534/0x57a [btrfs 221aeb03de8eb7d91f94bd737554730626a2b838]
->    generic_shutdown_super+0x89/0x1a0
->    kill_anon_super+0x16/0x40
->    btrfs_kill_super+0x16/0x20 [btrfs 221aeb03de8eb7d91f94bd737554730626a2b838]
->    deactivate_locked_super+0x2d/0xb0
->    cleanup_mnt+0xdc/0x140
->    task_work_run+0x5a/0xa0
->    exit_to_user_mode_loop+0x123/0x4b0
->    do_syscall_64+0x288/0x7d0
->    entry_SYSCALL_64_after_hwframe+0x4b/0x53
->    </TASK>
->   ---[ end trace 0000000000000000 ]---
->   BTRFS warning (device dm-2 state EA): unable to release extent buffer 115638272 owner 1 refs 2 flags 0x7
->   BTRFS warning (device dm-2 state EA): unable to release extent buffer 115671040 owner 9 refs 2 flags 0x7
->   ...
->   BTRFS warning (device dm-2 state EA): unable to release extent buffer 116817920 owner 1 refs 2 flags 0x7
->   BTRFS warning (device dm-2 state EA): unable to release extent buffer 116834304 owner 1 refs 2 flags 0x7
-> 
-> [CAUSE]
-> Inside btrfs_write_marked_extents(), we clear the @mark from
-> @dirty_pages io tree.
-> 
-> For the above warning example, it's clearing EXTENT_DIRTY flag from
-> transaction->dirty_pages io tree, which is utilized to track dirty
-> metadata pages belonging to the current transaction.
-> 
-> But the EXTENT_DIRTY flag is converted to EXTENT_NEED_WAIT immediately,
-> before we even started metadata writeback.
-> 
-> And furthermore, we rely on filemap_fdatawrite_range() ->
-> btree_writepages() -> lock_extent_buffer_for_io() to clear the
-> EXTENT_BUFFER_DIRTY flag for the involved extent buffers.
-> Normally this call chain succeeds, so the involved ebs also have their
-> DIRTY flag cleared.
-> 
-> But if filemap_fdatawrite_range() failed, there is no guarantee that all
-> involved EBs are properly submitted, thus they may still have
-> EXTENT_BUFFER_DIRTY flag left.
-> 
-> Those dirty EBs will stay there until detected by the recently
-> introduced invalidate_btree_folios() and trigger the warning.
-> 
-> [FIX]
-> Introduce a helper, btrfs_btree_cleanup_range(), to not only
-> wait for any submitted ebs, but also call btrfs_clear_buffer_dirty()
-> for any ebs inside the target range.
-> 
-> This will ensure transaction->dirty_pages have its EXTENT_DIRTY flag
-> matching the underlying extent buffers' EXTENT_BUFFER_DIRTY flag, and
-> avoid the warning inside invalidate_btree_folios().
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->   fs/btrfs/extent_io.c   | 44 ++++++++++++++++++++++++++++++++++++++++++
->   fs/btrfs/extent_io.h   |  1 +
->   fs/btrfs/transaction.c | 11 ++++++++++-
->   3 files changed, 55 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 4eab0f9909e3..ea0f1a73d3e2 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2308,6 +2308,50 @@ void btrfs_btree_wait_writeback_range(struct btrfs_fs_info *fs_info, u64 start,
->   	}
->   }
->   
-> +void __cold btrfs_btree_cleanup_range(struct btrfs_fs_info *fs_info,
-> +					 u64 start, u64 end)
-> +{
-> +	struct eb_batch batch;
-> +	unsigned long start_index = (start >> fs_info->nodesize_bits);
-> +	const unsigned long end_index = (end >> fs_info->nodesize_bits);
-> +
-> +	eb_batch_init(&batch);
-> +	/* Wait for writeback ebs first. */
-> +	while (start_index <= end_index) {
-> +		struct extent_buffer *eb;
-> +		unsigned int nr_ebs;
-> +
-> +		nr_ebs = buffer_tree_get_ebs_tag(fs_info, &start_index, end_index,
-> +						 PAGECACHE_TAG_WRITEBACK, &batch);
-> +		if (!nr_ebs)
-> +			break;
-> +
-> +		while ((eb = eb_batch_next(&batch)) != NULL)
-> +			wait_on_extent_buffer_writeback(eb);
-> +		eb_batch_release(&batch);
-> +		cond_resched();
-> +	}
-> +	/* Clear remaining dirty ebs. */
-> +	start_index = (start >> fs_info->nodesize_bits);
-> +	while (start_index <= end_index) {
-> +		struct extent_buffer *eb;
-> +		unsigned int nr_ebs;
-> +
-> +		nr_ebs = buffer_tree_get_ebs_tag(fs_info, &start_index, end_index,
-> +						 PAGECACHE_TAG_DIRTY, &batch);
+I find code using WARN_ON(1), ASSERT(0), and so on, to be annoying,
+unnecessary, and verbose.
+We can pass a condition to avoid the if statement, making the code
+shorter and clearer.
 
-With more runs, it turns out that PAGECACHE_TAG_DIRTY is not able to 
-locate the dirty ebs.
+Instead of:
 
-And furthermore, there are still dirty ebs out of the cleaned up range.
+ if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
+     WARN_ON_ONCE(true);
 
-So there are definitely something else.
+WARN_ON_ONCE(IS_ENABLED(CONFIG_BTRFS_DEBUG));
 
-Thanks,
-Qu
-> +		if (!nr_ebs)
-> +			break;
-> +
-> +		while ((eb = eb_batch_next(&batch)) != NULL) {
-> +			btrfs_tree_lock(eb);
-> +			btrfs_clear_buffer_dirty(NULL, eb);
-> +			btrfs_tree_unlock(eb);
-> +		}
-> +		eb_batch_release(&batch);
-> +		cond_resched();
-> +	}
-> +}
-> +
->   int btree_writepages(struct address_space *mapping, struct writeback_control *wbc)
->   {
->   	struct btrfs_eb_write_context ctx = { .wbc = wbc };
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index b284aee1bfb0..cf7afde0a78b 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -262,6 +262,7 @@ void extent_write_locked_range(struct inode *inode, const struct folio *locked_f
->   int btrfs_writepages(struct address_space *mapping, struct writeback_control *wbc);
->   int btree_writepages(struct address_space *mapping, struct writeback_control *wbc);
->   void btrfs_btree_wait_writeback_range(struct btrfs_fs_info *fs_info, u64 start, u64 end);
-> +void __cold btrfs_btree_cleanup_range(struct btrfs_fs_info *fs_info, u64 start, u64 end);
->   void btrfs_readahead(struct readahead_control *rac);
->   int set_folio_extent_mapped(struct folio *folio);
->   void clear_folio_extent_mapped(struct folio *folio);
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 248adb785051..b19f64db9518 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1185,8 +1185,17 @@ int btrfs_write_marked_extents(struct btrfs_fs_info *fs_info,
->   		if (!ret && wait_writeback)
->   			btrfs_btree_wait_writeback_range(fs_info, start, end);
->   		btrfs_free_extent_state(cached_state);
-> -		if (ret)
-> +		if (ret) {
-> +			/*
-> +			 * The original mark of dirty_pages is cleared, but
-> +			 * we hit an error, there is no guarantee the corresponding
-> +			 * ebs have been submitted.
-> +			 * So we need to wait for writeback range and also clear
-> +			 * dirty extent buffers for the range.
-> +			 */
-> +			btrfs_btree_cleanup_range(fs_info, start, end);
->   			break;
-> +		}
->   		cached_state = NULL;
->   		cond_resched();
->   		start = end + 1;
-
+Thanks.
+>
+> Thanks,
+> Qu
+>

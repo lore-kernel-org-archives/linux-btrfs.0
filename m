@@ -1,141 +1,129 @@
-Received: from fhigh-b2-smtp.messagingengine.com (fhigh-b2-smtp.messagingengine.com [202.12.124.153])
+Received: from r9220.ps.combzmail.jp (r9220.ps.combzmail.jp [160.16.65.223])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3E5DC1FCFEF
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2026 01:26:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.153
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CA43E18AE2
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2026 02:09:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=160.16.65.223
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776302761; cv=none; b=e35bqx7QLyx6PeAfAq/JaBl8qiFkCZSULlFJvyCdKYvDyOAt1Q1KegXcy6oBwUP4aFX1vS1zYogdhVLBx/UrIsfHRpn7Grt99S7E88KCOlpB9CHfmyDrGdWx+5UjXxl/GBOHdbvwplHeL+qJ+m+Gn4EMD6Xezj1YuerC1N1eSKs=
+	t=1776305390; cv=none; b=IrficP/uWH3N7OW7i1tuJDUYhIy5HLQ3oNQ+Yn3uwnNq7EyVbl/aKvDtkfrZ7fEHUQchCkp59c8zHkXGHFKz8uyyyJ7MA2si5MZH7SWF2kZJKFgtanCDV9q8MkZERhFa6RIfB0qtC+NfRNZuW0mF7jxmCfx4p/aCejpRuYDD6kQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776302761; c=relaxed/simple;
-	bh=/J4M3V/6ZyQoTX2l12Jg4QojJDRWwe9P61atd+VHqr0=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=MDF/npP9tIq0TppswaznE2VkINg+UWTIViTBcMcraZA3o2barMK8szmcXr3utslmpp5SwxZnk0xD3VBO5jSCjvfr7H9kfsDdroJIHral7id+peD9RFW2H/ZrfiG43IV2QeKIP5UnSkZcaPCaTn22UBUR/S6OZV1BuM/zXiW4SPc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=UuUG607r; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=NRCBeftX; arc=none smtp.client-ip=202.12.124.153
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="UuUG607r";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="NRCBeftX"
-Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 8EE907A01C2;
-	Wed, 15 Apr 2026 21:25:59 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-04.internal (MEProxy); Wed, 15 Apr 2026 21:25:59 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1776302759; x=1776389159; bh=Muldp/e9It
-	kaReZ7PHRL8UMiBOsV3+8oaIlDG+Y6NoA=; b=UuUG607rWPqBTJq537naeiU8LL
-	R1pzJpgI+zKZPejJAYqGWZzd6UAAiMhf8Z5mUXgb3dOsNAZxLSyRD0wuBTgJktDh
-	F/5yfULkg45puWvcmo5eCJMgWRMKBeM0i5K9pBZVLs9Ag9Kc6YKwsb6aceq1NlpN
-	lhJ19Tr9wrv8vhHexPCwZlDxJONI0ybhorhZN1MVp7BQlRWfil36BgIDw+lwMt9O
-	2by+kDOJXMRWVO4NaSfAj/cvyVj4lf+MtqaQ8to15cCwxr7jMVez46OFWKqxCkOP
-	yGfDuWvIO0ZSI/ppQm2o2oZ7Ae9xlgjAdx/8lGUSOWinT0o9BWiTHeOe7bfg==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1776302759; x=1776389159; bh=Muldp/e9ItkaReZ7PHRL8UMiBOsV3+8oaIl
-	DG+Y6NoA=; b=NRCBeftXsus0zg22OdYNtw9EQgFJlrhBE4R9EQdpFpLRDuFW2cM
-	Ru5AJkHDJ0yV6P8TeSwnNognoE4f7vecGBzJToMBk2sPo+P76wngyAGyIUEh0IZV
-	LQjcdPxa+/ksXHfJuJOk+OhGUlVbZTBNeOJd3Rl5SdEFvR498VZa643t+SjG5+aV
-	L9h6eb3tEBhk42QUFjYLCqVuN8qTuqCnVFl2XWxj+NO6ajEm2702kAsnCX0Bgs4/
-	Oq3dhx/JtturYuyUcexpkAldz0H84qtKKrT5Rg21FFF4TOvxTO5lnR4Eb/39bRtG
-	LHvTI4fmRNK8+1+SCPgYweH0xm5lQ3uxpwQ==
-X-ME-Sender: <xms:pzrgaRxqfEPyNIEndE3z7QxCrzmq12qObYa60uUb31ePF5h-RhGTkw>
-    <xme:pzrgaXT1sXXDBIQvPhcPM6Wx91hcJoqrDdifb4nzyOSloUF_8uMTWQtOUb5RlwFDJ
-    GgZ183NQoMFzQSLyNDhD1YjLuG-aBnx9T-PiH4YYFxcoIrI30vUsfg>
-X-ME-Received: <xmr:pzrgaY-whBLT_WknCkT79L0fOUg0cj3R2Y_yEGSPEifO7E28X2uAuNuLbxrbSd-1wbnGNRsL8BIC6ua-7pQYZ1CfZ9s>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdegheeijecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
-    ihhlohhuthemuceftddtnecunecujfgurhepfffhvfevuffkfhggtggujgesthdtredttd
-    dtvdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihho
-    qeenucggtffrrghtthgvrhhnpeeutddvtdehgedvvdetuefgvefggfegudekjefhgefgje
-    ekgeelgfeigeegudevheenucffohhmrghinhepmhgvrhhlihhnshdrohhrghenucevlhhu
-    shhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
-    hrrdhiohdpnhgspghrtghpthhtohepvddpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
-    ohepmhgrrhgtpggsthhrfhhssehmvghrlhhinhhsrdhorhhgpdhrtghpthhtoheplhhinh
-    hugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrgh
-X-ME-Proxy: <xmx:pzrgaervzQb00wMyJZOFNj9LaFxB-1Ic6ps4lRkNGVQLs4abrymjkw>
-    <xmx:pzrgaVnguez7TdXFAiWDIGHlYOxphymXbp2Z9WTLxhC_1N13K8hpDw>
-    <xmx:pzrgaVJnWGjFsdPHYqvTis1OFABoEeASZfxHjD2mOkDIyPfAcw0Vmw>
-    <xmx:pzrgaaxcpBGxhX8BpHWCzGDUZ_SjOzBdOE4RVOwnnb9Y1UPOvCRszQ>
-    <xmx:pzrgaVK2PLSVnZr0EhovY6qZXfURUcZylc-APm5Ye_G7ADX4TbmrVPx->
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 15 Apr 2026 21:25:58 -0400 (EDT)
-Date: Wed, 15 Apr 2026 18:25:35 -0700
-From: Boris Burkov <boris@bur.io>
-To: Marc MERLIN <marc_btrfs@merlins.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Simple quota unsafe? RIP:
- 0010:__btrfs_free_extent.isra.0+0xc41/0x1020 [btrfs] /
- do_free_extent_accounting:2999: errno=-2 No such entry
-Message-ID: <20260416012535.GB1065998@zen.localdomain>
-References: <ad1GxXgWNBfgrRtN@merlins.org>
- <ad8gcwTFOLUhBHGA@merlins.org>
- <20260415170510.GA780391@zen.localdomain>
- <ad_SEOvBQtzsxWkY@merlins.org>
- <20260415184427.GA842130@zen.localdomain>
- <ad_zkh47QZZnns7x@merlins.org>
- <20260415223629.GA956756@zen.localdomain>
- <aeAXawJ9F9K28shr@merlins.org>
- <20260416004552.GA1045221@zen.localdomain>
- <aeA2c8V4FgCctUPG@merlins.org>
+	s=arc-20240116; t=1776305390; c=relaxed/simple;
+	bh=dDkk4mnzfHKJldzPmvzDMe22JbYrxd2TLEafe2IUTJI=;
+	h=To:From:Subject:Mime-Version:Content-Type:Message-Id:Date; b=ZfZYTjDKTYi0eVH3SVZpHYKzpsukYrRWWeQxjGa5LbAMeZtx9iduhjV/oB1I702emKvbhr29XR6tsRGuJBRuH+QtGStpeeYRw+cdZY6BaaSLgxGWkZ4GN8/MbjLwoujW8vKX44E9WA6WzVKwxVv9f3dCR88tQV6LMXk4H1HUtx4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=knowledge-seminar.jp; spf=pass smtp.mailfrom=magerr.combzmail.jp; arc=none smtp.client-ip=160.16.65.223
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=knowledge-seminar.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=magerr.combzmail.jp
+Received: by r9220.ps.combzmail.jp (Postfix, from userid 99)
+	id DCC39C0937; Thu, 16 Apr 2026 11:09:29 +0900 (JST)
+DKIM-Filter: OpenDKIM Filter v2.11.0 r9220.ps.combzmail.jp DCC39C0937
+To: linux-btrfs@vger.kernel.org
+From: =?ISO-2022-JP?B?GyRCP0BFRCE/JUolbCVDJTglaiVzJS8bKEI=?= <info@knowledge-seminar.jp>
+X-Ip: 757334283273731
+X-Ip-source: k85gj72848dnsad1u0p6gd
+Precedence: bulk
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+Subject: =?ISO-2022-JP?B?GyRCPFJEOSROGyhCTkcbJEI5VEYwGyhC?=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <aeA2c8V4FgCctUPG@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-2022-jp
+Content-Transfer-Encoding: 7bit
+X-MagazineId: 28d1
+X-uId: 6764255440486060694174711004
+X-Sender: CombzMailSender
+X-Url: http://www.combzmail.jp/
+Message-Id: <20260416020940.DCC39C0937@r9220.ps.combzmail.jp>
+Date: Thu, 16 Apr 2026 11:09:29 +0900 (JST)
 
-On Wed, Apr 15, 2026 at 06:08:03PM -0700, Marc MERLIN wrote:
-> On Wed, Apr 15, 2026 at 05:45:52PM -0700, Boris Burkov wrote:
-> > I am 99% sure this is a squotas bug now. I am able to reproduce friends
-> > of your issue like:
-> 
-> Great news, thanks or looking into it.
-> 
-> > I also think "btrfstune --remove-simple-quota" may fix your fs. It will
-> > have to do work in O(extents), and might fail in its fake mount, though.
->  
-> moremagic:/tmp# btrfstune --remove-simple-quota /dev/mapper/crypt_bcache0
-> bad eb member end: ptr 0x4000 start 15495725432832 member offset 16384 size 1
-> bad eb member end: ptr 0x4000 start 16568941559808 member offset 16384 size 1
-> bad eb member end: ptr 0x4000 start 16133011357696 member offset 16384 size 1
-> bad eb member end: ptr 0x4000 start 15495760642048 member offset 16384 size 1
-> bad eb member end: ptr 0x4000 start 15641229164544 member offset 16384 size 1
-> bad eb member end: ptr 0x4000 start 16027775762432 member offset 16384 size 1
-> bad eb member end: ptr 0x4000 start 16217851576320 member offset 16384 size 1
-> bad eb member end: ptr 0x4000 start 16217853050880 member offset 16384 size 1
-> bad eb member end: ptr 0x4000 start 15505960157184 member offset 16384 size 1
-> (...) many lines
-> 
-> It's still running after a while and giving hundreds of those lines.
-> 
-> Willl report back when it's done.
-> 
+　お世話になります。ナレッジリンクセミナー事務局です。
+　
+　
+　「社員のモチベーションを上げようと声をかける」
+　「部下の相談に乗り、一緒に悩んであげる」
+　「現場のトラブルに、自ら先頭に立って対応する」
+　
+　もし社長がこれらを率先しているようであれば、
+　残念ながら、その組織の成長はそこで止まります。
+　
+　社長のその“優しさ”が、社員の甘えを生み、責任感を奪い、
+　「指示待ち人間」を量産する装置になっているからです。
+　
+　
+　4,800社の経営者が衝撃を受けた、
+　良かれと思ってやってしまう「社長のNG行動」の正体。
+　
+　組織を劇的に変えるための、
+　オンラインセミナーを開催いたします。
+　
+　1つでも心当たりがあれば、一度ご視聴ください。　
+　
+　>>視聴予約はこちら
+　https://knowledge-corp.jp/shikigaku5/
+　
+----------------------------------------------
+　
+　テーマ ：　それ、危険です 『社長のNG行動』
+　　　　　 〜 その行動が、組織崩壊を招く 〜
+　
 
-Not too promising, but no theory what would cause that off the top of my
-head. You can let it run, now that you started it, I think.
+　日 程　： 4月21日（火）13:00スタート　※残11席
+　　　　　  5月19日（火）13:00スタート
+　　　　　※どちらの日程も内容は同じ
+　会 場　：Zoom開催
+　定 員　：先着100名（費用は不要）
+----------------------------------------------
+　※経営層の方限定です
+　
+　
+　なぜ、社員は「言われたこと」しかやらないのか。
+　なぜ、次世代のリーダー候補が育たないのか。
+　
+　それは、能力の問題ではなく、
+　
+　良かれと思って続けている「社長の配慮」こそが、
+　組織成長を止める、最大のボトルネックかもしれません。
+　
+　本セミナーでは、4,800社以上が導入した
+　独自の組織論「識学」に基づき、社長の「NG行動」と
+　真の経営者へ脱皮するためのマインドセットを伝授します。
+　
+　
+　【セミナー内容(一部抜粋)】
+　 ○ NG行動3選
+　 ○ なぜ優秀なNo.2や部長が育たないのか
+　 ○ マネジメントスタイルの変革について
+　 ○ 導入企業の事例
+　
+　「管理職が育ったら任せる」ではなく「任せるから育つ」
+　という思考の逆転を提言。
+　
+　現場から「冷たくなった」と思われることを恐れず、
+　機能的な階層構造（仕組み）を作ることで
 
-> > In terms of a check option, I think I can try to detect that we
-> > have a owner_ref item for a missing subvol and then nuke it. Working on
-> > that next.
-> 
-> thank you. But I can only check that if btrfs tune doesn't fix it. Did
-> you want me to stop the tune or let it run to completion?
-> 
+　結果として社員全員を守り、
+　利益を最大化させる道筋を明示します。
 
-That's ok, I think the condition to fix is easy enough to produce.
+　「優しさ」で人を動かすのではなく、
+　「正しさ」で組織を動かす。
 
-> Marc
-> -- 
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
->  
-> Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08
+　音声やお顔が表に出ることはございませんので
+　お気軽にご視聴ください。
+　
+　>>視聴予約はこちら
+　https://knowledge-corp.jp/shikigaku5/
+　
+　
+-----------------------
+　一般社団法人 ナレッジリンク
+　東京都千代田区神田小川町1-8-3
+　電話：03-5256-7638
+
+　セミナーのご案内が不要な方は大変残念ではございますが、
+　下記URLより手続き下さいませ。
+　
+　メール配信のワンクリック解除はこちら
+　https://fc-knowledgelink-corp.jp/mail/
+　

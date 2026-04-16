@@ -1,109 +1,334 @@
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C22930215A
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2026 21:47:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.81.13.136
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 71F9512CDBE
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2026 22:43:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776376037; cv=none; b=ss5KqsIPYB8jyaeIIxVWhVISa9m/BbJC0v/Hsj6Fgq+ZQz1TzK/nyqCNLIzxogufyC4He3M0TVoiiGsOuXAdQY9Ly5LxkP0x9MUus+GqmxRVjNZdWGdDQK4S5lOGMiGL+kYg0NrScH3exEPCnmRxibCZQMqeow90854orTYPtpA=
+	t=1776379423; cv=none; b=cj06CPPPXs+FLpsP0ytpvbDmSNJnqynmEu4lEcB4zEttE2giUn+/4bSJJonZOzWZ3CdkIWcJfvUEZ5QEMAu1YbWUPHK0p0WfPM0nrQGJKUxUfQPmPQ/gKm5rORqWgj7yxFzR0mE+przUZWiNaFscfupl+hN8N2oZbe0yNxB+rd0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776376037; c=relaxed/simple;
-	bh=XrTcbj5b6tR56vDVvpcEBOz2TgUyljJKKq000CyqPDg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=GZhRb+BJwuFiBrAHQwizGnpLSciLbor4EQ5oJPShGNwNViULQM4qUxn7rK2xGBpXMKvlLOjRnby/4r/UaiZVu93b6Z4k6qsuKeZ4vd2wq1fCO6JdhT6AJ/KbO5l4f+sG/s6Lu7AgXb57xxEerBhY3lA06BDphrS3X0VvVqrTLAg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org; spf=pass smtp.mailfrom=merlins.org; dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b=KfKTWEAg; arc=none smtp.client-ip=209.81.13.136
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=merlins.org
+	s=arc-20240116; t=1776379423; c=relaxed/simple;
+	bh=BkYC/ZWj3/TQP4Sb/AvzgOWJU1sLcF67d13LrlsdYak=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=BeLV2sdIap+YwNJr7qvInM/pF2DsxN2cAOez0Ia3Pgc4dokyyRwV11zqEgVcPIHkcf9UO+YxxUwpyFRUAb0mvkiwkVid4mezdmpPEZs/l+1sVVukRV0if9Vk997Y66iTyiYImonOljXxjUWqzW0+B9ugjSvTLh0sIrku8cJrYm0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PY89O5/5; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PY89O5/5; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b="KfKTWEAg"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=merlins.org
-	; s=20251023; h=In-Reply-To:Content-Type:MIME-Version:References:Message-ID:
-	Subject:Cc:To:From:Date:Sender:Reply-To:Content-Transfer-Encoding:Content-ID:
-	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-	:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:List-Subscribe:
-	List-Post:List-Owner:List-Archive;
-	bh=PdicfQjyxoQUD84n/SGzwV6rmzssnIybELyb4sS7mjw=; b=KfKTWEAgKs2WiyriIperz66/ra
-	0udlId/pFzvGSQk7uLp4SNGORpKdW3d01YXiyC5ZeL9WX8rmbvLUXxws3lxdiM9O4u+uoGxEFJ3xo
-	FjxFKwhObaG30nXHYxbbdNuqXbkyd07qJWQDGtTFX6hlGEz8/GigBXV6Si0ULn8m6R7iByaGpXk4d
-	9tpBxpDpt1vS+1LOTmmghk7n0q7ezvHxG5YYPQb3lNf2wq6BHaAMNM85t8ot8Jeu9F1PU5bnyAC7X
-	3NfJCo27cRpru1vEElphHMqODsX9gxUCMvUBvlbFUNpJFJ7JsjRN8T80M1LVY6hNDk2Gadqy7QkjT
-	e2PndDBg==;
-Received: from [24.6.49.44] (port=49822 helo=sauron.svh.merlins.org)
-	by mail1.merlins.org with esmtpsa 
-	(Cipher TLS1.3:ECDHE_SECP256R1__ECDSA_SECP256R1_SHA256__AES_256_GCM:256) (Exim 4.98.2 #2)
-	id 1wDUYO-0000000DqVB-0xAW by authid <merlins.org> with srv_auth_plain;
-	Thu, 16 Apr 2026 14:47:16 -0700
-Received: from merlin by sauron.svh.merlins.org with local (Exim 4.96)
-	(envelope-from <marc_btrfs@merlins.org>)
-	id 1wDUYM-0026v0-27;
-	Thu, 16 Apr 2026 14:47:14 -0700
-Date: Thu, 16 Apr 2026 14:47:14 -0700
-From: Marc MERLIN <marc_btrfs@merlins.org>
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Simple quota unsafe? RIP:
- 0010:__btrfs_free_extent.isra.0+0xc41/0x1020 [btrfs] /
- do_free_extent_accounting:2999: errno=-2 No such entry
-Message-ID: <aeFY4uSTSIz4Ccat@merlins.org>
-References: <ad_SEOvBQtzsxWkY@merlins.org>
- <20260415184427.GA842130@zen.localdomain>
- <ad_zkh47QZZnns7x@merlins.org>
- <20260415223629.GA956756@zen.localdomain>
- <aeAXawJ9F9K28shr@merlins.org>
- <20260416004552.GA1045221@zen.localdomain>
- <aeA2c8V4FgCctUPG@merlins.org>
- <20260416012535.GB1065998@zen.localdomain>
- <aeEaqCJAWaWbz1vO@merlins.org>
- <20260416213632.GA1654609@zen.localdomain>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PY89O5/5";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PY89O5/5"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 7BE475BD47;
+	Thu, 16 Apr 2026 22:43:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1776379419; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=CyQaTNGCETcOpNuacC9P+P2hcGJBTaLNlSk6dc4KpUg=;
+	b=PY89O5/50ymrwi8DqiuafCbll8iU+QbZFbVvdShO2ytNDwK/1rWCZhYCQEp2GAfxWFiQWV
+	XgpnQSaE+aYXCqEleDCXDDkE0ne+15rWZDzYWbX+GL017BBaEjnKoHZcc0LqzTEGsSDjDE
+	lsAIma8Iq1HFBebs2iLmalqrFMiCjws=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b="PY89O5/5"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1776379419; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=CyQaTNGCETcOpNuacC9P+P2hcGJBTaLNlSk6dc4KpUg=;
+	b=PY89O5/50ymrwi8DqiuafCbll8iU+QbZFbVvdShO2ytNDwK/1rWCZhYCQEp2GAfxWFiQWV
+	XgpnQSaE+aYXCqEleDCXDDkE0ne+15rWZDzYWbX+GL017BBaEjnKoHZcc0LqzTEGsSDjDE
+	lsAIma8Iq1HFBebs2iLmalqrFMiCjws=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BBE34593A3;
+	Thu, 16 Apr 2026 22:43:37 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id naNnGRlm4Wk4cgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 16 Apr 2026 22:43:37 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: AHN SEOK-YOUNG <iamsyahn@gmail.com>,
+	Teng Liu <27rabbitlt@gmail.com>
+Subject: [PATCH v3] btrfs: warn about extent buffer that can not be released
+Date: Fri, 17 Apr 2026 08:13:14 +0930
+Message-ID: <4ac4a9f2c599841b00f39f3be082432f43130f3e.1776379191.git.wqu@suse.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260416213632.GA1654609@zen.localdomain>
-X-Sysadmin: BOFH
-X-URL: http://marc.merlins.org/
-X-SA-Exim-Connect-IP: 24.6.49.44
-X-SA-Exim-Mail-From: marc_btrfs@merlins.org
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	FREEMAIL_CC(0.00)[gmail.com];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim,suse.com:email];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DKIM_TRACE(0.00)[suse.com:+];
+	RCPT_COUNT_THREE(0.00)[3];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com]
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 7BE475BD47
 
-On Thu, Apr 16, 2026 at 02:36:32PM -0700, Boris Burkov wrote:
-> On Thu, Apr 16, 2026 at 10:21:44AM -0700, Marc MERLIN wrote:
-> > No help needed, just showing it happened overnight with balance and squota in 6.19
-> > on my laptop. It looks like squota and balance are simply not compatible until the
-> > fix for squota, lands.
-> > Now that I know more, I rescued the FS and removed squota on my own and it's good again.
-> > 
-> > It looks pretty clear that btrfs balance seems to trigger the bug in
-> > squota:
-> 
-> Thank you for the additional report, this is helpful. I am attempting to
-> reproduce directly with balance to be sure I've got everything.
-> 
-> One question just to be extra careful:
-> In all these situations, were you ever manually managing either the
-> subvolumes or the qgroups? e.g., when, if ever, where you deleting
-> qgroups and / or subvols?
+When we unmount the fs or during mount failures, btrfs will call
+invalidate_inode_pages() to release all btree inode folios.
 
-All 3 filesystems this happened on were btrfs receive recipients, so
-that created snapshots nightly (when it crashed each time).
-Also after btrfs receive, my script deletes the oldest backup that rolls
-out the rotation.
-Then I also have some amount btrfs-snaps that makes hourly/daily/weekly
-snapshots
+However that function can return -EBUSY if any folios can not be
+invalidated.
+This can be caused by:
 
-So yes, multiple per day per subvolume multipled by many subvolume
-(10-ish)
+- Some extent buffers are still held by btrfs
+  This is a logic error, as we should release all tree root nodes
+  during unmount and mount failure handling.
 
-I have squotas still running on a single host but I turned off btrfs
-balance nightly cronjob as well as btrfs scrub, and it has not crashed
-yet (it's a 20TB+ backup recipient built from scratch, I woudl love for
-squotas to work on it)
+- Some extent buffers are under readahead and haven't yet finished
+  This is much rarer but valid cases.
+  In that case we should wait for those extent buffers.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Introduce a new helper invalidate_btree_folios() which will:
+
+- Call invalidate_inode_pages2() and catch its return value
+  If it returned 0 as expected, that's great and we can call it a day.
+
+- Otherwise go through each extent buffer in buffer_tree
+  Increase the ref by one first for the eb we're checking.
+  This is to ensure the eb won't be freed after the readahead is
+  finished.
+
+  For eb that still has EXTENT_BUFFER_READING flag, wait for them to
+  finish first.
+
+  After waiting for the readahead, check the refs of the eb and if it's
+  still dirty.
+
+  If the eb refs is greater than 2 (one for the buffer tree, one hold by
+  us), it means we are still holding the extent buffer somewhere else,
+  which is a logic bug.
+
+  If the eb is still dirty, it means a bug in transaction handling.
+  Unfortunately there are already test cases triggering this warning, so
+  our transaction cleanup hasn't done its work reliably.
+
+  For either case, show a warning message about the eb, including its
+  bytenr, owner, refs and flags.
+  And if it's a debug build, also trigger WARN_ON_ONCE() so that fstests
+  can properly catch such situation.
+
+Furthermore, to help debugging the unreleased extent buffers, output the
+transid of the current aborted transaction, so that we can know which
+transaction the unreleased extent buffers belong to.
+
+This will help future debugging as we're already hitting the new
+warnings from test cases like generic/388.
+
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=221270
+Reported-by: AHN SEOK-YOUNG <iamsyahn@gmail.com>
+Cc: Teng Liu <27rabbitlt@gmail.com>
+Tested-by: Teng Liu <27rabbitlt@gmail.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+Changelog:
+v3:
+- Revert the DEBUG_WANR_ON_ONCE() change
+  As there is only one user, a simple
+  WARN_ON_ONCE(IS_ENABLED(CONFIG_BTRFS_DEBUG)) is more than enough.
+
+- Output the generation of the unreleased eb too
+  Since it's possible to have 2 transactions (one committing and reached
+  UNBLOCKED state, one new running), the generation output will help us
+  to know which transaction the unreleased eb belongs to.
+
+- Also output the transid when a transaction is aborted
+  To co-operate with the above change for debugging.
+
+v2:
+- Add one extra ref before checking the eb
+  Although readahead has one extra ref, after the readahead finished the
+  extra ref will be dropped, and memory pressure can kick in to free the
+  extent buffer.
+
+- Use rcu lock with xa_for_each() instead of xas lock and xas_for_each()
+  Since we're holding one extra eb ref to prevent eb from disappearing,
+  we no longer needs the more strict xas lock nor the extra xas
+  pause/unlock.
+
+  Although xa_for_each() is more time consuming, we're at the cold path
+  already, not a huge cost.
+
+- Remove the temporarary void pointer
+  And pass eb pointer directly into xas_for_each().
+
+- Introduce DEBUG_WARN_ON_ONCE() helper
+  To follow the existing DEBUG_WARN() helper.
+
+- Fix a typo
+
+- Also fix the checkpatch warning on the exist DEBUG_WARN()
+---
+ fs/btrfs/disk-io.c     | 49 ++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/extent_io.c   |  6 ------
+ fs/btrfs/extent_io.h   |  6 ++++++
+ fs/btrfs/transaction.h |  8 +++----
+ 4 files changed, 57 insertions(+), 12 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 7800a1b20290..241acdc16da1 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3272,6 +3272,51 @@ static bool fs_is_full_ro(const struct btrfs_fs_info *fs_info)
+ 	return false;
+ }
  
-Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08
++static void invalidate_btree_folios(struct btrfs_fs_info *fs_info)
++{
++	unsigned long index = 0;
++	struct extent_buffer *eb;
++	int ret;
++
++	ret = invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
++	if (likely(ret == 0))
++		return;
++
++	/*
++	 * Some btree pages can not be invalidated, this happens when some
++	 * tree blocks are still held (either by some pointer or readahead).
++	 */
++	rcu_read_lock();
++	xa_for_each(&fs_info->buffer_tree, index, eb) {
++		/* Increase the ref so that the eb won't disappear. */
++		if (!refcount_inc_not_zero(&eb->refs))
++			continue;
++		rcu_read_unlock();
++
++		/* Wait for any readahead first. */
++		if (test_bit(EXTENT_BUFFER_READING, &eb->bflags))
++			wait_on_bit_io(&eb->bflags, EXTENT_BUFFER_READING,
++				       TASK_UNINTERRUPTIBLE);
++		/*
++		 * The refs threshold is 2, one hold by us at the beginning
++		 * of the loop, one for the ownership in the buffer tree.
++		 */
++		if (unlikely(refcount_read(&eb->refs) > 2 ||
++			     extent_buffer_under_io(eb))) {
++			WARN_ON_ONCE(IS_ENABLED(CONFIG_BTRFS_DEBUG));
++			btrfs_warn(fs_info,
++			"unable to release extent buffer %llu owner %llu gen %llu refs %u flags 0x%lx",
++				   eb->start, btrfs_header_owner(eb),
++				   btrfs_header_generation(eb),
++				   refcount_read(&eb->refs), eb->bflags);
++		}
++		free_extent_buffer(eb);
++		rcu_read_lock();
++	}
++	rcu_read_unlock();
++	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
++}
++
+ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_devices)
+ {
+ 	u32 sectorsize;
+@@ -3702,7 +3747,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 	if (fs_info->data_reloc_root)
+ 		btrfs_drop_and_free_fs_root(fs_info, fs_info->data_reloc_root);
+ 	free_root_pointers(fs_info, true);
+-	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
++	invalidate_btree_folios(fs_info);
+ 
+ fail_sb_buffer:
+ 	btrfs_stop_all_workers(fs_info);
+@@ -4431,7 +4476,7 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 	 * We must make sure there is not any read request to
+ 	 * submit after we stop all workers.
+ 	 */
+-	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
++	invalidate_btree_folios(fs_info);
+ 	btrfs_stop_all_workers(fs_info);
+ 
+ 	/*
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 8d241a7a880f..4eab0f9909e3 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2872,12 +2872,6 @@ bool try_release_extent_mapping(struct folio *folio, gfp_t mask)
+ 	return try_release_extent_state(io_tree, folio);
+ }
+ 
+-static int extent_buffer_under_io(const struct extent_buffer *eb)
+-{
+-	return (test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags) ||
+-		test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
+-}
+-
+ static bool folio_range_has_eb(struct folio *folio)
+ {
+ 	struct btrfs_folio_state *bfs;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index fd209233317f..b284aee1bfb0 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -326,6 +326,12 @@ static inline bool extent_buffer_uptodate(const struct extent_buffer *eb)
+ 	return test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
+ }
+ 
++static inline bool extent_buffer_under_io(const struct extent_buffer *eb)
++{
++	return (test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags) ||
++		test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
++}
++
+ int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
+ 			 unsigned long start, unsigned long len);
+ void read_extent_buffer(const struct extent_buffer *eb, void *dst,
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 7d70fe486758..264dcd4b3788 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -255,13 +255,13 @@ do {								\
+ 		__first = true;					\
+ 		if (WARN(btrfs_abort_should_print_stack(error),	\
+ 			KERN_ERR				\
+-			"BTRFS: Transaction aborted (error %d)\n",	\
+-			(error))) {					\
++			"BTRFS: Transaction %llu aborted (error %d)\n",	\
++			(trans)->transid, (error))) {			\
+ 			/* Stack trace printed. */			\
+ 		} else {						\
+ 			btrfs_err((trans)->fs_info,			\
+-				  "Transaction aborted (error %d)",	\
+-				  (error));			\
++			"Transaction %llu aborted (error %d)",	\
++				  (trans)->transid, (error));	\
+ 		}						\
+ 	}							\
+ 	__btrfs_abort_transaction((trans), __func__,		\
+-- 
+2.53.0
+

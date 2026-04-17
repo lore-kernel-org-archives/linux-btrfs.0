@@ -1,60 +1,60 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 776801A682C
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2026 02:26:16 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6A66ABA21
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2026 02:30:00 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776392779; cv=none; b=IdGAGZRyrQqTYfDW6FGcElvbBihgTpsXOfG57IfcjiUOC/FyO/BmHnMcMrTSOX65xIO9dH1Xn94uwmZhNLm1L27HDUnXORBx77SgXb8I3dSTDMkmfVif+m0LX9XzMH07l+RDSpfa8O5Licl8mrdLhBs/b6iadals5xDOlhEsu1U=
+	t=1776393002; cv=none; b=Cgsz7gvN9RIUatNdYrrFHpPObwh/HuCfnHteR2YCzESl4iHFUtls2idPW35ySqKRS5WRJ2aP3lvsV4vxjNR1AMGPqzncnRR2SekR0HL8gCrKSvf5h9Z+Ji+cbnc7FEAzdv/WSZnOoth2rEUPbxqzardjVC8eMo6W5HzbMtGxknA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776392779; c=relaxed/simple;
-	bh=Wzzkv3GpDgQ9bHj4iE4aiEu2Wik4TBg5xQ2xKQaWayQ=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=uuZg32XqJm8bGNuybL08350NAyqmKimaBDg8VNJXsCAbZSzdg599Y5L4usSr5uc+P/lR5lqJ73wEIoYR+CGhyPeCRWRf+pyShOXVCa1QkSqkwYwrhonVVfUHbxGMhsT1euqT54gEldJ7LoIWcZS2snB/MIPwRFvlTxjVmmkqbgo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gNrI/eh/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gNrI/eh/; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1776393002; c=relaxed/simple;
+	bh=/MvRwTyeBsRuDu2dau/FBdUz2mKvIAo6AXUPI5pPYf0=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=R334SGMKrh8nfVljxO6Af6GWl4YxNMjKIXSGUnbCG9kD/4kCP4R/0haRV4dALvN0+i/J9Srt4PUxSox8nQYnFrVqb8eZGBytabJmg1MNbKCYxog0wuhE5YSi5wOdafv6cIqmKpxAbD3gAOscnDlzcrB0rnk1Vbs8T4VsGYTJJL0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=O7QUjbl8; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=OPPD7TWm; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gNrI/eh/";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gNrI/eh/"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="O7QUjbl8";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="OPPD7TWm"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id BF4BC5BCF4;
-	Fri, 17 Apr 2026 02:26:14 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id BF5EB5BCF4;
+	Fri, 17 Apr 2026 02:29:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1776392774; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1776392998; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=6E4RBqk4W7Xzw7qbHZLBkTra2qbfw1TkbiHtnRDGE/o=;
-	b=gNrI/eh/NzPkAmcHQVtILM+GdWebwrO3Yp1CAaCM4JvX/k9VIBgnt3kCjpm/yV5AvyGUSM
-	IchcN0qbV5XdtxZhiK6ZtG1GPMuPp6iev43SRGeJeqyganaFQb/FcG1j0Vwjsfl4b1gaw4
-	9NmPDjpadoujv3HGNvWIEJIw4WiwSYU=
+	bh=MZH5wqkGyODMhSK46mhH6+1ieNoerttapH1zsh55AY0=;
+	b=O7QUjbl8Rt0nEF3xVT5qXOxb0py8esL3veYqBtmMgnFAMT6FAyQbmwLqtiQuSnsW9fDXAr
+	x2Kh4x6QdpBLnHuhmr+H+03tZtHoXo6VLeq+A6Bn646tfokHK/QZw61J6Ck2aWnGXjyyqB
+	XUFSBffB+Ue4quld1OAr8TxHaSd6Uqo=
 Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1776392774; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1776392994; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=6E4RBqk4W7Xzw7qbHZLBkTra2qbfw1TkbiHtnRDGE/o=;
-	b=gNrI/eh/NzPkAmcHQVtILM+GdWebwrO3Yp1CAaCM4JvX/k9VIBgnt3kCjpm/yV5AvyGUSM
-	IchcN0qbV5XdtxZhiK6ZtG1GPMuPp6iev43SRGeJeqyganaFQb/FcG1j0Vwjsfl4b1gaw4
-	9NmPDjpadoujv3HGNvWIEJIw4WiwSYU=
+	bh=MZH5wqkGyODMhSK46mhH6+1ieNoerttapH1zsh55AY0=;
+	b=OPPD7TWmrxX6kSV0b+myTxC71m+7+jFhjwfVu1I/7NnQ2zrKmRMmZEFnxRqUIrMDj56Rrh
+	5ODnGPIIL7AUBHzr6dZg1ib+lxhsdJmud1x8tLet3SO6vliXvG7xlTF4sv5zrNIYv7M7Li
+	OAlCJXlwy8sX1EfdQ9XUQ6ZcR4sX4eA=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6422E593AE;
-	Fri, 17 Apr 2026 02:26:13 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B8A46593AE;
+	Fri, 17 Apr 2026 02:29:54 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 1zvkA0Wa4WlsYgAAD6G6ig
-	(envelope-from <wqu@suse.com>); Fri, 17 Apr 2026 02:26:13 +0000
-From: Qu Wenruo <wqu@suse.com>
+	id vYwOLSKb4WncZQAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Fri, 17 Apr 2026 02:29:54 +0000
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: stable@vger.kernel.org
-Subject: [PATCH] btrfs: only release the dirty pages io tree after successful writes
-Date: Fri, 17 Apr 2026 11:55:54 +0930
-Message-ID: <d85344362c5c75b1a28484a31ef8ad066b2dbcec.1776392753.git.wqu@suse.com>
-X-Mailer: git-send-email 2.53.0
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH v2] btrfs: make more ASSERTs verbose, part 3
+Date: Fri, 17 Apr 2026 04:29:52 +0200
+Message-ID: <20260417022952.16673-1-dsterba@suse.com>
+X-Mailer: git-send-email 2.51.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -71,165 +71,296 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	ARC_NA(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_TWO(0.00)[2];
 	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_DN_SOME(0.00)[];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
 
-[BUG]
-With the recent commit "btrfs: warn about extent buffer that can not be
-released", we can trigger the following warning running test cases like
-generic/388 at unmount:
+We have support for optional string to be printed in ASSERT() (added in
+19468a623a9109 ("btrfs: enhance ASSERT() to take optional format
+string")), it's not yet everywhere it could be so add a few more files.
 
- BTRFS critical (device dm-2 state E): emergency shutdown
- BTRFS error (device dm-2 state E): cow_file_range failed, root=5 inode=265 start=135168 len=118784 cur_offset=135168 cur_alloc_size=0: -5
- BTRFS error (device dm-2 state E): error while writing out transaction: -30
- BTRFS warning (device dm-2 state E): Skipping commit of aborted transaction.
- BTRFS error (device dm-2 state EA): Transaction 9 aborted (error -30)
- BTRFS: error (device dm-2 state EA) in cleanup_transaction:2068: errno=-30 Readonly filesystem
- BTRFS info (device dm-2 state EA): forced readonly
- BTRFS error (device dm-2 state EA): failed to run delalloc range, root=5 ino=265 folio=135168 submit_bitmap=0 start=135168 len=118784: -5
- BTRFS info (device dm-2 state EA): last unmount of filesystem 8b3d8748-4710-4b5a-84d9-b072cb03be2d
- ------------[ cut here ]------------
- WARNING: disk-io.c:3306 at invalidate_btree_folios+0xfd/0x1ca [btrfs], CPU#4: umount/60183
- CPU: 4 UID: 0 PID: 60183 Comm: umount Tainted: G        W  OE       7.0.0-rc6-custom+ #365 PREEMPT(full)  5804053f02137e627472d94b5128cc9fcb110e88
- Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 02/02/2022
- RIP: 0010:invalidate_btree_folios+0xfd/0x1ca [btrfs]
- Call Trace:
-  <TASK>
-  close_ctree+0x534/0x57a [btrfs eeeee2af86b856a32e0b81b75d427a17a62ffe29]
-  generic_shutdown_super+0x89/0x1a0
-  kill_anon_super+0x16/0x40
-  btrfs_kill_super+0x16/0x20 [btrfs eeeee2af86b856a32e0b81b75d427a17a62ffe29]
-  deactivate_locked_super+0x2d/0xb0
-  cleanup_mnt+0xdc/0x140
-  task_work_run+0x5a/0xa0
-  exit_to_user_mode_loop+0x123/0x4b0
-  do_syscall_64+0x288/0x7d0
-  entry_SYSCALL_64_after_hwframe+0x4b/0x53
-  </TASK>
- ---[ end trace 0000000000000000 ]---
- BTRFS warning (device dm-2 state EA): unable to release extent buffer 30507008 owner 1 gen 9 refs 2 flags 0x7
- BTRFS warning (device dm-2 state EA): unable to release extent buffer 30588928 owner 9 gen 9 refs 2 flags 0x7
- BTRFS warning (device dm-2 state EA): unable to release extent buffer 30605312 owner 257 gen 9 refs 2 flags 0x7
- BTRFS warning (device dm-2 state EA): unable to release extent buffer 30621696 owner 7 gen 9 refs 2 flags 0x7
- BTRFS warning (device dm-2 state EA): unable to release extent buffer 30638080 owner 258 gen 9 refs 2 flags 0x7
- BTRFS warning (device dm-2 state EA): unable to release extent buffer 30654464 owner 2 gen 9 refs 2 flags 0x7
- BTRFS warning (device dm-2 state EA): unable to release extent buffer 30670848 owner 10 gen 9 refs 2 flags 0x7
+Try to finish what was left after 1c094e6ccead7a ("btrfs: make a few
+more ASSERTs verbose").
 
-I'm using a striped down version, which seems to be trigger the warning
-more reliably:
-
-  _fsstress_pid=""
-  workload()
-  {
-  	dmesg -C
-  	mkfs.btrfs -f -K $dev > /dev/null
-  	echo 1 > /sys/kernel/debug/clear_warn_once
-  	mount $dev $mnt
-  	$fsstress -w -n 1024 -p 4 -d $mnt &
-  	_fsstress_pid=$!
-  	sleep 0
-  	$godown $mnt
-  	pkill --echo -PIPE fsstress > /dev/null
-  	wait $_fsstress_pid
-  	unset _fsstress_pid
-  	umount $mnt
-
-  	if dmesg | grep -q "WARNING"; then
-  		fail
-  	fi
-  }
-
-  for (( i = 0; i < $runtime; i++ )); do
-  	echo "=== $i/$runtime ==="
-  	workload
-  done
-
-[CAUSE]
-Inside btrfs_write_and_wait_transaction(), we first try to write all
-dirty ebs, then wait for them to finish.
-
-After that we call btrfs_extent_io_tree_release() to free all
-extent states from dirty_pages io tree.
-
-However if we hit an error from btrfs_write_marked_extent(), then we
-still call btrfs_extent_io_tree_release() to clear that dirty_pages io
-tree, which may contain dirty records that we haven't yet submitted.
-
-Furthermore, later transaction cleanup path will utilize that
-dirty_pages io tree to properly cleanup those dirty ebs, but since it's
-already empty, no dirty ebs are properly cleaned up, thus will later
-trigger the warnings inside invalidate_btree_folios().
-
-[FIX]
-Normally such dirty ebs won't cause problems, as when the iput() is
-called on the btree inode, the dirty ebs will be forced written back.
-But at that stage all workers have been destroyed, and if the metadata
-writeback needs any worker (e.g. RAID56), it will easily trigger an NULL
-pointer dereference.
-
-Furthermore such writeback at iput() time can be too late for zoned
-btrfs, as we also need to properly update the write pointer for zoned
-devices.
-
-Instead of unconditionally calling btrfs_extent_io_tree_release(), only
-call it if btrfs_write_and_wait_transaction() finished successfully, so
-that @dirty_pages extent io tree is kept untouched for transaction
-cleanup.
-
-CC: stable@vger.kernel.org # 6.1+
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/disk-io.c     | 1 +
- fs/btrfs/transaction.c | 9 ++++-----
- 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 241acdc16da1..775260381593 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4717,6 +4717,7 @@ static void btrfs_destroy_marked_extents(struct btrfs_fs_info *fs_info,
- 			free_extent_buffer_stale(eb);
+v2:
+
+- add bytenr, in btrfs_cross_ref_exist()
+- drop string, in btrfs_insert_replace_extent()
+
+- refresh on for-next, drop assertion that was changed to error handling
+  in "btrfs: replace ASSERT with proper error handling in stripe lookup
+  fallback"
+
+ fs/btrfs/backref.c          |  4 ++--
+ fs/btrfs/extent-tree.c      | 15 ++++++++++-----
+ fs/btrfs/extent_map.c       |  6 +++---
+ fs/btrfs/fiemap.c           |  2 +-
+ fs/btrfs/file-item.c        |  4 +++-
+ fs/btrfs/file.c             |  7 +++++--
+ fs/btrfs/ioctl.c            |  3 ++-
+ fs/btrfs/ordered-data.c     | 12 +++++++-----
+ fs/btrfs/raid-stripe-tree.c |  4 +++-
+ fs/btrfs/reflink.c          |  5 +++--
+ 10 files changed, 39 insertions(+), 23 deletions(-)
+
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 273924ca912c..2c25e5d86f3e 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -2367,7 +2367,7 @@ int tree_backref_for_extent(unsigned long *ptr, struct extent_buffer *eb,
+ 		info = (struct btrfs_tree_block_info *)(ei + 1);
+ 		*out_level = btrfs_tree_block_level(eb, info);
+ 	} else {
+-		ASSERT(key->type == BTRFS_METADATA_ITEM_KEY);
++		ASSERT(key->type == BTRFS_METADATA_ITEM_KEY, "key->type=%hhu", key->type);
+ 		*out_level = (u8)key->offset;
+ 	}
+ 
+@@ -3199,7 +3199,7 @@ static int handle_direct_tree_backref(struct btrfs_backref_cache *cache,
+ 	struct btrfs_backref_node *upper;
+ 	struct rb_node *rb_node;
+ 
+-	ASSERT(ref_key->type == BTRFS_SHARED_BLOCK_REF_KEY);
++	ASSERT(ref_key->type == BTRFS_SHARED_BLOCK_REF_KEY, "ref_key->type=%hhu", ref_key->type);
+ 
+ 	/* Only reloc root uses backref pointing to itself */
+ 	if (ref_key->objectid == ref_key->offset) {
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 5d5b42ea4ade..420d52b097d9 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -385,7 +385,7 @@ int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
+ 					return type;
+ 			}
+ 		} else {
+-			ASSERT(is_data == BTRFS_REF_TYPE_ANY);
++			ASSERT(is_data == BTRFS_REF_TYPE_ANY, "is_data=%d", is_data);
+ 			return type;
  		}
  	}
-+	btrfs_extent_io_tree_release(dirty_pages);
+@@ -2531,8 +2531,11 @@ int btrfs_cross_ref_exist(struct btrfs_inode *inode, u64 offset,
+ 				struct btrfs_key key;
+ 
+ 				btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
+-				ASSERT(key.objectid == bytenr);
+-				ASSERT(key.type == BTRFS_EXTENT_ITEM_KEY);
++				ASSERT(key.objectid == bytenr,
++				       "key.objectid=%llu bytenr=%llu",
++				       key.objectid, bytenr);
++				ASSERT(key.type == BTRFS_EXTENT_ITEM_KEY, "key.type=%u",
++				       key.type);
+ 			}
+ 		}
+ 
+@@ -4598,10 +4601,12 @@ static noinline int find_free_extent(struct btrfs_root *root,
+ 		/* Use dedicated sub-space_info for dedicated block group users. */
+ 		if (ffe_ctl->for_data_reloc) {
+ 			space_info = space_info->sub_group[0];
+-			ASSERT(space_info->subgroup_id == BTRFS_SUB_GROUP_DATA_RELOC);
++			ASSERT(space_info->subgroup_id == BTRFS_SUB_GROUP_DATA_RELOC,
++			       "space_info->subgroup_id=%d", space_info->subgroup_id);
+ 		} else if (ffe_ctl->for_treelog) {
+ 			space_info = space_info->sub_group[0];
+-			ASSERT(space_info->subgroup_id == BTRFS_SUB_GROUP_TREELOG);
++			ASSERT(space_info->subgroup_id == BTRFS_SUB_GROUP_TREELOG,
++			       "space_info->subgroup_id=%d", space_info->subgroup_id);
+ 		}
+ 	}
+ 	if (!space_info) {
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 095a561d733f..93a0950293a3 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -717,7 +717,7 @@ int btrfs_add_extent_mapping(struct btrfs_inode *inode,
+ 	 * file offset. Here just do a sanity check.
+ 	 */
+ 	if (em->disk_bytenr == EXTENT_MAP_INLINE)
+-		ASSERT(em->start == 0);
++		ASSERT(em->start == 0, "em->start=%llu", em->start);
+ 
+ 	ret = add_extent_mapping(inode, em, false);
+ 	/* it is possible that someone inserted the extent into the tree
+@@ -761,7 +761,7 @@ int btrfs_add_extent_mapping(struct btrfs_inode *inode,
+ 		}
+ 	}
+ 
+-	ASSERT(ret == 0 || ret == -EEXIST);
++	ASSERT(ret == 0 || ret == -EEXIST, "ret=%d", ret);
+ 	return ret;
  }
  
- static void btrfs_destroy_pinned_extent(struct btrfs_fs_info *fs_info,
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 248adb785051..194f581b36f3 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1293,14 +1293,13 @@ static int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans)
- 	blk_finish_plug(&plug);
- 	ret2 = btrfs_wait_extents(fs_info, dirty_pages);
+@@ -943,7 +943,7 @@ void btrfs_drop_extent_map_range(struct btrfs_inode *inode, u64 start, u64 end,
  
--	btrfs_extent_io_tree_release(&trans->transaction->dirty_pages);
--
- 	if (ret)
+ 				ret = add_extent_mapping(inode, split, modified);
+ 				/* Logic error, shouldn't happen. */
+-				ASSERT(ret == 0);
++				ASSERT(ret == 0, "ret=%d", ret);
+ 				if (WARN_ON(ret != 0) && modified)
+ 					btrfs_set_inode_full_sync(inode);
+ 			}
+diff --git a/fs/btrfs/fiemap.c b/fs/btrfs/fiemap.c
+index 27d361c7adc4..6263e837093e 100644
+--- a/fs/btrfs/fiemap.c
++++ b/fs/btrfs/fiemap.c
+@@ -112,7 +112,7 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
+ 	u64 cache_end;
+ 
+ 	/* Set at the end of extent_fiemap(). */
+-	ASSERT((flags & FIEMAP_EXTENT_LAST) == 0);
++	ASSERT((flags & FIEMAP_EXTENT_LAST) == 0, "flags=0x%u", flags);
+ 
+ 	if (!cache->cached)
+ 		goto assign;
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index d72249390030..82ae4a2afd34 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -325,7 +325,9 @@ static int search_csum_tree(struct btrfs_fs_info *fs_info,
+ 
+ 	csum_start = key.offset;
+ 	csum_len = (itemsize / csum_size) * sectorsize;
+-	ASSERT(in_range(disk_bytenr, csum_start, csum_len));
++	ASSERT(in_range(disk_bytenr, csum_start, csum_len),
++	       "disk_bytenr=%llu csum_start=%llu csum_len=%llu",
++	       disk_bytenr, csum_start, csum_len);
+ 
+ found:
+ 	ret = (min(csum_start + csum_len, disk_bytenr + len) -
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index a6f641a41d99..f007f1f2fd84 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1218,8 +1218,11 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *iter,
  		return ret;
--	else if (ret2)
-+	if (ret2)
- 		return ret2;
--	else
--		return 0;
-+
-+	btrfs_extent_io_tree_release(&trans->transaction->dirty_pages);
-+	return 0;
- }
+ 	reserved_len = ret;
+ 	/* Write range must be inside the reserved range. */
+-	ASSERT(reserved_start <= start);
+-	ASSERT(start + write_bytes <= reserved_start + reserved_len);
++	ASSERT(reserved_start <= start, "reserved_start=%llu start=%llu",
++	       reserved_start, start);
++	ASSERT(start + write_bytes <= reserved_start + reserved_len,
++	       "start=%llu write_bytes=%zu reserved_start=%llu reserved_len=%llu",
++	       start, write_bytes, reserved_start, reserved_len);
  
- /*
+ again:
+ 	ret = balance_dirty_pages_ratelimited_flags(inode->vfs_inode.i_mapping,
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index db7ffabbd3a4..e60b13b27a6d 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -5011,7 +5011,8 @@ static int btrfs_ioctl_subvol_sync(struct btrfs_fs_info *fs_info, void __user *a
+ 			return -ENOENT;
+ 
+ 		wait_for_deletion = true;
+-		ASSERT(root_flags & BTRFS_ROOT_SUBVOL_DEAD);
++		ASSERT(root_flags & BTRFS_ROOT_SUBVOL_DEAD, "root_flags=0x%llx",
++		       root_flags);
+ 		sched_ret = schedule_timeout_interruptible(HZ);
+ 		/* Early wake up or error. */
+ 		if (sched_ret != 0)
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 96ee8ebfdb92..439f9aa9721a 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -157,7 +157,8 @@ static struct btrfs_ordered_extent *alloc_ordered_extent(
+ 	       ((1U << BTRFS_ORDERED_NOCOW) | (1U << BTRFS_ORDERED_PREALLOC)));
+ 
+ 	/* Only one type flag can be set. */
+-	ASSERT(has_single_bit_set(flags & BTRFS_ORDERED_EXCLUSIVE_FLAGS));
++	ASSERT(has_single_bit_set(flags & BTRFS_ORDERED_EXCLUSIVE_FLAGS),
++	       "flags=0x%lx", flags);
+ 
+ 	/* DIRECT cannot be set with COMPRESSED nor ENCODED. */
+ 	if (test_bit(BTRFS_ORDERED_DIRECT, &flags)) {
+@@ -302,7 +303,7 @@ struct btrfs_ordered_extent *btrfs_alloc_ordered_extent(
+ {
+ 	struct btrfs_ordered_extent *entry;
+ 
+-	ASSERT((flags & ~BTRFS_ORDERED_TYPE_FLAGS) == 0);
++	ASSERT((flags & ~BTRFS_ORDERED_TYPE_FLAGS) == 0, "flags=0x%lx", flags);
+ 
+ 	/*
+ 	 * For regular writes, we just use the members in @file_extent.
+@@ -1238,7 +1239,7 @@ struct btrfs_ordered_extent *btrfs_split_ordered_extent(
+ 
+ 	trace_btrfs_ordered_extent_split(inode, ordered);
+ 
+-	ASSERT(!(flags & (1U << BTRFS_ORDERED_COMPRESSED)));
++	ASSERT(!(flags & (1U << BTRFS_ORDERED_COMPRESSED)), "flags=0x%lx", flags);
+ 
+ 	/*
+ 	 * The entire bio must be covered by the ordered extent, but we can't
+@@ -1260,7 +1261,7 @@ struct btrfs_ordered_extent *btrfs_split_ordered_extent(
+ 	}
+ 	/* We cannot split partially completed ordered extents. */
+ 	if (ordered->bytes_left) {
+-		ASSERT(!(flags & ~BTRFS_ORDERED_TYPE_FLAGS));
++		ASSERT(!(flags & ~BTRFS_ORDERED_TYPE_FLAGS), "flags=0x%lx", flags);
+ 		if (WARN_ON_ONCE(ordered->bytes_left != ordered->disk_num_bytes))
+ 			return ERR_PTR(-EINVAL);
+ 	}
+@@ -1307,7 +1308,8 @@ struct btrfs_ordered_extent *btrfs_split_ordered_extent(
+ 	ordered->ram_bytes -= len;
+ 
+ 	if (test_bit(BTRFS_ORDERED_IO_DONE, &ordered->flags)) {
+-		ASSERT(ordered->bytes_left == 0);
++		ASSERT(ordered->bytes_left == 0, "ordered->bytes_left=%llu",
++		       ordered->bytes_left);
+ 		new->bytes_left = 0;
+ 	} else {
+ 		ordered->bytes_left -= len;
+diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
+index 4b0186c83ad1..454a95bf542a 100644
+--- a/fs/btrfs/raid-stripe-tree.c
++++ b/fs/btrfs/raid-stripe-tree.c
+@@ -272,7 +272,9 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
+ 								 &key,
+ 								 key.offset - length,
+ 								 length);
+-			ASSERT(key.offset - diff_end == length);
++			ASSERT(key.offset - diff_end == length,
++			       "key.offset=%llu diff_end=%llu length=%llu",
++			       key.offset, diff_end, length);
+ 			break;
+ 		}
+ 
+diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+index 14742abe0f92..86fa8d92e15b 100644
+--- a/fs/btrfs/reflink.c
++++ b/fs/btrfs/reflink.c
+@@ -69,7 +69,8 @@ static int copy_inline_to_page(struct btrfs_inode *inode,
+ 	struct address_space *mapping = inode->vfs_inode.i_mapping;
+ 	int ret;
+ 
+-	ASSERT(IS_ALIGNED(file_offset, block_size));
++	ASSERT(IS_ALIGNED(file_offset, block_size), "file_offset=%llu block_size=%u",
++	       file_offset, block_size);
+ 
+ 	/*
+ 	 * We have flushed and locked the ranges of the source and destination
+@@ -458,7 +459,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 		    key.objectid != btrfs_ino(BTRFS_I(src)))
+ 			break;
+ 
+-		ASSERT(key.type == BTRFS_EXTENT_DATA_KEY);
++		ASSERT(key.type == BTRFS_EXTENT_DATA_KEY, "key.type=%u", key.type);
+ 
+ 		extent = btrfs_item_ptr(leaf, slot,
+ 					struct btrfs_file_extent_item);
 -- 
-2.53.0
+2.51.0
 

@@ -1,169 +1,144 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from fhigh-a5-smtp.messagingengine.com (fhigh-a5-smtp.messagingengine.com [103.168.172.156])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0F6CB32AADE;
-	Fri, 17 Apr 2026 11:50:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D92ED342CA9
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2026 21:51:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.156
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776426659; cv=none; b=SA3YRuPXou0R8+thOyNcwoio1VIEiEi/HHrp3IioPZjMedn5S7uqCkUyTQG1J7zGx0Mko8bmG6lAkoGvKJe/fJI4ug/xCCzL4R6X+L63DylZjikRUeGLiNIP639qt324P2HaRdyLYMEk+XQ90jDjpoa8/zBjPDXFxkC7lEWrQ2Q=
+	t=1776462717; cv=none; b=FaH1hjfhkP+jcJ43sfz0OoGGL2yIf7fVsGCotUCA8X/UGht/V//d2gz7jzCvxXafsFXJyhvDxn84gOCBSPy4oDPL+Iff8IXcyKeEmQahrkhwpzD4RSxigrWvL6Pxkv94Hbg9L2B5E8Ehp7zD2CcQlmuuVj7QescggNrRq9PNByo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776426659; c=relaxed/simple;
-	bh=eChbAgykxjX0W5rYjX38q+EpgtcI2CThnTHQSgO+2C8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=GTbrDUIodZryAVMQMPY/CL0coJ2A3D7v7uvkIlaTQPskKwXIocKiH+Gni3xnIYKL9TaCK0HjnzcoyVu0q7bZz8FJlGaIpMdDPk1IL1DITJv2WFYG+DhKbKnO92MdN0vty1pIpEBjhIDwlZCooXmEhm3pSpEfCx/Ow+TtuhsjQVE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SlAhKPap; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1776462717; c=relaxed/simple;
+	bh=uwiYtSsqqYOSzqsn/6k+aoyc4okCP9B9hIebmy2qCPY=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=WG/W3DttPKbBS9L2UB+rFRLnDEAgln2Qd6x2mU77GXB3wp4hDvCHYvbJmAQrdLsNk76SIklteXRsbaHz5616kAKmI1h0VYJebl7/0EOJGXGfWz14cXZn8dVTMpSeVM1nAggV8TXL4gIN1+4m6zNQ5tAUMK1MZckM+qGdC2vR7Lc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=dsYPvQ2t; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=qbmLCFPe; arc=none smtp.client-ip=103.168.172.156
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SlAhKPap"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 67F00C19425;
-	Fri, 17 Apr 2026 11:50:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776426658;
-	bh=eChbAgykxjX0W5rYjX38q+EpgtcI2CThnTHQSgO+2C8=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=SlAhKPapXV3MGVCHn44BXiJ4tHz78BdMc1lyfrOGcjqzwRPmD1Hc3rHm7p1TxaBRk
-	 PQ++dEY3fDb7DCQ4mUa5IvWEqtKLP31N60Ysd2Tt2gAY2LsLyw9MpSp02SY3733zLd
-	 MZko1FyQgkrc2bADXrdz8I92E3NKO02cC+yBAXrQVng6/zVdCc4yX4CpJYZsxv1J5Q
-	 WRFHqWyBUZvKeZA5Ipu35Yc3XiFyjNj1QLXDIya+la75QzfBjJosdmznj0Z0pTgt5y
-	 Wgd8VPKql4RexoTD3gyzmSul528C3LMQKtqg2Vc+Ns0eke9xlBVII8I1VgjrehhiQM
-	 g9agWd2ZFrkkA==
-Message-ID: <2c0f57b1-7a4f-4e50-9d7f-6b96c0f73796@kernel.org>
-Date: Fri, 17 Apr 2026 13:50:49 +0200
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="dsYPvQ2t";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="qbmLCFPe"
+Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
+	by mailfhigh.phl.internal (Postfix) with ESMTP id F121A1400062;
+	Fri, 17 Apr 2026 17:51:54 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-04.internal (MEProxy); Fri, 17 Apr 2026 17:51:54 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm3; t=1776462714; x=1776549114; bh=xVVwYi7uIO
+	qC9EZnIJhKhlCaFRaSc1ODPwv9QoUA45M=; b=dsYPvQ2tJ6UOk7X5f+sSEtOwkg
+	iXYKOabEIFX/XzAsTpK0zxMQel47xnNA9L/IlPYDwT5LgUbnleeguIbOhmfaqDKI
+	bjS6UI+yi8rG4VHyndId7zu0LPgdAqcu7ZWB/YnUtJQm08y192eYznKw3AOvyYW5
+	4dEQeL5M8djcICWOCKANy/meMgyVnrg16C6wXjgR/qnxNRoQpz/EihsisgfqXhov
+	m3gS9uvUgAM37Y6787/myot8bsa6k5EgX+GLUi6Ss3VamOG7m8dtwNtqwUPZ0oHE
+	VlJMlszdGZkmaKrJLYV6UfNu/g/OaPg/XWnXGwW79AmJ6ZdtMHFgLkcLXTkQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+	1776462714; x=1776549114; bh=xVVwYi7uIOqC9EZnIJhKhlCaFRaSc1ODPwv
+	9QoUA45M=; b=qbmLCFPeGtE3ke1aPOE1C9OQoLKmnZUJxW1jB21YWvfkNLjMwLS
+	rDoHxqpQGARi//wnYvY6yN6rOgLO/rBuRtw9w9gtqa1aTOOEWeHZILnsYBKsFzdN
+	7/szXy52vb2bGXiGL7rvR8qzoGV1tVlfAj3vhmfg6yT9yO+9v6X+c9NT44qsma8n
+	XPJI8umwM1Z4p8/9iEzQdfbQnqm2Rm60ZkZU4jHyalmvGNRvRklSojDPWnQ8r5Jo
+	JT5Qv1HtfKq1agtsHH/l9QsYLEIYijcDkoGE50uHigdVbTiH/QADIdPJ7PvnjVus
+	mY8kdpUFVgiF17L3NuOfa6T5+ZV7O2mMlPw==
+X-ME-Sender: <xms:eqviaaao4R_BCUGW8Tcosh57JAcRVxLV8KqrxTwjgBoBQTTXg4tjyA>
+    <xme:eqviaTaSNZYbHDCXqeBDG6zBGaPm2CJPqRKk_Rwlfdap4uuE_h7Egs1JiIltyQHml
+    TQC5NeQDOaZ9nte539vvKMWgyDaYw6VlQ-uuoRCbja4p-xzydfv7LU>
+X-ME-Received: <xmr:eqviaSm7POhfVpEIqpvZ7DOhPXkUL1gDiF4dH1da_ufes4PZDhm_CIzU2H5JDT9_DWestO6lWoJ4ybtgu7Ug2TWqeds>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdehuddtudcutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
+    ihhlohhuthemuceftddtnecunecujfgurhepfffhvfevuffkfhggtggujgesthdtredttd
+    dtvdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihho
+    qeenucggtffrrghtthgvrhhnpeeutddvtdehgedvvdetuefgvefggfegudekjefhgefgje
+    ekgeelgfeigeegudevheenucffohhmrghinhepmhgvrhhlihhnshdrohhrghenucevlhhu
+    shhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
+    hrrdhiohdpnhgspghrtghpthhtohepvddpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
+    ohepmhgrrhgtpggsthhrfhhssehmvghrlhhinhhsrdhorhhgpdhrtghpthhtoheplhhinh
+    hugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrgh
+X-ME-Proxy: <xmx:eqviaXzPqLGbwuDAi-wZFR79dot_lHwzNziZ903YMWHx9sP2GPUPpg>
+    <xmx:eqviaYM9YAcLWWWpQZPVRTjtwe2m8wG57tu06jUFZAkr2gbzWQTXMQ>
+    <xmx:eqviaTTOmYfMZpvH-T610I_UYehAYMOSwM9D9owjLm3DON44O8x7KQ>
+    <xmx:eqviaeY2RPdZEs1ipdOJEeppt-UpW4NvCB5Notrxm-mEH3H4HEvjIA>
+    <xmx:eqviadwB5nWVTx1W3M5Uxj2XrYI3xKVqJcKs9pxTebUNghk8fwnagopP>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
+ 17 Apr 2026 17:51:54 -0400 (EDT)
+Date: Fri, 17 Apr 2026 14:51:27 -0700
+From: Boris Burkov <boris@bur.io>
+To: Marc MERLIN <marc_btrfs@merlins.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Simple quota unsafe? RIP:
+ 0010:__btrfs_free_extent.isra.0+0xc41/0x1020 [btrfs] /
+ do_free_extent_accounting:2999: errno=-2 No such entry
+Message-ID: <20260417215127.GA2310330@zen.localdomain>
+References: <20260415184427.GA842130@zen.localdomain>
+ <ad_zkh47QZZnns7x@merlins.org>
+ <20260415223629.GA956756@zen.localdomain>
+ <aeAXawJ9F9K28shr@merlins.org>
+ <20260416004552.GA1045221@zen.localdomain>
+ <aeA2c8V4FgCctUPG@merlins.org>
+ <20260416012535.GB1065998@zen.localdomain>
+ <aeEaqCJAWaWbz1vO@merlins.org>
+ <20260416213632.GA1654609@zen.localdomain>
+ <aeFY4uSTSIz4Ccat@merlins.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 7.2 v2 02/12] mm/khugepaged: add folio dirty check after
- try_to_unmap_flush()
-To: Zi Yan <ziy@nvidia.com>
-Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
- Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- Andrew Morton <akpm@linux-foundation.org>, Lorenzo Stoakes <ljs@kernel.org>,
- Baolin Wang <baolin.wang@linux.alibaba.com>,
- "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
- Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
- Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
- Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
- Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
- Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-mm@kvack.org, linux-kselftest@vger.kernel.org
-References: <20260413192030.3275825-1-ziy@nvidia.com>
- <20260413192030.3275825-3-ziy@nvidia.com>
- <10aadfeb-86c6-47b2-b6ab-b86657aafb88@kernel.org>
- <842D3AD2-32A0-41E1-AC09-08EC793EAF7F@nvidia.com>
- <C83282EC-F3C3-44FB-A8A4-615F67F9CEEC@nvidia.com>
-From: "David Hildenbrand (Arm)" <david@kernel.org>
-Content-Language: en-US
-Autocrypt: addr=david@kernel.org; keydata=
- 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
- qIws/H2t
-In-Reply-To: <C83282EC-F3C3-44FB-A8A4-615F67F9CEEC@nvidia.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <aeFY4uSTSIz4Ccat@merlins.org>
 
-On 4/17/26 04:09, Zi Yan wrote:
-> On 14 Apr 2026, at 11:55, Zi Yan wrote:
+On Thu, Apr 16, 2026 at 02:47:14PM -0700, Marc MERLIN wrote:
+> On Thu, Apr 16, 2026 at 02:36:32PM -0700, Boris Burkov wrote:
+> > On Thu, Apr 16, 2026 at 10:21:44AM -0700, Marc MERLIN wrote:
+> > > No help needed, just showing it happened overnight with balance and squota in 6.19
+> > > on my laptop. It looks like squota and balance are simply not compatible until the
+> > > fix for squota, lands.
+> > > Now that I know more, I rescued the FS and removed squota on my own and it's good again.
+> > > 
+> > > It looks pretty clear that btrfs balance seems to trigger the bug in
+> > > squota:
+> > 
+> > Thank you for the additional report, this is helpful. I am attempting to
+> > reproduce directly with balance to be sure I've got everything.
+> > 
+> > One question just to be extra careful:
+> > In all these situations, were you ever manually managing either the
+> > subvolumes or the qgroups? e.g., when, if ever, where you deleting
+> > qgroups and / or subvols?
 > 
->> On 14 Apr 2026, at 6:38, David Hildenbrand (Arm) wrote:
->>
->>>
->>> maybe simplify to "folios, since that would require taking the folio lock first."
->>
->> Sure.
->>
->>>
->>>
->>>
->>> IIRC, after successful try_to_unmap() the PTE dirty bit would be synced to the
->>> folio. That's what you care about, not about any stale TLB entries.
->>
->> Right. I missed the PTE dirty bit to folio dirtiness part.
->>
->>>
->>> The important part is that the
->>>
->>> So can't we simply test for dirty folios after the refcount check (where
->>> we made sure the folio is no longer mapped)?
->>>
->>
->> I think so.
+> All 3 filesystems this happened on were btrfs receive recipients, so
+> that created snapshots nightly (when it crashed each time).
+> Also after btrfs receive, my script deletes the oldest backup that rolls
+> out the rotation.
+> Then I also have some amount btrfs-snaps that makes hourly/daily/weekly
+> snapshots
 > 
-> After more thoughts, this still works but the reasoning is more complicated.
-> 
-> After try_to_unmap(), PTE dirty bit is transferred to folio dirty flag if exists.
-> The code bails out if the folio is dirty. A clean folio means the removed
-> PTEs were clean, thus TLB entries caching these PTEs have dirty bit not set.
+> So yes, multiple per day per subvolume multipled by many subvolume
+> (10-ish)
 
-Right.
+Just to be extra clear as it is relevant for fully understanding the
+repro-space, are you managing these purely with receive / subvol delete
+commands? Did you ever delete a qgroup that was straggling around or add
+automation to do that (btrfs qgroup destroy <qgid>) or did you ever
+disable/enable squotas besides the first time?
 
-> Any write to the folio after try_to_unmap() causes a page table walk and
-> a page fault due to invalid PTEs, and they cannot proceed since collapse_file()
-> is holding the folio lock. 
-
-Right.
-
-> As a result, we can skip marking folio dirty
-> after the collapse.
-
-Exactly.
+Were all the squota enables on existing fs-es?
 
 > 
-> If we allow a dirty folio after try_to_unmap(), we need to mark the folio dirty
-> after the collapse like shmem. And a potential optimization is that we only
-> mark the after-collapse folio dirty if any old folio is dirty after try_to_unmap().
-
-That was my thinking as well, but it would be something we'd try to
-handle separately.
-
-Folios that are under writeback cannot be collapsed IIUC.
-
--- 
-Cheers,
-
-David
+> I have squotas still running on a single host but I turned off btrfs
+> balance nightly cronjob as well as btrfs scrub, and it has not crashed
+> yet (it's a 20TB+ backup recipient built from scratch, I woudl love for
+> squotas to work on it)
+> 
+> Marc
+> -- 
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+>  
+> Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

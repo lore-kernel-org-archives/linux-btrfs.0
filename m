@@ -1,221 +1,92 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CD4A236EA8D
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2026 07:49:17 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E32C22D0C9D
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2026 07:54:42 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776412157; cv=none; b=KKBYoiGCtdtGPQkAxaZN5jKcYLqpe8GWhsxQ7YbVOs5ki+fk8u+iV5b8fzBg2Vaqc9vHV1cyIlkE1GXllEHsYJOJuWABYklr9cKS54qD5RTxVxO4oqHWKFIk7DzGmijQ4HnvKQuqTRYPB+vvdrtVB73eKt/Mmucq8CGMkZ5Yb0k=
+	t=1776412483; cv=none; b=HMxK+hyf/nmAhuN6mOgfyZw/I1qArqohEbzcgaQOfMhtcd7y37LzYVHRiB2EhHADLJ/iKF+SoVZM26ljISpCa/uxUdUCcOhQTSbEGhi4n8UcVxmzieUQiID/Zhp7XrW1BGZ3jhz7E+YLbyrWIRjRzXFbM6PsZw+qMNI+RPQYOdk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776412157; c=relaxed/simple;
-	bh=IDQHJDvwgJujgFPu8RgNv48pLfvY7uMuxR9l9eObccw=;
+	s=arc-20240116; t=1776412483; c=relaxed/simple;
+	bh=ELNnSD5V6GV8UAxMfCfYcH5TJ/QE+NC4gZ8Gl1X69ew=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=T38vGWHtSq7fLdPSKlr6KQjnTdXWDM+9ytoVRA/2aMMrc8xtv85ZTMAAy8C2iW8H56fvXgp/VjgHGxytIkf6YdOVgcFA1yOKvte1Qob2vB1Xdx9WHcn0Tu90sSTXAfIG+X/9BgbwBOaegpOWBPfF+jDUquHDYjMscqFF6dBFdGc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=lWiGKeqY; arc=none smtp.client-ip=10.30.226.201
+	 To:Cc:Content-Type; b=kz52XD5IXh9Bra/CgEENjy1f0uwRs1aWupWdpD9CFLGi86ektOksXtTKYSZCScSy+K7ewYnY7p9dA+M+4niBlI5TzCzkJ4mWk3eer60q7erZEh+nk02Q8Jg9GFDdS1JovqvjTdEL43o5H8L88fe4yaahiaim8Ai9GOic9RFZ2uo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Rp8Vbia7; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="lWiGKeqY"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C3266C2BCB6
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2026 07:49:16 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Rp8Vbia7"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 83A60C19425
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2026 07:54:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776412156;
-	bh=IDQHJDvwgJujgFPu8RgNv48pLfvY7uMuxR9l9eObccw=;
+	s=k20201202; t=1776412482;
+	bh=ELNnSD5V6GV8UAxMfCfYcH5TJ/QE+NC4gZ8Gl1X69ew=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=lWiGKeqYCMuDljwwhlTgSu/Us6W8kzpWOKiEQd2/nNyNZOebLLfwD82t5p7e5XNA2
-	 NIEW4A/G7u7oDReYriOs1PLNwS/eiuohnPEAhToJW6OB5Fe/bc6U98RoaJM4JrxBp/
-	 Daii9/BM5PUufmJRxFHZ2tPbX/msYGIHID3RMvHfFti0RPDsdTIB1JX8l0Ctf3fQak
-	 +0KHXEY0uItlSC2RepLxpOg3mK3J65/p9/+Alqnj4wNLRwAw8/SCeH6ULcN+MVAqgp
-	 oEfUPYh5tZd2Q8QxdpO5Ij2spK9l2vbOSp5BqgAMi0g4heP3ixC8XT7gaufPcXSzMx
-	 MqcVPYwe8wYAQ==
-Received: by mail-ej1-f54.google.com with SMTP id a640c23a62f3a-b9910707d82so61426766b.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2026 00:49:16 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AFNElJ80Qn1CwWqNEH3m4vbGQg/Iv1F4nQTYw+B0fx4o83TiW8KGvF7iT7moV1LFemATZgUDMsKsGf13u82E/g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxRjqLS3ORbXmICvAOaSWs1v0TTXOsJ0/ps+ISITuDG6MzOPPsb
-	llmix6TxFAoK+egIbpKISJP8zRsZyBtozU0BiegGTvYuU55QRSimD+7akhcFfnkZ8lmyFwiN3uN
-	B8MewJ209IUThPoYxBPCxTkMuqDml1SE=
-X-Received: by 2002:a17:907:9622:b0:b96:996c:8605 with SMTP id
- a640c23a62f3a-ba41aa16456mr84136266b.23.1776412155221; Fri, 17 Apr 2026
- 00:49:15 -0700 (PDT)
+	b=Rp8Vbia7UluOGFkpWIdXNY+CSq2FnlVuydRr8V+B3yrFXmIZMlAc5BSvMYBb44OOA
+	 PO0l4QSklFlMB1n/vlqBNMlWnqzE5pw+jvw7Jo1kfvpF/StT1t1YNpDe3694fzazBK
+	 OQZoKAxJrnSol3hw1y3Vfj4iP9tW7NXdiJmn1UUH83rtP+ZImNGWivXtkScomPWnBu
+	 mI7y7NhOFr7kBNBdqUcmK0Dii7VgTMYW6J25J7wQEvc1Bj3/PddTu5Qzct1CcTjsXG
+	 3JDWxJJ8BTEoYDXh5+7AFPXF1cWACk3Rja4839Yze/0j/ht7XFmL2w8kdUx6EN2P0g
+	 xJ1RHZHBoghqA==
+Received: by mail-ej1-f45.google.com with SMTP id a640c23a62f3a-b982b0889d8so60325066b.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2026 00:54:42 -0700 (PDT)
+X-Gm-Message-State: AOJu0Yxl1o8QWK1+6KP0u26fiDVLmqETHfgXvGW5HzinxqCLd410d/aT
+	pgAw94LpySqbdk9Xt0RJbgPywLZ61I/1LldCawE6Cv3xq3AYa7aFlPmXtimEzkKPAGwgqxRS7Ll
+	uAO6tmgFOZOc2+U0QYLu4suRhQnOgIeQ=
+X-Received: by 2002:a17:906:c10d:b0:b88:6164:6421 with SMTP id
+ a640c23a62f3a-ba419559a3bmr85593166b.16.1776412481057; Fri, 17 Apr 2026
+ 00:54:41 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260417070737.1318926-1-tchou@synology.com>
-In-Reply-To: <20260417070737.1318926-1-tchou@synology.com>
+References: <cover.1776278490.git.fdmanana@suse.com> <20260417021639.GW12792@twin.jikos.cz>
+In-Reply-To: <20260417021639.GW12792@twin.jikos.cz>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Fri, 17 Apr 2026 08:48:37 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H7CmQahCU9enFrM4bhTLmdEYrWn0EhXKBUxriMcKdJR0A@mail.gmail.com>
-X-Gm-Features: AQROBzAzMPwuyhVwc_EKpSfZZBaTswEikwiQJ_xZBb1j3w0bKeJ55g3aU2uOH68
-Message-ID: <CAL3q7H7CmQahCU9enFrM4bhTLmdEYrWn0EhXKBUxriMcKdJR0A@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: regression test for duplicated rmdir in
- incremental send with extrefs
-To: tchou <tchou@synology.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Date: Fri, 17 Apr 2026 08:54:03 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H5hdPAGxSYqsCJ4QMoO6a-5KE18t1d6Kr3X_+YoRs3zFw@mail.gmail.com>
+X-Gm-Features: AQROBzBsW_TqWVDYIjhkBXdfMDJzNyTF0YHTtLme5diRXHO7m37g7-gn5gBjmnc
+Message-ID: <CAL3q7H5hdPAGxSYqsCJ4QMoO6a-5KE18t1d6Kr3X_+YoRs3zFw@mail.gmail.com>
+Subject: Re: [PATCH v2 00/10] btrfs: reduce memory consumption for block groups
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, Apr 17, 2026 at 8:08=E2=80=AFAM tchou <tchou@synology.com> wrote:
+On Fri, Apr 17, 2026 at 3:16=E2=80=AFAM David Sterba <dsterba@suse.cz> wrot=
+e:
 >
-> From: Ting-Chang Hou <tchou@synology.com>
+> On Wed, Apr 15, 2026 at 07:44:38PM +0100, fdmanana@kernel.org wrote:
+> > From: Filipe Manana <fdmanana@suse.com>
+> >
+> > Reduce the amount of memory used by block groups by using kmem caches
+> > and reducing structure sizes, plus a few cleanups. Details in the
+> > change logs.
+> >
+> > V2: Add one extra patch that was missing, to further reduce the size
+> >     of struct btrfs_free_space_ctl (patch 7/10).
+> >
+> > Filipe Manana (10):
+> >   btrfs: use a kmem_cache for block groups
+> >   btrfs: reduce size of struct btrfs_block_group
+> >   btrfs: use a kmem_cache for free space control structures
+> >   btrfs: remove start field from struct btrfs_free_space_ctl
+> >   btrfs: remove unit field from struct btrfs_free_space_ctl
+> >   btrfs: reduce size of struct btrfs_free_space_ctl
+> >   btrfs: remove op field from struct btrfs_free_space_ctl
+> >   btrfs: remove block group argument from copy_free_space_cache()
+> >   btrfs: remove unnecessary ctl argument from __btrfs_write_out_cache()
+> >   btrfs: remove unnecessary ctl argument from write_cache_extent_entrie=
+s()
 >
-> Regression test for btrfs incremental send issue where duplicated rmdir
-> instructions were sent when using INODE_EXTREF. This happens when there
-> are many hardlinks to the same file across two directories, causing the
-> INODE_EXTREF items to interleave between directories.
+> Reviewed-by: David Sterba <dsterba@suse.com>
 >
-> This issue is fixed by the following linux kernel btrfs patch:
->
-> commit 1fabe43b4e1a ("btrfs: send: fix duplicated rmdir operations when u=
-sing extrefs")
->
-> Signed-off-by: Ting-Chang Hou <tchou@synology.com>
-> ---
->  tests/btrfs/348     | 99 +++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/348.out |  1 +
->  2 files changed, 100 insertions(+)
->  create mode 100755 tests/btrfs/348
->  create mode 100644 tests/btrfs/348.out
->
-> diff --git a/tests/btrfs/348 b/tests/btrfs/348
-> new file mode 100755
-> index 00000000..6e887e77
-> --- /dev/null
-> +++ b/tests/btrfs/348
-> @@ -0,0 +1,99 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2025 Synology Inc.  All Rights Reserved.
-> +#
-> +# FS QA Test No. btrfs/348
-> +#
-> +# Regression test for btrfs incremental send issue where duplicated rmdi=
-r
-> +# instructions were sent when using INODE_EXTREF. This happens when ther=
-e
-> +# are many hardlinks to the same file across two directories, causing th=
-e
-> +# INODE_EXTREF items to interleave between directories. The original fix
-> +# in commit 29d6d30f5c8a ("Btrfs: send, don't send rmdir for same target
-> +# multiple times") only handled consecutive rmdir operations for the sam=
-e
-> +# directory, but failed when rmdir operations were not consecutive due t=
-o
-> +# the interleaved INODE_EXTREF ordering.
-> +#
-> +# This issue is fixed by the following linux kernel btrfs patch:
-> +#
-> +#   commit 1fabe43b4e1a ("btrfs: send: fix duplicated rmdir operations w=
-hen using extrefs")
+> We're planning to remove the free-space-cache in the future and
+> hopefully majority of users have been using the FST so I'm not sure the
+> optimizations will have much impact.
 
-We already have a test case for this since October 2025: btrfs/338
-
-Also in the future, please specify the commit like this:
-
-_fixed_by_kernel_commit 1fabe43b4e1a \
-        "btrfs: send: fix duplicated rmdir operations when using extrefs"
-
-Thanks.
-
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick send
-> +
-> +tmp=3D`mktemp -d`
-> +
-> +# Override the default cleanup function.
-> +_cleanup()
-> +{
-> +       rm -fr $tmp
-> +}
-> +
-> +. ./common/filter
-> +
-> +_require_scratch
-> +_require_fssum
-> +
-> +_scratch_mkfs >/dev/null 2>&1
-> +_scratch_mount
-> +
-> +mkdir $SCRATCH_MNT/a $SCRATCH_MNT/b
-> +
-> +echo 123 > $SCRATCH_MNT/a/foo
-> +
-> +# Create enough hardlinks to trigger INODE_EXTREF usage.
-> +# When hardlinks exceed what a single INODE_REF item can hold,
-> +# INODE_EXTREF is used. The key of INODE_EXTREF includes a hash
-> +# of the name and parent inode, causing items from different
-> +# directories to interleave.
-> +for ((i =3D 1; i <=3D 1000; i++)); do
-> +       ln $SCRATCH_MNT/a/foo $SCRATCH_MNT/a/foo.$i
-> +       ln $SCRATCH_MNT/a/foo $SCRATCH_MNT/b/foo.$i
-> +done
-> +
-> +# Filesystem looks like:
-> +#
-> +# .                              (ino 256)
-> +# |-- a/                         (ino 257)
-> +# |   |-- foo                    (ino 259)
-> +# |   |-- foo.1 ... foo.1000     (ino 259, hardlinks)
-> +# |
-> +# |-- b/                         (ino 258)
-> +#     |-- foo.1 ... foo.1000     (ino 259, hardlinks)
-> +
-> +_btrfs subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap1
-> +
-> +rm -r $SCRATCH_MNT/a $SCRATCH_MNT/b
-> +
-> +# Filesystem now looks like:
-> +#
-> +# .                              (ino 256)
-> +# |-- snap1/                     (read-only snapshot)
-> +
-> +_btrfs subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap2
-> +
-> +run_check $FSSUM_PROG -A -f -w $tmp/1.fssum $SCRATCH_MNT/snap1
-> +run_check $FSSUM_PROG -A -f -w $tmp/2.fssum -x $SCRATCH_MNT/snap2/snap1 =
-\
-> +       $SCRATCH_MNT/snap2
-> +
-> +_btrfs send -f $tmp/1.snap $SCRATCH_MNT/snap1
-> +_btrfs send -p $SCRATCH_MNT/snap1 -f $tmp/2.snap $SCRATCH_MNT/snap2
-> +
-> +_scratch_unmount
-> +_check_btrfs_filesystem $SCRATCH_DEV
-> +
-> +_scratch_mkfs >/dev/null 2>&1
-> +_scratch_mount
-> +
-> +_btrfs receive -f $tmp/1.snap $SCRATCH_MNT
-> +run_check $FSSUM_PROG -r $tmp/1.fssum $SCRATCH_MNT/snap1
-> +
-> +# This used to fail with:
-> +# ERROR: rmdir o<ino>-<gen>-0 failed: No such file or directory
-> +_btrfs receive -f $tmp/2.snap $SCRATCH_MNT
-> +run_check $FSSUM_PROG -r $tmp/2.fssum $SCRATCH_MNT/snap2
-> +
-> +_scratch_unmount
-> +_check_btrfs_filesystem $SCRATCH_DEV
-> +
-> +status=3D0
-> +exit
-> diff --git a/tests/btrfs/348.out b/tests/btrfs/348.out
-> new file mode 100644
-> index 00000000..f5e0b75a
-> --- /dev/null
-> +++ b/tests/btrfs/348.out
-> @@ -0,0 +1 @@
-> +QA output created by 348
-> --
-> 2.34.1
->
->
-> Disclaimer: The contents of this e-mail message and any attachments are c=
-onfidential and are intended solely for addressee. The information may also=
- be legally privileged. This transmission is sent in trust, for the sole pu=
-rpose of delivery to the intended recipient. If you have received this tran=
-smission in error, any use, reproduction or dissemination of this transmiss=
-ion is strictly prohibited. If you are not the intended recipient, please i=
-mmediately notify the sender by reply e-mail or phone and delete this messa=
-ge and its attachments, if any.
->
+I know we plan to remove the free-space-cache, but none of this is
+specific to the free space cache.
+The btrfs_free_space_ctl structure is used for both the free space
+cache and the free space tree; it is the structure for the in-memory
+cache per block group.

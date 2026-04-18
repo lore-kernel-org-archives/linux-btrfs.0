@@ -1,69 +1,73 @@
-Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
+Received: from mail-wr1-f48.google.com (mail-wr1-f48.google.com [209.85.221.48])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B64162609E3
-	for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 14:38:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 04F10396577
+	for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 14:38:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776523098; cv=none; b=ad61x/DFkjA7lLk4h2GH+cQz8GrOnWHD1SBCfcxGElzHsJTC1vUeoxfS47zCpcowbjRGbUO3boV0ZwHEaWRlpBMn5iIW8xOVlS+5uUiTOmdusyM7x9FfDNlvupmm38hJ6o3ryCpL+evPYqryXkcr2JX/O6Mhegit+NU+68WFZCw=
+	t=1776523110; cv=none; b=rBl7orZDLg5tNeJWEPSwXp4uMf0Ruf/IltyaelOBw6zKLEzuYd9/Ny5+W7/17Bk4Ol7FUWvF29s1WfXY5M7DYayIwZ2gMNhECd847mc0PlXa3ej3/cjl5hyo7oCR7XfFXDwOxsmwW7zLRDytUOUBERmShSS/4FEcbdjXxAEIRv4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776523098; c=relaxed/simple;
-	bh=p9DnI22GDRN4QccD87VqwOj8oRUrLgHHBOa/JAzk+98=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=kyI/qKnRWhQt+TlfOVNRb7nxMZv016Qnn41v+7bipwwFD7h7G76hWQLn+4VrmwIWTxXvTpCPSr/zRjwrfKfcWp4j6b7YmpK6tdYpaO1pcGksbTErzHMtO38XuxnYbwJ7eaQp2tmhTCu9E/frPAVYZnvZZhvVyU4zEauROUp7Lbg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=SdoWX5bX; arc=none smtp.client-ip=209.85.128.51
+	s=arc-20240116; t=1776523110; c=relaxed/simple;
+	bh=/8TVsJSi13dF5kAwMlx23LiWEj4oczYz3ZMAe5mQAU0=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=PJGYKfI36GmsbKJBCWwvc06+YmywPnCaJ0qogWqGXF1TpsqD3dus9/pBwIQVAIwxiLOL6rqsWRI1DrbAJdC6N+XSjwN6eGsvRMtiLYgyIs/wmQ7K/ZriP+mZW4Pxh0+31fytgp8vsLqCoRxn2P9upnq9Svzd+r0PR/HYe175IQQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=fuevE+RL; arc=none smtp.client-ip=209.85.221.48
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SdoWX5bX"
-Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4852b81c73aso13876275e9.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 07:38:16 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="fuevE+RL"
+Received: by mail-wr1-f48.google.com with SMTP id ffacd0b85a97d-43fe608cb92so972247f8f.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 07:38:28 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1776523095; x=1777127895; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=7nboMJM3Fb3YlBzMB4MoG6uu+OnAbiyWJjlxHC15pgk=;
-        b=SdoWX5bXHDT4XwjnkPS0GGBwaCDDVya7LuC61Fq4OOyS3ltMbH0Se6wJq5uGsBI5uc
-         1o93Pu0GA1lnknrp235P8bbHkaWqg+tecC1QjlwLAH1cXaQud64ZE81CUYe2/V5D8RbI
-         CjdQV8uWfIEmlMHgsQq1CWi2dE3J7xzMJ3flpRTkFycMko395pv+rJJh9mTw99MmnCuk
-         jKpP+MdaH3VupoqMONADo5BftpaSRX/mz7VqsCjdc9qGEG9hpjoAh2VLyatIrQ2BVg3e
-         wlI0pBv0F4wQgChDf5/X7erdjY9TjxPeycV2BjXFIcm/r6KJP2i6B5Y8hf0Gdvlybmx5
-         NZFA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1776523095; x=1777127895;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=gmail.com; s=20251104; t=1776523107; x=1777127907; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=7nboMJM3Fb3YlBzMB4MoG6uu+OnAbiyWJjlxHC15pgk=;
-        b=SNyiUGIlwXfvWbKHOHSR66x7q0l6ByMpeFK8VSFi/epPhkvo6QMGV8w9KqafqpbcIU
-         /ZLNuuIXM+wflhODrazP7SRVXcMTF5cFkVDYAqzT+pZe9IUUcFDMD0figFGfqXgnj0XV
-         3wKfD8mOgk6LTJrnQjgHIuKgNq48BRIZwMPAbAaYytywUx/+nMEKPNlgb4uAnP1oAME+
-         PMMAScUpWVnV9olf7BJUJlaH/TtQUEksCqKIWExo31iE3eJ3ro9YkQs6svJFT9K6CfTL
-         bjpS+soWMJuO0isD76zv18dfvTmJ6ligfQRCmndOu7a7AsWiHbnfykz0TisfjUBfNG0X
-         5dSQ==
-X-Gm-Message-State: AOJu0YwCovtIRGWI22E3R93IyFEYFjmkbaf+rXHcLw3+56HB4TZOPurn
-	aHnq+9I/0WoaQUDxpeaw5qENUyZQ7fxPvVQdgf1NpFoobibua5+AyR6CJQES+PK6
-X-Gm-Gg: AeBDiesYeYy+ErIluKoci7bAJL1AUwPkS/ETC/MQv5zvsJPIQx/VIcsf7E4tSUFZasq
-	MiVVqSPRGf/ugkwmoEGcAbN+kfkErfyRqODH7DJZJvnQveEidEXw2BFgceqcB6416pnmkv6bMxb
-	IxC2EvkDFHastc+LetJ9BvfGMOs6YlWYaBvZxB3mrjnoDqA1+mB8KbtlDOvXMWC3JGPjUBlBEwW
-	MFmW++69KOILa2rE22gr1ffIC6xNpRNls6nX1MlZyESCdztVFhQFpMMqqd/02KQUfeOfU4qaEAs
-	dReTI+Uoxs3/LiWHtihuo5TqEmecYmXopHTr1JXgNdTZHlUXdKsf/AeXds8xYtpPASGt8aDyr5C
-	Uw4MsENKiDllEB6sRc28hOdsWC2TITGpKZngFtAa9eG//pLFJodmOP1itG6W7EdU7PKF61rUlDj
-	rHg5aNhm3KlU1300/fBJ289HN5ADbNHWqNXwSq0JsyEwNhddKgwjLM5ePONLRrtroVOXaxGm68h
-	2bA09Z8PQ+lbKDj81QpUOGlPaZnJ/lWJoEUwZc=
-X-Received: by 2002:a05:600c:890b:b0:488:a977:8d6 with SMTP id 5b1f17b1804b1-488fb775a35mr68237705e9.19.1776523094551;
-        Sat, 18 Apr 2026 07:38:14 -0700 (PDT)
+        bh=q4Ro7hgVQu12yjxOCPabNh2Oo9KzFKlGIJIlFbADXw0=;
+        b=fuevE+RL1beM5EkCoyVyJe7EkyGuaEP5orXiSZrW6At9V36DnlDWHUz9rUGr2ibs6S
+         IIDU2bwJBFybOwCu0vdUgT/Otdup0BHXaISuubrjbLZhc0LFfepGhxA5avCbLFKHvuew
+         7yYl/w606yDO3OxVPkmgLnKpjlYmmif5SE/dlAOMTlQ/BgyqWkPNqWgFvYFhNxB8AAxc
+         ZRhOGsW30rJMHxpAkocKTqqUQ2Vv1vF2zSZTIufBtGeRDYJzymRAaM02o7Y3zf4oFk6m
+         UfWh/Cqiu5IgtDNax0GnEcaDYRD0NlLcZ7nF0fZpPqIrZQgpI0GN3blV0ubrLQkBFRLN
+         jLwA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1776523107; x=1777127907;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=q4Ro7hgVQu12yjxOCPabNh2Oo9KzFKlGIJIlFbADXw0=;
+        b=mOSClg4wXu1NmXTguaC5bztmxwCn9HKm6SLFtQKVL0aXUFmLinXZcq19nEaWzOE9Cp
+         MzxBbBM5/b9vkKp+jVYMQKuIEbdNed2lPWcn7lLWGFAnl2Hi06N0oD7D54Q6VLVqCP9G
+         iJOvd3/UiAIXwiroNoODhbTwqmtwJv9Hui2q2gBMRQVDFgggqa0jg/p9MbGzY1a3UW4s
+         qK9rX+47vSkkms6Sho5daOowwOUtg50ROG4wlSpzAh8k6uygOi3y5IjbHDaRthwGYU8a
+         HRnV/UHmu44gs8YVH7iXa4e2fLjjn8Md+O0F246s3dsF+K4ff8unWkw9xr0IcFqHDKHb
+         b2Zw==
+X-Gm-Message-State: AOJu0YxkbEqr9TgHalTVKMYEqA/yb8evCUrLt+ggzWJGy5juKuzHWBgJ
+	owP6M6MoA3G/a5VemJhvNfe9PZQqCsW9mQ6wTImMHHy/eCKGTMwrcF+PgFLl+3P4
+X-Gm-Gg: AeBDiesnQAMFWAvzy4X+TBY6fxajiWX9FUzlGMptM3kv7Wxm+1FxxnrrhksrnK4RaBf
+	GvVuEdPbpN6BCT6EdySuYl/uSoeXXGEkrxG7cC40rAinKWhTqJEYo+BjAKmtzaoshTSGrx4g8hX
+	eg+a9JzvjzvWqIvyqiu+wSH53pZ6+7p+T13qDXBsXmuBbEwIu6uMJdq0Zp0wisQMy32sh4Zt1Cl
+	Krr/GsCORliKui+qY6PvHLx8nC3JC8f+avHCzktihx0QJgde+cuSoVI5ahofyCtTeCZNBFlpw53
+	gdzJNLVac6JXIEDSVBfelj3mZDANp74ukSwDs8NIZkn+6oNi029RKAlli+/OExT5PBc9E2h1e3Q
+	DnAOUWPfsB9uRWPZmigJjhIPivhfbbwjsNMgcMSq1D1xD+dmxbQVDalLS0S/NvhRSWNhrwNQzqi
+	t29fV6CXJBm9fb44py6mQyE+ZfekICaxMrnkm20XUsU1OYdVUxk+8FFX6JKFwp+83M1vUnXNkFe
+	x9Rk6QzT2ALBBzvCUgLfN7BWIyip2UyUecYc3g=
+X-Received: by 2002:a05:6000:2f8a:b0:43d:9bb5:bda5 with SMTP id ffacd0b85a97d-43fe3e0ae25mr10338578f8f.40.1776523106815;
+        Sat, 18 Apr 2026 07:38:26 -0700 (PDT)
 Received: from len.tail8322.ts.net (sgyl-44-b2-v4wan-166595-cust701.vm6.cable.virginm.net. [77.97.226.190])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-43fe4e3a397sm14509303f8f.23.2026.04.18.07.38.13
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-43fe4e3a397sm14509303f8f.23.2026.04.18.07.38.25
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 18 Apr 2026 07:38:13 -0700 (PDT)
+        Sat, 18 Apr 2026 07:38:26 -0700 (PDT)
 From: Paul Richards <paul.richards@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.com,
 	Paul Richards <paul.richards@gmail.com>
-Subject: [RFC PATCH 0/3] btrfs: implement FALLOC_FL_COLLAPSE_RANGE and FALLOC_FL_INSERT_RANGE
-Date: Sat, 18 Apr 2026 15:38:05 +0100
-Message-ID: <20260418143808.199603-1-paul.richards@gmail.com>
+Subject: [PATCH 1/3] btrfs: refactor btrfs_fallocate() ahead of supporting more modes
+Date: Sat, 18 Apr 2026 15:38:06 +0100
+Message-ID: <20260418143808.199603-2-paul.richards@gmail.com>
 X-Mailer: git-send-email 2.53.0
+In-Reply-To: <20260418143808.199603-1-paul.richards@gmail.com>
+References: <20260418143808.199603-1-paul.richards@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -72,116 +76,148 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-This series adds support for FALLOC_FL_COLLAPSE_RANGE and
-FALLOC_FL_INSERT_RANGE to btrfs_fallocate(). Both operations are
-already supported by ext4 and xfs. The userspace contract is
-documented in fallocate(2).
+Refactor btrfs_fallocate() to switch and dispatch based on
+the mode argument, splitting most of the modes into separate
+functions. Only the "allocate range" and "zero range" functions
+remain coupled.
 
-Patch 1 refactors btrfs_fallocate() to dispatch via a switch statement,
-moving punch_hole into its own function and decoupling locking from the
-per-operation helpers. This is similar to the implementaitons for ext4
-and xfs. The allocate-range and zero-range paths remain coupled since
-they share some setup logic.
+Signed-off-by: Paul Richards <paul.richards@gmail.com>
+---
+ fs/btrfs/file.c | 63 +++++++++++++++++++++++++++++++------------------
+ 1 file changed, 40 insertions(+), 23 deletions(-)
 
-Patches 2 and 3 add COLLAPSE_RANGE and INSERT_RANGE respectively.
-
-== Implementation approach ==
-
-For COLLAPSE_RANGE:
- - The removed region [offset, offset+len) is punched out via
-   btrfs_replace_file_extents(), which handles boundary splitting.
- - All EXTENT_DATA keys with key.offset >= offset+len are shifted
-   leftward by len in forward order.
-
-For INSERT_RANGE:
- - All EXTENT_DATA keys with key.offset >= offset are shifted rightward
-   by len in reverse order (required to avoid key collisions).
- - No pre-splitting of straddling extents is needed: the left portion
-   of a straddling extent stays in place, the right portion is shifted;
-   both reference the same physical extent via their existing
-   extent_offset fields.
-
-For each shifted key, the corresponding back-reference in the extent
-tree is updated via a shared helper btrfs_shift_extent_backref().
-
-After the key-shift loop, btrfs_drop_extent_map_range() is called to
-invalidate the in-memory extent map cache. This is important for reads
-after the fallocate operation to ensure they obtain data for the new
-offsets.
-
-The page cache is flushed and invalidated upfront (before any extent
-manipulation) following the ext4/xfs pattern. The inode lock
-(BTRFS_ILOCK_MMAP) is held throughout, preventing new dirty pages from
-appearing during the operation.
-
-Transaction cycling: the key-shift loop cycles transactions every
-BTRFS_INSERT_COLLAPSE_TRANSACTION_CYCLE_INTERVAL (32) items to avoid
-holding a single transaction open across a large number of extents.
-
-Both operations are gated on CONFIG_BTRFS_EXPERIMENTAL.
-
-== Known limitations ==
-
-INSERT_RANGE returns -EOPNOTSUPP for inlined files. Supporting inline
-files will require promoting the existing inline extent to a regular
-one, since inline extends are supported only at the very start of a
-file.
-
-In the opposite direction, COLLAPSE_RANGE will not create inline files
-like it should if the remaining data is small enough.
-
-I intend to address both of these limitations.
-
-== Testing ==
-
-Tested with a Rust-based functional test suite covering:
- - Collapse and insert at the start, middle of a file
- - Multiple sequential operations on the same file
- - Files with multiple extents (fsync between writes to force separate
-   extent items)
- - Files with holes (explicit punch_hole and implicit sparse writes)
- - Compressed extents (mount -o compress=zstd)
- - Transaction cycling (interval reduced to 4 during testing, verified
-   in dmesg logs)
- - Inline files, verified that -EOPNOTSUPP is returned.
-
-The same tests pass on both btrfs and xfs (modulo the inline files).
-
-I have not run fstests which I know contains tests for INSERT_RANGE
-and COLLAPSE_RANGE. I will do so.
-
-== Questions for reviewers ==
-
-1. Transaction cycling interval: we use 32 items per cycle. Is this
-   the right threshold, or is there an established convention in btrfs
-   for this kind of loop?
-
-2. Extent lock scope for collapse: we hold the extent lock only on
-   [offset, offset+len) during the hole punch, not on the full
-   [offset, i_size) range that the key-shift loop operates on. Is
-   this safe, or should we lock the full affected range?
-
-3. CONFIG_BTRFS_EXPERIMENTAL gate: is this the right gate for these
-   operations, or should they be unconditionally available?
-
-== Notes ==
-
-This is my first kernel contribution. Development was significantly
-assisted by an LLM (Amazon Q Developer). The implementation, testing,
-and final review decisions are my own.
-
-Various btrfs_info() print statements, assertions, and comments that
-were useful during development and testing have been left in place,
-but will be removed or streamlined in the next revision.
-
-Paul Richards (3):
-  btrfs: refactor btrfs_fallocate() ahead of supporting more modes
-  btrfs: support for FALLOC_FL_COLLAPSE_RANGE in btrfs_fallocate()
-  btrfs: support for FALLOC_FL_INSERT_RANGE in btrfs_fallocate()
-
- fs/btrfs/file.c | 601 ++++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 578 insertions(+), 23 deletions(-)
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index a4cb9d3cfc4e..0b5cc3cec675 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2668,8 +2668,6 @@ static int btrfs_punch_hole(struct file *file, loff_t offset, loff_t len)
+ 	bool truncated_block = false;
+ 	bool updated_inode = false;
+ 
+-	btrfs_inode_lock(BTRFS_I(inode), BTRFS_ILOCK_MMAP);
+-
+ 	ret = btrfs_wait_ordered_range(BTRFS_I(inode), offset, len);
+ 	if (ret)
+ 		goto out_only_mutex;
+@@ -2712,7 +2710,6 @@ static int btrfs_punch_hole(struct file *file, loff_t offset, loff_t len)
+ 		truncated_block = true;
+ 		ret = btrfs_truncate_block(BTRFS_I(inode), offset, orig_start, orig_end);
+ 		if (ret) {
+-			btrfs_inode_unlock(BTRFS_I(inode), BTRFS_ILOCK_MMAP);
+ 			return ret;
+ 		}
+ 	}
+@@ -2809,7 +2806,6 @@ static int btrfs_punch_hole(struct file *file, loff_t offset, loff_t len)
+ 				ret = ret2;
+ 		}
+ 	}
+-	btrfs_inode_unlock(BTRFS_I(inode), BTRFS_ILOCK_MMAP);
+ 	return ret;
+ }
+ 
+@@ -2933,6 +2929,8 @@ static int btrfs_zero_range(struct inode *inode,
+ 	u64 bytes_to_reserve = 0;
+ 	bool space_reserved = false;
+ 
++	ASSERT((mode & FALLOC_FL_MODE_MASK) == FALLOC_FL_ZERO_RANGE);
++
+ 	em = btrfs_get_extent(BTRFS_I(inode), NULL, alloc_start,
+ 			      alloc_end - alloc_start);
+ 	if (IS_ERR(em)) {
+@@ -3092,7 +3090,7 @@ static int btrfs_zero_range(struct inode *inode,
+ 	return ret;
+ }
+ 
+-static long btrfs_fallocate(struct file *file, int mode,
++static long btrfs_allocate_or_zero_range(struct file *file, int mode,
+ 			    loff_t offset, loff_t len)
+ {
+ 	struct inode *inode = file_inode(file);
+@@ -3115,27 +3113,12 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	int blocksize = BTRFS_I(inode)->root->fs_info->sectorsize;
+ 	int ret;
+ 
+-	if (btrfs_is_shutdown(inode_to_fs_info(inode)))
+-		return -EIO;
+-
+-	/* Do not allow fallocate in ZONED mode */
+-	if (btrfs_is_zoned(inode_to_fs_info(inode)))
+-		return -EOPNOTSUPP;
++	ASSERT((mode & FALLOC_FL_MODE_MASK) == FALLOC_FL_ALLOCATE_RANGE || (mode & FALLOC_FL_MODE_MASK) == FALLOC_FL_ZERO_RANGE);
+ 
+ 	alloc_start = round_down(offset, blocksize);
+ 	alloc_end = round_up(offset + len, blocksize);
+ 	cur_offset = alloc_start;
+ 
+-	/* Make sure we aren't being give some crap mode */
+-	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE |
+-		     FALLOC_FL_ZERO_RANGE))
+-		return -EOPNOTSUPP;
+-
+-	if (mode & FALLOC_FL_PUNCH_HOLE)
+-		return btrfs_punch_hole(file, offset, len);
+-
+-	btrfs_inode_lock(BTRFS_I(inode), BTRFS_ILOCK_MMAP);
+-
+ 	if (!(mode & FALLOC_FL_KEEP_SIZE) && offset + len > inode->i_size) {
+ 		ret = inode_newsize_ok(inode, offset + len);
+ 		if (ret)
+@@ -3185,7 +3168,6 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 
+ 	if (mode & FALLOC_FL_ZERO_RANGE) {
+ 		ret = btrfs_zero_range(inode, offset, len, mode);
+-		btrfs_inode_unlock(BTRFS_I(inode), BTRFS_ILOCK_MMAP);
+ 		return ret;
+ 	}
+ 
+@@ -3282,11 +3264,46 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	btrfs_unlock_extent(&BTRFS_I(inode)->io_tree, alloc_start, locked_end,
+ 			    &cached_state);
+ out:
+-	btrfs_inode_unlock(BTRFS_I(inode), BTRFS_ILOCK_MMAP);
+ 	extent_changeset_free(data_reserved);
+ 	return ret;
+ }
+ 
++static long btrfs_fallocate(struct file *file, int mode,
++			    loff_t offset, loff_t len)
++{
++	struct inode *inode = file_inode(file);
++	int ret;
++
++	if (btrfs_is_shutdown(inode_to_fs_info(inode)))
++		return -EIO;
++
++	/* Do not allow fallocate in ZONED mode */
++	if (btrfs_is_zoned(inode_to_fs_info(inode)))
++		return -EOPNOTSUPP;
++
++	/* Check for options we do not support. */
++	if (mode & ~(FALLOC_FL_MODE_MASK | FALLOC_FL_KEEP_SIZE))
++		return -EOPNOTSUPP;
++
++	btrfs_inode_lock(BTRFS_I(inode), BTRFS_ILOCK_MMAP);
++
++	/* Only one mode bit may be set. */
++	switch (mode & FALLOC_FL_MODE_MASK) {
++	case FALLOC_FL_ALLOCATE_RANGE:
++	case FALLOC_FL_ZERO_RANGE:
++		ret = btrfs_allocate_or_zero_range(file, mode, offset, len);
++		break;
++	case FALLOC_FL_PUNCH_HOLE:
++		ret = btrfs_punch_hole(file, offset, len);
++		break;
++	default:
++		ret = -EOPNOTSUPP;
++	}
++
++	btrfs_inode_unlock(BTRFS_I(inode), BTRFS_ILOCK_MMAP);
++	return ret;
++}
++
+ /*
+  * Helper for btrfs_find_delalloc_in_range(). Find a subrange in a given range
+  * that has unflushed and/or flushing delalloc. There might be other adjacent
 -- 
 2.53.0
 

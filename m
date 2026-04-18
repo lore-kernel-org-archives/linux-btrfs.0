@@ -1,234 +1,241 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 613A329E10B
-	for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 04:46:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 346D727FD49;
+	Sat, 18 Apr 2026 09:27:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776487589; cv=none; b=R/bqcHtHaVvCAhA9B0eZYSTaAhtGDnxScx71wOZoZ8oKe+ccGQaQ9Js9W+EF9/ZvD1913/efSkNvbkWIYq5yWwyF78gYv93L9isqxtqI8+F53cs2rDSxpz8r9S+yroaQArARBNbLW1+J0DFA7hsZUYQ741CzJRtLeCCR1XOcmJY=
+	t=1776504433; cv=none; b=DTSi9Rx8bsKTkmhYpU1C+4q0ZUz7YJ0Rj1c3buHaPOpKriBNyGz8X4q57rCt0u73JQsRgxZvbGh5mVROHhWx5545O1ps7ZamBPnn794gFICQjk0ulsqKskWHAJ7X4u7Y9ganAZbBGDBDsnTsDEb/nmFL15CssLLpZRT+tcs+mkg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776487589; c=relaxed/simple;
-	bh=DxciYcE+2ZF3qV4z78ohRwONadZXRmFPK7md+ZAAkQ0=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=nZpR3RLtWxWJBVqbTkaapV+pYkP+JTevL46ZGmekrVnm/Ax0YUBe34I9BPKuZ3vn+36dftocOStY4FCsA6JJT5lQN0ndSMwpj2waxf08K6vMlPRygWN3b4Mn0PnumuVzRYXKDGkP+QpepZk+NeEuXhznOEwdYITj0yDstnh0+ms=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=udZqbavF; arc=none smtp.client-ip=212.227.17.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1776504433; c=relaxed/simple;
+	bh=qQK1tXEC3bQP9DZ7GFPDMCN0K1t29slMgrLD0yyfeZ4=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=RxGcu/qLdDmHJWsbjYg6waZ/PjqHBskssVR1IJmZgaho/v2RXRBJVHC3Ivvis6leSSF36GyvJLEMASD/EUfvcvTzQdhE8lpVbNPu5B0ksWXM6tjyZRUhpelHxBwQ62pzYqbarsJBVOVlGbQZbV2xbNRKipf2GimrCqqlxd8OSag=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ikWmHtfu; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="udZqbavF"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1776487574; x=1777092374; i=quwenruo.btrfs@gmx.com;
-	bh=DxciYcE+2ZF3qV4z78ohRwONadZXRmFPK7md+ZAAkQ0=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:From:To:
-	 Cc:References:In-Reply-To:Content-Type:Content-Transfer-Encoding:
-	 cc:content-transfer-encoding:content-type:date:from:message-id:
-	 mime-version:reply-to:subject:to;
-	b=udZqbavF42tCdPWOO8/7nUAqmlscfoo0e4DmJtI/z8e4/6l9KDUlaf1LgqsO5jqw
-	 WL+WHX+NMerE3hiPfUYZ72I2uWR2zQSpJlSzD0XCFWi1vW10pXR9tA4ER3p0NDxOf
-	 CRPdHj0R0LJ2cPyH+tPABj1Lf+pwNSd3cLIgX7L0y04xD8U+1zwh+73s4x4dRRZWx
-	 Ps/zHA8rUqRO64366ENrWrOiLrTQKD8ZeUsztq71Elvbl9bxAs2iSel4Bt3vVFu3s
-	 Kd56Z9Fgn0T3IbnFvh5MGinwn6B6c55HY18ksgcRO8BMTISlrl5hEOHjKFISu9y8J
-	 DictRdgjgj84hu9UFg==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mnaof-1vWxJz1Gh3-00fOm8; Sat, 18
- Apr 2026 06:46:14 +0200
-Message-ID: <767fe300-7ab0-4c91-ace9-ce73ad9b1771@gmx.com>
-Date: Sat, 18 Apr 2026 14:16:11 +0930
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ikWmHtfu"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BCC7BC19424;
+	Sat, 18 Apr 2026 09:27:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1776504432;
+	bh=qQK1tXEC3bQP9DZ7GFPDMCN0K1t29slMgrLD0yyfeZ4=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=ikWmHtfu7pVAnscldTDWmT2dkebMotrLIBQE8B3cj/NJm+LMOdJQ1+SicHCaJzh2j
+	 hvQDrQkhkcCi9Gs9VMZ+zu/zKq2plSfI+RnUQ2AKfDN0ePzK/cddQUoOimK4WLSszf
+	 73s7zVs5pDX8IJ1ORCYFd+4yIo+u+omrpvxuhh0vbNwiJSdalDH28uKWpTGEVH3tOm
+	 jyy0UKIxK3Db8Tw+PQ4t/LhdfbHTtt1XgMdnZxUteaIAUPqDeMUzwIoq2wRqAysxrN
+	 /iuPRwQi1pEE1O52z35J4YmZ5J/y1R47cZAbeZXVPqXz4SmGwgdUhgQxYkzqAzQNjx
+	 3cpLn0aRJZ1mQ==
+Date: Sat, 18 Apr 2026 10:27:04 +0100
+From: Lorenzo Stoakes <ljs@kernel.org>
+To: Zi Yan <ziy@nvidia.com>
+Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>, 
+	Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
+	Alexander Viro <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, 
+	Andrew Morton <akpm@linux-foundation.org>, David Hildenbrand <david@kernel.org>, 
+	Baolin Wang <baolin.wang@linux.alibaba.com>, "Liam R. Howlett" <Liam.Howlett@oracle.com>, 
+	Nico Pache <npache@redhat.com>, Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>, 
+	Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>, 
+	Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>, 
+	Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>, Shuah Khan <shuah@kernel.org>, 
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-mm@kvack.org, linux-kselftest@vger.kernel.org
+Subject: Re: [PATCH 7.2 v3 00/12] Remove read-only THP support for FSes
+ without large folio support
+Message-ID: <aeNNjgD09VqwI0jo@lucifer>
+References: <20260418024429.4055056-1-ziy@nvidia.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: preallocate extent changeset before acquiring
- extent_io_tree lock
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: tchou <tchou@synology.com>, linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, dsterba@suse.com
-References: <20260417064011.1316310-1-tchou@synology.com>
- <20260417073836.1320467-1-tchou@synology.com>
- <9180d175-397c-45ba-94ac-8b6299fb9ec4@gmx.com>
-Content-Language: en-US
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <9180d175-397c-45ba-94ac-8b6299fb9ec4@gmx.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:7UMkpwP5ahWHImJaJpSp2PRUOvXXyM+ZqSbzx05vjwp5FdcjL3E
- VTjsE8jVjGyb3CnURD557vSd0g+WSXcIg8Co2d1kbbUsMhC/lnYSDSsja4cSPVoX8j1J2qV
- p+lijPaiC4BqlZXS+LGLBeTJ+K84C/tXyie39VxoLsS73heJCG0xMd0XZORPJui4l3REOBt
- t2fI28ApQg+dbEAgf2oLw==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:exkMPhIcOkQ=;CqOhlpe1RVSDG4WYJeXaElAC2RI
- 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
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <20260418024429.4055056-1-ziy@nvidia.com>
 
+On Fri, Apr 17, 2026 at 10:44:17PM -0400, Zi Yan wrote:
+> Hi all,
+>
+> This patchset removes READ_ONLY_THP_FOR_FS Kconfig and enables creating
+> read-only THPs for FSes with large folio support (the supported orders
+> need to include PMD_ORDER) by default.
+>
+> Before the patchset, the status of creating read-only THPs is below:
 
+Good to specify the read-only bit up front!
 
-=E5=9C=A8 2026/4/17 18:50, Qu Wenruo =E5=86=99=E9=81=93:
->=20
->=20
-> =E5=9C=A8 2026/4/17 17:08, tchou =E5=86=99=E9=81=93:
->> In btrfs_clear_extent_bit_changeset(), the extent changeset ulist may=
-=20
->> need
->> to allocate new nodes. Currently, this can happen while holding the
->> extent_io_tree->lock spinlock. Although ulist_prealloc() uses GFP_NOFS =
-to
->> avoid deadlock with filesystem reclaim, it's better to preallocate befo=
-re
->> acquiring the spinlock to:
->>
->> 1. Avoid potential allocation failures while holding the lock
->> 2. Be consistent with set_extent_bit() which already preallocates both
->> =C2=A0=C2=A0=C2=A0 extent state and changeset before the spinlock
->> 3. Reduce lock contention by not doing allocations under the lock
->>
->> Preallocate the changeset ulist node before acquiring the spinlock,
->> mirroring the pattern used for extent state preallocation.
->>
->> Signed-off-by: Ting-Chang Hou <tchou@synology.com>
->> Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+>
+>                             |    PF     | MADV_COLLAPSE | khugepaged |
+>                             |-----------|---------------|------------|
+>  large folio FSes only      |     ✓     |       x       |      x     |
+>  READ_ONLY_THP_FOR_FS only  |     x     |       ✓       |      ✓     |
+>  both                       |     ✓     |       ✓       |      ✓     |
 
-Forgot to mention, please do not add reviewed-by tags unless the=20
-reviewer has explicitly provided.
+This diagrams seem familiar :P but very nice, thanks!
 
-Especially when you do not know which mail address the reviewer is=20
-really using.
+And since we include cover letter in series in mm this should be some nice
+documentation in the commit msg also.
 
-You do not need to resend, I have fixed the address in the for-next branch=
-.
+>
+> where READ_ONLY_THP_FOR_FS implies no large folio FSes.
+>
+>
+> Now without READ_ONLY_THP_FOR_FS:
+>
+>                            |    PF     | MADV_COLLAPSE | khugepaged |
+>                            |-----------|---------------|------------|
+>  large folio FSes          |     ✓     |       ✓       |      ✓     |
+>  no large folio FSes       |     x     |       x       |      x     |
 
-Thanks,
-Qu
+This is really nice and clear thanks!
 
->=20
-> Now pushed to for-next.
->=20
-> Thanks,
-> Qu
->=20
->> ---
->> =C2=A0 fs/btrfs/extent-io-tree.c | 3 +++
->> =C2=A0 1 file changed, 3 insertions(+)
->>
->> diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
->> index 626702244809..b5ba650cdb55 100644
->> --- a/fs/btrfs/extent-io-tree.c
->> +++ b/fs/btrfs/extent-io-tree.c
->> @@ -663,6 +663,9 @@ int btrfs_clear_extent_bit_changeset(struct=20
->> extent_io_tree *tree, u64 start, u64
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 */
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 prealloc =3D all=
-oc_extent_state(mask);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> +=C2=A0=C2=A0=C2=A0 /* Preallocate the extent changeset ulist node befo=
-re acquiring=20
->> spinlock. */
->> +=C2=A0=C2=A0=C2=A0 if (changeset)
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 extent_changeset_prealloc(c=
-hangeset, mask);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 spin_lock(&tree->lock);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (cached_state) {
->=20
->=20
+>
+> This means no large folio FSes need to add large folio support (the
+> supported orders need to include PMD_ORDER), so that they can leverage
+> read-only THP creation function.
+>
+> To prevent breaking read-only THP support for large folio FSes,
+> 1. first 4 patches enables the support, so that without READ_ONLY_THP_FOR_FS,
+>    read-only THP still works for large folio FSes,
 
+I guess this introduces what was previously supported by
+CONFIG_READ_ONLY_THP_FOR_FS to large folios as part of that before removal of
+the config option?
+
+> 2. Patch 5 removes READ_ONLY_THP_FOR_FS Kconfig,
+> 3. the rest of patches remove code related to READ_ONLY_THP_FOR_FS.
+
+Makes sense thanks!
+
+>
+>
+> The overview of the changes is:
+>
+> 1. collapse_file() checks for to-be-collapsed folio dirtiness after they
+>    are locked, unmapped to make sure no new write happens. Before,
+>    mapping->nr_thps and inode->i_writecount are used to cause read-only
+>    THP truncation before a fd becomes writable.
+>
+> 2. hugepage_pmd_enabled() is true for anon, shmem, and file-backed cases
+>    if the global khugepaged control is on, otherwise, khugepaged for
+>    file-backed case is turned off and anon and shmem depend on per-size
+>    control knobs.
+>
+> 3. collapse_file() from mm/khugepaged.c, instead of checking
+>    CONFIG_READ_ONLY_THP_FOR_FS, makes sure the mapping_max_folio_order()
+>    of struct address_space of the file is at least PMD_ORDER.
+>
+> 4. file_thp_enabled() also checks mapping_max_folio_order() instead and
+>    no longer checks if the input file is opened as read-only (Change 1
+>    handles read-write files).
+>
+> 5. truncate_inode_partial_folio() calls folio_split() directly instead
+>    of the removed try_folio_split_to_order(), since large folios can
+>    only show up on a FS with large folio support.
+>
+> 6. nr_thps is removed from struct address_space, since it is no longer
+>    needed to drop all read-only THPs from a FS without large folio
+>    support when the fd becomes writable. Its related filemap_nr_thps*()
+>    are removed too.
+>
+> 7. folio_check_splittable() no longer checks READ_ONLY_THP_FOR_FS.
+>
+> 8. Updated comments in various places.
+>
+>
+> Changelog
+> ===
+> From V2[3]:
+> 1. removed unnecessary check in collapse_scan_file().
+>
+> 2. removed inode_is_open_for_write() check in file_thp_enabled().
+>
+> 3. changed hugepage_pmd_enabled() to return true if khugepaged global
+>    control is on instead of false. cleaned up anon and shmem code in the
+>    function.
+>
+> 4. moved folio dirtiness check after try_to_unmap() but before
+>    try_to_unmap_flush(), since that is sufficient to prevent new writes.
+>
+> 5. reordered patch 4 and 5, so that khugepaged behavior does not change
+>    after READ_ONLY_THP_FOR_FS is removed.
+>
+> 6. added read-write file test in khugepaged selftest.
+>
+> 7. removed the read-only file restriction from guard-region selftest.
+>
+> From V1[2]:
+> 1. removed inode_is_open_for_write() check in collapse_file(), since the
+>    added folio dirtiness check after try_to_unmap_flush() should be
+>    sufficient to prevent writes to candidate folios.
+>
+> 2. removed READ_ONLY_THP_FOR_FS check in hugepage_pmd_enabled(), please
+>    see Patch 5 and item 2 in the overview for more details.
+>
+> 3. moved the patch removing READ_ONLY_THP_FOR_FS Kconfig after enabling
+>    khugepaged and MADV_COLLAPSE to create read-only THPs.
+>
+> 4. added mapping_pmd_thp_support() helper function.
+>
+> 5. used VM_WARN_ON_ONCE() in collapse_file() for mapping eligibility check
+>    and address alignment check instead of if + return error code. Always
+>    allow shmem, since MADV_COLLAPSE ignore shmem huge config.
+>
+> 6. added mapping eligibility check in collapse_scan_file().
+>
+> 7. removed trailing ; for folio_split() in the !CONFIG_TRANSPARENT_HUGEPAGE.
+>
+> 8. simplified code in folio_check_splittable() after removing
+>    READ_ONLY_THP_FOR_FS code.
+>
+> 9. clarified that read-only THP works for FSes with PMD THP support by
+>    default.
+>
+> From RFC[1]:
+> 1. instead of removing READ_ONLY_THP_FOR_FS function entirely, turn it
+>    on by default for all FSes with large folio support and the supported
+>    orders includes PMD_ORDER.
+>
+> Suggestions and comments are welcome.
+>
+> Link: https://lore.kernel.org/all/20260323190644.1714379-1-ziy@nvidia.com/ [1]
+> Link: https://lore.kernel.org/all/20260327014255.2058916-1-ziy@nvidia.com/ [2]
+> Link: https://lore.kernel.org/all/20260413192030.3275825-1-ziy@nvidia.com/ [3]
+>
+> Zi Yan (12):
+>   mm/khugepaged: remove READ_ONLY_THP_FOR_FS check
+>   mm/khugepaged: add folio dirty check after try_to_unmap()
+>   mm/huge_memory: remove READ_ONLY_THP_FOR_FS from file_thp_enabled()
+>   mm/khugepaged: remove READ_ONLY_THP_FOR_FS check in
+>     hugepage_pmd_enabled()
+>   mm: remove READ_ONLY_THP_FOR_FS Kconfig option
+>   mm: fs: remove filemap_nr_thps*() functions and their users
+>   fs: remove nr_thps from struct address_space
+>   mm/huge_memory: remove folio split check for READ_ONLY_THP_FOR_FS
+>   mm/truncate: use folio_split() in truncate_inode_partial_folio()
+>   fs/btrfs: remove a comment referring to READ_ONLY_THP_FOR_FS
+>   selftests/mm: remove READ_ONLY_THP_FOR_FS in khugepaged
+>   selftests/mm: remove READ_ONLY_THP_FOR_FS code from guard-regions
+>
+>  fs/btrfs/defrag.c                          |   3 -
+>  fs/inode.c                                 |   3 -
+>  fs/open.c                                  |  27 -----
+>  include/linux/fs.h                         |   5 -
+>  include/linux/huge_mm.h                    |  25 +----
+>  include/linux/pagemap.h                    |  35 ++-----
+>  include/linux/shmem_fs.h                   |   2 +-
+>  mm/Kconfig                                 |  11 ---
+>  mm/filemap.c                               |   1 -
+>  mm/huge_memory.c                           |  39 ++------
+>  mm/khugepaged.c                            |  86 ++++++++--------
+>  mm/truncate.c                              |   8 +-
+>  tools/testing/selftests/mm/guard-regions.c |  18 +---
+>  tools/testing/selftests/mm/khugepaged.c    | 110 +++++++++++++++------
+>  tools/testing/selftests/mm/run_vmtests.sh  |  12 ++-
+>  15 files changed, 156 insertions(+), 229 deletions(-)
+>
+> --
+> 2.43.0
+>

@@ -1,46 +1,47 @@
-Received: from CY7PR03CU001.outbound.protection.outlook.com (mail-westcentralusazon11010067.outbound.protection.outlook.com [40.93.198.67])
+Received: from SN4PR0501CU005.outbound.protection.outlook.com (mail-southcentralusazon11011029.outbound.protection.outlook.com [40.93.194.29])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 38E3A334C39;
-	Sat, 18 Apr 2026 02:44:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.93.198.67
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5CA93331A6E;
+	Sat, 18 Apr 2026 02:44:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.93.194.29
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776480294; cv=fail; b=OVI4g2DEs3i6Kq/sY2RTmKNn0V/6i+VbYh6Bk042yrN0oA/hRmjbrWBNaPoa1UdgXMMuEcHaC6NgF1i4Uxhh0xBiGODucYa3+ZrkwmN/mbW/d1utFajbUngmapALU9C8H0sDx/fdV57vxoceaQMZyj3kIjBRl8Jpc/fEfO2nTZQ=
+	t=1776480294; cv=fail; b=ep8o4yAqWIN7mYEgMxjXp3QPQiL4gtUeElWlQVQFWuvbjUU2OaBTxhjZbbFeCT5+M+MA9TovkUV1nwkhj5CW9XVByDwmKSO/8yF2TDt9eNEnbyW2PpLLBKrigIBmvbSGbH9n4L6WW5efu8fExmF/0Xe941snEUBYasfDnzRYnHQ=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1776480294; c=relaxed/simple;
-	bh=zOhpFryq6KZuw8JHSxKAxs2WTds1NYEakOKHnG9oFIw=;
-	h=From:To:Cc:Subject:Date:Message-ID:Content-Type:MIME-Version; b=SItbgOZVgZkEQvXVACJN8QZ9ENCn989TRQeHuuKZQU2EXdg4rCtLOfKx9kDbJ66ariDPydUaGs8L5Z83KPUOKgZ5PaZjmb/UNmqfq+8w4FeXlXg0S32c1aEvjS71MCPO/tLnAD2CU4WkafvH72hPMzt9hFeVASlDCFMRjQIWhoA=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=Y6SwOyRL; arc=fail smtp.client-ip=40.93.198.67
+	bh=4LFjaYbsvjloysTEybfjXD9Q05sP/8VpfUIoHZDiA5Y=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=RinA/f4oqmsPvIpzGyNke04yx97xolbiodDD3OzOY7XmjPO0MAoa6ZNjr6EQCfZFZwZouq5UVvZynKPHrMT6z7YeGOdgjDhUQTwtjZtUq5xmhZmTmAbKiLG0a/MjShwMBQtffjlzlw0VE6x/g8I7gP+lPEe1W1AZoz8k11ubFFo=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=uXB7joPH; arc=fail smtp.client-ip=40.93.194.29
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
 Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="Y6SwOyRL"
+	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="uXB7joPH"
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=juWremLv5GVHm8qQJip4VSTJfySUAwBfEUuDu2tIkJqUFSxFFu1j5t29r30nQ9GsH/ZgYToDvFiUUstbNLoTO9OIBKSfQz37gyBfUKMk+kGmGx1WJc4YoD6lWxmaFjzVDC7EbFTkSLokgH6qjLtka4YscXVQWOGqVIuBDsgRpQLPrlonlAQWupufAjYxoECpAJCQLGwTOzh+in5VtRUf9mQQ8tHKrbuz4I606+FYuB6sEgVSpkiy/OglPsSlLMfL1Q2Qd7YOY3iUzEJ3sT08AMa97SLNSPdclCydsCJqvOwS5gc1V5pbUY321SWTNvqx79EaSJu4sNzSgf+loLZR9A==
+ b=Pd6QuTKH8bsSklsex/al9Q4h6ZMDJ/cqarROsCE31bPvopkWxgYaiKrSQ5A60iQvOrZQL1DNSoICZ54nbEcxenFmJrckyGIaoXkr8WDAlUojzdR6cbRQ9NLDyzoTorAGBCZpiXPoBoMJ/Fnp05ypu84B5cJUP384H30tIOetsp0CkWZddznOT+cE7Qb5fhXfxNldMWWdbO74sOo8yMpIUep1pW2yj5SVdOqZvAXZBb/LVBvzJdOhR7q+yNMqK5u4CNFKuUJKocne8oGENIx2EaAINOHxw6W8Nz7raESKHNfE19VSz6T1+WLNU2SVsPy5sDEu9BFbVnj5PGs9Uug9Dg==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector10001;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=DPx2RCfeczoVsE6yMqzxeRzHwu8NfLHfqg0KzPF1Cco=;
- b=aDYl+uIMEeWTaAEzZPgXGyHZXKJNL3gyjQv+GCJxAHuPhUe8+1Z2lUkkSOte9M2MtC2kn2eRoJFEVUYzbF/jJcHhiLiS5AMyE+P8pE3teO7UD5QEhGHgVaKRL3IwyQUkIhlyCOx8xWkgIK2560shSJNgM61FoLPwGfxXo1B7dVeLfAzPfVR+sj91WEd2Ui/MQkDt/+o2g8z2H5YxbjQbgGC91uj8y3Vd0SGrtbXlkZBkx2oLGJUGBj3GkDbGyvYy0lXlF8817oX4fSd79+mxaReQpVR6J/ntUqylTKYh5ZeHrHQIcEnCFy7WuOGhc0yCrXUwqVAxyHpGVO5fziZMAg==
+ bh=xnlnaP8b4VVDCFdGJn3Fuf32eVk9FmQJ0OYvzW8/xjU=;
+ b=ctHPMMnNdr3d04JGNz9c5V8KtE1TTAWzrRWJX7cfB7lp7PCeRYrI0plbZzD2dfjNX9mrCErny4z3C+sMqdSyfE9PeT7EP+wISA8H4usvy9KxUA8AalHWWy2tgbfCQ+YZvrKzkT1s8vZW8RYZjLI0yDhxm8hQcYvXRLi3Ux6RPeK1P4nmXB2Cgy2+SX0r8W5/uNyndlZ/vzLmdWGj2qltdTiaKy+RFPka89SpH4pjW4/rsiZoLrkS6m/jDALy9pQn2a3AhSH9aPYIxACntbzfDXU1Mg79SEta7oCHZ7OO5ZwuHmwh/JGjas7f6cAoYNgf/xIVCT67oAqlSJD5lH4CGw==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
  smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
  dkim=pass header.d=nvidia.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
  s=selector2;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=DPx2RCfeczoVsE6yMqzxeRzHwu8NfLHfqg0KzPF1Cco=;
- b=Y6SwOyRLUV5s+4yVRDbQP+RKFeXS+HID7tuh/oJKfWMHQGazpQg/fg+7iWNzkBdCdzCloxw/Jpvnvzp+VTbaOHDTBjuOlh3CGq2twtpFwIR7T6nDPqk0TjPaZXbrYK1MOTO9bAduxcmLZL5qs8IvfLQK5mUjuSzEtp8BQ1qDGyO/FiH6KR1kSSweA05b8vypF3MtZ7kXrqjTmdBatgOylRZU9JZSD/J0QQWrKRkO6I+y9peFMsbUkWwEM2H10+Mxdv5+AcQL5xkdlq1LmOw+mGodXf/3yC6eJ9ljGd4Ut50VyIPkvB8/gnW4qRfBmNhxrRPheath95oU5eHs47ndwQ==
+ bh=xnlnaP8b4VVDCFdGJn3Fuf32eVk9FmQJ0OYvzW8/xjU=;
+ b=uXB7joPHE40VU/m+7xeMbzvqRmlSR9MRAd6fpEyAxrBMBu3PXiJ/vllocClVfHQeYrwU71UE8sQghEUp48b6ARS4rJt0bh+7YLahZHo5mqYRI3ToiopexKMBMOEAGs9PR8Iznbh06EsQXy5FUaFfl8urKpQj+E1BIKWF74iNoJdgMr0mscguTAKPY6OmBCHi7vMHcwDLc1jWSMfoki/U2jbmWQ00VBM/0ajxl68lLeRjp42FIu2d9iRMa/ZSadBo65VDMcFc2Mg6o9yyyQ5YK/CC+TMuiGT6mq4HniLXy8jQzJU6GfmpadtVD2Sw7TMti7hE6F9zK1x+iF5vzbVStA==
 Authentication-Results: dkim=none (message not signed)
  header.d=none;dmarc=none action=none header.from=nvidia.com;
 Received: from DS7PR12MB9473.namprd12.prod.outlook.com (2603:10b6:8:252::5) by
  IA1PR12MB6650.namprd12.prod.outlook.com (2603:10b6:208:3a1::18) with
  Microsoft SMTP Server (version=TLS1_2,
  cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9818.20; Sat, 18 Apr
- 2026 02:44:39 +0000
+ 2026 02:44:40 +0000
 Received: from DS7PR12MB9473.namprd12.prod.outlook.com
  ([fe80::f01d:73d2:2dda:c7b2]) by DS7PR12MB9473.namprd12.prod.outlook.com
  ([fe80::f01d:73d2:2dda:c7b2%4]) with mapi id 15.20.9818.017; Sat, 18 Apr 2026
- 02:44:32 +0000
+ 02:44:40 +0000
 From: Zi Yan <ziy@nvidia.com>
 To: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
 	Song Liu <songliubraving@fb.com>
@@ -70,14 +71,16 @@ Cc: Chris Mason <clm@fb.com>,
 	linux-fsdevel@vger.kernel.org,
 	linux-mm@kvack.org,
 	linux-kselftest@vger.kernel.org
-Subject: [PATCH 7.2 v3 00/12] Remove read-only THP support for FSes without large folio support
-Date: Fri, 17 Apr 2026 22:44:17 -0400
-Message-ID: <20260418024429.4055056-1-ziy@nvidia.com>
+Subject: [PATCH 7.2 v3 04/12] mm/khugepaged: remove READ_ONLY_THP_FOR_FS check in hugepage_pmd_enabled()
+Date: Fri, 17 Apr 2026 22:44:21 -0400
+Message-ID: <20260418024429.4055056-5-ziy@nvidia.com>
 X-Mailer: git-send-email 2.43.0
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20260418024429.4055056-1-ziy@nvidia.com>
+References: <20260418024429.4055056-1-ziy@nvidia.com>
 Content-Transfer-Encoding: 8bit
-X-ClientProxiedBy: BL1PR13CA0180.namprd13.prod.outlook.com
- (2603:10b6:208:2bd::35) To DS7PR12MB9473.namprd12.prod.outlook.com
+Content-Type: text/plain
+X-ClientProxiedBy: MN2PR18CA0003.namprd18.prod.outlook.com
+ (2603:10b6:208:23c::8) To DS7PR12MB9473.namprd12.prod.outlook.com
  (2603:10b6:8:252::5)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -87,228 +90,132 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 X-MS-PublicTrafficType: Email
 X-MS-TrafficTypeDiagnostic: DS7PR12MB9473:EE_|IA1PR12MB6650:EE_
-X-MS-Office365-Filtering-Correlation-Id: d99e2a34-4a71-4ae4-9981-08de9cf46b7b
+X-MS-Office365-Filtering-Correlation-Id: 5a448dd2-9429-4ad5-7001-08de9cf46f27
 X-MS-Exchange-SenderADCheck: 1
 X-MS-Exchange-AntiSpam-Relay: 0
 X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|376014|7416014|366016|1800799024|18002099003|56012099003;
+	BCL:0;ARA:13230040|376014|7416014|366016|1800799024|22082099003|18002099003|56012099003;
 X-Microsoft-Antispam-Message-Info:
-	s0ltYWCAjXfDQTSaNSQ9+oyuM3y+C7iSU3Oq8nsTaVAPZ7V6Sh8JGkGM6rf25isBV1J9w3fu5miKZ5/vKDdYkHdTTh9twuJjH3XxQqjdh/OQ6rGNoHLyP0qvvUZ71YBEZR6ooQr+5rwPEd2Szu7d0F97NNL8TulK67zbZgJaGvKGkFSxKjgdtKg3kBo/Q4/oDQGUYOGtQIJyoF4qf1zh5dov6cVjWmnj4grW39VT1dndU3usuXOpLZbpSAXtSjHUix0mgyaNAnhLHtclmdZ15N5HS4SW75T7rL0YyriVYOsWxBjNYa9r0rgtlqUeXJe4IYuWJOGwId/pH0dYDyX+l+PMJwVag3iiTjIbORsET6cNEP+5y5+xra6iKEPAPCgcYhyBcp+qTOv8wP37jqlYtemv3NQzzSyk4ORYvSJEjqEJ9Epn4185FYUbjwpmh4Cpc4k4YX4Q7zL3LnwueU0+TN0Q+R9bgIQS/SVZ/S+SVRZEw6UHwL/t98CfTyw92wWDGApQKPF4a6IMAIINrQtxJlhwgZejGwpBx+dGjJ0OP6zky/w/7igVRE5SNAtAtXS7whA+dqmn0AyKOmDbSXnTtKaoWbXXgxafeXs35G5Ll6HOABZ18BsGSXeyqJZoKU7NnO1yS8Fq/8p9LzyEm4YFmSSlTiXhb3+mQ9ntUuMBKlMKARtzwOsmN0f6lIWd2sUeKATOCQDCiALbpuLgwM4BvsC52fZOs1vO355gtZ7L+xo=
+	Pqn+ojz7jEp0L2YNR24ADuXbLgI9/xy/GSOmvPhXzzMEr2GLV1mXK7OsVsmbQBxWkS0WM+foA1aH0KLjRntvPddZIoZeyWsRKfE5cFp6V7DxN9rTs8ZHMQ6ARhNk56Pp7NsNz+13SeLpEbC0Gqpk/T/RvkH5zNhjRho957fBbl3o0lNXMTCeTDFpXtkP2G9TrEBJ9hdea2mNd5JN0UXnFO5juA9RmwtoXxT3nkkR+EMfcVzzXE3opHcpU8U69o1JgKAoP7joK0AzvmPOa7cVX76LEyOcGeuJEqwGrKd+m6S9Mz137TqQjsZnwwIpop3GvNCxkKNMZiFGpswgrsZEXxCEKnYAEDS440f8ONJ+15xKjbCAo6JmBoUq8+9SXseK0CViMhbTLjWwQK5UvWpkd6KwkroZ4SK9xfEgBA+WokvLy95l1DyI9DBxN/lISGKVksemdjpcu0mHphPvnv1BNzrzwRwP0iezXQfOOneLH1SVaR55b7RoIJvE37LbabzFFX+95WwMCFfJTywjH0s/HMVgwQ+X1ScIhQ7uzXAY/Zj4Yky3LVvSXXFKWsV6K1+38SXaR+G5qwMz9Le+tbK44pv1TEkHu4L3OxOIZw43bjZAQ1ZR4p4zJN/LOWxkP8dnwoFB4g3zv4KURm7no3ibRaiwIsqzrzcY8D9PiDc0teri1T6uRLtNgvOYA5WDKwxkEJZm03oO7zO+FWhRZ8OczqrHBjq2jN2ZhiTLxk4drwo=
 X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DS7PR12MB9473.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(376014)(7416014)(366016)(1800799024)(18002099003)(56012099003);DIR:OUT;SFP:1101;
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DS7PR12MB9473.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(376014)(7416014)(366016)(1800799024)(22082099003)(18002099003)(56012099003);DIR:OUT;SFP:1101;
 X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
 X-MS-Exchange-AntiSpam-MessageData-0:
-	=?utf-8?B?RTJoVVB4ZUgvOEt6TFROT3E5bHFIQ2lxRUQ2OFdxanA3U1NoZEJCOGpVOXdl?=
- =?utf-8?B?QXBYTi9KTnlDZklzSDg4bXpBVVc3M1FKL1d2MnZ2RGhuMGI2aVdLaDFicmpz?=
- =?utf-8?B?cTVFUDBIbEpDUG5BWW5HZ3Jua2RSejdPK1U1YVZzLzBhTXh3a1RwT3hBczVL?=
- =?utf-8?B?OElVV0pZQko2eDl6QTRTYUJmNzh6TU8yaWx6Z2t4NGx4RVozL1BkUkZlTEpR?=
- =?utf-8?B?eVRncWEyTWNjK3FUd3BNOVBIY1F1aTYxNUpVMk4vYXVYbFZQdVI5WnJVd1Fp?=
- =?utf-8?B?NEdIOFhoL0lOSjlJNUd3L2VDOEZqdzdYTXgrZEJtNGs5ZXlRNW9oN1UreXEr?=
- =?utf-8?B?MTFIa2lwUzBFS1o4RjJtWGIxbWZzb0UzZ05JeEZTMFJuQ0R0cG9oclRXNTVT?=
- =?utf-8?B?NUFHcnBGemJNTW15aGkyNFpoYmNwaTNwYTdLVmdmQnBGeHV2QkFlTlZRL1BT?=
- =?utf-8?B?Ty8yRUpnMmQ1MEM3WTBHdHpjK0E1TGlHblRJZkgyeXhqRytuajZmV3hNZ0FV?=
- =?utf-8?B?RnJzaWtiWThhT0kvUXcwdnF5MXEyUkVnOXVXWHJSc1pmVVN2WDhkZk1SN0cx?=
- =?utf-8?B?VjlhYTQvWHliUDd6THdpbGwwNHJHZmtWU24zYXp4cXlFVXJ5ME9NL0orMXhj?=
- =?utf-8?B?TGRtVTFMeGFLd1llOW0vbm5rQ2hkT0lodWhzaWRBTlFZbno2NTBwUTRJSkwy?=
- =?utf-8?B?RjNFcm01YU1OWGh2WmJMUktnR3hWL1NIZEwxajRiZ25DZmpNQlR4anZ5VUpy?=
- =?utf-8?B?S3N2SFY0NDhkbExhYzB0eHBRUVBBZUU4eEdwOEo0cllKbDM2QVpwMjIrR21R?=
- =?utf-8?B?Z1lrdm5KL0JxcWJhRk45ZUFwUWFmUG9ic0h5OWtPaTEwemJOK25nNU4xWjFo?=
- =?utf-8?B?NGVFNUJ2N0UwbzRSSUVpcmVDbXI5TGF4MkpRVWhtZ2NHb0lCSkVLeXB0emcy?=
- =?utf-8?B?U0g5ZWxjMVBHT2hjc09qaDZiRUJWS3hrQUVmdE80emZ1YkZUb0haTDRSNUNP?=
- =?utf-8?B?ZDdGM0k5UHovVkNkT0tDbkpDWWtVVnF0K3J0RjViSHVkYzhiTnRYR3B4dlYy?=
- =?utf-8?B?aWdrTVQyK2FaS0hqdVQ5NmxpNmlUOVJKeDVqclloZGs3T0Y2bmtvYVM2dSsw?=
- =?utf-8?B?RXFlVlltMzBPS0l6WWVlKzBQNldkbGpwOEdxM1ZYMmhmbUlEZ2VGenBRN2tE?=
- =?utf-8?B?aHFLcEZmM3hTK2x5L0Y1MzFUdUkyUnd1RDV5QU1qdGRhc1V5V2ZyWVdxRFBv?=
- =?utf-8?B?Z05DcTZvTVV1R3d0Ny95Ylc3N0g2ZFZVSGVJTXRabWZQSGZPUkdnQ0c0WG1N?=
- =?utf-8?B?UHlCalhadXcwQ1o3bXg4U3VaRFRKQkRWamZ4Q3JVdW1TL2FRL2xFZXhpWUNI?=
- =?utf-8?B?YlNGUU9TUnZyRGVwRWlJK0NsR3Z3eEpRNGZQREgyR0pZTVk4TVhNTnhUclRI?=
- =?utf-8?B?ZGhtMVhrYWlsZkNhcHdXZjRZbE4veFk3dXh0bTlGd3JuU0MxbE5CbnVQVEhE?=
- =?utf-8?B?VzlpaEJJWE9LWjN3N1NaanQ1U1h6LzFYL0ViakpERHFKcEtYdXArRFIvR0gz?=
- =?utf-8?B?UUIyd2I1V2N6YWNFcVBJbUdoZC9zZ2RudWpTYkpjbFpLL1dpc2ZnY3czQTlK?=
- =?utf-8?B?amFuNzJiOFFVNmhUNDlwZFBrcitxTzJIc1JPNXljdDhqRjhlaTNkN0NOdUt4?=
- =?utf-8?B?UklyaDVHM05jdHhKeWVpdmN4V0tRZ0oxblYrMTY0THNqb2NKUDJORVZZSnNw?=
- =?utf-8?B?dUVFVCtmaTFTMmtaSytGVGRackNLV2tRempkVHg2d1ZzRkE5VjJ6Sm9BV04r?=
- =?utf-8?B?T1lrRDRWSEhGbE9XaHRpYXcyQTFnaEhHUTh6SlBZOGY4cm40TUhDNzVjUzBi?=
- =?utf-8?B?K1JCbGJlWk4wa0pOejRyQ3JsVklJcHdTdmMzMnZURmxKUFNTaUtJblZ3TW4r?=
- =?utf-8?B?a0YzQlFucnVuUHZOUWpydm93enE4dGZYYTVYT0hRb1VuV24ySEpsVjM3THl5?=
- =?utf-8?B?MFQxZ1V6dzhnS0ZIRWNzbkdjdlc2T2pUdHBYTlgzZmZKOTRGeEh1ZmpiTFZq?=
- =?utf-8?B?eWdyVmNqZGdzaXN1SmZmVXA3bnNzZyt4RXpDTkc2RE1MMjkyYytzSUVHY1Rh?=
- =?utf-8?B?Nmw1L0dGWlZEUFkva2VWZk5MWjdIMGRLbE16V2xJVmprb0JLRmxZL3h3SGtP?=
- =?utf-8?B?dXlWZnllMDdMVGlIaGo2d3pvM2NHS3VPQkxFOXBkSzh6bmxhUEI1VlFEY3dT?=
- =?utf-8?B?RXRhcFFuOExqWFN6M2FQTlBkWWplRGpwTFo1V0ludEg4OVBhSXg0TURpRDZl?=
- =?utf-8?Q?teyQbSd1yecgqfIUA7?=
+	=?us-ascii?Q?xukUgXGHHZmspi6Rf33izUj6sF5WIZfYCgAvO4M+VvDLMXzTgebSoawwQ77J?=
+ =?us-ascii?Q?QqBCK+1rU4S+TpVaqdX/NULoI7yqNU/UCCcb8YEfQhor0tRm0Fxn7fGjp4+j?=
+ =?us-ascii?Q?dQVDUl0xx1QDIn4eASlmTo3zhAoC/GSm8Wx7sgsmPDqkzKkyWsjfXrTgpAJ+?=
+ =?us-ascii?Q?sDloS2vLm5gsMR5vLzCRfBxsPlGv61YlJMf++OigIbcpNdi7W1a9W+O3b5Qm?=
+ =?us-ascii?Q?EhCwG1PZlNZciiy9TMkEw5MXiSO8xafL9BHxn5ZX0KzrP5oDg8OwvjpOKr+N?=
+ =?us-ascii?Q?3ZFY2Z57HN23JtobCwjh4o9Fac4za/Xd5Wh41fMZcXVPGilxSBxXQLOMJGXU?=
+ =?us-ascii?Q?GtkmfqYFpqTr3hv/qogFY2Cs9DS7zapAe3hPs6zrFLWAFkhutZZlgsNSrQgK?=
+ =?us-ascii?Q?lQJKiMJVeVETTiWWqoqK3yB9n+wjHlvXBtLJWL8m5ih3hMbAo/vqtdC/Zmg9?=
+ =?us-ascii?Q?jAeMb8xOYQ2vRxzsqgwpBE3IqsK9zQIZoWkGN2PuGFBbWnD9bSx4cfCU29CM?=
+ =?us-ascii?Q?uMQmoBuwJz4kcHRALKt+b3SNPlEET9L3YRKE75qwyXnGH2zIIeLPsA1rHUar?=
+ =?us-ascii?Q?SbLsPjI5U0NaE5owN3KoSeTscdm5gy1Ze/AjxXOZepAjnUF6aQWX8Z23zCqP?=
+ =?us-ascii?Q?rxyHuKo0w7AUY5dK1PuzGj9oGL21sb97P1RUrggnUnLM2+WSdgnDU0oegZcR?=
+ =?us-ascii?Q?5UFKstETTl/E3oKAn5383nOmkzZb7CBcw9lw3mJn9mcYKjoJJRQSQuv4WIrc?=
+ =?us-ascii?Q?ouqbeqtenPQjgEChy48tDqUHqADhXwhajE4V613PR6HsAbEKnfe0n+/ogjWg?=
+ =?us-ascii?Q?bogkcWVDVLmJgFl+ZkBJlMz9NwrBjqL+K/Teq5Yn3hcRCLZDAqeIzJLfazXt?=
+ =?us-ascii?Q?ZkwBsDt1dNajUWWf71XLtXcF2tgQPmapeabOUSElDZOsIbkOio6f4yexVK0K?=
+ =?us-ascii?Q?+1ONlP4KvikTn71PllLRHFGl/5ke1yxgBIeitbkxPLTRR99sybDkLcPrwmfU?=
+ =?us-ascii?Q?jceOl/8Eyf3Na9dMC34V94RgVI0HnEuc61Ij9vW5KP2pEClv9KpDpK5jNUF/?=
+ =?us-ascii?Q?ft9tXQYVlVz86O/cIRWH3IptuVue+wMAmU28Hti+yd/r1Szp9QI+w4K8o2DF?=
+ =?us-ascii?Q?0541rG3/NSmZFy5jm6nFgky2a64t/5EtZfcAUlCrKULxKaErBzrX02yFncnu?=
+ =?us-ascii?Q?LIrhjg7y/mx8PHf70ZH3KzyyG812jDKbVHCtSbPHYg8JDgFEL1sqzuzSqPik?=
+ =?us-ascii?Q?m4VhPxNdwa/xfMcA+u/xT4vOvw+/X3nrzYJJ521xHskZn2a6ld5cIe2Vu3Cq?=
+ =?us-ascii?Q?mjn/8f5mjoD8mUEtlUJBM9A4J5w5EHpOFu9ubf3H18pMockvp5Oiu9aP78o6?=
+ =?us-ascii?Q?kkdF1wk5Kwg3mAy4c6YE/iwUc/KH2C3YHoaN6ug3mqsVrbavmuaQSVX9Zqcr?=
+ =?us-ascii?Q?aGB5Z+0w2KFvuDnveAu3Y14OjdEy8KTcREClxZjEmRd8JXXvEbusZbJOiCwf?=
+ =?us-ascii?Q?+9sDYHhU3jVRRdsbodox4erP2LfZe3NwTZB5kuFqoD3vKDYr6nXUvbUQgIjU?=
+ =?us-ascii?Q?TJOHT6aMlOBX0OCfcjbCNxuMzR052A9l/RMjxb0YMU9gjJ02R4r4/ViReAnr?=
+ =?us-ascii?Q?C2y9F7jsV7NlxEylvfWvkAapGhEx+TDcjv76Z0lU9xUp1ZZlga/Kp4cdThUT?=
+ =?us-ascii?Q?vWGiXDcMg38TGGkoOU0ZMi/VgfvaixOtRSuyJiv91ONNZ10D?=
 X-OriginatorOrg: Nvidia.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: d99e2a34-4a71-4ae4-9981-08de9cf46b7b
+X-MS-Exchange-CrossTenant-Network-Message-Id: 5a448dd2-9429-4ad5-7001-08de9cf46f27
 X-MS-Exchange-CrossTenant-AuthSource: DS7PR12MB9473.namprd12.prod.outlook.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 18 Apr 2026 02:44:32.3842
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 18 Apr 2026 02:44:38.5124
  (UTC)
 X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
 X-MS-Exchange-CrossTenant-Id: 43083d15-7273-40c1-b7db-39efd9ccc17a
 X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: ecsXSaa2q2REQ0GIfaK0mX0lxg+Q8OZN3cKUI3SAdoAgoxEB53xb022e9OzVpAwm
+X-MS-Exchange-CrossTenant-UserPrincipalName: xEfU9Aq3P5bxulXAMUE+LhsF5l8hMbif9AQWl11suIsfGdnsOPg9MAs8EkFX+Pgq
 X-MS-Exchange-Transport-CrossTenantHeadersStamped: IA1PR12MB6650
 
-Hi all,
+Remove READ_ONLY_THP_FOR_FS and khugepaged for file-backed pmd-sized
+hugepages are enabled by the global transparent hugepage control.
+khugepaged can still be enabled by per-size control for anon and shmem when
+the global control is off.
 
-This patchset removes READ_ONLY_THP_FOR_FS Kconfig and enables creating
-read-only THPs for FSes with large folio support (the supported orders
-need to include PMD_ORDER) by default.
+Add shmem_hpage_pmd_enabled() stub for !CONFIG_SHMEM to remove
+IS_ENABLED(SHMEM) in hugepage_pmd_enabled().
 
-Before the patchset, the status of creating read-only THPs is below:
+Signed-off-by: Zi Yan <ziy@nvidia.com>
+---
+ include/linux/shmem_fs.h |  2 +-
+ mm/khugepaged.c          | 28 ++++++++++++++++------------
+ 2 files changed, 17 insertions(+), 13 deletions(-)
 
-                            |    PF     | MADV_COLLAPSE | khugepaged |
-                            |-----------|---------------|------------|
- large folio FSes only      |     ✓     |       x       |      x     |
- READ_ONLY_THP_FOR_FS only  |     x     |       ✓       |      ✓     |
- both                       |     ✓     |       ✓       |      ✓     |
-
-where READ_ONLY_THP_FOR_FS implies no large folio FSes.
-
-
-Now without READ_ONLY_THP_FOR_FS:
-
-                           |    PF     | MADV_COLLAPSE | khugepaged |
-                           |-----------|---------------|------------|
- large folio FSes          |     ✓     |       ✓       |      ✓     |
- no large folio FSes       |     x     |       x       |      x     |
-
-This means no large folio FSes need to add large folio support (the
-supported orders need to include PMD_ORDER), so that they can leverage
-read-only THP creation function.
-
-To prevent breaking read-only THP support for large folio FSes,
-1. first 4 patches enables the support, so that without READ_ONLY_THP_FOR_FS,
-   read-only THP still works for large folio FSes,
-2. Patch 5 removes READ_ONLY_THP_FOR_FS Kconfig,
-3. the rest of patches remove code related to READ_ONLY_THP_FOR_FS.
-
-
-The overview of the changes is:
-
-1. collapse_file() checks for to-be-collapsed folio dirtiness after they
-   are locked, unmapped to make sure no new write happens. Before,
-   mapping->nr_thps and inode->i_writecount are used to cause read-only
-   THP truncation before a fd becomes writable.
-
-2. hugepage_pmd_enabled() is true for anon, shmem, and file-backed cases
-   if the global khugepaged control is on, otherwise, khugepaged for
-   file-backed case is turned off and anon and shmem depend on per-size
-   control knobs.
-
-3. collapse_file() from mm/khugepaged.c, instead of checking
-   CONFIG_READ_ONLY_THP_FOR_FS, makes sure the mapping_max_folio_order()
-   of struct address_space of the file is at least PMD_ORDER.
-
-4. file_thp_enabled() also checks mapping_max_folio_order() instead and
-   no longer checks if the input file is opened as read-only (Change 1
-   handles read-write files).
-
-5. truncate_inode_partial_folio() calls folio_split() directly instead
-   of the removed try_folio_split_to_order(), since large folios can
-   only show up on a FS with large folio support.
-
-6. nr_thps is removed from struct address_space, since it is no longer
-   needed to drop all read-only THPs from a FS without large folio
-   support when the fd becomes writable. Its related filemap_nr_thps*()
-   are removed too.
-
-7. folio_check_splittable() no longer checks READ_ONLY_THP_FOR_FS.
-
-8. Updated comments in various places.
-
-
-Changelog
-===
-From V2[3]:
-1. removed unnecessary check in collapse_scan_file().
-
-2. removed inode_is_open_for_write() check in file_thp_enabled().
-
-3. changed hugepage_pmd_enabled() to return true if khugepaged global
-   control is on instead of false. cleaned up anon and shmem code in the
-   function.
-
-4. moved folio dirtiness check after try_to_unmap() but before
-   try_to_unmap_flush(), since that is sufficient to prevent new writes.
-
-5. reordered patch 4 and 5, so that khugepaged behavior does not change
-   after READ_ONLY_THP_FOR_FS is removed.
-
-6. added read-write file test in khugepaged selftest.
-
-7. removed the read-only file restriction from guard-region selftest.
-
-From V1[2]:
-1. removed inode_is_open_for_write() check in collapse_file(), since the
-   added folio dirtiness check after try_to_unmap_flush() should be
-   sufficient to prevent writes to candidate folios.
-
-2. removed READ_ONLY_THP_FOR_FS check in hugepage_pmd_enabled(), please
-   see Patch 5 and item 2 in the overview for more details.
-
-3. moved the patch removing READ_ONLY_THP_FOR_FS Kconfig after enabling
-   khugepaged and MADV_COLLAPSE to create read-only THPs.
-
-4. added mapping_pmd_thp_support() helper function.
-
-5. used VM_WARN_ON_ONCE() in collapse_file() for mapping eligibility check
-   and address alignment check instead of if + return error code. Always
-   allow shmem, since MADV_COLLAPSE ignore shmem huge config.
-
-6. added mapping eligibility check in collapse_scan_file().
-
-7. removed trailing ; for folio_split() in the !CONFIG_TRANSPARENT_HUGEPAGE.
-
-8. simplified code in folio_check_splittable() after removing
-   READ_ONLY_THP_FOR_FS code.
-
-9. clarified that read-only THP works for FSes with PMD THP support by
-   default.
-
-From RFC[1]:
-1. instead of removing READ_ONLY_THP_FOR_FS function entirely, turn it
-   on by default for all FSes with large folio support and the supported
-   orders includes PMD_ORDER.
-
-Suggestions and comments are welcome.
-
-Link: https://lore.kernel.org/all/20260323190644.1714379-1-ziy@nvidia.com/ [1]
-Link: https://lore.kernel.org/all/20260327014255.2058916-1-ziy@nvidia.com/ [2]
-Link: https://lore.kernel.org/all/20260413192030.3275825-1-ziy@nvidia.com/ [3]
-
-Zi Yan (12):
-  mm/khugepaged: remove READ_ONLY_THP_FOR_FS check
-  mm/khugepaged: add folio dirty check after try_to_unmap()
-  mm/huge_memory: remove READ_ONLY_THP_FOR_FS from file_thp_enabled()
-  mm/khugepaged: remove READ_ONLY_THP_FOR_FS check in
-    hugepage_pmd_enabled()
-  mm: remove READ_ONLY_THP_FOR_FS Kconfig option
-  mm: fs: remove filemap_nr_thps*() functions and their users
-  fs: remove nr_thps from struct address_space
-  mm/huge_memory: remove folio split check for READ_ONLY_THP_FOR_FS
-  mm/truncate: use folio_split() in truncate_inode_partial_folio()
-  fs/btrfs: remove a comment referring to READ_ONLY_THP_FOR_FS
-  selftests/mm: remove READ_ONLY_THP_FOR_FS in khugepaged
-  selftests/mm: remove READ_ONLY_THP_FOR_FS code from guard-regions
-
- fs/btrfs/defrag.c                          |   3 -
- fs/inode.c                                 |   3 -
- fs/open.c                                  |  27 -----
- include/linux/fs.h                         |   5 -
- include/linux/huge_mm.h                    |  25 +----
- include/linux/pagemap.h                    |  35 ++-----
- include/linux/shmem_fs.h                   |   2 +-
- mm/Kconfig                                 |  11 ---
- mm/filemap.c                               |   1 -
- mm/huge_memory.c                           |  39 ++------
- mm/khugepaged.c                            |  86 ++++++++--------
- mm/truncate.c                              |   8 +-
- tools/testing/selftests/mm/guard-regions.c |  18 +---
- tools/testing/selftests/mm/khugepaged.c    | 110 +++++++++++++++------
- tools/testing/selftests/mm/run_vmtests.sh  |  12 ++-
- 15 files changed, 156 insertions(+), 229 deletions(-)
-
+diff --git a/include/linux/shmem_fs.h b/include/linux/shmem_fs.h
+index 1a345142af7d..dff8fb6ddac0 100644
+--- a/include/linux/shmem_fs.h
++++ b/include/linux/shmem_fs.h
+@@ -127,7 +127,7 @@ int shmem_writeout(struct folio *folio, struct swap_iocb **plug,
+ void shmem_truncate_range(struct inode *inode, loff_t start, uoff_t end);
+ int shmem_unuse(unsigned int type);
+ 
+-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
++#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && defined(CONFIG_SHMEM)
+ unsigned long shmem_allowable_huge_orders(struct inode *inode,
+ 				struct vm_area_struct *vma, pgoff_t index,
+ 				loff_t write_end, bool shmem_huge_force);
+diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+index 1c0fdc81d276..718a2d06d1e6 100644
+--- a/mm/khugepaged.c
++++ b/mm/khugepaged.c
+@@ -406,18 +406,8 @@ static inline int collapse_test_exit_or_disable(struct mm_struct *mm)
+ 		mm_flags_test(MMF_DISABLE_THP_COMPLETELY, mm);
+ }
+ 
+-static bool hugepage_pmd_enabled(void)
++static inline bool anon_hpage_pmd_enabled(void)
+ {
+-	/*
+-	 * We cover the anon, shmem and the file-backed case here; file-backed
+-	 * hugepages, when configured in, are determined by the global control.
+-	 * Anon pmd-sized hugepages are determined by the pmd-size control.
+-	 * Shmem pmd-sized hugepages are also determined by its pmd-size control,
+-	 * except when the global shmem_huge is set to SHMEM_HUGE_DENY.
+-	 */
+-	if (IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) &&
+-	    hugepage_global_enabled())
+-		return true;
+ 	if (test_bit(PMD_ORDER, &huge_anon_orders_always))
+ 		return true;
+ 	if (test_bit(PMD_ORDER, &huge_anon_orders_madvise))
+@@ -425,7 +415,21 @@ static bool hugepage_pmd_enabled(void)
+ 	if (test_bit(PMD_ORDER, &huge_anon_orders_inherit) &&
+ 	    hugepage_global_enabled())
+ 		return true;
+-	if (IS_ENABLED(CONFIG_SHMEM) && shmem_hpage_pmd_enabled())
++	return false;
++}
++
++static bool hugepage_pmd_enabled(void)
++{
++	/*
++	 * Anon, shmem and file-backed pmd-size hugepages are all determined by
++	 * the global control. If the global control is off, anon and shmem
++	 * pmd-sized hugepages are also determined by its per-size control.
++	 */
++	if (hugepage_global_enabled())
++		return true;
++	if (anon_hpage_pmd_enabled())
++		return true;
++	if (shmem_hpage_pmd_enabled())
+ 		return true;
+ 	return false;
+ }
 -- 
 2.43.0
 

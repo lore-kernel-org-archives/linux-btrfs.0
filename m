@@ -1,241 +1,187 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 346D727FD49;
-	Sat, 18 Apr 2026 09:27:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B64162609E3
+	for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 14:38:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776504433; cv=none; b=DTSi9Rx8bsKTkmhYpU1C+4q0ZUz7YJ0Rj1c3buHaPOpKriBNyGz8X4q57rCt0u73JQsRgxZvbGh5mVROHhWx5545O1ps7ZamBPnn794gFICQjk0ulsqKskWHAJ7X4u7Y9ganAZbBGDBDsnTsDEb/nmFL15CssLLpZRT+tcs+mkg=
+	t=1776523098; cv=none; b=ad61x/DFkjA7lLk4h2GH+cQz8GrOnWHD1SBCfcxGElzHsJTC1vUeoxfS47zCpcowbjRGbUO3boV0ZwHEaWRlpBMn5iIW8xOVlS+5uUiTOmdusyM7x9FfDNlvupmm38hJ6o3ryCpL+evPYqryXkcr2JX/O6Mhegit+NU+68WFZCw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776504433; c=relaxed/simple;
-	bh=qQK1tXEC3bQP9DZ7GFPDMCN0K1t29slMgrLD0yyfeZ4=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=RxGcu/qLdDmHJWsbjYg6waZ/PjqHBskssVR1IJmZgaho/v2RXRBJVHC3Ivvis6leSSF36GyvJLEMASD/EUfvcvTzQdhE8lpVbNPu5B0ksWXM6tjyZRUhpelHxBwQ62pzYqbarsJBVOVlGbQZbV2xbNRKipf2GimrCqqlxd8OSag=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ikWmHtfu; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1776523098; c=relaxed/simple;
+	bh=p9DnI22GDRN4QccD87VqwOj8oRUrLgHHBOa/JAzk+98=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=kyI/qKnRWhQt+TlfOVNRb7nxMZv016Qnn41v+7bipwwFD7h7G76hWQLn+4VrmwIWTxXvTpCPSr/zRjwrfKfcWp4j6b7YmpK6tdYpaO1pcGksbTErzHMtO38XuxnYbwJ7eaQp2tmhTCu9E/frPAVYZnvZZhvVyU4zEauROUp7Lbg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=SdoWX5bX; arc=none smtp.client-ip=209.85.128.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ikWmHtfu"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id BCC7BC19424;
-	Sat, 18 Apr 2026 09:27:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776504432;
-	bh=qQK1tXEC3bQP9DZ7GFPDMCN0K1t29slMgrLD0yyfeZ4=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=ikWmHtfu7pVAnscldTDWmT2dkebMotrLIBQE8B3cj/NJm+LMOdJQ1+SicHCaJzh2j
-	 hvQDrQkhkcCi9Gs9VMZ+zu/zKq2plSfI+RnUQ2AKfDN0ePzK/cddQUoOimK4WLSszf
-	 73s7zVs5pDX8IJ1ORCYFd+4yIo+u+omrpvxuhh0vbNwiJSdalDH28uKWpTGEVH3tOm
-	 jyy0UKIxK3Db8Tw+PQ4t/LhdfbHTtt1XgMdnZxUteaIAUPqDeMUzwIoq2wRqAysxrN
-	 /iuPRwQi1pEE1O52z35J4YmZ5J/y1R47cZAbeZXVPqXz4SmGwgdUhgQxYkzqAzQNjx
-	 3cpLn0aRJZ1mQ==
-Date: Sat, 18 Apr 2026 10:27:04 +0100
-From: Lorenzo Stoakes <ljs@kernel.org>
-To: Zi Yan <ziy@nvidia.com>
-Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>, 
-	Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
-	Alexander Viro <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, 
-	Andrew Morton <akpm@linux-foundation.org>, David Hildenbrand <david@kernel.org>, 
-	Baolin Wang <baolin.wang@linux.alibaba.com>, "Liam R. Howlett" <Liam.Howlett@oracle.com>, 
-	Nico Pache <npache@redhat.com>, Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>, 
-	Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>, 
-	Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>, 
-	Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>, Shuah Khan <shuah@kernel.org>, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	linux-mm@kvack.org, linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH 7.2 v3 00/12] Remove read-only THP support for FSes
- without large folio support
-Message-ID: <aeNNjgD09VqwI0jo@lucifer>
-References: <20260418024429.4055056-1-ziy@nvidia.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SdoWX5bX"
+Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4852b81c73aso13876275e9.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 07:38:16 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1776523095; x=1777127895; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=7nboMJM3Fb3YlBzMB4MoG6uu+OnAbiyWJjlxHC15pgk=;
+        b=SdoWX5bXHDT4XwjnkPS0GGBwaCDDVya7LuC61Fq4OOyS3ltMbH0Se6wJq5uGsBI5uc
+         1o93Pu0GA1lnknrp235P8bbHkaWqg+tecC1QjlwLAH1cXaQud64ZE81CUYe2/V5D8RbI
+         CjdQV8uWfIEmlMHgsQq1CWi2dE3J7xzMJ3flpRTkFycMko395pv+rJJh9mTw99MmnCuk
+         jKpP+MdaH3VupoqMONADo5BftpaSRX/mz7VqsCjdc9qGEG9hpjoAh2VLyatIrQ2BVg3e
+         wlI0pBv0F4wQgChDf5/X7erdjY9TjxPeycV2BjXFIcm/r6KJP2i6B5Y8hf0Gdvlybmx5
+         NZFA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1776523095; x=1777127895;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=7nboMJM3Fb3YlBzMB4MoG6uu+OnAbiyWJjlxHC15pgk=;
+        b=SNyiUGIlwXfvWbKHOHSR66x7q0l6ByMpeFK8VSFi/epPhkvo6QMGV8w9KqafqpbcIU
+         /ZLNuuIXM+wflhODrazP7SRVXcMTF5cFkVDYAqzT+pZe9IUUcFDMD0figFGfqXgnj0XV
+         3wKfD8mOgk6LTJrnQjgHIuKgNq48BRIZwMPAbAaYytywUx/+nMEKPNlgb4uAnP1oAME+
+         PMMAScUpWVnV9olf7BJUJlaH/TtQUEksCqKIWExo31iE3eJ3ro9YkQs6svJFT9K6CfTL
+         bjpS+soWMJuO0isD76zv18dfvTmJ6ligfQRCmndOu7a7AsWiHbnfykz0TisfjUBfNG0X
+         5dSQ==
+X-Gm-Message-State: AOJu0YwCovtIRGWI22E3R93IyFEYFjmkbaf+rXHcLw3+56HB4TZOPurn
+	aHnq+9I/0WoaQUDxpeaw5qENUyZQ7fxPvVQdgf1NpFoobibua5+AyR6CJQES+PK6
+X-Gm-Gg: AeBDiesYeYy+ErIluKoci7bAJL1AUwPkS/ETC/MQv5zvsJPIQx/VIcsf7E4tSUFZasq
+	MiVVqSPRGf/ugkwmoEGcAbN+kfkErfyRqODH7DJZJvnQveEidEXw2BFgceqcB6416pnmkv6bMxb
+	IxC2EvkDFHastc+LetJ9BvfGMOs6YlWYaBvZxB3mrjnoDqA1+mB8KbtlDOvXMWC3JGPjUBlBEwW
+	MFmW++69KOILa2rE22gr1ffIC6xNpRNls6nX1MlZyESCdztVFhQFpMMqqd/02KQUfeOfU4qaEAs
+	dReTI+Uoxs3/LiWHtihuo5TqEmecYmXopHTr1JXgNdTZHlUXdKsf/AeXds8xYtpPASGt8aDyr5C
+	Uw4MsENKiDllEB6sRc28hOdsWC2TITGpKZngFtAa9eG//pLFJodmOP1itG6W7EdU7PKF61rUlDj
+	rHg5aNhm3KlU1300/fBJ289HN5ADbNHWqNXwSq0JsyEwNhddKgwjLM5ePONLRrtroVOXaxGm68h
+	2bA09Z8PQ+lbKDj81QpUOGlPaZnJ/lWJoEUwZc=
+X-Received: by 2002:a05:600c:890b:b0:488:a977:8d6 with SMTP id 5b1f17b1804b1-488fb775a35mr68237705e9.19.1776523094551;
+        Sat, 18 Apr 2026 07:38:14 -0700 (PDT)
+Received: from len.tail8322.ts.net (sgyl-44-b2-v4wan-166595-cust701.vm6.cable.virginm.net. [77.97.226.190])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-43fe4e3a397sm14509303f8f.23.2026.04.18.07.38.13
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 18 Apr 2026 07:38:13 -0700 (PDT)
+From: Paul Richards <paul.richards@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com,
+	Paul Richards <paul.richards@gmail.com>
+Subject: [RFC PATCH 0/3] btrfs: implement FALLOC_FL_COLLAPSE_RANGE and FALLOC_FL_INSERT_RANGE
+Date: Sat, 18 Apr 2026 15:38:05 +0100
+Message-ID: <20260418143808.199603-1-paul.richards@gmail.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <20260418024429.4055056-1-ziy@nvidia.com>
 
-On Fri, Apr 17, 2026 at 10:44:17PM -0400, Zi Yan wrote:
-> Hi all,
->
-> This patchset removes READ_ONLY_THP_FOR_FS Kconfig and enables creating
-> read-only THPs for FSes with large folio support (the supported orders
-> need to include PMD_ORDER) by default.
->
-> Before the patchset, the status of creating read-only THPs is below:
+This series adds support for FALLOC_FL_COLLAPSE_RANGE and
+FALLOC_FL_INSERT_RANGE to btrfs_fallocate(). Both operations are
+already supported by ext4 and xfs. The userspace contract is
+documented in fallocate(2).
 
-Good to specify the read-only bit up front!
+Patch 1 refactors btrfs_fallocate() to dispatch via a switch statement,
+moving punch_hole into its own function and decoupling locking from the
+per-operation helpers. This is similar to the implementaitons for ext4
+and xfs. The allocate-range and zero-range paths remain coupled since
+they share some setup logic.
 
->
->                             |    PF     | MADV_COLLAPSE | khugepaged |
->                             |-----------|---------------|------------|
->  large folio FSes only      |     ✓     |       x       |      x     |
->  READ_ONLY_THP_FOR_FS only  |     x     |       ✓       |      ✓     |
->  both                       |     ✓     |       ✓       |      ✓     |
+Patches 2 and 3 add COLLAPSE_RANGE and INSERT_RANGE respectively.
 
-This diagrams seem familiar :P but very nice, thanks!
+== Implementation approach ==
 
-And since we include cover letter in series in mm this should be some nice
-documentation in the commit msg also.
+For COLLAPSE_RANGE:
+ - The removed region [offset, offset+len) is punched out via
+   btrfs_replace_file_extents(), which handles boundary splitting.
+ - All EXTENT_DATA keys with key.offset >= offset+len are shifted
+   leftward by len in forward order.
 
->
-> where READ_ONLY_THP_FOR_FS implies no large folio FSes.
->
->
-> Now without READ_ONLY_THP_FOR_FS:
->
->                            |    PF     | MADV_COLLAPSE | khugepaged |
->                            |-----------|---------------|------------|
->  large folio FSes          |     ✓     |       ✓       |      ✓     |
->  no large folio FSes       |     x     |       x       |      x     |
+For INSERT_RANGE:
+ - All EXTENT_DATA keys with key.offset >= offset are shifted rightward
+   by len in reverse order (required to avoid key collisions).
+ - No pre-splitting of straddling extents is needed: the left portion
+   of a straddling extent stays in place, the right portion is shifted;
+   both reference the same physical extent via their existing
+   extent_offset fields.
 
-This is really nice and clear thanks!
+For each shifted key, the corresponding back-reference in the extent
+tree is updated via a shared helper btrfs_shift_extent_backref().
 
->
-> This means no large folio FSes need to add large folio support (the
-> supported orders need to include PMD_ORDER), so that they can leverage
-> read-only THP creation function.
->
-> To prevent breaking read-only THP support for large folio FSes,
-> 1. first 4 patches enables the support, so that without READ_ONLY_THP_FOR_FS,
->    read-only THP still works for large folio FSes,
+After the key-shift loop, btrfs_drop_extent_map_range() is called to
+invalidate the in-memory extent map cache. This is important for reads
+after the fallocate operation to ensure they obtain data for the new
+offsets.
 
-I guess this introduces what was previously supported by
-CONFIG_READ_ONLY_THP_FOR_FS to large folios as part of that before removal of
-the config option?
+The page cache is flushed and invalidated upfront (before any extent
+manipulation) following the ext4/xfs pattern. The inode lock
+(BTRFS_ILOCK_MMAP) is held throughout, preventing new dirty pages from
+appearing during the operation.
 
-> 2. Patch 5 removes READ_ONLY_THP_FOR_FS Kconfig,
-> 3. the rest of patches remove code related to READ_ONLY_THP_FOR_FS.
+Transaction cycling: the key-shift loop cycles transactions every
+BTRFS_INSERT_COLLAPSE_TRANSACTION_CYCLE_INTERVAL (32) items to avoid
+holding a single transaction open across a large number of extents.
 
-Makes sense thanks!
+Both operations are gated on CONFIG_BTRFS_EXPERIMENTAL.
 
->
->
-> The overview of the changes is:
->
-> 1. collapse_file() checks for to-be-collapsed folio dirtiness after they
->    are locked, unmapped to make sure no new write happens. Before,
->    mapping->nr_thps and inode->i_writecount are used to cause read-only
->    THP truncation before a fd becomes writable.
->
-> 2. hugepage_pmd_enabled() is true for anon, shmem, and file-backed cases
->    if the global khugepaged control is on, otherwise, khugepaged for
->    file-backed case is turned off and anon and shmem depend on per-size
->    control knobs.
->
-> 3. collapse_file() from mm/khugepaged.c, instead of checking
->    CONFIG_READ_ONLY_THP_FOR_FS, makes sure the mapping_max_folio_order()
->    of struct address_space of the file is at least PMD_ORDER.
->
-> 4. file_thp_enabled() also checks mapping_max_folio_order() instead and
->    no longer checks if the input file is opened as read-only (Change 1
->    handles read-write files).
->
-> 5. truncate_inode_partial_folio() calls folio_split() directly instead
->    of the removed try_folio_split_to_order(), since large folios can
->    only show up on a FS with large folio support.
->
-> 6. nr_thps is removed from struct address_space, since it is no longer
->    needed to drop all read-only THPs from a FS without large folio
->    support when the fd becomes writable. Its related filemap_nr_thps*()
->    are removed too.
->
-> 7. folio_check_splittable() no longer checks READ_ONLY_THP_FOR_FS.
->
-> 8. Updated comments in various places.
->
->
-> Changelog
-> ===
-> From V2[3]:
-> 1. removed unnecessary check in collapse_scan_file().
->
-> 2. removed inode_is_open_for_write() check in file_thp_enabled().
->
-> 3. changed hugepage_pmd_enabled() to return true if khugepaged global
->    control is on instead of false. cleaned up anon and shmem code in the
->    function.
->
-> 4. moved folio dirtiness check after try_to_unmap() but before
->    try_to_unmap_flush(), since that is sufficient to prevent new writes.
->
-> 5. reordered patch 4 and 5, so that khugepaged behavior does not change
->    after READ_ONLY_THP_FOR_FS is removed.
->
-> 6. added read-write file test in khugepaged selftest.
->
-> 7. removed the read-only file restriction from guard-region selftest.
->
-> From V1[2]:
-> 1. removed inode_is_open_for_write() check in collapse_file(), since the
->    added folio dirtiness check after try_to_unmap_flush() should be
->    sufficient to prevent writes to candidate folios.
->
-> 2. removed READ_ONLY_THP_FOR_FS check in hugepage_pmd_enabled(), please
->    see Patch 5 and item 2 in the overview for more details.
->
-> 3. moved the patch removing READ_ONLY_THP_FOR_FS Kconfig after enabling
->    khugepaged and MADV_COLLAPSE to create read-only THPs.
->
-> 4. added mapping_pmd_thp_support() helper function.
->
-> 5. used VM_WARN_ON_ONCE() in collapse_file() for mapping eligibility check
->    and address alignment check instead of if + return error code. Always
->    allow shmem, since MADV_COLLAPSE ignore shmem huge config.
->
-> 6. added mapping eligibility check in collapse_scan_file().
->
-> 7. removed trailing ; for folio_split() in the !CONFIG_TRANSPARENT_HUGEPAGE.
->
-> 8. simplified code in folio_check_splittable() after removing
->    READ_ONLY_THP_FOR_FS code.
->
-> 9. clarified that read-only THP works for FSes with PMD THP support by
->    default.
->
-> From RFC[1]:
-> 1. instead of removing READ_ONLY_THP_FOR_FS function entirely, turn it
->    on by default for all FSes with large folio support and the supported
->    orders includes PMD_ORDER.
->
-> Suggestions and comments are welcome.
->
-> Link: https://lore.kernel.org/all/20260323190644.1714379-1-ziy@nvidia.com/ [1]
-> Link: https://lore.kernel.org/all/20260327014255.2058916-1-ziy@nvidia.com/ [2]
-> Link: https://lore.kernel.org/all/20260413192030.3275825-1-ziy@nvidia.com/ [3]
->
-> Zi Yan (12):
->   mm/khugepaged: remove READ_ONLY_THP_FOR_FS check
->   mm/khugepaged: add folio dirty check after try_to_unmap()
->   mm/huge_memory: remove READ_ONLY_THP_FOR_FS from file_thp_enabled()
->   mm/khugepaged: remove READ_ONLY_THP_FOR_FS check in
->     hugepage_pmd_enabled()
->   mm: remove READ_ONLY_THP_FOR_FS Kconfig option
->   mm: fs: remove filemap_nr_thps*() functions and their users
->   fs: remove nr_thps from struct address_space
->   mm/huge_memory: remove folio split check for READ_ONLY_THP_FOR_FS
->   mm/truncate: use folio_split() in truncate_inode_partial_folio()
->   fs/btrfs: remove a comment referring to READ_ONLY_THP_FOR_FS
->   selftests/mm: remove READ_ONLY_THP_FOR_FS in khugepaged
->   selftests/mm: remove READ_ONLY_THP_FOR_FS code from guard-regions
->
->  fs/btrfs/defrag.c                          |   3 -
->  fs/inode.c                                 |   3 -
->  fs/open.c                                  |  27 -----
->  include/linux/fs.h                         |   5 -
->  include/linux/huge_mm.h                    |  25 +----
->  include/linux/pagemap.h                    |  35 ++-----
->  include/linux/shmem_fs.h                   |   2 +-
->  mm/Kconfig                                 |  11 ---
->  mm/filemap.c                               |   1 -
->  mm/huge_memory.c                           |  39 ++------
->  mm/khugepaged.c                            |  86 ++++++++--------
->  mm/truncate.c                              |   8 +-
->  tools/testing/selftests/mm/guard-regions.c |  18 +---
->  tools/testing/selftests/mm/khugepaged.c    | 110 +++++++++++++++------
->  tools/testing/selftests/mm/run_vmtests.sh  |  12 ++-
->  15 files changed, 156 insertions(+), 229 deletions(-)
->
-> --
-> 2.43.0
->
+== Known limitations ==
+
+INSERT_RANGE returns -EOPNOTSUPP for inlined files. Supporting inline
+files will require promoting the existing inline extent to a regular
+one, since inline extends are supported only at the very start of a
+file.
+
+In the opposite direction, COLLAPSE_RANGE will not create inline files
+like it should if the remaining data is small enough.
+
+I intend to address both of these limitations.
+
+== Testing ==
+
+Tested with a Rust-based functional test suite covering:
+ - Collapse and insert at the start, middle of a file
+ - Multiple sequential operations on the same file
+ - Files with multiple extents (fsync between writes to force separate
+   extent items)
+ - Files with holes (explicit punch_hole and implicit sparse writes)
+ - Compressed extents (mount -o compress=zstd)
+ - Transaction cycling (interval reduced to 4 during testing, verified
+   in dmesg logs)
+ - Inline files, verified that -EOPNOTSUPP is returned.
+
+The same tests pass on both btrfs and xfs (modulo the inline files).
+
+I have not run fstests which I know contains tests for INSERT_RANGE
+and COLLAPSE_RANGE. I will do so.
+
+== Questions for reviewers ==
+
+1. Transaction cycling interval: we use 32 items per cycle. Is this
+   the right threshold, or is there an established convention in btrfs
+   for this kind of loop?
+
+2. Extent lock scope for collapse: we hold the extent lock only on
+   [offset, offset+len) during the hole punch, not on the full
+   [offset, i_size) range that the key-shift loop operates on. Is
+   this safe, or should we lock the full affected range?
+
+3. CONFIG_BTRFS_EXPERIMENTAL gate: is this the right gate for these
+   operations, or should they be unconditionally available?
+
+== Notes ==
+
+This is my first kernel contribution. Development was significantly
+assisted by an LLM (Amazon Q Developer). The implementation, testing,
+and final review decisions are my own.
+
+Various btrfs_info() print statements, assertions, and comments that
+were useful during development and testing have been left in place,
+but will be removed or streamlined in the next revision.
+
+Paul Richards (3):
+  btrfs: refactor btrfs_fallocate() ahead of supporting more modes
+  btrfs: support for FALLOC_FL_COLLAPSE_RANGE in btrfs_fallocate()
+  btrfs: support for FALLOC_FL_INSERT_RANGE in btrfs_fallocate()
+
+ fs/btrfs/file.c | 601 ++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 578 insertions(+), 23 deletions(-)
+
+-- 
+2.53.0
+

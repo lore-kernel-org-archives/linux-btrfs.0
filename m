@@ -1,81 +1,51 @@
-Received: from fhigh-a6-smtp.messagingengine.com (fhigh-a6-smtp.messagingengine.com [103.168.172.157])
+Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4475837F742
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 Apr 2026 23:16:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.157
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 475B540DFB4
+	for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 00:18:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.81.13.136
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776467793; cv=none; b=i8dIEuiTGU6KUi+bAJebo5KWDfmzLUzuVXpMBqsFeYgvyMgh568cyp5DhVNVCOHsD7bjCMHvgOMr4LEu/W6qP2NMCUwsP10baGv1rv81xzKOvr4ijZq9+XdpdsUxcRRyN33O2NkT5XhxhPbGzTbp0FonkFv7AAIErO8aIiz63gw=
+	t=1776471497; cv=none; b=Kc8EHuspev0CdVSJntA+1P0up8gwbgAHC6M3S2eyxpFtrThMLcaIYl8yp9dE0YxWiqiXSXN4D8fAh2d7TbcpX1oIIsjWCSPFlpPo9gnONICLet5hxu+J359Nxges3nWaXxqwqmI7oHhBu8lba52eQ7eNXL0eUdMuEnrDj9WvjSM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776467793; c=relaxed/simple;
-	bh=dioKhvlPx8gEF12LRAqA6JpX9yOFd3IVZZXD64M0zyc=;
+	s=arc-20240116; t=1776471497; c=relaxed/simple;
+	bh=3OO1hg+w/oM2fbUYgKQXfR+W4XjctgHDJHqjhsTecP8=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=MxdNdSki+ph90ZzqEH9O9uVETQHhYkWmBpeTnUE9oXmzPtEE6QYr6lVLAjlhKbuftuwNRl8ZLKNww51y/4LS5rQZQ/dkJskd9NkKxPJyRZLo3AsKzp3DoTkRPNYa7PLrUdym6i8tJVAJ+hpYfqv+FbYfHKoeDH/Y7IZ+CC4dVqk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=H7IWGkjx; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=rei4gazz; arc=none smtp.client-ip=103.168.172.157
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	 Content-Type:Content-Disposition:In-Reply-To; b=PZQS1rXfSGBF6lP57bcZMmEFydMaMv+tiCyOt+FYkFwFOv+QvLAyP1fu7Wt8tnmnV/xqIcxoVLtozM6Y17R/BHc6B9DOuioLCNvDE9T09J7RL23sIbQ56En6gYZfNUBlgJOthXj93QXHh0H2libS61hJORmqYkgSaIk25yCbb1A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org; spf=pass smtp.mailfrom=merlins.org; dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b=ag/F2jJI; arc=none smtp.client-ip=209.81.13.136
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=merlins.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="H7IWGkjx";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="rei4gazz"
-Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id 30E08140006C;
-	Fri, 17 Apr 2026 19:16:31 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-06.internal (MEProxy); Fri, 17 Apr 2026 19:16:31 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1776467791; x=1776554191; bh=XPJaFkT5CZ
-	iQRA3Gs/UIT7nV5NCTfdm4E3Mp/Jrw6ig=; b=H7IWGkjxHgw/0xpIovU7v0rkeO
-	Js9G1IHvvz+1olnD5L9xy3T3lsLsEFATvF0UhZ8stBkAR9my3TNP8uNywJZwmewY
-	VxvWScQIQIG73xlwck4MNqAO8eg+YV8Ikuwqb5A/Fl84QmIfy42zEOrZ9tX9pbjM
-	lxMqOL2AcQld70hRt+dqnRM4TYu11ALrIjfJX49MnU88+ykk+FgfUtOe2FIUmcys
-	6dCp8wj2/BNK7FMjtiv7m7YV4NWRxk8vqEHo0vHJkz9o8NLN0dIFt0Drljf4BDKH
-	QauPQYSR4G0h+TUKDA0slvIyS04YqgdOsVPXwGvnVKdJ/dTefLcPnqb2RrXQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1776467791; x=1776554191; bh=XPJaFkT5CZiQRA3Gs/UIT7nV5NCTfdm4E3M
-	p/Jrw6ig=; b=rei4gazzvvxuQJJlTt9a1js0OL3jZts+w+Og6cnQL44pK+WaM7M
-	g1kUbmFqfHUH1JIvsEpAAU7Mr5OtPQMAVEK7XlgxlxlGr3Q9Vk23CVvvYBcZNDpd
-	GvHQEPewA2Xslkl6xxffwVOVqmk5AAuwrEzCEEuvAsbOhUqaVoGh/PdqNl+fYDyU
-	aaE4Mt/m6bOzjlBtS7aDfotqomELr+gJIgkuOukFbVAzTcwgeMTHzEIr9Cb/RFj5
-	WAMq1BtvCkCKlkwftgvCtYql7cg/Nr1b1kJnJ8vPFxDHBw8tFsd/RnEMPSaSDTed
-	aiiWsmi5/SNs3Wt2m1VEY5aby/57Dln8kNg==
-X-ME-Sender: <xms:Tr_iaQfu5DDnowNDNOqPWqqAbrfr-is9r62o_BW55YbwfV-PexbbtQ>
-    <xme:Tr_iaYNCW9ixw6l_bJ1qfK0YyuYmUJjQkFETpb8jO9S-GYIz1t7sXQN2jQRbNQxNX
-    IcUF3RxEFPUBNydQWXIKgWOO2lig6GAetK-l7sSXnQMkowxbHq89m8>
-X-ME-Received: <xmr:Tr_iafL5qTtjZqTxrznulLgXZRhp0DYYLSBQ5OXg4XvAJKKdiAz2CgMtZXQOXK4YJTSSjOZuwCzdpXCwXMEpi6VgfF4>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdehuddukecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
-    ihhlohhuthemuceftddtnecunecujfgurhepfffhvfevuffkfhggtggujgesthdtredttd
-    dtvdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihho
-    qeenucggtffrrghtthgvrhhnpeeutddvtdehgedvvdetuefgvefggfegudekjefhgefgje
-    ekgeelgfeigeegudevheenucffohhmrghinhepmhgvrhhlihhnshdrohhrghenucevlhhu
-    shhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
-    hrrdhiohdpnhgspghrtghpthhtohepvddpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
-    ohepmhgrrhgtpggsthhrfhhssehmvghrlhhinhhsrdhorhhgpdhrtghpthhtoheplhhinh
-    hugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrgh
-X-ME-Proxy: <xmx:Tr_iaREh4YwDy40C33W4_GN4ypGygQDelOUaolmA9Q49RHCx23vNew>
-    <xmx:Tr_iafTXAmPnshMlJAoSKyuhWU23AckwLgU8kp1adaCeRCDGf5xNPA>
-    <xmx:Tr_iaVEWwwCyb1lXIyQayxKmJhZbMxWJBvWDpGv3DyWWTrJqE1P9GA>
-    <xmx:Tr_iaT_5XUWYydjZxkMV-LuJcGje0Bn5KAvRlIWS2sYCfm_AGAhNNQ>
-    <xmx:T7_iab2LxA5uU8exuA1AX83bp0E0uN8PVwkkZFxu8exhrBVQFYIZzJ_B>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
- 17 Apr 2026 19:16:30 -0400 (EDT)
-Date: Fri, 17 Apr 2026 16:16:03 -0700
-From: Boris Burkov <boris@bur.io>
-To: Marc MERLIN <marc_btrfs@merlins.org>
+	dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b="ag/F2jJI"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=merlins.org
+	; s=20251023; h=In-Reply-To:Content-Type:MIME-Version:References:Message-ID:
+	Subject:Cc:To:From:Date:Sender:Reply-To:Content-Transfer-Encoding:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:List-Subscribe:
+	List-Post:List-Owner:List-Archive;
+	bh=BXYlollBxdwv308h1lEDlWuxiJlb8HXcLsQ1TdZc6lo=; b=ag/F2jJI4/S97OPnA6cP4r8Cpk
+	cvuEXrmvXF56/wcrS8iRpev1l+NyWbnDmN3+wmcyfcshbD4DPjL1McLFwlvBJjnryF+pNiiB/LFZz
+	D6+VERTC2fOCvTxBWUkcxtIcGIajAu6/HBMBsivdTB3uGzFmKc1zbk7sdrPP69iGAFfGzIlZsyVOg
+	y8xQh32qnkz08sChiLE6ebCEWUFSZo3sgQKCBzEvQ0L9F9g2glNAy5FK4LOvUm+aXTN4VpqhvKRF8
+	bDChiKCk9e1S0kjy7xcgk7bqs2VS1pPk+kmPSan9UZEtbOYcomOy0bR04CFZXHHm+5r3zTQbGGQts
+	vKwRF04g==;
+Received: from [24.6.49.44] (port=49498 helo=sauron.svh.merlins.org)
+	by mail1.merlins.org with esmtpsa 
+	(Cipher TLS1.3:ECDHE_SECP256R1__ECDSA_SECP256R1_SHA256__AES_256_GCM:256) (Exim 4.98.2 #2)
+	id 1wDtO3-00000002NQp-3cBR by authid <merlins.org> with srv_auth_plain;
+	Fri, 17 Apr 2026 17:18:15 -0700
+Received: from merlin by sauron.svh.merlins.org with local (Exim 4.96)
+	(envelope-from <marc_btrfs@merlins.org>)
+	id 1wDtO2-003k3U-1R;
+	Fri, 17 Apr 2026 17:18:14 -0700
+Date: Fri, 17 Apr 2026 17:18:14 -0700
+From: Marc MERLIN <marc_btrfs@merlins.org>
+To: Boris Burkov <boris@bur.io>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Simple quota unsafe? RIP:
  0010:__btrfs_free_extent.isra.0+0xc41/0x1020 [btrfs] /
  do_free_extent_accounting:2999: errno=-2 No such entry
-Message-ID: <20260417231603.GA2376753@zen.localdomain>
-References: <20260415223629.GA956756@zen.localdomain>
- <aeAXawJ9F9K28shr@merlins.org>
+Message-ID: <aeLNxjmUGGhnW5ss@merlins.org>
+References: <aeAXawJ9F9K28shr@merlins.org>
  <20260416004552.GA1045221@zen.localdomain>
  <aeA2c8V4FgCctUPG@merlins.org>
  <20260416012535.GB1065998@zen.localdomain>
@@ -84,6 +54,7 @@ References: <20260415223629.GA956756@zen.localdomain>
  <aeFY4uSTSIz4Ccat@merlins.org>
  <20260417215127.GA2310330@zen.localdomain>
  <aeK2QgUCefpVY4KX@merlins.org>
+ <20260417231603.GA2376753@zen.localdomain>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -92,39 +63,58 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <aeK2QgUCefpVY4KX@merlins.org>
+In-Reply-To: <20260417231603.GA2376753@zen.localdomain>
+X-Sysadmin: BOFH
+X-URL: http://marc.merlins.org/
+X-SA-Exim-Connect-IP: 24.6.49.44
+X-SA-Exim-Mail-From: marc_btrfs@merlins.org
 
-On Fri, Apr 17, 2026 at 03:37:54PM -0700, Marc MERLIN wrote:
-> On Fri, Apr 17, 2026 at 02:51:27PM -0700, Boris Burkov wrote:
-> > Just to be extra clear as it is relevant for fully understanding the
-> > repro-space, are you managing these purely with receive / subvol delete
-> > commands? 
-> 
-> yes
-> 
-> > Did you ever delete a qgroup that was straggling around or add
-> > automation to do that (btrfs qgroup destroy <qgid>) or did you ever
-> > disable/enable squotas besides the first time?
-> 
-> no to all 3
-> 
+On Fri, Apr 17, 2026 at 04:16:03PM -0700, Boris Burkov wrote:
+> Rad, so there is some more "exciting" bug with balance lurking there.
+ 
+Correct, all 3 times the bug happened, it was during balance.
+And now that you mention it, all 3 filesystems it happened to had a
+bunch of data already before I enabled squota on them (because those
+FSes were several years old, and created with much older kernels).
 
-Rad, so there is some more "exciting" bug with balance lurking there.
+On all 3, I ran:
+btrfstune -n -x -r $DEV; btrfstune --enable-simple-quota $DEV ; btrfstune --convert-to-block-group-tree $DEV
+and then on the mounted filesystem
+btrfs quota enable --simple .
 
-> > Were all the squota enables on existing fs-es?
-> 
-> Yes. My understanding was that I have to create the FS first and then
-> turn on squota. If I could turn it on as an option to mkfs.btffs, I
-> would but I didn't find such an option.
-> 
+I'm not sure how many of -n -x -r were already enabled before, but 
+100% know squota were not and neither were block group trees
 
-mkfs.btrfs -O squota <dev>
+My last remaining FS with squota running is the only one that had
+squotas on it from the start (with the btrfs quota comamand but the FS
+was empty).
+If you feel the bug might not trigger in that use case, I can try to
+re-enable balance and scrub on it, but it's another 30TB FS, so it sucks
+if I lose it. Then again, I think we now know I can recover without
+losing it, so should I go ahead and re-enable them with 6.19 (even if
+6.19 did crash on my older FS where I enabled squota after data was
+already there?)
 
-should make a fresh btrfs with squota enabled. But we can worry about
-that once I get the fixes in. :)
+> mkfs.btrfs -O squota <dev>
+ 
+Aaah, I was missing that option, but even if it's a make time, do I
+still need to turn them on with "btrfs quota enable --simple mountpoint"?
 
-> Marc
-> -- 
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
->  
-> Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08
+If there is no good documentation on all this, it's been 12 years since
+I wrote all those missing docs/howtos on btrfs in https://marc.merlins.org/perso/btrfs/
+happy to make a new one to put a few new notes on squotas and block-group-tree
+which I was unaware of until just a week ago.
+
+On the plus side, knowing it's squota and balance makes me feel better
+that btrfs on top of raid5 isn't as unsafe as it used to be (it's
+supposed to be safe, but I've had more than 5 unrecoverable FS crashes
+after swraid5 misbehaved when I was really hoping for just a bit of data
+loss or data corruption that scrub would find and then I could move on.
+Also, I'm pretty sure I had -m dup all these years, so it's sad it
+didn't help)
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

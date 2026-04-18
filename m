@@ -1,343 +1,158 @@
-Received: from mail-wr1-f44.google.com (mail-wr1-f44.google.com [209.85.221.44])
+Received: from mail-oo1-f77.google.com (mail-oo1-f77.google.com [209.85.161.77])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73DD4389472
-	for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 14:38:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1A27DF6C
+	for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 16:18:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.77
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776523117; cv=none; b=Ujn0HRgEmmsdjSnB31jWJ9YQBtiUaJUiZAlkKwNWbR8GbMcB359Px2zWztm3yRsRmkA1Sdl/vxK6mbZFVResB3khFbG5/Q0HoxuXSzMDvHpEjX1mY6L1X9STIZicZ6iw5hrrvVp8xf+RqW87zHC7UGgUZgwr4xXm/F6h7c1rc/c=
+	t=1776529111; cv=none; b=NCmEst8MowXFgtO2v86vXgs03+3x1wKZGhooydI+IHFcyF1f24CkIcn6Y5dzFy/3X4YcmI21HmIPWyplt5rdj1JsWztSGhskBW7HeokkHa12XG+yj4EkpYtPgYB0ErDSoJCeN4s0Urkz5nXbodKq3LteYxQ+J2FrgLkepgcK5Cc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776523117; c=relaxed/simple;
-	bh=qSMrIYbPB05ge12X+y3Av09OzKgQ5IdeBH0L6iKMnnY=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=dIKQ391S0AATABzmRPPx89PhMkJxZ7kIo8ZYMf3xNxqlhJJPns4YvsgafZbPaVKOSmUapOlmCX1INSs1Hy8U5HN8fRUm3y6JEe7E+qve06zG9kF3Bm3lWBm7EtIAFYnJ3DcDluW0AMse+OGIlK/q2k5F38nlvuRsHRsAsdjRbvo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=FTOWrwz5; arc=none smtp.client-ip=209.85.221.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="FTOWrwz5"
-Received: by mail-wr1-f44.google.com with SMTP id ffacd0b85a97d-43d7645adbdso920648f8f.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 07:38:35 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1776523113; x=1777127913; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=WnJNlFPESeWmEBJ8xNZADIHMqM23M0DOcweTPG/45EM=;
-        b=FTOWrwz5Uc7WFtIMLNMS/UFhAr8cHaYCA4e3BX6qZiKmICTZlnOFWJeKIJCoYnYqH2
-         CICsin3Ctwt4Ur2tfoq6uikLpcM8u3Ux5u0f3UyttV0mPKhVFFoYgAm+98UWvPxMGlpc
-         dT5v8KwnBF3b88i7fEfxH+E4zgYvbsb3ZczHjpmjfJlzjxE2s4OuH4MyZ2kWaoHmGAca
-         aAPsCFRqCwWoD559M5KFz5sDgiocdxhbZnH0BygclmRnOcxbnmNnkYUHFxdI+d2wE1EL
-         2lr5Fgky4wl98Bk0m5/GXsoLO7bP6CzgjtTcBnQaxPho1Zpx2iSWaw0bffNnvP5NaR9P
-         xUFg==
+	s=arc-20240116; t=1776529111; c=relaxed/simple;
+	bh=yb2RgiugMP9KIPaIriZTRVpFoOO6gr5YnImg0sI/iJw=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=AMr4rieGK7DnjtQbvN4cTF7XqYFy0lq/k/GvlNY8jZpYeKq69prNO1wdj9lHX5Tosll8S9J1AUgqiJl3+UnmsYZaQscdheP3FpFmTYxyRn65TRFEjorMtlRo4DmD4m8jcWAHoM4ONJwkk7fuOkTAWRtIJ9pkhlatuXdYwKBF53g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.161.77
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oo1-f77.google.com with SMTP id 006d021491bc7-68d7d187379so3289237eaf.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 18 Apr 2026 09:18:29 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1776523113; x=1777127913;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=WnJNlFPESeWmEBJ8xNZADIHMqM23M0DOcweTPG/45EM=;
-        b=mr3wdZ392sE6bRorKxb9gCuJJUcYuOet4/xuVXA+ocORviYI2mQEuUVBN1dY5QuzY3
-         paxQqqvXWjqae+cSIeCMDGg1ehZhaa49+BxIan/OSfVn6GScz8sfvkMKBplL+fvNIgt6
-         eqm7GcDmRS86ZIVUFiydgc1Eq8U8kmoctcSVGzJ0hMgVta8eVupDVsu/FVaZBIjvu9lg
-         4f7DFG9i3yxM1tgMSOmbOeOeHEILFilmhFLd2bubEwuUX3J9pMUJd3z/LMqixdnl/jiR
-         rN1Z5mrisWw88C4lwTt2s+4N9+q3HX204x9ypAuZhvGPfSnU4BC/UTQ/+8j1+T+3wS2D
-         OZxg==
-X-Gm-Message-State: AOJu0YwkksZYCMEpjeFzlPQF4PLM+YjUSAq+Ce5l67lz3kRMp/0ZoOvN
-	/xaV+rueFdYuW4UYGNW29MgV8oCc7mwmXkzJn+8VkCjuTTgydoUNdHjCnhoVpMzV
-X-Gm-Gg: AeBDieuZxL8oHjU7xizXkFvxmTTrHGyXQW+ZURvVS+xMjkDqRCX53AxoODniec3emM3
-	5Ih4pGeiRRA7jncOTNpyvxseJapd1okZHp0okNRjMtdrBKHMV0ZeKp+ZBcKriN+G3zD7V0ygsju
-	5aLQKRtiblLw5FY+CAonYCYY2ViRm2Q3mm/hXQfJzKyBS7e8VXeHk3QPGBupys7LrBMfvn9KPKH
-	wz3kAq+7pAxJYlgfCm3VXxjLkIFBSNAYoJCOYPiTMVckAEbbex6eyA69vKEK81SzOjJ5U7Uc0sf
-	WQluMMedXhJ0Cv4MDvYrpiS1oRedcqwssv1Zw/HHarjdk7hnjDWJ7pX+iolo8yNenOkeilVEryX
-	gU8RuHrFSo7is8quCH23UeQT1IrDEjtj3v4an0WHTnyLfidFA+0lRB1KntsplLTfrsD3VpcFfW8
-	xdZlQwgc/JA68RVgOz5VZAtoDeVJWx3s77k1M3dqudRtSdcSwpRaOg95LMcHpmgUQuU7pfslIdj
-	Qn3JhR0bNOOvO+auXnE94Fni9ELpLi+o2Vcrd4=
-X-Received: by 2002:a05:6000:1a8c:b0:43e:b0f8:66f1 with SMTP id ffacd0b85a97d-43fe3e0b86emr10325629f8f.43.1776523113395;
-        Sat, 18 Apr 2026 07:38:33 -0700 (PDT)
-Received: from len.tail8322.ts.net (sgyl-44-b2-v4wan-166595-cust701.vm6.cable.virginm.net. [77.97.226.190])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-43fe4e3a397sm14509303f8f.23.2026.04.18.07.38.32
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 18 Apr 2026 07:38:32 -0700 (PDT)
-From: Paul Richards <paul.richards@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com,
-	Paul Richards <paul.richards@gmail.com>
-Subject: [PATCH 3/3] btrfs: support for FALLOC_FL_INSERT_RANGE in btrfs_fallocate()
-Date: Sat, 18 Apr 2026 15:38:08 +0100
-Message-ID: <20260418143808.199603-4-paul.richards@gmail.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <20260418143808.199603-1-paul.richards@gmail.com>
-References: <20260418143808.199603-1-paul.richards@gmail.com>
+        d=1e100.net; s=20251104; t=1776529108; x=1777133908;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=9J1+0eCeLXt32Dfr0Ncz3Nv0HT5xCvEYARTz0KXvAHI=;
+        b=ijL3fcySK4mq9/m303iI6Kv6Gt6c0x5DjAN+8SFfF5j7FnRYLKhuQPZgWCKzOYUir2
+         Va5GnhUE20GeeMCKstyj/Sea9ITAFAREvLCEbIX8u0LLoHJjeF3s3ibyXvBP7J3qS4/y
+         58vgjtpFDSD5psSfKLB9jau/QfVAMMDkx3HVxaPYBDYGHmcLpCAa12tZkhl37URBt7jL
+         /ZFgkPUQ8O6KQ4q8wwma1dLmKMVN77lRX4Nm24t9lSVLriOUBldVyMnR1zEmukCPHwVY
+         ZCnRliu6hzAox8+vToncXpP9Yjuqp3uwmqCp5dCHZOCTCG/cUi5Yd1ntjlcWDGx1MjKc
+         g5Qw==
+X-Forwarded-Encrypted: i=1; AFNElJ/Nzj8UPCJ4k11ueQz7H0yqjyljZweIhV1cUtrO9fRB5eBvb/EKKYy6QQGh9lICDmtGxO9QMLMVJOkk+A==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzR6lNx6k9zTmMAB8/v1ryyeQWFJQR2bjBVZRuIHzLVnnAXimLK
+	+n+KHtaNcKrpepI6elIl3fjeX1PZbjH1svqKGDHvdYM7d7ycpIMn0fwjk6b+kMwTit2XUTfvVs/
+	Z1XTx57bQ3gwvs9+y8EEM1SUZrHY2bzBga7az7JZ09+4Md5v+F7+D6cceLFk=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-Received: by 2002:a05:6820:2089:b0:67e:3ae6:9031 with SMTP id
+ 006d021491bc7-69462f45720mr4251430eaf.59.1776529108747; Sat, 18 Apr 2026
+ 09:18:28 -0700 (PDT)
+Date: Sat, 18 Apr 2026 09:18:28 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <69e3aed4.a00a0220.1bd0ca.0047.GAE@google.com>
+Subject: [syzbot] [btrfs?] kernel BUG in replace_file_extents
+From: syzbot <syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 
-Assisted-by: Amazon Q Developer:auto/unknown
-Signed-off-by: Paul Richards <paul.richards@gmail.com>
+Hello,
+
+syzbot found the following issue on:
+
+HEAD commit:    43cfbdda5af6 Merge tag 'for-linus-iommufd' of git://git.ke..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=14fb82d2580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=eae4973b8684a00c
+dashboard link: https://syzkaller.appspot.com/bug?extid=3e20d8f3d41bac5dc9a2
+compiler:       Debian clang version 21.1.8 (++20251221033036+2078da43e25a-1~exp1~20251221153213.50), Debian LLD 21.1.8
+
+Unfortunately, I don't have any reproducer for this issue yet.
+
+Downloadable assets:
+disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-43cfbdda.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/473adbf1a380/vmlinux-43cfbdda.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/63ebea9fbab4/bzImage-43cfbdda.xz
+
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com
+
+BTRFS info (device loop0): balance: start -d -m
+BTRFS info (device loop0): relocating block group 6881280 flags data|metadata
+BTRFS info (device loop0): relocating block group 5242880 flags data|metadata
+BTRFS info (device loop0): found 22 extents, stage: move data extents
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/relocation.c:841!
+Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 5328 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+RIP: 0010:get_new_location fs/btrfs/relocation.c:838 [inline]
+RIP: 0010:replace_file_extents+0x1574/0x1590 fs/btrfs/relocation.c:941
+Code: 81 2c fe 49 8b 3e be 03 00 00 00 48 c7 c2 40 da 17 8c 44 89 e9 e8 cc dd 25 fd e8 f7 36 ff ff e9 a7 fc ff ff e8 ad 5f c0 fd 90 <0f> 0b e8 a5 5f c0 fd 90 0f 0b e8 9d 5f c0 fd 90 0f 0b e8 95 5f c0
+RSP: 0000:ffffc900071f6e80 EFLAGS: 00010287
+RAX: ffffffff8404c563 RBX: ffff88800e57f9a0 RCX: 0000000000100000
+RDX: ffffc90021003000 RSI: 00000000000c282c RDI: 00000000000c282d
+RBP: ffffc900071f7090 R08: ffffea0000ef04c7 R09: 1ffffd40001de098
+R10: dffffc0000000000 R11: fffff940001de099 R12: 0000000000000483
+R13: ffff88805b2e8000 R14: 0000000000000e70 R15: 80c06030180c2811
+FS:  00007fa6cd9886c0(0000) GS:ffff88808c820000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f2a6cc8ecf0 CR3: 000000001cdeb000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ btrfs_force_cow_block+0xa4d/0x2450 fs/btrfs/ctree.c:532
+ btrfs_cow_block+0x3c4/0xa90 fs/btrfs/ctree.c:699
+ do_relocation+0xd2e/0x1920 fs/btrfs/relocation.c:2288
+ relocate_tree_block fs/btrfs/relocation.c:2538 [inline]
+ relocate_tree_blocks+0x11ee/0x2020 fs/btrfs/relocation.c:2645
+ relocate_block_group+0x76f/0xe70 fs/btrfs/relocation.c:3570
+ do_nonremap_reloc+0xa8/0x5b0 fs/btrfs/relocation.c:5250
+ btrfs_relocate_block_group+0x7e6/0xc40 fs/btrfs/relocation.c:5416
+ btrfs_relocate_chunk+0x115/0x820 fs/btrfs/volumes.c:3598
+ __btrfs_balance+0x1db0/0x2ae0 fs/btrfs/volumes.c:4509
+ btrfs_balance+0xaf3/0x11b0 fs/btrfs/volumes.c:4896
+ btrfs_ioctl_balance+0x3d3/0x610 fs/btrfs/ioctl.c:3453
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:597 [inline]
+ __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0x15f/0xf80 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fa6ccb9c819
+Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fa6cd987fe8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007fa6cce16090 RCX: 00007fa6ccb9c819
+RDX: 0000200000000180 RSI: 00000000c4009420 RDI: 0000000000000006
+RBP: 00007fa6ccc32c91 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007fa6cce16128 R14: 00007fa6cce16090 R15: 00007ffdf45f3438
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:get_new_location fs/btrfs/relocation.c:838 [inline]
+RIP: 0010:replace_file_extents+0x1574/0x1590 fs/btrfs/relocation.c:941
+Code: 81 2c fe 49 8b 3e be 03 00 00 00 48 c7 c2 40 da 17 8c 44 89 e9 e8 cc dd 25 fd e8 f7 36 ff ff e9 a7 fc ff ff e8 ad 5f c0 fd 90 <0f> 0b e8 a5 5f c0 fd 90 0f 0b e8 9d 5f c0 fd 90 0f 0b e8 95 5f c0
+RSP: 0000:ffffc900071f6e80 EFLAGS: 00010287
+RAX: ffffffff8404c563 RBX: ffff88800e57f9a0 RCX: 0000000000100000
+RDX: ffffc90021003000 RSI: 00000000000c282c RDI: 00000000000c282d
+RBP: ffffc900071f7090 R08: ffffea0000ef04c7 R09: 1ffffd40001de098
+R10: dffffc0000000000 R11: fffff940001de099 R12: 0000000000000483
+R13: ffff88805b2e8000 R14: 0000000000000e70 R15: 80c06030180c2811
+FS:  00007fa6cd9886c0(0000) GS:ffff88808c820000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055557e0c9528 CR3: 000000001cdeb000 CR4: 0000000000352ef0
+
+
 ---
- fs/btrfs/file.c | 238 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 238 insertions(+)
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 99d24bef5f88..b708bb6a1082 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2945,6 +2945,241 @@ static int btrfs_collapse_range(struct inode *inode, loff_t offset, loff_t len)
- 	return ret;
- }
- 
-+static int btrfs_insert_range(struct inode *inode, loff_t offset, loff_t len)
-+{
-+	struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_path *path;
-+	struct btrfs_trans_handle *trans = NULL;
-+	struct extent_buffer *leaf;
-+	struct btrfs_key key;
-+	struct btrfs_key new_key;
-+	u64 ino = btrfs_ino(BTRFS_I(inode));
-+	int ret;
-+
-+	if (!IS_ENABLED(CONFIG_BTRFS_EXPERIMENTAL))
-+		return -EOPNOTSUPP;
-+
-+	/* offset and len must be sector-aligned */
-+	if (!IS_ALIGNED(offset | len, fs_info->sectorsize))
-+		return -EINVAL;
-+
-+	/* offset must be within the file - use ftruncate to extend */
-+	if (offset >= inode->i_size)
-+		return -EINVAL;
-+
-+	/* result must not exceed the maximum file size */
-+	if (len > inode->i_sb->s_maxbytes - inode->i_size)
-+		return -EFBIG;
-+
-+	btrfs_info(fs_info,
-+		   "btrfs_insert_range: ino=%llu offset=%lld len=%lld i_size=%lld",
-+		   btrfs_ino(BTRFS_I(inode)), offset, len, inode->i_size);
-+
-+	/* wait for any ordered extents in [offset, i_size) to complete */
-+	ret = btrfs_wait_ordered_range(BTRFS_I(inode), offset,
-+				       inode->i_size - offset);
-+	if (ret)
-+		return ret;
-+
-+	/*
-+	 * Flush and invalidate the page cache for [offset, i_size) upfront,
-+	 * following the same pattern as btrfs_collapse_range().
-+	 */
-+	ret = filemap_write_and_wait_range(inode->i_mapping, offset, LLONG_MAX);
-+	if (ret)
-+		return ret;
-+	truncate_pagecache_range(inode, offset, LLONG_MAX);
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		trans = NULL;
-+		goto out_path;
-+	}
-+
-+	/*
-+	 * Shift all BTRFS_EXTENT_DATA_KEY items with key.offset >= offset
-+	 * rightward by len bytes.
-+	 *
-+	 * We must iterate in reverse order (highest offset first) to avoid
-+	 * colliding with a key we haven't shifted yet - shifting forward
-+	 * would overwrite the next item's key before we process it.
-+	 *
-+	 * No pre-splitting of straddling extents is needed. If an extent
-+	 * straddles offset, the left portion (key.offset < offset) stays
-+	 * in place and the right portion is shifted. Both reference the
-+	 * same physical extent via their existing extent_offset fields,
-+	 * which remain correct after the key shift.
-+	 */
-+
-+	int nr_shifted = 0;
-+
-+	/* Find the last extent item for this inode */
-+	key.objectid = ino;
-+	key.type = BTRFS_EXTENT_DATA_KEY;
-+	key.offset = (u64)-1;
-+
-+	while (1) {
-+		struct btrfs_file_extent_item *fi;
-+		u64 disk_bytenr;
-+		u64 num_bytes;
-+		u64 extent_offset;
-+		int extent_type;
-+
-+		ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
-+		if (ret < 0)
-+			goto out_trans;
-+
-+		/*
-+		 * Search for (ino, EXTENT_DATA, -1) will never find an exact
-+		 * match, so ret == 1 and slot points one past the last item.
-+		 * Step back one slot to land on the last extent item.
-+		 */
-+		if (path->slots[0] == 0) {
-+			/* No items at all - nothing to shift */
-+			ret = 0;
-+			break;
-+		}
-+		path->slots[0]--;
-+
-+		leaf = path->nodes[0];
-+		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-+
-+		/* If we've gone past this inode's items, we are done */
-+		if (key.objectid != ino || key.type != BTRFS_EXTENT_DATA_KEY) {
-+			ret = 0;
-+			break;
-+		}
-+
-+		/* If this item is before the insertion point, we are done */
-+		if (key.offset < offset) {
-+			ret = 0;
-+			break;
-+		}
-+
-+		btrfs_info(fs_info,
-+			   "btrfs_insert_range: shifting key offset %llu -> %llu",
-+			   key.offset, key.offset + len);
-+
-+		fi = btrfs_item_ptr(leaf, path->slots[0],
-+				    struct btrfs_file_extent_item);
-+		extent_type = btrfs_file_extent_type(leaf, fi);
-+		disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
-+		num_bytes = btrfs_file_extent_disk_num_bytes(leaf, fi);
-+		extent_offset = btrfs_file_extent_offset(leaf, fi);
-+
-+		/*
-+		 * Inline extents must have key.offset == 0 and cannot be
-+		 * shifted to a non-zero offset - the tree checker enforces
-+		 * this invariant. Reject with -EOPNOTSUPP.
-+		 *
-+		 * An inline extent can only exist if the file's entire content
-+		 * fits within a single sector, meaning it is the only extent
-+		 * item for this inode. It will therefore always be the first
-+		 * item we encounter in the reverse iteration, before any keys
-+		 * have been shifted, so bailing here leaves the file in a
-+		 * consistent state.
-+		 *
-+		 * TODO: support this case by converting the inline extent to
-+		 * a regular extent first, then shifting it. This would allow
-+		 * INSERT_RANGE on small files, which xfs supports.
-+		 */
-+		if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
-+			ret = -EOPNOTSUPP;
-+			btrfs_release_path(path);
-+			goto out_trans;
-+		}
-+
-+		memcpy(&new_key, &key, sizeof(new_key));
-+		new_key.offset += len;
-+		btrfs_set_item_key_safe(trans, path, &new_key);
-+
-+		/* Update back-reference: drop old offset, add new offset */
-+		if (extent_type != BTRFS_FILE_EXTENT_INLINE && disk_bytenr > 0) {
-+			ret = btrfs_shift_extent_backref(trans, root, ino,
-+					disk_bytenr, num_bytes,
-+					key.offset - extent_offset,
-+					new_key.offset - extent_offset);
-+			if (unlikely(ret))
-+				goto out_trans;
-+		}
-+
-+		/*
-+		 * Step back to the previous item for the next iteration.
-+		 * If we've reached slot 0 we need to move to the previous leaf.
-+		 */
-+		nr_shifted++;
-+		if (nr_shifted % BTRFS_INSERT_COLLAPSE_TRANSACTION_CYCLE_INTERVAL == 0) {
-+			btrfs_info(fs_info,
-+			   "btrfs_insert_range: cycling transaction, nr_shifted=%d", nr_shifted);
-+
-+			inode_inc_iversion(inode);
-+			inode_set_mtime_to_ts(inode,
-+					      inode_set_ctime_current(inode));
-+			ret = btrfs_update_inode(trans, BTRFS_I(inode));
-+			if (ret) {
-+				btrfs_release_path(path);
-+				goto out_trans;
-+			}
-+			btrfs_end_transaction(trans);
-+			btrfs_btree_balance_dirty(fs_info);
-+			trans = btrfs_start_transaction(root, 1);
-+			if (IS_ERR(trans)) {
-+				ret = PTR_ERR(trans);
-+				trans = NULL;
-+				btrfs_release_path(path);
-+				goto out_path;
-+			}
-+		}
-+
-+		/*
-+		 * Set key.offset to one below the current item so the next
-+		 * btrfs_search_slot lands on the item before it.
-+		 */
-+		if (key.offset == 0) {
-+			ret = 0;
-+			break;
-+		}
-+		key.offset--;
-+		btrfs_release_path(path);
-+	}
-+
-+	if (ret)
-+		goto out_trans;
-+
-+	/*
-+	 * Drop stale extent map entries so subsequent reads re-load correct
-+	 * mappings from the btree.
-+	 */
-+	btrfs_drop_extent_map_range(BTRFS_I(inode), offset, (u64)-1, false);
-+
-+	btrfs_info(fs_info,
-+		   "btrfs_insert_range: updating i_size %lld -> %lld",
-+		   inode->i_size, inode->i_size + len);
-+	inode_inc_iversion(inode);
-+	inode_set_mtime_to_ts(inode, inode_set_ctime_current(inode));
-+	i_size_write(inode, inode->i_size + len);
-+	btrfs_inode_safe_disk_i_size_write(BTRFS_I(inode), 0);
-+	ret = btrfs_update_inode(trans, BTRFS_I(inode));
-+
-+out_trans:
-+	if (trans) {
-+		if (ret)
-+			btrfs_end_transaction(trans);
-+		else
-+			ret = btrfs_end_transaction(trans);
-+	}
-+out_path:
-+	btrfs_free_path(path);
-+	btrfs_info(fs_info, "btrfs_insert_range: returning %d", ret);
-+	return ret;
-+}
-+
- static int btrfs_punch_hole(struct file *file, loff_t offset, loff_t len)
- {
- 	struct inode *inode = file_inode(file);
-@@ -3596,6 +3831,9 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	case FALLOC_FL_COLLAPSE_RANGE:
- 		ret = btrfs_collapse_range(inode, offset, len);
- 		break;
-+	case FALLOC_FL_INSERT_RANGE:
-+		ret = btrfs_insert_range(inode, offset, len);
-+		break;
- 	default:
- 		ret = -EOPNOTSUPP;
- 	}
--- 
-2.53.0
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
 
+If the report is already addressed, let syzbot know by replying with:
+#syz fix: exact-commit-title
+
+If you want to overwrite report's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
+
+If the report is a duplicate of another one, reply with:
+#syz dup: exact-subject-of-another-report
+
+If you want to undo deduplication, reply with:
+#syz undup

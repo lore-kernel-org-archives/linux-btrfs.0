@@ -1,69 +1,69 @@
-Received: from mail-ej1-f41.google.com (mail-ej1-f41.google.com [209.85.218.41])
+Received: from mail-ej1-f46.google.com (mail-ej1-f46.google.com [209.85.218.46])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 99FC737C0F1
-	for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2026 14:26:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48A243081BE
+	for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2026 14:26:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.46
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776608797; cv=none; b=sWDFgzt+X1+wzCtYTYnhgoHKjOBXgq0UqYIh1gDlXdp2qtKQ74ycZBR55izbeOfHKRC6Y/1oM9MvcVeQ8i6rdRYv0urmdI8sKFM56mA6Z0DKq39fdekSwYYoiaIK9kYWD8NxkqWeUd2W3e4Gdwq6q7NKZlz/1gFG62mss0wjqfI=
+	t=1776608797; cv=none; b=D8LIc9+PUmXOQqj0Li/cnBHLl2565t3utCvzFaLXqc+7SYYFsvQECsrJiQh2BPTCHxGw3nLXmGlCNzxInvATECkyY8bEjkO511zvc7Q5xUU04km8RbGDg8SKAdyuxzmg5UkCcBs+zwpNbaL2B4oBqWLp2TDVPi/cpY07vJ6vJ2o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1776608797; c=relaxed/simple;
-	bh=FzaBNssAatdDoVK47gn9sO7SQfXNjfSOzING7huuodM=;
+	bh=zazQj1ToSNlzKmM5xjzQqqU6nSdT1rr10+kRFoNVRwo=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=KbFD+QcX/Purn765qZssITq+iVish4TIyIDVVKEgKIJLcOoPY+W/y4mrPMBWj4NlWbTrlUXYmKzuTX5kRnE3TR6jjiXXmSWa8GO/HQK92MKNGGvPxDbRk2LFZlla3TVgS5v3ooJqdCbojlnfVre767KIHdvIxn0E4b1rkt5FBTU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=eVJSxKvK; arc=none smtp.client-ip=209.85.218.41
+	 MIME-Version; b=AT+JE3ot1qD0iJgA8TfTpQVE42J381QrHY2H8OS7fBalhVUivTspx/ffOIC5Ag4WXiewGYtHYfhxLkbT98aujRci/QeQC+VQ1as9DhDgzSG1HWvnlwL7mmMrTzZQOqYhb80pFddJurYBb6SXZ46JI7qJaAREYiUPplh5nQnvJpc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=GsEmEuE8; arc=none smtp.client-ip=209.85.218.46
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="eVJSxKvK"
-Received: by mail-ej1-f41.google.com with SMTP id a640c23a62f3a-ba3b9601b97so332110166b.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2026 07:26:35 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="GsEmEuE8"
+Received: by mail-ej1-f46.google.com with SMTP id a640c23a62f3a-b93698bb57aso411012166b.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2026 07:26:36 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1776608794; x=1777213594; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1776608795; x=1777213595; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=s3UePxNCI5hUAslEeh02mUbfz4qnsxejHziKeuRjT4Y=;
-        b=eVJSxKvKCLsnXr3ZauBFDHJOZimT+Pi4nENszOKFl9GOvx6Xv07Y9gIxu/sDx8sfxJ
-         UAI/MeIGpkHqMFpEb6yS44XFqjssbxPSQiLdUGAJSkuIJq+ijey/7JNrVlOrixg03X+m
-         8TH54csqxyE6TWTLteCMnP3PDIjMQJ70fD3lfpG3sfayTChYOv7iHaUVAK10Ad+eXfB0
-         rH6biMfIoerE/XUthhr7qbYedz3XFM/KYGMk7O6THSBhQ+LO/5P4Dvi5Be/xjVNzQBWA
-         qmG4aHJtFQEYRkJRg+Ke+KTCvhzrRkn4KXBiPyB+VFM3i2fme9bQzpX47IAo9tckvfH8
-         ijdw==
+        bh=4+yqN5cF9YATbBaKpJLZIzMolqoyLxiIOOo+fVmzeoU=;
+        b=GsEmEuE858Ph6+fXt+Ho3oVZjA53sJKjvy781ot5CMmC/s4keSzGbf9ReXZGYN1gAu
+         hCwjZ/dPQTr0Tzo6EZFujUs1S0kI9/vRonfMqFNARWnW9ljD3ihhxuXlz4ZUhaeB4qb9
+         nuXRA3DrVlhFd99NVdmpZm0YcItb6NKG/hSTHND7uyxNY8HBFYVv3BE4lyh7BwlPj90g
+         NtDRFkbVsrzTPa/xfCyDiNWAHxvR1KjbSfoH8uCWcC6zAfN10SeR1alaNpcSSZ1bYY/N
+         qlGh+egdytUHk62MHW4O4j65CxZ1P8H4OoA1wI2aZaFxthaENHDYXvoSwQLX7HfAZs9A
+         2H3A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1776608794; x=1777213594;
+        d=1e100.net; s=20251104; t=1776608795; x=1777213595;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to;
-        bh=s3UePxNCI5hUAslEeh02mUbfz4qnsxejHziKeuRjT4Y=;
-        b=F6L3F+XPiKCE4piOc6UM5Wo92YLDez9dnNsPxJlLwS27vg/wNQB/Ol+QczgS9IBsh9
-         uT9yTU8B/paEHL8MtqLjlc+xkVWCZbib0fv2tiz0Y0DIvhBwVserz9X2BowTKx+hldS0
-         ydpUK12iH2JwcNbczjDnZrhhr7zd4Kw87aP6kbrOfhEpgUVlJiOkSopfJoF1L+WeO8el
-         Xolg70eYG/+fzcRZNR32UdqnaeThJ+HXhhMn74qpl21/F5A0lhxyGTlNSihms/JIVc15
-         AHED74Epq59KHBKQ4lXIyGV8Sj3wDkZp/mveJX2rhyyJrnHq/YRjpVCq7ZMDApTewdeo
-         pQEw==
-X-Gm-Message-State: AOJu0YwPiLCz1BMsWYYWPrIb0rsyfdKHb1PJWyfeL3sktjS76mOFGHqT
-	vCk2D3qIxh2vibPQF+pMzkU3YVNFmi07ye3R/M7bnoq0dg6w2D42uRYLZZNatg==
-X-Gm-Gg: AeBDies6qYhLU7M0rC+5JIzh/7g+dJXNjg2IZbvoZwZ7GGBbegwF1cZBVYVDyOEg1tB
-	4uDvSyFnKVRD9djF/QQUQZOk8iz+tYAh088lLViCwc3B/CAM3jdc27/UR63ek84qa6HoQP/Kb0w
-	xIZM7MDjsnY93m01Ns5otatQ/C4N8VpDaLU6CkQJ4lCHoUSdwN75y9qnOSF2Fhu1bWCKiKU9H+H
-	XW+uzuMABX2vYhmX0QqXNsL0NTb45TdOO4AF4VUGnaauaslm3LKooZp4u1HDmZ3ycVu9LjTQUFb
-	wKq6oMw+QmsrxMciZAJVak9BchCppjHUNBBD6fRyOM4DqSuuRvBs8m+/stjBlTbXV79pXINM2t9
-	TWlYsuYnXiyi8DAGt2PJy9s7vZP5LE0g76X4dSKzPKe9mH47AxOiFBxRu9JKCv3wDguOKo+BHs2
-	UISdcLeN/KA4WpDU1ykCbWEV3/dHdn9GpyjNyb8jetaaUoEK8/7ZwaFi5g+Qj6Kg==
-X-Received: by 2002:a17:906:7946:b0:ba2:7010:c535 with SMTP id a640c23a62f3a-ba41c0bb9c2mr441461266b.47.1776608793525;
-        Sun, 19 Apr 2026 07:26:33 -0700 (PDT)
+        bh=4+yqN5cF9YATbBaKpJLZIzMolqoyLxiIOOo+fVmzeoU=;
+        b=VBIusfcfIExYQ6HOtEd2HNlAIJOuL8LglyKiBHFuByj8qNujMpZ+XXhqsuLvrdayOw
+         7QU4jLEJRUGRfte6LiywaxyC2Kfu2yGbvKEblyLhC1x6NvVL6q/aSkPaqpitIHykTm9b
+         vptxpmY8JXti1K+1PwHlKG/FIB9FUbDcw0bkndAgVNjvktqRElEzo6hTUP9DtXNla7JQ
+         uv7uFCg3YlNxvd8h5r/ftmtZUJSpBvy9kLgy8rCh8gIgCLQMwaBeP038bn0ZLNmhkhXa
+         AuCwWU68+fAKwiZXDVnE5zEK27tctmWYyXlr2EByc5p1gquoP10lLXJk8wc+O57vDSye
+         eg5A==
+X-Gm-Message-State: AOJu0YxTeCMsTKP4f7/R1HLFJ2tz8xyjRdtnsx2DKalQMmtn+eARoXos
+	nulYy/bT8GwNH/QdJYnUq72BB4bK+5BJc6RY/rrj3EyFg5vrz4X0RtTEl4pSEA==
+X-Gm-Gg: AeBDievDGmu0X5gQ4RcDio3pLf1z1b9scUc0KWu4/S0YsHsgrVSSqCXDxcBtWEnPavG
+	GuQLgOOAYEQgmysnEz/NKD3mqtVaCgIYOHJ20dGSAhTl7wRJBgimHWuWjVZ4ViGf+TxwSmjYsjk
+	ayQLBNHsiNvqHZn7CKS5GV8WzDjyEZrBYHc4zrp6T8CavMBBkhTDurF1tMeHLD61oqnFbbdmJsR
+	x+BsxsmwJ8/WI/CcNRYUakJhWTGqcDJMMyGyqbmPMB+R6KaLnHjD08NX/m7eayrX6nDkrFkh328
+	5nAt0eUD8miLIWbuiM7f8/ddK+dW4oVGYvLSxIzltm8rcTATlgFORSCk9+pkQaQbbM6vEn2g2EN
+	Lw0OGrJ+7u1SZkV6r/mD8akHSZ4X0RfaLOnndFOwcvCSjFt1xDeKaSQ8uurfxSJXkg3kaxjYkxo
+	NIO5IHCq6q3Pa94eurxAeiQlmxOh3f+z/vvM9/7jUSLdtk/GgTXlvnzdhrB7ZJCQ==
+X-Received: by 2002:a17:907:2d0f:b0:ba6:79c0:c743 with SMTP id a640c23a62f3a-ba679c0cceamr112492366b.11.1776608794421;
+        Sun, 19 Apr 2026 07:26:34 -0700 (PDT)
 Received: from TE-laptop.internal ([2a01:799:3a1:9700:10f5:c193:4430:919e])
-        by smtp.googlemail.com with ESMTPSA id a640c23a62f3a-ba455046223sm258232666b.49.2026.04.19.07.26.31
+        by smtp.googlemail.com with ESMTPSA id a640c23a62f3a-ba455046223sm258232666b.49.2026.04.19.07.26.33
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 19 Apr 2026 07:26:33 -0700 (PDT)
+        Sun, 19 Apr 2026 07:26:34 -0700 (PDT)
 From: Torstein Eide <torsteine@gmail.com>
 X-Google-Original-From: Torstein Eide <torsteine+linux@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Torstein Eide <torsteine@gmail.com>
-Subject: [PATCH 1/5] btrfs: uapi: introduce on-disk scrub stats item
-Date: Sun, 19 Apr 2026 16:26:13 +0200
-Message-ID: <20260419142618.3147763-2-torsteine+linux@gmail.com>
+Subject: [PATCH 2/5] btrfs: add in-memory scrub lifetime and session fields
+Date: Sun, 19 Apr 2026 16:26:14 +0200
+Message-ID: <20260419142618.3147763-3-torsteine+linux@gmail.com>
 X-Mailer: git-send-email 2.48.1
 In-Reply-To: <20260419142618.3147763-1-torsteine+linux@gmail.com>
 References: <20260419142618.3147763-1-torsteine+linux@gmail.com>
@@ -77,77 +77,158 @@ Content-Transfer-Encoding: 8bit
 
 From: Torstein Eide <torsteine@gmail.com>
 
-Add a new persistent item type for per-device scrub lifetime counters:
+Extend struct btrfs_device with two counter arrays and session metadata:
 
-  Key: (BTRFS_SCRUB_STATS_OBJECTID, BTRFS_PERSISTENT_ITEM_KEY, devid)
+  scrub_stat_values[]    - lifetime totals, persisted across mounts via
+                           the new BTRFS_SCRUB_STATS_OBJECTID tree item.
+                           Protected by an atomic dirty counter
+                           (scrub_stats_ccnt) and flushed at transaction
+                           commit by btrfs_run_scrub_stats().
 
-The item payload is struct btrfs_scrub_stats_item, an array of __le64
-values indexed by BTRFS_SCRUB_STAT_* constants (data/tree extents and
-bytes scrubbed, read/checksum/verify/malloc errors, etc.).
+  scrub_session_values[] - per-run counters reset when a new scrub
+                           starts; never written to disk.
 
-The array is designed to grow at the end; existing index values are
-fixed and must not be renumbered.  New entries should be appended and
-the item_size check in the reader handles shorter on-disk items from
-older kernels gracefully.
+  scrub_session_{t_start,t_end,last_physical,status} - timing and
+                           progress metadata for the current or most
+                           recent scrub session on this device.
+
+Add matching kobject pointers (scrub_kobj, scrub_lifetime_kobj,
+scrub_session_kobj) to both struct btrfs_device and struct btrfs_fs_info
+for the sysfs hierarchy added in a later patch.
+
+Add BTRFS_SCRUB_STATUS_* constants and the inline read/write helpers
+btrfs_scrub_stat_{read,add,set}() and btrfs_scrub_session_read().
+The add/set helpers include an smp_mb__before_atomic() to order stat
+updates before the dirty-counter increment, pairing with the smp_rmb()
+in btrfs_run_scrub_stats().
 
 Signed-off-by: Torstein Eide <torsteine@gmail.com>
 Assisted-by: Claude:claude-sonnet-4-6
 ---
- include/uapi/linux/btrfs_tree.h | 34 +++++++++++++++++++++++++++++++++
- 1 file changed, 34 insertions(+)
+ fs/btrfs/fs.h      |  5 +++
+ fs/btrfs/volumes.h | 79 ++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 84 insertions(+)
 
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index cc3b9f7dccafa..7eb775b6b6253 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -82,6 +82,9 @@
- /* device stats in the device tree */
- #define BTRFS_DEV_STATS_OBJECTID 0ULL
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index a4758d94b32e9..c333e30c93e40 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -714,6 +714,11 @@ struct btrfs_fs_info {
+ 	struct kobject *qgroups_kobj;
+ 	struct kobject *discard_kobj;
  
-+/* per-device scrub lifetime stats in the device tree */
-+#define BTRFS_SCRUB_STATS_OBJECTID 1ULL
++	/* For /sys/fs/btrfs/<UUID>/scrub/{lifetime,session}/ */
++	struct kobject *scrub_kobj;
++	struct kobject *scrub_lifetime_kobj;
++	struct kobject *scrub_session_kobj;
 +
- /* for storing balance parameters in the root tree */
- #define BTRFS_BALANCE_OBJECTID -4ULL
+ 	/* Track the number of blocks (sectors) read by the filesystem. */
+ 	struct percpu_counter stats_read_blocks;
  
-@@ -1139,6 +1142,37 @@ struct btrfs_dev_stats_item {
- 	__le64 values[BTRFS_DEV_STAT_VALUES_MAX];
- } __attribute__ ((__packed__));
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 0082c166af91f..e77f726928abd 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -200,6 +200,29 @@ struct btrfs_device {
+ 	atomic_t dev_stats_ccnt;
+ 	atomic_t dev_stat_values[BTRFS_DEV_STAT_VALUES_MAX];
+ 
++	/*
++	 * Scrub lifetime counters. Persisted via BTRFS_SCRUB_STATS_OBJECTID
++	 * tree items in the device tree; loaded at mount by
++	 * btrfs_init_scrub_stats(), flushed at commit by btrfs_run_scrub_stats().
++	 * Index values defined by BTRFS_SCRUB_STAT_* in btrfs_tree.h.
++	 */
++	int scrub_stats_valid;
++	atomic_t scrub_stats_ccnt;
++	atomic64_t scrub_stat_values[BTRFS_SCRUB_STAT_VALUES_MAX];
++
++	/*
++	 * Per-session scrub counters. Reset to zero when a new scrub starts on
++	 * this device. Never persisted to disk.
++	 */
++	atomic64_t scrub_session_values[BTRFS_SCRUB_STAT_VALUES_MAX];
++	/* Resume offset at end of session */
++	u64 scrub_session_last_physical;
++	/* Unix time (seconds) when the session started / ended (0 if idle) */
++	u64 scrub_session_t_start;
++	u64 scrub_session_t_end;
++	/* BTRFS_SCRUB_STATUS_* */
++	atomic_t scrub_session_status;
++
+ 	/*
+ 	 * Device's major-minor number. Must be set even if the device is not
+ 	 * opened (bdev == NULL), unless the device is missing.
+@@ -211,6 +234,10 @@ struct btrfs_device {
+ 	struct completion kobj_unregister;
+ 	/* For sysfs/FSID/devinfo/devid/ */
+ 	struct kobject devid_kobj;
++	/* For sysfs/FSID/devinfo/devid/scrub/ hierarchy */
++	struct kobject *scrub_kobj;
++	struct kobject *scrub_lifetime_kobj;
++	struct kobject *scrub_session_kobj;
+ 
+ 	/* Bandwidth limit for scrub, in bytes */
+ 	u64 scrub_speed_max;
+@@ -864,6 +891,58 @@ static inline void btrfs_dev_stat_set(struct btrfs_device *dev,
+ 	atomic_inc(&dev->dev_stats_ccnt);
+ }
  
 +/*
-+ * Scrub lifetime error counters, stored per device in the device tree.
-+ * Key: (BTRFS_SCRUB_STATS_OBJECTID, BTRFS_PERSISTENT_ITEM_KEY, devid)
-+ *
-+ * Index values are defined by enum btrfs_scrub_stat_index in btrfs_tree.h
-+ * (kernel-internal, not exposed via ioctl).
++ * Scrub session status values stored in device->scrub_session_status.
 + */
-+#define BTRFS_SCRUB_STAT_DATA_EXTENTS_SCRUBBED		0
-+#define BTRFS_SCRUB_STAT_TREE_EXTENTS_SCRUBBED		1
-+#define BTRFS_SCRUB_STAT_DATA_BYTES_SCRUBBED		2
-+#define BTRFS_SCRUB_STAT_TREE_BYTES_SCRUBBED		3
-+#define BTRFS_SCRUB_STAT_READ_ERRORS			4
-+#define BTRFS_SCRUB_STAT_CSUM_ERRORS			5
-+#define BTRFS_SCRUB_STAT_VERIFY_ERRORS			6
-+#define BTRFS_SCRUB_STAT_NO_CSUM			7
-+#define BTRFS_SCRUB_STAT_CSUM_DISCARDS			8
-+#define BTRFS_SCRUB_STAT_SUPER_ERRORS			9
-+#define BTRFS_SCRUB_STAT_MALLOC_ERRORS			10
-+#define BTRFS_SCRUB_STAT_UNCORRECTABLE_ERRORS		11
-+#define BTRFS_SCRUB_STAT_CORRECTED_ERRORS		12
-+#define BTRFS_SCRUB_STAT_UNVERIFIED_ERRORS		13
-+#define BTRFS_SCRUB_STAT_VALUES_MAX			14
++#define BTRFS_SCRUB_STATUS_IDLE		0
++#define BTRFS_SCRUB_STATUS_RUNNING	1
++#define BTRFS_SCRUB_STATUS_FINISHED	2
++#define BTRFS_SCRUB_STATUS_CANCELED	3
 +
-+struct btrfs_scrub_stats_item {
++static inline u64 btrfs_scrub_stat_read(const struct btrfs_device *dev,
++					int index)
++{
++	return (u64)atomic64_read(&dev->scrub_stat_values[index]);
++}
++
++static inline void btrfs_scrub_stat_add(struct btrfs_device *dev,
++					int index, u64 val)
++{
++	atomic64_add((long long)val, &dev->scrub_stat_values[index]);
 +	/*
-+	 * Grow at the end for future enhancements; keep existing values
-+	 * unchanged.  Index values defined by BTRFS_SCRUB_STAT_* above.
++	 * Order the stat update before the dirty-counter increment so that
++	 * btrfs_run_scrub_stats() observes a consistent snapshot.  Pairs with
++	 * smp_rmb() in btrfs_run_scrub_stats().
 +	 */
-+	__le64 values[BTRFS_SCRUB_STAT_VALUES_MAX];
-+} __attribute__ ((__packed__));
++	smp_mb__before_atomic();
++	atomic_inc(&dev->scrub_stats_ccnt);
++}
 +
- #define BTRFS_DEV_REPLACE_ITEM_CONT_READING_FROM_SRCDEV_MODE_ALWAYS	0
- #define BTRFS_DEV_REPLACE_ITEM_CONT_READING_FROM_SRCDEV_MODE_AVOID	1
- 
++static inline void btrfs_scrub_stat_set(struct btrfs_device *dev,
++					int index, u64 val)
++{
++	atomic64_set(&dev->scrub_stat_values[index], (long long)val);
++	/*
++	 * Order the stat update before the dirty-counter increment so that
++	 * btrfs_run_scrub_stats() observes a consistent snapshot.  Pairs with
++	 * smp_rmb() in btrfs_run_scrub_stats().
++	 */
++	smp_mb__before_atomic();
++	atomic_inc(&dev->scrub_stats_ccnt);
++}
++
++static inline u64 btrfs_scrub_session_read(const struct btrfs_device *dev,
++					   int index)
++{
++	return (u64)atomic64_read(&dev->scrub_session_values[index]);
++}
++
++int btrfs_init_scrub_stats(struct btrfs_fs_info *fs_info);
++int btrfs_run_scrub_stats(struct btrfs_trans_handle *trans);
++void btrfs_update_scrub_stats(struct btrfs_device *dev,
++			      const struct btrfs_scrub_progress *progress,
++			      int scrub_ret);
++
+ static inline const char *btrfs_dev_name(const struct btrfs_device *device)
+ {
+ 	if (!device || test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state))
 -- 
 2.48.1
 

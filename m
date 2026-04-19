@@ -1,772 +1,294 @@
-Received: from mail-ej1-f50.google.com (mail-ej1-f50.google.com [209.85.218.50])
+Received: from mail-dl1-f54.google.com (mail-dl1-f54.google.com [74.125.82.54])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 27DA737C0F1
-	for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2026 14:26:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.50
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776608801; cv=none; b=szNzakNPxV1cbfvM9TO3fNb7hCJOXQJuEBVNQv2Dd2iSEoH/0BpUNywifrnKHE3Z6jzoXWdE3tOZL8Tz6YfvrIHt+LqtpcBiQKrQjqxiVTAMIbWmABmNE9UiuU3PLSMq0cPIxGBZgpJrRngRpWK1O3+wjIil27C4vZalQagtszg=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776608801; c=relaxed/simple;
-	bh=N7TvWnqpunr3awAHty8h2+mHpdERnYbhessezm881PI=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=F3a5qwO8LMe6OsA6c1aUe1suSrzSJxI+kiMpkH0mPbpAOycPHS4TUSGmzH6UcP8LePPsSTye+77t2ekgFcDPwB1rtykLcvq8tcP4ip6LOq18OxmjVJT6brNqyi3wxZkh/ch6CU0XdvW7qkcPVZ5UR2GxL0gMXO8q+Otckc9LIZQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=KxgXoPeO; arc=none smtp.client-ip=209.85.218.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8DA9E24B28
+	for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2026 18:40:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.82.54
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1776624015; cv=pass; b=q7MgvCMMfS2Ve79HqrAsT4JuDH7pW3THmFiqdFHHRpip92N2LdO7b10UJ02DyKFIbWCkr5EfhnYwGJHy8SMgBn2bydi8a/gfH3jxeA3K0j8ypZHlRKhIIQx/v5NWeo2x+KdBGeXiuJkrFLf5onbUz4+mDCQ87umE24hkz55224A=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1776624015; c=relaxed/simple;
+	bh=sg0GK+WLKzf6//ET9ne3dXbHn1FY0m9iEAsCIrJVVR0=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=Mp3avXNKNEQn5pbPhoyRko6jahqQzBhMxkt8Edy+MeDxbezZlsL46758k0gRt6brnC3KB8WoKenA+NdoDv+HX2Chm0LqHaQ6CBmd3w2f/IJd/1ORU5CR9ib5KgBv5V9g8CwUxu32/V2835sOaGHTQPZZl2/3UfqMWMkyud3BQ9Q=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=KyxFaUWP; arc=pass smtp.client-ip=74.125.82.54
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="KxgXoPeO"
-Received: by mail-ej1-f50.google.com with SMTP id a640c23a62f3a-b9c3a9fe80fso279103966b.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2026 07:26:38 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="KyxFaUWP"
+Received: by mail-dl1-f54.google.com with SMTP id a92af1059eb24-12c726ef332so2593532c88.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2026 11:40:13 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1776624013; cv=none;
+        d=google.com; s=arc-20240605;
+        b=HrAzauvRKvza/yP3JWfATP+1IoH+SFkhdPMkyvz5HU1MJ3zDuEG8frCC/+cWc/02r5
+         hXfT9Rjz/BDLVxjp/808JvNv84nxFSamcyXoiCQ9dcVXs0qtfblElLLWlT1Al8svooz2
+         r+9T3XGKJq0ckrA5yQu+Nskw0jPd8I1PZ6pAvNgDtLC9/9tWp36s66zjfwBkdTXB/MgE
+         WBN26k9ZleR5Y8wVbIk5wExIKs3hMynWYiVJOnP7ESR28I+roQmk0eDmxxNS4714Dw7Q
+         MLmZ7CiEDd1EJGseUIrK5UAWmMnfcUZDw58aaERqSzFQi6c3wRZyGtOINHxh1vKZcQ4e
+         Ec8g==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=ytXUBOarkVXuR2yiipppt77NNst1i7oZ6litYLo/0fw=;
+        fh=9lEVqXf0xtFztV29e2PYWQC150xkteAQi4Te3dbrdZA=;
+        b=VDd1nQQ5H0RRAZG1i1RszOoSs8lJOM6DURvm41m8+dOZVcSZ07VYbIYc4w1Kef9T/E
+         0q4Rv+VeIJGAtGljN9FjDAygZBabWvD+R31YJJMYyZiNUxyb15b/XR3JH+jm4rcd9nle
+         UFqRQ3Tmpn+BDsUMPcfQdUf75Ymdt0Y7rstf5Nr+XCydMy/pJMLGpk9UbVTD3/me3Cfa
+         llxukairm8463eOVIqIaxx4CYJBeY6vBINIC8HdrhdA4FOs5C0GSUV2M19b+nI++RjWx
+         km9eB7kYbwear8tmZpmJNGaiUuFxwpbtCV08HBThM8qYFbqxA5Q8dmBxaYWoYQ3KUSTa
+         9prQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1776608797; x=1777213597; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+        d=gmail.com; s=20251104; t=1776624013; x=1777228813; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=ZwiMuu+930sGI0DeJFUgTszXhgEKT1/fklC6orMe7vk=;
-        b=KxgXoPeOBeAFqBVb0NncwA/Y3c74Bkt8X9n/S5ejj8sCej2M7U51xWbHD+Bmj3yHdN
-         eLUw2PDZyZQUtZI+guCc06IUJHrtL+wPTcZm1iTLN8AB9EBozS67ijqI4lEB8tWHYBB2
-         RUVJupzLZGdYYDWDY1zETNZ4YRRQBmgBA+nGm4U38jhzgj64MHN39BFB+8sHqGEq6LW8
-         KxcSdmX7RiS3obFt5ZlwhX8EvUA+/tUmzezP23id267ypUJBXxeF2dBRwd3GJhX3KigI
-         YpKrB6tl1wJGxPk60Php6nOhXTUVVYbxrxQsSbWeDsmwM4EvjOJedgP7fNhOSLNFsvv7
-         91Hw==
+        bh=ytXUBOarkVXuR2yiipppt77NNst1i7oZ6litYLo/0fw=;
+        b=KyxFaUWPKIgsJ08FirjYl3Q7jRTvAdif3ftA4+9IEp2nqQ+kq8eymSfm+E5BEXZ67Q
+         h0q1kwqRgR99RbGeuqNPYzJohSpqbPClt23lcbsNbfPGWvvxmRueCvkAxEcLNJeGrHme
+         V7beW7mEgvDmhSqenqkExZMD4jo5/fSsKvWfmkayXc9lKAR2XjxUkeSalW57gGrta6un
+         /hx2JV20vcuwE6mqBKf6E4K2G5QvYZdPilo9HKiQynYqZknOjNkuOdnfh5XKJf6UYlMJ
+         e/bUT62EO/JoRbPOVpcKjlzrYWejgbsR4jNz3zVaZ+Mmey6lsKQo5Xf4guHY49XafHk1
+         iVZg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1776608797; x=1777213597;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+        d=1e100.net; s=20251104; t=1776624013; x=1777228813;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to;
-        bh=ZwiMuu+930sGI0DeJFUgTszXhgEKT1/fklC6orMe7vk=;
-        b=A7dd/qzpAPHuWu0mTKTSaNfvLfpkz9iV5ugHOjM621xRL9vNt5V8egeDQhmVPXAKtt
-         srHtj/O55d8+J8R9YWYlK/+kseht5Y/AgEC3ozh3pJLO/rIXGLXCgUT84S8MHzcJ0Koy
-         VmI2z1ightqiTeJ15OVkBhZ1uipVbNe8I5BSMGMUmTL7y1HcMNyBsbs0gUgyU/Humjtf
-         hkXDcxGclZkHe166665EZVjpN7rLqIdeRUKyaFO6IOQmS/B/1smzi5ewzxAlyj1IDwrP
-         hpwWLIHnEhl5iYjiliw2cWos/jvbMkjutDLrgT6G3711TGPph3e18dTpDLwYwAl79B64
-         vJFA==
-X-Gm-Message-State: AOJu0YwpMCAqMNO3VW+KGh6jVfahZTWzS0QpQLAtcrGtL73Br9GTgxby
-	ifIF/NOFgqECk9F6Ci+Gm/TXJVC5/HWipPMdvF4YriXiLFg4Hy1/5r+PM6Z4+w==
-X-Gm-Gg: AeBDietpZ+uv2MgOBuSrDvE+dOjRx+JtdHwQ40LvdtqkM8+EBuAy1lTzEs+bSws8QEz
-	tfAK3sNpQq2S47kiCGnQc5vqJKXYjtB2sB0KZsCxJ4ZO63vU/9NxQwf8zg80FhqCQT0nb7efyeo
-	twNie4nx56mNM3lqLfm9SOJ9RtPQqPpgGeCNRxsGbFD4ziOFLniTIq3lWDkp+a/Q+7tpwmGUpSh
-	6yD8MLKQojkWu1Jh1ZLguHzvpod7nnH+c5rd1rBzTTTGKcrOMfwlVk6HGUMYdhGNilsgMtepDoo
-	5/lptzpJIw+l+WGUq8ik8EYns+TXmusyG+sO5wZVuvofbC5Leug6GMQYRfkBS91HZe97UrOe8r1
-	tN9ZD7ThO3vluZZH2UhXYGFVilnzM7pL8hEkDdwuC7kJBOfL8v/y2OMHtM3jQJKhZuv2ijvtgLT
-	XAP1NlrYX4IuSFhpJXng9e4EPjuHUqhP3+bppWdFmuTnOL8Mftv24=
-X-Received: by 2002:a17:907:934c:b0:b9c:1089:47b8 with SMTP id a640c23a62f3a-ba41b3e12e6mr436855566b.47.1776608797329;
-        Sun, 19 Apr 2026 07:26:37 -0700 (PDT)
-Received: from TE-laptop.internal ([2a01:799:3a1:9700:10f5:c193:4430:919e])
-        by smtp.googlemail.com with ESMTPSA id a640c23a62f3a-ba455046223sm258232666b.49.2026.04.19.07.26.36
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 19 Apr 2026 07:26:36 -0700 (PDT)
-From: Torstein Eide <torsteine@gmail.com>
-X-Google-Original-From: Torstein Eide <torsteine+linux@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Torstein Eide <torsteine@gmail.com>
-Subject: [PATCH 5/5] btrfs: expose scrub lifetime and session counters via sysfs
-Date: Sun, 19 Apr 2026 16:26:17 +0200
-Message-ID: <20260419142618.3147763-6-torsteine+linux@gmail.com>
-X-Mailer: git-send-email 2.48.1
-In-Reply-To: <20260419142618.3147763-1-torsteine+linux@gmail.com>
-References: <20260419142618.3147763-1-torsteine+linux@gmail.com>
+        bh=ytXUBOarkVXuR2yiipppt77NNst1i7oZ6litYLo/0fw=;
+        b=apC3kMaQTgUGVJZ3fUdvsEeSricrZVZN3S5uaJjV/WXDE//vvrabrJeG9jwXtG+tcC
+         UVeoOeGiq6ClBvv/iMAwgYaS8Ahf+oGEXREznw84zGYDyX4xAhRoNZ94efQc/riBJQ8a
+         +y57HvNcnwE/X3GV100cl8HlA3r5mC0V05/u6BWyU9nOQNsvTpAgqo7v93Zb2WJdyL7/
+         p62BIHVjWOTwftfBJaBaoM2FRKYFhuvl6ycNbBft28hg4FIoCsarOk1Zu03WbzDGLmyT
+         yn0sGUPpZAgs2PsGVvq2dmdYYIEdn60LXeiJR6LRQNxpbqD+5P5m0gm6Q5uXVnokXITI
+         UVLw==
+X-Gm-Message-State: AOJu0YxjzMVrqd9uX/RQE9WtE21GMekppyZT0TfXQLD8K2Be7H5sX8PT
+	TXm+81NgacMTiIORNOsq46sqyt0i2L7H18bkjDVrOc4RaxLpDg9xda01DW2MkrWtHyh5IWfA+Wv
+	KPiZoZr5nd5xCC2yy4o84ihOoASZgJ2Q=
+X-Gm-Gg: AeBDiesAqjTrnhMywXumaNjnhVevAyY+hTr5zocf2VkrsSmjm+tSefCxLuPt5zr3qJl
+	hHEA61LFdKE9As3wdg1yg/uzwNrzDRf/zIS5QGDI1T2faFcm0qPI50kbNoy8j/oP3E+k5nnAEL6
+	S0O0D7DT6jMi9yVbUxiJnXBAsWrOGRvkkjVLyiEIlW1fTssZ6HigwSoJrZgE98Wz791egboz4fM
+	RoL7aLoj1UsScZdiDwsJ6dB2ZfWaGFVw9gGFF6dddr2GSOVHQ+FSoR3EXblp8/Jd8F3mHnfOAGw
+	/R09het6WH9oRRX7TXlOXZ1e3+kP
+X-Received: by 2002:a05:7022:60f:b0:122:3a5:fc42 with SMTP id
+ a92af1059eb24-12c73f99eeemr4800897c88.20.1776624012361; Sun, 19 Apr 2026
+ 11:40:12 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20260418143808.199603-1-paul.richards@gmail.com>
+ <92c96052-6619-4c25-8add-a85a4b76c060@gmx.com> <412d6926-8613-4377-8f33-3cf0194f685b@gmx.com>
+In-Reply-To: <412d6926-8613-4377-8f33-3cf0194f685b@gmx.com>
+From: Paul Richards <paul.richards@gmail.com>
+Date: Sun, 19 Apr 2026 19:40:00 +0100
+X-Gm-Features: AQROBzCP--R7zBpmk2r7Y50FajK8B81uK0FJ_9khcjQgsPRM1tbQBRZrGsBX2mw
+Message-ID: <CAMoswehjDpHm7_jmTPV_vKkqJSNKu5pCEDxmwGzAghhEwTGHSA@mail.gmail.com>
+Subject: Re: [RFC PATCH 0/3] btrfs: implement FALLOC_FL_COLLAPSE_RANGE and FALLOC_FL_INSERT_RANGE
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-From: Torstein Eide <torsteine@gmail.com>
+Thanks Qu for your feedback! I wasn't expecting such a thorough review of
+this early RFC. I will reply to a few of your comments below.
 
-Create two sysfs sub-hierarchies under each filesystem UUID and under
-each devinfo/<devid>/ entry:
+For the comments I don't reply to, please know that I have read them and
+agree with them. If I follow up with another revision then I will address t=
+hem
+there.
 
-  /sys/fs/btrfs/<UUID>/scrub/
-    reset                   (write "1" to zero all devices' lifetime
-                             counters and mark them dirty)
-    lifetime/               filesystem-wide sums of per-device lifetime
-      data_extents_scrubbed   counters (one file per stat index)
-      tree_extents_scrubbed
-      ... (14 counters total)
-    session/                filesystem-wide view of the most recent run
-      data_extents_scrubbed   (summed across devices for counters,
-      ...                      earliest t_start / latest t_end for time)
-      status                  idle | running | finished | canceled
-      t_start / t_end         Unix timestamps (seconds)
-      duration_seconds        computed on read; live while running
 
-  /sys/fs/btrfs/<UUID>/devinfo/<devid>/scrub/
-    reset                   (per-device reset)
-    lifetime/               per-device lifetime counters
-    session/                per-device session counters + metadata
-      last_physical           byte offset where the last run stopped
+On Sun, 19 Apr 2026 at 06:09, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>
+> =E5=9C=A8 2026/4/19 09:55, Qu Wenruo =E5=86=99=E9=81=93:
+> >
+> >
+> > =E5=9C=A8 2026/4/19 00:08, Paul Richards =E5=86=99=E9=81=93:
+> >> This series adds support for FALLOC_FL_COLLAPSE_RANGE and
+> >> FALLOC_FL_INSERT_RANGE to btrfs_fallocate(). Both operations are
+> >> already supported by ext4 and xfs. The userspace contract is
+> >> documented in fallocate(2).
+> >>
+> >> Patch 1 refactors btrfs_fallocate() to dispatch via a switch statement=
+,
+> >> moving punch_hole into its own function and decoupling locking from th=
+e
+> >> per-operation helpers. This is similar to the implementaitons for ext4
+> >> and xfs. The allocate-range and zero-range paths remain coupled since
+> >> they share some setup logic.
+> >>
+> >> Patches 2 and 3 add COLLAPSE_RANGE and INSERT_RANGE respectively.
+> >>
+> >> =3D=3D Implementation approach =3D=3D
+> >>
+> >> For COLLAPSE_RANGE:
+> >>   - The removed region [offset, offset+len) is punched out via
+> >>     btrfs_replace_file_extents(), which handles boundary splitting.
+> >>   - All EXTENT_DATA keys with key.offset >=3D offset+len are shifted
+> >>     leftward by len in forward order.
+> >>
+> >> For INSERT_RANGE:
+> >>   - All EXTENT_DATA keys with key.offset >=3D offset are shifted right=
+ward
+> >>     by len in reverse order (required to avoid key collisions).
+> >>   - No pre-splitting of straddling extents is needed: the left portion
+> >>     of a straddling extent stays in place, the right portion is shifte=
+d;
+> >>     both reference the same physical extent via their existing
+> >>     extent_offset fields.
+> >>
+> >> For each shifted key, the corresponding back-reference in the extent
+> >> tree is updated via a shared helper btrfs_shift_extent_backref().
+>
+> After looking into each patch, I do not think the low level direct file
+> item change is a good idea, especially with your current implement:
+>
+> - Can lock the inode for a very long time
+>    E.g. inserting a hole into the beginning of a very large file.
+>    We will lock the inode until all file items are iterated, which kills
+>    concurrency.
+>
+> - Possible problems with metadata reservation
+>
+> - Problems with ^no-holes collapse
+>    Will cause duplicated file offsets with hole file items.
+>
+> On the other hand, with reflink the insert/collapse can even be
+> implemented in user space, with a proper step setting, we can still
+> allow concurrent read/write out of the reflink ranges.
+>
+> This makes me wonder, is these features really that necessary?
+>
+> If you know some programs actively utilize these features for real world
+> benefits, but can not be done through reflink, please provide them.
+>
 
-The attribute arrays are declared as 'const struct attribute *[]' so
-they are compatible with sysfs_create_files() / sysfs_remove_files().
-Forward declarations are placed before btrfs_sysfs_remove_mounted() and
-btrfs_sysfs_remove_device() which reference them before their
-definitions.
+There is a proprietary tool at my $dayjob which uses insert and collapse ra=
+nge.
+This works great on ext4 and xfs, and I am personally interested in having =
+it
+work on btrfs.
 
-Signed-off-by: Torstein Eide <torsteine@gmail.com>
-Assisted-by: Claude:claude-sonnet-4-6
----
- fs/btrfs/sysfs.c | 586 +++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/sysfs.h |   3 +
- 2 files changed, 589 insertions(+)
+Emulating in userspace is entirely possible using FICLONERANGE ioclt.. but
+since ext4 doesn't support that operation this leaves userspace needing to
+use one solution for ext4 (fallocate insert/collapse) and another for btrfs
+(FICLONERANGE). By filling the gap of btrfs fallocate modes I was hoping
+to simplify userspace and reduce friction in supporting btrfs.
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 0d14570c8bc29..d5f12a40b31fc 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -11,6 +11,7 @@
- #include <linux/bug.h>
- #include <linux/list.h>
- #include <linux/string_choices.h>
-+#include <linux/timekeeping.h>
- #include "messages.h"
- #include "ctree.h"
- #include "discard.h"
-@@ -1707,6 +1708,14 @@ static void btrfs_sysfs_remove_fs_devices(struct btrfs_fs_devices *fs_devices)
- 	}
- }
- 
-+/* Forward declarations for scrub sysfs attribute arrays defined later. */
-+static const struct attribute *scrub_attrs[];
-+static const struct attribute *scrub_lifetime_attrs[];
-+static const struct attribute *scrub_session_attrs[];
-+static const struct attribute *devid_scrub_attrs[];
-+static const struct attribute *devid_scrub_lifetime_attrs[];
-+static const struct attribute *devid_scrub_session_attrs[];
-+
- void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
- {
- 	struct kobject *fsid_kobj = &fs_info->fs_devices->fsid_kobj;
-@@ -1723,6 +1732,21 @@ void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
- 		kobject_del(fs_info->discard_kobj);
- 		kobject_put(fs_info->discard_kobj);
- 	}
-+	if (fs_info->scrub_session_kobj) {
-+		sysfs_remove_files(fs_info->scrub_session_kobj, scrub_session_attrs);
-+		kobject_del(fs_info->scrub_session_kobj);
-+		kobject_put(fs_info->scrub_session_kobj);
-+	}
-+	if (fs_info->scrub_lifetime_kobj) {
-+		sysfs_remove_files(fs_info->scrub_lifetime_kobj, scrub_lifetime_attrs);
-+		kobject_del(fs_info->scrub_lifetime_kobj);
-+		kobject_put(fs_info->scrub_lifetime_kobj);
-+	}
-+	if (fs_info->scrub_kobj) {
-+		sysfs_remove_files(fs_info->scrub_kobj, scrub_attrs);
-+		kobject_del(fs_info->scrub_kobj);
-+		kobject_put(fs_info->scrub_kobj);
-+	}
- #ifdef CONFIG_BTRFS_DEBUG
- 	if (fs_info->debug_kobj) {
- 		sysfs_remove_files(fs_info->debug_kobj, btrfs_debug_mount_attrs);
-@@ -1970,6 +1994,28 @@ void btrfs_sysfs_remove_device(struct btrfs_device *device)
- 	if (device->bdev)
- 		sysfs_remove_link(devices_kobj, bdev_kobj(device->bdev)->name);
- 
-+	/* Tear down devinfo/<devid>/scrub/ hierarchy (children before parent) */
-+	if (device->scrub_session_kobj) {
-+		sysfs_remove_files(device->scrub_session_kobj,
-+				   devid_scrub_session_attrs);
-+		kobject_del(device->scrub_session_kobj);
-+		kobject_put(device->scrub_session_kobj);
-+		device->scrub_session_kobj = NULL;
-+	}
-+	if (device->scrub_lifetime_kobj) {
-+		sysfs_remove_files(device->scrub_lifetime_kobj,
-+				   devid_scrub_lifetime_attrs);
-+		kobject_del(device->scrub_lifetime_kobj);
-+		kobject_put(device->scrub_lifetime_kobj);
-+		device->scrub_lifetime_kobj = NULL;
-+	}
-+	if (device->scrub_kobj) {
-+		sysfs_remove_files(device->scrub_kobj, devid_scrub_attrs);
-+		kobject_del(device->scrub_kobj);
-+		kobject_put(device->scrub_kobj);
-+		device->scrub_kobj = NULL;
-+	}
-+
- 	if (device->devid_kobj.state_initialized) {
- 		kobject_del(&device->devid_kobj);
- 		kobject_put(&device->devid_kobj);
-@@ -2099,6 +2145,482 @@ static ssize_t btrfs_devinfo_error_stats_show(struct kobject *kobj,
- }
- BTRFS_ATTR(devid, error_stats, btrfs_devinfo_error_stats_show);
- 
-+/* ---------- scrub/lifetime/ and scrub/session/ sysfs attributes ---------- */
-+
-+/*
-+ * Return the btrfs_device owning a kobject that lives two levels below
-+ * devid_kobj, i.e. kobj->parent is scrub_kobj, kobj->parent->parent is
-+ * devid_kobj.
-+ */
-+static struct btrfs_device *kobj_to_scrub_device(struct kobject *kobj)
-+{
-+	return container_of(kobj->parent->parent, struct btrfs_device, devid_kobj);
-+}
-+
-+/*
-+ * Return the btrfs_fs_info owning a kobject that lives two levels below
-+ * fsid_kobj, i.e. kobj->parent is fs_info->scrub_kobj,
-+ * kobj->parent->parent is &fs_devs->fsid_kobj.
-+ */
-+static struct btrfs_fs_info *kobj_to_scrub_fs_info(struct kobject *kobj)
-+{
-+	struct btrfs_fs_devices *fs_devs =
-+		container_of(kobj->parent->parent, struct btrfs_fs_devices, fsid_kobj);
-+	return fs_devs->fs_info;
-+}
-+
-+/*
-+ * Per-device scrub/lifetime/ attributes.
-+ * Each show function reads an atomic64 from btrfs_device::scrub_stat_values[].
-+ */
-+#define DEV_SCRUB_LIFETIME_ATTR(_name, _idx)					\
-+static ssize_t btrfs_devid_scrub_lifetime_##_name##_show(			\
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)	\
-+{										\
-+	struct btrfs_device *dev = kobj_to_scrub_device(kobj);			\
-+	return sysfs_emit(buf, "%llu\n", btrfs_scrub_stat_read(dev, _idx));	\
-+}										\
-+BTRFS_ATTR(devid_scrub_lifetime, _name,					\
-+	   btrfs_devid_scrub_lifetime_##_name##_show)
-+
-+DEV_SCRUB_LIFETIME_ATTR(data_extents_scrubbed, BTRFS_SCRUB_STAT_DATA_EXTENTS_SCRUBBED);
-+DEV_SCRUB_LIFETIME_ATTR(tree_extents_scrubbed, BTRFS_SCRUB_STAT_TREE_EXTENTS_SCRUBBED);
-+DEV_SCRUB_LIFETIME_ATTR(data_bytes_scrubbed,   BTRFS_SCRUB_STAT_DATA_BYTES_SCRUBBED);
-+DEV_SCRUB_LIFETIME_ATTR(tree_bytes_scrubbed,   BTRFS_SCRUB_STAT_TREE_BYTES_SCRUBBED);
-+DEV_SCRUB_LIFETIME_ATTR(read_errors,           BTRFS_SCRUB_STAT_READ_ERRORS);
-+DEV_SCRUB_LIFETIME_ATTR(csum_errors,           BTRFS_SCRUB_STAT_CSUM_ERRORS);
-+DEV_SCRUB_LIFETIME_ATTR(verify_errors,         BTRFS_SCRUB_STAT_VERIFY_ERRORS);
-+DEV_SCRUB_LIFETIME_ATTR(no_csum,               BTRFS_SCRUB_STAT_NO_CSUM);
-+DEV_SCRUB_LIFETIME_ATTR(csum_discards,         BTRFS_SCRUB_STAT_CSUM_DISCARDS);
-+DEV_SCRUB_LIFETIME_ATTR(super_errors,          BTRFS_SCRUB_STAT_SUPER_ERRORS);
-+DEV_SCRUB_LIFETIME_ATTR(malloc_errors,         BTRFS_SCRUB_STAT_MALLOC_ERRORS);
-+DEV_SCRUB_LIFETIME_ATTR(uncorrectable_errors,  BTRFS_SCRUB_STAT_UNCORRECTABLE_ERRORS);
-+DEV_SCRUB_LIFETIME_ATTR(corrected_errors,      BTRFS_SCRUB_STAT_CORRECTED_ERRORS);
-+DEV_SCRUB_LIFETIME_ATTR(unverified_errors,     BTRFS_SCRUB_STAT_UNVERIFIED_ERRORS);
-+
-+static const struct attribute *devid_scrub_lifetime_attrs[] = {
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, data_extents_scrubbed),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, tree_extents_scrubbed),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, data_bytes_scrubbed),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, tree_bytes_scrubbed),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, read_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, csum_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, verify_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, no_csum),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, csum_discards),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, super_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, malloc_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, uncorrectable_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, corrected_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_lifetime, unverified_errors),
-+	NULL
-+};
-+
-+/*
-+ * Per-device scrub/session/ attributes.
-+ */
-+#define DEV_SCRUB_SESSION_ATTR(_name, _idx)					\
-+static ssize_t btrfs_devid_scrub_session_##_name##_show(			\
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)	\
-+{										\
-+	struct btrfs_device *dev = kobj_to_scrub_device(kobj);			\
-+	return sysfs_emit(buf, "%llu\n", btrfs_scrub_session_read(dev, _idx));	\
-+}										\
-+BTRFS_ATTR(devid_scrub_session, _name,					\
-+	   btrfs_devid_scrub_session_##_name##_show)
-+
-+DEV_SCRUB_SESSION_ATTR(data_extents_scrubbed, BTRFS_SCRUB_STAT_DATA_EXTENTS_SCRUBBED);
-+DEV_SCRUB_SESSION_ATTR(tree_extents_scrubbed, BTRFS_SCRUB_STAT_TREE_EXTENTS_SCRUBBED);
-+DEV_SCRUB_SESSION_ATTR(data_bytes_scrubbed,   BTRFS_SCRUB_STAT_DATA_BYTES_SCRUBBED);
-+DEV_SCRUB_SESSION_ATTR(tree_bytes_scrubbed,   BTRFS_SCRUB_STAT_TREE_BYTES_SCRUBBED);
-+DEV_SCRUB_SESSION_ATTR(read_errors,           BTRFS_SCRUB_STAT_READ_ERRORS);
-+DEV_SCRUB_SESSION_ATTR(csum_errors,           BTRFS_SCRUB_STAT_CSUM_ERRORS);
-+DEV_SCRUB_SESSION_ATTR(verify_errors,         BTRFS_SCRUB_STAT_VERIFY_ERRORS);
-+DEV_SCRUB_SESSION_ATTR(no_csum,               BTRFS_SCRUB_STAT_NO_CSUM);
-+DEV_SCRUB_SESSION_ATTR(csum_discards,         BTRFS_SCRUB_STAT_CSUM_DISCARDS);
-+DEV_SCRUB_SESSION_ATTR(super_errors,          BTRFS_SCRUB_STAT_SUPER_ERRORS);
-+DEV_SCRUB_SESSION_ATTR(malloc_errors,         BTRFS_SCRUB_STAT_MALLOC_ERRORS);
-+DEV_SCRUB_SESSION_ATTR(uncorrectable_errors,  BTRFS_SCRUB_STAT_UNCORRECTABLE_ERRORS);
-+DEV_SCRUB_SESSION_ATTR(corrected_errors,      BTRFS_SCRUB_STAT_CORRECTED_ERRORS);
-+DEV_SCRUB_SESSION_ATTR(unverified_errors,     BTRFS_SCRUB_STAT_UNVERIFIED_ERRORS);
-+
-+static ssize_t btrfs_devid_scrub_session_last_physical_show(
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_device *dev = kobj_to_scrub_device(kobj);
-+
-+	return sysfs_emit(buf, "%llu\n", READ_ONCE(dev->scrub_session_last_physical));
-+}
-+BTRFS_ATTR(devid_scrub_session, last_physical,
-+	   btrfs_devid_scrub_session_last_physical_show);
-+
-+static ssize_t btrfs_devid_scrub_session_t_start_show(
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_device *dev = kobj_to_scrub_device(kobj);
-+
-+	return sysfs_emit(buf, "%llu\n", READ_ONCE(dev->scrub_session_t_start));
-+}
-+BTRFS_ATTR(devid_scrub_session, t_start, btrfs_devid_scrub_session_t_start_show);
-+
-+static ssize_t btrfs_devid_scrub_session_t_end_show(
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_device *dev = kobj_to_scrub_device(kobj);
-+
-+	return sysfs_emit(buf, "%llu\n", READ_ONCE(dev->scrub_session_t_end));
-+}
-+BTRFS_ATTR(devid_scrub_session, t_end, btrfs_devid_scrub_session_t_end_show);
-+
-+static ssize_t btrfs_devid_scrub_session_duration_seconds_show(
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_device *dev = kobj_to_scrub_device(kobj);
-+	u64 t_start = READ_ONCE(dev->scrub_session_t_start);
-+	u64 t_end   = READ_ONCE(dev->scrub_session_t_end);
-+	u64 dur;
-+
-+	if (t_start == 0)
-+		dur = 0;
-+	else if (t_end != 0)
-+		dur = t_end - t_start;
-+	else
-+		dur = (u64)ktime_get_real_seconds() - t_start;
-+	return sysfs_emit(buf, "%llu\n", dur);
-+}
-+BTRFS_ATTR(devid_scrub_session, duration_seconds,
-+	   btrfs_devid_scrub_session_duration_seconds_show);
-+
-+static const char * const btrfs_scrub_status_strings[] = {
-+	[BTRFS_SCRUB_STATUS_IDLE]     = "idle",
-+	[BTRFS_SCRUB_STATUS_RUNNING]  = "running",
-+	[BTRFS_SCRUB_STATUS_FINISHED] = "finished",
-+	[BTRFS_SCRUB_STATUS_CANCELED] = "canceled",
-+};
-+
-+static ssize_t btrfs_devid_scrub_session_status_show(
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_device *dev = kobj_to_scrub_device(kobj);
-+	int status = atomic_read(&dev->scrub_session_status);
-+
-+	if (status < 0 || status >= ARRAY_SIZE(btrfs_scrub_status_strings))
-+		return sysfs_emit(buf, "unknown\n");
-+	return sysfs_emit(buf, "%s\n", btrfs_scrub_status_strings[status]);
-+}
-+BTRFS_ATTR(devid_scrub_session, status, btrfs_devid_scrub_session_status_show);
-+
-+static const struct attribute *devid_scrub_session_attrs[] = {
-+	BTRFS_ATTR_PTR(devid_scrub_session, data_extents_scrubbed),
-+	BTRFS_ATTR_PTR(devid_scrub_session, tree_extents_scrubbed),
-+	BTRFS_ATTR_PTR(devid_scrub_session, data_bytes_scrubbed),
-+	BTRFS_ATTR_PTR(devid_scrub_session, tree_bytes_scrubbed),
-+	BTRFS_ATTR_PTR(devid_scrub_session, read_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_session, csum_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_session, verify_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_session, no_csum),
-+	BTRFS_ATTR_PTR(devid_scrub_session, csum_discards),
-+	BTRFS_ATTR_PTR(devid_scrub_session, super_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_session, malloc_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_session, uncorrectable_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_session, corrected_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_session, unverified_errors),
-+	BTRFS_ATTR_PTR(devid_scrub_session, last_physical),
-+	BTRFS_ATTR_PTR(devid_scrub_session, t_start),
-+	BTRFS_ATTR_PTR(devid_scrub_session, t_end),
-+	BTRFS_ATTR_PTR(devid_scrub_session, duration_seconds),
-+	BTRFS_ATTR_PTR(devid_scrub_session, status),
-+	NULL
-+};
-+
-+/*
-+ * Per-device scrub/reset (write-only): "echo 1 > reset" zeroes lifetime
-+ * counters and marks them dirty for the next transaction commit.
-+ */
-+static ssize_t btrfs_devid_scrub_reset_store(struct kobject *kobj,
-+		struct kobj_attribute *a, const char *buf, size_t len)
-+{
-+	struct btrfs_device *dev;
-+	unsigned long val;
-+	int i;
-+
-+	if (kstrtoul(buf, 10, &val) || val != 1)
-+		return -EINVAL;
-+
-+	/* kobj here is the scrub_kobj, one level below devid_kobj */
-+	dev = container_of(kobj->parent, struct btrfs_device, devid_kobj);
-+
-+	for (i = 0; i < BTRFS_SCRUB_STAT_VALUES_MAX; i++)
-+		btrfs_scrub_stat_set(dev, i, 0);
-+
-+	btrfs_info(dev->fs_info,
-+		   "scrub: lifetime stats reset for devid %llu by %s (%d)",
-+		   dev->devid, current->comm, task_pid_nr(current));
-+	return len;
-+}
-+BTRFS_ATTR_W(devid_scrub, reset, btrfs_devid_scrub_reset_store);
-+
-+static const struct attribute *devid_scrub_attrs[] = {
-+	BTRFS_ATTR_PTR(devid_scrub, reset),
-+	NULL
-+};
-+
-+/* ---------- fs-level scrub/lifetime/ and scrub/session/ attributes ---------- */
-+
-+/*
-+ * Filesystem-level lifetime counters: sum of all device lifetime counters.
-+ */
-+#define FS_SCRUB_LIFETIME_ATTR(_name, _idx)					\
-+static ssize_t btrfs_scrub_lifetime_##_name##_show(				\
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)	\
-+{										\
-+	struct btrfs_fs_info *fs_info = kobj_to_scrub_fs_info(kobj);		\
-+	struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;			\
-+	struct btrfs_device *dev;						\
-+	u64 total = 0;								\
-+										\
-+	mutex_lock(&fs_devs->device_list_mutex);				\
-+	list_for_each_entry(dev, &fs_devs->devices, dev_list)			\
-+		total += btrfs_scrub_stat_read(dev, _idx);			\
-+	mutex_unlock(&fs_devs->device_list_mutex);				\
-+	return sysfs_emit(buf, "%llu\n", total);				\
-+}										\
-+BTRFS_ATTR(scrub_lifetime, _name, btrfs_scrub_lifetime_##_name##_show)
-+
-+FS_SCRUB_LIFETIME_ATTR(data_extents_scrubbed, BTRFS_SCRUB_STAT_DATA_EXTENTS_SCRUBBED);
-+FS_SCRUB_LIFETIME_ATTR(tree_extents_scrubbed, BTRFS_SCRUB_STAT_TREE_EXTENTS_SCRUBBED);
-+FS_SCRUB_LIFETIME_ATTR(data_bytes_scrubbed,   BTRFS_SCRUB_STAT_DATA_BYTES_SCRUBBED);
-+FS_SCRUB_LIFETIME_ATTR(tree_bytes_scrubbed,   BTRFS_SCRUB_STAT_TREE_BYTES_SCRUBBED);
-+FS_SCRUB_LIFETIME_ATTR(read_errors,           BTRFS_SCRUB_STAT_READ_ERRORS);
-+FS_SCRUB_LIFETIME_ATTR(csum_errors,           BTRFS_SCRUB_STAT_CSUM_ERRORS);
-+FS_SCRUB_LIFETIME_ATTR(verify_errors,         BTRFS_SCRUB_STAT_VERIFY_ERRORS);
-+FS_SCRUB_LIFETIME_ATTR(no_csum,               BTRFS_SCRUB_STAT_NO_CSUM);
-+FS_SCRUB_LIFETIME_ATTR(csum_discards,         BTRFS_SCRUB_STAT_CSUM_DISCARDS);
-+FS_SCRUB_LIFETIME_ATTR(super_errors,          BTRFS_SCRUB_STAT_SUPER_ERRORS);
-+FS_SCRUB_LIFETIME_ATTR(malloc_errors,         BTRFS_SCRUB_STAT_MALLOC_ERRORS);
-+FS_SCRUB_LIFETIME_ATTR(uncorrectable_errors,  BTRFS_SCRUB_STAT_UNCORRECTABLE_ERRORS);
-+FS_SCRUB_LIFETIME_ATTR(corrected_errors,      BTRFS_SCRUB_STAT_CORRECTED_ERRORS);
-+FS_SCRUB_LIFETIME_ATTR(unverified_errors,     BTRFS_SCRUB_STAT_UNVERIFIED_ERRORS);
-+
-+static const struct attribute *scrub_lifetime_attrs[] = {
-+	BTRFS_ATTR_PTR(scrub_lifetime, data_extents_scrubbed),
-+	BTRFS_ATTR_PTR(scrub_lifetime, tree_extents_scrubbed),
-+	BTRFS_ATTR_PTR(scrub_lifetime, data_bytes_scrubbed),
-+	BTRFS_ATTR_PTR(scrub_lifetime, tree_bytes_scrubbed),
-+	BTRFS_ATTR_PTR(scrub_lifetime, read_errors),
-+	BTRFS_ATTR_PTR(scrub_lifetime, csum_errors),
-+	BTRFS_ATTR_PTR(scrub_lifetime, verify_errors),
-+	BTRFS_ATTR_PTR(scrub_lifetime, no_csum),
-+	BTRFS_ATTR_PTR(scrub_lifetime, csum_discards),
-+	BTRFS_ATTR_PTR(scrub_lifetime, super_errors),
-+	BTRFS_ATTR_PTR(scrub_lifetime, malloc_errors),
-+	BTRFS_ATTR_PTR(scrub_lifetime, uncorrectable_errors),
-+	BTRFS_ATTR_PTR(scrub_lifetime, corrected_errors),
-+	BTRFS_ATTR_PTR(scrub_lifetime, unverified_errors),
-+	NULL
-+};
-+
-+/*
-+ * Filesystem-level session counters: sum of per-device session values.
-+ * Timing/status derive from per-device values.
-+ */
-+#define FS_SCRUB_SESSION_ATTR(_name, _idx)					\
-+static ssize_t btrfs_scrub_session_##_name##_show(				\
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)	\
-+{										\
-+	struct btrfs_fs_info *fs_info = kobj_to_scrub_fs_info(kobj);		\
-+	struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;			\
-+	struct btrfs_device *dev;						\
-+	u64 total = 0;								\
-+										\
-+	mutex_lock(&fs_devs->device_list_mutex);				\
-+	list_for_each_entry(dev, &fs_devs->devices, dev_list)			\
-+		total += btrfs_scrub_session_read(dev, _idx);			\
-+	mutex_unlock(&fs_devs->device_list_mutex);				\
-+	return sysfs_emit(buf, "%llu\n", total);				\
-+}										\
-+BTRFS_ATTR(scrub_session, _name, btrfs_scrub_session_##_name##_show)
-+
-+FS_SCRUB_SESSION_ATTR(data_extents_scrubbed, BTRFS_SCRUB_STAT_DATA_EXTENTS_SCRUBBED);
-+FS_SCRUB_SESSION_ATTR(tree_extents_scrubbed, BTRFS_SCRUB_STAT_TREE_EXTENTS_SCRUBBED);
-+FS_SCRUB_SESSION_ATTR(data_bytes_scrubbed,   BTRFS_SCRUB_STAT_DATA_BYTES_SCRUBBED);
-+FS_SCRUB_SESSION_ATTR(tree_bytes_scrubbed,   BTRFS_SCRUB_STAT_TREE_BYTES_SCRUBBED);
-+FS_SCRUB_SESSION_ATTR(read_errors,           BTRFS_SCRUB_STAT_READ_ERRORS);
-+FS_SCRUB_SESSION_ATTR(csum_errors,           BTRFS_SCRUB_STAT_CSUM_ERRORS);
-+FS_SCRUB_SESSION_ATTR(verify_errors,         BTRFS_SCRUB_STAT_VERIFY_ERRORS);
-+FS_SCRUB_SESSION_ATTR(no_csum,               BTRFS_SCRUB_STAT_NO_CSUM);
-+FS_SCRUB_SESSION_ATTR(csum_discards,         BTRFS_SCRUB_STAT_CSUM_DISCARDS);
-+FS_SCRUB_SESSION_ATTR(super_errors,          BTRFS_SCRUB_STAT_SUPER_ERRORS);
-+FS_SCRUB_SESSION_ATTR(malloc_errors,         BTRFS_SCRUB_STAT_MALLOC_ERRORS);
-+FS_SCRUB_SESSION_ATTR(uncorrectable_errors,  BTRFS_SCRUB_STAT_UNCORRECTABLE_ERRORS);
-+FS_SCRUB_SESSION_ATTR(corrected_errors,      BTRFS_SCRUB_STAT_CORRECTED_ERRORS);
-+FS_SCRUB_SESSION_ATTR(unverified_errors,     BTRFS_SCRUB_STAT_UNVERIFIED_ERRORS);
-+
-+static ssize_t btrfs_scrub_session_status_show(
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_fs_info *fs_info = kobj_to_scrub_fs_info(kobj);
-+
-+	if (atomic_read(&fs_info->scrubs_running) > 0)
-+		return sysfs_emit(buf, "running\n");
-+
-+	/*
-+	 * Not running: check if any device's last session finished or was
-+	 * canceled.
-+	 */
-+	{
-+		struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;
-+		struct btrfs_device *dev;
-+		int seen_finished = 0, seen_canceled = 0;
-+
-+		mutex_lock(&fs_devs->device_list_mutex);
-+		list_for_each_entry(dev, &fs_devs->devices, dev_list) {
-+			int st = atomic_read(&dev->scrub_session_status);
-+
-+			if (st == BTRFS_SCRUB_STATUS_FINISHED)
-+				seen_finished = 1;
-+			else if (st == BTRFS_SCRUB_STATUS_CANCELED)
-+				seen_canceled = 1;
-+		}
-+		mutex_unlock(&fs_devs->device_list_mutex);
-+
-+		if (seen_canceled)
-+			return sysfs_emit(buf, "canceled\n");
-+		if (seen_finished)
-+			return sysfs_emit(buf, "finished\n");
-+	}
-+	return sysfs_emit(buf, "idle\n");
-+}
-+BTRFS_ATTR(scrub_session, status, btrfs_scrub_session_status_show);
-+
-+static ssize_t btrfs_scrub_session_t_start_show(
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_fs_info *fs_info = kobj_to_scrub_fs_info(kobj);
-+	struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;
-+	struct btrfs_device *dev;
-+	u64 t_min = 0;
-+
-+	mutex_lock(&fs_devs->device_list_mutex);
-+	list_for_each_entry(dev, &fs_devs->devices, dev_list) {
-+		u64 t = READ_ONCE(dev->scrub_session_t_start);
-+
-+		if (t && (!t_min || t < t_min))
-+			t_min = t;
-+	}
-+	mutex_unlock(&fs_devs->device_list_mutex);
-+	return sysfs_emit(buf, "%llu\n", t_min);
-+}
-+BTRFS_ATTR(scrub_session, t_start, btrfs_scrub_session_t_start_show);
-+
-+static ssize_t btrfs_scrub_session_t_end_show(
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_fs_info *fs_info = kobj_to_scrub_fs_info(kobj);
-+	struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;
-+	struct btrfs_device *dev;
-+	u64 t_max = 0;
-+
-+	mutex_lock(&fs_devs->device_list_mutex);
-+	list_for_each_entry(dev, &fs_devs->devices, dev_list) {
-+		u64 t = READ_ONCE(dev->scrub_session_t_end);
-+
-+		if (t > t_max)
-+			t_max = t;
-+	}
-+	mutex_unlock(&fs_devs->device_list_mutex);
-+	return sysfs_emit(buf, "%llu\n", t_max);
-+}
-+BTRFS_ATTR(scrub_session, t_end, btrfs_scrub_session_t_end_show);
-+
-+static ssize_t btrfs_scrub_session_duration_seconds_show(
-+		struct kobject *kobj, struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_fs_info *fs_info = kobj_to_scrub_fs_info(kobj);
-+	struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;
-+	struct btrfs_device *dev;
-+	u64 t_start = 0, t_end = 0, dur;
-+
-+	mutex_lock(&fs_devs->device_list_mutex);
-+	list_for_each_entry(dev, &fs_devs->devices, dev_list) {
-+		u64 ts = READ_ONCE(dev->scrub_session_t_start);
-+		u64 te = READ_ONCE(dev->scrub_session_t_end);
-+
-+		if (ts && (!t_start || ts < t_start))
-+			t_start = ts;
-+		if (te > t_end)
-+			t_end = te;
-+	}
-+	mutex_unlock(&fs_devs->device_list_mutex);
-+
-+	if (!t_start)
-+		dur = 0;
-+	else if (t_end)
-+		dur = t_end - t_start;
-+	else
-+		dur = (u64)ktime_get_real_seconds() - t_start;
-+	return sysfs_emit(buf, "%llu\n", dur);
-+}
-+BTRFS_ATTR(scrub_session, duration_seconds,
-+	   btrfs_scrub_session_duration_seconds_show);
-+
-+static const struct attribute *scrub_session_attrs[] = {
-+	BTRFS_ATTR_PTR(scrub_session, data_extents_scrubbed),
-+	BTRFS_ATTR_PTR(scrub_session, tree_extents_scrubbed),
-+	BTRFS_ATTR_PTR(scrub_session, data_bytes_scrubbed),
-+	BTRFS_ATTR_PTR(scrub_session, tree_bytes_scrubbed),
-+	BTRFS_ATTR_PTR(scrub_session, read_errors),
-+	BTRFS_ATTR_PTR(scrub_session, csum_errors),
-+	BTRFS_ATTR_PTR(scrub_session, verify_errors),
-+	BTRFS_ATTR_PTR(scrub_session, no_csum),
-+	BTRFS_ATTR_PTR(scrub_session, csum_discards),
-+	BTRFS_ATTR_PTR(scrub_session, super_errors),
-+	BTRFS_ATTR_PTR(scrub_session, malloc_errors),
-+	BTRFS_ATTR_PTR(scrub_session, uncorrectable_errors),
-+	BTRFS_ATTR_PTR(scrub_session, corrected_errors),
-+	BTRFS_ATTR_PTR(scrub_session, unverified_errors),
-+	BTRFS_ATTR_PTR(scrub_session, status),
-+	BTRFS_ATTR_PTR(scrub_session, t_start),
-+	BTRFS_ATTR_PTR(scrub_session, t_end),
-+	BTRFS_ATTR_PTR(scrub_session, duration_seconds),
-+	NULL
-+};
-+
-+/*
-+ * Filesystem-level scrub/reset (write-only): zeros all devices' lifetime
-+ * counters and marks them dirty.
-+ */
-+static ssize_t btrfs_scrub_reset_store(struct kobject *kobj,
-+		struct kobj_attribute *a, const char *buf, size_t len)
-+{
-+	/* kobj is fs_info->scrub_kobj, parent is fsid_kobj */
-+	struct btrfs_fs_devices *fs_devs =
-+		container_of(kobj->parent, struct btrfs_fs_devices, fsid_kobj);
-+	struct btrfs_fs_info *fs_info = fs_devs->fs_info;
-+	struct btrfs_device *dev;
-+	unsigned long val;
-+	int i;
-+
-+	if (kstrtoul(buf, 10, &val) || val != 1)
-+		return -EINVAL;
-+
-+	mutex_lock(&fs_devs->device_list_mutex);
-+	list_for_each_entry(dev, &fs_devs->devices, dev_list)
-+		for (i = 0; i < BTRFS_SCRUB_STAT_VALUES_MAX; i++)
-+			btrfs_scrub_stat_set(dev, i, 0);
-+	mutex_unlock(&fs_devs->device_list_mutex);
-+
-+	btrfs_info(fs_info, "scrub: all lifetime stats reset by %s (%d)",
-+		   current->comm, task_pid_nr(current));
-+	return len;
-+}
-+BTRFS_ATTR_W(scrub, reset, btrfs_scrub_reset_store);
-+
-+static const struct attribute *scrub_attrs[] = {
-+	BTRFS_ATTR_PTR(scrub, reset),
-+	NULL
-+};
-+
- /*
-  * Information about one device.
-  *
-@@ -2169,7 +2691,41 @@ int btrfs_sysfs_add_device(struct btrfs_device *device)
- 		btrfs_warn(device->fs_info,
- 			   "devinfo init for devid %llu failed: %d",
- 			   device->devid, ret);
-+		goto out;
-+	}
-+
-+	/* Create devinfo/<devid>/scrub/ hierarchy */
-+	device->scrub_kobj = kobject_create_and_add("scrub", &device->devid_kobj);
-+	if (!device->scrub_kobj) {
-+		ret = -ENOMEM;
-+		btrfs_warn(device->fs_info,
-+			   "scrub kobj init for devid %llu failed",
-+			   device->devid);
-+		goto out;
-+	}
-+	ret = sysfs_create_files(device->scrub_kobj, devid_scrub_attrs);
-+	if (ret)
-+		goto out;
-+
-+	device->scrub_lifetime_kobj = kobject_create_and_add("lifetime",
-+							      device->scrub_kobj);
-+	if (!device->scrub_lifetime_kobj) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	ret = sysfs_create_files(device->scrub_lifetime_kobj,
-+				 devid_scrub_lifetime_attrs);
-+	if (ret)
-+		goto out;
-+
-+	device->scrub_session_kobj = kobject_create_and_add("session",
-+							     device->scrub_kobj);
-+	if (!device->scrub_session_kobj) {
-+		ret = -ENOMEM;
-+		goto out;
- 	}
-+	ret = sysfs_create_files(device->scrub_session_kobj,
-+				 devid_scrub_session_attrs);
- 
- out:
- 	memalloc_nofs_restore(nofs_flag);
-@@ -2346,6 +2902,36 @@ int btrfs_sysfs_add_mounted(struct btrfs_fs_info *fs_info)
- 	if (ret)
- 		goto failure;
- 
-+	/* Create /sys/fs/btrfs/<UUID>/scrub/{lifetime,session}/ hierarchy */
-+	fs_info->scrub_kobj = kobject_create_and_add("scrub", fsid_kobj);
-+	if (!fs_info->scrub_kobj) {
-+		ret = -ENOMEM;
-+		goto failure;
-+	}
-+	ret = sysfs_create_files(fs_info->scrub_kobj, scrub_attrs);
-+	if (ret)
-+		goto failure;
-+
-+	fs_info->scrub_lifetime_kobj = kobject_create_and_add("lifetime",
-+							       fs_info->scrub_kobj);
-+	if (!fs_info->scrub_lifetime_kobj) {
-+		ret = -ENOMEM;
-+		goto failure;
-+	}
-+	ret = sysfs_create_files(fs_info->scrub_lifetime_kobj, scrub_lifetime_attrs);
-+	if (ret)
-+		goto failure;
-+
-+	fs_info->scrub_session_kobj = kobject_create_and_add("session",
-+							      fs_info->scrub_kobj);
-+	if (!fs_info->scrub_session_kobj) {
-+		ret = -ENOMEM;
-+		goto failure;
-+	}
-+	ret = sysfs_create_files(fs_info->scrub_session_kobj, scrub_session_attrs);
-+	if (ret)
-+		goto failure;
-+
- 	return 0;
- failure:
- 	btrfs_sysfs_remove_mounted(fs_info);
-diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
-index 05498e5346c39..93da8ea06659e 100644
---- a/fs/btrfs/sysfs.h
-+++ b/fs/btrfs/sysfs.h
-@@ -41,6 +41,9 @@ int btrfs_sysfs_add_space_info_type(struct btrfs_space_info *space_info);
- void btrfs_sysfs_remove_space_info(struct btrfs_space_info *space_info);
- void btrfs_sysfs_update_devid(struct btrfs_device *device);
- 
-+int btrfs_sysfs_add_scrub_device(struct btrfs_device *device);
-+void btrfs_sysfs_remove_scrub_device(struct btrfs_device *device);
-+
- int btrfs_sysfs_add_one_qgroup(struct btrfs_fs_info *fs_info,
- 				struct btrfs_qgroup *qgroup);
- void btrfs_sysfs_del_qgroups(struct btrfs_fs_info *fs_info);
--- 
-2.48.1
+However, on balance I agree with your opinion that emulating in userspace
+is the best approach here. So for now I will pause my work on this patch se=
+ries.
 
+> >>
+> >> =3D=3D Testing =3D=3D
+> >>
+> >> Tested with a Rust-based functional test suite covering:
+> >>   - Collapse and insert at the start, middle of a file
+> >>   - Multiple sequential operations on the same file
+> >>   - Files with multiple extents (fsync between writes to force separat=
+e
+> >>     extent items)
+> >>   - Files with holes (explicit punch_hole and implicit sparse writes)
+> >>   - Compressed extents (mount -o compress=3Dzstd)
+> >>   - Transaction cycling (interval reduced to 4 during testing, verifie=
+d
+> >>     in dmesg logs)
+> >>   - Inline files, verified that -EOPNOTSUPP is returned.
+> >
+> > I guess that tool has never verify the contents, nor multi-thread stres=
+s
+> > tests, e.g. fsstress?
+> >
+
+My tests did read back and verify file contents. It was not multi threaded =
+or
+particularly stressy.
+
+> >>
+> >> The same tests pass on both btrfs and xfs (modulo the inline files).
+> >>
+> >> I have not run fstests which I know contains tests for INSERT_RANGE
+> >> and COLLAPSE_RANGE. I will do so.
+> >
+> > Thus I'd prefer a fstest run before whatever your local tool.
+> >
+
+100% agree that fstests would be better. I started with my own tests
+only to keep
+things very simple while the code got off the ground. If I carry this work =
+on I
+will use fstests.
+
+> >> =3D=3D Notes =3D=3D
+> >>
+> >> This is my first kernel contribution. Development was significantly
+> >> assisted by an LLM (Amazon Q Developer). The implementation, testing,
+> >> and final review decisions are my own.
+> >
+> > I'm very interested in how the LLM is involved.
+> >
+> > You mentioned "implementation, testing, review" are on your own, this
+> > looks like everything is on your own.
+> >
+> > I don't think you're only using LLM to help understanding the code, thu=
+s
+> > it looks like implementation is contributed by the LLM.
+> >
+> > Please remember, you're the one explaining/defending the code.
+> > But as long as you can explain/defend the code, I'm fine with that.
+> >
+
+My workflow with the LLM was this:
+
+I provided a high level design, reference to the fallocate man page,
+pointers to the implementation of clone range in btrfs, and the existing
+fallocate implementations (for btrfs, ext4, and xfs). This was a couple
+of paragraphs and a handful of links.
+
+I prompted the LLM to produce a detailed design document for how
+I could go about implementing insert and collapse for btrfs. The
+document it produced is English text of around 2000 words. It
+contains references to internal btrfs functions I needed and a
+description of the logic I needed to implement. It has no code.
+
+I reviewed that doc, asked clarifications, and the doc was revised.
+
+I then crafted the code. I relied heavily on the design doc that the
+LLM had written but did not follow it to the letter. During this
+implementation work I asked the LLM to clarify a few points, and
+the design doc was revised by the LLM.
+
+During debugging most of the bugs I diagnosed myself. There was one
+bug which stumped me however, so I asked the LLM to provide
+hypotheses which I then worked through to solve the bug. I crafted
+the code for the fix. ( The specific bug was stale/incorrect data being
+read after the operation returned. The code was already invalidating
+the page cache, but I was not aware of the extent map cache that
+needed to be invalidated too. )
+
+I wrote the test code myself.
+
+Once the tests were passing the LLM was used to update the design
+doc to align with the code I actually wrote. I also asked the LLM to
+review my code prior to submitting it to the mailing list. I addressed
+some of that feedback. As an example piece of feedback it
+recommended I make use of unlikely() in "if" statements testing for
+errors.
+
+
+> > Still a newcomer with not a small code change will always attract more
+> > scrutiny, so please don't expect rapid review/merge/etc.
+> >
+
+I am not in a rush. This has been a low-priority side quest going back
+to 2023: https://lore.kernel.org/linux-btrfs/CAMosweitbAN5EPOgJCtrbkRAj1QSb=
+sYt4uDGVMZ378YY7wjnRw@mail.gmail.com/
+
+
+--=20
+Paul Richards

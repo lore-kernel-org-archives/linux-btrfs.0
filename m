@@ -1,44 +1,46 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D823A3A9DB3;
-	Mon, 20 Apr 2026 13:32:09 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ED8F949251F;
+	Mon, 20 Apr 2026 13:32:18 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776691929; cv=none; b=fjrjTJzEism7Bw93iAUWDJ4+SdPls3aLe4eJdCLo0RURRKuGNOOnnsfm01srONVsbmfjIwrA5ei673UQ/uQdAK6CmiQVOv4PLtL+hfrd40lR0qpXAi0/zxjEXDFSERLoM8IdGdQjJH1jaNRd0TVKdU4K6fF1c7ZPNvwMket4xL8=
+	t=1776691939; cv=none; b=AJethHcI5P6b+3OcODnWjPHZv56kZjp04AW11Y2KBR603H+pfjkKlpywZ8jxoXmwrQwYihwOb7n5rsaNEhS+gDqxF7hxXOf2TRYhNTDaE9oimMH5JBeRfuCU8eiSKJSfZ90L9o6eVbWA8jIGS9eQKiJWAAJ7woTKdlVX4P8Me6Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776691929; c=relaxed/simple;
-	bh=ezqlU37ANbeKsqozw/1jOWoBmKYZeToNqHXnc2Ys4rs=;
+	s=arc-20240116; t=1776691939; c=relaxed/simple;
+	bh=1hpRm6P3DILHi717aovrrIVgA+crpsx39F/oA0NUir0=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=N8ks1EQjL/hKWYD2YBYPskhoaYtB3tZaPo0MQOX+FKoHCIghB78o50gHCKlZzKclL6jaMG+lpJHzg2Ufuv7bdEjIEKUhF3vjRwvaMxqTCis98UltK/tn6991pVyzwKh2nYq7gvSNdmNM5AIzU9GncUzWgDw8TMo9MtkHgyrVZEk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=txde56fa; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version:Content-Type; b=cDuQjgHRGSiqFEkjn6mGojXiQJu37SulG8Y3AysPI1YLM9s0fuY82YiDrl4C/EMdAUIhflOikFyv6acZs2QLND+FSHLUwi3ADDABqFRk3CfAN7M05ESiwWBln58GXizrxqiONtydnM2oTYfZflWERtzI60F8ELvoWhhZFF3g1T0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QqluiPpC; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="txde56fa"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 982DAC19425;
-	Mon, 20 Apr 2026 13:32:08 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QqluiPpC"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 06618C2BCB7;
+	Mon, 20 Apr 2026 13:32:16 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776691929;
-	bh=ezqlU37ANbeKsqozw/1jOWoBmKYZeToNqHXnc2Ys4rs=;
+	s=k20201202; t=1776691938;
+	bh=1hpRm6P3DILHi717aovrrIVgA+crpsx39F/oA0NUir0=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=txde56faJQKBBmpJl2S97m1nnkvJL6KmRykK2MR9eekEV/KgTw/BRafHtDLoo8il6
-	 aRflBNa3YMTbFWNKufIMQGf0hSypOXBpPSra8EjcAuGYv6R1fBgraNSZ+RTiV+BNSH
-	 ExNZtzMJrIL0q5JCfWLcMvSrhCIR3KNtvmhx8cHwXrn95EXATpFsNFGAYdueinf0uN
-	 sJPBDcuHFtdHk5DbO+bgGnRmx1A0NEC3f+iCNB8RYxZq1iszEJMYd05ByFfOAdlNOY
-	 bcKM9p7jWmNnrL+Rl5rAWzN1/I96BIgMlusaTl7CPe94xw60rivEjnHzUch/3fPOy8
-	 09eCcc6tZ2Jhg==
+	b=QqluiPpCGm5PFpFs/7wvT8bvWeSCRWx4zz3i3Kkex4fUOv/le5erw+8WSvc5Bfz1V
+	 mnYZpWFMGWiWlW2bqVPvem8VaVong76lm7zr1ooGlVb8A6aAxj75Dgp6o/vyql75fQ
+	 ijkeQYSEMHRnbkDie5L8iumV67GlrWUgdJYfij0aaTlu0+iTjWWzNXoluCCYr3kh+t
+	 LLoNeycvvRGbTcUsYJfUjvWCJT9pLcpjGi89YJ+Eo2G6+8P4XBatd7rJkYBdVI7/Vb
+	 hw7QsyuieRXLbHtFkV+SLCOMevxrxf48DyF+Ar5TUNYnfXTlQujSCm2Ho9x6FhpNdO
+	 Hd0bDbnYQRdaA==
 From: Sasha Levin <sashal@kernel.org>
 To: patches@lists.linux.dev,
 	stable@vger.kernel.org
-Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	Filipe Manana <fdmanana@suse.com>,
+Cc: Michal Grzedzicki <mge@meta.com>,
+	Qu Wenruo <wqu@suse.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	Mark Harmstone <mark@harmstone.com>,
 	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 7.0-6.19] btrfs: zoned: cap delayed refs metadata reservation to avoid overcommit
-Date: Mon, 20 Apr 2026 09:21:09 -0400
-Message-ID: <20260420132314.1023554-275-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 7.0-6.12] btrfs: fix silent IO error loss in encoded writes and zoned split
+Date: Mon, 20 Apr 2026 09:21:14 -0400
+Message-ID: <20260420132314.1023554-280-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260420132314.1023554-1-sashal@kernel.org>
 References: <20260420132314.1023554-1-sashal@kernel.org>
@@ -51,581 +53,463 @@ MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
 X-stable-base: Linux 7.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+From: Michal Grzedzicki <mge@meta.com>
 
-[ Upstream commit 7bcb04de982ff0718870112ad9f38c35cbca528b ]
+[ Upstream commit 3cd181cc46d36aa7bd4af85f14639d86a25beaec ]
 
-On zoned filesystems metadata space accounting can become overly optimistic
-due to delayed refs reservations growing without a hard upper bound.
+can_finish_ordered_extent() and btrfs_finish_ordered_zoned() set
+BTRFS_ORDERED_IOERR via bare set_bit(). Later,
+btrfs_mark_ordered_extent_error() in btrfs_finish_one_ordered() uses
+test_and_set_bit(), finds it already set, and skips
+mapping_set_error(). The error is never recorded on the inode's
+address_space, making it invisible to fsync. For encoded writes this
+causes btrfs receive to silently produce files with zero-filled holes.
 
-The delayed_refs_rsv block reservation is allowed to speculatively grow and
-is only backed by actual metadata space when refilled. On zoned devices this
-can result in delayed_refs_rsv reserving a large portion of metadata space
-that is already effectively unusable due to zone write pointer constraints.
-As a result, space_info->may_use can grow far beyond the usable metadata
-capacity, causing the allocator to believe space is available when it is not.
+Fix: replace bare set_bit(BTRFS_ORDERED_IOERR) with
+btrfs_mark_ordered_extent_error() which pairs test_and_set_bit() with
+mapping_set_error(), guaranteeing the error is recorded exactly once.
 
-This leads to premature ENOSPC failures and "cannot satisfy tickets" reports
-even though commits would be able to make progress by flushing delayed refs.
-
-Analysis of "-o enospc_debug" dumps using a Python debug script
-confirmed that delayed_refs_rsv was responsible for the majority of
-metadata overcommit on zoned devices. By correlating space_info counters
-(total, used, may_use, zone_unusable) across transactions, the analysis
-showed that may_use continued to grow even after usable metadata space
-was exhausted, with delayed refs refills accounting for the excess
-reservations.
-
-Here's the output of the analysis:
-
-  ======================================================================
-  Space Type: METADATA
-  ======================================================================
-
-  Raw Values:
-    Total:                256.00 MB (268435456 bytes)
-    Used:                 128.00 KB (131072 bytes)
-    Pinned:                16.00 KB (16384 bytes)
-    Reserved:             144.00 KB (147456 bytes)
-    May Use:              255.48 MB (267894784 bytes)
-    Zone Unusable:        192.00 KB (196608 bytes)
-
-  Calculated Metrics:
-    Actually Usable:       255.81 MB (total - zone_unusable)
-    Committed:             255.77 MB (used + pinned + reserved + may_use)
-    Consumed:              320.00 KB (used + zone_unusable)
-
-  Percentages:
-    Zone Unusable:    0.07% of total
-    May Use:         99.80% of total
-
-Fix this by adding a zoned-specific cap in btrfs_delayed_refs_rsv_refill():
-Before reserving additional metadata bytes, limit the delayed refs
-reservation based on the usable metadata space (total bytes minus
-zone_unusable). If the reservation would exceed this cap, return -EAGAIN
-to trigger the existing flush/commit logic instead of overcommitting
-metadata space.
-
-This preserves the existing reservation and flushing semantics while
-preventing metadata overcommit on zoned devices. The change is limited to
-metadata space and does not affect non-zoned filesystems.
-
-This patch addresses premature metadata ENOSPC conditions on zoned devices
-and ensures delayed refs are throttled before exhausting usable metadata.
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Reviewed-by: Mark Harmstone <mark@harmstone.com>
+Signed-off-by: Michal Grzedzicki <mge@meta.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
 
 LLM Generated explanations, may be completely bogus:
 
-Now I have a thorough understanding. Let me compile the final analysis.
+Now I have all the information needed. Let me compile the full analysis.
 
 ---
 
-## PHASE 1: COMMIT MESSAGE FORENSICS
+# PHASE 1: COMMIT MESSAGE FORENSICS
 
-### Step 1.1: Subject Line
-- **Subsystem**: `btrfs: zoned:` (btrfs filesystem, zoned device mode)
-- **Action verb**: "cap" (limit/constrain)
-- **Summary**: Cap delayed refs metadata reservation to avoid overcommit
-  on zoned filesystems
+## Step 1.1: PARSE THE SUBJECT LINE
+- **Subsystem prefix**: `btrfs`
+- **Action verb**: "fix"
+- **Summary**: Fix silent IO error loss in encoded writes and zoned
+  split
+- Record: [btrfs] [fix] [silent IO error loss in encoded writes and
+  zoned split paths]
 
-Record: [btrfs: zoned] [cap] [Limit delayed refs metadata reservation to
-prevent metadata overcommit on zoned devices]
+## Step 1.2: PARSE ALL COMMIT MESSAGE TAGS
+- **Reviewed-by**: Qu Wenruo `<wqu@suse.com>` — well-known btrfs
+  developer/maintainer
+- **Reviewed-by**: Johannes Thumshirn `<johannes.thumshirn@wdc.com>` —
+  prominent btrfs contributor
+- **Reviewed-by**: Mark Harmstone `<mark@harmstone.com>` — btrfs
+  developer
+- **Signed-off-by**: Michal Grzedzicki `<mge@meta.com>` — author (Meta)
+- **Signed-off-by**: David Sterba `<dsterba@suse.com>` — btrfs subsystem
+  maintainer
+- No Fixes: tag, no Cc: stable — expected for candidate review
+- No Reported-by — likely found via code review/testing at Meta
+- Record: 3 Reviewed-by from expert btrfs devs, signed off by subsystem
+  maintainer.
 
-### Step 1.2: Tags
-- **Reviewed-by**: Filipe Manana <fdmanana@suse.com> -- a core btrfs
-  developer and the most prolific btrfs contributor
-- **Signed-off-by**: Johannes Thumshirn <johannes.thumshirn@wdc.com> --
-  author, WDC employee, active btrfs/zoned contributor
-- **Signed-off-by**: David Sterba <dsterba@suse.com> -- btrfs maintainer
-  who merged it
-- No Fixes: tag (expected for manual review candidates)
-- No Cc: stable tag (expected)
-- No Reported-by tag (author-discovered through debugging)
+## Step 1.3: ANALYZE THE COMMIT BODY TEXT
+The commit describes a clear, precise bug mechanism:
+1. `can_finish_ordered_extent()` and `btrfs_finish_ordered_zoned()` set
+   `BTRFS_ORDERED_IOERR` via bare `set_bit()`.
+2. Later, `btrfs_mark_ordered_extent_error()` in
+   `btrfs_finish_one_ordered()` uses `test_and_set_bit()`, finds the bit
+   already set, and **skips** `mapping_set_error()`.
+3. The IO error is never recorded on the inode's address_space, making
+   it invisible to `fsync`.
+4. For encoded writes, `btrfs receive` silently produces files with
+   zero-filled holes.
 
-Record: Reviewed by Filipe Manana (core btrfs developer), committed by
-maintainer David Sterba. No bug report reference.
+- **Failure mode**: Silent data corruption (zero-filled holes instead of
+  actual data)
+- **Root cause**: bare `set_bit()` pre-empts the `test_and_set_bit()` in
+  the helper that actually records the error
+- Record: [Silent data loss bug] [fsync misses IO errors] [Encoded write
+  files get zero-filled holes] [Author clearly explains the root cause
+  mechanism]
 
-### Step 1.3: Commit Body
-The commit describes a real-world ENOSPC problem on zoned btrfs:
-- `delayed_refs_rsv` speculatively grows without a hard upper bound
-- On zoned devices, zone write pointer constraints make some space
-  unusable
-- `space_info->may_use` grows beyond usable metadata capacity
-- This causes premature ENOSPC failures ("cannot satisfy tickets")
-- The author provided extensive analysis output from enospc_debug dumps
-  showing may_use at 99.80% of total while consumed was only 320KB
+## Step 1.4: DETECT HIDDEN BUG FIXES
+This is an explicit bug fix, not hidden. The subject and body directly
+describe a data integrity bug.
+Record: [Not a hidden fix — explicitly described as a data loss fix]
 
-**Failure mode**: Premature ENOSPC errors on zoned devices, preventing
-writes even though space could be recovered by flushing delayed refs.
+---
 
-Record: [Bug: Metadata overcommit on zoned devices leads to premature
-ENOSPC] [Symptom: cannot satisfy tickets, premature ENOSPC] [Root cause:
-delayed_refs_rsv unbounded growth relative to zone_unusable space]
+# PHASE 2: DIFF ANALYSIS - LINE BY LINE
 
-### Step 1.4: Hidden Bug Fix Detection
-This is NOT a hidden bug fix - the commit explicitly describes fixing
-premature ENOSPC on zoned devices. It's a clear bug fix with detailed
-analysis.
+## Step 2.1: INVENTORY THE CHANGES
+- `fs/btrfs/ordered-data.c`: 1 line changed (line 388)
+- `fs/btrfs/zoned.c`: 1 line changed (line 2139)
+- Total: 2 lines changed, 0 lines added/removed net
+- Functions modified: `can_finish_ordered_extent()`,
+  `btrfs_finish_ordered_zoned()`
+- Record: [2 files, 2 lines changed, single-file-equivalent surgical
+  fix]
 
-Record: [Direct bug fix, not hidden]
+## Step 2.2: UNDERSTAND THE CODE FLOW CHANGE
+**Hunk 1** (`ordered-data.c:388`):
+- Before: `set_bit(BTRFS_ORDERED_IOERR, &ordered->flags)` — sets flag
+  only
+- After: `btrfs_mark_ordered_extent_error(ordered)` — sets flag AND
+  calls `mapping_set_error()`
 
-## PHASE 2: DIFF ANALYSIS
+**Hunk 2** (`zoned.c:2139`):
+- Before: `set_bit(BTRFS_ORDERED_IOERR, &ordered->flags)` — sets flag
+  only
+- After: `btrfs_mark_ordered_extent_error(ordered)` — sets flag AND
+  calls `mapping_set_error()`
+- Record: [Both hunks: bare set_bit → helper that also records error on
+  mapping]
 
-### Step 2.1: Change Inventory
-- **fs/btrfs/delayed-ref.c**: +28 lines (new function
-  `btrfs_zoned_cap_metadata_reservation` + 3-line call site)
-- **fs/btrfs/transaction.c**: +8 lines (handle -EAGAIN from refill by
-  committing transaction and retrying)
-- **Total**: ~36 lines added, 0 removed
-- **Functions modified**: `btrfs_delayed_refs_rsv_refill()`,
-  `start_transaction()`
-- **New function**: `btrfs_zoned_cap_metadata_reservation()` (static
-  helper)
-- **Scope**: Two-file surgical fix, limited to zoned mode
+## Step 2.3: IDENTIFY THE BUG MECHANISM
+**Category**: Logic / correctness bug → silent data corruption
 
-Record: [2 files, ~36 lines added] [btrfs_delayed_refs_rsv_refill
-modified, start_transaction modified] [Small surgical fix]
+The bug is a race between setting the error flag and recording the
+error:
+1. `can_finish_ordered_extent()` uses bare `set_bit()` to set
+   `BTRFS_ORDERED_IOERR`
+2. `btrfs_finish_one_ordered()` (line 3363) later calls
+   `btrfs_mark_ordered_extent_error()`
+3. `btrfs_mark_ordered_extent_error()` does `if (!test_and_set_bit(...))
+   mapping_set_error()`
+4. Since the bit was already set by step 1, step 3 thinks the error was
+   already recorded and skips `mapping_set_error()`
+5. But the `mapping_set_error()` was NEVER called — the bare `set_bit()`
+   didn't do it
 
-### Step 2.2: Code Flow Changes
+Record: [Logic/correctness bug] [test_and_set_bit finds bit already set,
+skips recording error to mapping]
 
-**Hunk 1 (delayed-ref.c)**: New static function
-`btrfs_zoned_cap_metadata_reservation`:
-- Before: No cap on delayed refs reservation
-- After: On zoned devices, checks if `block_rsv->size` exceeds half of
-  usable metadata (`total_bytes - bytes_zone_unusable`). Returns -EAGAIN
-  if exceeded.
-- Only affects zoned mode (`btrfs_is_zoned` check at start)
+## Step 2.4: ASSESS THE FIX QUALITY
+- **Obviously correct**: YES. The helper function
+  `btrfs_mark_ordered_extent_error()` at line 336-340 does exactly
+  what's needed:
 
-**Hunk 2 (delayed-ref.c)**: Call to new function in
-`btrfs_delayed_refs_rsv_refill`:
-- Before: Directly calls `btrfs_reserve_metadata_bytes`
-- After: First checks the zoned cap; if exceeded, returns -EAGAIN before
-  attempting actual reservation
+```336:340:fs/btrfs/ordered-data.c
+void btrfs_mark_ordered_extent_error(struct btrfs_ordered_extent
+*ordered)
+{
+        if (!test_and_set_bit(BTRFS_ORDERED_IOERR, &ordered->flags))
+                mapping_set_error(ordered->inode->vfs_inode.i_mapping,
+-EIO);
+}
+```
 
-**Hunk 3 (transaction.c)**: -EAGAIN handling in `start_transaction`:
-- Before: Any error from `btrfs_delayed_refs_rsv_refill` goes to
-  `reserve_fail`
-- After: If -EAGAIN (zoned cap hit), commits current transaction (which
-  flushes delayed refs, freeing space), then retries the refill
+- **Minimal/surgical**: YES. 2 lines, identical transformation pattern.
+- **Regression risk**: Essentially zero. The helper does a superset of
+  what the bare `set_bit()` did: same flag setting + additional error
+  recording. The `test_and_set_bit()` ensures `mapping_set_error()` is
+  called at most once.
+- Record: [Obviously correct, minimal, zero regression risk]
 
-Record: [New cap check prevents overcommit] [EAGAIN triggers transaction
-commit + retry] [Only zoned mode affected]
+---
 
-### Step 2.3: Bug Mechanism
-Category: **Logic/correctness fix** for metadata accounting on zoned
-devices.
+# PHASE 3: GIT HISTORY INVESTIGATION
 
-What was broken: The delayed refs block reserve could grow arbitrarily
-large on zoned filesystems, where zone write pointer constraints
-(tracked as `bytes_zone_unusable`) make portions of metadata space
-physically unusable. The overcommit logic didn't account for this, so
-`may_use` could far exceed actually usable space.
+## Step 3.1: BLAME THE CHANGED LINES
+- **ordered-data.c:388**: Introduced by commit `53df25869a5659`
+  (Christoph Hellwig, 2023-05-31) — "btrfs: factor out a
+  can_finish_ordered_extent helper". Present since v6.5.
+- **zoned.c:2139**: Introduced by commit `71df088c1cc090` (Christoph
+  Hellwig, 2023-05-24) — "btrfs: defer splitting of ordered extents
+  until I/O completion". Present since v6.5.
+- **Helper function** (`btrfs_mark_ordered_extent_error()`): Introduced
+  by commit `aa5ccf29173acf` (Josef Bacik, 2024-04-03) — "btrfs: handle
+  errors in btrfs_reloc_clone_csums properly". Present since v6.10.
 
-How the fix works: Adds a zoned-specific cap at 50% of usable metadata
-space (`usable >> 1`). When the cap is hit, returns -EAGAIN instead of
-proceeding with the reservation. The caller (transaction start) responds
-by committing the current transaction, which flushes delayed refs and
-frees the overcommitted space.
+Record: [Buggy code introduced in v6.5 by refactoring commits; helper
+exists from v6.10]
 
-Record: [Logic/correctness bug in metadata accounting on zoned devices]
-[Fix: cap at 50% usable space, trigger flush when cap exceeded]
+## Step 3.2: FOLLOW THE FIXES: TAG
+No Fixes: tag present — expected. The commits that introduced the bare
+`set_bit()` calls (`53df25869a5659` and `71df088c1cc090`) are the
+implicit "fixes targets."
+Record: [Implicit fixes: 53df25869a5659 and 71df088c1cc090, both in
+v6.5+]
 
-### Step 2.4: Fix Quality
-- The fix is well-contained: adds one static helper + two call sites
-- The zoned-only guard (`btrfs_is_zoned`) ensures non-zoned systems are
-  completely unaffected
-- The `ASSERT(btrfs_is_zoned(fs_info))` in the EAGAIN handler is good
-  defensive coding
-- The retry pattern (commit, then retry) is a well-established pattern
-  in btrfs space management
-- Reviewed by Filipe Manana who is the most active btrfs contributor
-- Potential regression risk is LOW: only affects zoned mode, uses
-  existing flush/commit mechanisms, and the cap is generous (50% of
-  usable)
+## Step 3.3: CHECK FILE HISTORY FOR RELATED CHANGES
+Recent ordered-data.c changes are refactoring (folio conversion, lock
+relaxation). No conflicting changes to the `can_finish_ordered_extent()`
+function in this area. The fix is self-contained.
+Record: [No conflicting recent changes; fix is standalone]
 
-Record: [Obviously correct, well-reviewed, minimal regression risk for
-non-zoned users] [Zero risk for non-zoned, low risk for zoned]
+## Step 3.4: CHECK THE AUTHOR'S OTHER COMMITS
+Michal Grzedzicki from Meta. Other commits in this tree are in SCSI.
+This appears to be a cross-subsystem contributor who found the bug
+likely through `btrfs receive` usage at Meta.
+Record: [Author is from Meta, likely found bug through production btrfs
+receive usage]
 
-## PHASE 3: GIT HISTORY INVESTIGATION
+## Step 3.5: CHECK FOR DEPENDENT/PREREQUISITE COMMITS
+The helper `btrfs_mark_ordered_extent_error()` already exists in the 7.0
+tree (and all trees since v6.10). The fix has NO dependencies for v6.10+
+trees. For v6.6-v6.9, the helper would need to be backported first.
+Record: [No dependencies for 7.0 tree; for older stable trees, helper
+(aa5ccf29173acf) may be needed]
 
-### Step 3.1: Blame
-- `btrfs_delayed_refs_rsv_refill()` was introduced by Josef Bacik in
-  commit `6ef03debdb3d82` (2019-06-19), present since approximately
-  v5.3.
-- The function has been refined by Filipe Manana (2023) and others but
-  its core logic (grow unbounded) has been present since inception.
-- The zoned mode support was added later, but the interaction with
-  delayed refs rsv was never specifically addressed.
+---
 
-Record: [Refill function from v5.3 (6ef03debdb3d82)] [Zoned support
-added later without accounting for delayed refs rsv interaction]
+# PHASE 4: MAILING LIST AND EXTERNAL RESEARCH
 
-### Step 3.2: Fixes Tag
-No Fixes: tag present. The bug is a design gap in how delayed refs rsv
-interacts with zoned mode constraints, not introduced by a single
-commit.
+## Step 4.1: FIND THE ORIGINAL PATCH DISCUSSION
+b4 dig did not find a match (commit not yet in mainline at time of
+search). Web search also did not locate the specific patch thread. This
+is likely a recently submitted patch that was accepted into David
+Sterba's btrfs tree but not yet pushed to mainline.
+Record: [Could not locate lore discussion — likely very recent
+submission]
 
-Record: [No Fixes: tag - this is a design gap, not a single-commit
-regression]
+## Step 4.2: CHECK WHO REVIEWED THE PATCH
+Three Reviewed-by tags from Qu Wenruo, Johannes Thumshirn, and Mark
+Harmstone — three core btrfs developers. David Sterba (btrfs maintainer)
+signed off, indicating it passed through the official btrfs tree.
+Record: [Reviewed by 3 expert btrfs developers; signed off by
+maintainer]
 
-### Step 3.3: Related Changes
-- `28270e25c69a2` (v6.7) - "btrfs: always reserve space for delayed refs
-  when starting transaction" - changed how delayed refs reservations
-  work, may have exacerbated the issue
-- `64d2c847ba380` (v6.9) - "btrfs: zoned: fix
-  calc_available_free_space() for zoned mode" - closely related fix for
-  overcommit on zoned, was CC'd to stable
-- `a1359d06d7878` (v7.0) - API change to `btrfs_reserve_metadata_bytes`
-  that would affect clean backport
+## Step 4.3-4.5: SEARCH FOR BUG REPORT / RELATED PATCHES / STABLE
+HISTORY
+No external bug report found. The commit message specifically mentions
+`btrfs receive` producing files with zero-filled holes, suggesting this
+was found in a production environment at Meta.
+Record: [Likely production-found bug at Meta; no external reports found]
 
-Record: [Related to 28270e25c69a2 and 64d2c847ba380] [API differences
-across stable trees]
+---
 
-### Step 3.4: Author
-Johannes Thumshirn is a WDC employee and regular btrfs/zoned contributor
-with 20+ btrfs commits visible. He is a recognized expert on zoned
-btrfs.
+# PHASE 5: CODE SEMANTIC ANALYSIS
 
-Record: [Author is a recognized zoned btrfs expert at WDC]
+## Step 5.1: IDENTIFY KEY FUNCTIONS
+- `can_finish_ordered_extent()` — processes ordered extent completion
+- `btrfs_finish_ordered_zoned()` — handles zoned write completion
+- `btrfs_mark_ordered_extent_error()` — the helper being used as the fix
 
-### Step 3.5: Dependencies
-**CRITICAL**: `btrfs_commit_current_transaction()` was introduced in
-commit `ded980eb3fadd7` (2024-05-22), which is only present in v6.11+.
-This function is used in the `transaction.c` hunk. Backporting to v6.6.y
-or older stable trees would require either:
-1. Also backporting `ded980eb3fadd7` (and its dependents)
-2. Replacing the call with the inline equivalent
-   (`btrfs_attach_transaction_barrier` + `btrfs_commit_transaction`)
+## Step 5.2: TRACE CALLERS
+`can_finish_ordered_extent()` is called by:
+- `btrfs_finish_ordered_extent()` — called from IO completion paths (bio
+  endio)
+- `btrfs_mark_ordered_io_finished()` — called from writeback paths
 
-Additionally, `btrfs_reserve_metadata_bytes()` had its signature changed
-by `a1359d06d7878` (dropping `fs_info` argument), which is only in the
-latest tree. Older trees have a different API.
+`btrfs_finish_ordered_zoned()` is called by:
+- `btrfs_finish_ordered_io()` — the main ordered extent completion
+  function
 
-Record: [Depends on ded980eb3fadd7 (btrfs_commit_current_transaction) -
-only in v6.11+] [API differences for btrfs_reserve_metadata_bytes across
-versions]
+These are core IO completion paths — every data write goes through them.
+Record: [Core IO completion path; called for every write operation]
 
-## PHASE 4: MAILING LIST AND EXTERNAL RESEARCH
+## Step 5.3-5.4: TRACE CALLEES AND CALL CHAIN
+The encoded write path is: `btrfs_do_encoded_write()` →
+`btrfs_submit_compressed_write()` → bio completion →
+`end_bbio_compressed_write()` → `btrfs_finish_ordered_extent()` →
+`can_finish_ordered_extent()`. This is the path that `btrfs receive`
+uses.
+Record: [btrfs receive → encoded write → bio completion → buggy
+function]
 
-### Step 4.1-4.5
-b4 dig could not find the commit (likely very recent, post-7.0-rc or in
-a merge window). Web searches also did not find the specific patch
-discussion. Lore.kernel.org was protected by anti-bot measures.
+## Step 5.5: SEARCH FOR SIMILAR PATTERNS
+The third `set_bit(BTRFS_ORDERED_IOERR)` in `disk-io.c:4598` is in
+`btrfs_destroy_ordered_extents()`, a cleanup path during filesystem
+abort/unmount. This is intentionally different — during umount there's
+no fsync concern, so bare `set_bit()` is acceptable there.
+Record: [disk-io.c case is in cleanup path, doesn't need the fix]
 
-Record: [Could not find mailing list discussion - commit appears very
-recent, possibly in 7.0 merge window or rc cycle] [UNVERIFIED: Full
-mailing list discussion not available]
+---
 
-## PHASE 5: CODE SEMANTIC ANALYSIS
+# PHASE 6: CROSS-REFERENCING AND STABLE TREE ANALYSIS
 
-### Step 5.1-5.4: Functions and Call Chains
-- `btrfs_delayed_refs_rsv_refill()` is called from:
-  1. `start_transaction()` in `transaction.c` - called on every
-     transaction start with num_items==0
-  2. `btrfs_truncate_inode_items()` in `inode-item.c` - called during
-     truncate/unlink (with BTRFS_RESERVE_NO_FLUSH)
-- `start_transaction()` is called from many places throughout btrfs
-  (dozens of call sites)
-- The `num_items == 0` path specifically handles callers using
-  `btrfs_start_transaction(root, 0)` which is a very common pattern (24+
-  call sites across btrfs)
+## Step 6.1: DOES THE BUGGY CODE EXIST IN STABLE TREES?
+- Buggy `set_bit()` calls: present since v6.5
+- Helper function: present since v6.10
+- For 7.0 tree: both the buggy code AND the helper exist. Fix applies
+  directly.
+- For v6.12.y, v6.6.y: buggy code exists; v6.12 has the helper, v6.6
+  does not.
+Record: [Bug exists in 7.0 tree; fix applies cleanly]
 
-The `inode-item.c` caller already converts ALL errors to `-EAGAIN` (line
-708), so the new -EAGAIN from the cap function is handled correctly
-without modification.
+## Step 6.2: CHECK FOR BACKPORT COMPLICATIONS
+The fix is a trivial 2-line substitution. No contextual conflicts
+expected for 7.0.
+Record: [Clean apply expected for 7.0]
 
-Record: [btrfs_delayed_refs_rsv_refill called from transaction start and
-truncate] [Very widely called function] [inode-item.c caller unaffected
-by change]
+## Step 6.3: CHECK IF RELATED FIXES ARE ALREADY IN STABLE
+No related fixes found in this tree for this specific issue.
+Record: [No existing fix in stable]
 
-### Step 5.5: Similar Patterns
-The previous fix `64d2c847ba380` ("btrfs: zoned: fix
-calc_available_free_space() for zoned mode") addressed a very similar
-issue - overcommit on zoned mode leading to ENOSPC. That fix was CC'd to
-stable 6.9+. This new fix addresses a different vector of the same
-overcommit problem.
+---
 
-Record: [Similar fix 64d2c847ba380 was CC'd to stable 6.9+]
+# PHASE 7: SUBSYSTEM AND MAINTAINER CONTEXT
 
-## PHASE 6: CROSS-REFERENCING AND STABLE TREE ANALYSIS
+## Step 7.1: IDENTIFY THE SUBSYSTEM AND ITS CRITICALITY
+- **Subsystem**: fs/btrfs — filesystem
+- **Criticality**: IMPORTANT — btrfs is widely used, and data integrity
+  is its primary value proposition
+Record: [btrfs filesystem, IMPORTANT criticality]
 
-### Step 6.1: Existence in Stable Trees
-- The delayed refs rsv refill mechanism exists since v5.3
-- Zoned mode support has been present since ~v5.12
-- The interaction problem exists in all stable trees with zoned mode
-  support
-- However, `28270e25c69a2` (v6.7) changed delayed refs reservation
-  behavior and may have worsened the problem
-
-Record: [Buggy interaction exists in v5.12+, but may be worse in v6.7+
-due to 28270e25c69a2]
-
-### Step 6.2: Backport Complications
-**SIGNIFICANT backport complications:**
-1. `btrfs_commit_current_transaction()` only exists in v6.11+ - requires
-   adaptation for older trees
-2. `btrfs_reserve_metadata_bytes()` API changed - minor adaptation
-   needed for older trees
-3. The `delayed-ref.c` hunk adding the new function should apply
-   relatively cleanly
-
-Record: [Needs adaptation for v6.6-v6.10 due to missing
-btrfs_commit_current_transaction] [API differences need resolution]
-
-### Step 6.3: Related Fixes Already in Stable
-`64d2c847ba380` (CC: stable 6.9+) addresses a different vector of the
-same overcommit problem. This new patch addresses a complementary
-vector.
-
-Record: [64d2c847ba380 is a related but different fix, CC'd to stable
-6.9+]
-
-## PHASE 7: SUBSYSTEM AND MAINTAINER CONTEXT
-
-### Step 7.1: Subsystem Criticality
-- **Subsystem**: btrfs filesystem, zoned device support
-- **Criticality**: IMPORTANT (btrfs is a widely used filesystem, but
-  zoned mode is a specialized use case for SMR/ZNS devices)
-- Zoned btrfs is increasingly used on enterprise/datacenter storage
-  systems with ZNS SSDs
-
-Record: [btrfs filesystem, zoned mode - IMPORTANT but specialized use
-case]
-
-### Step 7.2: Subsystem Activity
-btrfs is one of the most actively developed filesystems in the kernel.
-The zoned mode subsystem specifically is under active development by
-WDC/Seagate engineers.
-
+## Step 7.2: ASSESS SUBSYSTEM ACTIVITY
+The btrfs subsystem is very actively developed (48+ commits since v6.6
+in ordered-data.c alone).
 Record: [Very active subsystem]
 
-## PHASE 8: IMPACT AND RISK ASSESSMENT
+---
 
-### Step 8.1: Affected Users
-Users of btrfs on zoned block devices (SMR HDDs, ZNS SSDs). This is a
-growing but still specialized use case, primarily in
-enterprise/datacenter environments.
+# PHASE 8: IMPACT AND RISK ASSESSMENT
 
-Record: [Affected: btrfs zoned mode users, primarily
-enterprise/datacenter]
+## Step 8.1: DETERMINE WHO IS AFFECTED
+- All btrfs users who encounter IO errors during:
+  1. Encoded writes (`btrfs receive` with stream v2/v3)
+  2. Zoned device writes where ordered extent splitting fails
+Record: [btrfs receive users, zoned device users]
 
-### Step 8.2: Trigger Conditions
-- Occurs on zoned devices when delayed refs accumulate
-- Triggered by normal write workloads that generate many delayed
-  references
-- More likely with sustained write activity and many COW operations
-- Not timing-dependent - deterministic once space accounting gets out of
-  balance
+## Step 8.2: DETERMINE THE TRIGGER CONDITIONS
+- **Encoded writes**: Any IO error during `btrfs receive` (e.g., disk
+  error, corruption)
+- **Zoned split**: Memory allocation failure during zoned ordered extent
+  splitting
+- These are not obscure conditions — disk errors happen, and memory
+  pressure with `btrfs receive` on large datasets is common in
+  production
+Record: [IO error during btrfs receive or zoned write; realistic trigger
+conditions]
 
-Record: [Triggered by normal sustained write workloads on zoned devices]
-[Deterministic, not timing-dependent]
+## Step 8.3: DETERMINE THE FAILURE MODE SEVERITY
+- **Silent data corruption**: Files produced by `btrfs receive` have
+  zero-filled holes where data should be
+- `fsync` returns success because `mapping_set_error()` was never called
+- User believes data is safely written when it is not
+- **Severity: CRITICAL** — silent data loss is the worst possible
+  outcome for a filesystem
+Record: [Silent data loss; fsync returns success with corrupted data;
+CRITICAL]
 
-### Step 8.3: Failure Mode Severity
-- **ENOSPC errors** - writes fail prematurely
-- This is a HIGH severity issue for affected users: they lose the
-  ability to write to their filesystem even though space could be
-  reclaimed
-- Not a crash/security issue, but a significant usability/functionality
-  bug
-- Data in-flight could potentially be lost if applications don't handle
-  ENOSPC gracefully
+## Step 8.4: CALCULATE RISK-BENEFIT RATIO
+- **BENEFIT**: Very high — prevents silent data corruption for `btrfs
+  receive` users
+- **RISK**: Very low — 2-line change, replacing bare `set_bit()` with
+  existing helper that does strictly more, obviously correct
+Record: [Very high benefit, very low risk — strongly favorable ratio]
 
-Record: [Premature ENOSPC - HIGH severity for affected users] [No
-crash/corruption, but functional failure]
+---
 
-### Step 8.4: Risk-Benefit Ratio
-**BENEFIT**: High for zoned btrfs users - fixes a real ENOSPC issue
-preventing normal operation
-**RISK**:
-- Very low for non-zoned users (completely unaffected - `btrfs_is_zoned`
-  guard)
-- Low for zoned users (uses existing transaction commit mechanism)
-- ~36 lines added, well-contained
-- BUT: requires backport adaptation due to
-  `btrfs_commit_current_transaction` dependency
+# PHASE 9: FINAL SYNTHESIS
 
-Record: [HIGH benefit for zoned users] [LOW risk overall] [Needs
-adaptation for older stable trees]
+## Step 9.1: COMPILE THE EVIDENCE
 
-## PHASE 9: FINAL SYNTHESIS
+**Evidence FOR backporting:**
+- Fixes silent data corruption (the most critical bug category for
+  filesystems)
+- Extremely small and surgical (2 lines)
+- Uses existing well-tested helper function
+- Obviously correct by code inspection
+- 3 Reviewed-by from expert btrfs developers
+- Signed off by btrfs subsystem maintainer (David Sterba)
+- Bug affects `btrfs receive` — a critical data migration/backup tool
+- All needed infrastructure (the helper) already exists in the 7.0 tree
+- Zero regression risk
 
-### Step 9.1: Evidence Compilation
+**Evidence AGAINST backporting:**
+- None identified
 
-**FOR backporting:**
-- Fixes a real, significant ENOSPC bug affecting zoned btrfs users
-- Well-analyzed and well-documented by the author
-- Reviewed by Filipe Manana (core btrfs developer)
-- Committed by David Sterba (btrfs maintainer)
-- Small and well-contained (~36 lines, 2 files)
-- Zero risk to non-zoned users
-- Author is a recognized zoned btrfs expert
-- Related fix (64d2c847ba380) was explicitly CC'd to stable
+**Unresolved questions:**
+- Could not access lore.kernel.org to read full patch discussion (Anubis
+  bot protection)
+- Could not find the commit in mainline (likely very recently merged or
+  in-flight to next merge window)
 
-**AGAINST backporting:**
-- Requires adaptation for stable trees older than v6.11
-  (`btrfs_commit_current_transaction` dependency)
-- API differences in `btrfs_reserve_metadata_bytes` across stable trees
-- No Fixes: tag or Cc: stable tag (design gap, not single-commit
-  regression)
-- Zoned mode is a specialized use case (fewer affected users)
-- The new static function adds ~25 lines of new code (more than a
-  trivial one-liner)
+## Step 9.2: APPLY THE STABLE RULES CHECKLIST
+1. **Obviously correct and tested?** YES — trivial substitution of bare
+   `set_bit()` with existing helper; 3 reviews
+2. **Fixes a real bug?** YES — silent data loss in `btrfs receive`
+3. **Important issue?** YES — data corruption (CRITICAL severity)
+4. **Small and contained?** YES — 2 lines, 2 files
+5. **No new features or APIs?** YES — uses existing helper
+6. **Can apply to stable trees?** YES — clean apply for 7.0 (helper
+   exists)
 
-**UNRESOLVED:**
-- Could not access mailing list discussion to check for stable
-  nominations by reviewers
-- Could not verify whether this was part of a larger series
+## Step 9.3: CHECK FOR EXCEPTION CATEGORIES
+Not an exception category — this is a standard bug fix, and a strong
+one.
 
-### Step 9.2: Stable Rules Checklist
-1. Obviously correct and tested? **YES** - reviewed by Filipe Manana,
-   well-analyzed
-2. Fixes a real bug? **YES** - premature ENOSPC on zoned devices
-3. Important issue? **YES** - prevents normal filesystem operation
-   (ENOSPC)
-4. Small and contained? **YES** - ~36 lines, 2 files, zoned-only
-5. No new features or APIs? **YES** - no new features, just a cap on
-   existing behavior
-6. Can apply to stable trees? **NEEDS ADAPTATION** - requires backport
-   work for v6.6-v6.10
+## Step 9.4: DECISION
+This is a textbook stable backport candidate: a tiny, obviously correct
+fix for silent data corruption in a widely used filesystem feature
+(`btrfs receive`). It uses existing infrastructure, has been thoroughly
+reviewed, and carries essentially zero regression risk.
 
-### Step 9.3: Exception Categories
-Not an exception category (not a device ID, quirk, DT, build fix, or doc
-fix). It's a standard bug fix.
+---
 
-### Step 9.4: Decision
+# Verification
 
-This is a genuine bug fix for premature ENOSPC on zoned btrfs devices.
-The fix is well-contained, well-reviewed, and carries very low
-regression risk (zero for non-zoned users). However, it has notable
-backport complications:
-
-1. The dependency on `btrfs_commit_current_transaction()` (v6.11+) means
-   this cannot be cleanly cherry-picked to older stable trees without
-   adaptation.
-2. API differences in `btrfs_reserve_metadata_bytes()` add further
-   complications for older trees.
-
-Despite the backport complications, the fix addresses a real,
-significant user-facing bug (premature ENOSPC preventing writes), is
-well-reviewed by the top btrfs developer, and is small enough to warrant
-the adaptation effort. The related fix `64d2c847ba380` was CC'd to
-stable 6.9+, indicating the maintainers recognize zoned overcommit
-issues as stable-worthy.
-
-## Verification
-
-- [Phase 1] Parsed tags: Reviewed-by: Filipe Manana, Signed-off-by:
-  Johannes Thumshirn (author), David Sterba (maintainer)
-- [Phase 2] Diff analysis: ~36 lines added across 2 files, new static
-  helper + EAGAIN handling
-- [Phase 2] Verified inode-item.c caller already handles all errors as
-  -EAGAIN (line 708)
-- [Phase 3] git blame: btrfs_delayed_refs_rsv_refill from 6ef03debdb3d82
-  (Josef Bacik, 2019, v5.3)
-- [Phase 3] git blame: btrfs_commit_current_transaction from
-  ded980eb3fadd7 (Filipe Manana, 2024-05-22)
-- [Phase 3] Verified ded980eb3fadd7 is in v6.11+ but NOT in v6.10 or
-  earlier
-- [Phase 3] Verified 28270e25c69a2 (always reserve for delayed refs) is
-  in v6.7+
-- [Phase 3] git show 64d2c847ba380: confirmed related zoned overcommit
-  fix was CC'd to stable 6.9+
-- [Phase 4] b4 dig failed to find commit (too recent); lore.kernel.org
-  blocked by anti-bot
-- [Phase 4] UNVERIFIED: Could not access mailing list discussion for
-  stable nominations
-- [Phase 5] Verified btrfs_delayed_refs_rsv_refill callers:
-  start_transaction (transaction.c), btrfs_truncate_inode_items (inode-
-  item.c)
-- [Phase 5] Verified btrfs_start_transaction(root, 0) has 24+ call sites
-  across btrfs
-- [Phase 6] Verified btrfs_commit_current_transaction exists in current
-  tree (line 2040 of transaction.c) but not in v6.6
-- [Phase 6] Verified bytes_zone_unusable field exists in space-info.h
-  (all relevant stable trees)
-- [Phase 6] Verified btrfs_reserve_metadata_bytes API changed by
-  a1359d06d7878 (signature differs in older trees)
-- [Phase 8] Failure mode: premature ENOSPC preventing writes on zoned
-  devices - severity HIGH for affected users
+- [Phase 1] Parsed tags: 3 Reviewed-by (Qu Wenruo, Johannes Thumshirn,
+  Mark Harmstone), 2 Signed-off-by (author + David Sterba maintainer)
+- [Phase 2] Diff analysis: 2 lines changed —
+  `set_bit(BTRFS_ORDERED_IOERR)` → `btrfs_mark_ordered_extent_error()`
+  in two locations
+- [Phase 2] Verified `btrfs_mark_ordered_extent_error()` at line 336-340
+  does `test_and_set_bit() + mapping_set_error()` — confirmed exact
+  mechanism described in commit message
+- [Phase 2] Verified `btrfs_finish_one_ordered()` at inode.c:3363 calls
+  `btrfs_mark_ordered_extent_error()` which finds bit already set and
+  skips `mapping_set_error()` — confirmed the "double-set" bug path
+- [Phase 3] git blame: `ordered-data.c:388` introduced by 53df25869a5659
+  (Christoph Hellwig, v6.5)
+- [Phase 3] git blame: `zoned.c:2139` introduced by 71df088c1cc090
+  (Christoph Hellwig, v6.5)
+- [Phase 3] git show aa5ccf29173acf: confirmed
+  `btrfs_mark_ordered_extent_error()` introduced in v6.10 by Josef Bacik
+- [Phase 3] git merge-base: confirmed helper exists in v6.10+, buggy
+  code in v6.5+
+- [Phase 4] b4 dig: no match found (likely very recent patch not yet
+  indexed)
+- [Phase 4] UNVERIFIED: Could not access lore.kernel.org discussion due
+  to bot protection
+- [Phase 5] Traced call chain: `btrfs_do_encoded_write()` → bio
+  completion → `btrfs_finish_ordered_extent()` →
+  `can_finish_ordered_extent()` — confirmed encoded writes reach buggy
+  code
+- [Phase 5] Verified disk-io.c:4598 `set_bit()` is in
+  `btrfs_destroy_ordered_extents()` (cleanup path) — correctly not fixed
+- [Phase 5] Verified 3 remaining bare `set_bit(BTRFS_ORDERED_IOERR)`
+  calls: 2 fixed by this commit, 1 in cleanup path (acceptable)
+- [Phase 6] Confirmed buggy code exists in 7.0 tree (read both files
+  directly)
+- [Phase 6] Confirmed fix applies cleanly — helper exists, code context
+  matches
+- [Phase 8] Failure mode: silent data loss (zero-filled holes) —
+  CRITICAL severity
 
 **YES**
 
- fs/btrfs/delayed-ref.c | 28 ++++++++++++++++++++++++++++
- fs/btrfs/transaction.c |  8 ++++++++
- 2 files changed, 36 insertions(+)
+ fs/btrfs/ordered-data.c | 2 +-
+ fs/btrfs/zoned.c        | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 3766ff29fbbb1..605858c2d9a95 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -207,6 +207,30 @@ void btrfs_dec_delayed_refs_rsv_bg_updates(struct btrfs_fs_info *fs_info)
-  * This will refill the delayed block_rsv up to 1 items size worth of space and
-  * will return -ENOSPC if we can't make the reservation.
-  */
-+static int btrfs_zoned_cap_metadata_reservation(struct btrfs_space_info *space_info)
-+{
-+	struct btrfs_fs_info *fs_info = space_info->fs_info;
-+	struct btrfs_block_rsv *block_rsv = &fs_info->delayed_refs_rsv;
-+	u64 usable;
-+	u64 cap;
-+	int ret = 0;
-+
-+	if (!btrfs_is_zoned(fs_info))
-+		return 0;
-+
-+	spin_lock(&space_info->lock);
-+	usable = space_info->total_bytes - space_info->bytes_zone_unusable;
-+	spin_unlock(&space_info->lock);
-+	cap = usable >> 1;
-+
-+	spin_lock(&block_rsv->lock);
-+	if (block_rsv->size > cap)
-+		ret = -EAGAIN;
-+	spin_unlock(&block_rsv->lock);
-+
-+	return ret;
-+}
-+
- int btrfs_delayed_refs_rsv_refill(struct btrfs_fs_info *fs_info,
- 				  enum btrfs_reserve_flush_enum flush)
- {
-@@ -228,6 +252,10 @@ int btrfs_delayed_refs_rsv_refill(struct btrfs_fs_info *fs_info,
- 	if (!num_bytes)
- 		return 0;
- 
-+	ret = btrfs_zoned_cap_metadata_reservation(space_info);
-+	if (ret)
-+		return ret;
-+
- 	ret = btrfs_reserve_metadata_bytes(space_info, num_bytes, flush);
- 	if (ret)
- 		return ret;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 8dd77c431974d..86c5ebdf56998 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -678,6 +678,14 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
- 		 * here.
- 		 */
- 		ret = btrfs_delayed_refs_rsv_refill(fs_info, flush);
-+		if (ret == -EAGAIN) {
-+			ASSERT(btrfs_is_zoned(fs_info));
-+			ret = btrfs_commit_current_transaction(root);
-+			if (ret)
-+				goto reserve_fail;
-+			ret = btrfs_delayed_refs_rsv_refill(fs_info, flush);
-+		}
-+
- 		if (ret)
- 			goto reserve_fail;
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 5df02c707aee6..b65c1f1e2956e 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -385,7 +385,7 @@ static bool can_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
  	}
+ 
+ 	if (!uptodate)
+-		set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
++		btrfs_mark_ordered_extent_error(ordered);
+ 
+ 	if (ordered->bytes_left)
+ 		return false;
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 0cd7fd3fcfa3a..d728c3bafc092 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -2136,7 +2136,7 @@ void btrfs_finish_ordered_zoned(struct btrfs_ordered_extent *ordered)
+ 			continue;
+ 		}
+ 		if (!btrfs_zoned_split_ordered(ordered, logical, len)) {
+-			set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
++			btrfs_mark_ordered_extent_error(ordered);
+ 			btrfs_err(fs_info, "failed to split ordered extent");
+ 			goto out;
+ 		}
 -- 
 2.53.0
 

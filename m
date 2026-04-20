@@ -1,35 +1,35 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C054D30DD2F
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2026 13:54:00 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9DBE231A07B
+	for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2026 13:54:14 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776693240; cv=none; b=mC7L543gLYyvWCEnYA4/EP0YL1BoQbuELcT/c9f0z7hXOujlMqKh4VUuSVsW4Tc1O9lWV38bfJxnE7Ipv+BDvNsFUAgmT+ctfEHKd1VfPjqcTJxfYRlblCy3To9AVkQ9nrZZNfIXaqFHjfIKQiRYo21cCBzNO0lsevBi+u6N0WU=
+	t=1776693254; cv=none; b=rIY0uN6/ORwg1ZDMe90xRDWtsVSAvsHAmws4F7/74JATzN+XF07AhB5qB3OYkooLUqjqnllq0UrDwpUxChUMzCKiZOfqVNJLrWabnJLbZ58BlUwS3e5Gl+u9dcYkFiheeHQgohE6MbjsnQmtNwXhKabDEL7SjiAUCLX72rTE0aU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776693240; c=relaxed/simple;
-	bh=pHXShU9t8idlMBP52CR/P6CEKTjR2IPAzx/ICF4cpQ4=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=gLys8FCnMWpjt5oYCms65wvkT0/+/8aaJYGO+eLpDBbJy0oLx9X6v/d2xELQ4dAyGjkDg5unkxcZk7By0KjWCRGgAipxa+TV9Rv7mwdLRidPOOH0fk0sGXTsgsBL37BKMaNpWjNPKJuZjcwnUCm1lxmytZDvtD4TjRRXpzQKLe0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=JFf/6I5H; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1776693254; c=relaxed/simple;
+	bh=XYRmpsrvDibZx5mdTk3unoAtH4tEIfAzsDari8wcUBw=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=Wri0wls/3FsEZGgKbQPIU+m/wfcUhBsBWBVGK8+Coo2KKCfp7bLz7+5holw4/YXRJ88vJu0DUxE7drcdcHudwtu3EX1b2DNyrVO9ilXABihKK+mIjaJxWxpQw1+z9L58/F4Mhgs+jBg+OEZ+sdsJ5k9dxDF2tRlu+6plaqQoQ0U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=U9/zgadf; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="JFf/6I5H"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D9D7BC2BCB7
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2026 13:53:59 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="U9/zgadf"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B751CC2BCB6
+	for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2026 13:54:13 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776693240;
-	bh=pHXShU9t8idlMBP52CR/P6CEKTjR2IPAzx/ICF4cpQ4=;
+	s=k20201202; t=1776693254;
+	bh=XYRmpsrvDibZx5mdTk3unoAtH4tEIfAzsDari8wcUBw=;
 	h=From:To:Subject:Date:From;
-	b=JFf/6I5Hr254SoDmGiJfp0hxmK1JxPGkQ9rIGZ8fG28yPNFmkdPrSOBnMQLrZ7yrX
-	 433gs1OJMuLk56W2EOv3kFrAbcypmoXmViebPvR7cxJxSayOmViI5+u5/WWoplmPb7
-	 jt58QeMMV/V2rlTx8z8KZNjmdX5FV4Gr243NN/OZq7B320vK+eHskCyyoh3VKHing4
-	 Z9TNhZH8mpC8NVRd9uT9goJL7dKZRK6XmCrE0dMEvAsSpz7jcgEo03zVs3G5H7Yy8Q
-	 5QDexpE74ngkTpWJUGxJAyedQQZqCE9SzLB4sQ+DGqh6GddTHfi2otWOZbvEEXbQ0m
-	 PBTTlo/Ql65zQ==
+	b=U9/zgadfElvOvYei0zvaTREqiDK91b9YELhvUweGYRLgXQnHfefCiFjPISHLN7dMz
+	 liWstqYzWuNYcSn9c6CwFmekwLgkD4InnEaR+neVWyO+zDMGxsZCvhyngcJNTTeztC
+	 1MK/aNgTBqoLXh8ShoBMQ+GgEGsdT97WybfSgI6tIIB5YrQj9Q99UMqQ3hMuo+XQX0
+	 E3A48csakt/vkI7T2CGbhKNtUzAG6mqzEoOnHehasGQBGSH4Y0EanYHnABN+jipRRP
+	 aDUz4kLpJ5yHI2fERMubtEphlhABcCWeYiKxo0dKF43nLgQpYRw7XABrad4Jd0j7hh
+	 xHs3FBCwXkfyQ==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: use min_size variable to setup block rsv in btrfs_replace_file_extents()
-Date: Mon, 20 Apr 2026 14:53:56 +0100
-Message-ID: <efc156002e21e5453d58c2c0856f605575f27642.1776693213.git.fdmanana@suse.com>
+Subject: [PATCH] btrfs: use the enums instead of int type in struct btrfs_block_group fields
+Date: Mon, 20 Apr 2026 14:54:11 +0100
+Message-ID: <085942c2ba1ec8fec438f49c6f8e2d6bb2011eb1.1776693204.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -41,40 +41,34 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-There's no need to calculate again the size for the temporary block
-reserve in btrfs_replace_file_extents() - we have already calculated it
-and stored it in the 'min_size' variable.
-
-So use the variable to make it more clear and also make the variable const
-since it's not supposed to change during the whole function.
+The 'disk_cache_state' and 'cached' fields are defined with an int type
+but all the values we assigned to them come from the enums
+btrfs_disk_cache_state and btrfs_caching_type. So change the type in the
+btrfs_block_group structure from int to these enums - in practice an enum
+is an int, so this is more for readability and clarity.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/file.c | 4 ++--
+ fs/btrfs/block-group.h | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f007f1f2fd84..7aab4a98caaa 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2395,7 +2395,7 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
- 	struct btrfs_drop_extents_args drop_args = { 0 };
- 	struct btrfs_root *root = inode->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
--	u64 min_size = btrfs_calc_insert_metadata_size(fs_info, 1);
-+	const u64 min_size = btrfs_calc_insert_metadata_size(fs_info, 1);
- 	u64 ino_size = round_up(inode->vfs_inode.i_size, fs_info->sectorsize);
- 	struct btrfs_trans_handle *trans = NULL;
- 	struct btrfs_block_rsv rsv;
-@@ -2408,7 +2408,7 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
- 		return -EINVAL;
+diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+index 60a3b1c0a8ab..790c2d467af5 100644
+--- a/fs/btrfs/block-group.h
++++ b/fs/btrfs/block-group.h
+@@ -171,10 +171,10 @@ struct btrfs_block_group {
+ 	unsigned long full_stripe_len;
+ 	unsigned long runtime_flags;
  
- 	btrfs_init_metadata_block_rsv(fs_info, &rsv, BTRFS_BLOCK_RSV_TEMP);
--	rsv.size = btrfs_calc_insert_metadata_size(fs_info, 1);
-+	rsv.size = min_size;
- 	rsv.failfast = true;
+-	int disk_cache_state;
++	enum btrfs_disk_cache_state disk_cache_state;
  
- 	/*
+ 	/* Cache tracking stuff */
+-	int cached;
++	enum btrfs_caching_type cached;
+ 	struct btrfs_caching_control *caching_ctl;
+ 
+ 	struct btrfs_space_info *space_info;
 -- 
 2.47.2
 

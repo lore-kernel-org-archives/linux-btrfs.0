@@ -1,369 +1,108 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7039338423A
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2026 11:50:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 644223A5E92;
+	Mon, 20 Apr 2026 13:17:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776685839; cv=none; b=ZyymwEyVGeef7rC0MX3p20IMCSP5zjkWPy/SAn8L80Dy+EavYdz5kVbSXy/KYiNod0LQtauzS9NdIpswnZvfjW/JMpxzhTUc95QprpgQzsmH3jD7mDnZNN4OIlUcp+T1k1TAyuCnhHL1/GmfMo/ZbqyRoyEZzizCfJJ1V6Tm4Q4=
+	t=1776691039; cv=none; b=jZSzAXFzNUckddNJ/AURAQ8NF3+aZ+6CP17olgqeqnWk8VWkv/xfXYLbpCHax95Vcslzqg4A6Jm25oFNdB77a7OLgDov5qg9wOMctMm5zdDW2HDj241TAWnfbvuIy68slhRFkWwN1Jfi7A/Q1tA0MhZvB9oVKjlfp/WwVn9kpMs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776685839; c=relaxed/simple;
-	bh=KOulq+pWXbbx6akmxGn+eWmbEZDwKTy4h8dh97wi2ww=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=JbqJfBXxywbMNO+BHrlCdOGVQTcvcsLby/fYZfoaOOC27Qf3wYf9pZYgXCNdJUQ1UaQovssxJZeFBeRP8ge6b6e9Igu5N/w9Yv7yXt0GsCKQkuKuAgZnrQ04T3wTOdBZ4YmCKDs6hfIPV92cBY5BmvBBAza3I/tohuVDKn7wj1M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=CJzTuxim; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=t0tKxGvH; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1776691039; c=relaxed/simple;
+	bh=NWaMfhADkFs8adYX4BONkjmh2cuUY93pvd7Wvpcbq2E=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=N+sHL7SOhEqOqyHYjXpQyF8wqFlEneHiqaeZaw97Z0u/11cCU+k0nXj0/ms6FapNfZubB6VXA9f1mhKRDUF19WwLW3230XIZg5JsNGpWic0Hao4YTSMBMGcHM7xKoadaLKfT8NecHP3zAnSGKaJh6mF2tchdYb2X/Ufpq+tf7GU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ip+OD/nq; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="CJzTuxim";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="t0tKxGvH"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 9AA455BCE1;
-	Mon, 20 Apr 2026 11:50:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1776685835; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=2PCEXxubw1vrykvYphnkNxwzar4VL6lQgFVF2UebE9U=;
-	b=CJzTuximkxS8Rq9CJfZcmlTMNzzCL+/poCL/xUlyvWgjChZ8RO3zmzkERzOrvzbMKE3xj5
-	4R3pa9wEWYtCqLs4omONJCfw5WEm2Zo9gVCbLuwJXQ1tiCY1Fc+x3M9xMLiKtnR6XZwOrj
-	fwobQ58E2oUflm1v0cYB96Ldz3KWvVc=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=t0tKxGvH
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1776685834; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=2PCEXxubw1vrykvYphnkNxwzar4VL6lQgFVF2UebE9U=;
-	b=t0tKxGvHB6hkwvcWss3y//RmeY3Du1EKR0AjeC6VaPn7DpoTH5+NWfEC9htd+CeKcE5Oo8
-	dAsn4BgYtKK9j0kelPv8ZsxOA5G6kjMmZ7T1Hmw3IE3ec0DoLDwMC0sH8fwP/iEBReFzju
-	Ib50UwV8USpmza3SZuS+1Q8g3wGVq0s=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 95242593AE;
-	Mon, 20 Apr 2026 11:50:33 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id W/1yFQkT5mkSUQAAD6G6ig
-	(envelope-from <wqu@suse.com>); Mon, 20 Apr 2026 11:50:33 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: stable@vger.kernel.org
-Subject: [PATCH v2] btrfs: check and set EXTENT_DELALLOC_NEW before clearing EXTENT_DELALLOC
-Date: Mon, 20 Apr 2026 21:20:11 +0930
-Message-ID: <9941e0c488a0229ac9005bb0fb977823ee428ddb.1776685790.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ip+OD/nq"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 10C3BC19425;
+	Mon, 20 Apr 2026 13:17:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1776691039;
+	bh=NWaMfhADkFs8adYX4BONkjmh2cuUY93pvd7Wvpcbq2E=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+	b=ip+OD/nq2ETmHoGAArfGZ9a6mxIAqIjiLRRXiX/JiBQmR/+06C9RkWNe0lXRia4Xu
+	 QbdFU43WJ3OTvAb+6xBaAZQa9wbVDe+fRSxinb+9FraDS0HlQRKas3D8z1im837sCf
+	 xvsRreBWCuy5UTbVbH/xbNYNy6r8W8DukoElGTBQ4G8Dloi8xrnMtyerQCzaI6Ej1c
+	 QPZ4zTzeZLB9FRaRfb0c0X4Pbphl17068iajvXsCUJy4UIEPa1gKJ3imqYf9i1DhVc
+	 SVWL7cLEasl7Y/kAtY+blkUHdNCLpv73zl3yxq1WUeJeCifHO8aya1rvrsXxG9jpyq
+	 SmTs+a7U05kIw==
+From: Sasha Levin <sashal@kernel.org>
+To: patches@lists.linux.dev,
+	stable@vger.kernel.org
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.de>,
+	Boris Burkov <boris@bur.io>,
+	Goldwyn Rodrigues <rgoldwyn@suse.com>,
+	David Sterba <dsterba@suse.com>,
+	Sasha Levin <sashal@kernel.org>,
+	clm@fb.com,
+	rostedt@goodmis.org,
+	mhiramat@kernel.org,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-trace-kernel@vger.kernel.org
+Subject: [PATCH AUTOSEL 6.18] btrfs: tracepoints: get correct superblock from dentry in event btrfs_sync_file()
+Date: Mon, 20 Apr 2026 09:08:44 -0400
+Message-ID: <20260420131539.986432-58-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
+In-Reply-To: <20260420131539.986432-1-sashal@kernel.org>
+References: <20260420131539.986432-1-sashal@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+X-stable: review
+X-Patchwork-Hint: Ignore
+X-stable-base: Linux 6.18.23
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
-	URIBL_BLOCKED(0.00)[suse.com:mid,suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	TO_DN_NONE(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FROM_HAS_DN(0.00)[]
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 9AA455BCE1
 
-[WARNING]
-When running test cases with injected errors or shutdown, e.g.
-generic/388 or generic/475, there is a chance that the following kernel
-warning is triggered:
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
 
- BTRFS info (device dm-2): first mount of filesystem d8a19a28-3232-4809-b0df-38df83e71bff
- BTRFS info (device dm-2): using crc32c checksum algorithm
- BTRFS info (device dm-2): checking UUID tree
- BTRFS info (device dm-2): turning on async discard
- BTRFS info (device dm-2): enabling free space tree
- BTRFS critical (device dm-2 state E): emergency shutdown
- ------------[ cut here ]------------
- WARNING: extent_io.c:1742 at extent_writepage_io+0x437/0x520 [btrfs], CPU#2: kworker/u43:2/651591
- CPU: 2 UID: 0 PID: 651591 Comm: kworker/u43:2 Tainted: G        W  OE       7.0.0-rc6-custom+ #365 PREEMPT(full)  5804053f02137e627472d94b5128cc9fcb110e88
- RIP: 0010:extent_writepage_io+0x437/0x520 [btrfs]
- Call Trace:
-  <TASK>
-  extent_write_cache_pages+0x2a5/0x820 [btrfs 70299925d0856939e93b17d480651713b3cbba58]
-  btrfs_writepages+0x74/0x130 [btrfs 70299925d0856939e93b17d480651713b3cbba58]
-  do_writepages+0xd0/0x160
-  __writeback_single_inode+0x42/0x340
-  writeback_sb_inodes+0x22d/0x580
-  wb_writeback+0xc6/0x360
-  wb_workfn+0xbd/0x470
-  process_one_work+0x198/0x3b0
-  worker_thread+0x1c8/0x330
-  kthread+0xee/0x120
-  ret_from_fork+0x2a6/0x330
-  ret_from_fork_asm+0x11/0x20
-  </TASK>
- ---[ end trace 0000000000000000 ]---
- BTRFS error (device dm-2 state E): root 5 ino 259 folio 1323008 is marked dirty without notifying the fs
- BTRFS error (device dm-2 state E): failed to submit blocks, root=5 inode=259 folio=1323008 submit_bitmap=0: -117
- BTRFS info (device dm-2 state E): last unmount of filesystem d8a19a28-3232-4809-b0df-38df83e71bff
+[ Upstream commit a85b46db143fda5869e7d8df8f258ccef5fa1719 ]
 
-[CAUSE]
-Inside btrfs we have the following pattern in several locations, for
-example inside btrfs_dirty_folio():
+If overlay is used on top of btrfs, dentry->d_sb translates to overlay's
+super block and fsid assignment will lead to a crash.
 
-	btrfs_clear_extent_bit(&inode->io_tree, start_pos, end_of_last_block,
-			       EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
-			       cached);
+Use file_inode(file)->i_sb to always get btrfs_sb.
 
-	ret = btrfs_set_extent_delalloc(inode, start_pos, end_of_last_block,
-					extra_bits, cached);
-	if (ret)
-		return ret;
-
-However btrfs_set_extent_delalloc() can return IO errors other than -ENOMEM
-through the following callchain:
-
- btrfs_set_extent_delalloc()
- \- btrfs_find_new_delalloc_bytes()
-    \- btrfs_get_extent()
-       \- btrfs_lookup_file_extent()
-          \- btrfs_search_slot()
-
-When such IO error happened, the previous btrfs_clear_extent_bit() has
-cleared the EXTENT_DELALLOC for the range, and we're expecting
-btrfs_set_extent_delalloc() to re-set EXTENT_DELALLOC.
-
-But since btrfs_set_extent_delalloc() failed before
-btrfs_set_extent_bit(), EXTENT_DELALLOC flag is no longere present.
-
-And if the folio range is dirty before entering
-btrfs_set_extent_delalloc(), we got a dirty folio but no EXTENT_DELALLOC
-flag now.
-
-Then we hit the folio writeback:
-
- extent_writepage()
- |- writepage_delalloc()
- |  No ordered extent is created, as there is no EXTENT_DELALLOC set
- |  for the folio range.
- |  This also means the folio has no ordered flag set.
- |
- |- extent_writepage_io()
-    \- if (unlikely(!folio_test_ordered(folio))
-       Now we hit the warning.
-
-[FIX]
-Introduce a new helper, btrfs_reset_extent_delalloc() to replace the
-currently open-coded btrfs_clear_extent_bit() +
-btrfs_set_extent_delalloc() combination.
-
-Instead of calling btrfs_clear_extent_bit() first, update
-EXTENT_DELALLOC_NEW first, as that part can fail due to metadata IO,
-meanwhile btrfs_clear_extent_bit() and btrfs_set_extent_bit() can really
-only fail with -ENOMEM.
-
-This allows us to fail early without clearing EXTENT_DELALLOC bit, so
-even if that new btrfs_reset_extent_delalloc() failed before touching
-EXTENT_DELALLOC, the existing dirty range will still have their old
-EXTENT_DELALLOC flag present, thus avoid the warning.
-
-Cc: stable@vger.kernel.org # 6.1+
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Boris Burkov <boris@bur.io>
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
-Changelog:
-v2:
-- Use NULL as @cached_extent for btrfs_find_new_delalloc_bytes()
-  Unlike later btrfs_clear_extent_bit(), btrfs_find_new_delalloc_bytes()
-  can hit several different extent maps and update @cached_state.
 
-  This makes later btrfs_set/clear_extent_bit() to discard the cache,
-  making the original optimization less useful.
----
- fs/btrfs/btrfs_inode.h |  3 +++
- fs/btrfs/file.c        | 25 +++---------------
- fs/btrfs/inode.c       | 58 +++++++++++++++++++++++++++++++++++++-----
- fs/btrfs/reflink.c     |  4 +--
- 4 files changed, 58 insertions(+), 32 deletions(-)
+LLM Generated explanations, may be completely bogus:
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 6e696b350dc5..ad523549d8b4 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -569,6 +569,9 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, long nr,
- int btrfs_set_extent_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
- 			      unsigned int extra_bits,
- 			      struct extent_state **cached_state);
-+int btrfs_reset_extent_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
-+				unsigned int extra_bits,
-+				struct extent_state **cached_state);
+Error: Failed to generate final synthesis
+
+ include/trace/events/btrfs.h | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 125bdc166bfed..0864700f76e0a 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -769,12 +769,15 @@ TRACE_EVENT(btrfs_sync_file,
+ 	),
  
- struct btrfs_new_inode_args {
- 	/* Input */
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index a6f641a41d99..ab536a304500 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -85,16 +85,8 @@ int btrfs_dirty_folio(struct btrfs_inode *inode, struct folio *folio, loff_t pos
+ 	TP_fast_assign(
+-		const struct dentry *dentry = file->f_path.dentry;
+-		const struct inode *inode = d_inode(dentry);
++		struct dentry *dentry = file_dentry(file);
++		struct inode *inode = file_inode(file);
++		struct dentry *parent = dget_parent(dentry);
++		struct inode *parent_inode = d_inode(parent);
  
- 	end_of_last_block = start_pos + num_bytes - 1;
- 
--	/*
--	 * The pages may have already been dirty, clear out old accounting so
--	 * we can set things up properly
--	 */
--	btrfs_clear_extent_bit(&inode->io_tree, start_pos, end_of_last_block,
--			       EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
--			       cached);
--
--	ret = btrfs_set_extent_delalloc(inode, start_pos, end_of_last_block,
--					extra_bits, cached);
-+	ret = btrfs_reset_extent_delalloc(inode, start_pos, end_of_last_block,
-+					  extra_bits, cached);
- 	if (ret)
- 		return ret;
- 
-@@ -1952,18 +1944,7 @@ static vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 		}
- 	}
- 
--	/*
--	 * page_mkwrite gets called when the page is firstly dirtied after it's
--	 * faulted in, but write(2) could also dirty a page and set delalloc
--	 * bits, thus in this case for space account reason, we still need to
--	 * clear any delalloc bits within this page range since we have to
--	 * reserve data&meta space before lock_page() (see above comments).
--	 */
--	btrfs_clear_extent_bit(io_tree, page_start, end,
--			       EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
--			       EXTENT_DEFRAG, &cached_state);
--
--	ret = btrfs_set_extent_delalloc(inode, page_start, end, 0, &cached_state);
-+	ret = btrfs_reset_extent_delalloc(inode, page_start, end, 0, &cached_state);
- 	if (ret < 0) {
- 		btrfs_unlock_extent(io_tree, page_start, page_end, &cached_state);
- 		goto out_unlock;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 71129502333a..ec2300698a6a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2810,7 +2810,10 @@ int btrfs_set_extent_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
- 			      unsigned int extra_bits,
- 			      struct extent_state **cached_state)
- {
--	WARN_ON(PAGE_ALIGNED(end));
-+	const u32 blocksize = inode->root->fs_info->sectorsize;
-+
-+	ASSERT(IS_ALIGNED(start, blocksize), "start=%llu", start);
-+	ASSERT(IS_ALIGNED(end + 1, blocksize), "end=%llu", end);
- 
- 	if (start >= i_size_read(&inode->vfs_inode) &&
- 	    !(inode->flags & BTRFS_INODE_PREALLOC)) {
-@@ -2833,6 +2836,52 @@ int btrfs_set_extent_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
- 				    EXTENT_DELALLOC | extra_bits, cached_state);
- }
- 
-+/*
-+ * Clear the old accounting flags and set EXTENT_DELALLOC for the range.
-+ *
-+ * Return <0 for error, in that case no range has EXTENT_DELALLOC bit cleared or set.
-+ */
-+int btrfs_reset_extent_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
-+				unsigned int extra_bits,
-+				struct extent_state **cached_state)
-+{
-+	const u32 blocksize = inode->root->fs_info->sectorsize;
-+
-+	/* The @extra_bits can only be EXTENT_NORESERVE for now. */
-+	ASSERT(!(extra_bits & ~EXTENT_NORESERVE));
-+
-+	/* Basic alignment check. */
-+	ASSERT(IS_ALIGNED(start, blocksize), "start=%llu", start);
-+	ASSERT(IS_ALIGNED(end + 1, blocksize), "end=%llu", end);
-+
-+	/*
-+	 * Check and set DELALLOC_NEW flags, this needs to search tree thus
-+	 * can fail early.
-+	 * Thus we want to do this before clearing DELALLOC_EXTENT.
-+	 */
-+	if (start >= i_size_read(&inode->vfs_inode) &&
-+	    !(inode->flags & BTRFS_INODE_PREALLOC)) {
-+		/*
-+		 * There can't be any extents following eof in this case so just
-+		 * set the delalloc new bit for the range directly.
-+		 */
-+		extra_bits |= EXTENT_DELALLOC_NEW;
-+	} else {
-+		int ret;
-+
-+		ret = btrfs_find_new_delalloc_bytes(inode, start, end + 1 - start,
-+						    NULL);
-+		if (unlikely(ret))
-+			return ret;
-+	}
-+	/* Clear the old accounting as the range may already be dirty. */
-+	btrfs_clear_extent_bit(&inode->io_tree, start, end,
-+			       EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
-+			       EXTENT_DEFRAG, cached_state);
-+	return btrfs_set_extent_bit(&inode->io_tree, start, end,
-+				    EXTENT_DELALLOC | extra_bits, cached_state);
-+}
-+
- static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 				       struct btrfs_inode *inode, u64 file_pos,
- 				       struct btrfs_file_extent_item *stack_fi,
-@@ -4973,12 +5022,7 @@ int btrfs_truncate_block(struct btrfs_inode *inode, u64 offset, u64 start, u64 e
- 		goto again;
- 	}
- 
--	btrfs_clear_extent_bit(&inode->io_tree, block_start, block_end,
--			       EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
--			       &cached_state);
--
--	ret = btrfs_set_extent_delalloc(inode, block_start, block_end, 0,
--					&cached_state);
-+	ret = btrfs_reset_extent_delalloc(inode, block_start, block_end, 0, &cached_state);
- 	if (ret) {
- 		btrfs_unlock_extent(io_tree, block_start, block_end, &cached_state);
- 		goto out_unlock;
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index 14742abe0f92..fb34598a77ff 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -94,9 +94,7 @@ static int copy_inline_to_page(struct btrfs_inode *inode,
- 	if (ret < 0)
- 		goto out_unlock;
- 
--	btrfs_clear_extent_bit(&inode->io_tree, file_offset, range_end,
--			       EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG, NULL);
--	ret = btrfs_set_extent_delalloc(inode, file_offset, range_end, 0, NULL);
-+	ret = btrfs_reset_extent_delalloc(inode, file_offset, range_end, 0, NULL);
- 	if (ret)
- 		goto out_unlock;
- 
+-		TP_fast_assign_fsid(btrfs_sb(file->f_path.dentry->d_sb));
++		dput(parent);
++		TP_fast_assign_fsid(btrfs_sb(inode->i_sb));
+ 		__entry->ino		= btrfs_ino(BTRFS_I(inode));
+-		__entry->parent		= btrfs_ino(BTRFS_I(d_inode(dentry->d_parent)));
++		__entry->parent		= btrfs_ino(BTRFS_I(parent_inode));
+ 		__entry->datasync	= datasync;
+ 		__entry->root_objectid	= btrfs_root_id(BTRFS_I(inode)->root);
+ 	),
 -- 
 2.53.0
 

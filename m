@@ -1,44 +1,44 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A4D43FF899;
-	Mon, 20 Apr 2026 13:26:42 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 602B7421884;
+	Mon, 20 Apr 2026 13:27:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776691602; cv=none; b=jvxoF7JywcS6FQ7JhtFU72WsINQMseveCNDwWGlglHbFanUn0PcwDftwfHerP1ribfjnO9E/8pdV+HZ0QND4IYVp7ZwqIkuKbkiu+OgBoxL0BnCPB6B0Z8spuEsEswdzURC5Ei4ijs7htf6dqVmelXYcnOgL1LTpO55ZbgYiBb4=
+	t=1776691655; cv=none; b=mSAkM8d70zyR1HkJPDF95cmNTpA8wUmX20tMfqdCC5PVV3Hrp34nJCUqJk0uDwE1jK+jPoNRqMUdeaEmVXm4I+Bd6YxihpJwP5lSQHFDZBlFm1vz/bpoeo4T1o8E9coazAYN88SzztT1azCc5n+x3F2pBx1xUJdgGRp4EwgQukk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776691602; c=relaxed/simple;
-	bh=95WN5sYertdwIMQjfnx9hCDly4/Zh3P/4b9JLd2upBA=;
+	s=arc-20240116; t=1776691655; c=relaxed/simple;
+	bh=G7VJJaTaxr7b3XLIoxE7vwkM/LSUFkg0fMzL9nJqDP8=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=t/v7AiwHGHDuFifWHE4FwCYJ4ExM4isaX03oAi2ERshinvwlcvOA+5r16glF4+vfjyFDo4o7nSgwKm+Tt+uQvqw81bBbcPjcFxgFm2bbBMlmgwDDnz7ErJi0XBk3l/F+Pj9de8JykjeaQqXWlBufJSrS91yz5ej1Mv+1jnri9G8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SwtyksGq; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version:Content-Type; b=BT/2sX+dGZTJAwvCyX22/DiqJXB+6kF5CkvFSWytn1Ws68JL+Y0vAEWnl50WcQi30YOzI3HO1lfmXw/H+WEN+b8gPwQVdPb3RgK0BYnhT7orJlZDobwXkpXdanEbY8iNdTZsiFBi9+L7OI6m5wnaqaQFWstD7V/Xz3D5e4ijjIY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=JvQDJmOL; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SwtyksGq"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id BAB67C2BCB6;
-	Mon, 20 Apr 2026 13:26:40 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="JvQDJmOL"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 15766C19425;
+	Mon, 20 Apr 2026 13:27:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776691602;
-	bh=95WN5sYertdwIMQjfnx9hCDly4/Zh3P/4b9JLd2upBA=;
+	s=k20201202; t=1776691655;
+	bh=G7VJJaTaxr7b3XLIoxE7vwkM/LSUFkg0fMzL9nJqDP8=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=SwtyksGq2lTIVwTjXkon6U2Ew1hKD4rwIR6YptqgE2PlzMYmWjPDolH+BNMmnVMF4
-	 hlEkhglsMZ6kojnhUGBgBtLLbZcYunDVUYW1MklDMplN6mseLVDiaf4VakE64L/zRj
-	 etZgaDKX/9P6KzBNqi7Ubzqc3RBZ7boLRdyZMN1rve0RCaAg7pe3DQxs0rp3oiYpVJ
-	 vc75NUfoFac4aU6ZZLwi/Ev0Xzz64EjBSwyfvaB3p/FDdE7q60gbTBmGXhDbfzIHmg
-	 ii/rZ7ggziWLgNvrut4xUaC+AJm/fNx8VYhkq/qktyhu9a1FnjGHp9W/BAHg18UEQN
-	 kjcAZn4WuihMw==
+	b=JvQDJmOLvqamjunl7T5oerd2KkiFPgpxsDvZC9Y4qCQyWfacx99BVhrG8XC0is3k2
+	 9yCHzf8l6WteltrHp2aIr8w+o+arXNMc3/GhSebeoMiPuCSz+CiudIVQuHkgYJalTY
+	 x8q/GaS3FUBJF+Xgn6we9m+Qqf8t7Kgzo0QalMGwqEx7S7WVWSsJOzYRC8YcvNbIk8
+	 ij77Q0ePXnbD+w1s+6rUy+LAWwxZkJV9h6vfKl2tU+jwZKhiPLA3UEMVDiQnXzhHnT
+	 2XAjDZMBjBM13caFB+IYIylB3xzMvrJepvQWh6egrXrmmGp+AY0qR2lHDMGcsm6d/N
+	 KDSrqwTa6VWxg==
 From: Sasha Levin <sashal@kernel.org>
 To: patches@lists.linux.dev,
 	stable@vger.kernel.org
-Cc: Leo Martins <loemra.dev@gmail.com>,
+Cc: Teng Liu <27rabbitlt@gmail.com>,
 	Qu Wenruo <wqu@suse.com>,
 	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 7.0] btrfs: avoid GFP_ATOMIC allocations in qgroup free paths
-Date: Mon, 20 Apr 2026 09:18:39 -0400
-Message-ID: <20260420132314.1023554-125-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 7.0-5.10] btrfs: replace BUG_ON() with error return in cache_save_setup()
+Date: Mon, 20 Apr 2026 09:19:09 -0400
+Message-ID: <20260420132314.1023554-155-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260420132314.1023554-1-sashal@kernel.org>
 References: <20260420132314.1023554-1-sashal@kernel.org>
@@ -48,513 +48,310 @@ List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 X-stable: review
 X-Patchwork-Hint: Ignore
 X-stable-base: Linux 7.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-From: Leo Martins <loemra.dev@gmail.com>
+From: Teng Liu <27rabbitlt@gmail.com>
 
-[ Upstream commit e0a85137a882db789b1bccc1e7db06356ac8c69f ]
+[ Upstream commit 30d537f723d6f37a8ddfb17fe668bb9808f5b49f ]
 
-When qgroups are enabled, __btrfs_qgroup_release_data() and
-qgroup_free_reserved_data() pass an extent_changeset to
-btrfs_clear_record_extent_bits() to track how many bytes had their
-EXTENT_QGROUP_RESERVED bits cleared. Inside the extent IO tree spinlock,
-add_extent_changeset() calls ulist_add() with GFP_ATOMIC to record each
-changed range. If this allocation fails, it hits a BUG_ON and panics the
-kernel.
+In cache_save_setup(), if create_free_space_inode() succeeds but the
+subsequent lookup_free_space_inode() still fails on retry, the
+BUG_ON(retries) will crash the kernel. This can happen due to I/O
+errors or transient failures, not just programming bugs.
 
-However, both of these callers only read changeset.bytes_changed
-afterwards — the range_changed ulist is populated and immediately freed
-without ever being iterated. The GFP_ATOMIC allocation is entirely
-unnecessary for these paths.
-
-Introduce extent_changeset_init_bytes_only() which uses a sentinel value
-(EXTENT_CHANGESET_BYTES_ONLY) on the ulist's prealloc field to signal
-that only bytes_changed should be tracked. add_extent_changeset() checks
-for this sentinel and returns early after updating bytes_changed,
-skipping the ulist_add() call entirely. This eliminates the GFP_ATOMIC
-allocation and makes the BUG_ON unreachable for these paths.
-
-Callers that need range tracking (qgroup_reserve_data,
-qgroup_unreserve_range, btrfs_qgroup_check_reserved_leak) continue to
-use extent_changeset_init() and are unaffected.
+Replace the BUG_ON with proper error handling that returns the original
+error code through the existing cleanup path. The callers already handle
+this gracefully: disk_cache_state defaults to BTRFS_DC_ERROR, so the
+space cache simply won't be written for that block group.
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: Leo Martins <loemra.dev@gmail.com>
+Signed-off-by: Teng Liu <27rabbitlt@gmail.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
 
 LLM Generated explanations, may be completely bogus:
 
-This is the `set_extent_bit()` path - the preallocation happens for set
-operations (used by `qgroup_reserve_data`), not the clear operations.
-The clear path doesn't prealloc. This confirms the commit's analysis -
-the clear path (used by free/release) always hits the GFP_ATOMIC
-allocation.
-
-Now I have all the information needed for the full analysis. Let me
-compile it.
+Now I have all the information I need. Let me compile the final
+analysis.
 
 ---
 
 ## PHASE 1: COMMIT MESSAGE FORENSICS
 
-### Step 1.1: PARSE THE SUBJECT LINE
-Record: [btrfs] [avoid] "Avoid GFP_ATOMIC allocations in qgroup free
-paths" - The action verb "avoid" suggests preventing a problematic
-behavior. While not a classic "fix" verb, the commit message body
-reveals the actual bug: BUG_ON/kernel panic from failed GFP_ATOMIC
-allocation.
+### Step 1.1: Subject Line
+- **Subsystem**: btrfs
+- **Action verb**: "replace" (BUG_ON with error return)
+- **Summary**: Replaces a kernel-crashing BUG_ON() with graceful error
+  handling in cache_save_setup()
 
-### Step 1.2: PARSE ALL COMMIT MESSAGE TAGS
-- **Reviewed-by: Qu Wenruo <wqu@suse.com>** - Qu Wenruo is a senior
-  btrfs developer/maintainer
-- **Signed-off-by: Leo Martins <loemra.dev@gmail.com>** - the author
-- **Signed-off-by: David Sterba <dsterba@suse.com>** - the btrfs
-  maintainer who committed it
-- No Fixes: tag (expected for candidates under review)
-- No Reported-by: tag
-- No Link: tag
+Record: [btrfs] [replace] [Remove BUG_ON(retries) in cache_save_setup(),
+replace with error return]
 
-Record: Reviewed by a core btrfs developer, committed by the btrfs
-maintainer.
+### Step 1.2: Tags
+- **Reviewed-by**: Qu Wenruo <wqu@suse.com> - prominent btrfs
+  maintainer/reviewer
+- **Signed-off-by**: Teng Liu <27rabbitlt@gmail.com> (author)
+- **Signed-off-by**: David Sterba <dsterba@suse.com> (btrfs maintainer
+  who merged it)
+- No Fixes: tag (expected for candidates)
+- No Cc: stable (expected)
 
-### Step 1.3: ANALYZE THE COMMIT BODY TEXT
-The commit describes:
-- **Bug:** When qgroups are enabled, `__btrfs_qgroup_release_data()` and
-  `qgroup_free_reserved_data()` pass an `extent_changeset` to
-  `btrfs_clear_record_extent_bits()`, which calls
-  `add_extent_changeset()` under a spinlock. Inside, `ulist_add()` is
-  called with `GFP_ATOMIC`. If this allocation fails, it hits a `BUG_ON`
-  and panics the kernel.
-- **Observation:** The callers only read `changeset.bytes_changed` - the
-  `range_changed` ulist is never iterated for these paths.
-- **Fix:** Introduces a "bytes only" mode that skips the `ulist_add()`
-  call entirely.
+Record: Reviewed by key btrfs developer Qu Wenruo. Merged by David
+Sterba, the btrfs maintainer.
 
-Record: Bug = kernel panic (BUG_ON) from GFP_ATOMIC allocation failure
-in qgroup free/release paths. Failure mode = kernel crash. Root cause =
-unnecessary GFP_ATOMIC allocation that can fail under memory pressure.
+### Step 1.3: Commit Body
+The bug: If `create_free_space_inode()` succeeds but the subsequent
+`lookup_free_space_inode()` still fails on retry (due to I/O errors or
+transient failures), `BUG_ON(retries)` crashes the kernel. The callers
+already handle errors gracefully - `disk_cache_state` defaults to
+`BTRFS_DC_ERROR`, so the space cache simply won't be written for that
+block group.
 
-### Step 1.4: DETECT HIDDEN BUG FIXES
-Record: This IS a bug fix disguised with the verb "avoid". The actual
-bug is a kernel panic (BUG_ON) triggered by memory allocation failure
-under memory pressure. The fix eliminates the problematic allocation
-path entirely.
+Record: Bug = kernel crash (BUG_ON) on transient I/O failures. Symptom =
+kernel panic. Root cause = BUG_ON used for a condition that can happen
+due to I/O errors, not just programming bugs.
 
-## PHASE 2: DIFF ANALYSIS - LINE BY LINE
+### Step 1.4: Hidden Bug Fix Detection
+This IS a bug fix - it prevents a kernel crash (BUG_ON → panic) from a
+reachable error condition.
 
-### Step 2.1: INVENTORY THE CHANGES
-- `fs/btrfs/extent-io-tree.c`: +3/-0 (add early return in
-  `add_extent_changeset`)
-- `fs/btrfs/extent_io.h`: +21/-2 (new inline functions + guard in
-  release/prealloc)
-- `fs/btrfs/qgroup.c`: +3/-2 (change two callsites to use `_bytes_only`,
-  add 1 ASSERT)
+## PHASE 2: DIFF ANALYSIS
 
-Total: ~27 lines added, ~4 removed. Single-subsystem, well-contained.
+### Step 2.1: Inventory
+- **Files changed**: 1 (fs/btrfs/block-group.c)
+- **Lines**: +6 added, -1 removed (net +5 lines)
+- **Function modified**: `cache_save_setup()`
+- **Scope**: Single-file, surgical fix
 
-Record: 3 files changed, ~30 lines of actual code. Functions modified:
-`add_extent_changeset`, `extent_changeset_release`,
-`extent_changeset_prealloc`, `qgroup_free_reserved_data`,
-`__btrfs_qgroup_release_data`, `btrfs_qgroup_check_reserved_leak`.
-Scope: single-subsystem surgical fix.
+### Step 2.2: Code Flow Change
+**Before**: `BUG_ON(retries)` — if retries is non-zero (i.e., we already
+tried once to create the inode and look it up again), the kernel
+crashes.
 
-### Step 2.2: UNDERSTAND THE CODE FLOW CHANGE
-**Hunk 1 (extent-io-tree.c):** Before: `add_extent_changeset()` always
-calls `ulist_add()` with GFP_ATOMIC. After: If changeset is "bytes
-only", returns early after incrementing `bytes_changed`, skipping
-`ulist_add()`.
+**After**: If retries is non-zero, set `ret = PTR_ERR(inode)`, log an
+error message, and `goto out_free` which flows through the existing
+cleanup path. `dcs` remains `BTRFS_DC_ERROR` (its initial value), so
+`block_group->disk_cache_state` will be set to `BTRFS_DC_ERROR`, and the
+space cache simply won't be written for this block group.
 
-**Hunk 2 (extent_io.h):** Adds `EXTENT_CHANGESET_BYTES_ONLY` sentinel,
-`extent_changeset_init_bytes_only()`, `extent_changeset_tracks_ranges()`
-helper. Guards `extent_changeset_release()` and
-`extent_changeset_prealloc()` against the sentinel.
+### Step 2.3: Bug Mechanism
+Category: **Logic/correctness fix** - replacing a crash assertion with
+proper error handling. The BUG_ON asserts that a condition "cannot
+happen," but it can happen due to I/O errors.
 
-**Hunk 3 (qgroup.c):** Changes `qgroup_free_reserved_data()` and
-`__btrfs_qgroup_release_data()` from `extent_changeset_init()` to
-`extent_changeset_init_bytes_only()`. Adds a safety ASSERT in
-`btrfs_qgroup_check_reserved_leak()` (which needs ranges).
-
-Record: The change flow is: callers opt into bytes-only mode ->
-`add_extent_changeset` checks and returns early -> no GFP_ATOMIC
-allocation -> BUG_ON becomes unreachable on this path.
-
-### Step 2.3: IDENTIFY THE BUG MECHANISM
-Category: **Kernel panic / BUG_ON from allocation failure**.
-
-The call chain is:
-1. `btrfs_qgroup_free_data()` / `btrfs_qgroup_release_data()` ->
-   `__btrfs_qgroup_release_data()`
-2. -> `btrfs_clear_record_extent_bits()` ->
-   `btrfs_clear_extent_bit_changeset()`
-3. -> `spin_lock(&tree->lock)` (acquires spinlock)
-4. -> `clear_state_bit()` -> `add_extent_changeset()` ->
-   `ulist_add(&changeset->range_changed, ..., GFP_ATOMIC)`
-5. If GFP_ATOMIC allocation fails, returns -ENOMEM
-6. `BUG_ON(ret < 0)` at line 570 fires -> kernel panic
-
-Record: Bug category = kernel panic from allocation failure under
-spinlock. The fix makes the allocation unreachable for callers that
-don't need the result.
-
-### Step 2.4: ASSESS THE FIX QUALITY
-- **Obviously correct?** YES - The commit clearly shows that
-  `qgroup_free_reserved_data` and `__btrfs_qgroup_release_data` only
-  read `changeset.bytes_changed` and never iterate `range_changed`.
-  Verified by reading the code.
-- **Minimal/surgical?** YES - ~30 lines, well-contained.
-- **Regression risk?** VERY LOW - The sentinel value approach is clean.
-  The only risk would be if a future change to these callers started
-  iterating the range_changed list without checking, but the ASSERT in
-  `btrfs_qgroup_check_reserved_leak` shows the pattern is guarded.
-- **Red flags?** None.
-
-Record: Fix quality is high. Obviously correct, minimal, low regression
-risk.
+### Step 2.4: Fix Quality
+- **Obviously correct**: Yes. The `out_free` path already exists and
+  handles exactly this case. The `dcs` variable defaults to
+  `BTRFS_DC_ERROR`.
+- **Minimal/surgical**: Yes, only 6 lines added replacing 1 line.
+- **Regression risk**: Very low. The error path is well-established and
+  callers check `disk_cache_state == BTRFS_DC_SETUP` before proceeding.
 
 ## PHASE 3: GIT HISTORY INVESTIGATION
 
-### Step 3.1: BLAME THE CHANGED LINES
-The `add_extent_changeset` function with its GFP_ATOMIC `ulist_add` was
-introduced in the 2017-2018 timeframe. The BUG_ON was moved from inside
-the function to callers by David Sterba in commit 57599c7e7722
-(2018-03-01). The buggy code (`extent_changeset_init` in
-`qgroup_free_reserved_data`) traces back to commit bc42bda22345e (Qu
-Wenruo, 2017-02-27).
+### Step 3.1: Blame
+The BUG_ON(retries) line was in commit `77745c05115fc` (2019), which was
+a code migration. The actual BUG_ON was introduced in commit
+`0af3d00bad38d` ("Btrfs: create special free space cache inode") from
+2010, present since **v2.6.37**. This bug has been in the kernel for ~16
+years.
 
-Record: Buggy code introduced in v4.11 (2017). Present in ALL active
-stable trees.
+### Step 3.2: No Fixes: tag to follow (expected).
 
-### Step 3.2: FOLLOW THE FIXES TAG
-No Fixes: tag present (expected).
+### Step 3.3: Related Changes
+- `8ac7fad32b930` (Feb 2026): Removed a pointless WARN_ON() in the same
+  function - shows the btrfs team is actively cleaning up this function.
+- `719dc4b75561f`: Similar BUG_ON removal in
+  `btrfs_remove_block_group()`
+- Many other BUG_ON removal commits in btrfs history
 
-### Step 3.3: CHECK FILE HISTORY
-Recent changes to extent-io-tree.c are mostly cleanups and
-optimizations. No conflicting changes observed that would affect this
-patch's applicability.
+### Step 3.4: Author
+Teng Liu (27rabbitlt) appears to be a relatively new contributor.
+However, the patch was **Reviewed-by Qu Wenruo** and **Signed-off-by
+David Sterba** (the btrfs maintainer), giving it strong credibility.
 
-Record: Standalone fix, no prerequisites identified.
+### Step 3.5: Dependencies
+None. This is a completely standalone fix - it only changes one
+conditional in one function, using existing error paths.
 
-### Step 3.4: CHECK THE AUTHOR
-Leo Martins appears to be a newer contributor. However, the patch was
-reviewed by Qu Wenruo (core btrfs dev) and committed by David Sterba
-(btrfs maintainer).
+## PHASE 4: MAILING LIST RESEARCH
 
-Record: Author is less experienced, but patch was reviewed by core btrfs
-team.
+The patch was submitted as v1 and v2 on 2026-03-28, found in the
+lore/LKML archive mirror. The v2 was the applied version. Reviewed-by Qu
+Wenruo confirms it was peer-reviewed by a senior btrfs developer.
 
-### Step 3.5: CHECK FOR DEPENDENCIES
-The patch is self-contained. The only dependency is on the `struct
-ulist` having a `prealloc` field, which has existed since the ulist was
-introduced.
-
-Record: No dependencies. Can apply standalone.
-
-## PHASE 4: MAILING LIST AND EXTERNAL RESEARCH
-
-### Step 4.1-4.5:
-Lore.kernel.org blocked access with bot protection. Web search did not
-return the specific patch thread. However, the commit has `Reviewed-by:
-Qu Wenruo` which indicates formal review, and was committed by the btrfs
-maintainer David Sterba.
-
-Record: Could not access lore.kernel.org. Review is indicated by the
-Reviewed-by tag from a core btrfs developer.
+Record: Patch went through v1 → v2 revision. Reviewed by senior btrfs
+developer.
 
 ## PHASE 5: CODE SEMANTIC ANALYSIS
 
-### Step 5.1: KEY FUNCTIONS
-Modified: `add_extent_changeset`, `extent_changeset_release`,
-`extent_changeset_prealloc`, `qgroup_free_reserved_data`,
-`__btrfs_qgroup_release_data`, `btrfs_qgroup_check_reserved_leak`.
+### Step 5.1: Function Modified
+`cache_save_setup()` - a static function in `fs/btrfs/block-group.c`.
 
-### Step 5.2: TRACE CALLERS
-- `btrfs_qgroup_free_data()` and `btrfs_qgroup_release_data()` are
-  called from: `inode.c` (11 call sites), `file.c` (1), `ordered-data.c`
-  (3), `delalloc-space.c` (1), `qgroup.c` (7). These are core btrfs I/O
-  paths.
-- Any btrfs file write with qgroups enabled goes through
-  `btrfs_qgroup_release_data`.
-- Error paths go through `btrfs_qgroup_free_data`.
+### Step 5.2: Callers
+Three callers, all in the same file:
+1. `btrfs_setup_space_cache()` (line 3490) - ignores return value
+2. `btrfs_start_dirty_block_groups()` (line 3577) - ignores return
+   value, checks `disk_cache_state`
+3. `btrfs_write_dirty_block_groups()` (line 3729) - ignores return
+   value, checks `disk_cache_state`
 
-Record: The affected code path is reachable from every btrfs write
-operation when qgroups are enabled. High-impact path.
+All callers check `cache->disk_cache_state == BTRFS_DC_SETUP` before
+proceeding with cache write. When `cache_save_setup()` fails, `dcs`
+stays at `BTRFS_DC_ERROR`, so the callers gracefully skip the cache
+write.
 
-### Step 5.3-5.5: CALL CHAIN
-The chain from userspace: `write()` -> btrfs write path -> qgroup
-accounting -> `__btrfs_qgroup_release_data()` ->
-`btrfs_clear_record_extent_bits()` -> spinlock -> `clear_state_bit()` ->
-`add_extent_changeset()` -> BUG_ON on failure.
-
-Record: Reachable from userspace write operations. Very common path for
-qgroup users.
+### Step 5.3-5.4: Call Chain
+These functions are called during **transaction commit**
+(`btrfs_commit_transaction`), a core kernel path that runs frequently
+during normal btrfs filesystem operations.
 
 ## PHASE 6: STABLE TREE ANALYSIS
 
-### Step 6.1: BUGGY CODE IN STABLE TREES?
-Verified: The `extent_changeset_init()` calls in
-`qgroup_free_reserved_data` and `__btrfs_qgroup_release_data` exist in
-v5.15, v6.1, v6.6, and all newer trees. The BUG_ON exists in all these
-versions.
+### Step 6.1: Buggy Code in Stable Trees
+The BUG_ON(retries) was introduced in v2.6.37 (2010) and exists in **ALL
+active stable trees** (5.10.y, 5.15.y, 6.1.y, 6.6.y, 6.12.y, etc.). The
+code hasn't changed around this specific line since it was written.
 
-Record: Bug exists in ALL active stable trees (v5.15+, likely v4.11+).
+### Step 6.2: Backport Complications
+The patch should apply cleanly to all stable trees. The surrounding code
+is unchanged since 2019 (when it was migrated from extent-tree.c to
+block-group.c). For trees older than 5.3 (before migration), the file
+would be `extent-tree.c` instead.
 
-### Step 6.2: BACKPORT COMPLICATIONS
-In v6.6, the code structure is essentially identical. The `extent_io.h`
-structure, `add_extent_changeset`, and qgroup functions have the same
-layout. Minor differences: `kmalloc_obj` vs `kmalloc` in
-`extent_changeset_alloc()`, `int set` vs `bool set` parameter in
-`add_extent_changeset`. The patch would need minor adaptation for v6.6
-and older but is conceptually clean.
+### Step 6.3: No related fixes already in stable.
 
-Record: Minor adaptation needed for stable trees, but the core logic
-applies cleanly.
+## PHASE 7: SUBSYSTEM CONTEXT
 
-### Step 6.3: RELATED FIXES
-No related fix for the same issue was found in stable.
-
-## PHASE 7: SUBSYSTEM AND MAINTAINER CONTEXT
-
-### Step 7.1: SUBSYSTEM CRITICALITY
-btrfs is an IMPORTANT subsystem - widely used filesystem. Qgroups are
-used for quota management, common in container deployments and multi-
-user systems.
-
-Record: [fs/btrfs] [IMPORTANT] - affects btrfs qgroup users.
-
-### Step 7.2: SUBSYSTEM ACTIVITY
-Very active - many commits per cycle. The btrfs maintainer committed
-this fix.
+- **Subsystem**: btrfs (filesystem)
+- **Criticality**: IMPORTANT - btrfs is a widely used filesystem
+  (default in openSUSE, Fedora)
+- **Path**: Space cache management during transaction commit - a **core
+  btrfs operation**
 
 ## PHASE 8: IMPACT AND RISK ASSESSMENT
 
-### Step 8.1: WHO IS AFFECTED
-All btrfs users with qgroups enabled. This includes container
-deployments (Docker, LXC), systems using btrfs quotas for storage
-management.
+### Step 8.1: Affected Users
+All btrfs users with space_cache v1 enabled (the default for many
+configs) are affected.
 
-Record: filesystem-specific, but a significant user population.
+### Step 8.2: Trigger Conditions
+The BUG_ON triggers when:
+1. A block group's free space cache needs to be written
+2. The free space inode doesn't exist, so btrfs creates one
+3. On retry lookup, the inode still can't be found (I/O error, transient
+   failure)
 
-### Step 8.2: TRIGGER CONDITIONS
-- Trigger: Memory pressure + btrfs qgroup-enabled file operations
-- GFP_ATOMIC allocations fail when there's no immediately available
-  memory (no sleeping allowed under spinlock)
-- More likely under heavy workloads or constrained systems
-- Can be triggered by any unprivileged user doing file writes on a btrfs
-  filesystem with qgroups
+This can be triggered by I/O errors on the disk, which are real-world
+events, especially on aging or failing hardware.
 
-Record: Trigger = memory pressure during file write with qgroups.
-Moderate likelihood, but can affect production systems.
+### Step 8.3: Failure Mode
+**CRITICAL** - BUG_ON causes a kernel panic, crashing the system.
+Without this fix, a transient I/O error during space cache setup causes
+a full system crash instead of gracefully skipping the cache write.
 
-### Step 8.3: FAILURE MODE SEVERITY
-BUG_ON -> kernel panic -> system crash. CRITICAL severity.
-
-Record: CRITICAL - kernel panic, complete system loss.
-
-### Step 8.4: RISK-BENEFIT RATIO
-- **BENEFIT:** HIGH - Prevents kernel panic in a real-world scenario
-  (memory pressure + qgroups)
-- **RISK:** VERY LOW - ~30 lines, well-contained, obviously correct
-  sentinel pattern, reviewed by btrfs maintainer
-- **Ratio:** Very favorable for backporting
-
-Record: High benefit, very low risk.
+### Step 8.4: Risk-Benefit Ratio
+- **Benefit**: VERY HIGH - prevents kernel panic on I/O errors during
+  normal filesystem operation
+- **Risk**: VERY LOW - 6-line change using existing error paths,
+  reviewed by btrfs maintainers
+- **Ratio**: Strongly favorable for backporting
 
 ## PHASE 9: FINAL SYNTHESIS
 
-### Step 9.1: COMPILE EVIDENCE
-
+### Step 9.1: Evidence
 **FOR backporting:**
-- Fixes a real kernel panic (BUG_ON) triggered by GFP_ATOMIC allocation
-  failure
-- Code path is reachable from common btrfs operations (file writes with
-  qgroups)
-- Small, surgical fix (~30 lines, 3 files, single subsystem)
-- Reviewed by core btrfs developer Qu Wenruo
-- Committed by btrfs maintainer David Sterba
-- Buggy code exists in ALL active stable trees (since v4.11)
-- Eliminates unnecessary GFP_ATOMIC allocation entirely (not just
-  handling failure differently)
-- No risk of regression - sentinel pattern is well-guarded
+- Prevents kernel panic (BUG_ON → crash) on a reachable error condition
+- Tiny, surgical fix (+6/-1 lines) in a single file
+- Uses existing, well-tested error handling paths
+- Bug present since v2.6.37 (2010) — affects ALL stable trees
+- Reviewed by Qu Wenruo (senior btrfs developer), merged by David Sterba
+  (btrfs maintainer)
+- No dependencies on other patches
+- Callers already handle the error gracefully
+- btrfs is a widely-used filesystem
+- Pattern consistent with other BUG_ON removals in btrfs that have gone
+  to stable
 
 **AGAINST backporting:**
-- No explicit Cc: stable tag or Fixes: tag (expected - that's why it
-  needs review)
-- No reported-by tag (the bug may be rare in practice)
-- Introduces new API functions (`extent_changeset_init_bytes_only`,
-  `extent_changeset_tracks_ranges`, `EXTENT_CHANGESET_BYTES_ONLY`) -
-  though these are internal inline helpers
-- May need minor adaptation for older stable trees
+- No reported syzbot trigger or specific user crash report cited
+- The trigger condition (I/O error between create and lookup) may be
+  uncommon
 
-**UNRESOLVED:**
-- Could not access lore.kernel.org discussion for stable nomination
-  signals
-- No concrete report of this BUG_ON triggering in the wild
+### Step 9.2: Stable Rules Checklist
+1. Obviously correct and tested? **YES** - trivial change, reviewed by
+   maintainer
+2. Fixes a real bug? **YES** - kernel panic on I/O error
+3. Important issue? **YES** - kernel crash (CRITICAL severity)
+4. Small and contained? **YES** - 6 lines, single file
+5. No new features or APIs? **YES** - purely error handling
+6. Can apply to stable? **YES** - code unchanged since 2010
 
-### Step 9.2: STABLE RULES CHECKLIST
-1. Obviously correct and tested? **YES** - Reviewed by core developer,
-   clearly eliminates unnecessary allocation
-2. Fixes a real bug? **YES** - BUG_ON/kernel panic from allocation
-   failure
-3. Important issue? **YES** - kernel panic (CRITICAL)
-4. Small and contained? **YES** - ~30 lines, single subsystem
-5. No new features or APIs? **YES** - internal helpers only, no
-   userspace-visible changes
-6. Can apply to stable trees? **YES** - with minor adaptation
-
-### Step 9.3: EXCEPTION CATEGORIES
-Not an exception category - this is a direct bug fix.
-
-### Step 9.4: DECISION
-The commit fixes a real kernel panic (BUG_ON triggered by GFP_ATOMIC
-allocation failure under spinlock) in a commonly-used btrfs code path
-(qgroup free/release). The fix is small, obviously correct, reviewed by
-the btrfs core team, and committed by the btrfs maintainer. The buggy
-code exists in all active stable trees. The risk of regression is very
-low.
+### Step 9.3: Exception Categories
+Not needed - this qualifies as a straightforward bug fix.
 
 ## Verification
 
-- [Phase 1] Parsed tags: Reviewed-by Qu Wenruo, SOB by Leo Martins and
-  David Sterba (btrfs maintainer)
-- [Phase 2] Diff analysis: 3 files, ~30 lines. Adds sentinel to skip
-  ulist_add in bytes-only mode
-- [Phase 2] Verified `qgroup_free_reserved_data` only reads
-  `changeset.bytes_changed` (line 4364), never iterates `range_changed`
-- [Phase 2] Verified `__btrfs_qgroup_release_data` only reads
-  `changeset.bytes_changed` (lines 4402-4408), never iterates
-  `range_changed`
-- [Phase 2] Verified `btrfs_qgroup_check_reserved_leak` DOES iterate
-  `range_changed` (line 4650) and correctly still uses
-  `extent_changeset_init`
-- [Phase 3] git blame: `qgroup_free_reserved_data` buggy code from
-  bc42bda22345e (Qu Wenruo, 2017-02-27, v4.11)
-- [Phase 3] git blame: BUG_ON moved to callers by commit 57599c7e7722
-  (David Sterba, 2018-03-01)
-- [Phase 3] Confirmed BUG_ON at lines 398 and 570 of current extent-io-
-  tree.c
-- [Phase 3] Confirmed `add_extent_changeset` called under
-  `spin_lock(&tree->lock)` (line 647 -> line 709/740/746)
-- [Phase 5] Verified
-  `btrfs_qgroup_free_data`/`btrfs_qgroup_release_data` called from 25+
-  sites across btrfs
-- [Phase 6] Confirmed buggy pattern (`extent_changeset_init` in these
-  functions) exists in v5.15, v6.1, v6.6
-- [Phase 6] Confirmed BUG_ON on `add_extent_changeset` return exists in
-  v5.15, v6.6
-- [Phase 7] Qu Wenruo and David Sterba verified as core btrfs
-  developers/maintainers
-- [Phase 8] Failure mode: BUG_ON -> kernel panic, severity CRITICAL
-- UNVERIFIED: Could not access lore.kernel.org to check for stable
-  nomination in review comments
-- UNVERIFIED: No concrete real-world reports of this BUG_ON triggering
-  (does not invalidate the bug - GFP_ATOMIC failures are real)
+- [Phase 1] Parsed tags: Reviewed-by Qu Wenruo, SOB David Sterba (btrfs
+  maintainer)
+- [Phase 2] Diff analysis: +6/-1 lines replacing BUG_ON(retries) with
+  error return + log message, uses existing `out_free` cleanup path
+- [Phase 3] git blame: BUG_ON(retries) introduced in commit
+  `0af3d00bad38d` (v2.6.37-rc1, 2010), migrated in `77745c05115fc`
+  (2019)
+- [Phase 3] git describe: confirmed original commit is in v2.6.37-rc1,
+  present in all stable trees
+- [Phase 3] Related commits: `8ac7fad32b930` removed WARN_ON in same
+  function (Feb 2026), `719dc4b75561f` similar BUG_ON removal in btrfs
+- [Phase 4] Found v1 and v2 patch submissions on lore mirror
+  (2026-03-28), v2 is the applied version
+- [Phase 5] Verified callers: 3 call sites in same file, all ignore
+  return value and check `disk_cache_state == BTRFS_DC_SETUP` — error
+  case is handled gracefully
+- [Phase 5] Verified `dcs` defaults to `BTRFS_DC_ERROR` (line 3316),
+  confirmed `out_free` path preserves this default
+- [Phase 6] Code exists unchanged in all active stable trees (verified
+  via git log v6.6.. and git log v6.1..)
+- [Phase 6] Patch should apply cleanly (code hasn't changed since 2019
+  migration)
+- [Phase 8] Failure mode: BUG_ON → kernel panic during transaction
+  commit, severity CRITICAL
+- UNVERIFIED: Could not fetch full lore.kernel.org discussion due to bot
+  protection; relied on web search confirmation of review
+
+The fix is small, surgical, obviously correct, prevents a kernel crash,
+uses existing error paths, and was reviewed and merged by the btrfs
+maintainers. It meets all stable kernel criteria.
 
 **YES**
 
- fs/btrfs/extent-io-tree.c |  3 +++
- fs/btrfs/extent_io.h      | 23 ++++++++++++++++++++++-
- fs/btrfs/qgroup.c         |  5 +++--
- 3 files changed, 28 insertions(+), 3 deletions(-)
+ fs/btrfs/block-group.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index d0dd50f7d2795..2a2bce0f1f7c8 100644
---- a/fs/btrfs/extent-io-tree.c
-+++ b/fs/btrfs/extent-io-tree.c
-@@ -193,7 +193,10 @@ static int add_extent_changeset(struct extent_state *state, u32 bits,
- 		return 0;
- 	if (!set && (state->state & bits) == 0)
- 		return 0;
-+
- 	changeset->bytes_changed += state->end - state->start + 1;
-+	if (!extent_changeset_tracks_ranges(changeset))
-+		return 0;
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index c0d17a369bda5..ccabcad1a3fc3 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -3343,7 +3343,13 @@ static int cache_save_setup(struct btrfs_block_group *block_group,
+ 	}
  
- 	return ulist_add(&changeset->range_changed, state->start, state->end, GFP_ATOMIC);
- }
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 8d05f1a58b7c3..080215352b7a1 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -196,6 +196,25 @@ static inline void extent_changeset_init(struct extent_changeset *changeset)
- 	ulist_init(&changeset->range_changed);
- }
+ 	if (IS_ERR(inode)) {
+-		BUG_ON(retries);
++		if (retries) {
++			ret = PTR_ERR(inode);
++			btrfs_err(fs_info,
++				  "failed to lookup free space inode after creation for block group %llu: %d",
++				  block_group->start, ret);
++			goto out_free;
++		}
+ 		retries++;
  
-+/*
-+ * Sentinel value for range_changed.prealloc indicating that the changeset
-+ * only tracks bytes_changed and does not record individual ranges. This
-+ * avoids GFP_ATOMIC allocations inside add_extent_changeset() when the
-+ * caller doesn't need to iterate the changed ranges afterwards.
-+ */
-+#define EXTENT_CHANGESET_BYTES_ONLY	((struct ulist_node *)1)
-+
-+static inline void extent_changeset_init_bytes_only(struct extent_changeset *changeset)
-+{
-+	changeset->bytes_changed = 0;
-+	changeset->range_changed.prealloc = EXTENT_CHANGESET_BYTES_ONLY;
-+}
-+
-+static inline bool extent_changeset_tracks_ranges(const struct extent_changeset *changeset)
-+{
-+	return changeset->range_changed.prealloc != EXTENT_CHANGESET_BYTES_ONLY;
-+}
-+
- static inline struct extent_changeset *extent_changeset_alloc(void)
- {
- 	struct extent_changeset *ret;
-@@ -210,6 +229,7 @@ static inline struct extent_changeset *extent_changeset_alloc(void)
- 
- static inline void extent_changeset_prealloc(struct extent_changeset *changeset, gfp_t gfp_mask)
- {
-+	ASSERT(extent_changeset_tracks_ranges(changeset));
- 	ulist_prealloc(&changeset->range_changed, gfp_mask);
- }
- 
-@@ -218,7 +238,8 @@ static inline void extent_changeset_release(struct extent_changeset *changeset)
- 	if (!changeset)
- 		return;
- 	changeset->bytes_changed = 0;
--	ulist_release(&changeset->range_changed);
-+	if (extent_changeset_tracks_ranges(changeset))
-+		ulist_release(&changeset->range_changed);
- }
- 
- static inline void extent_changeset_free(struct extent_changeset *changeset)
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 41589ce663718..a95fa70def7f8 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -4326,7 +4326,7 @@ static int qgroup_free_reserved_data(struct btrfs_inode *inode,
- 	u64 freed = 0;
- 	int ret;
- 
--	extent_changeset_init(&changeset);
-+	extent_changeset_init_bytes_only(&changeset);
- 	len = round_up(start + len, root->fs_info->sectorsize);
- 	start = round_down(start, root->fs_info->sectorsize);
- 
-@@ -4391,7 +4391,7 @@ static int __btrfs_qgroup_release_data(struct btrfs_inode *inode,
- 	WARN_ON(!free && reserved);
- 	if (free && reserved)
- 		return qgroup_free_reserved_data(inode, reserved, start, len, released);
--	extent_changeset_init(&changeset);
-+	extent_changeset_init_bytes_only(&changeset);
- 	ret = btrfs_clear_record_extent_bits(&inode->io_tree, start, start + len - 1,
- 					     EXTENT_QGROUP_RESERVED, &changeset);
- 	if (ret < 0)
-@@ -4646,6 +4646,7 @@ void btrfs_qgroup_check_reserved_leak(struct btrfs_inode *inode)
- 
- 	WARN_ON(ret < 0);
- 	if (WARN_ON(changeset.bytes_changed)) {
-+		ASSERT(extent_changeset_tracks_ranges(&changeset));
- 		ULIST_ITER_INIT(&iter);
- 		while ((unode = ulist_next(&changeset.range_changed, &iter))) {
- 			btrfs_warn(inode->root->fs_info,
+ 		if (block_group->ro)
 -- 
 2.53.0
 

@@ -1,416 +1,255 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from DM1PR04CU001.outbound.protection.outlook.com (mail-centralusazon11010017.outbound.protection.outlook.com [52.101.61.17])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9DEE93CF68C
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2026 14:25:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776695114; cv=none; b=cZqw9fJZxGUC8bCBqQtE4D5Y2zVXKhId0J/o3Cb9IPbmraCoJw9u/cG0vNeArLT3Bs14UkL0hRT8DzgVxXLi2P2C1CVr0AZ17KMd1ickQquuTtsZe7sirQI1uKOGbyfDNukuzpV9pTeMETxMWLfctcPNHKYGMYeWQiaexqbefWE=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776695114; c=relaxed/simple;
-	bh=7pHAUW45jkeiisjDLmrS/eMT1lBDoot/PNN8OVFMH2k=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=rRxMWdZDMvWo1msX534JioHUo+2vOwofuUWkbiEOH3A3fa4lknYW/KGcuYb75Lvo+hSiCAlp+Qqtgtu73n3xEj1j8rmWuTL5C7qG3PhIN695U+C4Z+vxZEHTISzXdK6npDd5XoHR6C2g1vhk0K+mtzWYw46JYoT6rCp9p6wflWg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ngfLncbl; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6106633C52F;
+	Mon, 20 Apr 2026 14:58:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=52.101.61.17
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1776697089; cv=fail; b=O7vkmhiSeuLujb9UcuN1QJipOH8fbjmsNX9DGqr4bq5I7amZ7MA10o6pqQoZfKriZ3FFQ5L+5m/TVgzDc5JTcZrDi07RHx0s94ZEgaCTRudVUjQ2MlcE8IgQ0UkBj0+oUAlSCotpNUAReoQ7UU2vl/KYm4wsU+GExNzcP2cnUdE=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1776697089; c=relaxed/simple;
+	bh=JVBYiGlyO9kZjFf+7YgZ9NB+fsedMh0KqtyScdgZ4iE=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=PCjKkXmQcRc9RFe0Kc3FZ8AEjmYGVH/5dTSNFUwetDEMZ/vGWBCJUbd3E6eKA4u20J/N63FlwbaAmR11GRg8Zb+23/V0Mg4pgUlqVpE2CzkZxeh/sxhB3c5ToWnbryQB+4iq/tuSlyZz23K7XUnCz25nXJKa/kpQzHzpSYUO2b0=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=eaAgl3op; arc=fail smtp.client-ip=52.101.61.17
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ngfLncbl"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 40E22C19425
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2026 14:25:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776695114;
-	bh=7pHAUW45jkeiisjDLmrS/eMT1lBDoot/PNN8OVFMH2k=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=ngfLncblfp1K0UYVmBii3p3QyngfeIviuQtail2pZ8uBVudNNegECiUy4d/By/4iJ
-	 von+DJ1K2N/02P8lvRAVIODEJyS3IZwstlWpnHkmzPv2xcmmV/sM+OrugZMl7fZDNK
-	 IDHCFOpi3Ki3umXoDaI9Rq6PJyS+MS7Jh7xjT6sbYwvtB/30dSQa17cF3RYZWu8/Sw
-	 MmYgMfDz8V3ijMURcypKXQxlujgtCvQKKN3CfGMKp5Gr6ophrOcip93tGpk2PYuKsG
-	 I6366VAw66fSbnxIUTky7/6g5ybWYbkefNJdxS+mDFc6Jzh1e2QpJgxap2ZqBWZOHF
-	 Yn3fkSPbb3VDA==
-Received: by mail-ej1-f42.google.com with SMTP id a640c23a62f3a-b932fe2e1a7so441780266b.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2026 07:25:14 -0700 (PDT)
-X-Gm-Message-State: AOJu0Ywl/TWnvGtSrw1VVVfDRH9ur/bzedRpovOc1oj9vnn3fK8r/B2q
-	uvICIFrqAX/TijjXKGLX2Du+z/w89y9ZmuLWd32kquWcs9VlQUXGjBw8eAk1RE164yMUW3Ok5Ml
-	pFRQoFHS0oOU9nJPP0L3zmjYHwd6dD6c=
-X-Received: by 2002:a17:907:6d19:b0:ba4:ea47:5a2b with SMTP id
- a640c23a62f3a-ba4ea47b226mr533889466b.43.1776695112708; Mon, 20 Apr 2026
- 07:25:12 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="eaAgl3op"
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=tp38ERwawBYzQmFGHwj9QCY2efsnu1AKpOAGi7JwjRi+dozvIudbujlETlYlzgiH5ukewLzjbjP5Ys62FUloLcNcoQsuhlvshUrl8yATjWS+EsuCu4t63BAMibTTy/w0+ucVLto4LuMc/vNrZpWD5CZQlsUIUhNKuTApXqMomRTvLNIAWqw1biY0fytO951s9sL4xCfbcfhMxGkUsOwFWtYYZgem9CpMxjerYy9aBKkYq8pvnrmmNXg22377nlNGFP5V0o587HL6KxQWT8mrBL8L25a2GGhrKCNMFqEMpkteYjkGFyz0Ubu33/YqG5p3P5n3k2mgOjPZoXuWoeyzFg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=rV2ui5RiwbqnqhAG/H2cKfmgsW9iYVPlP17qHeTumio=;
+ b=V3HKJoUVI5rX9mUPiwA/RGSUrxTqPaMatf4D3MduI+ahDcIUndHXTLXQEPkORM4sKP4bu/qMYKbc5iCc6swR3lIfZ8rPXi3sGcGy7ozx+bdvd7vu0b3POTVILZ5rX+yJebDnnzyVRfx7VGoMybWyRMEt/peVJSqgR1ckNqCl//JiWmHqfKuSFMLvR6hAxeh5SJjkmFgeUzopYZNkfsXd7Js+i/t6V/YlS1tf+Ls/JXEK5WCO95Ucewwrf2no2VYrypQD4PpnkDbH+BumbaqeZjQa5ul2cbnR7dsyuVig8d/vD67Hxeegld//jdRW9o0hxfAoQ76+eRizSZzhNjHZuw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
+ dkim=pass header.d=nvidia.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
+ s=selector2;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=rV2ui5RiwbqnqhAG/H2cKfmgsW9iYVPlP17qHeTumio=;
+ b=eaAgl3op++ngnocs5RRBy0PYUEyirCCgtU8WhUS+XoGAewgf1Fwpx9p++qiy8Zn/+QuYeh5kZhVMxutjdTBeLWP7F2eE/IauuS3F/xwfMUE4Zow65CjkFDr5qmuMS2Reeaxs3UuPQ27DhieNa8GBs/l9iQGh7AVtTsbHFI3qaKXDIODBP5FdofRj9LEs5FDyCn7OE/BH3fSDM7gbaP8dyvcLe6mqzB1uixb1I25Kp69ubXdonN+HNW9wk0KVAdxPEKwrmTO+Ycm90NUf6w6bwbn0ZgYiA2nCNmB+jdfIv/1hpKPBoXCSGbt6gokK0MmYWGLnUvfoun+peDCEOmVDNw==
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=nvidia.com;
+Received: from DS7PR12MB9473.namprd12.prod.outlook.com (2603:10b6:8:252::5) by
+ CY8PR12MB8065.namprd12.prod.outlook.com (2603:10b6:930:73::16) with Microsoft
+ SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.9846.15; Mon, 20 Apr 2026 14:58:00 +0000
+Received: from DS7PR12MB9473.namprd12.prod.outlook.com
+ ([fe80::f01d:73d2:2dda:c7b2]) by DS7PR12MB9473.namprd12.prod.outlook.com
+ ([fe80::f01d:73d2:2dda:c7b2%4]) with mapi id 15.20.9846.014; Mon, 20 Apr 2026
+ 14:58:00 +0000
+From: Zi Yan <ziy@nvidia.com>
+To: Baolin Wang <baolin.wang@linux.alibaba.com>
+Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+ Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
+ David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
+ Andrew Morton <akpm@linux-foundation.org>,
+ David Hildenbrand <david@kernel.org>, Lorenzo Stoakes <ljs@kernel.org>,
+ "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
+ Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
+ Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
+ Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
+ Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
+ Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-mm@kvack.org, linux-kselftest@vger.kernel.org
+Subject: Re: [PATCH 7.2 v3 04/12] mm/khugepaged: remove READ_ONLY_THP_FOR_FS
+ check in hugepage_pmd_enabled()
+Date: Mon, 20 Apr 2026 10:57:29 -0400
+X-Mailer: MailMate (2.0r6290)
+Message-ID: <E7EBC528-C511-4166-89F3-654171383646@nvidia.com>
+In-Reply-To: <b228baf2-0dcd-4135-bab9-04d979b6e617@linux.alibaba.com>
+References: <20260418024429.4055056-1-ziy@nvidia.com>
+ <20260418024429.4055056-5-ziy@nvidia.com>
+ <b228baf2-0dcd-4135-bab9-04d979b6e617@linux.alibaba.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+X-ClientProxiedBy: BL1PR13CA0412.namprd13.prod.outlook.com
+ (2603:10b6:208:2c2::27) To DS7PR12MB9473.namprd12.prod.outlook.com
+ (2603:10b6:8:252::5)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <9941e0c488a0229ac9005bb0fb977823ee428ddb.1776685790.git.wqu@suse.com>
-In-Reply-To: <9941e0c488a0229ac9005bb0fb977823ee428ddb.1776685790.git.wqu@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 20 Apr 2026 15:24:35 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H7BPxykccZUR4x2uOMA7gs1mf=pGz9Z-WxyENnPeb9WKw@mail.gmail.com>
-X-Gm-Features: AQROBzCuc-XAJbm9X3rmTY_3AttIlNz5RqQBXpsbgGBQaSCMjH8cLYD7-hd3rRA
-Message-ID: <CAL3q7H7BPxykccZUR4x2uOMA7gs1mf=pGz9Z-WxyENnPeb9WKw@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: check and set EXTENT_DELALLOC_NEW before
- clearing EXTENT_DELALLOC
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: DS7PR12MB9473:EE_|CY8PR12MB8065:EE_
+X-MS-Office365-Filtering-Correlation-Id: 739a8025-12cf-4cec-64d7-08de9eed36d9
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|7416014|376014|366016|1800799024|18002099003|22082099003|56012099003;
+X-Microsoft-Antispam-Message-Info:
+	1zx3+u5OeTfU7z5v9ZNQGQITBtUPTwvtFVEgNuojQg2bT7GEmfUCgRPrBmQ32LxY7Q91v2xp5JxbBO2cvIGRajbcSHvl+QK80FkmKjqrCXlikBbXcfsbbB1sfzPRh7nLVAVns5eT2niSAYBTbg6mY/8gCUyird0dzzkQYCWan2sqWeYgBOFNS3GV+NaNvEGLPR11/Kf8CmyERNCRYZLDGFF2dktxWk6ZJaB5F88a5rMKbiNdCO6anqZvwgRXaP7ERZKmZla3p+MBOLo7vg+kDD4xZNrh76IA8xRYuYU2HqfWYT/r7vpqROukhxRFayRLQgZ0AYI4Me8m0adEPDwpl6jYdgr9cSecU4nVDoRxOFFLBoiLEDzOlRMGmdxtAarJkZAekdWa4uxq41kYgIv6CEfXzQyQxmdJXI2cpQiCtTIHAxPyKkFUPO6W6enN8BuWiCmdvomtqXrqAkfJHl3ro/R0juQlII2+Am+HxHitZjWkZ6g1QAUIotZrkx7g+2LgZk8NVC/pOjH7t13ySu3ccagDWZokgBD6sxBCZTuaMIgrgIJ/Gq584h1FuP6GtRn6E97WanKka7PIZ78QBpcS+PPxUBRBRffYh4ilHTrcJsLjSB0Mxl7DffvQoxz8ysCQrFnlrxFGQwXW4mVErf4F3G6NNTbYSbjpFNqXVx0bqabdW0mXrHHqU+m2VBTg3RqO0Nui5cn5HU2PT1Xgm9FNwGaSNIHB+51yvpoio55v2YA=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DS7PR12MB9473.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(7416014)(376014)(366016)(1800799024)(18002099003)(22082099003)(56012099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?utf-8?B?K2pUSGNLdjh1QzNUMVJvTDk0WHBZbUpmSldiVVArUDMzL1lXNDN5a0N5NHlH?=
+ =?utf-8?B?clg3VHdnUDlwT05EZWoxNDJnelROWlpZeUF0a3FtbE9XYVV2OVBMYXVub0xl?=
+ =?utf-8?B?ZUQrRnE1SThDOFA1WDF4djFSMjR6UTNHbXE2K3lKQ1UwOUJzNU54M2wwemc1?=
+ =?utf-8?B?bDBnWnFYZjIxbC9hUnpZM1R6cEd5eHdiQmY4WWhKN0VkSDRYWXlYMGIxVEZa?=
+ =?utf-8?B?blNUYUZJUjFQSi9aSmdaR3BEYUo1QS9CdjhtSEo1OWFMU0g5SEx6R20xaDhL?=
+ =?utf-8?B?VHgwdHlSZzIxUzQ1VW8vZ1lYTnhxZjZuTlJhVnF0YndqYStENndSd2t0WUpu?=
+ =?utf-8?B?SWg5cEJLRlpFYmFCaVQzWFlNU09pQ2QzelVNUmVLQzg5V05PSnRxYTkweXhR?=
+ =?utf-8?B?N3NtMnJzY21lTk1CcTZmVGV5OE4ybTRaa1dYNWNPK1d2KzVUVTBLdUhMSHRm?=
+ =?utf-8?B?QUt2SW1ncVE2Q0d2R3lva3l3NkptTTkwRzQ3UDVPSVMzVnNvdlVmQ2J0UzFm?=
+ =?utf-8?B?OGdwQ2M4dmhFTHJkN3V3a1RiYUlxeXZPVFYwN2FyaFNoSmJtaWZSc0dHQTlJ?=
+ =?utf-8?B?UE45R2tTSVFsbDFWaTJnUmhwcmVzLzlhWVhMNUhld29jN3ozRXU0YStXQXlP?=
+ =?utf-8?B?SG02WmtHMlVCK0kzYzh6UzgyeFE5cGk2ZDFyQVlxMjYrdDcxTDRtZ0pJM3BG?=
+ =?utf-8?B?c3d1TGhXcWZ6YWVXeUdveHRydnNCby9nQi80NHZUcjNqTWkwRWdIQmdlbmpH?=
+ =?utf-8?B?NjRJWW5hdDZycFJ1dHZmM1BjOVhMYmlqZnVxK0dGcXNYc01mUDhVUUwzcXhl?=
+ =?utf-8?B?RlBHc29xWHB6MFA2WG9wK2xHUmxXa3JmVGlxQ21DeHJLMzZzNWJ4WVA1WUlF?=
+ =?utf-8?B?MnpTYXRrYUhxR1phd1B6RGs5NTJ6V2NyKzZvOTdSVGFZYkVlV2RaVHN0eHZ3?=
+ =?utf-8?B?QmdpRElHeDczc1dGRUVOUkhFYUVVeEo3YUVJUHRsa2d2NitKNFBmeEdvWEZF?=
+ =?utf-8?B?aDRsT3dTdHpjb081Y2JSZFV1VnJoNCszMi82bEpQTkJZUDkrTUpuUUNMVU5R?=
+ =?utf-8?B?NGhodzVyRFRlNHJwbHhaYk5IdlAxNlhKaUgwMWNHZzBSbCtLNkdpY3huNGdv?=
+ =?utf-8?B?NmM1Z0JmT2I0bm0wcWQ2NmE5eW1VbjdzRXl2TmZvV3RYOEFTekVmY05Ea0U3?=
+ =?utf-8?B?R25qYytqTnliSUhnSHdCUEtuZVlsemQzUXlaY2ZkdFFsL0cvTStPSUpoSEpS?=
+ =?utf-8?B?dWg3UlhMaEFwVmk4N0J5YzM0RXd5RHBhZGQxUnZEQS9UTG5RR0RJRHFEYjFi?=
+ =?utf-8?B?bjNKN2dWN21JNU8xRGFXUnNhSDUwM0RLVDlMVFZackRLVjRJZGU3YUYzbW1E?=
+ =?utf-8?B?RnpacnZqL2tsRndIejE1VCtsMm5KbGE0Tzc2WlJGN1oxRFlBTyt6ZzVxbEs0?=
+ =?utf-8?B?NnRIZTZQSHVWTjZXTW1JaVA4Wk0xanBMZzNkWkcya3hFeVU3VzRBa3RITkRz?=
+ =?utf-8?B?ZXBGZmc3eWFyUGFzektuTzVNNXIySmd1bXA3L2VkM2FnVHV2RXIwaFA4dEI0?=
+ =?utf-8?B?Slc0aFBLZE9ZUW1QS282VFk0SXhHbHdDYVdyRFh1Mm9kaUhpWUJueU5LY25m?=
+ =?utf-8?B?SVc1THpNbFRKVVpFL0NkeHZqdzdIREk2cW1yaUIxWWRWOUhMa0NPZHplaGZI?=
+ =?utf-8?B?UjF2WG16Vmo4L09yOVlqQm1DeTdjaE0ySVNrL0xzeUoyaUQ4eDU1QlVneFlo?=
+ =?utf-8?B?MTR1bXpBWDhwVXczaFBmbDZKelNHUHNGdFR0dEJnU3FBTVdsdy80Y1dWK0JB?=
+ =?utf-8?B?bzZycm5JNHFManI0Uy9WbDFUNzdDeGkrcm5GVElpaWNld2R3TFVwQVRiM1lz?=
+ =?utf-8?B?RWNXeDYrbzZoelJNbHBuTnlZR1FNeWtMWElxY2pjZ09ta0prQWVoamxnajUr?=
+ =?utf-8?B?R2hmaGVzR0xyS2NYS3R2T1RqQ090RlNxQVR6OXFKOXlxc3Y3OFFZZjg3ZWZY?=
+ =?utf-8?B?d3Y2NStxcThFZEdXSURzdjEwWExrVVNma0V6VHR2bXk5azFPbmhocUZTZ0F2?=
+ =?utf-8?B?Q1lLUUZCTkk0QUJFeUJrVFRLOWNseGFaZU9yUXYySFZLRzhMSXplN0R4OWhw?=
+ =?utf-8?B?Vy80eS9HbHRhWWRRUW90dTdoVlNPa1FUN0hHNXBCL1ZBWnpyN2xoS084S0pq?=
+ =?utf-8?B?OFpYMU9zc3pvRitzYXJhckhLdE56S3NnaGwzVlVSZjNMU2hpTTh0SnJPaU52?=
+ =?utf-8?B?STc3MGJDbFpSM2g0TWR2WVJ2anZyOTVseTVPZVlMMVBMYmdIa3h1MFF2ei9H?=
+ =?utf-8?Q?PrjBiEVHWDiYn34YCP?=
+X-OriginatorOrg: Nvidia.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 739a8025-12cf-4cec-64d7-08de9eed36d9
+X-MS-Exchange-CrossTenant-AuthSource: DS7PR12MB9473.namprd12.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 20 Apr 2026 14:57:59.9889
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 43083d15-7273-40c1-b7db-39efd9ccc17a
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: jOwWt+nwr1Zvu6eSNsWyU4NHYWW5tf401AU2djEYznYR05953FvZxjlS8RCW+T7N
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: CY8PR12MB8065
 
-On Mon, Apr 20, 2026 at 12:51=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
->
-> [WARNING]
-> When running test cases with injected errors or shutdown, e.g.
-> generic/388 or generic/475, there is a chance that the following kernel
-> warning is triggered:
->
->  BTRFS info (device dm-2): first mount of filesystem d8a19a28-3232-4809-b=
-0df-38df83e71bff
->  BTRFS info (device dm-2): using crc32c checksum algorithm
->  BTRFS info (device dm-2): checking UUID tree
->  BTRFS info (device dm-2): turning on async discard
->  BTRFS info (device dm-2): enabling free space tree
->  BTRFS critical (device dm-2 state E): emergency shutdown
->  ------------[ cut here ]------------
->  WARNING: extent_io.c:1742 at extent_writepage_io+0x437/0x520 [btrfs], CP=
-U#2: kworker/u43:2/651591
->  CPU: 2 UID: 0 PID: 651591 Comm: kworker/u43:2 Tainted: G        W  OE   =
-    7.0.0-rc6-custom+ #365 PREEMPT(full)  5804053f02137e627472d94b5128cc9fc=
-b110e88
->  RIP: 0010:extent_writepage_io+0x437/0x520 [btrfs]
->  Call Trace:
->   <TASK>
->   extent_write_cache_pages+0x2a5/0x820 [btrfs 70299925d0856939e93b17d4806=
-51713b3cbba58]
->   btrfs_writepages+0x74/0x130 [btrfs 70299925d0856939e93b17d480651713b3cb=
-ba58]
->   do_writepages+0xd0/0x160
->   __writeback_single_inode+0x42/0x340
->   writeback_sb_inodes+0x22d/0x580
->   wb_writeback+0xc6/0x360
->   wb_workfn+0xbd/0x470
->   process_one_work+0x198/0x3b0
->   worker_thread+0x1c8/0x330
->   kthread+0xee/0x120
->   ret_from_fork+0x2a6/0x330
->   ret_from_fork_asm+0x11/0x20
->   </TASK>
->  ---[ end trace 0000000000000000 ]---
->  BTRFS error (device dm-2 state E): root 5 ino 259 folio 1323008 is marke=
-d dirty without notifying the fs
->  BTRFS error (device dm-2 state E): failed to submit blocks, root=3D5 ino=
-de=3D259 folio=3D1323008 submit_bitmap=3D0: -117
->  BTRFS info (device dm-2 state E): last unmount of filesystem d8a19a28-32=
-32-4809-b0df-38df83e71bff
->
-> [CAUSE]
-> Inside btrfs we have the following pattern in several locations, for
-> example inside btrfs_dirty_folio():
->
->         btrfs_clear_extent_bit(&inode->io_tree, start_pos, end_of_last_bl=
-ock,
->                                EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING | E=
-XTENT_DEFRAG,
->                                cached);
->
->         ret =3D btrfs_set_extent_delalloc(inode, start_pos, end_of_last_b=
-lock,
->                                         extra_bits, cached);
->         if (ret)
->                 return ret;
->
-> However btrfs_set_extent_delalloc() can return IO errors other than -ENOM=
-EM
-> through the following callchain:
->
->  btrfs_set_extent_delalloc()
->  \- btrfs_find_new_delalloc_bytes()
->     \- btrfs_get_extent()
->        \- btrfs_lookup_file_extent()
->           \- btrfs_search_slot()
->
-> When such IO error happened, the previous btrfs_clear_extent_bit() has
-> cleared the EXTENT_DELALLOC for the range, and we're expecting
-> btrfs_set_extent_delalloc() to re-set EXTENT_DELALLOC.
->
-> But since btrfs_set_extent_delalloc() failed before
-> btrfs_set_extent_bit(), EXTENT_DELALLOC flag is no longere present.
+On 20 Apr 2026, at 2:55, Baolin Wang wrote:
 
-longere -> longer
+> On 4/18/26 10:44 AM, Zi Yan wrote:
+>> Remove READ_ONLY_THP_FOR_FS and khugepaged for file-backed pmd-sized
+>> hugepages are enabled by the global transparent hugepage control.
+>> khugepaged can still be enabled by per-size control for anon and shmem w=
+hen
+>> the global control is off.
+>>
+>> Add shmem_hpage_pmd_enabled() stub for !CONFIG_SHMEM to remove
+>> IS_ENABLED(SHMEM) in hugepage_pmd_enabled().
+>>
+>> Signed-off-by: Zi Yan <ziy@nvidia.com>
+>> ---
+>>   include/linux/shmem_fs.h |  2 +-
+>>   mm/khugepaged.c          | 28 ++++++++++++++++------------
+>>   2 files changed, 17 insertions(+), 13 deletions(-)
+>>
+>> diff --git a/include/linux/shmem_fs.h b/include/linux/shmem_fs.h
+>> index 1a345142af7d..dff8fb6ddac0 100644
+>> --- a/include/linux/shmem_fs.h
+>> +++ b/include/linux/shmem_fs.h
+>> @@ -127,7 +127,7 @@ int shmem_writeout(struct folio *folio, struct swap_=
+iocb **plug,
+>>   void shmem_truncate_range(struct inode *inode, loff_t start, uoff_t en=
+d);
+>>   int shmem_unuse(unsigned int type);
+>>  -#ifdef CONFIG_TRANSPARENT_HUGEPAGE
+>> +#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && defined(CONFIG_SHMEM)
+>>   unsigned long shmem_allowable_huge_orders(struct inode *inode,
+>>   				struct vm_area_struct *vma, pgoff_t index,
+>>   				loff_t write_end, bool shmem_huge_force);
+>> diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+>> index 1c0fdc81d276..718a2d06d1e6 100644
+>> --- a/mm/khugepaged.c
+>> +++ b/mm/khugepaged.c
+>> @@ -406,18 +406,8 @@ static inline int collapse_test_exit_or_disable(str=
+uct mm_struct *mm)
+>>   		mm_flags_test(MMF_DISABLE_THP_COMPLETELY, mm);
+>>   }
+>>  -static bool hugepage_pmd_enabled(void)
+>> +static inline bool anon_hpage_pmd_enabled(void)
+>>   {
+>> -	/*
+>> -	 * We cover the anon, shmem and the file-backed case here; file-backed
+>> -	 * hugepages, when configured in, are determined by the global control=
+.
+>> -	 * Anon pmd-sized hugepages are determined by the pmd-size control.
+>> -	 * Shmem pmd-sized hugepages are also determined by its pmd-size contr=
+ol,
+>> -	 * except when the global shmem_huge is set to SHMEM_HUGE_DENY.
+>> -	 */
+>> -	if (IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) &&
+>> -	    hugepage_global_enabled())
+>> -		return true;
+>>   	if (test_bit(PMD_ORDER, &huge_anon_orders_always))
+>>   		return true;
+>>   	if (test_bit(PMD_ORDER, &huge_anon_orders_madvise))
+>> @@ -425,7 +415,21 @@ static bool hugepage_pmd_enabled(void)
+>>   	if (test_bit(PMD_ORDER, &huge_anon_orders_inherit) &&
+>>   	    hugepage_global_enabled())
+>>   		return true;
+>> -	if (IS_ENABLED(CONFIG_SHMEM) && shmem_hpage_pmd_enabled())
+>> +	return false;
+>> +}
+>> +
+>> +static bool hugepage_pmd_enabled(void)
+>> +{
+>> +	/*
+>> +	 * Anon, shmem and file-backed pmd-size hugepages are all determined b=
+y
+>> +	 * the global control. If the global control is off, anon and shmem
+>> +	 * pmd-sized hugepages are also determined by its per-size control.
+>> +	 */
+>
+> Personally, I found the previous comments clearer to me. The statement "A=
+non, shmem pmd-size hugepages are all determined by the global control" see=
+ms somewhat confusing. For example, if hugepage_global_enabled() returns tr=
+ue but the pmd-sized sub-control is set to 'never', that means anon pmd-siz=
+e hugepages are not allowed.
 
->
-> And if the folio range is dirty before entering
-> btrfs_set_extent_delalloc(), we got a dirty folio but no EXTENT_DELALLOC
-> flag now.
->
-> Then we hit the folio writeback:
->
->  extent_writepage()
->  |- writepage_delalloc()
->  |  No ordered extent is created, as there is no EXTENT_DELALLOC set
->  |  for the folio range.
->  |  This also means the folio has no ordered flag set.
->  |
->  |- extent_writepage_io()
->     \- if (unlikely(!folio_test_ordered(folio))
->        Now we hit the warning.
->
-> [FIX]
-> Introduce a new helper, btrfs_reset_extent_delalloc() to replace the
-> currently open-coded btrfs_clear_extent_bit() +
-> btrfs_set_extent_delalloc() combination.
->
-> Instead of calling btrfs_clear_extent_bit() first, update
-> EXTENT_DELALLOC_NEW first, as that part can fail due to metadata IO,
-> meanwhile btrfs_clear_extent_bit() and btrfs_set_extent_bit() can really
-> only fail with -ENOMEM.
+You are right.
 
-No, they don't fail with -ENOMEM. They keep looping until allocation succee=
-ds.
+I will revert back to the old comment without =E2=80=9Cwhen configured in=
+=E2=80=9D like below.
 
-Boris also misunderstood this recently, see:
-
-https://lore.kernel.org/linux-btrfs/CAL3q7H7v-9M485_svy_5BCaWVaf+61DvFB6gMU=
-EWhR=3D2ykM+qw@mail.gmail.com/
-
-So please correct that statement.
-
->
-> This allows us to fail early without clearing EXTENT_DELALLOC bit, so
-> even if that new btrfs_reset_extent_delalloc() failed before touching
-> EXTENT_DELALLOC, the existing dirty range will still have their old
-> EXTENT_DELALLOC flag present, thus avoid the warning.
->
-> Cc: stable@vger.kernel.org # 6.1+
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Changelog:
-> v2:
-> - Use NULL as @cached_extent for btrfs_find_new_delalloc_bytes()
->   Unlike later btrfs_clear_extent_bit(), btrfs_find_new_delalloc_bytes()
->   can hit several different extent maps and update @cached_state.
->
->   This makes later btrfs_set/clear_extent_bit() to discard the cache,
->   making the original optimization less useful.
-> ---
->  fs/btrfs/btrfs_inode.h |  3 +++
->  fs/btrfs/file.c        | 25 +++---------------
->  fs/btrfs/inode.c       | 58 +++++++++++++++++++++++++++++++++++++-----
->  fs/btrfs/reflink.c     |  4 +--
->  4 files changed, 58 insertions(+), 32 deletions(-)
->
-> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-> index 6e696b350dc5..ad523549d8b4 100644
-> --- a/fs/btrfs/btrfs_inode.h
-> +++ b/fs/btrfs/btrfs_inode.h
-> @@ -569,6 +569,9 @@ int btrfs_start_delalloc_roots(struct btrfs_fs_info *=
-fs_info, long nr,
->  int btrfs_set_extent_delalloc(struct btrfs_inode *inode, u64 start, u64 =
-end,
->                               unsigned int extra_bits,
->                               struct extent_state **cached_state);
-> +int btrfs_reset_extent_delalloc(struct btrfs_inode *inode, u64 start, u6=
-4 end,
-> +                               unsigned int extra_bits,
-> +                               struct extent_state **cached_state);
->
->  struct btrfs_new_inode_args {
->         /* Input */
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index a6f641a41d99..ab536a304500 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -85,16 +85,8 @@ int btrfs_dirty_folio(struct btrfs_inode *inode, struc=
-t folio *folio, loff_t pos
->
->         end_of_last_block =3D start_pos + num_bytes - 1;
->
-> -       /*
-> -        * The pages may have already been dirty, clear out old accountin=
-g so
-> -        * we can set things up properly
-> -        */
-> -       btrfs_clear_extent_bit(&inode->io_tree, start_pos, end_of_last_bl=
-ock,
-> -                              EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING | E=
-XTENT_DEFRAG,
-> -                              cached);
-> -
-> -       ret =3D btrfs_set_extent_delalloc(inode, start_pos, end_of_last_b=
-lock,
-> -                                       extra_bits, cached);
-> +       ret =3D btrfs_reset_extent_delalloc(inode, start_pos, end_of_last=
-_block,
-> +                                         extra_bits, cached);
->         if (ret)
->                 return ret;
->
-> @@ -1952,18 +1944,7 @@ static vm_fault_t btrfs_page_mkwrite(struct vm_fau=
-lt *vmf)
->                 }
->         }
->
-> -       /*
-> -        * page_mkwrite gets called when the page is firstly dirtied afte=
-r it's
-> -        * faulted in, but write(2) could also dirty a page and set delal=
-loc
-> -        * bits, thus in this case for space account reason, we still nee=
-d to
-> -        * clear any delalloc bits within this page range since we have t=
-o
-> -        * reserve data&meta space before lock_page() (see above comments=
-).
-> -        */
-> -       btrfs_clear_extent_bit(io_tree, page_start, end,
-> -                              EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
-> -                              EXTENT_DEFRAG, &cached_state);
-> -
-> -       ret =3D btrfs_set_extent_delalloc(inode, page_start, end, 0, &cac=
-hed_state);
-> +       ret =3D btrfs_reset_extent_delalloc(inode, page_start, end, 0, &c=
-ached_state);
->         if (ret < 0) {
->                 btrfs_unlock_extent(io_tree, page_start, page_end, &cache=
-d_state);
->                 goto out_unlock;
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 71129502333a..ec2300698a6a 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -2810,7 +2810,10 @@ int btrfs_set_extent_delalloc(struct btrfs_inode *=
-inode, u64 start, u64 end,
->                               unsigned int extra_bits,
->                               struct extent_state **cached_state)
->  {
-> -       WARN_ON(PAGE_ALIGNED(end));
-> +       const u32 blocksize =3D inode->root->fs_info->sectorsize;
-> +
-> +       ASSERT(IS_ALIGNED(start, blocksize), "start=3D%llu", start);
-> +       ASSERT(IS_ALIGNED(end + 1, blocksize), "end=3D%llu", end);
-
-When not print blocksize too? It's useful.
+	/*
+	 * We cover the anon, shmem and the file-backed case here; file-backed
+	 * hugepages are determined by the global control.
+	 * Anon pmd-sized hugepages are determined by the pmd-size control.
+	 * Shmem pmd-sized hugepages are also determined by its pmd-size control,
+	 * except when the global shmem_huge is set to SHMEM_HUGE_DENY.
+	 */
 
 >
->         if (start >=3D i_size_read(&inode->vfs_inode) &&
->             !(inode->flags & BTRFS_INODE_PREALLOC)) {
-> @@ -2833,6 +2836,52 @@ int btrfs_set_extent_delalloc(struct btrfs_inode *=
-inode, u64 start, u64 end,
->                                     EXTENT_DELALLOC | extra_bits, cached_=
-state);
->  }
->
-> +/*
-> + * Clear the old accounting flags and set EXTENT_DELALLOC for the range.
-> + *
-> + * Return <0 for error, in that case no range has EXTENT_DELALLOC bit cl=
-eared or set.
-> + */
-> +int btrfs_reset_extent_delalloc(struct btrfs_inode *inode, u64 start, u6=
-4 end,
-> +                               unsigned int extra_bits,
-> +                               struct extent_state **cached_state)
-> +{
-> +       const u32 blocksize =3D inode->root->fs_info->sectorsize;
-> +
-> +       /* The @extra_bits can only be EXTENT_NORESERVE for now. */
-> +       ASSERT(!(extra_bits & ~EXTENT_NORESERVE));
-
-Please make the assert verbose to print extra_bits in hex too.
-
-> +
-> +       /* Basic alignment check. */
-> +       ASSERT(IS_ALIGNED(start, blocksize), "start=3D%llu", start);
-> +       ASSERT(IS_ALIGNED(end + 1, blocksize), "end=3D%llu", end);
-
-Same here, printing blocksize is useful.
-
-> +
-> +       /*
-> +        * Check and set DELALLOC_NEW flags, this needs to search tree th=
-us
-
-flags -> flag (it's just one).
-
-> +        * can fail early.
-> +        * Thus we want to do this before clearing DELALLOC_EXTENT.
-
-DELALLOC_EXTENT -> EXTENT_DELALLOC
-
-Otherwise it looks fine, and with those small things addressed:
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> The code changes LGTM.
 
 Thanks.
 
-> +        */
-> +       if (start >=3D i_size_read(&inode->vfs_inode) &&
-> +           !(inode->flags & BTRFS_INODE_PREALLOC)) {
-> +               /*
-> +                * There can't be any extents following eof in this case =
-so just
-> +                * set the delalloc new bit for the range directly.
-> +                */
-> +               extra_bits |=3D EXTENT_DELALLOC_NEW;
-> +       } else {
-> +               int ret;
-> +
-> +               ret =3D btrfs_find_new_delalloc_bytes(inode, start, end +=
- 1 - start,
-> +                                                   NULL);
-> +               if (unlikely(ret))
-> +                       return ret;
-> +       }
-> +       /* Clear the old accounting as the range may already be dirty. */
-> +       btrfs_clear_extent_bit(&inode->io_tree, start, end,
-> +                              EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
-> +                              EXTENT_DEFRAG, cached_state);
-> +       return btrfs_set_extent_bit(&inode->io_tree, start, end,
-> +                                   EXTENT_DELALLOC | extra_bits, cached_=
-state);
-> +}
-> +
->  static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
->                                        struct btrfs_inode *inode, u64 fil=
-e_pos,
->                                        struct btrfs_file_extent_item *sta=
-ck_fi,
-> @@ -4973,12 +5022,7 @@ int btrfs_truncate_block(struct btrfs_inode *inode=
-, u64 offset, u64 start, u64 e
->                 goto again;
->         }
 >
-> -       btrfs_clear_extent_bit(&inode->io_tree, block_start, block_end,
-> -                              EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING | E=
-XTENT_DEFRAG,
-> -                              &cached_state);
-> -
-> -       ret =3D btrfs_set_extent_delalloc(inode, block_start, block_end, =
-0,
-> -                                       &cached_state);
-> +       ret =3D btrfs_reset_extent_delalloc(inode, block_start, block_end=
-, 0, &cached_state);
->         if (ret) {
->                 btrfs_unlock_extent(io_tree, block_start, block_end, &cac=
-hed_state);
->                 goto out_unlock;
-> diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-> index 14742abe0f92..fb34598a77ff 100644
-> --- a/fs/btrfs/reflink.c
-> +++ b/fs/btrfs/reflink.c
-> @@ -94,9 +94,7 @@ static int copy_inline_to_page(struct btrfs_inode *inod=
-e,
->         if (ret < 0)
->                 goto out_unlock;
->
-> -       btrfs_clear_extent_bit(&inode->io_tree, file_offset, range_end,
-> -                              EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING | E=
-XTENT_DEFRAG, NULL);
-> -       ret =3D btrfs_set_extent_delalloc(inode, file_offset, range_end, =
-0, NULL);
-> +       ret =3D btrfs_reset_extent_delalloc(inode, file_offset, range_end=
-, 0, NULL);
->         if (ret)
->                 goto out_unlock;
->
-> --
-> 2.53.0
->
->
+>> +	if (hugepage_global_enabled())
+>> +		return true;
+>> +	if (anon_hpage_pmd_enabled())
+>> +		return true;
+>> +	if (shmem_hpage_pmd_enabled())
+>>   		return true;
+>>   	return false;
+>>   }
+
+
+Best Regards,
+Yan, Zi

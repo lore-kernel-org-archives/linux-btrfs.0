@@ -1,102 +1,73 @@
-Received: from mail-pj1-f43.google.com (mail-pj1-f43.google.com [209.85.216.43])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from out30-119.freemail.mail.aliyun.com (out30-119.freemail.mail.aliyun.com [115.124.30.119])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E8AE223C4F3
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2026 06:30:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.216.43
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776666649; cv=pass; b=DmcQyaE68/GQYZxrlh/nO/YTVi84rjn7v2HYjzJ9ujxlDFtNMX/DV0eDNNtmGsuq844zSbqZmZbcbCTYrxNMz+DosaObZNH+fCJ7hHq6NK/2uy6lpDlo7BNHsvsoTpVHlnXeefMWiVBnlLHRPLOV/gzJ99gW/F3YjAFyPl2Ynz4=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776666649; c=relaxed/simple;
-	bh=dahbqAJ0nZcqnd6aYe9vWXahQmPzLniDVO+YsQkQnUY=;
-	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=Fm0UnU8gxz+Mur6cMq4FycwRr8B0zkPfNlsVxGx9IuYcS17GvZToXKhzP9hWAO+gy70gAyPSrcTIMviRU/6LnUcvrK3W4Ib5zao2ky42WK9SStsu48mggVNCd1ESlBpXs9hqENwRB/MTmouKT+S/pUsEQa4jhHhhBrLcNUu5XEY=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=dkXr5wMu; arc=pass smtp.client-ip=209.85.216.43
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6148B15746F;
+	Mon, 20 Apr 2026 06:31:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=115.124.30.119
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1776666717; cv=none; b=ZfmoTs1yw4uHb5QO0q6KTpgG/hatf5sQ5YYhUZCi7vw/954lZ+i3HA+Qlo6oygBZjFRXmKm99rQjeUaNjHKJX9xrIZmeXCmnl4KZ8la0O26BG3wAXtZiGC/34eMlYfzHSsrubOnOAICh6cSxv4SZS5pQSNZCPrc6TDE/5TKddpY=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1776666717; c=relaxed/simple;
+	bh=6xQihWuAN6X0vR6c7iGH60kQRSbU7gLnWjXt5CdwF4Q=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=f/+8eLM9sF3UTrklQLYlw9ywWJ8Xk04FZMZ03t36u7e/6v+oAZOgnIUBR/Yzdlj3+rS+wx5CYkchyNFErAEhneYwNnCqCNc7tntq2WtjmCUf8isgzwZ7Azok1JkzFSCH5s61YKZL4fdx+uvK6tTPb3iakMoY+tcWrBHrxiBQmI8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com; spf=pass smtp.mailfrom=linux.alibaba.com; dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b=ixvvzp3Q; arc=none smtp.client-ip=115.124.30.119
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.alibaba.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dkXr5wMu"
-Received: by mail-pj1-f43.google.com with SMTP id 98e67ed59e1d1-35da1af3e10so2603165a91.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Apr 2026 23:30:47 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1776666647; cv=none;
-        d=google.com; s=arc-20240605;
-        b=gRtDUSXPc/PGJi/x98LauLdPFZZDPDFQfxufs6zvnBJjC6g8afehJMiXUgvVmC+BXY
-         ztRWg1P7qnFZc0AAWF3vMH0n+TAlh03PHDOU+HZeyy2hIuKWin5zLXz2MQXPS3GmgU0A
-         lk6KWaMDBlIbSmpW6WjbZSS8Ikj0ovyL4Nb5opXl/yk8B391TAOQW1JHIWm14l8gzyU5
-         UajE8UMaxgPN2B9RIFxDLwdAw6mbRUH/OX5EXK+nbEFmqhQXqy87X4srIGA/M7/dGNqC
-         7qA0YIBRxh1uUxKkveMnJXRCt+ZzYLiX0kvowQUprSUTX278TEVKGjQ8mVn5WiTpF67a
-         y6tQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=to:subject:message-id:date:from:mime-version:dkim-signature;
-        bh=2VULVFUZeYNdYuuaJ646DIVUjUOZhXeTsJA4YviZ0LY=;
-        fh=IOI3BSFtc4S+mY5yRaEOyEQVEbaexZFmwOG7FNW1hpE=;
-        b=DCj8HF1vL6wN4yKmEg7FDVDIMnq5XWEhFYTw3gfNtfGsWcG3WEZFFyrtjlghw9NG4l
-         fEbQqZsvacIEwfSBKdkrlSDvmDNPbkgQY6fSArGTQShHOsKviaE9TXECgFfmF5RlKdyK
-         EoK/6QiI6/pFaAg2IaBO/hsO0+MWs4KBRAt4t3PU6yj+qRztyF57A3UR/jbGFCeV8ehW
-         jiyxQK/8f2ffdQN192bJ26iiJ9yxNlfcyzeRoHrTKC5zER9odE8CoVK+PDtxNOVmvu4y
-         Y1y/rw7wnVYLvosdXZJN6slLtH+sbZlBXGIvQxCDSX8IL1MLu4zY7FKTpOrH/2L5C0ww
-         MGLA==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1776666647; x=1777271447; darn=vger.kernel.org;
-        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject
-         :date:message-id:reply-to;
-        bh=2VULVFUZeYNdYuuaJ646DIVUjUOZhXeTsJA4YviZ0LY=;
-        b=dkXr5wMuA5JlHs1DbBGL/bVPstzuu8AXr3j2kG63Zz62LNqwV2++MU/u5WykUsi1Cc
-         CAgNrITbWho1lIAkdI1YHMYyATLzV+ppMPJE2PCLiJa2GgNWeWnay7Kl0hU5ZHUH6HzE
-         ud171N9myC1/MNbJWmLhcOrmhKJQV4U4GpyOiqFJIuldsE21gS7MkAos3dmzlbpdxITO
-         suvyBQk9kJ30KooLEAJlm9uRX+hJCkttjR3AUjnXJ8Kul0S/DMzz/vkepXHcdxAjXOTp
-         RKjibEvIMP1iU8sx19FogTq025Rpdt37/1CfRZhkG3fLGGuuiLTqQB1BUL3Y9gsUBDkJ
-         kJrA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1776666647; x=1777271447;
-        h=to:subject:message-id:date:from:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=2VULVFUZeYNdYuuaJ646DIVUjUOZhXeTsJA4YviZ0LY=;
-        b=LUagQDZqvT3MF08spvcGZswdAYxEZB3m1vBvbspq5TK6j84Ue6H02DVwkcAjsvYQ9E
-         J1/3zCkWi53KaQpQEmbM55WAK85wQoi4qakkHeE5Fo0L2iNoy6xARdDfnY2xOp8Ghzdy
-         amjagF7/i27pAczuCylSeMM/pN+DJ4rA+7xQ2CIoqva1c0decx8ItazvnFDbzWmKqcxz
-         bJfs/susT08J53YThUDCv0Q7ao6QC+6L1SHNNn7rPA1JpxOQqqJcVCul8RjZ8rb+Jrce
-         gA+lUMTlpWK5WwW10Z41L90hm5JRVLcgec/IN1RRQaJWTsPYVxcH80HqeZDiFvWkPlyw
-         FkXA==
-X-Gm-Message-State: AOJu0YxQu5iJXh6+ALgcLbvgOkwV4xEFb/jEOyYIDIf0d5/DRxn1tirs
-	zfmnHQawwmoXrjlIk1XbKqX3f74V8TPc+REt/FVfMsc7Z7gPwtu9bFLSr9ClhpnMjImyijIQIQR
-	4K8bzQdTVWw0dc15hVPF7EzFDdF0h1sbZZhdH
-X-Gm-Gg: AeBDiesLIGBrY8q//5iVzfoaT72658Z7Veae/pyOf7LnKkX6boCd9KK+ZgQNyP91Nlv
-	lzZ9MeA7d2ohld9s0YRt7BU6yJ5V/dN+DzUIiwTPUMnns630stHD2dEsdg95A9dQgdiynT5GVVQ
-	M59wXKD2Tu5dQGRa/2ttPpNl54yoeB5A6qo0RzQrfSlYPOeZ95hZZrHxEqiOBtfKafS7fM3iWmV
-	J3HdGaEut01jK1sjlIbp5EOVSqH+/Np+zu1WyZ022tD7yWBgWbkIX1IvOW1T/Rp34uObeZpAdlM
-	IXtz+q5wySOR5t5LmdveiIylZOL+Fqsz1OPaMUexdFTwPKNF+A==
-X-Received: by 2002:a17:90b:2fc4:b0:35f:b6d3:da7d with SMTP id
- 98e67ed59e1d1-361404635e6mr11935788a91.17.1776666647013; Sun, 19 Apr 2026
- 23:30:47 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b="ixvvzp3Q"
+DKIM-Signature:v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=linux.alibaba.com; s=default;
+	t=1776666707; h=Message-ID:Date:MIME-Version:Subject:To:From:Content-Type;
+	bh=Fl4jBlNrsLzHQOt9Xuwu05ZRkyi97MaFfuf5gBZ/Gy4=;
+	b=ixvvzp3QD2U+5ew2BdEu2oLxz2167csNGMu9AKWvlYR0HAfyaR4PNrvJIyJ2vQDmPb852FOacMeFGRI3O+Eg+I7JoZX5DpOo6JSMvlslMi3DAEpfULqFOGlPALs5dHesiDbOYGTh0IMwpBQU2Qj5EJsXsiFTgIG0gyYRGu+sljg=
+X-Alimail-AntiSpam:AC=PASS;BC=-1|-1;BR=01201311R681e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=maildocker-contentspam033032089153;MF=baolin.wang@linux.alibaba.com;NM=1;PH=DS;RN=27;SR=0;TI=SMTPD_---0X1I6p8D_1776666704;
+Received: from 30.74.144.127(mailfrom:baolin.wang@linux.alibaba.com fp:SMTPD_---0X1I6p8D_1776666704 cluster:ay36)
+          by smtp.aliyun-inc.com;
+          Mon, 20 Apr 2026 14:31:45 +0800
+Message-ID: <6797d16b-5db9-4bbf-a7d9-314cd98ac95e@linux.alibaba.com>
+Date: Mon, 20 Apr 2026 14:31:43 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-From: Torstein Eide <torsteine@gmail.com>
-Date: Mon, 20 Apr 2026 08:30:35 +0200
-X-Gm-Features: AQROBzB_jOsVRgVBMm_761SlB6hud_ENHwtWDQAy2JLR1MC-i6GSAKrZVqJFvys
-Message-ID: <CAL5DHTHA8a=BemS5mVLdvt5CT+DVgegMFftdMqyk+=B60KFAsA@mail.gmail.com>
-Subject: BtrFS, Scrub: bug fail to respect scrub_speed_max
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 7.2 v3 03/12] mm/huge_memory: remove READ_ONLY_THP_FOR_FS
+ from file_thp_enabled()
+To: Zi Yan <ziy@nvidia.com>, "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+ Song Liu <songliubraving@fb.com>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+ Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
+ Andrew Morton <akpm@linux-foundation.org>,
+ David Hildenbrand <david@kernel.org>, Lorenzo Stoakes <ljs@kernel.org>,
+ "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
+ Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
+ Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
+ Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
+ Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
+ Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-mm@kvack.org, linux-kselftest@vger.kernel.org
+References: <20260418024429.4055056-1-ziy@nvidia.com>
+ <20260418024429.4055056-4-ziy@nvidia.com>
+From: Baolin Wang <baolin.wang@linux.alibaba.com>
+In-Reply-To: <20260418024429.4055056-4-ziy@nvidia.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Hi
-There is a issue with /sys/fs/btrfs/*/devinfo/{2...}/scrub_speed_max,
-where when running it scrub the limit will change to none ("0"),
-before reset after scrub finished.
-tested on both 7.0 and 6.12
-
-| Devid | Before | Running | Finnished |
-|-------|--------|---------|-----------|
-| 1     | 100m   | 100m    | 100m      |
-| 2     | 100m   | 0       | 100m      |
-| 3     | 100m   | 0       | 100m      |
-| 4     | 100m   | 0       | 100m      |
 
 
--- 
-Torstein Eide
+On 4/18/26 10:44 AM, Zi Yan wrote:
+> Replace it with a check on the max folio order of the file's address space
+> mapping, making sure PMD THP is supported. Also remove the read-only fd
+> check, since collapse_file() now makes sure all to-be-collapsed folios are
+> clean and the created PMD file THP can be handled by FSes properly.
+> 
+> Signed-off-by: Zi Yan <ziy@nvidia.com>
+> ---
+
+LGTM.
+Reviewed-by: Baolin Wang <baolin.wang@linux.alibaba.com>

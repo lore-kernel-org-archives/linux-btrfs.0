@@ -1,44 +1,44 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1238247DFA5;
-	Mon, 20 Apr 2026 13:31:09 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D823A3A9DB3;
+	Mon, 20 Apr 2026 13:32:09 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776691870; cv=none; b=XRNmV9n/ef7JDCsulgJ/0/OiChQ8D/Swbge3L605yqeRX6Nb3bwth16kYfZ83tbL/r+/l4gAOPReh3k95S3nW9lAjm9g2/TblTKKv++xqndgcYLDTwdbPoFYHDjIScAvDqKuUTw/5fFoWuya7BGGcPSg87bOFse22JDsigrOPzE=
+	t=1776691929; cv=none; b=fjrjTJzEism7Bw93iAUWDJ4+SdPls3aLe4eJdCLo0RURRKuGNOOnnsfm01srONVsbmfjIwrA5ei673UQ/uQdAK6CmiQVOv4PLtL+hfrd40lR0qpXAi0/zxjEXDFSERLoM8IdGdQjJH1jaNRd0TVKdU4K6fF1c7ZPNvwMket4xL8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776691870; c=relaxed/simple;
-	bh=jQOzeDVjrNxnA8vRHbOQiU7JQ6PboXnMxCsVHofwX/Q=;
+	s=arc-20240116; t=1776691929; c=relaxed/simple;
+	bh=ezqlU37ANbeKsqozw/1jOWoBmKYZeToNqHXnc2Ys4rs=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=sbFO8GsEdXxROUBk9PRCI5ilTAaXROjLXskDwNGq5FPZCJtWF56IRYg/AXzcOucv5PlXX2V7yEHwRhxN2JTDezCJ2YSjDChT1JkdEtXiYRe8UMepn7z7CHir2BkjSAyEjASFz2k7CavHiXR/R2aAjGdMTTCLkBF+n8JSJOY+ggU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=cGcQNpyE; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=N8ks1EQjL/hKWYD2YBYPskhoaYtB3tZaPo0MQOX+FKoHCIghB78o50gHCKlZzKclL6jaMG+lpJHzg2Ufuv7bdEjIEKUhF3vjRwvaMxqTCis98UltK/tn6991pVyzwKh2nYq7gvSNdmNM5AIzU9GncUzWgDw8TMo9MtkHgyrVZEk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=txde56fa; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="cGcQNpyE"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7BA21C2BCB6;
-	Mon, 20 Apr 2026 13:31:08 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="txde56fa"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 982DAC19425;
+	Mon, 20 Apr 2026 13:32:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776691869;
-	bh=jQOzeDVjrNxnA8vRHbOQiU7JQ6PboXnMxCsVHofwX/Q=;
+	s=k20201202; t=1776691929;
+	bh=ezqlU37ANbeKsqozw/1jOWoBmKYZeToNqHXnc2Ys4rs=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=cGcQNpyEl0UEke5CI6DHQHwOIa1hZOwZwBTwdGe+DDBlWAPpIQlJNNrurMDcUCuPp
-	 hCGOZ19A2EWHkFlVV39/mf4AcaknbIXzs7373XPg+3FQtjXbOpn9/iTab8gYItejQA
-	 CT5Bo30cFhXXRv/XTMe4XiOvk/DxH4oXE1IfISdP3WbozDltJcJqXdQTrxp2ggDNp2
-	 UjQF3nhRP+f4wFhdaHiAJOUaP2JxBXPuUiY86Dl5CEBH/GAy6XaMyzSsRBXLpgJ2p6
-	 IEY+CyiBqCuVPpQT8jYM6bSHEaMa0iGHMwMYT3elSz5YYihpYvH9NAC1k7xh1briz0
-	 I35/0j4agFIoQ==
+	b=txde56faJQKBBmpJl2S97m1nnkvJL6KmRykK2MR9eekEV/KgTw/BRafHtDLoo8il6
+	 aRflBNa3YMTbFWNKufIMQGf0hSypOXBpPSra8EjcAuGYv6R1fBgraNSZ+RTiV+BNSH
+	 ExNZtzMJrIL0q5JCfWLcMvSrhCIR3KNtvmhx8cHwXrn95EXATpFsNFGAYdueinf0uN
+	 sJPBDcuHFtdHk5DbO+bgGnRmx1A0NEC3f+iCNB8RYxZq1iszEJMYd05ByFfOAdlNOY
+	 bcKM9p7jWmNnrL+Rl5rAWzN1/I96BIgMlusaTl7CPe94xw60rivEjnHzUch/3fPOy8
+	 09eCcc6tZ2Jhg==
 From: Sasha Levin <sashal@kernel.org>
 To: patches@lists.linux.dev,
 	stable@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>,
-	Vyacheslav Kovalevsky <slava.kovalevskiy.2014@gmail.com>,
+Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	Filipe Manana <fdmanana@suse.com>,
 	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.18] btrfs: fix zero size inode with non-zero size after log replay
-Date: Mon, 20 Apr 2026 09:20:36 -0400
-Message-ID: <20260420132314.1023554-242-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 7.0-6.19] btrfs: zoned: cap delayed refs metadata reservation to avoid overcommit
+Date: Mon, 20 Apr 2026 09:21:09 -0400
+Message-ID: <20260420132314.1023554-275-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260420132314.1023554-1-sashal@kernel.org>
 References: <20260420132314.1023554-1-sashal@kernel.org>
@@ -50,224 +50,582 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
-X-stable-base: Linux 6.18.23
+X-stable-base: Linux 7.0
 Content-Transfer-Encoding: 8bit
 
-From: Filipe Manana <fdmanana@suse.com>
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-[ Upstream commit 5254d4181add9dfaa5e3519edd71cc8f752b2f85 ]
+[ Upstream commit 7bcb04de982ff0718870112ad9f38c35cbca528b ]
 
-When logging that an inode exists, as part of logging a new name or
-logging new dir entries for a directory, we always set the generation of
-the logged inode item to 0. This is to signal during log replay (in
-overwrite_item()), that we should not set the i_size since we only logged
-that an inode exists, so the i_size of the inode in the subvolume tree
-must be preserved (as when we log new names or that an inode exists, we
-don't log extents).
+On zoned filesystems metadata space accounting can become overly optimistic
+due to delayed refs reservations growing without a hard upper bound.
 
-This works fine except when we have already logged an inode in full mode
-or it's the first time we are logging an inode created in a past
-transaction, that inode has a new i_size of 0 and then we log a new name
-for the inode (due to a new hardlink or a rename), in which case we log
-an i_size of 0 for the inode and a generation of 0, which causes the log
-replay code to not update the inode's i_size to 0 (in overwrite_item()).
+The delayed_refs_rsv block reservation is allowed to speculatively grow and
+is only backed by actual metadata space when refilled. On zoned devices this
+can result in delayed_refs_rsv reserving a large portion of metadata space
+that is already effectively unusable due to zone write pointer constraints.
+As a result, space_info->may_use can grow far beyond the usable metadata
+capacity, causing the allocator to believe space is available when it is not.
 
-An example scenario:
+This leads to premature ENOSPC failures and "cannot satisfy tickets" reports
+even though commits would be able to make progress by flushing delayed refs.
 
-  mkdir /mnt/dir
-  xfs_io -f -c "pwrite 0 64K" /mnt/dir/foo
+Analysis of "-o enospc_debug" dumps using a Python debug script
+confirmed that delayed_refs_rsv was responsible for the majority of
+metadata overcommit on zoned devices. By correlating space_info counters
+(total, used, may_use, zone_unusable) across transactions, the analysis
+showed that may_use continued to grow even after usable metadata space
+was exhausted, with delayed refs refills accounting for the excess
+reservations.
 
-  sync
+Here's the output of the analysis:
 
-  xfs_io -c "truncate 0" -c "fsync" /mnt/dir/foo
+  ======================================================================
+  Space Type: METADATA
+  ======================================================================
 
-  ln /mnt/dir/foo /mnt/dir/bar
+  Raw Values:
+    Total:                256.00 MB (268435456 bytes)
+    Used:                 128.00 KB (131072 bytes)
+    Pinned:                16.00 KB (16384 bytes)
+    Reserved:             144.00 KB (147456 bytes)
+    May Use:              255.48 MB (267894784 bytes)
+    Zone Unusable:        192.00 KB (196608 bytes)
 
-  xfs_io -c "fsync" /mnt/dir
+  Calculated Metrics:
+    Actually Usable:       255.81 MB (total - zone_unusable)
+    Committed:             255.77 MB (used + pinned + reserved + may_use)
+    Consumed:              320.00 KB (used + zone_unusable)
 
-  <power fail>
+  Percentages:
+    Zone Unusable:    0.07% of total
+    May Use:         99.80% of total
 
-After log replay the file remains with a size of 64K. This is because when
-we first log the inode, when we fsync file foo, we log its current i_size
-of 0, and then when we create a hard link we log again the inode in exists
-mode (LOG_INODE_EXISTS) but we set a generation of 0 for the inode item we
-add to the log tree, so during log replay overwrite_item() sees that the
-generation is 0 and i_size is 0 so we skip updating the inode's i_size
-from 64K to 0.
+Fix this by adding a zoned-specific cap in btrfs_delayed_refs_rsv_refill():
+Before reserving additional metadata bytes, limit the delayed refs
+reservation based on the usable metadata space (total bytes minus
+zone_unusable). If the reservation would exceed this cap, return -EAGAIN
+to trigger the existing flush/commit logic instead of overcommitting
+metadata space.
 
-Fix this by making sure at fill_inode_item() we always log the real
-generation of the inode if it was logged in the current transaction with
-the i_size we logged before. Also if an inode created in a previous
-transaction is logged in exists mode only, make sure we log the i_size
-stored in the inode item located from the commit root, so that if we log
-multiple times that the inode exists we get the correct i_size.
+This preserves the existing reservation and flushing semantics while
+preventing metadata overcommit on zoned devices. The change is limited to
+metadata space and does not affect non-zoned filesystems.
 
-A test case for fstests will follow soon.
+This patch addresses premature metadata ENOSPC conditions on zoned devices
+and ensures delayed refs are throttled before exhausting usable metadata.
 
-Reported-by: Vyacheslav Kovalevsky <slava.kovalevskiy.2014@gmail.com>
-Link: https://lore.kernel.org/linux-btrfs/af8c15fa-4e41-4bb2-885c-0bc4e97532a6@gmail.com/
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
 
 LLM Generated explanations, may be completely bogus:
 
-Error: Failed to generate final synthesis
+Now I have a thorough understanding. Let me compile the final analysis.
 
- fs/btrfs/tree-log.c | 98 ++++++++++++++++++++++++++++++---------------
- 1 file changed, 65 insertions(+), 33 deletions(-)
+---
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 7505a87522fd7..c45c5112c0350 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4608,21 +4608,32 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
- 			    struct inode *inode, bool log_inode_only,
- 			    u64 logged_isize)
- {
-+	u64 gen = BTRFS_I(inode)->generation;
- 	u64 flags;
- 
- 	if (log_inode_only) {
--		/* set the generation to zero so the recover code
--		 * can tell the difference between an logging
--		 * just to say 'this inode exists' and a logging
--		 * to say 'update this inode with these values'
-+		/*
-+		 * Set the generation to zero so the recover code can tell the
-+		 * difference between a logging just to say 'this inode exists'
-+		 * and a logging to say 'update this inode with these values'.
-+		 * But only if the inode was not already logged before.
-+		 * We access ->logged_trans directly since it was already set
-+		 * up in the call chain by btrfs_log_inode(), and data_race()
-+		 * to avoid false alerts from KCSAN and since it was set already
-+		 * and one can set it to 0 since that only happens on eviction
-+		 * and we are holding a ref on the inode.
- 		 */
--		btrfs_set_inode_generation(leaf, item, 0);
-+		ASSERT(data_race(BTRFS_I(inode)->logged_trans) > 0);
-+		if (data_race(BTRFS_I(inode)->logged_trans) < trans->transid)
-+			gen = 0;
+## PHASE 1: COMMIT MESSAGE FORENSICS
+
+### Step 1.1: Subject Line
+- **Subsystem**: `btrfs: zoned:` (btrfs filesystem, zoned device mode)
+- **Action verb**: "cap" (limit/constrain)
+- **Summary**: Cap delayed refs metadata reservation to avoid overcommit
+  on zoned filesystems
+
+Record: [btrfs: zoned] [cap] [Limit delayed refs metadata reservation to
+prevent metadata overcommit on zoned devices]
+
+### Step 1.2: Tags
+- **Reviewed-by**: Filipe Manana <fdmanana@suse.com> -- a core btrfs
+  developer and the most prolific btrfs contributor
+- **Signed-off-by**: Johannes Thumshirn <johannes.thumshirn@wdc.com> --
+  author, WDC employee, active btrfs/zoned contributor
+- **Signed-off-by**: David Sterba <dsterba@suse.com> -- btrfs maintainer
+  who merged it
+- No Fixes: tag (expected for manual review candidates)
+- No Cc: stable tag (expected)
+- No Reported-by tag (author-discovered through debugging)
+
+Record: Reviewed by Filipe Manana (core btrfs developer), committed by
+maintainer David Sterba. No bug report reference.
+
+### Step 1.3: Commit Body
+The commit describes a real-world ENOSPC problem on zoned btrfs:
+- `delayed_refs_rsv` speculatively grows without a hard upper bound
+- On zoned devices, zone write pointer constraints make some space
+  unusable
+- `space_info->may_use` grows beyond usable metadata capacity
+- This causes premature ENOSPC failures ("cannot satisfy tickets")
+- The author provided extensive analysis output from enospc_debug dumps
+  showing may_use at 99.80% of total while consumed was only 320KB
+
+**Failure mode**: Premature ENOSPC errors on zoned devices, preventing
+writes even though space could be recovered by flushing delayed refs.
+
+Record: [Bug: Metadata overcommit on zoned devices leads to premature
+ENOSPC] [Symptom: cannot satisfy tickets, premature ENOSPC] [Root cause:
+delayed_refs_rsv unbounded growth relative to zone_unusable space]
+
+### Step 1.4: Hidden Bug Fix Detection
+This is NOT a hidden bug fix - the commit explicitly describes fixing
+premature ENOSPC on zoned devices. It's a clear bug fix with detailed
+analysis.
+
+Record: [Direct bug fix, not hidden]
+
+## PHASE 2: DIFF ANALYSIS
+
+### Step 2.1: Change Inventory
+- **fs/btrfs/delayed-ref.c**: +28 lines (new function
+  `btrfs_zoned_cap_metadata_reservation` + 3-line call site)
+- **fs/btrfs/transaction.c**: +8 lines (handle -EAGAIN from refill by
+  committing transaction and retrying)
+- **Total**: ~36 lines added, 0 removed
+- **Functions modified**: `btrfs_delayed_refs_rsv_refill()`,
+  `start_transaction()`
+- **New function**: `btrfs_zoned_cap_metadata_reservation()` (static
+  helper)
+- **Scope**: Two-file surgical fix, limited to zoned mode
+
+Record: [2 files, ~36 lines added] [btrfs_delayed_refs_rsv_refill
+modified, start_transaction modified] [Small surgical fix]
+
+### Step 2.2: Code Flow Changes
+
+**Hunk 1 (delayed-ref.c)**: New static function
+`btrfs_zoned_cap_metadata_reservation`:
+- Before: No cap on delayed refs reservation
+- After: On zoned devices, checks if `block_rsv->size` exceeds half of
+  usable metadata (`total_bytes - bytes_zone_unusable`). Returns -EAGAIN
+  if exceeded.
+- Only affects zoned mode (`btrfs_is_zoned` check at start)
+
+**Hunk 2 (delayed-ref.c)**: Call to new function in
+`btrfs_delayed_refs_rsv_refill`:
+- Before: Directly calls `btrfs_reserve_metadata_bytes`
+- After: First checks the zoned cap; if exceeded, returns -EAGAIN before
+  attempting actual reservation
+
+**Hunk 3 (transaction.c)**: -EAGAIN handling in `start_transaction`:
+- Before: Any error from `btrfs_delayed_refs_rsv_refill` goes to
+  `reserve_fail`
+- After: If -EAGAIN (zoned cap hit), commits current transaction (which
+  flushes delayed refs, freeing space), then retries the refill
+
+Record: [New cap check prevents overcommit] [EAGAIN triggers transaction
+commit + retry] [Only zoned mode affected]
+
+### Step 2.3: Bug Mechanism
+Category: **Logic/correctness fix** for metadata accounting on zoned
+devices.
+
+What was broken: The delayed refs block reserve could grow arbitrarily
+large on zoned filesystems, where zone write pointer constraints
+(tracked as `bytes_zone_unusable`) make portions of metadata space
+physically unusable. The overcommit logic didn't account for this, so
+`may_use` could far exceed actually usable space.
+
+How the fix works: Adds a zoned-specific cap at 50% of usable metadata
+space (`usable >> 1`). When the cap is hit, returns -EAGAIN instead of
+proceeding with the reservation. The caller (transaction start) responds
+by committing the current transaction, which flushes delayed refs and
+frees the overcommitted space.
+
+Record: [Logic/correctness bug in metadata accounting on zoned devices]
+[Fix: cap at 50% usable space, trigger flush when cap exceeded]
+
+### Step 2.4: Fix Quality
+- The fix is well-contained: adds one static helper + two call sites
+- The zoned-only guard (`btrfs_is_zoned`) ensures non-zoned systems are
+  completely unaffected
+- The `ASSERT(btrfs_is_zoned(fs_info))` in the EAGAIN handler is good
+  defensive coding
+- The retry pattern (commit, then retry) is a well-established pattern
+  in btrfs space management
+- Reviewed by Filipe Manana who is the most active btrfs contributor
+- Potential regression risk is LOW: only affects zoned mode, uses
+  existing flush/commit mechanisms, and the cap is generous (50% of
+  usable)
+
+Record: [Obviously correct, well-reviewed, minimal regression risk for
+non-zoned users] [Zero risk for non-zoned, low risk for zoned]
+
+## PHASE 3: GIT HISTORY INVESTIGATION
+
+### Step 3.1: Blame
+- `btrfs_delayed_refs_rsv_refill()` was introduced by Josef Bacik in
+  commit `6ef03debdb3d82` (2019-06-19), present since approximately
+  v5.3.
+- The function has been refined by Filipe Manana (2023) and others but
+  its core logic (grow unbounded) has been present since inception.
+- The zoned mode support was added later, but the interaction with
+  delayed refs rsv was never specifically addressed.
+
+Record: [Refill function from v5.3 (6ef03debdb3d82)] [Zoned support
+added later without accounting for delayed refs rsv interaction]
+
+### Step 3.2: Fixes Tag
+No Fixes: tag present. The bug is a design gap in how delayed refs rsv
+interacts with zoned mode constraints, not introduced by a single
+commit.
+
+Record: [No Fixes: tag - this is a design gap, not a single-commit
+regression]
+
+### Step 3.3: Related Changes
+- `28270e25c69a2` (v6.7) - "btrfs: always reserve space for delayed refs
+  when starting transaction" - changed how delayed refs reservations
+  work, may have exacerbated the issue
+- `64d2c847ba380` (v6.9) - "btrfs: zoned: fix
+  calc_available_free_space() for zoned mode" - closely related fix for
+  overcommit on zoned, was CC'd to stable
+- `a1359d06d7878` (v7.0) - API change to `btrfs_reserve_metadata_bytes`
+  that would affect clean backport
+
+Record: [Related to 28270e25c69a2 and 64d2c847ba380] [API differences
+across stable trees]
+
+### Step 3.4: Author
+Johannes Thumshirn is a WDC employee and regular btrfs/zoned contributor
+with 20+ btrfs commits visible. He is a recognized expert on zoned
+btrfs.
+
+Record: [Author is a recognized zoned btrfs expert at WDC]
+
+### Step 3.5: Dependencies
+**CRITICAL**: `btrfs_commit_current_transaction()` was introduced in
+commit `ded980eb3fadd7` (2024-05-22), which is only present in v6.11+.
+This function is used in the `transaction.c` hunk. Backporting to v6.6.y
+or older stable trees would require either:
+1. Also backporting `ded980eb3fadd7` (and its dependents)
+2. Replacing the call with the inline equivalent
+   (`btrfs_attach_transaction_barrier` + `btrfs_commit_transaction`)
+
+Additionally, `btrfs_reserve_metadata_bytes()` had its signature changed
+by `a1359d06d7878` (dropping `fs_info` argument), which is only in the
+latest tree. Older trees have a different API.
+
+Record: [Depends on ded980eb3fadd7 (btrfs_commit_current_transaction) -
+only in v6.11+] [API differences for btrfs_reserve_metadata_bytes across
+versions]
+
+## PHASE 4: MAILING LIST AND EXTERNAL RESEARCH
+
+### Step 4.1-4.5
+b4 dig could not find the commit (likely very recent, post-7.0-rc or in
+a merge window). Web searches also did not find the specific patch
+discussion. Lore.kernel.org was protected by anti-bot measures.
+
+Record: [Could not find mailing list discussion - commit appears very
+recent, possibly in 7.0 merge window or rc cycle] [UNVERIFIED: Full
+mailing list discussion not available]
+
+## PHASE 5: CODE SEMANTIC ANALYSIS
+
+### Step 5.1-5.4: Functions and Call Chains
+- `btrfs_delayed_refs_rsv_refill()` is called from:
+  1. `start_transaction()` in `transaction.c` - called on every
+     transaction start with num_items==0
+  2. `btrfs_truncate_inode_items()` in `inode-item.c` - called during
+     truncate/unlink (with BTRFS_RESERVE_NO_FLUSH)
+- `start_transaction()` is called from many places throughout btrfs
+  (dozens of call sites)
+- The `num_items == 0` path specifically handles callers using
+  `btrfs_start_transaction(root, 0)` which is a very common pattern (24+
+  call sites across btrfs)
+
+The `inode-item.c` caller already converts ALL errors to `-EAGAIN` (line
+708), so the new -EAGAIN from the cap function is handled correctly
+without modification.
+
+Record: [btrfs_delayed_refs_rsv_refill called from transaction start and
+truncate] [Very widely called function] [inode-item.c caller unaffected
+by change]
+
+### Step 5.5: Similar Patterns
+The previous fix `64d2c847ba380` ("btrfs: zoned: fix
+calc_available_free_space() for zoned mode") addressed a very similar
+issue - overcommit on zoned mode leading to ENOSPC. That fix was CC'd to
+stable 6.9+. This new fix addresses a different vector of the same
+overcommit problem.
+
+Record: [Similar fix 64d2c847ba380 was CC'd to stable 6.9+]
+
+## PHASE 6: CROSS-REFERENCING AND STABLE TREE ANALYSIS
+
+### Step 6.1: Existence in Stable Trees
+- The delayed refs rsv refill mechanism exists since v5.3
+- Zoned mode support has been present since ~v5.12
+- The interaction problem exists in all stable trees with zoned mode
+  support
+- However, `28270e25c69a2` (v6.7) changed delayed refs reservation
+  behavior and may have worsened the problem
+
+Record: [Buggy interaction exists in v5.12+, but may be worse in v6.7+
+due to 28270e25c69a2]
+
+### Step 6.2: Backport Complications
+**SIGNIFICANT backport complications:**
+1. `btrfs_commit_current_transaction()` only exists in v6.11+ - requires
+   adaptation for older trees
+2. `btrfs_reserve_metadata_bytes()` API changed - minor adaptation
+   needed for older trees
+3. The `delayed-ref.c` hunk adding the new function should apply
+   relatively cleanly
+
+Record: [Needs adaptation for v6.6-v6.10 due to missing
+btrfs_commit_current_transaction] [API differences need resolution]
+
+### Step 6.3: Related Fixes Already in Stable
+`64d2c847ba380` (CC: stable 6.9+) addresses a different vector of the
+same overcommit problem. This new patch addresses a complementary
+vector.
+
+Record: [64d2c847ba380 is a related but different fix, CC'd to stable
+6.9+]
+
+## PHASE 7: SUBSYSTEM AND MAINTAINER CONTEXT
+
+### Step 7.1: Subsystem Criticality
+- **Subsystem**: btrfs filesystem, zoned device support
+- **Criticality**: IMPORTANT (btrfs is a widely used filesystem, but
+  zoned mode is a specialized use case for SMR/ZNS devices)
+- Zoned btrfs is increasingly used on enterprise/datacenter storage
+  systems with ZNS SSDs
+
+Record: [btrfs filesystem, zoned mode - IMPORTANT but specialized use
+case]
+
+### Step 7.2: Subsystem Activity
+btrfs is one of the most actively developed filesystems in the kernel.
+The zoned mode subsystem specifically is under active development by
+WDC/Seagate engineers.
+
+Record: [Very active subsystem]
+
+## PHASE 8: IMPACT AND RISK ASSESSMENT
+
+### Step 8.1: Affected Users
+Users of btrfs on zoned block devices (SMR HDDs, ZNS SSDs). This is a
+growing but still specialized use case, primarily in
+enterprise/datacenter environments.
+
+Record: [Affected: btrfs zoned mode users, primarily
+enterprise/datacenter]
+
+### Step 8.2: Trigger Conditions
+- Occurs on zoned devices when delayed refs accumulate
+- Triggered by normal write workloads that generate many delayed
+  references
+- More likely with sustained write activity and many COW operations
+- Not timing-dependent - deterministic once space accounting gets out of
+  balance
+
+Record: [Triggered by normal sustained write workloads on zoned devices]
+[Deterministic, not timing-dependent]
+
+### Step 8.3: Failure Mode Severity
+- **ENOSPC errors** - writes fail prematurely
+- This is a HIGH severity issue for affected users: they lose the
+  ability to write to their filesystem even though space could be
+  reclaimed
+- Not a crash/security issue, but a significant usability/functionality
+  bug
+- Data in-flight could potentially be lost if applications don't handle
+  ENOSPC gracefully
+
+Record: [Premature ENOSPC - HIGH severity for affected users] [No
+crash/corruption, but functional failure]
+
+### Step 8.4: Risk-Benefit Ratio
+**BENEFIT**: High for zoned btrfs users - fixes a real ENOSPC issue
+preventing normal operation
+**RISK**:
+- Very low for non-zoned users (completely unaffected - `btrfs_is_zoned`
+  guard)
+- Low for zoned users (uses existing transaction commit mechanism)
+- ~36 lines added, well-contained
+- BUT: requires backport adaptation due to
+  `btrfs_commit_current_transaction` dependency
+
+Record: [HIGH benefit for zoned users] [LOW risk overall] [Needs
+adaptation for older stable trees]
+
+## PHASE 9: FINAL SYNTHESIS
+
+### Step 9.1: Evidence Compilation
+
+**FOR backporting:**
+- Fixes a real, significant ENOSPC bug affecting zoned btrfs users
+- Well-analyzed and well-documented by the author
+- Reviewed by Filipe Manana (core btrfs developer)
+- Committed by David Sterba (btrfs maintainer)
+- Small and well-contained (~36 lines, 2 files)
+- Zero risk to non-zoned users
+- Author is a recognized zoned btrfs expert
+- Related fix (64d2c847ba380) was explicitly CC'd to stable
+
+**AGAINST backporting:**
+- Requires adaptation for stable trees older than v6.11
+  (`btrfs_commit_current_transaction` dependency)
+- API differences in `btrfs_reserve_metadata_bytes` across stable trees
+- No Fixes: tag or Cc: stable tag (design gap, not single-commit
+  regression)
+- Zoned mode is a specialized use case (fewer affected users)
+- The new static function adds ~25 lines of new code (more than a
+  trivial one-liner)
+
+**UNRESOLVED:**
+- Could not access mailing list discussion to check for stable
+  nominations by reviewers
+- Could not verify whether this was part of a larger series
+
+### Step 9.2: Stable Rules Checklist
+1. Obviously correct and tested? **YES** - reviewed by Filipe Manana,
+   well-analyzed
+2. Fixes a real bug? **YES** - premature ENOSPC on zoned devices
+3. Important issue? **YES** - prevents normal filesystem operation
+   (ENOSPC)
+4. Small and contained? **YES** - ~36 lines, 2 files, zoned-only
+5. No new features or APIs? **YES** - no new features, just a cap on
+   existing behavior
+6. Can apply to stable trees? **NEEDS ADAPTATION** - requires backport
+   work for v6.6-v6.10
+
+### Step 9.3: Exception Categories
+Not an exception category (not a device ID, quirk, DT, build fix, or doc
+fix). It's a standard bug fix.
+
+### Step 9.4: Decision
+
+This is a genuine bug fix for premature ENOSPC on zoned btrfs devices.
+The fix is well-contained, well-reviewed, and carries very low
+regression risk (zero for non-zoned users). However, it has notable
+backport complications:
+
+1. The dependency on `btrfs_commit_current_transaction()` (v6.11+) means
+   this cannot be cleanly cherry-picked to older stable trees without
+   adaptation.
+2. API differences in `btrfs_reserve_metadata_bytes()` add further
+   complications for older trees.
+
+Despite the backport complications, the fix addresses a real,
+significant user-facing bug (premature ENOSPC preventing writes), is
+well-reviewed by the top btrfs developer, and is small enough to warrant
+the adaptation effort. The related fix `64d2c847ba380` was CC'd to
+stable 6.9+, indicating the maintainers recognize zoned overcommit
+issues as stable-worthy.
+
+## Verification
+
+- [Phase 1] Parsed tags: Reviewed-by: Filipe Manana, Signed-off-by:
+  Johannes Thumshirn (author), David Sterba (maintainer)
+- [Phase 2] Diff analysis: ~36 lines added across 2 files, new static
+  helper + EAGAIN handling
+- [Phase 2] Verified inode-item.c caller already handles all errors as
+  -EAGAIN (line 708)
+- [Phase 3] git blame: btrfs_delayed_refs_rsv_refill from 6ef03debdb3d82
+  (Josef Bacik, 2019, v5.3)
+- [Phase 3] git blame: btrfs_commit_current_transaction from
+  ded980eb3fadd7 (Filipe Manana, 2024-05-22)
+- [Phase 3] Verified ded980eb3fadd7 is in v6.11+ but NOT in v6.10 or
+  earlier
+- [Phase 3] Verified 28270e25c69a2 (always reserve for delayed refs) is
+  in v6.7+
+- [Phase 3] git show 64d2c847ba380: confirmed related zoned overcommit
+  fix was CC'd to stable 6.9+
+- [Phase 4] b4 dig failed to find commit (too recent); lore.kernel.org
+  blocked by anti-bot
+- [Phase 4] UNVERIFIED: Could not access mailing list discussion for
+  stable nominations
+- [Phase 5] Verified btrfs_delayed_refs_rsv_refill callers:
+  start_transaction (transaction.c), btrfs_truncate_inode_items (inode-
+  item.c)
+- [Phase 5] Verified btrfs_start_transaction(root, 0) has 24+ call sites
+  across btrfs
+- [Phase 6] Verified btrfs_commit_current_transaction exists in current
+  tree (line 2040 of transaction.c) but not in v6.6
+- [Phase 6] Verified bytes_zone_unusable field exists in space-info.h
+  (all relevant stable trees)
+- [Phase 6] Verified btrfs_reserve_metadata_bytes API changed by
+  a1359d06d7878 (signature differs in older trees)
+- [Phase 8] Failure mode: premature ENOSPC preventing writes on zoned
+  devices - severity HIGH for affected users
+
+**YES**
+
+ fs/btrfs/delayed-ref.c | 28 ++++++++++++++++++++++++++++
+ fs/btrfs/transaction.c |  8 ++++++++
+ 2 files changed, 36 insertions(+)
+
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 3766ff29fbbb1..605858c2d9a95 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -207,6 +207,30 @@ void btrfs_dec_delayed_refs_rsv_bg_updates(struct btrfs_fs_info *fs_info)
+  * This will refill the delayed block_rsv up to 1 items size worth of space and
+  * will return -ENOSPC if we can't make the reservation.
+  */
++static int btrfs_zoned_cap_metadata_reservation(struct btrfs_space_info *space_info)
++{
++	struct btrfs_fs_info *fs_info = space_info->fs_info;
++	struct btrfs_block_rsv *block_rsv = &fs_info->delayed_refs_rsv;
++	u64 usable;
++	u64 cap;
++	int ret = 0;
 +
- 		btrfs_set_inode_size(leaf, item, logged_isize);
- 	} else {
--		btrfs_set_inode_generation(leaf, item, BTRFS_I(inode)->generation);
- 		btrfs_set_inode_size(leaf, item, inode->i_size);
- 	}
- 
-+	btrfs_set_inode_generation(leaf, item, gen);
-+
- 	btrfs_set_inode_uid(leaf, item, i_uid_read(inode));
- 	btrfs_set_inode_gid(leaf, item, i_gid_read(inode));
- 	btrfs_set_inode_mode(leaf, item, inode->i_mode);
-@@ -5428,42 +5439,63 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
--static int logged_inode_size(struct btrfs_root *log, struct btrfs_inode *inode,
--			     struct btrfs_path *path, u64 *size_ret)
-+static int get_inode_size_to_log(struct btrfs_trans_handle *trans,
-+				 struct btrfs_inode *inode,
-+				 struct btrfs_path *path, u64 *size_ret)
- {
- 	struct btrfs_key key;
-+	struct btrfs_inode_item *item;
- 	int ret;
- 
- 	key.objectid = btrfs_ino(inode);
- 	key.type = BTRFS_INODE_ITEM_KEY;
- 	key.offset = 0;
- 
--	ret = btrfs_search_slot(NULL, log, &key, path, 0, 0);
--	if (ret < 0) {
--		return ret;
--	} else if (ret > 0) {
--		*size_ret = 0;
--	} else {
--		struct btrfs_inode_item *item;
-+	/*
-+	 * Our caller called inode_logged(), so logged_trans is up to date.
-+	 * Use data_race() to silence any warning from KCSAN. Once logged_trans
-+	 * is set, it can only be reset to 0 after inode eviction.
-+	 */
-+	if (data_race(inode->logged_trans) == trans->transid) {
-+		ret = btrfs_search_slot(NULL, inode->root->log_root, &key, path, 0, 0);
-+	} else if (inode->generation < trans->transid) {
-+		path->search_commit_root = true;
-+		path->skip_locking = true;
-+		ret = btrfs_search_slot(NULL, inode->root, &key, path, 0, 0);
-+		path->search_commit_root = false;
-+		path->skip_locking = false;
- 
--		item = btrfs_item_ptr(path->nodes[0], path->slots[0],
--				      struct btrfs_inode_item);
--		*size_ret = btrfs_inode_size(path->nodes[0], item);
--		/*
--		 * If the in-memory inode's i_size is smaller then the inode
--		 * size stored in the btree, return the inode's i_size, so
--		 * that we get a correct inode size after replaying the log
--		 * when before a power failure we had a shrinking truncate
--		 * followed by addition of a new name (rename / new hard link).
--		 * Otherwise return the inode size from the btree, to avoid
--		 * data loss when replaying a log due to previously doing a
--		 * write that expands the inode's size and logging a new name
--		 * immediately after.
--		 */
--		if (*size_ret > inode->vfs_inode.i_size)
--			*size_ret = inode->vfs_inode.i_size;
-+	} else {
-+		*size_ret = 0;
++	if (!btrfs_is_zoned(fs_info))
 +		return 0;
- 	}
- 
-+	/*
-+	 * If the inode was logged before or is from a past transaction, then
-+	 * its inode item must exist in the log root or in the commit root.
-+	 */
-+	ASSERT(ret <= 0);
-+	if (WARN_ON_ONCE(ret > 0))
-+		ret = -ENOENT;
 +
-+	if (ret < 0)
++	spin_lock(&space_info->lock);
++	usable = space_info->total_bytes - space_info->bytes_zone_unusable;
++	spin_unlock(&space_info->lock);
++	cap = usable >> 1;
++
++	spin_lock(&block_rsv->lock);
++	if (block_rsv->size > cap)
++		ret = -EAGAIN;
++	spin_unlock(&block_rsv->lock);
++
++	return ret;
++}
++
+ int btrfs_delayed_refs_rsv_refill(struct btrfs_fs_info *fs_info,
+ 				  enum btrfs_reserve_flush_enum flush)
+ {
+@@ -228,6 +252,10 @@ int btrfs_delayed_refs_rsv_refill(struct btrfs_fs_info *fs_info,
+ 	if (!num_bytes)
+ 		return 0;
+ 
++	ret = btrfs_zoned_cap_metadata_reservation(space_info);
++	if (ret)
 +		return ret;
 +
-+	item = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+			      struct btrfs_inode_item);
-+	*size_ret = btrfs_inode_size(path->nodes[0], item);
-+	/*
-+	 * If the in-memory inode's i_size is smaller then the inode size stored
-+	 * in the btree, return the inode's i_size, so that we get a correct
-+	 * inode size after replaying the log when before a power failure we had
-+	 * a shrinking truncate followed by addition of a new name (rename / new
-+	 * hard link). Otherwise return the inode size from the btree, to avoid
-+	 * data loss when replaying a log due to previously doing a write that
-+	 * expands the inode's size and logging a new name immediately after.
-+	 */
-+	if (*size_ret > inode->vfs_inode.i_size)
-+		*size_ret = inode->vfs_inode.i_size;
+ 	ret = btrfs_reserve_metadata_bytes(space_info, num_bytes, flush);
+ 	if (ret)
+ 		return ret;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 8dd77c431974d..86c5ebdf56998 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -678,6 +678,14 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+ 		 * here.
+ 		 */
+ 		ret = btrfs_delayed_refs_rsv_refill(fs_info, flush);
++		if (ret == -EAGAIN) {
++			ASSERT(btrfs_is_zoned(fs_info));
++			ret = btrfs_commit_current_transaction(root);
++			if (ret)
++				goto reserve_fail;
++			ret = btrfs_delayed_refs_rsv_refill(fs_info, flush);
++		}
 +
- 	btrfs_release_path(path);
- 	return 0;
- }
-@@ -6978,7 +7010,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 			ret = drop_inode_items(trans, log, path, inode,
- 					       BTRFS_XATTR_ITEM_KEY);
- 	} else {
--		if (inode_only == LOG_INODE_EXISTS && ctx->logged_before) {
-+		if (inode_only == LOG_INODE_EXISTS) {
- 			/*
- 			 * Make sure the new inode item we write to the log has
- 			 * the same isize as the current one (if it exists).
-@@ -6992,7 +7024,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 			 * (zeroes), as if an expanding truncate happened,
- 			 * instead of getting a file of 4Kb only.
- 			 */
--			ret = logged_inode_size(log, inode, path, &logged_isize);
-+			ret = get_inode_size_to_log(trans, inode, path, &logged_isize);
- 			if (ret)
- 				goto out_unlock;
- 		}
+ 		if (ret)
+ 			goto reserve_fail;
+ 	}
 -- 
 2.53.0
 

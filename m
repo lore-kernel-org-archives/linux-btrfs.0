@@ -1,203 +1,633 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95854332604
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Apr 2026 21:57:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9151A178372
+	for <linux-btrfs@vger.kernel.org>; Tue, 21 Apr 2026 01:59:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776722278; cv=none; b=ERhPNVuCTGYlkTDoFiXHvImN+Yh4CrwV7mOIfMMyG3VHnwJIyUC9jp6QDfp8UhigKxZr9oKMj3gFRMA9vIt/39+0oLIboIWuS7/W9DlJpKhpAhSqi8zhYJEUDhcyVdcVnImHi0o6cGBV7Y8Q2P1Go1yiCnHm6+BDXaJILwDAwkg=
+	t=1776736773; cv=none; b=PincnP3JYXfJpcSmcTY043dqSpp/0g47lOBtZMF4h5WgtVw0Mf/si5Ae5iZeXVr9/BaPz0WvqsgUDMnSpI6FUHYclBPr9OeRjtRatSV6IXgbGHkPupjoWBA3wP2o0yajIfdzFCrm1+p2vZRfi7S3OgSjasYMxMygeUYfMeIcXpg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776722278; c=relaxed/simple;
-	bh=S3EVKRHgRSH9ciT8GbII4wLQKAl+A7c3Y/xphuAt6Ww=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=qTflFKNHcLSaqiuQAv+GHl3YkE2oaUcqNNU6qvG644dBnD7o+JAjfXQJr2NCl00Y7k0Jrp22/tOekhQktgEOuPyt3BIY7K/cUfTFmfzCNfrw53RDwriayu364NAk7zCXni08G5ZHLM643WTtC57JDR5unTO8uL3hhgLNgnC4dD0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=dpbX+UJI; arc=none smtp.client-ip=212.227.17.20
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1776736773; c=relaxed/simple;
+	bh=ReePLimBL8j3IvTR7mu4hFn46p80PJXkcgr5X7YZm1I=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=ak4URAugfrfChgGAUEa9reDZ/hZUhvr1gmup2f2/FJIyuTjYYCHxYbEONHFvt3qTpDo8+w815yu8DRpVXm6OcQcDPgAqt40gvc5HSJGfmpXuiqzUoPPt9MBHNx8Gr7jZXELEqNp95gk8Vr8kwVFwHQXNgEs2ejSDAH/J0BYf/7A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=PcgbOOcd; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=tMnjeweZ; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=PcgbOOcd; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=tMnjeweZ; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="dpbX+UJI"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1776722270; x=1777327070; i=quwenruo.btrfs@gmx.com;
-	bh=jtn7LLeg6HQsTaUerJYmacghIkXQjGFLF9v08ydaoLo=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=dpbX+UJICVOmwWVu+FcxrkN2cz54V6nKKJ4/5mJyy4oeqMTpOllfInZ328oI71Uh
-	 h+zznOJp8Cq6s+bgIw9Aa7fr6b+1e77afLxVRmEAASNXQb7d+FuTAuexxqEhY1A7m
-	 LO29ypuXwoDa2A8rco4xvcH8VFhszDaGp77F+9xNm3F8c0wnJoT0kzsgY3HluabIO
-	 V1wpKUAykgwxrkkRlaovXU0gs0ZYodd4oPh0Xs4OZo9TRv0WuQqmFG9TOidrCYmFu
-	 7b+9RFY5J9sKLw90SBwpZeaSuses4EVYiKsl1VODLRdLxugm88PcEbSnXWuAwCFhp
-	 ewf+L029JUFaVwzedw==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1M26r3-1wHQWt0QJ7-00Dz26; Mon, 20
- Apr 2026 23:57:50 +0200
-Message-ID: <e5814387-b235-4277-a5fc-cdc2f52cdf3f@gmx.com>
-Date: Tue, 21 Apr 2026 07:27:46 +0930
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="PcgbOOcd";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="tMnjeweZ";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="PcgbOOcd";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="tMnjeweZ"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 9D10D5BCDE;
+	Tue, 21 Apr 2026 01:59:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1776736769;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=apGU4TaDdgF2fRbMGQL+ESvRCKiod47KHtGLk2uePQw=;
+	b=PcgbOOcdZ/uhmbIuzDUc+AalUT+w949HjYiB9n1J8IfqSheY4U24Hf/x9i2LEh8w2xQ52H
+	xuFIKtO8RNnr4qzig8vcNT/f9ZhxolNGicbTwOq5HggwXQsiuQNQXc62oD+Frx+eAqYflW
+	c43Ub1P/Pwr870KGXQHZFv89mw28uVA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1776736769;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=apGU4TaDdgF2fRbMGQL+ESvRCKiod47KHtGLk2uePQw=;
+	b=tMnjeweZb/EUwlSgvKVD5dL30+X2GBzQhmA+OAf3c1VIWEzfN3+XD60gia3D+OkNHcVZWM
+	13bfFVB/lkQ8rhDg==
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1776736769;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=apGU4TaDdgF2fRbMGQL+ESvRCKiod47KHtGLk2uePQw=;
+	b=PcgbOOcdZ/uhmbIuzDUc+AalUT+w949HjYiB9n1J8IfqSheY4U24Hf/x9i2LEh8w2xQ52H
+	xuFIKtO8RNnr4qzig8vcNT/f9ZhxolNGicbTwOq5HggwXQsiuQNQXc62oD+Frx+eAqYflW
+	c43Ub1P/Pwr870KGXQHZFv89mw28uVA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1776736769;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=apGU4TaDdgF2fRbMGQL+ESvRCKiod47KHtGLk2uePQw=;
+	b=tMnjeweZb/EUwlSgvKVD5dL30+X2GBzQhmA+OAf3c1VIWEzfN3+XD60gia3D+OkNHcVZWM
+	13bfFVB/lkQ8rhDg==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3F13A593AF;
+	Tue, 21 Apr 2026 01:59:29 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id d5k5DwHa5mkEdQAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 21 Apr 2026 01:59:29 +0000
+Date: Tue, 21 Apr 2026 03:59:24 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Mark Harmstone <mark@harmstone.com>
+Cc: linux-btrfs@vger.kernel.org, wqu@suse.com, boris@bur.io,
+	dsterba@suse.cz, fdmanana@kernel.org
+Subject: Re: [PATCH v5] btrfs: add BTRFS_IOC_GET_CSUMS ioctl
+Message-ID: <20260421015923.GA12792@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20260416180141.266457-1-mark@harmstone.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: use the enums instead of int type in struct
- btrfs_block_group fields
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <085942c2ba1ec8fec438f49c6f8e2d6bb2011eb1.1776693204.git.fdmanana@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <085942c2ba1ec8fec438f49c6f8e2d6bb2011eb1.1776693204.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:0aAkeSaFSXCUJkpidcoqi5RNBiO8ccWrLfxD1QREvy2ku6Pn550
- PpQ6nPe1VFLo2xfSgmOXI54OtDdOV7GM1ySmtehJqF1KRJFq7Kc+lbw0mzNld3wRWC8FDU7
- TtPgZjolxVv02LZZGyZXqfisXD2hCFw5bArbqJvyVI34oOdApPE4UqCVNbwpHRRR16IlYJz
- oVaou2OyQCgtrr96TzjTw==
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260416180141.266457-1-mark@harmstone.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
+	ARC_NA(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_FIVE(0.00)[6];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:XO/txBocRfI=;m32M+bX4CwefaX2xkngKattG205
- 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
+X-Spam-Score: -4.00
+X-Spam-Level: 
 
+On Thu, Apr 16, 2026 at 07:01:18PM +0100, Mark Harmstone wrote:
+> Add a new unprivileged BTRFS_IOC_GET_CSUMS ioctl, which can be used to
+> query the on-disk csums for a file.
+> 
+> The ioctl is deliberately per-file rather than exposing raw csum tree
+> lookups, to avoid leaking information to users about files they may not
+> have access to.
+> 
+> This is done by userspace passing a struct btrfs_ioctl_get_csums_args to
+> the kernel, which details the offset and length we're interested in, and
+> a buffer for the kernel to write its results into. The kernel writes a
+> struct btrfs_ioctl_get_csums_entry into the buffer, followed by the
+> csums if available.
 
+I've added a note that the user buffer is 16MiB.
 
-=E5=9C=A8 2026/4/20 23:24, fdmanana@kernel.org =E5=86=99=E9=81=93:
-> From: Filipe Manana <fdmanana@suse.com>
->=20
-> The 'disk_cache_state' and 'cached' fields are defined with an int type
-> but all the values we assigned to them come from the enums
-> btrfs_disk_cache_state and btrfs_caching_type. So change the type in the
-> btrfs_block_group structure from int to these enums - in practice an enu=
-m
-> is an int, so this is more for readability and clarity.
->=20
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> If the extent is an uncompressed, non-nodatasum extent, the kernel sets
+> the entry type to BTRFS_GET_CSUMS_HAS_CSUMS and follows it with the
+> csums. If it is sparse, preallocated, or beyond the EOF, it sets the
+> type to BTRFS_GET_CSUMS_ZEROED - this is so userspace knows it can use
+> the precomputed hash of the zero sector. Otherwise, it sets the type to
+> BTRFS_GET_CSUMS_NODATASUM, BTRFS_GET_CSUMS_COMPRESSED,
+> BTRFS_GET_CSUM_ENCRYPTED, or BTRFS_GET_CSUM_INLINE.
+> 
+> For example, a file with a [0, 4K) hole and [4K, 12K) data extent would
+> produce the following output buffer:
+> 
+>   | [0, 4K) ZEROED | [4K, 12K) HAS_CSUMS | csum data |
+> 
+> We do store the csums of compressed extents, but we deliberately don't
+> return them here: they're hashed over the compressed data, not the
+> uncompressed data that's returned to userspace. Similarly for encrypted
+> data, once encryption is supported, in which the csums will be on the
+> ciphertext.
+> 
+> The main use case for this is for speeding up mkfs.btrfs --rootdir. For
+> the case when the source FS is btrfs and using the same csum algorithm,
+> we can avoid having to recalculate the csums - in my synthetic
+> benchmarks (16GB file on a spinning-rust drive), this resulted in a ~11%
+> speed-up (218s to 196s).
+> 
+> When using the --reflink option added in btrfs-progs v6.16.1, we can forgo
+> reading the data entirely, resulting a ~2200% speed-up on the same test
+> (128s to 6s).
+> 
+>     # mkdir rootdir
+>     # dd if=/dev/urandom of=rootdir/file bs=4096 count=4194304
+> 
+>     (without ioctl)
+>     # echo 3 > /proc/sys/vm/drop_caches
+>     # time mkfs.btrfs --rootdir rootdir testimg
+>     ...
+>     real    3m37.965s
+>     user    0m5.496s
+>     sys     0m6.125s
+> 
+>     # echo 3 > /proc/sys/vm/drop_caches
+>     # time mkfs.btrfs --rootdir rootdir --reflink testimg
+>     ...
+>     real    2m8.342s
+>     user    0m5.472s
+>     sys     0m1.667s
+> 
+>     (with ioctl)
+>     # echo 3 > /proc/sys/vm/drop_caches
+>     # time mkfs.btrfs --rootdir rootdir testimg
+>     ...
+>     real    3m15.865s
+>     user    0m4.258s
+>     sys     0m6.261s
+> 
+>     # echo 3 > /proc/sys/vm/drop_caches
+>     # time mkfs.btrfs --rootdir rootdir --reflink testimg
+>     ...
+>     real    0m5.847s
+>     user    0m2.899s
+>     sys     0m0.097s
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+And here I've mentioned the deduplication use case.
 
-Thanks,
-Qu
-
+> Signed-off-by: Mark Harmstone <mark@harmstone.com>
 > ---
->   fs/btrfs/block-group.h | 4 ++--
->   1 file changed, 2 insertions(+), 2 deletions(-)
->=20
-> diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
-> index 60a3b1c0a8ab..790c2d467af5 100644
-> --- a/fs/btrfs/block-group.h
-> +++ b/fs/btrfs/block-group.h
-> @@ -171,10 +171,10 @@ struct btrfs_block_group {
->   	unsigned long full_stripe_len;
->   	unsigned long runtime_flags;
->  =20
-> -	int disk_cache_state;
-> +	enum btrfs_disk_cache_state disk_cache_state;
->  =20
->   	/* Cache tracking stuff */
-> -	int cached;
-> +	enum btrfs_caching_type cached;
->   	struct btrfs_caching_control *caching_ctl;
->  =20
->   	struct btrfs_space_info *space_info;
+> Changes since v4:
+> * Added check that csum_root isn't NULL
+> 
+> Changes since v3:
+> * Changed type to bit flags, so we can have e.g. COMPRESSED | ENCRYPTED
+> * Made minor changes as requested by David Sterba
+> 
+>  fs/btrfs/ioctl.c           | 346 +++++++++++++++++++++++++++++++++++++
+>  include/uapi/linux/btrfs.h |  25 +++
+>  2 files changed, 371 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index a39460bf68a778..93046319711c7c 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -56,6 +56,7 @@
+>  #include "uuid-tree.h"
+>  #include "ioctl.h"
+>  #include "file.h"
+> +#include "file-item.h"
+>  #include "scrub.h"
+>  #include "super.h"
+>  
+> @@ -5140,6 +5141,349 @@ static int btrfs_ioctl_shutdown(struct btrfs_fs_info *fs_info, unsigned long arg
+>  	return ret;
+>  }
+>  
+> +#define GET_CSUMS_BUF_MAX	SZ_16M
+> +
+> +static int copy_csums_to_user(struct btrfs_fs_info *fs_info, u64 disk_bytenr,
+> +			      u64 len, u8 __user *buf)
+> +{
+> +	struct btrfs_root *csum_root;
+> +	struct btrfs_ordered_sum *sums;
+> +	LIST_HEAD(list);
+> +	const u32 csum_size = fs_info->csum_size;
+> +	int ret;
+> +
+> +	csum_root = btrfs_csum_root(fs_info, disk_bytenr);
+> +	if (unlikely(!csum_root)) {
+> +		btrfs_err(fs_info,
+> +			  "missing csum root for extent at bytenr %llu", disk_bytenr);
+> +		return -EUCLEAN;
+> +	}
+> +
+> +	ret = btrfs_lookup_csums_list(csum_root, disk_bytenr,
+> +				      disk_bytenr + len - 1, &list, false);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	ret = 0;
+> +	while (!list_empty(&list)) {
+> +		u64 offset;
+> +		size_t copy_size;
+> +
+> +		sums = list_first_entry(&list, struct btrfs_ordered_sum, list);
+> +		list_del(&sums->list);
+> +
+> +		offset = ((sums->logical - disk_bytenr) >> fs_info->sectorsize_bits) * csum_size;
+> +		copy_size = (sums->len >> fs_info->sectorsize_bits) * csum_size;
+> +
+> +		if (copy_to_user(buf + offset, sums->sums, copy_size)) {
+> +			kfree(sums);
+> +			ret = -EFAULT;
+> +			goto out;
+> +		}
+> +
+> +		kfree(sums);
+> +	}
+> +
+> +out:
+> +	while (!list_empty(&list)) {
+> +		sums = list_first_entry(&list, struct btrfs_ordered_sum, list);
+> +		list_del(&sums->list);
+> +		kfree(sums);
+> +	}
+> +	return ret;
+> +}
+> +
+> +static int btrfs_ioctl_get_csums(struct file *file, void __user *argp)
+> +{
+> +	struct inode *vfs_inode = file_inode(file);
+> +	struct btrfs_inode *inode = BTRFS_I(vfs_inode);
+> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> +	struct btrfs_root *root = inode->root;
+> +	struct btrfs_ioctl_get_csums_args args;
+> +	BTRFS_PATH_AUTO_FREE(path);
+> +	const u64 ino = btrfs_ino(inode);
+> +	const u32 sectorsize = fs_info->sectorsize;
+> +	const u32 csum_size = fs_info->csum_size;
+> +	u8 __user *ubuf;
+> +	u64 buf_limit;
+> +	u64 buf_used = 0;
+> +	u64 cur_offset;
+> +	u64 end_offset;
+> +	u64 prev_extent_end;
+> +	struct btrfs_key key;
+> +	int ret;
+> +
+> +	if (!(file->f_mode & FMODE_READ))
+> +		return -EBADF;
+> +
+> +	if (!S_ISREG(vfs_inode->i_mode))
+> +		return -EINVAL;
+> +
+> +	if (copy_from_user(&args, argp, sizeof(args)))
+> +		return -EFAULT;
+> +
+> +	if (!IS_ALIGNED(args.offset, sectorsize) ||
+> +	    !IS_ALIGNED(args.length, sectorsize))
+> +		return -EINVAL;
+> +	if (args.length == 0)
+> +		return -EINVAL;
+> +	if (args.offset + args.length < args.offset)
+> +		return -EOVERFLOW;
 
+I've kept it as is but this should use the check_add_overflow() helper,
+please send a followup.
+
+> +	if (args.flags != 0)
+> +		return -EINVAL;
+> +	if (args.buf_size < sizeof(struct btrfs_ioctl_get_csums_entry))
+> +		return -EINVAL;
+> +
+> +	buf_limit = min_t(u64, args.buf_size, GET_CSUMS_BUF_MAX);
+> +	ubuf = (u8 __user *)(argp + offsetof(struct btrfs_ioctl_get_csums_args, buf));
+> +
+> +	if (clear_user(ubuf, buf_limit))
+> +		return -EFAULT;
+> +
+> +	cur_offset = args.offset;
+> +	end_offset = args.offset + args.length;
+> +
+> +	path = btrfs_alloc_path();
+> +	if (!path)
+> +		return -ENOMEM;
+> +
+> +	ret = btrfs_wait_ordered_range(inode, cur_offset, args.length);
+> +	if (ret)
+> +		return ret;
+> +
+> +	ret = down_read_interruptible(&vfs_inode->i_rwsem);
+> +	if (ret)
+> +		return ret;
+> +
+> +	ret = btrfs_wait_ordered_range(inode, cur_offset, args.length);
+> +	if (ret)
+> +		goto out_unlock;
+> +
+> +	/* NODATASUM early exit. */
+> +	if (inode->flags & BTRFS_INODE_NODATASUM) {
+> +		struct btrfs_ioctl_get_csums_entry entry = {
+> +			.offset = cur_offset,
+> +			.length = end_offset - cur_offset,
+> +			.type = BTRFS_GET_CSUMS_NODATASUM,
+> +		};
+> +
+> +		if (copy_to_user(ubuf, &entry, sizeof(entry))) {
+> +			ret = -EFAULT;
+> +			goto out_unlock;
+> +		}
+> +
+> +		buf_used = sizeof(entry);
+> +		cur_offset = end_offset;
+> +		goto done;
+> +	}
+> +
+> +	prev_extent_end = cur_offset;
+> +
+> +	while (cur_offset < end_offset) {
+> +		struct btrfs_file_extent_item *ei;
+> +		struct extent_buffer *leaf;
+> +		struct btrfs_ioctl_get_csums_entry entry = { 0 };
+> +		u64 extent_end;
+> +		u64 disk_bytenr = 0;
+> +		u64 extent_offset = 0;
+> +		u64 range_start, range_len;
+> +		u64 entry_csum_size;
+> +		u64 key_offset;
+> +		int extent_type;
+> +		u8 compression;
+> +		u8 encryption;
+> +
+> +		/* Search for the extent at or before cur_offset. */
+> +		key.objectid = ino;
+> +		key.type = BTRFS_EXTENT_DATA_KEY;
+> +		key.offset = cur_offset;
+> +
+> +		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+> +		if (ret < 0)
+> +			goto out_unlock;
+> +
+> +		if (ret > 0 && path->slots[0] > 0) {
+> +			btrfs_item_key_to_cpu(path->nodes[0], &key,
+> +					      path->slots[0] - 1);
+> +			if (key.objectid == ino &&
+> +			    key.type == BTRFS_EXTENT_DATA_KEY) {
+> +				path->slots[0]--;
+> +				if (btrfs_file_extent_end(path) <= cur_offset)
+> +					path->slots[0]++;
+> +			}
+> +		}
+> +
+> +		if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
+> +			ret = btrfs_next_leaf(root, path);
+> +			if (ret < 0)
+> +				goto out_unlock;
+> +			if (ret > 0) {
+> +				ret = 0;
+> +				btrfs_release_path(path);
+> +				break;
+> +			}
+> +		}
+> +
+> +		leaf = path->nodes[0];
+> +
+> +		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
+> +		if (key.objectid != ino || key.type != BTRFS_EXTENT_DATA_KEY) {
+> +			btrfs_release_path(path);
+> +			break;
+> +		}
+> +
+> +		extent_end = btrfs_file_extent_end(path);
+> +		key_offset = key.offset;
+> +
+> +		/* Read extent fields before releasing the path. */
+> +		ei = btrfs_item_ptr(leaf, path->slots[0],
+> +				    struct btrfs_file_extent_item);
+> +		extent_type = btrfs_file_extent_type(leaf, ei);
+> +		compression = btrfs_file_extent_compression(leaf, ei);
+> +		encryption = btrfs_file_extent_encryption(leaf, ei);
+> +
+> +		if (extent_type != BTRFS_FILE_EXTENT_INLINE) {
+> +			disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, ei);
+> +			if (disk_bytenr && compression == BTRFS_COMPRESS_NONE)
+> +				extent_offset = btrfs_file_extent_offset(leaf, ei);
+> +		}
+> +
+> +		btrfs_release_path(path);
+> +
+> +		/* Implicit hole (NO_HOLES feature). */
+> +		if (prev_extent_end < key_offset) {
+> +			u64 hole_end = min(key_offset, end_offset);
+> +			u64 hole_len = hole_end - prev_extent_end;
+> +
+> +			if (prev_extent_end >= cur_offset) {
+> +				entry.offset = prev_extent_end;
+> +				entry.length = hole_len;
+> +				entry.type = BTRFS_GET_CSUMS_ZEROED;
+> +
+> +				if (buf_used + sizeof(entry) > buf_limit)
+> +					goto done;
+> +				if (copy_to_user(ubuf + buf_used, &entry,
+> +						 sizeof(entry))) {
+> +					ret = -EFAULT;
+> +					goto out_unlock;
+> +				}
+> +				buf_used += sizeof(entry);
+> +				cur_offset = hole_end;
+> +			}
+> +
+> +			if (key_offset >= end_offset) {
+> +				cur_offset = end_offset;
+> +				break;
+> +			}
+> +		}
+> +
+> +		/* Clamp to our query range. */
+> +		range_start = max(cur_offset, key_offset);
+> +		range_len = min(extent_end, end_offset) - range_start;
+> +
+> +		entry.offset = range_start;
+> +		entry.length = range_len;
+> +
+> +		if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+> +			entry.type = BTRFS_GET_CSUMS_INLINE;
+> +			if (compression != BTRFS_COMPRESS_NONE)
+> +				entry.type |= BTRFS_GET_CSUMS_COMPRESSED;
+> +			if (encryption != 0)
+> +				entry.type |= BTRFS_GET_CSUMS_ENCRYPTED;
+> +			entry_csum_size = 0;
+> +		} else if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
+> +			entry.type = BTRFS_GET_CSUMS_ZEROED;
+> +			entry_csum_size = 0;
+> +		} else {
+> +			/* BTRFS_FILE_EXTENT_REG */
+> +			if (disk_bytenr == 0) {
+> +				/* Explicit hole. */
+> +				entry.type = BTRFS_GET_CSUMS_ZEROED;
+> +				entry_csum_size = 0;
+> +			} else if (encryption != 0 ||
+> +				   compression != BTRFS_COMPRESS_NONE) {
+> +				entry.type = 0;
+> +				if (encryption != 0)
+> +					entry.type |= BTRFS_GET_CSUMS_ENCRYPTED;
+> +				if (compression != BTRFS_COMPRESS_NONE)
+> +					entry.type |= BTRFS_GET_CSUMS_COMPRESSED;
+> +				entry_csum_size = 0;
+> +			} else {
+> +				entry.type = BTRFS_GET_CSUMS_HAS_CSUMS;
+> +				entry_csum_size = (range_len >> fs_info->sectorsize_bits) * csum_size;
+> +			}
+> +		}
+> +
+> +		/* Check if this entry (+ csum data) fits in the buffer. */
+> +		if (buf_used + sizeof(entry) + entry_csum_size > buf_limit) {
+> +			if (buf_used == 0) {
+> +				ret = -EOVERFLOW;
+> +				goto out_unlock;
+> +			}
+> +			goto done;
+> +		}
+> +
+> +		if (copy_to_user(ubuf + buf_used, &entry, sizeof(entry))) {
+> +			ret = -EFAULT;
+> +			goto out_unlock;
+> +		}
+> +		buf_used += sizeof(entry);
+> +
+> +		if (entry.type == BTRFS_GET_CSUMS_HAS_CSUMS) {
+> +			ret = copy_csums_to_user(fs_info,
+> +				disk_bytenr + extent_offset + (range_start - key_offset),
+> +				range_len, ubuf + buf_used);
+> +			if (ret)
+> +				goto out_unlock;
+> +			buf_used += entry_csum_size;
+> +		}
+> +
+> +		cur_offset = range_start + range_len;
+> +		prev_extent_end = extent_end;
+> +
+> +		if (fatal_signal_pending(current)) {
+> +			if (buf_used == 0) {
+> +				ret = -EINTR;
+> +				goto out_unlock;
+> +			}
+> +			goto done;
+> +		}
+> +
+> +		cond_resched();
+> +	}
+> +
+> +	/* Handle trailing implicit hole. */
+> +	if (cur_offset < end_offset) {
+> +		struct btrfs_ioctl_get_csums_entry entry = {
+> +			.offset = prev_extent_end,
+> +			.length = end_offset - prev_extent_end,
+> +			.type = BTRFS_GET_CSUMS_ZEROED,
+> +		};
+> +
+> +		if (buf_used + sizeof(entry) <= buf_limit) {
+> +			if (copy_to_user(ubuf + buf_used, &entry,
+> +					 sizeof(entry))) {
+> +				ret = -EFAULT;
+> +				goto out_unlock;
+> +			}
+> +			buf_used += sizeof(entry);
+> +			cur_offset = end_offset;
+> +		}
+> +	}
+> +
+> +done:
+> +	args.offset = cur_offset;
+> +	args.length = (cur_offset < end_offset) ? end_offset - cur_offset : 0;
+> +	args.buf_size = buf_used;
+> +
+> +	if (copy_to_user(argp, &args, sizeof(args)))
+> +		ret = -EFAULT;
+> +
+> +out_unlock:
+> +	up_read(&vfs_inode->i_rwsem);
+> +	return ret;
+> +}
+> +
+>  long btrfs_ioctl(struct file *file, unsigned int
+>  		cmd, unsigned long arg)
+>  {
+> @@ -5297,6 +5641,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+>  		return btrfs_ioctl_subvol_sync(fs_info, argp);
+>  	case BTRFS_IOC_SHUTDOWN:
+>  		return btrfs_ioctl_shutdown(fs_info, arg);
+> +	case BTRFS_IOC_GET_CSUMS:
+> +		return btrfs_ioctl_get_csums(file, argp);
+>  	}
+>  
+>  	return -ENOTTY;
+> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+> index 9165154a274d94..ddb7a8f2610d0e 100644
+> --- a/include/uapi/linux/btrfs.h
+> +++ b/include/uapi/linux/btrfs.h
+> @@ -1100,6 +1100,29 @@ enum btrfs_err_code {
+>  	BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET,
+>  };
+>  
+> +/* Flags for struct btrfs_ioctl_get_csums_entry::type */
+> +#define BTRFS_GET_CSUMS_HAS_CSUMS	(1 << 0)
+> +#define BTRFS_GET_CSUMS_ZEROED		(1 << 1)
+> +#define BTRFS_GET_CSUMS_NODATASUM	(1 << 2)
+> +#define BTRFS_GET_CSUMS_COMPRESSED	(1 << 3)
+> +#define BTRFS_GET_CSUMS_ENCRYPTED	(1 << 4)
+> +#define BTRFS_GET_CSUMS_INLINE		(1 << 5)
+
+Bit definitions must use an unsigned type, like (1U << ...)
+
+> +struct btrfs_ioctl_get_csums_entry {
+> +	__u64 offset;		/* file offset of this range */
+> +	__u64 length;		/* length in bytes */
+> +	__u32 type;		/* BTRFS_GET_CSUMS_* type */
+> +	__u32 reserved;		/* padding, must be 0 */
+
+Comments should be on separate line and following the common style of a
+full sentence.
+
+> +};
+> +
+> +struct btrfs_ioctl_get_csums_args {
+> +	__u64 offset;		/* in/out: file offset */
+> +	__u64 length;		/* in/out: range length */
+> +	__u64 buf_size;		/* in/out: buffer capacity / bytes written */
+> +	__u64 flags;		/* in: flags, must be 0 for now */
+> +	__u8 buf[];		/* out: entries + csum data */
+> +};
+> +
+>  /* Flags for IOC_SHUTDOWN, must match XFS_FSOP_GOING_FLAGS_* flags. */
+>  #define BTRFS_SHUTDOWN_FLAGS_DEFAULT			0x0
+>  #define BTRFS_SHUTDOWN_FLAGS_LOGFLUSH			0x1
+> @@ -1226,6 +1249,8 @@ enum btrfs_err_code {
+>  				     struct btrfs_ioctl_encoded_io_args)
+>  #define BTRFS_IOC_SUBVOL_SYNC_WAIT _IOW(BTRFS_IOCTL_MAGIC, 65, \
+>  					struct btrfs_ioctl_subvol_wait)
+> +#define BTRFS_IOC_GET_CSUMS _IOWR(BTRFS_IOCTL_MAGIC, 66, \
+> +				  struct btrfs_ioctl_get_csums_args)
+
+Functionally it seems OK, so I've added it to for-next, with some coding
+style fixups. Thanks.

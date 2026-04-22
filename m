@@ -1,65 +1,65 @@
-Received: from mail-pf1-f181.google.com (mail-pf1-f181.google.com [209.85.210.181])
+Received: from mail-pg1-f171.google.com (mail-pg1-f171.google.com [209.85.215.171])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EA0623C277B
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 11:40:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.181
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5BD813D0934
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 11:51:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.171
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776858003; cv=none; b=E9eQnNazGUEHy3u0CTDUI+dTaU1b3gllQsriIrEzqYb+pxl7W9c5RdvNnL62tXeFWLlZQ5HweoI+mx58l4QNtHdt8+zcIt4REiF9gSwIl4zit+THClTsooHAyH3jOEOizJfUsnuPu2XkDt+u+dT6KyStjX+NBSF9HOkFmO14VPE=
+	t=1776858693; cv=none; b=fEIN5WbPKpz3caKY6WMcO3/gj3TGVkfRCuvoqreXfJHVX//FePO11aeB8jg2ZvPd6c7cdKY6s7wVeSUvIj9kmW8xpYgdp1OSynKEris2/u31DTle10rqy6/iUEO2ffCL/0f6okyXbg+3haDu+OrbXhKtEOx32Bm1RJZ8sDQx/v0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776858003; c=relaxed/simple;
-	bh=7jSkwPHB1rmAue0G4ep5X5x0tFp0MCnjlBuXF0HrV68=;
-	h=Message-ID:Date:MIME-Version:From:Subject:To:Cc:References:
-	 In-Reply-To:Content-Type; b=rG2ZplUFfkZ5EpKVsk8/oucc2SPxAagyIiB3rJJcHi7IgKkunXvNMOT6ALEtw9s8Mfz+4ip8jdA+jynl/RncIy2lBGnJ1yPkhRm1AHFzBLJLCXtgkmnt/1vA/Q5nkxanENFpIm43HS6Lffu3EWQX3sNgG0q6EVP3m9R5kENfa64=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=ll9mgn/J; arc=none smtp.client-ip=209.85.210.181
+	s=arc-20240116; t=1776858693; c=relaxed/simple;
+	bh=XCRMq3Jl28lb7xVzh6vJ99+uZ69SG+aN/hdMvbNBYVc=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=BlGsGkIyY1FrIRkS3PaSbIzFzu61wlIywTu2OjeAmK5D7OIp/SsPGsL980BRDN9wkgEJ6iMiRt84wzUYg3zxWd2hXckNwUADYDnxFzOzPw9jYHsnRcoeZ8grrrCmsn67LUrMMxxMDvadtfVVrsBXYPuwzmHmg2fHp7C4mQHcWIY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=OklNU0x0; arc=none smtp.client-ip=209.85.215.171
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ll9mgn/J"
-Received: by mail-pf1-f181.google.com with SMTP id d2e1a72fcca58-82fcd0aa2dbso889822b3a.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 04:40:01 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="OklNU0x0"
+Received: by mail-pg1-f171.google.com with SMTP id 41be03b00d2f7-c76c60c7502so2339597a12.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 04:51:32 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1776858001; x=1777462801; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :cc:to:subject:from:user-agent:mime-version:date:message-id:from:to
-         :cc:subject:date:message-id:reply-to;
-        bh=MUHkTSAzkxq/Om8+jSsUbp1RMELRmuD0B/+VrfsdgxU=;
-        b=ll9mgn/JnyYFNKhpAt/qyIgH1H+6MCuZuRMt6NoafZGs++QWkmwE9ELntcK6j2aZrs
-         bjQDiQFaXB2pDrlBOV1aoPlpvtUlnweGGbZMAF9Q7qAo54WB+4r87Df9qK0m/MFglUBd
-         BHMCkiou5z1IwPYX5t+7wdQ6N9NGl5PX0SBC+LSXK8JwUi9vyLk0h5QApWvWmE1B/ym0
-         SCtz+viyfmXeVbo/hLcsa8mfFKnC4LHSM4xJtetEzCH1GXbOMkQiH1fScUiEa/qYmSFM
-         gZv5DV9WtfS5UBKC+jofPgs7h43TRT0mP/GxTto7wBYsxzUMpgxu2N0ZTl+YyPksLurO
-         u+Jg==
+        d=gmail.com; s=20251104; t=1776858692; x=1777463492; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:cc:to:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=g/ZDMUKz4uhk7JHfTz2NQ2cYjK+SrQpOAZldlPX+P6I=;
+        b=OklNU0x00YVMKRZ/+OGO+qSdzxmMqmBbMVR138mlg7rYefDAkrydtF39KKbtrRUpi2
+         PABvkdCUSw+H7eCUvY4C2vcdUyW/E33+IZGWltKe2BUc8mh57SYJsBP2cZVnHgg8Fu5U
+         cIqscv9kv8KeeNFoQBls20CpXwf+0p6xVqu32LmlAfj8GBrgkpW9xm5cR8ufIEhLmly6
+         /30LEIOy3NsgKe6s1mWPG5ACai2bflGm1A3H0z4MdkoI4zToAfYBXuHjsM5t5r06bJ+9
+         sszpCTbfK2g0sNndO9+PtSg+GA+Wmv+34867yYk9eTe0i7sqgf86JvgmHUMPww7CyHhm
+         HKbg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1776858001; x=1777462801;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :cc:to:subject:from:user-agent:mime-version:date:message-id:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=MUHkTSAzkxq/Om8+jSsUbp1RMELRmuD0B/+VrfsdgxU=;
-        b=TCV9ZPXgMVykLRN5te6+FZvZdH2m349onmNGUiH3NnFJztOpxDIDYih5eP261KqGmi
-         o/FOVZf45Qh5sOmsjSYHX7lm0MS6WOADxgDxZ+9b7JpQWmKuH4lUElzfViGifHeGjoTC
-         2lriLmAJGiiV2p7v/UQ94rmQXxb0GtUXYFxATBKIbshClWdli5GezsoykUhAd2+0Ix5M
-         hgiOgr3UIf5XZBVWa9CswZ+pnlAb7naWHANfR1CcopRLwdDGLcgFjnKd6jrc5Lf0x/EH
-         hYgETRIdatALDM0qa851KTR+BoKghg2IITDJnU+XMEFGaOockaFzXWE0vEEIYhrMXH93
-         wohA==
-X-Forwarded-Encrypted: i=1; AFNElJ/oT4JMrRS4zw7Du3AsCkmoIYG8Uhxg3CjZRSAetwRpxmGig7Jtrc/bQob42ri5W9NK3PnShsu6DqNjpQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwvbQ7PHtYMpTQMDZKHYCSZ+KkdmPz561cf/FeQXspq27++VEQ1
-	1CaSIuVUNNBSPAPNYTcw7VfLOnaajuSFrZaB9LHM0g7WwxprxdXeWtWl
-X-Gm-Gg: AeBDietHeqrub4jM/hl61ZXYI+JGDJB2IeRAYyXeH6oM0EEAUH0h75fyPvFPlDNxLvP
-	USXUu2IGbOrcHj7DQ3kWsxyxxeBg9lXs6FpbZK1n8IRFOKk5A4+90Q6aB63n/BWTWcqd2IWcBxM
-	9kG7cB71qBtR1xgdmG+0tmuDxj6TQDNAc8+TPcEio6DAPRtapMPgd1R++ly4gyh2QTKdcDz9InY
-	LLaLv3qDlWZKnq0s4cgblOFnI4aZLTcsdh7ihpUIja5aVrhw4Zxb0TeGreduutHDiN9bSB+HsO7
-	jlasLTFjn5tNWAjzJ8eORINhzbpv58FVkmamU8/jV87Ybyknc0UJky97flgl/7oSVLDQb51GqFJ
-	tYoMrbhGKf+9euPE7paS0G1+DfnMwhmGsWzOjUFHO+a5lRQmOr+c2pT7O5VN6i/naRK9yPNH+2u
-	GoSyVp6AkctTHD7Y9yWdIZWnzg1K36hy6vPCLOcw==
-X-Received: by 2002:a05:6a00:984:b0:82f:2985:2094 with SMTP id d2e1a72fcca58-82f8b554ebemr18415296b3a.30.1776858001175;
-        Wed, 22 Apr 2026 04:40:01 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1776858692; x=1777463492;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:cc:to:subject:user-agent:mime-version:date:message-id
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=g/ZDMUKz4uhk7JHfTz2NQ2cYjK+SrQpOAZldlPX+P6I=;
+        b=rslCP9SKa2j2e3uCch+5+qVMaWNXx4zy3TCojHmyddxmL3elkJSeqOQ5Hl27f/lNAy
+         07MYYbfaa+qYTK2W7CIljobHcbg1wLlHhme6KxU63Rz+8cjUIsucmZN1tbFAKA/S4Vfb
+         zNDdQji3HyPIIYlzVZJhLumUZ0yk1mGkh4jzjkP+y1dGztQ1xOzGZMQ8JygGeooQs6vc
+         7viXtUDT1oGol5DQp5aMRNqg+1ZVPuMjtsmgXM6VivW6jhoClvIJId3uLrej3zGhOtqt
+         vJKfPC+sHFO4voOVpAd0bm7guc19aihj74Dr/mdWeVjsEpQmwxuEYeY0I50V4O/2ezPC
+         aWiQ==
+X-Gm-Message-State: AOJu0YxgBMPCwjCWSXALL0tV8sxN0/t62rUMQcJ/6jTzxzyCr117WYHp
+	oHk3XjGy3HvZxKIYn1uEzwfYeVwnUTm/KkblnvMQhWCyamT8Bjodm4oN
+X-Gm-Gg: AeBDietK0MEACn4ZI2qEk029eKQX0L/jCUDXr9lqqAFaMg7P+zMNtTbQq5CS0zPrk6S
+	QmcTDXaRCKVl/cIc0qMRWtH4p9u4PZIU62feq5Cku5I3JgRi9usi17x1KSbeCfeaLgaqrTWiTg7
+	p7KXT7mMWE+1RFKgZe90Tbi3Mt9CS/8Xwotm4CFD/x8Wsp5LzIxhFFPglKYdOBvgv5zqIeYSPcM
+	/VR2J9TorasJjslUTxJPPWEBGgKxPepR0WRwiDWC7jtVwjl5hEdi7LqYIMxHFPE4lUM93Vg0C3P
+	MdgF/2a5HAT3p93U3soqijN2Xs0Hc++sSbKUWUcbZ1EhrBfoS2D3GxsCZYA0ZD1/2gVyyVDaMhl
+	xG8w3lIVBwxrj3QWlGiFMxGS8tx+BlXOsAliiU9H58ZdcK2wii8ktoRJPhfMHNt8LkcQiD0pS6J
+	g3lawUxmluOqxRHfWcRU9yKPGq1w5TUP/ckaxR2w==
+X-Received: by 2002:a05:6a20:7d9f:b0:39f:3559:750d with SMTP id adf61e73a8af0-3a08cca99ddmr19877598637.31.1776858691628;
+        Wed, 22 Apr 2026 04:51:31 -0700 (PDT)
 Received: from [192.168.50.90] ([116.87.14.48])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-82f8ec0092bsm18335315b3a.50.2026.04.22.04.39.58
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c797701afeesm12385720a12.15.2026.04.22.04.51.29
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 22 Apr 2026 04:40:00 -0700 (PDT)
-Message-ID: <cd9c0147-18cf-464d-86e2-12342a992ebc@gmail.com>
-Date: Wed, 22 Apr 2026 19:39:57 +0800
+        Wed, 22 Apr 2026 04:51:31 -0700 (PDT)
+Message-ID: <c27c678b-89b2-40e0-9b12-23b0807f74ed@gmail.com>
+Date: Wed, 22 Apr 2026 19:51:28 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -67,94 +67,67 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-From: Anand Jain <anajain.sg@gmail.com>
-Subject: Re: [PATCH v2 3/3] ext4: derive f_fsid from block device to avoid
- collisions
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Theodore Tso <tytso@mit.edu>, "Darrick J. Wong" <djwong@kernel.org>,
- linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
- linux-xfs@vger.kernel.org, Anand Jain <asj@kernel.org>, dsterba@suse.com
-References: <20260323041624.GA11453@mac.lan>
- <d4a9970b-e7ed-4e74-be9d-2d08400f9d79@gmail.com>
- <5bda3d00-df35-4ea1-b313-2fef6e5c5682@gmail.com>
- <adSUiB9L0sFAd04U@infradead.org> <20260407144709.GA81690@macsyma-wired.lan>
- <3c9e478a-42ef-446f-a8cc-1b4ac970d2ef@gmail.com>
- <20260409041035.GC99725@macsyma-wired.lan>
- <22cfbf8d-af9b-462e-b240-67a1de24764f@gmail.com>
- <20260409131238.GC18443@macsyma-wired.lan>
- <b593ab17-afaf-4128-97eb-0ab9c23dec5c@gmail.com>
- <aeHikJwRmFdDg5FW@infradead.org>
+Subject: Re: [PATCH 1/2] common/dmlogwrites: add _require_logwrites_size
+ helper
+To: Disha Goel <disgoel@linux.ibm.com>, fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, ritesh.list@gmail.com,
+ ojaswin@linux.ibm.com, djwong@kernel.org, fdmanana@kernel.org,
+ quwenruo.btrfs@gmx.com, zlang@kernel.org
+References: <20260414102031.74527-1-disgoel@linux.ibm.com>
 Content-Language: en-US
-In-Reply-To: <aeHikJwRmFdDg5FW@infradead.org>
+From: Anand Jain <anajain.sg@gmail.com>
+In-Reply-To: <20260414102031.74527-1-disgoel@linux.ibm.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-
-
->> It seems we've reached the functional limits of f_fsid.
->> If we want to solve this properly for Overlayfs, NFS handles, or a
->> complex system monitoring..etc, we need a new identifier let's call
->> it f_fsid_v2, that meets the following requirements:
->>
->>   System-wide Uniqueness: Must distinguish between cloned filesystems.
->>
->>   Persistence: Must remain consistent across reboots/HW re-enumeration.
-
- My mistake- this should be:
-
-  Consistency: Must remain consistent across reboots/HW re-enumeration.
-
-
->>
->>   Non-On-Disk: Must not be stored on-disk.
+On 14/4/26 18:20, Disha Goel wrote:
+> Add a new helper function _require_logwrites_size() to check if the
+> LOGWRITES_DEV meets a minimum size requirement.
 > 
-> The third requirement doesn't make much sense to me.  If it is
-> persistent it. or something it can be derived from must be stored
-> on-disk.
-
- I hope it make sense now with "Persistence" replaced by
- "Consistency" for the 2nd requirement (above).
-
-
->> One possible implementation for f_fsid_v2 could be:
->>
->>    f_fsid_v2 =  hash(s_uuid, block_device_serial, [subvol_id])
->>
->> For pseudo block devices (virtio-blk, loop, nbd, brd,..),
->> the serial could be derived recursively:
->>
->>    serial_number = hash(backing_file.f_fsid_v2, backing_file.ino)
+> This is useful for tests that use dm-log-writes with additional space
+> requirements, such as creating LVM snapshots during log replay or tests
+> that generate large amounts of logged I/O operations.
 > 
-> What i the point in this?  All of this seems to be better served
-> by s_uuid.
-
-The goal is to fix duplicate f_fsid issues in cloned filesystems
-by creating a unique, reboot-consistent ID. This allows the
-source and clone to remain identical (sharing same uuid) while
-still being individually identifiable.
-
->> Note on Hardware Serials:
->>  Standard storage protocols (T10, NVMe, SAS) mandate unique,
->>  persistent serials per LUN. While I've seen T10 protocol
->>  violations during my time authoring Solaris HBA drivers, I
->>  believe these outliers shouldn't dictate the design.
+> The function takes a size parameter in KB and skips the test if
+> LOGWRITES_DEV is smaller than the required size.
 > 
-> No, T10 does not actually mandate unique identifiers, NVMe does, but the
-> implementations are often totally broken.
+> Signed-off-by: Disha Goel <disgoel@linux.ibm.com>
+> ---
+>  common/dmlogwrites | 9 +++++++++
+>  1 file changed, 9 insertions(+)
+> 
+> diff --git a/common/dmlogwrites b/common/dmlogwrites
+> index a27e1966..1ce2b2fb 100644
+> --- a/common/dmlogwrites
+> +++ b/common/dmlogwrites
+> @@ -14,6 +14,15 @@ _require_log_writes()
+>  	_require_test_program "log-writes/replay-log"
+>  }
+>  
+> +_require_logwrites_size()
+> +{
+> +        [ $# -eq 1 ] || _fail "_require_logwrites_size: expected size param"
+> +
+> +        local devsize=$(_get_device_size $LOGWRITES_DEV)
+> +        [ $devsize -lt $1 ] && \
+> +                _notrun "LOGWRITES_DEV too small, ${devsize}KB < $1KB"
+> +}
+> +
+>  # Starting from v4.15-rc1, DAX support was added to dm-log-writes, but note
+>  # that it doesn't track the data that we write via the mmap(), so we can't do
+>  # any data integrity checking. We can only verify that the metadata writes for
 
-Right. Newer SPC-3 (and above) compliant devices must support
-the Inquiry CDB EVPD flag and provide page 0x83 for identification,
-which is what we typically use for multipathing.
-These are globally unique. And, we can overlook legacy
-drives, as they've probably been past their EOSL for a while now.
 
-We can tweak the algorithm as follows:
+_require_logwrites_size() should be designed something like this
 
-  ID = hash(s_uuid, device_identifier_id,
-            partition_start_lba, partition_end_lba,
-            [subvol_id], [file.ino])
+_require_log_writes_sized()
+{
+	local size=$1
 
-This is an ID which remains consistent across reboots while
-staying unique within the system, which we can use it for f_fsid.
+	_require_log_writes
+	check $size || _notrun
+}
+
+So, patch 2/2 can simply call `_require_log_writes_sized <>`
 
 Thanks.

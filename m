@@ -1,193 +1,148 @@
-Received: from fout-b2-smtp.messagingengine.com (fout-b2-smtp.messagingengine.com [202.12.124.145])
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0DCB435CB6E
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 02:27:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.145
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 330BF61FFE;
+	Wed, 22 Apr 2026 05:38:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.156.1
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776824832; cv=none; b=A7qryvK6Z+l/BJdn8mzJii63V3bErwmMabBF2f7RPTk/xq3OgqbhzdIEUCssLk9EdHLBW1F7qJNz4d3AOnrctAfOx/ENFSxhopV8jukC7zKUfWnFnayXsLSoNitj4GlaC+cwGosBuV8MvWv9uGqxYq2jgCmR4UrzjlV2cyf6ioU=
+	t=1776836323; cv=none; b=qdpO5FWfhCZXE+b0xP2yLjeiegnuNKBVBMFXqAuq0A/w33pi9kdynfTTOhBZlIsbeOsdWnwFGyazYFVsJ6YxASDv+gOq0NhukY5q9pwPYn98L9pChdn9/EqF4MGMx1u3rWMfEcj4O2t7GOGx3N6Ns0WqTBBxPbYm5vrNZvl15Yw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776824832; c=relaxed/simple;
-	bh=MM/5RZpp6JhNVPh3naIbNvcoNUVO2flAbKZOhutbnG8=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=DpFZrmlg9tKmTWA8sxC3ocZKvuNiXd6onrv5OKwyvaQaZWyZu65u4Sf7+3FrP+heLOWNVT0GL/RqO7amqtMR1F3KujSvFJf/ThMEtQIGhoyuqhR4az0MzWOu/Th6sWCZKSZ5oRW/pcJCFhllvfl+4huiqPxTiFQDeotcUJkPuvU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=MGoR7GkK; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=eOKv5N3F; arc=none smtp.client-ip=202.12.124.145
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1776836323; c=relaxed/simple;
+	bh=SSbTn8nI/sVgR0OSaemvvrlN3XOjDrcQcY0pwBkht7k=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=UoOcT0gEjcVMFRwGA+kyBHrtA3xuZJtOjTdC7NTKX2Yn60Pw9D8FWLy07Jwg1raJSwHAgJ1d56vKX4cLh8mzmUKOrdiOZOp8b7Y4uhjoUyTWlUNAKS4IbCiWDMPC05v2QDlE8mzcVBEANUe8INsj4B6rDsQ4azpt4EUG2qejbbE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=eQaqdnX+; arc=none smtp.client-ip=148.163.156.1
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="MGoR7GkK";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="eOKv5N3F"
-Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
-	by mailfout.stl.internal (Postfix) with ESMTP id 743EE1D00144;
-	Tue, 21 Apr 2026 22:27:02 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-04.internal (MEProxy); Tue, 21 Apr 2026 22:27:02 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1776824822; x=1776911222; bh=pBoneOW9os
-	ABACtekEzu4u8J1imQgv+eZwM1bg4XPro=; b=MGoR7GkKd2YsgdJcXlJna7C1gx
-	OMgMYh1dHgx/rPbqca08VKdvgshdyYEA6iGMyUX1+7/V0FTSR8gvTgIDdNJ9Ylww
-	fGwAcyonlJnrtUvazO8Uyon6/PfvKZDvLopgrmrg9iHWM4efOJJZZEHlnceN1nVx
-	+d5n5ART+rhXDXtm6QulNEA7XpKJCgvKyBWBT4PYzVfc+g2kzlaTjXODfG7mNjGW
-	8yKxiPljMXMzUjq5lXr4kX1wyEDMQhQrbx1sDHH/aIUVzGmre7199i6C7UpHRIm1
-	gmqkT2xfLF6gdalj0iK6W8IMuBoBEefDAyEtD3ITJRf6/krv1WJXUiNo7gCQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1776824822; x=1776911222; bh=pBoneOW9osABACtekEzu4u8J1imQgv+eZwM
-	1bg4XPro=; b=eOKv5N3FZxSfs8eSt/IQMFzLjm+5udDGw+Lod6bfEo4hEVNqMkp
-	WCSHsGBAjOXamX7NfjppnB/HwXbpSVX5zq9DCNpxWtEsoeXJhf0eUfYOdNbPR94L
-	MywBHd2mHDBIruLVVs0OZ4aWAkjG2UHY40nbdI1ocvRo4aQgVWsarf2y/P4Nf3zz
-	InogJbOtr1D86E8FTmvjK5Us1UIF9UZHDxOtjCmBeunz6Swork2mF/UBbTktT2Tz
-	QzCxxIYf8G5L4xQE552QgHTXZP+wIjLtk+XDv0YsQh3gFD4udrs5vlfEYsAhFfrw
-	WrJ+XAzel3rUKGpNAMO3ppiqMksjQyFFC6Q==
-X-ME-Sender: <xms:9THoaVzpvvZA3K9-Kch6SPYAO6mFNsCkwAntiUsM-mpu9oXnhzIJFQ>
-    <xme:9THoabSjVVZDa4qbykl4pJmqbat8Plk5BQwi1loTMGb8bd7nKIo0N6LR8u0zOD9tO
-    C8KI9xE4qwLhisd9_uCuWk0-G46Bvf5za5zpIVj6BHQAankwqv9A3E>
-X-ME-Received: <xmr:9THoac9hw-mr-IAl4zG0KeKdcy14Sb7n_0C0zW-JuH-X9pWG6qcT8btc94oZ-GA4N05eghwASw6ACsiQEW08VMja8D4>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdeifedtjecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
-    ihhlohhuthemuceftddtnecunecujfgurhepfffhvfevuffkfhggtggujgesthdtredttd
-    dtvdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihho
-    qeenucggtffrrghtthgvrhhnpeeutddvtdehgedvvdetuefgvefggfegudekjefhgefgje
-    ekgeelgfeigeegudevheenucffohhmrghinhepmhgvrhhlihhnshdrohhrghenucevlhhu
-    shhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
-    hrrdhiohdpnhgspghrtghpthhtohepvddpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
-    ohepmhgrrhgtpggsthhrfhhssehmvghrlhhinhhsrdhorhhgpdhrtghpthhtoheplhhinh
-    hugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrgh
-X-ME-Proxy: <xmx:9THoaSrovuYNQrUG8yq7CjX3cB19vXgsFY2t-3rYRQtblWg-OWkjYg>
-    <xmx:9jHoaZkTXSBREZ5acYcf7AG5inbpkO0uzASLMU4RT9XIMfV2N7zKNQ>
-    <xmx:9jHoaZK54MPQF7xInfg4Ji8h9CVNF2HCXNtaiHxmPkXoHLVmDIYzoQ>
-    <xmx:9jHoaezhlNepxki5wgnqynHQDfD8jVj2wgTAb6twQnmYlTqPqfmftQ>
-    <xmx:9jHoaZLV74jEbmtSckxwyozB6kW-HxnNonGCVcrSMTa2x0SEM6sB6RgG>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 21 Apr 2026 22:27:01 -0400 (EDT)
-Date: Tue, 21 Apr 2026 19:26:27 -0700
-From: Boris Burkov <boris@bur.io>
-To: Marc MERLIN <marc_btrfs@merlins.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Simple quota unsafe? RIP:
- 0010:__btrfs_free_extent.isra.0+0xc41/0x1020 [btrfs] /
- do_free_extent_accounting:2999: errno=-2 No such entry
-Message-ID: <20260422022627.GA1034721@zen.localdomain>
-References: <20260416004552.GA1045221@zen.localdomain>
- <aeA2c8V4FgCctUPG@merlins.org>
- <20260416012535.GB1065998@zen.localdomain>
- <aeEaqCJAWaWbz1vO@merlins.org>
- <20260416213632.GA1654609@zen.localdomain>
- <aeFY4uSTSIz4Ccat@merlins.org>
- <20260417215127.GA2310330@zen.localdomain>
- <aeK2QgUCefpVY4KX@merlins.org>
- <20260417231603.GA2376753@zen.localdomain>
- <aeLNxjmUGGhnW5ss@merlins.org>
+	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="eQaqdnX+"
+Received: from pps.filterd (m0356517.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 63LImLpl590806;
+	Wed, 22 Apr 2026 05:38:39 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=cc
+	:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=pp1; bh=d1yIWL
+	xnHFD5U/7t3Z9R2B7Z9KsW8UDapcVpFrHpzKE=; b=eQaqdnX+MQBW3JoHZBuNCr
+	fID92FGQcZs74fBk4MuTVdaOuThVYq/cPz8931g2oKMS0Pw/8mLgpq7KmVVRsGJw
+	rjC2ElC7ALWO6s5eRFG6XyVkfQQjSQYS/npFJB5wzg/4bpvcoMbCwSBiCy3J755V
+	n31cYxplpnyoZar5hl7ezHWOP/2yErcd5IA1DnRrIn48sp21UtdvUh8La+sbQDZH
+	5+2z+fMgnL1qx6vMRzJJnPeBoACJiocyGE5BHrLN4Fc3PoVUQUuJ+X1CAMaziSvq
+	xgQsT1jC6nGdQed1JFafgqQqebO0rRyvKiRyeNoiTBGOt9A3eSFiRvaKaPpLEN+w
+	==
+Received: from ppma12.dal12v.mail.ibm.com (dc.9e.1632.ip4.static.sl-reverse.com [50.22.158.220])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 4dpeu21v5g-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 22 Apr 2026 05:38:39 +0000 (GMT)
+Received: from pps.filterd (ppma12.dal12v.mail.ibm.com [127.0.0.1])
+	by ppma12.dal12v.mail.ibm.com (8.18.1.7/8.18.1.7) with ESMTP id 63M5ZMQ5011638;
+	Wed, 22 Apr 2026 05:38:38 GMT
+Received: from smtprelay01.fra02v.mail.ibm.com ([9.218.2.227])
+	by ppma12.dal12v.mail.ibm.com (PPS) with ESMTPS id 4dpjkxrxg2-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 22 Apr 2026 05:38:38 +0000 (GMT)
+Received: from smtpav04.fra02v.mail.ibm.com (smtpav04.fra02v.mail.ibm.com [10.20.54.103])
+	by smtprelay01.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 63M5caps59638136
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Wed, 22 Apr 2026 05:38:36 GMT
+Received: from smtpav04.fra02v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id B9BBC20043;
+	Wed, 22 Apr 2026 05:38:36 +0000 (GMT)
+Received: from smtpav04.fra02v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 6C78A20040;
+	Wed, 22 Apr 2026 05:38:35 +0000 (GMT)
+Received: from [9.123.4.214] (unknown [9.123.4.214])
+	by smtpav04.fra02v.mail.ibm.com (Postfix) with ESMTP;
+	Wed, 22 Apr 2026 05:38:35 +0000 (GMT)
+Message-ID: <1e1e374a-d9ef-4e0f-843d-09f292cddc57@linux.ibm.com>
+Date: Wed, 22 Apr 2026 11:08:34 +0530
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <aeLNxjmUGGhnW5ss@merlins.org>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 1/2] common/dmlogwrites: add _require_logwrites_size
+ helper
+Content-Language: en-GB
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, ritesh.list@gmail.com, ojaswin@linux.ibm.com,
+        djwong@kernel.org, fdmanana@kernel.org, quwenruo.btrfs@gmx.com,
+        zlang@kernel.org
+References: <20260414102031.74527-1-disgoel@linux.ibm.com>
+From: Disha Goel <disgoel@linux.ibm.com>
+In-Reply-To: <20260414102031.74527-1-disgoel@linux.ibm.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-Reinject: loops=2 maxloops=12
+X-Proofpoint-GUID: vrjVkgJlTJB8ySTK6p81ZAgwom7LDSM2
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwNDIyMDA1MSBTYWx0ZWRfXw3DNMK6qQ4FP
+ 2991lUcb7biLKU949UuV0FMVVNslR6wCH1Vf8g+sJXpCOGcdtU/VtrFfWo+kD4SXA6oIwGZq3F3
+ M+JpmyBBHcLUgzCm8jRRbaffwiyisBomgUOcz3o+CnKZ4P/KbYEx+0XZcE1HQYkPOQka1vfSBt1
+ 0tf4x0P9/oh8axERgNEKlBW3K51af+SoRvWFy5mefxW1Y8AFdNXRXs1g62WfHEYQpiTH3JaK2uS
+ v5rj0t3z/o4A65QJZKZJHk0jIsPiI4wqZkfxIEq1P4ZoyH7ZBh+RTp5vfwE4E5s0kXj6+TijTD8
+ 3+eWFE2VpDc5XF6M8zCSwqAJR7ytb730p5Hz9Bs706UynViTXlqtaMzqxU1Pn9Fn/JcKruSwRxr
+ I1OD6nt2gseKvlzfuYUSlYhKCjH1fU1H+PQYBJ1pz2ln7dq/ypvVG81uXTM6O74E1TaoIEEcDYu
+ 31sgg5/p2B1o7IrK6rQ==
+X-Authority-Analysis: v=2.4 cv=C8LZDwP+ c=1 sm=1 tr=0 ts=69e85edf cx=c_pps
+ a=bLidbwmWQ0KltjZqbj+ezA==:117 a=bLidbwmWQ0KltjZqbj+ezA==:17
+ a=IkcTkHD0fZMA:10 a=A5OVakUREuEA:10 a=VkNPw1HP01LnGYTKEx00:22
+ a=RnoormkPH1_aCDwRdu11:22 a=U7nrCbtTmkRpXpFmAIza:22 a=VnNF1IyMAAAA:8
+ a=-RhjpE4fvuK0Md3SiowA:9 a=QEXdDO2ut3YA:10
+X-Proofpoint-ORIG-GUID: FITPu3K_4MTP37hwkimf5BwZrSsM_IuJ
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1143,Hydra:6.1.51,FMLib:17.12.100.49
+ definitions=2026-04-21_03,2026-04-21_02,2025-10-01_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ adultscore=0 suspectscore=0 priorityscore=1501 malwarescore=0
+ lowpriorityscore=0 clxscore=1015 bulkscore=0 impostorscore=0 spamscore=0
+ phishscore=0 classifier=typeunknown authscore=0 authtc= authcc=
+ route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2604200000
+ definitions=main-2604220051
 
-On Fri, Apr 17, 2026 at 05:18:14PM -0700, Marc MERLIN wrote:
-> On Fri, Apr 17, 2026 at 04:16:03PM -0700, Boris Burkov wrote:
-> > Rad, so there is some more "exciting" bug with balance lurking there.
->  
-> Correct, all 3 times the bug happened, it was during balance.
-> And now that you mention it, all 3 filesystems it happened to had a
-> bunch of data already before I enabled squota on them (because those
-> FSes were several years old, and created with much older kernels).
+Hi,
+
+Looking for review comments on this patch series.
+
+On 14/04/26 3:50 pm, Disha Goel wrote:
+> Add a new helper function _require_logwrites_size() to check if the
+> LOGWRITES_DEV meets a minimum size requirement.
 > 
-> On all 3, I ran:
-> btrfstune -n -x -r $DEV; btrfstune --enable-simple-quota $DEV ; btrfstune --convert-to-block-group-tree $DEV
-> and then on the mounted filesystem
-> btrfs quota enable --simple .
+> This is useful for tests that use dm-log-writes with additional space
+> requirements, such as creating LVM snapshots during log replay or tests
+> that generate large amounts of logged I/O operations.
 > 
-> I'm not sure how many of -n -x -r were already enabled before, but 
-> 100% know squota were not and neither were block group trees
+> The function takes a size parameter in KB and skips the test if
+> LOGWRITES_DEV is smaller than the required size.
 > 
-> My last remaining FS with squota running is the only one that had
-> squotas on it from the start (with the btrfs quota comamand but the FS
-> was empty).
-> If you feel the bug might not trigger in that use case, I can try to
-> re-enable balance and scrub on it, but it's another 30TB FS, so it sucks
-> if I lose it. Then again, I think we now know I can recover without
-> losing it, so should I go ahead and re-enable them with 6.19 (even if
-> 6.19 did crash on my older FS where I enabled squota after data was
-> already there?)
-
-I believe I have reproduced the balance bug, and in my reproducer, the
-fact that the subvolume predated squota was critical.
-
-reproducer sketch:
-- create subvol
-- write stuff
-- snapshot subvol
-- enable squota (usage = 0)
-- delete subvol (leave snapshot)
-- run a data balance that hits an extent in the snapshot (owned by subvol)
-- balance double counts extents in squotas (valid interpretation) but
-  critically, creates a new tree block with the old dead owner but a
-  fresh generation.
-- run_delayed_refs happens now, say from a commit running (important race),
-  writing that dangerous tree block to disk (in the reloc root)
-- we do the pointer swapping and drop the reloc root. the nodes of the
-  reloc tree are of this bogus form and cause your abort
-- I believe the snapshot also has some bogus leaves and would abort
-  later, too.
-
-So the thing that is definitely dangerous, as far as I can tell, is
-running balance on a filesystem where squotas was enabled after any
-subvolume owning a shared extent (snapshot or reflink) was deleted.
-
-Is that story consistent with your situation? It sounds like yes, but I
-think it's nice to double check :)
-
-At any rate, I think that your fs is safe from this bug, but at this
-point, it is hard to be certain of the safety of other balance vs.
-squota interactions.
-
-Now that I am at least clear on the more sophisticated bugs we have, I
-think that I am ready to put in some fixes and some defense in depth. I
-was feeling sheepish about just wallpapering over it without explaining
-your actual bug. So I think you should wait for that, to be safe with
-your big FS, even if it happens to not *need* the fixes.
-
-Thanks again for your reports, follow-ups, etc.
-Boris
-
+> Signed-off-by: Disha Goel <disgoel@linux.ibm.com>
+> ---
+>   common/dmlogwrites | 9 +++++++++
+>   1 file changed, 9 insertions(+)
 > 
-> > mkfs.btrfs -O squota <dev>
->  
-> Aaah, I was missing that option, but even if it's a make time, do I
-> still need to turn them on with "btrfs quota enable --simple mountpoint"?
-> 
+> diff --git a/common/dmlogwrites b/common/dmlogwrites
+> index a27e1966..1ce2b2fb 100644
+> --- a/common/dmlogwrites
+> +++ b/common/dmlogwrites
+> @@ -14,6 +14,15 @@ _require_log_writes()
+>   	_require_test_program "log-writes/replay-log"
+>   }
+>   
+> +_require_logwrites_size()
+> +{
+> +        [ $# -eq 1 ] || _fail "_require_logwrites_size: expected size param"
+> +
+> +        local devsize=$(_get_device_size $LOGWRITES_DEV)
+> +        [ $devsize -lt $1 ] && \
+> +                _notrun "LOGWRITES_DEV too small, ${devsize}KB < $1KB"
+> +}
+> +
+>   # Starting from v4.15-rc1, DAX support was added to dm-log-writes, but note
+>   # that it doesn't track the data that we write via the mmap(), so we can't do
+>   # any data integrity checking. We can only verify that the metadata writes for
 
-FYI
-I believe that when btrfs mounts a filesystem with qgroup trees present
-it will enable quotas, so you don't need to manually enable them if it
-was created with squotas.
+-- 
+Regards,
+Disha
 
-> If there is no good documentation on all this, it's been 12 years since
-> I wrote all those missing docs/howtos on btrfs in https://marc.merlins.org/perso/btrfs/
-> happy to make a new one to put a few new notes on squotas and block-group-tree
-> which I was unaware of until just a week ago.
-> 
-> On the plus side, knowing it's squota and balance makes me feel better
-> that btrfs on top of raid5 isn't as unsafe as it used to be (it's
-> supposed to be safe, but I've had more than 5 unrecoverable FS crashes
-> after swraid5 misbehaved when I was really hoping for just a bit of data
-> loss or data corruption that scrub would find and then I could move on.
-> Also, I'm pretty sure I had -m dup all these years, so it's sad it
-> didn't help)
-> 
-> Marc
-> -- 
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
->  
-> Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

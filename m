@@ -1,124 +1,102 @@
-Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F4217244687
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 14:11:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C387035CB73;
+	Wed, 22 Apr 2026 15:55:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776867080; cv=none; b=RzpPFHYzAKdVrQrrfJP5GI7xiZ4ATB0+SF7YC+oRhfnX2rLoF8QK4YbSkwJPa1aO5t/c9gKuo+R5g4E9nkvwcnzIXrpnIga1/T71uADZO+hqChN9R191YkEWYx3alv/jxVxMRq3QgeN4dieNTmQNXd9Eu4PC9+zdDfplg9wZHGU=
+	t=1776873330; cv=none; b=M8ZCEDC5nYLJLV4KCBGZJyenV8Pgc2MHx4dhK+r0uI+eGLc7Lx0fr8+7Af1HvWMFXbnBmFSo/5MPuBB+fCKdQ51W+FhgBxbJ3K+lJuKfVo8+9BcewxgP+9ERV1La6nbf5c+j8hEcfqFSOcJXauK1JdrVjlNXwYvU4ovTGSlI2gg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776867080; c=relaxed/simple;
-	bh=rEnkjjl3zIr2s8ICDm42RaVDMqVpfu1Ji1McIduqxc8=;
-	h=From:To:Cc:Subject:Date:Message-ID:Mime-Version; b=V49msfwVz9t49KeL3sJPM8hlE8+rna3LW+wWcINbR06pH20IhC/kYIMIVgbuVFmfwMGnQ370bNjToUbxMFJ3a5npKHtaZPduBcs73HyVmecobNQF785pj5sN5uWt98Pgn7/E7nanXXL7ZbJIXDXreJtCrCWYfWX3YGW48y9KpxM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=CerqtKD5; arc=none smtp.client-ip=217.169.27.34
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
+	s=arc-20240116; t=1776873330; c=relaxed/simple;
+	bh=H53Pi2+KL5AiARyZw1kDL912O/VbBph3HnqhpcmZpKU=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=NR2o3Zv1I4MA+R3ayYOdp8PCbcOn/FE7Hi2NmHRYmu/ahMtkNYZtekB9CCh3bPlKCuNXx4NJEJFLF7na2nR7Jdd6QbKY6Zei23edlpdVEIyn6bvaixAke5dxzWTtn2iaXt1pdZdJNq60fdlk2TTUVCxuDiRtcWTrM7gUFD7CvlM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=gUxgwOMj; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="CerqtKD5"
-Received: from beren (beren.burntcomma.com [IPv6:2a02:8012:8cf0:0:ce28:aaff:fe0d:6db2])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(Client did not present a certificate)
-	by mail.burntcomma.com (Postfix) with ESMTPSA id 7CD65320ADC;
-	Wed, 22 Apr 2026 15:03:40 +0100 (BST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
-	s=mail; t=1776866620;
-	bh=bvCixvJijhm88KqYGAyNrK9x/9T9tlR+yS1Dm481l2M=;
-	h=From:To:Cc:Subject:Date;
-	b=CerqtKD5frLSYxEpq7qmxs48VYw6Dv1wS331V1uqpakB8Yrecw6897k2cYYQVX4UG
-	 tS9qdp+1FJ/EIHFdmPqtpkWEhk1DeTU1uSi1CgRqcmZdpEtGkoY7XK+jhFcGN1CQYK
-	 zTOYxCdZak9+Ee5NikEjV3MiWrTgmaUxp0YKLRDQ=
-From: Mark Harmstone <mark@harmstone.com>
-To: linux-btrfs@vger.kernel.org
-Cc: josef@toxicpanda.com,
-	boris@bur.io,
-	Mark Harmstone <mark@harmstone.com>
-Subject: [PATCH] btrfs: don't force DIO writes to be serialized
-Date: Wed, 22 Apr 2026 15:03:35 +0100
-Message-ID: <20260422140339.417238-1-mark@harmstone.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="gUxgwOMj"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6B65AC19425;
+	Wed, 22 Apr 2026 15:55:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1776873330;
+	bh=H53Pi2+KL5AiARyZw1kDL912O/VbBph3HnqhpcmZpKU=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=gUxgwOMjtQWyujrNVOdu5Jk3XELjxEY1m0xXZGBCMVpV+QJFmog+ROPnRT8e0Tlf2
+	 7ioQUp3dmtWAbn2R/D+caNI9uJr9A71aZZvIi5Jqko/ajr54j3qdZUY7SvQOm9lDWi
+	 oLATlfYVlzEzgJ9kHEhj3VU5/KrH4wQXgSBqG5wjUf+rCW7M2JnHN2ubGNqCuLJQEL
+	 Z3wcCsirx6PZ1JgUR+3OXa4Xbllvyf1p+4ixLszpyz+o65o1EFZUoFA5f1uaW858I6
+	 jFUAkchtzPWcN8+lO8F0PVOmYhHEjbLHzOx0aEer+46siohUSXE4x6sSD6YcXD3WDE
+	 SasZR/o8Dps1Q==
+Date: Wed, 22 Apr 2026 08:55:28 -0700
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: Disha Goel <disgoel@linux.ibm.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	ritesh.list@gmail.com, ojaswin@linux.ibm.com, fdmanana@kernel.org,
+	quwenruo.btrfs@gmx.com, zlang@kernel.org
+Subject: Re: [PATCH 1/2] common/dmlogwrites: add _require_logwrites_size
+ helper
+Message-ID: <20260422155528.GE7739@frogsfrogsfrogs>
+References: <20260414102031.74527-1-disgoel@linux.ibm.com>
+ <1e1e374a-d9ef-4e0f-843d-09f292cddc57@linux.ibm.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Content-Transfer-Encoding: 8bit
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <1e1e374a-d9ef-4e0f-843d-09f292cddc57@linux.ibm.com>
 
-Before btrfs switched to the new mount API in 2023, we were setting
-SB_NOSEC in btrfs_mount_root(). This flag tells the VFS that the
-filesystem may have files which don't have security xattrs, enabling it
-to do some optimizations.
+On Wed, Apr 22, 2026 at 11:08:34AM +0530, Disha Goel wrote:
+> Hi,
+> 
+> Looking for review comments on this patch series.
+> 
+> On 14/04/26 3:50 pm, Disha Goel wrote:
+> > Add a new helper function _require_logwrites_size() to check if the
+> > LOGWRITES_DEV meets a minimum size requirement.
+> > 
+> > This is useful for tests that use dm-log-writes with additional space
+> > requirements, such as creating LVM snapshots during log replay or tests
+> > that generate large amounts of logged I/O operations.
+> > 
+> > The function takes a size parameter in KB and skips the test if
+> > LOGWRITES_DEV is smaller than the required size.
+> > 
+> > Signed-off-by: Disha Goel <disgoel@linux.ibm.com>
+> > ---
+> >   common/dmlogwrites | 9 +++++++++
+> >   1 file changed, 9 insertions(+)
+> > 
+> > diff --git a/common/dmlogwrites b/common/dmlogwrites
+> > index a27e1966..1ce2b2fb 100644
+> > --- a/common/dmlogwrites
+> > +++ b/common/dmlogwrites
+> > @@ -14,6 +14,15 @@ _require_log_writes()
+> >   	_require_test_program "log-writes/replay-log"
+> >   }
+> > +_require_logwrites_size()
+> > +{
+> > +        [ $# -eq 1 ] || _fail "_require_logwrites_size: expected size param"
 
-Unfortunately this was missed in the transition, meaning that IS_NOSEC
-will always return false for a btrfs inode. This means that
-btrfs_direct_write() calls will always get the inode lock exclusively,
-meaning that DIO writes to the same file will be serialized.
+What are the units of the size parameter?  Bytes?  512b sectors?
 
-On my machine, this one-line change results in a ~59% improvement in DIO
-throughput:
+The helper should have a comment clarifying that.
 
-Before patch:
+--D
 
-  test: (g=0): rw=randwrite, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=io_uring, iodepth=64
-  ...
-  fio-3.39
-  Starting 32 processes
-  test: Laying out IO file (1 file / 1024MiB)
-  Jobs: 32 (f=32): [w(32)][100.0%][w=764MiB/s][w=195k IOPS][eta 00m:00s]
-  test: (groupid=0, jobs=32): err= 0: pid=586: Wed Apr 22 13:03:04 2026
-    write: IOPS=202k, BW=787MiB/s (826MB/s)(46.1GiB/60012msec); 0 zone resets
-     bw (  KiB/s): min=498714, max=1199892, per=100.00%, avg=806659.03, stdev=4229.94, samples=3808
-     iops        : min=124677, max=299971, avg=201661.82, stdev=1057.49, samples=3808
-    cpu          : usr=0.32%, sys=1.27%, ctx=8329204, majf=0, minf=1163
-    IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
-       submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
-       complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
-       issued rwts: total=0,12094328,0,0 short=0,0,0,0 dropped=0,0,0,0
-       latency   : target=0, window=0, percentile=100.00%, depth=64
-
-  Run status group 0 (all jobs):
-    WRITE: bw=787MiB/s (826MB/s), 787MiB/s-787MiB/s (826MB/s-826MB/s), io=46.1GiB (49.5GB), run=60012-60012msec
-
-After patch:
-
-  test: (g=0): rw=randwrite, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=io_uring, iodepth=64
-  ...
-  fio-3.39
-  Starting 32 processes
-  test: Laying out IO file (1 file / 1024MiB)
-  Jobs: 32 (f=32): [w(32)][100.0%][w=1255MiB/s][w=321k IOPS][eta 00m:00s]
-  test: (groupid=0, jobs=32): err= 0: pid=572: Wed Apr 22 13:13:46 2026
-    write: IOPS=320k, BW=1250MiB/s (1311MB/s)(73.3GiB/60003msec); 0 zone resets
-     bw (  MiB/s): min=  619, max= 2289, per=100.00%, avg=1251.28, stdev= 9.64, samples=3808
-     iops        : min=158538, max=586025, avg=320320.80, stdev=2468.97, samples=3808
-    cpu          : usr=0.35%, sys=11.50%, ctx=1584847, majf=0, minf=1160
-    IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
-       submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
-       complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
-       issued rwts: total=0,19203309,0,0 short=0,0,0,0 dropped=0,0,0,0
-       latency   : target=0, window=0, percentile=100.00%, depth=64
-
-  Run status group 0 (all jobs):
-    WRITE: bw=1250MiB/s (1311MB/s), 1250MiB/s-1250MiB/s (1311MB/s-1311MB/s), io=73.3GiB (78.7GB), run=60003-60003msec
-
-Fixes: ad21f15b0f79 ("btrfs: switch to the new mount API")
-Signed-off-by: Mark Harmstone <mark@harmstone.com>
----
- fs/btrfs/super.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index a60bce413d33b5..fb15decb086189 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1872,6 +1872,7 @@ static int btrfs_get_tree_super(struct fs_context *fc)
- 	fs_info->fs_devices = fs_devices;
- 	mutex_unlock(&uuid_mutex);
- 
-+	fc->sb_flags |= SB_NOSEC;
- 
- 	sb = sget_fc(fc, btrfs_fc_test_super, set_anon_super_fc);
- 	if (IS_ERR(sb)) {
--- 
-2.52.0
-
+> > +
+> > +        local devsize=$(_get_device_size $LOGWRITES_DEV)
+> > +        [ $devsize -lt $1 ] && \
+> > +                _notrun "LOGWRITES_DEV too small, ${devsize}KB < $1KB"
+> > +}
+> > +
+> >   # Starting from v4.15-rc1, DAX support was added to dm-log-writes, but note
+> >   # that it doesn't track the data that we write via the mmap(), so we can't do
+> >   # any data integrity checking. We can only verify that the metadata writes for
+> 
+> -- 
+> Regards,
+> Disha
+> 
+> 

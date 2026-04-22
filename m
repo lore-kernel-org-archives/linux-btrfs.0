@@ -1,142 +1,200 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 23A9D3CB2C5
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 09:59:17 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A7BC63CBE76
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 10:29:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776851958; cv=none; b=IF8h6k3V4plIVVCpkUFAZNT+Zf90eToK9lgGewcwaXU5rMOtPtrczhvOSXSfYvRKdFJO7MqLRDJa91E+Kk2JjnUd3kiNpJX1bsPUNqFOTpTQizdxSZmEmjY37+Hcnv+Bc45GSAQ3Vn6LVwm7qoSot5mVWvt/Ni7xLiu28K84JMA=
+	t=1776853788; cv=none; b=fL1WTqECa2tDTeH/eQJTfGT+sBYghsQGJMdWtV9t0vgZ9YolkTtEAW2ogXbW7R7TTZ04YNpPrDufiFT8+cMjar6fKKph7ynDeyAPz5xGvB3zx0QBlNWAdEUACaMc9W6sdoJRIsAJux6S9RzYctEvT2/RrRGFajDq7Nz0+jcb9cY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776851958; c=relaxed/simple;
-	bh=qdTdoKTlhVu86bDuyPkOaG5VtZiyVVLX9VSgFPv2CkI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=K8otd3NeHbgfK7jzVHUdVyDWDf5tekMfN21gP85xy0LAVfHiCnWDapSbZ66lVlSU31p4GgdViUTU1qcOocwwrGT4K6qOaiLM//eFV1K9dBaFzqRdiXh2mg26H4AoKm8Vfqgh7KiRr++/PjbzCjtmNcEoKls+w7ZUaLou0AM/rsY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=QOu1lDi6; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=JBE8rlhG; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1776853788; c=relaxed/simple;
+	bh=IjFngPwuefsKMhzTlKN6e2G9FW+ktklXtsM+0b2gtUA=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=TCvx0vLxVdHOFXyONhGTHIz+hgto0+GqNu3kJwaTeS7sgXxqNnTV96shDVRT8A8kb3f4E8kVAcXE+2Nb9gwObnsZM+j4qrH5GTCD5asGmve4CbmTh92eJOUK5xvp19lcV48UT2XEBo2u0Us5pJKql1lCLSnNzne4f6Y4wX9PtaU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=K+H10UZn; arc=none smtp.client-ip=209.85.128.54
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="QOu1lDi6";
-	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="JBE8rlhG"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1776851956;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=QVpt6cL/XFUpoSbUgEFsp9E/b8gj4ghVTxVOycpPEPQ=;
-	b=QOu1lDi6VUFBgOsXhgnJG+Df4lJek8huCUy/k3Qh9pCXS+3ZUh/+cwNQ3X5qJRWw6TJYHn
-	uWi9XX6eTozNyQFR8VshXHDw90Oc9b611BG/TKQqMECUGC+An/bshBFsC6M/NtoAvr505j
-	bsUpA1Hk0uUiuUpv7YBycMCbfRvswbg=
-Received: from mail-wm1-f72.google.com (mail-wm1-f72.google.com
- [209.85.128.72]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-231-xbIDfuHJPUyStGGZMrbJ7w-1; Wed, 22 Apr 2026 05:59:15 -0400
-X-MC-Unique: xbIDfuHJPUyStGGZMrbJ7w-1
-X-Mimecast-MFC-AGG-ID: xbIDfuHJPUyStGGZMrbJ7w_1776851954
-Received: by mail-wm1-f72.google.com with SMTP id 5b1f17b1804b1-48a55d82e0eso11243015e9.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 02:59:14 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="K+H10UZn"
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4891d7164ddso20330835e9.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 03:29:46 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redhat.com; s=google; t=1776851954; x=1777456754; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=QVpt6cL/XFUpoSbUgEFsp9E/b8gj4ghVTxVOycpPEPQ=;
-        b=JBE8rlhGQ2Hn4b93hBQ0u+xvUXg7aktY146nU8sbznDNmGI/U3W9R6KdzTpt+HUQ+v
-         ZmCiz1ZgCnF83ZpCpZv3rUv8hsEX5urJfoRqrwD5Jfn7z+jSbCac4tw6GS83t+6zp5Ma
-         YRMz4cAJ72xeX1cipWl94+KEVEs1mrvFu+dTMvASA983NrKgUbHtCzWsz/9ZzB0ZpI7S
-         V8PGt5PBA2zwQGpyU+EAxnTVtUs9hVP48K9hNuY/t7LqSM2sXrJ0aneYavkM1CIQz89C
-         Rl49gZKRgoT0e51Qo2OhZel+tw4T115rwkpSnA+Gk+3wHhNIh839Vqfc+u0I/gAPqeJU
-         rslQ==
+        d=suse.com; s=google; t=1776853785; x=1777458585; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=rI2fi6UkqXUWaBao1RLoql+DKOqLkV4uXoIuteADEXA=;
+        b=K+H10UZnsfb2CXxXAep8iiRSwt2H8qlW8HY4locp5uHhf8JsiNSSs0WQ3O1xdwiE+B
+         xADpho2HPsK/K/sqFW8TcObSieobmxOZODie9homG3ov4y5VRUn1yO52+E5E+TyCvwDf
+         X0rqBhYp1RnRhlIHkklGmOiot9Yp1+707/JcOmMctcA/0mOrh7ZFPVHXX+p2fHKb6P/U
+         RegqdzrRVUbke8k5sMLrFEVCuND929+JnfAVnalm1F15898A73muhpajWFcCeGCIe5M4
+         +ZvEQR1yokzwzlBC39USj0BSOnRr0anF8c1PGyfny52EY5dRROs+BSXDvN6dueRsf8r3
+         1HAQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1776851954; x=1777456754;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=QVpt6cL/XFUpoSbUgEFsp9E/b8gj4ghVTxVOycpPEPQ=;
-        b=TmQsnlQUAUok0pdindc63WYMWHYqJIZEd5yHtON0Q4BADIC20caRgmS5v8oVrGHw4Y
-         Nk9jLGt73OSRUnv1YzFQ6mNERcc3skxNGAouuLZjfBaIEI3Qz0jOcthAN/ZK5juuALa3
-         w7cCYxKj+4lSQbtWx73I2o4A/jKCqt5PMeJXonFCaeC8oEbo+nX2c8oYgLxnkrt7JGZG
-         7YssJSClrZ0ania1nvp7h8wyoH2F2MsK5D71o85X3HrKRl4RbEdHS1gmMRm5zmybX1sk
-         fswG8M9c3NZA63qq0kR8XxJE9IcrPVRuv4t8ZuK2lUqOCG/0zYVm/RxpJA7wHfDwT+zU
-         tCeQ==
-X-Forwarded-Encrypted: i=1; AFNElJ+QonkUjX9+jsMiJbyGc1tIp3Ly6lZOF/WifRBTk50XhdhI3VnedA8Rx1vvg0CeK4w2VEoPjXS7Mg6OWA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YznLIFvtsiBFCnh4uWcIpH3grl6l3O9ePWoOXP1K1cFT4By/mSL
-	ZYZeSZqp3ST9tGGKUL5sl06lLF/oPSqd6qoH7PGTBXYu7BQl3AYqP5rejPh/NaEZDhJhjuE86IQ
-	+mMV1v6HFpn4svQZF7C49CsbFxDorgCIZTUa9qksqs7vjZPAkz52DEZRnMoUcJ8Q=
-X-Gm-Gg: AeBDiet2M6G2GFaoAgvghfeoDvEvaNbaRKhcear2LGDVAjWRp22UU2/T5dTletLFwxk
-	VDDz04A21giB4RgyWYnkUoeHQgDA4Yh5w9MhDP6CsL0Z9/wJrJIbUH+2jMVyO1sXmcn0oltj0hy
-	150uT68m6XmpbXD+xQ0TIv4T4CVSx44l1CWOExP8WOJ2EhSEZ2n7R2KfOygqg2cB3dGHkLZWNeM
-	a+MqUftEalAxInNSl5iNE3rpJHsvKzqWvPZzXSA91X28l0uLxkTH1kdGdGvRzXz1H9oWj2abSbt
-	XLeHZzi7wwjr7qr1tMF0vI4Mv3fv8zcUFGMTIJDHQtL3CBaXDjO1JLSuQIWV7MJdqlaTH8QNKoX
-	DMqTbSdR269ZtHA44LjM8xA==
-X-Received: by 2002:a05:600c:8b8a:b0:489:149a:f9e7 with SMTP id 5b1f17b1804b1-489149afa2bmr214250975e9.27.1776851953572;
-        Wed, 22 Apr 2026 02:59:13 -0700 (PDT)
-X-Received: by 2002:a05:600c:8b8a:b0:489:149a:f9e7 with SMTP id 5b1f17b1804b1-489149afa2bmr214250425e9.27.1776851953134;
-        Wed, 22 Apr 2026 02:59:13 -0700 (PDT)
-Received: from thinky ([217.30.74.39])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-488ffc5e3f4sm222129625e9.2.2026.04.22.02.59.12
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 22 Apr 2026 02:59:12 -0700 (PDT)
-Date: Wed, 22 Apr 2026 11:59:11 +0200
-From: Andrey Albershteyn <aalbersh@redhat.com>
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org, 
-	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, hch@lst.de, 
-	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
-	linux-btrfs@vger.kernel.org, linux-unionfs@vger.kernel.org, djwong@kernel.org, 
-	Amir Goldstein <amir73il@gmail.com>
-Subject: Re: [PATCH v8 03/22] ovl: use core fsverity ensure info interface
-Message-ID: <gpmgtg2wkoo4vozzaaouhdp2df6zlifwi6gy4jvq7xc22zo7om@t3f2bl374nlr>
-References: <20260420114714.1621982-1-aalbersh@kernel.org>
- <20260420114714.1621982-4-aalbersh@kernel.org>
- <20260421214457.GC37143@quark>
+        d=1e100.net; s=20251104; t=1776853785; x=1777458585;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=rI2fi6UkqXUWaBao1RLoql+DKOqLkV4uXoIuteADEXA=;
+        b=KetdnR3eVgeQEoLV3eDmKdU0BxdQfcVxhrZEyhvxu9SCjJ3W00pt48M1ZdLnG8kn2r
+         ziru7q8v7wGWHja7L+jQZ/CHJfNmrgo+3sM/d+1ihnFP0LU2ZUqQMV8O97JE/q74s7Dr
+         fH0S7MpRrn2+kuq1kR2rXsswwI/h8SylI5BHUFcz0/uvRsAwY/OnUg6m5XgS+HuMeXL5
+         9icQrOzUQd1i58KUqo1FBiQxPA+StkQDYZ7U9EVxNZ5cYwnwbDe49cDB2KUHtgj7VdeZ
+         hEW3VPQ4fVe7cnLZ1ogpffbRzqXTlX+aZjBsmM2nwWFIgIBlF8J14YKfFi/nfH9ZTtg6
+         6+IA==
+X-Gm-Message-State: AOJu0YwQnyUJSDSqPfFiapg8K96lmOIdSxXwr8kOkIDr0F/GcS49qPt7
+	2+hk0Zw0/+LzvtpGmuN3hz4dF/e2hHTpL7uX4e7eOhjt3d36W1LqBR76VSzt2zoUbIk=
+X-Gm-Gg: AeBDietJACdEPGyDxC/WbPfVjKDaa4RgQFFDF47d3JhEdW6nAFvIDVXVnkZ6Oa2jzIb
+	i0aUIiRSrjSQE2zhfk8y76Z0wFMgO8h1QJ0A59TvJCLIpr50cuQeoa9DP1H2KAOQRCV2kkXjMw/
+	p4OwrSQwSWLnmW7Rx6KIUZDGKxJLQxYXmfGIWbC7ok6pDd1Ae0Xdny1dwRD5DuDdmfEK8SrtFat
+	boMWYf7PEhOnJaXCfUEYsP8gOAYEI/3YMQ+Fk7tEBkuBsUdmtPDefaluyR/IzYNsqWMNcu6hI0o
+	wGFgq29hSsgiWieXGj80UgQVAzuIMAucFg5pqUVBOLO44aHlEdFlTIcPf4J3tEloOzwhf8irUMp
+	deTjsDhp7voKGcYkp6Nv8PKOhYVf3q49Ixn5x+S+Z38Nbne8Gnf5g7i8K3RaETKNDYZLJ/9JPLb
+	BCT8ARi7EQ9CnhX24HUKWPmLrGE6Z2mX9TuXoWyoqjhEKLtbNJ8zwBl5nc+AHfVA==
+X-Received: by 2002:a05:600c:8909:b0:489:1b10:d896 with SMTP id 5b1f17b1804b1-4891b10dd45mr175018955e9.0.1776853784974;
+        Wed, 22 Apr 2026 03:29:44 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c797703059fsm12627422a12.24.2026.04.22.03.29.42
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 22 Apr 2026 03:29:43 -0700 (PDT)
+Message-ID: <2f467264-0f15-4ced-858e-bbfdad4dcefa@suse.com>
+Date: Wed, 22 Apr 2026 19:59:38 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260421214457.GC37143@quark>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: Limit size of bios submitted from writeback
+To: Jan Kara <jack@suse.cz>, David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <20260422094255.12672-2-jack@suse.cz>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260422094255.12672-2-jack@suse.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On 2026-04-21 14:44:57, Eric Biggers wrote:
-> On Mon, Apr 20, 2026 at 01:46:50PM +0200, Andrey Albershteyn wrote:
-> >  int ovl_ensure_verity_loaded(const struct path *datapath)
-> >  {
-> >  	struct inode *inode = d_inode(datapath->dentry);
-> > -	struct file *filp;
-> >  
-> > -	if (!fsverity_active(inode) && IS_VERITY(inode)) {
-> > -		/*
-> > -		 * If this inode was not yet opened, the verity info hasn't been
-> > -		 * loaded yet, so we need to do that here to force it into memory.
-> > -		 */
-> > -		filp = kernel_file_open(datapath, O_RDONLY, current_cred());
-> > -		if (IS_ERR(filp))
-> > -			return PTR_ERR(filp);
-> > -		fput(filp);
-> > -	}
-> > +	if (fsverity_active(inode))
-> > +		return fsverity_ensure_verity_info(inode);
-> 
-> Not sure whether I should review this version or the version in git, but
-> both seem wrong.  
 
-Sorry, I forgot to push, this one is the latest, the one on git is
-v7. I will push v8 now.
 
-> The 'if (!fsverity_active(inode) && IS_VERITY(inode)) {' condition
-> should stay
+在 2026/4/22 19:12, Jan Kara 写道:
+[...]
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index ca3e4b99aec2..9c603d59a09b 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2555,6 +2555,16 @@ static int extent_write_cache_pages(struct address_space *mapping,
+>   				break;
+>   			}
+>   
+> +			/*
+> +			 * If we have accumulated decent amount of IO, send it
+> +			 * to the block layer so that IO can run while we are
+> +			 * accumulating more folios to write.
+> +			 */
+> +			if (bio_ctrl->bbio &&
+> +			    bio_ctrl->bbio->bio.bi_iter.bi_size >=
+> +			    inode_to_fs_info(inode)->writeback_bio_size)
+> +				submit_write_bio(bio_ctrl, 0);
 
-Why? With recent changes, the fsverity_active() now checks for
-IS_VERITY() instead of verity_descriptor.
+I'd prefer to move the check a little earlier, better inside 
+submit_extent_filio() where we already have a similar check for ordered 
+extent boundaries.
 
-> , but fsverity_ensure_verity_info() will need to
-> gain a !CONFIG_FS_VERITY stub to fix the build error.
+One reason here is, we're considering huge folio support recently, and 
+with huge folios on arm64, we can have a folio as large as 32MiB, thus 
+for the worst case we can have a bio as large as 96MiB before submitting it.
 
-With "if (fsverity_active(inode))" I think this is not necessary as
-this fsverity_active() will be always false, and this if-case is
-optimized.
+[...]
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index a88e68f90564..cb654e990333 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -8179,6 +8179,60 @@ int btrfs_init_dev_stats(struct btrfs_fs_info *fs_info)
+>   	return ret;
+>   }
+>   
+> +/*
+> + * At maximum we submit writeback bios 64MB in size to avoid too large
+> + * submission latencies
+> + */
+> +#define BTRFS_MAX_WB_BIO_SIZE (64 << 20)
+> +
+> +int btrfs_init_writeback_bio_size(struct btrfs_fs_info *fs_info)
+> +{
+> +	struct rb_node *node;
+> +	u32 writeback_bio_sectors = 1;
+> +
+> +	read_lock(&fs_info->mapping_tree_lock);
+> +	/*
+> +	 * For each data chunk compute the size of bio large enough to submit
+> +	 * optimum size request for each of chunk's disk and take maximum
+> +	 * over all data chunks.
+> +	 */
+> +	for (node = rb_first_cached(&fs_info->mapping_tree); node;
+> +	     node = rb_next(node)) {
 
--- 
-- Andrey
+Iterating through all chunk maps may take some time for huge filesystems.
 
+Meanwhile the device list is way smaller than the chunk maps, what about 
+iterating through all devices instead?
+
+Not to mention we are going to hit the same devices again and again 
+through the chunk maps.
+
+This may not handle all corner cases, e.g. a fs with new disks added, 
+but should handle the most common cases pretty well.
+
+> +		struct btrfs_chunk_map *map;
+> +		unsigned int data_stripes, opt_rq_size = fs_info->sectorsize;
+> +		int i;
+> +
+> +		map = rb_entry(node, struct btrfs_chunk_map, rb_node);
+> +		if (!(map->type & BTRFS_BLOCK_GROUP_DATA))
+> +			continue;
+> +		data_stripes = calc_data_stripes(map->type, map->num_stripes);
+> +		for (i = 0; i < map->num_stripes; i++) {
+> +			struct request_queue *queue;
+> +			unsigned int io_opt;
+> +
+> +			if (!map->stripes[i].dev)
+> +				continue;
+> +			queue = bdev_get_queue(map->stripes[i].dev->bdev);
+> +			io_opt = queue_io_opt(queue) ? :
+> +				queue_max_sectors(queue) << SECTOR_SHIFT;
+> +			opt_rq_size = max(opt_rq_size, io_opt);
+
+I'm wondering if we should use the minimal or maximum size.
+
+If the optimal io sizes are very different, e.g. 512K vs 128M, the final 
+result will be truncated to 64M, would a 64M io submission stall the 
+pipeline for that 512K device?
+
+Thanks a lot for finding the root cause!
+Qu

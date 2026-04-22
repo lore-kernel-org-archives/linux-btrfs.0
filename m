@@ -1,58 +1,94 @@
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C3DCB3659FF
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 17:10:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.81.13.136
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C651361DBF
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 19:14:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776877816; cv=none; b=C2MtvmYnb3RdAt0mCWdVUMgoONEDNzb/zOipKB/rHg/ZxlESZDqXWlRoVlYMUatJuEF0QlKuWdXa2eAmhQfcYOqv7DZpUFTnhAzqTBF836zFCx3RBoO3/JBOXhvSTirLD7QVWkn3prRzoAYMDx2oWptpg5H6fqh3FN8AzWio5M4=
+	t=1776885267; cv=none; b=BXtZX7R4l1mBI35B7PvMWH1n2gW+8kfa4b3qthIInYrP3SAkdXAGcM7zlHYaGx/9BBteBYNIWFKrTpyEQnRxDQGbMYu1+Itk+6Bnr7jhH4rRjJ49fEox1uEUZt4CgqQF39+lR3DcJsFMFsvlcrm7kGuZlrxan/5z3sJxZUyM/uQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776877816; c=relaxed/simple;
-	bh=wo7Bpy4qHdwLngDOoKa8/LUxHKKvrrDXkziZTUHy01U=;
+	s=arc-20240116; t=1776885267; c=relaxed/simple;
+	bh=v3k6BW0VjtHYSkTtjZWNvzXiA+F5vkZY+kYFdoYFF6k=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=pvj7N1+/8CpbqM7x6Obedgm0VqnX18LWwFfKVLuX8pCimsT8CCaH+T9N2i9yfZu7jMssBN2nyx5iikysDddZ3K1CzKWNMjS6Sjdl8ADfF5JyR+O8XkhCTrKrcgb7fu8t5JKHlUGlqbi89kMRqMk5g1dzPouyFlOfCn7CR1U4nbI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org; spf=pass smtp.mailfrom=merlins.org; dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b=CUm9pOFE; arc=none smtp.client-ip=209.81.13.136
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=merlins.org
+	 Content-Type:Content-Disposition:In-Reply-To; b=NTcYpNLVCfKsWIDWaYGq8MACQK4WBxm6nuVFO5XFatwiBXewL6zoNGLP+owMnspcETQdCndtnRk2o9ldpLk4SQmfya7FFBkAG3XHoKaQO8jkZ8kMvjT2zbdU5CzpwOH95yaM0erTOjyxPcElgpGG7kHMCVoN8RnKXL97bX0b4Sg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=REnHlWwN; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=hj/9OoPc; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=REnHlWwN; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=hj/9OoPc; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b="CUm9pOFE"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=merlins.org
-	; s=20251023; h=In-Reply-To:Content-Type:MIME-Version:References:Message-ID:
-	Subject:Cc:To:From:Date:Sender:Reply-To:Content-Transfer-Encoding:Content-ID:
-	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-	:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:List-Subscribe:
-	List-Post:List-Owner:List-Archive;
-	bh=UfxwHpcivqTaU0/D6etCPUZvI9y0/SPHOmy6Zf6ZigM=; b=CUm9pOFEy5EQhweg3nqb4ek9HB
-	a5gFcK9MKYE5+YmG3Z6D93w+6bhd1CvMUpKN0IhiDRe3k55G2FWvZS4BAnlHbw/QryxRGSQ+GS7R8
-	s0UHGpxK5KA9yEEEjyxKfLGs3FzGzXEEELYjiO2mkZmHX+5V12ONdgEXmkvOIrpYsxP7tdVivLSEE
-	brVoBnS2Tzv+FRnjvX8YqN0I5zgig8G5tRnmr3n74usxYowPZEK/l8RyuqHX5VvnQNXIm6lwcfaXj
-	X7WzNHtaA1MvSBclJxZWgeSpSNd2bTR0Fio02k6bbwf2o0zQXRsvhQhPGIcVA4e3uoxtqEX30/dnh
-	5Azoak6Q==;
-Received: from [24.6.49.44] (port=39446 helo=sauron.svh.merlins.org)
-	by mail1.merlins.org with esmtpsa 
-	(Cipher TLS1.3:ECDHE_SECP256R1__ECDSA_SECP256R1_SHA256__AES_256_GCM:256) (Exim 4.98.2 #2)
-	id 1wFb5Y-00000007GgX-1ups by authid <merlins.org> with srv_auth_plain;
-	Wed, 22 Apr 2026 10:10:12 -0700
-Received: from merlin by sauron.svh.merlins.org with local (Exim 4.96)
-	(envelope-from <marc_btrfs@merlins.org>)
-	id 1wFb5W-00AF5I-31;
-	Wed, 22 Apr 2026 10:10:10 -0700
-Date: Wed, 22 Apr 2026 10:10:10 -0700
-From: Marc MERLIN <marc_btrfs@merlins.org>
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Deleted snapshots stay in squota, mayube because of bees?
-Message-ID: <aekA8mS4hppTjbA-@merlins.org>
-References: <aeA2c8V4FgCctUPG@merlins.org>
- <20260416012535.GB1065998@zen.localdomain>
- <aeEaqCJAWaWbz1vO@merlins.org>
- <20260416213632.GA1654609@zen.localdomain>
- <aeFY4uSTSIz4Ccat@merlins.org>
- <20260417215127.GA2310330@zen.localdomain>
- <aeK2QgUCefpVY4KX@merlins.org>
- <20260417231603.GA2376753@zen.localdomain>
- <aeLNxjmUGGhnW5ss@merlins.org>
- <20260422022627.GA1034721@zen.localdomain>
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="REnHlWwN";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="hj/9OoPc";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="REnHlWwN";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="hj/9OoPc"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 48EE46A827;
+	Wed, 22 Apr 2026 19:14:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1776885255;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=kVuxbSAzewsAYv8/qYWz0g/O7K1OXFm7e8ZlxXnfSt0=;
+	b=REnHlWwNhU+aY9Fe7p+ZajDg+lfd0uFecBx1jOdTU0hn6kEFp6Z9Bf2E5Pz2d7C2hhEZNz
+	YqUtg3r4rlpSQ3+bsxiBcsZX05/iEKYemleZbTCA+L1bpRRhq4f5JYClOVT0IjKgfmEHBI
+	VkfwFdSsYyGaNmnpKWbhd284Rj8bnRA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1776885255;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=kVuxbSAzewsAYv8/qYWz0g/O7K1OXFm7e8ZlxXnfSt0=;
+	b=hj/9OoPci7zg8PPoyMK0MyMxe3VC2eAGp6yMRvAy6bpbYPxDfjounNHVHFtjkvEqgKhrP0
+	/9O821rA4F0IZDDg==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1776885255;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=kVuxbSAzewsAYv8/qYWz0g/O7K1OXFm7e8ZlxXnfSt0=;
+	b=REnHlWwNhU+aY9Fe7p+ZajDg+lfd0uFecBx1jOdTU0hn6kEFp6Z9Bf2E5Pz2d7C2hhEZNz
+	YqUtg3r4rlpSQ3+bsxiBcsZX05/iEKYemleZbTCA+L1bpRRhq4f5JYClOVT0IjKgfmEHBI
+	VkfwFdSsYyGaNmnpKWbhd284Rj8bnRA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1776885255;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=kVuxbSAzewsAYv8/qYWz0g/O7K1OXFm7e8ZlxXnfSt0=;
+	b=hj/9OoPci7zg8PPoyMK0MyMxe3VC2eAGp6yMRvAy6bpbYPxDfjounNHVHFtjkvEqgKhrP0
+	/9O821rA4F0IZDDg==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1EAD4593AF;
+	Wed, 22 Apr 2026 19:14:15 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id TleCBgce6WnqegAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Wed, 22 Apr 2026 19:14:15 +0000
+Date: Wed, 22 Apr 2026 21:14:13 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Aleksandar Gerasimovski <Aleksandar.Gerasimovski@belden.com>
+Cc: Sasha Levin <sashal@kernel.org>,
+	"patches@lists.linux.dev" <patches@lists.linux.dev>,
+	"stable@vger.kernel.org" <stable@vger.kernel.org>,
+	Rene Straub <Rene.Straub@belden.com>,
+	Filipe Manana <fdmanana@suse.com>, Qu Wenruo <wqu@suse.com>,
+	David Sterba <dsterba@suse.com>, "clm@fb.com" <clm@fb.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH AUTOSEL 7.0-5.10] btrfs: be less aggressive with metadata
+ overcommit when we can do full flushing
+Message-ID: <20260422191413.GG12792@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20260420132314.1023554-1-sashal@kernel.org>
+ <20260420132314.1023554-174-sashal@kernel.org>
+ <SA1PR18MB56923AA957ABED674340E52C992D2@SA1PR18MB5692.namprd18.prod.outlook.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -61,86 +97,42 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260422022627.GA1034721@zen.localdomain>
-X-Sysadmin: BOFH
-X-URL: http://marc.merlins.org/
-X-SA-Exim-Connect-IP: 24.6.49.44
-X-SA-Exim-Mail-From: marc_btrfs@merlins.org
+In-Reply-To: <SA1PR18MB56923AA957ABED674340E52C992D2@SA1PR18MB5692.namprd18.prod.outlook.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Score: -4.00
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_EQ_ADDR_SOME(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RCPT_COUNT_SEVEN(0.00)[11];
+	RCVD_TLS_ALL(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Flag: NO
 
-Hi Boris,
+On Wed, Apr 22, 2026 at 12:24:52PM +0000, Aleksandar Gerasimovski wrote:
+> Hi everyone,
+> 
+> Can you add Rene's tag to the reporter as well, he was the one seeing
+> and triggering the that internally and I continued with following that
+> with the mailing list:
 
-I noticed another issue, when I do a btrfs send to this volume
-which was created cleanly from scratch with squota, if I have
-an incomplete btrfs receive subvolume (copy failed half way),
-when I delete it, it does from
-<under deletion> to <squota space holder>.
-You'll notice I have now two <squota space holder> which just so happen
-to be 297.04MiB each.
-
-I do run bees, so there is a very small chance bees took data from
-debian64 and dupedd it against another subvolume and then can't delete
-all the data, but in this example backup/debian64_kodi_ro.20260327_10:11:40
-was last, so any duped data should have been duped against a previous
-snapshot, and ideally not leave leftover squota data after deletion,
-unless bees somehow is making those references the other way around
-and the new copy becomes the master copy for squota?
-
-But even then, it looks a bit weird that now I have two
-0/263        297.04MiB    297.04MiB   <squota space holder>
-0/269        287.84MiB    287.84MiB   <squota space holder>
-of almost the same space
-
-Is that still working as intended and I don't quite grasp how?
-
-gargamel:/mnt/btrfs_pool2/backup# btrfs qgroup show .
-Qgroupid    Referenced    Exclusive   Path 
---------    ----------    ---------   ---- 
-0/5            1.61GiB      1.61GiB   <toplevel>
-0/256         16.00KiB     16.00KiB   backup
-0/258         16.00KiB     16.00KiB   backup-btrfssend
-0/260          1.06GiB      1.06GiB   .beeshome
-0/261         63.74GiB     63.74GiB   backup/win_kodi_ro.20260328_21:48:59
-0/262        229.51GiB    229.51GiB   backup/ubuntu_kodi_ro.20260328_10:19:47
-0/263        297.04MiB    297.04MiB   <squota space holder> <- this has been there for days
-0/264        187.38GiB    187.38GiB   backup/0Notmachines_kodi_ro.20260325_20:08:49
-0/266         10.37GiB     10.37GiB   backup/1Appliances_kodi_ro.20260325_23:22:32
-0/268        294.27GiB    294.27GiB   backup/debian32_kodi_ro.20260325_23:43:06
-0/269        295.74GiB    295.74GiB   backup/debian64_kodi_ro.20260327_10:11:40
-gargamel:/mnt/btrfs_pool2/backup# btrfs subvolume delete debian64_kodi_ro.20260327_10:11:40/
-Delete subvolume 269 (no-commit): '/mnt/btrfs_pool2/backup/debian64_kodi_ro.20260327_10:11:40'
-gargamel:/mnt/btrfs_pool2/backup# btrfs qgroup show .
-Qgroupid    Referenced    Exclusive   Path
---------    ----------    ---------   ----
-0/5            1.61GiB      1.61GiB   <toplevel>
-0/256         16.00KiB     16.00KiB   backup
-0/258         16.00KiB     16.00KiB   backup-btrfssend
-0/260          1.06GiB      1.06GiB   .beeshome
-0/261         63.74GiB     63.74GiB   backup/win_kodi_ro.20260328_21:48:59
-0/262        229.51GiB    229.51GiB   backup/ubuntu_kodi_ro.20260328_10:19:47
-0/263        297.04MiB    297.04MiB   <squota space holder>
-0/264        187.38GiB    187.38GiB   backup/0Notmachines_kodi_ro.20260325_20:08:49
-0/266         10.37GiB     10.37GiB   backup/1Appliances_kodi_ro.20260325_23:22:32
-0/268        294.27GiB    294.27GiB   backup/debian32_kodi_ro.20260325_23:43:06
-0/269        295.74GiB    295.74GiB   <under deletion>
-gargamel:/mnt/btrfs_pool2/backup# btrfs qgroup show .
-Qgroupid    Referenced    Exclusive   Path
---------    ----------    ---------   ----
-0/5            1.63GiB      1.63GiB   <toplevel>
-0/256         16.00KiB     16.00KiB   backup
-0/258         16.00KiB     16.00KiB   backup-btrfssend
-0/260          1.06GiB      1.06GiB   .beeshome
-0/261         63.74GiB     63.74GiB   backup/win_kodi_ro.20260328_21:48:59
-0/262        229.51GiB    229.51GiB   backup/ubuntu_kodi_ro.20260328_10:19:47
-0/263        297.04MiB    297.04MiB   <squota space holder>
-0/264        187.38GiB    187.38GiB   backup/0Notmachines_kodi_ro.20260325_20:08:49
-0/266         10.37GiB     10.37GiB   backup/1Appliances_kodi_ro.20260325_23:22:32
-0/268        294.27GiB    294.27GiB   backup/debian32_kodi_ro.20260325_23:43:06
-0/269        287.84MiB    287.84MiB   <squota space holder>
-0/270        321.80GiB    321.80GiB   backup/debian64_kodi_ro.20260327_10:11:40
-
-Thanks
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
- 
-Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08
+Technically the Reported-by tag can be added but that would be only for
+the stable patches and I don't think this has even been done. Credits
+are collected before the patch is merged, after that it's immutable
+(574d93fc62e2).

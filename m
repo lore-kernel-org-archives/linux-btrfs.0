@@ -1,45 +1,46 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC43E35AC38;
-	Wed, 22 Apr 2026 22:47:20 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 023CA32ED40;
+	Wed, 22 Apr 2026 22:54:26 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776898041; cv=none; b=OxhQnQCITBy5kSdjwPDIjbl0fRI1QyqLLCo8pOiU2Clnc0q5CLT4XYQReDZM0guvvaYuoOk7Furg3G7975jPL89EEM57pQiUoc4ieKFA6KvFR0fM+/twndl1KAklAnTPjxRAKghXbV5OYMgyS26mWpBnE5WI+2owozpB99Ic35c=
+	t=1776898466; cv=none; b=etU5OFau05BGOXsm99LZWHPiJmflOsPYwmTK/hE+1UpAsOfgttkoxw9U9K+l5NwFI6zA2KIuzgtXFR2JRUCpP7UgZzyw7A8CLLTdMutomZ0hwOKSi1F5VXDECr3DkcMZsl41E1DQPXK+Z+3DKCBI7m5pJk/0DJZa6FOvTomv6Nc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776898041; c=relaxed/simple;
-	bh=xywk3FuWWC6fImVY9XXhdwDp4KDD7unC169c5GRX1tI=;
+	s=arc-20240116; t=1776898466; c=relaxed/simple;
+	bh=Xwdj3WPtuVugPCCdzzAsmUilrlXNct1Zv2lAeA2Zzxg=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Zge23IRpJfLGAbCyC4kY154qqJFge2jLfGueK5lb+yZ/kHYomp5A8uYoWs2gutr9Lh8tXRkcHkgV/mv5gs4SA1dcIplm6Rl1+htXj1P0COOgo9aRm0SiT1MjADwzCyc4cx2G97aK/r7y71bOe/TlT8RKzL5P399YITh+h/tkZPs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=taLQSnF3; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=f/9kx20EMI2/QzHszxVVgtq8pxwqd7hSr3qzG2RcJUdCSs4whyQF5qDUKhPdQK0wA1XZSEBxvjTFJvTTCt4Euc7mDWQfaIyiWICEcdReEfZRce2FYkOhMSM0rWPa2BLfPqgxC94hoVin4WFRcjxeRN/z0rrjbPoSHMXOQJnvCK4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=nFESlm5X; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="taLQSnF3"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 37BCAC2BCB3;
-	Wed, 22 Apr 2026 22:47:20 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="nFESlm5X"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 853CEC19425;
+	Wed, 22 Apr 2026 22:54:25 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1776898040;
-	bh=xywk3FuWWC6fImVY9XXhdwDp4KDD7unC169c5GRX1tI=;
+	s=k20201202; t=1776898465;
+	bh=Xwdj3WPtuVugPCCdzzAsmUilrlXNct1Zv2lAeA2Zzxg=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=taLQSnF3g6HjJbm8te8XI4HVGp9e1gYWYDyyEz4BDMSY9RcVw0NXVW7XxNrL52qCk
-	 XPKErDIJA4sab4tLjf0mKkrAvi/TtZ3wBs3wdurJAhtObSlzCASr1OLS6myyQJTU1m
-	 7klnFauuVwF7QP/L63MRpWBDs69K6V4heEuT0ERt8G6EQ8ttNsdGztrZJly83cpNYu
-	 LYk/WSAJXazmI45BAAZnCCGTQ7h9+ITYX2SKoPiujjo0/H5GJcvptdWUTVFCrvYEBW
-	 m9I8VcfQRYVtcp1nirJ+jBJUduExqrJUPrsdhuZz3a4BeSBwXE/BUyb8VWEywliUcI
-	 9SG/FhHW9jycg==
-Date: Wed, 22 Apr 2026 15:46:04 -0700
+	b=nFESlm5X3p9423YsQhMhvWhuNIU93mJ3vAInWDA9ykantZvTRsXwxfkwD/exp4d+X
+	 wpwR8pZIA6cmduvSklON9PDdhFUmOFDwhjpbXbRVdrE9GaW2xjkNZf9dNzzDUXw7Q1
+	 Wpe3ubCm97yLTMqe8waKErBGZ94e+Z/7KxdGoUny/LQ1va6PiZiYn2v5bHpDSYb8gj
+	 sn6u9EPhbUkjeQqc8eQQxxGAJ6Qe8OG5tZPPRSCpJFD8aRenVOXRdT0IN30Kg1uneI
+	 +Y1bxXhDJSfrRefYZxsanllXb14+ttOrJY6Mme41mXoLIRbgbjNPnb/ix10x8WOuz0
+	 znQU3BP4UL3fA==
+Date: Wed, 22 Apr 2026 15:53:10 -0700
 From: Eric Biggers <ebiggers@kernel.org>
-To: Andrey Albershteyn <aalbersh@redhat.com>
-Cc: Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org,
-	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, hch@lst.de,
-	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-	linux-btrfs@vger.kernel.org, linux-unionfs@vger.kernel.org,
-	djwong@kernel.org, Amir Goldstein <amir73il@gmail.com>
-Subject: Re: [PATCH v8 03/22] ovl: use core fsverity ensure info interface
-Message-ID: <20260422224604.GA2226@sol>
-References: <20260420114714.1621982-1-aalbersh@kernel.org>
- <20260420114714.1621982-4-aalbersh@kernel.org>
- <20260421214457.GC37143@quark>
- <gpmgtg2wkoo4vozzaaouhdp2df6zlifwi6gy4jvq7xc22zo7om@t3f2bl374nlr>
+To: Daniel Vacek <neelx@suse.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+	"Theodore Y. Ts'o" <tytso@mit.edu>,
+	Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>,
+	David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
+	linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v6 01/43] fscrypt: add per-extent encryption support
+Message-ID: <20260422225310.GB2226@sol>
+References: <20260206182336.1397715-1-neelx@suse.com>
+ <20260206182336.1397715-2-neelx@suse.com>
+ <20260221221153.GA2123@quark>
+ <CAPjX3FficsLf2QXFU70sR6PN7h8rj5opz_wntLm+Acd3YLvu+A@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -48,18 +49,72 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <gpmgtg2wkoo4vozzaaouhdp2df6zlifwi6gy4jvq7xc22zo7om@t3f2bl374nlr>
+In-Reply-To: <CAPjX3FficsLf2QXFU70sR6PN7h8rj5opz_wntLm+Acd3YLvu+A@mail.gmail.com>
 
-On Wed, Apr 22, 2026 at 11:59:11AM +0200, Andrey Albershteyn wrote:
-> > The 'if (!fsverity_active(inode) && IS_VERITY(inode)) {' condition
-> > should stay
+On Wed, Apr 22, 2026 at 10:17:40AM +0200, Daniel Vacek wrote:
+> > > +/**
+> > > + * fscrypt_mergeable_extent_bio() - test whether data can be added to a bio
+> > > + * @bio: the bio being built up
+> > > + * @ei: the fscrypt_extent_info for this extent
+> > > + * @next_lblk: the next file logical block number in the I/O
+> > > + *
+> > > + * When building a bio which may contain data which should undergo inline
+> > > + * encryption (or decryption) via fscrypt, filesystems should call this function
+> > > + * to ensure that the resulting bio contains only contiguous data unit numbers.
+> > > + * This will return false if the next part of the I/O cannot be merged with the
+> > > + * bio because either the encryption key would be different or the encryption
+> > > + * data unit numbers would be discontiguous.
+> > > + *
+> > > + * fscrypt_set_bio_crypt_ctx_from_extent() must have already been called on the
+> > > + * bio.
+> > > + *
+> > > + * This function isn't required in cases where crypto-mergeability is ensured in
+> > > + * another way, such as I/O targeting only a single file (and thus a single key)
+> > > + * combined with fscrypt_limit_io_blocks() to ensure DUN contiguity.
+> > > + *
+> > > + * Return: true iff the I/O is mergeable
+> > > + */
+> > > +bool fscrypt_mergeable_extent_bio(struct bio *bio,
+> > > +                               const struct fscrypt_extent_info *ei,
+> > > +                               u64 next_lblk)
+> > > +{
+> > > +     const struct bio_crypt_ctx *bc = bio->bi_crypt_context;
+> > > +     u64 next_dun[BLK_CRYPTO_DUN_ARRAY_SIZE] = { next_lblk };
+> > > +
+> > > +     if (!ei)
+> > > +             return true;
+> > > +     if (!bc)
+> > > +             return true;
+> > > +
+> > > +     /*
+> > > +      * Comparing the key pointers is good enough, as all I/O for each key
+> > > +      * uses the same pointer.  I.e., there's currently no need to support
+> > > +      * merging requests where the keys are the same but the pointers differ.
+> > > +      */
+> > > +     if (bc->bc_key != ei->prep_key.blk_key)
+> > > +             return false;
+> > > +
+> > > +     return bio_crypt_dun_is_contiguous(bc, bio->bi_iter.bi_size, next_dun);
+> > > +}
+> > > +EXPORT_SYMBOL_GPL(fscrypt_mergeable_extent_bio);
+> >
+> > Similar to fscrypt_set_bio_crypt_ctx_from_extent().  The copy-pasted
+> > comment needs to be updated to remove no-longer-relevant information
+> > specific to per-file encryption and correctly reflect per-extent
+> > encryption.  The DUN needs to be calculated correctly for sub-block data
+> > units or else the combination of the two needs to be unsupported.
 > 
-> Why? With recent changes, the fsverity_active() now checks for
-> IS_VERITY() instead of verity_descriptor.
-> 
+> The DUN is fixed as per above. Regarding the comment, it looks quite
+> valid to me. What exactly would you like to change?
 
-Okay, I forgot that that had changed.  Looks like the kerneldoc never
-got updated, though.  It still says "This checks whether the inode's
-verity info has been set."
+It's now been a while since I was looking at this, but looking at it
+again now, at least the following parts are incorrect:
+
+    "the next file logical block number in the I/O"
+
+    "I/O targeting only a single file (and thus a single key)"
+
+It's actually the block number in the *extent*.  And it's a single key
+only when the I/O targets a single *extent*.
 
 - Eric

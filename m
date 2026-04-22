@@ -1,65 +1,65 @@
-Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
+Received: from mail-pf1-f181.google.com (mail-pf1-f181.google.com [209.85.210.181])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A7BC63CBE76
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 10:29:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EA0623C277B
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 11:40:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.181
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776853788; cv=none; b=fL1WTqECa2tDTeH/eQJTfGT+sBYghsQGJMdWtV9t0vgZ9YolkTtEAW2ogXbW7R7TTZ04YNpPrDufiFT8+cMjar6fKKph7ynDeyAPz5xGvB3zx0QBlNWAdEUACaMc9W6sdoJRIsAJux6S9RzYctEvT2/RrRGFajDq7Nz0+jcb9cY=
+	t=1776858003; cv=none; b=E9eQnNazGUEHy3u0CTDUI+dTaU1b3gllQsriIrEzqYb+pxl7W9c5RdvNnL62tXeFWLlZQ5HweoI+mx58l4QNtHdt8+zcIt4REiF9gSwIl4zit+THClTsooHAyH3jOEOizJfUsnuPu2XkDt+u+dT6KyStjX+NBSF9HOkFmO14VPE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776853788; c=relaxed/simple;
-	bh=IjFngPwuefsKMhzTlKN6e2G9FW+ktklXtsM+0b2gtUA=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=TCvx0vLxVdHOFXyONhGTHIz+hgto0+GqNu3kJwaTeS7sgXxqNnTV96shDVRT8A8kb3f4E8kVAcXE+2Nb9gwObnsZM+j4qrH5GTCD5asGmve4CbmTh92eJOUK5xvp19lcV48UT2XEBo2u0Us5pJKql1lCLSnNzne4f6Y4wX9PtaU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=K+H10UZn; arc=none smtp.client-ip=209.85.128.54
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1776858003; c=relaxed/simple;
+	bh=7jSkwPHB1rmAue0G4ep5X5x0tFp0MCnjlBuXF0HrV68=;
+	h=Message-ID:Date:MIME-Version:From:Subject:To:Cc:References:
+	 In-Reply-To:Content-Type; b=rG2ZplUFfkZ5EpKVsk8/oucc2SPxAagyIiB3rJJcHi7IgKkunXvNMOT6ALEtw9s8Mfz+4ip8jdA+jynl/RncIy2lBGnJ1yPkhRm1AHFzBLJLCXtgkmnt/1vA/Q5nkxanENFpIm43HS6Lffu3EWQX3sNgG0q6EVP3m9R5kENfa64=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=ll9mgn/J; arc=none smtp.client-ip=209.85.210.181
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="K+H10UZn"
-Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4891d7164ddso20330835e9.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 03:29:46 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ll9mgn/J"
+Received: by mail-pf1-f181.google.com with SMTP id d2e1a72fcca58-82fcd0aa2dbso889822b3a.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2026 04:40:01 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1776853785; x=1777458585; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=rI2fi6UkqXUWaBao1RLoql+DKOqLkV4uXoIuteADEXA=;
-        b=K+H10UZnsfb2CXxXAep8iiRSwt2H8qlW8HY4locp5uHhf8JsiNSSs0WQ3O1xdwiE+B
-         xADpho2HPsK/K/sqFW8TcObSieobmxOZODie9homG3ov4y5VRUn1yO52+E5E+TyCvwDf
-         X0rqBhYp1RnRhlIHkklGmOiot9Yp1+707/JcOmMctcA/0mOrh7ZFPVHXX+p2fHKb6P/U
-         RegqdzrRVUbke8k5sMLrFEVCuND929+JnfAVnalm1F15898A73muhpajWFcCeGCIe5M4
-         +ZvEQR1yokzwzlBC39USj0BSOnRr0anF8c1PGyfny52EY5dRROs+BSXDvN6dueRsf8r3
-         1HAQ==
+        d=gmail.com; s=20251104; t=1776858001; x=1777462801; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:content-language:references
+         :cc:to:subject:from:user-agent:mime-version:date:message-id:from:to
+         :cc:subject:date:message-id:reply-to;
+        bh=MUHkTSAzkxq/Om8+jSsUbp1RMELRmuD0B/+VrfsdgxU=;
+        b=ll9mgn/JnyYFNKhpAt/qyIgH1H+6MCuZuRMt6NoafZGs++QWkmwE9ELntcK6j2aZrs
+         bjQDiQFaXB2pDrlBOV1aoPlpvtUlnweGGbZMAF9Q7qAo54WB+4r87Df9qK0m/MFglUBd
+         BHMCkiou5z1IwPYX5t+7wdQ6N9NGl5PX0SBC+LSXK8JwUi9vyLk0h5QApWvWmE1B/ym0
+         SCtz+viyfmXeVbo/hLcsa8mfFKnC4LHSM4xJtetEzCH1GXbOMkQiH1fScUiEa/qYmSFM
+         gZv5DV9WtfS5UBKC+jofPgs7h43TRT0mP/GxTto7wBYsxzUMpgxu2N0ZTl+YyPksLurO
+         u+Jg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1776853785; x=1777458585;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=rI2fi6UkqXUWaBao1RLoql+DKOqLkV4uXoIuteADEXA=;
-        b=KetdnR3eVgeQEoLV3eDmKdU0BxdQfcVxhrZEyhvxu9SCjJ3W00pt48M1ZdLnG8kn2r
-         ziru7q8v7wGWHja7L+jQZ/CHJfNmrgo+3sM/d+1ihnFP0LU2ZUqQMV8O97JE/q74s7Dr
-         fH0S7MpRrn2+kuq1kR2rXsswwI/h8SylI5BHUFcz0/uvRsAwY/OnUg6m5XgS+HuMeXL5
-         9icQrOzUQd1i58KUqo1FBiQxPA+StkQDYZ7U9EVxNZ5cYwnwbDe49cDB2KUHtgj7VdeZ
-         hEW3VPQ4fVe7cnLZ1ogpffbRzqXTlX+aZjBsmM2nwWFIgIBlF8J14YKfFi/nfH9ZTtg6
-         6+IA==
-X-Gm-Message-State: AOJu0YwQnyUJSDSqPfFiapg8K96lmOIdSxXwr8kOkIDr0F/GcS49qPt7
-	2+hk0Zw0/+LzvtpGmuN3hz4dF/e2hHTpL7uX4e7eOhjt3d36W1LqBR76VSzt2zoUbIk=
-X-Gm-Gg: AeBDietJACdEPGyDxC/WbPfVjKDaa4RgQFFDF47d3JhEdW6nAFvIDVXVnkZ6Oa2jzIb
-	i0aUIiRSrjSQE2zhfk8y76Z0wFMgO8h1QJ0A59TvJCLIpr50cuQeoa9DP1H2KAOQRCV2kkXjMw/
-	p4OwrSQwSWLnmW7Rx6KIUZDGKxJLQxYXmfGIWbC7ok6pDd1Ae0Xdny1dwRD5DuDdmfEK8SrtFat
-	boMWYf7PEhOnJaXCfUEYsP8gOAYEI/3YMQ+Fk7tEBkuBsUdmtPDefaluyR/IzYNsqWMNcu6hI0o
-	wGFgq29hSsgiWieXGj80UgQVAzuIMAucFg5pqUVBOLO44aHlEdFlTIcPf4J3tEloOzwhf8irUMp
-	deTjsDhp7voKGcYkp6Nv8PKOhYVf3q49Ixn5x+S+Z38Nbne8Gnf5g7i8K3RaETKNDYZLJ/9JPLb
-	BCT8ARi7EQ9CnhX24HUKWPmLrGE6Z2mX9TuXoWyoqjhEKLtbNJ8zwBl5nc+AHfVA==
-X-Received: by 2002:a05:600c:8909:b0:489:1b10:d896 with SMTP id 5b1f17b1804b1-4891b10dd45mr175018955e9.0.1776853784974;
-        Wed, 22 Apr 2026 03:29:44 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c797703059fsm12627422a12.24.2026.04.22.03.29.42
+        d=1e100.net; s=20251104; t=1776858001; x=1777462801;
+        h=content-transfer-encoding:in-reply-to:content-language:references
+         :cc:to:subject:from:user-agent:mime-version:date:message-id:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=MUHkTSAzkxq/Om8+jSsUbp1RMELRmuD0B/+VrfsdgxU=;
+        b=TCV9ZPXgMVykLRN5te6+FZvZdH2m349onmNGUiH3NnFJztOpxDIDYih5eP261KqGmi
+         o/FOVZf45Qh5sOmsjSYHX7lm0MS6WOADxgDxZ+9b7JpQWmKuH4lUElzfViGifHeGjoTC
+         2lriLmAJGiiV2p7v/UQ94rmQXxb0GtUXYFxATBKIbshClWdli5GezsoykUhAd2+0Ix5M
+         hgiOgr3UIf5XZBVWa9CswZ+pnlAb7naWHANfR1CcopRLwdDGLcgFjnKd6jrc5Lf0x/EH
+         hYgETRIdatALDM0qa851KTR+BoKghg2IITDJnU+XMEFGaOockaFzXWE0vEEIYhrMXH93
+         wohA==
+X-Forwarded-Encrypted: i=1; AFNElJ/oT4JMrRS4zw7Du3AsCkmoIYG8Uhxg3CjZRSAetwRpxmGig7Jtrc/bQob42ri5W9NK3PnShsu6DqNjpQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwvbQ7PHtYMpTQMDZKHYCSZ+KkdmPz561cf/FeQXspq27++VEQ1
+	1CaSIuVUNNBSPAPNYTcw7VfLOnaajuSFrZaB9LHM0g7WwxprxdXeWtWl
+X-Gm-Gg: AeBDietHeqrub4jM/hl61ZXYI+JGDJB2IeRAYyXeH6oM0EEAUH0h75fyPvFPlDNxLvP
+	USXUu2IGbOrcHj7DQ3kWsxyxxeBg9lXs6FpbZK1n8IRFOKk5A4+90Q6aB63n/BWTWcqd2IWcBxM
+	9kG7cB71qBtR1xgdmG+0tmuDxj6TQDNAc8+TPcEio6DAPRtapMPgd1R++ly4gyh2QTKdcDz9InY
+	LLaLv3qDlWZKnq0s4cgblOFnI4aZLTcsdh7ihpUIja5aVrhw4Zxb0TeGreduutHDiN9bSB+HsO7
+	jlasLTFjn5tNWAjzJ8eORINhzbpv58FVkmamU8/jV87Ybyknc0UJky97flgl/7oSVLDQb51GqFJ
+	tYoMrbhGKf+9euPE7paS0G1+DfnMwhmGsWzOjUFHO+a5lRQmOr+c2pT7O5VN6i/naRK9yPNH+2u
+	GoSyVp6AkctTHD7Y9yWdIZWnzg1K36hy6vPCLOcw==
+X-Received: by 2002:a05:6a00:984:b0:82f:2985:2094 with SMTP id d2e1a72fcca58-82f8b554ebemr18415296b3a.30.1776858001175;
+        Wed, 22 Apr 2026 04:40:01 -0700 (PDT)
+Received: from [192.168.50.90] ([116.87.14.48])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-82f8ec0092bsm18335315b3a.50.2026.04.22.04.39.58
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 22 Apr 2026 03:29:43 -0700 (PDT)
-Message-ID: <2f467264-0f15-4ced-858e-bbfdad4dcefa@suse.com>
-Date: Wed, 22 Apr 2026 19:59:38 +0930
+        Wed, 22 Apr 2026 04:40:00 -0700 (PDT)
+Message-ID: <cd9c0147-18cf-464d-86e2-12342a992ebc@gmail.com>
+Date: Wed, 22 Apr 2026 19:39:57 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -67,134 +67,94 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: Limit size of bios submitted from writeback
-To: Jan Kara <jack@suse.cz>, David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <20260422094255.12672-2-jack@suse.cz>
+From: Anand Jain <anajain.sg@gmail.com>
+Subject: Re: [PATCH v2 3/3] ext4: derive f_fsid from block device to avoid
+ collisions
+To: Christoph Hellwig <hch@infradead.org>
+Cc: Theodore Tso <tytso@mit.edu>, "Darrick J. Wong" <djwong@kernel.org>,
+ linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+ linux-xfs@vger.kernel.org, Anand Jain <asj@kernel.org>, dsterba@suse.com
+References: <20260323041624.GA11453@mac.lan>
+ <d4a9970b-e7ed-4e74-be9d-2d08400f9d79@gmail.com>
+ <5bda3d00-df35-4ea1-b313-2fef6e5c5682@gmail.com>
+ <adSUiB9L0sFAd04U@infradead.org> <20260407144709.GA81690@macsyma-wired.lan>
+ <3c9e478a-42ef-446f-a8cc-1b4ac970d2ef@gmail.com>
+ <20260409041035.GC99725@macsyma-wired.lan>
+ <22cfbf8d-af9b-462e-b240-67a1de24764f@gmail.com>
+ <20260409131238.GC18443@macsyma-wired.lan>
+ <b593ab17-afaf-4128-97eb-0ab9c23dec5c@gmail.com>
+ <aeHikJwRmFdDg5FW@infradead.org>
 Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260422094255.12672-2-jack@suse.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <aeHikJwRmFdDg5FW@infradead.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
 
 
-在 2026/4/22 19:12, Jan Kara 写道:
-[...]
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index ca3e4b99aec2..9c603d59a09b 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2555,6 +2555,16 @@ static int extent_write_cache_pages(struct address_space *mapping,
->   				break;
->   			}
->   
-> +			/*
-> +			 * If we have accumulated decent amount of IO, send it
-> +			 * to the block layer so that IO can run while we are
-> +			 * accumulating more folios to write.
-> +			 */
-> +			if (bio_ctrl->bbio &&
-> +			    bio_ctrl->bbio->bio.bi_iter.bi_size >=
-> +			    inode_to_fs_info(inode)->writeback_bio_size)
-> +				submit_write_bio(bio_ctrl, 0);
+>> It seems we've reached the functional limits of f_fsid.
+>> If we want to solve this properly for Overlayfs, NFS handles, or a
+>> complex system monitoring..etc, we need a new identifier let's call
+>> it f_fsid_v2, that meets the following requirements:
+>>
+>>   System-wide Uniqueness: Must distinguish between cloned filesystems.
+>>
+>>   Persistence: Must remain consistent across reboots/HW re-enumeration.
 
-I'd prefer to move the check a little earlier, better inside 
-submit_extent_filio() where we already have a similar check for ordered 
-extent boundaries.
+ My mistake- this should be:
 
-One reason here is, we're considering huge folio support recently, and 
-with huge folios on arm64, we can have a folio as large as 32MiB, thus 
-for the worst case we can have a bio as large as 96MiB before submitting it.
+  Consistency: Must remain consistent across reboots/HW re-enumeration.
 
-[...]
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index a88e68f90564..cb654e990333 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -8179,6 +8179,60 @@ int btrfs_init_dev_stats(struct btrfs_fs_info *fs_info)
->   	return ret;
->   }
->   
-> +/*
-> + * At maximum we submit writeback bios 64MB in size to avoid too large
-> + * submission latencies
-> + */
-> +#define BTRFS_MAX_WB_BIO_SIZE (64 << 20)
-> +
-> +int btrfs_init_writeback_bio_size(struct btrfs_fs_info *fs_info)
-> +{
-> +	struct rb_node *node;
-> +	u32 writeback_bio_sectors = 1;
-> +
-> +	read_lock(&fs_info->mapping_tree_lock);
-> +	/*
-> +	 * For each data chunk compute the size of bio large enough to submit
-> +	 * optimum size request for each of chunk's disk and take maximum
-> +	 * over all data chunks.
-> +	 */
-> +	for (node = rb_first_cached(&fs_info->mapping_tree); node;
-> +	     node = rb_next(node)) {
 
-Iterating through all chunk maps may take some time for huge filesystems.
+>>
+>>   Non-On-Disk: Must not be stored on-disk.
+> 
+> The third requirement doesn't make much sense to me.  If it is
+> persistent it. or something it can be derived from must be stored
+> on-disk.
 
-Meanwhile the device list is way smaller than the chunk maps, what about 
-iterating through all devices instead?
+ I hope it make sense now with "Persistence" replaced by
+ "Consistency" for the 2nd requirement (above).
 
-Not to mention we are going to hit the same devices again and again 
-through the chunk maps.
 
-This may not handle all corner cases, e.g. a fs with new disks added, 
-but should handle the most common cases pretty well.
+>> One possible implementation for f_fsid_v2 could be:
+>>
+>>    f_fsid_v2 =  hash(s_uuid, block_device_serial, [subvol_id])
+>>
+>> For pseudo block devices (virtio-blk, loop, nbd, brd,..),
+>> the serial could be derived recursively:
+>>
+>>    serial_number = hash(backing_file.f_fsid_v2, backing_file.ino)
+> 
+> What i the point in this?  All of this seems to be better served
+> by s_uuid.
 
-> +		struct btrfs_chunk_map *map;
-> +		unsigned int data_stripes, opt_rq_size = fs_info->sectorsize;
-> +		int i;
-> +
-> +		map = rb_entry(node, struct btrfs_chunk_map, rb_node);
-> +		if (!(map->type & BTRFS_BLOCK_GROUP_DATA))
-> +			continue;
-> +		data_stripes = calc_data_stripes(map->type, map->num_stripes);
-> +		for (i = 0; i < map->num_stripes; i++) {
-> +			struct request_queue *queue;
-> +			unsigned int io_opt;
-> +
-> +			if (!map->stripes[i].dev)
-> +				continue;
-> +			queue = bdev_get_queue(map->stripes[i].dev->bdev);
-> +			io_opt = queue_io_opt(queue) ? :
-> +				queue_max_sectors(queue) << SECTOR_SHIFT;
-> +			opt_rq_size = max(opt_rq_size, io_opt);
+The goal is to fix duplicate f_fsid issues in cloned filesystems
+by creating a unique, reboot-consistent ID. This allows the
+source and clone to remain identical (sharing same uuid) while
+still being individually identifiable.
 
-I'm wondering if we should use the minimal or maximum size.
+>> Note on Hardware Serials:
+>>  Standard storage protocols (T10, NVMe, SAS) mandate unique,
+>>  persistent serials per LUN. While I've seen T10 protocol
+>>  violations during my time authoring Solaris HBA drivers, I
+>>  believe these outliers shouldn't dictate the design.
+> 
+> No, T10 does not actually mandate unique identifiers, NVMe does, but the
+> implementations are often totally broken.
 
-If the optimal io sizes are very different, e.g. 512K vs 128M, the final 
-result will be truncated to 64M, would a 64M io submission stall the 
-pipeline for that 512K device?
+Right. Newer SPC-3 (and above) compliant devices must support
+the Inquiry CDB EVPD flag and provide page 0x83 for identification,
+which is what we typically use for multipathing.
+These are globally unique. And, we can overlook legacy
+drives, as they've probably been past their EOSL for a while now.
 
-Thanks a lot for finding the root cause!
-Qu
+We can tweak the algorithm as follows:
+
+  ID = hash(s_uuid, device_identifier_id,
+            partition_start_lba, partition_end_lba,
+            [subvol_id], [file.ino])
+
+This is an ID which remains consistent across reboots while
+staying unique within the system, which we can use it for f_fsid.
+
+Thanks.

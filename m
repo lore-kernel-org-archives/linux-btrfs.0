@@ -1,161 +1,170 @@
-Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
+Received: from fout-b8-smtp.messagingengine.com (fout-b8-smtp.messagingengine.com [202.12.124.151])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78FCA2E0B71
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2026 14:58:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.154.42
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776956292; cv=fail; b=n1LHOuKVfKvJr+A1PP7T+g33syqIcBLrV4H1P5UPaXbIUMmjggZVdgEASrW9/wMM7XSDMK3EzKufyprjSKk6XI4QkuVadjk6/QbqSfT4iOzQALYGO0NhL3DGj8K+blkVYhjflR6ieMnXuAm31M0OWTW2etEfoaC/SGVoi93YGU0=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776956292; c=relaxed/simple;
-	bh=0hFm4yO+V2KgeQG0ik8lLOHczCQdLX2syeEcd394fgI=;
-	h=Message-ID:Date:Subject:To:References:From:In-Reply-To:
-	 Content-Type:MIME-Version; b=DONfODdbVe8Z+CkQwd3bXqG74sSv7MhIi4KJqcX5E3JMlsr+UKlZZDAdafgArAwzwIousLezaDlK38tCC3borvyq986e/urj5FfnDImMv+bbZkdBfaMl8zzJMeZ8F7hkrq0WH5EmbqSzXdV/V+PSOvRjGRGNYwJqbvclcEY0w3w=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=HXb0MVJg; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=Cka0jorR; arc=fail smtp.client-ip=216.71.154.42
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EBB7581724
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2026 19:29:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.151
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1776972552; cv=none; b=QomqyZ1nbFxEWQ1iJRwXV2X/SEcFphwbRtB56xPY6f6w0mf211pxfyVkKSuwtkAZPTufXf4yCWBs4pW1O5QC2/pnVGU22KS0deboetrPRTUSEwIbT5U4mfsmy8YMDg6W2EXd/j2bxw2fW5ATz0iLWhYrUplBR3Pwc7McQ0mTPFE=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1776972552; c=relaxed/simple;
+	bh=ReMz7/yyEZNJHEoAy4t/fQz0nQ0qpqwf5Q531ve4UPY=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=WjoLhTk8KktkSbB7JIb+D4yj0qlog5O0ou5ZU9OJHcsGPIBAP4hmmeKscx7Z1A3IIVhlkAj37bHdX7E9OksO7iyQYWKPQH6P0uxQz423CDYOfmYLVH2SeHFmjpEdAysYMD5DHA8xNq6XgBExSMf18+GG3bLXYKETHvIgoeLrdsA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=G+Dt1DkH; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=rvwcwSR/; arc=none smtp.client-ip=202.12.124.151
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="HXb0MVJg";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="Cka0jorR"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1776956291; x=1808492291;
-  h=message-id:date:subject:to:references:from:in-reply-to:
-   content-transfer-encoding:mime-version;
-  bh=0hFm4yO+V2KgeQG0ik8lLOHczCQdLX2syeEcd394fgI=;
-  b=HXb0MVJgrkUnWrYTB/y4g1HRVXwnCzr2uO0yFe1EXzPHqmubeZ8zY9YC
-   sY9ruF3MwRs2PrwdwCfZrFXtdgNxonYGmuMUdo8sgTyS0HTfnMrJhEHpy
-   PiTmJoSgnaR1TxCj1Y6RyhILJoTV0CdPM+oZzT3hEUv4ElYPDhrwzzYo8
-   cpDeVc6eUClqW+teI2btHAMJsimTUgSUsKsf5Y1gi24VTEGeqaGQ4TyPd
-   5gYWds9TFRBwOuegHrozsF6G7RyGNBbzs5eb14wTWi5w580hh7fEHuLYP
-   6Ar9zTZ19BYpsjqEAAE5I2Fg00zDUkQSpWGA18r9S4oc9DtqVguh/JcYC
-   g==;
-X-CSE-ConnectionGUID: K/ByaaWfQ9eCmEC2/703zQ==
-X-CSE-MsgGUID: 1u9hmMxYR8eH92e5cgWvlw==
-X-IronPort-AV: E=Sophos;i="6.23,194,1770566400"; 
-   d="scan'208";a="141353333"
-Received: from mail-southcentralusazon11013034.outbound.protection.outlook.com (HELO SA9PR02CU001.outbound.protection.outlook.com) ([40.93.196.34])
-  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 23 Apr 2026 22:58:04 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=Db46UW9f0tTFh9ko+u7Nb+lUfPPgx1XFmeglDvcLzZmCP0FFcVcGK1f/wjSQIdZEDqfdfpe/9GKzAAyPLgvnrYyiSwDCtakomqH5IdnlafbpeTs9bM9q4BhrPfP+pzJFtol18/qobcFExzRFxBkavC6ueHJavrACyDlAW8bE32eeQiWXh/j8AN7RIQSU8+vvvstzZg6Aafjd5RZE+UiT9cnsoYIPbSqZKaCQdG2rZBYTA4wK/lzYDWz4vEFVcjt4nminmR9UWeaDn2N/E1lr5JQvuCekp7cBELlxmL/4I2YUbOteW0KEwNAYfx4c4IKAOxEYLvzY62kAIbCkJ4RbHw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=0hFm4yO+V2KgeQG0ik8lLOHczCQdLX2syeEcd394fgI=;
- b=GcV/xjwGo25VHzl+6pN3lTn/zBegDjxfocyV+cDLia6RhP7qjav7sxxrfVwM/nnq0j7tBVtdMUMzH1yGEJodv7fbUPRxQOC/QjnWyijjdP4WkeYJ5CyY9LYWG8SDf6z9hj9idxGk6KrDp+WujN+67ectx1dMcIGR8VoKUGxREcWc50m5Y2+OGQIGo1g1kDZVnNO3zrPwr+CI5lIfnssrxQyHvFodERHpYSgztSWZRtAkE0qaohroEhKKZBHYOEL6N8lPCDrZVRzr1Ii9XZLcecRriQLt0x2qZEdMbbumDG6n/Imms1WzGp1ly+/BryjuRfu1MHskIWHq/F9uhPaPnQ==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=0hFm4yO+V2KgeQG0ik8lLOHczCQdLX2syeEcd394fgI=;
- b=Cka0jorRsemmOXhM17H2VAZXPrGJd/kfULiwitel1RcvQcudQDi9FucvjN31C52oT7YyXgHoX7UYcd8j6As6fgr7Qu+eDRZ/K7va5i5XvR4nOuBRB4er2IUjFii8KKAXfbHUgpb26COM9+W5oR+XU+PoGWvpu9hDi01Vo7HHtQQ=
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-Received: from LV8PR04MB8984.namprd04.prod.outlook.com (2603:10b6:408:18b::13)
- by LV2PR04MB9926.namprd04.prod.outlook.com (2603:10b6:408:37c::13) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9846.21; Thu, 23 Apr
- 2026 14:58:03 +0000
-Received: from LV8PR04MB8984.namprd04.prod.outlook.com
- ([fe80::14a1:5b7a:6cf4:31a3]) by LV8PR04MB8984.namprd04.prod.outlook.com
- ([fe80::14a1:5b7a:6cf4:31a3%3]) with mapi id 15.20.9846.021; Thu, 23 Apr 2026
- 14:58:03 +0000
-Message-ID: <9eacb0f9-26a7-4ff6-9e34-7609f58c1a1f@wdc.com>
-Date: Thu, 23 Apr 2026 16:57:59 +0200
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: change return type from int to bool in
- check_eb_range()
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <1a69f68aedf5ea12277401b8ad5d0a17a3ac4a25.1776952936.git.fdmanana@suse.com>
-Content-Language: en-US
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-In-Reply-To: <1a69f68aedf5ea12277401b8ad5d0a17a3ac4a25.1776952936.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: FR4P281CA0448.DEUP281.PROD.OUTLOOK.COM
- (2603:10a6:d10:c6::15) To LV8PR04MB8984.namprd04.prod.outlook.com
- (2603:10b6:408:18b::13)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="G+Dt1DkH";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="rvwcwSR/"
+Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
+	by mailfout.stl.internal (Postfix) with ESMTP id 137101D001BA;
+	Thu, 23 Apr 2026 15:29:10 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-05.internal (MEProxy); Thu, 23 Apr 2026 15:29:10 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm3; t=1776972549; x=1777058949; bh=TfcMuGotzA
+	tAWdsyauInV3nMHEYszjU95izorcnvhc8=; b=G+Dt1DkHdzHAAU7SxNuykjxIZd
+	bh5BT+cbILgTtq002yJhcZZ9YHmKpZd0cTryJKCWQSDPKrdKbjnBLFfku0IpnudN
+	yuIjVL9AXXxwJyAaD1QsURW3Ik2XtKW6ScMR65SAYTiKXWubiB5gGkVdKE7X1des
+	u4hhwzWHTUBQqw6dU1s26vA6MdqpN6yvAZccAPfjlYUvMAq+sTbSUsf4Nm7oN8mA
+	AtnMdBWgPIKiV//8MRaieq2nzyu6I70Q+dpvGWmxL+RTgH3X8mpFg4H6Ks7sbOow
+	bAFyBwvM2Z/CvDM6GEur4J6/tDaAK8ROSCtkmqurkVxYw5pwWAkE4H9WxD9A==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+	1776972549; x=1777058949; bh=TfcMuGotzAtAWdsyauInV3nMHEYszjU95iz
+	orcnvhc8=; b=rvwcwSR/XLkT5Z0K07Pqcz4B/jq7K0SmJJd8UWfCjLPey1Pfc00
+	y1LdvYShMFVc/kNd4Oi2D/7jjEFjwvEU7a84gVr8EuHowy0eTgNYeACeGjUl2PgT
+	ZtavMXxENW5QrXSW1COz3shhHJIdcaSmA5NRAFFL4ptX5J//wGvkOrYjNFc9kPH+
+	8T4LTyO+EEJnN4J9HHO3gqmzovhWDXBj37OTWOyifCF1bDKp/YqRgSkJcV75OSNz
+	zpCCge0mTN45kQLyj+R/wRGL6Yg19NhHfmJluBLh1SXdscZAUfBwfsgzTKpPkeWf
+	jH5nMkZ3aEghwKukTzkVuax6GdLlRuAgVbg==
+X-ME-Sender: <xms:BXPqaameRwrSBYj0zmreT3Ml6OOO3MkShZC-y_sBW82O6aR7omhDVA>
+    <xme:BXPqaX0DamNJGD-JlNYr8CKiEBCBvDd36dTb1IYpCgRGon_xn91sIkJ1myfo_XL8u
+    g1JsALKzgZv9zSkfxnok9fMXAg9Xyr9TLm7Y-5sSZAYcmHmBOGcpg>
+X-ME-Received: <xmr:BXPqaWTAymTEsPLkDPX4ngDwn3nWv2U6xvXU_B7QKdnSNw06TmfzjJuPvKaecU5oynB7Pmm7VWAZlyZijw7nJhohYg4>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdeijeellecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
+    ihhlohhuthemuceftddtnecunecujfgurhepfffhvfevuffkfhggtggujgesthdtredttd
+    dtvdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihho
+    qeenucggtffrrghtthgvrhhnpeeutddvtdehgedvvdetuefgvefggfegudekjefhgefgje
+    ekgeelgfeigeegudevheenucffohhmrghinhepmhgvrhhlihhnshdrohhrghenucevlhhu
+    shhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
+    hrrdhiohdpnhgspghrtghpthhtohepvddpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
+    ohepmhgrrhgtpggsthhrfhhssehmvghrlhhinhhsrdhorhhgpdhrtghpthhtoheplhhinh
+    hugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrgh
+X-ME-Proxy: <xmx:BXPqaZsLOE-Urf0xYpeJ6IOpnB0M6aGOivBvoCveidz_cmMJqycgZg>
+    <xmx:BXPqabaw9BvigvxvWRmamyY26m_jFcjT4L9Bf3qBgNedDgWRHegZPQ>
+    <xmx:BXPqaeusUhfHGK9je1xZxeLvtmyRlnS7rMshSP3aEePnJtqKsNFpgg>
+    <xmx:BXPqadF0x0PCk9qn0KXvlsyMLT6-1fszNjle3QrPOav55GCfImgUmg>
+    <xmx:BXPqaV81RqlbzH2_uM6PHW3kWQUmDKza61bfFyy2EUpS74Q3TPn6oeqB>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
+ 23 Apr 2026 15:29:09 -0400 (EDT)
+Date: Thu, 23 Apr 2026 12:28:31 -0700
+From: Boris Burkov <boris@bur.io>
+To: Marc MERLIN <marc_btrfs@merlins.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Deleted snapshots stay in squota, mayube because of bees?
+Message-ID: <20260423192831.GA2096001@zen.localdomain>
+References: <20260417215127.GA2310330@zen.localdomain>
+ <aeK2QgUCefpVY4KX@merlins.org>
+ <20260417231603.GA2376753@zen.localdomain>
+ <aeLNxjmUGGhnW5ss@merlins.org>
+ <20260422022627.GA1034721@zen.localdomain>
+ <aekA8mS4hppTjbA-@merlins.org>
+ <20260422192344.GA1392535@zen.localdomain>
+ <aekh8CX_LmbtMbQ_@merlins.org>
+ <20260422193853.GA1478152@zen.localdomain>
+ <aekrVJnCaGkYWeBp@merlins.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: LV8PR04MB8984:EE_|LV2PR04MB9926:EE_
-X-MS-Office365-Filtering-Correlation-Id: c1a02e08-b6cd-4822-a925-08dea148b811
-WDCIPOUTBOUND: EOP-TRUE
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|366016|376014|19092799006|10070799003|1800799024|22082099003|56012099003|18002099003;
-X-Microsoft-Antispam-Message-Info:
-	iK/TgFZ2hb/dQm0eMA+kfX+iSUqFg7BifXHTbBJIP0IQnN+r0yYgZknFlWXZZYxKGmsWODgEQdym5NmLRJZ3vUHPSQunbKGlLSzEzlnhp3irad12WwB2s8Ph1vbacudcnAFCF6neRDXAUcQO1F1YAl/i/VyyPlJqNsqBpOKPKyeS+YadDstt4an8s8xn1GdHUWqHp/3Y4PTKUNqhjgmfBlS3h8ImZCufmHcYQeBaJKSqgwD8TO5xl80Mczc0LfZSgYokfAVLrdog9bj6pE9SjSW65BLP7w+smm3TLd2ROYV8B11KHTD5vCb2zd80sCgmRXe+hWrkX/ONJZkWe+J5v6MynLizJFxHKTd8jgU7Qc/5xt5Ct5aT9SY4zxxp8Cd5X25xzcEeSI0Hzk9BSkScuQBb0JHY5u1w+fIoGx5MOhAIUkVdSrK032XEqnDcqjb+0V8V6DSmKs5a+czZf8SF29HNvL/T1MoUWhtBTm8U9DLXk0qZzaDFZxyu8iMhmeDK64tiw3pNpW/MQLMDmOXeHKxClUvxOKJ75gyCuKauBGe9FzLZuh7TaUmD0dQv8DqVmw9nfj+iPKAb2XC17bqcxyXbrsnKtSPdC0U5ujftTT5acIuFzmtv7uoiMcrU21/aV+sfTtFlsDh8bd/dJ/S9qLCSbsXGOpB5W727P7Y2er9CCcECSZIn52rkWdf/SvoU0xf15EX4xRMcvBY9KyIJRwhG0RXJUHHqH8xxtqZeDJQ=
-X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:LV8PR04MB8984.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(366016)(376014)(19092799006)(10070799003)(1800799024)(22082099003)(56012099003)(18002099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
-X-MS-Exchange-AntiSpam-MessageData-0:
-	=?utf-8?B?a09Jak50SGpwRzEzZXVadmFZSzQ5Vk0vZ3YrZmtUc3ZFa3hjKytoS2tndFpJ?=
- =?utf-8?B?dHR3dTF6WVpLRmlnWXJncXdzdFlMWklmRXhyVVVoQkcyU204dlQ0NjhZdEE2?=
- =?utf-8?B?a0ZyWjRLcGhqbDkxTk1FZGNLQ0NQVzhYL3ZxTW9UeVc3V2RYMkhGMFVkRmxp?=
- =?utf-8?B?VHZCMGkxbldhZDV1b0liQnZ3YnJhSWZCMDdCb2hkR2k1YktkQllFTnFiaFEx?=
- =?utf-8?B?U2NtOEVFak15c25rVytaQlBIRXJ6Uy9PQnVDcXVROE1qcXRlZWVhTXhITkdK?=
- =?utf-8?B?ZHFoWHFLdEtWd0lOR3M4djRHWlA2WWlNZVR2YWU5MjJjc0lkeXB5UUFubjVK?=
- =?utf-8?B?eTlEbzZ1MGRycDRRdWQ1bGlhZ05vQWNTM040UFd4UE5ZTXZmbDQrZzhpOXo2?=
- =?utf-8?B?Vmtpc2lXYkM2ajVKc3dHN25NQkJHMDNod0ttanVVeEhkc0VRNXpEdzRHNXdB?=
- =?utf-8?B?Z0RkeS93WHNLWERYblZlaGtOM0dOMjZ1YkI4UXp2WkJmdlo3MGVRMUZUTnIx?=
- =?utf-8?B?UUc3M0drMitxKzN5K0FBWlJGSXpqRFdtcksySGgvMnNIOHJReldMN3Byckps?=
- =?utf-8?B?Z1ppU1VvMFRVTVMwY01qZk9oS0hydmlyY3FKNlRiL2tFR1YwaUtPRVl3QTc1?=
- =?utf-8?B?QVZ3dzJQWk42VjkxNloxb2pYdHVXMzNYV25UYUZhTTZRdUtPdjhqNWhod1Ry?=
- =?utf-8?B?WUkzc1ErLzRvVVFmS0JwRUZvanlMMDFndnU3SEhVeGdmUVpYaFRYY0RWR2dH?=
- =?utf-8?B?K2ZUQUcrSkxKQVJoMjlPSUN4R3FpV3czZ2VRWnlVT2Q1aFJxd3BUVGZtQXZm?=
- =?utf-8?B?U2FWZ05Yb1BrV25VQXhSSHkzWWV2cVlCZ2lmcGVDRlBlSXZqN2IvOTJKS0FP?=
- =?utf-8?B?dlVvSUxycjJwTFJ2Wk5JbTN6RDk2bTlXOENRaHE2OHoxT3JHYVJGT1M5MkZM?=
- =?utf-8?B?ZzZXMnZCaUkvV3VqcHduWG1FUkdkRjdjTmxEdkFLV0JmTVMzNW9ZcU5KK25i?=
- =?utf-8?B?QStKS2R6MTVwaGFvQmVEelZ1TzB4S1J4Z2RzRTZObkRHMzlzL2YrNlc5RExt?=
- =?utf-8?B?LzFlN1VGTkFiSDVhQWR2Tk1maGJ5YzdhaHI4SU4vMFFCRE9QS0hodUhtYmY4?=
- =?utf-8?B?cnY4TGtCemo1VEdlL0pVekZ0Y2hzdEdGSDBkZlBvWGp6elpNTnM5N0l4bmxs?=
- =?utf-8?B?QUk3MThKOFdzYTBpSkpNOEJvV3lwQzdWTnBZMjhnalkzdml3eXZZSjlURUto?=
- =?utf-8?B?WDZ1NDNCR1lKV1hpUDNqNHp5MmN5cG8raWNSeGgyeHhoc3ZScDRmUlVjMUk2?=
- =?utf-8?B?a3NzOGJMUEhSbG5CZ04rajRHdUd2Tjc0UjBqSkg0aDZUSmxBNkdJaXQvcGx3?=
- =?utf-8?B?bWNzWmVJbHJOL0RlaThDWjJPTDdkWHY3ejFJWlFJUkpaYTBKWmFkN0NJa1Jy?=
- =?utf-8?B?MjFwSkJ4Z3RYREhmeDNxTVVreG10c2hBdnJpd2FBbSszQXBkQy9sdnF4TzJw?=
- =?utf-8?B?VWhSVVhaMkwvc2lESDBqaFJ0Y2MvN2MxZHFkOURNemVueVJhTUtCeDh3UjJB?=
- =?utf-8?B?cFg5VXQydGl0dTgyQ0I3SWF4dXVXcE9SNFRGRlRpcHg3TUFCUnZ1VjU1NXZL?=
- =?utf-8?B?Z0pOcTRRMk82VnJMeXkzaThrNnQzZXJSVWJDcmhCb3RuYWFsWXFDVXg2bmM5?=
- =?utf-8?B?TytySytROVNxZTIvZHVmZkIzZjB5ck5KQnFNMGlXRm5xYitGcjE4SExXcVVo?=
- =?utf-8?B?R1BXQlJPZjQ4VlRtdVZUQjBFTUR1SU12dDQ0MGZTZlgzQW41d0Fhc1pVdlZv?=
- =?utf-8?B?SldneUZFMzBNamM0V2MzVnFURm5QT2JEcUdIaTZDZkNad0htcEtKUUFBclRl?=
- =?utf-8?B?YkpuZUo3SjlkOHUrWnZ6OUR5WHFIOXo3MG10MGpnSnptbXVpQVFubXFOMWtl?=
- =?utf-8?B?anRqdkZKRjc4VnRHNlFMMEM1OGNVR29lY1dxWjd4eE1ITTlhVFRxWU9xRzAy?=
- =?utf-8?B?YjExTml3MlN1NHkyYk92cXYwRzU3aUNYcExXVTIzN09SVHkyalZiYjEvc3Qx?=
- =?utf-8?B?WVFrSEJJWDYwMHp0YmJWckZ1cEkvRWdjQWNlQS94bGt4eXJhRWlCTHQ4STUv?=
- =?utf-8?B?SXNwY1N0SVZ2MEp0bTQwVXVSMXlRcUREVUtWNWswOUQzc1RKaE9HUzJndjB3?=
- =?utf-8?B?VkRjeWFocnZ5Ny8ya09ZSmg0VlpmaGZ1VVB4MS83dXVzZDVvcE02NEhsby85?=
- =?utf-8?B?NDdmNEpnZVdMSGZNTUdnbldjRCtGN2ptK1FiZ004Q1MxeU02NkZoMjlZR3Q3?=
- =?utf-8?B?TVNBNU9GMXJhellDRVduTkxuYk5GWXdTdUFBMko5bUpieERQSmdSQzhmWkxp?=
- =?utf-8?Q?c9wAjN/kWeP9SPWRdgsq8+f/T1muX7RyDwia3d4eVXFlD?=
-X-MS-Exchange-AntiSpam-MessageData-1: 3Kxc90R6rfLkrxQ80yUfdzAvswho7n1ceB4=
-X-Exchange-RoutingPolicyChecked:
-	P55PmtPmf9gQtB1OTvI+ROKyM/Gmx2QJhQXIZReETJh9BHaLp1igcGgD8YIHwYZIzG7mKrQkGPLRozQTTZ6/199YXQlO8CSLVKV781oLZKcwtOuPUf8pWft1VU/I9VqIhKayESRaf8JD7+9+diuxQg7DTUgUqGz3q/sIySUI10xcxNnJS5dHO3J54Hm0rkAGi+vLOUco4vCJ8Wis4XgH96sHdfZvLhimBwnH9Z+eHwGJa0AU5PFhFB6DYMMB9TYEB7MiAv/VhMhsXVbigu9JILKE6n6yV5qBVbCpeFr/V0Z+/3SKxZHFz2bIAdwWtQ3JXo7ZlCIcUFiU6AQcBmGooA==
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	Mm67vZfK3GeKmi1FpqUrI5ePx32FNxAaE4TA11YYBPeFoaQf2Eg5o29V1+5jzEEiM9p1bgTmq343iybtfSxWUjvNOhjgmnn/vwoiTn0z0Phz7SPiAZg2MtThgwZ7zqxfyXCdYKBCdVrIlt0jCi/OwJZMGeGlt1XHVptnh/M6uRs3rRTIHhkCFSFuPAsKw8RqwzvSWWRwgYfw0ndZtuA34Kord3MM6jIHRZXI7HiUC+PX1t5Y9qTWqhTimgcJ/4g2S9Q/BRMzv8g0OZCGmWDjC3+LosYrJzZBEA6tOzgQerIku7Edq9mrca3W/qZICWudETJqFTE0Ar3mf89Y5clVxsqNxJsElagjPVIo4pwqwqfKHK5NPcf9iOVe4z+bJP46TpxWq5xl6L21kXeo9Go1U9Cgbii8wFNKeT0WVygvGy+LJ+CbMAWbqFfD/lt3qLaojfDY+CeJZzGPjYqwWlZ4GknbQG3fYsDB+gYbiuq08rqq7B5cJA67amKysc/Huhh7ATkM3aFBnKbBZNSCPvGdJtKK3T7uYjzt9sutzCSeclgAkdqJHNWMwkPYX+tFzoKuqeDhe4FhLxyoLGM7MqJ4qPzorvOuDU42jjjXh7J5nM0RA3MGZBSg3Z0RT+ZvMfLJ
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: c1a02e08-b6cd-4822-a925-08dea148b811
-X-MS-Exchange-CrossTenant-AuthSource: LV8PR04MB8984.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 23 Apr 2026 14:58:03.3652
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: fc9dvNXFVPzh+aDiLWs3P9/bM65mK/sIWf5wCifz+p0yVeNVj52yN233rOhF77eri/LQVOkxrVnekcTb3dfu62BqTe/cMwyK1lWPTI0XROE=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: LV2PR04MB9926
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <aekrVJnCaGkYWeBp@merlins.org>
 
-Looks good,
+On Wed, Apr 22, 2026 at 01:11:00PM -0700, Marc MERLIN wrote:
+> On Wed, Apr 22, 2026 at 12:38:53PM -0700, Boris Burkov wrote:
+> > No, I'm saying that there are two explanations for your observations:
+> > 1. You have legitimate shared extents owned by the deleted snapshot.
+> >    Presumably caused by bees as you guess.
+> > 2. A squotas bug where we have usage recorded for your qgroup but no
+> >    matching extent in the extent tree.
+>  
+> Gotcha.
+> 
+> > btrfs check will walk the extent tree and add up the extent usage based
+> > on the squota owner refs and compare that to the value stored on the
+> > qgroup. The squotas invariant is that those are equal. If it complains,
+> > that means there is an extent attributed to a subvolume that isn't in
+> 
+> Gotcha too. When my copy is finally finished, I will run a check and
+> report back.
+> 
+> > As currently designed, squotas is quite dogmatic about never re-owning
+> > an extent from the original creator. That is the core design conceit and
+> > simplification that allows it to be fast. There are likely narrow cases
+> 
+> I got that part.
+> What I was saying is some out of band way that would be slow and long,
+> but only run rarely, to fix things that drifted.
+> 
+> You mentioned btrfs check, maybe a check --repair option to regenerate
+> squotas on an existing filesystem (also awesome if you add squotas later
+> and want them to be correct). For extra points, it would be awesome if
+> it were while the filesystem remains online, even if that run takes
+> days (since it would be a one time run after converting to squota, or a
+> very occasional "fix things up to be all clean and accounted for")
 
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+My proposal for repair was to clean up clearly broken states like
+scrubbing off the owner_refs for missing subvols (basically
+conditionally do what the btrfstune did when you notice leaked
+extents)
 
+> 
+> Is that possible at all? (separately from being worth your time, which
+> I'd understand). The biggest plus I see is allowing many people to
+> switch to squotas on existing FS without having to wipe and start over
+> just to benefit from squota.
+
+I think the tricky part is deciding who should own data blocks. It is,
+in my opinion, impossible to arrive at a given FS and properly account
+each data block to its originating subvol, with the same result as "as
+if you turned on squotas at the start". I think necessary information
+would be gone by now in even relatively simple cases involving reflinks.
+
+You could pick arbitrarily, or you could try to make educated guesses
+based on the owner of the enclosing metadata tree blocks and their
+generations or something, but I think fundamentally it would be a lossy
+process.
+
+Perhaps we could add an ioctl that was something like "assign extent E
+(or maybe file F's extents) to subvol S" and then userspace could assign
+how they want. Or maybe even something subvol oriented like "squota
+account subvol S" which would mean "S takes ownership of all unowned
+extents reachable by S". And you could iterate your subvols in the order
+you wanted. I like those ideas more than the kernel making fundamentally
+arbitrary picks.
+
+Ultimately, I would still be sort of worried about the resultant weird
+state where you could have a shared metadata block owned by S1 and
+shared with S2 (so S2 is a snapshot of S1 and the data must be from S1)
+but then the data is accounted to S2. Nothing would freak out about this
+now, I don't think, but it's sort of sloppy.
+
+> 
+> Thanks,
+> Marc
+> -- 
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+>  
+> Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

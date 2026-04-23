@@ -1,170 +1,162 @@
-Received: from fout-b8-smtp.messagingengine.com (fout-b8-smtp.messagingengine.com [202.12.124.151])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EBB7581724
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2026 19:29:10 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.151
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 96135241139
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2026 21:43:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776972552; cv=none; b=QomqyZ1nbFxEWQ1iJRwXV2X/SEcFphwbRtB56xPY6f6w0mf211pxfyVkKSuwtkAZPTufXf4yCWBs4pW1O5QC2/pnVGU22KS0deboetrPRTUSEwIbT5U4mfsmy8YMDg6W2EXd/j2bxw2fW5ATz0iLWhYrUplBR3Pwc7McQ0mTPFE=
+	t=1776980591; cv=none; b=qV5nMtFLiWZv0HnEzw+htsGEph9HsOXOaT03DSekjTk2TJfs6ZgztyMipinPENtx70ZwS61TTwC7pQp7Gquqgz5/JEKop8b0X9MblPJ0Ggetq5tbyzNbzGnPMtiBqF7J9felE3+ICNK91djj7shZtHMpPiYrwe/PTnjAhY2m7mQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776972552; c=relaxed/simple;
-	bh=ReMz7/yyEZNJHEoAy4t/fQz0nQ0qpqwf5Q531ve4UPY=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=WjoLhTk8KktkSbB7JIb+D4yj0qlog5O0ou5ZU9OJHcsGPIBAP4hmmeKscx7Z1A3IIVhlkAj37bHdX7E9OksO7iyQYWKPQH6P0uxQz423CDYOfmYLVH2SeHFmjpEdAysYMD5DHA8xNq6XgBExSMf18+GG3bLXYKETHvIgoeLrdsA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=G+Dt1DkH; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=rvwcwSR/; arc=none smtp.client-ip=202.12.124.151
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1776980591; c=relaxed/simple;
+	bh=g+PaylH6yu0RsZP6CmqEskklkYRGzugJqTUaEA+m6OY=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=PUvCnofZal2teImJe5g8T9ZpJvHcwf5LG7sudZwM+7BDmIfMHT2IeuIfKixefwDFMugEVNKOzwDlzo4pJ3EXs6HsmSwd4Ql/vxUgcIw8eTD+hcaTNHTo04ZsYcCTgfvPkTMoqBk9BSjXxsmPRYqUZHu2eGLWMZ/w07k+DB+kRE4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=YsHyqNGa; arc=none smtp.client-ip=209.85.128.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="G+Dt1DkH";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="rvwcwSR/"
-Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
-	by mailfout.stl.internal (Postfix) with ESMTP id 137101D001BA;
-	Thu, 23 Apr 2026 15:29:10 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-05.internal (MEProxy); Thu, 23 Apr 2026 15:29:10 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1776972549; x=1777058949; bh=TfcMuGotzA
-	tAWdsyauInV3nMHEYszjU95izorcnvhc8=; b=G+Dt1DkHdzHAAU7SxNuykjxIZd
-	bh5BT+cbILgTtq002yJhcZZ9YHmKpZd0cTryJKCWQSDPKrdKbjnBLFfku0IpnudN
-	yuIjVL9AXXxwJyAaD1QsURW3Ik2XtKW6ScMR65SAYTiKXWubiB5gGkVdKE7X1des
-	u4hhwzWHTUBQqw6dU1s26vA6MdqpN6yvAZccAPfjlYUvMAq+sTbSUsf4Nm7oN8mA
-	AtnMdBWgPIKiV//8MRaieq2nzyu6I70Q+dpvGWmxL+RTgH3X8mpFg4H6Ks7sbOow
-	bAFyBwvM2Z/CvDM6GEur4J6/tDaAK8ROSCtkmqurkVxYw5pwWAkE4H9WxD9A==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1776972549; x=1777058949; bh=TfcMuGotzAtAWdsyauInV3nMHEYszjU95iz
-	orcnvhc8=; b=rvwcwSR/XLkT5Z0K07Pqcz4B/jq7K0SmJJd8UWfCjLPey1Pfc00
-	y1LdvYShMFVc/kNd4Oi2D/7jjEFjwvEU7a84gVr8EuHowy0eTgNYeACeGjUl2PgT
-	ZtavMXxENW5QrXSW1COz3shhHJIdcaSmA5NRAFFL4ptX5J//wGvkOrYjNFc9kPH+
-	8T4LTyO+EEJnN4J9HHO3gqmzovhWDXBj37OTWOyifCF1bDKp/YqRgSkJcV75OSNz
-	zpCCge0mTN45kQLyj+R/wRGL6Yg19NhHfmJluBLh1SXdscZAUfBwfsgzTKpPkeWf
-	jH5nMkZ3aEghwKukTzkVuax6GdLlRuAgVbg==
-X-ME-Sender: <xms:BXPqaameRwrSBYj0zmreT3Ml6OOO3MkShZC-y_sBW82O6aR7omhDVA>
-    <xme:BXPqaX0DamNJGD-JlNYr8CKiEBCBvDd36dTb1IYpCgRGon_xn91sIkJ1myfo_XL8u
-    g1JsALKzgZv9zSkfxnok9fMXAg9Xyr9TLm7Y-5sSZAYcmHmBOGcpg>
-X-ME-Received: <xmr:BXPqaWTAymTEsPLkDPX4ngDwn3nWv2U6xvXU_B7QKdnSNw06TmfzjJuPvKaecU5oynB7Pmm7VWAZlyZijw7nJhohYg4>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdeijeellecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
-    ihhlohhuthemuceftddtnecunecujfgurhepfffhvfevuffkfhggtggujgesthdtredttd
-    dtvdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihho
-    qeenucggtffrrghtthgvrhhnpeeutddvtdehgedvvdetuefgvefggfegudekjefhgefgje
-    ekgeelgfeigeegudevheenucffohhmrghinhepmhgvrhhlihhnshdrohhrghenucevlhhu
-    shhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
-    hrrdhiohdpnhgspghrtghpthhtohepvddpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
-    ohepmhgrrhgtpggsthhrfhhssehmvghrlhhinhhsrdhorhhgpdhrtghpthhtoheplhhinh
-    hugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrgh
-X-ME-Proxy: <xmx:BXPqaZsLOE-Urf0xYpeJ6IOpnB0M6aGOivBvoCveidz_cmMJqycgZg>
-    <xmx:BXPqabaw9BvigvxvWRmamyY26m_jFcjT4L9Bf3qBgNedDgWRHegZPQ>
-    <xmx:BXPqaeusUhfHGK9je1xZxeLvtmyRlnS7rMshSP3aEePnJtqKsNFpgg>
-    <xmx:BXPqadF0x0PCk9qn0KXvlsyMLT6-1fszNjle3QrPOav55GCfImgUmg>
-    <xmx:BXPqaV81RqlbzH2_uM6PHW3kWQUmDKza61bfFyy2EUpS74Q3TPn6oeqB>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 23 Apr 2026 15:29:09 -0400 (EDT)
-Date: Thu, 23 Apr 2026 12:28:31 -0700
-From: Boris Burkov <boris@bur.io>
-To: Marc MERLIN <marc_btrfs@merlins.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Deleted snapshots stay in squota, mayube because of bees?
-Message-ID: <20260423192831.GA2096001@zen.localdomain>
-References: <20260417215127.GA2310330@zen.localdomain>
- <aeK2QgUCefpVY4KX@merlins.org>
- <20260417231603.GA2376753@zen.localdomain>
- <aeLNxjmUGGhnW5ss@merlins.org>
- <20260422022627.GA1034721@zen.localdomain>
- <aekA8mS4hppTjbA-@merlins.org>
- <20260422192344.GA1392535@zen.localdomain>
- <aekh8CX_LmbtMbQ_@merlins.org>
- <20260422193853.GA1478152@zen.localdomain>
- <aekrVJnCaGkYWeBp@merlins.org>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="YsHyqNGa"
+Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-488ad135063so63371925e9.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2026 14:43:09 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1776980588; x=1777585388; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=K4/ccKjIbfL5FRe38iOKiUCUXP4+dg2Zr/TdlmB2s94=;
+        b=YsHyqNGa3m9PMRRDyXcjfqr8ujKeM8zAZlmYqKqITNoXJ45+dMAz+qb6QsUIVrwg8K
+         EuuH01Slo/57va9AcGdQ6vyieDTenxUlE80TpuXWfueLwK3OwT8gRQNcmQsYH0SsB/3n
+         yCwiKRkk6ZTPol3W+iF156PRY+I1ijAwNI9D1X2xNGRYgTs1mlVHflR+uLGCX+pS4toJ
+         iO7wXMBraGoAFsPjdWcdYFbk7Pdittcs7/GBv+/I6+IhxDpv/8hDU1pldp2u3o3xeYnv
+         c9amTKfFMWX6+aYrxoKTVPRxkrifas41GAHixXBUKU95Bx9NZGZiNv5Z5MJKatNUX3t4
+         uuLQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1776980588; x=1777585388;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=K4/ccKjIbfL5FRe38iOKiUCUXP4+dg2Zr/TdlmB2s94=;
+        b=pgMDHLvJtZjlK9Mn/7cMbYBcEly1EDbdK2ohz+B3tnc+B5XtShYlIcBjMm0MV0ElQQ
+         fZgRJWlMPqMSLu+K2mGStBjC1ea+22gZpeMGGs4WsUf6D3kN45PlSZhFD1rhwWorjdoD
+         EwFNADJkgzrpJ98nuOPZY6Nj+c1BH2eTSQ1tuLLseFulYaJAa8Mfu7e32qHi7d4rZNwM
+         XlJbAY8mkhcJw3/MvfbPCIcYACBrYmV0DrF1TXtFAFOdMU8PQynZDyVTN5GDWOCmY2yH
+         QX+7MmmNqHV61Aaq5rxLBm5bejpSLAGxAIiL0f1+VscEB2Ajsj+CtChjxl0SrmGYUKt8
+         2n7Q==
+X-Forwarded-Encrypted: i=1; AFNElJ+2RT6VLAM/Myc8OKaRhgFS6901BNK74MRnUUAEbm78F9oaPd4/N6ho0tztTu0ILaytfil+ya+e0o1qoA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxBZ74fYG7iy6Is35ocHSok3CUb5vvRnI9eFNxBB+AQiDdyibjT
+	mSng3tSFxDZgQ1zIAX0qHCZTO8B97GMKew5dy58T8ELjcsZp/+iDBtPl/uS2szgwh1M=
+X-Gm-Gg: AeBDietyXs/cT3ByX8KUa1OIYKd42eGu4hnjgn09Uy8o26OOcCT7S3P7QU4Nbk63L+7
+	3W843+FJN6aKmwgQXKHasyPFnYRJrkvshSUsoyd4juAyUaZ1kR5eDhDnnXtGGOgvvimj/XRR0bi
+	0uLEygwRaxy779YuEP9PdU7Z2HpkNgbsmnfA99xrCnpOg3pRRGEqO4FeOMGyDHKhmu3yqH3Qojk
+	9E3oT9WLAi0HKXLs4N0Iv5DyB4TAKvINlNMqheaQvN0b32PBeKChS4DH91T1H/C731aHk/Y8WA5
+	lJ01TD8a7uPjIm4wgjWccTc5SOYFxjCan7RfVBkZ/F1tFCH9XS9yd7ohtFZrJpoTW4mnyl3gi91
+	7M+tVoNTitH+yHvZF9TTiK6bvYepqrz32U2KMTq8fUGw5YJlXQJrm8bJ2MGvhPj7pUGl5nj5/pf
+	rP0fBXw6CDjJ4qSlcF9elEl+v2JQCVuF4snQxAy0x15Jjc3LbAgfedQulfFbWi7g==
+X-Received: by 2002:a05:600c:3f10:b0:485:35d3:ce59 with SMTP id 5b1f17b1804b1-488fb753c9amr381338155e9.10.1776980587900;
+        Thu, 23 Apr 2026 14:43:07 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c797704c332sm16023220a12.30.2026.04.23.14.43.05
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 23 Apr 2026 14:43:06 -0700 (PDT)
+Message-ID: <fb37b237-b6ef-4b12-9255-66ee23fead2e@suse.com>
+Date: Fri, 24 Apr 2026 07:13:01 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <aekrVJnCaGkYWeBp@merlins.org>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: collapse report_eb_range() into its single caller
+To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <b2dc0f485fc063e2b666e150002f59a278b97023.1776944252.git.fdmanana@suse.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <b2dc0f485fc063e2b666e150002f59a278b97023.1776944252.git.fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On Wed, Apr 22, 2026 at 01:11:00PM -0700, Marc MERLIN wrote:
-> On Wed, Apr 22, 2026 at 12:38:53PM -0700, Boris Burkov wrote:
-> > No, I'm saying that there are two explanations for your observations:
-> > 1. You have legitimate shared extents owned by the deleted snapshot.
-> >    Presumably caused by bees as you guess.
-> > 2. A squotas bug where we have usage recorded for your qgroup but no
-> >    matching extent in the extent tree.
->  
-> Gotcha.
+
+
+在 2026/4/23 21:08, fdmanana@kernel.org 写道:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> > btrfs check will walk the extent tree and add up the extent usage based
-> > on the squota owner refs and compare that to the value stored on the
-> > qgroup. The squotas invariant is that those are equal. If it complains,
-> > that means there is an extent attributed to a subvolume that isn't in
+> There's no point in having this static function since it's too short and
+> it has a single caller (check_eb_range()), so move its code into the
+> caller and remove it.
 > 
-> Gotcha too. When my copy is finally finished, I will run a check and
-> report back.
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> ---
+>   fs/btrfs/extent_io.c | 20 +++++++-------------
+>   1 file changed, 7 insertions(+), 13 deletions(-)
 > 
-> > As currently designed, squotas is quite dogmatic about never re-owning
-> > an extent from the original creator. That is the core design conceit and
-> > simplification that allows it to be fast. There are likely narrow cases
-> 
-> I got that part.
-> What I was saying is some out of band way that would be slow and long,
-> but only run rarely, to fix things that drifted.
-> 
-> You mentioned btrfs check, maybe a check --repair option to regenerate
-> squotas on an existing filesystem (also awesome if you add squotas later
-> and want them to be correct). For extra points, it would be awesome if
-> it were while the filesystem remains online, even if that run takes
-> days (since it would be a one time run after converting to squota, or a
-> very occasional "fix things up to be all clean and accounted for")
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 6a6d98eec787..2b0aec031a9a 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3976,17 +3976,6 @@ int read_extent_buffer_pages(struct extent_buffer *eb, int mirror_num,
+>   	return 0;
+>   }
+>   
+> -static bool report_eb_range(const struct extent_buffer *eb, unsigned long start,
+> -			    unsigned long len)
+> -{
+> -	btrfs_warn(eb->fs_info,
+> -		"access to eb bytenr %llu len %u out of range start %lu len %lu",
+> -		eb->start, eb->len, start, len);
+> -	DEBUG_WARN();
+> -
+> -	return true;
+> -}
+> -
+>   /*
+>    * Check if the [start, start + len) range is valid before reading/writing
+>    * the eb.
+> @@ -4000,8 +3989,13 @@ static inline int check_eb_range(const struct extent_buffer *eb,
+>   	unsigned long offset;
+>   
+>   	/* start, start + len should not go beyond eb->len nor overflow */
+> -	if (unlikely(check_add_overflow(start, len, &offset) || offset > eb->len))
+> -		return report_eb_range(eb, start, len);
+> +	if (unlikely(check_add_overflow(start, len, &offset) || offset > eb->len)) {
+> +		btrfs_warn(eb->fs_info,
+> +		   "access to eb bytenr %llu len %u out of range start %lu len %lu",
+> +			   eb->start, eb->len, start, len);
+> +		DEBUG_WARN();
+> +		return true;
+> +	}
+>   
+>   	return false;
+>   }
 
-My proposal for repair was to clean up clearly broken states like
-scrubbing off the owner_refs for missing subvols (basically
-conditionally do what the btrfstune did when you notice leaked
-extents)
-
-> 
-> Is that possible at all? (separately from being worth your time, which
-> I'd understand). The biggest plus I see is allowing many people to
-> switch to squotas on existing FS without having to wipe and start over
-> just to benefit from squota.
-
-I think the tricky part is deciding who should own data blocks. It is,
-in my opinion, impossible to arrive at a given FS and properly account
-each data block to its originating subvol, with the same result as "as
-if you turned on squotas at the start". I think necessary information
-would be gone by now in even relatively simple cases involving reflinks.
-
-You could pick arbitrarily, or you could try to make educated guesses
-based on the owner of the enclosing metadata tree blocks and their
-generations or something, but I think fundamentally it would be a lossy
-process.
-
-Perhaps we could add an ioctl that was something like "assign extent E
-(or maybe file F's extents) to subvol S" and then userspace could assign
-how they want. Or maybe even something subvol oriented like "squota
-account subvol S" which would mean "S takes ownership of all unowned
-extents reachable by S". And you could iterate your subvols in the order
-you wanted. I like those ideas more than the kernel making fundamentally
-arbitrary picks.
-
-Ultimately, I would still be sort of worried about the resultant weird
-state where you could have a shared metadata block owned by S1 and
-shared with S2 (so S2 is a snapshot of S1 and the data must be from S1)
-but then the data is accounted to S2. Nothing would freak out about this
-now, I don't think, but it's sort of sloppy.
-
-> 
-> Thanks,
-> Marc
-> -- 
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
->  
-> Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

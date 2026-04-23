@@ -1,184 +1,160 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from out-173.mta1.migadu.com (out-173.mta1.migadu.com [95.215.58.173])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DEFB434D916
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2026 07:57:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5643D38D68F;
+	Thu, 23 Apr 2026 08:31:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.173
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776931038; cv=none; b=QZ1uNZDZp9drM0aMsj3gKExzrAwfvG1G60WsC11HF1wkYY4ur6NEAl2mBgSA2QYaEBji+MQV9mLfMFhusMZUiIRY4SZlexhjIGWogv9wwMd97P5MRdHpinAtubLQjJN/HuOA0z9OumpMVvAL/Jn4N6Mql8IrfM6YHWhLOc/O310=
+	t=1776933080; cv=none; b=Kvsv8UZxhdGfqbJanMgTKwHJGjBk4/viOJus4ronPVT7kOQd9MQsdhrwERDjbz9A7c0s2K6iXP37WXB9fyGUzvGVbAoHWZJeU1QGQyjYTs+xJkg2suQXWyATWPfVrxXKuupkKOvE4jwW/t/gEHxBwwXkwieS0bhjPdBmqp+Mr78=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776931038; c=relaxed/simple;
-	bh=uU5YD/8rqWOlEuCl7VBrwle4b7tRuwOdt12nwA8vpn4=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=p8rFX018TQYlojRPqBZTEqtWvRNTWAFG43NIn5yerIdSxl/l7YuPRjn+mdcDoqlHTlK1atQ/OQPEl93X/pvhfl+F/hcWVGK2vwqwQZmarQZUwT+sw77aBqG6WosRS8EJ8fR1dCO5Oo52dyFu7w5uvXiKAY1O+3fp2NG8PdBYC+s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=1OcAEk76; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=UElwDtqb; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=vqiLeGXj; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=HJEw4Wxn; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1776933080; c=relaxed/simple;
+	bh=0mGuKowfe/XKCihGyX/x0JPopKQmhoso38DXB1vAdFA=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=Nl0fpfx1ogWSYAu60FourKE0G3+WO86IK+KeEe64IA4nqegGmA+j5Cmrif+nXT//h3p0iQo5gEPRBpT7ykws9/Am4K1JgwZoFnbk1sQGV1qYdH7QN8fPxc1hQjl7DNi5zL3T1hpBjF4vuQD8cNx+qmhVCzyKCamamuBK6r9Yekc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=bE5bcvvO; arc=none smtp.client-ip=95.215.58.173
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="1OcAEk76";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="UElwDtqb";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="vqiLeGXj";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="HJEw4Wxn"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id C8ED66A823;
-	Thu, 23 Apr 2026 07:57:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1776931034; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="bE5bcvvO"
+X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
+	t=1776933076;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=JzWCH7HrpLt5lXmaaGBfTLa9Owo7kGAgdniQq2wp3cw=;
-	b=1OcAEk76PMQzVakUjm1RRVmKqX0qWK42m2UnsOw+TgEV4wzoalpkvUcCz4HIpyqdgfDIzZ
-	++2RGmT+uPa/CAwjN4lGJe8kmaQCYdKlhtJ819fn5IpTKWfluBB4HBnJthXgSR6qXQBRVO
-	apgITL8tDDYTodMznw3ZrLwWoFYvhRU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1776931034;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=JzWCH7HrpLt5lXmaaGBfTLa9Owo7kGAgdniQq2wp3cw=;
-	b=UElwDtqbVyWJeQAC17sSzwT36yfj+wTxZIsOy2YVgSGRyLierYxmJegu44zu7CNl1ddmhS
-	zhuYOFIrV9Wut+Bg==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=vqiLeGXj;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=HJEw4Wxn
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1776931033; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=JzWCH7HrpLt5lXmaaGBfTLa9Owo7kGAgdniQq2wp3cw=;
-	b=vqiLeGXjZhVdZxYw2ls+k5C/0SNIyNtd1Ofg0arR943eIUaxTIHR2pWGTG7wU52zQ0rhkD
-	JVX4SPOYGlW4tbF14RA0A4CeEy/8kBcRI0LXNfW08VrMQt6mS4JaiqTgTrouPa8Un6V3vT
-	3e0IhJsnt93nQOW9kiL/d9jf/PZDHiw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1776931033;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=JzWCH7HrpLt5lXmaaGBfTLa9Owo7kGAgdniQq2wp3cw=;
-	b=HJEw4WxnSTV4ZA0zREJuS9pFf0OcWO10Fw2ayeY+vmV650m6Df09Tw+/v51+21JY6tQFNQ
-	9jZeP6Zm3ntnSBBQ==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A8946593A3;
-	Thu, 23 Apr 2026 07:57:13 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 97QiKdnQ6WlmUgAAD6G6ig
-	(envelope-from <jack@suse.cz>); Thu, 23 Apr 2026 07:57:13 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-	id 50872A0A2D; Thu, 23 Apr 2026 09:57:13 +0200 (CEST)
-Date: Thu, 23 Apr 2026 09:57:13 +0200
-From: Jan Kara <jack@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: Jan Kara <jack@suse.cz>, David Sterba <dsterba@suse.com>, 
-	linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Limit size of bios submitted from writeback
-Message-ID: <yiyxz3rhwoppms6reo7yg66fr2dvn66z5qjl43vdssl6r3inyd@dnm3jrvzilri>
-References: <20260422094255.12672-2-jack@suse.cz>
- <2f467264-0f15-4ced-858e-bbfdad4dcefa@suse.com>
- <kfksarpckjgqr52rk2p2uhabgb666rfrp2hewnra7mbzbcujqr@5pwsegezuzuf>
- <13e12285-329a-46d2-8182-b6e8568275e6@suse.com>
+	bh=8YwT2J6y8VB+nAR+GUBhFBsu9Q8obY1raNP6TplLRG0=;
+	b=bE5bcvvOtZaF4jMACv4gJWXGy9pHyr8ZxjVjWFRr+w6XlHcOtheOUgxbQgLv+svPUFqb4T
+	GokyuelKSqLfKOt2rGQAUf3T4tMyRE7867WB0u62bDlpEYJXjKkepMxOSQNZFnhG3YNhsv
+	dANjm0XSetWNnKHvHhvfdfBZT807gF4=
+From: Lance Yang <lance.yang@linux.dev>
+To: ziy@nvidia.com
+Cc: willy@infradead.org,
+	songliubraving@fb.com,
+	clm@fb.com,
+	dsterba@suse.com,
+	viro@zeniv.linux.org.uk,
+	brauner@kernel.org,
+	jack@suse.cz,
+	akpm@linux-foundation.org,
+	david@kernel.org,
+	ljs@kernel.org,
+	baolin.wang@linux.alibaba.com,
+	Liam.Howlett@oracle.com,
+	npache@redhat.com,
+	ryan.roberts@arm.com,
+	dev.jain@arm.com,
+	baohua@kernel.org,
+	lance.yang@linux.dev,
+	vbabka@kernel.org,
+	rppt@kernel.org,
+	surenb@google.com,
+	mhocko@suse.com,
+	shuah@kernel.org,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-mm@kvack.org,
+	linux-kselftest@vger.kernel.org
+Subject: Re: [PATCH 7.2 v3 02/12] mm/khugepaged: add folio dirty check after try_to_unmap()
+Date: Thu, 23 Apr 2026 16:30:50 +0800
+Message-Id: <20260423083050.68509-1-lance.yang@linux.dev>
+In-Reply-To: <20260418024429.4055056-3-ziy@nvidia.com>
+References: <20260418024429.4055056-3-ziy@nvidia.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <13e12285-329a-46d2-8182-b6e8568275e6@suse.com>
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-4.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_RHS_NOT_FQDN(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RCVD_COUNT_THREE(0.00)[3];
-	URIBL_BLOCKED(0.00)[suse.com:email];
-	FROM_HAS_DN(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_SOME(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCVD_TLS_LAST(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	FROM_EQ_ENVFROM(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_THREE(0.00)[4];
-	MISSING_XM_UA(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.cz:dkim]
-X-Rspamd-Queue-Id: C8ED66A823
-X-Spam-Flag: NO
-X-Spam-Score: -4.01
-X-Spam-Level: 
+X-Migadu-Flow: FLOW_OUT
 
-On Thu 23-04-26 07:13:59, Qu Wenruo wrote:
-> 在 2026/4/22 22:19, Jan Kara 写道:
-> [...]
-> > > Iterating through all chunk maps may take some time for huge filesystems.
-> > 
-> > Yeah, I was wondering a bit. But since this is done only on mount, I
-> > figured it doesn't matter much.
-> > 
-> > > Meanwhile the device list is way smaller than the chunk maps, what about
-> > > iterating through all devices instead?
-> > 
-> > I was thinking about that as well. But as you can see below, we also need
-> > to know how the devices are put together in a raid and AFAIU that
-> > information isn't there at the device level... If there's some better data
-> > structure to iterate to get information about raid configurations of all
-> > pieces of btrfs filesystem, I can certainly use that.
+
+On Fri, Apr 17, 2026 at 10:44:19PM -0400, Zi Yan wrote:
+>This check ensures the correctness of collapse read-only THPs for FSes
+>after READ_ONLY_THP_FOR_FS is enabled by default for all FSes supporting
+>PMD THP pagecache.
+>
+>READ_ONLY_THP_FOR_FS only supports read-only fd and uses mapping->nr_thps
+>and inode->i_writecount to prevent any write to read-only to-be-collapsed
+>folios. In upcoming commits, READ_ONLY_THP_FOR_FS will be removed and the
+>aforementioned mechanism will go away too. To ensure khugepaged functions
+>as expected after the changes, skip if any folio is dirty after
+>try_to_unmap(), since a dirty folio means this read-only folio
+>got some writes via mmap can happen between try_to_unmap() and
+>try_to_unmap_flush() via cached TLB entries and khugepaged does not support
+>writable pagecache folio collapse yet.
+>
+>Signed-off-by: Zi Yan <ziy@nvidia.com>
+>---
+> mm/khugepaged.c | 25 +++++++++++++++++++++----
+> 1 file changed, 21 insertions(+), 4 deletions(-)
+>
+>diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+>index 3eb5d982d3d3..1c0fdc81d276 100644
+>--- a/mm/khugepaged.c
+>+++ b/mm/khugepaged.c
+>@@ -1979,8 +1979,7 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
+> 				}
+> 			} else if (folio_test_dirty(folio)) {
+> 				/*
+>-				 * khugepaged only works on read-only fd,
+>-				 * so this page is dirty because it hasn't
+>+				 * This page is dirty because it hasn't
+> 				 * been flushed since first write. There
+> 				 * won't be new dirty pages.
+> 				 *
+>@@ -2038,8 +2037,8 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
+> 		if (!is_shmem && (folio_test_dirty(folio) ||
+> 				  folio_test_writeback(folio))) {
+> 			/*
+>-			 * khugepaged only works on read-only fd, so this
+>-			 * folio is dirty because it hasn't been flushed
+>+			 * khugepaged only works on clean file-backed folios,
+>+			 * so this folio is dirty because it hasn't been flushed
+> 			 * since first write.
+> 			 */
+> 			result = SCAN_PAGE_DIRTY_OR_WRITEBACK;
+>@@ -2083,6 +2082,24 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
+> 			goto out_unlock;
+> 		}
 > 
-> My idea would be just ignore the detailed RAID configuration completely.
-> 
-> One point is, btrfs can have more than one data profiles (e.g. during
-> balance, or canceled balance, or degraded writes), and even there is only a
-> single data profile, we can still have different optimized sizes, e.g.
-> RAID10 on very unbalanced disks.
+>+		/*
+>+		 * At this point, the folio is locked, unmapped. Make sure the
+>+		 * folio is clean, so that no one else is able to write to it,
+>+		 * since that would require taking the folio lock first.
+>+		 * Otherwise that means the folio was pointed by a dirty PTE and
+>+		 * some CPU might have a valid TLB entry with dirty bit set
+>+		 * still pointing to this folio and writes can happen without
+>+		 * causing a page table walk and folio lock acquisition before
+>+		 * the try_to_unmap_flush() below is done. After the collapse,
+>+		 * file-backed folio is not set as dirty and can be discarded
+>+		 * before any new write marks the folio dirty, causing data
+>+		 * corruption.
+>+		 */
+>+		if (!is_shmem && folio_test_dirty(folio)) {
+>+			result = SCAN_PAGE_DIRTY_OR_WRITEBACK;
+>+			goto out_unlock;
 
-So these would be corner cases I'd be happy to ignore...
+Looks buggy :)
 
-> Furthermore for real multi-device btrfs setup, it's very likely the data
-> profile is at least striped (RAID0/RAID10), thus the huge bio will be split
-> into 64K stripes by btrfs before submission already.
+This runs after folio_isolate_lru() and after xas_lock_irq(&xas) ...
 
-But this is a good point. With RAID setups btrfs is submitting one bio per
-stripe (64k) anyway so there's no point in computing any larger limit. It
-will never get used anyway.
+If not missing something, "goto out_unlock" would leave the xarray lock
+held and the folio off the LRU :)
 
-> It's really affecting single-device profiles like SINGLE/DUP and mirror-only
-> profiles (RAID1*), where we directly submit such huge bio to each device.
-> 
-> With that said, it will be much easier to ignore the complex RAID profile
-> iteration, and just grab the min/max optimal io size of each device,
-> multiple it by the number of disks and call it a day.
+Note that the block right above does call xas_unlock_irq(&xas), and it
+also does call folio_putback_lru(folio):
 
-OK, you've convinced me :) I'll change to iterating all devices. Just I don't
-think multiplying by the number of disks makes sense - RAID setups don't
-matter as we agreed above and with simple setups you're always submitting
-to a single disk at a time anyway. So I'd go for max of opt_io over all
-disks.
+---8<---
+		if (folio_ref_count(folio) != 2 + folio_nr_pages(folio)) {
+			result = SCAN_PAGE_COUNT;
+			xas_unlock_irq(&xas);     <-
+			folio_putback_lru(folio); <-
+			goto out_unlock;
+		}
+---
 
-								Honza
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+So we should follow the same cleanup as that block here, right?

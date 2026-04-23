@@ -1,226 +1,184 @@
-Received: from m16.mail.163.com (m16.mail.163.com [117.135.210.2])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8111830595C;
-	Thu, 23 Apr 2026 07:39:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=117.135.210.2
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DEFB434D916
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2026 07:57:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776929992; cv=none; b=TEBPT6wl7FXnLgqbLFr2caUFv1JJW5aNuAYd106kiogrurbil5aDuxyqlSLQyNdEGvbtMokna/UVAcQ0mJ5yFniM0fTQP9CUYO2MkCNeMiKfeQ7OJF8lMFqv7t6M4vgYIsoE15R+mwT/QueaFLCVMokDcwJN7GYB1pSvoyZasME=
+	t=1776931038; cv=none; b=QZ1uNZDZp9drM0aMsj3gKExzrAwfvG1G60WsC11HF1wkYY4ur6NEAl2mBgSA2QYaEBji+MQV9mLfMFhusMZUiIRY4SZlexhjIGWogv9wwMd97P5MRdHpinAtubLQjJN/HuOA0z9OumpMVvAL/Jn4N6Mql8IrfM6YHWhLOc/O310=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776929992; c=relaxed/simple;
-	bh=1Pq47hVZbphU/+I1iiDvZirGah4H1IwyQaY6xggwXRI=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=QhW2QWd/5pWVaMtveYVPC/v1Ppx4fmtJSNI90+2sdqkGKqIDM93KwjN8Xnjk5RpZ+YDRCZxkT1wJ/k7ZIMw7HSpe7P6GIHlRjtLEwFbahCpNB7xnh7VvFtQVZESuc6d9qKuiUjhjP5gaEIUuZMXVkVzEok6TPcGmkCE8XwWWr5Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=A2OqDnrN; arc=none smtp.client-ip=117.135.210.2
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
+	s=arc-20240116; t=1776931038; c=relaxed/simple;
+	bh=uU5YD/8rqWOlEuCl7VBrwle4b7tRuwOdt12nwA8vpn4=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=p8rFX018TQYlojRPqBZTEqtWvRNTWAFG43NIn5yerIdSxl/l7YuPRjn+mdcDoqlHTlK1atQ/OQPEl93X/pvhfl+F/hcWVGK2vwqwQZmarQZUwT+sw77aBqG6WosRS8EJ8fR1dCO5Oo52dyFu7w5uvXiKAY1O+3fp2NG8PdBYC+s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=1OcAEk76; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=UElwDtqb; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=vqiLeGXj; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=HJEw4Wxn; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="A2OqDnrN"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
-	s=s110527; h=From:To:Subject:Date:Message-Id:MIME-Version; bh=Io
-	FPxMS70khgTGXGferxsRnIrCPyg+kivGt85Qun7iI=; b=A2OqDnrNOzw5hGlQwf
-	WnImK48FUST82KYMOiSZiOg5mOdwDU3JzXuTYyDyB/oYKmHac3nSPBLO+0vtWa+O
-	O/NS6IMw6/NiuQexmWems8Q5m/GUSlBdIl+kVVbdF4AkbUYmXY7aUgseCqTItDA9
-	0oeF9t7pGhIvVb7aFAQNObJDg=
-Received: from pek-lpg-core5.wrs.com (unknown [])
-	by gzsmtp4 (Coremail) with SMTP id PygvCgBHCRCCzOlpjMVvBA--.61S2;
-	Thu, 23 Apr 2026 15:38:45 +0800 (CST)
-From: Robert Garcia <rob_garcia@163.com>
-To: stable@vger.kernel.org,
-	Filipe Manana <fdmanana@suse.com>
-Cc: David Sterba <dsterba@suse.com>,
-	Josef Bacik <josef@toxicpanda.com>,
-	Chris Mason <clm@fb.com>,
-	Robert Garcia <rob_garcia@163.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH 5.15.y] btrfs: lock the inode in shared mode before starting fiemap
-Date: Thu, 23 Apr 2026 15:38:42 +0800
-Message-Id: <20260423073842.3827122-1-rob_garcia@163.com>
-X-Mailer: git-send-email 2.34.1
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="1OcAEk76";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="UElwDtqb";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="vqiLeGXj";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="HJEw4Wxn"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C8ED66A823;
+	Thu, 23 Apr 2026 07:57:13 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1776931034; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=JzWCH7HrpLt5lXmaaGBfTLa9Owo7kGAgdniQq2wp3cw=;
+	b=1OcAEk76PMQzVakUjm1RRVmKqX0qWK42m2UnsOw+TgEV4wzoalpkvUcCz4HIpyqdgfDIzZ
+	++2RGmT+uPa/CAwjN4lGJe8kmaQCYdKlhtJ819fn5IpTKWfluBB4HBnJthXgSR6qXQBRVO
+	apgITL8tDDYTodMznw3ZrLwWoFYvhRU=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1776931034;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=JzWCH7HrpLt5lXmaaGBfTLa9Owo7kGAgdniQq2wp3cw=;
+	b=UElwDtqbVyWJeQAC17sSzwT36yfj+wTxZIsOy2YVgSGRyLierYxmJegu44zu7CNl1ddmhS
+	zhuYOFIrV9Wut+Bg==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=vqiLeGXj;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=HJEw4Wxn
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1776931033; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=JzWCH7HrpLt5lXmaaGBfTLa9Owo7kGAgdniQq2wp3cw=;
+	b=vqiLeGXjZhVdZxYw2ls+k5C/0SNIyNtd1Ofg0arR943eIUaxTIHR2pWGTG7wU52zQ0rhkD
+	JVX4SPOYGlW4tbF14RA0A4CeEy/8kBcRI0LXNfW08VrMQt6mS4JaiqTgTrouPa8Un6V3vT
+	3e0IhJsnt93nQOW9kiL/d9jf/PZDHiw=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1776931033;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=JzWCH7HrpLt5lXmaaGBfTLa9Owo7kGAgdniQq2wp3cw=;
+	b=HJEw4WxnSTV4ZA0zREJuS9pFf0OcWO10Fw2ayeY+vmV650m6Df09Tw+/v51+21JY6tQFNQ
+	9jZeP6Zm3ntnSBBQ==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A8946593A3;
+	Thu, 23 Apr 2026 07:57:13 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 97QiKdnQ6WlmUgAAD6G6ig
+	(envelope-from <jack@suse.cz>); Thu, 23 Apr 2026 07:57:13 +0000
+Received: by quack3.suse.cz (Postfix, from userid 1000)
+	id 50872A0A2D; Thu, 23 Apr 2026 09:57:13 +0200 (CEST)
+Date: Thu, 23 Apr 2026 09:57:13 +0200
+From: Jan Kara <jack@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: Jan Kara <jack@suse.cz>, David Sterba <dsterba@suse.com>, 
+	linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Limit size of bios submitted from writeback
+Message-ID: <yiyxz3rhwoppms6reo7yg66fr2dvn66z5qjl43vdssl6r3inyd@dnm3jrvzilri>
+References: <20260422094255.12672-2-jack@suse.cz>
+ <2f467264-0f15-4ced-858e-bbfdad4dcefa@suse.com>
+ <kfksarpckjgqr52rk2p2uhabgb666rfrp2hewnra7mbzbcujqr@5pwsegezuzuf>
+ <13e12285-329a-46d2-8182-b6e8568275e6@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:PygvCgBHCRCCzOlpjMVvBA--.61S2
-X-Coremail-Antispam: 1Uf129KBjvJXoWxKrW7WF15AFW3Cr43Ar1rXrb_yoWfXFyxpr
-	ya9r1UGws5W34DWrZ7Ca1kZr1Fgws8Aay7Xr4xGrn8ZF1UXr17Jr1ktr47Xa1DJrs7JFya
-	vF4v93y8Kw4DtaDanT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x0z_WlkDUUUUU=
-X-CM-SenderInfo: 5uresw5dufxti6rwjhhfrp/xtbDAgYplGnpzIa32gAA3e
+In-Reply-To: <13e12285-329a-46d2-8182-b6e8568275e6@suse.com>
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-4.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_RHS_NOT_FQDN(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	RCVD_COUNT_THREE(0.00)[3];
+	URIBL_BLOCKED(0.00)[suse.com:email];
+	FROM_HAS_DN(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	TO_DN_SOME(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCVD_TLS_LAST(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	FROM_EQ_ENVFROM(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	MISSING_XM_UA(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.cz:dkim]
+X-Rspamd-Queue-Id: C8ED66A823
+X-Spam-Flag: NO
+X-Spam-Score: -4.01
+X-Spam-Level: 
 
-From: Filipe Manana <fdmanana@suse.com>
+On Thu 23-04-26 07:13:59, Qu Wenruo wrote:
+> 在 2026/4/22 22:19, Jan Kara 写道:
+> [...]
+> > > Iterating through all chunk maps may take some time for huge filesystems.
+> > 
+> > Yeah, I was wondering a bit. But since this is done only on mount, I
+> > figured it doesn't matter much.
+> > 
+> > > Meanwhile the device list is way smaller than the chunk maps, what about
+> > > iterating through all devices instead?
+> > 
+> > I was thinking about that as well. But as you can see below, we also need
+> > to know how the devices are put together in a raid and AFAIU that
+> > information isn't there at the device level... If there's some better data
+> > structure to iterate to get information about raid configurations of all
+> > pieces of btrfs filesystem, I can certainly use that.
+> 
+> My idea would be just ignore the detailed RAID configuration completely.
+> 
+> One point is, btrfs can have more than one data profiles (e.g. during
+> balance, or canceled balance, or degraded writes), and even there is only a
+> single data profile, we can still have different optimized sizes, e.g.
+> RAID10 on very unbalanced disks.
 
-[ Upstream commit 519b7e13b5ae8dd38da1e52275705343be6bb508 ]
+So these would be corner cases I'd be happy to ignore...
 
-Currently fiemap does not take the inode's lock (VFS lock), it only locks
-a file range in the inode's io tree. This however can lead to a deadlock
-if we have a concurrent fsync on the file and fiemap code triggers a fault
-when accessing the user space buffer with fiemap_fill_next_extent(). The
-deadlock happens on the inode's i_mmap_lock semaphore, which is taken both
-by fsync and btrfs_page_mkwrite(). This deadlock was recently reported by
-syzbot and triggers a trace like the following:
+> Furthermore for real multi-device btrfs setup, it's very likely the data
+> profile is at least striped (RAID0/RAID10), thus the huge bio will be split
+> into 64K stripes by btrfs before submission already.
 
-   task:syz-executor361 state:D stack:20264 pid:5668  ppid:5119   flags:0x00004004
-   Call Trace:
-    <TASK>
-    context_switch kernel/sched/core.c:5293 [inline]
-    __schedule+0x995/0xe20 kernel/sched/core.c:6606
-    schedule+0xcb/0x190 kernel/sched/core.c:6682
-    wait_on_state fs/btrfs/extent-io-tree.c:707 [inline]
-    wait_extent_bit+0x577/0x6f0 fs/btrfs/extent-io-tree.c:751
-    lock_extent+0x1c2/0x280 fs/btrfs/extent-io-tree.c:1742
-    find_lock_delalloc_range+0x4e6/0x9c0 fs/btrfs/extent_io.c:488
-    writepage_delalloc+0x1ef/0x540 fs/btrfs/extent_io.c:1863
-    __extent_writepage+0x736/0x14e0 fs/btrfs/extent_io.c:2174
-    extent_write_cache_pages+0x983/0x1220 fs/btrfs/extent_io.c:3091
-    extent_writepages+0x219/0x540 fs/btrfs/extent_io.c:3211
-    do_writepages+0x3c3/0x680 mm/page-writeback.c:2581
-    filemap_fdatawrite_wbc+0x11e/0x170 mm/filemap.c:388
-    __filemap_fdatawrite_range mm/filemap.c:421 [inline]
-    filemap_fdatawrite_range+0x175/0x200 mm/filemap.c:439
-    btrfs_fdatawrite_range fs/btrfs/file.c:3850 [inline]
-    start_ordered_ops fs/btrfs/file.c:1737 [inline]
-    btrfs_sync_file+0x4ff/0x1190 fs/btrfs/file.c:1839
-    generic_write_sync include/linux/fs.h:2885 [inline]
-    btrfs_do_write_iter+0xcd3/0x1280 fs/btrfs/file.c:1684
-    call_write_iter include/linux/fs.h:2189 [inline]
-    new_sync_write fs/read_write.c:491 [inline]
-    vfs_write+0x7dc/0xc50 fs/read_write.c:584
-    ksys_write+0x177/0x2a0 fs/read_write.c:637
-    do_syscall_x64 arch/x86/entry/common.c:50 [inline]
-    do_syscall_64+0x3d/0xb0 arch/x86/entry/common.c:80
-    entry_SYSCALL_64_after_hwframe+0x63/0xcd
-   RIP: 0033:0x7f7d4054e9b9
-   RSP: 002b:00007f7d404fa2f8 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
-   RAX: ffffffffffffffda RBX: 00007f7d405d87a0 RCX: 00007f7d4054e9b9
-   RDX: 0000000000000090 RSI: 0000000020000000 RDI: 0000000000000006
-   RBP: 00007f7d405a51d0 R08: 0000000000000000 R09: 0000000000000000
-   R10: 0000000000000000 R11: 0000000000000246 R12: 61635f65646f6e69
-   R13: 65646f7475616f6e R14: 7261637369646f6e R15: 00007f7d405d87a8
-    </TASK>
-   INFO: task syz-executor361:5697 blocked for more than 145 seconds.
-         Not tainted 6.2.0-rc3-syzkaller-00376-g7c6984405241 #0
-   "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-   task:syz-executor361 state:D stack:21216 pid:5697  ppid:5119   flags:0x00004004
-   Call Trace:
-    <TASK>
-    context_switch kernel/sched/core.c:5293 [inline]
-    __schedule+0x995/0xe20 kernel/sched/core.c:6606
-    schedule+0xcb/0x190 kernel/sched/core.c:6682
-    rwsem_down_read_slowpath+0x5f9/0x930 kernel/locking/rwsem.c:1095
-    __down_read_common+0x54/0x2a0 kernel/locking/rwsem.c:1260
-    btrfs_page_mkwrite+0x417/0xc80 fs/btrfs/inode.c:8526
-    do_page_mkwrite+0x19e/0x5e0 mm/memory.c:2947
-    wp_page_shared+0x15e/0x380 mm/memory.c:3295
-    handle_pte_fault mm/memory.c:4949 [inline]
-    __handle_mm_fault mm/memory.c:5073 [inline]
-    handle_mm_fault+0x1b79/0x26b0 mm/memory.c:5219
-    do_user_addr_fault+0x69b/0xcb0 arch/x86/mm/fault.c:1428
-    handle_page_fault arch/x86/mm/fault.c:1519 [inline]
-    exc_page_fault+0x7a/0x110 arch/x86/mm/fault.c:1575
-    asm_exc_page_fault+0x22/0x30 arch/x86/include/asm/idtentry.h:570
-   RIP: 0010:copy_user_short_string+0xd/0x40 arch/x86/lib/copy_user_64.S:233
-   Code: 74 0a 89 (...)
-   RSP: 0018:ffffc9000570f330 EFLAGS: 00050202
-   RAX: ffffffff843e6601 RBX: 00007fffffffefc8 RCX: 0000000000000007
-   RDX: 0000000000000000 RSI: ffffc9000570f3e0 RDI: 0000000020000120
-   RBP: ffffc9000570f490 R08: 0000000000000000 R09: fffff52000ae1e83
-   R10: fffff52000ae1e83 R11: 1ffff92000ae1e7c R12: 0000000000000038
-   R13: ffffc9000570f3e0 R14: 0000000020000120 R15: ffffc9000570f3e0
-    copy_user_generic arch/x86/include/asm/uaccess_64.h:37 [inline]
-    raw_copy_to_user arch/x86/include/asm/uaccess_64.h:58 [inline]
-    _copy_to_user+0xe9/0x130 lib/usercopy.c:34
-    copy_to_user include/linux/uaccess.h:169 [inline]
-    fiemap_fill_next_extent+0x22e/0x410 fs/ioctl.c:144
-    emit_fiemap_extent+0x22d/0x3c0 fs/btrfs/extent_io.c:3458
-    fiemap_process_hole+0xa00/0xad0 fs/btrfs/extent_io.c:3716
-    extent_fiemap+0xe27/0x2100 fs/btrfs/extent_io.c:3922
-    btrfs_fiemap+0x172/0x1e0 fs/btrfs/inode.c:8209
-    ioctl_fiemap fs/ioctl.c:219 [inline]
-    do_vfs_ioctl+0x185b/0x2980 fs/ioctl.c:810
-    __do_sys_ioctl fs/ioctl.c:868 [inline]
-    __se_sys_ioctl+0x83/0x170 fs/ioctl.c:856
-    do_syscall_x64 arch/x86/entry/common.c:50 [inline]
-    do_syscall_64+0x3d/0xb0 arch/x86/entry/common.c:80
-    entry_SYSCALL_64_after_hwframe+0x63/0xcd
-   RIP: 0033:0x7f7d4054e9b9
-   RSP: 002b:00007f7d390d92f8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-   RAX: ffffffffffffffda RBX: 00007f7d405d87b0 RCX: 00007f7d4054e9b9
-   RDX: 0000000020000100 RSI: 00000000c020660b RDI: 0000000000000005
-   RBP: 00007f7d405a51d0 R08: 00007f7d390d9700 R09: 0000000000000000
-   R10: 00007f7d390d9700 R11: 0000000000000246 R12: 61635f65646f6e69
-   R13: 65646f7475616f6e R14: 7261637369646f6e R15: 00007f7d405d87b8
-    </TASK>
+But this is a good point. With RAID setups btrfs is submitting one bio per
+stripe (64k) anyway so there's no point in computing any larger limit. It
+will never get used anyway.
 
-What happens is the following:
+> It's really affecting single-device profiles like SINGLE/DUP and mirror-only
+> profiles (RAID1*), where we directly submit such huge bio to each device.
+> 
+> With that said, it will be much easier to ignore the complex RAID profile
+> iteration, and just grab the min/max optimal io size of each device,
+> multiple it by the number of disks and call it a day.
 
-1) Task A is doing an fsync, enters btrfs_sync_file() and flushes delalloc
-   before locking the inode and the i_mmap_lock semaphore, that is, before
-   calling btrfs_inode_lock();
+OK, you've convinced me :) I'll change to iterating all devices. Just I don't
+think multiplying by the number of disks makes sense - RAID setups don't
+matter as we agreed above and with simple setups you're always submitting
+to a single disk at a time anyway. So I'd go for max of opt_io over all
+disks.
 
-2) After task A flushes delalloc and before it calls btrfs_inode_lock(),
-   another task dirties a page;
-
-3) Task B starts a fiemap without FIEMAP_FLAG_SYNC, so the page dirtied
-   at step 2 remains dirty and unflushed. Then when it enters
-   extent_fiemap() and it locks a file range that includes the range of
-   the page dirtied in step 2;
-
-4) Task A calls btrfs_inode_lock() and locks the inode (VFS lock) and the
-   inode's i_mmap_lock semaphore in write mode. Then it tries to flush
-   delalloc by calling start_ordered_ops(), which will block, at
-   find_lock_delalloc_range(), when trying to lock the range of the page
-   dirtied at step 2, since this range was locked by the fiemap task (at
-   step 3);
-
-5) Task B generates a page fault when accessing the user space fiemap
-   buffer with a call to fiemap_fill_next_extent().
-
-   The fault handler needs to call btrfs_page_mkwrite() for some other
-   page of our inode, and there we deadlock when trying to lock the
-   inode's i_mmap_lock semaphore in read mode, since the fsync task locked
-   it in write mode (step 4) and the fsync task can not progress because
-   it's waiting to lock a file range that is currently locked by us (the
-   fiemap task, step 3).
-
-Fix this by taking the inode's lock (VFS lock) in shared mode when
-entering fiemap. This effectively serializes fiemap with fsync (except the
-most expensive part of fsync, the log sync), preventing this deadlock.
-
-Reported-by: syzbot+cc35f55c41e34c30dcb5@syzkaller.appspotmail.com
-Link: https://lore.kernel.org/linux-btrfs/00000000000032dc7305f2a66f46@google.com/
-CC: stable@vger.kernel.org # 6.1+
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Robert Garcia <rob_garcia@163.com>
----
- fs/btrfs/extent_io.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 3b671e9bf684..659f3eae9ab9 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5591,6 +5591,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
- 		last_for_get_extent = isize;
- 	}
- 
-+	btrfs_inode_lock(&inode->vfs_inode, BTRFS_ILOCK_SHARED);
- 	lock_extent_bits(&inode->io_tree, start, start + len - 1,
- 			 &cached_state);
- 
-@@ -5706,6 +5707,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
- out:
- 	unlock_extent_cached(&inode->io_tree, start, start + len - 1,
- 			     &cached_state);
-+	btrfs_inode_unlock(&inode->vfs_inode, BTRFS_ILOCK_SHARED);
- 
- out_free_ulist:
- 	btrfs_free_path(path);
+								Honza
 -- 
-2.34.1
-
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

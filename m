@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0695C35A384;
-	Fri, 24 Apr 2026 12:43:46 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8BEC2260566;
+	Fri, 24 Apr 2026 12:48:00 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777034627; cv=none; b=eDsYGljPO4vQ/oNSnXz9Fuq/Do0NACqdwlku1+846V/RXyZ6inDjr+6vXySevhsWT/6bauXLEF1l2t0RqrhRJ+uj+SAkZjw3bKsw+U0kTVXVnbo2GUS0Dm15iHT/nS/Wtj/WtWq//QXgo4QqN0GJoLr3hYfa0rfx0HhwIes0Rk4=
+	t=1777034880; cv=none; b=V0VsfyNTX0FDX+k+qP9/k5EavAoyIT9JAyaI2WNYT1dw4yQfy45pqP74DTmIo2eeGMmCeKkIk6et64U9MB3Akuz7/iphlCSoNPhz2Q1MDh9d/MntAGpIULZtIuFqjN9AIf1Nzra22IYxHlWg4TPcFo0bEYThKDvqNjl2JOgwKnE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777034627; c=relaxed/simple;
-	bh=LxPmp8iQxWz2eBbEuseV1mCBeRehEkx6aKC4TqxZp+c=;
+	s=arc-20240116; t=1777034880; c=relaxed/simple;
+	bh=1Cf3B57eA/Xv1J45OL1HqPDwusKTeEJ3wvuRI4kM4Qg=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=dQhk+r0OhY30zvf7g/BOxXYE+1tk2FEkc2X+J+Spgno1gIc0NN90tNeUaTyVBsD5jHQja3+JjcHFEoVFG74HoeTdkqMWgL7bVGysCDbsQFNFxYL4byJRDD/bh8XDr7dyZmZZb4AvHaEJKTDqHj0c2+Xbi3QnardvN7ZSvCLXOz0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=I3P0LkNV; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=nnSIppeIFg5xoon9JBwVvj7jGRPBWEJbipiX64Ami2X5HtjNtiFUCXHXY8DlDLUhsAo/neIyhYvEeg0QECr8Z/BZIUyVKYWuGIG7U7eyWCeT6fF0HRP10PT75UaAtUepO3uhIS95rTG/m/1KfcMFVzwumtTxxIuOT/ty7osVDJQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=c+MBUo4Y; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="I3P0LkNV"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5254DC19425;
-	Fri, 24 Apr 2026 12:43:39 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="c+MBUo4Y"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A7209C19425;
+	Fri, 24 Apr 2026 12:47:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1777034626;
-	bh=LxPmp8iQxWz2eBbEuseV1mCBeRehEkx6aKC4TqxZp+c=;
+	s=k20201202; t=1777034880;
+	bh=1Cf3B57eA/Xv1J45OL1HqPDwusKTeEJ3wvuRI4kM4Qg=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=I3P0LkNVz83U0Cahye4rRm93gn2CHTINURKRHKmewgLZGDlZxZaglfDH4YJTki7NL
-	 85GtNEHiW8+dqmsHnT1+LLH04gANvNF5nG+51H/rEVo705TfWxR/7l0alTstw3rRIO
-	 x5Y0WMgrC2h6cY60htl0N+wBPjMFGOWrqt4dBA2xhjFySbZ+Rb2YdhWodH10Y0vkDl
-	 VMAQ+HiUplc6451tvIzg15Q9HL58ey8LBG6YaFFZubhCpwApvtJngBJ0XSWSYC7VUN
-	 J10yHfTn/BUHc5yuLO0AB+4UmYUj3KDD1MosTe/2BLCjQx9JaMkGav5YIXZu12+Hhv
-	 ShtwgiezhBKmQ==
-Message-ID: <d6ba9cde-b6c3-479e-8aac-a8b3ca0405e0@kernel.org>
-Date: Fri, 24 Apr 2026 14:43:37 +0200
+	b=c+MBUo4YmmqJhSbQ4lFHV+9KptHXnOQ2WBGmJw6ZiQE7tBQ3jQlZAyfTO3iyN66GU
+	 aIMlLh9/QbG3nB+FjT1XcH+cyLPmstj0Myw9tOuwh2XOO5vbrKnmfYjNhWn1PWy65j
+	 1bm0FUiVTRTqtxHhyQ4aOxumH8Q5jW8MtCGM5/pO4DkocHAwFB9tLBoiwUR7T8BLia
+	 f3iu49Yia6FdGkcK2ti2TGHzfW1T1CTt/JK+iqEReocUdjphyJuJcmQx/iFZ3Sgw+N
+	 QTcUkVONSW+tUxsG0aHVaDMGa9lJH8Z/V6YRxgetHHhBeWoyjKFT8vu0FhB29mWECS
+	 OIxyjdHp7g80g==
+Message-ID: <312bc872-be82-457b-b0dc-fae7f4e15bbf@kernel.org>
+Date: Fri, 24 Apr 2026 14:47:50 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,8 +35,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 7.2 v4 03/12] mm/huge_memory: remove READ_ONLY_THP_FOR_FS
- from file_thp_enabled()
+Subject: Re: [PATCH 7.2 v4 04/12] mm/khugepaged: remove READ_ONLY_THP_FOR_FS
+ check in hugepage_enabled()
 To: Zi Yan <ziy@nvidia.com>, Andrew Morton <akpm@linux-foundation.org>,
  "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  Song Liu <songliubraving@fb.com>
@@ -54,7 +54,7 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260424024915.28758-1-ziy@nvidia.com>
- <20260424024915.28758-4-ziy@nvidia.com>
+ <20260424024915.28758-5-ziy@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -101,19 +101,91 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <20260424024915.28758-4-ziy@nvidia.com>
+In-Reply-To: <20260424024915.28758-5-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
 On 4/24/26 04:49, Zi Yan wrote:
-> Replace it with a check on the max folio order of the file's address space
-> mapping, making sure PMD THP is supported. Also remove the read-only fd
-> check, since collapse_file() now makes sure all to-be-collapsed folios are
-> clean and the created PMD file THP can be handled by FSes properly.
+> Remove READ_ONLY_THP_FOR_FS and khugepaged for file-backed pmd-sized
+> hugepages are enabled by the global transparent hugepage control.
+> khugepaged can still be enabled by per-size control for anon and shmem when
+> the global control is off.
+> 
+> Add shmem_hpage_pmd_enabled() stub for !CONFIG_SHMEM to remove
+> IS_ENABLED(SHMEM) in hugepage_enabled().
+> 
+> Clean up hugepage_enabled() by moving anon code to anon_hpage_enabled().
 > 
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
 > Reviewed-by: Baolin Wang <baolin.wang@linux.alibaba.com>
 > ---
+>  include/linux/shmem_fs.h |  2 +-
+>  mm/khugepaged.c          | 26 ++++++++++++++++----------
+>  2 files changed, 17 insertions(+), 11 deletions(-)
+> 
+> diff --git a/include/linux/shmem_fs.h b/include/linux/shmem_fs.h
+> index 93a0ba872ebe..acb8dd961b45 100644
+> --- a/include/linux/shmem_fs.h
+> +++ b/include/linux/shmem_fs.h
+> @@ -127,7 +127,7 @@ int shmem_writeout(struct folio *folio, struct swap_iocb **plug,
+>  void shmem_truncate_range(struct inode *inode, loff_t start, uoff_t end);
+>  int shmem_unuse(unsigned int type);
+>  
+> -#ifdef CONFIG_TRANSPARENT_HUGEPAGE
+> +#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && defined(CONFIG_SHMEM)
+>  unsigned long shmem_allowable_huge_orders(struct inode *inode,
+>  				struct vm_area_struct *vma, pgoff_t index,
+>  				loff_t write_end, bool shmem_huge_force);
+> diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+> index 726f8ace01af..cdd4b37e4a68 100644
+> --- a/mm/khugepaged.c
+> +++ b/mm/khugepaged.c
+> @@ -524,26 +524,32 @@ static inline int collapse_test_exit_or_disable(struct mm_struct *mm)
+>  		mm_flags_test(MMF_DISABLE_THP_COMPLETELY, mm);
+>  }
+>  
+> +static inline bool anon_hpage_enabled(void)
+> +{
+> +	if (READ_ONCE(huge_anon_orders_always))
+> +		return true;
+> +	if (READ_ONCE(huge_anon_orders_madvise))
+> +		return true;
+> +	if (READ_ONCE(huge_anon_orders_inherit) &&
+> +	    hugepage_global_enabled())
+> +		return true;
+> +	return false;
+> +}
+
+Ah, that is based on Nicos work, right?
+
+> +
+>  static bool hugepage_enabled(void)
+>  {
+>  	/*
+>  	 * We cover the anon, shmem and the file-backed case here; file-backed
+> -	 * hugepages, when configured in, are determined by the global control.
+> +	 * hugepages are determined by the global control.
+>  	 * Anon hugepages are determined by its per-size mTHP control.
+>  	 * Shmem pmd-sized hugepages are also determined by its pmd-size control,
+>  	 * except when the global shmem_huge is set to SHMEM_HUGE_DENY.
+>  	 */
+> -	if (IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) &&
+> -	    hugepage_global_enabled())
+> -		return true;
+> -	if (READ_ONCE(huge_anon_orders_always))
+> +	if (hugepage_global_enabled())
+>  		return true;
+> -	if (READ_ONCE(huge_anon_orders_madvise))
+> -		return true;
+> -	if (READ_ONCE(huge_anon_orders_inherit) &&
+> -	    hugepage_global_enabled())
+> +	if (anon_hpage_enabled())
+>  		return true;
+> -	if (IS_ENABLED(CONFIG_SHMEM) && shmem_hpage_pmd_enabled())
+> +	if (shmem_hpage_pmd_enabled())
+>  		return true;
+>  	return false;
+>  }
 
 Acked-by: David Hildenbrand (Arm) <david@kernel.org>
 

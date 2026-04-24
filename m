@@ -1,148 +1,96 @@
-Received: from mail-oo1-f80.google.com (mail-oo1-f80.google.com [209.85.161.80])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mxex1.tik.uni-stuttgart.de (mxex1.tik.uni-stuttgart.de [129.69.192.20])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C10B34A767
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 07:54:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.80
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 56C3631F9A0
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 08:31:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=129.69.192.20
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777017275; cv=none; b=S2WrQ1rrFrWiwLHcKrtjCwG8phIYmsmulRSUGi3RTY9qhsAge2FKfybfJYhpWIO6i6KymNI90yIBdBWSAKPGyqMDKfiAkw/0vhMCHEu+g6YcdZDIKmWqz8pU5Ip7ghLMmbticWW+G7rTuGKg31lPWFY04uS2GM/2JSKm1Oyj0H8=
+	t=1777019508; cv=none; b=JFYSD+aSq/uQrE7MxYN60iuhfCqfDb/Hk/3wMngXjDZlhOsnNguW0OBZsa2Hg4NO+C7V4hRU4EwiHvnPU2eakWXYJI+UUDVDJAtysU590ZSQdBgnCDXlz3sfGUnsTDpVU30V7kCSbko4so5Ya3TFUrgta9jSnDCVfbMt8yIWbic=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777017275; c=relaxed/simple;
-	bh=MaraI430aZsozOsdIp+Rf471L3nAQsLpcrEn6ChTYKk=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=b1687IicwMQE/SgbOJCOe5vIJ630oDoROpEfJwwJugdH0pRVTXjmY0ifmWCbNGNCJbNo4n5ngmBb3MfpmePd6iJU1+GlrQ2Jkd/h9e4fo4uqUtgj3Dtlaqfz2wfSZ7Y8f4ZWgM9mUAGn7FzGEY6cFn0RQz4M66+tQnmb/otVdyA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.161.80
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oo1-f80.google.com with SMTP id 006d021491bc7-69491bd267fso8947950eaf.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 00:54:33 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1777017272; x=1777622072;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=eFKi649ZkY5D599kqoYXiEqrp7pEoyOSrvNmABzUs8c=;
-        b=fpGsfxtSWStFbJiW2r9nPCAT80lVndX4fZ561YYj87Zm+AGX63+UUsJNLIqKssFhia
-         3TvZwHIZ2Vi/Y56eNKkHs+Psq2cjhUYlorcFC4Q97gTXmaFtTXSYr80jhlHAKoEnjKzI
-         rFxE5zqyF+bluixfMjNueO3pLTYzcSyi1Y2W0xTHeU8nXHHoVgRFYa7cChFZgV6owYQy
-         henlHZUnVudNoPWYan78njpzRmB3bWyYF8amZ4UocC7aEcKgTlEbUnxsYrAQjnadFh+l
-         ChTewdQeyEmoKnv4saWizCMudBGimfUVAY8nK7nkWJOLGlsmcFkSwaAylxZ3BdjMcPrZ
-         blMw==
-X-Forwarded-Encrypted: i=1; AFNElJ9libmc9QH1Mdak5SBAVEl1hpqOxPQwIQhH8K9ppraQfe+6kilOWCWw+T53awNMjpuldy1KMP8d+xhJ/g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YztcM9FbEYw3yKsTPtIseOsEeAJ1cfnjlR71q150Y6gBt+E51SM
-	w7UXP0uDbG2NtOJdzmMvpAFfdLsBG13Nz1EHupQoTuMbm+JWKIcGTifl43JFfkTffLizwxnOivf
-	yD9bZNGSaP8sJ1XzAJg8+iYtqoRRLskAneG09X0/tuzPCqxBozMKMSdRES8o=
+	s=arc-20240116; t=1777019508; c=relaxed/simple;
+	bh=j/zzEnU47NMEhhYV6aRq9c6sRS+WV1EOV82rnByRKDA=;
+	h=Date:From:To:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=scklY7M7tuNS7Hu/sPQJGxAEs92XXPBrgboHADFsQ0cG7oL4fvl9UEGo5d5TdCE0lO3CfXwUSsjJ/3VSJg2s3RvgaUcPMhYhz2yYjGxvC/N7g9H44ny8Da9IHf5eqkDeShsNH1oJzuQDK4KP7PsulW8v6BYZUJ77CNxnZZqwYik=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de; spf=pass smtp.mailfrom=rus.uni-stuttgart.de; dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b=x5HSJu3N; arc=none smtp.client-ip=129.69.192.20
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=rus.uni-stuttgart.de
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b="x5HSJu3N"
+Received: from localhost (localhost [127.0.0.1])
+	by mxex1.tik.uni-stuttgart.de (Postfix) with ESMTP id 12AA160E7D
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 10:23:03 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=uni-stuttgart.de;
+	 h=user-agent:in-reply-to:content-disposition:content-type
+	:content-type:mime-version:references:message-id:subject:subject
+	:from:from:date:date; s=dkim; i=@rus.uni-stuttgart.de; t=
+	1777018981; x=1778757782; bh=j/zzEnU47NMEhhYV6aRq9c6sRS+WV1EOV82
+	rnByRKDA=; b=x5HSJu3N27u//rNmjvtfBSHzhgE0Swkb1mTx/PD54+cgtf4B9Q0
+	CfoUv8JzjbKVq4lMAaC1miOLPf2vV0fPD3ZNjmVNqM+xruKfALghTej9cVQXgixH
+	PVLQZ8XWmOigHnj8Xkxuy1l3+0p0Dw8dHqCEz/4IHmGoAlRPPmytcCtx7wXZMwN1
+	aEoguXMfV96sNJ0eJUsuJrRSpCdPMui675fqlPlRIof8eWRlIzsNNnB7jsw+N7oj
+	gjQhPU6s01Xv3K2uK4ki8YpSXurnfqlBLKCRQpKACv/B2Nymt10ONCv+qRNtA+H8
+	VvoCNeNKJhET517x+bKcF5XnODyVA09qIfQ==
+X-Virus-Scanned: USTUTT mailrelay AV services at mxex1.tik.uni-stuttgart.de
+Received: from mxex1.tik.uni-stuttgart.de ([127.0.0.1])
+ by localhost (mxex1.tik.uni-stuttgart.de [127.0.0.1]) (amavis, port 10031)
+ with ESMTP id T7kUyIo6z7fU for <linux-btrfs@vger.kernel.org>;
+ Fri, 24 Apr 2026 10:23:01 +0200 (CEST)
+Received: from authenticated client
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange secp256r1 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mxex1.tik.uni-stuttgart.de (Postfix) with ESMTPSA
+Date: Fri, 24 Apr 2026 10:23:00 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Fixing a corrupted file system
+Message-ID: <20260424082300.GA361238@tik.uni-stuttgart.de>
+Mail-Followup-To: linux-btrfs@vger.kernel.org
+References: <8c8e2466574b29ba1da29c325a108824c8373a85.camel@infradead.org>
+ <fc202c52-cb3e-40b2-a80a-6ffda886f76b@suse.com>
+ <571fb6a8-d4e7-42ed-9f19-22962163918d@app.fastmail.com>
+ <87d1aca.ae41f579.19d4f977d95@tnonline.net>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6820:f005:b0:696:1be1:92d0 with SMTP id
- 006d021491bc7-6961be1a142mr3331947eaf.30.1777017272621; Fri, 24 Apr 2026
- 00:54:32 -0700 (PDT)
-Date: Fri, 24 Apr 2026 00:54:32 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <69eb21b8.a00a0220.17a17.0056.GAE@google.com>
-Subject: [syzbot] [btrfs?] WARNING in __btrfs_update_delayed_inode (4)
-From: syzbot <syzbot+768687d6d7c96a124e24@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
-
-Hello,
-
-syzbot found the following issue on:
-
-HEAD commit:    bea8d77e45a8 Merge tag 'staging-7.1-rc1' of git://git.kern..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=1636202a580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=f8c5ce991a39e5d9
-dashboard link: https://syzkaller.appspot.com/bug?extid=768687d6d7c96a124e24
-compiler:       Debian clang version 21.1.8 (++20251221033036+2078da43e25a-1~exp1~20251221153213.50), Debian LLD 21.1.8
-
-Unfortunately, I don't have any reproducer for this issue yet.
-
-Downloadable assets:
-disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-bea8d77e.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/fa29d85c34c6/vmlinux-bea8d77e.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/c65a4276191b/bzImage-bea8d77e.xz
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+768687d6d7c96a124e24@syzkaller.appspotmail.com
-
-------------[ cut here ]------------
-BTRFS: Transaction aborted (error -28)
-WARNING: fs/btrfs/delayed-inode.c:1027 at __btrfs_update_delayed_inode+0xe3d/0x1070 fs/btrfs/delayed-inode.c:1027, CPU#0: kworker/u4:5/70
-Modules linked in:
-CPU: 0 UID: 0 PID: 70 Comm: kworker/u4:5 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-Workqueue: events_unbound btrfs_async_reclaim_data_space
-RIP: 0010:__btrfs_update_delayed_inode+0xe40/0x1070 fs/btrfs/delayed-inode.c:1027
-Code: bc bd fd e9 22 01 00 00 e8 7d d1 a2 fd 84 c0 74 23 e8 a4 bc bd fd e9 0f 01 00 00 e8 9a bc bd fd 48 8d 3d 63 e8 34 0c 44 89 ee <67> 48 0f b9 3a e9 31 01 00 00 e8 51 38 b1 07 89 c3 31 ff 89 c6 e8
-RSP: 0018:ffffc90000cff140 EFLAGS: 00010293
-RAX: ffffffff84082226 RBX: 00000000ffffffe4 RCX: ffff888000bc4a00
-RDX: 0000000000000000 RSI: 00000000ffffffe4 RDI: ffffffff903d0a90
-RBP: ffffc90000cff270 R08: ffff888000bc4a00 R09: 0000000000000003
-R10: 00000000fffffffb R11: 0000000000000000 R12: ffff888011cf9200
-R13: 00000000ffffffe4 R14: 0000000000000000 R15: ffff888012ef93c0
-FS:  0000000000000000(0000) GS:ffff88808c812000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f4b4adeaff8 CR3: 000000001f399000 CR4: 0000000000352ef0
-Call Trace:
- <TASK>
- btrfs_update_delayed_inode fs/btrfs/delayed-inode.c:1103 [inline]
- __btrfs_commit_inode_delayed_items+0x1dfa/0x1f50 fs/btrfs/delayed-inode.c:1127
- __btrfs_run_delayed_items+0x1f6/0x510 fs/btrfs/delayed-inode.c:1158
- btrfs_commit_transaction+0x836/0x30e0 fs/btrfs/transaction.c:2376
- flush_space+0x2a3/0xe20 fs/btrfs/space-info.c:-1
- do_async_reclaim_data_space+0x29a/0x520 fs/btrfs/space-info.c:1464
- btrfs_async_reclaim_data_space+0x41/0x90 fs/btrfs/space-info.c:1512
- process_one_work kernel/workqueue.c:3302 [inline]
- process_scheduled_works+0xb5d/0x1860 kernel/workqueue.c:3385
- worker_thread+0xa53/0xfc0 kernel/workqueue.c:3466
- kthread+0x388/0x470 kernel/kthread.c:436
- ret_from_fork+0x514/0xb70 arch/x86/kernel/process.c:158
- ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
- </TASK>
-----------------
-Code disassembly (best guess):
-   0:	bc bd fd e9 22       	mov    $0x22e9fdbd,%esp
-   5:	01 00                	add    %eax,(%rax)
-   7:	00 e8                	add    %ch,%al
-   9:	7d d1                	jge    0xffffffdc
-   b:	a2 fd 84 c0 74 23 e8 	movabs %al,0xbca4e82374c084fd
-  12:	a4 bc
-  14:	bd fd e9 0f 01       	mov    $0x10fe9fd,%ebp
-  19:	00 00                	add    %al,(%rax)
-  1b:	e8 9a bc bd fd       	call   0xfdbdbcba
-  20:	48 8d 3d 63 e8 34 0c 	lea    0xc34e863(%rip),%rdi        # 0xc34e88a
-  27:	44 89 ee             	mov    %r13d,%esi
-* 2a:	67 48 0f b9 3a       	ud1    (%edx),%rdi <-- trapping instruction
-  2f:	e9 31 01 00 00       	jmp    0x165
-  34:	e8 51 38 b1 07       	call   0x7b1388a
-  39:	89 c3                	mov    %eax,%ebx
-  3b:	31 ff                	xor    %edi,%edi
-  3d:	89 c6                	mov    %eax,%esi
-  3f:	e8                   	.byte 0xe8
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <87d1aca.ae41f579.19d4f977d95@tnonline.net>
+User-Agent: Mutt/1.5.23 (2014-03-12)
 
 
----
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+On Thu 2026-04-02 (21:07), Forza wrote:
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+> > I forget what mkfs version, but the default behaviour changed a few years ago so the default profile is Single on SSD's. (Correct me if this has since been reverted.)  Something about the way SSD's copy on write, the DUP entries would end up on the same physical block, so the redundancy was not effective.
+> 
+> It is the reverse. Since btrfs-progs 5.15, the default was changed to DUP for single device fs.
+> 
+> https://github.com/kdave/btrfs-progs/commit/65181c273e67bd48d01fc79f00826dce38b93c4c
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
+I have some old btrfs filesystems with single metadata:
 
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
+root@moep:~# btrfs filesystem df /
+Data, single: total=23.01GiB, used=12.51GiB
+System, DUP: total=8.00MiB, used=16.00KiB
+Metadata, DUP: total=1.75GiB, used=930.19MiB
+GlobalReserve, single: total=42.06MiB, used=0.00B
 
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
+root@moep:~# btrfs filesystem df /home
+Data, single: total=95.01GiB, used=54.27GiB
+System, single: total=32.00MiB, used=16.00KiB
+Metadata, single: total=1.00GiB, used=293.70MiB
+GlobalReserve, single: total=80.53MiB, used=0.00B
 
-If you want to undo deduplication, reply with:
-#syz undup
+(How) can I convert /home to DUP for System and Metadata?
+(/ looks good)
+
+-- 
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    https://www.tik.uni-stuttgart.de/
+REF:<87d1aca.ae41f579.19d4f977d95@tnonline.net>

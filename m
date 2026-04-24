@@ -1,58 +1,58 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C9E021CEADB
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 00:53:35 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C385A13AF2
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 00:56:49 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776992017; cv=none; b=aMNrkMqvZABaIurZEPnAQKGRVLJlkWy5XlrU7cIyt9LrK5Sa0jyFUcZKd431fnE+bHF//0KY0gzyXhHpDnt5nTK1/uwmCRXBURoiaO2J/rSLk9hy1FGDGzvqcnWMks1TnDsmyva4+wTaISPSYi/sQCuOP4iYbXpIAr5oKqfYrX8=
+	t=1776992211; cv=none; b=ptPeMZFOlXsADMs19NWvMwG9QCE3Inj3rrKJ9ugrgJpqjdhzntRcA2aQ2yFqoFZlJEQipISOWRJnfuZYGaRqq2JnQSGbBdUdaFKivSDCon3v8ZocvOKNDzdjn4Gdl0ahnhR5xiJbW681fl3dyH5aQXiCL0F5N4LbOc5NpGB8pWI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776992017; c=relaxed/simple;
+	s=arc-20240116; t=1776992211; c=relaxed/simple;
 	bh=utUi5swq9eNfZMYRb1VjK6mpOP0Ql4WiUuFWWQsd4c0=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=E1dB65wD2yWHOfz0Q45zI5wwyPCPF+WjLtFDwoAAh/URlzAOeZvCFEIbrVV+rP2fkP1ID4MNjinpVUMt6PwNM4RCNHeEmEg0TfNyMqaAXpP3J/E6JntN+jcXXCwyaaDpHkoDhk06ZZ/nfvHBX3rZ6RW3QfQX00gH6PiMqp5SYis=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=HP82iDky; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=HP82iDky; arc=none smtp.client-ip=195.135.223.131
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=Bw99Grj++Bxq5Mv4oG1woyqdSYBIZtmc+/ar1S3ues3RS5xTpQHxQAWeO5UsZ9pNKUjHnjAbxBp0fBrPsK2yWlfPJ9M44COiUcC79wbLnqW2n6mAPBMlARAhQzr2kwBj/WzijStkZeCGR3+ONefwML1f8oVDlK8HbIXSgq3CyeE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ceizVEfF; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ceizVEfF; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HP82iDky";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HP82iDky"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ceizVEfF";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ceizVEfF"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 72B665BCED
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 00:53:33 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id C454E5BCFF
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 00:50:44 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1776992013; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1776991844; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
 	bh=iogfO+9Cy/NlkAyQlUwub6unJ6j0Hm1cs/qp2WvoBBE=;
-	b=HP82iDkyhj8hEyRaw0xx/2YcQupHz93CEKB9vJO3lO32b2dSM7vlk2gqN96gFw7FhSE7v1
-	w6NcZOPrygNkPlA2mokhC/0eWUKCxrADAoUHuaDIgf3ghbbBxWWVNG9eyXncvlgfB+tN2S
-	e4vOpechrVVOHPW51FcGvCPKhyik/xg=
+	b=ceizVEfFkRj3jBumGcaKraHKqUl+WJsvyFFYirIV2V4G+ARkqOdTs6emrMDX1eS3wiZeca
+	iWeOIN6I957S+NBwZwLPNgVN4Ly9kduSmMOClxVMUm75N7LtZ2FNtKhgPtS5M40j87denV
+	PKnWhKuY44zYLa1PRB61qu2cUpudXzs=
 Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=HP82iDky
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1776992013; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1776991844; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
 	bh=iogfO+9Cy/NlkAyQlUwub6unJ6j0Hm1cs/qp2WvoBBE=;
-	b=HP82iDkyhj8hEyRaw0xx/2YcQupHz93CEKB9vJO3lO32b2dSM7vlk2gqN96gFw7FhSE7v1
-	w6NcZOPrygNkPlA2mokhC/0eWUKCxrADAoUHuaDIgf3ghbbBxWWVNG9eyXncvlgfB+tN2S
-	e4vOpechrVVOHPW51FcGvCPKhyik/xg=
+	b=ceizVEfFkRj3jBumGcaKraHKqUl+WJsvyFFYirIV2V4G+ARkqOdTs6emrMDX1eS3wiZeca
+	iWeOIN6I957S+NBwZwLPNgVN4Ly9kduSmMOClxVMUm75N7LtZ2FNtKhgPtS5M40j87denV
+	PKnWhKuY44zYLa1PRB61qu2cUpudXzs=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 74C4E593AE
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 00:53:32 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C055C593AE
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 00:50:43 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id HU0rCQy/6mlEUAAAD6G6ig
+	id xyIpG2O+6mnyTQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 00:53:32 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 00:50:43 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Subject: [PATCH v2] btrfs: move larger data folios out of experimental features
-Date: Fri, 24 Apr 2026 10:23:13 +0930
+Date: Fri, 24 Apr 2026 10:20:25 +0930
 Message-ID: <1cd9bec514234044fa75a5e1e73575f854331508.1776991780.git.wqu@suse.com>
 X-Mailer: git-send-email 2.53.0
 Precedence: bulk
@@ -62,40 +62,31 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spamd-Result: default: False [-2.79 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-0.998];
+	NEURAL_HAM_SHORT(-0.19)[-0.957];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
-X-Rspamd-Action: no action
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
-X-Spam-Score: -3.01
+X-Spam-Score: -2.79
 X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 72B665BCED
+Message-ID: <20260424005025.Kqhh1MqnKL1oalmqhrBBaicdTcdoF4JSLsO2qzMK2Ro@z>
 
 This feature was introduced in v6.17 under experimental, and we had
 several small bugs related to or exposed by that feature:

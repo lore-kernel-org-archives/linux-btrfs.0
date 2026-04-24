@@ -1,169 +1,160 @@
-Received: from PH8PR06CU001.outbound.protection.outlook.com (mail-westus3azon11012019.outbound.protection.outlook.com [40.107.209.19])
+Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A64F5314D06;
-	Fri, 24 Apr 2026 02:53:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.107.209.19
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1776999189; cv=fail; b=NOsZuk8F3r7eKF4DYf2sSkGbexHSFB5AzUZeWn2Q8OuRVB9EiulUdBsF/79aEF1O6Y0tA+PQYWeSsORqLpMRtb0v0qQvAy3ybTKr9798J5RPmVrqJ0xCvPrBWDb7voXSMlOSAmCiUICj//yqOHw1+PLrCfMMktxPjcNoxbg32kg=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1776999189; c=relaxed/simple;
-	bh=coxrppTJGXWQDtuSPOtEo3pIE6kGyEkrBqiD1hCYffw=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=D5d+FkaKSeehYI74vN0BxMJ/lb/rO8Xz1NNY9biQ3ZfTlUGxBqauki5BvXkHPRKVDUySy+MfsfZ/XcShHCTu5wYAVENH1gg2Mr7i6EwCtHlj+Oo4p8ekPWxLYKsklverhXB+KfCk2OUrD4Nm1lpjrI8DrZoLIyPHZ80F5I23qFw=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=s1cKQMQA; arc=fail smtp.client-ip=40.107.209.19
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A5E792E1746
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 02:55:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.81.13.136
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1776999328; cv=none; b=QMbbxcQexP9vMUTB5i5WpBByH1FZThcPbt0IKG6dX2D3g/X68SmOEAvAgsswqUWvj4UdCSS+ipBSOiSfiESv3ScB0xcrYNGBypyOtAAHpzhqr7lIykqf/L5kq429BIJBwyyGgh5XlwNczcRL8cIsMltyqk0SZePZgpvq1VwYoEc=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1776999328; c=relaxed/simple;
+	bh=E8F7eSum21+JphJVvADSd/oRw1h7RYMMqNESrnaMCnw=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=O5vdD9rsDlc3MTCrPApxlzhHTreh0JMT9+acZpPK0AnWMFkjpoKrGbe47qNyL2VtV4WalNKuFcQVafjD0kfuswEzf/4nlFbbyYBJCw2RYHt9C38+apRu6pHAKuIcUMAErSk/m/e7FK56PElkK66dKFQd88CQLPszxlAsbHuPKPU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org; spf=pass smtp.mailfrom=merlins.org; dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b=KYSNOIDM; arc=none smtp.client-ip=209.81.13.136
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=merlins.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=merlins.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="s1cKQMQA"
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=VGlZXHFSW1rXul6JTPpOo1nLhdRoDZCq8rQZ2RwaztJzWYnczZdwvIJx/48h2y/4VQT6IZk9VF9CPRk6Frpv2VAg8tAzFIfd2XNtXLYcaP6WiAfMoW3Y0AEPdK0FJb4myUg3/fhFFFhdAIUDKCODRyr9ITizbQP2cSPxRfr3Fl0mxQKIlF6Kzo3KuOtVUZdbrZcWqz0vFWdjYSW1C/11qmhV2tPMvo1DdnYs5J/zJ+Pfoh2dSgh45s1fGc2A0yDTWEK70HbcedW89n8vhXvNCEMUTV+H7fA5kJBw+kdCV+6vmJRiZFKpvRWTWA3BrudfcZ5klEDchXkOuSZ6uxZlwQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=ZBxyRBoqqiTc/WT41TjhmmTGhmo/L9qXeALUWtsfAxM=;
- b=EPCbg3l/wvRqkAKU5eb4eXJyobGpPxtckQEsSkoTdqkRAxpf1Cs5rArhkUiUSJCKid6wH7gptNmex/Ch+rCdeylwQQw5hpAHy7JJVkSxim/pEILw8EaFbZ2kJpwNa8NSO0ReK7lkKGLEh4+pcTmWFVbTTsaAd5TJBRSQfQTQXrDl8SPViCjHhvTeI2jS3uPrVxAlQgnSOAAOApNsGPZGj3nggvXybRHEQzHAWU8+PUNdE82cblvydOemL3XAKWp+tHAH+AyM1GwPuxHYW6jnAVpJM2DITBYzlRIJcEgR7GKf42TqfMcSQYy2W9bEWz/z/ppXt7PeSttU5QzxQWgwRg==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
- dkim=pass header.d=nvidia.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
- s=selector2;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=ZBxyRBoqqiTc/WT41TjhmmTGhmo/L9qXeALUWtsfAxM=;
- b=s1cKQMQAqNXe9JExzsuwMqH12LmOQLrNiTR6mJyro3F5KsX58YM4QiK9VNYcBH4Axfo8CItDzLUNse+75QszWBPJWt402SkrFnJpkD1YzDBMoijsRgucS3p0W7NSMHraDno2vO0WoZ02qVVT4zio5W8VmxYCI6jTq5tYgnUAtzvprY30MVErTNhOgpPdepIHu27zxu6ck7xnUnkvWbEyXhFgy++rxD8soXlbAwucArydgnEFfmuimcUMl9du6DQF2/wkf924WYyvmjsTJ/VJJvlfJkdvb+KOlONwW5c0UNxxevMmuffzdV/OHPQcaVcFpac3Kja4bQIqKe0onFmZJw==
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=nvidia.com;
-Received: from DS7PR12MB9473.namprd12.prod.outlook.com (2603:10b6:8:252::5) by
- DS4PR12MB9588.namprd12.prod.outlook.com (2603:10b6:8:282::17) with Microsoft
- SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.9846.16; Fri, 24 Apr 2026 02:52:21 +0000
-Received: from DS7PR12MB9473.namprd12.prod.outlook.com
- ([fe80::f01d:73d2:2dda:c7b2]) by DS7PR12MB9473.namprd12.prod.outlook.com
- ([fe80::f01d:73d2:2dda:c7b2%4]) with mapi id 15.20.9846.021; Fri, 24 Apr 2026
- 02:52:21 +0000
-From: Zi Yan <ziy@nvidia.com>
-To: Andrew Morton <akpm@linux-foundation.org>,
-	"Matthew Wilcox (Oracle)" <willy@infradead.org>,
-	Song Liu <songliubraving@fb.com>
-Cc: Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Christian Brauner <brauner@kernel.org>,
-	Jan Kara <jack@suse.cz>,
-	David Hildenbrand <david@kernel.org>,
-	Lorenzo Stoakes <ljs@kernel.org>,
-	Zi Yan <ziy@nvidia.com>,
-	Baolin Wang <baolin.wang@linux.alibaba.com>,
-	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
-	Nico Pache <npache@redhat.com>,
-	Ryan Roberts <ryan.roberts@arm.com>,
-	Dev Jain <dev.jain@arm.com>,
-	Barry Song <baohua@kernel.org>,
-	Lance Yang <lance.yang@linux.dev>,
-	Vlastimil Babka <vbabka@kernel.org>,
-	Mike Rapoport <rppt@kernel.org>,
-	Suren Baghdasaryan <surenb@google.com>,
-	Michal Hocko <mhocko@suse.com>,
-	Shuah Khan <shuah@kernel.org>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-mm@kvack.org,
-	linux-kselftest@vger.kernel.org
-Subject: [PATCH 7.2 v4 10/12] fs/btrfs: remove a comment referring to READ_ONLY_THP_FOR_FS
-Date: Thu, 23 Apr 2026 22:49:13 -0400
-Message-ID: <20260424024915.28758-11-ziy@nvidia.com>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20260424024915.28758-1-ziy@nvidia.com>
-References: <20260424024915.28758-1-ziy@nvidia.com>
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-ClientProxiedBy: IA4P221CA0008.NAMP221.PROD.OUTLOOK.COM
- (2603:10b6:208:559::6) To DS7PR12MB9473.namprd12.prod.outlook.com
- (2603:10b6:8:252::5)
+	dkim=pass (2048-bit key) header.d=merlins.org header.i=@merlins.org header.b="KYSNOIDM"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=merlins.org
+	; s=20251023; h=In-Reply-To:Content-Type:MIME-Version:References:Message-ID:
+	Subject:Cc:To:From:Date:Sender:Reply-To:Content-Transfer-Encoding:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:List-Subscribe:
+	List-Post:List-Owner:List-Archive;
+	bh=i9Lc5bjCWBpmSdW9nN9RgiTHN1DPzph5FIYvuO4gg74=; b=KYSNOIDMmUiPOcz8fa5GPK4Grg
+	vNbpNcxggcKMhYBE+O7060+0BfGYtUxPTLVpOQg2RMX+f6pJDKZOAUVtyJg0z8D2t9dSv+l6a3PSf
+	2d5Z9QBu1px76oZGHGisjk8viHBAzjQx4tCid/ly2qrZaTX/HToubeebu/k+IzpvB5Xws7Hyajxyb
+	I1V31eLUnxLFwjNR07DrhDmgUatRpajNCN+llAOLMXINVUHWTGWQZXjtHnyNmngg1e0gqhs7mq5Sa
+	Je87+Eeb8Nn8ztd6MpDsIHw+xPfxU0wiOrsmxr9XQIGPymnHYtjKvtDBGLAtuVXSZrqeG0+lM17Hm
+	847I9BFg==;
+Received: from [24.6.49.44] (port=46972 helo=sauron.svh.merlins.org)
+	by mail1.merlins.org with esmtpsa 
+	(Cipher TLS1.3:ECDHE_SECP256R1__ECDSA_SECP256R1_SHA256__AES_256_GCM:256) (Exim 4.98.2 #2)
+	id 1wG6hQ-0000000ECdA-2fja by authid <merlins.org> with srv_auth_plain;
+	Thu, 23 Apr 2026 19:55:24 -0700
+Received: from merlin by sauron.svh.merlins.org with local (Exim 4.96)
+	(envelope-from <marc_btrfs@merlins.org>)
+	id 1wG6hP-00Bwuj-0e;
+	Thu, 23 Apr 2026 19:55:23 -0700
+Date: Thu, 23 Apr 2026 19:55:23 -0700
+From: Marc MERLIN <marc_btrfs@merlins.org>
+To: Boris Burkov <boris@bur.io>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Deleted snapshots stay in squota, mayube because of bees?
+Message-ID: <aerbm1ARY2hERpOv@merlins.org>
+References: <aeK2QgUCefpVY4KX@merlins.org>
+ <20260417231603.GA2376753@zen.localdomain>
+ <aeLNxjmUGGhnW5ss@merlins.org>
+ <20260422022627.GA1034721@zen.localdomain>
+ <aekA8mS4hppTjbA-@merlins.org>
+ <20260422192344.GA1392535@zen.localdomain>
+ <aekh8CX_LmbtMbQ_@merlins.org>
+ <20260422193853.GA1478152@zen.localdomain>
+ <aekrVJnCaGkYWeBp@merlins.org>
+ <20260423192831.GA2096001@zen.localdomain>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: DS7PR12MB9473:EE_|DS4PR12MB9588:EE_
-X-MS-Office365-Filtering-Correlation-Id: e80a77a2-c505-49e9-0328-08dea1ac8180
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|1800799024|7416014|376014|366016|56012099003|18002099003|22082099003;
-X-Microsoft-Antispam-Message-Info:
-	j38B6JutPiEN07CNONu0GooLNvVepR7R8/frFAdy+JPFctOGFcVeGpYIbb+4/N7R38ZggXtDdpiux+Owq5jc6AxbKRYCnfcFofGiaRpAewMlojY4uyy2B/67iWAs6G9P7wl+vyfnmP8dSp786zWq3x4ALUapiRTjGkQBuxnCgeIt5WLGjqjvzKJop2gD4m/E7X5FDUJklAF5RKK71KSoB5ZX/xHW679AK+wwSnyGli5pLa+oFBhuU341xDD4T/2zd05ODnE9RbYXRGua/inOGwR4dF+tjpwSJtxFy+A0qoIpmq+cED5xAMkXdA1TICBkR4aTlI2Yx8/mgyM8cxranYBIIebKeQtn2rxftN06tC43sD03h8H2+sMo9JIetjO/bl+sNDGplsaHmMh4sap4tHNicbeEvJP+Rf7eB/cc5Nl/Jf+ivfsbn8WiWvko6JvgxOtDYLuAtiGwincqaNgsDx8ojvYI0P7gLgR99fZNItS5DCMIPLp9/q5pZPZCjpyjBcO8lvuBJ+bQRcnfUb4sEkcEEnpv2v/4XcWhJGufPm1MwP8+AgUdym6/1GC7C1xF8EU/qlAd+DSvOui65jzokOPQSiuRkv0KMKn/ojlcJZ6tAVQFyli+h2Yh7RbIfps0WBRex4pCWi2TQjbNKgn09KOYzM57qEqhxWfYfQFo06EtBCusLoxDozE2oKUUnxwS2xd6lXZOjOHc+hJtBrcw/dk5KYqevfvvg5xWN/TEF2o=
-X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DS7PR12MB9473.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(7416014)(376014)(366016)(56012099003)(18002099003)(22082099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0:
-	=?us-ascii?Q?GcnWXDN41Nv62QFMNuBwOe6ZEVICaKwN6lCixp/dNRcer06b7KbuC6DQh9vi?=
- =?us-ascii?Q?id5gnJkaVjunwfGb334omtfDV/kK5kufcU7jtht9cbCgQKL/YE8HVmEdvy0S?=
- =?us-ascii?Q?q7QPodS6j7yVUAEW1cAndwnNmDBIMe5e8iZT7V3i4dOzZjfiK3scXVDYMKHm?=
- =?us-ascii?Q?dgOucf5plpM+AjzaOhTJYXzf/7txAcJQryX/+3GE2pmRs13IWg9tgcNAb8ZG?=
- =?us-ascii?Q?ehT/8ZfxKdcwvcWtHn/uazweb+aBydLFH4KCciBDj32ECLh3jwjbJ8PYJxS9?=
- =?us-ascii?Q?ocX5asMbECVbxamPa7hnDAf1UG9Ia6EgkHdgjn+peH8RiGNp7Lt3F87Z1X1y?=
- =?us-ascii?Q?q3MadLblDWwvAjtIJCWO+9P5EEp8FHTRuHqoBT5TVVfTB8yyocJS/SWaU6EU?=
- =?us-ascii?Q?X0lMqauZIuOBR7zEB8SvZcWQ/FzV6cN9BMAVcFw5CnKa7TGGXSO3DtbampRc?=
- =?us-ascii?Q?vM2fmMyx17f4H1tGw9R8P2/6gx/2BVpSjv0vGHNIjVVIaFrfO5m8FSrBNDwg?=
- =?us-ascii?Q?7XmEwpvtvWwHuVgNlpYYJaGTiAtoMn+qcrMjacG/UZ0Lnrbn5xHV7FYSRpkl?=
- =?us-ascii?Q?AkhAVEwWdgUjtrxsWXqL9alMED1U6w8yIVRhA6S+q3wQyziz51B2LunaYMVl?=
- =?us-ascii?Q?u6ZWtkAZ2zp/ED8aDOigtD2ogT3sdcSi6HOm4VhikmFBeqw6EcV3q0ogtKin?=
- =?us-ascii?Q?LRwQNXy8KG1vkLYJEuaN2gWMZZE0AMatA4d1f0Lt7pmXp1qTkVAdgvePuRaz?=
- =?us-ascii?Q?XIEGXGpIVV0wA3aeG3UiLPfUHANmwKPNxwOrFSocE82OS9V3EPS1WwBjQFkF?=
- =?us-ascii?Q?+IHQCPO/is4oXuYTE2r7GTPhuwUJcz4/tgUkbN5lPFGHu2OBqZ1D/7267w3i?=
- =?us-ascii?Q?6o/ZDxhMC2ni7Q84ZzHggVzQcwmEsT5DlGa0PEGRa+v1ZcKAQOQAtUqB2SFr?=
- =?us-ascii?Q?M3H+vv/eiEHJ80U/30CiIBe6x9XZH+78pUsOwufviiHXjaVwbF+0qp7T3rMD?=
- =?us-ascii?Q?4VFkQUFL7iqdFm72uxh8fJYcHKMHNwGyYmpwzIidTEyeGOIDHuXKkQNStcrw?=
- =?us-ascii?Q?DJ2Oej8vkYKp6JwZnpwNiEabSp8NxdapPgq1vcjO1S5wy4nAimwwCp5IF+yN?=
- =?us-ascii?Q?Hg4tufWccIzArJVdq24pbL5UOg0g4faP0p7UT8bDbG8ZeSX2SD401WlYBxpl?=
- =?us-ascii?Q?KiYlfK7vNfe73VXHFynPRm1umECVlRhbymTMOXvyRbHTNjgyj/2omTlQCLAy?=
- =?us-ascii?Q?M2+9u9uLv6gPOsNviajx5lfy0INgsCMKMphPyhToh8tIYrqgGwcXNrF0Rkpd?=
- =?us-ascii?Q?m08eWqtszPbGU0WJENx3/RvEnKzWyYiqdT0Ma7svIxKGh70mF19SJXSMMnvM?=
- =?us-ascii?Q?2l7Mg1dlbMKsc7Zkiogg6GrQWD7pZZk9hTIKWiJj9TkBlOT42NO4YcZWGEao?=
- =?us-ascii?Q?ejvKpV2kfZ8Ii/TfvZ0LV2vsTO6jAfIqqScp+wjKvJ9HTwLaO7uMJo6b67Pb?=
- =?us-ascii?Q?CdBk+rvEDoy5wQkc4VVXiWGLg0Tm8QyUbQSD6v/xJQXIEsOY0VXpSiMkce7J?=
- =?us-ascii?Q?0P2AM4zRTcJM03NVfRIYehMyDQ33LUZz5OtGBKFdjEKuXWy/jGNKyQJcDjTw?=
- =?us-ascii?Q?4J9rGQg/HfddtaJCnTMZZxUzlIh1itkeartXYUc6AwWMBAR0fbI71hrwdrsH?=
- =?us-ascii?Q?Dv7ylx6s6a9FwFJ/v11wg/S2Qr6wNLjFraS2LxIQ/jM3jHp/?=
-X-OriginatorOrg: Nvidia.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: e80a77a2-c505-49e9-0328-08dea1ac8180
-X-MS-Exchange-CrossTenant-AuthSource: DS7PR12MB9473.namprd12.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 24 Apr 2026 02:52:21.3479
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 43083d15-7273-40c1-b7db-39efd9ccc17a
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: c4votqpGhgUfIGMSfO7J0HUcH2C2auNhe3rq2SyVXvHEXu9WWpxoyBuPCPFFsZO0
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DS4PR12MB9588
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260423192831.GA2096001@zen.localdomain>
+X-Sysadmin: BOFH
+X-URL: http://marc.merlins.org/
+X-SA-Exim-Connect-IP: 24.6.49.44
+X-SA-Exim-Mail-From: marc_btrfs@merlins.org
 
-READ_ONLY_THP_FOR_FS is no longer present, remove related comment.
+On Thu, Apr 23, 2026 at 12:28:31PM -0700, Boris Burkov wrote:
+> My proposal for repair was to clean up clearly broken states like
+> scrubbing off the owner_refs for missing subvols (basically
+> conditionally do what the btrfstune did when you notice leaked
+> extents)
 
-Signed-off-by: Zi Yan <ziy@nvidia.com>
-Reviewed-by: David Hildenbrand (Arm) <david@kernel.org>
-Acked-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/defrag.c | 3 ---
- 1 file changed, 3 deletions(-)
+Ack.
 
-diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
-index 7e2db5d3a4d4..a8d49d9ca981 100644
---- a/fs/btrfs/defrag.c
-+++ b/fs/btrfs/defrag.c
-@@ -860,9 +860,6 @@ static struct folio *defrag_prepare_one_folio(struct btrfs_inode *inode, pgoff_t
- 		return folio;
+> > Is that possible at all? (separately from being worth your time, which
+> > I'd understand). The biggest plus I see is allowing many people to
+> > switch to squotas on existing FS without having to wipe and start over
+> > just to benefit from squota.
+> 
+> I think the tricky part is deciding who should own data blocks. It is,
+> in my opinion, impossible to arrive at a given FS and properly account
+> each data block to its originating subvol, with the same result as "as
+
+In the case of blocks that are owned by multiple subvols, no need to be
+fancy, it's fine to just assign them to the subvol with the lower number
+and be done with it.
+The main idea being to clean up unowned blocks and the state I just
+reported (see end of this mail), which I can reproduce pretty much at
+will (start btrfs receive, let it run, have bees run at the same time,
+kill btrfs receive, delete subvoll, and up with unowned blocks forever).
+
+> You could pick arbitrarily, or you could try to make educated guesses
+> based on the owner of the enclosing metadata tree blocks and their
+> generations or something, but I think fundamentally it would be a lossy
+> process.
  
- 	/*
--	 * Since we can defragment files opened read-only, we can encounter
--	 * transparent huge pages here (see CONFIG_READ_ONLY_THP_FOR_FS).
--	 *
- 	 * The IO for such large folios is not fully tested, thus return
- 	 * an error to reject such folios unless it's an experimental build.
- 	 *
--- 
-2.43.0
+This doesn't need to be perfect, nor can you guess who to assign if
+there are multiple others, just pick the lowest id one, and that's fine.
 
+> Perhaps we could add an ioctl that was something like "assign extent E
+> (or maybe file F's extents) to subvol S" and then userspace could assign
+> how they want. Or maybe even something subvol oriented like "squota
+> account subvol S" which would mean "S takes ownership of all unowned
+> extents reachable by S". And you could iterate your subvols in the order
+> you wanted. I like those ideas more than the kernel making fundamentally
+> arbitrary picks.
+
+That is even btter if it's not too much work and you don't mind that.
+
+> Ultimately, I would still be sort of worried about the resultant weird
+> state where you could have a shared metadata block owned by S1 and
+> shared with S2 (so S2 is a snapshot of S1 and the data must be from S1)
+> but then the data is accounted to S2. Nothing would freak out about this
+> now, I don't think, but it's sort of sloppy.
+
+So let me give my outside view and opinion :)
+s in squotas stands both for simple and sloppy :)
+When I took them, I accepted that in the name of performance. 
+"good enough" that I can live with performance wise, 1000x beats
+"perfect but I can't deal with the performance hit"
+
+I already accepted that accounting won't be perfect and it's not true
+reality with shared blocks, never mind snapshots of snapshots, but even
+more so with bees. I'm ok with that.
+I just want to know that this 10 million file subvol is around 7.2TB
+without spending hours and hours running a du -sh on it.
+And let's be honest, even with du -sh, shared blocks can be an issue, so
+really it's not really worse.
+
+But I do want to fix this is very very vexing to see forever unless I
+wipe the filesystem and start over:
+
+Qgroupid    Referenced    Exclusive   Path 
+--------    ----------    ---------   ---- 
+0/5            4.78GiB      4.78GiB   <toplevel>
+0/256         16.00KiB     16.00KiB   backup
+0/258         16.00KiB     16.00KiB   backup-btrfssend
+0/260          1.06GiB      1.06GiB   .beeshome
+0/261         63.74GiB     63.74GiB   backup/win_kodi_ro.20260328_21:48:59
+0/262        229.51GiB    229.51GiB   backup/ubuntu_kodi_ro.20260328_10:19:47
+0/263        297.04MiB    297.04MiB   <squota space holder>   <-- be gone
+0/264        187.38GiB    187.38GiB   backup/0Notmachines_kodi_ro.20260325_20:08:49
+0/266         10.37GiB     10.37GiB   backup/1Appliances_kodi_ro.20260325_23:22:32
+0/268        294.27GiB    294.27GiB   backup/debian32_kodi_ro.20260325_23:43:06
+0/269        287.84MiB    287.84MiB   <squota space holder>a <-- be gone too ;)
+
+I think it's pretty obvious where to assign them, it's the other
+subvolume that didn't get deleted, and if there are 4 that these blocks
+are shared against, any of the 4 will do, I truly don't care :)
+
+hope that makes sense.
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

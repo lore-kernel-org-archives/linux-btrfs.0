@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B84B93CEBBC;
-	Fri, 24 Apr 2026 12:43:13 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0695C35A384;
+	Fri, 24 Apr 2026 12:43:46 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777034593; cv=none; b=L9AF/jstvmVXjRdmBL93sjSib4/0z4RbZWfVPjwTzQOiYCmJ6w7vPnIIFEt125hCh/6UPnxfO58PnV9wkaRKxUmAWNOzSozlOj0tmY7/6J2S0N6rcz0rxHDiAy1oeS2+ipcApOGU3ZQwWbrggo7DJZ4XOSgUnenoZ1F+f0nHNUo=
+	t=1777034627; cv=none; b=eDsYGljPO4vQ/oNSnXz9Fuq/Do0NACqdwlku1+846V/RXyZ6inDjr+6vXySevhsWT/6bauXLEF1l2t0RqrhRJ+uj+SAkZjw3bKsw+U0kTVXVnbo2GUS0Dm15iHT/nS/Wtj/WtWq//QXgo4QqN0GJoLr3hYfa0rfx0HhwIes0Rk4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777034593; c=relaxed/simple;
-	bh=A8Xv77MZdIwUP4OGTQH12LVbjGVW7Q5PgatU6hZo1c8=;
+	s=arc-20240116; t=1777034627; c=relaxed/simple;
+	bh=LxPmp8iQxWz2eBbEuseV1mCBeRehEkx6aKC4TqxZp+c=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Xyj9pG0sNz6cRopJN0ceK+byBsdL1WranRPKv4HPm/eIVXGqyxSJ0cFPBQe2TV6ecCWrifvoNh4mXHIucq6CpJQ+7FVklip+3V5pMqynjDSiBurVE0p+nsaPODIoieDfCdCIvJn/irBQtxtA4zifwvv3Bjgmx8/Z/KV+ZQ1J4vY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=GvWlI/PB; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=dQhk+r0OhY30zvf7g/BOxXYE+1tk2FEkc2X+J+Spgno1gIc0NN90tNeUaTyVBsD5jHQja3+JjcHFEoVFG74HoeTdkqMWgL7bVGysCDbsQFNFxYL4byJRDD/bh8XDr7dyZmZZb4AvHaEJKTDqHj0c2+Xbi3QnardvN7ZSvCLXOz0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=I3P0LkNV; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="GvWlI/PB"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E9C30C19425;
-	Fri, 24 Apr 2026 12:43:05 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="I3P0LkNV"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5254DC19425;
+	Fri, 24 Apr 2026 12:43:39 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1777034593;
-	bh=A8Xv77MZdIwUP4OGTQH12LVbjGVW7Q5PgatU6hZo1c8=;
+	s=k20201202; t=1777034626;
+	bh=LxPmp8iQxWz2eBbEuseV1mCBeRehEkx6aKC4TqxZp+c=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=GvWlI/PBBsrM97FtrKUwJ4dy8XCDHWcBfG1FJF69Uu80g7SeDUwWE0dm5LBrIKW8X
-	 dG20HH5q13MOKMvRV37TntY330Advrgn3VXP9lKN3D+lEDyHIOZdG8D0+XQvSKXRaB
-	 OWTFUjX/c5DSJh3mBP3AX+TS7aOSO2TVWs2kuIYz7xmkaxvCmuhNn2t6jIX7TpBIDe
-	 9Ghk6q/JgbowZUn6vFYExXVyOjzCiaGtInT5D4NupCoMzKPKG7DRMTKsOPU7V17C49
-	 K8gVlnNdmF0L6PhUdr+CXKCW0sx5X85+VQWhhD9PxAFIaCOdZEkaoJvsZMH0zAe586
-	 9BkKdRS84Hy6g==
-Message-ID: <aec46705-a02c-4429-844f-bdfa1140661b@kernel.org>
-Date: Fri, 24 Apr 2026 14:43:04 +0200
+	b=I3P0LkNVz83U0Cahye4rRm93gn2CHTINURKRHKmewgLZGDlZxZaglfDH4YJTki7NL
+	 85GtNEHiW8+dqmsHnT1+LLH04gANvNF5nG+51H/rEVo705TfWxR/7l0alTstw3rRIO
+	 x5Y0WMgrC2h6cY60htl0N+wBPjMFGOWrqt4dBA2xhjFySbZ+Rb2YdhWodH10Y0vkDl
+	 VMAQ+HiUplc6451tvIzg15Q9HL58ey8LBG6YaFFZubhCpwApvtJngBJ0XSWSYC7VUN
+	 J10yHfTn/BUHc5yuLO0AB+4UmYUj3KDD1MosTe/2BLCjQx9JaMkGav5YIXZu12+Hhv
+	 ShtwgiezhBKmQ==
+Message-ID: <d6ba9cde-b6c3-479e-8aac-a8b3ca0405e0@kernel.org>
+Date: Fri, 24 Apr 2026 14:43:37 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,8 +35,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 7.2 v4 02/12] mm/khugepaged: add folio dirty check after
- try_to_unmap()
+Subject: Re: [PATCH 7.2 v4 03/12] mm/huge_memory: remove READ_ONLY_THP_FOR_FS
+ from file_thp_enabled()
 To: Zi Yan <ziy@nvidia.com>, Andrew Morton <akpm@linux-foundation.org>,
  "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  Song Liu <songliubraving@fb.com>
@@ -54,7 +54,7 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260424024915.28758-1-ziy@nvidia.com>
- <20260424024915.28758-3-ziy@nvidia.com>
+ <20260424024915.28758-4-ziy@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -101,26 +101,18 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <20260424024915.28758-3-ziy@nvidia.com>
+In-Reply-To: <20260424024915.28758-4-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
 On 4/24/26 04:49, Zi Yan wrote:
-> This check ensures the correctness of collapse read-only THPs for FSes
-> after READ_ONLY_THP_FOR_FS is enabled by default for all FSes supporting
-> PMD THP pagecache.
-> 
-> READ_ONLY_THP_FOR_FS only supports read-only fd and uses mapping->nr_thps
-> and inode->i_writecount to prevent any write to read-only to-be-collapsed
-> folios. In upcoming commits, READ_ONLY_THP_FOR_FS will be removed and the
-> aforementioned mechanism will go away too. To ensure khugepaged functions
-> as expected after the changes, skip if any folio is dirty after
-> try_to_unmap(), since a dirty folio means this read-only folio
-> got some writes via mmap can happen between try_to_unmap() and
-> try_to_unmap_flush() via cached TLB entries and khugepaged does not support
-> writable pagecache folio collapse yet.
+> Replace it with a check on the max folio order of the file's address space
+> mapping, making sure PMD THP is supported. Also remove the read-only fd
+> check, since collapse_file() now makes sure all to-be-collapsed folios are
+> clean and the created PMD file THP can be handled by FSes properly.
 > 
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
+> Reviewed-by: Baolin Wang <baolin.wang@linux.alibaba.com>
 > ---
 
 Acked-by: David Hildenbrand (Arm) <david@kernel.org>

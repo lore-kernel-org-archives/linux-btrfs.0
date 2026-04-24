@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C44D135B63B
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 08:52:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE27C34A783
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 08:52:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777020738; cv=none; b=ZyHlnsaOD//H5ODZNw0/m72qD/m3AwZQCFpDy7RtXATnP62/btX+P6sCP0Qr3QCnlIs140okd/owO/sptMzbeJSvIqYNXNElXCM4HKRpS4JtUYrj1EeqZJCf6g9DvQhCLi27dw5ZM+OK83S54zYkuaJM17hN3fkfbfXUy33q/DE=
+	t=1777020739; cv=none; b=c4ZDD5/i/LYa17QHGJCGAsvAgWgsZ8y7Hqe1qUsYpcrD0s/kuSnZ2dOQM6VO9N+Rw8QgDXbRos75vz5cF1Gos2IuwNt431wPfIY2kiddqC9ovPS/B1RYozOmu6FPO2LOnabAt5gj1ExCGOXe+z+vMtfr5sA84/VtdMycMs7xBUs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777020738; c=relaxed/simple;
-	bh=UMR9A5A8tHdQwdvZgoWsr/siAI9OQeUZOqH3oWUqze0=;
+	s=arc-20240116; t=1777020739; c=relaxed/simple;
+	bh=r7OcOvNqbeOR+lUMy5sXsfiai3n0FHJ4vr9Wou/QYHk=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=d1VDBh+RolSWjfpYcdJdHtEvNYMxhn1UPtK6Ij4noRhAB6Vd6w0jF/Gbdr793ZMYa/uaGpAP9VdRHBshbhlVYn41rJvC/0fx0qoUj+7HTHNqWZZjoTVBEPwcezYVvkbb+mdI5qOrU2pGZ6Iv99Bnm2q8wRf8tka+JO66UGJlDPg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZtDxdjgF; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=CUSpi3rn; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=hxlip5zTTrk1kstSwdRz1FDRIMZactpjuE1MtPL4vSsupZtbLQBpdXLmgcF1FbYJP5ZUew3tin5eVHbq/y+9TiVSiEY09YSzgAQnINLGmH2p2irv8QA4uhzpy2tcHZnGvWYaeG/10MKsqYbIMPYVfa96uRmE4ElW4zW6ifRtgmE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=H2wUDPfm; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=H2wUDPfm; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZtDxdjgF";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="CUSpi3rn"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="H2wUDPfm";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="H2wUDPfm"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id EA5CD5BD8A
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 08:52:05 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 43E3F6A8A3
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 08:52:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1777020726; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1777020729; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=08ScbQI34qO2Ug2G8pZ5SSkCrTcWaE7kuogoJxrNWsc=;
-	b=ZtDxdjgF/a1urxj29ngJPcQQccZmhEf2LOwwUUyZtqWq8RKTt8C3SdVMcmRHVAUquIKx/B
-	iw4NEw1znRP4DtnU0lh31IEkjSFuzk4G7W0Q2MDbvFUZWR728ZCPnXz7QjbOrCCVpgz4XO
-	yvxRKXJE/RXlQJfPD9VfU7SHyH/o8+w=
-Authentication-Results: smtp-out2.suse.de;
-	none
+	bh=a0+XkKpWFzSFNd7k1Dfdt6xFAv+nbGCbiOU10rbcnzU=;
+	b=H2wUDPfm2vkioZgnyyRAM/TGimL0g2xZuPVyM9mbQX7XZ/lb5vOdXS/Ci6MqK86D/wJAA9
+	BqolO7lCq73BkbpCogKjyRTk3jD6HnsdMOgkSWX2hpc2DRlzlwcVHSqlvnTva3j8RM0G6k
+	3rMaLxuSHz+Qm8J7Z9SeQWKnr2K77fs=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=H2wUDPfm
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1777020725; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1777020729; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=08ScbQI34qO2Ug2G8pZ5SSkCrTcWaE7kuogoJxrNWsc=;
-	b=CUSpi3rnBI0q9gAWOJM8jcH7g+UoEh02oRRbDU65v4kthvpsiAR7vtWUbWkmFt/Y7fm4aX
-	WzS2rFldd6+pSks/OJpLmqJtne3WCJakJVYiqzE2vnvOSfrKdQMVgvKaRusoT5+GxgfWKu
-	XFEVRzkWS/1agq+c6sxwnM1a6GtmIkQ=
+	bh=a0+XkKpWFzSFNd7k1Dfdt6xFAv+nbGCbiOU10rbcnzU=;
+	b=H2wUDPfm2vkioZgnyyRAM/TGimL0g2xZuPVyM9mbQX7XZ/lb5vOdXS/Ci6MqK86D/wJAA9
+	BqolO7lCq73BkbpCogKjyRTk3jD6HnsdMOgkSWX2hpc2DRlzlwcVHSqlvnTva3j8RM0G6k
+	3rMaLxuSHz+Qm8J7Z9SeQWKnr2K77fs=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E62F0593A4
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 08:52:04 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 400A8593A4
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 08:52:07 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id KORqJDQv62m2HQAAD6G6ig
+	id oAuBNzcv62m2HQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 08:52:04 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Apr 2026 08:52:07 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 2/5] btrfs: prepare subpage operations to support >= BITS_PER_LONG sub-bitmaps
-Date: Fri, 24 Apr 2026 18:21:31 +0930
-Message-ID: <3f27ba806b162b0368be5e324eefeac3fca5e045.1777019132.git.wqu@suse.com>
+Subject: [PATCH RFC 4/5] btrfs: remove 2K block size support
+Date: Fri, 24 Apr 2026 18:21:33 +0930
+Message-ID: <0673de432dd2e64c8d32671247710aab33f7254d.1777019132.git.wqu@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <cover.1777019132.git.wqu@suse.com>
 References: <cover.1777019132.git.wqu@suse.com>
@@ -69,297 +69,90 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
+	MX_GOOD(-0.01)[];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
+	FROM_EQ_ENVFROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Action: no action
 X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 43E3F6A8A3
 
-[CURRENT LIMIT]
-Btrfs currently only supports sub-bitmaps (e.g. dirty bitmap) no larger
-than BITS_PER_LONG.
+Originally 2K block size support was introduced to test subpage (block
+size < page size) on x86_64 where the page size is exactly the original
+minimal block size.
 
-That limit allows us to easily grab an unsigned long without the need to
-properly allocate memory for a larger bitmap.
+However that 2K block size support has some problems:
 
-Unfortunately that limit prevents us from supporting huge folios, which
-means order 9 and for 4K page size and block size, it means 512 blocks
-inside a 2M folio.
+- No 2K nodesize support
+  This is critical, as there is still no way to exercise the subpage
+  metadata routine.
 
-[ENHANCEMENT]
-To allow direct bitmap operations without allocating new memory,
-introduce two different ways to access the subpage bitmaps:
+- Very easy to test subpage data path now
+  With the currently experimental large folio support, it's very easy to
+  test the subpage data folio path already, as when a folio larger than
+  4K is encountered on x86_64, we will need all the subpage folio states
+  and bitmaps.
 
-- Return an unsigned long value
-  This only happens if blocks_per_folio <= BITS_PER_LONG.
+  So there is no need to use 2K block size just to verify subpage data
+  path even on x86_64.
 
-  We read out the sub-bitmap into an unsigned long, and return the
-  value.
-  This is the old existing method.
-
-  This involves get_bitmap_value_##name() helper functions.
-  And this time the helper functions are defined as inline functions
-  instead of macros to provide better type checks.
-
-- Return a pointer where the sub-bitmap starts
-  This only happens if blocks_per_folio >= BITS_PER_LONG.
-
-  This is the new method for sub-bitmaps larger than BITS_PER_LONG.
-  Since the sizes of sub-bitmaps are all aligned to BITS_PER_LONG, we
-  can directly access the start byte of the sub-bitmap.
-
-  This involves get_bitmap_pointer_##name() helper functions.
-  And this time the helper functions are defined as inline functions
-  instead of macros to provide better type checks.
-
-Then change the existing sub-bitmaps users to use the new helpers:
-
-- Bitmap dumping
-  Switch between get_bitmap_value_##name() and
-  get_bitmap_pointer_##name() depending on the sub-bitmap size.
-
-- btrfs_get_subpage_dirty_bitmap()
-  Rename it to btrfs_get_subpage_dirty_bitmap_value() to follow the new
-  value/pointer naming.
-  Since we do not support huge folios yet, there is no pointer version
-  for it yet.
-
-  Furthermore add the support for bs == ps cases for
-  btrfs_get_subpage_dirty_bitmap_value(), so that the caller no longer
-  needs to check if the folio needs subpage handling.
+And with the incoming huge folio (2M on x86_64) support, the 2K block
+size will easily double the bitmap size, considering the burden to
+maintain and the limited extra coverage, I believe it's time to remove
+it for the incoming huge folio support.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c |   7 +--
- fs/btrfs/subpage.c   | 133 ++++++++++++++++++++++++++++++-------------
- fs/btrfs/subpage.h   |   5 +-
- 3 files changed, 96 insertions(+), 49 deletions(-)
+ fs/btrfs/fs.h | 12 +-----------
+ 1 file changed, 1 insertion(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 6a6d98eec787..13b726831aa0 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1447,12 +1447,7 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 	int ret = 0;
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index d69b8ce41912..e99db75dede6 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -50,18 +50,8 @@ struct btrfs_subpage_info;
+ struct btrfs_stripe_hash_table;
+ struct btrfs_space_info;
  
- 	/* Save the dirty bitmap as our submission bitmap will be a subset of it. */
--	if (btrfs_is_subpage(fs_info, folio)) {
--		ASSERT(blocks_per_folio > 1);
--		btrfs_get_subpage_dirty_bitmap(fs_info, folio, &bio_ctrl->submit_bitmap);
--	} else {
--		bio_ctrl->submit_bitmap = 1;
--	}
-+	bio_ctrl->submit_bitmap = btrfs_get_subpage_dirty_bitmap_value(fs_info, folio);
+-/*
+- * Minimum data and metadata block size.
+- *
+- * Normally it's 4K, but for testing subpage block size on 4K page systems, we
+- * allow DEBUG builds to accept 2K page size.
+- */
+-#ifdef CONFIG_BTRFS_DEBUG
+-#define BTRFS_MIN_BLOCKSIZE	(SZ_2K)
+-#else
++/* Minimum data and metadata block size. */
+ #define BTRFS_MIN_BLOCKSIZE	(SZ_4K)
+-#endif
+-
+ #define BTRFS_MAX_BLOCKSIZE	(SZ_64K)
  
- 	for_each_set_bitrange(start_bit, end_bit, &bio_ctrl->submit_bitmap,
- 			      blocks_per_folio) {
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index becaa1dc0001..2116a6b4a476 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -601,25 +601,56 @@ IMPLEMENT_BTRFS_PAGE_OPS(writeback, folio_start_writeback, folio_end_writeback,
- IMPLEMENT_BTRFS_PAGE_OPS(ordered, folio_set_ordered, folio_clear_ordered,
- 			 folio_test_ordered);
- 
--#define GET_SUBPAGE_BITMAP(fs_info, folio, name, dst)			\
--{									\
--	const unsigned int __bpf = btrfs_blocks_per_folio(fs_info, folio); \
--	const struct btrfs_folio_state *__bfs = folio_get_private(folio); \
--									\
--	ASSERT(__bpf <= BITS_PER_LONG);					\
--	*dst = bitmap_read(__bfs->bitmaps,				\
--			   __bpf * btrfs_bitmap_nr_##name, __bpf);	\
-+#define DEFINE_GET_SUBPAGE_BITMAP(name)						\
-+static inline unsigned long get_bitmap_value_##name(				\
-+					const struct btrfs_fs_info *fs_info,	\
-+					struct folio *folio)			\
-+{										\
-+	const unsigned int __bpf = btrfs_blocks_per_folio(fs_info, folio);	\
-+	const struct btrfs_folio_state *__bfs = folio_get_private(folio);	\
-+	unsigned long value;							\
-+										\
-+	ASSERT(__bpf <= BITS_PER_LONG);						\
-+	value = bitmap_read(__bfs->bitmaps, __bpf * btrfs_bitmap_nr_##name,	\
-+			     __bpf);						\
-+	return value;								\
-+}										\
-+static inline unsigned long *get_bitmap_pointer_##name(				\
-+					const struct btrfs_fs_info *fs_info,	\
-+					struct folio *folio)			\
-+{										\
-+	const unsigned int __bpf = btrfs_blocks_per_folio(fs_info, folio);	\
-+	struct btrfs_folio_state *__bfs = folio_get_private(folio);		\
-+	unsigned long *pointer;							\
-+										\
-+	ASSERT(__bpf >= BITS_PER_LONG);						\
-+	ASSERT(IS_ALIGNED(__bpf, BITS_PER_LONG));				\
-+	pointer = __bfs->bitmaps + (BIT_WORD(__bpf) * btrfs_bitmap_nr_##name);	\
-+	return pointer;								\
- }
- 
--#define SUBPAGE_DUMP_BITMAP(fs_info, folio, name, start, len)		\
--{									\
--	unsigned long bitmap;						\
--	const unsigned int __bpf = btrfs_blocks_per_folio(fs_info, folio); \
--									\
--	GET_SUBPAGE_BITMAP(fs_info, folio, name, &bitmap);		\
--	btrfs_warn(fs_info,						\
--	"dumping bitmap start=%llu len=%u folio=%llu " #name "_bitmap=%*pbl", \
--		   start, len, folio_pos(folio), __bpf, &bitmap);	\
-+DEFINE_GET_SUBPAGE_BITMAP(uptodate);
-+DEFINE_GET_SUBPAGE_BITMAP(dirty);
-+DEFINE_GET_SUBPAGE_BITMAP(writeback);
-+DEFINE_GET_SUBPAGE_BITMAP(ordered);
-+DEFINE_GET_SUBPAGE_BITMAP(locked);
-+
-+#define SUBPAGE_DUMP_BITMAP(fs_info, folio, name, start, len)			\
-+{										\
-+	const unsigned int __bpf = btrfs_blocks_per_folio(fs_info, folio);	\
-+										\
-+	if (__bpf <= BITS_PER_LONG) {						\
-+		unsigned long bitmap = get_bitmap_value_##name(fs_info, folio);	\
-+										\
-+		btrfs_warn(fs_info,						\
-+	"dumping bitmap start=%llu len=%u folio=%llu " #name "_bitmap=%*pbl",	\
-+		   start, len, folio_pos(folio), __bpf, &bitmap);		\
-+	} else {								\
-+		btrfs_warn(fs_info,						\
-+	"dumping bitmap start=%llu len=%u folio=%llu " #name "_bitmap=%*pbl",	\
-+		   start, len, folio_pos(folio), __bpf,				\
-+		   get_bitmap_pointer_##name(fs_info, folio));			\
-+	}									\
- }
- 
- /*
-@@ -717,48 +748,70 @@ void __cold btrfs_subpage_dump_bitmap(const struct btrfs_fs_info *fs_info,
- {
- 	struct btrfs_folio_state *bfs;
- 	const unsigned int blocks_per_folio = btrfs_blocks_per_folio(fs_info, folio);
--	unsigned long uptodate_bitmap;
--	unsigned long dirty_bitmap;
--	unsigned long writeback_bitmap;
--	unsigned long ordered_bitmap;
--	unsigned long locked_bitmap;
- 	unsigned long flags;
- 
- 	ASSERT(folio_test_private(folio) && folio_get_private(folio));
- 	ASSERT(blocks_per_folio > 1);
- 	bfs = folio_get_private(folio);
- 
--	spin_lock_irqsave(&bfs->lock, flags);
--	GET_SUBPAGE_BITMAP(fs_info, folio, uptodate, &uptodate_bitmap);
--	GET_SUBPAGE_BITMAP(fs_info, folio, dirty, &dirty_bitmap);
--	GET_SUBPAGE_BITMAP(fs_info, folio, writeback, &writeback_bitmap);
--	GET_SUBPAGE_BITMAP(fs_info, folio, ordered, &ordered_bitmap);
--	GET_SUBPAGE_BITMAP(fs_info, folio, locked, &locked_bitmap);
--	spin_unlock_irqrestore(&bfs->lock, flags);
-+	if (blocks_per_folio <= BITS_PER_LONG) {
-+		unsigned long uptodate;
-+		unsigned long dirty;
-+		unsigned long writeback;
-+		unsigned long ordered;
-+		unsigned long locked;
-+
-+		spin_lock_irqsave(&bfs->lock, flags);
-+		uptodate = get_bitmap_value_uptodate(fs_info, folio);
-+		dirty = get_bitmap_value_dirty(fs_info, folio);
-+		writeback = get_bitmap_value_writeback(fs_info, folio);
-+		ordered = get_bitmap_value_ordered(fs_info, folio);
-+		locked = get_bitmap_value_locked(fs_info, folio);
-+
-+		spin_unlock_irqrestore(&bfs->lock, flags);
-+
-+		btrfs_warn(fs_info,
-+"start=%llu len=%u page=%llu, bitmaps uptodate=%*pbl dirty=%*pbl writeback=%*pbl ordered=%*pbl locked=%*pbl",
-+			    start, len, folio_pos(folio),
-+			    blocks_per_folio, &uptodate,
-+			    blocks_per_folio, &dirty,
-+			    blocks_per_folio, &writeback,
-+			    blocks_per_folio, &ordered,
-+			    blocks_per_folio, &locked);
-+		return;
-+	}
- 
- 	dump_page(folio_page(folio, 0), "btrfs folio state dump");
-+	spin_lock_irqsave(&bfs->lock, flags);
- 	btrfs_warn(fs_info,
--"start=%llu len=%u page=%llu, bitmaps uptodate=%*pbl dirty=%*pbl locked=%*pbl writeback=%*pbl ordered=%*pbl",
-+"start=%llu len=%u page=%llu, bitmaps uptodate=%*pbl dirty=%*pbl writeback=%*pbl ordered=%*pbl locked=%*pbl",
- 		    start, len, folio_pos(folio),
--		    blocks_per_folio, &uptodate_bitmap,
--		    blocks_per_folio, &dirty_bitmap,
--		    blocks_per_folio, &locked_bitmap,
--		    blocks_per_folio, &writeback_bitmap,
--		    blocks_per_folio, &ordered_bitmap);
-+		    blocks_per_folio, get_bitmap_pointer_uptodate(fs_info, folio),
-+		    blocks_per_folio, get_bitmap_pointer_dirty(fs_info, folio),
-+		    blocks_per_folio, get_bitmap_pointer_writeback(fs_info, folio),
-+		    blocks_per_folio, get_bitmap_pointer_ordered(fs_info, folio),
-+		    blocks_per_folio, get_bitmap_pointer_locked(fs_info, folio));
-+	spin_unlock_irqrestore(&bfs->lock, flags);
- }
- 
--void btrfs_get_subpage_dirty_bitmap(struct btrfs_fs_info *fs_info,
--				    struct folio *folio,
--				    unsigned long *ret_bitmap)
-+unsigned long btrfs_get_subpage_dirty_bitmap_value(struct btrfs_fs_info *fs_info,
-+						   struct folio *folio)
- {
- 	struct btrfs_folio_state *bfs;
-+	const unsigned int blocks_per_folio = btrfs_blocks_per_folio(fs_info, folio);
- 	unsigned long flags;
-+	unsigned long value;
-+
-+	if (blocks_per_folio == 1)
-+		return 1;
- 
- 	ASSERT(folio_test_private(folio) && folio_get_private(folio));
--	ASSERT(btrfs_blocks_per_folio(fs_info, folio) > 1);
-+	ASSERT(blocks_per_folio > 1);
-+	ASSERT(blocks_per_folio <= BITS_PER_LONG);
- 	bfs = folio_get_private(folio);
- 
- 	spin_lock_irqsave(&bfs->lock, flags);
--	GET_SUBPAGE_BITMAP(fs_info, folio, dirty, ret_bitmap);
-+	value = get_bitmap_value_dirty(fs_info, folio);
- 	spin_unlock_irqrestore(&bfs->lock, flags);
-+	return value;
- }
-diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
-index fdea0b605bfc..9e92877e7251 100644
---- a/fs/btrfs/subpage.h
-+++ b/fs/btrfs/subpage.h
-@@ -200,9 +200,8 @@ bool btrfs_subpage_clear_and_test_dirty(const struct btrfs_fs_info *fs_info,
- void btrfs_folio_assert_not_dirty(const struct btrfs_fs_info *fs_info,
- 				  struct folio *folio, u64 start, u32 len);
- bool btrfs_meta_folio_clear_and_test_dirty(struct folio *folio, const struct extent_buffer *eb);
--void btrfs_get_subpage_dirty_bitmap(struct btrfs_fs_info *fs_info,
--				    struct folio *folio,
--				    unsigned long *ret_bitmap);
-+unsigned long btrfs_get_subpage_dirty_bitmap_value(struct btrfs_fs_info *fs_info,
-+						   struct folio *folio);
- void __cold btrfs_subpage_dump_bitmap(const struct btrfs_fs_info *fs_info,
- 				      struct folio *folio, u64 start, u32 len);
- 
+ #define BTRFS_MAX_EXTENT_SIZE SZ_128M
 -- 
 2.53.0
 

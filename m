@@ -1,131 +1,189 @@
-Received: from mxex2.tik.uni-stuttgart.de (mxex2.tik.uni-stuttgart.de [129.69.192.21])
+Received: from PH0PR06CU001.outbound.protection.outlook.com (mail-westus3azon11011044.outbound.protection.outlook.com [40.107.208.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AC7A736AB5B
-	for <linux-btrfs@vger.kernel.org>; Sat, 25 Apr 2026 09:12:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=129.69.192.21
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777108359; cv=none; b=O5/hdCGRQw79EwkBd8NPn9baV36HE4oIHkKYXPB0qo387mLbu9eZcV5c6RPxBs1PKlmtILio1P+YNszI7pjRBWdVbthGPAgHeHyRy22TU+hZY0HHTb7L8H/QK3n4SRPNRVoYkp63fA63XUkLwtQvJf0HRd+FapacRKhOEDtTvbE=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777108359; c=relaxed/simple;
-	bh=vb/ngUiI1LjvH7jH/qJNN1jAaXgCNrEq+wdp6hQ3sDk=;
-	h=Date:From:To:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=UhAGqUzS+gM2++OSC0cvQ8gXUh127VhteCfTh8AJETWSKfPENx88CaZqLoc0YIu76WkZLWTpz968OJrWHJj6Vcwk6MIbwD6g+XfRHDw9QC26hXLsuwc2m9eTxG8symkiwW8cPoAGvL6J864ofiNm7pc8gJYp8U5Oyu8yWI9QrHw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de; spf=pass smtp.mailfrom=rus.uni-stuttgart.de; dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b=a9GT4zBQ; arc=none smtp.client-ip=129.69.192.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=rus.uni-stuttgart.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5347E48CFC;
+	Sat, 25 Apr 2026 12:00:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.107.208.44
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1777118451; cv=fail; b=OnzfNy5n1yILQQNqYfx8JX5EDxmMA6zh1NDMM/YupyzbFHY50Dz6tWE+jFQoOYEHRQ2yCx8ZlU82pZB5pghivhqDNUlZxPQHp4UPaak2E9eV19+ZoxL7b9lkH1IKp1WA4euiXFZ+vnVgcJ5mVd87tzJ4QIoiGrwo8nNJVfyowoU=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1777118451; c=relaxed/simple;
+	bh=2zWgXf6bJSYNOSOr3HzyoAmgGdd8J/ZYABWvmgzePOo=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=NPYOzZkZwUP0hTbLkswv2VumQFVVsIKt7qE076xRDN586XcWaHbufRb3w3gaM54XJbTB5UzYX7vKkIjhkyQjRSIZKZXb+yNykAl3FaK1d3O0si9cC3vpgMJPsTs9CkxcayrK7QpOrxUVNiRXonq4LZ2N+enRXizL+0UICVRwe3I=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=cG04i6H6; arc=fail smtp.client-ip=40.107.208.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b="a9GT4zBQ"
-Received: from localhost (localhost [127.0.0.1])
-	by mxex2.tik.uni-stuttgart.de (Postfix) with ESMTP id 1572960C08
-	for <linux-btrfs@vger.kernel.org>; Sat, 25 Apr 2026 11:06:34 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=uni-stuttgart.de;
-	 h=user-agent:in-reply-to:content-disposition:content-type
-	:content-type:mime-version:references:message-id:subject:subject
-	:from:from:date:date; s=dkim; i=@rus.uni-stuttgart.de; t=
-	1777107992; x=1778846793; bh=vb/ngUiI1LjvH7jH/qJNN1jAaXgCNrEq+wd
-	p6hQ3sDk=; b=a9GT4zBQIj8DYFc6Nj8dV9RLT8wy9wa2qfne4J0bbUa84QyvLQn
-	AhZQteXWSWTXb0hIuE3SJ94si9x+Y6sYfIX89lRrFKt6OXfbq2aDpCiDbc6yfdPr
-	5jdHHhahReMqey3UHMrd7jUUhtzc7UzsiRMAwHBueZ00OX049R7IhxDQzBbo82TV
-	8ktnLkHZEzQNBbalAlGi6+5JjjXG9XKQB8VWylj5RWrawCiQvPx/JdHSKYOhkiku
-	yuhe49E7tEALcXtUuVRLpPb7DkKus8CPZmLj12gLyE59udqf/4ZTC2QI22eXg4RC
-	PNkPIPtsmuzo2hW/UagBrPAblv6BWs/TyJw==
-X-Virus-Scanned: USTUTT mailrelay AV services at mxex2.tik.uni-stuttgart.de
-Received: from mxex2.tik.uni-stuttgart.de ([127.0.0.1])
- by localhost (mxex2.tik.uni-stuttgart.de [127.0.0.1]) (amavis, port 10031)
- with ESMTP id EBv290mtr3oZ for <linux-btrfs@vger.kernel.org>;
- Sat, 25 Apr 2026 11:06:32 +0200 (CEST)
-Received: from authenticated client
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange secp256r1 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mxex2.tik.uni-stuttgart.de (Postfix) with ESMTPSA
-Date: Sat, 25 Apr 2026 11:06:31 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: snaprotate
-Message-ID: <20260425090631.GA538432@tik.uni-stuttgart.de>
-Mail-Followup-To: linux-btrfs@vger.kernel.org
-References: <20171202125356.GA1355@rus.uni-stuttgart.de>
+	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="cG04i6H6"
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=ihNgSU4d5RkozeIubLGYAeijB1N5ZAR0ZfVCJVaNiOLBO2luuGNvFj4s0pJ9MGCX0QJ4qKAch4vybnM+JxzHTjRd9oPwXCH+Rmt2pqew7iTHmJnc/6NUJ6kJqMvsQyUc/LUOy5WGqBobHeJSndlWkO2Foclu13YvmdDN6D8Z2Tc8JBrBXCTGnnVWlnBP6UIz8aMsYGETUa+lyX1AX7V0XbgHAhe8i7ph2JGs8i+QkxEwpfLufx1S45Y504eaCXMPeDVr29HP6jU0LaLtaqt0ecpkkaqLqFQ91NcEdfMb0m75EB4SfYOUDgZ1IpwJ8hxmMwVYRxWxquyFr2w3+rxm+A==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=fHtdjaGcbUjrQWaR2bse8uIiTCMPzar0l7abrB5l0EM=;
+ b=RmnO5OOn38oGjDbtUwBNuZnEv7lJntWYEa1I67aWnXL0tr26BE5XLvzp3uBEw+mp8Sto90xaTpgqxRFbFuKF7YXpsFUxBsVcVCk9I8gDuRmIhfrq3tWqrKEbco7bopSynQi1Dyde5yJTVyzBqDIscJwMXOq8kfCu1uwTQX+pQA0vRqdnXxwYbVR+IF1vmN5wk39N1+ecHjtxPI/Lxacr4UmC1hoXtY5I4PZUuLDV/HQI9H3NRM3v4mf4otVnQtwY0KDHiGX9pe0kgXL7Qx+aLiflS9yuQ4ueXPDk1nhrsDbxgIZ0Tlq3NV5TMhZZYwsJmxikQacQx8muOIiMnp2VhA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
+ dkim=pass header.d=nvidia.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
+ s=selector2;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=fHtdjaGcbUjrQWaR2bse8uIiTCMPzar0l7abrB5l0EM=;
+ b=cG04i6H6p+KQZaWgSORm/HrJloWz2Xy5OpwuPoNvyxBUSV0T4cywCnaN/fCChjzIBBFY/GtG4dZsEoNPKSTSca2zZXS+cwXcb2/kuvCK68zak53cqApI/H/IGZNnQLQ8nApZPk6TXs9ak8IMnfhyft38YROMuehaGjJVJs+bcrn6dO+OzijLi6L9seNyBTTvp/CRQnLd/4bqNB/dg9xOFkKyUcByOoUepa9JBBqDRRE6FKH/uNI6DfQ4KG9YwdAvbcGufZ007tyvYRT5kMOiX7TYuNkVrS7lR9hvSKEemhwa8eU2xDS4QsQYMRXc5vERPgxLmsRsirhvvq3l1JC+dQ==
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=nvidia.com;
+Received: from DS7PR12MB9473.namprd12.prod.outlook.com (2603:10b6:8:252::5) by
+ IA0PR12MB8376.namprd12.prod.outlook.com (2603:10b6:208:40b::9) with Microsoft
+ SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.9870.12; Sat, 25 Apr 2026 12:00:45 +0000
+Received: from DS7PR12MB9473.namprd12.prod.outlook.com
+ ([fe80::f01d:73d2:2dda:c7b2]) by DS7PR12MB9473.namprd12.prod.outlook.com
+ ([fe80::f01d:73d2:2dda:c7b2%4]) with mapi id 15.20.9846.021; Sat, 25 Apr 2026
+ 12:00:44 +0000
+From: Zi Yan <ziy@nvidia.com>
+To: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+ David Hildenbrand <david@kernel.org>, Lorenzo Stoakes <ljs@kernel.org>
+Cc: Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
+ David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
+ Andrew Morton <akpm@linux-foundation.org>, Zi Yan <ziy@nvidia.com>,
+ Baolin Wang <baolin.wang@linux.alibaba.com>,
+ "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
+ Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
+ Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
+ Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
+ Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
+ Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-mm@kvack.org, linux-kselftest@vger.kernel.org
+Subject: Re: [PATCH 7.2 v3 03/12] mm/huge_memory: remove READ_ONLY_THP_FOR_FS
+ from file_thp_enabled()
+Date: Sat, 25 Apr 2026 08:00:41 -0400
+X-Mailer: MailMate (2.0r6290)
+Message-ID: <74D4C50B-CB20-45B3-8E7E-E9A499701F61@nvidia.com>
+In-Reply-To: <20260418024429.4055056-4-ziy@nvidia.com>
+References: <20260418024429.4055056-1-ziy@nvidia.com>
+ <20260418024429.4055056-4-ziy@nvidia.com>
+Content-Type: text/plain
+X-ClientProxiedBy: YQBP288CA0037.CANP288.PROD.OUTLOOK.COM
+ (2603:10b6:c01:9d::14) To DS7PR12MB9473.namprd12.prod.outlook.com
+ (2603:10b6:8:252::5)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20171202125356.GA1355@rus.uni-stuttgart.de>
-User-Agent: Mutt/1.5.23 (2014-03-12)
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: DS7PR12MB9473:EE_|IA0PR12MB8376:EE_
+X-MS-Office365-Filtering-Correlation-Id: 479d07ff-e8ed-4640-1400-08dea2c247e2
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|1800799024|7416014|376014|366016|56012099003|22082099003|18002099003;
+X-Microsoft-Antispam-Message-Info:
+	ze090QUzkOXdc7WgHm4XPX8N9pz7/I8f+Z/4SXZkAUee7vuiYeo8janGCH/z1a2N0IGBb5CC0u9CSG+Wrvl8kzRepCvH7W1x0AIRAtIiaeg4rcAW00lhwHNIyBLMaIj34XE7rXDfd5qpT5ds+iBDegRfYAnfjxiXlZeWhYaysZTNCUU82rvnHNii4K98kTRBB18M0bQgp3Ws4kSR6ZcehE4SiOjPHPL91hovFRb+Q/w55BGaqNFQwc+rwIoBZ6/xvJzgstiAWnxn8UQOBTkvALOi99Dv7DyWoG1StJScew1KoCdra0G40s7gojVjDw3exLwJrFf8xmwVbHA/w68LzAm6GAzz57SfQ2ds8oCN/8mz73KX/vPP6bVf/xxu0WvZ/UmkvwyLzNnPXSsGaQEoMvwKSqWJHfiQ2Z6jHe6BqsSfKMoy27VUTOvjww9ogY0k1BYLAHMz7rGE++L0NAAbDXpFNXmv/qdf2WFKCSa3FjmyGn3vXWpED9yuFutvzZjDv2qfUomG/cQ24DerVAr/XA2oEO0lxM7thWE8mihZIS0bJW4jEX482Sdmt59FDqmNF4lFQ8KJ/8E18Pg2XfYY1bdIqTCcTN593YP14jtrGXPC7yaY3HaGyxgM8gZqD8HuYHVndnT64fqVEIxY/yuw466mWHcjuSqunXYgoUoB+SVUtc9kW7YZcM/x0cRzdll2yoCpgWNIDaYvyJVmzYQiPXxEONZphzx3AIrvPFg5WF0=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DS7PR12MB9473.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(7416014)(376014)(366016)(56012099003)(22082099003)(18002099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?us-ascii?Q?eQE7NXC5M/d6SkFus6k7pOzf+zitPSSaYT97ssa0WmzOynMtPKVjATLXcbFT?=
+ =?us-ascii?Q?Uu2FEvIOIULiibxvxJy2GIqp0o8XwYC6ppT7UAS01DnBD7RN2iFkwvYB2gXU?=
+ =?us-ascii?Q?n05siePvPeHurAJ3f4nXwiPF8+X47B09/PSh8ubhSru3ydH4ETaBXoY2kr5Y?=
+ =?us-ascii?Q?wbX58DRdtH8D6u5MW4cYemJ688bxjIYFQR9PDnJD9TGqR0JfOInFcB6Wep5j?=
+ =?us-ascii?Q?P5NMDCN7Q+u1z6F2MtOMIVokRWoHpKEIPY6wvXb1GP9vw81pVahsIU5zp6fx?=
+ =?us-ascii?Q?V4FgHU3h1l2eqJN8yEMnXfoCPUNLT5ep+buzPNLQuU/nR3M4KRWl+bPwUX+p?=
+ =?us-ascii?Q?6K3iXTQlaZEGfgGwEeGrI/IPPoKFW/hK7YtpA+zTutDQnh45wBcqRKYngPI2?=
+ =?us-ascii?Q?j+6KMHa7o4QxKGiwMWArizxUcJTg1qrAYKR+sWiV8/qgX9XhnRS6ObrIl/Gk?=
+ =?us-ascii?Q?vfnFtXEYVhXxrR0KQxgvvkGFYB9LLx3XE7ndswTvnAtEsGgZP2oru/BPaXG/?=
+ =?us-ascii?Q?AaEugGzvK9wtATl+00LbOs7Oh0D/yNICuKbOsKuoauHmq6TyA48kVlCuKJgW?=
+ =?us-ascii?Q?vCmJ8lFa8iCU52duZUUF8J0/spWzlrEAYB74ZmKDMF6A2TOLM9QzZ6PlJyTa?=
+ =?us-ascii?Q?r30kVHYRBTlyiPKEFndzaXZrWidKsrFqGntlIMA7TnIx715wDRJh2iKYsoCO?=
+ =?us-ascii?Q?/esGHOQLdSTpSBmmQw6cYMnWjCzaoCDEQi8dcUGf21p9lQzLz+c87D8UvaH8?=
+ =?us-ascii?Q?SqqXmxbVWRdKcU9GQZWIwWDhAZSkCf+y1ssvzXRoUSBC8m6Sq75gQb1WWjsm?=
+ =?us-ascii?Q?QZCqnOgTXsQw2FE9sIcdKEMct1uEZMWukarNpSPm/u8VzghXlad/s4n89Qkl?=
+ =?us-ascii?Q?RC1cqF3rsJBBdAbmQ56iKzgrW1P39bhJw0GnmPh7y83EFEHNhYZ6h+A91Byj?=
+ =?us-ascii?Q?gdr7T5entrO6rJDPz+g+P7TThh7FtbrOh9qG7Kr8JzbtxCzOFBZ4tUebs0Oe?=
+ =?us-ascii?Q?xv+2iM5JzzXI1sCn6HpJHzPf0mGV1+SVKWIGOoQghA/ezTcsEFWfezdAEo/v?=
+ =?us-ascii?Q?sd6UKWdR5N8FjqjNKUJ512Pq78LERIt39qj05HWydij7iyisq4lTXxNYDrya?=
+ =?us-ascii?Q?Xc3ySJJTx04evijrAkvuN8cW9y+OzQS+mr4iYd7HFUfwDOxnjHv3Up+UMCu4?=
+ =?us-ascii?Q?5jNhs2nof6Aoy3uMw7TvtMqefYKv6WXAAkeKfusmZ9IO/phIGgU7QgF6Iz8k?=
+ =?us-ascii?Q?nP6QXt7sgshqoCwvuvQpQd5kzZI5OIwR6lD/ceJ4ipjJcq0EsC5ac9Q8p/Aq?=
+ =?us-ascii?Q?UaPSCQdL8k9LdljbDCTSQd49/yPuXYDGxW+sYg+XNKkX37COdyk7FVivLSEb?=
+ =?us-ascii?Q?besdKumxumIIVN6JKz6g3/521YgrYDEQ4uezwiXOx43QFIVu4y/40RycDRhS?=
+ =?us-ascii?Q?0ofg9ujxWoFH9KDAumBztQJ17yP/2Dz1o61hNHEn9vGRURIfk48g9lYF7dYN?=
+ =?us-ascii?Q?b5otJNSwiy60q62l83s0D66s+lBLHVKwr0aZRKWi2C0I9AW9WZHRAbTLDElJ?=
+ =?us-ascii?Q?DLPxLzUDgJEpFRjoU902II5PmLpp9qkuUCDUIECcWG+iJTKyHw3Kna3KJy7d?=
+ =?us-ascii?Q?bl1tem8km8o8Gf+Znpr7yFXXTzpFZt3XOEP9YGbtrmkEiazam5ufB5E0TPJW?=
+ =?us-ascii?Q?shp1Vl/xvnvFrC5bDGADs7CILMtyZxO2fScG43BFIElnuPzN?=
+X-OriginatorOrg: Nvidia.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 479d07ff-e8ed-4640-1400-08dea2c247e2
+X-MS-Exchange-CrossTenant-AuthSource: DS7PR12MB9473.namprd12.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 25 Apr 2026 12:00:44.8332
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 43083d15-7273-40c1-b7db-39efd9ccc17a
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: DxjH/k6dtRZPNhiQyHCblIHpahliPXtj7an7Kyf8ozBvDOk8t+wMjeYj8rQRIK3Z
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: IA0PR12MB8376
+
+On 17 Apr 2026, at 22:44, Zi Yan wrote:
+
+> Replace it with a check on the max folio order of the file's address space
+> mapping, making sure PMD THP is supported. Also remove the read-only fd
+> check, since collapse_file() now makes sure all to-be-collapsed folios are
+> clean and the created PMD file THP can be handled by FSes properly.
+>
+> Signed-off-by: Zi Yan <ziy@nvidia.com>
+> ---
+>  mm/huge_memory.c | 8 ++++----
+>  1 file changed, 4 insertions(+), 4 deletions(-)
+>
+> diff --git a/mm/huge_memory.c b/mm/huge_memory.c
+> index 970e077019b7..7e9cf8c0985f 100644
+> --- a/mm/huge_memory.c
+> +++ b/mm/huge_memory.c
+> @@ -86,9 +86,6 @@ static inline bool file_thp_enabled(struct vm_area_struct *vma)
+>  {
+>  	struct inode *inode;
+>
+> -	if (!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS))
+> -		return false;
+> -
+>  	if (!vma->vm_file)
+>  		return false;
+>
+> @@ -97,7 +94,10 @@ static inline bool file_thp_enabled(struct vm_area_struct *vma)
+>  	if (IS_ANON_FILE(inode))
+>  		return false;
+>
+> -	return !inode_is_open_for_write(inode) && S_ISREG(inode->i_mode);
+
+Hi Matthew, David, and Lorenzo,
+
+After some discussions on irc, I feel that we probably should not allow
+read-write fd for PMD THP collapse at the moment. Combining with the
+filemap_flush() under folio_dirty() check from collapse_file(), khugepaged
+would become a kwritebackd that scans pagecache folios and writes them back.
+If we limit it to read-only fds, at least khugepaged would only write
+back once for the pagecache folios from these fds.
+
+I am planning to restore inode_is_open_for_write() check in the next version.
+Let me know your thoughts.
+
+> +	if (!mapping_pmd_thp_support(inode->i_mapping))
+> +		return false;
+> +
+> +	return S_ISREG(inode->i_mode);
+>  }
+>
+>  /* If returns true, we are unable to access the VMA's folios. */
+> -- 
+> 2.43.0
 
 
-For what and when do you need a backup?
-In most cases it is an inadvertently deleted or overwritten file.
-Catastrophic failures like a filesystem crash or a burned computer are 
-more seldom.
-For the first case one wants a QUICK and EASY way to restore the lost
-file(s). btrfs snapshots comes to mind :-)
-
-On Sat 2017-12-02 (13:53), Ulli Horlacher wrote:
-> Being a Netapp user for a long time, I have always missed btrfs snapshots
-> the way Netapp creates them.
-> 
-> I have now written snaprotate:
-> 
-> http://fex.belwue.de/snaprotate.html
-> 
-> snaprotate creates and manages btrfs readonly snapshots similar to Netapp.
-> Snapshots have names like hourly, daily, weekly, single and a date_time
-> prefix.
-> 
-> Snapshots are stored in a .snapshot/ directory in the subvolume root. 
-> Example: /local/home/.snapshot/2017-09-09_1200.hourly
-
-Some time later...
-
-I have extended snaprotate with the shell function ssd (snapshot directories).
-
-With ssd one can interactivly select a snapshot directory for recovery.
-Example: 
-
-  framstag@fex:~/data: ssd
-  Snapshots:
-   #1) 2026-04-18_1100
-   #2) 2026-04-18_1000
-   #3) 2026-04-18_0900
-   #4) 2026-04-18_0800
-   #5) 2026-04-18_0700
-   #6) 2026-04-18_0600
-   #7) 2026-04-18_0500
-   #8) 2026-04-18_0400
-   #9) 2026-04-18_0300
-  #10) 2026-04-18_0200
-  #11) 2026-04-18_0100
-  #12) 2026-04-18_0000
-  #13) 2026-04-17_2300
-  #14) 2026-04-17_0000
-  #15) 2026-04-16_0000
-  #16) 2026-04-13_0000
-  Snapshot #3
-  SS0=/home/framstag/data
-  framstag@fex:/local/home/.snapshot/2026-04-18_0900.hourly/framstag/data:
-
-The only thing I have had to enter was "3"
-Then I am in the snapshot directory from 2026-04-18 09:00
-The restore then can be done with any command, example:
-
-  framstag@fex:/local/home/.snapshot/2026-04-18_0900.hourly/framstag/data: cp -av *.txt $SS0/
-  framstag@fex:/local/home/.snapshot/2026-04-18_0900.hourly/framstag/data: cd -
-  framstag@fex:~/data:
-
-
-https://fex.belwue.de/linuxtools/snaprotate.html
-
-
--- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    https://www.tik.uni-stuttgart.de/
-REF:<20171202125356.GA1355@rus.uni-stuttgart.de>
+--
+Best Regards,
+Yan, Zi

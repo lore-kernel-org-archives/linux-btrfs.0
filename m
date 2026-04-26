@@ -1,67 +1,78 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 578F92AE78
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 07:51:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4321C2BEFFF
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 20:16:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777189900; cv=none; b=b8fbcic9FQybm/qGnkLz+lel9HpybO5uQinSZ/C8u05gYuqdqH27TEO2ZjGzkyFAxyScY9muRSAy41XQhUMQRUHmHD+cB1QlJ3R/RgOFDpccULgjq/lHKcZCzUEsPHUTK3KQgUyp15RmFKXLXrBp1vupMpG6hMJG/OZTApkuPD8=
+	t=1777234572; cv=none; b=WIfScV/MOwY20WRYWTksgp4iU4C79UYkWtuVHqcgWdWMawxTfU3kWSHvLCKnnXTXlrFzbuW/EpL+UeJajp0PPhmNOmA7ySWPvZQqJt8WhmWVSDjSMFvWmVVonSTJ0CRhMH8Z6Gonsg8wsUhpIqhDXfwCj5XI0EsU5lpfRs6SM0Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777189900; c=relaxed/simple;
-	bh=H9nHT4b9Ju/C0eOqgyNbcu1S7O+Ry1YVvbQXGXog218=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Ekb5nCa9HkHLZjiNM89JpaQqdEUkiMo2W00k7zLRpJrCtA+kb+4xUfWMrz4N+v17u/gO2K62piI30g3deYfovfWrMYqTsItQ3VJKfoaU3h44/rE3IbmWbMHPvNj1WMR6Un+4+afHTHnpiSkzkynFPAQSjec5PsWOPWYpnGIHTYs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nDUnPOfl; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nDUnPOfl; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1777234572; c=relaxed/simple;
+	bh=0cBDJDVsverrJm5TX4gD92HaBBqI7XiWHStBQDqbsKE=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=gObVI1FnxPpXlht9Zw7qF5a8YhuUbHK05phbdlKI51/0DLDHRviVILycrRfRZvupJej9skWf8CSYuoh7h1knuby3p43ATnhjGkiDAyutVfyc+lqPggGMeuODDt/Gj+twkBAqpaq+yB1gjhNQ8mdt8Uc4tkkGNAKhSqzmTlw5Ku0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=hKEQMjLh; arc=none smtp.client-ip=209.85.128.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nDUnPOfl";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nDUnPOfl"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 904A26A7D5
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 07:51:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1777189891; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=bdh/sN0nx6ZpzghIPof6+m6389+Tp/xB4uFrBJ87y9c=;
-	b=nDUnPOfljrOR3YqLDmTAn+63fsXNhUW8okKMEDx1glKn9Rw16I5BPQg8KjrsrEFwDLs59S
-	cAvwiu+tZI2Jkq61/3mIvr0kK3ZR5QeAMsNJ5CIP+kcdkOEswF5ouot05cHzYde9OCINyt
-	H+hZfAPgFvfgbgAOB/o1+hszXvqH4rg=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=nDUnPOfl
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1777189891; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=bdh/sN0nx6ZpzghIPof6+m6389+Tp/xB4uFrBJ87y9c=;
-	b=nDUnPOfljrOR3YqLDmTAn+63fsXNhUW8okKMEDx1glKn9Rw16I5BPQg8KjrsrEFwDLs59S
-	cAvwiu+tZI2Jkq61/3mIvr0kK3ZR5QeAMsNJ5CIP+kcdkOEswF5ouot05cHzYde9OCINyt
-	H+hZfAPgFvfgbgAOB/o1+hszXvqH4rg=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8F697593B0
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 07:51:30 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 0KKbDwLE7Wm3IwAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 07:51:30 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="hKEQMjLh"
+Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4891c00e7aeso68902025e9.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 13:16:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1777234569; x=1777839369; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=YEG1xBF5/17YlnXXV6ISynHTyhtqMCuuiWpFweQNv/U=;
+        b=hKEQMjLhqvnSoBhDdrqyQPRukKLdNV73u9KYv81wGHKfjRlTGibD8sPeqYx3lgkN/e
+         Ya2B1kInDpBVhEWGaf4/U6I3nYF5WBVhOTG7DQ4dy8ZkWuGbJinrkvo8H8Yi51Zj7OEO
+         UxfYmBm7RP3lnXrA+2/DP+81yCXM+GTn8mKd26cQiWcQIcgYoSlOpoBKPvVxJ74b5umW
+         tyvnrmzRRvmZZ07tBu6JsLehOqKUv9fGtie6DsB+ZxPQejrW9a2nbx1rs/6+9nJOdUy6
+         TmRUKZ8GZL3gJ5cTzkkReFDal3EB5k/N6ChP/v9dpR9Ixx2ho0iX38GBSo6Ata0Pk3/S
+         oWpg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1777234569; x=1777839369;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=YEG1xBF5/17YlnXXV6ISynHTyhtqMCuuiWpFweQNv/U=;
+        b=kXUUwmLEfakbMofTKPw8VcmpnRViOOwi614uV2lxZuZdhMlR7Yo7uVu7H1rgRQXLoW
+         XO9luRLzqYMfeTu7axm3ZSjocP9LrJGzMNp8ZHZQWyLmfiwzT/El4UmIJ+hBGVBCFEZT
+         VvknP1ha6n7Snukyj8H/54etSaQO6TNYcV1d05E/eRKVAAkgM1ZpYSrq0RUVElUHX3Ok
+         o5FjlD6EdlaCcrdAeMW9Ba691TjZgUhCAWifsmF3SLbsMmC/y8z+SyUXTuE2h0s0GoA6
+         /njFoQAlqCi1th/KEACl0mEqsNpuhrEQFU13EiMXzDuttfTfg1ao/zt72AKGAOJ1EZ7e
+         KTYQ==
+X-Gm-Message-State: AOJu0YzOYYisec7wMCI0WNf6jTdA8wwwLEGMYl3MjBTkO6UbH0M4sqB8
+	AofAzqsj6oWJxEZzBsqpB0jEyRBlMEFblGRSgj9HvvklToFYALMvgJfCePlcIVCP
+X-Gm-Gg: AeBDietAggSiPCIk+/t77EuqH77rY5zBrV9QZq87XcnmR3EtdORU/hi6SbD6Fpw/EJy
+	InV1BYM/yigS2KhEPT+oAEAG6ws4740mb1IEXSeBjuFqkH/KX2NJclW367Syn0yqAmoW1lcbnl1
+	C91x9MFkh+FSrZZvYE/9TU2KuJBy4R9cefky69OkLCowXeoOJz5FeK9tCY3F2c1g0svagyxFMEh
+	4dsKV7uB4BxpsjV2cIqICmFEbMJteMbL7ojTRj7CFvDrdNweYwwV8ebuLBeATbZ9D5flgxcEr8E
+	IhTPdl9D4mG53eXFPJUbFucmyapx3/TJUjs82/Vs7o5AOyGNWlHAYXSBRf6Mk2UlqsSkMq4Kbau
+	+y8a/0nUeC+J4YSyYkMuhCO6Ixi3gJusEUoTpZM1NXBR5QXidZ6tcmF17Se3huc/a/KRW5pWHSp
+	wAH/bicXmIFfshj0oNQkUKJ4bojDJA6uqo
+X-Received: by 2002:a05:600c:3213:b0:489:149a:f9e6 with SMTP id 5b1f17b1804b1-489149afa07mr257254935e9.28.1777234569033;
+        Sun, 26 Apr 2026 13:16:09 -0700 (PDT)
+Received: from localhost ([145.40.214.139])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-488fc0f82bbsm1272653495e9.3.2026.04.26.13.16.08
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 26 Apr 2026 13:16:08 -0700 (PDT)
+From: Teng Liu <27rabbitlt@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: refresh add_ra_bio_pages() to indicate it's using folios
-Date: Sun, 26 Apr 2026 17:21:04 +0930
-Message-ID: <4a5a1581ed3ecad6df8fd35a5e56f7fe460a5867.1777189624.git.wqu@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <cover.1777189624.git.wqu@suse.com>
-References: <cover.1777189624.git.wqu@suse.com>
+Cc: dsterba@suse.com,
+	clm@fb.com,
+	wqu@suse.co,
+	linux-kernel@vger.kernel.org,
+	syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.co,
+	Teng Liu <27rabbitlt@gmail.com>,
+	wqu@suse.com,
+	syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com
+Subject: [PATCH v2] btrfs: replace BUG_ON() with error return in get_new_location()
+Date: Sun, 26 Apr 2026 22:16:00 +0200
+Message-ID: <20260426201605.36626-1-27rabbitlt@gmail.com>
+X-Mailer: git-send-email 2.54.0
+In-Reply-To: <20260425061214.235982-1-27rabbitlt@gmail.com>
+References: <20260425061214.235982-1-27rabbitlt@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,172 +80,80 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCPT_COUNT_ONE(0.00)[1];
-	MIME_TRACE(0.00)[0:+];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FROM_HAS_DN(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Queue-Id: 904A26A7D5
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
 
-The function add_ra_bio_folios() has been utilizing folio interfaces
-since c808c1dcb1b2 ("btrfs: convert add_ra_bio_pages() to use only
-folios"), but we are still referring to "pages" inside the function name
-and all comments.
+In get_new_location(), BUG_ON() crashes the kernel if the looked up
+file extent item has any of offset, compression, encryption, or other
+encoding set. The data reloc inode this lookup targets is populated
+solely by relocation's own prealloc and writeback paths:
 
-Furthermore, such folio/page mixing can even be confusing, e.g. the
-variable @page_end is very confusing as we're not really referring to
-the end of the page, but the end of the folio, especially when we
-already have large folio support.
+  - insert_prealloc_file_extent() memsets the stack item to 0 and only
+    sets type/disk_bytenr/disk_num_bytes/num_bytes, so the four checked
+    fields stay 0.
+  - insert_ordered_extent_file_extent() copies oe->compress_type into
+    file_extent compression, but the data reloc inode is created with
+    BTRFS_INODE_NOCOMPRESS, so compress_type is always 0; encryption
+    and other_encoding are reserved-and-zero per the comment in that
+    function.
 
-Enhance that function by:
+So observing non-zero compression, encryption or other_encoding here
+should on-disk corruption. A malformed image can reach this code
+through a balance operation and panic the kernel.
 
-- Rename "page" to "folio" to avoid confusion
+Replace the BUG_ON() with a return of -EUCLEAN, the established error
+code in fs/btrfs/relocation.c for filesystem corruption, and pair it
+with btrfs_print_leaf() and btrfs_err() as suggested by Qu allowing dmesg
+to log the necessary information. The caller in replace_file_extents() 
+already handles errors from get_new_location() by breaking out of the loop 
+without aborting the transaction, so no caller changes are needed.
 
-- Skip to the folio end if there is already a folio in the page cache
-  The existing skip is:
-
-  	cur += folio_size(folio);
-
-  This is incorrect if @cur is not folio size aligned, and can be
-  common with large folio support.
-
-  Thankfully this is not going to cause any real bugs, but at most will
-  skip some blocks that can be added to readahead.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reported-by: syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com
+Closes: https://syzkaller.appspot.com/bug?extid=3e20d8f3d41bac5dc9a2
+Signed-off-by: Teng Liu <27rabbitlt@gmail.com>
 ---
- fs/btrfs/compression.c | 40 ++++++++++++++++++++--------------------
- 1 file changed, 20 insertions(+), 20 deletions(-)
+Changes in v2:
+ - Pair the -EUCLEAN return with btrfs_print_leaf() and btrfs_err() so
+   the offending leaf is dumped to dmesg, per Qu's review:
+   https://lore.kernel.org/linux-btrfs/6c54901d-5e07-4c46-9553-997b28c93b86@suse.com/
+ - Expand the changelog to argue why non-zero compression/encryption/
+   other_encoding in the data reloc inode imply on-disk corruption
+   rather than a kernel bug.
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 09729728624b..8ee0a4117d62 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -355,18 +355,18 @@ struct compressed_bio *btrfs_alloc_compressed_write(struct btrfs_inode *inode,
- }
- 
- /*
-- * Add extra pages in the same compressed file extent so that we don't need to
-+ * Add extra folios in the same compressed file extent so that we don't need to
-  * re-read the same extent again and again.
-  *
-- * If we have several sectors in the same page points to the same
-+ * If we have several blocks in the same folio pointing to the same
-  * on-disk compressed data, we will re-read the same extent many times and
-- * this function can only help for the next page.
-+ * this function can only help for the next folio(s).
-  */
--static noinline int add_ra_bio_pages(struct inode *inode,
--				     u64 compressed_end,
--				     struct compressed_bio *cb,
--				     int *memstall, unsigned long *pflags,
--				     bool direct_reclaim)
-+static noinline int add_ra_bio_folios(struct inode *inode,
-+				      u64 compressed_end,
-+				      struct compressed_bio *cb,
-+				      int *memstall, unsigned long *pflags,
-+				      bool direct_reclaim)
+ fs/btrfs/relocation.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 1c42c5180bdd..bba28866df1c 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -814,6 +814,7 @@ static int get_new_location(struct inode *reloc_inode, u64 *new_bytenr,
+ 			    u64 bytenr, u64 num_bytes)
  {
- 	struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
- 	pgoff_t end_index;
-@@ -396,7 +396,7 @@ static noinline int add_ra_bio_pages(struct inode *inode,
+ 	struct btrfs_root *root = BTRFS_I(reloc_inode)->root;
++	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	BTRFS_PATH_AUTO_FREE(path);
+ 	struct btrfs_file_extent_item *fi;
+ 	struct extent_buffer *leaf;
+@@ -835,10 +836,16 @@ static int get_new_location(struct inode *reloc_inode, u64 *new_bytenr,
+ 	fi = btrfs_item_ptr(leaf, path->slots[0],
+ 			    struct btrfs_file_extent_item);
  
- 	/*
- 	 * Avoid direct reclaim when the caller does not allow it.  Since
--	 * add_ra_bio_pages() is always speculative, suppress allocation warnings
-+	 * add_ra_bio_folios() is always speculative, suppress allocation warnings
- 	 * in either case.
- 	 */
- 	if (!direct_reclaim) {
-@@ -408,7 +408,7 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 	}
+-	BUG_ON(btrfs_file_extent_offset(leaf, fi) ||
+-	       btrfs_file_extent_compression(leaf, fi) ||
+-	       btrfs_file_extent_encryption(leaf, fi) ||
+-	       btrfs_file_extent_other_encoding(leaf, fi));
++	if (unlikely(btrfs_file_extent_offset(leaf, fi) ||
++		     btrfs_file_extent_compression(leaf, fi) ||
++		     btrfs_file_extent_encryption(leaf, fi) ||
++		     btrfs_file_extent_other_encoding(leaf, fi))) {
++		btrfs_print_leaf(leaf);
++		btrfs_err(fs_info,
++"unexpected non-zero fields in file extent item for data reloc inode %llu offset %llu (offset/compression/encryption/other_encoding must all be 0)",
++			  btrfs_ino(BTRFS_I(reloc_inode)), bytenr);
++		return -EUCLEAN;
++	}
  
- 	while (cur < compressed_end) {
--		pgoff_t page_end;
-+		u64 folio_end;
- 		pgoff_t pg_index = cur >> PAGE_SHIFT;
- 		u32 add_size;
- 
-@@ -442,8 +442,8 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 			break;
- 
- 		if (filemap_add_folio(mapping, folio, pg_index, cache_gfp)) {
--			/* There is already a folio, skip to folio end */
--			cur += folio_size(folio);
-+			/* There is already a folio, skip to the folio end */
-+			cur += folio_size(folio) - offset_in_folio(folio, cur);
- 			folio_put(folio);
- 			continue;
- 		}
-@@ -460,10 +460,10 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 			break;
- 		}
- 
--		page_end = (pg_index << PAGE_SHIFT) + folio_size(folio) - 1;
--		btrfs_lock_extent(tree, cur, page_end, NULL);
-+		folio_end = folio_next_pos(folio) - 1;
-+		btrfs_lock_extent(tree, cur, folio_end, NULL);
- 		read_lock(&em_tree->lock);
--		em = btrfs_lookup_extent_mapping(em_tree, cur, page_end + 1 - cur);
-+		em = btrfs_lookup_extent_mapping(em_tree, cur, folio_end + 1 - cur);
- 		read_unlock(&em_tree->lock);
- 
- 		/*
-@@ -476,14 +476,14 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 		    (btrfs_extent_map_block_start(em) >> SECTOR_SHIFT) !=
- 		    orig_bio->bi_iter.bi_sector) {
- 			btrfs_free_extent_map(em);
--			btrfs_unlock_extent(tree, cur, page_end, NULL);
-+			btrfs_unlock_extent(tree, cur, folio_end, NULL);
- 			folio_unlock(folio);
- 			folio_put(folio);
- 			break;
- 		}
--		add_size = min(btrfs_extent_map_end(em), page_end + 1) - cur;
-+		add_size = min(btrfs_extent_map_end(em), folio_end + 1) - cur;
- 		btrfs_free_extent_map(em);
--		btrfs_unlock_extent(tree, cur, page_end, NULL);
-+		btrfs_unlock_extent(tree, cur, folio_end, NULL);
- 
- 		if (folio_contains(folio, end_index)) {
- 			size_t zero_offset = offset_in_folio(folio, isize);
-@@ -592,8 +592,8 @@ void btrfs_submit_compressed_read(struct btrfs_bio *bbio)
- 	}
- 	ASSERT(cb->bbio.bio.bi_iter.bi_size == compressed_len);
- 
--	add_ra_bio_pages(&inode->vfs_inode, em_start + em_len, cb, &memstall,
--			 &pflags, !(bbio->bio.bi_opf & REQ_RAHEAD));
-+	add_ra_bio_folios(&inode->vfs_inode, em_start + em_len, cb, &memstall,
-+			  &pflags, !(bbio->bio.bi_opf & REQ_RAHEAD));
- 
- 	cb->len = bbio->bio.bi_iter.bi_size;
- 	cb->bbio.bio.bi_iter.bi_sector = bbio->bio.bi_iter.bi_sector;
+ 	if (num_bytes != btrfs_file_extent_disk_num_bytes(leaf, fi))
+ 		return -EINVAL;
 -- 
-2.53.0
+2.54.0
 

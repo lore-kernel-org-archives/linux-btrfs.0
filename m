@@ -1,84 +1,116 @@
-Received: from out30-112.freemail.mail.aliyun.com (out30-112.freemail.mail.aliyun.com [115.124.30.112])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 690772556E;
-	Sun, 26 Apr 2026 06:01:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=115.124.30.112
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ECB082AE78
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 07:51:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777183299; cv=none; b=Sqblrtt/BmiS9t3LQLxbwtRVfz5hioj6DBtBw88fCZHtwE/2q7v6EEzkMPwKWQMrsREQ6Q9q19+sQAgRU4aPj9ChyCwm6EYGseT9qkHFRmg4f1xLhQ3jGnuusXXyVzBB7HKAS0UJgW+y2nYWUXDOQ4Q+PI3AeN0l5lrOln2S5tg=
+	t=1777189891; cv=none; b=uiYRwnGSDv/RR3/aZ37dmgfzLVjrl6kmxepfWDctszUGk+cRPAeN5rWGks042DxGw+2FXbxr24LwWfshYEPREalJ5f20RZmMx+iIkOrwjPGfW9UzdEskw/JRAdLzfkZy62GIuperu8MbwOuO2uukbZy0zG9+n1gjbknEE1GpPyM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777183299; c=relaxed/simple;
-	bh=SY6bpUtbGeACGvwsANX2qd3x5liJRX9jCEOqSHdBstM=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=SyRPYu3KVhwAFiqypPQ0lPd3OxLddTPMhlDggbhKxvWPTvMoF2EnJaK5YYxwhOLC42aiIlN5dOK35uNvKjJ9q4Q2URAxKhHgbQn18pR2rdYww1mT+NpUxombq/nbcBMmGBjlbD7KESezQb04G5kNLE0dBt6+QG9OkQ3ZS5TbPTc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com; spf=pass smtp.mailfrom=linux.alibaba.com; dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b=mD/H9xBA; arc=none smtp.client-ip=115.124.30.112
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.alibaba.com
+	s=arc-20240116; t=1777189891; c=relaxed/simple;
+	bh=RqTrGEOIvbsN7QEMrNmkRRmKcoATYtvE4u16/7iQVn8=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=GXo7AilfCMIVos+mWgoLfcut+Msdv4zwWUXheZt3oGYCz9wkoyXrRg020FiZU3ymK15e6TFqMaeP41u65XoinEe2NJm2H9eUQCQU/V6xSFkPsjaEfygMt3eDSfoB3G8tYp6n2KGmVaySP67aHMWwOmHCOZ7KxuGpaQTrrooKHbQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=hf46ZEua; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=hf46ZEua; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b="mD/H9xBA"
-DKIM-Signature:v=1; a=rsa-sha256; c=relaxed/relaxed;
-	d=linux.alibaba.com; s=default;
-	t=1777183295; h=Message-ID:Date:MIME-Version:Subject:To:From:Content-Type;
-	bh=b+wabLzY7PQDl0SUnNEn2ncKgvz1hAOANX6yNTSodsQ=;
-	b=mD/H9xBAz6Jq09uKI5Ckro26gwVve6ObUrB2+4bVUWfIKZj8AHXTiVjj/ZtstBOzOtzjssmV69JMDZONJiejMv4v+NA9gGsWGxgWxZgjQdTt4A55TLfOzOT/cH2XLbsiDLHmFOTj+aMo0JU5gyCXzKqVeD1RuX6C8ikv0JPV7TI=
-X-Alimail-AntiSpam:AC=PASS;BC=-1|-1;BR=01201311R411e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=maildocker-contentspam033045098064;MF=baolin.wang@linux.alibaba.com;NM=1;PH=DS;RN=27;SR=0;TI=SMTPD_---0X1gM9NY_1777183293;
-Received: from 192.168.0.100(mailfrom:baolin.wang@linux.alibaba.com fp:SMTPD_---0X1gM9NY_1777183293 cluster:ay36)
-          by smtp.aliyun-inc.com;
-          Sun, 26 Apr 2026 14:01:34 +0800
-Message-ID: <6a6f15ff-233a-4912-8be4-b2a43d442692@linux.alibaba.com>
-Date: Sun, 26 Apr 2026 14:01:32 +0800
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="hf46ZEua";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="hf46ZEua"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 48C6D5BCD4
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 07:51:28 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1777189888; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=GF4MDpsyqH43y8lx4Ic0uv63FZ3sl7WtTQa1cYUCaCQ=;
+	b=hf46ZEuag7psJnqmG0mP7j41HqAc6OWnmLolAHm13eQFNlMvJaU8toa5hpcOhm/j7ngbrS
+	cOCW7cH8ZoukXZrjvQHr8ihSyPimwQdbD0ysTrC981uG7lv8E/IeHYlO4n8PQXENIDsYZK
+	W7OyPD96u40YzYxvqmGkQHZUgiX9a1w=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1777189888; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=GF4MDpsyqH43y8lx4Ic0uv63FZ3sl7WtTQa1cYUCaCQ=;
+	b=hf46ZEuag7psJnqmG0mP7j41HqAc6OWnmLolAHm13eQFNlMvJaU8toa5hpcOhm/j7ngbrS
+	cOCW7cH8ZoukXZrjvQHr8ihSyPimwQdbD0ysTrC981uG7lv8E/IeHYlO4n8PQXENIDsYZK
+	W7OyPD96u40YzYxvqmGkQHZUgiX9a1w=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 49E4C593B0
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 07:51:26 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id mL02Ov7D7Wm3IwAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 07:51:26 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: properly enable compressed readahead for bs < ps and large folio cases
+Date: Sun, 26 Apr 2026 17:21:02 +0930
+Message-ID: <cover.1777189624.git.wqu@suse.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 7.2 v4 02/12] mm/khugepaged: add folio dirty check after
- try_to_unmap()
-To: Zi Yan <ziy@nvidia.com>, Andrew Morton <akpm@linux-foundation.org>,
- "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- Song Liu <songliubraving@fb.com>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
- Alexander Viro <viro@zeniv.linux.org.uk>,
- Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- David Hildenbrand <david@kernel.org>, Lorenzo Stoakes <ljs@kernel.org>,
- "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
- Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
- Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
- Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
- Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
- Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-mm@kvack.org, linux-kselftest@vger.kernel.org
-References: <20260424024915.28758-1-ziy@nvidia.com>
- <20260424024915.28758-3-ziy@nvidia.com>
-From: Baolin Wang <baolin.wang@linux.alibaba.com>
-In-Reply-To: <20260424024915.28758-3-ziy@nvidia.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
+Compressed data readahead is disabled for bs < ps cases, but it has
+never taken large folios into the consideration.
 
+And that unexpectedly enables compressed data readahead for large
+folios, which should go through the same subpage routine.
 
-On 4/24/26 10:49 AM, Zi Yan wrote:
-> This check ensures the correctness of collapse read-only THPs for FSes
-> after READ_ONLY_THP_FOR_FS is enabled by default for all FSes supporting
-> PMD THP pagecache.
-> 
-> READ_ONLY_THP_FOR_FS only supports read-only fd and uses mapping->nr_thps
-> and inode->i_writecount to prevent any write to read-only to-be-collapsed
-> folios. In upcoming commits, READ_ONLY_THP_FOR_FS will be removed and the
-> aforementioned mechanism will go away too. To ensure khugepaged functions
-> as expected after the changes, skip if any folio is dirty after
-> try_to_unmap(), since a dirty folio means this read-only folio
-> got some writes via mmap can happen between try_to_unmap() and
-> try_to_unmap_flush() via cached TLB entries and khugepaged does not support
-> writable pagecache folio collapse yet.
-> 
-> Signed-off-by: Zi Yan <ziy@nvidia.com>
-> ---
+This means for real bs < ps cases compressed data read is disabled, but
+still enabled for bs == ps with large folios.
 
-LGTM (Thanks to Lance for pointing out the xas lock issue in the 
-previous version). Feel free to add:
+This small series will properly enable the compressed readahead for both
+bs < ps and large folios cases, mostly by simply remove the unnecessary
+checks.
 
-Reviewed-by: Baolin Wang <baolin.wang@linux.alibaba.com>
+Then since we're here, also update the function name and comments to
+reflect that we're already using folio interface, not the old page
+interface.
+
+Qu Wenruo (2):
+  btrfs: enable cross-folio readahead for bs < ps and large folio cases
+  btrfs: refresh add_ra_bio_pages() to indicate it's using folios
+
+ fs/btrfs/compression.c | 67 +++++++++++++++---------------------------
+ 1 file changed, 24 insertions(+), 43 deletions(-)
+
+-- 
+2.53.0
+

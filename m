@@ -1,159 +1,151 @@
-Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4321C2BEFFF
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 20:16:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
+Received: from rebatir.fr (rebatir.fr [212.129.56.80])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 7209020E702
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 21:31:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.129.56.80
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777234572; cv=none; b=WIfScV/MOwY20WRYWTksgp4iU4C79UYkWtuVHqcgWdWMawxTfU3kWSHvLCKnnXTXlrFzbuW/EpL+UeJajp0PPhmNOmA7ySWPvZQqJt8WhmWVSDjSMFvWmVVonSTJ0CRhMH8Z6Gonsg8wsUhpIqhDXfwCj5XI0EsU5lpfRs6SM0Y=
+	t=1777239072; cv=none; b=RAc/k99QFg5V2czEgdj/bhcWKGOU9HTsrMhYMiawEQyYMMSbK7jxMRHD7gaywCUO0tR2+1i81lUsPQy+3s5rG3C4FVYiIIx4W61Fhky+SeYmI43TVGpKuae1ukY1Kqtg0kMJcjmvKXFxwwouQkOt98JVnfGd+WAVCEa1GnksfNs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777234572; c=relaxed/simple;
-	bh=0cBDJDVsverrJm5TX4gD92HaBBqI7XiWHStBQDqbsKE=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=gObVI1FnxPpXlht9Zw7qF5a8YhuUbHK05phbdlKI51/0DLDHRviVILycrRfRZvupJej9skWf8CSYuoh7h1knuby3p43ATnhjGkiDAyutVfyc+lqPggGMeuODDt/Gj+twkBAqpaq+yB1gjhNQ8mdt8Uc4tkkGNAKhSqzmTlw5Ku0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=hKEQMjLh; arc=none smtp.client-ip=209.85.128.51
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="hKEQMjLh"
-Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4891c00e7aeso68902025e9.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 13:16:11 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1777234569; x=1777839369; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=YEG1xBF5/17YlnXXV6ISynHTyhtqMCuuiWpFweQNv/U=;
-        b=hKEQMjLhqvnSoBhDdrqyQPRukKLdNV73u9KYv81wGHKfjRlTGibD8sPeqYx3lgkN/e
-         Ya2B1kInDpBVhEWGaf4/U6I3nYF5WBVhOTG7DQ4dy8ZkWuGbJinrkvo8H8Yi51Zj7OEO
-         UxfYmBm7RP3lnXrA+2/DP+81yCXM+GTn8mKd26cQiWcQIcgYoSlOpoBKPvVxJ74b5umW
-         tyvnrmzRRvmZZ07tBu6JsLehOqKUv9fGtie6DsB+ZxPQejrW9a2nbx1rs/6+9nJOdUy6
-         TmRUKZ8GZL3gJ5cTzkkReFDal3EB5k/N6ChP/v9dpR9Ixx2ho0iX38GBSo6Ata0Pk3/S
-         oWpg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1777234569; x=1777839369;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=YEG1xBF5/17YlnXXV6ISynHTyhtqMCuuiWpFweQNv/U=;
-        b=kXUUwmLEfakbMofTKPw8VcmpnRViOOwi614uV2lxZuZdhMlR7Yo7uVu7H1rgRQXLoW
-         XO9luRLzqYMfeTu7axm3ZSjocP9LrJGzMNp8ZHZQWyLmfiwzT/El4UmIJ+hBGVBCFEZT
-         VvknP1ha6n7Snukyj8H/54etSaQO6TNYcV1d05E/eRKVAAkgM1ZpYSrq0RUVElUHX3Ok
-         o5FjlD6EdlaCcrdAeMW9Ba691TjZgUhCAWifsmF3SLbsMmC/y8z+SyUXTuE2h0s0GoA6
-         /njFoQAlqCi1th/KEACl0mEqsNpuhrEQFU13EiMXzDuttfTfg1ao/zt72AKGAOJ1EZ7e
-         KTYQ==
-X-Gm-Message-State: AOJu0YzOYYisec7wMCI0WNf6jTdA8wwwLEGMYl3MjBTkO6UbH0M4sqB8
-	AofAzqsj6oWJxEZzBsqpB0jEyRBlMEFblGRSgj9HvvklToFYALMvgJfCePlcIVCP
-X-Gm-Gg: AeBDietAggSiPCIk+/t77EuqH77rY5zBrV9QZq87XcnmR3EtdORU/hi6SbD6Fpw/EJy
-	InV1BYM/yigS2KhEPT+oAEAG6ws4740mb1IEXSeBjuFqkH/KX2NJclW367Syn0yqAmoW1lcbnl1
-	C91x9MFkh+FSrZZvYE/9TU2KuJBy4R9cefky69OkLCowXeoOJz5FeK9tCY3F2c1g0svagyxFMEh
-	4dsKV7uB4BxpsjV2cIqICmFEbMJteMbL7ojTRj7CFvDrdNweYwwV8ebuLBeATbZ9D5flgxcEr8E
-	IhTPdl9D4mG53eXFPJUbFucmyapx3/TJUjs82/Vs7o5AOyGNWlHAYXSBRf6Mk2UlqsSkMq4Kbau
-	+y8a/0nUeC+J4YSyYkMuhCO6Ixi3gJusEUoTpZM1NXBR5QXidZ6tcmF17Se3huc/a/KRW5pWHSp
-	wAH/bicXmIFfshj0oNQkUKJ4bojDJA6uqo
-X-Received: by 2002:a05:600c:3213:b0:489:149a:f9e6 with SMTP id 5b1f17b1804b1-489149afa07mr257254935e9.28.1777234569033;
-        Sun, 26 Apr 2026 13:16:09 -0700 (PDT)
-Received: from localhost ([145.40.214.139])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-488fc0f82bbsm1272653495e9.3.2026.04.26.13.16.08
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 26 Apr 2026 13:16:08 -0700 (PDT)
-From: Teng Liu <27rabbitlt@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com,
-	clm@fb.com,
-	wqu@suse.co,
-	linux-kernel@vger.kernel.org,
-	syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.co,
-	Teng Liu <27rabbitlt@gmail.com>,
-	wqu@suse.com,
-	syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com
-Subject: [PATCH v2] btrfs: replace BUG_ON() with error return in get_new_location()
-Date: Sun, 26 Apr 2026 22:16:00 +0200
-Message-ID: <20260426201605.36626-1-27rabbitlt@gmail.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <20260425061214.235982-1-27rabbitlt@gmail.com>
-References: <20260425061214.235982-1-27rabbitlt@gmail.com>
+	s=arc-20240116; t=1777239072; c=relaxed/simple;
+	bh=CT5oJxANCipfW+8omlDeNzVYZx4hZR55maK/dawCaRM=;
+	h=MIME-Version:From:Date:Message-ID:Subject:To:Cc:Content-Type; b=IyZJsbeVCnjFLS9+vSaINK6XJ0dLBPuNdeyqiSOXOMVObeRp1vNiUU4BVjYcJBG1Y05rU8RR1tKtwA+DolF7rnmmizG28Top3EQCkreP4zlv7BgBZd5CPVObzVAe6iSQ8j651bxK6hJ/FSEqK+++X2AfqLBS5wUpT6kvmLENpGQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=illwieckz.net; spf=pass smtp.mailfrom=illwieckz.net; arc=none smtp.client-ip=212.129.56.80
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=illwieckz.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=illwieckz.net
+Received: from mail-dy1-f181.google.com (mail-dy1-f181.google.com [74.125.82.181])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by rebatir.fr (Postfix) with ESMTPSA id C377920141
+	for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 23:23:51 +0200 (CEST)
+Received: by mail-dy1-f181.google.com with SMTP id 5a478bee46e88-2c15849aa2cso12520904eec.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 14:23:51 -0700 (PDT)
+X-Gm-Message-State: AOJu0YwGX/iNutu6nPwdvlrGuuHrgjJPcNYUSGNXzDERgHv8q2LIqs++
+	I94jFUl2HI1H+QY/kdX9Q2wX4w5KRx8Cs12rGx4IZaiwJFM1X+eK2H77ZCXhC/5Sw5HEw2RTAg2
+	BM2Qf13Saveo7z3iKe8k0NPcaINvgCGg=
+X-Received: by 2002:a05:7022:103:b0:12c:3d30:37ba with SMTP id
+ a92af1059eb24-12c73f9bf03mr17716996c88.25.1777238629874; Sun, 26 Apr 2026
+ 14:23:49 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+From: Thomas Debesse <dev@illwieckz.net>
+Date: Sun, 26 Apr 2026 23:23:38 +0200
+X-Gmail-Original-Message-ID: <CALpuBKwmZRYX0Mag-gLSoL9NgBBR_D+iOeKX7sdhHtyAposGRg@mail.gmail.com>
+X-Gm-Features: AQROBzAJH_MNrcPZK8R9yPYbT1vZ7DUAwwBPLQP6wzmdGpG_NTCfn1bFgVj7eCM
+Message-ID: <CALpuBKwmZRYX0Mag-gLSoL9NgBBR_D+iOeKX7sdhHtyAposGRg@mail.gmail.com>
+Subject: corruption after block-group-tree conversion, how to recover? (data
+ is readable)
+To: linux-btrfs@vger.kernel.org
+Cc: Thomas DEBESSE <dev@illwieckz.net>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-In get_new_location(), BUG_ON() crashes the kernel if the looked up
-file extent item has any of offset, compression, encryption, or other
-encoding set. The data reloc inode this lookup targets is populated
-solely by relocation's own prealloc and writeback paths:
+Hi, I just did a `btrfstune --convert-to-block-group-tree` conversion
+operation on a btrfs filesystem and this corrupted the volume:
 
-  - insert_prealloc_file_extent() memsets the stack item to 0 and only
-    sets type/disk_bytenr/disk_num_bytes/num_bytes, so the four checked
-    fields stay 0.
-  - insert_ordered_extent_file_extent() copies oe->compress_type into
-    file_extent compression, but the data reloc inode is created with
-    BTRFS_INODE_NOCOMPRESS, so compress_type is always 0; encryption
-    and other_encoding are reserved-and-zero per the comment in that
-    function.
+```
+[  786.278571] BTRFS info (device dm-9): first mount of filesystem <uuid>
+[  786.278595] BTRFS info (device dm-9): using crc32c (crc32c-intel)
+checksum algorithm
+[  786.442781] BTRFS error (device dm-9): parent transid verify failed
+on logical 9820282388480 mirror 2 wanted 5715946 found 5717327
+[  786.448020] BTRFS error (device dm-9): parent transid verify failed
+on logical 9820282388480 mirror 1 wanted 5715946 found 5717327
+[  786.449543] BTRFS error (device dm-9): failed to read block groups: -5
+[  786.481199] BTRFS error (device dm-9): open_ctree failed: -5
+```
 
-So observing non-zero compression, encryption or other_encoding here
-should on-disk corruption. A malformed image can reach this code
-through a balance operation and panic the kernel.
+I can mount the btrfs volume with `mount -oro,rescue=3Dall`, I can
+browse the filesystem, and every file data I checked loocked fine.
 
-Replace the BUG_ON() with a return of -EUCLEAN, the established error
-code in fs/btrfs/relocation.c for filesystem corruption, and pair it
-with btrfs_print_leaf() and btrfs_err() as suggested by Qu allowing dmesg
-to log the necessary information. The caller in replace_file_extents() 
-already handles errors from get_new_location() by breaking out of the loop 
-without aborting the transaction, so no caller changes are needed.
+Here is the log when mounting with `-oro,rescue=3Dall`:
 
-Reported-by: syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com
-Closes: https://syzkaller.appspot.com/bug?extid=3e20d8f3d41bac5dc9a2
-Signed-off-by: Teng Liu <27rabbitlt@gmail.com>
----
-Changes in v2:
- - Pair the -EUCLEAN return with btrfs_print_leaf() and btrfs_err() so
-   the offending leaf is dumped to dmesg, per Qu's review:
-   https://lore.kernel.org/linux-btrfs/6c54901d-5e07-4c46-9553-997b28c93b86@suse.com/
- - Expand the changelog to argue why non-zero compression/encryption/
-   other_encoding in the data reloc inode imply on-disk corruption
-   rather than a kernel bug.
+```
+[ 2523.344235] BTRFS info (device dm-9): first mount of filesystem <uuid>
+[ 2523.344260] BTRFS info (device dm-9): using crc32c (crc32c-intel)
+checksum algorithm
+[ 2523.612830] BTRFS error (device dm-9: state C): parent transid
+verify failed on logical 9820282388480 mirror 2 wanted 5715946 found
+5717327
+[ 2523.613372] BTRFS error (device dm-9: state C): parent transid
+verify failed on logical 9820282388480 mirror 1 wanted 5715946 found
+5717327
+[ 2523.639263] BTRFS info (device dm-9: state C): enabling ssd optimization=
+s
+[ 2523.639268] BTRFS info (device dm-9: state C): disabling log replay
+at mount time
+[ 2523.639271] BTRFS info (device dm-9: state C): turning on async discard
+[ 2523.639273] BTRFS info (device dm-9: state C): enabling free space tree
+[ 2523.639276] BTRFS info (device dm-9: state C): ignoring bad roots
+[ 2523.639278] BTRFS info (device dm-9: state C): ignoring data csums
+```
 
- fs/btrfs/relocation.c | 15 +++++++++++----
- 1 file changed, 11 insertions(+), 4 deletions(-)
+The log reports SSD optimization to be enabled because those drives
+are bcache backing devices. Bcache was disabled throughout the
+operation.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 1c42c5180bdd..bba28866df1c 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -814,6 +814,7 @@ static int get_new_location(struct inode *reloc_inode, u64 *new_bytenr,
- 			    u64 bytenr, u64 num_bytes)
- {
- 	struct btrfs_root *root = BTRFS_I(reloc_inode)->root;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	BTRFS_PATH_AUTO_FREE(path);
- 	struct btrfs_file_extent_item *fi;
- 	struct extent_buffer *leaf;
-@@ -835,10 +836,16 @@ static int get_new_location(struct inode *reloc_inode, u64 *new_bytenr,
- 	fi = btrfs_item_ptr(leaf, path->slots[0],
- 			    struct btrfs_file_extent_item);
- 
--	BUG_ON(btrfs_file_extent_offset(leaf, fi) ||
--	       btrfs_file_extent_compression(leaf, fi) ||
--	       btrfs_file_extent_encryption(leaf, fi) ||
--	       btrfs_file_extent_other_encoding(leaf, fi));
-+	if (unlikely(btrfs_file_extent_offset(leaf, fi) ||
-+		     btrfs_file_extent_compression(leaf, fi) ||
-+		     btrfs_file_extent_encryption(leaf, fi) ||
-+		     btrfs_file_extent_other_encoding(leaf, fi))) {
-+		btrfs_print_leaf(leaf);
-+		btrfs_err(fs_info,
-+"unexpected non-zero fields in file extent item for data reloc inode %llu offset %llu (offset/compression/encryption/other_encoding must all be 0)",
-+			  btrfs_ino(BTRFS_I(reloc_inode)), bytenr);
-+		return -EUCLEAN;
-+	}
- 
- 	if (num_bytes != btrfs_file_extent_disk_num_bytes(leaf, fi))
- 		return -EINVAL;
--- 
-2.54.0
+I expect that recovering from backup would take 10 days, so I would
+like to avoid that if possible. If there are ways to recompute the
+broken metadata for example or other repair operation, I would prefer
+doing that.
 
+I asked on #btrfs channel and after helping me succesfully mount the
+volume, multicore recommended me to send an email to this mailing
+list, so here we are.
+
+What do you think about it? Is there a way to repair the filesytem?
+
+Context: This is a 4 HDD btrfs raid10 volume. Drives are large (16TB
+each, Seagate IronWolf Pro).
+24 days ago two drives started logging some errors, so I replaced
+them. Those drives are bcache backing devices but bcache has been kept
+disabled for the whole operation that follows.
+
+I first did a backup of the files in their last state. Then I replaced
+the first drive with `btrfs replace`, waited for complete replacement,
+then replaced the second drive with `btrfs replace` and waited for
+complete replacement again. Once this was done I shut down, removed
+the replaced drive, only keeping plugged in the two sane non-replaced
+drives and the two sane replacement drives. I then rebooted, mounted
+successfully the btrfs volume, and did a scrub. The scrub finished
+without error.
+
+It happens that this btrfs volume had been created on September 2023
+so I was running Ubuntu Lunar that used Linux 6.2 at the time, and it
+lacked the block group tree feature. Mounting was very slow so and it
+annoyed me so in February of 2025 I asked on the #btrfs channel if
+there was something doable to speed-up things, and it had been told to
+me that enabling block group tree would help me. Out of caution, I
+didn't do it at the time, waiting for a better moment. Since I just
+replaced two drives and did a backup, I thought this was the best
+moment to do it, and I did the block group tree conversion, after a
+year of patience. It looks like it was the right time to do it but
+that I should have not done it.
+
+It also happens that I use btrfs deduplication and compression
+extensively, and I do know that in fact once decompressed and
+deduplicated the data is larger than the size of the disk storage. So
+not only decompressing and copying from borg will be slow (and take
+days=E2=80=A6), but I'll have to also wait for btrfs to recompress everythi=
+ng
+and I'll have to run bees while the copy is going on to deduplicate on
+the go to make sure the restoration fits. This will be slow as hell.
+That's why I expect the restoration from backup to last 10 days. Since
+I'm already in degraded workflow since 24 days, I'm looking for faster
+options if they do exist.
+
+So if there is any recovery or repair operation available I want to
+try it first. Since I can read the data, can the corrupted metadata be
+recomputed?
+
+The system is running Ubuntu 24.04.4 with Linux 6.8.0-110-generic and
+btrfs-progs 6.6.3-1.1build2. I can run rescue systems on removable
+drives if newer tools are required to repair.
+
+Best regards,
+
+--=20
+Thomas =E2=80=9Cillwieckz=E2=80=9D Debesse

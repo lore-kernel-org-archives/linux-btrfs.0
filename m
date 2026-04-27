@@ -1,368 +1,248 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-ej1-f48.google.com (mail-ej1-f48.google.com [209.85.218.48])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EB3B1346782
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 15:48:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777304890; cv=none; b=BGA+mYuoAkefDC1srfv8p+iv6XWSMac0XCpToEUYq6ve1jf+auGptnikR+t2a2Qa3UNvPSKysq3rEUIslwFYxn0xfpP5VTy7SHdjHkky4EKox2ORNatVhqDzlhrlS4d7m9uYIY+/V55YLKy5gLsd30GLMVt8G5C7PeOsHqd2QqY=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777304890; c=relaxed/simple;
-	bh=gbTHhX9usiWIz8mIR3MzZw1vWQVbgtPHlx2oQkxxmXU=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=KHnJJ9BpHBMD5Y34dtUR8aL8rfmYWvUt5FK9mPgIBL/lrE54UeHM5JYjoQqrTvEV+q/yd/McIZ66icch9c4+BLhCFomHK73CwPOZlYijuMYjrKGkqxuemJEMS202t1stOdtHByE4tNOGfpc/GBnVaIFRMtyam1RbU18byaltQW0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=mzHJ+soD; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=b5dSGa5k; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=mzHJ+soD; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=b5dSGa5k; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C5CAA3DB653
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 17:16:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.218.48
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1777310171; cv=pass; b=SDZQlMWsWREdH0kHTQbEUy1eXEVeVZsxQO5jAMNoWpVhIQLdZLKB5XF6h1FY9eIP5MEB0aAOUutJ36S+dE9JjWHk7r7DwWi9QkhF8Frowq2sYO9FYBMezRviNdGvK2/Uhv7P4DpOVMeiZcVK6hCDvwBMpX6nBqrB+jNIne6vB8Y=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1777310171; c=relaxed/simple;
+	bh=jxGA1aqdU5aIJg6I6FITOfxM34vHxNTeEwbnO/2hjXs=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=qZd1yY4l9jvuvRvH+FUF2hsoeBGjE99bypvkjmfy18hKlk/uUf/cbTTDWkuN/8Q3L0oJgVuBPnNFyExm51ui5GNaq50GJUtp4KYW854u+U50MnYVf2X7bOVE7SIfBHjVz/vWzoKUPQU3ZUK/l3DXrbw+i7P2N48PSYf6SaASIJ8=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=MpuJOS8p; arc=pass smtp.client-ip=209.85.218.48
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="mzHJ+soD";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="b5dSGa5k";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="mzHJ+soD";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="b5dSGa5k"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 1E0795BCD0;
-	Mon, 27 Apr 2026 15:48:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1777304887;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9n76Wd9I1mvqMvjRbL+nbT7IFlD+cGUSny8G8Ij0fNI=;
-	b=mzHJ+soDsF1JuUKGlWcBmeTfIbhZAe+QbIOdlImAWdNgETqgcXTMdRAGqAyqlB7ISHEgHz
-	P9w+wStXVHchk6CW/9djN5ZeahP1fZUKRCVs4R6ToUwnqZ0YxAVUHMvrXlsLVBWdqH71R8
-	GdZz7zUyCkoYm1NX0v6mazxCnHxmbhA=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1777304887;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9n76Wd9I1mvqMvjRbL+nbT7IFlD+cGUSny8G8Ij0fNI=;
-	b=b5dSGa5kWndvI9QyJrx+tRmpsrhQKA2Q6rocbhNfvcxFzZQVX6cS44MpNtpa35jOoYr383
-	Gu2RFv8QIFPIjDAg==
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=mzHJ+soD;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=b5dSGa5k
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1777304887;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9n76Wd9I1mvqMvjRbL+nbT7IFlD+cGUSny8G8Ij0fNI=;
-	b=mzHJ+soDsF1JuUKGlWcBmeTfIbhZAe+QbIOdlImAWdNgETqgcXTMdRAGqAyqlB7ISHEgHz
-	P9w+wStXVHchk6CW/9djN5ZeahP1fZUKRCVs4R6ToUwnqZ0YxAVUHMvrXlsLVBWdqH71R8
-	GdZz7zUyCkoYm1NX0v6mazxCnHxmbhA=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1777304887;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9n76Wd9I1mvqMvjRbL+nbT7IFlD+cGUSny8G8Ij0fNI=;
-	b=b5dSGa5kWndvI9QyJrx+tRmpsrhQKA2Q6rocbhNfvcxFzZQVX6cS44MpNtpa35jOoYr383
-	Gu2RFv8QIFPIjDAg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DE5D1593B0;
-	Mon, 27 Apr 2026 15:48:06 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id wuXjNTaF72nmZgAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 27 Apr 2026 15:48:06 +0000
-Date: Mon, 27 Apr 2026 17:48:05 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, AHN SEOK-YOUNG <iamsyahn@gmail.com>,
-	Teng Liu <27rabbitlt@gmail.com>
-Subject: Re: [PATCH v3] btrfs: warn about extent buffer that can not be
- released
-Message-ID: <20260427154805.GQ12792@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <4ac4a9f2c599841b00f39f3be082432f43130f3e.1776379191.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MpuJOS8p"
+Received: by mail-ej1-f48.google.com with SMTP id a640c23a62f3a-ba699316b42so1308899966b.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 10:16:08 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1777310167; cv=none;
+        d=google.com; s=arc-20240605;
+        b=RoL5s1HCNxOMZGyIwQCZIXzGrL3B7BOibIPQVDNpui96UQx9sNqtKEuW8GDHSiLXnI
+         91bdlvY/vRllSbEpoNHlGLdImwfg2SqHhaMboM3NR+N0XEO2VivrGn5xVIpQf2FdhRQN
+         mvzXlInIq8YeknqQltK7lRgtAKA44+VYRAcMTtpsZoqVfZdqKEjRCLOUBp+SFuCr3ybj
+         ETtKcMtOGBAcUxuiQlRyah81MIKRXn/FYhPtl9iyzLGV2KJJ868JbtN5hq1QmwOUszjT
+         ZoOJJWa4XGMEluG1muxtZiv2037ONDmQMfxPcMeKCjyqIMyfJnfTVXHPBFEr3WeAsAA/
+         gYvQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=P6ipWyGGAT6CynzNoASFRro8XE42u5BsugQYyk5ItRc=;
+        fh=TZbKxqcKd9hxKdb5MhPcoze/e35keSKUSezLw07anvI=;
+        b=jhXO+u58dVELFSKqnzN7pWorSuXVoAB5e5PG1NE+LkLxKmKPzSME8/x9kb26CMAFgC
+         WmkkNKB/wYBqaipNfuoBbMdYh2OLRx5P8tCfFgVQZ0ihnm76oj1sIKLeMj5ckGCr//xR
+         o7x1sZRelhEz/C+s65molVORl65trbSu+FZ2PWyklSrtZRifdB0FQaOYh/Z1VJe58O0/
+         j18AlBTo9yRsmKMFJdibVDG1J8AObcBg3Np1pfOREysjz91aK5CZn+6lUeBK1vsde4fM
+         oghU7no38AynAgyQvmNMVIG9idxozMkHxkIP7hdIhjidU9yfErTGUvIs/qE6qVP79yHL
+         cO2Q==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1777310167; x=1777914967; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=P6ipWyGGAT6CynzNoASFRro8XE42u5BsugQYyk5ItRc=;
+        b=MpuJOS8pwEzOsvsxMz3lW7KiuzyvLgyVO7wisFNgSltReRYyrPHbP6NNKe0oaYvpu4
+         L4/qiPrIo73jH5uQpbZR4oGugkQPP98VRlXpFhaW6SeQSqBIaywdcAisu+SOjgHsP6BJ
+         eZdgbubwlN5RIiCaceqN3J5Xg3TtJ0r1/lq1s3TKD0ezSflwAqTNO0h3YgOXjIAsjy1a
+         KxlXlb2ZfGvAREfKJXgP3Pnp2SBU2M5u/ZfYyI3LZDrqpPa9Hm4RBajS7RjHUfb/xwT0
+         5vTV4LndrGlqLFCMVAkAjX/X9yUJAEElN4WQcUDfgtaO6ov2DSnDQk8ypztNzQXw4EDL
+         o0fg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1777310167; x=1777914967;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=P6ipWyGGAT6CynzNoASFRro8XE42u5BsugQYyk5ItRc=;
+        b=kUZbvx7OayuUuJ5ar+XRblhakqLEshUB4Qj03pcYdUthynFG4fsTame2mzE3h6Q7lu
+         e6I0sOqTyHSRrZlRIzdjAR6GXBKRiD0nJeyWwjIcmTifvBg0zzrP4iJYWxPbs2iNIJFx
+         UQkIGlHqZlM+Jh3FMT+J9FcgMRhjs5AUJXHZIsTd7ea4A8xN3exwKNJ/NUjazD6buAMZ
+         IWiayLYPIMK7grbyQ0XwCiwujWHyMxPK5BfUA5HM16MV2t2QgTglmr4b5jUp8uWyEEGW
+         yhGTo83h5O7a3SwYxuRnjzRl+U4t531t6d54LXH7JN13yfQKNKlTcWkMcsE7SGScee1E
+         aN7w==
+X-Forwarded-Encrypted: i=1; AFNElJ+t+/rtxOxTBA9L+y5fE5Ao9KXhw77OP/NkK5mB8AYo94bzEvGn4yXWTTwlPnuP6TWjXWUMKg3E4WQacg==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yx/ppFE/mIJ6C7GHIZXdu8mMl/6jTJ7GskNBLZQv4b2Bqmu7IAx
+	cdAocWwd7QmtN6GT+3YlOlQRu8Yc/duh0Rn1bj8IV/FG4owgRNY+3P/+4GpqQTsTC9o10Pw9GTF
+	H6XR9Y3k81Ka2ga5Y1b8WTArHZazUWLc=
+X-Gm-Gg: AeBDieuwd11Mt+ieFVv5/EUFssZUuvSlI01IaBzNSynkCMisC9ft+M23+qrAGnhDlbY
+	UJe7UKoL0TfrqB9FM+0Pr9+nq4YepGcEE/WC3ap8xBsKfDKkOeqUnVV8d04z06EODwRC1hxXmS2
+	Y2+xgpdWwfKaUHFwzg0b2QibT0pURkiVIzJdxpbfRfGvUp5Bj7VkUQp+n2F5K7DaiE4+agUwxp6
+	IbDj3fk3pD68f/NSJFEgMLlOim6PButLn+O2iXJiIu5oqaX+A8gMddNbySRreOMiWfQ/KbdqVay
+	sO/IsMuywcEwateoSsCgwOyydvCYjaAVu0i5K5bSxOWHG0Uc+7j/
+X-Received: by 2002:a17:907:6e90:b0:ba8:30a6:8b02 with SMTP id
+ a640c23a62f3a-ba830a68c0bmr1561283366b.41.1777310166726; Mon, 27 Apr 2026
+ 10:16:06 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <4ac4a9f2c599841b00f39f3be082432f43130f3e.1776379191.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	FREEMAIL_CC(0.00)[vger.kernel.org,gmail.com];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	RCPT_COUNT_THREE(0.00)[4];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.cz:dkim,suse.cz:replyto,suse.com:email,twin.jikos.cz:mid]
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -4.21
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 1E0795BCD0
+References: <cover.1777281778.git.asj@kernel.org> <d5bff7b1c8f17cffb13c8a8f28bd8ad645306e09.1777281778.git.asj@kernel.org>
+In-Reply-To: <d5bff7b1c8f17cffb13c8a8f28bd8ad645306e09.1777281778.git.asj@kernel.org>
+From: Amir Goldstein <amir73il@gmail.com>
+Date: Mon, 27 Apr 2026 19:15:55 +0200
+X-Gm-Features: AVHnY4JyEbKT9mB86SxM37c-LVIlc9Tqn5Mw2-4UgKXGOHZ2QdS3GaMZk-sYwIU
+Message-ID: <CAOQ4uxh+YKCZpb_FxwC+P4nbm0f5FfOy71f7+h-NR8=Xc94=BQ@mail.gmail.com>
+Subject: Re: [PATCH v3 3/9] fstests: add test for inotify isolation on cloned devices
+To: Anand Jain <asj@kernel.org>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, 
+	linux-f2fs@vger.kernel.org, zlang@redhat.com, hch@infradead.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Fri, Apr 17, 2026 at 08:13:14AM +0930, Qu Wenruo wrote:
-> When we unmount the fs or during mount failures, btrfs will call
-> invalidate_inode_pages() to release all btree inode folios.
-> 
-> However that function can return -EBUSY if any folios can not be
-> invalidated.
-> This can be caused by:
-> 
-> - Some extent buffers are still held by btrfs
->   This is a logic error, as we should release all tree root nodes
->   during unmount and mount failure handling.
-> 
-> - Some extent buffers are under readahead and haven't yet finished
->   This is much rarer but valid cases.
->   In that case we should wait for those extent buffers.
-> 
-> Introduce a new helper invalidate_btree_folios() which will:
-> 
-> - Call invalidate_inode_pages2() and catch its return value
->   If it returned 0 as expected, that's great and we can call it a day.
-> 
-> - Otherwise go through each extent buffer in buffer_tree
->   Increase the ref by one first for the eb we're checking.
->   This is to ensure the eb won't be freed after the readahead is
->   finished.
-> 
->   For eb that still has EXTENT_BUFFER_READING flag, wait for them to
->   finish first.
-> 
->   After waiting for the readahead, check the refs of the eb and if it's
->   still dirty.
-> 
->   If the eb refs is greater than 2 (one for the buffer tree, one hold by
->   us), it means we are still holding the extent buffer somewhere else,
->   which is a logic bug.
-> 
->   If the eb is still dirty, it means a bug in transaction handling.
->   Unfortunately there are already test cases triggering this warning, so
->   our transaction cleanup hasn't done its work reliably.
-> 
->   For either case, show a warning message about the eb, including its
->   bytenr, owner, refs and flags.
->   And if it's a debug build, also trigger WARN_ON_ONCE() so that fstests
->   can properly catch such situation.
-> 
-> Furthermore, to help debugging the unreleased extent buffers, output the
-> transid of the current aborted transaction, so that we can know which
-> transaction the unreleased extent buffers belong to.
-> 
-> This will help future debugging as we're already hitting the new
-> warnings from test cases like generic/388.
-> 
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=221270
-> Reported-by: AHN SEOK-YOUNG <iamsyahn@gmail.com>
-> Cc: Teng Liu <27rabbitlt@gmail.com>
-> Tested-by: Teng Liu <27rabbitlt@gmail.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+On Mon, Apr 27, 2026 at 12:20=E2=80=AFPM Anand Jain <asj@kernel.org> wrote:
+>
+> Add a new test, to verify that the kernel correctly differentiates betwee=
+n
+> two block devices sharing the same FSID/UUID.
+>
+> Signed-off-by: Anand Jain <asj@kernel.org>
+
+Reviewed-by: Amir Goldstein <amir73il@gmail.com>
+
 > ---
-> Changelog:
-> v3:
-> - Revert the DEBUG_WANR_ON_ONCE() change
->   As there is only one user, a simple
->   WARN_ON_ONCE(IS_ENABLED(CONFIG_BTRFS_DEBUG)) is more than enough.
-> 
-> - Output the generation of the unreleased eb too
->   Since it's possible to have 2 transactions (one committing and reached
->   UNBLOCKED state, one new running), the generation output will help us
->   to know which transaction the unreleased eb belongs to.
-> 
-> - Also output the transid when a transaction is aborted
->   To co-operate with the above change for debugging.
-> 
-> v2:
-> - Add one extra ref before checking the eb
->   Although readahead has one extra ref, after the readahead finished the
->   extra ref will be dropped, and memory pressure can kick in to free the
->   extent buffer.
-> 
-> - Use rcu lock with xa_for_each() instead of xas lock and xas_for_each()
->   Since we're holding one extra eb ref to prevent eb from disappearing,
->   we no longer needs the more strict xas lock nor the extra xas
->   pause/unlock.
-> 
->   Although xa_for_each() is more time consuming, we're at the cold path
->   already, not a huge cost.
-> 
-> - Remove the temporarary void pointer
->   And pass eb pointer directly into xas_for_each().
-> 
-> - Introduce DEBUG_WARN_ON_ONCE() helper
->   To follow the existing DEBUG_WARN() helper.
-> 
-> - Fix a typo
-> 
-> - Also fix the checkpatch warning on the exist DEBUG_WARN()
-> ---
->  fs/btrfs/disk-io.c     | 49 ++++++++++++++++++++++++++++++++++++++++--
->  fs/btrfs/extent_io.c   |  6 ------
->  fs/btrfs/extent_io.h   |  6 ++++++
->  fs/btrfs/transaction.h |  8 +++----
->  4 files changed, 57 insertions(+), 12 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 7800a1b20290..241acdc16da1 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3272,6 +3272,51 @@ static bool fs_is_full_ro(const struct btrfs_fs_info *fs_info)
->  	return false;
->  }
->  
-> +static void invalidate_btree_folios(struct btrfs_fs_info *fs_info)
-
-This is too close to the generic invalidate_inode_pages2, please add
-btrfs_ prefix.
-
+>  common/config         |  1 +
+>  tests/generic/800     | 88 +++++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/800.out |  7 ++++
+>  3 files changed, 96 insertions(+)
+>  create mode 100644 tests/generic/800
+>  create mode 100644 tests/generic/800.out
+>
+> diff --git a/common/config b/common/config
+> index 4fd4c2c8af11..605a57947a40 100644
+> --- a/common/config
+> +++ b/common/config
+> @@ -242,6 +242,7 @@ export BTRFS_MAP_LOGICAL_PROG=3D$(type -P btrfs-map-l=
+ogical)
+>  export PARTED_PROG=3D"$(type -P parted)"
+>  export XFS_PROPERTY_PROG=3D"$(type -P xfs_property)"
+>  export FSCRYPTCTL_PROG=3D"$(type -P fscryptctl)"
+> +export INOTIFYWAIT_PROG=3D"$(type -P inotifywait)"
+>
+>  # udev wait functions.
+>  #
+> diff --git a/tests/generic/800 b/tests/generic/800
+> new file mode 100644
+> index 000000000000..16bc1159a2e1
+> --- /dev/null
+> +++ b/tests/generic/800
+> @@ -0,0 +1,88 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 Anand Jain <asj@kernel.org>.  All Rights Reserved.
+> +#
+> +# FS QA Test 800
+> +#
+> +# Verify if the kernel or userspace becomes confused when two block devi=
+ces
+> +# share the same fid/fsid/uuid. Create inotify on both original and clon=
+ed
+> +# filesystem. Monitor the notification in the respective logs.
+> +
+> +. ./common/preamble
+> +
+> +_begin_fstest auto quick mount clone
+> +
+> +_require_test
+> +_require_loop
+> +_require_command "$INOTIFYWAIT_PROG" inotifywait
+> +
+> +_cleanup()
 > +{
-> +	unsigned long index = 0;
-> +	struct extent_buffer *eb;
-> +	int ret;
-> +
-> +	ret = invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
-> +	if (likely(ret == 0))
-> +		return;
-> +
-> +	/*
-> +	 * Some btree pages can not be invalidated, this happens when some
-> +	 * tree blocks are still held (either by some pointer or readahead).
-> +	 */
-> +	rcu_read_lock();
-> +	xa_for_each(&fs_info->buffer_tree, index, eb) {
-> +		/* Increase the ref so that the eb won't disappear. */
-> +		if (!refcount_inc_not_zero(&eb->refs))
-> +			continue;
-> +		rcu_read_unlock();
-> +
-> +		/* Wait for any readahead first. */
-> +		if (test_bit(EXTENT_BUFFER_READING, &eb->bflags))
-> +			wait_on_bit_io(&eb->bflags, EXTENT_BUFFER_READING,
-> +				       TASK_UNINTERRUPTIBLE);
-> +		/*
-> +		 * The refs threshold is 2, one hold by us at the beginning
-> +		 * of the loop, one for the ownership in the buffer tree.
-> +		 */
-> +		if (unlikely(refcount_read(&eb->refs) > 2 ||
-> +			     extent_buffer_under_io(eb))) {
-> +			WARN_ON_ONCE(IS_ENABLED(CONFIG_BTRFS_DEBUG));
-> +			btrfs_warn(fs_info,
-> +			"unable to release extent buffer %llu owner %llu gen %llu refs %u flags 0x%lx",
-> +				   eb->start, btrfs_header_owner(eb),
-> +				   btrfs_header_generation(eb),
-> +				   refcount_read(&eb->refs), eb->bflags);
-> +		}
-> +		free_extent_buffer(eb);
-> +		rcu_read_lock();
-> +	}
-> +	rcu_read_unlock();
-> +	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+> +       cd /
+> +       [[ -n $pid1 ]] && { kill -TERM "$pid1" 2> /dev/null; wait $pid1; =
+}
+> +       [[ -n $pid2 ]] && { kill -TERM "$pid2" 2> /dev/null; wait $pid2; =
+}
+> +       rm -r -f $tmp.*
+> +       _unmount $mnt1 2>/dev/null
+> +       _unmount $mnt2 2>/dev/null
+> +       _loop_image_destroy "${devs[@]}" 2> /dev/null
 > +}
 > +
->  int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_devices)
->  {
->  	u32 sectorsize;
-> @@ -3702,7 +3747,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
->  	if (fs_info->data_reloc_root)
->  		btrfs_drop_and_free_fs_root(fs_info, fs_info->data_reloc_root);
->  	free_root_pointers(fs_info, true);
-> -	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
-> +	invalidate_btree_folios(fs_info);
->  
->  fail_sb_buffer:
->  	btrfs_stop_all_workers(fs_info);
-> @@ -4431,7 +4476,7 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
->  	 * We must make sure there is not any read request to
->  	 * submit after we stop all workers.
->  	 */
-> -	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
-> +	invalidate_btree_folios(fs_info);
->  	btrfs_stop_all_workers(fs_info);
->  
->  	/*
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 8d241a7a880f..4eab0f9909e3 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2872,12 +2872,6 @@ bool try_release_extent_mapping(struct folio *folio, gfp_t mask)
->  	return try_release_extent_state(io_tree, folio);
->  }
->  
-> -static int extent_buffer_under_io(const struct extent_buffer *eb)
-> -{
-> -	return (test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags) ||
-> -		test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> -}
-> -
->  static bool folio_range_has_eb(struct folio *folio)
->  {
->  	struct btrfs_folio_state *bfs;
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index fd209233317f..b284aee1bfb0 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -326,6 +326,12 @@ static inline bool extent_buffer_uptodate(const struct extent_buffer *eb)
->  	return test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
->  }
->  
-> +static inline bool extent_buffer_under_io(const struct extent_buffer *eb)
-> +{
-> +	return (test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags) ||
-> +		test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags));
-> +}
+> +devs=3D()
+> +_loop_image_create_clone devs
+> +mkdir -p $TEST_DIR/$seq
+> +mnt1=3D$TEST_DIR/$seq/mnt1
+> +mnt2=3D$TEST_DIR/$seq/mnt2
+> +mkdir -p $mnt1
+> +mkdir -p $mnt2
 > +
->  int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
->  			 unsigned long start, unsigned long len);
->  void read_extent_buffer(const struct extent_buffer *eb, void *dst,
-> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-> index 7d70fe486758..264dcd4b3788 100644
-> --- a/fs/btrfs/transaction.h
-> +++ b/fs/btrfs/transaction.h
-> @@ -255,13 +255,13 @@ do {								\
->  		__first = true;					\
->  		if (WARN(btrfs_abort_should_print_stack(error),	\
->  			KERN_ERR				\
-> -			"BTRFS: Transaction aborted (error %d)\n",	\
-> -			(error))) {					\
-> +			"BTRFS: Transaction %llu aborted (error %d)\n",	\
-> +			(trans)->transid, (error))) {			\
->  			/* Stack trace printed. */			\
->  		} else {						\
->  			btrfs_err((trans)->fs_info,			\
-> -				  "Transaction aborted (error %d)",	\
-> -				  (error));			\
-> +			"Transaction %llu aborted (error %d)",	\
-> +				  (trans)->transid, (error));	\
-
-Adding the transaction number adds like 4KiB of object code because the
-calls are inlined so we can have exact location and stack.
-
-It could be possibly moved to __btrfs_abort_transaction() but with some
-additinal shuffling of the code from macro to the handler.
+> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[0]} $m=
+nt1 || \
+> +                                               _fail "Failed to mount de=
+v1"
+> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[1]} $m=
+nt2 || \
+> +                                               _fail "Failed to mount de=
+v2"
+> +
+> +log1=3D$tmp.inotify1
+> +log2=3D$tmp.inotify2
+> +
+> +pid1=3D""
+> +pid2=3D""
+> +echo "Setup inotify watchers on both mnt1 and mnt2"
+> +$INOTIFYWAIT_PROG -m -e create --format '%f' $mnt1 > $log1 2>&1 &
+> +pid1=3D$!
+> +$INOTIFYWAIT_PROG -m -e create --format '%f' $mnt2 > $log2 2>&1 &
+> +pid2=3D$!
+> +sleep 2
+> +
+> +echo "Trigger file creation on mnt1"
+> +touch $mnt1/file_on_mnt1
+> +sync
+> +sleep 1
+> +
+> +echo "Trigger file creation on mnt2"
+> +touch $mnt2/file_on_mnt2
+> +sync
+> +sleep 1
+> +
+> +echo "Verify inotify isolation"
+> +kill $pid1 $pid2
+> +wait $pid1 $pid2 2>/dev/null
+> +pid1=3D""
+> +pid2=3D""
+> +
+> +if grep -q "file_on_mnt1" $log1 && ! grep -q "file_on_mnt2" $log1; then
+> +       echo "SUCCESS: mnt1 events isolated."
+> +else
+> +       echo "FAIL: mnt1 inotify confusion!"
+> +       [ ! -s $log1 ] && echo "  - mnt1 received no events."
+> +       grep -q "file_on_mnt2" $log1 && echo "  - mnt1 received event fro=
+m mnt2."
+> +fi
+> +
+> +if grep -q "file_on_mnt2" $log2 && ! grep -q "file_on_mnt1" $log2; then
+> +       echo "SUCCESS: mnt2 events isolated."
+> +else
+> +       echo "FAIL: mnt2 inotify confusion!"
+> +       [ ! -s $log2 ] && echo "  - mnt2 received no events."
+> +       grep -q "file_on_mnt1" $log2 && echo "  - mnt2 received event fro=
+m mnt1."
+> +fi
+> +
+> +status=3D0
+> +exit
+> diff --git a/tests/generic/800.out b/tests/generic/800.out
+> new file mode 100644
+> index 000000000000..b10842a31210
+> --- /dev/null
+> +++ b/tests/generic/800.out
+> @@ -0,0 +1,7 @@
+> +QA output created by 800
+> +Setup inotify watchers on both mnt1 and mnt2
+> +Trigger file creation on mnt1
+> +Trigger file creation on mnt2
+> +Verify inotify isolation
+> +SUCCESS: mnt1 events isolated.
+> +SUCCESS: mnt2 events isolated.
+> --
+> 2.43.0
+>

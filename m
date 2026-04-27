@@ -1,284 +1,186 @@
-Received: from mail-ej1-f44.google.com (mail-ej1-f44.google.com [209.85.218.44])
+Received: from mail-wm1-f53.google.com (mail-wm1-f53.google.com [209.85.128.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8CBA835F8C9
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 18:32:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.218.44
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777314753; cv=pass; b=Ro/dBfNJ9it1Ertu0cfC3QjxMEsjJbqvc1ZOnDGdIW2CKbgDIDnqEbUiPdBxrglzHYmvcmpXmQnuksW/w+CGtZ6HsTvzQBYaLAqGots0xnr/lP453Szb9gERw/Va2hCsiZx0nm/o+5D/wNNRNj929eOP8q19ShtLKMXG1W4l2K0=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777314753; c=relaxed/simple;
-	bh=UtOgge0cKqxumGSXf9uYQ1KZS1aYFNESYpleFuFar0E=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=hlQ50JbHdAtXnBGiuJ2cFLwVSBGcRE6KyncrFRNXxQRRKJFHQ7q9yPtvKBxfTlGYczQJHWn5mRYpmbSoaQDE30uP61ia77Yw48TMTjNRm0WQ9RE25Ut8AWvb6oSGPvxxPNOiZhvhuGTbOyVRYw8f4aNNluWRLEB/flnhVrSpan8=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=anHhRmwO; arc=pass smtp.client-ip=209.85.218.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 72191366072
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 20:28:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.53
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1777321709; cv=none; b=euZpndqtPIbAn7K6+sq9dukVcwlLaVIi03EVCvY7Ez8Ped7nasxZKWXVY0W9tsY0pg6VqW8wxFiWgWWhtyOJOx4UEi2nvB+4l/rJNG7KqaYcxySy0fX8R4mySHVJoDudm31tF4qcrF2RzCfOQEotS6weBnk7XRVhmxvPHJhZaH8=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1777321709; c=relaxed/simple;
+	bh=2W3udJfpoUpVU+zcXEL2kBe6tqgHZ5XeEjLMm3rQp+Q=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=OYh2s7Zot9mB7/Z0W24/4DZplBlSB4vEyIMKfK75y9ylaz5rsaZfWO8LwprPAn18fBQC5zQW0KRMC4lodiW4HhbvMJ29RfU6Y5bwHI1NOG27DA4ihRRCzuPboYOjKuRZ31ZQTFRrOhKJq1aFITOlH0zRIV+LEjQJGf5p++htI1I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=CEbITPW9; arc=none smtp.client-ip=209.85.128.53
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="anHhRmwO"
-Received: by mail-ej1-f44.google.com with SMTP id a640c23a62f3a-bb662d56b5aso91372566b.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 11:32:31 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1777314750; cv=none;
-        d=google.com; s=arc-20240605;
-        b=eDy2dlf6oAyzFfmZmVJUiJwOn088DSwAqxsYj0dcvFglXdhOtdHmuszART9/fJ4oPc
-         AJnBjcmsiIeK6UQIK8bzffJkse1ZPX6Q/ziv7fa/tYhT+LTv+/aiUebiSP6dD0VKUAbn
-         R+FDX/p1N5Lvr2u9DOXojgrSLPuFdk/awUoi5knNCjHFNjbhIL1DLqR4neRGRhc3tHn4
-         y4wLSK6vMWx8eLrF/JMwWT9yIbneqhXR9Yl4tdrf5yVWJGFpnQGaRzhvY+qdDPnPsy89
-         Fe99pPc1Vsqh5toX/LWOfFP8JbXX82eFkG7KR55Qg1uaw/00RhoFXAhBSo8Hxt5zpaRF
-         tTlg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=L9JTKa0ULOAWGOj4v37Nl/p/NjTeX7BfvfYT/LUVbrM=;
-        fh=+l+N+SDUrtu1bqVBBxeq1R58WRW8aJr82F4Z9XgnX+E=;
-        b=fZQjZK4ZaQTuBwSJeHG/BprTwUMHkPCf0O3JudMdKWNryJq1+KfM8Yt70Ki3dK4BxV
-         0AW84F2hqgyDer+t+zzk8xwsgnEyD0QPh4kPS2TlBQCMMx+rLLkVkzao/m6qJ2lZLpwN
-         qKDEXQWhadsXuq2qe28CngMAR4RtunF/MU2YHNMYsaB96MxciOY/jluC9gz9WicRK57o
-         iBKHL9YYtbW0ad1E78dPOYWIzqqIz2d71cUPbYQINFyhbhUWRNLoaKGhuAwtG6PoeFNo
-         utuciGGDvRkwMTuWSDNVIGmafYL78xbB+JNiTPgJr65tOi4iPAmt4w9MvRZFsNJcD2QO
-         L2BQ==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CEbITPW9"
+Received: by mail-wm1-f53.google.com with SMTP id 5b1f17b1804b1-488b3f8fa2bso108204335e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 13:28:28 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1777314750; x=1777919550; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
+        d=gmail.com; s=20251104; t=1777321706; x=1777926506; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=L9JTKa0ULOAWGOj4v37Nl/p/NjTeX7BfvfYT/LUVbrM=;
-        b=anHhRmwO4YFeLi3N5o05MH8P/pxhkpPbYCSoUjimbV78+R+ExaRXfTklIZKlqynIlu
-         qjbYJmTe36PbdBm/GsQHB0D/8/7WCHJINdYJtoEKU5g2MuofVF5/OlwjHQgTYfOHbxkQ
-         nd9arxqSUGTA/Gbw9226LYPz/MvZY158yvnhQQuAzqfc3KBVqvT6zaLpZyydfE9VhHOh
-         4kGTXTnnO2yN0uigAf/3mpRoRDgYj8LWEfjWPnELeCDYT+dCMAkrBBRe9PODKxCo8NG+
-         +PzfETh/4YVmwRDUAMJ1sv8VCJ/YOAE7/lOYkfiEN01ssyrqG7aSfOhcN/HfpnGiDaJq
-         mKzQ==
+        bh=RJsJ0/AdMp4F3EjvGpZbBz3zMwBhPSd1Q0YoCqjYwls=;
+        b=CEbITPW9JJptOSlT6yC2YhPqoav+hmMeWJmZhPPMgHHF0EM7KPvo5+v9kLqYVTnmeT
+         L48c2AjLgOXcdNn5Swjz/D7ETSBmxGE0ZA8LTwBbId91R8tlWg2pPsrFSMZ/ZIN/B93y
+         QXprOZDPYuBYfZQ+6h+Fc9rryMpWalD3NHvhgYQd1UWkwQzjoDw/pTlM0fu7ApfQpLm7
+         vZkSmE77jWLG1BoNvhGS2vEODLWess64ET+18+NAbJpOVyCXTFutbzSFQfACInRRg09j
+         fLS3yMDY6aMTA2Q+5jvbyFt9leqLL0ki2iEtPfb+Ys0Gns8Rk051KKuRGNMiMTYNBMui
+         4t1g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1777314750; x=1777919550;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+        d=1e100.net; s=20251104; t=1777321706; x=1777926506;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to;
-        bh=L9JTKa0ULOAWGOj4v37Nl/p/NjTeX7BfvfYT/LUVbrM=;
-        b=jGTXx7bw8408UktGSBGlMS1HTiB3TGeuNGut4Pjx9BlAsicYM3jxySPfjO13ZR9ttw
-         cN593aZJGAVQk9Go2gqEB2r/rkqebHW/atuLNBrs/2R2ly+tDwwU8GVzDOpWG7XWe0wx
-         Mk5vbJkCUXg6hQPCdEepZduA8To9cuYglUL2MZilgKHYrLSBSsylYIpgeth/ZdVNNJom
-         3yLMxyvoMZ/AyAgMzg1avQsL1RBSrft60Z3Mt/nDrtXbqR/zyuvCR3GvI3Pl4iVTlvZJ
-         d/nr9aoMNk8WbWHyD3vLlWI1TkgnWC0E67D1g0iPwdF9rFmiitIp8F1MmgNRwmqEpgac
-         yEfg==
-X-Forwarded-Encrypted: i=1; AFNElJ/7v4zbAKWQwcJpnFxvYjKx68qVT883Eo/PnHfghn5HId0XPF6284rhzgRLxbauH8LoZpiTUT8cfcBkYA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yz+2iQBHglks5Bx/Y7eL2JBf2swvr+xMHWHC3/xl99LVk4ds+1N
-	gtFAxfHjLQFObnuh6J6FEkwKvd8+9jXp46TqI5E0yC2bhef7pC9QV4pZhJOr3V57GDFicKt6s2i
-	yq9ea1u9e7kEOzcFzxx27AWirrZ67e7I=
-X-Gm-Gg: AeBDiev3mg++4FUmXCYxBLLq/7nI4poQrgT+3bwqTVBBk9JX6M4ecr6JrcB7xGZlsYN
-	XvTOPOS6lX5eBDibevYLD3o8Rz5/Bw/vZuqMjAUytqiPaNXzvB8fiwC0DJ/7YpM1XqulP0jbGjy
-	Qa/gaoLLAdWBqKCOoSs3yyIlRA/Qd1o3FKbXRHkud9ULwzctEVHxkBjtK+IKrKIQIMaezhf9uYC
-	kjR5nasUl8gdQLU/PUL6K8d64w+uXgpyovW3TPpXUHp4cn/zDoOlRbm19QEU2IG6eSlWYlBRzeT
-	r5vmK8JUryy7O42ulQqWhoNZv9Gzo9WpPucbE63V/NIuOoHs2Wem
-X-Received: by 2002:a17:907:7b84:b0:b98:8494:3174 with SMTP id
- a640c23a62f3a-bb7ed02e493mr14116166b.24.1777314749580; Mon, 27 Apr 2026
- 11:32:29 -0700 (PDT)
+        bh=RJsJ0/AdMp4F3EjvGpZbBz3zMwBhPSd1Q0YoCqjYwls=;
+        b=lv1RqdKBEyIpBmFhCV0j1hVAyc5XHglYQ+qezpkeZGz2e3NH4HsoHDeibnHw7UfkJy
+         JR2klw9aHemLn1NSrbK48snSSZA5lE9dgoNyCWAAB333q8eD2jamPAy/L5VmYAQz6CLS
+         B6QhMcIMP2FahoY2PDwUagtO5PYGZgqtabjZOY93StGbD9oXSKWCcAR30snFlMzB61GD
+         c2R7M4XEEQ2atn2f3g+K2TZuPH9bfMAyyVXumIeg/lOvTRzslj0j44DunOFUbFQ7aMmR
+         MUyrnX7/uHV7Y0NPa97lv5nt4Prk6UYDWh+K1QI9sczXUqg/qm4mtAGXMdfuBrGCnllf
+         7MNw==
+X-Gm-Message-State: AOJu0YwprcSfbBEreA35tTGWftq7WOar8Wef15Xy6gg1Tpdmw9+cuXov
+	5KKfv8Dnw+cl7vgUd5X5YPsP8PJoFJnwbMoADMCs5v7EZhPIeKdHpESaTHUASedy
+X-Gm-Gg: AeBDievC9m3IQWbgGdhRMlarv+sdsQe4gN/vMLpohM9S9pQ9+vwvxj4WHJLhKSIXKeu
+	/2o6f4tjUHzvwJM9dQ8QSLOpvvjQ8gdf9tJlbZENK6z0DaMLvQhxnnnktRRXZL4c/zFi4Azx8Mf
+	lN1b57TAe0Qpwq3ayZGM/N2/luIrPSajY8ZXsFfIvpVDHqjxS8SilG9TIKYoEhekW9LAC8wYyg1
+	NLUSxYroZDTw6m5V1XGRwl862NZ2ccQ9NFyn5Rr3xSf2zgAkPP1CbDt4L8Wp9nbad3gfHeOXSnp
+	PU7KeG6D9sdsFjBf/u5GP0ohX/5sZIPJ6FdsCuWgmXwNCKSD/AR6GVDHbXPtHxsZd63GnpViFP+
+	Dngmbv+4EoC7zt0Q9J+BnlR+XpqyWk1M5GM0npgVvHw+Y+5GFai1Ou35UshItCwndJmjW6HUQWu
+	l14oGRg+g3X0jQuFmC8VOMDqpWGx9fr6f63wtupqJFSKg=
+X-Received: by 2002:a05:600c:4f08:b0:48a:5821:6006 with SMTP id 5b1f17b1804b1-48a77e40cfamr2229895e9.4.1777321706225;
+        Mon, 27 Apr 2026 13:28:26 -0700 (PDT)
+Received: from localhost ([145.40.214.139])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4463cb59a68sm872149f8f.4.2026.04.27.13.28.25
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 27 Apr 2026 13:28:25 -0700 (PDT)
+From: Teng Liu <27rabbitlt@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com,
+	clm@fb.com,
+	wqu@suse.com,
+	linux-kernel@vger.kernel.org,
+	syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com,
+	Teng Liu <27rabbitlt@gmail.com>
+Subject: [PATCH v3] btrfs: validate data reloc tree file extent item members in tree-checker
+Date: Mon, 27 Apr 2026 22:24:58 +0200
+Message-ID: <20260427202822.278326-1-27rabbitlt@gmail.com>
+X-Mailer: git-send-email 2.54.0
+In-Reply-To: <20260426201605.36626-1-27rabbitlt@gmail.com>
+References: <20260426201605.36626-1-27rabbitlt@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1777281778.git.asj@kernel.org> <4777ecd14815b92c9e8577ed4d073d0f999e51ef.1777281778.git.asj@kernel.org>
-In-Reply-To: <4777ecd14815b92c9e8577ed4d073d0f999e51ef.1777281778.git.asj@kernel.org>
-From: Amir Goldstein <amir73il@gmail.com>
-Date: Mon, 27 Apr 2026 20:32:18 +0200
-X-Gm-Features: AVHnY4K3_LMeu73jac9TFiNYcw67v9zWVy-SF3D1BeO7qe-VO7kSEp3Js4m6UMk
-Message-ID: <CAOQ4uxhcrETXWo33=-Y_21xyb7wm6kZ2mGOZo7K_U7EBXQBMSw@mail.gmail.com>
-Subject: Re: [PATCH v3 4/9] fstests: verify fanotify isolation on cloned filesystems
-To: Anand Jain <asj@kernel.org>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, 
-	linux-f2fs@vger.kernel.org, zlang@redhat.com, hch@infradead.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Mon, Apr 27, 2026 at 12:20=E2=80=AFPM Anand Jain <asj@kernel.org> wrote:
->
-> Verify that fanotify events are correctly routed to the appropriate
-> watcher when cloned filesystems are mounted.
-> Helps verify kernel's event notification distinguishes between devices
-> sharing the same FSID/UUID.
->
-> Signed-off-by: Anand Jain <asj@kernel.org>
-> ---
->  common/config         |   1 +
->  tests/generic/801     | 115 ++++++++++++++++++++++++++++++++++++++++++
->  tests/generic/801.out |   7 +++
->  3 files changed, 123 insertions(+)
->  create mode 100644 tests/generic/801
->  create mode 100644 tests/generic/801.out
->
-> diff --git a/common/config b/common/config
-> index 605a57947a40..1588bdcb1aa1 100644
-> --- a/common/config
-> +++ b/common/config
-> @@ -243,6 +243,7 @@ export PARTED_PROG=3D"$(type -P parted)"
->  export XFS_PROPERTY_PROG=3D"$(type -P xfs_property)"
->  export FSCRYPTCTL_PROG=3D"$(type -P fscryptctl)"
->  export INOTIFYWAIT_PROG=3D"$(type -P inotifywait)"
-> +export FSNOTIFYWAIT_PROG=3D"$(type -P fsnotifywait)"
->
->  # udev wait functions.
->  #
-> diff --git a/tests/generic/801 b/tests/generic/801
-> new file mode 100644
-> index 000000000000..3f64e4de2206
-> --- /dev/null
-> +++ b/tests/generic/801
-> @@ -0,0 +1,115 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 Anand Jain <asj@kernel.org>.  All Rights Reserved.
-> +#
-> +# FS QA Test 801
-> +# Verify fanotify FID functionality on cloned filesystems by setting up
-> +# watchers and making sure notifications are in the correct logs files.
-> +
-> +. ./common/preamble
-> +
-> +_begin_fstest auto quick mount clone
-> +
-> +_require_test
-> +_require_loop
+get_new_location() uses BUG_ON() to crash the kernel if the file extent
+item it looks up has any of offset, compression, encryption, or
+other_encoding set. The data reloc inode is only written by relocation's
+own paths -- insert_prealloc_file_extent() and
+insert_ordered_extent_file_extent() -- which always leave those four
+fields at 0 (the data reloc inode is created with BTRFS_INODE_NOCOMPRESS,
+and encryption/other_encoding are reserved-and-zero). Observing a
+non-zero value therefore means the leaf decoded from disk does not match
+what the kernel wrote, i.e. on-disk corruption. A malformed image can
+reach this code via balance and panic the kernel.
 
-insufficient check for mounting a blockdev fs
+Move the validation into tree-checker's check_extent_data_item(), where
+the constraint is enforced when the leaf is read off disk rather than
+after relocation has already started. The data reloc tree has a fixed
+root id (BTRFS_DATA_RELOC_TREE_OBJECTID) recorded in the extent buffer
+header, so check_extent_data_item() has all the information it needs to
+apply this check on its own. Report violations via file_extent_err() and
+print the four offending values.
 
-> +_require_command "$FSNOTIFYWAIT_PROG" fsnotifywait
-> +
-> +[ "$FSTYP" =3D "ext4" ] && _fixed_by_kernel_commit xxxxxxxxxxxx \
+In get_new_location() replace the BUG_ON() with an ASSERT().
+The caller in replace_file_extents() already handles non-zero returns from
+get_new_location() by breaking out of the loop without aborting the
+transaction, so no caller changes are needed.
 
-Fix before merging
+Suggested-by: Qu Wenruo <wqu@suse.com>
+Suggested-by: David Sterba <dsterba@suse.com>
+Reported-by: syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com
+Closes: https://syzkaller.appspot.com/bug?extid=3e20d8f3d41bac5dc9a2
+Signed-off-by: Teng Liu <27rabbitlt@gmail.com>
+---
+Changes in v3:
+ - Move the corruption check from relocation.c into tree-checker's
+   check_extent_data_item(), per Qu and David. The data reloc tree's
+   fixed objectid is recorded in the extent buffer header, so the
+   check has all the context it needs at read time.
+ - Use file_extent_err() and print offset/compression/encryption/
+   other_encoding values, per Qu.
+ - Replace the BUG_ON in get_new_location() with ASSERT() rather than
+   -EUCLEAN, per David.
 
-Other than that it looks ok.
+Changes in v2:
+ - Pair the -EUCLEAN return with btrfs_print_leaf() and btrfs_err() so
+   the offending leaf is dumped to dmesg, per Qu's review of v1.
+ - Expand the changelog to argue why non-zero
+   compression/encryption/other_encoding in the data reloc inode imply
+   on-disk corruption.
 
-Thanks,
-Amir.
+ fs/btrfs/relocation.c   |  8 ++++----
+ fs/btrfs/tree-checker.c | 21 +++++++++++++++++++++
+ 2 files changed, 25 insertions(+), 4 deletions(-)
 
-> +       "ext4: derive f_fsid from block device to avoid collisions"
-> +
-> +_cleanup()
-> +{
-> +       cd /
-> +       [[ -n $pid1 ]] && { kill -TERM "$pid1" 2> /dev/null; wait $pid1; =
-}
-> +       [[ -n $pid2 ]] && { kill -TERM "$pid2" 2> /dev/null; wait $pid2; =
-}
-> +       umount $mnt1 $mnt2 2>/dev/null
-> +       _loop_image_destroy "${devs[@]}" 2> /dev/null
-> +       rm -r -f $tmp.*
-> +}
-> +
-> +monitor_fanotify()
-> +{
-> +       local mmnt=3D$1
-> +       exec stdbuf -oL $FSNOTIFYWAIT_PROG -m -F -S -e create "$mmnt" 2>&=
-1
-> +}
-> +
-> +fsid_to_fid_parts()
-> +{
-> +       local fsid=3D$1
-> +       # Pad to 16 hex chars (64-bit), then split into two 32-bit halves
-> +       local padded=3D$(printf '%016x' "0x${fsid}")
-> +       local hi=3D$(printf '%x' "0x${padded:0:8}")   # strips leading ze=
-ros
-> +       local lo=3D$(printf '%x' "0x${padded:8:8}")   # strips leading ze=
-ros
-> +       echo "${hi}.${lo}"
-> +}
-> +
-> +devs=3D()
-> +_loop_image_create_clone devs
-> +mkdir -p $TEST_DIR/$seq
-> +mnt1=3D$TEST_DIR/$seq/mnt1
-> +mnt2=3D$TEST_DIR/$seq/mnt2
-> +mkdir -p $mnt1
-> +mkdir -p $mnt2
-> +
-> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[0]} $m=
-nt1 || \
-> +                                               _fail "Failed to mount de=
-v1"
-> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[1]} $m=
-nt2 || \
-> +                                               _fail "Failed to mount de=
-v2"
-> +
-> +fsid1=3D$(stat -f -c "%i" $mnt1)
-> +fsid2=3D$(stat -f -c "%i" $mnt2)
-> +
-> +[[ "$fsid1" =3D=3D "$fsid2" ]] && \
-> +       _notrun "Require clone filesystem with unique f_fsid"
-> +
-> +log1=3D$tmp.fanotify1
-> +log2=3D$tmp.fanotify2
-> +
-> +pid1=3D""
-> +pid2=3D""
-> +echo "Setup FID fanotify watchers on both mnt1 and mnt2"
-> +( monitor_fanotify "$mnt1" > "$log1" ) &
-> +pid1=3D$!
-> +( monitor_fanotify "$mnt2" > "$log2" ) &
-> +pid2=3D$!
-> +sleep 2
-> +
-> +echo "Trigger file creation on mnt1"
-> +touch $mnt1/file_on_mnt1
-> +sync
-> +sleep 1
-> +
-> +echo "Trigger file creation on mnt2"
-> +touch $mnt2/file_on_mnt2
-> +sync
-> +sleep 1
-> +
-> +echo "Verify fsid in the fanotify"
-> +kill $pid1 $pid2
-> +wait $pid1 $pid2 2>/dev/null
-> +pid1=3D""
-> +pid2=3D""
-> +
-> +e_fsid1=3D$(fsid_to_fid_parts "$fsid1")
-> +e_fsid2=3D$(fsid_to_fid_parts "$fsid2")
-> +
-> +echo $fsid1 $e_fsid1 $fsid2 $e_fsid2 >> $seqres.full
-> +cat $log1 >> $seqres.full
-> +cat $log2 >> $seqres.full
-> +
-> +if grep -qF "$e_fsid1" "$log1" && ! grep -qF "$e_fsid2" "$log1"; then
-> +       echo "SUCCESS: mnt1 events found"
-> +else
-> +       [ ! -s "$log1" ] && echo "  - mnt1 received no events."
-> +       grep -qF "$e_fsid2" "$log1" && echo "  - mnt1 received event from=
- mnt2."
-> +fi
-> +
-> +if grep -qF "$e_fsid2" "$log2" && ! grep -qF "$e_fsid1" "$log2"; then
-> +       echo "SUCCESS: mnt2 events found"
-> +else
-> +       [ ! -s "$log2" ] && echo "  - mnt2 received no events."
-> +       grep -qF "$e_fsid1" "$log2" && echo "  - mnt2 received event from=
- mnt1."
-> +fi
-> +
-> +status=3D0
-> +exit
-> diff --git a/tests/generic/801.out b/tests/generic/801.out
-> new file mode 100644
-> index 000000000000..d7b318d9f27c
-> --- /dev/null
-> +++ b/tests/generic/801.out
-> @@ -0,0 +1,7 @@
-> +QA output created by 801
-> +Setup FID fanotify watchers on both mnt1 and mnt2
-> +Trigger file creation on mnt1
-> +Trigger file creation on mnt2
-> +Verify fsid in the fanotify
-> +SUCCESS: mnt1 events found
-> +SUCCESS: mnt2 events found
-> --
-> 2.43.0
->
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 1c42c5180bdd..527d4dbfe31c 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -835,10 +835,10 @@ static int get_new_location(struct inode *reloc_inode, u64 *new_bytenr,
+ 	fi = btrfs_item_ptr(leaf, path->slots[0],
+ 			    struct btrfs_file_extent_item);
+ 
+-	BUG_ON(btrfs_file_extent_offset(leaf, fi) ||
+-	       btrfs_file_extent_compression(leaf, fi) ||
+-	       btrfs_file_extent_encryption(leaf, fi) ||
+-	       btrfs_file_extent_other_encoding(leaf, fi));
++	ASSERT(!btrfs_file_extent_offset(leaf, fi) &&
++	       !btrfs_file_extent_compression(leaf, fi) &&
++	       !btrfs_file_extent_encryption(leaf, fi) &&
++	       !btrfs_file_extent_other_encoding(leaf, fi));
+ 
+ 	if (num_bytes != btrfs_file_extent_disk_num_bytes(leaf, fi))
+ 		return -EINVAL;
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 1f15d0793a9c..e4864f7a471e 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -296,6 +296,27 @@ static int check_extent_data_item(struct extent_buffer *leaf,
+ 		return 0;
+ 	}
+ 
++	/*
++	 * For the data reloc tree, file extent items are written by
++	 * relocation's own paths, which always leave offset, compression,
++	 * encryption and other_encoding as 0. Any non-zero value here means
++	 * the leaf decoded from disk does not match what the kernel wrote,
++	 * i.e. on-disk corruption.
++	 */
++	if (unlikely(btrfs_header_owner(leaf) == BTRFS_DATA_RELOC_TREE_OBJECTID &&
++		     (btrfs_file_extent_offset(leaf, fi) ||
++		      btrfs_file_extent_compression(leaf, fi) ||
++		      btrfs_file_extent_encryption(leaf, fi) ||
++		      btrfs_file_extent_other_encoding(leaf, fi)))) {
++		file_extent_err(leaf, slot,
++"invalid members for data reloc tree, offset=%llu compress=%u encryption=%u other_encoding=%u",
++				btrfs_file_extent_offset(leaf, fi),
++				btrfs_file_extent_compression(leaf, fi),
++				btrfs_file_extent_encryption(leaf, fi),
++				btrfs_file_extent_other_encoding(leaf, fi));
++		return -EUCLEAN;
++	}
++
+ 	/* Regular or preallocated extent has fixed item size */
+ 	if (unlikely(item_size != sizeof(*fi))) {
+ 		file_extent_err(leaf, slot,
+-- 
+2.54.0
+

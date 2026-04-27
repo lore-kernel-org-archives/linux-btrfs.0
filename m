@@ -1,105 +1,79 @@
-Received: from poodle.tulip.relay.mailchannels.net (poodle.tulip.relay.mailchannels.net [23.83.218.249])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from rebatir.fr (rebatir.fr [212.129.56.80])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 0EF3B317152
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 02:43:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.129.56.80
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1777257834; cv=none; b=HcMpK9d+EKh2FB9GbMnbZHFqB5XhMDntxIAuhJ1aGucKYAFzQKcqGkVhdEo2MVOLCpjfJGCnIOFiCpGXlVgrQ7QuxUbrrgPdnBRoY26JEEKWd005id10QF69/tmKtutFQm1/ZZfQ7cuTMMrhg5j5V5PhjbFg9p/d9Jc8AX/DBEc=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1777257834; c=relaxed/simple;
+	bh=qRiM9MNqUAw83u5XrkN4YbdfzK6riH8UrntduSH8R18=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=aO2ZecT1FC9klrmt7PFfQkPBVuQ/P+C7HTChLEn1MuwndcBReanLCgC0a9mN9Q3azirmZmlFwC2gVDgr7GRiB398tv0XIZEp5PDjhd3kDIr8QKjjfRusdPCrI19f77C4YFQVHXtwQSGDxTX70nLp3RQOBHFfO8BXs4Cw8QZNTBw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=illwieckz.net; spf=pass smtp.mailfrom=illwieckz.net; arc=none smtp.client-ip=212.129.56.80
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=illwieckz.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=illwieckz.net
+Received: from mail-dl1-f45.google.com (mail-dl1-f45.google.com [74.125.82.45])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6842F31A7F6
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 02:41:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=23.83.218.249
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777257693; cv=pass; b=XWRFVQir6N4a/CNGl47oJqtmCavavfGCOFTi+4hakAzP7UtfsQfJ4BTbUHG8P8DhU/WAMLmzrlt6kMdm5AweDx8Ja1jTiSF0knqLGpklU14Sm76KEL390cYYJQUCwyzbZKMdwqRvgdQt+hUKXcEOHH8ngpuFE6LkpD/Na5soEOg=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777257693; c=relaxed/simple;
-	bh=a7NzCdY+vZGeVtBp17WgL6QM8fVhYR2VM7jgwLNLy6o=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=LZb1dtK5bxGDXuW+0o0JxNSQenim1G0IQudIhkM9hVPeSvlxpVOfpQ2RUh1lg1FBEaIm7U9x4xcup3Yx4DjwbZZ5QQpOCVE1FQn1CR4u9TH0UAadWaP29JyVvpaXr5S2xAqIIz5y9WhWnei6HUYablYBsL2VkFxOr2y6V81H2RE=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org; spf=pass smtp.mailfrom=scientia.org; arc=pass smtp.client-ip=23.83.218.249
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-	by relay.mailchannels.net (Postfix) with ESMTP id 25B9861714;
-	Mon, 27 Apr 2026 02:24:07 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (trex-green-4.trex.outbound.svc.cluster.local [100.96.22.203])
-	(Authenticated sender: instrampxe0y3a)
-	by relay.mailchannels.net (Postfix) with ESMTPA id 230F261232;
-	Mon, 27 Apr 2026 02:24:06 +0000 (UTC)
-ARC-Seal: i=1; a=rsa-sha256; d=mailchannels.net; s=arc-2022; cv=none;
-	t=1777256646;
-	b=GMGps3plryWsAH8RLAkjcO1KQ4jwqJKV114LGBfCXYBzTpqVxkgMJOOp8SmKnM249xG3f0
-	NuwlE02YfeveWTzIs4sCU9Y+YeFD2GfAL3EDcrVZwfZw+5hupjAaOfzn75gdDdPIJF8St+
-	FFRV2L1Qn4PWlZXzmXvZDIbDuxx5LOCuhRC49voTu42tdETBxQm91IRm/sxOqKFARN4aXC
-	Lv9Y3brMjYbcPzqkFFdwdEEzXHJ0YVeWmoXMXvldJAY7WG2Eh3tU/+UahAL2O9xnZlcLex
-	5Ukgr0U46+VvIisC89uCopxyVDuj/JGpq4FIDbE4ZUGv8vmuexVCB8xHoppxtg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-	s=arc-2022; t=1777256646;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=a7NzCdY+vZGeVtBp17WgL6QM8fVhYR2VM7jgwLNLy6o=;
-	b=8d3Njb9GyolR5FLuitwIsKxsdEj5+7WMN+GjTGleUJNpSPCiaq0/qbXlwAc1rCq2763pRN
-	r/FoGLhQXS9yYkb53ao8BGIn1Dt3F3UgkGez0OS3pbNLsiSRQ7Q52yLIn+XLJAUzfSgW2y
-	MNdbzJ9CeOY3q9k2E/RvgkNiYiNGQWv5Am8RbyPecUZ8sGGSMHll8clcb1GFB8huqnrEMF
-	R6veQYGtqeQU/nh7RBpl7bwTYoIYP7CDJ72YbXOomRDFdJBU7lJ+JmwFEPONoYL8zsYiyZ
-	J9THDC5khmuD3i/6EPJflogFJqpTBMvqyufCoW9si2KZK0PPSOePpLTzpB+C3w==
-ARC-Authentication-Results: i=1;
-	rspamd-b9d4fc544-8wftt;
-	auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Cold-Trade: 0c40e8a51b8ba99f_1777256646990_3374573765
-X-MC-Loop-Signature: 1777256646990:2922901508
-X-MC-Ingress-Time: 1777256646990
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
-	by 100.96.22.203 (trex/7.1.5);
-	Mon, 27 Apr 2026 02:24:06 +0000
-Received: from [212.104.214.84] (port=58612 helo=[10.2.0.2])
-	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.3) tls TLS_AES_256_GCM_SHA384
-	(Exim 4.99.1)
-	(envelope-from <calestyo@scientia.org>)
-	id 1wHBdk-0000000AHPu-17jx;
-	Mon, 27 Apr 2026 02:24:04 +0000
-Message-ID: <27cc875b06bb6a3e42e7d0b11e1dcfdfafaee28c.camel@scientia.org>
-Subject: Re: corruption after block-group-tree conversion, how to recover?
- (data is readable)
-From: Christoph Anton Mitterer <calestyo@scientia.org>
-To: Qu Wenruo <wqu@suse.com>, Thomas Debesse <dev@illwieckz.net>, 
-	linux-btrfs@vger.kernel.org
-Date: Mon, 27 Apr 2026 04:24:03 +0200
-In-Reply-To: <07db83f8-5769-4aaf-9f54-2711ddad9eea@suse.com>
-References: 
-	<CALpuBKwmZRYX0Mag-gLSoL9NgBBR_D+iOeKX7sdhHtyAposGRg@mail.gmail.com>
-	 <07db83f8-5769-4aaf-9f54-2711ddad9eea@suse.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.56.2-9 
+	by rebatir.fr (Postfix) with ESMTPSA id 97DF120298
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 04:43:50 +0200 (CEST)
+Received: by mail-dl1-f45.google.com with SMTP id a92af1059eb24-12c1a170a50so12113819c88.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 26 Apr 2026 19:43:50 -0700 (PDT)
+X-Gm-Message-State: AOJu0YwigxzbxiUeCLuSjYiGr6eBSoLBk9xS/ugq15vmqrleAF99E8Ou
+	aCaOnfmIiSJxDCe+oLNF/pni/vekuOcuM2qvsm133uY86fcG58UCW+mHC0Ac9TtWJDPQ/OvLSIR
+	aGFsD/gQVVc/hsdqm6xGEU6LRY3yenio=
+X-Received: by 2002:a05:7022:4596:b0:128:d450:bc76 with SMTP id
+ a92af1059eb24-12c73f978fcmr20157878c88.26.1777257828605; Sun, 26 Apr 2026
+ 19:43:48 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-AuthUser: calestyo@scientia.org
+References: <CALpuBKwmZRYX0Mag-gLSoL9NgBBR_D+iOeKX7sdhHtyAposGRg@mail.gmail.com>
+ <07db83f8-5769-4aaf-9f54-2711ddad9eea@suse.com>
+In-Reply-To: <07db83f8-5769-4aaf-9f54-2711ddad9eea@suse.com>
+From: Thomas Debesse <dev@illwieckz.net>
+Date: Mon, 27 Apr 2026 04:43:36 +0200
+X-Gmail-Original-Message-ID: <CALpuBKx=EQY=-K5VtLKATufdAbptZD0x6ZiSgbXZgOAG8Q8vAQ@mail.gmail.com>
+X-Gm-Features: AQROBzCgAYISeReEWbMViQs5qtp7BAspuye23U9ULneIb9GYPL3PwLSItdUDKxM
+Message-ID: <CALpuBKx=EQY=-K5VtLKATufdAbptZD0x6ZiSgbXZgOAG8Q8vAQ@mail.gmail.com>
+Subject: Re: corruption after block-group-tree conversion, how to recover?
+ (data is readable)
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, Thomas DEBESSE <dev@illwieckz.net>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2026-04-27 at 07:48 +0930, Qu Wenruo wrote:
->=20
-> Unfortunately the btrfs-progs is too old, and possibility the root
-> cause.
-> There are some fixes in progs v6.15, thus it's strongly recommended
-> to=20
-> use progs newer than v6.15.
+Le lun. 27 avr. 2026 =C3=A0 00:18, Qu Wenruo <wqu@suse.com> a =C3=A9crit :
+> Unfortunately, transid mismatch is not reliably repairable.
+> I'm afraid restoring from backup is the only reliable solution.
 
-Is there a way to verify whether his issue was actually caused by
-what's fixed in 6.15?
+Thank you for your answers. Is the data from the =E2=80=9Cbadly converted=
+=E2=80=9D
+volume be assumed safe?
 
-I mean now that BGT is the default on fs creation, more people will
-probably want to convert their existing fs to it... but if that would
-be still unstable then there might be quite some breakage.
+The idea is that, instead of overwriting the =E2=80=9Cbadly converted=E2=80=
+=9D volume
+with a brand newly created and empty btrfs volume and copying the data
+from backup, I may consider the option to create the new btrfs volume
+on brand new devices I may source. I would have then the option to
+copy the data from either the backup or the =E2=80=9Cbadly converted=E2=80=
+=9D volume.
+If the data is safely copyable from the =E2=80=9Cbadly converted=E2=80=9D v=
+olume (once
+mounted with recovery options), I expect copying from the =E2=80=9Cbadly
+converted=E2=80=9D volume to be way faster than copying from backup.
 
+Also another question: if it happens that copying from the =E2=80=9Cbadly
+converted=E2=80=9D volume can be assumed to be safe, would `btrfs send` wor=
+k
+or do I would still have to do it the btrfs-agnostic way, like by
+using rsync?
 
-Cheers,
-Chris.
+Thanks in advance for your answers, that helps a lot.
+
+--=20
+Thomas =E2=80=9Cillwieckz=E2=80=9D Debesse

@@ -1,186 +1,156 @@
-Received: from mail-wm1-f53.google.com (mail-wm1-f53.google.com [209.85.128.53])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mout-p-202.mailbox.org (mout-p-202.mailbox.org [80.241.56.172])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 72191366072
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 20:28:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 80EA436167F
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 20:32:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=80.241.56.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777321709; cv=none; b=euZpndqtPIbAn7K6+sq9dukVcwlLaVIi03EVCvY7Ez8Ped7nasxZKWXVY0W9tsY0pg6VqW8wxFiWgWWhtyOJOx4UEi2nvB+4l/rJNG7KqaYcxySy0fX8R4mySHVJoDudm31tF4qcrF2RzCfOQEotS6weBnk7XRVhmxvPHJhZaH8=
+	t=1777321940; cv=none; b=pI4n14qNzh0BygJ6l81TyjO4BM9K/zC/1nOd9TCPf5H1qK6s1pgYGVUjpRUoHZHAhzzZG+Nv0BO2fXWxzafdb0Nh+1AC0J8ACB6/8hIIDEY2dQCJjnyWBLuSYLaWsxHzmm1+mQLxNlfLi0n6cwY/XMPGI4q745NQ317sqRypNDQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777321709; c=relaxed/simple;
-	bh=2W3udJfpoUpVU+zcXEL2kBe6tqgHZ5XeEjLMm3rQp+Q=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=OYh2s7Zot9mB7/Z0W24/4DZplBlSB4vEyIMKfK75y9ylaz5rsaZfWO8LwprPAn18fBQC5zQW0KRMC4lodiW4HhbvMJ29RfU6Y5bwHI1NOG27DA4ihRRCzuPboYOjKuRZ31ZQTFRrOhKJq1aFITOlH0zRIV+LEjQJGf5p++htI1I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=CEbITPW9; arc=none smtp.client-ip=209.85.128.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1777321940; c=relaxed/simple;
+	bh=fE2C0ACOdn4QYkMZ+VIu+HL1E0jyN/5xZgeCVAOA2BU=;
+	h=Date:From:Subject:To:Message-Id:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=pcADI++WDJu3MU2lcKufHNKL1nawyhVnAXsMyLKjZMWkkkV+P8jmfw0brjjASczYA++Mzru9YT0CB5TWKt6zcH9MwyOarcayO+qci4LA9i/zQ/fPaoauMI/BUAIvicwPhg2K9KFUc9Eg4qLX8SNd8as4Hsf2x58EyXD67G1p/ZI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mailbox.org; spf=pass smtp.mailfrom=mailbox.org; dkim=pass (2048-bit key) header.d=mailbox.org header.i=@mailbox.org header.b=MmaeB6I5; arc=none smtp.client-ip=80.241.56.172
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mailbox.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mailbox.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CEbITPW9"
-Received: by mail-wm1-f53.google.com with SMTP id 5b1f17b1804b1-488b3f8fa2bso108204335e9.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 13:28:28 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1777321706; x=1777926506; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=RJsJ0/AdMp4F3EjvGpZbBz3zMwBhPSd1Q0YoCqjYwls=;
-        b=CEbITPW9JJptOSlT6yC2YhPqoav+hmMeWJmZhPPMgHHF0EM7KPvo5+v9kLqYVTnmeT
-         L48c2AjLgOXcdNn5Swjz/D7ETSBmxGE0ZA8LTwBbId91R8tlWg2pPsrFSMZ/ZIN/B93y
-         QXprOZDPYuBYfZQ+6h+Fc9rryMpWalD3NHvhgYQd1UWkwQzjoDw/pTlM0fu7ApfQpLm7
-         vZkSmE77jWLG1BoNvhGS2vEODLWess64ET+18+NAbJpOVyCXTFutbzSFQfACInRRg09j
-         fLS3yMDY6aMTA2Q+5jvbyFt9leqLL0ki2iEtPfb+Ys0Gns8Rk051KKuRGNMiMTYNBMui
-         4t1g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1777321706; x=1777926506;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=RJsJ0/AdMp4F3EjvGpZbBz3zMwBhPSd1Q0YoCqjYwls=;
-        b=lv1RqdKBEyIpBmFhCV0j1hVAyc5XHglYQ+qezpkeZGz2e3NH4HsoHDeibnHw7UfkJy
-         JR2klw9aHemLn1NSrbK48snSSZA5lE9dgoNyCWAAB333q8eD2jamPAy/L5VmYAQz6CLS
-         B6QhMcIMP2FahoY2PDwUagtO5PYGZgqtabjZOY93StGbD9oXSKWCcAR30snFlMzB61GD
-         c2R7M4XEEQ2atn2f3g+K2TZuPH9bfMAyyVXumIeg/lOvTRzslj0j44DunOFUbFQ7aMmR
-         MUyrnX7/uHV7Y0NPa97lv5nt4Prk6UYDWh+K1QI9sczXUqg/qm4mtAGXMdfuBrGCnllf
-         7MNw==
-X-Gm-Message-State: AOJu0YwprcSfbBEreA35tTGWftq7WOar8Wef15Xy6gg1Tpdmw9+cuXov
-	5KKfv8Dnw+cl7vgUd5X5YPsP8PJoFJnwbMoADMCs5v7EZhPIeKdHpESaTHUASedy
-X-Gm-Gg: AeBDievC9m3IQWbgGdhRMlarv+sdsQe4gN/vMLpohM9S9pQ9+vwvxj4WHJLhKSIXKeu
-	/2o6f4tjUHzvwJM9dQ8QSLOpvvjQ8gdf9tJlbZENK6z0DaMLvQhxnnnktRRXZL4c/zFi4Azx8Mf
-	lN1b57TAe0Qpwq3ayZGM/N2/luIrPSajY8ZXsFfIvpVDHqjxS8SilG9TIKYoEhekW9LAC8wYyg1
-	NLUSxYroZDTw6m5V1XGRwl862NZ2ccQ9NFyn5Rr3xSf2zgAkPP1CbDt4L8Wp9nbad3gfHeOXSnp
-	PU7KeG6D9sdsFjBf/u5GP0ohX/5sZIPJ6FdsCuWgmXwNCKSD/AR6GVDHbXPtHxsZd63GnpViFP+
-	Dngmbv+4EoC7zt0Q9J+BnlR+XpqyWk1M5GM0npgVvHw+Y+5GFai1Ou35UshItCwndJmjW6HUQWu
-	l14oGRg+g3X0jQuFmC8VOMDqpWGx9fr6f63wtupqJFSKg=
-X-Received: by 2002:a05:600c:4f08:b0:48a:5821:6006 with SMTP id 5b1f17b1804b1-48a77e40cfamr2229895e9.4.1777321706225;
-        Mon, 27 Apr 2026 13:28:26 -0700 (PDT)
-Received: from localhost ([145.40.214.139])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4463cb59a68sm872149f8f.4.2026.04.27.13.28.25
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 27 Apr 2026 13:28:25 -0700 (PDT)
-From: Teng Liu <27rabbitlt@gmail.com>
+	dkim=pass (2048-bit key) header.d=mailbox.org header.i=@mailbox.org header.b="MmaeB6I5"
+Received: from smtp202.mailbox.org (smtp202.mailbox.org [IPv6:2001:67c:2050:b231:465::202])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mout-p-202.mailbox.org (Postfix) with ESMTPS id 4g4Fbx3Ymcz9tk6
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 22:32:13 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mailbox.org; s=mail20150812;
+	t=1777321933;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=fE2C0ACOdn4QYkMZ+VIu+HL1E0jyN/5xZgeCVAOA2BU=;
+	b=MmaeB6I5CQgtTcvacs7bjuUED1wAA5+6FtUhbwT8ih2ztVfRLJO5ab4DuRyeSH7pp880xN
+	/rMD8HIUbOpbNhXjca243emQmZlJIDyZ0a+6xlsVyPgwfNj1wd7Lrh9Xh/wumjsBhQxnP1
+	xxQtrFa9E6ho+6RWT7blc5pGMh7+i6XEikoHRITcQ98mhiQDFnAaG4b+gDyouRN3CPLy4W
+	cZAwQ8ZU0gnWdOz48RHw1wtxt8OESGUr+o4txgEXl/A+q/RgTxULhRGQ7al+pRz704zqbK
+	LP6/axiNSRA2TQ0f0dmFHg8kmUFj0qQm0uM1IZEa9OrZHQN5kCw2YuQADrKfig==
+Date: Mon, 27 Apr 2026 16:32:06 -0400
+From: brainchild@mailbox.org
+Subject: Re: Strange behavior with scrub, quotas, and snapshots
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com,
-	clm@fb.com,
-	wqu@suse.com,
-	linux-kernel@vger.kernel.org,
-	syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com,
-	Teng Liu <27rabbitlt@gmail.com>
-Subject: [PATCH v3] btrfs: validate data reloc tree file extent item members in tree-checker
-Date: Mon, 27 Apr 2026 22:24:58 +0200
-Message-ID: <20260427202822.278326-1-27rabbitlt@gmail.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <20260426201605.36626-1-27rabbitlt@gmail.com>
-References: <20260426201605.36626-1-27rabbitlt@gmail.com>
+Message-Id: <ID66ET.91J1PP272KJY1@mailbox.org>
+In-Reply-To: <b53641af-f231-45b9-9d4f-21e1ee8132c7@gmx.com>
+References: <SYK4ET.WNV9390MEC881@mailbox.org>
+	<b53641af-f231-45b9-9d4f-21e1ee8132c7@gmx.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: multipart/mixed; boundary="=-x6wBgCb1QqRadaEG/tFB"
+X-MBO-RS-META: 5my4gtah3ssj7ftu4jifxd6inr5ymocm
+X-MBO-RS-ID: 70e0ec184f5b8ff3103
 
-get_new_location() uses BUG_ON() to crash the kernel if the file extent
-item it looks up has any of offset, compression, encryption, or
-other_encoding set. The data reloc inode is only written by relocation's
-own paths -- insert_prealloc_file_extent() and
-insert_ordered_extent_file_extent() -- which always leave those four
-fields at 0 (the data reloc inode is created with BTRFS_INODE_NOCOMPRESS,
-and encryption/other_encoding are reserved-and-zero). Observing a
-non-zero value therefore means the leaf decoded from disk does not match
-what the kernel wrote, i.e. on-disk corruption. A malformed image can
-reach this code via balance and panic the kernel.
+--=-x6wBgCb1QqRadaEG/tFB
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-Move the validation into tree-checker's check_extent_data_item(), where
-the constraint is enforced when the leaf is read off disk rather than
-after relocation has already started. The data reloc tree has a fixed
-root id (BTRFS_DATA_RELOC_TREE_OBJECTID) recorded in the extent buffer
-header, so check_extent_data_item() has all the information it needs to
-apply this check on its own. Report violations via file_extent_err() and
-print the four offending values.
+I have the run the check command, which reported a variety of errors.=20
+The output is attached.
 
-In get_new_location() replace the BUG_ON() with an ASSERT().
-The caller in replace_file_extents() already handles non-zero returns from
-get_new_location() by breaking out of the loop without aborting the
-transaction, so no caller changes are needed.
+Are any recommendations available to attempt restoring the volume?
 
-Suggested-by: Qu Wenruo <wqu@suse.com>
-Suggested-by: David Sterba <dsterba@suse.com>
-Reported-by: syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com
-Closes: https://syzkaller.appspot.com/bug?extid=3e20d8f3d41bac5dc9a2
-Signed-off-by: Teng Liu <27rabbitlt@gmail.com>
----
-Changes in v3:
- - Move the corruption check from relocation.c into tree-checker's
-   check_extent_data_item(), per Qu and David. The data reloc tree's
-   fixed objectid is recorded in the extent buffer header, so the
-   check has all the context it needs at read time.
- - Use file_extent_err() and print offset/compression/encryption/
-   other_encoding values, per Qu.
- - Replace the BUG_ON in get_new_location() with ASSERT() rather than
-   -EUCLEAN, per David.
+Thanks.
 
-Changes in v2:
- - Pair the -EUCLEAN return with btrfs_print_leaf() and btrfs_err() so
-   the offending leaf is dumped to dmesg, per Qu's review of v1.
- - Expand the changelog to argue why non-zero
-   compression/encryption/other_encoding in the data reloc inode imply
-   on-disk corruption.
+On Mon, Apr 27 2026 at 11:35:28 AM +09:30:00, Qu Wenruo=20
+<quwenruo.btrfs@gmx.com> wrote:
+>=20
+>=20
+> =E5=9C=A8 2026/4/27 09:22, brainchild@mailbox.org =E5=86=99=E9=81=93:
+>> Hello.
+>>=20
+>> I am struggling with a poorly behaved BTRFS volume.
+>>=20
+> [...]
+>> ---
+>>=20
+>> No errors are reported in the kernel log, only warnings about=20
+>> skipping =7Fthe swap file during scrub.
+>=20
+> If you assume the fs has some corruption, none of the above is really=20
+> useful.
+> A full "btrfs check" is strongly recommended.
+>=20
+>>=20
+>> Second, within the logs generated for Timeshift, a concerning=20
+>> pattern =7Frecurs, as in the attached example. Further, during the=20
+>> periods in which =7Fare generated logs such as the one attached, the=20
+>> entire system lags =7Fconsiderably. It is clear that the volume is not=20
+>> healthy.
+>=20
+> The lag is mostly caused by qgroup.
+> You have a lot of snapshots (shown by the super large snapshot id),=20
+> every time a large snapshot/subvolume is deleted, btrfs will try to=20
+> disable qgroup to avoid such lag, but if whatever script/tool decides=20
+> to rescan qgroup when the snapshot/subvolume deleting is still under=20
+> going, the lag will be re-introduced.
+>=20
+>>=20
+>> I was using a recent 6.x kernel, I believe one of 6.18.x, when the=20
+>> =7Fproblem emerged. I upgraded by to 7.0, finding no improvement in=20
+>> the =7Foperation of the volume.
+>>=20
+>> Also, I tried initiating the scrub through the most recent static=20
+>> build =7Fof the user-space utility (i.e. btrfs-progs), with no=20
+>> improvement.
+>>=20
+>> I would like some suggestions for restoring the volume to health, to=20
+>> =7Favoid the need to provision a new volume from scratch.
+>=20
+> "btrfs check" first, if no error, disable qgroup if you have frequent=20
+> snapshot creation/deletion.
+>=20
+> Thanks,
+> Qu
+>=20
+>>=20
+>> Thank you.
+>>=20
+>=20
 
- fs/btrfs/relocation.c   |  8 ++++----
- fs/btrfs/tree-checker.c | 21 +++++++++++++++++++++
- 2 files changed, 25 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 1c42c5180bdd..527d4dbfe31c 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -835,10 +835,10 @@ static int get_new_location(struct inode *reloc_inode, u64 *new_bytenr,
- 	fi = btrfs_item_ptr(leaf, path->slots[0],
- 			    struct btrfs_file_extent_item);
- 
--	BUG_ON(btrfs_file_extent_offset(leaf, fi) ||
--	       btrfs_file_extent_compression(leaf, fi) ||
--	       btrfs_file_extent_encryption(leaf, fi) ||
--	       btrfs_file_extent_other_encoding(leaf, fi));
-+	ASSERT(!btrfs_file_extent_offset(leaf, fi) &&
-+	       !btrfs_file_extent_compression(leaf, fi) &&
-+	       !btrfs_file_extent_encryption(leaf, fi) &&
-+	       !btrfs_file_extent_other_encoding(leaf, fi));
- 
- 	if (num_bytes != btrfs_file_extent_disk_num_bytes(leaf, fi))
- 		return -EINVAL;
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 1f15d0793a9c..e4864f7a471e 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -296,6 +296,27 @@ static int check_extent_data_item(struct extent_buffer *leaf,
- 		return 0;
- 	}
- 
-+	/*
-+	 * For the data reloc tree, file extent items are written by
-+	 * relocation's own paths, which always leave offset, compression,
-+	 * encryption and other_encoding as 0. Any non-zero value here means
-+	 * the leaf decoded from disk does not match what the kernel wrote,
-+	 * i.e. on-disk corruption.
-+	 */
-+	if (unlikely(btrfs_header_owner(leaf) == BTRFS_DATA_RELOC_TREE_OBJECTID &&
-+		     (btrfs_file_extent_offset(leaf, fi) ||
-+		      btrfs_file_extent_compression(leaf, fi) ||
-+		      btrfs_file_extent_encryption(leaf, fi) ||
-+		      btrfs_file_extent_other_encoding(leaf, fi)))) {
-+		file_extent_err(leaf, slot,
-+"invalid members for data reloc tree, offset=%llu compress=%u encryption=%u other_encoding=%u",
-+				btrfs_file_extent_offset(leaf, fi),
-+				btrfs_file_extent_compression(leaf, fi),
-+				btrfs_file_extent_encryption(leaf, fi),
-+				btrfs_file_extent_other_encoding(leaf, fi));
-+		return -EUCLEAN;
-+	}
-+
- 	/* Regular or preallocated extent has fixed item size */
- 	if (unlikely(item_size != sizeof(*fi))) {
- 		file_extent_err(leaf, slot,
--- 
-2.54.0
+--=-x6wBgCb1QqRadaEG/tFB
+Content-Type: text/plain
+Content-Disposition: attachment; filename=brainchild_btrfs-check_log.txt
+Content-Transfer-Encoding: base64
+
+WzEvOF0gY2hlY2tpbmcgbG9nIHNraXBwZWQgKG5vbmUgd3JpdHRlbikKWzIvOF0gY2hlY2tpbmcg
+cm9vdCBpdGVtcwpbMy84XSBjaGVja2luZyBleHRlbnRzCnN1cGVyIGJ5dGVzIHVzZWQgNzQzODky
+OTgzODA4IG1pc21hdGNoZXMgYWN0dWFsIHVzZWQgNzQwNTU4ODU2MTkyCkVSUk9SOiBlcnJvcnMg
+Zm91bmQgaW4gZXh0ZW50IGFsbG9jYXRpb24gdHJlZSBvciBjaHVuayBhbGxvY2F0aW9uCls0Lzhd
+IGNoZWNraW5nIGZyZWUgc3BhY2UgdHJlZQpbNS84XSBjaGVja2luZyBmcyByb290cwpyb290IDY4
+NTUgaW5vZGUgMTY1MjM4NjMgZXJyb3JzIDQwMCwgbmJ5dGVzIHdyb25nCnJvb3QgNTg1NzAgaW5v
+ZGUgMTY1MjM4NjMgZXJyb3JzIDQwMCwgbmJ5dGVzIHdyb25nCnJvb3QgNTk0ODYgaW5vZGUgMTY1
+MjM4NjMgZXJyb3JzIDQwMCwgbmJ5dGVzIHdyb25nCnJvb3QgNjAzMzMgaW5vZGUgMTY1MjM4NjMg
+ZXJyb3JzIDQwMCwgbmJ5dGVzIHdyb25nCnJvb3QgNjAzNjcgaW5vZGUgMTY1MjM4NjMgZXJyb3Jz
+IDQwMCwgbmJ5dGVzIHdyb25nCnJvb3QgNjAzNzcgaW5vZGUgMTY1MjM4NjMgZXJyb3JzIDQwMCwg
+bmJ5dGVzIHdyb25nCnJvb3QgNjAzODMgaW5vZGUgMTY1MjM4NjMgZXJyb3JzIDQwMCwgbmJ5dGVz
+IHdyb25nCnJvb3QgNjA0NzUgaW5vZGUgMTY1MjM4NjMgZXJyb3JzIDQwMCwgbmJ5dGVzIHdyb25n
+CnJvb3QgNjA3MTMgaW5vZGUgMTY1MjM4NjMgZXJyb3JzIDQwMCwgbmJ5dGVzIHdyb25nCnJvb3Qg
+NjEzNTEgaW5vZGUgMTY1MjM4NjMgZXJyb3JzIDQwMCwgbmJ5dGVzIHdyb25nCnJvb3QgNjE0MjEg
+aW5vZGUgMTY1MjM4NjMgZXJyb3JzIDQwMCwgbmJ5dGVzIHdyb25nCnJvb3QgNjE0MjMgaW5vZGUg
+MTY1MjM4NjMgZXJyb3JzIDQwMCwgbmJ5dGVzIHdyb25nCnJvb3QgNjE0MjUgaW5vZGUgMTY1MjM4
+NjMgZXJyb3JzIDQwMCwgbmJ5dGVzIHdyb25nCnJvb3QgNjE0MjcgaW5vZGUgMTY1MjM4NjMgZXJy
+b3JzIDQwMCwgbmJ5dGVzIHdyb25nCnJvb3QgNjE0MjkgaW5vZGUgMTY1MjM4NjMgZXJyb3JzIDQw
+MCwgbmJ5dGVzIHdyb25nCnJvb3QgNjE0MzEgaW5vZGUgMTY1MjM4NjMgZXJyb3JzIDQwMCwgbmJ5
+dGVzIHdyb25nCkVSUk9SOiBlcnJvcnMgZm91bmQgaW4gZnMgcm9vdHMKT3BlbmluZyBmaWxlc3lz
+dGVtIHRvIGNoZWNrLi4uCkNoZWNraW5nIGZpbGVzeXN0ZW0gb24gL2Rldi9udm1lMG4xcDUKVVVJ
+RDogYmJhYzg2ZTUtZWFiYS00NWJmLWJiYWEtYzI0OTRlMTE4MzFhCmZvdW5kIDc0MDU1ODY0NzI5
+NiBieXRlcyB1c2VkLCBlcnJvcihzKSBmb3VuZAp0b3RhbCBjc3VtIGJ5dGVzOiA0NzM1OTYyMzYK
+dG90YWwgdHJlZSBieXRlczogNjgzNDg0Nzc0NAp0b3RhbCBmcyB0cmVlIGJ5dGVzOiA1NjYwMzI3
+OTM2CnRvdGFsIGV4dGVudCB0cmVlIGJ5dGVzOiA1Mjk4MjU3OTIKYnRyZWUgc3BhY2Ugd2FzdGUg
+Ynl0ZXM6IDE1MTQ2ODU5MjAKZmlsZSBkYXRhIGJsb2NrcyBhbGxvY2F0ZWQ6IDExMDI3Mzc4OTI1
+NTY4CiByZWZlcmVuY2VkIDg4NjcwNDAzNzg4OAo=
+
+--=-x6wBgCb1QqRadaEG/tFB--
 

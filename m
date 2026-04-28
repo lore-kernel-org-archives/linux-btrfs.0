@@ -1,94 +1,94 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0AA822C3252
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2026 15:17:03 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D7F83126A9
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2026 15:29:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777389426; cv=none; b=ImE5mDZBDiXkC3LSrgWGc4ZBmkIAWLmOjWkD5A2b/KjzlDkb8q5STpeWr3zEXDBKyOy/BM+YBiOsypLfOfutCsM+BLjFb92bYDJ0W7eAYzJegl2PqqUCRrwGq7IB+7ummYuGBwvp5zalVOIuAv6RfIwJFlo9w/grEN4f99ydSns=
+	t=1777390170; cv=none; b=ZvhDGe/VayqrdEtRbJ6MP+toWmIwgHhZ1KuGQB2brYa+IZZ30B96u0X1NxrKoUZMydYYcksmA/XNbzs8x5coTaiwHSUcUwrFmqC6Kg+MX1UfPyINmEmd13QaHkzDksjF/nNyORCfRa9l/YHgo9jgVocHyx7h20L9+xeDqRsX358=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777389426; c=relaxed/simple;
-	bh=HqT79Jv/LzvfW2LFj4U+IRlCxKb/K+fegux1cYGnDLM=;
+	s=arc-20240116; t=1777390170; c=relaxed/simple;
+	bh=VF2LNSiZRJD6gTtVCugwOA6c9s5qjWe8n/lBu1fY1Zg=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=YeMNO6cO+4zq1fu8rJiJYlsTNDwGwuq99fVu+MwhcrZIdzoCG/txqiBd0hO8ALNWo9uVFOUoKMn4l4GT3ntOS3SexUbGFyQFF2IYyMRwe+iX6dz9ZoazGZcQ3OsRBym/GqyNffEd/13MzfLWwQ5DhDWOSDt7Fc6THb+X7o51Jy4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=OHVTEnny; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=VNCtkUHm; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=OHVTEnny; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=VNCtkUHm; arc=none smtp.client-ip=195.135.223.131
+	 Content-Type:Content-Disposition:In-Reply-To; b=PTbFKDi/LHrEkT51BYzuXEtioIWSVJtUMuSG4mL6g1dpWirYZBgUzH2U/h3LgyCI2IOyo/XIJz42h1v8UKtlU8EOGBuSKV13dnC6sAOkckXS1L5VvJSI3r7WA1lquqDJnx0XXRj38vliQFRIAVgTq4xL6JWBq8cV3BVKaMGkWsM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=p15/ei1d; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=MZLtkPOy; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=p15/ei1d; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=MZLtkPOy; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="OHVTEnny";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="VNCtkUHm";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="OHVTEnny";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="VNCtkUHm"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="p15/ei1d";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="MZLtkPOy";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="p15/ei1d";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="MZLtkPOy"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 05B145BD58;
-	Tue, 28 Apr 2026 15:17:02 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 771315BD4E;
+	Tue, 28 Apr 2026 15:29:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1777389422;
+	t=1777390167;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=CGbnNoNdVyQ5LbhaxAVvEr1+2vxI3SS2DqwwarmPIEo=;
-	b=OHVTEnnyB2iz22S9h6ZK0OsaqwHv6X3+omBrBsztC5i9z1AkKWcMANjd+db+3OxrOUdhYq
-	7dXE8nsD1TNT2jv9dQbUYkoZ61pYOhQRvdJcrokKN4KcMv8MJXR5SCbrYhivG6m024WxeH
-	nmwNQD0C5JFNueTDlmcUOU4DUznygME=
+	bh=5HsCg4xwWA4bZlO9jpHa3jCP+F2N/lXL475gQKTzGjM=;
+	b=p15/ei1diWlppLjjm9CdUlVXX1S90Bbun7uGPzY7RclapT0aKkkzGesD0L2bEt57V4W9nc
+	GYsxCa4leADFKTn7jqbG/vp5N4A/x/wQmjMXSD9AIJ2HyHYtL3KwV3GcFMol/AOxsjOx2y
+	x4wTp87JZPLH4KsiLVFfPeZ7vPPSfAM=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1777389422;
+	s=susede2_ed25519; t=1777390167;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=CGbnNoNdVyQ5LbhaxAVvEr1+2vxI3SS2DqwwarmPIEo=;
-	b=VNCtkUHmWCVwQ6yG+IBRL3J4lwPiByT/ndZHzwkR2uYbAQjHFrDzOOgpvnUa5uJ4wolvr5
-	t3TUs1+d09LwlcAQ==
+	bh=5HsCg4xwWA4bZlO9jpHa3jCP+F2N/lXL475gQKTzGjM=;
+	b=MZLtkPOyZCiIUrIVdDSc97LBwHoIcB+QuWeizQwoZVwoTomISNFUNQDFeG9z6wQQOD87Cu
+	mgOQA+NDtSpeIWDQ==
 Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=OHVTEnny;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=VNCtkUHm
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1777389422;
+	t=1777390167;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=CGbnNoNdVyQ5LbhaxAVvEr1+2vxI3SS2DqwwarmPIEo=;
-	b=OHVTEnnyB2iz22S9h6ZK0OsaqwHv6X3+omBrBsztC5i9z1AkKWcMANjd+db+3OxrOUdhYq
-	7dXE8nsD1TNT2jv9dQbUYkoZ61pYOhQRvdJcrokKN4KcMv8MJXR5SCbrYhivG6m024WxeH
-	nmwNQD0C5JFNueTDlmcUOU4DUznygME=
+	bh=5HsCg4xwWA4bZlO9jpHa3jCP+F2N/lXL475gQKTzGjM=;
+	b=p15/ei1diWlppLjjm9CdUlVXX1S90Bbun7uGPzY7RclapT0aKkkzGesD0L2bEt57V4W9nc
+	GYsxCa4leADFKTn7jqbG/vp5N4A/x/wQmjMXSD9AIJ2HyHYtL3KwV3GcFMol/AOxsjOx2y
+	x4wTp87JZPLH4KsiLVFfPeZ7vPPSfAM=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1777389422;
+	s=susede2_ed25519; t=1777390167;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=CGbnNoNdVyQ5LbhaxAVvEr1+2vxI3SS2DqwwarmPIEo=;
-	b=VNCtkUHmWCVwQ6yG+IBRL3J4lwPiByT/ndZHzwkR2uYbAQjHFrDzOOgpvnUa5uJ4wolvr5
-	t3TUs1+d09LwlcAQ==
+	bh=5HsCg4xwWA4bZlO9jpHa3jCP+F2N/lXL475gQKTzGjM=;
+	b=MZLtkPOyZCiIUrIVdDSc97LBwHoIcB+QuWeizQwoZVwoTomISNFUNQDFeG9z6wQQOD87Cu
+	mgOQA+NDtSpeIWDQ==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E8843593B0;
-	Tue, 28 Apr 2026 15:17:01 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 48AE4593B0;
+	Tue, 28 Apr 2026 15:29:27 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 1hiROG3P8GnBWwAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 28 Apr 2026 15:17:01 +0000
-Date: Tue, 28 Apr 2026 17:17:00 +0200
+	id QmOHEFfS8GmmZwAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 28 Apr 2026 15:29:27 +0000
+Date: Tue, 28 Apr 2026 17:29:22 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-	AHN SEOK-YOUNG <iamsyahn@gmail.com>,
-	Teng Liu <27rabbitlt@gmail.com>
-Subject: Re: [PATCH v3] btrfs: warn about extent buffer that can not be
- released
-Message-ID: <20260428151700.GG3906171@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: Teng Liu <27rabbitlt@gmail.com>, linux-btrfs@vger.kernel.org,
+	dsterba@suse.com, clm@fb.com, linux-kernel@vger.kernel.org,
+	syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com
+Subject: Re: [PATCH v3] btrfs: validate data reloc tree file extent item
+ members in tree-checker
+Message-ID: <20260428152922.GH3906171@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <4ac4a9f2c599841b00f39f3be082432f43130f3e.1776379191.git.wqu@suse.com>
- <20260427154805.GQ12792@twin.jikos.cz>
- <f94d6fe3-e4a5-42ac-bf2b-47d126dbd46b@gmx.com>
+References: <20260426201605.36626-1-27rabbitlt@gmail.com>
+ <20260427202822.278326-1-27rabbitlt@gmail.com>
+ <aeb71a41-2727-472d-a869-20ca9bd2b005@suse.com>
+ <4fed7e18-4bc7-43a5-8438-62bff279fbe7@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -98,88 +98,106 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <f94d6fe3-e4a5-42ac-bf2b-47d126dbd46b@gmx.com>
+In-Reply-To: <4fed7e18-4bc7-43a5-8438-62bff279fbe7@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Result: default: False [-4.21 / 50.00];
+X-Spam-Score: -2.50
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.50 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
+	SUSPICIOUS_RECIPS(1.50)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com,gmx.com];
+	TAGGED_RCPT(0.00)[3e20d8f3d41bac5dc9a2];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	TO_DN_SOME(0.00)[];
-	FREEMAIL_TO(0.00)[gmx.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	MIME_TRACE(0.00)[0:+];
 	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
 	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	RCPT_COUNT_FIVE(0.00)[6];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	FREEMAIL_CC(0.00)[suse.cz,suse.com,vger.kernel.org,gmail.com];
+	FREEMAIL_CC(0.00)[gmail.com,vger.kernel.org,suse.com,fb.com,syzkaller.appspotmail.com];
+	RCPT_COUNT_SEVEN(0.00)[7];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
 	RCVD_COUNT_TWO(0.00)[2];
-	DWL_DNSWL_BLOCKED(0.00)[suse.cz:dkim];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.cz:dkim,suse.cz:replyto]
-X-Rspamd-Action: no action
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
 X-Spam-Flag: NO
-X-Spam-Score: -4.21
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 05B145BD58
 
-On Tue, Apr 28, 2026 at 07:31:50AM +0930, Qu Wenruo wrote:
+On Tue, Apr 28, 2026 at 10:14:40AM +0930, Qu Wenruo wrote:
 > 
 > 
-> 在 2026/4/28 01:18, David Sterba 写道:
-> [...]
-> >>   
-> >> +static void invalidate_btree_folios(struct btrfs_fs_info *fs_info)
+> 在 2026/4/28 07:45, Qu Wenruo 写道:
 > > 
-> > This is too close to the generic invalidate_inode_pages2, please add
-> > btrfs_ prefix.
-> 
-> Sure, and I'll try to get a better name for it, as we also have 
-> btree_invalidate_folio().
-> 
-> [...]
-> >> --- a/fs/btrfs/transaction.h
-> >> +++ b/fs/btrfs/transaction.h
-> >> @@ -255,13 +255,13 @@ do {								\
-> >>   		__first = true;					\
-> >>   		if (WARN(btrfs_abort_should_print_stack(error),	\
-> >>   			KERN_ERR				\
-> >> -			"BTRFS: Transaction aborted (error %d)\n",	\
-> >> -			(error))) {					\
-> >> +			"BTRFS: Transaction %llu aborted (error %d)\n",	\
-> >> +			(trans)->transid, (error))) {			\
-> >>   			/* Stack trace printed. */			\
-> >>   		} else {						\
-> >>   			btrfs_err((trans)->fs_info,			\
-> >> -				  "Transaction aborted (error %d)",	\
-> >> -				  (error));			\
-> >> +			"Transaction %llu aborted (error %d)",	\
-> >> +				  (trans)->transid, (error));	\
 > > 
-> > Adding the transaction number adds like 4KiB of object code because the
-> > calls are inlined so we can have exact location and stack.
+> > 在 2026/4/28 05:54, Teng Liu 写道:
+> >> get_new_location() uses BUG_ON() to crash the kernel if the file extent
+> >> item it looks up has any of offset, compression, encryption, or
+> >> other_encoding set. The data reloc inode is only written by relocation's
+> >> own paths -- insert_prealloc_file_extent() and
+> >> insert_ordered_extent_file_extent() -- which always leave those four
+> >> fields at 0 (the data reloc inode is created with BTRFS_INODE_NOCOMPRESS,
+> >> and encryption/other_encoding are reserved-and-zero). Observing a
+> >> non-zero value therefore means the leaf decoded from disk does not match
+> >> what the kernel wrote, i.e. on-disk corruption. A malformed image can
+> >> reach this code via balance and panic the kernel.
+> >>
+> >> Move the validation into tree-checker's check_extent_data_item(), where
+> >> the constraint is enforced when the leaf is read off disk rather than
+> >> after relocation has already started. The data reloc tree has a fixed
+> >> root id (BTRFS_DATA_RELOC_TREE_OBJECTID) recorded in the extent buffer
+> >> header, so check_extent_data_item() has all the information it needs to
+> >> apply this check on its own. Report violations via file_extent_err() and
+> >> print the four offending values.
+> >>
+> >> In get_new_location() replace the BUG_ON() with an ASSERT().
+> >> The caller in replace_file_extents() already handles non-zero returns 
+> >> from
+> >> get_new_location() by breaking out of the loop without aborting the
+> >> transaction, so no caller changes are needed.
+> >>
+> >> Suggested-by: Qu Wenruo <wqu@suse.com>
+> >> Suggested-by: David Sterba <dsterba@suse.com>
+> >> Reported-by: syzbot+3e20d8f3d41bac5dc9a2@syzkaller.appspotmail.com
+> >> Closes: https://syzkaller.appspot.com/bug?extid=3e20d8f3d41bac5dc9a2
+> >> Signed-off-by: Teng Liu <27rabbitlt@gmail.com>
 > > 
-> > It could be possibly moved to __btrfs_abort_transaction() but with some
-> > additinal shuffling of the code from macro to the handler.
+> > Reviewed-by: Qu Wenruo <wqu@suse.com>
 > > 
+> > And merged.
 > 
-> I can remove the transid part, as it doesn't contribute to the final bug 
-> that got pinned down.
+> Unfortunately this tree-checker got triggered during btrfs/061 runs at 
+> write-time tree-checker, with arm64 64K page size.
 > 
-> It's mostly a precautious debug feature.
+> The offending file extent is as the following:
+> 
+> [  536.885066] 	item 69 key (258 EXTENT_DATA 4063232) itemoff 12400 
+> itemsize 53
+> [  536.885067] 		generation 28 type 1
+> [  536.885067] 		extent data disk bytenr 10512723968 nr 36864
+> [  536.885068] 		extent data offset 24576 nr 12288 ram 36864
+> [  536.885069] 		extent compression 0
+> 
+> Note the offset is not zero, and the type is 1 which means it's a 
+> regular file extent.
+> 
+> So the check is causing false alerts.
 
-I have found a way how to reclaim 22K of object code, so the transaction
-id can stay. I'll post the patch once you send v2.
+I maybe have an idea.  The difference from the BUG_ON and the
+tree-checker is the context where it's called. In relocation it's
+somewere in the middle and there are actions fixing up the offset. OTOH
+when this is done in tree-checker the constraints are different.
+
+  get_new_location() - verifies offset, compression, ...
+
+The offset corresponds to 'bytenr' and is returned via *new_bytenr to
+replace_file_extents() and then updated in the leaf
+
+  btrfs_set_file_extent_disk_bytenr(leaf, fi, new_bytenr);
+
+This eventually ends up in in the pre-write check.

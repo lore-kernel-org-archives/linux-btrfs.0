@@ -1,225 +1,131 @@
-Received: from mout-p-202.mailbox.org (mout-p-202.mailbox.org [80.241.56.172])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E291154425
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2026 02:33:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=80.241.56.172
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D859C314D21
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2026 03:13:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777343630; cv=none; b=QVyRdKCQf4Pw4PpfUzRAskFAOJ/JhN/PbyrvJT9BEUQYyaEgNUgBZgGhD7KCggvpjLDe5oy+T3qLNUKxmqyzshjPA4+GANKNDcbK6VZ2Z46WxZvEJ6lZkir20X6knjazpe28KXPL7Oc7g89sXsRuwGKWvk9b4fdqELL3fiBwo2Y=
+	t=1777346039; cv=none; b=YAhPuhxwy/V4BtJM+yIvr5fJNUxmL8CwX7nc7ABQMBV2u9Tss4CAL3ei10rCeoLHqohai/4XqA+k1nxG8sK/+G/Fia9GmxRv42mQwW4u9A9xAb3X0jvwpmkN1CJleMon5cO0ENtoWdlC/+b7WQRo2bk0msGPph44I982ulZvviI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777343630; c=relaxed/simple;
-	bh=N1HdjyrHJ9HwzNBZzA0vDtEMu5PkW4jFv8n0N07CaAc=;
-	h=From:To:Cc:Subject:References:In-Reply-To:Message-ID:Date:
-	 Content-Type:MIME-Version; b=LimCyqJlUuIbszqd9vijF7vAXV0/d5LVgmsF+1GKS6AWPwYozYJxlwxlwl85VZ1cIzhAi9SLyAHKnDkNO+ntLd6dGwRuFEKHBxivulPmw4PIzRvIZ/Sc9k8oJaMpTa5YQ8QqMAIh1ZKQdT5GN8AAjxemaTaghtODWOHaxQ7K26M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mailbox.org; spf=pass smtp.mailfrom=mailbox.org; dkim=pass (2048-bit key) header.d=mailbox.org header.i=@mailbox.org header.b=yjda7wfY; arc=none smtp.client-ip=80.241.56.172
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mailbox.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mailbox.org
+	s=arc-20240116; t=1777346039; c=relaxed/simple;
+	bh=tu6bnEq9h0T35B9FBeUbZWyV19fHfBWi9XlnExU6Y/I=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=CJQPd9Ep1aWgUHck4rEQ6KqiAFTzKhBL1H8DOKTy/BHcWJR2WLqcK02mSUL/P9+59qboN71ZeWwy8qaVEVLZsMv7ELg5q4QBfl2AbTnrs0aXYzFwq54Zx7OOJVH8hz/YkakcaXPc/xm1/VEDLe/z8p01+ju8gk2pFevbBgmsWzI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=LoPGcfEz; arc=none smtp.client-ip=209.85.128.43
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mailbox.org header.i=@mailbox.org header.b="yjda7wfY"
-Received: from smtp102.mailbox.org (smtp102.mailbox.org [IPv6:2001:67c:2050:b231:465::102])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mout-p-202.mailbox.org (Postfix) with ESMTPS id 4g4Pd526Z0z9t1g
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2026 04:33:45 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mailbox.org; s=mail20150812;
-	t=1777343625;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=N1HdjyrHJ9HwzNBZzA0vDtEMu5PkW4jFv8n0N07CaAc=;
-	b=yjda7wfY0NTMSOrLS2caSnHB9uISBPFNL/VDCoKG4WPAzuZm0ml73eBOnnGwQCpFVY6EhZ
-	X1iGgn8+U1ugAaMyC12wznb7NOrMc5NYJ6huJnwTBQkc8OYLd9lVJgAoWZwy0hPsxW+8Uf
-	TsPY1Lyn+uCDxOlciQ69uriLEWGyVe4ADQklc/SYzpbqf+jH6zaxlpdenl4P+oqivHC4Pv
-	XrQCEtlrDYJlOFsIvgr2E96Iw6J4s+JiT3YVRwgZJ08b4P08Mnce8HCa3KG68qNB+dOhxF
-	IyKe0GDQaPxlQ84J8XpYx3qMRYSU4i/G23/P8/6UVF8vGLLgMaXYpz8jlQnvKw==
-From: brainchild <brainchild@mailbox.org>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: 
-Subject: Re: Strange behavior with scrub, quotas, and snapshots
-References: <20260428012128.Horde.f5fqQoIpJ3QCuz9LBZNU3Qz@nextcloud.brainspace.site>
-In-Reply-To: <20260428012128.Horde.f5fqQoIpJ3QCuz9LBZNU3Qz@nextcloud.brainspace.site>
-Message-ID: <20260428023344.Horde.ACdhtTWNQo0yzpeKOd7keUl@nextcloud.brainspace.site>
-Date: Tue, 28 Apr 2026 02:33:44 +0000
-Content-Type: text/plain; charset=utf-8
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="LoPGcfEz"
+Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-48896199cbaso107834405e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Apr 2026 20:13:57 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1777346036; x=1777950836; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=WLRdx6vrhxqil850JAnuEufxVhMOeWlB+VYeL61H3P4=;
+        b=LoPGcfEzgZbp1myIi7h77A5t35Zq+yOTqe/+thAaMta6R/qn/+a4I0VtFGaVql5OC7
+         K8OPrpSnzMlSqxAR0+lKDajclLc5dUXVtUmbKAMJ3/0KZ7Zr5/cUsr0QVR9ikxuJCapm
+         G/TjjNhin4svui89M403AyNoKG7x74qiBLJYxDLssXoDopIXHB/Wl1VS/QrUjzPItl6u
+         auleJMK8VIUI46a4zgqS0R75DH3Im/hj8pjVzzfEzZSNDT8W63DTtCc9LkAcuJgGV6OD
+         dzRQWASTlA7DJKdrVLg1/E38Yq/Nd1Bb4nqihxTd9s7O+5/DQgkdO7b4hY1kVjdj7QZj
+         QtdA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1777346036; x=1777950836;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=WLRdx6vrhxqil850JAnuEufxVhMOeWlB+VYeL61H3P4=;
+        b=F62X6xEbXSUgrAswwaRvgKeukWqgNjYsfhYu+5JYxAKQlt3kO4nixKgeBsiQ7B1ytC
+         8auFKoRnLZkPsWjXfTTq3WiruGH+T/QCb/h3mDOtzaLPwgvJHtrXjhka73VmY2JxT5hT
+         wwFrIMsrqL1UXfHGQoZYCpNR1KlMCc4FtFMyn9hy2DR3J0zGEhHdgWjfBgUppD1cZeHm
+         Oqp6XDD9dgKzZgFlpo54DnllvafRyY4EXZ3H0JoZjzgw1qpjf4Ol9kyDbt9bBnLgb8nx
+         WsZXGNRZnOradT+kQo6V+x60pBogx+amJ6Ag5Z1N3HhC/lZDvKhiGsfrNTNtiuSTImlf
+         iqRA==
+X-Forwarded-Encrypted: i=1; AFNElJ+rwy+reQA5VirUPE+rWA3EwDSJxm0KnrsF/eHKRQdTaEqyyJhbsaxF8pmynmDfsgFHuYp37EkUYzqVIQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxsiVlC3K2G1qLAgkpvnVDH9jDIioXRKscmnb/m7ltKoFPbh98k
+	nrAgdaoFEdNufWxl8lJwT0/ViWJzr5n9ZblHMmAlmuz3pILmklHdinEUq+Ra9OnsJzY=
+X-Gm-Gg: AeBDiessRPffH+s0+sZoWW4uTXPJ5eo8Vjh9PwnmeCARgxdqq2Pt0TXTl5KqhhzPl+L
+	cp0Xua4Xqzyvl5K8+0We5tj7PeqdwEars08tbe1yhz5vOLd1TEG8Kfvm14eNT5TCueKT9THqo+n
+	jQ90dWONJ7iAtlvzEjRVTl6mgnTcC2GsDFzDB/iypzqdOuqePCvh0jsdVGhSeUm6JAxKBSP71vl
+	uGR6uzOVBkQ6a5fCh1ZtSSSGI9upWLVfTOKewC36zdxrJcwIFOkhEE03gJqnI/O0zydHYwL7x+g
+	+PutKawnxmiiGbeAmhcmtFJGE66nd36Mz1qeGzqNQXjFofOSTff0lrRhxHE9O4MEJwOZXT1MsKe
+	Ykl+GZzTlDNtOhhFTj8AKts84mlVnEjArB9Lv+MxIWnrA1juzezzqtxuodDcmrWETX480K2h4oe
+	8D8MHWazejWs4AGyLrA9Pe9NwvaT4Qicqfd/4utanFoz+POmlYNxgJfXkxJlvMWA==
+X-Received: by 2002:a05:600c:5494:b0:488:ffad:6728 with SMTP id 5b1f17b1804b1-48a77b05c77mr18789155e9.19.1777346036179;
+        Mon, 27 Apr 2026 20:13:56 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c7fc2ba84a2sm717715a12.13.2026.04.27.20.13.53
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 27 Apr 2026 20:13:55 -0700 (PDT)
+Message-ID: <2bf2013f-ecc3-424a-b6b3-deec4f3b74e6@suse.com>
+Date: Tue, 28 Apr 2026 12:43:51 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: Strange behavior with scrub, quotas, and snapshots
+To: brainchild <brainchild@mailbox.org>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <20260428012128.Horde.f5fqQoIpJ3QCuz9LBZNU3Qz@nextcloud.brainspace.site>
+ <20260428023344.Horde.ACdhtTWNQo0yzpeKOd7keUl@nextcloud.brainspace.site>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260428023344.Horde.ACdhtTWNQo0yzpeKOd7keUl@nextcloud.brainspace.site>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-MBO-RS-META: bk9ogcugu4hod3e7ruckohduc1nkbaji
-X-MBO-RS-ID: 88316361dedbac8f9f6
 
-With swap disabled, the scrub operation seems to reach completion, with no errors found.
- 
-However, the check operation still discovers the same errors.
- 
-The output of `rescue fix-device-size' is "No device size related problem found".
- 
-After, check still reports the same errors, including the super mismatch.
- 
-"brainchild" brainchild@mailbox.org – April 28, 2026 1:21 AM
-> I have not tried scrubbing without the swap file being in use.
->  
-> I could try, but as the file is only 32Gb, I would be very surprised if it made any difference.
->  
-> "Qu Wenruo" wqu@suse.com – April 27, 2026 9:16 PM
-> > 在 2026/4/28 09:52, brainchild 写道:
-> > > Just as I was scanning for the name of the particular inode, the volume reverted to again insist on being without any free space.
-> > > 
-> > > I was able to extract the log for a new scrub, as requested (begun after the switch to being unable to create new files).
-> > 
-> > Only 10GiB of data is scrubbed, meanwhile your data should be 600GiB+.
-> > 
-> > You mentioned that there is a swap file, how large is that file, and 
-> > have you tried to disable the swap file before scrubbing?
-> > 
-> > Thanks,
-> > Qu
-> > 
-> > > 
-> > > Thanks.
-> > > 
-> > > "Qu Wenruo" wqu@suse.com – April 27, 2026 6:58 PM
-> > >> 在 2026/4/28 08:17, brainchild@mailbox.org 写道:
-> > >>> Currently, scrub operations are not completing properly, so I certainly
-> > >>> think it is important to try to repair the volume.
-> > >>> 
-> > >>> Which error do you expect is related to the particular problem,
-> > >>> concerning scrub?
-> > >> 
-> > >> Can you provide the full "btrfs scrub start -BR" output?
-> > >> 
-> > >>> 
-> > >>> Is there any evidence that data may have been lost,
-> > >> 
-> > >> Not yet.
-> > >> 
-> > >>> or concern that
-> > >>> 'fix-device-size' could cause further loss?
-> > >> 
-> > >> That should be mostly safe, but if you're concerned about it, please
-> > >> update to a newer version of btrfs-progs.
-> > >> 
-> > >> Ubuntu is pretty bad at backporting fixes for btrfs-progs.
-> > >> 
-> > >>> Should the operation be done
-> > >>> while the device is mounted, or only while not mounted?
-> > >> 
-> > >> Must be unmounted for btrfs check and btrfs rescue.
-> > >> 
-> > >> Thanks,
-> > >> Qu
-> > >> 
-> > >>> 
-> > >>> Thanks.
-> > >>> 
-> > >>> On Tue, Apr 28 2026 at 07:40:31 AM +09:30:00, Qu Wenruo <wqu@suse.com>
-> > >>> wrote:
-> > >>>>
-> > >>>>
-> > >>>> 在 2026/4/28 06:02, brainchild@mailbox.org 写道:
-> > >>>>> I have the run the check command, which reported a variety of errors.
-> > >>>>> The output is attached.
-> > >>>>>
-> > >>>>> Are any recommendations available to attempt restoring the volume?
-> > >>>>
-> > >>>> The super block bytes mismatch is a minor one, which shouldn't affect
-> > >>>> normal operations.
-> > >>>>
-> > >>>> But still you can use "btrfs rescue fix-device-size" to fix the problem.
-> > >>>>
-> > >>>>
-> > >>>> The nbytes wrong can be minor too, but it's affecting all snapshots
-> > >>>> containing the inode 16523863.
-> > >>>>
-> > >>>> You can either fix it by copying the inode to another location (can be
-> > >>>> inside the same btrfs), remove the original file, mv back the new copy.
-> > >>>> This will need to be done for every snapshot.
-> > >>>>
-> > >>>> Or you can try "btrfs check --repair", which will do an in-place fix,
-> > >>>> but will still break the shared blocks of every snapshot.
-> > >>>>
-> > >>>> Overall, I'd strongly recommend to remove all unused snapshots first
-> > >>>> before doing either fix.
-> > >>>>
-> > >>>>>
-> > >>>>> Thanks.
-> > >>>>>
-> > >>>>> On Mon, Apr 27 2026 at 11:35:28 AM +09:30:00, Qu Wenruo
-> > >>>>> <quwenruo.btrfs@gmx.com> wrote:
-> > >>>>>>
-> > >>>>>>
-> > >>>>>> 在 2026/4/27 09:22, brainchild@mailbox.org 写道:
-> > >>>>>>> Hello.
-> > >>>>>>>
-> > >>>>>>> I am struggling with a poorly behaved BTRFS volume.
-> > >>>>>>>
-> > >>>>>> [...]
-> > >>>>>>> ---
-> > >>>>>>>
-> > >>>>>>> No errors are reported in the kernel log, only warnings about
-> > >>>>>>> skipping the swap file during scrub.
-> > >>>>>>
-> > >>>>>> If you assume the fs has some corruption, none of the above is
-> > >>>>>> really useful.
-> > >>>>>> A full "btrfs check" is strongly recommended.
-> > >>>>>>
-> > >>>>>>>
-> > >>>>>>> Second, within the logs generated for Timeshift, a concerning
-> > >>>>>>> pattern recurs, as in the attached example. Further, during the
-> > >>>>>>> periods in which are generated logs such as the one attached,
-> > >>>>>>> the entire system lags considerably. It is clear that the
-> > >>>>>>> volume is not healthy.
-> > >>>>>>
-> > >>>>>> The lag is mostly caused by qgroup.
-> > >>>>>> You have a lot of snapshots (shown by the super large snapshot id),
-> > >>>>>> every time a large snapshot/subvolume is deleted, btrfs will try
-> > >>>>>> to disable qgroup to avoid such lag, but if whatever script/tool
-> > >>>>>> decides to rescan qgroup when the snapshot/subvolume deleting is
-> > >>>>>> still under going, the lag will be re-introduced.
-> > >>>>>>
-> > >>>>>>>
-> > >>>>>>> I was using a recent 6.x kernel, I believe one of 6.18.x, when the
-> > >>>>>>> problem emerged. I upgraded by to 7.0, finding no improvement
-> > >>>>>>> in the operation of the volume.
-> > >>>>>>>
-> > >>>>>>> Also, I tried initiating the scrub through the most recent static
-> > >>>>>>> build of the user-space utility (i.e. btrfs-progs), with no
-> > >>>>>>> improvement.
-> > >>>>>>>
-> > >>>>>>> I would like some suggestions for restoring the volume to health,
-> > >>>>>>> to avoid the need to provision a new volume from scratch.
-> > >>>>>>
-> > >>>>>> "btrfs check" first, if no error, disable qgroup if you have
-> > >>>>>> frequent snapshot creation/deletion.
-> > >>>>
-> > >>>> So your fsck is mostly fine, the lag part is highly possible to be
-> > >>>> caused by qgroup.
-> > >>>>
-> > >>>> If you do not need it, just disable it for good.
-> > >>>>
-> > >>>> Thanks,
-> > >>>> Qu
-> > >>>>
-> > >>>>>>
-> > >>>>>> Thanks,
-> > >>>>>> Qu
-> > >>>>>>
-> > >>>>>>>
-> > >>>>>>> Thank you.
-> > >>>>>>>
-> > >>>>>>
-> > >>>>>
-> > >>>>
-> > >>> 
-> > >>>
-> > >> 
-> > >>
-> > 
-> >
-> 
->
+
+
+在 2026/4/28 12:03, brainchild 写道:
+> With swap disabled, the scrub operation seems to reach completion, with no errors found.
+>   
+> However, the check operation still discovers the same errors.
+
+Scrub is not a fsck, from man page of btrfs-scrub:
+
+Note:
+         Scrub is not a filesystem checker (fsck, btrfs-check(8)). It 
+can only detect filesystem damage using the checksum validation, and it 
+can only repair filesystem damage by copying from other known good replicas.
+
+         btrfs-check(8) performs more exhaustive checking and can 
+sometimes be used, with expert guidance, to rebuild certain corrupted 
+filesystem structures in the absence of any good replica.
+
+
+>   
+> The output of `rescue fix-device-size' is "No device size related problem found".
+>   
+> After, check still reports the same errors, including the super mismatch.
+
+If you do not want to manually fix the nbytes mismatch, go "btrfs check 
+--repair", which may also help to fix the super block size mismatch.

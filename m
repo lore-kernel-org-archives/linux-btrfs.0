@@ -1,41 +1,66 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f42.google.com (mail-wm1-f42.google.com [209.85.128.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DA1F733D6F0
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2026 22:45:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.22
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D6734372ECB
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2026 22:50:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777416346; cv=none; b=eCJr4smzPLZgtI3zGwKExTf9Ca60RiFBrUJoXV/xUhqn2orLgryICBJ2wyzhxg9if4unNv7ubkR680qqQV3UvdUD1OVVbU+LDOJtskvYpL03b3imPXa8I2I4/lZW+F4IGWBPQBVGUuppr+3YzsIirkCF8oDgI+W3IWeU/q4kkoo=
+	t=1777416649; cv=none; b=JJ9Lk6UpYrWXizBHG4eb6G985frZFArsz2j4l2EvZnsGoIM9MigCgMr7mUQtG1RLtUELW/zSfuG8fcE1r7GCerkXYPQTajM6+D+ZAUzBR/SSKBgK8p05QvUxt/7r5KFf05+wrcsjAxPrC+IwyIh96NBBNT5dIRQHy+ERsrdwMRU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777416346; c=relaxed/simple;
-	bh=VPpnVTptQVvjhsvuCLDJZzCW3hIGpUNi6iVP768C5zk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=J9+jpz57lM7JeD3+D33O6Qi9Q4nt3A0lnQcyFJcB4dB0h2jOJBOCfgm2Iw1kxQHkyT3fVFdzWfX2uzZzEF4EBlsFWXgeg4uPDYKoj6i7gYCxAAqMOsYJOswW5y7zsFXuHUcF2D78/VvZf/E8aNxT7dQCrVNTwiTHlc4ABgDDqoY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=WM/KS4lP; arc=none smtp.client-ip=212.227.17.22
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1777416649; c=relaxed/simple;
+	bh=vZn992v0NLbPdcKB9S65GAKPyWVgx7glcrUpnc3a3nY=;
+	h=Message-ID:Date:MIME-Version:Subject:From:To:References:
+	 In-Reply-To:Content-Type; b=qAV4GdTLMclpCZ7YKDOJdU+acYM/29JPC9CtE/qK+6LLH5lJfDDeMWpj5ijPtq65lKmg4lGypFrJ8M/aeCWSAQ73E51vC59SkgCRPtbxFIsNvKaS1TtKKpXB4jTsUXGJoLEj15gEaupbBBf5aIb+PsjKzPLYS+kkl5NUbFKH0OI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=JakrkZL3; arc=none smtp.client-ip=209.85.128.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="WM/KS4lP"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1777416342; x=1778021142; i=quwenruo.btrfs@gmx.com;
-	bh=D3rkdrOIzta9aI0ecgQRIhkeOq6kBQxD+kIJbrJJ11Q=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=WM/KS4lP3C7Nq9n61p2hlHVPAHXpp8IB1yJKC2vJ+jgpRCPZCB2LE54lV4/EfWGP
-	 j8yRl9gdT0soiNd2v+ARM+pbmTH7weCBmNVYjKhoV2Jdkg9vbe/nUF2DvSE8rBkyq
-	 tQtrUs3ujlDN/q15zFDG0bQk/0FUnRP23TfRhrucCtHaUJ0kgc+nRJjpMAWrvQYUN
-	 op761d/GwibnflFMydwLi7CnUN4TGjl4H27Op8OXZy+ifn7u/dc2ymK4Xgo8LBTia
-	 FYBW9yzyRbMWktJtcA9lKh9sc2GQ/o4oWUUbBd7wehIWWM5qgcnMDsnpeCN/CBg/N
-	 zQbUdlXyi2OKDmV2fw==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MowKc-1vZOQa0i8U-00agnq; Wed, 29
- Apr 2026 00:45:42 +0200
-Message-ID: <f910a267-a99d-4007-a5ee-a186471697a8@gmx.com>
-Date: Wed, 29 Apr 2026 08:15:39 +0930
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="JakrkZL3"
+Received: by mail-wm1-f42.google.com with SMTP id 5b1f17b1804b1-488a8ca4aadso164155075e9.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2026 15:50:45 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1777416643; x=1778021443; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
+         :references:to:from:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=TOi7+c5S9KfgFFREHImV9lgradocUSjnNYEe7+V5hNA=;
+        b=JakrkZL3Lbngd+NysJfunL2C3ibRLwBZ+h2KZsSacdb/v1LtbM0vJYj4kmqRRJUTwL
+         pb295SZqNC3/aT0P8AUcnrYmhXiwNffV5lkzgfvy49DWLPfan2RsdS08vB9AxWPSJ5xo
+         UKmnTva+VB/rbbVuEmBopV9Eg4WgcKDcwLOnILeO+9QDHNdR/ho2ENf3DSLD2eiUyKN7
+         RQo3r3MsexVVg9pg+6ucWWpHBW/WfxzjCl4z/6GTNI91KNnnZW6HwxySZoDr0LXaWu43
+         diVuzitgLGaE4M+x3VJBwKALuVXhDvGdwFEJ/Thg26afoqqHU4bIlyVW/5DEjPkS4ywG
+         fSJg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1777416643; x=1778021443;
+        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
+         :references:to:from:subject:user-agent:mime-version:date:message-id
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=TOi7+c5S9KfgFFREHImV9lgradocUSjnNYEe7+V5hNA=;
+        b=bTiWfuyHKAk5bmfBd5M/vyNISVT5ai50Fa8nHn+3GTOFNHiqJvfil52L8NEevtsDzk
+         44yRvn8LxCwyNoWsISxrPHejqgQ6jJyTJKzqZT58oH89cab5RAX5BnqMN8IpBClsmBo5
+         DdlcWr/Cm2RfRXwCknjJ7nVbWwanyAhoCBE8BIhWYGLJocOW1r5rE42IrL4ncQajgo45
+         9b8FWD/YzBUvFY/dr7AfNy6viOCEcEN70SB7mnRGBeX68MYQe779Qs75kP+YabzN7Ml7
+         nkfI06ugAOjAZmgY7RIOKoBRl7JST7g4WhI1b0kSPp1dIjzQcWmFpaPHvsHu5wE29jrT
+         w7eA==
+X-Forwarded-Encrypted: i=1; AFNElJ/L5a5JpvHL2LMehTpY8MDjFdyUCGdrKyQVMXuwDlYvZeua/l5LnFDN220FY191WGuhoHoESTBm44n0dA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzjusotWMUPGCNyYOo/cQWy8RuDynt3DzIAuAqCBnmmT9rF37hj
+	PqijaxIbraH84RVSg0ADjW8sh8FSo3bEnrR2DejKr+lExK4IsvuuWbS0sUnZOpvH6sA=
+X-Gm-Gg: AeBDiesLMsWOMTxhtyO9BDszN+cI3TgptUAQoEJdEEZqljwCdRX5q67xjbHLqhhjVTx
+	bm9xVPXpSjrKoY35AhimCNxdzM2MxZd5KqXc/jKbJlofO/hWbSxrFZniGesoA4BwgDVjbbDI6Er
+	L4/IorBMnEeDXY4OeiT9uN4ggoVA5HAv6RwFrFbEDm3k16VhwuBUg1tFOGeF03eZjYBYkQFF4cJ
+	nvdGcIRl7ACQ6bEYwMiBRyOYpCrslTip2h2vAOXrwHHrghqsrqVd/ymNRGGZ685xGvpJBWIZ5BH
+	WcS5lyhrLTeUN8pbuaBbK/pd9FaYkptGi7OV6WerAlZBQO1kjjYCAYx61lLuo49ErLo0mNaSfES
+	5aDWl68AuCE97DdAqjw4fNPmQLOxeiy2YrBvKORgWLZ1ZqQ2xkTZbd7OPuNOG8K2q0Q6cTuN383
+	FSm+ysKpa8PGk+XfBtyS+USO7kGwb8BnmaQ2CUmucHs4iRgb4OZb3qjiETmjsjqQ==
+X-Received: by 2002:a05:600c:2e0a:b0:48a:5574:3a48 with SMTP id 5b1f17b1804b1-48a7b59d1camr13418175e9.16.1777416643279;
+        Tue, 28 Apr 2026 15:50:43 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-834ed6dd628sm115740b3a.37.2026.04.28.15.50.40
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 28 Apr 2026 15:50:42 -0700 (PDT)
+Message-ID: <762ea596-a2b0-4e07-91ef-225a9298c3a0@suse.com>
+Date: Wed, 29 Apr 2026 08:20:38 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,176 +68,159 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: move transaction abort message to
- __btrfs_abort_transaction()
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <20260428155148.2399-1-dsterba@suse.com>
+Subject: Re: Strange behavior with scrub, quotas, and snapshots
+From: Qu Wenruo <wqu@suse.com>
+To: brainchild@mailbox.org, linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <20260428012128.Horde.f5fqQoIpJ3QCuz9LBZNU3Qz@nextcloud.brainspace.site>
+ <20260428023344.Horde.ACdhtTWNQo0yzpeKOd7keUl@nextcloud.brainspace.site>
+ <2bf2013f-ecc3-424a-b6b3-deec4f3b74e6@suse.com>
+ <KAR6ET.BWL8BEMZPLSV@mailbox.org>
+ <0f6f3f32-f0b3-4c61-89c2-6f931592f122@suse.com>
+ <d580bc81-71be-4153-8d4e-58c4f6261085@mailbox.org>
+ <19c6157d-235e-4174-8865-3d029f9a2de7@suse.com>
+ <06Y7ET.5XM6UHU999Y21@mailbox.org> <A168ET.AOECEOR9CWSE1@mailbox.org>
+ <d3e1af7d-fa08-407b-894b-46d6ba3626cd@suse.com>
 Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+Autocrypt: addr=wqu@suse.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
  1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
  9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
  gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260428155148.2399-1-dsterba@suse.com>
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <d3e1af7d-fa08-407b-894b-46d6ba3626cd@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:eCq42uMEV/6SmJpEwQAM8Z7GpoNffXAHL6KYw7wYxkNLBqhL4rW
- LApwLpeyZfEssrRo0TMHCRAWszwLKovg0A1+G1EOAs2DiHi4AkfepkOjeDiXDhrN3v+rULL
- fvmII/KVGDd+JTNeOcJ+olAr+qgwGVT4ylZQf405ceUFTMFmPOR8kPFYpta6EdmrsZUzLUt
- sCcYBckICMIUaSe7Amrww==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:+oguqyP0Y4c=;H+LijzSkJfje2P9Y57V924Vcj0Q
- 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
- eTsRtFNZ22814Qks2DXbSPXA==
+Content-Transfer-Encoding: 8bit
 
 
 
-=E5=9C=A8 2026/4/29 01:21, David Sterba =E5=86=99=E9=81=93:
-> The btrfs_abort_transaction() is called at the location where we want to
-> report the abort. It must be a macro so we get the correct line and
-> stack trace. This inlines the necessary code and the rest is pushed to
-> __btrfs_abort_transaction().
->=20
-> There's a possibility to reduce the inlined code if we move the message
-> to the helper function as well, without loss of information. The
-> difference is only that the WARN will not print it inside the stack
-> report but after:
->=20
->    --[ cut here ]--
->    WARNING: fs/btrfs/transaction.c:2045 at btrfs_commit_transaction+0xa2=
-1/0xd30 [btrfs], CPU#11: bonnie++/3377975
->    ...
->    --[ end trace ] --
->    BTRFS error (device dm-0 state A): Transaction aborted (error -28)
->=20
-> While previously there would be one more line like:
->=20
->    --[ cut here ]--
->    BTRFS: Transaction aborted (error -28)
->    WARNING: fs/btrfs/transaction.c:2045 at btrfs_commit_transaction+0xa2=
-1/0xd30 [btrfs], CPU#11: bonnie++/3377975
->    ...
->    --[ end trace ] --
->=20
-> This removes about 22KiB of btrfs.ko on a release config.
->=20
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->   fs/btrfs/transaction.c |  3 +++
->   fs/btrfs/transaction.h | 11 +----------
->   2 files changed, 4 insertions(+), 10 deletions(-)
->=20
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 194f581b36f3..5125cb20ef85 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -2729,6 +2729,9 @@ void __cold __btrfs_abort_transaction(struct btrfs=
-_trans_handle *trans,
->   {
->   	struct btrfs_fs_info *fs_info =3D trans->fs_info;
->  =20
-> +	btrfs_err(trans->fs_info, "Transaction %llu aborted (error %d)",
-> +		  trans->transid, error);
-> +
+在 2026/4/29 07:56, Qu Wenruo 写道:
+> 
+> 
+> 在 2026/4/29 07:49, brainchild@mailbox.org 写道:
+>> Further to the comments in the previous message, I have also found 
+>> some messages in the kernel log, from the balance operations, which 
+>> may be relevant.
+>>
+>> As the console output of the command is "ERROR: error during balancing 
+>> '/': No space left on device", the kernel messages are as shown below.
+>>
+>> ---
+>>
+>> balance: start -musage=50 -susage=50
+>> BTRFS info (device nvme0n1p5): relocating block group 4126692868096 
+>> flags metadata|dup
+>> BTRFS info (device nvme0n1p5): found 9279 extents, stage: move data 
+>> extents
+>> BTRFS info (device nvme0n1p5): relocating block group 4126155997184 
+>> flags metadata|dup
+>> BTRFS info (device nvme0n1p5): found 6365 extents, stage: move data 
+>> extents
+>> BTRFS info (device nvme0n1p5): relocating block group 4125149364224 
+>> flags metadata|dup
+>> BTRFS info (device nvme0n1p5): found 10145 extents, stage: move data 
+>> extents
+>> BTRFS info (device nvme0n1p5): relocating block group 4124612493312 
+>> flags metadata|dup
+>> BTRFS info (device nvme0n1p5): found 11487 extents, stage: move data 
+>> extents
+>> BTRFS info (device nvme0n1p5): 1 enospc errors during balance
+>> BTRFS info (device nvme0n1p5): balance: ended with status: -28
+> 
+>  From the dmesg, you're relocating only metadata block groups.
+> 
+> Meanwhile all the free space is inside data block groups, you need to 
+> balance *only* data block groups to free up space for metadata.
+> 
+> Not the opposite.
 
-This message will be outputted for every btrfs_abort_transaction() call.
+And forgot to mention, balance is also affected by swapfiles.
 
-Shouldn't we move it behind first_hit check?
+The same as scrub, a block group (1GiB) will be completely skipped if 
+there is any extent of an active swapfile.
 
-Thanks,
-Qu
+So your previous balance runs may also be screwed up by your swapfile.
+
+> 
+>>
+>>
+>> On Tue, Apr 28 2026 at 03:30:00 PM -04:00:00, brainchild@mailbox.org 
+>> wrote:
+>>>
+>>> On Tue, Apr 28 2026 at 04:11:05 PM +09:30:00, Qu Wenruo 
+>>> <wqu@suse.com> wrote:
+>>>>
+>>>> I strongly don't recommend to use swap files on btrfs, as you have 
+>>>> already experienced the limit on scrub, and I believe a lot of end 
+>>>> users are not aware of all the limits when using swap file on 
+>>>> btrfs, please check the long long list of limitations in "SWAPFILE 
+>>>> SUPPORT" of btrfs(5).
+>>>
+>>> Is it expected that the scrub operation cannot function properly if 
+>>> the volume has a swap file? I never before observed such a problem, 
+>>> nor find any mention in the documentation.
+>>>
+>>> The specific restrictions, as documented, for the swap file, seem 
+>>> completely compatible with my use, a single partition with no data 
+>>> duplication. I have no need for spanning devices or duplicating data, 
+>>> on the particular system.
+>>>
+>>>> Any dmesg of that RO flips? That indicates the fs flipped read-only, 
+>>>> which is a huge problem by itself.
+>>>
+>>> No. There are no kernel messages that are errors for the file system, 
+>>> or switches to read-only.
+>>>
+>>>> Especially with your initial info, there should be enough data 
+>>>> space, metadata space is less ideal but should be enough.
+>>>
+>>> I have read that the space allocated for metadata is expanded as 
+>>> needed. Why would problems follow from too little space being allocated?
+>>>
+>>>> Considering how many snapshots you have (triggering qgroup lag), I 
+>>>> strongly recommended to remove unused snapshots to free up space.
+>>>>
+>>>> After freeing up enough space, then try to balance data block groups 
+>>>> to make space for future metadata usages.
+>>>
+>>> The situation with balance is quite confused.
+>>>
+>>> The problem with the reported lack of free space first occurred 
+>>> several weeks ago. At that time, I deleted snapshots, and ran balance 
+>>> operations with incrementally higher usage values for data and 
+>>> metadata. By the end, I had run the operation, without reported 
+>>> failure, with values as high as 95%. Normally, such an operation 
+>>> would be very long, but in my case it finished in less than a minute. 
+>>> Also by the end, only about ten blocks in total had actually been 
+>>> reported as moved.
+>>>
+>>> Perhaps my installation of btrfsd has been successfully maintaining 
+>>> the balance for the volume. The system logs are not extensive enough 
+>>> for me to know when it last performed any operations.
+>>>
+>>> Regardless, it seems that the general problems are not becoming 
+>>> resolved by invocations of balance.
+>>>
+>>
+>>
+>>
+> 
+> 
 

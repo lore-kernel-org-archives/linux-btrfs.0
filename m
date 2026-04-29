@@ -1,38 +1,60 @@
-Received: from mail.synology.com (mail.synology.com [211.23.38.101])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9091522301
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 02:14:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C5DAA1F4C8E
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 05:04:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777428884; cv=none; b=hX35qAbNCjgnQ8QCqk1hB2k4sbqKWs7OprADNpawaF8DDQ1MYwNUqAgK9IW0od8kKeaErU+f7hnTCYI16fFrBzjg3XsTZ1bwl7f56tj6poI5IIGLmVri3sbeFYu7u8nHjWuw00UZ4J42S6i5JV9EZmx4a7CoI2MH3hQOiMOUAeU=
+	t=1777439059; cv=none; b=Mj366/zzt2ZEg13a/gY7Il9l7qfTaq/inu32yKaLrGuEfTEEcVlXU5sp2iSLfoOehzh44xXefDrre2q/4SszqcQk3IWyKrF0J3XxINzrRgqnTDclirQfb+8xlWfP06W+pHLZrBmEhtvGIYV+r/r3t3Lb0gEanGVXgEkVZw8RY2g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777428884; c=relaxed/simple;
-	bh=RCQuawf9W4BkMWuEpUBM78NKZ3RafUVOwbTGY+A4MdQ=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=eC23syiSLrzAAKfpCYWtU6P4iLYltmW1Cr93NYofvBUe+jh7sX35bZFHJsz1OO7J+A0iImdVlYAtlw9/It4alBcd0i4GzNf5GT/ZWyEqVp0Be0scdeRO3D4zcfkuDelHtPKNBzHaPqrFIm7wS4JBtzaOrsBaI+iNCp1NfCRSEZ0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=GryqGFKi; arc=none smtp.client-ip=211.23.38.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
+	s=arc-20240116; t=1777439059; c=relaxed/simple;
+	bh=F/tT+Fb5VNikLFHUKR8sk1zyQHiMwZyhAsdjj8/RvTo=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=FDC9xBy1qvkM6KrhLXqNpLiQgEMBiH44YZLSckcL/tpu0jMrx4/SqCknOpnt/Gp+XQqfT601pFHJ/RHZM3MqXgza4HG42M2GI53EAnc39IZO166wLFhtMz6sgBnkbS00fcUdRSvE2vYpf4EOnU7t3BTFxJKEJDxFgkiPqk/Jz1I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=MM0pwNQw; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=k51o3hG7; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="GryqGFKi"
-Received: from 11212-DT-014.. (unknown [10.17.40.185])
-	by mail.synology.com (Postfix) with ESMTPA id 4g518V2mWszJDnVCJ;
-	Wed, 29 Apr 2026 10:14:34 +0800 (CST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-	t=1777428874; bh=RCQuawf9W4BkMWuEpUBM78NKZ3RafUVOwbTGY+A4MdQ=;
-	h=From:To:Cc:Subject:Date;
-	b=GryqGFKiypgFXglZWpgswdXLdDLCDWHv0NCyDj9FKAQnkrTdTvQM1QHJjdDFhr6kb
-	 hhpn9nTBAyWR+23owi/Mov8b4iFJvL4oISDMWgzS7YiU8HQR6TWga2EvvjB4bhJ8/3
-	 0SzhRjB8WGOiGeNpPNCml30XJqMO68x6mXWrjqJg=
-From: Dave Chen <davechen@synology.com>
-To: linux-btrfs@vger.kernel.org,
-	dsterba@suse.com
-Cc: cccheng@synology.com,
-	Dave Chen <davechen@synology.com>
-Subject: [PATCH] btrfs: fix fill_holes() to merge a new hole with both adjacent items
-Date: Wed, 29 Apr 2026 10:13:51 +0800
-Message-ID: <20260429021351.596972-1-davechen@synology.com>
-X-Mailer: git-send-email 2.43.0
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="MM0pwNQw";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="k51o3hG7"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id E7EA25BCCA
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 05:04:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1777439056; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=DUgj+PfWqOfZEA0OEcF8Ei2S6RQcXe5GjNMORsVRiuw=;
+	b=MM0pwNQw4QyWiBdcfhCEwbDgHoXSI1OcXVn5oukrzLzqCjF1logO9CeYClD0/EEuXhD8MA
+	BrwvEapMI/NXMZBK4AfRmpHJZPOpgVQbuyW3dxe3OhUJ7kTCf8uZAW+GfjkG6vcYLhPEL4
+	zfojai9N6EiJJYQ0Oa4RFgIPdgDFByQ=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=k51o3hG7
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1777439055; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=DUgj+PfWqOfZEA0OEcF8Ei2S6RQcXe5GjNMORsVRiuw=;
+	b=k51o3hG7k6mnEozLFbR5dLYOeyhri+8xhm4sA37LVJhUatxwNb4DiO87TOIqsD+T/R4LwG
+	sFV3pxEza0SmR6bJ0WHehELf6ugyuMwnetER2BAMKfLx/SnBg3+qCxtGXhNnG3gR5JIJhH
+	tMEzhwgfNUcm+RHe+txudPUmqLFWcjs=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E123B593B0
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 05:04:14 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id LIcPI06R8WloAgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 05:04:14 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/4] btrfs: experimental support for huge data folios
+Date: Wed, 29 Apr 2026 14:33:48 +0930
+Message-ID: <cover.1777438651.git.wqu@suse.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -40,137 +62,102 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Synology-MCP-Status: no
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Spam-Flag: no
-X-Synology-Virus-Status: no
-Content-Type: text/plain
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	RCPT_COUNT_ONE(0.00)[1];
+	MIME_TRACE(0.00)[0:+];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_HAS_DN(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: E7EA25BCCA
 
-fill_holes() currently merges a punched hole with either the previous
-or the next file extent item, but never both in the same call.  When
-holes are punched in a non-sequential order this leaves consecutive
-hole items in the file extent tree that should have been collapsed
-into a single one.
+[CHANGELOG]
+RFC->v1:
+- Rebase to the latest for-next branch
+  Which provides a stable baseline that can pass usual fstests runs, and
+  no more 2K fs block size support.
 
-For example:
+- Mark the new huge folio support as experimental
+  Since the large folio support itself is moved out of experimental
+  features, the huge folio support will need to be hidden behind
+  experimental.
 
-  fallocate -p -o 4K  -l 4K ${FILE}
-  fallocate -p -o 12K -l 4K ${FILE}
-  fallocate -p -o 8K  -l 4K ${FILE}
+- Rework the blocks per folio limit
+  Previously blocks per folio limit is always calculated by
+  BTRFS_MAX_FOLIO_SIZE / BTRFS_MIN_BLOCK_SIZE, but the real blocks per
+  folio is also depending on the fs block size.
 
-After the third punch the [4K, 8K) and [12K, 16K) holes become
-adjacent to the new [8K, 12K) hole, but fill_holes() merges only one
-side and leaves two separate hole items ([4K, 12K) and [12K, 16K))
-instead of the expected single [4K, 16K) hole item.
+  Now introduce a new BTRFS_MAX_BLOCKS_PER_FOLIO macro, which is either
+  BITS_PER_LONG (the old one), or 512 (the new experimental one).
 
-Fix this by checking both path->slots[0] - 1 and path->slots[0] in one
-pass:
+  This will allow non-experimental builds to get rid of the enlarged
+  bitmap, thus lower the on-stack memory usage for non-experimental
+  builds.
 
-  - If only the previous slot is mergeable, extend it forward as
-    before.
-  - If only the next slot is mergeable, extend it backward and update
-    its key offset as before.
-  - If both are mergeable, extend the previous item to cover the new
-    hole plus the next item, and remove the redundant next item with
-    btrfs_del_items().
+Currently btrfs only supports folios as large as BITS_PER_LONG * blocks.
+This is an artificial limit introduced to make bitmap operations easier.
 
-Because the merge path may now delete an item, switch the initial
-btrfs_search_slot() call from a plain lookup (ins_len = 0) to a
-search-for-deletion (ins_len = -1), so the leaf is prepared for a
-possible item removal.
+Btrfs has two extra bitmaps that are out of btrfs_folio_state structure,
+btrfs_bio_ctrl->submit_bitmap and @delalloc_bitmap inside
+writepage_delalloc().
 
-Fixes: 2aaa66558172 ("Btrfs: add hole punching")
-Signed-off-by: Dave Chen <davechen@synology.com>
----
- fs/btrfs/file.c | 48 +++++++++++++++++++++++++++++++-----------------
- 1 file changed, 31 insertions(+), 17 deletions(-)
+Limits the bitmap size to BITS_PER_LONG makes it very easy to handle the
+above two bitmaps, we can just use a local unsigned long, no need to do
+any memory allocation.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index cf1cb5c4db757..84450452d2347 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2093,6 +2093,10 @@ static int fill_holes(struct btrfs_trans_handle *trans,
- 	struct btrfs_file_extent_item *fi;
- 	struct extent_map *hole_em;
- 	struct btrfs_key key;
-+	int modify_slot = -1;
-+	int del_slot = -1;
-+	bool update_offset = false;
-+	u64 num_bytes = 0;
- 	int ret;
- 
- 	if (btrfs_fs_incompat(fs_info, NO_HOLES))
-@@ -2102,7 +2106,7 @@ static int fill_holes(struct btrfs_trans_handle *trans,
- 	key.type = BTRFS_EXTENT_DATA_KEY;
- 	key.offset = offset;
- 
--	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
-+	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
- 	if (ret <= 0) {
- 		/*
- 		 * We should have dropped this offset, so if we find it then
-@@ -2115,33 +2119,43 @@ static int fill_holes(struct btrfs_trans_handle *trans,
- 
- 	leaf = path->nodes[0];
- 	if (hole_mergeable(inode, leaf, path->slots[0] - 1, offset, end)) {
--		u64 num_bytes;
--
--		path->slots[0]--;
--		fi = btrfs_item_ptr(leaf, path->slots[0],
-+		fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
- 				    struct btrfs_file_extent_item);
- 		num_bytes = btrfs_file_extent_num_bytes(leaf, fi) +
- 			end - offset;
--		btrfs_set_file_extent_num_bytes(leaf, fi, num_bytes);
--		btrfs_set_file_extent_ram_bytes(leaf, fi, num_bytes);
--		btrfs_set_file_extent_offset(leaf, fi, 0);
--		btrfs_set_file_extent_generation(leaf, fi, trans->transid);
--		goto out;
-+		modify_slot = path->slots[0] - 1;
- 	}
--
- 	if (hole_mergeable(inode, leaf, path->slots[0], offset, end)) {
--		u64 num_bytes;
--
--		key.offset = offset;
--		btrfs_set_item_key_safe(trans, path, &key);
- 		fi = btrfs_item_ptr(leaf, path->slots[0],
- 				    struct btrfs_file_extent_item);
--		num_bytes = btrfs_file_extent_num_bytes(leaf, fi) + end -
--			offset;
-+		if (modify_slot != -1) {
-+			num_bytes += btrfs_file_extent_num_bytes(leaf, fi);
-+			del_slot = path->slots[0];
-+		} else {
-+			num_bytes = btrfs_file_extent_num_bytes(leaf, fi) +
-+				end - offset;
-+			modify_slot = path->slots[0];
-+			update_offset = true;
-+		}
-+	}
-+	if (modify_slot >= 0) {
-+		fi = btrfs_item_ptr(leaf, modify_slot,
-+				    struct btrfs_file_extent_item);
- 		btrfs_set_file_extent_num_bytes(leaf, fi, num_bytes);
- 		btrfs_set_file_extent_ram_bytes(leaf, fi, num_bytes);
-+		if (update_offset) {
-+			key.offset = offset;
-+			btrfs_set_item_key_safe(trans, path, &key);
-+		}
- 		btrfs_set_file_extent_offset(leaf, fi, 0);
- 		btrfs_set_file_extent_generation(leaf, fi, trans->transid);
-+		if (del_slot >= 0) {
-+			ret = btrfs_del_items(trans, root, path, del_slot, 1);
-+			if (ret) {
-+				btrfs_release_path(path);
-+				return ret;
-+			}
-+		}
- 		goto out;
- 	}
- 	btrfs_release_path(path);
+On the other hand, those two external bitmaps are the only thing
+limiting huge folios.
+
+The 1st patch will update the comments related to subpage implementation
+first.
+The 2nd patch will handle the subpage internal operations, mostly to
+handle bitmap dumping.
+The 3rd patch will prepare btrfs_bio_ctrl::submit_bitmap to be a proper
+pointer for the incoming huge folios support.
+
+The final patch will enable the huge folio support, by using on-stack
+bitmap that can contain 512 bits.
+That will ensure 2MiB folio size, which is order 9 on 4K page sized
+systems.
+
+Qu Wenruo (4):
+  btrfs: update the out-of-date comments on subpage
+  btrfs: prepare subpage operations to support >= BITS_PER_LONG
+    sub-bitmaps
+  btrfs: migrate btrfs_bio_ctrl::submit_bitmap to support larger bitmaps
+  btrfs: introduce support for huge folios
+
+ fs/btrfs/disk-io.c   |  11 ++-
+ fs/btrfs/extent_io.c |  71 +++++++++-------
+ fs/btrfs/fs.h        |  16 ++++
+ fs/btrfs/subpage.c   | 191 ++++++++++++++++++++++++++-----------------
+ fs/btrfs/subpage.h   |   8 +-
+ 5 files changed, 186 insertions(+), 111 deletions(-)
+
 -- 
-2.43.0
+2.53.0
 
-
-Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.

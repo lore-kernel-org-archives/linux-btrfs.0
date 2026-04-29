@@ -1,83 +1,176 @@
-Received: from mout-p-202.mailbox.org (mout-p-202.mailbox.org [80.241.56.172])
+Received: from mail.synology.com (mail.synology.com [211.23.38.101])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 912443B1B3
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 02:11:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=80.241.56.172
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9091522301
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 02:14:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777428719; cv=none; b=jm/bAzn370AQy//Q6QbrtbwhdzUdu0P3QnRE4Ltk29C0nemV3p35xSqzSlrd7PDUkitpJPv9BpoffzQVpQvCVzMv5bb6I6uYdaSX4J4+qmIFQznW8HhnT+AVNFPUqHbxOrdRhOq3OsiYQxWFOEi5G/nFBWC34f+qhiWfXw+XLcY=
+	t=1777428884; cv=none; b=hX35qAbNCjgnQ8QCqk1hB2k4sbqKWs7OprADNpawaF8DDQ1MYwNUqAgK9IW0od8kKeaErU+f7hnTCYI16fFrBzjg3XsTZ1bwl7f56tj6poI5IIGLmVri3sbeFYu7u8nHjWuw00UZ4J42S6i5JV9EZmx4a7CoI2MH3hQOiMOUAeU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777428719; c=relaxed/simple;
-	bh=As/Kg67OPojaDreFDpKB5RonuSn7oqJAo8K+D0ecdmo=;
-	h=Date:From:Subject:To:Message-Id:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=u8tuxKrO6TqXZWOMZnhnC3uaorVBsIyOGkCAdxR4KFUq9fv0LPzzavaLzPGdErS2JNBXIDSAsMk2aF36Vxa/tS6qUz85u/oARqoR9l10TGDQzgApzm+UCSz42E1OLAeiCuaXZe2k35nCvXvyQ9oyWXVpZO8721b0Iqf63CVyGYU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mailbox.org; spf=pass smtp.mailfrom=mailbox.org; dkim=pass (2048-bit key) header.d=mailbox.org header.i=@mailbox.org header.b=wIRJJY/6; arc=none smtp.client-ip=80.241.56.172
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mailbox.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mailbox.org
+	s=arc-20240116; t=1777428884; c=relaxed/simple;
+	bh=RCQuawf9W4BkMWuEpUBM78NKZ3RafUVOwbTGY+A4MdQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=eC23syiSLrzAAKfpCYWtU6P4iLYltmW1Cr93NYofvBUe+jh7sX35bZFHJsz1OO7J+A0iImdVlYAtlw9/It4alBcd0i4GzNf5GT/ZWyEqVp0Be0scdeRO3D4zcfkuDelHtPKNBzHaPqrFIm7wS4JBtzaOrsBaI+iNCp1NfCRSEZ0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=GryqGFKi; arc=none smtp.client-ip=211.23.38.101
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mailbox.org header.i=@mailbox.org header.b="wIRJJY/6"
-Received: from smtp1.mailbox.org (smtp1.mailbox.org [IPv6:2001:67c:2050:b231:465::1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mout-p-202.mailbox.org (Postfix) with ESMTPS id 4g515H73JYz9tdV
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 04:11:47 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mailbox.org; s=mail20150812;
-	t=1777428708;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=5g+G8TpnAMvMk293EXR+kUkAmmgKK3ZF0yuyiWNkkRE=;
-	b=wIRJJY/6V9OX5c3Ss5CBB+fr+EJ5x5kj+Qm/J/N9dEID5xKTCv3B2Y3SVJUtLLx9/GA63/
-	xYilaczjWRc/+tIXRLkSG57Pb8BG3wrSlM8GN5++d7Kb/mMLbG6hwBkfzex3iKK4Kiq9Zw
-	TAaEAjZDntZ+4Hxu2fwzyZwNASoD2VCBnrhGqxzr+P9sCRe4to0rV0U9xKAk5mTf67cv/q
-	bX2dmkVkWatoBZXHSDEyVYF8RuNUHqoNzIxM/2GPCA53FpAPwLkW5d6eAW+wJ2gTeBnvRt
-	rB+y61krf8De87dZJYYWxFiDroIY+VrcEiV+Vc8xzCfD34Y0OTSINBFiSNO00w==
-Date: Tue, 28 Apr 2026 22:11:40 -0400
-From: brainchild@mailbox.org
-Subject: Re: Strange behavior with scrub, quotas, and snapshots
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <GRG8ET.3U4PW88BR25W@mailbox.org>
-In-Reply-To: <76cadf51-bc18-4a16-af19-1103e0b7cef5@suse.com>
-References: <20260428012128.Horde.f5fqQoIpJ3QCuz9LBZNU3Qz@nextcloud.brainspace.site>
-	<20260428023344.Horde.ACdhtTWNQo0yzpeKOd7keUl@nextcloud.brainspace.site>
-	<2bf2013f-ecc3-424a-b6b3-deec4f3b74e6@suse.com>
-	<KAR6ET.BWL8BEMZPLSV@mailbox.org>
-	<0f6f3f32-f0b3-4c61-89c2-6f931592f122@suse.com>
-	<d580bc81-71be-4153-8d4e-58c4f6261085@mailbox.org>
-	<19c6157d-235e-4174-8865-3d029f9a2de7@suse.com>
-	<06Y7ET.5XM6UHU999Y21@mailbox.org>
-	<70b6a4ec-8ed9-4f41-adf8-93eb06f24eb7@suse.com>
-	<2CD8ET.98SA563QWYJ71@mailbox.org>
-	<ac3e8496-26dd-43c4-8ef8-6f7223c1c61a@suse.com>
-	<I7E8ET.MZV7K8OOT3YS1@mailbox.org>
-	<76cadf51-bc18-4a16-af19-1103e0b7cef5@suse.com>
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="GryqGFKi"
+Received: from 11212-DT-014.. (unknown [10.17.40.185])
+	by mail.synology.com (Postfix) with ESMTPA id 4g518V2mWszJDnVCJ;
+	Wed, 29 Apr 2026 10:14:34 +0800 (CST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
+	t=1777428874; bh=RCQuawf9W4BkMWuEpUBM78NKZ3RafUVOwbTGY+A4MdQ=;
+	h=From:To:Cc:Subject:Date;
+	b=GryqGFKiypgFXglZWpgswdXLdDLCDWHv0NCyDj9FKAQnkrTdTvQM1QHJjdDFhr6kb
+	 hhpn9nTBAyWR+23owi/Mov8b4iFJvL4oISDMWgzS7YiU8HQR6TWga2EvvjB4bhJ8/3
+	 0SzhRjB8WGOiGeNpPNCml30XJqMO68x6mXWrjqJg=
+From: Dave Chen <davechen@synology.com>
+To: linux-btrfs@vger.kernel.org,
+	dsterba@suse.com
+Cc: cccheng@synology.com,
+	Dave Chen <davechen@synology.com>
+Subject: [PATCH] btrfs: fix fill_holes() to merge a new hole with both adjacent items
+Date: Wed, 29 Apr 2026 10:13:51 +0800
+Message-ID: <20260429021351.596972-1-davechen@synology.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-X-MBO-RS-META: i956ty6c4b1nxbzz4bmp6a9n5c345frj
-X-MBO-RS-ID: 51f44138825c3c785c7
+Content-Transfer-Encoding: 8bit
+X-Synology-MCP-Status: no
+X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
+X-Synology-Spam-Flag: no
+X-Synology-Virus-Status: no
+Content-Type: text/plain
+
+fill_holes() currently merges a punched hole with either the previous
+or the next file extent item, but never both in the same call.  When
+holes are punched in a non-sequential order this leaves consecutive
+hole items in the file extent tree that should have been collapsed
+into a single one.
+
+For example:
+
+  fallocate -p -o 4K  -l 4K ${FILE}
+  fallocate -p -o 12K -l 4K ${FILE}
+  fallocate -p -o 8K  -l 4K ${FILE}
+
+After the third punch the [4K, 8K) and [12K, 16K) holes become
+adjacent to the new [8K, 12K) hole, but fill_holes() merges only one
+side and leaves two separate hole items ([4K, 12K) and [12K, 16K))
+instead of the expected single [4K, 16K) hole item.
+
+Fix this by checking both path->slots[0] - 1 and path->slots[0] in one
+pass:
+
+  - If only the previous slot is mergeable, extend it forward as
+    before.
+  - If only the next slot is mergeable, extend it backward and update
+    its key offset as before.
+  - If both are mergeable, extend the previous item to cover the new
+    hole plus the next item, and remove the redundant next item with
+    btrfs_del_items().
+
+Because the merge path may now delete an item, switch the initial
+btrfs_search_slot() call from a plain lookup (ins_len = 0) to a
+search-for-deletion (ins_len = -1), so the leaf is prepared for a
+possible item removal.
+
+Fixes: 2aaa66558172 ("Btrfs: add hole punching")
+Signed-off-by: Dave Chen <davechen@synology.com>
+---
+ fs/btrfs/file.c | 48 +++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 31 insertions(+), 17 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index cf1cb5c4db757..84450452d2347 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2093,6 +2093,10 @@ static int fill_holes(struct btrfs_trans_handle *trans,
+ 	struct btrfs_file_extent_item *fi;
+ 	struct extent_map *hole_em;
+ 	struct btrfs_key key;
++	int modify_slot = -1;
++	int del_slot = -1;
++	bool update_offset = false;
++	u64 num_bytes = 0;
+ 	int ret;
+ 
+ 	if (btrfs_fs_incompat(fs_info, NO_HOLES))
+@@ -2102,7 +2106,7 @@ static int fill_holes(struct btrfs_trans_handle *trans,
+ 	key.type = BTRFS_EXTENT_DATA_KEY;
+ 	key.offset = offset;
+ 
+-	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
++	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+ 	if (ret <= 0) {
+ 		/*
+ 		 * We should have dropped this offset, so if we find it then
+@@ -2115,33 +2119,43 @@ static int fill_holes(struct btrfs_trans_handle *trans,
+ 
+ 	leaf = path->nodes[0];
+ 	if (hole_mergeable(inode, leaf, path->slots[0] - 1, offset, end)) {
+-		u64 num_bytes;
+-
+-		path->slots[0]--;
+-		fi = btrfs_item_ptr(leaf, path->slots[0],
++		fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
+ 				    struct btrfs_file_extent_item);
+ 		num_bytes = btrfs_file_extent_num_bytes(leaf, fi) +
+ 			end - offset;
+-		btrfs_set_file_extent_num_bytes(leaf, fi, num_bytes);
+-		btrfs_set_file_extent_ram_bytes(leaf, fi, num_bytes);
+-		btrfs_set_file_extent_offset(leaf, fi, 0);
+-		btrfs_set_file_extent_generation(leaf, fi, trans->transid);
+-		goto out;
++		modify_slot = path->slots[0] - 1;
+ 	}
+-
+ 	if (hole_mergeable(inode, leaf, path->slots[0], offset, end)) {
+-		u64 num_bytes;
+-
+-		key.offset = offset;
+-		btrfs_set_item_key_safe(trans, path, &key);
+ 		fi = btrfs_item_ptr(leaf, path->slots[0],
+ 				    struct btrfs_file_extent_item);
+-		num_bytes = btrfs_file_extent_num_bytes(leaf, fi) + end -
+-			offset;
++		if (modify_slot != -1) {
++			num_bytes += btrfs_file_extent_num_bytes(leaf, fi);
++			del_slot = path->slots[0];
++		} else {
++			num_bytes = btrfs_file_extent_num_bytes(leaf, fi) +
++				end - offset;
++			modify_slot = path->slots[0];
++			update_offset = true;
++		}
++	}
++	if (modify_slot >= 0) {
++		fi = btrfs_item_ptr(leaf, modify_slot,
++				    struct btrfs_file_extent_item);
+ 		btrfs_set_file_extent_num_bytes(leaf, fi, num_bytes);
+ 		btrfs_set_file_extent_ram_bytes(leaf, fi, num_bytes);
++		if (update_offset) {
++			key.offset = offset;
++			btrfs_set_item_key_safe(trans, path, &key);
++		}
+ 		btrfs_set_file_extent_offset(leaf, fi, 0);
+ 		btrfs_set_file_extent_generation(leaf, fi, trans->transid);
++		if (del_slot >= 0) {
++			ret = btrfs_del_items(trans, root, path, del_slot, 1);
++			if (ret) {
++				btrfs_release_path(path);
++				return ret;
++			}
++		}
+ 		goto out;
+ 	}
+ 	btrfs_release_path(path);
+-- 
+2.43.0
 
 
-On Wed, Apr 29 2026 at 10:57:02 AM +09:30:00, Qu Wenruo <wqu@suse.com> 
-wrote:
-> 
-> All I can do is to enhance the docs and hope there will be no more 
-> end users sticking with stupid swapfile idea without really 
-> understanding all the limitations.
-
-I think we misunderstood each other. Running balance with swap disabled 
-is not a problem. I have just done it, and as you predicted, many more 
-blocks were identified for balancing.
-
-However, I cannot disable swap permanently. If I am planning to migrate 
-away from a swap file on the Btrfs volume, then I need to resize it to 
-make space for a separate partition for swap. I was concerned that the 
-super mismatch earlier discovered might make it unsafe to resize the 
-partition.
-
-
+Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.

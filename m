@@ -1,67 +1,72 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-dy1-f178.google.com (mail-dy1-f178.google.com [74.125.82.178])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CAFF99463
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 05:04:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DEFA93A3817
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 07:10:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.178
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777439084; cv=none; b=PgsqvwfMeAbeS0tR/CR+aZPbqhsjh+dtFwtnqt9VVyOzcChgyByswx0FJlkngxTNrV+cxIUWNQgSZDHjL6z2S05o7ubXEsweHCeZfo/uM5jm03BZP5woax8LcgsDqmm2S8AQ2FCCCFY0Kx4bnSzh4WKEHOUtZ0pgcIdHZiL/Q4Q=
+	t=1777446650; cv=none; b=bDbQsqsc8TF+f8n8Kp68+e01AYK6/0j5efKsTUAD2Q+uMnmIJGk2+YrmGky20avyzbCD1hUftdHuVianmgC/7o9HnovYTg3E1Uch4xTaJYIcCyWOGY6l9e/CDYir/Nc+KRZciKJLuWzpfU+zyhMbixlYmkLV2e5avPsnfAJMpis=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777439084; c=relaxed/simple;
-	bh=Cz/q+/Lg5LV6gCiEifFNQUUSwMfFLlcQw8GmVCcYQ0s=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=abVlnfvI0iLtk+GT9Kk7SXKKRx1CnNcO0AMmcdLPG930YVYZXIrdueUU9EvIdQ1r4DhoGHJS1xiu4LTuShmrhZeFaf7W85hD8JuEICX6E7fxw3FU8DjYY2d/ZnvJcL4UA2B0QIxGzWVP0bq+HTzEjKcrvoAx0Ie3DeytCWdWAic=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=KoZnC0J5; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=KoZnC0J5; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1777446650; c=relaxed/simple;
+	bh=lgJe9gJeU4AuKOrNjpDmrlMYpeUP928w/B1EnYLtuRM=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=e02ZkMslk5C8dGD6GlSBhxl05IFca7RarUI93xe5Y0rh7cbXBka+MYrYm3kmOcd9kkOpr9Rn++xOIx9AKf5O8trBnnrBYvSzLOkn73nfzmpefsDvyEcLR8bGCIZBIb2cMwLJH793xLen+RNyor1NOesHe104JUkGHSEHAM9rqcA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=wbinvd.org; spf=pass smtp.mailfrom=wbinvd.org; dkim=pass (2048-bit key) header.d=wbinvd.org header.i=@wbinvd.org header.b=Qv9aln5w; arc=none smtp.client-ip=74.125.82.178
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=wbinvd.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wbinvd.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="KoZnC0J5";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="KoZnC0J5"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 2A7565BCCA
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 05:04:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1777439063; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=S2tmAtWirl9zvK9+tYCBLXq3Df4zVEDAZ06H5eBW61s=;
-	b=KoZnC0J5Xr2r/O8YcZLhkE3X3+oIoo0Mesk77u+Lrm7s37PRE92RHe0f9BBJ5qSyP0/UAM
-	QzePrHJIUzuXAGQyWRNHICqG2yFWZ98m5H11t1zsiuZVY/No8zPWBEAV+QnjATGE/lICcG
-	f1NCFd5ckvd0D60o/4PCBWk0plUWJgw=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=KoZnC0J5
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1777439063; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=S2tmAtWirl9zvK9+tYCBLXq3Df4zVEDAZ06H5eBW61s=;
-	b=KoZnC0J5Xr2r/O8YcZLhkE3X3+oIoo0Mesk77u+Lrm7s37PRE92RHe0f9BBJ5qSyP0/UAM
-	QzePrHJIUzuXAGQyWRNHICqG2yFWZ98m5H11t1zsiuZVY/No8zPWBEAV+QnjATGE/lICcG
-	f1NCFd5ckvd0D60o/4PCBWk0plUWJgw=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 253DF593B0
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 05:04:21 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id uI7TMFWR8WloAgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 05:04:21 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs: introduce support for huge folios
-Date: Wed, 29 Apr 2026 14:33:52 +0930
-Message-ID: <9d51538ca03c967f47ec3176980389bd8d06109c.1777438651.git.wqu@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <cover.1777438651.git.wqu@suse.com>
-References: <cover.1777438651.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=wbinvd.org header.i=@wbinvd.org header.b="Qv9aln5w"
+Received: by mail-dy1-f178.google.com with SMTP id 5a478bee46e88-2d868d014a5so12100588eec.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Apr 2026 00:10:47 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=wbinvd.org; s=wbinvd; t=1777446646; x=1778051446; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=JvMkiMSkoPoG3P9EaL3Cbb8ZOBvfwwRmrUF1MTc3Tso=;
+        b=Qv9aln5w83XXYm3hyvK6DwbZ5IUWei3nwA0xwW8FmsG7juByfTcj36B5zUaDHE5uDp
+         jyvIywfv8Plb1FvWWtl4OkqGRCwJ0U/y1qH16RPECnubFz5po4pfQkcnsXVj5J4CcgzC
+         BnZD2ijUnjjjvl+qGPoUKrchhjwXReQplAYy/OOp2uKpe98BZIfoxZI6FtnvkhYvrmwL
+         5lUoMYsBYZjYwFEztLgcBh1h5xk7aXsDOiodwvTLdheS8Ov9wTet+swR8iUfuDJV062G
+         jFJNTWTTS2fmylWriGN98CgmgfJaMbSvrekq0jMzFvzmF+u3X4zEwDyF7J1i/4wSpJBw
+         7Tpw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1777446646; x=1778051446;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=JvMkiMSkoPoG3P9EaL3Cbb8ZOBvfwwRmrUF1MTc3Tso=;
+        b=hEdVQaWqhHtmtV12ohGxZdhJ18ox9NvuaNzs4VeCvj1mAr1AHFL2oJC8m8ZdLFU7q3
+         akIFTlJRCjrNREkfAuxSvGuWHrYhdzT/3ZCAvjtGde98rdx6mdBQJcVr4yIt3Q9Bh1hb
+         jESqPpxtZzqaREvdiaTAW9gn69e2+haX3w7jdCL5DN0tJaRqLNo5SFe85b5EP1N8ux40
+         j2b9/j5VyqMul5aYXMhU2Umo0Gb2k9OSpt9y0jdo810H5zog2Facfw40DgfVjZe/jI1F
+         2Qz7um6dZujzEgNXmChI4kTPsZFM/FEkqQR9Rf6IPwh6f7Naq9h40rHzyZ/E6cYAE7Ya
+         ceVw==
+X-Gm-Message-State: AOJu0Yyx+eo5aT3b4C6qA0gvuJIKqLzTAUaaIHP74B0hQKrSO/nS5PLR
+	4E1JYukPwyGbG23nsiuDOffsz/vddLjRRTXe4LvHOA8wjqP7LvvMRsE1MM/Y1sMHWNI=
+X-Gm-Gg: AeBDietHbcMB02zCyMVXUiqH70Xq8ouU5Z4xn6kavlTeYb/uSIb488VGuO/ZaTEfdyY
+	GmKK+9fJ0ojT+Nhni36FVqimSnqxDDNDtS9qonvzQpSFhn/TAh/+zdp9cDJByRLsau3yRHuwMRf
+	kuyoDzE5HvFz5Pa9keh2EHh2rODrGt+AzBA3sg9FxmYTm+ZCLF0Xc6+RlxCgWt5R1PVdmDeXplO
+	YQO1oHAEzzMExVqiRrjxMFBgV1JZblS5ysKTlMwa99pAzr+rVCeJsrkNsAQBnzX+hwZFNsAHGLI
+	n5IVpmUda1kBefRAVC6bSdWV18J5R9gDH67KGjqHpwKwfLLvaGNYCPZNlBsPvu83z0zLfKfe/ON
+	DR9DGpUmiuOFHY6s0GlHgiOD7zNfHC+3Q//inK5X5U9oRpY4SyD2dMxqgtvdSEUu6I9lY+A7sEE
+	+E5uYYgoKuNHbUVPtytzVvntHGyzgjZTWUaTsA
+X-Received: by 2002:a05:7300:6c24:b0:2dd:5641:f01 with SMTP id 5a478bee46e88-2ed198bf5aamr1257642eec.28.1777446645843;
+        Wed, 29 Apr 2026 00:10:45 -0700 (PDT)
+Received: from mozart.vkv.me ([2001:5a8:468b:d015:6050:66c4:ba14:2c51])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-2ed1c09c6e3sm1036260eec.25.2026.04.29.00.10.44
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 29 Apr 2026 00:10:45 -0700 (PDT)
+From: Calvin Owens <calvin@wbinvd.org>
+To: linux-kernel@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org,
+	Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>,
+	"JP Kobryn (Meta)" <jp.kobryn@linux.dev>,
+	Mark Harmstone <mark@harmstone.com>,
+	Qu Wenruo <wqu@suse.com>
+Subject: [PATCH] btrfs: always pass __GFP_NOWARN from add_ra_bio_pages()
+Date: Wed, 29 Apr 2026 00:10:25 -0700
+Message-ID: <fa015cf39d4dd9575052141e86bce7417c61d4e1.1777445157.git.calvin@wbinvd.org>
+X-Mailer: git-send-email 2.47.3
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,288 +74,103 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCPT_COUNT_ONE(0.00)[1];
-	MIME_TRACE(0.00)[0:+];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FROM_HAS_DN(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim,suse.com:email];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 2A7565BCCA
 
-With all the previous preparations, it's finally time to enable the
-huge folio support.
+A build workload newly prints order-0 allocation failures on 7.1-rc1:
 
-- The max folio size
-  Here we define BTRFS_MAX_FOLIO_SIZE, which is fixed to 2MiB.
+    sh: page allocation failure: order:0
+    mode:0x14084a(__GFP_HIGHMEM|__GFP_MOVABLE|__GFP_IO|__GFP_KSWAPD_RECLAIM|
+                  __GFP_COMP|__GFP_HARDWALL)
+    CPU: 27 UID: 1000 PID: 855540 Comm: sh Not tainted 7.1.0-rc1-llvm-00058-gdca922e019dd #1 PREEMPTLAZY
+    Call Trace:
+     <TASK>
+     dump_stack_lvl+0x50/0x70
+     warn_alloc+0xeb/0x100
+     __alloc_pages_slowpath+0x567/0x5a0
+     ? filemap_get_entry+0x11a/0x140
+     __alloc_frozen_pages_noprof+0x249/0x2d0
+     alloc_pages_mpol+0xe4/0x180
+     folio_alloc_noprof+0x80/0xa0
+     add_ra_bio_pages+0x13c/0x4b0
+     btrfs_submit_compressed_read+0x229/0x300
+     submit_one_bio+0x9e/0xe0
+     btrfs_readahead+0x185/0x1a0
+     [...]
 
-  This will ensure we have a large enough but not too large folio for
-  btrfs.
-  This limit applies to all systems regardless of page size.
+    (lldb) source list -a add_ra_bio_pages+0x13c
+    .../vmlinux.unstripped add_ra_bio_pages + 316 at .../fs/btrfs/compression.c:454:8
+       451
+       452                  folio = filemap_alloc_folio(mapping_gfp_constraint(mapping, constraint_gfp),
+       453                                              0, NULL);
+    -> 454                  if (!folio)
+       455                          break;
 
-  Then we also define BTRFS_MAX_BLOCKS_PER_FOLIO, which depends on
-  CONFIG_BTRFS_EXPERIMENTAL.
+I can reproduce this consistently by running a memory hog concurrently
+with a buffered writer on a machine with a very large amount of swap.
 
-  If it's an experimental build, BTRFS_MAX_BLOCKS_PER_FOLIO is 512,
-  otherwise it's BITS_PER_LONG.
+Commit 7ae37b2c94ed ("btrfs: prevent direct reclaim during compressed
+readahead") clearly intended to suppress these warnings. But because the
+mask set in the address_space with mapping_set_gfp_mask() doesn't include
+__GFP_NOWARN, mapping_gfp_constraint() removes it from constraint_gfp
+before it is passed to filemap_alloc_folio().
 
-  The filemap max order will be calculated using both
-  BTRFS_MAX_FOLIO_SIZE and BTRFS_MAX_BLOCKS_PER_FOLIO.
+Fix by refactoring the code to add __GFP_NOWARN after the call to
+mapping_gfp_constraint().
 
-  E.g. for 64K page size with 64K fs block size, the limit will be
-  BTRFS_MAX_FOLIO_SIZE (2M), which limits the filemap max order to 5.
-  This will be lower than the old order (6), but folios larger than 2M
-  are rarely any better for IO performance. Meanwhile excessively large
-  folios can cause other problems like stalling the IO pipeline for too
-  long.
-
-  For 4K page size and 4K fs block size, the limit will be increased to
-  2M from the old 256K.
-  This new size is constrained by both BTRFS_MAX_FOLIO_SIZE (2M) and
-  BTRFS_MAX_BLOCKS_PER_FOLIO (512 * 4K), allowing x86_64 to reach huge
-  folio support, and the filemap max order will be 9.
-
-- btrfs_bio_ctrl::submit_bitmap
-  This will be enlarged to contain BTRFS_MAX_BLOCKS_PER_FOLIO bits, and
-  this will be on-stack memory.
-  This will increase on-stack memory usage by 56 bytes compared to the
-  baseline (before any patch in the series).
-
-- Local @delalloc_bitmap inside writepage_delalloc()
-  Unfortunately we cannot afford to handle an allocation error here, thus
-  again we use on-stack memory.
-  Thus this will increase on-stack memory usage by 56 bytes again.
-
-So unfortunately this means during the delalloc window, the writeback path
-will have +112 bytes for on-stack memory usage, and for other cases the
-writeback path will have +56 bytes on-stack memory usage.
-
-The +56 bytes (btrfs_bio_ctrl::submit_bitmap) can be removed
-after we have reworked the compression submission, so the current
-on-stack submit_bitmap is mostly a workaround until then.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Fixes: 7ae37b2c94ed ("btrfs: prevent direct reclaim during compressed readahead")
+Signed-off-by: Calvin Owens <calvin@wbinvd.org>
 ---
- fs/btrfs/disk-io.c   | 11 ++++++++++-
- fs/btrfs/extent_io.c | 42 ++++++++++++------------------------------
- fs/btrfs/fs.h        | 16 ++++++++++++++++
- fs/btrfs/subpage.c   |  7 ++++---
- 4 files changed, 42 insertions(+), 34 deletions(-)
+ fs/btrfs/compression.c | 24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 308955f0592a..48ddbeb18e3c 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3272,6 +3272,15 @@ static bool fs_is_full_ro(const struct btrfs_fs_info *fs_info)
- 	return false;
- }
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index b2393a48a8fe..d29a42ff8653 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -408,21 +408,19 @@ static noinline int add_ra_bio_pages(struct inode *inode,
+ 	end_index = (i_size_read(inode) - 1) >> PAGE_SHIFT;
  
-+static u32 calc_block_max_order(u32 sectorsize_bits)
-+{
-+	u32 max_size;
-+
-+	max_size = min(BTRFS_MAX_BLOCKS_PER_FOLIO << sectorsize_bits,
-+		       BTRFS_MAX_FOLIO_SIZE);
-+	return ilog2(round_up(max_size, PAGE_SIZE) >> PAGE_SHIFT);
-+}
-+
- int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_devices)
- {
- 	u32 sectorsize;
-@@ -3394,7 +3403,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 	fs_info->sectorsize = sectorsize;
- 	fs_info->sectorsize_bits = ilog2(sectorsize);
- 	fs_info->block_min_order = ilog2(round_up(sectorsize, PAGE_SIZE) >> PAGE_SHIFT);
--	fs_info->block_max_order = ilog2((BITS_PER_LONG << fs_info->sectorsize_bits) >> PAGE_SHIFT);
-+	fs_info->block_max_order = calc_block_max_order(fs_info->sectorsize_bits);
- 	fs_info->csums_per_leaf = BTRFS_MAX_ITEM_SIZE(fs_info) / fs_info->csum_size;
- 	fs_info->stripesize = stripesize;
- 	fs_info->fs_devices->fs_info = fs_info;
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 71593d19c0a3..31a65c662b65 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -130,12 +130,7 @@ struct btrfs_bio_ctrl {
- 	 * extent_writepage_io().
- 	 * This is to avoid touching ranges covered by compression/inline.
- 	 */
--	unsigned long *submit_bitmap;
--	/*
--	 * When blocks_per_folio <= BITS_PER_LONG, we can use the inline
--	 * one without allocating memory.
--	 */
--	unsigned long submit_bitmap_value;
-+	unsigned long submit_bitmap[BITS_TO_LONGS(BTRFS_MAX_BLOCKS_PER_FOLIO)];
- 
- 	struct readahead_control *ractl;
- 
-@@ -1438,7 +1433,7 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 	const u64 page_start = folio_pos(folio);
- 	const u64 page_end = page_start + folio_size(folio) - 1;
- 	const unsigned int blocks_per_folio = btrfs_blocks_per_folio(fs_info, folio);
--	unsigned long delalloc_bitmap = 0;
-+	unsigned long delalloc_bitmap[BITS_TO_LONGS(BTRFS_MAX_BLOCKS_PER_FOLIO)] = { 0 };
  	/*
- 	 * Save the last found delalloc end. As the delalloc end can go beyond
- 	 * page boundary, thus we cannot rely on subpage bitmap to locate the
-@@ -1481,7 +1476,7 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 			delalloc_start = delalloc_end + 1;
+-	 * Avoid direct reclaim when the caller does not allow it.  Since
+-	 * add_ra_bio_pages() is always speculative, suppress allocation warnings
+-	 * in either case.
++	 * Avoid direct reclaim when the caller does not allow it.
+ 	 */
++	constraint_gfp = ~__GFP_FS;
++	cache_gfp = GFP_NOFS | __GFP_NOWARN;
+ 	if (!direct_reclaim) {
+-		constraint_gfp = ~(__GFP_FS | __GFP_DIRECT_RECLAIM) | __GFP_NOWARN;
+-		cache_gfp = (GFP_NOFS & ~__GFP_DIRECT_RECLAIM) | __GFP_NOWARN;
+-	} else {
+-		constraint_gfp = (~__GFP_FS) | __GFP_NOWARN;
+-		cache_gfp = GFP_NOFS | __GFP_NOWARN;
++		constraint_gfp &= ~__GFP_DIRECT_RECLAIM;
++		cache_gfp &= ~__GFP_DIRECT_RECLAIM;
+ 	}
+ 
+ 	while (cur < compressed_end) {
+ 		pgoff_t page_end;
+ 		pgoff_t pg_index = cur >> PAGE_SHIFT;
++		gfp_t masked_constraint_gfp;
+ 		u32 add_size;
+ 
+ 		if (pg_index > end_index)
+@@ -449,8 +447,14 @@ static noinline int add_ra_bio_pages(struct inode *inode,
  			continue;
  		}
--		set_delalloc_bitmap(folio, &delalloc_bitmap, delalloc_start,
-+		set_delalloc_bitmap(folio, delalloc_bitmap, delalloc_start,
- 				    min(delalloc_end, page_end) + 1 - delalloc_start);
- 		last_delalloc_end = delalloc_end;
- 		delalloc_start = delalloc_end + 1;
-@@ -1507,7 +1502,7 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 			found_len = last_delalloc_end + 1 - found_start;
- 			found = true;
- 		} else {
--			found = find_next_delalloc_bitmap(folio, &delalloc_bitmap,
-+			found = find_next_delalloc_bitmap(folio, delalloc_bitmap,
- 					delalloc_start, &found_start, &found_len);
- 		}
- 		if (!found)
-@@ -1838,26 +1833,19 @@ static void bio_ctrl_init_submit_bitmap(struct btrfs_fs_info *fs_info,
- {
- 	const unsigned int blocks_per_folio = btrfs_blocks_per_folio(fs_info, folio);
  
--	/* Only supported for blocks per folio <= BITS_PER_LONG for now. */
--	ASSERT(blocks_per_folio <= BITS_PER_LONG);
--	bio_ctrl->submit_bitmap_value = 0;
--	bio_ctrl->submit_bitmap = &bio_ctrl->submit_bitmap_value;
-+	ASSERT(blocks_per_folio <= BTRFS_MAX_BLOCKS_PER_FOLIO);
+-		folio = filemap_alloc_folio(mapping_gfp_constraint(mapping, constraint_gfp),
+-					    0, NULL);
++		/*
++		 * Since add_ra_bio_pages() is always speculative, suppress
++		 * allocation warnings.
++		 */
++		masked_constraint_gfp = mapping_gfp_constraint(mapping, constraint_gfp);
++		masked_constraint_gfp |= __GFP_NOWARN;
 +
- 	/*
- 	 * Default to unlock the whole folio.
- 	 * The proper bitmap is not initialized until writepage_delalloc().
-+	 *
-+	 * We're safe just to set the bitmap range [0, blocks_per_folio), as
-+	 * all later usage of the bitmap will follow the same range limit.
-+	 * Any bits beyond blocks_per_folio will be ignored.
- 	 */
- 	bitmap_set(bio_ctrl->submit_bitmap, 0, blocks_per_folio);
- }
++		folio = filemap_alloc_folio(masked_constraint_gfp, 0, NULL);
+ 		if (!folio)
+ 			break;
  
--static void bio_ctrl_release_submit_bitmap(struct btrfs_fs_info *fs_info,
--					   struct folio *folio,
--					   struct btrfs_bio_ctrl *bio_ctrl)
--{
--	ASSERT(btrfs_blocks_per_folio(fs_info, folio) <= BITS_PER_LONG);
--
--	bio_ctrl->submit_bitmap = NULL;
--}
--
- /*
-  * the writepage semantics are similar to regular writepage.  extent
-  * records are inserted to lock ranges in the tree, and as dirty areas
-@@ -1917,19 +1905,15 @@ static int extent_writepage(struct folio *folio, struct btrfs_bio_ctrl *bio_ctrl
- 		goto done;
- 
- 	ret = writepage_delalloc(inode, folio, bio_ctrl);
--	if (ret == 1) {
--		bio_ctrl_release_submit_bitmap(fs_info, folio, bio_ctrl);
-+	if (ret == 1)
- 		return 0;
--	}
- 	if (ret)
- 		goto done;
- 
- 	ret = extent_writepage_io(inode, folio, folio_pos(folio),
- 				  folio_size(folio), bio_ctrl, i_size);
--	if (ret == 1) {
--		bio_ctrl_release_submit_bitmap(fs_info, folio, bio_ctrl);
-+	if (ret == 1)
- 		return 0;
--	}
- 	if (unlikely(ret < 0))
- 		btrfs_err_rl(fs_info,
- "failed to submit blocks, root=%lld inode=%llu folio=%llu submit_bitmap=%*pbl: %d",
-@@ -1947,7 +1931,6 @@ static int extent_writepage(struct folio *folio, struct btrfs_bio_ctrl *bio_ctrl
- 	 * submitted ranges inside the folio.
- 	 */
- 	btrfs_folio_end_lock_bitmap(fs_info, folio, bio_ctrl->submit_bitmap);
--	bio_ctrl_release_submit_bitmap(fs_info, folio, bio_ctrl);
- 	ASSERT(ret <= 0);
- 	return ret;
- }
-@@ -2695,7 +2678,6 @@ void extent_write_locked_range(struct inode *inode, const struct folio *locked_f
- 		if (ret < 0)
- 			found_error = true;
- next_page:
--		bio_ctrl_release_submit_bitmap(fs_info, folio, &bio_ctrl);
- 		folio_put(folio);
- 		cur = cur_end + 1;
- 	}
-diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index f821aa762613..9997bbc1d1e5 100644
---- a/fs/btrfs/fs.h
-+++ b/fs/btrfs/fs.h
-@@ -54,6 +54,22 @@ struct btrfs_space_info;
- #define BTRFS_MIN_BLOCKSIZE	(SZ_4K)
- #define BTRFS_MAX_BLOCKSIZE	(SZ_64K)
- 
-+/* The max folio size btrfs supports. */
-+#define BTRFS_MAX_FOLIO_SIZE	(SZ_2M)
-+static_assert(BTRFS_MAX_FOLIO_SIZE > PAGE_SIZE);
-+
-+/*
-+ * The max number of blocks a huge folio can support.
-+ *
-+ * Depending on the fs block size, the real max blocks per folio
-+ * may also be limited by the above BTRFS_MAX_FOLIO_SIZE.
-+ */
-+#ifdef CONFIG_BTRFS_EXPERIMENTAL
-+#define BTRFS_MAX_BLOCKS_PER_FOLIO	(512)
-+#else
-+#define BTRFS_MAX_BLOCKS_PER_FOLIO	(BITS_PER_LONG)
-+#endif
-+
- #define BTRFS_MAX_EXTENT_SIZE SZ_128M
- 
- /*
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index 0bad087c445c..ea202698fa10 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -13,9 +13,10 @@
-  * - Metadata must be fully aligned to node size
-  *   So when nodesize <= page size, the metadata can never cross folio boundaries.
-  *
-- * - Only support blocks per folio <= BITS_PER_LONG
-- *   This is to make bitmap copying much easier, a single unsigned long can handle
-- *   one bitmap.
-+ * - Only support blocks per folio <= min(BTRFS_MAX_FOLIO_SIZE / fs block size,
-+ *					  BTRFS_MAX_BLOCKS_PER_FOLIO)
-+ *   This is to ensure we can afford an on-stack bitmap, without the need to allocate
-+ *   bitmap memory at runtime.
-  *
-  * Implementation:
-  *
 -- 
-2.53.0
+2.47.3
 

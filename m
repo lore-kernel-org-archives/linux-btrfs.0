@@ -1,63 +1,60 @@
-Received: from esa1.hgst.iphmx.com (esa1.hgst.iphmx.com [68.232.141.245])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9B5542C3259;
-	Wed, 29 Apr 2026 20:48:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=68.232.141.245
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E38B227B94
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2026 01:07:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777495693; cv=none; b=OzLN9/+awTq9hHDL1ReIyZyG3SdRhVUnSc/IDBMr8CRcURvr7HFnfZytAXtePvEUMx4AI22XRgkvGGg0Hqa4EKnJIh9jYYx+sU76nZke/eZKGnf4hm9JpHDZbS1lG2ZUAY2glejy3HKogZLJDQdeBvU+IrAHkHHXdUN25TXQC9A=
+	t=1777511273; cv=none; b=obloqZGE+4Pv/l8r/k/3pxtvDAmpx3YBcWcgLSwPApSiEwtUfPjl6v1mgwmWFGtUNFva1OCm+xWHS3YATUPajX2VG+DRXuWNO92ov/Of4QJTGbcORVwBFL0NEBsBfhteDmlowKDpCRNS9jcTSPH1hJqITZMODsK1hefIIqklWuw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777495693; c=relaxed/simple;
-	bh=jD2tnPjT+mVdbbH+mbn2X2InqfNaaAu+t3E47eqgzoc=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=tZCDvAw+pt2/+4F0RAbyIuJlCt0QvHoDpmHyo8b+DDcbYzmv6O6Hjb/j2CxZ7cpTY8V2KKiHNh/IstyByuXEx9q7oz+ywc0pov0Qocp4ngQpnVxaMQNBNp7n4jwuIuX7EBMVYAFZRUuS94BpVkpuOuvXhEOfy4tTgzR91KRSFxE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=G93aqohd; arc=none smtp.client-ip=68.232.141.245
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	s=arc-20240116; t=1777511273; c=relaxed/simple;
+	bh=Vh1nnXslVHZ4yPhcIr5kg2QGckONIjlqkvS2bzMM6V0=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=pDp2fHZgwVbuVquCHvtNDlc/GTX5dJla5u7ZV8slsJ63Oj5RL8IGrFJpGL0rMED2nzUkCAeCWsTYxFm82Jj00f1f5EhKfdQxKietD0wGEGjGN1Kul28n48UJHP1H/sL4wGQB4aetPax695rqceAPyrSWreFMvPyfzFM/sFyE0v0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=taIuLR6H; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=taIuLR6H; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="G93aqohd"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1777495690; x=1809031690;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=jD2tnPjT+mVdbbH+mbn2X2InqfNaaAu+t3E47eqgzoc=;
-  b=G93aqohdpKCR7LJumIAK6UPAF6xDqPwwYmTGgyuw3z5R0DcDSXMJOf0y
-   kciVN/odXUsiR9u6/1Rf8pvIoGXt1ru165zDtkZAJXJrSu567dyoyAG2F
-   OQE+jC9E8xo8koud2DLvt6AWbqgRvFj9Pxi+w5V7gXBRTS1cYGSGEPNNS
-   GRCupFIYpdjQKmV8/Ls1wu5yYvNUN+o6pgI7dZYIU346yQB+C4hUJdme9
-   cJuqKwnV7E4ss6adRlNJrjsFHvbd9q+SPqELgi6/pSt+IjSDQxzRW0cYd
-   cN97Z7/peLXJjjzeuqacjIyKVrBHcRWw7MxQ9y5kaTPR7Ht4X9hj7yuqJ
-   g==;
-X-CSE-ConnectionGUID: lFUyp3jKTiy7qjdhfJMLJg==
-X-CSE-MsgGUID: uvjt3kgyRR+gTD3B0JfdZw==
-X-IronPort-AV: E=Sophos;i="6.23,206,1770566400"; 
-   d="scan'208";a="145552338"
-Received: from unknown (HELO uls-op-esad2-o.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 30 Apr 2026 04:47:01 +0800
-X-CSE-ConnectionGUID: VaoI5fW7Q2uCI5Ldq0DeRw==
-X-CSE-MsgGUID: qIiS6DwOQyyxYVYCi0xXDQ==
-IronPort-SDR: 69f26e27_K2Su1sHiTThFFlRbjvP01Z3TsKS1i91/X0pRM9oKJvqvjXj
- 4VeO5JEaA38+xrgIVgOgdI8a9+uFclMMCj6Jmtg==
-Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
-  by uls-op-esad2-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 29 Apr 2026 13:46:31 -0700
-X-CSE-ConnectionGUID: yRZbdT35Ru2lUnuN/QJuew==
-X-CSE-MsgGUID: dtzVo67rTFCL2lB4ige/IA==
-WDCIronportException: Internal
-Received: from 5cg1443s5p.ad.shared (HELO neo.fritz.box) ([10.224.28.29])
-  by uls-op-esai1-o.wdc.com with ESMTP; 29 Apr 2026 13:46:29 -0700
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To: Zorro Lang <zlang@redhat.com>
-Cc: Naohiro Aota <naohiro.aota@wdc.com>,
-	fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org,
-	Christoph Hellwig <hch@lst.de>,
-	Hans Holmberg <Hans.Holmberg@wdc.com>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
-Subject: [PATCH v3] generic/793: limit number of overwrites
-Date: Wed, 29 Apr 2026 22:46:24 +0200
-Message-ID: <20260429204624.807220-1-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="taIuLR6H";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="taIuLR6H"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id A0C745BD65
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2026 01:07:49 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1777511269; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=RhEiCPJoI9E2SWy0WUK/vPJ15rgS1KXljn+4POsWEiE=;
+	b=taIuLR6HAhHPw8yvjooVT5NMbwXRmiAw7aa6iH3yYPyQ4f+hYUj+QSMxkPwyorkrmXeptg
+	Q7RCXVfv99EEFK8i+EPMnb0VKqfctPBanPJoC6UWir7gZT+r41FpXy1CLQ2uW8C4/ftxIm
+	QZC1iI98JkPhG3S2YWepoyyv1LpTh4g=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=taIuLR6H
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1777511269; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=RhEiCPJoI9E2SWy0WUK/vPJ15rgS1KXljn+4POsWEiE=;
+	b=taIuLR6HAhHPw8yvjooVT5NMbwXRmiAw7aa6iH3yYPyQ4f+hYUj+QSMxkPwyorkrmXeptg
+	Q7RCXVfv99EEFK8i+EPMnb0VKqfctPBanPJoC6UWir7gZT+r41FpXy1CLQ2uW8C4/ftxIm
+	QZC1iI98JkPhG3S2YWepoyyv1LpTh4g=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E008A593B0
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2026 01:07:48 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 9opKKGSr8mlyWgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2026 01:07:48 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v4 0/2] btrfs: fix and detect dirty/held ebs at unmount time
+Date: Thu, 30 Apr 2026 10:37:21 +0930
+Message-ID: <cover.1777510825.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -65,59 +62,117 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_ONE(0.00)[1];
+	MIME_TRACE(0.00)[0:+];
+	FROM_HAS_DN(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:dkim,suse.com:mid];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Queue-Id: A0C745BD65
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
 
-Testcase generic/793 overwrites a 1GB file "number of sequential zones"
-times in order to trigger a bug in zoned BTRFS' garbage collection. But on
-scratch devices with a huge number of sequential zones (like SMR drives)
-this can cause very long runtimes.
+[CHANGELOG]
+v4:
+- Add the patch into the series which fixes the dirty ebs
 
-As the testcase also limits the filesystem size to 16GB, constraint the
-number of overwrite loops to the number of sequential zones in the
-filesystem. This still guarantees that the file will be overwritten often
-enough to trigger the bug while not exploding the overall test runtime.
+- Remove the transid output
+  It's not really utilized for the particular bug, and can be added
+  later easily.
 
-Reported-by: Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
+- Rename the detecting function to invalidate_and_check_btree_folios()
 
-Changes to v2:
-- Re-add $BLKZONE_PROG
+- Update the commit message in the 1st patch
+  The dirty ebs won't cause NULL pointer dereferences even all workers
+  are already stopped.
+  As in this particular case the fs is already in RO mode, thus all
+  metadata writeback will fail immediately without going through the
+  writeback path.
 
- tests/generic/793 | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+  But still better to fix the bug other than relying on extra safety
+  nets.
+  
+v3:
+- Revert the DEBUG_WANR_ON_ONCE() change
+  As there is only one user, a simple
+  WARN_ON_ONCE(IS_ENABLED(CONFIG_BTRFS_DEBUG)) is more than enough.
 
-diff --git a/tests/generic/793 b/tests/generic/793
-index a59e84694309..0d3b0bfcac5e 100755
---- a/tests/generic/793
-+++ b/tests/generic/793
-@@ -11,6 +11,7 @@
- _begin_fstest auto quick zone
- 
- . ./common/filter
-+. ./common/zoned
- 
- _require_scratch_size $((16 * 1024 * 1024))
- 
-@@ -34,12 +35,14 @@ _fixed_by_fs_commit btrfs 258e46a6385c \
- _fixed_by_fs_commit btrfs e2a7fd22378f \
- 	"btrfs: zoned: add zone reclaim flush state for DATA space_info"
- 
--_scratch_mkfs_sized $((16 * 1024 * 1024 * 1024)) &>>$seqres.full
-+fssize=$((16 * 1024 * 1024 * 1024))
-+_scratch_mkfs_sized ${fssize} &>>$seqres.full
- _scratch_mount
- 
--# Overwrite the data "number of seq zones" times, this is arbitrarily chosen
-+# Overwrite the data "number of zones in fs" times, this is arbitrarily chosen
- # but triggers the original bug reliably
--loops=$($BLKZONE_PROG report $zoned_dev | grep -c "SEQ_WRITE_REQUIRED")
-+zsize=$(_zone_capacity 0 $zoned_dev)
-+loops=$(( fssize/zsize))
- 
- for (( i = 0; i < $loops; i++ )); do
- 	dd if=/dev/zero of=$SCRATCH_MNT/test bs=1M count=1024 status=none
+- Output the generation of the unreleased eb too
+  Since it's possible to have 2 transactions (one committing and reached
+  UNBLOCKED state, one new running), the generation output will help us
+  to know which transaction the unreleased eb belongs to.
+
+- Also output the transid when a transaction is aborted
+  To co-operate with the above change for debugging.
+
+v2:
+- Add one extra ref before checking the eb
+  Although readahead has one extra ref, after the readahead finished the
+  extra ref will be dropped, and memory pressure can kick in to free the
+  extent buffer.
+
+- Use rcu lock with xa_for_each() instead of xas lock and xas_for_each()
+  Since we're holding one extra eb ref to prevent eb from disappearing,
+  we no longer needs the more strict xas lock nor the extra xas
+  pause/unlock.
+
+  Although xa_for_each() is more time consuming, we're at the cold path
+  already, not a huge cost.
+
+- Remove the temporarary void pointer
+  And pass eb pointer directly into xas_for_each().
+
+- Introduce DEBUG_WARN_ON_ONCE() helper
+  To follow the existing DEBUG_WARN() helper.
+
+- Fix a typo
+
+- Also fix the checkpatch warning on the exist DEBUG_WARN()
+
+There is a report about readahead triggering NULL pointer dereferences,
+which inspired me to add a detection mechanism about any dirty/held ebs
+during unmount.
+
+It turns out that several error injection/shutdown test cases can
+trigger the new detection mechanism, and after more debugging it shows
+that we had a bug in the transaction abort path that doesn't properly
+cleanup the dirty ebs.
+
+The first patch fixes the bug first, then the second patch introduces
+the new detection mechanism.
+
+Qu Wenruo (2):
+  btrfs: only release the dirty pages io tree after successful writes
+  btrfs: warn about extent buffer that can not be released
+
+ fs/btrfs/disk-io.c     | 55 ++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/extent_io.c   |  6 -----
+ fs/btrfs/extent_io.h   |  6 +++++
+ fs/btrfs/transaction.c |  9 +++----
+ 4 files changed, 63 insertions(+), 13 deletions(-)
+
 -- 
-2.53.0
+2.54.0
 

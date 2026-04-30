@@ -1,151 +1,248 @@
-Received: from fhigh-b4-smtp.messagingengine.com (fhigh-b4-smtp.messagingengine.com [202.12.124.155])
+Received: from SN4PR0501CU005.outbound.protection.outlook.com (mail-southcentralusazon11011032.outbound.protection.outlook.com [40.93.194.32])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B34E7262A
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2026 15:08:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.155
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777561733; cv=none; b=UaPqU/wEVJqaAt/CyyG2f4I5YaOSKgi6ZrN5oXCDpUnZfWHBUediFyaPJyBd2kwXSSfeFzuXirYw3UH+jIHlz2jYh9DM3ZumnfMdkOX7p1xkJJMtdtjzT7P1mqEvvq5IzOm0hxBzZYtZlxKov7f0PE04aU6gvzJ6JI/oXQqCI9w=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777561733; c=relaxed/simple;
-	bh=4fQSAAAH7bBMhTKkXUKLNsXTfBJYzLVf/xUye4+iJ4s=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=VAi7SLw2WrT97jGhCGNMT472yqiG+90waHR4uMylXwjVmzZvsbuZGiHyOo1BWDtYaUBUhHBvovFnAxQUR8pWlMc4sEswkqDUxEFjHPMmKRBJl0dNck2MEKl2EV4gHBjG8wvlslVaU3v/1Awqh7GtEK8SKgl8SXuSshPjrK2MZto=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=eP+yhRze; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=Ue9SSbtK; arc=none smtp.client-ip=202.12.124.155
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 148FA42E011;
+	Thu, 30 Apr 2026 15:11:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.93.194.32
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1777561881; cv=fail; b=juYEPeh3hbtCq1u36LNtYhn5i2zs7/aDucDL4FL0c/USIKQi9FseCf42Di5l9P49lMvy84LAkKUYvDejE62C2iH7ibG0fwLOzDqKY314gxh3j7mAvyIMJ9gGW5i4kFjxQuSTStS7ZUNFqC8/N2tFacFYm6g6Co5LclCHjyJRV1U=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1777561881; c=relaxed/simple;
+	bh=Rk16Ng8R7LUMq6jPn8aIzpEbbwDTD/q6YfkqwkPcGkg=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=I8/6jEipVXF75yTC0Bl6rL3q0F0eKIhrS4JTjYXvTEzjkncVIZMLHOuXg8c66C3qdQxVjlozw7plN2zN6Nq+PCL15RJ/3oWvtkVU4YenoESdR22hNHFlQApr4Lz8qc12fBiOl/TOsYumRX1zWv1v5QMgX0mdpKgYH5zFD0i7AjY=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=iobF/Hm/; arc=fail smtp.client-ip=40.93.194.32
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="eP+yhRze";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Ue9SSbtK"
-Received: from phl-compute-09.internal (phl-compute-09.internal [10.202.2.49])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id D41867A0028;
-	Thu, 30 Apr 2026 11:08:49 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-09.internal (MEProxy); Thu, 30 Apr 2026 11:08:50 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1777561729; x=1777648129; bh=XuscbQoZiN
-	vvWP8D2cQuDQ+uKMih+5kGUIanApPvR4k=; b=eP+yhRzekCPBTvok8hksfw9paz
-	Cd13BYPd0JpZwUegkcoB98XSl8gDySMnV/l4qqufJ1VMA0xcJ+dKmXhD9jhmqdmQ
-	FsBnLWcrFPZVQxlQUmUHEoV0dbeVvVhV5JA3HNZ8O9MLCuUeB7RysgVcxDOswuwE
-	5YUNLDlQ2jWZHg54CJ2xqfI934DSBjRNsTiimp1cwQiytlxR036o968rzql8xgQi
-	8L/mprv4QMANJenZR6QqfiYGvyGxShVo2LnDdUBa4S5SYrdB4CVRPRcE/vxYhTfz
-	R2jSuU6qSy7Wad+u9Hr7jgYhhn86jp8xPs17qlyM5f8QhloFdKkTnVGhAnaA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1777561729; x=1777648129; bh=XuscbQoZiNvvWP8D2cQuDQ+uKMih+5kGUIa
-	nApPvR4k=; b=Ue9SSbtKtXbuGojQ8bUMUZjLFUSVNfnni6I0pDaPxUDQ0ubTsqa
-	c9GB8ItPt0IxSNR6shIQCtzy7HpfoIJKpr5g/hsI0/MqSy9eM1r8pKh3WnqTbbGY
-	tqGn3kgxByIHP0A7SGBXycds3ofrAPzjW8t7ob10FDrfIuM0owNjUvp+lFsqVb46
-	A0Pfz5DoychdyoOnzCdJ97lRfRY0lsfEHkcVX7OqKeUQ+7FcpK0+sQoI+qDnAKwK
-	EcXckjEpryv0XzmN5sYZmFFoCk9XoAjHH6IwksHs5Z7MIPTFKaIpYBxDT37tsjlF
-	CtUaWpWB5NE43VgmWk7RAlulTSUJqTrNh5Q==
-X-ME-Sender: <xms:gXDzab5KDrSh29qrxBshuJrIwDK3aEnIJesLI0sHMUsjsgbdHtzEfw>
-    <xme:gXDzaRF9rWDiwR6j8o3DPQKPL3CtVbLyqGKZh_HedF5TGAbOQtRf_yzCHEnu06_ye
-    HxTNiyDW1f8x8_njPjttFIWoaydCyYLHXFYuIZSuLj1e51nvWlvVnE>
-X-ME-Received: <xmr:gXDzaUTPwTntK6BIHmUGX_Z3K8rzMcJsOFUugREqWDP5tlUkM2PlG4qXRYwvLA>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdekjeeigecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpuffrtefokffrpgfnqfghnecuuegr
-    ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
-    hrpeffhffvvefukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhrihhsuceu
-    uhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhepuefgfe
-    etffefgfduvedvvedtfffgudefgfeuffejffehheduueeiudetkeegffehnecuffhomhgr
-    ihhnpehqvghmuhdrohhrghenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmh
-    grihhlfhhrohhmpegsohhrihhssegsuhhrrdhiohdpnhgspghrtghpthhtohepvddpmhho
-    uggvpehsmhhtphhouhhtpdhrtghpthhtohepfhgumhgrnhgrnhgrsehsuhhsvgdrtghomh
-    dprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrhhnvghlrdhorhhg
-X-ME-Proxy: <xmx:gXDzaavVMqxB2-OUm0E6OUbrncY7ZvswGyt1oce3oHFpWMXMoWLYhw>
-    <xmx:gXDzaTyH2N4afbks67Q7cUftWdJcnrIySOmPRLcqwT_DbPtAo2NOVg>
-    <xmx:gXDzaU4vlvrg3q8iqP7UA8i5Dva3epyCQnVSLomPfrgHUZOFvwm3dA>
-    <xmx:gXDzadUvLJIXYOdXY4kw4N3cYByUTvNal1TZ5FpCxcEjsIU8oe4_Bg>
-    <xmx:gXDzaYpDbQ298kRWvDRMH0L7GR5lyukiLVWQjAHF7w3PGNPgT9L2cJtj>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 30 Apr 2026 11:08:49 -0400 (EDT)
-Date: Thu, 30 Apr 2026 08:08:45 -0700
-From: Boris Burkov <boris@bur.io>
-To: Filipe Manana <fdmanana@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: tracepoints: fix sleep while in atomic context in
- btrfs_sync_file()
-Message-ID: <afNwffvf1FG43XAb@devvm12410.ftw0.facebook.com>
-References: <d93784745689ea623c8c1156755d0113344a9354.1777392274.git.fdmanana@suse.com>
+	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="iobF/Hm/"
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=ZwejkswFS5r9hNqTmqNQ4d31fUQn1OKkwbs5niKptKJUmYkUfZUFEn7ShxuQUPUD1AeSpOYyahWdolPHZKWMxxq94FZWaEQ5S4KbutV7eyosU72fyo2rh00aQ/oTJKjQVnmnwH2z/a9FaQ/60Ckdrzv6/znapRyenRsS857eCl9cB7RrPj8SOmREnLR39VLmxHUgJw1q/E30QAOoq9CXT3ZrJhdompFQY7HBIH/lvb/3F79SGvDgHiv9x3fpcVXH7MLyRF6l8VVNPQ8BAthHawxT7o4ldmgvkez5UJU/WTDbyEFEbRqA4WkfotpD/MaPY4LNNtcTSm8A1g0R6aM1sw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=D7+Hc9YftzQFlqLUGSJMSZgQXTmv2dOrrKUdCSg47UI=;
+ b=f1Z4cfmgDY2b9vCAx7Toztrl+IyCaR4A/Hz0ph/raD2mrbXAiKzS9TGk4m40O+hw6hQFlVbUALdciIouYYY214BdNjhY161uXGEv1qzZt8uzLeqFaYB0Qz7+AethEpmkFtAKE1BIXcNCWOPNRBDXoC/W/9ldzUAXmnGwMn4F5D7gvdl2mQ1/7YpDloWoEbyiIPJ3qU+ve2dNRzK3CqAAays2ysl1pRM8dbrkJ0sKgwtBNiq9YksXVmgyLvC8kBpd4DzZF2Kcb+q86rb1d7J36JzFQ+kSIqcTQoV35jScurn8E3knE4t0r875Brx60J2lZm8JPFR8ap5TZdq8wNph5w==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
+ dkim=pass header.d=nvidia.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
+ s=selector2;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=D7+Hc9YftzQFlqLUGSJMSZgQXTmv2dOrrKUdCSg47UI=;
+ b=iobF/Hm/6TcyHrpVmFZDKOhGVTrIooDOonT/JaqxTtmMT+yFEM3eTP1qwHiUlbL5KEXxPuy2q+PXJYxrOABqjPszrdsvj+shk/WwLUtBfB53iEufGUuqz7+ZP+S/dvL1XeAkpogKoK8/b0RTADCg+EuAS2eBp4c1x0fWkaJ+snUxonD1z2SIW1jfaCA4B+OaradnO+j6uSx5xXVp2X/llVTlrH2gWOqUhNAImlVIwLWy9T+wCUPLKGsZymohaTlCNFQwDx5ErGpshmZ/hoH4uF43fiFsQODB0YFWzfhNQ6uYt669E73qHIcTvMkqFK2oGU6nNePZ9Jfhe1eHGo4yPw==
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=nvidia.com;
+Received: from DS7PR12MB9473.namprd12.prod.outlook.com (2603:10b6:8:252::5) by
+ DSVPR12MB999194.namprd12.prod.outlook.com (2603:10b6:8:496::21) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9846.26; Thu, 30 Apr
+ 2026 15:11:15 +0000
+Received: from DS7PR12MB9473.namprd12.prod.outlook.com
+ ([fe80::f01d:73d2:2dda:c7b2]) by DS7PR12MB9473.namprd12.prod.outlook.com
+ ([fe80::f01d:73d2:2dda:c7b2%4]) with mapi id 15.20.9870.013; Thu, 30 Apr 2026
+ 15:11:14 +0000
+From: Zi Yan <ziy@nvidia.com>
+To: Andrew Morton <akpm@linux-foundation.org>,
+ David Hildenbrand <david@kernel.org>,
+ "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+ Song Liu <songliubraving@fb.com>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+ Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
+ Lorenzo Stoakes <ljs@kernel.org>, Zi Yan <ziy@nvidia.com>,
+ Baolin Wang <baolin.wang@linux.alibaba.com>,
+ "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
+ Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
+ Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
+ Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
+ Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
+ Shuah Khan <shuah@kernel.org>, <linux-btrfs@vger.kernel.org>,
+ <linux-kernel@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
+ <linux-mm@kvack.org>, <linux-kselftest@vger.kernel.org>
+Subject: Re: [PATCH v5 02/14] mm/khugepaged: add folio dirty check after
+ try_to_unmap()
+Date: Thu, 30 Apr 2026 11:11:09 -0400
+X-Mailer: MailMate (2.0r6292)
+Message-ID: <CCA78A7B-95FB-4B25-BD3C-FC690D2B1343@nvidia.com>
+In-Reply-To: <20260429152924.727124-3-ziy@nvidia.com>
+References: <20260429152924.727124-1-ziy@nvidia.com>
+ <20260429152924.727124-3-ziy@nvidia.com>
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
+X-ClientProxiedBy: CH2PR10CA0001.namprd10.prod.outlook.com
+ (2603:10b6:610:4c::11) To DS7PR12MB9473.namprd12.prod.outlook.com
+ (2603:10b6:8:252::5)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <d93784745689ea623c8c1156755d0113344a9354.1777392274.git.fdmanana@suse.com>
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: DS7PR12MB9473:EE_|DSVPR12MB999194:EE_
+X-MS-Office365-Filtering-Correlation-Id: 77da3ba3-0da8-4f3b-a8f2-08dea6cab8ae
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|366016|7416014|376014|1800799024|22082099003|18002099003|56012099003;
+X-Microsoft-Antispam-Message-Info:
+	8jVDVtwZ/F3aZoRt66wBFW5scDwXMgJCZHXpSD9QUO/MymldCR+nw7AvgROLoGr9OfbxFF+8ejQ4Q2n7XnJP9aKpKW+vh/bCSHm0/mwLcfUzdBdpUEqfv3R7W9ZggThwGJIqPFZQb/8QpBCBs13YEiu90GDn4X/jTug/czfv3O/pf49bsU+uIo3ZWtG++ldF0Bhr6aFICM4LsB9qx+/uhL54Gm4Fiwc8vvMbMBuxGMiPF9oMqk1yH5yaFIp6GtIlLoAE+7l2mFebAcs7ye0idCdifvNkfa3R89UCUYvNWTrcb4tdEDvnJsibEgU4fLmW5pZ+s+SuKjr0aAFB9CXmUzTeX3TlIPPSyiYqLBBVwmkfHb+xOMKF83iojecpCkAcXbUAKlNcy/rsayagtB4BwIPYZh3MKkryTdiSnS4zrVLz/wQjmGinRuqFmfVva+WjhEdmTdhD6hCudemdmbAAeRMqZyANylfstPVRqOOBPGdDXLV8p8TC8lvPk5DIKYxbpdIK20QKA4Xj0uHfi3tjJkeuxZuAgLsKbttUsOmzjj9Wwm7g4VehI+JKDI2bpX6HCVLed79IPgscnu5R2KROur+lRTkQNT0ez8Y8m39MXN259kBb2malOqV6b7TKr5kyj/ymaOkZl0cW5IBVdWEE1XQ3+3P/MVGvM1sFzLp2KWGStoNaIx0xMlKmJpAFrUHgV7dJJ/B7/zeFOnSfZ9tM3uKEk9fZ2NVUpUFJ5Qsw8KM=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DS7PR12MB9473.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(366016)(7416014)(376014)(1800799024)(22082099003)(18002099003)(56012099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?us-ascii?Q?9Qt9iTh5kQgM41CikK1oUt/kGE4ezXsVtIN8GOMHE1B6P2C68KKuX6l+9XI/?=
+ =?us-ascii?Q?700c42o9Pzz4smbzSnuZY8UK4MM/2dVDv5KBGz6ef1uwSOlTB1TZqCrCOyJK?=
+ =?us-ascii?Q?0nymCbjz9q1sQchtRWl3plj6MP1ec+ctmH8Akz/OI+8yT7OYDT8XhMQ7zXYU?=
+ =?us-ascii?Q?U/1uE0p/HwdYXnnyQ6Bk+Bly3LR51ASq3hAEmJJkQYT7xeZnhMTtjHiBIGJ4?=
+ =?us-ascii?Q?7oIALFUsZCbjR+ZrcaOWuJovsMRkRCrKYxlcVlS5133wssa7NhxihW4yjv/d?=
+ =?us-ascii?Q?FsmVyFCXAF+8tfTs4kW2j5eo9Lyye/HOdXfJvJsJDUL9AJQo6cA062kJAbIf?=
+ =?us-ascii?Q?i7fKRNnxwl/MrKfguQJHIfSboTDeRsvfHZY4xF0hmN0oKv1HpZCtkHzHifdc?=
+ =?us-ascii?Q?/XSXx+w9fyo6mI8YrPRNouSJk9Q9FSshGdK1njwfJU7tT/jOyVJEwdG3IfFl?=
+ =?us-ascii?Q?5zKup7G7HZflq7+ozPyOaGH4IuLVusdgGsIFSK6XNyjm4mD3aBicE3vXgSlF?=
+ =?us-ascii?Q?7eXlf1mC0YF1/geOEbBRzl64TyrVFwEIqss4Pmbz9hSDXjpCl8leKe9rQzaU?=
+ =?us-ascii?Q?VyMwGuxw5WVJFsyqG1vu3KgO5o6Cx1Q/7cS0l5oe6M9TJKgjdYhpXiaTtKIu?=
+ =?us-ascii?Q?/BO1N9N2TBGsiclpJrjCaZAYuPUZsHh5xoSHqUgVlnLBAjmCJSS4QKdtvqHL?=
+ =?us-ascii?Q?8enX9BXXAGUEzTSYJ82vCU16ohJ6kyHUrBo+ayNQ4JI2h3xDWksPgAACgCck?=
+ =?us-ascii?Q?lvZ8kX3yhfbbpFisVoXbg4GfhSL+lgYOA3X5bwF8oFqg6j+v5AhQNI4Qp8nL?=
+ =?us-ascii?Q?8y6p/GsedRfVPG4/sdIY/mkIKxHjaGLhS53BnhtA45nqu+RVYTrXY9BEr1TO?=
+ =?us-ascii?Q?R4SWnmQVZEAtcrKcgzKdW/qrScJmgnmqCRoOUSnoamBe1gcOc9lsjiGT7CYA?=
+ =?us-ascii?Q?QPdMlFhmSJmaqAlRlNGyM/OL6r4eptjPmCTvebVJrd5DE/fHDY/Cnv0nFttI?=
+ =?us-ascii?Q?vsKMcfqJwUAp+6d9kF/xZti1VxqrLf25h08tQYREyVTuuK71a3nqOE3UpRgH?=
+ =?us-ascii?Q?MYLqF+Ea9zEMAn0QKjwnO3RAgNo+8rWT30EWjyr1Qt+pQKW//X5tdqOYdBUM?=
+ =?us-ascii?Q?nJcehiJOEYm8laZyeqyqpvNufv8VuPRvFW4edbd9LGafooq/euFvB1g+UFdW?=
+ =?us-ascii?Q?/lKHa/8XGYaTRL/9EBJkMYYqftZPcvHnLtTC13QrNVlOuR25zXwoaM8aKimK?=
+ =?us-ascii?Q?x7ySzNOe/mfnw58QASGDf8X3irb5WTE5I5eoLKVi6U93/cE7gZNhv1pOsfxD?=
+ =?us-ascii?Q?KMDQnm2IoMmpE2aLdRpP0HuPHfzLJMv/w5N4EEuux76Gf58vsuPoAd7uDOFA?=
+ =?us-ascii?Q?JpgcozxwEMV3760VT7K0u7eA372eaE0EyCIwWiJKSuOHHRIAlER070+KMDNl?=
+ =?us-ascii?Q?qewvpfTUOl10FS/hYsVNiGN8nJzArFeGNEfZFOsJZW4k3zPMz+kR6km+8bn/?=
+ =?us-ascii?Q?F5HD1Wn+v6PXLNCFRbf1x6DG9ZxYJTodSWwRAoHH7VEM3pToxqcxqAS8Q+yr?=
+ =?us-ascii?Q?nglQZM5wHoasan2Qknwz7wTPcItb8By45q8xh+sHyBPUobgL8lCdjUdM/B+Y?=
+ =?us-ascii?Q?hKvW8yauMm5mTZqQ07c1KUuLD9u+mOpllhdg8/M2aMUftFxH43gT3DTPFjvA?=
+ =?us-ascii?Q?0bih/24HN4qSNtBlgEFs3hTu1GGep/CTprzcAlOX/p1Yd0s4?=
+X-OriginatorOrg: Nvidia.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 77da3ba3-0da8-4f3b-a8f2-08dea6cab8ae
+X-MS-Exchange-CrossTenant-AuthSource: DS7PR12MB9473.namprd12.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 30 Apr 2026 15:11:14.6889
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 43083d15-7273-40c1-b7db-39efd9ccc17a
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: 1/UFeyoRU3XWYhppJOmqloNlP9Zc8A0iZSlvhnK/Pllr+drQL5iKcBK8SBEtR7QH
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DSVPR12MB999194
 
-On Tue, Apr 28, 2026 at 05:05:43PM +0100, Filipe Manana wrote:
-> The trace event btrfs_sync_file() can be called in an atomic context and
-> its call to dput(), which is needed due to the call to dget_parent(), can
-> sleep, triggering a kernel splat.
-> 
-> This can be reproduced by enabling the trace event and running btrfs/056
-> from fstests for example. The splat shown in dmesg is the following:
-> 
->    [84853.995109] BUG: sleeping function called from invalid context at fs/dcache.c:970
->    [84853.996457] in_atomic(): 1, irqs_disabled(): 0, non_block: 0, pid: 32773, name: xfs_io
->    [84853.997858] preempt_count: 2, expected: 0
->    [84853.998647] RCU nest depth: 0, expected: 0
->    [84853.999403] Preemption disabled at:
->    [84853.999404] [<0000000000000000>] 0x0
->    [84854.000708] CPU: 0 UID: 0 PID: 32773 Comm: xfs_io Tainted: G        W           7.1.0-rc1-btrfs-next-232+ #1 PREEMPT(full)
->    [84854.000710] Tainted: [W]=WARN
->    [84854.000711] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.2-0-gea1b7a073390-prebuilt.qemu.org 04/01/2014
->    [84854.000712] Call Trace:
->    [84854.000714]  <TASK>
->    [84854.000716]  dump_stack_lvl+0x56/0x80
->    [84854.000719]  __might_resched.cold+0xd6/0x10f
->    [84854.000722]  dput.part.0+0x24/0x110
->    [84854.000728]  trace_event_raw_event_btrfs_sync_file+0x75/0x140 [btrfs]
->    [84854.000809]  btrfs_sync_file+0x1ed/0x530 [btrfs]
->    [84854.000887]  ? __handle_mm_fault+0x8ae/0xed0
->    [84854.000889]  btrfs_do_write_iter+0x172/0x210 [btrfs]
->    [84854.000951]  vfs_write+0x21f/0x450
->    [84854.000954]  __x64_sys_pwrite64+0x8d/0xc0
->    [84854.000956]  ? do_user_addr_fault+0x20c/0x670
->    [84854.000959]  do_syscall_64+0x60/0xf20
->    [84854.000962]  ? clear_bhb_loop+0x60/0xb0
->    [84854.000964]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
-> 
-> So stop using dget_parent() and dput() and access the parent dentry
-> directly as dentry->d_parent. This is also what ext4 is doing in
-> its equivalent trace event ext4_sync_file_enter().
-> 
-> Fixes: a85b46db143f ("btrfs: tracepoints: get correct superblock from dentry in event btrfs_sync_file()")
+On 29 Apr 2026, at 11:29, Zi Yan wrote:
 
-Looks good, thanks.
-Reviewed-by: Boris Burkov <boris@bur.io>
-
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> This check ensures the correctness of read-only PMD folio collapse
+> after it is enabled for all FSes supporting PMD pagecache folios and
+> replaces READ_ONLY_THP_FOR_FS.
+>
+> READ_ONLY_THP_FOR_FS only supports read-only fd and uses mapping->nr_th=
+ps
+> and inode->i_writecount to prevent any write to read-only to-be-collaps=
+ed
+> folios. In upcoming commits, READ_ONLY_THP_FOR_FS will be removed and t=
+he
+> aforementioned mechanism will go away too. To ensure khugepaged functio=
+ns
+> as expected after the changes, skip if any folio is dirty after
+> try_to_unmap(), since a dirty folio at that point means this read-only
+> folio can get writes between try_to_unmap() and try_to_unmap_flush() vi=
+a
+> cached TLB entries and khugepaged does not support writable pagecache f=
+olio
+> collapse yet.
+>
+> Signed-off-by: Zi Yan <ziy@nvidia.com>
+> Reviewed-by: Baolin Wang <baolin.wang@linux.alibaba.com>
+> Acked-by: David Hildenbrand (Arm) <david@kernel.org>
 > ---
->  include/trace/events/btrfs.h | 4 +---
->  1 file changed, 1 insertion(+), 3 deletions(-)
-> 
-> diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-> index 8ad7a2d76c1d..ec1df8b94517 100644
-> --- a/include/trace/events/btrfs.h
-> +++ b/include/trace/events/btrfs.h
-> @@ -771,10 +771,8 @@ TRACE_EVENT(btrfs_sync_file,
->  	TP_fast_assign(
->  		struct dentry *dentry = file_dentry(file);
->  		struct inode *inode = file_inode(file);
-> -		struct dentry *parent = dget_parent(dentry);
-> -		struct inode *parent_inode = d_inode(parent);
-> +		struct inode *parent_inode = d_inode(dentry->d_parent);
->  
-> -		dput(parent);
->  		TP_fast_assign_fsid(btrfs_sb(inode->i_sb));
->  		__entry->ino		= btrfs_ino(BTRFS_I(inode));
->  		__entry->parent		= btrfs_ino(BTRFS_I(parent_inode));
-> -- 
-> 2.47.2
+>  mm/khugepaged.c | 28 ++++++++++++++++++++++++----
+>  1 file changed, 24 insertions(+), 4 deletions(-)
+>
+> diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+> index 6808f2b48d864..71209a72195ab 100644
+> --- a/mm/khugepaged.c
+> +++ b/mm/khugepaged.c
+> @@ -2327,8 +2327,7 @@ static enum scan_result collapse_file(struct mm_s=
+truct *mm, unsigned long addr,
+>  				}
+>  			} else if (folio_test_dirty(folio)) {
+>  				/*
+> -				 * khugepaged only works on read-only fd,
+> -				 * so this page is dirty because it hasn't
+> +				 * This page is dirty because it hasn't
+>  				 * been flushed since first write. There
+>  				 * won't be new dirty pages.
+>  				 *
+> @@ -2386,8 +2385,8 @@ static enum scan_result collapse_file(struct mm_s=
+truct *mm, unsigned long addr,
+>  		if (!is_shmem && (folio_test_dirty(folio) ||
+>  				  folio_test_writeback(folio))) {
+>  			/*
+> -			 * khugepaged only works on read-only fd, so this
+> -			 * folio is dirty because it hasn't been flushed
+> +			 * khugepaged only works on clean file-backed folios,
+> +			 * so this folio is dirty because it hasn't been flushed
+>  			 * since first write.
+>  			 */
+>  			result =3D SCAN_PAGE_DIRTY_OR_WRITEBACK;
+> @@ -2431,6 +2430,27 @@ static enum scan_result collapse_file(struct mm_=
+struct *mm, unsigned long addr,
+>  			goto out_unlock;
+>  		}
+>
+> +		/*
+> +		 * At this point, the folio is locked and unmapped. If the PTE
+> +		 * was dirty, try_to_unmap() has transferred the dirty bit to
+> +		 * the folio and we must not collapse it into a clean
+> +		 * file-backed folio.
+> +		 *
+> +		 * If the folio is clean here, no one can write it until we
+> +		 * drop the folio lock. A write through a stale TLB entry came
+> +		 * from a clean PTE and must fault because the PTE has been
+> +		 * cleared; the fault path has to take the folio lock before
+> +		 * installing a writable mapping. Buffered write paths also
+> +		 * have to take the folio lock before modifying file contents
+> +		 * without a mapping, typically via write_begin_get_folio().
+> +		 */
+> +		if (!is_shmem && folio_test_dirty(folio)) {
+> +			result =3D SCAN_PAGE_DIRTY_OR_WRITEBACK;
+> +			xas_unlock_irq(&xas);
+> +			folio_putback_lru(folio);
+> +			goto out_unlock;
+
+Sashiko asked:
+
+Could a concurrent operation, such as truncate(), lock the folio, remove =
+it
+from the page cache, and drop the final reference while we are jumping to=
+
+xa_unlocked?
+If the page is freed back to the buddy allocator before try_to_unmap_flus=
+h()
+completes, could this leave a stale TLB entry pointing to the freed page,=
+
+potentially allowing memory corruption if the page is reallocated?
+
+Answer:
+
+The folio still has pagecache and LRU refs before try_to_unmap_flush() an=
+d
+the truncate and free operation cannot be completed in that small window.=
+
+
+> +		}
+> +
+>  		/*
+>  		 * Accumulate the folios that are being collapsed.
+>  		 */
+> -- =
+
+> 2.53.0
+
+
+Best Regards,
+Yan, Zi

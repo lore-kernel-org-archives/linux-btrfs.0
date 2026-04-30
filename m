@@ -1,41 +1,35 @@
-Received: from mail.synology.com (mail.synology.com [211.23.38.101])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 62EB1227B94
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2026 02:27:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7FD6C33A70E;
+	Thu, 30 Apr 2026 03:25:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777516064; cv=none; b=Jt1ts/1KhVKh4WcewLwDztkRcJBvd4gMzqj9ZZl0ARyvuBXi2fdUFq3Kd2TcFRvPt/dYBCjF5XWhgWUOjt0CtWG5XSA8Qb3Po374466ZATQ4NcHZ6kPYxIOKpUF8eheOlA44pRHt+NVnBb8xdyAH/mQ2qCQFL/89Kd5GXphcGG8=
+	t=1777519544; cv=none; b=OzeGNLfqR2Wyw0s0vlX8nqiEgg8NHeRkdAqbBGRXhZrvZ0IQOJcE/uPbQX5lwwmlIRva10hGuTF6OP1CzGDELcN4ALXUbsU9xKqxu/7BIr3gL09lO5Sc8Z4/iCd8AcHvkd8u4cs+ESsrQkKymRag3gv89yhOWnEU/kBcsfrMl3c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777516064; c=relaxed/simple;
-	bh=mHtzzzb+/uRk4dXzoE+MkIGxRxQ6SC+OBFqgUUzl+SA=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=tWPKsCoeatOYDdYVnV0477zINz7QwbzL1F6sDvR92AKSnGD3+Fu183FI5hd0XRH2H3TN0oaW6k8t644Iw0KXk3A4l7J+FYkFuTqK2ouDhNCqvIFDYKiFLMFgLvGuUN7vrTL2lcj85PSDH+Xy8V4iuI5S3jPfkS+haFE1gbyAZMM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=tNEC1nPQ; arc=none smtp.client-ip=211.23.38.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
+	s=arc-20240116; t=1777519544; c=relaxed/simple;
+	bh=wBz7OM7TlHLm2WIVihmJBmiohjoSXyxgTPPi2XUGXGY=;
+	h=Content-Type:MIME-Version:Subject:From:Message-Id:Date:References:
+	 In-Reply-To:To:Cc; b=pv5PBTPYzaa9+eYPjyqxzPwEdlz4tO71YYGwHouilj5OJVsF1b4Ou7XoAYor1LlMcUFFgzSpBX13kLPL71kFV6zeRKyz0HD0KYgeAetSufzLVmgDFV54KAOT+n/GPA70DpQES/jQDlKZ7vSeB8fNsQlXNqXNbcDxckpwpL0NYl0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=uTpJPZRC; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="tNEC1nPQ"
-Received: from 11212-DT-014.. (unknown [10.17.40.185])
-	by mail.synology.com (Postfix) with ESMTPA id 4g5dP141wgzJFwswf;
-	Thu, 30 Apr 2026 10:27:33 +0800 (CST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-	t=1777516054; bh=mHtzzzb+/uRk4dXzoE+MkIGxRxQ6SC+OBFqgUUzl+SA=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=tNEC1nPQsWk2MpoavojFfxKD11lfp7Ef5m0zCS3MBVwXMZ8/UZhWD6GOZhb5RMISW
-	 zMA8bXKtlgYYqTYQT24LcvOpefie7OKqHeYzLfGZHz9+ABDWmQdBBaiUFyUaAcMBNa
-	 cEkx0D1R0x6VeqYkOGeDjb28caynktz2q0wIlkL0=
-From: Dave Chen <davechen@synology.com>
-To: fdmanana@suse.com
-Cc: cccheng@synology.com,
-	davechen@synology.com,
-	linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: optimize fill_holes() to merge a new hole with both adjacent items
-Date: Thu, 30 Apr 2026 10:27:21 +0800
-Message-ID: <20260430022721.1274249-1-davechen@synology.com>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20260429021351.596972-1-davechen@synology.com>
-References: <20260429021351.596972-1-davechen@synology.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="uTpJPZRC"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2CD70C2BCB9;
+	Thu, 30 Apr 2026 03:25:44 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1777519544;
+	bh=wBz7OM7TlHLm2WIVihmJBmiohjoSXyxgTPPi2XUGXGY=;
+	h=Subject:From:Date:References:In-Reply-To:To:Cc:From;
+	b=uTpJPZRCgWp5AfDjLmVTacGdTqRQtgMVXovLDOgY5LJHM1kRJTcTAjAjlzCgBpZvp
+	 PVuwPlNReHlcJ1FQ9PgNdCrqANSuP5dIHOg1WFVE1UPqOFQrLsNyEaAv1TIimY3yJ6
+	 dNLJ1aTEBqXG6wIIAe+hTTilZEZmiRBioNt3vpRgGA7/f1YWR+zd1uAs2cIdkGAHSF
+	 MZVBM6p+H1jvCofKth5JZ3lRO/w2r49uSYovI3hCogvHxcTwqsMRM3nY6Ct3vVu9oR
+	 CmYp2PZ4xwBzwNein821COzMLGD6YCZFeFgtsAQGoLKs2+1jduSB39tglFke+SexZz
+	 n/9KGgA7orfhA==
+Received: from [10.30.226.235] (localhost [IPv6:::1])
+	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 7D0473809A07;
+	Thu, 30 Apr 2026 03:25:00 +0000 (UTC)
+Content-Type: text/plain; charset="utf-8"
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,156 +37,114 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Synology-Spam-Flag: no
-X-Synology-Virus-Status: no
-X-Synology-MCP-Status: no
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-Content-Type: text/plain
+Subject: Re: [PATCH 01/28] xor: assert that xor_blocks is not call from
+ interrupt
+ context
+From: patchwork-bot+linux-riscv@kernel.org
+Message-Id: 
+ <177751949930.2274119.9590297379331785751.git-patchwork-notify@kernel.org>
+Date: Thu, 30 Apr 2026 03:24:59 +0000
+References: <20260327061704.3707577-2-hch@lst.de>
+In-Reply-To: <20260327061704.3707577-2-hch@lst.de>
+To: Christoph Hellwig <hch@lst.de>
+Cc: linux-riscv@lists.infradead.org, akpm@linux-foundation.org,
+ richard.henderson@linaro.org, mattst88@gmail.com, linmag7@gmail.com,
+ linux@armlinux.org.uk, catalin.marinas@arm.com, will@kernel.org,
+ ardb@kernel.org, chenhuacai@kernel.org, kernel@xen0n.name,
+ maddy@linux.ibm.com, mpe@ellerman.id.au, npiggin@gmail.com,
+ chleroy@kernel.org, pjw@kernel.org, palmer@dabbelt.com,
+ aou@eecs.berkeley.edu, alex@ghiti.fr, hca@linux.ibm.com, gor@linux.ibm.com,
+ agordeev@linux.ibm.com, borntraeger@linux.ibm.com, svens@linux.ibm.com,
+ davem@davemloft.net, andreas@gaisler.com, richard@nod.at,
+ anton.ivanov@cambridgegreys.com, johannes@sipsolutions.net, tglx@kernel.org,
+ mingo@redhat.com, bp@alien8.de, dave.hansen@linux.intel.com, x86@kernel.org,
+ hpa@zytor.com, herbert@gondor.apana.org.au, dan.j.williams@intel.com,
+ clm@fb.com, dsterba@suse.com, arnd@arndb.de, song@kernel.org,
+ yukuai@fnnas.com, linan122@huawei.com, tytso@mit.edu, Jason@zx2c4.com,
+ linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
+ linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
+ sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+ linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
+ linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
 
-fill_holes() currently merges a punched hole with either the previous
-or the next file extent item, but never both in the same call.  When
-holes are punched in a non-sequential order this leaves consecutive
-hole items in the inode's subvolume tree that should have been collapsed
-into a single one.
+Hello:
 
-This is a minor metadata optimization that reduces the number of file
-extent items when holes are punched in non-sequential order. While
-having extra file extent items is harmless and has no functional
-impact, reducing metadata overhead can benefit workloads with heavily
-fragmented hole patterns.
+This series was applied to riscv/linux.git (fixes)
+by Andrew Morton <akpm@linux-foundation.org>:
 
-For example:
+On Fri, 27 Mar 2026 07:16:33 +0100 you wrote:
+> Most of the optimized xor_blocks versions require FPU/vector registers,
+> which generally are not supported in interrupt context.
+> 
+> Both callers already are in user context, so enforce this at the highest
+> level.
+> 
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> 
+> [...]
 
-  fallocate -p -o 4K  -l 4K ${FILE}
-  fallocate -p -o 12K -l 4K ${FILE}
-  fallocate -p -o 8K  -l 4K ${FILE}
+Here is the summary with links:
+  - [01/28] xor: assert that xor_blocks is not call from interrupt context
+    https://git.kernel.org/riscv/c/d8593b8f9354
+  - [02/28] arm/xor: remove in_interrupt() handling
+    https://git.kernel.org/riscv/c/b7ca705758b9
+  - [03/28] arm64/xor: fix conflicting attributes for xor_block_template
+    https://git.kernel.org/riscv/c/675a0dd596e7
+  - [04/28] um/xor: cleanup xor.h
+    https://git.kernel.org/riscv/c/3ea16a98518a
+  - [05/28] xor: move to lib/raid/
+    https://git.kernel.org/riscv/c/9e229025e247
+  - [06/28] xor: small cleanups
+    https://git.kernel.org/riscv/c/7c6e6b2b48e8
+  - [07/28] xor: cleanup registration and probing
+    https://git.kernel.org/riscv/c/0471415f3fd6
+  - [08/28] xor: split xor.h
+    https://git.kernel.org/riscv/c/54e20be48fd4
+  - [09/28] xor: remove macro abuse for XOR implementation registrations
+    https://git.kernel.org/riscv/c/35ebc4de1059
+  - [10/28] xor: move generic implementations out of asm-generic/xor.h
+    https://git.kernel.org/riscv/c/c46928fdcfa0
+  - [11/28] alpha: move the XOR code to lib/raid/
+    https://git.kernel.org/riscv/c/503793b1340e
+  - [12/28] arm: move the XOR code to lib/raid/
+    https://git.kernel.org/riscv/c/0d64a24ec0c0
+  - [13/28] arm64: move the XOR code to lib/raid/
+    https://git.kernel.org/riscv/c/3786f2ad0095
+  - [14/28] loongarch: move the XOR code to lib/raid/
+    https://git.kernel.org/riscv/c/033bee3e4963
+  - [15/28] powerpc: move the XOR code to lib/raid/
+    https://git.kernel.org/riscv/c/3f276cece4dd
+  - [16/28] riscv: move the XOR code to lib/raid/
+    https://git.kernel.org/riscv/c/5265d55b2146
+  - [17/28] sparc: move the XOR code to lib/raid/
+    https://git.kernel.org/riscv/c/7f96362396ee
+  - [18/28] s390: move the XOR code to lib/raid/
+    https://git.kernel.org/riscv/c/95c104cc5571
+  - [19/28] x86: move the XOR code to lib/raid/
+    https://git.kernel.org/riscv/c/77fd47e57a09
+  - [20/28] xor: avoid indirect calls for arm64-optimized ops
+    https://git.kernel.org/riscv/c/352ebd066b62
+  - [21/28] xor: make xor.ko self-contained in lib/raid/
+    https://git.kernel.org/riscv/c/e20043b4765c
+  - [22/28] xor: add a better public API
+    (no matching commit)
+  - [23/28] xor: add a better public API
+    (no matching commit)
+  - [24/28] async_xor: use xor_gen
+    https://git.kernel.org/riscv/c/7c12c32b9f73
+  - [25/28] btrfs: use xor_gen
+    https://git.kernel.org/riscv/c/0f629e7283ad
+  - [26/28] xor: pass the entire operation to the low-level ops
+    https://git.kernel.org/riscv/c/80dcf0a7832a
+  - [27/28] xor: use static_call for xor_gen
+    https://git.kernel.org/riscv/c/a21921dd02d3
+  - [28/28] xor: add a kunit test case
+    https://git.kernel.org/riscv/c/af53e85ef797
 
-After the third punch the [4K, 8K) and [12K, 16K) holes become
-adjacent to the new [8K, 12K) hole, but fill_holes() merges only one
-side and leaves two separate hole items ([4K, 12K) and [12K, 16K))
-instead of the expected single [4K, 16K) hole item.
-
-Fix this by checking both path->slots[0] - 1 and path->slots[0] in one
-pass:
-
-  - If only the previous slot is mergeable, extend it forward as
-    before.
-  - If only the next slot is mergeable, extend it backward and update
-    its key offset as before.
-  - If both are mergeable, extend the previous item to cover the new
-    hole plus the next item, and remove the redundant next item with
-    btrfs_del_items().
-
-Because the merge path may now delete an item, switch the initial
-btrfs_search_slot() call from a plain lookup (ins_len = 0) to a
-search-for-deletion (ins_len = -1), so the leaf is prepared for a
-possible item removal.
-
-Note: This optimization only applies to filesystems without the
-NO_HOLES feature enabled. Since NO_HOLES is now the default, this
-primarily benefits older filesystems or those explicitly created with
-NO_HOLES disabled.
-
-Signed-off-by: Dave Chen <davechen@synology.com>
----
-Changes in v2:
-- Replace "file extent tree" with "inode's subvolume tree" to avoid
-  confusion with the global extent tree (Filipe)
-- Remove the Fixes: tag as this is a minor metadata optimization
-  rather than a functional bug fix (Filipe)
-- Reframe commit message to explicitly characterize this as a small
-  optimization with no functional impact (Filipe)
-- Add note about NO_HOLES default status and applicability scope
-
- fs/btrfs/file.c | 48 +++++++++++++++++++++++++++++++-----------------
- 1 file changed, 31 insertions(+), 17 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index cf1cb5c4db757..84450452d2347 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2093,6 +2093,10 @@ static int fill_holes(struct btrfs_trans_handle *trans,
- 	struct btrfs_file_extent_item *fi;
- 	struct extent_map *hole_em;
- 	struct btrfs_key key;
-+	int modify_slot = -1;
-+	int del_slot = -1;
-+	bool update_offset = false;
-+	u64 num_bytes = 0;
- 	int ret;
- 
- 	if (btrfs_fs_incompat(fs_info, NO_HOLES))
-@@ -2102,7 +2106,7 @@ static int fill_holes(struct btrfs_trans_handle *trans,
- 	key.type = BTRFS_EXTENT_DATA_KEY;
- 	key.offset = offset;
- 
--	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
-+	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
- 	if (ret <= 0) {
- 		/*
- 		 * We should have dropped this offset, so if we find it then
-@@ -2115,33 +2119,43 @@ static int fill_holes(struct btrfs_trans_handle *trans,
- 
- 	leaf = path->nodes[0];
- 	if (hole_mergeable(inode, leaf, path->slots[0] - 1, offset, end)) {
--		u64 num_bytes;
--
--		path->slots[0]--;
--		fi = btrfs_item_ptr(leaf, path->slots[0],
-+		fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
- 				    struct btrfs_file_extent_item);
- 		num_bytes = btrfs_file_extent_num_bytes(leaf, fi) +
- 			end - offset;
--		btrfs_set_file_extent_num_bytes(leaf, fi, num_bytes);
--		btrfs_set_file_extent_ram_bytes(leaf, fi, num_bytes);
--		btrfs_set_file_extent_offset(leaf, fi, 0);
--		btrfs_set_file_extent_generation(leaf, fi, trans->transid);
--		goto out;
-+		modify_slot = path->slots[0] - 1;
- 	}
--
- 	if (hole_mergeable(inode, leaf, path->slots[0], offset, end)) {
--		u64 num_bytes;
--
--		key.offset = offset;
--		btrfs_set_item_key_safe(trans, path, &key);
- 		fi = btrfs_item_ptr(leaf, path->slots[0],
- 				    struct btrfs_file_extent_item);
--		num_bytes = btrfs_file_extent_num_bytes(leaf, fi) + end -
--			offset;
-+		if (modify_slot != -1) {
-+			num_bytes += btrfs_file_extent_num_bytes(leaf, fi);
-+			del_slot = path->slots[0];
-+		} else {
-+			num_bytes = btrfs_file_extent_num_bytes(leaf, fi) +
-+				end - offset;
-+			modify_slot = path->slots[0];
-+			update_offset = true;
-+		}
-+	}
-+	if (modify_slot >= 0) {
-+		fi = btrfs_item_ptr(leaf, modify_slot,
-+				    struct btrfs_file_extent_item);
- 		btrfs_set_file_extent_num_bytes(leaf, fi, num_bytes);
- 		btrfs_set_file_extent_ram_bytes(leaf, fi, num_bytes);
-+		if (update_offset) {
-+			key.offset = offset;
-+			btrfs_set_item_key_safe(trans, path, &key);
-+		}
- 		btrfs_set_file_extent_offset(leaf, fi, 0);
- 		btrfs_set_file_extent_generation(leaf, fi, trans->transid);
-+		if (del_slot >= 0) {
-+			ret = btrfs_del_items(trans, root, path, del_slot, 1);
-+			if (ret) {
-+				btrfs_release_path(path);
-+				return ret;
-+			}
-+		}
- 		goto out;
- 	}
- 	btrfs_release_path(path);
+You are awesome, thank you!
 -- 
-2.43.0
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/patchwork/pwbot.html
 
 
-Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.

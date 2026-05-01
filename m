@@ -1,133 +1,135 @@
-Received: from out-182.mta1.migadu.com (out-182.mta1.migadu.com [95.215.58.182])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D900E38758F
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2026 10:25:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.182
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B14F63876DA
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2026 10:43:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777631123; cv=none; b=c9VKmwyVUcYDvFrTSioq3uHXvdyTAL5/XQj3NkHenKB/4z18ePZWU5TyaTzrp8g6EebXCzOSAApKB/oHRexuAltL/KGdUHV5is1ce8APmzMLnMjK5FkbcKjAnRS17FAultHCJiPcvBQD9keZjyh+zwm+Yl0ag5JybYASeFTf+KE=
+	t=1777632238; cv=none; b=B0tELeNxbM7y9fDTn2TG5bdxshns+G/1HFwm7wJjGTNjXjPjZVfdVmx26GjyOYFog8BYlu+ccAu4aENfEtT9IRvoSyKrPkgXdtJr5lBh2kDVzy85jJToPUVemoAQKmAjXZ761Ta8v+Jnk6OUaUAhu1lWsRkJROEv3QypNSJKiWI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777631123; c=relaxed/simple;
-	bh=tIAT1dRXVuVYcnrraE5XW/JAeG2/b/WFEb61V8+RRu0=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=RL7rXoGpdkmpY9qkx2QHFo5q5BudKstPkdPfbICIQ75AlOlwT+7Dun8a27JauP2fsc6UONW3T3m5N1yPwY5Nr+0cIA2+KFNZENXOzkq99Jj/9CL/4/acPOYoJB9mWwyQrjZFjyiibTnhR0Diqj7PhT0XMJHHknUtjgzZQBdoTns=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=maxchernoff.ca; spf=pass smtp.mailfrom=maxchernoff.ca; dkim=pass (2048-bit key) header.d=maxchernoff.ca header.i=@maxchernoff.ca header.b=7m2l54/r; arc=none smtp.client-ip=95.215.58.182
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=maxchernoff.ca
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=maxchernoff.ca
+	s=arc-20240116; t=1777632238; c=relaxed/simple;
+	bh=QrYvbbotL+FlWB/gqqjTv+wxOz3W3MqLVz3dbO1PMYM=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=NASZuiCXgYcCty20zSHkcN4caKofWPUhJa/MjP8bI+u7o0YZYRgajgOFCh54rm0R2WUsrnUwSOINA4mbbYsb5MjELV4mpIZUeDb5JoIgYx5PXa3FO+tfBmeuzx/fymon31B0QTL4ociNres2uz7AWrVB+TTUNsq09cblyB0eGkU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=FxPya7RB; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=FxPya7RB; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=maxchernoff.ca header.i=@maxchernoff.ca header.b="7m2l54/r"
-Message-ID: <ff07ef238645e8fe6404308e83373d004af1dde0.camel@maxchernoff.ca>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=maxchernoff.ca;
-	s=key1; t=1777631119;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PCvyDnuUSRVjdyPGbpmgNLlBneTb9EHqp19fK8KPQ5E=;
-	b=7m2l54/rkqu8BRijSb5iCIDYowYqIdTTD69zyZ1sH7N9MTff1TOa9D+W65FsIv3sg3ySTm
-	JwwSzosMZtm8rvzbn+eGaYbsm3sB6zsjMpeVCr2D0gx6xrNK2HY1TfniUIMqq9vM0oYQN+
-	xKhq4f8H3yh03uo6fo18YzM0TzvvE7E1qSHb6Q3ee0mp5IKOYb2mdyu5Y6LVho0Ey6HBnb
-	6FhCdsXoIlQtd3uVVj/Ql6lirUhL3ye5lZheJIcGJRNSLVzdBfuNieIJgNlpdh0UkYEy9Q
-	LJPBKUaUJ3NCxz5UAnxf36fDRuvcRHBZRgA7+Xnd0KQVDcsbbExPv+8npVlYQw==
-Subject: Re: Enabling qgroups causes 2+ minute hangs
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-From: Max Chernoff <git@maxchernoff.ca>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs
-	 <linux-btrfs@vger.kernel.org>
-Date: Fri, 01 May 2026 04:25:04 -0600
-In-Reply-To: <d248a319-d2ff-4520-8ad5-8967e8cce43d@gmx.com>
-References: <22a4a11e1933a7b07cee7d6896098a5b251cb755.camel@maxchernoff.ca>
-	 <d248a319-d2ff-4520-8ad5-8967e8cce43d@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="FxPya7RB";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="FxPya7RB"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 1ABE46A8AE;
+	Fri,  1 May 2026 10:43:49 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1777632229; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=PqDG1/QmBL80bFcb0YqmLV/9gbN4eFZ28u2h2eUOxZc=;
+	b=FxPya7RBiPXuYo9tqQpBR+u07TqT8GHvt0cVzPI4u9C4og7wk3aSGsD13no8q/SDMX8bp1
+	wwALHjVKeFOZHwRxOJlbxA0W2rP7ciLq6w/j54LoriT3x7YtmoxO7EncUhvQr6M1+kgcNf
+	UAkva1ybCIize9+8UG8C4dzVfYaUIeA=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1777632229; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=PqDG1/QmBL80bFcb0YqmLV/9gbN4eFZ28u2h2eUOxZc=;
+	b=FxPya7RBiPXuYo9tqQpBR+u07TqT8GHvt0cVzPI4u9C4og7wk3aSGsD13no8q/SDMX8bp1
+	wwALHjVKeFOZHwRxOJlbxA0W2rP7ciLq6w/j54LoriT3x7YtmoxO7EncUhvQr6M1+kgcNf
+	UAkva1ybCIize9+8UG8C4dzVfYaUIeA=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 160A3593B1;
+	Fri,  1 May 2026 10:43:47 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id pSgvMuOD9GnydQAAD6G6ig
+	(envelope-from <wqu@suse.com>); Fri, 01 May 2026 10:43:47 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Max Chernoff <git@maxchernoff.ca>
+Subject: [PATCH] btrfs-progs: docs: update the qgroup performance hit
+Date: Fri,  1 May 2026 20:13:26 +0930
+Message-ID: <313118e97b2a5c1fb3bf0bb2f3fccfa2663e42f5.1777632200.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Migadu-Flow: FLOW_OUT
+Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.988];
+	MIME_GOOD(-0.10)[text/plain];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_TWO(0.00)[2];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_DN_SOME(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
 
-Hi Qu,
+Although we have mentioned the qgroup performance hit, we have never
+explained how large the impact is.
 
-On Fri, 2026-05-01 at 19:36 +0930, Qu Wenruo wrote:
-> =E5=9C=A8 2026/5/1 19:10, Max Chernoff =E5=86=99=E9=81=93:
-> > Yesterday, I accidentally enabled qgroups on my root filesystem, and I
-> > started experiencing severe system hangs. When I disabled the quotas
-> > again, the problem went away completely.
-> >
-> > I'm currently using "btrfs-progs v6.19.1" with "Linux
-> > 6.19.14-200.fc43.x86_64" on Fedora 43 x86_64. I have "/boot/" and "/" i=
-n
-> > the same btrfs filesystem, which is on 2 NVMe disks with RAID0 data and
-> > RAID1 metadata. I have a swap partition on both disks, and I'm not usin=
-g
-> > a swap file. When I booted into the "initrd" for my rescue kernel
-> > ("6.15.8-200.fc42.x86_64"), I saw the exact same issue. My filesystem
-> > has 309 snapshots and 17 subvolumes;
->
-> This is the problem, btrfs qgroup performance is directly bounded to the
-> number of shared extents.
->
-> If you have over 50 snapshots, it's going to be ugly, if you have 300,
-> it's going to be hell.
->
-> And it has no good way to resolve, the qgroup rescan (triggered by the
-> enabling) normally should not block normal operations, but for such
-> heavily snapshotted systems, even doing qgroup accounting for a single
-> extent can take a very long time.
-> As such backref walk will need to iterate through all the subvolumes
-> that own that extent, in your case it can be 309 subvolumes.
->
-> This long time of accounting just one extent will block the transaction
-> for a long time.
->
-> There are a lot of optimizations merged, but nothing can resolve the
-> root problem.
+Update the documentation to:
 
-That makes a lot of sense to me, thanks.
+- Explain what affects qgroup performance
+  Including snapshots and reflinks.
 
-> >      WARNING: qgroups enabled on a filesystem with lots of snapshots, e=
-xpect poor performance
->
->  From btrfs-quota(8):
->
->       When quotas are activated, they affect all extent processing, which
->       takes a performance  hit.  Activation  of qgroups is not
->       recommended unless the user intends to actually use them.
->
-> >
-> > to dmesg to make it easier to debug?
->
-> Normally it's not that a huge problem as the normal amount of snapshots
-> are only around one or two dozens.
->
-> Furthermore, if you only have subvolumes but no snapshot, and no shared
-> extent (aka, no dedup), then the qgroup performance impact should be
-> very tiny.
->
-> But unfortunately that's not the case for you.
->
-> Even with that dmesg warning, if your system is already hanging, I'm not
-> sure if the end user will even be able to see that message.
+- Explain that the automatic rescan can cause performance problem
 
-The system does eventually recover after 10 minutes or so, so I would
-see the warning _eventually_. But yeah, for the message to be useful, it
-requires the combination of lots of snapshots + qgroups enabled
-unknowingly + a user who reads dmesg---all of these apply to me, but
-probably not to very many other people :).
+- Add extra warning to avoid qgroup
+  If there are too many snapshots or reflinks.
 
-> I can try to add a check inside "btrfs qgroup enable" command, which
-> will checks how many snapshots, if that's beyond 10, give a warning with
-> timeout before enabling traditional qgroups.
+Reported-by: Max Chernoff <git@maxchernoff.ca>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ Documentation/btrfs-quota.rst | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
 
-That won't help me in this specific case, since another program enabled
-it via an ioctl:
+diff --git a/Documentation/btrfs-quota.rst b/Documentation/btrfs-quota.rst
+index 131f9506d281..921f37ca6c1f 100644
+--- a/Documentation/btrfs-quota.rst
++++ b/Documentation/btrfs-quota.rst
+@@ -26,7 +26,19 @@ The qgroup implementation is considered reasonably stable for daily use and has
+ been enabled in various distributions.
+ 
+ When quotas are activated, they affect all extent processing, which takes a
+-performance hit. Activation of qgroups is not recommended unless the user
++performance hit.
++The performance hit depends on the number of back references for each extent.
++The number of back references for an extent further depends on the number of
++snapshots and reflinks.
++
++Furthermore, when qgroups are enabled, a qgroup rescan will be automatically queued.
++Normally it won't affect the system too much, but since it's going to scan the
++whole filesystem, if there are too many snapshots/reflinks, the system may be unresponsive.
++
++If there are many snapshots (over 20) or reflinks (e.g. deduplicated),
++it's strongly recommended not to enable qgroups.
++
++Activation of qgroups is not recommended unless the user
+ intends to actually use them.
+ 
+ .. _man-quota-hierarchical-quota-group-concepts:
+-- 
+2.54.0
 
-    https://github.com/systemd/systemd/issues/41903
-
-    https://github.com/systemd/systemd/blob/v260.1/src/shared/btrfs-util.c#=
-L584-L609
-
-Thanks,
--- Max

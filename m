@@ -1,229 +1,163 @@
-Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mail.synology.com (mail.synology.com [211.23.38.101])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1602B7E0FF
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2026 22:24:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5800340DFBD
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2026 02:43:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777587868; cv=none; b=f82FRHPdSu59rSfymI7yfft7A8nAlArDAfdQMejuMXmSUelfm8uNHYdFfjUigY5DW2TQhwCnBFR0Rwr2dwccbl15woEoAkzDG/rQV55FPwEy+5bl9Qwlb1bCZYrrfLYua4AUoK1fVbg21xNLcaam+7ZLpCD6szuRVjjmPXXrdJE=
+	t=1777603407; cv=none; b=MapdfURTZjNQb5VwFc/tHu9gwAOY6Q8TZRhS+vqbZ2279IDrmuf+LtmP+KVXbul9ac3ywzWCR8YAn6zdBRyof4U+moyItm66eVUsPFdwiHXErrGMqzkiZcYnlTIXFAuoaSfVKW9R/54CrcD7EDB+MTFEZ5ERWACvUFb2MzDIP5g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777587868; c=relaxed/simple;
-	bh=LakY05XnMW0fAGTeb3Gy05OtZxMTz6IX4KdHSjFLJLg=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=Ugf4txScU7if/8HH0mUh0WpGX/AeUbcnS2DRPOgWvk2sx8hjngM7AoCh7FafkkwpHGvoq5w+/fhNce/fGj3SmIG3Er7pvEK1C/SLRQFKnjeDOrlmCm9v+HQfAPKJnk51CM+CMTlR23SZkx5PkvyzwtJf6WKTzHnO8bEwULMddfA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Hygig7GC; arc=none smtp.client-ip=209.85.128.43
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1777603407; c=relaxed/simple;
+	bh=mqr1XLb0BKLVJJhG7aFEUZmuo2tFZM3CGepv9di/v7s=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=inGfN06AHrr5shzesbNMNMmW5w1YDBdS/yik4IYkjZNpZGGmFZeM4p582EgqBBvnUIzKWUTFfh32mWF62MD8+mp2mUcI6kv931VgIDdKNbkCK2c+iSRSFCqj920su1NR4NW6ZqO6F0TU3fdOZzpeHFQFkXjJHmu+1cwZvO+lDns=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=Wk2VN0jw; arc=none smtp.client-ip=211.23.38.101
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Hygig7GC"
-Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-488ff90d6c7so13634305e9.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2026 15:24:26 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1777587865; x=1778192665; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=FN3i6cz2Qte2ZCDZ54xgcA+upoRK0MuKDC+sH88fU6E=;
-        b=Hygig7GCs8xp1hceWUdgOrXnwn4OA8EyPKFeXXZJWKwfHVP8zLZWkfzd0ARjR0jECb
-         B5redG9xtrjR2gkZczjzuK/jMNmOXD+EiSCNQkBF1asaMEbUeriSKIP7+4D4RocVvKxN
-         Qwn8sxF0PlDVWo/bGe4U5tY5htXsYSLx+1pcJCmC2LOKx6JTwTlmnbryJAXIM2ltUoC8
-         9hAel1lYELL3vl1RSzyTuie+k/dl3NAZM8GtheI09H9Nk0Brgu1JjMmXfN/Gp6wS4xjH
-         k1ORinbLd0d82MF87IkGAU2I/0r1IRfHJRO/P1eQT2z5VRihwwX5U1JGhsuoBWZux0Q/
-         7t0A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1777587865; x=1778192665;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=FN3i6cz2Qte2ZCDZ54xgcA+upoRK0MuKDC+sH88fU6E=;
-        b=Ji8pF+snEGGcMgIott9mDhdSLIA1muX+kh+LzkopoxPnXJxdU6MECR8WIgHfcDTBzS
-         h0svlD+Gq6FJ/i0uZO52KdfYuPiuPCVgYWHjnqZ2oJJf8WDAW1HJ+CFMbW0pBQ81uEdZ
-         PHtk5fPMh/w0E/FiYiOufyrc4MFbS0gWy/AqRdC3sazOcBMfE5wpYQvzzmESPebtF/yb
-         dEtxwTeGJQP7jClYQVMDaQmMhvRt0pb6kdqOTtCdAcLGA72yXNjK9s0rMA26v+nOcCZ5
-         IvFBoGvMjemsUOIRKoVRdeFx1HU8WV5Djo36XBU597jKzRfHnjrQxJWHYzBGOZ5wJ5QR
-         30fA==
-X-Forwarded-Encrypted: i=1; AFNElJ/S50Fh9zlS1nyiz9sjkFWS3nZA7gLBTA8nGASI91/TwsGpBIoAjRJBlOud2leo8/kFAWIn0aoYPFoF+g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwnqVknJ6s+H7WLDVtmhsa53J3HAyN9GCM08H7dEl9JE/FeOGGI
-	yxywUXPmLL2JOw+x7YoaUrvi/bUivT0lEikG3vSIHjko+oPBR+TnZ28CTi7bK9mul7c=
-X-Gm-Gg: AeBDievDeN5hLvz0khASTU96+GxBftl/9/E7hgHP7F90NP1w5elLJIJUxp7fxYz7RfE
-	SA80YDGZzQ8XBI9ZC9pyIcQp3WYvlTUUeULDCxaFqgp82PIHRrRKfMnGTJGsOO0zfCWXfseBHTA
-	SQON1214Gc8DZmxbdGMmvNKEPZWfS5WtoYkWQ1TxRDBC8NTOdL5EVIJs+YQ4gP/MNQzhRh5koan
-	TNmoeM/cD6gX3Zrb+JUTIkBtwPM9qpQbj0K1H4EsSGfhxNtOC7yMuLFoxiKmwUSL2wl3kFU4G1g
-	adSgK3+IuT79vDGwn3Nvf+YlFaMaWd3vNSWEA+7q7P9y6S0DUxSmLAbgIuybVPxyYhASUxeIl9C
-	jSGvrIM0awEHmqafBvNWAYoB18fsReVsf63os+Svas7uYtOpk7AuBa9pQ2KuH3ygWuwOroH92zJ
-	+AkDb4Ts6vu+a7Vn9It4gDCFabi4M8DWdvbM5Q1450xrcZfdqCcqZveXxlefvANy8AUPMfccq20
-	AT6I87HjAq2YCdAJKg30f780/ZnFRNRW47dXEzgUnahc/Yc7Rd1k9Q4Ew==
-X-Received: by 2002:a05:600c:8b04:b0:48a:5821:5ffc with SMTP id 5b1f17b1804b1-48a83d6a89bmr82628605e9.2.1777587865362;
-        Thu, 30 Apr 2026 15:24:25 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-364ec0f06e7sm177974a91.2.2026.04.30.15.24.22
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 30 Apr 2026 15:24:23 -0700 (PDT)
-Message-ID: <0247f301-39ed-4e29-9a68-3a8ff3619006@suse.com>
-Date: Fri, 1 May 2026 07:54:19 +0930
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="Wk2VN0jw"
+From: robbieko <robbieko@synology.com>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
+	t=1777603397; bh=mqr1XLb0BKLVJJhG7aFEUZmuo2tFZM3CGepv9di/v7s=;
+	h=From:To:Cc:Subject:Date;
+	b=Wk2VN0jw970DtjZf00aTFUzTSdau7z0ubKYFfqmbhmd5KJr0riH1vFAYEAOZQQKkL
+	 LCGgj+JlR+wiPJ4j9aMUa1sWM4n1lPO9/TVGwO/oRYf4PFnCr7UM3BUONvMSeHeG3B
+	 T/R4OOeGAl/40izNCFz6f9lmOc874tcS6UoVyc2Y=
+To: linux-btrfs@vger.kernel.org
+Cc: Robbie Ko <robbieko@synology.com>
+Subject: [PATCH] btrfs: fix incorrect i_size after remount caused by KEEP_SIZE prealloc gap
+Date: Fri,  1 May 2026 10:41:56 +0800
+Message-ID: <20260501024310.193220-1-robbieko@synology.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: simplify how first hit is passed to
- __btrfs_abort_transaction()
-To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <20260430141851.14332-1-dsterba@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260430141851.14332-1-dsterba@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Synology-MCP-Status: no
+X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
+X-Synology-Spam-Flag: no
+X-Synology-Virus-Status: no
+Content-Type: text/plain
+
+From: Robbie Ko <robbieko@synology.com>
+
+When fallocate() with FALLOC_FL_KEEP_SIZE preallocates an extent past the
+current i_size, the file_extent_tree of the inode is updated to cover
+that range. However, on the next mount, btrfs_read_locked_inode() only
+re-populates file_extent_tree with [0, round_up(i_size, sectorsize)),
+losing the marks that belonged to the KEEP_SIZE prealloc extent beyond
+i_size.
+
+Later, when a non-KEEP_SIZE fallocate() extends i_size into / past that
+old prealloc extent, the reservation loop in btrfs_fallocate() skips
+already-prealloc segments and does not call into the path that marks the
+file_extent_tree, so a gap remains inside the file_extent_tree across
+[old_aligned_i_size, start_of_new_alloc). Then __btrfs_prealloc_file_range()
+calls btrfs_inode_safe_disk_i_size_write(), which uses
+find_contiguous_extent_bit() starting at offset 0 to derive disk_i_size.
+The walk stops at the gap, so disk_i_size ends up smaller than i_size and
+gets persisted. After the next mount, the file shows the wrong (smaller)
+size.
+
+The following reproducer triggers the problem:
+
+  $ cat test.sh
+  MNT=/mnt/test
+  DEV=/dev/loop1
+
+  mkdir -p $MNT
+  mkfs.btrfs -f -O ^no-holes $DEV
+  mount $DEV $MNT
+
+  touch $MNT/file1
+  # KEEP_SIZE prealloc beyond i_size (i_size stays 0)
+  fallocate -n -o 1604991 -l 865536 $MNT/file1
+  umount $MNT
+  mount $DEV $MNT
+
+  # non-KEEP_SIZE fallocate that overlaps the previous prealloc tail
+  # and extends past it
+  fallocate -o 2381098 -l 624426 $MNT/file1
+  ls -l $MNT/file1
+  umount $MNT
+  mount $DEV $MNT
+  ls -l $MNT/file1
+  umount $MNT
+
+Running the reproducer gives the following result:
+
+  $ ./test.sh
+  (...)
+  -rw-r--r-- 1 root root 3005524 ... /mnt/test/file1
+  -rw-r--r-- 1 root root 2379776 ... /mnt/test/file1
+
+The size before the second mount is correct (3005524), but after the
+remount it drops to 2379776, which is round_down(2381098, 4096), i.e.
+the start of the gap inside file_extent_tree aligned down to sectorsize.
+
+Fix this in __btrfs_prealloc_file_range() by marking the entire range
+[round_down(old_i_size, sectorsize), round_up(new_i_size, sectorsize))
+in file_extent_tree before updating i_size and calling
+btrfs_inode_safe_disk_i_size_write(). This ensures the contiguous bit
+search starting from 0 is not truncated by a stale gap left behind by a
+previous KEEP_SIZE prealloc that was not restored on inode load.
+
+The fix has no effect when the NO_HOLES feature is enabled because
+btrfs_inode_safe_disk_i_size_write() and btrfs_inode_set_file_extent_range()
+both take the fast path that directly tracks disk_i_size without consulting
+file_extent_tree.
+
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+---
+ fs/btrfs/inode.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 906d5c21ebc4..c39a0ce24224 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9299,10 +9299,38 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 		if (!(mode & FALLOC_FL_KEEP_SIZE) &&
+ 		    (actual_len > inode->i_size) &&
+ 		    (cur_offset > inode->i_size)) {
++			u64 range_start, range_end;
++
+ 			if (cur_offset > actual_len)
+ 				i_size = actual_len;
+ 			else
+ 				i_size = cur_offset;
++
++			/*
++			 * Make sure the file_extent_tree covers the entire
++			 * range [old_i_size, new_i_size) before we update
++			 * disk_i_size. Without this, a previous KEEP_SIZE
++			 * prealloc that extended past i_size (and was lost
++			 * across umount/mount because file_extent_tree is
++			 * only populated up to round_up(i_size) on inode
++			 * load) can leave a gap inside this range. That gap
++			 * would cause btrfs_inode_safe_disk_i_size_write()
++			 * (via find_contiguous_extent_bit() starting at 0)
++			 * to truncate disk_i_size to the start of the gap,
++			 * making the persisted size smaller than i_size.
++			 */
++			range_start = round_down(inode->i_size,
++						 fs_info->sectorsize);
++			range_end = round_up(i_size, fs_info->sectorsize);
++			ret = btrfs_inode_set_file_extent_range(BTRFS_I(inode),
++					range_start, range_end - range_start);
++			if (ret) {
++				btrfs_abort_transaction(trans, ret);
++				if (own_trans)
++					btrfs_end_transaction(trans);
++				break;
++			}
++
+ 			i_size_write(inode, i_size);
+ 			btrfs_inode_safe_disk_i_size_write(BTRFS_I(inode), 0);
+ 		}
+-- 
+2.43.0
 
 
-
-在 2026/4/30 23:48, David Sterba 写道:
-> Optimize the btrfs_abort_transaction() for size as it (by our
-> convention) must be put right after the error condition is detected.
-> The exact file:line is reported so there's a portion that must be
-> inlined. As this is cold code it bloats functions. In previous patch
-> "btrfs: move transaction abort message to __btrfs_abort_transaction()"
-> the error message was moved to the common helper, saving like 20KiB of
-> btrfs.ko and several instructions per call site and some stack space.
-> 
-> There's little left to be optimized, we need to keep the atomic
-> test_and_set_bit() and to convey that as 'first hit' to
-> __btrfs_abort_transaction().
-> 
-> Right now it's a bool, which takes 8 bytes on stack for each call but
-> it's 1 bit of information. We can encode that to some of the other
-> parameters.
-> 
-> For that let's use the 'error' parameter, by convention it's negative
-> errno so we can reliably detect if it's the first hit or a later error.
-> Also the negation is usually implemented by a single instruction (NEG on
-> x86_64) so the resulting object code is kept short.
-> 
-> This reduces btrfs.ko by 8K and stack in several functions by 8 bytes.
-> 
-> Cumulative effect with the other commit is -30K of btrfs.ko. While the
-> encoding is an implementation detail, it's contained within the API.
-> Making the transaction abort calls very light is desired.
-> 
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->   fs/btrfs/transaction.c | 13 ++++++++++++-
->   fs/btrfs/transaction.h | 15 +++++++++------
->   2 files changed, 21 insertions(+), 7 deletions(-)
-> 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 01f66328966f..bbef3ae86ac4 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -2723,12 +2723,23 @@ int btrfs_clean_one_deleted_snapshot(struct btrfs_fs_info *fs_info)
->    *
->    * We'll complete the cleanup in btrfs_end_transaction and
->    * btrfs_commit_transaction.
-> + *
-> + * Note: the parameter @error encodes whether the transactin abort was first hit
-> + *       (setting the FS_ERROR state bit in btrfs_abort_transaction())
-> + *       - positive number - first hit
-> + *       - negative number - abort after it was already done
->    */
->   void __cold __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
->   				      const char *function,
-> -				      unsigned int line, int error, bool first_hit)
-> +				      unsigned int line, int error)
->   {
->   	struct btrfs_fs_info *fs_info = trans->fs_info;
-> +	bool first_hit = false;
-> +
-> +	if (error > 0) {
-> +		error = -error;
-> +		first_hit = true;
-> +	}
->   
->   	WRITE_ONCE(trans->aborted, error);
->   	WRITE_ONCE(trans->transaction->aborted, error);
-> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-> index f1cb05460cec..e1d4e7330198 100644
-> --- a/fs/btrfs/transaction.h
-> +++ b/fs/btrfs/transaction.h
-> @@ -243,20 +243,23 @@ static inline bool btrfs_abort_should_print_stack(int error)
->   }
->   
->   /*
-> - * Call btrfs_abort_transaction as early as possible when an error condition is
-> - * detected, that way the exact stack trace is reported for some errors.
-> + * Call btrfs_abort_transaction() as early as possible when an error condition
-> + * is detected, that way the exact stack trace is reported for some errors.
-> + *
-> + * Error number must be negative as it encodes wheather it's the first abort.
-
-What about an ASSERT() for it?
-
-It's not that rare to forgot the minus sign for immediately error code 
-like "-EIO".
-
->    */
->   #define btrfs_abort_transaction(trans, error)		\
-
-And I do not like to use macros when inlined function can be used.
-There is no special requirement for things like #name, thus this can be 
-converted to a regular static inline function.
-
-Not sure how an static inlined version would affect the text section 
-size though.
-
-Thanks,
-Qu
->   do {								\
-> -	bool __first = false;					\
-> +	int __error = (error);					\
-> +								\
->   	/* Report first abort since mount */			\
->   	if (!test_and_set_bit(BTRFS_FS_STATE_TRANS_ABORTED,	\
->   			&((trans)->fs_info->fs_state))) {	\
-> -		__first = true;					\
-> +		__error = -__error;				\
->   		WARN_ON(btrfs_abort_should_print_stack(error));	\
->   	}							\
->   	__btrfs_abort_transaction((trans), __func__,		\
-> -				  __LINE__, (error), __first);	\
-> +				  __LINE__, __error);		\
->   } while (0)
->   
->   int btrfs_end_transaction(struct btrfs_trans_handle *trans);
-> @@ -294,7 +297,7 @@ void btrfs_add_dropped_root(struct btrfs_trans_handle *trans,
->   void btrfs_trans_release_chunk_metadata(struct btrfs_trans_handle *trans);
->   void __cold __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
->   				      const char *function,
-> -				      unsigned int line, int error, bool first_hit);
-> +				      unsigned int line, int error);
->   
->   int __init btrfs_transaction_init(void);
->   void __cold btrfs_transaction_exit(void);
-
+Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.

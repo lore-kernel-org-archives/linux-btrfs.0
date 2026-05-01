@@ -1,124 +1,138 @@
-Received: from mout-p-202.mailbox.org (mout-p-202.mailbox.org [80.241.56.172])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f53.google.com (mail-wm1-f53.google.com [209.85.128.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 589862EACEF
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2026 21:17:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=80.241.56.172
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E7A3309F1D
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2026 22:59:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777670260; cv=none; b=oNN2sEevR9C9YqOsGoC7hY4AG8JPXz5714y+OMupH7toCm7SdaXE4kXs+ALSIvXHJTz93CS5RJ9ff+rMPh2YHEOYwHMdYAHqxYYf2HsmVkhFoviCXKnaFEyYPfhahZPzGirj/sVyHH7mNjUBSfid03P8i2YFeJqgvbj31xTAY3o=
+	t=1777676368; cv=none; b=bHFNa3/AtEvDnoM07LssEdBCIsHbVK8/W+a54LmfmlC0K2kQKbrtW95NHqEshNG1+9csKqbljKqWDfk95fG+H5R0LFtsZaD3AaCjRt002TF1u6/GQ2AB+A9nHL2LoJx8Jl+Li/497R1HlYti+OWsG6vHbXtxbBC6Nn3hgbeXY1w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777670260; c=relaxed/simple;
-	bh=14NqhAPbdI0uVUMAwvVsNjd7xdnrlkzPkMqNpLZs5v0=;
-	h=Date:From:Subject:To:Message-Id:MIME-Version:Content-Type; b=IamPopgVtAJONgN+YwKSLNSw/o8gOuOxkBV8YfQA6LnDLVEiZ34LI48oCigkalv7L1Uj8qG7woT+XBIDxm5KRkmfGRWAhy5hDo0DAo2wuNkco+i3nT3L017TfPaQ4kvkoRbuEzmN/GJjgxQ3Oh/qvaWlDT+e8Mu3j0K06nOP6wk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mailbox.org; spf=pass smtp.mailfrom=mailbox.org; dkim=pass (2048-bit key) header.d=mailbox.org header.i=@mailbox.org header.b=yKO7OHj8; arc=none smtp.client-ip=80.241.56.172
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=mailbox.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=mailbox.org
+	s=arc-20240116; t=1777676368; c=relaxed/simple;
+	bh=rJzdJ0nJakCdcdLt2Cz3uGK/YnyLnTAgdSLLvujVM6Y=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=lfzopTplmiYtvs1jBHoJeRHlPNgnXgsv9+dQg0z69N16xooTgDNoLCOsWwLdDbDhRF0zGyCbgiCFJKlZ/LVYRDI7xSC+r5bRgGDoK2aEnMLLBw+k7jWM5TlMrkkqk8fLB08gjlqOyMfXaRahk4iI+P7lWC74x90r5z0VKnNiOsw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Ov5yiVh8; arc=none smtp.client-ip=209.85.128.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mailbox.org header.i=@mailbox.org header.b="yKO7OHj8"
-Received: from smtp202.mailbox.org (smtp202.mailbox.org [IPv6:2001:67c:2050:b231:465::202])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mout-p-202.mailbox.org (Postfix) with ESMTPS id 4g6kQJ21ycz9tpM
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2026 23:17:28 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mailbox.org; s=mail20150812;
-	t=1777670248;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:mime-version:mime-version:content-type:content-type;
-	bh=yvaGygx8A2wr9qUAsGqbFIPNJUKnLifiAAK/EVBIdvU=;
-	b=yKO7OHj8YXFZoYithl5bBRwu4ZhPr5JSsbA73krzqBsOa5mdNQCOqP+PsKvSc1oOl/jUun
-	1G6Qz6qIxrGRpDVfIin4mTIoDiQ5iP1a3b7mgN/+oXgzd7fFVmXWM51NgSrLyJUkn54PN7
-	GT+2ZhimttUR0CNeWc7S+CBoPsNs9PFTDsk4DuUrXNpicB0pt/n8y/HGl4ZG2vpT4RiflB
-	MxN2IaO1BI28sbarvDM+mFklTVgzC4Dkc/SuyOU420SqdwvUqEkG6lGBkEgGh6Fcb8qbqe
-	gOlPqFacmEtWp/EJN10oKofkNTYKAhVHcEQewqJ+ToNZk9obFtllEQAaArFXpw==
-Date: Fri, 01 May 2026 17:17:20 -0400
-From: brainchild@mailbox.org
-Subject: Understanding and resolving super mismatch error
-To: linux-btrfs@vger.kernel.org
-Message-Id: <W4NDET.0Z0BXQT4DXWY2@mailbox.org>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Ov5yiVh8"
+Received: by mail-wm1-f53.google.com with SMTP id 5b1f17b1804b1-488b0046078so18531065e9.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 May 2026 15:59:26 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1777676365; x=1778281165; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=PCvkgenE7sHtNfAdRg2v/zuU1vPAludwGPHKFZQLt0g=;
+        b=Ov5yiVh8X0O3HNO63sXNCsBr9wOn+XL95SkZQ+p0q7a5M2SOxu8zKu2tdDtJ8m6Sjb
+         KkMQCTMMavlxZqsyA+zE/mu3YmnPi8kK8aIcl+oH7eyWSohoja7XYcVDE8PeGQ22+ODr
+         MBf3iI6/whgj8TsPAXk4WPkB+VHfFJviS/b/SQp/vWN3vfgX2XZIQ0XPRvz+xee7j1Av
+         v9J0mRmMJcJ/SNRlAflwB9DJ2jY4J6hNLHuFBq1RlmPesTn5nBfqHYUQ6eMyD6Tp0RPL
+         AUFhLQz+VdRJz6UqIuitsj9FXgCVW/GqlazFmc+2MbKhxR4IjJUtpMr9r6lnosVlGpLZ
+         mD8w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1777676365; x=1778281165;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=PCvkgenE7sHtNfAdRg2v/zuU1vPAludwGPHKFZQLt0g=;
+        b=NXAFph5fXAoxIeJdnCn8+LMv1HKGL9JeY4QYvOskcjcag3+gwPK+KVOmuLyTnr0fqe
+         GvNqyuU7ejwOkz2KJsj9ghESwyQQGvhfw8CtiAC8elWbydAzQBIrdhelgcNGpbav+UpV
+         2aoWgXOPbS+wyIZ9qfh7zm/ABO6Oy3qYMinC3H9lnR8urpMJKC1NNcOqnHspgBh8ElwY
+         yuAvqvsR5KwkkOt5D7rB4ftqtBVq+F2MF2Ng6f9QlLAdTOWwuxOMobIhEyehd7Hx9+bK
+         1TkAfe5jqqYRF8EjM97cVTOUBNhCqtUbpVQljQPCQWM5XBnM3mTSQRfLg0eyLhpKH+3X
+         /Vrw==
+X-Gm-Message-State: AOJu0YzWeMsJNXEhL0niqlS1uENnZRQNU60vCJrPqqczP0z8rmUgWrmc
+	o7h48lxz9y2GjsXDy/xi9zOtswe9JD1gjAL84h4I2vyqpkRVt8bnjenWay1LreiX0zRFldpjIY8
+	lOXJuA64=
+X-Gm-Gg: AeBDieuOmxfT1AXqQVWzvpF34Tuc5Ea562+fjuq7tN9QxFp6kLEWGTt1uP7I3xdWndK
+	adpVQCbT8qYzMUgRem8HsVABaQ5S8DZBnFe/WbZsOoRmB9Ac7gn+vZinNn7kOhxhu6xPBT7PDJB
+	JqSj/Uld07ClBTXDkU6V+0d1kEWxvrWikC9ChaJo/SNKDrTWp/eUhfm7FqGdbzACNSga47xryzR
+	RmHORTNqo6AiB6gV1JNmi/NuvZ0ft6THIa3gv3XcmhvPao03RYQLbXTECuJf4A39tSXVeT7veEr
+	CbJxe1HXOd28VY7f5NRbpCXdv9ck0+LaEwkDZVrcZDksJDqL3pVQMdKYm3Jf4ZZUSdw+pTkRVf7
+	YhbE6u+FrfbIomInFyiMdPpiboUJRSotNaspldAp/OYuEN3J3QoZ9beKiwRmc35s+dRQCL24+5p
+	PKXjKDka2Aas4fju1RG7A3oCh1gCongoSbp+jxUvEgcqfATR5hich0MrEL5blsFpR1IU7yLte5V
+	ENGLGsp3pKZBvu2YbbPUSUD5JbC09gIaajsV3a2Ps5+iaXsXl1r0HTNuQ==
+X-Received: by 2002:a05:600c:444c:b0:488:a824:fdff with SMTP id 5b1f17b1804b1-48a9866dcd9mr12560065e9.22.1777676365437;
+        Fri, 01 May 2026 15:59:25 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2b9cae4fd16sm38798165ad.69.2026.05.01.15.59.22
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 01 May 2026 15:59:24 -0700 (PDT)
+Message-ID: <368cc782-c5c0-43b2-8174-b187089ede42@suse.com>
+Date: Sat, 2 May 2026 08:29:19 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-X-MBO-RS-META: 4m1t4h9g8fgr3c3zpya9rkg6p57jiuza
-X-MBO-RS-ID: f4f15e8cf3e07f0f2bc
-
-I would like to resize a Btrfs volume, as I normally would do through 
-Gparted.
-
-Unfortunately, the check utility is reporting a problem:
-
----
-[1/8] checking log skipped (none written)
-[2/8] checking root items
-[3/8] checking extents
-super bytes used 756613705728 mismatches actual used 753279578112
-ERROR: errors found in extent allocation tree or chunk allocation
-[4/8] checking free space tree
-[5/8] checking fs roots
-[6/8] checking only csums items (without verifying data)
-[7/8] checking root refs
-[8/8] checking quota groups skipped (not enabled on this FS)
-Opening filesystem to check...
-Checking filesystem on /dev/nvme0n1p5
-UUID: bbac86e5-eaba-45bf-bbaa-c2494e11831a
-found 753279516672 bytes used, error(s) found
-total csum bytes: 483872008
-total tree bytes: 8971255808
-total fs tree bytes: 7809040384
-total extent tree bytes: 558678016
-btree space waste bytes: 1983819676
-file data blocks allocated: 12001362440192
- referenced 1022445051904
----
-
-I tried to resolve using `rescue fix-device-size`, but the results were 
-unhelpful:
-
-----
-No device size related problem found
----
-
-Gparted, as I recall, normally will not proceed to resize a partition 
-that fails basic checks.
-
-More importantly, I do not want to proceed while the health of the 
-partition reduces the safety of the operation.
-
-The system is using btrfs-progs version 6.6.3, though the check and 
-rescue operations were performed in a recovery environment using 
-version 6.17.1
-
-Further information is reported below.
-
-I would like some advice in regard to a few questions:
-
-1. Does the super mismatch indicate an elevated risk of loss during a 
-resize operation?
-
-2. How can the error be resolved, so that the check succeeds, and the 
-volume is fully healthy?
-
----
-
-$ uname -a
-Linux *** 7.0.2-070002-generic #202604271502 SMP PREEMPT_DYNAMIC Mon 
-Apr 27 15:35:55 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
-
-$ btrfs fi show
-Label: none uuid: bbac86e5-eaba-45bf-bbaa-c2494e11831a
- Total devices 1 FS bytes used 703.67GiB
- devid 1 size 831.26GiB used 723.38GiB path /dev/nvme0n1p5
-
-$ btrfs fi df /
-Data, single: total=701.19GiB, used=692.17GiB
-System, DUP: total=32.00MiB, used=144.00KiB
-Metadata, DUP: total=11.06GiB, used=8.40GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs-progs: docs: update the qgroup performance hit
+To: Neal Gompa <neal@gompa.dev>
+Cc: linux-btrfs@vger.kernel.org, Max Chernoff <git@maxchernoff.ca>
+References: <313118e97b2a5c1fb3bf0bb2f3fccfa2663e42f5.1777632200.git.wqu@suse.com>
+ <CAEg-Je_E3f_Wy-0M20rUp5Zd7Yg=s6SuaJ2==08W1C7EOYscBQ@mail.gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <CAEg-Je_E3f_Wy-0M20rUp5Zd7Yg=s6SuaJ2==08W1C7EOYscBQ@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
 
 
+在 2026/5/2 05:51, Neal Gompa 写道:
+> On Fri, May 1, 2026 at 6:44 AM Qu Wenruo <wqu@suse.com> wrote:
+>>
+>> Although we have mentioned the qgroup performance hit, we have never
+>> explained how large the impact is.
+>>
+>> Update the documentation to:
+>>
+>> - Explain what affects qgroup performance
+>>    Including snapshots and reflinks.
+>>
+>> - Explain that the automatic rescan can cause performance problem
+>>
+>> - Add extra warning to avoid qgroup
+>>    If there are too many snapshots or reflinks.
+>>
+>> Reported-by: Max Chernoff <git@maxchernoff.ca>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> 
+> LGTM.
+> 
+> Reviewed-by: Neal Gompa <neal@gompa.dev>
+> 
+> That said, is there actually anything we can do to make the
+> performance not suck with qgroups?
 
+If that's easy to do, I would have already done it.
+
+Thanks,
+Qu

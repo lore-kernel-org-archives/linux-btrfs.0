@@ -1,386 +1,247 @@
-Received: from out-186.mta1.migadu.com (out-186.mta1.migadu.com [95.215.58.186])
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8A3C713D638
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2026 09:40:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.186
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 417303806A2
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2026 10:06:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777628458; cv=none; b=g0UA4hPXmA4NM6Xic0xVG5+iCvf6e6JY5HFlQZLJTSc3Q0jFWOkeUVZcYRElNmCM4g5jRoEsm2wI4BWeO+QZ6EnjYsTeQKEEjSiRbJXbqY6sPuA7W+iVswzBecNdwHxe7NE3CCINk+G7JtCCVBf1HCt1AV0J72ZpEKv5H/rhRNs=
+	t=1777629991; cv=none; b=oa0VCcepVOYEVKJUJlhDwE/zvuOsPrD1G2RQ9R0LIYM5K37KW4g1oBEQp8uLaH0CHy2Ggb2PRdXpzdlt8eTtXyALXOwiPSWVnv7tRrQ0H9oDqkVFkYUMbldQgUrczQvfyadrTeb0bq5+8HfWp83M3/lv3453bheR38+AI4F8Cuc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777628458; c=relaxed/simple;
-	bh=3xKS/ScBwPijYxLhldl4z0kXfIjdJxiF9/QKlHmrthE=;
-	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=laud1KTB8p4r0Sz5aZPbLAEw7XXvEZFYNcRMKJzp8qEZTqJ8GXCdDWgqD6VJlwy0DjwyZXJdZHLCf//jk6EgM0XT/MUxrGsC0v2q8EZN/7pbrRrrvJjNyqtBTAgiJ32CSXg9U0cmQo1ZkvoRztkXYUzSup/iM8Ha/ZGLfnynfic=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=maxchernoff.ca; spf=pass smtp.mailfrom=maxchernoff.ca; dkim=pass (2048-bit key) header.d=maxchernoff.ca header.i=@maxchernoff.ca header.b=PApEEkHj; arc=none smtp.client-ip=95.215.58.186
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=maxchernoff.ca
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=maxchernoff.ca
+	s=arc-20240116; t=1777629991; c=relaxed/simple;
+	bh=A1Ucf5g9ZpEWyNtoOTZQFFNBwiwrIWfQt6fXTp/2RzA=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=N2clfVIToXSIGQBUWcBspIghn80QTGNKcR4E9r+pShr3QW5ukVbC/1UDr2yy/PS2dRp5JyaYymksheZiOX9jO31a39m4SGTqBfv1Des9TvEyphVIIWqD0XSvMeXiSqAK6YgaBLboQ5NbzmiXfZRd0G9xgtQT0rd0ZIEqieAUbkI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=HpgNJMHF; arc=none smtp.client-ip=212.227.17.20
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=maxchernoff.ca header.i=@maxchernoff.ca header.b="PApEEkHj"
-Message-ID: <22a4a11e1933a7b07cee7d6896098a5b251cb755.camel@maxchernoff.ca>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=maxchernoff.ca;
-	s=key1; t=1777628452;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding;
-	bh=w1a+OUNiVIZoonK154EY30162Z9M3u0GJptfDM0KlaE=;
-	b=PApEEkHjdz5K1PRY/0vbewO2og9UeMjZltyw1QrAuwNOTzS85WdneW+/Lmtfqt1FEnJArj
-	yHuZpOehJyBO3vFSsQU6asjVD7/1aLuIjBa87/iQdun35BppdgCtaV+mjHiceYHpOa9p1k
-	2ejOPGDUF95Nz3owJWS/IET2MpX6bKW6ycBjOnOaxeeZF/hPaEa59rmcMjKlj3dkRjBSCn
-	xxNf1RpeRC9VEF3bosUXrerrwliasfcadMARl8CQUeF4nlCV/1swnU+VYBf+mUOo5BwNGj
-	VcTrQ1wkETl0GZqwT06o7Ttk8NEOeIWKt/KZn2wa8kkcsK+Ih/PiL4L2B0tl7A==
-Subject: Enabling qgroups causes 2+ minute hangs
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-From: Max Chernoff <git@maxchernoff.ca>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Max Chernoff <git@maxchernoff.ca>
-Date: Fri, 01 May 2026 03:40:41 -0600
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="HpgNJMHF"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1777629987; x=1778234787; i=quwenruo.btrfs@gmx.com;
+	bh=7D80BbZ2wFKXm+ZG++TjweVrYQBsH4DVgHwn2m/3I9Y=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=HpgNJMHFE/Cr8rUXljTAxOJ8ptwPQX8mwbCRkE50W0G4RzZAduAQK4X8ha7Gj2hP
+	 E/k2RXlLLDaJpa2L3g87Pa5dG+s2acYUEsmKqKQiIQwmQRZuWVzpws9LxF+DbS7ni
+	 Vl0w5xRjoDrkdun9OBFZePOgCx/rMJ+ZWTIxXtZnAM1dputsJZ9vjj/QYkrAi7UG5
+	 ppX7JwcesYnNN5H3eAYbTHoj0wcZtzwhLG3zUGDfJ+t/iB1+4cqjXNGiT1CKugKkI
+	 Hj6xDM5pcu3gdZqyTpF7sVPXUK0squdjJznfv6DgAep6m5xYoZY/qapzQU8hXYcEL
+	 QgOgDEWcIYsk0KTtAQ==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MowKc-1vY5PQ3ARa-00agte; Fri, 01
+ May 2026 12:06:27 +0200
+Message-ID: <d248a319-d2ff-4520-8ad5-8967e8cce43d@gmx.com>
+Date: Fri, 1 May 2026 19:36:24 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Migadu-Flow: FLOW_OUT
+User-Agent: Mozilla Thunderbird
+Subject: Re: Enabling qgroups causes 2+ minute hangs
+To: Max Chernoff <git@maxchernoff.ca>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <22a4a11e1933a7b07cee7d6896098a5b251cb755.camel@maxchernoff.ca>
+Content-Language: en-US
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <22a4a11e1933a7b07cee7d6896098a5b251cb755.camel@maxchernoff.ca>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:3VZgW9HU7P3YrQAEgHlemQyXV6D2tATUwdfIulJ59U1M4r0i4t+
+ hMx7kCRHFuzVgGZctCFP6Ba2Ztx5JAbXQPkSKWH+cX9xdvAqg9K2Rr6ACcHpcShKhUpgVjk
+ Rc3F5P4z1cXjpUdACDWnIuCW9ltGdJejcLsOrs7cxZWh/cRP/IKFIpcN+05PUVaviBiuTNB
+ CIAmhiWbLJ3UkC6TEZdTw==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:HBdhnpIADoI=;66YM3wbvhwiSsgjMKTaXcUtUwKV
+ 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
+ OaaictXRUwxiBsQ==
 
-Hi all,
 
-(please keep me cc'd as I'm not subscribed)
 
-Yesterday, I accidentally enabled qgroups on my root filesystem, and I
-started experiencing severe system hangs. When I disabled the quotas
-again, the problem went away completely.
+=E5=9C=A8 2026/5/1 19:10, Max Chernoff =E5=86=99=E9=81=93:
+> Hi all,
+>=20
+> (please keep me cc'd as I'm not subscribed)
+>=20
+> Yesterday, I accidentally enabled qgroups on my root filesystem, and I
+> started experiencing severe system hangs. When I disabled the quotas
+> again, the problem went away completely.
+>=20
+> I'm currently using "btrfs-progs v6.19.1" with "Linux
+> 6.19.14-200.fc43.x86_64" on Fedora 43 x86_64. I have "/boot/" and "/" in
+> the same btrfs filesystem, which is on 2 NVMe disks with RAID0 data and
+> RAID1 metadata. I have a swap partition on both disks, and I'm not using
+> a swap file. When I booted into the "initrd" for my rescue kernel
+> ("6.15.8-200.fc42.x86_64"), I saw the exact same issue. My filesystem
+> has 309 snapshots and 17 subvolumes;
 
-I'm currently using "btrfs-progs v6.19.1" with "Linux
-6.19.14-200.fc43.x86_64" on Fedora 43 x86_64. I have "/boot/" and "/" in
-the same btrfs filesystem, which is on 2 NVMe disks with RAID0 data and
-RAID1 metadata. I have a swap partition on both disks, and I'm not using
-a swap file. When I booted into the "initrd" for my rescue kernel
-("6.15.8-200.fc42.x86_64"), I saw the exact same issue. My filesystem
-has 309 snapshots and 17 subvolumes; 45238 is the largest subvolume ID.
-I'm using "snapper" and "btrfsmaintenance", but no other btrfs-related
-programs. The /proc/mounts entry is
+This is the problem, btrfs qgroup performance is directly bounded to the=
+=20
+number of shared extents.
 
-    /dev/nvme0n1p3 / btrfs rw,seclabel,noatime,compress=3Dzstd:1,ssd,discar=
-d=3Dasync,space_cache=3Dv2,subvolid=3D5,subvol=3D/ 0 0
+If you have over 50 snapshots, it's going to be ugly, if you have 300,=20
+it's going to be hell.
 
-I have snapper set to take hourly snapshots, and this has worked
-perfectly for the past 5 years. But once I enabled qgroups, whenever
-snapper took a new snapshot, the system became mostly
-unresponsive---complex programs froze completely, and I was unable to
-launch any new programs. "Alt+Sysrq" still worked, and I was usually
-able to switch to an already-open VT, but I was unable to log in to a
-new VT. The lockups only lasted 10-15 minutes, and "dmesg" and
-"journalctl" showed nothing relevant before, during, or after.
+And it has no good way to resolve, the qgroup rescan (triggered by the=20
+enabling) normally should not block normal operations, but for such=20
+heavily snapshotted systems, even doing qgroup accounting for a single=20
+extent can take a very long time.
+As such backref walk will need to iterate through all the subvolumes=20
+that own that extent, in your case it can be 309 subvolumes.
 
-Booting between lockups was fine, but if I tried to reboot during a
-lockup, then it got stuck while shutting down, but I was able to force
-it with "Alt+Sysrq". When I turned the computer back on, it would get
-stuck at
+This long time of accounting just one extent will block the transaction=20
+for a long time.
 
-    Starting initrd-switch-root.service - Switch Root...
+There are a lot of optimizations merged, but nothing can resolve the=20
+root problem.
+>=20
+>      WARNING: qgroups enabled on a filesystem with lots of snapshots, ex=
+pect poor performance
 
-and adding "rd.debug debug" to the kernel cmdline gave no further
-output. After waiting 10+ minutes, the system would eventually boot
-though. Trying to boot into "rescue" or "emergency" gave the exact same
-results.
+ From btrfs-quota(8):
 
-Booting into "rd.rescue" worked correctly though. Mounting the root as
-read-only and as read-write both worked fine, and unmounting as
-read-only worked fine, but trying to unmount as read-write hung for at
-least 5 minutes (before I gave up).
+      When quotas are activated, they affect all extent processing, which
+      takes a performance  hit.  Activation  of qgroups is not
+      recommended unless the user intends to actually use them.
 
-When the system is hanging, I saw that the "btrfs-clean" (and
-occasionally "btrfs-transaction") kernel threads were taking up >100% of
-the CPU. This happened both when booted into the main system and when
-booted into the "initrd" with the root mounted as read-write, but not
-when mounted as read-only.
+>=20
+> to dmesg to make it easier to debug?
 
-To measure the freezes more quantitatively, I ran the following script:
+Normally it's not that a huge problem as the normal amount of snapshots=20
+are only around one or two dozens.
 
-    #!/bin/sh
-    set -eu
+Furthermore, if you only have subvolumes but no snapshot, and no shared=20
+extent (aka, no dedup), then the qgroup performance impact should be=20
+very tiny.
 
-    # Use busybox in tmpfs to make sure that we aren't reading off of the r=
-oot
-    # filesystem during the tests.
-    bb=3D"$XDG_RUNTIME_DIR/busybox"
-    cp --force "$(which busybox)" "$bb"
+But unfortunately that's not the case for you.
 
-    while true; do
-        "$bb" time -f 'real:%e kernel:%S user:%U' "$bb" sh -c "$bb date > ~=
-/test.txt" 2>&1
-        "$bb" sleep 1
-    done | ts -i 'delta:%.s' | ts '%Y-%m-%d %H:%M:%S' | "$bb" tee -a ~/time=
--reads.log
+Even with that dmesg warning, if your system is already hanging, I'm not=
+=20
+sure if the end user will even be able to see that message.
 
-which gave me the following results (all the elided times are 1 second):
+I can try to add a check inside "btrfs qgroup enable" command, which=20
+will checks how many snapshots, if that's beyond 10, give a warning with=
+=20
+timeout before enabling traditional qgroups.
 
-    [...]
-    2026-04-30 17:55:33 delta:1.002839 real:0.00 kernel:0.00 user:0.00
-    2026-04-30 17:55:34 delta:1.002585 real:0.00 kernel:0.00 user:0.00
-    2026-04-30 17:55:40 delta:6.169116 real:5.16 kernel:0.00 user:0.00
-    2026-04-30 17:55:43 delta:3.227686 real:2.22 kernel:0.00 user:0.00
-    2026-04-30 17:57:53 delta:130.211634 real:129.21 kernel:0.00 user:0.00
-    2026-04-30 17:58:00 delta:6.771055 real:5.76 kernel:0.00 user:0.00
-    2026-04-30 17:58:07 delta:6.938813 real:5.93 kernel:0.00 user:0.00
-    2026-04-30 18:00:43 delta:155.816819 real:154.81 kernel:0.00 user:0.00
-    2026-04-30 18:00:44 delta:1.002916 real:0.00 kernel:0.00 user:0.00
-    2026-04-30 18:00:45 delta:1.003044 real:0.00 kernel:0.00 user:0.00
-    [...]
-    2026-04-30 18:00:50 delta:1.002643 real:0.00 kernel:0.00 user:0.00
-    2026-04-30 18:00:56 delta:6.015252 real:5.01 kernel:0.00 user:0.00
-    2026-04-30 18:00:57 delta:1.003057 real:0.00 kernel:0.00 user:0.00
-    [...]
-    2026-04-30 18:01:25 delta:1.003564 real:0.00 kernel:0.00 user:0.00
-    2026-04-30 18:01:26 delta:1.002711 real:0.00 kernel:0.00 user:0.00
-    2026-04-30 18:03:20 delta:114.606827 real:113.60 kernel:0.00 user:0.00
-    2026-04-30 18:03:21 delta:1.003087 real:0.00 kernel:0.00 user:0.00
-    2026-04-30 18:03:22 delta:1.002655 real:0.00 kernel:0.00 user:0.00
-    [...]
-    2026-04-30 18:03:51 delta:1.002898 real:0.00 kernel:0.00 user:0.00
-    2026-04-30 18:06:02 delta:131.139355 real:130.13 kernel:0.00 user:0.00
-    2026-04-30 18:06:03 delta:1.003131 real:0.00 kernel:0.00 user:0.00
-    [...]
-    2026-04-30 18:55:33 delta:1.003722 real:0.00 kernel:0.00 user:0.00
-    2026-04-30 18:55:38 delta:5.352721 real:4.35 kernel:0.00 user:0.00
-    2026-04-30 18:55:41 delta:3.060421 real:2.05 kernel:0.00 user:0.00
-    2026-04-30 18:57:42 delta:120.278858 real:119.27 kernel:0.00 user:0.00
-    2026-04-30 18:57:48 delta:6.371515 real:5.37 kernel:0.00 user:0.00
-    2026-04-30 18:57:55 delta:6.858136 real:5.85 kernel:0.00 user:0.00
-    2026-04-30 18:58:44 delta:49.099334 real:48.09 kernel:0.00 user:0.00
-    2026-04-30 18:58:45 delta:1.414115 real:0.41 kernel:0.00 user:0.00
-    2026-04-30 19:00:23 delta:97.499004 real:96.49 kernel:0.00 user:0.00
-    2026-04-30 19:00:26 delta:2.701334 real:1.70 kernel:0.00 user:0.00
-    2026-04-30 19:00:27 delta:1.265323 real:0.26 kernel:0.00 user:0.00
-    2026-04-30 19:00:34 delta:7.264837 real:6.26 kernel:0.00 user:0.00
-    2026-04-30 19:02:52 delta:137.679866 real:136.67 kernel:0.00 user:0.00
-    2026-04-30 19:02:56 delta:4.076251 real:3.07 kernel:0.00 user:0.00
-    2026-04-30 19:03:32 delta:36.097353 real:35.09 kernel:0.00 user:0.00
-    2026-04-30 19:05:24 delta:112.509576 real:111.50 kernel:0.00 user:0.00
-    2026-04-30 19:05:25 delta:1.002256 real:0.00 kernel:0.00 user:0.00
-    [...]
-
-There are no obvious signs of corruption: "btrfs scrub" completed
-successfully, and the SMART data looks okay:
-
-    $ sudo btrfs scrub status --human-readable /
-    UUID:             c95a9dcb-1da8-4773-9dc3-a3d6e42e7cd1
-    Scrub started:    Thu Apr 30 03:17:21 2026
-    Status:           finished
-    Duration:         0:09:31
-    Total to scrub:   1.28TiB
-    Rate:             2.30GiB/s
-    Error summary:    no errors found
-
-    $ sudo smartctl --all /dev/nvme0
-    [...]
-    SMART overall-health self-assessment test result: PASSED
-    [...]
-
-    $ sudo smartctl --all /dev/nvme1
-    [...]
-    SMART overall-health self-assessment test result: PASSED
-    [...]
-
-    $ sudo btrfs device stats /
-    [/dev/nvme1n1p3].write_io_errs    0
-    [/dev/nvme1n1p3].read_io_errs     0
-    [/dev/nvme1n1p3].flush_io_errs    0
-    [/dev/nvme1n1p3].corruption_errs  0
-    [/dev/nvme1n1p3].generation_errs  0
-    [/dev/nvme0n1p2].write_io_errs    0
-    [/dev/nvme0n1p2].read_io_errs     0
-    [/dev/nvme0n1p2].flush_io_errs    0
-    [/dev/nvme0n1p2].corruption_errs  0
-    [/dev/nvme0n1p2].generation_errs  0
-
-My filesystem also has lots of free space:
-
-    $ sudo btrfs filesystem usage -T /
-    Overall:
-        Device size:		   1.81TiB
-        Device allocated:		   1.36TiB
-        Device unallocated:		 455.32GiB
-        Device missing:		     0.00B
-        Device slack:		     0.00B
-        Used:			   1.28TiB
-        Free (estimated):		 489.53GiB	(min: 261.87GiB)
-        Free (statfs, df):		 489.53GiB
-        Data ratio:			      1.00
-        Metadata ratio:		      2.00
-        Global reserve:		 512.00MiB	(used: 0.00B)
-        Multiple profiles:		        no
-
-                      Data      Metadata System
-    Id Path           RAID0     RAID1    RAID1     Unallocated Total     Sl=
-ack
-    -- -------------- --------- -------- --------- ----------- --------- --=
----
-     1 /dev/nvme1n1p3 649.00GiB 48.00GiB  32.00MiB   236.84GiB 933.87GiB   =
-  -
-     2 /dev/nvme0n1p2 649.00GiB 48.00GiB  32.00MiB   218.48GiB 915.51GiB   =
-  -
-    -- -------------- --------- -------- --------- ----------- --------- --=
----
-       Total            1.27TiB 48.00GiB  32.00MiB   455.32GiB   1.81TiB 0.=
-00B
-       Used             1.23TiB 23.23GiB 128.00KiB
-
-I ran "btrfs check --readonly" from the "initrd", and here are the
-results:
-
-    $ btrfs check --readonly --progress /dev/nvme0n1p3
-    Opening filesystem to check...
-    Checking filesystem on /dev/nvme0n1p3
-    UUID: c95a9dcb-1da8-4773-9dc3-a3d6e42e7cd1
-    [1/7] checking root items                      (0:00:08 elapsed, 123958=
-21 items checked)
-    [2/7] checking extents                         (0:02:07 elapsed, 152213=
-9 items checked)
-    [3/7] checking free space tree                 (0:00:08 elapsed, 699 it=
-ems checked)
-    [4/7] checking fs roots                        (0:06:19 elapsed, 134598=
-2 items checked)
-    [5/7] checking csums (without verifying data)  (0:00:12 elapsed, 289014=
-4 items checked)
-    [6/7] checking root refs                       (0:00:00 elapsed, 331 it=
-ems checked)
-    ERROR: failed to add qgroup relation, member=3D20768 parent=3D717761190=
-61238848: No such file or directory
-    ERROR: loading qgroups from disk: -2
-    [7/7] checking quota groups                    (0:00:00 elapsed)
-    ERROR: failed to check quota groups
-    found 1383420903546 bytes used, error(s) found
-    total csum bytes: 1250854052
-    total tree bytes: 24933187584
-    total fs tree bytes: 22152527872
-    total extent tree bytes: 1297121280
-    btree space waste bytes: 4820245506
-    file data blocks allocated: 21729234993152
-    referenced 2309334016000
-    extent buffer leak: start 1315779461128 len 16384
-    extent buffer leak: start 1315762536448 len 16384
-
-    $ btrfs check --readonly --progress /dev/nvme1n1p3
-    Opening filesystem to check...
-    Checking filesystem on /dev/nvme1n1p2
-    UUID: c95a9dcb-1da8-4773-9dc3-a3d6e42e7cd1
-    [1/7] checking root items                      (0:00:08 elapsed, 123958=
-21 items checked)
-    [2/7] checking extents                         (0:02:06 elapsed, 152213=
-9 items checked)
-    [3/7] checking free space tree                 (0:00:09 elapsed, 699 it=
-ems checked)
-    [4/7] checking fs roots                        (0:06:17 elapsed, 134598=
-2 items checked)
-    [5/7] checking csums (without verifying data)  (0:00:12 elapsed, 289014=
-4 items checked)
-    [6/7] checking root refs                       (0:00:00 elapsed, 331 it=
-ems checked)
-    ERROR: failed to add qgroup relation, member=3D280768 parent=3D71776119=
-061238848: No such file or directory
-    ERROR: loading qgroups from disk: -2
-    [7/7] checking quota groups                    (0:00:00 elapsed)
-    extent buffer leak: start 1315779461128 len 16384
-    extent buffer leak: start 1315762536448 len 16384
-    found 1383420903546 bytes used, error(s) found
-    total csum bytes: 1250854052
-    total tree bytes: 24933187584
-    total fs tree bytes: 22152527872
-    total extent tree bytes: 1297121280
-    btree space waste bytes: 4820245506
-    file data blocks allocated: 21729234993152
-    referenced 2309334016000
-
-    $ btrfs check --readonly --progress --check-data-csum /dev/nvme0n1p3
-    Opening filesystem to check...
-    Checking filesystem on /dev/nvme0n1p3
-    UUID: c95a9dcb-1da8-4773-9dc3-a3d6e42e7cd1
-    [1/7] checking root items                      (0:00:08 elapsed, 123958=
-21 items checked)
-    [2/7] checking extents                         (0:02:08 elapsed, 152213=
-9 items checked)
-    [3/7] checking free space tree                 (0:00:08 elapsed, 699 it=
-ems checked)
-    [4/7] checking fs roots                        (0:06:17 elapsed, 134598=
-2 items checked)
-    [5/7] checking csums against data              (0:16:23 elapsed, 289014=
-4 items checked)
-    [6/7] checking root refs                       (0:00:00 elapsed, 331 it=
-ems checked)
-    failed to add qgroup relation, member=3D28768 parent=3D7177611906123884=
-8: No such file or directory
-    ERROR: loading qgroups from disk: -2
-    ERROR: failed to check quota groups
-    [7/7] checking quota groups                    (0:00:00 elapsed)
-
-    extent buffer leak: start 1315779461128 len 16364
-    extent buffer leak: start 1315762536448 len 16384
-    found 1383420903546 bytes used, error(s) found
-    total csum bytes: 1250854052
-    total tree bytes: 24933187584
-    total fs tree bytes: 22152527872
-    total extent tree bytes: 1297121280
-    btree space waste bytes: 4820245506
-    file data blocks allocated: 21729234993152
-    referenced 2309334016000
-
-    $ btrfs check --readonly --progress --qgroup-report /dev/nvme0n1p3
-    ERROR: failed to add qgroup relation, member=3D20768 parent=3D717761190=
-61238048: No such file or directory
-    ERROR: loading qgroups from disk: -2
-    extent buffer leak: start 1315779461120 len 16384
-    extent buffer leak: start 1315762536448 len 16394
-    Opening filesystem to check...
-    Checking filesystem on /dev/nvme0n1p3
-    UUID: c95a9dcb-1da8-4773-9dc3-a3d6e42e7cd1
-    Print quota groups report for /dev/nvme0n1p3
-    UUID: c95a9dcb-1da8-4773-9dc3-a3d6e42e7cd1
-
-    $ btrfs check --readonly --progress --qgroup-report /dev/nvme1n1p2
-    ERROR: failed to add qgroup relation, member=3D20768 parent=3D717761190=
-61238048: No such file or directory
-    ERROR: loading gqgroups from disk: -2
-    extent buffer leak: start 1315779461120 len 16384
-    extent buffer leak: start 1315762536448 len 16384
-    Opening filesystem to check...
-    Checking filesystem on /dev/nvme1n1p2
-    UUID: c95a9dcb-1da8-4773-9dc3-a3d6e42e7cd1
-    Print quota groups report for /dev/nvme1n1p2
-    UUID: c95a9dcb-1da8-4773-9dc3-a3d6e42e7cd1
-
-When booted into the main system, "btrfs qgroup show" ran without any
-errors:
-
-    $ sudo btrfs qgroup show /
-    Qgroupid    Referenced    Exclusive   Path
-    --------    ----------    ---------   ----
-    0/5           56.69GiB    102.11MiB   <toplevel>
-    0/256         25.44GiB     12.11MiB   home
-    0/257         71.98GiB     71.98GiB   var
-    0/258          1.71MiB      1.71MiB   snapshots
-    0/261         26.01GiB     23.00GiB   home/max/.local
-    0/262        589.32GiB    589.26GiB   home/max/Games
-    0/263         41.70GiB     41.43GiB   home/max/.cache
-    0/264        240.00KiB    240.00KiB   home/.snapshots
-    [...]
-    255/20768     16.00KiB     16.00KiB   <0 member qgroups>
-
-I realize that enabling qgroups on a large filesystem with a bunch of
-snapshots is going to be rather slow and I/O intensive, but 2 minute
-hangs on writes and 10 minute hangs on unmounting seems fairly
-problematic to me. Or if it's not feasible to fix this, would it at
-least be possible to print something like
-
-    WARNING: qgroups enabled on a filesystem with lots of snapshots, expect=
- poor performance
-
-to dmesg to make it easier to debug?
-
-Let me know if you want me to run any more commands, share full system
-logs, or anything else. I'm also comfortable building a kernel if you
-want me to test any patches.
+But please remember that, there are tons of ways to work around above=20
+warning/timeout.
+E.g. offline dedupe can easily recreate the worst case scenario.
 
 Thanks,
--- Max
+Qu
+
+>=20
+> Let me know if you want me to run any more commands, share full system
+> logs, or anything else. I'm also comfortable building a kernel if you
+> want me to test any patches.
+>=20
+> Thanks,
+> -- Max
+>=20
+

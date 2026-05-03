@@ -1,217 +1,189 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wr1-f48.google.com (mail-wr1-f48.google.com [209.85.221.48])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5ED143AEF36
-	for <linux-btrfs@vger.kernel.org>; Sun,  3 May 2026 09:48:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 700EA1F5821
+	for <linux-btrfs@vger.kernel.org>; Sun,  3 May 2026 15:35:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777801709; cv=none; b=k876bucIYw3KVyn5JLKWncqyf9obKPio+wrbTAYPb8KeJBdkKpYavEPFlhNl4ud/R5ZNzln64L4BL3OQRoREl9KgGQuRVYwOTrJnkrASLBYgWOP6fAhRlKpo3Wc2Msu7F2ehX6gE2ewY29BhufvI0f4+Lwdji9tGQR3XtPNPpwE=
+	t=1777822555; cv=none; b=Hj77rJhGXp5xiNNs5MmJ6PDTuIj/LDPcTBGwFkG1teBgQL2sYWFQFdBsQoe3x01w+TW/eKo0il5lXXfEPIsF1QiOsosr7aJE6eB6AJZGFGmr0yr9l0krExZaOOsNfTiI9Vyqjr1JbrHmS+QK44BtHqkHTHzEw3j/sLoM112b38w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777801709; c=relaxed/simple;
-	bh=ckpYGsSTOCs+E/MxUgZ5FbAr0GS47JboKKW0eA+o5ow=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=h5fbSmYi/2HyQo17fOVJvD72PbSTOwIeDfQakWp+s6Snnksq38p34DJCaA98Iwa0n+iLffjWRKilaQEJ5n44YZ1mZ8UqwD0nCv8eDnoULYKbxkmVTmHXSZ1uJgsn7G0tvjYAEcCl0lHghP8U8YsW1KXbUg6eVmyCGAQPrlJzV9w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=HzAZGode; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=HzAZGode; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1777822555; c=relaxed/simple;
+	bh=3K1UymCVefvTMFBFVW2e3cV68UAOrq6eEYInWbfGrBw=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=nAVjEPpuybenw6/GIx/36QawT1i7d9gBGl4gm3LcaGGgrP4p7u5+uSgO1sM7iVRpziDjz1G/a6KTnohYxiTCJBCwRjg9H3KukL1UGb4h09gbH7vbkz+PEcYR0UCQL/7zcPjsWhwFTFGxFVf6vc60LDPUYnDeBfaCxAlFPLMk6Pc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=BhqbVzRp; arc=none smtp.client-ip=209.85.221.48
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HzAZGode";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HzAZGode"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 0405C6AA8A
-	for <linux-btrfs@vger.kernel.org>; Sun,  3 May 2026 09:48:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1777801695; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=mQhHKq2AfUMDXbU4tpToaEsZdT/Wqn08nRlXZ945/HM=;
-	b=HzAZGodePrgcaTeWPKexJ/eQNBE8zkxtJwVbUoXPTZ8gaALSCP3Th4483iPt3hQ3e6vBXU
-	ywAokOarEPgwYqmONnPxRc80nQhHYrYt3XA5QkHYPNauO9Ec9voO4EJuJ+QWVyXXlZUZiG
-	t3Xd/YFxl3yet/Ta7SYkYoldKZ5g1PE=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1777801695; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=mQhHKq2AfUMDXbU4tpToaEsZdT/Wqn08nRlXZ945/HM=;
-	b=HzAZGodePrgcaTeWPKexJ/eQNBE8zkxtJwVbUoXPTZ8gaALSCP3Th4483iPt3hQ3e6vBXU
-	ywAokOarEPgwYqmONnPxRc80nQhHYrYt3XA5QkHYPNauO9Ec9voO4EJuJ+QWVyXXlZUZiG
-	t3Xd/YFxl3yet/Ta7SYkYoldKZ5g1PE=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 424B7593A3
-	for <linux-btrfs@vger.kernel.org>; Sun,  3 May 2026 09:48:14 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id OCjQAd4Z92mUPAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 03 May 2026 09:48:14 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="BhqbVzRp"
+Received: by mail-wr1-f48.google.com with SMTP id ffacd0b85a97d-43d73352cf2so2998523f8f.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 May 2026 08:35:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1777822551; x=1778427351; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=IA8iXwG9o4NPzKNjWbhLMcYmAXxFWjV4L1239e0Xzn4=;
+        b=BhqbVzRptWxD2sjnR399kE4M1NyOA9h/p+8OtUgrsnmipvGJB2/otqhwM7EG6u1a+Y
+         u03stfREghQWtUyX+tFv3DwY0GS2lneO8Q5pYQObt624Zo9zllzbX5kOqVJ1oexPBH8x
+         ARfK5pmnRzpHVp+sJZuXjQ8Jy5WRyS9oeosrTMAXRohi8cnb5E9MZ69FayRBClQdlHhv
+         JEK+1Wk2xHeC8WeeqhhcmmGvVqcK/uodYpcK+KPnLBYHkI0Dj/gTkr6Q4IzSQ+vqeLlq
+         RsI6nTq2X4IooSB6taq7Lk3F/AHY9RRIJqINp1mOTbQK9XCJxOtxsoI8swdL0ET/l2tL
+         CyUg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1777822551; x=1778427351;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=IA8iXwG9o4NPzKNjWbhLMcYmAXxFWjV4L1239e0Xzn4=;
+        b=GQmyHWkoDo2J7HxpIwdCh/5nx8LjW3RzCQT2NSL4Ce9lkduJw232Dblas8Z4cujXCU
+         AirNje3CY/Oa/677il1H1CEvnC25T7SQW6cE/69MSnVS3wrRiZyshwuoCS8PVLJApQ32
+         1Lr7AsgNXaynOzsRAHsH7XOJsc+hsTtaGACpGe/QXZAL5f+Tcp+n9VSgMO1t+rHqCYQa
+         /oY6X37q5PT2WSeBIuC9vbo5Ytyny6w4IECxY8Troua+e9XYDhQ1JKiBcyHTbwAf0lMS
+         cgBSRtaVV7KKhA81TDlcos+mwVSqMLdCPlnhu7IrhUSErzrMUzN+WPpllQV+pyZB2qX/
+         UD0A==
+X-Gm-Message-State: AOJu0YwGKAXNOpDLU3KKFkjAwRepFG4TIjc9XldzkfKKK4pBxjrLb7pV
+	C4X+35SBqiOmZVuYjdN3JD09VxTP1dnDxly6mUDQtVhGFbZMUfqmzIzE0aodFg==
+X-Gm-Gg: AeBDievG77l16fNnBlE8lhG5cM/93RlSrnOWuPeyHxiSFiMgKRDoRPGkkPwwfHYQyoK
+	yI+H1cNwj4vRj64V1P5MEK4eKknwUUgsbRHUnEtWSSeI1WJU9YXxQ/VOU61npj+2m8ibfyhxP/1
+	jQvcvgEqWJ8dwiFCmIVXZN0nfZ57DqaLAdBtr4y8Lb6HNyPvCWKEZWwKIKen0w2Ob+1cHv5tIBE
+	M2JhvY3zTF8nwJjWRLsiwfSmnCYdaFI2piGIimID7Qm88E1rR2raJG2JzExGXDDEjv722nD87ct
+	vcgy6IpQeUWg7WhLwn9fvHOs72K+ioE7zWY8/RYwHqmnW/QHDmpe4n+Ks5LwqUpUdEGg1Wleyw5
+	UrdB7jW+EP9u+uLuNBIAH9Qi2IJ5NA49Ci+xuPJ8NCuFYz92i8W+zWtEb2Upbm7DSCdE8cqqdtH
+	+DNdafoRluhE2togVtNqwAhKa7fC97v7poHFb1sOjLb3GT
+X-Received: by 2002:a05:6000:2410:b0:441:247a:e98e with SMTP id ffacd0b85a97d-44bb5f26609mr10908893f8f.24.1777822551080;
+        Sun, 03 May 2026 08:35:51 -0700 (PDT)
+Received: from rabbitArch ([145.40.214.139])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-44a8bf18c9bsm18973072f8f.0.2026.05.03.08.35.50
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 03 May 2026 08:35:50 -0700 (PDT)
+Date: Sun, 3 May 2026 17:35:48 +0200
+From: Teng Liu <27rabbitlt@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: unexport and move extent_invalidate_folio()
-Date: Sun,  3 May 2026 19:17:50 +0930
-Message-ID: <96ff3d0603f93ca952ff303f9b556c14d1d1ef79.1777801546.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1777801546.git.wqu@suse.com>
-References: <cover.1777801546.git.wqu@suse.com>
+Cc: wqu@suse.com, dsterba@suse.cz
+Subject: Re: [PATCH v3] btrfs: validate data reloc tree file extent item
+ members in tree-checker
+Message-ID: <afdoNU3rQUr0pREJ@rabbitArch>
+References: <20260426201605.36626-1-27rabbitlt@gmail.com>
+ <20260427202822.278326-1-27rabbitlt@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spam-Level: 
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260427202822.278326-1-27rabbitlt@gmail.com>
 
-The function extent_invalidate_folio() has only a single caller inside
-btree_invalidate_folio().
+On 2026-04-27 22:24, Teng Liu wrote:
+> get_new_location() uses BUG_ON() to crash the kernel if the file extent
+> item it looks up has any of offset, compression, encryption, or
+> other_encoding set. The data reloc inode is only written by relocation's
+> own paths -- insert_prealloc_file_extent() and
+> insert_ordered_extent_file_extent() -- which always leave those four
+> fields at 0 (the data reloc inode is created with BTRFS_INODE_NOCOMPRESS,
+> and encryption/other_encoding are reserved-and-zero). Observing a
+> non-zero value therefore means the leaf decoded from disk does not match
+> what the kernel wrote, i.e. on-disk corruption. A malformed image can
+> reach this code via balance and panic the kernel.
+> 
+> Move the validation into tree-checker's check_extent_data_item(), where
+> the constraint is enforced when the leaf is read off disk rather than
+> after relocation has already started. The data reloc tree has a fixed
+> root id (BTRFS_DATA_RELOC_TREE_OBJECTID) recorded in the extent buffer
+> header, so check_extent_data_item() has all the information it needs to
+> apply this check on its own. Report violations via file_extent_err() and
+> print the four offending values.
+> 
+> In get_new_location() replace the BUG_ON() with an ASSERT().
+> The caller in replace_file_extents() already handles non-zero returns from
+> get_new_location() by breaking out of the loop without aborting the
+> transaction, so no caller changes are needed.
+> 
 
-There is no need to export such a function just for a single caller inside
-another file.
+Hi Qu, David, and all,
 
-Unexport extent_invalidate_folio() and move it to disk-io.c.
+I spent some time trying to understand why the tree-checker saw non-zero
+offset while BUG_ON never hit. Share some observation here in case it's
+helpful and also ask for further advice about how to make the patch
+correct.
 
-And since we're moving the code, update the commit to match the current
-style, and remove the seemingly stale comment on the extent state
-removal, it's better explained by the comment just before
-btrfs_unlock_extent().
+Short answer: I noticed that get_new_location() and the tree-checker
+look at different itmes in the data reloc tree. The tree-chcker
+validates every item pre-write; while get_new_location() searches only
+exact cluster boundary key, so the offset is always 0.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/disk-io.c   | 31 +++++++++++++++++++++++++++++++
- fs/btrfs/extent_io.c | 32 --------------------------------
- fs/btrfs/extent_io.h |  2 --
- 3 files changed, 31 insertions(+), 34 deletions(-)
+== How I tested ==
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 48ddbeb18e3c..f925dcea0c46 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -488,6 +488,37 @@ static bool btree_release_folio(struct folio *folio, gfp_t gfp_flags)
- 	return try_release_extent_buffer(folio);
- }
- 
-+/*
-+ * Basic invalidate_folio code, this waits on any locked or writeback
-+ * ranges corresponding to the folio.
-+ */
-+static int extent_invalidate_folio(struct extent_io_tree *tree,
-+				   struct folio *folio, size_t offset)
-+{
-+	struct extent_state *cached_state = NULL;
-+	u64 start = folio_pos(folio);
-+	u64 end = start + folio_size(folio) - 1;
-+	size_t blocksize = folio_to_fs_info(folio)->sectorsize;
-+
-+	/* This function is only called for the btree inode */
-+	ASSERT(tree->owner == IO_TREE_BTREE_INODE_IO);
-+
-+	start += ALIGN(offset, blocksize);
-+	if (start > end)
-+		return 0;
-+
-+	btrfs_lock_extent(tree, start, end, &cached_state);
-+	folio_wait_writeback(folio);
-+
-+	/*
-+	 * Currently for btree io tree, only EXTENT_LOCKED is utilized,
-+	 * so here we only need to unlock the extent range to free any
-+	 * existing extent state.
-+	 */
-+	btrfs_unlock_extent(tree, start, end, &cached_state);
-+	return 0;
-+}
-+
- static void btree_invalidate_folio(struct folio *folio, size_t offset,
- 				 size_t length)
- {
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 31a65c662b65..ebf9a63946e5 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2734,38 +2734,6 @@ void btrfs_readahead(struct readahead_control *rac)
- 	submit_one_bio(&bio_ctrl);
- }
- 
--/*
-- * basic invalidate_folio code, this waits on any locked or writeback
-- * ranges corresponding to the folio, and then deletes any extent state
-- * records from the tree
-- */
--int extent_invalidate_folio(struct extent_io_tree *tree,
--			  struct folio *folio, size_t offset)
--{
--	struct extent_state *cached_state = NULL;
--	u64 start = folio_pos(folio);
--	u64 end = start + folio_size(folio) - 1;
--	size_t blocksize = folio_to_fs_info(folio)->sectorsize;
--
--	/* This function is only called for the btree inode */
--	ASSERT(tree->owner == IO_TREE_BTREE_INODE_IO);
--
--	start += ALIGN(offset, blocksize);
--	if (start > end)
--		return 0;
--
--	btrfs_lock_extent(tree, start, end, &cached_state);
--	folio_wait_writeback(folio);
--
--	/*
--	 * Currently for btree io tree, only EXTENT_LOCKED is utilized,
--	 * so here we only need to unlock the extent range to free any
--	 * existing extent state.
--	 */
--	btrfs_unlock_extent(tree, start, end, &cached_state);
--	return 0;
--}
--
- /*
-  * A helper for struct address_space_operations::release_folio, this tests for
-  * areas of the folio that are locked or under IO and drops the related state
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index b310a5145cf6..ede7abbe4031 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -381,8 +381,6 @@ void extent_clear_unlock_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
- 				  const struct folio *locked_folio,
- 				  struct extent_state **cached,
- 				  u32 bits_to_clear, unsigned long page_ops);
--int extent_invalidate_folio(struct extent_io_tree *tree,
--			    struct folio *folio, size_t offset);
- void btrfs_clear_buffer_dirty(struct btrfs_trans_handle *trans,
- 			      struct extent_buffer *buf);
- 
--- 
-2.54.0
+I instrumented both check_extent_data_item() (tree-checker) and
+get_new_location() with pr_info() to log ino+key_offset+offset for every
+item. Then ran btrfs/061 on qemu. 
+
+== Some Evidence ==
+
+Tree-checker hits (items with non-zero fields in the data reloc tree):
+[   63.531400] tree-checker HIT: ino=258 key_off=13303808 type=1 offset=102400
+              compress=0 encrypt=0 other=0
+
+Printing out the leaf items (when tree-checker hit an item with non-zero
+offset) and we found:
+[   63.540541]  item 114 key (258 EXTENT_DATA 13201408) itemoff 10188 itemsize 53
+[   63.540549]          generation 22 type 2
+[   63.540554]          extent data disk bytenr 4566134784 nr 110592
+[   63.540558]          extent data offset 0 nr 102400 ram 110592
+[   63.540613]          extent compression 0
+[   63.540619]  item 115 key (258 EXTENT_DATA 13303808) itemoff 10135 itemsize 53
+[   63.540644]          generation 22 type 1
+[   63.540649]          extent data disk bytenr 4566134784 nr 110592
+[   63.540744]          extent data offset 102400 nr 8192 ram 110592
+[   63.540750]          extent compression 0
+
+Looking for the two 13201408 and 13303808 items in get_new_location:
+
+get_new_location() search keys:
+  ino=258 key_off=13201408 offset=0 type=1
+  ...
+
+We didn't see 13303808 item at all during get_new_location.
+get_new_location searched for key_off=13201408 (the cluster boundary) and
+found offset=0.  It never searched for 13303808.
+
+=== Why this happens ===
+
+During the MOVE_DATA_EXTENTS phase:
+
+1. prealloc_file_extent_cluster() inserts one PREALLOC per cluster
+   boundary (via insert_prealloc_file_extent), all with offset=0.
+
+2. relocate_one_folio() reads source data and marks pages dirty.  On
+   writeback, ordered extents are created.  When an ordered extent
+   completes, insert_ordered_extent_file_extent() calls
+   insert_reserved_file_extent(), which calls btrfs_drop_extents() to
+   carve out the written range from the PREALLOC, splitting it.  The
+   right-hand piece (REG) gets the ordered extent's offset into the
+   shared disk_bytenr -- which can be non-zero.
+
+3. The pre-write tree-checker fires when the modified leaf is written
+   to disk, seeing the REG item with offset!=0.  This is the false
+   positive.
+
+4. btrfs_wait_ordered_range() waits for all ordered extents to finish,
+   then the stage switches to UPDATE_DATA_PTRS.  replace_file_extents()
+   calls get_new_location(src_disk_bytenr) for each source extent.
+   The search key is:
+
+       bytenr -= reloc_block_group_start;
+       btrfs_lookup_file_extent(..., ino, bytenr, 0);
+
+   This is the cluster boundary -- the start of an extent, where offset
+   is always 0.  get_new_location never searches the mid-range keys
+   where the split pieces live.
+
+== Advice Needed ==
+
+If my analysis is correct, what do you think is the best way to fix this
+problem? Or am I missing something somewhere?
+
+Thanks in advance,
+Teng Liu
 

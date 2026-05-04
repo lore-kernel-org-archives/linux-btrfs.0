@@ -1,99 +1,85 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pf1-f180.google.com (mail-pf1-f180.google.com [209.85.210.180])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C2FA273D6D;
-	Mon,  4 May 2026 16:10:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 302403246EF
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 May 2026 21:34:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.180
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777911003; cv=none; b=IX2TSWq01hNzeEw/+ZuvWrWS5w8Rw7EcwMsDJvzd4TdH0cXi129UKBcg7p0aePhWT0VJ4NP/iu7NIE9MMVe0LTs5Qpi/tOF1roaOH0NTfvVXpNpBC0jhS2eOBejk4GQdSsfc63gM3BYM8Jajtba6WEuMQBx+jIB8vDhj2Wct9+g=
+	t=1777930443; cv=none; b=HFGbGL62Zn8R5ab14BoIIcWI7XiIbz8r3ha5J35qBJUn7QMcTajIJhh+1B8Jz0ObC0AKXHHWf7mpPml8eE7rPTKsIXaqBLsL9dZzKIc803EJ3+Ipnp3OgNU+DGLqGawI/fl4n53mZGj7v1AtAzCfWzvJx/LqbPaYzC2SrJ0+i1w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777911003; c=relaxed/simple;
-	bh=pFViZUbSECeFrklIzjDeoJmMCgBEQRGxLhga3mht244=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=XWugKvb13e5GBbtNUqwDMN+FGe1B6MEoXMpHvWqWP5DvkE+ZeCX9KI4fb6oq080Rhk2AM97FaoU+i8Z3TLDWhP72cKpz/fJnNZpzkjskP66vfZORtDssi3hz4uDKeFR8SEv8wPeYomin6tkuGcR6YHY57yw6e0+AdhzKdYVs9JQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dolOvtHK; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1777930443; c=relaxed/simple;
+	bh=Jn8FgjA0d1vGqR20a/QvuBZyMfrWcbFg/VyROsUG8G8=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=teeKdqHGu7mxX7MsNvVidAgyC8OqQch+Nagd1D9rkK7xvipDVccC9w4seC59IIVNPgf4IvbFZvRV1vUxIG7WKQVFjcsbbsaS6V9ABlTnuGrgokvlRKx6xbZBExngBUo58EdHjf+7yf+DOX2YMhUBfb5rfAE1Z4smF0fjGvO4gGI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=LDVogyXo; arc=none smtp.client-ip=209.85.210.180
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dolOvtHK"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5BBB6C2BCB8;
-	Mon,  4 May 2026 16:10:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1777911003;
-	bh=pFViZUbSECeFrklIzjDeoJmMCgBEQRGxLhga3mht244=;
-	h=From:To:Cc:Subject:Date:From;
-	b=dolOvtHKVo9VOd0AuchkmSrmE0ILaGRYvZ1P3IOXy9oLa48sx0tfnGWNd6LTppsM3
-	 lkgsXoJarbleUtNNhrKbSf5HYJFXs/RisNTGGkwbyY58/25MLLWhXsyKAOKEo1N79H
-	 DfHr1uhPALgGGhCr0L4o9+VuXG+6vR8Q/M8PJr9Bg/AI6u6LhUf2caXkwKskuhLkSK
-	 h+ZoNUY1kmslH9UwqdXS0I9YBPoUWJi1xY9fvdiEvxtH921TA46oBO9HlI0gkl+ugp
-	 0TYXy3j4qDGxiVQXWwUaW1wFrni9MZNutr6GTutJ08uh36VV36It/kv8e18rFNwpwQ
-	 bX/DDf2G3TY/A==
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org,
-	Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: add commit IDs for kernel fixes already merged
-Date: Mon,  4 May 2026 17:09:57 +0100
-Message-ID: <db06887383a2a3d34801de9fb180241157177204.1777910956.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="LDVogyXo"
+Received: by mail-pf1-f180.google.com with SMTP id d2e1a72fcca58-836ebdeb969so666163b3a.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2026 14:34:01 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1777930441; x=1778535241; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:cc:to:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=Jn8FgjA0d1vGqR20a/QvuBZyMfrWcbFg/VyROsUG8G8=;
+        b=LDVogyXou4U2PIwrejxjBj2+SFWuP9j/gdJwWRoLIWYVBxm4cRsvxO1K615iixaH/w
+         89sKsnf0I7mfWUt0DyEcvtInfznmUrTXuOELLLDRW0xsZajV5WaxnSkvRLokW0ub8KvX
+         UR+R0+bdqxAj2dfnJL/nKISl3ky1dfHUI223W99JChEoHZmir3zHIaY5VQV/qyr8+ex+
+         0se/2Ckmd8BraUYo7JRGcfNw1Fb+A8aEIbPuztBcGoEKj60xWbMY6/6gbr6wB+Y2CiqF
+         50BMM+lWyb55ajnYLHjUxGWf5Jq9ijQKn2ZD9dXfYyTXcK7/5VZM7klN2vXb1g7lOdWb
+         m2+w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1777930441; x=1778535241;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:cc:to:subject:user-agent:mime-version:date:message-id
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=Jn8FgjA0d1vGqR20a/QvuBZyMfrWcbFg/VyROsUG8G8=;
+        b=WlCojVrz0Ze8goFgGFCEMbcu7EuCuCuQ3/2yQbB2pJu9XOJ0kUL2gK1V7wZiqS3kZ3
+         wF6o0/XQE7J5ZchaqZtO1Rw0Ao5B0mC0KgQDLpCPXTeKZUZ5Fyodd3SJ0So8vp4ekhzl
+         44W5QopLRqHbLox4gjoVwRU97UAxXNf9IiVz5HChjzz03LsCElppE2/Qlbd5XmPDJlUz
+         a48UY/wXXz3zliK2xHi1AA7NIPzMibOjB/26Ei/HMdXY/YQA85zvFqV8yDMFLzze6Vtc
+         WbK4hOV78ocSAYcXSPLV31XhYWFwXVXkGj7dEdI4DaDHkRaKEq70aa7gqWt1OpdbYrAj
+         hWcg==
+X-Gm-Message-State: AOJu0YyIypap0584bb5Rkpr+efpDpaode4tQrNk0h/fzaStxuNkK0xxu
+	GHr1haupZW54G5yjqsXP1liNRFqpHW4M8LClIfCSHDHjs1xbuH1jwVt/
+X-Gm-Gg: AeBDiet0DUEQmu5hV8fMYsJ8gcV9GGDE8eZGuvLn40Bimyi9ENmkiYf5Jm5wSDVR4Us
+	6zSyADTQ20uvFpwvgibPlxt+xOhRSLm2GItWvVvRQnxI/8BcPDfotmsNVFrIxN17Y7ZYv75TGmg
+	b6322LvaMgYwFxJSkh3tFy2emqOOAWK5avQjBYS5YTwwT85w82xah+fhN6ihfMvGwL3llWGLYE6
+	d3uT4QxmXbwZBYZ8kF/Sz1+yeZutzd319HoUmYuWrNmPkSWVnAoZ/I0Y+ZRy9+qdw6HD/DvV9gX
+	PELfgtFWvmUSisht1/PseEXBhw/EZadGbCgAROzzZu/7Fy+mmshqHKnRnXAU7wkGzO1MWLQThky
+	ajnKsKUk51lgwOyMxybc5mrN6ChRHs6liKfe0KhvI9amquxtPR2Zot5PQlqloefddCdPN/V7YH9
+	zoiA/e6aRgbHfQNfPsovOMCL8dik2/3A0dgmvCxbo=
+X-Received: by 2002:a05:6a00:99b:b0:82f:7ba2:e120 with SMTP id d2e1a72fcca58-8352d202693mr10225785b3a.28.1777930441374;
+        Mon, 04 May 2026 14:34:01 -0700 (PDT)
+Received: from [192.168.50.119] ([116.87.14.48])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-8394461476esm71829b3a.22.2026.05.04.14.33.58
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 04 May 2026 14:34:00 -0700 (PDT)
+Message-ID: <def21d6d-6302-4989-9585-22122716f2e8@gmail.com>
+Date: Tue, 5 May 2026 05:33:57 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] fstests: add commit IDs for kernel fixes already merged
+To: fdmanana@kernel.org, fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+References: <db06887383a2a3d34801de9fb180241157177204.1777910956.git.fdmanana@suse.com>
+Content-Language: en-US
+From: Anand Jain <anajain.sg@gmail.com>
+In-Reply-To: <db06887383a2a3d34801de9fb180241157177204.1777910956.git.fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-From: Filipe Manana <fdmanana@suse.com>
 
-A few fixes were merged into Linus' tree, so add their commit IDs in the
-respective test cases.
+looks good
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/343   | 2 +-
- tests/btrfs/344   | 4 ++--
- tests/generic/792 | 2 +-
- 3 files changed, 4 insertions(+), 4 deletions(-)
+Reviewed-by: Anand Jain <asj@kernel.org>
 
-diff --git a/tests/btrfs/343 b/tests/btrfs/343
-index 53e6028b..fd38c010 100755
---- a/tests/btrfs/343
-+++ b/tests/btrfs/343
-@@ -13,7 +13,7 @@ _begin_fstest auto quick compress
- _require_scratch
- _require_btrfs_command inspect-internal dump-tree
- 
--_fixed_by_kernel_commit xxxxxxxxxxxx \
-+_fixed_by_kernel_commit 883adb6dcff0 \
- 	"btrfs: fix the inline compressed extent check in inode_need_compress()"
- 
- _scratch_mkfs >>$seqres.full 2>&1
-diff --git a/tests/btrfs/344 b/tests/btrfs/344
-index 932b20d4..6e5d38d6 100755
---- a/tests/btrfs/344
-+++ b/tests/btrfs/344
-@@ -13,8 +13,8 @@ _begin_fstest auto quick compress
- _require_scratch
- _require_btrfs_command inspect-internal dump-tree
- 
--_fixed_by_kernel_commit xxxxxxxxxxxx \
--	"btrfs: do not mark inode incompressible after inline attempt failed"
-+_fixed_by_kernel_commit 2e0e3716c7b6 \
-+	"btrfs: do not mark inode incompressible after inline attempt fails"
- 
- _scratch_mkfs >>$seqres.full 2>&1
- 
-diff --git a/tests/generic/792 b/tests/generic/792
-index 892ca2d8..d1896728 100755
---- a/tests/generic/792
-+++ b/tests/generic/792
-@@ -25,7 +25,7 @@ _require_scratch
- _require_test_program unlink-fsync
- _require_dm_target flakey
- 
--_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
-+_fixed_by_fs_commit btrfs 999757231c49 \
- 	"btrfs: fix missing last_unlink_trans update when removing a directory"
- 
- _scratch_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
--- 
-2.47.2
 

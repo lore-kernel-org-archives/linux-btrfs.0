@@ -1,464 +1,137 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 09E5635A3BF
-	for <linux-btrfs@vger.kernel.org>; Mon,  4 May 2026 10:11:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C7C223DA7F9
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 May 2026 13:22:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777889464; cv=none; b=WHyFGH0Y/l0gu5jHrhyC8qDsvwvrWEcpp8hl9G+Zk2GAgZmDvfXrEMZjJQHIUP+Ud53TW1Yl4fWqHWCaSzyZUipVCZdsyj2FXBmae86cS1IkQIorh77p1qJORwKJ+uQBcT+JXYJSDlj0cWUfG84wqNvxeLqUMHFsT4E+pG8Iyvo=
+	t=1777900931; cv=none; b=ZYV5lqSE/n4XhnVSIPpD4R/1u2KxicT5v6xIple8Ye8IUk8S8VRDnrbGQWp3qMbNA2LGCg8siZr8EtOrLrzKHYUmfTrGzj9otFAWykpnchjSj4LnZc6DUJ/fa239C3kx44vGobO2OkyaPO5jZ+55IWgI1fXg1iZhK7/vKJSIeuI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777889464; c=relaxed/simple;
-	bh=zPbEKSIFBK/OdCYeXzqAX8VZ1fj7iqmUge6wNAIkJRY=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=FYLRL50+wp02+rOJ8ddY3U5at5SFiaYAy+wRvb4BbgiEXjbvKqmjNOmXEolRVg0PlZbwsMyO0/ydgKelQQRaOsQVRNwxoyp7YvlPvWRs4sStV0yLdRLfLjlDQ8PZ+BR1RebJ2Z9HuWMfwr8t4OR/hGwjAXp7WmSoeWe7SGhIvSM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=ENcE2C4L; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=mQjQ+b6U; arc=none smtp.client-ip=170.10.133.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1777900931; c=relaxed/simple;
+	bh=Tdq+h/suO3Vlav7HiQYf+S/hyy6gXl0NudoepIYywuU=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=oOdjGRNCTzWchCh+tizlolwqiiL6IZzIeU/U4FAajbZ8ScpMWVMfnw/2YypeTZLWm7MrUix4Rgwn4CPOonG53WU7w/Hiyw+4hUKTACIaYdZ6Nz6bxYEvam6ouPbcM7segm+74aRx4P4YsxMOPzxEA4SGUJ3L48cBZQGTbOE+qfE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=SvLbNORe; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=3/D2yRYX; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=SvLbNORe; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=3/D2yRYX; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="ENcE2C4L";
-	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="mQjQ+b6U"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1777889460;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="SvLbNORe";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="3/D2yRYX";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="SvLbNORe";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="3/D2yRYX"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 8C6AD5C570;
+	Mon,  4 May 2026 13:22:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1777900927;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=81kZB1lQDdoEwhatA9igFuYifA9DMVlrGv5S79TABrk=;
-	b=ENcE2C4LZBKg7XsBvt6cEQN9fxsxboY6AMLi+Ef4yGHfuck+anmuySjVmmHx6Lwr7zB1Kc
-	In2PT/TaBbG1A6msr2rOYPwJkgYvP3Y1EBB8bbyEXphOVIemcbLY4AnI5thkLuwL+hYtGZ
-	WBM4BvYwBHIqBjp1AWc3M2liizuTNG0=
-Received: from mail-wr1-f69.google.com (mail-wr1-f69.google.com
- [209.85.221.69]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-688-IYSTbbXJN262tMGgF0Xawg-1; Mon, 04 May 2026 06:10:58 -0400
-X-MC-Unique: IYSTbbXJN262tMGgF0Xawg-1
-X-Mimecast-MFC-AGG-ID: IYSTbbXJN262tMGgF0Xawg_1777889458
-Received: by mail-wr1-f69.google.com with SMTP id ffacd0b85a97d-44a71109b94so2141429f8f.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2026 03:10:58 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redhat.com; s=google; t=1777889457; x=1778494257; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=81kZB1lQDdoEwhatA9igFuYifA9DMVlrGv5S79TABrk=;
-        b=mQjQ+b6U9gzcAlgcV83IaUcNbkv1b69axgbwZ8xAd0jP5uuYP9f6IqnAvgsAKlWs+l
-         fbU1LSWaDFVYNnbtDNaAOWdm91gd6smCNw0EzeA36k8P0SoSWTNFm0p3qFGTsZyjVMCL
-         V9prsYK6BoQkO/I9GRjrtMN15PoVQjw1MmEcsEkUVEkirh8uvldwQD/ULmxt6lhiZYdS
-         JP69KSuDQGWcC27lpgTtv18/pbmriBX9c5hdHSY9tsU7CnGtLSygFvPB+5OlgXqYiDUm
-         XQre9JifCQMm3PZu3c1wgzbatTVeoiUffPQOXsi34yBSzsTGwPTYb0ofu5IoKp8KGPod
-         iyTA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1777889457; x=1778494257;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=81kZB1lQDdoEwhatA9igFuYifA9DMVlrGv5S79TABrk=;
-        b=Xb4qAJ35o/aSNP+inumNuk+8RRTLQ3pksB+i6OsnkwwQ/M5pS8RjYCqKZmOjMPhxTH
-         WkGj9RooCKxhfCwmoTiJ2ZX4tTPHLzk4G6/0VlC3fGPCf8Y22C9ovgYHXhOVQiY/w/kR
-         R4Xq1AyRj+ju3he3Tony5MqFyu097SZMHd2de6Noe4/6xNDCaSZzeY1TFzWqsZJf3+Xi
-         q4gCIYvYcRuYu11NhREo52jupzliXYcflxi0F+eJJFIqZ3uLDVhiCosnVRJb/v0L82L/
-         VUDRBzkGMXlY1xRmT5kVQKUVsrhLM5sPVRZny61k7l0ciH1MoK0LN0xPsLmtglGy1r/X
-         nVoQ==
-X-Forwarded-Encrypted: i=1; AFNElJ93IsqB7pra47aCDwp6O6qpmB5lPXGqzzxFs9GSTFkOVSJjVovPinHCKJfdwa+eWhNNV+03WF7w2RLebQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxtVq8/TAR0ApKShXUvlUEH2ccRra50nUOy5DWfvpvU9kqgg4/g
-	xOyOAdWU3QO4Eydw4Ud08Ti7D2r20VgqB8qHS0w3YrrolKKrgstkSVTzyG+s2GlWlz37ZXCk9NY
-	xUu0BVHXIiLLkzzul+s9rr4eYslaY50HXJJG3YZIBdhmVGVokpQTuSUcjeJnD90LE
-X-Gm-Gg: AeBDietz6Fh6+zSSmaM/qrXtX2JbDRrYZ1MK0MCR2RF/ffdTT5Tq08kktvU3xwbC/Oz
-	S1nBYb09DtdLtsVq9Gc9CKa1pwZ+fEKkIz5vLWrGfL1ozPjPP9j65eim9TMOl7Q3NtR/E22oYkr
-	VQVIbumGQ53BDdN2iTFb3akf29z3QJSr91MxsRI4iduUwK3YguIwE19+Rea8kFGb3qS+JFJjLwt
-	baoPehDgtzLWBSYoY5gGhHg5EaWRODqjVPZew5dudPZi9tbs7TanI9qZRSa/mQyaGkqiFBsMQON
-	9ESXHgYxkHsojJLt7kpgRbqhGcBU7KSMplwYK5DTP73o6Eols0jX7YVyO4HfE6PvoPkrwVe9zcs
-	84EDWHJIyxiLCmn76fu7btQDwq/ESDc59
-X-Received: by 2002:a05:6000:22c4:b0:441:36b7:725f with SMTP id ffacd0b85a97d-44bb33f1b4emr15775222f8f.5.1777889457462;
-        Mon, 04 May 2026 03:10:57 -0700 (PDT)
-X-Received: by 2002:a05:6000:22c4:b0:441:36b7:725f with SMTP id ffacd0b85a97d-44bb33f1b4emr15775159f8f.5.1777889456963;
-        Mon, 04 May 2026 03:10:56 -0700 (PDT)
-Received: from [10.211.10.91] ([213.147.98.98])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-44a8ea7cf6asm25084303f8f.8.2026.05.04.03.10.53
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 04 May 2026 03:10:54 -0700 (PDT)
-Message-ID: <7e42faea-9f55-4722-a426-94be7fc3a49b@redhat.com>
-Date: Mon, 4 May 2026 04:11:30 -0600
+	bh=lO/YDNTqQaT9U2SKGCmry2HSWQGvPppoXAhTs5V1T+0=;
+	b=SvLbNOReopfuBqWVsK9Ymd5XEWkyYBxh/1wdnecRjRBf91h9jST9st9fQi4KF3Er7DyYoN
+	1D6QhIe1IK2JEReD0Iu/8LtUm1uAuZflo1Kds5jQJZ9LgxNQ8XxrMCwGLf0OWqwrQHYGXf
+	I4Ps/EHdyhTcemZFb0qeKhPy8DZY3l0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1777900927;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=lO/YDNTqQaT9U2SKGCmry2HSWQGvPppoXAhTs5V1T+0=;
+	b=3/D2yRYXO0brrogu9yhBCYN/QKnRRw7IyoHcJTza5sGovEdIpmYZ4B9PXGDsWjMcOtjpZ5
+	SIgUymZHCQ3diZAw==
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=SvLbNORe;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b="3/D2yRYX"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1777900927;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=lO/YDNTqQaT9U2SKGCmry2HSWQGvPppoXAhTs5V1T+0=;
+	b=SvLbNOReopfuBqWVsK9Ymd5XEWkyYBxh/1wdnecRjRBf91h9jST9st9fQi4KF3Er7DyYoN
+	1D6QhIe1IK2JEReD0Iu/8LtUm1uAuZflo1Kds5jQJZ9LgxNQ8XxrMCwGLf0OWqwrQHYGXf
+	I4Ps/EHdyhTcemZFb0qeKhPy8DZY3l0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1777900927;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=lO/YDNTqQaT9U2SKGCmry2HSWQGvPppoXAhTs5V1T+0=;
+	b=3/D2yRYXO0brrogu9yhBCYN/QKnRRw7IyoHcJTza5sGovEdIpmYZ4B9PXGDsWjMcOtjpZ5
+	SIgUymZHCQ3diZAw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 81DEA593A3;
+	Mon,  4 May 2026 13:22:07 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id wOaFH3+d+GmUEgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 04 May 2026 13:22:07 +0000
+Date: Mon, 4 May 2026 15:22:06 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/2] btrfs: simple cleanup around
+Message-ID: <20260504132206.GA2558453@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1777801546.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v5 11/14] selftests/mm: remove READ_ONLY_THP_FOR_FS in
- khugepaged
-To: Zi Yan <ziy@nvidia.com>, Andrew Morton <akpm@linux-foundation.org>,
- David Hildenbrand <david@kernel.org>,
- "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- Song Liu <songliubraving@fb.com>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
- Alexander Viro <viro@zeniv.linux.org.uk>,
- Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- Lorenzo Stoakes <ljs@kernel.org>, Baolin Wang
- <baolin.wang@linux.alibaba.com>, "Liam R. Howlett"
- <Liam.Howlett@oracle.com>, Ryan Roberts <ryan.roberts@arm.com>,
- Dev Jain <dev.jain@arm.com>, Barry Song <baohua@kernel.org>,
- Lance Yang <lance.yang@linux.dev>, Vlastimil Babka <vbabka@kernel.org>,
- Mike Rapoport <rppt@kernel.org>, Suren Baghdasaryan <surenb@google.com>,
- Michal Hocko <mhocko@suse.com>, Shuah Khan <shuah@kernel.org>,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
- linux-kselftest@vger.kernel.org
-References: <20260429152924.727124-1-ziy@nvidia.com>
- <20260429153538.727855-7-ziy@nvidia.com>
-Content-Language: en-US
-From: Nico Pache <npache@redhat.com>
-In-Reply-To: <20260429153538.727855-7-ziy@nvidia.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1777801546.git.wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCPT_COUNT_TWO(0.00)[2];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	TO_DN_SOME(0.00)[];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,twin.jikos.cz:mid,suse.com:email,suse.cz:dkim,suse.cz:replyto];
+	FROM_HAS_DN(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.cz:dkim,suse.cz:replyto,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
+X-Rspamd-Queue-Id: 8C6AD5C570
+X-Spam-Flag: NO
+X-Spam-Score: -4.21
+X-Spam-Level: 
 
-
-
-On 4/29/26 9:35 AM, Zi Yan wrote:
-> Change the requirement to a file system with large folio support and the
-> supported order needs to include PMD_ORDER.
+On Sun, May 03, 2026 at 07:17:49PM +0930, Qu Wenruo wrote:
+> The first patch moves and unexport the function.
 > 
-> Also add tests of opening a file with read write permission and populating
-> folios with writes. Reuse the XFS image from split_huge_page_test.
+> The second one open-codes the function into the only caller, and
+> replaces remove the need for @offset/@length usage.
 > 
-> Signed-off-by: Zi Yan <ziy@nvidia.com>
-> ---
->   tools/testing/selftests/mm/khugepaged.c   | 131 +++++++++++++++-------
->   tools/testing/selftests/mm/run_vmtests.sh |  12 +-
->   2 files changed, 102 insertions(+), 41 deletions(-)
-> 
-> diff --git a/tools/testing/selftests/mm/khugepaged.c b/tools/testing/selftests/mm/khugepaged.c
-> index a6bb9d50363d2..80b913185c643 100644
-> --- a/tools/testing/selftests/mm/khugepaged.c
-> +++ b/tools/testing/selftests/mm/khugepaged.c
-> @@ -49,7 +49,8 @@ struct mem_ops {
->   	const char *name;
->   };
->   
-> -static struct mem_ops *file_ops;
-> +static struct mem_ops *read_only_file_ops;
-> +static struct mem_ops *read_write_file_ops;
->   static struct mem_ops *anon_ops;
->   static struct mem_ops *shmem_ops;
->   
-> @@ -112,7 +113,8 @@ static void restore_settings(int sig)
->   static void save_settings(void)
->   {
->   	printf("Save THP and khugepaged settings...");
-> -	if (file_ops && finfo.type == VMA_FILE)
-> +	if ((read_only_file_ops || read_write_file_ops) &&
-> +	    finfo.type == VMA_FILE)
->   		thp_set_read_ahead_path(finfo.dev_queue_read_ahead_path);
->   	thp_save_settings();
->   
-> @@ -364,11 +366,14 @@ static bool anon_check_huge(void *addr, int nr_hpages)
->   	return check_huge_anon(addr, nr_hpages, hpage_pmd_size);
->   }
->   
-> -static void *file_setup_area(int nr_hpages)
-> +static void *file_setup_area_common(int nr_hpages, bool read_only)
->   {
->   	int fd;
->   	void *p;
->   	unsigned long size;
-> +	int open_opt = read_only ? O_RDONLY : O_RDWR;
-> +	int mmap_prot = read_only ? PROT_READ : (PROT_READ | PROT_WRITE);
-> +	int mmap_opt = read_only ? MAP_PRIVATE : MAP_SHARED;
->   
->   	unlink(finfo.path);  /* Cleanup from previous failed tests */
->   	printf("Creating %s for collapse%s...", finfo.path,
-> @@ -399,14 +404,15 @@ static void *file_setup_area(int nr_hpages)
->   	munmap(p, size);
->   	success("OK");
->   
-> -	printf("Opening %s read only for collapse...", finfo.path);
-> -	finfo.fd = open(finfo.path, O_RDONLY, 777);
-> +	printf("Opening %s %s for collapse...", finfo.path,
-> +	       read_only ? "read only" : "read-write");
-> +	finfo.fd = open(finfo.path, open_opt, 777);
->   	if (finfo.fd < 0) {
->   		perror("open()");
->   		exit(EXIT_FAILURE);
->   	}
-> -	p = mmap(BASE_ADDR, size, PROT_READ,
-> -		 MAP_PRIVATE, finfo.fd, 0);
-> +	p = mmap(BASE_ADDR, size, mmap_prot,
-> +		 mmap_opt, finfo.fd, 0);
->   	if (p == MAP_FAILED || p != BASE_ADDR) {
->   		perror("mmap()");
->   		exit(EXIT_FAILURE);
-> @@ -418,6 +424,16 @@ static void *file_setup_area(int nr_hpages)
->   	return p;
->   }
->   
-> +static void *file_setup_read_only_area(int nr_hpages)
-> +{
-> +	return file_setup_area_common(nr_hpages, /* read_only= */ true);
-> +}
-> +
-> +static void *file_setup_read_write_area(int nr_hpages)
-> +{
-> +	return file_setup_area_common(nr_hpages, /* read_only= */ false);
-> +}
-> +
->   static void file_cleanup_area(void *p, unsigned long size)
->   {
->   	munmap(p, size);
-> @@ -425,14 +441,25 @@ static void file_cleanup_area(void *p, unsigned long size)
->   	unlink(finfo.path);
->   }
->   
-> -static void file_fault(void *p, unsigned long start, unsigned long end)
-> +static void file_fault_common(void *p, unsigned long start, unsigned long end,
-> +		int madv_ops)
->   {
-> -	if (madvise(((char *)p) + start, end - start, MADV_POPULATE_READ)) {
-> +	if (madvise(((char *)p) + start, end - start, madv_ops)) {
->   		perror("madvise(MADV_POPULATE_READ");
->   		exit(EXIT_FAILURE);
->   	}
->   }
->   
-> +static void file_fault_read(void *p, unsigned long start, unsigned long end)
-> +{
-> +	file_fault_common(p, start, end, MADV_POPULATE_READ);
-> +}
-> +
-> +static void file_fault_write(void *p, unsigned long start, unsigned long end)
-> +{
-> +	file_fault_common(p, start, end, MADV_POPULATE_WRITE);
-> +}
-> +
->   static bool file_check_huge(void *addr, int nr_hpages)
->   {
->   	switch (finfo.type) {
-> @@ -488,10 +515,18 @@ static struct mem_ops __anon_ops = {
->   	.name = "anon",
->   };
->   
-> -static struct mem_ops __file_ops = {
-> -	.setup_area = &file_setup_area,
-> +static struct mem_ops __read_only_file_ops = {
-> +	.setup_area = &file_setup_read_only_area,
->   	.cleanup_area = &file_cleanup_area,
-> -	.fault = &file_fault,
-> +	.fault = &file_fault_read,
-> +	.check_huge = &file_check_huge,
-> +	.name = "file",
-> +};
-> +
-> +static struct mem_ops __read_write_file_ops = {
-> +	.setup_area = &file_setup_read_write_area,
-> +	.cleanup_area = &file_cleanup_area,
-> +	.fault = &file_fault_write,
->   	.check_huge = &file_check_huge,
->   	.name = "file",
->   };
-> @@ -504,6 +539,18 @@ static struct mem_ops __shmem_ops = {
->   	.name = "shmem",
->   };
->   
-> +static bool is_tmpfs(struct mem_ops *ops)
-> +{
-> +	return (ops == &__read_only_file_ops ||
-> +		ops == &__read_write_file_ops) &&
-> +	       finfo.type == VMA_SHMEM;
-> +}
-> +
-> +static bool is_anon(struct mem_ops *ops)
-> +{
-> +	return ops == &__anon_ops;
-> +}
-> +
->   static void __madvise_collapse(const char *msg, char *p, int nr_hpages,
->   			       struct mem_ops *ops, bool expect)
->   {
-> @@ -512,6 +559,10 @@ static void __madvise_collapse(const char *msg, char *p, int nr_hpages,
->   
->   	printf("%s...", msg);
->   
-> +	/* read&write file collapse always fail */
-> +	if (!is_tmpfs(ops) && ops == &__read_write_file_ops)
-> +		expect = false;
-> +
->   	/*
->   	 * Prevent khugepaged interference and tests that MADV_COLLAPSE
->   	 * ignores /sys/kernel/mm/transparent_hugepage/enabled
-> @@ -578,6 +629,10 @@ static bool wait_for_scan(const char *msg, char *p, int nr_hpages,
->   static void khugepaged_collapse(const char *msg, char *p, int nr_hpages,
->   				struct mem_ops *ops, bool expect)
->   {
-> +	/* read&write file collapse always fail */
-> +	if (!is_tmpfs(ops) && ops == &__read_write_file_ops)
-> +		expect = false;
-> +
->   	if (wait_for_scan(msg, p, nr_hpages, ops)) {
->   		if (expect)
->   			fail("Timeout");
-> @@ -612,16 +667,6 @@ static struct collapse_context __madvise_context = {
->   	.name = "madvise",
->   };
->   
-> -static bool is_tmpfs(struct mem_ops *ops)
-> -{
-> -	return ops == &__file_ops && finfo.type == VMA_SHMEM;
-> -}
-> -
-> -static bool is_anon(struct mem_ops *ops)
-> -{
-> -	return ops == &__anon_ops;
-> -}
-> -
->   static void alloc_at_fault(void)
->   {
->   	struct thp_settings settings = *thp_current_settings();
-> @@ -1097,8 +1142,8 @@ static void usage(void)
->   	fprintf(stderr, "\t<context>\t: [all|khugepaged|madvise]\n");
->   	fprintf(stderr, "\t<mem_type>\t: [all|anon|file|shmem]\n");
->   	fprintf(stderr, "\n\t\"file,all\" mem_type requires [dir] argument\n");
-> -	fprintf(stderr, "\n\t\"file,all\" mem_type requires kernel built with\n");
-> -	fprintf(stderr,	"\tCONFIG_READ_ONLY_THP_FOR_FS=y\n");
-> +	fprintf(stderr, "\n\t\"file,all\" mem_type requires a file system\n");
-> +	fprintf(stderr,	"\twith large folio support (order >= PMD order)\n");
->   	fprintf(stderr, "\n\tif [dir] is a (sub)directory of a tmpfs mount, tmpfs must be\n");
->   	fprintf(stderr,	"\tmounted with huge=advise option for khugepaged tests to work\n");
->   	fprintf(stderr,	"\n\tSupported Options:\n");
-> @@ -1154,20 +1199,22 @@ static void parse_test_type(int argc, char **argv)
->   		usage();
->   
->   	if (!strcmp(buf, "all")) {
-> -		file_ops =  &__file_ops;
-> +		read_only_file_ops =  &__read_only_file_ops;
-> +		read_write_file_ops =  &__read_write_file_ops;
->   		anon_ops = &__anon_ops;
->   		shmem_ops = &__shmem_ops;
->   	} else if (!strcmp(buf, "anon")) {
->   		anon_ops = &__anon_ops;
->   	} else if (!strcmp(buf, "file")) {
-> -		file_ops =  &__file_ops;
-> +		read_only_file_ops =  &__read_only_file_ops;
-> +		read_write_file_ops =  &__read_write_file_ops;
->   	} else if (!strcmp(buf, "shmem")) {
->   		shmem_ops = &__shmem_ops;
->   	} else {
->   		usage();
->   	}
->   
-> -	if (!file_ops)
-> +	if (!read_only_file_ops && !read_write_file_ops)
->   		return;
->   
->   	if (argc != 2)
-> @@ -1239,37 +1286,43 @@ int main(int argc, char **argv)
->   	} while (0)
->   
->   	TEST(collapse_full, khugepaged_context, anon_ops);
-> -	TEST(collapse_full, khugepaged_context, file_ops);
-> +	TEST(collapse_full, khugepaged_context, read_only_file_ops);
-> +	TEST(collapse_full, khugepaged_context, read_write_file_ops);
->   	TEST(collapse_full, khugepaged_context, shmem_ops);
->   	TEST(collapse_full, madvise_context, anon_ops);
-> -	TEST(collapse_full, madvise_context, file_ops);
-> +	TEST(collapse_full, madvise_context, read_only_file_ops);
-> +	TEST(collapse_full, madvise_context, read_write_file_ops);
->   	TEST(collapse_full, madvise_context, shmem_ops);
->   
->   	TEST(collapse_empty, khugepaged_context, anon_ops);
->   	TEST(collapse_empty, madvise_context, anon_ops);
->   
->   	TEST(collapse_single_pte_entry, khugepaged_context, anon_ops);
-> -	TEST(collapse_single_pte_entry, khugepaged_context, file_ops);
-> +	TEST(collapse_single_pte_entry, khugepaged_context, read_only_file_ops);
-> +	TEST(collapse_single_pte_entry, khugepaged_context, read_write_file_ops);
->   	TEST(collapse_single_pte_entry, khugepaged_context, shmem_ops);
->   	TEST(collapse_single_pte_entry, madvise_context, anon_ops);
-> -	TEST(collapse_single_pte_entry, madvise_context, file_ops);
-> +	TEST(collapse_single_pte_entry, madvise_context, read_only_file_ops);
-> +	TEST(collapse_single_pte_entry, madvise_context, read_write_file_ops);
->   	TEST(collapse_single_pte_entry, madvise_context, shmem_ops);
->   
->   	TEST(collapse_max_ptes_none, khugepaged_context, anon_ops);
-> -	TEST(collapse_max_ptes_none, khugepaged_context, file_ops);
-> +	TEST(collapse_max_ptes_none, khugepaged_context, read_only_file_ops);
-> +	TEST(collapse_max_ptes_none, khugepaged_context, read_write_file_ops);
->   	TEST(collapse_max_ptes_none, madvise_context, anon_ops);
-> -	TEST(collapse_max_ptes_none, madvise_context, file_ops);
-> +	TEST(collapse_max_ptes_none, madvise_context, read_only_file_ops);
-> +	TEST(collapse_max_ptes_none, madvise_context, read_write_file_ops);
->   
->   	TEST(collapse_single_pte_entry_compound, khugepaged_context, anon_ops);
-> -	TEST(collapse_single_pte_entry_compound, khugepaged_context, file_ops);
-> +	TEST(collapse_single_pte_entry_compound, khugepaged_context, read_only_file_ops);
->   	TEST(collapse_single_pte_entry_compound, madvise_context, anon_ops);
-> -	TEST(collapse_single_pte_entry_compound, madvise_context, file_ops);
-> +	TEST(collapse_single_pte_entry_compound, madvise_context, read_only_file_ops);
->   
->   	TEST(collapse_full_of_compound, khugepaged_context, anon_ops);
-> -	TEST(collapse_full_of_compound, khugepaged_context, file_ops);
-> +	TEST(collapse_full_of_compound, khugepaged_context, read_only_file_ops);
->   	TEST(collapse_full_of_compound, khugepaged_context, shmem_ops);
->   	TEST(collapse_full_of_compound, madvise_context, anon_ops);
-> -	TEST(collapse_full_of_compound, madvise_context, file_ops);
-> +	TEST(collapse_full_of_compound, madvise_context, read_only_file_ops);
->   	TEST(collapse_full_of_compound, madvise_context, shmem_ops);
->   
->   	TEST(collapse_compound_extreme, khugepaged_context, anon_ops);
-> @@ -1291,10 +1344,10 @@ int main(int argc, char **argv)
->   	TEST(collapse_max_ptes_shared, madvise_context, anon_ops);
->   
->   	TEST(madvise_collapse_existing_thps, madvise_context, anon_ops);
-> -	TEST(madvise_collapse_existing_thps, madvise_context, file_ops);
-> +	TEST(madvise_collapse_existing_thps, madvise_context, read_only_file_ops);
->   	TEST(madvise_collapse_existing_thps, madvise_context, shmem_ops);
->   
-> -	TEST(madvise_retracted_page_tables, madvise_context, file_ops);
-> +	TEST(madvise_retracted_page_tables, madvise_context, read_only_file_ops);
->   	TEST(madvise_retracted_page_tables, madvise_context, shmem_ops);
->   
->   	restore_settings(0);
-> diff --git a/tools/testing/selftests/mm/run_vmtests.sh b/tools/testing/selftests/mm/run_vmtests.sh
-> index 3b61677fe9840..854c5c3e3a6ae 100755
-> --- a/tools/testing/selftests/mm/run_vmtests.sh
-> +++ b/tools/testing/selftests/mm/run_vmtests.sh
-> @@ -490,8 +490,6 @@ CATEGORY="thp" run_test ./khugepaged all:shmem
->   
->   CATEGORY="thp" run_test ./khugepaged -s 4 all:shmem
->   
-> -CATEGORY="thp" run_test ./transhuge-stress -d 20
-> -
->   # Try to create XFS if not provided
->   if [ -z "${SPLIT_HUGE_PAGE_TEST_XFS_PATH}" ]; then
->       if [ "${HAVE_HUGEPAGES}" = "1" ]; then
-> @@ -508,6 +506,14 @@ if [ -z "${SPLIT_HUGE_PAGE_TEST_XFS_PATH}" ]; then
->       fi
->   fi
->   
-> +if [ -n "${SPLIT_HUGE_PAGE_TEST_XFS_PATH}" ]; then
-> +CATEGORY="thp" run_test ./khugepaged all:file ${SPLIT_HUGE_PAGE_TEST_XFS_PATH}
-> +else
-> +	count_total=$(( count_total + 1 ))
-> +	count_skip=$(( count_skip + 1 ))
-> +	echo "[SKIP] ./khugepaged all:file" | tap_prefix
+> Qu Wenruo (2):
+>   btrfs: unexport and move extent_invalidate_folio()
+>   btrfs: simplify the btree folio wait during invalidation
 
-This leads selftest runs to always litter the output with SKIP when 
-running this with the wrapper
-
-make -C tools/testing/selftests TARGETS=mm run_tests
-
-> +fi
-> +
->   CATEGORY="thp" run_test ./split_huge_page_test ${SPLIT_HUGE_PAGE_TEST_XFS_PATH}
->   
->   if [ -n "${MOUNTED_XFS}" ]; then
-> @@ -516,6 +522,8 @@ if [ -n "${MOUNTED_XFS}" ]; then
->       rm -f ${XFS_IMG}
->   fi
->   
-> +CATEGORY="thp" run_test ./transhuge-stress -d 20
-> +
->   CATEGORY="thp" run_test ./folio_split_race_test
->   
->   CATEGORY="migration" run_test ./migration
-
+Reviewed-by: David Sterba <dsterba@suse.com>

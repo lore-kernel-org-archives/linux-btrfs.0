@@ -1,85 +1,85 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 278891DE3B7
-	for <linux-btrfs@vger.kernel.org>; Mon,  4 May 2026 03:53:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8EA8A222599
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 May 2026 03:57:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777866810; cv=none; b=HBGumJ4WrC37p481vrkfb8R0OekDwBryayYj2eXfJslN6FzANk4zjC1mebp3eRPvIk3mwjNTgmw6NLMLCXqh13OwuiH0Z2haPSSMKifuhXd6IaR4Mtne84rsmCVTWrYuxRvDmz0D+tRGC/GaF6A4ibR1njtwplqnytxMP/vU4uk=
+	t=1777867026; cv=none; b=HfeiE5HAejsHvsMN0+m94M4QIKmrRMNtHAIHWIEmgnCjodwXpo0UfCIVSUaGowxe6R5caygxe2R4dHScnGLZC6aj9QMeA1y5z1nsgnsFoNPEGCf0/SHXPFs0ycVGtIiL4RGt5PE6eP/B+MubVHMKoT0IQb0UPPvpY7UCoJi4qPI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777866810; c=relaxed/simple;
-	bh=R0AUDzSWQxPWg+a126fEPwXl/Ajgx4AVi7lR7GVW0QY=;
+	s=arc-20240116; t=1777867026; c=relaxed/simple;
+	bh=v/hn59alj5J7N2H22CfQHHEbWjJ2B0vjPYXnMKwqp/M=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=ZpsCV3ky70BfeqrvkW0cPTVwTtaOMuuIdJPiAUI3gFRb/CGrbWEKF6M6jkEHstXJLWg68YVH7m9I2K0Kifcbozd349YrCKQYlXgA8vSzM/vW6+nI73tkWP7wycFdy4Um7bX889/eI5kPgZxtX0UABy+rOm0lhADWTQKtTLK/9Ok=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=DggAExdJ; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=jWo37643; arc=none smtp.client-ip=170.10.129.124
+	 In-Reply-To:Content-Type; b=R1dHtgRqmvsbQuqrr3h8ilcaXH0HynXlNfrnIgrP7hv9vqOjnxhzwTxNPZ2fxUToLqRDYydQRtmhAx8c8JHAxUNz8IlPELcnYD7Kj7Mw3prp2EJYSfpy8J2ZqO3kbadF/dqREfwgQMG1eZrIgbRqDOqqgklerKzQeiiGHjbbtDI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=UBSiXzWW; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=rueF3pkF; arc=none smtp.client-ip=170.10.133.124
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="DggAExdJ";
-	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="jWo37643"
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="UBSiXzWW";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="rueF3pkF"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1777866808;
+	s=mimecast20190719; t=1777867023;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=nuwaC1QCoVaWPCWlh6YJVeUyAviJpTjgkGZ69+fjPic=;
-	b=DggAExdJ9t/QzWWM4gwTcQqK9557AFouNO/DfqYftcycfZ4Dp6gVThzaghN1hK+YAVPRD0
-	unu/NQAO80gPQi9wTUBhzaH9nuhL5Tx/dQ5jMk/EqfR2n47uZEvyagTJPo+vCxzO8tmX+J
-	pAo1YZBQ714pb1pXxTg5S+H6Ah5fJek=
-Received: from mail-yx1-f69.google.com (mail-yx1-f69.google.com
- [74.125.224.69]) by relay.mimecast.com with ESMTP with STARTTLS
+	bh=Qmtvy+Ja1TH//9Y34ehxEV0VvVTj9S6URXD/jFo8hZY=;
+	b=UBSiXzWWm+BNmsCDCzUOhI0oWtyyxy2Xx9cSEgr52JUXOzVvnmThE6KffgcUKUkWpiiDw9
+	Ep2lHQjVoSkfhyVGj/CXXX4uTPx/YvIZRJRU6ANwmEkQSqmUKu/d2J90kyM0cUiHO0FguX
+	1nDOiK5hQvwkTzSJ/vl7MENTDXIWgNU=
+Received: from mail-yw1-f197.google.com (mail-yw1-f197.google.com
+ [209.85.128.197]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-685-bZKEd6eaOWKmhS9Ga_y1nA-1; Sun, 03 May 2026 23:53:27 -0400
-X-MC-Unique: bZKEd6eaOWKmhS9Ga_y1nA-1
-X-Mimecast-MFC-AGG-ID: bZKEd6eaOWKmhS9Ga_y1nA_1777866807
-Received: by mail-yx1-f69.google.com with SMTP id 956f58d0204a3-6583252c117so5922536d50.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 May 2026 20:53:27 -0700 (PDT)
+ us-mta-362-3ZYII55yNRqrfvcfbZakpw-1; Sun, 03 May 2026 23:57:02 -0400
+X-MC-Unique: 3ZYII55yNRqrfvcfbZakpw-1
+X-Mimecast-MFC-AGG-ID: 3ZYII55yNRqrfvcfbZakpw_1777867022
+Received: by mail-yw1-f197.google.com with SMTP id 00721157ae682-7985951fa83so87027277b3.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 May 2026 20:57:02 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redhat.com; s=google; t=1777866806; x=1778471606; darn=vger.kernel.org;
+        d=redhat.com; s=google; t=1777867022; x=1778471822; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:from:content-language
          :references:cc:to:subject:user-agent:mime-version:date:message-id
          :from:to:cc:subject:date:message-id:reply-to;
-        bh=nuwaC1QCoVaWPCWlh6YJVeUyAviJpTjgkGZ69+fjPic=;
-        b=jWo376438Jo7ccdSSjkHuLe0+b8Zg+79jUN3KTsof2DZiE1D0jCy4ayPclw3XTm6yN
-         1iPsGcGZZ7XLfoYcOKNfFhYWyFit92pc3wcQIas5uSuxY5L5XVSkixvz+1Cr508dRirJ
-         NLYCw7c0/L0Fb5uhj18wR0HSukfYhF3BqmQTE0oyQoURTM37tHLBkYqZs+sKwG9DsUCu
-         CS8YFkD8BU1cu1KFImL+hqvwSmW1yO0nWeVWkvsDNkRet4e+h/rE/AANzLfWvXjQf+c/
-         7vpCcc6fquUCIJtawZVtbfuVFJgl0Drt7/AjW6gVbWMFhy/AUzFQiESj5RZT/dO3J1za
-         GY9A==
+        bh=Qmtvy+Ja1TH//9Y34ehxEV0VvVTj9S6URXD/jFo8hZY=;
+        b=rueF3pkFqbS3nsu8xuz80AomRvD5fgM9mKSRzOvaXyTkou78HOMtP5EWb17uOWBk4O
+         zdOFqut2TFH5sm/lIet67bkxog8hsTbXDWf2In4DU0nZCvcRceT5JrW868GtzyR3U3zT
+         vtloQshGOM1ZBs/DkG+VyJjEq7zOERszvzU1UJPhvRmUw3xJMaJRItxb8el2Psjy59hn
+         NDnAEv9FJL8s6pAT9QQmIezj1V5Si4GQQhklUIKrzZlh1NYlW4d/+ZzatHhA1mNN9xC4
+         OfbjTLI+c0mVZkt9WWgNT1puEnL1EJTYHskEX/8qg6TfblQrrfY4Iros9zj1p6q/vcyr
+         E/dA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1777866806; x=1778471606;
+        d=1e100.net; s=20251104; t=1777867022; x=1778471822;
         h=content-transfer-encoding:in-reply-to:from:content-language
          :references:cc:to:subject:user-agent:mime-version:date:message-id
          :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=nuwaC1QCoVaWPCWlh6YJVeUyAviJpTjgkGZ69+fjPic=;
-        b=VrIKdvJSzGuQ1VNOtF17WJ7sFY0GMBXMaGK/VBW+qkZ37SPCh/QqJT7kKKaXmVV1yd
-         E8K9sCaZ9FUnAFUokO6f2Q7JPVi+Q7SMnNBpgjJsFVrZ7Jas3V3fMPFRbJNceNoWkJpD
-         j3T+/l/x6WQ1FC7ECLarZHKJLrDyB/mc4KnRDFiVbVjvSR4xMdj0nGw29EVcL4IGHrkA
-         25Wuab3e7NInreECUhlamsBZXlXDHRPRQScPCvLUCIrqthHTwoDtO6JWcAStScnxMJ/B
-         OFG/lSHO3ZPLVHWS354qrs/sXLJHn6d9pBLmWa/HXPL9h0ofI19CGpfEpL37TL4BkzrB
-         DE1g==
-X-Forwarded-Encrypted: i=1; AFNElJ9kzAapmbPYnUvk9EHSsXKP5FW8HFJq4E/K3jbMlRcHhe5Uknd1helW1rd03U/4Toi7XdeqNcWkoFmnSQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yyo0tqmzZyAqFVXB64fMfCjzkVQJ4wc2KAguo4ClocW3lpYwijS
-	Q7PffY8ZH6b4Y0QkdPsDBm1nue70uIy/V5KHJjHzbaEsNDSicwdNs9TqjTUkbjG4PxYk8trL7o6
-	+byVKM5rUcvVDiz7KJWcTO+ACVUmHZokWzUgelOUYpaMU9tDFyE3BNk3PxNqSRC7M
-X-Gm-Gg: AeBDiesdVQZrIV6se+AUnBDAE28Bih1nBCnMZLQpF+pdCbowPXOJ+YEaWFZ1Z7o2kpv
-	dMrbdvwlAG5yjFRkMqeiDA/C08CHo3T5a/EJmXpAsrRSVwPxbCNSAesC9xJ+xohwUAoUQHSDpgM
-	9wxM9BlNRQs1wF5TSVR28PEnozz/eTGFS/9jYsT8DpKcgarq05YUnJTw47Nfo8BaICnLDzYI/qI
-	jiPg/kpnkW/xFEBcjaD0t40MdejJbgh1FbHcR7DFZgzB/LV8wA1L8aE3P5ZD8SygcDP1I3eLKXp
-	loYuz7Iem8mrqWbyYL3y1XieTwXf2y59jENBGdv7J3GWkKWdSLRbzHoehwMx296mXB7hLDuXLKz
-	Rm5Ao/aiE9Le+z2sObA6H9d61Ax17xRs4FQSC3ZEA8ifaqk5r1AY92xmx8xksNysWbTI=
-X-Received: by 2002:a05:690e:13cb:b0:651:be50:af09 with SMTP id 956f58d0204a3-65c3d96ca98mr7541984d50.3.1777866806640;
-        Sun, 03 May 2026 20:53:26 -0700 (PDT)
-X-Received: by 2002:a05:690e:13cb:b0:651:be50:af09 with SMTP id 956f58d0204a3-65c3d96ca98mr7541955d50.3.1777866806149;
-        Sun, 03 May 2026 20:53:26 -0700 (PDT)
+        bh=Qmtvy+Ja1TH//9Y34ehxEV0VvVTj9S6URXD/jFo8hZY=;
+        b=W1pTuMMfa9xT1SWXABYemv+z4FAcn+nZO7KFoxmutvD143MFhzil67cRPzLnkySw01
+         k78ko0t9UqupIguEQUoeCCfL6wGVcXnnJn/k7uJo3SwKY2yWjtucRNC5vG6ILUOA2MD5
+         ipdQ1ixO1NsAwlzPLytj/eFO/BPw4TgOsoF/QNnhJJtZNW15XDr613AKGTtXWQpeb8TI
+         qaW68x0Zp85QWk8I2uwkIFMZGcRxnPJMWgmEhJyyytKAK2PHBsKqveVBTKIC7k7X+Gzk
+         4YzP0VjPi1MeS4Ol50bNakAoDo9A99senAt5CNgwL8d3tcuzLiqipmkHhVV97CmRnw9k
+         LPjg==
+X-Forwarded-Encrypted: i=1; AFNElJ/g6zlW4urfnNfnbw4FlLxeMpIO5HRjQQDw13Il2ZNPlIgAo6t+629v0STAfbX5Q7HnHI8cO2676AScHQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzCIH2bpxJgwxSgBQXT0Kb6BdtPqsXfg/AN/+6XiSwrQw92Oind
+	qKwLQuTbsxazJ7xxLZt6LK7BAtspUoXgFzJXTzCJzr3B8DGBheHOfUArUKbxODrKNG5wjJMoQDe
+	WwpOlWVwrDFowpF+cyg+mXrUCNSSv3KcrClBxCvxlRU0ZO6S8/Kjhv5d5cppTCcAl
+X-Gm-Gg: AeBDiesiU18YfpPahP1EKu8e0WlqUHBVT2RUs2Jc9tKHbW2yeOgF2Jwtphg1jacdLDo
+	J8JA4HT4O0DOs4UjAzsnCgC060DzYP4n+kM7YDw1i5DnplNr5lTAQEjHAsQBnD9F8RpyYa9Mui0
+	A2jcd/eWJopz8TGwDwndyRCveBk/PTAOof2vP8vh8ABRYAElIBn9IKhCJ6hiJyXYkulb7qNyS0P
+	1viLClrRVYS8sB3GRKNnoPRUwuLzDukF3tQcHfCOnSJAc9KVfAXhwCysmYgEMa1fqQxU+mpEEgN
+	kU/2UcpxtFnzXCtQxcsSjp8tyBogo1d6OdnjOh66yfMfJkkkLobRFORlp5e/c9ObyLpwjNrpaaj
+	K6E0mzraSCMO8inFluKwMvFBK2waZwCljTGgbAk05DJKejv83kN0Z93Ia1F7+1NxIT90=
+X-Received: by 2002:a05:690c:e094:b0:7b8:c19c:ee9a with SMTP id 00721157ae682-7bd770db6a4mr85526757b3.32.1777867021832;
+        Sun, 03 May 2026 20:57:01 -0700 (PDT)
+X-Received: by 2002:a05:690c:e094:b0:7b8:c19c:ee9a with SMTP id 00721157ae682-7bd770db6a4mr85526497b3.32.1777867021452;
+        Sun, 03 May 2026 20:57:01 -0700 (PDT)
 Received: from [192.168.178.105] (78-0-206-107.adsl.net.t-com.hr. [78.0.206.107])
-        by smtp.gmail.com with ESMTPSA id 956f58d0204a3-65c2e8b2e55sm4980740d50.20.2026.05.03.20.53.21
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-7bd6683aa8asm44078807b3.26.2026.05.03.20.56.56
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 03 May 2026 20:53:25 -0700 (PDT)
-Message-ID: <b3b5cfc6-e61f-4904-ad2a-dc1f53f04838@redhat.com>
-Date: Sun, 3 May 2026 21:53:57 -0600
+        Sun, 03 May 2026 20:57:01 -0700 (PDT)
+Message-ID: <fae1d9c9-1d8c-416c-bb53-90ef11edbba9@redhat.com>
+Date: Sun, 3 May 2026 21:57:33 -0600
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -87,8 +87,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v5 02/14] mm/khugepaged: add folio dirty check after
- try_to_unmap()
+Subject: Re: [PATCH v5 03/14] mm/huge_memory: remove READ_ONLY_THP_FOR_FS from
+ file_thp_enabled()
 To: Zi Yan <ziy@nvidia.com>, Andrew Morton <akpm@linux-foundation.org>,
  David Hildenbrand <david@kernel.org>,
  "Matthew Wilcox (Oracle)" <willy@infradead.org>,
@@ -107,93 +107,57 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
  linux-kselftest@vger.kernel.org
 References: <20260429152924.727124-1-ziy@nvidia.com>
- <20260429152924.727124-3-ziy@nvidia.com>
+ <20260429152924.727124-4-ziy@nvidia.com>
 Content-Language: en-US
 From: Nico Pache <npache@redhat.com>
-In-Reply-To: <20260429152924.727124-3-ziy@nvidia.com>
+In-Reply-To: <20260429152924.727124-4-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 
 
 
 On 4/29/26 9:29 AM, Zi Yan wrote:
-> This check ensures the correctness of read-only PMD folio collapse
-> after it is enabled for all FSes supporting PMD pagecache folios and
-> replaces READ_ONLY_THP_FOR_FS.
-> 
-> READ_ONLY_THP_FOR_FS only supports read-only fd and uses mapping->nr_thps
-> and inode->i_writecount to prevent any write to read-only to-be-collapsed
-> folios. In upcoming commits, READ_ONLY_THP_FOR_FS will be removed and the
-> aforementioned mechanism will go away too. To ensure khugepaged functions
-> as expected after the changes, skip if any folio is dirty after
-> try_to_unmap(), since a dirty folio at that point means this read-only
-> folio can get writes between try_to_unmap() and try_to_unmap_flush() via
-> cached TLB entries and khugepaged does not support writable pagecache folio
-> collapse yet.
+> Replace it with a check on the max folio order of the file's address space
+> mapping, making sure PMD folio is supported. Keep the inode open-for-write
+> check, since even if collapse_file() now makes sure all to-be-collapsed
+> folios are clean and the created PMD file THP can be handled by FSes
+> properly, the filemap_flush() could perform undesirable write back.
 > 
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
-> Reviewed-by: Baolin Wang <baolin.wang@linux.alibaba.com>
-> Acked-by: David Hildenbrand (Arm) <david@kernel.org>
+> ---
+>   mm/huge_memory.c | 6 +++---
+>   1 file changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/mm/huge_memory.c b/mm/huge_memory.c
+> index 2f3fcb4dd1ef8..3b324f03e9283 100644
+> --- a/mm/huge_memory.c
+> +++ b/mm/huge_memory.c
+> @@ -86,9 +86,6 @@ static inline bool file_thp_enabled(struct vm_area_struct *vma)
+>   {
+>   	struct inode *inode;
+>   
+> -	if (!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS))
+> -		return false;
+> -
+>   	if (!vma->vm_file)
+>   		return false;
+>   
+> @@ -97,6 +94,9 @@ static inline bool file_thp_enabled(struct vm_area_struct *vma)
+>   	if (IS_ANON_FILE(inode))
+>   		return false;
+>   
+> +	if (!mapping_pmd_folio_support(vma->vm_file->f_mapping))
+
+Other than my question in the previous patch about >= PMD_ORDER vs == 
+PMD_ORDER.
 
 LGTM
 
 Reviewed-by: Nico Pache <npache@redhat.com>
 
-> ---
->   mm/khugepaged.c | 28 ++++++++++++++++++++++++----
->   1 file changed, 24 insertions(+), 4 deletions(-)
-> 
-> diff --git a/mm/khugepaged.c b/mm/khugepaged.c
-> index 6808f2b48d864..71209a72195ab 100644
-> --- a/mm/khugepaged.c
-> +++ b/mm/khugepaged.c
-> @@ -2327,8 +2327,7 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
->   				}
->   			} else if (folio_test_dirty(folio)) {
->   				/*
-> -				 * khugepaged only works on read-only fd,
-> -				 * so this page is dirty because it hasn't
-> +				 * This page is dirty because it hasn't
->   				 * been flushed since first write. There
->   				 * won't be new dirty pages.
->   				 *
-> @@ -2386,8 +2385,8 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
->   		if (!is_shmem && (folio_test_dirty(folio) ||
->   				  folio_test_writeback(folio))) {
->   			/*
-> -			 * khugepaged only works on read-only fd, so this
-> -			 * folio is dirty because it hasn't been flushed
-> +			 * khugepaged only works on clean file-backed folios,
-> +			 * so this folio is dirty because it hasn't been flushed
->   			 * since first write.
->   			 */
->   			result = SCAN_PAGE_DIRTY_OR_WRITEBACK;
-> @@ -2431,6 +2430,27 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
->   			goto out_unlock;
->   		}
->   
-> +		/*
-> +		 * At this point, the folio is locked and unmapped. If the PTE
-> +		 * was dirty, try_to_unmap() has transferred the dirty bit to
-> +		 * the folio and we must not collapse it into a clean
-> +		 * file-backed folio.
-> +		 *
-> +		 * If the folio is clean here, no one can write it until we
-> +		 * drop the folio lock. A write through a stale TLB entry came
-> +		 * from a clean PTE and must fault because the PTE has been
-> +		 * cleared; the fault path has to take the folio lock before
-> +		 * installing a writable mapping. Buffered write paths also
-> +		 * have to take the folio lock before modifying file contents
-> +		 * without a mapping, typically via write_begin_get_folio().
-> +		 */
-> +		if (!is_shmem && folio_test_dirty(folio)) {
-> +			result = SCAN_PAGE_DIRTY_OR_WRITEBACK;
-> +			xas_unlock_irq(&xas);
-> +			folio_putback_lru(folio);
-> +			goto out_unlock;
-> +		}
+> +		return false;
 > +
->   		/*
->   		 * Accumulate the folios that are being collapsed.
->   		 */
+>   	return !inode_is_open_for_write(inode) && S_ISREG(inode->i_mode);
+>   }
+>   
 

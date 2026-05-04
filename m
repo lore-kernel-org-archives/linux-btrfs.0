@@ -1,169 +1,159 @@
-Received: from mail-pj1-f48.google.com (mail-pj1-f48.google.com [209.85.216.48])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7EA3937B3F2
-	for <linux-btrfs@vger.kernel.org>; Mon,  4 May 2026 23:43:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6A0D638CFEF
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 May 2026 23:49:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777938218; cv=none; b=HjH+9IO97UKMKkL8Sh30TaTFRIRq52aXiN1x8aLsKqm6sv3VSuK4IkyCs1CsHyKl3OzIWsnC8OCwLexPzHRsg5xUyrfbzI76kPZQHlgcOLtiFGXwQ2a9EUvksT09izKFOEymGDvFhIQT6y6widrH3RbTM9XsylGcSPCyj/Qtems=
+	t=1777938586; cv=none; b=lsElyo/j+9PvZ4zf96iVsA92STFncVM6XLIwRzjv/I9cf2t7nWukKhUd+yvr8qXbTGDz98gi6direBPE996icJthz9MTEV8Vo4G0LmK0YdKocJJ0lgzaYKyvAqIKTZIyOjnUgC9uIyvTfH0KiQyMsTDIkUndXJpHQLpPLKaPipE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777938218; c=relaxed/simple;
-	bh=P0JRurqQEroBpI6NTu34iI6OS1yE20tL5Pk2ort+Ewk=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=QnqM62Z0JCpsT+lZDPduFVz/2OaM9LOygR4e0JhPfbjoojcMJwoRuN6xE43CY6CAoYFTQm0jPspH5sHiutVSjhiXKg1IDhbvBkmnFaTucN+uyOkjoB0ol+DX3SkV6bTdr7Xy1xo+U/3GYs/gPjCHUtdyYhKc1p0WNbJH7o8e3oI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=J0o/vIad; arc=none smtp.client-ip=209.85.216.48
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1777938586; c=relaxed/simple;
+	bh=lJb8XA4pEoxO626F27Rj7RFxh6+U2a95hwWZrITZe4A=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=rvtc7AVbxhojLCaUvmTDKzwyTjs4SSe6RlqapAqOUHoUG/orFvxp8AAWc1pnVd7CyTlEAsR0siCHeKdaf/kqWAwyBpi+ekTebcY4PyjL1F9hrypn7oEIdDnItpOTbK5QE2aV4phiQV1cmHbb4K8/0O8c7uScbMlYUWIVgk5VQ7E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Wna/dbSz; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Wna/dbSz; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="J0o/vIad"
-Received: by mail-pj1-f48.google.com with SMTP id 98e67ed59e1d1-36520a83186so1569501a91.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2026 16:43:37 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1777938217; x=1778543017; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :cc:to:from:subject:user-agent:mime-version:date:message-id:from:to
-         :cc:subject:date:message-id:reply-to;
-        bh=YS3nIskAJmcds5exY/NyDgnXHfFkRgkwxiLt6dSOk6E=;
-        b=J0o/vIad2NXUktDNQFXeIIQolwKchEsbAlNjls9Jtv7TNlLG8KH52rM1dmA0969u92
-         5jxEmqwenBdMQhXq+d2LZe8o44BtT7xErA4VZXIhyg2iauPlt8QUbKa39C45tjfuJydl
-         +JKOra1ThWiOTlvHr4JqlOVZLc7BXIGhwjTIi5DkVw1DQw/c3FZoWGPyTGc4liAUbOk5
-         YrH6HkNqmI8oSPZlvUKJtNb1mYodfRU8DdmZsJ1CwGs6ikG3SnR+buFnG0e+vjMn1WT0
-         1P5sZSMTnm56x0mZlldn2RGBIrhYV95WBxOi3hAViWfTOIp7sPO54y6PiT+md3n0z1bq
-         tQMw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1777938217; x=1778543017;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :cc:to:from:subject:user-agent:mime-version:date:message-id:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=YS3nIskAJmcds5exY/NyDgnXHfFkRgkwxiLt6dSOk6E=;
-        b=L2CxDNdVSPCIJXNsb6PWlnNsqiQW3xLQurg6L+wPKGSH7ch9AKS2JkaB0mehTinjax
-         vICXyhGCLc8Ymzt2QPxe4Cahb7R9dxg7FUirj0r+hYWUMvEMN80vBhIK0+7udHiC/nix
-         JNQ+XObgyoOIa0hz1wA+XFft21jK8MN6RuXQXW+tHAKjz0AdGotwLpDY2ElJL1SvANSD
-         ug7iYYgi+EQYQi7UOBm5EAxFOQjg4G51jr3lU5iQHuuVdVvW3KMHwdaQJ0c5q4QALwUm
-         IeIcExdMIOjoQyq2y3zTN5sl3pfQmlBRzfAvzipsVHxhZKUnSVe8jhDcRzMGx78/uPTP
-         Hffw==
-X-Gm-Message-State: AOJu0Ywnd3nQbmya6p7th+kFBdXCpq/Qe4er+FpImCmtLglRhOb6VOQy
-	9lvrfMWq+zC8UjirgxMOuG/MPomzJ1gE4lYeW9tIRSReDIP0ySt0pziw2dvaC59+
-X-Gm-Gg: AeBDietufLf7aZycnvYHdf/PQx8Jusfn2AQQI7XptithUK8BRvKHBYQ9AnqWocVJJqh
-	UHhja2FwXAVre1Ww/rMNMUwpgSicGm6XWlaVvo2EVjAnmnRMVHNNAdtZvoA/Gb+alH+B1WkoxZ/
-	F4w8Gpr9XY/KSsW6LpU/1nQdV58I9SJ1NMi7pYGYx+FcxOJTKY/yyiVkF7gHpbOm3hUOksSo86k
-	8w2NIs1sbMPX7p0IOvvMN0bTqtxVHu37wVgaH/j/1uG5USm8v/gVjwAiMQWxBoLfXpB2fWPV88/
-	KfhDwnMrh70ByjpYHQZg+1GiWYKuKs3xCBPDLvTxbJYwxJ6tK7wULyi8+8a6fHQusWwFN5J1Yj1
-	GvLD3/fZ5S6luGqEq/Go4Jel0oOTNBEM5uSIiVEQdc0ut0hPphep06RBDoq2mNZzSm0TdP2KSRg
-	PcLz1xt9hXob/UN5hk/UPIy/WGOmfDLLHYd0PCdbc=
-X-Received: by 2002:a17:90b:4d01:b0:35b:8d89:719b with SMTP id 98e67ed59e1d1-3657737b70dmr940328a91.1.1777938216866;
-        Mon, 04 May 2026 16:43:36 -0700 (PDT)
-Received: from [192.168.50.119] ([116.87.14.48])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-364be028cd6sm15818818a91.14.2026.05.04.16.43.34
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 04 May 2026 16:43:36 -0700 (PDT)
-Message-ID: <683ddd4b-d811-4d6e-a348-6918a10fbab8@gmail.com>
-Date: Tue, 5 May 2026 07:43:32 +0800
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Wna/dbSz";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Wna/dbSz"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 9D6846B565
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 May 2026 23:49:42 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1777938582; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=fjyR/bfcaSrX6ky1Cemqi9ZeRXCLfFqHOI6mNj8ZwlA=;
+	b=Wna/dbSzBpPUknK/zVkxoGH5pK6t+F9rjbrpbk0/G0GDgcCx46xYWkPCw4Wst7WwqoR5iG
+	ex5RAv8E3XfCgdN0MC1iNvwXEeR2Bs4Ikjv/4a1VlJ8jK08pO2ZcKGhd9GpGEv0YtOjvI+
+	4S90S8F9vdxWyj3CrEe9aFBcUNwVXc8=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1777938582; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=fjyR/bfcaSrX6ky1Cemqi9ZeRXCLfFqHOI6mNj8ZwlA=;
+	b=Wna/dbSzBpPUknK/zVkxoGH5pK6t+F9rjbrpbk0/G0GDgcCx46xYWkPCw4Wst7WwqoR5iG
+	ex5RAv8E3XfCgdN0MC1iNvwXEeR2Bs4Ikjv/4a1VlJ8jK08pO2ZcKGhd9GpGEv0YtOjvI+
+	4S90S8F9vdxWyj3CrEe9aFBcUNwVXc8=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DBB78593A3
+	for <linux-btrfs@vger.kernel.org>; Mon,  4 May 2026 23:49:41 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id yCE4J5Uw+WmKAgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2026 23:49:41 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH RFC 0/4] btrfs: remove folio ordered flag
+Date: Tue,  5 May 2026 09:19:20 +0930
+Message-ID: <cover.1777937175.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 1/2] common/dmlogwrites: add _require_log_writes_sized
- helper
-From: Anand Jain <anajain.sg@gmail.com>
-To: Disha Goel <disgoel@linux.ibm.com>, fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, ritesh.list@gmail.com,
- ojaswin@linux.ibm.com, djwong@kernel.org, fdmanana@kernel.org,
- quwenruo.btrfs@gmx.com, zlang@kernel.org
-References: <20260427122551.71696-1-disgoel@linux.ibm.com>
- <7a5a4c7f-2c1f-4dc8-b2ef-b052b62798dc@gmail.com>
- <3cc304b6-0069-4cb8-b3c2-a15d0365cde3@gmail.com>
-Content-Language: en-US
-In-Reply-To: <3cc304b6-0069-4cb8-b3c2-a15d0365cde3@gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	URIBL_BLOCKED(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+
+Btrfs has a long history using an internal folio flag called ordered,
+which is to indicate if an fs block is covered by an ordered extent.
+
+However this means we need to synchronize between ordered extents, which
+are managed by a per-inode ordered tree, and folio flag/subpage bitmap.
+
+Furthermore with huge folio support, the ordered bitmap can be as large
+as 64 bytes (512 bits), which is not a small amount.
+
+The series is going to remove folio ordered flag completely, along with
+the ordered subpage bitmap.
+
+Most call sites of folio_test_ordered() are just inside ASSERT()s, so
+it's not too hard to remove them.
+
+But there is a special call site inside btrfs_invalidate_folio() where
+we use ordered flag to check if we can skip an ordered extent.
+This is worked around by using the fact that we have waited for
+writeback of the folio, so that endio should have already finished for
+the writeback range. Then check dirty flags to determine if we can skip
+the OE range.
+
+To get a reliable dirty flag for both sub-folio and full-folio cases, we
+can not clear the folio dirty flag early, so the first patch is
+introduced to change the folio dirty flag clearing timing, then the
+second patch can remove the folio_test_ordered() usage.
+
+Then the third patch is to remove the remaining folio_test_ordered()
+usage, and finally we can remove the whole ordered flag/subpage bitmap
+completely.
+
+[REASON FOR RFC]
+I'm not sure if we should remove the folio ordered flag completely, or
+keep it an internal debug feature for a while.
+
+The main concern is that we're removing quite some ASSERT()s, some are
+never hit, but at least one is very useful and had triggered several
+times during development, exposing bugs.
+
+In the long run, we will eventually remove the folio ordered
+flag/subpage bitmap so that we can align btrfs_folio_state with
+iomap_folio_state, so ordered flags should still be gone eventually.
 
 
+Another point of concern is the new btrfs_ordered_extent_in_range()
+helper for extent_writepage_io().
+Previously we're just doing a folio flag check, now we have to do an
+rbtree search.
+I hope the overhead is not that huge.
 
-On 5/5/26 07:16, Anand Jain wrote:
-> 
-> 
-> On 5/5/26 05:53, Anand Jain wrote:
->>
->> looks good.
->>
->> Reviewed-by: Anand Jain <asj@kernel.org>
->>
->> Thanks
->>
-> 
-> sorry, not yet; I'm canceling the RVB.
-> Details below.
-> 
-> 
->> v2:
->> - Renamed function from _require_logwrites_size to
-> _require_log_writes_sized
->> - Added documentation comment clarifying the parameter is in KB
->> - Made function call _require_log_writes() internally to avoid redundant
->>   calls in test code
-> 
-> 
->  This change log should be below the Signed-off-by "---"
-> 
-> 
->> Suggested-by: Darrick J. Wong <djwong@kernel.org>
->> Suggested-by: Anand Jain <anajain.sg@gmail.com>
->> Signed-off-by: Disha Goel <disgoel@linux.ibm.com>
->> ---
-> 
-> ... v2 changes  here...
-> 
-> 
->>  common/dmlogwrites | 15 +++++++++++++++
->>  1 file changed, 15 insertions(+)
->>
->> diff --git a/common/dmlogwrites b/common/dmlogwrites
->> index a27e1966..0925b333 100644
->> --- a/common/dmlogwrites
->> +++ b/common/dmlogwrites
->> @@ -14,6 +14,21 @@ _require_log_writes()
->>  	_require_test_program "log-writes/replay-log"
->>  }
->>
->> +# Require a log writes device of a minimum size
->> +# $1: minimum size in KB
->> +_require_log_writes_sized()
->> +{
->> +        local size=$1
->> +
->> +        [ $# -eq 1 ] || _fail "_require_log_writes_sized: expected
-> size param"
->> +
->> +        _require_log_writes
->> +
->> +        local devsize=$(_get_device_size $LOGWRITES_DEV)
-> 
-> Please keep all declarations at the beginning of the function.
-> 
->> +        [ $devsize -lt $1 ] && \
-> 
-> use $size instead of $1 and
-> 
+Qu Wenruo (4):
+  btrfs: unify folio dirty flag clearing
+  btrfs: use dirty flag to check if an ordered extent needs to be
+    truncated
+  btrfs: remove folio_test_ordered() usage
+  btrfs: remove folio ordered flag and subpage bitmap
 
+ fs/btrfs/extent_io.c    | 35 ++++++++++--------------
+ fs/btrfs/extent_io.h    | 12 ++++++++-
+ fs/btrfs/fs.h           |  8 ------
+ fs/btrfs/inode.c        | 60 ++++++++++-------------------------------
+ fs/btrfs/ordered-data.h | 16 +++++++++++
+ fs/btrfs/subpage.c      | 41 ++--------------------------
+ fs/btrfs/subpage.h      | 12 +++------
+ 7 files changed, 60 insertions(+), 124 deletions(-)
 
-> $devsize and $size units are different, 512 sectors vs KiB
-  My bad, devsize is also in KiB. So this is fine.
-
-> 
->> +                _notrun "LOGWRITES_DEV too small, ${devsize}KB <
-> ${size}KB"
->> +}
->> +
-> 
-> $devsize is not in KB and $size is in KiB
-
- This is fine as well.
-
-Thanks, Anand
-
-
+-- 
+2.54.0
 

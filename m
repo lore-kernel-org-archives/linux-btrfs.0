@@ -1,31 +1,31 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 044423783CB;
-	Tue,  5 May 2026 09:53:06 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C9EA932F749;
+	Tue,  5 May 2026 09:53:09 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777974787; cv=none; b=uqpsJBYhsjasOMbgua/wczJFHYn4TkF1TSwVYs2MAJzX+IpRSxFyJ7Mi9fmLlLLa+HlR85Hcltbnmn1csKBTLKvrSOQUVgPRSWWmdgyfratWd81LPT+ae9c1YpaRJjj2Jm2jiIGgR/FAHFtia/12wZIipNkDgXaB8SVIVVyBd6I=
+	t=1777974789; cv=none; b=Evkfx0x3b99LixyydQQAnjW8n07Ft5FO+RptVxC585jMa8yZG3NaoTN9SdtLgePHCDtsV6/jZCG6JHeLv+lk2QvYCT3WjJ0uPMprAs7r+RBJCBVuQ6OP0BXV7W4MM+CWewO5fVXuQ3yZOTkgP+GjoTPeVbW2CnJkZx62HCwp2qc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777974787; c=relaxed/simple;
-	bh=A/TJ23ruxktp6tGrqMbRgFaDXiu8Md0lq6atQ5BTMPg=;
+	s=arc-20240116; t=1777974789; c=relaxed/simple;
+	bh=0sQg5E72+QtabmX/9fz8doQcyuXGFgL4tMF72in1JlQ=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=RRAi/fRvncsfkwe8XIXHrPBaj3N2e/+e1lDjO6iW6tQUUfXaOFSMVdfXZlW1iDqaDNXlxdxrWeZXx/Eg7QNxZiF5jqouZSfRquQPlblEbxwFU2f59jH/hTApn/k73X4hehR6/8JqZQakA1Bbo48EAiG7tqpHz+rxFrxTTCstBHA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Qn1outTk; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version:Content-Type; b=Td+SB079hGGMuF0C4XU3Y0mcucOnlTJam5waMyjBmXlPdvHyNv3QiLS/ISc5SkR0FJM0mFrgtDtN8oS/e6SJHQ7P/BRIfnX54zXR7aHy6iHaJ2nCsZwNdtkKqdEW5SIJ3SajZ7J9ANzWL2irY3z495JFye/325xWcyQIcThAlK4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=TU5f765g; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Qn1outTk"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6396FC2BCB4;
-	Tue,  5 May 2026 09:53:04 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="TU5f765g"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2D6EBC2BCB4;
+	Tue,  5 May 2026 09:53:06 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1777974786;
-	bh=A/TJ23ruxktp6tGrqMbRgFaDXiu8Md0lq6atQ5BTMPg=;
+	s=k20201202; t=1777974789;
+	bh=0sQg5E72+QtabmX/9fz8doQcyuXGFgL4tMF72in1JlQ=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=Qn1outTk7EaSpgjzOyW6GPhPh5TVskDsX29N3cg2S998JyL+FMVlqUUyJW86TfWa1
-	 fEJHMEqm7O9rXaCTG6twMJ4O/Z0Nx/+k8g4pJCZwERro07AH7/Ipp4CVKpZUayRfEx
-	 OPf6Q4zCj3assPS2xr+SAMLmvxNwRX9BCj1+d2ZMI7XgUMELVIXIw7paJ//0efTZT6
-	 qCfuDe8GO30morMAWOPrqx7RLgg98+2HnrJ9FQEOWTNSZ30ZqTXBdVyyOO6xYXNSOr
-	 3Et0DZ16anQxJ3DGlSVIKtzHqi8tzbh+mvWVizAngaYS9OidMsTSOvM0AGQIE6dR1q
-	 pCLSMtQaTTjwA==
+	b=TU5f765g6kFS25BJOseSiXjXtmtWn2tglL4ZZRJAhrCTZXwuLJEtSD2dO5wOH9D5y
+	 IyZcpJLb6/OfUJXcYDiYM8nV4tr81pAff05tj8xN2mSKyIMV7owqb++P7yakO2gx/t
+	 nJ3dSGh5cE3PDt8RG7MmUNviYesCvhAKz2Z/X/o+fnf9tk+Q9w51630BeZdAv+A2vE
+	 L0831g0EGlfvq6ASj4PvIUf6y7irDC8Wbg3yAecpVTpguvvyQCyNGgP3e+7tHO0kFQ
+	 8/ZhQ/tBHe7xM5s/MSmD3k2JPUTd7l2H7nnwu4WdM+AmXqeEk9fNRBl7Zx5lCti9oy
+	 PENl+0cs0ilug==
 From: Sasha Levin <sashal@kernel.org>
 To: patches@lists.linux.dev,
 	stable@vger.kernel.org
@@ -36,9 +36,9 @@ Cc: robbieko <robbieko@synology.com>,
 	clm@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 7.0-6.18] btrfs: check return value of btrfs_partially_delete_raid_extent()
-Date: Tue,  5 May 2026 05:51:40 -0400
-Message-ID: <20260505095149.512052-24-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 7.0-6.18] btrfs: fix raid stripe search missing entries at leaf boundaries
+Date: Tue,  5 May 2026 05:51:41 -0400
+Message-ID: <20260505095149.512052-25-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260505095149.512052-1-sashal@kernel.org>
 References: <20260505095149.512052-1-sashal@kernel.org>
@@ -56,16 +56,19 @@ Content-Transfer-Encoding: 8bit
 
 From: robbieko <robbieko@synology.com>
 
-[ Upstream commit a8d58a7c0200904ff24ca7f0d7c147017e25aa99 ]
+[ Upstream commit 2aef5cb1dcf9b3e1be3895a6477dc065e618aab8 ]
 
-btrfs_partially_delete_raid_extent() returns an error code (e.g.
--ENOMEM from kzalloc(), or errors from btrfs_del_item/btrfs_insert_item()),
-but all three call sites in btrfs_delete_raid_extent() discard the
-return value, silently losing errors and potentially leaving the stripe
-tree in an inconsistent state.
+In btrfs_delete_raid_extent(), the search key uses offset=0. When the
+target stripe entry is the first item on a leaf, btrfs_search_slot()
+may land on the previous leaf and decrementing the slot from nritems
+still points to the wrong entry, causing the stripe extent to be
+silently missed.
 
-Fix by capturing the return value into ret at all three call sites and
-breaking out of the loop on error where appropriate.
+Fix this by searching with offset=(u64)-1 instead. Since no real stripe
+entry has this offset, btrfs_search_slot() always returns 1 with the
+slot pointing past the last matching objectid entry. Then unconditionally
+decrement the slot with a proper slots[0]==0 early-exit check to handle
+the case where no matching entry exists.
 
 Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Signed-off-by: robbieko <robbieko@synology.com>
@@ -75,241 +78,250 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
 
 LLM Generated explanations, may be completely bogus:
 
-## Backport Analysis
+## Decision Summary
+Backport this to stable trees that contain the
+`btrfs_delete_raid_extent()` `offset = 0` search logic, verified locally
+in `v6.13` through `v7.0`. It is a small Btrfs filesystem metadata
+correctness fix: a leaf-boundary search miss can leave a RAID stripe-
+tree entry undeleted, and that tree is used later to derive read-side
+physical stripe mappings.
 
-### Phase 1: Commit Message Forensics
-Record 1.1: Subsystem `btrfs`; action verb `check`; intent is to
-propagate errors from `btrfs_partially_delete_raid_extent()` instead of
-silently treating failed stripe-tree updates as success.
+The main caveat is scope: RAID stripe tree support is behind
+`CONFIG_BTRFS_EXPERIMENTAL`, so the affected population is config and
+filesystem-feature specific. Still, for those users, the benefit
+outweighs the low patch risk.
 
-Record 1.2: Tags present: `Reviewed-by: Johannes Thumshirn
-<johannes.thumshirn@wdc.com>`, `Signed-off-by: robbieko
-<robbieko@synology.com>`, `Signed-off-by: David Sterba
-<dsterba@suse.com>`. No `Fixes:`, no `Cc: stable`, no `Reported-by`.
+## Phase Walkthrough
+Phase 1: Commit Message Forensics
 
-Record 1.3: The body describes ignored `-ENOMEM`, `btrfs_del_item()`,
-and `btrfs_insert_item()` errors, with the failure mode being silently
-lost errors and possible RAID stripe tree inconsistency.
+- Step 1.1 Record: subsystem `btrfs`; action verb `fix`; intent is to
+  prevent RAID stripe-tree deletion from missing entries at B-tree leaf
+  boundaries.
+- Step 1.2 Record: tags are `Reviewed-by: Johannes Thumshirn
+  <johannes.thumshirn@wdc.com>`, `Signed-off-by: robbieko
+  <robbieko@synology.com>`, `Signed-off-by: David Sterba
+  <dsterba@suse.com>`. No `Fixes:`, `Reported-by:`, `Tested-by:`, `Cc:
+  stable`, or `Link:` tags.
+- Step 1.3 Record: the described bug is that searching with `offset = 0`
+  can land on the previous leaf when the target stripe item is the first
+  item in the next leaf; the existing decrement then inspects the wrong
+  entry and silently misses the stripe extent. No affected kernel
+  versions are stated in the message.
+- Step 1.4 Record: this is not hidden cleanup; it is an explicit
+  correctness bug fix.
 
-Record 1.4: This is a hidden bug fix despite the “check return value”
-wording: it fixes error propagation and prevents filesystem metadata
-update failures from being reported as success.
+Phase 2: Diff Analysis
 
-### Phase 2: Diff Analysis
-Record 2.1: One file changed: `fs/btrfs/raid-stripe-tree.c`, 12
-additions and 7 deletions. Modified function:
-`btrfs_delete_raid_extent()`. Scope: single-file surgical error-handling
-fix.
+- Step 2.1 Record: one file changed, `fs/btrfs/raid-stripe-tree.c`,
+  +15/-3 in `btrfs_delete_raid_extent()`. Scope is single-function
+  surgical.
+- Step 2.2 Record: before, the delete loop searched `(objectid=start,
+  type=RAID_STRIPE, offset=0)` and only decremented the slot when the
+  slot was at `nritems`. After, it searches with `offset=(u64)-1`,
+  checks `slots[0] == 0`, then always decrements to the last candidate
+  item.
+- Step 2.3 Record: bug category is logic/correctness in B-tree search
+  positioning. The fix uses Btrfs key ordering by `objectid`, then
+  `type`, then `offset`, and `btrfs_bin_search()` semantics where a
+  missing key returns the insertion slot.
+- Step 2.4 Record: fix quality is good for valid filesystem state:
+  small, local, no API changes. Regression risk is low. One review
+  concern exists: David Sterba noted that an exact corrupt
+  `offset=(u64)-1` key should ideally be handled as `-EUCLEAN`; that is
+  robustness against corrupted/fuzzed images, not the normal valid-state
+  bug being fixed.
 
-Record 2.2: Before, three calls to
-`btrfs_partially_delete_raid_extent()` discarded the return value.
-After, all three store it in `ret`; the middle loop case additionally
-breaks immediately on error before advancing `start`/`length`.
+Phase 3: Git History Investigation
 
-Record 2.3: Bug category: error-path/correctness fix. The helper can
-fail before modifying the tree (`kzalloc()`), during deletion, or during
-insertion; ignoring those failures can leave the caller deleting more
-extents or returning success after a failed partial update.
+- Step 3.1 Record: blame shows the delete function was introduced by
+  `ca41504efda646` in `v6.7`, but the specific `key.offset = 0` logic
+  and `nritems` decrement pattern were introduced by `6aea95ee318890`
+  (`btrfs: implement partial deletion of RAID stripe extents`), first
+  contained in `v6.13`.
+- Step 3.2 Record: no `Fixes:` tag, so no tagged original commit to
+  follow. Blame nevertheless identifies `6aea95ee318890` as the relevant
+  introducer.
+- Step 3.3 Record: related recent commits in master are a six-patch
+  deletion-path fix series: copy missing devid, this leaf-boundary
+  search fix, wrong `btrfs_previous_item()` min objectid, ASSERT-to-
+  error handling, `-EAGAIN`/stale leaf handling, and return-value
+  checking.
+- Step 3.4 Record: author `robbieko` authored all six related RAID
+  stripe-tree deletion fixes in that series. I did not verify them as a
+  subsystem maintainer; David Sterba committed the series and Johannes
+  reviewed this patch.
+- Step 3.5 Record: candidate applies standalone to the current `7.0.3`
+  worktree via `git apply --check`; companion patches are related fixes
+  but not prerequisites for this hunk.
 
-Record 2.4: Fix quality is high: it only propagates existing errors
-through the existing `ret` path. Regression risk is low; the behavior
-change is that real failures now abort/return instead of being hidden.
+Phase 4: Mailing List And External Research
 
-### Phase 3: Git History
-Record 3.1: `git blame` shows `btrfs_partially_delete_raid_extent()` was
-introduced by `6aea95ee318890` and changed to return errors by
-`dc14ba10781bd`. The ignored call sites come from the partial
-deletion/hole-punching work around `a678543e609df`, `50cae2ca69561`, and
-`6aa0e7cc569eb`.
+- Step 4.1 Record: `b4 dig -c 2aef5cb1dcf9b` found the original
+  submission at `https://patch.msgid.link/20260413065249.2320122-3-
+  robbieko@synology.com`. `b4 dig -a` found only v1 of the six-patch
+  series.
+- Step 4.2 Record: `b4 dig -w` showed original recipients were
+  `robbieko` and `linux-btrfs@vger.kernel.org`. The thread later
+  includes Johannes Thumshirn and David Sterba review/maintainer
+  feedback.
+- Step 4.3 Record: no separate bug report or syzbot report was linked.
+- Step 4.4 Record: series context confirms this is patch 2/6 in “fix
+  multiple bugs in raid-stripe-tree deletion path.” Johannes asked for
+  tests for the conditions; Johannes also gave `Reviewed-by` on this
+  patch. David later said the series was added to `for-next`.
+- Step 4.5 Record: direct lore stable search was blocked by Anubis; web
+  search did not find stable-specific discussion. This remains
+  unverified.
 
-Record 3.2: No `Fixes:` tag is present, so there was no tagged
-introducer to follow. History shows the relevant bug only exists once
-`dc14ba10781bd` made the helper return `int`.
+Phase 5: Code Semantic Analysis
 
-Record 3.3: Recent master history shows this is patch 6 of a six-patch
-RAID stripe tree deletion bug-fix series. The candidate applies cleanly
-to the current 7.0.y checkout without requiring the preceding five
-patches for context.
+- Step 5.1 Record: modified function is `btrfs_delete_raid_extent()`.
+- Step 5.2 Record: callers are `do_free_extent_accounting()` in
+  `fs/btrfs/extent-tree.c` and RAID stripe-tree selftests.
+  `do_free_extent_accounting()` is reached when a data extent’s refs
+  drop to zero in `__btrfs_free_extent()`.
+- Step 5.3 Record: key callees include `btrfs_search_slot()`,
+  `btrfs_item_key_to_cpu()`, `btrfs_del_item()`,
+  `btrfs_previous_item()`, and partial deletion helpers.
+- Step 5.4 Record: user reachability is through Btrfs extent
+  deletion/accounting paths; `file.c` calls `btrfs_free_extent()` while
+  dropping file extents. Exact VFS entrypoints were not fully traced,
+  but the path is filesystem-operation reachable on RST-enabled
+  filesystems.
+- Step 5.5 Record: similar verified patterns include
+  `btrfs_search_prev_slot()` checking `slot == 0` before decrementing.
+  `zoned.c` also demonstrates the Btrfs pattern of treating impossible
+  exact matches as `-EUCLEAN`, matching David’s review concern.
 
-Record 3.4: The author has multiple adjacent btrfs RAID stripe tree
-fixes in master; David Sterba committed the patch, and Johannes
-Thumshirn reviewed it.
+Phase 6: Stable Tree Analysis
 
-Record 3.5: Dependency: target tree must have the `int`-returning helper
-from `dc14ba10781bd`. Verified present in v6.14+ and absent in
-v6.12/v6.13, so older trees without that helper form are not applicable.
+- Step 6.1 Record: `v6.6` lacks this file/feature; `v6.12` has
+  `key.offset = length`; `v6.13` through `v7.0` have `key.offset = 0`
+  plus the vulnerable `nritems` decrement. Candidate is in `v7.1-rc2`,
+  not in `v7.0`.
+- Step 6.2 Record: backport difficulty is clean for current `7.0.3` by
+  `git apply --check`; older affected trees appear to have the same
+  local search pattern, but exact apply was not checked on separate
+  worktrees.
+- Step 6.3 Record: no alternate stable fix for the same subject was
+  found locally; stable-list search was blocked, so external stable
+  history is partially unverified.
 
-### Phase 4: Mailing List And External Research
-Record 4.1: `b4 dig -c a8d58a7c02009` found the original submission at `
-https://patch.msgid.link/20260413065249.2320122-7-
-robbieko@synology.com`. `b4 dig -a` found a single v1 series.
+Phase 7: Subsystem Context
 
-Record 4.2: `b4 dig -w` showed the patch was sent to `linux-
-btrfs@vger.kernel.org`; direct recipients were limited, but the
-subsystem list was included.
+- Step 7.1 Record: subsystem is Btrfs filesystem, specifically RAID
+  stripe tree. Criticality is important for users of that filesystem
+  feature, but not universal.
+- Step 7.2 Record: file history shows active development and several
+  recent bug fixes in the same deletion path, indicating this code is
+  relatively new and still being hardened.
 
-Record 4.3: No external bug report or syzbot link exists for this
-specific patch.
+Phase 8: Impact And Risk
 
-Record 4.4: The cover letter states all six patches fix bugs in RAID
-stripe tree deletion paths. Johannes requested tests for the series;
-patch 6 itself received “Looks good” and `Reviewed-by`.
+- Step 8.1 Record: affected population is config-specific and feature-
+  specific: Btrfs filesystems using `RAID_STRIPE_TREE`, which is
+  supported only when `CONFIG_BTRFS_EXPERIMENTAL` is enabled.
+- Step 8.2 Record: trigger is deleting/freeing data extents where the
+  matching stripe item is first in a leaf. Commonness of the leaf-
+  boundary condition is data-layout dependent. User triggering is
+  partially verified via file extent deletion paths, subject to
+  filesystem permissions and the RST feature being enabled.
+- Step 8.3 Record: failure mode is stale/missed RAID stripe-tree
+  deletion. Severity is high for affected users because
+  `btrfs_get_raid_extent_offset()` is used for read mapping and sets
+  `stripe->physical` from stripe-tree contents.
+- Step 8.4 Record: benefit is medium-high for affected RST users; risk
+  is low because the change is +15/-3, one function, no ABI/API change,
+  and accepted by Btrfs maintainers.
 
-Record 4.5: Lore `WebFetch` was blocked by Anubis, but the yhbt mirror
-and local `b4` mbox were readable. I found no stable-specific discussion
-or explicit stable nomination.
+Phase 9: Final Synthesis
 
-### Phase 5: Code Semantic Analysis
-Record 5.1: Modified function: `btrfs_delete_raid_extent()`.
-
-Record 5.2: Callers found: `do_free_extent_accounting()` calls
-`btrfs_delete_raid_extent()` for data extents; btrfs sanity tests also
-call it.
-
-Record 5.3: Key callees: `btrfs_partially_delete_raid_extent()` calls
-`kzalloc()`, `btrfs_del_item()`, and `btrfs_insert_item()`.
-`btrfs_delete_raid_extent()` also uses B-tree search/delete helpers.
-
-Record 5.4: Reachability verified through delayed reference processing:
-`run_one_delayed_ref()` -> `run_delayed_data_ref()` ->
-`__btrfs_free_extent()` -> `do_free_extent_accounting()` ->
-`btrfs_delete_raid_extent()`. This is reachable from normal Btrfs extent
-freeing and transaction commit paths.
-
-Record 5.5: Similar pattern search found only these three helper call
-sites, and the patch fixes all of them.
-
-### Phase 6: Stable Tree Analysis
-Record 6.1: The buggy code exists in trees containing `dc14ba10781bd`:
-verified v6.14, v6.15, v6.16, v6.17, v6.18, v6.19, and current 7.0.y
-lineage. It is not applicable to v6.12/v6.13 as checked.
-
-Record 6.2: Backport difficulty is low for the current 7.0.y checkout:
-`git apply --check` for the candidate patch succeeded cleanly.
-
-Record 6.3: Searches for this subject and “silently losing errors”
-between v6.14 and v6.19 found no already-applied equivalent fix.
-
-### Phase 7: Subsystem Context
-Record 7.1: Subsystem is Btrfs filesystem metadata, specifically RAID
-stripe tree support. Criticality: important to critical for users of
-Btrfs filesystems with `RAID_STRIPE_TREE` enabled.
-
-Record 7.2: The file has active recent maintenance and multiple bug
-fixes, which indicates the area is actively being stabilized rather than
-being a feature-only churn area.
-
-### Phase 8: Impact And Risk
-Record 8.1: Affected users are Btrfs users with the RAID stripe tree
-incompat feature and supported RAID/DUP data profiles.
-
-Record 8.2: Trigger is extent deletion/freeing where a stripe extent is
-partially deleted and the helper hits allocation or B-tree operation
-failure. User reachability depends on write access to such a mounted
-filesystem; I verified ordinary filesystem extent-freeing paths, not a
-standalone reproducer.
-
-Record 8.3: Failure mode is hidden filesystem metadata update failure
-and possible RAID stripe tree inconsistency. Severity: HIGH, with
-data/metadata integrity risk.
-
-Record 8.4: Benefit is high because errors propagate to transaction
-abort handling instead of being hidden. Risk is low because the patch is
-small, local, and only changes failure handling.
-
-### Phase 9: Final Synthesis
-Record 9.1: Evidence for backporting: real error propagation bug;
-filesystem metadata consistency impact; small single-file patch; all
-call sites fixed; reviewed by Johannes Thumshirn; committed by David
-Sterba; applies cleanly to current 7.0.y. Evidence against: no explicit
-stable tag, no external bug report, no direct test tag, and only
-relevant to RAID stripe tree users.
-
-Record 9.2: Stable checklist: obviously correct, yes; fixes a real bug,
-yes; important issue, yes due filesystem metadata consistency; small and
-contained, yes; no new features/APIs, yes; can apply to stable, yes for
-current 7.0.y and likely v6.14+ trees with the helper.
-
-Record 9.3: No special exception category applies; this is a normal bug
-fix.
-
-Record 9.4: The technical merit supports backporting to stable trees
-that contain the `int`-returning `btrfs_partially_delete_raid_extent()`
-implementation. Do not backport to trees where the helper is still
-`void`.
+- Step 9.1 Record: evidence for backporting: real metadata correctness
+  bug, verified affected stable code in `v6.13`-`v7.0`, small fix,
+  reviewed by Johannes, committed by David, clean apply to current
+  stable worktree. Evidence against: experimental/config-specific
+  feature, no `Reported-by`/`Tested-by`, no explicit stable nomination,
+  companion fixes in same area, and one unaddressed corrupt-image
+  robustness comment.
+- Step 9.2 Record: stable rules: obviously correct for valid state yes;
+  fixes real bug yes; important issue yes for RST metadata/read mapping
+  correctness; small and contained yes; no new feature/API yes; applies
+  to current stable tree yes.
+- Step 9.3 Record: no exception category like device ID, quirk, DT,
+  build, or docs applies.
+- Step 9.4 Record: decision is YES, limited to stable trees containing
+  the `offset = 0` deletion search logic.
 
 ## Verification
-- Phase 1: Parsed `git show --format=fuller --stat --patch
-  a8d58a7c02009`; confirmed tags and message.
-- Phase 2: Inspected the diff; confirmed one file, `12+ / 7-`, and three
-  ignored return values fixed.
-- Phase 3: Ran `git blame` on helper and call-site ranges; identified
-  relevant introducer/history commits.
-- Phase 3: Checked related file history on current tree and master;
-  found the six-patch deletion-path series.
-- Phase 3/6: Ran `git apply --check` with the candidate patch against
-  current checkout; it applies cleanly.
-- Phase 4: Ran `b4 dig -c`, `-a`, `-w`, and saved/read the mbox;
-  verified v1 submission, review, and no patch-specific objections.
-- Phase 4: WebFetch to lore was blocked by Anubis; yhbt mirror fetch
-  succeeded and matched the b4 thread.
-- Phase 5: Used code search and file reads to trace
-  `btrfs_delete_raid_extent()` through `do_free_extent_accounting()` and
-  delayed refs.
-- Phase 6: Used `git merge-base --is-ancestor` to verify v6.14+ contains
-  the helper returning errors; v6.12/v6.13 do not.
-- Phase 8: Verified `do_free_extent_accounting()` aborts the transaction
-  on nonzero return from `btrfs_delete_raid_extent()`.
+- Phase 1: Parsed `git show 2aef5cb1dcf9b` and confirmed tags, subject,
+  message, and +15/-3 diff.
+- Phase 2: Read `fs/btrfs/raid-stripe-tree.c` and confirmed the exact
+  modified code in `btrfs_delete_raid_extent()`.
+- Phase 3: Ran blame around the changed lines; confirmed
+  `6aea95ee318890` introduced `offset = 0`, and tag containment starts
+  at `v6.13`.
+- Phase 3: Inspected `ca41504efda646` and confirmed the function existed
+  earlier with a different `offset = length` search.
+- Phase 4: `b4 dig -c 2aef5cb1dcf9b` found the patch thread; `-a` found
+  only v1; `-w` showed original recipients.
+- Phase 4: Saved and searched the mbox; confirmed Johannes’ `Reviewed-
+  by`, test request, David’s `EUCLEAN` robustness comment, and David’s
+  “Added to for-next”.
+- Phase 5: Used code search and reads to trace
+  `btrfs_delete_raid_extent()` from `do_free_extent_accounting()` and
+  `__btrfs_free_extent()`, with file deletion paths calling
+  `btrfs_free_extent()`.
+- Phase 5: Verified read-side RST use: `set_io_stripe()` calls
+  `btrfs_get_raid_extent_offset()` for reads, and that function sets
+  `stripe->physical` from the stripe-tree item.
+- Phase 6: Checked historical tags: `v6.12` uses `offset = length`;
+  `v6.13`-`v7.0` use `offset = 0` and the vulnerable slot handling.
+- Phase 6: Ran `git apply --check` for the upstream patch against
+  current `7.0.3`; it succeeded.
+- UNVERIFIED: Direct lore stable search was blocked by Anubis, so
+  stable-list discussion could not be confirmed.
+- UNVERIFIED: Exact apply status on every older affected stable tree was
+  not checked in separate worktrees.
 
 **YES**
 
- fs/btrfs/raid-stripe-tree.c | 19 ++++++++++++-------
- 1 file changed, 12 insertions(+), 7 deletions(-)
+ fs/btrfs/raid-stripe-tree.c | 18 +++++++++++++++---
+ 1 file changed, 15 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index 5909ad35a1b07..86ddc3ecb4060 100644
+index d2b8995febec9..dd924048c6659 100644
 --- a/fs/btrfs/raid-stripe-tree.c
 +++ b/fs/btrfs/raid-stripe-tree.c
-@@ -213,8 +213,9 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
- 			/* The "left" item. */
- 			path->slots[0]--;
- 			btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
--			btrfs_partially_delete_raid_extent(trans, path, &key,
--							   diff_start, 0);
-+			ret = btrfs_partially_delete_raid_extent(trans, path,
-+								 &key,
-+								 diff_start, 0);
+@@ -95,14 +95,26 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
+ 	while (1) {
+ 		key.objectid = start;
+ 		key.type = BTRFS_RAID_STRIPE_KEY;
+-		key.offset = 0;
++		key.offset = (u64)-1;
+ 
+ 		ret = btrfs_search_slot(trans, stripe_root, &key, path, -1, 1);
+ 		if (ret < 0)
  			break;
- 		}
  
-@@ -230,8 +231,11 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
- 		if (found_start < start) {
- 			u64 diff_start = start - found_start;
+-		if (path->slots[0] == btrfs_header_nritems(path->nodes[0]))
+-			path->slots[0]--;
++		/*
++		 * Search with offset=(u64)-1 ensures we land on the correct
++		 * leaf even when the target entry is the first item on a leaf.
++		 * Since no real entry has offset=(u64)-1, ret is always 1 and
++		 * slot points past the last entry with objectid==start (or
++		 * past the end of the leaf if that entry is the last item).
++		 * Back up one slot to find the actual entry.
++		 */
++		if (path->slots[0] == 0) {
++			/* No entry with objectid <= start exists. */
++			ret = 0;
++			break;
++		}
++		path->slots[0]--;
  
--			btrfs_partially_delete_raid_extent(trans, path, &key,
--							   diff_start, 0);
-+			ret = btrfs_partially_delete_raid_extent(trans, path,
-+								 &key,
-+								 diff_start, 0);
-+			if (ret)
-+				break;
- 
- 			start += (key.offset - diff_start);
- 			length -= (key.offset - diff_start);
-@@ -254,9 +258,10 @@ int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start, u64 le
- 		if (found_end > end) {
- 			u64 diff_end = found_end - end;
- 
--			btrfs_partially_delete_raid_extent(trans, path, &key,
--							   key.offset - length,
--							   length);
-+			ret = btrfs_partially_delete_raid_extent(trans, path,
-+								 &key,
-+								 key.offset - length,
-+								 length);
- 			ASSERT(key.offset - diff_end == length);
- 			break;
- 		}
+ 		leaf = path->nodes[0];
+ 		slot = path->slots[0];
 -- 
 2.53.0
 

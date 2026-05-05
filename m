@@ -1,43 +1,43 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BDF9F331A76;
-	Tue,  5 May 2026 09:52:48 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9B608311975;
+	Tue,  5 May 2026 09:52:54 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1777974768; cv=none; b=oq4hAphmYDjWPTUk3wBhwgM6cblz+OS6LwwOMXYQxcnbS9fcNUinIz1SWbA9ZNV7I8MD6HBm38f+GD/ZKULCKZuOT8MhTR6y2aQOnFjKwWc8yXjH91S15xE8HAbWPvf046ti7PbVHxUIUN67nudmb9Htoe0fbiSF0/Dfw/JmNPg=
+	t=1777974774; cv=none; b=ASRj2fF0OTBbcrXYAod+nD6JdH08MVnz8kzsGg8PytHAgk038z5X73cM9nSe+Ubebiu2ZEAX9GXlRTgwW3p1Y5ZELMLz5tSSctAXkBU7KIUXTnqj/vidt+QRx+jYZ3//TB5QArQyXWRG+LwU3U9GetF3PrLJRrjaJcCKVB9DAlg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1777974768; c=relaxed/simple;
-	bh=3Jwe2AH1ArwNGNZIXmG5PPYRAW7osNQaKvrALtPm2m0=;
+	s=arc-20240116; t=1777974774; c=relaxed/simple;
+	bh=vjE4Cv92YHNag8i6JvNnjf69Un/cmZ80a1irNkLp/8M=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=drk5uNxUb6xzL5kSo80PJPeT98cOnxWXVO4YDrs8Moov5R43tuE2K2DP9pleBH0SPDNgsp5QI8+0cbn+VD+t3/DxKz7EauNCZ7pGQfkT4iCEcjpGtPeDgUsiHNWMgHXl8p5Mh4//Ojg2/QzSuQpi8T+A2Dtf6cCuVuMLQ24ASQw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MneIq/gc; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version:Content-Type; b=t6IhS32/LSReCcdJcTJEt0oY4sSfsCIrRM8jsQNJYsXe27z3UM76kzjHDJTU+xxWUWCd2XumhkUMMhqh80IOL7aw87biaxffdYMq4MWTh/e/Uya+Lc2ZzU/O7Dh6096rSWjPsqHejdBEqYM+214joGD2SvKc3DtCIsnifpsayOw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dmK62tG7; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MneIq/gc"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 64796C2BCB9;
-	Tue,  5 May 2026 09:52:46 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dmK62tG7"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4D6ACC2BCB9;
+	Tue,  5 May 2026 09:52:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1777974768;
-	bh=3Jwe2AH1ArwNGNZIXmG5PPYRAW7osNQaKvrALtPm2m0=;
+	s=k20201202; t=1777974774;
+	bh=vjE4Cv92YHNag8i6JvNnjf69Un/cmZ80a1irNkLp/8M=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=MneIq/gcYKZBjAWGM88A3JE36mGcG2/VNBNTzNwTUXDAjv7T6gJ+zCkEoek3vheTk
-	 t4oJbBi745pLs31o+Gu+CuTwBlR3C4ZLKsGnZS0phCc7MNBlzV3EE07KqNwYFOuXzW
-	 XqkLVGgYV710shPTlxgTN3Eqx7lIuSafLlSyXUu9tKVSt4bnWQUYoQUtvmIXcxo42y
-	 TUBr5/rZ1/n3mi5SEDpAfgy0Ozxj4cr2najX3XNN0DGhpt0pDCBL2ALysaLlseB21k
-	 YQy8uNzM+JfTxIjkwuPtXKa5Yf6ive4wpUJdOH60mEVgD4Uzn00Za0XPJkWg/Ky7Nu
-	 GvEgy4Ti+fJkg==
+	b=dmK62tG7mO/xPEAW8wOz0l0juCpwoQxLe3HVb/q2hz5QRveBZGpbxU1lJIeSNMIhG
+	 uydXealE4jy+ADCEdejROLsdzOhI/tkvcxfAZv2V6zzQYmMQhRcJrKWcx3hYKBemRA
+	 zNO9NClPJ40lozbj3chei0RYaJzdsRKyY2NMMIswU/pFUd+7mGhlUSjeksIVj3/Bf/
+	 XKiSqD5nqSooHedk5Nels80QHh9dNhqdn0Dv+iueOC5LMIx5wA96hoGm7b6N3YpyQG
+	 NuEHlxGIDR71+6oDhinoXgskmvKrg7CNKB40zrvTcIz5K93MtA2ouWZSG21BMT9gXE
+	 3sMN/BlkXd0xA==
 From: Sasha Levin <sashal@kernel.org>
 To: patches@lists.linux.dev,
 	stable@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+Cc: Qu Wenruo <wqu@suse.com>,
+	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 7.0-5.10] btrfs: handle unexpected free-space-tree key types
-Date: Tue,  5 May 2026 05:51:34 -0400
-Message-ID: <20260505095149.512052-18-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 7.0-6.6] btrfs: apply first key check for readahead when possible
+Date: Tue,  5 May 2026 05:51:36 -0400
+Message-ID: <20260505095149.512052-20-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260505095149.512052-1-sashal@kernel.org>
 References: <20260505095149.512052-1-sashal@kernel.org>
@@ -53,15 +53,51 @@ X-stable-base: Linux 7.0.3
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-From: David Sterba <dsterba@suse.com>
+From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit 4d95b9efd783adca472e957b2f576983e789b839 ]
+[ Upstream commit a86a283430e1a44907b142c4f53e1f3ad24e87ae ]
 
-Replace the conditional assertions with proper error handling and
-transaction abort if we find an unexpected key type in the free space
-tree.
+Currently for tree block readahead we never pass a
+btrfs_tree_parent_check with @has_first_key set.
 
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Without @has_first_key set, btrfs will skip the following extra
+checks:
+
+- Header generation check
+  This is a minor one.
+
+- Empty leaf/node checks
+  This is more serious, for certain trees like the csum tree, they are
+  allowed to be empty, thus an empty leaf can pass the tree checker.
+  But if there is a parent node for such an empty leaf, it indicates
+  corruption.
+
+  Without @has_first_key set, we can no longer detect such a problem.
+
+  In fact there is already a fuzzed image report that a corrupted csum
+  leaf which has zero nritems but still has a parent node can trigger
+  a BUG_ON() during csum deletion.
+
+However there are only two call sites of btrfs_readahead_tree_block():
+
+- Inside relocate_tree_blocks()
+  At this call site we are trying to grab the first key of the tree
+  block, thus we are not able to pass a @first_key parameter.
+
+- Inside btrfs_readahead_node_child()
+  This is the more common call site, where we have the parent node and
+  want to readahead the child tree blocks.
+
+  In this case we can easily grab the node key and pass it for checks.
+
+Add a new parameter @first_key to btrfs_readahead_tree_block() and pass
+the node key to it inside btrfs_readahead_node_child().
+
+This should plug the gap in empty leaf detection during readahead.
+
+Link: https://lore.kernel.org/linux-btrfs/20260409071255.3358044-1-gality369@gmail.com/
+Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
@@ -69,264 +105,308 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
 LLM Generated explanations, may be completely bogus:
 
 ## Phase 1: Commit Message Forensics
-Step 1.1 Record: subsystem `btrfs`, action verb `handle`, intent:
-replace assertions with real error handling for unexpected free-space-
-tree key types.
+Record 1.1: Subsystem is `btrfs`; action is `apply` / `pass existing
+first key`; intent is to enable existing parent/first-key validation for
+tree-block readahead where the parent node is available.
 
-Step 1.2 Record: tags found: `Reviewed-by: Johannes Thumshirn
-<johannes.thumshirn@wdc.com>`, `Signed-off-by: David Sterba
-<dsterba@suse.com>`. No `Fixes:`, `Reported-by:`, `Tested-by:`, `Link:`,
-or `Cc: stable`.
+Record 1.2: Tags found:
+- `Link: https://lore.kernel.org/linux-
+  btrfs/20260409071255.3358044-1-gality369@gmail.com/`
+- `Reviewed-by: David Sterba <dsterba@suse.com>`
+- `Signed-off-by: Qu Wenruo <wqu@suse.com>`
+- `Signed-off-by: David Sterba <dsterba@suse.com>`
+- No `Fixes:`, `Reported-by:`, `Tested-by:`, or `Cc:
+  stable@vger.kernel.org` tag in the final commit.
 
-Step 1.3 Record: the commit says unexpected free-space-tree key types
-currently hit conditional assertions; the fix logs an error, returns
-`-EUCLEAN`, and aborts the transaction. No user report, stack trace, or
-affected version is stated.
+Record 1.3: The commit describes a real corruption-detection gap:
+readahead builds a `btrfs_tree_parent_check` without `has_first_key`, so
+checks that require the parent slot key are skipped. The stated failure
+mode is a fuzzed corrupt csum-tree leaf with zero items but a parent
+node later reaching csum deletion and triggering a `BUG_ON()`.
 
-Step 1.4 Record: yes, this is a hidden bug fix. `ASSERT(0)` is not
-runtime handling in normal non-`CONFIG_BTRFS_ASSERT` builds, so the
-unexpected-key branch previously did not return an error or advance
-iteration.
+Record 1.4: This is a hidden bug fix, not a feature. It adds no new
+behavior for valid filesystems; it makes an existing metadata integrity
+check run during readahead when the caller already has the parent key.
 
 ## Phase 2: Diff Analysis
-Step 2.1 Record: one file changed: `fs/btrfs/free-space-tree.c`, 15
-insertions and 3 deletions. Modified functions:
-`btrfs_convert_free_space_to_bitmaps()`,
-`btrfs_convert_free_space_to_extents()`,
-`btrfs_remove_block_group_free_space()`. Scope: single-file surgical
-fix.
+Record 2.1: Final committed diff changes 3 files: `fs/btrfs/extent_io.c`
++12/-2, `fs/btrfs/extent_io.h` +2/-1, `fs/btrfs/relocation.c` +1/-1;
+total +15/-4. Modified functions are `btrfs_readahead_tree_block()`,
+`btrfs_readahead_node_child()`, and the call in
+`relocate_tree_blocks()`. Scope is small and Btrfs-local.
 
-Step 2.2 Record: each hunk changes `else { ASSERT(0); }` after
-recognized free-space-tree item types into `btrfs_err()`, `ret =
--EUCLEAN`, `btrfs_abort_transaction()`, and exit. Affected paths are
-transaction-time conversion between free-space extents/bitmaps and
-block-group free-space removal.
+Record 2.2: Before, `btrfs_readahead_tree_block()` always initialized
+parent-check data with level/transid only. After, it optionally copies a
+caller-provided `first_key` and sets `has_first_key`.
+`btrfs_readahead_node_child()` now derives the key from the parent node
+slot and passes it. The relocation caller passes `NULL` because it lacks
+the first key at that point.
 
-Step 2.3 Record: bug category is logic/corruption error handling. With
-assertions disabled, the unexpected branch leaves `path->slots[0]`
-unchanged and continues the inner `while (path->slots[0] > 0)`, which
-can loop indefinitely. With assertions enabled, it can `BUG()`. The fix
-converts both cases to a controlled filesystem-corruption error and
-transaction abort.
-
-Step 2.4 Record: fix quality is high: minimal, consistent with
-surrounding transaction-abort handling, no new API, no data structure
-change. Regression risk is low; the only changed behavior is for
-unexpected on-disk key types.
-
-## Phase 3: Git History Investigation
-Step 3.1 Record: `git blame` shows the affected `ASSERT(0)` branches
-were introduced by `a5ed91828518ab` (“Btrfs: implement the free space
-B-tree”), first contained in `v4.5-rc1`. Later nearby lines changed, but
-the bad branches are old.
-
-Step 3.2 Record: no `Fixes:` tag, so no tagged introducing commit to
-follow. Blame identifies `a5ed91828518ab` as the source of these
-branches.
-
-Step 3.3 Record: recent file history shows related free-space-tree
-churn, but this patch is standalone. The current stable `7.0` tree
-accepts the patch with `git apply --check`. Older stable tags contain
-the same logical branches but may need context/name adjustment.
-
-Step 3.4 Record: author David Sterba is listed as a Btrfs maintainer in
-`MAINTAINERS`; recent history shows many Btrfs commits from him.
-
-Step 3.5 Record: no functional prerequisite was found. The patch uses
-existing `btrfs_err()`, `-EUCLEAN`, and `btrfs_abort_transaction()`
+Record 2.3: Bug category is filesystem metadata validation / corruption
+handling. Mechanism: missing parent first-key information let readahead
+read and mark a corrupt child block valid under weaker checks. Passing
+the parent slot key enables existing first-key/empty-child validation
 paths.
 
+Record 2.4: Fix quality is good: small, direct, no locking changes, no
+public API changes, no unrelated refactor. Regression risk is low; the
+new validation applies only where the parent node already provides the
+expected key. Legitimate empty roots are not children of a parent slot
+with a first key.
+
+## Phase 3: Git History Investigation
+Record 3.1: `git blame` shows the current readahead helper was
+introduced by `bfb484d922a3` (`btrfs: cleanup extent buffer readahead`,
+described as `v5.11-rc1~144^2~112`), owner/level plumbing by
+`3fbaf25817f7`, and the parent-check struct initialization in this
+helper by `947a629988f1` (`v6.2-rc1~143^2~39`).
+`btrfs_verify_level_key()` empty-child validation exists in the local
+stable tags examined, including `v5.15`, `v6.1`, and newer.
+
+Record 3.2: No `Fixes:` tag is present, so there was no direct fixes
+target to follow for this commit.
+
+Record 3.3: Recent file history shows related Btrfs metadata/readahead
+validation work, including `f04c6475c2db` (`btrfs: revalidate cached
+tree blocks on the uptodate path`) and `908ab5634751` (`btrfs: remove
+atomic parameter from btrfs_buffer_uptodate()`). The candidate itself is
+standalone on `master`, but older stable trees have API differences.
+
+Record 3.4: Qu Wenruo has many recent `fs/btrfs` commits; David Sterba
+is listed in `MAINTAINERS` as Btrfs maintainer and reviewed/committed
+this patch.
+
+Record 3.5: Dependency/backport finding: the patch applies cleanly to
+the current `v7.0.3` working tree with offsets. `v6.6`, `v6.12`, and
+`v7.0` have the `btrfs_tree_parent_check` readahead infrastructure.
+`v5.15`/`v6.1` have older `read_extent_buffer_pages()` interfaces, so
+they would need a tailored backport rather than the exact diff.
+
 ## Phase 4: Mailing List And External Research
-Step 4.1 Record: `b4 dig -c 4d95b9efd783a` found the lore submission at
-`https://patch.msgid.link/23bf53315a59a3acc0abdf4f4d8f4c9336c936e1.17761
-80388.git.dsterba@suse.com`. It was `v1`, patch `3/6`.
+Record 4.1: `b4 dig -c a86a283430e1a` failed exact patch-id matching,
+then found the candidate by author/subject at
+`49ae0f6badb787c1111daff252f034b7ae94f257.1775991651.git.wqu@suse.com`.
+`b4 am` fetched the candidate patch and showed 3 thread messages.
 
-Step 4.2 Record: `b4 dig -w` shows original recipients were David Sterba
-and `linux-btrfs@vger.kernel.org`. The saved mbox contains Johannes
-Thumshirn’s “Looks good to me” and `Reviewed-by`.
+Record 4.2: `b4 dig -w` mis-associated the related earlier patch thread,
+so I did not rely on it for candidate recipients. The candidate mbox
+shows it was sent to `linux-btrfs@vger.kernel.org`; David Sterba replied
+with `Reviewed-by`.
 
-Step 4.3 Record: no reporter or bug-report link exists in the commit or
-thread.
+Record 4.3: The linked bug thread contains a concrete fuzzed-image
+crash: `kernel BUG at fs/btrfs/ctree.c:3388`, call chain through
+`push_leaf_left()`, `btrfs_del_items()`, `btrfs_del_csums()`, delayed
+refs, transaction commit, and `sync`. Qu replied that detecting the
+empty non-root leaf earlier during extent-buffer validation was
+preferable.
 
-Step 4.4 Record: series title was “Debugging macro and kmalloc_obj*
-cleanups”. Cover letter explicitly says this patch “updates error
-handling” for “impossible” conditions. No dependency on other patches
-was found.
+Record 4.4: Related patch context: the linked patch proposed checking
+`push_leaf_left()` directly. Qu rejected that as too late and followed
+with this broader readahead validation coverage patch. No newer revision
+of this candidate was found; the final commit incorporated David’s minor
+review by dropping the unnecessary trailing comma from the submitted
+diff.
 
-Step 4.5 Record: stable lore WebFetch was blocked by Anubis. Web search
-found the original patch discussion, but no stable-specific request or
-rejection.
+Record 4.5: WebFetch of the stable lore search was blocked by Anubis, so
+stable-list discussion could not be verified through WebFetch. No
+stable-specific rationale against this patch was found locally.
 
 ## Phase 5: Code Semantic Analysis
-Step 5.1 Record: modified functions:
-`btrfs_convert_free_space_to_bitmaps()`,
-`btrfs_convert_free_space_to_extents()`,
-`btrfs_remove_block_group_free_space()`.
+Record 5.1: Modified functions: `btrfs_readahead_tree_block()` and
+`btrfs_readahead_node_child()`.
 
-Step 5.2 Record: conversion functions are called from
-`update_free_space_extent_count()`, which is reached by free-space-tree
-add/remove operations. `btrfs_remove_block_group_free_space()` is called
-from block-group removal and relocation paths.
+Record 5.2: Callers of `btrfs_readahead_node_child()` in the local tree
+are Btrfs tree search/balance readahead in `ctree.c`, tree deletion
+walking in `extent-tree.c`, chunk-tree read at mount in `volumes.c`, and
+send-tree traversal in `send.c`. `relocate_tree_blocks()` calls
+`btrfs_readahead_tree_block()` directly.
 
-Step 5.3 Record: key callees include `btrfs_search_prev_slot()`,
-`btrfs_item_key_to_cpu()`, `btrfs_del_items()`,
-`btrfs_search_free_space_info()`, and now `btrfs_abort_transaction()`.
+Record 5.3: Key callees are `btrfs_node_key_to_cpu()`,
+`btrfs_node_blockptr()`, `btrfs_node_ptr_generation()`,
+`btrfs_find_create_tree_block()`, `btrfs_buffer_uptodate()`, and
+`read_extent_buffer_pages_nowait()`.
 
-Step 5.4 Record: the affected paths are reachable during Btrfs
-allocation/freeing, relocation, balance/remap, and block-group removal.
-Trigger requires an unexpected free-space-tree key type in the relevant
-block-group key range; I did not verify an unprivileged direct trigger.
+Record 5.4: Reachability is real for Btrfs users: metadata readahead
+occurs during tree searches, balancing, send traversal, chunk-tree mount
+processing, and snapshot/drop-tree walking. The concrete bug report
+reaches a crash via filesystem operation and `sync` on a corrupted
+mounted image.
 
-Step 5.5 Record: similar `ASSERT(0)` patterns exist elsewhere in older
-Btrfs free-space-tree code, but this patch specifically fixes the three
-branches where the loop otherwise makes no progress.
+Record 5.5: Similar pattern exists in normal tree reads:
+`read_block_for_search()` already builds a parent check with
+`has_first_key = true`. This patch aligns readahead with that existing
+checked read path.
 
-## Phase 6: Stable Tree Analysis
-Step 6.1 Record: the affected logic exists in stable-era tags checked:
-`v5.15`, `v6.1`, `v6.6`, `v6.12`, `v6.19`, and `v7.0`. It originated in
-`v4.5-rc1`.
+## Phase 6: Cross-Referencing And Stable Tree Analysis
+Record 6.1: The affected readahead helper exists from `v5.11` onward.
+Local tags show `v5.15`, `v6.1`, `v6.6`, `v6.12`, and `v7.0` contain the
+readahead path; `v6.6+` contain the same parent-check structure in this
+area.
 
-Step 6.2 Record: clean apply verified on current `stable/linux-7.0.y`.
-For older stable trees, function names differ before `v6.19`
-(`convert_free_space_to_bitmaps()` etc.), so minor backport adjustment
-is expected.
+Record 6.2: Backport difficulty: clean for current `v7.0.3` by `git
+apply --check`; likely minor/manual for `v6.6` and `v6.12`; non-trivial
+for `v5.15`/`v6.1` due older metadata read APIs.
 
-Step 6.3 Record: current branch search found no existing fix with the
-same “unexpected free space tree key type” message.
+Record 6.3: No equivalent fix with the same subject was found in the
+checked stable working tree. Related validation infrastructure already
+exists, so this patch fills a coverage gap rather than introducing the
+checker.
 
 ## Phase 7: Subsystem And Maintainer Context
-Step 7.1 Record: subsystem is Btrfs filesystem, criticality IMPORTANT
-because it affects users of a production filesystem and can impact
-transaction progress and filesystem integrity handling.
+Record 7.1: Subsystem is `fs/btrfs`, a production filesystem.
+Criticality is IMPORTANT to CORE for Btrfs users because metadata
+corruption handling can mean kernel crash or filesystem transaction
+abort behavior.
 
-Step 7.2 Record: Btrfs is active; recent `fs/btrfs` history includes
-multiple fixes and the candidate was merged via the Btrfs maintainer
-tree.
+Record 7.2: Btrfs is actively maintained; recent logs show ongoing Btrfs
+commits from Qu Wenruo and David Sterba, and `MAINTAINERS` lists David
+Sterba as maintainer.
 
-## Phase 8: Impact And Risk
-Step 8.1 Record: affected users are Btrfs users with the free-space-tree
-feature enabled and malformed/unexpected free-space-tree entries.
+## Phase 8: Impact And Risk Assessment
+Record 8.1: Affected users are Btrfs users, especially systems
+encountering corrupted metadata or fuzzed/untrusted images.
 
-Step 8.2 Record: trigger is not every boot or every operation; it
-requires unexpected free-space-tree key types encountered during
-conversion/removal. It can be hit by mounted filesystem state or
-corruption; unprivileged trigger was not verified.
+Record 8.2: Trigger requires a corrupt tree block with an empty non-root
+child reachable through parent-node readahead. The crash report shows a
+reachable path through Btrfs csum deletion and `sync`; unprivileged
+creation/mounting of such an image was not verified.
 
-Step 8.3 Record: failure mode is severe: non-assert builds can spin in
-the inner loop because the slot is not decremented; assert builds can
-`BUG()`. Severity: HIGH to CRITICAL depending on build/configuration.
+Record 8.3: Failure mode is severe: the linked report shows a kernel
+`BUG`/Oops during Btrfs metadata operations. Severity: CRITICAL for
+affected systems.
 
-Step 8.4 Record: benefit is high for affected systems because it
-prevents a hang/BUG and cleanly aborts a corrupt transaction. Risk is
-low because the patch only affects an invalid/corrupt branch and is 15
-added lines in one file.
+Record 8.4: Benefit is high because it turns a missed corruption case
+into earlier detection. Risk is low because the patch is small and only
+supplies existing verifier data to existing verifier code.
 
 ## Phase 9: Final Synthesis
-Step 9.1 Record: evidence for backporting: old bug present since
-`v4.5-rc1`, affects active stable trees, fixes hang/BUG behavior, small
-and contained, authored by Btrfs maintainer, reviewed. Evidence against:
-no user report, no `Fixes:` or stable tag, trigger appears to require
-corrupted/unexpected on-disk state, older trees need minor backport
-context adjustment.
+Record 9.1: Evidence for backporting: fixes a real fuzzed corruption
+crash path, reviewed by Btrfs maintainer, tiny Btrfs-only diff, no new
+feature/API, clean on `v7.0.3`, aligns readahead with normal parent-key
+validation. Evidence against: older stable trees need tailored
+backports; no `Tested-by`; WebFetch stable-list search was blocked.
+Unresolved: exact applicability to every older LTS branch without
+writing/testing dedicated backports.
 
-Step 9.2 Record: stable checklist: obviously correct: yes by code
-inspection; tested: no explicit `Tested-by`. Real bug: yes, verified
-non-progress branch. Important issue: yes, possible hang/BUG.
-Small/contained: yes. No new features/APIs: yes. Applies to stable:
-clean on `7.0`, minor adjustments likely for older trees.
+Record 9.2: Stable rules:
+1. Obviously correct and tested: mostly yes by inspection and maintainer
+   review; no explicit `Tested-by`.
+2. Fixes a real bug: yes, linked fuzzed image crash and Btrfs
+   corruption-detection gap.
+3. Important issue: yes, kernel BUG/Oops on filesystem metadata path.
+4. Small and contained: yes, 15 insertions / 4 deletions in Btrfs.
+5. No new features/APIs: yes.
+6. Can apply to stable: yes for current `v7.0.y`; likely minor/tailored
+   for other modern stable trees; older LTS needs more care.
 
-Step 9.3 Record: no automatic exception category applies; this is not a
-device ID, quirk, DT, build, or documentation change.
+Record 9.3: No automatic exception category such as device ID, quirk,
+DT, build, or docs. This is a filesystem bug fix.
 
-Step 9.4 Record: decision is YES. The key technical point is that this
-is not just replacing a debug assertion: in production builds the
-assertion compiles away, leaving a no-progress loop on unexpected free-
-space-tree item types. The fix is small and turns a hang/BUG into normal
-Btrfs corruption handling.
+Record 9.4: Decision: backport. The benefit of earlier metadata
+corruption detection and avoiding a documented Btrfs BUG outweighs the
+low risk of passing an existing parent key into existing checks.
 
 ## Verification
-- Phase 1: Parsed `git show --format=fuller` for commit
-  `4d95b9efd783adca472e957b2f576983e789b839`; confirmed tags and absence
-  of reporter/fixes/stable tags.
-- Phase 2: Inspected full diff; confirmed 15 insertions, 3 deletions,
-  one file, three functions.
-- Phase 2: Read `fs/btrfs/messages.h`; confirmed `ASSERT()` calls
-  `BUG()` only under `CONFIG_BTRFS_ASSERT`, otherwise compiles away via
-  `BUILD_BUG_ON_INVALID()`.
-- Phase 3: Ran `git blame` on all three changed regions; confirmed
-  `ASSERT(0)` branches came from `a5ed91828518ab`.
-- Phase 3: Ran `git describe --contains a5ed91828518ab`; confirmed first
-  contained around `v4.5-rc1`.
-- Phase 3: Checked `MAINTAINERS`; confirmed David Sterba is Btrfs
-  maintainer.
-- Phase 4: Ran `b4 dig -c`, `-a`, `-w`; confirmed v1 patch 3/6,
-  recipients, and lore URL.
-- Phase 4: Saved and read mbox; confirmed patch text, cover-letter
-  context, and Johannes Thumshirn `Reviewed-by`.
-- Phase 4: WebFetch to lore/stable was blocked by Anubis; WebSearch
-  found original patch mirror and no stable-specific discussion.
-- Phase 5: Used `rg` and file reads to trace callers through
-  `update_free_space_extent_count()`, free-space add/remove, block-group
-  removal, relocation, and extent-tree allocation/freeing paths.
-- Phase 6: Scripted checks against `v5.15`, `v6.1`, `v6.6`, `v6.12`,
-  `v6.19`, `v7.0`, and `master`; confirmed the affected assertions exist
-  in stable-era code and the fix message only in `master`.
-- Phase 6: Ran `git apply --check` for the candidate patch on current
-  `stable/linux-7.0.y`; it applies cleanly.
-- Phase 8: Verified `EUCLEAN` maps to filesystem corruption via
-  `include/uapi/asm-generic/errno.h` (`EFSCORRUPTED EUCLEAN`).
-- Unverified: no runtime test, no kernel build, no proof of unprivileged
-  trigger, and no direct check that every older stable branch applies
-  without manual adjustment.
+- Phase 1: Parsed `git show -s a86a283430e1a`; confirmed subject, body,
+  tags, author, reviewer, and lack of `Fixes:`/`Tested-by`.
+- Phase 2: Used `git show --stat --numstat` and full patch; confirmed
+  files, line counts, and function changes.
+- Phase 3: Used `git blame -L :btrfs_readahead_tree_block`,
+  `:btrfs_readahead_node_child`, and `:btrfs_verify_level_key`;
+  confirmed historical origins and validation code.
+- Phase 3: Used `git log master --oneline -- fs/btrfs/...` and author
+  logs; confirmed related Btrfs history and author activity.
+- Phase 4: Used `b4 dig -c`, `b4 dig -a`, `b4 am`, and `b4 mbox`;
+  confirmed candidate thread, related bug thread, maintainer review, and
+  absence of substantive objections beyond a minor comma cleanup.
+- Phase 4: WebFetch of lore pages was blocked by Anubis; b4 mbox
+  provided the mailing-list content instead.
+- Phase 5: Used `rg` and code reads for callers in `ctree.c`, `extent-
+  tree.c`, `volumes.c`, and `send.c`; confirmed reachability through
+  Btrfs metadata operations.
+- Phase 6: Used `git grep` on `v5.15`, `v6.1`, `v6.6`, `v6.12`, `v7.0`;
+  confirmed code presence and API differences.
+- Phase 6: Ran `git apply --check` of the candidate diff on current
+  `v7.0.3`; patch applies with offsets.
+- Phase 7: Checked `MAINTAINERS`; David Sterba is Btrfs maintainer.
+- Phase 8: Read the linked bug mbox; confirmed the kernel BUG/Oops stack
+  through `btrfs_del_csums()` and `sync`.
 
 **YES**
 
- fs/btrfs/free-space-tree.c | 18 +++++++++++++++---
- 1 file changed, 15 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c  | 14 ++++++++++++--
+ fs/btrfs/extent_io.h  |  3 ++-
+ fs/btrfs/relocation.c |  2 +-
+ 3 files changed, 15 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index 9efd1ec90f031..472b3060e5ac3 100644
---- a/fs/btrfs/free-space-tree.c
-+++ b/fs/btrfs/free-space-tree.c
-@@ -259,7 +259,11 @@ int btrfs_convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
- 				nr++;
- 				path->slots[0]--;
- 			} else {
--				ASSERT(0);
-+				btrfs_err(fs_info, "unexpected free space tree key type %u",
-+					  found_key.type);
-+				ret = -EUCLEAN;
-+				btrfs_abort_transaction(trans, ret);
-+				goto out;
- 			}
- 		}
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 5f97a3d2a8d72..83feb96b82673 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4593,7 +4593,8 @@ int try_release_extent_buffer(struct folio *folio)
+  * to read the block we will not block on anything.
+  */
+ void btrfs_readahead_tree_block(struct btrfs_fs_info *fs_info,
+-				u64 bytenr, u64 owner_root, u64 gen, int level)
++				u64 bytenr, u64 owner_root, u64 gen, int level,
++				const struct btrfs_key *first_key)
+ {
+ 	struct btrfs_tree_parent_check check = {
+ 		.level = level,
+@@ -4602,6 +4603,11 @@ void btrfs_readahead_tree_block(struct btrfs_fs_info *fs_info,
+ 	struct extent_buffer *eb;
+ 	int ret;
  
-@@ -405,7 +409,11 @@ int btrfs_convert_free_space_to_extents(struct btrfs_trans_handle *trans,
++	if (first_key) {
++		memcpy(&check.first_key, first_key, sizeof(struct btrfs_key));
++		check.has_first_key = true;
++	}
++
+ 	eb = btrfs_find_create_tree_block(fs_info, bytenr, owner_root, level);
+ 	if (IS_ERR(eb))
+ 		return;
+@@ -4629,9 +4635,13 @@ void btrfs_readahead_tree_block(struct btrfs_fs_info *fs_info,
+  */
+ void btrfs_readahead_node_child(struct extent_buffer *node, int slot)
+ {
++	struct btrfs_key node_key;
++
++	btrfs_node_key_to_cpu(node, &node_key, slot);
+ 	btrfs_readahead_tree_block(node->fs_info,
+ 				   btrfs_node_blockptr(node, slot),
+ 				   btrfs_header_owner(node),
+ 				   btrfs_node_ptr_generation(node, slot),
+-				   btrfs_header_level(node) - 1);
++				   btrfs_header_level(node) - 1,
++				   &node_key);
+ }
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 8d05f1a58b7c3..6f7e3ead1dbaa 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -264,7 +264,8 @@ static inline void wait_on_extent_buffer_writeback(struct extent_buffer *eb)
+ }
  
- 				nr++;
- 			} else {
--				ASSERT(0);
-+				btrfs_err(fs_info, "unexpected free space tree key type %u",
-+					  found_key.type);
-+				ret = -EUCLEAN;
-+				btrfs_abort_transaction(trans, ret);
-+				goto out;
- 			}
- 		}
+ void btrfs_readahead_tree_block(struct btrfs_fs_info *fs_info,
+-				u64 bytenr, u64 owner_root, u64 gen, int level);
++				u64 bytenr, u64 owner_root, u64 gen, int level,
++				const struct btrfs_key *first_key);
+ void btrfs_readahead_node_child(struct extent_buffer *node, int slot);
  
-@@ -1518,7 +1526,11 @@ int btrfs_remove_block_group_free_space(struct btrfs_trans_handle *trans,
- 				nr++;
- 				path->slots[0]--;
- 			} else {
--				ASSERT(0);
-+				btrfs_err(trans->fs_info, "unexpected free space tree key type %u",
-+					  found_key.type);
-+				ret = -EUCLEAN;
-+				btrfs_abort_transaction(trans, ret);
-+				return ret;
- 			}
- 		}
+ /* Note: this can be used in for loops without caching the value in a variable. */
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 2519cdb401eda..ff31266a44a4d 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2610,7 +2610,7 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+ 		if (!block->key_ready)
+ 			btrfs_readahead_tree_block(fs_info, block->bytenr,
+ 						   block->owner, 0,
+-						   block->level);
++						   block->level, NULL);
+ 	}
  
+ 	/* Get first keys */
 -- 
 2.53.0
 

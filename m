@@ -1,207 +1,177 @@
-Received: from DM5PR21CU001.outbound.protection.outlook.com (mail-centralusazon11011041.outbound.protection.outlook.com [52.101.62.41])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A131223E342;
-	Wed,  6 May 2026 13:15:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=52.101.62.41
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778073345; cv=fail; b=ivSomx3kMPrhb3Z7DO4nH/0Kq3ukQnlUcy4tZvcN/XEN4PTdvsncoh/bm7newLioMfBgvM9+41wckl9l8RU0fnCmdEZ5SkDxWXe3rqjtTyFrlmH6MaZyRjQASdkfLgIODr7/c579R33ZwnVzvRofahI3s12g4zYWUPL+/m9L7Ag=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778073345; c=relaxed/simple;
-	bh=tct1lKkh/5+wEh+7tcKoGGyrrqX1Gb5KVMSUqHSuAUs=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=r6E1mbz+NBZA0dHN770SLjypckXF2P1STPdxU9DwyJ5xj675F9Jhdd0PwtlsZlEE01erMymiH8EGT6+H+KQv4elqlcNwE7OZmHDcUk4qZx93/TxiWCgTKJSNZ29iQur+SDn3uORuaDxI49/9FFZQNyAXZWOzy+NA6cBbt+eqULM=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=R3lKYbAo; arc=fail smtp.client-ip=52.101.62.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9061E3EC2DB
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 May 2026 13:43:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1778075025; cv=none; b=gaczOQ2i8B+atQaVCj5x77/nTqMpdCcTK+WABMzgwpkq3CRLZjnvyetRT5YibkkQPAbVzblwQdtkqDV+t4QnOwaQxgBChzyQrjZB2fHuwhgTLylPJtu1xPHdSlmEITHqTFoUDnlrHku9Cwp53fvEr9jALC2LlTTLE/4s7F5v7SY=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1778075025; c=relaxed/simple;
+	bh=eDHnrkj9aNYuc5uMxxntRmN9oHbo9NX8e2lJYlgsesc=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=QioAgvqNrLBiqA5eDA/IoLL04+HsB7/63EHBtagPbKHTvWgUjlPlV2H0b/4xSeTLnxJa+Qzc8Or6JAWrMRtCwj/Mfezw79fhEOi5EzrA9YKk2NdC7sbvQF9gCU2aZtq0LSidDCP2zsQKr/UphSFeUHeF1UJ4oEkAataYmZXdP5k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Ynx19IKV; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=YvFm/q5k; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Ynx19IKV; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=YvFm/q5k; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="R3lKYbAo"
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=PEQ5+GpVwesSGKECG0iYwppvm72cu+KdWcaGXiaUaRmanr2dRxQuWKYfK3me9JD7xGEOsu0rmaAD/oaDCDjQbgR5vgMfSgZEVPujfrqCZNtm5KJj16uZO4/1cifhfCIB3lJ/jEBzuGVe6wBtDXlcG1LpyQK2kMKw1ITZSoBDNvXSID7hsepnTdB+2FugzC7qJVfEtppwwStHgFljfFM/va9aOi3BG3mL9ej/TyvHjXjOGpGsIDq8zpaFgBmjIDfP7lIpAPiGaNe3AbtvyKPTWkKrT6WNfQqjmd9SriuBbUPDgUNlUXoHSw9sY4uywTwW/neW5i3VorrWZctKf2erhA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=tKm+I75MqLH5FFybicnKVsUpbZee1tWk0U07zyqmmS0=;
- b=r73wRiAofZrvZoifx1D9wA9z6lUoAkh8pDmNN4dBBFSG/5CU/w5LVvSIDNrQFzS2n5GaLgG5TxWQVGfpCFAHiXbTQsee073+QIDy+cxDbQpOxPXKraaAqh7DedJRdJ2ypun1cCEzvVJPncTb0KrHgEoNTAnj/HtUc0NWDx4bFIof2Ys3CuwkMHbOI55AtIgkg/XMuTnoBzp+7K9vqvkT76XQAI/NzdDp3f8ig3YcLJdneuC0u8J5dJO0xznf21E3p754oaqqhErPOv379v5dT/z9h78Rr9ziKUk0dVG4whv4PNhFn/mwjQ5r14ixbjTn0+zdB0A/vz2OksGbsgLO5A==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
- dkim=pass header.d=nvidia.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
- s=selector2;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=tKm+I75MqLH5FFybicnKVsUpbZee1tWk0U07zyqmmS0=;
- b=R3lKYbAoevIWf5Zb2pXKox7i1dvQUBFVu/A0M2kqlzlITvs93DlQod3jOQqocDEpOtvuo4pp0UHTTpaZbAy8bAqpSNuKaKYX//9fgesPKqD68kyOngYCSD4G1FsHypKDTkmlPkujhB7DZQ7JkWkkKZ5yrrpMVbshNM7aNLWTEi3CNfJ6pwjVjliXts5564whVWkZm6iIq4kpIQCFJqzEx6g75aXps7urxc0UTiUK79iTbAH3XQrmxx8+XsoAlgnIb358p+Cx4zxTWSA9JgC3O5ZaUfHwPLeAuppe1iwjZuOPhKaAK0HoWuDEVKYtRp+FsNsOa4zCe+TOxxEojLSAsg==
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=nvidia.com;
-Received: from DS7PR12MB9473.namprd12.prod.outlook.com (2603:10b6:8:252::5) by
- PH0PR12MB8152.namprd12.prod.outlook.com (2603:10b6:510:292::14) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9891.15; Wed, 6 May
- 2026 13:15:39 +0000
-Received: from DS7PR12MB9473.namprd12.prod.outlook.com
- ([fe80::f01d:73d2:2dda:c7b2]) by DS7PR12MB9473.namprd12.prod.outlook.com
- ([fe80::f01d:73d2:2dda:c7b2%4]) with mapi id 15.20.9870.023; Wed, 6 May 2026
- 13:15:39 +0000
-From: Zi Yan <ziy@nvidia.com>
-To: Nico Pache <npache@redhat.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
- David Hildenbrand <david@kernel.org>,
- "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
- Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- Lorenzo Stoakes <ljs@kernel.org>,
- Baolin Wang <baolin.wang@linux.alibaba.com>,
- "Liam R. Howlett" <Liam.Howlett@oracle.com>,
- Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
- Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
- Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
- Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
- Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-mm@kvack.org, linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v5 11/14] selftests/mm: remove READ_ONLY_THP_FOR_FS in
- khugepaged
-Date: Wed, 06 May 2026 21:15:22 +0800
-X-Mailer: MailMate (2.0r6292)
-Message-ID: <61FB928B-03FD-4852-BED5-4E453ABB706A@nvidia.com>
-In-Reply-To: <7e42faea-9f55-4722-a426-94be7fc3a49b@redhat.com>
-References: <20260429152924.727124-1-ziy@nvidia.com>
- <20260429153538.727855-7-ziy@nvidia.com>
- <7e42faea-9f55-4722-a426-94be7fc3a49b@redhat.com>
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
-X-ClientProxiedBy: YQBPR0101CA0311.CANPRD01.PROD.OUTLOOK.COM
- (2603:10b6:c01:6c::14) To DS7PR12MB9473.namprd12.prod.outlook.com
- (2603:10b6:8:252::5)
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Ynx19IKV";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="YvFm/q5k";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Ynx19IKV";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="YvFm/q5k"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id D41CB6BCEA;
+	Wed,  6 May 2026 13:43:42 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1778075022;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=VdtTT3nz9moBejioGCzRuKWgcRlEjo9z+bvLXWINDXc=;
+	b=Ynx19IKVO0SapoZE7rFP+bsK3YuMuLpHmwfsL3OKiA10ofLSgYX76DhITKc6xhlcwE1VZV
+	CtZKyE9Fc0nTLdVMZ+sS1VbrFbivWaUeUr/nmUTLpJcUda7U7yBu6AqyMcoH9BRzI1CYTP
+	cHAZq1NIbtoFUsSzMvrm/NPLdCc8evM=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1778075022;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=VdtTT3nz9moBejioGCzRuKWgcRlEjo9z+bvLXWINDXc=;
+	b=YvFm/q5kEXMY6T60/INbqdp2p9uu3krA56repONCMs2wLY+vw0lOsHG/UbN2P926BdZHKc
+	cz2E+rcY09StihCg==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1778075022;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=VdtTT3nz9moBejioGCzRuKWgcRlEjo9z+bvLXWINDXc=;
+	b=Ynx19IKVO0SapoZE7rFP+bsK3YuMuLpHmwfsL3OKiA10ofLSgYX76DhITKc6xhlcwE1VZV
+	CtZKyE9Fc0nTLdVMZ+sS1VbrFbivWaUeUr/nmUTLpJcUda7U7yBu6AqyMcoH9BRzI1CYTP
+	cHAZq1NIbtoFUsSzMvrm/NPLdCc8evM=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1778075022;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=VdtTT3nz9moBejioGCzRuKWgcRlEjo9z+bvLXWINDXc=;
+	b=YvFm/q5kEXMY6T60/INbqdp2p9uu3krA56repONCMs2wLY+vw0lOsHG/UbN2P926BdZHKc
+	cz2E+rcY09StihCg==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BDAD4593A3;
+	Wed,  6 May 2026 13:43:42 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id SOoLLo5F+2nYewAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Wed, 06 May 2026 13:43:42 +0000
+Date: Wed, 6 May 2026 15:43:41 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFC 0/4] btrfs: remove folio ordered flag
+Message-ID: <20260506134341.GD2558453@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1777937175.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: DS7PR12MB9473:EE_|PH0PR12MB8152:EE_
-X-MS-Office365-Filtering-Correlation-Id: a5ecec89-78ce-4ec9-682b-08deab719137
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|1800799024|7416014|376014|10070799003|366016|56012099003|18002099003|22082099003;
-X-Microsoft-Antispam-Message-Info:
-	keEp3pXRmMO2A6imwdN7WXiyvKurWZVaNGv70G0/M09hVKXWGjlc2RIx1OApWoNy+q16vRLddCYEAD7vxPhL5NcgM3CuF9K5SgnmaX3xI7lRmcxDSIF5U7ybIK1Vr9Ta06uNCNAIep0FSLI7h+3s1mY6ewOjDux4+Cis4y8+aIa+yLM4y2iT9FcLwM/wUFTX4J1HUh3ASkMBtfHah0XR1XmjT+7uavvB5EwIRSUB1iajJrKm79JOnml+eC7mHxD6pfHdAsRSSo7VqAUL7oVI6TKn6HJzeGWRNs9U4PhA7nfsgcJ98zTPXF6M+CmjApvtkaf1JMDkfpcGoEyWh/RZljkgROwS6iiCg+Q02OBH8wczu//GI9YA5PvqisenJbg0YNibEdU0fCxXODF6nSD6eTfJDMatD0uk/lAgkzcQ0IDgYE7PqLGbabPPOh1/l+w4lQmTJR+VX9ic/tTzHni0WiZqSHLAU47vzsvVqV10KsBf/UhFm/2AtcYzvXan1X1kohYzwT2p7KzD2enndt1IrwqFbhH8lBWr324K8els/Iij+Noj0hVSUDabVzJthz0/RlhjR1pnQiu6bCPlAca/rw8aa0qOOrO7M4IwwYfqc7yQJwnl6bGjxVmhTJ7pDDHjhRtVYCv8r+5q/x043kkcNcT0uW63gCgEsHWQI8f1jj4LMpcyuJ9KHxxwDsafu7g8
-X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DS7PR12MB9473.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(7416014)(376014)(10070799003)(366016)(56012099003)(18002099003)(22082099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0:
-	=?us-ascii?Q?xPq8830KIRgTBxsfJ+PtNVrXXma37FQwtLaCVvJ97ffalrz7Lptb0sSzGb4U?=
- =?us-ascii?Q?hl949MA5qnCP1kxsFwNr2ug1PLeUYXzfxdSfgjCeS/phIwu/Od7h+0EuKTbV?=
- =?us-ascii?Q?TVxBhGmp0UhuqOhV05IgtxIGQX/sO+kDa0QkJ1hk1gH4ZbU3Uok+FakBw8o6?=
- =?us-ascii?Q?i4Q/1PaIYgxFI+7l5t5IcIl0LL5Pr/hYca7aIA2SO/SGE+nrqcifDRnl4Gab?=
- =?us-ascii?Q?xmPRKhYM5v+9hQm66FYqyTtq4lZWxJONHAir/ydfO4c6XrkyG3glC2yGt7+j?=
- =?us-ascii?Q?S0rundVAB3j3AdIgFwYk47l2vGPUn3WAy/ZRfla4bYqeJo7s4skFk9SEcmQg?=
- =?us-ascii?Q?If6hUHH9LZQNgVbhgZJ52Snb5lz11UyMnrKa9AJMu2f/z17mVcamvagAXnY3?=
- =?us-ascii?Q?CO4I88ZElbmyTFvZqfV3J3Mw7QOUCq72iv5zbxS0xBhOmrVcQnRpRvEws6RN?=
- =?us-ascii?Q?rQkd7CHVgMIgyLy0cTZVCNnR8wTNuj2y1V5KlzsAmVRqwEvle93tCLJuMaCH?=
- =?us-ascii?Q?7CrdHNBE42IP+IGmGGvo4tBk2mAn+54PBezXuyKLNY2zE/1p7zb16iB5OKJt?=
- =?us-ascii?Q?eWJW/hFxORMR0QLFu8SdnPv8X56yRsb31Ay/nIvBiupk1QvkpEb9/cPLWwL/?=
- =?us-ascii?Q?vB3tvrpLOfz6OqJV85V/xiNnuvayn70qbW4MVgAuWcDxiq6G8PWXXNtJ68vb?=
- =?us-ascii?Q?RgKiTBgzL3GKVUXuGTzqYuOZNNSlSxcFFeh0bBZHNIGX6oU3RiT8bOM5HrKb?=
- =?us-ascii?Q?gh0KL6C9Dey5+pz1uagKpqhDl93ris2gFQ+Ny/dca6Osb3Tp6YYXxzBnph6A?=
- =?us-ascii?Q?5M0+qUGeQAVhToeFh6pPCvmNeN+Al7OBiqwxNpstPL9Hlh6cmm5vCkatxGUK?=
- =?us-ascii?Q?Yg/yeTzG7Fg60+ZI6x2EdJfLgYuvgKBXMkKfTQy4Wnd5Qx60qpYhCTpFn/5T?=
- =?us-ascii?Q?1eWlqvi+yhyKzeNgqbWjPU9iS6EZmOV+UVxokr09ppKe+J+8KMHYP6toGOhc?=
- =?us-ascii?Q?SbW1YsRieNBh0RUN4aczrgbyM8WzWHfVMBEo4/ngZqZVOTU439Y393EqPE7j?=
- =?us-ascii?Q?bsGhVSmj8bgeQdwj5B8PuBIpH3Yb0uIJYXQcKx7cpdE/aGnu36yeG8oD8Xnl?=
- =?us-ascii?Q?nFGqthMZDr7/wMM4xTut6Drh3Ua2yOkrS5ugrNd5OKBYxPMqJprohpn2W0PH?=
- =?us-ascii?Q?J5RYJRVTTB9+L1l7s5GzKgNKTlsWWS3iNuVuHk4A/50XYQY/FmXiwFfb/Tl5?=
- =?us-ascii?Q?EmIiByt1juSkH3SmUF76oQcv/HQ2lsJg3N7d3g/j7E60GRbhvvrp9JlcSV92?=
- =?us-ascii?Q?ntfLGCkl08sokngU8nAvF4Q7pjEJFJhMbM5vF/DEE2PSL1VONOOhInIZCBVt?=
- =?us-ascii?Q?Tjvwh3BFzPYi9Dv52pJAaJOh5tmKgZT7KuTttA6wBWl5ROto+/9V1TPDEGky?=
- =?us-ascii?Q?Fvc9vh13C1+W/oJImE41sEMloi7NshhbuOqNDHTWGJZj9olXFmYqgB/3ybV+?=
- =?us-ascii?Q?oUPsMFqR7liHIHegss+UHRNM6TF6F9q6oHvqymJdIz49sJKROcYVJAaoFs5J?=
- =?us-ascii?Q?uyeujNvNxTwhpsmEdQlxcQqprHgMqzdS/4WZp59NfiSamkjgTvp7LwBCn/RG?=
- =?us-ascii?Q?dSd32Uqb+Dx3fe3rox58kWJZDvxOSeeX3DG3TpFEWVmT+Wb58YGXpUzO/PMF?=
- =?us-ascii?Q?ZMi5gs+690tPbg0Hh3k+CYPr1tew57qSiOel1BUMnMtMr5heuuczU+Q/JuHD?=
- =?us-ascii?Q?xxHx6bOajhnP5LcMhOgpL80HqoNDiGqw2fDmPonnvFnlVsogalg/?=
-X-OriginatorOrg: Nvidia.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: a5ecec89-78ce-4ec9-682b-08deab719137
-X-MS-Exchange-CrossTenant-AuthSource: DS7PR12MB9473.namprd12.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 06 May 2026 13:15:39.0410
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 43083d15-7273-40c1-b7db-39efd9ccc17a
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: tYV/j14PttpOj/WVfhvJ0Rb9T5Gjx3CDKGj2vc80dX369dWC+Ca7EHpNhRzKtMr8
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR12MB8152
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1777937175.git.wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	RCVD_TLS_ALL(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -4.00
 
-On 4 May 2026, at 18:11, Nico Pache wrote:
+On Tue, May 05, 2026 at 09:19:20AM +0930, Qu Wenruo wrote:
+> Btrfs has a long history using an internal folio flag called ordered,
+> which is to indicate if an fs block is covered by an ordered extent.
+> 
+> However this means we need to synchronize between ordered extents, which
+> are managed by a per-inode ordered tree, and folio flag/subpage bitmap.
+> 
+> Furthermore with huge folio support, the ordered bitmap can be as large
+> as 64 bytes (512 bits), which is not a small amount.
+> 
+> The series is going to remove folio ordered flag completely, along with
+> the ordered subpage bitmap.
+> 
+> Most call sites of folio_test_ordered() are just inside ASSERT()s, so
+> it's not too hard to remove them.
+> 
+> But there is a special call site inside btrfs_invalidate_folio() where
+> we use ordered flag to check if we can skip an ordered extent.
+> This is worked around by using the fact that we have waited for
+> writeback of the folio, so that endio should have already finished for
+> the writeback range. Then check dirty flags to determine if we can skip
+> the OE range.
+> 
+> To get a reliable dirty flag for both sub-folio and full-folio cases, we
+> can not clear the folio dirty flag early, so the first patch is
+> introduced to change the folio dirty flag clearing timing, then the
+> second patch can remove the folio_test_ordered() usage.
+> 
+> Then the third patch is to remove the remaining folio_test_ordered()
+> usage, and finally we can remove the whole ordered flag/subpage bitmap
+> completely.
+> 
+> [REASON FOR RFC]
+> I'm not sure if we should remove the folio ordered flag completely, or
+> keep it an internal debug feature for a while.
 
-> On 4/29/26 9:35 AM, Zi Yan wrote:
->> Change the requirement to a file system with large folio support and t=
-he
->> supported order needs to include PMD_ORDER.
->>
->> Also add tests of opening a file with read write permission and popula=
-ting
->> folios with writes. Reuse the XFS image from split_huge_page_test.
->>
->> Signed-off-by: Zi Yan <ziy@nvidia.com>
->> ---
->>   tools/testing/selftests/mm/khugepaged.c   | 131 +++++++++++++++-----=
---
->>   tools/testing/selftests/mm/run_vmtests.sh |  12 +-
->>   2 files changed, 102 insertions(+), 41 deletions(-)
->>
+For debugging and additional verification we can keep it as long as it's
+practical.
 
-<snip>
+> The main concern is that we're removing quite some ASSERT()s, some are
+> never hit, but at least one is very useful and had triggered several
+> times during development, exposing bugs.
+> 
+> In the long run, we will eventually remove the folio ordered
+> flag/subpage bitmap so that we can align btrfs_folio_state with
+> iomap_folio_state, so ordered flags should still be gone eventually.
+> 
+> Another point of concern is the new btrfs_ordered_extent_in_range()
+> helper for extent_writepage_io().
+> Previously we're just doing a folio flag check, now we have to do an
+> rbtree search.
+> I hope the overhead is not that huge.
 
->> diff --git a/tools/testing/selftests/mm/run_vmtests.sh b/tools/testing=
-/selftests/mm/run_vmtests.sh
->> index 3b61677fe9840..854c5c3e3a6ae 100755
->> --- a/tools/testing/selftests/mm/run_vmtests.sh
->> +++ b/tools/testing/selftests/mm/run_vmtests.sh
->> @@ -490,8 +490,6 @@ CATEGORY=3D"thp" run_test ./khugepaged all:shmem
->>    CATEGORY=3D"thp" run_test ./khugepaged -s 4 all:shmem
->>  -CATEGORY=3D"thp" run_test ./transhuge-stress -d 20
->> -
->>   # Try to create XFS if not provided
->>   if [ -z "${SPLIT_HUGE_PAGE_TEST_XFS_PATH}" ]; then
->>       if [ "${HAVE_HUGEPAGES}" =3D "1" ]; then
->> @@ -508,6 +506,14 @@ if [ -z "${SPLIT_HUGE_PAGE_TEST_XFS_PATH}" ]; the=
-n
->>       fi
->>   fi
->>  +if [ -n "${SPLIT_HUGE_PAGE_TEST_XFS_PATH}" ]; then
->> +CATEGORY=3D"thp" run_test ./khugepaged all:file ${SPLIT_HUGE_PAGE_TES=
-T_XFS_PATH}
->> +else
->> +	count_total=3D$(( count_total + 1 ))
->> +	count_skip=3D$(( count_skip + 1 ))
->> +	echo "[SKIP] ./khugepaged all:file" | tap_prefix
->
-> This leads selftest runs to always litter the output with SKIP when run=
-ning this with the wrapper
->
-> make -C tools/testing/selftests TARGETS=3Dmm run_tests
+This seems to be a concern for removing the ordered bit, it will have
+some performance impact. Searching in rb-tree is not cheap, compared to
+a single bit check. This kind of optimization could be there even after
+we switch to iomap.
 
-Yes, this is intended to let people know one case is not tested and skipp=
-ed if XFS cannot be created.
-
->
->> +fi
->> +
->>   CATEGORY=3D"thp" run_test ./split_huge_page_test ${SPLIT_HUGE_PAGE_T=
-EST_XFS_PATH}
->>    if [ -n "${MOUNTED_XFS}" ]; then
->> @@ -516,6 +522,8 @@ if [ -n "${MOUNTED_XFS}" ]; then
->>       rm -f ${XFS_IMG}
->>   fi
->>  +CATEGORY=3D"thp" run_test ./transhuge-stress -d 20
->> +
->>   CATEGORY=3D"thp" run_test ./folio_split_race_test
->>    CATEGORY=3D"migration" run_test ./migration
-
-
-Best Regards,
-Yan, Zi
+Otherwise, reducing the size of bitmaps makes sense. We could live for a
+release with less effective storage just to make sure things work and
+then remove ordered bitmap or other optimizations.

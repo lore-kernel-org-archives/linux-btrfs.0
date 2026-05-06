@@ -1,163 +1,125 @@
-Received: from out-176.mta1.migadu.com (out-176.mta1.migadu.com [95.215.58.176])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4DA2B2F25F3
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 May 2026 05:24:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.176
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 675A819B5A3
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 May 2026 13:01:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778045083; cv=none; b=PrzCK9qPKPEVH7QrLm033M6JkqbyhwieWDSAJ7fD0qU3wZM2o5BslWfzb2rcgZaBb0hYJc5Ke1UQt2HYszJWCEeEm09TTKZiTShYvD3vaVuB989xYH1drBSbOssh/sP23bS2608i28EhsY18IZjdTno1hwY6VUVkJNKvRCU/vig=
+	t=1778072475; cv=none; b=TIaKXkB3QGtuHPsJ4RjaKxn7nzfUD5MZr6RitsjMsAFnqZ16TvC50P/vTgkae/fi4hKIWPs1BBNUGWwTpCsO4k6eTGh/o2SFdzFTst06df6s7DkHzcOjeTnWeTPMp2o2xeCpMJGi9IZRG8hdfINncQ0n1RqZjWUizTZbx3AhrqQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778045083; c=relaxed/simple;
-	bh=XSi9GE6KzTKtL3JnuU0hOJ2FsXccbvvkotBnn36FK8A=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=HGmYU9YxyADLqY1ofa3CXUy2C3XgcComGAgLJgPnoGJv6sTOIe0Df+lulxHcjGJcUyk+8QJ+4xMBQXDA4Ew5a6hFPwaQ47r5vJGZVXNYbGdwZLJZZTndZSPiQ0jhOTbwXa9yWeq7Lty63TcBi0z/W1LDy0zLewH8LNKOZyHP5tU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=b9UhZIT1; arc=none smtp.client-ip=95.215.58.176
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	s=arc-20240116; t=1778072475; c=relaxed/simple;
+	bh=+yPHaBJ/OcUc6JnscwHHK7ux/vGOSe0F5nabbcqTShM=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=UvxGYzp+0h4RDDdAiiW+TuImIX/GNNbr+cQhy47aQIbano/7KdLpL/gV7L1lCOn6FuVR4TkznfumyleuC/AKQqDpHkvhdSo8f1Zf0WuEEcJFvlQxHgZzWOfOzwqNio5WzDjEIMKCNCDbk13y4kRPQSGfmrVRrIsDpac+OkmCTOw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=0QS3gKmN; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=OK8ciN4+; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=0QS3gKmN; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=OK8ciN4+; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="b9UhZIT1"
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1778045069;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="0QS3gKmN";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="OK8ciN4+";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="0QS3gKmN";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="OK8ciN4+"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 1CEDA6BC72;
+	Wed,  6 May 2026 13:00:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1778072459;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=s1w2c8Ff4EBVaptmWDiNW5OHkzAexKcOkjAxIk43isM=;
-	b=b9UhZIT1mho4iJRIe/NF0Wb22N6oKuFN0uCmJ90L+9ONYFTY/ERbctell74yYE4Bg3x2Km
-	jVwm94U2l7uI56nzb3Vu1s3FTQ2JNxPBlIqnC2nJpohkb7saC3QqMYOLYWMRQ3vl9TZ0oV
-	mPEz18rGt+0O+mTEvVaQ+SsgfULNh7w=
-From: Lance Yang <lance.yang@linux.dev>
-To: ziy@nvidia.com
-Cc: akpm@linux-foundation.org,
-	david@kernel.org,
-	willy@infradead.org,
-	songliubraving@fb.com,
-	clm@fb.com,
-	dsterba@suse.com,
-	viro@zeniv.linux.org.uk,
-	brauner@kernel.org,
-	jack@suse.cz,
-	ljs@kernel.org,
-	baolin.wang@linux.alibaba.com,
-	Liam.Howlett@oracle.com,
-	npache@redhat.com,
-	ryan.roberts@arm.com,
-	dev.jain@arm.com,
-	baohua@kernel.org,
-	lance.yang@linux.dev,
-	vbabka@kernel.org,
-	rppt@kernel.org,
-	surenb@google.com,
-	mhocko@suse.com,
-	shuah@kernel.org,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-mm@kvack.org,
-	linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v5 02/14] mm/khugepaged: add folio dirty check after try_to_unmap()
-Date: Wed,  6 May 2026 13:23:57 +0800
-Message-Id: <20260506052357.91716-1-lance.yang@linux.dev>
-In-Reply-To: <20260429152924.727124-3-ziy@nvidia.com>
-References: <20260429152924.727124-3-ziy@nvidia.com>
+	bh=+yPHaBJ/OcUc6JnscwHHK7ux/vGOSe0F5nabbcqTShM=;
+	b=0QS3gKmNIYIkMOv9R1+zjkky1+bkxXSzHjOt4TfqcfPkTSX5GKYF/FjYFRsduQ/RGZrsYU
+	+CZpWQYZhcd/qlxvPXgK5wSTVPYWxofXqWl1F554lAGIxv/ChwnckGheSEIYPLduuT3QBI
+	YMV0UBDlfrLXr2f0PtiLuHIyZeEP1MY=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1778072459;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=+yPHaBJ/OcUc6JnscwHHK7ux/vGOSe0F5nabbcqTShM=;
+	b=OK8ciN4+lLpGsjnXRk+A5XeKUDdKi7nWPOp5gtmNfyNl2HkG/Nnqceci1iwXliuXkWIR4C
+	iGoS+9INg9EICXAA==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1778072459;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=+yPHaBJ/OcUc6JnscwHHK7ux/vGOSe0F5nabbcqTShM=;
+	b=0QS3gKmNIYIkMOv9R1+zjkky1+bkxXSzHjOt4TfqcfPkTSX5GKYF/FjYFRsduQ/RGZrsYU
+	+CZpWQYZhcd/qlxvPXgK5wSTVPYWxofXqWl1F554lAGIxv/ChwnckGheSEIYPLduuT3QBI
+	YMV0UBDlfrLXr2f0PtiLuHIyZeEP1MY=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1778072459;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=+yPHaBJ/OcUc6JnscwHHK7ux/vGOSe0F5nabbcqTShM=;
+	b=OK8ciN4+lLpGsjnXRk+A5XeKUDdKi7nWPOp5gtmNfyNl2HkG/Nnqceci1iwXliuXkWIR4C
+	iGoS+9INg9EICXAA==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0859B593A3;
+	Wed,  6 May 2026 13:00:59 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 0gacAYs7+2k2UgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Wed, 06 May 2026 13:00:59 +0000
+Date: Wed, 6 May 2026 15:00:53 +0200
+From: David Sterba <dsterba@suse.cz>
+To: AlaEldin Mohamed <aeiedamo@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Will Btrfs progs get a 7.0 release?
+Message-ID: <20260506130053.GC2558453@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <4575d1380ada67bcc34b60f0245ad37e316a6ac3.camel@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-X-Migadu-Flow: FLOW_OUT
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <4575d1380ada67bcc34b60f0245ad37e316a6ac3.camel@gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Level: 
+X-Spamd-Result: default: False [-3.00 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	SUBJECT_ENDS_QUESTION(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FREEMAIL_TO(0.00)[gmail.com];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	RCPT_COUNT_TWO(0.00)[2];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,suse.cz:replyto,twin.jikos.cz:mid];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.cz:replyto];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -3.00
 
+On Tue, Apr 28, 2026 at 09:58:11PM +0300, AlaEldin Mohamed wrote:
+> According to the btrfs-progs release cycle, we should expect a 7.0
+> release by now. Is there any regression preventing this from happening?
 
-On Wed, Apr 29, 2026 at 11:29:12AM -0400, Zi Yan wrote:
->This check ensures the correctness of read-only PMD folio collapse
->after it is enabled for all FSes supporting PMD pagecache folios and
->replaces READ_ONLY_THP_FOR_FS.
->
->READ_ONLY_THP_FOR_FS only supports read-only fd and uses mapping->nr_thps
->and inode->i_writecount to prevent any write to read-only to-be-collapsed
->folios. In upcoming commits, READ_ONLY_THP_FOR_FS will be removed and the
->aforementioned mechanism will go away too. To ensure khugepaged functions
->as expected after the changes, skip if any folio is dirty after
->try_to_unmap(), since a dirty folio at that point means this read-only
->folio can get writes between try_to_unmap() and try_to_unmap_flush() via
->cached TLB entries and khugepaged does not support writable pagecache folio
->collapse yet.
->
->Signed-off-by: Zi Yan <ziy@nvidia.com>
->Reviewed-by: Baolin Wang <baolin.wang@linux.alibaba.com>
->Acked-by: David Hildenbrand (Arm) <david@kernel.org>
->---
-> mm/khugepaged.c | 28 ++++++++++++++++++++++++----
-> 1 file changed, 24 insertions(+), 4 deletions(-)
->
->diff --git a/mm/khugepaged.c b/mm/khugepaged.c
->index 6808f2b48d864..71209a72195ab 100644
->--- a/mm/khugepaged.c
->+++ b/mm/khugepaged.c
->@@ -2327,8 +2327,7 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
-> 				}
-> 			} else if (folio_test_dirty(folio)) {
-> 				/*
->-				 * khugepaged only works on read-only fd,
->-				 * so this page is dirty because it hasn't
->+				 * This page is dirty because it hasn't
-> 				 * been flushed since first write. There
-> 				 * won't be new dirty pages.
-> 				 *
->@@ -2386,8 +2385,8 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
-> 		if (!is_shmem && (folio_test_dirty(folio) ||
-> 				  folio_test_writeback(folio))) {
-> 			/*
->-			 * khugepaged only works on read-only fd, so this
->-			 * folio is dirty because it hasn't been flushed
->+			 * khugepaged only works on clean file-backed folios,
->+			 * so this folio is dirty because it hasn't been flushed
-> 			 * since first write.
-> 			 */
-> 			result = SCAN_PAGE_DIRTY_OR_WRITEBACK;
->@@ -2431,6 +2430,27 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
-> 			goto out_unlock;
-> 		}
-> 
->+		/*
->+		 * At this point, the folio is locked and unmapped. If the PTE
->+		 * was dirty, try_to_unmap() has transferred the dirty bit to
->+		 * the folio and we must not collapse it into a clean
->+		 * file-backed folio.
->+		 *
->+		 * If the folio is clean here, no one can write it until we
->+		 * drop the folio lock. A write through a stale TLB entry came
->+		 * from a clean PTE and must fault because the PTE has been
->+		 * cleared; the fault path has to take the folio lock before
-
-Yeah, try_to_unmap_one() also already documents the required arch
-guarantee for a clean cached TLB entry after the PTE is cleared.
-
-			/*
-			 * We clear the PTE but do not flush so potentially
-			 * a remote CPU could still be writing to the folio.
-			 * If the entry was previously clean then the
-			 * architecture must guarantee that a clear->dirty
-			 * transition on a cached TLB entry is written through
-			 * and traps if the PTE is unmapped.
-			 */
-
-Lesson learned :)
-
->+		 * installing a writable mapping. Buffered write paths also
->+		 * have to take the folio lock before modifying file contents
->+		 * without a mapping, typically via write_begin_get_folio().
->+		 */
->+		if (!is_shmem && folio_test_dirty(folio)) {
->+			result = SCAN_PAGE_DIRTY_OR_WRITEBACK;
->+			xas_unlock_irq(&xas);
->+			folio_putback_lru(folio);
->+			goto out_unlock;
->+		}
-
-LGTM.
-Reviewed-by: Lance Yang <lance.yang@linux.dev>
+The release ETA is this Friday (+2 days).

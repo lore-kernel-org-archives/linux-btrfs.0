@@ -1,211 +1,93 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C69854508FF
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 18:00:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 801A1175A85;
+	Thu,  7 May 2026 20:21:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778176806; cv=none; b=s6UL+vzHZYEL+aTEEobDpXpIyceU8MRuLWm+j4C2f0c7dSXwEDczrtNeBvngr/nN0HVIv1D/Xjse9mw+eqT4sE1ownyprGGd3prJrXkwUvv1V/ibgUECeHaPMrIeCIKmAl3yb2QEwySjrD0TD/Q+MIzCsSTa+oqsSLwaGxS0nzA=
+	t=1778185265; cv=none; b=jf0bd8HhjKxJS27n+k7SXUkPexm2Ag1T010v5BoWqHz0tlHQg2z1dKjN9cL6Zwi8EsoXa5rQRqUKS/+DLLi+A8fhE8fWqJ9qZfMGuBckFY5ZaoEK7NQAU2knD+u3EFC7lK5NJfRSLpt+V9kYlzKKx02n2mmIJ4kPzPDiRdzdk90=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778176806; c=relaxed/simple;
-	bh=U626NxbuXWag+0EVv316NY4xGuVy7D6yOyg5igfV7rI=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ehca0AI2Cp9QPVa8CJwwlSV+igf7z9YMBGyktGe/iVLXBBnMbaNnXfWAyJue1tkOKr9ZKBpo6QTXSTIwUY46FohwGr2If8bzfr5eM3xO5aELvq3SKcY1+ayGJTC2DmZB1bLrA7XDDbkXKLbqIRunI6CM5zCPltXDp2vIDN5JBvc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Gh0cT89F; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=huWjtf1+; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1778185265; c=relaxed/simple;
+	bh=tD8py6U0e7L6UhPQPJi5qYuBjRmS263KJiaioSan1ks=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=IP9n4CYmMATeP7+KZftI6To7xLvcAc4hha+fzgez+cIGTRsFqYOXf+aP/sKn8aWX8w2IqcyjhcpQfWGzgo5EjTA/jFHRWhX0YkO9Tdd41gJw0q8gUday2hVNsIpBBvsRCURYLiqKTDZTi01JUTB9/DcjV++KyVqycw8kw3STbkU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dpMDx/Pg; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Gh0cT89F";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="huWjtf1+"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id E802E66E8E;
-	Thu,  7 May 2026 18:00:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778176803; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=oJ6gDPUwIO0hwHqNrr4t2+wyM3PdqsA3NCXgzuHXlxE=;
-	b=Gh0cT89F0zVDJLJAu9buU0itINoQh/d01SD5nRgNHA9u9+5x9nlLuSg/yC+94n34+jcNF1
-	7bh+pciROktC+5T8CNq0JvqIVyP/cYgC+AuD9jcpHIsWxIHHkZ4+vryxmHi+OCuxpuGOXt
-	nk2zcCvalrcJ7mV2K1LIzBrrjhH6fa4=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=huWjtf1+
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778176802; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=oJ6gDPUwIO0hwHqNrr4t2+wyM3PdqsA3NCXgzuHXlxE=;
-	b=huWjtf1+6Yn+bSf0RNOeqOyrqenfSZe1FTbCK1lBoth5pofoD7L6U+ROlaDYvN+FALael1
-	Ztg8UJljxR3duFbCXdSHZSz1JWOO/pJnpoZgHCTAYSqj8mE9uM5HdDcYz/XsTCRhe9NkrI
-	hdUQXKNCD3/FA+BPOl6RImWWgMjeRrs=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E1D6A593A7;
-	Thu,  7 May 2026 18:00:02 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id psYgNyLT/GklCQAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Thu, 07 May 2026 18:00:02 +0000
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH v2 2/2] btrfs: simplify how first hit is passed to __btrfs_abort_transaction()
-Date: Thu,  7 May 2026 19:59:32 +0200
-Message-ID: <06764bc69306e40baf712eeaa3589dba733769aa.1778176579.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <cover.1778176579.git.dsterba@suse.com>
-References: <cover.1778176579.git.dsterba@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dpMDx/Pg"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6557FC2BCB2;
+	Thu,  7 May 2026 20:21:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1778185265;
+	bh=tD8py6U0e7L6UhPQPJi5qYuBjRmS263KJiaioSan1ks=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=dpMDx/Pg4TmbJr9ZvqT7t7ldaFhuiW081o5nuciCK9xQ7dymxSwvb8z8wqwyAFig2
+	 ah9M+A7BrMaMAc8ifD6XVmWvEqZSJl6qu3Vi4Zaubm0kqdvhwvAX9iWVkEQGWWsybr
+	 Y+r8K24L5K4Bel7pOLLRW9yf6AwpP5Y5H62D2EWGO6rVLdkSAcsVmJUW3cSwuO+SEv
+	 oy2sqcduu2boXuTT0ZqzUOlLX8oTTS1nMhF1pZw9jt8J/Eb2P4Vwis0lJm49SoTdNU
+	 ovNEF9GhIo9Af3/qQ77T2D8Ul9PM3inRTZkzBzI8quZPppPfvkEL46eQIwEIWoJJ3z
+	 kO4/eHHQzubxA==
+Date: Fri, 8 May 2026 04:20:54 +0800
+From: Zorro Lang <zlang@kernel.org>
+To: Theodore Tso <tytso@mit.edu>
+Cc: fstests@vger.kernel.org, xfs-list <linux-xfs@vger.kernel.org>, 
+	ext4-list <linux-ext4@vger.kernel.org>, btrfs-list <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH RFC] check: add new option "--loop <n>" which runs each
+ test multiple times
+Message-ID: <afzyQgqrhZEtMcc0@zlang-mailbox>
+Mail-Followup-To: Theodore Tso <tytso@mit.edu>, fstests@vger.kernel.org, 
+	xfs-list <linux-xfs@vger.kernel.org>, ext4-list <linux-ext4@vger.kernel.org>, 
+	btrfs-list <linux-btrfs@vger.kernel.org>
+References: <20260415213248.1795275-1-tytso@mit.edu>
+ <20260505133409.GA49070@macsyma.local>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCPT_COUNT_TWO(0.00)[2];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:email,suse.com:mid];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Queue-Id: E802E66E8E
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260505133409.GA49070@macsyma.local>
 
-Optimize the btrfs_abort_transaction() for size as it (by our
-convention) must be put right after the error condition is detected.
-The exact file:line is reported so there's a portion that must be
-inlined. As this is cold code it bloats functions. In previous patch
-"btrfs: move transaction abort message to __btrfs_abort_transaction()"
-the error message was moved to the common helper, saving like 20KiB of
-btrfs.ko and several instructions per call site and some stack space.
+On Tue, May 05, 2026 at 03:34:09PM +0200, Theodore Tso wrote:
+> On Wed, Apr 15, 2026 at 05:32:48PM -0400, Theodore Ts'o wrote:
+> > Teach the check script a new option --loop, which re-run each test
+> > multiple times.  This works very similarly to to -L, which will retry
+> > a particular test after it first fails, except that the test is rerun
+> > unconditionally.
+> 
+> Ping?  Does anyone have a preference between adding a new option,
+> --loop, or changing the heaviour of the -i option?
 
-There's little left to be optimized, we need to keep the atomic
-test_and_set_bit() and to convey that as 'first hit' to
-__btrfs_abort_transaction().
+Hi Ted,
 
-Right now it's a bool, which takes 8 bytes on stack for each call but
-it's 1 bit of information. We can encode that to some of the other
-parameters.
+Personally, I feel that once we have --loop, the existing -i starts to lose
+its value. --loop is far more effective at catching specific, flaky bugs due
+to its stashing logic.
 
-For that let's use the 'error' parameter, by convention it's negative
-errno so we can reliably detect if it's the first hit or a later error.
-Also the negation is usually implemented by a single instruction (NEG on
-x86_64) so the resulting object code is kept short.
+Furthermore, if we eventually add something like --loop-while-successful, then
+-I also becomes redundant. It might be worth considering a more unified naming
+convention in the long run, perhaps renaming -L to --loop-on-fail and keeping
+everything under the --loop-* family. This would be much clearer for other users
+than the current mix of single-letter flags.
 
-This reduces btrfs.ko by 8K and stack in several functions by 8 bytes.
+Welcome any further feedback. Also, feel free to weigh in if you have concerns
+about the potential impact of renaming these option names.
 
-Cumulative effect with the other commit is -30K of btrfs.ko. While the
-encoding is an implementation detail, it's contained within the API.
-Making the transaction abort calls very light is desired.
+Thanks,
+Zorro
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/transaction.c | 13 ++++++++++++-
- fs/btrfs/transaction.h | 17 ++++++++++-------
- 2 files changed, 22 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 0fd596e2c65b..bc99d1200d28 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2722,12 +2722,23 @@ int btrfs_clean_one_deleted_snapshot(struct btrfs_fs_info *fs_info)
-  *
-  * We'll complete the cleanup in btrfs_end_transaction and
-  * btrfs_commit_transaction.
-+ *
-+ * Note: the parameter @error encodes whether the transactin abort was first hit
-+ *       (setting the FS_ERROR state bit in btrfs_abort_transaction())
-+ *       - positive number - first hit
-+ *       - negative number - abort after it was already done
-  */
- void __cold __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 				      const char *function,
--				      unsigned int line, int error, bool first_hit)
-+				      unsigned int line, int error)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
-+	bool first_hit = false;
-+
-+	if (error > 0) {
-+		error = -error;
-+		first_hit = true;
-+	}
- 
- 	WRITE_ONCE(trans->aborted, error);
- 	WRITE_ONCE(trans->transaction->aborted, error);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 72ab32c8ddca..5e4b1106fd90 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -266,21 +266,24 @@ do {										\
- } while(0)
- 
- /*
-- * Call btrfs_abort_transaction as early as possible when an error condition is
-- * detected, that way the exact stack trace is reported for some errors.
-+ * Call btrfs_abort_transaction() as early as possible when an error condition
-+ * is detected, that way the exact stack trace is reported for some errors.
-+ *
-+ * Error number must be negative as it encodes wheather it's the first abort.
-  */
- #define btrfs_abort_transaction(trans, error)		\
- do {								\
--	bool __first = false;					\
-+	int __error = (error);					\
-+								\
- 	VERIFY_NEGATIVE_ERROR(error);				\
- 	/* Report first abort since mount */			\
- 	if (!test_and_set_bit(BTRFS_FS_STATE_TRANS_ABORTED,	\
- 			&((trans)->fs_info->fs_state))) {	\
--		__first = true;					\
--		WARN_ON(btrfs_abort_should_print_stack(error));	\
-+		WARN_ON(btrfs_abort_should_print_stack(__error)); \
-+		__error = -__error;				\
- 	}							\
- 	__btrfs_abort_transaction((trans), __func__,		\
--				  __LINE__, (error), __first);	\
-+				  __LINE__, __error);		\
- } while (0)
- 
- int btrfs_end_transaction(struct btrfs_trans_handle *trans);
-@@ -318,7 +321,7 @@ void btrfs_add_dropped_root(struct btrfs_trans_handle *trans,
- void btrfs_trans_release_chunk_metadata(struct btrfs_trans_handle *trans);
- void __cold __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 				      const char *function,
--				      unsigned int line, int error, bool first_hit);
-+				      unsigned int line, int error);
- 
- int __init btrfs_transaction_init(void);
- void __cold btrfs_transaction_exit(void);
--- 
-2.53.0
-
+> 
+> > This differs from the "-i <n>" option, which iterates each set of
+> > tests <n> times instead of each test.  The -i option is problematic in
+> > two ways.  First, it doesn't save the test artifacts from each test run.
+> > This is unfortunate because when the developer is trying to debug a
+> > flaky test failure, running "check -i 100" will run a test 100 times,
+> > but if only the 42nd test fails, the NNN.out.bad file for that failing
+> > test run is not preserved.  The second difference between --loop and
+> > -i is the result.xml file is rewritten after each test set, so we do
+> > not have the cumulative statistics of the 100 test runs in the junit
+> > XML file.
+> 
+> 						- Ted
+> 

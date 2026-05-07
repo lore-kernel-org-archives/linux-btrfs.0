@@ -1,66 +1,62 @@
-Received: from out-178.mta0.migadu.com (out-178.mta0.migadu.com [91.218.175.178])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B2C6B3CFF55
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 12:59:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.178
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B37B93AB29D
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 17:59:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778158791; cv=none; b=pNO73FjzEZZsEyNbYYZV+kgc1GsZXrlPwBF1rezdlgjJc5PvUg4QK123ISdEIhe7l7zR9otR/+85DJqNyB046cp71VmZxBRJr8hgCa1NDOiB9vqS8tSvrlTMjoE/QNVmvOtOTyJkRnUpxkCKBmeiFw4tIQMLoqRbXHgLnEu9IMQ=
+	t=1778176786; cv=none; b=hmNCg5b9Y6QG5ab2dR384DjJNMFvDKnWdk7GFOWJCiHOLpQi1VX/Dmy7pR2eIqoFtrhA96UOHihsIlpXvje2+deXUkH9VUJAzxu/y/CIN4El6OYDU7giTdq+ohTAngegej5zOmD8OQFSDCh5U7JN6fiet9ryjoR3t4hWaVUVRds=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778158791; c=relaxed/simple;
-	bh=N+8on1rJhIM7gFzPDRKP1K79fhr5fu80l2DgfLVZ7Hc=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=H/pA0Per91lFv5voEiJUMEB40S5sJNo7iRCEJoYDxLXYJjes9y0Jt71tf/Y8dHsvjEChbCVn7fIbLmDO4Hvz0ZUPXVv8XeAPw4MfyEgN6uaay4ZrNs/VxS9Zu1x22adaB77dRzxeOTNcL0VRoKJz94ti8j/wmPUvcPYjYT7Hoow=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=rq2dqH3L; arc=none smtp.client-ip=91.218.175.178
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	s=arc-20240116; t=1778176786; c=relaxed/simple;
+	bh=hfhbwDOw2mDIXOqmK29ImYFb7YbuMaz2P/Bh+vWC/gg=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=QrHpiSmXjsjVMCufyc6to0Olu7ahmXOlQjilmtfg7XXDbSqipTJJb1j7ma/fdZ1qDwebzQi63gqK9IntdQBMGhSyAeZFBXPmeh7cO59b/lfLlphWEPf65HpB4+W31Alv48F6r04AtK02gFJjkBTOk/NA2xFDe3+CEx2hHvL9eVA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Zi4TigcZ; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=o5cZOe74; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="rq2dqH3L"
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1778158777;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=N+8on1rJhIM7gFzPDRKP1K79fhr5fu80l2DgfLVZ7Hc=;
-	b=rq2dqH3LbsTDkNm64j4yfugrxYnuo1K5QSVNxsj0wf0x+gTd830yL//sZ1zls/YfFle5Ea
-	rHimXqQZl2XdEdZH/pVmBJ7KEOCjfln0xEgi5Y+CUNGbqvdO6qsze8DrzkZ4nbLBf6umJN
-	4C9u2RSxqusKL26SGb9MF9QMwi4Tu3I=
-From: Lance Yang <lance.yang@linux.dev>
-To: ziy@nvidia.com
-Cc: akpm@linux-foundation.org,
-	david@kernel.org,
-	willy@infradead.org,
-	songliubraving@fb.com,
-	clm@fb.com,
-	dsterba@suse.com,
-	viro@zeniv.linux.org.uk,
-	brauner@kernel.org,
-	jack@suse.cz,
-	ljs@kernel.org,
-	baolin.wang@linux.alibaba.com,
-	Liam.Howlett@oracle.com,
-	npache@redhat.com,
-	ryan.roberts@arm.com,
-	dev.jain@arm.com,
-	baohua@kernel.org,
-	lance.yang@linux.dev,
-	vbabka@kernel.org,
-	rppt@kernel.org,
-	surenb@google.com,
-	mhocko@suse.com,
-	shuah@kernel.org,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-mm@kvack.org,
-	linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v5 06/14] mm: fs: remove filemap_nr_thps*() functions and their users
-Date: Thu,  7 May 2026 20:59:21 +0800
-Message-Id: <20260507125921.6325-1-lance.yang@linux.dev>
-In-Reply-To: <20260429153538.727855-2-ziy@nvidia.com>
-References: <20260429153538.727855-2-ziy@nvidia.com>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Zi4TigcZ";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="o5cZOe74"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id A92525C196;
+	Thu,  7 May 2026 17:59:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1778176782; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=BBOuawKhkDOMKI9SkBw6WwgZ+47f6dqosG0JWsGpx8Y=;
+	b=Zi4TigcZ9Ou442wi2ZZAz3wjnuUpq0XENS3lVxAe901KKMXJ+dfBM/T0l/CWIpd7nVh1aR
+	4z+ooCbsXGFBG+1vNOzsHGojrKsmvhQW5uVgDO+x55NhacGEtRQxnFFqS+auj3gk8UW09O
+	UxtjoTVsN/YJCvKgjotE1ipoHFCHNsc=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=o5cZOe74
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1778176781; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=BBOuawKhkDOMKI9SkBw6WwgZ+47f6dqosG0JWsGpx8Y=;
+	b=o5cZOe74n3H4coAGYr4jQXVwsIfIEd1E/g0VeXBccjD5NW0L8maRoBVUP2dD7o3cpIyiYV
+	xHwsYgiJfhJP5Qnmfs29dy7+rgy7Y4OFswSILj4h6Vlpg9758EJJnOLl8kfRw7Y69A0w26
+	PaGDpux8kj40kiMz0zzJog/sF7YK+fk=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A229F593A7;
+	Thu,  7 May 2026 17:59:41 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id bCKRJw3T/Gl9CAAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Thu, 07 May 2026 17:59:41 +0000
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH v2 0/2] Transaction abort macro optimizations
+Date: Thu,  7 May 2026 19:59:30 +0200
+Message-ID: <cover.1778176579.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,35 +65,54 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Migadu-Flow: FLOW_OUT
+X-Spam-Flag: NO
+X-Spam-Score: -3.51
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-3.51 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:dkim];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: A92525C196
+X-Spam-Level: 
 
+Optimize size of the macro btrfs_abort_transaction() by encoding the
+'first hit' logic into the error code. Additionally also verify that the
+error code is negative.
 
-On Wed, Apr 29, 2026 at 11:35:29AM -0400, Zi Yan wrote:
->They are used by READ_ONLY_THP_FOR_FS to handle writes to FSes without
->large folio support, so that read-only THPs created in these FSes are not
->seen by the FSes when the underlying fd becomes writable. Now read-only PMD
->THPs only appear in a FS with large folio support and the supported orders
->include PMD_ORDER.
->
->READ_ONLY_THP_FOR_FS was using mapping->nr_thps, inode->i_writecount, and
->smp_mb() to prevent writes to a read-only THP and collapsing writable
->folios into a THP. In collapse_file(), mapping->nr_thps is increased, then
->smp_mb(), and if inode->i_writecount > 0, collapse is stopped, while
->do_dentry_open() first increases inode->i_writecount, then a full memory
->fence, and if mapping->nr_thps > 0, all read-only THPs are truncated.
->
->Now this mechanism can be removed along with READ_ONLY_THP_FOR_FS code,
->since a dirty folio check has been added after try_to_unmap() in
->collapse_file() to prevent dirty folios from being collapsed as clean.
->
->Signed-off-by: Zi Yan <ziy@nvidia.com>
->Reviewed-by: Matthew Wilcox (Oracle) <willy@infradead.org>
->Acked-by: David Hildenbrand (Arm) <david@kernel.org>
->Reviewed-by: Baolin Wang <baolin.wang@linux.alibaba.com>
->---
+v2:
 
-Nice cleanup! The old counter/barrier trick is no longer needed;
-collapse_file() now checks the thing we actually care about ;)
+- add patch with the verification
+- in second patch reuse local variable for btrfs_abort_should_print_stack()
 
-LGTM.
-Reviewed-by: Lance Yang <lance.yang@linux.dev>
+David Sterba (2):
+  btrfs: validate negative error number passed to
+    btrfs_abort_transaction()
+  btrfs: simplify how first hit is passed to __btrfs_abort_transaction()
+
+ fs/btrfs/transaction.c | 13 ++++++++++++-
+ fs/btrfs/transaction.h | 41 ++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 46 insertions(+), 8 deletions(-)
+
+-- 
+2.53.0
+

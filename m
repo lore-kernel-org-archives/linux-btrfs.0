@@ -1,67 +1,60 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5BEBE230BD5
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 05:29:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 89B2330B502
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 05:29:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778131787; cv=none; b=ChT/gEzSRoCAKCR709WKwFJLDVo3I5MSMbSqIJFAvyUwtYpw+ixDkHm0iqklMAsOQFLpLfjNdecPWS393aV6vQFyrnCsEeg1xGfDkX+fPGqs57WYBaaApXPuAgzGsWXpSFuxmxJQjysi4EjornRsoVtMLCkDsm95silUc76Jszw=
+	t=1778131788; cv=none; b=mUUoSo+lAw369rHVpMZzR6hV7MF5IXvcs628e/uVduZ/0UYAmOSEQPRQ+mEWUqF5P2GqFMSqzulgwSMXi7v0mAIG19GhQh1IzefVltvP7DG3CGphLhF1ago5po5W2fhX4GBW18rgBXA396VnVhHQ5hBxzUKCXWM8R0JDpxibCVc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778131787; c=relaxed/simple;
-	bh=T0qIKQt79k+zE5uJpDp8vrkl8vLQp4P61NZrom8KkAY=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=lThJN3yYWRttNvnHqZNVWMEAEJ+VtitBneKcv/H9jiGXkSwmXN+yVF/PEUNyLAfB2Tz11DT/+qilliUG4ccDyUefLRKojTgffd2oIbzr1Xb5f4SkrEsK4P1AUUpMaFoDp6xuYddekidyZz2DtojeU34Pm2AKCkYzEJooJhC0p0Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Q60F/zOD; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Q60F/zOD; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1778131788; c=relaxed/simple;
+	bh=WUU2/iRHmbY6yE1V4O0Hxqb9SMsmDqTAZuCURaEezms=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=dmUC+MwkbJE/PMGjHyN2UQrB4XGjiVpqWwLnNFPnu4woStqRrnYnyX7GtpebsV+gNDLIa91V70S70kdymOz/xAmlIreLTzd6ZaoaOKvDWFlOXupwNUecp6HzhD9+wh33B5gxFlpAM2+4DKp2czadW5yP6qkqk1gAjIHahzXd3lM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NIfnSGa2; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NIfnSGa2; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Q60F/zOD";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Q60F/zOD"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NIfnSGa2";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NIfnSGa2"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 56B166C067
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 05:29:44 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 8F0EE5D10A
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 05:29:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778131784; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=N2MsDMAGj5hR3LoBD8hE/lETlyUauOfU6egjYijem10=;
-	b=Q60F/zODkFYRZ7TmvL6dGu3wmYog3qtF+XX50gOO5AKUVb44tXiwW/8cZ/x2lS2/1kGZaU
-	sas1tWuSdxP0y8U/uB5eVQVVQ/p4leG67kMf081uu5I9cjy1tT9wV0kwbbrmw9G7Lmh3NM
-	tWcaxLkwM2Pr9rVSXis7tD4ZjXTASFA=
-Authentication-Results: smtp-out1.suse.de;
+	t=1778131780; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=RIwF3ZRV1133RKtA1QRs5AkTWPpxdidwu6aiVZNfdzk=;
+	b=NIfnSGa2bcc+YLb2IRdI8eQuszuSDFWRW1CvjguK4cU2XR3NvNzrIEgEZLlb8bs0jdTukV
+	n2AHootEn4md2P5wcPHrwtui62CDKCnr9+NlTrVPNfWDUXfhwP3NOtB1dB1loF8bnTOHRc
+	tPPbjYETWEa467RlUq2BzY6ooVqXHrA=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778131784; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=N2MsDMAGj5hR3LoBD8hE/lETlyUauOfU6egjYijem10=;
-	b=Q60F/zODkFYRZ7TmvL6dGu3wmYog3qtF+XX50gOO5AKUVb44tXiwW/8cZ/x2lS2/1kGZaU
-	sas1tWuSdxP0y8U/uB5eVQVVQ/p4leG67kMf081uu5I9cjy1tT9wV0kwbbrmw9G7Lmh3NM
-	tWcaxLkwM2Pr9rVSXis7tD4ZjXTASFA=
+	t=1778131780; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=RIwF3ZRV1133RKtA1QRs5AkTWPpxdidwu6aiVZNfdzk=;
+	b=NIfnSGa2bcc+YLb2IRdI8eQuszuSDFWRW1CvjguK4cU2XR3NvNzrIEgEZLlb8bs0jdTukV
+	n2AHootEn4md2P5wcPHrwtui62CDKCnr9+NlTrVPNfWDUXfhwP3NOtB1dB1loF8bnTOHRc
+	tPPbjYETWEa467RlUq2BzY6ooVqXHrA=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8DF1E593A7
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 05:29:43 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C69C3593A7
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 05:29:39 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id gDC0E0cj/GmvEgAAD6G6ig
+	id /jiCIUMj/GmvEgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 07 May 2026 05:29:43 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 07 May 2026 05:29:39 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/5] btrfs: use dirty flag to check if an ordered extent needs to be truncated
-Date: Thu,  7 May 2026 14:59:19 +0930
-Message-ID: <295a9c2c5113a53d97451c0f9a47a7f422ead367.1778131118.git.wqu@suse.com>
+Subject: [PATCH 0/5] btrfs: remove folio ordered flag
+Date: Thu,  7 May 2026 14:59:16 +0930
+Message-ID: <cover.1778131118.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1778131118.git.wqu@suse.com>
-References: <cover.1778131118.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,8 +62,7 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
+X-Spam-Level: 
 X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
@@ -83,7 +75,7 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -92,72 +84,81 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
 
-Currently there are only two folio ordered flag users:
+[CHANGELOG]
+RFC->v1:
+- Replace the folio_test_ordered() inside extent_writepage_io()
+  Now do the check inside alloc_new_bio(), which is already doing the OE
+  search.
 
-- extent_writepage_io()
-  To ensure the folio range has an ordered extent covering it.
-  This is from the legacy COW fixup mechanism, which is already removed
-  and only a simple check is left.
+  Now we can detect dirty blocks without an OE at per-block level, much
+  better than the previous per-folio level checks, and without any extra
+  overhead.
 
-- btrfs_invalidate_folio()
-  This is to avoid race with end_bbio_data_write(), where
-  btrfs_finish_ordered_extent() will be called to handle the OE
-  finishing.
+Btrfs has a long history using an internal folio flag called ordered,
+which is to indicate if an fs block is covered by an ordered extent.
 
-But for btrfs_invalidate_folio() we have already waited for the folio
-writeback to finish, and locked the folio.
-This means we can use the dirty flag to check if a range is already
-submitted or not.
+However this means we need to synchronize between ordered extents, which
+are managed by a per-inode ordered tree, and folio flag/subpage bitmap.
 
-If the OE range is not dirty, it means the range has been submitted and
-its dirty flag was cleared. And since we have already waited for
-writeback, the endio function will handle the OE finishing.
-Thus if the range is not dirty, we must skip the range.
+Furthermore with huge folio support, the ordered bitmap can be as large
+as 64 bytes (512 bits), which is not a small amount.
 
-If the OE range is dirty, it means we have allocated an ordered extent but
-have not yet submitted the range. And that's exactly the case where we need
-to truncate the ordered extent.
+The series is going to remove folio ordered flag completely, along with
+the ordered subpage bitmap.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/inode.c | 21 +++++++++++++--------
- 1 file changed, 13 insertions(+), 8 deletions(-)
+Most call sites of folio_test_ordered() are just inside ASSERT()s, so
+it's not too hard to remove them.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4cc4643af7b4..eaae344804f2 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7593,15 +7593,20 @@ static void btrfs_invalidate_folio(struct folio *folio, size_t offset,
- 				page_end);
- 		ASSERT(range_end + 1 - cur < U32_MAX);
- 		range_len = range_end + 1 - cur;
--		if (!btrfs_folio_test_ordered(fs_info, folio, cur, range_len)) {
--			/*
--			 * If Ordered is cleared, it means endio has
--			 * already been executed for the range.
--			 * We can't delete the extent states as
--			 * btrfs_finish_ordered_io() may still use some of them.
--			 */
-+		/*
-+		 * If the range is not dirty, the range has been submitted and
-+		 * since we have waited for the writeback, endio has been
-+		 * executed, thus we must skip the range to avoid double
-+		 * accounting for the ordered extent.
-+		 */
-+		if (!btrfs_folio_test_dirty(fs_info, folio, cur, range_len))
- 			goto next;
--		}
-+
-+		/*
-+		 * The range is dirty meaning it has not been submitted.
-+		 * Here we need to truncate the OE range as the range will never
-+		 * be submitted.
-+		 */
- 		btrfs_folio_clear_ordered(fs_info, folio, cur, range_len);
- 
- 		/*
+There are two call sites that utilizing *_folio_test_ordered():
+
+- Inside extent_writepage_io()
+  The warning left by the legacy COW fixup mechanism.
+  The 1st patch is to introduce a more reliable way to detect dirty
+  blocks without an OE, other than checking the folio ordered flag, now
+  it's doing a per-block level check without introducing new overhead.
+
+- Inside btrfs_invalidate_folio()
+  We use ordered flag to check if we can skip an ordered extent.
+  This is worked around by using the fact that we have waited for
+  writeback of the folio, so that endio should have already finished for
+  the writeback range. Then check dirty flags to determine if we can skip
+  the OE range.
+
+  To get a reliable dirty flag for both sub-folio and full-folio cases, we
+  can not clear the folio dirty flag early, so the 2nd patch is
+  introduced to change the folio dirty flag clearing timing, then the
+  3rd patch can remove the folio_test_ordered() usage.
+
+Then the 4th patch is to remove the remaining folio_test_ordered()
+usage, and finally we can remove the whole ordered flag/subpage bitmap
+completely.
+
+I tried to hide the ordered flag/bitmap behind DEBUG, but unfortunately
+the subpage bitmap macros are not that easy to be tweaked to handle
+conditional ordered flags.
+
+So the ordered flag/bitmap must be either there, or be completely gone.
+I hope enough test runs will cover the removed ASSERT()s.
+
+Qu Wenruo (5):
+  btrfs: detect dirty blocks without an ordered extent more reliably
+  btrfs: unify folio dirty flag clearing
+  btrfs: use dirty flag to check if an ordered extent needs to be
+    truncated
+  btrfs: remove folio_test_ordered() usage
+  btrfs: remove folio ordered flag and subpage bitmap
+
+ fs/btrfs/extent_io.c | 117 ++++++++++++++++++++++++-------------------
+ fs/btrfs/extent_io.h |  12 ++++-
+ fs/btrfs/fs.h        |   8 ---
+ fs/btrfs/inode.c     |  60 ++++++----------------
+ fs/btrfs/subpage.c   |  41 +--------------
+ fs/btrfs/subpage.h   |  19 +++----
+ 6 files changed, 100 insertions(+), 157 deletions(-)
+
 -- 
 2.54.0
 

@@ -1,169 +1,163 @@
-Received: from out-180.mta1.migadu.com (out-180.mta1.migadu.com [95.215.58.180])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 31F72305E32
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 04:50:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.180
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5BEBE230BD5
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 05:29:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778129412; cv=none; b=HFLw/V5Px+QloxqnWRaujWf7jmTiDRFtkzQrqL8t3NqFbVda6eRa0l/nGclyr6+ex4yvd87AB9lfYkNONKuvxO6cNc8bauegJyvvVOOVP7bRcvV0B8IOO5rQp0I/4Y+9YXskB3oXRv8dIps6E/70ejCnL3bclQJAUVbb9fP8ccY=
+	t=1778131787; cv=none; b=ChT/gEzSRoCAKCR709WKwFJLDVo3I5MSMbSqIJFAvyUwtYpw+ixDkHm0iqklMAsOQFLpLfjNdecPWS393aV6vQFyrnCsEeg1xGfDkX+fPGqs57WYBaaApXPuAgzGsWXpSFuxmxJQjysi4EjornRsoVtMLCkDsm95silUc76Jszw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778129412; c=relaxed/simple;
-	bh=bQB2s8WxmFtpfxZIVw/wVGZuGsPY7l5Dxg6IzHMJ1s4=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=U0k4BkML7NAPm8G9YjwZKzoHUPcbCghlny3vuFjiIiB6uDMpoECjkO3AALUDsj0r5n2zVQZXaPiVwePG+ajKdmySy5pIZ4+5d2tjExMh0Q/EC3lwubJ0xL1u8RRBnPun1iIrRS6/F3qNVxKD/9vbS2W4Lgmetn0EtsrGl149vjE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=BQd+lmXA; arc=none smtp.client-ip=95.215.58.180
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	s=arc-20240116; t=1778131787; c=relaxed/simple;
+	bh=T0qIKQt79k+zE5uJpDp8vrkl8vLQp4P61NZrom8KkAY=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=lThJN3yYWRttNvnHqZNVWMEAEJ+VtitBneKcv/H9jiGXkSwmXN+yVF/PEUNyLAfB2Tz11DT/+qilliUG4ccDyUefLRKojTgffd2oIbzr1Xb5f4SkrEsK4P1AUUpMaFoDp6xuYddekidyZz2DtojeU34Pm2AKCkYzEJooJhC0p0Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Q60F/zOD; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Q60F/zOD; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="BQd+lmXA"
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1778129399;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Q60F/zOD";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Q60F/zOD"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 56B166C067
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 05:29:44 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1778131784; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=T92lbeSuDJF7TOb0l3mnZYGDplRGv4RFUXtmKR9fQi8=;
-	b=BQd+lmXA/f8WxjtF/4MvcydOiZ2rTKsUXYuNzKxVCyqK0llXG8SamTlt4wBud+vNOjd6jY
-	DeEajAO4982nOxFQgRyaNturbsK3JjGj9nIf8/wzzwGBS1WHqsGdMgEwwa6AQrffAnCajT
-	exWHhM88xlcXdwqUY8+G+f2BslZyrZI=
-From: Lance Yang <lance.yang@linux.dev>
-To: ziy@nvidia.com,
-	akpm@linux-foundation.org
-Cc: david@kernel.org,
-	willy@infradead.org,
-	songliubraving@fb.com,
-	clm@fb.com,
-	dsterba@suse.com,
-	viro@zeniv.linux.org.uk,
-	brauner@kernel.org,
-	jack@suse.cz,
-	ljs@kernel.org,
-	baolin.wang@linux.alibaba.com,
-	Liam.Howlett@oracle.com,
-	npache@redhat.com,
-	ryan.roberts@arm.com,
-	dev.jain@arm.com,
-	baohua@kernel.org,
-	lance.yang@linux.dev,
-	vbabka@kernel.org,
-	rppt@kernel.org,
-	surenb@google.com,
-	mhocko@suse.com,
-	shuah@kernel.org,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-mm@kvack.org,
-	linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v5 04/14] mm/khugepaged: remove READ_ONLY_THP_FOR_FS check in hugepage_enabled()
-Date: Thu,  7 May 2026 12:49:38 +0800
-Message-Id: <20260507044938.12529-1-lance.yang@linux.dev>
-In-Reply-To: <20260429152924.727124-5-ziy@nvidia.com>
-References: <20260429152924.727124-5-ziy@nvidia.com>
+	bh=N2MsDMAGj5hR3LoBD8hE/lETlyUauOfU6egjYijem10=;
+	b=Q60F/zODkFYRZ7TmvL6dGu3wmYog3qtF+XX50gOO5AKUVb44tXiwW/8cZ/x2lS2/1kGZaU
+	sas1tWuSdxP0y8U/uB5eVQVVQ/p4leG67kMf081uu5I9cjy1tT9wV0kwbbrmw9G7Lmh3NM
+	tWcaxLkwM2Pr9rVSXis7tD4ZjXTASFA=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1778131784; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=N2MsDMAGj5hR3LoBD8hE/lETlyUauOfU6egjYijem10=;
+	b=Q60F/zODkFYRZ7TmvL6dGu3wmYog3qtF+XX50gOO5AKUVb44tXiwW/8cZ/x2lS2/1kGZaU
+	sas1tWuSdxP0y8U/uB5eVQVVQ/p4leG67kMf081uu5I9cjy1tT9wV0kwbbrmw9G7Lmh3NM
+	tWcaxLkwM2Pr9rVSXis7tD4ZjXTASFA=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8DF1E593A7
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 May 2026 05:29:43 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id gDC0E0cj/GmvEgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Thu, 07 May 2026 05:29:43 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 3/5] btrfs: use dirty flag to check if an ordered extent needs to be truncated
+Date: Thu,  7 May 2026 14:59:19 +0930
+Message-ID: <295a9c2c5113a53d97451c0f9a47a7f422ead367.1778131118.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
+In-Reply-To: <cover.1778131118.git.wqu@suse.com>
+References: <cover.1778131118.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Migadu-Flow: FLOW_OUT
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Level: 
 
-Hi Andrew,
+Currently there are only two folio ordered flag users:
 
-I just noticed that mm-new commit 83f151d1f7e3[1] links to this patch:
+- extent_writepage_io()
+  To ensure the folio range has an ordered extent covering it.
+  This is from the legacy COW fixup mechanism, which is already removed
+  and only a simple check is left.
 
-Link: https://lore.kernel.org/20260429152924.727124-5-ziy@nvidia.com
+- btrfs_invalidate_folio()
+  This is to avoid race with end_bbio_data_write(), where
+  btrfs_finish_ordered_extent() will be called to handle the OE
+  finishing.
 
-but the applied commit only has the include/linux/shmem_fs.h hunk ...
-The mm/khugepaged.c hunk seems missing. Was this dropped unintentionally?
+But for btrfs_invalidate_folio() we have already waited for the folio
+writeback to finish, and locked the folio.
+This means we can use the dirty flag to check if a range is already
+submitted or not.
 
-[1] https://git.kernel.org/pub/scm/linux/kernel/git/akpm/mm.git/commit/?h=mm-new&id=83f151d1f7e3429100d148fbafc65203294e9f90
+If the OE range is not dirty, it means the range has been submitted and
+its dirty flag was cleared. And since we have already waited for
+writeback, the endio function will handle the OE finishing.
+Thus if the range is not dirty, we must skip the range.
 
-Thanks, Lance
+If the OE range is dirty, it means we have allocated an ordered extent but
+have not yet submitted the range. And that's exactly the case where we need
+to truncate the ordered extent.
 
-On Wed, Apr 29, 2026 at 11:29:14AM -0400, Zi Yan wrote:
->Remove the READ_ONLY_THP_FOR_FS gate and khugepaged for file-backed
->pmd-sized hugepages are enabled by the global transparent hugepage control.
->khugepaged can still be enabled by per-size control for anon and shmem when
->the global control is off.
->
->Add shmem_hpage_pmd_enabled() stub for !CONFIG_SHMEM to remove
->IS_ENABLED(SHMEM) in hugepage_enabled().
->
->Clean up hugepage_enabled() by moving anon code to anon_hpage_enabled().
->
->Signed-off-by: Zi Yan <ziy@nvidia.com>
->Reviewed-by: Baolin Wang <baolin.wang@linux.alibaba.com>
->Acked-by: David Hildenbrand (Arm) <david@kernel.org>
->---
-> include/linux/shmem_fs.h |  2 +-
-> mm/khugepaged.c          | 26 ++++++++++++++++----------
-> 2 files changed, 17 insertions(+), 11 deletions(-)
->
->diff --git a/include/linux/shmem_fs.h b/include/linux/shmem_fs.h
->index 93a0ba872ebe0..acb8dd961b45c 100644
->--- a/include/linux/shmem_fs.h
->+++ b/include/linux/shmem_fs.h
->@@ -127,7 +127,7 @@ int shmem_writeout(struct folio *folio, struct swap_iocb **plug,
-> void shmem_truncate_range(struct inode *inode, loff_t start, uoff_t end);
-> int shmem_unuse(unsigned int type);
-> 
->-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
->+#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && defined(CONFIG_SHMEM)
-> unsigned long shmem_allowable_huge_orders(struct inode *inode,
-> 				struct vm_area_struct *vma, pgoff_t index,
-> 				loff_t write_end, bool shmem_huge_force);
->diff --git a/mm/khugepaged.c b/mm/khugepaged.c
->index 71209a72195ab..d6971ada8f199 100644
->--- a/mm/khugepaged.c
->+++ b/mm/khugepaged.c
->@@ -524,26 +524,32 @@ static inline int collapse_test_exit_or_disable(struct mm_struct *mm)
-> 		mm_flags_test(MMF_DISABLE_THP_COMPLETELY, mm);
-> }
-> 
->+static inline bool anon_hpage_enabled(void)
->+{
->+	if (READ_ONCE(huge_anon_orders_always))
->+		return true;
->+	if (READ_ONCE(huge_anon_orders_madvise))
->+		return true;
->+	if (READ_ONCE(huge_anon_orders_inherit) &&
->+	    hugepage_global_enabled())
->+		return true;
->+	return false;
->+}
->+
-> static bool hugepage_enabled(void)
-> {
-> 	/*
-> 	 * We cover the anon, shmem and the file-backed case here; file-backed
->-	 * hugepages, when configured in, are determined by the global control.
->+	 * hugepages are determined by the global control.
-> 	 * Anon hugepages are determined by its per-size mTHP control.
-> 	 * Shmem pmd-sized hugepages are also determined by its pmd-size control,
-> 	 * except when the global shmem_huge is set to SHMEM_HUGE_DENY.
-> 	 */
->-	if (IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) &&
->-	    hugepage_global_enabled())
->-		return true;
->-	if (READ_ONCE(huge_anon_orders_always))
->+	if (hugepage_global_enabled())
-> 		return true;
->-	if (READ_ONCE(huge_anon_orders_madvise))
->-		return true;
->-	if (READ_ONCE(huge_anon_orders_inherit) &&
->-	    hugepage_global_enabled())
->+	if (anon_hpage_enabled())
-> 		return true;
->-	if (IS_ENABLED(CONFIG_SHMEM) && shmem_hpage_pmd_enabled())
->+	if (shmem_hpage_pmd_enabled())
-> 		return true;
-> 	return false;
-> }
->-- 
->2.53.0
->
->
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/inode.c | 21 +++++++++++++--------
+ 1 file changed, 13 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 4cc4643af7b4..eaae344804f2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7593,15 +7593,20 @@ static void btrfs_invalidate_folio(struct folio *folio, size_t offset,
+ 				page_end);
+ 		ASSERT(range_end + 1 - cur < U32_MAX);
+ 		range_len = range_end + 1 - cur;
+-		if (!btrfs_folio_test_ordered(fs_info, folio, cur, range_len)) {
+-			/*
+-			 * If Ordered is cleared, it means endio has
+-			 * already been executed for the range.
+-			 * We can't delete the extent states as
+-			 * btrfs_finish_ordered_io() may still use some of them.
+-			 */
++		/*
++		 * If the range is not dirty, the range has been submitted and
++		 * since we have waited for the writeback, endio has been
++		 * executed, thus we must skip the range to avoid double
++		 * accounting for the ordered extent.
++		 */
++		if (!btrfs_folio_test_dirty(fs_info, folio, cur, range_len))
+ 			goto next;
+-		}
++
++		/*
++		 * The range is dirty meaning it has not been submitted.
++		 * Here we need to truncate the OE range as the range will never
++		 * be submitted.
++		 */
+ 		btrfs_folio_clear_ordered(fs_info, folio, cur, range_len);
+ 
+ 		/*
+-- 
+2.54.0
+

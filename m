@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A8D922BD11;
-	Fri,  8 May 2026 19:46:36 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3E8643254B3;
+	Fri,  8 May 2026 19:48:49 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778269596; cv=none; b=KO5HX4+0PUQANp2SQVyw+V/MPj13RtlGm2yW/vrX31yX/6Vgq4Ua5RsgCvcoo0IFQEleBOHAKSWqEgevH8INTGTAkyHmqMWfvJwHgzNwPLRrii125k1C2TE+7TGY+gondFM0aAw/fmskdQDKvvcM1k9lVLtrogBkaCj3E6fp8Ps=
+	t=1778269730; cv=none; b=uxvgAtOohcYOzuXuC2wWpNFeLpFeE/Hr9Coij7U38cMIFNvbXR7PkGG5sWQTofrOXQvUI9TpDJlEIuFjKkwL8+TJViyTWP/kI2+WiC+I8iBTotH4nd7dYZHzjmJS7qeSZpz+7epsN3+FtMRGUgOVreVtBOku5BUuiYWkLr/OWag=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778269596; c=relaxed/simple;
-	bh=AP/csasG3IScJjNYEs9Zv3ujE4WcsOcNE0SmpbZPdLM=;
+	s=arc-20240116; t=1778269730; c=relaxed/simple;
+	bh=eYKckCjevTstTvfrX409clPwx64nbPPG5Iv4w90sO24=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=OB7w31UX9ES8jwJPnPV+4Kjq8xPseAlvjbtxTLzIeiJ3/C7wsNU3tFYonQJrIIWTftwoVH+F1BeiICt5QoAtm8xrAK/FdDM0FXUAmTJUrIDTdWmc4hBRK3AfH7f7ELK292U2cDKHpyjLKoeO9nJV/nGRstUplXdQKa3eEUzfAmI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=lKpHqYe6; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=QHfFTE0+EcyfWmNZo1afujPA4CzRvm5Bvro+ZR4xy9IdoQpXSTdQzywsvSMku5yZ3xinFko2quDJmNHevVAI76ymIVzS+hxorjcxemZmJH7HKvH/nePOumOgDL4j+RBuAN8Xkj8qCiSAauHqnLVl75LfZPhaBSljHf0hgHZBHdE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Y8Xlwg1M; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="lKpHqYe6"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 61453C2BCB0;
-	Fri,  8 May 2026 19:46:29 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Y8Xlwg1M"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A2FA8C2BCC9;
+	Fri,  8 May 2026 19:48:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778269596;
-	bh=AP/csasG3IScJjNYEs9Zv3ujE4WcsOcNE0SmpbZPdLM=;
+	s=k20201202; t=1778269729;
+	bh=eYKckCjevTstTvfrX409clPwx64nbPPG5Iv4w90sO24=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=lKpHqYe6W6R33mkJXDELMsu8RFuNO/sq0dNtC6h6Oo3PMtolQzTeVnDvuJ/ls9YVp
-	 jrIifreEhlQVOmiOW4+2DhNgbUGNFwK/cvswq/U6ohIRJJLUz2q0cqXVxOgrXEN42h
-	 2LV5subwM88Xo4CTeflKVNFAJLoIHWnh7NKCdY8WMv0uY4X4O2jPQPj4QX07ok/kEu
-	 iETRNeKL07RjtIrLtdYn1uBZ4infisG+uZRCD481wenJ+kkYoSosOXN6Ui7KVjDLMr
-	 ybZBejtIi4cgs9Cemy5bxVMNSa/qtFy6mvZDpZC0asH11nmf2ITFxnREKt9TArJ2sh
-	 iGAAawYhsj6/g==
-Message-ID: <58947d4e-abb5-4d2d-a668-2ac76ce59382@kernel.org>
-Date: Fri, 8 May 2026 21:46:27 +0200
+	b=Y8Xlwg1M5NBl3ESdd/zuPKj3Io4Qy5OR1/OaZ5JgOTwdmrQ2W++lf2PGn06s9Ku8N
+	 OuusMpNZ7UCztd2ObE7/NaIswGjp8z0Iqek54mOrIHMgI5LrcEZltYmdDaJ0DBogmD
+	 EZnLWeLbj6e06Ufr8zAwMldPbQz1pAM+NZvXkvYTrzDJ3kIOuF1u9/YGgMehLGBuKO
+	 q93wDHvhpeLRIcFAxviHGopB++NR+zKGOIaSm8rU9G66jUhxQ/6fOKWi9EZLQbHyeL
+	 GXyETCvEmxSIPZKQl/sjPkqs4lw76lszD0M8w07G9cCmlmVHwpHZ7ITuk6mdmdt974
+	 goooAcSszAkzA==
+Message-ID: <e9e61132-902a-445f-9c4c-4d405d164e70@kernel.org>
+Date: Fri, 8 May 2026 21:48:39 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,8 +35,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v5 09/14] mm/truncate: use folio_split() in
- truncate_inode_partial_folio()
+Subject: Re: [PATCH v5 11/14] selftests/mm: remove READ_ONLY_THP_FOR_FS in
+ khugepaged
 To: Zi Yan <ziy@nvidia.com>, Andrew Morton <akpm@linux-foundation.org>,
  "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  Song Liu <songliubraving@fb.com>
@@ -54,7 +54,9 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260429152924.727124-1-ziy@nvidia.com>
- <20260429153538.727855-5-ziy@nvidia.com>
+ <20260429153538.727855-7-ziy@nvidia.com>
+ <B1D68BA2-11D2-4053-B715-F7704ED784DA@nvidia.com>
+ <3BFC4C26-1C97-40AA-B4B7-7472B9768565@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -101,32 +103,74 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <20260429153538.727855-5-ziy@nvidia.com>
+In-Reply-To: <3BFC4C26-1C97-40AA-B4B7-7472B9768565@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 4/29/26 17:35, Zi Yan wrote:
-> After READ_ONLY_THP_FOR_FS is removed, FS either supports large folio or
-> not. folio_split() can be used on a FS with large folio support without
-> worrying about getting a THP on a FS without large folio support.
+On 4/30/26 17:27, Zi Yan wrote:
+> On 30 Apr 2026, at 11:16, Zi Yan wrote:
 > 
-> When READ_ONLY_THP_FOR_FS was present, a PMD large pagecache folio can
-> appear in a FS without large folio support after khugepaged or
-> madvise(MADV_COLLAPSE) creates it. During truncate_inode_partial_folio(),
-> such a PMD large pagecache folio is split and if the FS does not support
-> large folio, it needs to be split to order-0 ones and could not be split
-> non uniformly to ones with various orders. try_folio_split_to_order() was
-> added to handle this situation by checking folio_check_splittable(...,
-> SPLIT_TYPE_NON_UNIFORM) to detect if the large folio is created due to
-> READ_ONLY_THP_FOR_FS and the FS does not support large folio. Now
-> READ_ONLY_THP_FOR_FS is removed, all large pagecache folios are created
-> with FSes supporting large folio, this function is no longer needed and all
-> large pagecache folios can be split non uniformly.
+>> On 29 Apr 2026, at 11:35, Zi Yan wrote:
+>>
+>>> Change the requirement to a file system with large folio support and the
+>>> supported order needs to include PMD_ORDER.
+>>>
+>>> Also add tests of opening a file with read write permission and populating
+>>> folios with writes. Reuse the XFS image from split_huge_page_test.
+>>>
+>>> Signed-off-by: Zi Yan <ziy@nvidia.com>
+>>> ---
+>>>  tools/testing/selftests/mm/khugepaged.c   | 131 +++++++++++++++-------
+>>>  tools/testing/selftests/mm/run_vmtests.sh |  12 +-
+>>>  2 files changed, 102 insertions(+), 41 deletions(-)
+>>>
+> 
+> <snip>
+> 
+>>> -static void file_fault(void *p, unsigned long start, unsigned long end)
+>>> +static void file_fault_common(void *p, unsigned long start, unsigned long end,
+>>> +		int madv_ops)
+>>>  {
+>>> -	if (madvise(((char *)p) + start, end - start, MADV_POPULATE_READ)) {
+>>> +	if (madvise(((char *)p) + start, end - start, madv_ops)) {
+>>>  		perror("madvise(MADV_POPULATE_READ");
+>>
+>> Sashiko:
+>> Since madv_ops can now be either MADV_POPULATE_READ or MADV_POPULATE_WRITE,
+>> will this hardcoded error message be misleading if the write fault path
+>> fails?
+>>
+>> Answer:
+>> Will send a fixup.
+> 
+> 
+> This is the fixup:
+> From 76e301cf5198f33d07492e224ec627b94902b4b6 Mon Sep 17 00:00:00 2001
+> From: Zi Yan <ziy@nvidia.com>
+> Date: Thu, 30 Apr 2026 11:22:30 -0400
+> Subject: [PATCH] selftests/mm: khugepaged perror fixup.
 > 
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
 > ---
+>  tools/testing/selftests/mm/khugepaged.c | 5 ++++-
+>  1 file changed, 4 insertions(+), 1 deletion(-)
+> 
+> diff --git a/tools/testing/selftests/mm/khugepaged.c b/tools/testing/selftests/mm/khugepaged.c
+> index 80b913185c643..97b8fcc490c76 100644
+> --- a/tools/testing/selftests/mm/khugepaged.c
+> +++ b/tools/testing/selftests/mm/khugepaged.c
+> @@ -445,7 +445,10 @@ static void file_fault_common(void *p, unsigned long start, unsigned long end,
+>  		int madv_ops)
+>  {
+>  	if (madvise(((char *)p) + start, end - start, madv_ops)) {
+> -		perror("madvise(MADV_POPULATE_READ");
+> +		if (madv_ops == MADV_POPULATE_READ)
+> +			perror("madvise(MADV_POPULATE_READ");
+> +		else if (madv_ops == MADV_POPULATE_WRITE)
+> +			perror("madvise(MADV_POPULATE_WRITE");
 
-Acked-by: David Hildenbrand (Arm) <david@kernel.org>
+Alternatively, just "madvise()". It's unexpected to fail in any case and would
+have to be debugged ...
 
 -- 
 Cheers,

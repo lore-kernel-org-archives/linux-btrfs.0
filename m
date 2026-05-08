@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1EEB8357A25;
-	Fri,  8 May 2026 20:09:34 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3E9F4221DB3;
+	Fri,  8 May 2026 20:14:01 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778270975; cv=none; b=nhiffx2jbAGdkCUYVWOptFCbZqlUDbYZycgv0EfOoz3eDGOL3oYboRDuVQtrhpmsNkOq/Mp0RM6MXHprT5njTDSHaO77vufrfcqbeMueali1ScK3yHQPgSFgytElnGNBWv3M6B1t/9rmCePyIYVVOEpgv/6Qf2cz/PlM0XWYMQo=
+	t=1778271241; cv=none; b=kkYPtTDum72NQ8XvKCc626jd71xwbk4kS9TnjZAMtBaJyA5ozdOtAx9L937LKCLd/are55JePb47XNB7iAOWNuXHYXLfUnvJkEbR8I0WSQBL4N+nqZRRoWWQV+cb5tR+hBz1pCkw006zDGucLmT912ty5EOMRLO4AGjHg1lJOkk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778270975; c=relaxed/simple;
-	bh=t5h/pbwLwJoMHajI/15IwmnbpJqPM0yySlvu9EFrr1A=;
+	s=arc-20240116; t=1778271241; c=relaxed/simple;
+	bh=hxYgkYjG67gsdnfV7iJptPK6UKCqEsrTTyrjyXlkR1c=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=FZg5BEERwdJgRroghTAUGxJkkqHiL8uaZsRrQfMnE/iVFD7a0ZDOKfwE72sXECRg2MwQRLAUYBR4oEGGPwF8vgfKRzJkkBmbqrjJkpn6HImd0IG85AIb551sQnzomazIxNjilwSiJ306oUxuL1BzRMHz84W910/w5L9oq7slCy8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=m4tZNpao; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=eyWEOF1/sgj06Z6Uxx2oJ1KR2D8Gcw0m77QBdT9cGC5DtHXpxQ+NOyjEqNhGGmAJ3PF5oKipGAi+fzR60TjTEf/2460XdwZWShdLbB/ciLNRDxFC26NgsbqtAemKgvLkntnzbINP1Wzwc9d9hxBY5NhpHwzE9SEvZ5/06J7lWpU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LHtvnfbU; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="m4tZNpao"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id BA8FCC2BCB0;
-	Fri,  8 May 2026 20:09:26 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LHtvnfbU"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2C735C2BCB0;
+	Fri,  8 May 2026 20:13:51 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778270974;
-	bh=t5h/pbwLwJoMHajI/15IwmnbpJqPM0yySlvu9EFrr1A=;
+	s=k20201202; t=1778271241;
+	bh=hxYgkYjG67gsdnfV7iJptPK6UKCqEsrTTyrjyXlkR1c=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=m4tZNpaoWxVYS7/LIvxw+3IqL/2lAfawJ/rtqwePsUP0JKCQYPGJ22Y1uZrgmLxif
-	 oeOwuxUIGI1ArhngJrhwS0oJ4IP0zZxelswhP7BWGQdm/judK0rGGnGaQMQMxeUJun
-	 Xk9zMcI7f1za1jyxBDZub+Onk+ZHcW9bdn71LcDLAerJSLENxxb4fZgBiI25X6xLT/
-	 PsSfCQ6La7NtzuAewmc5mWbeunaktUwH4qyJEml/OagSokzAhutYcds/varYgMUC/K
-	 wIGRFD08sVLqcWQcEaKIa2HIvjhsfLv2Iz+sY66VqNtqowY/Ln81gcU1UWHdYW3Gxu
-	 L7sayZY/ZTw1g==
-Message-ID: <6b2a81e0-21c8-4454-a07b-dd025d032a67@kernel.org>
-Date: Fri, 8 May 2026 22:09:24 +0200
+	b=LHtvnfbUnAn1itMO5JnsxJvmwUVGU8cIc09e/GNdS5u0N99UZQaOCu1FUn5eHyLFz
+	 kiU1yWY7UdIgcbhFWm7ChdnCjgQoBWHtva/iyb0ZXmrpL7koLNRthngO4y0yswIGhO
+	 gBpNjkIkRCIu4C4olmSvuEFzfuQOYLoXP/evhxI5czz1aKF/LlwtwFCqwQwVLe2HP1
+	 WrQ6sctqlZh29QqtfiYzSuvlvwmjcnEMCegSO4qlxxZlKGVV4pmFzhRgPr2wAvgADU
+	 V/0MOSyp24Uwypku5XAbLe7Gcbntnvmp6eV6HY7xVvKUyKnOp8mtXHsJdL/tnjixjT
+	 M3ekFqMx+v39A==
+Message-ID: <b8a3c3eb-f241-40fe-9121-4ae5a1097807@kernel.org>
+Date: Fri, 8 May 2026 22:13:50 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -55,7 +55,6 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260429152924.727124-1-ziy@nvidia.com>
  <20260429153538.727855-9-ziy@nvidia.com>
- <CFECCB44-EEEA-4D3F-A505-3BA2C564C107@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -102,46 +101,74 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <CFECCB44-EEEA-4D3F-A505-3BA2C564C107@nvidia.com>
+In-Reply-To: <20260429153538.727855-9-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 4/30/26 17:18, Zi Yan wrote:
-> On 29 Apr 2026, at 11:35, Zi Yan wrote:
+On 4/29/26 17:35, Zi Yan wrote:
+> collapse_file() is capable of collapsing pagecache folios from writable
+> files to PMD folios. Now enable clean pagecache folio collapse in addition
+> to read-only pagecache folio collapse by removing the
+> inode_is_open_for_write() from file_thp_enabled() and only performing
+> filemap_flush() if the file is read-only.
 > 
->> collapse_file() is capable of collapsing pagecache folios from writable
->> files to PMD folios. Now enable clean pagecache folio collapse in addition
->> to read-only pagecache folio collapse by removing the
->> inode_is_open_for_write() from file_thp_enabled() and only performing
->> filemap_flush() if the file is read-only.
->>
->> This means userspace needs to explicitly flush the content of pagecache
->> folios before khugepaged can collapse the folios, or use
->> madvise(MADV_COLLAPSE), which does the flush in the retry. The reason is
->> that blindly enabling dirty pagecache folio from writable files collapse
->> makes khugepaged flush these folios all the time. It is undesirable to
->> cause system level pagecache flushes.
->>
->> To properly support dirty pagecache folio collapse, filemap_flush() needs
->> to be avoided. Potentially, merging associated buffer instead of dropping
->> it with filemap_release_folio() might be needed.
->>
->> NOTE: this breaks khugepaged selftests for writable file pagecache
->> collapse, which is set to fail all the time. The next commit fix it.
+> This means userspace needs to explicitly flush the content of pagecache
+> folios before khugepaged can collapse the folios, or use
+> madvise(MADV_COLLAPSE), which does the flush in the retry. The reason is
+> that blindly enabling dirty pagecache folio from writable files collapse
+> makes khugepaged flush these folios all the time. It is undesirable to
+> cause system level pagecache flushes.
 > 
-> Sashiko:
+> To properly support dirty pagecache folio collapse, filemap_flush() needs
+> to be avoided. Potentially, merging associated buffer instead of dropping
+> it with filemap_release_folio() might be needed.
 > 
-> Is it acceptable to intentionally break the selftests in this commit? Each
-> commit should be self-contained and not knowingly introduce test regressions,
-> as this breaks bisectability.
+> NOTE: this breaks khugepaged selftests for writable file pagecache
+> collapse, which is set to fail all the time. The next commit fix it.
 > 
-> Answer:
+> Signed-off-by: Zi Yan <ziy@nvidia.com>
+> ---
+>  mm/huge_memory.c | 2 +-
+>  mm/khugepaged.c  | 9 ++++++++-
+>  2 files changed, 9 insertions(+), 2 deletions(-)
 > 
-> I am fine with squashing patch 14 into this one, but it is unlikely anyone
-> gets a kernel at exact this commit.
+> diff --git a/mm/huge_memory.c b/mm/huge_memory.c
+> index 9b3abb98a7e51..e1e9d59db6e70 100644
+> --- a/mm/huge_memory.c
+> +++ b/mm/huge_memory.c
+> @@ -97,7 +97,7 @@ static inline bool file_thp_enabled(struct vm_area_struct *vma)
+>  	if (!mapping_pmd_folio_support(vma->vm_file->f_mapping))
+>  		return false;
+>  
+> -	return !inode_is_open_for_write(inode) && S_ISREG(inode->i_mode);
+> +	return S_ISREG(inode->i_mode);
+>  }
+>  
+>  /* If returns true, we are unable to access the VMA's folios. */
+> diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+> index 1ee15b48962a3..fb7ff643973cc 100644
+> --- a/mm/khugepaged.c
+> +++ b/mm/khugepaged.c
+> @@ -2345,7 +2345,14 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
+>  				 * forcing writeback in loop.
+>  				 */
+>  				xas_unlock_irq(&xas);
+> -				filemap_flush(mapping);
+> +				/*
+> +				 * Only flush for read-only files. Writable
+> +				 * files can have their folios dirty at any
+> +				 * time; blindly flushing them would cause
+> +				 * undesirable system-wide writeback.
+> +				 */
 
-For bisecting maybe problematic. I wouldn't squash it, though, instead prepare
-the selftests in a different way beforehand, such that they won't get broken?
+That comment should really be merged in the comment above.
+
+Also, there we say "khugepaged only works on read-only fd" ... which is now just
+wrong?
+
+Please revise that whole comment as you incorporate your comment.
+
+Apart from that I guess this is fine ... or we'll learn rather quickly, haha.
 
 -- 
 Cheers,

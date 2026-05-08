@@ -1,32 +1,66 @@
-Received: from mail.synology.com (mail.synology.com [211.23.38.101])
+Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BCCD3327C09
-	for <linux-btrfs@vger.kernel.org>; Fri,  8 May 2026 13:42:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 28FDE279792;
+	Fri,  8 May 2026 14:47:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.158.5
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778247748; cv=none; b=cDoFMJS3fXqPFSj4hZYNE9aXfmvHAr+DyzyOPIWL3cAMf05XeM1ZfWOzSIbXVOQdBE43s5qc+0z+G7/X3CcDs3CUgSKk3I10imopqPQO12U+au/BQQxUsBkUSaFxCoDmvMSg7tWoumb34qzj+c5UR8pEmJqwGaHEn3XmmwarQc4=
+	t=1778251651; cv=none; b=Z5yCFDRobg32v4+HJ3E4CBVMYY9wLWB+g7/VbX6R1EEI6yCXjGYKsIfu84fUQpjL/X5uW60N7x1cKMoWy34j/sDiyTtRozbxgAoc+2RjAwMN3CvZ/fToZMH2VwIpVflvw2eLuowvNajmB+ugqI9ru05R11LVcvrDIz3YwKXh5lg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778247748; c=relaxed/simple;
-	bh=eKFKAAt1MYiFEYkBClOwfkBJ1TMcQnFDrhuGdmOYnME=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=Y+H/TDFvBhPzPm/HBTmIR/F+jRef4fZeAd7BlAbIKfMD9Qb46+Lc/oIVet1T5I0FJ6SkMdBPrE7DZeROIg1sIvw71r3/GzYdESZTwmXHBcZY8p0hryglO6+ZWFpKGMt9MRbesOGWcsb/KOyDEt+dDWqhj4jkYqA9j7C8aCqmJS0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=LWVEac+L; arc=none smtp.client-ip=211.23.38.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
+	s=arc-20240116; t=1778251651; c=relaxed/simple;
+	bh=puF0Sl9NmkVWAeiPEvE75t9mDGez+H8o7iWsz+Z4NB0=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=cY5hVTwfdmI/PVMn7Vxs8JNA5fA8mb/KT8Eep/Ib7IBbXVaXJQiF4xfkWE6qO75stVJUR4dFJUibQuPLVEtuo4xuei1YvFmEkKOmJ3Uq/v7QV5Wa58BSTZJRrI0piwujM8Hn89e/CIF62e4KisUOk/Jk46U1vP1EMiF6FVZojJQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=X1DWUbkr; arc=none smtp.client-ip=148.163.158.5
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="LWVEac+L"
-From: robbieko <robbieko@synology.com>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-	t=1778247744; bh=eKFKAAt1MYiFEYkBClOwfkBJ1TMcQnFDrhuGdmOYnME=;
-	h=From:To:Cc:Subject:Date;
-	b=LWVEac+LA2al04m1oebIszm1KVRSMQDoqepQmnP9H8f4oSrzubYsCPr1llSZ/iUrg
-	 84r74qfEVN7OlGRVy3lrsyMofT/+o88Sj8ZzBFqIBDzs2roasEJCTv2eMJW9IsAk0p
-	 oHNbq4n87Yl2LhDeUAq5jsUuyJPCDAVntR++i3DY=
-To: linux-btrfs@vger.kernel.org
-Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH v2] btrfs: mark file extent range dirty after converting prealloc extents
-Date: Fri,  8 May 2026 21:42:11 +0800
-Message-ID: <20260508134215.1716255-1-robbieko@synology.com>
+	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="X1DWUbkr"
+Received: from pps.filterd (m0356516.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 648E9FQG3254680;
+	Fri, 8 May 2026 14:47:27 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=cc
+	:content-transfer-encoding:date:from:message-id:mime-version
+	:subject:to; s=pp1; bh=QWGOklq9g6Bs+JbxIbQKUFXLyOHqVYJwTeAx8b7t/
+	5w=; b=X1DWUbkrZDrxSh0p+alKLWJJBIfMiTGUiupiNOP1BQZfAHSS/6mRr3cwt
+	ihm1Fu1i1sQkdISciJRjGQuJaS5CSHiKdgv5f6ohm52efb1w9p/kV+EtN5GAhqs+
+	aAP2j+AJVdL6h34TtLgKTVlHA8OE8QcDBQZL2x1nZsoTZypZKlpRzDMyknwc3mwx
+	bj20Jtu9Os2MaQcyHmxGjttYP+MVcWjld6hzj63SQh2XnXMECQZeirhsl9rb9QAh
+	UjIqjQaHOsZJfd1kP+LqcKJTToiFh6ojuSCsQz+xOucB0ZYPFpTtuHc4Eyujvqvr
+	vqBnECPZfxXn9rQoaVey7Z3AiZK/Q==
+Received: from ppma22.wdc07v.mail.ibm.com (5c.69.3da9.ip4.static.sl-reverse.com [169.61.105.92])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 4dw9w6tv71-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Fri, 08 May 2026 14:47:26 +0000 (GMT)
+Received: from pps.filterd (ppma22.wdc07v.mail.ibm.com [127.0.0.1])
+	by ppma22.wdc07v.mail.ibm.com (8.18.1.7/8.18.1.7) with ESMTP id 648EdZuL014876;
+	Fri, 8 May 2026 14:47:26 GMT
+Received: from smtprelay07.fra02v.mail.ibm.com ([9.218.2.229])
+	by ppma22.wdc07v.mail.ibm.com (PPS) with ESMTPS id 4dwuywgpcj-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Fri, 08 May 2026 14:47:26 +0000 (GMT)
+Received: from smtpav02.fra02v.mail.ibm.com (smtpav02.fra02v.mail.ibm.com [10.20.54.101])
+	by smtprelay07.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 648ElMhH50856392
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Fri, 8 May 2026 14:47:22 GMT
+Received: from smtpav02.fra02v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 1F22020043;
+	Fri,  8 May 2026 14:47:22 +0000 (GMT)
+Received: from smtpav02.fra02v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 7538520040;
+	Fri,  8 May 2026 14:47:18 +0000 (GMT)
+Received: from localhost.localdomain (unknown [9.39.21.154])
+	by smtpav02.fra02v.mail.ibm.com (Postfix) with ESMTP;
+	Fri,  8 May 2026 14:47:18 +0000 (GMT)
+From: Disha Goel <disgoel@linux.ibm.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, ritesh.list@gmail.com, ojaswin@linux.ibm.com,
+        djwong@kernel.org, fdmanana@kernel.org, quwenruo.btrfs@gmx.com,
+        zlang@kernel.org, anajain.sg@gmail.com,
+        Disha Goel <disgoel@linux.ibm.com>
+Subject: [PATCH v3 1/2] common/dmlogwrites: add _require_log_writes_sized helper
+Date: Fri,  8 May 2026 20:17:00 +0530
+Message-ID: <20260508144701.68561-1-disgoel@linux.ibm.com>
+X-Mailer: git-send-email 2.45.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -34,100 +68,82 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Synology-Virus-Status: no
-X-Synology-MCP-Status: no
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Spam-Flag: no
-Content-Type: text/plain
+X-TM-AS-GCONF: 00
+X-Proofpoint-Reinject: loops=2 maxloops=12
+X-Authority-Analysis: v=2.4 cv=XPQAjwhE c=1 sm=1 tr=0 ts=69fdf77f cx=c_pps
+ a=5BHTudwdYE3Te8bg5FgnPg==:117 a=5BHTudwdYE3Te8bg5FgnPg==:17
+ a=NGcC8JguVDcA:10 a=VkNPw1HP01LnGYTKEx00:22 a=RnoormkPH1_aCDwRdu11:22
+ a=Y2IxJ9c9Rs8Kov3niI8_:22 a=VwQbUJbxAAAA:8 a=pGLkceISAAAA:8 a=VnNF1IyMAAAA:8
+ a=hwWE5IYIQOin4IlEfmAA:9
+X-Proofpoint-ORIG-GUID: ce45iQ1nBTvk_0OQBClVh-WrWYQq-v2s
+X-Proofpoint-GUID: L6DiMiDEwQPVxc-l6kdNyT89_KvZ_h9o
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwNTA4MDE1MCBTYWx0ZWRfX+DoOhU4yr9L7
+ wZhpZ6V0GURm68BeUat3AsQBYL2jPfBlqfgWDZL4WwfGK2G5pC4UFgv+DNfLY3udoUcMG7a5JYk
+ MaFXANJBn3cZ2ggg3MgFHwuUFppq59nhigheCpirHK9ACwJe5FEv9nlX84iAgE0rtiNgPwhJREr
+ f7uHxFczakVfHqSVLRywfoSq/0KrJWp2hPFRGGvdEQBW1DRJ4MUoWJYNXNHDkZdXREGWb0+Gqti
+ rjkKiwfSI5trDYxdB81lLpNPs9vr4d8gdd6KRt1SrEvTIfdoXgjBM5AMTABm8YJZCcKLskTr83z
+ nKbe46F0c6HjgfFjN9gE4owGqDwoM4JKQmQp9l9qRyCFThARD6QAMkVQ9Gvtx2BL2nSGfM12o62
+ e1FZt2YN9mULB/JKPvTVcIOqNSdDihlVXw8OfAwmSBsyy9xhuLMLRFPwcVLHWHPJDJ4ZWv6sfT1
+ 3kqjqc5XyXGs7OzUx1g==
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1143,Hydra:6.1.51,FMLib:17.12.100.49
+ definitions=2026-05-07_02,2026-05-08_02,2025-10-01_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ bulkscore=0 lowpriorityscore=0 suspectscore=0 adultscore=0 spamscore=0
+ priorityscore=1501 impostorscore=0 phishscore=0 malwarescore=0 clxscore=1015
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2604200000 definitions=main-2605080150
 
-From: Robbie Ko <robbieko@synology.com>
+Add a new helper function _require_log_writes_sized() to check if the
+LOGWRITES_DEV meets a minimum size requirement.
 
-When writing into a preallocated extent, ordered extent completion calls
-btrfs_mark_extent_written() to convert the file extent item from
-BTRFS_FILE_EXTENT_PREALLOC to BTRFS_FILE_EXTENT_REG.
+This is useful for tests that use dm-log-writes with additional space
+requirements, such as creating LVM snapshots during log replay or tests
+that generate large amounts of logged I/O operations.
 
-If the preallocated extent was created beyond i_size with fallocate
-keep-size, and the inode is evicted and loaded again before the write,
-the inode's file_extent_tree is initialized only up to i_size.
+The function takes a size parameter in KB, calls _require_log_writes()
+internally, and skips the test if LOGWRITES_DEV is smaller than the
+required size.
 
-The out-of-i_size prealloc extent is therefore not tracked there.
-
-After a write into that extent extends i_size, btrfs_mark_extent_written()
-updates the file extent item, but the corresponding range is not marked
-dirty in the inode's file_extent_tree. 
-
-This can leave disk_i_size stale when the filesystem does not use the
-no-holes feature, so after remount the file size can go back to the old
-value.
-
-The following reproducer triggers the problem:
-
-  mkfs.btrfs -f -O ^no-holes $DEV
-  mount $DEV $MNT
-  touch $MNT/file
-  fallocate -n -l 2M $MNT/file
-  umount $MNT
-  mount $DEV $MNT
-  dd if=/dev/zero of=$MNT/file bs=1M count=1 conv=notrunc
-  ls -l $MNT/file
-  umount $MNT
-  mount $DEV $MNT
-  ls -l $MNT/file
-  umount $MNT
-
-Running the reproducer gives the following result:
-
--rw------- 1 root root 1048576 May  8 21:20 /mnt/file
--rw------- 1 root root 0 May  8 21:20 /mnt/file
-
-Fix this by marking the written range dirty in file_extent_tree after
-successfully converting the prealloc extent to a regular extent.
-
-Fixes: 9ddc959e802b ("btrfs: use the file extent tree infrastructure")
-
-Signed-off-by: Robbie Ko <robbieko@synology.com>
+Suggested-by: Darrick J. Wong <djwong@kernel.org>
+Suggested-by: Anand Jain <anajain.sg@gmail.com>
+Signed-off-by: Disha Goel <disgoel@linux.ibm.com>
 ---
- fs/btrfs/file.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+v2 -> v3:
+- Fixed variable declaration order - declare all local variables at the
+  beginning of the function
+- Use $size instead of $1 for clarity in the comparison
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index cf1cb5c4db75..8c171ed07008 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -633,7 +633,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
- 							 trans->transid);
- 			btrfs_set_file_extent_num_bytes(leaf, fi,
- 							end - other_start);
--			return 0;
-+			goto mark_dirty;
- 		}
- 	}
- 
-@@ -661,7 +661,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
- 							other_end - start);
- 			btrfs_set_file_extent_offset(leaf, fi,
- 						     start - orig_offset);
--			return 0;
-+			goto mark_dirty;
- 		}
- 	}
- 
-@@ -788,7 +788,12 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
- 		}
- 	}
- 
--	return 0;
-+mark_dirty:
-+	ret = btrfs_inode_set_file_extent_range(inode, start, end - start);
-+	if (ret)
-+		btrfs_abort_transaction(trans, ret);
-+
-+	return ret;
+ common/dmlogwrites | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/common/dmlogwrites b/common/dmlogwrites
+index a27e1966..b457ef7f 100644
+--- a/common/dmlogwrites
++++ b/common/dmlogwrites
+@@ -14,6 +14,22 @@ _require_log_writes()
+ 	_require_test_program "log-writes/replay-log"
  }
  
- /*
++# Require a log writes device of a minimum size
++# $1: minimum size in KB
++_require_log_writes_sized()
++{
++	local size=$1
++	local devsize
++
++	[ $# -eq 1 ] || _fail "_require_log_writes_sized: expected size param"
++
++	_require_log_writes
++
++	devsize=$(_get_device_size $LOGWRITES_DEV)
++	[ $devsize -lt $size ] && \
++		_notrun "LOGWRITES_DEV too small, ${devsize}KB < ${size}KB"
++}
++
+ # Starting from v4.15-rc1, DAX support was added to dm-log-writes, but note
+ # that it doesn't track the data that we write via the mmap(), so we can't do
+ # any data integrity checking. We can only verify that the metadata writes for
 -- 
-2.43.0
+2.45.1
 
-
-Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.

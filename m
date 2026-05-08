@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ACF05421EE1;
-	Fri,  8 May 2026 19:43:31 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A8D922BD11;
+	Fri,  8 May 2026 19:46:36 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778269411; cv=none; b=cL0Cp+9Um8Z99Qax3XIlK1k7Qw24ifedq7YhvdDOLJCDNRmRpQe7f2EuRgfaPQ424Yo3BOKQ6XlgDmrp2WK+y+CKvbBnVaRk+DojHkQCkU/T9O4QQV4dNPJN1wO+8Xk/hGsz280/1/Z2A1UzYd0RbNB56hy/pZjrbm1vL77JFPw=
+	t=1778269596; cv=none; b=KO5HX4+0PUQANp2SQVyw+V/MPj13RtlGm2yW/vrX31yX/6Vgq4Ua5RsgCvcoo0IFQEleBOHAKSWqEgevH8INTGTAkyHmqMWfvJwHgzNwPLRrii125k1C2TE+7TGY+gondFM0aAw/fmskdQDKvvcM1k9lVLtrogBkaCj3E6fp8Ps=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778269411; c=relaxed/simple;
-	bh=5IF7JI+6OisTTE6pJfDw6BJFcJCa7+vh0uEInLOxcVU=;
+	s=arc-20240116; t=1778269596; c=relaxed/simple;
+	bh=AP/csasG3IScJjNYEs9Zv3ujE4WcsOcNE0SmpbZPdLM=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=VHoIy12sYxsg54dTCwH9SHfC5+TVEoOgfEXuFzeFlppomXAZWXSVop9JymaC9rZGOn7txN+VFDENK2yTMg21zG5jihXmujJ8jHEt7Kdnklx2NQ0iktKJt2ykeojW6UrOdhFLK5zVgnsYzL6s8Qzzm0dyPsJ3+IoYbEbw8SqrJZ0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=onbU9bup; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=OB7w31UX9ES8jwJPnPV+4Kjq8xPseAlvjbtxTLzIeiJ3/C7wsNU3tFYonQJrIIWTftwoVH+F1BeiICt5QoAtm8xrAK/FdDM0FXUAmTJUrIDTdWmc4hBRK3AfH7f7ELK292U2cDKHpyjLKoeO9nJV/nGRstUplXdQKa3eEUzfAmI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=lKpHqYe6; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="onbU9bup"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2381EC2BCB0;
-	Fri,  8 May 2026 19:43:22 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="lKpHqYe6"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 61453C2BCB0;
+	Fri,  8 May 2026 19:46:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778269411;
-	bh=5IF7JI+6OisTTE6pJfDw6BJFcJCa7+vh0uEInLOxcVU=;
+	s=k20201202; t=1778269596;
+	bh=AP/csasG3IScJjNYEs9Zv3ujE4WcsOcNE0SmpbZPdLM=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=onbU9bup6KlPEwg2Um5ab6qt0uW5y0+HPsiFUUJsRvThzNBb8bnMSdyoNezqdpxsI
-	 GdPzZLjS5F7MiJfRm0UsSmHkqoDrghEPjuDwJWIXTC9JBafflYe9HDgi4D67PNnMNr
-	 UtZSzjrQPj0vdfTTkeXfvq8vJN4aAIb1UnABzPson7WGVFj0VTBH87rvCuCxJ+M3yg
-	 rehqRHr+3O8uuOwjjqgHqPRrHA86hEWKwb7vP1UoOzJfsFyw3wS98va5Yc6sRg/Z9t
-	 n56pRD4X9BEQGm53AkxnJD66xlBjS3B3IPCuqHLk70O6tsnzEA9/eb1LZms5qYBsCp
-	 0Femi7BcuoSKg==
-Message-ID: <37454322-3442-4510-b339-bd968cb9ddc1@kernel.org>
-Date: Fri, 8 May 2026 21:43:20 +0200
+	b=lKpHqYe6W6R33mkJXDELMsu8RFuNO/sq0dNtC6h6Oo3PMtolQzTeVnDvuJ/ls9YVp
+	 jrIifreEhlQVOmiOW4+2DhNgbUGNFwK/cvswq/U6ohIRJJLUz2q0cqXVxOgrXEN42h
+	 2LV5subwM88Xo4CTeflKVNFAJLoIHWnh7NKCdY8WMv0uY4X4O2jPQPj4QX07ok/kEu
+	 iETRNeKL07RjtIrLtdYn1uBZ4infisG+uZRCD481wenJ+kkYoSosOXN6Ui7KVjDLMr
+	 ybZBejtIi4cgs9Cemy5bxVMNSa/qtFy6mvZDpZC0asH11nmf2ITFxnREKt9TArJ2sh
+	 iGAAawYhsj6/g==
+Message-ID: <58947d4e-abb5-4d2d-a668-2ac76ce59382@kernel.org>
+Date: Fri, 8 May 2026 21:46:27 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,8 +35,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v5 03/14] mm/huge_memory: remove READ_ONLY_THP_FOR_FS from
- file_thp_enabled()
+Subject: Re: [PATCH v5 09/14] mm/truncate: use folio_split() in
+ truncate_inode_partial_folio()
 To: Zi Yan <ziy@nvidia.com>, Andrew Morton <akpm@linux-foundation.org>,
  "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  Song Liu <songliubraving@fb.com>
@@ -54,7 +54,7 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org
 References: <20260429152924.727124-1-ziy@nvidia.com>
- <20260429152924.727124-4-ziy@nvidia.com>
+ <20260429153538.727855-5-ziy@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -101,16 +101,27 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <20260429152924.727124-4-ziy@nvidia.com>
+In-Reply-To: <20260429153538.727855-5-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 4/29/26 17:29, Zi Yan wrote:
-> Replace it with a check on the max folio order of the file's address space
-> mapping, making sure PMD folio is supported. Keep the inode open-for-write
-> check, since even if collapse_file() now makes sure all to-be-collapsed
-> folios are clean and the created PMD file THP can be handled by FSes
-> properly, the filemap_flush() could perform undesirable write back.
+On 4/29/26 17:35, Zi Yan wrote:
+> After READ_ONLY_THP_FOR_FS is removed, FS either supports large folio or
+> not. folio_split() can be used on a FS with large folio support without
+> worrying about getting a THP on a FS without large folio support.
+> 
+> When READ_ONLY_THP_FOR_FS was present, a PMD large pagecache folio can
+> appear in a FS without large folio support after khugepaged or
+> madvise(MADV_COLLAPSE) creates it. During truncate_inode_partial_folio(),
+> such a PMD large pagecache folio is split and if the FS does not support
+> large folio, it needs to be split to order-0 ones and could not be split
+> non uniformly to ones with various orders. try_folio_split_to_order() was
+> added to handle this situation by checking folio_check_splittable(...,
+> SPLIT_TYPE_NON_UNIFORM) to detect if the large folio is created due to
+> READ_ONLY_THP_FOR_FS and the FS does not support large folio. Now
+> READ_ONLY_THP_FOR_FS is removed, all large pagecache folios are created
+> with FSes supporting large folio, this function is no longer needed and all
+> large pagecache folios can be split non uniformly.
 > 
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
 > ---

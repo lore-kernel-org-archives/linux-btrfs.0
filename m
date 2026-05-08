@@ -1,32 +1,32 @@
-Received: from out-173.mta1.migadu.com (out-173.mta1.migadu.com [95.215.58.173])
+Received: from out-173.mta0.migadu.com (out-173.mta0.migadu.com [91.218.175.173])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A5BF3822BF
-	for <linux-btrfs@vger.kernel.org>; Fri,  8 May 2026 07:02:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.173
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DF1C0376BC1
+	for <linux-btrfs@vger.kernel.org>; Fri,  8 May 2026 07:47:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.173
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778223731; cv=none; b=PmrIojcbKURvR+JRIqeaFaYVxhNJg7l9GPwTHL1o9vfNFrXjrvJjjtmZWJqDqdUZ7GVa4Nrzc1ZCo86LKE06JogM7DWgaEqFUo5ejmJQvaS2/wvrtF8W4cid9a5XAGxi9HNZT/c4K+CA+X9ixWuqmJiZyRwGXi4e5rbFMQlfDbA=
+	t=1778226448; cv=none; b=Pt3OzjPGngIPjs7DCEFX5MgB0DMdhK6K+b2k1AET6nwZHL2f3sHi77P+ciyFrMEoE2Mc01AXYOWpU5Vom/9ImXE4/DYTy3+P0V+yd5rq4t3dj8lZCViYqDrBfmkoygE0Ghhq1O3IBDIQX1hSmwFJmmpfvcdB6bJeMTnelbvFG4s=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778223731; c=relaxed/simple;
-	bh=NjihaeD76Jsi8Lwgt5xatfktO5NhR9x51duFuCUS48I=;
+	s=arc-20240116; t=1778226448; c=relaxed/simple;
+	bh=VX0XzmygCP006w30fb/t3PlZoR7eIn8pG4f57T93yMM=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=AzUicPAbzZ0t2C2OfeZsrdCAUAjA7Genw11AFjhA4xAQ8kIE8vkIs0nE2dCBEbjADF6VBkpaDQb+DrrQTsRt35SakENArf0fyy7CDW5/U0QawxYVvE7ZCJcJxM1fAsg3FbOPxXE2/y8HTKmZ90Lh/mjZ270ycdgxSLxC9R5rf1s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=iha2P92R; arc=none smtp.client-ip=95.215.58.173
+	 MIME-Version:Content-Type; b=pDfrBCFXgeiOls9izDF7xAJBBZ7WeEJ9fvbGOn6iqI2YWIwxhSKtQmzRgoBzlfeOJGT7CUZ0ygC1l7eaDuaeDcMwKJIay03kLPb+I9p5lFA5FgZftyse1RyRAXv0D7w9xbXkv0qs1euxUfOVwWtDaoXZbFGzalGIL5nuaAEXD7w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=ewXSNaom; arc=none smtp.client-ip=91.218.175.173
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="iha2P92R"
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="ewXSNaom"
 X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1778223712;
+	t=1778226432;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=NjihaeD76Jsi8Lwgt5xatfktO5NhR9x51duFuCUS48I=;
-	b=iha2P92RrzX66oAtKsbukb/2Sw0Jn2it2q2sfp/ztwpYbr2+hf03kOW505Mxcb1lEHH1Sa
-	H1TGMGI6zu6hxwo9RaHB1CDDQ/KHNSUQH0b270vEUH3aUWr6DvDhuP75QME4ASoJjvxk6b
-	dgjJoO36+YMmfKBxkU3JaBgkcX19mnE=
+	bh=3ywAzvaNWn4c6wjdRn8PKJu6vnrjvK/OKJzqJA8I7cw=;
+	b=ewXSNaomo+/VRA3wetbuDv59SQT1taIzdio5CEahqiCz4zhct+/v18Re0BtsLAuGdvyGxE
+	B9Fn3h+8B6UTstuCfEXlLMJbXwvumE7KhHFX9T9NMPrhp+T6aNglDmsxIgX9qKdcns2t91
+	qQ3MG3ZjU2BcYoTu8TbBcS/+tTpXuTU=
 From: Lance Yang <lance.yang@linux.dev>
 To: ziy@nvidia.com
 Cc: akpm@linux-foundation.org,
@@ -56,11 +56,11 @@ Cc: akpm@linux-foundation.org,
 	linux-fsdevel@vger.kernel.org,
 	linux-mm@kvack.org,
 	linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v5 09/14] mm/truncate: use folio_split() in truncate_inode_partial_folio()
-Date: Fri,  8 May 2026 15:01:27 +0800
-Message-Id: <20260508070127.18666-1-lance.yang@linux.dev>
-In-Reply-To: <20260429153538.727855-5-ziy@nvidia.com>
-References: <20260429153538.727855-5-ziy@nvidia.com>
+Subject: Re: [PATCH v5 13/14] mm/khugepaged: enable clean pagecache folio collapse for writable files
+Date: Fri,  8 May 2026 15:46:43 +0800
+Message-Id: <20260508074643.55548-1-lance.yang@linux.dev>
+In-Reply-To: <20260429153538.727855-9-ziy@nvidia.com>
+References: <20260429153538.727855-9-ziy@nvidia.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -72,30 +72,78 @@ Content-Transfer-Encoding: 8bit
 X-Migadu-Flow: FLOW_OUT
 
 
-On Wed, Apr 29, 2026 at 11:35:32AM -0400, Zi Yan wrote:
->After READ_ONLY_THP_FOR_FS is removed, FS either supports large folio or
->not. folio_split() can be used on a FS with large folio support without
->worrying about getting a THP on a FS without large folio support.
+On Wed, Apr 29, 2026 at 11:35:36AM -0400, Zi Yan wrote:
+>collapse_file() is capable of collapsing pagecache folios from writable
+>files to PMD folios. Now enable clean pagecache folio collapse in addition
+>to read-only pagecache folio collapse by removing the
+>inode_is_open_for_write() from file_thp_enabled() and only performing
+>filemap_flush() if the file is read-only.
 >
->When READ_ONLY_THP_FOR_FS was present, a PMD large pagecache folio can
->appear in a FS without large folio support after khugepaged or
->madvise(MADV_COLLAPSE) creates it. During truncate_inode_partial_folio(),
->such a PMD large pagecache folio is split and if the FS does not support
->large folio, it needs to be split to order-0 ones and could not be split
->non uniformly to ones with various orders. try_folio_split_to_order() was
->added to handle this situation by checking folio_check_splittable(...,
->SPLIT_TYPE_NON_UNIFORM) to detect if the large folio is created due to
->READ_ONLY_THP_FOR_FS and the FS does not support large folio. Now
->READ_ONLY_THP_FOR_FS is removed, all large pagecache folios are created
->with FSes supporting large folio, this function is no longer needed and all
->large pagecache folios can be split non uniformly.
+>This means userspace needs to explicitly flush the content of pagecache
+>folios before khugepaged can collapse the folios, or use
+>madvise(MADV_COLLAPSE), which does the flush in the retry. The reason is
+>that blindly enabling dirty pagecache folio from writable files collapse
+>makes khugepaged flush these folios all the time. It is undesirable to
+>cause system level pagecache flushes.
+>
+>To properly support dirty pagecache folio collapse, filemap_flush() needs
+>to be avoided. Potentially, merging associated buffer instead of dropping
+>it with filemap_release_folio() might be needed.
+>
+>NOTE: this breaks khugepaged selftests for writable file pagecache
+>collapse, which is set to fail all the time. The next commit fix it.
 >
 >Signed-off-by: Zi Yan <ziy@nvidia.com>
 >---
+> mm/huge_memory.c | 2 +-
+> mm/khugepaged.c  | 9 ++++++++-
+> 2 files changed, 9 insertions(+), 2 deletions(-)
+>
+>diff --git a/mm/huge_memory.c b/mm/huge_memory.c
+>index 9b3abb98a7e51..e1e9d59db6e70 100644
+>--- a/mm/huge_memory.c
+>+++ b/mm/huge_memory.c
+>@@ -97,7 +97,7 @@ static inline bool file_thp_enabled(struct vm_area_struct *vma)
+> 	if (!mapping_pmd_folio_support(vma->vm_file->f_mapping))
+> 		return false;
+> 
+>-	return !inode_is_open_for_write(inode) && S_ISREG(inode->i_mode);
+>+	return S_ISREG(inode->i_mode);
+> }
+> 
+> /* If returns true, we are unable to access the VMA's folios. */
+>diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+>index 1ee15b48962a3..fb7ff643973cc 100644
+>--- a/mm/khugepaged.c
+>+++ b/mm/khugepaged.c
+>@@ -2345,7 +2345,14 @@ static enum scan_result collapse_file(struct mm_struct *mm, unsigned long addr,
+> 				 * forcing writeback in loop.
+> 				 */
 
-With that gone, large page-cache folios should only exsit on mappings
-that support large folios, so folio_split() with
-mapping_min_folio_order() is enough :)
+Nit: the comment above now looks stale. It still says:
 
-LGTM, feel free to add:
+"There won’t be new dirty pages."
+
+That was true when file_thp_enabled() rejected writable-open files, but
+not after this patch ;)
+
+Otherwise, LGTM.
 Reviewed-by: Lance Yang <lance.yang@linux.dev>
+
+> 				xas_unlock_irq(&xas);
+>-				filemap_flush(mapping);
+>+				/*
+>+				 * Only flush for read-only files. Writable
+>+				 * files can have their folios dirty at any
+>+				 * time; blindly flushing them would cause
+>+				 * undesirable system-wide writeback.
+>+				 */
+>+				if (!inode_is_open_for_write(mapping->host))
+>+					filemap_flush(mapping);
+> 				result = SCAN_PAGE_DIRTY_OR_WRITEBACK;
+> 				goto xa_unlocked;
+> 			} else if (folio_test_writeback(folio)) {
+>-- 
+>2.53.0
+>
+>

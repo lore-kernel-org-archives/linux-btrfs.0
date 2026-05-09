@@ -1,290 +1,195 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 044D0391E7E
-	for <linux-btrfs@vger.kernel.org>; Sat,  9 May 2026 09:07:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778317626; cv=none; b=sBk662EpweESzkQF6EpV6hA8FevSmcqMBSElGiOpz57+5jXtnK2kwji6dO+56psML2D3m9NlO//9rcugv1wdfQw8giooVfSoX24JT/x4d5dRzZDTWuV+VS5Z8fgunzBN2+wuaAO50I1F7e612AisdRy9YvXDVDmxPctYmjaA9RA=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778317626; c=relaxed/simple;
-	bh=ER9z+LV+TCSYOc1EPW9+CWhs3fAeiOSgieIXpEyAdvc=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=NXzatJubbl3dyTfnqUvSpa0kPi/eG1l4EAn5eEgqKjsKzDbZRjoEMNyzLQfjLk55z2dDG4Z2sbOmrPKYELQYBxoOYLWJig0mfuk0lpGb/2A3NEGhLPYREogUH/oZF3kBTerU70+pynZYbBqmNhw2sNx569QYY3Y8dVz3P4ihD2I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tkZ+I/id; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tkZ+I/id; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CCCCE2F8EB7
+	for <linux-btrfs@vger.kernel.org>; Sat,  9 May 2026 14:46:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=68.232.143.124
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1778337966; cv=fail; b=P4Zflfe///gXVFfkgA0raJN+9MJCe4tQNe8N0BDySqvyuEIMxsdukq+oQ48IrAK7FY1xnigR0idZzsOvcr/kFUyrijCfjPD6uxS3wcFM8Ia8ieeuC1DFGODSF/Sl4vun6TY6TOSVEFny9cSwfywFBqukEqXh3W7ORZ5hwLe12Qs=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1778337966; c=relaxed/simple;
+	bh=AwpTTCxPCAMla8kXzC6VBfC9MzAL0GEvqWeDUqtCSiw=;
+	h=Date:From:To:Cc:Subject:Message-ID:Content-Type:
+	 Content-Disposition:MIME-Version; b=tYpDiLNkg01Zttrh74IEYT5FQWPbjlhi8xqlbT6nhLa9/4rhUz3LluCO4nV17e2jT/P/C7ghqv3mTekhbj0y2F7ktC8plBH6WFqYV8Ti1lQMGTPBZXWZiWl/DC0BfX8p++FEYKMJmC6yktwB7P2Zj13jRzLVvIhtLvPcPM5mtys=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=QG26lXSo; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=Jaenm7yt; arc=fail smtp.client-ip=68.232.143.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tkZ+I/id";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tkZ+I/id"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 53B7D672C4
-	for <linux-btrfs@vger.kernel.org>; Sat,  9 May 2026 09:06:54 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778317614; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=TlugCdzD+T0orBIiaX1aPa1iZbLgYGx5LliG6g+c9fk=;
-	b=tkZ+I/idIDaG+9EkqmMzq28R+XOfro0ZNw30JhU1azj6/UNcVaMyFBqSFZx/tU7cat4H2R
-	NgnGeXsTGUYDZGOMFQtdQtIJu1fuCBX4DLl6drUJpHnswkv920hw6usY1bLkE1FWrtTzRo
-	RQJScJEOUMI6+pESsdTsc2IaPQL9DM0=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="tkZ+I/id"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778317614; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=TlugCdzD+T0orBIiaX1aPa1iZbLgYGx5LliG6g+c9fk=;
-	b=tkZ+I/idIDaG+9EkqmMzq28R+XOfro0ZNw30JhU1azj6/UNcVaMyFBqSFZx/tU7cat4H2R
-	NgnGeXsTGUYDZGOMFQtdQtIJu1fuCBX4DLl6drUJpHnswkv920hw6usY1bLkE1FWrtTzRo
-	RQJScJEOUMI6+pESsdTsc2IaPQL9DM0=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9348D593A3
-	for <linux-btrfs@vger.kernel.org>; Sat,  9 May 2026 09:06:53 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id vEGkFS35/mlYeAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sat, 09 May 2026 09:06:53 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="QG26lXSo";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="Jaenm7yt"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1778337964; x=1809873964;
+  h=date:from:to:cc:subject:message-id:mime-version;
+  bh=AwpTTCxPCAMla8kXzC6VBfC9MzAL0GEvqWeDUqtCSiw=;
+  b=QG26lXSolxvEruKxe/+miIU/UG343ZhA86RKVWCyT7J2uXIkYiA7xGvG
+   d0P2t+GQklPQYEzSVxfXPvvM7I+U6UbInpTmxGYzhMi4XPmNRrSFdJ4+M
+   jLZAcgbIObldVeb3KcF5CZrbgAFXFtQsGUWlIjPn48X182zPWgT6tGOZm
+   xvtVsvWmoHX0Y7IAagYZPNs/lWwu7zLrxRpCZACYEZxwRjnih+t9jwB3x
+   jt+1YnrCDXSUiRxA7/Wzbj/UL0RmNRb5YmmOcuUBoUhh5Ogk8j72t6uwW
+   12OSeVVsgwqtnkmBqJHFFe2MUC3guoAM0VUu+dkGxyNoUNH/sncl9KP5X
+   A==;
+X-CSE-ConnectionGUID: Lc//tvr8QL6zcsXnJ+nohg==
+X-CSE-MsgGUID: 8gz+Jp21Q0G5ENws3TOGqA==
+X-IronPort-AV: E=Sophos;i="6.23,225,1770566400"; 
+   d="scan'208";a="147396918"
+Received: from mail-eastusazon11012009.outbound.protection.outlook.com (HELO BL0PR03CU003.outbound.protection.outlook.com) ([52.101.53.9])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 09 May 2026 22:46:03 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=OVAcoQjsy33+nmJF/gnV0COPCbe87xDcL0Q10pbspcHhX4GkRnYbjXLzyx40ayqxm1X0UANndFb2izyrcveRbgvR6FBBe2aEDXrCHTmuY3oZWvyOSSPvyG7l5ooLCG9PrXK7SGS6MxtAHiz2G/GLOSFCbrI8jr6k0NyD6ZZ5z0JMdAiUNRfKJuxm19DmI89MTYC9bszoc6oPnAWrLdAxALPYdmquJO8bDIMbLOZx8ZBLmt8hpgqP9zQXA2in+0asD8SyAS96QXNtk9Su9ObYJOjHRn4A29mTXBxS0etXsWgyuOxm268Cc4nyS1o6p8CQ1fnhL3U4Rvb8Ey2f3ayHwQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=xy7dqyObqH2hskmUCpqthjnt26d9ZSPgPsLz2Qrl/6s=;
+ b=R/tj7gEiaK+tKfGBQx1HWy2wH+G4OFS5f8GmBUuBFzgb2jbshWgyRBTTBo28Z+GhYPUdwOrF2H3cuc4rD9ew7Uri3RooiGiQKpyQscBnNH9HKLNz2zre3AMDtuj9eOAdMrHmI3I/hOT1b7gRtzA3W43M1is0LI7qlvErpvHeQpb8+sFOUwRC+Dz0KdyM2pZ4jvkC+MPYm2bMIviQGu1/bP7bl8A3Vc5V0ji7z3zIU1KtMDNiV/MJB6CrZoyaLLyDwfG/J0Vxz9zXaIvivPnjQXsvlYsHKHEWyJMgO15y+RWb7N/TxAct9A2GQDedcwNpxSADJIu+IFU6+U5/vzMf7A==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=xy7dqyObqH2hskmUCpqthjnt26d9ZSPgPsLz2Qrl/6s=;
+ b=Jaenm7ytzsyGLm8/q//m+LYc4K524vP1LmmXaAQb196UoAqin8oRHJPGuUx62PHDoU9qbBh4t5sowaxaiR+tYTA7462oibjYtCvv8uS1GXFGfsYuCZHq8+aU4XHsHCbZMM5EqQ56XYqYYi4+wXsmLqJ0BEq/8n7cqDetRdFNomM=
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SN7PR04MB8532.namprd04.prod.outlook.com (2603:10b6:806:350::6)
+ by CH9PR04MB10093.namprd04.prod.outlook.com (2603:10b6:610:341::12) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9891.20; Sat, 9 May
+ 2026 14:46:02 +0000
+Received: from SN7PR04MB8532.namprd04.prod.outlook.com
+ ([fe80::ce42:7775:2df8:8729]) by SN7PR04MB8532.namprd04.prod.outlook.com
+ ([fe80::ce42:7775:2df8:8729%6]) with mapi id 15.20.9891.020; Sat, 9 May 2026
+ 14:46:02 +0000
+Date: Sat, 9 May 2026 16:45:55 +0200
+From: Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: remove locked subpage bitmap
-Date: Sat,  9 May 2026 18:36:31 +0930
-Message-ID: <ce0d536ed12aa0e931a384654447ba183ff068f3.1778317565.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+Cc: David Sterba <dsterba@suse.com>
+Subject: [bug report] fstests failures at btrfs/003 and other test cases
+Message-ID: <af9EHC5b-aBdr1zn@shinmob>
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+X-ClientProxiedBy: TYXPR01CA0043.jpnprd01.prod.outlook.com
+ (2603:1096:403:a::13) To SN7PR04MB8532.namprd04.prod.outlook.com
+ (2603:10b6:806:350::6)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCPT_COUNT_ONE(0.00)[1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:email,suse.com:mid];
-	DWL_DNSWL_BLOCKED(0.00)[suse.com:dkim];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Queue-Id: 53B7D672C4
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SN7PR04MB8532:EE_|CH9PR04MB10093:EE_
+X-MS-Office365-Filtering-Correlation-Id: 3f69a720-224b-4732-ec9e-08deadd9b0de
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|19092799006|376014|1800799024|366016|56012099003|18002099003|3023799003;
+X-Microsoft-Antispam-Message-Info:
+	+OMP/xTVHeykFewuPZO6W1w3/dyX0lJs96NDQ6r2/Zg4CjRhhTIau/dxWItyMDMI9RsJyTGQzeyE5eo5UW8VB1T+3bOYKL5HK3PmjFrJnf8ijZSKvj/0zZC7iOCe8NPQm7ZRPTrJIna04DjRF2f34Jbz3H46NFgXwLzPN6M13EEc1BSo6l+RXQveVevpU/gbXbdHWT1Asf8iwPMcqEqPzaVruIcrl/UdPtcmvCFLWs6jsOo4TulzSrtxFDwJuIF3GJ/WvKGK+m/lh48M46cMbfjyrxHMCw31H7pgnA4fU27tb9xaI3rUGeho3f0Av4uJd/OukcytREOMs+ySdp1+7uAgu/gY0iLeY44++CiODfQ2IelNVM2p0lrcM6iNWI6GMHi3NlT26GrTshYkdIA5CrHuYcHlJhARSh0vVZuD94DXeBplhgcGydnJWkTm9qDyJwTxQJTHtDfs2p9tptyipXq3a3Wwv/lKnOletSDZLBuXnKPa9Ur92MeJvpy9fi7JdXGr9ZVgZzA63XXgVawMI93d58B6fs6pNvk/jRi35x7BjpHEuFRSVLzAO0XTVdqoVnMLDqPiPbtWDGOVF63/jDaZMq12Oh2caMiNVAvamHnk7blg6JRxRNVjjrut77bJK+zKs2C47d1bJrHHwF5Cms9K/x687DBlOEY3tni/Pxq0q4P9NjXYXzELP+pAFROpcO9m8Urm92qZuEQg1trH4g==
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN7PR04MB8532.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(19092799006)(376014)(1800799024)(366016)(56012099003)(18002099003)(3023799003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?us-ascii?Q?y/YeGjZ1Rqh2NapbxjGBODivqZWcJA+yC2g7cXE3+qd5GhxlOFqn4iPeog1U?=
+ =?us-ascii?Q?G5qwIiepMJCbGpDLv0yMCHafZ67kSAqvDtEagtn5pv8Fuz2youP6TuDMf5lR?=
+ =?us-ascii?Q?eXDlKES3H041zSA9EJTr3Vl4MfW8dvPd476Ez/2MnR4wyHGdY9Z/h+0uRDc9?=
+ =?us-ascii?Q?BJR+KftoYnzMh8v43SmA3AYpqHKxjm7ojfaxkOD/bvD853qUbfzyg/sGKiou?=
+ =?us-ascii?Q?6WF5V/eQjK6GazBC8aI39Ki9nRmuuj9ItjuPWUW3Apmt24AEmXsqc4UvdAU2?=
+ =?us-ascii?Q?ouHUrnah0QGuWGZSYRI/ejVFH1ePzUp9+cZe4iaN+9F84iFmEPdLgiIN2obj?=
+ =?us-ascii?Q?4c3WqMdZM9ZzdqqCF4efSZhnTRbjeko54U3/b6HwPkwECJWC+E3H47cun91/?=
+ =?us-ascii?Q?fxhc7By+NL+Gbg8Ez6bhf7q50cVP7heANblMY7G+UOgnx6Gym1GA0F33LBfC?=
+ =?us-ascii?Q?kz9M0UyIp5nYCb6iIL2CFXAYEUjUApizWT3Vx0rgtHX+vavYd9eCVbgs16zv?=
+ =?us-ascii?Q?yw0AK0kKlIaIajZ+2WPZi8V6sb9Wv4anunuvR0HCs/QIU72KZi8TNGIU4GS/?=
+ =?us-ascii?Q?Ykv2V3NxnaCcO8as811A9+xC4/R2IOlDBhnGh5i9QwkWyvPvYExdmDY/pe9s?=
+ =?us-ascii?Q?RlLS8eZumji69yKuAbhwDRjcD2qxwmc3uwMSe02DNixYQpQLSCdOsnA9IrjA?=
+ =?us-ascii?Q?z6bPEbKqlLa1VliUzkr2zGN/RthZEmOGXYMK9JIG4z/hUe4o43KiYeou1kOO?=
+ =?us-ascii?Q?Up77LPJuklpRR5jEZIlZWDX4/e+BInnjVrbzq/0rp18i4qNMtbFGcoV53JvO?=
+ =?us-ascii?Q?Xh2tfocqO1ngV3yfyJHtrme5Du5i+pSZ0Pkp52YN+tru5P3MzcOkFMhKdbG5?=
+ =?us-ascii?Q?fYMo2ziqj8hZ0fHKt7uR534cq03tG6talom/1c7fdqeIMI3jQIiol+5OEE3b?=
+ =?us-ascii?Q?Xn8NX1/nb8FvmKIS/cVdzS4ueKyqJg0djCZYoxTT2RBsVXrHd4D6BImzulEz?=
+ =?us-ascii?Q?sD6ZAgP9KRvPEBskWznvFlSY88BnBBm/pHWlDEK+jQuUqKfx/YwHg5OkNq/d?=
+ =?us-ascii?Q?QdPla5r4paTx6Jw+Xu84LpuIGjlQG8Mm/OoGUWvuhbAcsw2eBJrAtHUJafcX?=
+ =?us-ascii?Q?3ncPwoLnDKanIs3rJHd4O4xwDzhyLe80F69w4s30YH6CYUtBGd9892vMp+Rk?=
+ =?us-ascii?Q?3SZekLGTLreH6FuaGMrt3xONtuIhAOIHXhHpaCIHxF7cwAECV+zTzE66dpzP?=
+ =?us-ascii?Q?vCXjcWCR4NsisaIHYzdtgfgQY2uhUW92pm2ZKCYG4VTqSRzWqAxsIgCXBm7I?=
+ =?us-ascii?Q?C7pbQTOQtReo6i6zFIejZ6woJ60Zoc0GvD+HadXZjc2VAyyoE8219LIg0sTA?=
+ =?us-ascii?Q?Xty6zawg5exEx2QjS5txtOBRkMotR1kLrVX0bd53MA6AtQ/BI7Tuj0Ix/Tqm?=
+ =?us-ascii?Q?2aAdB9L6+mPvYd4hXy4fNfezAkG48mc3YtZnlkFvvgfywQCMbH0YdjYOUzCv?=
+ =?us-ascii?Q?USYpBJT8SYaw7BfkzVBdVoUmyVost4rhLm0OcPYDU6tI8gLOUwjmUPf1Tlwj?=
+ =?us-ascii?Q?quS027pTYmyu3F+ICq/jjNxJeMhSB9+QpWMl58e/x83iGVgxlIQQi8aRc+z8?=
+ =?us-ascii?Q?/912JPGSj9QBUZu+wP7yJiZc1h32zgdfuX0sKeHe0WwYvfnIMFpGDCkdWKai?=
+ =?us-ascii?Q?caIWtxZQ8PYLoiBwwI41GWnQtzXqYbiLwJNGEP+sq2MNSxo6a6rfQlCLgZ9i?=
+ =?us-ascii?Q?UyEMssG4bWoy/pacQNWHczfrAZd8EJw=3D?=
+X-Exchange-RoutingPolicyChecked:
+	eDmnbKTmGowJ0Kfz8VlpuiVcfaschCjMnP/bL0UxXCUGQPpDi3+mC4EWdt5fQ3v6s9Ay9DVzJPP4Isy8LAmccHyxCwzgAU86pFNZ6pKIx4IH628ffG6TuyNWNaBDwDpay6NZr2cZ0EsF+WgKTnTVNahDMn4gjgCYTzeS6wftwgPRJ1z1JCYhNJklNX5vivgi8+wehuye84Zh8Xr2QYbbX/q/50V0O5QferBaEigEkylwrG6oTtr/Vr0Uo+776wQ+N7UgdVKC+Pky4jqB6uKRjq3HMf3exq3ySstER4/HFjex6bbD/uVGEB499WS3yyZ4yjJk8c8HrjfbSKm3ne4hNQ==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	WmAyC1MvcQ/l05VKmZAnXOabe44mrOEX2QDCE4nQGJLBUKF6KJGCDXTjuv9bF9oUzuKqwI1O6DBLKPgt1Bo0d6bHwQimi8F3OqBwEdc4vEHixN4zWfVdGN/j8yriyRiCwlwWAxF2MR5X7jngE654QzScYK3xltMkyoBf9ldgzxV4VKB32LjWyBMvVnzScOiu8WqC69ryqOJ1TjFsdFaGAktXKitFyobYPGV87O0Cd5t+uFNdzQqAnIFhqSsl+o/Z0mGLwKl+q4nceHh1hSWe/dE9F9VWBMW77ArUxTK18/JCBAMryq38vZXntc4A/itNfKgI62cpZ1ww3EoayoULHpvssBw1YqB4OUehdPWFiT0QvVxTJxTHGwVfloL9dtEzevc+C9K0TYxixLk6dpO9Gb10Io3u4IZ5cCNEec6yoOk5Nx95jlLAnbjOrKVmVHe8hPEwH4egUZYf+dcwwZz0EDF/lAPs3/ldq/zM4L21zPn8ZcImg6ltzuICRdlhNLKs9Ep5Du5CApIMC3EFkqSKVdl+/X5fjUdoKNKxrcLtmRx+79uIEmsEOopIJ3aLMHB8+TGWMDM7dmJIpDgoSnxYAe0/wVpsSnUwB8LvbKAoVeE9dnd/C7cCSbPrPpPWVlFm
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 3f69a720-224b-4732-ec9e-08deadd9b0de
+X-MS-Exchange-CrossTenant-AuthSource: SN7PR04MB8532.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 09 May 2026 14:46:02.3334
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: aFRjGW9GEntoWIjk4IbD7IwNG9fC5XIT1tRwpULd/LUA+kVu0LchymnKvez+Zrdmhe/0BFukyb2HHFt7d9RoBKI0ZPxSJkzGGNftuoZFAWY=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: CH9PR04MB10093
 
-Currently there are two members inside btrfs_folio_state that are related
-to locked bitmap:
+Hi David and all,
 
-- locked sub-bitmap inside btrfs_folio_state::bitmaps[]
-  The enum btrfs_bitmap_nr_locked determines the sub-bitmap.
+I found btrfs/003 and other test cases of fstests fail with the latest btrfs-
+progs at the devel branch tip. The message "mkfs failed" is observed at the
+failures [1]. I bisected and found the btrfs-progs commit below triggers the
+failure.
 
-- btrfs_folio_state::nr_locked
-  Which records how many blocks are locked inside the folio.
+    ec8324cc4b8b ("btrfs-progs: help: adjust alignment of text")
 
-The locked sub-bitmap is a btrfs specific per-block tracking mechanism,
-which is mostly for async-submission, utilized by compressed writes.
+This commit modified the help message of mkfs.btrfs command.
 
-The sub-bitmap itself is a super set of nr_locked, as it can provide a
-more reliable tracking.
+I found fstests checks the help message and greps with the pattern
+"[[:space:]]-f[[:space:]|,]" in set_mkfs_prog_path_with_opts() [2]. The grep
+succeeds before the commit, since it had spaces before "-f".
 
-But the sub-bitmap itself can be pretty large for the incoming huge
-folio, 2M sized folio for 4K page size, meaning 512 bits for one
-sub-bitmap.
+$ mkfs.btrfs --help |& grep -e "--force"
+    -f, --force               force overwrite of existing filesystem
 
-Furthermore, in the long run compression will be reworked to get rid of
-async-submission completely, there is not much need for a full
-sub-bitmap to track the locked status.
+However, it fails to after the commit, since there is no space before "-f".
 
-This patch removes the locked sub-bitmap and only relies on @nr_locked
-atomic to do the tracking.
-This can also save 64 bytes from btrfs_folio_state::bitmaps[] for a huge
-folio.
+$ mkfs.btrfs --help |& grep -e "--force"
+-f, --force               force overwrite of existing filesystem
 
-This will reduce some safety checks, as previously if a block is not
-locked, btrfs_folio_end_lock()/btrfs_folio_end_lock_bitmap() will find
-out that, and skip reducing @nr_locked for that block, and avoid
-under-flow.
+Then, fstests no longer adds -f option to  not add $MKFS_BTRFS_PROGS.
 
-But this safety net itself shouldn't be necessary in the first place.
-If we're unlocking a block that is not locked, it's a bug in the logic,
-and we should catch it, not silently ignoring it.
-Thus I believe the removal of the extra safety net should not be a
-problem.
+Is this a known failure? If not, actions for fix will be appreciated.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-This will conflict with the huge folio patchset and the removal of
-ordered sub-bitmap.
 
-Thus all three patchsets (including this one) will need some co-ordination
-and refresh, depending on which one got merged first.
----
- fs/btrfs/subpage.c | 45 ++++++++++-----------------------------------
- fs/btrfs/subpage.h | 10 ----------
- 2 files changed, 10 insertions(+), 45 deletions(-)
 
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index 8a09f34ea31e..ff68e79fe72d 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -224,11 +224,8 @@ static bool btrfs_subpage_end_and_test_lock(const struct btrfs_fs_info *fs_info,
- 					    struct folio *folio, u64 start, u32 len)
- {
- 	struct btrfs_folio_state *bfs = folio_get_private(folio);
--	const int start_bit = subpage_calc_start_bit(fs_info, folio, locked, start, len);
- 	const int nbits = (len >> fs_info->sectorsize_bits);
- 	unsigned long flags;
--	unsigned int cleared = 0;
--	int bit = start_bit;
- 	bool last;
- 
- 	btrfs_subpage_assert(fs_info, folio, start, len);
-@@ -245,15 +242,10 @@ static bool btrfs_subpage_end_and_test_lock(const struct btrfs_fs_info *fs_info,
- 		spin_unlock_irqrestore(&bfs->lock, flags);
- 		return true;
- 	}
--
--	for_each_set_bit_from(bit, bfs->bitmaps, start_bit + nbits) {
--		clear_bit(bit, bfs->bitmaps);
--		cleared++;
--	}
--	ASSERT(atomic_read(&bfs->nr_locked) >= cleared,
--	       "atomic_read(&bfs->nr_locked)=%d cleared=%d",
--	       atomic_read(&bfs->nr_locked), cleared);
--	last = atomic_sub_and_test(cleared, &bfs->nr_locked);
-+	ASSERT(atomic_read(&bfs->nr_locked) >= nbits,
-+	       "atomic_read(&bfs->nr_locked)=%d nbits=%d",
-+	       atomic_read(&bfs->nr_locked), nbits);
-+	last = atomic_sub_and_test(nbits, &bfs->nr_locked);
- 	spin_unlock_irqrestore(&bfs->lock, flags);
- 	return last;
- }
-@@ -309,11 +301,9 @@ void btrfs_folio_end_lock_bitmap(const struct btrfs_fs_info *fs_info,
- {
- 	struct btrfs_folio_state *bfs = folio_get_private(folio);
- 	const unsigned int blocks_per_folio = btrfs_blocks_per_folio(fs_info, folio);
--	const int start_bit = blocks_per_folio * btrfs_bitmap_nr_locked;
-+	const unsigned int nbits = bitmap_weight(&bitmap, blocks_per_folio);
- 	unsigned long flags;
- 	bool last = false;
--	int cleared = 0;
--	int bit;
- 
- 	if (!btrfs_is_subpage(fs_info, folio)) {
- 		folio_unlock(folio);
-@@ -327,14 +317,10 @@ void btrfs_folio_end_lock_bitmap(const struct btrfs_fs_info *fs_info,
- 	}
- 
- 	spin_lock_irqsave(&bfs->lock, flags);
--	for_each_set_bit(bit, &bitmap, blocks_per_folio) {
--		if (test_and_clear_bit(bit + start_bit, bfs->bitmaps))
--			cleared++;
--	}
--	ASSERT(atomic_read(&bfs->nr_locked) >= cleared,
--	       "atomic_read(&bfs->nr_locked)=%d cleared=%d",
--	       atomic_read(&bfs->nr_locked), cleared);
--	last = atomic_sub_and_test(cleared, &bfs->nr_locked);
-+	ASSERT(atomic_read(&bfs->nr_locked) >= nbits,
-+	       "atomic_read(&bfs->nr_locked)=%d nbits=%d",
-+	       atomic_read(&bfs->nr_locked), nbits);
-+	last = atomic_sub_and_test(nbits, &bfs->nr_locked);
- 	spin_unlock_irqrestore(&bfs->lock, flags);
- 	if (last)
- 		folio_unlock(folio);
-@@ -696,7 +682,6 @@ void btrfs_folio_set_lock(const struct btrfs_fs_info *fs_info,
- {
- 	struct btrfs_folio_state *bfs;
- 	unsigned long flags;
--	unsigned int start_bit;
- 	unsigned int nbits;
- 	int ret;
- 
-@@ -705,15 +690,8 @@ void btrfs_folio_set_lock(const struct btrfs_fs_info *fs_info,
- 		return;
- 
- 	bfs = folio_get_private(folio);
--	start_bit = subpage_calc_start_bit(fs_info, folio, locked, start, len);
- 	nbits = len >> fs_info->sectorsize_bits;
- 	spin_lock_irqsave(&bfs->lock, flags);
--	/* Target range should not yet be locked. */
--	if (unlikely(!bitmap_test_range_all_zero(bfs->bitmaps, start_bit, nbits))) {
--		SUBPAGE_DUMP_BITMAP(fs_info, folio, locked, start, len);
--		ASSERT(bitmap_test_range_all_zero(bfs->bitmaps, start_bit, nbits));
--	}
--	bitmap_set(bfs->bitmaps, start_bit, nbits);
- 	ret = atomic_add_return(nbits, &bfs->nr_locked);
- 	ASSERT(ret <= btrfs_blocks_per_folio(fs_info, folio));
- 	spin_unlock_irqrestore(&bfs->lock, flags);
-@@ -750,7 +728,6 @@ void __cold btrfs_subpage_dump_bitmap(const struct btrfs_fs_info *fs_info,
- 	unsigned long dirty_bitmap;
- 	unsigned long writeback_bitmap;
- 	unsigned long ordered_bitmap;
--	unsigned long locked_bitmap;
- 	unsigned long flags;
- 
- 	ASSERT(folio_test_private(folio) && folio_get_private(folio));
-@@ -762,16 +739,14 @@ void __cold btrfs_subpage_dump_bitmap(const struct btrfs_fs_info *fs_info,
- 	GET_SUBPAGE_BITMAP(fs_info, folio, dirty, &dirty_bitmap);
- 	GET_SUBPAGE_BITMAP(fs_info, folio, writeback, &writeback_bitmap);
- 	GET_SUBPAGE_BITMAP(fs_info, folio, ordered, &ordered_bitmap);
--	GET_SUBPAGE_BITMAP(fs_info, folio, locked, &locked_bitmap);
- 	spin_unlock_irqrestore(&bfs->lock, flags);
- 
- 	dump_page(folio_page(folio, 0), "btrfs folio state dump");
- 	btrfs_warn(fs_info,
--"start=%llu len=%u page=%llu, bitmaps uptodate=%*pbl dirty=%*pbl locked=%*pbl writeback=%*pbl ordered=%*pbl",
-+"start=%llu len=%u page=%llu, bitmaps uptodate=%*pbl dirty=%*pbl writeback=%*pbl ordered=%*pbl",
- 		    start, len, folio_pos(folio),
- 		    blocks_per_folio, &uptodate_bitmap,
- 		    blocks_per_folio, &dirty_bitmap,
--		    blocks_per_folio, &locked_bitmap,
- 		    blocks_per_folio, &writeback_bitmap,
- 		    blocks_per_folio, &ordered_bitmap);
- }
-diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
-index fdea0b605bfc..ccdb817381dd 100644
---- a/fs/btrfs/subpage.h
-+++ b/fs/btrfs/subpage.h
-@@ -45,16 +45,6 @@ enum {
- 	 */
- 	btrfs_bitmap_nr_ordered,
- 
--	/*
--	 * The locked bit is for async delalloc range (compression), currently
--	 * async extent is queued with the range locked, until the compression
--	 * is done.
--	 * So an async extent can unlock the range at any random timing.
--	 *
--	 * This will need a rework on the async extent lifespan (mark writeback
--	 * and do compression) before deprecating this flag.
--	 */
--	btrfs_bitmap_nr_locked,
- 	btrfs_bitmap_nr_max
- };
- 
--- 
-2.54.0
+[1]
+
+$ sudo ./check btrfs/003
+FSTYP         -- btrfs
+PLATFORM      -- Linux/x86_64 redsun115 7.1.0-rc2-kts-btrfs #1 SMP PREEMPT_DYNAMIC Sat May  9 03:03:55 JST 2026
+MKFS_OPTIONS  -- -f /dev/nullb1
+MOUNT_OPTIONS -- -o enospc_debug -o context=system_u:object_r:root_t:s0 /dev/nullb1 /var/kts/scratch
+
+btrfs/003    55s ... [failed, exit status 1]- output mismatch (see /home/kts/kernel-test-suite/src/xfstests/results//btrfs/003.out.bad)
+    --- tests/btrfs/003.out     2026-05-09 03:07:52.952213772 +0900
+    +++ /home/kts/kernel-test-suite/src/xfstests/results//btrfs/003.out.bad     2026-05-09 23:32:17.595751435 +0900
+    @@ -1,2 +1,3 @@
+     QA output created by 003
+    -Silence is golden
+    +mkfs failed
+    +(see /home/kts/kernel-test-suite/src/xfstests/results//btrfs/003.full for details)
+    ...
+    (Run 'diff -u /home/kts/kernel-test-suite/src/xfstests/tests/btrfs/003.out /home/kts/kernel-test-suite/src/xfstests/results//btrfs/003.out.bad'  to see the entire diff)
+Ran: btrfs/003
+Failures: btrfs/003
+Failed 1 of 1 tests
+
+
+[2] https://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git/tree/common/config?h=for-next#n106
 

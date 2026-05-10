@@ -1,41 +1,66 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 30EE7284682;
-	Sun, 10 May 2026 21:48:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 58AF8242D6A
+	for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2026 22:13:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778449738; cv=none; b=nS6MWgT0Ys2Tw+ftbVcmLbFfV8IVZG40TswhHgn1WHbKR8rMfzumH+s9JWYtmUTWy6uWq7MDqixEqAAAqGWin4c8ADY9RMYToDhSjiUK2l83/vVBwkZnsO9KK+t//ImvEQKC/FTEG2gotsnG8/2p+mkG8F9YydxTMMdvG9p3948=
+	t=1778451184; cv=none; b=C0t80AridCDMj4GDmzwmsa92saTXatmp/J8QxF0hQvSKOAN8cyuNJ+bjZ26HB1GhpyBP4E6Tlsa/ZwaraUM0ciGXoyp39wH0zdhNwIrEjLR2aiI3fjo9NJwN1BdM9WuQmqfuqIOs2U88dJlhwWO95FSdB+SUkTEsS1BP6+B0IVc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778449738; c=relaxed/simple;
-	bh=7gCIjy79LxhRqAOwSpj2GrPNI9wm45hbR31pWOctedw=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=XnaDSfO1WP4dl1V6tqL7MEnqvrQf92WbJG30arlKk/Q7rVzHZMyTNzULnzbeYdvozVMulC5ik25FBWtWN/eY0F2yYFvgNG+62cHkei+IgoXRDVmQ0RjQinXaNXQtam1H1yscHVSF90tsTKNWGnBp2wik2bVk/0CWTD3GBVA7bIk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=cW1GIzaB; arc=none smtp.client-ip=212.227.15.18
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1778451184; c=relaxed/simple;
+	bh=ExGCFEf/x2UlK2fQmP1zsJeE/1DSLyEQNl9SlRdOuro=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=jSEtyOZzOcezeMTiEsfBHZqYD5fKK1O0UiZxABoYBIIL09iGne9AS5pgzStkbgfqTfFs4YWq1U6QZKcxK3++3ptzuvweOgq06GRczIXktVN0Jp3UXdklZRX+3JUJZZ0JLN4GDDUGm0/XhhZi05ywZI13/R0iOs7tKFeL1xzArBA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=WLRTgoS/; arc=none smtp.client-ip=209.85.128.54
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="cW1GIzaB"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1778449732; x=1779054532; i=quwenruo.btrfs@gmx.com;
-	bh=vP4AHpDkSm180LiLREnXuB3HK7eiGDVwsu74zBd4L6E=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=cW1GIzaBdn2oRuT15RofKgLE98R140W1rZ/0IGtFkLWA0H9l7yYTA6XhRafXyUOV
-	 PVA09L8NJT1933ueLht8QXViwbm8mv+re5y2A2mtAiHgGWARRldg0zqXPl5vJwBVq
-	 JRoah6sau2MSgcGkLXQJbEHMeZc6hvhvB08kDj2TG9Itwo7vWFobYCz4bvahNggtd
-	 XcvXYbXKOYMnjHxE8NejvbsyUzQiERcIQhUWQ1W4/Ur/ZijEHXG7nm1/7XyKg+Zly
-	 IY+dM83hYehu2ryIyTD553PStroBFifEz9KlzpjNrx8NSfaoz6zXJcNA9vDy6ViLb
-	 E6v0VMLXfNHwpmuyNA==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mg6e4-1x3TWn0LYE-00pRbf; Sun, 10
- May 2026 23:48:52 +0200
-Message-ID: <b66eb427-bc17-4463-ba3b-a5ef3fa4a317@gmx.com>
-Date: Mon, 11 May 2026 07:18:44 +0930
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="WLRTgoS/"
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4891e5b9c1fso34673545e9.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2026 15:13:02 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1778451181; x=1779055981; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=jBvS4/CfkU/nhI9wlpzwR56DJi7lcCEmDFi5TzNkQAM=;
+        b=WLRTgoS/hknqzF3dhzkXTZqe/7Xh0p0QtG8bEewa0B59EcTx8ZtgwMYLxsPOcXrTeC
+         m/rfCoYbPUp7cmKNp0wljQLw/1aRy3WkZI3838U9OTF5EqvDcZUJ0BBBqH/3l0YT74wi
+         I6PKglFmF8TnGANjzI8+P6Vz2Dv6xJvu4W/aHVFq04ptAOVjJ85s8KcSoP3HCsetCvCy
+         mTM0uwGvdrWQgHGADp1HWICXErqOTd6bI9yo3CYm2iZgsz2TCVz0YppKC5ONjBsEVJ+B
+         LcQSabpAdsNku11QitD+18hA8jlkhXAN3AQbTvGR65rpX4+KmHnOKZTIWWbZYTh0QCqU
+         NRKw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1778451181; x=1779055981;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=jBvS4/CfkU/nhI9wlpzwR56DJi7lcCEmDFi5TzNkQAM=;
+        b=OWeDuqorADjsusumZpuDstgo+TRbFxa6RfXyJO8tsTApJDDXyjGMrKYLlLCbU4kJx+
+         L4WWnEptRhLnXTzVzkPDNgJKa3osHa7WEFulhhRbDcXgh0ySk1uyD/onwaAVAPAskxdB
+         AWCUHUhFTzWlXNm3mVJw4J2dc9bC0GHIo9MhDbMM7OOrR//pgVp4R4Pmo9kzTXxLAF2q
+         cHAQE3h4mIOSpRenWiOsx/1FODyJ5yblT7i6X1aBRlhjP7zEX0Neh5IvQX1TU9e4FtAq
+         uaZcBEjaMAmiAdvvejpRgGZR+XFal1Z2FUlD8L3npwZ9ZTF47gYsTKH8H/NVLrOG4sMy
+         4iMw==
+X-Gm-Message-State: AOJu0Yxa4Mj5CelvfbV4YGSD5Vanfqj+nQZkKzx7rAGczeOWSqBZiY5I
+	pBNszjnmLeDKwkrFIa2DJPq7IVoZ/s9jMm5BZcU/cbiNuvPzK3WjjEEdZPUZuE6Zf9Y=
+X-Gm-Gg: Acq92OFxM7rpiNbSiTTzKEKR0gETobrgl17h+82GnbbPfhUyRdWBwN6UuWBVeAXQgvH
+	3iygEzm/rz1JdCoGunhsdide9/G7iBSONvaOcDgb0vxSYSyuyFXB7hhacXrKqfrk9VsU7iLkWQx
+	UyEfFYf3F+rT7Arp/ThV6Cg9ZmXL3YUZLBCNM/vJJ72EUk9kX09fXX1bE09DGANDo0wQdOlZ0zJ
+	gUyu859e5rIB6+/lopgywIeiZSahX4BRHuQQNr0PHH42nG5+9K/2VecQNrMdpNxIYRqLPGJS9QN
+	mIDcIgUO0sq6NJ4G5oJ+vKgMBSHXF9cqOATvVJktBW8nMViOSTahP+QyBdNsgcOEJzYYfqNcg/q
+	GHqm3ETaxTx4JVDuOHEOsRqGCfAqwWdvkG2/2n//hb9MWT1VSPR0rvgyVmJmkjZTc6+tcyje3Mp
+	S+7cOjR/bVDikAZZqYfMratov9AGDFakoNSuDaCVmKsV5HGBTCB58Ma7KX4K8vpujM2gbOKhrPq
+	aw8EnLhan4oEch6PIyb80qCxsB8sCcgsU8jMKG6EfNCyy4=
+X-Received: by 2002:a05:600c:3f18:b0:48e:5990:9698 with SMTP id 5b1f17b1804b1-48e5990978bmr296166975e9.24.1778451180630;
+        Sun, 10 May 2026 15:13:00 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c826771c6ddsm7035722a12.23.2026.05.10.15.12.55
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 10 May 2026 15:12:58 -0700 (PDT)
+Message-ID: <2b94bd00-d2b4-427a-b181-5607f8298f44@suse.com>
+Date: Mon, 11 May 2026 07:42:52 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,227 +68,160 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] fstests: support new mkfs.btrfs help string
-To: Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org,
- linux-btrfs@vger.kernel.org,
- Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
-References: <20260510001704.68396-1-wqu@suse.com>
- <agDVg6UXhP4DoKK_@zlang-mailbox>
+Subject: Re: [PATCH v3] btrfs: validate root ref names in tree-checker
+To: Zhang Cen <rollkingzzc@gmail.com>, Chris Mason <clm@fb.com>,
+ David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org, zerocling0077@gmail.com, 2045gemini@gmail.com
+References: <20260510074943.2644335-1-rollkingzzc@gmail.com>
+ <qu-root-backref-20260510-161800@local>
+ <20260510150322.3778139-1-rollkingzzc@gmail.com>
 Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
  1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
  9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
  gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <agDVg6UXhP4DoKK_@zlang-mailbox>
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260510150322.3778139-1-rollkingzzc@gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:/oSXv8qKWKg47waFLPdRlAt6yXRBBySTqCewGubqrsKtbMslJrG
- LTK84UAVKwf8UcVvwAnaRyaWjgw0RwIhCgAtPtaaMnYNAJLeOz9f98KpioWdUTbsyr+aKPv
- kApz+HtoOmPbY8uaL26UsIYCjcbesMoGY50DxMJP/ZTP4NP+woJkA+f1T4r+RsqaeBUnE9k
- NSEXv+hd8w82iQG7gqzFg==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:QDk5yB02Log=;FuEETonviVenMzYZACbFPCfCGdK
- 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
+Content-Transfer-Encoding: 8bit
 
 
 
-=E5=9C=A8 2026/5/11 04:39, Zorro Lang =E5=86=99=E9=81=93:
-> On Sun, May 10, 2026 at 09:47:04AM +0930, Qu Wenruo wrote:
->> [BUG]
->> The latest btrfs-progs release v7.0 breaks a lot of tests, e.g.
->> btrfs/003:
->>
->> btrfs/003    55s ... [failed, exit status 1]- output mismatch (see /hom=
-e/kts/kernel-test-suite/src/xfstests/results//btrfs/003.out.bad)
->>      --- tests/btrfs/003.out     2026-05-09 03:07:52.952213772 +0900
->>      +++ /home/kts/kernel-test-suite/src/xfstests/results//btrfs/003.ou=
-t.bad     2026-05-09 23:32:17.595751435 +0900
->>      @@ -1,2 +1,3 @@
->>       QA output created by 003
->>      -Silence is golden
->>      +mkfs failed
->>      +(see /home/kts/kernel-test-suite/src/xfstests/results//btrfs/003.=
-full for details)
->>      ...
->>      (Run 'diff -u /home/kts/kernel-test-suite/src/xfstests/tests/btrfs=
-/003.out /home/kts/kernel-test-suite/src/xfstests/results//btrfs/003.out.b=
-ad'  to see the entire diff)
->>
->> [CAUSE]
->> Commit ec8324cc4b8b ("btrfs-progs: help: adjust alignment of text") fro=
-m
->> btrfs-progs changed the helpe string output format, the previous help
->> string for "-f" option of mkfs.btrfs looks like this:
->>
->>      -f|--force                force overwrite of existing filesystem
->>
->> There were 4 spaces before the "-f", thus can be matched by
->> "[[:space:]]-f[[:space]|,]".
->>
->> But now the help string looks like:
->>
->> -f, --force               force overwrite of existing filesystem
->>
->> Which removed the spaces at the beginning.
->>
->> The existing regex to catch "-f" requires at least one space before
->> "-f", now it doesn't match the new btrfs help string, and cause mkfs
->> failure because we can not overwrite an existing scratch device without
->> "-f" option.
->>
->> [FIX]
->> Change the regex to allow no space before "-f".
->>
->> Reported-by: Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
->> Link: https://lore.kernel.org/linux-btrfs/af9EHC5b-aBdr1zn@shinmob/
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>   common/config | 2 +-
->>   1 file changed, 1 insertion(+), 1 deletion(-)
->>
->> diff --git a/common/config b/common/config
->> index 1420e35d..339f7767 100644
->> --- a/common/config
->> +++ b/common/config
->> @@ -103,7 +103,7 @@ set_mkfs_prog_path_with_opts()
->>   	# Note: mkfs.f2fs doesn't support the --help option yet, but it does=
-n't
->>   	# matter since it also prints the help when an invalid option is giv=
-en.
->>   	if [ "$p" !=3D "" ] && \
->> -		$p --help |& grep -q "[[:space:]]-f[[:space:]|,]"; then
->> +		$p --help |& grep -q "[[:space:]]*-f[[:space:]|,]"; then
->=20
-> Hi Qu,
->=20
-> This change looks good to me. But to be a bit nitpicky, the original
-> "[[:space:]]-f" required *a* mandatory [space] before the -f, whereas
-> "[[:space:]]*-f" allows for *zero* or more spaces. This changes the
-> semantics slightly, but it makes sense if you're trying to match cases
-> where -f appears at the very beginning of a line.
+在 2026/5/11 00:33, Zhang Cen 写道:
+> ROOT_REF and ROOT_BACKREF items contain a struct btrfs_root_ref followed
+> by the subvolume name. Several readers assume that this layout is already
+> valid and then use the on-disk name length directly. A corrupted item can
+> therefore make those readers address bytes outside the item, and
+> BTRFS_IOC_GET_SUBVOL_INFO can copy too many bytes into its fixed-size UAPI
+> name buffer.
+> 
+> Validate ROOT_REF and ROOT_BACKREF items in tree-checker before any reader
+> uses them. Reject items smaller than struct btrfs_root_ref, reject records
+> whose name_len does not exactly describe the remaining item payload, and
+> reject names longer than BTRFS_SUBVOL_NAME_MAX.
+> 
+> For BTRFS_IOC_GET_SUBVOL_INFO, copy only the validated on-disk name_len and
+> keep a local BTRFS_VOL_NAME_MAX guard for the fixed ioctl output field.
+> Terminate the copied name explicitly.
+> 
+> Sanitizer validation reported:
+> BUG: KASAN: slab-out-of-bounds in read_extent_buffer()
+> Write of size 505 at addr ffff88810936d608
+> Call trace:
+>    read_extent_buffer()
+>    btrfs_ioctl_get_subvol_info()
+> 
+> Signed-off-by: Zhang Cen <rollkingzzc@gmail.com>
+> ---
+> Changes since v2:
+> - Regenerate the mail-ready patch without the nested mbox wrapper.
+> - No code changes beyond the v2 fix.
+> 
+>   fs/btrfs/ioctl.c       | 17 +++++++++++++----
+>   fs/btrfs/tree-checker.c | 39 +++++++++++++++++++++++++++++++++++++++
+>   2 files changed, 52 insertions(+), 4 deletions(-)
+> diff --git aa/fs/btrfs/ioctl.c bb/fs/btrfs/ioctl.c
+> index a39460bf68a7..b43d33eaea07 100644
+> --- aa/fs/btrfs/ioctl.c
+> +++ bb/fs/btrfs/ioctl.c
+> @@ -1956,7 +1956,8 @@ static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
+>   	struct btrfs_root_ref *rref;
+>   	struct extent_buffer *leaf;
+>   	unsigned long item_off;
+> -	unsigned long item_len;
+> +	u32 item_size;
 
-That's exactly my intention.
-Also explained in the commit message:
+Move the declaration where it's really used, aka, the if () branch where 
+it's first utilized.
 
-    The existing regex to catch "-f" requires at least one space before
-    "-f", now it doesn't match the new btrfs help string,
+> +	u16 name_len;
+>   	int slot;
+>   	int ret = 0;
+>   
+> @@ -2034,14 +2035,21 @@ static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
+>   			subvol_info->parent_id = key.offset;
+>   
+>   			rref = btrfs_item_ptr(leaf, slot, struct btrfs_root_ref);
+> +			item_size = btrfs_item_size(leaf, slot);
+> +			name_len = btrfs_root_ref_name_len(leaf, rref);
+> +			if (name_len > item_size - sizeof(*rref) ||
+> +			    name_len > BTRFS_VOL_NAME_MAX) {
 
-And
+Those conditions are already checked in tree-checker.
+And you return -EUCLEAN without any error message.
 
-    Change the regex to allow no space before "-f".
+An ASSERT() will be more than enough, and I even prefer not to have an 
+ASSERT().
+
+And that's the idea of tree-checker, we validate everything (that we can 
+validate) in tree-checker, so that callers won't need to bother 
+re-checking them at random location again and again.
+
+> +				ret = -EUCLEAN;
+> +				goto out;
+> +			}
+> +
+>   			subvol_info->dirid = btrfs_root_ref_dirid(leaf, rref);
+>   
+> -			item_off = btrfs_item_ptr_offset(leaf, slot)
+> -					+ sizeof(struct btrfs_root_ref);
+> -			item_len = btrfs_item_size(leaf, slot)
+> -					- sizeof(struct btrfs_root_ref);
+> +			item_off = btrfs_item_ptr_offset(leaf, slot) +
+> +				   sizeof(*rref);
+>   			read_extent_buffer(leaf, subvol_info->name,
+> -					   item_off, item_len);
+> +					   item_off, name_len);
+> +			subvol_info->name[name_len] = '\0';
+
+No need to manually add terminating \0.
+
+subvol_info is allocated by kzalloc_obj(), all members in 
+subvol_info->name[] should be zero, and the BTRFS_VOL_NAME_MAX check 
+ensured there is at least one byte left in name[] that is not touched.
+
+>   		} else {
+>   			ret = -ENOENT;
+>   			goto out;
+> diff --git aa/fs/btrfs/tree-checker.c bb/fs/btrfs/tree-checker.c
+> index 1f15d0793a9c..41417b2df32d 100644
+> --- aa/fs/btrfs/tree-checker.c
+> +++ bb/fs/btrfs/tree-checker.c
+> @@ -1371,6 +1371,38 @@ static int check_root_item(struct extent_buffer *leaf, struct btrfs_key *key,
+>   	return 0;
+>   }
+>   
+> +static int check_root_ref(struct extent_buffer *leaf, struct btrfs_key *key,
+> +				  int slot)
+> +{
+> +	struct btrfs_root_ref *rref;
+> +	u32 item_size = btrfs_item_size(leaf, slot);
+> +	u32 name_len;
+> +
+> +	if (unlikely(item_size < sizeof(*rref))) {
+
+There should be a name_len that is not zero.
+So the check should be (item_size <= sizeof(*ref)).
 
 Thanks,
 Qu
-
->=20
-> If that wasn't your intention or if you find this behavior unexpected, l=
-et me
-> know :) Otherwise, I'd like to:
->=20
-> Reviewed-by: Zorro Lang <zlang@kernel.org>
->=20
->>   		echo "$p -f"
->>   	else
->>   		echo $p
->> --=20
->> 2.51.2
->>
->>
->=20
-

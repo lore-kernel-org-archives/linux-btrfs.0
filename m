@@ -1,71 +1,78 @@
-Received: from mail-pg1-f195.google.com (mail-pg1-f195.google.com [209.85.215.195])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from flow-a1-smtp.messagingengine.com (flow-a1-smtp.messagingengine.com [103.168.172.136])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BE08E243951
-	for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2026 15:29:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.195
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B23368834
+	for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2026 17:46:49 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.136
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778426960; cv=none; b=Pa1XDxMu1/FgkJWDgYLO8NEJk44f+JHWs9WHcYEIcaejFrDvXdjA8CvPBt29azyroO3/Wlc1bPRmy3h3/gC2PPp5fd9LyznJPEz6lU9aaWlEwAmBuhRhA9u16pCNbg9uDUMtUdSwa7DqwGNeV3zfqH6OisxgoPRW/ppkFt8TZ58=
+	t=1778435211; cv=none; b=ntYMvFUKhsR6zIk8VC8a8+OFpnjdPIodzXvwS0autICMEp6pQRcanNPLPvsZWyolNnva2Y8+2+oqddVND+M6uDEVW6b2mM2iyYIfr5nBlrKVjgyxUE4KMJuqtsLdhn2BPKGRsaM1ECv8J8Jmh3M1es11sAfyw/QVOcH3K7hjPis=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778426960; c=relaxed/simple;
-	bh=X9hjY0rwMAsfwrAY3m95a7ArJ/isWcsx4qfAwX3RLDc=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=JANHaxN1XWYqhoTSKWqw4j5/40QTZHDR4vB3AE9DRxcyXbxOdnYwll/0mdW2q4h9ji2bY7JDKKzN17rv+peQUmSZzN1FPmHxSQm1PstC/qE3QOFXu1ToNumF5MOCN12BmSHP7T6Uu3b86/wlbtn0KPa3RfJ7Is9NSvV032ffOvw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=nMYBqV/a; arc=none smtp.client-ip=209.85.215.195
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1778435211; c=relaxed/simple;
+	bh=JCaHw4pvCZEvkyECOf1JWNt0kWxlKf87k/10TK7cWrg=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=LERaO9V1vaWJd7d9zRpZlhqslZA15aMi4BKShwI0+95Ng4sTbJDGK67BqFNaQmSIzo6egxQPkizSwVhtwvRHAPzw/qRfCQozRs1j0W6u7TL1sfUA493JtbI1PpylSNxuj51DvSHjJ+2pmmyhuaZNKRB9VwIMLGvWQFs02XMTKSo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=NcVIobDs; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=q++8swPl; arc=none smtp.client-ip=103.168.172.136
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nMYBqV/a"
-Received: by mail-pg1-f195.google.com with SMTP id 41be03b00d2f7-c7b9f54d3deso2310836a12.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2026 08:29:18 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1778426958; x=1779031758; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=8q7GuFqAon4StG56UBqxvWt0V3wronoJWg2hbApzjzA=;
-        b=nMYBqV/aI+JFT35yDkqRpymbOgcwOGUSdpO6GU7/hFuRpeOznxCjjmWAgpbNSpa1kE
-         q3mxZrlQzTu1C9wm/YGyeafIwJjhLuOLtif44x2movlPQgkl6obg58J+TuaMJz3BsN6z
-         pOaaLmel0iqFf4sSWU4nO9iaE3iv4OiJdfrbiNlum85JT30YVfvfEiF47S8a/Zk8EvQ6
-         sSZ3kWMIBbj1jNBXTtA9NvwEFW4I/yoRgsrX7DhZMu8WuAUSzaTs3ll8aRkIR7CNFRmS
-         ct1dkffm4d5BuMs9VLrt/Fk6PiLHnzKiel+lZL9qC1UtqxhptwWH2BBInbfbppRwW2rU
-         YODA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1778426958; x=1779031758;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=8q7GuFqAon4StG56UBqxvWt0V3wronoJWg2hbApzjzA=;
-        b=RtvQNnJEFsTTH73pUNiADivA2uXUZwltKEggTdVk8FENfBvW8w/2EIckdJDRdxUoav
-         LrNm7y0klhkPWrZNv3oT2vkFr+wR+dwybspqsTTtPpawjLIlvndKF731fGATm4VKrl9C
-         f7a2X6sm+lAxhRJ5JJsGx/fSg7CDpzkOR5DAhR7DmBVyKwgqxeteF3+vpyIzmnpm4pYu
-         h5YbNl1R6GLIQo8SRuZBqBg7MYCEwWWCOw45nDwit+yk1z2J86FJmAyYWaldReoQ7Owk
-         KNZ2cLPjKPJRrfzlQiilBD2LSFzMSyWNAZhT7dVa/FSrrczfBJS0yvjm7tcTOP5ow+ki
-         yFQQ==
-X-Gm-Message-State: AOJu0YzBDkq3A0ywyR14I4I7l0LV01WZBnzCij9rNCKiE9jRDnf1K07h
-	44m1E8lRVCSSDOCb/eBpvpbO3OSiMUyN9gWlKUAUoTM25rfeizjQqP7/
-X-Gm-Gg: Acq92OEm1lzekMw5lVIKPozwuw7am7+jJBHi4+P4YTIqa/vwoFT/8ocsoWw4TBnhVDF
-	0wD7bHrI8eVYyvxjXRxQaYTc70x8efpX10YR7fZlGTOlQOrfEz/77RSXC/qoGKLkyk/Fmax4Uwz
-	m8/KtyybLZdGUBXoC6U1r084mbce4qgW1iyj6M0bTTlUTrAMHbPhLwo0CO7jMW7+8bpU5+sfzAD
-	a5tWirPzEWToIJwugsfMzuJR+dKsfcV1WFsXohUcMEcOqaPs3vwzNvYqIkKtkwONMpHQ2RuDjVp
-	ggMBzDqLKnY+z3SJOz+/bYODx0TfDcvL5cBHRi0Pl5f31wXy/S5q5MRfZJY8dNsxx9v1G35Xvly
-	cUPN7Q2kLPUW6vBPfmxnPV3rBgBYC6OnsLJiJqd8FE0cUgtxlhRVDKTjFQfGhzxcBGIxdSSUcMD
-	DDNK/nAtkq3Pf7703yx8voizpZxXf2XLyn7GSnRs5kPQ==
-X-Received: by 2002:a05:6a20:7295:b0:39c:39d1:dbf4 with SMTP id adf61e73a8af0-3aa5abc85e8mr22076551637.46.1778426958044;
-        Sun, 10 May 2026 08:29:18 -0700 (PDT)
-Received: from localhost ([111.228.63.84])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c826771c6ddsm6604225a12.23.2026.05.10.08.29.10
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 10 May 2026 08:29:16 -0700 (PDT)
-From: Zhang Cen <rollkingzzc@gmail.com>
-To: Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org,
-	Qu Wenruo <wqu@suse.com>,
-	zerocling0077@gmail.com,
-	2045gemini@gmail.com
-Subject: [PATCH v3] btrfs: validate root ref names in tree-checker
-Date: Sun, 10 May 2026 23:28:48 +0800
-Message-Id: <20260510152848.3844890-1-rollkingzzc@gmail.com>
-X-Mailer: git-send-email 2.34.1
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="NcVIobDs";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="q++8swPl"
+Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
+	by mailflow.phl.internal (Postfix) with ESMTP id B87FB138008C;
+	Sun, 10 May 2026 13:46:48 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-06.internal (MEProxy); Sun, 10 May 2026 13:46:48 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-transfer-encoding:content-type:date:date:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to; s=fm1; t=1778435208; x=1778442408; bh=DFTguNZYm9sTJ+uqEabDD
+	ZRd35ux+2HTEDD0zCywYB8=; b=NcVIobDsdfHo+zCaTGchf/pSjseyR+VesQBQ6
+	KEAywhS8PpNjZ/GdOJvSO30ZfFwE9r9/Acw2xZfHitJSB49VJJoMWWAK39g7sjwx
+	NGaYeRUtr1Fx6oS90HqoOF72Y0IvFW6gKM1wbhKShPfyDrxom7XabLizhOk4YL+0
+	63rGC9G4k9B4hUy0uZG1gchRBYAN4+WoN/YVGb9cAYYo9BJhrv3Jo/8F60KN2A79
+	4O7QjeaUX1JAc2h7NE1mFBXHp1OfX9RP74oQBnsgGtlEnN7cVXgz8bXbljt20lPX
+	rGOmtiVKsL0TuE8sa6Fk46vyDJ3GOcNFnkj9cq6dzy/RW3ang==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:date:date:feedback-id:feedback-id:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
+	1778435208; x=1778442408; bh=DFTguNZYm9sTJ+uqEabDDZRd35ux+2HTEDD
+	0zCywYB8=; b=q++8swPloiYve/rquoucFZEpw0Ud91pL4Kfr7YatuAhQObJuZ5x
+	Z++v7YGOM5JkRsFiQRJlTw5IMFj5qB6b++eq+1Iyg05f2A5ebZxnt8BG89Z95Ads
+	ZHmM2fZo/zSsiHPbg/cxzjX+3zO5DOonwRxIayc89cSjpQi8OlVE4pkAlI8HnZax
+	UYypyNF0b3ly9BOAuGTBo6tGa29WRexnw4gOoEHSjwN0zz/L9V9YBOSWifOCQoQA
+	i8+WfszdT4IYICPvoXuyzy0vwrAKceJ1Eaj2Rz8CjjdsBcIqHelsMzis4soFhRxr
+	MGEYjd0shEBIKAy3tRWZdWcb6pa84ND7UNA==
+X-ME-Sender: <xms:iMQAajjAKtc7ELgqHQ6b9irsAKubak0C45KEmrpyCQcUIE5Z8APoUg>
+    <xme:iMQAancfWHvTTCr7wygdRKB4BLYu1tsYBxB5binybLmasSo2IMJltq0t4K2G_nqxI
+    HqbFVbuXuToFvoHhZKCHwVosS7KPdzeGN7BSddD0aXbGHoMTjCFVSk>
+X-ME-Received: <xmr:iMQAagdY_BgGan5ca-y81X0YpZDTaLwqnzhbu-N4dSSwZ0NIUWkwprc23-Ifm2l6heeKZ55E3jQq4MIlFRK59cMkQos>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdduudeijeegucetufdoteggodetrf
+    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
+    rghilhhouhhtmecufedttdenucenucfjughrpefhvfevufffkffoggfgsedtkeertdertd
+    dtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheq
+    necuggftrfgrthhtvghrnhepudduhfevvddugffggefgkeeggfdvieejgfegkedvudetke
+    ehhfdvffeugeevfedunecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghi
+    lhhfrhhomhepsghorhhishessghurhdrihhopdhnsggprhgtphhtthhopeefpdhmohguvg
+    epshhmthhpohhuthdprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgv
+    rhhnvghlrdhorhhgpdhrtghpthhtohepkhgvrhhnvghlqdhtvggrmhesfhgsrdgtohhmpd
+    hrtghpthhtoheprhhivghlsehsuhhrrhhivghlrdgtohhm
+X-ME-Proxy: <xmx:iMQAap9IxntmBTSEU8wQ3poKRnNUzul3iIrdYTPyvsCjlSffqAQodQ>
+    <xmx:iMQAaklBoReTj9vjiboD3LP19rSrOwB0k7gbS2huqjBAwe7yw8p0Tg>
+    <xmx:iMQAaj_jLXixO9nOLI-BNLHP3ZH-smXBn3io65JMEvE3X1CN7lwAKg>
+    <xmx:iMQAaqllm_MenHmOFL91ei7BsKhj2wQiDaNkpCLw6vraglnlWPJoaA>
+    <xmx:iMQAakTUDUryed9RlJA96i54KUOV4Z6yKqey-P6We8Cktn9YmFJI0fxa>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Sun,
+ 10 May 2026 13:46:48 -0400 (EDT)
+From: Boris Burkov <boris@bur.io>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Cc: riel@surriel.com
+Subject: [PATCH] btrfs: always drop root->inodes lock in find_first_inode_to_shrink()
+Date: Sun, 10 May 2026 10:46:36 -0700
+Message-ID: <2c932910eb227ef5e9829fdc86d10a11e3170a99.1778435133.git.boris@bur.io>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -74,158 +81,61 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-ROOT_REF and ROOT_BACKREF items contain a struct btrfs_root_ref followed
-by the subvolume name. Several readers assume that this layout is already
-valid and then use the on-disk name length directly. A corrupted item can
-therefore make those readers address bytes outside the item, and
-BTRFS_IOC_GET_SUBVOL_INFO can copy too many bytes into its fixed-size UAPI
-name buffer.
+find_first_inode_to_shrink() locks root->inodes, then loops over them,
+skipping those where it can't lock the extent_tree, or which have no
+extent_maps or it can't igrab. When it doesn't pick an inode, it
+attempts to share the cpu/lock with cond_resched_lock().
 
-Validate ROOT_REF and ROOT_BACKREF items in tree-checker before any reader
-uses them. Reject items smaller than struct btrfs_root_ref, reject records
-whose name_len does not exactly describe the remaining item payload, and
-reject names longer than BTRFS_SUBVOL_NAME_MAX.
+However, that has a subtle problem associated with it.
+cond_resched_lock() only drops the lock if it needs to actually call
+schedule(). With CONFIG_PREEMPT_NONE, this means the full timeslice as
+detected at ticks. With 8+ cpus and default tunables, this is 2.8ms. So
+regardless of HZ, we will run for at least 2.8ms in this loop without
+dropping the lock, assuming it finds no suitable inodes. If HZ is
+small enough, it might be even worse as the tick granularity becomes
+bigger than the timeslice.
 
-For BTRFS_IOC_GET_SUBVOL_INFO, copy only the validated on-disk name_len and
-keep a local BTRFS_VOL_NAME_MAX guard for the fixed ioctl output field.
-Terminate the copied name explicitly.
+The knock-on effect of this is that callers to
+btrfs_del_inode_from_root() like kswapd trying to shrink the inode slab
+or userspace threads calling evict() will spin on xa_lock(&root->inodes)
+for 2.8ms, so the extent map shrinker dominates the lock even though
+ostensibly it is intending to share it. This produces memory pressure as
+there is only one kswapd and it runs sequentially so it can get stuck in
+the inode slab shrinking.
 
-Changes since v2:
-- Regenerate the mail-ready patch without the nested mbox wrapper.
-- No code changes beyond the v2 fix.
+To fix it, simply replace cond_resched_lock() with an open coded variant
+which unconditionally does unlock/lock around cond_resched. Sharing the
+lock is decoupled from sharing the cpu, and all the users of the lock
+now share it fairly.
 
-Sanitizer validation reported:
-KASAN slab-out-of-bounds in read_extent_buffer()
-Write of size 505
-Call trace:
-  dump_stack_lvl() (?:?)
-  print_address_description() (mm/kasan/report.c:373)
-  read_extent_buffer() (?:?)
-  print_report() (?:?)
-  __virt_addr_valid() (?:?)
-  srso_alias_return_thunk() (arch/x86/include/asm/nospec-branch.h:375)
-  kasan_addr_to_slab() (mm/kasan/common.c:45)
-  kasan_report() (?:?)
-  kasan_check_range() (?:?)
-  __asan_memcpy() (mm/kasan/shadow.c:103)
-  btrfs_ioctl_get_subvol_info() (fs/btrfs/ioctl.c:1948)
-  btrfs_get_32() (?:?)
-  btrfs_set_16() (?:?)
-  btrfs_test_get_subvol_info_name_oob() (?:?)
-  btrfs_run_sanity_tests() (?:?)
-  init_btrfs_fs() (fs/btrfs/super.c:2690)
-  do_one_initcall() (init/main.c:1382)
-  __kasan_kmalloc() (?:?)
-  rcu_is_watching() (?:?)
-  do_initcalls() (init/main.c:1457)
-  kernel_init_freeable() (init/main.c:1674)
-  kernel_init() (init/main.c:1584)
-  ret_from_fork() (?:?)
-  __switch_to() (?:?)
-  ret_from_fork_asm() (?:?)
-  kasan_save_stack() (mm/kasan/common.c:52)
-  kasan_save_track() (mm/kasan/common.c:74)
+I was able to reproduce this on test systems by producing a lot of empty
+files (to make a big root->inodes xarray), then producing memory
+pressure by reading large files larger than ram, triggering kswapd and
+the extent_map shrinker. The lock contention is visible with perf or
+lockstat. This patch also relieved a user-apparent bottleneck on a
+production system from the original report.
 
-Signed-off-by: Zhang Cen <rollkingzzc@gmail.com>
-
+Tested-by: Rik van Riel <riel@surriel.com>
+Signed-off-by: Boris Burkov <boris@bur.io>
 ---
-fs/btrfs/ioctl.c       | 17 +++++++++++++----
- fs/btrfs/tree-checker.c | 39 +++++++++++++++++++++++++++++++++++++++
- 2 files changed, 52 insertions(+), 4 deletions(-)
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a39460bf68a7..b43d33eaea07 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1956,7 +1956,8 @@ static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
- 	struct btrfs_root_ref *rref;
- 	struct extent_buffer *leaf;
- 	unsigned long item_off;
--	unsigned long item_len;
-+	u32 item_size;
-+	u16 name_len;
- 	int slot;
- 	int ret = 0;
+ fs/btrfs/extent_map.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 514d7b59cbe5..fce9c5cc0122 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -1246,7 +1246,9 @@ static struct btrfs_inode *find_first_inode_to_shrink(struct btrfs_root *root,
+ 		write_unlock(&tree->lock);
+ next:
+ 		from = btrfs_ino(inode) + 1;
+-		cond_resched_lock(&root->inodes.xa_lock);
++		xa_unlock(&root->inodes);
++		cond_resched();
++		xa_lock(&root->inodes);
+ 	}
+ 	xa_unlock(&root->inodes);
  
-@@ -2034,14 +2035,21 @@ static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
- 			subvol_info->parent_id = key.offset;
- 
- 			rref = btrfs_item_ptr(leaf, slot, struct btrfs_root_ref);
-+			item_size = btrfs_item_size(leaf, slot);
-+			name_len = btrfs_root_ref_name_len(leaf, rref);
-+			if (name_len > item_size - sizeof(*rref) ||
-+			    name_len > BTRFS_VOL_NAME_MAX) {
-+				ret = -EUCLEAN;
-+				goto out;
-+			}
-+
- 			subvol_info->dirid = btrfs_root_ref_dirid(leaf, rref);
- 
--			item_off = btrfs_item_ptr_offset(leaf, slot)
--					+ sizeof(struct btrfs_root_ref);
--			item_len = btrfs_item_size(leaf, slot)
--					- sizeof(struct btrfs_root_ref);
-+			item_off = btrfs_item_ptr_offset(leaf, slot) +
-+				   sizeof(*rref);
- 			read_extent_buffer(leaf, subvol_info->name,
--					   item_off, item_len);
-+					   item_off, name_len);
-+			subvol_info->name[name_len] = '\0';
- 		} else {
- 			ret = -ENOENT;
- 			goto out;
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 1f15d0793a9c..41417b2df32d 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -1371,6 +1371,38 @@ static int check_root_item(struct extent_buffer *leaf, struct btrfs_key *key,
- 	return 0;
- }
- 
-+static int check_root_ref(struct extent_buffer *leaf, struct btrfs_key *key,
-+			  int slot)
-+{
-+	struct btrfs_root_ref *rref;
-+	u32 item_size = btrfs_item_size(leaf, slot);
-+	u32 name_len;
-+
-+	if (unlikely(item_size < sizeof(*rref))) {
-+		generic_err(leaf, slot,
-+			    "invalid root ref item size for key type %u, have %u expect >= %zu",
-+			    key->type, item_size, sizeof(*rref));
-+		return -EUCLEAN;
-+	}
-+
-+	rref = btrfs_item_ptr(leaf, slot, struct btrfs_root_ref);
-+	name_len = btrfs_root_ref_name_len(leaf, rref);
-+	if (unlikely(name_len > BTRFS_SUBVOL_NAME_MAX)) {
-+		generic_err(leaf, slot,
-+			    "root ref name too long for key type %u, have %u max %u",
-+			    key->type, name_len, BTRFS_SUBVOL_NAME_MAX);
-+		return -EUCLEAN;
-+	}
-+	if (unlikely(item_size != sizeof(*rref) + name_len)) {
-+		generic_err(leaf, slot,
-+			    "invalid root ref item size for key type %u, have %u expect %zu",
-+			    key->type, item_size, sizeof(*rref) + name_len);
-+		return -EUCLEAN;
-+	}
-+
-+	return 0;
-+}
-+
- __printf(3,4)
- __cold
- static void extent_err(const struct extent_buffer *eb, int slot,
-@@ -2226,6 +2258,10 @@ static enum btrfs_tree_block_status check_leaf_item(struct extent_buffer *leaf,
- 	case BTRFS_ROOT_ITEM_KEY:
- 		ret = check_root_item(leaf, key, slot);
- 		break;
-+	case BTRFS_ROOT_REF_KEY:
-+	case BTRFS_ROOT_BACKREF_KEY:
-+		ret = check_root_ref(leaf, key, slot);
-+		break;
- 	case BTRFS_EXTENT_ITEM_KEY:
- 	case BTRFS_METADATA_ITEM_KEY:
- 		ret = check_extent_item(leaf, key, slot, prev_key);
 -- 
-2.43.0
+2.54.0
+

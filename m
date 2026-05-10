@@ -1,96 +1,95 @@
-Received: from mail-lj1-f193.google.com (mail-lj1-f193.google.com [209.85.208.193])
+Received: from mail-lf1-f68.google.com (mail-lf1-f68.google.com [209.85.167.68])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 66D0939DBF2
-	for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2026 14:44:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.208.193
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 186D623D2A4
+	for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2026 14:47:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.167.68
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778424292; cv=pass; b=eyK4y73tDgpzXQRvWIjnEM0hEVljB8akvELhM1FuP7VrBd9oNlV3rAflcmpav7gYga3Fsu6nOIJfle8azwgVYTyL/m8DRx+AMJB1CugkgT7ONDMuS1aWbMqVyzxvsvJ7Z0bAgfOOO2H8D+aK0vKuVtkuHEvdxBIXvZi+NU84T3k=
+	t=1778424423; cv=pass; b=aGRbkO1vGIa8T1nYqkwjY61HR+5c9vyp2pKums/PjZxBQVm2Afap3g+ayO9JryxD/pFa5y+9/Em8+fnN3DR0auTT8ahDUhtB814i1X43QxPod1LGc+dORphsMIG472XIE47F0pelQ8RPJqk02L2Pg4uSFIO3uM8C6hs/J9Qz3QQ=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778424292; c=relaxed/simple;
-	bh=mskav7sFlheYV6q45tolJOjxiiujrlBg5LN6Xl4W8kY=;
+	s=arc-20240116; t=1778424423; c=relaxed/simple;
+	bh=h40h/uE3I3vyKbVkt+V9MnD/yQesarFdVJWJtXTsgeQ=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=hh7+G40Wrarvb/TlIeUhttsxxydfX/e0u8nJ73OCdsiqOrE3QIbNs+8XC60FQRG09UHSeEXFwA/AhhlCZfHxDi83xUXXyrW7iU8SLXBRi3L+5jPZ50yY58tu0KAO3SukRnRdxeCyA4qEc1uCIvo1AC0YSHWDGidpfr+ZjwGQFHw=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=KnnIOe3+; arc=pass smtp.client-ip=209.85.208.193
+	 To:Cc:Content-Type; b=D6MigEaC/FDh3g0TAwmZQITqXp+fpYc+ar9HIfJPG7w1EEjQBMwDKN5dO9MP0NUYYFGRZiKaHWngEq1JCng7QW81wzepv+vIgQtJl32YGcMVL+LE3p2iA44v2Ab3pxPHn+CBgJqti9NEE4jkb6748NoR6MVDWg7Pw3bo8dzhz7g=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=C6H+IvEx; arc=pass smtp.client-ip=209.85.167.68
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="KnnIOe3+"
-Received: by mail-lj1-f193.google.com with SMTP id 38308e7fff4ca-393ba0616aaso37928641fa.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2026 07:44:50 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1778424289; cv=none;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="C6H+IvEx"
+Received: by mail-lf1-f68.google.com with SMTP id 2adb3069b0e04-5a8c6fc5fd3so341474e87.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2026 07:47:01 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1778424420; cv=none;
         d=google.com; s=arc-20240605;
-        b=HQL86hM2nec509JNYvhf9yKaRM2arbpA9tMiamx2CHUVTGY8Mb1Zb35n0uDmHRVJFI
-         SvcyHOE74h1PTYpM+59muCIKWPyHJq5LBS2WtXn/0V+IhGTx73Zb/H+q4eebxuiYLYAb
-         NhLApdHNyJm5JMSmthgwmOBE+wYSCpTqmHCO3s092hLMZpsfT8JG1zMgU5CT9qeYHJbH
-         UpCcUlwek2aeCWxr4b28gpLiOeUx+2HH3snGAY+91Uj/w/ReZFWGYaxr06S6v5IKfe8G
-         USuUW70uvA96JebeGCB8H0lzyYB9dI0D+/NJpPRFk5Al+gYrEy1z+s5I8AQpfdZ6pO+v
-         AEtA==
+        b=cxGF4k+u5DZyltEm5emGb+K0WDLtqGKaG9uxlOB1DliPF8mzfeKYx149nnoTRXeNVu
+         oL0wJ1SKfeESiJOYmR3Ip0vS3DuL8jAoQDIfaV4TwmJFJYTqMr149wfCex7cYzKgwGlX
+         J40PdA5nAoKoWR4nJRve6TzF7KuDtbXytGMvTpWwwEtmDIZnNnft5lTZAr1+/cNA9/8H
+         1GxlulYTxwHO9nibZViCjwhMDu4K4wAsQNm9ODuP3t+HJUAL4mUxDoVfjLtdZEDGXMUr
+         0GNQa7dHxpEA/mtO4UyymEB4lUKWJa15joImSvA1xxxCSei6+Ci28+80s7EUROpRSGKg
+         M9bg==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:dkim-signature;
-        bh=+z9dq4MdKDwl6PRAHOilg3mkYJKufrb25miiAwXy46E=;
-        fh=LogI6ssdZz3RIQfU00nAF6ADXPfowqKzgMaGJ5kvAUk=;
-        b=J2fWpqTZNeNi0WQkkhfJSVi32W7xigV23QQf7+/gxGSAlbQ5TIp6xfFQRoWNdpTAq0
-         lB3DEGxyATT+RCafeEcustnUcawdCGfBrhtGpzle2uxUtEvt2H03pYpCYNPTuHxqWiLn
-         QPAr2eIl2AjYssswD/eLNcsD1oxIoUNuEzuYyVSiDyj3P3yvLCmZZqoGfgFIS08GnDvl
-         mZ6GRKInfIGGmr7AyTdosyNJHyoe+nGunXtEh1i7/SDmC5G80cxzFNPrbqBC92bH2H/N
-         qh9uojEj27Q9/UBD0CRMZVxiszPBY39cfaCd2k5ip76RkhdtHtc4yRlcIF3j8Dvmaqx7
-         5Jyw==;
+        bh=TqoMZgRLv2HnhjHwvIDSk69jPRZKx+pgDAbPaXC8/44=;
+        fh=762QtiOhYH6qWN2JSWVSRWSbENY216VY9ebJ4sU8iwE=;
+        b=Pgo04bp1SIlJjdF44e9pcgZ+l2JPYtgU2kFeaIb3zT4IARzNplNWK1u0tpbwubXsNt
+         q16tdUP9JWKW6RVpDKW0mnCa0tYriKOMojkvdukTlLP60EZ2Tx7E4W0oV3xKWarXC4Sc
+         ZpPsOQlBnWDl2HJeIZxiIoDPcqDu+HvVcaRR0doVbGXBsRk5sH/3lJ+0P14NhcSKeJRg
+         HfSF3zQ/t5zLQeVEEgPyrgkaciL8aa9kUGn62wDLvgOMvO+MqzoFDZGM0XiW4Y8yOc+y
+         oEpjfQgdlWdQQtxfC28p65EkKYGU0t+w1OiCJkV3M328oz94ULAXMWEdwe2fIsi33EJC
+         VpYA==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1778424289; x=1779029089; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1778424420; x=1779029220; darn=vger.kernel.org;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=+z9dq4MdKDwl6PRAHOilg3mkYJKufrb25miiAwXy46E=;
-        b=KnnIOe3+gw5rsmaYXemFxbRoOQSr3SNjKkNIrleUwmLc8bxBs3b2iH2uuAhkcMueso
-         9xZJz91eGC57C5WFVkj4SWmOJHyWcUbwsQSrmivWVRbm2RQ8l6bvtz2vXQen8Zmo4kUF
-         csTUu2EHOipR/gFzRjRRfr5AYoevg3hojByOxbIfLiq5PZglmrkGR32nxXTHEx9zixDA
-         Jr5uYGtCOg3G3Rce5k1ZjEgHMh7sL8V5mydTXbLSS7mBYOkf2dVJhM+d/LOUjq+lq8/q
-         NURduXCKdqOx0VJUohNqBZ66dg/90vdDkTiXP77JiFojkbMLD2i5/B4MXBVEWgwnljV5
-         +6fQ==
+        bh=TqoMZgRLv2HnhjHwvIDSk69jPRZKx+pgDAbPaXC8/44=;
+        b=C6H+IvExbTeh79AJWPxjKijgBCmZQAa0zAELjebjFhRWRG7A4oPHCO+BSNSSwWNCn1
+         houtCAKAVSt1LtSfrC7eJ8JpneyYEjwa5K6nw+YOykFOn69ihsLBB8EyNaAv1nZ7s75g
+         ODtj1GSXwn9Di/K3um4idIQ9dhMeoiMHsyRZl8QmYy7VmP2HEGcQ6aAQ1I3q+0RoSXsZ
+         9UCiznudOkM6m80SeZZPy0TzpYton9UYLIk5b4Y5U1W9Mr1CIc/3MwfmW4j9UNj1UL1d
+         rNYj+nHxQiV3Q34dqvwRLbMmxQcrnE//z3BtM6ySbv07TWLKq5KVfIcGVrSNqe0cLIAj
+         opkw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1778424289; x=1779029089;
+        d=1e100.net; s=20251104; t=1778424420; x=1779029220;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to;
-        bh=+z9dq4MdKDwl6PRAHOilg3mkYJKufrb25miiAwXy46E=;
-        b=WbPoPjR3J8A5z5dgy5ooZgaG6vaxWRB0gVxdOQOP6xWtwq4NGcAQyv2FeP++dm4hld
-         6we6xEqHjNK+hqdlQpKFYGkKcOALoXlHmAayDNC4N4ys8G9LjxeF8dyB40isnU4DjG5r
-         4fw6hxoGM1uNnbsnlNrdsYrHLg7Jf8YoUYoAIexnyNNfK0m4G+YE4GmqBR4RyJeSf7ru
-         rZxM+FX0S3riJEOiVbltX0FhUT1z0Qu2E6cDOKynYmwjW2wX9pSZGlcu44xq6IavN6/F
-         lSDUkXxmDFiBx0pFM594e7zIaqwkQUF7oRRWvW4mhz/v8nCrWqIKbM3FpQMcJ/YAutX1
-         VK1g==
-X-Gm-Message-State: AOJu0YxIGkNFpxsF9QpoXzr63aR0x8yFdjyMPDtWP1YmrpoXqt9Lww+0
-	joWVpuPbZ9pIK6oc/xPGAkYH1ld3jdg73E89kO9+agjFzCpWQfyGezWkbefK67biOGyyhV2pP0b
-	msJUxsJp0olQu/tOc+nqEkyi+mh1ZbBk=
-X-Gm-Gg: Acq92OGUEVUBNjoa3WTQX/u1oTJCrO6xTQQB2OZOjM9G+zKc/pTw2eC5/4R4nphMaQG
-	wutYKNB5xYSU/Bjgw5N/bryJzycq3k0ThilJizJ9YuX5EAdxxoZhSFhTdQURTL+FNd5pfq4TnC7
-	wMh7iasag+8pEnazHCj0R2U9pYJFN9C+m2r6Wjw08LHrtV7K2FHo2sgQYDeoB5jUjP2XSvnuE75
-	rLnZ1rrXPGUI5T4Qk9g6ZNpvHzMiD21v0vonjQnXuNWBVREKmLKBDLhSGiU8WAx5SOrS7QuTGMc
-	9bJIhUBqirtzlIxovSY=
-X-Received: by 2002:a05:651c:146b:b0:38a:3208:8cc4 with SMTP id
- 38308e7fff4ca-393c420a160mr76927411fa.25.1778424288303; Sun, 10 May 2026
- 07:44:48 -0700 (PDT)
+        bh=TqoMZgRLv2HnhjHwvIDSk69jPRZKx+pgDAbPaXC8/44=;
+        b=dRtjiWJWMqKcv8bvhD8gejHXeeBeYA71GuGChZmu85AiQKDCQWCXF0CEuYDCMsQa8Q
+         nUuhrtEIvH8oqew5qWuKMkAWpBlIHAnfvsp/tksTIb9XBf3mthJoGdAZ7j7dGSxmiEtd
+         EL5FfyG4PtYcVp895kH5yZx4lmK0XQc7GgKP8dFa0WL3eCA7oc/FsPtWwxgVhbmfDijg
+         Ll+rdJTqM0hxLBrAlFLGRqc5Jq9IQ3eFkEQhnSi1jkSiMxsx3I8g/h4SPe6/yyu6msf2
+         HkoZWuY5Wl0U25xHhU7aPuKnM07c0+1IqxW0kz7u41GM1PiyWqzXDnQitQLtPE+Mz5fH
+         HVYg==
+X-Gm-Message-State: AOJu0YyMDNp1VcUSOiWN/gJM5UBvkJUwVCvMeaEqRJp2DpJ3AsjpwAQe
+	6bYaVGhTXzK5rZgu0G1nPBnbTu1jGWtDc88T1b//JyJHE4xFow663NGKtQrN07Z/yce3XNLvxiy
+	twv1vmv2nOhjWsmaxKOsNhO4l61ykR6U=
+X-Gm-Gg: Acq92OF9kvWqQd5KCjxMRGDi3EjUu9m0Lys6eMnBazE8LayCjp8OAWBBDuyfiYViOEx
+	lQ+QunjSnqhlSMBkQuS/kPhUGmTQEX68hTD0c+n3p/tGqPSrqGNPVc28Pe6/f5GcZw7ild49LIj
+	0KTwe+rUD20vdkxlbLanSCt973G/HBZiV8xGEHl6m1gVlYmL85lfgacFqNTQsoHP+i9uwPGEYO0
+	QgM5/gKKoc5YxoWEXCS+MpDjAs+mveuAEVmn3R+ck5aEX+tg8jzoy+VdBRE7bTNBzMR7tDC2hFE
+	pRPGxi8Vg4jqZB7scr0=
+X-Received: by 2002:a05:6512:39d0:b0:5a4:5d0:2892 with SMTP id
+ 2adb3069b0e04-5a899bbd00emr3896613e87.19.1778424420005; Sun, 10 May 2026
+ 07:47:00 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260510074943.2644334-1-rollkingzzc@gmail.com> <20260510144211.3722703-1-rollkingzzc@gmail.com>
-In-Reply-To: <20260510144211.3722703-1-rollkingzzc@gmail.com>
+References: <20260510074943.2644335-1-rollkingzzc@gmail.com> <20260510144211.3722701-1-rollkingzzc@gmail.com>
+In-Reply-To: <20260510144211.3722701-1-rollkingzzc@gmail.com>
 From: Cen Zhang <rollkingzzc@gmail.com>
-Date: Sun, 10 May 2026 22:44:36 +0800
-X-Gm-Features: AVHnY4LK3TzcXvpSFGgM4VRrxuSoNdnGgVLJiWcFbFgwYoleGVwWqKKofI-vNVY
-Message-ID: <CAB7XQsH+5VksYga6FJHnCBh8au7W4_ifUx56+an_Oo3beWvjVA@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: free-space-tree: reject mismatched extent and
- bitmap items
+Date: Sun, 10 May 2026 22:46:47 +0800
+X-Gm-Features: AVHnY4LawKNGQTz1oY5XJTHXPWvJAyvrGNce2wb0x251qEy6edLRgPGRjyk_ZxI
+Message-ID: <CAB7XQsFWKoeV_SVGs+g0xAfvFPuJ4WcxC36DR_NutuGUMG1KxQ@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: validate root ref names in tree-checker
 To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	Qu Wenruo <wqu@suse.com>, zerocling0077@gmail.com, 2045gemini@gmail.com
+Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>, zerocling0077@gmail.com, 
+	2045gemini@gmail.com
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
@@ -102,59 +101,45 @@ Zhang Cen
 Zhang Cen <rollkingzzc@gmail.com> =E4=BA=8E2026=E5=B9=B45=E6=9C=8810=E6=97=
 =A5=E5=91=A8=E6=97=A5 22:42=E5=86=99=E9=81=93=EF=BC=9A
 >
-> btrfs_load_free_space_tree() reads FREE_SPACE_INFO once and then chooses
-> the bitmap or extent loader for all following free-space records until th=
-e
-> next FREE_SPACE_INFO item. Those loaders currently enforce the selected
-> record type only with ASSERT().
+> ROOT_REF and ROOT_BACKREF items contain a struct btrfs_root_ref followed
+> by the subvolume name. Several readers assume that this layout is already
+> valid and then use the on-disk name length directly. A corrupted item can
+> therefore make those readers address bytes outside the item, and
+> BTRFS_IOC_GET_SUBVOL_INFO can copy too many bytes into its fixed-size UAP=
+I
+> name buffer.
 >
-> On production builds without CONFIG_BTRFS_ASSERT, a malformed free-space
-> tree can therefore be decoded in the wrong mode. An EXTENT item can reach
-> btrfs_free_space_test_bit() as bitmap data, while a BITMAP item can be
-> added as a full free extent. The latter corrupts the in-memory free-space
-> cache and the former can read beyond the item payload.
+> Validate ROOT_REF and ROOT_BACKREF items in tree-checker before any reade=
+r
+> uses them. Reject items smaller than struct btrfs_root_ref, reject record=
+s
+> whose name_len does not exactly describe the remaining item payload, and
+> reject names longer than BTRFS_SUBVOL_NAME_MAX.
 >
-> Validate every post-info key before decoding it. Reject keys whose type
-> does not match the mode selected by FREE_SPACE_INFO, and reject keys
-> whose range extends past the block group, returning -EUCLEAN instead of
-> feeding the wrong record type to the bitmap or extent decoder.
->
-> Also reject zero-length FREE_SPACE_EXTENT items in tree-checker, matching
-> the existing FREE_SPACE_BITMAP zero-length check. This keeps the loader
-> range check simple and prevents a zero-length extent item from being a
-> valid on-disk free-space record.
+> For BTRFS_IOC_GET_SUBVOL_INFO, copy only the validated on-disk name_len a=
+nd
+> keep a local BTRFS_VOL_NAME_MAX guard for the fixed ioctl output field.
+> Terminate the copied name explicitly.
 >
 > Sanitizer validation reported:
-> Oops: general protection fault, probably for non-canonical address 0xdfff=
-fc0000000001: 0000 [#1] SMP KASAN NOPTI
+> BUG: KASAN: slab-out-of-bounds in read_extent_buffer()
+> Write of size 505 at addr ffff88810936d608
 > Call trace:
->   assert_eb_folio_uptodate() (fs/btrfs/extent_io.c:4134)
->   extent_buffer_test_bit() (?:?)
->   btrfs_free_space_test_bit() (fs/btrfs/free-space-tree.c:518)
->   srso_alias_return_thunk() (arch/x86/include/asm/nospec-branch.h:375)
->   __entry_text_end() (?:?)
->   __asan_memcpy() (mm/kasan/shadow.c:103)
+>   dump_stack_lvl() (?:?)
+>   print_address_description() (mm/kasan/report.c:373)
 >   read_extent_buffer() (?:?)
->   load_free_space_bitmaps() (fs/btrfs/free-space-tree.c:1548)
->   btrfs_get_32() (fs/btrfs/free-space-tree.c:?)
->   btrfs_set_16() (fs/btrfs/free-space-tree.c:?)
->   kmem_cache_alloc_noprof() (?:?)
->   btrfs_load_free_space_tree() (fs/btrfs/free-space-tree.c:1685)
->   load_free_space_tree_for_test() (?:?)
->   rcu_disable_urgency_upon_qs() (kernel/rcu/tree.c:721)
->   vprintk_emit() (?:?)
->   __up_write() (kernel/locking/rwsem.c:1401)
->   clone_commit_root_for_test() (?:?)
->   test_extent_as_bitmap_mode_mismatch() (?:?)
->   kmem_cache_free() (?:?)
->   btrfs_free_path() (fs/btrfs/free-space-tree.c:1449)
->   __add_block_group_free_space() (fs/btrfs/free-space-tree.c:20)
->   run_test() (?:?)
->   do_raw_spin_unlock() (?:?)
->   btrfs_test_free_space_tree() (fs/btrfs/tests/free-space-tree-tests.c:54=
-7)
->   btrfs_test_qgroups() (fs/btrfs/tests/qgroup-tests.c:462)
->   btrfs_run_sanity_tests() (fs/btrfs/free-space-tree.c:?)
+>   print_report() (?:?)
+>   __virt_addr_valid() (?:?)
+>   srso_alias_return_thunk() (arch/x86/include/asm/nospec-branch.h:375)
+>   kasan_addr_to_slab() (mm/kasan/common.c:45)
+>   kasan_report() (?:?)
+>   kasan_check_range() (?:?)
+>   __asan_memcpy() (mm/kasan/shadow.c:103)
+>   btrfs_ioctl_get_subvol_info() (fs/btrfs/ioctl.c:1948)
+>   btrfs_get_32() (?:?)
+>   btrfs_set_16() (?:?)
+>   btrfs_test_get_subvol_info_name_oob() (?:?)
+>   btrfs_run_sanity_tests() (?:?)
 >   init_btrfs_fs() (fs/btrfs/super.c:2690)
 >   do_one_initcall() (init/main.c:1382)
 >   __kasan_kmalloc() (?:?)
@@ -165,164 +150,171 @@ fc0000000001: 0000 [#1] SMP KASAN NOPTI
 >   ret_from_fork() (?:?)
 >   __switch_to() (?:?)
 >   ret_from_fork_asm() (?:?)
+>   kasan_save_stack() (mm/kasan/common.c:52)
+>   kasan_save_track() (mm/kasan/common.c:74)
 >
 > Signed-off-by: Zhang Cen <rollkingzzc@gmail.com>
 >
 > ---
-> From ccb16e1f1b9490dc3d76e219cc2d9fe8cdd3afa7 Mon Sep 17 00:00:00 2001
-> Message-ID: <ccb16e1f1b9490dc3d76e219cc2d9fe8cdd3afa7.1778403060.git.roll=
-kingzzc@gmail.com>
-> In-Reply-To: <20260510074943.2644334-1-rollkingzzc@gmail.com>
-> References: <20260510074943.2644334-1-rollkingzzc@gmail.com>
+> From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+> In-Reply-To: <20260510074943.2644335-1-rollkingzzc@gmail.com>
+> References: <20260510074943.2644335-1-rollkingzzc@gmail.com> <qu-root-bac=
+kref-20260510-161800@local>
 > From: Zhang Cen <rollkingzzc@gmail.com>
-> Date: Sun, 10 May 2026 16:51:00 +0800
-> Subject: [PATCH v2] btrfs: free-space-tree: reject mismatched extent and
->  bitmap items
+> Date: Sun, 10 May 2026 17:05:00 +0800
+> Subject: [PATCH v2] btrfs: validate root ref names in tree-checker
 > To: Chris Mason <clm@fb.com>,
 >     David Sterba <dsterba@suse.com>
 > Cc: linux-btrfs@vger.kernel.org,
->     linux-kernel@vger.kernel.org,
 >     Qu Wenruo <wqu@suse.com>,
 >     zerocling0077@gmail.com,
 >     2045gemini@gmail.com,
 >     Zhang Cen <rollkingzzc@gmail.com>
 >
-> btrfs_load_free_space_tree() reads FREE_SPACE_INFO once and then chooses
-> the bitmap or extent loader for all following free-space records until th=
-e
-> next FREE_SPACE_INFO item. Those loaders currently enforce the selected
-> record type only with ASSERT().
+> ROOT_REF and ROOT_BACKREF items contain a struct btrfs_root_ref followed
+> by the subvolume name. Several readers assume that this layout is already
+> valid and then use the on-disk name length directly. A corrupted item can
+> therefore make those readers address bytes outside the item, and
+> BTRFS_IOC_GET_SUBVOL_INFO can copy too many bytes into its fixed-size UAP=
+I
+> name buffer.
 >
-> On production builds without CONFIG_BTRFS_ASSERT, a malformed free-space
-> tree can therefore be decoded in the wrong mode. An EXTENT item can reach
-> btrfs_free_space_test_bit() as bitmap data, while a BITMAP item can be
-> added as a full free extent. The latter corrupts the in-memory free-space
-> cache and the former can read beyond the item payload.
+> Validate ROOT_REF and ROOT_BACKREF items in tree-checker before any reade=
+r
+> uses them. Reject items smaller than struct btrfs_root_ref, reject record=
+s
+> whose name_len does not exactly describe the remaining item payload, and
+> reject names longer than BTRFS_SUBVOL_NAME_MAX.
 >
-> Validate every post-info key before decoding it. Reject keys whose type
-> does not match the mode selected by FREE_SPACE_INFO, and reject keys
-> whose range extends past the block group, returning -EUCLEAN instead of
-> feeding the wrong record type to the bitmap or extent decoder.
+> For BTRFS_IOC_GET_SUBVOL_INFO, copy only the validated on-disk name_len a=
+nd
+> keep a local BTRFS_VOL_NAME_MAX guard for the fixed ioctl output field.
+> Terminate the copied name explicitly.
 >
-> Also reject zero-length FREE_SPACE_EXTENT items in tree-checker, matching
-> the existing FREE_SPACE_BITMAP zero-length check. This keeps the loader
-> range check simple and prevents a zero-length extent item from being a
-> valid on-disk free-space record.
->
-> A malformed extent-as-bitmap record was observed as a KASAN fault in
-> extent_buffer_test_bit() (fs/btrfs/extent_io.c:4313), reached through
-> btrfs_free_space_test_bit() (fs/btrfs/free-space-tree.c:518) from
-> load_free_space_bitmaps() (fs/btrfs/free-space-tree.c:1603).
+> Sanitizer validation reported:
+> BUG: KASAN: slab-out-of-bounds in read_extent_buffer()
+> Write of size 505 at addr ffff88810936d608
+> Call trace:
+>   read_extent_buffer()
+>   btrfs_ioctl_get_subvol_info()
 >
 > Signed-off-by: Zhang Cen <rollkingzzc@gmail.com>
 > ---
 > Changes since v1:
-> - Use unlikely() on validate_free_space_key() failure checks.
-> - Replace the loader range check with key->objectid + key->offset > end.
-> - Reject zero-length free-space extent items in tree-checker.
+> - Move ROOT_REF/ROOT_BACKREF structural validation into tree-checker.
+> - Validate both forward and backward root refs instead of only the ioctl =
+path.
+> - Keep the ioctl-side BTRFS_VOL_NAME_MAX check as a destination-buffer gu=
+ard.
 >
->  fs/btrfs/free-space-tree.c | 37 ++++++++++++++++++++++++++++++++-----
->  fs/btrfs/tree-checker.c    |  4 ++++
->  2 files changed, 36 insertions(+), 5 deletions(-)
+>  fs/btrfs/ioctl.c       | 17 +++++++++++++----
+>  fs/btrfs/tree-checker.c | 39 +++++++++++++++++++++++++++++++++++++++
+>  2 files changed, 52 insertions(+), 4 deletions(-)
+> diff --git aa/fs/btrfs/ioctl.c bb/fs/btrfs/ioctl.c
+> index a39460bf68a7..b43d33eaea07 100644
+> --- aa/fs/btrfs/ioctl.c
+> +++ bb/fs/btrfs/ioctl.c
+> @@ -1956,7 +1956,8 @@ static int btrfs_ioctl_get_subvol_info(struct inode=
+ *inode, void __user *argp)
+>         struct btrfs_root_ref *rref;
+>         struct extent_buffer *leaf;
+>         unsigned long item_off;
+> -       unsigned long item_len;
+> +       u32 item_size;
+> +       u16 name_len;
+>         int slot;
+>         int ret =3D 0;
 >
-> diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-> index 472b3060e5ac..c1af70761919 100644
-> --- a/fs/btrfs/free-space-tree.c
-> +++ b/fs/btrfs/free-space-tree.c
-> @@ -1545,6 +1545,30 @@ int btrfs_remove_block_group_free_space(struct btr=
-fs_trans_handle *trans,
+> @@ -2034,14 +2035,21 @@ static int btrfs_ioctl_get_subvol_info(struct ino=
+de *inode, void __user *argp)
+>                         subvol_info->parent_id =3D key.offset;
+>
+>                         rref =3D btrfs_item_ptr(leaf, slot, struct btrfs_=
+root_ref);
+> +                       item_size =3D btrfs_item_size(leaf, slot);
+> +                       name_len =3D btrfs_root_ref_name_len(leaf, rref);
+> +                       if (name_len > item_size - sizeof(*rref) ||
+> +                           name_len > BTRFS_VOL_NAME_MAX) {
+> +                               ret =3D -EUCLEAN;
+> +                               goto out;
+> +                       }
+> +
+>                         subvol_info->dirid =3D btrfs_root_ref_dirid(leaf,=
+ rref);
+>
+> -                       item_off =3D btrfs_item_ptr_offset(leaf, slot)
+> -                                       + sizeof(struct btrfs_root_ref);
+> -                       item_len =3D btrfs_item_size(leaf, slot)
+> -                                       - sizeof(struct btrfs_root_ref);
+> +                       item_off =3D btrfs_item_ptr_offset(leaf, slot) +
+> +                                  sizeof(*rref);
+>                         read_extent_buffer(leaf, subvol_info->name,
+> -                                          item_off, item_len);
+> +                                          item_off, name_len);
+> +                       subvol_info->name[name_len] =3D '\0';
+>                 } else {
+>                         ret =3D -ENOENT;
+>                         goto out;
+> diff --git aa/fs/btrfs/tree-checker.c bb/fs/btrfs/tree-checker.c
+> index 1f15d0793a9c..41417b2df32d 100644
+> --- aa/fs/btrfs/tree-checker.c
+> +++ bb/fs/btrfs/tree-checker.c
+> @@ -1371,6 +1371,38 @@ static int check_root_item(struct extent_buffer *l=
+eaf, struct btrfs_key *key,
 >         return 0;
 >  }
 >
-> +static int validate_free_space_key(struct btrfs_block_group *block_group=
-,
-> +                                  const struct btrfs_key *key,
-> +                                  u8 expected_type)
+> +static int check_root_ref(struct extent_buffer *leaf, struct btrfs_key *=
+key,
+> +                                 int slot)
 > +{
-> +       const u64 end =3D btrfs_block_group_end(block_group);
+> +       struct btrfs_root_ref *rref;
+> +       u32 item_size =3D btrfs_item_size(leaf, slot);
+> +       u32 name_len;
 > +
-> +       if (unlikely(key->type !=3D expected_type)) {
-> +               btrfs_err(block_group->fs_info,
-> +                         "block group %llu has unexpected free space key=
- type %u, expected %u",
-> +                         block_group->start, key->type, expected_type);
+> +       if (unlikely(item_size < sizeof(*rref))) {
+> +               generic_err(leaf, slot,
+> +                           "invalid root ref item size for key type %u, =
+have %u expect >=3D %zu",
+> +                           key->type, item_size, sizeof(*rref));
 > +               return -EUCLEAN;
 > +       }
 > +
-> +       if (unlikely(key->objectid + key->offset > end)) {
-> +               btrfs_err(block_group->fs_info,
-> +                         "block group %llu has invalid free space key (%=
-llu %u %llu)",
-> +                         block_group->start, key->objectid, key->type,
-> +                         key->offset);
+> +       rref =3D btrfs_item_ptr(leaf, slot, struct btrfs_root_ref);
+> +       name_len =3D btrfs_root_ref_name_len(leaf, rref);
+> +       if (unlikely(name_len > BTRFS_SUBVOL_NAME_MAX)) {
+> +               generic_err(leaf, slot,
+> +                           "root ref name too long for key type %u, have=
+ %u max %u",
+> +                           key->type, name_len, BTRFS_SUBVOL_NAME_MAX);
+> +               return -EUCLEAN;
+> +       }
+> +       if (unlikely(item_size !=3D sizeof(*rref) + name_len)) {
+> +               generic_err(leaf, slot,
+> +                           "invalid root ref item size for key type %u, =
+have %u expect %zu",
+> +                           key->type, item_size, sizeof(*rref) + name_le=
+n);
 > +               return -EUCLEAN;
 > +       }
 > +
 > +       return 0;
 > +}
 > +
->  static int load_free_space_bitmaps(struct btrfs_caching_control *caching=
-_ctl,
->                                    struct btrfs_path *path,
->                                    u32 expected_extent_count)
-> @@ -1576,8 +1600,10 @@ static int load_free_space_bitmaps(struct btrfs_ca=
-ching_control *caching_ctl,
->                 if (key.type =3D=3D BTRFS_FREE_SPACE_INFO_KEY)
->                         break;
->
-> -               ASSERT(key.type =3D=3D BTRFS_FREE_SPACE_BITMAP_KEY);
-> -               ASSERT(key.objectid < end && key.objectid + key.offset <=
-=3D end);
-> +               ret =3D validate_free_space_key(block_group, &key,
-> +                                             BTRFS_FREE_SPACE_BITMAP_KEY=
-);
-> +               if (unlikely(ret))
-> +                       return ret;
->
->                 offset =3D key.objectid;
->                 while (offset < key.objectid + key.offset) {
-> @@ -1633,7 +1659,6 @@ static int load_free_space_extents(struct btrfs_cac=
-hing_control *caching_ctl,
->         struct btrfs_fs_info *fs_info =3D block_group->fs_info;
->         struct btrfs_root *root;
->         struct btrfs_key key;
-> -       const u64 end =3D btrfs_block_group_end(block_group);
->         u64 total_found =3D 0;
->         u32 extent_count =3D 0;
->         int ret;
-> @@ -1654,8 +1679,10 @@ static int load_free_space_extents(struct btrfs_ca=
-ching_control *caching_ctl,
->                 if (key.type =3D=3D BTRFS_FREE_SPACE_INFO_KEY)
->                         break;
->
-> -               ASSERT(key.type =3D=3D BTRFS_FREE_SPACE_EXTENT_KEY);
-> -               ASSERT(key.objectid < end && key.objectid + key.offset <=
-=3D end);
-> +               ret =3D validate_free_space_key(block_group, &key,
-> +                                             BTRFS_FREE_SPACE_EXTENT_KEY=
-);
-> +               if (unlikely(ret))
-> +                       return ret;
->
->                 ret =3D btrfs_add_new_free_space(block_group, key.objecti=
-d,
->                                                key.objectid + key.offset,
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index 1f15d0793a9c..ec24ffb6641d 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -2129,6 +2129,10 @@ static int check_free_space_extent(struct extent_b=
-uffer *leaf, struct btrfs_key
->                             blocksize, BTRFS_KEY_FMT_VALUE(key));
->                 return -EUCLEAN;
->         }
-> +       if (unlikely(key->offset =3D=3D 0)) {
-> +               generic_err(leaf, slot, "free space extent length is 0");
-> +               return -EUCLEAN;
-> +       }
->         if (unlikely(btrfs_item_size(leaf, slot) !=3D 0)) {
->                 generic_err(leaf, slot,
->                             "invalid item size for free space info, has %=
-u expect 0",
+>  __printf(3,4)
+>  __cold
+>  static void extent_err(const struct extent_buffer *eb, int slot,
+> @@ -2226,6 +2258,10 @@ static enum btrfs_tree_block_status check_leaf_ite=
+m(struct extent_buffer *leaf,
+>         case BTRFS_ROOT_ITEM_KEY:
+>                 ret =3D check_root_item(leaf, key, slot);
+>                 break;
+> +       case BTRFS_ROOT_REF_KEY:
+> +       case BTRFS_ROOT_BACKREF_KEY:
+> +               ret =3D check_root_ref(leaf, key, slot);
+> +               break;
+>         case BTRFS_EXTENT_ITEM_KEY:
+>         case BTRFS_METADATA_ITEM_KEY:
+>                 ret =3D check_extent_item(leaf, key, slot, prev_key);
 > --
 > 2.43.0

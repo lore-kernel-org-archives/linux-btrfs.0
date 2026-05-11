@@ -1,159 +1,157 @@
-Received: from mail-wm1-f47.google.com (mail-wm1-f47.google.com [209.85.128.47])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E63042D739B
-	for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2026 22:18:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.47
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BD83A1624D5;
+	Mon, 11 May 2026 00:47:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778451523; cv=none; b=XxMUNP0PWtQmSK03YEBjBdI0x5V82WKAnQUOeb/EV7Wx+hKmS+GVhSk/fo4rslkS5KKrBS1hqwP7T2XO0RwUsoUsL7FqveNavOM2zTrbYR6pVkWA2mkEWo72NX6U590JQpXH4NGilsh0WOK3yaUdIFYqtILj/E2O4txH70S6T6Q=
+	t=1778460479; cv=none; b=HNi9gFX5FGQVUikEGhAJOhYRwn4eQsbUrGr/UUeaM5s1aZAQ0g49Bu3Kohw8287ebGT3DOsvDaYXCEM6G5Eb2qohz8kLTvFQwp4hvLpERLjwlNHSSPpw+kLKf6E2pnw16elmSwuRfMHvp1zRdHrAsU+JM3NCe8kCeDfcFSEcpps=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778451523; c=relaxed/simple;
-	bh=+ATBH66DUg2zHZ0+GKTqEbJJPhIgYCNoAjG/RGYg5xI=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=XuEbuWTVNRznKRNtKFOTOnasIKWKkg+v/zvzPlmt/MpQ9NIyEQbS58dKLfAh2kbkufKRVY6i3HC/l4vznpEs01fqOMJIb1a3guE5zuvqel5Y6IDrf3yeD4Aao9mjdd8q9/PiVhMIyCb07/D+QXd/VHgxGyJ+W6PDGgpd+yjzVVc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=O+mg81hN; arc=none smtp.client-ip=209.85.128.47
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1778460479; c=relaxed/simple;
+	bh=6IdC639V1/YoZSJDa8M4QfeT0oFxAaEfW2S6jZLbpEg=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=RrTKOGITkXd9rSjBLY8r1/KhEshDnC8hD0BMfkzfWTUHgISDPHt9h4r1T8x09rUiM64aBLnaK0wgxdW6wdL4TCoBJ0hqKQjmALViif952etnxCThW6f8igluewM2howfSpfTaGUkf6wsYaCGGvkhMYw0vsCaSaTyWt0HAiEFElE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dq0DrKjN; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="O+mg81hN"
-Received: by mail-wm1-f47.google.com with SMTP id 5b1f17b1804b1-4891c0620bcso25245085e9.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 May 2026 15:18:40 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1778451519; x=1779056319; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=2orhtQLkaR2F4Nhw0IkD2mYir2NwtxOcoY2NIC265aY=;
-        b=O+mg81hNbTGPYzQczHNffSOg3hhc5zwVQKvZkESTqToVjjU7xHB9KAu8GoNXEpLsXQ
-         MBW3poLB5GOtDws8/W2FJ/4YIjdVXKUShOoknk1G9caYSV1okCkCJaQys6uk0kvrfHcM
-         CJ70uho7ZrvrAB6x2dUYdDCj9YwXrw0br5aAYsIhA6rlLt3GShWuUvU9kA99YfJbN3Zz
-         7/7i+eDVt+XdYl7Frsx2pCEaqCgPDT/08LQZ9JxDA7/IATJKQwAteVcBwkpBcM8Xw3W3
-         2aivlS9FMQoq8kCxntLJfU98h/ULMOJrwAa8Lt37cdhSv8kSPVKo7fzcMk+IzsFikNI9
-         tAgA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1778451519; x=1779056319;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=2orhtQLkaR2F4Nhw0IkD2mYir2NwtxOcoY2NIC265aY=;
-        b=p+9Os3RMRRdcTqt5AiCN5BzIjui5HJEDretwaQYY+9ygaX7aCQOvN/QKEpwvRuoT/E
-         CJhcfm8tyhIEZeC4ZG4Clxjy74B1fVU9+tVEBYRsE/gyh2+8KV/6rfzM0LQa6FSW6KJS
-         CjT17FqYEtz7pBPIGSTyOjXcStYULcaXU3E8pX4Te2ZFR4j4KZUI2KKCl2g1wrI0j4op
-         YsNkSrc3UG+O/SGDD51FksXfLcewqcOBA+OAtf4ospz5cMqmrAfIYYTVYCWVMCPC6XCf
-         XlcgOp93SYQ+h0MJ8nzp416qnkir/NGq65Sp+imXe164ZHxzf7bpBywInoneTxACZ0ul
-         L91w==
-X-Gm-Message-State: AOJu0YzkQ157v+ce2k2Oz/sCAYSAx58rnfOkNjX/Joa9du6Qkr8Ud4e8
-	54EoCGjRGJgGsa0s+qfaQTxot5+lLExxNGAHY8lq0X1SSL/EqJGADiTgYqkVqXBYJNU=
-X-Gm-Gg: Acq92OG7lm6hiteWOFfw1pm4NuOtl0wKQmKhmpk5tspF6zqdbDlt6jJC/FqHvlf6S/A
-	4i4ugxMfJjEfL4oJv/oPo0cn6P2xtoQxU7glncjLj1lOK7yoNhAv9FovPeNRGU4x5Qtn4DHE2mp
-	KU6QrANBz07CO5SjYb5ERjCMl81sgz8SozqngWmDSiX9I++EFCjznr+zqcGEEZEvBpnvJTcew4P
-	R7oa+JP1h8jKwPpRlyAH+dd886YIu2O1lnPEu9rfIergc+0JxlXRCTfaULacq5SBt5IWMwLVuit
-	Yme1VvWrI3SO4RQ/9NapI0y7j1zyMqOTjQWvRZqhTfVGNoJeOeC+rrY4e304VsRX/g9ezlwuY/9
-	nRWUYgWO+vUAJ1I1fFzgkiFvKg09i4z7fWs/x7GUWsh+8leGNt36QSnYSh8UMm8iOufprdDurrU
-	1umK4H8lbu2qdagFk55bJycUmzh8XCgZazOUMRYyF83Pl31QaZlrlzoy2XUSRA9KP7tqFGtJwlG
-	Ql1WNkZrB2AFFHgUT0SUsy3Oyk/u0GPa5CaUPpV+vrRtdyJzwn/zKnrmnUIvZcRcitP
-X-Received: by 2002:a05:600d:8:b0:48a:58ae:993b with SMTP id 5b1f17b1804b1-48e676a4e03mr172158145e9.16.1778451519266;
-        Sun, 10 May 2026 15:18:39 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-83965d34872sm18488520b3a.22.2026.05.10.15.18.34
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 10 May 2026 15:18:38 -0700 (PDT)
-Message-ID: <b4769807-4175-440d-915a-e2bcd4af06d4@suse.com>
-Date: Mon, 11 May 2026 07:48:31 +0930
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dq0DrKjN"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 28385C2BCB8;
+	Mon, 11 May 2026 00:47:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1778460479;
+	bh=6IdC639V1/YoZSJDa8M4QfeT0oFxAaEfW2S6jZLbpEg=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=dq0DrKjNkRHm5F3mXdSwWuQImUC6Ku2Bq2c6O64PttJc63007m1V4UMNGdHhT/U69
+	 4ZSnzFu93umSIMeMX1mF3+iBzJw1h7eOW8cVmCv1DmyoRVeOUmqoYhfK6RkN+GhCOI
+	 HCUvipTo9zyjB3D24n0UFkxHjSMA+W/TvJsTqvkEMkZOYBjLEYGQ3nHAZtfbN39vbk
+	 VwqnYbgkiGjCvTwpwK7RoR1E/IIftEWJManx4eDT64kI7Glm3eYVhDgn2BK/kwPhCN
+	 Tc/rnjACcMEjHcgYCOt4jIT9ieYHZnRxbat9VIA+7Yo5lQ1vX3fEfQWDX9PAjcEhM5
+	 awJsh/9hoLvhw==
+Date: Mon, 11 May 2026 08:47:53 +0800
+From: Zorro Lang <zlang@kernel.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
+Subject: Re: [PATCH] fstests: support new mkfs.btrfs help string
+Message-ID: <agEmk7jbaoKi179R@zlang-mailbox>
+Mail-Followup-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, 
+	Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
+References: <20260510001704.68396-1-wqu@suse.com>
+ <agDVg6UXhP4DoKK_@zlang-mailbox>
+ <b66eb427-bc17-4463-ba3b-a5ef3fa4a317@gmx.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v3] btrfs: free-space-tree: reject mismatched extent and
- bitmap items
-To: Zhang Cen <rollkingzzc@gmail.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
- zerocling0077@gmail.com, 2045gemini@gmail.com
-References: <20260510074943.2644334-1-rollkingzzc@gmail.com>
- <ccb16e1f1b9490dc3d76e219cc2d9fe8cdd3afa7.1778403060.git.rollkingzzc@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <ccb16e1f1b9490dc3d76e219cc2d9fe8cdd3afa7.1778403060.git.rollkingzzc@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <b66eb427-bc17-4463-ba3b-a5ef3fa4a317@gmx.com>
 
-
-
-在 2026/5/11 00:33, Zhang Cen 写道:
-> btrfs_load_free_space_tree() reads FREE_SPACE_INFO once and then chooses
-> the bitmap or extent loader for all following free-space records until the
-> next FREE_SPACE_INFO item. Those loaders currently enforce the selected
-> record type only with ASSERT().
+On Mon, May 11, 2026 at 07:18:44AM +0930, Qu Wenruo wrote:
 > 
-> On production builds without CONFIG_BTRFS_ASSERT, a malformed free-space
-> tree can therefore be decoded in the wrong mode. An EXTENT item can reach
-> btrfs_free_space_test_bit() as bitmap data, while a BITMAP item can be
-> added as a full free extent. The latter corrupts the in-memory free-space
-> cache and the former can read beyond the item payload.
 > 
-> Validate every post-info key before decoding it. Reject keys whose type
-> does not match the mode selected by FREE_SPACE_INFO, and reject keys
-> whose range extends past the block group, returning -EUCLEAN instead of
-> feeding the wrong record type to the bitmap or extent decoder.
+> 在 2026/5/11 04:39, Zorro Lang 写道:
+> > On Sun, May 10, 2026 at 09:47:04AM +0930, Qu Wenruo wrote:
+> > > [BUG]
+> > > The latest btrfs-progs release v7.0 breaks a lot of tests, e.g.
+> > > btrfs/003:
+> > > 
+> > > btrfs/003    55s ... [failed, exit status 1]- output mismatch (see /home/kts/kernel-test-suite/src/xfstests/results//btrfs/003.out.bad)
+> > >      --- tests/btrfs/003.out     2026-05-09 03:07:52.952213772 +0900
+> > >      +++ /home/kts/kernel-test-suite/src/xfstests/results//btrfs/003.out.bad     2026-05-09 23:32:17.595751435 +0900
+> > >      @@ -1,2 +1,3 @@
+> > >       QA output created by 003
+> > >      -Silence is golden
+> > >      +mkfs failed
+> > >      +(see /home/kts/kernel-test-suite/src/xfstests/results//btrfs/003.full for details)
+> > >      ...
+> > >      (Run 'diff -u /home/kts/kernel-test-suite/src/xfstests/tests/btrfs/003.out /home/kts/kernel-test-suite/src/xfstests/results//btrfs/003.out.bad'  to see the entire diff)
+> > > 
+> > > [CAUSE]
+> > > Commit ec8324cc4b8b ("btrfs-progs: help: adjust alignment of text") from
+> > > btrfs-progs changed the helpe string output format, the previous help
+> > > string for "-f" option of mkfs.btrfs looks like this:
+> > > 
+> > >      -f|--force                force overwrite of existing filesystem
+> > > 
+> > > There were 4 spaces before the "-f", thus can be matched by
+> > > "[[:space:]]-f[[:space]|,]".
+> > > 
+> > > But now the help string looks like:
+> > > 
+> > > -f, --force               force overwrite of existing filesystem
+> > > 
+> > > Which removed the spaces at the beginning.
+> > > 
+> > > The existing regex to catch "-f" requires at least one space before
+> > > "-f", now it doesn't match the new btrfs help string, and cause mkfs
+> > > failure because we can not overwrite an existing scratch device without
+> > > "-f" option.
+> > > 
+> > > [FIX]
+> > > Change the regex to allow no space before "-f".
+> > > 
+> > > Reported-by: Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
+> > > Link: https://lore.kernel.org/linux-btrfs/af9EHC5b-aBdr1zn@shinmob/
+> > > Signed-off-by: Qu Wenruo <wqu@suse.com>
+> > > ---
+> > >   common/config | 2 +-
+> > >   1 file changed, 1 insertion(+), 1 deletion(-)
+> > > 
+> > > diff --git a/common/config b/common/config
+> > > index 1420e35d..339f7767 100644
+> > > --- a/common/config
+> > > +++ b/common/config
+> > > @@ -103,7 +103,7 @@ set_mkfs_prog_path_with_opts()
+> > >   	# Note: mkfs.f2fs doesn't support the --help option yet, but it doesn't
+> > >   	# matter since it also prints the help when an invalid option is given.
+> > >   	if [ "$p" != "" ] && \
+> > > -		$p --help |& grep -q "[[:space:]]-f[[:space:]|,]"; then
+> > > +		$p --help |& grep -q "[[:space:]]*-f[[:space:]|,]"; then
+> > 
+> > Hi Qu,
+> > 
+> > This change looks good to me. But to be a bit nitpicky, the original
+> > "[[:space:]]-f" required *a* mandatory [space] before the -f, whereas
+> > "[[:space:]]*-f" allows for *zero* or more spaces. This changes the
+> > semantics slightly, but it makes sense if you're trying to match cases
+> > where -f appears at the very beginning of a line.
 > 
-> Also reject zero-length FREE_SPACE_EXTENT items in tree-checker, matching
-> the existing FREE_SPACE_BITMAP zero-length check. This keeps the loader
-> range check simple and prevents a zero-length extent item from being a
-> valid on-disk free-space record.
+> That's exactly my intention.
+> Also explained in the commit message:
 > 
-> A malformed extent-as-bitmap record was observed as a KASAN fault in
-> extent_buffer_test_bit() (fs/btrfs/extent_io.c:4313), reached through
-> btrfs_free_space_test_bit() (fs/btrfs/free-space-tree.c:518) from
-> load_free_space_bitmaps() (fs/btrfs/free-space-tree.c:1603).
+>    The existing regex to catch "-f" requires at least one space before
+>    "-f", now it doesn't match the new btrfs help string,
 > 
-> Signed-off-by: Zhang Cen <rollkingzzc@gmail.com>
-> ---
-> Changes since v2:
-> - Regenerate the mail-ready patch without the nested mbox wrapper.
-> - No code changes beyond the v2 fix.
+> And
+> 
+>    Change the regex to allow no space before "-f".
 
-If you want to put a changelog, please include all modification, not 
-only the last modification but from the very beginning.
+Great! I agree that's a proper change.
 
-A proper example:
+> 
+> Thanks,
+> Qu
+> 
+> > 
+> > If that wasn't your intention or if you find this behavior unexpected, let me
+> > know :) Otherwise, I'd like to:
+> > 
+> > Reviewed-by: Zorro Lang <zlang@kernel.org>
 
-https://lore.kernel.org/linux-btrfs/335133ce1989ac89a6de007d4db05f5f4a6c1be2.1775491985.git.boris@bur.io/
+Merged.
 
-Otherwise looks good to me.
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-I'll give it a full fstests run before merging.
-
-Thanks,
-Qu
-
+> > 
+> > >   		echo "$p -f"
+> > >   	else
+> > >   		echo $p
+> > > -- 
+> > > 2.51.2
+> > > 
+> > > 
+> > 
+> 
+> 

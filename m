@@ -1,143 +1,184 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 56D092D97B9
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2026 18:37:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 79DA52D12ED;
+	Tue, 12 May 2026 05:23:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778524620; cv=none; b=IntKagiPYEz10qLKZlvFXuwKN6CZ4VwGekoXsBi7OCk0r90mHBQUESsIV5pkD0ajNKzsPo8SBqMU5uYXWFYgt5+CCCSLRdzyhUQkuK/Ie01lvUoegYMLALkR/zLAxvAh9r1NxTZaCIO2oLFTVzWJXfwBpApc1uwe4NY0wRNWCuQ=
+	t=1778563406; cv=none; b=ksIKtZfa0ZW3YL9IYplyMZM/2eWqAN5j4VZHCzYA1w++eyLeuTlMBXBgwI813MLu9Uzzp4S7MVqVq+KvKOVzi2d/Ziwo0ZD9h3kRGPiTx0rx/viSVXsXvwqEBdcnmrxQGSYMc+PNKLG+fDq5vPanxoYyHfGsQ9Ugv/i72ZCtHdE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778524620; c=relaxed/simple;
-	bh=wNEgdHhfVeUnIkKrO8aOZzLTB0Som4tMGODndJ15oJY=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=PZMh7CO504+KAhK7bpV1WIB/CZXxLnUJUeK/tfoaWd3zYylDm15KxyO507RX7dqntvW6sHzNE4RPsFHdrdNd7fESUc43sRO4tnHDI7ch6sZL+pI1oZDZ96caX1pFrWRDHWCglYaizRLpddMJImIZd2UtynngZJnw0rr7mNeiyfA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=pphXe+Ak; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1778563406; c=relaxed/simple;
+	bh=qj0HhEGSi5uUOjhdkDpAEzZ/VYBnmPrjXqneop/fn4I=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=f3q5dVCKIpSVpJgarRM4uVKgNlfsa1DhKBFXbSjT0BADJLTeD+ZRH9ZKxa9hhpX+WcJyMy2BY0YO7Jk/zIcSEiD7uT6Z6PrYaEx6Vli2jb0B4p27pIyp9LoHqR46uqQYfTfwDEx7Gqud+/bPqfwUQb/AJA2I5plMwEOK/fCWD48=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=vtscn1Fk; arc=none smtp.client-ip=198.137.202.133
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="pphXe+Ak"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DAD9AC2BCB0
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2026 18:36:59 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778524619;
-	bh=wNEgdHhfVeUnIkKrO8aOZzLTB0Som4tMGODndJ15oJY=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=pphXe+AkvayBaYPJab/v/tfVBQJ54gv6eM0he9p0jfQcIInjFd1s4vxBNgxdtNwHF
-	 f0WjwRmn5iUkiSpyV3uL+fx9fF5qIpIjhfia1jvYP5C79Q81fvRgIBxyx8YdhIjaKu
-	 JdMv97Aj+TTBhi4U5zqyiq2+Qp+0Kae03bMnQ2T+e1eb0B0t62hdPe1mDxs+Wb7gkP
-	 fGGNwQKN6gT8VeZsLQP4x92Fp+CGAHXjtTYSOeCAngTFx5Rwbhh/zTGsoFHOtijEwx
-	 7qksdkkRICWul+YVYX8bKCGJaxEt0490FkaON2kNze7oI/NF4Hq0CGu/Hd+aKzDMWJ
-	 Hlnef+gcOjJCw==
-Received: by mail-ej1-f48.google.com with SMTP id a640c23a62f3a-bcff2d08ca8so185157666b.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 May 2026 11:36:59 -0700 (PDT)
-X-Gm-Message-State: AOJu0YwbxX6yuO4BGh0Q0bJ1J01HlJnh9SKddckfA2i22gSj8NXdpSgH
-	g6mHtvZWi33/MiGF3h6LO0zIjdN9gma41rbe0xHpBWpD/g7/rrrqDGhwoKa0mWGVKUGFm7D5byk
-	m0lMw+AQjhoA3NgOpgIWo5dR3b1NXDgE=
-X-Received: by 2002:a17:907:972a:b0:bcc:2f39:7def with SMTP id
- a640c23a62f3a-bcc2f397e3amr597406266b.5.1778524618526; Mon, 11 May 2026
- 11:36:58 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="vtscn1Fk"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+	MIME-Version:Message-ID:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+	Content-ID:Content-Description:In-Reply-To:References;
+	bh=hWNuCSvOTgL+hl7LSeigsUSvduHQkUgOajdKryVpMzA=; b=vtscn1Fk3uE4T8sWoxzxlGROEJ
+	GCADN1TTiJPS4GrO9lcYTxNPoCYGR0Fg2YfYSZzEqBWFKq2hhv5PT4Hqz353ftsQAUkD0T8gLGlqd
+	z0A72chaGEeedY1Api/DTbf4rOEzT9+pcvs4aKeu12A42LLGhu1uQsL8R2tZhrUsXMUPt3yTgpzLv
+	u5trTMadFgEa6RMlzUE0dtLyIHiet5/ttZO0xqLdJdPFASjLmSebe8/gCPLk/MFMb4OvN8x2DZjzo
+	uyCvvRPg5vy8g7A8aHtdehArpsSMrcXlUxHEy9FmxQeib99y7ucocuZiPQW6XpLvCGzZ68OHTJZN0
+	5wEgmGCQ==;
+Received: from 2a02-8389-2341-5b80-decc-1a96-daaa-a2cc.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:decc:1a96:daaa:a2cc] helo=localhost)
+	by bombadil.infradead.org with esmtpsa (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wMfZo-0000000FaGb-2eLn;
+	Tue, 12 May 2026 05:22:41 +0000
+From: Christoph Hellwig <hch@lst.de>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Catalin Marinas <catalin.marinas@arm.com>,
+	Will Deacon <will@kernel.org>,
+	Ard Biesheuvel <ardb@kernel.org>,
+	Huacai Chen <chenhuacai@kernel.org>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+	Paul Walmsley <pjw@kernel.org>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Albert Ou <aou@eecs.berkeley.edu>,
+	Alexandre Ghiti <alex@ghiti.fr>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	Sven Schnelle <svens@linux.ibm.com>,
+	Thomas Gleixner <tglx@kernel.org>,
+	Ingo Molnar <mingo@redhat.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	Herbert Xu <herbert@gondor.apana.org.au>,
+	Dan Williams <dan.j.williams@intel.com>,
+	Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Song Liu <song@kernel.org>,
+	Yu Kuai <yukuai@fnnas.com>,
+	Li Nan <linan122@huawei.com>,
+	linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	loongarch@lists.linux.dev,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org,
+	linux-crypto@vger.kernel.org,
+	linux-btrfs@vger.kernel.org,
+	linux-arch@vger.kernel.org,
+	linux-raid@vger.kernel.org
+Subject: cleanup the RAID6 P/Q library v2
+Date: Tue, 12 May 2026 07:20:40 +0200
+Message-ID: <20260512052230.2947683-1-hch@lst.de>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <c02edfd2e71891c095d0b70e530f41ed3d97a874.1778523510.git.boris@bur.io>
-In-Reply-To: <c02edfd2e71891c095d0b70e530f41ed3d97a874.1778523510.git.boris@bur.io>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 11 May 2026 19:36:21 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H6CiZ3Bh84E7onsOjx_FDLz-m=rx7ix2CVbSM7G-j4ZLw@mail.gmail.com>
-X-Gm-Features: AVHnY4JYR1Qu1onzAgWr3cgFMmr5mVRir3WK_zAa2kZdaJ2lFB8aRVUaXJihDd8
-Message-ID: <CAL3q7H6CiZ3Bh84E7onsOjx_FDLz-m=rx7ix2CVbSM7G-j4ZLw@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: always drop root->inodes lock before cond_resched()
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com, riel@surriel.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-On Mon, May 11, 2026 at 7:24=E2=80=AFPM Boris Burkov <boris@bur.io> wrote:
->
-> find_first_inode() and find_first_inode_to_shrink() lock root->inodes,
-> then loop over them, occasionally skipping some inodes. When they skip
-> an inode, they attempt to share the cpu/lock with cond_resched_lock().
->
-> However, that has a subtle problem associated with it.
-> cond_resched_lock() only drops the lock if it needs to actually call
-> schedule(). With CONFIG_PREEMPT_NONE, this means the full timeslice as
-> detected at ticks. With 8+ cpus and default tunables, this is 2.8ms. So
-> regardless of HZ, we will run for at least 2.8ms in this loop without
-> dropping the lock, assuming it finds no suitable inodes. If HZ is
-> small enough, it might be even worse as the tick granularity becomes
-> bigger than the timeslice.
->
-> The knock-on effect of this is that callers to
-> btrfs_del_inode_from_root() like kswapd trying to shrink the inode slab
-> or userspace threads calling evict() will spin on xa_lock(&root->inodes)
-> for 2.8ms, so the extent map shrinker dominates the lock even though
-> ostensibly it is intending to share it. This produces memory pressure as
-> there is only one kswapd and it runs sequentially so it can get stuck in
-> the inode slab shrinking.
->
-> To fix it, simply replace cond_resched_lock() with an open coded variant
-> which unconditionally does unlock/lock around cond_resched. Sharing the
-> lock is decoupled from sharing the cpu, and all the users of the lock
-> now share it fairly.
->
-> I was able to reproduce this on test systems by producing a lot of empty
-> files (to make a big root->inodes xarray), then producing memory
-> pressure by reading large files larger than ram, triggering kswapd and
-> the extent_map shrinker. The lock contention is visible with perf or
-> lockstat. This patch also relieved a user-apparent bottleneck on a
-> production system from the original report.
->
-> Tested-by: Rik van Riel <riel@surriel.com>
-> Signed-off-by: Boris Burkov <boris@bur.io>
+Hi all,
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+this series cleans up the RAID6 P/Q library to match the recent updates
+to the RAID 5 XOR library and other CRC/crypto libraries.  This includes
+providing properly documented external interfaces, hiding the internals,
+using static_call instead of indirect calls and turning the user space
+test suite into an in-kernel kunit test which is also extended to
+improve coverage.
 
-Looks good, thanks.
+Note that this changes registration so that non-priority algorithms are
+not registered, which greatly helps with the benchmark time at boot time.
+I'd like to encourage all architecture maintainers to see if they can
+further optimized this by registering as few as possible algorithms when
+there is a clear benefit in optimized or more unrolled implementations.
 
-> ---
-> Changelog:
-> v2:
-> - apply the pattern to btrfs_find_first_inode() as well.
->
-> ---
->  fs/btrfs/extent_map.c | 4 +++-
->  fs/btrfs/inode.c      | 4 +++-
->  2 files changed, 6 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-> index 514d7b59cbe5..fce9c5cc0122 100644
-> --- a/fs/btrfs/extent_map.c
-> +++ b/fs/btrfs/extent_map.c
-> @@ -1246,7 +1246,9 @@ static struct btrfs_inode *find_first_inode_to_shri=
-nk(struct btrfs_root *root,
->                 write_unlock(&tree->lock);
->  next:
->                 from =3D btrfs_ino(inode) + 1;
-> -               cond_resched_lock(&root->inodes.xa_lock);
-> +               xa_unlock(&root->inodes);
-> +               cond_resched();
-> +               xa_lock(&root->inodes);
->         }
->         xa_unlock(&root->inodes);
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 0e72408c8612..201010ced09d 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -10540,7 +10540,9 @@ struct btrfs_inode *btrfs_find_first_inode(struct=
- btrfs_root *root, u64 min_ino)
->                         break;
->
->                 from =3D btrfs_ino(inode) + 1;
-> -               cond_resched_lock(&root->inodes.xa_lock);
-> +               xa_unlock(&root->inodes);
-> +               cond_resched();
-> +               xa_lock(&root->inodes);
->         }
->         xa_unlock(&root->inodes);
->
-> --
-> 2.54.0
->
->
+This series sits on top of the "cleanup the RAID5 XOR library v3" series.
+
+A git tree is also available here:
+
+    git://git.infradead.org/users/hch/misc.git lib-raid6
+
+Gitweb:
+
+    https://git.infradead.org/?p=users/hch/misc.git;a=shortlog;h=refs/heads/lib-raid6
+
+Changes since v1:
+ - fix arm64 objdir != srcdir builds
+ - call the kunit module raid6_kunit.ko from the beginning
+ - update MAINTAINERS
+ - don't require preemptible context and apply the same restrictions as
+   the merged version of the XOR API
+ - fix the arm64 default in Kconfig
+ - pick the last registered (and presumably most optimized) algorithm when
+   benchmarking is disabled
+ - port over the randomization fixes from the XOR series
+ - misc other kunit cleanups
+ - require at least 4 devices for RAID6 to skip broken special cases
+
+Diffstat:
+ b/Documentation/crypto/async-tx-api.rst           |    4 
+ b/MAINTAINERS                                     |    2 
+ b/crypto/async_tx/async_pq.c                      |    9 
+ b/crypto/async_tx/async_raid6_recov.c             |    9 
+ b/drivers/dma/bcm-sba-raid.c                      |    1 
+ b/drivers/md/raid5.c                              |    4 
+ b/fs/btrfs/raid56.c                               |    8 
+ b/fs/btrfs/volumes.c                              |    2 
+ b/include/linux/raid/pq.h                         |  233 +------------
+ b/include/linux/raid/pq_tables.h                  |   19 +
+ b/lib/Kconfig                                     |   11 
+ b/lib/Makefile                                    |    1 
+ b/lib/raid/Kconfig                                |   33 +
+ b/lib/raid/Makefile                               |    2 
+ b/lib/raid/raid6/Makefile                         |  126 +++++++
+ b/lib/raid/raid6/algos.c                          |  383 ++++++++++++++++++++++
+ b/lib/raid/raid6/algos.h                          |   41 ++
+ b/lib/raid/raid6/arm/neon.c                       |   23 -
+ b/lib/raid/raid6/arm/neon.uc                      |    2 
+ b/lib/raid/raid6/arm/pq_arch.h                    |   24 +
+ b/lib/raid/raid6/arm/recov_neon.c                 |   27 -
+ b/lib/raid/raid6/arm/recov_neon_inner.c           |    2 
+ b/lib/raid/raid6/arm64/pq_arch.h                  |    1 
+ b/lib/raid/raid6/int.uc                           |   10 
+ b/lib/raid/raid6/loongarch/loongarch_simd.c       |   31 -
+ b/lib/raid/raid6/loongarch/pq_arch.h              |   23 +
+ b/lib/raid/raid6/loongarch/recov_loongarch_simd.c |   39 --
+ b/lib/raid/raid6/mktables.c                       |   28 -
+ b/lib/raid/raid6/powerpc/altivec.uc               |   32 -
+ b/lib/raid/raid6/powerpc/pq_arch.h                |   31 +
+ b/lib/raid/raid6/powerpc/vpermxor.uc              |   29 -
+ b/lib/raid/raid6/recov.c                          |   62 ---
+ b/lib/raid/raid6/riscv/pq_arch.h                  |   21 +
+ b/lib/raid/raid6/riscv/recov_rvv.c                |   14 
+ b/lib/raid/raid6/riscv/rvv.h                      |   26 -
+ b/lib/raid/raid6/s390/pq_arch.h                   |   15 
+ b/lib/raid/raid6/s390/recov_s390xc.c              |   14 
+ b/lib/raid/raid6/s390/s390vx.uc                   |   15 
+ b/lib/raid/raid6/tests/Makefile                   |    3 
+ b/lib/raid/raid6/tests/raid6_kunit.c              |  321 ++++++++++++++++++
+ b/lib/raid/raid6/x86/avx2.c                       |   47 --
+ b/lib/raid/raid6/x86/avx512.c                     |   57 +--
+ b/lib/raid/raid6/x86/mmx.c                        |   39 --
+ b/lib/raid/raid6/x86/pq_arch.h                    |   97 +++++
+ b/lib/raid/raid6/x86/recov_avx2.c                 |   22 -
+ b/lib/raid/raid6/x86/recov_avx512.c               |   26 -
+ b/lib/raid/raid6/x86/recov_ssse3.c                |   23 -
+ b/lib/raid/raid6/x86/sse1.c                       |   49 --
+ b/lib/raid/raid6/x86/sse2.c                       |   47 --
+ lib/raid6/Makefile                                |   83 ----
+ lib/raid6/algos.c                                 |  291 ----------------
+ lib/raid6/loongarch.h                             |   38 --
+ lib/raid6/test/.gitignore                         |    3 
+ lib/raid6/test/Makefile                           |  156 --------
+ lib/raid6/test/test.c                             |  152 --------
+ lib/raid6/x86.h                                   |   75 ----
+ 56 files changed, 1369 insertions(+), 1517 deletions(-)

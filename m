@@ -1,56 +1,84 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D130E3D5C05;
-	Tue, 12 May 2026 17:02:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C80D3D45D4
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 May 2026 17:02:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778605325; cv=none; b=Wq9Q4kDZmK5kwZQqxCAaLYa3G4FxKUfTQSHsKm4hROgv12VDfwegJHQb7WykVhnOUyMnMrgrbBb99Fr8PnD6Gbc/Vhc7lFxFk3rqpk17cJBXY12NZOkTzhTT/qO3Zb0O8w0aly0IgyIU779BLts2Av1skhpQuunGeNI07n7Zp4s=
+	t=1778605357; cv=none; b=XxfHSEWqmw0FamatpkwPC+h2SI3APL9YlDWjFqrvOjc/xl325bEzg6EaFVq0FltYASSarNXDvUD5BCBKnytf4R++nv2wns24+O9R43oJe29ils0IRQ3yD+FAkG4l7qpPYj+IQLwayamtds8GVTLJIDi/P3mYb/UhAbB/NuUXQNc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778605325; c=relaxed/simple;
-	bh=3w1awZ3eeZyi0jyriVIT/nzrxciCz6a3fg6BE8QtIlg=;
+	s=arc-20240116; t=1778605357; c=relaxed/simple;
+	bh=6Z7QhECsoiT51A0LzveB/6lXSqsR5hRP+/itP8F6pCs=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=G5uslSr+tSmuo0d6F51f0tPRdKogqVtXMZCSxCTsHwtfQSsgHC6M+pEYzL1LWEUos7mAmBEaEySZK6tmXHFvLq89RMDAQTqX1J8GUpudprL9qVCJhdtKNfQvQa+2I6EMqs0VjoxOyS3d7fb3HZqE8Q3hRZeE0ACmwl059ef00rU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=TjMYk2vR; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=a0tvdrKQ8k6suTlx5QjYDuY3T+JF3LLxeKE6ObbqOMWrqwaSiZtYsmQTEJymIfJNTxib2J2JXl3ujZowPeKafc5gjF0z9gpHnsyz2rc0STzIm2urQlHC07j1uwgjNPExE71Hgg/cG/4T1xTgStbdnpNasJ6EVbGXiy/EcWYnQP0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Fjw867DU; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=vHLS6L1G; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=PlB72knN; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=LAZgmrPr; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="TjMYk2vR"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6F11FC2BCC7;
-	Tue, 12 May 2026 17:02:05 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778605325;
-	bh=3w1awZ3eeZyi0jyriVIT/nzrxciCz6a3fg6BE8QtIlg=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=TjMYk2vRoty2a4xDF+mPNkwg088Su/Dx1Sz86vsQ2QZG6kbz61WB0pPzkcCZAxjYq
-	 kJY3nMshWUg7KGRx6BsutKaT+vu8mwemfJijbJapF//T7rUIbic7QUSCSMCINj9Vnm
-	 utITe5nMhhEVSeINgpaCBTozVPfIZ/os3th5Ms0aJgOfThlG42fWDsASqq13Ot1T5b
-	 Wg1VYUEw8U21QanLlWxGkEH80h/yjschij/vN+NnHNHX+S7Sb+2OzYIZUb7Q97/fHl
-	 QCDzO30QikF4V6NHzRaXJaxzSG3Ei3fZ/Pa/6QN0mk9zIzYYmmkf0fXA4YRksP43ne
-	 w2Gji8z2LDbZA==
-Date: Tue, 12 May 2026 10:02:04 -0700
-From: "Darrick J. Wong" <djwong@kernel.org>
-To: Christoph Hellwig <hch@lst.de>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Chris Li <chrisl@kernel.org>,
-	Kairui Song <kasong@tencent.com>,
-	Christian Brauner <brauner@kernel.org>,
-	Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>,
-	Theodore Ts'o <tytso@mit.edu>, Jaegeuk Kim <jaegeuk@kernel.org>,
-	Chao Yu <chao@kernel.org>, Trond Myklebust <trondmy@kernel.org>,
-	Anna Schumaker <anna@kernel.org>,
-	Namjae Jeon <linkinjeon@kernel.org>,
-	Hyunchul Lee <hyc.lee@gmail.com>, Steve French <sfrench@samba.org>,
-	Paulo Alcantara <pc@manguebit.org>,
-	Carlos Maiolino <cem@kernel.org>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Naohiro Aota <naohiro.aota@wdc.com>, linux-xfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-doc@vger.kernel.org,
-	linux-mm@kvack.org, linux-block@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-f2fs-devel@lists.sourceforge.net, linux-nfs@vger.kernel.org,
-	linux-cifs@vger.kernel.org
-Subject: Re: [PATCH 08/12] swap,iomap: simplify iomap_swapfile_iter
-Message-ID: <20260512170204.GI9555@frogsfrogsfrogs>
-References: <20260512053625.2950900-1-hch@lst.de>
- <20260512053625.2950900-9-hch@lst.de>
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Fjw867DU";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="vHLS6L1G";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="PlB72knN";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="LAZgmrPr"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 91B3C6B20F;
+	Tue, 12 May 2026 17:02:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1778605354;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=qWmA/SU30iisUL8yDAmLEMsUHqmwJh+wy7NiCYQYZxo=;
+	b=Fjw867DUfUe22dAKW6i5/cHfJ/vKFdJ0bbUuBompEyuv4fYGqzNpo7kHixRsP4/57kqXcZ
+	xiHZSasoeiDKtw/Py8a4cf6ObP0fARKK7yrFgjLV4JQnQHGUYvso5pHl/ch9dcEpFqqbUZ
+	bCoH8YQktKfjLaMpz4th3L6gnyDM8bM=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1778605354;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=qWmA/SU30iisUL8yDAmLEMsUHqmwJh+wy7NiCYQYZxo=;
+	b=vHLS6L1Gypf4IGvFSl4t4oOYdCv2Rql+vxFX6gf+K9bHBES8DAkApaLkhaARzvaSJBawm8
+	lcgf0irt+DD2ozCw==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1778605350;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=qWmA/SU30iisUL8yDAmLEMsUHqmwJh+wy7NiCYQYZxo=;
+	b=PlB72knNaSkwjjkHeOHT/gkqcvtF+QgLB+5lLZsKXmsQFWCugX7Wlj0pdEeum8hCr3wv/t
+	cIR+5v6k/b8AkbvYg3It6eq8QyTuVVmbDsbdkbhcQNlwL2wlPYwl8KXSMT3Wi42L7oHw2K
+	Pmzw2+pHt62RXLSEHTp1QL7NQOdshfk=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1778605350;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=qWmA/SU30iisUL8yDAmLEMsUHqmwJh+wy7NiCYQYZxo=;
+	b=LAZgmrPrhV6qz2WwSJ7+DhmTPfNS6qFuzeRyHyGdF+D/DwcSn57PaAPx/GWYYYDfFlkoJr
+	qXFtTY1IwKJROCDg==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7BF55593A9;
+	Tue, 12 May 2026 17:02:30 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id zY0NHiZdA2qzLgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 12 May 2026 17:02:30 +0000
+Date: Tue, 12 May 2026 19:02:25 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: remove locked subpage bitmap
+Message-ID: <20260512170225.GK2558453@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <ce0d536ed12aa0e931a384654447ba183ff068f3.1778317565.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -59,209 +87,84 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260512053625.2950900-9-hch@lst.de>
+In-Reply-To: <ce0d536ed12aa0e931a384654447ba183ff068f3.1778317565.git.wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	RCPT_COUNT_TWO(0.00)[2];
+	TO_DN_SOME(0.00)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	URIBL_BLOCKED(0.00)[suse.com:email,suse.cz:replyto,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,twin.jikos.cz:mid,suse.com:email,suse.cz:replyto];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -4.00
 
-On Tue, May 12, 2026 at 07:35:24AM +0200, Christoph Hellwig wrote:
-> add_swap_extent already coalesces multiple extents, no need to duplicate
-> that in the caller.
+On Sat, May 09, 2026 at 06:36:31PM +0930, Qu Wenruo wrote:
+> Currently there are two members inside btrfs_folio_state that are related
+> to locked bitmap:
 > 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> - locked sub-bitmap inside btrfs_folio_state::bitmaps[]
+>   The enum btrfs_bitmap_nr_locked determines the sub-bitmap.
+> 
+> - btrfs_folio_state::nr_locked
+>   Which records how many blocks are locked inside the folio.
+> 
+> The locked sub-bitmap is a btrfs specific per-block tracking mechanism,
+> which is mostly for async-submission, utilized by compressed writes.
+> 
+> The sub-bitmap itself is a super set of nr_locked, as it can provide a
+> more reliable tracking.
+> 
+> But the sub-bitmap itself can be pretty large for the incoming huge
+> folio, 2M sized folio for 4K page size, meaning 512 bits for one
+> sub-bitmap.
+> 
+> Furthermore, in the long run compression will be reworked to get rid of
+> async-submission completely, there is not much need for a full
+> sub-bitmap to track the locked status.
+> 
+> This patch removes the locked sub-bitmap and only relies on @nr_locked
+> atomic to do the tracking.
+> This can also save 64 bytes from btrfs_folio_state::bitmaps[] for a huge
+> folio.
+> 
+> This will reduce some safety checks, as previously if a block is not
+> locked, btrfs_folio_end_lock()/btrfs_folio_end_lock_bitmap() will find
+> out that, and skip reducing @nr_locked for that block, and avoid
+> under-flow.
+> 
+> But this safety net itself shouldn't be necessary in the first place.
+> If we're unlocking a block that is not locked, it's a bug in the logic,
+> and we should catch it, not silently ignoring it.
+> Thus I believe the removal of the extra safety net should not be a
+> problem.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-/me wishes he'd either noticed that add_swap_extent already had the
-coalescing code or had documented why he implemented his own.
-
-OH.  Now I remember why -- it's to handle contiguous mixed mappings
-better.
-
-Let's say that you have a 1k fsblock filesystem and 4k base pages.  You
-fallocate an 8G swap file and then mkswap it.  The first mapping is a 1k
-written mapping at offset 0 for the swap header, followed by an 8388607k
-unwritten mapping at offset 3k.
-
-The PAGE_SIZE rounding code in iomap_swapfile_add_extent will round the
-end of that first mapping down to zero and ignore it.  The second
-mapping will be treated as if it were a 8388604k mapping starting at
-offset 4096.  Now the page counts are wrong and the swapon fails.
-
-A more generic solution to this would be to change add_swap_extent to
-take sector_t addr and length values and use them to construct a bitmap
-representing contiguous physical space on the bdev, accounting of course
-for PAGE_SIZE alignment.  Except for the swap header page, every other
-contiguously set page-aligned region in the bitmap gets added to the
-swap extent map.
-
-You could then maximize the number of pages participating in swap even
-for files with layouts that are truly egregiously bad.  But I elected
-not to go there because the common case is fallocate getting contiguous
-space.
-
-But still, I'm not sure we want to drop the iomap accumulator in
-fs/iomap/swapfile.c.
-
---D
+Reviewed-by: David Sterba <dsterba@suse.com>
 
 > ---
->  fs/iomap/swapfile.c | 104 +++++++++++++-------------------------------
->  1 file changed, 31 insertions(+), 73 deletions(-)
+> This will conflict with the huge folio patchset and the removal of
+> ordered sub-bitmap.
 > 
-> diff --git a/fs/iomap/swapfile.c b/fs/iomap/swapfile.c
-> index cf354fdfb7c3..a4e0ca462cc4 100644
-> --- a/fs/iomap/swapfile.c
-> +++ b/fs/iomap/swapfile.c
-> @@ -6,57 +6,32 @@
->  #include <linux/iomap.h>
->  #include <linux/swap.h>
->  
-> -/* Swapfile activation */
-> -
-> -struct iomap_swapfile_info {
-> -	struct iomap iomap;		/* accumulated iomap */
-> -	struct swap_info_struct *sis;
-> -	unsigned long nr_pages;		/* number of pages collected */
-> -	struct file *file;
-> -};
-> -
-> -/*
-> - * Collect physical extents for this swap file.  Physical extents reported to
-> - * the swap code must be trimmed to align to a page boundary.  The logical
-> - * offset within the file is irrelevant since the swapfile code maps logical
-> - * page numbers of the swap device to the physical page-aligned extents.
-> - */
-> -static int iomap_swapfile_add_extent(struct iomap_swapfile_info *isi)
-> -{
-> -	struct iomap *iomap = &isi->iomap;
-> -	uint64_t first_ppage;
-> -	uint64_t next_ppage;
-> -
-> -	/*
-> -	 * Round the start up and the end down so that the physical
-> -	 * extent aligns to a page boundary.
-> -	 */
-> -	first_ppage = ALIGN(iomap->addr, PAGE_SIZE) >> PAGE_SHIFT;
-> -	next_ppage = ALIGN_DOWN(iomap->addr + iomap->length, PAGE_SIZE) >>
-> -			PAGE_SHIFT;
-> -	return add_swap_extent(isi->sis, next_ppage - first_ppage, first_ppage);
-> -}
-> -
-> -static int iomap_swapfile_fail(struct iomap_swapfile_info *isi, const char *str)
-> +static int iomap_swapfile_fail(struct file *file, const char *str)
->  {
->  	char *buf, *p = ERR_PTR(-ENOMEM);
->  
->  	buf = kmalloc(PATH_MAX, GFP_KERNEL);
->  	if (buf)
-> -		p = file_path(isi->file, buf, PATH_MAX);
-> +		p = file_path(file, buf, PATH_MAX);
->  	pr_err("swapon: file %s %s\n", IS_ERR(p) ? "<unknown>" : p, str);
->  	kfree(buf);
->  	return -EINVAL;
->  }
->  
->  /*
-> - * Accumulate iomaps for this swap file.  We have to accumulate iomaps because
-> - * swap only cares about contiguous page-aligned physical extents and makes no
-> - * distinction between written and unwritten extents.
-> + * Report physical extents for this swap file.  Physical extents reported to the
-> + * swap code must be trimmed to align to a page boundary.  The logical offset
-> + * within the file is irrelevant since the swapfile code maps logical page
-> + * numbers of the swap device to the physical page-aligned extents.
->   */
-> -static int iomap_swapfile_iter(struct iomap_iter *iter,
-> -		struct iomap *iomap, struct iomap_swapfile_info *isi)
-> +static int iomap_swapfile_iter(struct iomap_iter *iter, struct file *file,
-> +		struct swap_info_struct *sis)
->  {
-> +	struct iomap *iomap = &iter->iomap;
-> +	uint64_t first_ppage;
-> +	uint64_t next_ppage;
-> +	int error;
-> +
->  	switch (iomap->type) {
->  	case IOMAP_MAPPED:
->  	case IOMAP_UNWRITTEN:
-> @@ -64,35 +39,31 @@ static int iomap_swapfile_iter(struct iomap_iter *iter,
->  		break;
->  	case IOMAP_INLINE:
->  		/* No inline data. */
-> -		return iomap_swapfile_fail(isi, "is inline");
-> +		return iomap_swapfile_fail(file, "is inline");
->  	default:
-> -		return iomap_swapfile_fail(isi, "has unallocated extents");
-> +		return iomap_swapfile_fail(file, "has unallocated extents");
->  	}
->  
->  	/* No uncommitted metadata or shared blocks. */
->  	if (iomap->flags & IOMAP_F_DIRTY)
-> -		return iomap_swapfile_fail(isi, "is not committed");
-> +		return iomap_swapfile_fail(file, "is not committed");
->  	if (iomap->flags & IOMAP_F_SHARED)
-> -		return iomap_swapfile_fail(isi, "has shared extents");
-> +		return iomap_swapfile_fail(file, "has shared extents");
->  
->  	/* Only one bdev per swap file. */
-> -	if (iomap->bdev != isi->sis->bdev)
-> -		return iomap_swapfile_fail(isi, "outside the main device");
-> -
-> -	if (isi->iomap.length == 0) {
-> -		/* No accumulated extent, so just store it. */
-> -		memcpy(&isi->iomap, iomap, sizeof(isi->iomap));
-> -	} else if (isi->iomap.addr + isi->iomap.length == iomap->addr) {
-> -		/* Append this to the accumulated extent. */
-> -		isi->iomap.length += iomap->length;
-> -	} else {
-> -		/* Otherwise, add the retained iomap and store this one. */
-> -		int error = iomap_swapfile_add_extent(isi);
-> -		if (error)
-> -			return error;
-> -		memcpy(&isi->iomap, iomap, sizeof(isi->iomap));
-> -	}
-> +	if (iomap->bdev != sis->bdev)
-> +		return iomap_swapfile_fail(file, "outside the main device");
->  
-> +	/*
-> +	 * Round the start up and the end down so that the physical extent
-> +	 * aligns to a page boundary.
-> +	 */
-> +	first_ppage = ALIGN(iomap->addr, PAGE_SIZE) >> PAGE_SHIFT;
-> +	next_ppage = ALIGN_DOWN(iomap->addr + iomap->length, PAGE_SIZE) >>
-> +			PAGE_SHIFT;
-> +	error = add_swap_extent(sis, next_ppage - first_ppage, first_ppage);
-> +	if (error)
-> +		return error;
->  	return iomap_iter_advance_full(iter);
->  }
->  
-> @@ -110,10 +81,6 @@ int iomap_swap_activate(struct file *file, struct swap_info_struct *sis,
->  		.len	= ALIGN_DOWN(i_size_read(inode), PAGE_SIZE),
->  		.flags	= IOMAP_REPORT,
->  	};
-> -	struct iomap_swapfile_info isi = {
-> -		.sis = sis,
-> -		.file = file,
-> -	};
->  	int ret;
->  
->  	/*
-> @@ -125,16 +92,7 @@ int iomap_swap_activate(struct file *file, struct swap_info_struct *sis,
->  		return ret;
->  
->  	while ((ret = iomap_iter(&iter, ops)) > 0)
-> -		iter.status = iomap_swapfile_iter(&iter, &iter.iomap, &isi);
-> -	if (ret < 0)
-> -		return ret;
-> -
-> -	if (isi.iomap.length) {
-> -		ret = iomap_swapfile_add_extent(&isi);
-> -		if (ret)
-> -			return ret;
-> -	}
-> -
-> -	return 0;
-> +		iter.status = iomap_swapfile_iter(&iter, file, sis);
-> +	return ret;
->  }
->  EXPORT_SYMBOL_GPL(iomap_swap_activate);
-> -- 
-> 2.53.0
-> 
-> 
+> Thus all three patchsets (including this one) will need some co-ordination
+> and refresh, depending on which one got merged first.
+
+Let's start with this single patch, then the ordered series. We have
+enough time to test it soufficiently before the next merge window.

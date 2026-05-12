@@ -1,90 +1,56 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 52ABB3E172F
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 May 2026 15:18:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C163A2E7631;
+	Tue, 12 May 2026 16:14:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778599132; cv=none; b=tRdAtHhN21Xtmr+6+HTxaNiCjFq1JNk6QPQcaRqLFGuSWvwQ0/k10OQ31GDrNPGjQc9IiSsHPnZ4LkMwWrnlkNt0so3XhFNESDyz8X70FQtIjm8fbTM7zGZn1P85uT3QxS9E5oDCo0rYl6PUXtESYEZd+ughYJgVgoKVb5ELKoQ=
+	t=1778602455; cv=none; b=GsWS4tlcfOTd6WmEf+SCRHYRo+MERQd706y4XZ8wFBJRdyKRmF1V9mXhyxpRvZg+Nv4y67IqB6v7EhEd1rvxaWgiV49KOv2QxoHvt2ZfQlmHzTaKOptd1UkDy5oovmKDYI00EWUJEH9bGBUMEtGu4NvzDQVwkv9F8G9i+kcQGSk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778599132; c=relaxed/simple;
-	bh=jvd+MDamcvt/hP9X/KMaF+Mf0JvrbzEXpZxZAkLaRcw=;
+	s=arc-20240116; t=1778602455; c=relaxed/simple;
+	bh=IUNQoj40BBpUNJf0ajtJqYtGemiYL8A1ke06SM7+b4E=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=FyoCCrK0RYD9EHU+qHQZIqRWodGrhRCJDDfC0WJWH+EMc5JLk7Gy82QA+LO475gznOBnqpe3JzmE/WwFnnr1gnqZLs3in7wQkNpiaek2+MSkgSRiEa1faMi7/I1OuWQ12RmSSfzJp4wjPnD8SZ9epAEtPgd7o+RB9dHr8AExchc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=bYJ+Rbma; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=YIRkQcDc; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=ZE6Vf/mW; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=CEJ+cODB; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	 Content-Type:Content-Disposition:In-Reply-To; b=TT4CwthdPK2f4KCeKhXs0d6UfLQNQIAzw7+mmlHz7yfT7nJsW7j8pc/7NPj5HCR7n/19i2OP3Ct95L63un+mYIkctWOUtmumsus8+lKsdmVJpZJQeq3SjHjhj8A+CgQp0dhXgsZpGjg+ZFqRvVYOrEYxRW6KxlSBElYMajILoQ4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=J/S/PcOS; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="bYJ+Rbma";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="YIRkQcDc";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="ZE6Vf/mW";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="CEJ+cODB"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 4BDBB6B84E;
-	Tue, 12 May 2026 15:18:48 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1778599129;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=hBnVZ87OU95lwBeuP0QsA39hhypzUd99Z32VJYcxa+Y=;
-	b=bYJ+RbmaECRNs3ncID+DvMLsP7dJTIcFsP0lMJZzBv/i+J/ymGqcnytm2XNYjk/d8JVQhL
-	q7dMsYJeGK2EBblQsiDqNyRsLsILJPmhk97UnCh/3B7D6gXhAiYFn4U2U7aMQzJcacs2SE
-	/0f3pg774JGzNf6dn/iIf51QF5/Og0c=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1778599129;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=hBnVZ87OU95lwBeuP0QsA39hhypzUd99Z32VJYcxa+Y=;
-	b=YIRkQcDcW18I8JRkdRzOnWKlXWSkeV8a4e/jdMJYUE+fNAhE3ZzET5Fkuh1aWt+LDXY9PY
-	xqwFkshm3usxE+CA==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b="ZE6Vf/mW";
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=CEJ+cODB
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1778599128;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=hBnVZ87OU95lwBeuP0QsA39hhypzUd99Z32VJYcxa+Y=;
-	b=ZE6Vf/mWfgKJt4gU9is8Tb+vvjQ6xOIMh6zeZZhUc8yafMNg1hsX2rtWrrT4J68FEn6ivL
-	s71t1Pf6dikLfpLLjEvcnjxdjyIFmd/3FjQieEJmTAbVAvRpITLs+bmUVEDkmreJNrYkQk
-	6AgyIvir45lvIEUMJcesJ1TPyksLPLI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1778599128;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=hBnVZ87OU95lwBeuP0QsA39hhypzUd99Z32VJYcxa+Y=;
-	b=CEJ+cODBzitdehQmJE+fEq9OuulnrzpnK4cpt1mqBdhYkuak7FvNoWzkCoKwwVe7NqPkYW
-	I0cXVW4dNNc3akCw==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2B383593A9;
-	Tue, 12 May 2026 15:18:48 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id ATflCdhEA2pRRwAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 12 May 2026 15:18:48 +0000
-Date: Tue, 12 May 2026 17:18:46 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Zhang Cen <rollkingzzc@gmail.com>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	Qu Wenruo <wqu@suse.com>, zerocling0077@gmail.com,
-	2045gemini@gmail.com
-Subject: Re: [PATCH v3] btrfs: free-space-tree: reject mismatched extent and
- bitmap items
-Message-ID: <20260512151846.GJ2558453@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20260510074943.2644334-1-rollkingzzc@gmail.com>
- <ccb16e1f1b9490dc3d76e219cc2d9fe8cdd3afa7.1778403060.git.rollkingzzc@gmail.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="J/S/PcOS"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 646AEC2BCFA;
+	Tue, 12 May 2026 16:14:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1778602455;
+	bh=IUNQoj40BBpUNJf0ajtJqYtGemiYL8A1ke06SM7+b4E=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=J/S/PcOS1XPcZV7Syc+JlqArxkXZ/hbxBjwDT1oINHHwBvkhhEWP9INmRvwBy5uMs
+	 IQ7LRTkDcpdEEKM0Tw08keNfDow4yaHa7b0CVm3jBd1tISNFLljNv2sMqAGoS/qtXU
+	 kvv4bupqJjw57mXwLGv3YQYnlWf91aYSUfKamfSgWAYibwIdHaKI2hKtoE8SnMjl/r
+	 yss2iKimG4E33ynm2qH/k2CFu5aRhuOAM/21vTLClYeYWVJ5nzDy2SveAFpZ27Z4QK
+	 HnDMLSECA8B5Mln82mBvnzgxuWuoXQxgVvLQ2dQycDnG6am4VL4o8Rvgtxso9ns8vD
+	 fQ/KjPYMec+yg==
+Date: Tue, 12 May 2026 09:14:14 -0700
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: Christoph Hellwig <hch@lst.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Chris Li <chrisl@kernel.org>,
+	Kairui Song <kasong@tencent.com>,
+	Christian Brauner <brauner@kernel.org>,
+	Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>,
+	Theodore Ts'o <tytso@mit.edu>, Jaegeuk Kim <jaegeuk@kernel.org>,
+	Chao Yu <chao@kernel.org>, Trond Myklebust <trondmy@kernel.org>,
+	Anna Schumaker <anna@kernel.org>,
+	Namjae Jeon <linkinjeon@kernel.org>,
+	Hyunchul Lee <hyc.lee@gmail.com>, Steve French <sfrench@samba.org>,
+	Paulo Alcantara <pc@manguebit.org>,
+	Carlos Maiolino <cem@kernel.org>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Naohiro Aota <naohiro.aota@wdc.com>, linux-xfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-doc@vger.kernel.org,
+	linux-mm@kvack.org, linux-block@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-f2fs-devel@lists.sourceforge.net, linux-nfs@vger.kernel.org,
+	linux-cifs@vger.kernel.org
+Subject: Re: [PATCH 01/12] swap: remove the maxpages variable in sys_swapon
+Message-ID: <20260512161414.GB9555@frogsfrogsfrogs>
+References: <20260512053625.2950900-1-hch@lst.de>
+ <20260512053625.2950900-2-hch@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -93,64 +59,125 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <ccb16e1f1b9490dc3d76e219cc2d9fe8cdd3afa7.1778403060.git.rollkingzzc@gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Flag: NO
-X-Spam-Score: -4.21
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	URIBL_BLOCKED(0.00)[suse.cz:replyto,suse.cz:dkim,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,sashiko.dev:url];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	FREEMAIL_TO(0.00)[gmail.com];
-	ARC_NA(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	FREEMAIL_CC(0.00)[fb.com,suse.com,vger.kernel.org,gmail.com];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCPT_COUNT_SEVEN(0.00)[8];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,sashiko.dev:url,suse.cz:replyto,suse.cz:dkim,twin.jikos.cz:mid]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 4BDBB6B84E
-X-Spam-Level: 
+In-Reply-To: <20260512053625.2950900-2-hch@lst.de>
 
-On Sun, May 10, 2026 at 11:03:22PM +0800, Zhang Cen wrote:
-> +static int validate_free_space_key(struct btrfs_block_group *block_group,
-> +				   const struct btrfs_key *key,
-> +				   u8 expected_type)
-> +{
-> +	const u64 end = btrfs_block_group_end(block_group);
-> +
-> +	if (unlikely(key->type != expected_type)) {
-> +		btrfs_err(block_group->fs_info,
-> +			  "block group %llu has unexpected free space key type %u, expected %u",
-> +			  block_group->start, key->type, expected_type);
-> +		return -EUCLEAN;
-> +	}
-> +
-> +	if (unlikely(key->objectid + key->offset > end)) {
+On Tue, May 12, 2026 at 07:35:17AM +0200, Christoph Hellwig wrote:
+> Always use si->max which is updated setup_swap_extents instead of copying
 
-This has a review comment https://sashiko.dev/#/patchset/20260510152848.3844894-1-rollkingzzc%40gmail.com
-that the expression can overflow. I did a light check if it is valid at
-all (we're still evaluating the quality of AI reviews) but I think in
-this case more checks to the key.offset and key.objectid could be added.
-As this would is in checker it's meant to be extensive so partially
-overlapping conditions are not a problem.
+"...updated in setup_swap_extents..."
+
+> into and out of maxpages.
+> 
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+
+But yes, it's much harder to track the data flows if we keep copying the
+value in and out of local variables.
+
+Reviewed-by: "Darrick J. Wong" <djwong@kernel.org>
+
+--D
+
+> ---
+>  mm/swapfile.c | 27 +++++++++++----------------
+>  1 file changed, 11 insertions(+), 16 deletions(-)
+> 
+> diff --git a/mm/swapfile.c b/mm/swapfile.c
+> index 9174f1eeffb0..f7ebd97e28a3 100644
+> --- a/mm/swapfile.c
+> +++ b/mm/swapfile.c
+> @@ -3350,10 +3350,9 @@ static unsigned long read_swap_header(struct swap_info_struct *si,
+>  }
+>  
+>  static int setup_swap_clusters_info(struct swap_info_struct *si,
+> -				    union swap_header *swap_header,
+> -				    unsigned long maxpages)
+> +				    union swap_header *swap_header)
+>  {
+> -	unsigned long nr_clusters = DIV_ROUND_UP(maxpages, SWAPFILE_CLUSTER);
+> +	unsigned long nr_clusters = DIV_ROUND_UP(si->max, SWAPFILE_CLUSTER);
+>  	struct swap_cluster_info *cluster_info;
+>  	int err = -ENOMEM;
+>  	unsigned long i;
+> @@ -3395,7 +3394,7 @@ static int setup_swap_clusters_info(struct swap_info_struct *si,
+>  		if (err)
+>  			goto err;
+>  	}
+> -	for (i = maxpages; i < round_up(maxpages, SWAPFILE_CLUSTER); i++) {
+> +	for (i = si->max; i < round_up(si->max, SWAPFILE_CLUSTER); i++) {
+>  		err = swap_cluster_setup_bad_slot(si, cluster_info, i, true);
+>  		if (err)
+>  			goto err;
+> @@ -3425,7 +3424,7 @@ static int setup_swap_clusters_info(struct swap_info_struct *si,
+>  	si->cluster_info = cluster_info;
+>  	return 0;
+>  err:
+> -	free_swap_cluster_info(cluster_info, maxpages);
+> +	free_swap_cluster_info(cluster_info, si->max);
+>  	return err;
+>  }
+>  
+> @@ -3440,7 +3439,6 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
+>  	union swap_header *swap_header;
+>  	int nr_extents;
+>  	sector_t span;
+> -	unsigned long maxpages;
+>  	struct folio *folio = NULL;
+>  	struct inode *inode = NULL;
+>  	bool inced_nr_rotate_swap = false;
+> @@ -3512,14 +3510,13 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
+>  	}
+>  	swap_header = kmap_local_folio(folio, 0);
+>  
+> -	maxpages = read_swap_header(si, swap_header, inode);
+> -	if (unlikely(!maxpages)) {
+> +	si->max = read_swap_header(si, swap_header, inode);
+> +	if (unlikely(!si->max)) {
+>  		error = -EINVAL;
+>  		goto bad_swap_unlock_inode;
+>  	}
+>  
+> -	si->max = maxpages;
+> -	si->pages = maxpages - 1;
+> +	si->pages = si->max - 1;
+>  	nr_extents = setup_swap_extents(si, swap_file, &span);
+>  	if (nr_extents < 0) {
+>  		error = nr_extents;
+> @@ -3531,14 +3528,12 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
+>  		goto bad_swap_unlock_inode;
+>  	}
+>  
+> -	maxpages = si->max;
+> -
+>  	/* Set up the swap cluster info */
+> -	error = setup_swap_clusters_info(si, swap_header, maxpages);
+> +	error = setup_swap_clusters_info(si, swap_header);
+>  	if (error)
+>  		goto bad_swap_unlock_inode;
+>  
+> -	error = swap_cgroup_swapon(si->type, maxpages);
+> +	error = swap_cgroup_swapon(si->type, si->max);
+>  	if (error)
+>  		goto bad_swap_unlock_inode;
+>  
+> @@ -3546,7 +3541,7 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
+>  	 * Use kvmalloc_array instead of bitmap_zalloc as the allocation order might
+>  	 * be above MAX_PAGE_ORDER incase of a large swap file.
+>  	 */
+> -	si->zeromap = kvmalloc_array(BITS_TO_LONGS(maxpages), sizeof(long),
+> +	si->zeromap = kvmalloc_array(BITS_TO_LONGS(si->max), sizeof(long),
+>  				     GFP_KERNEL | __GFP_ZERO);
+>  	if (!si->zeromap) {
+>  		error = -ENOMEM;
+> @@ -3597,7 +3592,7 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
+>  		}
+>  	}
+>  
+> -	error = zswap_swapon(si->type, maxpages);
+> +	error = zswap_swapon(si->type, si->max);
+>  	if (error)
+>  		goto bad_swap_unlock_inode;
+>  
+> -- 
+> 2.53.0
+> 
+> 

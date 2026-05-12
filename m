@@ -1,56 +1,84 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A85B9385D6B;
-	Tue, 12 May 2026 17:10:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12F963DC86D
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 May 2026 17:35:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778605829; cv=none; b=i1wpDAG1YU4yv/8aRb6zN3WnlsdA2yz4cgBcSodM+Bo/IjlkejggUzkZiBGwCWMQ9HNUY2FMyWoshHGssjGEqorLxY/5DP5WVlbowTPOL7OD1muH9hLxNHf60Aq5mV59/8LCMZJCKK2bbAtH8hoiOH1BlwGw1K2Shydd8q2Q4kI=
+	t=1778607329; cv=none; b=b3Udnow8AYhqbklgYRcpXRHdtp0oIWMn8jePSobhPoZoMvqmb0T9e4vHueL42UUN3gy+0+DjFh/cUFqGEDvZJzWtu0qCTbX7dEKyHZqkFFy6RatUp4RCWiKELpBSxWbUNPjzvFfRMyljSdvgbDFoyQNbsX6Y5qNIYpcW/51o3/0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778605829; c=relaxed/simple;
-	bh=UIMc6Epq1jKVpYoN8NQkrsbH35Z/rxkSt0+cjObPXEg=;
+	s=arc-20240116; t=1778607329; c=relaxed/simple;
+	bh=nDWPzYH9MhON6AmEkgJQI9LLViEVtbjDwSPtnDd8GSM=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=vF2Rh4X0Meb/cIxqTxT8Dd9Bs+Y7KK5rNJkI5VbdgkYjg7f3MHRUe8iQ3sHnmh1y2+vYUcUBCjpyNC3Kz8BYRym8YdjUSjKvhOiYsjKBvCFVD4zAhrUnRJVxilOY5Q0e/FuK27y+4qxd+pwUduBgo0zznzSI3iflkOrJaoqL+kI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=cwQyUKQ7; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=dMVcbH34LD1klAVKJyDAPJwQlp8H9avkk9Ffkmweb0Hf0hOqk5RidXFCjqNbW4sA6z0DnIayTHZ3Ez1QI/1kO08CSt7tmizDWcBSmtHxAWhJi9Fwyep8pASniBkCnHE7VwZLbdWuut7PDpS4ReAFv6W6dFBdmjW6dLMriMAFwoQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=UD/jjqDy; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=0abc2jqO; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=UD/jjqDy; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=0abc2jqO; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="cwQyUKQ7"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3BEBEC2BCB0;
-	Tue, 12 May 2026 17:10:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778605829;
-	bh=UIMc6Epq1jKVpYoN8NQkrsbH35Z/rxkSt0+cjObPXEg=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=cwQyUKQ7/ehswE6htqBY9YS5WZtrPNKyBqWQCvZt3MGoMAZl38WrdS4VCCUoTtce5
-	 3HXiMl5gnt6E8BE0Wlgn1JAAx+a721k2CiMTFjCC1q/33PgDsydSqQVOEZ0c/aEcPh
-	 qqMPItxUFu2pzF96J9wTatigpI1eNoG4appb93SUembefpNXfS+dQ3jx5Zjo7T9pg+
-	 Mru+31A2ZvAy//NyZ0pamvIuUJ6MRZj/QrOw+oPtdc5YksLDWF2zrWsZK+3k4Y36/N
-	 kUKgR6D21j3nHYHX3zYVq674GjpOqIAusFNnu8t7U2Rep60jDIv6s7wrNPKcxawCYO
-	 7JJLf2m6C5FqQ==
-Date: Tue, 12 May 2026 10:10:28 -0700
-From: "Darrick J. Wong" <djwong@kernel.org>
-To: Christoph Hellwig <hch@lst.de>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Chris Li <chrisl@kernel.org>,
-	Kairui Song <kasong@tencent.com>,
-	Christian Brauner <brauner@kernel.org>,
-	Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>,
-	Theodore Ts'o <tytso@mit.edu>, Jaegeuk Kim <jaegeuk@kernel.org>,
-	Chao Yu <chao@kernel.org>, Trond Myklebust <trondmy@kernel.org>,
-	Anna Schumaker <anna@kernel.org>,
-	Namjae Jeon <linkinjeon@kernel.org>,
-	Hyunchul Lee <hyc.lee@gmail.com>, Steve French <sfrench@samba.org>,
-	Paulo Alcantara <pc@manguebit.org>,
-	Carlos Maiolino <cem@kernel.org>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Naohiro Aota <naohiro.aota@wdc.com>, linux-xfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-doc@vger.kernel.org,
-	linux-mm@kvack.org, linux-block@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-f2fs-devel@lists.sourceforge.net, linux-nfs@vger.kernel.org,
-	linux-cifs@vger.kernel.org
-Subject: Re: [PATCH 12/12] swap: move swap_info_struct to mm/swap.h
-Message-ID: <20260512171028.GM9555@frogsfrogsfrogs>
-References: <20260512053625.2950900-1-hch@lst.de>
- <20260512053625.2950900-13-hch@lst.de>
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="UD/jjqDy";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="0abc2jqO";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="UD/jjqDy";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="0abc2jqO"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 399126B16D;
+	Tue, 12 May 2026 17:35:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1778607326;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=PxtZMEHIr+GRXZUkZG63Zsk6iE5I8cc2EfIYoHG+6GI=;
+	b=UD/jjqDyadYNAP8rSUGqD1XRqEYyK4vOrtniZF4kS6il8APXNjEnMWJb+by5mrkeEniqfJ
+	c7BRvhiVEOnMoivmpeyYB4CRRGUnXYPhIXvV5NKRY9NfzLj5KZgVQNZFHu8dmZkOeMGhMu
+	wzdHkbPx8DPrZ0dJXkP5smgGrcwpsJk=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1778607326;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=PxtZMEHIr+GRXZUkZG63Zsk6iE5I8cc2EfIYoHG+6GI=;
+	b=0abc2jqOo2t5PAr3i2XJWRpu+uoeHXGQTzs7ecZZmeMirnQBUpzuItUTIPgEOfM5biOG0v
+	wXz3dUqUxT+1shBg==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1778607326;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=PxtZMEHIr+GRXZUkZG63Zsk6iE5I8cc2EfIYoHG+6GI=;
+	b=UD/jjqDyadYNAP8rSUGqD1XRqEYyK4vOrtniZF4kS6il8APXNjEnMWJb+by5mrkeEniqfJ
+	c7BRvhiVEOnMoivmpeyYB4CRRGUnXYPhIXvV5NKRY9NfzLj5KZgVQNZFHu8dmZkOeMGhMu
+	wzdHkbPx8DPrZ0dJXkP5smgGrcwpsJk=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1778607326;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=PxtZMEHIr+GRXZUkZG63Zsk6iE5I8cc2EfIYoHG+6GI=;
+	b=0abc2jqOo2t5PAr3i2XJWRpu+uoeHXGQTzs7ecZZmeMirnQBUpzuItUTIPgEOfM5biOG0v
+	wXz3dUqUxT+1shBg==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1AADD593A9;
+	Tue, 12 May 2026 17:35:26 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id LdrLBd5kA2oUTgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 12 May 2026 17:35:26 +0000
+Date: Tue, 12 May 2026 19:35:24 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/5] btrfs: remove folio ordered flag
+Message-ID: <20260512173524.GL2558453@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1778131118.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -59,288 +87,97 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260512053625.2950900-13-hch@lst.de>
+In-Reply-To: <cover.1778131118.git.wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Flag: NO
+X-Spam-Score: -4.00
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	RCPT_COUNT_TWO(0.00)[2];
+	TO_DN_SOME(0.00)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,twin.jikos.cz:mid,suse.cz:replyto];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[twin.jikos.cz:mid,suse.cz:replyto,imap1.dmz-prg2.suse.org:helo];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Level: 
 
-On Tue, May 12, 2026 at 07:35:28AM +0200, Christoph Hellwig wrote:
-> swap_info_struct is now internal to the MM subsystem, so remove it from
-> the public header.
+On Thu, May 07, 2026 at 02:59:16PM +0930, Qu Wenruo wrote:
+> [CHANGELOG]
+> RFC->v1:
+> - Replace the folio_test_ordered() inside extent_writepage_io()
+>   Now do the check inside alloc_new_bio(), which is already doing the OE
+>   search.
 > 
+>   Now we can detect dirty blocks without an OE at per-block level, much
+>   better than the previous per-folio level checks, and without any extra
+>   overhead.
+> 
+> Btrfs has a long history using an internal folio flag called ordered,
+> which is to indicate if an fs block is covered by an ordered extent.
+> 
+> However this means we need to synchronize between ordered extents, which
+> are managed by a per-inode ordered tree, and folio flag/subpage bitmap.
+> 
+> Furthermore with huge folio support, the ordered bitmap can be as large
+> as 64 bytes (512 bits), which is not a small amount.
+> 
+> The series is going to remove folio ordered flag completely, along with
+> the ordered subpage bitmap.
+> 
+> Most call sites of folio_test_ordered() are just inside ASSERT()s, so
+> it's not too hard to remove them.
+> 
+> There are two call sites that utilizing *_folio_test_ordered():
+> 
+> - Inside extent_writepage_io()
+>   The warning left by the legacy COW fixup mechanism.
+>   The 1st patch is to introduce a more reliable way to detect dirty
+>   blocks without an OE, other than checking the folio ordered flag, now
+>   it's doing a per-block level check without introducing new overhead.
+> 
+> - Inside btrfs_invalidate_folio()
+>   We use ordered flag to check if we can skip an ordered extent.
+>   This is worked around by using the fact that we have waited for
+>   writeback of the folio, so that endio should have already finished for
+>   the writeback range. Then check dirty flags to determine if we can skip
+>   the OE range.
+> 
+>   To get a reliable dirty flag for both sub-folio and full-folio cases, we
+>   can not clear the folio dirty flag early, so the 2nd patch is
+>   introduced to change the folio dirty flag clearing timing, then the
+>   3rd patch can remove the folio_test_ordered() usage.
+> 
+> Then the 4th patch is to remove the remaining folio_test_ordered()
+> usage, and finally we can remove the whole ordered flag/subpage bitmap
+> completely.
+> 
+> I tried to hide the ordered flag/bitmap behind DEBUG, but unfortunately
+> the subpage bitmap macros are not that easy to be tweaked to handle
+> conditional ordered flags.
+> 
+> So the ordered flag/bitmap must be either there, or be completely gone.
+> I hope enough test runs will cover the removed ASSERT()s.
+> 
+> Qu Wenruo (5):
+>   btrfs: detect dirty blocks without an ordered extent more reliably
+>   btrfs: unify folio dirty flag clearing
+>   btrfs: use dirty flag to check if an ordered extent needs to be
+>     truncated
+>   btrfs: remove folio_test_ordered() usage
+>   btrfs: remove folio ordered flag and subpage bitmap
 
-Even more cleaning out of swap.h is nice, so
-Reviewed-by: "Darrick J. Wong" <djwong@kernel.org>
-
---D
-
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> ---
->  include/linux/swap.h | 98 +-------------------------------------------
->  mm/swap.h            | 92 +++++++++++++++++++++++++++++++++++++++++
->  2 files changed, 94 insertions(+), 96 deletions(-)
-> 
-> diff --git a/include/linux/swap.h b/include/linux/swap.h
-> index 95237ee065c2..31eef9b74949 100644
-> --- a/include/linux/swap.h
-> +++ b/include/linux/swap.h
-> @@ -16,9 +16,9 @@
->  #include <uapi/linux/mempolicy.h>
->  #include <asm/page.h>
->  
-> -struct notifier_block;
-> -
->  struct bio;
-> +struct notifier_block;
-> +struct swap_info_struct;
->  
->  #define SWAP_FLAG_PREFER	0x8000	/* set if swap priority specified */
->  #define SWAP_FLAG_PRIO_MASK	0x7fff
-> @@ -178,29 +178,6 @@ struct sysinfo;
->  struct writeback_control;
->  struct zone;
->  
-> -/*
-> - * Max bad pages in the new format..
-> - */
-> -#define MAX_SWAP_BADPAGES \
-> -	((offsetof(union swap_header, magic.magic) - \
-> -	  offsetof(union swap_header, info.badpages)) / sizeof(int))
-> -
-> -enum {
-> -	SWP_USED	= (1 << 0),	/* is slot in swap_info[] used? */
-> -	SWP_WRITEOK	= (1 << 1),	/* ok to write to this swap?	*/
-> -	SWP_DISCARDABLE = (1 << 2),	/* blkdev support discard */
-> -	SWP_DISCARDING	= (1 << 3),	/* now discarding a free cluster */
-> -	SWP_SOLIDSTATE	= (1 << 4),	/* blkdev seeks are cheap */
-> -	SWP_BLKDEV	= (1 << 6),	/* its a block device */
-> -	SWP_ACTIVATED	= (1 << 7),	/* set after swap_activate success */
-> -	SWP_FS_OPS	= (1 << 8),	/* swapfile operations go through fs */
-> -	SWP_AREA_DISCARD = (1 << 9),	/* single-time swap area discards */
-> -	SWP_PAGE_DISCARD = (1 << 10),	/* freed swap page-cluster discards */
-> -	SWP_STABLE_WRITES = (1 << 11),	/* no overwrite PG_writeback pages */
-> -	SWP_SYNCHRONOUS_IO = (1 << 12),	/* synchronous IO is efficient */
-> -					/* add others here before... */
-> -};
-> -
->  #define SWAP_CLUSTER_MAX 32UL
->  #define SWAP_CLUSTER_MAX_SKIPPED (SWAP_CLUSTER_MAX << 10)
->  #define COMPACT_CLUSTER_MAX SWAP_CLUSTER_MAX
-> @@ -219,56 +196,6 @@ enum {
->  #define SWAP_NR_ORDERS		1
->  #endif
->  
-> -/*
-> - * We keep using same cluster for rotational device so IO will be sequential.
-> - * The purpose is to optimize SWAP throughput on these device.
-> - */
-> -struct swap_sequential_cluster {
-> -	unsigned int next[SWAP_NR_ORDERS]; /* Likely next allocation offset */
-> -};
-> -
-> -/*
-> - * The in-memory structure used to track swap areas.
-> - */
-> -struct swap_info_struct {
-> -	struct percpu_ref users;	/* indicate and keep swap device valid. */
-> -	unsigned long	flags;		/* SWP_USED etc: see above */
-> -	signed short	prio;		/* swap priority of this type */
-> -	struct plist_node list;		/* entry in swap_active_head */
-> -	signed char	type;		/* strange name for an index */
-> -	unsigned int	max;		/* size of this swap device */
-> -	unsigned long *zeromap;		/* kvmalloc'ed bitmap to track zero pages */
-> -	struct swap_cluster_info *cluster_info; /* cluster info. Only for SSD */
-> -	struct list_head free_clusters; /* free clusters list */
-> -	struct list_head full_clusters; /* full clusters list */
-> -	struct list_head nonfull_clusters[SWAP_NR_ORDERS];
-> -					/* list of cluster that contains at least one free slot */
-> -	struct list_head frag_clusters[SWAP_NR_ORDERS];
-> -					/* list of cluster that are fragmented or contented */
-> -	unsigned int pages;		/* total of usable pages of swap */
-> -	atomic_long_t inuse_pages;	/* number of those currently in use */
-> -	struct swap_sequential_cluster *global_cluster; /* Use one global cluster for rotating device */
-> -	spinlock_t global_cluster_lock;	/* Serialize usage of global cluster */
-> -	struct rb_root swap_extent_root;/* root of the swap extent rbtree */
-> -	struct block_device *bdev;	/* swap device or bdev of swap file */
-> -	struct file *swap_file;		/* seldom referenced */
-> -	struct completion comp;		/* seldom referenced */
-> -	spinlock_t lock;		/*
-> -					 * protect map scan related fields like
-> -					 * inuse_pages and all cluster lists.
-> -					 * Other fields are only changed
-> -					 * at swapon/swapoff, so are protected
-> -					 * by swap_lock. changing flags need
-> -					 * hold this lock and swap_lock. If
-> -					 * both locks need hold, hold swap_lock
-> -					 * first.
-> -					 */
-> -	struct work_struct discard_work; /* discard worker */
-> -	struct work_struct reclaim_work; /* reclaim worker */
-> -	struct list_head discard_clusters; /* discard clusters list */
-> -	struct plist_node avail_list;   /* entry in swap_avail_head */
-> -};
-> -
->  static inline swp_entry_t page_swap_entry(struct page *page)
->  {
->  	struct folio *folio = page_folio(page);
-> @@ -423,10 +350,7 @@ int find_first_swap(dev_t *device);
->  extern unsigned int count_swap_pages(int, int);
->  extern sector_t swapdev_block(int, pgoff_t);
->  extern int __swap_count(swp_entry_t entry);
-> -extern bool swap_entry_swapped(struct swap_info_struct *si, swp_entry_t entry);
->  extern int swp_swapcount(swp_entry_t entry);
-> -struct backing_dev_info;
-> -extern struct swap_info_struct *get_swap_device(swp_entry_t entry);
->  sector_t swap_folio_sector(struct folio *folio);
->  
->  /*
-> @@ -452,20 +376,7 @@ bool folio_free_swap(struct folio *folio);
->  swp_entry_t swap_alloc_hibernation_slot(int type);
->  void swap_free_hibernation_slot(swp_entry_t entry);
->  
-> -static inline void put_swap_device(struct swap_info_struct *si)
-> -{
-> -	percpu_ref_put(&si->users);
-> -}
-> -
->  #else /* CONFIG_SWAP */
-> -static inline struct swap_info_struct *get_swap_device(swp_entry_t entry)
-> -{
-> -	return NULL;
-> -}
-> -
-> -static inline void put_swap_device(struct swap_info_struct *si)
-> -{
-> -}
->  
->  #define get_nr_swap_pages()			0L
->  #define total_swap_pages			0L
-> @@ -497,11 +408,6 @@ static inline int __swap_count(swp_entry_t entry)
->  	return 0;
->  }
->  
-> -static inline bool swap_entry_swapped(struct swap_info_struct *si, swp_entry_t entry)
-> -{
-> -	return false;
-> -}
-> -
->  static inline int swp_swapcount(swp_entry_t entry)
->  {
->  	return 0;
-> diff --git a/mm/swap.h b/mm/swap.h
-> index a77016f2423b..70974495bf15 100644
-> --- a/mm/swap.h
-> +++ b/mm/swap.h
-> @@ -8,6 +8,79 @@ struct swap_iocb;
->  
->  extern int page_cluster;
->  
-> +/*
-> + * We keep using same cluster for rotational device so IO will be sequential.
-> + * The purpose is to optimize SWAP throughput on these device.
-> + */
-> +struct swap_sequential_cluster {
-> +	unsigned int next[SWAP_NR_ORDERS]; /* Likely next allocation offset */
-> +};
-> +
-> +/*
-> + * The in-memory structure used to track swap areas.
-> + */
-> +struct swap_info_struct {
-> +	struct percpu_ref users;	/* indicate and keep swap device valid. */
-> +	unsigned long	flags;		/* SWP_USED etc: see above */
-> +	signed short	prio;		/* swap priority of this type */
-> +	struct plist_node list;		/* entry in swap_active_head */
-> +	signed char	type;		/* strange name for an index */
-> +	unsigned int	max;		/* size of this swap device */
-> +	unsigned long *zeromap;		/* kvmalloc'ed bitmap to track zero pages */
-> +	struct swap_cluster_info *cluster_info; /* cluster info. Only for SSD */
-> +	struct list_head free_clusters; /* free clusters list */
-> +	struct list_head full_clusters; /* full clusters list */
-> +	struct list_head nonfull_clusters[SWAP_NR_ORDERS];
-> +					/* list of cluster that contains at least one free slot */
-> +	struct list_head frag_clusters[SWAP_NR_ORDERS];
-> +					/* list of cluster that are fragmented or contented */
-> +	unsigned int pages;		/* total of usable pages of swap */
-> +	atomic_long_t inuse_pages;	/* number of those currently in use */
-> +	struct swap_sequential_cluster *global_cluster; /* Use one global cluster for rotating device */
-> +	spinlock_t global_cluster_lock;	/* Serialize usage of global cluster */
-> +	struct rb_root swap_extent_root;/* root of the swap extent rbtree */
-> +	struct block_device *bdev;	/* swap device or bdev of swap file */
-> +	struct file *swap_file;		/* seldom referenced */
-> +	struct completion comp;		/* seldom referenced */
-> +	spinlock_t lock;		/*
-> +					 * protect map scan related fields like
-> +					 * inuse_pages and all cluster lists.
-> +					 * Other fields are only changed
-> +					 * at swapon/swapoff, so are protected
-> +					 * by swap_lock. changing flags need
-> +					 * hold this lock and swap_lock. If
-> +					 * both locks need hold, hold swap_lock
-> +					 * first.
-> +					 */
-> +	struct work_struct discard_work; /* discard worker */
-> +	struct work_struct reclaim_work; /* reclaim worker */
-> +	struct list_head discard_clusters; /* discard clusters list */
-> +	struct plist_node avail_list;   /* entry in swap_avail_head */
-> +};
-> +
-> +/*
-> + * Max bad pages in the new format..
-> + */
-> +#define MAX_SWAP_BADPAGES \
-> +	((offsetof(union swap_header, magic.magic) - \
-> +	  offsetof(union swap_header, info.badpages)) / sizeof(int))
-> +
-> +enum {
-> +	SWP_USED	= (1 << 0),	/* is slot in swap_info[] used? */
-> +	SWP_WRITEOK	= (1 << 1),	/* ok to write to this swap?	*/
-> +	SWP_DISCARDABLE = (1 << 2),	/* blkdev support discard */
-> +	SWP_DISCARDING	= (1 << 3),	/* now discarding a free cluster */
-> +	SWP_SOLIDSTATE	= (1 << 4),	/* blkdev seeks are cheap */
-> +	SWP_BLKDEV	= (1 << 6),	/* its a block device */
-> +	SWP_ACTIVATED	= (1 << 7),	/* set after swap_activate success */
-> +	SWP_FS_OPS	= (1 << 8),	/* swapfile operations go through fs */
-> +	SWP_AREA_DISCARD = (1 << 9),	/* single-time swap area discards */
-> +	SWP_PAGE_DISCARD = (1 << 10),	/* freed swap page-cluster discards */
-> +	SWP_STABLE_WRITES = (1 << 11),	/* no overwrite PG_writeback pages */
-> +	SWP_SYNCHRONOUS_IO = (1 << 12),	/* synchronous IO is efficient */
-> +					/* add others here before... */
-> +};
-> +
->  #ifdef CONFIG_THP_SWAP
->  #define SWAPFILE_CLUSTER	HPAGE_PMD_NR
->  #define swap_entry_order(order)	(order)
-> @@ -352,6 +425,13 @@ static inline int non_swapcache_batch(swp_entry_t entry, int max_nr)
->  	return i;
->  }
->  
-> +bool swap_entry_swapped(struct swap_info_struct *si, swp_entry_t entry);
-> +struct swap_info_struct *get_swap_device(swp_entry_t entry);
-> +static inline void put_swap_device(struct swap_info_struct *si)
-> +{
-> +	percpu_ref_put(&si->users);
-> +}
-> +
->  #else /* CONFIG_SWAP */
->  struct swap_iocb;
->  static inline struct swap_cluster_info *swap_cluster_lock(
-> @@ -498,5 +578,17 @@ static inline int non_swapcache_batch(swp_entry_t entry, int max_nr)
->  {
->  	return 0;
->  }
-> +static inline bool swap_entry_swapped(struct swap_info_struct *si,
-> +		swp_entry_t entry)
-> +{
-> +	return false;
-> +}
-> +static inline struct swap_info_struct *get_swap_device(swp_entry_t entry)
-> +{
-> +	return NULL;
-> +}
-> +static inline void put_swap_device(struct swap_info_struct *si)
-> +{
-> +}
->  #endif /* CONFIG_SWAP */
->  #endif /* _MM_SWAP_H */
-> -- 
-> 2.53.0
-> 
-> 
+Please add it to for-next.

@@ -1,183 +1,113 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fhigh-a6-smtp.messagingengine.com (fhigh-a6-smtp.messagingengine.com [103.168.172.157])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12F963DC86D
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 May 2026 17:35:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1E0E035979
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 May 2026 19:35:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.157
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778607329; cv=none; b=b3Udnow8AYhqbklgYRcpXRHdtp0oIWMn8jePSobhPoZoMvqmb0T9e4vHueL42UUN3gy+0+DjFh/cUFqGEDvZJzWtu0qCTbX7dEKyHZqkFFy6RatUp4RCWiKELpBSxWbUNPjzvFfRMyljSdvgbDFoyQNbsX6Y5qNIYpcW/51o3/0=
+	t=1778614516; cv=none; b=eKhoPIQj6zeocSr+107YTP1/1WALDMM3T32He4vGRU76+QsBJ0ygmdJiEPmagYsSg5NeYXrJ29SPF/vJ0Ydl7kUt5j+sOTBPC50ss85Y4Up4Js6ZJSGSIsAhj9Ezn8+1Px6Oo7RxP891xrqDH5Z6xKAuJTHKbWOsc8+o5Kyrbss=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778607329; c=relaxed/simple;
-	bh=nDWPzYH9MhON6AmEkgJQI9LLViEVtbjDwSPtnDd8GSM=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=dMVcbH34LD1klAVKJyDAPJwQlp8H9avkk9Ffkmweb0Hf0hOqk5RidXFCjqNbW4sA6z0DnIayTHZ3Ez1QI/1kO08CSt7tmizDWcBSmtHxAWhJi9Fwyep8pASniBkCnHE7VwZLbdWuut7PDpS4ReAFv6W6dFBdmjW6dLMriMAFwoQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=UD/jjqDy; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=0abc2jqO; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=UD/jjqDy; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=0abc2jqO; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1778614516; c=relaxed/simple;
+	bh=8HDUTIHkYxnn+JH8IMlPoWDfIaxltilBPHP9U7ATRgQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=bWrCLulFyOulRWyAEvsG892Kc+okKKqqu3haJwue7+PnvKjtC9S5zyy8C/0deKNwiUAX2MI+73pBJx6SMrKyoGaq1CnZw92n4OVjVVk0on7i1CGamIJAgBMcVV2xLjTzIqinfd2AgdVRhl0Wvd5XOoaj22eZy0+j6WGj92Yvauk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=IDDbWStX; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=f68/9bpk; arc=none smtp.client-ip=103.168.172.157
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="UD/jjqDy";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="0abc2jqO";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="UD/jjqDy";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="0abc2jqO"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 399126B16D;
-	Tue, 12 May 2026 17:35:26 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1778607326;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PxtZMEHIr+GRXZUkZG63Zsk6iE5I8cc2EfIYoHG+6GI=;
-	b=UD/jjqDyadYNAP8rSUGqD1XRqEYyK4vOrtniZF4kS6il8APXNjEnMWJb+by5mrkeEniqfJ
-	c7BRvhiVEOnMoivmpeyYB4CRRGUnXYPhIXvV5NKRY9NfzLj5KZgVQNZFHu8dmZkOeMGhMu
-	wzdHkbPx8DPrZ0dJXkP5smgGrcwpsJk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1778607326;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PxtZMEHIr+GRXZUkZG63Zsk6iE5I8cc2EfIYoHG+6GI=;
-	b=0abc2jqOo2t5PAr3i2XJWRpu+uoeHXGQTzs7ecZZmeMirnQBUpzuItUTIPgEOfM5biOG0v
-	wXz3dUqUxT+1shBg==
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1778607326;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PxtZMEHIr+GRXZUkZG63Zsk6iE5I8cc2EfIYoHG+6GI=;
-	b=UD/jjqDyadYNAP8rSUGqD1XRqEYyK4vOrtniZF4kS6il8APXNjEnMWJb+by5mrkeEniqfJ
-	c7BRvhiVEOnMoivmpeyYB4CRRGUnXYPhIXvV5NKRY9NfzLj5KZgVQNZFHu8dmZkOeMGhMu
-	wzdHkbPx8DPrZ0dJXkP5smgGrcwpsJk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1778607326;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PxtZMEHIr+GRXZUkZG63Zsk6iE5I8cc2EfIYoHG+6GI=;
-	b=0abc2jqOo2t5PAr3i2XJWRpu+uoeHXGQTzs7ecZZmeMirnQBUpzuItUTIPgEOfM5biOG0v
-	wXz3dUqUxT+1shBg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1AADD593A9;
-	Tue, 12 May 2026 17:35:26 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id LdrLBd5kA2oUTgAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 12 May 2026 17:35:26 +0000
-Date: Tue, 12 May 2026 19:35:24 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/5] btrfs: remove folio ordered flag
-Message-ID: <20260512173524.GL2558453@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1778131118.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="IDDbWStX";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="f68/9bpk"
+Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
+	by mailfhigh.phl.internal (Postfix) with ESMTP id 21AB114001A1;
+	Tue, 12 May 2026 15:35:12 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-06.internal (MEProxy); Tue, 12 May 2026 15:35:12 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-transfer-encoding:content-type:date:date:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to; s=fm1; t=1778614512; x=1778700912; bh=HU5wTAN9SyF8zKObufLZF
+	FYjtL18S2I5R0wi2H8VYog=; b=IDDbWStXW3pQO2Wf35DHOUpZbThw7qJGcVULt
+	cTZV+aL1DAfKAlniQR2AHlHMYT91Qdw9kiLWcjyncYiM8+FwoaM/KXAnJLKytUi6
+	K7nTG3QQYJpMGCZVFGJeK2WLAHuABdlDvaWSRyKvauSjYTitq76Ic5ekhfQFn2gD
+	aVrpA2OFsZWHSUxn17Jeb6cWpsL/OpJBMUJHnu14pWXtN8q2UA8Mh7URq/dZVecy
+	zuWtOA0GjcROp6ZQbQkq/ZMQcY9/tthfgvw9tCc6D8Ax6/IYIDKFqMjlpDw7p60I
+	+Q8d/IaRXrIbN00tyj5JJjuZjknG0giNij+rt2StQoz2sLxiQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:date:date:feedback-id:feedback-id:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
+	1778614512; x=1778700912; bh=HU5wTAN9SyF8zKObufLZFFYjtL18S2I5R0w
+	i2H8VYog=; b=f68/9bpk6cbqUdsn6odGe4Qfpl1tLXNhNS4Wqx0y7FQZvLBnrp+
+	HAblqpBIGy+2P0GuEtvb6Cu7YdQ+r/st84DOy/n1bn7cVfejOknslkqL68Vh+lpM
+	ctZVLXWMvxyuWyqCb0iP9wtfAAgZUB+igCMLTvVriBCDWst1JoBGjYPolm1gfbKd
+	NDHkKnzWQK9T/bTzEgze73i6Tst5DdPOWFEtVHrnNmpntAwbFlOWBKw9c9Uzf/Sr
+	tEsLe//o0uZo5DyKJv4i4K6B5fL/0zXbfoUau0eaprKDaBaZ/UUglumlryOewQdq
+	Nkv4jeM6ROmJe2pwYtIsgF3t7E1UmEujpwg==
+X-ME-Sender: <xms:74ADamRz4Ks39lT0Zrj0o3ZniQIM2BxutxSnTiyDjqOGwUE4AHfk9w>
+    <xme:74ADajPxPqDHB3Q2NKUWwgZgeL8DgvzsT3GFm8BXyqoPXt7rfmEd6v7QzvwLLFQzZ
+    ikMDSCQyRRkqCPrkzA0ZWa2yBO3Wra-loJKTzGpKMNTywRPfUiCzgk>
+X-ME-Received: <xmr:74ADahONApHSalFjkO0fHh3GQ98UVGZL9zg1IlVBi24ywmyEeLir60P73PTJKw-u-2QgnABaB9tFqHXndcY0_ZCsphU>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdduvddvieehucetufdoteggodetrf
+    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
+    rghilhhouhhtmecufedttdenucenucfjughrpefhvfevufffkffoggfgsedtkeertdertd
+    dtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheq
+    necuggftrfgrthhtvghrnhepieegleehjeelfeeifeeiuefhfefgvefgkedtjefhiedvve
+    etgfduleejheeifffgnecuffhomhgrihhnpehkvghrnhgvlhdrohhrghenucevlhhushht
+    vghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuhhrrd
+    hiohdpnhgspghrtghpthhtohepfedpmhhouggvpehsmhhtphhouhhtpdhrtghpthhtohep
+    lhhinhhugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhope
+    hkvghrnhgvlhdqthgvrghmsehfsgdrtghomhdprhgtphhtthhopehmrghrtgesmhgvrhhl
+    ihhnshdrohhrgh
+X-ME-Proxy: <xmx:74ADarumI3neKnYlbn0PNXIWGQ90Px1nBOKtrOIRAsqyVYTY5SVxyw>
+    <xmx:74ADajV7v-Sh26T8-IHDG7Xd9Ic990advt94blzYJC0zvg6_QSi3Vg>
+    <xmx:74ADaruUpgNATs1Whbq-3eaJGl1GsHQ07d4DgBO0nwyUungtEKGsXQ>
+    <xmx:74ADanVfxOu50NbeDMQFeOFcF0yHkxUZuGqtHTzBQxF4fahxT7gw1A>
+    <xmx:8IADahzBprDCsHh00iyzp555zTmm7x0v8mI1nY0KajG5kd5Zk9cUmi3u>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
+ 12 May 2026 15:35:11 -0400 (EDT)
+From: Boris Burkov <boris@bur.io>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Cc: marc@merlins.org
+Subject: [PATCH 0/4] btrfs: squota lifetime fixes
+Date: Tue, 12 May 2026 12:34:52 -0700
+Message-ID: <cover.1778613519.git.boris@bur.io>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1778131118.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Flag: NO
-X-Spam-Score: -4.00
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	TO_DN_SOME(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,twin.jikos.cz:mid,suse.cz:replyto];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[twin.jikos.cz:mid,suse.cz:replyto,imap1.dmz-prg2.suse.org:helo];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Spam-Level: 
+Content-Transfer-Encoding: 8bit
 
-On Thu, May 07, 2026 at 02:59:16PM +0930, Qu Wenruo wrote:
-> [CHANGELOG]
-> RFC->v1:
-> - Replace the folio_test_ordered() inside extent_writepage_io()
->   Now do the check inside alloc_new_bio(), which is already doing the OE
->   search.
-> 
->   Now we can detect dirty blocks without an OE at per-block level, much
->   better than the previous per-folio level checks, and without any extra
->   overhead.
-> 
-> Btrfs has a long history using an internal folio flag called ordered,
-> which is to indicate if an fs block is covered by an ordered extent.
-> 
-> However this means we need to synchronize between ordered extents, which
-> are managed by a per-inode ordered tree, and folio flag/subpage bitmap.
-> 
-> Furthermore with huge folio support, the ordered bitmap can be as large
-> as 64 bytes (512 bits), which is not a small amount.
-> 
-> The series is going to remove folio ordered flag completely, along with
-> the ordered subpage bitmap.
-> 
-> Most call sites of folio_test_ordered() are just inside ASSERT()s, so
-> it's not too hard to remove them.
-> 
-> There are two call sites that utilizing *_folio_test_ordered():
-> 
-> - Inside extent_writepage_io()
->   The warning left by the legacy COW fixup mechanism.
->   The 1st patch is to introduce a more reliable way to detect dirty
->   blocks without an OE, other than checking the folio ordered flag, now
->   it's doing a per-block level check without introducing new overhead.
-> 
-> - Inside btrfs_invalidate_folio()
->   We use ordered flag to check if we can skip an ordered extent.
->   This is worked around by using the fact that we have waited for
->   writeback of the folio, so that endio should have already finished for
->   the writeback range. Then check dirty flags to determine if we can skip
->   the OE range.
-> 
->   To get a reliable dirty flag for both sub-folio and full-folio cases, we
->   can not clear the folio dirty flag early, so the 2nd patch is
->   introduced to change the folio dirty flag clearing timing, then the
->   3rd patch can remove the folio_test_ordered() usage.
-> 
-> Then the 4th patch is to remove the remaining folio_test_ordered()
-> usage, and finally we can remove the whole ordered flag/subpage bitmap
-> completely.
-> 
-> I tried to hide the ordered flag/bitmap behind DEBUG, but unfortunately
-> the subpage bitmap macros are not that easy to be tweaked to handle
-> conditional ordered flags.
-> 
-> So the ordered flag/bitmap must be either there, or be completely gone.
-> I hope enough test runs will cover the removed ASSERT()s.
-> 
-> Qu Wenruo (5):
->   btrfs: detect dirty blocks without an ordered extent more reliably
->   btrfs: unify folio dirty flag clearing
->   btrfs: use dirty flag to check if an ordered extent needs to be
->     truncated
->   btrfs: remove folio_test_ordered() usage
->   btrfs: remove folio ordered flag and subpage bitmap
+A recent report of read-only filesystems since enabling squotas:
 
-Please add it to for-next.
+https://lore.kernel.org/linux-btrfs/adnBhWfJQ1n3hZC8@merlins.org/
+
+led me to investigate a handful of issues in squotas and find some trivial and
+not so trivial bugs in their lifetime management. The aim of the series is to
+strengthen enforcement of the invariant: "a squota qgroup must outlast extents
+that are accounted to it".
+
+This series consists of two fixes to squota lifetime bugs and two patches that
+reduce the consequences of errors in lifetime management from full fs goes
+read-only abort to "warning and inaccurate squotas which can be deleted
+eventually"
+
+Additional improvements to btrfs check and fstests to follow.
+
+Boris Burkov (4):
+  btrfs: check for subvolume before deleting squota qgroup
+  btrfs: fix squota accounting during enable generation
+  btrfs: clamp to avoid squota underflow
+  btrfs: swallow btrfs_record_squota_delta() enoent
+
+ fs/btrfs/fs.h     |  1 +
+ fs/btrfs/qgroup.c | 99 ++++++++++++++++++++++++++++++++---------------
+ 2 files changed, 68 insertions(+), 32 deletions(-)
+
+-- 
+2.54.0
+

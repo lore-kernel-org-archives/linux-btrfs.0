@@ -1,58 +1,58 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AB9A53ED5D9
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 08:55:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1533E3EDAA8
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 08:55:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778662511; cv=none; b=LABmsxlZPBuHYVaHZxM8mPdMcRs5jYuaIzzVrloai3PezDbMGq7NTLKCWrflS6TPEuO/5ZbrtfRqQ7nFaOvLZV1ggzu57SXf68nKAPmbU2duhNJOml2yOhwcvLX5TeO8a9dMesUj8T2N6H+09Cr2XdWpl3JH0NDtOeYNhwmARyQ=
+	t=1778662520; cv=none; b=FFYSY7B1t3WLLqpi/GcN6k2EoqXhtpePLkxFWATd9A9YwKXrd4u7zYzzjXAUpWCpakLwBjCmwt8qd+hj2mVVbfdOKfBipgHAOFtaZFYa1LQluNL6V4X3SF9vx9/QcG4mHfSnHRZMLFuYN/6Lu1ot4zeZ8l6mBgOreQ1QU6FLn6o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778662511; c=relaxed/simple;
-	bh=94P+SRsXxZhohd1vsPmoPPpQ5SEJhyeoZt4KF1gpwaI=;
+	s=arc-20240116; t=1778662520; c=relaxed/simple;
+	bh=oTx+s53o9QGSa978UB27L5OMElk2vZ4l8K3wpgDRjfw=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=sAZevMjFO7MZJZUxNqv/A63SwxTfeOB4El49W7oh87BQOYTA+KOa4mAICms4Ef23o+VeVKZXvJ/TyCBDXGloBBFcypEH0ZT3GvX5OvLJpPB9MesVzjzHYNfdgc8K/1tZwVu0lKBFdkmNJLDuLu57qYNejgu4QyviEER9nookR50=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=l/fYUPou; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=VGzMuO6a; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=KqozpllhxbIaDttTrmteJzvpG2JEu9rA5Qs3B2K2AAM6hD6WH/Xy8eDyeNG1+UB8gl2j7z3UGtJmboOoV0avYnW+p9XMhWp+mexPuCW1/m4CVmUxW8s/M+B6QmIUbHbdrK4J/cftj6ZLj8uC0npT8ldQJTm9E/fJPJci9uLp8kM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=VafArh8L; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=VafArh8L; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="l/fYUPou";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="VGzMuO6a"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="VafArh8L";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="VafArh8L"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id EFAE476652;
-	Wed, 13 May 2026 08:54:27 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 558B0625AA;
+	Wed, 13 May 2026 08:54:25 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778662468; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1778662465; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=sWReB9WTng1IwqRCJwegtHT96f7uSBkqcgWgR62g8Tk=;
-	b=l/fYUPouAmADVq4AzaOCYFXE2qqS0DntYS3lwQJ3UUN+mrwP1bAuxFGiMPl28szM+9H5aX
-	OdRrtUNEg1qDrl4dE/aXew7N5i8OavFf8/X+yzy31AAirVQCIPMiLfqe3Onw4ZVI7p1N9P
-	Yxy8CU4RW6VszNRge7RQnbVba2D2OgY=
-Authentication-Results: smtp-out2.suse.de;
+	bh=Bh7wEy+EWi6DcUGs41lBk5quKr6fivESv2tl2GRiB7s=;
+	b=VafArh8L4kcmJeThd0uZrsYhPwq7S3ILoNT6uAiAmL8nhUtvnKSUMb8UbuCyetopVF/ptu
+	+HdmTi25kb4xhZl2Z5buoMbmiBBEfi2J56nSBZYZ5PB5YXdHo25+5o1ZzC4pU7qHpDwcwk
+	cl8tGsCANIjC3WCdaDicIV+Qb3QXR4E=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778662467; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1778662465; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=sWReB9WTng1IwqRCJwegtHT96f7uSBkqcgWgR62g8Tk=;
-	b=VGzMuO6aG4DJdh/rpAFGRJ+cC0RHxcjmO6mEQOwaiJJ0HPaEPBsmfCg+ur/pcImN1cFd3g
-	AraHIRQdp4o+QYOOVyP6urFgjZyzzNfD09Nc0qZ4wkxvXVRlulWz/sKp/p21KfiOU7+od+
-	khZRGKITjVToOJPc1XaEGCE6YtzESMQ=
+	bh=Bh7wEy+EWi6DcUGs41lBk5quKr6fivESv2tl2GRiB7s=;
+	b=VafArh8L4kcmJeThd0uZrsYhPwq7S3ILoNT6uAiAmL8nhUtvnKSUMb8UbuCyetopVF/ptu
+	+HdmTi25kb4xhZl2Z5buoMbmiBBEfi2J56nSBZYZ5PB5YXdHo25+5o1ZzC4pU7qHpDwcwk
+	cl8tGsCANIjC3WCdaDicIV+Qb3QXR4E=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CBA11593A9;
-	Wed, 13 May 2026 08:54:27 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2E56B593A9;
+	Wed, 13 May 2026 08:54:25 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id eF4+MUM8BGpERwAAD6G6ig
-	(envelope-from <neelx@suse.com>); Wed, 13 May 2026 08:54:27 +0000
+	id yFXNCkE8BGpERwAAD6G6ig
+	(envelope-from <neelx@suse.com>); Wed, 13 May 2026 08:54:25 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: Chris Mason <clm@fb.com>,
 	Josef Bacik <josef@toxicpanda.com>,
@@ -66,10 +66,11 @@ Cc: linux-block@vger.kernel.org,
 	linux-fscrypt@vger.kernel.org,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
+	Omar Sandoval <osandov@osandov.com>,
 	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v7 14/43] btrfs: handle nokey names
-Date: Wed, 13 May 2026 10:52:48 +0200
-Message-ID: <20260513085340.3673127-15-neelx@suse.com>
+Subject: [PATCH v7 12/43] btrfs: add new FEATURE_INCOMPAT_ENCRYPT flag
+Date: Wed, 13 May 2026 10:52:46 +0200
+Message-ID: <20260513085340.3673127-13-neelx@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260513085340.3673127-1-neelx@suse.com>
 References: <20260513085340.3673127-1-neelx@suse.com>
@@ -80,201 +81,119 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spam-Score: -6.80
 X-Spamd-Result: default: False [-6.80 / 50.00];
 	REPLY(-4.00)[];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
 	ARC_NA(0.00)[];
 	MIME_TRACE(0.00)[0:+];
 	TO_DN_SOME(0.00)[];
-	RCPT_COUNT_TWELVE(0.00)[13];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCPT_COUNT_TWELVE(0.00)[14];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
 	R_RATELIMIT(0.00)[to_ip_from(RLjpbzrka5mc1bf4fb9cmz1e4f)];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -6.80
+X-Spam-Level: 
 
-From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+From: Omar Sandoval <osandov@osandov.com>
 
-For encrypted or unencrypted names, we calculate the offset for the dir
-item by hashing the name for the dir item. However, this doesn't work
-for a long nokey name, where we do not have the complete ciphertext.
-Instead, fscrypt stores the filesystem-provided hash in the nokey name,
-and we can extract it from the fscrypt_name structure in such a case.
+As encrypted files will be incompatible with older filesystem versions,
+new filesystems should be created with an incompat flag for fscrypt,
+which will gate access to the encryption ioctls.
 
-Additionally, for nokey names, if we find the nokey name on disk we can
-update the fscrypt_name with the disk name, so add that to searching for
-diritems.
-
+Signed-off-by: Omar Sandoval <osandov@osandov.com>
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Daniel Vacek <neelx@suse.com>
 ---
 
-v7 changes:
- * Fix a memory leak as found by Chris' AI review.
-No changes in v6.
-v5: https://lore.kernel.org/linux-btrfs/a7e3aec8ec03814b4baa1d929ae8fb77f13c17d2.1706116485.git.josef@toxicpanda.com/
+v5: https://lore.kernel.org/linux-btrfs/ccbea52046c1dadbbef926bfc878cc23af952729.1706116485.git.josef@toxicpanda.com/
+ * No changes since.
 ---
- fs/btrfs/dir-item.c | 43 +++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/fscrypt.c  | 27 +++++++++++++++++++++++++++
- fs/btrfs/fscrypt.h  | 11 +++++++++++
- 3 files changed, 79 insertions(+), 2 deletions(-)
+ fs/btrfs/fs.h              | 3 ++-
+ fs/btrfs/super.c           | 5 +++++
+ fs/btrfs/sysfs.c           | 6 ++++++
+ include/uapi/linux/btrfs.h | 1 +
+ 4 files changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index 1525b945646b..09ce1b85af74 100644
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -228,6 +228,35 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
- 	return di;
- }
- 
-+/*
-+ * If appropriate, populate the disk name for a fscrypt_name looked up without
-+ * a key.
-+ *
-+ * @path:	The path to the extent buffer in which the name was found.
-+ * @di:		The dir item corresponding.
-+ * @fname:	The fscrypt_name to perhaps populate.
-+ *
-+ * Returns: 0 if the name is already populated or the dir item doesn't exist
-+ * or the name was successfully populated, else an error code.
-+ */
-+static int ensure_disk_name_from_dir_item(struct btrfs_path *path,
-+					  struct btrfs_dir_item *di,
-+					  struct fscrypt_name *name)
-+{
-+	int ret;
-+
-+	if (name->disk_name.name || !di)
-+		return 0;
-+
-+	ret = btrfs_fscrypt_get_disk_name(path->nodes[0], di, &name->disk_name);
-+	if (ret)
-+		return ret;
-+
-+	name->crypto_buf.name = name->disk_name.name;
-+	name->crypto_buf.len  = name->disk_name.len;
-+	return 0;
-+}
-+
- /*
-  * Lookup for a directory item by fscrypt_name.
-  *
-@@ -254,8 +283,11 @@ struct btrfs_dir_item *btrfs_lookup_dir_item_fname(struct btrfs_trans_handle *tr
- 
- 	key.objectid = dir;
- 	key.type = BTRFS_DIR_ITEM_KEY;
--	key.offset = btrfs_name_hash(name->disk_name.name, name->disk_name.len);
--	/* XXX get the right hash for no-key names */
-+
-+	if (!name->disk_name.name)
-+		key.offset = name->hash | ((u64)name->minor_hash << 32);
-+	else
-+		key.offset = btrfs_name_hash(name->disk_name.name, name->disk_name.len);
- 
- 	ret = btrfs_search_slot(trans, root, &key, path, mod, -mod);
- 	if (ret == 0)
-@@ -263,6 +295,8 @@ struct btrfs_dir_item *btrfs_lookup_dir_item_fname(struct btrfs_trans_handle *tr
- 
- 	if (ret == -ENOENT || (di && IS_ERR(di) && PTR_ERR(di) == -ENOENT))
- 		return NULL;
-+	if (ret == 0)
-+		ret = ensure_disk_name_from_dir_item(path, di, name);
- 	if (ret < 0)
- 		di = ERR_PTR(ret);
- 
-@@ -371,7 +405,12 @@ btrfs_search_dir_index_item(struct btrfs_root *root, struct btrfs_path *path,
- 	btrfs_for_each_slot(root, &key, &key, path, ret) {
- 		if (key.objectid != dirid || key.type != BTRFS_DIR_INDEX_KEY)
- 			break;
-+
- 		di = btrfs_match_dir_item_fname(path, name);
-+		if (di)
-+			ret = ensure_disk_name_from_dir_item(path, di, name);
-+		if (ret)
-+			break;
- 		if (di)
- 			return di;
- 	}
-diff --git a/fs/btrfs/fscrypt.c b/fs/btrfs/fscrypt.c
-index ae4f15762842..2fa33e69083d 100644
---- a/fs/btrfs/fscrypt.c
-+++ b/fs/btrfs/fscrypt.c
-@@ -15,6 +15,33 @@
- #include "transaction.h"
- #include "xattr.h"
- 
-+/*
-+ * From a given location in a leaf, read a name into a qstr (usually a
-+ * fscrypt_name's disk_name), allocating the required buffer. Used for
-+ * nokey names.
-+ */
-+int btrfs_fscrypt_get_disk_name(struct extent_buffer *leaf,
-+				struct btrfs_dir_item *dir_item,
-+				struct fscrypt_str *name)
-+{
-+	unsigned long de_name_len = btrfs_dir_name_len(leaf, dir_item);
-+	unsigned long de_name = (unsigned long)(dir_item + 1);
-+	/*
-+	 * For no-key names, we use this opportunity to find the disk
-+	 * name, so future searches don't need to deal with nokey names
-+	 * and we know what the encrypted size is.
-+	 */
-+	name->name = kmalloc(de_name_len, GFP_NOFS);
-+
-+	if (!name->name)
-+		return -ENOMEM;
-+
-+	read_extent_buffer(leaf, name->name, de_name, de_name_len);
-+
-+	name->len = de_name_len;
-+	return 0;
-+}
-+
- /*
-  * This function is extremely similar to fscrypt_match_name() but uses an
-  * extent_buffer.
-diff --git a/fs/btrfs/fscrypt.h b/fs/btrfs/fscrypt.h
-index 4e9c87290158..c5cdc27f943c 100644
---- a/fs/btrfs/fscrypt.h
-+++ b/fs/btrfs/fscrypt.h
-@@ -9,11 +9,22 @@
- #include "fs.h"
- 
- #ifdef CONFIG_FS_ENCRYPTION
-+int btrfs_fscrypt_get_disk_name(struct extent_buffer *leaf,
-+				struct btrfs_dir_item *di,
-+				struct fscrypt_str *qstr);
-+
- bool btrfs_fscrypt_match_name(struct fscrypt_name *fname,
- 			      struct extent_buffer *leaf,
- 			      unsigned long de_name, u32 de_name_len);
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index a4758d94b32e..dbdb73722c14 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -322,7 +322,8 @@ enum {
+ 	(BTRFS_FEATURE_INCOMPAT_SUPP_STABLE |	\
+ 	 BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE | \
+ 	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2 | \
+-	 BTRFS_FEATURE_INCOMPAT_REMAP_TREE)
++	 BTRFS_FEATURE_INCOMPAT_REMAP_TREE |	\
++	 BTRFS_FEATURE_INCOMPAT_ENCRYPT)
  
  #else
-+static inline int btrfs_fscrypt_get_disk_name(struct extent_buffer *leaf,
-+					      struct btrfs_dir_item *di,
-+					      struct fscrypt_str *qstr)
-+{
-+	return 0;
-+}
-+
- static inline bool btrfs_fscrypt_match_name(struct fscrypt_name *fname,
- 					    struct extent_buffer *leaf,
- 					    unsigned long de_name,
+ 
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index efaa0788c1fc..84df97363611 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2563,6 +2563,11 @@ static int __init btrfs_print_mod_info(void)
+ 			", fsverity=yes"
+ #else
+ 			", fsverity=no"
++#endif
++#ifdef CONFIG_FS_ENCRYPTION
++			", fscrypt=yes"
++#else
++			", fscrypt=no"
+ #endif
+ 			;
+ 
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 0d14570c8bc2..3fe57843f902 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -305,6 +305,9 @@ BTRFS_FEAT_ATTR_INCOMPAT(remap_tree, REMAP_TREE);
+ #ifdef CONFIG_FS_VERITY
+ BTRFS_FEAT_ATTR_COMPAT_RO(verity, VERITY);
+ #endif
++#ifdef CONFIG_FS_ENCRYPTION
++BTRFS_FEAT_ATTR_INCOMPAT(encryption, ENCRYPT);
++#endif /* CONFIG_FS_ENCRYPTION */
+ 
+ /*
+  * Features which depend on feature bits and may differ between each fs.
+@@ -338,6 +341,9 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ #ifdef CONFIG_FS_VERITY
+ 	BTRFS_FEAT_ATTR_PTR(verity),
+ #endif
++#ifdef CONFIG_FS_ENCRYPTION
++	BTRFS_FEAT_ATTR_PTR(encryption),
++#endif /* CONFIG_FS_ENCRYPTION */
+ 	NULL
+ };
+ 
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 9165154a274d..2f6a46e5f4ce 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -335,6 +335,7 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_ZONED		(1ULL << 12)
+ #define BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2	(1ULL << 13)
+ #define BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE	(1ULL << 14)
++#define BTRFS_FEATURE_INCOMPAT_ENCRYPT		(1ULL << 15)
+ #define BTRFS_FEATURE_INCOMPAT_SIMPLE_QUOTA	(1ULL << 16)
+ #define BTRFS_FEATURE_INCOMPAT_REMAP_TREE	(1ULL << 17)
+ 
 -- 
 2.53.0
 

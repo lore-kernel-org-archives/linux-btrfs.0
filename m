@@ -1,58 +1,58 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 677113F1669
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 08:56:32 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 92D143E6388
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 08:56:38 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778662594; cv=none; b=GvAzXDPHuR5YEXdgrHnSrZ/DQ6c42mbl+VLrgC4N1eogH7e+eWqcBd7QJOyemzwuaMRSFV++VTO8wO0xEI2XLK9xmtTKEWK1L6y4+yFVgv65XD7D1NrQDA7A27I8uhQ9eaiAfVyrr3zQzKF7sZaQn3CHE6E4kc17f6H5LU0/mAc=
+	t=1778662600; cv=none; b=LlolRk5jym/hV8K/gJ0OnfIjFSFs15MeBHVPNKWc2KmZ0WWRnqf3M/xySh9QUFbX+dMut8KfNg4GPxb5cgOmBvNM4L8y8cNKeZt/eeWHMb55G3DKnqwsp9Y962W342mQrbbJ37EBCC/RNawkt5TJxaPhYQWyner4wLbI8jRDc88=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778662594; c=relaxed/simple;
-	bh=OfxRv/x1GKZM+dnlSRHrJgn0vdJsuIgV/p5vmY/NovA=;
+	s=arc-20240116; t=1778662600; c=relaxed/simple;
+	bh=0PaKGKV9pn/F24X2tNYGC/fbQASdvA4fSV2UQLwI3GY=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Euunj0UgMcEhSK4iLAaILbKxH4llMnEU21ngsrrc+76HN9/vBfWiVEJwlR/UFLUaP9MVFJHGar9nWlKKz52ReMQJxsG1ABg7pP51sTudzlynvgk23Y2VDoyKAc56KTflbwzDwt/N2pJOBTvwnv8B/62LwuBV5amMId3/LiJ+ctc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=q7mH8ww7; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=q7mH8ww7; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=hzaXntQSqjsdnSdbzt7zrp5KpN5NbEi80K5ZeVWnB44Oc2mSuLg1LZzJc5gsDMlWvMBsp2dBcUB08hXZhYJWrSg0FMNngpi7ccZE0bUSvF0fLC9uEU7U/6BW2ba2Mf+84c8VFElqErm3LU2IzC1dj9SY9eUYTyNZBz2XGCzfCOs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=OzdAKvyA; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=OzdAKvyA; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="q7mH8ww7";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="q7mH8ww7"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="OzdAKvyA";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="OzdAKvyA"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id AFA607665A;
-	Wed, 13 May 2026 08:54:44 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 333FD7665C;
+	Wed, 13 May 2026 08:54:45 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778662484; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1778662485; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=GRn0Z5Sr7KC0seCzmb9DiVdSPN+hyVolaVJwO3nevzg=;
-	b=q7mH8ww7rJ7hhUJ4YEao0qBgL9hY9fCI9+HqPZ4ZgQ9g4rExpuknBYikXUQQYIytsh8e2q
-	aKSklTGXDFdf1xxCnH/5Qrd3yD08twcCTyGNLUv6YgmSqmPfrfy8Rr/NBeZQJj97vwvmGy
-	hq7rBmb1OtsTgWcvsQHfeztWHi3lCgw=
+	bh=xcZdEbP79cX5oRQiJ3XPDjWtgMOPTRVTGtZ1DO2nEr8=;
+	b=OzdAKvyA1/ehCjM5oXQMwYTeEe19bHCoZRtFkRCDX1Z6G+/h9Oz+pmOfAOdEw3xt7OXfuZ
+	ttCiBKZv8FeJvj7sxKpAothcDQ90INimlcfMazbXYXpDpP78W2dF5yxdgUgLNYtiNPHlOr
+	cFbmniWtq7+2GgovqlyW5VBHAwJhCpg=
 Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778662484; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1778662485; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=GRn0Z5Sr7KC0seCzmb9DiVdSPN+hyVolaVJwO3nevzg=;
-	b=q7mH8ww7rJ7hhUJ4YEao0qBgL9hY9fCI9+HqPZ4ZgQ9g4rExpuknBYikXUQQYIytsh8e2q
-	aKSklTGXDFdf1xxCnH/5Qrd3yD08twcCTyGNLUv6YgmSqmPfrfy8Rr/NBeZQJj97vwvmGy
-	hq7rBmb1OtsTgWcvsQHfeztWHi3lCgw=
+	bh=xcZdEbP79cX5oRQiJ3XPDjWtgMOPTRVTGtZ1DO2nEr8=;
+	b=OzdAKvyA1/ehCjM5oXQMwYTeEe19bHCoZRtFkRCDX1Z6G+/h9Oz+pmOfAOdEw3xt7OXfuZ
+	ttCiBKZv8FeJvj7sxKpAothcDQ90INimlcfMazbXYXpDpP78W2dF5yxdgUgLNYtiNPHlOr
+	cFbmniWtq7+2GgovqlyW5VBHAwJhCpg=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4ED9A593A9;
-	Wed, 13 May 2026 08:54:44 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1159B593A9;
+	Wed, 13 May 2026 08:54:45 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id +By6ElQ8BGpERwAAD6G6ig
-	(envelope-from <neelx@suse.com>); Wed, 13 May 2026 08:54:44 +0000
+	id 8F29A1U8BGpERwAAD6G6ig
+	(envelope-from <neelx@suse.com>); Wed, 13 May 2026 08:54:45 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: Chris Mason <clm@fb.com>,
 	Josef Bacik <josef@toxicpanda.com>,
@@ -66,9 +66,9 @@ Cc: linux-block@vger.kernel.org,
 	linux-fscrypt@vger.kernel.org,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH v7 36/43] btrfs: deal with encrypted symlinks in send
-Date: Wed, 13 May 2026 10:53:10 +0200
-Message-ID: <20260513085340.3673127-37-neelx@suse.com>
+Subject: [PATCH v7 37/43] btrfs: decrypt file names for send
+Date: Wed, 13 May 2026 10:53:11 +0200
+Message-ID: <20260513085340.3673127-38-neelx@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260513085340.3673127-1-neelx@suse.com>
 References: <20260513085340.3673127-1-neelx@suse.com>
@@ -79,37 +79,38 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -6.80
+X-Spam-Level: 
 X-Spamd-Result: default: False [-6.80 / 50.00];
 	REPLY(-4.00)[];
 	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_HAS_DN(0.00)[];
 	ARC_NA(0.00)[];
 	MIME_TRACE(0.00)[0:+];
 	TO_DN_SOME(0.00)[];
 	RCPT_COUNT_TWELVE(0.00)[12];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	FROM_HAS_DN(0.00)[];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	R_RATELIMIT(0.00)[to_ip_from(RLdafymbgddseoxkryad1wgu8n)];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	R_RATELIMIT(0.00)[to_ip_from(RLdafymbgddseoxkryad1wgu8n)];
 	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spam-Score: -6.80
 
 From: Josef Bacik <josef@toxicpanda.com>
 
-Send needs to send the decrypted value of the symlinks, handle the case
-where the inode is encrypted and decrypt the symlink name into a buffer
-and copy this buffer into our fs_path struct.
+In send we're going to be looking up file names from back references and
+putting them into the send stream.  If we are encrypted use the helper
+for decrypting names and copy the decrypted name into the buffer.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Daniel Vacek <neelx@suse.com>
@@ -117,75 +118,110 @@ Signed-off-by: Daniel Vacek <neelx@suse.com>
 
 No changes in v7.
 v6 changes:
- * read_symlink_encrypted() reworked from using pages to using folios.
-v5: https://lore.kernel.org/linux-btrfs/4d97f35d6f85ff041b09bed33b63446a92b7a20c.1706116485.git.josef@toxicpanda.com/
+ * Simplified the error return logic in fs_path_add_from_encrypted().
+v5: https://lore.kernel.org/linux-btrfs/fd8b1d5f395a890dbdf8281a52fbaaa920c7b726.1706116485.git.josef@toxicpanda.com/
 ---
- fs/btrfs/send.c | 45 ++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 42 insertions(+), 3 deletions(-)
+ fs/btrfs/send.c | 47 +++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 37 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 89d72d8cb85f..d5256c22fe7a 100644
+index d5256c22fe7a..3d9764aa4a25 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -1701,9 +1701,7 @@ static int find_extent_clone(struct send_ctx *sctx,
- 	return ret;
+@@ -32,6 +32,7 @@
+ #include "ioctl.h"
+ #include "verity.h"
+ #include "lru_cache.h"
++#include "fscrypt.h"
+ 
+ /*
+  * Maximum number of references an extent can have in order for us to attempt to
+@@ -579,13 +580,39 @@ static inline int fs_path_add_path(struct fs_path *p, const struct fs_path *p2)
+ 	return fs_path_add(p, p2->start, fs_path_len(p2));
  }
  
--static int read_symlink(struct btrfs_root *root,
--			u64 ino,
--			struct fs_path *dest)
-+static int read_symlink_unencrypted(struct btrfs_root *root, u64 ino, struct fs_path *dest)
- {
- 	int ret;
- 	BTRFS_PATH_AUTO_FREE(path);
-@@ -1764,6 +1762,47 @@ static int read_symlink(struct btrfs_root *root,
- 	return fs_path_add_from_extent_buffer(dest, path->nodes[0], off, len);
- }
- 
-+static int read_symlink_encrypted(struct btrfs_root *root, u64 ino, struct fs_path *dest)
+-static int fs_path_add_from_extent_buffer(struct fs_path *p,
++static int fs_path_add_from_encrypted(struct btrfs_root *root,
++				      struct fs_path *p,
++				      struct extent_buffer *eb,
++				      unsigned long off, int len,
++				      u64 parent_ino)
 +{
-+	DEFINE_DELAYED_CALL(done);
-+	const char *buf;
-+	struct folio *folio;
-+	struct btrfs_inode *inode;
-+	int ret = 0;
++	struct fscrypt_str fname = FSTR_INIT(NULL, 0);
++	int ret;
 +
-+	inode = btrfs_iget(ino, root);
-+	if (IS_ERR(inode))
-+		return PTR_ERR(inode);
++	ret = fscrypt_fname_alloc_buffer(BTRFS_NAME_LEN, &fname);
++	if (ret)
++		return ret;
 +
-+	folio = read_mapping_folio(inode->vfs_inode.i_mapping, 0, NULL);
-+	if (IS_ERR(folio)) {
-+		iput(&inode->vfs_inode);
-+		return PTR_ERR(folio);
-+	}
++	ret = btrfs_decrypt_name(root, eb, off, len, parent_ino, &fname);
++	if (!ret)
++		ret = fs_path_add(p, fname.name, fname.len);
 +
-+	buf = fscrypt_get_symlink(&inode->vfs_inode, folio_address(folio),
-+				  BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info),
-+				  &done);
-+	folio_put(folio);
-+	iput(&inode->vfs_inode);
-+
-+	if (IS_ERR(buf))
-+		return PTR_ERR(buf);
-+
-+	ret = fs_path_add(dest, buf, strlen(buf));
-+	do_delayed_call(&done);
++	fscrypt_fname_free_buffer(&fname);
 +	return ret;
 +}
 +
++static int fs_path_add_from_extent_buffer(struct btrfs_root *root,
++					  struct fs_path *p,
+ 					  struct extent_buffer *eb,
+-					  unsigned long off, int len)
++					  unsigned long off, int len,
++					  u64 parent_ino)
+ {
+ 	int ret;
+ 	char *prepared;
+ 
++	if (root && btrfs_fs_incompat(root->fs_info, ENCRYPT))
++		return fs_path_add_from_encrypted(root, p, eb, off, len, parent_ino);
 +
-+static int read_symlink(struct btrfs_root *root, u64 ino,
-+			struct fs_path *dest)
-+{
-+	if (btrfs_fs_incompat(root->fs_info, ENCRYPT))
-+		return read_symlink_encrypted(root, ino, dest);
-+	return read_symlink_unencrypted(root, ino, dest);
-+}
-+
- /*
-  * Helper function to generate a file name that is unique in the root of
-  * send_root and parent_root. This is used to generate names for orphan inodes.
+ 	ret = fs_path_prepare_for_add(p, len, &prepared);
+ 	if (ret < 0)
+ 		return ret;
+@@ -1062,8 +1089,7 @@ static int iterate_inode_ref(struct btrfs_root *root, struct btrfs_path *path,
+ 			}
+ 			p->start = start;
+ 		} else {
+-			ret = fs_path_add_from_extent_buffer(p, eb, name_off,
+-							     name_len);
++			ret = fs_path_add_from_extent_buffer(root, p, eb, name_off, name_len, dir);
+ 			if (ret < 0)
+ 				goto out;
+ 		}
+@@ -1759,7 +1785,7 @@ static int read_symlink_unencrypted(struct btrfs_root *root, u64 ino, struct fs_
+ 	off = btrfs_file_extent_inline_start(ei);
+ 	len = btrfs_file_extent_ram_bytes(path->nodes[0], ei);
+ 
+-	return fs_path_add_from_extent_buffer(dest, path->nodes[0], off, len);
++	return fs_path_add_from_extent_buffer(NULL, dest, path->nodes[0], off, len, 0);
+ }
+ 
+ static int read_symlink_encrypted(struct btrfs_root *root, u64 ino, struct fs_path *dest)
+@@ -2034,18 +2060,19 @@ static int get_first_ref(struct btrfs_root *root, u64 ino,
+ 		iref = btrfs_item_ptr(path->nodes[0], path->slots[0],
+ 				      struct btrfs_inode_ref);
+ 		len = btrfs_inode_ref_name_len(path->nodes[0], iref);
+-		ret = fs_path_add_from_extent_buffer(name, path->nodes[0],
+-						     (unsigned long)(iref + 1),
+-						     len);
+ 		parent_dir = found_key.offset;
++		ret = fs_path_add_from_extent_buffer(root, name, path->nodes[0],
++						     (unsigned long)(iref + 1),
++						     len, parent_dir);
+ 	} else {
+ 		struct btrfs_inode_extref *extref;
+ 		extref = btrfs_item_ptr(path->nodes[0], path->slots[0],
+ 					struct btrfs_inode_extref);
+ 		len = btrfs_inode_extref_name_len(path->nodes[0], extref);
+-		ret = fs_path_add_from_extent_buffer(name, path->nodes[0],
+-					(unsigned long)&extref->name, len);
+ 		parent_dir = btrfs_inode_extref_parent(path->nodes[0], extref);
++		ret = fs_path_add_from_extent_buffer(root, name, path->nodes[0],
++					(unsigned long)&extref->name, len,
++					parent_dir);
+ 	}
+ 	if (ret < 0)
+ 		return ret;
 -- 
 2.53.0
 

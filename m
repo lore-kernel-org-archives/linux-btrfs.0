@@ -1,150 +1,178 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C74F5477E
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 02:13:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E817718787A
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 04:36:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778638417; cv=none; b=NgJIW3MsLT7O+yLumff3kVYjBTHzrOFR7pE/h/G+a8mALUfmrpaGzPBYYwqyC03L7YIfgPow2y8yhFORiVmLdL661PgMcyHrsWZi3ymVOoXC3Y4sCvuAnZMqM8yLvdegn+/N2LZ9k0ON/8MB+NNWhjvKBoKz0jCOPGZbRmMzLpc=
+	t=1778647007; cv=none; b=h9RopXzUvx6dYg6kswFkt0CoVT+DS5fI5lnsrQW6ngneoJew/28D98PQ8WDicd+WGHajZ+TxWLBOt/0KEf5lF5gn9cPLWMY1AdNro2c/UfWerSUe+pC/LXVtImGXaO3TOKR45QCHhP9xZK0EmutbB/xE14If8KnHZqhk7BHXnrk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778638417; c=relaxed/simple;
-	bh=SjndBkjbpL0geMngmeBLBBf7Vu/jLwmws1t+pq/iALo=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=GE3OPxgV5CW1H2VG46oxrjCykHc4TPtTIC9t4amM9PXytNLStP9VII9V+AyJdAxF9WMrPPBz5p1OZm4ANDeUDUgNwODwe9Tj33yAPGKGjt3VIwyYFuuohifKk+IqFlK/GSIGehPamWMq7P3bnVzUWtfgFy3eXGx/uf1xu47f8fU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=ZDcYbEtm; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=/JCxKWYZ; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=ZDcYbEtm; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=/JCxKWYZ; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1778647007; c=relaxed/simple;
+	bh=B2NhYyH+9/9EBG4E5ABiW0Ys2zZ6FP31skrbbFi5JZI=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=a9MD8euS/NGPkrjDQuReWx+KEPrHupKkyZuWPfzd2KnFxjCMSDdME0ENY3GaL0/l0o+P8B6krq1LYeiP9CqRB0Czkix+PekG5MhiLGHYBYlsepVKpuR4hOPTgyl8ZUIBZvOS1uFXWrP604NuN8i8G+tsNVo7XXabBZqX6JqRKTg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Gn8bKQkE; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Gn8bKQkE; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="ZDcYbEtm";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="/JCxKWYZ";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="ZDcYbEtm";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="/JCxKWYZ"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Gn8bKQkE";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Gn8bKQkE"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 8A7D76B38A;
-	Wed, 13 May 2026 02:13:33 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1778638413;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=pelIqflt9v6KFlE3V5KxHgSm7h83b4EvqpMMhsXhr5A=;
-	b=ZDcYbEtmozyurc2VPdJx9dE7FT6DOPO9NxB7y+Kpmyt9fNExO64ckzd20Ookv/zqCCcyBT
-	6nzm2aOyGiIWiOuzk6ReneCqxJe9H/vio/HrnNh7DSuR4HX5daYsWuDVG9TRPhYE1TXKmb
-	i4uW9YshjmZRtTrhyjRHd213m5+iBYo=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1778638413;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=pelIqflt9v6KFlE3V5KxHgSm7h83b4EvqpMMhsXhr5A=;
-	b=/JCxKWYZ17qkn26mrJgPaVlPosVAavsuJArLHXAKbiAVQlvVHsSE4m+uLKhmJ5I/LAbUPl
-	IUVSYMiuPe/AKnDw==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=ZDcYbEtm;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b="/JCxKWYZ"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1778638413;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=pelIqflt9v6KFlE3V5KxHgSm7h83b4EvqpMMhsXhr5A=;
-	b=ZDcYbEtmozyurc2VPdJx9dE7FT6DOPO9NxB7y+Kpmyt9fNExO64ckzd20Ookv/zqCCcyBT
-	6nzm2aOyGiIWiOuzk6ReneCqxJe9H/vio/HrnNh7DSuR4HX5daYsWuDVG9TRPhYE1TXKmb
-	i4uW9YshjmZRtTrhyjRHd213m5+iBYo=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1778638413;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=pelIqflt9v6KFlE3V5KxHgSm7h83b4EvqpMMhsXhr5A=;
-	b=/JCxKWYZ17qkn26mrJgPaVlPosVAavsuJArLHXAKbiAVQlvVHsSE4m+uLKhmJ5I/LAbUPl
-	IUVSYMiuPe/AKnDw==
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 35C016706A
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 04:36:44 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1778647004; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=2pC+gTa1JGByMcaAudDvosoDh5JbwAe/1FBErtomvYQ=;
+	b=Gn8bKQkE/sjrnpvvjAigY2ufLcA1+ifI0b5Hv5AQhy7nBcjsN0mIX7XUQsvUSnQJflWhyo
+	1WgkhC7o4ThHD5OL3GKdxxjMGzJDZfLD5IC0p6q3Am+di3e/Hxwh2PGIHAouV0lC6LOTu0
+	AQW/v5vlxVumwUMdzTA+l9Z4/auE6JA=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=Gn8bKQkE
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1778647004; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=2pC+gTa1JGByMcaAudDvosoDh5JbwAe/1FBErtomvYQ=;
+	b=Gn8bKQkE/sjrnpvvjAigY2ufLcA1+ifI0b5Hv5AQhy7nBcjsN0mIX7XUQsvUSnQJflWhyo
+	1WgkhC7o4ThHD5OL3GKdxxjMGzJDZfLD5IC0p6q3Am+di3e/Hxwh2PGIHAouV0lC6LOTu0
+	AQW/v5vlxVumwUMdzTA+l9Z4/auE6JA=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 73F02593A9;
-	Wed, 13 May 2026 02:13:33 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 742E3593A9
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 04:36:43 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id XBobHE3eA2rSQQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Wed, 13 May 2026 02:13:33 +0000
-Date: Wed, 13 May 2026 04:13:23 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com, marc@merlins.org
-Subject: Re: [PATCH 0/4] btrfs: squota lifetime fixes
-Message-ID: <20260513004543.GM2558453@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1778613519.git.boris@bur.io>
+	id 9q78Ddv/A2r1SQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 04:36:43 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/4] btrfs: experimental support for huge data folios
+Date: Wed, 13 May 2026 14:06:17 +0930
+Message-ID: <cover.1778646753.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1778613519.git.boris@bur.io>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 X-Spam-Level: 
 X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:mid];
 	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	MIME_TRACE(0.00)[0:+];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	RCPT_COUNT_THREE(0.00)[4];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_ONE(0.00)[1];
+	MIME_TRACE(0.00)[0:+];
 	FROM_HAS_DN(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCVD_COUNT_TWO(0.00)[2];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:dkim,suse.cz:replyto,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_TRACE(0.00)[suse.cz:+]
-X-Rspamd-Queue-Id: 8A7D76B38A
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Queue-Id: 35C016706A
 X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Spam-Flag: NO
-X-Spam-Score: -4.21
+X-Spam-Score: -3.01
 
-On Tue, May 12, 2026 at 12:34:52PM -0700, Boris Burkov wrote:
-> A recent report of read-only filesystems since enabling squotas:
-> 
-> https://lore.kernel.org/linux-btrfs/adnBhWfJQ1n3hZC8@merlins.org/
-> 
-> led me to investigate a handful of issues in squotas and find some trivial and
-> not so trivial bugs in their lifetime management. The aim of the series is to
-> strengthen enforcement of the invariant: "a squota qgroup must outlast extents
-> that are accounted to it".
-> 
-> This series consists of two fixes to squota lifetime bugs and two patches that
-> reduce the consequences of errors in lifetime management from full fs goes
-> read-only abort to "warning and inaccurate squotas which can be deleted
-> eventually"
-> 
-> Additional improvements to btrfs check and fstests to follow.
-> 
-> Boris Burkov (4):
->   btrfs: check for subvolume before deleting squota qgroup
->   btrfs: fix squota accounting during enable generation
->   btrfs: clamp to avoid squota underflow
->   btrfs: swallow btrfs_record_squota_delta() enoent
+[CHANGELOG]
+v2:
+- Rebased to the latest for-next branch
+  There are several conflicts with the removal of locked and ordered
+  sub-bitmaps.
 
-Looks good to me, as much I can understand it. Please add it to
-for-next.
+  Now huge folios will take full advantage of the reduced sub-bitmap
+  size.
+  Previously we need 5x64 bytes for the sub-bitmaps, now it's only
+  3x64 bytes, a reduction of 40%.
+
+  Although the increase on on-stack memory usage is still there.
+
+- Minor grammar fixes
+  Mostly in the commit message.
+
+RFC->v1:
+- Rebased to the latest for-next branch
+  Which provides a stable baseline that can pass usual fstests runs, and
+  no more 2K fs block size support.
+
+- Mark the new huge folio support as experimental
+  Since the large folio support itself is moved out of experimental
+  features, the huge folio support will need to be hidden behind
+  experimental.
+
+- Rework the blocks per folio limit
+  Previously blocks per folio limit is always calculated by
+  BTRFS_MAX_FOLIO_SIZE / BTRFS_MIN_BLOCK_SIZE, but the real blocks per
+  folio is also depending on the fs block size.
+
+  Now introduce a new BTRFS_MAX_BLOCKS_PER_FOLIO macro, which is either
+  BITS_PER_LONG (the old one), or 512 (the new experimental one).
+
+  This will allow non-experimental builds to get rid of the enlarged
+  bitmap, thus lower the on-stack memory usage for non-experimental
+  builds.
+
+Currently btrfs only supports folios as large as BITS_PER_LONG * blocks.
+This is an artificial limit introduced to make bitmap operations easier.
+
+Btrfs has two extra bitmaps that are out of btrfs_folio_state structure,
+btrfs_bio_ctrl->submit_bitmap and @delalloc_bitmap inside
+writepage_delalloc().
+
+Limits the bitmap size to BITS_PER_LONG makes it very easy to handle the
+above two bitmaps, we can just use a local unsigned long, no need to do
+any memory allocation.
+
+On the other hand, those two external bitmaps are the only thing
+limiting huge folios.
+
+The 1st patch will update the comments related to subpage implementation
+first.
+The 2nd patch will handle the subpage internal operations, mostly to
+handle bitmap dumping.
+The 3rd patch will prepare btrfs_bio_ctrl::submit_bitmap to be a proper
+pointer for the incoming huge folios support.
+
+The final patch will enable the huge folio support, by using on-stack
+bitmap that can contain 512 bits.
+That will ensure 2MiB folio size, which is order 9 on 4K page sized
+systems.
+
+Qu Wenruo (4):
+  btrfs: update the out-of-date comments on subpage
+  btrfs: prepare subpage operations to support >= BITS_PER_LONG
+    sub-bitmaps
+  btrfs: migrate btrfs_bio_ctrl::submit_bitmap to support larger bitmaps
+  btrfs: introduce support for huge folios
+
+ fs/btrfs/disk-io.c   |  11 ++-
+ fs/btrfs/extent_io.c |  71 ++++++++++--------
+ fs/btrfs/fs.h        |  16 ++++
+ fs/btrfs/subpage.c   | 173 ++++++++++++++++++++++++++-----------------
+ fs/btrfs/subpage.h   |   8 +-
+ 5 files changed, 175 insertions(+), 104 deletions(-)
+
+-- 
+2.54.0
+

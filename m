@@ -1,100 +1,126 @@
-Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EA67A41B373
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 12:36:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.141
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8FFA438655A;
+	Wed, 13 May 2026 14:59:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778675798; cv=none; b=igdondkyJVcqQdlSJURDi3zZZwx+s51UjdmoxRHObGqKRKU/7YunTPTHJeneETgnR8tR+XcURJiQcrtYQfNFrUX4h+acoajOrweDLjw5Gl9xAXpDI/7UzpH201KyHMBSlhdxayZl/cNMmbwU1TgosCLi2ys9pi/nw2wQZWRc2sQ=
+	t=1778684361; cv=none; b=iTK1QhfmhcdYbhmyQoPdM4VrW7HzWoI3PtTB101iNjpQXqUEouYHpZk1olqfT4B6LFqCTRT5yRrHRnekBCrOC5b8ONsdLjVCul4tZP9p1DGGaA2oL6sHF3Tyd3Jo/xSZBrkajesE/xWKD5KrbKXeOJJj9bq5NgrI/WxMgGf0Cjo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778675798; c=relaxed/simple;
-	bh=0s75Cv6HGPJeTAykvSRmBEp358efltskuQZVX+kEhrg=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=QwrxzqIaUXetIHrh+DnP23ZGr0KJiaNAFdEKvngYU8Bd2lSKTxBzwrTpYxUXjGnZ9YQLDRNDYgLEbQ//kMiTO1VbjlkIwSD5yjpPCzdiFib3eEVelMvzrJ1OHwnsxI9crpAW5CflzW/F6suCoG2OoWJDMydW9heIeOJdI88wVFo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=D2jOQM/f; arc=none smtp.client-ip=216.71.153.141
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	s=arc-20240116; t=1778684361; c=relaxed/simple;
+	bh=zbNHyyDRYAeGo6U86F5ea4LHa32zJh59lyteWOe4KGw=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=ZhMrupf3fZ6ls6FVHJp880rovHBrIpAxXmr8lnULIEhJPSrZiYAzG1/w8BjXXkWF/YlY651QuhNX2j5B0SV0hm4xGTDZ21uo84LwcqRDo7Umyj2OVhM7le6YNRunOLF4FBm+8lkkdyqRsJLIWqZH3UgwwtbbnGAmzRD9RgyiUzU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=iIhYEKx5; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="D2jOQM/f"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1778675797; x=1810211797;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=0s75Cv6HGPJeTAykvSRmBEp358efltskuQZVX+kEhrg=;
-  b=D2jOQM/fcANJItuZCSdrOjFLkCaRM4G3E0JmkZLAOlVLhfTr4TnhUe+1
-   1CLevYhhym8zha0AOWsRPOjLwnrsSBIUvttsqJLICFUYpWe2mhxnBwNgb
-   PZMTuSaXs0ey9EkFhkOBd6R4SqB7XBXHVW4JaUzk9vJ11GpemBwDef7V1
-   36oDIjjcalatiBcg6kN6M4X+hx0EASafbLszMajOhtJoREiUw4lBYTC1O
-   6vM2Nt6WwMEmJpfErARqPhySTFSgBRkQ/PJOyO0PuCbSKnZxBVakGY7k5
-   GtbEZzMHPBmqmDPKmsKQjWMFgnAu+kTuWRqGOwYYO1zBBURxhPEVTXEwq
-   w==;
-X-CSE-ConnectionGUID: g7xePx07SD6u5csEVJegjA==
-X-CSE-MsgGUID: LLR5209tTqGxuXtqE7AnBA==
-X-IronPort-AV: E=Sophos;i="6.23,232,1770566400"; 
-   d="scan'208";a="146869036"
-Received: from unknown (HELO uls-op-esad2-o.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 13 May 2026 20:35:26 +0800
-X-CSE-ConnectionGUID: mztByqKGQEOpYnIbf8I+cQ==
-X-CSE-MsgGUID: 8ta6FgBsSwetSx3acK1umQ==
-IronPort-SDR: 6a046fff_dsoZxHsXTxFx47ML7HY1n4jMiaT9q8i48GBQI5c5kJbPBjI
- v+rfG6CQmfOniZ3cTc4W9uzlqBMTr2y6YRU9UkA==
-Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
-  by uls-op-esad2-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 May 2026 05:35:10 -0700
-X-CSE-ConnectionGUID: Dryw4l2MTjaldHQ4EhHLMA==
-X-CSE-MsgGUID: aFFHBXr+Qky3uCFDjgkADQ==
-WDCIronportException: Internal
-Received: from wdap-6xonuiesoc.ad.shared (HELO neo.wdc.com) ([10.224.28.49])
-  by uls-op-esai1-o.wdc.com with ESMTP; 13 May 2026 05:35:10 -0700
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>,
-	David Sterba <dsterba@suse.com>,
-	Hans Holmberg <Hans.Holmberg@wdc.com>,
-	Boris Burkov <boris@bur.io>,
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="iIhYEKx5"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2D47CC2BCB3;
+	Wed, 13 May 2026 14:59:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1778684360;
+	bh=zbNHyyDRYAeGo6U86F5ea4LHa32zJh59lyteWOe4KGw=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=iIhYEKx51XcVXCXizSytP4ZvhZtiBJmIPf+6O8Mktq3AJeEzUzkfq9zJFMxWWOQN/
+	 aoWFZ5To1myUEqEdw7VallkySu/iGPAldgKZg0gl6xnLSnuloIhSu3lBTLqysfs1I0
+	 Skg4f9BktAuE18yvvQRJ70VrpwY5SAV36hi26w0P9GMsQkbf7JD+SNU9HxSde3AnHu
+	 bo3a4ZV9/09phwV+AioQvcuqmfuB2eTSN/4uxVBmpiaTeWdd95EFcAzHk3DTbz/8je
+	 v+mVMmUJ6OM8tMNlaOTQXwFxTd7uJskcOql+wcSZWQ2REyC0QM0b5EqoBwpRfC7ETk
+	 FtuJsAzYKU1jA==
+Date: Wed, 13 May 2026 07:59:19 -0700
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: Christoph Hellwig <hch@lst.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Chris Li <chrisl@kernel.org>,
+	Kairui Song <kasong@tencent.com>,
+	Christian Brauner <brauner@kernel.org>,
+	Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>,
+	Theodore Ts'o <tytso@mit.edu>, Jaegeuk Kim <jaegeuk@kernel.org>,
+	Chao Yu <chao@kernel.org>, Trond Myklebust <trondmy@kernel.org>,
+	Anna Schumaker <anna@kernel.org>,
+	Namjae Jeon <linkinjeon@kernel.org>,
+	Hyunchul Lee <hyc.lee@gmail.com>, Steve French <sfrench@samba.org>,
+	Paulo Alcantara <pc@manguebit.org>,
+	Carlos Maiolino <cem@kernel.org>,
 	Damien Le Moal <dlemoal@kernel.org>,
-	Naohiro Aota <naohiro.aota@wdc.com>,
-	Christoph Hellwig <hch@lst.de>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 4/7] btrfs: zoned: don't account data relocation space-info in statfs free space
-Date: Wed, 13 May 2026 14:34:42 +0200
-Message-ID: <20260513123445.43197-5-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <20260513123445.43197-1-johannes.thumshirn@wdc.com>
-References: <20260513123445.43197-1-johannes.thumshirn@wdc.com>
+	Naohiro Aota <naohiro.aota@wdc.com>, linux-xfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-doc@vger.kernel.org,
+	linux-mm@kvack.org, linux-block@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-f2fs-devel@lists.sourceforge.net, linux-nfs@vger.kernel.org,
+	linux-cifs@vger.kernel.org
+Subject: Re: [PATCH 08/12] swap,iomap: simplify iomap_swapfile_iter
+Message-ID: <20260513145919.GP9555@frogsfrogsfrogs>
+References: <20260512053625.2950900-1-hch@lst.de>
+ <20260512053625.2950900-9-hch@lst.de>
+ <20260512170204.GI9555@frogsfrogsfrogs>
+ <20260513065608.GA2250@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260513065608.GA2250@lst.de>
 
-Don't account the free space in a data relocation space-info sub-group as
-usable free space in statfs.
+On Wed, May 13, 2026 at 08:56:08AM +0200, Christoph Hellwig wrote:
+> On Tue, May 12, 2026 at 10:02:04AM -0700, Darrick J. Wong wrote:
+> > OH.  Now I remember why -- it's to handle contiguous mixed mappings
+> > better.
+> > 
+> > Let's say that you have a 1k fsblock filesystem and 4k base pages.  You
+> > fallocate an 8G swap file and then mkswap it.  The first mapping is a 1k
+> > written mapping at offset 0 for the swap header, followed by an 8388607k
+> > unwritten mapping at offset 3k.
+> > 
+> > The PAGE_SIZE rounding code in iomap_swapfile_add_extent will round the
+> > end of that first mapping down to zero and ignore it.  The second
+> > mapping will be treated as if it were a 8388604k mapping starting at
+> > offset 4096.  Now the page counts are wrong and the swapon fails.
+> 
+> Do we care about this use case?  I guess you did as you implemented
+> his, but still?
 
-This is misleading as no user allocations can be made in this space-info
-sub-group. It is only a target for relocation.
+We do, because mkswap -F uses fallocate nowadays:
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/super.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+$ mkswap -s 4194304 -F a
+Setting up swapspace version 1, size = 4 MiB (4190208 bytes)
+no label, UUID=bc9746bf-e200-4944-927c-80d83872f1cb
+$ filefrag -v a
+Filesystem type is: 58465342
+File size of a is 4194304 (1024 blocks of 4096 bytes)
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+   0:        0..       0:  411383552.. 411383552:      1:            
+   1:        1..    1023:  411383553.. 411384575:   1023:             last,unwritten,eof
+a: 1 extent found
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index fb15decb0861..a0dbc0d2213f 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1739,7 +1739,8 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	int mixed = 0;
- 
- 	list_for_each_entry(found, &fs_info->space_info, list) {
--		if (found->flags & BTRFS_BLOCK_GROUP_DATA) {
-+		if (found->flags & BTRFS_BLOCK_GROUP_DATA &&
-+		    found->subgroup_id != BTRFS_SUB_GROUP_DATA_RELOC) {
- 			int i;
- 
- 			total_free_data += found->disk_total - found->disk_used;
--- 
-2.54.0
+> > A more generic solution to this would be to change add_swap_extent to
+> > take sector_t addr and length values and use them to construct a bitmap
+> > representing contiguous physical space on the bdev, accounting of course
+> > for PAGE_SIZE alignment.  Except for the swap header page, every other
+> > contiguously set page-aligned region in the bitmap gets added to the
+> > swap extent map.
+> 
+> You don't even need a bitmap, just do basically the same checks as
+> the iomap code when moving to a new swap extent after moving to use
+> the sector_t.  And it really should anyway, as the current abuse of
+> sector_t to store a disk offset in PAGE_SIZE units is pretty gross.
 
+Oh, I meant this to handle the particularly gross case where the fsblock
+size is smaller than a base page, but there are a very large number of
+file mappings that point to a physically contiguous extent but are not
+in logical order:
+
+{.offset=0, .length=1k, .addr=7},
+{.offset=1, .length=1k, .addr=6},
+{.offset=2, .length=1k, .addr=5},
+{.offset=3, .length=1k, .addr=4},
+{.offset=4, .length=1k, .addr=3},
+{.offset=5, .length=1k, .addr=2},
+{.offset=6, .length=1k, .addr=1},
+{.offset=7, .length=1k, .addr=0},
+
+That's two pages of swapfile, but with the current layout accumulation
+code we "cannot" find either.
+
+--D

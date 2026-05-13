@@ -1,58 +1,58 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6AB173FF8A9
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 08:55:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EB648401494
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 08:55:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778662540; cv=none; b=c35jRwrXamQfbKHNz7ncmrIvvFeOg3cxR/IkWxkth6/BQqHFf0G4QN+QLyoa/7yUz2ZXl9vCCdPRWyboxb6I3sH/Az/UM89DZPkXf5/sc2PkClmlAIKD9TU+bqP75GQmgITmRHVVFAzxkY+4EsglryfJFIVcuRzpOU+UWToYzfU=
+	t=1778662544; cv=none; b=ggM7sXe5Hzm7Ri3gDbOVc9AOMKKeryRSzA2ZcteludqZHbj7FUgpX7+gmwR8WOpH521y7AAVeoDKSSWvF4rpHj6iMs7esX9B8H3xRBP/DQmUmso0ar3pqbcMdBNEa31uU+ibNoQQ9MjPckMOIQOTn6BjjCwjYTYoBcn2AfoXwwY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778662540; c=relaxed/simple;
-	bh=1FtFIlBqoaNm3ZAKcTS+4f2w++MAxzjyZ45rZdfqcPs=;
+	s=arc-20240116; t=1778662544; c=relaxed/simple;
+	bh=DEnORXHmoQgwwGPcMDhEW44AW0Ue4rHR08tXzQJtIXw=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=HKbhyN0mZPiUtGVj7gquSc2RJhLllrGMn4B+7f376jFjry6EAENB9NvUpjaerwf0THpiCg2uaAyKv346WWjYVjaXWcd4bXZH8uZFk3aZ6uLaySSu3JTRc3TTBSlZXjUnIM9FYvohaQnzp8sdyczeu6wCirUwSST2afzwVKbNwaw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=mSGV9IhT; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Y4Fj1VSG; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=YhlYCCSTqVRTkb13xF2ly1Okv+YZNLENcsQ2IDXuE7exJiBsmvpp2CZ0sYepBfa8dFFTahQeqNjib8M7FSCVhbgHGbcePc9XVMZjHobGuKWuZcty+fi+X00rjKlRGq76SS6Z5SxAHZsfxqXbI2PRE7WZceXiP0XJop/0dbt4k1k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=UAafPuvA; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=UAafPuvA; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="mSGV9IhT";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Y4Fj1VSG"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UAafPuvA";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UAafPuvA"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id E512976672;
-	Wed, 13 May 2026 08:54:31 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 76F00625AE;
+	Wed, 13 May 2026 08:54:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778662472; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1778662473; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=iQGWM7+w0kbQEF0MyiAgEUfgjut+7zEyKpvCh2x/3gg=;
-	b=mSGV9IhTZmdlHIuD3KbVDFm4MnFZkeeCODeZ/jxJBLWySsSNnlRi513btXvWHb/XNe/ATi
-	QgNl9v3vXz0ZlVDa7Z/ksJn4B0gwtiDu6mVDZVoN0a2iBc7kW8ku+zaO4XXFRnDk8e5kfz
-	ZBf5l1LcmSlwfYVKL102AStC8NL28og=
-Authentication-Results: smtp-out2.suse.de;
+	bh=E2slESMQWzpw5l3XyaJIAXq3fLmXEBsU03dFbqKhyUc=;
+	b=UAafPuvAPZ93Qh+L55EoE+DHSvXY2TCops3JCovh7270m79yIHN8SzGVhoVxholBkAzx4/
+	Ne7Ar7kc+Gj7FNTv8TjaNv4f3ARfib/FySMadGGEzLg0LfNYeBeIotzXnEZvdVKzbAjoYz
+	p2+5C3CAq8xM1568c6p6U+uNM2Uep8Q=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778662471; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1778662473; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=iQGWM7+w0kbQEF0MyiAgEUfgjut+7zEyKpvCh2x/3gg=;
-	b=Y4Fj1VSGtMQWFT3+Bha8CZ0PN6BY6O6JPGcAJ6erCHt8zmn5HrqbY/9UIZY/a0uys4u1UQ
-	zMKbyyw5m26IP2jPtgWSAG2pIK5pB+JIjtAEg5O6jqVA8H5qKa1a+y+FWsaB1m/IQe4/4n
-	UqXqX1QG/ZtYnAgMOWIeJGkg/V+YIaA=
+	bh=E2slESMQWzpw5l3XyaJIAXq3fLmXEBsU03dFbqKhyUc=;
+	b=UAafPuvAPZ93Qh+L55EoE+DHSvXY2TCops3JCovh7270m79yIHN8SzGVhoVxholBkAzx4/
+	Ne7Ar7kc+Gj7FNTv8TjaNv4f3ARfib/FySMadGGEzLg0LfNYeBeIotzXnEZvdVKzbAjoYz
+	p2+5C3CAq8xM1568c6p6U+uNM2Uep8Q=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C3698593A9;
-	Wed, 13 May 2026 08:54:31 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5647D593AA;
+	Wed, 13 May 2026 08:54:33 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id EPk6L0c8BGpERwAAD6G6ig
-	(envelope-from <neelx@suse.com>); Wed, 13 May 2026 08:54:31 +0000
+	id 0NCfFEk8BGpERwAAD6G6ig
+	(envelope-from <neelx@suse.com>); Wed, 13 May 2026 08:54:33 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: Chris Mason <clm@fb.com>,
 	Josef Bacik <josef@toxicpanda.com>,
@@ -66,9 +66,9 @@ Cc: linux-block@vger.kernel.org,
 	linux-fscrypt@vger.kernel.org,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH v7 20/43] btrfs: add fscrypt_info and encryption_type to ordered_extent
-Date: Wed, 13 May 2026 10:52:54 +0200
-Message-ID: <20260513085340.3673127-21-neelx@suse.com>
+Subject: [PATCH v7 22/43] btrfs: populate the ordered_extent with the fscrypt context
+Date: Wed, 13 May 2026 10:52:56 +0200
+Message-ID: <20260513085340.3673127-23-neelx@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260513085340.3673127-1-neelx@suse.com>
 References: <20260513085340.3673127-1-neelx@suse.com>
@@ -79,38 +79,38 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spam-Score: -6.80
 X-Spamd-Result: default: False [-6.80 / 50.00];
 	REPLY(-4.00)[];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
 	ARC_NA(0.00)[];
 	MIME_TRACE(0.00)[0:+];
 	TO_DN_SOME(0.00)[];
 	RCPT_COUNT_TWELVE(0.00)[12];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
 	R_RATELIMIT(0.00)[to_ip_from(RLdafymbgddseoxkryad1wgu8n)];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -6.80
+X-Spam-Level: 
 
 From: Josef Bacik <josef@toxicpanda.com>
 
-We're going to need these to update the file extent items once the
-writes are complete.  Add them and add the pieces necessary to assign
-them and free everything.
+The fscrypt_extent_info will be tied to the extent_map lifetime, so it
+will be created when we create the IO em, or it'll already exist in the
+NOCOW case. Use this fscrypt_info when creating the ordered extent to
+make sure everything is passed through properly.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Daniel Vacek <neelx@suse.com>
@@ -118,57 +118,147 @@ Signed-off-by: Daniel Vacek <neelx@suse.com>
 
 No changes in v7.
 v6 changes:
- * Changed encryption_type member to u8 as suggested by Dave.
-v5: https://lore.kernel.org/linux-btrfs/de9ff13d1dc042b764c224d039fbb2a08946e004.1706116485.git.josef@toxicpanda.com/
+ * Splitted the dio-related hunks from inode.c to direct-io.c as upstream
+   refactored in the meantime.
+ * Pass fscrypt_info using the file_extent structure to follow the
+   upstream cleanup.
+v5: https://lore.kernel.org/linux-btrfs/33e650f3e91ed0318211301beb27fa613382f28e.1706116485.git.josef@toxicpanda.com/
 ---
- fs/btrfs/ordered-data.c | 2 ++
- fs/btrfs/ordered-data.h | 6 ++++++
- 2 files changed, 8 insertions(+)
+ fs/btrfs/direct-io.c |  4 +++-
+ fs/btrfs/inode.c     | 36 ++++++++++++++++++++++++++++++------
+ 2 files changed, 33 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index e5a24b3ff95e..ac302fb7484b 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -205,6 +205,7 @@ static struct btrfs_ordered_extent *alloc_ordered_extent(
+diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
+index 5a53739e9445..e46bca590f35 100644
+--- a/fs/btrfs/direct-io.c
++++ b/fs/btrfs/direct-io.c
+@@ -140,7 +140,7 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
+ static struct extent_map *btrfs_create_dio_extent(struct btrfs_inode *inode,
+ 						  struct btrfs_dio_data *dio_data,
+ 						  const u64 start,
+-						  const struct btrfs_file_extent *file_extent,
++						  struct btrfs_file_extent *file_extent,
+ 						  const int type)
+ {
+ 	struct extent_map *em = NULL;
+@@ -150,6 +150,7 @@ static struct extent_map *btrfs_create_dio_extent(struct btrfs_inode *inode,
+ 		em = btrfs_create_io_em(inode, start, file_extent, type);
+ 		if (IS_ERR(em))
+ 			goto out;
++		file_extent->fscrypt_info = em->fscrypt_info;
  	}
- 	entry->inode = inode;
- 	entry->compress_type = compress_type;
-+	entry->encryption_type = BTRFS_ENCRYPTION_NONE;
- 	entry->truncated_len = (u64)-1;
- 	entry->qgroup_rsv = qgroup_rsv;
- 	entry->flags = flags;
-@@ -629,6 +630,7 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
- 		btrfs_add_delayed_iput(entry->inode);
- 		list_for_each_entry_safe(sum, tmp, &entry->csum_list, list)
- 			kvfree(sum);
-+		fscrypt_put_extent_info(entry->fscrypt_info);
- 		kmem_cache_free(btrfs_ordered_extent_cache, entry);
+ 
+ 	ordered = btrfs_alloc_ordered_extent(inode, start, file_extent,
+@@ -276,6 +277,7 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
+ 		}
+ 		space_reserved = true;
+ 
++		file_extent.fscrypt_info = em->fscrypt_info;
+ 		em2 = btrfs_create_dio_extent(BTRFS_I(inode), dio_data, start,
+ 					      &file_extent, type);
+ 		btrfs_dec_nocow_writers(bg);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c6c8ae05e471..eab7950372ae 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1121,10 +1121,11 @@ static void submit_one_async_extent(struct async_chunk *async_chunk,
+ 		ret = PTR_ERR(em);
+ 		goto out_free_reserve;
  	}
- }
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 03e12380a2fd..9b288c3908f9 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -131,6 +131,9 @@ struct btrfs_ordered_extent {
- 	/* compression algorithm */
- 	int compress_type;
+-	btrfs_free_extent_map(em);
  
-+	/* encryption mode */
-+	u8 encryption_type;
++	file_extent.fscrypt_info = em->fscrypt_info;
+ 	ordered = btrfs_alloc_ordered_extent(inode, start, &file_extent,
+ 					     1U << BTRFS_ORDERED_COMPRESSED);
++	btrfs_free_extent_map(em);
+ 	if (IS_ERR(ordered)) {
+ 		btrfs_drop_extent_map_range(inode, start, end, false);
+ 		ret = PTR_ERR(ordered);
+@@ -1263,10 +1264,11 @@ static int cow_one_range(struct btrfs_inode *inode, struct folio *locked_folio,
+ 		ret = PTR_ERR(em);
+ 		goto free_reserved;
+ 	}
+-	btrfs_free_extent_map(em);
+ 
++	file_extent.fscrypt_info = em->fscrypt_info;
+ 	ordered = btrfs_alloc_ordered_extent(inode, file_offset, &file_extent,
+ 					     1U << BTRFS_ORDERED_REGULAR);
++	btrfs_free_extent_map(em);
+ 	if (IS_ERR(ordered)) {
+ 		btrfs_drop_extent_map_range(inode, file_offset, cur_end, false);
+ 		ret = PTR_ERR(ordered);
+@@ -1933,18 +1935,32 @@ static int nocow_one_range(struct btrfs_inode *inode, struct folio *locked_folio
+ 			   u64 file_pos, bool is_prealloc)
+ {
+ 	struct btrfs_ordered_extent *ordered;
++	struct extent_map *em;
+ 	const u64 len = nocow_args->file_extent.num_bytes;
+ 	const u64 end = file_pos + len - 1;
+ 	int ret = 0;
+ 
+ 	btrfs_lock_extent(&inode->io_tree, file_pos, end, cached);
+ 
+-	if (is_prealloc) {
+-		struct extent_map *em;
++	/*
++	 * We only want to do this lookup if we're encrypted, otherwise
++	 * fsrypt_info will be null and we can avoid this lookup.
++	 */
++	if (IS_ENCRYPTED(&inode->vfs_inode)) {
++		em = btrfs_get_extent(inode, NULL, file_pos, len);
++		if (IS_ERR(em)) {
++			btrfs_unlock_extent(&inode->io_tree, file_pos, end, cached);
++			return PTR_ERR(em);
++		}
++		nocow_args->file_extent.fscrypt_info = fscrypt_get_extent_info(em->fscrypt_info);
++		btrfs_free_extent_map(em);
++	}
+ 
++	if (is_prealloc) {
+ 		em = btrfs_create_io_em(inode, file_pos, &nocow_args->file_extent,
+ 					BTRFS_ORDERED_PREALLOC);
+ 		if (IS_ERR(em)) {
++			fscrypt_put_extent_info(nocow_args->file_extent.fscrypt_info);
+ 			ret = PTR_ERR(em);
+ 			goto error;
+ 		}
+@@ -1955,6 +1971,7 @@ static int nocow_one_range(struct btrfs_inode *inode, struct folio *locked_folio
+ 					     is_prealloc
+ 					     ? (1U << BTRFS_ORDERED_PREALLOC)
+ 					     : (1U << BTRFS_ORDERED_NOCOW));
++	fscrypt_put_extent_info(nocow_args->file_extent.fscrypt_info);
+ 	if (IS_ERR(ordered)) {
+ 		if (is_prealloc)
+ 			btrfs_drop_extent_map_range(inode, file_pos, end, false);
+@@ -7657,7 +7674,13 @@ struct extent_map *btrfs_create_io_em(struct btrfs_inode *inode, u64 start,
+ 	em->flags |= EXTENT_FLAG_PINNED;
+ 	if (type == BTRFS_ORDERED_COMPRESSED)
+ 		btrfs_extent_map_set_compression(em, file_extent->compression);
+-	btrfs_extent_map_set_encryption(em, BTRFS_ENCRYPTION_NONE);
 +
- 	/* Qgroup reserved space */
- 	int qgroup_rsv;
++	if (file_extent->fscrypt_info) {
++		btrfs_extent_map_set_encryption(em, BTRFS_ENCRYPTION_FSCRYPT);
++		em->fscrypt_info = fscrypt_get_extent_info(file_extent->fscrypt_info);
++	} else {
++		btrfs_extent_map_set_encryption(em, BTRFS_ENCRYPTION_NONE);
++	}
  
-@@ -140,6 +143,9 @@ struct btrfs_ordered_extent {
- 	/* the inode we belong to */
- 	struct btrfs_inode *inode;
+ 	ret = btrfs_replace_extent_map_range(inode, em, true);
+ 	if (ret) {
+@@ -10209,11 +10232,12 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+ 		ret = PTR_ERR(em);
+ 		goto out_free_reserved;
+ 	}
+-	btrfs_free_extent_map(em);
  
-+	/* the fscrypt_info for this extent, if necessary */
-+	struct fscrypt_extent_info *fscrypt_info;
-+
- 	/* list of checksums for insertion when the extent io is done */
- 	struct list_head csum_list;
- 
++	file_extent.fscrypt_info = em->fscrypt_info;
+ 	ordered = btrfs_alloc_ordered_extent(inode, start, &file_extent,
+ 				       (1U << BTRFS_ORDERED_ENCODED) |
+ 				       (1U << BTRFS_ORDERED_COMPRESSED));
++	btrfs_free_extent_map(em);
+ 	if (IS_ERR(ordered)) {
+ 		btrfs_drop_extent_map_range(inode, start, end, false);
+ 		ret = PTR_ERR(ordered);
 -- 
 2.53.0
 

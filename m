@@ -1,51 +1,51 @@
 Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 986653932DE
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D7EF541B369
 	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 12:36:36 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778675797; cv=none; b=IzymBtc7LFzAHK4lqdZANz2qeWEVOILr5weGRtyjryfNZoP9uW0bI7H2iyl8WS/9EbnW5hqtW3zV8ts5gFNfORGQj/ZfZnwOt60ivX3QhdQmiu2dbTzyF4+5JxQ/0bYtpc7r6kBS7bUAWoPfG1BS80Cow5bAMeDD1L4sjQwFQHI=
+	t=1778675798; cv=none; b=pvcfDZWdvf/j+rNvjxTThVK3Z7StymIQZXDwS9CsaoIhw/Gf2ofp2227OyBxvifoATVan5wUwnEkUf+/2NEgQc0RnCD/UQinAR/QcSQRBVJnt6gfqrzE6zv5aOKsCGPQOu9g4q+JzaYducY/BakYq0U6epx75BRn6gLaSY2J30k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778675797; c=relaxed/simple;
-	bh=0l+ziYlRDjP2Zyzl6gHNrYAHjrq6RY040r6ga3U5Jas=;
+	s=arc-20240116; t=1778675798; c=relaxed/simple;
+	bh=3ui4rtSYEBAKgYVKs7kdE1N/QSUyXXgtBnXBglvKLEc=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=GGbxahXCHqjyW7VS7GpGwfuicdysGYiD0f59S3dIhslfpqq3webWkZ0mv9VF13kSKDmMpnvs/Pm+v1gKaluYYmgoBY8fmvf1HiRC2FfQc0e7ZKA46Uzu37uHdRXBtzf6R2nXhxdMVIAQjgKfNp1nj89Ma7+eXpuygHeon9RueCs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=WOjSob1M; arc=none smtp.client-ip=216.71.153.141
+	 MIME-Version; b=tMwxg/zogZP0bFZMUNZESfDEVreSQT2QsXnHMrsUOsPYFUU2qypkh1Tat/x4fIBnZ4gcg6WphnVlCNgQ4ReXyFgmDzBPfHSjEi+h1zLff6Xlx8A8zKzGVRX63HrpO8345VaeR/hSz2bTwc5woqeKNVYHajGuXvYxivxFJ9rjtww=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=noWUj/U/; arc=none smtp.client-ip=216.71.153.141
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="WOjSob1M"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="noWUj/U/"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
   t=1778675797; x=1810211797;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=0l+ziYlRDjP2Zyzl6gHNrYAHjrq6RY040r6ga3U5Jas=;
-  b=WOjSob1Mx4c4xr1uRjxvIDQh+CHGuCRDS7LJg93C+yD0GVY/Y4rGFtb+
-   pvC8PENQ19HRjBGaw9C48r1x6D/iSnLcxFYg5TF6Hc8PXbQEDtC5UwanG
-   LcyAeR1leLEyhT6jmXpYuYNYcsoLbENPLSVnbECzAxwRnehaJHi+ZVO0d
-   yTyYqjIRsFkgw7oObwOG59Hgw3kGdZFmnTtv/PXW9eunr0WLhr75aXJuS
-   N4dRxTsFeR43YKxS50NGsLBmXaZq2jwc8YvCD/Jiqx2NDSzgC9n0oCIst
-   u0z+uRQbS0Rx+RongnfNdXW+AfhEc3TOspTAqR1SrKp91M2cWnGP/bAfi
+  bh=3ui4rtSYEBAKgYVKs7kdE1N/QSUyXXgtBnXBglvKLEc=;
+  b=noWUj/U/fXeJETxLGs34q0rwevuyk1wOSHyv2dyE8M+qNAe3wA7LIPz6
+   ZT3D4d+okCvnu5yEfCGyTjOtVDuZdbb8PuY8Xm0MSGre+x58060woPjLT
+   cj1Ncc6fq4FmAU1bfftohzhEHrUXj6y+MeSTqlbN6Kq8fXoraL8MIxOB/
+   Bl6xZzy4bU0QFPSYwQ543uOESGIui7YdkuQOk9GZdFbzHm4botnzcPGQd
+   jWDI4TcIM0wj+UWTTn2f0q2Q+Emnd2nieRCBlRmjlngB7HJYLUfSeBwsz
+   svtT6fSn9ljEN37bL+FnS9rfHSG1lTzjJxy1w5OFTisYbEnrWsUE9rg9E
    Q==;
-X-CSE-ConnectionGUID: Cj32vsF6QRiSnS5MXBmBQQ==
-X-CSE-MsgGUID: C4xCQ5oiRzKeRAPQGfikuA==
+X-CSE-ConnectionGUID: BEU5JfetR0KNx/qRVzloWQ==
+X-CSE-MsgGUID: 9MkSnRHkSrqyfvPQKcSxAQ==
 X-IronPort-AV: E=Sophos;i="6.23,232,1770566400"; 
-   d="scan'208";a="146869035"
+   d="scan'208";a="146869037"
 Received: from unknown (HELO uls-op-esad2-o.wdc.com) ([199.255.45.15])
   by ob1.hgst.iphmx.com with ESMTP; 13 May 2026 20:35:26 +0800
-X-CSE-ConnectionGUID: rH42eA5wSZuxdD5cipchWg==
-X-CSE-MsgGUID: 7TG73m/pTMmsgnMmJMtCgQ==
-IronPort-SDR: 6a046ffc_hblOqiKNrBEubxfsZk+6fmexYEw5LicQiQCH4KDYhdOw5vx
- lNIkKVgg22YkHGoWA2I1MFJMiUyI+XLX1yhYwxA==
+X-CSE-ConnectionGUID: lhw+gTujQtuEZ8b/roVq1g==
+X-CSE-MsgGUID: NBtBzGyJTRSszxjEidfRmQ==
+IronPort-SDR: 6a047002_PMSDpaCBfkIK/MJ+sV4O2+EXN1QjydQRz2ouNL1i/kB4w9S
+ tLZadUKh+GJ+1/GZ6spG9K/MiqbqEONra8WY3mw==
 Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
-  by uls-op-esad2-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 May 2026 05:35:07 -0700
-X-CSE-ConnectionGUID: UoAGZlNKSuS+ctWuBMvVng==
-X-CSE-MsgGUID: rq/VDo3kSNOiAOHHJlmQTg==
+  by uls-op-esad2-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 May 2026 05:35:13 -0700
+X-CSE-ConnectionGUID: xQ/DXbyQQHCce7EXVAbzoA==
+X-CSE-MsgGUID: hwA/isS1TRyj1d0mqJPH8Q==
 WDCIronportException: Internal
 Received: from wdap-6xonuiesoc.ad.shared (HELO neo.wdc.com) ([10.224.28.49])
-  by uls-op-esai1-o.wdc.com with ESMTP; 13 May 2026 05:35:07 -0700
+  by uls-op-esai1-o.wdc.com with ESMTP; 13 May 2026 05:35:13 -0700
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>,
@@ -56,9 +56,9 @@ Cc: Filipe Manana <fdmanana@suse.com>,
 	Naohiro Aota <naohiro.aota@wdc.com>,
 	Christoph Hellwig <hch@lst.de>,
 	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 3/7] btrfs: zoned: always set data_relocation_bg
-Date: Wed, 13 May 2026 14:34:41 +0200
-Message-ID: <20260513123445.43197-4-johannes.thumshirn@wdc.com>
+Subject: [PATCH 5/7] btrfs: zoned: subtract zone_unusable space in statfs
+Date: Wed, 13 May 2026 14:34:43 +0200
+Message-ID: <20260513123445.43197-6-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.54.0
 In-Reply-To: <20260513123445.43197-1-johannes.thumshirn@wdc.com>
 References: <20260513123445.43197-1-johannes.thumshirn@wdc.com>
@@ -70,42 +70,35 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-When searching for a data relocation block-group on mount,
-btrfs_zoned_reserve_data_reloc_bg() is looking for the first empty DATA
-block-group. But it first checks if the block-group is empty and if yes
-continues the search, and then checks if it is the first DATA block-group.
+On zoned filesystems, space in block groups that has been freed but not
+yet reset is tracked in bytes_zone_unusable. This space cannot be used for
+new allocations until zone reclaim resets the zones, but it was being
+reported as available space in statfs.
 
-Reverse the order, first check if it is the first DATA block-group found
-and skip, then check if the block-group is empty. This enusres that there
-is always a DATA block-group set as data_relocation_bg in the filesystem.
+This caused statfs to over-report free space, leading to ENOSPC errors
+when applications tried to allocate based on the reported free space.
 
-Singed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Fix this by subtracting bytes_zone_unusable from total_free_data in the
+statfs calculation for zoned filesystems.
+
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/zoned.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/super.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 16dd87aa06f2..0b80b498fb85 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -2784,14 +2784,14 @@ void btrfs_zoned_reserve_data_reloc_bg(struct btrfs_fs_info *fs_info)
- again:
- 	bg_list = &space_info->block_groups[index];
- 	list_for_each_entry(bg, bg_list, list) {
--		if (bg->alloc_offset != 0)
--			continue;
--
- 		if (first) {
- 			first = false;
- 			continue;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index a0dbc0d2213f..498aa3039fbe 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1752,6 +1752,8 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 					factor = btrfs_bg_type_to_factor(
+ 						btrfs_raid_array[i].bg_flag);
+ 			}
++
++			total_free_data -= found->bytes_zone_unusable * factor;
  		}
  
-+		if (bg->alloc_offset != 0)
-+			continue;
-+
- 		if (space_info == data_sinfo) {
- 			/* Migrate the block group to the data relocation space_info. */
- 			struct btrfs_space_info *reloc_sinfo = data_sinfo->sub_group[0];
+ 		/*
 -- 
 2.54.0
 

@@ -1,79 +1,82 @@
-Received: from fout-a4-smtp.messagingengine.com (fout-a4-smtp.messagingengine.com [103.168.172.147])
+Received: from fhigh-a8-smtp.messagingengine.com (fhigh-a8-smtp.messagingengine.com [103.168.172.159])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 04D3F42A82;
-	Wed, 13 May 2026 00:43:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.147
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A3C01D798E;
+	Wed, 13 May 2026 00:43:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.159
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778633027; cv=none; b=kalI/DZZI5uwoHjL+ircztJqA82A2DTq0lbPbrpGTVW3VTE0kcbuL2Tn02VKWtRch27NLNgQ7az2D/3ta+VmwD4FiLH8KekywE+1eqcl5MIammlZBR4irVlaoYzw1rI+y1KRbsJqY1ta4PhE8RhhNZm5zjGXvc8A/6494w8X8Ew=
+	t=1778633028; cv=none; b=TZ0Zf433Yx+MMhX0HwKQb+w3Q8tSkwl/ORgaSlymAr1zVRfqjzvG+NiYl70wP4sVfvDB7LdWZMze7Fv6+VU9M0VfgHGNc4MphJ4DpP6mw1ftlaQ1SMQy1kVjElypDdDfI2E7WHALKvvWkGQjAto3rbS0ItCfJ1hqRBnA06oEOck=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778633027; c=relaxed/simple;
-	bh=oSC2vPGr/cqRklDEpJcJeWWGJ3FZEnXoePEt1Ui7O+Q=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=HUQooC+CWIlGQ7j03XmbpomUObSThTIGN5XZSC3VUwJ2Rld+KN58WYZKZ6lMV2uwrkW/QUz/6prbkZHcNfp6jT29xA9z+pB3ahxFCKEOBs9GWHnWZD8aIaJaMxtB8D1EHSVghQ+BRg9aXVm+3K8VYsGg6/6ozMXThtEoIxPk2JM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=fxiukOl1; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=rnesUf7B; arc=none smtp.client-ip=103.168.172.147
+	s=arc-20240116; t=1778633028; c=relaxed/simple;
+	bh=gYJBdpHNZqV5l2/RY+ywnV0cbXBwP/Qx/MJhZPmsDbY=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=hOCLDkcqho1/sZlCrPinbHWb+OpCQbamQvWfzsS1jJyWrDok5Bn4EhQUDJ6undH8xpJoBpJ51hVAeKyUSDnyBGJ5HGHp8EfNDcaHqJvOPewzfipwzG9w5FTcRatKecBIOFnjW/kvWVpCRidFBSfsD6cARbjjPpzBDomN9iRsIL0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=YTyhv4Aw; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=PqwcVa96; arc=none smtp.client-ip=103.168.172.159
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="fxiukOl1";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="rnesUf7B"
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="YTyhv4Aw";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="PqwcVa96"
 Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
-	by mailfout.phl.internal (Postfix) with ESMTP id 00BBFEC0176;
-	Tue, 12 May 2026 20:43:44 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-03.internal (MEProxy); Tue, 12 May 2026 20:43:44 -0400
+	by mailfhigh.phl.internal (Postfix) with ESMTP id C6C7F14001D3;
+	Tue, 12 May 2026 20:43:45 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-03.internal (MEProxy); Tue, 12 May 2026 20:43:45 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
 	:content-transfer-encoding:content-type:date:date:from:from
-	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
-	:to; s=fm1; t=1778633023; x=1778719423; bh=gOZgvVeSRQJmzZr0PiKwT
-	TcHo9TZDQEHr35hNn+OUl4=; b=fxiukOl1ffmCSRj0ZeF8vXHSLrxBqOr/RU6qX
-	mfEc0OX5v8wq29Ul3wNqEf3i71UMMZtzlzFRyMOvh5+PRwFwsk6I8OYJlYnGf55W
-	ir3B6aos07ANJQyoxNGUJA9qjC8rut2R7Bs/O4zBRMu1pgjn0zuTcLOiEkEkQ2fP
-	PfpxUQ48rLk0rFl0lsSCt5OArs0+gfVtUP5QQR8fOFAcnSjjywpyvm8+LYDb1n5z
-	usrOdlyGGsTk7dphBGx9wvkcPAdK4tktzb+WXFPaAKCMXFJpIYS4Uxbq3TsM15zQ
-	4SwuYieGKLMF5GpzJDTXQcSPDajWwoZWDz1AwlNmsLU7k+gpA==
+	:in-reply-to:in-reply-to:message-id:mime-version:references
+	:reply-to:subject:subject:to:to; s=fm1; t=1778633025; x=
+	1778719425; bh=y2EuBgAkToqE4AaAkuZ3+PVjl4qcNqmVoGDl9ppaPok=; b=Y
+	Tyhv4AwodBO9hkh0pBKrOXq9SLUDaJPAMEucK686ucnwUB98LqGEvf68tRCt83D/
+	vTTMktK087iKQ/bhLr0XQWsKeTELnnmw+U92In6mClWcFO+QMGfs/bElTCtHnOIK
+	gAb0tsmqCcvJftrosoggICaTw9LeRsib5oQoAY6j9q/FAqoB5Fq+qY+YeX18/JmK
+	H0/inGLcfKSipFBnLMXWOcnofQJrJTPe46XNj3g6FlG+KwvSmzstQ1gz0Fc7P6ER
+	UqAanXTzmgLTeWAFhT14pnjq5sc5bvaioWavXqRMpnDZaNE9ELBHYGM1deTNEXE/
+	4g4QzyOaFZa1gwntY9l2A==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:content-transfer-encoding:content-type
 	:date:date:feedback-id:feedback-id:from:from:in-reply-to
-	:message-id:mime-version:reply-to:subject:subject:to:to
-	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
-	1778633023; x=1778719423; bh=gOZgvVeSRQJmzZr0PiKwTTcHo9TZDQEHr35
-	hNn+OUl4=; b=rnesUf7BhwyZfEwTnBVjEKir4/wcwmyIfZV7qmvufrHyuoUiTh/
-	j8GFJTea+UbBMf+nAuYsRMU30v0+CQYtNi9hdNlCGwjRk6EMKi78kWyeE1uqoLeB
-	1QATKgVbDIxd9118ST82mVdVN4I+FmEuTdjeHnw3UcBLZqeebAG9KrNW3y7MWLG/
-	pO0mKkR+5tbH9a98dKQxdaMc0zCT1gN/pc9mfdZKTO4QsYj0ngswjf6PQckjW9z5
-	ANC4ANNr+60TF8pkiYvrWg4xtekDyLy42ii83GO0y7o9zcLYKLKZ/94D/cC6vKkg
-	1U94iL2cLOKh2blItMdFAUSn4RUP23Pk6nQ==
-X-ME-Sender: <xms:P8kDajyQr2x-xXOIOZ02QF2fEnKBPUFFuoIt4Ry0mX3ozKDt22BBZw>
-    <xme:P8kDajDVcOq8nwPeRbT0vqBYkWCgj8JxuM_HOCfgy41C28ln-kc1w69E8HAej-iZH
-    yQuXlwOW96XotnQZ1wr75s0ADclDqLiD37RA_mJmqg9w4PnhpCdNnQ>
-X-ME-Received: <xmr:P8kDagZhNcSzyIOoud3kD_1VMMZyoP1zK1SzVRIiIwmte9u81D0Pub4ipXk_-PvYsKy4zqm6lYaeSEZjJBx-utPb6dI>
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+	fm3; t=1778633025; x=1778719425; bh=y2EuBgAkToqE4AaAkuZ3+PVjl4qc
+	NqmVoGDl9ppaPok=; b=PqwcVa964n8S62x+AMvyYTgZ5wYBus7rNyEQOoFaR96i
+	RWpRr6B9nuKUwt4vLP0RVMFeeFcp396+++x2b54hZJf5271rxiDKoNXcddRpZ9mP
+	eVX5z1ew//Eakgw1LzFO6ZqkBXmFaN5hrb0cpCfhbFNdNzF63fheSFoNimcz7bEN
+	imVPAjEQNjYqsRmZzXIa1BDvrtlZMX7P88iYXzYNTs8cBqxlEaC0ZMUai2Msb2JY
+	aoH4+N++8VVGXmSO/Bd1gK/3xmFWGwcvYr7va8PTTgTzEMxpOon/44PkpOHz0eNf
+	aGXk1Ze0Hm5kjrGsszLF6SkJDS+/wyE+LoynRIyfOw==
+X-ME-Sender: <xms:QckDasYQKnVg6vzIL8c-fEIiH9ac8KX_QQ9gMNC5k5NXmv-HhCvqzg>
+    <xme:QckDavKLTcHfvQhSFEhxVMSdTF_XIIXsKspoH0BuZRxlrLzGaDKSIi5molBF4fm62
+    tsYcLoCBVNiLw9hRzi0xNfWhlFYt8H2fZpVHbx3vs-VdOYxmi97BqY>
+X-ME-Received: <xmr:QckDaqB9OUMWczfmNWpbsOXmKlSwDPOduhScsGNr4C52yJHcHW7jNn2wWiIof10tXjkxKbjZ3HqMa4M0bfCtpsLKKjY>
 X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgdduvdefvdejucetufdoteggodetrf
     dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
-    rghilhhouhhtmecufedttdenucenucfjughrpefhvffufffkofgggfestdekredtredttd
-    enucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihhoqeen
-    ucggtffrrghtthgvrhhnpeeiledtfffhhfdvtdefgedvieetleeijeejiedthfefgeekhe
-    evheekjeelkeegkeenucffohhmrghinhepkhgvrhhnvghlrdhorhhgnecuvehluhhsthgv
-    rhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhishessghurhdrih
-    hopdhnsggprhgtphhtthhopeefpdhmohguvgepshhmthhpohhuthdprhgtphhtthhopehl
-    ihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpthhtohepkh
-    gvrhhnvghlqdhtvggrmhesfhgsrdgtohhmpdhrtghpthhtohepfhhsthgvshhtshesvhhg
-    vghrrdhkvghrnhgvlhdrohhrgh
-X-ME-Proxy: <xmx:P8kDarg0_y-ytVlzLmtPpBdmTvVvQ4-4AR0xE0IJuLceWLVUtAfA3Q>
-    <xmx:P8kDai7MeVC1UPi-nPih0Zql-u6i6Bh20caTdnMLNgO5WggULyKrLQ>
-    <xmx:P8kDai4E5DKmrD3JU83hhkpqiYcuIF1CbqzN82_H3BapoeYCZObtMA>
-    <xmx:P8kDamcpKbM-Pt3vvz5v02OOkTXe9IHu5yxRMXGUevN4x_naBkOOTw>
-    <xmx:P8kDahtgYaHEOMxx9NSi3JNRTudKkRq5haqnlgxAcAnkoFy8h6ZMalql>
+    rghilhhouhhtmecufedttdenucenucfjughrpefhvffufffkofgjfhgggfestdekredtre
+    dttdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihho
+    qeenucggtffrrghtthgvrhhnpeeiueffuedvieeujefhheeigfekvedujeejjeffvedvhe
+    dtudefiefhkeegueehleenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgr
+    ihhlfhhrohhmpegsohhrihhssegsuhhrrdhiohdpnhgspghrtghpthhtohepfedpmhhoug
+    gvpehsmhhtphhouhhtpdhrtghpthhtoheplhhinhhugidqsghtrhhfshesvhhgvghrrdhk
+    vghrnhgvlhdrohhrghdprhgtphhtthhopehkvghrnhgvlhdqthgvrghmsehfsgdrtghomh
+    dprhgtphhtthhopehfshhtvghsthhssehvghgvrhdrkhgvrhhnvghlrdhorhhg
+X-ME-Proxy: <xmx:QckDakq-aeBgQRbUPruaCzfOc_JAlXzF-Sd1vr0HRUp-kjSQleCbHw>
+    <xmx:QckDaliLB5T59zejD8TS_IAyqRSYb5Tj5RpiCEgYWgRj5uwHQoWm2g>
+    <xmx:QckDahAltvbq1yLTNDeajbtPZJmBWBl4eHd8F9zZNwhiCVVqwz7GsA>
+    <xmx:QckDaqE1hCnSebzUESmRHyEHbijuQXh1glzMk9sPqvB3XpTVwHTUww>
+    <xmx:QckDav2ZD378k-1m6R1v9Jjbk_MkzS85XnivPF9rBYkYxmm_5Zh7clft>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 12 May 2026 20:43:43 -0400 (EDT)
+ 12 May 2026 20:43:45 -0400 (EDT)
 From: Boris Burkov <boris@bur.io>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com,
 	fstests@vger.kernel.org
-Subject: [PATCH 0/2] squota delete fstests
-Date: Tue, 12 May 2026 17:43:32 -0700
-Message-ID: <cover.1778632843.git.boris@bur.io>
+Subject: [PATCH 1/2] btrfs: inline enable_quota helper in test 301
+Date: Tue, 12 May 2026 17:43:33 -0700
+Message-ID: <3234af372b0f16511aa5856aa7a3a0ca28397fcb.1778632843.git.boris@bur.io>
 X-Mailer: git-send-email 2.54.0
+In-Reply-To: <cover.1778632843.git.boris@bur.io>
+References: <cover.1778632843.git.boris@bur.io>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -82,27 +85,59 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Resurrect a failed previous attempt to land tests exercising edge cases
-of squota qgroup deletion.
+The enable_quota helper in btrfs/301 takes a mode argument ('n', 's',
+or anything else) to switch between "no quota", "simple quota", and
+"full quota" enable.  Only the simple-quota path is ever exercised by
+this test, so the dispatch is dead weight and the indirection just
+obscures the actual btrfs command being run.
 
-Previous attempt:
-https://lore.kernel.org/fstests/ce4a79cafb6790ef6d1e141d65195f72f469ae4d.1706035378.git.boris@bur.io/
+Inline the two call sites to call 'btrfs quota enable --simple'
+directly and drop the helper.
 
-Since then, there have been some more bugs fixed so include some
-additional testing reflecting that, as well as incorporating the last
-round of feedback.
+Signed-off-by: Boris Burkov <boris@bur.io>
+---
+ tests/btrfs/301 | 14 ++------------
+ 1 file changed, 2 insertions(+), 12 deletions(-)
 
-Boris Burkov (2):
-  btrfs: inline enable_quota helper in test 301
-  btrfs: test qgroup deletion races with squota writes
-
- tests/btrfs/301     |  14 +----
- tests/btrfs/348     | 136 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/348.out |  10 ++++
- 3 files changed, 148 insertions(+), 12 deletions(-)
- create mode 100755 tests/btrfs/348
- create mode 100644 tests/btrfs/348.out
-
+diff --git a/tests/btrfs/301 b/tests/btrfs/301
+index 1f72a97b..31243aab 100755
+--- a/tests/btrfs/301
++++ b/tests/btrfs/301
+@@ -169,16 +169,6 @@ do_enospc_falloc()
+ 	do_falloc $file $sz
+ }
+ 
+-enable_quota()
+-{
+-	local mode=$1
+-
+-	[ $mode == "n" ] && return
+-	arg=$([ $mode == "s" ] && echo "--simple")
+-
+-	$BTRFS_UTIL_PROG quota enable $arg $SCRATCH_MNT
+-}
+-
+ get_subvid()
+ {
+ 	_btrfs_get_subvolid $SCRATCH_MNT subv
+@@ -198,7 +188,7 @@ prepare()
+ {
+ 	_scratch_mkfs >> $seqres.full
+ 	_scratch_mount
+-	enable_quota "s"
++	$BTRFS_UTIL_PROG quota enable --simple $SCRATCH_MNT
+ 	$BTRFS_UTIL_PROG subvolume create $subv >> $seqres.full
+ 	local subvid=$(get_subvid)
+ 	set_subvol_limit $subvid $limit
+@@ -421,7 +411,7 @@ enable_mature()
+ 	# Sync before enabling squotas to reliably *not* count the writes
+ 	# we did before enabling.
+ 	sync
+-	enable_quota "s"
++	$BTRFS_UTIL_PROG quota enable --simple $SCRATCH_MNT
+ 	set_subvol_limit $subvid $limit
+ 	_scratch_cycle_mount
+ 	usage=$(get_subvol_usage $subvid)
 -- 
 2.54.0
 

@@ -1,51 +1,51 @@
 Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E1A1413240
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 12:36:35 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 986653932DE
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2026 12:36:36 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778675796; cv=none; b=m1iRupUi5HPpfTR8/u4ezsAlqtWJELD/Da+5uSU2JAvOsYeQ+Nc+/B9eeXpuonPnKo/TS6DxxbqgYrdk2/iLk3E4Bm3ocVi/Kn+jG7ybVUZF/wdZYCwc5+zKXCnd7zjQoVDp/ZmxHdwrrZMo7Q8KZTZK/ribj5x83oUAQJzUtfk=
+	t=1778675797; cv=none; b=IzymBtc7LFzAHK4lqdZANz2qeWEVOILr5weGRtyjryfNZoP9uW0bI7H2iyl8WS/9EbnW5hqtW3zV8ts5gFNfORGQj/ZfZnwOt60ivX3QhdQmiu2dbTzyF4+5JxQ/0bYtpc7r6kBS7bUAWoPfG1BS80Cow5bAMeDD1L4sjQwFQHI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778675796; c=relaxed/simple;
-	bh=LSCcF5Ih97a3GlTQhpxvlbCMp05xa4n7iIdUq/EPGFE=;
+	s=arc-20240116; t=1778675797; c=relaxed/simple;
+	bh=0l+ziYlRDjP2Zyzl6gHNrYAHjrq6RY040r6ga3U5Jas=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=OADjJpLttVIBp6/As/HrYCYx2dcisVxqcfqdDqlQR+6ycenVMAnUWaDGltIFGzyOzUr+Ep1XtpiBrAGh2kMVsI+9fShyDkDVLMvbliAfUTmHZNfB2J31W7FN1sx6EkffTAG/9ZvCazDZDm0aOhmCoL7hrMpcE/gSSW2mcElCpy0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=bhFDf4oS; arc=none smtp.client-ip=216.71.153.141
+	 MIME-Version; b=GGbxahXCHqjyW7VS7GpGwfuicdysGYiD0f59S3dIhslfpqq3webWkZ0mv9VF13kSKDmMpnvs/Pm+v1gKaluYYmgoBY8fmvf1HiRC2FfQc0e7ZKA46Uzu37uHdRXBtzf6R2nXhxdMVIAQjgKfNp1nj89Ma7+eXpuygHeon9RueCs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=WOjSob1M; arc=none smtp.client-ip=216.71.153.141
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="bhFDf4oS"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="WOjSob1M"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1778675795; x=1810211795;
+  t=1778675797; x=1810211797;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=LSCcF5Ih97a3GlTQhpxvlbCMp05xa4n7iIdUq/EPGFE=;
-  b=bhFDf4oSDg5ZgAzzU0TVWwNYXR7kThbsNN1qdSA867+x8NtkZRit7NUI
-   mv4XPoRj3PaIRGdDAl1xYc7mvHJDImtYeVFf8by928fZunhICVGdWwyq0
-   NZ8gWHq6va8TgUyPg519Wd/yYz3TqudOYOcFql/xDVpgYO0YBpcD9HA3Q
-   fh0oWJnLmt0gD1GZmb8tM0+w8YrSYn7zso3uxTidvSK5fOwyD4qOOWc6x
-   lvZZbfl3Eu8TzFFiAMrP2+nxLk6GyXoY1za1siYWY0Ybi0/i9Lp2HzaCF
-   5KnkbYi1FmOHnYHteuG4HRDIRKzdFGDF+xD4xldg9oNfxBaIaRZZplxhU
-   w==;
-X-CSE-ConnectionGUID: FOpWVZ2wTGCPsVAy0iFaQQ==
-X-CSE-MsgGUID: 77RHP3AqQv6JLPXinFB5Jg==
+  bh=0l+ziYlRDjP2Zyzl6gHNrYAHjrq6RY040r6ga3U5Jas=;
+  b=WOjSob1Mx4c4xr1uRjxvIDQh+CHGuCRDS7LJg93C+yD0GVY/Y4rGFtb+
+   pvC8PENQ19HRjBGaw9C48r1x6D/iSnLcxFYg5TF6Hc8PXbQEDtC5UwanG
+   LcyAeR1leLEyhT6jmXpYuYNYcsoLbENPLSVnbECzAxwRnehaJHi+ZVO0d
+   yTyYqjIRsFkgw7oObwOG59Hgw3kGdZFmnTtv/PXW9eunr0WLhr75aXJuS
+   N4dRxTsFeR43YKxS50NGsLBmXaZq2jwc8YvCD/Jiqx2NDSzgC9n0oCIst
+   u0z+uRQbS0Rx+RongnfNdXW+AfhEc3TOspTAqR1SrKp91M2cWnGP/bAfi
+   Q==;
+X-CSE-ConnectionGUID: Cj32vsF6QRiSnS5MXBmBQQ==
+X-CSE-MsgGUID: C4xCQ5oiRzKeRAPQGfikuA==
 X-IronPort-AV: E=Sophos;i="6.23,232,1770566400"; 
-   d="scan'208";a="146869034"
+   d="scan'208";a="146869035"
 Received: from unknown (HELO uls-op-esad2-o.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 13 May 2026 20:35:25 +0800
-X-CSE-ConnectionGUID: 7Lz1FCiwQDORr78UQyiAoQ==
-X-CSE-MsgGUID: Gev18YoFSia57+vvUeDibg==
-IronPort-SDR: 6a046ffa_3+N5XLvNoPtnKxb2iOH9WYMXpkeWjdSywldXNb/Mm8uAhxs
- Fs8L5AtLhWb0WLs35zPPd2GaI2KF+KbxYsT9wEw==
+  by ob1.hgst.iphmx.com with ESMTP; 13 May 2026 20:35:26 +0800
+X-CSE-ConnectionGUID: rH42eA5wSZuxdD5cipchWg==
+X-CSE-MsgGUID: 7TG73m/pTMmsgnMmJMtCgQ==
+IronPort-SDR: 6a046ffc_hblOqiKNrBEubxfsZk+6fmexYEw5LicQiQCH4KDYhdOw5vx
+ lNIkKVgg22YkHGoWA2I1MFJMiUyI+XLX1yhYwxA==
 Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
-  by uls-op-esad2-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 May 2026 05:35:05 -0700
-X-CSE-ConnectionGUID: K2WfFAMwQWGByeEx7j0wvw==
-X-CSE-MsgGUID: c7QcAaS2SA+YLrxoxm9GHw==
+  by uls-op-esad2-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 May 2026 05:35:07 -0700
+X-CSE-ConnectionGUID: UoAGZlNKSuS+ctWuBMvVng==
+X-CSE-MsgGUID: rq/VDo3kSNOiAOHHJlmQTg==
 WDCIronportException: Internal
 Received: from wdap-6xonuiesoc.ad.shared (HELO neo.wdc.com) ([10.224.28.49])
-  by uls-op-esai1-o.wdc.com with ESMTP; 13 May 2026 05:35:04 -0700
+  by uls-op-esai1-o.wdc.com with ESMTP; 13 May 2026 05:35:07 -0700
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>,
@@ -56,9 +56,9 @@ Cc: Filipe Manana <fdmanana@suse.com>,
 	Naohiro Aota <naohiro.aota@wdc.com>,
 	Christoph Hellwig <hch@lst.de>,
 	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 2/7] btrfs: zoned: decode 'RECLAIM_ZONES' state in tracepoints
-Date: Wed, 13 May 2026 14:34:40 +0200
-Message-ID: <20260513123445.43197-3-johannes.thumshirn@wdc.com>
+Subject: [PATCH 3/7] btrfs: zoned: always set data_relocation_bg
+Date: Wed, 13 May 2026 14:34:41 +0200
+Message-ID: <20260513123445.43197-4-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.54.0
 In-Reply-To: <20260513123445.43197-1-johannes.thumshirn@wdc.com>
 References: <20260513123445.43197-1-johannes.thumshirn@wdc.com>
@@ -70,26 +70,42 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Decode the 'RECLAIM_ZONES' state in tracepoints, as of now only the
-numerical state is shown in the tracepoints.
+When searching for a data relocation block-group on mount,
+btrfs_zoned_reserve_data_reloc_bg() is looking for the first empty DATA
+block-group. But it first checks if the block-group is empty and if yes
+continues the search, and then checks if it is the first DATA block-group.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Reverse the order, first check if it is the first DATA block-group found
+and skip, then check if the block-group is empty. This enusres that there
+is always a DATA block-group set as data_relocation_bg in the filesystem.
+
+Singed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- include/trace/events/btrfs.h | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/zoned.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index ec1df8b94517..ed272a100fa8 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -101,6 +101,7 @@ struct find_free_extent_ctl;
- 	EM( ALLOC_CHUNK_FORCE,		"ALLOC_CHUNK_FORCE")		\
- 	EM( RUN_DELAYED_IPUTS,		"RUN_DELAYED_IPUTS")		\
- 	EM( COMMIT_TRANS,		"COMMIT_TRANS")			\
-+	EM( RECLAIM_ZONES,		"RECLAIM_ZONES")		\
- 	EMe(RESET_ZONES,		"RESET_ZONES")
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 16dd87aa06f2..0b80b498fb85 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -2784,14 +2784,14 @@ void btrfs_zoned_reserve_data_reloc_bg(struct btrfs_fs_info *fs_info)
+ again:
+ 	bg_list = &space_info->block_groups[index];
+ 	list_for_each_entry(bg, bg_list, list) {
+-		if (bg->alloc_offset != 0)
+-			continue;
+-
+ 		if (first) {
+ 			first = false;
+ 			continue;
+ 		}
  
- /*
++		if (bg->alloc_offset != 0)
++			continue;
++
+ 		if (space_info == data_sinfo) {
+ 			/* Migrate the block group to the data relocation space_info. */
+ 			struct btrfs_space_info *reloc_sinfo = data_sinfo->sub_group[0];
 -- 
 2.54.0
 

@@ -1,126 +1,109 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from mail.zytor.com (terminus.zytor.com [198.137.202.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8FFA438655A;
-	Wed, 13 May 2026 14:59:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7FF5B44A724;
+	Wed, 13 May 2026 16:27:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.136
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778684361; cv=none; b=iTK1QhfmhcdYbhmyQoPdM4VrW7HzWoI3PtTB101iNjpQXqUEouYHpZk1olqfT4B6LFqCTRT5yRrHRnekBCrOC5b8ONsdLjVCul4tZP9p1DGGaA2oL6sHF3Tyd3Jo/xSZBrkajesE/xWKD5KrbKXeOJJj9bq5NgrI/WxMgGf0Cjo=
+	t=1778689653; cv=none; b=NjSxIUAqFqfaLka9eAJfmV4qM3i2DpElGcXdG4aWpAiu/CAI112WiUDatUL3WKr8Fc8WjuIv4z3f1um27GLqLoUZufi0skKyuFprwsvHb7KcQ93Mk22bOucZfF9htoOQj1yrLP5bvDtsukxPBisIgcJqUJPHhsBCsabE+x2DFnE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778684361; c=relaxed/simple;
-	bh=zbNHyyDRYAeGo6U86F5ea4LHa32zJh59lyteWOe4KGw=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ZhMrupf3fZ6ls6FVHJp880rovHBrIpAxXmr8lnULIEhJPSrZiYAzG1/w8BjXXkWF/YlY651QuhNX2j5B0SV0hm4xGTDZ21uo84LwcqRDo7Umyj2OVhM7le6YNRunOLF4FBm+8lkkdyqRsJLIWqZH3UgwwtbbnGAmzRD9RgyiUzU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=iIhYEKx5; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1778689653; c=relaxed/simple;
+	bh=CDzF6zxpWm/EIG7IClV3NwFJ7pzNxzMC2HVtf6q6ESc=;
+	h=Date:From:To:CC:Subject:In-Reply-To:References:Message-ID:
+	 MIME-Version:Content-Type; b=CwVEUnQ+XZhcOIiU6+3cne3D42kLjnU08brxc+vpnxcgBFX5Fx3khnczAQkMlUr3sZfZAEgHnP7dAczgnnEf+6wU/MqW4Bs6hxmFNJivM3crGjo/WF5GRKpNcBoRNfFI3uxGEK8VOIQNQzhIh4LavpOKCDrvsz7YW89Lo7FquCc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zytor.com; spf=pass smtp.mailfrom=zytor.com; dkim=pass (2048-bit key) header.d=zytor.com header.i=@zytor.com header.b=Ahhs2ZaN; arc=none smtp.client-ip=198.137.202.136
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zytor.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zytor.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="iIhYEKx5"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2D47CC2BCB3;
-	Wed, 13 May 2026 14:59:20 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778684360;
-	bh=zbNHyyDRYAeGo6U86F5ea4LHa32zJh59lyteWOe4KGw=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=iIhYEKx51XcVXCXizSytP4ZvhZtiBJmIPf+6O8Mktq3AJeEzUzkfq9zJFMxWWOQN/
-	 aoWFZ5To1myUEqEdw7VallkySu/iGPAldgKZg0gl6xnLSnuloIhSu3lBTLqysfs1I0
-	 Skg4f9BktAuE18yvvQRJ70VrpwY5SAV36hi26w0P9GMsQkbf7JD+SNU9HxSde3AnHu
-	 bo3a4ZV9/09phwV+AioQvcuqmfuB2eTSN/4uxVBmpiaTeWdd95EFcAzHk3DTbz/8je
-	 v+mVMmUJ6OM8tMNlaOTQXwFxTd7uJskcOql+wcSZWQ2REyC0QM0b5EqoBwpRfC7ETk
-	 FtuJsAzYKU1jA==
-Date: Wed, 13 May 2026 07:59:19 -0700
-From: "Darrick J. Wong" <djwong@kernel.org>
-To: Christoph Hellwig <hch@lst.de>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Chris Li <chrisl@kernel.org>,
-	Kairui Song <kasong@tencent.com>,
-	Christian Brauner <brauner@kernel.org>,
-	Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>,
-	Theodore Ts'o <tytso@mit.edu>, Jaegeuk Kim <jaegeuk@kernel.org>,
-	Chao Yu <chao@kernel.org>, Trond Myklebust <trondmy@kernel.org>,
-	Anna Schumaker <anna@kernel.org>,
-	Namjae Jeon <linkinjeon@kernel.org>,
-	Hyunchul Lee <hyc.lee@gmail.com>, Steve French <sfrench@samba.org>,
-	Paulo Alcantara <pc@manguebit.org>,
-	Carlos Maiolino <cem@kernel.org>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Naohiro Aota <naohiro.aota@wdc.com>, linux-xfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-doc@vger.kernel.org,
-	linux-mm@kvack.org, linux-block@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-f2fs-devel@lists.sourceforge.net, linux-nfs@vger.kernel.org,
-	linux-cifs@vger.kernel.org
-Subject: Re: [PATCH 08/12] swap,iomap: simplify iomap_swapfile_iter
-Message-ID: <20260513145919.GP9555@frogsfrogsfrogs>
-References: <20260512053625.2950900-1-hch@lst.de>
- <20260512053625.2950900-9-hch@lst.de>
- <20260512170204.GI9555@frogsfrogsfrogs>
- <20260513065608.GA2250@lst.de>
+	dkim=pass (2048-bit key) header.d=zytor.com header.i=@zytor.com header.b="Ahhs2ZaN"
+Received: from ehlo.thunderbird.net (c-76-133-66-138.hsd1.ca.comcast.net [76.133.66.138])
+	(authenticated bits=0)
+	by mail.zytor.com (8.18.1/8.17.1) with ESMTPSA id 64DGEn1a2905667
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NO);
+	Wed, 13 May 2026 09:14:50 -0700
+DKIM-Filter: OpenDKIM Filter v2.11.0 mail.zytor.com 64DGEn1a2905667
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=zytor.com;
+	s=2026042601; t=1778688894;
+	bh=kzc3j2nHoRxQd9M0vkzx/uZg5Iwn8WIixU3RTEBg+i4=;
+	h=Date:From:To:CC:Subject:In-Reply-To:References:From;
+	b=Ahhs2ZaNxCuIyTcDd/to/S7gqU6ft6zabx6TakulFhnIjDt8bXMJ0LGzYVyEfrxzF
+	 EoSq1ir5sKEz+X8RiAhKD9hHd7SJ2OozMvt9/+9wrxu0pBvVJBlgjVq84smFg5PvWl
+	 ODAygtu3MetLOSzf39fcORVc45KgUJxXa0B3c1WcYV/TBfKv8I2j2JZj6Oo7LMLnaS
+	 F/w+6e9Kh9WjQd20++VspvTwbnc9Zogl0CKsAiiMu7QXkJbZu0hP9l3BvRBi3h/lIE
+	 60H32//SMm5Gsh1hto9j6ldrE4pFtBClA6C9ESo0hnzWXYJCYw3OlK+u43GeYa68K6
+	 OTz8RC1DMTHsw==
+Date: Wed, 13 May 2026 09:14:44 -0700
+From: "H. Peter Anvin" <hpa@zytor.com>
+To: Christoph Hellwig <hch@lst.de>, Andrew Morton <akpm@linux-foundation.org>
+CC: Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>,
+        Ard Biesheuvel <ardb@kernel.org>, Huacai Chen <chenhuacai@kernel.org>,
+        WANG Xuerui <kernel@xen0n.name>,
+        Madhavan Srinivasan <maddy@linux.ibm.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+        Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>,
+        Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Sven Schnelle <svens@linux.ibm.com>, Thomas Gleixner <tglx@kernel.org>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        Herbert Xu <herbert@gondor.apana.org.au>,
+        Dan Williams <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
+        Song Liu <song@kernel.org>,
+        Yu Kuai <yukuai@alb-78bjiv52429oh8qptp.cn-shenzhen.alb.aliyuncs.com>,
+        Li Nan <linan122@huawei.com>, linux-kernel@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-crypto@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-raid@vger.kernel.org
+Subject: Re: [PATCH 01/19] btrfs: require at least 4 devices for RAID 6
+User-Agent: K-9 Mail for Android
+In-Reply-To: <20260512052230.2947683-2-hch@lst.de>
+References: <20260512052230.2947683-1-hch@lst.de> <20260512052230.2947683-2-hch@lst.de>
+Message-ID: <45B68AA3-36E2-4187-BD30-F4631C7F32C2@zytor.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260513065608.GA2250@lst.de>
+Content-Type: text/plain;
+ charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-On Wed, May 13, 2026 at 08:56:08AM +0200, Christoph Hellwig wrote:
-> On Tue, May 12, 2026 at 10:02:04AM -0700, Darrick J. Wong wrote:
-> > OH.  Now I remember why -- it's to handle contiguous mixed mappings
-> > better.
-> > 
-> > Let's say that you have a 1k fsblock filesystem and 4k base pages.  You
-> > fallocate an 8G swap file and then mkswap it.  The first mapping is a 1k
-> > written mapping at offset 0 for the swap header, followed by an 8388607k
-> > unwritten mapping at offset 3k.
-> > 
-> > The PAGE_SIZE rounding code in iomap_swapfile_add_extent will round the
-> > end of that first mapping down to zero and ignore it.  The second
-> > mapping will be treated as if it were a 8388604k mapping starting at
-> > offset 4096.  Now the page counts are wrong and the swapon fails.
-> 
-> Do we care about this use case?  I guess you did as you implemented
-> his, but still?
+On May 11, 2026 10:20:41 PM PDT, Christoph Hellwig <hch@lst=2Ede> wrote:
+>While the RAID6 algorithm could in theory support 3 devices by just
+>copying the data disk to the two parity disks, this version is not only
+>useless because it is a suboptimal version of 3-way mirroring, but also
+>broken with various crashes and incorrect parity generation in various
+>architecture-optimized implementations=2E  Disallow it similar to mdraid
+>which requires at least 4 devices for RAID 6=2E
+>
+>Fixes: 53b381b3abeb ("Btrfs: RAID5 and RAID6")
+>Signed-off-by: Christoph Hellwig <hch@lst=2Ede>
+>---
+> fs/btrfs/volumes=2Ec | 2 +-
+> 1 file changed, 1 insertion(+), 1 deletion(-)
+>
+>diff --git a/fs/btrfs/volumes=2Ec b/fs/btrfs/volumes=2Ec
+>index a88e68f90564=2E=2E0b54b97bdad8 100644
+>--- a/fs/btrfs/volumes=2Ec
+>+++ b/fs/btrfs/volumes=2Ec
+>@@ -159,7 +159,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_N=
+R_RAID_TYPES] =3D {
+> 		=2Esub_stripes	=3D 1,
+> 		=2Edev_stripes	=3D 1,
+> 		=2Edevs_max	=3D 0,
+>-		=2Edevs_min	=3D 3,
+>+		=2Edevs_min	=3D 4,
+> 		=2Etolerated_failures =3D 2,
+> 		=2Edevs_increment	=3D 1,
+> 		=2Encopies	=3D 1,
 
-We do, because mkswap -F uses fallocate nowadays:
-
-$ mkswap -s 4194304 -F a
-Setting up swapspace version 1, size = 4 MiB (4190208 bytes)
-no label, UUID=bc9746bf-e200-4944-927c-80d83872f1cb
-$ filefrag -v a
-Filesystem type is: 58465342
-File size of a is 4194304 (1024 blocks of 4096 bytes)
- ext:     logical_offset:        physical_offset: length:   expected: flags:
-   0:        0..       0:  411383552.. 411383552:      1:            
-   1:        1..    1023:  411383553.. 411384575:   1023:             last,unwritten,eof
-a: 1 extent found
-
-> > A more generic solution to this would be to change add_swap_extent to
-> > take sector_t addr and length values and use them to construct a bitmap
-> > representing contiguous physical space on the bdev, accounting of course
-> > for PAGE_SIZE alignment.  Except for the swap header page, every other
-> > contiguously set page-aligned region in the bitmap gets added to the
-> > swap extent map.
-> 
-> You don't even need a bitmap, just do basically the same checks as
-> the iomap code when moving to a new swap extent after moving to use
-> the sector_t.  And it really should anyway, as the current abuse of
-> sector_t to store a disk offset in PAGE_SIZE units is pretty gross.
-
-Oh, I meant this to handle the particularly gross case where the fsblock
-size is smaller than a base page, but there are a very large number of
-file mappings that point to a physically contiguous extent but are not
-in logical order:
-
-{.offset=0, .length=1k, .addr=7},
-{.offset=1, .length=1k, .addr=6},
-{.offset=2, .length=1k, .addr=5},
-{.offset=3, .length=1k, .addr=4},
-{.offset=4, .length=1k, .addr=3},
-{.offset=5, .length=1k, .addr=2},
-{.offset=6, .length=1k, .addr=1},
-{.offset=7, .length=1k, .addr=0},
-
-That's two pages of swapfile, but with the current layout accumulation
-code we "cannot" find either.
-
---D
+Yes, if anyone cares about < 4 disks for the RAID-6 case (or < 3 for the R=
+AID-4/5 case), just use the RAID-1 code=2E

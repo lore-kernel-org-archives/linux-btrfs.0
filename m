@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 07B33390229
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 May 2026 05:43:04 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 79CAA3AF64B
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 May 2026 05:43:40 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778737385; cv=none; b=gVmiITfoOmmdc+r+06UWJNUAbZuGfuRPt08BOOgYxoigeFNlzhLMquWExKTOqm+4UVcljhoLvFHLjPF0udim+t+sZRDGNNfr2XIPamG8ZOXUTr0Gf5rbEOs2AGrdlKYqewgRGnWHBixOadkYTjPH6oNn4V1Obr0FAjZfrTQqYL4=
+	t=1778737420; cv=none; b=Plyhqt+mTc93t0ZYlcCvP7/ECUZUXo2asGJq+L/A3kxJfiOdcHrXJruQE9EWf8CjuB05htvZAYIgqIXVp1dtzvzrC5jDGo6frQnoKe0FuPmJeib8b9MzV5VJfvcO3k4LiScYDWFeYBnOqRD3PX44zlhqCpvmtyyf/E4uq5/jLTA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778737385; c=relaxed/simple;
-	bh=sWG620i9qMrnr1EnBqFhfe3GA4VPV1arNM/TrNvc3KI=;
+	s=arc-20240116; t=1778737420; c=relaxed/simple;
+	bh=U9r8C8y+h33wPVpFwXiDljqpKV544BmzyMi8+iaolQw=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=eoZKwiqCS38BN8i2Grn05fS+2MiWqQAUuFlfFZx6loylqtkAe1KQ/arJVNY1j/f09chrF5Yo2vnwyH9IWkhJTRJWjZuVx88CoCzlhs2ZHUMKsET4ZYvmO+2Taw2tvJxhb8ecEgqR4ewB7wgMV1E3tIn17oNs4Q3YxISW6cx+CgY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=WqrQ8CIC; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=t8i8vWOMZTyC5G4eTrOPVqNIyLkGfMxzLtNaON86Dcd0FVGwBOYxUbxbn+piNuOUyAhwvY7/SHF7/RALYsudP6fFaj+FeMQjRJ6OyHE0C/xpMgralFT8zPGFulXxEyMcbpLz2GXc7TeDVdniD55yvIdYPp3GbWC+qN2s3LK27AM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YrZwoSDK; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="WqrQ8CIC"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B0C07C2BCB7;
-	Thu, 14 May 2026 05:43:03 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YrZwoSDK"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 12773C2BCB7;
+	Thu, 14 May 2026 05:43:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778737384;
-	bh=sWG620i9qMrnr1EnBqFhfe3GA4VPV1arNM/TrNvc3KI=;
+	s=k20201202; t=1778737420;
+	bh=U9r8C8y+h33wPVpFwXiDljqpKV544BmzyMi8+iaolQw=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=WqrQ8CICY00LA+Q5LDNrv2cAs53140hhVjUNZj8ItYPoP1ZHCP1DENgj03RH3GOd/
-	 IXqlZIv9A+B99G4ocXJfIJEHqK32W7+r0m+wePwDK6ajlnD5ksTOHWgLOW1JWXnmDr
-	 r9i2V+8Uwoy+onAP4Oqcm7PNnl//fTqckGqSNJ60pLjldnn5FIHzM/PF0/9arcMdXF
-	 +rq61Jm6X2fQlUPwOx1BTOSOapOCsr4RNYJ69ZD4Vhjhwjye5oTXpNWH4958uMQTEW
-	 k79hVzVasY4zgDAVmLDW0lZ7fFjxVhd9Y+We5cMppNk5LPZGHR2hqZW9vOKfGqppzB
-	 IGwMzfnoZWC/g==
-Message-ID: <7c6a6b6d-a023-47e8-b27e-1c45929e0fc3@kernel.org>
-Date: Thu, 14 May 2026 14:42:56 +0900
+	b=YrZwoSDKynIrwr9eVhL4xXxjquyUhAYgNmf/Eiifr1yX989QUOxEkaOpssvS0/P5s
+	 gK1/zxi+sPmqJlr2hCLeUcN0IDqmcPfBzsWwy+RTe8JNvA4BbFBZJmcF9SVb3WCrO2
+	 cZBATfg5GsAa/SK4DxyGog9WnYN9jcTzT/nSk2XkcnaPe/AtkyoPvDGhJgJe+1FlhM
+	 l8kHiIw+YO4Ti3Ri/O20YfZYHywMNZUK6PjwBy8Z3G4Nnagt5yHEPHkITtxK6qGjtl
+	 pD3D9MYR1LPuKzYPBUrtTPtWCwcm3X43iQn7ACV6ebm3w3i4hCIv0AAzKpGWM5giJC
+	 ASG3FHM+Qx+dA==
+Message-ID: <1bb07853-a52e-4eff-b7b7-5cb8d0b9c8db@kernel.org>
+Date: Thu, 14 May 2026 14:43:31 +0900
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,51 +35,54 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 4/7] btrfs: zoned: don't account data relocation
- space-info in statfs free space
+Subject: Re: [PATCH 5/7] btrfs: zoned: subtract zone_unusable space in statfs
 To: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
  linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
  Hans Holmberg <Hans.Holmberg@wdc.com>, Boris Burkov <boris@bur.io>,
  Naohiro Aota <naohiro.aota@wdc.com>, Christoph Hellwig <hch@lst.de>
 References: <20260513123445.43197-1-johannes.thumshirn@wdc.com>
- <20260513123445.43197-5-johannes.thumshirn@wdc.com>
+ <20260513123445.43197-6-johannes.thumshirn@wdc.com>
 Content-Language: en-US
 From: Damien Le Moal <dlemoal@kernel.org>
 Organization: Western Digital Research
-In-Reply-To: <20260513123445.43197-5-johannes.thumshirn@wdc.com>
+In-Reply-To: <20260513123445.43197-6-johannes.thumshirn@wdc.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
 On 2026/05/13 21:34, Johannes Thumshirn wrote:
-> Don't account the free space in a data relocation space-info sub-group as
-> usable free space in statfs.
+> On zoned filesystems, space in block groups that has been freed but not
+> yet reset is tracked in bytes_zone_unusable. This space cannot be used for
+> new allocations until zone reclaim resets the zones, but it was being
+> reported as available space in statfs.
 > 
-> This is misleading as no user allocations can be made in this space-info
-> sub-group. It is only a target for relocation.
+> This caused statfs to over-report free space, leading to ENOSPC errors
+> when applications tried to allocate based on the reported free space.
+> 
+> Fix this by subtracting bytes_zone_unusable from total_free_data in the
+> statfs calculation for zoned filesystems.
 > 
 > Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-It feels like this one also needs a Fixes tag...
+Fixes tag here as well ? and same for the following patch.
 
 > ---
->  fs/btrfs/super.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
+>  fs/btrfs/super.c | 2 ++
+>  1 file changed, 2 insertions(+)
 > 
 > diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index fb15decb0861..a0dbc0d2213f 100644
+> index a0dbc0d2213f..498aa3039fbe 100644
 > --- a/fs/btrfs/super.c
 > +++ b/fs/btrfs/super.c
-> @@ -1739,7 +1739,8 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
->  	int mixed = 0;
+> @@ -1752,6 +1752,8 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+>  					factor = btrfs_bg_type_to_factor(
+>  						btrfs_raid_array[i].bg_flag);
+>  			}
+> +
+> +			total_free_data -= found->bytes_zone_unusable * factor;
+>  		}
 >  
->  	list_for_each_entry(found, &fs_info->space_info, list) {
-> -		if (found->flags & BTRFS_BLOCK_GROUP_DATA) {
-> +		if (found->flags & BTRFS_BLOCK_GROUP_DATA &&
-> +		    found->subgroup_id != BTRFS_SUB_GROUP_DATA_RELOC) {
->  			int i;
->  
->  			total_free_data += found->disk_total - found->disk_used;
+>  		/*
 
 
 -- 

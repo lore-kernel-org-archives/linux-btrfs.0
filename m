@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A98E6380FC2
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:53 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6A2D8380FCA
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:54 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778864453; cv=none; b=fligbsZ/P/C88Hwo+BHhNXxL5LNoVcdufMi4frmrKJ/xRDN4mqU03Gqz376KtTsIR776WH7GZGjLjMIMexrysURBhBV9HNy9uFf37IyT5VzlDZNsnhhja6ieoAw9F9J3V7PuuoIKFksK7ZEf1JsHkyXVn+fVDgKX+KiOI4Rx9bg=
+	t=1778864454; cv=none; b=SuInx3NNiR3K7aWiVtMBTELzYH4pqdNxpkVk4xBq6Ttmc7g4wrJoBHF9aFnVjD4SMdhCj8j1Z6kzbvlwp+1cLBg6iPTdM2s46UytXU8aYOEW0sGMultd/Kqdwl0P3FEpfWD5gxM/YNNSuD7dCMmug2hvmLgBtGuNLGlp5PKJWog=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778864453; c=relaxed/simple;
-	bh=FkFoeDsT73UHlLQ7lniX0u0spYWqnfQ2SJhDAmxPHjw=;
+	s=arc-20240116; t=1778864454; c=relaxed/simple;
+	bh=81NKOV762dqs+GrdhWCjvMzhB4VWDYj4pdoYJU8/6Vw=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=oInNA2j24e0qP7g9S90dINcbdXyRW+L3rsXDQYzyaPQxaZCZz1p+rNLpoJlCJPqgjYIeJ+IzIQIMrPSklRwa++nL5aXyZuAJAB3L1z9p/x7favHvULiXZPPQjpnOY+XR9OFsdFsHKPk9l2jgx9SInTKxkrkhsjJV+RTp9qwaHLs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UTZ9lXNP; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=IovQDQCrnQnmiMx7lWviUY+dwQCtAcVDd0WDiAFucNZL9+76ZyPiZhsVQ3t9SozIoCrnSxgCgpmk+G8cvDNApYZtZ54l5HUjXZywDGiC7Q/sCviRrOGJERPpqo1L6aWHJE3odeGNoCOtginwSdlVpoRZNL6GOhRWYu+fnquBDLk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=KtXRygA3; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UTZ9lXNP"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D768CC2BCB0
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:52 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="KtXRygA3"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id CA8BBC2BCB3
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:53 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778864453;
-	bh=FkFoeDsT73UHlLQ7lniX0u0spYWqnfQ2SJhDAmxPHjw=;
+	s=k20201202; t=1778864454;
+	bh=81NKOV762dqs+GrdhWCjvMzhB4VWDYj4pdoYJU8/6Vw=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=UTZ9lXNPwfagLiNdyWEyDr1OXSt4WI7/+1jzrfJJCoWfHH5HFdzZ8Kzvl7nfywl2j
-	 RgiXOhiHHVvfOLzHfURQN0/hx1jXcj8n9XgKhY90j5HiBDKBUI2k0a1yej2OuZAZEE
-	 4eOoazzjspVO/2TraMAESlY72mfOm7uNues9fGH26wO73m9bXM6Kn4Oj7Py6uc6tOP
-	 a25qNIz4aZZ7r7y0/PJlJPd3XrvbKXNVze/ffMWbkpql/fQUh9SHJDmiNNvafOPNCP
-	 R/cb2LOHPconSd3euNBIgWIcEnZ52goLSdSI4vMngxmxqqyelwsXJ7UqiMFLN7T44I
-	 tCyan+fCIau0A==
+	b=KtXRygA3IISzziGuJNmzffB4sUUbcPigDg1v6qVLNv5y6oKu/fBfJlGZrMshzVQp1
+	 BZYCYnftdAIM55Y9tC0J8tbFo3nbh5JM+bOxzgruv9SHW2DeCwE4+TC3WHLV6d2LRb
+	 ybOFAx/Z1kq612KLpJUTOWbkzAqofwtrTC9AfEb9hokrUrDUgvUbfdWB4wbO30Nljt
+	 TKSmvOfYrekiHUQnWPUiX38ddP5/ZgbY91tHEVBQW+CcHQ6tGpUIr3HTBzTm/C5gVz
+	 SD7QDPtO/5IGbO+ZPh1Czc2CS4sYdc/EK7oXuHERiK0cJrN86ueQga77eQgjZwsH/W
+	 yCbcDhOArYOGA==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 25/28] btrfs: tracepoints: add trace event for btrfs_record_new_subvolume()
-Date: Fri, 15 May 2026 18:00:22 +0100
-Message-ID: <7e8c56f827a33aee6f0139e928fe886eedec93a4.1778776707.git.fdmanana@suse.com>
+Subject: [PATCH 26/28] btrfs: tracepoints: add trace event for btrfs_log_new_name()
+Date: Fri, 15 May 2026 18:00:23 +0100
+Message-ID: <7f37d8fa6fb506343b20aa4ce51fff4bd79a443e.1778776707.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1778776706.git.fdmanana@suse.com>
 References: <cover.1778776706.git.fdmanana@suse.com>
@@ -44,60 +44,127 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-btrfs_record_new_subvolume() is an important operation that affects
-inode logging and is called during subvolume creation. Add a trace event
-for it to help debug issues.
+btrfs_log_new_name() is an important function that affects inode logging
+and is called during link and rename operations. Add trace events for when
+entering and exiting that function.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c          |  2 ++
- include/trace/events/btrfs.h | 25 +++++++++++++++++++++++++
- 2 files changed, 27 insertions(+)
+ fs/btrfs/tree-log.c          |  7 ++--
+ include/trace/events/btrfs.h | 66 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 71 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 49258c5624f4..4bc7e3726fb6 100644
+index 4bc7e3726fb6..807747725509 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -8025,6 +8025,8 @@ void btrfs_record_snapshot_destroy(struct btrfs_trans_handle *trans,
- void btrfs_record_new_subvolume(const struct btrfs_trans_handle *trans,
- 				struct btrfs_inode *dir)
- {
-+	trace_btrfs_record_new_subvolume(trans, dir);
+@@ -8059,6 +8059,8 @@ void btrfs_log_new_name(struct btrfs_trans_handle *trans,
+ 	bool log_pinned = false;
+ 	int ret;
+ 
++	trace_btrfs_log_new_name_enter(trans, inode, old_dir, old_dir_index);
 +
- 	mutex_lock(&dir->log_mutex);
- 	dir->last_unlink_trans = trans->transid;
- 	mutex_unlock(&dir->log_mutex);
+ 	/* The inode has a new name (ref/extref), so make sure we log it. */
+ 	set_bit(BTRFS_INODE_COPY_EVERYTHING, &inode->runtime_flags);
+ 
+@@ -8081,7 +8083,7 @@ void btrfs_log_new_name(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 	} else if (ret == 0) {
+ 		if (!old_dir)
+-			return;
++			goto out;
+ 		/*
+ 		 * If the inode was not logged and we are doing a rename (old_dir is not
+ 		 * NULL), check if old_dir was logged - if it was not we can return and
+@@ -8091,7 +8093,7 @@ void btrfs_log_new_name(struct btrfs_trans_handle *trans,
+ 		if (ret < 0)
+ 			goto out;
+ 		else if (ret == 0)
+-			return;
++			goto out;
+ 	}
+ 	ret = 0;
+ 
+@@ -8190,6 +8192,7 @@ void btrfs_log_new_name(struct btrfs_trans_handle *trans,
+ 	btrfs_log_inode_parent(trans, inode, parent, LOG_INODE_EXISTS, &ctx);
+ 	ASSERT(list_empty(&ctx.conflict_inodes));
+ out:
++	trace_btrfs_log_new_name_exit(trans, inode, old_dir, ret);
+ 	/*
+ 	 * If an error happened mark the log for a full commit because it's not
+ 	 * consistent and up to date or we couldn't find out if one of the
 diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index abfedcd4663b..a38367cf0187 100644
+index a38367cf0187..4e5bb434f53a 100644
 --- a/include/trace/events/btrfs.h
 +++ b/include/trace/events/btrfs.h
-@@ -1456,6 +1456,31 @@ TRACE_EVENT(btrfs_record_snapshot_destroy,
+@@ -1481,6 +1481,72 @@ TRACE_EVENT(btrfs_record_new_subvolume,
  			__entry->dir)
  );
  
-+TRACE_EVENT(btrfs_record_new_subvolume,
++TRACE_EVENT(btrfs_log_new_name_enter,
 +
 +	TP_PROTO(const struct btrfs_trans_handle *trans,
-+		 const struct btrfs_inode *dir),
++		 const struct btrfs_inode *inode,
++		 const struct btrfs_inode *old_dir,
++		 u64 old_dir_index),
 +
-+	TP_ARGS(trans, dir),
++	TP_ARGS(trans, inode, old_dir, old_dir_index),
 +
 +	TP_STRUCT__entry_btrfs(
 +		__field(	u64,     	root_objectid		)
 +		__field(	u64,		transid			)
-+		__field(	u64,	 	dir			)
++		__field(	u64,	 	ino			)
++		__field(	umode_t,	mode			)
++		__field(	u64,	 	old_dir_ino		)
++		__field(	u64,		old_dir_index		)
 +	),
 +
 +	TP_fast_assign(
 +		TP_fast_assign_fsid(trans->fs_info);
-+		__entry->root_objectid		= btrfs_root_id(dir->root);
++		__entry->root_objectid		= btrfs_root_id(inode->root);
 +		__entry->transid		= trans->transid;
-+		__entry->dir			= btrfs_ino(dir);
++		__entry->ino			= btrfs_ino(inode);
++		__entry->mode			= inode->vfs_inode.i_mode;
++		__entry->old_dir_ino		= old_dir ? btrfs_ino(old_dir) : 0;
++		__entry->old_dir_index		= old_dir_index;
 +	),
 +
-+	TP_printk_btrfs("root=%llu(%s) transid=%llu dir=%llu",
++	TP_printk_btrfs("root=%llu(%s) transid=%llu ino=%llu type=%s"
++			" old_dir=%llu old_dir_index=%llu",
 +			show_root_type(__entry->root_objectid), __entry->transid,
-+			__entry->dir)
++			__entry->ino, show_inode_type(__entry->mode),
++			__entry->old_dir_ino, __entry->old_dir_index)
++);
++
++TRACE_EVENT(btrfs_log_new_name_exit,
++
++	TP_PROTO(const struct btrfs_trans_handle *trans,
++		 const struct btrfs_inode *inode,
++		 const struct btrfs_inode *old_dir,
++		 int ret),
++
++	TP_ARGS(trans, inode, old_dir, ret),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	u64,     	root_objectid		)
++		__field(	u64,		transid			)
++		__field(	u64,	 	ino			)
++		__field(	u64,	 	old_dir_ino		)
++		__field(	int,		ret			)
++	),
++
++	TP_fast_assign(
++		TP_fast_assign_fsid(trans->fs_info);
++		__entry->root_objectid		= btrfs_root_id(inode->root);
++		__entry->transid		= trans->transid;
++		__entry->ino			= btrfs_ino(inode);
++		__entry->old_dir_ino		= old_dir ? btrfs_ino(old_dir) : 0;
++		__entry->ret			= ret;
++	),
++
++	TP_printk_btrfs("root=%llu(%s) transid=%llu ino=%llu old_dir=%llu ret=%d",
++			show_root_type(__entry->root_objectid), __entry->transid,
++			__entry->ino, __entry->old_dir_ino, __entry->ret)
 +);
 +
  TRACE_EVENT(btrfs_sync_fs,

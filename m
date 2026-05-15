@@ -1,126 +1,99 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B05440B6D8;
-	Fri, 15 May 2026 16:55:45 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 09E964DD6FC
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778864145; cv=none; b=s2slHVJDV7wRN+4ned/XgrySP5vX+7Sb5dHWoKQN7EJsJ56PIQrQUAxDk9rDdlkbOf+IgevTQ/equUM0if9MpZZ6Z6FDjVi+Ovz0kBk79fmyusu6SXlQ009iQbBxLL+shRgCFzQL/YRDgnQM+QW5D05LzK9oIni7nU8AC8Fe8eg=
+	t=1778864430; cv=none; b=Vmn/Jz4eTQhZS0zFdrAqXLuLier+Ej9/uJFhd8K6jEx9UjaXzgvZE7hCgha+iojv4QNgUigeNmujJkQJ3saw910QqQJeJpw3+yGtvpoY7MowvR0QCp3Ht/Tbx541yAZmK3W80aVhrFMUc7lwzqDUKLNgUd9qAAgBSTIexwZfzjY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778864145; c=relaxed/simple;
-	bh=P7THp2aJWxhHxVi+7cvCLm1OOtK9LcNoKQGsJhZqvn8=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=UBcoIdlJPpxs494uB/QmAF9ARtrsS814q1DOrmHp+wdxd36jN6kYgL++DtHSOE3uI6+svLQinNKlDYO5GpwTxGPsJhPr5dJyKwS2BE4dFHgtpwxqQ5OlfPpUPGn9pdAv9hL0SUckC306LpEBNOqV/9niN/jEUEs/rn0DayYP9rQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PjX0bsT1; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1778864430; c=relaxed/simple;
+	bh=CFLSqTDXvm3VZkDbZg7Qq++Z3OTgzEQe1aj/s2wSaIk=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=IFhHCMG/j6A5EXXcCHRIqYx+tSMUFr6GqR1wQd9H6fDiJDTf3NpZCLhHPV1COZSa8agrrNx0by6ldOMwPj3aVPbcEyxURac4czcd7XuiYgEGocnKLoB+Utkasq4G9GfPpsXHn2q3L3ZrvJ3G4IHnbHEKmm8X0L9qVyKBkaY+cZU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=n+Erhp0G; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PjX0bsT1"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8D145C2BCB0;
-	Fri, 15 May 2026 16:55:42 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="n+Erhp0G"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2E758C2BCB0
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778864145;
-	bh=P7THp2aJWxhHxVi+7cvCLm1OOtK9LcNoKQGsJhZqvn8=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=PjX0bsT13kqxUyNQBJDJbTYQHvU8I7DKOUU+NqUckvIQGhBP+EFWin6w4GrvVSH85
-	 aoMeCKHyBkxMK2El6mqduAfEtPUcY6B3xiNxFEhKr4x5iY7OhCpIs5jpsTar8Vr3G0
-	 ryUM1bty79t4p7Ac+WRvPkVN4QOJ5M0v2uYz8aMGfIODc7gKoxHpxFgDHfCUZ4rBBS
-	 Ys9Eb88/QfcTxVIVf6oSxQ5ChVS+GhiGHrOu9/Bocdpe0wFk9Bq65N0YeMlVx5FWDV
-	 g6n3FS83fwPDWvglQLeXJKZW6+l+rf9PzFNgP/cxVI+U9fOgugJCHuhxDKKPzIGMxL
-	 /fdMe5Z4WbF5Q==
-Date: Sat, 16 May 2026 00:55:39 +0800
-From: Zorro Lang <zlang@kernel.org>
-To: Qu Wenruo <wqu@suse.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	Long An <lan@suse.com>
-Subject: Re: [PATCH v2] fstests: btrfs/340: add support for older
- kernels/progs
-Message-ID: <agdOBcKgPn3s7_u0@zlang-mailbox>
-Mail-Followup-To: Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org, 
-	linux-btrfs@vger.kernel.org, Long An <lan@suse.com>
-References: <ed76cf7d6a0ad2a98e5730015dd4fc6514fc2343.1778749477.git.wqu@suse.com>
+	s=k20201202; t=1778864429;
+	bh=CFLSqTDXvm3VZkDbZg7Qq++Z3OTgzEQe1aj/s2wSaIk=;
+	h=From:To:Subject:Date:From;
+	b=n+Erhp0GyX9oigFGgOz3vqmSjOPWtcSeX0AblqpsydIkgMCNuzpkEf12swzryQpvu
+	 8yQwsvaeQjTfSMfS27RURq8u/OW5Nbe3gUUlyr9UhKoT+6nf2foFF3UZdLaBA05v+t
+	 15FrJZ+22SoahegJeZs5raWn7rv74i9WWwpWL2k+46JnbyvuPbibNrmCNWmFq1u+f9
+	 qh1ITQmsVfr1kKzmia2KzTyOi0cnbUQqo2XBHpIQ7SYnToV22q5jwRrctfZ5bomGQl
+	 jZca7N38M18Dv9PhiazgGGXNvHEnKJ5oakaQ2oOByGqhOtkjWworDCfuifd4inQPny
+	 FFz/OjB79+8cQ==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 00/28] btrfs: add trace events for fsync and inode logging
+Date: Fri, 15 May 2026 17:59:57 +0100
+Message-ID: <cover.1778776706.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <ed76cf7d6a0ad2a98e5730015dd4fc6514fc2343.1778749477.git.wqu@suse.com>
+Content-Transfer-Encoding: 8bit
 
-On Thu, May 14, 2026 at 06:34:39PM +0930, Qu Wenruo wrote:
-> The test case will fail on older distros like SLE12-SP5, there are two
-> problems on the test case itself:
-> 
-> - Requires "--sync" option from "btrfs qgroup show" subcommand
->   That option was introduecd in v4.9.1, thus there are still some older
->   distros using that very old version.
-> 
-> - Not all kernels support quick inherit
->   The kernel commit introducing the quick inherit is 6.9, thus some
->   supported LTS kernels do not have that commit.
-> 
->   In that case qgroup will just be marked inconsistent, this will cause
->   the later "btrfs qgroup show" command to output a warning due to the
->   inconsistent flag.
-> 
-> Fix both problems by:
-> 
-> - Require "--sync" option from "btrfs qgroup show" subcommand
->   So older distros will just skip the test.
-> 
-> - Redirect all output from "btrfs qgroup show" to $seqres.full
->   So older kernels can still pass the test case by marking qgroup
->   inconsitent.
-> 
-> Reported-by: Long An <lan@suse.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Changelog:
-> v2:
-> - Fix the mismatch between the commit message and the test case change
->   Forgot to amend the changes before sending.
-> 
-> - Fix a bug in the stderr redirect
->   The stdout redirect should be put last.
+From: Filipe Manana <fdmanana@suse.com>
 
-Sorry, did I miss part of the discussion? Why did v2 switch to notrun for
-older tools instead of using the compatible `btrfs filesystem sync` from v1?
-Was there something wrong with the v1 method :)
+We don't have any useful tracing events for fsync and inode logging
+operations (which also happen during rename and link), except for a
+tracing event triggered when we enter an fsync, but that alone is
+useless to debug fsync bugs.
 
-Thanks,
-Zorro
+This patch set adds several trace events and improve a couple existing
+ones in order to debug fsync related issues. These are based on most of
+the custom trace_printk() code I have used over the years and were useful
+to debug bugs.
 
-> ---
->  tests/btrfs/340 | 8 +++++++-
->  1 file changed, 7 insertions(+), 1 deletion(-)
-> 
-> diff --git a/tests/btrfs/340 b/tests/btrfs/340
-> index 872f790cb975..eff76d0b633c 100755
-> --- a/tests/btrfs/340
-> +++ b/tests/btrfs/340
-> @@ -16,6 +16,7 @@ _fixed_by_kernel_commit 68d4b3fa18d7 \
->  # For the automatic fsck at unmount.
->  _require_scratch
->  _require_btrfs_qgroup_report
-> +_require_btrfs_command qgroup show --sync
->  
->  # This will imply mkfs and enable regular qgroup.
->  _require_scratch_qgroup
-> @@ -39,7 +40,12 @@ _btrfs qgroup show -p --sync $SCRATCH_MNT >> $seqres.full
->  # without marking qgroup inconsistent.
->  _btrfs subv snap -i 1/1 $SCRATCH_MNT/subv1 $SCRATCH_MNT/snap1
->  echo "After quick inherit:" >> $seqres.full
-> -_btrfs qgroup show -p --sync $SCRATCH_MNT >> $seqres.full
-> +# Redirect all output to seqres.full including stderr.
-> +# For older kernels without quick inherit support, it will mark
-> +# qgroup inconsistent, which will output a warning about the inconsistent
-> +# numbers. Here we rely on the final btrfs check to catch any qgroup number
-> +# errors, thus no need to bother that possible warning.
-> +_btrfs qgroup show -p --sync $SCRATCH_MNT >> $seqres.full 2>&1
->  
->  echo "Silence is golden"
->  _exit 0
-> -- 
-> 2.54.0
-> 
-> 
+A few cleanups are also included in here.
+
+More details in the individual change logs.
+
+Filipe Manana (28):
+  btrfs: tracepoints: remove double negation in finish ordered extent event
+  btrfs: tracepoints: remove pointless root field from transaction commit event
+  btrfs: remove call to transaction commit trace in warn_about_uncommitted_trans()
+  btrfs: remove call to transaction commit trace in btrfs_cleanup_transaction()
+  btrfs: tracepoints: pass a transaction handle to transaction commit event
+  btrfs: tracepoints: add in_fsync field to transaction commit event
+  btrfs: tracepoints: add trace event for transaction aborts
+  btrfs: tracepoints: add trace event for the start of a new transaction
+  btrfs: tracepoints: trace transaction states during commit phase
+  btrfs: stop checking for greater then zero return values in btrfs_sync_file()
+  btrfs: remove redundant writeback error check during fsync
+  btrfs: tracepoints: add trace event for when fsync finishes
+  btrfs: tracepoints: add trace event for btrfs_log_inode_parent()
+  btrfs: use a named enum for the log mode in inode log functions
+  btrfs: tracepoints: add trace event for btrfs_log_inode()
+  btrfs: tracepoints: add trace event for btrfs_log_all_parents()
+  btrfs: tracepoints: add trace event for log_all_new_ancestors()
+  btrfs: tracepoints: add trace event for log_new_dir_dentries()
+  btrfs: tracepoints: add trace event for add_conflicting_inode()
+  btrfs: tracepoints: add trace event for log_conflicting_inodes()
+  btrfs: use simple assertions where enough during inode logging and replay
+  btrfs: tracepoints: add trace event for log_new_delayed_dentries()
+  btrfs: tracepoints: add trace event for btrfs_record_unlink_dir()
+  btrfs: tracepoints: add trace event for btrfs_record_snapshot_destroy()
+  btrfs: tracepoints: add trace event for btrfs_record_new_subvolume()
+  btrfs: tracepoints: add trace event for btrfs_log_new_name()
+  btrfs: tracepoints: add trace event for btrfs_sync_log()
+  btrfs: tracepoints: show inode type in btrfs_sync_file_enter() event
+
+ fs/btrfs/disk-io.c           |   2 -
+ fs/btrfs/file.c              |  19 +-
+ fs/btrfs/super.c             |   1 +
+ fs/btrfs/transaction.c       |  12 +-
+ fs/btrfs/tree-log.c          | 273 +++++++----
+ fs/btrfs/tree-log.h          |   7 +
+ include/trace/events/btrfs.h | 886 ++++++++++++++++++++++++++++++++++-
+ 7 files changed, 1074 insertions(+), 126 deletions(-)
+
+-- 
+2.47.2
+

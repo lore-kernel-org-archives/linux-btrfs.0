@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AC0052F7F1D
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:49 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A66A14C042E
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:50 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778864449; cv=none; b=XBwrNIp7XQsD+QkjdzMjCfJnbPlUWF4yQQwUUAnUXGuxWMZ5bIxNizhZI/Zsu7yvXf2WbNZAGYYXI66IxKE40c6+Rx0OLCxGijoCbJAruobxxaRgoJGNZU+Gbq+lazNu/8nhVm9w9GkvBekfhO9mFadWE94sKqpKeO90KUI1k0Y=
+	t=1778864450; cv=none; b=gRV40JrbTDbDZp2mJt3YE+kI9iPfHqa0tdGb+LUvyCGp6vgzFPmGXj85xRJTsnAkkMYlZ6mG3xGJWP27b6EtNIeLhe9BMr9F0CiDLHGtrq3cH20lP8Bm39IZx2cqZNj1kusJHCe4iyLZ14jMlE+W3PT1X+w6ne0357eczGnwdZE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778864449; c=relaxed/simple;
-	bh=qg+/nP9sCRb9XS44zvt/6PH8e+b+TQQyUF1IK0SB7bI=;
+	s=arc-20240116; t=1778864450; c=relaxed/simple;
+	bh=Md0QzbODvz27HEYXDSnCDwqutZQtz6VixPGgKE/YKqE=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=eMghhNJfUTOi3yX8o3kwQN0IWTZxqQ24XuR6iCSDK8XGmFykgEUpgnBNb07ixJ5sTJyBGL6yMNHmYtw8T0PyRHXq21A5+k2wdNMMo78Y+F/PiM3IH4z1H+qn4ywIAm7RN+BkkoSjd5n7aP2aY6/Rzc1ceILhewqrB1o5lgw8oCU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=VOQzrPVp; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=Qde8IwAe7qQcwZKeQHtVWdfYW9RDcyiQWbrScOc9ixCfVGXEgh6wDC6mInDDEI/bmGRU06ycSCRDVfWHwtZcjZVT2ndVocEXm5wqg35cXHgZ+6Azi2LGr9dnH2M8mE22E0ICQzv/5y9eWCZ4cCvtIKx2SarTO4WaGXOAGk077+o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=trjIJWRe; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="VOQzrPVp"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 178A9C2BCB0
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:48 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="trjIJWRe"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0A8E9C2BCB0
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:49 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778864449;
-	bh=qg+/nP9sCRb9XS44zvt/6PH8e+b+TQQyUF1IK0SB7bI=;
+	s=k20201202; t=1778864450;
+	bh=Md0QzbODvz27HEYXDSnCDwqutZQtz6VixPGgKE/YKqE=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=VOQzrPVpZYT19DD/pvFuPj1eNrl8wwqJsJae9CCwrj99Y+WlcV/o1/GZrPvrn8F9b
-	 g3LZTo2XvyGWtbLz5IMllfL/O6wo6EQFneh5UD1104xgoeExvLD5nVtN9GZznFMr8G
-	 BGlF0WC35W/ln+ZZuLjUl2ejhz54CbH0a1PcBh34P89PavsQyKCZ4r9wGaZ7mRcrAa
-	 9V8ItzLjVhIQ+F2I963+avlzBbnF2B2DZrtyx02egFei++o4lyg+LPskNUi+ZOdvuM
-	 IvhgI9Al5kNzwbU3a95QVVUYYZhFjySLa+DOzO0kzn7pg0KjcFqpwUUkEMbxZNmr1X
-	 chSftR3lMQf8A==
+	b=trjIJWReqeNcUKKEEcAcLtAJehCbwL02HjzOxhy2PwqqnXaLkOqXXj0jCXhdPNKrH
+	 KQPoZtWYyr65ZZZSlIxRLrphKdiOYZ9ZaHYnIVaWLDLv/YgbTdergKf3j+wSyPpvlq
+	 9biqUyuEloncirjUu+yITAQCmp2ZObn6dXe3FNOqh2peu+tutM0yTjSB7opkHIByDe
+	 sfMLcuZtFm97LSMgjWYVPddmWU1RD2jZlDYfmfLnSX6iU8F6FQ9duq4ygm04y/G+pI
+	 IKFeDUNV14dMaYKvMB/p80uebyGFdYdQZ7Hqf++vUAuH7qPp6Ou9AdXF9VW7xUA6Uq
+	 BCmSEyL3XeS0Q==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 21/28] btrfs: use simple assertions where enough during inode logging and replay
-Date: Fri, 15 May 2026 18:00:18 +0100
-Message-ID: <9febb56498a2c1c545b2ab5627d52d49584a4c1a.1778776707.git.fdmanana@suse.com>
+Subject: [PATCH 22/28] btrfs: tracepoints: add trace event for log_new_delayed_dentries()
+Date: Fri, 15 May 2026 18:00:19 +0100
+Message-ID: <8db81596d3e96b5ebdffc7201e69750658173690.1778776707.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1778776706.git.fdmanana@suse.com>
 References: <cover.1778776706.git.fdmanana@suse.com>
@@ -44,62 +44,108 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-In overwrite_item():
-
-  There's no point in printing the root's ID if the assertion fails, since
-  it can only be BTRFS_TREE_LOG_OBJECTID if it fails.
-
-In log_new_delayed_dentries():
-
-  There's no point in using a verbose assertion to print the value of
-  ctx->logging_new_delayed_dentries because it's a boolean, so if the
-  assertion fails we know its value is true (1).
-
-So convert them to simpler assertion to make the code less verbose.
-It also slightly reduces the object size, at least on x86_64 using
-Debian's gcc 14.2.0-19 (if CONFIG_BTRFS_ASSERT is enabled in the kernel
-config, which is the case for SUSE distributions for example).
-
-Before:
-
-  $ size fs/btrfs/btrfs.ko
-     text	   data	    bss	    dec	    hex	filename
-  2028244	 197176	  15624	2241044	 223214	fs/btrfs/btrfs.ko
-
-After:
-
-  $ size fs/btrfs/btrfs.ko
-     text	   data	    bss	    dec	    hex	filename
-  2028228	 197176	  15624	2241028	 223204	fs/btrfs/btrfs.ko
+log_new_delayed_dentries() is an important step called during a fsync, as
+well as during rename and link operations on inodes that were previously
+logged. Add trace events for when entering and exiting that function.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/tree-log.c          | 10 +++++++
+ include/trace/events/btrfs.h | 53 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 63 insertions(+)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index dab1452dc4d1..6be98f8a3b43 100644
+index 6be98f8a3b43..7a1cd93c4582 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -491,7 +491,7 @@ static int overwrite_item(struct walk_control *wc)
- 	 * the leaf before writing into the log tree. See the comments at
- 	 * copy_items() for more details.
- 	 */
--	ASSERT(btrfs_root_id(root) != BTRFS_TREE_LOG_OBJECTID, "root_id=%llu", btrfs_root_id(root));
-+	ASSERT(btrfs_root_id(root) != BTRFS_TREE_LOG_OBJECTID);
- 
- 	item_size = btrfs_item_size(wc->log_leaf, wc->log_slot);
- 	src_ptr = btrfs_item_ptr_offset(wc->log_leaf, wc->log_slot);
-@@ -6844,8 +6844,7 @@ static int log_new_delayed_dentries(struct btrfs_trans_handle *trans,
- 	 */
+@@ -6845,6 +6845,15 @@ static int log_new_delayed_dentries(struct btrfs_trans_handle *trans,
  	lockdep_assert_not_held(&inode->log_mutex);
  
--	ASSERT(!ctx->logging_new_delayed_dentries,
--	       "ctx->logging_new_delayed_dentries=%d", ctx->logging_new_delayed_dentries);
-+	ASSERT(!ctx->logging_new_delayed_dentries);
+ 	ASSERT(!ctx->logging_new_delayed_dentries);
++
++	/*
++	 * Return early if empty list, avoid emitting redundant trace events
++	 * that generate noise only.
++	 */
++	if (list_empty(delayed_ins_list))
++		return 0;
++
++	trace_btrfs_log_new_delayed_dentries_enter(trans, inode);
  	ctx->logging_new_delayed_dentries = true;
  
  	list_for_each_entry(item, delayed_ins_list, log_list) {
+@@ -6887,6 +6896,7 @@ static int log_new_delayed_dentries(struct btrfs_trans_handle *trans,
+ 
+ 	ctx->log_new_dentries = orig_log_new_dentries;
+ 	ctx->logging_new_delayed_dentries = false;
++	trace_btrfs_log_new_delayed_dentries_exit(trans, inode, ret);
+ 
+ 	return ret;
+ }
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 8fd18365a3ac..36e592bbc616 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1347,6 +1347,59 @@ TRACE_EVENT(btrfs_log_conflicting_inodes_exit,
+ 			__entry->ctx_ino, __entry->ret)
+ );
+ 
++TRACE_EVENT(btrfs_log_new_delayed_dentries_enter,
++
++	TP_PROTO(const struct btrfs_trans_handle *trans,
++		 const struct btrfs_inode *inode),
++
++	TP_ARGS(trans, inode),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	u64,     	root_objectid		)
++		__field(	u64,		transid			)
++		__field(	u64,	 	ino			)
++	),
++
++	TP_fast_assign(
++		TP_fast_assign_fsid(trans->fs_info);
++		__entry->root_objectid		= btrfs_root_id(inode->root);
++		__entry->transid		= trans->transid;
++		__entry->ino			= btrfs_ino(inode);
++	),
++
++	TP_printk_btrfs("root=%llu(%s) transid=%llu ino=%llu",
++			show_root_type(__entry->root_objectid), __entry->transid,
++			__entry->ino)
++);
++
++TRACE_EVENT(btrfs_log_new_delayed_dentries_exit,
++
++	TP_PROTO(const struct btrfs_trans_handle *trans,
++		 const struct btrfs_inode *inode,
++		 int ret),
++
++	TP_ARGS(trans, inode, ret),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	u64,     	root_objectid		)
++		__field(	u64,		transid			)
++		__field(	u64,	 	ino			)
++		__field(	int,	 	ret			)
++	),
++
++	TP_fast_assign(
++		TP_fast_assign_fsid(trans->fs_info);
++		__entry->root_objectid		= btrfs_root_id(inode->root);
++		__entry->transid		= trans->transid;
++		__entry->ino			= btrfs_ino(inode);
++		__entry->ret			= ret;
++	),
++
++	TP_printk_btrfs("root=%llu(%s) transid=%llu ino=%llu ret=%d",
++			show_root_type(__entry->root_objectid), __entry->transid,
++			__entry->ino, __entry->ret)
++);
++
+ TRACE_EVENT(btrfs_sync_fs,
+ 
+ 	TP_PROTO(const struct btrfs_fs_info *fs_info, int wait),
 -- 
 2.47.2
 

@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DA23F2F7F05
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:46 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 189542F7F05
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:47 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778864446; cv=none; b=KBU9dcxsfWDcklUsnrbXLy7pUs+hi9fCrXOPHEz1KHLajQwl5DFvWTCKCHYOzce7v4f4YXPEqdBltvE2A/mYRoUmG9d8SJOHnD9W0c6OQmqQWzXoB+VSWesv3YTRpRkMSnRnRWZrYsj2ACvtwo+mZ8CXxSwR2BEKl/JtPBBcCvk=
+	t=1778864448; cv=none; b=NDlMhWc3pxbQhtHZRlc4OZ0WrKrHT9orHROCQ5Jse/t1lVMZ6FgDHF0MnO53oNGjKx+3LYDd3JmfRT3e8dc5yXIQC02JzTZKADf7wthcy+xG0uKiNWaqlgpPCGilAModhJ0ZWY7vCDLzlfV8h8qV3TYwAlanlda86KyJ/Ownfxk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778864446; c=relaxed/simple;
-	bh=fwSrr8otfSF5Fzqce5yv7ebj3a9two6QdImOxI4gdaM=;
+	s=arc-20240116; t=1778864448; c=relaxed/simple;
+	bh=zLLXKTs/PcivD3VszKsUS2BRbgE4OdYreKfF/IZkM+Q=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=iAmWOsA762PVYYpKLhkYcyyWFcPqT/t8Kt14Nm4aI6+IpOL+MPglveEjvNmPAzyyhbUgXIEYoWM6WpdBAATzGdrH5L3qDcXT6spZ8a4F0Yyq+mH3F1dmy7oROD6tqMqRnQjtVvXSD3UuHjbnawUpuCqDPQ0WZ9uJA6sPa3Y6p50=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=gca+tgeI; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=nXeWFHFMxNkjZF3CNTboNx4pW/R9EPUBGQICC6YCbdNqNP165isAPaAclJDUAbgZWQFapwFPxFc6URm/++JEBMTSerRHLmoQcnv7dIdcbaywIE0RoYu+vW56LRukvchfV1sAYFuBfHWVyMnDOLJlkFQLARO3vLZmg1tE7L/ygj8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SK5qbkep; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="gca+tgeI"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3ECE1C2BCB3
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:46 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SK5qbkep"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 319D0C2BCB0
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778864446;
-	bh=fwSrr8otfSF5Fzqce5yv7ebj3a9two6QdImOxI4gdaM=;
+	s=k20201202; t=1778864447;
+	bh=zLLXKTs/PcivD3VszKsUS2BRbgE4OdYreKfF/IZkM+Q=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=gca+tgeIKm1nFW8qkX1ctXJ74B+uj0P+pINfjds7mNPB3JM1Yk5hPrW2p5FSYmdBn
-	 EYyDGpI/AKn2JW8Z0xqP1R+gd+DbRbbJvMfcapZtTts1egZ16j7eeeovlszCV7KZf1
-	 m0UGuf8trTdJ4+hCf/KU+IuwlopE7OWQ3odBx/Pioy8/CEOSr7KZ8aRjet0uHbRK1B
-	 V/WSewc2mI+CLy2efSqGygiciDJo24idryrrLISabHJmuey7Dt6SLyQVsieG293Wnm
-	 ov/Vq4X6n3NUC6vyeN4SpIidioQeY66seZo0Rgo531TcWMSll+L1LbdOrMDcpE8dMt
-	 nensTio/vW3RA==
+	b=SK5qbkepNhH4vD9XZcnRasL+FgtS4UBvLaV41d6qJOJy09sITmS4Xjj/tq0bUtlnZ
+	 xxI0zn0GSQnuh7HkcEC0Igp55l2VH7VVpEey/NIokAsNCHs+YDpjXo5OWU0dLsyTH3
+	 yVPPD0FHHJ4bnGkrteLO6xP740lw2wW5w/gzGw9eY+2LBdWQkcZC6L2/pO2Ly59pCF
+	 HzXS0yKo30RVTYbZ/MaJVC9KY7D6mb1ipNsZRCnEkr68jWyebJxo50+XxFrVwdO0A5
+	 m7ep+7BxsFMflktRuzC8jiahoEhXo4fULGJP2k/4O7NEjpUkUI0I7cw88WZLinJ6DH
+	 Mn/LG/4aef+FQ==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 18/28] btrfs: tracepoints: add trace event for log_new_dir_dentries()
-Date: Fri, 15 May 2026 18:00:15 +0100
-Message-ID: <6793730b9ead08d070c28e6e6f3e305de3e535e8.1778776707.git.fdmanana@suse.com>
+Subject: [PATCH 19/28] btrfs: tracepoints: add trace event for add_conflicting_inode()
+Date: Fri, 15 May 2026 18:00:16 +0100
+Message-ID: <238c79ed66ab85e05394448aeddf91899839ca22.1778776707.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1778776706.git.fdmanana@suse.com>
 References: <cover.1778776706.git.fdmanana@suse.com>
@@ -44,104 +44,184 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-log_new_dir_dentries() is an important step called during a fsync, as
+add_conflicting_inode() is an important step called during a fsync, as
 well as during rename and link operations on inodes that were previously
 logged. Add trace events for when entering and exiting that function.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c          | 10 +++++--
- include/trace/events/btrfs.h | 53 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 61 insertions(+), 2 deletions(-)
+ fs/btrfs/tree-log.c          | 39 ++++++++++++++-------
+ include/trace/events/btrfs.h | 66 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 92 insertions(+), 13 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index f34dc9771dab..44c7d250b810 100644
+index 44c7d250b810..8e2a2b8982d7 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -5902,9 +5902,13 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
- 	struct btrfs_inode *curr_inode = start_inode;
- 	int ret = 0;
- 
-+	trace_btrfs_log_new_dir_dentries_enter(trans, start_inode);
+@@ -6121,6 +6121,9 @@ static int add_conflicting_inode(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_ino_list *ino_elem;
+ 	struct btrfs_inode *inode;
++	int ret = 0;
 +
- 	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
-+	if (!path) {
-+		ret = -ENOMEM;
++	trace_btrfs_add_conflicting_inode_enter(trans, ctx, ino, parent);
+ 
+ 	/*
+ 	 * It's rare to have a lot of conflicting inodes, in practice it is not
+@@ -6129,8 +6132,10 @@ static int add_conflicting_inode(struct btrfs_trans_handle *trans,
+ 	 * LOG_INODE_EXISTS mode) and slow down other fsyncs or transaction
+ 	 * commits.
+ 	 */
+-	if (ctx->num_conflict_inodes >= MAX_CONFLICT_INODES)
+-		return BTRFS_LOG_FORCE_COMMIT;
++	if (ctx->num_conflict_inodes >= MAX_CONFLICT_INODES) {
++		ret = BTRFS_LOG_FORCE_COMMIT;
 +		goto out;
 +	}
  
- 	/* Pairs with btrfs_add_delayed_iput below. */
- 	ihold(&curr_inode->vfs_inode);
-@@ -6023,6 +6027,8 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
- 			kfree(dir_elem);
+ 	inode = btrfs_iget_logging(ino, root);
+ 	/*
+@@ -6157,23 +6162,25 @@ static int add_conflicting_inode(struct btrfs_trans_handle *trans,
+ 		int ret = PTR_ERR(inode);
+ 
+ 		if (ret != -ENOENT)
+-			return ret;
++			goto out;
+ 
+ 		ret = conflicting_inode_is_dir(root, ino, path);
+ 		/* Not a directory or we got an error. */
+ 		if (ret <= 0)
+-			return ret;
++			goto out;
+ 
+ 		/* Conflicting inode is a directory, so we'll log its parent. */
+ 		ino_elem = kmalloc_obj(*ino_elem, GFP_NOFS);
+-		if (!ino_elem)
+-			return -ENOMEM;
++		if (!ino_elem) {
++			ret = -ENOMEM;
++			goto out;
++		}
+ 		ino_elem->ino = ino;
+ 		ino_elem->parent = parent;
+ 		list_add_tail(&ino_elem->list, &ctx->conflict_inodes);
+ 		ctx->num_conflict_inodes++;
+-
+-		return 0;
++		ret = 0;
++		goto out;
  	}
  
-+	trace_btrfs_log_new_dir_dentries_exit(trans, start_inode, ret);
+ 	/*
+@@ -6213,25 +6220,31 @@ static int add_conflicting_inode(struct btrfs_trans_handle *trans,
+ 	 */
+ 	if (!need_log_inode(trans, inode)) {
+ 		btrfs_add_delayed_iput(inode);
+-		return 0;
++		goto out;
+ 	}
+ 
+ 	if (!can_log_conflicting_inode(trans, inode)) {
+ 		btrfs_add_delayed_iput(inode);
+-		return BTRFS_LOG_FORCE_COMMIT;
++		ret = BTRFS_LOG_FORCE_COMMIT;
++		goto out;
+ 	}
+ 
+ 	btrfs_add_delayed_iput(inode);
+ 
+ 	ino_elem = kmalloc_obj(*ino_elem, GFP_NOFS);
+-	if (!ino_elem)
+-		return -ENOMEM;
++	if (!ino_elem) {
++		ret = -ENOMEM;
++		goto out;
++	}
+ 	ino_elem->ino = ino;
+ 	ino_elem->parent = parent;
+ 	list_add_tail(&ino_elem->list, &ctx->conflict_inodes);
+ 	ctx->num_conflict_inodes++;
+ 
+-	return 0;
++out:
++	trace_btrfs_add_conflicting_inode_exit(trans, ctx, ino, parent, ret);
 +
- 	return ret;
++	return ret;
  }
  
+ static int log_conflicting_inodes(struct btrfs_trans_handle *trans,
 diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index d16de652a815..c13c1ce0b344 100644
+index c13c1ce0b344..a10901b94f0d 100644
 --- a/include/trace/events/btrfs.h
 +++ b/include/trace/events/btrfs.h
-@@ -1175,6 +1175,59 @@ TRACE_EVENT(btrfs_log_all_new_ancestors_exit,
+@@ -1228,6 +1228,72 @@ TRACE_EVENT(btrfs_log_new_dir_dentries_exit,
  			__entry->transid, __entry->ret)
  );
  
-+TRACE_EVENT(btrfs_log_new_dir_dentries_enter,
++TRACE_EVENT(btrfs_add_conflicting_inode_enter,
 +
 +	TP_PROTO(const struct btrfs_trans_handle *trans,
-+		 const struct btrfs_inode *inode),
++		 const struct btrfs_log_ctx *ctx,
++		 u64 ino, u64 parent),
 +
-+	TP_ARGS(trans, inode),
++	TP_ARGS(trans, ctx, ino, parent),
 +
 +	TP_STRUCT__entry_btrfs(
 +		__field(	u64,     	root_objectid		)
-+		__field(	u64,	 	ino			)
 +		__field(	u64,		transid			)
++		__field(	u64,	 	ctx_ino			)
++		__field(	u64,	 	conflict_ino		)
++		__field(	u64,	 	conflict_ino_parent	)
 +	),
 +
 +	TP_fast_assign(
-+		TP_fast_assign_fsid(inode->root->fs_info);
-+		__entry->root_objectid		= btrfs_root_id(inode->root);
-+		__entry->ino			= btrfs_ino(inode);
++		TP_fast_assign_fsid(trans->fs_info);
++		__entry->root_objectid		= btrfs_root_id(ctx->inode->root);
 +		__entry->transid		= trans->transid;
++		__entry->ctx_ino		= btrfs_ino(ctx->inode);
++		__entry->conflict_ino		= ino;
++		__entry->conflict_ino_parent	= parent;
 +	),
 +
-+	TP_printk_btrfs("root=%llu(%s) ino=%llu transid=%llu",
-+			show_root_type(__entry->root_objectid), __entry->ino,
-+			__entry->transid)
++	TP_printk_btrfs("root=%llu(%s) transid=%llu ctx_ino=%llu conflic_ino=%llu"
++			" conflict_ino_parent=%llu",
++			show_root_type(__entry->root_objectid), __entry->transid,
++			__entry->ctx_ino, __entry->conflict_ino,
++			__entry->conflict_ino_parent)
 +);
 +
-+TRACE_EVENT(btrfs_log_new_dir_dentries_exit,
++TRACE_EVENT(btrfs_add_conflicting_inode_exit,
 +
 +	TP_PROTO(const struct btrfs_trans_handle *trans,
-+		 const struct btrfs_inode *inode,
-+		 int ret),
++		 const struct btrfs_log_ctx *ctx,
++		 u64 ino, u64 parent, int ret),
 +
-+	TP_ARGS(trans, inode, ret),
++	TP_ARGS(trans, ctx, ino, parent, ret),
 +
 +	TP_STRUCT__entry_btrfs(
 +		__field(	u64,     	root_objectid		)
-+		__field(	u64,	 	ino			)
 +		__field(	u64,		transid			)
++		__field(	u64,	 	ctx_ino			)
++		__field(	u64,	 	conflict_ino		)
++		__field(	u64,	 	conflict_ino_parent	)
 +		__field(	int,	 	ret			)
 +	),
 +
 +	TP_fast_assign(
-+		TP_fast_assign_fsid(inode->root->fs_info);
-+		__entry->root_objectid		= btrfs_root_id(inode->root);
-+		__entry->ino			= btrfs_ino(inode);
++		TP_fast_assign_fsid(trans->fs_info);
++		__entry->root_objectid		= btrfs_root_id(ctx->inode->root);
 +		__entry->transid		= trans->transid;
++		__entry->ctx_ino		= btrfs_ino(ctx->inode);
++		__entry->conflict_ino		= ino;
++		__entry->conflict_ino_parent	= parent;
 +		__entry->ret			= ret;
 +	),
 +
-+	TP_printk_btrfs("root=%llu(%s) ino=%llu transid=%llu ret=%d",
-+			show_root_type(__entry->root_objectid), __entry->ino,
-+			__entry->transid, __entry->ret)
++	TP_printk_btrfs("root=%llu(%s) transid=%llu ctx_ino=%llu conflic_ino=%llu"
++			" conflict_ino_parent=%llu ret=%d",
++			show_root_type(__entry->root_objectid), __entry->transid,
++			__entry->ctx_ino, __entry->conflict_ino,
++			__entry->conflict_ino_parent, __entry->ret)
 +);
 +
  TRACE_EVENT(btrfs_sync_fs,

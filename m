@@ -1,178 +1,171 @@
-Received: from fout-a3-smtp.messagingengine.com (fout-a3-smtp.messagingengine.com [103.168.172.146])
+Received: from fhigh-a2-smtp.messagingengine.com (fhigh-a2-smtp.messagingengine.com [103.168.172.153])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5563D2989B5
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 21:05:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.146
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4AF963F86ED;
+	Fri, 15 May 2026 21:16:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.153
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778879129; cv=none; b=YDRFilYfq/tcOoYUiW8rSL+1HPl/TchTrwx8dXLeugDX16pC4Y27t0Ko7bM3U7cf693O2ZLRx4MfuA2Yp4p1jdKFNpjLQaUACyia2RXbHw3dgQF56Y19s4uEha12RRZDp0CVBU0rolGYcl/PGSKsWL25AowcE2XbdOx1ExsO+KA=
+	t=1778879766; cv=none; b=CU/kZOdZktkKVeA7PhKQJeuUGXo1PNsNRiBjEYTSjgVrILAMAzFKWrdIW1H2dMRWt7MEY9S3NoGq8oE6igJm9jMQx/Hp3bFpNJLiCSaRwzJuwEoouSn6zllNdXupYm4GHm7+P7jky9m0JqshqdWo2v/rk7414tDSs+MxmeB5Yek=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778879129; c=relaxed/simple;
-	bh=Tk44JUH7aQdlxlwKW7j4czHVsgwMP/EIQJsE255POzE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=X5lXK8zvuAdF9vOYhf7LV7ghdEHvaaRZgc20/1wu0jmqptTg7LUF7X6/tU03TC6g6hAk5Bo/CHOcKO1cr5JSo3JQRKxGJOufb4DlHQr3la2f2eyxlYd049AXRkFTUDRKu4BC58V6CGEiuQ+djEDxp0hLxGvkIVspFg0bX8gNXX8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=LcJyFGr+; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=rRMNzOq4; arc=none smtp.client-ip=103.168.172.146
+	s=arc-20240116; t=1778879766; c=relaxed/simple;
+	bh=v1ZMVdVTScUFdRTnLCXoeqP2CFA/KimCyQ7FIvHqhgo=;
+	h=Date:From:To:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=X8YkqdIPKz47sGr4u7EZoZ6Ar4kEHP3YurF9oQFx98QiC4Lwe8LkWmOEPMznLuNLG7XunvpavtwpZgGGksDpWl9q6XNU3JRlERWqL220eRSrVVEwd/NR2hj9puNXuIbwUomQufjp1CtGyAQU+3ZCKkVMLeu0dk8rL8SlBSA9ZLM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=FYxF0lwl; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=hMkzsfPz; arc=none smtp.client-ip=103.168.172.153
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="LcJyFGr+";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="rRMNzOq4"
-Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
-	by mailfout.phl.internal (Postfix) with ESMTP id 5A70AEC00A6;
-	Fri, 15 May 2026 17:05:26 -0400 (EDT)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="FYxF0lwl";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="hMkzsfPz"
+Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
+	by mailfhigh.phl.internal (Postfix) with ESMTP id 65B4114000AD;
+	Fri, 15 May 2026 17:16:03 -0400 (EDT)
 Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-02.internal (MEProxy); Fri, 15 May 2026 17:05:26 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-transfer-encoding:content-type:content-type:date:date
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm1; t=1778879126;
-	 x=1778965526; bh=FWzlAw7br1jpCEj1rKF2cNBWIcKGg/MDbXI54Et+XhU=; b=
-	LcJyFGr+zqAADs508j+ZG87tmVy+sLvBg/vqomnTmqiNy68ruLHmDIn56MmSK8J0
-	Wpfh/l6veBQ+3mUDDVPviQgQhKO3Go5vIIsPXz91PVC8TnB+Zdyz3ZYyEBR4npXE
-	uIZaZUX6pJgP5oV8Cbjhxoin19T8G4KYagOcQn1EWa6091alvZ0lbesNsGUd2J18
-	MArsJAlf+POdbJb4uHVeWKMK91PoQ93jk76hRaSIMSUnbS+XuWJv3bk6IMtllpNz
-	BxTJ2cot70GsKt7I0ZaM0h/fREDbNDo63kTtjbn/T5t/puiab8mhrJN3jrX11tL3
-	8nZMUjAyP4H9dmgwPL3k9Q==
+  by phl-compute-03.internal (MEProxy); Fri, 15 May 2026 17:16:03 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm1; t=1778879763; x=1778966163; bh=VXcfs4KVQr
+	53AVvuwo4ENuxo1HHNMoygZgChmb7Aq/g=; b=FYxF0lwlK2VWfnM3yMrd0RWrvR
+	Sqta8eCQ3bIOdi61/l5Wo3gv1ppRB/5mN72mumijXx/IzOAM84tPGbklnGC240SX
+	WkrTFfjdKfwW8osfl5Yw6MulkSFZNKVjYHqq7cSHR8PEImc4C4RVH491JZL4kfyV
+	ShC4FYC6FXhNErzGwzsRNobdBSF0HleSxvT6TvVFSmTIvFmGn4AludQb5sVb4wpe
+	NVXCaTa5ahjt4oBxGr+MBMV1jkGbu4hSWL3B3mXUbZBlpPWwEgcz1D7OLaHTt6OG
+	AmrRT7BononqizuTSvE6kyhKLO+8KMTjjTHPXO5WTsJRrqryZ09GeEq1HTZg==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=1778879126; x=
-	1778965526; bh=FWzlAw7br1jpCEj1rKF2cNBWIcKGg/MDbXI54Et+XhU=; b=r
-	RMNzOq4A8vKkKnGBl3Nprc6kQHjqZDGBNGYbp1q0XWkIbPxr3fT3w7C5O4O6nMgg
-	kAgL0t3y6asa5YzPurhumoyXaMsIS7kRzkbP/x1eHztim9MluHTPVrKm3iEoqYMm
-	2WZZbw93WIxFo2DmZBv09tlv45lBv1elD+zOWrm89P+Rn5k9TB5vHBDh4929dfke
-	xdhY9dQ5XoiKXvaU2Afmf1oZchiWKwwEJ9ywjaHhFnh2qsh671C6XMkR0M+IGV1R
-	HdhoSxbmsViWw2hICmCNPQddyykwxLyg4DW+FY583fRPeZQvlNOFFU2/pRc+EmFT
-	Ls7fZh2kkJdjgrROXcDYQ==
-X-ME-Sender: <xms:looHaiCD19rXMAoL31mweWYVVD3VzIlA4sLlV_zdLBR8VbW9reaaVQ>
-    <xme:looHarmPev1xI13zwbGguRwl-mSOlFymb3R0pawxHvDRxfVhSati5i75_7Fi2Dcqs
-    n7usSutIvLwoe2Dj6sGsfWQRvn1ikHg5jxKHWbM8a2vlW8Pwq18w-4>
-X-ME-Received: <xmr:looHarwlaIo-0KkezRN4XgMIW_xJiZm3R9a0x7Kh9XvRN-Kr13bhcv9tT7obK7FiopuNWZi7OjeL1fi34soltWwUKGk>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddufedugeegucetufdoteggodetrf
+	messagingengine.com; h=cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
+	1778879763; x=1778966163; bh=VXcfs4KVQr53AVvuwo4ENuxo1HHNMoygZgC
+	hmb7Aq/g=; b=hMkzsfPzj/BydrQZ5qJ65aKsdu+vpn/J+No1hYXrkQSZhZQWBn1
+	PQiw/b12sCy87zq56bG9Zfn6r45Ad4ygXODtTYIE58LqgfoenmVLMrqI8TJDaF96
+	kuyfsr6weBDRwenUtOUEcrcT/8m0PMDvcw1UTRhczr7iYJnkWq65T4vEv+vsItCQ
+	Buy7HVl871YGKriodiGM2vUVerQU/cgqHu5p5qGG2xCPeKQWgXFRuVzelEm9GwfZ
+	cD6Vrd+N8q3nsxcOITJfzPpklYDFm0fkGHVUeFJK2Ou+PHtwWsj7IV/TLJa/XRki
+	YyKkeLHm2PCuH1O2OtxTdX+uXQUFajqNL+Q==
+X-ME-Sender: <xms:E40HaiN23A2whEBpm7at0V6-LwV7YQK3n4lwCk4639gxvpxMtXwtEA>
+    <xme:E40HaotCECRXw09134_1VBXXt20roL0j1FGCOXieV0D_t5S8qWgfckxw6s9wfaUK6
+    uhYSxaPDk3z3N30oRMkUPbm85Vbm6AKGVkkkD2laKzQ3dYOtKp09W1_>
+X-ME-Received: <xmr:E40HasWyOkNw7UupnEkrW-ERLN4MTU80IR1eWH9TbASIa0y2-ojqOMnWxb2EcbozqMXMxGZ4_rmZN-B5bkjWObEz8Do>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddufedugeehucetufdoteggodetrf
     dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
-    rghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujf
-    gurhepfffhvfevuffkfhggtggugfgjsehtkeertddttddunecuhfhrohhmpeeuohhrihhs
-    uceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhepud
-    eliefhtdeggfekueekheeukeehheelfeejuedtffelgfdutddvhfffvdeggfelnecuffho
-    mhgrihhnpehkvghrnhgvlhdrohhrghenucevlhhushhtvghrufhiiigvpedtnecurfgrrh
-    grmhepmhgrihhlfhhrohhmpegsohhrihhssegsuhhrrdhiohdpnhgspghrtghpthhtohep
-    kedpmhhouggvpehsmhhtphhouhhtpdhrtghpthhtohephhgthheslhhsthdruggvpdhrtg
-    hpthhtohepjhhohhgrnhhnvghsrdhthhhumhhshhhirhhnseifuggtrdgtohhmpdhrtghp
-    thhtoheplhhinhhugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtph
-    htthhopehfughmrghnrghnrgesshhushgvrdgtohhmpdhrtghpthhtohepughsthgvrhgs
-    rgesshhushgvrdgtohhmpdhrtghpthhtohephhgrnhhsrdhhohhlmhgsvghrghesfigutg
-    drtghomhdprhgtphhtthhopegulhgvmhhorghlsehkvghrnhgvlhdrohhrghdprhgtphht
-    thhopehnrghohhhirhhordgrohhtrgesfigutgdrtghomh
-X-ME-Proxy: <xmx:looHatQWeMZSN4kf1haN-UzpbNLBk7RxTgWauIxKeym8Std3tjjhhQ>
-    <xmx:looHar--UnHQWiXtRtEvdg2dux8HSDmGggJr6zHGwbga4Y3t683UaA>
-    <xmx:looHajvPZvIPp2e1p4cg0lCJpKNoOBCtW9iuoOF8LWzN58NSi34o6A>
-    <xmx:looHarOOHEvQFfVIoqs3SJhsDCKACAqUbyBJNR1dUHcF2h4-O2tguA>
-    <xmx:looHav8hbuNH16EzvXqFoB0bNZGbMq5JM2OmbqFmGWRl3hfFjY7lPSd6>
+    rghilhhouhhtmecufedttdenucenucfjughrpeffhffvuffkfhggtggujgesthdtredttd
+    dtvdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdrihho
+    qeenucggtffrrghtthgvrhhnpeehudevleekieetleevieeuhfduhedtiefgheekfeefge
+    elvdeuveeggfduueevfeenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgr
+    ihhlfhhrohhmpegsohhrihhssegsuhhrrdhiohdpnhgspghrtghpthhtohepfedpmhhoug
+    gvpehsmhhtphhouhhtpdhrtghpthhtoheplhhinhhugidqsghtrhhfshesvhhgvghrrdhk
+    vghrnhgvlhdrohhrghdprhgtphhtthhopehkvghrnhgvlhdqthgvrghmsehfsgdrtghomh
+    dprhgtphhtthhopehfshhtvghsthhssehvghgvrhdrkhgvrhhnvghlrdhorhhg
+X-ME-Proxy: <xmx:E40HagudyAqI6fB6_9YiUH6U4iaKn7hwmEUtaDfc1AR-Y3jpwA23bg>
+    <xmx:E40HaoXJeZL2VSV48eb7aymLvs_9a7lctJHqjWMKTIXuz2l7izjDzg>
+    <xmx:E40HajkMs0hyxcIH4Iok4nddSIhWnjbfWr15agfjxoL93ZFg3jd5xg>
+    <xmx:E40HahZ4rfErFckZN-TGO29Blo70vQUOZO0pQ96Tw7CPCFB3x2iCaQ>
+    <xmx:E40HaqZJhOtD93LDU15ECikGwNVH4uon8GNWOg6jTdlgFjj3rV22acbs>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
- 15 May 2026 17:05:25 -0400 (EDT)
-Date: Fri, 15 May 2026 14:05:11 -0700
+ 15 May 2026 17:16:02 -0400 (EDT)
+Date: Fri, 15 May 2026 14:15:49 -0700
 From: Boris Burkov <boris@bur.io>
-To: Christoph Hellwig <hch@lst.de>
-Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
-	David Sterba <dsterba@suse.com>,
-	Hans Holmberg <Hans.Holmberg@wdc.com>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Naohiro Aota <naohiro.aota@wdc.com>
-Subject: Re: [PATCH 5/7] btrfs: zoned: subtract zone_unusable space in statfs
-Message-ID: <20260515210511.GA2887949@zen.localdomain>
-References: <20260513123445.43197-1-johannes.thumshirn@wdc.com>
- <20260513123445.43197-6-johannes.thumshirn@wdc.com>
- <20260515043921.GB3936@lst.de>
- <bc97d41f-55e2-44ed-a500-e74f8f25f006@wdc.com>
- <20260515113430.GA25099@lst.de>
+To: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+	fstests@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs: inline enable_quota helper in test 301
+Message-ID: <20260515211549.GA3470939@zen.localdomain>
+References: <cover.1778632843.git.boris@bur.io>
+ <3234af372b0f16511aa5856aa7a3a0ca28397fcb.1778632843.git.boris@bur.io>
+ <agU-k5OnlkvcLiFB@zlang-mailbox>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20260515113430.GA25099@lst.de>
+In-Reply-To: <agU-k5OnlkvcLiFB@zlang-mailbox>
 
-On Fri, May 15, 2026 at 01:34:30PM +0200, Christoph Hellwig wrote:
-> On Fri, May 15, 2026 at 11:26:22AM +0200, Johannes Thumshirn wrote:
-> > On 5/15/26 6:39 AM, Christoph Hellwig wrote:
-> >> On Wed, May 13, 2026 at 02:34:43PM +0200, Johannes Thumshirn wrote:
-> >>> On zoned filesystems, space in block groups that has been freed but not
-> >>> yet reset is tracked in bytes_zone_unusable. This space cannot be used for
-> >>> new allocations until zone reclaim resets the zones, but it was being
-> >>> reported as available space in statfs.
-> >>>
-> >>> This caused statfs to over-report free space, leading to ENOSPC errors
-> >>> when applications tried to allocate based on the reported free space.
-> >>>
-> >>> Fix this by subtracting bytes_zone_unusable from total_free_data in the
-> >>> statfs calculation for zoned filesystems.
-> >> This OTOH sounds very wrong.  Freed but not reclaimed space is usable,
-> >> it just needs work.
-> >>
-> > man statfs says:
-> >
-> >                fsblkcnt_t f_bavail;  /* Free blocks available to
-> >                                         unprivileged user */
-> >
-> > which in my interpretation would include zone_unusable_bytes, as they're 
-> > not "free blocks available". Or would that be accounted as f_bfree?
+On Thu, May 14, 2026 at 11:34:00AM +0800, Zorro Lang wrote:
+> On Tue, May 12, 2026 at 05:43:33PM -0700, Boris Burkov wrote:
+> > The enable_quota helper in btrfs/301 takes a mode argument ('n', 's',
+> > or anything else) to switch between "no quota", "simple quota", and
+> > "full quota" enable.  Only the simple-quota path is ever exercised by
+> > this test, so the dispatch is dead weight and the indirection just
+> > obscures the actual btrfs command being run.
+> > 
+> > Inline the two call sites to call 'btrfs quota enable --simple'
+> > directly and drop the helper.
+> > 
+> > Signed-off-by: Boris Burkov <boris@bur.io>
+> > ---
 > 
-> The only different between f_bavail and f_bfree is reservations for
-> the superuser, which IIRC only extN do on Linux.
+> Hahah, to be honest, the title '[PATCH 0/2] squota delete fstests' gave me
+> a minor heart attack. I thought it was a critical bug report about fstests
+> accidentally deleting itself while running :-D
 > 
-> f_bavail is all the space you as a user could potentially use on
-> the file system (modulo quota restrictions).
 
-I think it would be great to discuss this in more detail. The whole
-"reservations for the superuser" thing never made a huge amount of sense
-to me, and feels sort of under-specified.
+Oops, sorry!
 
-I take it to spiritually mean "space allocated to other crap definitely
-needed to do your data allocation anyway". So in btrfs that would
-mean something like "an estimate of how much metadata you would need for
-the remaining space"?
+> >  tests/btrfs/301 | 14 ++------------
+> >  1 file changed, 2 insertions(+), 12 deletions(-)
+> > 
+> > diff --git a/tests/btrfs/301 b/tests/btrfs/301
+> > index 1f72a97b..31243aab 100755
+> > --- a/tests/btrfs/301
+> > +++ b/tests/btrfs/301
+> > @@ -169,16 +169,6 @@ do_enospc_falloc()
+> >  	do_falloc $file $sz
+> >  }
+> >  
+> > -enable_quota()
+> > -{
+> > -	local mode=$1
+> > -
+> > -	[ $mode == "n" ] && return
+> > -	arg=$([ $mode == "s" ] && echo "--simple")
+> > -
+> > -	$BTRFS_UTIL_PROG quota enable $arg $SCRATCH_MNT
+> > -}
+> > -
+> >  get_subvid() > >  {
+> >  	_btrfs_get_subvolid $SCRATCH_MNT subv
+> > @@ -198,7 +188,7 @@ prepare()
+> >  {
+> >  	_scratch_mkfs >> $seqres.full
+> >  	_scratch_mount
+> > -	enable_quota "s"
+> > +	$BTRFS_UTIL_PROG quota enable --simple $SCRATCH_MNT
+> >  	$BTRFS_UTIL_PROG subvolume create $subv >> $seqres.full
+> >  	local subvid=$(get_subvid)
+> >  	set_subvol_limit $subvid $limit
+> > @@ -421,7 +411,7 @@ enable_mature()
+> >  	# Sync before enabling squotas to reliably *not* count the writes
+> >  	# we did before enabling.
+> >  	sync
+> > -	enable_quota "s"
+> > +	$BTRFS_UTIL_PROG quota enable --simple $SCRATCH_MNT
+> 
+> This change doesn't seem related to patch 2/2. I think we can review
+> these 2 patches separately.
+> 
+> For this patch, I'm fine with or without it. If the btrfs list prefers
+> to have it, or move it to be a common helper, I'm good with that.
+> 
+> Thanks,
+> Zorro
+> 
 
-Returning to the actual implementation and this concrete question:
+I pulled this into a separate patch based on Filipe's feedback on the
+old version I failed to get in. Agreed it doesn't need to be a series,
+just felt related enough to send in a batch, due to the context.
 
-AIUI, we calculate f_bavail as unaware of any stranded metadata space
-we could free up by running a 'btrfs balance start -m', for example.
-Furthermore, there is a discontinuity to zero in edge cases when
-potential space for metadata is exhausted even if there is still space
-allocated for data.
-
-So I think Johannes's change certainly fits with that (and the raid
-aware) nature of the bavail calculation.
-
-On the other hand, given that the zone reclaiming is guaranteed to
-happen automatically, I can see how it could be treated differently,
-though, unlike the metadata balancing. But if we made metadata
-balancing happen automatically in a flusher, we would need to change
-f_bavail to count stranded metadata space too?
-
-There was another recent discussion on this, where you said we should
-avoid over-estimating:
-https://lore.kernel.org/linux-btrfs/efcb3c8470bf099534fec1c1745780eba445e111.1774394322.git.loemra.dev@gmail.com/
-
-So I think the main thing is whether btrfs guarantees it will succeed on
-allocations given space stranded in zones is available "after a balance"
-or not? Should it admit those writes? (Is this the right test?)
-
-I think in this case, given that balance is in a flusher, it should, but
-it is better to say "everything" out loud to leave less to the
-imagination. And we should confirm that this property really holds, that
-such a write will succeed after painful extra balancing work. It is
-possible the balance fails, for example, due to insufficient free space
-for a large extent that needs balancing. Maybe because of the reloc zone,
-that isn't true for zoned? Either way, does that aspect of it change how
-we feel?
-
-Thanks,
+Thanks for taking a look,
 Boris
+
+> >  	set_subvol_limit $subvid $limit
+> >  	_scratch_cycle_mount
+> >  	usage=$(get_subvol_usage $subvid)
+> > -- 
+> > 2.54.0
+> > 
+> > 

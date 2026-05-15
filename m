@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C2C94EA382
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:34 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BC6B64E3764
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778864434; cv=none; b=hBCOcEU+ris8LuYfoINdFpMJQutc8PPb6d+Q2h/lNP94045v0asVDB0/nQTKy77/Y92/56KR7eClYywG+/Vtyw4YP2RLWvpLcKWVVj5g/+EnuTsIoQxgkxI8SYTUgCPA0IBiPQ52s6n6vKQydmxXy5yHbJfu/Uh6AT8R9JFRkE0=
+	t=1778864435; cv=none; b=UmB2p4/tr1i1deGRKWTsBeCOmkuRiblcMBd0vXvYXYvOiKnxQGNT36saPPb+bVOaZMUxHXNtKfAKNVGu9ITkmimQEoYu+DGs1ofyBLPEO1LD9qOuwStmSSuU4tjvrYnmV2317zCcigD2hPwDinnfpPCQxSCnjR6RdBe/8ia5WW8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778864434; c=relaxed/simple;
-	bh=on+CkYbQ21maJpOpyGbK8bXGEV6gFP4w/aMsCM3fMPk=;
+	s=arc-20240116; t=1778864435; c=relaxed/simple;
+	bh=RKIvGAC5aA7ETUEsnndtSAg4dvW+8DMmz9SZB1EtRf0=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=OI+6qGksBZeZexYot7sHJdaa18yIvHCIrj+3y/nPhH9gVHrA22la1ssVf9NYhBPHH6xO09gGwR9TJvZq4D1ip0FAOUlBXbhlz69JDA0x83Y2wLC3MsDFsxIouzu348YtpHZPJaicF3NCalmK2p+KTFlj81ykvFQGEFOGVGh0ncc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dr5uHZZg; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=tCa2Ty70mMwOVEyNGxl6UDIExTbkOBM5ApqhChGVb0Xp29etdThOtTQdS9SsheZlHnEOWzpHxysBUDJ0bVeZsfQaHxkgGhr9pSipywPQNGsvgkDH06rVvJ2dEkPWCderKlMqpM45yB/RE7f7mMOV82H+UfNlnN/TXFY5lM6mDtY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QJuh9lQg; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dr5uHZZg"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EBC82C2BCB0
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:33 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QJuh9lQg"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id DDE70C2BCB0
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778864434;
-	bh=on+CkYbQ21maJpOpyGbK8bXGEV6gFP4w/aMsCM3fMPk=;
+	s=k20201202; t=1778864435;
+	bh=RKIvGAC5aA7ETUEsnndtSAg4dvW+8DMmz9SZB1EtRf0=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=dr5uHZZgTiUXL33Vw/snUm14NmXh8m0dk50nCQfJa0cAtsO8ZrVqZdWWIO0SzGHXh
-	 g0mBUqqC/vY2qyCoRRR5qcI5LXdMfDb18NIYuVdmLl98JF6jhIshPlWOdvINa4SfCA
-	 E7U6k/q3y8VJ69gvGcXFoEEafJV4jVGq3ICtYJX5sexn58BYod2g6ViP1JrBe2qrje
-	 TiCaRi3Ylf/T9rPLC1xX1joxeFUuzMHGb5upNUiNXyVzltrEQiP8T6yFQ0l3oe3Ff7
-	 6tYtxd6Jr2YGPkd2gFyEGKfm3DGCxN/q0LfhwIxb+m5Ay6ShQe/ilsT50Lr0/B6Quk
-	 ZTk2/hhy3luWw==
+	b=QJuh9lQg4XaYTpAmPSKDydyHoD46dWz2dcB9P5f5vhuB7/oBbtD+Z+6AIuzK4T5nQ
+	 PrIoPISdteprbOeRjzKC3403Xjrd0U40mCfo+GLlxFDheVrRYDWevscs7FHxg3otg1
+	 /wk728gZz66wflfIEOFF55sY7iNqIltBpP2YjtsEpYstVmLcZ37njD2uRlGcmW3sk+
+	 IltXHVHOC/4faN6ckrtrnhYvU3qZOUT6ktasiL6vhMK/gB30ABoA3+XBp+PN0bbw+F
+	 enHEUdB4c9breTYvPHnuNd6QQIkf720oGsXk7mSe1oOBunGm97qLV1tEvEY9nH1QPz
+	 OetzWPAg7el4Q==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 05/28] btrfs: tracepoints: pass a transaction handle to transaction commit event
-Date: Fri, 15 May 2026 18:00:02 +0100
-Message-ID: <74601fdecdb5c73d792d5f671c587fc915d03ba6.1778776706.git.fdmanana@suse.com>
+Subject: [PATCH 06/28] btrfs: tracepoints: add in_fsync field to transaction commit event
+Date: Fri, 15 May 2026 18:00:03 +0100
+Message-ID: <80855d2e7d7aae0d94c08e724676149b6711dd01.1778776707.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1778776706.git.fdmanana@suse.com>
 References: <cover.1778776706.git.fdmanana@suse.com>
@@ -44,80 +44,36 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The transaction commit tracepoint prints fs_info->generation as if it
-were the ID of the committed transaction but this does not always match
-that ID. This is because the trace point is called in the transaction
-commit path after the transaction is in the TRANS_STATE_COMPLETED state,
-which means another transaction may have already started (which can happen
-as soon as the transaction state was set to TRANS_STATE_UNBLOCKED), in
-which case fs_info->generation was incremented and does not correspond
-to the committed transaction anymore.
-
-So fix this by passing a transaction handle to the trace event instead of
-fs_info. This will also allow later for the trace event to dump other
-useful information about the transaction.
+Include the in_fsync value from the transaction handle so that we can know
+if a transaction commit was triggered by a fsync call.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/transaction.c       | 4 ++--
- include/trace/events/btrfs.h | 9 +++++----
- 2 files changed, 7 insertions(+), 6 deletions(-)
+ include/trace/events/btrfs.h | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 0fd596e2c65b..b98cb7b0630a 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2114,7 +2114,7 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans, int err)
- 	btrfs_put_transaction(cur_trans);
- 	btrfs_put_transaction(cur_trans);
- 
--	trace_btrfs_transaction_commit(fs_info);
-+	trace_btrfs_transaction_commit(trans);
- 
- 	if (current->journal_info == trans)
- 		current->journal_info = NULL;
-@@ -2632,7 +2632,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	if (trans->type & __TRANS_FREEZABLE)
- 		sb_end_intwrite(fs_info->sb);
- 
--	trace_btrfs_transaction_commit(fs_info);
-+	trace_btrfs_transaction_commit(trans);
- 
- 	btrfs_scrub_continue(fs_info);
- 
 diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index a8cdc50677a5..4cec2f8838f5 100644
+index 4cec2f8838f5..4e077abd6704 100644
 --- a/include/trace/events/btrfs.h
 +++ b/include/trace/events/btrfs.h
-@@ -31,6 +31,7 @@ struct btrfs_space_info;
- struct btrfs_raid_bio;
- struct raid56_bio_trace_info;
- struct find_free_extent_ctl;
-+struct btrfs_trans_handle;
- 
- #define show_ref_type(type)						\
- 	__print_symbolic(type,						\
-@@ -182,16 +183,16 @@ FLUSH_STATES
- 
- TRACE_EVENT(btrfs_transaction_commit,
- 
--	TP_PROTO(const struct btrfs_fs_info *fs_info),
-+	TP_PROTO(const struct btrfs_trans_handle *trans),
- 
--	TP_ARGS(fs_info),
-+	TP_ARGS(trans),
+@@ -189,13 +189,16 @@ TRACE_EVENT(btrfs_transaction_commit,
  
  	TP_STRUCT__entry_btrfs(
  		__field(	u64,  generation		)
++		__field(	bool, in_fsync			)
  	),
  
--	TP_fast_assign_btrfs(fs_info,
--		__entry->generation	= fs_info->generation;
-+	TP_fast_assign_btrfs(trans->fs_info,
-+		__entry->generation	= trans->transid;
+ 	TP_fast_assign_btrfs(trans->fs_info,
+ 		__entry->generation	= trans->transid;
++		__entry->in_fsync	= trans->in_fsync;
  	),
  
- 	TP_printk_btrfs("gen=%llu", __entry->generation)
+-	TP_printk_btrfs("gen=%llu", __entry->generation)
++	TP_printk_btrfs("gen=%llu in_fsync=%d", __entry->generation,
++			__entry->in_fsync)
+ );
+ 
+ DECLARE_EVENT_CLASS(btrfs__inode,
 -- 
 2.47.2
 

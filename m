@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6BDCC4DD6E4
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:40 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 508324F7992
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:41 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778864440; cv=none; b=gSD7EnbCEe48buXPHrRNroLSM2B3Yqw3n1MVXSOIcQt2tOYDuIIcszKxZ0SduDOd3iYgmMwpX3h0cFUaDIrIlm1MpMRUdYC8eSv8flp9ZFBp4k5VbsV0s02rEgIMPtXCSBM41bR8giCYThn5444yegZf7vrH+QWNnb7BmVt4UJk=
+	t=1778864441; cv=none; b=rFq4uyqb9cwCYNX9UIyZ6tCtlVrdB5s23omQtc/oNvXrGn50f5P3cP7Q2ohYk4JuxpsISp2JEJZtvSYkSm0Io6LmQn3I4MyL9dreokiicp+PCihEkUVZ0V4PahNEYRTmC7PNpr2zvzKfafSirJ7nJysdTcSRKHtqF0ieFGyBdp0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778864440; c=relaxed/simple;
-	bh=dpgyI/frrG/kEzxKVmDD5jyCchbaHNtG3BvqSVkd+ng=;
+	s=arc-20240116; t=1778864441; c=relaxed/simple;
+	bh=g5GNWNH9M83iN631+TfY2qlTvavqxtcgwjTbRGzwvIo=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=P//cVnZmk4k49BbJp2dmcqxyX6FDDU1VZ5wgyvj+9UBYaoRgIBt36BktwT8MFbEaqczeGdYZUuAArA1L5Rll//lQrqbAaSXARw1Ad4U2SkXEORrYGfyCs9gAouZA1jGDX8XU5141H8x60s4Z+UsuoHB+F0cGJ4b78j4nKvytJm0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=qhimSa4v; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=phH5OlvDUJot4gjAi2Se8EmOHj5B0GBoSRk8tMnKfQ4956hOh3tR8TUzyperUFrIX0zInqL90T2nBMpP0/pwSFJ7YRCXVSfESwfHFcPcmOraZlK0rPgQoNVuPAYaS0dlzm1tOarofL+GBkedzz9lLr7u4KCUtGm90BAmUccJaIo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=aNW2EKFh; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="qhimSa4v"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9B14AC2BCB3
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:39 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="aNW2EKFh"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8DD55C2BCB3
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778864440;
-	bh=dpgyI/frrG/kEzxKVmDD5jyCchbaHNtG3BvqSVkd+ng=;
+	s=k20201202; t=1778864441;
+	bh=g5GNWNH9M83iN631+TfY2qlTvavqxtcgwjTbRGzwvIo=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=qhimSa4vTzVj3V0Aek26zgycqPwtQZ2p6PY/CxUAoCuXmx4Wqkpi1x/8WEPKMAwA0
-	 Nr/WT1Q/uF/tOG3NwjW5/y/WFeth5aR0QzxnMCw/GYvYZx0CHRhjMf9+6Zb9pxTFJ2
-	 Qeczx0TIVOhUap2Q4Mh1YuqAaNMYNTJzCa6R2ThKyzLUKwrMghICrpGMW7Trh7vi1e
-	 gvK7oNxuVLNMT4n2oXGFL9hTP0Jw1hY9UZ42OA4KVeKuPlbm2fBcftvY98mAfGqDpW
-	 hdiATeInNp/ZDavhYchit+mi56nv+onOU8SOcWRQEo3/D0j5QlwG8R99gNCU/79n0p
-	 VIAdNAQXUapmw==
+	b=aNW2EKFhmDv6z9jxHPjQlklFglO4V1iPRBKEOxIYHFbg8J3zNsvbhVeSBI8E3EC3C
+	 jDTlSOm2WO2BoUp8P+F4ooAACxQ3os6S6EsSFQq8Lh+UIA47WWHfI5ByZ9gubulGvj
+	 P4HVtqeHxS9cHqJcJUf1kRpKxXtSO9G0pHmjdNCS0OoGmTmrddf/+tdQ8CcdXTpAD9
+	 MVyqz8a2sN3VafBEzVkYLTVmrz+iSMIYwm2V0doAuvDZS9Izq190lBYFffB8DyYX/Z
+	 7+cnTRUZ0zfsF9XZw3SkEBj9RUItEg9QGjpfAjRiElnlM+juOy8jfibOTvnBWz70I2
+	 hXuetWLgkXUuQ==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 11/28] btrfs: remove redundant writeback error check during fsync
-Date: Fri, 15 May 2026 18:00:08 +0100
-Message-ID: <ebdfea00379d6cad89df73ac624fdc2393cede83.1778776707.git.fdmanana@suse.com>
+Subject: [PATCH 12/28] btrfs: tracepoints: add trace event for when fsync finishes
+Date: Fri, 15 May 2026 18:00:09 +0100
+Message-ID: <d35c709027313d25a9c7b6fb0c22973badef9594.1778776707.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1778776706.git.fdmanana@suse.com>
 References: <cover.1778776706.git.fdmanana@suse.com>
@@ -44,51 +44,91 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-If we can skip logging the inode during fsync, we check for writeback
-errors in the inode's mapping by calling filemap_check_wb_err() and then
-jump to the 'out_release_extents' label, which in turn jumps to the 'out'
-label under which we check again for a writeback error by calling
-file_check_and_advance_wb_err(). So the filemap_check_wb_err() ends up
-being redundant. This happens since commit 333427a505be ("btrfs: minimal
-conversion to errseq_t writeback error reporting on fsync").
+Currently we only have a trace event for when a fsync operation starts,
+but this alone is not very helpful. Add a trace event for when fsync
+finishes, which reports its return value, so that using tracing we can
+see which other trace events happened in between (several will be added
+soon for inode logging steps) and even measure execution time.
 
-Remove the filemap_check_wb_err() call.
+So rename the existing trace event btrfs_sync_file to
+btrfs_sync_file_enter and add the trace event btrfs_sync_file_exit.
+The naming is similar to what ext4 does (ext4_sync_file_enter and
+ext4_sync_file_exit) and with similar information reported.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/file.c | 12 ++++--------
- 1 file changed, 4 insertions(+), 8 deletions(-)
+ fs/btrfs/file.c              |  4 +++-
+ include/trace/events/btrfs.h | 28 +++++++++++++++++++++++++++-
+ 2 files changed, 30 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 42914c9785e5..f77ccef837b9 100644
+index f77ccef837b9..d786b9666755 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1688,14 +1688,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 		 * reason, it's no longer relevant.
- 		 */
- 		clear_bit(BTRFS_INODE_NEEDS_FULL_SYNC, &inode->runtime_flags);
--		/*
--		 * An ordered extent might have started before and completed
--		 * already with io errors, in which case the inode was not
--		 * updated and we end up here. So check the inode's mapping
--		 * for any errors that might have happened since we last
--		 * checked called fsync.
--		 */
--		ret = filemap_check_wb_err(inode->vfs_inode.i_mapping, file->f_wb_err);
- 		goto out_release_extents;
+@@ -1564,7 +1564,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 		btrfs_assert_inode_locked(inode);
  	}
  
-@@ -1811,6 +1803,10 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	ASSERT(list_empty(&ctx.list));
- 	ASSERT(list_empty(&ctx.conflict_inodes));
- 	ASSERT(ret <= 0, "ret=%d", ret);
-+	/*
-+	 * Ordered extents might have started and completed before this fsync,
-+	 * so check for any io errors and advance the writeback error sequence.
-+	 */
+-	trace_btrfs_sync_file(file, datasync);
++	trace_btrfs_sync_file_enter(file, datasync);
+ 
+ 	btrfs_init_log_ctx(&ctx, inode);
+ 
+@@ -1810,6 +1810,8 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
  	err = file_check_and_advance_wb_err(file);
  	if (!ret)
  		ret = err;
++	trace_btrfs_sync_file_exit(file, ret);
++
+ 	return ret;
+ 
+ out_release_extents:
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 801f4793e002..1b19364eabff 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -808,7 +808,7 @@ TRACE_EVENT(btrfs_writepage_end_io_hook,
+ 		  __entry->end, __entry->uptodate)
+ );
+ 
+-TRACE_EVENT(btrfs_sync_file,
++TRACE_EVENT(btrfs_sync_file_enter,
+ 
+ 	TP_PROTO(const struct file *file, int datasync),
+ 
+@@ -840,6 +840,32 @@ TRACE_EVENT(btrfs_sync_file,
+ 		  __entry->datasync)
+ );
+ 
++TRACE_EVENT(btrfs_sync_file_exit,
++
++	TP_PROTO(const struct file *file, int ret),
++
++	TP_ARGS(file, ret),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	u64,	ino		)
++		__field(	int,    ret		)
++		__field(	u64,    root_objectid	)
++	),
++
++	TP_fast_assign(
++		struct btrfs_inode *inode = BTRFS_I(file_inode(file));
++
++		TP_fast_assign_fsid(inode->root->fs_info);
++		__entry->root_objectid	= btrfs_root_id(inode->root);
++		__entry->ino		= btrfs_ino(inode);
++		__entry->ret		= ret;
++	),
++
++	TP_printk_btrfs("root=%llu(%s) ino=%llu ret=%d",
++			show_root_type(__entry->root_objectid),
++			__entry->ino, __entry->ret)
++);
++
+ TRACE_EVENT(btrfs_sync_fs,
+ 
+ 	TP_PROTO(const struct btrfs_fs_info *fs_info, int wait),
 -- 
 2.47.2
 

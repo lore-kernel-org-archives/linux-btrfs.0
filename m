@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E53E92F7EFC
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:45 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DA23F2F7F05
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:46 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778864446; cv=none; b=jICMdzZSX4M789KTcE+JTzve0R8VlC3H92M0sC9LK81SFkEAA8PLkhxY1yhm7RDexvhdRtXf9zgfxaRrMIQ0T3T8+yf3Ctz20eCJhK+Zb+D/n1rW6RUJoIaQfPi10Vjo1j3c4wt/9ApEmMiGaBvsFFKqYJrXvbJoFS3PvlQvyrw=
+	t=1778864446; cv=none; b=KBU9dcxsfWDcklUsnrbXLy7pUs+hi9fCrXOPHEz1KHLajQwl5DFvWTCKCHYOzce7v4f4YXPEqdBltvE2A/mYRoUmG9d8SJOHnD9W0c6OQmqQWzXoB+VSWesv3YTRpRkMSnRnRWZrYsj2ACvtwo+mZ8CXxSwR2BEKl/JtPBBcCvk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1778864446; c=relaxed/simple;
-	bh=0GEH6lOLlJLD3vS42vAaiZtEpFe8MR28vatQCydb//E=;
+	bh=fwSrr8otfSF5Fzqce5yv7ebj3a9two6QdImOxI4gdaM=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=D7mjzHOlH/BdBU9bxYOLhPUuAsEHRiKRe3Idd3z/w3XW7VTWEBMfctkKIQr6lAcJlZHPrhh9QsQ0i1KahLJMp+yP5Y7f7Q8NVPh5einT9J3Ifpe5VgpNvbbFtc/5J2hbAHRG6a/CnIZl7rMeJaxubUZqq86WFCH2bSQeSOZwltA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=A67lOwZp; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=iAmWOsA762PVYYpKLhkYcyyWFcPqT/t8Kt14Nm4aI6+IpOL+MPglveEjvNmPAzyyhbUgXIEYoWM6WpdBAATzGdrH5L3qDcXT6spZ8a4F0Yyq+mH3F1dmy7oROD6tqMqRnQjtVvXSD3UuHjbnawUpuCqDPQ0WZ9uJA6sPa3Y6p50=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=gca+tgeI; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="A67lOwZp"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4C0BAC2BCB3
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:45 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="gca+tgeI"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3ECE1C2BCB3
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778864445;
-	bh=0GEH6lOLlJLD3vS42vAaiZtEpFe8MR28vatQCydb//E=;
+	s=k20201202; t=1778864446;
+	bh=fwSrr8otfSF5Fzqce5yv7ebj3a9two6QdImOxI4gdaM=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=A67lOwZpCQV9BXLDerjoX2fdZ2W7yZI9ZzGBBu2hQ1N/QsaABbYigdskox4plFi2o
-	 goO+WrXA2KP1XXjpQU86mhB82NZInTvIpSygebvDKcESn1WPJZACzjLwnZukzR1C0r
-	 +l2HeEUekduyEWn/ixFZLWUVa0NgNDku8sVJT4O4LX4FuKg708RZ2C/sDHuvCJeNQb
-	 WwlU1rghRemQmFcHS+wkeAeg94tCXZjtER4Mjxca9yWxBPh5b49+kMPv2rtIKWjScQ
-	 026Kmy26Y5Y8yoI+Oz4NVqWQYZZQd0Gv5GXBytVbNy4tH8T6MXUCkQDp/Fv9Fc/WLo
-	 qTUYKk6+13e5Q==
+	b=gca+tgeIKm1nFW8qkX1ctXJ74B+uj0P+pINfjds7mNPB3JM1Yk5hPrW2p5FSYmdBn
+	 EYyDGpI/AKn2JW8Z0xqP1R+gd+DbRbbJvMfcapZtTts1egZ16j7eeeovlszCV7KZf1
+	 m0UGuf8trTdJ4+hCf/KU+IuwlopE7OWQ3odBx/Pioy8/CEOSr7KZ8aRjet0uHbRK1B
+	 V/WSewc2mI+CLy2efSqGygiciDJo24idryrrLISabHJmuey7Dt6SLyQVsieG293Wnm
+	 ov/Vq4X6n3NUC6vyeN4SpIidioQeY66seZo0Rgo531TcWMSll+L1LbdOrMDcpE8dMt
+	 nensTio/vW3RA==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 17/28] btrfs: tracepoints: add trace event for log_all_new_ancestors()
-Date: Fri, 15 May 2026 18:00:14 +0100
-Message-ID: <cae5d5b9d7bb0fea257e7f15e21a81e128877b1e.1778776707.git.fdmanana@suse.com>
+Subject: [PATCH 18/28] btrfs: tracepoints: add trace event for log_new_dir_dentries()
+Date: Fri, 15 May 2026 18:00:15 +0100
+Message-ID: <6793730b9ead08d070c28e6e6f3e305de3e535e8.1778776707.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1778776706.git.fdmanana@suse.com>
 References: <cover.1778776706.git.fdmanana@suse.com>
@@ -44,37 +44,26 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-log_all_new_ancestors() is an important step called during a fsync, as
+log_new_dir_dentries() is an important step called during a fsync, as
 well as during rename and link operations on inodes that were previously
 logged. Add trace events for when entering and exiting that function.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c          | 34 ++++++++++++++--------
- include/trace/events/btrfs.h | 55 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 78 insertions(+), 11 deletions(-)
+ fs/btrfs/tree-log.c          | 10 +++++--
+ include/trace/events/btrfs.h | 53 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 61 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 90f5d1c830e4..f34dc9771dab 100644
+index f34dc9771dab..44c7d250b810 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -7462,16 +7462,22 @@ static int log_all_new_ancestors(struct btrfs_trans_handle *trans,
- 	struct btrfs_key search_key;
- 	int ret;
+@@ -5902,9 +5902,13 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
+ 	struct btrfs_inode *curr_inode = start_inode;
+ 	int ret = 0;
  
-+	trace_btrfs_log_all_new_ancestors_enter(trans, inode);
++	trace_btrfs_log_new_dir_dentries_enter(trans, start_inode);
 +
- 	/*
- 	 * For a single hard link case, go through a fast path that does not
- 	 * need to iterate the fs/subvolume tree.
- 	 */
--	if (inode->vfs_inode.i_nlink < 2)
--		return log_new_ancestors_fast(trans, inode, parent, ctx);
-+	if (inode->vfs_inode.i_nlink < 2) {
-+		ret = log_new_ancestors_fast(trans, inode, parent, ctx);
-+		goto out;
-+	}
- 
  	path = btrfs_alloc_path();
 -	if (!path)
 -		return -ENOMEM;
@@ -83,69 +72,26 @@ index 90f5d1c830e4..f34dc9771dab 100644
 +		goto out;
 +	}
  
- 	search_key.objectid = ino;
- 	search_key.type = BTRFS_INODE_REF_KEY;
-@@ -7479,7 +7485,7 @@ static int log_all_new_ancestors(struct btrfs_trans_handle *trans,
- again:
- 	ret = btrfs_search_slot(NULL, root, &search_key, path, 0, 0);
- 	if (ret < 0)
--		return ret;
-+		goto out;
- 	if (ret == 0)
- 		path->slots[0]++;
- 
-@@ -7491,9 +7497,11 @@ static int log_all_new_ancestors(struct btrfs_trans_handle *trans,
- 		if (slot >= btrfs_header_nritems(leaf)) {
- 			ret = btrfs_next_leaf(root, path);
- 			if (ret < 0)
--				return ret;
--			if (ret > 0)
-+				goto out;
-+			if (ret > 0) {
-+				ret = 0;
- 				break;
-+			}
- 			continue;
- 		}
- 
-@@ -7509,8 +7517,10 @@ static int log_all_new_ancestors(struct btrfs_trans_handle *trans,
- 		 * this loop, etc). So just return some error to fallback to
- 		 * a transaction commit.
- 		 */
--		if (found_key.type == BTRFS_INODE_EXTREF_KEY)
--			return -EMLINK;
-+		if (found_key.type == BTRFS_INODE_EXTREF_KEY) {
-+			ret = -EMLINK;
-+			goto out;
-+		}
- 
- 		/*
- 		 * Logging ancestors needs to do more searches on the fs/subvol
-@@ -7522,11 +7532,13 @@ static int log_all_new_ancestors(struct btrfs_trans_handle *trans,
- 
- 		ret = log_new_ancestors(trans, root, path, ctx);
- 		if (ret)
--			return ret;
-+			goto out;
- 		btrfs_release_path(path);
- 		goto again;
+ 	/* Pairs with btrfs_add_delayed_iput below. */
+ 	ihold(&curr_inode->vfs_inode);
+@@ -6023,6 +6027,8 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
+ 			kfree(dir_elem);
  	}
--	return 0;
-+out:
-+	trace_btrfs_log_all_new_ancestors_exit(trans, inode, ret);
-+	return ret;
+ 
++	trace_btrfs_log_new_dir_dentries_exit(trans, start_inode, ret);
++
+ 	return ret;
  }
  
- /*
 diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 2c145240d809..d16de652a815 100644
+index d16de652a815..c13c1ce0b344 100644
 --- a/include/trace/events/btrfs.h
 +++ b/include/trace/events/btrfs.h
-@@ -1120,6 +1120,61 @@ TRACE_EVENT(btrfs_log_all_parents_exit,
+@@ -1175,6 +1175,59 @@ TRACE_EVENT(btrfs_log_all_new_ancestors_exit,
  			__entry->transid, __entry->ret)
  );
  
-+TRACE_EVENT(btrfs_log_all_new_ancestors_enter,
++TRACE_EVENT(btrfs_log_new_dir_dentries_enter,
 +
 +	TP_PROTO(const struct btrfs_trans_handle *trans,
 +		 const struct btrfs_inode *inode),
@@ -156,7 +102,6 @@ index 2c145240d809..d16de652a815 100644
 +		__field(	u64,     	root_objectid		)
 +		__field(	u64,	 	ino			)
 +		__field(	u64,		transid			)
-+		__field(	unsigned int,	nlink			)
 +	),
 +
 +	TP_fast_assign(
@@ -164,15 +109,14 @@ index 2c145240d809..d16de652a815 100644
 +		__entry->root_objectid		= btrfs_root_id(inode->root);
 +		__entry->ino			= btrfs_ino(inode);
 +		__entry->transid		= trans->transid;
-+		__entry->nlink			= inode->vfs_inode.i_nlink;
 +	),
 +
-+	TP_printk_btrfs("root=%llu(%s) ino=%llu transid=%llu nlink=%u",
++	TP_printk_btrfs("root=%llu(%s) ino=%llu transid=%llu",
 +			show_root_type(__entry->root_objectid), __entry->ino,
-+			__entry->transid, __entry->nlink)
++			__entry->transid)
 +);
 +
-+TRACE_EVENT(btrfs_log_all_new_ancestors_exit,
++TRACE_EVENT(btrfs_log_new_dir_dentries_exit,
 +
 +	TP_PROTO(const struct btrfs_trans_handle *trans,
 +		 const struct btrfs_inode *inode,
@@ -184,7 +128,7 @@ index 2c145240d809..d16de652a815 100644
 +		__field(	u64,     	root_objectid		)
 +		__field(	u64,	 	ino			)
 +		__field(	u64,		transid			)
-+		__field(	int,		ret			)
++		__field(	int,	 	ret			)
 +	),
 +
 +	TP_fast_assign(
@@ -192,7 +136,7 @@ index 2c145240d809..d16de652a815 100644
 +		__entry->root_objectid		= btrfs_root_id(inode->root);
 +		__entry->ino			= btrfs_ino(inode);
 +		__entry->transid		= trans->transid;
-+		__entry->ret		= ret;
++		__entry->ret			= ret;
 +	),
 +
 +	TP_printk_btrfs("root=%llu(%s) ino=%llu transid=%llu ret=%d",

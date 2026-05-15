@@ -1,194 +1,104 @@
-Received: from fout-a2-smtp.messagingengine.com (fout-a2-smtp.messagingengine.com [103.168.172.145])
+Received: from mail.zytor.com (terminus.zytor.com [198.137.202.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 19D2730568B
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 18:38:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.145
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D576837B3F2;
+	Fri, 15 May 2026 20:44:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.136
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778870325; cv=none; b=ihmomLwVDxccapf0iowRdKIsBB1ZY1WanocpXHhR9Je1TE8fQ5l7sJopATr58qurn57nnMQkfDyns+BeK0G86r46i/sPiRfFV/KHPguncKTpVu3YUfjZOHv0V2twQKl/7j2IShY7ZnvAmpWNo87FTyYRAvFDqYc+0FDq6FxEKOk=
+	t=1778877877; cv=none; b=GIse8AIZxvQ2dIvzBBOlXUhU1i9BP8SRDT7dYWRHv4LQNwaA2wjdygOzcRHe8xs16XFKaXfZNjgNu0pu5GYTo+bijWpQA2fMqBP1UkUceMOIQx6QCDTGcCNKIT/8eudJOJLxsyM8vEdFXi3tE2dIarGteO9Bo5iOebbNSEr36lM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778870325; c=relaxed/simple;
-	bh=YhPxZREZahmlWfIgc4+2NuZkVUH7hOCBNH1luVoLrBA=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=bqyBtXpTTMWM/odZSs0tWkPiUUe+XWsYwkQ0x55y44nWSzmNok3zIGNgkxny6Kq4ps4f+3cvZCageuYzPmBdS4Ivjedy+6P6eDLUI0JrPaiI7k+BEvWEXJBv886iLlZN9NE/NoJ9l7IcY98ukwCwKZnPI7KpxyPyIYUH60v8+Jg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=LgxXydwa; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=EfeoAktW; arc=none smtp.client-ip=103.168.172.145
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1778877877; c=relaxed/simple;
+	bh=E1+eWqDxv6j99dZMDhlO+NNDH9oYnsJmpH6o+qF/hR0=;
+	h=Date:From:To:CC:Subject:In-Reply-To:References:Message-ID:
+	 MIME-Version:Content-Type; b=eDo4fU69+2vwDwBTZ97muihXaLNI6OKn1n/sVAzdNxrrD6+3fsQcgFkaLbV3wMLPNjrTxRvy0QQG5gCJDjV72qY35hBbXU65eCsmMMyFnXRr3IQJIlv1aa92e17KhGWEi7wyG3XZ8GnXnGMCgSM4/ivpSoEc9POhwS/oyXc90Ro=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zytor.com; spf=pass smtp.mailfrom=zytor.com; dkim=pass (2048-bit key) header.d=zytor.com header.i=@zytor.com header.b=HvwBqnLT; arc=none smtp.client-ip=198.137.202.136
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zytor.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zytor.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="LgxXydwa";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="EfeoAktW"
-Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
-	by mailfout.phl.internal (Postfix) with ESMTP id BABF7EC0017;
-	Fri, 15 May 2026 14:38:41 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-04.internal (MEProxy); Fri, 15 May 2026 14:38:41 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm1; t=1778870321; x=1778956721; bh=htzE2WoeSe
-	wZGh/kA6qRosNnUKKyj5E9+up8q2KO7lc=; b=LgxXydwajYi84XnA5JTFREpSK4
-	5OafNYQo8Vb/IGF+YBQzCrKq8RZTitG3WL/OqAPh1RQVQgwnvus+nNgkFNGYNEbg
-	dlpNeTokfW3BC7CO9GeHV/fFvKmXdda3NMhCwtZLdGZYynL9nUP4ON5iTWpFqs5I
-	EtimZam+XvC9bHLrjMim3j/Qx9WtmR13mXD4xhInC3yiqq7UO2vNmVujq56oazs4
-	+jU4dd4Qp6wBeDzHashNeOSXO7qV4cxeLg2bE46srmiy+jECnb3WcpHYIaaBqkNP
-	4cwuoDzj2F2qYP85CWc3cPXl1WNodFhW3Ey7WNGGL/w3JS4/xTzPfPe8b1xQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
-	1778870321; x=1778956721; bh=htzE2WoeSewZGh/kA6qRosNnUKKyj5E9+up
-	8q2KO7lc=; b=EfeoAktWxZI3V20RHhgxv3k+HnW3nP97H5RmdNTa1ko8wEQN0FB
-	qwUuEjtVuuBvy2j82KTDATMK2P4u9Dvxj99BKylDV65Uda1Jkw+dBWbqWHGwtJl5
-	dVCrmtLzdR/kEK0uRjPYKRTB53SusFKxV3vDey6GyCwoZH67488VSCTBPieMNsSo
-	07InvRMoeBqEuuStGGGm7FPZM87ZC3L7wR/BJrnzxrqZ00ENPAuH86yvEapKDaLX
-	3hBHxzC+iJH70I5c441EXtJYm7PmL0hlbEMYbXR3FBazcd3dDA+QfD5FP79Zo620
-	5av9kyG4dimyAzdqgkl3VqbBD5QVzo8IfAA==
-X-ME-Sender: <xms:MWgHarwP-lqo-uBrCbpCj2bxQFtvmI9qbsrRHUZdjVrpJz77EnNxtw>
-    <xme:MWgHaiWWVH7wrEtw3G9wMJmtYLcMs3-pugYeQpIGJU3tBWUW8E1v1kxoZQ_QcA32k
-    gqxBgJrG56DwL0KgryQqAco2gUgUCueAk6rLISSPeAIfd3aw4Vbpa4>
-X-ME-Received: <xmr:MWgHarjpkdxpM9CQXvYqTJwHveggPB3c8bsKCsAJwjQcj5APVKLlmfXAoE9XcLh9oXgnsqzYiP_RuvQ2acF3-sXgH5c>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddufeduudegucetufdoteggodetrf
-    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
-    rghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujf
-    gurhepfffhvfevuffkfhggtggujgesthdtredttddtvdenucfhrhhomhepuehorhhishcu
-    uehurhhkohhvuceosghorhhishessghurhdrihhoqeenucggtffrrghtthgvrhhnpeekvd
-    ekffejleelhfevhedvjeduhfejtdfhvdevieeiiedugfeugfdtjefgfeeljeenucevlhhu
-    shhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
-    hrrdhiohdpnhgspghrtghpthhtohepkedpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
-    ohepjhhohhgrnhhnvghsrdhthhhumhhshhhirhhnseifuggtrdgtohhmpdhrtghpthhtoh
-    eplhhinhhugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthho
-    pehfughmrghnrghnrgesshhushgvrdgtohhmpdhrtghpthhtohepughsthgvrhgsrgessh
-    hushgvrdgtohhmpdhrtghpthhtohephhgrnhhsrdhhohhlmhgsvghrghesfigutgdrtgho
-    mhdprhgtphhtthhopegulhgvmhhorghlsehkvghrnhgvlhdrohhrghdprhgtphhtthhope
-    hnrghohhhirhhordgrohhtrgesfigutgdrtghomhdprhgtphhtthhopehhtghhsehlshht
-    rdguvg
-X-ME-Proxy: <xmx:MWgHaiDxpHwEbuzpDanFAIHtJfhO_j8iiOmAhwR2KGFZiFJQLrDdjg>
-    <xmx:MWgHahv5m3SkBY7wcyi1i6r5_onoZUhmKMJ1CR83Nb165yvaqYm-Kw>
-    <xmx:MWgHamdQ07f7prxsXajJmz7FXj6pAo2guXHdolZIMjcpnC2phIyDHQ>
-    <xmx:MWgHam8W7RL95Vk7HoPYKNAEY_zkOTkOez697y_eRN8eDuuu_fho-w>
-    <xmx:MWgHajsB5eG4PEyoIdzQ-d9E-MZORbwpaX0vpUffOBNlmocbkgP8jYJt>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
- 15 May 2026 14:38:40 -0400 (EDT)
-Date: Fri, 15 May 2026 11:38:27 -0700
-From: Boris Burkov <boris@bur.io>
-To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
-	David Sterba <dsterba@suse.com>,
-	Hans Holmberg <Hans.Holmberg@wdc.com>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Naohiro Aota <naohiro.aota@wdc.com>, Christoph Hellwig <hch@lst.de>
-Subject: Re: [RFC PATCH 7/7] btrfs: zoned: add RECLAIM_ZONES and RESET_ZONES
- to first async reclaim loop
-Message-ID: <20260515183827.GE1197064@zen.localdomain>
-References: <20260513123445.43197-1-johannes.thumshirn@wdc.com>
- <20260513123445.43197-8-johannes.thumshirn@wdc.com>
+	dkim=pass (2048-bit key) header.d=zytor.com header.i=@zytor.com header.b="HvwBqnLT"
+Received: from ehlo.thunderbird.net (c-76-133-66-138.hsd1.ca.comcast.net [76.133.66.138])
+	(authenticated bits=0)
+	by mail.zytor.com (8.18.1/8.17.1) with ESMTPSA id 64FJxdt93762934
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NO);
+	Fri, 15 May 2026 12:59:40 -0700
+DKIM-Filter: OpenDKIM Filter v2.11.0 mail.zytor.com 64FJxdt93762934
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=zytor.com;
+	s=2026042601; t=1778875185;
+	bh=yOPbK2OFF6IcrfoJraZaWua7RTa6T7n9+bq8VLS6qCY=;
+	h=Date:From:To:CC:Subject:In-Reply-To:References:From;
+	b=HvwBqnLT38+P8wOr09I0oo/MRbA0gltt1BvxpDB/CXoHAI/p9iMtZP4Acni9CBE8i
+	 UuQANyZJcLZO9XcaPLGm0i1Xg+soCjS4z5NjIoUETnDDa930DiHBVRAOT/MRlLb9jY
+	 QYrQ9QMS7lPYMHGvM8plKfNxe30Gl9az6f+vOCv0hNim3O4/Bdo2qSTnUxGO9V7Nx4
+	 F46aEk0Mx5DZE0TAlF3l22P0Yw61+alulS+V4O2YtDdYTlzt2T6qIuwD2KE0nXfR9T
+	 jNDuDCJ8yXY/CId0JmSkw1Ar6+GJQTs5O0RqwrWv5l7cMbOBEgdh93GvzIYQG1gbNB
+	 I9HJmsdG2PKng==
+Date: Fri, 15 May 2026 12:59:34 -0700
+From: "H. Peter Anvin" <hpa@zytor.com>
+To: Christoph Hellwig <hch@lst.de>, kreijack@inwind.it
+CC: David Sterba <dsterba@suse.cz>, Andrew Morton <akpm@linux-foundation.org>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, Ard Biesheuvel <ardb@kernel.org>,
+        Huacai Chen <chenhuacai@kernel.org>, WANG Xuerui <kernel@xen0n.name>,
+        Madhavan Srinivasan <maddy@linux.ibm.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+        Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>,
+        Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Sven Schnelle <svens@linux.ibm.com>, Thomas Gleixner <tglx@kernel.org>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        Herbert Xu <herbert@gondor.apana.org.au>,
+        Dan Williams <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
+        Song Liu <song@kernel.org>,
+        Yu Kuai <yukuai@alb-78bjiv52429oh8qptp.cn-shenzhen.alb.aliyuncs.com>,
+        Li Nan <linan122@huawei.com>, linux-kernel@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-crypto@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-raid@vger.kernel.org
+Subject: Re: [PATCH 01/19] btrfs: require at least 4 devices for RAID 6
+User-Agent: K-9 Mail for Android
+In-Reply-To: <20260515043705.GA3855@lst.de>
+References: <20260512052230.2947683-1-hch@lst.de> <20260512052230.2947683-2-hch@lst.de> <20260512114231.GG2558453@suse.cz> <20260513054742.GA1018@lst.de> <0a8d1ff4-f5a2-49e9-aa45-d25dbe4ded40@libero.it> <20260515043705.GA3855@lst.de>
+Message-ID: <34C16854-1065-4542-8836-DDED58EC1844@zytor.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260513123445.43197-8-johannes.thumshirn@wdc.com>
+Content-Type: text/plain;
+ charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-On Wed, May 13, 2026 at 02:34:45PM +0200, Johannes Thumshirn wrote:
-> On zoned filesystems, when waiting for space tickets during data
-> relocation, the async reclaim flush state machine may starve if
-> RECLAIM_ZONES and RESET_ZONES states are not executed early in the flush
-> sequence.
-> 
-> Currently do_async_reclaim_data_space() only executes RECLAIM_ZONES and
-> RESET_ZONES in later flush states (FLUSH_DELALLOC and beyond), but by
-> the time these states are reached, the ticket wait may have already
-> deadlocked waiting for space that can only be freed by zone reset.
+On May 14, 2026 9:37:05 PM PDT, Christoph Hellwig <hch@lst=2Ede> wrote:
+>On Thu, May 14, 2026 at 09:51:59PM +0200, Goffredo Baroncelli wrote:
+>> I think that the David concern is : "what happens for an already
+>> existing btrfs raid6 3 disks filesystem when the user upgrade the kerne=
+l ?"
+>> (I am thinking when a new BG needs to be allocated)=2E=2E=2E
+>
+>Then it will cleanly fail to mount instead of constantly corrupting data
+>and memory with every write, yes=2E  Which clearly suggest that such
+>file systems don't exist in the wild=2E
+>
+>But if btrfs wants to keep supporting this I'll just add a _unsafe
+>version without the check in the core library=2E
 
-This explanation is a bit confusing to me. Does your previous fix
-prevent all known deadlocks? If not, can you describe the remaining
-deadlock in more detail? If having these flush states in the general
-flush state list causes a deadlock, we should not leave them there, even
-if we add this earlier pass.
+I don't think this is a good idea=2E Error out; it is the btrfs maintainer=
+s' job to ensure user data isn't lost=2E=20
 
-I assume the issue is that some other flusher can't make progress when
-we are out of zones and also lands on a ticket, and so async reclaim is
-stuck on a ticket and the only way to make progress is to reset a zone
-(hopefully) or reclaim a zone (painfully?)
+The RAID-6 code has *never* supported only 3 units, and if it ever worked =
+for *any* of the implementations it was purely by accident=2E Speaking as t=
+he original author I should know; this was deliberate as in some cases the =
+degenerate case (3) would have required extra trays in the code to no user =
+benefit=2E=20
 
-Maybe we need some high level flushing logic like "needs zoned help now
-please"? i.e., if we are low/out of free zones, do only zone flushing,
-otherwise do regular flushing (including zoned stuff if necessary/wise?)
-
-> 
-> Fix this by adding RECLAIM_ZONES and RESET_ZONES to the first async
-> reclaim loop (FLUSH_ALLOC) for zoned filesystems, ensuring zone reset
-> happens early enough to free space for pending allocation tickets.
-> 
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> ---
-> 
-> This patch was AI assisted and I'm not sure this is the correct thing to
-> do (the flushing, not the use of AI), hence the RFC tag. 
-> 
->  fs/btrfs/space-info.c | 11 +++++++++++
->  1 file changed, 11 insertions(+)
-> 
-> diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-> index ec811a77ebb1..a1235f114f3e 100644
-> --- a/fs/btrfs/space-info.c
-> +++ b/fs/btrfs/space-info.c
-> @@ -1451,6 +1451,17 @@ static void do_async_reclaim_data_space(struct btrfs_space_info *space_info)
->  
->  	while (!space_info->full) {
->  		flush_space(space_info, U64_MAX, ALLOC_CHUNK_FORCE, false);
-> +		/*
-> +		 * For zoned filesystems, also run RECLAIM_ZONES and RESET_ZONES
-> +		 * in the first loop to avoid starvation. Zoned filesystems have
-> +		 * sequential write requirements, so space cannot be reused until
-> +		 * zones are reset. Running these states early ensures zones are
-> +		 * reclaimed and reset before we get into a starvation situation.
-> +		 */
-> +		if (btrfs_is_zoned(fs_info)) {
-> +			flush_space(space_info, U64_MAX, RECLAIM_ZONES, false);
-> +			flush_space(space_info, U64_MAX, RESET_ZONES, false);
-> +		}
-
-Just to set a common ground on the existing algorithm:
-The current logic is to allocate a chunk (which may satisfy tickets)
-then check if we have any tickets left. If not tickets left, great we're
-done. Else, allocate another chunk (till full). Finally, go into the
-various flushers if we can't allocate a chunk.
-
-The way you have changed it, you tack on the two zoned specific flushes
-right after allocating a chunk, regardless of the continued presense of
-tickets. That feels off to me. I don't know enough about zoned to
-accurately judge how you want to order it, but I think the question you
-want to answer for yourself is:
-
-If there are totally free bgs on a zoned fs, do I want to run
-reclaim/reset zones before or after allocating them?
-
-Given the fixed number of zones, I would assume reset zones at least
-should come before grabbing a fresh bg? (Unless that fails in a free
-zone aware way?)
-
-OTOH, if you put zoned reclaim before chunk alloc, we may block data
-allocations on pretty expensive reclaim work when we could just make
-progress now by allocating a chunk.
-
-Long term, I am planning to refactor space flushing to try to make the
-separate work less sequential and driven by the demand for the
-particular type of flushing, but that is way longer term than your
-immediate need. I am just saying that to hopefully make the pain of the
-"ordering" aspect a bit more clear in greater context, it's not zoned
-specific. (it's bad to keep running delalloc first if we have a bunch
-of ordered extents out and should instead run delayed refs or commmit a
-txn to unpin, e.g.)
-
->  		spin_lock(&space_info->lock);
->  		if (list_empty(&space_info->tickets)) {
->  			space_info->flush = false;
-> -- 
-> 2.54.0
-> 
+I would not be surprised if the kernel crashed or corrupted the page cache=
+ in that case=2E

@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B37AE4EA389
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:33 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C2C94EA382
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:34 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778864433; cv=none; b=i31byFdokecqB0Tn1tfRXHwKVWDx4IbjGPBbIS1WvAzHBxflbxarAGn23G0djG1WW/zInLaIUBkXLz76k4IWmiYh1qmELx+/2aRtDxj+5PaprIQP5XcE25cOkmvnbn4DUxgFd4wL3Nz/Trzrbq9SQbESIk3nryICxl5XlMfs63E=
+	t=1778864434; cv=none; b=hBCOcEU+ris8LuYfoINdFpMJQutc8PPb6d+Q2h/lNP94045v0asVDB0/nQTKy77/Y92/56KR7eClYywG+/Vtyw4YP2RLWvpLcKWVVj5g/+EnuTsIoQxgkxI8SYTUgCPA0IBiPQ52s6n6vKQydmxXy5yHbJfu/Uh6AT8R9JFRkE0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778864433; c=relaxed/simple;
-	bh=p5uUJ1iyNt7GwsXovFY+MbeI16DBKYI7Hpz61n0uWYc=;
+	s=arc-20240116; t=1778864434; c=relaxed/simple;
+	bh=on+CkYbQ21maJpOpyGbK8bXGEV6gFP4w/aMsCM3fMPk=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=LVii2XSb+XmuhLMNbqSXMr+pSdrNeoEONHYnhYtSmaZyZUIStjofgS7LMFDn34XIyVHh31L+8Nu35A759INE8/o3v2GNFgSml7WXB3GV9L2oxVuICkxLcYjkTURzM89NYqR35RUvO4T5gwvC3JB1GcK+kMBQcsDMn9+a70HuOQs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dK0lT6jw; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=OI+6qGksBZeZexYot7sHJdaa18yIvHCIrj+3y/nPhH9gVHrA22la1ssVf9NYhBPHH6xO09gGwR9TJvZq4D1ip0FAOUlBXbhlz69JDA0x83Y2wLC3MsDFsxIouzu348YtpHZPJaicF3NCalmK2p+KTFlj81ykvFQGEFOGVGh0ncc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dr5uHZZg; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dK0lT6jw"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 04660C2BCC7
-	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:32 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dr5uHZZg"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id EBC82C2BCB0
+	for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 17:00:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1778864433;
-	bh=p5uUJ1iyNt7GwsXovFY+MbeI16DBKYI7Hpz61n0uWYc=;
+	s=k20201202; t=1778864434;
+	bh=on+CkYbQ21maJpOpyGbK8bXGEV6gFP4w/aMsCM3fMPk=;
 	h=From:To:Subject:Date:In-Reply-To:References:From;
-	b=dK0lT6jwaP/F/bhwUjoAvtbP1zd7vnH88/STC5MSo4DdoSQ1lXRIog3dKUtESYwAF
-	 LJWY1iNMHEc3nHptc1jKAWs50fXwfCtdG6zU/eQuhsRArMDKPdn/SfFI70wTi+NarL
-	 Jz6TY205yWbg1etwjNQV8WtDSpVK3CpIWK8aQ+Z0bcgJeSnRDa/4oPR/MObW2uvU4b
-	 qGq6snCO76wuq7s+Bi7KFbUWReXZkL27xiyWMtBVwm9vWMucBQngXmuQ41GCE5PhBK
-	 767rhXHrkYqKdBz1FY/r6c8dzAycWULm2JLX1UsU7kA/7j9ssmU+eTKcu5AT1F30og
-	 4ffYynuTTQwXg==
+	b=dr5uHZZgTiUXL33Vw/snUm14NmXh8m0dk50nCQfJa0cAtsO8ZrVqZdWWIO0SzGHXh
+	 g0mBUqqC/vY2qyCoRRR5qcI5LXdMfDb18NIYuVdmLl98JF6jhIshPlWOdvINa4SfCA
+	 E7U6k/q3y8VJ69gvGcXFoEEafJV4jVGq3ICtYJX5sexn58BYod2g6ViP1JrBe2qrje
+	 TiCaRi3Ylf/T9rPLC1xX1joxeFUuzMHGb5upNUiNXyVzltrEQiP8T6yFQ0l3oe3Ff7
+	 6tYtxd6Jr2YGPkd2gFyEGKfm3DGCxN/q0LfhwIxb+m5Ay6ShQe/ilsT50Lr0/B6Quk
+	 ZTk2/hhy3luWw==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 04/28] btrfs: remove call to transaction commit trace in btrfs_cleanup_transaction()
-Date: Fri, 15 May 2026 18:00:01 +0100
-Message-ID: <a3a736e4af384573fb7e4051d0d389af6f5a67a5.1778776706.git.fdmanana@suse.com>
+Subject: [PATCH 05/28] btrfs: tracepoints: pass a transaction handle to transaction commit event
+Date: Fri, 15 May 2026 18:00:02 +0100
+Message-ID: <74601fdecdb5c73d792d5f671c587fc915d03ba6.1778776706.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1778776706.git.fdmanana@suse.com>
 References: <cover.1778776706.git.fdmanana@suse.com>
@@ -44,29 +44,80 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We are not committing a transaction there, plus in subsequent patches we
-want to change the argument for the trace event to be a transaction handle
-instead of fs_info and in this context we don't have a transaction handle
-(struct btrfs_trans_handle, only a struct btrfs_transaction). So remove the
-call to the trace point.
+The transaction commit tracepoint prints fs_info->generation as if it
+were the ID of the committed transaction but this does not always match
+that ID. This is because the trace point is called in the transaction
+commit path after the transaction is in the TRANS_STATE_COMPLETED state,
+which means another transaction may have already started (which can happen
+as soon as the transaction state was set to TRANS_STATE_UNBLOCKED), in
+which case fs_info->generation was incremented and does not correspond
+to the committed transaction anymore.
+
+So fix this by passing a transaction handle to the trace event instead of
+fs_info. This will also allow later for the trace event to dump other
+useful information about the transaction.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/disk-io.c | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/transaction.c       | 4 ++--
+ include/trace/events/btrfs.h | 9 +++++----
+ 2 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 62ef5ba69d37..e6ed52f5cd6d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4946,7 +4946,6 @@ static int btrfs_cleanup_transaction(struct btrfs_fs_info *fs_info)
- 		spin_unlock(&fs_info->trans_lock);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 0fd596e2c65b..b98cb7b0630a 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -2114,7 +2114,7 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans, int err)
+ 	btrfs_put_transaction(cur_trans);
+ 	btrfs_put_transaction(cur_trans);
  
- 		btrfs_put_transaction(t);
--		trace_btrfs_transaction_commit(fs_info);
- 		spin_lock(&fs_info->trans_lock);
- 	}
- 	spin_unlock(&fs_info->trans_lock);
+-	trace_btrfs_transaction_commit(fs_info);
++	trace_btrfs_transaction_commit(trans);
+ 
+ 	if (current->journal_info == trans)
+ 		current->journal_info = NULL;
+@@ -2632,7 +2632,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	if (trans->type & __TRANS_FREEZABLE)
+ 		sb_end_intwrite(fs_info->sb);
+ 
+-	trace_btrfs_transaction_commit(fs_info);
++	trace_btrfs_transaction_commit(trans);
+ 
+ 	btrfs_scrub_continue(fs_info);
+ 
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index a8cdc50677a5..4cec2f8838f5 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -31,6 +31,7 @@ struct btrfs_space_info;
+ struct btrfs_raid_bio;
+ struct raid56_bio_trace_info;
+ struct find_free_extent_ctl;
++struct btrfs_trans_handle;
+ 
+ #define show_ref_type(type)						\
+ 	__print_symbolic(type,						\
+@@ -182,16 +183,16 @@ FLUSH_STATES
+ 
+ TRACE_EVENT(btrfs_transaction_commit,
+ 
+-	TP_PROTO(const struct btrfs_fs_info *fs_info),
++	TP_PROTO(const struct btrfs_trans_handle *trans),
+ 
+-	TP_ARGS(fs_info),
++	TP_ARGS(trans),
+ 
+ 	TP_STRUCT__entry_btrfs(
+ 		__field(	u64,  generation		)
+ 	),
+ 
+-	TP_fast_assign_btrfs(fs_info,
+-		__entry->generation	= fs_info->generation;
++	TP_fast_assign_btrfs(trans->fs_info,
++		__entry->generation	= trans->transid;
+ 	),
+ 
+ 	TP_printk_btrfs("gen=%llu", __entry->generation)
 -- 
 2.47.2
 

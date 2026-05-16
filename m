@@ -1,113 +1,145 @@
-Received: from mail-pl1-f194.google.com (mail-pl1-f194.google.com [209.85.214.194])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 481A62D7D59
-	for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2026 07:16:57 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.194
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E6382773EC;
+	Sat, 16 May 2026 13:55:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778915818; cv=none; b=jkWC4PpTspfeDeNoASHLjBpwRbIAOwQuaAo6FeVHzye9NwTSTNT3p1L5K7OCPwwidhcs2EkbNrIgLGFaPv49BYVvdn/OhU+qAw8mj1bR6hi9SBKmjYkYLG3KOzRbKpQH8PSJyyv2zs12Sos41ijwLW/FhBT0asKI8y18kuOO+CE=
+	t=1778939740; cv=none; b=d+3Rg62D9NahrHACXo8SVQ0hsLN4dDM6mBz4Eo/BV+Enc9jBlXV70hA7DBvEJT4Tsdhua77oob9gDHt3k+jnimyfqgCWwX2JduTRhIN60hHuFTFdXaw6ljW/ig1GlGQKmjeuKjHWAx6+/xKaFi2m45wlKdAKOnJNZb9X/n2Wktc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778915818; c=relaxed/simple;
-	bh=PibgjZqkX/Lvv8LAD4y/jWc8+9uGZ1ppiohWHQbdKCM=;
-	h=Message-ID:Date:MIME-Version:To:From:Subject:Content-Type; b=p6k0CYnedS5tm50oMkiLkWzcxYgME8PLuQIewwPJ6i6Ycc2ZxgWQpbfH4oyHJ40jC/Esgsywptah7296jsDOxPT8SzNwt9KhV3HYSarsb438TJ8zneYy4CbcS5aL4h88ZwpD6DwcLIKdd4IKz/zcBZ/B4az/geWYhqlhqqFHLNo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=WVwfOZvD; arc=none smtp.client-ip=209.85.214.194
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1778939740; c=relaxed/simple;
+	bh=mY8YaNnAtq3STAA8KAYmnPxlSQLbzdGdNLToKmXs5i0=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=YqT/BTiSSJAN1HtlJuOp4WT4YO2sESDgIepKqPDyiXZGhP+SpyFZY6ZpegQp6diYVZOGuUqDuKqNdtft04UNXx/3Sr85XuDmQjdh+gNXnaIy5PxSpTQkGPyNPlcS5FkoUB7RxY96GkYpwkJvGsZUdmiNyGlgGkh6jwNmRVC2E3Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=XEHZnRZn; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="WVwfOZvD"
-Received: by mail-pl1-f194.google.com with SMTP id d9443c01a7336-2bcdc085c52so746095ad.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2026 00:16:57 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1778915816; x=1779520616; darn=vger.kernel.org;
-        h=content-transfer-encoding:subject:from:to:content-language
-         :user-agent:mime-version:date:message-id:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=yoitvfM05S2pQp9brCwg5hSoyQrB1rZ2sXniwHysT8Y=;
-        b=WVwfOZvD5AHje1x6AVFy5QIWVLj1etRrnEXAbpGWainKBKf+AM8wGomYRuRkTCvMIl
-         Vhyse/12iGhXGteHRTzkLQRk0fJQq0D0bGe7bEIsnY53IJB4iWXQWKA++w8zquUanEtT
-         jJU0/0hfLGg2h8nbMf6FhpK7BV3IrCb0w5lR2eXE+/5KiGqtAChwI7S/E2tq8yZT/4B7
-         mcXIpnuROvxQQhZilM1dbgMHdWATsXJFESddLRMcCRl7Tv83ykhp4fUMnTQ3VUhdDAgZ
-         u+8sQwj2AKBla38DLQ3ZBWAwe860vDVDXzZVOnRibySXotoIMlD+u4GUXxOthUX01Nad
-         a+wQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1778915816; x=1779520616;
-        h=content-transfer-encoding:subject:from:to:content-language
-         :user-agent:mime-version:date:message-id:x-gm-gg:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=yoitvfM05S2pQp9brCwg5hSoyQrB1rZ2sXniwHysT8Y=;
-        b=AXP+lJqL6O5F/oEFbacBPPyj2FJoNx89JWKTgIwbK3/BuKZJK3lXe3M2ho1vPZ1Qxf
-         tglH+ocriDqL5xR5yztaT/cpp1fbA/9A7mIPIm5PfP1HK/HI9WGzRTdL4kQKcjtb8iIV
-         I2yUlk+5hG4pZj429zx0qJS0vXvn0R/MeVqe+5h6ascELuIW6GzfboEELYL4gTy7IqOy
-         f+5UKk5VCLnJyoMVYLUjLToTlA1E+prqAuRpMGyWSZ0aCOrMez7JFeQxC9IrXG48FFo4
-         LHJuoQ40phKExyJPxgPa9dnMzLjf7wS86zBd2N2KU9wjS0kjYjkTSnos+5XEnORFKTJh
-         EduA==
-X-Gm-Message-State: AOJu0YyCB/IgpKC3/nZwhsHoW5aEphbTV0szH/fglEgq8pZcGZJNG/Sz
-	/EY3CVgXzGyF4tUIwGoKti8oMkQQ+053rq+bszeUJhOf768s+kXEMJgJ+W/c5ak+
-X-Gm-Gg: Acq92OGBMnwiMjg+6yy0iVqgz5cgt6H6hGv+11GHYEXNWI1qJMxaaEIGwYmkfcfhhBv
-	fmXPxuB+oqpf7LFER+cx3idDNtbjs23YG7p5UwdJsc0iOIan7g0N2vvpwws2UNnvxrDNhDxXWfS
-	7qruHRLeGLkRiEkOzdj+02MlTVIz5Awcontv1C2hC9tVqvnuT07vBTpGdoypWGHkm1k2ufPxqax
-	miTtKtlF4Jhv0xDpgOtkr8RDM/cosle3GjiEYKJ10ClSry5NlTDhYFRBfcOaWeawTVc9/Fm8pKV
-	P/zHYcFdTKNthV2isjOppFeTcn0xUiIL1IV1g/lJD/RT0cF3pjOVt9U1S+QX47NErXZbQjVBLO6
-	r1QyvFb/QbLO5pWwrTWcLkowM9H5U5dgkePbMgkqgYL068jdmri/kRYEw2Yd9b+nGnYQ9nGVSgw
-	tSEl4mOOUX7rDN2HR8I5OTrp6u4f59WkC+fG5JDyrHF2D0fNB3Hufc81MsDkAlvox2gUtSVAN3s
-	ho7eSxSlpbIPPfruH8emIUv0vJgrO9fqRQ=
-X-Received: by 2002:a05:6a21:6f11:b0:3a3:2195:b536 with SMTP id adf61e73a8af0-3b22eceac9cmr4211792637.8.1778915816549;
-        Sat, 16 May 2026 00:16:56 -0700 (PDT)
-Received: from ?IPV6:240e:3b6:c21:8af0:5d7b:130f:ee39:2eca? (softbank126013051224.bbtec.net. [126.13.51.224])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-83f196660f9sm10289117b3a.10.2026.05.16.00.16.49
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 16 May 2026 00:16:56 -0700 (PDT)
-Message-ID: <eb259b63-e19e-4bc9-9741-161faa15fb55@gmail.com>
-Date: Sat, 16 May 2026 15:16:43 +0800
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="XEHZnRZn"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 58E74C19425;
+	Sat, 16 May 2026 13:55:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1778939739;
+	bh=mY8YaNnAtq3STAA8KAYmnPxlSQLbzdGdNLToKmXs5i0=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=XEHZnRZn4k/1HUbzFUal/4FxWUEGNCu67heSJD9j7nIS9+7L79hEx95bgTBWaCsP0
+	 y/pLm/bDY0GL8eyQqfeYiWc9BKTFQhlD6ChQqKfP1kDE/lROOxv9KB4gibQtKCNJGd
+	 sRceF1/SOEWfwTzPH2cU0vB+tyqhaxg41Mt0gtQhi5hgnL/TQHybQnVEnKcHn3jAlm
+	 xGBusVekXCQTYviJ7j96t7CFQCK9L+nSz9dsR79K/DF/V6xC5VuxLhsohcQxumwPSl
+	 jxW6c6hbRoDGnHbPed6h3clIJ3qOd4Tmtas8X3mueADYkmf6CqhAdoiH7wHWrd35ou
+	 WClmQbLTo89wg==
+Date: Sat, 16 May 2026 21:55:33 +0800
+From: Zorro Lang <zlang@kernel.org>
+To: Boris Burkov <boris@bur.io>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com, 
+	fstests@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs: inline enable_quota helper in test 301
+Message-ID: <agh2fWSSrcyYchml@zlang-mailbox>
+Mail-Followup-To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org, 
+	kernel-team@fb.com, fstests@vger.kernel.org
+References: <cover.1778632843.git.boris@bur.io>
+ <3234af372b0f16511aa5856aa7a3a0ca28397fcb.1778632843.git.boris@bur.io>
+ <agU-k5OnlkvcLiFB@zlang-mailbox>
+ <20260515211549.GA3470939@zen.localdomain>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Content-Language: en-US
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Sun YangKai <sunk67188@gmail.com>
-Subject: Opt-in non-fatal data csum mismatch handling?
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260515211549.GA3470939@zen.localdomain>
 
-Hi btrfs developers and maintainers,
+On Fri, May 15, 2026 at 02:15:49PM -0700, Boris Burkov wrote:
+> On Thu, May 14, 2026 at 11:34:00AM +0800, Zorro Lang wrote:
+> > On Tue, May 12, 2026 at 05:43:33PM -0700, Boris Burkov wrote:
+> > > The enable_quota helper in btrfs/301 takes a mode argument ('n', 's',
+> > > or anything else) to switch between "no quota", "simple quota", and
+> > > "full quota" enable.  Only the simple-quota path is ever exercised by
+> > > this test, so the dispatch is dead weight and the indirection just
+> > > obscures the actual btrfs command being run.
+> > > 
+> > > Inline the two call sites to call 'btrfs quota enable --simple'
+> > > directly and drop the helper.
+> > > 
+> > > Signed-off-by: Boris Burkov <boris@bur.io>
+> > > ---
+> > 
+> > Hahah, to be honest, the title '[PATCH 0/2] squota delete fstests' gave me
+> > a minor heart attack. I thought it was a critical bug report about fstests
+> > accidentally deleting itself while running :-D
+> > 
+> 
+> Oops, sorry!
+>
+> > >  tests/btrfs/301 | 14 ++------------
+> > >  1 file changed, 2 insertions(+), 12 deletions(-)
+> > > 
+> > > diff --git a/tests/btrfs/301 b/tests/btrfs/301
+> > > index 1f72a97b..31243aab 100755
+> > > --- a/tests/btrfs/301
+> > > +++ b/tests/btrfs/301
+> > > @@ -169,16 +169,6 @@ do_enospc_falloc()
+> > >  	do_falloc $file $sz
+> > >  }
+> > >  
+> > > -enable_quota()
+> > > -{
+> > > -	local mode=$1
+> > > -
+> > > -	[ $mode == "n" ] && return
+> > > -	arg=$([ $mode == "s" ] && echo "--simple")
+> > > -
+> > > -	$BTRFS_UTIL_PROG quota enable $arg $SCRATCH_MNT
+> > > -}
+> > > -
+> > >  get_subvid() > >  {
+> > >  	_btrfs_get_subvolid $SCRATCH_MNT subv
+> > > @@ -198,7 +188,7 @@ prepare()
+> > >  {
+> > >  	_scratch_mkfs >> $seqres.full
+> > >  	_scratch_mount
+> > > -	enable_quota "s"
+> > > +	$BTRFS_UTIL_PROG quota enable --simple $SCRATCH_MNT
+> > >  	$BTRFS_UTIL_PROG subvolume create $subv >> $seqres.full
+> > >  	local subvid=$(get_subvid)
+> > >  	set_subvol_limit $subvid $limit
+> > > @@ -421,7 +411,7 @@ enable_mature()
+> > >  	# Sync before enabling squotas to reliably *not* count the writes
+> > >  	# we did before enabling.
+> > >  	sync
+> > > -	enable_quota "s"
+> > > +	$BTRFS_UTIL_PROG quota enable --simple $SCRATCH_MNT
+> > 
+> > This change doesn't seem related to patch 2/2. I think we can review
+> > these 2 patches separately.
 
-Many btrfs deployments run on consumer hardware — desktop PCs, home NAS 
-boxes, laptops with no ECC RAM, USB-attached drives, consumer SSDs — 
-environments where occasional data corruption are not rare. For many of 
-these users, the data that fills most of the volume is also the data 
-they care least about per-byte: BitTorrent downloads, build caches, 
-browser caches, transcoded media, and so on. They would prefer "warn me 
-and give me the data" over "fail the read with -EIO".
+Don't worry. What I mean is that as long as one of these two patches gets an
+Ack first, even if the other is still being questioned, we can merge it first.
+After all, they are independent of each other.
 
-Today btrfs offers two ways out: `nodatasum` (and the `chattr +C` 
-linkage) and `rescue=ignoredatacsums`. Both disable detection entirely, 
-losing the diagnostic signal users might still want. The middle option — 
-keep verifying, keep logging, but let the read succeed on mismatch — 
-isn't available short of patching the kernel.
+> > 
+> > For this patch, I'm fine with or without it. If the btrfs list prefers
+> > to have it, or move it to be a common helper, I'm good with that.
 
-A possible interface: a mount option (e.g. `datacsum_action=warn`) that 
-preserves the existing diagnostics — `btrfs_print_data_csum_error()` and 
-the `BTRFS_DEV_STAT_CORRUPTION_ERRS` counter — but, after all 
-mirror-repair attempts have failed, returns the corrupted data to the 
-caller instead of `-EIO`. Disk-layer EIO from below the csum check would 
-continue to propagate unchanged.
+Sure.
 
-Before sketching a patch I wanted to ask:
-
-1. Is the concept acceptable in principle, or is "never silently return 
-corrupt data" a hard line for btrfs?
-2. If acceptable, is "suppress csum-fail only, never disk EIO" the right 
-boundary?
-3. Are the existing diagnostic anchors (dev_stat counter + ratelimited 
-dmesg) sufficient for the "warn" half, or would you want a statx/xattr 
-surface as well?
-
-Happy to send an RFC patch if the direction sounds reasonable.
-
-Thanks,
-Sun YangKai
+> > 
+> > Thanks,
+> > Zorro
+> > 
+> 
+> I pulled this into a separate patch based on Filipe's feedback on the
+> old version I failed to get in. Agreed it doesn't need to be a series,
+> just felt related enough to send in a batch, due to the context.
+> 
+> Thanks for taking a look,
+> Boris
+> 
+> > >  	set_subvol_limit $subvid $limit
+> > >  	_scratch_cycle_mount
+> > >  	usage=$(get_subvol_usage $subvid)
+> > > -- 
+> > > 2.54.0
+> > > 
+> > > 
+> 

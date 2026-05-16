@@ -1,303 +1,241 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-dy1-f182.google.com (mail-dy1-f182.google.com [74.125.82.182])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 302282236EE
-	for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2026 03:46:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4480524679C
+	for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2026 05:14:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.182
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1778903170; cv=none; b=TF3yTaBsEHkJGPWzQElTmrbZBF/axUaYb8fp9x3ya0u+2L0gDp7bP3AMGGCri9SLUC6yKh0lwCNTLH1/GngAeUg/IrUnzWWV/voY/g6ypACeBjAHIlnk22DhBY7KEe6rDEJavfiEmFOdVIe5JbQGCokxUz3tLVl3V4AtxyGAOrc=
+	t=1778908473; cv=none; b=LCQKqY1VWjPAGGxWlL1BBD6/rfQH2d2Y3A/obqxz7XVjDVlk2omQ57RyxY+zL5ffquvZid0G4H6aWewbGcgrst7QJKFNj3UYEBETX/9aK2XT5hQ3lkZieliNT4Ly7sZtAwssUf4QZLRVW9YD69OyCBAPaEqHVjBbJZPoGzXgjXs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1778903170; c=relaxed/simple;
-	bh=WU3LapPIA5Uynk8ue7rL4tVRi7AZ9gL4rdxt1O+6cMI=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Zyksi915mZHxSk2LooRK0leNoPUA0QwAoBUjUqpjld+lwJUQL8/km4G/7ULWVceHb88ODNYbx5BlBqXllgGgPwgY6MuLJgBRoTinuQ/GQc1soWGw/NtLrrz3WAFSNorxWwkxUa6zcUfmtXuWJtT4L1TEzwc6oQV+3w4JQkALbVg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PGM/DBNG; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PGM/DBNG; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1778908473; c=relaxed/simple;
+	bh=jLtchWusixu7LfLoIUA8/jEmMHSrr8/wTXiXbZzNpW0=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=T6/Goh5j/tfVRP+o3soTKI4u6cwMYw5ZSpl7ERtQpShVQmrpeU8frxU9fNdYF5yzHtkZKiWZJpUcF6WQyQYT8bLOCwAk/yREOZchTHpTvrYYacf55SFZMf+BCZ+wsaAe1IMbztBdTtl9QfYjqqgV5Omq48Pp7O6+5v6VIA4AN9w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=DIquJ28n; arc=none smtp.client-ip=74.125.82.182
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PGM/DBNG";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PGM/DBNG"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id A8CF85F3A0
-	for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2026 03:45:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778903145; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=xB3inYTe7NVkEnamN603aq422yYa6fh0jzVQNxA0e4E=;
-	b=PGM/DBNGw8TK1rTNt54MuseqWLTVU3fX+1aiVYw1nAoeR+zImMMs87kFrIjHFbYdQdzC2J
-	pWQ4bzBc+u+Wm/x1hu6kg4NkSR3tiE2Q1ghRiXVej+d7lYzrOVQu3DUna0P6c7JTxsXIDG
-	JFc9FR8PBtlBdzhPfHhdhFIs9x8badk=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1778903145; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=xB3inYTe7NVkEnamN603aq422yYa6fh0jzVQNxA0e4E=;
-	b=PGM/DBNGw8TK1rTNt54MuseqWLTVU3fX+1aiVYw1nAoeR+zImMMs87kFrIjHFbYdQdzC2J
-	pWQ4bzBc+u+Wm/x1hu6kg4NkSR3tiE2Q1ghRiXVej+d7lYzrOVQu3DUna0P6c7JTxsXIDG
-	JFc9FR8PBtlBdzhPfHhdhFIs9x8badk=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E80F8593A8
-	for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2026 03:45:44 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id aG5KKmjoB2qdMQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sat, 16 May 2026 03:45:44 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 6/6] btrfs: enable experimental delayed compression support
-Date: Sat, 16 May 2026 13:15:19 +0930
-Message-ID: <1e72627dfa498d4437323abd820868c8e3b3dbf5.1778902678.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1778902677.git.wqu@suse.com>
-References: <cover.1778902677.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="DIquJ28n"
+Received: by mail-dy1-f182.google.com with SMTP id 5a478bee46e88-2f0ad52830cso697008eec.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 May 2026 22:14:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1778908471; x=1779513271; darn=vger.kernel.org;
+        h=mime-version:user-agent:message-id:date:subject:cc:to:from:from:to
+         :cc:subject:date:message-id:reply-to;
+        bh=mtPgGB2zU9NqHvi7GwOlYOD+kXF2nthSunwFIsncs4U=;
+        b=DIquJ28nRAiNX3e4c21epQM86Foysx7I73X/KdspPdb6dTxMdz7oamAutud+IjvUKC
+         CJkw3sPhcCWbKDbp3U+V/Fc+o4zlBx6SudifhLKSWvhAuYhVL/Y/Hb9k++SfSt/DK65o
+         APkSnk1tjOAdDlT58PbSoWsNOYsGbxZGEMav2pH0Ca0GxN9PO4rpXDv+EtH47JftI1DS
+         7EAbNUKrd85lmlHDvj9uZgXW2WWE5f1Z7nJ7b7bwyDa5ctUvtH9P52wNh3xNU8gOj319
+         idSx5HrtrkQJVcHo5dQuo9hvnVErZJI7y7lfW2wYG6CJs+i44Ahp8LNYhDEXuc0CZy7S
+         Qfjw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1778908471; x=1779513271;
+        h=mime-version:user-agent:message-id:date:subject:cc:to:from:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=mtPgGB2zU9NqHvi7GwOlYOD+kXF2nthSunwFIsncs4U=;
+        b=spWujI6XXM8cxUnKAyfa+49GTp/mQwEDE/k5GeRJMx+pNScxCopfMnqVYze3+ysBIQ
+         bgy0YgcqUzP10TQVKEWdzhrA5eMYx/WmdRYzbdrkZYj0IJN2eIb4rYp/jHTACWMc79+6
+         a5ycjeuK+VPfUq/bUD+Van+mXmOTktzhxZtV4WCaMM+iHmxQdk3fosoOshUVcxo+Tog1
+         PsrvqBtiCSwmzvubp2cAj5/KsULRqhUgtuhudmJtcY2xa1u+pRTOg3ZPwOv819P/L6GR
+         Zj94/L9ocZLT1BzebUTBDEzuuYAW/8woVo2UbB8agpzGlXOUIddUDJUlxKChE+S8P6Eh
+         SnZQ==
+X-Forwarded-Encrypted: i=1; AFNElJ9fFagwcGM3soxkj/uMKfjfaYiS+tdnBINKHDIEIKPCv1BtM5o4DCnUvENEzCue08NB8IUp7ozglJ9RCw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzmSX9oyLgsUq76vzdpMWo4VXjVPD9/gDQlA9mJqjT5hCriTng7
+	NdadwEjCsIpE7MjgnrOJGhw9Bt5iGWGVdakVG70z87p5To/4/goQs349PKK5Jg==
+X-Gm-Gg: Acq92OEDPFSVAV8bBAJRwn9APLZ8aK0dNhvKDZ4/ppDlcsZrKGiLtLibcXsK6t6/Dxv
+	GLlFrxgGgnj8eQul14e+QKLNdjuouSxwrrlH3YMpEqaddbHaSjxRtUDOIRVx7WnhjXEQW6fsR+y
+	ogxxt/o4V5uIWu64z2iCLfhZjPa+3jRmJwGaedP6xmwTwTMxPq2sjRuWfXbaqOfe8E3rwllp1z7
+	+/A1qCHXCuOoZX4C9p50mULFCsKEyzux4761hRkpahcybyN62oKg9TxWgluEVen4EwyUjp7uyT+
+	RCwkpTzyUBgd44WqupogYLroo/a5NjTdhC0zLMrmcGBNVsrEypqrR638Goj/jVh+lMcTymrd4eb
+	CU3q4SkSiGcZLszzF3Xa8So3XrfM2Pn2EBSoorpiKD4QWIUsfoAKt61xegvwyivMcsxCIv8waRi
+	i6IMtUOqtHIQr9gpVB3T9Qa4s=
+X-Received: by 2002:a05:7301:644c:b0:2ed:e12:376b with SMTP id 5a478bee46e88-303986b14d3mr3240402eec.33.1778908470668;
+        Fri, 15 May 2026 22:14:30 -0700 (PDT)
+Received: from fedora ([2601:646:8081:3770:e6d1:d01d:99b8:802a])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30293e2ea78sm8916575eec.6.2026.05.15.22.14.29
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 15 May 2026 22:14:29 -0700 (PDT)
+From: Collin Funk <collin.funk1@gmail.com>
+To: bug-gnulib@gnu.org,
+Cc: Christoph Hellwig <hch@lst.de>, linux-kernel@vger.kernel.org,
+ linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, Jan Kara
+ <jack@suse.cz>, Christian Brauner <brauner@kernel.org>
+Subject: test-fdutimensat failures after 7.0.6-200.fc44.x86_64 kernel update
+Date: Fri, 15 May 2026 22:14:28 -0700
+Message-ID: <8733zsj5qj.fsf@gmail.com>
+User-Agent: Gnus/5.13 (Gnus v5.13)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
+Content-Type: text/plain
 
-Instead of the existing async submission path, the new delayed bbio will
-handle compressed writes by:
+Hi,
 
-- Allocating delayed em/oe at run_delalloc_*() time
-  Thus no data extent is reserved at that time.
+After updating my Fedora system to kernel version 7.0.6-200.fc44.x86_64,
+I noticed that the Gnulib 'test-fdutimensat' test fails a majority of
+the time in my GNU coreutils checkout:
 
-- Delayed bbio will be assembled at extent_writepage_io() time
+    $ seq 100 | xargs -n 1 sh -c '
+      ./test-fdutimensat >/dev/null 2>&1
+      echo $?
+      ' | LC_ALL=C sort | LC_ALL=C uniq -c
+         14 0
+         86 134
 
-- Delayed bbio will be intercepted just before submission
-  Which will run compression (or fallback to uncompressed writes) in
-  workqueue.
-  Data extents will only be reserved at that time, and the delayed em
-  will be replaced by real ones.
+Here is the section of code where it fails [1]:
 
-  Meanwhile the real OE will be added as a child of the parent delayed
-  OE, and when the parent OE finishes, the child OE will be finished
-  with their file extents inserted.
+  /* Play with UTIME_OMIT, UTIME_NOW.  */
+  {
+    struct stat st3;
+    struct timespec ts[2];
+    ts[0].tv_sec = BILLION;
+    ts[0].tv_nsec = UTIME_OMIT;
+    ts[1].tv_sec = 0;
+    ts[1].tv_nsec = UTIME_NOW;
+    nap ();
+    ASSERT (func (BASE "link", ts) == 0);
+    ASSERT (lstat (BASE "link", &st3) == 0);
+    if (check_atime_on_symlinks)
+      {
+        /* The first assertion fails.  */
+        ASSERT (st3.st_atime == Y2K);
+        ASSERT (0 <= get_stat_atime_ns (&st3));
+        ASSERT (get_stat_atime_ns (&st3) < BILLION / 2);
+      }
 
-This has some benefits:
+Adding some print statements in place of the comment:
 
-- Higher concurrency
-  Previously async submission will hold the folio and io tree range
-  locked, this means we can not even read the uptodate folio.
+        fprintf (stderr, "%jd\n", (intmax_t) st3.st_atime);
+        fprintf (stderr, "%jd\n", (intmax_t) Y2K);
+        fprintf (stderr, "----------------\n");
 
-  Furthermore although the compressed write is queued into a workqueue
-  for submission and extent_writepage_io() will skip the compressed
-  range, when we need to write the next folio of the compressed range,
-  we will need to wait for the folio to be unlocked.
+Here is an example of what is seen when the test fails:
 
-  This makes async submission less async.
+    $ ./test-fdutimensat 
+    ----------------
+    1778905091
+    946684800
+    test-lutimens.h:192: assertion 'st3.st_atime == Y2K' failed
 
-- Future DONTCACHE writes support
-  We do not support DONTCACHE because that feature requires writeback path
-  to clear the folio dirty and submit them sequentially.
+Here is an example of what is seen when the test passes:
 
-  Meanwhile async submission makes the writeback async, breaking the
-  sequential submission requirement.
+    $ ./test-fdutimensat 
+    ----------------
+    946684800
+    946684800
+    ----------------
+    946684800
+    946684800
+    ----------------
+    946684800
+    946684800
 
-  This is also why we need complex per-block tracking for writeback
-  flags, while iomap only requires a counter tracking.
+So, it looks like the atime is being updated sometimes despite the use
+of UTIME_OMIT.
 
-  With the new delayed compression, the lifespan of a folio aligns with
-  DONTCACHE and iomap.
+Interestingly, in my Gnulib checkout residing in a separate directory
+the test passes:
 
-There is an extra handling for defrag, where we have to write and wait
-for the defrag range.
-This is to avoid clearing inode->defrag_compress before the delayed
-compression started.
+    $ git clone https://github.com/coreutils/gnulib.git
+    $ cd gnulib
+    $ ./gnulib-tool --create-testdir --dir testdir1 fdutimensat
+    $ cd testdir1
+    $ ./configure && make -j $(nproc)
+    $ cd gltests
+    $ seq 100 | xargs -n 1 sh -c '
+          ./test-fdutimensat >/dev/null 2>&1
+          echo $?
+          ' | LC_ALL=C sort | LC_ALL=C uniq -c
+        100 0
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/defrag.c    | 26 ++++++++++++++++---
- fs/btrfs/extent_io.c |  5 +++-
- fs/btrfs/inode.c     | 61 +++++++++++++++++++++++++++++++++++++++++---
- 3 files changed, 84 insertions(+), 8 deletions(-)
+All of this testing was performed on the same BTRFS subvolume:
 
-diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
-index f0c6758b7055..092693cbb79e 100644
---- a/fs/btrfs/defrag.c
-+++ b/fs/btrfs/defrag.c
-@@ -1342,6 +1342,7 @@ int btrfs_defrag_file(struct btrfs_inode *inode, struct file_ra_state *ra,
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	unsigned long sectors_defragged = 0;
- 	u64 isize = i_size_read(&inode->vfs_inode);
-+	const u64 start = round_down(range->start, fs_info->sectorsize);
- 	u64 cur;
- 	u64 last_byte;
- 	bool do_compress = (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS);
-@@ -1393,7 +1394,7 @@ int btrfs_defrag_file(struct btrfs_inode *inode, struct file_ra_state *ra,
- 	}
- 
- 	/* Align the range */
--	cur = round_down(range->start, fs_info->sectorsize);
-+	cur = start;
- 	last_byte = round_up(last_byte, fs_info->sectorsize) - 1;
- 
- 	/*
-@@ -1464,10 +1465,27 @@ int btrfs_defrag_file(struct btrfs_inode *inode, struct file_ra_state *ra,
- 		 * need to be written back immediately.
- 		 */
- 		if (range->flags & BTRFS_DEFRAG_RANGE_START_IO) {
--			filemap_flush(inode->vfs_inode.i_mapping);
--			if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--				     &inode->runtime_flags))
-+			/*
-+			 * For experimental delayed writeback, we must wait
-+			 * for the range to be fully written back before
-+			 * clearing inode->defrag_compress.
-+			 *
-+			 * Regular filemap_flush() will only start writeback,
-+			 * which will only create delayed OEs. But the real
-+			 * compression is happening later.
-+			 * This means if we just flush but not wait for writeback,
-+			 * the inode->defrag_compress clearing can race with
-+			 * compression, causing the defrag algorithm not reflected.
-+			 */
-+			if (IS_ENABLED(CONFIG_BTRFS_EXPERIMENTAL)) {
-+				filemap_write_and_wait_range(inode->vfs_inode.i_mapping,
-+							     start, last_byte);
-+			} else {
- 				filemap_flush(inode->vfs_inode.i_mapping);
-+				if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
-+					     &inode->runtime_flags))
-+					filemap_flush(inode->vfs_inode.i_mapping);
-+			}
- 		}
- 		if (range->compress_type == BTRFS_COMPRESS_LZO)
- 			btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 7adf8e80ba36..6ec7682df565 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -899,8 +899,11 @@ static unsigned int submit_extent_folio(struct btrfs_bio_ctrl *bio_ctrl,
- 		 * If we have accumulated decent amount of IO, send it to the
- 		 * block layer so that IO can run while we are accumulating
- 		 * more folios to write.
-+		 *
-+		 * This doesn't apply to delayed bbio which is going to be
-+		 * compressed.
- 		 */
--		else if (bio_ctrl->wbc &&
-+		else if (bio_ctrl->wbc && !bio_ctrl->bbio->is_delayed &&
- 			 bio_ctrl->bbio->bio.bi_iter.bi_size >=
- 			    inode->root->fs_info->writeback_bio_size)
- 			submit_one_bio(bio_ctrl);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 75376c2ef665..4acf710f7e0a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1654,6 +1654,58 @@ static bool run_delalloc_compressed(struct btrfs_inode *inode,
- 	return true;
- }
- 
-+static int run_delalloc_delayed(struct btrfs_inode *inode, struct folio *locked_folio,
-+				u64 start, u64 end)
-+{
-+	struct btrfs_root *root = inode->root;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct extent_state *cached = NULL;
-+	u64 cur = start;
-+	int ret;
-+
-+	if (btrfs_is_shutdown(fs_info)) {
-+		ret = -EIO;
-+		goto error;
-+	}
-+	while (cur < end) {
-+		struct extent_map *em;
-+		struct btrfs_ordered_extent *oe;
-+		u32 cur_len = min_t(u64, end + 1 - cur, BTRFS_MAX_COMPRESSED);
-+
-+		btrfs_lock_extent(&inode->io_tree, cur, cur + cur_len - 1, &cached);
-+		em = btrfs_create_delayed_em(inode, cur, cur_len);
-+		if (IS_ERR(em)) {
-+			ret = PTR_ERR(em);
-+			goto error;
-+		}
-+		btrfs_free_extent_map(em);
-+		oe = btrfs_alloc_delayed_ordered_extent(inode, cur, cur_len);
-+		if (IS_ERR(oe)) {
-+			btrfs_drop_extent_map_range(inode, cur, cur + cur_len - 1, false);
-+			ret = PTR_ERR(oe);
-+			goto error;
-+		}
-+		btrfs_put_ordered_extent(oe);
-+
-+		cur += cur_len;
-+	}
-+	extent_clear_unlock_delalloc(inode, start, end, locked_folio, &cached,
-+				     EXTENT_LOCKED | EXTENT_DELALLOC,
-+				     PAGE_UNLOCK);
-+	return 0;
-+error:
-+	if (start < cur) {
-+		btrfs_drop_extent_map_range(inode, start, cur - 1, false);
-+		btrfs_cleanup_ordered_extents(inode, start, cur - start);
-+	}
-+	/* No range has any extent reserved, just clear them all. */
-+	extent_clear_unlock_delalloc(inode, start, end, locked_folio, &cached,
-+			EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DELALLOC_NEW |
-+			EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
-+			PAGE_UNLOCK | PAGE_START_WRITEBACK | PAGE_END_WRITEBACK);
-+	return ret;
-+}
-+
- /*
-  * Run the delalloc range from start to end, and write back any dirty pages
-  * covered by the range.
-@@ -2427,9 +2479,12 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct folio *locked_fol
- 		return run_delalloc_nocow(inode, locked_folio, start, end);
- 
- 	if (btrfs_inode_can_compress(inode) &&
--	    inode_need_compress(inode, start, end, false) &&
--	    run_delalloc_compressed(inode, locked_folio, start, end, wbc))
--		return 1;
-+	    inode_need_compress(inode, start, end, false)) {
-+		if (IS_ENABLED(CONFIG_BTRFS_EXPERIMENTAL))
-+			return run_delalloc_delayed(inode, locked_folio, start, end);
-+		else if (run_delalloc_compressed(inode, locked_folio, start, end, wbc))
-+			return 1;
-+	}
- 
- 	if (zoned)
- 		return run_delalloc_cow(inode, locked_folio, start, end, wbc, true);
--- 
-2.54.0
+    /dev/mapper/nvme0n1p3_encrypted on /home type btrfs (rw,relatime,seclabel,ssd,space_cache=v2,subvolid=257,subvol=/root/home)
 
+I could only find one commit since 6.19.14-300.fc44, which I never
+experienced this error on, that looked like it may be related [2]. I am
+very much unfamiliar with this code, so anything after this sentence
+should be taken with a grain of salt.
+
+Looking at the new inode_update_atime function that was added in that
+commit:
+
+> +static int inode_update_atime(struct inode *inode)
+> +{
+> +	struct timespec64 atime = inode_get_atime(inode);
+> +	struct timespec64 now = current_time(inode);
+> +
+> +	if (timespec64_equal(&now, &atime))
+> +		return 0;
+> +
+> +	inode_set_atime_to_ts(inode, now);
+> +	return inode_time_dirty_flag(inode);
+> +}
+
+Compared to the old inode_update_timestamps function:
+
+> -int inode_update_timestamps(struct inode *inode, int flags)
+> +int inode_update_time(struct inode *inode, enum fs_update_time type,
+> +		unsigned int flags)
+>  {
+> -	int updated = 0;
+> -	struct timespec64 now;
+> -
+> -	if (flags & (S_MTIME|S_CTIME|S_VERSION)) {
+> -		struct timespec64 ctime = inode_get_ctime(inode);
+> -		struct timespec64 mtime = inode_get_mtime(inode);
+> -
+> -		now = inode_set_ctime_current(inode);
+> -		if (!timespec64_equal(&now, &ctime))
+> -			updated |= S_CTIME;
+> -		if (!timespec64_equal(&now, &mtime)) {
+> -			inode_set_mtime_to_ts(inode, now);
+> -			updated |= S_MTIME;
+> -		}
+> -		if (IS_I_VERSION(inode) && inode_maybe_inc_iversion(inode, updated))
+> -			updated |= S_VERSION;
+> -	} else {
+> -		now = current_time(inode);
+> -	}
+> -
+> -	if (flags & S_ATIME) {
+> -		struct timespec64 atime = inode_get_atime(inode);
+> -
+> -		if (!timespec64_equal(&now, &atime)) {
+> -			inode_set_atime_to_ts(inode, now);
+> -			updated |= S_ATIME;
+> -		}
+> +	switch (type) {
+> +	case FS_UPD_ATIME:
+> +		return inode_update_atime(inode);
+> +	case FS_UPD_CMTIME:
+> +		return inode_update_cmtime(inode);
+> +	default:
+> +		WARN_ON_ONCE(1);
+> +		return -EIO;
+>  	}
+> -	return updated;
+>  }
+
+The behavior looks a bit different in the case of flags having S_MTIME,
+S_CTIME, and S_VERSION being set. Before that commit it would use the
+following to compare to atime:
+
+    now = inode_set_ctime_current(inode);
+
+However, now it will always use:
+
+    struct timespec64 now = current_time(inode);
+
+Could that be the cause of this behavior?
+
+Let me know if there is any other useful information that I can share.
+
+Thanks,
+Collin
+
+[1] https://github.com/coreutils/gnulib/blob/master/tests/test-lutimens.h#L176-L192
+[2] https://github.com/torvalds/linux/commit/761475268fa8e322fe6b80bcf557dc65517df71e#diff-325e7194d6fde054508f3ab689c05b774e0755b85d5639dc92c19a2230bbcc2f

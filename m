@@ -1,66 +1,66 @@
 Received: from mail-pf1-f174.google.com (mail-pf1-f174.google.com [209.85.210.174])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 50B6D374731
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 May 2026 14:44:01 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1F6BB405C55
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 May 2026 14:44:44 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.174
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779115444; cv=none; b=fPI/L9hcIn0uxy+ThnNB0skyqMnRwUqlpUO5+TXSRXV7//zJEYwkHgTWV+Z5wNZbhNhuoApcI9Mj05d8FnzAfa8j3TrY0XvcEvwCg3LxeXuXucQrGC3Q8qMxqyI41uxmOfejtMcyVkVcuFYDWlJswjyqHVjW0Yq34DsmQ5cAlIo=
+	t=1779115485; cv=none; b=fBIs5A2l2eYn6uDc4EJUnNOnLS5FIjJevOqLHJxtOdcj+T8fmsChlr0g6oDPXNEUDDUGY7ZXjqdNox8a0tTe+N0IVcmJQjkTOhgqpTPq7SxsumZI117bE/P+L93z9UKtXxMMDOy4mKwVRffANfpllVgDuTubrWK6Sd0EgBU+vRE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779115444; c=relaxed/simple;
-	bh=DyV8E3gxpcSupU2HjznTUlS9YPVeCW8iPycUi9wK0EM=;
+	s=arc-20240116; t=1779115485; c=relaxed/simple;
+	bh=u1htIQ+cBGbRbD9P6U7xix0lnFYW5IXNgGXzrDz+aWQ=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=fsSYy9/Wwu8i36TpRJwALKy2TwINER9WmYciLQgV/AwISm1dR3FoDpr3ucCslSWgF6y5D8g2pc6aBW0VY5ji4oJx25eLJXBzQYfIXUGobS1nTnF4SFtKBFA/zySqUsQQoDDZyFJsGvO06qAcfmYGSEcA/42ByciTscdX/s/sIeQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=M4+tDHig; arc=none smtp.client-ip=209.85.210.174
+	 In-Reply-To:Content-Type; b=fPA0MIrIz0h0wRnRwN275+05W7YhqIwNrv2eDMR6TyvVPTqh4C1Mk94RWE7C0Xf7h+beOeyrTz8uMZLNxYb0+3iLR1SDAz/QeqqHJ2nhXSS52L3tvdtx9WDzSSrm8F0UyVW12HFBTQ146vXcplogLtBqQPd3BGONURGHFWk8VnI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=fRtytCeZ; arc=none smtp.client-ip=209.85.210.174
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="M4+tDHig"
-Received: by mail-pf1-f174.google.com with SMTP id d2e1a72fcca58-82748257f5fso2132538b3a.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 May 2026 07:44:01 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="fRtytCeZ"
+Received: by mail-pf1-f174.google.com with SMTP id d2e1a72fcca58-8379e010b01so948517b3a.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 May 2026 07:44:44 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1779115441; x=1779720241; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1779115483; x=1779720283; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:from:content-language
          :references:cc:to:subject:user-agent:mime-version:date:message-id
          :from:to:cc:subject:date:message-id:reply-to;
-        bh=Aw3Z5TVg60gqBwRTovyIOoXICrBGxM4+/44g78bnGc4=;
-        b=M4+tDHigKh0ivz8gpaqr/o19kEk9bNx2U3Mj4EY08txi1IAUE6OR+8wwYW03j3GRTy
-         h0RB1/Vq6EW4E+FQcM4zykvp5Fjt6u5kM7aigRyTme6flDmDDD98GjYhW1S0Cz9ki2dI
-         pokBK9vGiah9n7hQM7L6drNHDw+tHDmbJyrX/HSQe9df80Hw3vfX8OdiNpxi1AGACbcM
-         PR3jVsBI1IRPoJfVyaM6jwyDDVs3VqsmX6ktFeZLtjt2JekQlRNxl31pzq48IfidX0fJ
-         iWogToX+yW3IOalChrMvvafe+OHhayufbWju0muC89ze2IkYf25dw7VtgXxcEs5H3303
-         Al+Q==
+        bh=5QC+PoU+YwXsRW92BuD7PelfR56JvKbxUHG8raaMFfs=;
+        b=fRtytCeZJc3KHI8ohi8X0/fY1f4yrucjpV8tLF7hueQbc7DcIlFk8pXKPDTbwV3e/Y
+         ON1zw0N/cmgme+DlpRm8MKUWkg3dJRt0qcHjnrh6F5x2KLVtxymcPzqGHfKrHoDlOCR1
+         3UAK24Hm7H2IUeU67cAYZLz25BFK9eReckj+cTijftv2lcsaDQYeekLzhjVd/o64gZlH
+         GCfaZOwEncJjd1JSZsnzFJ9Ee7OiGPuFz+MaqCXQhLp4CPpJypHK+ttGMzmqwmKIdN4C
+         cVRStWKwlyV+AylL3vNd6cCSqja5EGGhhVykEQg3mrNB2pAidjRq1fWpjaiDmi2xzmhj
+         uOsA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779115441; x=1779720241;
+        d=1e100.net; s=20251104; t=1779115483; x=1779720283;
         h=content-transfer-encoding:in-reply-to:from:content-language
          :references:cc:to:subject:user-agent:mime-version:date:message-id
          :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=Aw3Z5TVg60gqBwRTovyIOoXICrBGxM4+/44g78bnGc4=;
-        b=OXgWEpHz6xPfpkzI7UmQRXgFpPafWVyc9Nwxe8eFoCDljvyp7BJrljOyrYFy5qEVk6
-         UgiHommWdRYHd+bsxKJqVT+k/mGTtboWNfPY2BxrhMy/TMNcq1lsZsW6OrDcFVjSbZXW
-         wGl+FUyF+4N7v1YVzu/eFktPsgW5D+FUhFlwEdvoLcaP0KtAeCHo5inPNtND9qq8giXj
-         xjmUCFKZMjaeSUa6wrU5N0YeCeOjSNvtyk8PewYfzpS4UXqL4YQwBDjL3SqISruQkBrT
-         4UkmWXNgaa1/RJm+ivpzLwAdla0f5irRwPya0v7xS/JuKjyGHUGusFDaP7oEb2PRnU0f
-         srhQ==
-X-Forwarded-Encrypted: i=1; AFNElJ8CPWCOOUxjPHNgRMj6KtZMHm8O7Opg4ux7OPfiyiZ3hziADbamLLZVEE1lg/us3nnOPLhlVd1KvxIM/w==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzjgAY6Icr+ns1vhDW96GF9WwuOoStiVviCHsBV2AWKqJXhMyve
-	yz3f+6pFmbqb4BluL3yjYZOlRVKh7JryyC9zpoQpH/CPeUIKYs/WPYDK
-X-Gm-Gg: Acq92OG2v9qfIXn8peT/vhed9IvxGZd5BI8yflCX+lTq73OfAb3/cs3SF4yaO3GoiVR
-	0YEGQ1AQBk/dRLEgNrQZgAp2KnwyB2zohcWLJx9PvclTNsnClvQyOS+3Sc3bJaM8ADxFR6J4Ojg
-	81ZAZgBLPEBiv5XNHpmA7tDY8OtoN8S45Owiu96Qdv8OIEIEK/58mmu+NmOegKEUKKzYoB6KObP
-	0Ob7/Yz9MU9jR/ZGHrzphcZiAjfjEsbmytdHolObnVuy1Wztggh9Ej5o8dqvMFhyEGCjR1FTcXf
-	FGC2OiYVjcARVF4ao98yMeDso0dd69hEVq6HThApqqWIDQy0QRAZpfwMWthWu2zPxgziVPWgkL0
-	dOb0iiFdNFke26zIxQEYPoYoSNHfZb82y5VdhG00aKJ7uwPoKNg+rRPE47hPHix3pMkY0p0/cf3
-	awEV7qmaSPGFrBlnA7BspyoJ7DRs0=
-X-Received: by 2002:a05:6a00:a227:b0:82c:9c90:6ea0 with SMTP id d2e1a72fcca58-83f33ad8782mr12373366b3a.3.1779115440605;
-        Mon, 18 May 2026 07:44:00 -0700 (PDT)
+        bh=5QC+PoU+YwXsRW92BuD7PelfR56JvKbxUHG8raaMFfs=;
+        b=GjbrlkxVDSXomvaoPcnL2O6AX1njgq8wd1EDiAtRmwu9LnBP9lx5M8RWtdN93Zh+hN
+         xlr2GlE+ruR50nzXyiR1RW43+WlkwfeqxACwa7D5+8vo78mdvzP4vB6C6zQjYzsRhrpx
+         0eo0LWrEv1f6zqvUNCx/vFX8Z0BFyVpWQn28yeyd5zDtdoTYNcuf7xt8iCwACocDm3xt
+         Jn686bbgp8s0o++fg+0wK5Vkpy9KUZHnlFoXs2ubxYuQcCd0iJRbyEpQXLrZF42L7TLx
+         lDlzxJT7Ifje6bbcTB5GEoM2sa42Qr+IHy6jkJ7S9YzsgKC8i1eNQ49ungHqr7QbJUUf
+         YmaA==
+X-Forwarded-Encrypted: i=1; AFNElJ+m527tx9kQ1+7SXUWewEnSXVtNaCGmiRgdeB935hxKN/XP3fNQD/pL74aFB718PjE9UzQboNhCQZFKBw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxdvhoARKLAgn8tRqWAaoFGdE4zN4yA3c5rRopW8kHWbAqwtWGV
+	8+G1daS3D4Q2Lr5g4Xd+cGCxmWAJaU2mwJi2pjnaXCkVGLQpDKfLqbEi
+X-Gm-Gg: Acq92OHanZ0IX0830YOBwLF0FVgCqRWxmXR38McyeY1h4WNZ/1dgCZsC+qZt9+kL2Xi
+	97C91YpFgj9uysyd83Zd3tlclKccmtGzIR952N+FSVut0LvctcFqG47eVNlFkOPvcsv+cd8V5Ou
+	0XBVLORmWPsEl39f0t7/0duaInGUmPdfYERZi0fu3C9Fewq9eK/p9irrwqQRsVC8TiFME0KKBMI
+	xaKSirzlP/WzK6isIJ/4HrIQ7e6ASYRhL5zh5hJJSVMBdAD5luzGvkXfceDD+atIti47RAK84o0
+	7RpshD8R0hPj4JrpfTRzMUa2svxGmvKIr2v0JW8AOwj5tQbUAdnG2Bcid9kKOGxfMTvWXsCZB1p
+	Ad5sAnd2jMslIcycl7MnqL5tPww1hdP8DI5Mp95yPLo+HeDZsOJ6xUxj0hEkcYEiGdqivdHG3FN
+	LhkSKTWoBHvlN28uTAu61OWQFOhzg=
+X-Received: by 2002:a05:6a00:2992:b0:82c:e692:1f91 with SMTP id d2e1a72fcca58-83f33df6ca2mr16284317b3a.39.1779115483338;
+        Mon, 18 May 2026 07:44:43 -0700 (PDT)
 Received: from [192.168.50.90] ([116.87.14.48])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-83f2b9bec8fsm13165150b3a.33.2026.05.18.07.43.57
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-83f19c5b4bfsm15394428b3a.28.2026.05.18.07.44.40
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 18 May 2026 07:44:00 -0700 (PDT)
-Message-ID: <aa4f29f5-b683-4d07-bc5f-fa5520ba2302@gmail.com>
-Date: Mon, 18 May 2026 22:43:56 +0800
+        Mon, 18 May 2026 07:44:43 -0700 (PDT)
+Message-ID: <82a93174-6897-46af-8602-d7ac9d2d9dc3@gmail.com>
+Date: Mon, 18 May 2026 22:44:39 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -68,76 +68,33 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v4 4/9] fstests: verify fanotify isolation on cloned
- filesystems
+Subject: Re: [PATCH v4 9/9] fstests: btrfs: test UUID consistency for clones
+ with metadata_uuid
 To: Christoph Hellwig <hch@infradead.org>, Anand Jain <asj@kernel.org>
 Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
  linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
  linux-f2fs@vger.kernel.org, amir73il@gmail.com, zlang@redhat.com,
- =?UTF-8?Q?Andr=C3=A9_Almeida?= <andrealmeid@igalia.com>
+ djwong@kernel.org
 References: <cover.1777357320.git.asj@kernel.org>
- <5857d9f33de7f0ea8ddd12c36334c6463c0bfe0f.1777357321.git.asj@kernel.org>
- <agK83s6NBxpbDREJ@infradead.org>
+ <d079b3f7cce446b0c5bc0762226957b960c7a3ac.1777357321.git.asj@kernel.org>
+ <agK9MC0ufkTJj-zu@infradead.org>
 Content-Language: en-US
 From: Anand Jain <anajain.sg@gmail.com>
-In-Reply-To: <agK83s6NBxpbDREJ@infradead.org>
+In-Reply-To: <agK9MC0ufkTJj-zu@infradead.org>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 12/5/26 13:38, Christoph Hellwig wrote:
-> On Tue, Apr 28, 2026 at 02:42:54PM +0800, Anand Jain wrote:
->> Verify that fanotify events are correctly routed to the appropriate
->> watcher when cloned filesystems are mounted.
->> Helps verify kernel's event notification distinguishes between devices
->> sharing the same FSID/UUID.
+On 12/5/26 13:40, Christoph Hellwig wrote:
+> On Tue, Apr 28, 2026 at 02:42:59PM +0800, Anand Jain wrote:
+>> Btrfs uses the metadata_uuid superblock feature to change the on-disk UUID
+>> without rewriting every block header. This patch adds a sanity check to
+>> ensure UUID consistency when a filesystem with metadata_uuid enabled is
+>> cloned.
 > 
-> Do these tests pass with all major file systems?  Or does this reproduce
-> the previous btrfs issues in this area?
+> xfs does the same.
+> 
+> Can we abstract out the uuid change and generalize the test?
 
+Sure. let me try.
 
-Yes. The major FSs (BTRFS, EXT4, XFS, and F2FS) all pass, except
-EXT4 does not run `generic/801` because statfs `f_fsid` is not
-unique when the cloned FS is mounted. Also, BTRFS requires the
-kernel patch mentioned in test cases `generic/802` and `generic/804`.
-
-`generic/801` fails in an SELinux environment; this can be
-fixed with the following changes in `generic/801` I'll add
-this change in v5.
-
--------
-diff --git a/tests/generic/801 b/tests/generic/801
-index e1282f4e3d71..384e82120d4e 100644
---- a/tests/generic/801
-+++ b/tests/generic/801
-@@ -23,6 +23,10 @@ _cleanup()
-        umount $mnt1 $mnt2 2>/dev/null
-        _loop_image_destroy "${devs[@]}" 2> /dev/null
-        rm -r -f $tmp.*
-+
-+       if [ -n "$old_selinux_state" ]; then
-+               setenforce "$old_selinux_state"
-+       fi
- }
-
- monitor_fanotify()
-@@ -49,6 +53,14 @@ mnt2=$TEST_DIR/$seq/mnt2
- mkdir -p $mnt1
- mkdir -p $mnt2
-
-+# Setting SELINUX_MOUNT_OPTIONS to null still fails fanotify with
-+# permission failure, so set SELinux to permissive if it is enforcing.
-+if command -v getenforce &>/dev/null && [ "$(getenforce)" = "Enforcing"
-]; then
-+       old_selinux_state="Enforcing"
-+       setenforce Permissive
-+else
-+       old_selinux_state=""
-+fi
- _mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[0]}
-$mnt1 || \
-                                                _fail "Failed to mount dev1"
- _mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[1]}
-$mnt2 || \
-(END)
--------
-
+Thanks.

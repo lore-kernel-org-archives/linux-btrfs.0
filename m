@@ -1,334 +1,187 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+Received: from PH0PR06CU001.outbound.protection.outlook.com (mail-westus3azon11011026.outbound.protection.outlook.com [40.107.208.26])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2C6E02741B5;
-	Mon, 18 May 2026 22:47:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779144468; cv=none; b=Pbu5ZpLKt7cOBpbbq6b5cK7XAaiQNdjQsO8vg2bwAsO1DTAx+C/D/cQpJFe308o2TcKRsmMsOUtX81QpDYKKNfzyIaWQo4dABqW7xkHmWMVirBZxTITeiHsjK90IBIoh78ra3xCDJvMgN4kcYnpPzAcwRwduUcYjgGzl70UkA2c=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779144468; c=relaxed/simple;
-	bh=I2IYPi6qnR9FO4dt7mjOM5tU/2XBFRIfFkyqxVMo7Ec=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=ikdAFUvZPYnX9r+bBeebtPMwreI2OURIN1gPISo4xlHfTuhAh6NfbPiTKl/6rlzHG6a6TmdJ6NuSdKE4qtOi7lzFkGe2ld5hzS4OBiZWl+US+DBeGXICwqgOZl8GxxGlYMWZjyrXfO3ZdQCVG2JKp+0WeWWZXF8+r+5BLsmh0vU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=YYvTGd0b; arc=none smtp.client-ip=212.227.15.18
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 700AC33A711;
+	Mon, 18 May 2026 23:39:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.107.208.26
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1779147566; cv=fail; b=EgsYQWxXwhYhlLerQqZQMXjcIP8kdt8HOSOJ956dW1tfCIPS5dgqS8CHL8rJ/oqod16AUhBWGi0qmuPowvHU/DTEzok2pvHP8c2x8PZ0QZjocy0PCAJKLPKv6kSdQsmnAHZCPaUH8sfEQ9wDl7FeHjmvMauUyc4rtageT/amlsg=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1779147566; c=relaxed/simple;
+	bh=be3FZsiJh4FzAQfxFTXec5Bc0pu7tldOKQYcjEWUp1g=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=iCxPCoAOMeOcA1kOXxzj13hm2jsP70qcBSX4FWImpe0rKUzx6/LVScmp2+v3R1DrJoS7QprlmbYeor6Rr1n+vwHqx1VHV98HS94NeYQeHRxkJ2+2rwITw+7vyVXn4LpPmb864aeqsHq2pd7qy017PLMrjMpZ/y5XJCE6NwCYY88=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=HpsfYeSd; arc=fail smtp.client-ip=40.107.208.26
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="YYvTGd0b"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1779144464; x=1779749264; i=quwenruo.btrfs@gmx.com;
-	bh=9ObVVRTDFLpxCJmuJwUBepGuT31rnlGAdwKsdf9CU8o=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=YYvTGd0bzyWpEkg5YQM86DJl1eWDfzHDVHXVZAKeR1tA3EaYBFwclSA9ke8eXGDc
-	 Jg1g1jb0st9jPL+qHTtOZeU/Lsvkn/v6byQowp9T0l+BKFMdFEAnQpHal0K0VY190
-	 ToTOnS0d9XkX99i6GxuaSRbDhJZdMnnEhrTYZ6L0S94DJUvwsMuWYFtF0q7OQB9sR
-	 6tL/LjXL/5uCuGVtNCuNfhhPZkLIp0eFg+PUD+59I7pP2yd+d2H3cwAGFCgkspZh0
-	 K38dgZPI8zGFuZZLA1I1xi9Y5mcopJ0x+lU6sIQJBF4P/cAKxzfZZyf6KC+ZIpNoi
-	 AscuJxiyYxOKSE/9aQ==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1N3KPg-1xO7On3koc-015sgP; Tue, 19
- May 2026 00:47:44 +0200
-Message-ID: <1fc3200f-779f-4ca8-8035-24497e127a42@gmx.com>
-Date: Tue, 19 May 2026 08:17:41 +0930
+	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="HpsfYeSd"
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=bm48ASqs3VZM6rppdk+Ixrlgtjgs/rhMUJT34kd9WUSLVRz1vc3Iawmx1ryRmo/qXnvGtHnXrLFO3NgKf1NXt7OwjTLFqKUilVfKQOCCWf4p8DnSIAto7Kx9plvvwiTuHKMcweZTftT+5Pqo0f3IWoriVfsk1GrgJvQgfO00UiJDMRot9eXHMGGXNxSwswPPgEecwlSjPu0wYxJaSRTlurIVxdQ39c/pGjqZdeuC94KTSIFsa46C73eB0GHF2I7BS9dxy6y1R47rSka7koo2w1pGbYIVPKAoskz03khtvm1Azpc8my8/0OhivDpzqJ8ja8r3bfq7THQXR2H4+BeCig==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=xcDYbidjxfZoLKAtpPFGHME7l85m5uckjklA1ubzjLU=;
+ b=SrMh6zqgG6lpPh/XoPDcWY25grRY0clfnwZAuFw45wSn8GVJi9A/LxSX/RO10aexJk2s9hKBWeyWArW25R79v2FADJyYRk9LpbJTCH3ck5vOEp5olViWYMg/yOI7iqEVjiC+DleldmR7g2BzJAwyOc1P2Auna2v1jnp1OmRGEt3JSvtDhBXS6YjzGGIr04940OH1EG6oCYFqTvDf1nlj9hauBVGYt0QNZ5zkOoWhLBUyNxD7C26QPOXjwkY2Si21HNRj/3nWWZfnF5q9HvWLU1ApovqAm0mHoUBKffvMXY7ywSpVr+CnSDXgmX72gqEIGQqOiNnepMbtQMH9snLwkQ==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
+ dkim=pass header.d=nvidia.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
+ s=selector2;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=xcDYbidjxfZoLKAtpPFGHME7l85m5uckjklA1ubzjLU=;
+ b=HpsfYeSdAk2W3AGr8OiyI40mVb8w88BQRIF/PTqF17HHoCSOSV6a/moLKXzZzofBr/XAL30nkLRvpIktoraoFwRdHuzOfp+zjpFVf60agni82vCYagSCuaGvpCw++SarNDw2Fh8XLkIquLC0DZTsb2H5IoJ+D6/xgZnxpNpb7DUUA/R1R9QgK1OKL1M8osO/GMsTDpsik5nyZnBu35Pz+BF0SHvO/G9j9D3xFcrJrCrrqmSDvCxmHPnOvbd7UR6ziY00nGzLrt29QiCIAt9KYyL/DT7fwox/NEUlp7Erepn2jw7+2Y9H9bssZad4szze696A1sc0YzDt8if1YnPBwA==
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=nvidia.com;
+Received: from DS7PR12MB9473.namprd12.prod.outlook.com (2603:10b6:8:252::5) by
+ MN2PR12MB4176.namprd12.prod.outlook.com (2603:10b6:208:1d5::20) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.25.24; Mon, 18 May
+ 2026 23:39:20 +0000
+Received: from DS7PR12MB9473.namprd12.prod.outlook.com
+ ([fe80::f01d:73d2:2dda:c7b2]) by DS7PR12MB9473.namprd12.prod.outlook.com
+ ([fe80::f01d:73d2:2dda:c7b2%5]) with mapi id 15.21.0025.016; Mon, 18 May 2026
+ 23:39:20 +0000
+From: Zi Yan <ziy@nvidia.com>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: David Hildenbrand <david@kernel.org>,
+ "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+ Song Liu <songliubraving@fb.com>, Chris Mason <clm@fb.com>,
+ David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
+ Lorenzo Stoakes <ljs@kernel.org>,
+ Baolin Wang <baolin.wang@linux.alibaba.com>,
+ "Liam R. Howlett" <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
+ Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
+ Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
+ Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
+ Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
+ Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-mm@kvack.org, linux-kselftest@vger.kernel.org,
+ Luiz Capitulino <luizcap@redhat.com>, Donet Tom <donettom@linux.ibm.com>,
+ Jason Gunthorpe <jgg@ziepe.ca>, John Hubbard <jhubbard@nvidia.com>,
+ Leon Romanovsky <leon@kernel.org>, Liam Howlett <liam@infradead.org>,
+ Mark Brown <broonie@kernel.org>, Peter Xu <peterx@redhat.com>,
+ Li Wang <li.wang@linux.dev>, Sarthak Sharma <sarthak.sharma@arm.com>
+Subject: Re: [PATCH v6 00/14] Remove CONFIG_READ_ONLY_THP_FOR_FS and enable
+ file THP for writable files
+Date: Tue, 19 May 2026 07:39:07 +0800
+X-Mailer: MailMate (2.0r6292)
+Message-ID: <0FB04D3E-489A-4ABF-BD04-EE735EAD6F25@nvidia.com>
+In-Reply-To: <20260518152116.840e926e9992d47c9b3e33c3@linux-foundation.org>
+References: <20260517135416.1434539-1-ziy@nvidia.com>
+ <20260518152116.840e926e9992d47c9b3e33c3@linux-foundation.org>
+Content-Type: text/plain
+X-ClientProxiedBy: CH5PR02CA0023.namprd02.prod.outlook.com
+ (2603:10b6:610:1ed::24) To DS7PR12MB9473.namprd12.prod.outlook.com
+ (2603:10b6:8:252::5)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: add test for BTRFS_IOC_GET_CSUMS ioctl
-To: Mark Harmstone <mark@harmstone.com>, linux-btrfs@vger.kernel.org,
- fstests@vger.kernel.org
-References: <20260320125223.90171-1-mark@harmstone.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260320125223.90171-1-mark@harmstone.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:IVf8TScuIl6iyJ3cnFxtJpeMjcNH5s/ip+Z4y3wUgBWxTQ57KWc
- Ew0HH4DoUZVxdYbOgFi6j8qvJiUbYjeY/ZB82g5tB1jrsEMGrYFfzMxWoqcc0GYJaQ/SD6y
- MsHDqsX5KaIskvMV2NXtEXGwo/0DbPQ+d0J/jBT+qUJRX2KsqQGex1Zr+mhNfGW/8VnPvBS
- MQSD9MN10eChUm87yDUIw==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:Qpj1cfv1NN4=;jZqGeTpXWKz91qbXaXFwtXOiYuX
- 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
- 4VXBbkkBwrwgCJw==
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: DS7PR12MB9473:EE_|MN2PR12MB4176:EE_
+X-MS-Office365-Filtering-Correlation-Id: 3c410183-02da-49f7-2b28-08deb536af39
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|10070799003|366016|376014|7416014|1800799024|11063799003|4143699003|18002099003|22082099003|56012099003;
+X-Microsoft-Antispam-Message-Info:
+	so0hMwsRCzPp5cTRjwOdUPTOVn+zTJBIbPS9ow1zLb6Yk2ldVpsS7iM+oKSo2LdS56ti2FSM/YaktLz9DzHw+2TtYN9hEJ2onPEqN8B7Kg61/DbynU7mg0ScqYqx40QLcPCUVwG/7wEl475Qfl5ZqegaoVBxFWkPb2wnRaLa6sJkuoKoypI43+/hG0fPvHpp0yvpI+mxHeIO5X1dqFicglmXtS+igMGQakgPA7nNxQGUITZmhvOy2ebOglQB/s9FK3Cmj+ww7EtqwNH5UE5zKLGpskgjVkwoYdizUo8t/epdqDzLykYBG3zr3ASIJf5rRZXwZt39x38IuOBmk/Lh/7CQJcc1a2BWGVXP+g6qYCq8bI1Y6JZpgR+cAw5kKOrDT9gczsVDil7KijHGOz754Qq4iYjDn3U3eUIT4gPZoF2YBRejHkt54fN2X8PhNcip7eUlSKDLq35w2TMHFxMecqrQZ2k/8rumL7PMM/QCXWoQLhXibVRwHYbM2PZ5H4jWq+TZGiA0pPUaJ1xYlaSXL26Y+hBqX1DESD1M6H88iG5Vsiu/xo/HRiUjJqqSdv+QQmwXKuKtqPplHemq//ECnKEjslmeW0GysUwWR4yvif0ePvkpBemk8k4ndqvSSxPWUwWhXOTKOFBbcC1uNgZyPMurmNUnQ1I+OGxhhnPtxtCDrMhlQXUOH3kiSrPlIrxL
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DS7PR12MB9473.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(10070799003)(366016)(376014)(7416014)(1800799024)(11063799003)(4143699003)(18002099003)(22082099003)(56012099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?us-ascii?Q?3E3hjtjmDEMWXxpD7eKstQPOkkmmedKJjsQjjjNAwhCsxdq91yTthOnoT6Gl?=
+ =?us-ascii?Q?IKnCHrZDV0Z3htYpiWGNiA0JjCp0cphBIgQlj7VN3S555OBGzM2dnvlOwxWy?=
+ =?us-ascii?Q?1R59GLWayAHon6Bmprj4vIAN0CtG/BZwJ6a3U9T4MSzgOYta42XjKGvXloTR?=
+ =?us-ascii?Q?Mxq1E5u/w6fgLjsSNwlKxcvXrsGvtT2eFfXT+kCRZIJXEtNIb2Skom5Ldf3b?=
+ =?us-ascii?Q?pAevtvWjojrS4t8NDi23eLXzuzQ4MRn3hzWF6On+Ij9H3zFiixmo3CgAm6oW?=
+ =?us-ascii?Q?TKuUoscGKsoBrBRdV6ewdBQU7ms+2nd4HmVhQg0yNTCbti0aFpg3ZMuvm7cc?=
+ =?us-ascii?Q?mmA9PDmwjrkn9mEZdQjtx28NcMq4w+PGPyPTZI4kjmLYh62lDK+N/fSdyCrO?=
+ =?us-ascii?Q?0ofBviJc9y8Je87w7K/0O6/PGigRSiZrcBfg1yBgA1hqSY2CfNUqX1c0zC7w?=
+ =?us-ascii?Q?tdTqyUhcz0EQ5ZXi0M8x6zgLMYvCMotzEVoRQmn6SdyjmJze2Ir5yRKmF8Mb?=
+ =?us-ascii?Q?sehTP4xGyvofkP3ay/czNZRQGSBpep5OwKqYQOrpqIqcVn6dL3TYB9FF/Wx7?=
+ =?us-ascii?Q?lMFQVEv5zpdXojz8442tPo3vULwsCXVt8IjpvGWsGOvapEQSaFWxQedmxNQz?=
+ =?us-ascii?Q?6XOYJvThqwqz7Jj3dPI0DhgSJFnHWj6iHSL8hzfuPGan39iwm8KA/JKdrRRW?=
+ =?us-ascii?Q?NUPMs9RghOpLm2L4xplphaOh08/rJZWKg/jTYwp5mt4WL9KHoM4cRKwvWxSg?=
+ =?us-ascii?Q?Yy9JF0QU9glvqw6Dmnm7FZLYB89JN/y75Fb4jI0AZKZqbEtb6L8Vf5l27oil?=
+ =?us-ascii?Q?UHhAZWQ0s2cJu29UmvQuqhuOEeA5bKjaEVyr49/rI/RI+3CsesRhtpv76PBd?=
+ =?us-ascii?Q?om8BAzjDQxidgvgHPPZ+pkFEx+NhZCW/30vXDp4fgQTuEtaAfanqcRipcCM4?=
+ =?us-ascii?Q?q5UWmyclBhmwAZvzr3DFpSv7tgchTXeZUYu/tMrlqgeJbpfPqBm1VfO3hEnI?=
+ =?us-ascii?Q?72pOY6DbPINSFs2DbOG6sOTlgUDfpv5BUoCE0bhpsX8ZePljH9r+yJjUIES/?=
+ =?us-ascii?Q?gUEqUfaIt1I/VuqFNiItPPwr1sGLG+aq6SVjyPf8l6wc2XcJcHWpLuuvAEse?=
+ =?us-ascii?Q?ZGx0+D8M7jApRRGulsjs7hfoYQzO6xj8QfXin/hbLWYnRNMcO3jKTutXWV4f?=
+ =?us-ascii?Q?M1Z5Q2fBq+HVOEp6bojoYyzxfKy8o4xZD/O7IHA9IkAtwIWCyhKcKZeg7xAg?=
+ =?us-ascii?Q?DfXnTgL1MEnDowbdioS5OrtbTvHRpvMlMw5LGAoUatwhp2go1EfUfAwiPVu/?=
+ =?us-ascii?Q?sFBlAfBt5pSO2TGxogD7vVj8OjwzcK6aWB4th9wUweNpAffKgjdsCx5Eje8x?=
+ =?us-ascii?Q?66/gbThbysP75kQpU9fF2U+uGo4cawfQedSpXhXC+emRmrhOxjpXX6bTTLi+?=
+ =?us-ascii?Q?UgQ6OYgFx0LsRnlHzfRcUXaSHjMaX/7oyDC1NCBkdx+LniQhIVF089njx12w?=
+ =?us-ascii?Q?UUvMISqkbNCbyAISckfagWJboKzc1yNATJjge0q69nl/GMZuJlua9F9CGAbp?=
+ =?us-ascii?Q?WcHTgWhNicmh96ATOmQooH88BPpQc9e25qFyQBTzRqtJ0gK2coCtojCda6U5?=
+ =?us-ascii?Q?n8xVttSoh0bDSEs5zAJN6sZWgaonuTl+F1mMhkB2Oe3Qns7hQYKctV3s6CaC?=
+ =?us-ascii?Q?JCCuxZIvuwqXOPCkTIAY9FkTgfVtAXnWsVpXqN3OwUZ+kzuiiQSk5Y0k9447?=
+ =?us-ascii?Q?aq4Sd2hdqXiutpEvtskP8/CpyDqYq6hyXn6qbvbpAqpTpfuutjTV?=
+X-OriginatorOrg: Nvidia.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 3c410183-02da-49f7-2b28-08deb536af39
+X-MS-Exchange-CrossTenant-AuthSource: DS7PR12MB9473.namprd12.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 18 May 2026 23:39:20.6864
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 43083d15-7273-40c1-b7db-39efd9ccc17a
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: Ge3TzgK5O6QkfQBLhMB+dD6P/VefKvLazDdLFUO6YRPcRaGn2ULswb1rj3nZpPHN
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR12MB4176
 
+On 19 May 2026, at 6:21, Andrew Morton wrote:
 
+> On Sun, 17 May 2026 09:54:02 -0400 Zi Yan <ziy@nvidia.com> wrote:
+>
+>> Hi all,
+>>
+>> This patchset removes READ_ONLY_THP_FOR_FS Kconfig and enables creating
+>> file-backed THPs for FSes with large folio support (the supported orders
+>> need to include PMD_ORDER) by default, including for writable files.
+>
+> Cool.  Sashiko wasn't able to apply this (presumably because of Mike's
+> CI-friendly series).  I take it that the AI review from v5
+> (https://sashiko.dev/#/patchset/20260429152924.727124-1-ziy@nvidia.com)
+> was considered?
+>
+> Also, please check that the below were considered:
+>
+> https://lore.kernel.org/e9e61132-902a-445f-9c4c-4d405d164e70@kernel.org
+> https://lore.kernel.org/22831162-abe7-4498-9e81-7f5aa3526d00@kernel.org
+> https://lore.kernel.org/959238dd-2493-4d9c-ac35-6d04460a8239@kernel.org
+> https://lore.kernel.org/1895A67C-BB1F-49EA-ADC3-AA4F51A6ED57@nvidia.com
+>
+> https://lore.kernel.org/20260508074643.55548-1-lance.yang@linux.dev
+> https://lore.kernel.org/b8a3c3eb-f241-40fe-9121-4ae5a1097807@kernel.org
+>
 
-=E5=9C=A8 2026/3/20 23:22, Mark Harmstone =E5=86=99=E9=81=93:
-> Test the new BTRFS_IOC_GET_CSUMS ioctl which retrieves file checksums
-> from the kernel's csum tree. The test covers:
+I addressed all of them, except the second one and I will reply to the
+second one soon.
 
-I think it's a great idea to have a dedicated test case for the new ioctl.
+>
+>> is an in-place replacement of V5 in mm-new. It affects Mike Rapoport's
+>> "make MM selftests more CI friendly", since "selftests/mm: khugepaged:
+>> use kselftest framework" needs to be updated. I updated it and put it at
+>> the end of this cover letter.
+>
+> Helpful, thanks.  It was a little complicated because your email client
+> messes with whitespace (it always has!), but I figured it out.
 
-Although that ioctl has some changes and a refresh will be appriciated.
+You mean tabs become whitespace? And does all my patches have the whitespace
+issue or the one I put at the bottom? I am trying to figure out the issue.
+BTW, All patches are sent via git send-email using mstmp and
+I copied the bottom one from git format-patch. I wonder which part went
+wrong.
 
->=20
-> 1. Regular data extents returning HAS_CSUMS with checksum data
+Thanks.
 
-Maybe also test an inlined extent?
-
-> 2. Holes returning SPARSE entries
-> 3. Preallocated extents returning SPARSE entries
-> 4. Buffer continuation (small buffer forcing multiple calls)
-> 5. Checksum consistency (identical data produces identical csums)
-> 6. Querying past file data returning SPARSE
-
-I guess we may also want some corner cases related to the last block:
-
-- The file size is not aligned
-   * Test get csum of the last block
-     Which should return the csum of the last full block.
-
-   * Test get csum beyond the last block
-     Which should return ZEROED.
-
-- The file size is aligned, but the last extent is truncated
-   E.g. the file size is 4K, but the data extent is 16K (e.g. reflinked)
-
-   * Test get csum of the [4K, 8K)
-     Which should return ZEROED
-
-> 7. Precomputed values
->=20
-> Signed-off-by: Mark Harmstone <mark@harmstone.com>
-[...]
-> +
-> +# Test 7: Verify checksum values against precomputed values for all alg=
-orithms.
-> +# Uses explicit -s 4096 as the expected values are precomputed for 4096=
--byte
-> +# sectors. Write three sectors: all 0x00, all 0xff, all 0xaa.
-> +echo "=3D=3D=3D Test 7: precomputed csums =3D=3D=3D"
-
-One idea to get rid of the pre-calculated csum is, to read out the data=20
-block by block from the file (as long as the file size is aligned to=20
-block size), then calculate the csum.
-
-For xxhash/sha256/blake2, the checksum can be calculated in user space=20
-and should match the one in csum tree.
-
-It's only crc32c that we do not have a handy tool in user-space.
-
-Thanks,
-Qu
-> +_scratch_unmount
-> +for csum_algo in crc32c xxhash sha256 blake2; do
-> +	echo "--- $csum_algo ---"
-> +
-> +	_scratch_mkfs -s 4096 --csum $csum_algo >> $seqres.full 2>&1
-> +	_scratch_mount
-> +
-> +	case "$csum_algo" in
-> +	crc32c)
-> +		expect_00=3D"98f94189"
-> +		expect_ff=3D"25c1fe13"
-> +		expect_aa=3D"4ed66b65"
-> +		;;
-> +	xxhash)
-> +		expect_00=3D"ac869b6f32d8bbdb"
-> +		expect_ff=3D"10af2cb94282321f"
-> +		expect_aa=3D"e35ac2d66625ceaa"
-> +		;;
-> +	sha256)
-> +		expect_00=3D"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b=
-48892ca7"
-> +		expect_ff=3D"f47a8ec3e9aff2318d896942282ad4fe37d6391c82914f54a5da8a37=
-de1300c6"
-> +		expect_aa=3D"c622005493c4cb75f3e08eda4cc0bfe172e2c5eeca661ec4908c5490=
-fc3d6994"
-> +		;;
-> +	blake2)
-> +		expect_00=3D"686ede9288c391e7e05026e56f2f91bfd879987a040ea98445dabc76=
-f55b8e5f"
-> +		expect_ff=3D"1e23d2944a4523734ef9c8b536eed668fa8a99b272bfc10988864e1e=
-f135197d"
-> +		expect_aa=3D"8337334ce71745681a24e9aa409fdf85fe4081242c39815ccf266df6=
-d33355a2"
-> +		;;
-> +	esac
-> +
-> +	$XFS_IO_PROG -f \
-> +		-c "pwrite -S 0x00 0 4096" \
-> +		-c "pwrite -S 0xff 4096 4096" \
-> +		-c "pwrite -S 0xaa 8192 4096" \
-> +		$SCRATCH_MNT/file7 >> $seqres.full
-> +	sync
-> +
-> +	output=3D$($GET_CSUMS $SCRATCH_MNT/file7 0 12288)
-> +	echo "$output" >> $seqres.full
-> +
-> +	got_csums=3D$(echo "$output" | grep "^HAS_CSUMS" | \
-> +		awk '{for(i=3D4;i<=3DNF;i++) printf $i " "; print ""}')
-> +	got_00=3D$(echo $got_csums | awk '{print $1}')
-> +	got_ff=3D$(echo $got_csums | awk '{print $2}')
-> +	got_aa=3D$(echo $got_csums | awk '{print $3}')
-> +
-> +	pass=3Dtrue
-> +	if [ "$got_00" !=3D "$expect_00" ]; then
-> +		echo "FAIL: 0x00 sector csum $got_00 !=3D $expect_00"
-> +		pass=3Dfalse
-> +	fi
-> +	if [ "$got_ff" !=3D "$expect_ff" ]; then
-> +		echo "FAIL: 0xff sector csum $got_ff !=3D $expect_ff"
-> +		pass=3Dfalse
-> +	fi
-> +	if [ "$got_aa" !=3D "$expect_aa" ]; then
-> +		echo "FAIL: 0xaa sector csum $got_aa !=3D $expect_aa"
-> +		pass=3Dfalse
-> +	fi
-> +	$pass && echo "csums verified"
-> +
-> +	_scratch_unmount
-> +done
-> +
-> +echo "=3D=3D=3D done =3D=3D=3D"
-> +status=3D0
-> +exit
-> diff --git a/tests/btrfs/343.out b/tests/btrfs/343.out
-> new file mode 100644
-> index 00000000..85582c24
-> --- /dev/null
-> +++ b/tests/btrfs/343.out
-> @@ -0,0 +1,33 @@
-> +QA output created by 343
-> +=3D=3D=3D Test 1: regular data =3D=3D=3D
-> +HAS_CSUMS
-> +has csums
-> +complete
-> +=3D=3D=3D Test 2: hole =3D=3D=3D
-> +HAS_CSUMS
-> +SPARSE
-> +HAS_CSUMS
-> +complete
-> +=3D=3D=3D Test 3: prealloc =3D=3D=3D
-> +SPARSE
-> +complete
-> +=3D=3D=3D Test 4: continuation =3D=3D=3D
-> +SPARSE
-> +incomplete
-> +HAS_CSUMS
-> +complete
-> +=3D=3D=3D Test 5: csum consistency =3D=3D=3D
-> +csums match
-> +=3D=3D=3D Test 6: past data =3D=3D=3D
-> +SPARSE
-> +complete
-> +=3D=3D=3D Test 7: precomputed csums =3D=3D=3D
-> +--- crc32c ---
-> +csums verified
-> +--- xxhash ---
-> +csums verified
-> +--- sha256 ---
-> +csums verified
-> +--- blake2 ---
-> +csums verified
-> +=3D=3D=3D done =3D=3D=3D
-
+Best Regards,
+Yan, Zi

@@ -1,35 +1,35 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 064BF392838;
-	Mon, 18 May 2026 05:18:58 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3C6D93939C8;
+	Mon, 18 May 2026 05:19:17 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779081549; cv=none; b=G3QgGtXdSpjIWR0mdFbm7QBFQmIyLz3D2G5k1uBMtjptv/uGR6i8mWrfmjli76915ndHqi0gHveU1frCn4eo7o5k84kwlWy+m/CjrLoFtvelplw/l9uikKJ2Pj6eJYC8F+Ff3eeAdX4rsvuPc9H5PJTwtC5U3cphpuUuuFi7+D4=
+	t=1779081575; cv=none; b=GA1BjS0Gy9UxZbI4ZaA/VSMK9mHJ6L6g3mGln/j2rMMyoTvbzUKt4HxBsCCBGkkxLR06kOKVF4xfLJ0QybMB544NRvm/+LqNg0sJblw/JE+YRPLq5w4KFOZ61hO2jFROaqAw7y7FmUnkPXelU0eO8TCtNf1E/upmbdD5OpqM+nQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779081549; c=relaxed/simple;
-	bh=d6buLL8aIm40FtrnlQMSKHmhD6uIZ+VTeSQHXznKp7Y=;
+	s=arc-20240116; t=1779081575; c=relaxed/simple;
+	bh=l8XDwy6KKCSDf9rQludaC5vhtqtHj2val0Yzc65gVZ0=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=qLA5B+B6ln/T5KJaG28qkrm4TQIlr7M/G1kylpO+2U/hJD4wbXhpOVhbJPJ226FiDkO+MlTC45IrsE81TArA6+XxCCR3EEbYBPGLkQudhuGTYQPSBPiN9P1cet/pe82CEN0QknPaFNmfbbjOhlK1A8zUQO+MvKPllz4esUdGqK0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=G1C/wsGA; arc=none smtp.client-ip=198.137.202.133
+	 MIME-Version; b=Xc/sK1rfg5vEGFt3r1mpZNQCzl1UUmeG/MP8F044HC95RK1LoeGhwUlD89/AMOtxhLO+tHI2FWAnOsse1pzsoV+R1UYvVITEkub/Cz6dhD4naxDbJZVjCebESLdQr9qEyNvse9Kr/dSnFziasCYZDh8Wwsibdtz2IS1d6uj1T6Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=udUvafzB; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="G1C/wsGA"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="udUvafzB"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
 	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:Sender
 	:Reply-To:Content-Type:Content-ID:Content-Description;
-	bh=YQiDZHGMTPM9+2JGUUl8meZg6TQLe9mTlKws/+OdmRQ=; b=G1C/wsGA0ptUctRm0HvLosRjLp
-	8ivQ23tub+cnt4iOhMmuV4HuAw4bqcXRp7encOmXCFtm1jRxJtqFHkZKdWYCUeGpeaqM9Vf/2ga5F
-	xOwfybY2vLgxIN+1vl9g2SmHhTii3B2J60CndmUmmZ0dIlX8glla8qg3/cQTYqYCtj8KQSTYYRUco
-	927PlYNZ16KGse0QQvRQYSg3USAddX9llrn/r4hje+IuStihexooMd9oKmuoHj7+11qDGNwX1Su80
-	ccL3Zzx10Xu3h4v1dG9d/Zwgx39OsXn/vBWGYNAw/pT6mMpCYD3ozUFOgKHQCukyFZeVjbJF23pi1
-	BOxp6qaw==;
+	bh=lsHXYIM3P1M+yO9RsMlwxeQWLyulusrmln84gA1zZ9U=; b=udUvafzBN/IxqTK4plXiOaRW86
+	yeKXL7McPk4pvMSc3bsGzFhz5MYN36rT4B/7u1Xm4U/jXyMKAjAzoe5wzKsyewQfA2QLrHxj2gIS+
+	RuGAVruj7zbuQ7797CCC3IhiUAFySYwySGy9uvz8DQYIlfEdRGal2m095Ujn68ahMHCCUGwr8F2mX
+	CiSNZtDG7RHZFHKcmivAlWTDhLo+qvszPyWYG6LW5WUizQjrbt+2tpOUDNZcuXxrZdaYH850Snlri
+	NqFXqsYC6HdnJDqcpj6YlhUtomEUVpcJBkkITA7e6sbyrhW5i5Zg0ryXN0YwAP61h/X4Ow/Z8Uykk
+	50dfKC4Q==;
 Received: from [2001:4bb8:2d1:6fdb:d67d:128c:34ba:85b8] (helo=localhost)
 	by bombadil.infradead.org with esmtpsa (Exim 4.99.1 #2 (Red Hat Linux))
-	id 1wOqNH-0000000EFZ3-3uJT;
-	Mon, 18 May 2026 05:18:44 +0000
+	id 1wOqNX-0000000EFhF-3dRL;
+	Mon, 18 May 2026 05:19:01 +0000
 From: Christoph Hellwig <hch@lst.de>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Catalin Marinas <catalin.marinas@arm.com>,
@@ -74,9 +74,9 @@ Cc: Catalin Marinas <catalin.marinas@arm.com>,
 	linux-btrfs@vger.kernel.org,
 	linux-arch@vger.kernel.org,
 	linux-raid@vger.kernel.org
-Subject: [PATCH 02/18] raid6: remove __KERNEL__ ifdefs
-Date: Mon, 18 May 2026 07:17:45 +0200
-Message-ID: <20260518051804.462141-3-hch@lst.de>
+Subject: [PATCH 03/18] raid6: move to lib/raid/
+Date: Mon, 18 May 2026 07:17:46 +0200
+Message-ID: <20260518051804.462141-4-hch@lst.de>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260518051804.462141-1-hch@lst.de>
 References: <20260518051804.462141-1-hch@lst.de>
@@ -89,631 +89,650 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-With the test code ported to kernel space, none of this is required.
+Move the raid6 code to live in lib/raid/ with the XOR code, and change
+the internal organization so that each architecture has a subdirectory
+similar to the CRC, crypto and XOR libraries, and fix up the Makefile to
+only build files actually needed.
+
+Also move the kunit test case from the history test/ subdirectory to
+tests/ and use the normal naming scheme for it.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Acked-by: Ard Biesheuvel <ardb@kernel.org>
 Tested-by: Ard Biesheuvel <ardb@kernel.org> # kunit only on arm64
 ---
- include/linux/raid/pq.h          | 90 --------------------------------
- lib/raid6/algos.c                | 12 -----
- lib/raid6/altivec.uc             | 10 +---
- lib/raid6/avx2.c                 |  2 +-
- lib/raid6/avx512.c               |  2 +-
- lib/raid6/loongarch.h            | 38 --------------
- lib/raid6/loongarch_simd.c       |  3 +-
- lib/raid6/mktables.c             | 14 -----
- lib/raid6/mmx.c                  |  2 +-
- lib/raid6/neon.c                 |  6 ---
- lib/raid6/recov_avx2.c           |  2 +-
- lib/raid6/recov_avx512.c         |  2 +-
- lib/raid6/recov_loongarch_simd.c |  3 +-
- lib/raid6/recov_neon.c           |  6 ---
- lib/raid6/recov_ssse3.c          |  2 +-
- lib/raid6/rvv.h                  | 11 +---
- lib/raid6/sse1.c                 |  2 +-
- lib/raid6/sse2.c                 |  2 +-
- lib/raid6/vpermxor.uc            |  7 ---
- lib/raid6/x86.h                  | 75 --------------------------
- 20 files changed, 15 insertions(+), 276 deletions(-)
- delete mode 100644 lib/raid6/loongarch.h
- delete mode 100644 lib/raid6/x86.h
+ MAINTAINERS                                   |   2 +-
+ lib/Kconfig                                   |  22 ----
+ lib/Makefile                                  |   1 -
+ lib/raid/Kconfig                              |  22 ++++
+ lib/raid/Makefile                             |   2 +-
+ lib/{ => raid}/raid6/.gitignore               |   0
+ lib/raid/raid6/Makefile                       | 122 ++++++++++++++++++
+ lib/{ => raid}/raid6/algos.c                  |   0
+ lib/{raid6 => raid/raid6/arm}/neon.c          |   0
+ lib/{raid6 => raid/raid6/arm}/neon.h          |   0
+ lib/{raid6 => raid/raid6/arm}/neon.uc         |   2 +-
+ lib/{raid6 => raid/raid6/arm}/recov_neon.c    |   2 +-
+ .../raid6/arm}/recov_neon_inner.c             |   2 +-
+ lib/{ => raid}/raid6/int.uc                   |   0
+ .../raid6/loongarch}/loongarch_simd.c         |   0
+ .../raid6/loongarch}/recov_loongarch_simd.c   |   0
+ lib/{ => raid}/raid6/mktables.c               |   0
+ lib/{raid6 => raid/raid6/powerpc}/altivec.uc  |   4 -
+ lib/{raid6 => raid/raid6/powerpc}/vpermxor.uc |   3 -
+ lib/{ => raid}/raid6/recov.c                  |   0
+ lib/{raid6 => raid/raid6/riscv}/recov_rvv.c   |   0
+ lib/{raid6 => raid/raid6/riscv}/rvv.c         |   0
+ lib/{raid6 => raid/raid6/riscv}/rvv.h         |   0
+ lib/{raid6 => raid/raid6/s390}/recov_s390xc.c |   0
+ lib/{raid6 => raid/raid6/s390}/s390vx.uc      |   0
+ lib/{raid6/test => raid/raid6/tests}/Makefile |   2 -
+ .../test.c => raid/raid6/tests/raid6_kunit.c} |   0
+ lib/{ => raid}/raid6/unroll.awk               |   0
+ lib/{raid6 => raid/raid6/x86}/avx2.c          |   0
+ lib/{raid6 => raid/raid6/x86}/avx512.c        |   0
+ lib/{raid6 => raid/raid6/x86}/mmx.c           |   4 -
+ lib/{raid6 => raid/raid6/x86}/recov_avx2.c    |   0
+ lib/{raid6 => raid/raid6/x86}/recov_avx512.c  |   0
+ lib/{raid6 => raid/raid6/x86}/recov_ssse3.c   |   0
+ lib/{raid6 => raid/raid6/x86}/sse1.c          |   4 -
+ lib/{raid6 => raid/raid6/x86}/sse2.c          |   0
+ lib/raid6/Makefile                            |  83 ------------
+ lib/raid6/test/.gitignore                     |   3 -
+ 38 files changed, 149 insertions(+), 131 deletions(-)
+ rename lib/{ => raid}/raid6/.gitignore (100%)
+ create mode 100644 lib/raid/raid6/Makefile
+ rename lib/{ => raid}/raid6/algos.c (100%)
+ rename lib/{raid6 => raid/raid6/arm}/neon.c (100%)
+ rename lib/{raid6 => raid/raid6/arm}/neon.h (100%)
+ rename lib/{raid6 => raid/raid6/arm}/neon.uc (99%)
+ rename lib/{raid6 => raid/raid6/arm}/recov_neon.c (99%)
+ rename lib/{raid6 => raid/raid6/arm}/recov_neon_inner.c (99%)
+ rename lib/{ => raid}/raid6/int.uc (100%)
+ rename lib/{raid6 => raid/raid6/loongarch}/loongarch_simd.c (100%)
+ rename lib/{raid6 => raid/raid6/loongarch}/recov_loongarch_simd.c (100%)
+ rename lib/{ => raid}/raid6/mktables.c (100%)
+ rename lib/{raid6 => raid/raid6/powerpc}/altivec.uc (98%)
+ rename lib/{raid6 => raid/raid6/powerpc}/vpermxor.uc (98%)
+ rename lib/{ => raid}/raid6/recov.c (100%)
+ rename lib/{raid6 => raid/raid6/riscv}/recov_rvv.c (100%)
+ rename lib/{raid6 => raid/raid6/riscv}/rvv.c (100%)
+ rename lib/{raid6 => raid/raid6/riscv}/rvv.h (100%)
+ rename lib/{raid6 => raid/raid6/s390}/recov_s390xc.c (100%)
+ rename lib/{raid6 => raid/raid6/s390}/s390vx.uc (100%)
+ rename lib/{raid6/test => raid/raid6/tests}/Makefile (77%)
+ rename lib/{raid6/test/test.c => raid/raid6/tests/raid6_kunit.c} (100%)
+ rename lib/{ => raid}/raid6/unroll.awk (100%)
+ rename lib/{raid6 => raid/raid6/x86}/avx2.c (100%)
+ rename lib/{raid6 => raid/raid6/x86}/avx512.c (100%)
+ rename lib/{raid6 => raid/raid6/x86}/mmx.c (99%)
+ rename lib/{raid6 => raid/raid6/x86}/recov_avx2.c (100%)
+ rename lib/{raid6 => raid/raid6/x86}/recov_avx512.c (100%)
+ rename lib/{raid6 => raid/raid6/x86}/recov_ssse3.c (100%)
+ rename lib/{raid6 => raid/raid6/x86}/sse1.c (99%)
+ rename lib/{raid6 => raid/raid6/x86}/sse2.c (100%)
+ delete mode 100644 lib/raid6/Makefile
+ delete mode 100644 lib/raid6/test/.gitignore
 
-diff --git a/include/linux/raid/pq.h b/include/linux/raid/pq.h
-index 08c5995ea980..d26788fada58 100644
---- a/include/linux/raid/pq.h
-+++ b/include/linux/raid/pq.h
-@@ -8,8 +8,6 @@
- #ifndef LINUX_RAID_RAID6_H
- #define LINUX_RAID_RAID6_H
+diff --git a/MAINTAINERS b/MAINTAINERS
+index c2c6d79275c6..e6f778339a3f 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -24821,7 +24821,7 @@ F:	drivers/md/md*
+ F:	drivers/md/raid*
+ F:	include/linux/raid/
+ F:	include/uapi/linux/raid/
+-F:	lib/raid6/
++F:	lib/raid/raid6/
  
--#ifdef __KERNEL__
--
- #include <linux/blkdev.h>
- #include <linux/mm.h>
+ SOLIDRUN CLEARFOG SUPPORT
+ M:	Russell King <linux@armlinux.org.uk>
+diff --git a/lib/Kconfig b/lib/Kconfig
+index bffe015a6c10..b87f954a14bc 100644
+--- a/lib/Kconfig
++++ b/lib/Kconfig
+@@ -8,28 +8,6 @@ config BINARY_PRINTF
  
-@@ -19,59 +17,6 @@ static inline void *raid6_get_zero_page(void)
- 	return page_address(ZERO_PAGE(0));
- }
+ menu "Library routines"
  
--#else /* ! __KERNEL__ */
--/* Used for testing in user space */
+-config RAID6_PQ
+-	tristate
 -
--#include <errno.h>
--#include <inttypes.h>
--#include <stddef.h>
--#include <string.h>
--#include <sys/mman.h>
--#include <sys/time.h>
--#include <sys/types.h>
+-config RAID6_PQ_KUNIT_TEST
+-	tristate "KUnit tests for RAID6 PQ functions" if !KUNIT_ALL_TESTS
+-	depends on KUNIT
+-	depends on RAID6_PQ
+-	default KUNIT_ALL_TESTS
+-	help
+-	  Unit tests for the RAID6 PQ library functions.
 -
--/* Not standard, but glibc defines it */
--#define BITS_PER_LONG __WORDSIZE
+-	  This is intended to help people writing architecture-specific
+-	  optimized versions.  If unsure, say N.
 -
--typedef uint8_t  u8;
--typedef uint16_t u16;
--typedef uint32_t u32;
--typedef uint64_t u64;
+-config RAID6_PQ_BENCHMARK
+-	bool "Automatically choose fastest RAID6 PQ functions"
+-	depends on RAID6_PQ
+-	default y
+-	help
+-	  Benchmark all available RAID6 PQ functions on init and choose the
+-	  fastest one.
 -
--#ifndef PAGE_SIZE
--# define PAGE_SIZE 4096
--#endif
--#ifndef PAGE_SHIFT
--# define PAGE_SHIFT 12
--#endif
--extern const char raid6_empty_zero_page[PAGE_SIZE];
--
--#define __init
--#define __exit
--#ifndef __attribute_const__
--# define __attribute_const__ __attribute__((const))
--#endif
--#define noinline __attribute__((noinline))
--
--#define preempt_enable()
--#define preempt_disable()
--#define cpu_has_feature(x) 1
--#define enable_kernel_altivec()
--#define disable_kernel_altivec()
--
--#undef	EXPORT_SYMBOL
--#define EXPORT_SYMBOL(sym)
--#undef	EXPORT_SYMBOL_GPL
--#define EXPORT_SYMBOL_GPL(sym)
--#define MODULE_LICENSE(licence)
--#define MODULE_DESCRIPTION(desc)
--#define subsys_initcall(x)
--#define module_exit(x)
--
--#define IS_ENABLED(x) (x)
--#define CONFIG_RAID6_PQ_BENCHMARK 1
--#endif /* __KERNEL__ */
--
- /* Routine choices */
- struct raid6_calls {
- 	void (*gen_syndrome)(int, size_t, void **);
-@@ -165,39 +110,4 @@ extern void (*raid6_2data_recov)(int disks, size_t bytes, int faila, int failb,
- extern void (*raid6_datap_recov)(int disks, size_t bytes, int faila,
- 			void **ptrs);
+ config LINEAR_RANGES
+ 	tristate
  
--/* Some definitions to allow code to be compiled for testing in userspace */
--#ifndef __KERNEL__
--
--# define jiffies	raid6_jiffies()
--# define printk 	printf
--# define pr_err(format, ...) fprintf(stderr, format, ## __VA_ARGS__)
--# define pr_info(format, ...) fprintf(stdout, format, ## __VA_ARGS__)
--# define GFP_KERNEL	0
--# define __get_free_pages(x, y)	((unsigned long)mmap(NULL, PAGE_SIZE << (y), \
--						     PROT_READ|PROT_WRITE,   \
--						     MAP_PRIVATE|MAP_ANONYMOUS,\
--						     0, 0))
--# define free_pages(x, y)	munmap((void *)(x), PAGE_SIZE << (y))
--
--static inline void cpu_relax(void)
--{
--	/* Nothing */
--}
--
--#undef  HZ
--#define HZ 1000
--static inline uint32_t raid6_jiffies(void)
--{
--	struct timeval tv;
--	gettimeofday(&tv, NULL);
--	return tv.tv_sec*1000 + tv.tv_usec/1000;
--}
--
--static inline void *raid6_get_zero_page(void)
--{
--	return raid6_empty_zero_page;
--}
--
--#endif /* ! __KERNEL__ */
--
- #endif /* LINUX_RAID_RAID6_H */
-diff --git a/lib/raid6/algos.c b/lib/raid6/algos.c
-index 5a9f4882e18d..985c60bb00a4 100644
---- a/lib/raid6/algos.c
-+++ b/lib/raid6/algos.c
-@@ -12,13 +12,8 @@
+diff --git a/lib/Makefile b/lib/Makefile
+index f33a24bf1c19..6e72d2c1cce7 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -167,7 +167,6 @@ obj-$(CONFIG_LZ4_DECOMPRESS) += lz4/
+ obj-$(CONFIG_ZSTD_COMPRESS) += zstd/
+ obj-$(CONFIG_ZSTD_DECOMPRESS) += zstd/
+ obj-$(CONFIG_XZ_DEC) += xz/
+-obj-$(CONFIG_RAID6_PQ) += raid6/
+ 
+ lib-$(CONFIG_DECOMPRESS_GZIP) += decompress_inflate.o
+ lib-$(CONFIG_DECOMPRESS_BZIP2) += decompress_bunzip2.o
+diff --git a/lib/raid/Kconfig b/lib/raid/Kconfig
+index 5ab2b0a7be4c..e39f6d667792 100644
+--- a/lib/raid/Kconfig
++++ b/lib/raid/Kconfig
+@@ -28,3 +28,25 @@ config XOR_KUNIT_TEST
+ 
+ 	  This is intended to help people writing architecture-specific
+ 	  optimized versions.  If unsure, say N.
++
++config RAID6_PQ
++	tristate
++
++config RAID6_PQ_KUNIT_TEST
++	tristate "KUnit tests for RAID6 PQ functions" if !KUNIT_ALL_TESTS
++	depends on KUNIT
++	depends on RAID6_PQ
++	default KUNIT_ALL_TESTS
++	help
++	  Unit tests for the RAID6 PQ library functions.
++
++	  This is intended to help people writing architecture-specific
++	  optimized versions.  If unsure, say N.
++
++config RAID6_PQ_BENCHMARK
++	bool "Automatically choose fastest RAID6 PQ functions"
++	depends on RAID6_PQ
++	default y
++	help
++	  Benchmark all available RAID6 PQ functions on init and choose the
++	  fastest one.
+diff --git a/lib/raid/Makefile b/lib/raid/Makefile
+index 3540fe846dc4..6fc5eeb53df0 100644
+--- a/lib/raid/Makefile
++++ b/lib/raid/Makefile
+@@ -1,3 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
+-obj-y				+= xor/
++obj-y				+= xor/ raid6/
+diff --git a/lib/raid6/.gitignore b/lib/raid/raid6/.gitignore
+similarity index 100%
+rename from lib/raid6/.gitignore
+rename to lib/raid/raid6/.gitignore
+diff --git a/lib/raid/raid6/Makefile b/lib/raid/raid6/Makefile
+new file mode 100644
+index 000000000000..7cb31b8a5c17
+--- /dev/null
++++ b/lib/raid/raid6/Makefile
+@@ -0,0 +1,122 @@
++# SPDX-License-Identifier: GPL-2.0
++
++ccflags-y			+= -I $(src)
++
++obj-$(CONFIG_RAID6_PQ)		+= raid6_pq.o tests/
++
++raid6_pq-y			+= algos.o tables.o
++
++# generic integer generation and recovery implementation
++raid6_pq-y			+= int1.o int2.o int4.o int8.o
++raid6_pq-y			+= recov.o
++
++# architecture-specific generation and recovery implementations:
++raid6_pq-$(CONFIG_KERNEL_MODE_NEON) += arm/neon.o \
++				   arm/neon1.o \
++				   arm/neon2.o \
++				   arm/neon4.o \
++				   arm/neon8.o \
++				   arm/recov_neon.o \
++				   arm/recov_neon_inner.o
++raid6_pq-$(CONFIG_LOONGARCH)	+= loongarch/loongarch_simd.o \
++				   loongarch/recov_loongarch_simd.o
++raid6_pq-$(CONFIG_ALTIVEC)	+= powerpc/altivec1.o \
++				   powerpc/altivec2.o \
++				   powerpc/altivec4.o \
++				   powerpc/altivec8.o \
++				   powerpc/vpermxor1.o \
++				   powerpc/vpermxor2.o \
++				   powerpc/vpermxor4.o \
++				   powerpc/vpermxor8.o
++raid6_pq-$(CONFIG_RISCV_ISA_V)	+= riscv/rvv.o \
++				   riscv/recov_rvv.o
++raid6_pq-$(CONFIG_S390)		+= s390/s390vx8.o \
++				   s390/recov_s390xc.o
++ifeq ($(CONFIG_X86),y)
++raid6_pq-$(CONFIG_X86_32)	+= x86/mmx.o \
++				   x86/sse1.o
++endif
++raid6_pq-$(CONFIG_X86)		+= x86/sse2.o \
++				   x86/avx2.o \
++				   x86/avx512.o \
++				   x86/recov_ssse3.o \
++				   x86/recov_avx2.o \
++				   x86/recov_avx512.o
++
++hostprogs			+= mktables
++
++CFLAGS_arm/neon1.o += $(CC_FLAGS_FPU)
++CFLAGS_arm/neon2.o += $(CC_FLAGS_FPU)
++CFLAGS_arm/neon4.o += $(CC_FLAGS_FPU)
++CFLAGS_arm/neon8.o += $(CC_FLAGS_FPU)
++CFLAGS_arm/recov_neon_inner.o += $(CC_FLAGS_FPU)
++CFLAGS_REMOVE_arm/neon1.o += $(CC_FLAGS_NO_FPU)
++CFLAGS_REMOVE_arm/neon2.o += $(CC_FLAGS_NO_FPU)
++CFLAGS_REMOVE_arm/neon4.o += $(CC_FLAGS_NO_FPU)
++CFLAGS_REMOVE_arm/neon8.o += $(CC_FLAGS_NO_FPU)
++CFLAGS_REMOVE_arm/recov_neon_inner.o += $(CC_FLAGS_NO_FPU)
++
++ifeq ($(CONFIG_ALTIVEC),y)
++altivec_flags := -maltivec $(call cc-option,-mabi=altivec)
++# Enable <altivec.h>
++altivec_flags += -isystem $(shell $(CC) -print-file-name=include)
++
++CFLAGS_powerpc/altivec1.o += $(altivec_flags)
++CFLAGS_powerpc/altivec2.o += $(altivec_flags)
++CFLAGS_powerpc/altivec4.o += $(altivec_flags)
++CFLAGS_powerpc/altivec8.o += $(altivec_flags)
++CFLAGS_powerpc/vpermxor1.o += $(altivec_flags)
++CFLAGS_powerpc/vpermxor2.o += $(altivec_flags)
++CFLAGS_powerpc/vpermxor4.o += $(altivec_flags)
++CFLAGS_powerpc/vpermxor8.o += $(altivec_flags)
++
++ifdef CONFIG_CC_IS_CLANG
++# clang ppc port does not yet support -maltivec when -msoft-float is
++# enabled. A future release of clang will resolve this
++# https://llvm.org/pr31177
++CFLAGS_REMOVE_powerpc/altivec1.o  += -msoft-float
++CFLAGS_REMOVE_powerpc/altivec2.o  += -msoft-float
++CFLAGS_REMOVE_powerpc/altivec4.o  += -msoft-float
++CFLAGS_REMOVE_powerpc/altivec8.o  += -msoft-float
++CFLAGS_REMOVE_powerpc/vpermxor1.o += -msoft-float
++CFLAGS_REMOVE_powerpc/vpermxor2.o += -msoft-float
++CFLAGS_REMOVE_powerpc/vpermxor4.o += -msoft-float
++CFLAGS_REMOVE_powerpc/vpermxor8.o += -msoft-float
++endif # CONFIG_CC_IS_CLANG
++endif # CONFIG_ALTIVEC
++
++quiet_cmd_mktable = TABLE   $@
++      cmd_mktable = $(obj)/mktables > $@
++
++targets += tables.c
++$(obj)/tables.c: $(obj)/mktables FORCE
++	$(call if_changed,mktable)
++
++quiet_cmd_unroll = UNROLL  $@
++      cmd_unroll = $(AWK) -v N=$* -f $(src)/unroll.awk < $< > $@
++
++targets += int1.c int2.c int4.c int8.c
++$(obj)/int%.c: $(src)/int.uc $(src)/unroll.awk FORCE
++	$(call if_changed,unroll)
++
++targets += arm/neon1.c arm/neon2.c arm/neon4.c arm/neon8.c
++$(obj)/arm/neon%.c: $(src)/arm/neon.uc $(src)/unroll.awk FORCE
++	$(call if_changed,unroll)
++
++targets += powerpc/altivec1.c \
++	   powerpc/altivec2.c \
++	   powerpc/altivec4.c \
++	   powerpc/altivec8.c
++$(obj)/powerpc/altivec%.c: $(src)/powerpc/altivec.uc $(src)/unroll.awk FORCE
++	$(call if_changed,unroll)
++
++targets += powerpc/vpermxor1.c \
++	   powerpc/vpermxor2.c \
++	   powerpc/vpermxor4.c \
++	   powerpc/vpermxor8.c
++$(obj)/powerpc/vpermxor%.c: $(src)/powerpc/vpermxor.uc $(src)/unroll.awk FORCE
++	$(call if_changed,unroll)
++
++targets += s390/s390vx8.c
++$(obj)/s390/s390vx%.c: $(src)/s390/s390vx.uc $(src)/unroll.awk FORCE
++	$(call if_changed,unroll)
+diff --git a/lib/raid6/algos.c b/lib/raid/raid6/algos.c
+similarity index 100%
+rename from lib/raid6/algos.c
+rename to lib/raid/raid6/algos.c
+diff --git a/lib/raid6/neon.c b/lib/raid/raid6/arm/neon.c
+similarity index 100%
+rename from lib/raid6/neon.c
+rename to lib/raid/raid6/arm/neon.c
+diff --git a/lib/raid6/neon.h b/lib/raid/raid6/arm/neon.h
+similarity index 100%
+rename from lib/raid6/neon.h
+rename to lib/raid/raid6/arm/neon.h
+diff --git a/lib/raid6/neon.uc b/lib/raid/raid6/arm/neon.uc
+similarity index 99%
+rename from lib/raid6/neon.uc
+rename to lib/raid/raid6/arm/neon.uc
+index 355270af0cd6..14a9fc2c60fa 100644
+--- a/lib/raid6/neon.uc
++++ b/lib/raid/raid6/arm/neon.uc
+@@ -25,7 +25,7 @@
   */
  
- #include <linux/raid/pq.h>
--#ifndef __KERNEL__
--#include <sys/mman.h>
--#include <stdio.h>
--#else
- #include <linux/module.h>
- #include <linux/gfp.h>
--#endif
- #include <kunit/visibility.h>
+ #include <arm_neon.h>
+-#include "neon.h"
++#include "arm/neon.h"
  
- struct raid6_calls raid6_call;
-@@ -123,14 +118,7 @@ const struct raid6_recov_calls *const raid6_recov_algos[] = {
- };
- EXPORT_SYMBOL_IF_KUNIT(raid6_recov_algos);
+ typedef uint8x16_t unative_t;
  
--#ifdef __KERNEL__
- #define RAID6_TIME_JIFFIES_LG2	4
--#else
--/* Need more time to be stable in userspace */
--#define RAID6_TIME_JIFFIES_LG2	9
--#define time_before(x, y) ((x) < (y))
--#endif
--
- #define RAID6_TEST_DISKS	8
- #define RAID6_TEST_DISKS_ORDER	3
- 
-diff --git a/lib/raid6/altivec.uc b/lib/raid6/altivec.uc
-index d20ed0d11411..2c59963e58f9 100644
---- a/lib/raid6/altivec.uc
-+++ b/lib/raid6/altivec.uc
-@@ -27,10 +27,8 @@
- #ifdef CONFIG_ALTIVEC
- 
- #include <altivec.h>
--#ifdef __KERNEL__
--# include <asm/cputable.h>
--# include <asm/switch_to.h>
--#endif /* __KERNEL__ */
-+#include <asm/cputable.h>
-+#include <asm/switch_to.h>
- 
- /*
-  * This is the C data type to use.  We use a vector of
-@@ -113,11 +111,7 @@ int raid6_have_altivec(void);
- int raid6_have_altivec(void)
- {
- 	/* This assumes either all CPUs have Altivec or none does */
--# ifdef __KERNEL__
- 	return cpu_has_feature(CPU_FTR_ALTIVEC);
--# else
--	return 1;
--# endif
- }
- #endif
- 
-diff --git a/lib/raid6/avx2.c b/lib/raid6/avx2.c
-index 059024234dce..a1a5213918af 100644
---- a/lib/raid6/avx2.c
-+++ b/lib/raid6/avx2.c
-@@ -14,7 +14,7 @@
-  */
- 
- #include <linux/raid/pq.h>
--#include "x86.h"
-+#include <asm/fpu/api.h>
- 
- static const struct raid6_avx2_constants {
- 	u64 x1d[4];
-diff --git a/lib/raid6/avx512.c b/lib/raid6/avx512.c
-index 009bd0adeebf..874998bcd7d7 100644
---- a/lib/raid6/avx512.c
-+++ b/lib/raid6/avx512.c
-@@ -18,7 +18,7 @@
-  */
- 
- #include <linux/raid/pq.h>
--#include "x86.h"
-+#include <asm/fpu/api.h>
- 
- static const struct raid6_avx512_constants {
- 	u64 x1d[8];
-diff --git a/lib/raid6/loongarch.h b/lib/raid6/loongarch.h
-deleted file mode 100644
-index acfc33ce7056..000000000000
---- a/lib/raid6/loongarch.h
-+++ /dev/null
-@@ -1,38 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0-or-later */
--/*
-- * Copyright (C) 2023 WANG Xuerui <git@xen0n.name>
-- *
-- * raid6/loongarch.h
-- *
-- * Definitions common to LoongArch RAID-6 code only
-- */
--
--#ifndef _LIB_RAID6_LOONGARCH_H
--#define _LIB_RAID6_LOONGARCH_H
--
--#ifdef __KERNEL__
--
--#include <asm/cpu-features.h>
--#include <asm/fpu.h>
--
--#else /* for user-space testing */
--
--#include <sys/auxv.h>
--
--/* have to supply these defines for glibc 2.37- and musl */
--#ifndef HWCAP_LOONGARCH_LSX
--#define HWCAP_LOONGARCH_LSX	(1 << 4)
--#endif
--#ifndef HWCAP_LOONGARCH_LASX
--#define HWCAP_LOONGARCH_LASX	(1 << 5)
--#endif
--
--#define kernel_fpu_begin()
--#define kernel_fpu_end()
--
--#define cpu_has_lsx	(getauxval(AT_HWCAP) & HWCAP_LOONGARCH_LSX)
--#define cpu_has_lasx	(getauxval(AT_HWCAP) & HWCAP_LOONGARCH_LASX)
--
--#endif /* __KERNEL__ */
--
--#endif /* _LIB_RAID6_LOONGARCH_H */
-diff --git a/lib/raid6/loongarch_simd.c b/lib/raid6/loongarch_simd.c
-index aa5d9f924ca3..72f4d92d4876 100644
---- a/lib/raid6/loongarch_simd.c
-+++ b/lib/raid6/loongarch_simd.c
-@@ -10,7 +10,8 @@
-  */
- 
- #include <linux/raid/pq.h>
--#include "loongarch.h"
-+#include <asm/cpu-features.h>
-+#include <asm/fpu.h>
- 
- /*
-  * The vector algorithms are currently priority 0, which means the generic
-diff --git a/lib/raid6/mktables.c b/lib/raid6/mktables.c
-index 3be03793237c..3de1dbf6846c 100644
---- a/lib/raid6/mktables.c
-+++ b/lib/raid6/mktables.c
-@@ -56,9 +56,7 @@ int main(int argc, char *argv[])
- 	uint8_t v;
- 	uint8_t exptbl[256], invtbl[256];
- 
--	printf("#ifdef __KERNEL__\n");
- 	printf("#include <linux/export.h>\n");
--	printf("#endif\n");
- 	printf("#include <linux/raid/pq.h>\n");
- 
- 	/* Compute multiplication table */
-@@ -76,9 +74,7 @@ int main(int argc, char *argv[])
- 		printf("\t},\n");
- 	}
- 	printf("};\n");
--	printf("#ifdef __KERNEL__\n");
- 	printf("EXPORT_SYMBOL(raid6_gfmul);\n");
--	printf("#endif\n");
- 
- 	/* Compute vector multiplication table */
- 	printf("\nconst u8  __attribute__((aligned(256)))\n"
-@@ -101,9 +97,7 @@ int main(int argc, char *argv[])
- 		printf("\t},\n");
- 	}
- 	printf("};\n");
--	printf("#ifdef __KERNEL__\n");
- 	printf("EXPORT_SYMBOL(raid6_vgfmul);\n");
--	printf("#endif\n");
- 
- 	/* Compute power-of-2 table (exponent) */
- 	v = 1;
-@@ -120,9 +114,7 @@ int main(int argc, char *argv[])
- 		}
- 	}
- 	printf("};\n");
--	printf("#ifdef __KERNEL__\n");
- 	printf("EXPORT_SYMBOL(raid6_gfexp);\n");
--	printf("#endif\n");
- 
- 	/* Compute log-of-2 table */
- 	printf("\nconst u8 __attribute__((aligned(256)))\n"
-@@ -140,9 +132,7 @@ int main(int argc, char *argv[])
- 		}
- 	}
- 	printf("};\n");
--	printf("#ifdef __KERNEL__\n");
- 	printf("EXPORT_SYMBOL(raid6_gflog);\n");
--	printf("#endif\n");
- 
- 	/* Compute inverse table x^-1 == x^254 */
- 	printf("\nconst u8 __attribute__((aligned(256)))\n"
-@@ -155,9 +145,7 @@ int main(int argc, char *argv[])
- 		}
- 	}
- 	printf("};\n");
--	printf("#ifdef __KERNEL__\n");
- 	printf("EXPORT_SYMBOL(raid6_gfinv);\n");
--	printf("#endif\n");
- 
- 	/* Compute inv(2^x + 1) (exponent-xor-inverse) table */
- 	printf("\nconst u8 __attribute__((aligned(256)))\n"
-@@ -169,9 +157,7 @@ int main(int argc, char *argv[])
- 			       (j == 7) ? '\n' : ' ');
- 	}
- 	printf("};\n");
--	printf("#ifdef __KERNEL__\n");
- 	printf("EXPORT_SYMBOL(raid6_gfexi);\n");
--	printf("#endif\n");
- 
- 	return 0;
- }
-diff --git a/lib/raid6/mmx.c b/lib/raid6/mmx.c
-index 3a5bf53a297b..e411f0cfbd95 100644
---- a/lib/raid6/mmx.c
-+++ b/lib/raid6/mmx.c
-@@ -14,7 +14,7 @@
- #ifdef CONFIG_X86_32
- 
- #include <linux/raid/pq.h>
--#include "x86.h"
-+#include <asm/fpu/api.h>
- 
- /* Shared with raid6/sse1.c */
- const struct raid6_mmx_constants {
-diff --git a/lib/raid6/neon.c b/lib/raid6/neon.c
-index 6d9474ce6da9..47b8bb0afc65 100644
---- a/lib/raid6/neon.c
-+++ b/lib/raid6/neon.c
-@@ -6,13 +6,7 @@
-  */
- 
- #include <linux/raid/pq.h>
--
--#ifdef __KERNEL__
- #include <asm/simd.h>
--#else
--#define scoped_ksimd()
--#define cpu_has_neon()		(1)
--#endif
- 
- /*
-  * There are 2 reasons these wrappers are kept in a separate compilation unit
-diff --git a/lib/raid6/recov_avx2.c b/lib/raid6/recov_avx2.c
-index 97d598d2535c..19fbd9c4dce6 100644
---- a/lib/raid6/recov_avx2.c
-+++ b/lib/raid6/recov_avx2.c
-@@ -5,7 +5,7 @@
-  */
- 
- #include <linux/raid/pq.h>
--#include "x86.h"
-+#include <asm/fpu/api.h>
- 
- static int raid6_has_avx2(void)
- {
-diff --git a/lib/raid6/recov_avx512.c b/lib/raid6/recov_avx512.c
-index 7986120ca444..143f4976b2ad 100644
---- a/lib/raid6/recov_avx512.c
-+++ b/lib/raid6/recov_avx512.c
-@@ -7,7 +7,7 @@
-  */
- 
- #include <linux/raid/pq.h>
--#include "x86.h"
-+#include <asm/fpu/api.h>
- 
- static int raid6_has_avx512(void)
- {
-diff --git a/lib/raid6/recov_loongarch_simd.c b/lib/raid6/recov_loongarch_simd.c
-index 93dc515997a1..eb3a1e79f01f 100644
---- a/lib/raid6/recov_loongarch_simd.c
-+++ b/lib/raid6/recov_loongarch_simd.c
-@@ -11,7 +11,8 @@
-  */
- 
- #include <linux/raid/pq.h>
--#include "loongarch.h"
-+#include <asm/cpu-features.h>
-+#include <asm/fpu.h>
- 
- /*
-  * Unlike with the syndrome calculation algorithms, there's no boot-time
-diff --git a/lib/raid6/recov_neon.c b/lib/raid6/recov_neon.c
-index 9d99aeabd31a..13d5df718c15 100644
+diff --git a/lib/raid6/recov_neon.c b/lib/raid/raid6/arm/recov_neon.c
+similarity index 99%
+rename from lib/raid6/recov_neon.c
+rename to lib/raid/raid6/arm/recov_neon.c
+index 13d5df718c15..5a48fcc762e8 100644
 --- a/lib/raid6/recov_neon.c
-+++ b/lib/raid6/recov_neon.c
-@@ -5,14 +5,8 @@
-  */
++++ b/lib/raid/raid6/arm/recov_neon.c
+@@ -6,7 +6,7 @@
  
  #include <linux/raid/pq.h>
--
--#ifdef __KERNEL__
  #include <asm/simd.h>
- #include "neon.h"
--#else
--#define scoped_ksimd()
--#define cpu_has_neon()		(1)
--#endif
+-#include "neon.h"
++#include "arm/neon.h"
  
  static int raid6_has_neon(void)
  {
-diff --git a/lib/raid6/recov_ssse3.c b/lib/raid6/recov_ssse3.c
-index 2e849185c32b..146cdbf465bd 100644
---- a/lib/raid6/recov_ssse3.c
-+++ b/lib/raid6/recov_ssse3.c
-@@ -4,7 +4,7 @@
+diff --git a/lib/raid6/recov_neon_inner.c b/lib/raid/raid6/arm/recov_neon_inner.c
+similarity index 99%
+rename from lib/raid6/recov_neon_inner.c
+rename to lib/raid/raid6/arm/recov_neon_inner.c
+index f9e7e8f5a151..53c355efa7ff 100644
+--- a/lib/raid6/recov_neon_inner.c
++++ b/lib/raid/raid6/arm/recov_neon_inner.c
+@@ -5,7 +5,7 @@
   */
+ 
+ #include <arm_neon.h>
+-#include "neon.h"
++#include "arm/neon.h"
+ 
+ #ifdef CONFIG_ARM
+ /*
+diff --git a/lib/raid6/int.uc b/lib/raid/raid6/int.uc
+similarity index 100%
+rename from lib/raid6/int.uc
+rename to lib/raid/raid6/int.uc
+diff --git a/lib/raid6/loongarch_simd.c b/lib/raid/raid6/loongarch/loongarch_simd.c
+similarity index 100%
+rename from lib/raid6/loongarch_simd.c
+rename to lib/raid/raid6/loongarch/loongarch_simd.c
+diff --git a/lib/raid6/recov_loongarch_simd.c b/lib/raid/raid6/loongarch/recov_loongarch_simd.c
+similarity index 100%
+rename from lib/raid6/recov_loongarch_simd.c
+rename to lib/raid/raid6/loongarch/recov_loongarch_simd.c
+diff --git a/lib/raid6/mktables.c b/lib/raid/raid6/mktables.c
+similarity index 100%
+rename from lib/raid6/mktables.c
+rename to lib/raid/raid6/mktables.c
+diff --git a/lib/raid6/altivec.uc b/lib/raid/raid6/powerpc/altivec.uc
+similarity index 98%
+rename from lib/raid6/altivec.uc
+rename to lib/raid/raid6/powerpc/altivec.uc
+index 2c59963e58f9..130d3d3dd42c 100644
+--- a/lib/raid6/altivec.uc
++++ b/lib/raid/raid6/powerpc/altivec.uc
+@@ -24,8 +24,6 @@
  
  #include <linux/raid/pq.h>
--#include "x86.h"
-+#include <asm/fpu/api.h>
  
- static int raid6_has_ssse3(void)
- {
-diff --git a/lib/raid6/rvv.h b/lib/raid6/rvv.h
-index 6d0708a2c8a4..b0a71b375962 100644
---- a/lib/raid6/rvv.h
-+++ b/lib/raid6/rvv.h
-@@ -7,17 +7,8 @@
-  * Definitions for RISC-V RAID-6 code
-  */
- 
--#ifdef __KERNEL__
--#include <asm/vector.h>
--#else
--#define kernel_vector_begin()
--#define kernel_vector_end()
--#include <sys/auxv.h>
--#include <asm/hwcap.h>
--#define has_vector() (getauxval(AT_HWCAP) & COMPAT_HWCAP_ISA_V)
--#endif
+-#ifdef CONFIG_ALTIVEC
 -
- #include <linux/raid/pq.h>
-+#include <asm/vector.h>
- 
- static int rvv_has_vector(void)
- {
-diff --git a/lib/raid6/sse1.c b/lib/raid6/sse1.c
-index 692fa3a93bf0..794d5cfa0306 100644
---- a/lib/raid6/sse1.c
-+++ b/lib/raid6/sse1.c
-@@ -19,7 +19,7 @@
- #ifdef CONFIG_X86_32
- 
- #include <linux/raid/pq.h>
--#include "x86.h"
-+#include <asm/fpu/api.h>
- 
- /* Defined in raid6/mmx.c */
- extern const struct raid6_mmx_constants {
-diff --git a/lib/raid6/sse2.c b/lib/raid6/sse2.c
-index 2930220249c9..f9edf8a8d1c4 100644
---- a/lib/raid6/sse2.c
-+++ b/lib/raid6/sse2.c
-@@ -13,7 +13,7 @@
-  */
- 
- #include <linux/raid/pq.h>
--#include "x86.h"
-+#include <asm/fpu/api.h>
- 
- static const struct raid6_sse_constants {
- 	u64 x1d[2];
-diff --git a/lib/raid6/vpermxor.uc b/lib/raid6/vpermxor.uc
-index 1bfb127fbfe8..a8e76b1c956e 100644
---- a/lib/raid6/vpermxor.uc
-+++ b/lib/raid6/vpermxor.uc
-@@ -25,10 +25,8 @@
- 
  #include <altivec.h>
- #include <asm/ppc-opcode.h>
--#ifdef __KERNEL__
  #include <asm/cputable.h>
  #include <asm/switch_to.h>
--#endif
- 
- typedef vector unsigned char unative_t;
- #define NSIZE sizeof(unative_t)
-@@ -85,13 +83,8 @@ int raid6_have_altivec_vpermxor(void);
- int raid6_have_altivec_vpermxor(void)
- {
- 	/* Check if arch has both altivec and the vpermxor instructions */
--# ifdef __KERNEL__
- 	return (cpu_has_feature(CPU_FTR_ALTIVEC_COMP) &&
- 		cpu_has_feature(CPU_FTR_ARCH_207S));
--# else
--	return 1;
--#endif
+@@ -122,5 +120,3 @@ const struct raid6_calls raid6_altivec$# = {
+ 	"altivecx$#",
+ 	0
+ };
 -
- }
- #endif
+-#endif /* CONFIG_ALTIVEC */
+diff --git a/lib/raid6/vpermxor.uc b/lib/raid/raid6/powerpc/vpermxor.uc
+similarity index 98%
+rename from lib/raid6/vpermxor.uc
+rename to lib/raid/raid6/powerpc/vpermxor.uc
+index a8e76b1c956e..595f20aaf4cf 100644
+--- a/lib/raid6/vpermxor.uc
++++ b/lib/raid/raid6/powerpc/vpermxor.uc
+@@ -21,8 +21,6 @@
+  */
  
-diff --git a/lib/raid6/x86.h b/lib/raid6/x86.h
+ #include <linux/raid/pq.h>
+-#ifdef CONFIG_ALTIVEC
+-
+ #include <altivec.h>
+ #include <asm/ppc-opcode.h>
+ #include <asm/cputable.h>
+@@ -95,4 +93,3 @@ const struct raid6_calls raid6_vpermxor$# = {
+ 	"vpermxor$#",
+ 	0
+ };
+-#endif
+diff --git a/lib/raid6/recov.c b/lib/raid/raid6/recov.c
+similarity index 100%
+rename from lib/raid6/recov.c
+rename to lib/raid/raid6/recov.c
+diff --git a/lib/raid6/recov_rvv.c b/lib/raid/raid6/riscv/recov_rvv.c
+similarity index 100%
+rename from lib/raid6/recov_rvv.c
+rename to lib/raid/raid6/riscv/recov_rvv.c
+diff --git a/lib/raid6/rvv.c b/lib/raid/raid6/riscv/rvv.c
+similarity index 100%
+rename from lib/raid6/rvv.c
+rename to lib/raid/raid6/riscv/rvv.c
+diff --git a/lib/raid6/rvv.h b/lib/raid/raid6/riscv/rvv.h
+similarity index 100%
+rename from lib/raid6/rvv.h
+rename to lib/raid/raid6/riscv/rvv.h
+diff --git a/lib/raid6/recov_s390xc.c b/lib/raid/raid6/s390/recov_s390xc.c
+similarity index 100%
+rename from lib/raid6/recov_s390xc.c
+rename to lib/raid/raid6/s390/recov_s390xc.c
+diff --git a/lib/raid6/s390vx.uc b/lib/raid/raid6/s390/s390vx.uc
+similarity index 100%
+rename from lib/raid6/s390vx.uc
+rename to lib/raid/raid6/s390/s390vx.uc
+diff --git a/lib/raid6/test/Makefile b/lib/raid/raid6/tests/Makefile
+similarity index 77%
+rename from lib/raid6/test/Makefile
+rename to lib/raid/raid6/tests/Makefile
+index 520381ea71d7..87a001b22847 100644
+--- a/lib/raid6/test/Makefile
++++ b/lib/raid/raid6/tests/Makefile
+@@ -1,5 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
+ obj-$(CONFIG_RAID6_PQ_KUNIT_TEST)	+= raid6_kunit.o
+-
+-raid6_kunit-y += test.o
+diff --git a/lib/raid6/test/test.c b/lib/raid/raid6/tests/raid6_kunit.c
+similarity index 100%
+rename from lib/raid6/test/test.c
+rename to lib/raid/raid6/tests/raid6_kunit.c
+diff --git a/lib/raid6/unroll.awk b/lib/raid/raid6/unroll.awk
+similarity index 100%
+rename from lib/raid6/unroll.awk
+rename to lib/raid/raid6/unroll.awk
+diff --git a/lib/raid6/avx2.c b/lib/raid/raid6/x86/avx2.c
+similarity index 100%
+rename from lib/raid6/avx2.c
+rename to lib/raid/raid6/x86/avx2.c
+diff --git a/lib/raid6/avx512.c b/lib/raid/raid6/x86/avx512.c
+similarity index 100%
+rename from lib/raid6/avx512.c
+rename to lib/raid/raid6/x86/avx512.c
+diff --git a/lib/raid6/mmx.c b/lib/raid/raid6/x86/mmx.c
+similarity index 99%
+rename from lib/raid6/mmx.c
+rename to lib/raid/raid6/x86/mmx.c
+index e411f0cfbd95..7e9810669347 100644
+--- a/lib/raid6/mmx.c
++++ b/lib/raid/raid6/x86/mmx.c
+@@ -11,8 +11,6 @@
+  * MMX implementation of RAID-6 syndrome functions
+  */
+ 
+-#ifdef CONFIG_X86_32
+-
+ #include <linux/raid/pq.h>
+ #include <asm/fpu/api.h>
+ 
+@@ -135,5 +133,3 @@ const struct raid6_calls raid6_mmxx2 = {
+ 	"mmxx2",
+ 	0
+ };
+-
+-#endif
+diff --git a/lib/raid6/recov_avx2.c b/lib/raid/raid6/x86/recov_avx2.c
+similarity index 100%
+rename from lib/raid6/recov_avx2.c
+rename to lib/raid/raid6/x86/recov_avx2.c
+diff --git a/lib/raid6/recov_avx512.c b/lib/raid/raid6/x86/recov_avx512.c
+similarity index 100%
+rename from lib/raid6/recov_avx512.c
+rename to lib/raid/raid6/x86/recov_avx512.c
+diff --git a/lib/raid6/recov_ssse3.c b/lib/raid/raid6/x86/recov_ssse3.c
+similarity index 100%
+rename from lib/raid6/recov_ssse3.c
+rename to lib/raid/raid6/x86/recov_ssse3.c
+diff --git a/lib/raid6/sse1.c b/lib/raid/raid6/x86/sse1.c
+similarity index 99%
+rename from lib/raid6/sse1.c
+rename to lib/raid/raid6/x86/sse1.c
+index 794d5cfa0306..deecdd72ceec 100644
+--- a/lib/raid6/sse1.c
++++ b/lib/raid/raid6/x86/sse1.c
+@@ -16,8 +16,6 @@
+  * worthwhile as a separate implementation.
+  */
+ 
+-#ifdef CONFIG_X86_32
+-
+ #include <linux/raid/pq.h>
+ #include <asm/fpu/api.h>
+ 
+@@ -155,5 +153,3 @@ const struct raid6_calls raid6_sse1x2 = {
+ 	"sse1x2",
+ 	1			/* Has cache hints */
+ };
+-
+-#endif
+diff --git a/lib/raid6/sse2.c b/lib/raid/raid6/x86/sse2.c
+similarity index 100%
+rename from lib/raid6/sse2.c
+rename to lib/raid/raid6/x86/sse2.c
+diff --git a/lib/raid6/Makefile b/lib/raid6/Makefile
 deleted file mode 100644
-index 9a6ff37115e7..000000000000
---- a/lib/raid6/x86.h
+index 6fd048c127b6..000000000000
+--- a/lib/raid6/Makefile
 +++ /dev/null
-@@ -1,75 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0-or-later */
--/* ----------------------------------------------------------------------- *
-- *
-- *   Copyright 2002-2004 H. Peter Anvin - All Rights Reserved
-- *
-- * ----------------------------------------------------------------------- */
+@@ -1,83 +0,0 @@
+-# SPDX-License-Identifier: GPL-2.0
+-obj-$(CONFIG_RAID6_PQ)	+= raid6_pq.o test/
 -
--/*
-- * raid6/x86.h
-- *
-- * Definitions common to x86 and x86-64 RAID-6 code only
-- */
+-raid6_pq-y	+= algos.o recov.o tables.o int1.o int2.o int4.o \
+-		   int8.o
 -
--#ifndef LINUX_RAID_RAID6X86_H
--#define LINUX_RAID_RAID6X86_H
+-raid6_pq-$(CONFIG_X86) += recov_ssse3.o recov_avx2.o mmx.o sse1.o sse2.o avx2.o avx512.o recov_avx512.o
+-raid6_pq-$(CONFIG_ALTIVEC) += altivec1.o altivec2.o altivec4.o altivec8.o \
+-                              vpermxor1.o vpermxor2.o vpermxor4.o vpermxor8.o
+-raid6_pq-$(CONFIG_KERNEL_MODE_NEON) += neon.o neon1.o neon2.o neon4.o neon8.o recov_neon.o recov_neon_inner.o
+-raid6_pq-$(CONFIG_S390) += s390vx8.o recov_s390xc.o
+-raid6_pq-$(CONFIG_LOONGARCH) += loongarch_simd.o recov_loongarch_simd.o
+-raid6_pq-$(CONFIG_RISCV_ISA_V) += rvv.o recov_rvv.o
 -
--#if (defined(__i386__) || defined(__x86_64__)) && !defined(__arch_um__)
+-hostprogs	+= mktables
 -
--#ifdef __KERNEL__ /* Real code */
+-ifeq ($(CONFIG_ALTIVEC),y)
+-altivec_flags := -maltivec $(call cc-option,-mabi=altivec)
+-# Enable <altivec.h>
+-altivec_flags += -isystem $(shell $(CC) -print-file-name=include)
 -
--#include <asm/fpu/api.h>
+-ifdef CONFIG_CC_IS_CLANG
+-# clang ppc port does not yet support -maltivec when -msoft-float is
+-# enabled. A future release of clang will resolve this
+-# https://llvm.org/pr31177
+-CFLAGS_REMOVE_altivec1.o  += -msoft-float
+-CFLAGS_REMOVE_altivec2.o  += -msoft-float
+-CFLAGS_REMOVE_altivec4.o  += -msoft-float
+-CFLAGS_REMOVE_altivec8.o  += -msoft-float
+-CFLAGS_REMOVE_vpermxor1.o += -msoft-float
+-CFLAGS_REMOVE_vpermxor2.o += -msoft-float
+-CFLAGS_REMOVE_vpermxor4.o += -msoft-float
+-CFLAGS_REMOVE_vpermxor8.o += -msoft-float
+-endif
+-endif
 -
--#else /* Dummy code for user space testing */
+-quiet_cmd_unroll = UNROLL  $@
+-      cmd_unroll = $(AWK) -v N=$* -f $(src)/unroll.awk < $< > $@
 -
--static inline void kernel_fpu_begin(void)
--{
--}
+-targets += int1.c int2.c int4.c int8.c
+-$(obj)/int%.c: $(src)/int.uc $(src)/unroll.awk FORCE
+-	$(call if_changed,unroll)
 -
--static inline void kernel_fpu_end(void)
--{
--}
+-CFLAGS_altivec1.o += $(altivec_flags)
+-CFLAGS_altivec2.o += $(altivec_flags)
+-CFLAGS_altivec4.o += $(altivec_flags)
+-CFLAGS_altivec8.o += $(altivec_flags)
+-targets += altivec1.c altivec2.c altivec4.c altivec8.c
+-$(obj)/altivec%.c: $(src)/altivec.uc $(src)/unroll.awk FORCE
+-	$(call if_changed,unroll)
 -
--#define __aligned(x) __attribute__((aligned(x)))
+-CFLAGS_vpermxor1.o += $(altivec_flags)
+-CFLAGS_vpermxor2.o += $(altivec_flags)
+-CFLAGS_vpermxor4.o += $(altivec_flags)
+-CFLAGS_vpermxor8.o += $(altivec_flags)
+-targets += vpermxor1.c vpermxor2.c vpermxor4.c vpermxor8.c
+-$(obj)/vpermxor%.c: $(src)/vpermxor.uc $(src)/unroll.awk FORCE
+-	$(call if_changed,unroll)
 -
--#define X86_FEATURE_MMX		(0*32+23) /* Multimedia Extensions */
--#define X86_FEATURE_FXSR	(0*32+24) /* FXSAVE and FXRSTOR instructions
--					   * (fast save and restore) */
--#define X86_FEATURE_XMM		(0*32+25) /* Streaming SIMD Extensions */
--#define X86_FEATURE_XMM2	(0*32+26) /* Streaming SIMD Extensions-2 */
--#define X86_FEATURE_XMM3	(4*32+ 0) /* "pni" SSE-3 */
--#define X86_FEATURE_SSSE3	(4*32+ 9) /* Supplemental SSE-3 */
--#define X86_FEATURE_AVX	(4*32+28) /* Advanced Vector Extensions */
--#define X86_FEATURE_AVX2        (9*32+ 5) /* AVX2 instructions */
--#define X86_FEATURE_AVX512F     (9*32+16) /* AVX-512 Foundation */
--#define X86_FEATURE_AVX512DQ    (9*32+17) /* AVX-512 DQ (Double/Quad granular)
--					   * Instructions
--					   */
--#define X86_FEATURE_AVX512BW    (9*32+30) /* AVX-512 BW (Byte/Word granular)
--					   * Instructions
--					   */
--#define X86_FEATURE_AVX512VL    (9*32+31) /* AVX-512 VL (128/256 Vector Length)
--					   * Extensions
--					   */
--#define X86_FEATURE_MMXEXT	(1*32+22) /* AMD MMX extensions */
+-CFLAGS_neon1.o += $(CC_FLAGS_FPU)
+-CFLAGS_neon2.o += $(CC_FLAGS_FPU)
+-CFLAGS_neon4.o += $(CC_FLAGS_FPU)
+-CFLAGS_neon8.o += $(CC_FLAGS_FPU)
+-CFLAGS_recov_neon_inner.o += $(CC_FLAGS_FPU)
+-CFLAGS_REMOVE_neon1.o += $(CC_FLAGS_NO_FPU)
+-CFLAGS_REMOVE_neon2.o += $(CC_FLAGS_NO_FPU)
+-CFLAGS_REMOVE_neon4.o += $(CC_FLAGS_NO_FPU)
+-CFLAGS_REMOVE_neon8.o += $(CC_FLAGS_NO_FPU)
+-CFLAGS_REMOVE_recov_neon_inner.o += $(CC_FLAGS_NO_FPU)
+-targets += neon1.c neon2.c neon4.c neon8.c
+-$(obj)/neon%.c: $(src)/neon.uc $(src)/unroll.awk FORCE
+-	$(call if_changed,unroll)
 -
--/* Should work well enough on modern CPUs for testing */
--static inline int boot_cpu_has(int flag)
--{
--	u32 eax, ebx, ecx, edx;
+-targets += s390vx8.c
+-$(obj)/s390vx%.c: $(src)/s390vx.uc $(src)/unroll.awk FORCE
+-	$(call if_changed,unroll)
 -
--	eax = (flag & 0x100) ? 7 :
--		(flag & 0x20) ? 0x80000001 : 1;
--	ecx = 0;
+-quiet_cmd_mktable = TABLE   $@
+-      cmd_mktable = $(obj)/mktables > $@
 -
--	asm volatile("cpuid"
--		     : "+a" (eax), "=b" (ebx), "=d" (edx), "+c" (ecx));
--
--	return ((flag & 0x100 ? ebx :
--		(flag & 0x80) ? ecx : edx) >> (flag & 31)) & 1;
--}
--
--#endif /* ndef __KERNEL__ */
--
--#endif
--#endif
+-targets += tables.c
+-$(obj)/tables.c: $(obj)/mktables FORCE
+-	$(call if_changed,mktable)
+diff --git a/lib/raid6/test/.gitignore b/lib/raid6/test/.gitignore
+deleted file mode 100644
+index 1b68a77f348f..000000000000
+--- a/lib/raid6/test/.gitignore
++++ /dev/null
+@@ -1,3 +0,0 @@
+-/int.uc
+-/neon.uc
+-/raid6test
 -- 
 2.53.0
 

@@ -1,66 +1,33 @@
-Received: from mail-pf1-f174.google.com (mail-pf1-f174.google.com [209.85.210.174])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1F6BB405C55
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 May 2026 14:44:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.174
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BC5D026FA5A
+	for <linux-btrfs@vger.kernel.org>; Mon, 18 May 2026 14:55:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779115485; cv=none; b=fBIs5A2l2eYn6uDc4EJUnNOnLS5FIjJevOqLHJxtOdcj+T8fmsChlr0g6oDPXNEUDDUGY7ZXjqdNox8a0tTe+N0IVcmJQjkTOhgqpTPq7SxsumZI117bE/P+L93z9UKtXxMMDOy4mKwVRffANfpllVgDuTubrWK6Sd0EgBU+vRE=
+	t=1779116147; cv=none; b=hKD28mhuoQAcigfRVG1i7J1/tWybLxHVHbisE+dff8clmePwvkV6DamGCDAWRfjsXfh9QhX5HBUuLCPUDzYzIpqJucK0p6fz4w/Dghjw3fUsU/YNymlgx4yUnX9ojCK8bVu4lu4D76g3IFUa5nHd6U5j4pB+j6EYOysHDiDEBiU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779115485; c=relaxed/simple;
-	bh=u1htIQ+cBGbRbD9P6U7xix0lnFYW5IXNgGXzrDz+aWQ=;
+	s=arc-20240116; t=1779116147; c=relaxed/simple;
+	bh=Rp2c/jO3fy94X2q+Pn+ILY6Bw/8eA/nJRabz8wbOThU=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=fPA0MIrIz0h0wRnRwN275+05W7YhqIwNrv2eDMR6TyvVPTqh4C1Mk94RWE7C0Xf7h+beOeyrTz8uMZLNxYb0+3iLR1SDAz/QeqqHJ2nhXSS52L3tvdtx9WDzSSrm8F0UyVW12HFBTQ146vXcplogLtBqQPd3BGONURGHFWk8VnI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=fRtytCeZ; arc=none smtp.client-ip=209.85.210.174
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	 In-Reply-To:Content-Type; b=FyFGcnAFymNOi7q/4lCCjrKjfyrZtE0hlf5WnZFPtXHm5WpIjGstX60S32/HqKOuTwJNpyduz1+s6jQhX309UZBa7Rv508wiIb6wDIMcpOgjcopRL0IhZhoFdFaZOxbqphRVS1RV23R8gWvrqa0+MoX97vpIpUO/tHg/2d76VO8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ZF0yGD69; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="fRtytCeZ"
-Received: by mail-pf1-f174.google.com with SMTP id d2e1a72fcca58-8379e010b01so948517b3a.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 May 2026 07:44:44 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1779115483; x=1779720283; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=5QC+PoU+YwXsRW92BuD7PelfR56JvKbxUHG8raaMFfs=;
-        b=fRtytCeZJc3KHI8ohi8X0/fY1f4yrucjpV8tLF7hueQbc7DcIlFk8pXKPDTbwV3e/Y
-         ON1zw0N/cmgme+DlpRm8MKUWkg3dJRt0qcHjnrh6F5x2KLVtxymcPzqGHfKrHoDlOCR1
-         3UAK24Hm7H2IUeU67cAYZLz25BFK9eReckj+cTijftv2lcsaDQYeekLzhjVd/o64gZlH
-         GCfaZOwEncJjd1JSZsnzFJ9Ee7OiGPuFz+MaqCXQhLp4CPpJypHK+ttGMzmqwmKIdN4C
-         cVRStWKwlyV+AylL3vNd6cCSqja5EGGhhVykEQg3mrNB2pAidjRq1fWpjaiDmi2xzmhj
-         uOsA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779115483; x=1779720283;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=5QC+PoU+YwXsRW92BuD7PelfR56JvKbxUHG8raaMFfs=;
-        b=GjbrlkxVDSXomvaoPcnL2O6AX1njgq8wd1EDiAtRmwu9LnBP9lx5M8RWtdN93Zh+hN
-         xlr2GlE+ruR50nzXyiR1RW43+WlkwfeqxACwa7D5+8vo78mdvzP4vB6C6zQjYzsRhrpx
-         0eo0LWrEv1f6zqvUNCx/vFX8Z0BFyVpWQn28yeyd5zDtdoTYNcuf7xt8iCwACocDm3xt
-         Jn686bbgp8s0o++fg+0wK5Vkpy9KUZHnlFoXs2ubxYuQcCd0iJRbyEpQXLrZF42L7TLx
-         lDlzxJT7Ifje6bbcTB5GEoM2sa42Qr+IHy6jkJ7S9YzsgKC8i1eNQ49ungHqr7QbJUUf
-         YmaA==
-X-Forwarded-Encrypted: i=1; AFNElJ+m527tx9kQ1+7SXUWewEnSXVtNaCGmiRgdeB935hxKN/XP3fNQD/pL74aFB718PjE9UzQboNhCQZFKBw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxdvhoARKLAgn8tRqWAaoFGdE4zN4yA3c5rRopW8kHWbAqwtWGV
-	8+G1daS3D4Q2Lr5g4Xd+cGCxmWAJaU2mwJi2pjnaXCkVGLQpDKfLqbEi
-X-Gm-Gg: Acq92OHanZ0IX0830YOBwLF0FVgCqRWxmXR38McyeY1h4WNZ/1dgCZsC+qZt9+kL2Xi
-	97C91YpFgj9uysyd83Zd3tlclKccmtGzIR952N+FSVut0LvctcFqG47eVNlFkOPvcsv+cd8V5Ou
-	0XBVLORmWPsEl39f0t7/0duaInGUmPdfYERZi0fu3C9Fewq9eK/p9irrwqQRsVC8TiFME0KKBMI
-	xaKSirzlP/WzK6isIJ/4HrIQ7e6ASYRhL5zh5hJJSVMBdAD5luzGvkXfceDD+atIti47RAK84o0
-	7RpshD8R0hPj4JrpfTRzMUa2svxGmvKIr2v0JW8AOwj5tQbUAdnG2Bcid9kKOGxfMTvWXsCZB1p
-	Ad5sAnd2jMslIcycl7MnqL5tPww1hdP8DI5Mp95yPLo+HeDZsOJ6xUxj0hEkcYEiGdqivdHG3FN
-	LhkSKTWoBHvlN28uTAu61OWQFOhzg=
-X-Received: by 2002:a05:6a00:2992:b0:82c:e692:1f91 with SMTP id d2e1a72fcca58-83f33df6ca2mr16284317b3a.39.1779115483338;
-        Mon, 18 May 2026 07:44:43 -0700 (PDT)
-Received: from [192.168.50.90] ([116.87.14.48])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-83f19c5b4bfsm15394428b3a.28.2026.05.18.07.44.40
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 18 May 2026 07:44:43 -0700 (PDT)
-Message-ID: <82a93174-6897-46af-8602-d7ac9d2d9dc3@gmail.com>
-Date: Mon, 18 May 2026 22:44:39 +0800
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ZF0yGD69"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BEF21C2BCB7;
+	Mon, 18 May 2026 14:55:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1779116147;
+	bh=Rp2c/jO3fy94X2q+Pn+ILY6Bw/8eA/nJRabz8wbOThU=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=ZF0yGD69lbBimNxsVRVHwmve9Ew9dXAYm/CJ4TKsQAtn9TMnVeg+eH2Dc2qz4pXN4
+	 fwc3OjDgAa8MtWJlAZG3BR8kY3gh1W7KeF0tbn3WThrJq2hG1ib1d9Zp9x4myUMksb
+	 VC4H5XOLBCwU94CdNPtefYvHzwg47jBn8I8bIepmBes2hPPmKVVPipcXdc8QwCcb86
+	 mGy3KHPu/xNZ3tAEYauuPTjX912bRRaT/hr0135sdrtzzVY2fH7AJKTBkadglmNAUy
+	 ABR3ZAEmhwK9rI8KgJlHBQ3lSl97vBqXa07K7ROVizD7hRAJbelrOCsfAJxOaU5Z0j
+	 AzZHtkk6xibDg==
+Message-ID: <a3926a25-e29f-4cfd-bc7d-483b3e575d4c@kernel.org>
+Date: Mon, 18 May 2026 16:55:44 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -68,33 +35,74 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v4 9/9] fstests: btrfs: test UUID consistency for clones
- with metadata_uuid
-To: Christoph Hellwig <hch@infradead.org>, Anand Jain <asj@kernel.org>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
- linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
- linux-f2fs@vger.kernel.org, amir73il@gmail.com, zlang@redhat.com,
- djwong@kernel.org
-References: <cover.1777357320.git.asj@kernel.org>
- <d079b3f7cce446b0c5bc0762226957b960c7a3ac.1777357321.git.asj@kernel.org>
- <agK9MC0ufkTJj-zu@infradead.org>
+Subject: Re: [PATCH v2] btrfs: zoned: always set max_active_zones for zoned
+ devices
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+ linux-btrfs@vger.kernel.org
+Cc: Naohiro Aota <naohiro.aota@wdc.com>
+References: <20260518135824.202728-1-johannes.thumshirn@wdc.com>
 Content-Language: en-US
-From: Anand Jain <anajain.sg@gmail.com>
-In-Reply-To: <agK9MC0ufkTJj-zu@infradead.org>
+From: Damien Le Moal <dlemoal@kernel.org>
+Organization: Western Digital Research
+In-Reply-To: <20260518135824.202728-1-johannes.thumshirn@wdc.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 12/5/26 13:40, Christoph Hellwig wrote:
-> On Tue, Apr 28, 2026 at 02:42:59PM +0800, Anand Jain wrote:
->> Btrfs uses the metadata_uuid superblock feature to change the on-disk UUID
->> without rewriting every block header. This patch adds a sanity check to
->> ensure UUID consistency when a filesystem with metadata_uuid enabled is
->> cloned.
+On 2026/05/18 15:58, Johannes Thumshirn wrote:
+> When a block device does not report a maximum number of open or active
+> zones, btrfs currently assigns BTRFS_DEFAULT_MAX_ACTIVE_ZONES (128) to the
+> internal limit, if the device has more than BTRFS_DEFAULT_MAX_ACTIVE_ZONES
+> zones.
 > 
-> xfs does the same.
+> But if the device has less than BTRFS_DEFAULT_MAX_ACTIVE_ZONES the
+> internal max_active_zones limit will stay at 0, even if the device has
+> zone resource limits. Furthermore, if the device has a total number of
+> zones that is less than BTRFS_DEFAULT_MAX_ACTIVE_ZONE, max_active_zones
+> should be set to at most the the number of zones.
+
+s/the the number of zones./the total number of zones of the device.
+
 > 
-> Can we abstract out the uuid change and generalize the test?
+> Also move the max_active_zone calculation and setting into a dedicated
+> helper, to shrink btrfs_get_dev_zone_info().
+> 
+> Fixes: 04147d8394e8 ("btrfs: zoned: limit active zones to max_open_zones")
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-Sure. let me try.
+[...]
 
-Thanks.
+> @@ -517,22 +527,21 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
+>  		goto out;
+>  	}
+>  
+> -	if (max_active_zones) {
+> -		if (unlikely(nactive > max_active_zones)) {
+> +	if (zone_info->max_active_zones) {
+
+Why this if ? max_active_zones now cannot ever be zero.
+
+> +		if (unlikely(nactive > zone_info->max_active_zones)) {
+>  			if (bdev_max_active_zones(bdev) == 0) {
+> -				max_active_zones = 0;
+>  				zone_info->max_active_zones = 0;
+>  				goto validate;
+>  			}
+>  			btrfs_err(device->fs_info,
+>  			"zoned: %u active zones on %s exceeds max_active_zones %u",
+>  					 nactive, rcu_dereference(device->name),
+> -					 max_active_zones);
+> +					 zone_info->max_active_zones);
+>  			ret = -EIO;
+>  			goto out;
+>  		}
+>  		atomic_set(&zone_info->active_zones_left,
+> -			   max_active_zones - nactive);
+> +			   zone_info->max_active_zones - nactive);
+>  		set_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &fs_info->flags);
+>  	}
+>  
+
+
+-- 
+Damien Le Moal
+Western Digital Research

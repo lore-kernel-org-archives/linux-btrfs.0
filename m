@@ -1,207 +1,179 @@
-Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fout-b8-smtp.messagingengine.com (fout-b8-smtp.messagingengine.com [202.12.124.151])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7DBA1367F3D
-	for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2026 22:08:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2C659352003
+	for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2026 23:23:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.151
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779228496; cv=none; b=RI4mz6ug0ZqICXxxK0O6DpNgLF61fJrxANj0lPsHnYKJCD9N7jfIHaEgHMOq0xNroeKPwXxsHywKl1i67ffkJBTAnSJQeefwZ1kknF725hNleHTEqnE8pNRFQs5R/6DuYTc2kXinVdis2h+JyzmejtHxwClY8LN05TDbzMSJmro=
+	t=1779233030; cv=none; b=CoFqwK8b7nko0mCr4xE+xb+K/mnQG94yl6scPmV3IReNfJtbpqK7i5RRAZhoCzKrt7zYhsnwjvMyDORdxkGTdhjvlUKDKcRLkOPjL/j6ZtIsGk0BBaCks3wXvyRxmygo5B1pLRCbK+fLptY2Cqvfj7r4L0zvkR5j4ujOnH5GL7w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779228496; c=relaxed/simple;
-	bh=3SYkAKMKmsj9uqnCFrPK7q+9UsRrRcHRsqrMZ0/L6js=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=CwlG8+uUfZFIHdcpbxin9dmIpHLZA2dl40xwjXyRl4GTOTVVqJ1HnqPPZ9W5khYBnilsX0jdxChCC4z5sUOUkxjlrfiVs86n9JL+336M1CtlMdAPcc0NLjIzJTe8Rz/wVojuwCUtKVvEJAaMLyHd9pXbXXKTfcdmPpkIa3o+3c0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=QeqZATId; arc=none smtp.client-ip=209.85.128.50
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1779233030; c=relaxed/simple;
+	bh=TDn7+VBVYXpIkstLhgBBtV6lOy694Jy7jMvwc52sI2I=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=tLJS7NWJaeLSTzaDYGpRc5WMouWOmU36A2FYzKOFKkrTx2jMmO0SbW5x4dE4Uw2f6RW0v2m9icmgB1VZ9W2d+zNqo01Bvme8Zt5BQwAQkqeUiHLOcx3Ki5BWgHMg64ihGsETvwKlsxosruXPkHPCRIcFOj7EQidJ3Cc/vBocDME=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=F4AhG8Cu; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=bvOnffv+; arc=none smtp.client-ip=202.12.124.151
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="QeqZATId"
-Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-4891e5b9c1fso35471095e9.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2026 15:08:14 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1779228493; x=1779833293; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=TTI4dCi8ZZO20f9p8Sjn/cedZ/ywBXVVUaaJuI86fdI=;
-        b=QeqZATIdUjyWV7b5SnAfAMW1glvnm/99/OTsExPqD7zD1KWxCATXj0zRTimG4knloZ
-         BDFnLEaamcRbha/DJP6x3sSbpDyWdJwfcdrcpXHkK2ziivL1zE/aGFS2NYMIpecNqyBt
-         w68d2K4AEDC6NUmA+xwW1+YAjxcs/EqEo2iM5ARnl1MfCH8+1AOSJDKrW1pvyy4GUXRu
-         pE/GgT0xwZ6HAy5+ZybTwgQ5r6S38JiZFG7hSKFM/YHE+9b5mMWhXdybFWs8TIRNMxrA
-         gDDcrAbLDWmVnp5IJDb+QnjVCc2QuVHfKzYBUuH/bi1kODj31Bi9BGaOEMVbSvkNM1DR
-         gOtQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779228493; x=1779833293;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=TTI4dCi8ZZO20f9p8Sjn/cedZ/ywBXVVUaaJuI86fdI=;
-        b=JI2xpSOADexHRmU+5BcKNzGjtMlTGMQJ8utrlwIylEL++HrRyINErvpzSLouaxWmLI
-         guoIHJbakQsnJS95501gBGj8TrOak1So5cOcSBhWoNmoRI0Ad8D6aDmYVRWrnFDPV4kV
-         6OdHDRES0GmOz7k5MAH+GEfGp2I9qmdXvcLCZit+MQP8t+/t3uDyxGQvsZi67I7G0Qnh
-         NS/5Fk9FuFYu1gmphuG5RgwAGUUG135PD4IQH0U8fRK1OnoT5EEnUFs+kiZB8/A0jCWp
-         nBetL8q+LzLomaYZaDUGQXlmhyqFnbRCoSnON0qJ1NNA17zSBbJrKD7TNSbQQ4noUgOm
-         bt4w==
-X-Gm-Message-State: AOJu0YyY+XC+6IkZHGI3u0mEAvAqUgcAyUd38QRRa5zQynyYfIoaUSGC
-	HJLQduX86pMSG4ScAoVr87nopEp87Qw+1rqHFSckSdqexaul6MXAb88hW01C95khPSA=
-X-Gm-Gg: Acq92OGoiXvXZgGo0TW0mANHFfNer0uKFJOTD+6qgA0dOmeH/kZqzTZBHzrowQvlNc3
-	B8rMTiCXn+fXUFNdZclTQHbvkZVVNkA43Lcr/Y53H+bd8p2p4laLMepaSoLtXlu13/pbS3N4mcL
-	K27MHmp8gm1aisRXZWg+kEB0Sm8GfT207XYpgJ1zqF1hZo4hgl0cwN5I2HZMaMLLkO3BG/n1W9V
-	gTdLyjHJpKN3rzfaz64cFIfvyaRMk8ypCm7MdTysVpj7cFCc98bXSyCgXUc3df/het8Auchp2en
-	J/KoOPc4xT4Uw4i3upLh7HF2Exj3c7IX2bwMMnv88LQXYlBI2ot0gaRZcKRO+C3MODmXj+KMlUB
-	OWxLGAP78zja1f1wjJF3WFOpMzF2IHD5AHHHeLl9DM2Zd7TK82AaEDk8AQcsWpW2TT06qseF4No
-	2iAzcG5anecy1UzL3Dv29NLuSg5dbsr12fUtgKm7Ms5RDmG2kcCV/zq0WtP+IyTvQEABFnR7cAV
-	DFRMEGN0MmQFzi25ACj+qlXlhfnvhNwvkC6ghTAkFnyQ1k=
-X-Received: by 2002:a05:600c:4692:b0:489:a4:e555 with SMTP id 5b1f17b1804b1-48fe6326445mr340218615e9.21.1779228492777;
-        Tue, 19 May 2026 15:08:12 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-83f19c77162sm20844701b3a.40.2026.05.19.15.08.07
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 19 May 2026 15:08:11 -0700 (PDT)
-Message-ID: <9d0bb7a4-7179-4d52-b3f4-0b67c0ed0352@suse.com>
-Date: Wed, 20 May 2026 07:38:02 +0930
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="F4AhG8Cu";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="bvOnffv+"
+Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
+	by mailfout.stl.internal (Postfix) with ESMTP id 88DDC1D000D9;
+	Tue, 19 May 2026 19:23:47 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-06.internal (MEProxy); Tue, 19 May 2026 19:23:47 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm1; t=1779233027; x=1779319427; bh=jgZHyqy4T5
+	uPCUd5WSymkYEB1aFjy1JN7JR9pVPnklE=; b=F4AhG8CuQKpVhNaVleFHcMDLmO
+	XBfNZeiYk/zBCYZR2AiZ7C9LLtTaNbk0I5QS58Sh+/wdI7kCfoVHEmBC645jD9kk
+	IBVpQ3xchZ6oaw13hQCcCPYrQoQNpX9yMxoKL3faaNMyFCwCze4mDK2vgMID621O
+	YTrPb9ynlu8P17tq3+CSwr91EZKD5Js33ebyHxNy7Dn3nr7Cd2OyA9fipsDfpSQI
+	afqoWRelSJlrBqH7fV1ZszkqXAhGhXmBjpyVbYgDf4rcBgy3+SinlhXhncCeWALU
+	K9KDLbcagcBPMsv3Mg6qYLhW8BL5v0SqNCooPVxYwTJ1j6lgDcwc2fsI/stg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
+	1779233027; x=1779319427; bh=jgZHyqy4T5uPCUd5WSymkYEB1aFjy1JN7JR
+	9pVPnklE=; b=bvOnffv+kr0N9K3jd1+kBjQ4p+U38H7Aq/bN7N3ebVGWsSun91B
+	BCLtFIe+I/DnSDrov9f3E2pmnUJ1k3vZTNKmTwevbqytAsEGjiSnGUFHDAbUWNBU
+	Rnnx+mBLUunzzOxQf9VB5hnSzpJNtENco93IYtuBAuHGhwF4Z/k3TzBy9OHkiIbG
+	vuDKmTODvnJc53dKXS7+4DyPXb4T9duxljbYTvuK913mW+FlcPIJ8VihwjM64+9R
+	AXTTCuuyKNvTSD1iE9NLrsFmXrIJ9XgHp7wtqRnreDfLl20zkKpKKEFMqTqrJrsQ
+	+bpNZey7zvEC1CK7Kv7++HSo6ghSbX3YFrw==
+X-ME-Sender: <xms:AvEMasnLLfz67zlOl2f3PSqrQDe99jg8lEULrFO8202-1eTZ1Xqrzw>
+    <xme:AvEMaq5VSz5wmplAjtzx5drxoXIG-XvOphb_KeSRGCFqXiqhQHlLBUqsaL2v7l3ha
+    hqsx0ZdXxLXDcjPFAqSB5zyjN1qeyjwuZTbSi-fHMsyk_4FW4-Pyp4>
+X-ME-Received: <xmr:AvEMag2NAqnVGzemauF-1mzR6qcUPkn4NxVLFGaY7-4gj3Lfg3dRzQhqAoxs5DSI2ffbVG_Sxk6NrcaEHPE5cflxIKg>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddugeeftdeiucetufdoteggodetrf
+    dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
+    rghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujf
+    gurhepfffhvfevuffkfhggtggujgesthdtredttddtvdenucfhrhhomhepuehorhhishcu
+    uehurhhkohhvuceosghorhhishessghurhdrihhoqeenucggtffrrghtthgvrhhnpeekvd
+    ekffejleelhfevhedvjeduhfejtdfhvdevieeiiedugfeugfdtjefgfeeljeenucevlhhu
+    shhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
+    hrrdhiohdpnhgspghrtghpthhtohepkedpmhhouggvpehsmhhtphhouhhtpdhrtghpthht
+    ohepjhhohhgrnhhnvghsrdhthhhumhhshhhirhhnseifuggtrdgtohhmpdhrtghpthhtoh
+    eplhhinhhugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthho
+    pehfughmrghnrghnrgesshhushgvrdgtohhmpdhrtghpthhtohepughsthgvrhgsrgessh
+    hushgvrdgtohhmpdhrtghpthhtohephhgrnhhsrdhhohhlmhgsvghrghesfigutgdrtgho
+    mhdprhgtphhtthhopegulhgvmhhorghlsehkvghrnhgvlhdrohhrghdprhgtphhtthhope
+    hnrghohhhirhhordgrohhtrgesfigutgdrtghomhdprhgtphhtthhopehhtghhsehlshht
+    rdguvg
+X-ME-Proxy: <xmx:AvEMalHatANGu0AdZFY2ZWFf-Z451GZOEzAz5EfuU7UyY7fZgOKIog>
+    <xmx:AvEMavhIELm30aa_2V25yQRhjLUuQbwLGzGrNDOK7zn41vYRm4XTdw>
+    <xmx:AvEMaoDf1aLiGyOeg_JXyZ0ah61gz_s8cAwBgxIGvEkChtlxdVE8xQ>
+    <xmx:AvEMahR6oAjWNcWBMi5IV9DInO70TnwKpRBZdiZCZyaGww3t-SKfTA>
+    <xmx:A_EMaoCh3vD9Bu60OghuUZiTSPmPLLs5HPOsjTcdLpVs-pqCd20mbjjR>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
+ 19 May 2026 19:23:46 -0400 (EDT)
+Date: Tue, 19 May 2026 16:23:45 -0700
+From: Boris Burkov <boris@bur.io>
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
+	David Sterba <dsterba@suse.com>,
+	Hans Holmberg <Hans.Holmberg@wdc.com>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Naohiro Aota <naohiro.aota@wdc.com>, Christoph Hellwig <hch@lst.de>
+Subject: Re: [PATCH v2 3/5] btrfs: zoned: always set data_relocation_bg
+Message-ID: <20260519232345.GA718937@zen.localdomain>
+References: <20260519154902.223445-1-johannes.thumshirn@wdc.com>
+ <20260519154902.223445-4-johannes.thumshirn@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] generic: add a test case for fallocate i_size extension
-To: fdmanana@kernel.org, fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-References: <a92aea73a82100f1dfde58e6f64191bed1d7f41d.1779210827.git.fdmanana@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <a92aea73a82100f1dfde58e6f64191bed1d7f41d.1779210827.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260519154902.223445-4-johannes.thumshirn@wdc.com>
 
+On Tue, May 19, 2026 at 05:49:00PM +0200, Johannes Thumshirn wrote:
+> When searching for a data relocation block-group on mount,
+> btrfs_zoned_reserve_data_reloc_bg() is looking for the first empty DATA
+> block-group. But it first checks if the block-group is empty and if yes
+> continues the search, and then checks if it is the first DATA block-group.
+> 
+> Reverse the order, first check if it is the first DATA block-group found
+> and skip, then check if the block-group is empty. This enusres that there
+> is always a DATA block-group set as data_relocation_bg in the filesystem.
 
+Can you help me understand why you want to skip the first one? Is it bad
+if the next real allocation just has to allocate a chunk? Why does the
+data_sinfo need a fully empty block_group rather than just one with some
+usable space?
 
-在 2026/5/20 02:44, fdmanana@kernel.org 写道:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Test an i_size expanding fallocate into a range beyond current i_size that
-> already has a preallocated extent, with an unmount and mount after each
-> fallocate to verify that no metadata (i_size) and extents were lost.
-> 
-> This used to fail on btrfs when not using the no-holes feature (which is
-> a default since btrfs-progs 5.15) before this recent kernel fix:
-> 
->    c562ba61fc5e ("btrfs: fix incorrect i_size after remount caused by KEEP_SIZE prealloc gap")
-> 
-> So in order to reproduce the failure when using an unpatched kernel and
-> a btrfs-progs >= 5.15, one must run the test with:
-> 
->    MKFS_OPTIONS="-O ^no-holes"
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Now aside from the general question, I still don't get what this change
+does or is for, it kinda still feels like a no-op. Can you be more clear
+about the case you are fixing?
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Previous logic:
+if non-empty: skip
+else (empty): if (first): clear first, skip
+So you skip until you see the second empty bg
+
+New logic:
+if first and empty: clear first, skip
+if non-empty: skip
+So you also skip until you see the second empty bg?
+
+Is the relevance once you loop around after allocating a chunk or
+something?
+
+Assuming I'm not missing something, I think it would make sense to simplify
+this algorithm to something like:
+
+1. Try to steal the first empty bg.
+
+2a. If stealing succeeds, do some arithmetic on the data_sinfo.
+    If zone usable is 0 (or < a chunk?), allocate a fresh bg into
+    data_sinfo. If no arithmetic could ever work, do a second pass?
+
+2b. If stealing fails (no empty bgs at all), allocate a fresh bg into
+    the data reloc sinfo.
+
+Also, when we do have to allocate something in the reloc sinfo, I don't
+really see the value of going to again: with the space_info set to the
+reloc sinfo instead of just setting data_reloc_bg to the freshly
+allocated thing directly.
 
 Thanks,
-Qu
+Boris
 
-> ---
->   tests/generic/795     | 52 +++++++++++++++++++++++++++++++++++++++++++
->   tests/generic/795.out |  5 +++++
->   2 files changed, 57 insertions(+)
->   create mode 100755 tests/generic/795
->   create mode 100644 tests/generic/795.out
 > 
-> diff --git a/tests/generic/795 b/tests/generic/795
-> new file mode 100755
-> index 00000000..299c8134
-> --- /dev/null
-> +++ b/tests/generic/795
-> @@ -0,0 +1,52 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> +#
-> +# FS QA Test 795
-> +#
-> +# Test an i_size expanding fallocate into a range beyond current i_size that
-> +# already has a preallocated extent, with an unmount and mount after each
-> +# fallocate to verify that no metadata (i_size) and extents were lost.
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick prealloc fiemap
+> Singed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  fs/btrfs/zoned.c | 8 ++++----
+>  1 file changed, 4 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index 16dd87aa06f2..dcdd7f8d8406 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -2784,14 +2784,14 @@ void btrfs_zoned_reserve_data_reloc_bg(struct btrfs_fs_info *fs_info)
+>  again:
+>  	bg_list = &space_info->block_groups[index];
+>  	list_for_each_entry(bg, bg_list, list) {
+> -		if (bg->alloc_offset != 0)
+> -			continue;
+> -
+> -		if (first) {
+> +		if (first && bg->alloc_offset == 0) {
+>  			first = false;
+>  			continue;
+>  		}
+>  
+> +		if (bg->alloc_offset != 0)
+> +			continue;
 > +
-> +. ./common/punch # for _filter_fiemap
-> +
-> +_require_scratch
-> +_require_xfs_io_command "falloc" "-k"
-> +_require_xfs_io_command "fiemap"
-> +
-> +_fixed_by_fs_commit btrfs c562ba61fc5e \
-> +	"btrfs: fix incorrect i_size after remount caused by KEEP_SIZE prealloc gap"
-> +
-> +_scratch_mkfs >>$seqres.full 2>&1
-> +_scratch_mount
-> +
-> +# The fiemap results in the golden output requires file allocations to align to
-> +# 1M boundaries.
-> +_require_congruent_file_oplen $SCRATCH_MNT 1048576
-> +
-> +# Create our file with a size of 0 and a prealloc extent in the range [4M, 8M].
-> +$XFS_IO_PROG -f -c "falloc -k 4M 4M" $SCRATCH_MNT/foo
-> +
-> +# Unmount and mount again to remove any in memory state of the inode. We will
-> +# verify later that neither metadata nor extents were lost during unmount.
-> +_scratch_cycle_mount
-> +
-> +# Do an i_size expanding fallocate that overlaps the previous prealloc range
-> +# and extents past it. This increases the file size to 9M and allocates an
-> +# extent in the range [8M, 9M].
-> +$XFS_IO_PROG -c "falloc 7M 2M" $SCRATCH_MNT/foo
-> +
-> +# Unmount and mount again to remove any in memory state of the inode. We will
-> +# verify later that neither metadata nor extents were lost during unmount.
-> +_scratch_cycle_mount
-> +
-> +# File size should be 9M and we should have unwritten extents in range [4M, 9M].
-> +echo "File size after cycle mounts: $(stat -c %s $SCRATCH_MNT/foo)"
-> +echo "Fiemap output:"
-> +$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foo | _filter_fiemap
-> +
-> +# Success, all done.
-> +_exit 0
-> diff --git a/tests/generic/795.out b/tests/generic/795.out
-> new file mode 100644
-> index 00000000..b2f78ac0
-> --- /dev/null
-> +++ b/tests/generic/795.out
-> @@ -0,0 +1,5 @@
-> +QA output created by 795
-> +File size after cycle mounts: 9437184
-> +Fiemap output:
-> +0: [0..8191]: hole
-> +1: [8192..18431]: unwritten
-
+>  		if (space_info == data_sinfo) {
+>  			/* Migrate the block group to the data relocation space_info. */
+>  			struct btrfs_space_info *reloc_sinfo = data_sinfo->sub_group[0];
+> -- 
+> 2.54.0
+> 

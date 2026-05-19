@@ -1,124 +1,119 @@
-Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 739F33CF032
-	for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2026 07:17:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.141
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3C753E274A;
+	Tue, 19 May 2026 08:24:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779175025; cv=none; b=JgOeZUyYCWjqq6wOF5DcNHiqW2ywTmSqWZ5kCW7mv4Iz9lgR05VnXXzDu67nUKSf/55PTwWHImkNll7TUoOPfXXdQbAaaiTWka6tRW6YhGjrfxZlrDzRrzMZOyhuYQHbIMYE3l7qtFTinhtBgDpRRmSbCQxzwM2va6y9isRQkH0=
+	t=1779179086; cv=none; b=KaDA1pKHe5/A0Z/W5PuVQG+D4F2IucC4k0CST1ttwO6/knjB/w19+tj/0gChVqpmb5MKxgBg3QZSw9LabUcXzORaLXYBXLFBNNEFqBzTBf39sSAhw/UviwNAk788cVlO0LA51sthziuitKO6+aMwVIkk4lYRzp3sXmH/r3OkiJE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779175025; c=relaxed/simple;
-	bh=IDOWPMx9poZUU5ejhELrp/9OFob5hzfK4NbW0Ujqt1g=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=gPpieRvpgdeMR9YdSjbZ3gKdgF0tcqpiqIT5/L9txac+gO6npWHlWDCYOhvdGLCxKCt3pJaG99ESJloa5r3tW5g4XN3LTCjom9gN8/jhyJaO2YESZzwD6ML7BdIPjrb0ls0aNVK/Co0ZpS/6qun21NuPuKL7BebtjSFRvzG89Os=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=NAc53O5a; arc=none smtp.client-ip=216.71.153.141
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="NAc53O5a"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1779175021; x=1810711021;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=IDOWPMx9poZUU5ejhELrp/9OFob5hzfK4NbW0Ujqt1g=;
-  b=NAc53O5a6rq19LKgPn+VPWQfREyiCjMyybVfBy6T3NUlBQtvW8KHWWM/
-   xjWfCzkLQccOUG5WI5LNY7cccE/nj0VVRYcmKYLLaY5VhVV+udCwCOg7q
-   dPOoTKCg2KP55piLL7F2+fvxuaiPVBmgM8jizdoBsNn9Vazu88Oese3Qr
-   qqcyvRi3Fu3E8Yr1Ld0b8Cm6Hhq+Fzv+9wuI/aIT/HQoPgi5nxyyI9iHr
-   PxDXflGsjBlD1yns/zoa0MlPDQydk7SCESPeuYIvAO+yWkAIGaA/gx2cm
-   8YYaJgoZL6VqiiD75tWMarpibn5gBKkZX1B/bLKa231GP0NCczXPFy7uM
-   g==;
-X-CSE-ConnectionGUID: 5c4VoEy+SJGQPs2T3Yp1AQ==
-X-CSE-MsgGUID: /4K2yXi6QwiVHazfTB3fTA==
-X-IronPort-AV: E=Sophos;i="6.23,243,1770566400"; 
-   d="scan'208";a="147243130"
-Received: from unknown (HELO uls-op-esad2-o.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 19 May 2026 15:16:51 +0800
-X-CSE-ConnectionGUID: n4FnmtajQO6aoSveWb84YA==
-X-CSE-MsgGUID: HQVAaH76Q5W4Hu/B+ugEdA==
-IronPort-SDR: 6a0c0e50_BpjmLwIzUEOGEJm+5qT/71gMu3HkVszIUvUl31HgZZBunhz
- 9+eECchiXmd7sXNCNInVwOqGLt8yWxOvUx9ba9w==
-Received: from uls-op-esai2-o.wdc.com ([10.248.3.38])
-  by uls-op-esad2-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 19 May 2026 00:16:32 -0700
-X-CSE-ConnectionGUID: cAyWXDOLR2yw71qaXsZCgA==
-X-CSE-MsgGUID: jjLoCRyGTZOeY1rd9srquA==
-WDCIronportException: Internal
-Received: from wdap-io7kepqecw.ad.shared (HELO neo.fritz.box) ([10.224.19.18])
-  by uls-op-esai2-o.wdc.com with ESMTP; 19 May 2026 00:16:30 -0700
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Naohiro Aota <naohiro.aota@wdc.com>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v3 2/2] btrfs: zoned: reflow max_active vs active checking
-Date: Tue, 19 May 2026 09:16:21 +0200
-Message-ID: <20260519071621.56490-3-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <20260519071621.56490-1-johannes.thumshirn@wdc.com>
-References: <20260519071621.56490-1-johannes.thumshirn@wdc.com>
+	s=arc-20240116; t=1779179086; c=relaxed/simple;
+	bh=WddjLMCxE2Qnvqhi02yA5fGkqdgfSy+rWBfhjD3zYLU=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=QBOE/APCUu0YG3E97NYW5hZo5TAL5u115ExRuHRL8QgdrDf+QoBEOZbXjyMQAjfhn+spBGZUQZkvCjbVbfRDT2xiO2nlnBLsWLWhE+PfOcCJF4QWCtnwSEeH921w+EalC94QFb5OPHCHkjCaPR1sbUtfrn30J2hpH0UfUFnPueg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id C9A0568D0D; Tue, 19 May 2026 10:24:33 +0200 (CEST)
+Date: Tue, 19 May 2026 10:24:32 +0200
+From: Christoph Hellwig <hch@lst.de>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Christoph Hellwig <hch@lst.de>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Will Deacon <will@kernel.org>, Ard Biesheuvel <ardb@kernel.org>,
+	Huacai Chen <chenhuacai@kernel.org>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
+	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
+	Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	Sven Schnelle <svens@linux.ibm.com>,
+	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	Herbert Xu <herbert@gondor.apana.org.au>,
+	Dan Williams <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
+	Song Liu <song@kernel.org>, Yu Kuai <yukuai@fnnas.com>,
+	Li Nan <linan122@huawei.com>, linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
+	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org, linux-crypto@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-arch@vger.kernel.org,
+	linux-raid@vger.kernel.org
+Subject: Re: cleanup the RAID6 P/Q library v3
+Message-ID: <20260519082432.GA14956@lst.de>
+References: <20260518051804.462141-1-hch@lst.de> <20260518141205.c100f76eec5f58e78bbbf7af@linux-foundation.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260518141205.c100f76eec5f58e78bbbf7af@linux-foundation.org>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-Reflow the checking of max_active_zones vs number of active zones, this
-simplifies the code and gets rid of a goto.
+On Mon, May 18, 2026 at 02:12:05PM -0700, Andrew Morton wrote:
+> Cool, I'll add this to mm.git's mm-nonmm-unstable branch for some
+> linux-next testing.
+> 
+> AI review found quite a lot to talk about:
+> 	https://sashiko.dev/#/patchset/20260518051804.462141-1-hch@lst.de
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/zoned.c | 32 +++++++++++++++++++-------------
- 1 file changed, 19 insertions(+), 13 deletions(-)
+Not a lot of it is very useful, though:
 
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index b1d0e2414178..9653681a6954 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -528,22 +528,28 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 	}
+raid6: turn the userspace test harness into a kunit test
+
+ - complains about basically adding need_resched, which we've decided
+   we won't do now that we have lazy preempt.  This is probably going
+   to come up in lots of places because of the old training data
+
+raid6: use named initializers for struct raid6_calls
+
+ - whining about keeping totally pointless comments
  
- 	if (unlikely(nactive > zone_info->max_active_zones)) {
--		if (bdev_max_active_zones(bdev) == 0) {
--			zone_info->max_active_zones = 0;
--			goto validate;
-+		if (bdev_max_active_zones(bdev) > 0) {
-+			btrfs_err(device->fs_info,
-+					"zoned: %u active zones on %s exceeds max_active_zones %u",
-+					nactive, rcu_dereference(device->name),
-+					zone_info->max_active_zones);
-+			ret = -EIO;
-+			goto out;
- 		}
--		btrfs_err(device->fs_info,
--				"zoned: %u active zones on %s exceeds max_active_zones %u",
--				nactive, rcu_dereference(device->name),
--				zone_info->max_active_zones);
--		ret = -EIO;
--		goto out;
-+
-+		/*
-+		 * This is for backwards compatibility with old filesystems that
-+		 * have a lot of active zones because the device doesn't report
-+		 * a maximum number of zones and we previously didn't care for
-+		 * the limit,
-+		 */
-+		zone_info->max_active_zones = 0;
-+	} else {
-+		atomic_set(&zone_info->active_zones_left,
-+				zone_info->max_active_zones - nactive);
-+		set_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &fs_info->flags);
- 	}
--	atomic_set(&zone_info->active_zones_left,
--			zone_info->max_active_zones - nactive);
--	set_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &fs_info->flags);
- 
--validate:
- 	/* Validate superblock log */
- 	nr_zones = BTRFS_NR_SB_LOG_ZONES;
- 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
--- 
-2.54.0
+raid6: warn when using less than four devices
 
+ - complains about warning for btrfs which is clearly documented as the
+   outcome in the commit log
+ - and also complaining that the enforcement isn't hard enough, but the
+   WARN_ON is the best we can do here
+
+raid6: rework registration of optimized algorithms
+
+ - less registration causing less kunit coverage:  that's intentional
+   as it keeps testing time down and similar to other arch optimized
+   tests in crc and crypto code.  It also doesn't really reduce
+   coverage as before this series there was none.
+
+raid6: use static_call for gen_syndrom and xor_syndrom
+
+ - doesn't seem to know that bool fails when an initcall fails
+
+raid6_kunit: use KUNIT_CASE_PARAM
+
+ - whining about the code style.  I don't really like it either,
+   but the kunit case stuff is a mess
+
+There are a few somewhat useful things, though.
+
+raid6: hide internals
+
+ - yes, the -I is duplicate and should be fixed
+
+raid6: rework registration of optimized algorithms
+
+ - avx2 instead of avx512 is probably the right thing for no
+   benchmarking, but if it was intentional (it wasn't), that should
+   be document.  So I'll just switch back to the previous version to
+   keep the state of the art

@@ -1,119 +1,109 @@
-Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3C753E274A;
-	Tue, 19 May 2026 08:24:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6AF323E1CFB
+	for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2026 08:36:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779179086; cv=none; b=KaDA1pKHe5/A0Z/W5PuVQG+D4F2IucC4k0CST1ttwO6/knjB/w19+tj/0gChVqpmb5MKxgBg3QZSw9LabUcXzORaLXYBXLFBNNEFqBzTBf39sSAhw/UviwNAk788cVlO0LA51sthziuitKO6+aMwVIkk4lYRzp3sXmH/r3OkiJE=
+	t=1779179798; cv=none; b=ddxQLcSewIp/Vq9SqEPY7CJzTow1hUen57mip5Mq2QcLZa31wkH8Rytg0b4w0Gjd516NS4K1QXDh00AQJfoH9MLAtDjh69D5kuLZgNJZo9TAiOY2u4tkrSEZbszO9UGx5axlL+c00PtEE8ZiYFmQ4oeF5dDqQBukmaa4RGpBBJA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779179086; c=relaxed/simple;
-	bh=WddjLMCxE2Qnvqhi02yA5fGkqdgfSy+rWBfhjD3zYLU=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=QBOE/APCUu0YG3E97NYW5hZo5TAL5u115ExRuHRL8QgdrDf+QoBEOZbXjyMQAjfhn+spBGZUQZkvCjbVbfRDT2xiO2nlnBLsWLWhE+PfOcCJF4QWCtnwSEeH921w+EalC94QFb5OPHCHkjCaPR1sbUtfrn30J2hpH0UfUFnPueg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
-Received: by verein.lst.de (Postfix, from userid 2407)
-	id C9A0568D0D; Tue, 19 May 2026 10:24:33 +0200 (CEST)
-Date: Tue, 19 May 2026 10:24:32 +0200
-From: Christoph Hellwig <hch@lst.de>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Christoph Hellwig <hch@lst.de>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Will Deacon <will@kernel.org>, Ard Biesheuvel <ardb@kernel.org>,
-	Huacai Chen <chenhuacai@kernel.org>,
-	WANG Xuerui <kernel@xen0n.name>,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Nicholas Piggin <npiggin@gmail.com>,
-	"Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
-	Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
-	Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>,
-	Heiko Carstens <hca@linux.ibm.com>,
-	Vasily Gorbik <gor@linux.ibm.com>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Christian Borntraeger <borntraeger@linux.ibm.com>,
-	Sven Schnelle <svens@linux.ibm.com>,
-	Thomas Gleixner <tglx@kernel.org>, Ingo Molnar <mingo@redhat.com>,
-	Borislav Petkov <bp@alien8.de>,
-	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-	"H. Peter Anvin" <hpa@zytor.com>,
-	Herbert Xu <herbert@gondor.apana.org.au>,
-	Dan Williams <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
-	Song Liu <song@kernel.org>, Yu Kuai <yukuai@fnnas.com>,
-	Li Nan <linan122@huawei.com>, linux-kernel@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
-	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-	linux-s390@vger.kernel.org, linux-crypto@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-arch@vger.kernel.org,
-	linux-raid@vger.kernel.org
-Subject: Re: cleanup the RAID6 P/Q library v3
-Message-ID: <20260519082432.GA14956@lst.de>
-References: <20260518051804.462141-1-hch@lst.de> <20260518141205.c100f76eec5f58e78bbbf7af@linux-foundation.org>
+	s=arc-20240116; t=1779179798; c=relaxed/simple;
+	bh=ZbLLZieL5zXEO8gr9YZdCmMuLPcU+aoPiCzDIaDyLw4=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=nJPLpuDT8z+3r/5VyGkcFtx8ChnqTBCwaqzT7MIz1cex5B2GppRZ8bMZzUAHaZiI7z6WvB0cGxL6kdMtVb+kmYvJLSrUtLYHYyGFixcv9sNRNO0d8osOzCs0gxeDAdP+dPRCwrR3xo9DmNeBa8HvFXNrpSjJ8ucdeWXIPrg6Hcc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QJhNLuKj; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QJhNLuKj"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 58264C2BCB3;
+	Tue, 19 May 2026 08:36:37 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1779179798;
+	bh=ZbLLZieL5zXEO8gr9YZdCmMuLPcU+aoPiCzDIaDyLw4=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=QJhNLuKjI1sPsVNP2h/NVnAbZzgiirP4LDUV3uzqjejUI+hwsw6c3FKX3JlowM2OO
+	 4uZ0T7ZjiGeGFuyP2KkG915qd93K4rUBYO7WvBaA0UkwazoYOUqmwRcFOuFqhDoja5
+	 OSxddpzKx4BmMSpXwijsWassCh89PlXNTC4SQ6pbD0fzM3ns14tFhlt6jhUxvF3woq
+	 1LzygzDY9TodEapgfzJ1Kj8ukfpe73qNXz83QvGT3kgETkKRY7m4/EQuz+lS1SCZ7f
+	 2ICymB5GsTDBl4MSvM+Dlg4sEZ1VjXQSOmcYaoGkWl7fhAi3cykzl2aD5xgaGvizie
+	 5X2WQVYuFGOnw==
+Message-ID: <8cde6b00-f80e-4f94-bce1-821126cf6c88@kernel.org>
+Date: Tue, 19 May 2026 10:36:35 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260518141205.c100f76eec5f58e78bbbf7af@linux-foundation.org>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v3 1/2] btrfs: zoned: always set max_active_zones for
+ zoned devices
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+ linux-btrfs@vger.kernel.org
+Cc: Naohiro Aota <naohiro.aota@wdc.com>
+References: <20260519071621.56490-1-johannes.thumshirn@wdc.com>
+ <20260519071621.56490-2-johannes.thumshirn@wdc.com>
+Content-Language: en-US
+From: Damien Le Moal <dlemoal@kernel.org>
+Organization: Western Digital Research
+In-Reply-To: <20260519071621.56490-2-johannes.thumshirn@wdc.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Mon, May 18, 2026 at 02:12:05PM -0700, Andrew Morton wrote:
-> Cool, I'll add this to mm.git's mm-nonmm-unstable branch for some
-> linux-next testing.
+On 2026/05/19 9:16, Johannes Thumshirn wrote:
+> When a block device does not report a maximum number of open or active
+> zones, btrfs currently assigns BTRFS_DEFAULT_MAX_ACTIVE_ZONES (128) to the
+> internal limit, if the device has more than BTRFS_DEFAULT_MAX_ACTIVE_ZONES
+> zones.
 > 
-> AI review found quite a lot to talk about:
-> 	https://sashiko.dev/#/patchset/20260518051804.462141-1-hch@lst.de
+> But if the device has less than BTRFS_DEFAULT_MAX_ACTIVE_ZONES the
+> internal max_active_zones limit will stay at 0, even if the device has
+> zone resource limits. Furthermore, if the device has a total number of
+> zones that is less than BTRFS_DEFAULT_MAX_ACTIVE_ZONE, max_active_zones
+> should be set to at most the the number of zones.
+> 
+> Also move the max_active_zone calculation and setting into a dedicated
+> helper, to shrink btrfs_get_dev_zone_info().
+> 
+> Fixes: 04147d8394e8 ("btrfs: zoned: limit active zones to max_open_zones")
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-Not a lot of it is very useful, though:
+Looks OK to me. One nit below.
+Regardless:
 
-raid6: turn the userspace test harness into a kunit test
+Reviewed-by: Damien Le Moal <dlemoal@kernel.org>
 
- - complains about basically adding need_resched, which we've decided
-   we won't do now that we have lazy preempt.  This is probably going
-   to come up in lots of places because of the old training data
+> +	if (unlikely(nactive > zone_info->max_active_zones)) {
+> +		if (bdev_max_active_zones(bdev) == 0) {
+> +			zone_info->max_active_zones = 0;
+> +			goto validate;
 
-raid6: use named initializers for struct raid6_calls
+We need a comment to explain this one. Also, I think it would be good to warn
+about it, because that potentially would leave a number of partially written
+zones that is higher than the max open zones limit (if the device has such
+limit), whihc would be bad for performance.
 
- - whining about keeping totally pointless comments
- 
-raid6: warn when using less than four devices
+Ideally, we should warn telling the user to run fsck or some other repair
+command that gets the FS out of this unusual state.
 
- - complains about warning for btrfs which is clearly documented as the
-   outcome in the commit log
- - and also complaining that the enforcement isn't hard enough, but the
-   WARN_ON is the best we can do here
+>  		}
+> -		atomic_set(&zone_info->active_zones_left,
+> -			   max_active_zones - nactive);
+> -		set_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &fs_info->flags);
+> +		btrfs_err(device->fs_info,
+> +				"zoned: %u active zones on %s exceeds max_active_zones %u",
+> +				nactive, rcu_dereference(device->name),
+> +				zone_info->max_active_zones);
+> +		ret = -EIO;
+> +		goto out;
+>  	}
+> +	atomic_set(&zone_info->active_zones_left,
+> +			zone_info->max_active_zones - nactive);
+> +	set_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &fs_info->flags);
+>  
+>  validate:
+>  	/* Validate superblock log */
 
-raid6: rework registration of optimized algorithms
 
- - less registration causing less kunit coverage:  that's intentional
-   as it keeps testing time down and similar to other arch optimized
-   tests in crc and crypto code.  It also doesn't really reduce
-   coverage as before this series there was none.
-
-raid6: use static_call for gen_syndrom and xor_syndrom
-
- - doesn't seem to know that bool fails when an initcall fails
-
-raid6_kunit: use KUNIT_CASE_PARAM
-
- - whining about the code style.  I don't really like it either,
-   but the kunit case stuff is a mess
-
-There are a few somewhat useful things, though.
-
-raid6: hide internals
-
- - yes, the -I is duplicate and should be fixed
-
-raid6: rework registration of optimized algorithms
-
- - avx2 instead of avx512 is probably the right thing for no
-   benchmarking, but if it was intentional (it wasn't), that should
-   be document.  So I'll just switch back to the previous version to
-   keep the state of the art
+-- 
+Damien Le Moal
+Western Digital Research

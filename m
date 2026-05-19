@@ -1,137 +1,207 @@
-Received: from mail-ot1-f78.google.com (mail-ot1-f78.google.com [209.85.210.78])
+Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 35B07369236
-	for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2026 20:54:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.78
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7DBA1367F3D
+	for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2026 22:08:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779224079; cv=none; b=cBBSsJn41uVbMpoaI+e0TyUNNVqvMMkSlR5t3Vu76CUeWOcLWhgkzWrkCpzcz9+tzQQZf7Wh5edxzffyOkasPI2hh1PIuRNQoCNWqVa4YrQ4T7xdAy35DctoXasiOnYqbJ0zj9paA1yX3yQoPdQIFcwwmjRhHsSAKBkcVvzCbnQ=
+	t=1779228496; cv=none; b=RI4mz6ug0ZqICXxxK0O6DpNgLF61fJrxANj0lPsHnYKJCD9N7jfIHaEgHMOq0xNroeKPwXxsHywKl1i67ffkJBTAnSJQeefwZ1kknF725hNleHTEqnE8pNRFQs5R/6DuYTc2kXinVdis2h+JyzmejtHxwClY8LN05TDbzMSJmro=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779224079; c=relaxed/simple;
-	bh=GG4n9ZF7xXSnh0vRJ4R7xLxB52bmZjl5ZnkAy/2tKtM=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=adJbQHQ2P7Co5SzjCHRSYCCBo9fXteSMy7aKTCBoFAER7Ad2CElXdjhNfcAeZn40rAdYjFc98XpKFKhueCpcDV9xEqBnL3PT8+Ig6aCCceEgwg5PYeWFTUNfGsA1cojXO9qud703R6x4PFdM2L/DvHdvaryRufDngWYDBdOk0X8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.210.78
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-ot1-f78.google.com with SMTP id 46e09a7af769-7e3a338673eso12815490a34.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2026 13:54:38 -0700 (PDT)
+	s=arc-20240116; t=1779228496; c=relaxed/simple;
+	bh=3SYkAKMKmsj9uqnCFrPK7q+9UsRrRcHRsqrMZ0/L6js=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=CwlG8+uUfZFIHdcpbxin9dmIpHLZA2dl40xwjXyRl4GTOTVVqJ1HnqPPZ9W5khYBnilsX0jdxChCC4z5sUOUkxjlrfiVs86n9JL+336M1CtlMdAPcc0NLjIzJTe8Rz/wVojuwCUtKVvEJAaMLyHd9pXbXXKTfcdmPpkIa3o+3c0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=QeqZATId; arc=none smtp.client-ip=209.85.128.50
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="QeqZATId"
+Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-4891e5b9c1fso35471095e9.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 May 2026 15:08:14 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1779228493; x=1779833293; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=TTI4dCi8ZZO20f9p8Sjn/cedZ/ywBXVVUaaJuI86fdI=;
+        b=QeqZATIdUjyWV7b5SnAfAMW1glvnm/99/OTsExPqD7zD1KWxCATXj0zRTimG4knloZ
+         BDFnLEaamcRbha/DJP6x3sSbpDyWdJwfcdrcpXHkK2ziivL1zE/aGFS2NYMIpecNqyBt
+         w68d2K4AEDC6NUmA+xwW1+YAjxcs/EqEo2iM5ARnl1MfCH8+1AOSJDKrW1pvyy4GUXRu
+         pE/GgT0xwZ6HAy5+ZybTwgQ5r6S38JiZFG7hSKFM/YHE+9b5mMWhXdybFWs8TIRNMxrA
+         gDDcrAbLDWmVnp5IJDb+QnjVCc2QuVHfKzYBUuH/bi1kODj31Bi9BGaOEMVbSvkNM1DR
+         gOtQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779224077; x=1779828877;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=Sy++itqFq3hKWdnmcSX1X+a753tpwHW/M0150XNdXGU=;
-        b=FB61qA36til0ptHC+zE5TFL1DZnW1pSmcTe604+XA0OS1QpKgrjymvA3/nV/+dbIQw
-         G6fbUMMoUrNSYE/LjS8s7UDP1z9hCjH2snrw6KdxHAmDBFnDM7wDYRIsJZcsw8wdjoVD
-         iWseH1/D9C3klwzm7u+EPYhFLWoti5lAsEhkdjJNAAGKuzaSsGwU06ABLGi1QycIrgE9
-         3D9jl7tsITqJ7DxxbLHbtjtKdlODlv8RQl76D0igNRVh+39nBNP9Zc0uaUlDy3uB20Ql
-         3XpCLu+SzvtVqlKCJifmVEZ5S8CdNggzMWc3D5x8PcLlJtbbcVZmPYQ2DfGMkwPN8qJr
-         0Fag==
-X-Forwarded-Encrypted: i=1; AFNElJ9jlfMKxhZc4kfyLEjWssqddWM0ZQS6ftp19ohI7uDiCJpnpBJE4CQbNVKZDxbRt59+emmIJeykNdg55A==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yx6z4Gy9nTpLSNg7EWez7pikxWhdQY4hgVMo1e8SzXWHJrXf5Dl
-	Iru3icjaq7BkQW4CE8rgWJKL1YQaOL0gQM0IFr2wXrpithtnKBKgBBmhOTDMbZYQL+eDiLrQZ9N
-	0pSA0I2eeUz2uVqsS3zjRmfLwbGWuYuhOJMJ6Uy7d0GFeo1gop14DfDWCLek=
+        d=1e100.net; s=20251104; t=1779228493; x=1779833293;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=TTI4dCi8ZZO20f9p8Sjn/cedZ/ywBXVVUaaJuI86fdI=;
+        b=JI2xpSOADexHRmU+5BcKNzGjtMlTGMQJ8utrlwIylEL++HrRyINErvpzSLouaxWmLI
+         guoIHJbakQsnJS95501gBGj8TrOak1So5cOcSBhWoNmoRI0Ad8D6aDmYVRWrnFDPV4kV
+         6OdHDRES0GmOz7k5MAH+GEfGp2I9qmdXvcLCZit+MQP8t+/t3uDyxGQvsZi67I7G0Qnh
+         NS/5Fk9FuFYu1gmphuG5RgwAGUUG135PD4IQH0U8fRK1OnoT5EEnUFs+kiZB8/A0jCWp
+         nBetL8q+LzLomaYZaDUGQXlmhyqFnbRCoSnON0qJ1NNA17zSBbJrKD7TNSbQQ4noUgOm
+         bt4w==
+X-Gm-Message-State: AOJu0YyY+XC+6IkZHGI3u0mEAvAqUgcAyUd38QRRa5zQynyYfIoaUSGC
+	HJLQduX86pMSG4ScAoVr87nopEp87Qw+1rqHFSckSdqexaul6MXAb88hW01C95khPSA=
+X-Gm-Gg: Acq92OGoiXvXZgGo0TW0mANHFfNer0uKFJOTD+6qgA0dOmeH/kZqzTZBHzrowQvlNc3
+	B8rMTiCXn+fXUFNdZclTQHbvkZVVNkA43Lcr/Y53H+bd8p2p4laLMepaSoLtXlu13/pbS3N4mcL
+	K27MHmp8gm1aisRXZWg+kEB0Sm8GfT207XYpgJ1zqF1hZo4hgl0cwN5I2HZMaMLLkO3BG/n1W9V
+	gTdLyjHJpKN3rzfaz64cFIfvyaRMk8ypCm7MdTysVpj7cFCc98bXSyCgXUc3df/het8Auchp2en
+	J/KoOPc4xT4Uw4i3upLh7HF2Exj3c7IX2bwMMnv88LQXYlBI2ot0gaRZcKRO+C3MODmXj+KMlUB
+	OWxLGAP78zja1f1wjJF3WFOpMzF2IHD5AHHHeLl9DM2Zd7TK82AaEDk8AQcsWpW2TT06qseF4No
+	2iAzcG5anecy1UzL3Dv29NLuSg5dbsr12fUtgKm7Ms5RDmG2kcCV/zq0WtP+IyTvQEABFnR7cAV
+	DFRMEGN0MmQFzi25ACj+qlXlhfnvhNwvkC6ghTAkFnyQ1k=
+X-Received: by 2002:a05:600c:4692:b0:489:a4:e555 with SMTP id 5b1f17b1804b1-48fe6326445mr340218615e9.21.1779228492777;
+        Tue, 19 May 2026 15:08:12 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-83f19c77162sm20844701b3a.40.2026.05.19.15.08.07
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 19 May 2026 15:08:11 -0700 (PDT)
+Message-ID: <9d0bb7a4-7179-4d52-b3f4-0b67c0ed0352@suse.com>
+Date: Wed, 20 May 2026 07:38:02 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6820:163:b0:696:2cfa:5d85 with SMTP id
- 006d021491bc7-69b8803d652mr9877587eaf.13.1779224077243; Tue, 19 May 2026
- 13:54:37 -0700 (PDT)
-Date: Tue, 19 May 2026 13:54:37 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a0cce0d.170a0220.3cbd30.0137.GAE@google.com>
-Subject: [syzbot] [btrfs?] WARNING in btrfs_rename2 (2)
-From: syzbot <syzbot+8b14244ee8d43b313915@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
-
-Hello,
-
-syzbot found the following issue on:
-
-HEAD commit:    d458a240344c Merge tag 'block-7.1-20260515' of git://git.k..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=12de58ec580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=f2e8ebfec4636d32
-dashboard link: https://syzkaller.appspot.com/bug?extid=8b14244ee8d43b313915
-compiler:       Debian clang version 21.1.8 (++20251221033036+2078da43e25a-1~exp1~20251221153213.50), Debian LLD 21.1.8
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=142e1fce580000
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=146998c8580000
-
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/81db812cf8a9/disk-d458a240.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/d60234f33956/vmlinux-d458a240.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/06b47f22d6a0/bzImage-d458a240.xz
-mounted in repro: https://storage.googleapis.com/syzbot-assets/37b66df1a3ba/mount_0.gz
-  fsck result: OK (log: https://syzkaller.appspot.com/x/fsck.log?x=15804d6a580000)
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+8b14244ee8d43b313915@syzkaller.appspotmail.com
-
-------------[ cut here ]------------
-!new_inode
-WARNING: fs/btrfs/inode.c:8616 at btrfs_rename fs/btrfs/inode.c:8616 [inline], CPU#1: syz.1.22/6085
-WARNING: fs/btrfs/inode.c:8616 at btrfs_rename2+0x1c07/0x40d0 fs/btrfs/inode.c:8854, CPU#1: syz.1.22/6085
-Modules linked in:
-CPU: 1 UID: 0 PID: 6085 Comm: syz.1.22 Not tainted syzkaller #0 PREEMPT_{RT,(full)} 
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/18/2026
-RIP: 0010:btrfs_rename fs/btrfs/inode.c:8616 [inline]
-RIP: 0010:btrfs_rename2+0x1c07/0x40d0 fs/btrfs/inode.c:8854
-Code: 00 e8 4d 43 dc fd 41 80 f6 01 45 0f b6 c6 48 8b 7c 24 18 48 c7 c6 46 09 67 8d ba 3b 21 00 00 e9 53 03 00 00 e8 2a 43 dc fd 90 <0f> 0b 90 41 bf ef ff ff ff e9 f2 f9 ff ff 4c 89 7c 24 08 4c 8b 7c
-RSP: 0018:ffffc900046cf800 EFLAGS: 00010293
-RAX: ffffffff83e83636 RBX: fffff520008d9f24 RCX: ffff888029319ec0
-RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
-RBP: ffffc900046cfbb0 R08: ffff888029319ec0 R09: 0000000000000002
-R10: 0000000000000100 R11: 00000000ffffffef R12: ffffc900046cfa38
-R13: 1ffff1100bdaf993 R14: 00000000ffffffef R15: ffff8880457d4c58
-FS:  00007f08aa1556c0(0000) GS:ffff888126274000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f6dee4c5000 CR3: 000000003d816000 CR4: 00000000003526f0
-Call Trace:
- <TASK>
- vfs_rename+0xa96/0xeb0 fs/namei.c:6054
- filename_renameat2+0x539/0x9c0 fs/namei.c:6172
- __do_sys_rename fs/namei.c:6216 [inline]
- __se_sys_rename+0x55/0x2c0 fs/namei.c:6212
- do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
- do_syscall_64+0x15f/0xf80 arch/x86/entry/syscall_64.c:94
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7f08aab1ce59
-Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007f08aa155028 EFLAGS: 00000246 ORIG_RAX: 0000000000000052
-RAX: ffffffffffffffda RBX: 00007f08aad96090 RCX: 00007f08aab1ce59
-RDX: 0000000000000000 RSI: 00002000000002c0 RDI: 0000200000000280
-RBP: 00007f08aabb2d6f R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-R13: 00007f08aad96128 R14: 00007f08aad96090 R15: 00007ffc34538de8
- </TASK>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] generic: add a test case for fallocate i_size extension
+To: fdmanana@kernel.org, fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+References: <a92aea73a82100f1dfde58e6f64191bed1d7f41d.1779210827.git.fdmanana@suse.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <a92aea73a82100f1dfde58e6f64191bed1d7f41d.1779210827.git.fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
 
----
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+在 2026/5/20 02:44, fdmanana@kernel.org 写道:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Test an i_size expanding fallocate into a range beyond current i_size that
+> already has a preallocated extent, with an unmount and mount after each
+> fallocate to verify that no metadata (i_size) and extents were lost.
+> 
+> This used to fail on btrfs when not using the no-holes feature (which is
+> a default since btrfs-progs 5.15) before this recent kernel fix:
+> 
+>    c562ba61fc5e ("btrfs: fix incorrect i_size after remount caused by KEEP_SIZE prealloc gap")
+> 
+> So in order to reproduce the failure when using an unpatched kernel and
+> a btrfs-progs >= 5.15, one must run the test with:
+> 
+>    MKFS_OPTIONS="-O ^no-holes"
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-If you want syzbot to run the reproducer, reply with:
-#syz test: git://repo/address.git branch-or-commit-hash
-If you attach or paste a git patch, syzbot will apply it before testing.
+Thanks,
+Qu
 
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
+> ---
+>   tests/generic/795     | 52 +++++++++++++++++++++++++++++++++++++++++++
+>   tests/generic/795.out |  5 +++++
+>   2 files changed, 57 insertions(+)
+>   create mode 100755 tests/generic/795
+>   create mode 100644 tests/generic/795.out
+> 
+> diff --git a/tests/generic/795 b/tests/generic/795
+> new file mode 100755
+> index 00000000..299c8134
+> --- /dev/null
+> +++ b/tests/generic/795
+> @@ -0,0 +1,52 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+> +#
+> +# FS QA Test 795
+> +#
+> +# Test an i_size expanding fallocate into a range beyond current i_size that
+> +# already has a preallocated extent, with an unmount and mount after each
+> +# fallocate to verify that no metadata (i_size) and extents were lost.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick prealloc fiemap
+> +
+> +. ./common/punch # for _filter_fiemap
+> +
+> +_require_scratch
+> +_require_xfs_io_command "falloc" "-k"
+> +_require_xfs_io_command "fiemap"
+> +
+> +_fixed_by_fs_commit btrfs c562ba61fc5e \
+> +	"btrfs: fix incorrect i_size after remount caused by KEEP_SIZE prealloc gap"
+> +
+> +_scratch_mkfs >>$seqres.full 2>&1
+> +_scratch_mount
+> +
+> +# The fiemap results in the golden output requires file allocations to align to
+> +# 1M boundaries.
+> +_require_congruent_file_oplen $SCRATCH_MNT 1048576
+> +
+> +# Create our file with a size of 0 and a prealloc extent in the range [4M, 8M].
+> +$XFS_IO_PROG -f -c "falloc -k 4M 4M" $SCRATCH_MNT/foo
+> +
+> +# Unmount and mount again to remove any in memory state of the inode. We will
+> +# verify later that neither metadata nor extents were lost during unmount.
+> +_scratch_cycle_mount
+> +
+> +# Do an i_size expanding fallocate that overlaps the previous prealloc range
+> +# and extents past it. This increases the file size to 9M and allocates an
+> +# extent in the range [8M, 9M].
+> +$XFS_IO_PROG -c "falloc 7M 2M" $SCRATCH_MNT/foo
+> +
+> +# Unmount and mount again to remove any in memory state of the inode. We will
+> +# verify later that neither metadata nor extents were lost during unmount.
+> +_scratch_cycle_mount
+> +
+> +# File size should be 9M and we should have unwritten extents in range [4M, 9M].
+> +echo "File size after cycle mounts: $(stat -c %s $SCRATCH_MNT/foo)"
+> +echo "Fiemap output:"
+> +$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foo | _filter_fiemap
+> +
+> +# Success, all done.
+> +_exit 0
+> diff --git a/tests/generic/795.out b/tests/generic/795.out
+> new file mode 100644
+> index 00000000..b2f78ac0
+> --- /dev/null
+> +++ b/tests/generic/795.out
+> @@ -0,0 +1,5 @@
+> +QA output created by 795
+> +File size after cycle mounts: 9437184
+> +Fiemap output:
+> +0: [0..8191]: hole
+> +1: [8192..18431]: unwritten
 
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup

@@ -1,67 +1,66 @@
-Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
+Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B31853BADB6
-	for <linux-btrfs@vger.kernel.org>; Wed, 20 May 2026 23:24:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.46
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6A12D313293
+	for <linux-btrfs@vger.kernel.org>; Wed, 20 May 2026 23:46:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779319475; cv=none; b=M5aCIY+CqWTApKe1pmq9PfjktRPGxFjOj9Kwi3sGDguiu6nsJrlELReLA+yd7xPtZd77blLcwXyVQgpi+mPrEnzIOcDNINlORWofPuraIJoVeIS/J3wLa/8L9Zkk2u8wsbgxe9yJ2sDvgguq14I283CouV76b0Y9fQlaHk8NXPs=
+	t=1779320810; cv=none; b=NedUf2BOs70ZMMtDr0/umwaREt/AScMMNMfYP+daihdI/D2sHPQlRHyjwR+Wxq5OyzJvEXajFRbCQvhmBQJWX4f3TGQ+8ow6ym2bM3lMKovjIZeE4TPHwQqM9RfXcR6YHxeV5QC3UIqNDd5jHogYw5GPIjh1FfvAMXi2WiLY3Y4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779319475; c=relaxed/simple;
-	bh=Ci2lYXWa6H6IKO9kev9hjyj0Pl+hnrYzJevsdU9Qjok=;
+	s=arc-20240116; t=1779320810; c=relaxed/simple;
+	bh=ZhCl2C5Wrn3IGyW32VptJnYyFGUADc5mhRU6Q0j52s0=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=gUszoedBL8r29z9Tq+6cWV5rQG0FIFdVUQU8ejmwn/0JJYfop6HHnL4JZsgwlBTvwe20e5yLudS77VIyE/nyA5cW2bhzWv88uB17qy48lRqAC/6phSh2nt5QF93xflaK8hvXfAUxQD6CuhEc3mVhIooaWIOZSX2L4udhz5oYif8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=B013WFLi; arc=none smtp.client-ip=209.85.128.46
+	 In-Reply-To:Content-Type; b=OI3e7VbiEJscOWysQHqFaaCQA6bKXKKma53EX5mJ/sDlAhs9ggFbGSXfG/46HGqtiI1ko6ZieF5eHRZ1qDCq1s8Z36Q38giqUMOojYftgG9n9nh0c+IL0zBhyAMDQl5LubkAVGvdzKz5er9riM/13+4YjZhwDfbBiHgP8SYSaLs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=aRADAanh; arc=none smtp.client-ip=209.85.128.51
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="B013WFLi"
-Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-4893940bb5eso30369475e9.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 May 2026 16:24:33 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="aRADAanh"
+Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4893940bb5eso30415125e9.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 May 2026 16:46:43 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1779319472; x=1779924272; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1779320801; x=1779925601; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=x93b05LqwC8lXT/3IhlsHXSgF954VUMXWJ0YVutMS2U=;
-        b=B013WFLiN6CRY5VbkBPHhYd01k/XeueE9gabHIRhNMfIQAwk+DizEuFJCnDY7EwmTA
-         hFZzSf0CWMyYq1X91SRfyiXAXbnAIm66bW5axTmI4GvWs9yBhLke8gUKQQe7VzaQla2Z
-         9CFZpn6zY63IOqbozuFPsWalmoXTfApX6IpOlUNiNgFs7WmjGx5vKFLbJFY6fOIGflEj
-         WwCMEk4vRFKZWwS6OKhg6nz92zQXC2PSEpJYJLxWLDSRUiV+HqdGpgiW/6f7vClGKN9y
-         yGlTOd1XEDaXrBpROiJMcMGf3KKIePE+IGg/QoMERWxWHFvtbA4KC1i+6eunHK4dyBEA
-         YmMg==
+        bh=WlGgHmkBC/kImGwZ2c8Hg4pZSU+NIAaMM311Vn7P4rI=;
+        b=aRADAanhfIxbWnVyLaRNSChJg7e99frR8RcfAogNrAGh39Pr84IDUKoB2XAR7YBWqD
+         2X3McnXPTqjJZoeI/RpoZSqX0QXFuA3gRkv/XHdcrffCR6kv2wddmPnX+auuJKcZPl+E
+         SzV55BW0q/hqRNEoVovheAUAdgZSvwlNHrCTkuYsaE1m96GJv3L5Z/kjqKIxUODZth+M
+         D5C/BqHVSpljguB0oxRql8tT9qtluDoGOecQUIkxuKNXFGvre1/D/MWf4GWjwHu6S6Tv
+         4bXHS5WXM/obk2Cj0RXryBb8GSuMWyYD2nhOtn8yAzkjAlEib48/SeyCcUxSdujT17L/
+         EWTw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779319472; x=1779924272;
+        d=1e100.net; s=20251104; t=1779320801; x=1779925601;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=x93b05LqwC8lXT/3IhlsHXSgF954VUMXWJ0YVutMS2U=;
-        b=LiT5lFfhSQ3R4mxB7U54GM/ljqj1Zu63RXcMuZdQu21lrkr54Fxk+pNbt0ojBmIz/E
-         ahyiBiPme1X28NovANiGneOkBWIpLNhCyM5S4W//O7OiCk6P++cZ9OTOzx15Y3YaP4Wl
-         F4CbCEJkSS7spf7Hhx8e731l+VADL0PBKrE74MAjyjJq6zEo/MwB5NKvR+8zAJrMt9Mh
-         /BMFfMNQOhaA4/oUMpX8D84RjcTIAP6uME4vX9uTUlqAZn65gZ9JYH6SGbS9FZWPUQiv
-         Mb6t13M/oWsqMiv1cYm2KufO8A3SyMPIQqCa99ToKTI3/SdmrBauiYmGyvfkgRtgpzql
-         DaYQ==
-X-Gm-Message-State: AOJu0Yzf1Ml/havQ75+PDlqSSCdFPWiMkZbCFFvL1uAawx/jtiDY7JsO
-	nShGAHDVoutaV/N3q2yMaXeDSXV4A2PbOdm69Ws9TSgHvpudGTiriaCgYoOTj/R5583fCwQGKC8
-	WVa/z
-X-Gm-Gg: Acq92OGChZ4hM+BuDXDFqCl4veEsyMJOvoiK8Wyli0FeMpeDJlBX6vYeqtkXXD9d5zV
-	pEqN0BzWAKnUeDNqjgFtdPfN66UIHVMEJDKVTzZuuQXtY/DKuJWshgyp9i+IeshugfyeHBMzrUe
-	X9lPOE19YY0i8T2vqs/2kcklV4LpP0M5UDIT+pDbCGZz+ri09KM+h1axhTr3uIMQQEMwbhanDlH
-	edHiLjoW3gUrc2rDVmVTQIPvyclbXyYy0GIsQ48usH+uPyP2XPNo0VBNtnBSwfS67u9lPas6ybU
-	bxsbZ6VEegCCAC9aKVXvpI3abls6jkQgytuEQkFvNWUPY5ZfUUJOfOdA3bVjnWW87D+FDnSYeIH
-	/AjaO3qDXIxT8hfmCK3WvJ+mkNfL4+JWYQQhBUgSUfcQXjzu6baulRd+DMzSizOezFx431OtPwV
-	yiMPC0GSPtVSNXFSsASvoVQyQTfkei5UdiGCwdj70eoVGlDeOQNCux8t6EKer3pWb4a1XV9syol
-	JIxOgUl6mj1pGM31cySddivBnKNfwYZcXedh1tCO3KEZhk=
-X-Received: by 2002:a05:600c:4816:b0:490:17da:27f8 with SMTP id 5b1f17b1804b1-4903607cef2mr2668865e9.18.1779319472285;
-        Wed, 20 May 2026 16:24:32 -0700 (PDT)
+        bh=WlGgHmkBC/kImGwZ2c8Hg4pZSU+NIAaMM311Vn7P4rI=;
+        b=IV6CGvzFXai0q7fPOc37xxROce2jOeJnzoQ1DiBFtras1zjJpFmXwTTpQNSPOkLXU6
+         VyoLFyhSn4tDJiSNz6JcifbimmKl6V1UXSqunfr36fayQisgC0p4q6z29gmifHHODve8
+         +V8X9feXLRXFl0TLhnJBVQfe4g3b9ldk8JHxk+meNJKhiJLe88mXxo+7mLj99pairT2f
+         AFijfA/ReYeTTIRLzesHP2hV5Xt2Aknno3S7V9CouYtvhd0QHVs1OTu7vB4toH2+mVnT
+         iJ9zetgFMcyALZYC8UKMy+3b+rJSraP/QeqIXMcjyvtaZ6YrFpEqaGfbXw93nIuo8Dp0
+         tiew==
+X-Gm-Message-State: AOJu0YwTGn6spX0FAwngDEPymaYYjEWzctubP2UU/CNt3YxBKkP/hyhJ
+	CqkeXzKTetxVUcPzMhQmDJTGypJmiBDEy9p8BisW1DFVEK8w7QFQBcyoI6PxCFkoIG8=
+X-Gm-Gg: Acq92OFwBpjne8JXG4RE4U0K85xqP84X4KxeaIni0MPhxg2BUtYT8GEhs6cW5z/1Mtp
+	tlsVACtHNL8We6eN/QYg3iSaOfHeqZtAbjnH4hrzD1zaAygctYqCh2+VW0pHnK/OKIENs8cnb0h
+	Q7V1mvxBNjB9/fsBw0nVjNI/AQTVbkK3NTbvAXCXgJhUxu1FDoU+6V9UJQ0Pl9BKgHoSBMnI84t
+	QaXsz0x9IsKEfXJ8rt0YMMnmatyhPW6W3XjTIxeNq11S7JCQODycfJZKN5qo0a5zDjY7EZVqySs
+	Y0HTiuGQwbuT3xqT8T5/6+LtuRr+DVRBo180Fxz/bccUer8K73mcM4GJniErycv0CxRaKqCWcxa
+	Z3TwXhWel4RkvJ2CJmYwnRjk8aRRHxjS4UlK9ceZX8gl5hNXDtw4ARPPNduPV25wVzmamHoCt+J
+	DgPGu9iev8xGmLrBSgwUaYG6tYMrJzYTDr0S0Z8ZzrCkvWtn0QEz1M/OXmBPUzq3nMmSW9+hTpg
+	yLeHzwqtikqIsZ3QkLAQvbUwGsP2lt7pCJf9AR0amlk3bc=
+X-Received: by 2002:a05:600c:1f86:b0:48a:5821:5ff2 with SMTP id 5b1f17b1804b1-4903603174cmr4784085e9.8.1779320800912;
+        Wed, 20 May 2026 16:46:40 -0700 (PDT)
 Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2bd5bd5fe51sm230300325ad.2.2026.05.20.16.24.29
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c82bb062695sm20350942a12.4.2026.05.20.16.46.38
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 20 May 2026 16:24:31 -0700 (PDT)
-Message-ID: <23e9b6b4-1824-40b5-b9d3-160fbdefe319@suse.com>
-Date: Thu, 21 May 2026 08:54:26 +0930
+        Wed, 20 May 2026 16:46:39 -0700 (PDT)
+Message-ID: <a56287a3-f836-4bc6-9e04-b3939b00aa4c@suse.com>
+Date: Thu, 21 May 2026 09:16:36 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,12 +68,12 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 1/6] btrfs: add skeleton for delayed btrfs bio
+Subject: Re: [PATCH v2 2/6] btrfs: add delayed ordered extent support
 To: Boris Burkov <boris@bur.io>
 Cc: linux-btrfs@vger.kernel.org
 References: <cover.1778902677.git.wqu@suse.com>
- <d8b91a2081c898c548545c8b7c0aff6f463766c4.1778902677.git.wqu@suse.com>
- <20260520213811.GA1479855@zen.localdomain>
+ <82ca7628a7a96eb8cde8c1a53f7db544fa2f6ef5.1778902677.git.wqu@suse.com>
+ <20260520220020.GB1479855@zen.localdomain>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -101,84 +100,118 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260520213811.GA1479855@zen.localdomain>
+In-Reply-To: <20260520220020.GB1479855@zen.localdomain>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/5/21 07:08, Boris Burkov 写道:
-> On Sat, May 16, 2026 at 01:15:14PM +0930, Qu Wenruo wrote:
->> The objective of such new delayed btrfs bio infrastructure is to allow
->> compressed write to go the regular extent_writepage_io() path, without
->> going through the async submission path.
+在 2026/5/21 07:30, Boris Burkov 写道:
+> On Sat, May 16, 2026 at 01:15:15PM +0930, Qu Wenruo wrote:
+>> A delayed ordered extent has the following features:
 >>
->> This will make it easier to align our write path to iomap.
+>> - A new BTRFS_ORDERED_DELAYED flag
+>>    And this new flag must be set along with the BTRFS_ORDERED_REGULAR flag.
 >>
->> The core ideas of delayed btrfs bio are:
+>> - No allocation of any on-disk space
+>>    As a delayed ordered extent doesn't take any on-disk space yet, it
+>>    won't release any reserved data/meta space either.
 >>
->> - A placeholder ordered extent created at delalloc time
->>    No space is reserved at that time, and is not implemented in this
->>    patch.
+>> - Zero or more real OEs can be added to the parent
+>>    If a real OE is allocated, it must be inside the parent OE.
+>>    And such real OE will go through the regular data/meta space
+>>    reservation path.
 >>
->> - A delayed extent map created at delalloc time
->>    It will have a special disk_bytenr (-4) to indicate the range is
->>    delayed.
->>    And a new EXTENT_FLAG_DELAYED flag.
+>> - Children OEs will not be added to the per-inode OE rb-tree nor
+>>    per-root list
+>>    Only the parent OE is added to the per-inode rb-tree and per-root
+>>    list.
+>>    So anything waiting for ordered extents should only work on the parent
+>>    one.
 >>
+>>    There is a special corner case to btrfs_wait_ordered_extents(), as
+>>    delayed parent OEs have 0 disk_bytenr and disk_num_bytes, they will
+>>    be considered out of the [0, U64_MAX] range.
+>>    Thus we have to always wait for any delayed OEs of a root, no matter
+>>    if a block group range is given or not.
+>>
+>> - When the parent OE finishes, all children OEs will also be finished
+>>    And reserved space handling is all handled by the children OEs.
+>>
+>> - Any range not covered by child OE will be manually cleaned up
+>>
+>> Above features allow us to use the existing ordered extent interfaces
+>> to allocate new real OEs, and wait for them properly.
 > 
-> What is the protection for current callers of btrfs_get_extent() which
-> use em->disk_bytenr? Many of them have specific logic for hole/inline
-> em, are we sure none of them need to handle em->disk_bytenr == EXTENT_MAP_DELAYED ?
-
-I checked all btrfs_get_extent() callers, they have all different kinds 
-of protection:
-
-- Check against EXTENT_MAP_LAST_BYTE
-
-- Have writeback or wait ordered extents for the range
-   Including:
-   * Direct IO
-
-- Extra handling before calling btrfs_get_extent()
-   E.g. btrfs_do_readpage(), which checks uptodate bit before
-   calling btrfs_get_extent().
-   In our case, since the delayed OE is only for writeback, the
-   folio is always uptodate.
-
-- Exactly on the submit path
-   E.g. submit_one_sector()
-
-- Callers only care about holes/prealloc
-   E.g. find_first_non_hole() and all callsites inside file.c.
-   And some other callsites like btrfs_find_new_delalloc_bytes().
-
+> I am getting comfortable with the idea of the nested OEs, and thanks for
+> seriously investigating the question of splitting. Sorry if I
+> underestimated the difficulty while asking about it before.
 > 
->> - Delayed btrfs bios will be limited to BTRFS_MAX_COMPRESSED size
->>    As only compression will go through delayed btrfs bio.
->>
->> - Delayed btrfs bios will have @is_delayed flag set
->>    And such bio will have 0 as bi_sector, but will never be submitted
->>    directly through btrfs_submit_bio().
+> Reading this all again gave me another idea that may possibly help with
+> making things as clear and simple as possible.
 > 
-> What is the purpose of using a false bbio as an async placeholder?
+> I'll blab a bit to set the idea up :)
 > 
-> Is it to allow keeping the "submission" code the same, though it is sort
-> of a no-op submission?
+> So a classic OE represents a range of a file that is under IO (just
+> about 1:1 with bio submitted, finished on bio done)
 
-Yes, re-use the same submission code is the core.
+To be a little strict, the classic OE is not 1:1 with bio submitted.
 
-The idea is to make sure we're going through the same submission, so 
-eventually we can get rid of the async-submission.
+The truth is, we can have super large OE, up to 128MIB. But our bio can 
+only be as large as 1MiB for the worst cases.
+Thus we will have a lot of smaller bios submitted for the same OE.
 
 > 
-> Put a different way, is this for convenience because real and delayed
-> bio submission share a bunch of delayed-agnostic folio logic,
+> This new delayed OE lacks the submitted IO (or even space alloc), but
+> is composed of "real" OEs which are not in the rb-tree. This means the
+> old finish_one_ordered code can just run on the children and the only
+> weird part is that deleting the rb_node is a no-op. But the outer one
+> looks enough like an OE that everyone who looks for an OE finds one and
+> can treat the delayed one transparently by trying to force it written
+> or wait for it.
 
-It's not only for convenience, but it is the objective.
+Exactly.
+
+> 
+> What if instead of having both of these be kinds of OEs, we just split
+> up the concepts? One is a range of a file which can have one or more OEs
+> in it and lives in the rb-tree. The other is the classic OE and
+> represents the I/O, finishing it places the extents, csums, delayed
+> refs, etc.. Another way of framing this idea is why not have all IOs use
+> a parent OE with a single child covering the whole range?
+
+I have a similar idea for the long run, to migrate the non-compressed 
+writes into the layer OEs (or split OEs), so that we can handle the 
+truncation cases better, without allocating a larger than needed data 
+extent.
+
+However going all in on layered OEs will need quite some extra work in 
+simplifying the structure, a lot of members in the parent OE is no 
+longer required and should be simplified for layered OE solution.
+
+
+> That way you
+> always have a parent/child and don't have as much code that has to treat
+> them transparently. When you look up in the rbtree you always expect a
+> parent.
+> 
+> This is of course a wider change (all ordered extent users suddenly care)
+> so it affects more code. However by not hiding the problem on a flag on
+> the OE, the OE functions don't have to be a mess of "if parent X else Y"
+> style logic. If the users of OEs use a narrow interface anyway
+> (presumably mostly just starting, waiting, cancelling), they don't care
+> too much which exact object they do that to.
+
+If we're fine with the current layered OE solution, I'm totally fine 
+going that path, migrating all writes to layered OE, and simplify the 
+structure.
 
 Thanks,
 Qu
 
+> 
+> Thanks,
+> Boris
+> 
 
 

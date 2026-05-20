@@ -1,199 +1,396 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AE04636CDEF
-	for <linux-btrfs@vger.kernel.org>; Wed, 20 May 2026 10:57:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 90B283EE1EC;
+	Wed, 20 May 2026 11:20:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779274663; cv=none; b=UW92vYwKer8tcb4cBKk30e3Ww94dDIrBmCWAw3Yy419tHMBc11yx6iKxqiwtKAdmT4LOqIbLtYeCzweRpOLEqwDRU49V1CqBxehVz2d7UFAlQmZNP6gXprrZuqnp4ebxPe9iv1rT09Eonsomxh1cMo6bD9v64Zk7bKneYjQe8TU=
+	t=1779276041; cv=none; b=hqqJokkX11iUWrbcVOb0dNHAijLjUfApayRdvG2sZxSssXIk2EQcnQdwnZ3pwc8BlbokJ2fSIgeR4fN9ek/4Dnr0A9UStpbVUlTL8+cXyzJwui1vZWR5Jc/haFFdgpDEYMMePio94tjtbnj+qAo2+1FiGUVTll4YZaDO2nQqu2o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779274663; c=relaxed/simple;
-	bh=CcNW7EXjY/vsA46WEZq71KdNBNWSGkIwuUqyGohe6pc=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=PD9cUFZMH5LRx0xDAAL5dAKMK7jKEfj8NWpILj1wxayhudt2l6/NRnfcU3Lbuh6UuL+JXf03gXPik5vsj5CEZfdjVMdlRrOpD5Dg2XERHiulYsDO4CGZVsftA/Z4819Slo42RsRED8b+t6EQAPUuAfuYTkbkW6EQkOfWAZUKhmk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=HPx6OLEa; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=HPx6OLEa; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1779276041; c=relaxed/simple;
+	bh=R0CXG/sR2XzcTICPaASs4rIpFuUDTo6aKtSJf/5vWx0=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=OAYsAvOkieLE4KlkAC11N4tGOpTykOnh1YhAggtX5f2G4/kJEUmlbV8drqdHDETjXZKX44K/BhvUbF1sfc+873BiXHIijEr4PHVSnuiZeeCgvwCcsXuVN0NLse/PwVZN+zm16VpRmH20gji4Nag2Y7bJimX8NsNf3ytXKxuI9Cw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UdE5gZrN; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HPx6OLEa";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HPx6OLEa"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 1A6DF6AD07;
-	Wed, 20 May 2026 10:57:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1779274660; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=hCSRQOnUYCaSufBzhskSe1eaj1fOYQgcjePcIXpGgAw=;
-	b=HPx6OLEatO1cmVIrddCIP7ulLi2vGtHFua93vQpgzgaGh2kyhWvw4uqWw6QOZlwUmsKXzb
-	j8b1XDgahN5R7d2ZwfcjUnFcVnd9KkyHxY1049gFY/syPJQ2fgmz4z3oj1pgeHwjtQHEvk
-	Pnx87AaJav/lek58dLZCgo6SoVj/V+E=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=HPx6OLEa
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1779274660; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=hCSRQOnUYCaSufBzhskSe1eaj1fOYQgcjePcIXpGgAw=;
-	b=HPx6OLEatO1cmVIrddCIP7ulLi2vGtHFua93vQpgzgaGh2kyhWvw4uqWw6QOZlwUmsKXzb
-	j8b1XDgahN5R7d2ZwfcjUnFcVnd9KkyHxY1049gFY/syPJQ2fgmz4z3oj1pgeHwjtQHEvk
-	Pnx87AaJav/lek58dLZCgo6SoVj/V+E=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D703B593AA;
-	Wed, 20 May 2026 10:57:38 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 5eoOJqKTDWr3LAAAD6G6ig
-	(envelope-from <wqu@suse.com>); Wed, 20 May 2026 10:57:38 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: hch@lst.de,
-	linux-raid@vger.kernel.org
-Subject: [PATCH RFC] btrfs: disguise single-data-RAID56 as RAID1/RAID1C3
-Date: Wed, 20 May 2026 20:27:17 +0930
-Message-ID: <a1d63733465229936351804f3760803d5894a962.1779274630.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UdE5gZrN"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 703CE1F00894;
+	Wed, 20 May 2026 11:20:38 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1779276039;
+	bh=BasMEeDW6XPs7A/N3atABlk5j0/nIx2aBYDkA9++MyI=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References;
+	b=UdE5gZrNLjmPSdqojUnXV5QQ8ADfTnnDFVCzgSgidcLgPUbAEXXIdwPobi8m5aJ0f
+	 LjV8ABsei4zGMVvmLq5B2bxw7XKMe6lFq1JfK4T3VF4bDOxYec8oYJ2R+h7uaxNelg
+	 GXmoWOKj57wWk8Avt3dVmHTwVDNqdsn/Kc+ygUg6VAJs9fxuxGR9DeyEvH8UoRImoH
+	 wOVKPjQfqtmzW7S9P0/U52ZHxb/rHJ/+yBytn+fKeGLismDnsxFKbv6cqFeS6+38/q
+	 sSpolIzOJWp5aFmng42dhhFz3+pqVBa24oB24WWGOg2IvYfp8ILbuGLNpfNoSbISju
+	 FIe+CC7bmZ2gQ==
+From: Sasha Levin <sashal@kernel.org>
+To: patches@lists.linux.dev,
+	stable@vger.kernel.org
+Cc: ZhengYuan Huang <gality369@gmail.com>,
+	David Sterba <dsterba@suse.com>,
+	Sasha Levin <sashal@kernel.org>,
+	clm@fb.com,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH AUTOSEL 7.0-6.12] btrfs: fix check_chunk_block_group_mappings() to iterate all chunk maps
+Date: Wed, 20 May 2026 07:19:10 -0400
+Message-ID: <20260520111944.3424570-38-sashal@kernel.org>
+X-Mailer: git-send-email 2.53.0
+In-Reply-To: <20260520111944.3424570-1-sashal@kernel.org>
+References: <20260520111944.3424570-1-sashal@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+X-stable: review
+X-Patchwork-Hint: Ignore
+X-stable-base: Linux 7.0.9
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:email,suse.com:mid];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_THREE(0.00)[3];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Queue-Id: 1A6DF6AD07
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
 
-Recently kernel RAID56 lib is trying to remove the unexpected
-single-data-RAID56 (2 disks RAID5 or 3 disk RAID5) support, meanwhile
-btrfs still supports such setup, which means in the long run btrfs has
-to handle such corner case by ourselves.
+From: ZhengYuan Huang <gality369@gmail.com>
 
-Thankfully single-data-RAID56 is really RAID1/RAID1C3, since data and
-P/Q stripes all match each other, rotation also makes no difference.
+[ Upstream commit fc51cba3ebae67f967120e27162e94cfb8594479 ]
 
-This patch will disguise those single-data-RAID56 chunks as
-RAID1/RAID1C3 chunks.
+[BUG]
+A corrupted image with a chunk present in the chunk tree but whose
+corresponding block group item is missing from the extent tree can be
+mounted successfully, even though check_chunk_block_group_mappings()
+is supposed to catch exactly this corruption at mount time.  Once
+mounted, running btrfs balance with a usage filter (-dusage=N or
+-dusage=min..max) triggers a null-ptr-deref:
 
-This is done at two timings:
+  KASAN: null-ptr-deref in range [0x0000000000000070-0x0000000000000077]
+    RIP: 0010:chunk_usage_filter fs/btrfs/volumes.c:3874 [inline]
+    RIP: 0010:should_balance_chunk fs/btrfs/volumes.c:4018 [inline]
+    RIP: 0010:__btrfs_balance fs/btrfs/volumes.c:4172 [inline]
+    RIP: 0010:btrfs_balance+0x2024/0x42b0 fs/btrfs/volumes.c:4604
 
-- Chunk read
-- Chunk allocation
+[CAUSE]
+The crash occurs because __btrfs_balance() iterates the on-disk chunk
+tree, finds the orphaned chunk, calls chunk_usage_filter() (or
+chunk_usage_range_filter()), which queries the in-memory block group
+cache via btrfs_lookup_block_group().  Since no block group was ever
+inserted for this chunk, the lookup returns NULL, and the subsequent
+dereference of cache->used crashes.
 
-And this disguise only affect on-disk chunk map, not affecting the
-corresponding block groups, so the extra bits like RAID1C3 or RAID56
-compatible flags will not be affected.
+check_chunk_block_group_mappings() uses btrfs_find_chunk_map() to
+iterate the in-memory chunk map (fs_info->mapping_tree):
 
-This method has a minimal impact on the fs, all other operations like
-scrub and read-repair, are all based on the chunk map type, so the
-disguise method will require no extra modification to those call sites.
+  map = btrfs_find_chunk_map(fs_info, start, 1);
 
-Although there are still some locations that are checking against
-block_group->flags, e.g. scrub. Those call sites will still get extra
-limits assuming the bg is RAID56. But it should not cause any extra
-problem.
+With @start = 0 and @length = 1, btrfs_find_chunk_map() looks for a
+chunk map that *contains* the logical address 0. If no chunk contains
+logical address 0, btrfs_find_chunk_map(fs_info, 0, 1) returns NULL
+immediately and the loop breaks after the very first iteration,
+having checked zero chunks. The entire verification function is therefore
+a no-op, and the corrupted image passes the mount-time check undetected.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+[FIX]
+Replace the btrfs_find_chunk_map() based loop with a direct in-order
+walk of fs_info->mapping_tree using rb_first_cached() + rb_next().
+This guarantees that every chunk map in the tree is visited regardless
+of the logical addresses involved.
+
+No lock is taken around the traversal. This function is called during
+mount from btrfs_read_block_groups(), which is invoked from open_ctree()
+before any background threads (cleaner, transaction kthread, etc.) are
+started. There are therefore no concurrent writers that could modify
+mapping_tree at this point. An analogous lockless direct traversal of
+mapping_tree already exists in fill_dummy_bgs() in the same file.
+
+Since we walk the rb-tree directly via rb_entry() without going through
+btrfs_find_chunk_map(), no reference is taken on each map entry, so the
+btrfs_free_chunk_map() calls are also removed.
+
+Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
-Reason for RFC:
 
-Although the current patch works fine, it is a little fragile, e.g. at
-chunk allocation time, we must use the bg->flags, instead of the
-in-memory chunk map type.
+LLM Generated explanations, may be completely bogus:
 
-I'm wondering if we should introduce some dedicated member, e.g.
-btrfs_chunk_map::on_disk_type to handle it.
----
- fs/btrfs/volumes.c | 24 +++++++++++++++++++++++-
- 1 file changed, 23 insertions(+), 1 deletion(-)
+## Phase 1: Commit Message Forensics
+Record: Subsystem is `btrfs`; action verb is `fix`; claimed intent is to
+make `check_chunk_block_group_mappings()` actually visit all chunk maps.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 93a923e4ecaf..848eafa5fbf7 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6000,6 +6000,26 @@ struct btrfs_chunk_map *btrfs_alloc_chunk_map(int num_stripes, gfp_t gfp)
- 	return map;
- }
+Record: Tags found in the committed version: `Signed-off-by: ZhengYuan
+Huang <gality369@gmail.com>`, `Reviewed-by: David Sterba
+<dsterba@suse.com>`, `Signed-off-by: David Sterba <dsterba@suse.com>`.
+No `Fixes:`, `Reported-by:`, `Tested-by:`, `Link:`, or `Cc:
+stable@vger.kernel.org` tag was present.
+
+Record: The commit describes a real mount-time corruption validation
+bug: a chunk can exist in the chunk tree while the matching block group
+item is missing from the extent tree. Because the verifier may check
+zero chunks, the corrupted filesystem can mount, and later `btrfs
+balance -dusage=...` can hit a NULL dereference in
+`chunk_usage_filter()` / `chunk_usage_range_filter()`.
+
+Record: This is not hidden cleanup. It is an explicit NULL-deref /
+corruption-detection fix.
+
+## Phase 2: Diff Analysis
+Record: One file changed: `fs/btrfs/block-group.c`, 8 insertions and 15
+deletions in the committed object. Modified function:
+`check_chunk_block_group_mappings()`. Scope: single-file surgical fix.
+
+Record: Before, the function started at logical address 0 and repeatedly
+called `btrfs_find_chunk_map(fs_info, start, 1)`. If no chunk
+intersected `[0,1)`, the first lookup returned NULL and the loop exited
+without checking any chunk. After, it walks `fs_info->mapping_tree`
+directly with `rb_first_cached()` and `rb_next()`.
+
+Record: Bug category is logic/correctness with memory-safety
+consequence. The broken verifier allows filesystem corruption through
+mount; later balance can dereference a NULL block group pointer.
+
+Record: Fix quality is good: small, direct, reviewed by the btrfs
+maintainer, and it removes `btrfs_free_chunk_map()` calls because direct
+`rb_entry()` traversal does not acquire chunk-map references. Regression
+risk is low; the main concern is lockless traversal, but code and commit
+context verify this runs during mount before cleaner/transaction
+kthreads start.
+
+## Phase 3: Git History Investigation
+Record: `git blame` on the pre-fix function shows the verifier loop
+originated from `4358d9635a16` (`btrfs: migrate the block group
+read/creation code`), first contained in `v5.4-rc1`. Later chunk-map
+conversion came from `7dc66abb5a47` in `v6.8-rc1`.
+
+Record: No `Fixes:` tag is present, so there was no Fixes target to
+follow.
+
+Record: Recent `fs/btrfs/block-group.c` history shows normal btrfs
+churn, but no prior fix for `check_chunk_block_group_mappings()` except
+this commit. `git log --grep=check_chunk_block_group_mappings
+origin/master` found only `fc51cba3ebae`.
+
+Record: Author history in `fs/btrfs` shows ZhengYuan Huang has other
+btrfs fixes; the patch was reviewed and committed by David Sterba, who
+is listed in `MAINTAINERS` as a btrfs maintainer.
+
+Record: The commit was submitted as patch 4/4, but the final mainline
+history contains this verifier fix independently. The earlier balance
+hardening patches were not found in `origin/master`; this patch still
+has standalone value because it prevents the corrupted state from
+passing mount.
+
+## Phase 4: Mailing List And External Research
+Record: `b4 dig -c fc51cba3ebae...` found the original lore submission:
+`https://patch.msgid.link/20260325004339.2323838-5-gality369@gmail.com`.
+
+Record: `b4 dig -a` found v2 and v3 series. v3 is the committed/latest
+revision found by `b4`.
+
+Record: `b4 dig -w` showed the patch was sent to David Sterba, Chris
+Mason, Ilya Dryomov, `linux-btrfs`, and `linux-kernel`.
+
+Record: Direct `WebFetch` of lore was blocked by Anubis, so I used `b4`
+mbox content and Patchew. The v3 mbox includes David Sterba saying he
+added the fixes to `for-next`; the committed patch has his `Reviewed-
+by`.
+
+Record: Patchew v2 discussion records David Sterba saying block group
+lookup checks make sense in general, and the author clarified the bug is
+reproducible with a crafted filesystem image and normal syscalls, not
+only fuzzing. No NAKs were found. No stable-specific discussion was
+found by web search.
+
+## Phase 5: Code Semantic Analysis
+Record: Modified function: `check_chunk_block_group_mappings()`.
+
+Record: Caller trace verified: `open_ctree()` calls
+`btrfs_read_block_groups()`, which calls
+`check_chunk_block_group_mappings()`. In `disk-io.c`,
+`btrfs_read_block_groups()` occurs before the cleaner and transaction
+kthreads are started.
+
+Record: Crash path verified: `BTRFS_IOC_BALANCE_V2` reaches
+`btrfs_ioctl_balance()`, then `btrfs_balance()`, `__btrfs_balance()`,
+`should_balance_chunk()`, then usage filters. Current code dereferences
+`cache->used` immediately after `btrfs_lookup_block_group()`.
+
+Record: Key callees: `rb_first_cached()`, `rb_next()`, `rb_entry()`,
+`btrfs_lookup_block_group()`, `btrfs_put_block_group()`, and error
+reporting via `btrfs_err()`.
+
+Record: Similar safe direct mapping-tree traversal already exists in
+`fill_dummy_bgs()` in the same file, and other mapping-tree traversal
+code exists elsewhere with appropriate locking/context.
+
+## Phase 6: Cross-Referencing And Stable Tree Analysis
+Record: Buggy code exists in stable branches. `stable/linux-6.8.y`
+through `stable/linux-6.19.y` contain the `btrfs_find_chunk_map(fs_info,
+start, 1)` pattern. `stable/linux-5.4.y`, `5.10.y`, `5.15.y`, `6.1.y`,
+`6.6.y`, and `6.7.y` contain the older analogous
+`lookup_extent_mapping(map_tree, start, 1)` pattern.
+
+Record: The upstream patch applies cleanly to the current `7.0` tree
+with `git apply --check`.
+
+Record: Older pre-`6.8` stable trees likely need an adjusted backport
+because they use `extent_map` / `map_lookup` rather than `struct
+btrfs_chunk_map`. The bug mechanism is still verified there by the
+strict intersection semantics in `extent_map.c`.
+
+Record: I found no related stable branch commit already fixing this
+issue by subject/grep.
+
+## Phase 7: Subsystem And Maintainer Context
+Record: Subsystem is btrfs filesystem code under `fs/btrfs/`.
+Criticality is IMPORTANT to CORE-for-users-of-btrfs because filesystem
+corruption handling and kernel crashes are involved.
+
+Record: Subsystem is actively maintained; recent `origin/master --
+fs/btrfs` history shows many btrfs fixes. David Sterba is listed as a
+btrfs maintainer and reviewed/committed this fix.
+
+## Phase 8: Impact And Risk Assessment
+Record: Affected users are btrfs users with a corrupted or crafted
+filesystem image containing a chunk without a corresponding block group
+item.
+
+Record: Trigger is mount of that corrupted image followed by balance
+with usage filters for the crash path; the patched behavior rejects the
+inconsistency at mount time with `-EUCLEAN`. Patchew discussion says it
+is reproducible with crafted filesystem image plus normal syscalls.
+Balance ioctl requires `CAP_SYS_ADMIN`, verified in
+`btrfs_ioctl_balance()`.
+
+Record: Failure mode is HIGH/CRITICAL: KASAN NULL pointer dereference in
+filesystem balance code, i.e. kernel crash/oops risk, and the underlying
+issue is missed filesystem corruption detection.
+
+Record: Benefit is high: prevents corrupted btrfs images from mounting
+silently and avoids a later NULL dereference. Risk is low for `6.8+`
+style trees: one contained verifier loop change during mount. Risk is
+medium-low for older trees only because the backport needs translation
+to the older extent-map data structure.
+
+## Phase 9: Final Synthesis
+Record: Evidence for backporting: real NULL-deref crash path, crafted-
+image reproducibility, filesystem corruption detection failure, small
+one-function fix, maintainer review, code present across stable trees,
+and clean apply to current `7.0` tree.
+
+Record: Evidence against backporting: no `Fixes:`/`Cc: stable` tag;
+older stable trees need adjusted backports; the exact patch is not
+directly applicable to pre-`6.8` extent-map code. These do not outweigh
+the bug severity.
+
+Record: Stable rules checklist: obviously correct and reviewed: yes;
+fixes real user-visible bug: yes; important issue: yes, NULL deref and
+missed corruption detection; small and contained: yes; no new
+feature/API: yes; stable application: clean for current `7.0`, likely
+straightforward for `6.8+`, adjusted backport needed for older trees.
+
+Record: Exception category: none. This is a normal bug fix, not a device
+ID, quirk, DT, build, or documentation-only patch.
+
+## Verification
+- [Phase 1] `git show --format=fuller --stat fc51cba3ebae...`: confirmed
+  commit message, tags, author, reviewer, and one-file diff.
+- [Phase 2] `git show --no-ext-diff fc51cba3ebae... -- fs/btrfs/block-
+  group.c`: confirmed the loop replacement and removal of
+  `btrfs_free_chunk_map()` calls.
+- [Phase 3] `git blame -L ... fc51cba3ebae^ -- fs/btrfs/block-group.c`:
+  identified `4358d9635a16` as the original verifier-loop source and
+  `7dc66abb5a47` as later chunk-map conversion.
+- [Phase 3] `git show 4358d9635a16` and `git describe --contains`:
+  confirmed first appearance around `v5.4-rc1`.
+- [Phase 3] `git log --grep=check_chunk_block_group_mappings
+  origin/master`: found no prior related fix except this commit.
+- [Phase 4] `b4 dig -c`, `-a`, `-w`, and `-m`: found v3 lore submission,
+  v2/v3 revision history, recipients, and maintainer response.
+- [Phase 4] Patchew v2 fetch: confirmed David Sterba review discussion
+  and author statement that crafted images plus normal syscalls
+  reproduce the issue.
+- [Phase 5] `rg`/file reads in `disk-io.c`, `block-group.c`,
+  `volumes.c`, and `ioctl.c`: verified mount-time call path and balance
+  NULL-deref path.
+- [Phase 6] `git grep` on stable branches: confirmed the buggy lookup
+  pattern in `6.8.y` through `6.19.y` and analogous extent-map pattern
+  in older stable branches.
+- [Phase 6] `git apply --check` against the current tree: confirmed
+  clean application to the current `7.0` checkout.
+- [Phase 7] `MAINTAINERS`: confirmed David Sterba as btrfs maintainer.
+- UNVERIFIED: I did not run a runtime reproducer or mount a crafted
+  btrfs image.
+- UNVERIFIED: I did not prove exact clean application to every older
+  stable branch; pre-`6.8` trees require an adjusted extent-map
+  backport.
+
+The technical merit is strong: this is a small, reviewed btrfs
+corruption-detection fix that prevents a real NULL-deref crash path and
+should be backported, with adjusted backports for older extent-map based
+stable trees.
+
+**YES**
+
+ fs/btrfs/block-group.c | 23 ++++++++---------------
+ 1 file changed, 8 insertions(+), 15 deletions(-)
+
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index c0d17a369bda5..acb55b6f1e550 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -2374,29 +2374,25 @@ static struct btrfs_block_group *btrfs_create_block_group(
+  */
+ static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
+ {
+-	u64 start = 0;
++	struct rb_node *node;
+ 	int ret = 0;
  
-+/*
-+ * For single data stripe RAID56, it's completely RAID1/RAID1C3, as data,
-+ * P/Q stripes all match each other, and rotation makes no difference anymore.
-+ *
-+ * So we still keep the on-disk chunk/bg type, but in memory we change the
-+ * chunk map type directly to RAID1/RAID1C3
-+ */
-+static void change_single_data_raid56_map(struct btrfs_chunk_map *map)
-+{
-+	if ((map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) == 0)
-+		return;
-+	if (nr_data_stripes(map) > 1)
-+		return;
-+	if (map->type & BTRFS_BLOCK_GROUP_RAID5)
-+		map->type |= BTRFS_BLOCK_GROUP_RAID1;
-+	else
-+		map->type |= BTRFS_BLOCK_GROUP_RAID1C3;
-+	map->type &= ~BTRFS_BLOCK_GROUP_RAID56_MASK;
-+}
-+
- static struct btrfs_block_group *create_chunk(struct btrfs_trans_handle *trans,
- 			struct alloc_chunk_ctl *ctl,
- 			struct btrfs_device_info *devices_info)
-@@ -6023,6 +6043,7 @@ static struct btrfs_block_group *create_chunk(struct btrfs_trans_handle *trans,
- 	map->io_width = BTRFS_STRIPE_LEN;
- 	map->sub_stripes = ctl->sub_stripes;
- 	map->num_stripes = ctl->num_stripes;
-+	change_single_data_raid56_map(map);
+-	while (1) {
++	/*
++	 * This is called during mount from btrfs_read_block_groups(), before
++	 * any background threads are started, so no concurrent writers can
++	 * modify the mapping_tree. No lock is needed here.
++	 */
++	for (node = rb_first_cached(&fs_info->mapping_tree); node; node = rb_next(node)) {
+ 		struct btrfs_chunk_map *map;
+ 		struct btrfs_block_group *bg;
  
- 	for (int i = 0; i < ctl->ndevs; i++) {
- 		for (int j = 0; j < ctl->dev_stripes; j++) {
-@@ -6201,7 +6222,7 @@ int btrfs_chunk_alloc_add_chunk_item(struct btrfs_trans_handle *trans,
- 	btrfs_set_stack_chunk_length(chunk, bg->length);
- 	btrfs_set_stack_chunk_owner(chunk, BTRFS_EXTENT_TREE_OBJECTID);
- 	btrfs_set_stack_chunk_stripe_len(chunk, BTRFS_STRIPE_LEN);
--	btrfs_set_stack_chunk_type(chunk, map->type);
-+	btrfs_set_stack_chunk_type(chunk, bg->flags);
- 	btrfs_set_stack_chunk_num_stripes(chunk, map->num_stripes);
- 	btrfs_set_stack_chunk_io_align(chunk, BTRFS_STRIPE_LEN);
- 	btrfs_set_stack_chunk_io_width(chunk, BTRFS_STRIPE_LEN);
-@@ -7596,6 +7617,7 @@ static int read_one_chunk(struct btrfs_key *key, struct extent_buffer *leaf,
- 	 */
- 	map->sub_stripes = btrfs_raid_array[index].sub_stripes;
- 	map->verified_stripes = 0;
-+	change_single_data_raid56_map(map);
- 
- 	if (num_stripes > 0)
- 		map->stripe_size = btrfs_calc_stripe_length(map);
+-		/*
+-		 * btrfs_find_chunk_map() will return the first chunk map
+-		 * intersecting the range, so setting @length to 1 is enough to
+-		 * get the first chunk.
+-		 */
+-		map = btrfs_find_chunk_map(fs_info, start, 1);
+-		if (!map)
+-			break;
+-
++		map = rb_entry(node, struct btrfs_chunk_map, rb_node);
+ 		bg = btrfs_lookup_block_group(fs_info, map->start);
+ 		if (unlikely(!bg)) {
+ 			btrfs_err(fs_info,
+ 	"chunk start=%llu len=%llu doesn't have corresponding block group",
+ 				     map->start, map->chunk_len);
+ 			ret = -EUCLEAN;
+-			btrfs_free_chunk_map(map);
+ 			break;
+ 		}
+ 		if (unlikely(bg->start != map->start || bg->length != map->chunk_len ||
+@@ -2409,12 +2405,9 @@ static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
+ 				bg->start, bg->length,
+ 				bg->flags & BTRFS_BLOCK_GROUP_TYPE_MASK);
+ 			ret = -EUCLEAN;
+-			btrfs_free_chunk_map(map);
+ 			btrfs_put_block_group(bg);
+ 			break;
+ 		}
+-		start = map->start + map->chunk_len;
+-		btrfs_free_chunk_map(map);
+ 		btrfs_put_block_group(bg);
+ 	}
+ 	return ret;
 -- 
-2.54.0
+2.53.0
 

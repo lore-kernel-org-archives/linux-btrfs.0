@@ -1,396 +1,302 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 90B283EE1EC;
-	Wed, 20 May 2026 11:20:39 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D91BA3438BA;
+	Wed, 20 May 2026 12:37:28 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779276041; cv=none; b=hqqJokkX11iUWrbcVOb0dNHAijLjUfApayRdvG2sZxSssXIk2EQcnQdwnZ3pwc8BlbokJ2fSIgeR4fN9ek/4Dnr0A9UStpbVUlTL8+cXyzJwui1vZWR5Jc/haFFdgpDEYMMePio94tjtbnj+qAo2+1FiGUVTll4YZaDO2nQqu2o=
+	t=1779280650; cv=none; b=PEgH/dIeeNR2V4Cs/bXUQXic046rYbW0OtFgMPIek5oNVD1c5sOT6gP4ntgrIfrQE1J6AO0h7XkNxmQafjVfvNZeEBxJXqoeGbxH0h4HGhyYsbMujoiHwb9PkYFnKoUVQHZQ4QNDgyYC5ITw/PYRtplj/cxvgR8QuiIYoBPXhh4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779276041; c=relaxed/simple;
-	bh=R0CXG/sR2XzcTICPaASs4rIpFuUDTo6aKtSJf/5vWx0=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=OAYsAvOkieLE4KlkAC11N4tGOpTykOnh1YhAggtX5f2G4/kJEUmlbV8drqdHDETjXZKX44K/BhvUbF1sfc+873BiXHIijEr4PHVSnuiZeeCgvwCcsXuVN0NLse/PwVZN+zm16VpRmH20gji4Nag2Y7bJimX8NsNf3ytXKxuI9Cw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UdE5gZrN; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1779280650; c=relaxed/simple;
+	bh=ZVRa+HkX4dyX4eLIuQX9X/xIIS5Xfq0MAUbxkOgscz8=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=oCGEX72Mrmr5aQCtQ10D+Yc3x8+dW+qU1ZRIUbiqmqWU3vwt9hA5TwNyotjhcWc/ovjm9Pyz9CwmmXEj4lEcGjZS24ui6ftds354S9jE1fDXvJIdu5HmCSklR5kARH2a4o+od0iVujJ7dpMeNAandl5WBYKL+50KFCNC+4ynhcA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=IAxExD7+; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UdE5gZrN"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 703CE1F00894;
-	Wed, 20 May 2026 11:20:38 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="IAxExD7+"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 46A7D1F00893;
+	Wed, 20 May 2026 12:37:26 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1779276039;
-	bh=BasMEeDW6XPs7A/N3atABlk5j0/nIx2aBYDkA9++MyI=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=UdE5gZrNLjmPSdqojUnXV5QQ8ADfTnnDFVCzgSgidcLgPUbAEXXIdwPobi8m5aJ0f
-	 LjV8ABsei4zGMVvmLq5B2bxw7XKMe6lFq1JfK4T3VF4bDOxYec8oYJ2R+h7uaxNelg
-	 GXmoWOKj57wWk8Avt3dVmHTwVDNqdsn/Kc+ygUg6VAJs9fxuxGR9DeyEvH8UoRImoH
-	 wOVKPjQfqtmzW7S9P0/U52ZHxb/rHJ/+yBytn+fKeGLismDnsxFKbv6cqFeS6+38/q
-	 sSpolIzOJWp5aFmng42dhhFz3+pqVBa24oB24WWGOg2IvYfp8ILbuGLNpfNoSbISju
-	 FIe+CC7bmZ2gQ==
-From: Sasha Levin <sashal@kernel.org>
-To: patches@lists.linux.dev,
-	stable@vger.kernel.org
-Cc: ZhengYuan Huang <gality369@gmail.com>,
-	David Sterba <dsterba@suse.com>,
-	Sasha Levin <sashal@kernel.org>,
-	clm@fb.com,
+	s=k20260515; t=1779280648;
+	bh=3GEIHKF35JluvQOpy9exSQmpcaZLR5m4pwZg7r97tXw=;
+	h=From:To:Cc:Subject:Date;
+	b=IAxExD7+7FxSjfV/43Ze9wsfKzGC2J00jnfaPFNhvksvf60HxSPEvBVZy7v4z8F4D
+	 hyjZ/MxSj1r3/NEL0C9ZIQHyZqTheRKcDeeFcyrMQNq6+07Rwc+c64j0rFRkQHPXn7
+	 MI1ECaQyjx942yP2MJyN2qiKMtQvhplsyzkbbTAK69DLyId1Fej2zj7aE6TcHofPv1
+	 JdMulII63ee6if39G4Od/cSdmB/BxJ7xIHmL7yN+k2fGV/Al85Y4atLmHofN073zt1
+	 BRfBgCWpmdyRiFAqPxpbOJYLb64EKe+7zgu+s7XpSiXnrXNqg1NwXq7YvNZF8ZLxkY
+	 4I7D+hCwRb5Aw==
+From: Andrey Albershteyn <aalbersh@kernel.org>
+To: linux-xfs@vger.kernel.org,
+	fsverity@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org,
+	ebiggers@kernel.org
+Cc: Andrey Albershteyn <aalbersh@kernel.org>,
+	hch@lst.de,
+	linux-ext4@vger.kernel.org,
+	linux-f2fs-devel@lists.sourceforge.net,
 	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 7.0-6.12] btrfs: fix check_chunk_block_group_mappings() to iterate all chunk maps
-Date: Wed, 20 May 2026 07:19:10 -0400
-Message-ID: <20260520111944.3424570-38-sashal@kernel.org>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <20260520111944.3424570-1-sashal@kernel.org>
-References: <20260520111944.3424570-1-sashal@kernel.org>
+	linux-unionfs@vger.kernel.org,
+	djwong@kernel.org,
+	david@fromorbit.com
+Subject: [PATCH v10 00/22] fs-verity support for XFS with post EOF merkle tree
+Date: Wed, 20 May 2026 14:36:58 +0200
+Message-ID: <20260520123722.405752-1-aalbersh@kernel.org>
+X-Mailer: git-send-email 2.51.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-X-stable-base: Linux 7.0.9
 Content-Transfer-Encoding: 8bit
 
-From: ZhengYuan Huang <gality369@gmail.com>
+Hi all,
 
-[ Upstream commit fc51cba3ebae67f967120e27162e94cfb8594479 ]
+This patch series adds fs-verity support for XFS. This version stores
+merkle tree beyond end of the file, the same way as ext4 does it. The
+difference is that verity descriptor is stored at the next aligned 64k
+block after the merkle tree last block. This is done due to sparse
+merkle tree which doesn't store hashes of zero data blocks.
 
-[BUG]
-A corrupted image with a chunk present in the chunk tree but whose
-corresponding block group item is missing from the extent tree can be
-mounted successfully, even though check_chunk_block_group_mappings()
-is supposed to catch exactly this corruption at mount time.  Once
-mounted, running btrfs balance with a usage filter (-dusage=N or
--dusage=min..max) triggers a null-ptr-deref:
+The patchset starts with a few fs-verity preparation patches. Then, a
+few patches to allow iomap to work in post EOF region. The XFS fs-verity
+implementation follows.
 
-  KASAN: null-ptr-deref in range [0x0000000000000070-0x0000000000000077]
-    RIP: 0010:chunk_usage_filter fs/btrfs/volumes.c:3874 [inline]
-    RIP: 0010:should_balance_chunk fs/btrfs/volumes.c:4018 [inline]
-    RIP: 0010:__btrfs_balance fs/btrfs/volumes.c:4172 [inline]
-    RIP: 0010:btrfs_balance+0x2024/0x42b0 fs/btrfs/volumes.c:4604
+The tree is read by iomap into page cache at offset of next largest
+folio past end of file. The same offset is used for on-disk.
 
-[CAUSE]
-The crash occurs because __btrfs_balance() iterates the on-disk chunk
-tree, finds the orphaned chunk, calls chunk_usage_filter() (or
-chunk_usage_range_filter()), which queries the in-memory block group
-cache via btrfs_lookup_block_group().  Since no block group was ever
-inserted for this chunk, the lookup returns NULL, and the subsequent
-dereference of cache->used crashes.
+This patchsets also synthesizes merkle tree block full of hashes of
+zeroed data blocks. This merkle blocks are not stored on disk, they are
+holes in the tree.
 
-check_chunk_block_group_mappings() uses btrfs_find_chunk_map() to
-iterate the in-memory chunk map (fs_info->mapping_tree):
+Testing. The -g verity is passing for 1k, 8k and 4k with/without quota
+on 4k and 64k page size systems. Tested -g quick for enabled/disabled
+fsverity. Also, overlay/080 overlay/089 with XFS as base. Compile test
+for FSVERITY=no/yes.
 
-  map = btrfs_find_chunk_map(fs_info, start, 1);
+This series based on v7.1-rc4.
 
-With @start = 0 and @length = 1, btrfs_find_chunk_map() looks for a
-chunk map that *contains* the logical address 0. If no chunk contains
-logical address 0, btrfs_find_chunk_map(fs_info, 0, 1) returns NULL
-immediately and the loop breaks after the very first iteration,
-having checked zero chunks. The entire verification function is therefore
-a no-op, and the corrupted image passes the mount-time check undetected.
+kernel:
+https://git.kernel.org/pub/scm/linux/kernel/git/aalbersh/xfs-linux.git/log/?h=b4/fsverity
 
-[FIX]
-Replace the btrfs_find_chunk_map() based loop with a direct in-order
-walk of fs_info->mapping_tree using rb_first_cached() + rb_next().
-This guarantees that every chunk map in the tree is visited regardless
-of the logical addresses involved.
+xfsprogs:
+https://github.com/alberand/xfsprogs/tree/b4/fsverity
 
-No lock is taken around the traversal. This function is called during
-mount from btrfs_read_block_groups(), which is invoked from open_ctree()
-before any background threads (cleaner, transaction kthread, etc.) are
-started. There are therefore no concurrent writers that could modify
-mapping_tree at this point. An analogous lockless direct traversal of
-mapping_tree already exists in fill_dummy_bgs() in the same file.
+xfstests:
+https://github.com/alberand/xfstests/tree/b4/fsverity
 
-Since we walk the rb-tree directly via rb_entry() without going through
-btrfs_find_chunk_map(), no reference is taken on each map entry, so the
-btrfs_free_chunk_map() calls are also removed.
+Cc: fsverity@lists.linux.dev
+Cc: linux-fsdevel@vger.kernel.org
+Cc: linux-xfs@vger.kernel.org
+Cc: linux-unionfs@vger.kernel.org
 
-Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
+Cc: david@fromorbit.com
+Cc: djwong@kernel.org
+Cc: ebiggers@kernel.org
+Cc: hch@lst.de
+
+1: https://lore.kernel.org/linux-xfs/20260223132021.292832-1-hch@lst.de/
+
 ---
+Changes in v10:
+- Rebase to v7.1-rc3 with relevant adjustments
+- Initialize ioend->io_vi to NULL to not get write work onto verity wq
+- Range diff below
+Changes in v9:
+- Fix fsverity_fill_zerohash() parameter names
+- A few fixes found by sashiko.dev:
+	- Replace ip->i_mount->m_attr_geo->blksize with m_sb.sb_blocksize
+	- Don't call xfs_trans_cancel() after xfs_trans_commit() in
+	  xfs_fsverity_end_enable()
+	- Call xfs_fsverity_delete_metadata() if verity enable failed
+	- Change start/end type from xfs_fileoff_t to loff_t
+	- Return xfs_trans_commit() error from
+	  xfs_fsverity_cancel_unwritten()
+Changes in v8:
+- Return fsverity_ensure_verity_info() errors from
+  ovl_ensure_verity_loaded()
+Changes in v7:
+- Move kerneldoc to fsverity_ensure_verity_info() definition
+- Drop patch adding XFS traces
+- Fix overly long line in the comment
+- Make order of fserror and fsverity_error consistent
+- Add overlay patch converting to fsverity_ensure_verity_info()
+Changes in v6:
+- Removed stub for fsverity_ensure_verity_info() as it's optimized out
+- Rename fsverity_folio_zero_hash() to fsverify_fill_zerohash()
+- Merge patches 8 to 10 into one
+- Merge patch gerating zero_hash and fsverity_fill_zerohash() into one
+- Add kerneldoc to fsverity_ensure_verity_info()
+- Add comments to iomap_block_needs_zeroing()
+Changes in v5:
+- Add fserror_report_data_lost() for data blocks in page spanning EOF
+- Issue fsverity metadata readahead in data readahead
+- iomap_fsverity_write() return type fix
+- Use of S_ISREG(mode)
+- Make 65536 #define instead of open-coded
+- Use transaction per unwritten extent removal
+- Fetch fsverity_info for all fsverity metadata
+- Revert fsverity_folio_zero_hash() stub as used in iomap
+- Extend cancel_unwritten to whole file range to remove cow leftovers
+- Drop delayed allocation on the COW fork on fsverity completion
+Changes in v4:
+- Use fserror interface in fsverity instead of fs callback
+- Hoist pagecache_read from f2fs/ext4 to fsverity
+- Refactor iomap code
+- Fetch fsverity_info only for file data and merkle tree holes
+- Do not disable preallocation, remove unwritten extents instead
+- Offload fsverity hash I/O to fsverity workqueue in read path
+- Store merkle tree at round_up(i_size, 64k)
+- Add a spacing between merkle tree and fsverity descriptor as next 64k
+  aligned block
+- Squash helpers into first user commits
+- Squash on-disk format changes into single commit
+- Drop different offset for pagecache/on-disk
+- Don't zero out pages in higher order folios in write path
+- Link to v3: https://lore.kernel.org/fsverity/20260217231937.1183679-1-aalbersh@kernel.org/T/#t
+Changes in v3:
+- Different on-disk and pagecache offset
+- Use read path ioends
+- Switch to hashtable fsverity info
+- Synthesize merkle tree blocks full of zeroes
+- Other minor refactors
+- Link to v2: https://lore.kernel.org/fsverity/20260114164210.GO15583@frogsfrogsfrogs/T/#t
+Changes in v2:
+- Move to VFS interface for merkle tree block reading
+- Drop patchset for per filesystem workqueues
+- Change how offsets of the descriptor and tree metadata is calculated
+- Store fs-verity descriptor in data fork side by side with merkle tree
+- Simplify iomap changes, remove interface for post eof read/write
+- Get rid of extended attribute implementation
+- Link to v1: https://lore.kernel.org/r/20250728-fsverity-v1-0-9e5443af0e34@kernel.org
 
-LLM Generated explanations, may be completely bogus:
+-- >8 --
 
-## Phase 1: Commit Message Forensics
-Record: Subsystem is `btrfs`; action verb is `fix`; claimed intent is to
-make `check_chunk_block_group_mappings()` actually visit all chunk maps.
+ 1:  aabd8b112385 <  -:  ------------ fs-verity support for XFS with post EOF merkle tree
+ -:  ------------ >  1:  ec15fda2f683 fs-verity support for XFS with post EOF merkle tree
+ 2:  f3a3cc5b6ab2 =  2:  97d22944e17f fsverity: report validation errors through fserror to fsnotify
+ 3:  c8155669bdff =  3:  f717e55c313c fsverity: expose ensure_fsverity_info()
+ 4:  83262640936a !  4:  38381b5ec63e ovl: use core fsverity ensure info interface
+    @@ fs/overlayfs/util.c: char *ovl_get_redirect_xattr(struct ovl_fs *ofs, const stru
+        struct inode *inode = d_inode(datapath->dentry);
+     -  struct file *filp;
 
-Record: Tags found in the committed version: `Signed-off-by: ZhengYuan
-Huang <gality369@gmail.com>`, `Reviewed-by: David Sterba
-<dsterba@suse.com>`, `Signed-off-by: David Sterba <dsterba@suse.com>`.
-No `Fixes:`, `Reported-by:`, `Tested-by:`, `Link:`, or `Cc:
-stable@vger.kernel.org` tag was present.
+    --  if (IS_VERITY(inode) && fsverity_get_info(inode) == NULL) {
+    +-  if (!fsverity_active(inode) && IS_VERITY(inode)) {
+     -          /*
+     -           * If this inode was not yet opened, the verity info hasn't been
+     -           * loaded yet, so we need to do that here to force it into memory.
+ 5:  6d63f3ee7604 =  5:  b4b86f757eaa fsverity: generate and store zero-block hash
+ 6:  800753879b5c =  6:  f9d2eaf0fdcd fsverity: pass digest size and hash of the all-zeroes block to ->write
+ 7:  c4e06f9d9c08 =  7:  87d8f4495aa5 fsverity: hoist pagecache_read from f2fs/ext4 to fsverity
+ 8:  34be1a25ffd2 =  8:  2da572c7a3bf iomap: introduce IOMAP_F_FSVERITY and teach writeback to handle fsverity
+ 9:  728df1f13e31 !  9:  3669ecfb610e iomap: teach iomap to read files with fsverity
+    @@ fs/iomap/buffered-io.c: void iomap_readahead(const struct iomap_ops *ops,
+                iter.status = iomap_readahead_iter(&iter, ctx,
+                                        &cur_bytes_submitted);
 
-Record: The commit describes a real mount-time corruption validation
-bug: a chunk can exist in the chunk tree while the matching block group
-item is missing from the extent tree. Because the verifier may check
-zero chunks, the corrupted filesystem can mount, and later `btrfs
-balance -dusage=...` can hit a NULL dereference in
-`chunk_usage_filter()` / `chunk_usage_range_filter()`.
+    - ## fs/iomap/ioend.c ##
+    -@@ fs/iomap/ioend.c: struct iomap_ioend *iomap_init_ioend(struct inode *inode,
+    -   ioend->io_offset = file_offset;
+    -   ioend->io_size = bio->bi_iter.bi_size;
+    -   ioend->io_sector = bio->bi_iter.bi_sector;
+    -+  ioend->io_vi = NULL;
+    -   ioend->io_private = NULL;
+    -   return ioend;
+    - }
+    -
+      ## include/linux/iomap.h ##
+     @@ include/linux/iomap.h: struct iomap_ioend {
+        loff_t                  io_offset;      /* offset in the file */
+10:  9eb9dd92b762 = 10:  a8989fbd29f1 iomap: introduce iomap_fsverity_write() for writing fsverity metadata
+11:  27602df28674 = 11:  04b23426b5cf xfs: introduce fsverity on-disk changes
+12:  544c81d26e7c = 12:  ba69a8817d13 xfs: initialize fs-verity on file open
+13:  6158f03b2ad4 = 13:  e2b59e6cd4da xfs: don't allow to enable DAX on fs-verity sealed inode
+14:  03b1f44c53b2 = 14:  9e2628f17346 xfs: disable direct read path for fs-verity files
+15:  96c9f90ade98 = 15:  3dea5f7e5481 xfs: handle fsverity I/O in write/read path
+16:  e864ce49e5b3 = 16:  ff837a33e8f5 xfs: use read ioend for fsverity data verification
+17:  b06bb3eefa38 = 17:  5c79a1e5f6ff xfs: add fs-verity support
+18:  567d5190bfd9 = 18:  af3c36498d1c xfs: remove unwritten extents after preallocations in fsverity metadata
+19:  b952307f139d = 19:  744cf7ec0842 xfs: add fs-verity ioctls
+20:  3f5382888801 = 20:  d47aac1643a7 xfs: advertise fs-verity being available on filesystem
+21:  b87668403694 = 21:  48e83ac7e6c2 xfs: check and repair the verity inode flag state
+22:  eec854161680 = 22:  2a9f58d29909 xfs: introduce health state for corrupted fsverity metadata
+23:  9ddc2cf10f52 = 23:  b5bf49f2e750 xfs: enable ro-compat fs-verity flag
 
-Record: This is not hidden cleanup. It is an explicit NULL-deref /
-corruption-detection fix.
+Andrey Albershteyn (20):
+  fsverity: report validation errors through fserror to fsnotify
+  fsverity: expose ensure_fsverity_info()
+  ovl: use core fsverity ensure info interface
+  fsverity: generate and store zero-block hash
+  fsverity: pass digest size and hash of the all-zeroes block to ->write
+  fsverity: hoist pagecache_read from f2fs/ext4 to fsverity
+  iomap: introduce IOMAP_F_FSVERITY and teach writeback to handle
+    fsverity
+  iomap: teach iomap to read files with fsverity
+  iomap: introduce iomap_fsverity_write() for writing fsverity metadata
+  xfs: introduce fsverity on-disk changes
+  xfs: initialize fs-verity on file open
+  xfs: don't allow to enable DAX on fs-verity sealed inode
+  xfs: disable direct read path for fs-verity files
+  xfs: handle fsverity I/O in write/read path
+  xfs: use read ioend for fsverity data verification
+  xfs: add fs-verity support
+  xfs: remove unwritten extents after preallocations in fsverity
+    metadata
+  xfs: add fs-verity ioctls
+  xfs: introduce health state for corrupted fsverity metadata
+  xfs: enable ro-compat fs-verity flag
 
-## Phase 2: Diff Analysis
-Record: One file changed: `fs/btrfs/block-group.c`, 8 insertions and 15
-deletions in the committed object. Modified function:
-`check_chunk_block_group_mappings()`. Scope: single-file surgical fix.
+Darrick J. Wong (2):
+  xfs: advertise fs-verity being available on filesystem
+  xfs: check and repair the verity inode flag state
 
-Record: Before, the function started at logical address 0 and repeatedly
-called `btrfs_find_chunk_map(fs_info, start, 1)`. If no chunk
-intersected `[0,1)`, the first lookup returned NULL and the loop exited
-without checking any chunk. After, it walks `fs_info->mapping_tree`
-directly with `rb_first_cached()` and `rb_next()`.
+ fs/btrfs/verity.c              |   6 +-
+ fs/ext4/verity.c               |  36 +--
+ fs/f2fs/verity.c               |  34 +--
+ fs/iomap/buffered-io.c         | 109 +++++++-
+ fs/iomap/ioend.c               |   1 +
+ fs/iomap/trace.h               |   3 +-
+ fs/overlayfs/util.c            |  14 +-
+ fs/verity/enable.c             |   4 +-
+ fs/verity/fsverity_private.h   |   3 +
+ fs/verity/measure.c            |   4 +-
+ fs/verity/open.c               |  25 +-
+ fs/verity/pagecache.c          |  55 ++++
+ fs/verity/verify.c             |   4 +
+ fs/xfs/Makefile                |   1 +
+ fs/xfs/libxfs/xfs_bmap.c       |   7 +
+ fs/xfs/libxfs/xfs_format.h     |  35 ++-
+ fs/xfs/libxfs/xfs_fs.h         |   2 +
+ fs/xfs/libxfs/xfs_health.h     |   4 +-
+ fs/xfs/libxfs/xfs_inode_buf.c  |   8 +
+ fs/xfs/libxfs/xfs_inode_util.c |   2 +
+ fs/xfs/libxfs/xfs_sb.c         |   4 +
+ fs/xfs/scrub/attr.c            |   7 +
+ fs/xfs/scrub/common.c          |  53 ++++
+ fs/xfs/scrub/common.h          |   2 +
+ fs/xfs/scrub/inode.c           |   7 +
+ fs/xfs/scrub/inode_repair.c    |  36 +++
+ fs/xfs/xfs_aops.c              |  62 ++++-
+ fs/xfs/xfs_bmap_util.c         |   8 +
+ fs/xfs/xfs_file.c              |  19 +-
+ fs/xfs/xfs_fsverity.c          | 457 +++++++++++++++++++++++++++++++++
+ fs/xfs/xfs_fsverity.h          |  28 ++
+ fs/xfs/xfs_health.c            |   1 +
+ fs/xfs/xfs_inode.h             |   6 +
+ fs/xfs/xfs_ioctl.c             |  14 +
+ fs/xfs/xfs_iomap.c             |  15 +-
+ fs/xfs/xfs_iops.c              |   4 +
+ fs/xfs/xfs_message.c           |   4 +
+ fs/xfs/xfs_message.h           |   1 +
+ fs/xfs/xfs_mount.h             |   4 +
+ fs/xfs/xfs_super.c             |   7 +
+ include/linux/fsverity.h       |  18 +-
+ include/linux/iomap.h          |  13 +
+ 42 files changed, 1020 insertions(+), 107 deletions(-)
+ create mode 100644 fs/xfs/xfs_fsverity.c
+ create mode 100644 fs/xfs/xfs_fsverity.h
 
-Record: Bug category is logic/correctness with memory-safety
-consequence. The broken verifier allows filesystem corruption through
-mount; later balance can dereference a NULL block group pointer.
-
-Record: Fix quality is good: small, direct, reviewed by the btrfs
-maintainer, and it removes `btrfs_free_chunk_map()` calls because direct
-`rb_entry()` traversal does not acquire chunk-map references. Regression
-risk is low; the main concern is lockless traversal, but code and commit
-context verify this runs during mount before cleaner/transaction
-kthreads start.
-
-## Phase 3: Git History Investigation
-Record: `git blame` on the pre-fix function shows the verifier loop
-originated from `4358d9635a16` (`btrfs: migrate the block group
-read/creation code`), first contained in `v5.4-rc1`. Later chunk-map
-conversion came from `7dc66abb5a47` in `v6.8-rc1`.
-
-Record: No `Fixes:` tag is present, so there was no Fixes target to
-follow.
-
-Record: Recent `fs/btrfs/block-group.c` history shows normal btrfs
-churn, but no prior fix for `check_chunk_block_group_mappings()` except
-this commit. `git log --grep=check_chunk_block_group_mappings
-origin/master` found only `fc51cba3ebae`.
-
-Record: Author history in `fs/btrfs` shows ZhengYuan Huang has other
-btrfs fixes; the patch was reviewed and committed by David Sterba, who
-is listed in `MAINTAINERS` as a btrfs maintainer.
-
-Record: The commit was submitted as patch 4/4, but the final mainline
-history contains this verifier fix independently. The earlier balance
-hardening patches were not found in `origin/master`; this patch still
-has standalone value because it prevents the corrupted state from
-passing mount.
-
-## Phase 4: Mailing List And External Research
-Record: `b4 dig -c fc51cba3ebae...` found the original lore submission:
-`https://patch.msgid.link/20260325004339.2323838-5-gality369@gmail.com`.
-
-Record: `b4 dig -a` found v2 and v3 series. v3 is the committed/latest
-revision found by `b4`.
-
-Record: `b4 dig -w` showed the patch was sent to David Sterba, Chris
-Mason, Ilya Dryomov, `linux-btrfs`, and `linux-kernel`.
-
-Record: Direct `WebFetch` of lore was blocked by Anubis, so I used `b4`
-mbox content and Patchew. The v3 mbox includes David Sterba saying he
-added the fixes to `for-next`; the committed patch has his `Reviewed-
-by`.
-
-Record: Patchew v2 discussion records David Sterba saying block group
-lookup checks make sense in general, and the author clarified the bug is
-reproducible with a crafted filesystem image and normal syscalls, not
-only fuzzing. No NAKs were found. No stable-specific discussion was
-found by web search.
-
-## Phase 5: Code Semantic Analysis
-Record: Modified function: `check_chunk_block_group_mappings()`.
-
-Record: Caller trace verified: `open_ctree()` calls
-`btrfs_read_block_groups()`, which calls
-`check_chunk_block_group_mappings()`. In `disk-io.c`,
-`btrfs_read_block_groups()` occurs before the cleaner and transaction
-kthreads are started.
-
-Record: Crash path verified: `BTRFS_IOC_BALANCE_V2` reaches
-`btrfs_ioctl_balance()`, then `btrfs_balance()`, `__btrfs_balance()`,
-`should_balance_chunk()`, then usage filters. Current code dereferences
-`cache->used` immediately after `btrfs_lookup_block_group()`.
-
-Record: Key callees: `rb_first_cached()`, `rb_next()`, `rb_entry()`,
-`btrfs_lookup_block_group()`, `btrfs_put_block_group()`, and error
-reporting via `btrfs_err()`.
-
-Record: Similar safe direct mapping-tree traversal already exists in
-`fill_dummy_bgs()` in the same file, and other mapping-tree traversal
-code exists elsewhere with appropriate locking/context.
-
-## Phase 6: Cross-Referencing And Stable Tree Analysis
-Record: Buggy code exists in stable branches. `stable/linux-6.8.y`
-through `stable/linux-6.19.y` contain the `btrfs_find_chunk_map(fs_info,
-start, 1)` pattern. `stable/linux-5.4.y`, `5.10.y`, `5.15.y`, `6.1.y`,
-`6.6.y`, and `6.7.y` contain the older analogous
-`lookup_extent_mapping(map_tree, start, 1)` pattern.
-
-Record: The upstream patch applies cleanly to the current `7.0` tree
-with `git apply --check`.
-
-Record: Older pre-`6.8` stable trees likely need an adjusted backport
-because they use `extent_map` / `map_lookup` rather than `struct
-btrfs_chunk_map`. The bug mechanism is still verified there by the
-strict intersection semantics in `extent_map.c`.
-
-Record: I found no related stable branch commit already fixing this
-issue by subject/grep.
-
-## Phase 7: Subsystem And Maintainer Context
-Record: Subsystem is btrfs filesystem code under `fs/btrfs/`.
-Criticality is IMPORTANT to CORE-for-users-of-btrfs because filesystem
-corruption handling and kernel crashes are involved.
-
-Record: Subsystem is actively maintained; recent `origin/master --
-fs/btrfs` history shows many btrfs fixes. David Sterba is listed as a
-btrfs maintainer and reviewed/committed this fix.
-
-## Phase 8: Impact And Risk Assessment
-Record: Affected users are btrfs users with a corrupted or crafted
-filesystem image containing a chunk without a corresponding block group
-item.
-
-Record: Trigger is mount of that corrupted image followed by balance
-with usage filters for the crash path; the patched behavior rejects the
-inconsistency at mount time with `-EUCLEAN`. Patchew discussion says it
-is reproducible with crafted filesystem image plus normal syscalls.
-Balance ioctl requires `CAP_SYS_ADMIN`, verified in
-`btrfs_ioctl_balance()`.
-
-Record: Failure mode is HIGH/CRITICAL: KASAN NULL pointer dereference in
-filesystem balance code, i.e. kernel crash/oops risk, and the underlying
-issue is missed filesystem corruption detection.
-
-Record: Benefit is high: prevents corrupted btrfs images from mounting
-silently and avoids a later NULL dereference. Risk is low for `6.8+`
-style trees: one contained verifier loop change during mount. Risk is
-medium-low for older trees only because the backport needs translation
-to the older extent-map data structure.
-
-## Phase 9: Final Synthesis
-Record: Evidence for backporting: real NULL-deref crash path, crafted-
-image reproducibility, filesystem corruption detection failure, small
-one-function fix, maintainer review, code present across stable trees,
-and clean apply to current `7.0` tree.
-
-Record: Evidence against backporting: no `Fixes:`/`Cc: stable` tag;
-older stable trees need adjusted backports; the exact patch is not
-directly applicable to pre-`6.8` extent-map code. These do not outweigh
-the bug severity.
-
-Record: Stable rules checklist: obviously correct and reviewed: yes;
-fixes real user-visible bug: yes; important issue: yes, NULL deref and
-missed corruption detection; small and contained: yes; no new
-feature/API: yes; stable application: clean for current `7.0`, likely
-straightforward for `6.8+`, adjusted backport needed for older trees.
-
-Record: Exception category: none. This is a normal bug fix, not a device
-ID, quirk, DT, build, or documentation-only patch.
-
-## Verification
-- [Phase 1] `git show --format=fuller --stat fc51cba3ebae...`: confirmed
-  commit message, tags, author, reviewer, and one-file diff.
-- [Phase 2] `git show --no-ext-diff fc51cba3ebae... -- fs/btrfs/block-
-  group.c`: confirmed the loop replacement and removal of
-  `btrfs_free_chunk_map()` calls.
-- [Phase 3] `git blame -L ... fc51cba3ebae^ -- fs/btrfs/block-group.c`:
-  identified `4358d9635a16` as the original verifier-loop source and
-  `7dc66abb5a47` as later chunk-map conversion.
-- [Phase 3] `git show 4358d9635a16` and `git describe --contains`:
-  confirmed first appearance around `v5.4-rc1`.
-- [Phase 3] `git log --grep=check_chunk_block_group_mappings
-  origin/master`: found no prior related fix except this commit.
-- [Phase 4] `b4 dig -c`, `-a`, `-w`, and `-m`: found v3 lore submission,
-  v2/v3 revision history, recipients, and maintainer response.
-- [Phase 4] Patchew v2 fetch: confirmed David Sterba review discussion
-  and author statement that crafted images plus normal syscalls
-  reproduce the issue.
-- [Phase 5] `rg`/file reads in `disk-io.c`, `block-group.c`,
-  `volumes.c`, and `ioctl.c`: verified mount-time call path and balance
-  NULL-deref path.
-- [Phase 6] `git grep` on stable branches: confirmed the buggy lookup
-  pattern in `6.8.y` through `6.19.y` and analogous extent-map pattern
-  in older stable branches.
-- [Phase 6] `git apply --check` against the current tree: confirmed
-  clean application to the current `7.0` checkout.
-- [Phase 7] `MAINTAINERS`: confirmed David Sterba as btrfs maintainer.
-- UNVERIFIED: I did not run a runtime reproducer or mount a crafted
-  btrfs image.
-- UNVERIFIED: I did not prove exact clean application to every older
-  stable branch; pre-`6.8` trees require an adjusted extent-map
-  backport.
-
-The technical merit is strong: this is a small, reviewed btrfs
-corruption-detection fix that prevents a real NULL-deref crash path and
-should be backported, with adjusted backports for older extent-map based
-stable trees.
-
-**YES**
-
- fs/btrfs/block-group.c | 23 ++++++++---------------
- 1 file changed, 8 insertions(+), 15 deletions(-)
-
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index c0d17a369bda5..acb55b6f1e550 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -2374,29 +2374,25 @@ static struct btrfs_block_group *btrfs_create_block_group(
-  */
- static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
- {
--	u64 start = 0;
-+	struct rb_node *node;
- 	int ret = 0;
- 
--	while (1) {
-+	/*
-+	 * This is called during mount from btrfs_read_block_groups(), before
-+	 * any background threads are started, so no concurrent writers can
-+	 * modify the mapping_tree. No lock is needed here.
-+	 */
-+	for (node = rb_first_cached(&fs_info->mapping_tree); node; node = rb_next(node)) {
- 		struct btrfs_chunk_map *map;
- 		struct btrfs_block_group *bg;
- 
--		/*
--		 * btrfs_find_chunk_map() will return the first chunk map
--		 * intersecting the range, so setting @length to 1 is enough to
--		 * get the first chunk.
--		 */
--		map = btrfs_find_chunk_map(fs_info, start, 1);
--		if (!map)
--			break;
--
-+		map = rb_entry(node, struct btrfs_chunk_map, rb_node);
- 		bg = btrfs_lookup_block_group(fs_info, map->start);
- 		if (unlikely(!bg)) {
- 			btrfs_err(fs_info,
- 	"chunk start=%llu len=%llu doesn't have corresponding block group",
- 				     map->start, map->chunk_len);
- 			ret = -EUCLEAN;
--			btrfs_free_chunk_map(map);
- 			break;
- 		}
- 		if (unlikely(bg->start != map->start || bg->length != map->chunk_len ||
-@@ -2409,12 +2405,9 @@ static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
- 				bg->start, bg->length,
- 				bg->flags & BTRFS_BLOCK_GROUP_TYPE_MASK);
- 			ret = -EUCLEAN;
--			btrfs_free_chunk_map(map);
- 			btrfs_put_block_group(bg);
- 			break;
- 		}
--		start = map->start + map->chunk_len;
--		btrfs_free_chunk_map(map);
- 		btrfs_put_block_group(bg);
- 	}
- 	return ret;
 -- 
-2.53.0
+2.51.2
 

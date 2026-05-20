@@ -1,439 +1,205 @@
-Received: from fout-b5-smtp.messagingengine.com (fout-b5-smtp.messagingengine.com [202.12.124.148])
+Received: from fhigh-a2-smtp.messagingengine.com (fhigh-a2-smtp.messagingengine.com [103.168.172.153])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 39472349AFF;
-	Wed, 20 May 2026 17:47:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.148
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 65E0F3F20FF
+	for <linux-btrfs@vger.kernel.org>; Wed, 20 May 2026 18:03:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.153
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779299276; cv=none; b=bj+ucid19a1l8umLMlNIIfmxEYZ74EcR6xIDpupxiKV5MIJU44TzWNrvmwG0kMFEvfJmV87ITH/0u4pYX/doQNUy4Qx3n3etfdyx4xQ8GRxFDNw0E6fULBOR6cL++fZ91lb8dVpvVboRxRUj78XY6Ge5T3YZHo0QNzKX0K6o20A=
+	t=1779300187; cv=none; b=J0kLA3gMeHNIhDANJfNOIeODRodQaL5DtgXs4Wqj+agQTCETChpTRY2XcEWQaGSqXMrf7/iQ3wT/4w51TpU941Xwo/WIQ5J5pr+M5GoFnhaEAMSnUyS95swYJxSjN/s8jushZNmYppWW2OjqUr4ykXF07ZyUz9oapGSGcb3UJUs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779299276; c=relaxed/simple;
-	bh=2yKnyAZN488LlRyCnRHOL+10+I5ClDvBj3lXa9LWLoQ=;
+	s=arc-20240116; t=1779300187; c=relaxed/simple;
+	bh=0++kqYwcMc+sD8GUZOhljOiPdvu+hO7nAZ2lY9QBQWo=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=GWbd02Lq5J50TNN3AigdfyKBeq5ZeFjkgIJhpfHlskx1sftCCbSRvNnNC+buah9g3kVWzj9S0oxEQk86hMN+ZyhVjzrvaq6m0QyomMmCkhcxt+bhGT3HSW2m3kcFlYtoiard5dr8J+bniB93KA7FJcCe2JUP4klw1FhjGtYLEdg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=P7p4DOzN; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=WKqoVTHe; arc=none smtp.client-ip=202.12.124.148
+	 Content-Type:Content-Disposition:In-Reply-To; b=N2+cvR6gWG1LUb8p9o8g1ajGnku/NSiJcSsiHkipqTWazUoVEo4J625ppy3R1VX8V6tApz1mc9nGA4itU/1AxUGXcEMm+iJYAvHJ9SvQbfxaEUVeaCRxVG/f7epzvFl9qeMe23KoPT12CRK23zHECYzmd3zE15dsfKgQRz5zmZA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=H5qi7/Ga; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=unpUAIfP; arc=none smtp.client-ip=103.168.172.153
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="P7p4DOzN";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="WKqoVTHe"
-Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
-	by mailfout.stl.internal (Postfix) with ESMTP id 988241D00058;
-	Wed, 20 May 2026 13:47:52 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-02.internal (MEProxy); Wed, 20 May 2026 13:47:53 -0400
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="H5qi7/Ga";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="unpUAIfP"
+Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
+	by mailfhigh.phl.internal (Postfix) with ESMTP id 8B7B9140011B;
+	Wed, 20 May 2026 14:03:05 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-03.internal (MEProxy); Wed, 20 May 2026 14:03:05 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
 	:content-transfer-encoding:content-type:content-type:date:date
 	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm1; t=1779299272;
-	 x=1779385672; bh=+I0u7hS0wY60ISgRabGOXhhEPYzNqBSobQ/51ospf94=; b=
-	P7p4DOzNQLFY6fuyKSohODfdw7Q6NzBl3hbXXlk9X8q1X1rxOzwRb2h7FWEHUKs8
-	8K8Pb0i7s1pQZE/tPhIkwYHesRq1iA4kpXuCxVGsqK2BfGJQvQYtWJdHGAzTgEF0
-	+xEzU8yMnfiX2eb8YyUN52o6/UyXijduONu+JR1hgkK4YnedHA+YU4RQIyb5VZuD
-	w/YwHrroskMuTYm9V9o0oXM5KmOuOcB0sdMv9OdI52g3P+9TAynGtXt4Z+I/d9uw
-	/3oWQBsdjuES1frZ+omnkxyBRsA0fVLuNa8BnWPTVekbk+7tov0MrsvpiLLT9nWf
-	6N/fSuKJ3iPXTMFegEWUtA==
+	:references:reply-to:subject:subject:to:to; s=fm1; t=1779300185;
+	 x=1779386585; bh=LuBZGEaIWbcndIsmdYe+gr8eZyq6va3CRWqSsJFc9fE=; b=
+	H5qi7/GaW6OajHrowG5Qd8yS8PKJmwNqU6mXZucSPzBhrKqsg59ofvSQd4hhdud0
+	ZrJvnhh06wImhfnS7aXZrZ/cilhE31/bX6AHSZ0u8hVNA2xq38PVSpZCglLirlj4
+	MWpA7UkKQHI0siI+bj9pxbyTdcEEdGCMmeMPKsmKFLedsuP7XiR4B1QbV0eZjwNl
+	khnv0+XxCl+dzgvxBcVLiPnaZzAkjLTIRplxVRUT7PHPXrCVBpDE7sZiURoXjVP3
+	2t5V0NF8GDi1a6uB+hRr593NH0z9WKOStWwG7j+0KAhEG7dbeZM7iDBn+bCuUcoe
+	N4opjhzYcW7n7IO28z6TvA==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-transfer-encoding
 	:content-type:content-type:date:date:feedback-id:feedback-id
 	:from:from:in-reply-to:in-reply-to:message-id:mime-version
 	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=1779299272; x=
-	1779385672; bh=+I0u7hS0wY60ISgRabGOXhhEPYzNqBSobQ/51ospf94=; b=W
-	KqoVTHeIwIoP5hY9AvNB/HmDcUCXjn/blWh42lQTidLMvNDlSzTzPAamFMqoEKkF
-	/rsGSLgKL3jnB0zkFcxRb4o7/v+81+9SGUr1pyVIwvKLNfr/VWMydHSDc08kRISX
-	ROoa/vHMLq0oR3GQ1gASf77FY8XKT5eOX7WvqROlxTbkX49A6vQdwGj49nMeF/ve
-	ze6qpk0m3z62LSB/ZJRmo6RJqS9p4QD519YjivHLW4g1y3xQYtdDlJ+A34XkqNlr
-	305HpsegmWjZMQ/+t7YcF7sxf8MJVpFSb1/emRnPkvTBdmFtHaqln/As/tjujnmb
-	boXlj65EX3Rjpljo/uo8g==
-X-ME-Sender: <xms:x_MNaunAVmDJ_rJV5DPQuLur0I3J_R7I9b8TwXo2PsQw_UDCah0-6w>
-    <xme:x_MNagOOQmJEId2rtBYJXImjy6KkScQ4kZz_dSs4AEx_9KY6SJ31ScTZdVLw9TVAq
-    z--C2qt0LMvXD01yqd7zFHSGHF2LaUCGdNl_d2aSucxPpad-_ucMv8>
-X-ME-Received: <xmr:x_MNaizJd9PF9gnqVdPOxpGmMslpQz5pjhXEu29WJ0aIwPtzFrSoURMoKP2DcKPJCe85vl56oFbk1-bM1AyGU6QaxOo>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddugeehvdejucetufdoteggodetrf
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=1779300185; x=
+	1779386585; bh=LuBZGEaIWbcndIsmdYe+gr8eZyq6va3CRWqSsJFc9fE=; b=u
+	npUAIfP0VYDhr/bj0FszSGECuKTiaMiOY4e00xkINwdeKEiJg0jYFTh3h39bk9Er
+	UTttJUP5FWmqJrGDxZ7IsoQMmFpgkseNjaWwnTK3MsTe5n+RIWWl/KvZTuuU3M5i
+	ARNuRuMr2F0WlFm0Eq2u7gtk99SjLxwDGznsx8cbt3/3oRM0AlLCv10rWF2cyDiB
+	Z9PkLJl8qyIxK9szsZGfhEXLZEKVYLVA4Hw0H+WFSXlVRm0+6lGxoHrUAVhlzOEy
+	nkUOSKcF/0iLnk7T4pvr6IoT8OuTKOSuhKCJiSrDPmzO6BOckMKqsKpY8t96w60l
+	5MOJaOgpCA/Most9bz7PA==
+X-ME-Sender: <xms:WPcNamWF518373N9dY-ldvyTaUamODFMI8PxXBN3LPXfVBT5UjFV-g>
+    <xme:WPcNahqF8fQL7XuZBZSVExqj4ufFnwNrQu5WztvrmmM6rpN_vIB7qvFfl-T194qDw
+    -22Tqp7-ujFDKGp-XMsQ1jTbFmtgV-Qk4MtwkCkXVnzSmpy-F05cTo>
+X-ME-Received: <xmr:WPcNagnG7xuo_AaHfy72J08vb4yTCz6HdeyIl7a-M-fAO1GjB_l-4BxUGYpEPoscok3c1MJ2s5ke-G4-4t_gKooZGrw>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeefhedrtddtgddugeehfedtucetufdoteggodetrf
     dotffvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfurfetoffkrfgpnffqhgenuceu
     rghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujf
-    gurhepfffhvfevuffkfhggtggugfgjsehtkeertddttdejnecuhfhrohhmpeeuohhrihhs
-    uceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhepud
-    elhfdthfetuddvtefhfedtiedtteehvddtkedvledtvdevgedtuedutdeitdeinecuvehl
+    gurhepfffhvfevuffkfhggtggugfgjsehtkeertddttddunecuhfhrohhmpeeuohhrihhs
+    uceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhepge
+    elheehjeegudfhteetleehieffgefhjefftefhheekleeujedtkeeugeetfffhnecuvehl
     uhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhishessg
-    hurhdrihhopdhnsggprhgtphhtthhopeduhedpmhhouggvpehsmhhtphhouhhtpdhrtghp
-    thhtoheprhhivghlsehsuhhrrhhivghlrdgtohhmpdhrtghpthhtoheplhhinhhugidqkh
-    gvrhhnvghlsehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpthhtohepkhgvrhhnvghl
-    qdhtvggrmhesmhgvthgrrdgtohhmpdhrtghpthhtoheplhhinhhugidqmhhmsehkvhgrtg
-    hkrdhorhhgpdhrtghpthhtohepuggrvhhiugeskhgvrhhnvghlrdhorhhgpdhrtghpthht
-    ohepfihilhhlhiesihhnfhhrrgguvggrugdrohhrghdprhgtphhtthhopehsuhhrvghnsg
-    esghhoohhglhgvrdgtohhmpdhrtghpthhtohephhgrnhhnvghssegtmhhpgigthhhgrdho
-    rhhgpdhrtghpthhtoheplhhjsheskhgvrhhnvghlrdhorhhg
-X-ME-Proxy: <xmx:x_MNattTtWBx2Q49dMijQFU63q35L-iuEMeiN2rwCCZf57c2l31jrA>
-    <xmx:x_MNalZ7muIE8tUQ10H3qpkM9OkRgeyukSrKa5ZrGO3eVY-CVZc16g>
-    <xmx:x_MNas06iMHElWg-rtvkHBT_c0mYqw473d6Dlpd4UxZ_x1TrN2Uvbg>
-    <xmx:x_MNanuntCcj0LzjTMsT2M2NntcAVFcb7IJluhAYKq9cRtag_F4DQQ>
-    <xmx:yPMNamvtAHbksNeqU8lU99qInmX1cbKIKqTG0KJ_o3KygmcIGf0CBogn>
+    hurhdrihhopdhnsggprhgtphhtthhopeekpdhmohguvgepshhmthhpohhuthdprhgtphht
+    thhopehjohhhrghnnhgvshdrthhhuhhmshhhihhrnhesfigutgdrtghomhdprhgtphhtth
+    hopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpthht
+    ohepfhgumhgrnhgrnhgrsehsuhhsvgdrtghomhdprhgtphhtthhopegushhtvghrsggrse
+    hsuhhsvgdrtghomhdprhgtphhtthhopehhrghnshdrhhholhhmsggvrhhgseifuggtrdgt
+    ohhmpdhrtghpthhtohepughlvghmohgrlheskhgvrhhnvghlrdhorhhgpdhrtghpthhtoh
+    epnhgrohhhihhrohdrrghothgrseifuggtrdgtohhmpdhrtghpthhtohephhgthheslhhs
+    thdruggv
+X-ME-Proxy: <xmx:WPcNap2FOCSriypy4MqiYf4SgEV9r4_qoHnw8IoxcHzBJ4ZdtyTRug>
+    <xmx:WPcNalSAFq8XoT8aZN3G0BZPPrhQ0XGKiAyq4bTO9GrhfEhgssaPJA>
+    <xmx:WPcNaqwZCMqix3QXSAU8JwcvC6eqBf6CHHxjznv6cgibxLnOPvx1lQ>
+    <xmx:WPcNatDG1qF1GlEiOXBNir7sURBLUlnKoYEa6Y_WardYBe4BD5S4zA>
+    <xmx:WfcNarzlOxxK2n-13gcCZLwUzjYPRNkNONMsxC97ht2ZlR29irtuRcAH>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 20 May 2026 13:47:50 -0400 (EDT)
-Date: Wed, 20 May 2026 10:47:49 -0700
+ 20 May 2026 14:03:04 -0400 (EDT)
+Date: Wed, 20 May 2026 11:03:03 -0700
 From: Boris Burkov <boris@bur.io>
-To: Rik van Riel <riel@surriel.com>
-Cc: linux-kernel@vger.kernel.org, kernel-team@meta.com, linux-mm@kvack.org,
-	david@kernel.org, willy@infradead.org, surenb@google.com,
-	hannes@cmpxchg.org, ljs@kernel.org, ziy@nvidia.com,
-	usama.arif@linux.dev, fvdl@google.com, Chris Mason <clm@meta.com>,
-	David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH 34/40] btrfs: allocate eb-attached btree pages as
- movable
-Message-ID: <20260520174749.GA1458531@zen.localdomain>
-References: <20260520150018.2491267-1-riel@surriel.com>
- <20260520150018.2491267-35-riel@surriel.com>
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
+	David Sterba <dsterba@suse.com>,
+	Hans Holmberg <Hans.Holmberg@wdc.com>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Naohiro Aota <naohiro.aota@wdc.com>, Christoph Hellwig <hch@lst.de>
+Subject: Re: [PATCH v2 3/5] btrfs: zoned: always set data_relocation_bg
+Message-ID: <20260520180303.GB1458531@zen.localdomain>
+References: <20260519154902.223445-1-johannes.thumshirn@wdc.com>
+ <20260519154902.223445-4-johannes.thumshirn@wdc.com>
+ <20260519232345.GA718937@zen.localdomain>
+ <d20b97b0-3d83-44e3-8132-edf8f2b7ddc7@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=iso-8859-1
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <20260520150018.2491267-35-riel@surriel.com>
+In-Reply-To: <d20b97b0-3d83-44e3-8132-edf8f2b7ddc7@wdc.com>
 
-On Wed, May 20, 2026 at 10:59:40AM -0400, Rik van Riel wrote:
-> Extent buffer pages allocated by alloc_extent_buffer() are attached to
-> btree_inode->i_mapping (the buffer_tree path), reach the LRU, and are
-> served by the btree_migrate_folio aops in fs/btrfs/disk-io.c. They are
-> migratable in practice once their owning extent buffer hits refs == 1,
-> which happens naturally as tree roots rotate. The buddy allocator
-
-Small correction to a generally correct story:
-
-every extent_buffer we have used (it is newly cowed or we have read it
-for some reason) will settle into a state where extent_buffer->refs == 1
-and it is eligible for release_folio(). If a block gets cowed, then its
-extent_buffer should be fully released/freed right away, with a tricky
-EXTENT_BUFFER_STALE bit dance to prevent accidental reuse during this
-process.
-
-So I don't think cow or trees moving around is all that relevant here.
-
-The folios you are after are the ones which are sitting around with
-extent_buffer->refs == 1 and which will return 0 to release_folio(),
-which is any valid, non-stale extent_buffer no btrfs operation is
-currently using (typically referred to from a btrfs_path). These are
-already available to be reclaimed by memory pressure based reclaim,
-drop_caches, etc.
-
-> classifies them by GFP, however, and bare GFP_NOFS lands them in
-> MIGRATE_UNMOVABLE pageblocks. The result: every btree_inode page we
-> read in pins an unmovable pageblock from the page-superblock allocator's
-> perspective, even though the page itself can be moved.
+On Wed, May 20, 2026 at 09:32:04AM +0200, Johannes Thumshirn wrote:
+> On 5/20/26 1:23 AM, Boris Burkov wrote:
+> > On Tue, May 19, 2026 at 05:49:00PM +0200, Johannes Thumshirn wrote:
+> > > When searching for a data relocation block-group on mount,
+> > > btrfs_zoned_reserve_data_reloc_bg() is looking for the first empty DATA
+> > > block-group. But it first checks if the block-group is empty and if yes
+> > > continues the search, and then checks if it is the first DATA block-group.
+> > > 
+> > > Reverse the order, first check if it is the first DATA block-group found
+> > > and skip, then check if the block-group is empty. This enusres that there
+> > > is always a DATA block-group set as data_relocation_bg in the filesystem.
+> > Can you help me understand why you want to skip the first one? Is it bad
+> > if the next real allocation just has to allocate a chunk? Why does the
+> > data_sinfo need a fully empty block_group rather than just one with some
+> > usable space?
 > 
-> Add __GFP_MOVABLE to that one allocation site (alloc_extent_buffer's
-> call to alloc_eb_folio_array). Plumb the flag through
-> alloc_eb_folio_array â†’ btrfs_alloc_page_array as a `gfp_t extra_gfp`
-> parameter. All other call sites pass 0.
-> 
-> Three categories of caller stay on bare GFP_NOFS, deliberately:
-> 
->   - alloc_dummy_extent_buffer / btrfs_clone_extent_buffer: the
->     resulting eb is EXTENT_BUFFER_UNMAPPED, folio->mapping stays NULL,
->     the folios never enter LRU, never get migrate_folio aops. Tagging
->     them __GFP_MOVABLE would violate the page allocator's migrability
->     contract and they would defeat compaction in MOVABLE pageblocks
->     where isolate_migratepages_block skips non-LRU non-movable_ops
->     pages outright.
-> 
->   - btrfs_alloc_page_array callers in fs/btrfs/raid56.c (stripe
->     pages), fs/btrfs/inode.c (encoded reads), fs/btrfs/ioctl.c (uring
->     encoded reads), fs/btrfs/relocation.c (relocation buffers): same
->     contract violation. raid56 stripe_pages additionally persist in
->     the stripe cache (RBIO_CACHE_SIZE=1024) well beyond a single I/O,
->     so they are not transient enough to hand-wave the contract.
-> 
->   - btrfs_alloc_folio_array caller in fs/btrfs/scrub.c (stripe
->     folios): same -- stripe->folios[] are private buffers freed via
->     folio_put in release_scrub_stripe.
-> 
-> This change targets the dominant fragmentation source observed on the
-> page-superblock series: ~28 GB of btree_inode pages parked across
-> many tainted superpageblocks on a 250 GB test system with btrfs root,
-> preventing 1 GiB hugepage allocation from those regions. With the
-> movable hint, those pages now land in MOVABLE pageblocks where the
-> existing background defragger drains them through the standard
-> PB_has_movable gate, no LRU-sample fallback needed.
+> I thought so as well, but I there can be a situation where you pick a bg
+> with enough usable space to house only one extent. All other bgs are mostly
+> unused. So you relocate one extent to the reloc bg, but it is not enough to
+> free up the source block group. Then you have to allocate a new chunk for a
+> new relocation block gorup. So if you're now  out of chunks you end up with
+> ENOSPC.
 > 
 
-I left a small code nit inline, but whether you take that suggestion or
-leave it, you can add:
+I don't see how allowing the first fully empty block group to be the
+reloc_bg causes that. That sounds like a bug with allowing a non-empty
+data_reloc_bg? I was asking about normal data_sinfo needing an empty bg,
+not data_reloc_bg needing to be empty.
 
-Reviewed-by: Boris Burkov <boris@bur.io>
+Let me put my question a different way:
 
-Thanks for the patch,
+Suppose you have an fs which has no unallocated space and one empty data
+block group. When you mount this fs, do you want the singular empty data
+bg to the be relocation block group?
+
+I assume that the answer to this question (even more so based on your
+reply above) is that you would want it to be the relocation block group.
+And if you had 2 or 3 or 4 or K empty block_groups, I can't see why you
+would care which one of them got selected to be the relocation block
+group.
+
+So why is the "skip first" logic ever useful?
+
+> > Now aside from the general question, I still don't get what this change
+> > does or is for, it kinda still feels like a no-op. Can you be more clear
+> > about the case you are fixing?
+> > 
+> > Previous logic:
+> > if non-empty: skip
+> > else (empty): if (first): clear first, skip
+> > So you skip until you see the second empty bg
+> > 
+> > New logic:
+> > if first and empty: clear first, skip
+> > if non-empty: skip
+> > So you also skip until you see the second empty bg?
+> 
+> The problem I saw (and I hope I recall it correctly) is:
+> 
+> The FS had lots of GC activity then remount.
+> 
+> All the non-empty BGs where skipped, then the first empty block group was
+> skipped as well (and used for data allocation) but the drive did not have
+> enough free zones so the FS could allocate a new chunk, resulting in no
+> relocation BG to be set at all.
+> 
+> 
+> > Is the relevance once you loop around after allocating a chunk or
+> > something?
+> > 
+> > Assuming I'm not missing something, I think it would make sense to simplify
+> > this algorithm to something like:
+> > 
+> > 1. Try to steal the first empty bg.
+> > 
+> > 2a. If stealing succeeds, do some arithmetic on the data_sinfo.
+> >      If zone usable is 0 (or < a chunk?), allocate a fresh bg into
+> >      data_sinfo. If no arithmetic could ever work, do a second pass?
+> > 
+> > 2b. If stealing fails (no empty bgs at all), allocate a fresh bg into
+> >      the data reloc sinfo.
+> 
+> Yes actually I can just skip the whole 'first' step and any data allocation
+> will create a new BG. And if we're out of zones to allocate a new data BG we
+> need to GC anyways.
+> 
+> 
+
+OK, looks like we agree, I think my proposed algorithm in my previous
+mail is too complex with the aim of ensuring an empty bg for both reloc
+and data_sinfo. I don't actually see a reason data_sinfo needs an empty
+bg.
+
+> > Also, when we do have to allocate something in the reloc sinfo, I don't
+> > really see the value of going to again: with the space_info set to the
+> > reloc sinfo instead of just setting data_reloc_bg to the freshly
+> > allocated thing directly.
+> 
+> This is to search the newly allocated bg. btrfs_chunk_alloc() doesn't give
+> us a nice interface to get the newly allocated block group.
+
+Oh, gotcha. Sorry for missing that.
+
+Thanks,
 Boris
-
-> Cc: Chris Mason <clm@meta.com>
-> Cc: David Sterba <dsterba@suse.com>
-> Cc: Boris Burkov <boris@bur.io>
-> Cc: linux-btrfs@vger.kernel.org
-> Signed-off-by: Rik van Riel <riel@surriel.com>
-> Assisted-by: Claude:claude-opus-4.7 syzkaller
-> ---
->  fs/btrfs/extent_io.c  | 69 ++++++++++++++++++++++++++++++-------------
->  fs/btrfs/extent_io.h  |  4 +--
->  fs/btrfs/inode.c      |  2 +-
->  fs/btrfs/ioctl.c      |  2 +-
->  fs/btrfs/raid56.c     |  6 ++--
->  fs/btrfs/relocation.c |  2 +-
->  fs/btrfs/scrub.c      |  3 +-
->  7 files changed, 59 insertions(+), 29 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 2275189b7860..563c4a7eaa36 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -620,24 +620,33 @@ static void end_bbio_data_read(struct btrfs_bio *bbio)
->  }
->  
->  /*
-> - * Populate every free slot in a provided array with folios using GFP_NOFS.
-> + * Populate every free slot in a provided array with folios using
-> + * GFP_NOFS plus optional caller-supplied flags.
->   *
-> - * @nr_folios:   number of folios to allocate
-> - * @order:	 the order of the folios to be allocated
-> - * @folio_array: the array to fill with folios; any existing non-NULL entries in
-> - *		 the array will be skipped
-> + * @nr_folios:    number of folios to allocate
-> + * @order:	  folio order
-> + * @folio_array:  array to fill with folios; non-NULL entries are skipped
-> + * @extra_gfp:    extra GFP flags OR'd into GFP_NOFS. The only value used
-> + *                today is __GFP_MOVABLE, which the extent-buffer real-mapping
-> + *                path (alloc_extent_buffer) passes when the resulting folios
-> + *                will be attached to btree_inode->i_mapping (added to LRU,
-> + *                served by the btree_migrate_folio aops). Pass 0 for
-> + *                everything else; folios allocated by other callers stay in
-> + *                driver-owned arrays, never reach LRU and never register
-> + *                movable_ops, so they cannot satisfy the __GFP_MOVABLE
-> + *                migrability contract.
->   *
->   * Return: 0        if all folios were able to be allocated;
->   *         -ENOMEM  otherwise, the partially allocated folios would be freed and
->   *                  the array slots zeroed
->   */
->  int btrfs_alloc_folio_array(unsigned int nr_folios, unsigned int order,
-> -			    struct folio **folio_array)
-> +			    struct folio **folio_array, gfp_t extra_gfp)
->  {
->  	for (int i = 0; i < nr_folios; i++) {
->  		if (folio_array[i])
->  			continue;
-> -		folio_array[i] = folio_alloc(GFP_NOFS, order);
-> +		folio_array[i] = folio_alloc(GFP_NOFS | extra_gfp, order);
->  		if (!folio_array[i])
->  			goto error;
->  	}
-> @@ -652,21 +661,27 @@ int btrfs_alloc_folio_array(unsigned int nr_folios, unsigned int order,
->  }
->  
->  /*
-> - * Populate every free slot in a provided array with pages, using GFP_NOFS.
-> + * Populate every free slot in a provided array with pages, using GFP_NOFS
-> + * plus optional caller-supplied flags.
->   *
-> - * @nr_pages:   number of pages to allocate
-> - * @page_array: the array to fill with pages; any existing non-null entries in
-> - *		the array will be skipped
-> - * @nofail:	whether using __GFP_NOFAIL flag
-> + * @nr_pages:    number of pages to allocate
-> + * @page_array:  array to fill; non-NULL entries are skipped
-> + * @nofail:      whether to use __GFP_NOFAIL
-> + * @extra_gfp:   extra GFP flags OR'd into the base mask. The only value used
-> + *               today is __GFP_MOVABLE, which the extent-buffer real-mapping
-> + *               path passes when the resulting pages will be attached to
-> + *               btree_inode->i_mapping. See btrfs_alloc_folio_array() for
-> + *               the full migrability rationale.
->   *
->   * Return: 0        if all pages were able to be allocated;
->   *         -ENOMEM  otherwise, the partially allocated pages would be freed and
->   *                  the array slots zeroed
->   */
->  int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array,
-> -			   bool nofail)
-> +			   bool nofail, gfp_t extra_gfp)
->  {
-> -	const gfp_t gfp = nofail ? (GFP_NOFS | __GFP_NOFAIL) : GFP_NOFS;
-> +	const gfp_t gfp = (nofail ? (GFP_NOFS | __GFP_NOFAIL) : GFP_NOFS) |
-> +			  extra_gfp;
->  	unsigned int allocated;
->  
->  	for (allocated = 0; allocated < nr_pages;) {
-> @@ -689,14 +704,23 @@ int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array,
->   * Populate needed folios for the extent buffer.
->   *
->   * For now, the folios populated are always in order 0 (aka, single page).
-> + *
-> + * @movable: pass true only when the resulting pages will be attached to
-> + *           btree_inode->i_mapping (the alloc_extent_buffer real path).
-> + *           Cloned/dummy extent buffers (EXTENT_BUFFER_UNMAPPED) leave
-> + *           folio->mapping NULL, never enter the LRU, and never get the
-> + *           btree_migrate_folio aops, so __GFP_MOVABLE would violate the
-> + *           page-allocator's migrability contract for them.
->   */
-
-My gut says it is nicer to just transparently pass along a gfp flag
-rather than a carefully documented movable boolean and let the callers
-do the right thing. Just a nit, I don't care strongly about it.
-
-> -static int alloc_eb_folio_array(struct extent_buffer *eb, bool nofail)
-> +static int alloc_eb_folio_array(struct extent_buffer *eb, bool nofail,
-> +				bool movable)
->  {
->  	struct page *page_array[INLINE_EXTENT_BUFFER_PAGES] = { 0 };
->  	int num_pages = num_extent_pages(eb);
->  	int ret;
->  
-> -	ret = btrfs_alloc_page_array(num_pages, page_array, nofail);
-> +	ret = btrfs_alloc_page_array(num_pages, page_array, nofail,
-> +				     movable ? __GFP_MOVABLE : 0);
->  	if (ret < 0)
->  		return ret;
->  
-> @@ -3097,7 +3121,7 @@ struct extent_buffer *btrfs_clone_extent_buffer(const struct extent_buffer *src)
->  	 */
->  	set_bit(EXTENT_BUFFER_UNMAPPED, &new->bflags);
->  
-> -	ret = alloc_eb_folio_array(new, false);
-> +	ret = alloc_eb_folio_array(new, false, false);
->  	if (ret)
->  		goto release_eb;
->  
-> @@ -3138,7 +3162,7 @@ struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
->  	if (!eb)
->  		return NULL;
->  
-> -	ret = alloc_eb_folio_array(eb, false);
-> +	ret = alloc_eb_folio_array(eb, false, false);
->  	if (ret)
->  		goto release_eb;
->  
-> @@ -3491,8 +3515,13 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
->  	}
->  
->  reallocate:
-> -	/* Allocate all pages first. */
-> -	ret = alloc_eb_folio_array(eb, true);
-> +	/*
-> +	 * Allocate all pages first. These will be attached to
-> +	 * btree_inode->i_mapping below (added to LRU, served by
-> +	 * btree_migrate_folio), so request __GFP_MOVABLE so the
-> +	 * page allocator places them in MOVABLE pageblocks.
-> +	 */
-
-i.e., just pass GFP_MOVABLE here with a comment explaining why
-
-> +	ret = alloc_eb_folio_array(eb, true, true);
->  	if (ret < 0) {
->  		btrfs_free_folio_state(prealloc);
->  		goto out;
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index b310a5145cf6..5e263f07b59d 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -387,9 +387,9 @@ void btrfs_clear_buffer_dirty(struct btrfs_trans_handle *trans,
->  			      struct extent_buffer *buf);
->  
->  int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array,
-> -			   bool nofail);
-> +			   bool nofail, gfp_t extra_gfp);
->  int btrfs_alloc_folio_array(unsigned int nr_folios, unsigned int order,
-> -			    struct folio **folio_array);
-> +			    struct folio **folio_array, gfp_t extra_gfp);
->  
->  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
->  bool find_lock_delalloc_range(struct inode *inode,
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 906d5c21ebc4..85f56ab815f9 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -9659,7 +9659,7 @@ ssize_t btrfs_encoded_read_regular(struct kiocb *iocb, struct iov_iter *iter,
->  	pages = kzalloc_objs(struct page *, nr_pages, GFP_NOFS);
->  	if (!pages)
->  		return -ENOMEM;
-> -	ret = btrfs_alloc_page_array(nr_pages, pages, false);
-> +	ret = btrfs_alloc_page_array(nr_pages, pages, false, 0);
->  	if (ret) {
->  		ret = -ENOMEM;
->  		goto out;
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index a39460bf68a7..77091915cacc 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -4621,7 +4621,7 @@ static int btrfs_uring_read_extent(struct kiocb *iocb, struct iov_iter *iter,
->  	pages = kzalloc_objs(struct page *, nr_pages, GFP_NOFS);
->  	if (!pages)
->  		return -ENOMEM;
-> -	ret = btrfs_alloc_page_array(nr_pages, pages, 0);
-> +	ret = btrfs_alloc_page_array(nr_pages, pages, 0, 0);
->  	if (ret) {
->  		ret = -ENOMEM;
->  		goto out_fail;
-> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> index 08ee8f316d96..4135bac62be1 100644
-> --- a/fs/btrfs/raid56.c
-> +++ b/fs/btrfs/raid56.c
-> @@ -1123,7 +1123,7 @@ static int alloc_rbio_pages(struct btrfs_raid_bio *rbio)
->  {
->  	int ret;
->  
-> -	ret = btrfs_alloc_page_array(rbio->nr_pages, rbio->stripe_pages, false);
-> +	ret = btrfs_alloc_page_array(rbio->nr_pages, rbio->stripe_pages, false, 0);
->  	if (ret < 0)
->  		return ret;
->  	/* Mapping all sectors */
-> @@ -1138,7 +1138,7 @@ static int alloc_rbio_parity_pages(struct btrfs_raid_bio *rbio)
->  	int ret;
->  
->  	ret = btrfs_alloc_page_array(rbio->nr_pages - data_pages,
-> -				     rbio->stripe_pages + data_pages, false);
-> +				     rbio->stripe_pages + data_pages, false, 0);
->  	if (ret < 0)
->  		return ret;
->  
-> @@ -1732,7 +1732,7 @@ static int alloc_rbio_data_pages(struct btrfs_raid_bio *rbio)
->  	const int data_pages = rbio->nr_data * rbio->stripe_npages;
->  	int ret;
->  
-> -	ret = btrfs_alloc_page_array(data_pages, rbio->stripe_pages, false);
-> +	ret = btrfs_alloc_page_array(data_pages, rbio->stripe_pages, false, 0);
->  	if (ret < 0)
->  		return ret;
->  
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 3ebaf5880125..6f6d25724fb8 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -4038,7 +4038,7 @@ static int copy_remapped_data(struct btrfs_fs_info *fs_info, u64 old_addr,
->  	if (!pages)
->  		return -ENOMEM;
->  
-> -	ret = btrfs_alloc_page_array(nr_pages, pages, 0);
-> +	ret = btrfs_alloc_page_array(nr_pages, pages, 0, 0);
->  	if (ret) {
->  		ret = -ENOMEM;
->  		goto end;
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index 1ac609239cbe..4089e80077cc 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -369,7 +369,8 @@ static int init_scrub_stripe(struct btrfs_fs_info *fs_info,
->  
->  	ASSERT(BTRFS_STRIPE_LEN >> min_folio_shift <= SCRUB_STRIPE_MAX_FOLIOS);
->  	ret = btrfs_alloc_folio_array(BTRFS_STRIPE_LEN >> min_folio_shift,
-> -				      fs_info->block_min_order, stripe->folios);
-> +				      fs_info->block_min_order, stripe->folios,
-> +				      0);
->  	if (ret < 0)
->  		goto error;
->  
-> -- 
-> 2.54.0
-> 

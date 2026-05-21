@@ -1,185 +1,136 @@
-Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D2D0202F70
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 May 2026 12:53:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 65C4325B095;
+	Thu, 21 May 2026 13:00:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779368012; cv=none; b=t/JoEbPdHTJ2yVLqBnP5PgfhYsrFiiLzVy6I95CvU8FqjzQ2IRPrhDcwyrlIjoi8EyGo/Z8LEfs2f8AueR/0eIJfRPk/WzckVXnCMT8Uov63+1xDuVTr9fMaty5CPgUEvRWDsIjs6v/KUnGCWPYUbKnF3BpDneDupNmj3YfVNB4=
+	t=1779368419; cv=none; b=pmtudY3xlIwg3o7C7WruogQjaQDVf65ZXtHs9Ddi+gb/fv7kkwTXi0/qgymbYdb1/bzGFcbPTmQBcULeqEIPoc09j7csDJpHdWChqEC1vMKGeoo43oECgvslZAFwZIZGNSQBn6kSvlxH6hNVIlAO/pVhUp+AmbtinUTjaXHvHvI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779368012; c=relaxed/simple;
-	bh=CY70IBDdCJkrvHoe5He9fUVnZK/HTXh7g9YjNip0yzA=;
-	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type:
-	 Content-Disposition; b=chLJr1qeZTZxTetpiVsN+3HmUyYJd4mnzfYTO/RiWTstdBf6/WP4ySRdTPUeUfn3khyWk0ZiawgXUmzLncbtO01AZvIyUgGiF+SHGCeTYh8NQWUnY9aAxqc0Tv/i41fCX4Ie07G9VsAbdjsa02nWtky4fBS8S8bsM8wdSSpjsUI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=d9HfmNPY; arc=none smtp.client-ip=209.85.128.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1779368419; c=relaxed/simple;
+	bh=idos7dKTS7lHhDXf49lbeC5f8DGS7EjSExem0TP69sc=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=pQgdq4P25SJPwNOaoJYu+WftYVpIrpPh7nahNmvSUlLhNBv291cuC1OS1jO9a2h7pEoz2pz1tJRbUduj7JIEcUVoNXHr+PlPiPiRcgoVmSzpbCKyLxxnSs1NPqO1sVeTPvwzqZDWRxe4FxtoLCCOa2r1blDCBMPxRx+u9/CE/M8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=R8QkDJTZ; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="d9HfmNPY"
-Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-48fe26a177cso45666735e9.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 May 2026 05:53:30 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1779368009; x=1779972809; darn=vger.kernel.org;
-        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=Po8bRY+2Zw7SpFByHj9bdyPqMpAiAdE/4HeoUagAzVY=;
-        b=d9HfmNPYVE4G3Apq+449xPBT1SkEeMX6pBRg6bKAng0pdPJriwmGnGcuj4Xs3s7yfG
-         SQLxp9yuPZVvNeJbvUpVpCdop/sU+vD0ywdeMm9QPePstOmKnCqLznZs89mgjD6OyHZS
-         QUSU2JHkd8elENnDuy7UBb+i1cYvZWR4Jcu8QrGKTSBz4GWZkbks2SSq9OLKezjrBbeP
-         w7reuyqneTeWmhqPXNaWokd6WyNdpzNt1xWj9/czVUDTrfPCotuaCQfFVKtOkUD0ShX2
-         xq6sIGT0TrSQihOcH8FL0dLlrsCW2Ep8BXaZkicOCgKL8UbXO0/Sxs2P27LJlVqj0znV
-         EG7g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779368009; x=1779972809;
-        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
-         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=Po8bRY+2Zw7SpFByHj9bdyPqMpAiAdE/4HeoUagAzVY=;
-        b=o50ysLhx/wkbc632TC6/9r0F7/ta4atC0XVCsdNJ3HATX84WAH1lcD40rgGFXhdjNU
-         1vvhCmAkW+FkxpuWa9GuQI3nIaAyHWyG3NgRQWmF9V9JCOI6Tuje6bk9G8eSJ82yHwDT
-         K41ybDbdw2aXw7KwkOxa4TcsxA2nYhnlV4dRrX69GjfZxq1a3q/Bu18//LUSL5Z6SFOH
-         6lLZrc+btNRZUtBfR9LY3tDWkEZrZp5a1V9sSrbnVHvCqYDlEZ7cJTf6QUXmiLxN5cXq
-         l4JMLkYrjxmBzWmgBC7IgdXJy8tGqqMIjQAd7lUPIcNN1+YBv1xfxgTJrZb3mHgaGSwh
-         6xPQ==
-X-Gm-Message-State: AOJu0YyFmrFKnw/G6T1jYLflGe1KpcTfLF73sf7DG6VLe26FY7RBpDyJ
-	o8r+nSGooiCtTcNS2sRQAnTJuMy3I4igDX1g5mdZdpsTuoFP+MeqBnNEVcs7YA==
-X-Gm-Gg: Acq92OH92fc1PTcEzAccbhjymvme+b35oZ7f1TH/hLb4Q3Ngjmwq4DM7s//pue8GacM
-	vgcFfDNJpHxL5Uq/70TjbxH+/OOXbC14p2c6pHiXH8kaAFeqnQ0JW0i5UYYn1+36sXcVo+GQ5DF
-	m+DY9NxCtxQeWvhjJwhGat+wLo1izCtrfAuv/Mc/z2ve7PnA/evlxGEs2+4RQd2ycNwxwNHsMS4
-	pYcm+4p5MmkiAB+gjI4pHwnimJeK3gAZKb7DXJzNSzwOna8arph7Y0DkCBdp+NOHGix8P7qTc5Y
-	N8yZiVXzIL3FScSKa0F09PP1HGd04XQ42P0n276RVV8RX5AI5cKSgmxw4qeC3c6K4N6YfS2kEEQ
-	SFdymU7aT/HBMUHXcJFlQIg00JDvlKhOsnQIHBcD/rbA0Bp2zFKW639U2lsjqcncriVw/rGSfEc
-	qV6k85EKPCZKw038sKSnXxOl1Z0C2KCC72Og==
-X-Received: by 2002:a05:600c:37c4:b0:489:1f08:91b with SMTP id 5b1f17b1804b1-490360a87a0mr42463605e9.16.1779368008985;
-        Thu, 21 May 2026 05:53:28 -0700 (PDT)
-Received: from localhost ([196.207.164.177])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-49035eec6casm15437265e9.33.2026.05.21.05.53.28
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 21 May 2026 05:53:28 -0700 (PDT)
-Date: Thu, 21 May 2026 15:53:25 +0300
-From: Dan Carpenter <error27@gmail.com>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: [bug report] btrfs: refactor __btrfs_run_delayed_refs loop
-Message-ID: <ag8ARRwykv8bpJ87@stanley.mountain>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="R8QkDJTZ"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 739581F000E9;
+	Thu, 21 May 2026 13:00:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1779368418;
+	bh=kw2UZRDIEaKvsqt9NlP7FIGKTM4BOEgXuuS0tV1nQmM=;
+	h=From:To:Cc:Subject:Date;
+	b=R8QkDJTZgTuI0rXgEEopzY3USVPfa0milAZBrl5l0ey9XNfwMTcBJ/sg10x9xujzW
+	 FIql9C4OwgIxy4pE2E4gxEWvTmzoFmCZ+hVTuYnYtQZUrfq/ZW9hOoMo0baGFQ7/pa
+	 cGHD1V2kDN4NfYS+6uHBOhdBW3dBJRXx7lSHZ+afLD4XN/fHv2smiTJ2mLGwDeV6h8
+	 W6hN6ELz2qneOp/9Ewjj8BEquFr8AjcdLBf3tEvDMpDCbLZrXK938Vp77L64ENLXHS
+	 tfpKXxdQXBkqTj+PUsWoc/MaNTQIrSKiP1BF2bFI3lOqiAltnJU5xukQ10bnKi/zQb
+	 WLCMHPwAk3NZA==
+From: Anand Jain <asj@kernel.org>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org,
+	linux-xfs@vger.kernel.org,
+	linux-f2fs@vger.kernel.org,
+	amir73il@gmail.com,
+	zlang@redhat.com,
+	hch@infradead.org
+Subject: [PATCH v5 0/10] fstests: add test coverage for cloned filesystem ids
+Date: Thu, 21 May 2026 20:54:50 +0800
+Message-ID: <cover.1779367627.git.asj@kernel.org>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
 
-[ 8 year old code and no one has complained...  It's surprising no
-  one has hit this in real life. - dan ]
+v5:
+  XFS supports metadata_uuid, I converted patch 10/10 to a generic
+   test. To do this, I moved the in-test helper to common/rc as
+   `pre_clone_tune_uuid()`.
 
-Hello Nikolay Borisov,
+  I also verified fanotifywait with SELinux in enforcing mode and
+    fixed patch 4/10.
 
-Commit 0110a4c43451 ("btrfs: refactor __btrfs_run_delayed_refs loop")
-from Aug 15, 2018 (linux-next), leads to the following Smatch static
-checker warning:
+v4:
+  https://lore.kernel.org/fstests/cover.1777357320.git.asj@kernel.org
 
-	fs/btrfs/extent-tree.c:2131 __btrfs_run_delayed_refs()
-	error: 'locked_ref' dereferencing possible ERR_PTR()
+v3:
+  https://lore.kernel.org/fstests/cover.1777281778.git.asj@kernel.org
 
-fs/btrfs/extent-tree.c
-    2084 static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
-    2085                                              u64 min_bytes)
-    2086 {
-    2087         struct btrfs_fs_info *fs_info = trans->fs_info;
-    2088         struct btrfs_delayed_ref_root *delayed_refs;
-    2089         struct btrfs_delayed_ref_head *locked_ref = NULL;
-    2090         int ret;
-    2091         unsigned long count = 0;
-    2092         unsigned long max_count = 0;
-    2093         u64 bytes_processed = 0;
-    2094 
-    2095         delayed_refs = &trans->transaction->delayed_refs;
-    2096         if (min_bytes == 0) {
-    2097                 /*
-    2098                  * We may be subject to a harmless race if some task is
-    2099                  * concurrently adding or removing a delayed ref, so silence
-    2100                  * KCSAN and similar tools.
-    2101                  */
-    2102                 max_count = data_race(delayed_refs->num_heads_ready);
-    2103                 min_bytes = U64_MAX;
-    2104         }
-    2105 
-    2106         do {
-    2107                 if (!locked_ref) {
-    2108                         locked_ref = btrfs_select_ref_head(fs_info, delayed_refs);
-    2109                         if (IS_ERR_OR_NULL(locked_ref)) {
-    2110                                 if (PTR_ERR(locked_ref) == -EAGAIN) {
-    2111                                         continue;
+v2:
+  https://lore.kernel.org/fstests/cover.1774090817.git.asj@kernel.org
 
-In the old we set "locked_ref = NULL" on this path and I think we
-probably should restore that line.  Now it looks like a crash.
+v1:
+  https://lore.kernel.org/fstests/cover.1772095513.git.asj@kernel.org
 
-    2112                                 } else {
-    2113                                         break;
-    2114                                 }
-    2115                         }
-    2116                         count++;
-    2117                 }
-    2118                 /*
-    2119                  * We need to try and merge add/drops of the same ref since we
-    2120                  * can run into issues with relocate dropping the implicit ref
-    2121                  * and then it being added back again before the drop can
-    2122                  * finish.  If we merged anything we need to re-loop so we can
-    2123                  * get a good ref.
-    2124                  * Or we can get node references of the same type that weren't
-    2125                  * merged when created due to bumps in the tree mod seq, and
-    2126                  * we need to merge them to prevent adding an inline extent
-    2127                  * backref before dropping it (triggering a BUG_ON at
-    2128                  * insert_inline_extent_backref()).
-    2129                  */
-    2130                 spin_lock(&locked_ref->lock);
-                                    ^^^^^^^^^^^^^^^^
-On the next iteration &locked_ref will be ERR_PTR(-EAGAIN).
+This series adds fstests infrastructure and test cases to verify correct
+filesystem identity when a filesystem is cloned (block-level copy).
+Test covers inotify, fanotify, f_fsid, libblkid, IMA, exportfs file handles
+and libblkid tools verify with metadata_uuid.
+  New helpers:
+  - _mkfs_scratch_sized_clone() helper to create a cloned filesystem
+  - _clone_mount_option() helper to apply per-filesystem clone mount options
+  - pre_clone_tune_uuid() changes the UUID before the clone
 
---> 2131                 btrfs_merge_delayed_refs(fs_info, delayed_refs, locked_ref);
-    2132 
-    2133                 ret = btrfs_run_delayed_refs_for_head(trans, locked_ref, &bytes_processed);
-    2134                 if (ret < 0 && ret != -EAGAIN) {
-    2135                         /*
-    2136                          * Error, btrfs_run_delayed_refs_for_head already
-    2137                          * unlocked everything so just bail out
-    2138                          */
-    2139                         return ret;
-    2140                 } else if (!ret) {
-    2141                         /*
-    2142                          * Success, perform the usual cleanup of a processed
-    2143                          * head
-    2144                          */
-    2145                         ret = cleanup_ref_head(trans, locked_ref, &bytes_processed);
-    2146                         if (ret > 0 ) {
-    2147                                 /* We dropped our lock, we need to loop. */
-    2148                                 ret = 0;
-    2149                                 continue;
-    2150                         } else if (ret) {
-    2151                                 return ret;
-    2152                         }
-    2153                 }
-    2154 
-    2155                 /*
-    2156                  * Either success case or btrfs_run_delayed_refs_for_head
-    2157                  * returned -EAGAIN, meaning we need to select another head
-    2158                  */
-    2159 
-    2160                 locked_ref = NULL;
-    2161                 cond_resched();
-    2162         } while ((min_bytes != U64_MAX && bytes_processed < min_bytes) ||
-    2163                  (max_count > 0 && count < max_count) ||
-    2164                  locked_ref);
-                          ^^^^^^^^^^
-We continue down to here and loop back since locked_ref is -EAGAIN.
+  New tests:
+  - inotify and fanotify events are isolated between cloned filesystems
+  - f_fsid is unique across cloned filesystem instances
+  - libblkid correctly resolves duplicate UUIDs to distinct devices
+    with and without metadata_uuid
+  - IMA distinct identity for each cloned filesystem
+  - exportfs file handles resolve correctly on cloned filesystems
 
-    2165 
-    2166         return 0;
-    2167 }
+Kernel Patches:
+  Requires Btrfs kernel patches for all tests to pass.
+   [1] https://lore.kernel.org/linux-btrfs/cover.1777281686.git.asj@kernel.org
 
-This email is a free service from the Smatch-CI project [smatch.sf.net].
+Anand Jain (10):
+  fstests: add _loop_image_create_clone() helper
+  fstests: add _clone_mount_option() helper
+  fstests: add test for inotify isolation on cloned devices
+  fstests: verify fanotify isolation on cloned filesystems
+  fstests: verify f_fsid for cloned filesystems
+  fstests: verify libblkid resolution of duplicate UUIDs
+  fstests: verify IMA isolation on cloned filesystems
+  fstests: verify exportfs file handles on cloned filesystems
+  fstests: add pre_clone_tune_uuid() healper
+  fstests: test UUID consistency for clones with metadata_uuid
 
-regards,
-dan carpenter
+ common/config         |   2 +
+ common/rc             |  84 ++++++++++++++++++++++++++++
+ tests/generic/800     |  89 ++++++++++++++++++++++++++++++
+ tests/generic/800.out |   7 +++
+ tests/generic/801     | 125 ++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/801.out |   7 +++
+ tests/generic/802     |  62 +++++++++++++++++++++
+ tests/generic/802.out |   7 +++
+ tests/generic/803     |  76 +++++++++++++++++++++++++
+ tests/generic/803.out |  19 +++++++
+ tests/generic/804     | 103 ++++++++++++++++++++++++++++++++++
+ tests/generic/804.out |  10 ++++
+ tests/generic/805     |  73 ++++++++++++++++++++++++
+ tests/generic/805.out |   2 +
+ tests/generic/806     |  78 ++++++++++++++++++++++++++
+ tests/generic/806.out |  19 +++++++
+ 16 files changed, 763 insertions(+)
+ create mode 100644 tests/generic/800
+ create mode 100644 tests/generic/800.out
+ create mode 100644 tests/generic/801
+ create mode 100644 tests/generic/801.out
+ create mode 100644 tests/generic/802
+ create mode 100644 tests/generic/802.out
+ create mode 100644 tests/generic/803
+ create mode 100644 tests/generic/803.out
+ create mode 100644 tests/generic/804
+ create mode 100644 tests/generic/804.out
+ create mode 100644 tests/generic/805
+ create mode 100644 tests/generic/805.out
+ create mode 100644 tests/generic/806
+ create mode 100644 tests/generic/806.out
+
+-- 
+2.43.0
+

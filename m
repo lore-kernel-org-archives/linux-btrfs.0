@@ -1,68 +1,67 @@
-Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
+Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 588113101A9
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 May 2026 22:13:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 685B3356756
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 May 2026 22:14:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779401589; cv=none; b=rC8DVAKgL9gSDyBcVfZdvLGbjfUb7/vKg1UDg6bFsuGO6L9t6ERbghVfesAVRCS3uQ0NA0Z6jIoYnf4rYt86vVvXvZ9NvyG3M5B7sWImoQbJJDBGuMgFwYR0uf0C/r2eTXMlxp0pQsx+BRtXibpQ6uYPkYLEVBNcH8sEYoESWbg=
+	t=1779401700; cv=none; b=Kz/M4zqhvIkqp8NZOeaai9Ownufpv4yGd8h08k6TkLWWrQaoStvvLo7fG3UmFyrzfH8ET/4iMMqthY5vRzY6ocFEZ/el98aL4WrXxX9PnsKaNbQk1ZUxEKTdAWf3c/8qfUW7Bo3ZyIcjVQb9kP1bDu9QaJ5qijcxxwxpbcyrxG0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779401589; c=relaxed/simple;
-	bh=2EeiUXAUN4tvRrcNwl/0rVeUKKrFhH9uUB7997mQHB8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=btI6whz3hBAJwTPzT5nqftWDFTqSC/Ad4yECQkdd0EoFqmuMfcnnrBioKH0mvdheY0UhqpDfWDvnRhk+dGjEmWWS2GaYXCORv6SaeWBzbwEBgUerkytvlSfsYOyJ4qfjdGnS1hjMtQs/dxyol52oFLuoaBEU9AyBtRW6GC7kMfg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=CKiQW+k0; arc=none smtp.client-ip=209.85.128.45
+	s=arc-20240116; t=1779401700; c=relaxed/simple;
+	bh=Vr+oduJ0XCc+hL/PmwrsLNg4Pnx8nW56YcGiqQ30eIM=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=t+4fuU3h4fZ+QZZP0Qi5Dx6dRdV/cs465nfmkelxZRUdHHy+ToXgcnPtFERtzwZSa696u1e7qp908XisOA9JhUvvimii+B4h8UcGHMD/ecGV2neSEUXv/wNvKqOIByXs+ULlEv7n9pPtBKZy+X5MZpdVEhJkIoW28m2Cx0EFXqM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=gpDd32Ee; arc=none smtp.client-ip=209.85.128.48
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="CKiQW+k0"
-Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-4903997fcb5so12105215e9.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 May 2026 15:13:07 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="gpDd32Ee"
+Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-4891c0620bcso42674455e9.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 May 2026 15:14:59 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1779401586; x=1780006386; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1779401698; x=1780006498; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=QfAJTrbQ2q08pMIJiapcZukE2eS8PWPzwmmzdILC9r0=;
-        b=CKiQW+k09svsU6nAPJRGaywJ7/Z8yLM9DvKckRTF48Jtgxo3sufaF05Hn7glnDH+KM
-         2zb6Vcb+fHXsNKyZHp74HobApXlz+x6LBoZBC21QetVYV9LI7dOA7q/iPCdLYFgukwRq
-         NOgH6UH35BdHyuC7RYdz8k9SC3Lk7s231FusPJpMecSztB8C7IcPapnJiZ6SKzM9vDDV
-         3NdVRGzZwoFnVExuqs2Py3ukpvJYpF+FTkbirlw2Y52x3y5k+Qdi3+yIym8Qyi1kWJHO
-         7Hbj3K6Y9ASE+On0EjUgPtPjPQmpOXXDyTmOZBQ/UBJxvVTMeXQ2Kj2AHOBuJ9hMTzxd
-         iDNQ==
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=SWkc8wmyZt9nypiNJuKMnuiZtgkKQD6i8cPiN1wqmXQ=;
+        b=gpDd32EelaPPuknKysaivYb6c+xA41//va0GLMyC/W9eeRXC3tiR0B88JHla8GPaDx
+         ah2K0rmYM+2r2S+LiIYIitotZQGWtu4cgJlG15jSP9Tdr/d3s1qou22JcCzWP6C2SIU3
+         0SAq4FfQ41m/cw0b9u8eBWlFpThzCkwUgAQOMbVH4QoND3oWhTVHRfrIiVpA8xPUdq+p
+         vaKIeUmV24hqUKNacV3+/QeLydfp6HQbWhYX8t2acOro2Vyb5NBUvttX2HV09qr1osAF
+         ZdO7mCya40dP1A6VBqKulluLMgC94JzthcawiCkXAnPnRHhp82d6nflucJo79CVJN8SA
+         48+g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779401586; x=1780006386;
+        d=1e100.net; s=20251104; t=1779401698; x=1780006498;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=QfAJTrbQ2q08pMIJiapcZukE2eS8PWPzwmmzdILC9r0=;
-        b=CeEhMYCKu7KQwTazooxSlGDbek/bcZuCl7L8Ll1rmW9y4KHUPcurMYxSGAJZRKXHZV
-         /pdCOWFH73P1f09b/rAScBMxG3BFQXIKKTaS5kQVazQdK0Btgx301Oq0p9UmSlBSa18f
-         nGrqi5ijIq7iLDfn6gyZUYrtiz8jHfTErlER6v1ez49H6LIwKZseO2E50ZqAd1rgK/iI
-         w0wPbkyd84rd2HklkUpJghooeCa5nAoJC1zPnUKf3XZPNDW5ED1KQJnvfKVAIx8M0XrS
-         aejmAg4W3GjXFrCWpXgT+oJQpek+Le4ZD7EBECNe6BqqPvmpYwtlrLJI1V85Huywou9f
-         Gdrg==
-X-Forwarded-Encrypted: i=1; AFNElJ9vhq8JJNPyWgn7YRdmcfJzTVAjvFPYF7/3UqG7KGTEXcGZiFwFlXxXqG9cMHsP7FAfcPpostUmuUhidw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxrqxXbF4fMmnRcQMU1Hj03FPRg7zGvr2Q/M+0TtV+EuiD/VPgn
-	/3IRZEgaD61dlA+av6uJb4JrSTk/sXj5yiuCIV+Cw3Gm+0Nj3vSr4AQvExY7U1Xxpc4DsAlVs6R
-	CglSO
-X-Gm-Gg: Acq92OEX5hvdmogce1rurS6RWqblJF6AeNTnmB/k+fE31rvmmG7mJGSI48AadxKNdMl
-	fHDh0ULuO74UVB61kkSa4l0hFczQT6j3696HcBBvEum3XbxJjTFU2aEd4f4eSEEpbI8lWOYjhJN
-	H7sMtEHH1itSeLRcIUjCWOBfgYffgfVSyCpBO9SZFzOpXMWWnfeElZpfJwCGuPsPP2hXXPH3Up4
-	cFnwMkuHKoyNxz8F8km2/0bCTRhtLV6kQ7VeuiyUCHM+VwnuHzmNrE3KCEuNogDQpUCZi/ObyDU
-	QKknbBMttZ5EVqF/SoazRWT+ZN2lxOYSHrQUWIndx6xSy7i7rsjH3XmJSwAAfFyGJSdHnXfgrfe
-	9OYUPCFJND92xkbdZQVNli+t1OvPHQf7O+kjX8zluXkhONG1cna99+Lt4hE+xptbHjEqU7jysR/
-	KYUTotONqUAyzCp6Y7HZl6aWc4Y6e7URof8EVKWVXQI6ck7ibBc6f39+qrX89NVnRM122rhqp4K
-	ZxdDm7kazFiTQnks8sBU4J9N+3MWNpuHRmcBQ/tPPdCEFY=
-X-Received: by 2002:a05:600c:4510:b0:48f:e230:c3fa with SMTP id 5b1f17b1804b1-490428ddc9fmr7537045e9.32.1779401585689;
-        Thu, 21 May 2026 15:13:05 -0700 (PDT)
+        bh=SWkc8wmyZt9nypiNJuKMnuiZtgkKQD6i8cPiN1wqmXQ=;
+        b=YlghFDjoP5Jq+BieCfSKrLkbpxwRS8F9OdKjuGfzaS6I5E7x70zdLE6T2oXR/djU6d
+         YLToeKNxSUL3fyGNa53Ov3LBqOVB4EsLLstaD68SGzyGfsOYNKYCGaFdoZtLsbHZljqy
+         waTVgSYdFpeM0Xm4kaAK8Ssbb9POB1vcE+5kFTePFssAkyFcuWQJzqL3qlaX+GVyAkog
+         M6K5WuGI3KmRUZa6d+1GNQJSawfRLFHf4mqSAY6S3nf37SbPSzW09OjWAN/F52Ee5CSE
+         X8CPHV/ZflcyrC7yaWCracY4CHHlXS1GHhsamDaa8zoG3s+N/ZuSCTE341jJld5Ivz2v
+         MxfQ==
+X-Forwarded-Encrypted: i=1; AFNElJ/UObRsIpNPYMwkUJo2iGm4J9OcrLqeD/MD9Pw7OIOXbuVncH6YeZtp9GZ3WZl7iYKjOR21ozgMDdyv3A==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yz/G60D5vubKSjzZKFt+vanNiZrkSP9WeXtGlHuqBPzX15E9SlJ
+	Utih8Etg8/6RTZOVCsm5tFDWlWPU/ngCxIpv8rCLSWvEltfXS8kfv7JcYRki9hpTqww=
+X-Gm-Gg: Acq92OFZQ2XhqO/05mS7Q1b19sC4dApSYZ7orrlmggcZQVkl5vGm+/5f0ix73HHSmt9
+	6EnvisavNxunz0za/KaeGuHs+STbFXocsNZpaqxRaMTbXcelSOFQdEuZyvzC4+gpnZtlFigbTCK
+	8+2d8hFae0qqxOZhnyshHIZVgQ6c/PiEDHdeioTQ7UpvIQaAJf24qqTHOnk1O0a4bgLV0+5HYgu
+	imHxd8WNWpBoadHnYFGPpmVk8Pir/zBOnXKVouZDF/Jfi/6meLEPGPoA1MgmBbXiktTrMP8Mq6k
+	fA8lcUQpJddbarmH6m3Z0WYO5GnS/aMHJm1P5ORE1i88ZnZ8DEq6ZN+fkgbOSMdC3Sq2JvhRStT
+	TreiwpSyOenZgEvW198Etdrr61Sl2+mm5Aq271AFgDZVEDVRc+rFZW0wCqNrVT7+yyPUI5a2Wx2
+	GZ1K61Hr32lIBlF+q6uUe9alC8oAhtVGR7fOPNgsTVSwIPKSI0NTdfmEHuMddJyLyCyvRvDlAzc
+	bks1gzoEBA0PWeP5ciaSdD07L108vdrnu4DU3yXmSdUaTRxFX/YNWDMXA==
+X-Received: by 2002:a05:600c:8599:b0:47e:e2eb:bc22 with SMTP id 5b1f17b1804b1-490424ac8e2mr5081245e9.5.1779401697867;
+        Thu, 21 May 2026 15:14:57 -0700 (PDT)
 Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2beb0e64b96sm2596605ad.17.2026.05.21.15.13.03
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2beb140a985sm2181695ad.81.2026.05.21.15.14.54
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 21 May 2026 15:13:04 -0700 (PDT)
-Message-ID: <bb91f646-6ccd-427c-b6aa-4e945dc39f07@suse.com>
-Date: Fri, 22 May 2026 07:43:00 +0930
+        Thu, 21 May 2026 15:14:56 -0700 (PDT)
+Message-ID: <89630748-76b3-4c63-94cd-b7d398ee73bb@suse.com>
+Date: Fri, 22 May 2026 07:44:51 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -70,11 +69,10 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: fix invalid pointer dereference in
- __btrfs_run_delayed_refs()
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <f33f040f3ced4b3813dba4ddb0b5377ab5aeac29.1779374308.git.fdmanana@suse.com>
- <f81a69124ba44ff062f13e6287be7f0f5cf56072.1779375954.git.fdmanana@suse.com>
+Subject: Re: [PATCH] btrfs: protect sb_write_pointer() with invalidate lock
+To: KangNing Liao <lkangn.kernel@gmail.com>, linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, dsterba@suse.com, eadavis@qq.com, linux-kernel@vger.kernel.org
+References: <20260521122945.524890-1-lkangn.kernel@gmail.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -101,40 +99,22 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <f81a69124ba44ff062f13e6287be7f0f5cf56072.1779375954.git.fdmanana@suse.com>
+In-Reply-To: <20260521122945.524890-1-lkangn.kernel@gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/5/22 00:37, fdmanana@kernel.org 写道:
-> From: Filipe Manana <fdmanana@suse.com>
+在 2026/5/21 21:59, KangNing Liao 写道:
+> sb_write_pointer() reads the super block from the block device page cache
+> using read_cache_page_gfp(). This has the same race with BLKBSZSET as the
+> one fixed by commit 3f29d661e568 ("btrfs: sync read disk super and set
+> block size").
 > 
-> In the beginning of the loop, we try to obtain a locked delayed ref head,
-> if 'locked_ref' is currently NULL, by calling btrfs_select_ref_head(),
-> which can return an error pointer. If the error pointer is -EAGAIN we do
-> a continue and go back to the beginning of the loop, which will not try
-> again to call btrfs_select_ref_head() since 'locked_ref' is no longer
-> NULL but it's ERR_PTR(-EAGAIN), and then we do:
+> Take the mapping invalidate lock around read_cache_page_gfp() to
+> serialize the read against block size changes.
 > 
->     spin_lock(&locked_ref->lock);
-> 
-> against a ERR_PTR(-EAGAIN) value, generating an invalid pointer
-> dereference.
-> 
-> Fix this by ensuring that 'locked_ref' is set to NULL when
-> btrfs_select_ref_head() returns ERR_PTR(-EAGAIN) and incrementing 'count'
-> as well, to prevent infinite looping. We do this by doing a goto to the
-> bottom of the loop that already sets 'locked_ref' to NULL and does a
-> cond_resched(), with an increment to 'count' right before the goto.
-> These measures were in place before the refactoring in commit 0110a4c43451
-> ("btrfs: refactor __btrfs_run_delayed_refs loop") but were unintentionally
-> lost afterwards.
-> 
-> Reported-by: Dan Carpenter <error27@gmail.com>
-> Link: https://lore.kernel.org/linux-btrfs/ag8ARRwykv8bpJ87@stanley.mountain/
-> Fixes: 0110a4c43451 ("btrfs: refactor __btrfs_run_delayed_refs loop")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Signed-off-by: KangNing Liao <lkangn.kernel@gmail.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 
@@ -142,34 +122,22 @@ Thanks,
 Qu
 
 > ---
+>   fs/btrfs/zoned.c | 2 ++
+>   1 file changed, 2 insertions(+)
 > 
-> V2: Use a goto approach to jump to the bottom of the loop, that already
->      sets locked_ref to NULL and does a cond_resched() too.
-> 
->   fs/btrfs/extent-tree.c | 5 +++--
->   1 file changed, 3 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index ecc1acb1e340..6030cdbdb742 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2108,7 +2108,8 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
->   			locked_ref = btrfs_select_ref_head(fs_info, delayed_refs);
->   			if (IS_ERR_OR_NULL(locked_ref)) {
->   				if (PTR_ERR(locked_ref) == -EAGAIN) {
-> -					continue;
-> +					count++;
-> +					goto again;
->   				} else {
->   					break;
->   				}
-> @@ -2156,7 +2157,7 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
->   		 * Either success case or btrfs_run_delayed_refs_for_head
->   		 * returned -EAGAIN, meaning we need to select another head
->   		 */
-> -
-> +again:
->   		locked_ref = NULL;
->   		cond_resched();
->   	} while ((min_bytes != U64_MAX && bytes_processed < min_bytes) ||
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index 16dd87aa06f2..5f75cf0e14b9 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -131,8 +131,10 @@ static int sb_write_pointer(struct block_device *bdev, struct blk_zone *zones,
+>   			u64 bytenr = ALIGN_DOWN(zone_end, BTRFS_SUPER_INFO_SIZE) -
+>   						BTRFS_SUPER_INFO_SIZE;
+>   
+> +			filemap_invalidate_lock(mapping);
+>   			page[i] = read_cache_page_gfp(mapping,
+>   					bytenr >> PAGE_SHIFT, GFP_NOFS);
+> +			filemap_invalidate_unlock(mapping);
+>   			if (IS_ERR(page[i])) {
+>   				if (i == 1)
+>   					btrfs_release_disk_super(super[0]);
 

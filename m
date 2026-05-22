@@ -1,88 +1,52 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mxex2.tik.uni-stuttgart.de (mxex2.tik.uni-stuttgart.de [129.69.192.21])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B953438C2A7
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 22:39:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 323C033F5A9
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 23:33:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=129.69.192.21
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779489544; cv=none; b=CjFp/40xrSwtkcO3ItFwTuSVHUwR3LDvyTJyyIOB9BNFqeWSuWZvBQyJWrmbSRfVYr8xX/eYGuVFxOGxI2WHARO5vqLhApARpIkEzCzcZyvfqekShcFxaSNgE1EFruegzv7JuJRf6QG8/9CHJyvGr7dG158RyjJwye6r5m6C15Q=
+	t=1779492809; cv=none; b=qiYDCwcS+qgaSf852hSYH9WAZiP/nF0RTd1S5b/goj8qaTT1iPHbr+yaiH2dLV8yDKGdqO/GtcPqeHD+S0NYoh712Nm3fdYxVliPTQPzXua+uoVRf0DOyPpYS0ebv+0QX+74kvylbsqAwa6SntDKwQ9VKKc2rdlfu5cfj2S2pH8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779489544; c=relaxed/simple;
-	bh=aYu5O6vknhbn9Su9Q8J1vq9kxgbUZxSdAZLZ+bbMgvg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Fu+/JYOTuW5pwnZE3XaWee+jBe2Kh/DzZaSCcKeKEKv08GEAfMJdLdL2/cq/WmAK0kHdEXXFofJFOhiI6MwkK/3KOls1iDXV2QxM8FDatIWVME2Z0OofoswKw+SIL3I8eH8TVNbM4k8XxHt4X0lJUcmNu9wz9wW5BYmpop8FETo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=nccy8dSp; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=jaUqpp0f; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=nccy8dSp; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=jaUqpp0f; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1779492809; c=relaxed/simple;
+	bh=KIXfQsuDLFgKVL8jv4C7rVljwwGHx7lLmuO4U5PsmMc=;
+	h=Date:From:To:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=pLY6N0siFA7trJf3FTQFaZLBa/7Ch51EPmsFVrxC0g6SPE6xcLWJbeU8MuowOa2HCjqD0zaWUs/wx87aR3rf+JUChkPZa3iTeOZQCto8www7Wv60I8inevMapenI5l3R2bo3U0mpAbw6fWJud8Kb9Cebpl3WNF2MOy7uwmarabg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de; spf=pass smtp.mailfrom=rus.uni-stuttgart.de; dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b=F1g1CMfU; arc=none smtp.client-ip=129.69.192.21
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=rus.uni-stuttgart.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="nccy8dSp";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="jaUqpp0f";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="nccy8dSp";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="jaUqpp0f"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b="F1g1CMfU"
+Received: from localhost (localhost [127.0.0.1])
+	by mxex2.tik.uni-stuttgart.de (Postfix) with ESMTP id 5D07660E0F
+	for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2026 01:25:35 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=uni-stuttgart.de;
+	 h=user-agent:in-reply-to:content-disposition:content-type
+	:content-type:mime-version:references:message-id:subject:subject
+	:from:from:date:date; s=dkim; i=@rus.uni-stuttgart.de; t=
+	1779492333; x=1781231134; bh=KIXfQsuDLFgKVL8jv4C7rVljwwGHx7lLmuO
+	4U5PsmMc=; b=F1g1CMfUvpApXTMhkTPx51eiBfxHYC65SzfX6ZWn5fvxeOiEfQg
+	zDM50TMIgRUsvY4dLA+lAhGRif6P6USLf4AdXmxj2308oUcAKZyp4sdqnYOnz67t
+	H2nAC2qZYU2wWgbuNmz9rovIjgIjunpct1/Wx+ObWi7PnlOv6Cyl0lzzFDmdyn/r
+	sgcRAn535NX9zDSWFR6UYjM50avVMAQQs+WyY/9cAFo5m4C3ujuTUS8T+/RnwSe4
+	PtVRrZJsixzM6A/7yumXqof4WdNeez6w7aJoEDUN3FYLVwqwH7zYRSlHP/GWYoGn
+	+mECerUZT23gQdTVQgPk/4OFWKks6S1Lz1Q==
+X-Virus-Scanned: USTUTT mailrelay AV services at mxex2.tik.uni-stuttgart.de
+Received: from mxex2.tik.uni-stuttgart.de ([127.0.0.1])
+ by localhost (mxex2.tik.uni-stuttgart.de [127.0.0.1]) (amavis, port 10031)
+ with ESMTP id aJ-Mmvdl1bjl for <linux-btrfs@vger.kernel.org>;
+ Sat, 23 May 2026 01:25:33 +0200 (CEST)
+Received: from authenticated client
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	 key-exchange secp256r1 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id A66C56C0D3;
-	Fri, 22 May 2026 22:39:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1779489540;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=H9WvBJDj991PC50czCZk8DBKpDYXBfIDeh0IRX1rfLM=;
-	b=nccy8dSpZdwEuhPwnFB5A90Hhbgb0YU4pv5KzTwanAuiOA1ETMn850M1oPuBiLyAdBo+tv
-	kpwPBxYw3wmvjgKJ7sODzGn2tyZ5Yc3b0aJvpqLPG4r1fKt7BWCaBIgpsIJNF4AfTveaAY
-	NPGmwJJHeUZcuyl7CBMLaJDHlUJodPw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1779489540;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=H9WvBJDj991PC50czCZk8DBKpDYXBfIDeh0IRX1rfLM=;
-	b=jaUqpp0fpicKxfPA5bWWoBs5S9PbILDbdVp2jDQgrtm/BSzSeK+VNhUumL6jPJ0t90DSti
-	BibNuX1Az+il9+CA==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=nccy8dSp;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=jaUqpp0f
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1779489540;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=H9WvBJDj991PC50czCZk8DBKpDYXBfIDeh0IRX1rfLM=;
-	b=nccy8dSpZdwEuhPwnFB5A90Hhbgb0YU4pv5KzTwanAuiOA1ETMn850M1oPuBiLyAdBo+tv
-	kpwPBxYw3wmvjgKJ7sODzGn2tyZ5Yc3b0aJvpqLPG4r1fKt7BWCaBIgpsIJNF4AfTveaAY
-	NPGmwJJHeUZcuyl7CBMLaJDHlUJodPw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1779489540;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=H9WvBJDj991PC50czCZk8DBKpDYXBfIDeh0IRX1rfLM=;
-	b=jaUqpp0fpicKxfPA5bWWoBs5S9PbILDbdVp2jDQgrtm/BSzSeK+VNhUumL6jPJ0t90DSti
-	BibNuX1Az+il9+CA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 86251593A8;
-	Fri, 22 May 2026 22:39:00 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id vjcaIATbEGpAPgAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Fri, 22 May 2026 22:39:00 +0000
-Date: Sat, 23 May 2026 00:38:55 +0200
-From: David Sterba <dsterba@suse.cz>
-To: "Matthew Wilcox (Oracle)" <willy@infradead.org>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
-	Boris Burkov <boris@bur.io>, Filipe Manana <fdmanana@suse.com>,
-	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: Re: [PATCH 0/3] Three folio-related btrfs fixes
-Message-ID: <20260522223855.GA29010@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20260522181411.2487732-1-willy@infradead.org>
+	by mxex2.tik.uni-stuttgart.de (Postfix) with ESMTPSA
+Date: Sat, 23 May 2026 01:25:33 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs progs release 7.0
+Message-ID: <20260522232533.GA316642@tik.uni-stuttgart.de>
+Mail-Followup-To: linux-btrfs@vger.kernel.org
+References: <20260509235151.2070978-1-dsterba@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -91,52 +55,48 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260522181411.2487732-1-willy@infradead.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Score: -4.21
-X-Spam-Level: 
-X-Rspamd-Queue-Id: A66C56C0D3
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	TO_DN_SOME(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	internal_greylist_whitelist(0.00)[2a07:de40:b281:104:10:150:64:97];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCPT_COUNT_SEVEN(0.00)[8];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Flag: NO
+In-Reply-To: <20260509235151.2070978-1-dsterba@suse.com>
+User-Agent: Mutt/1.5.23 (2014-03-12)
 
-On Fri, May 22, 2026 at 07:14:06PM +0100, Matthew Wilcox (Oracle) wrote:
-> All of these were discovered through auditing the (mis)uses of the folio
-> API throughout the kernel; I haven't been specifically reviewing btrfs,
-> nor testing.
-> 
-> Matthew Wilcox (Oracle) (3):
->   Revert "btrfs: fix the file offset calculation inside
->     btrfs_decompress_buf2page()"
+On Sun 2026-05-10 (01:51), David Sterba wrote:
 
-Why do you do the revert? It does not seem suitable for this case, we
-use reverts if we want to get back to the original behaviour, or when
-removing a patch from a long series to avoid a rebase. Merging the first
-and second patch makes more sense to me.
+> btrfs-progs version 7.0 have been released.
+
+Thanks.
+This version correct some bugs in the Ubuntu 24 btrfs package.
+
+
+> Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+> Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+> Release: https://github.com/kdave/btrfs-progs/releases/tag/v7.0
+
+To get the newest version of btrfs.box.static I have written this script:
+
+root@fex:/opt/btrfs-tools# cat btrfs-update
+#!/bin/bash
+
+bbs=btrfs.box.static
+cd /opt/btrfs-tools/bin || exit 1
+vv -s btrfs
+rm -f $bbs
+curl -sS -D- https://github.com/kdave/btrfs-progs/releases/latest |\
+perl -ne 's/^location: (\S+)/wget -q $1\/'$bbs'/ and s:/tag/:/download/: and print' |sh -x
+if [[ $(file $bbs) =~ executable ]]; then
+  cat $bbs > btrfs
+  del $bbs
+fi
+btrfs --version
+
+
+Yes, it works but it is ... ugly :-}
+
+Is there a more elegant solution?
+
+
+-- 
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    https://www.tik.uni-stuttgart.de/
+REF:<20260509235151.2070978-1-dsterba@suse.com>

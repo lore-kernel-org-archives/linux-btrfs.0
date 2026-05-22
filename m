@@ -1,154 +1,303 @@
-Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B81683B7759
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 09:03:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.141
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 17D8E38423B;
+	Fri, 22 May 2026 09:19:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779440596; cv=none; b=KadyZc/OmvfDVjVBFKxW93kgjeCNd+wgXn2sCQhy4APh01MP5L7U7jpa8rEgl1ODXYiJgcvMDeqkaZExjnD0Tkcw2UVa8Lbeb+R2bQpfRMJ2Aasys6msq6JT+tuhCZKSFQM9BYiozS/NLUf7zT12U5DLqEwjhhjxjGZdSOz3zAo=
+	t=1779441583; cv=none; b=l66ouJRjoDb7bauP/LykjCpHIoIpc5p0PjwCIyg+gddzDW2Fl4yvv801F5kf5orbByOagHBkgyF08bjRGXOnhuVX1yNZci8guQWk4da4F1tDVdrKi6tMwhx7ZqO64YYFepCaMU5g/la74iLK9CK25L4iu9Q4q/C2q+TXtNJAfo8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779440596; c=relaxed/simple;
-	bh=6JZoFEBtdIJdwoVungURMWVh7PWDbHUEZxXg0DUyxlQ=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=pauM/Tc1I6Mvcd7FLZhXLE1GUIxH/vePry/mDBqoISTijM/Ed20QJaiVW5cIhBo35Ie3BqVj+T+2rUNCmHgUJeFckgaUvB608nJob0y0f2uiyyICzH4JvPMN2Sp5833PO/ahsFk6XE5k1l4p9fypHmxhBh6fgzAgdnPb1VstvZA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=PIAardlm; arc=none smtp.client-ip=216.71.153.141
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	s=arc-20240116; t=1779441583; c=relaxed/simple;
+	bh=KHspHbjSJILbZEtc8+pBuJUp9cMlORp1Z37IAhD7LCU=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=uK79LZI/JS8EYOYtPNO5uVMM49nrLd3R/B1Xk8J4otpO6eUtBcLUgowEvtuGSnTFB51+4pJnRT4JwsrgS727YxYNdBIKGUggxSQ7CEu1GF5NMexI3lJpNtzVrzaPEx1dXS51lfHPaB4a7/LRdRxh37+XV5mOLHw0AJUxPPPikWo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=D2NBrePQ; arc=none smtp.client-ip=198.137.202.133
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="PIAardlm"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1779440595; x=1810976595;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=6JZoFEBtdIJdwoVungURMWVh7PWDbHUEZxXg0DUyxlQ=;
-  b=PIAardlmi45nQgAWSP18OkpvQbcSfgOzbFAXebRk7L8+20cuGWhellz2
-   Hn8Tt4F3KSQmHalbij2ZSs1gTTxe0SLAZejsVTPAArA0B2wA0YKiQuaFi
-   OhS8nupxDQBdJ1UbkeOxBfJKGRjilC84fvMrUNgvqtwp4jXhryOlqAQgc
-   qe7jMWACMufx6+I/NXGpUA2hqXZL37GHf56M/nm0hObi9/lySjUl9cR74
-   v14fPfyxRud/t75PxUyx8tpCmyN/61p11Qu1ph6Hxz1u4+GHU3luBJ0bi
-   vPDH3jzz8UbWM8SDSlXmynbFcx6lFUhFATreOWrWyR5eAgaCJLqn7TfCR
-   g==;
-X-CSE-ConnectionGUID: p9Rx68WIRsKKMHYUO8YarA==
-X-CSE-MsgGUID: jvbTkqOrSzidobp6qv9XUg==
-X-IronPort-AV: E=Sophos;i="6.24,162,1774281600"; 
-   d="scan'208";a="147475607"
-Received: from unknown (HELO uls-op-esad1-o.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 22 May 2026 17:03:15 +0800
-X-CSE-ConnectionGUID: UO9k4muVSyWhw6cToczLIQ==
-X-CSE-MsgGUID: RgVEa2n3SuiYQ4y5TNr0Yw==
-IronPort-SDR: 6a101bd2_b1ig9sHSvxehwg2qwFf3dUO4CQ1dFBoiTJiph/L5DVk7KGQ
- hXjNB8bJpPtu38+MgZwp9ajkxhj7EMqcdJG8yuw==
-Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
-  by uls-op-esad1-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 22 May 2026 02:03:13 -0700
-X-CSE-ConnectionGUID: vdsF1CEETimXDYTwSb9NcA==
-X-CSE-MsgGUID: 40ka7D/bQ/uoS2C8AjqZFg==
-WDCIronportException: Internal
-Received: from wdap-b6euub3vgq.ad.shared (HELO neo.wdc.com) ([10.224.19.8])
-  by uls-op-esai1-o.wdc.com with ESMTP; 22 May 2026 02:03:11 -0700
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>,
-	David Sterba <dsterba@suse.com>,
-	Hans Holmberg <Hans.Holmberg@wdc.com>,
-	Boris Burkov <boris@bur.io>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Naohiro Aota <naohiro.aota@wdc.com>,
-	Christoph Hellwig <hch@lst.de>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v3 5/5] btrfs: zoned: fix deadlock waiting for ticket during data relocation
-Date: Fri, 22 May 2026 11:02:47 +0200
-Message-ID: <20260522090247.27445-6-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <20260522090247.27445-1-johannes.thumshirn@wdc.com>
-References: <20260522090247.27445-1-johannes.thumshirn@wdc.com>
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="D2NBrePQ"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=2n1xSP/5cGJvn9+BBg47IJkWoOhGbcIWf3YqZLh9XX4=; b=D2NBrePQJxJ0kWJEc9y6l7vEo3
+	Yd51Vf+Mjr9Rajpk1+wfJ/hUC+lOB+8aukhC4SGLLckJgD3pcJyG2kAlC5AIe64efq68sFnEj/46S
+	J32AQCKvK+ytN9JBhPRretjeiB7AhzO+lgUBe7Z0Z16RSyEAjX6iDcVsXVYaezZodJKLHKCMhxzeX
+	QRVim2LzvIe4ZyO9rq5GT2CH6mNlu57Wmtsy6HXlCX9obmNj2o8TAVDCuPxYKlDJ6Eqox5RJU2aR3
+	Vsbm9A1+1JQ02zsz2SBdsvTf0e4MMPBSrvJCGG/fV/n9w6aeQbQM8KoXwGTrV4SR8zMRA0wXc/mav
+	b2V6geQQ==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wQM2V-0000000AJ9p-3oPS;
+	Fri, 22 May 2026 09:19:31 +0000
+Date: Fri, 22 May 2026 02:19:31 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Daniel Vacek <neelx@suse.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+	Eric Biggers <ebiggers@kernel.org>,
+	"Theodore Y. Ts'o" <tytso@mit.edu>,
+	Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>,
+	David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
+	linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v7 32/43] btrfs: implement process_bio cb for fscrypt
+Message-ID: <ahAfo4DzvH_ob1hv@infradead.org>
+References: <20260513085340.3673127-1-neelx@suse.com>
+ <20260513085340.3673127-33-neelx@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260513085340.3673127-33-neelx@suse.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-When performing data relocation on a zoned filesystem, BTRFS can deadlock
-in handle_reserve_tickets(). The relocation process is waiting on a space
-reservation ticket that can never be fulfilled, because the relocation
-itself is the operation responsible for freeing up that space.
+On Wed, May 13, 2026 at 10:53:06AM +0200, Daniel Vacek wrote:
+> From: Josef Bacik <josef@toxicpanda.com>
+> 
+> We are going to be checksumming the encrypted data, so we have to
+> implement the ->process_bio fscrypt callback.  This will provide us with
+> the original bio and the encrypted bio to do work on.  For WRITE's this
+> will happen after the encrypted bio has been encrypted.  For READ's this
+> will happen after the read has completed and before the decryption step
+> is done.
+> 
+> For write's this is straightforward, we can just pass in the encrypted
+> bio to btrfs_csum_one_bio and then the csums will be added to the bbio
+> as normal.
+> 
+> For read's this is relatively straightforward, but requires some care.
+> We assume (because that's how it works currently) that the encrypted bio
+> match the original bio, this is important because we save the iter of
+> the bio before we submit.  If this changes in the future we'll need a
+> hook to give us the bi_iter of the decryption bio before it's submitted.
+> We check the csums before decryption.  If it doesn't match we simply
+> error out and we let the normal path handle the repair work.
+> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> Signed-off-by: Daniel Vacek <neelx@suse.com>
+> ---
+> 
+> v7 changes:
+>  * Fixed array overflow stack corruption for bios > max blocksize (>64KiB)
+>    as reported by Chris' AI review.
+> v6 changes:
+>  * Adapt to btrfs_data_csum_ok() changes for bs > ps.  Mostly follow
+>    what was done in 052fd7a5cace ("btrfs: make read verification
+>    handle bs > ps cases without large folios").
+>  * Rename bbio::csum_done to csum_ok due to name collision.
+>    With upstream, member name csum_done was used for async csums.
+> v5: https://lore.kernel.org/linux-btrfs/ca32684b01ff8c252be515509137e0a4a0e5db7a.1706116485.git.josef@toxicpanda.com/
+> ---
+>  fs/btrfs/bio.c       | 44 +++++++++++++++++++++++++++++++++++++++++++-
+>  fs/btrfs/bio.h       |  3 +++
+>  fs/btrfs/file-item.c | 14 ++++++++++++--
+>  fs/btrfs/fscrypt.c   | 29 +++++++++++++++++++++++++++++
+>  4 files changed, 87 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+> index 3e2ee19aab50..729c5aff5c3d 100644
+> --- a/fs/btrfs/bio.c
+> +++ b/fs/btrfs/bio.c
+> @@ -301,6 +301,40 @@ static struct btrfs_failed_bio *repair_one_sector(struct btrfs_bio *failed_bbio,
+>  	return fbio;
+>  }
+>  
+> +blk_status_t btrfs_check_encrypted_read_bio(struct btrfs_bio *bbio, struct bio *enc_bio)
+> +{
+> +	struct btrfs_inode *inode = bbio->inode;
+> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> +	struct bvec_iter iter = bbio->saved_iter;
+> +	struct btrfs_device *dev = bbio->bio.bi_private;
+> +	const u32 blocksize = fs_info->sectorsize;
+> +	const u32 step = min(blocksize, PAGE_SIZE);
+> +	const u32 nr_steps = iter.bi_size / step;
+> +	phys_addr_t paddrs[BTRFS_MAX_BLOCKSIZE / PAGE_SIZE];
+> +	phys_addr_t paddr;
+> +	unsigned int slot = 0;
+> +	u32 offset = 0;
+> +
+> +	/*
+> +	 * We have to use a copy of iter in case there's an error,
+> +	 * btrfs_check_read_bio will handle submitting the repair bios.
+> +	 */
+> +	btrfs_bio_for_each_block(paddr, enc_bio, &iter, step) {
+> +		ASSERT(slot < nr_steps);
+> +		paddrs[slot] = paddr;
+> +		slot++;
+> +		offset += step;
+> +		if (IS_ALIGNED(offset, blocksize)) {
+> +			if (!btrfs_data_csum_ok(bbio, dev, offset - blocksize, paddrs))
+> +				return BLK_STS_IOERR;
+> +			slot = 0;
+> +		}
+> +	}
+> +
+> +	bbio->csum_ok = true;
+> +	return BLK_STS_OK;
+> +}
+> +
+>  static void btrfs_check_read_bio(struct btrfs_bio *bbio, struct btrfs_device *dev)
+>  {
+>  	struct btrfs_inode *inode = bbio->inode;
+> @@ -330,6 +364,10 @@ static void btrfs_check_read_bio(struct btrfs_bio *bbio, struct btrfs_device *de
+>  	/* Clear the I/O error. A failed repair will reset it. */
+>  	bbio->bio.bi_status = BLK_STS_OK;
+>  
+> +	/* This was an encrypted bio and we've already done the csum check. */
+> +	if (status == BLK_STS_OK && bbio->csum_ok)
+> +		goto out;
+> +
+>  	btrfs_bio_for_each_block(paddr, &bbio->bio, iter, step) {
+>  		paddrs[(offset / step) % nr_steps] = paddr;
+>  		offset += step;
+> @@ -341,6 +379,7 @@ static void btrfs_check_read_bio(struct btrfs_bio *bbio, struct btrfs_device *de
+>  							 paddrs, fbio);
+>  		}
+>  	}
+> +out:
+>  	if (bbio->csum != bbio->csum_inline)
+>  		kvfree(bbio->csum);
+>  
+> @@ -859,10 +898,13 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
+>  		/*
+>  		 * Csum items for reloc roots have already been cloned at this
+>  		 * point, so they are handled as part of the no-checksum case.
+> +		 *
+> +		 * Encrypted inodes are csum'ed via the ->process_bio callback.
+>  		 */
+>  		if (!(inode->flags & BTRFS_INODE_NODATASUM) &&
+>  		    !test_bit(BTRFS_FS_STATE_NO_DATA_CSUMS, &fs_info->fs_state) &&
+> -		    !btrfs_is_data_reloc_root(inode->root) && !bbio->is_remap) {
+> +		    !btrfs_is_data_reloc_root(inode->root) && !bbio->is_remap &&
+> +		    !IS_ENCRYPTED(&inode->vfs_inode)) {
+>  			if (should_async_write(bbio) &&
+>  			    btrfs_wq_submit_bio(bbio, bioc, &smap, mirror_num))
+>  				goto done;
+> diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
+> index 43f7544029ac..456d32db9e9e 100644
+> --- a/fs/btrfs/bio.h
+> +++ b/fs/btrfs/bio.h
+> @@ -43,6 +43,7 @@ struct btrfs_bio {
+>  		struct {
+>  			u8 *csum;
+>  			u8 csum_inline[BTRFS_BIO_INLINE_CSUM_SIZE];
+> +			bool csum_ok;
+>  			struct bvec_iter saved_iter;
+>  		};
+>  
+> @@ -130,5 +131,7 @@ void btrfs_submit_repair_write(struct btrfs_bio *bbio, int mirror_num, bool dev_
+>  int btrfs_repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 fileoff,
+>  			    u32 length, u64 logical, const phys_addr_t paddrs[],
+>  			    unsigned int step, int mirror_num);
+> +blk_status_t btrfs_check_encrypted_read_bio(struct btrfs_bio *bbio,
+> +					    struct bio *enc_bio);
+>  
+>  #endif
+> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> index 986914078708..72d9d3243460 100644
+> --- a/fs/btrfs/file-item.c
+> +++ b/fs/btrfs/file-item.c
+> @@ -338,6 +338,14 @@ static int search_csum_tree(struct btrfs_fs_info *fs_info,
+>  	return ret;
+>  }
+>  
+> +static inline bool inode_skip_csum(struct btrfs_inode *inode)
+> +{
+> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> +
+> +	return (inode->flags & BTRFS_INODE_NODATASUM) ||
+> +		test_bit(BTRFS_FS_STATE_NO_DATA_CSUMS, &fs_info->fs_state);
+> +}
+> +
+>  /*
+>   * Lookup the checksum for the read bio in csum tree.
+>   *
+> @@ -357,8 +365,7 @@ int btrfs_lookup_bio_sums(struct btrfs_bio *bbio)
+>  	int ret = 0;
+>  	u32 bio_offset = 0;
+>  
+> -	if ((inode->flags & BTRFS_INODE_NODATASUM) ||
+> -	    test_bit(BTRFS_FS_STATE_NO_DATA_CSUMS, &fs_info->fs_state))
+> +	if (inode_skip_csum(inode))
+>  		return 0;
+>  
+>  	/*
+> @@ -817,6 +824,9 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, struct bio *bio, bool async)
+>  	struct btrfs_ordered_sum *sums;
+>  	unsigned nofs_flag;
+>  
+> +	if (inode_skip_csum(inode))
+> +		return 0;
+> +
+>  	nofs_flag = memalloc_nofs_save();
+>  	sums = kvzalloc(btrfs_ordered_sum_size(fs_info, bio->bi_iter.bi_size),
+>  		       GFP_KERNEL);
+> diff --git a/fs/btrfs/fscrypt.c b/fs/btrfs/fscrypt.c
+> index 5d34a8b94da5..924ee3df7f32 100644
+> --- a/fs/btrfs/fscrypt.c
+> +++ b/fs/btrfs/fscrypt.c
+> @@ -16,6 +16,7 @@
+>  #include "transaction.h"
+>  #include "volumes.h"
+>  #include "xattr.h"
+> +#include "file-item.h"
+>  
+>  /*
+>   * From a given location in a leaf, read a name into a qstr (usually a
+> @@ -212,6 +213,33 @@ static struct block_device **btrfs_fscrypt_get_devices(struct super_block *sb,
+>  	return devs;
+>  }
+>  
+> +static blk_status_t btrfs_process_encrypted_bio(struct bio *orig_bio,
+> +						struct bio *enc_bio)
+> +{
+> +	struct btrfs_bio *bbio;
+> +
+> +	/*
+> +	 * If our bio is from the normal fs_bio_set then we know this is a
+> +	 * mirror split and we can skip it, we'll get the real bio on the last
+> +	 * mirror and we can process that one.
+> +	 */
+> +	if (orig_bio->bi_pool == &fs_bio_set)
+> +		return BLK_STS_OK;
+> +
+> +	bbio = btrfs_bio(orig_bio);
+> +
+> +	if (bio_op(orig_bio) == REQ_OP_READ) {
+> +		/*
+> +		 * We have ->saved_iter based on the orig_bio, so if the block
+> +		 * layer changes we need to notice this asap so we can update
+> +		 * our code to handle the new world order.
+> +		 */
+> +		ASSERT(orig_bio == enc_bio);
+> +		return btrfs_check_encrypted_read_bio(bbio, enc_bio);
+> +	}
+> +	return btrfs_csum_one_bio(bbio, enc_bio, false);
 
-Fix this by introducing a new flush state,
-BTRFS_RESERVE_FLUSH_ZONED_RELOCATION, specifically for data chunk
-allocation during zoned relocation. Like
-BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE, this state uses
-priority_reclaim_data_space() instead of the normal flushing path, which
-avoids re-entering the relocation code and breaking the deadlock cycle.
+Honestly, all this shows that the architecture of the I/O path in this
+series is pretty broken.  It needs all this magic detection, and the
+passing of arguments that mixes the bbio for state and the lower
+encrypted bio without the btrfs context shows something doesn't work
+well.
 
-In btrfs_alloc_data_chunk_ondemand(), select this new flush state when the
-inode belongs to a data relocation root on a zoned filesystem.
+So let's take a step back, if we think of the I/O pipeline, it should do
+things in this order for writes:
 
-Fixes: e2a7fd22378f ("btrfs: zoned: add zone reclaim flush state for DATA space_info")
-Reviewed-by: Boris Burkov <boris@bur.io>
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/delalloc-space.c |  2 ++
- fs/btrfs/space-info.c     |  2 ++
- fs/btrfs/space-info.h     | 11 +++++++++++
- 3 files changed, 15 insertions(+)
+ - encrypt data
+ - generate checksums
+ - do mirroring/striping/parity
 
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index 0970799d0aa4..4293a6383433 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -134,6 +134,8 @@ int btrfs_alloc_data_chunk_ondemand(const struct btrfs_inode *inode, u64 bytes)
- 
- 	if (btrfs_is_free_space_inode(inode))
- 		flush = BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE;
-+	else if (btrfs_is_zoned(fs_info) && btrfs_is_data_reloc_root(root))
-+		flush = BTRFS_RESERVE_FLUSH_ZONED_RELOCATION;
- 
- 	return btrfs_reserve_data_bytes(data_sinfo_for_inode(inode), bytes, flush);
- }
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 739984462677..e6641597b321 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -1705,6 +1705,7 @@ static int handle_reserve_ticket(struct btrfs_space_info *space_info,
- 						ARRAY_SIZE(evict_flush_states));
- 		break;
- 	case BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE:
-+	case BTRFS_RESERVE_FLUSH_ZONED_RELOCATION:
- 		priority_reclaim_data_space(space_info, ticket);
- 		break;
- 	default:
-@@ -1968,6 +1969,7 @@ int btrfs_reserve_data_bytes(struct btrfs_space_info *space_info, u64 bytes,
- 
- 	ASSERT(flush == BTRFS_RESERVE_FLUSH_DATA ||
- 	       flush == BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE ||
-+	       flush == BTRFS_RESERVE_FLUSH_ZONED_RELOCATION ||
- 	       flush == BTRFS_RESERVE_NO_FLUSH, "flush=%d", flush);
- 	ASSERT(!current->journal_info || flush != BTRFS_RESERVE_FLUSH_DATA,
- 	       "current->journal_info=0x%lx flush=%d",
-diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-index 24f45072ca4b..aa836e8a9d4a 100644
---- a/fs/btrfs/space-info.h
-+++ b/fs/btrfs/space-info.h
-@@ -77,6 +77,17 @@ enum btrfs_reserve_flush_enum {
- 	 */
- 	BTRFS_RESERVE_FLUSH_ALL_STEAL,
- 
-+	/*
-+	 * This is for relocation on zoned filesystems only. We need to use
-+	 * priority flushing for this, because otherwise we can deadlock on
-+	 * waiting for a ticket, that cannot be granted, because we cannot do
-+	 * any allocations.
-+	 *
-+	 * Apart from being specific to zoned relocation, it is equal to
-+	 * BTRFS_FLUSH_FREE_SPACE_INODE.
-+	 */
-+	BTRFS_RESERVE_FLUSH_ZONED_RELOCATION,
-+
- 	/*
- 	 * This is for btrfs_use_block_rsv only.  We have exhausted our block
- 	 * rsv and our global block rsv.  This can happen for things like
--- 
-2.54.0
+and reverse for reads.
+
+All this suggest that the btrfs_bio needs to exist for the encrypted
+data.  So I think you'll need to and refactor this, preferably with the
+really annoying two-level callbacks that this really hard to follow (or
+implement).  Your caller is in the file system, and it should be able to
+call fscrypt as helpers instead of going two layers down using direct
+calls and then two layers back up using indirect calls.  The recent
+refactoring that moves the fscrypt fallback above the block layer
+instead of calling it from the bottom should help a lot with that.
 

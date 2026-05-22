@@ -1,178 +1,83 @@
-Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 85A241D88B4
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 00:27:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBC2819004A;
+	Fri, 22 May 2026 02:06:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779409642; cv=none; b=mRNQ6ROwvw5ufF7jcPQp1mTSxnlKPZxnqnTb1DrOxXjs4tQsOM+FsVATzqu0pusDwa5eNWdK/+VeGmv4T4NDAK3IPk2tzyjbCsivpM15eOUrTSRX56EnDmkuDN6mWarMExPDo8VkyQGyk1ru6BOkRtcLmx5UYKSN2iQrwezoang=
+	t=1779415604; cv=none; b=ILugu3AVo+ZF3/OnaC/zaPft0XRrSpFQDPV/uQAe+T/YG1f69sbSemJ3ZtZkTteUm2apfEVmvnXDbBBis0Oc2V5d+lDmRiw5JVM06AaES3MdCYEte9ZBdqSuCIN54VFNjlCORFClbTGheta7WgcULWGojm1vwc6gvDtiykVCE80=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779409642; c=relaxed/simple;
-	bh=OeaBJnpyh+HO3KMXuAPZK5iYCsIl+yzigcjSPICIOXM=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=cM8bhMaW/V2UvN8umRN9N5gZAyQ1TGhq91qLdq1j03CQ5UQGadOtuJpNKT/rC91FNVxcq4DA0gZa7b19SK5BSkNZQPavyJP3SwWwsWHftJMqzpXFnwGcIrv5bdcKpX1ylT/kCgIGwLRVU5loM8QgPHKsBYqn33cKhxdqaFqZRFM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=PuX/S8HZ; arc=none smtp.client-ip=209.85.128.54
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1779415604; c=relaxed/simple;
+	bh=07hz+naxzFTXSzGaVDJJiD1tGK+Lr7PvamFXV2fNi5U=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=lSPBMG2BcV6Iz4//aAR/rqogiiWU5lmsOa3zf+kKrP2f32JvMc/CyLO3sJl5tcaNE5tVCpa2VQICAr4uDJY+6WEcBX8iuKwJohbG0uQllJtM3x5mDM9kHkmyVFuLhcEHB17tsCY3j5wrryqCYRBie6BieeMYX2OTyKhv9jcf91U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=cn0DKNiC; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="PuX/S8HZ"
-Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-48e6db3ff7eso35083555e9.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 May 2026 17:27:20 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1779409639; x=1780014439; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=6Ay5nOcwCJCKL9kJTKSvIioIW4guYTs+JXkN6Y689XM=;
-        b=PuX/S8HZNBG3rGmZb7jXpJY1TmOL6BM1XdZimuQ1Mo3sF1iQd1S+OSvIPpCNoJiRxP
-         ciYUxB+qCCeeiIVtYpCG6xYka03V3TYWGFAXmw6LSRvoRlY8P1HSsPqdN2vgYw+8+cV2
-         YbOorhIREcPpjLYESezzhxI6qhSwn/si/LgXHWjgb25pFgJW4wHAHA4oLh0S/8nSc9L7
-         nr5pQEAchCVDR6gk/vJzRuYg9H3tFchalPQkCtO64xf1/f3GQ7gL/zKWYkgnxIEjepd7
-         yoXnxlib59p3hr0/MhzefrNawh+lCo3Jda+C+8l3P6xklkK5ajky5yBhZBuHER90rsCd
-         JSzA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779409639; x=1780014439;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=6Ay5nOcwCJCKL9kJTKSvIioIW4guYTs+JXkN6Y689XM=;
-        b=KZjSynNLyf6fV2rnrhymIujyJZ39hKHkxf4F+QkorGeNNYz0/vTXQFG0clAbr4tZ7d
-         +oaz1W3WNFB7Ht1qA86Yu9jtbsYXdjvUPNrenUMhj/bCox2xkrCOT1OXb1tkmYfe/XzU
-         3g1CkTcbC/8Pn/II3OtJrejx7v4+ZRzgXdvXbTt/5zC+g/cid6pW9wArJ59RP3i6g3o1
-         zx7Lri7nqgC9FguWrhOxfLJYxZmzedrtMB6nN0llUzVmEuECCZLjA6oK/eOii7v9FdUs
-         IPMU9H4oxIo4anNwQafrT5qZdelmhJmQU2lB+f3LLEqUcNurVQXptd4Eca3jptSZTJGT
-         sETg==
-X-Forwarded-Encrypted: i=1; AFNElJ96/DWhLOzVgNlqpla/ol7sBg6YyYJ1tqJUXggbzp8U+kscivXPyrOpfJ/JUOP8ixzYpvMJQRTCax7tJw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwTG6JsgIPZjowpVwfmBQYGyHqQzHx5yI8InxR8xw7BMeov8/9w
-	2hWzjtypVtQ0tQEfqn4SwEVyyP6vBImZ05UBJqaXuZXl9Rq7qhMBDb/S5FOCpMIqk1I=
-X-Gm-Gg: Acq92OGNotztp8yw42YsyWwrlduTyj8TTp9geoyHpwzaR7LjwM8+8NXngjqO6skRdWu
-	7MvXu+V/LBuQinrOxub45iVj/JU2RPh/QhvXIzC81IRbpm1Wi8paM1nCWEMHb5UQpm9Lw/elAJR
-	67mb59IteqIvnynf9Q7Zsgq8ZTB4QkBPp3Tww8ObhDCEePAjRMFp7tj7PvmHGW9CmQYQ+t4xWP1
-	Lrcro/GIluUBV+GpQVd3ZTKH5XqHn06lDK2CvuhqudkqnrNZVF4c6xgSfEW1K4+7lHYoV6nxKP6
-	Z/3BHXzBGHe+McuIGg8goqbVjVZdxBlWnaivQMSsyp2KJNDyu0iaCoAX7/FhZ6XyE/ahz0Ez2oL
-	JlUS40tjkvpw0NVt7Jg+VvU8baEURPpWf1liE+KvGO6ifv6iEfAuqTlrr7hGm1e1kMUjPpCaT6b
-	MgdewI2e2DNFWz+3qhTkmeXPADYxkw4bh4F/bYrpxGnDpfZhhY10J2tWC3MSuTMCg6EIpit9KO6
-	0qU6Cxw+aKI+ttjGo4Zuh8eJFSNvXbgrMssHL3XPZ+qwYwmzPCiyR2hkw==
-X-Received: by 2002:a05:600c:4ecc:b0:490:3c90:2cda with SMTP id 5b1f17b1804b1-490426cef73mr10709345e9.20.1779409638952;
-        Thu, 21 May 2026 17:27:18 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2beb0f91bccsm4187125ad.36.2026.05.21.17.27.03
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 21 May 2026 17:27:17 -0700 (PDT)
-Message-ID: <cced8d26-d846-470d-b112-344e53ec1b9c@suse.com>
-Date: Fri, 22 May 2026 09:57:00 +0930
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="cn0DKNiC"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6199D1F000E9;
+	Fri, 22 May 2026 02:06:42 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1779415603;
+	bh=knPovaapjTuiFoAWUIpqfkz2sUYqGeJ9DVY/g4v9D24=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=cn0DKNiCX/B+AgeNdmnyOgzXcfSja9kfVGiETJSyy6g56tH9akiqD2DunRITdulvg
+	 qEIdHQTjAE9qmBkXUaJmwuAzJrUGXAt4MFPU2/GjTTlFoDTVA+ixjUjrt/Oz6+Vhtv
+	 8R+6eSEfs99o8wkRYf+MXs53sLi6E2hvukJgWQ0esSvPrPvyY3D/gsOs/08VOaTzDv
+	 BAlCN6chLZXijVQIvk2MFyuElcw/WUZ0ePo7YEeExQ3QcQcxaou5md2JYMlTiO8RiC
+	 29RoX4/OGh9CKMAYExLWC+0Nh7F1+O6QiOcBz+qYsUHgUyZO56xnQcmxA49v09OEuZ
+	 QKaCNkLB6alNg==
+Date: Thu, 21 May 2026 21:06:40 -0500
+From: Eric Biggers <ebiggers@kernel.org>
+To: Carlos Maiolino <cem@kernel.org>
+Cc: Andrey Albershteyn <aalbersh@redhat.com>,
+	Christoph Hellwig <hch@lst.de>,
+	Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org,
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+	linux-btrfs@vger.kernel.org, linux-unionfs@vger.kernel.org,
+	djwong@kernel.org, david@fromorbit.com, brauner@kernel.org,
+	amir73il@gmail.com, miklos@szeredi.hu
+Subject: Re: [PATCH v10 00/22] fs-verity support for XFS with post EOF merkle
+ tree
+Message-ID: <20260522020640.GB5937@quark>
+References: <20260520123722.405752-1-aalbersh@kernel.org>
+ <20260521090705.GA14254@lst.de>
+ <gcw7zcg6p4s2egpufwizfig72g6ren7jfmuz5mqskkpb7xepww@e3v35j7bk7dc>
+ <ag7uW7KQ5mVyCGEv@nidhogg.toxiclabs.cc>
+ <ag7vc9gaHo3XtsBJ@nidhogg.toxiclabs.cc>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 01/19] btrfs: require at least 4 devices for RAID 6
-To: Andrew Morton <akpm@linux-foundation.org>,
- Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Christoph Hellwig <hch@lst.de>, "H. Peter Anvin" <hpa@zytor.com>,
- kreijack@inwind.it, David Sterba <dsterba@suse.cz>,
- Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>,
- Ard Biesheuvel <ardb@kernel.org>, Huacai Chen <chenhuacai@kernel.org>,
- WANG Xuerui <kernel@xen0n.name>, Madhavan Srinivasan <maddy@linux.ibm.com>,
- Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>,
- "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
- Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
- Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>,
- Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>,
- Alexander Gordeev <agordeev@linux.ibm.com>,
- Christian Borntraeger <borntraeger@linux.ibm.com>,
- Sven Schnelle <svens@linux.ibm.com>, Thomas Gleixner <tglx@kernel.org>,
- Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
- Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
- Herbert Xu <herbert@gondor.apana.org.au>,
- Dan Williams <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
- Song Liu <song@kernel.org>,
- Yu Kuai <yukuai@alb-78bjiv52429oh8qptp.cn-shenzhen.alb.aliyuncs.com>,
- Li Nan <linan122@huawei.com>, linux-kernel@vger.kernel.org,
- linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
- linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
- linux-s390@vger.kernel.org, linux-crypto@vger.kernel.org,
- linux-btrfs@vger.kernel.org, linux-arch@vger.kernel.org,
- linux-raid@vger.kernel.org
-References: <20260512052230.2947683-1-hch@lst.de>
- <20260512052230.2947683-2-hch@lst.de> <20260512114231.GG2558453@suse.cz>
- <20260513054742.GA1018@lst.de>
- <0a8d1ff4-f5a2-49e9-aa45-d25dbe4ded40@libero.it>
- <20260515043705.GA3855@lst.de>
- <34C16854-1065-4542-8836-DDED58EC1844@zytor.com>
- <20260518051207.GB9374@lst.de> <f46636c8-80ba-4802-a6a0-74cbc35e7bee@gmx.com>
- <20260521171730.7872482df453975cf60ce7dc@linux-foundation.org>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260521171730.7872482df453975cf60ce7dc@linux-foundation.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ag7vc9gaHo3XtsBJ@nidhogg.toxiclabs.cc>
 
-
-
-在 2026/5/22 09:47, Andrew Morton 写道:
-> On Wed, 20 May 2026 18:11:09 +0930 Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+On Thu, May 21, 2026 at 01:42:42PM +0200, Carlos Maiolino wrote:
+> On Thu, May 21, 2026 at 01:38:45PM +0200, Carlos Maiolino wrote:
+> > On Thu, May 21, 2026 at 11:42:13AM +0200, Andrey Albershteyn wrote:
+> > > On 2026-05-21 11:07:05, Christoph Hellwig wrote:
+> > > > On Wed, May 20, 2026 at 02:36:58PM +0200, Andrey Albershteyn wrote:
+> > > > > This series based on v7.1-rc4.
+> > > > 
+> > > > How are we going to merge this?  It touches at three subsystem trees
+> > > > (fsverity, vfs/iomap, xfs) so some coordination will be needed.
+> > > 
+> > > As most of the patches are xfs, it's probably make sense to go
+> > > through xfs tree
+> > > 
+> > > Carlos, what do you think?
+> > 
+> > I was expecting this to come through xfs tree too if Eric and Christian
+> > agree.
+> > FWIW I'm adding Christian to the Cc
 > 
->>
->>
->> 在 2026/5/18 14:42, Christoph Hellwig 写道:
->>> On Fri, May 15, 2026 at 12:59:34PM -0700, H. Peter Anvin wrote:
->>>> I don't think this is a good idea. Error out; it is the btrfs maintainers' job to ensure user data isn't lost.
->>>>
->>>> The RAID-6 code has *never* supported only 3 units, and if it ever worked for *any* of the implementations it was purely by accident. Speaking as the original author I should know; this was deliberate as in some cases the degenerate case (3) would have required extra trays in the code to no user benefit.
->>>>
->>>> I would not be surprised if the kernel crashed or corrupted the page cache in that case.
->>>
->>> It does, that's why I wanted to exclude it.  Anyway, for the about to be
->>> resent version I'll drop this btrfs patch over the stated objection and
->>> will otherwise not change anything.  This means the (IMHO hypothetical)
->>> users of this configuration will get a WARN_ON_ONCE triggered, but
->>> otherwise keep working (or rather not working) as before.
->>>
->>
->> For the btrfs part, I believe I can get the current 2-disk-raid5 and
->> 3-disk-raid6 to fallback to raid1 inside btrfs.
->>
->> I hope the btrfs part can be finished and reach the next merge window,
->> but I'm not 100% sure.
->>
->> What is the planned cycle to merge this raid5/6 cleanup?
-> 
-> At present it's on track for the 7.2-rc1 merge window.  Does that suit?
+> Woops... Also Adding Amir and Miklos to the Cc list due the overlayfs
+> patch:
 
-The current btrfs fix (*) is pretty small, I believe we can get it into 
-the next merge window, as long as we got enough review on it.
+Please go ahead and take it through the XFS tree for 7.2 if you think
+it's ready.
 
-*: 
-https://lore.kernel.org/linux-btrfs/a1d63733465229936351804f3760803d5894a962.1779274630.git.wqu@suse.com/T/#u
-
-
-
+- Eric

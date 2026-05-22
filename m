@@ -1,52 +1,45 @@
-Received: from mxex2.tik.uni-stuttgart.de (mxex2.tik.uni-stuttgart.de [129.69.192.21])
+Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 323C033F5A9
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 23:33:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=129.69.192.21
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 509A7379C23
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 23:56:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779492809; cv=none; b=qiYDCwcS+qgaSf852hSYH9WAZiP/nF0RTd1S5b/goj8qaTT1iPHbr+yaiH2dLV8yDKGdqO/GtcPqeHD+S0NYoh712Nm3fdYxVliPTQPzXua+uoVRf0DOyPpYS0ebv+0QX+74kvylbsqAwa6SntDKwQ9VKKc2rdlfu5cfj2S2pH8=
+	t=1779494197; cv=none; b=R1f6k3igayzjIK2innWrOkItnIl/vaHNLECyckKpJGTKFgveZuZw3ktJcDblwgAWMtsc3UIdfaz4GQVJ+4inIVn9f9ga57oQyx9kr9AV6TxS2lV9hodzYxv7bE236NkapNVZQQap8AIC0TZVpFEwlOt91HGeUzUfY867hjtVKuI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779492809; c=relaxed/simple;
-	bh=KIXfQsuDLFgKVL8jv4C7rVljwwGHx7lLmuO4U5PsmMc=;
-	h=Date:From:To:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=pLY6N0siFA7trJf3FTQFaZLBa/7Ch51EPmsFVrxC0g6SPE6xcLWJbeU8MuowOa2HCjqD0zaWUs/wx87aR3rf+JUChkPZa3iTeOZQCto8www7Wv60I8inevMapenI5l3R2bo3U0mpAbw6fWJud8Kb9Cebpl3WNF2MOy7uwmarabg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de; spf=pass smtp.mailfrom=rus.uni-stuttgart.de; dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b=F1g1CMfU; arc=none smtp.client-ip=129.69.192.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=rus.uni-stuttgart.de
+	s=arc-20240116; t=1779494197; c=relaxed/simple;
+	bh=zq/unLPZk386k8wqzWiAllhAlqL+UAOTKeXdCyqhDFY=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=ge2k3TQCvHR/N179kZEWAxF4Z74MvycXV7YkKYbY1o54ZKROm5fyOTLrfsK02/0LPms/YQEWQPDRnbKobPrARb8vQpwYutmQoENwEQYS0wRYYhAZaOuQ0zk620rjN6SMdF05dCBu01KpTeq3nduKmMJlC8rrm8Z2gQHadHJ8+Vg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=RH1SChT2; arc=none smtp.client-ip=90.155.50.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b="F1g1CMfU"
-Received: from localhost (localhost [127.0.0.1])
-	by mxex2.tik.uni-stuttgart.de (Postfix) with ESMTP id 5D07660E0F
-	for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2026 01:25:35 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=uni-stuttgart.de;
-	 h=user-agent:in-reply-to:content-disposition:content-type
-	:content-type:mime-version:references:message-id:subject:subject
-	:from:from:date:date; s=dkim; i=@rus.uni-stuttgart.de; t=
-	1779492333; x=1781231134; bh=KIXfQsuDLFgKVL8jv4C7rVljwwGHx7lLmuO
-	4U5PsmMc=; b=F1g1CMfUvpApXTMhkTPx51eiBfxHYC65SzfX6ZWn5fvxeOiEfQg
-	zDM50TMIgRUsvY4dLA+lAhGRif6P6USLf4AdXmxj2308oUcAKZyp4sdqnYOnz67t
-	H2nAC2qZYU2wWgbuNmz9rovIjgIjunpct1/Wx+ObWi7PnlOv6Cyl0lzzFDmdyn/r
-	sgcRAn535NX9zDSWFR6UYjM50avVMAQQs+WyY/9cAFo5m4C3ujuTUS8T+/RnwSe4
-	PtVRrZJsixzM6A/7yumXqof4WdNeez6w7aJoEDUN3FYLVwqwH7zYRSlHP/GWYoGn
-	+mECerUZT23gQdTVQgPk/4OFWKks6S1Lz1Q==
-X-Virus-Scanned: USTUTT mailrelay AV services at mxex2.tik.uni-stuttgart.de
-Received: from mxex2.tik.uni-stuttgart.de ([127.0.0.1])
- by localhost (mxex2.tik.uni-stuttgart.de [127.0.0.1]) (amavis, port 10031)
- with ESMTP id aJ-Mmvdl1bjl for <linux-btrfs@vger.kernel.org>;
- Sat, 23 May 2026 01:25:33 +0200 (CEST)
-Received: from authenticated client
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange secp256r1 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mxex2.tik.uni-stuttgart.de (Postfix) with ESMTPSA
-Date: Sat, 23 May 2026 01:25:33 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs progs release 7.0
-Message-ID: <20260522232533.GA316642@tik.uni-stuttgart.de>
-Mail-Followup-To: linux-btrfs@vger.kernel.org
-References: <20260509235151.2070978-1-dsterba@suse.com>
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="RH1SChT2"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=nsSLN1yvxA3leIOsNWITPTfRwTfgb8EFJCqwCRkf6zg=; b=RH1SChT2u2ElfNBnUUX7+e2kOa
+	2gfEvb9ZK0gjLnA6cMrEuARyBukqedqHkNCfEVsxIP1yaxRX9YBdekNd8PWxPO5e2NoZprHKXLSn5
+	H8XWlWoGgvtNdO9tM6iKPJMyE12/8lHgXhVdpOr09HAFVdiHv5nyifr4iCfeGM+LuHs98/23fopn5
+	98wQ7RK1eNf1oqDEKZ6fI5hre7EaBhE8j6vVsSgAgTE8pFCUbyxbxqFfEu9X0fH8Mmz7hjCuNd3Fe
+	VfHuKGdp8Yh7SlRe9bRtOdfPf8evg6eP5BiI0pJT3j77UMc15f7UKKn3X1cgPIekVrxlsR9UCZW+8
+	s59FHNYw==;
+Received: from willy by casper.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wQZjB-0000000Ak0d-1OCt;
+	Fri, 22 May 2026 23:56:29 +0000
+Date: Sat, 23 May 2026 00:56:29 +0100
+From: Matthew Wilcox <willy@infradead.org>
+To: David Sterba <dsterba@suse.cz>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+	linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
+	Boris Burkov <boris@bur.io>, Filipe Manana <fdmanana@suse.com>,
+	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Subject: Re: [PATCH 0/3] Three folio-related btrfs fixes
+Message-ID: <ahDtLYinnFX5CBcE@casper.infradead.org>
+References: <20260522181411.2487732-1-willy@infradead.org>
+ <20260522223855.GA29010@twin.jikos.cz>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -55,48 +48,23 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260509235151.2070978-1-dsterba@suse.com>
-User-Agent: Mutt/1.5.23 (2014-03-12)
+In-Reply-To: <20260522223855.GA29010@twin.jikos.cz>
 
-On Sun 2026-05-10 (01:51), David Sterba wrote:
+On Sat, May 23, 2026 at 12:38:55AM +0200, David Sterba wrote:
+> On Fri, May 22, 2026 at 07:14:06PM +0100, Matthew Wilcox (Oracle) wrote:
+> > All of these were discovered through auditing the (mis)uses of the folio
+> > API throughout the kernel; I haven't been specifically reviewing btrfs,
+> > nor testing.
+> > 
+> > Matthew Wilcox (Oracle) (3):
+> >   Revert "btrfs: fix the file offset calculation inside
+> >     btrfs_decompress_buf2page()"
+> 
+> Why do you do the revert? It does not seem suitable for this case, we
+> use reverts if we want to get back to the original behaviour, or when
+> removing a patch from a long series to avoid a rebase. Merging the first
+> and second patch makes more sense to me.
 
-> btrfs-progs version 7.0 have been released.
-
-Thanks.
-This version correct some bugs in the Ubuntu 24 btrfs package.
-
-
-> Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-> Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-> Release: https://github.com/kdave/btrfs-progs/releases/tag/v7.0
-
-To get the newest version of btrfs.box.static I have written this script:
-
-root@fex:/opt/btrfs-tools# cat btrfs-update
-#!/bin/bash
-
-bbs=btrfs.box.static
-cd /opt/btrfs-tools/bin || exit 1
-vv -s btrfs
-rm -f $bbs
-curl -sS -D- https://github.com/kdave/btrfs-progs/releases/latest |\
-perl -ne 's/^location: (\S+)/wget -q $1\/'$bbs'/ and s:/tag/:/download/: and print' |sh -x
-if [[ $(file $bbs) =~ executable ]]; then
-  cat $bbs > btrfs
-  del $bbs
-fi
-btrfs --version
-
-
-Yes, it works but it is ... ugly :-}
-
-Is there a more elegant solution?
-
-
--- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    https://www.tik.uni-stuttgart.de/
-REF:<20260509235151.2070978-1-dsterba@suse.com>
+The revert is for a patch which was merged into v6.16.  Since the fix
+for page_offset() was merged into v6.15, af566bdaff54 should never have
+been merged, and it can safely be reverted.

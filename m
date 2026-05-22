@@ -1,74 +1,119 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 115963C4B92;
-	Fri, 22 May 2026 10:03:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BF41A3BED0C
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 10:07:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779444207; cv=none; b=VaIhXF+H2hxP2y+/T53QnyNFukLexT5EjI0/J2s0sP7NRceQz77v0IJbhWa7FNmcPYNILi/mkA7ZySi7TWqKjfwzUtCIGu0TOXz+oP2bYQyz1HSmT6/sXnm3IaTRohmqWiBEn0f1XBxutaTiq5TtLKxhvWiA4N2FL0nEfEAve/w=
+	t=1779444435; cv=none; b=ADszvOXDbgGJ0Q2LTHrvf6z3IB7xl6EpikXZmpieTZMtnHWQ6EZZKKqKIk6UhWFI8ZsIUM84/R95wVlbUQfOpSG5p7j9kg0jkQnbBw76jswcgUbMsHtgYMsSzFGTYWnnqOD9+WZoNjFrUrTTeWEljxsvwaU62voIiXx+ig2nB7o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779444207; c=relaxed/simple;
-	bh=Ew3wynC+4lQS88L8QM5VENAs5LeiSwNwOnhVs98s4U4=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=J3T0tQT98r46OfDN5XRQsAlqbX9vkGdIYhOcC2mVwbHx8cZPhaUKiY1ffq89ds/vipZwRrNTFwAMGKJEbx7WA2/MaN5rl47dbLZFSSttb/NoTxhSwGbZjQBpoqHknaJR3I+kQK89x8G5Yhta9HKxVYoLVzyzn8a+mUqv1deQj4Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=fXc8/bqE; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1779444435; c=relaxed/simple;
+	bh=hjAtIiiqjl1xUN9U8opXB9yxFZObwtHLSqBVORcVBOo=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=l8Ch2UPWZOXFVqm/dk7IbYi/c82rPf23yhVbjcbgU62Ef0xqQdqZ5+rmpWvACq0E83+GcMAzU9HpfKvPMRM5riVEPia3UPc72QXpehLhqLk1hMlqmDA+TnSSn7BQf2wc1pnD/QRKNKBZ6IuRNw2jsX0HPaApJk+N6GPmkhp+sXQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tKbykr/h; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=DmVs+Qry; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="fXc8/bqE"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7A1E01F000E9;
-	Fri, 22 May 2026 10:03:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1779444205;
-	bh=EE7jglkWc5b02EajD9Hq94MBW3TL9+QMd/i5HrD5hLk=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=fXc8/bqE5m2G9NEvKfhSpZy/CbTM6but4CMy/iSqgF60B3nrQyz8f0utXEFOxdil+
-	 P9+L7Vg7+dL5oU8/pe9hR00UqggP/TKnh7bcf8hQ8CElz45jdgnQOF+MSkRupA7pqw
-	 hAGDNvrzV1oUbeupPtwVTRgRtRqanW5BnOcvIHbDFddqfJIP3Uelyv+1ZK+4vo9PU2
-	 aVUAeDPJCBGQmlexODZiwr7nRZVfBGPaTuWdp+0wT2xRA8ggKinrOyEtXZ/Ntdii+l
-	 r5zKxDnskkUwp2l9kiezcdJjtq6/xnqDFIbp2onQkt0qvdZQy/1IjZ5C9PQDFGaBh/
-	 1UHtSubvYuffQ==
-Date: Fri, 22 May 2026 12:03:20 +0200
-From: Christian Brauner <brauner@kernel.org>
-To: Carlos Maiolino <cem@kernel.org>
-Cc: Andrey Albershteyn <aalbersh@redhat.com>, 
-	Christoph Hellwig <hch@lst.de>, Andrey Albershteyn <aalbersh@kernel.org>, 
-	linux-xfs@vger.kernel.org, fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, 
-	ebiggers@kernel.org, linux-ext4@vger.kernel.org, 
-	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org, linux-unionfs@vger.kernel.org, 
-	djwong@kernel.org, david@fromorbit.com
-Subject: Re: [PATCH v10 00/22] fs-verity support for XFS with post EOF merkle
- tree
-Message-ID: <20260522-unbehagen-baumethode-erlesen-811a4065eeac@brauner>
-References: <20260520123722.405752-1-aalbersh@kernel.org>
- <20260521090705.GA14254@lst.de>
- <gcw7zcg6p4s2egpufwizfig72g6ren7jfmuz5mqskkpb7xepww@e3v35j7bk7dc>
- <ag7uW7KQ5mVyCGEv@nidhogg.toxiclabs.cc>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tKbykr/h";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="DmVs+Qry"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id B9E8867AC4
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 10:07:11 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1779444432; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=QEDnpIFHnM1UCX9ousKWNmN3bVbtAghCwt6CZ0Fg2dM=;
+	b=tKbykr/h/Mj56aGenFDr7V7vIqkp4azwBL5pGgdHLC+oJBFVvrRh44ujOtJ1X8ensLJ3Hn
+	AQliSESdmKJQWeV/DOx0d27iW98turogBuqTcIDOY4a+IZFWT1MezO4VYChBtndLLtGhoy
+	hCBBsghk/Kv4nDZ3tv1C5y0gspREl/U=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=DmVs+Qry
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1779444431; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=QEDnpIFHnM1UCX9ousKWNmN3bVbtAghCwt6CZ0Fg2dM=;
+	b=DmVs+Qryn1dlGlylGjcys3qPng8fo36LBm5/z3TuB/vYNGwhnm9pdim37yIf1GI3EFe0Cr
+	N6EDEUWzDPKi9QrTvJu26KMiBjNoqNUSlPTYSCkeVMkiQVl7IGlZ7sYS7UD2LTMWW7S+wK
+	DW4EFHB2/iwWnH9b2dvrt3micXPTIOM=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E8295593A8
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 10:07:10 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 2Si5Kc4qEGpnbAAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 10:07:10 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs-progs: fix a heap-overflow bug in raid56 reconstruction
+Date: Fri, 22 May 2026 19:36:51 +0930
+Message-ID: <cover.1779442619.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <ag7uW7KQ5mVyCGEv@nidhogg.toxiclabs.cc>
+Content-Transfer-Encoding: 8bit
+X-Spam-Score: -3.01
+X-Rspamd-Queue-Id: B9E8867AC4
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:mid];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_ONE(0.00)[1];
+	MIME_TRACE(0.00)[0:+];
+	FROM_HAS_DN(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:mid];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
 
-On Thu, May 21, 2026 at 01:38:38PM +0200, Carlos Maiolino wrote:
-> On Thu, May 21, 2026 at 11:42:13AM +0200, Andrey Albershteyn wrote:
-> > On 2026-05-21 11:07:05, Christoph Hellwig wrote:
-> > > On Wed, May 20, 2026 at 02:36:58PM +0200, Andrey Albershteyn wrote:
-> > > > This series based on v7.1-rc4.
-> > > 
-> > > How are we going to merge this?  It touches at three subsystem trees
-> > > (fsverity, vfs/iomap, xfs) so some coordination will be needed.
-> > 
-> > As most of the patches are xfs, it's probably make sense to go
-> > through xfs tree
-> > 
-> > Carlos, what do you think?
-> 
-> I was expecting this to come through xfs tree too if Eric and Christian
-> agree.
+During my local tests on a kernel patchset of falling back to
+RAID1/RAID1C3 for single-data-RAID56, it turns out that "btrfs check
+--check-data-csum" can report a lot of false csum mismatch.
 
-You may take it through the xfs tree if there are no conflicts with
-vfs-7.2.iomap. If there are I want to add the iomap changes into
-vfs-7.2.iomap that you can pull in.
+It turns out that there is heap-overflow bug where we can get garbage
+into the IO buffer for RAID56 reconstruction read.
+
+Fix it and add a regression test case.
+
+Qu Wenruo (2):
+  btrfs-progs: fix raid56 reconstruction read
+  btrfs-progs: fsck-tests: add a new test case for the raid56 read fix
+
+ Makefile                                 |  2 +-
+ kernel-shared/extent_io.c                | 14 +++++++++++-
+ tests/fsck-tests/074-raid56-read/test.sh | 27 ++++++++++++++++++++++++
+ 3 files changed, 41 insertions(+), 2 deletions(-)
+ create mode 100755 tests/fsck-tests/074-raid56-read/test.sh
+
+--
+2.54.0
+

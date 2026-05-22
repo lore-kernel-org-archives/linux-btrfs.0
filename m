@@ -1,37 +1,29 @@
 Received: from verein.lst.de (verein.lst.de [213.95.11.211])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C0D1228CB8;
-	Fri, 22 May 2026 12:08:02 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 342F52FE057;
+	Fri, 22 May 2026 12:08:40 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779451684; cv=none; b=QpggRwBtYVyUFGXhqPVgiTOFZDJ+yKeQQBNOj5AgOPd9ezh7luje3h3X5Jfz9cvVZlqZqLYZLpjGtpieuy8RYZJb6pzrgvH/54V53cZIuziilGlciPGYMHjntxSQSr0asakwj5QnTVAnSnWean53DPwSH4ioG1qLWQOa7emx5wU=
+	t=1779451721; cv=none; b=FiT+7ebw8kyWmdtki+jac4EFOqQ2UbJmvCl34OkhgAiZoLbeO96ht5n6JKhMoUh4ko1Ntz0rYIWCEU70LEmjdLSnUgUa6ZChZzgYFklm9bygFWMQ1Ok9MlwmrWIa02enILrx3pWt/keCbDGJj+4lco9r59BaHEx8WBlqUvtIRfo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779451684; c=relaxed/simple;
-	bh=atNXOnjiGYV5Attahdoy1UUe8z1fIMr0HTetf8oZSus=;
+	s=arc-20240116; t=1779451721; c=relaxed/simple;
+	bh=SaeAy17DQz4ZQJdiPE5ahPVCtmRMnexTYkXVSRuCLMQ=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=cmTrnQwYKibIYH0jQNqrBN157NefykGXzUlWMNN9xxDRny2pjTdQmew9I8Z4jEwVOtAHQgM5zbpBPhbsUczLuIf7SZ+TYu80BDGMcHXdhRdpad35uX2ja3leP2u9k3byFRWeCv2/+AZS+R1l/2LnNvBkbc0esJyBNW6yTx2VCqs=
+	 Content-Type:Content-Disposition:In-Reply-To; b=Kf/tiBS4L/HEdIpUyvzrXKEPhtU0j2HCyUfUEzrEwnIqhT9ol1XZe5NGRFu3VKGIamkaoZt/9Sl48BTNxy560XQkxkOy1W0wn+XSxZJq0Oa/eJy0IVhg51rJUMsLT9M8ZQfRVTLpwsZp7xTyGu7Xej6jomAX9uU6vnL+8/8x5Mg=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
 Received: by verein.lst.de (Postfix, from userid 2407)
-	id AE61C68CFE; Fri, 22 May 2026 14:07:57 +0200 (CEST)
-Date: Fri, 22 May 2026 14:07:57 +0200
+	id C8A8268BFE; Fri, 22 May 2026 14:08:37 +0200 (CEST)
+Date: Fri, 22 May 2026 14:08:37 +0200
 From: Christoph Hellwig <hch@lst.de>
-To: Christian Brauner <brauner@kernel.org>
-Cc: Carlos Maiolino <cem@kernel.org>,
-	Andrey Albershteyn <aalbersh@redhat.com>,
-	Christoph Hellwig <hch@lst.de>,
-	Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org,
-	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org,
-	ebiggers@kernel.org, linux-ext4@vger.kernel.org,
-	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org,
-	linux-unionfs@vger.kernel.org, djwong@kernel.org,
-	david@fromorbit.com
-Subject: Re: [PATCH v10 00/22] fs-verity support for XFS with post EOF
- merkle tree
-Message-ID: <20260522120757.GA21041@lst.de>
-References: <20260520123722.405752-1-aalbersh@kernel.org> <20260521090705.GA14254@lst.de> <gcw7zcg6p4s2egpufwizfig72g6ren7jfmuz5mqskkpb7xepww@e3v35j7bk7dc> <ag7uW7KQ5mVyCGEv@nidhogg.toxiclabs.cc> <20260522-unbehagen-baumethode-erlesen-811a4065eeac@brauner>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Christoph Hellwig <hch@lst.de>, Qu Wenruo <wqu@suse.com>,
+	linux-btrfs@vger.kernel.org, linux-raid@vger.kernel.org
+Subject: Re: [PATCH RFC] btrfs: disguise single-data-RAID56 as RAID1/RAID1C3
+Message-ID: <20260522120837.GB21041@lst.de>
+References: <a1d63733465229936351804f3760803d5894a962.1779274630.git.wqu@suse.com> <20260522085211.GA6702@lst.de> <a8de8d07-d262-4f91-96eb-473fcded6549@gmx.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -40,16 +32,21 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260522-unbehagen-baumethode-erlesen-811a4065eeac@brauner>
+In-Reply-To: <a8de8d07-d262-4f91-96eb-473fcded6549@gmx.com>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 
-On Fri, May 22, 2026 at 12:03:20PM +0200, Christian Brauner wrote:
-> > I was expecting this to come through xfs tree too if Eric and Christian
-> > agree.
-> 
-> You may take it through the xfs tree if there are no conflicts with
-> vfs-7.2.iomap. If there are I want to add the iomap changes into
-> vfs-7.2.iomap that you can pull in.
+On Fri, May 22, 2026 at 07:00:25PM +0930, Qu Wenruo wrote:
+> Not sure what specific workload you may want to verify, but my planned 
+> workload is:
+>
+> - Create single-data-RAID56 btrfs
+> - Fsstress it
+> - Unmount
+>
+> - Mount with one device missing, readonly
+> - Do a readonly scrub, should be no error
+> - Retry with the remaining device(s)
 
-Merging the iomap bits through the iomap branch might make sense, given
-that iomap usually tends to see quite a bit of activity.
+fsstress doesn't actually check data ingtegrity.  So fsx is usually
+a better choice for these kinds of tests.  Otherwise this sounds good.
+

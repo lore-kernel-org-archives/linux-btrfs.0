@@ -1,50 +1,51 @@
 Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B7B23B8955
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 09:03:11 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 033042DA756
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 09:03:12 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779440592; cv=none; b=hPCfD3k3dAAaDHuHjIWQZ+f5q3s0EaDBKoRVcMtD1dViVY02fza1dExIj0YJQS4TmwgaP4DFNx5LbYzy2gAJb2UCzJpyFnBtBl9YFtikl3ADDQcXitcjh618HFt/QW3Li/yVsQsLhwA3mnOAyNbxe4T3RdukL3QehwrRKEFASvQ=
+	t=1779440594; cv=none; b=CsNL2I/L6/uuIgFKcO2XFmZDN3Wy2XpAyW3MHJkl4VlitAQQkgyOcTrJDXLDy0+umw/3qv57dG/8RuKq2QhlpGzNYC7ikqMHCmBrcopNtZ4JyeZTEVttnE8bXyfg/BI/qe/6BU7wtriW2iD4wWksr3vBBP4Ob9njIxH9wZ/p6Lo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779440592; c=relaxed/simple;
-	bh=aCRQ71zdUFfliz2LYagsT1soorO5vWfAR/5Nan9OBlk=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Wu3utEz2fEpezWXVbU53w9YCZHIJEuqHwup4NYU/dry1DgcJiywKUvcMJlu0B/StppZ7ya08Y3Secm622tLPGE1POR0HvDYAISJVw9COt43IRiW/OoCji82tdjCnketrfobR/lH38+2BifnNUYzfpQhihGBAau7r6GeaVHXJnbo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=mCusMM3c; arc=none smtp.client-ip=216.71.153.141
+	s=arc-20240116; t=1779440594; c=relaxed/simple;
+	bh=GnjBreGz7BhLaPXCPNCBg5Qg5BI/PwqnYlmKDdYgudU=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=S19jHEcajizuAPV1zp2G0oLf1IVL06Ug32Vo+YPf37W4A2NOV1OrfcJ4idnMuDa+YlkJ2TAf6EkCesN7JEmBJCEpuu7cAN7tVYaUqrbJbnKQUYdnudWIz/TvRFEvGyzgE1L1ByT+oZcMku9rOwDGtHDilHdC8r4MXqwTc9ofuro=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=S1WtoTIy; arc=none smtp.client-ip=216.71.153.141
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="mCusMM3c"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="S1WtoTIy"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1779440592; x=1810976592;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=aCRQ71zdUFfliz2LYagsT1soorO5vWfAR/5Nan9OBlk=;
-  b=mCusMM3chzzDlydSFgr6qY8IsYK14SM/BXgvIk3GbbwNZNgwpgxQNoLQ
-   p6+2FT55m8gTwe+fi19PsgXlJvPgAtykRhWDxzMVZ2GgJiN2NSblG0NdZ
-   5r8u75ZXeCtZPNw6yl/TMmHiCIUPYupqWIO8o+Jlem9gsOglRbbEQiYUU
-   idfUw0KrSRi6I/NtOzjJnVaqj9nd8ahcQY1zVXTLvHsahCF7Ah2hb1NMn
-   LWLrz5/peesmm5ebkggxGtlGwgQuIzqDcJJPsFaH1Wglf1SPHnKIyTYXp
-   J9K1qdpo3YAc35khSTtmca48kXRyvIk8k0Dq46b+dVuYPQRw5c5IudDDp
-   w==;
-X-CSE-ConnectionGUID: X6ISyUH4QruZOVtGCb0Kxw==
-X-CSE-MsgGUID: 2q/pAa/PTaK8NOTPkLKCBQ==
+  t=1779440593; x=1810976593;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=GnjBreGz7BhLaPXCPNCBg5Qg5BI/PwqnYlmKDdYgudU=;
+  b=S1WtoTIyMlRblpPl7wk6TT0je68DknNeZYv1nBnaLuhRd4Vuv3OL6xJs
+   B+vCZHb5CeLfUvpUM47fn+3+ncON8QAcsX8ZTieouSRYnSASCoFmoKqc6
+   wntFGiOW9eIHiTIXOF/jPgxbocqiBmNR6AU+jHNR7+Un995Tzn4XN6fl9
+   Ux2pPLuRAwFnnFtVSgaqMvJ2s3K9eZMglKI+WeJEh62YUCq9lVNkmoJwg
+   CbOhx1xdcUq6B6aduLcO/pZBqYaE5aEoa9aEoODsMyB6+W2wyLdCyxQVC
+   IocABGmkEFGYhNuV42NX1TP3WJR6MOI2McpxpbtRP4F2zxeWf01/92OH+
+   Q==;
+X-CSE-ConnectionGUID: psKAsLHhSrWCV1rFqdxPXg==
+X-CSE-MsgGUID: ZIgwNOjDQQGTvxk9g3O7PA==
 X-IronPort-AV: E=Sophos;i="6.24,162,1774281600"; 
-   d="scan'208";a="147475589"
+   d="scan'208";a="147475590"
 Received: from unknown (HELO uls-op-esad1-o.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 22 May 2026 17:03:05 +0800
-X-CSE-ConnectionGUID: 0fqWJt/SR4OaPkHJAzE3Lg==
-X-CSE-MsgGUID: BJP0xcWYSmi4rDf0T9mwsA==
-IronPort-SDR: 6a101bbf_+jxIXDoj5vRuMQNYyXbpFHTyKnpZ5bNKcmFiO0VgVFGJfPd
- feMC+SB4Mv4K4Icr208NOyrMe0d6mrkqlEh+JiQ==
+  by ob1.hgst.iphmx.com with ESMTP; 22 May 2026 17:03:06 +0800
+X-CSE-ConnectionGUID: zrmoRhEtRcCypWdG+SqnNQ==
+X-CSE-MsgGUID: DxC1s4BRSbSa/iN7IwC7OA==
+IronPort-SDR: 6a101bc3_MVmZPtVruhZi9Tk4L8T5MFho0kfMARyhwVght2DUgsZytiI
+ GG4cnwkgEg5/12TDh8kr2mEOfQBJK1SMVEzFzww==
 Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
-  by uls-op-esad1-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 22 May 2026 02:02:53 -0700
-X-CSE-ConnectionGUID: dB3c3WNJS7e6JHY1VBa5AA==
-X-CSE-MsgGUID: n34dynVlTOW7FuQBhnwHww==
+  by uls-op-esad1-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 22 May 2026 02:02:58 -0700
+X-CSE-ConnectionGUID: 5NLt1X3jSmGjcsF/UsBJOA==
+X-CSE-MsgGUID: JoI+EZ/nSQuUvYWu+eF6mw==
 WDCIronportException: Internal
 Received: from wdap-b6euub3vgq.ad.shared (HELO neo.wdc.com) ([10.224.19.8])
-  by uls-op-esai1-o.wdc.com with ESMTP; 22 May 2026 02:02:51 -0700
+  by uls-op-esai1-o.wdc.com with ESMTP; 22 May 2026 02:02:55 -0700
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>,
@@ -55,10 +56,12 @@ Cc: Filipe Manana <fdmanana@suse.com>,
 	Naohiro Aota <naohiro.aota@wdc.com>,
 	Christoph Hellwig <hch@lst.de>,
 	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v3 0/5] btrfs: zoned: fix deadlock and space reporting issues for zoned filesystems
-Date: Fri, 22 May 2026 11:02:42 +0200
-Message-ID: <20260522090247.27445-1-johannes.thumshirn@wdc.com>
+Subject: [PATCH v3 1/5] btrfs: zoned: document RECLAIM_ZONES flush state
+Date: Fri, 22 May 2026 11:02:43 +0200
+Message-ID: <20260522090247.27445-2-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.54.0
+In-Reply-To: <20260522090247.27445-1-johannes.thumshirn@wdc.com>
+References: <20260522090247.27445-1-johannes.thumshirn@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -67,56 +70,32 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-This series fixes premature ENOSPC errors and deadlock issues on zoned BTRFS
-filesystems when running xfstest generic/747, which tests garbage collection
-on zoned block devices using direct and buffered I/O.
+Document the purpose of the RECLAIM_ZONES flush state.
 
-There where two issues revealed in the investigation:
+Reviewed-by: Boris Burkov <boris@bur.io>
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/space-info.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-Async reclaim deadlock: On zoned filesystems, the flush state machine
-only executes RECLAIM_ZONES and RESET_ZONES in later flush states
-(FLUSH_DELALLOC and beyond). By the time these states are reached,
-ticket waiters can deadlock waiting for space that can only be freed by
-zone reset. The fix adds RECLAIM_ZONES and RESET_ZONES to the first
-async reclaim loop (FLUSH_ALLOC) specifically for zoned filesystems,
-ensuring zone reset happens early enough to free space for pending
-allocation tickets.
-
-Additionally, the series fixes a bug in data relocation block group selection
-where the first block group was incorrectly skipped, and adds a new flush
-state (BTRFS_RESERVE_FLUSH_DATA_RELOCATION) to use priority reclaim for
-zoned data relocation operations.
-
-Using this, generic/747 passes when lowering the fill_percent variable
-to 80% (from the 95%) that XFS uses. I'm still examining if this is due
-to XFS not having metadata on zoned or other statfs space estimation
-bugs or something else.
-
-Changes to v2:
-- Re-do the data-relocation block-group selection algorithm
-
-Changes to v1:
-- Removed the zone_unusable statfs patch
-- Removed the heavy handed flushing patch
-- Added fixes tags where needed
-- Added more comments
-
-Johannes Thumshirn (5):
-  btrfs: zoned: document RECLAIM_ZONES flush state
-  btrfs: zoned: decode 'RECLAIM_ZONES' state in tracepoints
-  btrfs: zoned: always set data_relocation_bg
-  btrfs: zoned: don't account data relocation space-info in statfs free
-    space
-  btrfs: zoned: fix deadlock waiting for ticket during data relocation
-
- fs/btrfs/delalloc-space.c    |  2 ++
- fs/btrfs/space-info.c        |  9 +++++++++
- fs/btrfs/space-info.h        | 11 +++++++++++
- fs/btrfs/super.c             |  3 ++-
- fs/btrfs/zoned.c             |  8 +-------
- include/trace/events/btrfs.h |  1 +
- 6 files changed, 26 insertions(+), 8 deletions(-)
-
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index f0436eea1544..739984462677 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -1411,6 +1411,13 @@ static void btrfs_preempt_reclaim_metadata_space(struct work_struct *work)
+  *   This is where we reclaim all of the pinned space generated by running the
+  *   iputs
+  *
++ * RECLAIM_ZONES
++ *   This state only works for the zoned mode. We scan the block groups in the
++ *   reclaim_bgs_list and check if we can relocate them. If yes perform the
++ *   relocation to garbage collect the zone. On each of these runs
++ *   BTRFS_ZONED_SYNC_RECLAIM_BATCH (5) block-groups will be reclaimed, after all
++ *   unused block-groups have been deleted.
++ *
+  * RESET_ZONES
+  *   This state works only for the zoned mode. We scan the unused block group
+  *   list and reset the zones and reuse the block group.
 -- 
 2.54.0
 

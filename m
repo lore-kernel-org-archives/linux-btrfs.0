@@ -1,59 +1,60 @@
-Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6CCB43C5DBB
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 09:22:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.144
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1525D1AB6F1
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 09:24:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779441761; cv=none; b=J37HLTGpTBtLWSJJN+kP/m15/21XJHYjV4pewJZrpOK3qHgbdnY6G1KTf9uewdVsgKvf/iMmwTRKUeISVjvny3Wou5E8Ck8Rty2m4uL9O1MNFl/K0fVSSH4ICCdoOt0FclCGEx1vAVbf0zFW5zNVG69u9phv5tHaGkSqadqrE1Y=
+	t=1779441855; cv=none; b=LDQfPie7HqFpJkU5oR2s0Hhb2ZKsWmdK+B46udZOtKeibnloD36fpjQvsxmjzAf2cFNX/6NcsIofVWAETGRDSfeV51o/DZAW7kWmYZfhpFl2nFS2VpZn6/TPBsK0oBBfZRd+8xLYIXjjRhVF8EivXHLRBxi/k34Ziva/171F34I=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779441761; c=relaxed/simple;
-	bh=qiR3+/X8m4hThw7cEpsuD7qAartCaqzNczdQ5T9pLXk=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=U2l1Dni5IQyTDDVQP3UGR5BBfvobg/v2XfU/tyDIF8seyLpFJeQhGOxcXIq+VFKmnzpMHwWaFAxFybhO12ZZeCHM7Z4TLSVjlC6Lof4q4RkunXvdiVzswtm6HH4hU9xGuDn2DgXwCFGaUOkWSPcXWDaKgu07i9z3QRgZVfEHLY0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=GLNMv32t; arc=none smtp.client-ip=216.71.153.144
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	s=arc-20240116; t=1779441855; c=relaxed/simple;
+	bh=ahdBajnGIia7rJRmkcgrkNusISseMLPg5V30BukLUP4=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=T83T7kdoKpXf40AwJ1qH3LNjFNzBmtmayWPI5KZ1kYQYF16xv65Gv5qWDLHE79vR3ZNs8RtLfZ0RWLzALpurLSq/3QqFbXZcmZb4rSipn8wgv3hk9LHs/e5VcgZ0BZDhC8moZ5Vug8IiaCuqv3EZ+AtcEm+Af3i3+j1PdhmaSz0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=l7PPyKpp; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=l7PPyKpp; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="GLNMv32t"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1779441759; x=1810977759;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=qiR3+/X8m4hThw7cEpsuD7qAartCaqzNczdQ5T9pLXk=;
-  b=GLNMv32tPrxbUwp3sLDZv4OcmyyOROX2pMtK4pLYDLoTw7yMxUu8pU67
-   6wWPSQaEjAupFEAoY02SlYiY0dLGewJ+5t6/AIm5Iq6LkGnLWkr834pE7
-   Oj6Tm0PPWuh6wAkbu8GA5ZdeHaPIuNiRtT61+2UmOTMvctMkfTDko/tfH
-   maQlYht8IwMM4gceOUtlebaQoRnuwWy2cveatJ6JK+fznmSZoNxtvc8Jf
-   SHRG3FEbi3ZuUWYQg28Qrt0BRlNEl/ULK09RrWqyIEcwQPiBrKvKgoCHW
-   xZRZeA39g11F1t0bxtCA1hXUcvsLSMe3Pf4x9HZJ8CmGLEmGsG9RLN0Im
-   A==;
-X-CSE-ConnectionGUID: FtrdQhTWRq+DubtnoNwz1A==
-X-CSE-MsgGUID: 0LEyGDyXTI2kpf+aFNyJEQ==
-X-IronPort-AV: E=Sophos;i="6.24,162,1774281600"; 
-   d="scan'208";a="146528036"
-Received: from unknown (HELO uls-op-esad1-o.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 22 May 2026 17:22:33 +0800
-X-CSE-ConnectionGUID: O9JbCIkqSrqVeYN7QIiPrw==
-X-CSE-MsgGUID: i3aUQRBuTbWJ+dN8QdgfWg==
-IronPort-SDR: 6a102049_02SIT/uIIXFkwg5fCOhSTXSZvfmrl6SqguhbkUJExoLafIv
- 60qk2/WHe+Te5+EGsigAxAQXqSL7WDeTXE3uUjQ==
-Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
-  by uls-op-esad1-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 22 May 2026 02:22:16 -0700
-X-CSE-ConnectionGUID: Fr15mS1BQh2j0K+y823hdQ==
-X-CSE-MsgGUID: tbY/TtfgRlOFlwWppi+bew==
-WDCIronportException: Internal
-Received: from wdap-b6euub3vgq.ad.shared (HELO neo.wdc.com) ([10.224.19.8])
-  by uls-op-esai1-o.wdc.com with ESMTP; 22 May 2026 02:22:15 -0700
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="l7PPyKpp";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="l7PPyKpp"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 6948A67A66;
+	Fri, 22 May 2026 09:24:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1779441852; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=cBNL1p9LpwkumQSCgJx3CtoxLri1zLmHlWTv0UdmR5M=;
+	b=l7PPyKppz/gqckM6JrUm7wwH/7Lz4rzO/w6EkJkIw5Zk8LEL2UEAdB70EdfXMh3ocbdbii
+	zh/RsB+pF/yuVHfYeswVSeWTOaV1A77hHGTv6t51GdNw1OF+G+L4B4k+Rotbe4O+Rpd4GO
+	e86MyQX9UNroOYiz4UJtYqvl1MN327A=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1779441852; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=cBNL1p9LpwkumQSCgJx3CtoxLri1zLmHlWTv0UdmR5M=;
+	b=l7PPyKppz/gqckM6JrUm7wwH/7Lz4rzO/w6EkJkIw5Zk8LEL2UEAdB70EdfXMh3ocbdbii
+	zh/RsB+pF/yuVHfYeswVSeWTOaV1A77hHGTv6t51GdNw1OF+G+L4B4k+Rotbe4O+Rpd4GO
+	e86MyQX9UNroOYiz4UJtYqvl1MN327A=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 32609593A8;
+	Fri, 22 May 2026 09:24:10 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id Cc+MObogEGoXQgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Fri, 22 May 2026 09:24:10 +0000
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>,
-	David Sterba <dsterba@suse.com>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	Damien Le Moal <dlemoal@kernel.org>
-Subject: [PATCH v4] btrfs: zoned: always set max_active_zones for zoned devices
-Date: Fri, 22 May 2026 11:22:12 +0200
-Message-ID: <20260522092212.31118-1-johannes.thumshirn@wdc.com>
+Cc: hch@lst.de,
+	linux-raid@vger.kernel.org
+Subject: [PATCH 0/3] btrfs: disguise single-data-RAID56 as RAID1/RAID1C3
+Date: Fri, 22 May 2026 18:53:50 +0930
+Message-ID: <cover.1779412152.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -62,143 +63,64 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
+	MIME_GOOD(-0.10)[text/plain];
+	TO_DN_NONE(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCPT_COUNT_THREE(0.00)[3];
+	internal_greylist_whitelist(0.00)[10.150.64.97];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid]
+X-Spam-Flag: NO
 
-When a block device does not report a maximum number of open or active
-zones, btrfs currently assigns BTRFS_DEFAULT_MAX_ACTIVE_ZONES (128) to the
-internal limit, if the device has more than BTRFS_DEFAULT_MAX_ACTIVE_ZONES
-zones.
+[CHANGELOG]
+RFC->v1:
+- Remove unused btrfs_chunk_map::io_(align|width) members
+  To make space for the new member.
 
-But if the device has less than BTRFS_DEFAULT_MAX_ACTIVE_ZONES the
-internal max_active_zones limit will stay at 0, even if the device has
-zone resource limits. Furthermore, if the device has a total number of
-zones that is less than BTRFS_DEFAULT_MAX_ACTIVE_ZONE, max_active_zones
-should be set to at most the the number of zones.
+- Fix a duplicated bg->flags assignment in fill_dummy_bgs()
+  Just exposed by the last patch which also touches that code.
 
-Also move the max_active_zone calculation and setting into a dedicated
-helper, to shrink btrfs_get_dev_zone_info().
+- Use a dedicated member to record the on-disk chunk type
+  So it's less fragile than the RFC patch.
 
-Fixes: 04147d8394e8 ("btrfs: zoned: limit active zones to max_open_zones")
-Reviewed-by: Damien Le Moal <dlemoal@kernel.org>
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+The single-data-RAID56 (2 disks raid5 or 3 disks raid6) is not a feature
+that should be supported in the first place, thus raid56 is going to
+remove such support.
 
----
-Changes to v2:
-- prefix error message with zoned, remove capitalisation and .
+Meanwhile rejecting single-data-RAID56 will cause existing btrfs users
+unable to mount their fs, even if there is only a single
+empty chunk with that flag, mostly caused by some degraded mount.
 
-Changes to v2:
-- Remove the now pointless 'if (max_active_zones)' before validating
-  nr_active <= max_active_zones
+So to avoid impacting existing users, implement an internal
+single-data-RAID56 to RAID1/RAID1C3 mapping, to co-operate with the
+upstream raid56 lib changes.
 
-Changes to v1:
-- Check if the device has enough zones to run BTRFS
-- Move all the setting to a seperate function
-- Never run with less than BTRFS_MIN_ACTIVE_ZONES
----
- fs/btrfs/zoned.c | 63 +++++++++++++++++++++++++++++-------------------
- 1 file changed, 38 insertions(+), 25 deletions(-)
+Qu Wenruo (3):
+  btrfs: remove btrfs_chunk_map::io_(align|width) members
+  btrfs: remove duplicated block group type assignment
+  btrfs: disguise single-data-RAID56 as RAID1/RAID1C3
 
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 0b80b498fb85..1a8c1078fa0a 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -354,12 +354,32 @@ int btrfs_get_dev_zone_info_all_devices(struct btrfs_fs_info *fs_info)
- 	return ret;
- }
- 
-+static int btrfs_get_max_active_zones(struct btrfs_device *device,
-+				       struct btrfs_zoned_device_info *zone_info)
-+{
-+	struct block_device *bdev = device->bdev;
-+	int max_active_zones;
-+
-+	if (zone_info->nr_zones < BTRFS_MIN_ACTIVE_ZONES) {
-+		btrfs_err(device->fs_info, "zoned: not enough zones to mount filesystem");
-+		return -EINVAL;
-+	}
-+
-+	max_active_zones = min_not_zero(bdev_max_active_zones(bdev),
-+					bdev_max_open_zones(bdev));
-+	if (!max_active_zones)
-+		max_active_zones = min(zone_info->nr_zones / 4,
-+				       BTRFS_DEFAULT_MAX_ACTIVE_ZONES);
-+
-+	zone_info->max_active_zones = max(max_active_zones, BTRFS_MIN_ACTIVE_ZONES);
-+	return 0;
-+}
-+
- int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- {
- 	struct btrfs_fs_info *fs_info = device->fs_info;
- 	struct btrfs_zoned_device_info *zone_info = NULL;
- 	struct block_device *bdev = device->bdev;
--	unsigned int max_active_zones;
- 	unsigned int nactive;
- 	sector_t nr_sectors;
- 	sector_t sector = 0;
-@@ -424,19 +444,9 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 	if (!IS_ALIGNED(nr_sectors, zone_sectors))
- 		zone_info->nr_zones++;
- 
--	max_active_zones = min_not_zero(bdev_max_active_zones(bdev),
--					bdev_max_open_zones(bdev));
--	if (!max_active_zones && zone_info->nr_zones > BTRFS_DEFAULT_MAX_ACTIVE_ZONES)
--		max_active_zones = BTRFS_DEFAULT_MAX_ACTIVE_ZONES;
--	if (max_active_zones && max_active_zones < BTRFS_MIN_ACTIVE_ZONES) {
--		btrfs_err(fs_info,
--"zoned: %s: max active zones %u is too small, need at least %u active zones",
--				 rcu_dereference(device->name), max_active_zones,
--				 BTRFS_MIN_ACTIVE_ZONES);
--		ret = -EINVAL;
-+	ret = btrfs_get_max_active_zones(device, zone_info);
-+	if (ret)
- 		goto out;
--	}
--	zone_info->max_active_zones = max_active_zones;
- 
- 	zone_info->seq_zones = bitmap_zalloc(zone_info->nr_zones, GFP_KERNEL);
- 	if (!zone_info->seq_zones) {
-@@ -517,26 +527,29 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 		goto out;
- 	}
- 
--	if (max_active_zones) {
--		if (unlikely(nactive > max_active_zones)) {
--			if (bdev_max_active_zones(bdev) == 0) {
--				max_active_zones = 0;
--				zone_info->max_active_zones = 0;
--				goto validate;
--			}
-+	if (unlikely(nactive > zone_info->max_active_zones)) {
-+		if (bdev_max_active_zones(bdev) > 0) {
- 			btrfs_err(device->fs_info,
--			"zoned: %u active zones on %s exceeds max_active_zones %u",
--					 nactive, rcu_dereference(device->name),
--					 max_active_zones);
-+					"zoned: %u active zones on %s exceeds max_active_zones %u",
-+					nactive, rcu_dereference(device->name),
-+					zone_info->max_active_zones);
- 			ret = -EIO;
- 			goto out;
- 		}
-+
-+		/*
-+		 * This is for backwards compatibility with old filesystems that
-+		 * have a lot of active zones because the device doesn't report
-+		 * a maximum number of zones and we previously didn't care for
-+		 * the limit,
-+		 */
-+		zone_info->max_active_zones = 0;
-+	} else {
- 		atomic_set(&zone_info->active_zones_left,
--			   max_active_zones - nactive);
-+				zone_info->max_active_zones - nactive);
- 		set_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &fs_info->flags);
- 	}
- 
--validate:
- 	/* Validate superblock log */
- 	nr_zones = BTRFS_NR_SB_LOG_ZONES;
- 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+ fs/btrfs/block-group.c |  3 +--
+ fs/btrfs/volumes.c     | 25 ++++++++++++++++++-------
+ fs/btrfs/volumes.h     | 10 ++++++++--
+ 3 files changed, 27 insertions(+), 11 deletions(-)
+
 -- 
 2.54.0
 

@@ -1,66 +1,204 @@
-Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 13F503B7B76;
-	Fri, 22 May 2026 09:19:57 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6CCB43C5DBB
+	for <linux-btrfs@vger.kernel.org>; Fri, 22 May 2026 09:22:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.144
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779441600; cv=none; b=KsflokWH4fjaCzEU3bF2gE/blc40pZb1KU7W3uzQ7N+8MMpjWo0M3MGIzRt+ws1MYxp6mY8SlyJYYkC3dubt/YmXA/jcehjFiXc0gMSgniqh9IHz5kF8NM5fGgG/T/LF/e90m0+x7k8Vcsk671XDOk3cLjdGJE7khkNkEYKR5Qg=
+	t=1779441761; cv=none; b=J37HLTGpTBtLWSJJN+kP/m15/21XJHYjV4pewJZrpOK3qHgbdnY6G1KTf9uewdVsgKvf/iMmwTRKUeISVjvny3Wou5E8Ck8Rty2m4uL9O1MNFl/K0fVSSH4ICCdoOt0FclCGEx1vAVbf0zFW5zNVG69u9phv5tHaGkSqadqrE1Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779441600; c=relaxed/simple;
-	bh=SJ68KPsEZ9VkEyWr8Acf0SqIVLkr7OFf5mS/PhPMjHc=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=pagCRSN3nSEEhLvOZ6TF7+3uV4Fjrbrj0J9yKzhIsSoQurKM9t2qAwLZSHrwvVIhsGlE6o/83ukETzj2JvlT6W/QMD2ButvFjC6evw5TFLB0QNb06NxWhuQxpC6almwvP8tiJgCz0oA3tocqBQHNWjOZOAfRy7pjeFxrdh3WFP8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=sZLSITCG; arc=none smtp.client-ip=198.137.202.133
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
+	s=arc-20240116; t=1779441761; c=relaxed/simple;
+	bh=qiR3+/X8m4hThw7cEpsuD7qAartCaqzNczdQ5T9pLXk=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=U2l1Dni5IQyTDDVQP3UGR5BBfvobg/v2XfU/tyDIF8seyLpFJeQhGOxcXIq+VFKmnzpMHwWaFAxFybhO12ZZeCHM7Z4TLSVjlC6Lof4q4RkunXvdiVzswtm6HH4hU9xGuDn2DgXwCFGaUOkWSPcXWDaKgu07i9z3QRgZVfEHLY0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=GLNMv32t; arc=none smtp.client-ip=216.71.153.144
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="sZLSITCG"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=jPeJkYiueAxXbzS7AayD31qPpHSAGv/gBivpIVqydsw=; b=sZLSITCGtKSASYmQ1ielmTa/AF
-	9G+z6xtTGYDkF8LKOZZFgeww68yytEyckBpeyiZLvmdaJ0VOR5df6xOn93gejjuhIHKC7FaOzK2sS
-	nUcvUXsTFnD8/58mvxJ4E08mpzJJTK0wEhQBlUjfINe2Zm9x/xHq8TxtP4EMj07LNxVP/gqMWGeIS
-	fMVNrGURpT9pa4/TFQjf1Wyb3DuuHOe2ttT+20cdE/GywxmpJP69S2Dv51KMeeNIM0w5+GhX1ePdn
-	03ASIkSvzculwNCZ+EOW+97M2OGf/o7uN8yM8SjOzcOvnPx6X5cKPnnH59ipdxaRiVTuerUwtQJO/
-	Lr+7HJcw==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
-	id 1wQM2u-0000000AJDr-1iAn;
-	Fri, 22 May 2026 09:19:56 +0000
-Date: Fri, 22 May 2026 02:19:56 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Daniel Vacek <neelx@suse.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-	Eric Biggers <ebiggers@kernel.org>,
-	"Theodore Y. Ts'o" <tytso@mit.edu>,
-	Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>,
-	David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
-	linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: Re: [PATCH v7 17/43] btrfs: add get_devices hook for fscrypt
-Message-ID: <ahAfvPa_yl6AKZoW@infradead.org>
-References: <20260513085340.3673127-1-neelx@suse.com>
- <20260513085340.3673127-18-neelx@suse.com>
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="GLNMv32t"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1779441759; x=1810977759;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=qiR3+/X8m4hThw7cEpsuD7qAartCaqzNczdQ5T9pLXk=;
+  b=GLNMv32tPrxbUwp3sLDZv4OcmyyOROX2pMtK4pLYDLoTw7yMxUu8pU67
+   6wWPSQaEjAupFEAoY02SlYiY0dLGewJ+5t6/AIm5Iq6LkGnLWkr834pE7
+   Oj6Tm0PPWuh6wAkbu8GA5ZdeHaPIuNiRtT61+2UmOTMvctMkfTDko/tfH
+   maQlYht8IwMM4gceOUtlebaQoRnuwWy2cveatJ6JK+fznmSZoNxtvc8Jf
+   SHRG3FEbi3ZuUWYQg28Qrt0BRlNEl/ULK09RrWqyIEcwQPiBrKvKgoCHW
+   xZRZeA39g11F1t0bxtCA1hXUcvsLSMe3Pf4x9HZJ8CmGLEmGsG9RLN0Im
+   A==;
+X-CSE-ConnectionGUID: FtrdQhTWRq+DubtnoNwz1A==
+X-CSE-MsgGUID: 0LEyGDyXTI2kpf+aFNyJEQ==
+X-IronPort-AV: E=Sophos;i="6.24,162,1774281600"; 
+   d="scan'208";a="146528036"
+Received: from unknown (HELO uls-op-esad1-o.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 22 May 2026 17:22:33 +0800
+X-CSE-ConnectionGUID: O9JbCIkqSrqVeYN7QIiPrw==
+X-CSE-MsgGUID: i3aUQRBuTbWJ+dN8QdgfWg==
+IronPort-SDR: 6a102049_02SIT/uIIXFkwg5fCOhSTXSZvfmrl6SqguhbkUJExoLafIv
+ 60qk2/WHe+Te5+EGsigAxAQXqSL7WDeTXE3uUjQ==
+Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
+  by uls-op-esad1-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 22 May 2026 02:22:16 -0700
+X-CSE-ConnectionGUID: Fr15mS1BQh2j0K+y823hdQ==
+X-CSE-MsgGUID: tbY/TtfgRlOFlwWppi+bew==
+WDCIronportException: Internal
+Received: from wdap-b6euub3vgq.ad.shared (HELO neo.wdc.com) ([10.224.19.8])
+  by uls-op-esai1-o.wdc.com with ESMTP; 22 May 2026 02:22:15 -0700
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>,
+	David Sterba <dsterba@suse.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	Damien Le Moal <dlemoal@kernel.org>
+Subject: [PATCH v4] btrfs: zoned: always set max_active_zones for zoned devices
+Date: Fri, 22 May 2026 11:22:12 +0200
+Message-ID: <20260522092212.31118-1-johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260513085340.3673127-18-neelx@suse.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Transfer-Encoding: 8bit
 
-On Wed, May 13, 2026 at 10:52:51AM +0200, Daniel Vacek wrote:
-> From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-> 
-> Since extent encryption requires inline encryption, even though we
-> expect to use the inlinecrypt software fallback most of the time, we
-> need to enumerate all the devices in use by btrfs.
+When a block device does not report a maximum number of open or active
+zones, btrfs currently assigns BTRFS_DEFAULT_MAX_ACTIVE_ZONES (128) to the
+internal limit, if the device has more than BTRFS_DEFAULT_MAX_ACTIVE_ZONES
+zones.
 
-How does this handled adding/removing devices at runtime?
+But if the device has less than BTRFS_DEFAULT_MAX_ACTIVE_ZONES the
+internal max_active_zones limit will stay at 0, even if the device has
+zone resource limits. Furthermore, if the device has a total number of
+zones that is less than BTRFS_DEFAULT_MAX_ACTIVE_ZONE, max_active_zones
+should be set to at most the the number of zones.
+
+Also move the max_active_zone calculation and setting into a dedicated
+helper, to shrink btrfs_get_dev_zone_info().
+
+Fixes: 04147d8394e8 ("btrfs: zoned: limit active zones to max_open_zones")
+Reviewed-by: Damien Le Moal <dlemoal@kernel.org>
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+
+---
+Changes to v2:
+- prefix error message with zoned, remove capitalisation and .
+
+Changes to v2:
+- Remove the now pointless 'if (max_active_zones)' before validating
+  nr_active <= max_active_zones
+
+Changes to v1:
+- Check if the device has enough zones to run BTRFS
+- Move all the setting to a seperate function
+- Never run with less than BTRFS_MIN_ACTIVE_ZONES
+---
+ fs/btrfs/zoned.c | 63 +++++++++++++++++++++++++++++-------------------
+ 1 file changed, 38 insertions(+), 25 deletions(-)
+
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 0b80b498fb85..1a8c1078fa0a 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -354,12 +354,32 @@ int btrfs_get_dev_zone_info_all_devices(struct btrfs_fs_info *fs_info)
+ 	return ret;
+ }
+ 
++static int btrfs_get_max_active_zones(struct btrfs_device *device,
++				       struct btrfs_zoned_device_info *zone_info)
++{
++	struct block_device *bdev = device->bdev;
++	int max_active_zones;
++
++	if (zone_info->nr_zones < BTRFS_MIN_ACTIVE_ZONES) {
++		btrfs_err(device->fs_info, "zoned: not enough zones to mount filesystem");
++		return -EINVAL;
++	}
++
++	max_active_zones = min_not_zero(bdev_max_active_zones(bdev),
++					bdev_max_open_zones(bdev));
++	if (!max_active_zones)
++		max_active_zones = min(zone_info->nr_zones / 4,
++				       BTRFS_DEFAULT_MAX_ACTIVE_ZONES);
++
++	zone_info->max_active_zones = max(max_active_zones, BTRFS_MIN_ACTIVE_ZONES);
++	return 0;
++}
++
+ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
+ {
+ 	struct btrfs_fs_info *fs_info = device->fs_info;
+ 	struct btrfs_zoned_device_info *zone_info = NULL;
+ 	struct block_device *bdev = device->bdev;
+-	unsigned int max_active_zones;
+ 	unsigned int nactive;
+ 	sector_t nr_sectors;
+ 	sector_t sector = 0;
+@@ -424,19 +444,9 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
+ 	if (!IS_ALIGNED(nr_sectors, zone_sectors))
+ 		zone_info->nr_zones++;
+ 
+-	max_active_zones = min_not_zero(bdev_max_active_zones(bdev),
+-					bdev_max_open_zones(bdev));
+-	if (!max_active_zones && zone_info->nr_zones > BTRFS_DEFAULT_MAX_ACTIVE_ZONES)
+-		max_active_zones = BTRFS_DEFAULT_MAX_ACTIVE_ZONES;
+-	if (max_active_zones && max_active_zones < BTRFS_MIN_ACTIVE_ZONES) {
+-		btrfs_err(fs_info,
+-"zoned: %s: max active zones %u is too small, need at least %u active zones",
+-				 rcu_dereference(device->name), max_active_zones,
+-				 BTRFS_MIN_ACTIVE_ZONES);
+-		ret = -EINVAL;
++	ret = btrfs_get_max_active_zones(device, zone_info);
++	if (ret)
+ 		goto out;
+-	}
+-	zone_info->max_active_zones = max_active_zones;
+ 
+ 	zone_info->seq_zones = bitmap_zalloc(zone_info->nr_zones, GFP_KERNEL);
+ 	if (!zone_info->seq_zones) {
+@@ -517,26 +527,29 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
+ 		goto out;
+ 	}
+ 
+-	if (max_active_zones) {
+-		if (unlikely(nactive > max_active_zones)) {
+-			if (bdev_max_active_zones(bdev) == 0) {
+-				max_active_zones = 0;
+-				zone_info->max_active_zones = 0;
+-				goto validate;
+-			}
++	if (unlikely(nactive > zone_info->max_active_zones)) {
++		if (bdev_max_active_zones(bdev) > 0) {
+ 			btrfs_err(device->fs_info,
+-			"zoned: %u active zones on %s exceeds max_active_zones %u",
+-					 nactive, rcu_dereference(device->name),
+-					 max_active_zones);
++					"zoned: %u active zones on %s exceeds max_active_zones %u",
++					nactive, rcu_dereference(device->name),
++					zone_info->max_active_zones);
+ 			ret = -EIO;
+ 			goto out;
+ 		}
++
++		/*
++		 * This is for backwards compatibility with old filesystems that
++		 * have a lot of active zones because the device doesn't report
++		 * a maximum number of zones and we previously didn't care for
++		 * the limit,
++		 */
++		zone_info->max_active_zones = 0;
++	} else {
+ 		atomic_set(&zone_info->active_zones_left,
+-			   max_active_zones - nactive);
++				zone_info->max_active_zones - nactive);
+ 		set_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &fs_info->flags);
+ 	}
+ 
+-validate:
+ 	/* Validate superblock log */
+ 	nr_zones = BTRFS_NR_SB_LOG_ZONES;
+ 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+-- 
+2.54.0
 

@@ -1,105 +1,138 @@
-Received: from mail-dy1-f170.google.com (mail-dy1-f170.google.com [74.125.82.170])
+Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F3D9225B0B7
-	for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2026 18:32:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.170
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B1F0850276
+	for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2026 22:47:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779561147; cv=none; b=r1168lFTk/lluN7iHNE3Fgt1iFCy7AmpEm9hAid/gFGu+mXqnvuIqoYXHnGR/uacy7hixIu9mZxr7fkOB26c6Pz0QmQCUCSIbkuq/1bLl+yulLi7kgCp8EhLNKaCA+rkfk0cP4SMz0YVEKvj7FLCPCNBurzCwX7xgKNN1Lx1LXU=
+	t=1779576427; cv=none; b=qLd8NlScopfddIMJlNAIijpSvvGsmsCjeqqU56Z0VjcGQvkdW4PX80fvpEKaVKhsBPNatpsBTJ+7xqtbobyzYXFqJ/uJeBoExIya6eDBkt0aDN1nI2+ym+nV7eSjpHhUa60W9b3+3AuBYuj0F31ieZZ2FENe1nYyo1lmWKLeloc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779561147; c=relaxed/simple;
-	bh=hPajcYyIhGoYyempZ5jrgZZlm51vmw6YCtWjAb9hR8Y=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
-	 MIME-Version:Content-Type; b=FVeEozFQ2Ocjbnoj/4ZcB7jNuVcK0S8K/tA2FBOs8BMJsBWJiahLs7XxKVTYbggcuCh+rQXB6ZVxtjaeqxzXrDVfzBzgOxRguUS0PdlxegDutieHVwm/3YWcX/OocMcr9gwhs1scZvLQ7t1DA6Xv3LABK+THANVZORwZxiFb7c0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=YwvzeL+w; arc=none smtp.client-ip=74.125.82.170
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1779576427; c=relaxed/simple;
+	bh=MrQoh/EfmVdVKlBkhuV93gVYhJJ0ceMp+MEgn0RMivs=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=sNNBhg5lYpElcG24qUdCle07RAAid5B2/UZQxwjec7ygY2l/egO9CSED8CUfcDEjrjbJtvUBtnyenBapkBcTrvOhdbjfpScLfZf6uubrbexaKXMsKJ1G9yrWbZDV74opzF5hPyXnk4N+xn//259wYRqEa8EG9WrVFTCyWrPDj/U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=ESHEu7Bl; arc=none smtp.client-ip=209.85.128.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="YwvzeL+w"
-Received: by mail-dy1-f170.google.com with SMTP id 5a478bee46e88-2f30a4601bbso8537360eec.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2026 11:32:24 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="ESHEu7Bl"
+Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-48a3e9862f0so46012175e9.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2026 15:47:05 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1779561144; x=1780165944; darn=vger.kernel.org;
-        h=mime-version:user-agent:message-id:date:references:in-reply-to
-         :subject:cc:to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=Id5dyBpQ6V3HQihPc3Wj/9kDk66whwQYXcAhNcn5FWw=;
-        b=YwvzeL+wG+50H6NvtNcSEbRH0yhqyRVvm5FDxXV3Uuc9mGCQvRZ7PMtiFtoTvdnzt8
-         L6yepNiwrYGZzxHsbp7vc+f2pNINUnJxQBva3wH4LemL6SViLRdcDMQdPUWQbKvmjWXB
-         5xpEcPwXf77gWoC9osDPKhHY6ByEJDTdE+n+qZYTYHaKw4yJnefOnpMk896TDUN29pwh
-         Q4eZC56nHpKBm277rx3rWIva8sKT6nYto2snhjJzezCQIIY+pnlCfKXY4FR34sNdnUsD
-         ld0/RSqWBt0UueRwERwfhnbbDjBs7QAKZykxju5NFLHVZJZrSluMJd02R8iCQr4KQkdI
-         9iiw==
+        d=suse.com; s=google; t=1779576424; x=1780181224; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=8Z1ek8TezGhOn7Xz7zUAnL28o0hfZqT/5T3cPIcBsjI=;
+        b=ESHEu7BlmvE0PYE5l/ts4Yg8iUFaLUnTkokvPDqyaGGgCSCq1BTRfiCOyD+8EwV2qf
+         EX4XrW0oU9Yg7b+DJWbrn3mtvVsEujsiYGQJsMEA+vz/A9MuPS45GF8pcM+Z7MfJeBkV
+         KquyOlRUyxqs/1dxEim2iTfqfoctSNqoI//0AkkEPYmpxvs2aD2YDYmDm/xh6pAv/oBn
+         xEeUf+RvQdOxLEr6ZYZtpsGNNemrslSak9e3Eyfq38dhCJmIge1FQ4VgcbxpzD/Qv4oI
+         T0Bt89SetbYAxUsPa2iOLQKk1yolmFX90vSs/zQ1iELgZ6sfm79MgNCn87GB5GD1gQVg
+         e1Ng==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779561144; x=1780165944;
-        h=mime-version:user-agent:message-id:date:references:in-reply-to
-         :subject:cc:to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject
-         :date:message-id:reply-to;
-        bh=Id5dyBpQ6V3HQihPc3Wj/9kDk66whwQYXcAhNcn5FWw=;
-        b=UJIDs4g/7hhjFV1qeryy5RTHbTIRsLT2Jtn/jf3wzYqtMT3TvrSkiDc0yZjIMkZ3Rm
-         UAzWYDBN+zmsdU0T3TGLZr23oQyVfvUPXyAijbgS6QBv+AowumNmX1y7k7J+4qaX9oZa
-         FOB6TPPajDT3bvsSWTbStdtXx/uf4XTfjh3lbRX0epS8dnXmL/BYX8xxXQUs6cWaqf+b
-         WvQfInWKAxhkEiA6ewJ+k6NDa0i5uPGwz7v/3U4AMrbDhL6F6x35pXMpe8ZcCnp0t0lv
-         hKCbt5EbVJcQL/dqU4fIrTiWEAYpdkUspjko3FS/j9vfxF5lmcwNBYVVjqukK60vfVWC
-         YXtA==
-X-Forwarded-Encrypted: i=1; AFNElJ/+vr8rqt0hDKQdkSOTjopXJ7YutUv8hZ/AYk2bEn6WEpPbT3sgPyVrqZno3MgNbb2LV6arfNLCbvh1sQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yxn5R2yNRYqTTSmXafvvr59kIY1/t3ibYUT9UfiiQPWPE3QaH1+
-	FfUoOrI/gtL7Sl3hEAK0/FD3Fe68CXJrykl7rET5Q89Xo5F3+COHb2UDQlWu9g==
-X-Gm-Gg: Acq92OGjQ2uvYqtufcOuPX5TkHWuWnH5AZUm5TWkkL0gZSyfcnx40xS+ffuyp+CtbTK
-	mQ+px0HBDXorfDOoBv/MGVNtLEak9R22uyg9zOadrmmypFFnxqoWyg6Bcr8tBCXw4ZvS1ItbBvl
-	EGaW1lvSvwTId7x9Mve6pnwvgmwao1inXWEH8EgBJlhaS8qRbeBb1bcB4UC56eL8t/kioDWCCns
-	cfshkdUg6IKhCH6tEz2dC8WdIhdtv8Su9TS2bV1BGm8jwyFjnD82SAVaHEua272hSWLh3s9SREQ
-	mo25khqEJ7fS8yjPqUvd9OPo/ks9O3QEYJ9d5UjQE6wMTq2ffWgPUx15K9qrKxqP4eLVWdfg7sT
-	6uQzLxoygPS19H0nCLFiObl0tKM2au4WqE7ib6AXdCSBltNLW/rf03lxgxwR8evWk1a9UYykbUa
-	s6ZVhxbmZP2ltSpCnnDrBMkFo=
-X-Received: by 2002:a05:7300:6da7:b0:2f2:6dde:df50 with SMTP id 5a478bee46e88-30449054359mr4460387eec.17.1779561143969;
-        Sat, 23 May 2026 11:32:23 -0700 (PDT)
-Received: from fedora ([2601:646:8081:3770:10ff:fc71:c346:9948])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3045225b7b6sm5660277eec.25.2026.05.23.11.32.23
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 23 May 2026 11:32:23 -0700 (PDT)
-From: Collin Funk <collin.funk1@gmail.com>
-To: Christoph Hellwig <hch@lst.de>
-Cc: bug-gnulib@gnu.org,  linux-kernel@vger.kernel.org,
-  linux-btrfs@vger.kernel.org,  linux-fsdevel@vger.kernel.org,  Jan Kara
- <jack@suse.cz>,  Christian Brauner <brauner@kernel.org>
-Subject: Re: test-fdutimensat failures after 7.0.6-200.fc44.x86_64 kernel
- update
-In-Reply-To: <20260518055617.GB10368@lst.de>
-References: <8733zsj5qj.fsf@gmail.com> <20260518055617.GB10368@lst.de>
-Date: Sat, 23 May 2026 11:32:22 -0700
-Message-ID: <87ik8enfih.fsf@gmail.com>
-User-Agent: Gnus/5.13 (Gnus v5.13)
+        d=1e100.net; s=20251104; t=1779576424; x=1780181224;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=8Z1ek8TezGhOn7Xz7zUAnL28o0hfZqT/5T3cPIcBsjI=;
+        b=bN5n84BYAPgaqneeMWW2wwva6xvLx+bwItmUu5Oqz9yZvTGFb+38GEzoFOXP7+2jvK
+         2WCWzXW34R4qQ2mCjP9STeWhcCWX9ysAxlF8L3pmcDmkdD7vdv5d9RuosiXfAO80J64i
+         TccpJxTB6JPcgc6KzZ+/U7XwkUwqHHFIMCu3yJg+34DEic1+WogPEGcqjAmzhmhVXlXE
+         pl27OqR7m2X9Tc58Y9b1fboKYrJ8TiScibyBLs5CXfRShMjZV21UN34kdHwhRYmRfGuX
+         e9JdQX/yyPHOZS9+wPc8aO67SreSr6DStinGlQQRZ25A0iP3Feef6X7fn+WPLwxM56Hq
+         FTYA==
+X-Gm-Message-State: AOJu0YxenTPwANAgSfyhC+q9IiPrpp5iVgRBfwdLCDrAg9me6aWo8Eiz
+	VFW4Se6TQBEmiMkxRLhWnz7rnyaNtS2Zi3E4/11WmhQC1cbhK1qOnxJ7+rWBi5aYj5E=
+X-Gm-Gg: Acq92OG0+yYlirTzhJWretBVqEexMwpLhkcXs6+ijBulccz2RrnkJ2UQC8w/FtIguw7
+	ISUK9+q6bMtPtIDG00p9aXkiGHO4XfC07H5lzk9j1fIWlSsep3cSIFYfNBsDjRsJJyvAa7bIsOo
+	Eb7lralSsasiXHXrPkvuO08uVRdo3en5tnnkTWXb82ra1kA7fKeJTI0eg7ar7RXddxurFHMqk1H
+	mFnk75+2e4KW7HeRgY6puHCG0JP7E3ftCX1D8XCruljPoiG6p3PaNebcDw48DaEO2etqBkOZ54E
+	nl8yx7ppHyRjV5+mp5P+3WGQX0tN4Tbh7wfvjZSdoi770OL5rmOQjx3Pv5f8RQbz8pcw2H9seyd
+	SBvNuBgTFtoDV8x0GEov7EEEPdvWqTC1k3JsKV1yapgAaa2BO3VEUbHhfvAcMuIpY0P3CitqmUV
+	3MFIwouxLs1kqvPyfMFroQO8QBJTbJDsf5DcbR3NDJEPE3WJqgq+HN8lTQ4QrNClIyh9o57L5AZ
+	jGIsHsP+SMMOZwstcU6nfnQlopSAjEFGCsRonKNDPtNzoRwJmwHdGPCaw==
+X-Received: by 2002:a05:600d:108:10b0:490:53b0:9e5a with SMTP id 5b1f17b1804b1-49053b09ff3mr33788005e9.5.1779576424144;
+        Sat, 23 May 2026 15:47:04 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2beb56ce2cdsm53850345ad.29.2026.05.23.15.47.01
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sat, 23 May 2026 15:47:03 -0700 (PDT)
+Message-ID: <e1961351-d563-4d73-b9f3-30063bbe7c4d@suse.com>
+Date: Sun, 24 May 2026 08:16:58 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 3/3] btrfs: disguise single-data-RAID56 as RAID1/RAID1C3
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org, hch@lst.de, linux-raid@vger.kernel.org
+References: <cover.1779412152.git.wqu@suse.com>
+ <ce02ebf8a9a6f5e2357b838df9d7ecce1f0cfd4b.1779412152.git.wqu@suse.com>
+ <20260523142344.GC183694@twin.jikos.cz>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260523142344.GC183694@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-Hi Christoph,
 
-Christoph Hellwig <hch@lst.de> writes:
 
-> On Fri, May 15, 2026 at 10:14:28PM -0700, Collin Funk wrote:
->> Adding some print statements in place of the comment:
->> 
->>         fprintf (stderr, "%jd\n", (intmax_t) st3.st_atime);
->>         fprintf (stderr, "%jd\n", (intmax_t) Y2K);
->>         fprintf (stderr, "----------------\n");
->
-> Can you share a complete stand-alone C source file for this
-> reproducer?
+在 2026/5/23 23:53, David Sterba 写道:
+> On Fri, May 22, 2026 at 06:53:53PM +0930, Qu Wenruo wrote:
+>> Recently kernel RAID56 lib is trying to remove the unexpected
+>> single-data-RAID56 (2 disks RAID5 or 3 disk RAID5) support, meanwhile
+>> btrfs still supports such setup, which means in the long run btrfs has
+>> to handle such corner case by ourselves.
+>>
+>> Thankfully single-data-RAID56 is really RAID1/RAID1C3, since data and
+>> P/Q stripes all match each other, rotation also makes no difference.
+>>
+>> This patch will disguise those single-data-RAID56 chunks as
+>> RAID1/RAID1C3 chunks.
+> 
+> I don't think this is the right way to fix it. Calculations are an
+> implementation detail and should be done at the time of the xor_gen or
+> raid6_call, not touching the upper level structures related to format.
+> 
+> Instead, please add helpers that take the same parameters and do the
+> switch if there's the edge case of raid5 or raid6, using memcpy. Thanks.
 
-It would be quite difficult. The test uses a nap function that sleeps
-until the system can notice a timestamp difference. It attempts to use
-the smallest interval possible, which requires a bit of work [1].
+I'd say going dedicated memcpy() is an adhoc fix, and not any easier to 
+maintain.
 
-Apologies for the late reply, I haven't been able to reproduce this
-since my original report. I'll let you know if it occurs again and
-hopefully I can create a simple reproducer.
+Now you have two paths, one from the raid56 lib, one from the btrfs 
+specific handling for the single-data specific corner case, and that no 
+one else is going to review/utilize that corner case.
 
-Thanks,
-Collin
+ From this point of view, reusing the existing RAID1/RAID1C3 is way more 
+reliable and sane.
 
-[1] https://github.com/coreutils/gnulib/blob/5ab7a04761dac69403f677de4ee44c1940777b46/tests/nap.h

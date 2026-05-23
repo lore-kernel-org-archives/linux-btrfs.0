@@ -1,85 +1,85 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1DA563A05CC
-	for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2026 14:18:15 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 534E53A63E8
+	for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2026 14:23:48 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779545897; cv=none; b=lJzboZvdYIdLy1Ii8CVljvlJJ4WZLYCzpO3Rfy5gj+c2CsboR+hgts8+6y9VsvA72XE0v56Pgw4Uw4dZ3mgXVgq8Hu9XKVIjXLCoZ+jgHZDjS+fQar0oimQryryt8D6EsJcswrqdSgavzkDpdHbmRCLtcLJN/V8B8H0Tkj4/vxs=
+	t=1779546229; cv=none; b=fxSHR2KsKnERUGRhGPaLwcDoK3mFFvLVRhRjm26SSP0/qrn44xXm6kPj5wLAtxQYVsrL01CklIYMOfUPVOWFvfRBqK6WL6cWgvr03yfY50VmzF8es4+HlER504/YC0Hlb0RurUP2/fxuzWhiRrieCt9cUww8TDYAk/kW8OTzdoo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779545897; c=relaxed/simple;
-	bh=hd0w6ccUZ3PXgdzwefuqTMnrJlF1MkjfP0CXXjH77ig=;
-	h=Date:From:To:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=AR4yhMm4Cja5e/O5exVhEdAAODaxTNEudYhZjkhtXXDh47DFgI/jJPTUXoC0iKicW6Da8uGZtFj07qad5d+HXK9Lc4+cU6tbuS2XjYRTbvukVApAGcvoN6A5XrnduBF8mmrfx/2pPLBmtXcyslQIoDKOko5UI/VumFbxXY39sCg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=3Tzm2icQ; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=JmA70iiV; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=3Tzm2icQ; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=JmA70iiV; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1779546229; c=relaxed/simple;
+	bh=lFtgVx+wwbwYLCj0QlJQ6NEwiNgXqzdehOO4MLBZAEU=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=uqsLP0LL/FIgGjMeJw6BSjWPPNJldFo1HgKKWENSCpXq99NVql7hu4WfTTpjaiyvt9DHsFCtjV+zZvks1kj3fZRkD9KbeTd566eZiH4/LGdEoNhldLL02bG/1DH0C2+QtfTvH1KiJ1UrUpFuWYPNw5UychGc72zTZGzW7Y7Jw8U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=TIwDO4PU; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=CBu6SuFO; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=gAiGFxzW; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=hRcQbg3Z; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="3Tzm2icQ";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="JmA70iiV";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="3Tzm2icQ";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="JmA70iiV"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="TIwDO4PU";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="CBu6SuFO";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="gAiGFxzW";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="hRcQbg3Z"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 299916AB8E;
-	Sat, 23 May 2026 14:18:14 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 6F45B6AA39;
+	Sat, 23 May 2026 14:23:45 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1779545894;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:content-type:content-type:
+	t=1779546226;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=XJMbiBjDY3Ese3h1GI6+nEWT/DSX4C0eFOFKbSd/S7M=;
-	b=3Tzm2icQ6UKQ9r5Z52kln/vPP0+z7qttd8jyOJwyBOZO4YyejzCTvR563v7osZCbnkR3NQ
-	oeas1jxbLdu24XkIJsm3oMayT9sxf2OI771U6esg1BtLW9eypvZDEJgtxvWvSaro/J+PlX
-	v9BFtalPCVMF5t1A6VLBhyD7BbRo3V0=
+	bh=n4ZNvb8RVD/E5U7E3XBWXnJGGsVuQxOqNMEQE51MkUg=;
+	b=TIwDO4PUKDPvzHk4ToWdpolRdU/Qd/wGYJJA75q3qR6c7JS5lQILLzdRtI5XHuZaB2qGu+
+	4vkR1I0wN0iwZvKOh8PwhpYZLOs8bYH/5w/pbEP5eqUZqYATWuKEOfZQMp5gSeux8E4yAY
+	YmShM39GlO/8RYNmSgYOQOr64YBwtQs=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1779545894;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:content-type:content-type:
+	s=susede2_ed25519; t=1779546226;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=XJMbiBjDY3Ese3h1GI6+nEWT/DSX4C0eFOFKbSd/S7M=;
-	b=JmA70iiVSeBf3CkhzbvNU0/5V4RclApyGKkjVOUd7AqHjHGecaixbFcne5eHueOUaU8dq5
-	pf0avTaeFlPE8XCQ==
+	bh=n4ZNvb8RVD/E5U7E3XBWXnJGGsVuQxOqNMEQE51MkUg=;
+	b=CBu6SuFOjOyQ0uvCUXmA7zSlhEs5PCTiouXaYWuTQdaE3q05+dD+/LPIcog1zDaxCY+w+O
+	sQSW7JTUBFE9TmCQ==
 Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=3Tzm2icQ;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=JmA70iiV
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1779545894;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:content-type:content-type:
+	t=1779546225;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=XJMbiBjDY3Ese3h1GI6+nEWT/DSX4C0eFOFKbSd/S7M=;
-	b=3Tzm2icQ6UKQ9r5Z52kln/vPP0+z7qttd8jyOJwyBOZO4YyejzCTvR563v7osZCbnkR3NQ
-	oeas1jxbLdu24XkIJsm3oMayT9sxf2OI771U6esg1BtLW9eypvZDEJgtxvWvSaro/J+PlX
-	v9BFtalPCVMF5t1A6VLBhyD7BbRo3V0=
+	bh=n4ZNvb8RVD/E5U7E3XBWXnJGGsVuQxOqNMEQE51MkUg=;
+	b=gAiGFxzWXDryPmXB+xSDVqN/Ejx+d4suOU9FeGgjngOd1RQzfN69G21C5yJugOeG5/sgnz
+	voQ7RtSv0OD6zypKYYW0IDgfxb7YwxrBRFJ5Ro0UubBgd2aExlhtnLD7LtVkKPO7mGZXX/
+	lFPr3Eg/bAATG4C04eSdmlK/GtfDCkw=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1779545894;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:content-type:content-type:
+	s=susede2_ed25519; t=1779546225;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=XJMbiBjDY3Ese3h1GI6+nEWT/DSX4C0eFOFKbSd/S7M=;
-	b=JmA70iiVSeBf3CkhzbvNU0/5V4RclApyGKkjVOUd7AqHjHGecaixbFcne5eHueOUaU8dq5
-	pf0avTaeFlPE8XCQ==
+	bh=n4ZNvb8RVD/E5U7E3XBWXnJGGsVuQxOqNMEQE51MkUg=;
+	b=hRcQbg3ZmwQcB07aMKqKU++01wjZj9x0eFqTXQ8345sMf+4eQj0ubsa0lrTFe+d+1DPfRr
+	Hlswk7//t3zZulBQ==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 10435593A8;
-	Sat, 23 May 2026 14:18:14 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5C347593A8;
+	Sat, 23 May 2026 14:23:45 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id u0tMAya3EWqIKAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Sat, 23 May 2026 14:18:14 +0000
-Date: Sat, 23 May 2026 16:18:08 +0200
+	id dJu5FXG4EWr9LQAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Sat, 23 May 2026 14:23:45 +0000
+Date: Sat, 23 May 2026 16:23:44 +0200
 From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs progs release 7.0
-Message-ID: <20260523141808.GB183694@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, hch@lst.de, linux-raid@vger.kernel.org
+Subject: Re: [PATCH 3/3] btrfs: disguise single-data-RAID56 as RAID1/RAID1C3
+Message-ID: <20260523142344.GC183694@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20260509235151.2070978-1-dsterba@suse.com>
- <20260522232533.GA316642@tik.uni-stuttgart.de>
+References: <cover.1779412152.git.wqu@suse.com>
+ <ce02ebf8a9a6f5e2357b838df9d7ecce1f0cfd4b.1779412152.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -88,75 +88,48 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260522232533.GA316642@tik.uni-stuttgart.de>
+In-Reply-To: <ce02ebf8a9a6f5e2357b838df9d7ecce1f0cfd4b.1779412152.git.wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Score: -4.21
-X-Rspamd-Queue-Id: 299916AB8E
-X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spamd-Result: default: False [-4.21 / 50.00];
+X-Spam-Score: -4.00
+X-Spamd-Result: default: False [-4.00 / 50.00];
 	BAYES_HAM(-3.00)[99.99%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.995];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:dkim,suse.cz:replyto];
-	RCPT_COUNT_ONE(0.00)[1];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
 	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCPT_COUNT_THREE(0.00)[4];
 	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	TO_DN_NONE(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,twin.jikos.cz:mid,suse.cz:replyto];
 	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Rspamd-Action: no action
+X-Spam-Level: 
 X-Spam-Flag: NO
 
-On Sat, May 23, 2026 at 01:25:33AM +0200, Ulli Horlacher wrote:
-> On Sun 2026-05-10 (01:51), David Sterba wrote:
+On Fri, May 22, 2026 at 06:53:53PM +0930, Qu Wenruo wrote:
+> Recently kernel RAID56 lib is trying to remove the unexpected
+> single-data-RAID56 (2 disks RAID5 or 3 disk RAID5) support, meanwhile
+> btrfs still supports such setup, which means in the long run btrfs has
+> to handle such corner case by ourselves.
 > 
-> > btrfs-progs version 7.0 have been released.
+> Thankfully single-data-RAID56 is really RAID1/RAID1C3, since data and
+> P/Q stripes all match each other, rotation also makes no difference.
 > 
-> Thanks.
-> This version correct some bugs in the Ubuntu 24 btrfs package.
-> 
-> 
-> > Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-> > Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-> > Release: https://github.com/kdave/btrfs-progs/releases/tag/v7.0
-> 
-> To get the newest version of btrfs.box.static I have written this script:
-> 
-> root@fex:/opt/btrfs-tools# cat btrfs-update
-> #!/bin/bash
-> 
-> bbs=btrfs.box.static
-> cd /opt/btrfs-tools/bin || exit 1
-> vv -s btrfs
-> rm -f $bbs
-> curl -sS -D- https://github.com/kdave/btrfs-progs/releases/latest |\
-> perl -ne 's/^location: (\S+)/wget -q $1\/'$bbs'/ and s:/tag/:/download/: and print' |sh -x
-> if [[ $(file $bbs) =~ executable ]]; then
->   cat $bbs > btrfs
->   del $bbs
-> fi
-> btrfs --version
-> 
-> 
-> Yes, it works but it is ... ugly :-}
-> 
-> Is there a more elegant solution?
+> This patch will disguise those single-data-RAID56 chunks as
+> RAID1/RAID1C3 chunks.
 
-Maybe it is, right now the place is the release web page (click to
-download), or you can use the 'gh' command line tool (gh release
-download). Using basic tools like curl, perl is more environment proof
-but you'd have to put to a script.
+I don't think this is the right way to fix it. Calculations are an
+implementation detail and should be done at the time of the xor_gen or
+raid6_call, not touching the upper level structures related to format.
+
+Instead, please add helpers that take the same parameters and do the
+switch if there's the edge case of raid5 or raid6, using memcpy. Thanks.

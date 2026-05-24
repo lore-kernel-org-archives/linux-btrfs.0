@@ -1,233 +1,210 @@
-Received: from mail-wm1-f47.google.com (mail-wm1-f47.google.com [209.85.128.47])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3E25C25B09C
-	for <linux-btrfs@vger.kernel.org>; Sun, 24 May 2026 04:14:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.47
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 088A04C97
+	for <linux-btrfs@vger.kernel.org>; Sun, 24 May 2026 05:14:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779596046; cv=none; b=HVcqH8dM0mB8CUVTv43TfTboQph6JWNw57dKmXj2m28XBIOzTVyYhtim9WVfwzLIfD1g8VKi743upjRTKejjE2jvcrwWdyv9zAmYyPvkjGYzrFMmYQpFQsIoYiqx1vbD2Z0GSZQFFFq8TgXRTlAZJf0zlSOApawPgG2Pq1i40dg=
+	t=1779599699; cv=none; b=p1Fh091Jq7SOPe/cX39D2NpUUUJaaGrN/Nl0olkJ0N09rhz7OyuIU4CDMBHhuBtN2AZZgNnRSuWPsXwlt4DyGlVSv1nLyEntSJ5IM3A3k2r89Ma47v532144xSmzm2CnRA1FU1Q7VGBZL0c+vcKmKEmOqJlDIlXwWrBAAaaDVkY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779596046; c=relaxed/simple;
-	bh=KPxX+CiakLYHNZgqT5sKhD3JZ76ErFKbUsuCw26mOII=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=kpfmI3sAkrnbl4QJ+QFXtnZXyEJtmtggvGwmnjcu2wP7rehEDE08XkDvo+M6kvKHYM2kegfg8XSlOC0ae5EmC62ndfXSD+0g1Vila1jMhIGeIh/Z9rYkkXqx/e3xASpFrKxkRCAjlzvZMZ0KAqLBYwUfAZ2JWOfkfRGXhKrKCo0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=bOK98/FG; arc=none smtp.client-ip=209.85.128.47
+	s=arc-20240116; t=1779599699; c=relaxed/simple;
+	bh=HKdawVnpYiGAasNgqzWNL3/7YzqOtGCVsgRYIjwaJtQ=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=lCNCLvSaa2+BJC9Vl918METs2N0Cq4HGnoQLcChV9x+KUGd9UaRKmFT1szZFyza0NLofAfdMLi7KhL4hXM8F1ExQ/yJIpDkPVeIFHHkROgBDr70hQ5XaPPObP9kriVMNhCSaf4fGxsM1+sq0kYsu5zoK6yJwM8CabpwVTjSVgwY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Rbogui+L; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Rbogui+L; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="bOK98/FG"
-Received: by mail-wm1-f47.google.com with SMTP id 5b1f17b1804b1-4903997fcb5so29320515e9.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2026 21:14:03 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1779596042; x=1780200842; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
-         :references:cc:to:from:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=RsUtZiDUfdzVtc95zyor9Mlvs8U7pMXaQiF7o7hOrb0=;
-        b=bOK98/FG7cJCgv/12C8BOvpjCzHW5oGNbxYcFW/cUT0GjygiLxjuMhl6ocEUtYulDa
-         x7WLGB4VDm80xD+r+n/JTdxduz1JTPAJmzmID9IMzlcCDUZXn6Bkrl5U1Byn8rfmfYWb
-         K5Zt0B1LHWzXXyx8JHSMb6h5l44/3QBv47NkkhYhN3WEvYS68Qi1STgDYQ8n6kFOs5YZ
-         AWjBYu6MIbKQM1FGRY1y9ME8gQ7IyilXXskWV49qYpnHL8460PagzMM5QmZ7sbTLNx45
-         p7Cz2vyAUELui534OOCmqc8P2ni+cTxIvaxI8FRuPOquOIuq8FnA1HzjjSvmJYmGlxE/
-         wuSA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779596042; x=1780200842;
-        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
-         :references:cc:to:from:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=RsUtZiDUfdzVtc95zyor9Mlvs8U7pMXaQiF7o7hOrb0=;
-        b=KB1Sf64Fv/ZDxl/jUIb2K7Ktm6oFpuTXVQed4sud+ny0DoUQpmwuIfaS70kakU4hvA
-         IJG4+L1mAa8g3qucXav7JZjZc2y8gmG+RPJjHC+30epqTGWo/rHFy/Dglve2rKCXv+46
-         yT9fj7vr7L3+9pMjfFeip2yZTkH5EY09Iu1pQ6yTa5DXTRQymRx1zxebZkVX08w/Eeu/
-         a4Nva76y2aksulY9mx/Fn4iCL/8BjMFnobQ+VdicjYdrqkwp8yBdTGcxcrcGQERgUnhj
-         NS3uZ81E5RCsQJM/VNvVAo9eu4zDmPRrnDvvHKGljFU4TqnCNCfF84LSGiBZCuArOscR
-         FVMQ==
-X-Gm-Message-State: AOJu0YyocF5+Tq7p1sVoOB2ecN5IV8KKXUK5SXX1fBrDd5kJBXYsds3g
-	Eum8adNfSuAFRblxOgVnrbTjO1UJeDYTKMu7XCU4HsYJNYrZwjSMXoCGrZLQ/iLAo2Q=
-X-Gm-Gg: Acq92OH7Eq98DqwjDTqQyvK6XdijJwuy+f48BrBDxNQYSXifjFWIx0iVf7HUJxMyV78
-	GdLvhfImS3x/xfuB4gPkW1Sj8vLjaqmp0FUP7H9Uzb0dyvd+37Dm3wfZmnHgQpUbpdbDElyXgr8
-	bh6XHIivI1d2wsy0wAsyw+cxOp63Qtwxvep31x9RXaVjrUu1hWOsrR4WO2KAP+jaqY5nDHEMu0t
-	k16zJnQzHjCpwDojzSmnwjsLLrjqjHxZYmZ+PnyZfwpX3vUcCVHJf9Xk3ZHYAfcwGjeCKakz0Qx
-	lURSSig4Bja2nje9g6JhSMzA4qob8HHiHLwpUWSwkZmHjAyMGhv/ByMG1V9R0Fw5XEzvCarmBsA
-	NFH8capgg+4LLyt2gYswCiIRNFBaM7h7i0u/7G0zOnaTe+dQIf1nD5PnwSL/lkEGt1IDsD19Lt7
-	uRgFKq9KlSjufHPILNJxC+w6/eT/ZeFnepjfcdyOwQtR5xNmSsj4lqXQfj1KvlHzVNf6TNP8/qh
-	XNMcnbZrG2leQFHXOC9n6msgDk6upChlvyEkUPwZ3Xz7OEvOxf83LEspw==
-X-Received: by 2002:a05:600c:4fd0:b0:48e:82b4:b54 with SMTP id 5b1f17b1804b1-490426d1ebbmr146277385e9.23.1779596042310;
-        Sat, 23 May 2026 21:14:02 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2beb591d07fsm61894625ad.82.2026.05.23.21.13.57
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 23 May 2026 21:14:01 -0700 (PDT)
-Message-ID: <1b5c39fe-df28-4a21-bace-fc742498945e@suse.com>
-Date: Sun, 24 May 2026 13:43:54 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Rbogui+L";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Rbogui+L"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 2D70C67D79;
+	Sun, 24 May 2026 05:09:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1779599347; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Xj56NLT7jvoe0e1R4yNw1Zb3iPs38+DGpcBI9tLiBpY=;
+	b=Rbogui+Lt7Lh9ooLuWLnuwLidIcugg8J0ofjaROg85HR2MWhNieyXHkLuNnJkL/OJgR5fe
+	AslbXZkB/nyVzJEuybwwK9YazOstlkgDX8m0/0C9VFd2VJ1otGYwrqsG2UrhaIZ8VNVEKM
+	c2UUuITpO/7eIAyjGsZYXvm7TJXtvTY=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1779599347; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Xj56NLT7jvoe0e1R4yNw1Zb3iPs38+DGpcBI9tLiBpY=;
+	b=Rbogui+Lt7Lh9ooLuWLnuwLidIcugg8J0ofjaROg85HR2MWhNieyXHkLuNnJkL/OJgR5fe
+	AslbXZkB/nyVzJEuybwwK9YazOstlkgDX8m0/0C9VFd2VJ1otGYwrqsG2UrhaIZ8VNVEKM
+	c2UUuITpO/7eIAyjGsZYXvm7TJXtvTY=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2D80E595B5;
+	Sun, 24 May 2026 05:09:05 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id Ym4EOPGHEmrVXQAAD6G6ig
+	(envelope-from <wqu@suse.com>); Sun, 24 May 2026 05:09:05 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: fstests@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+Subject: [PATCH] fstests: btrfs: add a new test case for single data RAID56
+Date: Sun, 24 May 2026 14:38:48 +0930
+Message-ID: <20260524050848.57740-1-wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 3/3] btrfs: disguise single-data-RAID56 as RAID1/RAID1C3
-From: Qu Wenruo <wqu@suse.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, hch@lst.de, linux-raid@vger.kernel.org
-References: <cover.1779412152.git.wqu@suse.com>
- <ce02ebf8a9a6f5e2357b838df9d7ecce1f0cfd4b.1779412152.git.wqu@suse.com>
- <20260523142344.GC183694@twin.jikos.cz>
- <e1961351-d563-4d73-b9f3-30063bbe7c4d@suse.com>
-Content-Language: en-US
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <e1961351-d563-4d73-b9f3-30063bbe7c4d@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
+	MIME_GOOD(-0.10)[text/plain];
+	RCPT_COUNT_TWO(0.00)[2];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	URIBL_BLOCKED(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Level: 
+X-Spam-Flag: NO
 
+Although single-data-RAID56, aka 2 disks raid5 or 3 disks raid6, is
+not recommended for btrfs, btrfs still supports it as there are cases
+like degraded writes can still lead to such cases.
 
+But we do not have any proper tests for such corner cases.
 
-在 2026/5/24 08:16, Qu Wenruo 写道:
-> 
-> 
-> 在 2026/5/23 23:53, David Sterba 写道:
->> On Fri, May 22, 2026 at 06:53:53PM +0930, Qu Wenruo wrote:
->>> Recently kernel RAID56 lib is trying to remove the unexpected
->>> single-data-RAID56 (2 disks RAID5 or 3 disk RAID5) support, meanwhile
->>> btrfs still supports such setup, which means in the long run btrfs has
->>> to handle such corner case by ourselves.
->>>
->>> Thankfully single-data-RAID56 is really RAID1/RAID1C3, since data and
->>> P/Q stripes all match each other, rotation also makes no difference.
->>>
->>> This patch will disguise those single-data-RAID56 chunks as
->>> RAID1/RAID1C3 chunks.
->>
->> I don't think this is the right way to fix it. Calculations are an
->> implementation detail and should be done at the time of the xor_gen or
->> raid6_call, not touching the upper level structures related to format.
->>
->> Instead, please add helpers that take the same parameters and do the
->> switch if there's the edge case of raid5 or raid6, using memcpy. Thanks.
-> 
-> I'd say going dedicated memcpy() is an adhoc fix, and not any easier to 
-> maintain.
-> 
-> Now you have two paths, one from the raid56 lib, one from the btrfs 
-> specific handling for the single-data specific corner case, and that no 
-> one else is going to review/utilize that corner case.
-> 
->  From this point of view, reusing the existing RAID1/RAID1C3 is way more 
-> reliable and sane.
+Furthermore, RAID56 lib is going to drop the support of
+single-data-RAID56, and btrfs will have its own handling of such cases,
+thus coverage on single-data-RAID56 is required.
 
-I tried the idea, and it doesn't look elegant at all, we need a lot of 
-if () checks around every xor_gen()/raid6_call.
+This new test case will have the following workload to verify the
+behavior:
 
-Sure the end result is not that huge (and I have only compile tested 
-it), but if we had some parameters passed wrongly, or some corner case 
-missed, it can be very hard to notice.
+- Create a fs with single-data-RAID56
 
-Just paste the adhoc fix for reference:
+- Populate the fs with fsx and fsstress
+  Fsx and fsstress will utilize read and write paths of RAID56.
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 08ee8f316d96..50fefe33bbe3 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1410,11 +1410,17 @@ static void generate_pq_vertical_step(struct 
-btrfs_raid_bio *rbio, unsigned int
-  				rbio_qstripe_paddr(rbio, sector_nr, step_nr));
+- Mount each device in degraded mode and run read-only scrub on them
+  Such scrub will utilize the following path of RAID56:
+  * Regular data read
+  * Reconstruction read
+  * P/Q stripe scrub
 
-  		assert_rbio(rbio);
--		raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
-+		if (rbio->nr_data > 1) {
-+			raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
-+		} else {
-+			memcpy(pointers[1], pointers[0], step);
-+			memcpy(pointers[2], pointers[0], step);
-+		}
-  	} else {
-  		/* raid5 */
-  		memcpy(pointers[rbio->nr_data], pointers[0], step);
--		xor_gen(pointers[rbio->nr_data], pointers + 1, rbio->nr_data - 1,
-+		if (rbio->nr_data > 1)
-+			xor_gen(pointers[rbio->nr_data], pointers + 1, rbio->nr_data - 1,
-  				step);
-  	}
-  	for (stripe = stripe - 1; stripe >= 0; stripe--)
-@@ -1987,11 +1993,17 @@ static void recover_vertical_step(struct 
-btrfs_raid_bio *rbio,
-  		}
+- Re-scan all devices and add a new disk to the array
+- Balance all data and scrub again
+  This should utilized non-single-data-RAID56 handling.
 
-  		if (failb == rbio->real_stripes - 2) {
--			raid6_datap_recov(rbio->real_stripes, step,
--					  faila, pointers);
-+			if (unlikely(rbio->nr_data == 1))
-+				memcpy(pointers[0], pointers[rbio->real_stripes - 1], step);
-+			else
-+				raid6_datap_recov(rbio->real_stripes, step,
-+						  faila, pointers);
-  		} else {
--			raid6_2data_recov(rbio->real_stripes, step,
--					  faila, failb, pointers);
-+			if (unlikely(rbio->nr_data == 1))
-+				memcpy(pointers[0], pointers[rbio->real_stripes - 2], step);
-+			else
-+				raid6_2data_recov(rbio->real_stripes, step,
-+						  faila, failb, pointers);
-  		}
-  	} else {
-  		void *p;
-@@ -2002,6 +2014,9 @@ static void recover_vertical_step(struct 
-btrfs_raid_bio *rbio,
-  		/* Copy parity block into failed block to start with */
-  		memcpy(pointers[faila], pointers[rbio->nr_data], step);
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ tests/btrfs/348     | 68 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/348.out |  2 ++
+ 2 files changed, 70 insertions(+)
+ create mode 100755 tests/btrfs/348
+ create mode 100644 tests/btrfs/348.out
 
-+		if (rbio->nr_data == 1)
-+			goto cleanup;
+diff --git a/tests/btrfs/348 b/tests/btrfs/348
+new file mode 100755
+index 00000000..748e5a86
+--- /dev/null
++++ b/tests/btrfs/348
+@@ -0,0 +1,68 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
++#
++# FS QA Test 348
++#
++# Basic function test for single-data-RAID56.
++#
++. ./common/preamble
++_begin_fstest auto raid
 +
-  		/* Rearrange the pointer array */
-  		p = pointers[faila];
-  		for (stripe_nr = faila; stripe_nr < rbio->nr_data - 1;
-@@ -2644,11 +2659,17 @@ static bool verify_one_parity_step(struct 
-btrfs_raid_bio *rbio,
-  	if (has_qstripe) {
-  		assert_rbio(rbio);
-  		/* RAID6, call the library function to fill in our P/Q. */
--		raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
-+		if (rbio->nr_data > 1) {
-+			raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
-+		} else {
-+			memcpy(pointers[1], pointers[0], step);
-+			memcpy(pointers[2], pointers[0], step);
-+		}
-  	} else {
-  		/* RAID5. */
-  		memcpy(pointers[nr_data], pointers[0], step);
--		xor_gen(pointers[nr_data], pointers + 1, nr_data - 1, step);
-+		if (rbio->nr_data > 1)
-+			xor_gen(pointers[nr_data], pointers + 1, nr_data - 1, step);
-  	}
++# 3 disks for single-data-raid6, but one extra to make sure btrfs can still properly
++# convert to regular 4 disks raid6.
++_require_scratch_dev_pool 4
++_require_btrfs_raid_type raid5
++_require_btrfs_raid_type raid6
++_require_btrfs_forget_or_module_loadable
++
++# Make sure we have support RAID1C34 first
++if [ ! -f "/sys/fs/btrfs/features/raid1c34" ]; then
++	_notrun "no RAID1C34 support"
++fi
++
++common_workload()
++{
++	_scratch_mount
++	_run_fsx_on_file $FSX_AVOID "$SCRATCH_MNT/foobar" -q -N 10000 >> $seqres.full
++	_run_fsstress -w -n 10000 -d "$SCRATCH_MNT"
++	_scratch_unmount
++
++	# Mount each device degraded and run a scrub to exercise:
++	# - Regular data read
++	# - Data reconstruction read
++	# - P/Q scrub
++	for dev in $SCRATCH_DEV_POOL; do
++		_btrfs_forget_or_module_reload
++
++		_mount -o ro,degraded "$dev" "$SCRATCH_MNT"
++		_btrfs scrub start -Br "$SCRATCH_MNT"
++		_scratch_unmount
++	done
++
++	# Add a new device, balance all data, and re-scrub to make sure
++	# regular RAID56 is still working.
++	_btrfs_rescan_devices
++	_spare_dev_get
++	_scratch_mount
++	_btrfs device add -f "$SPARE_DEV" "$SCRATCH_MNT"
++	_btrfs balance start -d "$SCRATCH_MNT"
++	_btrfs scrub start -B "$SCRATCH_MNT"
++	_scratch_unmount
++	_spare_dev_put
++}
++
++_scratch_dev_pool_get 2
++# There will be a warning about single-data-RAID56, thus need
++# to redirect stderr
++_scratch_pool_mkfs -m raid1 -d raid5 >> $seqres.full 2>&1
++common_workload
++_scratch_dev_pool_put
++
++_scratch_dev_pool_get 3
++_scratch_pool_mkfs -m raid1c3 -d raid6 >> $seqres.full 2>&1
++common_workload
++_scratch_dev_pool_put
++
++echo "Silence is golden"
++_exit 0
+diff --git a/tests/btrfs/348.out b/tests/btrfs/348.out
+new file mode 100644
+index 00000000..ec5e4701
+--- /dev/null
++++ b/tests/btrfs/348.out
+@@ -0,0 +1,2 @@
++QA output created by 348
++Silence is golden
+-- 
+2.51.2
 
-  	/* Check scrubbing parity and repair it. */
---
-2.54.0

@@ -1,42 +1,45 @@
 Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CD0173B0AE7
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 07:05:46 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1EFA63A9D9B;
+	Mon, 25 May 2026 07:07:22 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779692749; cv=none; b=uzzDE0/jGtAb6SpFtxWb6F3gg0KG1RztjLnAMJKVVOY7Rox9hWkWUfk6roLy+SS8wqGTyZxHNBPyRqbl+LwBCnglx9kXNlAtQTN2aCEus4uXZZEPiFjOT+91MTOv+jHWSiB0btWxxvc0EIIij6RiV45byCTSbWrLC3aKL8qD+f8=
+	t=1779692843; cv=none; b=md0gmzH3fHdV8V8NtJFM4DohULQ9mu0S2hdrysxhhlXXKBQzdeWLRkAqbts3FduEE+eppUgJ+vn+pRfXncnFHUNCG+SUhsjgQwPOLfKefZqQOYGxW4aAKRr+lNaA/JRjeAwsMD+5KU90BHBPdtB9FbBeHHmU6WnN/YOTGybQddw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779692749; c=relaxed/simple;
-	bh=06qaBguhC+beb84OG4lcvrsxElviP4W5cQ2lyYrj+CI=;
+	s=arc-20240116; t=1779692843; c=relaxed/simple;
+	bh=ZBgjeSkb2D8Jguda1BBstvS/A0xeXLPEkhHpXqFE/HQ=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=GjXcnXBoBsv1t6pDv4sAjk9JpetgDaGHK89/AlM7CLqlfs1Fk1ZMYdN5dgCxAwZfl4rvmLdeCFiigdCAedkeeKVTnGKs21F4MnOJvJhjRijbvztnGIHxo1eaQbkugYIZ50LSJPngznNYnV6iMxoS2LKwmfZvTQ+8RpSdl3yyuag=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=PcYde8AB; arc=none smtp.client-ip=198.137.202.133
+	 Content-Type:Content-Disposition:In-Reply-To; b=tVoVbCo8r0ode/vY4zaqHmOzaCYgfBhjCemFkZyoRhjOf4fBJDD2+EVd1ElXs0hcQqO5pam/Q6JgdJQPbI8ESyAIQNCYjM8vwg5Sj+rvGlBWU8Qn3oWgX6BoN7Gl1Z2D436H6ERiYD4z8hes93Ntc2bMoYY29meGgL+ydoJjh2Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=xbnspB3h; arc=none smtp.client-ip=198.137.202.133
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="PcYde8AB"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="xbnspB3h"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
 	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
 	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=HwDh2hckJj3RrsYndD3oPe6p9hhVhBIMNSFmkr2LZuk=; b=PcYde8ABQTzvIs3eFkrc1hb4It
-	24ZQ6S3gOei37x50KilM4mcrEF6+NaVLPeWuZG1ZSwZ7tDHRVUagqyF3CRRfLPDzoVScMoKB4eiwV
-	jKeyx3nqvr7Uj1ecwMgbY4wwQcZRwzr93+uBUQ3Ai2r9viXR/hWNiP67E/5VhrQkbJOK4hREqRaKf
-	C8rhcShqTo2kA73JVnkIlP71Gd2L0jO84CUNx4BEehmNDY3YAqJrjP996sO1ImBtBpSLul4nAE35X
-	I6rajB3sdL7wDUejulcUqqby7lhGDQ4eDEEpbgzmkNlwD4iuFY5h8mvmNqtCx/LnGinsKtWl9HgH4
-	coCqTzOg==;
+	bh=+d7PX2NcjtUHzTFbEE62EesXrZp/XO3eOjdCPHwyr1E=; b=xbnspB3hNQWkc/6HM/ZdrUqFGU
+	tzi1VdMadrQOnC9b1ZZVGnj1wf5SOiT10McOxugYIkHgrZpPARlJDIjfL4LUw9I7o9fSBn1+gKwdk
+	n7p4bYoZiwD4kvukPUIbnGEn00i52rDjrfhOgOx9wd5XgI+x2VReVBJ+F2M83cnt00v0xFCso1auj
+	kVZwNEeE9Yzd/fOKiOtTjCBJJ0XVyv96DvBMTA1O5G4FTPcvFFl8CjTGNTyA51TjO6AtnaajxBCdk
+	YFMcwx0CZ0VJnkZb6X6tvXGuTEqVBIkJtq492fT02h3n1vzgKgLMmEH/BjMAcSOrUPcgj4ZrRNsSH
+	vyZJaemg==;
 Received: from hch by bombadil.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
-	id 1wRPNh-0000000GUal-3T6B;
-	Mon, 25 May 2026 07:05:45 +0000
-Date: Mon, 25 May 2026 00:05:45 -0700
+	id 1wRPPF-0000000GUnL-2wj9;
+	Mon, 25 May 2026 07:07:21 +0000
+Date: Mon, 25 May 2026 00:07:21 -0700
 From: Christoph Hellwig <hch@infradead.org>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: use IOMAP_DIO_BOUNCE flag instead of falling
- back to buffered IO
-Message-ID: <ahP0yXND64FAOsCV@infradead.org>
-References: <e578ff1a2dd9a4f720ea77bc601534734ce87e18.1779685479.git.wqu@suse.com>
+To: Anand Jain <asj@kernel.org>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+	linux-f2fs@vger.kernel.org, amir73il@gmail.com, zlang@redhat.com,
+	hch@infradead.org
+Subject: Re: [PATCH v5 01/10] fstests: add _loop_image_create_clone() helper
+Message-ID: <ahP1KZ6aCNVqn__m@infradead.org>
+References: <cover.1779367627.git.asj@kernel.org>
+ <7b0edc0be51fd3ba222a4d0f204cd406c98085d8.1779367627.git.asj@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -45,39 +48,34 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <e578ff1a2dd9a4f720ea77bc601534734ce87e18.1779685479.git.wqu@suse.com>
+In-Reply-To: <7b0edc0be51fd3ba222a4d0f204cd406c98085d8.1779367627.git.asj@kernel.org>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-On Mon, May 25, 2026 at 02:35:33PM +0930, Qu Wenruo wrote:
-> +	struct btrfs_inode *inode = BTRFS_I(file_inode(iocb->ki_filp));
->  	struct btrfs_dio_data data = { 0 };
-> +	const u64 data_profile = btrfs_data_alloc_profile(inode->root->fs_info) &
-> +				 BTRFS_BLOCK_GROUP_PROFILE_MASK;
-> +	unsigned int dio_flags = IOMAP_DIO_PARTIAL | IOMAP_DIO_FSBLOCK_ALIGNED;
-> +
-> +	/*
-> +	 * Userspace may modify the buffer while DIO is in flight. With
-> +	 * data checksumming this would produce a checksum that doesn't
-> +	 * match the persisted data; with duplicated profiles the mirrors
-> +	 * would diverge. Bounce in those cases so writeback sees stable
-> +	 * content.
-> +	 */
-> +	if (!(inode->flags & BTRFS_INODE_NODATASUM) ||
-> +	    (data_profile != BTRFS_BLOCK_GROUP_RAID0 && data_profile != 0))
+On Thu, May 21, 2026 at 08:54:51PM +0800, Anand Jain wrote:
+> Introduce _loop_image_create_clone() and _loop_image_destroy() to mkfs an
+> image file and clone it to another image file, and attach a loop device to
+> them. And its destroy part.
+> 
+> Signed-off-by: Anand Jain <asj@kernel.org>
+> ---
+>  common/rc | 50 ++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 50 insertions(+)
+> 
+> diff --git a/common/rc b/common/rc
+> index 9632b211b58f..a2ee23c45003 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -1503,6 +1503,56 @@ _scratch_resvblks()
+>  	esac
+>  }
+>  
+> +_loop_image_create_clone()
+> +{
 
-Should the 0 here be BTRFS_RAID_SINGLE for better documentation?
+Please add a comment explaining the function and how to use it.
 
-Also the old code only did this for !BTRFS_INODE_NODATASUM and not
-raid, right?
+> +_loop_image_destroy()
+> +{
 
-
-> +		dio_flags |= IOMAP_DIO_BOUNCE;
-
-Splitting the data_profile check into a helper would improve readabilty
-here.  Maybe even as a prep patch before the actual change, then a
-patch to add IOMAP_DIO_BOUNCE, and the extension to raid as another
-stand-alone well documented patch?
-
-Also while you touch this, you should probably also check the
-bdev_stable_writes similar to XFS (probably yet another patch).
+Same.
 

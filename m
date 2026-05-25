@@ -1,88 +1,88 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9EF6F345CDD
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 10:12:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 79804346A0A
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 10:17:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779703965; cv=none; b=Bzm0G3ArSJslCiQxAUoERWpItKRKXI/lEwMAjkLxKVu3bkClWcZLWbV2hNq3mcan0gwnGvckQLdDfBVwWx0p91n0XjS74DldJPk15EKxX8jeErmBlcsjVJUaYoaMjJIZDG9ev5e30QBFexSrZxer5vZpTLUVYMQo3BNCqXmWMDM=
+	t=1779704235; cv=none; b=sJ4LXM3IoFVEn+JzcnR9tUxCqSl75qXcY3BaZCLKwhRI4tGYpoudg6ToFI8TmsQj9diTBlM11nom3t2HciIIwcQcpokjHHdTYC0eV874+IlKW55rDvGy1tFH8s7fAl6eFxE73u9vNWVynwHwSBe0T+PppvhV/MZ1YKHWwrYrxTs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779703965; c=relaxed/simple;
-	bh=JaL8Wvt55d+KJ/2LKf7yE/CaJCbO7w5zlfEWPxdQQ68=;
+	s=arc-20240116; t=1779704235; c=relaxed/simple;
+	bh=OmEEm2PCDtqK32Gs6A+DDu668INb3nOxd2MaLiD8Qdw=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=rJ4FaQmAzf6Z1iryJ2DBag/BqVRYo2erP+UVWlHQDY181Z+YK5moB+CY82c5T2yS3U+ZGz4vvKhKE+RRXwI2zl27j0KPhx8X7Qj9HR8uCA6K20UvlK5o7Rm+UuPbOfUmVL92LnOrBW3wSMSrU/O83sDb0hl+U2O4fAry4dnzKbs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=HpqIglO8; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=J+Fcje0q; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=HpqIglO8; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=J+Fcje0q; arc=none smtp.client-ip=195.135.223.131
+	 Content-Type:Content-Disposition:In-Reply-To; b=YZWcPZ440OAs7FuV52+V4SOmYGjEBuYJFdWTJpPn0UHPqMMmue47EW1dkSD+7uFszTf7KUc4QEpMi/44mCBl4a6ABBuMXpyFd6p12V2y+h/J0RJZ6JxZ4DXUmGBLOSTWtAkBkbdzaVWjxrJ1FM+9i4XiIe9PP0egRDGfQdYjDbs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=bthwkkkE; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=fRLTfRV8; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=bthwkkkE; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=fRLTfRV8; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="HpqIglO8";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="J+Fcje0q";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="HpqIglO8";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="J+Fcje0q"
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="bthwkkkE";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="fRLTfRV8";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="bthwkkkE";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="fRLTfRV8"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id E7ADF5D93C;
-	Mon, 25 May 2026 10:12:41 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id E2B7B6B3DA;
+	Mon, 25 May 2026 10:17:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1779703961;
+	t=1779704232;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=F0D3QRq6nfWRTLO9n5cpghnwh0s48piacMk1SI7W3I0=;
-	b=HpqIglO8dm2cSPwITbmQ4wMloCmLP1Hq/115v6wkQ7VXbga6c/EGSJGa2dIoQWp/w0nN/o
-	1oCReEQlCg/rspLAmyVejB3kxBkNkL7hNTMdvFwoEQ+rdWRWqqs0NUBxzR1IVQyyir4RTN
-	XvEpot30IEAKcNyH3GXFiBgQsWJ4Sy0=
+	bh=/hnsceYyM19/MbhX5bdjmRK4Ysicv9FRuHCSOw6CjVM=;
+	b=bthwkkkEB61QH4M/2CgfobNLIhwi1is5lXxtx0d2lsfMIi+ZHAlX8fNyl+TysDiYQ7N5f7
+	XqOvInMiu9e/M2YSPfhKfdawKWrH3ClmurEc5C2qLmB+vra8GLaXnWiVSj3W0Meh3hjuWT
+	3SfCIhIVNRKO6r4LdBltQHJPsZUUxas=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1779703961;
+	s=susede2_ed25519; t=1779704232;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=F0D3QRq6nfWRTLO9n5cpghnwh0s48piacMk1SI7W3I0=;
-	b=J+Fcje0qfZxosTABigme8K21MqsAIE62PSYfdU9ONAPs88F/iwUV7jaHBzUbfiF/emgikD
-	xzcjuL8QDD15D+DQ==
-Authentication-Results: smtp-out2.suse.de;
+	bh=/hnsceYyM19/MbhX5bdjmRK4Ysicv9FRuHCSOw6CjVM=;
+	b=fRLTfRV8DN+yZ297bBcYDHiuZHQLmgb0vHSB/5GFYPQK4oxgAiv9A/Czd6T8+kTNRbkQhy
+	+ZFxB1LsIGzEBrDQ==
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1779703961;
+	t=1779704232;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=F0D3QRq6nfWRTLO9n5cpghnwh0s48piacMk1SI7W3I0=;
-	b=HpqIglO8dm2cSPwITbmQ4wMloCmLP1Hq/115v6wkQ7VXbga6c/EGSJGa2dIoQWp/w0nN/o
-	1oCReEQlCg/rspLAmyVejB3kxBkNkL7hNTMdvFwoEQ+rdWRWqqs0NUBxzR1IVQyyir4RTN
-	XvEpot30IEAKcNyH3GXFiBgQsWJ4Sy0=
+	bh=/hnsceYyM19/MbhX5bdjmRK4Ysicv9FRuHCSOw6CjVM=;
+	b=bthwkkkEB61QH4M/2CgfobNLIhwi1is5lXxtx0d2lsfMIi+ZHAlX8fNyl+TysDiYQ7N5f7
+	XqOvInMiu9e/M2YSPfhKfdawKWrH3ClmurEc5C2qLmB+vra8GLaXnWiVSj3W0Meh3hjuWT
+	3SfCIhIVNRKO6r4LdBltQHJPsZUUxas=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1779703961;
+	s=susede2_ed25519; t=1779704232;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=F0D3QRq6nfWRTLO9n5cpghnwh0s48piacMk1SI7W3I0=;
-	b=J+Fcje0qfZxosTABigme8K21MqsAIE62PSYfdU9ONAPs88F/iwUV7jaHBzUbfiF/emgikD
-	xzcjuL8QDD15D+DQ==
+	bh=/hnsceYyM19/MbhX5bdjmRK4Ysicv9FRuHCSOw6CjVM=;
+	b=fRLTfRV8DN+yZ297bBcYDHiuZHQLmgb0vHSB/5GFYPQK4oxgAiv9A/Czd6T8+kTNRbkQhy
+	+ZFxB1LsIGzEBrDQ==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BF4CD59BB7;
-	Mon, 25 May 2026 10:12:41 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6CAAC59BBC;
+	Mon, 25 May 2026 10:17:12 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id /hcbLpkgFGqbNgAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 25 May 2026 10:12:41 +0000
-Date: Mon, 25 May 2026 12:12:36 +0200
+	id qhdJGqghFGrgOgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 25 May 2026 10:17:12 +0000
+Date: Mon, 25 May 2026 12:17:07 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, hch@lst.de, linux-raid@vger.kernel.org
+To: Christoph Hellwig <hch@lst.de>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+	linux-raid@vger.kernel.org
 Subject: Re: [PATCH 3/3] btrfs: disguise single-data-RAID56 as RAID1/RAID1C3
-Message-ID: <20260525101236.GU12792@suse.cz>
+Message-ID: <20260525101707.GV12792@suse.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1779412152.git.wqu@suse.com>
  <ce02ebf8a9a6f5e2357b838df9d7ecce1f0cfd4b.1779412152.git.wqu@suse.com>
  <20260523142344.GC183694@twin.jikos.cz>
- <e1961351-d563-4d73-b9f3-30063bbe7c4d@suse.com>
- <1b5c39fe-df28-4a21-bace-fc742498945e@suse.com>
+ <20260525060030.GB3370@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -91,7 +91,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <1b5c39fe-df28-4a21-bace-fc742498945e@suse.com>
+In-Reply-To: <20260525060030.GB3370@lst.de>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 X-Spam-Score: -4.00
 X-Spamd-Result: default: False [-4.00 / 50.00];
@@ -113,107 +113,32 @@ X-Spamd-Result: default: False [-4.00 / 50.00];
 	FROM_HAS_DN(0.00)[];
 	RCPT_COUNT_THREE(0.00)[4];
 	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.cz:replyto,suse.cz:mid];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,suse.cz:mid,imap1.dmz-prg2.suse.org:helo];
 	RCVD_COUNT_TWO(0.00)[2];
 	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
 X-Spam-Level: 
 X-Spam-Flag: NO
 
-On Sun, May 24, 2026 at 01:43:54PM +0930, Qu Wenruo wrote:
-> I tried the idea, and it doesn't look elegant at all, we need a lot of 
-> if () checks around every xor_gen()/raid6_call.
+On Mon, May 25, 2026 at 08:00:30AM +0200, Christoph Hellwig wrote:
+> On Sat, May 23, 2026 at 04:23:44PM +0200, David Sterba wrote:
+> > On Fri, May 22, 2026 at 06:53:53PM +0930, Qu Wenruo wrote:
+> > > Recently kernel RAID56 lib is trying to remove the unexpected
+> > > single-data-RAID56 (2 disks RAID5 or 3 disk RAID5) support, meanwhile
+> > > btrfs still supports such setup, which means in the long run btrfs has
+> > > to handle such corner case by ourselves.
+> > > 
+> > > Thankfully single-data-RAID56 is really RAID1/RAID1C3, since data and
+> > > P/Q stripes all match each other, rotation also makes no difference.
+> > > 
+> > > This patch will disguise those single-data-RAID56 chunks as
+> > > RAID1/RAID1C3 chunks.
+> > 
+> > I don't think this is the right way to fix it. Calculations are an
+> > implementation detail and should be done at the time of the xor_gen or
+> > raid6_call, not touching the upper level structures related to format.
 > 
-> Sure the end result is not that huge (and I have only compile tested 
-> it), but if we had some parameters passed wrongly, or some corner case 
-> missed, it can be very hard to notice.
-> 
-> Just paste the adhoc fix for reference:
+> It absolutely is.  Adding fast path workarounds for this is completely
+> stupid when it can be trivially handled on the mount side.
 
-I ended up with something similar, but replaced the open coded ifs with
-a helper so there's not that much churn at the call sites.
-
-> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> index 08ee8f316d96..50fefe33bbe3 100644
-> --- a/fs/btrfs/raid56.c
-> +++ b/fs/btrfs/raid56.c
-> @@ -1410,11 +1410,17 @@ static void generate_pq_vertical_step(struct 
-> btrfs_raid_bio *rbio, unsigned int
->   				rbio_qstripe_paddr(rbio, sector_nr, step_nr));
-> 
->   		assert_rbio(rbio);
-> -		raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
-> +		if (rbio->nr_data > 1) {
-> +			raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
-> +		} else {
-> +			memcpy(pointers[1], pointers[0], step);
-> +			memcpy(pointers[2], pointers[0], step);
-> +		}
->   	} else {
->   		/* raid5 */
->   		memcpy(pointers[rbio->nr_data], pointers[0], step);
-> -		xor_gen(pointers[rbio->nr_data], pointers + 1, rbio->nr_data - 1,
-> +		if (rbio->nr_data > 1)
-> +			xor_gen(pointers[rbio->nr_data], pointers + 1, rbio->nr_data - 1,
->   				step);
->   	}
->   	for (stripe = stripe - 1; stripe >= 0; stripe--)
-> @@ -1987,11 +1993,17 @@ static void recover_vertical_step(struct 
-> btrfs_raid_bio *rbio,
->   		}
-> 
->   		if (failb == rbio->real_stripes - 2) {
-> -			raid6_datap_recov(rbio->real_stripes, step,
-> -					  faila, pointers);
-> +			if (unlikely(rbio->nr_data == 1))
-> +				memcpy(pointers[0], pointers[rbio->real_stripes - 1], step);
-> +			else
-> +				raid6_datap_recov(rbio->real_stripes, step,
-> +						  faila, pointers);
->   		} else {
-> -			raid6_2data_recov(rbio->real_stripes, step,
-> -					  faila, failb, pointers);
-> +			if (unlikely(rbio->nr_data == 1))
-> +				memcpy(pointers[0], pointers[rbio->real_stripes - 2], step);
-
-The 2data recovery needs to do 2 memcpy
-
-> +			else
-> +				raid6_2data_recov(rbio->real_stripes, step,
-> +						  faila, failb, pointers);
->   		}
->   	} else {
->   		void *p;
-> @@ -2002,6 +2014,9 @@ static void recover_vertical_step(struct 
-> btrfs_raid_bio *rbio,
->   		/* Copy parity block into failed block to start with */
->   		memcpy(pointers[faila], pointers[rbio->nr_data], step);
-> 
-> +		if (rbio->nr_data == 1)
-> +			goto cleanup;
-> +
->   		/* Rearrange the pointer array */
->   		p = pointers[faila];
->   		for (stripe_nr = faila; stripe_nr < rbio->nr_data - 1;
-> @@ -2644,11 +2659,17 @@ static bool verify_one_parity_step(struct 
-> btrfs_raid_bio *rbio,
->   	if (has_qstripe) {
->   		assert_rbio(rbio);
->   		/* RAID6, call the library function to fill in our P/Q. */
-> -		raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
-> +		if (rbio->nr_data > 1) {
-> +			raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
-> +		} else {
-> +			memcpy(pointers[1], pointers[0], step);
-> +			memcpy(pointers[2], pointers[0], step);
-> +		}
->   	} else {
->   		/* RAID5. */
->   		memcpy(pointers[nr_data], pointers[0], step);
-> -		xor_gen(pointers[nr_data], pointers + 1, nr_data - 1, step);
-> +		if (rbio->nr_data > 1)
-> +			xor_gen(pointers[nr_data], pointers + 1, nr_data - 1, step);
->   	}
-> 
->   	/* Check scrubbing parity and repair it. */
-> --
-> 2.54.0
+It's a lazy hack at best and fix on absolutely wrong layer. The library
+should provide the support for the edge case. But we disagree on that.

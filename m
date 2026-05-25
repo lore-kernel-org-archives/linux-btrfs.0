@@ -1,109 +1,219 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73153345CDD
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 10:12:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9EF6F345CDD
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 10:12:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779703934; cv=none; b=HON3ivOce95UDMe74iV88fBopL/geq2PtsvgQYIjxQDHAeThm2+sBualrnWXq2q+oTqQ7vxhGqmES1QAb7iezBUQfSixZZ+lkHspXqZS0dcMGk7P3Lp9eNnbFL+1qFX9AaFKkm26eNpRcVqRrxF+22LUXIxiYcuhmOxfGvMYkn8=
+	t=1779703965; cv=none; b=Bzm0G3ArSJslCiQxAUoERWpItKRKXI/lEwMAjkLxKVu3bkClWcZLWbV2hNq3mcan0gwnGvckQLdDfBVwWx0p91n0XjS74DldJPk15EKxX8jeErmBlcsjVJUaYoaMjJIZDG9ev5e30QBFexSrZxer5vZpTLUVYMQo3BNCqXmWMDM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779703934; c=relaxed/simple;
-	bh=p1Yt63RJo25DqRYZJxMfSwfwExjNyM/BSSWtN8a4o5w=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=fGKJIhs+CxCUM2HMlx78OkEK6bwJFm3ZkdqTwb1hgw+MrBd6rLkXuGfoT0uWi5UwTgB5nTp6pcK4bSQTgNdSYm5asSZUflShi0mzExP1nKhSBWWyi5XV29vy0h/5Fn4u86LG3JpTz0g4ay1er3yz3qgP5Q7fdmIvtfM5zXumZe8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=F35sCeFZ; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1779703965; c=relaxed/simple;
+	bh=JaL8Wvt55d+KJ/2LKf7yE/CaJCbO7w5zlfEWPxdQQ68=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=rJ4FaQmAzf6Z1iryJ2DBag/BqVRYo2erP+UVWlHQDY181Z+YK5moB+CY82c5T2yS3U+ZGz4vvKhKE+RRXwI2zl27j0KPhx8X7Qj9HR8uCA6K20UvlK5o7Rm+UuPbOfUmVL92LnOrBW3wSMSrU/O83sDb0hl+U2O4fAry4dnzKbs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=HpqIglO8; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=J+Fcje0q; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=HpqIglO8; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=J+Fcje0q; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="F35sCeFZ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1DE0E1F000E9
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 10:12:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1779703933;
-	bh=61EoaxjS90KDps9jKhlIYZGVX1beebyG36qARrhRIxI=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=F35sCeFZGuijQlBSSmEj4fpiZqcdxzFeOf13FgkyEJ7eB5EdYbIQUQQx7VEMCgSsw
-	 d4EZ+xVlu08HIYW16jtGfW73R2tgyohKZHWtWg7iKtp3XfYlO1rI5xEjevvpIOV2QR
-	 zXcE6Dlwp2GFgo0Z2FAnAXkKtgq3Qnpl7V9RVXJRTVeYXeHvAzGO6UJuhfgFITe489
-	 uSXf9xWk2ZhyePJwACVBinV2QD3yd/IAOzV2CsgzanG5nOIkkHJVHw4PyMR7kfCX0l
-	 isP8hzR1EKax7ping20XMitJw1TAS5+5yCNxrSkK2+T/ihauo5fhrhjYrDZF2o8sn2
-	 OUnABT8BAXJ9A==
-Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-bd8f6ef4ba6so1384491766b.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 03:12:13 -0700 (PDT)
-X-Gm-Message-State: AOJu0YxzJG6zsAEOkb1ZFbG2gB7Dr78xV6EK6SMoIfUJojEXtHp05ljU
-	lzm7XTNGHOvZ8qN4lxcxpilbj3wgIV3ZQkdVa3xudmxY8WvAZLDpfwYPhyfnQoLWFpdsn5hat/m
-	oxCeYbS/AN5MiwWgY/GFy9MM2ZS109Ww=
-X-Received: by 2002:a17:906:844b:b0:bd5:2e64:afba with SMTP id
- a640c23a62f3a-bdd2580be79mr593030266b.29.1779703931834; Mon, 25 May 2026
- 03:12:11 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="HpqIglO8";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="J+Fcje0q";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="HpqIglO8";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="J+Fcje0q"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id E7ADF5D93C;
+	Mon, 25 May 2026 10:12:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1779703961;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=F0D3QRq6nfWRTLO9n5cpghnwh0s48piacMk1SI7W3I0=;
+	b=HpqIglO8dm2cSPwITbmQ4wMloCmLP1Hq/115v6wkQ7VXbga6c/EGSJGa2dIoQWp/w0nN/o
+	1oCReEQlCg/rspLAmyVejB3kxBkNkL7hNTMdvFwoEQ+rdWRWqqs0NUBxzR1IVQyyir4RTN
+	XvEpot30IEAKcNyH3GXFiBgQsWJ4Sy0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1779703961;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=F0D3QRq6nfWRTLO9n5cpghnwh0s48piacMk1SI7W3I0=;
+	b=J+Fcje0qfZxosTABigme8K21MqsAIE62PSYfdU9ONAPs88F/iwUV7jaHBzUbfiF/emgikD
+	xzcjuL8QDD15D+DQ==
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1779703961;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=F0D3QRq6nfWRTLO9n5cpghnwh0s48piacMk1SI7W3I0=;
+	b=HpqIglO8dm2cSPwITbmQ4wMloCmLP1Hq/115v6wkQ7VXbga6c/EGSJGa2dIoQWp/w0nN/o
+	1oCReEQlCg/rspLAmyVejB3kxBkNkL7hNTMdvFwoEQ+rdWRWqqs0NUBxzR1IVQyyir4RTN
+	XvEpot30IEAKcNyH3GXFiBgQsWJ4Sy0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1779703961;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=F0D3QRq6nfWRTLO9n5cpghnwh0s48piacMk1SI7W3I0=;
+	b=J+Fcje0qfZxosTABigme8K21MqsAIE62PSYfdU9ONAPs88F/iwUV7jaHBzUbfiF/emgikD
+	xzcjuL8QDD15D+DQ==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BF4CD59BB7;
+	Mon, 25 May 2026 10:12:41 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id /hcbLpkgFGqbNgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 25 May 2026 10:12:41 +0000
+Date: Mon, 25 May 2026 12:12:36 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, hch@lst.de, linux-raid@vger.kernel.org
+Subject: Re: [PATCH 3/3] btrfs: disguise single-data-RAID56 as RAID1/RAID1C3
+Message-ID: <20260525101236.GU12792@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1779412152.git.wqu@suse.com>
+ <ce02ebf8a9a6f5e2357b838df9d7ecce1f0cfd4b.1779412152.git.wqu@suse.com>
+ <20260523142344.GC183694@twin.jikos.cz>
+ <e1961351-d563-4d73-b9f3-30063bbe7c4d@suse.com>
+ <1b5c39fe-df28-4a21-bace-fc742498945e@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1778776706.git.fdmanana@suse.com> <238c79ed66ab85e05394448aeddf91899839ca22.1778776707.git.fdmanana@suse.com>
- <20260523175114.GK183694@twin.jikos.cz> <CAL3q7H7g4JCCw=n0DDq-tRNiBuiOAO=Pc4SZxQZyoemOMV26Yg@mail.gmail.com>
- <20260524110730.GL183694@suse.cz>
-In-Reply-To: <20260524110730.GL183694@suse.cz>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 25 May 2026 11:11:34 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H4c9b_mn6LD3=LxKcNcCEFeDTzzjQJ6L3Mn=Js9qwLdvg@mail.gmail.com>
-X-Gm-Features: AVHnY4KcaT_g7G_mX8kFOAMA4lYTyhuvZuOLmzDIyxn3u4i3-8JlrI-3s4cE9YA
-Message-ID: <CAL3q7H4c9b_mn6LD3=LxKcNcCEFeDTzzjQJ6L3Mn=Js9qwLdvg@mail.gmail.com>
-Subject: Re: [PATCH 19/28] btrfs: tracepoints: add trace event for add_conflicting_inode()
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <1b5c39fe-df28-4a21-bace-fc742498945e@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Score: -4.00
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-0.995];
+	MIME_GOOD(-0.10)[text/plain];
+	MID_RHS_MATCH_FROM(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.cz:replyto,suse.cz:mid];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Level: 
+X-Spam-Flag: NO
 
-On Sun, May 24, 2026 at 12:07=E2=80=AFPM David Sterba <dsterba@suse.cz> wro=
-te:
->
-> On Sat, May 23, 2026 at 06:57:32PM +0100, Filipe Manana wrote:
-> > On Sat, May 23, 2026 at 6:51=E2=80=AFPM David Sterba <dsterba@suse.cz> =
-wrote:
-> > >
-> > > On Fri, May 15, 2026 at 06:00:16PM +0100, fdmanana@kernel.org wrote:
-> > > > From: Filipe Manana <fdmanana@suse.com>
-> > > > +     TP_fast_assign(
-> > > > +             TP_fast_assign_fsid(trans->fs_info);
-> > > > +             __entry->root_objectid          =3D btrfs_root_id(ctx=
-->inode->root);
-> > > > +             __entry->transid                =3D trans->transid;
-> > > > +             __entry->ctx_ino                =3D btrfs_ino(ctx->in=
-ode);
-> > > > +             __entry->conflict_ino           =3D ino;
-> > > > +             __entry->conflict_ino_parent    =3D parent;
-> > > > +     ),
-> > > > +
-> > > > +     TP_printk_btrfs("root=3D%llu(%s) transid=3D%llu ctx_ino=3D%ll=
-u conflic_ino=3D%llu"
-> > >                                                                  ^^^^=
-^^^^^^^
-> > >
-> > > This looks like a typo, "conflict_ino" as the variable names.
-> > >
-> > > > +                     " conflict_ino_parent=3D%llu",
-> > > > +                     show_root_type(__entry->root_objectid), __ent=
-ry->transid,
-> > > > +                     __entry->ctx_ino, __entry->conflict_ino,
-> > > > +                     __entry->conflict_ino_parent)
-> > > > +);
-> > > > +
-> > > > +TRACE_EVENT(btrfs_add_conflicting_inode_exit,
-> > > ...
-> > > > +     TP_printk_btrfs("root=3D%llu(%s) transid=3D%llu ctx_ino=3D%ll=
-u conflic_ino=3D%llu"
-> > >
-> > > And here.
-> > >
-> > > Otherwise no other typos spotted in the whole series and the formats
-> > > look consistent. I'll fix the two in for-next. Thanks.
-> >
-> > No it's not a typo. It's intentional to call it conflict_ino - as ino
->
-> conflic_ino ... with missing 't', or did you reall mean to write 'conflic=
-'?
+On Sun, May 24, 2026 at 01:43:54PM +0930, Qu Wenruo wrote:
+> I tried the idea, and it doesn't look elegant at all, we need a lot of 
+> if () checks around every xor_gen()/raid6_call.
+> 
+> Sure the end result is not that huge (and I have only compile tested 
+> it), but if we had some parameters passed wrongly, or some corner case 
+> missed, it can be very hard to notice.
+> 
+> Just paste the adhoc fix for reference:
 
-Ok, I thought you were mentioning "ino" vs "conflict_ino".
-Yes, that is a typo and I'll fix it in for-next, thanks.
->
+I ended up with something similar, but replaced the open coded ifs with
+a helper so there's not that much churn at the call sites.
+
+> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+> index 08ee8f316d96..50fefe33bbe3 100644
+> --- a/fs/btrfs/raid56.c
+> +++ b/fs/btrfs/raid56.c
+> @@ -1410,11 +1410,17 @@ static void generate_pq_vertical_step(struct 
+> btrfs_raid_bio *rbio, unsigned int
+>   				rbio_qstripe_paddr(rbio, sector_nr, step_nr));
+> 
+>   		assert_rbio(rbio);
+> -		raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
+> +		if (rbio->nr_data > 1) {
+> +			raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
+> +		} else {
+> +			memcpy(pointers[1], pointers[0], step);
+> +			memcpy(pointers[2], pointers[0], step);
+> +		}
+>   	} else {
+>   		/* raid5 */
+>   		memcpy(pointers[rbio->nr_data], pointers[0], step);
+> -		xor_gen(pointers[rbio->nr_data], pointers + 1, rbio->nr_data - 1,
+> +		if (rbio->nr_data > 1)
+> +			xor_gen(pointers[rbio->nr_data], pointers + 1, rbio->nr_data - 1,
+>   				step);
+>   	}
+>   	for (stripe = stripe - 1; stripe >= 0; stripe--)
+> @@ -1987,11 +1993,17 @@ static void recover_vertical_step(struct 
+> btrfs_raid_bio *rbio,
+>   		}
+> 
+>   		if (failb == rbio->real_stripes - 2) {
+> -			raid6_datap_recov(rbio->real_stripes, step,
+> -					  faila, pointers);
+> +			if (unlikely(rbio->nr_data == 1))
+> +				memcpy(pointers[0], pointers[rbio->real_stripes - 1], step);
+> +			else
+> +				raid6_datap_recov(rbio->real_stripes, step,
+> +						  faila, pointers);
+>   		} else {
+> -			raid6_2data_recov(rbio->real_stripes, step,
+> -					  faila, failb, pointers);
+> +			if (unlikely(rbio->nr_data == 1))
+> +				memcpy(pointers[0], pointers[rbio->real_stripes - 2], step);
+
+The 2data recovery needs to do 2 memcpy
+
+> +			else
+> +				raid6_2data_recov(rbio->real_stripes, step,
+> +						  faila, failb, pointers);
+>   		}
+>   	} else {
+>   		void *p;
+> @@ -2002,6 +2014,9 @@ static void recover_vertical_step(struct 
+> btrfs_raid_bio *rbio,
+>   		/* Copy parity block into failed block to start with */
+>   		memcpy(pointers[faila], pointers[rbio->nr_data], step);
+> 
+> +		if (rbio->nr_data == 1)
+> +			goto cleanup;
+> +
+>   		/* Rearrange the pointer array */
+>   		p = pointers[faila];
+>   		for (stripe_nr = faila; stripe_nr < rbio->nr_data - 1;
+> @@ -2644,11 +2659,17 @@ static bool verify_one_parity_step(struct 
+> btrfs_raid_bio *rbio,
+>   	if (has_qstripe) {
+>   		assert_rbio(rbio);
+>   		/* RAID6, call the library function to fill in our P/Q. */
+> -		raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
+> +		if (rbio->nr_data > 1) {
+> +			raid6_call.gen_syndrome(rbio->real_stripes, step, pointers);
+> +		} else {
+> +			memcpy(pointers[1], pointers[0], step);
+> +			memcpy(pointers[2], pointers[0], step);
+> +		}
+>   	} else {
+>   		/* RAID5. */
+>   		memcpy(pointers[nr_data], pointers[0], step);
+> -		xor_gen(pointers[nr_data], pointers + 1, nr_data - 1, step);
+> +		if (rbio->nr_data > 1)
+> +			xor_gen(pointers[nr_data], pointers + 1, nr_data - 1, step);
+>   	}
+> 
+>   	/* Check scrubbing parity and repair it. */
+> --
+> 2.54.0

@@ -1,29 +1,42 @@
-Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0052712D1F1;
-	Mon, 25 May 2026 06:00:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B95381E0DD8;
+	Mon, 25 May 2026 06:17:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779688836; cv=none; b=lM3Kj6MiSYnv0ywOFACmEgekqsZRA3BHHN28abRbhq56qcVIFrK/qFmWLug8MH73rBpX/aV8BkBlOPwwvCwWKWnyX66FlaNd8o2ihkU+4HMgDO83BW2UcVgAT8VR26/06VeBJmOKRiHFQ4VBgYadW4r4PbWJymZfzh51bWFQa6s=
+	t=1779689858; cv=none; b=X2EykFeEcGFQD+r2qM7qu+7iy9RJAbHV+sfZVhefFaw5P8gvawBVaG1EkAUCb/GN/k8i/1ntgodtXw4R9KV3UjBeyy2OeUsF3/xhMbGVm0JsSLRSKIDHMY95YRbAuda5t0QUDTh4nx9ZTVu2aiGw1EiGPfgvOTLH8x0ychqpM+w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779688836; c=relaxed/simple;
-	bh=BbuSSJrR79jDkU2ma/SgLQiauRKwS7MArDAmMuddaF4=;
+	s=arc-20240116; t=1779689858; c=relaxed/simple;
+	bh=LSMhKp/M5lOQisQA6n5cIEixkv6W2+8v0P+HK+bYXrU=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=lluTXt2MFMGe+Gzta3QfjxXn2y7rLwDFnxYFLORHu6IckZR684/fYurPD0tg7smPNBDONsycpM5YkS4S9uXgdc99gaCq3daz5Ptm3vYyY4NPzSH/O14s6w+Z8GslZSKJVReo2fArYM1pp2C8yT6NWD8f05dvC5xtqXDJOeIm+sA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
-Received: by verein.lst.de (Postfix, from userid 2407)
-	id 8D07868D0D; Mon, 25 May 2026 08:00:32 +0200 (CEST)
-Date: Mon, 25 May 2026 08:00:30 +0200
-From: Christoph Hellwig <hch@lst.de>
-To: David Sterba <dsterba@suse.cz>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, hch@lst.de,
-	linux-raid@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs: disguise single-data-RAID56 as RAID1/RAID1C3
-Message-ID: <20260525060030.GB3370@lst.de>
-References: <cover.1779412152.git.wqu@suse.com> <ce02ebf8a9a6f5e2357b838df9d7ecce1f0cfd4b.1779412152.git.wqu@suse.com> <20260523142344.GC183694@twin.jikos.cz>
+	 Content-Type:Content-Disposition:In-Reply-To; b=jOTuXEQej4me5SqKoQUeJL1QUxJ6RCLJCRJimibRyHMQhBbhWCB5TJQYPs+oYDjD+UylVnJpdBfWT+60wOwAbMAb4LCP9VIdxpmZ2SuJyIyhZX9W9tCYhcJkvwMg2YtVPUCDIg+an29qVWRg51p6kkiO/K+Ne/p9iOa2kHzvI8g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=QGiSDoiq; arc=none smtp.client-ip=198.137.202.133
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="QGiSDoiq"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=LSMhKp/M5lOQisQA6n5cIEixkv6W2+8v0P+HK+bYXrU=; b=QGiSDoiqYS0XypylcGAGVm2Tuy
+	ViN0r6He898tl/aI1SMYGD8glWiJzIpF6FMy3wc5RXsHlfExRaWCK/VXDX/R7GJ9DUDMAeigiOFr2
+	opUGcd7kl9xvRwpZWiiX+gXFvv+N2/95jv8jQgWecEiAzNFUQdKXnI+1s3Bz41gmdKYSq2PdpUzIa
+	vFpGHzh2BDRDwUZtHbgYwVgkFXQ149I+rlFaFD1nllpCNm3KNKHLsytEP3z3ZDfY8BSktdVE65mVE
+	M8mnuNcsIS7ShPO5ka0GAOt+OdflaX9v+YdvRJSVuE13w10QVUo9ZI7hw9ONHAuN2aHVYJpI8CKOH
+	LDioWB1w==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wROd7-0000000GOj3-1XUs;
+	Mon, 25 May 2026 06:17:37 +0000
+Date: Sun, 24 May 2026 23:17:37 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Qu Wenruo <wqu@suse.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fstests: btrfs: add a new test case for single data
+ RAID56
+Message-ID: <ahPpgaPqDmxXEKLH@infradead.org>
+References: <20260524050848.57740-1-wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -32,25 +45,10 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260523142344.GC183694@twin.jikos.cz>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+In-Reply-To: <20260524050848.57740-1-wqu@suse.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-On Sat, May 23, 2026 at 04:23:44PM +0200, David Sterba wrote:
-> On Fri, May 22, 2026 at 06:53:53PM +0930, Qu Wenruo wrote:
-> > Recently kernel RAID56 lib is trying to remove the unexpected
-> > single-data-RAID56 (2 disks RAID5 or 3 disk RAID5) support, meanwhile
-> > btrfs still supports such setup, which means in the long run btrfs has
-> > to handle such corner case by ourselves.
-> > 
-> > Thankfully single-data-RAID56 is really RAID1/RAID1C3, since data and
-> > P/Q stripes all match each other, rotation also makes no difference.
-> > 
-> > This patch will disguise those single-data-RAID56 chunks as
-> > RAID1/RAID1C3 chunks.
-> 
-> I don't think this is the right way to fix it. Calculations are an
-> implementation detail and should be done at the time of the xor_gen or
-> raid6_call, not touching the upper level structures related to format.
+Looks good to me:
 
-It absolutely is.  Adding fast path workarounds for this is completely
-stupid when it can be trivially handled on the mount side.
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+

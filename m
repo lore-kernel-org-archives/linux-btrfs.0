@@ -1,198 +1,242 @@
-Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B270C3B4EB7
-	for <linux-btrfs@vger.kernel.org>; Sun, 24 May 2026 23:16:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.44
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779664597; cv=none; b=Xq3YnsKBJ+1TL04IY4agWeqUGvSwuyW3K1HNQsOSvGU3FVfo2vufj1iur/WZjqHrQShFYkVzyzIs2dPoh9vuSmBjvQ4Fy0/OGypw9q+o+jieW4lsg20FuTvqqfFA3EyUoXyauV9JQ70wgasGdi15B6MhN+GW0/cLBQZjHbTBrNo=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779664597; c=relaxed/simple;
-	bh=OCyh8Bh5cZ9qiD8GrYP0zOPzdJuy2aS/lqZqBNJrZWg=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=OqtEyFY9CrhHCL1RecF3g6zpwfAmjGcT/8fbZSbcHkE0DBWnSQCFxiHyX/Qa8kPbCrtGmwE5NFQIUIYk7HIa9SVKEtIAOk9ONjSFJiSlly9eIYWgYIzIHOnjyNrS5PyIM8lZQfeJbOMOLhzImddpim8nDtLjRp25ooRp/85Liuw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=PSL03n2K; arc=none smtp.client-ip=209.85.128.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 262DF322A
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 02:36:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.153.141
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1779676576; cv=fail; b=fDR3kecQSpRkF8NSNNq6H45M/DEkYbBVW4MvhHhtBwKsdX9Lh7LBWdOG3f/9J8Of0YFQQ9jp2DcWgJZ/87WmO6+rCyNIalCFjT7TdEdMA2w6JzM0ZcebF5IX75PqlKaoK4obZXjZWmQU+JIcT4gHMZ3qJW/z6mUswbRC3ig1284=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1779676576; c=relaxed/simple;
+	bh=yVuUn6J0mExa8Xsh3I7acQbpW82YZ54LdZl6P8ZBUAo=;
+	h=Content-Type:Date:Message-Id:Subject:Cc:From:To:References:
+	 In-Reply-To:MIME-Version; b=VfqkWgoYrZEQvVCO9MC6GyD9kxH3KRFdTEwD+eHldJ/PQZW77rYPHavRyKXr1DBL6RkYiEO6Dxm6MZBEdjpudGx6Ibt//9uZEcdn5ED49YuNTmV/Q3z5T2Qi37n3HHdt+nBpU0NbVW4w0jYdwajGuWNvWr5rGgAVqmh5aLni7XI=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=gUdcB6hr; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=f/h42O3Q; arc=fail smtp.client-ip=216.71.153.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="PSL03n2K"
-Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-49041e84237so20846045e9.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 24 May 2026 16:16:33 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="gUdcB6hr";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="f/h42O3Q"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1779676575; x=1811212575;
+  h=content-transfer-encoding:date:message-id:subject:cc:
+   from:to:references:in-reply-to:mime-version;
+  bh=yVuUn6J0mExa8Xsh3I7acQbpW82YZ54LdZl6P8ZBUAo=;
+  b=gUdcB6hrG4yNZmRToNekvQAA5BQ4ZA59EIS6LvlETgq2BVwKegSVAe0B
+   BkViY1ac4Fc0iW22lIvokoueorACQA3Y0mi7rrcuFd4jkAVk/6UO7f1TU
+   vMw3XVtWn2G0cfRujAYVDnSCIKFziT1xgAqTaSfmGVSjx2SjNk79Dqrc5
+   gNXpCK0ub9R5WhoDJYDyLwpQTS1b9GaNYQpH0SGqQcudfDfZ5Vd6ujYQl
+   RkflPDoEv63PhZ77IhPtRjNMEs1kCVGIfD/KMslASOQHL8gKd/OBgGYGm
+   PXmhPMonwkEH8e3+fPUuGlP59Pwb4MmaVdMXFwbbxM35gGEJ50FM4Sbqu
+   Q==;
+X-CSE-ConnectionGUID: Nw8kA5XYRwikH0nxRaf1pA==
+X-CSE-MsgGUID: w+YQ1RWmTIOvdD5UD71FKQ==
+X-IronPort-AV: E=Sophos;i="6.24,166,1774281600"; 
+   d="scan'208";a="147667688"
+Received: from mail-eastusazon11011044.outbound.protection.outlook.com (HELO BL2PR02CU003.outbound.protection.outlook.com) ([52.101.52.44])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 25 May 2026 10:36:08 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=jusYNTzU4rpHnODjmr7VTcQVgl5FRUflbZi2zE5uK2jAysAHfnPtQ52/LokIU4rfMA/A8KIe/WAQYxaNHujeS5B/H4gydJUj+xUE28Y7kHTzl457SfJG6v0CMN+7rJ9/BokTzyINqSYA6DQeqiu02YlsQQamg55RkQSetr9NjCWVHv170dnwi2EQ/5dQsxBPxUSUwZuwWd4aFSi64aVCxF1mKpB/4LaQmU04bZqjpVUe4+dDspCyy+8nRLU2SO+AvnjaIQvFL1+fDKS3ntm2gf9iMy1ULkuuo4p6EQELPWdlrMy3OHnpBD9zAYJ1hKFBvnDv2ykGGXe3aZe6Y1BQrw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=28Zjk9BjqAOH4tnJ/0YY9EMvU/kgpVYqLykWzZbNXlc=;
+ b=knYmd+ARbJAFBF3sVC5h/btdAppeyZqVmqGM+YQQUqFfy1VvpQUBx5WtUUL0GmeJEs0mYMjMjc+5o2c788riMkrJ7wo5n+ZEOjaaij6aIh5tzcqqPBxK60vfPbhBymjPgZgofY/x7jspmsOcHT9b5rUfIAUKuhHLQvXp85qv7zHISpCaDqRnVnBMmvJosSrmO7bvpwMYD2+WITMV9JcXdMk1tuveYsvj22T/eAfgPx5FGsnDm8SDrlJYbeulo7Jzd4X8ADhlbnIbQoqZa2VXq01GB63QV2t+KJkPpqLd4MJIvJr4kdeaJf3a/i8/GJvcFBzyE3vZ7MXJ23yMCf2B0Q==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1779664591; x=1780269391; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=esYMMcDFyPyyaihTO3sfquJeNfjjLwC7k6xiBUI4F4c=;
-        b=PSL03n2KwHsbO4FJ6/Owamj/zQDUFhqyiJQduIYKPRaQ4zSl++j9YknvRJEg1Y1T+L
-         ZKvfiGdBVlnnG2hWuEXpLLsqwT1PMVmRojX2KWHJDL6XROaexyyMai8GWKkVHT7aA6Iv
-         M4yUKeRZ1O+Nz3JzFVEkaxosWmL25odPpEdBHBuikeiDRXLeSiW2npTM79mIOuMS7QTv
-         t58YRXJnaXKbvJx985wSG/bpv3O4UnxhCcDVxLL1j6vWutTKgEjmFQaRv+JpE8psjzWV
-         eqn7hIvISPOOweF8SYIwIEbI9IoCSGXPId7LgToypTXbzyrox6PcVEAHh4a0knfA4Fs6
-         ljCg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779664591; x=1780269391;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=esYMMcDFyPyyaihTO3sfquJeNfjjLwC7k6xiBUI4F4c=;
-        b=XHcaqkvFxaekd4sxlNtyhIwXCBvqa5zoMAq2PNqu32g1+NVU6tWpRBA9NkIgYTjvTP
-         g9UcBJyZnwE4I1xm24fFwhwcHrtg/eDDVDvPfwo5/0G6do4QdVrSqUTauCJd0TQHBTHS
-         Dd6iM+AFM0ZfWQimdH/Xuyu3ZFsjGo5bTAqYoEhef8p2j9FPwFhsEqOXTxeYZWx3EGGe
-         FGLnf7TP470x+67JghHX1haz386EKLitPmOO/x7LAljU1fKJTByfNZdeIEK02nGsy6KE
-         6MGtOhN4O5LCdsMmhIg4oWuCplJuJ73tPQkSOOCfmU6gICLVWNKpx5S3998mgRz0rLnC
-         FtYw==
-X-Forwarded-Encrypted: i=1; AFNElJ9Bjv5HDV/VMdNCDLWewPObcCjy/bUe+mO41NtMuFnwXPx7+5EKp8oZr084ns8fSignkYwZG5i2lw+dDw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxkzJDrymHjalhQvAaQsJs709eTjNMY+iQ1ufqPE1iRblVTYUHE
-	edfy8Ij1gely/VLGmr4DgNirGYwul+VbHG8PP+Vy7MosfSHvVK0/7RBnh55JAoqql3U=
-X-Gm-Gg: Acq92OGEyWwQSUndzUb/+S6v7C9DW4IWkbHW7+LjBqUmXWih0PbY0usJWYv6g7KosHj
-	O9WBKFqIVXEXyHcUS2JqPyTpS5mwvgShcbu6pWPtgeRwT/PieTu3QaGOzfpKzA5hJkv6ztqRx4M
-	P4VWAVlNSFdC71YESaA4nPdBor7WsKHy0CNGqtY6cTuAsMmTnxz7DIfArwtno7IPM2wCf18tQZl
-	7DKGfnLxVE2DJ+TxizzIUT6U/Ifj9qub6Mak5wRHzlbHF6fUYqhNG/rcW4tSrVZo8eBRKUCZY31
-	ZF8/Ce2XIDXSOIpIwF9d0m0w3RbhOkZeWx4pBkRCwHtDKyhmn0durUm/zRGxlSXn2zSRiFp8yej
-	TCgFKzfjveL0LgLl51ZYVL/47CPhbLApdWNzTsjU1r+9u+lF59RdPWzkhGs0In6i9NWNx43gzEX
-	dOEHsO1imaA44Lc+uUkenQiq4M4K0JBudJ/Z2D3m4Zu1jX9fPaJLTtzJBIxmQ6ZQil1dLiUNquj
-	2Lc4BE2XIwlPD1CuoSf8WAAJyBouPn8whc3SA2qFX/YRF8=
-X-Received: by 2002:a05:600c:3b08:b0:490:50ff:d394 with SMTP id 5b1f17b1804b1-49050ffd4f7mr128124975e9.16.1779664590868;
-        Sun, 24 May 2026 16:16:30 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-84164aee7f5sm7552651b3a.14.2026.05.24.16.16.25
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 24 May 2026 16:16:29 -0700 (PDT)
-Message-ID: <fdb053b8-afef-40c9-99cb-e0a6310d4b8e@suse.com>
-Date: Mon, 25 May 2026 08:46:23 +0930
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=28Zjk9BjqAOH4tnJ/0YY9EMvU/kgpVYqLykWzZbNXlc=;
+ b=f/h42O3QLZ96jpv6/8rGsNJe6zpDFjfvPTQGUImXrCkqb3ffiLI7GiXCHOicOSNIP3mGAoy6S4i1YwVPf/z12U9b0LXC6yc9x/0VvU03ZHrzencDfzjRQptSzJYy+Wby98xumCKK2S/vjKKjBGdrcHPL3sJJzu6+GwjGV452YRQ=
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from LV3PR04MB9258.namprd04.prod.outlook.com (2603:10b6:408:26a::17)
+ by MN2PR04MB6287.namprd04.prod.outlook.com (2603:10b6:208:1b1::13) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.48.19; Mon, 25 May
+ 2026 02:36:05 +0000
+Received: from LV3PR04MB9258.namprd04.prod.outlook.com
+ ([fe80::1d27:4d42:3be8:77f2]) by LV3PR04MB9258.namprd04.prod.outlook.com
+ ([fe80::1d27:4d42:3be8:77f2%4]) with mapi id 15.21.0048.016; Mon, 25 May 2026
+ 02:36:05 +0000
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
+Date: Mon, 25 May 2026 11:36:00 +0900
+Message-Id: <DIREOT147OSP.YY2ABOT2IFNJ@wdc.com>
+Subject: Re: [PATCH v3 3/5] btrfs: zoned: always set data_relocation_bg
+Cc: "Filipe Manana" <fdmanana@suse.com>, "David Sterba" <dsterba@suse.com>,
+ "Hans Holmberg" <Hans.Holmberg@wdc.com>, "Boris Burkov" <boris@bur.io>,
+ "Damien Le Moal" <dlemoal@kernel.org>, "Naohiro Aota"
+ <naohiro.aota@wdc.com>, "Christoph Hellwig" <hch@lst.de>
+From: "Naohiro Aota" <Naohiro.Aota@wdc.com>
+To: "Johannes Thumshirn" <johannes.thumshirn@wdc.com>,
+ <linux-btrfs@vger.kernel.org>
+X-Mailer: aerc 0.21.0
+References: <20260522090247.27445-1-johannes.thumshirn@wdc.com>
+ <20260522090247.27445-4-johannes.thumshirn@wdc.com>
+In-Reply-To: <20260522090247.27445-4-johannes.thumshirn@wdc.com>
+X-ClientProxiedBy: TYCP286CA0276.JPNP286.PROD.OUTLOOK.COM
+ (2603:1096:400:3c9::13) To LV3PR04MB9258.namprd04.prod.outlook.com
+ (2603:10b6:408:26a::17)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 0/3] Three folio-related btrfs fixes
-To: Matthew Wilcox <willy@infradead.org>, David Sterba <dsterba@suse.cz>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
- linux-btrfs@vger.kernel.org, Boris Burkov <boris@bur.io>,
- Filipe Manana <fdmanana@suse.com>,
- Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-References: <20260522181411.2487732-1-willy@infradead.org>
- <20260522223855.GA29010@twin.jikos.cz>
- <ahDtLYinnFX5CBcE@casper.infradead.org> <20260523140601.GA183694@suse.cz>
- <ahNaEb4XOBPJIZDk@casper.infradead.org>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <ahNaEb4XOBPJIZDk@casper.infradead.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: LV3PR04MB9258:EE_|MN2PR04MB6287:EE_
+X-MS-Office365-Filtering-Correlation-Id: 78ef508c-49b5-4d80-35d9-08deba065e85
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|1800799024|10070799003|376014|19092799006|366016|22082099003|56012099003|18002099003|5023799004|11063799006|4143699003;
+X-Microsoft-Antispam-Message-Info:
+	X5GhtBg4UtjNTPwabtg1MiP4Dvzjwfhrp8zpDcwDI8IYkLdBLjEvT65YD7o7QFRMJFzNGHyrPg4Q2zvk4pbB/D5svKpdbekVfhAuQWD3zE5YkCcUSVu25g3RSigI+d1HNWIjMcxfTTOgtlFhSxwFuJsPcd2oN8oUQ3bLsYmSwMSX0I3WRuAmYSX6LTjViFckXdqFsUtLrUmngrKA8mZrD/60wCLmkN838JYfsoqITDoU76C+p0ThTH6mYLPcNRCUoUuIftl4FcG07T2oZPghio+3GnxZzRN85FJkyJcEY6KxGdVab87Fg+AyXIbO2AHMFd4uy+zJwn4Oda1ax8flpC5gDM8q30BNDaDRW+dVJIHAd/oIPNQKqZHCm79iGz3aJ1u99851SJ6ZrMz96vMlMqCOQi9eysSDCrVT0Ml+c9E2n+WxZTX9XkRRWceHkPorZ54F7axzz+W9QTdcGLfs5HuNeBaZCns6OaBkPSA12Irtn5chc8IBGgLPCt9Pik5W7zPtkc0vRsEwPWf7rvwh9cyoq4UHnYRLBUJdgspwgf+kw3iGH5whxqd3AX7uaRtOf18iQ/A/AdThlDz8a6fpQn2QTD2q4irVng7c1WYsFCd/A+kZPpbPMuA8zu+JguGZcenOjZmwLyneDsVXo7ryAnDR4y7XnIyd5IKMD9kmWTjyNVEaoLMUPeka/hbxJ7LR
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:LV3PR04MB9258.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(10070799003)(376014)(19092799006)(366016)(22082099003)(56012099003)(18002099003)(5023799004)(11063799006)(4143699003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?utf-8?B?THFTN2FtRW0reEF0NUlTMUlNUnpkT1AvdjNYZUNhdEpOVTYrOGRVb0dIdkgv?=
+ =?utf-8?B?S0d1Vkx4TEtmSjdXMThFc2RuclBzbzRBdjZ4UEdVamUzb0tEMmVCd0M4ZTR3?=
+ =?utf-8?B?eW1ZWmk0bjRFT05kYXNacHYwYXJwK1FwK2RudjJsVmkwWHc0SUJObFR5M1BG?=
+ =?utf-8?B?MmtZenZhSDUxdWVsTi9sZnVVVWtwMVJJSlpSQW5ZcEtvN3QxaHV0anJFN1ZF?=
+ =?utf-8?B?dDBsZURVME9Td0lybTFXNTBWcS9RaFJVb0RpR2J3S0hhdHRqSHFhRWxsY0VD?=
+ =?utf-8?B?dXdVSXk0WXRUU1FKbXRkR0d5QkpQdkk2b1JrQXVFdlRmdjJLUThaeEZEU3Vl?=
+ =?utf-8?B?bFJPRzkrM0FkN0VWdjBtbjNvaDFDeCtncHp4ZjlaNWRqamtSZmNPWUx4b1p5?=
+ =?utf-8?B?RFdDN25CMDJLNGk0OUE4TDEyU2FjSHlvM252NFFwMXY3cjROZUtDVWlMYmhH?=
+ =?utf-8?B?QjF5Y0VnT2kzRU9LSkx1eUpyWmRaV2hldmhiempyZFZkS3VLbFRGMStzYXBj?=
+ =?utf-8?B?Y0NqTU91WVJHQlJNTVl0NmFyMlJYcDY2djNBZW83YmxvNkNnSlRlTVF4MHRB?=
+ =?utf-8?B?a1JhQTU4YmxTczZ3ZlpERHVvaHMvVDV0SWdTdGNhL2laTW1wZmlVNXRtZS91?=
+ =?utf-8?B?Z082a2ZQcDh2aFE4dTFrSlNnK0xxRzNQZXR1TGtPNHE2RjIwcElRcnNuK29m?=
+ =?utf-8?B?WW1HcjVjY0I5RTZNcWJzaDFGdHFzQTZiSFVDbmNucVdFSDRxVWxKSkRCUHVD?=
+ =?utf-8?B?MmphVGQ1RGhnMFRWc2xMQmU5aE9iLzcxSlhSTHR5RDJnbVJ1R1pLZnpTT2Q4?=
+ =?utf-8?B?elJ5ZXM5MWNWYmVjZjBtcXhTM1pmZUFXUFlLd2xTMHNsZWNKM3NyUVJRR1hT?=
+ =?utf-8?B?blIvZFE3bVZHYWVXc0VscFdMRG5Udk1qbklNRTR1WEJEOERmUW5pWWRJN2Zz?=
+ =?utf-8?B?TzFJcXNtM3VXemYwbFV5eTRXUnM4S2R2Zm51V3BPemxWZUo4Z005Rkdlbmpp?=
+ =?utf-8?B?M0RHYmVQSThZRkJ1RnZzdE43bHVRK281c0Rab3VyOXRSS0R6b2dlOTBkQXZO?=
+ =?utf-8?B?c1YwdU5zOGE3SXJSd3ArYjR0K1RIWEhwSTcxWFB5S2xucllaYkFjQjErZ1Az?=
+ =?utf-8?B?VThpUEZKNURWS0VtL04xTi9MQXpEaHpXZVpROFdqWjdVTDNUeWRIMnhCUXVI?=
+ =?utf-8?B?bXdhRWxZWWxwUXF2cEtrb0ZOajNxaTNGR2hEYTJkaW52N3huWFd6MVNtS1NS?=
+ =?utf-8?B?Z0FXbm16RmJTMnJpQUpzYlh1T2cyQSttZVkzaFhvOGFYd0NrT2lPYzRoalRE?=
+ =?utf-8?B?YWM4TjRpalhHMm1UOVMvVk16OTRvd2I2K1M4cEVvb09TZnh1TDhmcTZiMTg5?=
+ =?utf-8?B?WkptTkJTSXNKZjRMQ3FTZVZGdWVEb0h0VUY0akl4RkYrVmdwMllaOHgrRlpX?=
+ =?utf-8?B?ZGVYeUVOUFJYVWZnMVc0UFF4LzJrNUwyRHlvQ2ViVDhQdkJyYmZDa09aTURD?=
+ =?utf-8?B?UU9VVTV4bnJKdldzeGZqZDFlMGd3eERranBWVFU4Tm9WRFB6L0FUYnZNeUor?=
+ =?utf-8?B?TkRzazZBZzJKcWRSZEpVc2FQWjdYZEJMK09oajhrL1B3cEpEK1dHQzZXNzRj?=
+ =?utf-8?B?ZDc1THp1TEtXcGlJYVRVU3o3YXpFOUhLNTdobUx0TXA5cHgyR2lzUndHc0tC?=
+ =?utf-8?B?dXV5Y01VbWlrNVZTQ1NPV0IxcWZWQlIybHkvYXFpS1NMckNvK1dOMGIvRURl?=
+ =?utf-8?B?bk5sbnh2b0dZVXEvRWlKY2hFTVRpd2o3dkRiTGVnOU1tVnBoNGl2Y01kZTF1?=
+ =?utf-8?B?eE9rVzdJZVh4OEdLSnY2Qi91VS9uVUFyS3dLR0Vua3ozRXZWM29MbmtnV0VR?=
+ =?utf-8?B?cFFLa3paa3JLb2lKUm93T3k1Z2s2TmMxdThBa1RHRzhYQ2RiNGw2WldINitz?=
+ =?utf-8?B?aHp4TWVFMUJieEU3TUdRejdxMlZRNG9ZT2dLWGhpOVdabktIZnNRWTZYdUVp?=
+ =?utf-8?B?UnF5Z3BDWmowcnlEMVNpemV3SGJNc08xYnpDdFA3b0RkTTExNnp3VGY5bzVh?=
+ =?utf-8?B?d1l5ZHV5a2VJcU9CTXhOOGRsS1FIYWlrNWpLWDRyWjlnMW1OaDdIR0JScnVJ?=
+ =?utf-8?B?WkdKU2RFTkZqcVVQNjBNRWloU2Q0ZnlHU0tpQUVsRXlWeVdsVTZLdHJLU3RL?=
+ =?utf-8?B?STJxM1pIWkQyVnVpQXc1dzF1TmNNMVl0a3F4S0FYeXkyU1JrTi8xUTJ6bGZu?=
+ =?utf-8?B?eDJiQ3hxWUZ4ZWJIb2ZsQU1YSEhhNytwcWE1RDZSWDhxb3lZS0ZWbFMxcUlx?=
+ =?utf-8?B?SCtJTlczYm16L1VuVWhpNHRzWSttR3hxNmVISlI5K0VVTTVMQ0Naa2RYNU9G?=
+ =?utf-8?Q?rA5q69W17QMnNU0jV5rJh/dHpEoo22PutMGayPINpJqdh?=
+X-MS-Exchange-AntiSpam-MessageData-1: dO/NVdKWgG6PGg==
+X-Exchange-RoutingPolicyChecked:
+	Pq5eyZ0ZguVzrKaQIcCRoGxs6lTBGsNRWu8N1nR2D0eKxfHYQX0w3M+a2+wbA8vthPJatyUDGVEmwwxhhgn++35Np1b9lx//AH86AbdDUMbFWnHTgzA7LAxeMwF7wFoGGEVHThMJfd2PI/G9fTPYpEtlZxNpaUvGxKUxDhAZqpDjacgOv/55Ez4Dg308rdmfcb9oc9fo8BYCA8BMdCvYGXdCj62fnULPOXl6AW5iacwiXpaCyrbh3DNV9jNUtN2eUbKkUB/bTEHO2Lj1CxyAk2j444mRkDHqQOQ4LmJ0Fe0f6gd6eWsBWMOQ8hPL7ajAd6AtmLkqdyI1F9kEHxjHzw==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	liaVLzJBV1/vLC0Qw8t7+2tEx4iKCYN1ZOfu9j+rByuCLVR/vNMJKHqYaQUMC5x/adFmvP0T8irhkzdwUAM+9lp4vNFMeEghinsli5KArXCcF5kkwmBT4LwqaPo7J5vYy8ao4ehTGMf1ixzgf28Qs3gNsMZY/+65k0pHCp9c5gmHZ7eTNFQhkbDElxlp5Ki9w7qIzfh7kPQdVAAPXH3ukjkc8E+OmtLcjF9+S7/FEcu0dmwnNyreYsFgl+x992UFUeIjuA8J10jJ2yE5zPb4IUE4AwS+KuI34gdqoEEVYmC9qKfP0Yn4+S9paEjVnepaQYvK9piHbyz8Rb5oUJubR51onXaHtj6GLFEGzqsn1jDqIYfE2xXMBqir7xdBu6ow88BSW7ZYgnaHPjjTViLgP7tjfbuiA3hVlfIqqoV9d7jIpA4tAZ22PJ7NkJ0sOiGMFENifm3gvXLSghGzJvlKKvmMuj3e5+2pALpNQHvGtmafZLUnO0zizD+FGbsf8TWS1NdEngtlwyQG5WzbzEz/gJaokfxlrdx1ROgpZ1U33mKq16Znus4XVI9v3CxzlJ0ZlhDirGuHERqq62ZgpJDDOtsjodqtKWgJ+ZMv7K82uBs0OU2vNxlpi07Eq29SlQZv
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 78ef508c-49b5-4d80-35d9-08deba065e85
+X-MS-Exchange-CrossTenant-AuthSource: LV3PR04MB9258.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 25 May 2026 02:36:05.2961
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: ckcykY+sMMkbAjlVhydXoUCZcO7vYKhmXD/EyRTzsFdlMCVjgyjB3DcZ/q1ZBUtXNpKlnHLxec1U18kBt0bORw==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR04MB6287
 
+On Fri May 22, 2026 at 6:02 PM JST, Johannes Thumshirn wrote:
+> When searching for a data relocation block-group on mount,
+> btrfs_zoned_reserve_data_reloc_bg() is looking for the first empty DATA
+> block-group. But it first checks if the block-group is empty and if yes
+> continues the search, and then checks if it is the first DATA block-group=
+.
+>
+> There is actually no point in looking for the second empty DATA block
+> group as new DATA allocations will just allocate a new chunk for it. Pick
+> the first DATA block-group without any allocations done and set it as
+> relocation block-group.
 
+I think we can add context here.
 
-在 2026/5/25 05:35, Matthew Wilcox 写道:
-> On Sat, May 23, 2026 at 04:06:01PM +0200, David Sterba wrote:
->> On Sat, May 23, 2026 at 12:56:29AM +0100, Matthew Wilcox wrote:
->>> On Sat, May 23, 2026 at 12:38:55AM +0200, David Sterba wrote:
->>>> On Fri, May 22, 2026 at 07:14:06PM +0100, Matthew Wilcox (Oracle) wrote:
->>>>> All of these were discovered through auditing the (mis)uses of the folio
->>>>> API throughout the kernel; I haven't been specifically reviewing btrfs,
->>>>> nor testing.
->>>>>
->>>>> Matthew Wilcox (Oracle) (3):
->>>>>    Revert "btrfs: fix the file offset calculation inside
->>>>>      btrfs_decompress_buf2page()"
->>>>
->>>> Why do you do the revert? It does not seem suitable for this case, we
->>>> use reverts if we want to get back to the original behaviour, or when
->>>> removing a patch from a long series to avoid a rebase. Merging the first
->>>> and second patch makes more sense to me.
->>>
->>> The revert is for a patch which was merged into v6.16.  Since the fix
->>> for page_offset() was merged into v6.15, af566bdaff54 should never have
->>> been merged, and it can safely be reverted.
->>
->> That it can be safely/cleanly reverted does not matter, you could say
->> that about many other patches. If the code was wrong then fix it in a
->> "forward" manner, no need for revert, namely for code from a year ago.
-> 
-> The patch should never have been merged.  It didn't make sense at
-> the time.
+At first, the commit 694ce5e143d6 ("btrfs: zoned: reserve data_reloc
+block group on mount") introduced the functionality. At that time, we
+took second unused (used =3D=3D 0) block group, as the first one might be
+a block group used for normal data.
 
-You're completely right, and it's all my fault.
+Later, commit daa0fde32235 ("btrfs: zoned: fix data relocation block
+group reservation") switched to look for an empty block group
+(alloc_offset =3D=3D 0). At this point, there is no reason taking the secon=
+d
+one anymore. So, this commit is fixing an issue in commit daa0fde32235.
 
-The background is more complex, and making the patch more unnecessary.
+>
+> Singed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  fs/btrfs/zoned.c | 8 +-------
+>  1 file changed, 1 insertion(+), 7 deletions(-)
+>
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index 16dd87aa06f2..a4d2fb774f72 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -2763,7 +2763,6 @@ void btrfs_zoned_reserve_data_reloc_bg(struct btrfs=
+_fs_info *fs_info)
+>  	struct btrfs_block_group *bg;
+>  	struct list_head *bg_list;
+>  	u64 alloc_flags;
+> -	bool first =3D true;
+>  	bool did_chunk_alloc =3D false;
+>  	int index;
+>  	int ret;
+> @@ -2784,13 +2783,9 @@ void btrfs_zoned_reserve_data_reloc_bg(struct btrf=
+s_fs_info *fs_info)
 
-Firstly that patch is sent and merged just before v6.15-rc1 came out, at 
-that time our development branch is based on the late v6.14-rc tags.
-Thus the proper mm fix would not show up until v6.15-rc1 was out.
+Could you please fix the comment here?
 
-At that time I was testing btrfs large folios support, shaking out bugs 
-and sent out fixes as preparation patches.
+	/* Scan the data space_info to find empty block groups. Take the second on=
+e. */
 
-Without that upstream fix showing in our development branch, the patch 
-made sense and got reviewed and queued, finally got upstreamed in the 
-next cycle (v6.16-rc1).
+Other than that,
 
-However just days before -rc1 came out, I got the reply from you 
-answering the question I submitted to the MM list 
-(https://lore.kernel.org/linux-btrfs/Z-7I9hOcGzQMV3hq@casper.infradead.org/), 
-which already shows the upstream commit.
+Reviewed-by: Naohiro Aota <naohiro.aota@wdc.com>
 
-At that time I should have removed the patch from our development 
-branch, but due to other reasons (I guess it was again the 
-update/testing of btrfs large folio support), I didn't notice that, and 
-lost the final chance to remove the patch from queue.
+>  again:
+>  	bg_list =3D &space_info->block_groups[index];
+>  	list_for_each_entry(bg, bg_list, list) {
+> -		if (bg->alloc_offset !=3D 0)
+> -			continue;
+> =20
+> -		if (first) {
+> -			first =3D false;
+> +		if (bg->alloc_offset !=3D 0)
+>  			continue;
+> -		}
+> =20
+>  		if (space_info =3D=3D data_sinfo) {
+>  			/* Migrate the block group to the data relocation space_info. */
+> @@ -2849,7 +2844,6 @@ void btrfs_zoned_reserve_data_reloc_bg(struct btrfs=
+_fs_info *fs_info)
+>  		 * We allocated a new block group in the data relocation space_info. W=
+e
+>  		 * can take that one.
+>  		 */
+> -		first =3D false;
+>  		did_chunk_alloc =3D true;
+>  		goto again;
+>  	}
 
-
-Finally what makes things worse is, btrfs large folio support came way 
-later than all those hassles.
-
-v6.15 fixed the page_offset() bug for non-head page of a large folio.
-v6.16 came with the btrfs' local fix, which is unnecessary.
-v6.17 came with btrfs' experimental large folio support.
-
-This means, there is no way to hit a large btrfs folio anyway before 
-v6.17, thus the local fix is not helping but only introducing an 
-overflow bug for 32bit systems.
-
-> Reverting it is the right approach.
-
-Yes, reverting is correct, it fixes a bug (overflow) that is introduced 
-by that patch, and there is no better way other than revert.
-
-Sure you can do a minimal fix by just fixing the type before left 
-shifting, but that won't resolve the fact that page_offset() is already 
-fixed.
-
-And the revert is also safe for backport.
-The only affected branch is v6.18, and at that branch there is already 
-the upstream proper fix.
-
-> There is no "forward"
-> to move it to, other than converting the code to use folios instead of
-> pages, which I'm not signing up for right now as that's more involved.
-> 
-> The fact that it's been in for a year with nobody reporting the bug just
-> shows the lack of 32-bit testing (and users).

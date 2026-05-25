@@ -1,59 +1,59 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 81034316199
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 04:55:35 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2241933EF
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 05:05:55 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779684937; cv=none; b=J9Oz+AzzGEUPyrRnuAMsm3VCUQt25SMWvaKMYSBOYFv1NoAXpmmnjLV3cjDUNMIyDi01MRKitdHCr39ZsU7tqSD9hEd6WhakbhjgEOz77PvGRlxYaMx/aedcDvNu5KorVXZFhpa8MhdihJZHM9b0wXqsLunUzPFHIKVuwbd/84o=
+	t=1779685557; cv=none; b=T9t3/uqh8njlP8XkKywKkXdbpZgsAgAOaBfO8eBR+nWVwezETQhiXLZ6dfkdacdtYHyNm1kqZtoaWuZJc9JK6ulHxpL2aCzo2pja6GDr3QP/XXO9rDosRxWxLVX/fx/HvIgXixCU1IDwg2UmkCgl/Jy2oW89ixnT58jgcdpX66M=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779684937; c=relaxed/simple;
-	bh=SWS57+zDSunyKNrUdyFTCturWTSc6m2sEG6C7wuYKo0=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=VaCo9LrV79BldBHFilg4UFEZwXnc0uZsorQVkPnMfsl+sWUjdHVXD3gipq+2b8V/jB2uSWPIVOciK7M1xqFDDf9pcmii4XnQTRUotB2DwmEW6gxL8KxHzfiXCtbkZMV3TrxkCAeF4O0yKflJC5oCBs+jkeAXpg3S2PMQXb9EcRo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=P0qX2cbj; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=P0qX2cbj; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1779685557; c=relaxed/simple;
+	bh=XxHQh9TJuHtpE3sxCNQFzL7HOC/Lxj5MhYCqfyu0b9I=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=ucPPq3OmfC9bosqLY9Rn/gtpaD5JDDKZli+3jwQhRsUiANjEEjMpe7F+P+usXoUPiPw+HWZBgcKwaG/6Sbbn+NgEK79xNnBhe1DFFNENOTWpk3KFzVvo4ns6KwH5whvPeQVL8vnxaLXT2Z6u8Nk4tQeQrlsQIU2guCXcXuvpUg8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=R8i5KHGW; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=eG9wvC2f; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="P0qX2cbj";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="P0qX2cbj"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="R8i5KHGW";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="eG9wvC2f"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 809026888C
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 04:55:33 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 18B776891E
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 05:05:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1779684933; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1779685554; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=nK9OP3NjqqxQ8f4bjpgCG1qcZ4ZDBSY7yBW2HuWsd0g=;
-	b=P0qX2cbj/zxvfK3lYWx7bxOLPWhgrgOACbcCYu2JCoEWdKhYbLvw2j5SfcLIWNj/ui2VEq
-	6PFoUdhikli2VQVeMQRCt+06T30gME9TKmRs5cKLIoDNVJ0Bzz3s9GzNJ+oD1o1xD9dLtm
-	f0mriCH1S+T8c4u0qp8rxVviWFjoL0w=
+	bh=gVXKAp1bgMqjtfR+eslI/SYpSykUTeq6rKgMlNYyFEo=;
+	b=R8i5KHGWaxeWntK5jpS518BjoqbV/nJiHq8js3dUQe45SE1i3UZ8VhppPnyBwQlNESb+2+
+	2Dd8QthX4gxOZxE5Ehb8W9KJwm6sGPgcSFjU83/an/3hIJm9VfAHXvFxcPA9r3xnyn080t
+	LOHFrn/oRaskNjIeuJwRZa+kuaXLBjE=
 Authentication-Results: smtp-out2.suse.de;
-	none
+	dkim=pass header.d=suse.com header.s=susede1 header.b=eG9wvC2f
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1779684933; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1779685552; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=nK9OP3NjqqxQ8f4bjpgCG1qcZ4ZDBSY7yBW2HuWsd0g=;
-	b=P0qX2cbj/zxvfK3lYWx7bxOLPWhgrgOACbcCYu2JCoEWdKhYbLvw2j5SfcLIWNj/ui2VEq
-	6PFoUdhikli2VQVeMQRCt+06T30gME9TKmRs5cKLIoDNVJ0Bzz3s9GzNJ+oD1o1xD9dLtm
-	f0mriCH1S+T8c4u0qp8rxVviWFjoL0w=
+	bh=gVXKAp1bgMqjtfR+eslI/SYpSykUTeq6rKgMlNYyFEo=;
+	b=eG9wvC2fsNnS+tIprQ3PvJAqWLCtz2p+vQovPxViLmO9U5gwdAPy7/saerw02ZrGuYMTZV
+	44PwItooXLJHDSMrA9BYOpRY32wJp9d507ui8fRuJbrzUJqL9P2NAHxxhizmEVOUHUqEHa
+	Rw+1uwXqGhgaAUcum/UiyWFYIZK4hwI=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B6EB559A7A
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 04:55:32 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 55E6C59A85
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 05:05:51 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id ROCeHUTWE2pkCAAAD6G6ig
+	id uh96Bq/YE2r6EQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 04:55:32 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 May 2026 05:05:51 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: use IOMAP_DIO_BOUNCE flag instead of falling back to buffered IO
-Date: Mon, 25 May 2026 14:25:10 +0930
-Message-ID: <821ee12cd5a6f24206259a42d48c47fb3731da79.1779684900.git.wqu@suse.com>
+Subject: [PATCH v2] btrfs: use IOMAP_DIO_BOUNCE flag instead of falling back to buffered IO
+Date: Mon, 25 May 2026 14:35:33 +0930
+Message-ID: <e578ff1a2dd9a4f720ea77bc601534734ce87e18.1779685479.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -62,29 +62,39 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Queue-Id: 18B776891E
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MX_GOOD(-0.01)[];
 	RCPT_COUNT_ONE(0.00)[1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
 	ARC_NA(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	internal_greylist_whitelist(0.00)[2a07:de40:b281:104:10:150:64:97];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,suse.com:dkim,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spam-Flag: NO
 
 Previously btrfs forces direct writes to fall back to buffered ones if the
@@ -125,14 +135,18 @@ fallback.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/direct-io.c | 43 ++++++++++++++-----------------------------
- 1 file changed, 14 insertions(+), 29 deletions(-)
+Changelog:
+v2:
+- Rework the comment in btrfs_dio_write()
+---
+ fs/btrfs/direct-io.c | 45 ++++++++++++++++----------------------------
+ 1 file changed, 16 insertions(+), 29 deletions(-)
 
 diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
-index 57167d56dc72..719b94497c41 100644
+index 57167d56dc72..173fe065fc38 100644
 --- a/fs/btrfs/direct-io.c
 +++ b/fs/btrfs/direct-io.c
-@@ -768,10 +768,23 @@ static ssize_t btrfs_dio_read(struct kiocb *iocb, struct iov_iter *iter,
+@@ -768,10 +768,25 @@ static ssize_t btrfs_dio_read(struct kiocb *iocb, struct iov_iter *iter,
  static struct iomap_dio *btrfs_dio_write(struct kiocb *iocb, struct iov_iter *iter,
  					 size_t done_before)
  {
@@ -143,9 +157,11 @@ index 57167d56dc72..719b94497c41 100644
 +	unsigned int dio_flags = IOMAP_DIO_PARTIAL | IOMAP_DIO_FSBLOCK_ALIGNED;
 +
 +	/*
-+	 * If the inode requires datacsum or data profile requires duplication,
-+	 * We can not do zero-copy using the folio provided by user space.
-+	 * Has to bounce the folios to prevent modification during writeback.
++	 * Userspace may modify the buffer while DIO is in flight. With
++	 * data checksumming this would produce a checksum that doesn't
++	 * match the persisted data; with duplicated profiles the mirrors
++	 * would diverge. Bounce in those cases so writeback sees stable
++	 * content.
 +	 */
 +	if (!(inode->flags & BTRFS_INODE_NODATASUM) ||
 +	    (data_profile != BTRFS_BLOCK_GROUP_RAID0 && data_profile != 0))
@@ -157,7 +173,7 @@ index 57167d56dc72..719b94497c41 100644
  }
  
  static ssize_t check_direct_IO(struct btrfs_fs_info *fs_info,
-@@ -800,8 +813,6 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+@@ -800,8 +815,6 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
  	ssize_t ret;
  	unsigned int ilock_flags = 0;
  	struct iomap_dio *dio;
@@ -166,7 +182,7 @@ index 57167d56dc72..719b94497c41 100644
  
  	if (iocb->ki_flags & IOCB_NOWAIT)
  		ilock_flags |= BTRFS_ILOCK_TRY;
-@@ -815,16 +826,6 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+@@ -815,16 +828,6 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
  	if (iocb->ki_pos + iov_iter_count(from) <= i_size_read(inode) && IS_NOSEC(inode))
  		ilock_flags |= BTRFS_ILOCK_SHARED;
  
@@ -183,7 +199,7 @@ index 57167d56dc72..719b94497c41 100644
  relock:
  	ret = btrfs_inode_lock(BTRFS_I(inode), ilock_flags);
  	if (ret < 0)
-@@ -865,22 +866,6 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+@@ -865,22 +868,6 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
  		btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
  		goto buffered;
  	}

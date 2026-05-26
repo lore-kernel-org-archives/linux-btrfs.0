@@ -1,293 +1,334 @@
-Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from shelob.surriel.com (shelob.surriel.com [96.67.55.147])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6666B3A380F
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2026 21:43:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D0FB983A14;
+	Tue, 26 May 2026 22:38:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=96.67.55.147
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779831782; cv=none; b=RN7TIC6j6quskVbTTHdK4BvXJRwwPT2JasFIPhPfTRTfY8hW4sTf1tJZhFKeDf1xkoZ7B9uGrbUNrUaaiaF6pUf1KXYpFvKxE2LZBzVO7kSL/aSbpZFeHRcbGRd4pSnxxGkVEavStBZu+YfCyau+aNyG8r4w2DqHd6OFBzcC/Nk=
+	t=1779835100; cv=none; b=jkThqZSB+Lfyl3gnvnqeonMf4sG++9EbhrrQT2ErO82COawUZZcQi5No+Ue/N4IbPaNu1+5s+0bVO/ug4gWIuVmT1DWoaQO64hxQLLea2NBaTA3753wguhisoJcMB3efLsYTqsNHZQWnLzOQT6aL0Xbch9iLDPzv84WRTT8dVEY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779831782; c=relaxed/simple;
-	bh=5OigM3VkT4jIdUaI8WZ2bNs5rDIbKdRQXk1Cl6WzPds=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=CSUsXIYvkE/lqFz+CGlgiaoXMDO8ohZueWn2kLbFw0N1hjaxmTYshaf8XFvIyCx2SSEePXQtEwsCHdX2Oyki0fzuwbAe80pXuuVZAsle6yNfG8ffJeLRT/OQniOawJe680K7KbEwi8pgcV5pAQ1jr5pcFjjkvd8ELhQCf9Jgw+I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=MneCTNEZ; arc=none smtp.client-ip=209.85.128.49
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1779835100; c=relaxed/simple;
+	bh=RuUubhEqZiPxmOYT0zJ7gBpEgU2HVWDFaoDLcrBkPR4=;
+	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type; b=XIvnuAEp2yAJka+EnurLhDjpzMbhT8qId6Gi+eOpw5PrCfFBVuOaADLA0ZkJ8PUU0qmQCuhRBOJlIGYWAP8U1YHwohGLNJK/jJAmbrdeVaLGXZ5PWBUuLMkeCM/BxqxIX0FSsfNIK1mTZybofTitaokzJOIVDNYUOWEVeMJ9iDM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=surriel.com; spf=pass smtp.mailfrom=surriel.com; dkim=pass (2048-bit key) header.d=surriel.com header.i=@surriel.com header.b=abBhKs0V; arc=none smtp.client-ip=96.67.55.147
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=surriel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=surriel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="MneCTNEZ"
-Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-4896c22fcbaso94675995e9.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2026 14:43:00 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1779831779; x=1780436579; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=yD+8njfhHqex8SazD1eDRurrlAkfN6Vj8mm2i7lIJuw=;
-        b=MneCTNEZPXH4jhlzo3Ed0ZOKCopoBz6+B4K04UbS/WV7O+/RtulbqHHqJOzCdhGQTz
-         YGRMDfo/OYhjX4S7KcGH+CL/UR9zk/d852NLrZgmvV5QC8WFFxqsDof056UyJIuKWm1X
-         JQthBf2msmnXpjkpJeHqS8ra7Fmb+iFr9Q8N+L0vd/9M9cpCjwPNk7gYL8VFEJ5WSoGa
-         TPFramN5g5USEjGrendLPXAsKR8wZpN1cF/Lls94OJ9R9IPonXjqHIOMc8qrp5MXQly5
-         +KhCuil13EmWMZRUS1IMtYKeVlNvzyxojqaPe/aFJDK7JXYsPG/jATRmz7nF9s9yLR09
-         Z0Wg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779831779; x=1780436579;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=yD+8njfhHqex8SazD1eDRurrlAkfN6Vj8mm2i7lIJuw=;
-        b=B6Jeuy485vPxp7ZPu5C0ShLEPEgqtvhh1LKhNzymtI0KrWKA/HeXyYnLEukJQ7ebbe
-         smUeXySjyxKVs0TTIq+JTSQCstzp1/C+63f+oICodmdUAZtYzpPURUti3p+VERKQj9Du
-         bbDc/KHV02l4G0OojarRqcH5mIOsTt9dn16/fbywC/X6mLb79c3QHnXysAjrrRrixq7J
-         PT25XDYyxu0C/fWRg1MG0fUgXlgKCLF9FFymi82lh82mAQLvWp0BBVBBNJN8WaYKPjru
-         jmcZTo26m9x4y+aQM1RCCUsonintcfW+rDw8nvLNt64Z3zvoqCMZKXmRHKIK7Rje9otS
-         iUlg==
-X-Gm-Message-State: AOJu0Ywv2YJZJOqa8thxYi6WV3NecRpJ6p7e/+5dtoOKe7n8GnIR89HX
-	Ukd8ubeMRVSyGDoRAQeCcMGNY/wi5rgQO8QHyKauCMufoW/bR62LaL6z+vRXZ8licznlnspT5UF
-	i2yVW
-X-Gm-Gg: Acq92OEfKnTPFV9A2LvvDeebaSWekTksDgOzufFJ7IUVTqGqFRCO039KSone39BQDQv
-	oPjVtmKPj01F48nIO2nJyOTREpT0ni7S2vFpHn1C0ChkRs1F6wK5K32W2uy9nrDbiYBLzeto0Ia
-	geuAjGleHP1XHecQr44lrvSNIU3Tz/s+16gcuMxbDZ2+oorB7MP/yJcjtZROyDL08AH/dH2xZ0B
-	t5q3S4geG0fnkQOZgKCdc4++HRKmvcfE8F3TXvP3U9Nb/tWAXQ+XWpXJLu1p3rlqjN0Ok8r1luC
-	TqdjgMQZm93C/UZ2j6gnyxu6U7bnman8zg3Mt5uzxnhJXw57FcZeYnmx5puyC6vbB5KTLkqm2kg
-	MFoe6Za6aj0CZJn04RPtlyzeRp5yo5bkHNUgOTJpxyaWFx1q6xrUTEuNdguiWSHwVZQy+EQRmDW
-	k4QOpMKN39LRy6/FrXUC1Vn80iIaG9ZAhRmnQ63lwdF5xq59s11VT60u164WAzsdXZ6h3Sucbnc
-	spLsfHIYj1OEvvG/X6ThH5S9w/ykOhobeJ862Mcm0t9hnie2U9mQObsCw==
-X-Received: by 2002:a05:600c:4ecc:b0:48a:557e:6b4f with SMTP id 5b1f17b1804b1-490426d2805mr305981295e9.23.1779831778568;
-        Tue, 26 May 2026 14:42:58 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c85200c3feesm11331186a12.0.2026.05.26.14.42.54
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 26 May 2026 14:42:57 -0700 (PDT)
-Message-ID: <7f0ab384-c077-4ec2-8f74-049e3963fb5a@suse.com>
-Date: Wed, 27 May 2026 07:12:52 +0930
+	dkim=pass (2048-bit key) header.d=surriel.com header.i=@surriel.com header.b="abBhKs0V"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=surriel.com
+	; s=mail; h=Content-Transfer-Encoding:Content-Type:MIME-Version:Message-ID:
+	Subject:Cc:To:From:Date:Sender:Reply-To:Content-ID:Content-Description:
+	Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:
+	In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:List-Subscribe:
+	List-Post:List-Owner:List-Archive;
+	bh=uWmi03TB0GBEII3plN7oGGBixiuBlNSlIQ+upsHcypE=; b=abBhKs0VXMI99JtTCuaGsoaiVt
+	9XGvaSZmYdJ5fi8QwEKVIYGhfb2WFx33xwqMaLg0DRQYNPg2w0nBeEERCKVYL9xEUEfEWxPvAVG6y
+	V+QEOxmMdOQVsE8yNFkCd6EdIk295bilzjVGWuow+7bZ4+hlhxTZQH02mZxYRp1fvIFoZmqNJsfrW
+	AImM3e2DNWEDlz7SzxOum7me2wLpEj5yk5WZYbIlK08I3ZThec4rxFfL0dG6CSXpcQoiGyRsxl+Yu
+	KGlL7iql15HzigZ3lvXJzbjh8To6gFYDTwX9VgyGjJX2pctJnccWO8ehoqPOTQZACYbJDoEY4JPfo
+	5/U9zytw==;
+Received: from [2601:18c:8180:83cc:5a47:caff:fe78:8708] (helo=fangorn)
+	by shelob.surriel.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.97.1)
+	(envelope-from <riel@surriel.com>)
+	id 1wS0P6-000000004kP-02V7;
+	Tue, 26 May 2026 18:37:40 -0400
+Date: Tue, 26 May 2026 18:37:39 -0400
+From: Rik van Riel <riel@surriel.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: Boris Burkov <boris@bur.io>, Matthew Wilcox <willy@infradead.org>,
+ Christoph Hellwig <hch@infradead.org>, kernel-team@meta.com,
+ linux-kernel@vger.kernel.org, Chris Mason <clm@meta.com>,
+ hannes@cmpxchg.org, usama.arif@linux.dev, linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: allocate eb-attached btree pages as movable
+Message-ID: <20260526183739.270a5387@fangorn>
+X-Mailer: Claws Mail 4.3.1 (GTK 3.24.49; x86_64-redhat-linux-gnu)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: use IOMAP_DIO_BOUNCE flag instead of falling
- back to buffered IO
-To: Boris Burkov <boris@bur.io>
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+
+Extent buffer pages allocated by alloc_extent_buffer() are attached to
+btree_inode->i_mapping (the buffer_tree path), reach the LRU, and are
+served by the btree_migrate_folio aops in fs/btrfs/disk-io.c. They are
+migratable in practice once their owning extent buffer hits refs == 1,
+which happens naturally. The buddy allocator classifies them by GFP, 
+however, and bare GFP_NOFS lands them in MIGRATE_UNMOVABLE pageblocks. 
+The result: every btree_inode page we read in pins an unmovable pageblock 
+from the page-superblock allocator's perspective, even though the page 
+itself can be moved.
+
+Have each caller of btrfs_alloc_page_array, btrfs_alloc_folio_array,
+and alloc_eb_folio_array pass in the full GFP mask directly, instead
+of having the functions calculate it from boolean flags.
+
+The alloc_extent_buffer call site passes GFP_NOFS | __GFP_NOFAIL |
+__GFP_MOVABLE. All other call sites pass plain GFP_NOFS.
+
+Three categories of caller stay on bare GFP_NOFS, deliberately:
+
+  - alloc_dummy_extent_buffer / btrfs_clone_extent_buffer: the
+    resulting eb is EXTENT_BUFFER_UNMAPPED, folio->mapping stays NULL,
+    the folios never enter LRU, never get migrate_folio aops. Tagging
+    them __GFP_MOVABLE would violate the page allocator's migrability
+    contract and they would defeat compaction in MOVABLE pageblocks
+    where isolate_migratepages_block skips non-LRU non-movable_ops
+    pages outright.
+
+  - btrfs_alloc_page_array callers in fs/btrfs/raid56.c (stripe
+    pages), fs/btrfs/inode.c (encoded reads), fs/btrfs/ioctl.c (uring
+    encoded reads), fs/btrfs/relocation.c (relocation buffers): same
+    contract violation. raid56 stripe_pages additionally persist in
+    the stripe cache (RBIO_CACHE_SIZE=1024) well beyond a single I/O,
+    so they are not transient enough to hand-wave the contract.
+
+  - btrfs_alloc_folio_array caller in fs/btrfs/scrub.c (stripe
+    folios): same -- stripe->folios[] are private buffers freed via
+    folio_put in release_scrub_stripe.
+
+This change targets the dominant fragmentation source observed on the
+page-superblock series: ~28 GB of btree_inode pages parked across
+many tainted superpageblocks on a 250 GB test system with btrfs root,
+preventing 1 GiB hugepage allocation from those regions. With the
+movable hint, those pages now land in MOVABLE pageblocks where the
+existing background defragger drains them through the standard
+PB_has_movable gate, no LRU-sample fallback needed.
+
+Cc: Chris Mason <clm@meta.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: Boris Burkov <boris@bur.io>
 Cc: linux-btrfs@vger.kernel.org
-References: <e578ff1a2dd9a4f720ea77bc601534734ce87e18.1779685479.git.wqu@suse.com>
- <20260526175955.GA1359754@zen.localdomain>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260526175955.GA1359754@zen.localdomain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Signed-off-by: Rik van Riel <riel@surriel.com>
+Assisted-by: Claude:claude-opus-4-6
+---
+v2: pass the gfp mask directly to each function from the callers (thanks Boris)
 
+ fs/btrfs/extent_io.c  | 43 +++++++++++++++++++++++--------------------
+ fs/btrfs/extent_io.h  |  4 ++--
+ fs/btrfs/inode.c      |  2 +-
+ fs/btrfs/ioctl.c      |  2 +-
+ fs/btrfs/raid56.c     |  6 +++---
+ fs/btrfs/relocation.c |  2 +-
+ fs/btrfs/scrub.c      |  3 ++-
+ 7 files changed, 33 insertions(+), 29 deletions(-)
 
-
-在 2026/5/27 03:29, Boris Burkov 写道:
-> On Mon, May 25, 2026 at 02:35:33PM +0930, Qu Wenruo wrote:
->> Previously btrfs forces direct writes to fall back to buffered ones if the
->> inode has data checksum or the profile has duplication.
->>
->> That fallback is to avoid the content being modified that the final
->> content may mismatch with the checksum or the other mirrors.
->>
->> That brings a pretty huge performance cost, which already caused some
->> concern at that time.
->>
->> But later upstream commit c9d114846b38 ("iomap: add a flag to bounce
->> buffer direct I/O") introduced a new method by copying the content into
->> new pages, and do all the operations based on the newly allocated pages.
->>
->> So let btrfs to utilize the new flag for direct writes if we require
->> stable folios.
->>
->> There is a quick benchmark, using the following fio setup:
->>
->>   fio --name=randwrite --filename $mnt/foobar --ioengine=libaio --size=4G \
->>       --rw=randwrite --iodepth=64 --runtime=60 --time_based --direct=1 \
->>       --bs=$blocksize
->>
->> Unit is MiB/s.
->>
->>   Blocksize | Zero-copy (*) | Buffered |   Bounce
->> -----------+---------------+----------+-----------
->>          4K |          35.1 |     17.1 |      33.8
->>         64K |           522 |      251 |       492
-> 
-> This is really exciting!
-> 
-> Dumb question:
-> Do you have a sense (or reference to previous discussion?) that would
-> explain why bounce buffering so much faster?
-> 
-> Thinking out loud about possible overhead:
-> 
-> - copying overhead : bounce vs buffered both need to copy the user data
-> - memory allocation overhead: they both need a folio (to copy into or to
->    dirty). It might already be present for buffered.
-> - btrfs architecture overhead: They both should be doing all the same
->    cow-ing/extent_map manipulation.
-> - synch-ness: The buffered fallback immediately writes back and waits as
->    far as I can tell, so it shouldn't be some kind of "writeback doesn't
->    get triggered when we want"
-> - balance_dirty_pages: we do call into it in the buffered fallback so we
->    could be made to wait. But I would sort of not expect that to happen
->    on the test you are running, unless you are doing lots of other
->    dirtying at the same time? Since each fallback pass does trigger
->    writeback so it shouldn't build up too much.
-> - libaio/iodepth true async: buffered fallback is synchronous per go
->    while maybe bounce can be more properly async? Haven't thought through
->    this too carefully.
-> - generic page cache overhead: we just have to do a lot more work for
->    the same operations. managing folio state, xarray, locks, balance
->    dirty pages, writeback xarray, etc etc
-> 
-> I would guess that it is the "generic overhead" in the benchmark.
-> Curious if you have any clearer thoughts on it.
-
-I guess it's mostly due to the page cache synchronization.
-
-
-But please do not be too excited for now, this new bounce behavior 
-exposes several problems, mostly related to the page fault during write.
-
-It exposed a bug that even without this patch, for nodatasum mount 
-option that generic/362 (*) can still fail due to failed page fault-in 
-and handling of later buffered fallback.
-
-*: Needs this patch to reliably trigger the failure, or it will only 
-fail with newly formatted TEST_DEV: 
-https://lore.kernel.org/linux-btrfs/20260526070055.60193-1-wqu@suse.com/T/#u
-
-Thanks,
-Qu
-
-> 
-> Thanks,
-> Boris
-> 
->>
->> *: This is done by reverting the commit 968f19c5b1b7 ("btrfs: always
->>     fallback to buffered write if the inode requires checksum")
->>
->> Although with page bouncing the performance is only around 95% of
->> true-zero copy, it's still almost double the performance of buffered
->> fallback.
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->> Changelog:
->> v2:
->> - Rework the comment in btrfs_dio_write()
->> ---
->>   fs/btrfs/direct-io.c | 45 ++++++++++++++++----------------------------
->>   1 file changed, 16 insertions(+), 29 deletions(-)
->>
->> diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
->> index 57167d56dc72..173fe065fc38 100644
->> --- a/fs/btrfs/direct-io.c
->> +++ b/fs/btrfs/direct-io.c
->> @@ -768,10 +768,25 @@ static ssize_t btrfs_dio_read(struct kiocb *iocb, struct iov_iter *iter,
->>   static struct iomap_dio *btrfs_dio_write(struct kiocb *iocb, struct iov_iter *iter,
->>   					 size_t done_before)
->>   {
->> +	struct btrfs_inode *inode = BTRFS_I(file_inode(iocb->ki_filp));
->>   	struct btrfs_dio_data data = { 0 };
->> +	const u64 data_profile = btrfs_data_alloc_profile(inode->root->fs_info) &
->> +				 BTRFS_BLOCK_GROUP_PROFILE_MASK;
->> +	unsigned int dio_flags = IOMAP_DIO_PARTIAL | IOMAP_DIO_FSBLOCK_ALIGNED;
->> +
->> +	/*
->> +	 * Userspace may modify the buffer while DIO is in flight. With
->> +	 * data checksumming this would produce a checksum that doesn't
->> +	 * match the persisted data; with duplicated profiles the mirrors
->> +	 * would diverge. Bounce in those cases so writeback sees stable
->> +	 * content.
->> +	 */
->> +	if (!(inode->flags & BTRFS_INODE_NODATASUM) ||
->> +	    (data_profile != BTRFS_BLOCK_GROUP_RAID0 && data_profile != 0))
->> +		dio_flags |= IOMAP_DIO_BOUNCE;
->>   
->>   	return __iomap_dio_rw(iocb, iter, &btrfs_dio_iomap_ops, &btrfs_dio_ops,
->> -			    IOMAP_DIO_PARTIAL | IOMAP_DIO_FSBLOCK_ALIGNED, &data, done_before);
->> +			      dio_flags, &data, done_before);
->>   }
->>   
->>   static ssize_t check_direct_IO(struct btrfs_fs_info *fs_info,
->> @@ -800,8 +815,6 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
->>   	ssize_t ret;
->>   	unsigned int ilock_flags = 0;
->>   	struct iomap_dio *dio;
->> -	const u64 data_profile = btrfs_data_alloc_profile(fs_info) &
->> -				 BTRFS_BLOCK_GROUP_PROFILE_MASK;
->>   
->>   	if (iocb->ki_flags & IOCB_NOWAIT)
->>   		ilock_flags |= BTRFS_ILOCK_TRY;
->> @@ -815,16 +828,6 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
->>   	if (iocb->ki_pos + iov_iter_count(from) <= i_size_read(inode) && IS_NOSEC(inode))
->>   		ilock_flags |= BTRFS_ILOCK_SHARED;
->>   
->> -	/*
->> -	 * If our data profile has duplication (either extra mirrors or RAID56),
->> -	 * we can not trust the direct IO buffer, the content may change during
->> -	 * writeback and cause different contents written to different mirrors.
->> -	 *
->> -	 * Thus only RAID0 and SINGLE can go true zero-copy direct IO.
->> -	 */
->> -	if (data_profile != BTRFS_BLOCK_GROUP_RAID0 && data_profile != 0)
->> -		goto buffered;
->> -
->>   relock:
->>   	ret = btrfs_inode_lock(BTRFS_I(inode), ilock_flags);
->>   	if (ret < 0)
->> @@ -865,22 +868,6 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
->>   		btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
->>   		goto buffered;
->>   	}
->> -	/*
->> -	 * We can't control the folios being passed in, applications can write
->> -	 * to them while a direct IO write is in progress.  This means the
->> -	 * content might change after we calculated the data checksum.
->> -	 * Therefore we can end up storing a checksum that doesn't match the
->> -	 * persisted data.
->> -	 *
->> -	 * To be extra safe and avoid false data checksum mismatch, if the
->> -	 * inode requires data checksum, just fallback to buffered IO.
->> -	 * For buffered IO we have full control of page cache and can ensure
->> -	 * no one is modifying the content during writeback.
->> -	 */
->> -	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
->> -		btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
->> -		goto buffered;
->> -	}
->>   
->>   	/*
->>   	 * The iov_iter can be mapped to the same file range we are writing to.
->> -- 
->> 2.54.0
->>
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2275189b7860..ccc2d174b919 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -620,24 +620,24 @@ static void end_bbio_data_read(struct btrfs_bio *bbio)
+ }
+ 
+ /*
+- * Populate every free slot in a provided array with folios using GFP_NOFS.
++ * Populate every free slot in a provided array with folios.
+  *
+- * @nr_folios:   number of folios to allocate
+- * @order:	 the order of the folios to be allocated
+- * @folio_array: the array to fill with folios; any existing non-NULL entries in
+- *		 the array will be skipped
++ * @nr_folios:    number of folios to allocate
++ * @order:	  folio order
++ * @folio_array:  array to fill with folios; non-NULL entries are skipped
++ * @gfp:          GFP flags for the allocation
+  *
+  * Return: 0        if all folios were able to be allocated;
+  *         -ENOMEM  otherwise, the partially allocated folios would be freed and
+  *                  the array slots zeroed
+  */
+ int btrfs_alloc_folio_array(unsigned int nr_folios, unsigned int order,
+-			    struct folio **folio_array)
++			    struct folio **folio_array, gfp_t gfp)
+ {
+ 	for (int i = 0; i < nr_folios; i++) {
+ 		if (folio_array[i])
+ 			continue;
+-		folio_array[i] = folio_alloc(GFP_NOFS, order);
++		folio_array[i] = folio_alloc(gfp, order);
+ 		if (!folio_array[i])
+ 			goto error;
+ 	}
+@@ -652,21 +652,19 @@ int btrfs_alloc_folio_array(unsigned int nr_folios, unsigned int order,
+ }
+ 
+ /*
+- * Populate every free slot in a provided array with pages, using GFP_NOFS.
++ * Populate every free slot in a provided array with pages.
+  *
+- * @nr_pages:   number of pages to allocate
+- * @page_array: the array to fill with pages; any existing non-null entries in
+- *		the array will be skipped
+- * @nofail:	whether using __GFP_NOFAIL flag
++ * @nr_pages:    number of pages to allocate
++ * @page_array:  array to fill; non-NULL entries are skipped
++ * @gfp:         GFP flags for the allocation
+  *
+  * Return: 0        if all pages were able to be allocated;
+  *         -ENOMEM  otherwise, the partially allocated pages would be freed and
+  *                  the array slots zeroed
+  */
+ int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array,
+-			   bool nofail)
++			   gfp_t gfp)
+ {
+-	const gfp_t gfp = nofail ? (GFP_NOFS | __GFP_NOFAIL) : GFP_NOFS;
+ 	unsigned int allocated;
+ 
+ 	for (allocated = 0; allocated < nr_pages;) {
+@@ -690,13 +688,13 @@ int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array,
+  *
+  * For now, the folios populated are always in order 0 (aka, single page).
+  */
+-static int alloc_eb_folio_array(struct extent_buffer *eb, bool nofail)
++static int alloc_eb_folio_array(struct extent_buffer *eb, gfp_t gfp)
+ {
+ 	struct page *page_array[INLINE_EXTENT_BUFFER_PAGES] = { 0 };
+ 	int num_pages = num_extent_pages(eb);
+ 	int ret;
+ 
+-	ret = btrfs_alloc_page_array(num_pages, page_array, nofail);
++	ret = btrfs_alloc_page_array(num_pages, page_array, gfp);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -3097,7 +3095,7 @@ struct extent_buffer *btrfs_clone_extent_buffer(const struct extent_buffer *src)
+ 	 */
+ 	set_bit(EXTENT_BUFFER_UNMAPPED, &new->bflags);
+ 
+-	ret = alloc_eb_folio_array(new, false);
++	ret = alloc_eb_folio_array(new, GFP_NOFS);
+ 	if (ret)
+ 		goto release_eb;
+ 
+@@ -3138,7 +3136,7 @@ struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	if (!eb)
+ 		return NULL;
+ 
+-	ret = alloc_eb_folio_array(eb, false);
++	ret = alloc_eb_folio_array(eb, GFP_NOFS);
+ 	if (ret)
+ 		goto release_eb;
+ 
+@@ -3491,8 +3489,13 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ reallocate:
+-	/* Allocate all pages first. */
+-	ret = alloc_eb_folio_array(eb, true);
++	/*
++	 * Allocate all pages first. These will be attached to
++	 * btree_inode->i_mapping below (added to LRU, served by
++	 * btree_migrate_folio), so request __GFP_MOVABLE so the
++	 * page allocator places them in MOVABLE pageblocks.
++	 */
++	ret = alloc_eb_folio_array(eb, GFP_NOFS | __GFP_NOFAIL | __GFP_MOVABLE);
+ 	if (ret < 0) {
+ 		btrfs_free_folio_state(prealloc);
+ 		goto out;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index b310a5145cf6..c53e7f8f3c86 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -387,9 +387,9 @@ void btrfs_clear_buffer_dirty(struct btrfs_trans_handle *trans,
+ 			      struct extent_buffer *buf);
+ 
+ int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array,
+-			   bool nofail);
++			   gfp_t gfp);
+ int btrfs_alloc_folio_array(unsigned int nr_folios, unsigned int order,
+-			    struct folio **folio_array);
++			    struct folio **folio_array, gfp_t gfp);
+ 
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ bool find_lock_delalloc_range(struct inode *inode,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 906d5c21ebc4..e55c416f048d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9659,7 +9659,7 @@ ssize_t btrfs_encoded_read_regular(struct kiocb *iocb, struct iov_iter *iter,
+ 	pages = kzalloc_objs(struct page *, nr_pages, GFP_NOFS);
+ 	if (!pages)
+ 		return -ENOMEM;
+-	ret = btrfs_alloc_page_array(nr_pages, pages, false);
++	ret = btrfs_alloc_page_array(nr_pages, pages, GFP_NOFS);
+ 	if (ret) {
+ 		ret = -ENOMEM;
+ 		goto out;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a39460bf68a7..c4ec6109952a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4621,7 +4621,7 @@ static int btrfs_uring_read_extent(struct kiocb *iocb, struct iov_iter *iter,
+ 	pages = kzalloc_objs(struct page *, nr_pages, GFP_NOFS);
+ 	if (!pages)
+ 		return -ENOMEM;
+-	ret = btrfs_alloc_page_array(nr_pages, pages, 0);
++	ret = btrfs_alloc_page_array(nr_pages, pages, GFP_NOFS);
+ 	if (ret) {
+ 		ret = -ENOMEM;
+ 		goto out_fail;
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 08ee8f316d96..fae457712218 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -1123,7 +1123,7 @@ static int alloc_rbio_pages(struct btrfs_raid_bio *rbio)
+ {
+ 	int ret;
+ 
+-	ret = btrfs_alloc_page_array(rbio->nr_pages, rbio->stripe_pages, false);
++	ret = btrfs_alloc_page_array(rbio->nr_pages, rbio->stripe_pages, GFP_NOFS);
+ 	if (ret < 0)
+ 		return ret;
+ 	/* Mapping all sectors */
+@@ -1138,7 +1138,7 @@ static int alloc_rbio_parity_pages(struct btrfs_raid_bio *rbio)
+ 	int ret;
+ 
+ 	ret = btrfs_alloc_page_array(rbio->nr_pages - data_pages,
+-				     rbio->stripe_pages + data_pages, false);
++				     rbio->stripe_pages + data_pages, GFP_NOFS);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -1732,7 +1732,7 @@ static int alloc_rbio_data_pages(struct btrfs_raid_bio *rbio)
+ 	const int data_pages = rbio->nr_data * rbio->stripe_npages;
+ 	int ret;
+ 
+-	ret = btrfs_alloc_page_array(data_pages, rbio->stripe_pages, false);
++	ret = btrfs_alloc_page_array(data_pages, rbio->stripe_pages, GFP_NOFS);
+ 	if (ret < 0)
+ 		return ret;
+ 
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 3ebaf5880125..5d090bdcf1fd 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4038,7 +4038,7 @@ static int copy_remapped_data(struct btrfs_fs_info *fs_info, u64 old_addr,
+ 	if (!pages)
+ 		return -ENOMEM;
+ 
+-	ret = btrfs_alloc_page_array(nr_pages, pages, 0);
++	ret = btrfs_alloc_page_array(nr_pages, pages, GFP_NOFS);
+ 	if (ret) {
+ 		ret = -ENOMEM;
+ 		goto end;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 1ac609239cbe..d2f7ac5b6e96 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -369,7 +369,8 @@ static int init_scrub_stripe(struct btrfs_fs_info *fs_info,
+ 
+ 	ASSERT(BTRFS_STRIPE_LEN >> min_folio_shift <= SCRUB_STRIPE_MAX_FOLIOS);
+ 	ret = btrfs_alloc_folio_array(BTRFS_STRIPE_LEN >> min_folio_shift,
+-				      fs_info->block_min_order, stripe->folios);
++				      fs_info->block_min_order, stripe->folios,
++				      GFP_NOFS);
+ 	if (ret < 0)
+ 		goto error;
+ 
+-- 
+2.53.0-Meta
 

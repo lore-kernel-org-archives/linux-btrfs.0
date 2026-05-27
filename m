@@ -1,75 +1,47 @@
-Received: from mail-qt1-f170.google.com (mail-qt1-f170.google.com [209.85.160.170])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from www262.sakura.ne.jp (www262.sakura.ne.jp [202.181.97.72])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A8D541925BC
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2026 01:20:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.160.170
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CA2A7313552;
+	Wed, 27 May 2026 01:36:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.181.97.72
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779844817; cv=none; b=jCzdT79dxn53q3huOmU9XWaY5gZtVmD0ioTVJCAP+WEmgkTIZXgs+/GDYiMGoZCS5PS7uZCe/8yHIEerGAzUce9E/Sz0toXw+VUe/hBCfAkQx9CP1jNtTrrth1gFTDJLQHAiJ9N50mim+x4kKe3aBbJ7MkYMOJnrmQrI7E2NS74=
+	t=1779845783; cv=none; b=df7sjRjfbaEAAJXgEWnNkUoVI1aoTOimcHZuUjz8fjxuBcjPQi63yHa9h5uGwd4e1pkgfYkvPRO+yX5F6HWp4R8W/beTL5OqbuYIlYtf7nz1YBOdzkpnpwZBw7M09HcZyzR3a2wbukBaLW4w1Ms3AT9oiSohYWj+KaaKTKBVRPk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779844817; c=relaxed/simple;
-	bh=zZFnGIBULEQhg8FFEYFwPaffueN2j/MQSoOCifUrvdE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=dZwXLbnrP/YZFDK2+Z9rgDq33d57Maa/1xqwQj+ya5FozDzOf8386rTUA027eeB3YvwOJ2iRNICOWnYkxvn3/OX9M9648SnYde6KQZX17QXXrIAmU88VP1UVssPuadcLjiVispr2HOhgIId/xY5nZxLoN+ZtmEXCRUXsNfkAenM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=WLZ1PPS9; arc=none smtp.client-ip=209.85.160.170
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="WLZ1PPS9"
-Received: by mail-qt1-f170.google.com with SMTP id d75a77b69052e-50e5dbd8e0eso130830931cf.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2026 18:20:15 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1779844815; x=1780449615; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=mlmC4XR4gxPVFC+3IrEsRTTaSk3Dm8cvG0pTcfli6zg=;
-        b=WLZ1PPS9k9IZrVn25H8e/ZPMAKqINazlPctdkjlpPnSayPqfBE7WGPuIKzPx9d0bio
-         8W62l78jxUQCBctHFNX2b9ASP2/8TWSkMyhYYX/MwMs9t9TiAsl/u+IG0IXlQJf3DDhM
-         S5Q1u1yRuzeRCQop12INnlvBMnZh1f16IAOo4YgWJYbHHNi5iEi3JI3mlsVQ5Cx9M83p
-         v3IbJAoadO/1bDkWt2eCkPrpr5pO02zqOOL67wT5s9I3ouniIQlkhyrUs94N3ZiAaqUr
-         RgpGIMGHB6Ev/UQktUX+3jG8u67iELUNX8Ntb2YaX1CqZRVvLbjMFELXP8b40rO1zzCh
-         nXjg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779844815; x=1780449615;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=mlmC4XR4gxPVFC+3IrEsRTTaSk3Dm8cvG0pTcfli6zg=;
-        b=BGNnJd7C9zSLb2QqavysvaQoWLJLuaILh6p6JuVD9beLxyv04Boe/PHcK3Rf+EGLnU
-         ea2RJsRz30cb77dSHH/A59197Di4/N0p9pLuhSNWiCIZ63y2g2bAiCDoWgn7SwAppYw9
-         fnMUA4RBrj8XbjE5XQIdIr3p3xkbHzwwy7eQptO17qJXvLrZFBPVqfvnZGVG7AZezZ1I
-         fspQAqSWuT3jwS4CSpuDVHAjY02M9qbsSlunPuseTGrPwtaY3IlrXghXuF5KnUNneTd+
-         4tUeDjVQ08FDyeVXQMFrq4kInRhTIQVu5gIJwxrAdxPi/HiZfSm8RNtcstTtcMcwHYrB
-         HCBQ==
-X-Forwarded-Encrypted: i=1; AFNElJ+r9NDR9WQ1f9JeCjfXxmpaHFdB2z05fdGJeJ924JLV5hmXAhPvkDAOF6SLtN0Cc52B/+R/Fex7bxq5/A==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw4sSFrL0i2oVixt9FapP62rxELzP7DnJBAXuLdJVFv6Mv8Dn/6
-	f+zUoYLQkBt94h3wWlfRkfXZvP3lu7rlL22NDZIPcWw/mEiXGm5CvpXR
-X-Gm-Gg: Acq92OGkJyc4QSFTAIC7E8XRzCthzBg+OJaPG0Trk9uiAL2APa0W+jGsdYccSQwFDBi
-	6aV6BiApxwvcPkVOKSKjpHhHspNgnAlD6uB5F2U3wI1PkZgWMg9OMNC8buna9fhzmFzzxpuocpc
-	KMYM/aPjisQLD95J36cyzWnqm9I7dvC0wjKIyUmG6YdqxA18uKdowP4fqZInoimpOGYkqeVf+s6
-	sgMqvIYzLsLWGr6ohLI9MfL60UKK0qn3L8mfSbos6ap2RtGYX5l5kqubSJ9OHvsOgYPHRhmg8Pk
-	6/pvVqn5wYhdP+rI9pGdBM6Es7Me6RxKsqcNHKp1w+6YUdoIsbm2nsXgNh60eY/qvZuX1lZw24W
-	jQR8qk4KtImuRketUvIlj3uK6uI7EL9Vcf7s4IgUJj3345/FGRHAPsgNJJthLyYMy8FaMMWH6xQ
-	oUPThMwmz/L+mAPpgFdCWFOUGxqkAFBwmaVYBRMo1MghKGKQYWxeJFV+ir4iy0iFe1Ap2waWO/g
-	DxwCcbXDti6PX/TZZX2yOEpJ2QKWmAHWcj1Ebx+MYs=
-X-Received: by 2002:ac8:7e93:0:b0:50d:66b6:1564 with SMTP id d75a77b69052e-516d42e4250mr296025671cf.14.1779844814473;
-        Tue, 26 May 2026 18:20:14 -0700 (PDT)
-Received: from fedora ([172.245.82.59])
-        by smtp.gmail.com with ESMTPSA id d75a77b69052e-51706af1328sm35061051cf.20.2026.05.26.18.20.09
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 26 May 2026 18:20:14 -0700 (PDT)
-Date: Tue, 26 May 2026 20:20:06 -0500
-From: Ming Lei <tom.leiming@gmail.com>
-To: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
-Cc: Jens Axboe <axboe@kernel.dk>, Bart Van Assche <bvanassche@acm.org>,
-	Christoph Hellwig <hch@lst.de>, Damien Le Moal <dlemoal@kernel.org>,
-	linux-block <linux-block@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+	s=arc-20240116; t=1779845783; c=relaxed/simple;
+	bh=gWQbte/D+rvnVAws4u9sQB+RBkaJQqcbbOTzu2IeZg0=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=XWH/n4Yo+aR/y5Oz0AyLDY+L1gQ+m8ZzJPUItCL2R6Acd++OLbeesNOclvmhTehpJhc9C1EfBt5MeLPKDDDPOA9sc+O0PA/PvLWT4LYgZrA7DCPb64lX6Ruyb/e9s1XlkzFtaX5cOFcsFRIEvMm/2AzBUuE6bp5nJv8UpzuzAk4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=I-love.SAKURA.ne.jp; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp; arc=none smtp.client-ip=202.181.97.72
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=I-love.SAKURA.ne.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp
+Received: from www262.sakura.ne.jp (localhost [127.0.0.1])
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTP id 64R1ZxZ5024720;
+	Wed, 27 May 2026 10:35:59 +0900 (JST)
+	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Received: from [192.168.1.5] (M106072072000.v4.enabler.ne.jp [106.72.72.0])
+	(authenticated bits=0)
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTPSA id 64R1Zx2p024714
+	(version=TLSv1.2 cipher=AES256-GCM-SHA384 bits=256 verify=NO);
+	Wed, 27 May 2026 10:35:59 +0900 (JST)
+	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Message-ID: <d1b5a737-f0e3-4927-b762-430b37fbb2f9@I-love.SAKURA.ne.jp>
+Date: Wed, 27 May 2026 10:35:56 +0900
+Precedence: bulk
+X-Mailing-List: linux-btrfs@vger.kernel.org
+List-Id: <linux-btrfs.vger.kernel.org>
+List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
+List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
 Subject: Re: [PATCH v3] loop: Fix NULL pointer dereference in lo_rw_aio()
-Message-ID: <ahZGxoI6oHQ_vSrx@fedora>
+To: Ming Lei <tom.leiming@gmail.com>
+Cc: Jens Axboe <axboe@kernel.dk>, Bart Van Assche <bvanassche@acm.org>,
+        Christoph Hellwig <hch@lst.de>, Damien Le Moal <dlemoal@kernel.org>,
+        linux-block <linux-block@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 References: <20260518174013.4b72dd50a5bcb89daaed1f62@linux-foundation.org>
  <d43125ff-cc66-49b7-b16d-1b2650c68c23@I-love.SAKURA.ne.jp>
  <ag0lS_CbKO9R5CV8@fedora>
@@ -80,71 +52,93 @@ References: <20260518174013.4b72dd50a5bcb89daaed1f62@linux-foundation.org>
  <fda8abc8-6aa2-463b-bf72-865f6b838034@I-love.SAKURA.ne.jp>
  <ahRocb0Vs_m6RF_O@fedora>
  <1a9f53d4-6f48-4df8-a3d8-2b0e442a163a@I-love.SAKURA.ne.jp>
-Precedence: bulk
-X-Mailing-List: linux-btrfs@vger.kernel.org
-List-Id: <linux-btrfs.vger.kernel.org>
-List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
-List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1a9f53d4-6f48-4df8-a3d8-2b0e442a163a@I-love.SAKURA.ne.jp>
+ <ahZGxoI6oHQ_vSrx@fedora>
+Content-Language: en-US
+From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+In-Reply-To: <ahZGxoI6oHQ_vSrx@fedora>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-Anti-Virus-Server: fsav405.rs.sakura.ne.jp
+X-Virus-Status: clean
 
-On Tue, May 26, 2026 at 09:25:30AM +0900, Tetsuo Handa wrote:
-> On 2026/05/26 0:19, Ming Lei wrote:
-> > On Mon, May 25, 2026 at 12:40:19PM +0900, Tetsuo Handa wrote:
-> >> Some commit which was merged in the merge window for 7.1 broke the loop
-> >> driver; a race window where lo_release() clears the backing file via
-> >> __loop_clr_fd() despite some I/O requests are pending was introduced [1][2].
-> >>
-> >> The exact commit which changed the behavior is not known due to lack of
-> >> reproducer and timing dependent behavior, but it seems that we need to
-> >> solve this problem in the loop driver despite there was no change for the
-> >> loop driver during this merge window.
-> >>
-> >> To close this race, try to flush pending I/O requests. However, calling
-> >> drain_workqueue() from __loop_clr_fd() with disk->open_mutex held causes
-> >> lockdep warnings [3][4]. We need to flush pending I/O requests without
-> >> disk->open_mutex held.
-> > 
-> > No, please don't workaround before root cause.
-> > 
-> > No proof shows that the issue is in block layer or loop driver, the IO isn't
-> > expected, you need to figure out why btrfs still issues IO after this loop
-> > disk is closed by everyone and writeback is done.
-> > 
-> > https://syzkaller.appspot.com/x/log.txt?x=101e4702580000
-> > 
+On 2026/05/27 10:20, Ming Lei wrote:
+>> Of course we should try to figure out the root cause first, but how can we do?
 > 
-> Of course we should try to figure out the root cause first, but how can we do?
+> Definitely unexpected write IO(after umount & loop closed) from btrfs is more serious,
+> which may cause data loss, so CC btrfs list and maintainer.
 
-Definitely unexpected write IO(after umount & loop closed) from btrfs is more serious,
-which may cause data loss, so CC btrfs list and maintainer.
+Why do you assume that the culprit is btrfs?
 
-...
- 
-> Possible approaches for finding the exact commit that is causing this problem:
-> 
->   (a) Revert all changes in the block layer from linux.git and monitor for one week for whether this
->       problem is still happening (because linux.git is more frequently hitting this problem than
->       linux-next.git ).
-> 
->   (b) Revert all changes in the block layer from linux-next.git and monitor for two weeks for
->       whether this problem is still happening (less reliable than linux.git but a candidate).
-> 
->   (c) Let sashiko review all changes between v7.0 and v7.1 that may cause this problem.
->       (Human developers have no time to review. But is investigation with moving baseline commit
->       possible for sashiko ?)
-> 
->   (d) Any ideas?
-> 
-> P.S. Since the loop driver is a critical infrastructure for testing filesystems by syzbot,
-> I want this problem be addressed before 7.1 is released.
+https://syzkaller.appspot.com/bug?extid=bc273027d5643e48e5b3 indicated that
+this similar race is also happening with jfs.
 
-syzbot is for finding real problem, here the real trouble is unexpected write IO from btrfs.
+[  678.816570][ T1038] read_mapping_page failed!
+[  678.816584][ T1038] ERROR: (device loop3): txCommit: 
+[  678.816584][ T1038] 
+[  678.816633][ T1038] jfs_write_inode: jfs_commit_inode failed!
+[  678.895688][ T2183] lo_rw_aio(loop3) starting write with raw_refcnt=0x0, refcnt=1
+[  678.956225][ T2183] lo_rw_aio(loop3) starting write with raw_refcnt=0x0, refcnt=1
+[  678.970652][   T12] lo_rw_aio(loop3) starting write with raw_refcnt=0x0, refcnt=1
+[  679.102838][ T4281] lo_rw_aio(loop3) starting write with raw_refcnt=0x0, refcnt=1
+[  679.104701][ T4281] lo_rw_aio(loop3) starting write with raw_refcnt=0x0, refcnt=1
+[  679.121329][ T2183] lo_rw_aio(loop3) starting write with raw_refcnt=0x0, refcnt=1
+[  679.122119][ T2183] lo_rw_aio(loop3) starting write with raw_refcnt=0x0, refcnt=1
+[  679.199283][ T2183] lo_rw_aio(loop3) starting read with raw_refcnt=0x0, refcnt=1
+[  679.200014][ T2183] lo_rw_aio(loop3) starting write with raw_refcnt=0x0, refcnt=1
+[  679.275613][ T5615] __loop_clr_fd(loop3) clearing lo_backing_file with raw_refcnt=0x0, refcnt=1
+[  679.397358][   T13] bridge_slave_1: left allmulticast mode
+[  679.397399][   T13] bridge_slave_1: left promiscuous mode
+[  679.410004][   T13] bridge0: port 2(bridge_slave_1) entered disabled state
+[  679.433576][ T2183] ------------[ cut here ]------------
+[  679.433592][ T2183] d_inode(dentry) != file_inode(file)
+[  679.433617][ T2183] WARNING: ./include/linux/fs.h:1368 at file_remove_privs_flags+0x58c/0x640, CPU#0: kworker/u8:12/2183
+[  679.433676][ T2183] Modules linked in:
+[  679.433695][ T2183] CPU: 0 UID: 0 PID: 2183 Comm: kworker/u8:12 Not tainted syzkaller #0 PREEMPT_{RT,(full)} 
+[  679.433720][ T2183] Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/18/2026
+[  679.433739][ T2183] Workqueue: loop3 loop_workfn
+[  679.433805][ T2183] RIP: 0010:file_remove_privs_flags+0x58c/0x640
+[  679.433848][ T2183] Code: 00 75 4d 44 89 e8 48 8d 65 d8 5b 41 5c 41 5d 41 5e 41 5f 5d c3 cc cc cc cc cc e8 5f d4 80 ff e9 90 fe ff ff e8 55 d4 80 ff 90 <0f> 0b 90 e9 85 fb ff ff 44 89 f1 80 e1 07 80 c1 03 38 c1 0f 8c b7
+[  679.433867][ T2183] RSP: 0018:ffffc90007e374e0 EFLAGS: 00010293
+[  679.433885][ T2183] RAX: ffffffff8243f7cb RBX: ffff888036fa8ca0 RCX: ffff88802c0abd80
+[  679.433902][ T2183] RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+[  679.433933][ T2183] RBP: ffffc90007e37638 R08: 0000000000000000 R09: 0000000000000000
+[  679.433946][ T2183] R10: dffffc0000000000 R11: fffffbfff1f1597f R12: ffff888063726220
+[  679.433962][ T2183] R13: 1ffff11006df5194 R14: 0000000000000000 R15: 1ffff1100c6e4c44
+[  679.433978][ T2183] FS:  0000000000000000(0000) GS:ffff888125f1f000(0000) knlGS:0000000000000000
+[  679.433998][ T2183] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  679.434016][ T2183] CR2: 00007f22e1be7dac CR3: 000000003e332000 CR4: 00000000003526f0
+[  679.434038][ T2183] Call Trace:
+[  679.434049][ T2183]  <TASK>
+[  679.434072][ T2183]  ? __pfx_file_remove_privs_flags+0x10/0x10
+[  679.434118][ T2183]  ? rt_mutex_post_schedule+0xd1/0x1c0
+[  679.434172][ T2183]  ? generic_write_checks_count+0x449/0x550
+[  679.434212][ T2183]  ? generic_write_checks+0xc8/0x110
+[  679.434249][ T2183]  shmem_file_write_iter+0xaa/0x120
+[  679.434286][ T2183]  lo_rw_aio+0xef0/0x1170
+[  679.434349][ T2183]  ? __pfx_lo_rw_aio+0x10/0x10
+[  679.434401][ T2183]  ? kthread_associate_blkcg+0x490/0x600
+[  679.434432][ T2183]  ? rt_spin_unlock+0x160/0x200
+[  679.434476][ T2183]  loop_process_work+0x637/0x11b0
+[  679.434539][ T2183]  ? __pfx_loop_process_work+0x10/0x10
+[  679.434582][ T2183]  ? look_up_lock_class+0x57/0x110
+[  679.434626][ T2183]  ? register_lock_class+0x31/0x2e0
+[  679.434661][ T2183]  ? __lock_acquire+0x6b5/0x2d10
+[  679.434741][ T2183]  ? do_raw_spin_lock+0x12b/0x2f0
+[  679.434785][ T2183]  ? __pfx_do_raw_spin_lock+0x10/0x10
+[  679.434830][ T2183]  ? process_one_work+0x8be/0x1630
+[  679.434870][ T2183]  ? process_one_work+0x8be/0x1630
+[  679.434922][ T2183]  ? process_one_work+0x8be/0x1630
+[  679.434959][ T2183]  process_one_work+0x98b/0x1630
+[  679.435026][ T2183]  ? __pfx_process_one_work+0x10/0x10
+[  679.435060][ T2183]  ? do_raw_spin_lock+0x12b/0x2f0
+[  679.435128][ T2183]  worker_thread+0xb49/0x1140
+[  679.435202][ T2183]  kthread+0x388/0x470
+[  679.435233][ T2183]  ? __pfx_worker_thread+0x10/0x10
+[  679.435276][ T2183]  ? __pfx_kthread+0x10/0x10
+[  679.435309][ T2183]  ret_from_fork+0x514/0xb70
+[  679.435348][ T2183]  ? __pfx_ret_from_fork+0x10/0x10
+[  679.435382][ T2183]  ? __switch_to+0xc79/0x1410
+[  679.435415][ T2183]  ? __pfx_kthread+0x10/0x10
+[  679.435447][ T2183]  ret_from_fork_asm+0x1a/0x30
+[  679.435517][ T2183]  </TASK>
 
-So please do not try to paper over real bug by 'fixing' loop.
-
-
-Thanks,
-Ming

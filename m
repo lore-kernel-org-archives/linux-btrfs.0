@@ -1,189 +1,145 @@
-Received: from fhigh-a8-smtp.messagingengine.com (fhigh-a8-smtp.messagingengine.com [103.168.172.159])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B01BF17745
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2026 16:04:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.159
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BD93545BD60;
+	Wed, 27 May 2026 18:11:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779897865; cv=none; b=CRcc4gJKkfumO7Wdjj2s9qeWQhKN9iShIwAVbPQjaUGQiwyqWpRJgqGHj3RAFqKkQ3A+OfalyzocofJZQDyO4fMzt3x1AbSlRHzrkFuSiNZ9h4+Bp0rDIIPcSMAFUpQ5Ez7wokNxbo6i34dgmQZhN48+iMNwgOmvmo9YIWx92yc=
+	t=1779905470; cv=none; b=SnuiISOVk6hoZG3uvEYIjNFvyc+W1EqNAKwNCxFRFRU/lvgqu2SoMfVBkn55H730ahGSzahH9QAWVjOXdJj0eCVs3th459iwEKL75hnh0J3eBeLLZnJeXh4ny8M0V7tOIbhePWrd12wBn4oHM4jQnokO6PojS2V7tcc2/9BSrcs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779897865; c=relaxed/simple;
-	bh=KJxaozxQKzdHwlq6Icpf+O2ddtYq4S/vS7ur/lgTJJQ=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Ny3jmC/wYXcRMQOUbzNMxGYCBWUGtAjRQnDjVGUhy2VZHTq5JVPtYI1u/8lAdFJQE1yOYAhJANbSjTownnLSreeJvTpWA2EahAZZEREMWu11EHV6eJ77wofNt23CXh5LrzE0VmAChiKkuKTWZHtr4KewAr5KCvjzDjPGzvuoQpk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=cRfCoqK0; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=JBEYOzqI; arc=none smtp.client-ip=103.168.172.159
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1779905470; c=relaxed/simple;
+	bh=FR3flEeJqppiUYRlGx6vob2K/t2fe/ABpe9P4OUT3rg=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=WUbBMbW8noktmS4gfeEkwSprFNyY5H4vO3TCc/8/N1MDHlhLJTHzzf+R/jYLTmoOFnrdC1ebQ/FLKmcDkE3i3VFasMAcq2x5fQJAsOkOT4eelfUz51mYgdqO1WYybgX+aL5gBKeW4MhemZFlFQzEvR6zl46XaC1xw9tWm5uvkVE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PMBqLHic; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="cRfCoqK0";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="JBEYOzqI"
-Received: from phl-compute-07.internal (phl-compute-07.internal [10.202.2.47])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id 2B6031400109;
-	Wed, 27 May 2026 12:04:23 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-07.internal (MEProxy); Wed, 27 May 2026 12:04:23 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm1; t=1779897863; x=1779984263; bh=txsDdTx9Lp
-	m528B6/LtW6E+yr0hZ3DRoaLhKRKdFoxs=; b=cRfCoqK0srJbJpJkguEQSGzSfP
-	fUSP4Lsug9o8jed1rPJjy7JARiVcmO/s3xHjucZ/zAYGv0fjT6HbAgPJs/oxMohE
-	eeH2pU8fKn6xreHYC1CMdaSGvNtzNsr/Sugde9SDqlW/X74xdL4m7Q4dWQOryRvO
-	7RR1FKTjACHL8+lq5OzDOvs21ZCyRaHi+KyLrEMvH32lZBrhE8vmDkJqGP45PoYk
-	aUjRqPk6TBpO3BY5jnf38LbO2xvzn4uCoBfcJ1a+8E6Qc0pFlLHC/XMPl5u8i5qg
-	wQKe68STqFpZAExNK5Cj5NQTE+zAU5WFzj2WZ2xioeOPB1WaffbNzmfAhHKA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
-	1779897863; x=1779984263; bh=txsDdTx9Lpm528B6/LtW6E+yr0hZ3DRoaLh
-	KRKdFoxs=; b=JBEYOzqIF2oc9YfAn28PXZpDoRKDjRXxFgM5Dc88peh+8I6w0um
-	vIiIX/dd3r7UambrYTbZxiYXnFSr0+tTYwijYQIvEV6tfTNA3yqGMfCBu2OLo8O3
-	ZTc74Ke4BXSkNB5I0jzc3Hxt++i9Ssbyouu0R1UyGsx8DjfR90Mh4+9PMorMe6Iu
-	mFgGwRDn12eWax9Oh2VP/ANcnaBMT6LKYvh4fKSe3pxufveHwZMtiSF2MWOdvDv+
-	E8CQdkuaftdxfUPfavVGQZOhRpd1mLiM8XauV5B2j8EHVR7Utb4eU0pi4NSgFzla
-	R1JqCWbvKo6N6PIMMeixhB9OPE8jdwHmXnw==
-X-ME-Sender: <xms:BxYXaumpxnqdmAfRQWYDwGlnSHjgdmZhBf2b-Iv3HAAS5TleAeo72Q>
-    <xme:BxYXar1NnUyDyo4tZHjCD7oC1Wl0MA6my60wQuU1lx1fuvKtn1QFM6X1Fi0mRG6Rh
-    TYhQEeXH3QrAU4VDrhSgo-yr3OZ07Dx4ciGDhH_dMJv9t0pz2HPFPc>
-X-ME-Received: <xmr:BxYXaqTdVrdYb6pKHtSuedx9k6Rhb4Aoy0FLrv1OjyyfYHkdQAmBRr4KO2YyFW6cqYwrqGt6xgmAlJaVKu1IMl7SEnI>
-X-ME-Proxy-Cause: dmFkZTGBO2Y0ATYpcffAASf6TOIRg7KHm72DbrskGqP/Yct+QNvRwDOn1Ph/VcRuh+8e/W
-    MXZ9Yj2iD9Ro9mZc/qrufWwPjyD23jihmoCzok3pzF0BfAjT0BR8Zi5LcMGv0HZo4+/gZR
-    Lix+jhbX9YTJkYN+6BagHP8qFsaK16SfsSEC2HmFLx01XJqoVdT2U4YZF10nsTV2Hq8oj5
-    vdlRSH4UJT6/2qdmgE4W83hZCQWQaZPz+jIMXxjL3Fno3fWcrSx/tzV560cx7wA1GZ5NHi
-    /M5ah3ICxQfZaEtoV2gHm/vaHTRZGzDR+TD/gpw2CxZr8HPp3HGYxENYOztayT7PehxuO0
-    A56xkh8NVD3NGMTbtNmyLwX+jIXF2GLFjq9zpwKgYIf5HQ6YQvOuNXFpOfcMucjdr/i0B1
-    UXd5h8PI4iJBI3gcLLRP56iBzLRUVUvoghDCJUt9SmjmvsDIvKWZRMSBcBjlHkVviP9Okz
-    SY8HmEWR2ZAeSIvms2J0X2IeAIsiHFthlKeeRkFjwv8Gy7sad8i9MhtkARSXsm9xgL1Zx7
-    QB78ZXw7HWH132CohGOqeXtjrjjLqvrKr/K8Vs4ZtvDN42tj12PU53AuXbfgmzmfGZR+cA
-    vYr//iH2+6u+R5GmEmFAl9m7MmU8h9xRCVLayAX3v0ZMjhUm6fI2+orUNJAQ
-X-ME-Proxy: <xmx:BxYXatv_J86N5a0tM0eFut4aa967jGGVszfI3DeRS6ooF7_1jDGChw>
-    <xmx:BxYXavYvkWjD5WPW4WWBoNF8Yfp2nzspXievc6opRBI9D42vFk_G4A>
-    <xmx:BxYXaitbSB9YlYOE53duy0hiGmd69adtenBpcobPL5ZAsdKKiJhCKg>
-    <xmx:BxYXahEm8IQAKKGkCU6zOZd8SfD3fp4AcjHKgZpOruXK34zzmQ9Ikw>
-    <xmx:BxYXapRpUc0gfGnYISNYM-FC_12QvFHI3mZM1d8IRiZYJ4YhIIKQdSiY>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 27 May 2026 12:04:22 -0400 (EDT)
-Date: Wed, 27 May 2026 09:04:09 -0700
-From: Boris Burkov <boris@bur.io>
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: use shifts for sectorsize and nodesize
-Message-ID: <20260527160409.GC1981571@zen.localdomain>
-References: <20260527111652.944584-1-dsterba@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PMBqLHic"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BCEA11F000E9;
+	Wed, 27 May 2026 18:11:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1779905468;
+	bh=LFIe2Cvhhffxlia7PRRhk6Oq1yPn74HcL0RzVeZsFu0=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To;
+	b=PMBqLHicoHnSY8YX/dhlwcV+sVEjR5MIKwC5zESQKIZ4/3mqZw5Jl4lrMHPyLfkX7
+	 +vQN7B/4NDpvX2y6E08p6QsFCJTes+Uv16U8Ld07P8JMtbjxzHw+8fmHc3fvUbDl7D
+	 idoR6xpJGi1XpDfcr37hty2sGNKh3EEj/8VR61FEMDKqSCCIQElHLsfautttCsSx4x
+	 ewQUJHtnsRJvONyGqwFIksan8pFjNtwmLyXKFQdTOVTolFYpFYF4g1++c+O3yXcxk2
+	 KpPQTeZz16EjzOdCOtb2cjvdrrlO3N38Rf+mueMCMu6sO6CSXqO/UlPb+IGFWLYdpD
+	 e6FVA4SGEuMsg==
+Message-ID: <ab5492b6-a053-4e3b-8c59-2e836ae85bc4@kernel.org>
+Date: Thu, 28 May 2026 03:11:05 +0900
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260527111652.944584-1-dsterba@suse.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v3] loop: Fix NULL pointer dereference in lo_rw_aio()
+To: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>,
+ Ming Lei <tom.leiming@gmail.com>
+Cc: Jens Axboe <axboe@kernel.dk>, Bart Van Assche <bvanassche@acm.org>,
+ Christoph Hellwig <hch@lst.de>, linux-block <linux-block@vger.kernel.org>,
+ LKML <linux-kernel@vger.kernel.org>,
+ Andrew Morton <akpm@linux-foundation.org>,
+ Linus Torvalds <torvalds@linux-foundation.org>, linux-btrfs@vger.kernel.org,
+ David Sterba <dsterba@suse.com>, linux-fsdevel@vger.kernel.org,
+ Christian Brauner <brauner@kernel.org>
+References: <ag0lS_CbKO9R5CV8@fedora>
+ <94076bc9-2c09-4bb6-8468-b6b8af419cb9@I-love.SAKURA.ne.jp>
+ <ag1nfIFcykmQHbkk@fedora>
+ <1ab8c579-eb76-4227-8a72-6ec819135219@I-love.SAKURA.ne.jp>
+ <ag1223nAa0wZ8ALC@fedora>
+ <fda8abc8-6aa2-463b-bf72-865f6b838034@I-love.SAKURA.ne.jp>
+ <ahRocb0Vs_m6RF_O@fedora>
+ <1a9f53d4-6f48-4df8-a3d8-2b0e442a163a@I-love.SAKURA.ne.jp>
+ <ahZGxoI6oHQ_vSrx@fedora>
+ <d1b5a737-f0e3-4927-b762-430b37fbb2f9@I-love.SAKURA.ne.jp>
+ <ahZeYQ0cLE1i8TGs@fedora>
+ <fbb3edda-f108-4e5b-acf2-266f043f8125@I-love.SAKURA.ne.jp>
+Content-Language: en-US
+From: Damien Le Moal <dlemoal@kernel.org>
+Organization: Western Digital Research
+In-Reply-To: <fbb3edda-f108-4e5b-acf2-266f043f8125@I-love.SAKURA.ne.jp>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Wed, May 27, 2026 at 01:16:52PM +0200, David Sterba wrote:
-> Convert more multiplications of sectorsize or nodesize to use the
-> shifts. The remaining cases are multiplications by constants that
-> compiler can optimize by itself, and in tests.
+On 2026/05/27 20:29, Tetsuo Handa wrote:
+> On 2026/05/27 12:00, Ming Lei wrote:
+>> On Wed, May 27, 2026 at 10:35:56AM +0900, Tetsuo Handa wrote:
+>>> On 2026/05/27 10:20, Ming Lei wrote:
+>>>>> Of course we should try to figure out the root cause first, but how can we do?
+>>>>
+>>>> Definitely unexpected write IO(after umount & loop closed) from btrfs is more serious,
+>>>> which may cause data loss, so CC btrfs list and maintainer.
+>>>
 > 
-Reviewed-by: Boris Burkov <boris@bur.io>
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/delalloc-space.c | 4 ++--
->  fs/btrfs/disk-io.c        | 2 +-
->  fs/btrfs/file-item.c      | 2 +-
->  fs/btrfs/relocation.c     | 4 ++--
->  fs/btrfs/transaction.c    | 2 +-
->  5 files changed, 7 insertions(+), 7 deletions(-)
+> I had a conversation with Google AI mode, and received the following response.
 > 
-> diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-> index 0970799d0aa443..5d5ff5a0280844 100644
-> --- a/fs/btrfs/delalloc-space.c
-> +++ b/fs/btrfs/delalloc-space.c
-> @@ -279,7 +279,7 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
->  	 *
->  	 * This is overestimating in most cases.
->  	 */
-> -	qgroup_rsv_size = (u64)outstanding_extents * fs_info->nodesize;
-> +	qgroup_rsv_size = ((u64)outstanding_extents << fs_info->nodesize_bits);
->  
->  	spin_lock(&block_rsv->lock);
->  	block_rsv->size = reserve_size;
-> @@ -309,7 +309,7 @@ static void calc_inode_reservations(struct btrfs_inode *inode,
->  	 * for an inode update.
->  	 */
->  	*meta_reserve += inode_update;
-> -	*qgroup_reserve = nr_extents * fs_info->nodesize;
-> +	*qgroup_reserve = (nr_extents << fs_info->nodesize_bits);
->  }
->  
->  int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index e6ed52f5cd6d99..590da1ba5de485 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -563,7 +563,7 @@ static bool btree_dirty_folio(struct address_space *mapping,
->  			continue;
->  		}
->  		spin_unlock_irqrestore(&subpage->lock, flags);
-> -		cur = page_start + cur_bit * fs_info->sectorsize;
-> +		cur = page_start + (cur_bit << fs_info->sectorsize_bits);
->  
->  		eb = find_extent_buffer(fs_info, cur);
->  		ASSERT(eb);
-> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-> index 82ae4a2afd3471..9f6454e9db8186 100644
-> --- a/fs/btrfs/file-item.c
-> +++ b/fs/btrfs/file-item.c
-> @@ -1309,7 +1309,7 @@ int btrfs_insert_data_csums(struct btrfs_trans_handle *trans,
->  
->  	index += ins_size;
->  	ins_size /= csum_size;
-> -	total_bytes += ins_size * fs_info->sectorsize;
-> +	total_bytes += (ins_size << fs_info->sectorsize_bits);
->  
->  	if (total_bytes < sums->len) {
->  		btrfs_release_path(path);
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 67af02e732d0ce..8212abc2d13652 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -1560,7 +1560,7 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
->  	 * and * 2 since we have two trees to COW.
->  	 */
->  	reserve_level = max_t(int, 1, btrfs_root_level(root_item));
-> -	min_reserved = fs_info->nodesize * reserve_level * 2;
-> +	min_reserved = (reserve_level << fs_info->nodesize_bits) * 2;
+> --------------------------------------------------------------------------------
+> Technical Analysis: lo_rw_aio Null Pointer Dereference / UAF since v7.1-rc1
+> 
+> 
+> 1. The Root Cause of the Timing Shift
+> 
+> This regression was introduced during the v7.1-rc1 merge window, primarily exposed by
+> Commit 65565ca5f99b ("block: unify the synchronous bi_end_io callbacks"), along with
+> helper refactorings like Commit 92c3737a2473 ("block: add a bio_submit_or_kill helper").
+> 
+> Prior to v7.0, the synchronous I/O completion path inherently contained execution lags (due
+> to serialized completion handling and context switches) before notifying upper layers. This
+> latency accidentally acted as a natural safety barrier. It ensured that by the time a file
+> system completed its final sync_filesystem() and initiated umount, the loop driver's internal
+> workqueue (lo_rw_aio) had already finished processing everything.
+> 
+> In v7.1, the unification and optimization of bi_end_io significantly minimized this latency.
+> The filesystem now learns of "I/O completion" much faster. Consequently, highly-concurrent
+> execution pipelines like btrfs or jfs proceed rapidly through kill_sb() and blkdev_put(),
+> ultimately invoking lo_release() -> __loop_clr_fd() while the loop driver's backend kworker
+> is still in the middle of executing the last sub-millisecond asynchronous file-backed I/O
+> request.
+> 
+> 
+> 2. Why the Block Layer's Built-in Quiesce/Freeze Fails
+> 
+> There is an implicit assumption that standard block layer freeze mechanisms (blk_mq_freeze_queue())
+> protect the device lifetime during release. However, the v7.1 BIO helper refactoring introduced
+> a synchronization gap:
+> 
+>   1. The filesystem triggers its final metadata or journal updates (e.g., txCommit in jfs or
+>      delayed refcount updates in btrfs) right during the unmount/close boundary.
+>   2. Due to the optimized execution path, these requests bypass the block layer's active
+>      request-tracking metrics at the exact moment blk_mq_freeze_queue() or state validation
+>      checks evaluated them as zero.
+>   3. The block layer assumes the queue is safe and silent, allowing __loop_clr_fd() to
+>      progress and nullify lo->lo_backing_file (or trigger fput()).
+>   4. The leaked asynchronous kworker wakes up a fraction of a millisecond too late, attempts
+>      to access lo->lo_backing_file or invokes kiocb_end_write() -> file_inode(), leading to
+>      either a general protection fault (Null pointer dereference) or a Use-After-Free (UAF).
+> 
+> 
+> 3. Why This Isn't Just an "Unexpected FS Bug"
+> 
+> While the write I/O originates from file systems like btrfs and jfs post-close, blaming the
+> file systems entirely ignores the underlying infrastructure change. The core issue is that the
+> block layer altered its synchronization behavior, breaking the barrier contract that
+> VFS and file systems historically relied on during the device release path.
+> 
+> Papering over this inside individual file systems would require adding heavy, duplicated
+> barriers inside every single filesystem's unmount path.
 
-Is it nicer to just add 1 to the shift operand?
+It sounds like the VFS unmount call needs to have something that waits for
+sync() to complete. Though, it really feels very strange that an FS can complete
+unmount without itself ensuring that there are no more IOs in flight. The
+generic VFS layer cannot know what the FS needs to flush on unmount, so waiting
+on a generic sync might not be enough.
 
->  	memset(&next_key, 0, sizeof(next_key));
->  
->  	while (1) {
-> @@ -2558,7 +2558,7 @@ static int relocate_cowonly_block(struct btrfs_trans_handle *trans,
->  
->  	nr_levels = max(btrfs_header_level(root->node) - block->level, 0) + 1;
->  
-> -	num_bytes = fs_info->nodesize * nr_levels;
-> +	num_bytes = (nr_levels << fs_info->nodesize_bits);
->  	ret = refill_metadata_space(trans, rc, num_bytes);
->  	if (ret) {
->  		btrfs_put_root(root);
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index a289a8fa237c8a..2263cb6bd8ca47 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -631,7 +631,7 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
->  	 * the appropriate flushing if need be.
->  	 */
->  	if (num_items && root != fs_info->chunk_root) {
-> -		qgroup_reserved = num_items * fs_info->nodesize;
-> +		qgroup_reserved = (num_items << fs_info->nodesize_bits);
->  		/*
->  		 * Use prealloc for now, as there might be a currently running
->  		 * transaction that could free this reserved space prematurely
-> -- 
-> 2.54.0
-> 
+It really feels like this is a btrfs and jfs issue, unless the same can be
+reproduced with any file system (XFS, ext4, f2fs, ...).
+
+Just my 2 cents.
+
+
+-- 
+Damien Le Moal
+Western Digital Research

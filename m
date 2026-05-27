@@ -1,145 +1,150 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BD93545BD60;
-	Wed, 27 May 2026 18:11:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 22C9A2F7EE9
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2026 18:50:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779905470; cv=none; b=SnuiISOVk6hoZG3uvEYIjNFvyc+W1EqNAKwNCxFRFRU/lvgqu2SoMfVBkn55H730ahGSzahH9QAWVjOXdJj0eCVs3th459iwEKL75hnh0J3eBeLLZnJeXh4ny8M0V7tOIbhePWrd12wBn4oHM4jQnokO6PojS2V7tcc2/9BSrcs=
+	t=1779907834; cv=none; b=nocZ8S02L1p62NEAEPEc9Vm6/5cH3luccov9yAqA/Ood9yIbEBgJ2tJeMdVOJ+BjpJ430wOyEtk1w9+rxDCm9oAGkPHuhEzIz+A6RYPmor4dOHnXDWW6sZXXelbaNTBUqtIq9De3tfVSwW5VWOvSoLA+3GjtCBLBXM2qESDGkHM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779905470; c=relaxed/simple;
-	bh=FR3flEeJqppiUYRlGx6vob2K/t2fe/ABpe9P4OUT3rg=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=WUbBMbW8noktmS4gfeEkwSprFNyY5H4vO3TCc/8/N1MDHlhLJTHzzf+R/jYLTmoOFnrdC1ebQ/FLKmcDkE3i3VFasMAcq2x5fQJAsOkOT4eelfUz51mYgdqO1WYybgX+aL5gBKeW4MhemZFlFQzEvR6zl46XaC1xw9tWm5uvkVE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PMBqLHic; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1779907834; c=relaxed/simple;
+	bh=qUIwgFLLBdVU2uhekTFMiZ/8vh0M5zSJerkjHXKnLSA=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=Wa1qaHCgAFMfqBKfX8Yeg0skT6/4LRoCwS0cCok7frqPmy/G10uMcidI+eRQPiKUeTtEJzRhhQPMY4xHLeEfR/rVLYiOCFDXR7CeKD9X+Udnx6Y+I5uInRnaH8lyLXDj9Ochvb9ngRDd5KZAT6Wi0l7o/riMTx2/hG/0TkCAKVs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=0q0nMsc/; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=iCoFwUU6; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=vA0u+yGU; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=cuRFKpkv; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PMBqLHic"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id BCEA11F000E9;
-	Wed, 27 May 2026 18:11:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1779905468;
-	bh=LFIe2Cvhhffxlia7PRRhk6Oq1yPn74HcL0RzVeZsFu0=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To;
-	b=PMBqLHicoHnSY8YX/dhlwcV+sVEjR5MIKwC5zESQKIZ4/3mqZw5Jl4lrMHPyLfkX7
-	 +vQN7B/4NDpvX2y6E08p6QsFCJTes+Uv16U8Ld07P8JMtbjxzHw+8fmHc3fvUbDl7D
-	 idoR6xpJGi1XpDfcr37hty2sGNKh3EEj/8VR61FEMDKqSCCIQElHLsfautttCsSx4x
-	 ewQUJHtnsRJvONyGqwFIksan8pFjNtwmLyXKFQdTOVTolFYpFYF4g1++c+O3yXcxk2
-	 KpPQTeZz16EjzOdCOtb2cjvdrrlO3N38Rf+mueMCMu6sO6CSXqO/UlPb+IGFWLYdpD
-	 e6FVA4SGEuMsg==
-Message-ID: <ab5492b6-a053-4e3b-8c59-2e836ae85bc4@kernel.org>
-Date: Thu, 28 May 2026 03:11:05 +0900
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="0q0nMsc/";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="iCoFwUU6";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="vA0u+yGU";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="cuRFKpkv"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id D6D856AD4E;
+	Wed, 27 May 2026 18:50:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1779907831;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=xJkd7CdGShlqnkt04nVSHYIKXoNQf7Z05+0TxdpP/DQ=;
+	b=0q0nMsc/fgcCj5HN97LxZ18nIY1hTxTXityn2vTl7hVCMjgK/Vc897+53StJ/reRKKSc+l
+	Fi6Hto6cL/cHHJ4uC189tPmn4p9a+Xw2wBz/YEYu5dfSVWA4otOQTAwOKAns6fdsY3PlA8
+	MtRB+5Fzd9LvWxnTwc5AwPnAsG9q8EQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1779907831;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=xJkd7CdGShlqnkt04nVSHYIKXoNQf7Z05+0TxdpP/DQ=;
+	b=iCoFwUU6TQA8shK3a3Lk8jo78Y1VRbIyJERsfNCuO6+g/xy742E2m7eUeQCwqJSbvmMHSO
+	RwyzBNa/t2uH2sAQ==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=vA0u+yGU;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=cuRFKpkv
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1779907830;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=xJkd7CdGShlqnkt04nVSHYIKXoNQf7Z05+0TxdpP/DQ=;
+	b=vA0u+yGUdvt6NAIx6nWc1DzHtLytBkXqvvW0ck5IK8cKhQPxDq6SVivjnraeKCvLK2iFBY
+	hQ1CLkt/Q4PCt46hECRFMwciOS41APH1wYBDXwT0sRd4CQjjjU/nd7rIy8Q7wQY6TVvfrS
+	2HhMw6gaV8Ws/wUaZbS6Chcaq6HIK64=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1779907830;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=xJkd7CdGShlqnkt04nVSHYIKXoNQf7Z05+0TxdpP/DQ=;
+	b=cuRFKpkvVnHoNM3CoykJCDLrLTiq86ZD6JCQ0musyEy2SFZWih4OyFIEp/QXLqUpqoy2gJ
+	n352MGSNSDpSzJBw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BEB7A5A988;
+	Wed, 27 May 2026 18:50:30 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id XnpRLvY8F2q4agAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Wed, 27 May 2026 18:50:30 +0000
+Date: Wed, 27 May 2026 20:50:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Boris Burkov <boris@bur.io>
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: use shifts for sectorsize and nodesize
+Message-ID: <20260527185029.GC880787@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <20260527111652.944584-1-dsterba@suse.com>
+ <20260527160409.GC1981571@zen.localdomain>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v3] loop: Fix NULL pointer dereference in lo_rw_aio()
-To: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>,
- Ming Lei <tom.leiming@gmail.com>
-Cc: Jens Axboe <axboe@kernel.dk>, Bart Van Assche <bvanassche@acm.org>,
- Christoph Hellwig <hch@lst.de>, linux-block <linux-block@vger.kernel.org>,
- LKML <linux-kernel@vger.kernel.org>,
- Andrew Morton <akpm@linux-foundation.org>,
- Linus Torvalds <torvalds@linux-foundation.org>, linux-btrfs@vger.kernel.org,
- David Sterba <dsterba@suse.com>, linux-fsdevel@vger.kernel.org,
- Christian Brauner <brauner@kernel.org>
-References: <ag0lS_CbKO9R5CV8@fedora>
- <94076bc9-2c09-4bb6-8468-b6b8af419cb9@I-love.SAKURA.ne.jp>
- <ag1nfIFcykmQHbkk@fedora>
- <1ab8c579-eb76-4227-8a72-6ec819135219@I-love.SAKURA.ne.jp>
- <ag1223nAa0wZ8ALC@fedora>
- <fda8abc8-6aa2-463b-bf72-865f6b838034@I-love.SAKURA.ne.jp>
- <ahRocb0Vs_m6RF_O@fedora>
- <1a9f53d4-6f48-4df8-a3d8-2b0e442a163a@I-love.SAKURA.ne.jp>
- <ahZGxoI6oHQ_vSrx@fedora>
- <d1b5a737-f0e3-4927-b762-430b37fbb2f9@I-love.SAKURA.ne.jp>
- <ahZeYQ0cLE1i8TGs@fedora>
- <fbb3edda-f108-4e5b-acf2-266f043f8125@I-love.SAKURA.ne.jp>
-Content-Language: en-US
-From: Damien Le Moal <dlemoal@kernel.org>
-Organization: Western Digital Research
-In-Reply-To: <fbb3edda-f108-4e5b-acf2-266f043f8125@I-love.SAKURA.ne.jp>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260527160409.GC1981571@zen.localdomain>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: D6D856AD4E
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	ARC_NA(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_TLS_ALL(0.00)[];
+	MID_RHS_MATCH_FROM(0.00)[];
+	RCPT_COUNT_THREE(0.00)[3];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:mid,suse.cz:dkim,suse.cz:replyto,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+]
+X-Spam-Flag: NO
+X-Spam-Score: -4.21
 
-On 2026/05/27 20:29, Tetsuo Handa wrote:
-> On 2026/05/27 12:00, Ming Lei wrote:
->> On Wed, May 27, 2026 at 10:35:56AM +0900, Tetsuo Handa wrote:
->>> On 2026/05/27 10:20, Ming Lei wrote:
->>>>> Of course we should try to figure out the root cause first, but how can we do?
->>>>
->>>> Definitely unexpected write IO(after umount & loop closed) from btrfs is more serious,
->>>> which may cause data loss, so CC btrfs list and maintainer.
->>>
+On Wed, May 27, 2026 at 09:04:09AM -0700, Boris Burkov wrote:
+> > --- a/fs/btrfs/relocation.c
+> > +++ b/fs/btrfs/relocation.c
+> > @@ -1560,7 +1560,7 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
+> >  	 * and * 2 since we have two trees to COW.
+> >  	 */
+> >  	reserve_level = max_t(int, 1, btrfs_root_level(root_item));
+> > -	min_reserved = fs_info->nodesize * reserve_level * 2;
+> > +	min_reserved = (reserve_level << fs_info->nodesize_bits) * 2;
 > 
-> I had a conversation with Google AI mode, and received the following response.
-> 
-> --------------------------------------------------------------------------------
-> Technical Analysis: lo_rw_aio Null Pointer Dereference / UAF since v7.1-rc1
-> 
-> 
-> 1. The Root Cause of the Timing Shift
-> 
-> This regression was introduced during the v7.1-rc1 merge window, primarily exposed by
-> Commit 65565ca5f99b ("block: unify the synchronous bi_end_io callbacks"), along with
-> helper refactorings like Commit 92c3737a2473 ("block: add a bio_submit_or_kill helper").
-> 
-> Prior to v7.0, the synchronous I/O completion path inherently contained execution lags (due
-> to serialized completion handling and context switches) before notifying upper layers. This
-> latency accidentally acted as a natural safety barrier. It ensured that by the time a file
-> system completed its final sync_filesystem() and initiated umount, the loop driver's internal
-> workqueue (lo_rw_aio) had already finished processing everything.
-> 
-> In v7.1, the unification and optimization of bi_end_io significantly minimized this latency.
-> The filesystem now learns of "I/O completion" much faster. Consequently, highly-concurrent
-> execution pipelines like btrfs or jfs proceed rapidly through kill_sb() and blkdev_put(),
-> ultimately invoking lo_release() -> __loop_clr_fd() while the loop driver's backend kworker
-> is still in the middle of executing the last sub-millisecond asynchronous file-backed I/O
-> request.
-> 
-> 
-> 2. Why the Block Layer's Built-in Quiesce/Freeze Fails
-> 
-> There is an implicit assumption that standard block layer freeze mechanisms (blk_mq_freeze_queue())
-> protect the device lifetime during release. However, the v7.1 BIO helper refactoring introduced
-> a synchronization gap:
-> 
->   1. The filesystem triggers its final metadata or journal updates (e.g., txCommit in jfs or
->      delayed refcount updates in btrfs) right during the unmount/close boundary.
->   2. Due to the optimized execution path, these requests bypass the block layer's active
->      request-tracking metrics at the exact moment blk_mq_freeze_queue() or state validation
->      checks evaluated them as zero.
->   3. The block layer assumes the queue is safe and silent, allowing __loop_clr_fd() to
->      progress and nullify lo->lo_backing_file (or trigger fput()).
->   4. The leaked asynchronous kworker wakes up a fraction of a millisecond too late, attempts
->      to access lo->lo_backing_file or invokes kiocb_end_write() -> file_inode(), leading to
->      either a general protection fault (Null pointer dereference) or a Use-After-Free (UAF).
-> 
-> 
-> 3. Why This Isn't Just an "Unexpected FS Bug"
-> 
-> While the write I/O originates from file systems like btrfs and jfs post-close, blaming the
-> file systems entirely ignores the underlying infrastructure change. The core issue is that the
-> block layer altered its synchronization behavior, breaking the barrier contract that
-> VFS and file systems historically relied on during the device release path.
-> 
-> Papering over this inside individual file systems would require adding heavy, duplicated
-> barriers inside every single filesystem's unmount path.
+> Is it nicer to just add 1 to the shift operand?
 
-It sounds like the VFS unmount call needs to have something that waits for
-sync() to complete. Though, it really feels very strange that an FS can complete
-unmount without itself ensuring that there are no more IOs in flight. The
-generic VFS layer cannot know what the FS needs to flush on unmount, so waiting
-on a generic sync might not be enough.
+There's fragment of the comment in the diff context, in full
 
-It really feels like this is a btrfs and jfs issue, unless the same can be
-reproduced with any file system (XFS, ext4, f2fs, ...).
+        /*
+         * In merge_reloc_root(), we modify the upper level pointer to swap the
+         * tree blocks between reloc tree and subvolume tree.  Thus for tree
+         * block COW, we COW at most from level 1 to root level for each tree.
+         *
+         * Thus the needed metadata size is at most root_level * nodesize,
+         * and * 2 since we have two trees to COW.
+         */
 
-Just my 2 cents.
-
-
--- 
-Damien Le Moal
-Western Digital Research
+so the "* 2" matches it.

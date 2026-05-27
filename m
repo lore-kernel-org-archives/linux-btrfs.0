@@ -1,68 +1,67 @@
-Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
+Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D823F39B944
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2026 21:44:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 659F4356761
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2026 21:45:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779918298; cv=none; b=ei0CYr+xxiGOakvo0QFCAWEzMTX6CP+O1pZbmJZSZqle8SIvolCbDap1PLwENCsKQcUJVIiYCT5CZZMAeaarmTbJn9g4ElsK1dzi5Yg+WD8pTpDbWzRQg3Jk5m5BC/Ej69gOW4k8ivuLOD5AaqSgloCJuLOp/Opqu1tKMmsh2Xg=
+	t=1779918339; cv=none; b=Cjqfo2lFx4z1APava+wkvjP9W1oTwDE50s00LWGAuo1e/MCVjU2O/np4zJVrCzH+myuoY1AV04hpJLbal/2HYGN0JJDxk9bYSJzWfoXCvvaDhP869V7FZX3b/LtWsV1B/0hlMUmgaXnFw2bDsZbyHcaeA4GCSI1mauWN0xTcjb8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779918298; c=relaxed/simple;
-	bh=wOPZOylbzn0EBb+XtnLCNG1tMnlbRxPcbU0fsqJ++/Q=;
+	s=arc-20240116; t=1779918339; c=relaxed/simple;
+	bh=RIS/E68KyHH3DBy5x5jSpSo5Egts7+jFl2fUDUnWeBQ=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=rudrPHweMj+rshFT5DVvm6GgDU2X0F8HNjVqP6MVBRhkgMcK/CUqQGhO2MeVeO0+oBOS/4XbTGPxOcpcgebR98xSW9ythGr9c9O3J7geL3kitFUBoQhO7BBN/bPPWDnMTGHMVTo0KI+x5hRSr4vxifDr5m7OjojoDIXlrEn2oU4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=ThfTl7c3; arc=none smtp.client-ip=209.85.128.50
+	 In-Reply-To:Content-Type; b=ZS4P7t0C1etsg0+ownap39aybOdS9P0vPiaQQH9S8MG8uqaZDl7a4hg0JHdeY1JOR1VUpykLrhdw6ZyB6gJETlmltAGBC0RhtsvgVVRbFsjVWeET+Hb88GeqdeVe5RiPBduqfgGV55kpW2xd1NpTIcWctwT1aCPqIhUfDEGBaSo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=HEBsz08T; arc=none smtp.client-ip=209.85.128.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="ThfTl7c3"
-Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-49041e84237so47844235e9.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2026 14:44:56 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="HEBsz08T"
+Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-4905e190c71so45175145e9.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2026 14:45:37 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1779918295; x=1780523095; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1779918336; x=1780523136; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=YP9NVQw6x17ijgF84UUWFIwb/egC2GyQ6u7Q+lRWOqY=;
-        b=ThfTl7c3rQI7xHlSDr3Lzp5/GhefpcBvOUZfGcLcwpb+XarLtTBCKp8aHMDWTaHaCR
-         nx08r1G8nH2eV3/bHU15C02v+5HbxE6StzoAywhmmdO6bKuS9R18BN3gysxijWhE2IcK
-         i64p/fIoZtRVod/DggHRO1Avzhq0M6jlSXROdtjGJ/w0ljd0a9As5BzJhPJJ0lPnEnKM
-         Ob1DhCVdwBN6oRwJUy8TsACnEH2SNJdfrPATG3ugle5/pZkISe6NDg5knSbfX7zog8Sf
-         9C3NolPe+bDlgx3WZkeZxIiFzYwyqeVU0r0tNkRu0dAHH2zzVsCTbworPz8ojxghxTAK
-         74mw==
+        bh=sLPGos2emiDUZB01fCRV1Uv0AE7h6zD6z2Plr3zZSFI=;
+        b=HEBsz08T7U2SVztHLOGc7WQOfiXchelHxucl7aJ4GWINtYVuvD29WJ1oCPKlvDPeDj
+         9wAzDSC9vsq1Zu+PXnB/YgaYSaZoj89iBAUU4lROHtKF/q/5D/AqG92DvvBYX1cIJYfb
+         hBp7rNmWxPAPRhrIbOzm/N5/xAiFL4NZ62KPZk8WZU6nmCssQsoGyosVv8zCyZ9+eI+Z
+         nb31wkynEi/VSSUlFqZ/dIk9CgkzGpJcHJqzd9WnUf+eysgtOAYrvS78cnEW22jGCz/N
+         9MwgYAvQPUYI7q94GSsI8Hnt1BzWpmUC4FluxtKB1jOrbbf8Y6OArc/omMBmiQcPzb8v
+         3zGQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1779918295; x=1780523095;
+        d=1e100.net; s=20251104; t=1779918336; x=1780523136;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=YP9NVQw6x17ijgF84UUWFIwb/egC2GyQ6u7Q+lRWOqY=;
-        b=i0hw7AgFcyMkSmUodcweL813f0SIxOrXf/e7gmslq4+SgoWmYbOpYba6Amvn9xc4lo
-         o50Y83/yBfxmtd2jfXQqL3sHk5oQYet67zy1affk4trazijIlbGchT6scgS04ic7Hu1F
-         J/QMidA4nwC0DVIg8gywO5hJ+9/54Wz1LrINrz8FnKKkdwLcM1g1s9gJWl8AgosS0q04
-         BNZ357iGRBzdCTk4VDTJUIZesObt1h3Ufss07LgcHnyuwqClH2pLanjQxqhaDmuqQ2C6
-         PB76G8lYnIU75zwiq7GI7RCFPe9B/sgbcGFldO1wD4ado7c+bmHksH1maz3TltjGL2bs
-         nbKA==
-X-Forwarded-Encrypted: i=1; AFNElJ/T56oXS4+Gu/2G4eO4BfEhXkVKCZdswhiHGfB3LEsJsFitXbL3r2f3YaYmQU+4NOJKXT2yOxGKexagEg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzrGWLl+DOJpY871Z3RwMVdYFEHVwsbViBPlyeM6qXH6sXf+cot
-	AN8W1L301JBMHErsB9gXu9cqn0vO9xQHa+0x6qXM07eS+DOuKTsMDo7Amkm5Bej9j8L+yaKk0cn
-	c84lp
-X-Gm-Gg: Acq92OEXL0UMw41Yu1iutE5A+8MaHBYWiS6dmZCvYVE7844qrWlg7RcX9ScM845K1YR
-	Vq6WEgk2ajFtUKWIKr5Z2RNVJ1xWbuAwcGhbBy2nnB/xTxcpnTnhH/5qzv7GGK4mQB5hbTfIvsD
-	uvulUhuomepL6UDexbawu1uAbAyGEq3Luav75PVMizxwlxS55hsAe0nbQHQceuglXMcEnY5f0y3
-	5ypwMcs36X2Iv/Ctih9lo8D+JjZytpFqKCtEW9ssp5gGnCjRnOj/rS63Pm+LmgdE5TKBoE/RvpV
-	30vhdPHGZcB0XkbFc0O8Hjy4c2Pl6LYOO07jIqwR1CxElkeCyCbTqyVv1mslm2c781oL9Muj8Er
-	qyJd84SrXEToCHBvElN1m+ofxkcEA09lVDosrIat9qjUG6OOO3E32v3pfO9vV9rdZM60sNjfhGe
-	piTJfjK1qBENpP4ByOFDysaxWGeqQP594wcFtIxxozZ1SmF8sJwh1j6bpQbyjXFinNwhGXpIaFV
-	FWu5FSJQFGAIq6ixn5bN5yY5NbOlkxQr439v38kqBVsgwpjb5OYNqKqa9mkkiCikpop
-X-Received: by 2002:a05:600d:108:10b0:490:53b0:9e5a with SMTP id 5b1f17b1804b1-49053b09ff3mr218036005e9.5.1779918295188;
-        Wed, 27 May 2026 14:44:55 -0700 (PDT)
+        bh=sLPGos2emiDUZB01fCRV1Uv0AE7h6zD6z2Plr3zZSFI=;
+        b=PCMow9dsPYHaTfjeMpQ9DhMKHe4SIfsLmf4ku8Gwh2XztTMK91PPaVt/vhk2jdR6ol
+         j2YlSTJB7EXsY8hyabBT1OhYuVOiyYhu7dMbJq1hpX0sWm0/OJ1m/ifVdr1+VMD4R42G
+         oR2QLDoPBvP0KmeYKjldiIW/rDP5dxb1Z/VIFH/HPtF4I1tJ9vnz614xwLENXFDUKyLG
+         V6eSRn0wAZ6EnJw614Or/drCx9xTqHnJhR4wVh0/o2p+fxIDfaVPV618yyYQr4K02A3V
+         z6QnycZKI2Be1xDdBDKvE8hKQse4qZzLcKOiwedhhsvsYaCVi+mz3xuPU8sCzJt60avi
+         C7Jw==
+X-Forwarded-Encrypted: i=1; AFNElJ+Wu5d9cEwiyWAK3EoL3U2WniBh4/MZLJFJO/pxWbyxRjB/bhqSrfVX3DLRS4Ka6A7qE9DLf2wOymNIwg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzFUk7hX030US9mH3T3Jce7U6E+EGZmDhMwMGYCOzNuxdxr+VHx
+	jYl0StQnNpEV+a+tlRZgGbIvg2zszlhv4M6Nf8dQ/uoIh36EJLL9JHKc22zFw2pxQlU=
+X-Gm-Gg: Acq92OFbRoMYSiOtawwhwNsruZpqNl27kCAafu+9bzd87JGrMz56ADqLzemXu6ri/Cd
+	jUQJ+kHETyseBsIFhi6x0bgTsZUZq6VBvKSoWo4UAp2Z9Va4iMNrIA23AuTXgPMNMm9XPolmKqE
+	Sc8pbqzCOiQW8d0QIbOnDbBsNAWm5B5+cjSWpvz1tqcd1g6WdESKK/EE1do8vYpLN/0GD5DE3ND
+	wp6ADU5FM3GnjOEYQGLiGbVMNW75nPPX5fFlFHWYqsAlbSjR244AeWUG5QTm8NSc1sdkI9bu8Su
+	wta8IR6uFM8oXiHBGw6fMiHbZ0U50XSF/BocorbcuKsjWMY+X5PUuT7I2/7o3JsoAklUR5ucJe6
+	DZ47kj+0WKXvG19B19nlmXJv/QMlP/vJn7V3geB8qRJgbCZ9pxe7E+WrPjJ8J+mh2rMy9N6/lQG
+	nJknU8vzj56F8wQ8JB5X3I8zmGLDS0gSN3iykr1Cd3LJUEe5yKtoxsPsKQvS1LRJ6OIu7kIxz7Q
+	eX3aIEn2BIdSCsUHeLQrN8t9q1YJSZTGFyD3J5V/cxVRezEa89KjvXXyw==
+X-Received: by 2002:a05:600d:640f:10b0:490:3ff5:737f with SMTP id 5b1f17b1804b1-490426cefe0mr302983195e9.18.1779918335584;
+        Wed, 27 May 2026 14:45:35 -0700 (PDT)
 Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2beb5903bcasm170980565ad.77.2026.05.27.14.44.52
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-841d6eae464sm4145099b3a.20.2026.05.27.14.45.33
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 27 May 2026 14:44:54 -0700 (PDT)
-Message-ID: <6edf7876-0e3e-4528-b18a-232c87245921@suse.com>
-Date: Thu, 28 May 2026 07:14:50 +0930
+        Wed, 27 May 2026 14:45:34 -0700 (PDT)
+Message-ID: <df399edc-eb21-4566-9640-02b446eb6d3a@suse.com>
+Date: Thu, 28 May 2026 07:15:30 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -70,12 +69,9 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: status of O_DIRECT with btrfs ?
-To: Roland Kletzing <devzero@web.de>, dsterba@suse.com,
- linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <a56459a9-0d23-4fcf-bea0-e16a2d6245cd@web.de>
- <4a00615e-7515-4bed-9cf0-e01b62356018@suse.com>
- <9dc28403-c294-405a-a9e6-cd4e32e6e327@web.de>
+Subject: Re: [PATCH] btrfs: use shifts for sectorsize and nodesize
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <20260527111652.944584-1-dsterba@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -102,73 +98,113 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <9dc28403-c294-405a-a9e6-cd4e32e6e327@web.de>
+In-Reply-To: <20260527111652.944584-1-dsterba@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/5/28 03:11, Roland Kletzing 写道:
-> hello,
+在 2026/5/27 20:46, David Sterba 写道:
+> Convert more multiplications of sectorsize or nodesize to use the
+> shifts. The remaining cases are multiplications by constants that
+> compiler can optimize by itself, and in tests.
 > 
-> thanks again for the patch.
-> 
-> i just build a recent proxmox kernel and applied your patch and it 
-> indeed fixes csum error from happening.
-> 
-> i installed several win11 VMs and and also did virtual disk live 
-> migration and see no checksum errors anymore.
-> 
-> any reason why this patch isn't getting merged?
+> Signed-off-by: David Sterba <dsterba@suse.com>
 
-Performance drop first, it will reduce performance pretty hugely.
-At least 1/2, sometimes even 1/3 of the original performance.
-
-Secondly unlike direct writes, modifying the buffer during read can 
-easily race with the data read from disks, thus it's a more serious 
-problem in the user space.
-
-Finally, we're closing to use IOMAP_DIO_BOUNCE flag, which completely 
-resolves the problem of performance drop.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
 
+> ---
+>   fs/btrfs/delalloc-space.c | 4 ++--
+>   fs/btrfs/disk-io.c        | 2 +-
+>   fs/btrfs/file-item.c      | 2 +-
+>   fs/btrfs/relocation.c     | 4 ++--
+>   fs/btrfs/transaction.c    | 2 +-
+>   5 files changed, 7 insertions(+), 7 deletions(-)
 > 
-> regards
-> Roland
-> 
-> 
-> Am 23.05.26 um 00:09 schrieb Qu Wenruo:
->>
->>
->> 在 2026/5/23 03:54, Roland Kletzing 写道:
->>> hello,
->>>
->>> i was under assumption that with recent patches and my successfully 
->>> testing
->>> from october last year ( https://bugzilla.kernel.org/show_bug.cgi? 
->>> id=99171#c35 ) ,
->>> i was under (false) assumption that O_DIRECT support in btrfs would 
->>> have gotten much more
->>> mature now.
->>>
->>> my latest findings reported at https://bugzilla.proxmox.com/ 
->>> show_bug.cgi?id=5320#c14
->>> tell different story.
->>>
->>> is there any official statement on reliability of O_DIRECT support in 
->>> btrfs ?
->>>
->>> i'm getting these types of errors when installing win11 VM
->>
->> Direct read can still result csum errors, as this patch is not yet 
->> merged upstream.
->>
->> https://lore.kernel.org/linux-btrfs/ 
->> aa09b68f159fb0de4864de151eeba9250f2e34fd.1758840406.git.wqu@suse.com/
->>
->>
->> Furthermore, for your compression if the direct IO block size is only 
->> 4K, it will never be compressed except for inlined ones.
+> diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
+> index 0970799d0aa443..5d5ff5a0280844 100644
+> --- a/fs/btrfs/delalloc-space.c
+> +++ b/fs/btrfs/delalloc-space.c
+> @@ -279,7 +279,7 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
+>   	 *
+>   	 * This is overestimating in most cases.
+>   	 */
+> -	qgroup_rsv_size = (u64)outstanding_extents * fs_info->nodesize;
+> +	qgroup_rsv_size = ((u64)outstanding_extents << fs_info->nodesize_bits);
+>   
+>   	spin_lock(&block_rsv->lock);
+>   	block_rsv->size = reserve_size;
+> @@ -309,7 +309,7 @@ static void calc_inode_reservations(struct btrfs_inode *inode,
+>   	 * for an inode update.
+>   	 */
+>   	*meta_reserve += inode_update;
+> -	*qgroup_reserve = nr_extents * fs_info->nodesize;
+> +	*qgroup_reserve = (nr_extents << fs_info->nodesize_bits);
+>   }
+>   
+>   int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index e6ed52f5cd6d99..590da1ba5de485 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -563,7 +563,7 @@ static bool btree_dirty_folio(struct address_space *mapping,
+>   			continue;
+>   		}
+>   		spin_unlock_irqrestore(&subpage->lock, flags);
+> -		cur = page_start + cur_bit * fs_info->sectorsize;
+> +		cur = page_start + (cur_bit << fs_info->sectorsize_bits);
+>   
+>   		eb = find_extent_buffer(fs_info, cur);
+>   		ASSERT(eb);
+> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> index 82ae4a2afd3471..9f6454e9db8186 100644
+> --- a/fs/btrfs/file-item.c
+> +++ b/fs/btrfs/file-item.c
+> @@ -1309,7 +1309,7 @@ int btrfs_insert_data_csums(struct btrfs_trans_handle *trans,
+>   
+>   	index += ins_size;
+>   	ins_size /= csum_size;
+> -	total_bytes += ins_size * fs_info->sectorsize;
+> +	total_bytes += (ins_size << fs_info->sectorsize_bits);
+>   
+>   	if (total_bytes < sums->len) {
+>   		btrfs_release_path(path);
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 67af02e732d0ce..8212abc2d13652 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -1560,7 +1560,7 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
+>   	 * and * 2 since we have two trees to COW.
+>   	 */
+>   	reserve_level = max_t(int, 1, btrfs_root_level(root_item));
+> -	min_reserved = fs_info->nodesize * reserve_level * 2;
+> +	min_reserved = (reserve_level << fs_info->nodesize_bits) * 2;
+>   	memset(&next_key, 0, sizeof(next_key));
+>   
+>   	while (1) {
+> @@ -2558,7 +2558,7 @@ static int relocate_cowonly_block(struct btrfs_trans_handle *trans,
+>   
+>   	nr_levels = max(btrfs_header_level(root->node) - block->level, 0) + 1;
+>   
+> -	num_bytes = fs_info->nodesize * nr_levels;
+> +	num_bytes = (nr_levels << fs_info->nodesize_bits);
+>   	ret = refill_metadata_space(trans, rc, num_bytes);
+>   	if (ret) {
+>   		btrfs_put_root(root);
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index a289a8fa237c8a..2263cb6bd8ca47 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -631,7 +631,7 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+>   	 * the appropriate flushing if need be.
+>   	 */
+>   	if (num_items && root != fs_info->chunk_root) {
+> -		qgroup_reserved = num_items * fs_info->nodesize;
+> +		qgroup_reserved = (num_items << fs_info->nodesize_bits);
+>   		/*
+>   		 * Use prealloc for now, as there might be a currently running
+>   		 * transaction that could free this reserved space prematurely
 

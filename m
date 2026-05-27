@@ -1,186 +1,164 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7117640759D
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2026 13:09:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 779482DFA3A
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2026 14:27:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779887373; cv=none; b=Y+h6Ful4emDA30BgINXURoJ0uVyvQlDip+gGYMbP7YwZR8OkVU0B/Fbon0zDRF10gMWD91wCeIrJYyog1Z0KEGNHlemCojbzsG2vostk6nEdXZIyYtPfbJ+8kWneSi4LEZ/hSlui3zCg0wYQyw/8I3Opu9swbyr4Wp+dpeapR2Q=
+	t=1779892036; cv=none; b=WlK/lnEnIh31yflgp86OMY7tZjBLmAK1Q6/4DAq59QdTFZLzWTcNVPZ4w+hgNPC+53lwvDR9GfskAQWPu3DDSJZ69BHFk9KlxRSAAReL0rvIe8ynzU0osA883GTgW3Bu8JAq4ZEa9OVfRc5P086jVi0dTyhj6+VwVQog4HB+C0c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779887373; c=relaxed/simple;
-	bh=7MH8Uui+HOgq+vhCxdhwalHaM9gRXOm3IunjgEeuV+k=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ZmBY0jS8Ofs8ZReTUAPJPvYR5P/w826KEnaggS06CPW0kEW3Ls4R8DLMK83nbBFWADprgi9FknBteoX87XKrKVwiRCr5Nez9KSb8qnb76bb57PiHriRwae78jdfApslehGXtiAMrIVNQR68CPC04DfTkQ1nZIaUUUrIvj9sLX2Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=T/6mRyyl; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=z+rATZIS; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=T/6mRyyl; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=z+rATZIS; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1779892036; c=relaxed/simple;
+	bh=zYSiVygun1gq9hDOfe+bvAI/q49J/ionupF7mO0EVbA=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=krWHtzf22J24Ay/0I1kjfp7jibqBxptUiq8APAGEQi+Jqmg2QeLXwUPHFT11NM+MpkvEDOAYqsz1UAQUF5uNwUBG+1je7DNhffiW/VX1b8Unz+sfiLkkaSm01R318Azp5eHhxUE/2s/2V+Qkk6bupmZ0LXYprE07j8rbJiGbMWY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=a79nNhKV; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="T/6mRyyl";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="z+rATZIS";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="T/6mRyyl";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="z+rATZIS"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id B7022675B4;
-	Wed, 27 May 2026 13:09:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1779887369;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=F/dUjVPd9bNoc4PxH5IFmnNS9c/QvaShmaLkkAK3/RA=;
-	b=T/6mRyylK4sCo+844DHB4XZ2p+QB6Dii1tb4MYoTtIxgGe6XlS9c8aSHUxfLO+nW8nG3DA
-	kQ7oEsyD2rTtXMGcPEZ05HMHgNA+jGKYhVIxn1SlRnXq4XlLbONbkkggUwaXXuyOkNyyCi
-	J01vEasd+2PhgMMoZbqGgm0I311BsT4=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1779887369;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=F/dUjVPd9bNoc4PxH5IFmnNS9c/QvaShmaLkkAK3/RA=;
-	b=z+rATZISS/Bd005h0zfp1pXWMWOAI1rxa/+D7yGgXC0ZP7iiLeD2wJNzrAQoJyN6p3NVEe
-	38g4nx1oLKwB3jDg==
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b="T/6mRyyl";
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=z+rATZIS
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1779887369;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=F/dUjVPd9bNoc4PxH5IFmnNS9c/QvaShmaLkkAK3/RA=;
-	b=T/6mRyylK4sCo+844DHB4XZ2p+QB6Dii1tb4MYoTtIxgGe6XlS9c8aSHUxfLO+nW8nG3DA
-	kQ7oEsyD2rTtXMGcPEZ05HMHgNA+jGKYhVIxn1SlRnXq4XlLbONbkkggUwaXXuyOkNyyCi
-	J01vEasd+2PhgMMoZbqGgm0I311BsT4=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1779887369;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=F/dUjVPd9bNoc4PxH5IFmnNS9c/QvaShmaLkkAK3/RA=;
-	b=z+rATZISS/Bd005h0zfp1pXWMWOAI1rxa/+D7yGgXC0ZP7iiLeD2wJNzrAQoJyN6p3NVEe
-	38g4nx1oLKwB3jDg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9C9FE5A7D6;
-	Wed, 27 May 2026 13:09:29 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id H3cIJgntFmqoEwAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Wed, 27 May 2026 13:09:29 +0000
-Date: Wed, 27 May 2026 15:09:28 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Rik van Riel <riel@surriel.com>
-Cc: David Sterba <dsterba@suse.cz>, Boris Burkov <boris@bur.io>,
-	Matthew Wilcox <willy@infradead.org>,
-	Christoph Hellwig <hch@infradead.org>, kernel-team@meta.com,
-	linux-kernel@vger.kernel.org, Chris Mason <clm@meta.com>,
-	hannes@cmpxchg.org, usama.arif@linux.dev,
-	linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: allocate eb-attached btree pages as movable
-Message-ID: <20260527130928.GB880787@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20260526183739.270a5387@fangorn>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="a79nNhKV"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 18B681F000E9
+	for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2026 14:27:11 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1779892031;
+	bh=guZs8WtxL9AG6fXuY6JT062ELqFghnw1sE0oB3puiQI=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=a79nNhKVoO6W6BakLya4s18wXy/kE4+F9lr5UTg0b3RfsUiC1ymmDgBF0cl0Cty95
+	 TfvfWjT5cuCZGFANk41hOeQeJzjZuVkYtZCBI3YQg8qAPuuisyqI1wsvaLxrKKvrMx
+	 znCuDllGaeWt9Z+zNWmT/XzmRwXupGFeVjMpVYF+YZWR2gkwgjz1IpP6sdokhtCZP5
+	 APVuiFYGVoRbXrRDQaZuUKze5NLlzO5QUisfs6ywQ+ucnbiPz6+PfveJPIu4cQoInu
+	 ZfXp9i2rUr3fMjjNJ4EWEBEUfbs/XZQK9dUigezzJ7ZUMisGqP+stdJwQAvYG+UsrO
+	 EM12T1dVtK49Q==
+Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-bcc9fdc959cso2058917166b.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2026 07:27:11 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AFNElJ9G7gEzcNHajLnxInMPkdjQh4tIzg4ICHnppvOmU1hS22hxVkA2RfWNCYOFbZD5zTmnnnZQy6pf0UOsEg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwIQqInce4x8hUQyxDHsvyJ+Wl/X0+Omp2k6W857wUBlFYi6aO2
+	lXPnNHeZ+wGcVIfYIczdXVQtkmp7M5V68HnHmqB2ikikkWDjmOq7B33jX8xaFCyKb+pQ3t5KaMk
+	8g85Xo6V82MT30sMvXTK66Sc7MDQvjJY=
+X-Received: by 2002:a17:907:c003:b0:bd4:7bed:512a with SMTP id
+ a640c23a62f3a-bdd2580bc63mr1478418066b.30.1779892029718; Wed, 27 May 2026
+ 07:27:09 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260526183739.270a5387@fangorn>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: B7022675B4
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_SOME(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_SEVEN(0.00)[11];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.cz:dkim,suse.cz:replyto];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+]
-X-Spam-Flag: NO
-X-Spam-Score: -4.21
+References: <20260526070055.60193-1-wqu@suse.com>
+In-Reply-To: <20260526070055.60193-1-wqu@suse.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Wed, 27 May 2026 15:26:31 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H7Axijwfd_c3X2Ni1XEu4=0wdf3Cc6tqKF8+O+Rx++fPg@mail.gmail.com>
+X-Gm-Features: AVHnY4LGea6gSHZBESG0pIFDXrrxG-HDgVxYtXdJ8q9u6SrPSP-D1Zt-GQJTAqs
+Message-ID: <CAL3q7H7Axijwfd_c3X2Ni1XEu4=0wdf3Cc6tqKF8+O+Rx++fPg@mail.gmail.com>
+Subject: Re: [PATCH] fstests: generic/362: remove the old file to reflect new
+ mount options
+To: Qu Wenruo <wqu@suse.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Tue, May 26, 2026 at 06:37:39PM -0400, Rik van Riel wrote:
-> Extent buffer pages allocated by alloc_extent_buffer() are attached to
-> btree_inode->i_mapping (the buffer_tree path), reach the LRU, and are
-> served by the btree_migrate_folio aops in fs/btrfs/disk-io.c. They are
-> migratable in practice once their owning extent buffer hits refs == 1,
-> which happens naturally. The buddy allocator classifies them by GFP, 
-> however, and bare GFP_NOFS lands them in MIGRATE_UNMOVABLE pageblocks. 
-> The result: every btree_inode page we read in pins an unmovable pageblock 
-> from the page-superblock allocator's perspective, even though the page 
-> itself can be moved.
-> 
-> Have each caller of btrfs_alloc_page_array, btrfs_alloc_folio_array,
-> and alloc_eb_folio_array pass in the full GFP mask directly, instead
-> of having the functions calculate it from boolean flags.
-> 
-> The alloc_extent_buffer call site passes GFP_NOFS | __GFP_NOFAIL |
-> __GFP_MOVABLE. All other call sites pass plain GFP_NOFS.
-> 
-> Three categories of caller stay on bare GFP_NOFS, deliberately:
-> 
->   - alloc_dummy_extent_buffer / btrfs_clone_extent_buffer: the
->     resulting eb is EXTENT_BUFFER_UNMAPPED, folio->mapping stays NULL,
->     the folios never enter LRU, never get migrate_folio aops. Tagging
->     them __GFP_MOVABLE would violate the page allocator's migrability
->     contract and they would defeat compaction in MOVABLE pageblocks
->     where isolate_migratepages_block skips non-LRU non-movable_ops
->     pages outright.
-> 
->   - btrfs_alloc_page_array callers in fs/btrfs/raid56.c (stripe
->     pages), fs/btrfs/inode.c (encoded reads), fs/btrfs/ioctl.c (uring
->     encoded reads), fs/btrfs/relocation.c (relocation buffers): same
->     contract violation. raid56 stripe_pages additionally persist in
->     the stripe cache (RBIO_CACHE_SIZE=1024) well beyond a single I/O,
->     so they are not transient enough to hand-wave the contract.
-> 
->   - btrfs_alloc_folio_array caller in fs/btrfs/scrub.c (stripe
->     folios): same -- stripe->folios[] are private buffers freed via
->     folio_put in release_scrub_stripe.
-> 
-> This change targets the dominant fragmentation source observed on the
-> page-superblock series: ~28 GB of btree_inode pages parked across
-> many tainted superpageblocks on a 250 GB test system with btrfs root,
-> preventing 1 GiB hugepage allocation from those regions. With the
-> movable hint, those pages now land in MOVABLE pageblocks where the
-> existing background defragger drains them through the standard
-> PB_has_movable gate, no LRU-sample fallback needed.
-> 
-> Cc: Chris Mason <clm@meta.com>
-> Cc: David Sterba <dsterba@suse.com>
-> Cc: Boris Burkov <boris@bur.io>
-> Cc: linux-btrfs@vger.kernel.org
-> Signed-off-by: Rik van Riel <riel@surriel.com>
-> Assisted-by: Claude:claude-opus-4-6
+On Tue, May 26, 2026 at 8:02=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+>
+> [HIDDEN BUG]
+> There is a btrfs bug that will only trigger on newly formated TEST_DEV,
+> with mount option "nodatasum":
+>
+>  FSTYP         -- btrfs
+>  PLATFORM      -- Linux/x86_64 btrfs-vm 7.1.0-rc4-custom+ #381 SMP PREEMP=
+T_DYNAMIC Tue May 26 10:47:14 ACST 2026
+>  MKFS_OPTIONS  -- -O bgt -K /dev/mapper/test-scratch1
+>  MOUNT_OPTIONS -- -o nodatasum /dev/mapper/test-scratch1 /mnt/scratch
+>
+>  generic/362  0s ... - output mismatch (see /home/adam/xfstests/results//=
+generic/362.out.bad)
+>      --- tests/generic/362.out  2024-08-24 15:31:37.200000000 +0930
+>      +++ /home/adam/xfstests/results//generic/362.out.bad       2026-05-2=
+6 16:24:40.201201849 +0930
+>      @@ -1,2 +1,3 @@
+>       QA output created by 362
+>      +First write failed: Input/output error
+>       Silence is golden
+>      ...
+>      (Run 'diff -u /home/adam/xfstests/tests/generic/362.out /home/adam/x=
+fstests/results//generic/362.out.bad'  to see the entire diff)
+>
+> But if one has formated TEST_DEV, run test with default mount option,
+> then change the mount option to "nodatasum", the test will not fail
+> anymore:
+>
+>  FSTYP         -- btrfs
+>  PLATFORM      -- Linux/x86_64 btrfs-vm 7.1.0-rc4-custom+ #381 SMP PREEMP=
+T_DYNAMIC Tue May 26 10:47:14 ACST 2026
+>  MKFS_OPTIONS  -- -O bgt -K /dev/mapper/test-scratch1
+>  MOUNT_OPTIONS -- /dev/mapper/test-scratch1 /mnt/scratch
+>
+>  generic/362  0s ...  0s
+>  Ran: generic/362
+>  Passed all 1 tests
+>
+>  FSTYP         -- btrfs
+>  PLATFORM      -- Linux/x86_64 btrfs-vm 7.1.0-rc4-custom+ #381 SMP PREEMP=
+T_DYNAMIC Tue May 26 10:47:14 ACST 2026
+>  MKFS_OPTIONS  -- -O bgt -K /dev/mapper/test-scratch1
+>  MOUNT_OPTIONS -- -o nodatasum /dev/mapper/test-scratch1 /mnt/scratch
+>
+>  generic/362  0s ...  0s
+>  Ran: generic/362
+>  Passed all 1 tests
+>
+> [CAUSE]
+> Btrfs' nodatasum mount option only affect new files, but the test case
+> itself is using TEST_DEV, and never delete the file
+> "$TEST_DIR/dio-append-buf-fault"
+>
+> So if the file is created with default mount option, then all later
+> "nodatasum" mount option will not affect that file, thus hide the test
+> failure.
+>
+> [FIX]
+> Always delete the target file "$TEST_DIR/dio-append-buf-fault" before
+> running dio-append-buf-fault command.
+>
+> So that the new target file is always newly created and will follow
+> btrfs' new mount option and expose the failure for nodatasum.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
-> v2: pass the gfp mask directly to each function from the callers (thanks Boris)
+> I'm already looking into the test failure, because it's mostly hidden by
+> the btrfs' falling back to buffered IO behavior.
+>
+> With the incoming IOMAP_DIO_BOUNCE usage inside btrfs, it will expose
+> the failure unconditionally.
+> ---
+>  tests/generic/362 | 4 ++++
+>  1 file changed, 4 insertions(+)
+>
+> diff --git a/tests/generic/362 b/tests/generic/362
+> index 0cfaa726..86191e57 100755
+> --- a/tests/generic/362
+> +++ b/tests/generic/362
+> @@ -20,6 +20,10 @@ _require_test_program dio-append-buf-fault
+>  _fixed_by_fs_commit btrfs 939b656bc8ab \
+>         "btrfs: fix corruption after buffer fault in during direct IO app=
+end write"
+>
+> +# Remove the existing file, so a new inode can be created, and will be
+> +# affected by changed mount options.
+> +rm -rf $TEST_DIR/dio-append-buf-fault
 
-Added to for-next, thanks.
+We can just remove the file in a _cleanup function - that's what most
+other tests that exercise faults during direct IO do, like
+generic/647.
+Some tests like this one are missing that, and there's at least one
+more: generic/708. We had several similar tests, and many were copied
+from another test.
+
+Thanks.
+
+> +
+>  # On error the test program writes messages to stderr, causing a golden =
+output
+>  # mismatch and making the test fail.
+>  $here/src/dio-append-buf-fault $TEST_DIR/dio-append-buf-fault
+> --
+> 2.51.2
+>
+>

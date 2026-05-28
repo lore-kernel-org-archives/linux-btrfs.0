@@ -1,59 +1,60 @@
-Received: from r3-24.sinamail.sina.com.cn (r3-24.sinamail.sina.com.cn [202.108.3.24])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D036A2FD7D3
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 May 2026 05:44:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.108.3.24
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 170EA343D8A
+	for <linux-btrfs@vger.kernel.org>; Thu, 28 May 2026 06:59:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1779947074; cv=none; b=jez0V4olhmzyyXRWngHv6XLQrlFuwoCDz4hOk9VXh1P0ZlxSSJ2hc3to1ADbCHTjN8OfQleMvqzSLbfwcj6mdskFCuBcITjV4gMi5nxNFkfpMYJzEa8QHFwA1aslaxHJkmexTmsNwaJVSFmgf31vHY01POKzuUoXAuQ6yFgkLYc=
+	t=1779951546; cv=none; b=Ff+VIKYKe3V5ipM8DR1Vsvdyq6ciBALbQRQnosPmFA5tCLXqUDwJk+DT0veDqES9CC914yz6a7YgDci6LqbhE1nMZCKTQHxoGqp9qmVpYzRp9yYBpzz7mwj1vHMvd/Fps7D6iwL4nXkIw+lFuaWERxGeNFPvjkzlsLX+R1FbY7A=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1779947074; c=relaxed/simple;
-	bh=C7JHlHzPIIDbcrjvTTaZykxa0kwfZ19sATnFMjQgAWY=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=C07bvw7QD9lrF+OJtaVaTrzlXidQaOWPNJ882MN/Xy0/FyvWa/LZF/w1iuAwvwbBg41YNW/ZZQPzD6eBKfKPQt/sH+qxEz2ozZF92PMrF1usEr8OyHkZefWsG73iD2a5LEsK2XLlbKUgNiPdaeURVdJvR4SvseiJazHOaUrAGn0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sina.com; spf=pass smtp.mailfrom=sina.com; dkim=pass (1024-bit key) header.d=sina.com header.i=@sina.com header.b=KeHDtnCp; arc=none smtp.client-ip=202.108.3.24
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sina.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sina.com
+	s=arc-20240116; t=1779951546; c=relaxed/simple;
+	bh=Jm4qhX9SGGS1geR6QFSqdq4CN0moJFebFN6nBm+mrwY=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=G23Cpz/o3qxczAQ/z0l4QVYCVwfT2mthc7aZ/2QvsIvgr4VeY0+nXNTEnCD5Q+3kTk+V8JHpH6VIm59aobUfoWCOu87ACcZC0xjMm8FXbFmQ5LjRwIgf9wzOpsOPncwmPmOAR8ko7+QyQzysvLL+bWERZysNPALF3f1LPGV5cuk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=j5OSi/F7; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=j5OSi/F7; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=sina.com header.i=@sina.com header.b="KeHDtnCp"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sina.com; s=201208; t=1779947071;
-	bh=cx/MeDnSm8Ccc4831CYFK65RBNwl+E+0XHr2pEV7eW0=;
-	h=From:Subject:Date:Message-ID;
-	b=KeHDtnCpMDujKRMnpFc++PjSF13nEn76CT++kiXKvHsbsu+MSsmFANgfswG5xhvJJ
-	 z1T9N7IywbTsfBSQg/0e0mWtomFZWjXw1YWiql7njo3r58ItOW5IKlI1luqEjEyudZ
-	 oOdvGo/ZqmrkAOI4FVwQ51HSGsalc85qPShKENGU=
-X-SMAIL-HELO: localhost.localdomain
-Received: from unknown (HELO localhost.localdomain)([114.249.62.144])
-	by sina.com (10.54.253.31) with ESMTP
-	id 6A17D60E000062C1; Thu, 28 May 2026 13:43:45 +0800 (CST)
-X-Sender: hdanton@sina.com
-X-Auth-ID: hdanton@sina.com
-Authentication-Results: sina.com;
-	 spf=none smtp.mailfrom=hdanton@sina.com;
-	 dkim=none header.i=none;
-	 dmarc=none action=none header.from=hdanton@sina.com
-X-SMAIL-MID: 9341726816115
-X-SMAIL-UIID: 4C03AE2645D34C15B349F3C5E267BA13-20260528-134345-1
-From: Hillf Danton <hdanton@sina.com>
-To: Ming Lei <tom.leiming@gmail.com>
-Cc: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>,
-	Jens Axboe <axboe@kernel.dk>,
-	Bart Van Assche <bvanassche@acm.org>,
-	Christoph Hellwig <hch@lst.de>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	linux-block <linux-block@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs@vger.kernel.org,
-	David Sterba <dsterba@suse.com>,
-	linux-fsdevel@vger.kernel.org,
-	Christian Brauner <brauner@kernel.org>
-Subject: Re: [PATCH v3] loop: Fix NULL pointer dereference in lo_rw_aio()
-Date: Thu, 28 May 2026 13:43:31 +0800
-Message-ID: <20260528054334.1159-1-hdanton@sina.com>
-In-Reply-To: <ahZeYQ0cLE1i8TGs@fedora>
-References: <ag0lS_CbKO9R5CV8@fedora> <94076bc9-2c09-4bb6-8468-b6b8af419cb9@I-love.SAKURA.ne.jp> <ag1nfIFcykmQHbkk@fedora> <1ab8c579-eb76-4227-8a72-6ec819135219@I-love.SAKURA.ne.jp> <ag1223nAa0wZ8ALC@fedora> <fda8abc8-6aa2-463b-bf72-865f6b838034@I-love.SAKURA.ne.jp> <ahRocb0Vs_m6RF_O@fedora> <1a9f53d4-6f48-4df8-a3d8-2b0e442a163a@I-love.SAKURA.ne.jp> <ahZGxoI6oHQ_vSrx@fedora> <d1b5a737-f0e3-4927-b762-430b37fbb2f9@I-love.SAKURA.ne.jp>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="j5OSi/F7";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="j5OSi/F7"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 60D0B6AFA5;
+	Thu, 28 May 2026 06:59:03 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1779951543; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=G/ZSdxSAZ7ER7yPRGPlO+GmeH383Lhf2G4+6dO1nhGU=;
+	b=j5OSi/F7eCy6M+U7IqFIMcvgFNaH6VrT8SCDMEXYYX2NPzjUsQVFGsh8/M9xPr4Je7I3g5
+	1iZCyLFucfrY3vdaAg2D48VTHF7Wij892GPmxl60UIgKUI2zpJztXLbzSE3tS8boka61TD
+	bB5Omt/DYHkhpUwhE1/84webRrW3yqk=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1779951543; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=G/ZSdxSAZ7ER7yPRGPlO+GmeH383Lhf2G4+6dO1nhGU=;
+	b=j5OSi/F7eCy6M+U7IqFIMcvgFNaH6VrT8SCDMEXYYX2NPzjUsQVFGsh8/M9xPr4Je7I3g5
+	1iZCyLFucfrY3vdaAg2D48VTHF7Wij892GPmxl60UIgKUI2zpJztXLbzSE3tS8boka61TD
+	bB5Omt/DYHkhpUwhE1/84webRrW3yqk=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 663BD5AC62;
+	Thu, 28 May 2026 06:59:02 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id trObCrbnF2pqLwAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 28 May 2026 06:59:02 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: fstests@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+Subject: [PATCH] fstests: remove dio related target file to respect mount options that only affecst new inodes
+Date: Thu, 28 May 2026 16:28:44 +0930
+Message-ID: <20260528065844.71952-1-wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -61,24 +62,180 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	RCPT_COUNT_TWO(0.00)[2];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
 
-On Tue, 26 May 2026 22:00:49 -0500 Ming Lei wrote:
->On Wed, May 27, 2026 at 10:35:56AM +0900, Tetsuo Handa wrote:
->> On 2026/05/27 10:20, Ming Lei wrote:
->> >> Of course we should try to figure out the root cause first, but how can we do?
->> > 
->> > Definitely unexpected write IO(after umount & loop closed) from btrfs is more serious,
->> > which may cause data loss, so CC btrfs list and maintainer.
->> 
->> Why do you assume that the culprit is btrfs?
->> 
->> https://syzkaller.appspot.com/bug?extid=bc273027d5643e48e5b3 indicated that
->> this similar race is also happening with jfs.
->
-> I just didn't see the above report on jfs.
-> 
-> It doesn't change anything, the same question still stands: unexpected write IO is issued
-> or crosses umount & last closing of loop disk.
->
-Given the loop workqueue that triggered the jfs warning, can you specify
-the reason why the workqueue in question is NOT flushed while closing disk?
+[BUG]
+Test case generic/362 and generic/365 will fail with nodatasum, but
+that's only when TEST_DEV is newly formated.
+
+ FSTYP         -- btrfs
+ PLATFORM      -- Linux/x86_64 btrfs-vm 7.1.0-rc4-custom+ #381 SMP PREEMPT_DYNAMIC Tue May 26 10:47:14 ACST 2026
+ MKFS_OPTIONS  -- -O bgt -K /dev/mapper/test-scratch1
+ MOUNT_OPTIONS -- -o nodatasum /dev/mapper/test-scratch1 /mnt/scratch
+
+  generic/362  0s ... - output mismatch (see /home/adam/xfstests/results//generic/362.out.bad)
+    --- tests/generic/362.out	2024-08-24 15:31:37.200000000 +0930
+    +++ /home/adam/xfstests/results//generic/362.out.bad	2026-05-28 16:18:33.866141979 +0930
+    @@ -1,2 +1,3 @@
+     QA output created by 362
+    +First write failed: Input/output error
+     Silence is golden
+    ...
+    (Run 'diff -u /home/adam/xfstests/tests/generic/362.out /home/adam/xfstests/results//generic/362.out.bad'  to see the entire diff)
+
+  generic/364  11s ... - output mismatch (see /home/adam/xfstests/results//generic/364.out.bad)
+    --- tests/generic/364.out	2024-09-30 09:09:51.216666681 +0930
+    +++ /home/adam/xfstests/results//generic/364.out.bad	2026-05-28 16:18:34.318532257 +0930
+    @@ -1,2 +1,3 @@
+     QA output created by 364
+    +Fsync failed: Input/output error
+     Silence is golden
+    ...
+    (Run 'diff -u /home/adam/xfstests/tests/generic/364.out /home/adam/xfstests/results//generic/364.out.bad'  to see the entire diff)
+
+But if one has formated TEST_DEV, run test with default mount option,
+then change the mount option to "nodatasum", the test will not fail
+anymore:
+
+ FSTYP         -- btrfs
+ PLATFORM      -- Linux/x86_64 btrfs-vm 7.1.0-rc4-custom+ #381 SMP PREEMPT_DYNAMIC Tue May 26 10:47:14 ACST 2026
+ MKFS_OPTIONS  -- -O bgt -K /dev/mapper/test-scratch1
+ MOUNT_OPTIONS -- /dev/mapper/test-scratch1 /mnt/scratch
+
+ generic/362  0s ...  1s
+ generic/364  11s ...  10s
+ Ran: generic/362 generic/364
+ Passed all 2 tests
+
+ FSTYP         -- btrfs
+ PLATFORM      -- Linux/x86_64 btrfs-vm 7.1.0-rc4-custom+ #381 SMP PREEMPT_DYNAMIC Tue May 26 10:47:14 ACST 2026
+ MKFS_OPTIONS  -- -O bgt -K /dev/mapper/test-scratch1
+ MOUNT_OPTIONS -- -o nodatasum /dev/mapper/test-scratch1 /mnt/scratch
+
+ generic/362  1s ...  0s
+ generic/364  10s ...  11s
+ Ran: generic/362 generic/364
+ Passed all 2 tests
+
+[CAUSE]
+Btrfs' nodatasum mount option only affect new files, but the test cases
+are using TEST_DEV, and never delete the target files
+"$TEST_DIR/dio-append-buf-fault" for generic/362 and
+"$TEST_DIR/dio-write-fsync-same-fd" for generic/364.
+
+So if the files are created with default mount option, then all later
+"nodatasum" mount option will not affect those files, thus hide the test
+failure.
+
+[FIX]
+For all test cases utilizing "$here/src/dio*", add a _cleanup()
+function, to remove target files, so that for mount options that only
+affect new inodes, the mount options will be respected, and expose
+failures.
+
+Now generic/36[24] will properly fail for "nodatasum" mount option on
+btrfs.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ tests/generic/362 | 6 ++++++
+ tests/generic/364 | 7 +++++++
+ tests/generic/418 | 7 +++++++
+ tests/generic/708 | 6 ++++++
+ 4 files changed, 26 insertions(+)
+
+diff --git a/tests/generic/362 b/tests/generic/362
+index 0cfaa726..5e8fd534 100755
+--- a/tests/generic/362
++++ b/tests/generic/362
+@@ -10,6 +10,12 @@
+ . ./common/preamble
+ _begin_fstest auto quick
+ 
++_cleanup()
++{
++	cd /
++	rm -f "$TEST_DIR/dio-append-buf-fault"
++}
++
+ # NFS forbade open with O_APPEND|O_DIRECT
+ _exclude_fs nfs
+ 
+diff --git a/tests/generic/364 b/tests/generic/364
+index f7fb002f..6587cf02 100755
+--- a/tests/generic/364
++++ b/tests/generic/364
+@@ -11,6 +11,13 @@
+ . ./common/preamble
+ _begin_fstest auto quick
+ 
++_cleanup()
++{
++	cd /
++	rm -f "$TEST_DIR/dio-write-fsync-same-fd"
++}
++
++
+ _require_test
+ _require_odirect
+ _require_test_program dio-write-fsync-same-fd
+diff --git a/tests/generic/418 b/tests/generic/418
+index 36789198..024c4682 100755
+--- a/tests/generic/418
++++ b/tests/generic/418
+@@ -26,6 +26,13 @@ _require_block_device $TEST_DEV
+ _require_test_program "dio-invalidate-cache"
+ _require_test_program "feature"
+ 
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++	rm -f "$testfile"
++}
++
+ diotest=$here/src/dio-invalidate-cache
+ testfile=$TEST_DIR/$seq-diotest
+ sectorsize=`$here/src/min_dio_alignment $TEST_DIR $TEST_DEV`
+diff --git a/tests/generic/708 b/tests/generic/708
+index 827dac13..cdaad811 100755
+--- a/tests/generic/708
++++ b/tests/generic/708
+@@ -14,6 +14,12 @@
+ . ./common/preamble
+ _begin_fstest quick auto mmap
+ 
++_cleanup()
++{
++	cd /
++	rm -f "$src" "$dst"
++}
++
+ _fixed_by_fs_commit btrfs b73a6fd1b1ef \
+ 		"btrfs: split partial dio bios before submit"
+ 
+-- 
+2.51.2
+

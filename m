@@ -1,139 +1,217 @@
-Received: from smtp153-165.sina.com.cn (smtp153-165.sina.com.cn [61.135.153.165])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6AC3C351C1F
-	for <linux-btrfs@vger.kernel.org>; Fri, 29 May 2026 07:05:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=61.135.153.165
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8E1F6351C2D
+	for <linux-btrfs@vger.kernel.org>; Fri, 29 May 2026 07:55:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780038310; cv=none; b=QdcHoxf/krM/yDXdqiEoz/Imfaq+IL9Eapvo5LIz3HcAkd6rQgHO3TC+y2kLhmJitu+F+AAJjdI2pYkMF2GgDvHOJsJuddRgk9Jhl68VOkq9N+7JYzMVIxFNUF51y1w+YtvD9+1+LgHbftxb9aUImS59a4IU1JtjzrDhp3EjgWo=
+	t=1780041332; cv=none; b=GJLujn5LhgGMmlFjLBoAn08qQMHrlo1mCOLth4Xa8vLy/jc5TWfe0+logIfsaBOq6Mnz+Df18LxmNIIV22zSqOmCzWGxg8aOcrJ3pIkIZoLptU7yR1hTqyOTL4ZGB81QFKEQ08ttqHNv06CyzPnv6DelXJMzQIhqOTIKCYezxpo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780038310; c=relaxed/simple;
-	bh=QJBPhTdn+jjhlbB5sPkQIha3ypdO5+Koy6MfhAQgOWg=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ZTMM/ufv1TznZmt5wmTJGUate4FT4Tjvj5d2Jb1RJ+1gs6ouAGWYV71sK1cIzgRW8FR8BqC6kfPuSwEcfu/+LobOA5WsSPISpJotDaoCZoIhXEBGyi6shCpVShEB+1c+EfnU3l9dGo1H7J7kSUMi1gCyBB5V897CL32nFL9ZS4A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sina.com; spf=pass smtp.mailfrom=sina.com; dkim=pass (1024-bit key) header.d=sina.com header.i=@sina.com header.b=JCisxEKB; arc=none smtp.client-ip=61.135.153.165
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sina.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sina.com
+	s=arc-20240116; t=1780041332; c=relaxed/simple;
+	bh=az+YGSnbEkqUPIWgm9boM+jZptAY8k8bCMuxg4pC9CE=;
+	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
+	 In-Reply-To:Content-Type; b=AYc/d566PlmDw5LKv6dlUdqTLTswwQ2RKGnDfig4Ny1ivx/b+BhRbhh0bbuDGPv9zqFuxIAghmUeyuZxRlPKDYEifeqt90IJI5KiWAUAxPZ34QBqjQXp8gcOrJH1JvJz34ReChUI2VX1dVOOS2arM0wIWiug1uP3oGNbFQvx018=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=fmYfJNwg; arc=none smtp.client-ip=209.85.128.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=sina.com header.i=@sina.com header.b="JCisxEKB"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sina.com; s=201208; t=1780038305;
-	bh=I/cvswV/b0UR4VjhlDE/PSQobnVxd2Hh74IJsbGpfyw=;
-	h=From:Subject:Date:Message-ID;
-	b=JCisxEKBe8UfFjtODYkgsZanCX+X/FwjrhldJ63+bCXfue/0frSrAhs+7qO60yFpL
-	 L5c9+CNet6EwwnlVqUBncbmZpFrUb16GM8QSpN/CcX4rtiYXGN9A+E4gprS+DNXasT
-	 vPgfGKsE2QcGzfM0OBlcfJv0SyVc4FAZz5XKfqnY=
-X-SMAIL-HELO: localhost.localdomain
-Received: from unknown (HELO localhost.localdomain)([114.249.62.144])
-	by sina.com (10.54.253.32) with ESMTP
-	id 6A193A7500003A64; Fri, 29 May 2026 15:04:23 +0800 (CST)
-X-Sender: hdanton@sina.com
-X-Auth-ID: hdanton@sina.com
-Authentication-Results: sina.com;
-	 spf=none smtp.mailfrom=hdanton@sina.com;
-	 dkim=none header.i=none;
-	 dmarc=none action=none header.from=hdanton@sina.com
-X-SMAIL-MID: 2904214456667
-X-SMAIL-UIID: 144996F36D3C4D3FBCBB600E4D7C0F5F-20260529-150423-1
-From: Hillf Danton <hdanton@sina.com>
-To: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
-Cc: Jens Axboe <axboe@kernel.dk>,
-	Bart Van Assche <bvanassche@acm.org>,
-	Christoph Hellwig <hch@lst.de>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Ming Lei <tom.leiming@gmail.com>,
-	linux-block <linux-block@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs@vger.kernel.org,
-	David Sterba <dsterba@suse.com>,
-	linux-fsdevel@vger.kernel.org,
-	Christian Brauner <brauner@kernel.org>
-Subject: Re: [PATCH v3] loop: Fix NULL pointer dereference in lo_rw_aio()
-Date: Fri, 29 May 2026 15:04:10 +0800
-Message-ID: <20260529070411.1206-1-hdanton@sina.com>
-In-Reply-To: <26717cb6-81b0-4d5d-a5db-669283f9bb9d@I-love.SAKURA.ne.jp>
-References: 
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="fmYfJNwg"
+Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-49050bfe053so42135625e9.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 May 2026 00:55:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1780041330; x=1780646130; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
+         :references:cc:to:from:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=NND3xz9n8aYUKvYXVex2mmyeZtIglxNaprb2v639ix4=;
+        b=fmYfJNwgj6tGim4TVejSiA8dTkBmB4b16E6eNaWN0Jd6Iyqi2wBkkNrLD7GWirvHqQ
+         BAFq4e39p9yb3uKWM9hwgpJsMdNtQ+HoV3vnb9JdBkPVtdjiH17rG0gKJqcLuwAxgE3W
+         lDjZ3yS6DKfCKRX5PVzV2LS/DH2x9VMqWxerarG8tueOLb74nNhXTWv0Dwz0QkkUip8i
+         Q1MHygf6cjHYYlkFzlf9TCLDWnvlEq0iidybDTdYpLD34P5jjLeMi7pJQxVJZEUEEyzV
+         /BYRMyU2NSlbMQUJO3gmqa0W+zgU4scbSjjUICArnEl7uBUG25f64DFdyUHQvGaGByh/
+         GkDg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1780041330; x=1780646130;
+        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
+         :references:cc:to:from:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=NND3xz9n8aYUKvYXVex2mmyeZtIglxNaprb2v639ix4=;
+        b=QsCkQowIrGuNBr55srKdj8w5ueIMq6AlyspxVC3KhaC2cyCeYxFlmSWcRNnQNeMBEy
+         C4O0yIhUJe+gXlvSHJyF1TBqbCrB1Ofrx/aWPndb04ME4G+uvb6EO/iPliiTdv+4N18h
+         gp5YpFRBVdi1+8Mchu6OLr3ko1SE6fIxPh494G8HQ4hZ2OKvy9GoMoffVQWtcnmm4Iy4
+         WFgxPLwYJcNZjxtLNf4CjPh/zn6Gt34kkf6biwLXGgYcviuhwRjghhbQNnnpJI2rimYd
+         dhucH5qb5m8rnaqxaeOs+Rg4wD0dcOcCq3uMy1cxU9elQZBwxr1kVdTVe880RgS2wA7x
+         H5tQ==
+X-Gm-Message-State: AOJu0Yz2O0TYUXkCO6SoFK7lSOtNfJDjt1J+bUyif9joTjFgEsDKFGAw
+	BIuBQ6KrBsxZGlKbS97haNdOgABSN3czn/IUBX8uiXjZECXRWwkV8krPNBCELa3x/NuxxaEnrkv
+	r+nmu
+X-Gm-Gg: Acq92OF2NEKmapIc87Hz26w41UXkUtjz4ivw/6+DKSRVKUjJVNghlaTU46aGkJwgloy
+	FZNvyJHwZ0CT7+hyf6Y6Ri9L0jDvXMWGC5YgBZbSfWkgVkDrUCWbab6ynFUkSxOKAVOuR/6Zz9C
+	NgNd6Qyob1Lp2+Wp23ro+VssYyzIBNdntnVQ6ZZYxhveCQ0lO6/qjsO3NuH5h490ujgiTgOnRBM
+	vBM46cO1JjBEIr3xcNoFZYFclU/3/IjR+4sjQJwO44Is5vr8+PiEKvUe7YIVUi7SXqxq6EY6guu
+	x36UMg3E1umlBir8H0OFPSnWoEAIDCfREtQ0G1aYAePij/9goJU5QxAzipH4qr9CsaFLhRWZ9Om
+	yxOghFSPsZANskUfhcAWAUuiRey7okmaHVWIOnECmF95U4GCs17kVEF5iqEaYRh5ZVy3AUI/ycv
+	Jja5sfESV5tCpTejm7/Z1ylUmi4t2jWZdSvUBG8lXzpEoMwguZ8XdvvZzeYLQvjZcUz2eV8X0Gt
+	5brPP9J6V85NFiFvAdQ/be3Ml7eDAllgRmXEgKfwjfxVJfQBvE8r1BQDQ==
+X-Received: by 2002:a05:600c:e489:10b0:490:778:4fe4 with SMTP id 5b1f17b1804b1-4909c0c570bmr22167225e9.26.1780041329849;
+        Fri, 29 May 2026 00:55:29 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-36bc65e760dsm1359533a91.2.2026.05.29.00.55.27
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 29 May 2026 00:55:28 -0700 (PDT)
+Message-ID: <a3482652-5944-4623-9257-3118aeda4fb1@suse.com>
+Date: Fri, 29 May 2026 17:25:24 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 2/2] btrfs: fix incorrect buffered IO fallback for append
+ direct writes
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: stable@vger.kernel.org
+References: <cover.1779846117.git.wqu@suse.com>
+ <54b90ef99f59d9a787e121779ad82b2c77d68466.1779846117.git.wqu@suse.com>
+Content-Language: en-US
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <54b90ef99f59d9a787e121779ad82b2c77d68466.1779846117.git.wqu@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-On Fri, 29 May 2026 09:14:47 +0900 Tetsuo Handa wrote:
->On 2026/05/29 8:00, Hillf Danton wrote:
->>> Given the loop workqueue that triggered the jfs warning, can you specify
->>> the reason why the workqueue in question is NOT flushed while closing disk?
->>>
->> Got it, the loop workqueue is NOT flushed to avoid deadlock, see d292dc80686a
->> ("loop: don't destroy lo->workqueue in __loop_clr_fd") for detail.
->> And the deadlock can be reproduced by flushing the loop workqueue with
->> disk->open_mutex held [1].
->> 
->> [1] Subject: Re: [syzbot] possible deadlock in blkdev_put (3)
->> https://lore.kernel.org/lkml/000000000000ea753505da2658d5@google.com/
->
->We can avoid the following lockdep warnings (including [1] you mentioned)
->
->  https://syzkaller.appspot.com/bug?extid=2f62807dc3239b8f584e
->  https://syzkaller.appspot.com/bug?extid=c4e9d077bcc86bee08dc
->  https://syzkaller.appspot.com/bug?extid=0f427123ae84b3ba6dc7
->  https://syzkaller.appspot.com/bug?extid=4feabfc9641267769c97
->  https://syzkaller.appspot.com/bug?extid=fb0ff9bfe34ad282ebd4
->
->caused by "drain_workqueue() with disk->open_mutex held" if we assign
->caller-specific lockdep class to disk->open_mutex
->
->  https://sourceforge.net/p/tomoyo/tomoyo.git/ci/c2245c765ebeba9dcb924d9171d8d470a9ac41c8/
->
->.
->
->Also, we can avoid lockdep warning caused by "drain_workqueue() with disk->open_mutex held" +
->"holding system_transition_mutex" if we forbid binding to pseudo files as backing file
->in the loop driver
->
->  https://lkml.kernel.org/r/d38e4600-3c32-491f-aa49-905f4fad1bfb@I-love.SAKURA.ne.jp
->
->which we can reproduce with
->
->  echo 7:0 > /sys/power/resume
->  losetup /dev/loop0 /sys/power/resume
->  cat /dev/loop0 > /dev/null
->  losetup -d /dev/loop0
->
->.
->
->Therefore, I think we can address this problem by "drain_workqueue() with disk->open_mutex
->held" in the loop driver side.
->
-Good news.
->
->
->However, the possibility that the last milli-second writeback request
->(which runs during unmount operation) from filesystem fails due to
->
->    if (data_race(READ_ONCE(lo->lo_state)) != Lo_bound)
->        return BLK_STS_IOERR;
->
->check in loop_queue_rq() will remain.
 
-This conflicts with "There is no need to destroy the workqueue when
-clearing unbinding a loop device from a backing file." in d292dc80686a
 
->Therefore, addressing this problem
->within individual filesystem will be more strict solution. But guessing from
+在 2026/5/27 14:36, Qu Wenruo 写道:
+> [BUG]
+> With the previous bug of short direct writes fixed, test case
+> generic/362 (*) will still fail with the following error with nodatasum
+> mount option:
+> 
+>   generic/362  0s ... _check_dmesg: something found in dmesg (see /home/adam/xfstests/results//generic/362.dmesg)
+>   - output mismatch (see /home/adam/xfstests/results//generic/362.out.bad)
+>      --- tests/generic/362.out	2024-08-24 15:31:37.200000000 +0930
+>      +++ /home/adam/xfstests/results//generic/362.out.bad	2026-05-27 10:13:09.072485767 +0930
+>      @@ -1,2 +1,3 @@
+>       QA output created by 362
+>      +Wrong file size after first write, got 8192 expected 4096
+>       Silence is golden
+>      ...
+> 
+> *: If the test case has been executed before with default data checksum,
+> the failure will not reproduce. Need the following fix to make it
+> reliably reproducible:
+> https://lore.kernel.org/linux-btrfs/20260526070055.60193-1-wqu@suse.com/
+> 
+> [CAUSE]
+> Btrfs disables page fault in during direct IO write, to avoid a specific
+> deadlock that is only specific to btrfs.
+> 
+> So for the test case generic/362, it will make the direct IO to fail
+> with -EFAULT, then we fallback to buffered IO.
+> 
+> However at btrfs_dio_iomap_begin() -> btrfs_get_blocks_direct_write(),
+> we have already updated the isize during extent allocation.
+> And if we failed the direct IO, the isize is still the updated one.
+> 
+> So it means the buffered write will respect the IOCB_APPEND flag and
+> write the new data at the update isize, resulting the above failure.
+> 
+> [FIX]
+> Introduce btrfs_dio_data::updated_isize and btrfs_dio_data::old_isize,
+> so that if btrfs_get_blocks_direct_write() enlarged the inode size, we
+> can know the old inode size.
+> 
+> Then if we got a short write, and btrfs_dio_data::updated_isize is set,
+> then revert to the old isize, so the buffered fallback can write into
+> the correct location.
+> 
+> Cc: stable@vger.kernel.org # 6.1+
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>   fs/btrfs/direct-io.c | 15 ++++++++++++++-
+>   1 file changed, 14 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
+> index 598480b77002..24163a4bcfb0 100644
+> --- a/fs/btrfs/direct-io.c
+> +++ b/fs/btrfs/direct-io.c
+> @@ -15,10 +15,16 @@
+>   
+>   struct btrfs_dio_data {
+>   	ssize_t submitted;
+> +	/*
+> +	 * If we got a short dio write and @updated_isize is set,
+> +	 * revert to the old isize.
+> +	 */
+> +	loff_t old_isize;
+>   	struct extent_changeset *data_reserved;
+>   	struct btrfs_ordered_extent *ordered;
+>   	bool data_space_reserved;
+>   	bool nocow_done;
+> +	bool updated_isize;
+>   };
+>   
+>   struct btrfs_dio_private {
+> @@ -341,8 +347,11 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
+>   	 * Need to update the i_size under the extent lock so buffered
+>   	 * readers will get the updated i_size when we unlock.
+>   	 */
+> -	if (start + len > i_size_read(inode))
+> +	if (start + len > i_size_read(inode)) {
+> +		dio_data->old_isize = i_size_read(inode);
+> +		dio_data->updated_isize = true;
+>   		i_size_write(inode, start + len);
+> +	}
+>   out:
+>   	if (ret && space_reserved) {
+>   		btrfs_delalloc_release_extents(BTRFS_I(inode), len);
+> @@ -634,6 +643,10 @@ static int btrfs_dio_iomap_end(struct inode *inode, loff_t pos, loff_t length,
+>   			 */
+>   			btrfs_mark_ordered_extent_truncated(ordered, 0);
+>   			btrfs_finish_ordered_extent(ordered, pos, length, true);
+> +			if (dio_data->updated_isize) {
+> +				i_size_write(inode, dio_data->old_isize);
 
-Conflicts with "Another thing is, if it's some btrfs bios on-the-fly after 
-close_ctree(), the most common symptom should be NULL pointer 
-dereference inside various btrfs endio functions." [2] once more.
+This part is incorrect, as if we have a short direct write, we can still 
+have part of the range written.
 
-And you need to pay the fs guys more than two cents I think for cooking
-a FIX.
+In that case we should not revert to the old isize, but to the new 
+written size.
 
-[2] Subject: Re: [PATCH v3] loop: Fix NULL pointer dereference in lo_rw_aio()
-https://lore.kernel.org/lkml/36571f8a-4df8-4152-b078-d82dbff4ad7e@suse.com/
+Considering we may go several different tries, I think it's better to 
+save and set the isize inside btrfs_direct_write(), other than relying 
+on the iomap_start/iomap_end() callbacks.
 
->the pace jfs fixes bugs, it would take long time before we stop seeing
->this problem...
+Thanks,
+Qu> +				dio_data->updated_isize = false;
+> +			}
+>   		} else {
+>   			btrfs_unlock_dio_extent(&BTRFS_I(inode)->io_tree, pos,
+>   						pos + length - 1, NULL);
+

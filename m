@@ -1,176 +1,104 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9FE1D3B3BE9;
-	Fri, 29 May 2026 08:04:22 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 870BA326930;
+	Fri, 29 May 2026 09:02:48 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780041863; cv=none; b=ckyDQIKt7t9jv5HxpaLbwo0JwT/ASGQbCd6JwWEpjRoxLsf2QySX3APMSgw6l5ajcI1vomcICkxwEE+Bo15W1NXIeaqID0PqyOXBQi5rbMdk5/UNWuFTnG29i22ONquX4St89hehcB9n7u8yWIQwzPVdZDEv7xd7PB94tCpgB2s=
+	t=1780045369; cv=none; b=NCIjyON6KfwBTK8G5M3BdtOGJeC+P8x8mamXF7W5+p00Dv+ubIuC8hN5ftbCa71Zas92dX8tjSoD6FaOJbEma3sC7gXxcCm+fUXuzNdzkdytZiMuujEkZLJLNa4v2pG/E0xpZKVZAhl3BnZaxF2qPVyIDTQbZyvQwnxVQPib8sc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780041863; c=relaxed/simple;
-	bh=R9cklFJYtB1FibLakqag4lyWcWAxRMWiS6noL4bbADg=;
+	s=arc-20240116; t=1780045369; c=relaxed/simple;
+	bh=E9SGioHdaiyNDjffWGZLOT3Aud1z7Z5wVnxNK2qa8xc=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=l3RemWET7CJ+qWl97SXzXwj2NAJAWFxj5mWxUUiKP8uW+ptiaMuheGdLIcCTmEoCdCBBtstz9hAUKQ/tNCOjH/aXuIPXxlYdi3iSjETM487bS8gqIdGNw1uLECMEfv1ul9qUNC1VhQLoZzrnbyEAHa/fF3eom6Y4nyZPA+n2AHA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=BAgOBOim; arc=none smtp.client-ip=100.103.45.18
+	 Content-Type:Content-Disposition:In-Reply-To; b=C7QAfrKH8+Kv7mo1in4bCdk5DngHq7nZcsQ2RQ9QZQkBv/67kcMYW4ijiS0Y2qncBqQnZcyFa4bSJXwCbxUYexKxn3eDLPejLkki7+ZZmOZUclDEJyU0uBvLYMhtGngsOQBAB4NEoKPQApR4IjZZ2QCpsd+pX5zPEiWSMAG0gik=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PdaXX2Xm; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="BAgOBOim"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id CD43F1F00893;
-	Fri, 29 May 2026 08:04:20 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PdaXX2Xm"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 415B31F00893;
+	Fri, 29 May 2026 09:02:45 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1780041862;
-	bh=S1LAc+tOiG5+avfY8MoOI0Ns+kmhToOfwbXRe5wuLt0=;
+	s=k20260515; t=1780045368;
+	bh=NY7cw3MXJfHKk5ZESWi1LozZjh67IEzAA25bdaW2LCo=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=BAgOBOim4VbFON+PL8JUFsv4+EjfhDlJBCwg2JjCekLm85Bsmhf3NuMMLVbC2cj0z
-	 QCeYnNEwpUnd3LfKMMFWJg1mbos471KPAr3cEtD/fRfq+vc82G5zgnJ0zGc3bB3sVz
-	 fXNuPx2Yjvmj6aY93CB6jWRL7PdWoTv8hKtHjOyRQP2JNl+Ii0WY43d13331xNl4sT
-	 RBVxcXl9zTEwyZllUxLikOpa2SwkxXKANt4hBzBeD46UG5Z2XpnH6z03+iDFqk4quQ
-	 Fk2Dt8qJnsTqucHX5Ju1sgQfs15nBThoejZfPrFEgpdWOw89Re6otPdVFQhWqRm0SS
-	 p4tqyr7zo8H1g==
-Date: Fri, 29 May 2026 16:04:17 +0800
+	b=PdaXX2XmhTDyeHYufyzLnEZ0Yn5wcKlihQk0tLl5Q1ugNqc+3rL2OypMW8cp9SSLq
+	 VFtu3nb75J+lPrGzoZAQHYNWjqCBQC14u7nHYGAJnUwYo6EQRV/iftO2VmQ6b/Bwh6
+	 ISRkn5YKLvahf1YmSmBzTDBxwoKvcgTlm/wE0St8E86aYROB0xBrxgo7YdjzyyDHvp
+	 jqNNOu0nOjNObb7jW874ae/J5JgeCCEw9bteHZEGdeckAQ1JRbOov1EL7rceW+4PCI
+	 Uyzy2WovhAUOZqfZp2s2G7tsaMSXQK+GR2OAvN9095SeXA8g4AdleO2i4JdPXdWVm/
+	 eZFzrT+UXxwhg==
+Date: Fri, 29 May 2026 17:02:42 +0800
 From: Zorro Lang <zlang@kernel.org>
 To: Qu Wenruo <wqu@suse.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fstests: btrfs: add a new test case for single data
- RAID56
-Message-ID: <ahlHVCZDpwvrhowj@zlang-mailbox>
-Mail-Followup-To: Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org, 
+Cc: Christoph Hellwig <hch@infradead.org>, fstests@vger.kernel.org, 
 	linux-btrfs@vger.kernel.org
-References: <20260524050848.57740-1-wqu@suse.com>
+Subject: Re: [PATCH] fstests: generic/362: remove the old file to reflect new
+ mount options
+Message-ID: <ahlU702Bo_QRTCCY@zlang-mailbox>
+Mail-Followup-To: Qu Wenruo <wqu@suse.com>, 
+	Christoph Hellwig <hch@infradead.org>, fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+References: <20260526070055.60193-1-wqu@suse.com>
+ <ahaQjYYQWcuOaRaq@infradead.org>
+ <e9fc0374-4a97-4cab-8f9d-9de39587cbec@suse.com>
+ <ahbrvyNg65OjGhpS@infradead.org>
+ <bea8a50b-4a14-4351-a56a-d295b90750b5@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20260524050848.57740-1-wqu@suse.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <bea8a50b-4a14-4351-a56a-d295b90750b5@suse.com>
 
-On Sun, May 24, 2026 at 02:38:48PM +0930, Qu Wenruo wrote:
-> Although single-data-RAID56, aka 2 disks raid5 or 3 disks raid6, is
-> not recommended for btrfs, btrfs still supports it as there are cases
-> like degraded writes can still lead to such cases.
+On Thu, May 28, 2026 at 07:12:24AM +0930, Qu Wenruo wrote:
 > 
-> But we do not have any proper tests for such corner cases.
 > 
-> Furthermore, RAID56 lib is going to drop the support of
-> single-data-RAID56, and btrfs will have its own handling of such cases,
-> thus coverage on single-data-RAID56 is required.
+> 在 2026/5/27 22:33, Christoph Hellwig 写道:
+> > On Wed, May 27, 2026 at 04:20:38PM +0930, Qu Wenruo wrote:
+> > > > I'd rather add a copy of the test that runs on the scratch device
+> > > > that can control the environment.  Or maybe just change the test
+> > > > to use the scratch device?
+> > > 
+> > > I'm completely happy with using scratch device instead of test dev.
+> > > 
+> > > If no special reason to use test dev, the next update will go scratch dev
+> > > instead.
+> > 
+> > I went back and re-read this.  What is the special mount option you
+> > change?   If you want to always exercise this as nocow, maybe add a new
+> > btrfs test that is a copy and uses the scratch device?  Or am I
+> > misunderstanding something?
+> > 
 > 
-> This new test case will have the following workload to verify the
-> behavior:
+> My point is, the current script prevent the test case to respect certain
+> mount options, thus reduce the coverage.
 > 
-> - Create a fs with single-data-RAID56
+> E.g. in a multi-section fstests setup, default and nodatasum mount options
+> are defined in different sections, and default mount option will be run
+> first.
 > 
-> - Populate the fs with fsx and fsstress
->   Fsx and fsstress will utilize read and write paths of RAID56.
+> Then the next nodatasum section will still utilize the old inode created
+> with regular default options, thus reduce the coverage.
 > 
-> - Mount each device in degraded mode and run read-only scrub on them
->   Such scrub will utilize the following path of RAID56:
->   * Regular data read
->   * Reconstruction read
->   * P/Q stripe scrub
 > 
-> - Re-scan all devices and add a new disk to the array
-> - Balance all data and scrub again
->   This should utilized non-single-data-RAID56 handling.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
+> Sure, a dedicated btrfs copy will help, but that will introduce duplication.
+> Not sure what is the proper way to handle such situation.
 
-This test case is highly standardized and complete! Thanks
+If there is a specific btrfs bug (commit) that can be 100% reproduced by
+slightly modifying this case (e.g. use a specific mkfs or mount option),
+I think it’s worth splitting it into a separate test case for better
+test coverage and known issue tracking.
 
-Reviewed-by: Zorro Lang <zlang@kernel.org>
+Thanks,
+Zorro
 
->  tests/btrfs/348     | 68 +++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/348.out |  2 ++
->  2 files changed, 70 insertions(+)
->  create mode 100755 tests/btrfs/348
->  create mode 100644 tests/btrfs/348.out
 > 
-> diff --git a/tests/btrfs/348 b/tests/btrfs/348
-> new file mode 100755
-> index 00000000..748e5a86
-> --- /dev/null
-> +++ b/tests/btrfs/348
-> @@ -0,0 +1,68 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> +#
-> +# FS QA Test 348
-> +#
-> +# Basic function test for single-data-RAID56.
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto raid
-> +
-> +# 3 disks for single-data-raid6, but one extra to make sure btrfs can still properly
-> +# convert to regular 4 disks raid6.
-> +_require_scratch_dev_pool 4
-> +_require_btrfs_raid_type raid5
-> +_require_btrfs_raid_type raid6
-> +_require_btrfs_forget_or_module_loadable
-> +
-> +# Make sure we have support RAID1C34 first
-> +if [ ! -f "/sys/fs/btrfs/features/raid1c34" ]; then
-> +	_notrun "no RAID1C34 support"
-> +fi
-> +
-> +common_workload()
-> +{
-> +	_scratch_mount
-> +	_run_fsx_on_file $FSX_AVOID "$SCRATCH_MNT/foobar" -q -N 10000 >> $seqres.full
-> +	_run_fsstress -w -n 10000 -d "$SCRATCH_MNT"
-> +	_scratch_unmount
-> +
-> +	# Mount each device degraded and run a scrub to exercise:
-> +	# - Regular data read
-> +	# - Data reconstruction read
-> +	# - P/Q scrub
-> +	for dev in $SCRATCH_DEV_POOL; do
-> +		_btrfs_forget_or_module_reload
-> +
-> +		_mount -o ro,degraded "$dev" "$SCRATCH_MNT"
-> +		_btrfs scrub start -Br "$SCRATCH_MNT"
-> +		_scratch_unmount
-> +	done
-> +
-> +	# Add a new device, balance all data, and re-scrub to make sure
-> +	# regular RAID56 is still working.
-> +	_btrfs_rescan_devices
-> +	_spare_dev_get
-> +	_scratch_mount
-> +	_btrfs device add -f "$SPARE_DEV" "$SCRATCH_MNT"
-> +	_btrfs balance start -d "$SCRATCH_MNT"
-> +	_btrfs scrub start -B "$SCRATCH_MNT"
-> +	_scratch_unmount
-> +	_spare_dev_put
-> +}
-> +
-> +_scratch_dev_pool_get 2
-> +# There will be a warning about single-data-RAID56, thus need
-> +# to redirect stderr
-> +_scratch_pool_mkfs -m raid1 -d raid5 >> $seqres.full 2>&1
-> +common_workload
-> +_scratch_dev_pool_put
-> +
-> +_scratch_dev_pool_get 3
-> +_scratch_pool_mkfs -m raid1c3 -d raid6 >> $seqres.full 2>&1
-> +common_workload
-> +_scratch_dev_pool_put
-> +
-> +echo "Silence is golden"
-> +_exit 0
-> diff --git a/tests/btrfs/348.out b/tests/btrfs/348.out
-> new file mode 100644
-> index 00000000..ec5e4701
-> --- /dev/null
-> +++ b/tests/btrfs/348.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 348
-> +Silence is golden
-> -- 
-> 2.51.2
 > 
+> For now I'll follow Filipe's review to use _cleanup() to delete those
+> involves test cases.
+> 
+> Thanks,
+> Qu
 > 

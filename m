@@ -1,59 +1,59 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EED351ABED9
-	for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2026 01:12:10 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6DC4E30E85C
+	for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2026 03:34:43 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780103532; cv=none; b=NmVZ5R7n/2sY+2+cQX4aLv6Kq5VejlAxmR6i/p4GxmZxy306KYF6cfyGrM0N4gMFe78ijrOd4a94Z44o0IyUTSDg/QJTPJTCPNt9Q9NV9cibdfx8jVMI2OEEUTEAhHBVD4HJoOXFzGncj1YCVtJun2zn2nLSCYQ5PKQpXl+Ze7Q=
+	t=1780112084; cv=none; b=Wb5Sl+l4Pjmv/EZpKwQ5sOQgCZo8vNnzn0omfnY1zaJcaItHhyfkGRbDOmx4/VwS5WkAfGcNAh7QvUC8kJAJlr0cdozmST6vqHvpa3xNvmmi2l6WJOQmjGL0ddBtBl+XbFXjeCs9KYTZKdTxaE5tkDde8B6oZ8yGmihEO+p+oyc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780103532; c=relaxed/simple;
-	bh=9TlrZIrj0mwIWy+VrRAWvuWki6qUfhzXQzkQ0TQr/9Y=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=WQpt8D0L+yGk7P6TEIv2AOcX7yvANnf3HMTaucxSHDAydRtbXu4ifQbh4FDKkx7G00NPzQhi1RLQFPscDsp1rdrH4Qu55FHZJOo72yE99PbN/+zFs3eG0svLzHgBoDUtwm5/XJQHnW133KhBp6PbCmi7jAxx5f75sfGi9HSCw2I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NpPoMGJD; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NpPoMGJD; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1780112084; c=relaxed/simple;
+	bh=2n/SMWhMaC/6412FY7ktbFBtCbjeiMrsj3zy0Q/CC8g=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=BuaHzo107LBzp4ACLwmR7kfRdDf8jkhVZeqSth0+ZmhBRXKfVPG8HjHXk55laoR32TVrTgQMeiQchs1SYV+s1RZ+cxciK4cis5RAlEqGLVMvEo5AgStV8EIx6xbCQWkWfCJtFnyI4QApOitwJLUus/+RhCIQVVgS7TrxdpJq/3I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=DSTjrg9c; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=DSTjrg9c; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NpPoMGJD";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NpPoMGJD"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="DSTjrg9c";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="DSTjrg9c"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 362D367001
-	for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2026 01:12:09 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id A95CA6745A
+	for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2026 03:34:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1780103529; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1780112081; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=1PFFAodbDRKyQqHx39J4MQ4NYly/XHzcQPKd0Rpa/T4=;
-	b=NpPoMGJDMPrFMORzLganctWLWECliDmiN3WwRb1NzrEZ381cZKaqEYMHvKMzMzTzVMxCil
-	BiNLZmLgLIm1eoih1Olkdz7ps3YQjTICAvQowg/sqylzbDKfBgt4AgzbuglasrCvJv1gCE
-	uvlC+h6ak13LUq4FjHIfoz3TLcyG5d0=
+	bh=bLwKk8xqwJxpeUH4ZWfCVy2mqM9z/qQewiFGEUDMC0w=;
+	b=DSTjrg9cq8VoXnyYsoMDv4IMReM3fr6OmiYl1pK4jMWXunxcQmsLxQVAdH/DGp0cN5rUja
+	D35Xpl9EnHKGBO9KkzB6krKm4O/uLjH+7FBW6saf87OhyjA2QjQ7uiJ1Of7dlvGtXEijd2
+	WGzbxIVZiaYrJtBr91fGSs3ZdbkmeFk=
 Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1780103529; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1780112081; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=1PFFAodbDRKyQqHx39J4MQ4NYly/XHzcQPKd0Rpa/T4=;
-	b=NpPoMGJDMPrFMORzLganctWLWECliDmiN3WwRb1NzrEZ381cZKaqEYMHvKMzMzTzVMxCil
-	BiNLZmLgLIm1eoih1Olkdz7ps3YQjTICAvQowg/sqylzbDKfBgt4AgzbuglasrCvJv1gCE
-	uvlC+h6ak13LUq4FjHIfoz3TLcyG5d0=
+	bh=bLwKk8xqwJxpeUH4ZWfCVy2mqM9z/qQewiFGEUDMC0w=;
+	b=DSTjrg9cq8VoXnyYsoMDv4IMReM3fr6OmiYl1pK4jMWXunxcQmsLxQVAdH/DGp0cN5rUja
+	D35Xpl9EnHKGBO9KkzB6krKm4O/uLjH+7FBW6saf87OhyjA2QjQ7uiJ1Of7dlvGtXEijd2
+	WGzbxIVZiaYrJtBr91fGSs3ZdbkmeFk=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 71B40779A7
-	for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2026 01:12:08 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E5D2D779A7
+	for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2026 03:34:40 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id Z6FGDWg5Gmq7awAAD6G6ig
+	id w+2UKdBaGmorcgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2026 01:12:08 +0000
+	for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2026 03:34:40 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: scrub: update the error message to reduce confusion
-Date: Sat, 30 May 2026 10:41:46 +0930
-Message-ID: <6d3508bdab79b1ac5b1999f2b1bfcc195d81e3b2.1780103458.git.wqu@suse.com>
+Subject: [PATCH v2 0/3] btrfs: fix generic/362 failures with nodatasum
+Date: Sat, 30 May 2026 13:04:16 +0930
+Message-ID: <cover.1780112003.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -72,67 +72,89 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo]
 
-[BUG]
-There is a bug report that scrub is reporting confusing and conflicting
-messages:
+Changelog
+v2:
+- Add a new patch to allow retry after no byte is submitted for direct
+  write
 
- $ sudo btrfs scrub start -B /mnt
- Starting scrub on devid 1
- scrub done for 44cb181f-faf6-48c2-a462-904cfe493576
- Scrub started:    Fri May 29 23:54:53 2026
- Status:           finished
- Duration:         0:10:23
- Total to scrub:   911.45GiB
- Rate:             1.46GiB/s
- Error summary:    csum=18
-   Corrected:      0
-   Uncorrectable:  18
-   Unverified:     0
- ERROR: there are 1 uncorrectable errors
+- Add a more clean callchain to explain why __iomap_dio_rw() doesn't
+  return -EFAULT/-ENOTBLK directly.
 
-There are 18 uncorrectable errors, but the final line only shows one.
+- Add a code comment explaining the OE split sitation and why we can
+  truncate all the remaining OE after a short write
 
-[CAUSE]
-The "1" is for the number of devices with uncorrectable errors, not the
-total errors found in the device.
+- Fix the isize revert when part of the direct write succeeded
 
-[FIX]
-Change the error message to "there are 1 device(s) with uncorrectable
-errors" instead.
+- Dig deeper into the original cause
+  Which is very old, dates back to v5.15 LTS at least, and add a reason
+  why no specific fixes tag is provided.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- cmds/scrub.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+The test case generic/362 is pretty well hidden by several factors:
 
-diff --git a/cmds/scrub.c b/cmds/scrub.c
-index 74fd0fec1b79..88883498eb48 100644
---- a/cmds/scrub.c
-+++ b/cmds/scrub.c
-@@ -1727,7 +1727,7 @@ out:
- 	if (nothing_to_resume)
- 		return 2;
- 	if (e_uncorrectable) {
--		error("there are %d uncorrectable errors", e_uncorrectable);
-+		error("there are %d device(s) with uncorrectable errors", e_uncorrectable);
- 		return 3;
- 	}
- 	if (e_correctable)
+- "nodatasum" will not take effect due to the bad design of the test
+  case
+  If the target file already exists, the test case will reuse it,
+  meanwhile "nodatasum" mount option only affects new files, meaning
+  if the test case is executed before with data checksum, it will never
+  go through the nodatasum path.
+
+  There is already an update on the test case to make the failure
+  reliably reproducible:
+  https://lore.kernel.org/linux-btrfs/20260528111659.87113-1-wqu@suse.com/
+
+- Btrfs always falls back to buffered IO if the inode has csum
+  Thus we do not exercise the zero-copy path, hide the failure for the
+  default mount option.
+
+With that said, the test case failure needs to be fixed, and there are
+several bugs in the direct write path:
+
+- Treat any short write as an error
+  This is especially common as we have disabled page faulting for
+  reading from the @from iov_iter.
+
+  This is fixed by the first patch.
+
+- No isize rollback after a short write
+  The isize is increased at btrfs_get_blocks_direct_write() but when a
+  short write happened, the isize is not propoerly rolledback, causing
+  later buffered fallback to write at the new isize.
+
+  This is fixed by the second patch.
+
+- No page fault-in retry after a zero-submitted short write
+  Unlike the previous two, this is only a minor problem which reduces
+  the chance to do zero-copy direct IO.
+
+  This is fixed by the third patch.
+
+Qu Wenruo (3):
+  btrfs: fix false IO failure after falling back to buffered write
+  btrfs: fix incorrect buffered IO fallback for append direct writes
+  btrfs: retry faulting in the pages after a zero sized short direct
+    write
+
+ fs/btrfs/direct-io.c    | 44 ++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/inode.c        |  6 +-----
+ fs/btrfs/ordered-data.c | 12 +++++++++++
+ fs/btrfs/ordered-data.h |  2 ++
+ 4 files changed, 54 insertions(+), 10 deletions(-)
+
 -- 
 2.54.0
 

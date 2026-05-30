@@ -1,155 +1,181 @@
-Received: from mx02lb.world4you.com (mx02lb.world4you.com [81.19.149.112])
+Received: from mail-24429.protonmail.ch (mail-24429.protonmail.ch [109.224.244.29])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 83EFD33FE26
-	for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2026 16:07:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=81.19.149.112
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 94BD72165EA
+	for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2026 20:25:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=109.224.244.29
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780157245; cv=none; b=PAxQ3T36hJ/nnmKGJBylt9s690WKv8dHXPeBa1TaVamAR1sBNslHCw2LAp+jFUVt1S7IfFUBhilx81t0pnsA3FNNtLEvbpSeTzBSrZQptGiskhMlSlZY2XYR/OQ3XFmO1EbdDbDJ57hEKXXDt3y4/LDBJ0cch+hWtITAl9eY0xE=
+	t=1780172751; cv=none; b=qFM86ZT4V2zYUGhCL9mt3lL+Ez3incXJ02LH9eD0Hvh/t56sNKg9CDdsDmr0QP/WSbQjgKUp3ClIWACO+UzLkJBHr2reN97nHxPpxs8a5ie0paPqLURA1YC5L5OeBo7SS/RuW97atMQB9uFpYiLTX0+5MvAZDh9WFdMwEPzuip0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780157245; c=relaxed/simple;
-	bh=Hjrya1jxqmPrIS9ZAsuENNYDcIaKrbiDmGMYuARLXvk=;
-	h=From:Content-Type:Mime-Version:Subject:Date:References:To:
-	 In-Reply-To:Message-Id; b=IxbVuReP8Gyo8gFX+HcYvfHd2jwZuJwRev9vCA9421gRdRtVEvENH1H98vo9ck+8DZSa0FBAfwUu9PW2k/TuN3IOIJwod6uV4wvWz3KjzBOJcpMD1OgrlzieAe/iA7NbQI4C4WVQ69D6M6A3Ysg9oAc9B2f2gHxzTPg30gfg7bE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=bluemole.com; spf=pass smtp.mailfrom=bluemole.com; dkim=pass (2048-bit key) header.d=bluemole.com header.i=@bluemole.com header.b=qAUIdQaS; arc=none smtp.client-ip=81.19.149.112
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=bluemole.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bluemole.com
+	s=arc-20240116; t=1780172751; c=relaxed/simple;
+	bh=LfrDEjuNme8kAWlIPiuZuby64t1eo2ql6WSa7FpGA3o=;
+	h=Date:To:From:Subject:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=rnr3zKV4QDNoJV+80ku9HfGNCGV0MHhh1V85RgBbIUTTAD6nEbvNPorlAh6g/XMT+E3jvThKO/XC7tzwzTDubySyDgXqYgkco/wUPjEQKxQUG00Gigv8C3Wn5QecKAwOKnd9H5GHScJif24+JMTUIYidTnQtVikeK2uo8zNcWig=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=proton.me; spf=pass smtp.mailfrom=proton.me; dkim=pass (2048-bit key) header.d=proton.me header.i=@proton.me header.b=n3Bc9FWW; arc=none smtp.client-ip=109.224.244.29
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=proton.me
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=proton.me
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bluemole.com header.i=@bluemole.com header.b="qAUIdQaS"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=bluemole.com; s=dkim11; h=Message-Id:In-Reply-To:To:References:Date:Subject
-	:Mime-Version:Content-Transfer-Encoding:Content-Type:From:Sender:Reply-To:Cc:
-	Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender:
-	Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:
-	List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=xdpY6AyibNQFAA2jgve5DGZ0sbzM6yE6nfXxhvAo8Wc=; b=qAUIdQaSB9zdxs27V9rI1mPr1F
-	z/jNZ1sAji6DviZjF0Pw9bVsA1Qx1P9F3fdfe1Obz3YCu2fYvyraLpSomiW/hEYskdTAi6rI8F0lZ
-	68CEm22cvraxjr54coim8fc1IEXZzMwqf3PoD0YbCeaeCCrKQ0KoTpzsPj8WtFPA7euZC2URmKM/A
-	gxJIbE9pO4NHWRiDnYn2GmKa5AnVF9+sYDSk9veIgRDkTjXCmqlX2PqGWhoZNtUonhHXk3XK2cetD
-	Duq81JP7Gp0blGKwec1+yQrmCr6zR5DJpUDl9TaRrQwOyZ4qloJ5ZLWVizkk4O8CxZ1tDypTjcY1u
-	qdLNO45w==;
-Received: from [41.66.99.8] (helo=smtpclient.apple)
-	by mx02lb.world4you.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.97.1)
-	(envelope-from <ubu@bluemole.com>)
-	id 1wTLVX-000000003vk-37uS
-	for linux-btrfs@vger.kernel.org;
-	Sat, 30 May 2026 17:21:52 +0200
-From: Michael Zacherl <ubu@bluemole.com>
-Content-Type: text/plain;
-	charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+	dkim=pass (2048-bit key) header.d=proton.me header.i=@proton.me header.b="n3Bc9FWW"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=proton.me;
+	s=protonmail; t=1780172745; x=1780431945;
+	bh=QyjE75C+iIsUOsCcKZPGiER+YOnSTW7n2H4RmU35nuo=;
+	h=Date:To:From:Subject:Message-ID:In-Reply-To:References:
+	 Feedback-ID:From:To:Cc:Date:Subject:Reply-To:Feedback-ID:
+	 Message-ID:BIMI-Selector;
+	b=n3Bc9FWW3MzEuHb3rw4Pw7HQVo0INCjFmMhuPdO6d2sFeAfrPYIihgKi9vRXnql7/
+	 qWroduEfnvpspQG/r2o+0jiX+niZyYLU/XaGFLnZBxjMceiJtLiVcI0A58Q/cALxAH
+	 Ss2YEkzYjzXbKlhUqqmMjbSE/Ne4a4wALy1eOjsfpvrG0nNic3F1zPiNWi+f9L5zLg
+	 ThzfbrmckiAbfwscKM5dAF0O5nWQUAZBT+fAtT5Rtt67ufkRi8clP74SiSABOnTI9U
+	 MU+WO8Qm9DWQXNmPvgyQQ4id+F26XejLGKM7KFbgnhYRgv0d9LP4xsZlpl0uxZUXUB
+	 O6bIDu0NB+wow==
+Date: Sat, 30 May 2026 20:25:42 +0000
+To: linux-btrfs@vger.kernel.org
+From: xerobrinhek <xerobrinhek@proton.me>
+Subject: btrfs: multi-device pool corrupted after repeated removal/recreation of missing device
+Message-ID: <ISRv0Ku3zGY139-n3o62hjAyUorcln7sKNLrUViaahtGK-bidGOIjXvj6OeK6_od0CwGnW0RuTP1Un8PXSUv6owZVbEfIJkRuiS8NLwIBqU=@proton.me>
+In-Reply-To: <JJ5S5tQDVkTmHxqx0ncj423p-TgogJGM8fSviYuGeF1i-xc7NtTdlmd1VO0aopC3SEVqYZF_Z6opVqrTz4eJ8sbDOiceQNzgwnjerSXJWhM=@proton.me>
+References: <JJ5S5tQDVkTmHxqx0ncj423p-TgogJGM8fSviYuGeF1i-xc7NtTdlmd1VO0aopC3SEVqYZF_Z6opVqrTz4eJ8sbDOiceQNzgwnjerSXJWhM=@proton.me>
+Feedback-ID: 188343733:user:proton
+X-Pm-Message-ID: 3894e24eb53f0ebae4d82637ff72a3712bce83e3
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 16.0 \(3776.700.51.11.10\))
-Subject: Re: scrub error & discrepancy
-Date: Sat, 30 May 2026 17:21:41 +0200
-References: <1552EE44-BE29-452D-BCAA-DAF750F4A2C7@bluemole.com>
- <bc9c0c4e-8f13-4e9f-8bd4-6c624d2b0a76@gmx.com>
-To: linux-btrfs@vger.kernel.org
-In-Reply-To: <bc9c0c4e-8f13-4e9f-8bd4-6c624d2b0a76@gmx.com>
-Message-Id: <B1D486C3-CBD6-4ED7-B0E8-D49EB89F7DE4@bluemole.com>
-X-Mailer: Apple Mail (2.3776.700.51.11.10)
-X-AV-Do-Run: Yes
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Thank you very much for your super-swift response and action!
+Hello btrfs developers,
 
-I safely could remove two files which indeed decreased the error count.
-However, there=E2=80=99s still one uncorrectable error left which I =
-don=E2=80=99t know how to tackle.
+I have a btrfs multi-device setup that got corrupted after a failed device =
+removal. I need help recovering the filesystem structure (not just raw file=
+ extraction).
 
-Scrub=E2=80=99s output:
+Setup:
 
-$ sudo btrfs scrub start -B /mnt
-Starting scrub on devid 1
-scrub done for 44cb181f-faf6-48c2-a462-904cfe493576
-Scrub started:    Sat May 30 12:42:56 2026
-Status:           finished
-Duration:         0:10:29
-Total to scrub:   912.31GiB
-Rate:             1.45GiB/s
-Error summary:    csum=3D1
-  Corrected:      0
-  Uncorrectable:  1
-  Unverified:     0
-ERROR: there are 1 uncorrectable errors
+- Two devices: nvme0n1p9 (17.53GB) and nvme0n1p8 (31,30GB) originally
 
-Associated log output:
+- The filesystem uses subvolumes: @, @home, @var, @snapshots
 
-May 30 12:42:56 EndeavourOS kernel: BTRFS info (device dm-0): scrub: =
-started on devid 1
-May 30 12:42:56 EndeavourOS kernel: BTRFS error (device dm-0): scrub: =
-unable to fixup (regular) error at logical 20316160 on dev =
-/dev/mapper/cryptroot
- physical 20316160
-May 30 12:42:56 EndeavourOS kernel: BTRFS error (device dm-0): bdev =
-/dev/mapper/cryptroot errs: wr 0, rd 0, flush 0, corrupt 5327, gen 0
-=E2=80=A6
-May 30 12:53:25 EndeavourOS kernel: BTRFS info (device dm-0): scrub: =
-finished on devid 1 with status: 0
+- Compression: enabled (zstd)
 
-Also, since the fs is not live I na=C3=AFvely ran a  cat file >/dev/null =
-over all sub-volumes and a third file (/etc/gai.conf) threw an =
-Input/Output error.
-This seems to correlate with another log entry (inode matches):
+What happened:
 
-May 30 15:10:04 EndeavourOS kernel: BTRFS warning (device dm-0): csum =
-failed root 256 ino 12433739 off 0 csum 0x6bf0922b expected csum =
-0x70e27ee0 mirr
-or 1
-May 30 15:10:04 EndeavourOS kernel: BTRFS error (device dm-0): bdev =
-/dev/mapper/cryptroot errs: wr 0, rd 0, flush 0, corrupt 5328, gen 0
+1. I removed /dev/nvme0n1p8 (devid 2) from the pool without proper 'btrfs d=
+evice remove'
 
-This file is completely unreadable.
-Is there a correlation to the scrub error?
+2. I tried to recreate the missing device multiple times, creating and remo=
+ving btrfs on it
 
-Thanks again, Michael.
+3. Now the filesystem won't mount at all
 
-> On 30.05.2026, at 03:03, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->=20
-> =E5=9C=A8 2026/5/30 09:49, Michael Zacherl =E5=86=99=E9=81=93:
->> Hello, I did a routine scrub on the offline root fs of a notebook =
-(EndeavourOS, Arch based).
->> This is the output:
->> $ sudo btrfs scrub start -B /mnt
->> Starting scrub on devid 1
->> scrub done for 44cb181f-faf6-48c2-a462-904cfe493576
->> Scrub started:    Fri May 29 23:54:53 2026
->> Status:           finished
->> Duration:         0:10:23
->> Total to scrub:   911.45GiB
->> Rate:             1.46GiB/s
->> Error summary:    csum=3D18
->>   Corrected:      0
->>   Uncorrectable:  18
->>   Unverified:     0
->> ERROR: there are 1 uncorrectable errors
->> Last line vs. "Uncorrectable:  18=E2=80=9D ..
->=20
-> Indeed it's confusing. Will update the message.
->=20
-> In fact the "1" is only accounting for how many device(s) have =
-uncorrectable errors.
->=20
-> So the more correct one should be "there are 1 device(s) with =
-uncorrectable errors".
->=20
->> How would I deal with that?
->=20
-> Check the dmesg, it should contain the file path of the bad blocks =
-where it belongs to.
->=20
-> And if that file is not important, you can just delete it.
->=20
-> If it's important, you can verify how bad the damage is, by going
-> "ro,rescue=3Didatacsums" and read out the affected file, manually =
-check
-> how damaged they are.
->=20
-> Thanks,
-> Qu
+Current symptoms:
 
+Mount attempt:
 
+# mount -t btrfs -o degraded,ro,rescue=3Dall /dev/nvme0n1p9 /mnt
+
+mount: /mnt: can't read superblock on /dev/nvme0n1p9.
+
+dmesg shows:
+
+[  688.380328] BTRFS warning: 'usebackuproot' is deprecated, use 'rescue=3D=
+usebackuproot' instead
+
+[  688.385530] BTRFS info (device nvme0n1p9): first mount of filesystem 0d5=
+54048-1a10-4fbe-9d7d-80de9d3f0700
+
+[  688.385538] BTRFS info (device nvme0n1p9): using crc32c checksum algorit=
+hm
+
+[  688.386981] BTRFS warning (device nvme0n1p9): devid 2 uuid a8559fa6-e465=
+-459f-ac73-86c842aa6fe0 is missing
+
+[  688.388044] BTRFS warning (device nvme0n1p9): failed to read root (objec=
+tid=3D4): -5
+
+[  688.388060] BTRFS warning (device nvme0n1p9): try to load backup roots s=
+lot 1
+
+[  688.388425] BTRFS warning (device nvme0n1p9): global root 2 0 already ex=
+ists
+
+[  688.388433] BTRFS error (device nvme0n1p9): failed to load root extent
+
+[  688.388440] BTRFS warning (device nvme0n1p9): try to load backup roots s=
+lot 2
+
+[  688.388498] BTRFS warning (device nvme0n1p9): couldn't read tree root
+
+[  688.388505] BTRFS warning (device nvme0n1p9): try to load backup roots s=
+lot 3
+
+[  688.388773] BTRFS warning (device nvme0n1p9): global root 2 0 already ex=
+ists
+
+[  688.388776] BTRFS error (device nvme0n1p9): failed to load root extent
+
+[  688.389043] BTRFS error (device nvme0n1p9): open_ctree failed: -17
+
+What I tried (all from Fedora Live USB):
+
+1. Superblock recovery:
+
+# btrfs rescue super-recover -v /dev/nvme0n1p9
+
+All supers are valid, no need to recover
+
+2. Zero log:
+
+# btrfs rescue zero-log /dev/nvme0n1p9
+
+Couldn't setup device tree
+
+ERROR: could not open ctree
+
+3. Chunk recover on both devices:
+
+# btrfs rescue chunk-recover -y -v /dev/nvme0n1p8
+
+Result: Chunk tree recovered successfully (generation 9, chunk root gen =
+=F0=9F=98=8E
+
+# btrfs rescue chunk-recover -y -v /dev/nvme0n1p9
+
+Result: Chunk tree recovery failed (the device is the main one with data)
+
+4. Mount with various options all fail with either "can't read superblock" =
+or "FS exist" error:
+
+- degraded,ro,subvol=3D@
+
+- degraded,ro,rescue=3Dall
+
+- degraded,ro,usebackuproot
+
+- degraded,ro,sb=3D1 (parameter unknown)
+
+Key observation:
+
+btrfs-find-root shows there are valid roots at various addresses, but mount=
+ing fails with EEXIST (-17) and "global root 2 0 already exists" errors.
+
+Questions:
+
+1. Is there any way to force the filesystem to forget about missing devid 2=
+ and mount using only nvme0n1p9?
+
+2. Can I manually copy the chunk tree from p8 to p9 using dd at specific of=
+fsets?
+
+3. What would be the correct procedure to rebuild the extent tree and root =
+tree without losing subvolume structure?
+
+4. Is --init-extent-tree a viable option at this stage?
+
+I understand the risk of data loss. My goal is to restore the filesystem st=
+ructure (subvolumes, names, directory hierarchy), not just raw file extract=
+ion.
+
+Thank you for your time.

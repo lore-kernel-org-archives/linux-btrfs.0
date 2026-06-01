@@ -1,99 +1,81 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from r3-17.sinamail.sina.com.cn (r3-17.sinamail.sina.com.cn [202.108.3.17])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95334368291;
-	Mon,  1 Jun 2026 23:09:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE7E727F19F
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Jun 2026 23:17:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.108.3.17
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780355356; cv=none; b=osnUT3ZkFQ3mxK7Lwm169foWN/Em6PYeRzndK1LdYEL+hdVJhx92IWD69efX4Lh0ETuaXwDDO9pJ+Tj10gdbnX+FYZoLJVXMe8TkJu4zUeWxR9kPL8DFMUOMRnpQLx9YAKA8HRLeoL76xu+6Ou6nu0NKOKd6H3/W9u0Krh1ICBU=
+	t=1780355879; cv=none; b=bAyqDoAaWiMdi8j1hKxSBeBvBTlrC8SLdRow09vWpd4s3XkZoYTnovpgs4mDrlFm/prOGcQRP3mCG/xx5efDdUQKbx+/mxHlOFbsiuAyC66l2lFM3y+sZoYiY1kMp0lrWtIPyYEqO5zw5BiEznbBI9obExi7UvBLTE7yHdX8BAE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780355356; c=relaxed/simple;
-	bh=QEUHe17jF1z/s4sTeRaJ/QC8yl4gpkRqsb5vh1X8ePc=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ffLy/N3VHr0/9MSGUC86WURtJGElHT6b/9M03QFliRy0qmetRO2WyLoHDke/BTJEg+v0k7Fdvo6wodta8T06bkpZJmtJrp8HvCRBYu9zSFwaZgbcauluSgirN0O0EHbXMxFI8E1+r8all9GDQS76m/vephT6+cUfi8OwHCy5KDU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Dh4paw87; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1780355879; c=relaxed/simple;
+	bh=Po0H4PhXpZB4CC0ZmuVH8OSxr/lv1Ed3Id5JhFMl2mg=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=MMTZNQN9FfRTKihj+o9lJwqCzWWBxk16cbnXARol8ygKoUTdKcEq8cg4TwnysHGmqT1jL9PF3Tc/5XO3p0K9or8Bwu6T9h+oIRBpxckRMRbjK5aGGZ33I055jrOEAcF+eOFYdyQyfInggdi1vVbdq/iZXeptB+Ry8WMQ1XldTZA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sina.com; spf=pass smtp.mailfrom=sina.com; dkim=pass (1024-bit key) header.d=sina.com header.i=@sina.com header.b=ObOVlkzb; arc=none smtp.client-ip=202.108.3.17
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sina.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sina.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Dh4paw87"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2820C1F00893;
-	Mon,  1 Jun 2026 23:09:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1780355355;
-	bh=EcIn0JdagysY/ulwgXnUitaA4RFu9sTCNRYjyUXx0VY=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=Dh4paw87gPjL1nWquFRrRbXZ1U3vy6bT4vLBk17pSnekG1UwdGgVFhLugNvNqSrcr
-	 py31cXJz1g15guUMhwz8aOmswAxKQKLmH9jJwsKwsNn24MCN8AG3n8bpISlmBA/NPW
-	 3nZ+Il5c8aWf3K7LTom9VfV+xDvEv8pFg+dAqgQl5B5F7adYL6HOKUP9wFCe5xLpKx
-	 urWKdvrN5HVVqIRyQMOowFrNhc1W3twPOlNYIZTnG+5QPI/jiPitofD5RM3ruw9f5p
-	 SQQUm3e4qb02hhy+Fpu9wgQ3MZdwkBCZrHHZiQxcV8z05vx2al49/6aZb2BX+MP+D3
-	 40FK/cjVIwvzg==
-Date: Mon, 1 Jun 2026 16:09:13 -0700
-From: Eric Biggers <ebiggers@kernel.org>
-To: Daniel Vacek <neelx@suse.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-	"Theodore Y. Ts'o" <tytso@mit.edu>,
-	Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>,
-	David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
-	linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v7 05/43] blk-crypto: add a process bio callback
-Message-ID: <20260601230913.GD25574@quark>
-References: <20260513085340.3673127-1-neelx@suse.com>
- <20260513085340.3673127-6-neelx@suse.com>
+	dkim=pass (1024-bit key) header.d=sina.com header.i=@sina.com header.b="ObOVlkzb"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sina.com; s=201208; t=1780355877;
+	bh=3OCVMiVaoAQ78KSjGPxA9tbJTpAysnsv+Uuid0f3YZE=;
+	h=From:Subject:Date:Message-ID;
+	b=ObOVlkzb5fa7C7FVj86QQJVbF37CxvnEdFcQfKOFQOCAHxFWqyKS9sYRLDflvI3hp
+	 kV54kotPcuHYxfGGhFMaKLabRKpCXXeQuQvZQe8gvwXw100q1Hz7djKRTnGRw5YW7L
+	 3hoJuBCCjIXXsKqA7z1+M9/S9E09JpQRocajocJM=
+X-SMAIL-HELO: localhost.localdomain
+Received: from unknown (HELO localhost.localdomain)([114.249.62.144])
+	by sina.com (10.54.253.34) with ESMTP
+	id 6A1E131500002077; Mon, 2 Jun 2026 07:17:45 +0800 (CST)
+X-Sender: hdanton@sina.com
+X-Auth-ID: hdanton@sina.com
+Authentication-Results: sina.com;
+	 spf=none smtp.mailfrom=hdanton@sina.com;
+	 dkim=none header.i=none;
+	 dmarc=none action=none header.from=hdanton@sina.com
+X-SMAIL-MID: 3043906291827
+X-SMAIL-UIID: 704A31F544FA422892316E3CA446A8CC-20260602-071745-1
+From: Hillf Danton <hdanton@sina.com>
+To: Ming Lei <tom.leiming@gmail.com>
+Cc: Qu Wenruo <wqu@suse.com>,
+	Christoph Hellwig <hch@lst.de>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>,
+	Jens Axboe <axboe@kernel.dk>,
+	Bart Van Assche <bvanassche@acm.org>,
+	linux-block <linux-block@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs@vger.kernel.org,
+	David Sterba <dsterba@suse.com>,
+	linux-fsdevel@vger.kernel.org,
+	Christian Brauner <brauner@kernel.org>
+Subject: Re: [PATCH v3] loop: Fix NULL pointer dereference in lo_rw_aio()
+Date: Tue,  2 Jun 2026 07:17:30 +0800
+Message-ID: <20260601231731.1403-1-hdanton@sina.com>
+In-Reply-To: <ah4EY2nhPxEETufZ@fedora>
+References: 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260513085340.3673127-6-neelx@suse.com>
+Content-Transfer-Encoding: 8bit
 
-On Wed, May 13, 2026 at 10:52:39AM +0200, Daniel Vacek wrote:
-> @@ -330,6 +330,17 @@ static void __blk_crypto_fallback_encrypt_bio(struct bio *src_bio,
->  		}
->  	}
->  
-> +	/* Process the encrypted bio before we submit it. */
-> +	if (bc->bc_key->crypto_cfg.process_bio) {
-> +		blk_status_t status;
-> +
-> +		status = bc->bc_key->crypto_cfg.process_bio(src_bio, enc_bio);
-> +		if (status != BLK_STS_OK) {
-> +			enc_bio->bi_status = status;
-> +			goto out_free_enc_bio;
-> +		}
-> +	}
-
-This looks very out of place in this function, because this function
-potentially submits multiple encrypted bios whereas this code assumes
-there's just one.  I think we could at least use a comment here, as well
-as a WARN_ON_ONCE(!bc->bc_key->crypto_cfg.process_bio) in the case where
-an additional bio is being submitted.
-
-> +	/*
-> +	 * We cannot split bio's that have process_bio, as they require the original bio.
-> +	 * The upper layer must make sure to limit the submitted bio's appropriately.
-> +	 */
-> +	if (bio_segments(src_bio) > BIO_MAX_VECS && bc->bc_key->crypto_cfg.process_bio) {
-
-Checks should be reversed so that the expensive bio_segments() check
-only gets done if process_bio is non-NULL.
-
-(Sashiko spotted this too, by the way)
-
-> + * @process_bio: the call back if the upper layer needs to process the encrypted
-> + *		 bio
-
-or NULL if no such callback is needed.
-
-> + * @proces_bio: optional callback to process encrypted bios.
-
-Typo.
-
-By the way, after writing kerneldoc you should run the kerneldoc
-checker, as it will find things like this:
-
-$ scripts/kernel-doc -v -none include/linux/blk-crypto.h 
-Info: include/linux/blk-crypto.h:79 Scanning doc for struct blk_crypto_config
-Warning: include/linux/blk-crypto.h:95 struct member 'process_bio' not described in 'blk_crypto_config'
+On Mon, 1 Jun 2026 17:14:59 -0500 Ming Lei wrote:
+> On Tue, Jun 02, 2026 at 05:51:26AM +0800, Hillf Danton wrote:
+> > On OnMon, 1 Jun 2026 10:29:25 -0500 Ming Lei wrote:
+> > > syzbot log shows the null-ptr-deref  is on WRITE, instead of DISCARD.
+> > >
+> > > https://syzkaller.appspot.com/bug?extid=cd8a9a308e879a4e2c28
+> > >
+> > > Adding WARN_ON(!lo->lo_backing_file) in loop_queue_rq() might capture
+> > > this bio submission context if this req isn't issued via wq.
+> > >
+> > I suspect this makes $.02 sense given the check of Lo_bound upon queuing rq.
+> 
+> Can't lo->lo_state be updated after the check? It is totally lockless...
+>
+Sounds good hm... do you mean it is UNWISE to not flush the loop workqueue
+when closing disk?

@@ -1,114 +1,58 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6FC963BE620
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Jun 2026 14:30:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48FAD3BE645;
+	Mon,  1 Jun 2026 14:40:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780324227; cv=none; b=h91uEzYWcwLVCY71Eobe77XkFoLPiJNbJb82ZHrIv2Ng6P8h5joOP1u93p4/WOdn/6iu9UlFrsDiQZDy/lCbxnSGsh/OZkk+h00GO/cTO4KAGat8dH7zZgAJAH9WRoHCYK281CL0Mmhsb1+LIkw2+7IY69kSOREDf710FVOF23g=
+	t=1780324841; cv=none; b=m+QvQ19qWp/FQvSf/x0R8i6Q/LhbAedQpBYi7Mke8h5HmifAjxIPaza0IomD9BL6/cNP647guF4DoVvkNvCAVcfg/Goohr6wR82NSQxuz8VZlnQO4QDU29hNz5lt2QnIOWWsf1pByBqT+gaLE8DkBDkhnffqKEXMV9rWxubOpb0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780324227; c=relaxed/simple;
-	bh=m/I0zpdJ71P7zS/LuA/I19DpQ3v0JTWoA/WvuZaMw5E=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=dq6xMYgPEkeSYdecCyffPQW7GsAYPsR+egITT2UFaCDwdqbx8LLs9+9d8ohydtvF7c0RXeJB4Zpzlm6bEZkHUFTesErptTW9jH7mcSnWe5da3pMR1uXvekmGNBn0NuofY85hA5TC65N/TdQnqf9pBs+i1Cehnk2d77L0f7eo7lo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Pa4Hqe5B; arc=none smtp.client-ip=100.103.45.18
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Pa4Hqe5B"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 27AF81F00893
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Jun 2026 14:30:26 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1780324226;
-	bh=QfWpIbrkA1ceSsX16E0eeSYuD7JU68UTA8KOXVZNR1w=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=Pa4Hqe5B5KL8psb0tjkWaiD3OHTWWIgk2NZm8qGw19nknYiP4THFqVQznxagHvUYE
-	 4/b0Ful11DxMXzV7vIaDvy8OKFmrjbbtIxu5j5fWr2nyjkYTYIfgANt5Wq6JaHzDbC
-	 /C+PHLTWQYltiXv4QWn5bW0kL+15hu+Z97028FyjJ10ZoZ8DBdJwdiG6oxdHbDYh4W
-	 Lo3vr8pWkT/1HRnVwb4kdJhfIpsYjr4RZHl8+XW4PvGwLKKVJnkXsCL+mZMeUSI69S
-	 fze39VZ0H3HEXvGbRthCysQeI2oeNxhuQ7WNikr7peIbq2vZiV+5NUcIk+1owyIeCj
-	 DG9q4AacQb7xA==
-Received: by mail-ed1-f47.google.com with SMTP id 4fb4d7f45d1cf-68bfcf11050so5487276a12.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jun 2026 07:30:26 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AFNElJ/7TQX2b7hOCqaw0KXUhqRz0KgE3/f4Rm7c8Mgmkeae502nUcv4nR76an/AJBPx29c3qTYx8zu1kDX8XA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw+MCBIJQWWTZWVU7dYXTV96halY/MAXni5gWNK0mMrtYiLWNNS
-	vuEH/JkhhCNTfuDbJhywNhGf743zWb9v9X4hj8NQ9Ey1sskXwQsJK593aLPxQIffzp9iNgCj5kr
-	U9GJ8MHjo59Pos4NmyVb3ZOyu+RJ4ur8=
-X-Received: by 2002:a17:907:6d29:b0:bed:1876:975 with SMTP id
- a640c23a62f3a-bed187610b8mr293963566b.28.1780324224826; Mon, 01 Jun 2026
- 07:30:24 -0700 (PDT)
+	s=arc-20240116; t=1780324841; c=relaxed/simple;
+	bh=4ljzOdHMm9OcvDs8tZ0hAINRuhHXyEj6CbPzt582Qec=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=RKRBGXzUTLpe5Aq9jIxK8FYKiLrz3eLfeG6LHr8fa3+U1o6vgjLNFutQ3u0zt4U1o6Z3oA+t+DZ3dFqMNBjN5q9CPuDhnMUvsNze4lGiGTVP4eMIhGKDc31Cko7WooxpeZSiFzs/oXjrNzJ5NlG5qanECUyukLyWBNrFq+U86B0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id 891AF68BEB; Mon,  1 Jun 2026 16:40:34 +0200 (CEST)
+Date: Mon, 1 Jun 2026 16:40:34 +0200
+From: Christoph Hellwig <hch@lst.de>
+To: Qu Wenruo <wqu@suse.com>
+Cc: Christoph Hellwig <hch@lst.de>, Damien Le Moal <dlemoal@kernel.org>,
+	Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>,
+	Ming Lei <tom.leiming@gmail.com>, Jens Axboe <axboe@kernel.dk>,
+	Bart Van Assche <bvanassche@acm.org>,
+	linux-block <linux-block@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+	linux-fsdevel@vger.kernel.org,
+	Christian Brauner <brauner@kernel.org>,
+	Brian Foster <bfoster@redhat.com>
+Subject: Re: [PATCH v3] loop: Fix NULL pointer dereference in lo_rw_aio()
+Message-ID: <20260601144034.GA4918@lst.de>
+References: <fda8abc8-6aa2-463b-bf72-865f6b838034@I-love.SAKURA.ne.jp> <ahRocb0Vs_m6RF_O@fedora> <1a9f53d4-6f48-4df8-a3d8-2b0e442a163a@I-love.SAKURA.ne.jp> <ahZGxoI6oHQ_vSrx@fedora> <d1b5a737-f0e3-4927-b762-430b37fbb2f9@I-love.SAKURA.ne.jp> <ahZeYQ0cLE1i8TGs@fedora> <fbb3edda-f108-4e5b-acf2-266f043f8125@I-love.SAKURA.ne.jp> <ab5492b6-a053-4e3b-8c59-2e836ae85bc4@kernel.org> <20260528083848.GA7694@lst.de> <36571f8a-4df8-4152-b078-d82dbff4ad7e@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260601140958.1333017-1-lgs201920130244@gmail.com>
-In-Reply-To: <20260601140958.1333017-1-lgs201920130244@gmail.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 1 Jun 2026 15:29:46 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H6ZcDK=_s-_s7+E8LHXnGyPGMpnE-uysY85EmRbkRwKtQ@mail.gmail.com>
-X-Gm-Features: AVHnY4IM9Log02HP-bD1FRznk2k76ZBQbOLeiZ2TuMWjKhSEMQFbqU5siGf-rlY
-Message-ID: <CAL3q7H6ZcDK=_s-_s7+E8LHXnGyPGMpnE-uysY85EmRbkRwKtQ@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix inline reflink deadlock at non-zero offset
-To: Guangshuo Li <lgs201920130244@gmail.com>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <36571f8a-4df8-4152-b078-d82dbff4ad7e@suse.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-On Mon, Jun 1, 2026 at 3:23=E2=80=AFPM Guangshuo Li <lgs201920130244@gmail.=
-com> wrote:
+On Thu, May 28, 2026 at 07:46:24PM +0930, Qu Wenruo wrote:
+>> e.g. 9c7504aa72b6 ("xfs: track and serialize in-flight async buffers against
+>> unmount")
+> Considering the xfs fix is pretty old, it's before the fix hint thus no 
+> such mention in fstests.
 >
-> clone_copy_inline_extent() can copy an inline extent into a page of the
-> destination inode before starting a transaction. If that page is beyond
-> EOF, writeback started by a transaction commit with flushoncommit can
-> invalidate the folio and block on the same extent range lock held by the
-> reflink task, while the reflink task waits to start a transaction.
->
-> The copy_to_page path already updates i_size after copy_inline_to_page(),
-> so writeback no longer treats the copied page as beyond EOF. However,
-> clone_copy_inline_extent() has an earlier new_key->offset > 0 path that
-> also calls copy_inline_to_page() and then goes to out, where it starts a
-> transaction. That path still leaves i_size unchanged before starting the
-> transaction.
->
-> Update i_size after a successful copy_inline_to_page() in the early
-> non-zero offset path as well, matching the existing copy_to_page path.
->
-> Fixes: 05a5a7621ce66 ("Btrfs: implement full reflink support for inline e=
-xtents")
-> Signed-off-by: Guangshuo Li <lgs201920130244@gmail.com>
-> ---
->  fs/btrfs/reflink.c | 2 ++
->  1 file changed, 2 insertions(+)
->
-> diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-> index 49865a463780..5722cccb53eb 100644
-> --- a/fs/btrfs/reflink.c
-> +++ b/fs/btrfs/reflink.c
-> @@ -185,6 +185,8 @@ static int clone_copy_inline_extent(struct btrfs_inod=
-e *inode,
->         if (new_key->offset > 0) {
->                 ret =3D copy_inline_to_page(inode, new_key->offset,
->                                           inline_data, size, datal, comp_=
-type);
-> +               if (ret =3D=3D 0 && new_key->offset + datal > i_size_read=
-(&inode->vfs_inode))
-> +                       i_size_write(&inode->vfs_inode, new_key->offset +=
- datal);
+> Do you happen to know which test case is for that fix?
+> I'd like to adapt it for btrfs as a reproducer.
 
-Please don't copy code without an explanation.
+No.  Adding Brian who authored that commit.
 
-This was already fixed here:
-
-https://lore.kernel.org/linux-btrfs/cbaede508d12a0bd0ef9ec1b49f8338fc46a07f=
-b.1779803705.git.fdmanana@suse.com/
-
-Thanks.
-
->                 goto out;
->         }
->
-> --
-> 2.43.0
->
->

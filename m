@@ -1,72 +1,91 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D0471C5F13
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Jun 2026 16:29:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D934B34F48A
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Jun 2026 18:57:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780331396; cv=none; b=WgZrxoTZbmsqaXVpO+qaLEZnqt5oj2CqU0dONBMMlHfftScV3gn/u3Pr7lcK4jQ61N/AUvTkX9b9uf71nJRDqmfI0B/m4Ytu4SEH8abyi5M5Qy/oQ3XvdHLUSto48GwM9Vm+HJ2vMBtVaj5jevujxVx6CsHNyLw7DHWi25ydZ4A=
+	t=1780340259; cv=none; b=uuCjuXTBATdD9aHbWEiPn8bd3ExU8wzUoW3aK4h6lnmQS3vPimng2IhUqVJqx51QtXePBkA4Wsh4ILK9SS5PabELMDCFddobVe+LkQCzEh4dvWmrxbdrPU/euC3D3ObHzNzcRBsUKvZ/97NNUtbjVknvw4qPODvYvqXQy/AV8Qg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780331396; c=relaxed/simple;
-	bh=gYfCSgj3xaS2A+YYEac1pAqnPzQSSEZ5MXWL4piM4aE=;
+	s=arc-20240116; t=1780340259; c=relaxed/simple;
+	bh=89tOA/vg8ODxo9Bd1kZAVRxj1Qun7rG5iGCntXOsfwM=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=VDrx+uAmHDu3u57DCg8Dq55MR/WNjRX9RmvaxXoAkIGEC7saxnPODqY+ggnBX2bKj/ERAj0noZSCwjTgaqfq49jQtXEyiD2AQdzoP9+OCy4quektfADBo0r4eeObuAJI01DTdtCaHpQvqaJyi2hrP8JEs/fbbiKjf0OcVejF7aI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=USA7JRgg; arc=none smtp.client-ip=170.10.133.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	 Content-Type:Content-Disposition:In-Reply-To; b=m2IQVrufIm3xoPflKtnKcYM8VNEBA7l864uSbXNNTHL2Srd27lzZjLVv67i/nDQl2CYtjytW6RdvuX6oRjuw9Go0D+auJ6iP8m6/w7+j7nPA2118s0nWeYqxmgwMB8dGfDxeXfjSFhYpDvhTeAwBn7WtkEW/xm2YaHxxdPzGih8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=lRv9FZWv; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Orov3lwY; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=lRv9FZWv; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Orov3lwY; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="USA7JRgg"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1780331394;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=FCDOSgEjx1fWi4LkC7ZBCwOBu8wF5UiqKv/5m50uf7w=;
-	b=USA7JRggHIs/hxLW8vEsy4PyBd4Ef60oi5F0vo81A6PkvEspbQ1ynMO9av/9ncbJUbIDOX
-	fUkxpIqJBJzB3dP8YyLhCBIYX43521tX33ei9MFbF9hKUIAAT3mDED7j/SAkSLw5oHRYjj
-	shfHduCGvi/MR4DivcirWx/60UEcbZ4=
-Received: from mx-prod-mc-05.mail-002.prod.us-west-2.aws.redhat.com
- (ec2-54-186-198-63.us-west-2.compute.amazonaws.com [54.186.198.63]) by
- relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-18-nWJ4074FMJq1TUF3XnERQQ-1; Mon,
- 01 Jun 2026 12:29:48 -0400
-X-MC-Unique: nWJ4074FMJq1TUF3XnERQQ-1
-X-Mimecast-MFC-AGG-ID: nWJ4074FMJq1TUF3XnERQQ_1780331386
-Received: from mx-prod-int-06.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-06.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.93])
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="lRv9FZWv";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Orov3lwY";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="lRv9FZWv";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Orov3lwY"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by mx-prod-mc-05.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 6384A195609F;
-	Mon,  1 Jun 2026 16:29:45 +0000 (UTC)
-Received: from bfoster (unknown [10.22.80.88])
-	by mx-prod-int-06.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 1AE5B1800347;
-	Mon,  1 Jun 2026 16:29:42 +0000 (UTC)
-Date: Mon, 1 Jun 2026 12:29:40 -0400
-From: Brian Foster <bfoster@redhat.com>
-To: Christoph Hellwig <hch@lst.de>
-Cc: Qu Wenruo <wqu@suse.com>, Damien Le Moal <dlemoal@kernel.org>,
-	Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>,
-	Ming Lei <tom.leiming@gmail.com>, Jens Axboe <axboe@kernel.dk>,
-	Bart Van Assche <bvanassche@acm.org>,
-	linux-block <linux-block@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
-	linux-fsdevel@vger.kernel.org,
-	Christian Brauner <brauner@kernel.org>
-Subject: Re: [PATCH v3] loop: Fix NULL pointer dereference in lo_rw_aio()
-Message-ID: <ah2zdCQ0WA6ol2Gn@bfoster>
-References: <ahRocb0Vs_m6RF_O@fedora>
- <1a9f53d4-6f48-4df8-a3d8-2b0e442a163a@I-love.SAKURA.ne.jp>
- <ahZGxoI6oHQ_vSrx@fedora>
- <d1b5a737-f0e3-4927-b762-430b37fbb2f9@I-love.SAKURA.ne.jp>
- <ahZeYQ0cLE1i8TGs@fedora>
- <fbb3edda-f108-4e5b-acf2-266f043f8125@I-love.SAKURA.ne.jp>
- <ab5492b6-a053-4e3b-8c59-2e836ae85bc4@kernel.org>
- <20260528083848.GA7694@lst.de>
- <36571f8a-4df8-4152-b078-d82dbff4ad7e@suse.com>
- <20260601144034.GA4918@lst.de>
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 23A346B645;
+	Mon,  1 Jun 2026 18:57:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1780340256;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=2BQBHJyYMWnTxoTg7lZFROZPbjpK0REybaOLyY1zGMo=;
+	b=lRv9FZWvI94VUYOpxJMCy2kLL6Bu6+3EsNZUzAnvNuCKo1QUuQkOI3zKss9ofXNX+YfLe3
+	q9w0lHsP9TeeJn46LjTjLKEt38KlHUn7A7uVTNCLmx3d55vxFi3wMomNejbBeSOEYjhxGT
+	YMVAcWgJVLsKq3fmuW/i901rtAqBWc0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1780340256;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=2BQBHJyYMWnTxoTg7lZFROZPbjpK0REybaOLyY1zGMo=;
+	b=Orov3lwYX6ld8pYiDK+atsNbPbR+/S5KpgtJ9aR09hUcycQjEor5HwTw3n2Xj68UjjUL2p
+	7ZW8RpYU3TeQjwCw==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1780340256;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=2BQBHJyYMWnTxoTg7lZFROZPbjpK0REybaOLyY1zGMo=;
+	b=lRv9FZWvI94VUYOpxJMCy2kLL6Bu6+3EsNZUzAnvNuCKo1QUuQkOI3zKss9ofXNX+YfLe3
+	q9w0lHsP9TeeJn46LjTjLKEt38KlHUn7A7uVTNCLmx3d55vxFi3wMomNejbBeSOEYjhxGT
+	YMVAcWgJVLsKq3fmuW/i901rtAqBWc0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1780340256;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=2BQBHJyYMWnTxoTg7lZFROZPbjpK0REybaOLyY1zGMo=;
+	b=Orov3lwYX6ld8pYiDK+atsNbPbR+/S5KpgtJ9aR09hUcycQjEor5HwTw3n2Xj68UjjUL2p
+	7ZW8RpYU3TeQjwCw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0E462779A7;
+	Mon,  1 Jun 2026 18:57:36 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 1jo9AyDWHWrlDgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 01 Jun 2026 18:57:36 +0000
+Date: Mon, 1 Jun 2026 20:57:30 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Eric Biggers <ebiggers@kernel.org>
+Cc: Daniel Vacek <neelx@suse.com>, David Sterba <dsterba@suse.com>,
+	linux-block@vger.kernel.org, linux-fscrypt@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+	"Theodore Y. Ts'o" <tytso@mit.edu>,
+	Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>
+Subject: Re: [PATCH v7 00/43] btrfs: add fscrypt support
+Message-ID: <20260601185730.GE880787@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20260513085340.3673127-1-neelx@suse.com>
+ <CAPjX3FdHJpZUVk2dfA+Ov5K6vOSsOJMUaxCU4G8y1qg6baMXYw@mail.gmail.com>
+ <20260531002812.GA2302@sol>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -75,26 +94,77 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260601144034.GA4918@lst.de>
-X-Scanned-By: MIMEDefang 3.4.1 on 10.30.177.93
+In-Reply-To: <20260531002812.GA2302@sol>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
+	MIME_GOOD(-0.10)[text/plain];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_TWELVE(0.00)[12];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,sashiko.dev:url];
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Level: 
+X-Spam-Score: -4.00
 
-On Mon, Jun 01, 2026 at 04:40:34PM +0200, Christoph Hellwig wrote:
-> On Thu, May 28, 2026 at 07:46:24PM +0930, Qu Wenruo wrote:
-> >> e.g. 9c7504aa72b6 ("xfs: track and serialize in-flight async buffers against
-> >> unmount")
-> > Considering the xfs fix is pretty old, it's before the fix hint thus no 
-> > such mention in fstests.
-> >
-> > Do you happen to know which test case is for that fix?
-> > I'd like to adapt it for btrfs as a reproducer.
+On Sat, May 30, 2026 at 05:28:12PM -0700, Eric Biggers wrote:
+> On Fri, May 22, 2026 at 09:00:46AM +0200, Daniel Vacek wrote:
+
+> It's been really hard to find time to review this huge patchset.  I've
+> started going through it and will try to leave comments next week.
+
+Thank you. The patchset is huge but we'd like your feedback namely on
+the crypto layer changes, i.e. the first 8 patches. As this is outside
+of btrfs code we can't fix it incrementally later on. The current size
+of btrfs-only can be slightly reduced but a lot of must stay so it's
+clear how the fscrypt API is used.
+
+I'm not sure if it was mentioned before wrt how to get this merged. My
+preferred way is to get your Ack for the crypto changes and then we can
+add it to linux-next via our btrfs git.
+
+It's too late for 7.2 also because you've asked for some changes. So the
+target is 7.3, hopefully giving all of us enough time to have the
+mergeable version in ~7.2-rc3 timeframe.
+
+If you have other ideas how to proceed with the merge process, please
+let me know.
+
+> In the mean time it would be really helpful if you went through the
+> Sashiko reviews
+> (https://sashiko.dev/#/patchset/20260513085340.3673127-1-neelx%40suse.com)
+> and address the ones that make sense to.  It found 93 issues including
+> 16 critical ones, which is kind of a lot.  Some of them are the same
+> things I'm noticing already.  Same for the issue that Christoph noticed
+> where new devices can be added; Sashiko had already found that too.
 > 
-> No.  Adding Brian who authored that commit.
+> If I'm going to have to use my limited human review time to point out
+> issues that were already found, that's not a great use of time.
 > 
+> I also don't see any information about how this was tested (and will
+> continue to be tested in the future).
 
-I haven't followed through the full thread here... But if you're just
-looking for an existing test case associated with the commit above on
-XFS, I did some quick digging and xfs/311 is the original reproducer for
-that one.
+The testing is not straightforward as it needs 3 projects to
+synchronize, kernel, fstests and btrfs-progs. Testing may need to use
+custom git branches for all of them. For btrfs-progs the changes will ge
+it in soon. For fstests it can be a chicken-egg problem, as they don't
+accept tests for unmerged code. We've been using our fstests [1] with
+additional fixups (not upstreamable, related to CI workarounds). Though
+I'm not sure if Daniel has updated the branch with his most recent
+version.
 
-Brian
-
+[1] https://github.com/btrfs/fstests branch staging

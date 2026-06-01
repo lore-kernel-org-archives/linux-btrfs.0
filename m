@@ -1,67 +1,68 @@
-Received: from mail-ed1-f49.google.com (mail-ed1-f49.google.com [209.85.208.49])
+Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2D562390606
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Jun 2026 10:13:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7544A395AD8
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Jun 2026 10:13:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780308803; cv=none; b=EF8SZvpExE8EZd3AUii5WECu/xsVffesklzbdD+t9JPV6socWPU5piMzWyoKfIEn1pFHHG50OJDReYzBQhRcIi9SdVNd32Eht6zFbovbIqUih7j2eim77FZT8stwtoTSVfogBIvn4Vhy0S1/FDeC3fk3j+lD58n2RtpjIv9iTj0=
+	t=1780308836; cv=none; b=sVuTihxRYTbbFzH/Vcnkdv+SVxnOSBfm5lngiN+Skrpf0nIR1THdvz64k9/dADg18BIj6O5VZvop5AmQ0HNwbTwtQVaD5nREcfIFBiyO10ttyxdzlfiJHbaBPa6k6F5WdXKELBgPqUQr0WcUnTiP6AuXWEt+xMATRYJecC1Cbq0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780308803; c=relaxed/simple;
-	bh=VW00pO2aIbhyKvOdYKjEeIJA4OsOLmQu97ZzaoXj+jM=;
+	s=arc-20240116; t=1780308836; c=relaxed/simple;
+	bh=1UrDiubNi3I7TRCzKnMZD8mHXq4tneZHpBHvZout/2M=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=kgJf4d5EvCJcMoKf1DD9hQM7tAOm3Wq0PNsN5vC1jfayjAxgd7PXjlsKuvZ5NXZTyZbXHtnVxr3Pz0nVsQKgIR9S3+8Qk4lmAt2xG1hY3ZgxGQ2MFcez2aBnHVb2Kh8hBBrqN5tyNo7XVpwfgGy/dwaj+dthHILMYHk2EMDotxI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=g5v9UR3u; arc=none smtp.client-ip=209.85.208.49
+	 In-Reply-To:Content-Type; b=rLiHOe2ZWQkJgstfY4Ns+oXDssRD6gTSdZbDL05Yvvo+2xsfebaib4y1ISpaOK33GDph1EgB+fQMvEAjdZjgQR8GXgJtAy+ollNks/Y3/TdWwrG1+AfKxHUod8mEdHLLjoXvbtApeK0VfVvG04vQI7bQMPUvh51oF89yfyFcM6Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=cAIWJVsJ; arc=none smtp.client-ip=209.85.128.50
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="g5v9UR3u"
-Received: by mail-ed1-f49.google.com with SMTP id 4fb4d7f45d1cf-68d23430690so2078478a12.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jun 2026 03:13:19 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="cAIWJVsJ"
+Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-490a7678b2dso9855295e9.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jun 2026 03:13:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1780308798; x=1780913598; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1780308831; x=1780913631; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=2QDvKFTQLOBwj/nDuY7JbFLbtx/8W1yZ+oNILCd6x+c=;
-        b=g5v9UR3uI4KbjS5JRTPJmoXG+TXMZrF096Uwc+0roJd+XnY6MGbLIuNHpLGY+WhJmk
-         VKERTGJVqg8uPmDAy6kU8vTUdYGq3jUzOCGEWsH7CZ10vnCuIIKRexEY7Dcn0IwYLJHI
-         ZIBSBCJW68ZvBdH8W/s7S6+PbKM0/VRw5CzjxStdrMOaVT8KQRLvEnk8XSCybf+261/O
-         uYCvE8wFDiXNZ+QRh97OavN+G53jxihzM7VFgzkd9riy0ndgCO74bVY6S6WjArO5cmXM
-         WnvvE6g/0UHedD+Nrd65U5LygNuCKhn9zNDW08dT7Dsd/ab/s3iW4+XizYmepuf3VbY9
-         775Q==
+        bh=4DKy0z8XhGoPRaNeDkRrbV8URevTqDUYQCR6lqhnU/0=;
+        b=cAIWJVsJyGMTfD7ITWefmBziBOw8gaZL/xawnIwhxJPBYjXThpaenf2esxbfEEvHyc
+         Qs4QVTkofmnJPixv3Gu2wNr36tBvGPdLq7jOzxvmlNYWrz80Cd+ZZmYtqe/ox7qU6Ygt
+         c8i8SOZEhcsxiCLy/lDjIn25pkSeD35PaKJc01Sq8TaMz0UfSdDGT/zEoLYeU0J1F/wk
+         1r5Ovgd9bWXQL2xTOZat9tvGBnW3pRK8X1UM6omxc4nDo4JUWYNGxRhSLYmS3iHQwPQt
+         NmaKLgxS2zoUpykkvGCrMNOlaNV1WaAc/Nw5f47xvs6E7slSr4tuCdAWdz/uyyWKi6yL
+         8uKA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780308798; x=1780913598;
+        d=1e100.net; s=20251104; t=1780308831; x=1780913631;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=2QDvKFTQLOBwj/nDuY7JbFLbtx/8W1yZ+oNILCd6x+c=;
-        b=NQAou6o4DCjuo1Sp6MpEW5AVT9X464Kioui4Mh7twqcwFazH8yEH4HRigVXwhkQ5WP
-         BGHsKBj/uwnQwDFaMQiCd9WH0a0e2L8XydlWelKfi+D+twFBvCYD059V9bXuhfJDnoth
-         70DPRdX7AL1UkrvN9K+KaoX1WfWuaW/vf3tH4uwyS1Pq3fZhgG7tPMMuYkzYPg5+Yej1
-         ZdFuGO+aAllo14rP0ImBmHsW/hnoALoPqtAersoNOhC6M3RTmB0gqyqMRVdnIhiutfj/
-         ZlR71givBcEBh6TLsORSwoqOTSeEtEOTOHG4CXC265CtxmSJztMf5j5aPvt6OYZXOox8
-         2IbA==
-X-Forwarded-Encrypted: i=1; AFNElJ+VYbp+x2V39eHnmkXAijDtJqCuvfxaNyVLZwy+Drrpjpw8fPBnSxF9gYYzEGStVqgruP84z01xxpsESQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwFrD88j1x/9U+uYj9g2Ss6VuPQT+vi6TQwckb/uM41NFuWNfW1
-	Hn7iVaVPIjs4woE8R2QXIFaqqFMk4ZWTMAPN0lq5s+8cJe9MGMRoD7t3KJmRNt/aHAo=
-X-Gm-Gg: Acq92OHFtWM809vbaoWff5ipLqgz4CPY0hiKD8FimiChXUGJuCMEuwdkJyBJCzSa8U6
-	QJVd9ylw3PeMFhUiDPXVVnNuvxa4lBk3AR3x9WQ1Pz4aBbtbpnX1Uz/zCnYhRGG1VdSOR4lOkU2
-	0ZGZuS1mS6fdm2wI1SSJbhTf99N0D0BCgq1Wg8t+2SXPr6PSDLg81V6UyssCXzQqE97l3i5jpqV
-	Hh8NsJTibJoApC68tPXzTfQcneAUlUfWGQbktGxd1GSNhLun3LVovjOb20ICYIGOdm+Ay93i+bz
-	Bu7W+HJhnZZXkUdEm1ZfbY993FO/pzb3zNRgVJshwTfPyTjOcDeOnr6/4K9gyWr3bmmUQz9TZnG
-	ZeWO1/oREN/0M9VY/LF00m2+iS7ae4s71VCUVbArFd8pTggJWVioAo6WWcDzMGzXfjtpRGgVIPm
-	Oay2KfZZG9NZJfeNsl/5K9f1BpoGRyneuoo0fL4xf0QO/j8JDjmS0hAi/6CL0rpwP9f5q0Qq/xq
-	9dfukyZFa0GymyYeyBjp2kLW/1acxsq2Oyl2wC/TzuJvtbl8GHpq89+sPFG/d04Kk56
-X-Received: by 2002:a17:907:7710:b0:bec:fa92:d36c with SMTP id a640c23a62f3a-becfa92d54bmr193376266b.38.1780308798226;
-        Mon, 01 Jun 2026 03:13:18 -0700 (PDT)
+        bh=4DKy0z8XhGoPRaNeDkRrbV8URevTqDUYQCR6lqhnU/0=;
+        b=I1PulXOpfSKnVysRuf0soquxI5BZlo0YIhuhas6Wm0Hpg2dgEY8UvH6qXlBIsHGT6e
+         nSRmgnIKGchElL+uQgN283kb5BXHn4ElQ06Q06kQCLx98uIISY7lQF6wn19WOZHRUByD
+         b00rUu1c75NPZyEeFz+sUF95aw9fP82hVNr/v1wkPeQnh5MgmrrOUfZ1WwZwPcLmZ61f
+         P4YPqYMr855Xn0uCrw58QvsptozJkHXPYEN67q7l2JKkSH7Gm8GW4kJQ42Y9PUsQ4uAn
+         x5ZPf+8sMkstG5ZP6pKr6z7Ci2GesEDmqz/yn9Kp1xjRizJA6KS1tPPo4MCqf2D7ps69
+         WaGQ==
+X-Forwarded-Encrypted: i=1; AFNElJ+99isn57oOoBW8nyGJvhyvH/8SNqpGXi533lGzSBbzdlGaxGdQSw1Bz5sEm7ANNYlHOzgTiVclUfaagw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyY6blj5z8nr63qkORw31+Rpj9YKgwqsIiYdE5CV/Et3Q+iFzNl
+	07OhxeZGuLFBfEqsBzkrB6P0UzCyLYMurm40+CjVhvf2Cr6JP1/UuRUViXidqiDg1VrIRQqWahl
+	r1zcr
+X-Gm-Gg: Acq92OGgcKKufUw3xAj9vTS2HyHw9IIJLDKl8TPqdFlZJ9dwreKISAoIeLR6S975vJm
+	nlINwTNLIUkY2oydbYh/+7zznJSpkfkg9J5+CjA0TENyx5tE+5rg0MP1jm+1YBOFbmUstrvCIhQ
+	c8nmtYKmNB9uPx12nFKPCAk2TTDI1XJcpZCY1jNGMBDkymIERqexnS4ahux4V7HkauMpdg4tQGS
+	jPQmNQhy3hpekM6kfbuUzxeS5DlMwLnBqAivjDgLiw4+3N9Y9QdxdNCul1eCFJnG0VwgGs/btS/
+	AmhMuej8VCL6SSAEr8FBJgbBMBp+NMmb86V+RtQry1gBZBru8AW1YpGMLFO31NSm+wKYWyXXHR+
+	l43w/qgYBCt3HW+81ys6ecQ14NhTaKyhWYYGJl52k680+/nX4C9QpBX/hilh1qLNaosVAQAHkHT
+	o9PMeCSBzCI8Li3lqVguo1BPql+8bqs+qjTSkLCLE4Vsj5Aj0QTHwaN1B7w18eXMQcoevLoQwJ6
+	dd+1l9DdbvTm2sKxL00y7N5tG9jO9pPR7hOSb8QMPpv+ZcxIfSJTaR80A==
+X-Received: by 2002:a05:600c:34cf:b0:490:5e2a:f924 with SMTP id 5b1f17b1804b1-490a2900e81mr162977365e9.7.1780308830040;
+        Mon, 01 Jun 2026 03:13:50 -0700 (PDT)
 Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-36bc0c341dasm10772197a91.15.2026.06.01.03.13.15
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2bf239e7024sm103054715ad.6.2026.06.01.03.13.47
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 01 Jun 2026 03:13:17 -0700 (PDT)
-Message-ID: <1e7cae27-1e3f-4c6c-9498-2e76b1058b20@suse.com>
-Date: Mon, 1 Jun 2026 19:43:12 +0930
+        Mon, 01 Jun 2026 03:13:49 -0700 (PDT)
+Message-ID: <67915c6e-5a5b-4909-a124-3330459f7d39@suse.com>
+Date: Mon, 1 Jun 2026 19:43:45 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,9 +70,10 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: use mapping shared locking for reading super block
+Subject: Re: [PATCH] btrfs: return real error after lookup failure in
+ btrfs_ioctl_default_subvol()
 To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <6085d60d77ea781ccb71be379b2e93825c489b4b.1780306581.git.fdmanana@suse.com>
+References: <e8443af84991f7c4cc6ebea885b850a1c51dc554.1780307495.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -98,7 +100,7 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <6085d60d77ea781ccb71be379b2e93825c489b4b.1780306581.git.fdmanana@suse.com>
+In-Reply-To: <e8443af84991f7c4cc6ebea885b850a1c51dc554.1780307495.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
@@ -107,8 +109,11 @@ Content-Transfer-Encoding: 8bit
 在 2026/6/1 19:21, fdmanana@kernel.org 写道:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> There's no need to exclusively lock the mapping, shared locking is enough
-> to protect from a concurrent set block size operation (BLKBSZSET ioctl).
+> If we fail to lookup the dir item, we are always returning -ENOENT but
+> that may not be the reason for the failure, as btrfs_lookup_dir_item() can
+> return many different errors, such as -EIO or -ENOMEM for example.
+> Fix this by returning the real error, and also fixup the silly error
+> message, including the id of the directory and the error.
 > 
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
@@ -118,41 +123,27 @@ Thanks,
 Qu
 
 > ---
->   fs/btrfs/volumes.c | 4 ++--
->   fs/btrfs/zoned.c   | 4 ++--
->   2 files changed, 4 insertions(+), 4 deletions(-)
+>   fs/btrfs/ioctl.c | 8 ++++++--
+>   1 file changed, 6 insertions(+), 2 deletions(-)
 > 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 66c44aa678c0..f409f870a6bc 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1369,9 +1369,9 @@ struct btrfs_super_block *btrfs_read_disk_super(struct block_device *bdev,
->   				      (bytenr + BTRFS_SUPER_INFO_SIZE) >> PAGE_SHIFT);
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 561f4a90981b..9d47d16394fc 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2829,9 +2829,13 @@ static long btrfs_ioctl_default_subvol(struct file *file, void __user *argp)
+>   	if (IS_ERR_OR_NULL(di)) {
+>   		btrfs_release_path(path);
+>   		btrfs_end_transaction(trans);
+> +		if (di)
+> +			ret = PTR_ERR(di);
+> +		else
+> +			ret = -ENOENT;
+>   		btrfs_err(fs_info,
+> -			  "Umm, you don't have the default diritem, this isn't going to work");
+> -		ret = -ENOENT;
+> +			  "could not find default diritem for dir %llu: %d",
+> +			  dir_id, ret);
+>   		goto out_free;
 >   	}
 >   
-> -	filemap_invalidate_lock(mapping);
-> +	filemap_invalidate_lock_shared(mapping);
->   	page = read_cache_page_gfp(mapping, bytenr >> PAGE_SHIFT, GFP_NOFS);
-> -	filemap_invalidate_unlock(mapping);
-> +	filemap_invalidate_unlock_shared(mapping);
->   	if (IS_ERR(page))
->   		return ERR_CAST(page);
->   
-> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-> index ec15a57c46fa..0f87701e38e3 100644
-> --- a/fs/btrfs/zoned.c
-> +++ b/fs/btrfs/zoned.c
-> @@ -131,10 +131,10 @@ static int sb_write_pointer(struct block_device *bdev, struct blk_zone *zones,
->   			u64 bytenr = ALIGN_DOWN(zone_end, BTRFS_SUPER_INFO_SIZE) -
->   						BTRFS_SUPER_INFO_SIZE;
->   
-> -			filemap_invalidate_lock(mapping);
-> +			filemap_invalidate_lock_shared(mapping);
->   			page[i] = read_cache_page_gfp(mapping,
->   					bytenr >> PAGE_SHIFT, GFP_NOFS);
-> -			filemap_invalidate_unlock(mapping);
-> +			filemap_invalidate_unlock_shared(mapping);
->   			if (IS_ERR(page[i])) {
->   				if (i == 1)
->   					btrfs_release_disk_super(super[0]);
 

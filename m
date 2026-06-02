@@ -1,79 +1,134 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 035C63CA493
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Jun 2026 10:21:16 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C9A13D5663
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Jun 2026 10:25:48 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780395677; cv=none; b=lJBlS87c4i/12JEj2O82d8n4EWLwMEAJkkX3BPgrYc78BYwcjD+DiNQbU8/Z8JjTnzfVM4uB28D0AnKPWhesMWfwxGrWk8DoSRdv8aAuf4sz7/nCEsbWsAv5zdpkdFOqebeZ5WFtnzGl7NK6z31CU9zRY6RqP1BNUjxSbduqikE=
+	t=1780395951; cv=none; b=qZezd0bUs06tEdLph3Y03apg78GaNd2EtRSTtHv/cLia8bkA6dLIEOIWL0eViitFuCNDz2PEymZB0E/A3H4+vpEEBX4Ev9DlB0z/w+yQua2i4QdWFqj4JsoHvsD0+CrrgTi9u86Ae6sJnjoqqYTDQKd///iNx5jD2zicT9CQEw4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780395677; c=relaxed/simple;
-	bh=tVR499rjYyDQFDTJ2pOPrqqQHq0rqbQnOKNNfqPDJGw=;
+	s=arc-20240116; t=1780395951; c=relaxed/simple;
+	bh=helQnf4uLoT1OyuIg5OnuJwLEOvnehBXo9q4uBi5lqw=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=Dv2hzvtalmqQR/Zhc4x/f/JV3TYN0hI2ljvlLVuX8cgfRfSTq6iL8c12BGnovqPFlolAALVPTHe78PZV/lN3gSF+/FLsO1LAXEahsNuy4UEDKuNOKnpBZWXp4G+o8x7M26c9rfvVq/z4WyTMgUWI13SCQabwbCuHcBexnXWi+00=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ZoHyWd6I; arc=none smtp.client-ip=100.103.45.18
+	 To:Cc:Content-Type; b=IK/AdfHJdAjhgE3xVzGdWAF91PqN/QaI9lQQflCVd45jazLqi5hEAwayZVZfY4PudOBJwpL3kiB5n75umHQoNIyH+kvSq4tW1QpUAE4+RRiSCJV25gs1ejofHzEa6KA50ZZFAaHTl/gY2SgeR8zCHKVyPbl962RPT+wHzbfoBV0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=A/TM46J0; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ZoHyWd6I"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9CADA1F00893
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Jun 2026 10:21:16 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="A/TM46J0"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 191611F00898
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Jun 2026 10:25:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1780395676;
-	bh=mLhsd4V2VCNwUOlJ7zuQHEg5FPEkxc/BDhWd+ZgNWjI=;
+	s=k20260515; t=1780395948;
+	bh=GSkJ+CIF5AyBKo2uLXwMmgTq4soZQaA+s0sCvZ8yl/k=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=ZoHyWd6I7YSkOc3UjgDkDnqnwYnu9H3d6754Ye9UvgFJ9VrIw2xhPFtvSjoBQLx3q
-	 M1DLJ8z0E2vNkTB0A7M92DaU1MhP5IwPcqeam4FXM9dzR7u/dk8sEqQmK4QRJvztvI
-	 IZCM90dn40ltdsfbtID3tDygOUiMqgE4cSGd5h3zwh557Y6w325u8Ys5yRpNMbNhYa
-	 ZUIDshU552Vux2UQS4AovmZ6Ht2slZcaITZng1gLIF8l0A+9RFm4RL8ebUL4R/9GMg
-	 gyTzfUFjo73uknm29UI7nHZoXWHgPTUE3aDgZ93PgLfptUU0bd6QmTzsiNnm1jmZyH
-	 KMk235bbPRVdQ==
-Received: by mail-ej1-f48.google.com with SMTP id a640c23a62f3a-bebde89cfd3so355281966b.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jun 2026 03:21:16 -0700 (PDT)
-X-Gm-Message-State: AOJu0YzTCWu3foLDBdlGP2rSaUbf6lfw49aH8fEfw8CYMEChXKLSMLf1
-	UfhubTO0ld7RfSoY08pC4hB7zT+3EQdBkiqd4CspT5xqZ93GnVUzT6cOMgRqm4W9CgU/13jFYOL
-	RAzTb/zWdywMC++SPaB1M5LIID83Ey70=
-X-Received: by 2002:a17:907:9813:b0:bec:fad3:5b58 with SMTP id
- a640c23a62f3a-becfad362bcmr538894166b.27.1780395675316; Tue, 02 Jun 2026
- 03:21:15 -0700 (PDT)
+	b=A/TM46J0IFlEiDsm4Is52B2M7uNUbJwrAgIo4YiysFyIm5SeulEcbKR2tKkywcK9u
+	 NzSDW9yNeZ71/OIDEkywhgAXj+vvM3glkuLjg0zwpiiDLVTqZdmF5fRNkRUayoF5ll
+	 /m+TEdBjmoL2Jlr/Bt8abGicH/uxcz4z5+RCjWzUZYlxywtA2soDTCw4GbacXzk2KE
+	 A9x211pHvdOHez8X/s6orHvdZBrmeh+m23Z1nrfDDuKMiqvLqSSupv8igF3Sk7MO5g
+	 G03GOsNmWHxpC1dbEyGwcqtZwNecAAKh2qcX3ByP7vB/Lo+iLklCAZvXmLSIolR69U
+	 uTE8dpkWrY80Q==
+Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-bebbc325000so310727866b.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jun 2026 03:25:48 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AFNElJ+jTwXIJuJSOBYnnBVFV4EcuFa99MonBLurpNQAP0TPcq4oJDtbpioxHbhUoNSyWwZf6MmRKH+7nuI3QQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxgpqcWXWbslnLQS/cv0NNiuSOU89qRMQxEOP7h1xtf4Zp82n1p
+	5gLro+rec89iBfv3qX0QkqRvImC7QB8FlkbO0ny/F0sJZpvBjgVj+iBmYQaQInErokwTz5BydUW
+	cjdle2CcIYyI20bunVNY3ElygFkPfvDA=
+X-Received: by 2002:a17:907:3c91:b0:bef:36f3:7277 with SMTP id
+ a640c23a62f3a-bef36f3857fmr149870366b.23.1780395946785; Tue, 02 Jun 2026
+ 03:25:46 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <c7860a5196a885c39e01676c4a1b3a4323f56590.1780377988.git.wqu@suse.com>
-In-Reply-To: <c7860a5196a885c39e01676c4a1b3a4323f56590.1780377988.git.wqu@suse.com>
+References: <20260602043347.50381-1-wqu@suse.com>
+In-Reply-To: <20260602043347.50381-1-wqu@suse.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Tue, 2 Jun 2026 11:20:38 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H79eeyxS+r3rj76aHCgK53+CizpaiExbr6aJcNZq5MNrQ@mail.gmail.com>
-X-Gm-Features: AVHnY4LKgo_sWW3xeyusEYBiS6wUJe1V9xzhJbJkA3rs-Fcybm9vR8QBztQwByY
-Message-ID: <CAL3q7H79eeyxS+r3rj76aHCgK53+CizpaiExbr6aJcNZq5MNrQ@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: output a message when a missing device re-appear
+Date: Tue, 2 Jun 2026 11:25:09 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H7HxyDhgDShkDrZkoZgJ0yHcOB7wAr9u3kS-ZWaqSMQ1Q@mail.gmail.com>
+X-Gm-Features: AVHnY4K9r2Ki_c560CY0aFZp4vmnxmLQ32OJH7wOYMbW0EEbjzDqiEsCxIvHTfM
+Message-ID: <CAL3q7H7HxyDhgDShkDrZkoZgJ0yHcOB7wAr9u3kS-ZWaqSMQ1Q@mail.gmail.com>
+Subject: Re: [PATCH] fstests: btrfs: add a new test case for fstrim crash
 To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	Su Yue <glass.su@suse.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, Jun 2, 2026 at 6:30=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+On Tue, Jun 2, 2026 at 5:34=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
 >
-> There is a bug report that fstrim crashed, and that crash is eventually
-> pinned down to a missing device which re-appeared and screwed up callers
-> that only checks BTRFS_DEV_STATE_MISSING, but not
-> BTRFS_DEV_STATE_WRITEABLE nor device->bdev.
+> There is a bug report that btrfs/242 can crash very randomly.
 >
-> A missing device re-appearing can be very tricky, as for now it will
-> result a device without WRITEABLE nor MISSING flag, and still no bdev
-
-result a device -> result in a device
-nor -> or
-
-> pointer.
+> It turns out the crash is caused by a re-appearing missing device, which
+> screwed up several checks in fstrim.
 >
-> As the first step to enhance handling of such re-appearing missing
-> devices, add an dmesg output when a missing device re-appeared.
+> This new test case is a more reliable version, dedicated for such crash,
+> which will:
+>
+> - Create a raid1 btrfs
+> - Mount with a single device in degraded mode
+> - Let the missing device to re-appear
+> - Run fstrim
+>
+> Which is reliably crashing in my environment without the submitted fix.
+> And with the submitted fix, the test no longer crashes.
+>
+> Reported-by: Su Yue <glass.su@suse.com>
+> Link: https://lore.kernel.org/linux-btrfs/wlwir19t.fsf@damenly.org/
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  tests/btrfs/350     | 38 ++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/350.out |  2 ++
+>  2 files changed, 40 insertions(+)
+>  create mode 100755 tests/btrfs/350
+>  create mode 100644 tests/btrfs/350.out
+>
+> diff --git a/tests/btrfs/350 b/tests/btrfs/350
+> new file mode 100755
+> index 00000000..1206d66f
+> --- /dev/null
+> +++ b/tests/btrfs/350
+> @@ -0,0 +1,38 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+> +#
+> +# FS QA Test 350
+> +#
+> +# Make sure fstrim will not crash when a missing device re-appeared.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick volume trim raid
+> +
+> +_fixed_by_kernel_commit XXXXXXXXXXXX \
+> +       "btrfs: do not trim a device which is not writeable"
+> +
+> +_require_btrfs_forget_or_module_loadable
+> +_require_scratch_dev_pool 2
+> +_scratch_dev_pool_get 2
+> +dev1=3D$(echo $SCRATCH_DEV_POOL | $AWK_PROG '{ print $1 }')
+> +dev2=3D$(echo $SCRATCH_DEV_POOL | $AWK_PROG '{ print $2 }')
+> +
+> +_scratch_pool_mkfs "-m raid1 -d raid1"
+> +_require_batched_discard $SCRATCH_MNT
+> +
+> +# Mount the filesystem in degraded mode
+> +_btrfs_forget_or_module_reload
+> +_mount -o degraded $dev1 $SCRATCH_MNT
+> +
+> +# Now let devid 2 reappear
+> +_btrfs device scan $dev2
+> +
+> +# Run fstrim, it should skip the re-appeared device, as it still
+> +# lacks WRITEBALE flag nor a proper bdev pointer.
 
-an dmsg -> a dmsg
+nor -> and
 
-Also in the subject, "re-appear" should be plural: "re-appears".
+> +#
+> +# For unpatched kernel, it will crash with a NULL pointer dereference.
+> +$FSTRIM_PROG $SCRATCH_MNT
+
+Misses a call to:   _scratch_dev_pool_put
 
 Otherwise:
 
@@ -81,30 +136,18 @@ Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
 Thanks.
 
->
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/volumes.c | 5 +++++
->  1 file changed, 5 insertions(+)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 93a923e4ecaf..716dcefb0fd8 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -963,6 +963,11 @@ static noinline struct btrfs_device *device_list_add=
-(const char *path,
->                                           devid, btrfs_dev_name(device),
->                                           path, current->comm,
->                                           task_pid_nr(current));
-> +               } else {
-> +                       btrfs_info(NULL,
-> +       "missing devid %llu re-appeared at %s scanned by %s (%d)",
-> +                                  devid, path, current->comm,
-> +                                  task_pid_nr(current));
->                 }
->
->                 name =3D kstrdup(path, GFP_NOFS);
+> +
+> +echo "Silence is golden"
+> +_exit 0
+> diff --git a/tests/btrfs/350.out b/tests/btrfs/350.out
+> new file mode 100644
+> index 00000000..e9aad823
+> --- /dev/null
+> +++ b/tests/btrfs/350.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 350
+> +Silence is golden
 > --
-> 2.54.0
+> 2.51.2
 >
 >

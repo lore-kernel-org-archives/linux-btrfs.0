@@ -1,209 +1,90 @@
-Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp153-141.sina.com.cn (smtp153-141.sina.com.cn [61.135.153.141])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 873301ACEDE
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Jun 2026 01:50:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C11192EAB82
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Jun 2026 02:02:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=61.135.153.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780365010; cv=none; b=JjAVInPlAKuQha5Nl1tt0nWvTdnm+E2ce8NmcnvAGMAHXzQ3ryKJYkQztxz7zNr2lWZ10Qay4pNBroZ5BhTCFF4aP20XqgzA9uyXeNrNC5zNO/aZyHU8/6jWwPelIzSaMWRe7mrP6y5/NBxjq8w0y7A5r9Pe5MA6AH8YWQZWAOk=
+	t=1780365752; cv=none; b=NR1xm9ZVxrQY/oCxYR7wCEwPLGPD8bNlhWYjvMx7BNmkUL7kiKA8ZaVM3nwT3RsIDSeZ6YZyGdsCZUPjoTU+nZLgX85uYyvwsbXQwhgTfu5oiMvqgDyb3iHoE+ZMr3L0k11zUTt5pRhA12mbENw/ILn9VqDlJHsxbcTXDUIJaZQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780365010; c=relaxed/simple;
-	bh=Yp6zApLcopAgzZm6NcOB/C//Gm4b3pxlV9vK+LzU4D8=;
-	h=Content-Type:Mime-Version:Subject:From:In-Reply-To:Date:Cc:
-	 Message-Id:References:To; b=F5/ESTdXqRhLYHJ/brDTBodPVRX9yCwe1e2s9kJU//zxzt/mqmgGWJ9PUPZxsYI6pgzlodrZFuUZDT9Kd+EOGfmqxDS8thwQZGyv+akrfTYGALqDEQ1eawcnblZkT+5YMoEOntJxxASzzoUkzbwjNriEEZCkf3gl4okk6C5wZUU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=WtMnhKPN; arc=none smtp.client-ip=209.85.128.51
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1780365752; c=relaxed/simple;
+	bh=4c3HxiNf/o9YDjCtEqMTF0xdGqjnroVz8yDppoabx6c=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=qp59C9pcUnUAPmmhcICkimyjK8RKQFyY2lmst6H0tPGesVNMT3bn+2CAIexBwSqihrLeMOBW37ZtJKceMePbSRyL/RVQK3M/tcIEg4qsgXF9cwEJzVFcE60Yg4vzqOeXrly8CeUdpXi6U27a7PwedS9cIkUA33u9IAAFg+LZVXE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sina.com; spf=pass smtp.mailfrom=sina.com; dkim=pass (1024-bit key) header.d=sina.com header.i=@sina.com header.b=hWjCE+Ym; arc=none smtp.client-ip=61.135.153.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sina.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sina.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="WtMnhKPN"
-Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-490a76757e5so14736135e9.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jun 2026 18:50:08 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1780365007; x=1780969807; darn=vger.kernel.org;
-        h=to:references:message-id:content-transfer-encoding:cc:date
-         :in-reply-to:from:subject:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=giYnUsHTxeQNRHLNyTMV8Z5l3vidwvTy9SqPi/y7dKo=;
-        b=WtMnhKPNOudgU9wEXXt5G3YdgUNGIjY7Bi7WjxQTOvvo1h9Tf+Z1yYZ0TZjXuycAJS
-         Vh1ftisrjdXVAFuuHfqyeR16RzCMckLeB0nPHFVEEeHbckcVFzA7aMk4oBCT838IRrjN
-         HLXbcU2waNsu4AGcShT7swVkwLLx7yIzGSU/aoMUnQaJyTOxwwSVD9lASHvfz7qcYS+O
-         hI69Ye9hgU63kiZXzClr4O673722V4Bn8mT0wBLOaeemeaRkDJOMwAbc0wseV51t9tll
-         H2CxwY2+r/51iJhkrzGvmnwYdfEiVHNQvZBoSJA6PH9Pq5XxX3puVZaigjld+QbegVa7
-         md4A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780365007; x=1780969807;
-        h=to:references:message-id:content-transfer-encoding:cc:date
-         :in-reply-to:from:subject:mime-version:x-gm-gg:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=giYnUsHTxeQNRHLNyTMV8Z5l3vidwvTy9SqPi/y7dKo=;
-        b=RZYdTHucOjSlPX8KxlhGlBMqPla++WlM6DZlSGxr0VJsfzZdXhphzglqbqrG6BDaU2
-         57VyAcWTauz3zMkP82oKZEqXRU4H5Rp8YoHClpMKZbUXjJpQ+myHTeIL0fco1P5TXzk1
-         jyKlAqV9G7xs7wyJY8FJ8x9lkHQEyTmqGbXSHeD6R8oa2GmCltWKqZ3GGl1hywVW2jtn
-         eh8q4nhJxyfY7bzqKKkjirJtZFvAXKXcUBXHn8vXccu648e5Nzyr8h+RxBPiJfiYtkXu
-         s8AWk4RR9N6BFhdXSQ+7MO3NQKM+lvpj9nhFTu5f1XI5kIMzKvX5ccV6tLbTmmYYo5yt
-         89gw==
-X-Forwarded-Encrypted: i=1; AFNElJ8DsKo/VAqyrRODN0ACdZZ4icKK8r86VKdE01sWFlhU1tJliCWY+FZ8HzgVuvEyXyhLp//MIFvrJisIwg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yx8L6Ufq2BZwftOEobrVwzjuykCQwoYKvb+LD1s9sq9d3bslf5u
-	DfIJTnkkdDPe5j9xLB9UF3XSxusG9bUY0liUtroGe9nuQyWzLFRwYB706A0nuIE0CbjEJMQjU5P
-	6ldst1SUOYQ==
-X-Gm-Gg: Acq92OGAM6+7DeQqqCFhawumHXbk/gn8xEVgXcOFwPHMFOYGdZ3gdBPMaceOYlgLjNg
-	iqpA9TL9fzH1UvkS5PAD7hApizJHuc7tVx6TUV4Qh9tBLjJlJVpKulOym+YEOOIhWPBR8hmerUq
-	wvaY9h7T9n/I1ceNdz/ThgACOvpQjuSyMvYO6w4HEb3JrmmnNeFDryWXeXW5xVXcBptga8qxk92
-	cHP4hM2ud0Tk7r+2k0ZTsMkKAxv0hKTxTrjW9SxghOlPBqTRe8+oYxEwtlWL2bjCaXQa9Kde0pf
-	jIDWykV12+gcFxufdAp+2dKCkly3+GG0KE8Z0q8nNyumrQc+dad/httLXHN9fKVu7FMpCx0ByFo
-	GIMR4IAcoRMFHa0xoCK4MaGj/KdNYbVGmx+/oVfa+gEw9QoCRRg1xW9Sr4gL8Eh3yAw96AJ6C+5
-	gOM8M8LVYqDWmFb3JU13CqkYXQlkMQywUFitVP
-X-Received: by 2002:a05:600c:3acb:b0:490:aef9:aa3b with SMTP id 5b1f17b1804b1-490aef9ab5cmr63984045e9.32.1780365006863;
-        Mon, 01 Jun 2026 18:50:06 -0700 (PDT)
-Received: from smtpclient.apple ([2605:52c0:2:27d1:8ca3:89ff:fe18:2252])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-304ee0dd8e1sm14296403eec.21.2026.06.01.18.50.05
-        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 01 Jun 2026 18:50:06 -0700 (PDT)
-Content-Type: text/plain;
-	charset=utf-8
+	dkim=pass (1024-bit key) header.d=sina.com header.i=@sina.com header.b="hWjCE+Ym"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sina.com; s=201208; t=1780365747;
+	bh=1bH9sJe186VqJCIcr0CHi8vVxsQpzOuCBdS8Qj+ILmo=;
+	h=From:Subject:Date:Message-ID;
+	b=hWjCE+Ym/jvwnlSwkPzcGTSlZaikoEX+EMRNNed49szgfEk5HB4gsiKJGalZu9QKv
+	 ieqRpXZQfeXRfnkdv8GfMMlgrmRi6hjijtmUibG+/MlMwKRljPb43MC6flp6owXqSi
+	 /dsuH7kD1Rqqvb3hLGmgxT4OAIlECPeTotHK/+PA=
+X-SMAIL-HELO: localhost.localdomain
+Received: from unknown (HELO localhost.localdomain)([114.249.62.144])
+	by sina.com (10.54.253.31) with ESMTP
+	id 6A1E39A600003D56; Tue, 2 Jun 2026 10:02:17 +0800 (CST)
+X-Sender: hdanton@sina.com
+X-Auth-ID: hdanton@sina.com
+Authentication-Results: sina.com;
+	 spf=none smtp.mailfrom=hdanton@sina.com;
+	 dkim=none header.i=none;
+	 dmarc=none action=none header.from=hdanton@sina.com
+X-SMAIL-MID: 4078536816537
+X-SMAIL-UIID: E78B314D45EE49BEBFAC1BE9F84BB44F-20260602-100217-1
+From: Hillf Danton <hdanton@sina.com>
+To: Ming Lei <tom.leiming@gmail.com>
+Cc: Qu Wenruo <wqu@suse.com>,
+	Christoph Hellwig <hch@lst.de>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>,
+	Jens Axboe <axboe@kernel.dk>,
+	Bart Van Assche <bvanassche@acm.org>,
+	linux-block <linux-block@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs@vger.kernel.org,
+	David Sterba <dsterba@suse.com>,
+	linux-fsdevel@vger.kernel.org,
+	Christian Brauner <brauner@kernel.org>
+Subject: Re: [PATCH v3] loop: Fix NULL pointer dereference in lo_rw_aio()
+Date: Tue,  2 Jun 2026 10:02:03 +0800
+Message-ID: <20260602020204.1420-1-hdanton@sina.com>
+In-Reply-To: <ah4Xc7OmGle_C5M3@fedora>
+References: 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0 (Mac OS X Mail 16.0 \(3864.500.181\))
-Subject: Re: [BUG report] btrfs/242 triggers kernel NULL pointer dereference
-From: Glass Su <glass.su@suse.com>
-In-Reply-To: <04af4b51-9039-404f-808d-0011443f8ba6@gmx.com>
-Date: Tue, 2 Jun 2026 09:49:49 +0800
-Cc: Su Yue <l@damenly.org>,
- linux-btrfs@vger.kernel.org
-Content-Transfer-Encoding: quoted-printable
-Message-Id: <579CB63E-1C39-4DCD-99D1-DE3E756E75F6@suse.com>
-References: <wlwir19t.fsf@damenly.org>
- <7edd1a98-4683-463d-b789-e75f7cb42de1@gmx.com> <ik82qx2i.fsf@damenly.org>
- <04af4b51-9039-404f-808d-0011443f8ba6@gmx.com>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-X-Mailer: Apple Mail (2.3864.500.181)
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-
-
-> On Jun 2, 2026, at 06:11, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->=20
->=20
->=20
-> =E5=9C=A8 2026/6/1 21:42, Su Yue =E5=86=99=E9=81=93:
->> On Mon 01 Jun 2026 at 21:23, Qu Wenruo <quwenruo.btrfs@gmx.com>
->> wrote:
-> [...]
->>> Since you can reproduce it on the latest for-next, mind to provide
->>> the for-next call trace along with the faddr2line output for pc
->>> register of the for-next run?
->> Sure.
->> # ./scripts/faddr2line  fs/btrfs/btrfs.ko  btrfs_trim_fs+0x36c/0xa48 =
-btrfs_trim_fs+0x36c/0xa48: bdev_max_discard_sectors at /var/lib/
->> btrfs-linux-for-next/./include/ linux/blkdev.h:1449 (discriminator
->> 1) (inlined by) btrfs_trim_free_extents_throttle at /var/lib/btrfs-
->> linux- for-next/fs/btrfs/extent-tree.c:6628 (discriminator 1)
->=20
-> Thanks! This is super helpful.
->=20
-> However this looks a little weird.
->=20
-> The NULL pointer dereference is from bdev_max_discard_sectors(), =
-meaning
-> the bdev is NULL, most likely the device is missing.
->=20
-> However just before we call btrfs_trim_extents_throttle() we have
-> already checked the DEV_STATE_MISSING flag of the device and will skip
-> any missing device.
->=20
-> Furthermore the test case doesn't change the missing device state =
-during
-> the run.
->=20
-> So there seems to be some weird race, or desychronization between
-> various bit flags.
->=20
-> Mind to test with the following diff?
-
-Here you are:
-
-[  434.761748] BTRFS info (device sdc): enabling free space tree
-[  434.785804] assertion failed: device->bdev, in extent-tree.c:6630 =
-(devid=3D2 path=3D/dev/sdd dev_state=3D0x82
-               )
-[  434.785822] ------------[ cut here ]------------
-[  434.785823] kernel BUG at extent-tree.c:6630!
-[  434.785846] Internal error: Oops - BUG: 00000000f2000800 [#1]  SMP
-[  434.785849] Modules linked in: btrfs(OE) xor(E) libblake2b(E) =
-raid6_pq(E) dm_mod(E) arm_smccc_trng(E) virtio_balloon(E) virtio_net(E) =
-net_failover(E) failover(E) vfat(E) fat(E) fuse(E) drm(E) xfs(E) =
-virtio_scsi(E) qemu_fw_cfg(E) virtio_pci(E) virtio_pci_legacy_dev(E) =
-virtio_pci_modern_dev(E) virtio_console(E) virtio_rng(E) rng_core(E) =
-[last unloaded: xor(E)]
-[  434.785860] CPU: 5 UID: 0 PID: 34553 Comm: fstrim Tainted: G          =
- OE       7.1.0-rc6-custom+ #2 PREEMPT(full)
-[  434.785862] Tainted: [O]=3DOOT_MODULE, [E]=3DUNSIGNED_MODULE
-[  434.785863] Hardware name: QEMU KVM Virtual Machine, BIOS =
-edk2-20250812-19.fc42 08/12/2025
-[  434.785864] pstate: 61400005 (nZCv daif +PAN -UAO -TCO +DIT -SSBS =
-BTYPE=3D--)
-[  434.785866] pc : btrfs_trim_fs+0x9f8/0xc48 [btrfs]
-[  434.785937] lr : btrfs_trim_fs+0x9f8/0xc48 [btrfs]
-[  434.785985] sp : ffff800087103ba0
-[  434.785986] x29: ffff800087103c30 x28: ffff0000dcd6cc00 x27: =
-ffff800087103c90
-[  434.785987] x26: ffff0000dcd6cc00 x25: ffff0000dcd6cca8 x24: =
-0000000000000000
-[  434.785989] x23: ffff0000de321c70 x22: ffff0000de321c00 x21: =
-ffff0000de321cf8
-[  434.785990] x20: 0000000000000002 x19: ffff0000c0c77110 x18: =
-0000000000000010
-[  434.785991] x17: 7020323d64697665 x16: 642820303336363a x15: =
-632e656572742d74
-[  434.785992] x14: 6e65747865206e69 x13: 290a323878303d65 x12: =
-746174735f766564
-[  434.785993] x11: 0000000000017fe8 x10: ffffd8425b311620 x9 : =
-ffffd84259e2bf3c
-[  434.785995] x8 : ffffd8425b4b2ed8 x7 : ffff0000d2108b78 x6 : =
-0000000000000000
-[  434.785996] x5 : ffff0002019de988 x4 : 0000000000000001 x3 : =
-0000000000000000
-[  434.785997] x2 : 0000000000000000 x1 : ffff0000d2108040 x0 : =
-000000000000005d
-[  434.785998] Call trace:
-[  434.785999]  btrfs_trim_fs+0x9f8/0xc48 [btrfs] (P)
-[  434.786045]  btrfs_ioctl_fitrim+0x138/0x2a0 [btrfs]
-[  434.786100]  btrfs_ioctl+0x10d8/0x2910 [btrfs]
-[  434.786146]  __arm64_sys_ioctl+0xac/0x108
-[  434.786151]  invoke_syscall.constprop.0+0x48/0x120
-[  434.786155]  el0_svc_common.constprop.0+0x40/0xe8
-[  434.786158]  do_el0_svc+0x24/0x38
-[  434.786160]  el0_svc+0x50/0x310
-[  434.786164]  el0t_64_sync_handler+0xa0/0xe8
-[  434.786166]  el0t_64_sync+0x198/0x1a0
-[  434.786168] Code: 911ca021 f00038a0 911b8000 9404ada8 (d4210000)
-[  434.786169] ---[ end trace 0000000000000000 ]=E2=80=94
-
->=20
-> Thanks,
-> Qu
->=20
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 6030cdbdb742..94535c90de22 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -6624,6 +6624,13 @@ static int =
-btrfs_trim_free_extents_throttle(struct btrfs_device *device,
->=20
->        *trimmed =3D 0;
->=20
-> +       ASSERT(!test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state),
-> +              "devid=3D%llu path=3D%s dev_state=3D0x%lx\n",
-> +              device->devid, btrfs_dev_name(device), =
-device->dev_state);
-> +       ASSERT(device->bdev,
-> +              "devid=3D%llu path=3D%s dev_state=3D0x%lx\n",
-> +              device->devid, btrfs_dev_name(device), =
-device->dev_state);
-> +
->        /* Discard not supported =3D nothing to do. */
->        if (!bdev_max_discard_sectors(device->bdev))
->                return 0;
-
+on Mon, 1 Jun 2026 18:36:19 -0500 Ming Lei wrote:
+> On Tue, Jun 02, 2026 at 07:17:30AM +0800, Hillf Danton wrote:
+> > On Mon, 1 Jun 2026 17:14:59 -0500 Ming Lei wrote:
+> > > On Tue, Jun 02, 2026 at 05:51:26AM +0800, Hillf Danton wrote:
+> > > > On OnMon, 1 Jun 2026 10:29:25 -0500 Ming Lei wrote:
+> > > > > syzbot log shows the null-ptr-deref  is on WRITE, instead of DISCARD.
+> > > > >
+> > > > > https://syzkaller.appspot.com/bug?extid=cd8a9a308e879a4e2c28
+> > > > >
+> > > > > Adding WARN_ON(!lo->lo_backing_file) in loop_queue_rq() might capture
+> > > > > this bio submission context if this req isn't issued via wq.
+> > > > >
+> > > > I suspect this makes $.02 sense given the check of Lo_bound upon queuing rq.
+> > > 
+> > > Can't lo->lo_state be updated after the check? It is totally lockless...
+> > >
+> > Sounds good hm... do you mean it is UNWISE to not flush the loop workqueue
+> > when closing disk?
+> 
+> Quite the opposite, it is wise to not flush wq in __loop_clr_fd(), please
+> see my previous comment.
+>
+When queuing rq, if lo_state is updated after checking Lo_bond, I see nothing
+that prevents syzbot from reporting null-ptr-deref exists. Can you tippoint
+why flush is NOT needed if you are right?

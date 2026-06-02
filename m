@@ -1,139 +1,104 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AB8AA2010EE;
-	Tue,  2 Jun 2026 02:44:17 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CCF20360751;
+	Tue,  2 Jun 2026 02:46:33 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780368258; cv=none; b=qLUfkQ1OL9IoxbdunsLazmdVaXWwt7570jw454kfsX+HCXEcxQ0k+P8Mbjtf1cF3VtAi9XUNkr18KI8eubYpLtQFRDnlC9JUpVyWk2r4cIcF1C76t7EhVeYwj9u3JZ3Xlwja0R/0T+l51j81YaE4j1yZMi99xYLIQINr1c5T9cg=
+	t=1780368394; cv=none; b=NybaTVroXcbLSpZ0IRC3e17bHMjcrSpmi8LMlyiVFR9d5wgVOJiKe2CuRr0wURY/iZv+OMjxBwS5fLI8lHBhygzqM+WBD3bDYtJodxHdEzMrMn79MKmisBEYjxO9VQQRGZN/iW/MWJ0e2UvjXnwmLGbdlZGOA2BieLheagHePhM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780368258; c=relaxed/simple;
-	bh=+XmuWlYhTiGmsCI4VothlVzBVtFcGZqioM02u69DrP0=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=oPZIlewKhrTEx6vxEsK4GihzciWfvpfFkWbtewBbSUaZHqyN8zaG2ZPJyktfIXEQxoT9Ep3HdnMn0wivF6Hc50q/PyjergrrzOdQdGwF3wyuh6cqBXPS1Dk+Glp6M4T2riwYHBQalRpmBmTRzKmV8XbViJOsn/3gIX3bLnwA4/Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ezJ+I9f+; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1780368394; c=relaxed/simple;
+	bh=JORkjKhi0XmWyPFgsHONLoVoZJBiAIJztJbRsi+f338=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=lzY+TDskhsoDuAAP2vWK/QCpPTs2yFnQSZYO0nRV1IVQM1r7p5SxmSEyTSDwmvaOc2R9EEt/aYJIkyRjIZz5AKAyNrZJxw8qFKjcASb/8/Vo3JUxCEV0zPkgvF3aFUGtgesoEPhn5piafp9GopCuWZOuIedMTMewI8Wte0fWtVQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=F79KQEcu; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ezJ+I9f+"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 048E71F00893;
-	Tue,  2 Jun 2026 02:44:16 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="F79KQEcu"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2CC641F00893;
+	Tue,  2 Jun 2026 02:46:32 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1780368257;
-	bh=Y4+34rADgxCwFAIURmToK3k1LlbMQhZN2+W42i8hbLs=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=ezJ+I9f+yY5uO9suor+/Yg0R9GFiKd4A8UPK30O7jK+WBDh/uzGqdwf2aBN5L2SR+
-	 LomF5C2oUXergM5ru3hOR+fGEMT02RIFlfJC86wWjagsrfih8lBoEjOG57mE/df8nu
-	 O5AP6x5NQtH28FiXFMRHZzbGsCimMF6hcIGRTFunoIu4WDmChZZd0F4Z2piCMuRA11
-	 hcW/NNFQzGxpq5O8WDKJJNrYwn02XmR8wqYB7APGyrzlmygEs5FTtYlfNVmZNF+tAb
-	 uQ7jn+RvRURT5TMlnSwaGVuD+EInBAq1Npxmt705Dauvkczup6XFR8NXaqrthnAX1P
-	 Na81djBI3fAVQ==
-Date: Mon, 1 Jun 2026 19:42:53 -0700
-From: Eric Biggers <ebiggers@kernel.org>
-To: Daniel Vacek <neelx@suse.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-	"Theodore Y. Ts'o" <tytso@mit.edu>,
-	Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>,
-	David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
-	linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v7 36/43] btrfs: deal with encrypted symlinks in send
-Message-ID: <20260602024253.GD2295@sol>
-References: <20260513085340.3673127-1-neelx@suse.com>
- <20260513085340.3673127-37-neelx@suse.com>
+	s=k20260515; t=1780368393;
+	bh=HUh3Tk2tPlmaZ0Q7uDxjEXlapcS05ZZciYnB6bp9/zo=;
+	h=From:Date:Subject:To:Cc;
+	b=F79KQEcujWaVxphse7wbHNGjReInOulObT4J5gjhwqZy+61I8lcRt3Y1932jDEw78
+	 A2uCEUcGkwjGui5c9DeiWe7M4aUeT/v+b/+vNgXw0mgZ6qiAoU2I3mu/P0BaZDw9JB
+	 ZSVU8FHzONS9agLkgbU0E6dsrSE2Z+U+Sh1beH7sr5FYO7Qruu8E98POtwiLwWerwO
+	 IuS8aQuUQAIBmOIHaclf/ZpMH1TCtst8GdYcnT/cMPfIFrjw0SxTeiqWUn9SENExeW
+	 hVAssD4KoqejuI7nNeedB/NpOURB0mDT7HifP10gKwHu6TDViw64pXvtIvWdH6YnVD
+	 lBHUUiAexHWPw==
+From: Nathan Chancellor <nathan@kernel.org>
+Date: Mon, 01 Jun 2026 19:46:26 -0700
+Subject: [PATCH] btrfs: Drop WQ_PERCPU from ordered_flags in
+ btrfs_init_workqueues()
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260513085340.3673127-37-neelx@suse.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260601-btrfs-fix-wq-warning-qgroup-rescan-v1-1-aff9a1128f27@kernel.org>
+X-B4-Tracking: v=1; b=H4sIAAAAAAAC/yXNQQ6CMBCF4auQWTtJS4CoVzEu2jKt46LADIgJ4
+ e4UXX7Jy/82UBImhXu1gdCHlYdcYC8VhJfLiZD7YqhN3ZnOWPSzRMXIX1wnXJ1kzgmnJMMyopA
+ Gl/HWtLZ39tq00UMJjUJl/zt5PP/Wxb8pzGcZ9v0AATn8O4YAAAA=
+X-Change-ID: 20260601-btrfs-fix-wq-warning-qgroup-rescan-9451da1845fb
+To: Tejun Heo <tj@kernel.org>, Chris Mason <clm@fb.com>, 
+ David Sterba <dsterba@suse.com>
+Cc: Marco Crivellari <marco.crivellari@suse.com>, 
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ Nathan Chancellor <nathan@kernel.org>
+X-Mailer: b4 0.16-dev
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1784; i=nathan@kernel.org;
+ h=from:subject:message-id; bh=JORkjKhi0XmWyPFgsHONLoVoZJBiAIJztJbRsi+f338=;
+ b=owGbwMvMwCUmm602sfCA1DTG02pJDFlyLuxesyZr5xTvitg5q8WoQI9Jl1stpzrwzhyfxjbNl
+ ZP28DB2lLIwiHExyIopslQ/Vj1uaDjnLOONU5Ng5rAygQxh4OIUgIl8nsfwi/n/460tvDWv09We
+ /7V/yLp+DdvSgyrH5gbb3728fdZaoRSG/1WP+VK3lzl9PpDzJ+iHaP3eJd95Zu+NLIm/vysjp+d
+ RPTcA
+X-Developer-Key: i=nathan@kernel.org; a=openpgp;
+ fpr=2437CB76E544CB6AB3D9DFD399739260CB6CB716
 
-On Wed, May 13, 2026 at 10:53:10AM +0200, Daniel Vacek wrote:
-> From: Josef Bacik <josef@toxicpanda.com>
-> 
-> Send needs to send the decrypted value of the symlinks, handle the case
-> where the inode is encrypted and decrypt the symlink name into a buffer
-> and copy this buffer into our fs_path struct.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> Signed-off-by: Daniel Vacek <neelx@suse.com>
-> ---
-> 
-> No changes in v7.
-> v6 changes:
->  * read_symlink_encrypted() reworked from using pages to using folios.
-> v5: https://lore.kernel.org/linux-btrfs/4d97f35d6f85ff041b09bed33b63446a92b7a20c.1706116485.git.josef@toxicpanda.com/
-> ---
->  fs/btrfs/send.c | 45 ++++++++++++++++++++++++++++++++++++++++++---
->  1 file changed, 42 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index 89d72d8cb85f..d5256c22fe7a 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -1701,9 +1701,7 @@ static int find_extent_clone(struct send_ctx *sctx,
->  	return ret;
->  }
->  
-> -static int read_symlink(struct btrfs_root *root,
-> -			u64 ino,
-> -			struct fs_path *dest)
-> +static int read_symlink_unencrypted(struct btrfs_root *root, u64 ino, struct fs_path *dest)
->  {
->  	int ret;
->  	BTRFS_PATH_AUTO_FREE(path);
-> @@ -1764,6 +1762,47 @@ static int read_symlink(struct btrfs_root *root,
->  	return fs_path_add_from_extent_buffer(dest, path->nodes[0], off, len);
->  }
->  
-> +static int read_symlink_encrypted(struct btrfs_root *root, u64 ino, struct fs_path *dest)
-> +{
-> +	DEFINE_DELAYED_CALL(done);
-> +	const char *buf;
-> +	struct folio *folio;
-> +	struct btrfs_inode *inode;
-> +	int ret = 0;
-> +
-> +	inode = btrfs_iget(ino, root);
-> +	if (IS_ERR(inode))
-> +		return PTR_ERR(inode);
-> +
-> +	folio = read_mapping_folio(inode->vfs_inode.i_mapping, 0, NULL);
-> +	if (IS_ERR(folio)) {
-> +		iput(&inode->vfs_inode);
-> +		return PTR_ERR(folio);
-> +	}
-> +
-> +	buf = fscrypt_get_symlink(&inode->vfs_inode, folio_address(folio),
-> +				  BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info),
-> +				  &done);
-> +	folio_put(folio);
-> +	iput(&inode->vfs_inode);
-> +
-> +	if (IS_ERR(buf))
-> +		return PTR_ERR(buf);
-> +
-> +	ret = fs_path_add(dest, buf, strlen(buf));
-> +	do_delayed_call(&done);
-> +	return ret;
-> +}
-> +
-> +
-> +static int read_symlink(struct btrfs_root *root, u64 ino,
-> +			struct fs_path *dest)
-> +{
-> +	if (btrfs_fs_incompat(root->fs_info, ENCRYPT))
-> +		return read_symlink_encrypted(root, ino, dest);
-> +	return read_symlink_unencrypted(root, ino, dest);
-> +}
+After commit 21c05ca88a54 ("workqueue: Add warnings and ensure one among
+WQ_PERCPU or WQ_UNBOUND is present"), there is a warning from the
+btrfs-qgroup-rescan workqueue at run time:
 
-This just assumes that all the symlinks on the filesystem are encrypted,
-without checking the actual encrypt flag in the inode.
+  workqueue: btrfs-qgroup-rescan uses both WQ_PERCPU and WQ_UNBOUND. Dropped WQ_PERCPU, keeping WQ_UNBOUND.
 
-Of course, looking at the Sashiko review for this patch, it already
-found this, as well as a use-after-free.
+WQ_PERCPU is included in ordered_flags after commit 69635d7f4b34 ("fs:
+WQ_PERCPU added to alloc_workqueue users") and WQ_UNBOUND is set in
+alloc_ordered_workqueue(), which btrfs_alloc_ordered_workqueue() calls.
 
-I don't know why I'm even reviewing this.
+Drop WQ_PERCPU from ordered_flags, as alloc_ordered_workqueue() notes
+that only WQ_FREEZABLE and WQ_MEM_RECLAIM are meaningful.
 
-- Eric
+Fixes: 69635d7f4b34 ("fs: WQ_PERCPU added to alloc_workqueue users")
+Fixes: 21c05ca88a54 ("workqueue: Add warnings and ensure one among WQ_PERCPU or WQ_UNBOUND is present")
+Signed-off-by: Nathan Chancellor <nathan@kernel.org>
+---
+This should go in via the workqueue tree that adds the warning.
+---
+ fs/btrfs/disk-io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8a11be02eeb9..f2a3b0705486 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1928,7 +1928,7 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info)
+ {
+ 	u32 max_active = fs_info->thread_pool_size;
+ 	unsigned int flags = WQ_MEM_RECLAIM | WQ_FREEZABLE | WQ_UNBOUND;
+-	unsigned int ordered_flags = WQ_MEM_RECLAIM | WQ_FREEZABLE | WQ_PERCPU;
++	unsigned int ordered_flags = WQ_MEM_RECLAIM | WQ_FREEZABLE;
+ 
+ 	fs_info->workers =
+ 		btrfs_alloc_workqueue(fs_info, "worker", flags, max_active, 16);
+
+---
+base-commit: 21c05ca88a548ca1353cbef189c97d4f03b90692
+change-id: 20260601-btrfs-fix-wq-warning-qgroup-rescan-9451da1845fb
+
+Best regards,
+--  
+Cheers,
+Nathan
+

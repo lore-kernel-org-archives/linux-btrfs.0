@@ -1,189 +1,137 @@
-Received: from mail-oo1-f70.google.com (mail-oo1-f70.google.com [209.85.161.70])
+Received: from sg-3-27.ptr.tlmpb.com (sg-3-27.ptr.tlmpb.com [101.45.255.27])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CFF702BFC60
-	for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2026 06:43:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.70
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0601F2E736D
+	for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2026 11:20:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=101.45.255.27
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780468989; cv=none; b=JAqO5QczCPfp0ndDRMVDfw/kbD2LD/VWLn4iUpnXwoGT1PdnTK95Ule2EmdkcbKRjBso0/M/YrbX2aF3zv6DmbbMPzt0Lwb5xzQRe4cZO2e9iKhN5WwlvoRWHBGQDNygZPwEC0mp8sRzpJ33ipoKdWJ+VQFd3tdoQnbv8845nAg=
+	t=1780485621; cv=none; b=iF1RFt6356dc0yjEKKMIO1zaOTtG8xEgobpgfNWK8TgxEgUrCvIQ+LHvh0S5gD05Ebw6I2ojjg55aFwfU5Y9hrpF5XeCN18pz4mqEZutdq4+s7obXFPVpRSMNgdra6FYQeih6pQJ09BTkURwHEtj/5KZ7PXHid5R8EWy4nZz83g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780468989; c=relaxed/simple;
-	bh=CGT7gEJWsfdmL4PputUa7LMdCWKNz5EziUoO4YB1Cv0=;
-	h=MIME-Version:Date:In-Reply-To:Message-ID:Subject:From:To:Cc:
-	 Content-Type; b=N+JgO8MgOHTg1Lu3ulFZjP5JEFWQU9PDW4GINEl+/f43eY8HTaePOS8FdnT10jmaC9APhMdNzCsVAdvhGq/0cSSksFn6fhRVksz3tMttidRHwZI1FTwaMUqPZHMBOXM7gjhi2TBOyVyx3YVfQEBByjVmW0/D+87qchNSfxBPLmY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.161.70
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oo1-f70.google.com with SMTP id 006d021491bc7-69df6e55f3fso7893248eaf.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jun 2026 23:43:07 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780468987; x=1781073787;
-        h=cc:to:from:subject:message-id:in-reply-to:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=BXLTeHlKrc/+j7C9QPbOJLUrs1rqjWUe2L1pYvC54MA=;
-        b=QjnDV+OLBXRSgIWF26e/2EPIc9iqe1utmaztznvuKdllgvzWtjgeX7vVBClQbnOKh8
-         /6rIPepcjwag8FeLjmjlchodreopgV+D1QtJV6sle5B/GSIBw9roWgWvyX7rbq2rUQDL
-         TJeEt72rbpNMop2xWlJ8Pg8XZoZjShS/4Wa8AP9gK4ADMPcPBPYE4be5h9o/Jad9thVK
-         yk159ZX033oteE3ndTiBCIPFhHiJTnwfKHWLYcNFnuDJaplYsN6uPgDySqQvz2K6YM7y
-         +bZck+SCM65ZDO/r4qH7mwr/fRqjdC9+H9GJIeua0Z+337sAlw5JH1U93+vzPZEBDYkf
-         zSYg==
-X-Forwarded-Encrypted: i=1; AFNElJ+AMI5WFafMvaaYm2IvO+ZKePgowfpfEGC94KuXN7Xq+vr22GQH3M5wWO+Nnf97xUyNwNht+mRAZXwlcg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwYS63yBn47TMF1mowDVyRlILwYNQ/yUA4y/HMqi/shyXiJOH9i
-	FIYepuGRupBQdGT22yx9bGc33vQ86UCAMauapoNAEAt3cl20gQlTgTS4uQ9ft3l6uPgH6aTwhqy
-	pkrJ5iMKFLMGUX+RldM87XtsefJfk8KOrw9fYK4wB6iQR5pB9T1VPW8JIfBE=
+	s=arc-20240116; t=1780485621; c=relaxed/simple;
+	bh=vvCS9BNx6rkhVcNzH1apDRAtXp7aKr2qx6tUvY9R3+A=;
+	h=To:Content-Type:From:Message-Id:Date:Cc:Subject:Mime-Version; b=g8JkAGwkYJ+foC/Q4SZdQG2WUwLTd946SLw7o86YURCFUXFf9ODJQMuScrMR6K61EOEoCnYcvH5QmrFyDRFVoW0Knsg6mzLTGpG+ycl3CkyQWE1VQi++haWXX18GKH+BrpX//7K6e1Ra5ma+wZEtyQOAH9bwVocpgOD8Wy9+ItA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com; spf=none smtp.mailfrom=fnnas.com; dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b=oQauaeSP; arc=none smtp.client-ip=101.45.255.27
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=fnnas.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b="oQauaeSP"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ s=s1; d=fnnas-com.20200927.dkim.feishu.cn; t=1780485567;
+  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
+ reply-to:content-type:mime-version:in-reply-to:message-id;
+ bh=ziJrDNVU/XO7/XN5X8k3HAhTrOEiFaDDdlHm0tG60s0=;
+ b=oQauaeSPeRMsLSh7qFNZYU+rqJfLtMXjM7LKO30WqQ0hHRWYuJfG28QpBsieH3olhu/l9h
+ lxn4drvPVxCIyAzpWILUjRs04dUW9WbQW5ML/VisfbJq2FKcZt7InjSlqcTmxE/TQ7Rk0C
+ KROvK3g+j0W+OgOCTpiNlZd/JQMF8mrBXSWX2/s4X2ugemqEr+mXU/OyOonxNLXROVbGx8
+ X5Y5E5+9bZLbteBhUQUrdwp5LnLoao4fA1FYUFOPN1+KD8QvM65Qo9Jyxfb40KE8L61NIy
+ v2jbsRO5W8IPINPF2Du6pyrISCbN7qiTeEATv5d810XjWWP3LmVO2denkCNQMw==
+To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+From: "Dongjiang Zhu" <zhudongjiang@fnnas.com>
+Message-Id: <20260603111857.230985-1-zhudongjiang@fnnas.com>
+X-Mailer: git-send-email 2.39.5
+Content-Transfer-Encoding: 7bit
+X-Lms-Return-Path: <lba+26a200dbd+d42481+vger.kernel.org+zhudongjiang@fnnas.com>
+Date: Wed,  3 Jun 2026 19:18:57 +0800
+Received: from localhost.localdomain ([183.34.161.59]) by smtp.feishu.cn with ESMTPS; Wed, 03 Jun 2026 19:19:24 +0800
+Cc: <dsterba@suse.com>, <fdmanana@suse.com>
+Subject: [RFC PATCH] btrfs: do not enforce qgroup limits when changing qgroup limits
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-X-Received: by 2002:a05:6820:180c:b0:696:637e:4831 with SMTP id
- 006d021491bc7-69e47f0669emr1446323eaf.25.1780468986990; Tue, 02 Jun 2026
- 23:43:06 -0700 (PDT)
-Date: Tue, 02 Jun 2026 23:43:06 -0700
-In-Reply-To: <20260602-work-super-bdev_holder_global-v1-0-bb0fd82f3861@kernel.org>
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a1fccfa.278b5b03.2bcf39.0048.GAE@google.com>
-Subject: [syzbot ci] Re: fs: support freeze/thaw/mark_dead/sync with shared devices
-From: syzbot ci <syzbot+ci2e0a11d6a5730bb0@syzkaller.appspotmail.com>
-To: axboe@kernel.dk, brauner@kernel.org, cem@kernel.org, clm@fb.com, 
-	dsterba@suse.com, hch@lst.de, jack@suse.cz, linux-block@vger.kernel.org, 
-	linux-btrfs@vger.kernel.org, linux-erofs@lists.ozlabs.org, 
-	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, linux-xfs@vger.kernel.org, tytso@mit.edu, 
-	viro@zeniv.linux.org.uk, xiang@kernel.org
-Cc: syzbot@lists.linux.dev, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
+X-Original-From: Dongjiang Zhu <zhudongjiang@fnnas.com>
 
-syzbot ci has tested the following series
+Since qgroup ioctls started reserving transaction space, qgroup limit
+changes can fail before reaching btrfs_limit_qgroup().
 
-[v1] fs: support freeze/thaw/mark_dead/sync with shared devices
-https://lore.kernel.org/all/20260602-work-super-bdev_holder_global-v1-0-bb0fd82f3861@kernel.org
-* [PATCH RFC 1/8] fs, block: move blk_mode_t and fop_flags_t into <linux/types.h>
-* [PATCH RFC 2/8] fs: add a global device to super block hash table
-* [PATCH RFC 3/8] fs: refuse to claim any frozen block device
-* [PATCH RFC 4/8] xfs: port to fs_bdev_file_open_by_path()
-* [PATCH RFC 5/8] btrfs: open via dedicated fs bdev helpers
-* [PATCH RFC 6/8] ext4: open via dedicated fs bdev helpers
-* [PATCH RFC 7/8] erofs: open via dedicated fs bdev helpers
-* [PATCH RFC 8/8] super: make fs_holder_ops private
+For example, if a subvolume qgroup has reached its max referenced limit,
+issuing BTRFS_IOC_QGROUP_LIMIT on a path inside that subvolume makes
+btrfs_start_transaction(root, 1) reserve qgroup metadata against that
+same qgroup. The reservation can fail with -EDQUOT, so the administrator
+cannot increase or disable the limit that caused the failure.
 
-and found the following issue:
-general protection fault in close_fs_devices
+This is also path dependent. The same operation may succeed when the
+ioctl is issued on another path from the same filesystem whose root
+qgroup is not limited, while it fails on the target subvolume path.
 
-Full report is available here:
-https://ci.syzbot.org/series/9511f00a-a3c2-44ab-9a0b-2d65de5bbd49
+Keep reserving transaction space for the QGROUP_LIMIT item, but do not
+enforce qgroup limits for that transaction reservation. This preserves
+the metadata and delayed ref reservation semantics added for qgroup
+ioctls, while avoiding a qgroup limit self-deadlock for limit changes.
 
-***
+Currently this can be worked around by enabling quota_override or by
+issuing the ioctl on another path from the same filesystem whose root
+qgroup is not limited. However, changing a qgroup limit should not depend
+on either of those.
 
-general protection fault in close_fs_devices
+This only changes BTRFS_IOC_QGROUP_LIMIT. A follow-up question is whether
+the same helper should also be used for other qgroup management ioctls,
+such as qgroup destroy or relation removal, when they are part of
+recovering from an over-limit state.
 
-tree:      bpf-next
-URL:       https://kernel.googlesource.com/pub/scm/linux/kernel/git/bpf/bpf-next.git
-base:      254f49634ee16a731174d2ae34bc50bd5f45e731
-arch:      amd64
-compiler:  Debian clang version 21.1.8 (++20251221033036+2078da43e25a-1~exp1~20251221153213.50), Debian LLD 21.1.8
-config:    https://ci.syzbot.org/builds/4af26755-5773-453e-807d-ee451d2fdec5/config
-syz repro: https://ci.syzbot.org/findings/2d8d96f7-d133-47dc-b4ca-5c0c65e1b6c9/syz_repro
-
-btrfs: Deprecated parameter 'usebackuproot'
-BTRFS warning: 'usebackuproot' is deprecated, use 'rescue=usebackuproot' instead
-BTRFS: device fsid ed167579-eb65-4e76-9a50-61ac97e9b59d devid 1281 transid 8 /dev/loop1 (7:1) scanned by syz.1.18 (5863)
-Oops: general protection fault, probably for non-canonical address 0xdffffc00000000f8: 0000 [#1] SMP KASAN PTI
-KASAN: null-ptr-deref in range [0x00000000000007c0-0x00000000000007c7]
-CPU: 1 UID: 0 PID: 5863 Comm: syz.1.18 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
-RIP: 0010:btrfs_close_bdev fs/btrfs/volumes.c:1140 [inline]
-RIP: 0010:btrfs_close_one_device fs/btrfs/volumes.c:1161 [inline]
-RIP: 0010:close_fs_devices+0x47c/0x860 fs/btrfs/volumes.c:1204
-Code: 3c 08 00 74 08 48 89 ef e8 b1 95 38 fe 48 8b 6d 00 b8 c0 07 00 00 48 01 c5 48 89 e8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 74 08 48 89 ef e8 86 95 38 fe 48 8b 75 00 4c 89 ff e8
-RSP: 0018:ffffc90004007a48 EFLAGS: 00010202
-RAX: 00000000000000f8 RBX: 1ffff110368c440b RCX: dffffc0000000000
-RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
-RBP: 00000000000007c0 R08: ffff8881b462206f R09: 1ffff110368c440d
-R10: dffffc0000000000 R11: ffffed10368c440e R12: ffff8881b4622000
-R13: ffff8881b4622068 R14: ffff8881b4622058 R15: ffff8881707b7a00
-FS:  00007f849d6ce6c0(0000) GS:ffff8882a9292000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f849c786a00 CR3: 00000001bbbcc000 CR4: 00000000000006f0
-Call Trace:
- <TASK>
- btrfs_close_devices+0xcd/0x570 fs/btrfs/volumes.c:1219
- btrfs_free_fs_info+0x4f/0x360 fs/btrfs/disk-io.c:1205
- deactivate_locked_super+0xbc/0x130 fs/super.c:477
- btrfs_get_tree_super fs/btrfs/super.c:-1 [inline]
- btrfs_get_tree_subvol fs/btrfs/super.c:2087 [inline]
- btrfs_get_tree+0xca6/0x1910 fs/btrfs/super.c:2121
- vfs_get_tree+0x92/0x2a0 fs/super.c:1928
- fc_mount fs/namespace.c:1193 [inline]
- do_new_mount_fc fs/namespace.c:3758 [inline]
- do_new_mount+0x341/0xd30 fs/namespace.c:3834
- do_mount fs/namespace.c:4167 [inline]
- __do_sys_mount fs/namespace.c:4383 [inline]
- __se_sys_mount+0x31d/0x420 fs/namespace.c:4360
- do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
- do_syscall_64+0x15f/0xf80 arch/x86/entry/syscall_64.c:94
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7f849c79e0ca
-Code: 48 c7 c2 e8 ff ff ff f7 d8 64 89 02 b8 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007f849d6cde58 EFLAGS: 00000246 ORIG_RAX: 00000000000000a5
-RAX: ffffffffffffffda RBX: 00007f849d6cdee0 RCX: 00007f849c79e0ca
-RDX: 00002000000055c0 RSI: 0000200000000340 RDI: 00007f849d6cdea0
-RBP: 00002000000055c0 R08: 00007f849d6cdee0 R09: 0000000000000408
-R10: 0000000000000408 R11: 0000000000000246 R12: 0000200000000340
-R13: 00007f849d6cdea0 R14: 00000000000055f5 R15: 0000200000000380
- </TASK>
-Modules linked in:
----[ end trace 0000000000000000 ]---
-RIP: 0010:btrfs_close_bdev fs/btrfs/volumes.c:1140 [inline]
-RIP: 0010:btrfs_close_one_device fs/btrfs/volumes.c:1161 [inline]
-RIP: 0010:close_fs_devices+0x47c/0x860 fs/btrfs/volumes.c:1204
-Code: 3c 08 00 74 08 48 89 ef e8 b1 95 38 fe 48 8b 6d 00 b8 c0 07 00 00 48 01 c5 48 89 e8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 74 08 48 89 ef e8 86 95 38 fe 48 8b 75 00 4c 89 ff e8
-RSP: 0018:ffffc90004007a48 EFLAGS: 00010202
-
-RAX: 00000000000000f8 RBX: 1ffff110368c440b RCX: dffffc0000000000
-RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
-RBP: 00000000000007c0 R08: ffff8881b462206f R09: 1ffff110368c440d
-R10: dffffc0000000000 R11: ffffed10368c440e R12: ffff8881b4622000
-R13: ffff8881b4622068 R14: ffff8881b4622058 R15: ffff8881707b7a00
-FS:  00007f849d6ce6c0(0000) GS:ffff8882a9292000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000557941c2b058 CR3: 00000001bbbcc000 CR4: 00000000000006f0
-----------------
-Code disassembly (best guess):
-   0:	3c 08                	cmp    $0x8,%al
-   2:	00 74 08 48          	add    %dh,0x48(%rax,%rcx,1)
-   6:	89 ef                	mov    %ebp,%edi
-   8:	e8 b1 95 38 fe       	call   0xfe3895be
-   d:	48 8b 6d 00          	mov    0x0(%rbp),%rbp
-  11:	b8 c0 07 00 00       	mov    $0x7c0,%eax
-  16:	48 01 c5             	add    %rax,%rbp
-  19:	48 89 e8             	mov    %rbp,%rax
-  1c:	48 c1 e8 03          	shr    $0x3,%rax
-  20:	48 b9 00 00 00 00 00 	movabs $0xdffffc0000000000,%rcx
-  27:	fc ff df
-* 2a:	80 3c 08 00          	cmpb   $0x0,(%rax,%rcx,1) <-- trapping instruction
-  2e:	74 08                	je     0x38
-  30:	48 89 ef             	mov    %rbp,%rdi
-  33:	e8 86 95 38 fe       	call   0xfe3895be
-  38:	48 8b 75 00          	mov    0x0(%rbp),%rsi
-  3c:	4c 89 ff             	mov    %r15,%rdi
-  3f:	e8                   	.byte 0xe8
-
-
-***
-
-If these findings have caused you to resend the series or submit a
-separate fix, please add the following tag to your commit message:
-  Tested-by: syzbot@syzkaller.appspotmail.com
-
+Signed-off-by: Dongjiang Zhu <zhudongjiang@fnnas.com>
 ---
-This report is generated by a bot. It may contain errors.
-syzbot ci engineers can be reached at syzkaller@googlegroups.com.
+ fs/btrfs/ioctl.c       | 10 ++++++++--
+ fs/btrfs/transaction.c |  8 ++++++++
+ fs/btrfs/transaction.h |  3 +++
+ 3 files changed, 19 insertions(+), 2 deletions(-)
 
-To test a patch for this bug, please reply with `#syz test`
-(should be on a separate line).
-
-The patch should be attached to the email.
-Note: arguments like custom git repos and branches are not supported.
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 9d47d16394fc..1e410db06c19 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3758,8 +3758,14 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
+ 		goto drop_write;
+ 	}
+ 
+-	/* 1 BTRFS_QGROUP_LIMIT_KEY item. */
+-	trans = btrfs_start_transaction(root, 1);
++	/*
++	 * 1 BTRFS_QGROUP_LIMIT_KEY item.
++	 *
++	 * Do not enforce the current qgroup limit while changing that limit,
++	 * otherwise a qgroup that already reached its limit cannot have the
++	 * limit increased or disabled.
++	 */
++	trans = btrfs_start_transaction_no_qgroup_enforce(root, 1);
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
+ 		goto drop_write;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 0360439e4864..92059af3064b 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -834,6 +834,14 @@ struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
+ 				 BTRFS_RESERVE_FLUSH_ALL, true);
+ }
+ 
++struct btrfs_trans_handle *btrfs_start_transaction_no_qgroup_enforce(
++					struct btrfs_root *root,
++					unsigned int num_items)
++{
++	return start_transaction(root, num_items, TRANS_START,
++				 BTRFS_RESERVE_FLUSH_ALL, false);
++}
++
+ struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
+ 					struct btrfs_root *root,
+ 					unsigned int num_items)
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 5e4b1106fd90..7a952a7cfd21 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -289,6 +289,9 @@ do {								\
+ int btrfs_end_transaction(struct btrfs_trans_handle *trans);
+ struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
+ 						   unsigned int num_items);
++struct btrfs_trans_handle *btrfs_start_transaction_no_qgroup_enforce(
++					struct btrfs_root *root,
++					unsigned int num_items);
+ struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
+ 					struct btrfs_root *root,
+ 					unsigned int num_items);
+-- 
+2.39.5

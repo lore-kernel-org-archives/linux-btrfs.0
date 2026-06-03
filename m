@@ -1,193 +1,189 @@
-Received: from mail-ej1-f47.google.com (mail-ej1-f47.google.com [209.85.218.47])
+Received: from mail-oo1-f70.google.com (mail-oo1-f70.google.com [209.85.161.70])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D1AFB1E520A
-	for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2026 05:15:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.47
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CFF702BFC60
+	for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2026 06:43:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.70
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780463758; cv=none; b=eXcV7cdTimQL/bX5KTG8z3LzXYw4RnzIY5uszQ4VxF/59f92/cK7UWfFasS/XoGFDwmW5Fb94VAvTg0xZMPyzrExMJrl8ifu1ODyMFYo4hRnIynDvh9LojyVv8DRs5Pg/dzbbAWlTS36ylQzd/SPJdFO4dotlrKPEjc8wYdQJNg=
+	t=1780468989; cv=none; b=JAqO5QczCPfp0ndDRMVDfw/kbD2LD/VWLn4iUpnXwoGT1PdnTK95Ule2EmdkcbKRjBso0/M/YrbX2aF3zv6DmbbMPzt0Lwb5xzQRe4cZO2e9iKhN5WwlvoRWHBGQDNygZPwEC0mp8sRzpJ33ipoKdWJ+VQFd3tdoQnbv8845nAg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780463758; c=relaxed/simple;
-	bh=zcx/3RFVeIFY7fP/bgC4vBDlCjp+ZgKbDV62UK8AyJ0=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=s1OvDJsVPdPRff1Ta34IXysvtn/TfDUU2SLyij1DUcP1g/hDRz/wEaj+jqKPnvbOMGhm+JnZIgqt1v8EZeEIlc8/cF3WWa6wvAbuGn4Bu5zXxliVg+jftWtwxPdAvcPsOLjE89elUMcK4NhpLcSjID1WOhmZ3qLOh6DD+8ZDR9Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=W/vod6hn; arc=none smtp.client-ip=209.85.218.47
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="W/vod6hn"
-Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-bebbc325000so441915466b.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jun 2026 22:15:56 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1780463755; x=1781068555; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=oSh1vcGZttDwboKfkW24ky4jzlC476U+WlQWgt0YzUw=;
-        b=W/vod6hn7fSWrcl6BuWGyh+BClUPwZ5LTCjWwPHXbIsa6hSsQmnNwnytp4JHo1jU/N
-         dWKDXxEJsnw+7J5RzqyD6p0PzxMbSsi5cc2LDX63o0FM+0XvntEX4z5y2LcRmIVySqVi
-         LxFecgfB7kAJHiJEvaISrIzvsMUec+rCj0Bc3s4feZYNuZ0HLKUflt1aypFol2X3e4d3
-         iYWWeQDHlfNp8ZHHR8nrMz9/B8Ik8JW0ANPhir6oHyZtLDhq8d7fVgJt9XR1TNCFcQOD
-         74tYzn919jlXzK3eo27NKFGEFMGvI2H4CEripktGK/bHeAvYSxKpJNE7PdB4+PmFGMwp
-         G1kg==
+	s=arc-20240116; t=1780468989; c=relaxed/simple;
+	bh=CGT7gEJWsfdmL4PputUa7LMdCWKNz5EziUoO4YB1Cv0=;
+	h=MIME-Version:Date:In-Reply-To:Message-ID:Subject:From:To:Cc:
+	 Content-Type; b=N+JgO8MgOHTg1Lu3ulFZjP5JEFWQU9PDW4GINEl+/f43eY8HTaePOS8FdnT10jmaC9APhMdNzCsVAdvhGq/0cSSksFn6fhRVksz3tMttidRHwZI1FTwaMUqPZHMBOXM7gjhi2TBOyVyx3YVfQEBByjVmW0/D+87qchNSfxBPLmY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.161.70
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oo1-f70.google.com with SMTP id 006d021491bc7-69df6e55f3fso7893248eaf.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jun 2026 23:43:07 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780463755; x=1781068555;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=oSh1vcGZttDwboKfkW24ky4jzlC476U+WlQWgt0YzUw=;
-        b=XuyK9mnUUIvwMytVJ5FAXtXVXDPXJigU4I8WXI6mHGMYQnoJKmsrcZJWbTivwKGWQ/
-         NGXvnqTS4hW1EYV75FC1Xvb8xxXSqNl2EmPC93yz04ShhfOiCechphtrEJQGHUX1Ynrp
-         ztAsX8IL+zWHOFyYBqL7kdEUXvMhi+PyCWsUL9OY6wBGCCcpiEZD3GzF635Eru165vtt
-         BysFGsqP/IAwx6v+dvWswg9RK4DPd7fDSt6DBwrV7kDT9VOWgx/hauvNkTbIENtVfmkV
-         aE5qX5zUs+HYFRgUt0dgiQsPYhTzCvZQPk2rNjw0yB56pUHW/+W9kVdBtb5uCzQpbFPW
-         cSiQ==
-X-Gm-Message-State: AOJu0Yy72IMhQ1s15IVrlxjQrWZeiA5P1EZOo2QWLuBmw5wYkUds/pe/
-	HvE3AQ6fJ5qdW16mVKk6mRtQC4D4gxIQCBx+QNXLzzRYLlL6zBoj1He7L58cPKCB5Ow=
-X-Gm-Gg: Acq92OFru5lzkN0eGY/jTegZO53UPhLbuprt10fM8JmQ5OE1lTuJpHwaxmlkTdkZ3Fs
-	Q1fq3RnLrkfXkp79Z7q3lPZ6HBHGBk2guvcReO7kGAiA+cAt7aEbiImHSW+kWZ0Pz73rN0LAsBS
-	VcyOZQBh08dFw1s4uPVXMAwk5NVUG7y6sfejh5bQ5b/l5w67Zo740qpSsScRqI3sPcXbcan6nps
-	Gkb5M0TdzzlJv+1ANvQhBWb9c0z6ae7kuOmyHKyng7LWtr5+yZSlLGr8qyxP7MVEwxZyKyc2pgL
-	0BD9LhEKHR/djhS9xRSOcHGZJYQTLCFYSnOzDoCMCO/ROyCWXzvtjl446ef5qQjikssumDLpEE5
-	74iuAdN4iOyV7Ps2JfE+hg8XVW7xtrCsPy9TfryRLJwGyJXhdTuU0mUB3hfE4N5NczeJwB2QYyE
-	YFx0kk087tOWKGoLu9GaWyZevc4iK8GRITm0H2aDkganWXU9lPmOpDYwDAcuJcNIHgLfAoyCG6d
-	QaMpGP7FtGK0ewBymCDYjjpXxmaQBMIpmEhYB+uNCFXu02oQT409AGIng==
-X-Received: by 2002:a17:907:9411:b0:bec:9f90:629d with SMTP id a640c23a62f3a-bf0b36a51a8mr66309666b.39.1780463755247;
-        Tue, 02 Jun 2026 22:15:55 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c85df0bd337sm881138a12.29.2026.06.02.22.15.52
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 02 Jun 2026 22:15:54 -0700 (PDT)
-Message-ID: <e9f81e66-f113-4956-a4a0-d9c2a4596092@suse.com>
-Date: Wed, 3 Jun 2026 14:45:50 +0930
+        d=1e100.net; s=20251104; t=1780468987; x=1781073787;
+        h=cc:to:from:subject:message-id:in-reply-to:date:mime-version
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=BXLTeHlKrc/+j7C9QPbOJLUrs1rqjWUe2L1pYvC54MA=;
+        b=QjnDV+OLBXRSgIWF26e/2EPIc9iqe1utmaztznvuKdllgvzWtjgeX7vVBClQbnOKh8
+         /6rIPepcjwag8FeLjmjlchodreopgV+D1QtJV6sle5B/GSIBw9roWgWvyX7rbq2rUQDL
+         TJeEt72rbpNMop2xWlJ8Pg8XZoZjShS/4Wa8AP9gK4ADMPcPBPYE4be5h9o/Jad9thVK
+         yk159ZX033oteE3ndTiBCIPFhHiJTnwfKHWLYcNFnuDJaplYsN6uPgDySqQvz2K6YM7y
+         +bZck+SCM65ZDO/r4qH7mwr/fRqjdC9+H9GJIeua0Z+337sAlw5JH1U93+vzPZEBDYkf
+         zSYg==
+X-Forwarded-Encrypted: i=1; AFNElJ+AMI5WFafMvaaYm2IvO+ZKePgowfpfEGC94KuXN7Xq+vr22GQH3M5wWO+Nnf97xUyNwNht+mRAZXwlcg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwYS63yBn47TMF1mowDVyRlILwYNQ/yUA4y/HMqi/shyXiJOH9i
+	FIYepuGRupBQdGT22yx9bGc33vQ86UCAMauapoNAEAt3cl20gQlTgTS4uQ9ft3l6uPgH6aTwhqy
+	pkrJ5iMKFLMGUX+RldM87XtsefJfk8KOrw9fYK4wB6iQR5pB9T1VPW8JIfBE=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 2/3] btrfs: fix incorrect buffered IO fallback for
- append direct writes
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-References: <cover.1780112003.git.wqu@suse.com>
- <8f3a0006edc5014c1de15b669f4d8c6d2aea3d61.1780112003.git.wqu@suse.com>
- <20260603043415.GA2114331@zen.localdomain>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260603043415.GA2114331@zen.localdomain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+X-Received: by 2002:a05:6820:180c:b0:696:637e:4831 with SMTP id
+ 006d021491bc7-69e47f0669emr1446323eaf.25.1780468986990; Tue, 02 Jun 2026
+ 23:43:06 -0700 (PDT)
+Date: Tue, 02 Jun 2026 23:43:06 -0700
+In-Reply-To: <20260602-work-super-bdev_holder_global-v1-0-bb0fd82f3861@kernel.org>
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6a1fccfa.278b5b03.2bcf39.0048.GAE@google.com>
+Subject: [syzbot ci] Re: fs: support freeze/thaw/mark_dead/sync with shared devices
+From: syzbot ci <syzbot+ci2e0a11d6a5730bb0@syzkaller.appspotmail.com>
+To: axboe@kernel.dk, brauner@kernel.org, cem@kernel.org, clm@fb.com, 
+	dsterba@suse.com, hch@lst.de, jack@suse.cz, linux-block@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, linux-erofs@lists.ozlabs.org, 
+	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-xfs@vger.kernel.org, tytso@mit.edu, 
+	viro@zeniv.linux.org.uk, xiang@kernel.org
+Cc: syzbot@lists.linux.dev, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
+
+syzbot ci has tested the following series
+
+[v1] fs: support freeze/thaw/mark_dead/sync with shared devices
+https://lore.kernel.org/all/20260602-work-super-bdev_holder_global-v1-0-bb0fd82f3861@kernel.org
+* [PATCH RFC 1/8] fs, block: move blk_mode_t and fop_flags_t into <linux/types.h>
+* [PATCH RFC 2/8] fs: add a global device to super block hash table
+* [PATCH RFC 3/8] fs: refuse to claim any frozen block device
+* [PATCH RFC 4/8] xfs: port to fs_bdev_file_open_by_path()
+* [PATCH RFC 5/8] btrfs: open via dedicated fs bdev helpers
+* [PATCH RFC 6/8] ext4: open via dedicated fs bdev helpers
+* [PATCH RFC 7/8] erofs: open via dedicated fs bdev helpers
+* [PATCH RFC 8/8] super: make fs_holder_ops private
+
+and found the following issue:
+general protection fault in close_fs_devices
+
+Full report is available here:
+https://ci.syzbot.org/series/9511f00a-a3c2-44ab-9a0b-2d65de5bbd49
+
+***
+
+general protection fault in close_fs_devices
+
+tree:      bpf-next
+URL:       https://kernel.googlesource.com/pub/scm/linux/kernel/git/bpf/bpf-next.git
+base:      254f49634ee16a731174d2ae34bc50bd5f45e731
+arch:      amd64
+compiler:  Debian clang version 21.1.8 (++20251221033036+2078da43e25a-1~exp1~20251221153213.50), Debian LLD 21.1.8
+config:    https://ci.syzbot.org/builds/4af26755-5773-453e-807d-ee451d2fdec5/config
+syz repro: https://ci.syzbot.org/findings/2d8d96f7-d133-47dc-b4ca-5c0c65e1b6c9/syz_repro
+
+btrfs: Deprecated parameter 'usebackuproot'
+BTRFS warning: 'usebackuproot' is deprecated, use 'rescue=usebackuproot' instead
+BTRFS: device fsid ed167579-eb65-4e76-9a50-61ac97e9b59d devid 1281 transid 8 /dev/loop1 (7:1) scanned by syz.1.18 (5863)
+Oops: general protection fault, probably for non-canonical address 0xdffffc00000000f8: 0000 [#1] SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x00000000000007c0-0x00000000000007c7]
+CPU: 1 UID: 0 PID: 5863 Comm: syz.1.18 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+RIP: 0010:btrfs_close_bdev fs/btrfs/volumes.c:1140 [inline]
+RIP: 0010:btrfs_close_one_device fs/btrfs/volumes.c:1161 [inline]
+RIP: 0010:close_fs_devices+0x47c/0x860 fs/btrfs/volumes.c:1204
+Code: 3c 08 00 74 08 48 89 ef e8 b1 95 38 fe 48 8b 6d 00 b8 c0 07 00 00 48 01 c5 48 89 e8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 74 08 48 89 ef e8 86 95 38 fe 48 8b 75 00 4c 89 ff e8
+RSP: 0018:ffffc90004007a48 EFLAGS: 00010202
+RAX: 00000000000000f8 RBX: 1ffff110368c440b RCX: dffffc0000000000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 00000000000007c0 R08: ffff8881b462206f R09: 1ffff110368c440d
+R10: dffffc0000000000 R11: ffffed10368c440e R12: ffff8881b4622000
+R13: ffff8881b4622068 R14: ffff8881b4622058 R15: ffff8881707b7a00
+FS:  00007f849d6ce6c0(0000) GS:ffff8882a9292000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f849c786a00 CR3: 00000001bbbcc000 CR4: 00000000000006f0
+Call Trace:
+ <TASK>
+ btrfs_close_devices+0xcd/0x570 fs/btrfs/volumes.c:1219
+ btrfs_free_fs_info+0x4f/0x360 fs/btrfs/disk-io.c:1205
+ deactivate_locked_super+0xbc/0x130 fs/super.c:477
+ btrfs_get_tree_super fs/btrfs/super.c:-1 [inline]
+ btrfs_get_tree_subvol fs/btrfs/super.c:2087 [inline]
+ btrfs_get_tree+0xca6/0x1910 fs/btrfs/super.c:2121
+ vfs_get_tree+0x92/0x2a0 fs/super.c:1928
+ fc_mount fs/namespace.c:1193 [inline]
+ do_new_mount_fc fs/namespace.c:3758 [inline]
+ do_new_mount+0x341/0xd30 fs/namespace.c:3834
+ do_mount fs/namespace.c:4167 [inline]
+ __do_sys_mount fs/namespace.c:4383 [inline]
+ __se_sys_mount+0x31d/0x420 fs/namespace.c:4360
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0x15f/0xf80 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f849c79e0ca
+Code: 48 c7 c2 e8 ff ff ff f7 d8 64 89 02 b8 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f849d6cde58 EFLAGS: 00000246 ORIG_RAX: 00000000000000a5
+RAX: ffffffffffffffda RBX: 00007f849d6cdee0 RCX: 00007f849c79e0ca
+RDX: 00002000000055c0 RSI: 0000200000000340 RDI: 00007f849d6cdea0
+RBP: 00002000000055c0 R08: 00007f849d6cdee0 R09: 0000000000000408
+R10: 0000000000000408 R11: 0000000000000246 R12: 0000200000000340
+R13: 00007f849d6cdea0 R14: 00000000000055f5 R15: 0000200000000380
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:btrfs_close_bdev fs/btrfs/volumes.c:1140 [inline]
+RIP: 0010:btrfs_close_one_device fs/btrfs/volumes.c:1161 [inline]
+RIP: 0010:close_fs_devices+0x47c/0x860 fs/btrfs/volumes.c:1204
+Code: 3c 08 00 74 08 48 89 ef e8 b1 95 38 fe 48 8b 6d 00 b8 c0 07 00 00 48 01 c5 48 89 e8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 74 08 48 89 ef e8 86 95 38 fe 48 8b 75 00 4c 89 ff e8
+RSP: 0018:ffffc90004007a48 EFLAGS: 00010202
+
+RAX: 00000000000000f8 RBX: 1ffff110368c440b RCX: dffffc0000000000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 00000000000007c0 R08: ffff8881b462206f R09: 1ffff110368c440d
+R10: dffffc0000000000 R11: ffffed10368c440e R12: ffff8881b4622000
+R13: ffff8881b4622068 R14: ffff8881b4622058 R15: ffff8881707b7a00
+FS:  00007f849d6ce6c0(0000) GS:ffff8882a9292000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000557941c2b058 CR3: 00000001bbbcc000 CR4: 00000000000006f0
+----------------
+Code disassembly (best guess):
+   0:	3c 08                	cmp    $0x8,%al
+   2:	00 74 08 48          	add    %dh,0x48(%rax,%rcx,1)
+   6:	89 ef                	mov    %ebp,%edi
+   8:	e8 b1 95 38 fe       	call   0xfe3895be
+   d:	48 8b 6d 00          	mov    0x0(%rbp),%rbp
+  11:	b8 c0 07 00 00       	mov    $0x7c0,%eax
+  16:	48 01 c5             	add    %rax,%rbp
+  19:	48 89 e8             	mov    %rbp,%rax
+  1c:	48 c1 e8 03          	shr    $0x3,%rax
+  20:	48 b9 00 00 00 00 00 	movabs $0xdffffc0000000000,%rcx
+  27:	fc ff df
+* 2a:	80 3c 08 00          	cmpb   $0x0,(%rax,%rcx,1) <-- trapping instruction
+  2e:	74 08                	je     0x38
+  30:	48 89 ef             	mov    %rbp,%rdi
+  33:	e8 86 95 38 fe       	call   0xfe3895be
+  38:	48 8b 75 00          	mov    0x0(%rbp),%rsi
+  3c:	4c 89 ff             	mov    %r15,%rdi
+  3f:	e8                   	.byte 0xe8
 
 
+***
 
-在 2026/6/3 14:04, Boris Burkov 写道:
-> On Sat, May 30, 2026 at 01:04:18PM +0930, Qu Wenruo wrote:
-[...]
->> The call chain looks like this:
->>
->>   btrfs_direct_write(pos=0, length=4K)
->>   |- __iomap_dio_rw()
->>   |  |- iomap_iter()
->>   |  |  |- btrfs_dio_iomap_begin()
->>   |  |     |- btrfs_get_blocks_direct_write()
->>   |  |        |- i_size_write()
->>   |  |           Which updates the isize to the write end (4K).
->>   |  |
->>   |  |- iomap_dio_iter()
->>   |  |  Failed with -EFAULT on the first page.
->>   |  |
->>   |  |- iomap_iter()
->>   |  |  |- btrfs_dio_iomap_end()
->>   |  |     Detects a short write, return -ENOTBLK
->>   |  |- if (ret == -ENOTBLK) { ret = 0;}
->>   |     Which resets the return value.
->>   |
->>   |- ret = iomap_dio_complet()
->>   |  Which returns 0.
->>   |
->>   |- btrfs_buffered_write(iocb, from);
->>      |- generic_write_checks()
->>         |- iocb->ki_pos = i_size_read()
->>            Which is still the new size (4K), other than the original
->> 	  isize 0.
->>
-> 
-> The explanation is very clear, so thank you for that. I agree with the
-> bug and the direction of the fix.
-> 
-> However, I fear that there could still be a smaller bug left.
-> 
-> You have reasoned out a race against buffered writes, and the invalid
-> i_size you are fixing up only exists inside the dio thread holding the
-> inode lock, so the buffered write does not see it before you get to
-> fixup i_size. However, after we set the invalid i_size we release the
-> extent lock, so I believe a buffered reader could now observe the
-> intermediate too-big i_size before you manage to fix it.
-> 
-> I believe that the consequence of this is that reader will block on the
-> OE, then the split half will be finished/truncated, but the reader could
-> still see the too-big i_size and get back zeroes. I am not completely sure
-> if this is for sure a bug, but it does feel like it could be wrong.
+If these findings have caused you to resend the series or submit a
+separate fix, please add the following tag to your commit message:
+  Tested-by: syzbot@syzkaller.appspotmail.com
 
-Buffered read doesn't take inode lock at all, thus inode lock doesn't 
-seem enough.
+---
+This report is generated by a bot. It may contain errors.
+syzbot ci engineers can be reached at syzkaller@googlegroups.com.
 
-Although I'm not sure if it's a good idea to mix buffered read with 
-direct IO in the real world.
+To test a patch for this bug, please reply with `#syz test`
+(should be on a separate line).
 
-> 
-> For what it's worth, there is a comment at the i_size_write() in
-> btrfs_get_blocks_direct_write() which also confirms that it is important
-> that the update is done under the extent lock, not just the inode lock.
-
-I just checked all i_size_write() calls inside btrfs, it looks like they 
-are all under extent lock.
-
-So even just for the sake of consistency we should already follow the 
-existing requirement.
-
-
-I'll try to explore some methods to properly update the isize.
-
-My current idea is to keep the EXTENT_DIO_LOCKED hold until iomap_end(), 
-so that we can properly update the isize inside iomap_end().
-But I'm not sure if it's safe or we may have some other hidden pitfalls.
-
-Thanks,
-Qu
-
-> 
-> If it is, in fact, safe, then clarifying that in the existing comment
-> and/or a new comment would be helpful, I think. The comment is from 2012:
-> c3473e830074 ("Btrfs: fix dio write vs buffered read race")
-> so I suspect some of the original reasoning may now be out of date..
-> 
-> Thanks,
-> Boris
+The patch should be attached to the email.
+Note: arguments like custom git repos and branches are not supported.

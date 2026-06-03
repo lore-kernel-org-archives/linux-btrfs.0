@@ -1,133 +1,69 @@
-Received: from va-2-37.ptr.blmpb.com (va-2-37.ptr.blmpb.com [209.127.231.37])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F16E847A0A4
-	for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2026 12:59:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.37
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 034883019AA;
+	Wed,  3 Jun 2026 13:42:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780491569; cv=none; b=FuD2WHF1wWWAl9ZiFj313l4AjqaVZbDwsqhQhE6aMbVruSW/9VcJs+YXKbQzXxQ3n5oxuoAbnyhQf9jEVMdkPJCowkcOKqsB9vOASoW0i6XHbp0wWOFbu11loCcorO1rglhbB1VOip8srBYwfesq/4LC7LSKZYqAqjm1t/JmBKg=
+	t=1780494132; cv=none; b=iN4TU9Pi7FD87mtYldybu8UsiawYnaY4eVxoHr3Efu0/FXYPAq9oxoWHOH9TeNcwV1KUkSly/twz7NiH41ALh9KLmiyiW2eDedBmXoArR4XW1YAZCGELaGdBCH/hMGaQGrZFilfYFt/KZM2v2KU2XlBfypVEZp2rYp4w2HKDhYY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780491569; c=relaxed/simple;
-	bh=AKYKY6cAYs45BR2tdbwrCClG0xJR+Su1POpzVrlLZFk=;
-	h=In-Reply-To:From:Subject:Mime-Version:To:Cc:Message-Id:References:
-	 Content-Type:Date; b=Oju9d4+WMNhrt/RdM/FO/uOe2cgsPK9xcPJe7jlQaBlzZw2tHMkp8dOrI80kDhTwDELvj4QdWYbu56M0zB6hCV5Zzpxg9rfRV0uNtCWkxjPG72Tv+PpDQrynhs/S+/trsyBTuxZ71UxGMMep9FnGoYNG2A4HFK147IkhWBxtZ1Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com; spf=pass smtp.mailfrom=fnnas.com; dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b=m3pVe/7U; arc=none smtp.client-ip=209.127.231.37
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fnnas.com
+	s=arc-20240116; t=1780494132; c=relaxed/simple;
+	bh=20NIHqWNkYzNtWsw5gcXIpkfj7VXIC9slkxS6qDvrqU=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=YuBwSDkkf+PPe9xeulw9YkSL1oMc1TyGec+TQvWMwS9FuSWL6rhyqFomlZW2C4HgVA3il0L7XdQU2mF0LMvjuOYWmUELXejr2x9cijXNl+8V2MTXmfRMFQ98zInotHPT3reEmVksqTA0D+ky87fzl4LZOKLRM9MN45tPa0/O6nQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=kkHGJzvF; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b="m3pVe/7U"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fnnas-com.20200927.dkim.feishu.cn; t=1780491561;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=AKYKY6cAYs45BR2tdbwrCClG0xJR+Su1POpzVrlLZFk=;
- b=m3pVe/7U3bw7s0M1zoYaA3Cim5dFv0veEVke/LQvL6iRtKwsdQYmXY49kOfPSDSHNWm2GY
- D4YmSDLw5ikxtTGdi8IyH0a/XeSO0ZVMAemJIVnnwu7AV0aBblvhkPpb4aYlshvBemTqxp
- KN2+rit/QvHj0UfRrLcX4r9+ulhIfyqugcjuOlyvQY7EFr/qykdC14H+J2/Uy3qkTZ1HF3
- AmeDETLLL5ZMoWQGvmSjC0YpMI8iu/XWeoPB6mx9nStAiLR9nsdSW7nRdUsSnwARplKhg1
- AHiJvI9zL4SYvPNoFpcC5yAKoQaJTwD8NMYjaKv00/4NSX2XEdfz9US/mvko4w==
-In-Reply-To: <ad4ceb68-99e5-432a-8589-de5e917b47d6@gmx.com>
-X-Lms-Return-Path: <lba+26a202527+721143+vger.kernel.org+zhudongjiang@fnnas.com>
-From: "Dongjiang Zhu" <zhudongjiang@fnnas.com>
-Subject: Re: [RFC PATCH] btrfs: do not enforce qgroup limits when changing qgroup limits
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="kkHGJzvF"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D4F8C1F00893;
+	Wed,  3 Jun 2026 13:42:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1780494131;
+	bh=20NIHqWNkYzNtWsw5gcXIpkfj7VXIC9slkxS6qDvrqU=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=kkHGJzvFmAwfe3z2sRaxyWOciskIY5l8XO36H8XCn7X5GWfWbSBONcHL3hBYcW/gY
+	 ZlqPSY13HQrlaQOmPDtp35fUJLoonxsA9tJYNvzbrqbhfD3CFuDndt7/P6fdcBhamn
+	 XgXphrAI0uEyeDchylT4q46uU76+EIBZTAR8mBPW/a4pifkUFt9gqDWjnbzsrvbSgg
+	 G76X7bKtjuPCY+Lfmw6SN7GU01neZ5VaSqQSXKKxdaBZ5Y1znFYNcEYK3ODCsorEO0
+	 M4H/hTOFuTRLsflTDrUSEfNcd4ZzTlc+om3ghi5m8D1Ly+p3ITZcQyXtaDPJFhXkhL
+	 OBM8VgOGRJ8EQ==
+Date: Wed, 3 Jun 2026 15:42:05 +0200
+From: Christian Brauner <brauner@kernel.org>
+To: Gao Xiang <hsiangkao@linux.alibaba.com>
+Cc: Jens Axboe <axboe@kernel.dk>, Alexander Viro <viro@zeniv.linux.org.uk>, 
+	linux-block@vger.kernel.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	Carlos Maiolino <cem@kernel.org>, linux-xfs@vger.kernel.org, Chris Mason <clm@fb.com>, 
+	David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, Theodore Ts'o <tytso@mit.edu>, 
+	linux-ext4@vger.kernel.org, Gao Xiang <xiang@kernel.org>, linux-erofs@lists.ozlabs.org, 
+	Christoph Hellwig <hch@lst.de>, Jan Kara <jack@suse.cz>
+Subject: Re: [PATCH RFC 7/8] erofs: open via dedicated fs bdev helpers
+Message-ID: <20260603-nieder-ausdehnen-siebdruck-aa96f40ebec6@brauner>
+References: <20260602-work-super-bdev_holder_global-v1-0-bb0fd82f3861@kernel.org>
+ <20260602-work-super-bdev_holder_global-v1-7-bb0fd82f3861@kernel.org>
+ <7c5bfcf0-36a3-4cc6-bf31-6af4fc901c37@linux.alibaba.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Received: from [192.168.8.79] ([183.34.161.59]) by smtp.feishu.cn with ESMTPS; Wed, 03 Jun 2026 20:59:19 +0800
-To: "Qu Wenruo" <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
-Cc: <dsterba@suse.com>, <fdmanana@suse.com>
-Message-Id: <7159aec7-f117-4e3e-9b91-bfef6cbf8d6b@fnnas.com>
-Content-Transfer-Encoding: quoted-printable
-References: <20260603111857.230985-1-zhudongjiang@fnnas.com> <ad4ceb68-99e5-432a-8589-de5e917b47d6@gmx.com>
-Content-Type: text/plain; charset=UTF-8
-Date: Wed, 3 Jun 2026 20:59:14 +0800
-User-Agent: Mozilla Thunderbird
-X-Original-From: Dongjiang Zhu <zhudongjiang@fnnas.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <7c5bfcf0-36a3-4cc6-bf31-6af4fc901c37@linux.alibaba.com>
 
-=E5=9C=A8 2026/6/3 19:33, Qu Wenruo =E5=86=99=E9=81=93:
->=20
->=20
-> =E5=9C=A8 2026/6/3 20:48, Dongjiang Zhu =E5=86=99=E9=81=93:
->> Since qgroup ioctls started reserving transaction space, qgroup limit
->> changes can fail before reaching btrfs_limit_qgroup().
->>
->> For example, if a subvolume qgroup has reached its max referenced limit,
->> issuing BTRFS_IOC_QGROUP_LIMIT on a path inside that subvolume makes
->> btrfs_start_transaction(root, 1) reserve qgroup metadata against that
->> same qgroup. The reservation can fail with -EDQUOT, so the administrator
->> cannot increase or disable the limit that caused the failure.
->>
->> This is also path dependent. The same operation may succeed when the
->> ioctl is issued on another path from the same filesystem whose root
->> qgroup is not limited, while it fails on the target subvolume path.
->>
->> Keep reserving transaction space for the QGROUP_LIMIT item, but do not
->> enforce qgroup limits for that transaction reservation. This preserves
->> the metadata and delayed ref reservation semantics added for qgroup
->> ioctls, while avoiding a qgroup limit self-deadlock for limit changes.
->>
->> Currently this can be worked around by enabling quota_override or by
->> issuing the ioctl on another path from the same filesystem whose root
->> qgroup is not limited. However, changing a qgroup limit should not depen=
-d
->> on either of those.
->>
->> This only changes BTRFS_IOC_QGROUP_LIMIT. A follow-up question is whethe=
-r
->> the same helper should also be used for other qgroup management ioctls,
->> such as qgroup destroy or relation removal, when they are part of
->> recovering from an over-limit state.
->>
->> Signed-off-by: Dongjiang Zhu <zhudongjiang@fnnas.com>
->> ---
->> =C2=A0 fs/btrfs/ioctl.c=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 | 10 +++++++=
-+--
->> =C2=A0 fs/btrfs/transaction.c |=C2=A0 8 ++++++++
->> =C2=A0 fs/btrfs/transaction.h |=C2=A0 3 +++
->> =C2=A0 3 files changed, 19 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 9d47d16394fc..1e410db06c19 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -3758,8 +3758,14 @@ static long btrfs_ioctl_qgroup_limit(struct=20
->> file *file, void __user *arg)
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto drop_write;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> -=C2=A0=C2=A0=C2=A0 /* 1 BTRFS_QGROUP_LIMIT_KEY item. */
->> -=C2=A0=C2=A0=C2=A0 trans =3D btrfs_start_transaction(root, 1);
->> +=C2=A0=C2=A0=C2=A0 /*
->> +=C2=A0=C2=A0=C2=A0=C2=A0 * 1 BTRFS_QGROUP_LIMIT_KEY item.
->> +=C2=A0=C2=A0=C2=A0=C2=A0 *
->> +=C2=A0=C2=A0=C2=A0=C2=A0 * Do not enforce the current qgroup limit whil=
-e changing that=20
->> limit,
->> +=C2=A0=C2=A0=C2=A0=C2=A0 * otherwise a qgroup that already reached its =
-limit cannot have the
->> +=C2=A0=C2=A0=C2=A0=C2=A0 * limit increased or disabled.
->> +=C2=A0=C2=A0=C2=A0=C2=A0 */
->> +=C2=A0=C2=A0=C2=A0 trans =3D btrfs_start_transaction_no_qgroup_enforce(=
-root, 1);
->=20
-> Nope, you should not work on the subvolume root.
->=20
-> The transaction is working on qgroup tree, so it's just simply passing=20
-> the wrong root.
+> May I ask if it's an urgent 7.2 work? If not, I could
 
-Yes, that makes sense. The qgroup ioctls update the quota tree, so using
-the inode root makes the transaction reservation depend on the path used
-for the ioctl.
+No no, it's way too late for that this cycle.
 
-I'll rework this to start the transaction on fs_info->quota_root instead
-of adding a no-qgroup-enforce helper.
+> make a preparation patch for the upcoming 7.2 cycle
+> to handle erofs_map_dev() failure here so you don't
+> need to bother with this in this patchset.
 
-I think the same should apply to the other qgroup management ioctls,
-such as create/destroy and assign/remove, since they also update the
-quota tree. Do you think v2 should switch them to fs_info->quota_root as
-well?
+Sounds good. I take it you can just do this yourself without me.
 
-Thanks,
-Dongjiang
+> I will seek more time to resolve the recent todos
+
+Thanks!
+
+> yet always intercepted by other unrelated stuffs.
+
+:)

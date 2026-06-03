@@ -1,80 +1,80 @@
-Received: from fout-b4-smtp.messagingengine.com (fout-b4-smtp.messagingengine.com [202.12.124.147])
+Received: from fhigh-b6-smtp.messagingengine.com (fhigh-b6-smtp.messagingengine.com [202.12.124.157])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 58B3D5CDF1;
-	Wed,  3 Jun 2026 04:35:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.147
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DDB722D9796
+	for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2026 04:35:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.157
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780461307; cv=none; b=UBPLkokVbwQX9qebopxJtrSbQKHdk75qe643gXMRtW/vbOCHXsdDLZ4RuieWofrSftrTpaqoQmmrPB9T/TB/U/ttiJ26osn0Hy9yf6ItkN413HLw/NbqKU2fMFG5KaR5GLHo/KHBA0VRnWTYl97aCq92n7UG+UdsyxqrGMvgSUc=
+	t=1780461330; cv=none; b=F21IfIYQHMgmKTkckiSJSYdbk0Ls4M8Vzt9ZAls9Ju1ZTlGhsS1DOKdqoAQinwllAHAjd6XAt/FPXV6HkPzjzHAhE2HpriMkO8n9LGa6y47ChBtA5K8ZaUuvH5VpHZiJM/HK/XLYSVorKZc7RT+4+RFH+Bp7brEYD+QJIxo4lAU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780461307; c=relaxed/simple;
-	bh=upeVWz+iFvknECMTzh9HSR6Sv3jI65GTALTC6jA3VnI=;
+	s=arc-20240116; t=1780461330; c=relaxed/simple;
+	bh=i8IsmCE0y0CmbVZKZ5yGS/nNQyC+z9RQB9SHQ1ZXziA=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=dGAaVsY52+oRjHgFqcrKMszwyF2voUI6Lngi8hTJ7uDWpXwjqshGpdWrMY458F0pRxNwFM/KmH+znCQdd+GXcglH+/ZPkcUDspKi0rSi4MPQs3DoyxJ+kdMMsWKNAIoFsQLFkPRIyVZvfuB1tGE3qPQXIEjyDXunttZF1SfuKKk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=jrzWDWGx; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=Tz1dGTf3; arc=none smtp.client-ip=202.12.124.147
+	 Content-Type:Content-Disposition:In-Reply-To; b=V0MFujFBfrqxksMS9PHIt366pMJHYgKeMVdJEflN+M8L6BxuFlD80MtFIJvwC7v3wv6oLQqlI+/VDiA/idZjmIshLatkXIH934vuOxwQ/pGvZzANuwuPZdEwHvraUyK62LKT1TMz1ATiFdH9/Q3BiJ2cUS20jBhJoFhJURgsXn4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=e8W0dkRS; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=gt1iuTHk; arc=none smtp.client-ip=202.12.124.157
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="jrzWDWGx";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Tz1dGTf3"
-Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
-	by mailfout.stl.internal (Postfix) with ESMTP id CA3151D000D3;
-	Wed,  3 Jun 2026 00:35:05 -0400 (EDT)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="e8W0dkRS";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="gt1iuTHk"
+Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
+	by mailfhigh.stl.internal (Postfix) with ESMTP id CA5697A00A2;
+	Wed,  3 Jun 2026 00:35:27 -0400 (EDT)
 Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-03.internal (MEProxy); Wed, 03 Jun 2026 00:35:05 -0400
+  by phl-compute-01.internal (MEProxy); Wed, 03 Jun 2026 00:35:27 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
 	:content-type:content-type:date:date:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm2; t=1780461305; x=1780547705; bh=aKL3zuUW4C
-	sYzvFG92Q8iHKYTA6xuLGPTGz5qU0XQ5Q=; b=jrzWDWGxvOfJ5rAiRJoVTZwqPy
-	PH+RGuJU7Z0Zk6XXOiJONenyCEjaltksXZe5kNyO8JviMXA+hyTkguFnu9Lfi/33
-	t5Dp0S/qi413kxUmF/9IKO0uvqav8UWt13ceigBIe8U7591VodaLpS0W5AExQZWT
-	BE+f1K54DDYDres1LJyMaZ6q7rcKFGUasksffSDJe40m0Mzg94Y6WfxlV9wq45y5
-	6iziGtlwFVSm2Av1cIa5gXv/9IwWJfRNcq+p1vupP68SkueRBQUc/uJQ3IObDZIQ
-	0aCy1Q/fIgwPYmBkwI4seEdx97csvfeVkDJ+c2UFVujYGWILUWDkvoPMb2jA==
+	:subject:to:to; s=fm2; t=1780461327; x=1780547727; bh=In4IydNlm/
+	NC4tybUuvZbai932Vlz39xbuB5KvwGy/U=; b=e8W0dkRS+taiMM5u0sLBSFJy9O
+	wIJcVZj44PzUmRTjbgIj0VFx3jTQ59nUu8r5MXJBFYyw094hfXYodOteH6PIZDIr
+	nwB3i+K1ZLRiOxVLdXHPhLaU/xho0GuvTFtGBtMkD1uqpTcufhocO2UxVsMOUUGU
+	2TnYPBHvI+Cg35wgBbF0YXpagqtMkPjUac+Tazek/7Em6A/Yk5+5HzYbwXMJnmT9
+	aaIjhQ6lBqk6uiD8RDiy9gvDAz1GT564y+IOVixPoVyAHIx8pQrv7eKakI3Saojh
+	1Mh9eXDsM/Qv+MVYd1A0HvBwXKGsZb/eaJFR2uPkOndFLNvbviQc9eM1Y1Gw==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-type:content-type:date:date
 	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
 	:message-id:mime-version:references:reply-to:subject:subject:to
 	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
-	1780461305; x=1780547705; bh=aKL3zuUW4CsYzvFG92Q8iHKYTA6xuLGPTGz
-	5qU0XQ5Q=; b=Tz1dGTf382TT/I9DcMWg4hHMYgVh6QWrBPUbszI41/fVid8lAiH
-	uj4qshfRPArhxu9IZT0BF9LqQwKf2F5/ejRplwMYN3iG+giGdGjrZ7rz2ntXpeNX
-	ie5gds29nWmm7FdqwYJihbJYl8vQDiIwGUq0up4LzjzChbTO9luT241tf/sOsa3e
-	BkDHFDcQrcVoAqQ6fgvltH7oJXVbdAuR2giHVw9B9WTo+ecQALeYlgtdaG3yMBH7
-	vd6JuJzYm65DIS5ICC3cWuKN+ME7JOSeSF0NVuVeU0SBn0oJDd9jQFbF+Si1S1DU
-	Zccfk2+xAZ7YoAOMATqtMrP+mMx21zk+LKQ==
-X-ME-Sender: <xms:-a4favRTzE6spQTUb6ZCU94gKxkn5yWoIL71OPXQRSR_MoIVbbYsQw>
-    <xme:-a4faoh6Jwaq7T5FOV0xZ0xHvuIXYg1vv8qmiPn-dYhgoYpfjQuD-bAffT98Yjvoh
-    QofGAUnbpbd3-IFA8WMK2k7pTQvLy8dcM-yf-N3rSHeVOYgqycUSsA>
-X-ME-Received: <xmr:-a4fan7XpmbVhieI9tuqeI6my3K2-1jWYIaRWM-SbSDrTGRtJDC0nMxHpiczOuzMVRx1pWVgnFNiVNzA6R2qmXwHDEQ>
-X-ME-Proxy-Cause: dmFkZTEwGi6hBRiKGdWsO1pM/+GouOqpHgOwPzahjKpwQoO78TA0HPt9PLhqj9oYmIEQl6
-    hd57+P/M2v/QU4yGVudFIn4OfnMVmD27F3HZ6RaNhV8Htrytnxym5Fa0wYW55vz70LZ9l4
-    93Z8mV9kJckH6/oYrv2wm+Oio5XF/ZByRsydyTYF3kTctp//jAlXo1chu1l24xiq1SLHxv
-    CRQPI5ajCuE5L0ZFODcPnrh5P1OnYEbJWQfH/eQQV7r6MGCeidmbRne8d/k/Tan6oEgYJP
-    ZK3ZPc0JSQfbt/QjTrVM+c9H3eglOXZ7KcX8A2FwRs3T82CN/cbp8pA2rp9FNtDb+wzAUG
-    exyT5oYZduVhA/zMmpBOaT+k0lIgDrCBnn9Y5dPBU80XHzoWD+6qeYrQ6jzcxKbo4/7eco
-    mn+9K3P0bTW43tvwWYkyY22lT9OUN0QIeX4Sf6U2lAu04CUbu0ulrlQDsdvl3riH0oNrsT
-    2Fh0alrERM9fi1MavJlcAW0316QaKW1gHM2I1of7gk8TEWH0F26wXP+MccmWArL3eCxmlN
-    na20Foh69f16/OlMZPxwmA0t5x561yAM9jsd50HLuuAf8wFGvtx03ggAl8ryX7huzUUkY1
-    yJUz99V5atjRtARutCqqPWF1T7Rym+f9GpUU0Ws29D98YLmENh7h+mjnQB7A
-X-ME-Proxy: <xmx:-a4fatB1XpH3LU3MU16_X_RquNjKFqwac8hUbNgqLZDE9kepdfwbRw>
-    <xmx:-a4famYTpCw51fv0iJw-3ZuEpkIBFvH17Z9HcVFDh0reFhh-POlrvQ>
-    <xmx:-a4fagangCRxgHhR7-ZZf3lh6hAF4g7536R8cFKGz5EzvbT1hrKbqg>
-    <xmx:-a4fal-PSLx9pcNPRJVRwt6EnM2jobrTSXwsGsECBZJpBG_qBGrlhA>
-    <xmx:-a4fanxG5WSSDYiSi2ZRPmrB9dt3xNrvgEBMtlr251Cn3aZwDi4qel_f>
+	1780461327; x=1780547727; bh=In4IydNlm/NC4tybUuvZbai932Vlz39xbuB
+	5KvwGy/U=; b=gt1iuTHkpNDXRrFA/bC92UEo1NEyKTKrSjsY4mcFLhHGkHobG9H
+	orMIra9NmCfO27U8qaWBKJEwBfYPMeMGYiklbfS11+xOikKx+7nsElWd8XRZX6UI
+	mLlWfnweHMaEKd/zrxHnvVyUH9Pt2BDxq7lbCTnDzm8dLRKEkCuQubGkoj6sOdkK
+	faufVwO3nD8zXGns+toi98dsNq3bFOLrbJxL+wWzMneKmMGhl21/iI+nf/FhxrO1
+	6GkBpKvFulLsUnk88vHd8paaL2m39VD0tVOs1CIylFsbnvW3LTij8B47NHt/q6ky
+	An62N+c5Zg92EmIqCKOVuH0WbTDXcI49WoQ==
+X-ME-Sender: <xms:D68fappqKti-WzsprcYkgjjvpAoKjidz7yfHLNygu2xIYEHYYRS9Lw>
+    <xme:D68fahpfYdCM-qCCGueryBSe1ebG8fBo4h7xnjK00J6pybUTDZHppKjyn2gkcjm1Q
+    yxBQE0e-bGxPQCp8vnXPOhPM5aB9EeAJ-KTuZQigWy7phOnACc3Gwo>
+X-ME-Received: <xmr:D68faj3QJ6G_2S4fDna6-qvyp8lu2VYX_loo3eVffC5MddNu84U49n7nG9WlsCwfXBWw7vvqbzv6qVnZzafztoRvw1Y>
+X-ME-Proxy-Cause: dmFkZTEvcPBtMUHLATK856ZaJdLls92aPJVShWcL9sMXx4N3+WiCjJX3sICt/qIQTubrbR
+    WbZ9YwTexNCR5msgtQcNZeBQae34jsJbTJnGMKN9fn2Wehwniqc8qAl46N6CeVIo8zhApm
+    GWPTnTSE8ehMc51aqAPQLQKYTeuE2yxPGvHMXMijhwv0ncL2WYTNk4eWLOKWcmkhttwgSK
+    sxgsnbqndPoFtxaIwu7VMhzmUoFt6AATY4ZpFv8lSg80wMn4itex28mpQE+oRgUZbJ6FqG
+    uAfEdSWyLJFWK4OJL6QrQJ2f7tE86OFsLgC+KVyxR8FfiEgB5R4j0JnYIP2V5WReA9MBAp
+    yV/5PovcmWz1FKGL3kgtu4EQunNjHzBjJo955jIvPiozXpqkaPsXcfe3DH3UtQRxLjvDBo
+    XExEa9acA4Vdv72a7xSwPOilATWYtkGSC1qYoAG+S1Fgy1uMk1SPuQJ7qhGT1GtuJpZ07x
+    o00wykqqOhXHs3nDDTarZXC2BaPdtGm81vjYdRrLJ6DrIh4a0yEFqW+EmepneNQV+CZ5Pn
+    /uzHjRKw7UTRdzOstogk38lxaQdbqcjovCVaFrXhzRITTnY/7t85kCisu52sLjYwPAQDq0
+    y4XA0awlVRE/TLV/7dE4aHydNV5Am2ArO/81C2UeyXqY7Ic5qRg9379tn7Pw
+X-ME-Proxy: <xmx:D68fagDBIGnehm6HZRiQX4Nw6u-qOMwIj8LQItGg8OEV3yFyc6l8Ow>
+    <xmx:D68fareqHgagp482n3W0VesfxIsdSc3k_yFu0saY0xpX1sAr84UYWA>
+    <xmx:D68falgFu9jroVYRytk8DkH-Ig8ZntFcglKR0elZr50DR29Dnh4_cw>
+    <xmx:D68fajoJI2dLP_6XBj8kd_2b4Ml18FzCiUEC5dDhg5AOkSbF6vLdHA>
+    <xmx:D68fao1Wy9O_8R_80wVNUWVzaFXB8MDnFLQuoedRzkqfCeEbaVxN6NaD>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 3 Jun 2026 00:35:05 -0400 (EDT)
-Date: Tue, 2 Jun 2026 21:34:40 -0700
+ 3 Jun 2026 00:35:27 -0400 (EDT)
+Date: Tue, 2 Jun 2026 21:35:02 -0700
 From: Boris Burkov <boris@bur.io>
 To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-Subject: Re: [PATCH v2 1/3] btrfs: fix false IO failure after falling back to
- buffered write
-Message-ID: <20260603043440.GB2114331@zen.localdomain>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 3/3] btrfs: retry faulting in the pages after a zero
+ sized short direct write
+Message-ID: <20260603043502.GC2114331@zen.localdomain>
 References: <cover.1780112003.git.wqu@suse.com>
- <474cf1bf278e4ec1fd66b90aa6eeb5603ae08cd4.1780112003.git.wqu@suse.com>
+ <70c80c02852c233abb0b3cde0c99efc37f14f9d8.1780112003.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -83,33 +83,17 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <474cf1bf278e4ec1fd66b90aa6eeb5603ae08cd4.1780112003.git.wqu@suse.com>
+In-Reply-To: <70c80c02852c233abb0b3cde0c99efc37f14f9d8.1780112003.git.wqu@suse.com>
 
-On Sat, May 30, 2026 at 01:04:17PM +0930, Qu Wenruo wrote:
-> [BUG]
-> The test case generic/362 will fail with "nodatasum" mount option (*):
+On Sat, May 30, 2026 at 01:04:19PM +0930, Qu Wenruo wrote:
+> Currently btrfs_direct_write() will not try to fault in the pages, but
+> directly fall back to buffered writes, if the first page of the buffer
+> can not be faulted in.
 > 
->  MOUNT_OPTIONS -- -o nodatasum /dev/mapper/test-scratch1 /mnt/scratch
-> 
->  generic/362  0s ... - output mismatch (see /home/adam/xfstests/results//generic/362.out.bad)
->     --- tests/generic/362.out	2024-08-24 15:31:37.200000000 +0930
->     +++ /home/adam/xfstests/results//generic/362.out.bad	2026-05-27 10:21:17.574771567 +0930
->     @@ -1,2 +1,3 @@
->      QA output created by 362
->     +First write failed: Input/output error
->      Silence is golden
->     ...
-> 
-> *: If the test case has been executed before with default data checksum,
-> the failure will not reproduce. Need the following fix to make it
-> reliably reproducible:
-> https://lore.kernel.org/linux-btrfs/20260528111659.87113-1-wqu@suse.com/
-> 
-> [CAUSE]
-> Inside __iomap_dio_rw(), the -EFAULT/-ENOTBLK error is not directly returned.
-> Thus we never got an error pointer from __iomap_dio_rw().
-> 
-> The call chain looks like this:
+> For example, during generic/362 with nodatasum mount option, there is a
+> write at file offset 0, length PAGE_SIZE, and the page is not faulted in.
+> Then we go the following callchain and directly fall back to buffered
+> IO:
 > 
 >  btrfs_direct_write()
 >  |- btrfs_dio_write()
@@ -123,151 +107,47 @@ On Sat, May 30, 2026 at 01:04:17PM +0930, Qu Wenruo wrote:
 >  |  |
 >  |  |- ret = iomap_iter()
 >  |  |  |- btrfs_dio_iomap_end()
->  |  |  |  |- btrfs_finish_ordered_extent(uptodate = false)
->  |  |  |  |  |- can_finish_ordered_extent()
->  |  |  |  |     |- btrfs_mark_ordered_extent_error()
->  |  |  |  |        |- mapping_set_error()
->  |  |  |  |           Now the address space is marked error.
 >  |  |  |  | return -ENOTBLK
 >  |  |  |- return -ENOTBLK
 >  |  |- if (ret == -ENOTBLK) { ret = 0; }
 >  |     Now the return value is reset to 0.
->  |     Thus no error pointer will be returned.
 >  |
 >  |- ret = iomap_dio_complete()
->  |  Since no byte is submitted, @ret is 0.
+>  |  Since no byte is submitted, @ret is now zero.
 >  |
->  |- Fallback to buffered IO
->  |  And the buffered write finished without error
+>  |- if (iov_iter_count() > 0 && (ret == -EFAULT || ret > 0))
+>  |  @ret is zero, thus not meeting the above retry condition
 >  |
->  |- filemap_fdatawait_range()
->     |- filemap_check_errors()
->        The previous error is recorded, thus an error is returned
+>  |- Fallback to buffered
 > 
-> However the buffered write is properly submitted and finished, the error
-> is from the btrfs_finish_ordered_extent() call with @uptodate = false.
+> Just slightly loosen the condition to allow retry faulting in pages after
+> a zero sized short write.
 > 
-> [FIX]
-> When a short dio write happened, any range that is submitted will have
-> btrfs_extract_ordered_extent() to be called, thus the submitted range
-> will always have an OE just covering the submitted range.
+> Unlike the previous two bug fixes, this one is not really cause any real
+> bug, but only reducing the chance to do zero-copy direct IO.
+> Thus it doesn't really require stable-CC nor fixes-tag.
 > 
-> The remaining OE range is never submitted, thus they should be treated
-> as truncated, not an error. So that we can properly reclaim and not
-> insert an unnecessary file extent item, without marking the mapping as
-> error.
-> 
-> Extract a helper, btrfs_mark_ordered_extent_truncated(), and utilize
-> that helper to mark the direct IO ordered extent as truncated, so it
-> won't cause failure for the later buffered fallback.
-> 
-> [REASON FOR NO FIXES TAG]
-> The bug itself is pretty old, at commit f85781fb505e ("btrfs: switch to
-> iomap for direct IO") we're already passing @uptodate=false finishing
-> the OE.
-> But at that time OE with IOERR won't call mapping_set_error(), so it's
-> not exposed.
-> Later commit d61bec08b904 ("btrfs: mark ordered extent and inode with
-> error if we fail to finish") finally exposed the bug, but that commit
-> is doing a correct job, not the root cause.
-> 
-> Anyway the bug is very old, dating back to 5.1x days, thus only CC to
-> stable.
-> 
-> Cc: stable@vger.kernel.org # 5.15+
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
+
 Reviewed-by: Boris Burkov <boris@bur.io>
+
 > ---
->  fs/btrfs/direct-io.c    | 17 ++++++++++++++---
->  fs/btrfs/inode.c        |  6 +-----
->  fs/btrfs/ordered-data.c | 12 ++++++++++++
->  fs/btrfs/ordered-data.h |  2 ++
->  4 files changed, 29 insertions(+), 8 deletions(-)
+>  fs/btrfs/direct-io.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
 > diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
-> index 57167d56dc72..88cb2e82a507 100644
+> index fd53fac7186e..99c959be8de7 100644
 > --- a/fs/btrfs/direct-io.c
 > +++ b/fs/btrfs/direct-io.c
-> @@ -624,12 +624,23 @@ static int btrfs_dio_iomap_end(struct inode *inode, loff_t pos, loff_t length,
->  	if (submitted < length) {
->  		pos += submitted;
->  		length -= submitted;
-> -		if (write)
-> +		if (write) {
-> +			/*
-> +			 * We have a short write, if there is any range
-> +			 * that is submitted properly, that part will have
-> +			 * its own OE split from the original one.
-> +			 *
-> +			 * So for the OE at dio_data->ordered, it's the part
-> +			 * that is not submitted, and should be marked
-> +			 * as fully truncated.
-> +			 */
-> +			btrfs_mark_ordered_extent_truncated(dio_data->ordered, 0);
->  			btrfs_finish_ordered_extent(dio_data->ordered,
-> -						    pos, length, false);
-> -		else
-> +						    pos, length, true);
-> +		} else {
->  			btrfs_unlock_dio_extent(&BTRFS_I(inode)->io_tree, pos,
->  						pos + length - 1, NULL);
-> +		}
->  		ret = -ENOTBLK;
->  	}
->  	if (write) {
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 973a89301baa..2c0131452754 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -7590,11 +7590,7 @@ static void btrfs_invalidate_folio(struct folio *folio, size_t offset,
->  					       EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
->  					       EXTENT_DEFRAG, &cached_state);
+> @@ -960,7 +960,7 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+>  	if (ret > 0)
+>  		written = ret;
 >  
-> -		spin_lock(&inode->ordered_tree_lock);
-> -		set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
-> -		ordered->truncated_len = min(ordered->truncated_len,
-> -					     cur - ordered->file_offset);
-> -		spin_unlock(&inode->ordered_tree_lock);
-> +		btrfs_mark_ordered_extent_truncated(ordered, cur - ordered->file_offset);
->  
+> -	if (iov_iter_count(from) > 0 && (ret == -EFAULT || ret > 0)) {
+> +	if (iov_iter_count(from) > 0 && (ret == -EFAULT || ret >= 0)) {
+>  		const size_t left = iov_iter_count(from);
 >  		/*
->  		 * If the ordered extent has finished, we're safe to delete all
-> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-> index f5f77c33cf59..b32d4eabe0ab 100644
-> --- a/fs/btrfs/ordered-data.c
-> +++ b/fs/btrfs/ordered-data.c
-> @@ -358,6 +358,18 @@ void btrfs_mark_ordered_extent_error(struct btrfs_ordered_extent *ordered)
->  		mapping_set_error(ordered->inode->vfs_inode.i_mapping, -EIO);
->  }
->  
-> +void btrfs_mark_ordered_extent_truncated(struct btrfs_ordered_extent *ordered,
-> +					 u64 truncate_len)
-> +{
-> +	struct btrfs_inode *inode = ordered->inode;
-> +
-> +	ASSERT(truncate_len <= ordered->num_bytes);
-> +	spin_lock(&inode->ordered_tree_lock);
-> +	set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
-> +	ordered->truncated_len = min(ordered->truncated_len, truncate_len);
-> +	spin_unlock(&inode->ordered_tree_lock);
-> +}
-> +
->  static void finish_ordered_fn(struct btrfs_work *work)
->  {
->  	struct btrfs_ordered_extent *ordered_extent;
-> diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-> index 03e12380a2fd..8d5d5ba1e02f 100644
-> --- a/fs/btrfs/ordered-data.h
-> +++ b/fs/btrfs/ordered-data.h
-> @@ -226,6 +226,8 @@ bool btrfs_try_lock_ordered_range(struct btrfs_inode *inode, u64 start, u64 end,
->  struct btrfs_ordered_extent *btrfs_split_ordered_extent(
->  			struct btrfs_ordered_extent *ordered, u64 len);
->  void btrfs_mark_ordered_extent_error(struct btrfs_ordered_extent *ordered);
-> +void btrfs_mark_ordered_extent_truncated(struct btrfs_ordered_extent *ordered,
-> +					 u64 truncate_len);
->  int __init ordered_data_init(void);
->  void __cold ordered_data_exit(void);
->  
+>  		 * We have more data left to write. Try to fault in as many as
 > -- 
 > 2.54.0
 > 

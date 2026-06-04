@@ -1,67 +1,67 @@
-Received: from mail-ej1-f49.google.com (mail-ej1-f49.google.com [209.85.218.49])
+Received: from mail-ej1-f41.google.com (mail-ej1-f41.google.com [209.85.218.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F24E22EEE90
-	for <linux-btrfs@vger.kernel.org>; Thu,  4 Jun 2026 22:14:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 57070285C84
+	for <linux-btrfs@vger.kernel.org>; Thu,  4 Jun 2026 22:51:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.41
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780611301; cv=none; b=AyOnhQVrDZ4vPWFwPF6NKPbS2oYDixYUACLgSzhYovbd17teOB+gOAHyXScKaLn30BRO7s2kkNtXy53nhVm2VfokXkXEa4iww2IZqgHS1CyK5oJLCxzYA5yQ8AWiceNJ7s2VJHwt5opYHfVq1KYaOGl3AwXmznnXQO4qhZDCLfw=
+	t=1780613511; cv=none; b=L1ubgg+mGxEIK7/h5e+VHl9jrKZ/NpQ3qeW8dbrziMMBIi3EsTvtydNEgc6Y0CbTp7EXo8eT6BD+oBs8gLzX7STwqZs7kghq9KiEx9B0S4Nm3xZA+dZgHvW0MeUgvnhAfhjsvte2jXxV9Vus5lufAqsaMT2w+btqgkZ3KKyv9ss=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780611301; c=relaxed/simple;
-	bh=nsAnKd2LuBCN97hLPwR548ZP+4PVMUjMOeGYCyp3mCw=;
+	s=arc-20240116; t=1780613511; c=relaxed/simple;
+	bh=x6MpqbkUCQ1G289Or0Sd2TKDbFML9fvZ2SbIvXLDx8g=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=d2JCK5uzxtUDs0jE35dM2V8hwH6CFMZrFooKk6o9sRZcOk+fjIMl0p72dng2OusSEhIhgSfQz6UBLzaZTbCsXHRH1B5hfJ1bMcgJzRZukkVZzhpKtYOilv6LfYox6l9RkvmiXOs/iixpmcvZg9uct1D7AwL51B9fRcKS9BjmHK4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=CxbzXiFq; arc=none smtp.client-ip=209.85.218.49
+	 In-Reply-To:Content-Type; b=uRcEoXyMZQd2DtXrEG6seE5GIiFoufulUl1b0i+aZ79ChoptyZvUH4MCPRrzjjdrgHeAg3pmtpkKoVcbTgsS13rE8+QnLvsVpmEng3Kiwfbm8nZfRgtckhZH6o/C+z+RojnDNKdE9ajGsM2j9D8pZJxmYJ2W43IuWr3UcxjZ6tw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=bXSkgkkt; arc=none smtp.client-ip=209.85.218.41
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="CxbzXiFq"
-Received: by mail-ej1-f49.google.com with SMTP id a640c23a62f3a-becfa735b9aso176521266b.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Jun 2026 15:14:59 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="bXSkgkkt"
+Received: by mail-ej1-f41.google.com with SMTP id a640c23a62f3a-bef1e6423e7so136568966b.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Jun 2026 15:51:48 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1780611298; x=1781216098; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1780613507; x=1781218307; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=swV2Gbwj1tjoYWtpb7LLSDT7BwBFiYnbxqafBDFuBsk=;
-        b=CxbzXiFqsOZ2uoRvQfBgdOHv+AMk/PYd9QTOcx5GeCf7Sr+MKpIdLo8hREqbsqb00n
-         RP4QY4Bc2ZUSBcULV8yyDYTTuGpfXuMLZ2o00O7gS/XUo9j0crBC2RePAp/xc68/KyPz
-         iUu1a1lQ4FD5OvxyeD2dBIrsp453mDRWMZY8oFo1LcnOwUnJ0BumYXkdeqzhePDBOaoP
-         6gi0MAG+cdoResjCErd51/44cpuKCsuKOafsx+uPwfrCmPeu6r/cZr3GHI5xHSBbCM2c
-         25VyxUELKOOyzX6xG4D5oR3WYu7X9WYLFu+iRn1OqVc4CYdRbei1qetcVqPk1wcDjzLt
-         iWpg==
+        bh=DUKZDxfajH37nlw3xRkmQhwUkFADCv3ENqC3QSb/tKw=;
+        b=bXSkgkktIXyd5+PFPwIo0/gClBnmWKjfImSMZUOdnX0Cwngotg3fT17cAvp+0l83+m
+         NLclnSMEVewgEKIAosNXeT+qPh9ATHa59qXitStQGN6exy7ojwCyKug4q6qUmYz0nyRS
+         XJttt0HAugNV0sMGNBHejqQiHzpBpla8n91cN0E8MtMv5cRd/5GAGLBuB8zc/IewvtZT
+         4c5c3CpfEhiS2Qx1wy41v62YOMaVmmmoQhfYzxMdKxJmLyReZnLj9olPNLkFaYTd2BgZ
+         5Ioludh/AkIuzTaugR5OZ+f/TzkQOsfs6CGc/btah9ucJnGcdxF+GAjnTJIZyD75Bkel
+         J1Fg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780611298; x=1781216098;
+        d=1e100.net; s=20251104; t=1780613507; x=1781218307;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=swV2Gbwj1tjoYWtpb7LLSDT7BwBFiYnbxqafBDFuBsk=;
-        b=jJLgVl+aRphCZq49hXJPZkyZj9K8WbXW5eUAJOxhdmBWx3QR4ITd9OvcG/s937B9LU
-         QAjM5+32JK2ZYQYjcgVJX/d1dF8zaFBNjwPJHUM/5ayUonrduuROOunecVi4saZBKy9E
-         IrzWlckebRcO30cbIwyGAhHr9ySyJ9+KK82UR+bwOsmsLoprTyiCvXgJ8FAR63a+GgmB
-         FqC/tJtOQk8OXtBkOtI7mGPzyORCSK3LFOwcBl2C5H/+xQ///9zLMcUN6J/yg5YIS5t/
-         ILAGH7nEC83xxHb/Ntze+FOK/ZNfTnmDmosealVw8FBv6SAwG6bbkX2MTiPgjbSMON5T
-         jA6Q==
-X-Forwarded-Encrypted: i=1; AFNElJ8L8fOcT3xcsyH+B/GdAZDoMaSM1XZoFHOrdWPKw6DXI/o+Cg1gzoKQgMj05ANzqYDtjBU5gILc/+wl2A==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwaHMdAIJ8TUx9sbA6nTXwu8ksU1gqFhuPNFnIsKQ0HPAU2bNNW
-	YXk8NIvfvg8EVUhT0WKHA0pCjqF64apv4ua4o1/L99wpVNXAp3p2gAhiQeRzvgbDOsE=
-X-Gm-Gg: Acq92OEuQyFZn2shvquHg8SuqUzSnzGHy6jis0+4ApdlHwpL+Q6bGwjtPbptcUEXa8H
-	VwJypkAw513Y+5Dv008ZD3QU3jyH/u7YNuCR5jGiCVPi/7xcU1JwnVmF0Xoa+x0B+UuJ85IixEo
-	f23IY7onUgi2RGyjZZBcUX3vJ2dcMgLqgqhSugox0MrXZxH0iY+QBCL3WwzKwceaQCsGKnEVoeP
-	B+xq8pf0x/09WAwGa4fo5tNQDvRSQtc8CmsRUD+JN5KmlvA6BaxXbjZ+ON/VPokrHX8ynejSsw/
-	S4hfu7y0PH7DltGG5987Novo8Hk0KWl0jdKrjrq5zxkMi467++sry7/i3tuOimgrVowlfwTXkef
-	nyJuHR0lwLJa6xc2uK0glWXbg9+n7S2qXLJCFCgTGnOD4be56vJ0fakrjp9tR3tRegwH6tsDgna
-	s7Czn1AEr8YiFsSae3L62Q53Wbr0tpoUg2vxu8DyK+o/ai1Xz2Abk6VtrBK+p3Nc62NvQfiNMr2
-	TVNdKZ4MU2RGMGfJUpWlf7frX7azg4manNRG9x7fs/FpAAy/yQI8tHQqA==
-X-Received: by 2002:a17:906:f5aa:b0:bec:6c5c:cced with SMTP id a640c23a62f3a-bf372159bf0mr29866266b.28.1780611298253;
-        Thu, 04 Jun 2026 15:14:58 -0700 (PDT)
+        bh=DUKZDxfajH37nlw3xRkmQhwUkFADCv3ENqC3QSb/tKw=;
+        b=ba3wl7fSovhkrKv0sx1aFZLGCtR0wde5iRmVSUckLALK798559GjBim1ZCOan4xTJR
+         RHQiJ5zVxxlJS/YkuyLaSJ/KneacZ+OaCFiSNfzW9SO09OKnbVbcVcfy1i+2a2ojUMd4
+         c12PpSFAx1ZCK0zIhu2aHEETIzDvc6sQUoTn4eBV15X5WxAP0ozlUgThOJ8UnMZcIsI5
+         0i3eyjOvUkTWDotU+BEne3iHbAy5Pfw6Dn9WOZY9BglfFQ0vyxnW0VP3CP257/eIzIgw
+         6L0VFaFPAnN9yGm7K3+JRjshjLtfnmqa84rm2d9UtVqF/VXr02li7kwbNoMcqKk/NFri
+         lRzw==
+X-Forwarded-Encrypted: i=1; AFNElJ/SLDW6lyXNiu/MABjqsrNR0t1Uf/CVgTHwHU7a6gZwi86p+l57QI6+n8I2EOTc3/mapAp3V5jVelfhGA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yy97bMBLrdIXIhoCZaPxYY0yaaKE3yTXME5O/QgoODka815IhE4
+	X+hLoU+FjmfMkpf8Vaz17agiDdhDmYxar6kSnp675zHnJNAdr0vQgHuU8NECQVpL8tI=
+X-Gm-Gg: Acq92OEfEvU1F4kzpEKT0Yvenoez1Q6sddpaPISCuZHMnkl70RY0sluOxr7h+7BuQAl
+	gLkpUCn/COJc9012mOmWQ8NTJ0HDWia1UoSvcmntvpOThW3jtG8/6vEr/JieR/UcPrc8znJ38Gs
+	0jTZ1sKP/3weJMihA51xD+hVjSvQ+1jl0IfBhDNHpnJ3vCSz3ULeyd4YYefT0/+oM/K1o654/AD
+	cIKtQ8RZn3/GUr851/f4I9nVbvCCmYOdme/6D0E3CAl7OE3LGRnfnTHI73t/Pva2iYHYHUe5F3B
+	22J2uapEHErcdC+/AN7aE5WzbuK9BzScJAOdDIrYnuLric9qSxj/K9TVAwkxIAHEYFJvgU7W/Cy
+	ok7MXa1AhH53xdZeuEibdBtHzp+2SNzajeYDs94aNDHF2X9P7x5FaL1UBByxaD5tyz/SsQJL/Ao
+	l4rwQvzYcfdOpcN7Gd0c7BoZ0+uLOV7fThDA+g2JsXT9XXRoouh1gYIZ7bP8bZKcAzevpcxWWRS
+	mYPIqKxSCJMnb+X46rcVlLg3VP1KWt+vnZfjMvSPNZb6RWlsVRJCqkC
+X-Received: by 2002:a17:907:8693:b0:beb:f71c:63a with SMTP id a640c23a62f3a-bf370e62bc1mr29386666b.2.1780613507130;
+        Thu, 04 Jun 2026 15:51:47 -0700 (PDT)
 Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-36f6c668f9bsm4364545a91.7.2026.06.04.15.14.54
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-842828cf783sm7540448b3a.40.2026.06.04.15.51.42
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 04 Jun 2026 15:14:57 -0700 (PDT)
-Message-ID: <45018d54-50c6-4804-8bce-6ae05c2ce715@suse.com>
-Date: Fri, 5 Jun 2026 07:44:51 +0930
+        Thu, 04 Jun 2026 15:51:44 -0700 (PDT)
+Message-ID: <f7550cda-a443-4979-b6c4-be086d23dfad@suse.com>
+Date: Fri, 5 Jun 2026 08:21:39 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -110,57 +110,7 @@ Content-Transfer-Encoding: 8bit
 
 在 2026/6/4 21:44, Dongjiang Zhu 写道:
 > 在 2026/6/4 17:15, Qu Wenruo 写道:
->>
->>
->> 在 2026/6/4 18:25, Dongjiang Zhu 写道:
->>> The qgroup ioctls update the quota tree, but they currently start their
->>> transactions using the root of the inode passed to the ioctl. This makes
->>> the transaction reservation depend on the path used for the ioctl instead
->>> of the tree being modified.
->>>
->>> Start qgroup ioctl transactions on the quota root instead. Grab a
->>> reference to the quota root before starting the transaction, as quota
->>> disable can clear fs_info->quota_root concurrently after the early quota
->>> enabled check.
->>>
->>> Suggested-by: Qu Wenruo <wqu@suse.com>
->>> Signed-off-by: Dongjiang Zhu <zhudongjiang@fnnas.com>
->>> ---
->>> Changes since RFC:
->>> - Rework the fix to start qgroup ioctl transactions on fs_info-
->>>> quota_root
->>>     instead of adding a no-qgroup-enforce transaction helper.
->>> - Grab the quota root before starting the transaction to handle
->>> concurrent
->>>     quota disable.
->>>
->>>    fs/btrfs/ioctl.c | 38 +++++++++++++++++++++++++++++++-------
->>>    1 file changed, 31 insertions(+), 7 deletions(-)
->>>
->>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->>> index 9d47d16394fc..bec4f921aefd 100644
->>> --- a/fs/btrfs/ioctl.c
->>> +++ b/fs/btrfs/ioctl.c
->>> @@ -3606,7 +3606,7 @@ static long btrfs_ioctl_qgroup_assign(struct
->>> file *file, void __user *arg)
->>>    {
->>>        struct inode *inode = file_inode(file);
->>>        struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
->>> -    struct btrfs_root *root = BTRFS_I(inode)->root;
->>> +    struct btrfs_root *quota_root;
->>>        struct btrfs_ioctl_qgroup_assign_args AUTO_KFREE(sa);
->>>        struct btrfs_qgroup_list AUTO_KFREE(prealloc);
->>>        struct btrfs_trans_handle *trans;
->>> @@ -3637,8 +3637,15 @@ static long btrfs_ioctl_qgroup_assign(struct
->>> file *file, void __user *arg)
->>>            }
->>>        }
->>> +    quota_root = btrfs_grab_root(fs_info->quota_root);
->>
->> No need to increase the root refs.
->>
->> Qgroup root is a global one, no need to grabbing it using ref count.
->>
+[...]
 >> Furthermore, all those qgroup related operations (including enabling/
 >> disabling) are all holding qgroup_ioctl_lock, thus there is no way the
 >> quota root is gone halfway.
@@ -172,6 +122,19 @@ Content-Transfer-Encoding: 8bit
 > transaction, but it does not hold qgroup_ioctl_lock between that check
 > and btrfs_start_transaction(). btrfs_quota_disable() can clear
 > fs_info->quota_root and put the quota root under qgroup_ioctl_lock.
+
+Then enlarge the lifespan of qgroup_ioctl_lock.
+
+btrfs_add_qgroup_relation() and btrfs_del_qgroup_relation() they are 
+only called inside the assign function.
+You can drop the mutex lock/unlock inside them, change then to do a 
+lockdep_assert().
+
+Then hold the qgroup_ioctl_lock inside the assign ioctl for the whole 
+duration, after start_transaction().
+
+Then you can safely access quota_root without refcount.
+
 > 
 > I enlarged that window locally. If the ioctl reads fs_info->quota_root
 > after the delay and passes it directly to btrfs_start_transaction(), it
@@ -216,9 +179,6 @@ Content-Transfer-Encoding: 8bit
 > For my understanding, is the problem that btrfs_start_transaction() does
 > not take ownership of the root pointer, so the caller must not drop the
 > last root reference while the transaction handle is still alive?
-
-Yes.
-
 > 
 > I really appreciate your review and the detailed explanation.
 > 

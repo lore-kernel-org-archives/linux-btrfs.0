@@ -1,80 +1,42 @@
-Received: from fout-b3-smtp.messagingengine.com (fout-b3-smtp.messagingengine.com [202.12.124.146])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF0382D0625;
-	Thu,  4 Jun 2026 16:47:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.146
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E1AD935B650;
+	Thu,  4 Jun 2026 17:48:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780591659; cv=none; b=bcgc6C0iFbrWVbYtRzCaH9bzLgbwxJNAj5WnGmVyi30N237OFPidTNCd3QGRAtW+CFj3CTWYvuaHKR93LIkJttfn3ACkdSHd5OdiFoKAQl4/6NwSEORkZyMcqIqXuc9dhNbZmfbodBczeiwFmsUiF7qtuDWaBpjQ5FiE2X/HJFc=
+	t=1780595309; cv=none; b=G9Q/uN02tpa9pS/qCGj46FZhCON2nZocDWYqVB3C4UxwjERuu3HrostHcnOmailU4eQdNd/2jCe/I80+7DUgmyFbaBYEiSk0wJQCYq7JtGrqiWDfdP3vbD0GTWs1vP/6DX6hUZU3ztkSMEAMS2rk9XP/7yMf0+6QYNe0z8Vgr5w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780591659; c=relaxed/simple;
-	bh=MUnLsCrPDVDhr6URnxsPIv7RkbZtGg9K5rd/eZeA7do=;
+	s=arc-20240116; t=1780595309; c=relaxed/simple;
+	bh=7kPe8NOhpEMTwelX0GuYFNbMygoUtCBc2ZTcVFNckYg=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=uI0shSjhecQnT+bcxyMrVUuXGJ4SaaCyZjBwdpGvhLHl0TZqE7WYtl4qObsYHv+pJo7ogthH+ZD3lGNxFhYC+1BUayxFBK36TE+nb5dgSWsVeFf+mjCOWyiwJd+5e/znS5+wi5PMd8GnTmGXdn/iG7qarrP74+acXCfeTvugTCk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=pwwerau3; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=PKgrNL6a; arc=none smtp.client-ip=202.12.124.146
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	 Content-Type:Content-Disposition:In-Reply-To; b=cf+i56X2o5k/d4AOJzmi/0Z9kcCxhUrb14h6c80U2cwT2uTfslJxyRgUW262bPfWrEFpgD/DndCC2L89rxXGXMbTbuRbqsSPgqCgLb1z8cq4pgV9Sep4F15loEe3sw/R04k0CN34aaH5Q3sujUA7BUQn6IlDYygwCfpmiS8pEkA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=F6zgR+1c; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="pwwerau3";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="PKgrNL6a"
-Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
-	by mailfout.stl.internal (Postfix) with ESMTP id CEA9A1D00084;
-	Thu,  4 Jun 2026 12:47:36 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-02.internal (MEProxy); Thu, 04 Jun 2026 12:47:37 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm2; t=1780591656; x=1780678056; bh=DNVzUrxgG/
-	jJw0bXtC9bwQVGzN/5tRTDv1iAtF6x/is=; b=pwwerau3irJONVVrcstCe7Ee6x
-	h3Fy3/cR9kK2ThI7tBG/75SFkqUFFoORJQOfU1Y/h0PTbB4HQ3W/7Pp4TkoZ6N9p
-	8eoY2suVODSM+9LVnsvMVRHT2Eu9Pfw0WJrghMCRc1cX++UFWbdh4YHo9aj5rk8T
-	Q0Z17d3OM4UkhivA7UEB4REogAIgUN78VP5dMU1+zE9/bjz6Gzd57TNgtcB/f01I
-	mIwxxbXVWLKzB9T3EXgKcH7bojyoV+LxR82QIPKLn6f6RKg0bMFTPpjFfTzjtvj3
-	TczzIVMAwBqUu5W2ROODsClBVfm5KxEHZ4gmyaO32ZFUvee9yRCdQONA6dHQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
-	1780591656; x=1780678056; bh=DNVzUrxgG/jJw0bXtC9bwQVGzN/5tRTDv1i
-	AtF6x/is=; b=PKgrNL6aM1t1Rg945DATxRn47TOCn4G/TYjyYkvVqWG97aEU3e6
-	5qjNlhdpHdGSrkSM3pTU9e64f9rxG/BOnYmR3AiAHUe8QEHQofytgtvSVYBxwOKv
-	pdv1CPUFnIaLPWUFv1ApmUofUJecr2m+49mc3TPbVYOkVl49IIehsn3umKV7cqwv
-	BK/uKiJjyL7Y7nnZ1O4AZY3JtanlzE3h9NY1ve5tqFO/L0FmCbp/ihyMKXcOGSH/
-	lbrHTiRQD8JJmrlKwhH8rCx0umzJYSCCaTWE+0pNeL7QLOq9zi71Vlbym4wJFoLT
-	Yj9BQX1USKtj7/1TDNFK5cfN+rPXDwd13Xg==
-X-ME-Sender: <xms:KKwhaqRBBLP4jtxz8acbwfxTstZS3ytfvtqOp3CHyJTjvIg_G7_-ig>
-    <xme:KKwhanjOw69kFCwUiDc_rxwFa9ule5A2e7ROlB9HxQuAcJ1vKHne8nynWB0m198vi
-    dzb13LPrAEROC0NNPo8I3pU1zzTRmeVfYxLc6sAjvshSRL9-zef6cM>
-X-ME-Received: <xmr:KKwhaq404JLFzQvSGyPgbQtETotCPD1BOs5ZjYhWdSypsBaNzM8-O3O3QQf0aUiyDjmxY7fBfIawi-LGdcbkZcCnc1U>
-X-ME-Proxy-Cause: dmFkZTFFm1kzkdcanJVRBkku+90OVlpTxJZcfGkWLoFiNd4+bG1aUQ7bXWpm+mP6F6zsSI
-    yJ0kgis6vznEiV7sLWjMJ+z4UmHEdgAEOhy4m6+IAdBWLzBTf6CjC5g/Uy9GMub7RcQ+XQ
-    l8mqxlhl5kP2ODizuz59tgLTpWBm35H1XZn3c1s6nZkxuJgoulQuklFlsdfoDtcU+hAIoZ
-    rH4PoA8s9YbQVUpai0Z+AKcvlfLYKQXtGULvGcclwnTGjrK6PyatXftxX4n4kEPZh8+OqY
-    CO7+tTnMjXu4RZ5d76ncPASA+0XGlGe19Lnjtam5mUZqZnO/cALz8/i0/DAOh7osECacsW
-    QogGaTcCZ0CNylftEYcAf1PCbs/fnNIeSnKyjpBd8zyIojE856QirlTMSvo70GX67CTC+x
-    kQDgooaj6+sv2ZdfNxKExZ8UnMSgI00Ly6fdYsujhSa9y1rEnMRWFxikZLPfqPcySXRtkB
-    MDMxfdcnLo3Lskr4eR4r9fhM6NELeYMg5BA1IU6VqFgMXHw/gOW62o3QLREwPcslzGRItj
-    L2Y1OLuaaAe+JDfvSV1Q3l8qzKjx9I6JeCoYvfAwW4QLqLvNCcusyNRDn2XIxjsupjUYBR
-    vMT3Ru62zBlTQhxEvb2V3Edd3FUvM/Ezyia0o6D3b3uk0Gwoon99bg0yHoFQ
-X-ME-Proxy: <xmx:KKwhakBDxHdJTOWD3iB8NKc3J6_DmsClv4bE41NNh0vdTfUrcpFhhQ>
-    <xmx:KKwhahYszz_XraSHIZjRYt2R8U5GCWnWB7NZ-SzGV9GyUcF7T7RWpw>
-    <xmx:KKwhavZJSGgusY0aJXIi_L3XyM0ZUYEDImVxj0wrnWnu7_HAmutp5Q>
-    <xmx:KKwhao-P7EkCnXALlkj9a4C8zVmU_kriYLSZOP2CkUNP5i0Ff4XrOQ>
-    <xmx:KKwhauwNp0xqESs5DbbGbTR8w0xcj1pIKk0iDcl82kOpZ9-UDEYRamk9>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 4 Jun 2026 12:47:36 -0400 (EDT)
-Date: Thu, 4 Jun 2026 09:47:04 -0700
-From: Boris Burkov <boris@bur.io>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="F6zgR+1c"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 857B41F00893;
+	Thu,  4 Jun 2026 17:48:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1780595307;
+	bh=qF7KJRghuSGQhH5TV/sbNtM9GCZOy6fOueBHMARPXBU=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=F6zgR+1ccpq+3q4vXCIZ6VpeIbcRJMOFlva+dF15+YxPz6q3HPpS3g68qIYNFlNTV
+	 d93PgJVT421vPIyhYaHZ8bzJbWAVESQujIbP1Lrivi5xa34J0ER4o5tfCH3yLmODvm
+	 bZlaNUWSc+sjdwzhXE1oTOe1Su24uDpZXtKtbj8lrjDCYCmxsXwBjcSa4jond2oPxo
+	 MJMTxsnf0xGeAcPXhWp/WJ1SCRX6djo0FgfvGXVRDesjxNrqBss9Dz0rnnJ7eSQpr9
+	 ZKBKn1DwZzr0i9dib2D6jrKrxGO9rbkJXurdvwbrnyujd0Q0zuFqtLKXKMbpZxe/Wo
+	 8owgcycc2GoLw==
+Date: Fri, 5 Jun 2026 01:48:22 +0800
+From: Zorro Lang <zlang@kernel.org>
 To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-Subject: Re: [PATCH v3 2/3] btrfs: fix incorrect buffered IO fallback for
- append direct writes
-Message-ID: <20260604164704.GA3450576@zen.localdomain>
-References: <cover.1780528155.git.wqu@suse.com>
- <4be56f5a6bd21da0f073d79d04912f3642a62e9b.1780528155.git.wqu@suse.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	Dave Chinner <david@fromorbit.com>
+Subject: Re: [PATCH RFC] fstests: use MOUNT_OPTIONS to populate
+ TEST_FS_MOUNT_OPTS if possible
+Message-ID: <aiGsok9xtmdM-q9c@zlang-mailbox>
+Mail-Followup-To: Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, Dave Chinner <david@fromorbit.com>
+References: <20260602001422.24364-1-wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -83,205 +45,166 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <4be56f5a6bd21da0f073d79d04912f3642a62e9b.1780528155.git.wqu@suse.com>
+In-Reply-To: <20260602001422.24364-1-wqu@suse.com>
 
-On Thu, Jun 04, 2026 at 09:59:47AM +0930, Qu Wenruo wrote:
-> [BUG]
-> With the previous bug of short direct writes fixed, test case
-> generic/362 (*) still fails with the following error with nodatasum
-> mount option:
+On Tue, Jun 02, 2026 at 09:44:22AM +0930, Qu Wenruo wrote:
+> If the test config only specifies "MOUNT_OPTIONS", but not
+> "TEST_FS_MOUNT_OPTS", the mount for TEST_DIR can have inconsistent flag
+> after _test_cycle_mount().
 > 
->  generic/362  0s ... - output mismatch (see /home/adam/xfstests/results//generic/362.out.bad)
->  - output mismatch (see /home/adam/xfstests/results//generic/362.out.bad)
->     --- tests/generic/362.out	2024-08-24 15:31:37.200000000 +0930
->     +++ /home/adam/xfstests/results//generic/362.out.bad	2026-05-27 10:13:09.072485767 +0930
->     @@ -1,2 +1,3 @@
->      QA output created by 362
->     +Wrong file size after first write, got 8192 expected 4096
->      Silence is golden
->     ...
+> Here is an very simple test case to show the problem:
 > 
-> *: If the test case has been executed before with default data checksum,
-> the failure will not reproduce. Need the following fix to make it
-> reliably reproducible:
-> https://lore.kernel.org/linux-btrfs/20260528111659.87113-1-wqu@suse.com/
+>  . ./common/preamble
+>  _begin_fstest auto
+>  _require_test
 > 
-> [CAUSE]
-> Inside btrfs_dio_iomap_begin() for a direct write, we increase the isize
-> if it's beyond the current isize.
-> 
-> But if the direct io finished short, we do not revert the isize to the
-> previous value nor to the short write end.
-> 
-> Then if we need to fall back to buffered writes, and the write has
-> IOCB_APPEND flag, then the buffered write will be positioned at the
-> incorrect isize.
-> 
-> The call chain looks like this:
-> 
->  btrfs_direct_write(pos=0, length=4K)
->  |- __iomap_dio_rw()
->  |  |- iomap_iter()
->  |  |  |- btrfs_dio_iomap_begin()
->  |  |     |- btrfs_get_blocks_direct_write()
->  |  |        |- i_size_write()
->  |  |           Which updates the isize to the write end (4K).
->  |  |
->  |  |- iomap_dio_iter()
->  |  |  Failed with -EFAULT on the first page.
->  |  |
->  |  |- iomap_iter()
->  |  |  |- btrfs_dio_iomap_end()
->  |  |     Detects a short write, return -ENOTBLK
->  |  |- if (ret == -ENOTBLK) { ret = 0;}
->  |     Which resets the return value.
->  |
->  |- ret = iomap_dio_complet()
->  |  Which returns 0.
->  |
->  |- btrfs_buffered_write(iocb, from);
->     |- generic_write_checks()
->        |- iocb->ki_pos = i_size_read()
->           Which is still the new size (4K), other than the original
-> 	  isize 0.
-> 
-> [FIX]
-> Introduce the following btrfs_dio_data members:
-> 
-> - old_isize
-> 
-> - updated_isize
->   If the direct write has enlarged the isize.
-> 
-> Then if we got a short write, and btrfs_dio_data::updated_isize is set,
-> revert to the correct isize based on old_isize and current file
-> position.
-> 
-> And here we call i_size_write() without holding an extent lock, which is
-> a very special case that we're safe to do:
-> 
->  - Only a single writer can be enlarging isize
->    Enlarging isize will take the exclusive inode lock.
-> 
->  - Buffered readers need to wait for the OE we're holding
->    Buffered readers will lock extent and wait for OE of the folio range.
->    Sometimes we can skip the OE wait, but since all page cache is
->    invalidated, the OE wait can not be skipped.
-> 
-> But I do not think this is the most elegant solution, nor covers all
-> cases. E.g. if the bio is submitted but IO failed, we are unable to do
-> the revert.
-> 
-> I believe the more elegant one would be extend the EXTENT_DIO_LOCKED
-> lifespan for direct writes, so that we can update the isize when a
-> write beyond EOF finished successfully.
-> 
-> However that change is too huge for a small bug fix.
-> So only implement the minimal partial fix for now.
-> 
-> [REASON FOR NO FIXES TAG]
-> The bug is again very old, before commit f85781fb505e ("btrfs: switch to
-> iomap for direct IO") we are already increasing isize without a
-> proper rollback for short writes.
-> 
-> Thus only a CC to stable.
-> 
-> Cc: stable@vger.kernel.org # 5.15+
+>  mount | grep "$TEST_DIR"
+>  _test_cycle_mount
 
-Looks good to me, now, thanks!
-Reviewed-by: Boris Burkov <boris@bur.io>
+AFAIK, TEST_FS_MOUNT_OPTS is designed to be the exact counterpart to
+MOUNT_OPTIONS. The former applies to TEST_DEV, while the latter affects
+SCRATCH_DEV and any other manually created devices (such as loop or dm
+devices). Therefore, when testing custom mount options, better to specify
+both parameters.
 
+>  mount | grep "$TEST_DIR"
+>  _exit 0
+> 
+> And with "MOUNT_OPTIONS" set to "-o nodatasum" (one of the btrfs mount
+> option that affects new inodes), but "TEST_FS_MOUNT_OPTS" not set, then
+> running the test, the output will be:
+> 
+>  QA output created by 348
+>  /dev/mapper/test-test on /mnt/test type btrfs (rw,relatime,nodatasum,discard=async,space_cache=v2,subvolid=5,subvol=/)
+>  /dev/mapper/test-test on /mnt/test type btrfs (rw,relatime,discard=async,space_cache=v2,subvolid=5,subvol=/)
+> 
+> This changed mount option will cause several test cases to fail on btrfs
+> with MOUNT_OPTIONS="-o nodatasum" set:
+> 
+> - generic/143
+> - generic/154
+> - generic/155
+> - generic/463
+> 
+> All above test case fails because the reflink source is from the initial
+> test mount, which has "nodatasum" mount option.
+> But later after _test_cycle_mount(), no more "nodatasum" flags, causing
+> reflink source and destination have different "nodatasum" flags.
+> And btrfs will reject such reflink, causing golden output mismatch.
+> 
+> One way to avoid such problem is to set TEST_FS_MOUNT_OPTS to the same
+> as MOUNT_OPTIONS, but I'm not sure if we really want different options
+> for test and scratch mounts.
+> 
+> So here as a compromise, set TEST_FS_MOUNT_OPTS to MOUNT_OPTIONS if
+> the former is not set but the latter is already set by the user.
+> 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/direct-io.c | 43 ++++++++++++++++++++++++++++++++++++++++++-
->  1 file changed, 42 insertions(+), 1 deletion(-)
+> Reason for RFC:
 > 
-> diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
-> index 88cb2e82a507..412309825d6f 100644
-> --- a/fs/btrfs/direct-io.c
-> +++ b/fs/btrfs/direct-io.c
-> @@ -15,10 +15,12 @@
->  
->  struct btrfs_dio_data {
->  	ssize_t submitted;
-> +	loff_t old_isize;
->  	struct extent_changeset *data_reserved;
->  	struct btrfs_ordered_extent *ordered;
->  	bool data_space_reserved;
->  	bool nocow_done;
-> +	bool updated_isize;
->  };
->  
->  struct btrfs_dio_private {
-> @@ -228,6 +230,7 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
->  	bool space_reserved = false;
->  	u64 len = *lenp;
->  	u64 prev_len;
-> +	loff_t old_isize;
->  	int ret = 0;
->  
->  	/*
-> @@ -341,8 +344,14 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
->  	 * Need to update the i_size under the extent lock so buffered
->  	 * readers will get the updated i_size when we unlock.
->  	 */
-> -	if (start + len > i_size_read(inode))
-> +	old_isize = i_size_read(inode);
-> +	if (start + len > old_isize) {
-> +		if (!dio_data->updated_isize) {
-> +			dio_data->old_isize = old_isize;
-> +			dio_data->updated_isize = true;
-> +		}
->  		i_size_write(inode, start + len);
-> +	}
->  out:
->  	if (ret && space_reserved) {
->  		btrfs_delalloc_release_extents(BTRFS_I(inode), len);
-> @@ -625,6 +634,38 @@ static int btrfs_dio_iomap_end(struct inode *inode, loff_t pos, loff_t length,
->  		pos += submitted;
->  		length -= submitted;
->  		if (write) {
-> +			/*
-> +			 * Got a short write and have updated the isize, need to
-> +			 * revert the isize change.
-> +			 *
-> +			 * Normally we need to update isize with extent lock hold,
-> +			 * but we're safe due to the following factors:
-> +			 *
-> +			 * - Only a single writer can be enlarging isize
-> +			 *   Enlarging isize will take the exclusive inode lock.
-> +			 *
-> +			 * - Buffered readers need to wait for the OE we're holding
-> +			 *   Buffered readers will lock extent and wait for OE
-> +			 *   of the folio range, and since page cache is invalidated
-> +			 *   the OE wait can not be skipped.
-> +			 *
-> +			 * So here we are safe to revert the isize before
-> +			 * finishing the OE, and no reader of the remaining range
-> +			 * can see the enlarged size.
-> +			 *
-> +			 * TODO: Extend the DIO_LOCKED lifespan for direct writes,
-> +			 * and only enlarge isize after a successful write.
+> - Still didn't get why the initial test mount respects MOUNT_OPTIONS
+>   If test mount only respects TEST_FS_MOUNT_OPTS, the first mount should
+>   not get the MOUNT_OPTIONS.
+> 
+> - Not sure if TEST_FS_MOUNT_OPTS is needed
+>   If not provided, the default config for TEST_FS_MOUNT_OPTS and
+>   MOUNT_OPTIONS are the same.
+>
+>   The introduction of TEST_FS_MOUNT_OPTS is from commit 0e9141e49d4a
+>   ("common: add cifs support"), with extra handling for
+>   _test_mount_opts().
 
-I am a little nervous to leave this as such a confident TODO. I'm not
-100% sure that is a good/working idea yet, and I wouldn't want a future
-reader to get confused. If you are certain it will work, then I don't
-mind you leaving it, though, this is just my opinion/gut feeling.
+No, actually TEST_FS_MOUNT_OPTS is far more than that. For example, you can
+check commit 3839d29973, it has TEST_FS_MOUNT_OPTS in _test_mount. But at
+that time xfstests was still under its original form, there was not common/
+directory.
 
-> +			 */
-> +			if (dio_data->updated_isize) {
-> +				u64 new_isize;
-> +
-> +				if (submitted == 0)
-> +					new_isize = dio_data->old_isize;
-> +				else
-> +					new_isize = max(dio_data->old_isize, pos);
-> +				i_size_write(inode, new_isize);
-> +				dio_data->updated_isize = false;
-> +			}
->  			/*
->  			 * We have a short write, if there is any range
->  			 * that is submitted properly, that part will have
+Then 8c4905a4 create common/ directory and common/rc, then TEST_FS_MOUNT_OPTS
+started to appear in common/rc:_test_mount().
+
+Then commit 0e9141e4 brought in _test_mount_opts for CIFS, but it didn't change
+the logic of TEST_FS_MOUNT_OPTS for TEST_DEV mount. And we can learn about why
+CIFS need a seperated TEST_FS_MOUNT_OPTS from its wiki link:
+
+  https://wiki.samba.org/images/9/99/Xfstests.local.config.txt
+
+Therefore, TEST_FS_MOUNT_OPTS has been dedicated entirely to TEST_DEV by design
+since the very inception of xfstests, and this principle seems to have remained
+unchanged. The real issue now is that we run into a conflict between
+TEST_FS_MOUNT_OPTS and MOUNT_OPTIONS when the helpers try to detect features,
+particularly those that depend on mount options.
+
+As for whether TEST_FS_MOUNT_OPTS is still necessary, I feel we need more
+discussion on this. Some upper filesystems might still need it, and the original
+purpose of keeping it separate for XFS testing probably deserves a deeper look.
+(CC'ing Dave Chinner, who might know more that that history :)
+
+About your current Btrfs tests, I would highly recommend specifying both
+TEST_FS_MOUNT_OPTS and MOUNT_OPTIONS at the same time. (I always do that
+actually).
+
+Regarding the feature detection mismatch, a quick fix could be making TEST_FS_MOUNT_OPTS
+default to MOUNT_OPTIONS when it's not set. That said, it is still worth double-checking
+the initial purpose of TEST_FS_MOUNT_OPTS, just in case I miss something.
+
+Thanks,
+Zorro
+
+> 
+>   But nowadays the special handling is moved to _common_mount_opts(),
+>   shared by both scratch and test mounts.
+>   Not sure if there is any fs that requires split options for test and
+>   scratch.
+> 
+> - Possible reduced coverage
+>   Ignoring MOUNT_OPTIONS and requiring extra TEST_FS_MOUNT_OPTS can cause
+>   reduced coverage, as one may expect MOUNT_OPTIONS to affect both test
+>   and scratch devices.
+> ---
+>  common/config | 10 ++++++++--
+>  1 file changed, 8 insertions(+), 2 deletions(-)
+> 
+> diff --git a/common/config b/common/config
+> index d5299d5b..12e94088 100644
+> --- a/common/config
+> +++ b/common/config
+> @@ -419,8 +419,14 @@ _mount_opts()
+>  	export MOUNT_OPTIONS=$(_common_mount_opts)
+>  }
+>  
+> +# Must be called before _mount_opts().
+>  _test_mount_opts()
+>  {
+> +	# Use $MOUNT_OPTIONS if provided.
+> +	if [ ! -z "$MOUNT_OPTIONS" ]; then
+> +		export TEST_FS_MOUNT_OPTS="$MOUNT_OPTIONS"
+> +		return
+> +	fi
+>  	export TEST_FS_MOUNT_OPTS=$(_common_mount_opts)
+>  }
+>  
+> @@ -823,8 +829,8 @@ get_next_config() {
+>  
+>  	parse_config_section $1
+>  	if [ ! -z "$OLD_FSTYP" ] && [ $OLD_FSTYP != $FSTYP ]; then
+> -		[ -z "$MOUNT_OPTIONS" ] && _mount_opts
+>  		[ -z "$TEST_FS_MOUNT_OPTS" ] && _test_mount_opts
+> +		[ -z "$MOUNT_OPTIONS" ] && _mount_opts
+>  		[ -z "$MKFS_OPTIONS" ] && _mkfs_opts
+>  		[ -z "$FSCK_OPTIONS" ] && _fsck_opts
+>  
+> @@ -915,8 +921,8 @@ if [ -z "$CONFIG_INCLUDED" ]; then
+>  	fi
+>  	FSTYP=${FSTYP:=xfs}
+>  	export FSTYP
+> -	[ -z "$MOUNT_OPTIONS" ] && _mount_opts
+>  	[ -z "$TEST_FS_MOUNT_OPTS" ] && _test_mount_opts
+> +	[ -z "$MOUNT_OPTIONS" ] && _mount_opts
+>  	[ -z "$MKFS_OPTIONS" ] && _mkfs_opts
+>  	[ -z "$FSCK_OPTIONS" ] && _fsck_opts
+>  else
 > -- 
-> 2.54.0
+> 2.51.2
+> 
 > 

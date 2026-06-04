@@ -1,78 +1,103 @@
-Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E22E92DECCC;
-	Thu,  4 Jun 2026 09:52:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F159741B34E;
+	Thu,  4 Jun 2026 12:00:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780566770; cv=none; b=N4WnjKXbNtKPUEy/gCZHOytLtayYVjWjyda9JEPii71BM9gsUgwh6fM9wBWujhovVngXJUhOm7X21XWp0Yr9Md7jRckMm+0CD3OP9ow6EZLC5dUvM4Ehkga4tJA3x7/TOAfeCCzoQVeywjO3qSxmCmhX1/qyjpSIECPDdy8eFWI=
+	t=1780574413; cv=none; b=OTptTgqJioCtbrw36xf0cW3ZmxABH47nCgE7irR/gvYiBpf6Vij4VNNpCJt+iJyQOcRG2jTiXh2/IXM7h71q6G5xnDw9SssPr/WdfvISeTZz3ez+zn/wCAi+J06777j3NESASNr+cropoRs7oGjiBaL4hT3W2hjnhm+Y5HHdK20=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780566770; c=relaxed/simple;
-	bh=gg3R/utfQnEsUrwuRKVQ4KuqFbw3VZz2Nfu3CCurB4M=;
+	s=arc-20240116; t=1780574413; c=relaxed/simple;
+	bh=yTiLymGix0Xy4q03aIU8uxZlq237YZY33OmzdOyx3ow=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=tNrpKwfDJVQSEvCCmjUBPJaxw5hkMsd/Y8VL63URDYKZyKvq4IbnuqP5Bbx4nY2G3ebvwATBO+G74LRaELE4jtrG6/hd3FDXRTItybGiOjtft3Xb3NVXY+9eqlHPtDTPgROAR4d6IU8fyB6Iq17Jm0801OBJuCi1z4rehfTNXY4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org; spf=pass smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=Cj7XKzxy; arc=none smtp.client-ip=82.195.75.108
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=debian.org
+	 Content-Type:Content-Disposition:In-Reply-To; b=B/XYeK54/TcqgXE5MiUxalI6eZKrcuf3KNQK+NT616yaAv+Ba/Zc7MM+JwWO8Wx/sb8+cYLytSeCinu1Y+pniNOeCSKuucpUXWFr23qF0IpXYu2eQv9wbZxEDyx8jPZhazutofcZOsZW4Rqpbikitzxui9mWjRhqpCypD8vPdXU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=bWlMIyVA; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="Cj7XKzxy"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
-	s=smtpauto.stravinsky; h=X-Debian-User:In-Reply-To:Content-Type:MIME-Version:
-	References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=xTL3V3QwkCYsZa3XibgZ6/fXpHwDDRnG2fWwtkgdRac=; b=Cj7XKzxySP9FkYEvBb2z07Jm8A
-	cArhiUalcMuPUp7eEC1W9vqx+u8NubszXdeCoW4hm2vSNk2tVj3BCAYUprJ+uwtSIhui3IQLU03xx
-	C83R378ShK9bt3EEQaPLFodpgwtAEnPQsDFZ9A8C6HEk3Kfujnsk6/Op6sn6THgMYpvncp/BSTBU2
-	TLz4kHBMz75YubWJz5e3OflywviQwcqupsnrkTzYPDzBsDhwmisSWOuS47MU4GuOoj72J34N4WzMK
-	1cIo2+byejCQb5pJDxTWh4+P9cpk9YN+j8QYemtjVx7Us5eHpyQ4EynzyMA9/TvunMLnAeVoILvUT
-	9j9c2dDw==;
-Received: from authenticated-user
-	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
-	(Exim 4.96)
-	(envelope-from <leitao@debian.org>)
-	id 1wV4kk-004QoM-1L;
-	Thu, 04 Jun 2026 09:52:42 +0000
-Date: Thu, 4 Jun 2026 02:52:38 -0700
-From: Breno Leitao <leitao@debian.org>
-To: Nathan Chancellor <nathan@kernel.org>
-Cc: Tejun Heo <tj@kernel.org>, Chris Mason <clm@fb.com>, 
-	David Sterba <dsterba@suse.com>, Marco Crivellari <marco.crivellari@suse.com>, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Drop WQ_PERCPU from ordered_flags in
- btrfs_init_workqueues()
-Message-ID: <aiFKsSlaq-_VBGtZ@gmail.com>
-References: <20260601-btrfs-fix-wq-warning-qgroup-rescan-v1-1-aff9a1128f27@kernel.org>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="bWlMIyVA"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 78CC21F00893;
+	Thu,  4 Jun 2026 12:00:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1780574412;
+	bh=eUGKeM7sI2oL66NeOVj98HdQqnjDqpuEH+7R/CzDGX8=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=bWlMIyVAfft41ZQCGzhI+SyhA9T/HLftfr8rJJGYdx5Uaqre8IIqdBMzPHBJBhrpV
+	 v/fE9puQ+K/giOQZ9M2RFrSBhcMOgGztSfJcwe2y4/6Eb8oun9fL01b0HCnkU7+SNm
+	 gSS1xffYq9sOdePq6pcGFGR1u0LOmjqTSJ5tNJePAOFySwP85TjKpV09ntzTwTYhC+
+	 ptUfdeSrDKTbcwsjQ5cWX0issdDT0V8jWDPnxMRlnRe8mOABWSYpvMzxr231lgKtxz
+	 zRPn9mAgi9NO7O6DZbP+SbH8o7I2pqJ3mQmiKSXYhSF/yk+c5+vaklddgJMcuBtjiK
+	 6jEpkLP8hKKig==
+Date: Thu, 4 Jun 2026 14:00:07 +0200
+From: Christian Brauner <brauner@kernel.org>
+To: Andrey Albershteyn <aalbersh@redhat.com>
+Cc: Carlos Maiolino <cem@kernel.org>, Christoph Hellwig <hch@lst.de>, 
+	Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org, fsverity@lists.linux.dev, 
+	linux-fsdevel@vger.kernel.org, ebiggers@kernel.org, linux-ext4@vger.kernel.org, 
+	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org, linux-unionfs@vger.kernel.org, 
+	djwong@kernel.org, david@fromorbit.com
+Subject: Re: [PATCH v10 00/22] fs-verity support for XFS with post EOF merkle
+ tree
+Message-ID: <20260604-holen-rundum-ausfechten-2193b39da363@brauner>
+References: <20260520123722.405752-1-aalbersh@kernel.org>
+ <20260521090705.GA14254@lst.de>
+ <gcw7zcg6p4s2egpufwizfig72g6ren7jfmuz5mqskkpb7xepww@e3v35j7bk7dc>
+ <ag7uW7KQ5mVyCGEv@nidhogg.toxiclabs.cc>
+ <20260522-unbehagen-baumethode-erlesen-811a4065eeac@brauner>
+ <20260522120757.GA21041@lst.de>
+ <ahVzkf8JoKP-kSC2@nidhogg.toxiclabs.cc>
+ <20260528-offiziell-luftleer-misswirtschaft-3503bda2ad70@brauner>
+ <fjdfwhwi4aogyiaoijwvw6w4npuu5mbt6ua6fkhwcp5ajlm543@ume2fkxg36cb>
+ <aiE_YQc6SGSdWlcE@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20260601-btrfs-fix-wq-warning-qgroup-rescan-v1-1-aff9a1128f27@kernel.org>
-X-Debian-User: leitao
+In-Reply-To: <aiE_YQc6SGSdWlcE@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
 
-On Mon, Jun 01, 2026 at 07:46:26PM -0700, Nathan Chancellor wrote:
-> After commit 21c05ca88a54 ("workqueue: Add warnings and ensure one among
-> WQ_PERCPU or WQ_UNBOUND is present"), there is a warning from the
-> btrfs-qgroup-rescan workqueue at run time:
+On Thu, Jun 04, 2026 at 11:04:32AM +0200, Andrey Albershteyn wrote:
+> On 2026-05-28 16:50:45, Andrey Albershteyn wrote:
+> > On 2026-05-28 14:20:08, Christian Brauner wrote:
+> > > On Tue, May 26, 2026 at 12:19:43PM +0200, Carlos Maiolino wrote:
+> > > > On Fri, May 22, 2026 at 02:07:57PM +0200, Christoph Hellwig wrote:
+> > > > > On Fri, May 22, 2026 at 12:03:20PM +0200, Christian Brauner wrote:
+> > > > > > > I was expecting this to come through xfs tree too if Eric and Christian
+> > > > > > > agree.
+> > > > > > 
+> > > > > > You may take it through the xfs tree if there are no conflicts with
+> > > > > > vfs-7.2.iomap. If there are I want to add the iomap changes into
+> > > > > > vfs-7.2.iomap that you can pull in.
+> > > > > 
+> > > > > Merging the iomap bits through the iomap branch might make sense, given
+> > > > > that iomap usually tends to see quite a bit of activity.
+> > > > > 
+> > > > 
+> > > > That sounds good to me. If you want to go ahead and pull in the iomap
+> > > > bits, do so, and give me a heads up when you do it so I'll pull your
+> > > > branch locally.
+> > > 
+> > > Great, can the series please be resent based on current vfs-7.2.iomap
+> > > then please? Because the iomap changes in this series don't apply
+> > > cleanly on vfs-7.2.iomap so we already have merge conflicts...
+> > > 
+> > 
+> > hmm do you mean this branch?
+> > https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git/log/?h=vfs-7.2.iomap
+> > 
+> > patches 07..09 seems to apply cleanly. The only conflict I see is in
+> > the overlayfs patch 03. This is because [1] (is in -rc5) is missing
+> > in vfs-7.2.iomap.
+> > 
+> > [1]: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/fs/overlayfs/util.c?h=v7.1-rc5&id=0c8c88b8eb82a2a41bec5f17c076d6312dc40316
 > 
->   workqueue: btrfs-qgroup-rescan uses both WQ_PERCPU and WQ_UNBOUND. Dropped WQ_PERCPU, keeping WQ_UNBOUND.
+> Christian, ping
 > 
-> WQ_PERCPU is included in ordered_flags after commit 69635d7f4b34 ("fs:
-> WQ_PERCPU added to alloc_workqueue users") and WQ_UNBOUND is set in
-> alloc_ordered_workqueue(), which btrfs_alloc_ordered_workqueue() calls.
-> 
-> Drop WQ_PERCPU from ordered_flags, as alloc_ordered_workqueue() notes
-> that only WQ_FREEZABLE and WQ_MEM_RECLAIM are meaningful.
-> 
-> Fixes: 69635d7f4b34 ("fs: WQ_PERCPU added to alloc_workqueue users")
-> Fixes: 21c05ca88a54 ("workqueue: Add warnings and ensure one among WQ_PERCPU or WQ_UNBOUND is present")
-> Signed-off-by: Nathan Chancellor <nathan@kernel.org>
+> Would be nice to have iomap in vfs, so Carlos can pull and test the
+> rest
 
-Reviewed-by: Breno Leitao <leitao@debian.org>
+Applied but note IOMAP_F_FSVERITY
+changed from (1U << 10) to (1U << 11) since we have another flag
+addition this cycle.
 
-This will solve the following issue I am seeing in linux-next:
-
-   workqueue: btrfs-qgroup-rescan uses both WQ_PERCPU and WQ_UNBOUND. Dropped WQ_PERCPU, keeping WQ_UNBOUND.

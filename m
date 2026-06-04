@@ -1,268 +1,101 @@
-Received: from va-2-35.ptr.blmpb.com (va-2-35.ptr.blmpb.com [209.127.231.35])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1818643CEDB
-	for <linux-btrfs@vger.kernel.org>; Thu,  4 Jun 2026 12:14:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.35
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C07747D955;
+	Thu,  4 Jun 2026 16:46:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780575275; cv=none; b=VposTKAAxDbAMktznQPGaOGd+0RYtEdzw9CDloa/VGp+2lqS7Z272MaMlChI3R0m4f/E6I0BBpqFD8XKZikNMhZ1SPS8C7OoHrHcla82GO96g4iGd7OJdgoHKaZAFaGRHu1IO+udtFqFw/mNoXpLFPfiMDRXvKtsCNJfl9SmHyo=
+	t=1780591581; cv=none; b=ebjiT3B7dt2byukkfIl9RoCWDHKziRfaOH7Ik0tst9Fsu/7XS5YYs9Zep7WYzTQfy0Lo0VlolvM1NrtSueaGOVzLCv/9A9bXJpDkPd0tvQc58AVP5jeaHGSwTJ1sy3hzYgOx7/LEDxQzdK/TB0QNuaicfcBuUKQSNYCBfNikpI8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780575275; c=relaxed/simple;
-	bh=JojnOV87DQpyDe1lUwiEuf5uFTfxa8ik6B4WNoRu4G4=;
-	h=References:To:Message-Id:In-Reply-To:Date:Mime-Version:
-	 Content-Type:Cc:From:Subject; b=XRjsOri069QPUCNAYkYd2aO80jG+y5nEvfWBzm1bWvW1vsyiq0NZy1aqzR1wusY/R+LELVRSXazjfQNYG3qFX72TCy6dGKlFk3xSZo5CaCNuJT3GKVr5Ef8poSjs+MYvFDhyYZt1/3Vhm4vAcLGVx0viY2JsvyL/nRM8G5lTcg0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com; spf=pass smtp.mailfrom=fnnas.com; dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b=mLqcf4jE; arc=none smtp.client-ip=209.127.231.35
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fnnas.com
+	s=arc-20240116; t=1780591581; c=relaxed/simple;
+	bh=Tw5lGgzNnHCqMEea5zqTVKsPakslIVaEPhlvR7AbpwQ=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=vB+N5p+wf+xS4MAXKFMTPBwNYEWnRiAuRUfcRGKIXYYGk2T3v8s9+yryuO34rvdMo48gorcs0B/fyp/bxHE0m3C7WGXqSHq0GkChZRNjFGYkvFu8kJU7/KMHIy3ZWRZA39W84Skuh7uHOVgD1QdhxO+wAs66qQOnxIiZykellDY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=F/grrgkC; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b="mLqcf4jE"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fnnas-com.20200927.dkim.feishu.cn; t=1780575260;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=JojnOV87DQpyDe1lUwiEuf5uFTfxa8ik6B4WNoRu4G4=;
- b=mLqcf4jEcax1W6M8SobrgECfSrpwbJ18939EBBXDZaEgv3Jk4R6FJkTlh1Hy7k/1K6eI4Y
- jz8k5q8egHhrlAK9SjON9CpYekqXoCTjywUmieEA7F1WtslDGFp5kgZBuiklluceuqHYTN
- Upiv+hET9ei7OlS1RbxxV6GS38vrTINfIqIw5n0WL43ehck+Rp9sYOqFtv+3rG0XChO3xl
- XHVkCLRgVkdW3VpchhjlRxIx03ez/W7UKnaOGXq/cnRMotRRyjEimPbJWvJW73+5yEspFw
- ped8pf9ACvA8cxbQTkTo/tGL5I44wbFBfGNpyNdJyS6gkFVBWmEAB2zM6oZ4MA==
-References: <20260604085522.3872126-1-zhudongjiang@fnnas.com> <02849934-ca88-42a7-ba3e-a7196e1fcef1@suse.com>
-To: "Qu Wenruo" <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
-Message-Id: <60e3c20b-8490-41b6-8189-ea595dd2ffa5@fnnas.com>
-In-Reply-To: <02849934-ca88-42a7-ba3e-a7196e1fcef1@suse.com>
-X-Original-From: Dongjiang Zhu <zhudongjiang@fnnas.com>
-User-Agent: Mozilla Thunderbird
-Content-Transfer-Encoding: quoted-printable
-Date: Thu, 4 Jun 2026 20:14:14 +0800
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="F/grrgkC"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AA9501F00893;
+	Thu,  4 Jun 2026 16:46:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1780591580;
+	bh=KhhMsGD0hHIEqCXVJYgHa3HFrWdd9uXB0blHijAPGwM=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=F/grrgkCmmQnaxwyeP/ARCUCTvo6BE3rL64rb8O2CoIbtPZVbJEOWY6wR9cXl1V5N
+	 bnZzhugcK4OeZroqVxD8I2valqbS5ruapOsXO+BQX6WX6OTzIsa8NvoFSW4RAl7+8r
+	 c7p+glsGZNuJbSHiMosXOloWcFpICwxXn9Neuhuf2/I+SI3jOkosrg/wQHUGJmWOOk
+	 1XblbTQGE2Dg4UtkQnEzmKO8vvdPREqrlNPJ6YzFqtozejNFfpfz37kKXTaA5p0YKm
+	 ABcrr6wOkeC2AFjbJavOISLX+juJZpBhEVN9FWALa+Qpl4xvQ9K1xWtGeyH1JtJyrE
+	 aiZ2nLfT0C5+g==
+Date: Fri, 5 Jun 2026 00:46:13 +0800
+From: Zorro Lang <zlang@kernel.org>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, Xiao Yang <yangx.jy@fujitsu.com>
+Subject: Re: [PATCH RFC] fstests: use MOUNT_OPTIONS to populate
+ TEST_FS_MOUNT_OPTS if possible
+Message-ID: <aiGYgLaQ7_r9LQ2G@zlang-mailbox>
+Mail-Followup-To: Christoph Hellwig <hch@infradead.org>, 
+	Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	Xiao Yang <yangx.jy@fujitsu.com>
+References: <20260602001422.24364-1-wqu@suse.com>
+ <ah50bZRaH6YWTJXc@infradead.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Received: from [192.168.8.79] ([183.34.166.141]) by smtp.feishu.cn with ESMTPS; Thu, 04 Jun 2026 20:14:17 +0800
-X-Lms-Return-Path: <lba+26a216c1a+60db2c+vger.kernel.org+zhudongjiang@fnnas.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: <dsterba@suse.com>, <fdmanana@suse.com>
-From: "Dongjiang Zhu" <zhudongjiang@fnnas.com>
-Subject: Re: [PATCH v2] btrfs: start qgroup ioctl transactions on the quota root
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ah50bZRaH6YWTJXc@infradead.org>
 
-=E5=9C=A8 2026/6/4 17:15, Qu Wenruo =E5=86=99=E9=81=93:
->=20
->=20
-> =E5=9C=A8 2026/6/4 18:25, Dongjiang Zhu =E5=86=99=E9=81=93:
->> The qgroup ioctls update the quota tree, but they currently start their
->> transactions using the root of the inode passed to the ioctl. This makes
->> the transaction reservation depend on the path used for the ioctl instea=
-d
->> of the tree being modified.
->>
->> Start qgroup ioctl transactions on the quota root instead. Grab a
->> reference to the quota root before starting the transaction, as quota
->> disable can clear fs_info->quota_root concurrently after the early quota
->> enabled check.
->>
->> Suggested-by: Qu Wenruo <wqu@suse.com>
->> Signed-off-by: Dongjiang Zhu <zhudongjiang@fnnas.com>
->> ---
->> Changes since RFC:
->> - Rework the fix to start qgroup ioctl transactions on fs_info-=20
->> >quota_root
->> =C2=A0=C2=A0 instead of adding a no-qgroup-enforce transaction helper.
->> - Grab the quota root before starting the transaction to handle=20
->> concurrent
->> =C2=A0=C2=A0 quota disable.
->>
->> =C2=A0 fs/btrfs/ioctl.c | 38 +++++++++++++++++++++++++++++++-------
->> =C2=A0 1 file changed, 31 insertions(+), 7 deletions(-)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 9d47d16394fc..bec4f921aefd 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -3606,7 +3606,7 @@ static long btrfs_ioctl_qgroup_assign(struct=20
->> file *file, void __user *arg)
->> =C2=A0 {
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct inode *inode =3D file_inode(file);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_fs_info *fs_info =3D inode_t=
-o_fs_info(inode);
->> -=C2=A0=C2=A0=C2=A0 struct btrfs_root *root =3D BTRFS_I(inode)->root;
->> +=C2=A0=C2=A0=C2=A0 struct btrfs_root *quota_root;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_ioctl_qgroup_assign_args AUT=
-O_KFREE(sa);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_qgroup_list AUTO_KFREE(preal=
-loc);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_trans_handle *trans;
->> @@ -3637,8 +3637,15 @@ static long btrfs_ioctl_qgroup_assign(struct=20
->> file *file, void __user *arg)
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> +=C2=A0=C2=A0=C2=A0 quota_root =3D btrfs_grab_root(fs_info->quota_root);
->=20
-> No need to increase the root refs.
->=20
-> Qgroup root is a global one, no need to grabbing it using ref count.
->=20
-> Furthermore, all those qgroup related operations (including enabling/=20
-> disabling) are all holding qgroup_ioctl_lock, thus there is no way the=20
-> quota root is gone halfway.
->=20
+On Mon, Jun 01, 2026 at 11:13:01PM -0700, Christoph Hellwig wrote:
+> On Tue, Jun 02, 2026 at 09:44:22AM +0930, Qu Wenruo wrote:
+> > If the test config only specifies "MOUNT_OPTIONS", but not
+> > "TEST_FS_MOUNT_OPTS", the mount for TEST_DIR can have inconsistent flag
+> > after _test_cycle_mount().
+>
+> AFAIK TEST_FS_MOUNT_OPTS gets overriden and isn't even a public option.
+> It gets filled by fstype-sepcific options in _common_mount_opts.
+> 
+> This started to really confuse me lately when I was trying to test with
+> mount options on the test fs.
+> 
+> I've looked at bit into the area but haven't come to a conclusion yet.
+> The most recent change in this area is 1dd7395623cb ("common/config:
+> Make test and scratch devices use the same mount options"), which didn't
+> really make them common, adding to my confusion.
+> 
+> So I really think we need to fix things here, but right now I'm not sure
+> how much of the current situation is intentional, and what our final
+> goal is :(
 
-I may have misunderstood this part.
+Sorry for this terrible code logic.
 
-The ioctl handler checks btrfs_qgroup_enabled() before starting the
-transaction, but it does not hold qgroup_ioctl_lock between that check
-and btrfs_start_transaction(). btrfs_quota_disable() can clear
-fs_info->quota_root and put the quota root under qgroup_ioctl_lock.
+AFAIK, TEST_FS_MOUNT_OPTS and MOUNT_OPTIONS serve different purposes:
+TEST_FS_MOUNT_OPTS is used for TEST_DEV, while MOUNT_OPTIONS is used for
+SCRATCH_DEV as well as loop or dm devices and so on. For instance, _test_mount
+only applies TEST_FS_MOUNT_OPTS, whereas _scratch_mount only uses MOUNT_OPTIONS.
+I used xfstests for over a decade, I typically configure both variables together
+(often to the same values), so I didn't give them too much thought.
 
-I enlarged that window locally. If the ioctl reads fs_info->quota_root
-after the delay and passes it directly to btrfs_start_transaction(), it
-can hit a NULL root after quota disable. If the ioctl saves
-fs_info->quota_root into a local variable before the delay and then
-starts the transaction on that saved pointer, KASAN reports a
-slab-use-after-free in start_transaction(), with the root allocated by
-btrfs_quota_enable() and freed by btrfs_quota_disable().
+About the commit 1dd7395623cb, the subject of it would be better to be
+"Make test and scratch devices use the same *default* mount options"
+from ${FSTYP}_MOUNT_OPTIONS parameters. The original intent was not to merge
+TEST_FS_MOUNT_OPTS and MOUNT_OPTIONS into a single variable.
 
-So I think I may be missing the intended serialization here. Since
-qgroup_ioctl_lock cannot be held across btrfs_start_transaction(), as
-noted in btrfs_quota_enable(), what would be the right way to protect
-the quota root for this transaction start?
+About documentation, it is true that TEST_FS_MOUNT_OPTS is barely mentioned.
+It is completely missing from the main README and only appears in other
+sub-documents like README.config-sections. We should definitely clarify the
+relationship between TEST_FS_MOUNT_OPTS and TEST_DEV, and metion that they
+have no connection to MOUNT_OPTIONS.
 
->> +=C2=A0=C2=A0=C2=A0 if (!quota_root) {
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D -ENOTCONN;
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto drop_write;
->> +=C2=A0=C2=A0=C2=A0 }
->> +
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /* 2 BTRFS_QGROUP_RELATION_KEY items. */
->> -=C2=A0=C2=A0=C2=A0 trans =3D btrfs_start_transaction(root, 2);
->> +=C2=A0=C2=A0=C2=A0 trans =3D btrfs_start_transaction(quota_root, 2);
->> +=C2=A0=C2=A0=C2=A0 btrfs_put_root(quota_root);
->=20
-> Again unnecessary.
->=20
-> Furthermore, the pattern of grab root -> start trans -> put root is=20
-> completely incorrect and dangerous.
->=20
-> If we're the last one holding a root pointer, after holding a trans=20
-> handler, calling btrfs_put_root() can cause the root pointer to be gone,=
-=20
-> resulting all kinds of use-after-free bugs.
->=20
-> I do not understand where you come up this cursed usage, it's completely=
-=20
-> incorrect.
->=20
-
-Understood, I will drop that pattern. I added it only because of the
-race above, but I misunderstood the root lifetime rules around
-transaction start.
-
-For my understanding, is the problem that btrfs_start_transaction() does
-not take ownership of the root pointer, so the caller must not drop the
-last root reference while the transaction handle is still alive?
-
-I really appreciate your review and the detailed explanation.
+Right now, the biggest inconsistent issue is probably with those feature-probing
+helpers. They often check TEST_DIR to determine behaviors for SCRATCH_MNT. While
+this works fine for features unaffected by mount options, but we might should
+handle mount options related features (for TEST_DEV or SCRATCH_DEV) separately.
 
 Thanks,
-Dongjiang
+Zorro
 
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (IS_ERR(trans)) {
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D PTR_ERR(t=
-rans);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto drop_write;
->> @@ -3675,7 +3682,8 @@ static long btrfs_ioctl_qgroup_assign(struct=20
->> file *file, void __user *arg)
->> =C2=A0 static long btrfs_ioctl_qgroup_create(struct file *file, void __u=
-ser=20
->> *arg)
->> =C2=A0 {
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct inode *inode =3D file_inode(file);
->> -=C2=A0=C2=A0=C2=A0 struct btrfs_root *root =3D BTRFS_I(inode)->root;
->> +=C2=A0=C2=A0=C2=A0 struct btrfs_fs_info *fs_info =3D inode_to_fs_info(i=
-node);
->> +=C2=A0=C2=A0=C2=A0 struct btrfs_root *quota_root;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_ioctl_qgroup_create_args AUT=
-O_KFREE(sa);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_trans_handle *trans;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 int ret;
->> @@ -3684,7 +3692,7 @@ static long btrfs_ioctl_qgroup_create(struct=20
->> file *file, void __user *arg)
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (!capable(CAP_SYS_ADMIN))
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return -EPERM;
->> -=C2=A0=C2=A0=C2=A0 if (!btrfs_qgroup_enabled(root->fs_info))
->> +=C2=A0=C2=A0=C2=A0 if (!btrfs_qgroup_enabled(fs_info))
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return -ENOTCONN;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D mnt_want_write_file(file);
->> @@ -3707,11 +3715,18 @@ static long btrfs_ioctl_qgroup_create(struct=20
->> file *file, void __user *arg)
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto drop_write;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> +=C2=A0=C2=A0=C2=A0 quota_root =3D btrfs_grab_root(fs_info->quota_root);
->=20
-> The same.
->=20
->> +=C2=A0=C2=A0=C2=A0 if (!quota_root) {
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D -ENOTCONN;
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto drop_write;
->> +=C2=A0=C2=A0=C2=A0 }
->> +
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /*
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * 1 BTRFS_QGROUP_INFO_KEY item.
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * 1 BTRFS_QGROUP_LIMIT_KEY item.
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 */
->> -=C2=A0=C2=A0=C2=A0 trans =3D btrfs_start_transaction(root, 2);
->> +=C2=A0=C2=A0=C2=A0 trans =3D btrfs_start_transaction(quota_root, 2);
->> +=C2=A0=C2=A0=C2=A0 btrfs_put_root(quota_root);
->=20
-> The same.
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (IS_ERR(trans)) {
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D PTR_ERR(t=
-rans);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto drop_write;
->> @@ -3736,6 +3751,8 @@ static long btrfs_ioctl_qgroup_limit(struct file=
-=20
->> *file, void __user *arg)
->> =C2=A0 {
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct inode *inode =3D file_inode(file);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_root *root =3D BTRFS_I(inode=
-)->root;
->> +=C2=A0=C2=A0=C2=A0 struct btrfs_root *quota_root;
->> +=C2=A0=C2=A0=C2=A0 struct btrfs_fs_info *fs_info =3D root->fs_info;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_ioctl_qgroup_limit_args AUTO=
-_KFREE(sa);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_trans_handle *trans;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 int ret;
->> @@ -3745,7 +3762,7 @@ static long btrfs_ioctl_qgroup_limit(struct file=
-=20
->> *file, void __user *arg)
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (!capable(CAP_SYS_ADMIN))
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return -EPERM;
->> -=C2=A0=C2=A0=C2=A0 if (!btrfs_qgroup_enabled(root->fs_info))
->> +=C2=A0=C2=A0=C2=A0 if (!btrfs_qgroup_enabled(fs_info))
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return -ENOTCONN;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D mnt_want_write_file(file);
->> @@ -3758,8 +3775,15 @@ static long btrfs_ioctl_qgroup_limit(struct=20
->> file *file, void __user *arg)
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto drop_write;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> +=C2=A0=C2=A0=C2=A0 quota_root =3D btrfs_grab_root(fs_info->quota_root);
->=20
-> The same.
->=20
->> +=C2=A0=C2=A0=C2=A0 if (!quota_root) {
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D -ENOTCONN;
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto drop_write;
->> +=C2=A0=C2=A0=C2=A0 }
->> +
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /* 1 BTRFS_QGROUP_LIMIT_KEY item. */
->> -=C2=A0=C2=A0=C2=A0 trans =3D btrfs_start_transaction(root, 1);
->> +=C2=A0=C2=A0=C2=A0 trans =3D btrfs_start_transaction(quota_root, 1);
->> +=C2=A0=C2=A0=C2=A0 btrfs_put_root(quota_root);
->=20
-> The same.
->=20
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (IS_ERR(trans)) {
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D PTR_ERR(t=
-rans);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto drop_write;
->
+> 

@@ -1,113 +1,130 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pj1-f48.google.com (mail-pj1-f48.google.com [209.85.216.48])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4DAB942EEDD;
-	Thu,  4 Jun 2026 12:08:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 772DA3793D5
+	for <linux-btrfs@vger.kernel.org>; Thu,  4 Jun 2026 12:14:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780574906; cv=none; b=eTWJxCU2Uyt7COpIhFqnrzS0lymxEGjg19AJ1WJym/GpbhYgviViIM0kHwFr66e+TWNXw29rCVurI36Zp65Act5WGRLfEFA8MkJwLM2ioXdTTGYoqRmS9JKqVLZP16aXZ5xP6+P1kwZc+gtvWvAPjFkqtvEfQygi/nYuZBeH3dw=
+	t=1780575264; cv=none; b=f+nVe+urUk7oEoYVX5FnfZRC+kyHXoJlMjXKmjki55K6gQlx/Xx6XJJaJiX0zcyAWdWyFdU+tPFk2qwu3LNRWIcRB48Wp0a1uUW/nf472T19EJSqrYwSAHj1iU2+3vZ6dX7A+ECPi0yDlqEmtHQLFtOq+exbnzJoNryOrmGeKlQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780574906; c=relaxed/simple;
-	bh=LfaFUmMQyjZHO3KS4+iNpnsCVjTMyIBIVLpR3PnSU+U=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=bDRahZc9m72/LxZDOB6ozrYtkpIaOlvAGmDf6Erc7Ku4XA7D6/SPH3Rykm5dObRZbPKlHUyxn2BOFTFeHWB5vMDsehJc/X9YAnfca9/kIOlgXG1h9TEI1zKzD35OqSzMfDmKiBxL4hKQadlHI4ZE6u7vfoVDf0+VT3XMvYC9OOY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=hviMYelb; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1780575264; c=relaxed/simple;
+	bh=Bkx11sUNszdwIHhq4gBPkGpD8tN3++Eftz5dCfj0OOE=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=QFcNJr31JKzfHYCh1EOm+EK0HHZ98zXQsb6XzTXOzd579qCKonxRgAih7MRYCT9ukRyFhoBYABcm5XuypFpdVVouErBODaUeMHCuLwEckmdC3ecuEGoCy6xuzE/FhHkeOupEvFOqiCdxVvN7rVbtnydeJXAAvThSlgsQj86Vuvc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=L1Qpxb+9; arc=none smtp.client-ip=209.85.216.48
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hviMYelb"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DB0591F00893;
-	Thu,  4 Jun 2026 12:08:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1780574904;
-	bh=dqjWETgw2fdknLUk3DwFQ4twFF3wQf7ZwlKX+xqjr7w=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=hviMYelbCq1FD1zUQhO+fHm5JXTR/dphxJCOG961fCE36/10DX6upgx+CDnxsr5FX
-	 E7MQVJW6QmbLnI4404ldzJhbz07IxXLVrtKFK1UfQs37p2h5nMYbL9uvFe+0lXC9zM
-	 /vSYlIo+hzLFJHw5bjRN9Qeb+00uVswiUz9YmLM5wDKhovt9TToPv3JYsZ4fuW0Amc
-	 ToaJ3qV8OdYyBWByuFT+ELyEYx8lgP+Ra0oTsmTgYQCW0/pEi3v8y6HbDUpJUfzbOq
-	 MI1Rxx2X/JgEK8gcgHC3OQ50l4LmIzfEAumH4sEFYuy8J1CBGjjQQucDd6JVnnfWZv
-	 9Vtsb4RtWox3w==
-Date: Thu, 4 Jun 2026 14:08:19 +0200
-From: Carlos Maiolino <cem@kernel.org>
-To: Andrey Albershteyn <aalbersh@redhat.com>
-Cc: Christian Brauner <brauner@kernel.org>, Christoph Hellwig <hch@lst.de>, 
-	Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org, fsverity@lists.linux.dev, 
-	linux-fsdevel@vger.kernel.org, ebiggers@kernel.org, linux-ext4@vger.kernel.org, 
-	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org, linux-unionfs@vger.kernel.org, 
-	djwong@kernel.org, david@fromorbit.com
-Subject: Re: [PATCH v10 00/22] fs-verity support for XFS with post EOF merkle
- tree
-Message-ID: <aiFqn8uEq_iR2ae7@nidhogg.toxiclabs.cc>
-References: <gcw7zcg6p4s2egpufwizfig72g6ren7jfmuz5mqskkpb7xepww@e3v35j7bk7dc>
- <ag7uW7KQ5mVyCGEv@nidhogg.toxiclabs.cc>
- <20260522-unbehagen-baumethode-erlesen-811a4065eeac@brauner>
- <20260522120757.GA21041@lst.de>
- <ahVzkf8JoKP-kSC2@nidhogg.toxiclabs.cc>
- <20260528-offiziell-luftleer-misswirtschaft-3503bda2ad70@brauner>
- <fjdfwhwi4aogyiaoijwvw6w4npuu5mbt6ua6fkhwcp5ajlm543@ume2fkxg36cb>
- <aiE_YQc6SGSdWlcE@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
- <20260604-holen-rundum-ausfechten-2193b39da363@brauner>
- <yezqqgowgmbn2z42zvha7cfcprym5vnurb33brdmooab6csdks@a76a7v6rtywn>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="L1Qpxb+9"
+Received: by mail-pj1-f48.google.com with SMTP id 98e67ed59e1d1-36b95eb4bb4so394320a91.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Jun 2026 05:14:23 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1780575263; x=1781180063; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=oyxRxCYOdMyc8Dc3ZoAGzmBA02Un7oBiGn+qmKX5HP8=;
+        b=L1Qpxb+9sI+/c2lErmEQbMZAr6Gc3KvexxVD8sZfZe1QRshdASSV7SXL3aY8FzhNeL
+         Ik8VwesFaB3F/9304OOkrofVKs5nBFDSybsRSz1EWUmcvrBt66yXHcjlGzwNACQkl1vR
+         5b9iFQJCpqnMyEUmsYY4ucYgrZriuMY7Ky/UfQ6vgSr/ATICDPbQurqi7sBDuo4JnXu5
+         yA6ndC6UgmXmsvCLQPVjN6JBMpN9OIp01+CWjcBtqUQFKf6vBEPu0Y4KZvrqa6FXFOEg
+         Q5qraxlkiDpzUUkzS+OqKW/LnZenoLiAhGAoUwYwnrV3O4/Yf0GFlaV8MK0DJQLIdzf2
+         4N4Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1780575263; x=1781180063;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=oyxRxCYOdMyc8Dc3ZoAGzmBA02Un7oBiGn+qmKX5HP8=;
+        b=jMF5D3e9ZM94TdztqtREC8PF15obYsmBfJKAvdkef+PrpsHJ83vWj194rQcGOAyyga
+         yhyuF2DefFzjCwuCQ09pj04MAGUYWuzH0ONv5FK2gWciWgmH6n6CX3YwTDw8hZnlqHRN
+         w8e0RcLXxitBi0qxT7rjPvaS7gtA0/1B072bRwiW+1x4X9gGDHpxpjYXhu9IDDnYmziG
+         TxJL5ZTlBCislq3yHpfl9FY8xYSCTLLliQuiQ57fSzFbXGESygSlLnT5Kh0xyOo1T4Pt
+         fNE05+mn37hlp8GZeIHCGp872DrGC7OoQOL2byGlKxtIZhAeVuOjaWXiHW4XOf0bVwDk
+         SqqA==
+X-Forwarded-Encrypted: i=1; AFNElJ99l+PHk8seGpYMdOcl8J/Fd2WVA2H+atdns6B0TMIpuYHgmA3DYc2Ynh8+QCJkYTVIFhilVobPHF8F6g==@vger.kernel.org
+X-Gm-Message-State: AOJu0Ywxt5SQv3uPP5FIQFKqSJBdDtYJ7XPU++H1NSx531dMfqgSFuHp
+	gfc9nQ8rLv6Z6CvoM/pVvF5qJbnL/EjsskqMfZvXV5M1045wRJo83JHK
+X-Gm-Gg: Acq92OFZwTSm/VHyAW/rx9dRBDx5LCXUAMqPkW9NFMNclPVLeNAOJjjyuQ1X7YEpPh8
+	amM0EDKPEXkIpYSrkBqVFCOoaKUwYFRUR0Gk7LgxeyPptXtvqvIK5UPKyIIEUngwJiRzUqtkkSi
+	2GDS1Nq6sokIuhriWASfmr+ie3uIcFs9q3Yf4sJLFUN0R7SkO/HSdjIMix6FOtICPILjdithyiC
+	tFIbaI2di1xqxsqWx59t0liegR0O0iNNmWEvM96O8jR8nsYv6BnNUriS+RIG54NPAN0h8YDdFZE
+	BE111cHdfJ5nyeFabjmxcyrh1nBAKcy6FgXJtgal+u755XUK1vjWnqOjoMM5rrh66p8erTrFgCK
+	PDgTzt3fv9CdUVcMG9jnt6Bq/MW1dH9ZiPdKb4vJrdXpr4bfmN116BKz/mL6jL9XjFpZqf5V5y4
+	bbVf1CiB5lHYbqrSaz
+X-Received: by 2002:a17:90a:b401:b0:36b:5b82:4834 with SMTP id 98e67ed59e1d1-36e30c213bfmr5045300a91.7.1780575262731;
+        Thu, 04 Jun 2026 05:14:22 -0700 (PDT)
+Received: from lgs.. ([2001:250:5800:1000::f280])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-36f6c675898sm3071384a91.6.2026.06.04.05.14.18
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 04 Jun 2026 05:14:21 -0700 (PDT)
+From: Guangshuo Li <lgs201920130244@gmail.com>
+To: Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Cc: Guangshuo Li <lgs201920130244@gmail.com>
+Subject: [PATCH] btrfs: fix zoned sub_group leak on space_info sysfs failure
+Date: Thu,  4 Jun 2026 20:10:43 +0800
+Message-ID: <20260604121043.1425201-1-lgs201920130244@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <yezqqgowgmbn2z42zvha7cfcprym5vnurb33brdmooab6csdks@a76a7v6rtywn>
+Content-Transfer-Encoding: 8bit
 
-On Thu, Jun 04, 2026 at 02:07:05PM +0200, Andrey Albershteyn wrote:
-> On 2026-06-04 14:00:07, Christian Brauner wrote:
-> > On Thu, Jun 04, 2026 at 11:04:32AM +0200, Andrey Albershteyn wrote:
-> > > On 2026-05-28 16:50:45, Andrey Albershteyn wrote:
-> > > > On 2026-05-28 14:20:08, Christian Brauner wrote:
-> > > > > On Tue, May 26, 2026 at 12:19:43PM +0200, Carlos Maiolino wrote:
-> > > > > > On Fri, May 22, 2026 at 02:07:57PM +0200, Christoph Hellwig wrote:
-> > > > > > > On Fri, May 22, 2026 at 12:03:20PM +0200, Christian Brauner wrote:
-> > > > > > > > > I was expecting this to come through xfs tree too if Eric and Christian
-> > > > > > > > > agree.
-> > > > > > > > 
-> > > > > > > > You may take it through the xfs tree if there are no conflicts with
-> > > > > > > > vfs-7.2.iomap. If there are I want to add the iomap changes into
-> > > > > > > > vfs-7.2.iomap that you can pull in.
-> > > > > > > 
-> > > > > > > Merging the iomap bits through the iomap branch might make sense, given
-> > > > > > > that iomap usually tends to see quite a bit of activity.
-> > > > > > > 
-> > > > > > 
-> > > > > > That sounds good to me. If you want to go ahead and pull in the iomap
-> > > > > > bits, do so, and give me a heads up when you do it so I'll pull your
-> > > > > > branch locally.
-> > > > > 
-> > > > > Great, can the series please be resent based on current vfs-7.2.iomap
-> > > > > then please? Because the iomap changes in this series don't apply
-> > > > > cleanly on vfs-7.2.iomap so we already have merge conflicts...
-> > > > > 
-> > > > 
-> > > > hmm do you mean this branch?
-> > > > https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git/log/?h=vfs-7.2.iomap
-> > > > 
-> > > > patches 07..09 seems to apply cleanly. The only conflict I see is in
-> > > > the overlayfs patch 03. This is because [1] (is in -rc5) is missing
-> > > > in vfs-7.2.iomap.
-> > > > 
-> > > > [1]: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/fs/overlayfs/util.c?h=v7.1-rc5&id=0c8c88b8eb82a2a41bec5f17c076d6312dc40316
-> > > 
-> > > Christian, ping
-> > > 
-> > > Would be nice to have iomap in vfs, so Carlos can pull and test the
-> > > rest
-> > 
-> > Applied but note IOMAP_F_FSVERITY
-> > changed from (1U << 10) to (1U << 11) since we have another flag
-> > addition this cycle.
-> 
-> Oh I haven't noticed that, thanks!
+On zoned filesystems, create_space_info() creates a space_info sub_group
+before registering the parent space_info in sysfs.
 
-Thanks Christian. I'll deal with the rest of the series next week!
+If the sub_group registration succeeds but the parent
+btrfs_sysfs_add_space_info_type() call fails, the parent space_info is
+released through its kobject release path, but the already published
+sub_group is left behind. The sub_group also keeps its logical parent
+pointer, which then points at freed memory.
 
-> 
-> -- 
-> - Andrey
-> 
+Remember the created sub_group before registering the parent and remove it
+when parent sysfs registration fails. Cache the sub_group pointer before
+calling btrfs_sysfs_add_space_info_type(), as that helper may already have
+put and released the parent on failure.
+
+Fixes: f92ee31e031c7 ("btrfs: introduce btrfs_space_info sub-group")
+Signed-off-by: Guangshuo Li <lgs201920130244@gmail.com>
+---
+ fs/btrfs/space-info.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index f0436eea1544..03659dfcb830 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -296,6 +296,7 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags)
+ {
+ 
+ 	struct btrfs_space_info *space_info;
++	struct btrfs_space_info *sub_group = NULL;
+ 	int ret = 0;
+ 
+ 	space_info = kzalloc_obj(*space_info, GFP_NOFS);
+@@ -316,11 +317,15 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags)
+ 
+ 		if (ret)
+ 			goto out_free;
++		sub_group = space_info->sub_group[0];
+ 	}
+ 
+ 	ret = btrfs_sysfs_add_space_info_type(space_info);
+-	if (ret)
++	if (ret) {
++		if (sub_group)
++			btrfs_sysfs_remove_space_info(sub_group);
+ 		return ret;
++	}
+ 
+ 	list_add(&space_info->list, &info->space_info);
+ 	if (flags & BTRFS_BLOCK_GROUP_DATA)
+-- 
+2.43.0
+

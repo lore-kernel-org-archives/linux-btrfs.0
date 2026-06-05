@@ -1,41 +1,41 @@
 Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 262DF37DAAA
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jun 2026 21:43:11 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E05B30566F
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jun 2026 22:01:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.22
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780695794; cv=none; b=g3N+P5tpxE55uatM6ZjIT0QCKNtTJCcA/H4l7SMO5lc+sJJJqEk6IEepEMCY4Mp1NushemF0BrzNnuu+JtvoZEYyXsHjks1oT3bSBkWnoLvmjdHiHn9SpDwkR5tthZzK6MUKri867Ych1v1D+r6VVG6UQDMAYXF/nqcE/mjY7JA=
+	t=1780696891; cv=none; b=uqdkASLXeSsBKanlQe4MY/KoJMtqltaOvILpJfYsZhScGQbsULtMBtLSA+sguwFYzfFZvq1Mg30Sep/TLgD/2rZHN5TbobXBrH9i4REFMD7wOqd6Hsac+X/jTQzn4n/PFLI7PVB6Uz4yficVvvqwrLAgmMlcMKEo9K/FPrbuW0w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780695794; c=relaxed/simple;
-	bh=uUjjTYBDEB4YPHIvqSc3uO25M6DNdKmTYfHZ/ySABTU=;
+	s=arc-20240116; t=1780696891; c=relaxed/simple;
+	bh=XeiA4x+CEeEKAxQiWWdZIDbzM5z/CbicPvk3/YdKSKI=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=R//Xlyjj/3zOAWx5K/p7V9JgTO0T07gWCA9xICeiXjF6EEPhcVYd8acs0D/DpK9LklBj+fXKellBoDwgLyrz8c8lTlS7w2GYXIZqrcfZd4XLF8CMUAsGVwlqJNtnI5qYl7QTv5Wk3fSazN5ylNbRT0SWOzX9+f2gWYTiKyHHNsQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=ohZdDTXt; arc=none smtp.client-ip=212.227.17.22
+	 In-Reply-To:Content-Type; b=AM2gukzYH1MHmZsDE4X7xdA0i4EMa5jXoFB4DmFNccjzdO1nL/G++03udUjSmjYBSr0b6hVJ974/16fUNTiPRG+Erg/M77Ii74wTcP+KHJF4uP4uGxdxzfTonz6nEGui6UdxW00ws4d4GfW31O0JQUf4aTM3rcRefH2nF7GNanE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=nJTGAfCG; arc=none smtp.client-ip=212.227.17.22
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="ohZdDTXt"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="nJTGAfCG"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1780695790; x=1781300590; i=quwenruo.btrfs@gmx.com;
-	bh=eFKMhmgKTin99vXBm+GyAiqSQy+6VaUxsNDDNPDhXvU=;
+	s=s31663417; t=1780696884; x=1781301684; i=quwenruo.btrfs@gmx.com;
+	bh=XeiA4x+CEeEKAxQiWWdZIDbzM5z/CbicPvk3/YdKSKI=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=ohZdDTXtymq0I7X1zd5FisWc9dTTzQHyr4ThErbhHkgRFUh27sburoFpcJtw0S8Z
-	 0hxJS2/CJkehiryo3tw9KTkx/0qaZGgDELPwBffKlFBWtkPYArLiiPcQ7i/Cil0Tf
-	 zovX0jBn3QZpq9Rmlx92/NPeov5YzzoHHpa5zCmd58vun4pcEx0rszSzcR4fEHbj6
-	 EdUTsuab4Lv6mmugW9zFlCE5xgmeZd4MURN/c+rTygKu/yfkJgW5D4NHNSWo9jM0Z
-	 sqPh4gvEFSiLbuZzuWT4oSsoSsPOHuCkOM9APMi6v7UxSI45QJSImctah8iFwbDQo
-	 qM8Z45NlEejcrg1BIw==
+	b=nJTGAfCGmAsqWMVIOmApyCZtUYiuso9fcCtZrPBNroYA9PYafWAF5ZYYYo8xoaF5
+	 xoIJFQJ3dRWpYqOdeH8DMyjPDF5ZM3UtEMBaeLzMdSyMrJmanbxTuqTWrc6dRb2so
+	 S++MOxFoAjfSd+0SgWsYTh22pkMUFZKIWqZ8G67PbjdDp2xskWsbGhl+NHpgz4N/+
+	 QAJix4D0Gg3xKhEJEPESauvUm3PtZbTPi2ZnVre1u8f+ikgkkRd0hJ1LN8PfK9Nu3
+	 /31bhEtkZCSOlkdli+rKS2WjyqH/kuUvBpcMl/MAnax1bxkSeerYo1E2h1SqmSmxZ
+	 Y9QlU1CL8Ft4IunSBQ==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
 Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1N6sit-1xKcV82xo7-00s9iz; Fri, 05
- Jun 2026 23:43:10 +0200
-Message-ID: <65d90768-8654-454d-a2a8-2f379bb72e55@gmx.com>
-Date: Sat, 6 Jun 2026 07:13:05 +0930
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MpDJX-1x35Ke1wit-00aUm2; Sat, 06
+ Jun 2026 00:01:23 +0200
+Message-ID: <d438efaf-6ec5-4c4b-9767-7d0ac0ebbb63@gmx.com>
+Date: Sat, 6 Jun 2026 07:31:20 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,13 +43,13 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 2/4] btrfs: wait for OE to be fully removed before falling
- back to buffered
+Subject: Re: [PATCH 1/4] btrfs: return the written number if there is any
+ progress for dio
 To: Filipe Manana <fdmanana@kernel.org>, Qu Wenruo <wqu@suse.com>
 Cc: linux-btrfs@vger.kernel.org
 References: <cover.1780645090.git.wqu@suse.com>
- <30dc9cbbaef57713552d7d00f1137c7c2b5be53e.1780645090.git.wqu@suse.com>
- <CAL3q7H5HP-aRh4eotU_qbwdA2ppFCYDdBqRSuwW=uB2H6mukvQ@mail.gmail.com>
+ <9e638119748a83f475861e69388b4dda9715b660.1780645090.git.wqu@suse.com>
+ <CAL3q7H4dEGHd=LmmW5PVVnaxY=qFq31ZSb1qE24wPGU-bKv39g@mail.gmail.com>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -76,190 +76,128 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
  +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
  HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <CAL3q7H5HP-aRh4eotU_qbwdA2ppFCYDdBqRSuwW=uB2H6mukvQ@mail.gmail.com>
+In-Reply-To: <CAL3q7H4dEGHd=LmmW5PVVnaxY=qFq31ZSb1qE24wPGU-bKv39g@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:2A9LMKfDZrKWAnqLPkQuhV/0z8PN/CZx05i/yzqIQwBcQUu8d+G
- JUgye6oym96nSi/sTn6ZD9jJEG6Lh+UWL16AeOEJM0TA6NryuB+JgkkkRqlia4xfEbx1pa1
- uVfqXlPOZdi5vlN1q6+VomRBx7rMFNfb8MtbAzyoV0+CooewPulpO/MYw4xCorCQAZvxbkT
- G4SXWRetW2aVQnBSke97g==
+X-Provags-ID: V03:K1:zfG4AqFpdjtX/imlAHen+LeTbDAKJQ9SJNfQBzqCAcZ1WjfQL/m
+ 1MEC8UPnjV9m7qNqEpOLHeyKcZHqOecfyY80JXrXR368Gu+xp+PuXG2LhHvE4PEBFWybGpu
+ +FD/OM+9hRZ7gBgXuBU1dlaFcZgZDShytjWiXJ4O2pZVNwsCIspZeXKyMMKVZoFryCFqPuo
+ P09g7AmJsDe/05Fs0fewA==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:GOg+s/QWusw=;HxBZegKwzgh+Eum3Q7tRxwNNalW
- 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
- Q3uYojI7y63Bjavons=
+UI-OutboundReport: notjunk:1;M01:P0:WwndIOcsIU0=;qZW1lvn4OLe86fir4eB56c3/XlR
+ +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
+ CuQOrQ==
 
 
 
-=E5=9C=A8 2026/6/5 19:40, Filipe Manana =E5=86=99=E9=81=93:
-> On Fri, Jun 5, 2026 at 10:08=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+=E5=9C=A8 2026/6/5 19:35, Filipe Manana =E5=86=99=E9=81=93:
+> On Fri, Jun 5, 2026 at 10:10=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
 >>
->> Currently if a direct write failed for whatever reasons, e.g. page faul=
-t
->> failure or IO error, then we fallback to buffered IO.
+>> Currently btrfs_direct_write() will return error even if there is some
+>> progress made.
 >>
->> But it's possible that the direct write attempt has created some ordere=
-d
->> extent, and they may not be fully removed from the inode io tree yet:
+>> E.g. a NOWAIT direct write has submitted 16KiB data, but later
+>> failed due to -EFAULT.
 >>
->>   btrfs_direct_write:
->>   |- __iomap_dio_rw()
->>   |  |- btrfs_dio_iomap_begin()
->>   |  |  |- btrfs_get_blocks_direct_write()
->>   |  |     |- btrfs_create_dio_extent()
->>   |  |        Now an OE is created for the whole range
->>   |  |
->>   |  |- iomap_dio_iter()
->>   |  |  Failed with -EFAULT, which is pretty common inside
->>   |  |  btrfs as we have set iov_iter->nofault flag.
->>   |  |
->>   |  |- btrfs_dio_iomap_end()
->>   |     |- btrfs_finish_ordered_extent()
->>   |        |- btrfs_queue_ordered_fn()
->>   |           The real removal of the OE is queued into a workqueue.
->>   |
->>   |- btrfs_buffered_write()
->>   |- btrfs_fdatawrite_range()
->>      |- cow_file_range()
->>         |- btrfs_alloc_ordered_extent()
->>            If the previous OE is not yet removed, a conflicting OE
->>            will be inserted and trigger a panic.
+>> In that case we can not fallback to buffered IO either, as it's an
+>> NOWAIT operation, so we set @ret to -EAGAIN.
 >>
->> Fix it by calling btrfs_wait_ordered_range() before buffered writes.
+>> In that case, we should not return -EAGAIN but 16K to indicate that we
+>> have already submitted 16KiB data.
 >=20
-> No, this should not be needed, we already wait for ordered extents elsew=
-here:
+> No, this will cause partial writes, resulting in unexpected behaviour
+> for applications.
 >=20
-> btrfs_buffered_write() -> copy_one_range() ->
-> lock_and_cleanup_extent_if_need() -> lock_and_cleanup_extent_if_need()
-
-Right, I'll drop this one.
-
+> For NOWAIT writes, if we perform a partial write we must return
+> EAGAIN, so that the remainder is attempted again in a blocking
+> context.
+> If we return what we were able to write, there's no retry in a
+> blocking context and the application gets a partial write.
 >=20
-> Was this a theoretical fix or did you actually find this happening in pr=
-actice?
+> We've had such bugs and reports of unexpected reads and writes in the
+> past, at least
+> with MariaDB.
 
-I was hitting OE conflicts during development on another direct IO=20
-related patchset, but that's after some extent lock related changes, and=
-=20
-I have not yet hit it again on for-next.
+But what about non-NOWAIT cases? And APPEND writes?
 
-So it may be some other bugs.
+Especially for APPEND writes, if we got a partial write, the isize is=20
+already increased, the next APPEND writes would land in the new position.
 
 Thanks,
 Qu
-
->=20
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>   fs/btrfs/direct-io.c | 10 ++++++++++
->>   1 file changed, 10 insertions(+)
->>
->> diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
->> index c97396ca476d..8efe3a722206 100644
->> --- a/fs/btrfs/direct-io.c
->> +++ b/fs/btrfs/direct-io.c
->> @@ -1025,6 +1025,16 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, s=
-truct iov_iter *from)
->>          }
->>
->>          pos =3D iocb->ki_pos;
->> +       /*
->> +        * Direct writes may have created an OE, then submitted nothing=
-.
->> +        * Although iomap_end() should have marked the OE as finished, =
-it's
->> +        * not yet removed from io-tree.
->> +        * Thus we have to wait for them to be removed.
->> +        */
->> +       ret =3D btrfs_wait_ordered_range(BTRFS_I(inode), pos, iov_iter_=
-count(from));
->> +       if (ret < 0)
->> +               goto out;
->> +
->>          written_buffered =3D btrfs_buffered_write(iocb, from);
->>          if (written_buffered < 0) {
->>                  ret =3D written_buffered;
->> --
->> 2.54.0
->>
->>
->=20
-

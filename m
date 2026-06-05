@@ -1,289 +1,155 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from va-2-30.ptr.blmpb.com (va-2-30.ptr.blmpb.com [209.127.231.30])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2BA394B8DF1
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jun 2026 09:01:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 475E5DDA9
+	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jun 2026 09:11:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.30
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780650107; cv=none; b=DZZLBanRLZow9tdNbkxAyD/CmhCp9IkaurVE4pd/dPCkcXQvHU2jGZgvlwLazSsSIFSxQbwb5A5wb7IPQTJ95w24Wu7yYO1Yhr2kGazekat5Jvnhi1FOR5cyLpiAX+S6O8h700iL5i+u2NXe4ZPWu/8K6f2PPlqHaihaC66RJwc=
+	t=1780650705; cv=none; b=VWKBN9+prlP0zjsL2jp85As9ByayGvvWsL6YTYKq1gCszJ7FLXGLCS2O48A1JeFvNAboKsOInFqVrc1T5o8MhB5iWtD9vA/LvNOnAeD25aA1O3+Zsj56psbOypgucGlp+G6cGPpaHZBDYVh33V71jabmq/6LaTHFSwEtDJp9F7c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780650107; c=relaxed/simple;
-	bh=Js6q3nPDAhuUpN1bfJrxXLCIDr2/0J6ROiz0MA9OeOM=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Q88VhpVCRtnoDBSZrujz/zTpYS4BqSFOg7YyXPanrUIEazfEZgHuJMhl8q1Y6oGy9ErugIqEO3VFl2mXK9s/bBm5GnS85PAp5TWgKT2incjJIT8otN3bCyuyheeZwAq046pS5urOsb3WSLy+e5bXdhVjiwN+IMNrThPIcaIxFhU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=g1r7KktB; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=g1r7KktB; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1780650705; c=relaxed/simple;
+	bh=JP9gzr3aGXGeNLrdcmpvn1bOK5sfzeXW0RUMt1fIxBk=;
+	h=To:From:Mime-Version:References:Content-Type:In-Reply-To:Cc:
+	 Subject:Date:Message-Id; b=Y277iKvlqZTqO7UOwFzVhA/cJZDdyebs6T8I4BR01KeMmt6iP2ityo25/EyP9a7SlaNeqt6T7NzPmhQEbyPL8SMxvE6av3qp8QaV5m2BVHi7gRciDXJGXi9D/YUmULSR+ClBUTOt0ssL0xkVy+jt7VDQHx+CUo4jG1E7XOkSNdY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com; spf=pass smtp.mailfrom=fnnas.com; dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b=rYY1DCOv; arc=none smtp.client-ip=209.127.231.30
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fnnas.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="g1r7KktB";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="g1r7KktB"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id A91EF7588C
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jun 2026 09:01:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1780650092; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=su4VSHdgQGw99Pa5DaMmRpbBUmlA8lpd5l2pePXWAw8=;
-	b=g1r7KktB+HjyGSY4quaO9ouLitwof4Vmii+PoD2jySz/xMZ8CE/QH6c91uABN2kQLQG7ad
-	ctk6g+hdVZW1KC29nNshu/Plf3jkHnhV9iiUNzz8Y6Hv5XcQjzogU9wwc9RUoO6dSGwBZx
-	qI0QpthsGf/xoeXelvbbG1kyLVJj0r4=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=g1r7KktB
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1780650092; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=su4VSHdgQGw99Pa5DaMmRpbBUmlA8lpd5l2pePXWAw8=;
-	b=g1r7KktB+HjyGSY4quaO9ouLitwof4Vmii+PoD2jySz/xMZ8CE/QH6c91uABN2kQLQG7ad
-	ctk6g+hdVZW1KC29nNshu/Plf3jkHnhV9iiUNzz8Y6Hv5XcQjzogU9wwc9RUoO6dSGwBZx
-	qI0QpthsGf/xoeXelvbbG1kyLVJj0r4=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id AB8EF779A8
-	for <linux-btrfs@vger.kernel.org>; Fri,  5 Jun 2026 09:01:31 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id KFiCFmuQImrFDAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 05 Jun 2026 09:01:31 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs: refactor btrfs_dio_iomap_end()
-Date: Fri,  5 Jun 2026 18:31:06 +0930
-Message-ID: <2b04182f3a630e5028b9eec29a1420d7d786ee22.1780645090.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1780645090.git.wqu@suse.com>
-References: <cover.1780645090.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b="rYY1DCOv"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ s=s1; d=fnnas-com.20200927.dkim.feishu.cn; t=1780650692;
+  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
+ reply-to:content-type:mime-version:in-reply-to:message-id;
+ bh=JP9gzr3aGXGeNLrdcmpvn1bOK5sfzeXW0RUMt1fIxBk=;
+ b=rYY1DCOvuVuFX5JEbstfv5i7T902jBzuvilEekpthTicb1byE4PG7jNyez76s4CF5Ad2ox
+ JTLJL4kmqGUaN0Pdccv7hMk7Vbtav3HVbXN7SECZSuK3C0WHZ0RzfBRZMQ7hBH9d5oOrYy
+ ZfS72mpgZEEnsB08vACrCjIKqY1Hs3NUVBKM3iIQwKHvIZDunfpWNsGxMZms2nbM2edKt6
+ 0dthwe555TuoYe7H1ju2HLniQXb1x0dLVZ9DxpNG/mQEEHJY/Nr1XC9iPX4qyoKkxsB+vP
+ pplXgtB744mEHV/mOTNlyolPnqivyGOUmJBczav7wzHb/cDKpLSGUONnJ+t8HQ==
+To: "Qu Wenruo" <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+User-Agent: Mozilla Thunderbird
+Content-Transfer-Encoding: quoted-printable
+From: "Dongjiang Zhu" <zhudongjiang@fnnas.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: A91EF7588C
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	URIBL_BLOCKED(0.00)[suse.com:dkim,suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:email,suse.com:mid]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+Mime-Version: 1.0
+X-Original-From: Dongjiang Zhu <zhudongjiang@fnnas.com>
+Received: from [192.168.8.79] ([183.34.165.103]) by smtp.feishu.cn with ESMTPS; Fri, 05 Jun 2026 17:11:28 +0800
+References: <20260604085522.3872126-1-zhudongjiang@fnnas.com> <02849934-ca88-42a7-ba3e-a7196e1fcef1@suse.com> <60e3c20b-8490-41b6-8189-ea595dd2ffa5@fnnas.com> <f7550cda-a443-4979-b6c4-be086d23dfad@suse.com> <8a85da40-4c7f-4366-b4da-fecec9d33970@suse.com> <e9967ac7-05a4-484d-b2a7-8b246890fe0b@fnnas.com> <e714a93e-a0b4-4cfd-afa3-adc912bd44ad@suse.com>
+Content-Type: text/plain; charset=UTF-8
+X-Lms-Return-Path: <lba+26a2292c1+f2e749+vger.kernel.org+zhudongjiang@fnnas.com>
+In-Reply-To: <e714a93e-a0b4-4cfd-afa3-adc912bd44ad@suse.com>
+Cc: <dsterba@suse.com>, <fdmanana@suse.com>
+Subject: Re: [PATCH v2] btrfs: start qgroup ioctl transactions on the quota root
+Date: Fri, 5 Jun 2026 17:11:22 +0800
+Message-Id: <2ab64718-f26d-4584-b9ad-384a745ec411@fnnas.com>
 
-That function has the following problems:
+=E5=9C=A8 2026/6/5 16:57, Qu Wenruo =E5=86=99=E9=81=93:
+>=20
+>=20
+> =E5=9C=A8 2026/6/5 18:23, Dongjiang Zhu =E5=86=99=E9=81=93:
+>> =E5=9C=A8 2026/6/5 7:02, Qu Wenruo =E5=86=99=E9=81=93:
+>>>
+>>>
+>>> =E5=9C=A8 2026/6/5 08:21, Qu Wenruo =E5=86=99=E9=81=93:
+>>>>
+>>>>
+>>>> =E5=9C=A8 2026/6/4 21:44, Dongjiang Zhu =E5=86=99=E9=81=93:
+>>>>> =E5=9C=A8 2026/6/4 17:15, Qu Wenruo =E5=86=99=E9=81=93:
+>>>> [...]
+>>>>>> Furthermore, all those qgroup related operations (including enabling=
+/
+>>>>>> disabling) are all holding qgroup_ioctl_lock, thus there is no way=
+=20
+>>>>>> the
+>>>>>> quota root is gone halfway.
+>>>>>>
+>>>>>
+>>>>> I may have misunderstood this part.
+>>>>>
+>>>>> The ioctl handler checks btrfs_qgroup_enabled() before starting the
+>>>>> transaction, but it does not hold qgroup_ioctl_lock between that chec=
+k
+>>>>> and btrfs_start_transaction(). btrfs_quota_disable() can clear
+>>>>> fs_info->quota_root and put the quota root under qgroup_ioctl_lock.
+>>>>
+>>>> Then enlarge the lifespan of qgroup_ioctl_lock.
+>>>>
+>>>> btrfs_add_qgroup_relation() and btrfs_del_qgroup_relation() they are
+>>>> only called inside the assign function.
+>>>> You can drop the mutex lock/unlock inside them, change then to do a
+>>>> lockdep_assert().
+>>>>
+>>>> Then hold the qgroup_ioctl_lock inside the assign ioctl for the whole
+>>>> duration, after start_transaction().
+>>>>
+>>>> Then you can safely access quota_root without refcount.
+>>>
+>>> My bad, this is totally wrong, you already need a quota root at start
+>>> transaction.
+>>>
+>>> I think the better solution is something like this:
+>>>
+>>> =C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0mutex_lock(qgroup_ioctl_lock);
+>>> =C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0quota_root =3D btrfs_grab_root(fs_info->=
+quota_root);
+>>> =C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0mutex_unlock(qgroup_ioctl_lock);
+>>
+>> Yes, this makes sense. I missed that the quota root lookup and ref grab
+>> need to be protected by qgroup_ioctl_lock.
+>>
+>>> =C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0if (!quota_root)
+>>> =C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto out;
+>>>
+>>> =C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0trans =3D btrfs_start_transaction(quota_=
+root);
+>>> =C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0/* Do the work */
+>>> =C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0ret =3D btrfs_end_transaction(trans);
+>>> =C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0btrfs_put_root(quota_root);
+>>>
+>>> Even if there is a race with quota disable and quota disable later
+>>> removed the quota_root, later functions like btrfs_add_qgroup_relation(=
+)
+>>> will still do the proper fs_info->quota_root check and exit early if
+>>> quota is already disabled.
+>>
+>> I am still trying to understand the needed lifetime here.
+>>
+>> I rechecked this qgroup ioctl path, and I did not find a post-start user
+>> of the root pointer passed to btrfs_start_transaction(). The trans handl=
+e
+>> does not keep the root pointer, the quota root is not retained by
+>> btrfs_record_root_in_trans(), and the later qgroup helpers re-check
+>> fs_info->quota_root under qgroup_ioctl_lock.
+>>
+>> So for this specific case, is dropping the temporary reference right
+>> after btrfs_start_transaction() still unsafe, or is holding it until
+>> btrfs_end_transaction() mainly the conservative pattern?
+>=20
+> Just for the sake of consistency, I would prefer to not have a new=20
+> pattern of doing grab->start_trans->put.
+>=20
+> Just follow the common pattern would be much easier to maintain.
 
-- Read/write handling scattered across different locations
-  E.g. At the beginning there is a dedicated hole read handling, but
-  later short read handling is at an if() branch.
+OK, got it. I will update it that way.
 
-- Modifying of @pos and @length parameter for short read
-  Although it's completely fine to modify those parameters as they are
-  passed by value, but it can still be confusing to read.
-  As normally we would assume @pos and @length to be the original range.
+Thanks a lot,
+Dongjiang
 
-  But for short IO handling we modify @pos/@length, and completely
-  ignore @written.
 
-- Unnecessary split for ordered extent and changeset handling
-  Both OE and changeset are only for writes, but they are handled in two
-  different if (write) {} blocks.
-
-Refactor the function so that:
-
-- Handling of reads and writes are concentrated in their code block
-  Now the handling of reads are in its own small if () branch.
-
-  Leaving the more complex writes handling to take the remaining
-  function, and reduce the indent level.
-
-  This also removes all unnecessary "if (write)" checks.
-
-- Do not modify @pos and @length
-  Let short IO handling to manually calculate the remaining range.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/direct-io.c | 125 ++++++++++++++++++++++---------------------
- 1 file changed, 65 insertions(+), 60 deletions(-)
-
-diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
-index e25f36eddb51..f2a68c3e31e5 100644
---- a/fs/btrfs/direct-io.c
-+++ b/fs/btrfs/direct-io.c
-@@ -621,74 +621,79 @@ static int btrfs_dio_iomap_end(struct inode *inode, loff_t pos, loff_t length,
- 	const bool write = !!(flags & IOMAP_WRITE);
- 	int ret = 0;
- 
--	if (!write && (iomap->type == IOMAP_HOLE)) {
--		/* If reading from a hole, unlock and return */
--		btrfs_unlock_dio_extent(&BTRFS_I(inode)->io_tree, pos,
--					pos + length - 1, NULL);
-+	if (!write) {
-+		/*
-+		 * Hole read, nothing is submitted, thus we have to unlock
-+		 * the whole range.
-+		 */
-+		if (iomap->type == IOMAP_HOLE) {
-+			btrfs_unlock_dio_extent(&BTRFS_I(inode)->io_tree, pos,
-+						pos + length - 1, NULL);
-+			return 0;
-+		}
-+		/*
-+		 * Short read, needs to unlock the remaining range, and
-+		 * return -ENOTBLK so we can later fault in the pages and retry.
-+		 */
-+		if (written < length) {
-+			btrfs_unlock_dio_extent(&BTRFS_I(inode)->io_tree, pos + written,
-+						pos + length - 1, NULL);
-+			return -ENOTBLK;
-+		}
-+		/* The full range is submitted, endio will do the unlock. */
- 		return 0;
- 	}
- 
- 	if (written < length) {
--		pos += written;
--		length -= written;
--		if (write) {
--			/*
--			 * Got a short write and have updated the isize, need to
--			 * revert the isize change.
--			 *
--			 * Normally we need to update isize with extent lock hold,
--			 * but we're safe due to the following factors:
--			 *
--			 * - Only a single writer can be enlarging isize
--			 *   Enlarging isize will take the exclusive inode lock.
--			 *
--			 * - Buffered readers need to wait for the OE we're holding
--			 *   Buffered readers will lock extent and wait for OE
--			 *   of the folio range, and since page cache is invalidated
--			 *   the OE wait can not be skipped.
--			 *
--			 * So here we are safe to revert the isize before
--			 * finishing the OE, and no reader of the remaining range
--			 * can see the enlarged size.
--			 *
--			 * TODO: Extend the DIO_LOCKED lifespan for direct writes,
--			 * and only enlarge isize after a successful write.
--			 */
--			if (dio_data->updated_isize) {
--				u64 new_isize;
-+		/*
-+		 * Got a short write and have updated the isize, need to
-+		 * revert the isize change.
-+		 *
-+		 * Normally we need to update isize with extent lock hold,
-+		 * but we're safe due to the following factors:
-+		 *
-+		 * - Only a single writer can be enlarging isize
-+		 *   Enlarging isize will take the exclusive inode lock.
-+		 *
-+		 * - Buffered readers need to wait for the OE we're holding
-+		 *   Buffered readers will lock extent and wait for OE
-+		 *   of the folio range, and since page cache is invalidated
-+		 *   the OE wait can not be skipped.
-+		 *
-+		 * So here we are safe to revert the isize before
-+		 * finishing the OE, and no reader of the remaining range
-+		 * can see the enlarged size.
-+		 *
-+		 * TODO: Extend the DIO_LOCKED lifespan for direct writes,
-+		 * and only enlarge isize after a successful write.
-+		 */
-+		if (dio_data->updated_isize) {
-+			u64 new_isize;
- 
--				if (written == 0)
--					new_isize = dio_data->old_isize;
--				else
--					new_isize = max(dio_data->old_isize, pos);
--				i_size_write(inode, new_isize);
--				dio_data->updated_isize = false;
--			}
--			/*
--			 * We have a short write, if there is any range
--			 * that is submitted properly, that part will have
--			 * its own OE split from the original one.
--			 *
--			 * So for the OE at dio_data->ordered, it's the part
--			 * that is not submitted, and should be marked
--			 * as fully truncated.
--			 */
--			btrfs_mark_ordered_extent_truncated(dio_data->ordered, 0);
--			btrfs_finish_ordered_extent(dio_data->ordered,
--						    pos, length, true);
--		} else {
--			btrfs_unlock_dio_extent(&BTRFS_I(inode)->io_tree, pos,
--						pos + length - 1, NULL);
-+			if (written == 0)
-+				new_isize = dio_data->old_isize;
-+			else
-+				new_isize = max(dio_data->old_isize, pos + written);
-+			i_size_write(inode, new_isize);
-+			dio_data->updated_isize = false;
- 		}
-+		/*
-+		 * We have a short write, if there is any range
-+		 * that is submitted properly, that part will have
-+		 * its own OE split from the original one.
-+		 *
-+		 * So for the OE at dio_data->ordered, it's the part
-+		 * that is not submitted, and should be marked
-+		 * as fully truncated.
-+		 */
-+		btrfs_mark_ordered_extent_truncated(dio_data->ordered, 0);
-+		btrfs_finish_ordered_extent(dio_data->ordered,
-+					    pos + written, length - written, true);
- 		ret = -ENOTBLK;
- 	}
--	if (write) {
--		btrfs_put_ordered_extent(dio_data->ordered);
--		dio_data->ordered = NULL;
--	}
--
--	if (write)
--		extent_changeset_free(dio_data->data_reserved);
-+	btrfs_put_ordered_extent(dio_data->ordered);
-+	dio_data->ordered = NULL;
-+	extent_changeset_free(dio_data->data_reserved);
- 	return ret;
- }
- 
--- 
-2.54.0
-
+>>
+>> Is dropping the reference after btrfs_end_transaction(), but before the
+>> transaction is committed, safe in this case?
+>>
+>>> But I have not yet tested this, you still need to run fstests to be
+>>> extra sure.
+>>
+>> Sure, I will test it carefully with fstests.
+>>
+>> Thanks a lot for your review and guidance.
+>>
+>> Dongjiang
+>

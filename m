@@ -1,312 +1,232 @@
-Received: from mail-ej1-f54.google.com (mail-ej1-f54.google.com [209.85.218.54])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DDE653BBFD4
-	for <linux-btrfs@vger.kernel.org>; Thu,  4 Jun 2026 23:02:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.54
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780614168; cv=none; b=tb3tLyy/+i/hGVdAMq1eNhfEe6pEJRf5zGLIvJ37eqEHsTXfLUIIv9KXkQm8/6BKuIWoweZHAoES3KWh/XhBK6HSaNaEzEK7c6/sfvxEuRYhJvi119MIPAKFcAXfd3eFFPQ94Fn0d7QaPJAOdQrRkXRRacC1SBsmoIyCjPSXHRc=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780614168; c=relaxed/simple;
-	bh=Us5cQJhtCHSuyPvkztI3q7OdJzU7EiMMDFpHFdzQpPo=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=j7OgXNh+VqZ6XvWUwysdQDljXJFaM3BEdjT+NDPBbP6P786iq8ZAWcJo+pqd0/Z387gJmJSgamiRYH/B/dFpfn04ZpL5FZGugCyO6XnEnZdYje6LytY/LjTOcHdBxU61VeedBhNefhpFdHTqH/CjLoUGOW0EVuzx43HLyxsrqeQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=AG9prGZT; arc=none smtp.client-ip=209.85.218.54
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7924837EFFD;
+	Fri,  5 Jun 2026 02:22:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.154.42
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1780626180; cv=fail; b=T2V+kqCu8loQoBoGvd4UEh3Dw/tKYkz0XnQmB6J371C0KFB5yp8pTlypu2mrmKXh05m4jmD/WZBOvJ8K+iGGo79Nx/6mKea3MLkE1QGYW3kUakFAp6uW3l8UYAaWbYYTetIrCXyCTVTIafusjTroEHcw5EX3j8WFrEbaU+cT/do=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1780626180; c=relaxed/simple;
+	bh=HJzXVxNcC5U9BaPtkNAcqVG0fu0AGKXsFKFn85AqwIw=;
+	h=Content-Type:Date:Message-Id:Subject:From:To:References:
+	 In-Reply-To:MIME-Version; b=uYq10IAg8bN7IQkQucar2DcYpIIW+u/59vgRSU6roeqTYEJ5A3SVnqt2ZwjQI7nkb52u+UouyLEHCI7JkHkgVEuBmYOXf8FQgfxsLcrluCeuKyc52tvebLmJGL9bsoI6T8PbOPM6xOHqzr2jkAvw5bTJTAc35z91cW9aD35UVVY=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=DfJbm8tg; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=L6s87P6y; arc=fail smtp.client-ip=216.71.154.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="AG9prGZT"
-Received: by mail-ej1-f54.google.com with SMTP id a640c23a62f3a-bec449d0af2so149469066b.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Jun 2026 16:02:46 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="DfJbm8tg";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="L6s87P6y"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1780626173; x=1812162173;
+  h=content-transfer-encoding:date:message-id:subject:from:
+   to:references:in-reply-to:mime-version;
+  bh=HJzXVxNcC5U9BaPtkNAcqVG0fu0AGKXsFKFn85AqwIw=;
+  b=DfJbm8tgH37dqN1QDRbu7Qwc2w3ORSaiwKw7P+zb431AZMDO9h5XW+b/
+   O6FhTUYnIGd+ZoAlmLze8uP+lK1FznProeRfTNDH2UO0GSAIstW3j77aJ
+   X8cBsu4nwabdB0fUin1UhIONvRu0TwTUnVSXyj+wWWphI07XYQUbBdntp
+   rtNo7C0Ey0HGigCMon5l2rQbjfs0CBe8TN9x3f+k2uwlH5Zivw2D0Oxsh
+   kZ37UUW0xfcsZjoKxnLMQFPoFfOxl5KKqhOfLY+ZzX421/bIUucbqOlc8
+   PTUEySt+1qQEpx925qyAoV0b4WOArbV/L8WlafBenWND2bRSl4mZojIJe
+   A==;
+X-CSE-ConnectionGUID: LlvPT8sFS3SVl0ww6EOJLQ==
+X-CSE-MsgGUID: zUQwqxhdRuuuAn3Qkc/hEw==
+X-IronPort-AV: E=Sophos;i="6.24,188,1774281600"; 
+   d="scan'208";a="144345981"
+Received: from mail-centralusazon11011045.outbound.protection.outlook.com (HELO DM5PR21CU001.outbound.protection.outlook.com) ([52.101.62.45])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 05 Jun 2026 10:22:52 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=vi3DhBFcweDiy9ooNfQqzzMxZxbHDr6zsNg9E7jaFfy98CnI85lT3sXEpgX2FR5h/tK52ENlXRWCMLsq42bsxc12Hqw4LhkMQaDAln4U7V4iFWtFTB5vTfcLTUO97jVgWY6zLuW/ZXUjhzHr5rrlvlxbisbhA2ShNQmDQ5reAXMw0rUbp6E2Y7XMr61PZyv4B+hhShKFrqcC6j0ed2uKUwHudMyN35WbrQhCpyVF8aVn4IR9TkNr4u2tfyRHUrVUtAIhkESpRjjKHjeUrtILOn7SY3ybY+LfgdF1lsTVffCOR2073fbpd7l3rtnEv9ZUvPVGLI7WpwwzX44dYqUdCw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=fzMGT4RUq6lfHnxvUfzNsXQrxgM8ARE9mWoqTPD6CLY=;
+ b=Rvw+LKjWeCLkfiPXncryzTKEtPWj/2E44qznmIziRv6iqcXxrsiuZZUjPQ2bdpILMlUOzMGiKKorI9F0Diw/q6epvepjhHntq0uL+SLu4xbb6y8XBiDjPs/nrUz+iyYZIUlX8gWgX6sK4yA7ArgqokHMW2B7x9g/Z63c5JxSn+ZkI3nD/CuD0MPF+J9yObv9mF5iCSJgcTyBIi1J5xmx7+QqDSUi7V9rpqcguoI2G0pT8kx/WyomGx9i6Cv5cqzhQ6u3mFGz1O8hDqf9jKjCt4DIiJhIR1CN6d5szh8CmNtMWDckRQATYltoQZQInzVtzne9B7gDhWVz+JDBRa8FQA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1780614165; x=1781218965; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
-         :references:cc:to:from:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=kWvqDBEdNNwv+HxbBnj4yt4aMkP3PfL1BZmGiVQCZfg=;
-        b=AG9prGZTQ/DbxCBK0nKY96Ei3kEpzc7chsS42SMT75mujaBZ0K1Lni4By40gzuXZhJ
-         WpBQY5+3Da3TpHGTkOveWl6//ckeCcBoV7NwxmI46BOzuElbDvTUSdcL6+onUqrG2jR4
-         wO73QEG+IAMob7iWq/00OuGEzQGejxF4V6ua3x2qo849L9uwMy+5l34829JiU20qOHTz
-         0izgWXsUQeJc1LcuIkD+vPsxQIL0ztGgkPEwBvxPP3ONbkQ/n53eMJP6C20HcCvwTBvK
-         ta/a+Nz3AhDIrURDgS0/lVLpXYEswYEn6IY9XlTtbzQRiEcC2z4zqD1C0iApQI7ld5Vp
-         fHTw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780614165; x=1781218965;
-        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
-         :references:cc:to:from:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=kWvqDBEdNNwv+HxbBnj4yt4aMkP3PfL1BZmGiVQCZfg=;
-        b=apYDXtdPXDXU32oVIZhMA7c9qz03gLfFJOY5gWXverYB8EDtJQSKUNmWDi8fttgqVf
-         RPNgpm+XruCo+APMe1CKQaaPvgK/0SHti5XTxipZ5c5R/C3HlSDEJNrvUMluQi4wRiJE
-         4GgfPubIhQRfYwIDwvrseYZdLhYk7qlRACPbM5jkMUo709rUC4lcGTpQVxLuhPL8egTx
-         C9BgbfU0Nefq6M29ertqasnGDzdkLxQnm0NQzS95r4/Q31HayhBp4cjP0lcE+BBlFcO+
-         noI4mL9Fqdeg3SMH4YnRtfOBPmhH9pAE8ZFoIluQoVmn9UVD6pUJ83f4+ZRzukz7jBYu
-         0jtA==
-X-Forwarded-Encrypted: i=1; AFNElJ85sBOA7vrlID6wnXeCjRTQPwYddb3WtCUcf+WSR+eJt93TAQb/8s9JAQggHoedkT6pDA1Y8jTfq6SwSA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzY9KTE60T6+c+gS4Ev5dxEC8Wct7T9vEyZaT6VSQnX95NiWEQx
-	Msf3XFYOVYvMCVGqg1wRMLi26T0DtOPPRvlyLeRyckLqV2te04J5LMI1QNrfKeIxcUw=
-X-Gm-Gg: Acq92OETxlZAgb1vS1Xs+nQ08CtWcciISgTMlyc6/GQofH+Zr8ByiQaewktEKEp/hD+
-	YtorABCFb2L2CadmqSzpQ0EeQTVwUka/16/jD67RoC65/psWG47rBJQx5JruO+rMypsIv3vcgku
-	v2fgnEt0KWK87HTjlh4YnDQoSynWqIKLB9JXSSUVdu14QDZRXYB4ax+F+GxowRFdQmbX/8yVRoj
-	Y9mdm0xaKG/YN5ISeDWOd4XvwsCaEtoElxpB5Eny2k8I050X0TIrvqVA0Ly029zP6ApwPmaYXaO
-	u+4YFG8wfpOrhlTaEBZdvPe3bx/Q2DNSCHA24c2JGur2FNzy+iOTlg08FbYx18oISI+dGybWS+d
-	xYyv/htd8a9JEFsEw32E6omOyXmstuoS3UTKiGxU0EcdAihTA2Re8HZEjhxA/6wxlLnK5UvsTNC
-	coLx+oYf6BAEaDl0TvQT4WwLQJBZz0Pd3wLZGnEo50iFxcs74MBW4S+qsxx2Rp2tTlnhXX2CcCx
-	Fcbsw0udEu4gDfxJYos4F4DFv86YpTqlGHIIjCp3Q+EBAzr05teU3Gv
-X-Received: by 2002:a17:907:971b:b0:bee:965f:dcf7 with SMTP id a640c23a62f3a-bf37086a747mr37396166b.17.1780614165115;
-        Thu, 04 Jun 2026 16:02:45 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-36f6c668f9bsm4434111a91.7.2026.06.04.16.02.41
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 04 Jun 2026 16:02:44 -0700 (PDT)
-Message-ID: <8a85da40-4c7f-4366-b4da-fecec9d33970@suse.com>
-Date: Fri, 5 Jun 2026 08:32:39 +0930
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=fzMGT4RUq6lfHnxvUfzNsXQrxgM8ARE9mWoqTPD6CLY=;
+ b=L6s87P6y+Ir6m41by9MbOoiSBLLdXhU3LGHB0mQJk824h+qFVhz+XepYRbjENxo/S7+Qs/ObgJxVLhBal0G6XfK363r4pLvogITqaV2ZvVf0M5he5OKzXtFZQpPxD6IrDHpZb2+fP5YDWilgndwfAdHlfVdlaSacqHabQLkCWbY=
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from LV3PR04MB9258.namprd04.prod.outlook.com (2603:10b6:408:26a::17)
+ by BY1PR04MB8702.namprd04.prod.outlook.com (2603:10b6:a03:527::13) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.92.8; Fri, 5 Jun 2026
+ 02:22:48 +0000
+Received: from LV3PR04MB9258.namprd04.prod.outlook.com
+ ([fe80::1d27:4d42:3be8:77f2]) by LV3PR04MB9258.namprd04.prod.outlook.com
+ ([fe80::1d27:4d42:3be8:77f2%4]) with mapi id 15.21.0092.007; Fri, 5 Jun 2026
+ 02:22:48 +0000
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
+Date: Fri, 05 Jun 2026 11:22:43 +0900
+Message-Id: <DJ0RAMUVW89X.C3T31TKENNYN@wdc.com>
+Subject: Re: [PATCH] btrfs: fix zoned sub_group leak on space_info sysfs
+ failure
+From: "Naohiro Aota" <Naohiro.Aota@wdc.com>
+To: "Guangshuo Li" <lgs201920130244@gmail.com>, "Chris Mason" <clm@fb.com>,
+ "David Sterba" <dsterba@suse.com>, "Naohiro Aota" <naohiro.aota@wdc.com>,
+ "Johannes Thumshirn" <johannes.thumshirn@wdc.com>,
+ <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+X-Mailer: aerc 0.21.0
+References: <20260604121043.1425201-1-lgs201920130244@gmail.com>
+In-Reply-To: <20260604121043.1425201-1-lgs201920130244@gmail.com>
+X-ClientProxiedBy: TYCP286CA0307.JPNP286.PROD.OUTLOOK.COM
+ (2603:1096:400:38b::15) To LV3PR04MB9258.namprd04.prod.outlook.com
+ (2603:10b6:408:26a::17)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: start qgroup ioctl transactions on the quota
- root
-From: Qu Wenruo <wqu@suse.com>
-To: Dongjiang Zhu <zhudongjiang@fnnas.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com, fdmanana@suse.com
-References: <20260604085522.3872126-1-zhudongjiang@fnnas.com>
- <02849934-ca88-42a7-ba3e-a7196e1fcef1@suse.com>
- <60e3c20b-8490-41b6-8189-ea595dd2ffa5@fnnas.com>
- <f7550cda-a443-4979-b6c4-be086d23dfad@suse.com>
-Content-Language: en-US
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <f7550cda-a443-4979-b6c4-be086d23dfad@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: LV3PR04MB9258:EE_|BY1PR04MB8702:EE_
+X-MS-Office365-Filtering-Correlation-Id: 61374273-6644-403b-3b52-08dec2a95621
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|19092799006|366016|376014|1800799024|10070799003|5023799004|11063799006|56012099006|22082099003|18002099003;
+X-Microsoft-Antispam-Message-Info:
+	lZRgEaCvykBy4CTueqjsK78vZ2z4ImatWxtyFy2utfBRZbMJUAxqHzMnud0I7uPq95yjrQOJnCdwSlh5bq26yt7/iINtczfb+LUa50cOywjhmN8OWGKQzKY+qkgQbTiEXwBYNXhZHSS4kC9K7qaLQhGp2PRt5dqjBOkmDr66qZqqQIbDb/zAV1mEUcp24TCCF81UODvrbXfdjLVmjUZhMVibQIir6twEjDI5KRpXV8DwAPJVo25P/y4/kAVVlxUKpPC5UzAZDl4fkYFF+0yRjOt+tB4TZ2bKNkKgiZwL6RgCKd4c44cufyIy8a039NsXfytwdcOaEf8Gite65NjrQbleH2OKrXrNiZM+jjnL9D71keQfMqswEHkNqbly21q1WVlSSFWwGtKWkK0CtJasHldF/4/agaac9d3xHB4dwoL/SiWFH6woL17G/X3WGiNaGahXnIopc6rMufrEZrYdFhG5NaVoVHsAkwy5Xq1tqiRKTysKp5SMsgunuUXaySPlOVr1cRZAELGK0ma9g9KIlP9BH/Rzu3p6WiYTm2SeIByzcPDZBaGNk+BH+t3F05sZs6CCMt6uED68k+wuZvE+U0w8Jwj3HK1LyCqiUvmCX9ZBjfZCLKRbbtN7pd1roQs9PUwdrVPHEp4pA3r800S23apDO0XqBYunq2BZm85/Pu5gKT6Zp3WsMj+PaY6Ll3ok
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:LV3PR04MB9258.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(19092799006)(366016)(376014)(1800799024)(10070799003)(5023799004)(11063799006)(56012099006)(22082099003)(18002099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?utf-8?B?NW9JS1hkTmpuNG55Z3pkN0h6RWR3MGUwMElYOG5GV1ZpQUZ5OEhZbXNaa1FP?=
+ =?utf-8?B?M0oyMkZKTDBsT2svc05HWnJnTk43ZktsaE9mVVArV0plQ3MvNnVFdkdPOUc2?=
+ =?utf-8?B?Y3k2Tk80TXVtYk5IMzlkT2NYYmw3M0V1V1A4VmpmUkRWbmhSTEpzTk5oTzVW?=
+ =?utf-8?B?RXBqWkMvK210T0NxNkNrbzZJVnBmK1p3TGNOSTd5ckcycXpMc2Z4ektsaUky?=
+ =?utf-8?B?UXRXWC9DTmpET09rZmNXNGdFWjVVa1pCZ3luZW1HaXptRnpKM0RMWGo5cDNr?=
+ =?utf-8?B?N1hpcnAyU1gvbUpXZnlUOVBJN3l6YnNOa3lQRUtLcUV5ODdtNm5BK0RUd3J5?=
+ =?utf-8?B?cStQWWJka05ONUFRbXlsNkEzQ2V3ZGRrLzR4R1ZNak9GREhvOHlpR2pZNkVj?=
+ =?utf-8?B?ZHcxWkhwTnBNZmF3dFFBVGlUbStkVkE5TjZ3dVBnL2VIRFRPeU41MDZ0NkpD?=
+ =?utf-8?B?Mm1oaUx3QWNKU0trSUJYVmZmM2RuL25QZHVUaTJQN0J2UzJBa2Rwdmw4NnRi?=
+ =?utf-8?B?QzRodlFwVUxKc1BZanRWRjFWakhPZzJjeENIbHoyVEJmRjZ1QXM0WWZxZlpH?=
+ =?utf-8?B?NzRtaDhzM1BBOXl2ZG52MGkydXAwUFJabjFiZUsvTk11Z3FsZDVSZUROeXli?=
+ =?utf-8?B?cEE4UEVpL1lrbnlmRjh4Q2hCMVIrZXNMTUUyWWhVYlV5d1dNUjlhL1Z2S3l3?=
+ =?utf-8?B?VWkzaFZEWGI1V056TXYwRHVESE50UDMvVHlXVFlTN1pSVVNIaEFMcWxNWWZO?=
+ =?utf-8?B?Tzd5dUFoNHRiSWJkUzUyL1ZxaXFkdG5EZEIvaGpYTk0yazhHNFNuYWdRa0dJ?=
+ =?utf-8?B?bU5ZMDMwbjRPTHk2MkVOUVlPS082OUJuNG5NblhSRU55WlhjWWh5eW0wa0l2?=
+ =?utf-8?B?M240MXpVallTMnlVQmZKYVZ1ZVNIYmY4Q2ZyK3RtNmpkSmpKaWlFbHdUVklQ?=
+ =?utf-8?B?Ymx4ZjA0MFp3KzlHUTlIN05nZm0yRjZjdHpHNXQ0dFlEYW50UnI1b0V3bWlF?=
+ =?utf-8?B?STF1UEJQTXlHcHNZN0xIQXJGdk9WUU0wUFJ1Mndpbjh4cElCZlFhV0pQSlhR?=
+ =?utf-8?B?YXBHeXRWdlY3eFUyZVUzRnZrN05FU1NIMTkzMkgza0wvRlZMNG1BWTBYSkhn?=
+ =?utf-8?B?blI4QkRMY1J0MW0zUWMzUVdadWg4cEZaNlQvc1dkYXZFaElZUDF6WkN0a2Ri?=
+ =?utf-8?B?RzZTc3lQWkV2Z3poNUNGUDM2UStCTkV4Z2JSeDczZUlSRkxUaTlob2Mwdkgw?=
+ =?utf-8?B?YUx5MkszU3BQV0xzM3RpaTlCbmVQVllFdExRMlBmUGk1dk5JeDRkNTAydld1?=
+ =?utf-8?B?MXhqUFg5MzZoL3N1OHRiQWhBNTBwdkdEK1FDY2c0YnBaN0hoZWZTTFlVdDNh?=
+ =?utf-8?B?emlaUFNWU3lmalZRcTVtcDFVcTdWOFNCeHZFR0wyb1pzSnVIQnNiNEVTNURj?=
+ =?utf-8?B?aTJ3V2dsSjk5Z2RhUkF5anJYb1I1QzFNNEdiSDdkdFNvbTBFQVNJTVhZeWll?=
+ =?utf-8?B?TXZOWU56L2NPejU5c3V0QkNGMmhGM3g1SjlUZW5JcnZEOWl4bDREMElURFdh?=
+ =?utf-8?B?Z3N3c29rSFpVY2NIQXpJK1ZXQmRYN2w1NzAydHhBZUpGSjVJU1ZMcnBLSlkz?=
+ =?utf-8?B?blNWSk9Tc2RGU0JZQzh2d0FiUTR4SU1kMldGQnRBbUtwSXB1NHMvbGVQbzhr?=
+ =?utf-8?B?eXFEaFpSS0EwV0ZhQ083UGJtRFhjY1hzTjlEeXNQUmtoYy9RNnNPMDNKZUx0?=
+ =?utf-8?B?WmNZVlBEc3czUkFaQUV0UEVQbFE1Q29HNUZTZkhNZWdPM2RwcklWTGloK2pC?=
+ =?utf-8?B?UXA3K2JjeHg5ZHlnMFdMRnp2K3VwVXF1bFQrd3pKU1RMSGdzMUxSQUtqOXd2?=
+ =?utf-8?B?NFhpU0hudmIwME1jS2tzRGF5YkRuMkNpTTJXeVdPV2lMLytRZlBwL2JnL21j?=
+ =?utf-8?B?dGtkdjM3bDZKS2lOam8zZnphd1Zpbk5qZlJlRWU1a1B3UGROTnBKUGxwWGlT?=
+ =?utf-8?B?ZG9DaTNiS0JOMk9HaDRGUFR1eWtUT0c2bTM5Z1pHZmxtbkEvc3d6QXZLN0NX?=
+ =?utf-8?B?Qy91VnJRZFcwMGhaSmZKU1czTEgyM3BYN1BOdVhjc2crMWUvMmE0ejJONTNm?=
+ =?utf-8?B?T1IxZTVuNjVhSTNGelMzeUJiS2ZxelNqOEJGM0ZxNFR6QkFEOTZZZU5lRHFB?=
+ =?utf-8?B?aytKUDJhYW1nQzd0ckRQemMvUmVnTUZFUURRS3h6N1BqYjV0UEFyWDJHUHJ4?=
+ =?utf-8?B?SmNLRnpTSkNJemFvK0VYNnR0b0M2encwMklwMU1YcFRMUFFzY3lyUGh6OXIw?=
+ =?utf-8?B?Nm1ITlNDSFEzYlYrS0F0Wi9ETzh2eUZQTGhmRG5WKzBPMUNRN2ZaVndkMUht?=
+ =?utf-8?Q?N3oGmAEfhQ77MHthKozS7nAuQ+g/EqoswuJnT7zP5hafY?=
+X-MS-Exchange-AntiSpam-MessageData-1: Wr4PtoZasSzn2Q==
+X-Exchange-RoutingPolicyChecked:
+	P2KgkYrWRqPcvVDuNIGPPKdwCRtQ8RgnNgUgbL1t0PS6qF8HJ7DJNEDmSgOxziqb+2HJc4EnL3PgGIfUN3HUqswpiSvDNdd6SQ8F8vVL8JCPNG8M8rRLh/uaZJHiIqu0Nfkye3IYsIOzfUXDN3BxvGSZl1dSVdN/CxO0i7tp8+8I9gKrMqkEQxi6vejk65gq1JhtFqcElc5eL//Y5BZaF8JAmnsfJ14dXWraiFPEIPgTP7uldibi9KSO3F5W7u3X2kIJ8gBnTiHWDwZ8zZIJWM+kTn3VYVs9TZ6vLurDjKmPp7XpSF/zs80lOFGiXPC1HCQ5XD0Nj9pV/LeoX2u5Zg==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	buUQPHQB0IR3tuWPJHPO37OVOeaoCvhEJ8x1YUDAuX+QUNjjhw6LGGssh5KCbwSxi+cfyfo/T+y15zsD1hNEz6dUGXx6afPAZ9GCAbL/+rug2/f00hjYtOepfqg93N12jlCyb5TwkPNExPUGLk1gOT4kgD0iunFYXVEUfyV2AfSMpbYQF9phEGpnZnfoCJiXGgPXbAJawIsORpORC78o7LP1HLNW2Vou51dR4VPEPgRk3QVApQRB9F3TB3+fhUTedGO0p1Zkre4Y8Nx1ovS4yb6Ci9S2jtnjcByEDg0bCUFcuT3o0Tw3ve2Hmj3A2+WXjqUWj8VlLkrdumossEetBwJVM5XY53OxbUoHTFoAriwFbuYlR1Dn5S/BEcqDfqpXab6OVumGLVeFGmIZ9/BXu9vO0vWIu/XYrCDvuENjUPqdgiFO3ujAbTex/rOqriuWfo7TDtJ4r0yBHcZSDp2Ab9sD5FKT6ij54whB+TtzONKkNviZvWeifVrFEzFSVzTY5ogobsRScNJl+kNf1Zu3WW0Aia+IRg8lNhUuRm22WgHjXp4q1eJNzsmKLiiCp1Q1tGcEJVqHG54Av490yVkwmORHYBjVaESJQIdvlyZHoJSJBPTZKefyIdIkTpDsr/d0
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 61374273-6644-403b-3b52-08dec2a95621
+X-MS-Exchange-CrossTenant-AuthSource: LV3PR04MB9258.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 05 Jun 2026 02:22:48.4240
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: ZKhnZFnWvww1nc+nMmEYmDZzwCxDvRB9NSqN1yoYiv1eEMyGJkNcR08sgXcU1Nn+FSvIE5usYFVHgXG+H7e2GQ==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: BY1PR04MB8702
 
+On Thu Jun 4, 2026 at 9:10 PM JST, Guangshuo Li wrote:
+> On zoned filesystems, create_space_info() creates a space_info sub_group
+> before registering the parent space_info in sysfs.
+>
+> If the sub_group registration succeeds but the parent
+> btrfs_sysfs_add_space_info_type() call fails, the parent space_info is
+> released through its kobject release path, but the already published
+> sub_group is left behind. The sub_group also keeps its logical parent
+> pointer, which then points at freed memory.
+>
+> Remember the created sub_group before registering the parent and remove i=
+t
+> when parent sysfs registration fails. Cache the sub_group pointer before
+> calling btrfs_sysfs_add_space_info_type(), as that helper may already hav=
+e
+> put and released the parent on failure.
 
+Thank you for the patch. The logic itself is correct, but I think there
+is a better alternative. My suggestion is making
+btrfs_sysfs_remove_space_info() responsible for removing sub-groups (if
+any) first.
 
-在 2026/6/5 08:21, Qu Wenruo 写道:
-> 
-> 
-> 在 2026/6/4 21:44, Dongjiang Zhu 写道:
->> 在 2026/6/4 17:15, Qu Wenruo 写道:
-> [...]
->>> Furthermore, all those qgroup related operations (including enabling/
->>> disabling) are all holding qgroup_ioctl_lock, thus there is no way the
->>> quota root is gone halfway.
->>>
->>
->> I may have misunderstood this part.
->>
->> The ioctl handler checks btrfs_qgroup_enabled() before starting the
->> transaction, but it does not hold qgroup_ioctl_lock between that check
->> and btrfs_start_transaction(). btrfs_quota_disable() can clear
->> fs_info->quota_root and put the quota root under qgroup_ioctl_lock.
-> 
-> Then enlarge the lifespan of qgroup_ioctl_lock.
-> 
-> btrfs_add_qgroup_relation() and btrfs_del_qgroup_relation() they are 
-> only called inside the assign function.
-> You can drop the mutex lock/unlock inside them, change then to do a 
-> lockdep_assert().
-> 
-> Then hold the qgroup_ioctl_lock inside the assign ioctl for the whole 
-> duration, after start_transaction().
-> 
-> Then you can safely access quota_root without refcount.
+With that change, we can reverse the space-info creation order in
+create_space_info(). If the parent space-info registration fails, no
+sub-groups exist yet, so nothing extra needs to be cleaned up. If
+sub-group creation fails, we can call btrfs_sysfs_remove_space_info() on
+the parent to clean everything up.
 
-My bad, this is totally wrong, you already need a quota root at start 
-transaction.
+This change also has a side benefit. Currently,
+check_removing_space_info() is also removing sub-groups, which
+contradicts its name. We can remove those
+btrfs_sysfs_remove_space_info() calls for sub-groups from the function,
+making it a pure checker.
 
-I think the better solution is something like this:
-
-	mutex_lock(qgroup_ioctl_lock);
-	quota_root = btrfs_grab_root(fs_info->quota_root);
-	mutex_unlock(qgroup_ioctl_lock);
-
-	if (!quota_root)
-		goto out;
-
-	trans = btrfs_start_transaction(quota_root);
-	/* Do the work */
-	ret = btrfs_end_transaction(trans);
-	btrfs_put_root(quota_root);
-
-Even if there is a race with quota disable and quota disable later 
-removed the quota_root, later functions like btrfs_add_qgroup_relation() 
-will still do the proper fs_info->quota_root check and exit early if 
-quota is already disabled.
-
-But I have not yet tested this, you still need to run fstests to be 
-extra sure.
-
-Thanks,
-Qu
-> 
->>
->> I enlarged that window locally. If the ioctl reads fs_info->quota_root
->> after the delay and passes it directly to btrfs_start_transaction(), it
->> can hit a NULL root after quota disable. If the ioctl saves
->> fs_info->quota_root into a local variable before the delay and then
->> starts the transaction on that saved pointer, KASAN reports a
->> slab-use-after-free in start_transaction(), with the root allocated by
->> btrfs_quota_enable() and freed by btrfs_quota_disable().
->>
->> So I think I may be missing the intended serialization here. Since
->> qgroup_ioctl_lock cannot be held across btrfs_start_transaction(), as
->> noted in btrfs_quota_enable(), what would be the right way to protect
->> the quota root for this transaction start?
->>
->>>> +    if (!quota_root) {
->>>> +        ret = -ENOTCONN;
->>>> +        goto drop_write;
->>>> +    }
->>>> +
->>>>        /* 2 BTRFS_QGROUP_RELATION_KEY items. */
->>>> -    trans = btrfs_start_transaction(root, 2);
->>>> +    trans = btrfs_start_transaction(quota_root, 2);
->>>> +    btrfs_put_root(quota_root);
->>>
->>> Again unnecessary.
->>>
->>> Furthermore, the pattern of grab root -> start trans -> put root is
->>> completely incorrect and dangerous.
->>>
->>> If we're the last one holding a root pointer, after holding a trans
->>> handler, calling btrfs_put_root() can cause the root pointer to be gone,
->>> resulting all kinds of use-after-free bugs.
->>>
->>> I do not understand where you come up this cursed usage, it's completely
->>> incorrect.
->>>
->>
->> Understood, I will drop that pattern. I added it only because of the
->> race above, but I misunderstood the root lifetime rules around
->> transaction start.
->>
->> For my understanding, is the problem that btrfs_start_transaction() does
->> not take ownership of the root pointer, so the caller must not drop the
->> last root reference while the transaction handle is still alive?
->>
->> I really appreciate your review and the detailed explanation.
->>
->> Thanks,
->> Dongjiang
->>
->>>>        if (IS_ERR(trans)) {
->>>>            ret = PTR_ERR(trans);
->>>>            goto drop_write;
->>>> @@ -3675,7 +3682,8 @@ static long btrfs_ioctl_qgroup_assign(struct
->>>> file *file, void __user *arg)
->>>>    static long btrfs_ioctl_qgroup_create(struct file *file, void __user
->>>> *arg)
->>>>    {
->>>>        struct inode *inode = file_inode(file);
->>>> -    struct btrfs_root *root = BTRFS_I(inode)->root;
->>>> +    struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
->>>> +    struct btrfs_root *quota_root;
->>>>        struct btrfs_ioctl_qgroup_create_args AUTO_KFREE(sa);
->>>>        struct btrfs_trans_handle *trans;
->>>>        int ret;
->>>> @@ -3684,7 +3692,7 @@ static long btrfs_ioctl_qgroup_create(struct
->>>> file *file, void __user *arg)
->>>>        if (!capable(CAP_SYS_ADMIN))
->>>>            return -EPERM;
->>>> -    if (!btrfs_qgroup_enabled(root->fs_info))
->>>> +    if (!btrfs_qgroup_enabled(fs_info))
->>>>            return -ENOTCONN;
->>>>        ret = mnt_want_write_file(file);
->>>> @@ -3707,11 +3715,18 @@ static long btrfs_ioctl_qgroup_create(struct
->>>> file *file, void __user *arg)
->>>>            goto drop_write;
->>>>        }
->>>> +    quota_root = btrfs_grab_root(fs_info->quota_root);
->>>
->>> The same.
->>>
->>>> +    if (!quota_root) {
->>>> +        ret = -ENOTCONN;
->>>> +        goto drop_write;
->>>> +    }
->>>> +
->>>>        /*
->>>>         * 1 BTRFS_QGROUP_INFO_KEY item.
->>>>         * 1 BTRFS_QGROUP_LIMIT_KEY item.
->>>>         */
->>>> -    trans = btrfs_start_transaction(root, 2);
->>>> +    trans = btrfs_start_transaction(quota_root, 2);
->>>> +    btrfs_put_root(quota_root);
->>>
->>> The same.
->>>>        if (IS_ERR(trans)) {
->>>>            ret = PTR_ERR(trans);
->>>>            goto drop_write;
->>>> @@ -3736,6 +3751,8 @@ static long btrfs_ioctl_qgroup_limit(struct file
->>>> *file, void __user *arg)
->>>>    {
->>>>        struct inode *inode = file_inode(file);
->>>>        struct btrfs_root *root = BTRFS_I(inode)->root;
->>>> +    struct btrfs_root *quota_root;
->>>> +    struct btrfs_fs_info *fs_info = root->fs_info;
->>>>        struct btrfs_ioctl_qgroup_limit_args AUTO_KFREE(sa);
->>>>        struct btrfs_trans_handle *trans;
->>>>        int ret;
->>>> @@ -3745,7 +3762,7 @@ static long btrfs_ioctl_qgroup_limit(struct file
->>>> *file, void __user *arg)
->>>>        if (!capable(CAP_SYS_ADMIN))
->>>>            return -EPERM;
->>>> -    if (!btrfs_qgroup_enabled(root->fs_info))
->>>> +    if (!btrfs_qgroup_enabled(fs_info))
->>>>            return -ENOTCONN;
->>>>        ret = mnt_want_write_file(file);
->>>> @@ -3758,8 +3775,15 @@ static long btrfs_ioctl_qgroup_limit(struct
->>>> file *file, void __user *arg)
->>>>            goto drop_write;
->>>>        }
->>>> +    quota_root = btrfs_grab_root(fs_info->quota_root);
->>>
->>> The same.
->>>
->>>> +    if (!quota_root) {
->>>> +        ret = -ENOTCONN;
->>>> +        goto drop_write;
->>>> +    }
->>>> +
->>>>        /* 1 BTRFS_QGROUP_LIMIT_KEY item. */
->>>> -    trans = btrfs_start_transaction(root, 1);
->>>> +    trans = btrfs_start_transaction(quota_root, 1);
->>>> +    btrfs_put_root(quota_root);
->>>
->>> The same.
->>>
->>>>        if (IS_ERR(trans)) {
->>>>            ret = PTR_ERR(trans);
->>>>            goto drop_write;
->>>
-> 
-> 
+>
+> Fixes: f92ee31e031c7 ("btrfs: introduce btrfs_space_info sub-group")
+> Signed-off-by: Guangshuo Li <lgs201920130244@gmail.com>
+> ---
+>  fs/btrfs/space-info.c | 7 ++++++-
+>  1 file changed, 6 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+> index f0436eea1544..03659dfcb830 100644
+> --- a/fs/btrfs/space-info.c
+> +++ b/fs/btrfs/space-info.c
+> @@ -296,6 +296,7 @@ static int create_space_info(struct btrfs_fs_info *in=
+fo, u64 flags)
+>  {
+> =20
+>  	struct btrfs_space_info *space_info;
+> +	struct btrfs_space_info *sub_group =3D NULL;
+>  	int ret =3D 0;
+> =20
+>  	space_info =3D kzalloc_obj(*space_info, GFP_NOFS);
+> @@ -316,11 +317,15 @@ static int create_space_info(struct btrfs_fs_info *=
+info, u64 flags)
+> =20
+>  		if (ret)
+>  			goto out_free;
+> +		sub_group =3D space_info->sub_group[0];
+>  	}
+> =20
+>  	ret =3D btrfs_sysfs_add_space_info_type(space_info);
+> -	if (ret)
+> +	if (ret) {
+> +		if (sub_group)
+> +			btrfs_sysfs_remove_space_info(sub_group);
+>  		return ret;
+> +	}
+> =20
+>  	list_add(&space_info->list, &info->space_info);
+>  	if (flags & BTRFS_BLOCK_GROUP_DATA)
 

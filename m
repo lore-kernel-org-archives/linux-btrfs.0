@@ -1,129 +1,147 @@
-Received: from mx0a-0064b401.pphosted.com (mx0a-0064b401.pphosted.com [205.220.166.238])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pl1-f182.google.com (mail-pl1-f182.google.com [209.85.214.182])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 883E72853E9;
-	Sun,  7 Jun 2026 05:34:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=205.220.166.238
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E62364071DD
+	for <linux-btrfs@vger.kernel.org>; Sun,  7 Jun 2026 05:36:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.182
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780810495; cv=none; b=MeY6yXDj/sbRb1VSAPdwvFwRRU0IJDCqfATJSUv3uftQo/VGDGyHcvexz1UjMtDdB5D2Ba8LJrog+N+nNGUMaNCg1eW4WWPbpVPd2Qsgr9DLGqE823mgzas26+qh8qQmlo/HhxmqfXzE6JSDoRq+E5FbywgUMBxcF/simjnJBSk=
+	t=1780810581; cv=none; b=X3g+bK5hNUH+RJctbVNaj+lS1AKY4w5zibVLHtxIF/OZ/Slry9FC27Ag42lBsM7u4+NTYDUrv/Ynr3+m13//WJAniZJeh5h4ffEbDIoZfKMbnKDtAzetOZfjnPqgg1QpQov/8rNSnYV+nPIlI6tVbEXtUa5mXhR9a5nhuvu2AzU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780810495; c=relaxed/simple;
-	bh=RrK5YmcgYjJ0bGP62+VZD8Rxpdu5X0IzbdXx7f8k6Ww=;
-	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=OLUEHawEfzPgVrG4QcDoPiOHp9+BlmyBa9TYLypyYUiqwJ9zoulCf+3D6fOdYggORW6PJP5SlXbh/mevS5BGVddqNVjCpLIwXCty5G7SfZzSmmaBtwM4SePMzvMhQ2An2I1FP3L24gR8meEIUeW5NC0ZncUTLZDCtOZkLBEuYzs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=windriver.com; spf=pass smtp.mailfrom=windriver.com; dkim=pass (2048-bit key) header.d=windriver.com header.i=@windriver.com header.b=JtZKuu49; arc=none smtp.client-ip=205.220.166.238
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=windriver.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=windriver.com
+	s=arc-20240116; t=1780810581; c=relaxed/simple;
+	bh=A8t9hCeoQLlihPIbA+jCrdGv38G25Nk9wq9uA8y4IuQ=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=DcK+2PEK/NOV8tE2O1+jxmMCIlr6d5f1lDmJIryb2+0tPy2CuGU7kZzHLC/C+fxeYISW87KP7PcnV3r8+b8xBLwXy5PEjG7DLDTpb3VmdFtf/AaBIDJvW/FSd0GyjD6DknWWoQGpV66l/9Z7oDTV72aZoF/IA14FU8Zo6CGrtH0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=j85ZdVa/; arc=none smtp.client-ip=209.85.214.182
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=windriver.com header.i=@windriver.com header.b="JtZKuu49"
-Received: from pps.filterd (m0250810.ppops.net [127.0.0.1])
-	by mx0a-0064b401.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 6575YIms1107068;
-	Sat, 6 Jun 2026 22:34:44 -0700
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=windriver.com;
-	 h=cc:content-transfer-encoding:content-type:date:from
-	:message-id:mime-version:subject:to; s=PPS06212021; bh=ebCIbjC/S
-	iGH/Wglp+hkHqKzk44aXz9rYr9cP5QdhFQ=; b=JtZKuu49tOgpqpZ/bDWjSk/gZ
-	U48q9yGSL8inIqzvgABRqda9bB2Cwx6iwwO6WYUmBC5O6oQN2AQsQCxWHZBoadrB
-	lJVa15iCNC9Yzn9aATKRS2SgYmKmpuSlZA2jwYSxO+8O7SbsIlo/+buZiuzbdZ6y
-	fsF823/T6VARmxidmaFBuy8e48CCZ7wFfFNmC5LG5rZV9PxkZQ0ppHMauwFApdbW
-	kHccpel8OPUqjgfRwElZPXDwt8mU9+NKeKsx9scDpV18ToR0kQkgEZPyT8/3bLgd
-	teiGG/IP6VdccU5tD/KrLN7nvBsm2p2rF0JlejPJK3DUc7sr5g1EhyM13y/sQ==
-Received: from ala-exchng02.corp.ad.wrs.com (ala-exchng02.wrs.com [128.224.246.37])
-	by mx0a-0064b401.pphosted.com (PPS) with ESMTPS id 4emety0w5f-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT);
-	Sat, 06 Jun 2026 22:34:44 -0700 (PDT)
-Received: from ala-exchng01.corp.ad.wrs.com (10.11.224.121) by
- ALA-EXCHNG02.corp.ad.wrs.com (10.11.224.122) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2507.61; Sat, 6 Jun 2026 22:34:43 -0700
-Received: from pek-yzhou-d3.wrs.com (10.11.232.110) by
- ala-exchng01.corp.ad.wrs.com (10.11.224.121) with Microsoft SMTP Server id
- 15.1.2507.61 via Frontend Transport; Sat, 6 Jun 2026 22:34:42 -0700
-From: Yun Zhou <yun.zhou@windriver.com>
-To: <clm@fb.com>, <dsterba@suse.com>
-CC: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-        <yun.zhou@windriver.com>
-Subject: [PATCH] btrfs: fix use-after-free of reloc_control in btrfs_reloc_cow_block
-Date: Sun, 7 Jun 2026 13:34:41 +0800
-Message-ID: <20260607053441.1629853-1-yun.zhou@windriver.com>
-X-Mailer: git-send-email 2.43.0
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="j85ZdVa/"
+Received: by mail-pl1-f182.google.com with SMTP id d9443c01a7336-2c0a5354da1so26175945ad.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 06 Jun 2026 22:36:19 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1780810579; x=1781415379; darn=vger.kernel.org;
+        h=in-reply-to:content-transfer-encoding:content-disposition
+         :mime-version:references:message-id:subject:cc:to:from:date:from:to
+         :cc:subject:date:message-id:reply-to;
+        bh=YVtSL8TeTzEFKBL7a/lLlvUpjDj1bGLYk7ZIu2zcnaQ=;
+        b=j85ZdVa/4Q26m2ki//0CillodIMfbc9p+Vo2cbzh3laIaPWtJX54dgXFWXyuF2/CHt
+         RXOqsPyzbgU9UO1bnwvsDCLhkMTSS57g6n4MYCXn2YP5L+UqMkLZcxdH8gEfyK8sptXU
+         y3LPEtw4GKp0xC3IGL4YA/zBCMNlrRvA3d8MdQzXk5Ny+DVGTpx0i29vZcYnHXZEyJmd
+         WCAtPIdsN5LwUkMiEcdNFL7vdvVhQzB8Sw5Rg432EaVImiSXAYU/nDos3W+AUCUlCZwI
+         cVZkZhXRNJ9eWe1ZwGe8eJwYpM0f5poAw5zECCW+iq7EwtdVoYMXidkUV2MTdQF/b+bi
+         a+BA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1780810579; x=1781415379;
+        h=in-reply-to:content-transfer-encoding:content-disposition
+         :mime-version:references:message-id:subject:cc:to:from:date:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=YVtSL8TeTzEFKBL7a/lLlvUpjDj1bGLYk7ZIu2zcnaQ=;
+        b=l12r64Be0FtVDDmXunpNMs1q+OEpABtVnfiYHY1ESKQLZ3wVryz9myOr4bF4Ex3Kch
+         KAg+pFDSrAqyAlCkHKCuT3OxU9Sr/mtN51/QPy9GdNwyYNmxb/DepuKDMamq96ahrRJo
+         Nyi+a96lXIvmB1+9dXlHMOhiO0DTKQ0y/F9LQQ5tm3ofJdwZbY1nqwWOInst8PTmXfE8
+         +Cy4KQBgYt0OG+1tuKJBw2FZD2cL6NRWGW2MdaSp1NfFwaZ/RI4IUrJyG3i56aIwqsCo
+         iGJ/anesV5VcfywTDOzS4YmFpRqTUO7WVyt7XrrF+XYSkWLvUq+QvOBTqkM+YaLm5Mk7
+         cHRg==
+X-Forwarded-Encrypted: i=1; AFNElJ/1JoHsh5OzpcdIb/ZILWiPQa9AjfZYCLf9WJ0jtk06ZFUKQYftxlq+oRvEtVjeKhC0uYrWqOMRTnAoAA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwFXGgBbCCHSVjag/CVgAR60HX7HMVEAlBC2mvG9IuvFkxwrHBJ
+	5AtX+zammeoO3I9tycGPYi9ZmBTqrHmTYAUxWageqOggyx43/MlzJ5Tg
+X-Gm-Gg: Acq92OHHJXMmOl6zD1oUj6bdQodkND3VbSkuw/WUKU82Qv2Teetx19rpcpjeU7WFLuC
+	oFli0YUI1tFBS7sAMLocRP5d6RewoU60WNEV6ynyZTs27qCx5kOwAVdDiHji0bGcbzGG1LjUEZr
+	jla6FiufwvVkVOpUAaS5f5FG0IMjApbfcc2Cy0pB3bFZuP2zNAINim/ZnXwzV+6ZUsbjsh3pkL9
+	kR98uLvRyMZKcCGW/+Tr2CO2FjSdwXmEQOQw2SHNFQNTak6Ihu8VmxhTEJIOgP9ePU4QY1dci7S
+	FywWtJC3a1fFddT5OBg9+6ZeU01Ms+PXfiGSgscUnnGJue16fO3MbrsscLiwP9kIj35yW/By3d2
+	We1tDU4ON5NuiUeq9tuSwxnxCxd1IGv7KPKKnvYEGLCI7bZI5K/5OCYY1xfbPhCIEnnMbknOwre
+	ye2CQEyrstSNY6yGa+5y4gGZuXcOHEgnYPHXYdmnaYmL1n6G6NnFbKpL2zLrfhLCArdo0aUODP
+X-Received: by 2002:a17:902:e842:b0:2bc:ac76:c1d0 with SMTP id d9443c01a7336-2c1ec964b51mr90243325ad.17.1780810579043;
+        Sat, 06 Jun 2026 22:36:19 -0700 (PDT)
+Received: from Air.local ([198.176.50.157])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2c164f70660sm139091645ad.11.2026.06.06.22.36.15
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 06 Jun 2026 22:36:18 -0700 (PDT)
+Date: Sun, 7 Jun 2026 13:36:12 +0800
+From: Weiming Shi <bestswngs@gmail.com>
+To: Qu Wenruo <wqu@suse.com>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>, 
+	Xiang Mei <xmei5@asu.edu>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: lzo: reject compressed segment that overflows the
+ compressed input
+Message-ID: <aiUDKJ0sBpTvAMGK@Air.local>
+References: <20260606174816.723525-2-bestswngs@gmail.com>
+ <f825ee51-a2be-46ac-9038-d094ecdf3212@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-Proofpoint-ORIG-GUID: P6wMdh5vGrFvkDhjZFexGOTVYiVPU0Oz
-X-Authority-Analysis: v=2.4 cv=VKjtWdPX c=1 sm=1 tr=0 ts=6a2502f4 cx=c_pps
- a=Lg6ja3A245NiLSnFpY5YKQ==:117 a=Lg6ja3A245NiLSnFpY5YKQ==:17
- a=FelO9ux0wxsA:10 a=VkNPw1HP01LnGYTKEx00:22 a=bi6dqmuHe4P4UrxVR6um:22
- a=HK-ge7EqtdluswH-FwHe:22 a=edf1wS77AAAA:8 a=hSkVLCK3AAAA:8 a=t7CeM3EgAAAA:8
- a=MHlOuU6TLEuX1EeffVEA:9 a=O8hF6Hzn-FEA:10 a=DcSpbTIhAlouE1Uv7lRv:22
- a=cQPPKAXgyycSBL8etih5:22 a=FdTzh2GWekK77mhwV6Dw:22
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwNjA3MDA1MSBTYWx0ZWRfX64wiO4dot5dJ
- x+ebin/3FsCR5+eFuQdHrjEcU5hHdRDbQZuSlOluMlYbZzmq+9U9b8TokXFOc6KT6A8PNz5JtFo
- fqU2H0kM1c/osnOKSndy5is5453CvCIWVKRE4nuMdKArzvFESfvNi4P9tKX+scFQI/+qruqXL9d
- lnlHSwZ+p9TGOkkLYZNR3jj17c0fErox+KPGUMqhivbo2rvBInZ5aWTEx1pZAewPHSMk81iJRgK
- 5GFIGlCkRNDd2uKvYOSCb8nfK32/24mKYDRGtCH5NOQ9T+wYFSfsJqtmwwTJkZYzbXKHgjtK1aX
- 6m8M8llmTT5GdwpUTGixV9k8d4kv/3WEHNJHBz2LmSTROr7ZMsliWYv5DoyRZ6QxXNOh27OWTQw
- zwF/6baenaGtSxVdvB6YejxUZ9GBqeM4nkrz7A/fcu+RBxGYRSL6pxAf+rBq80XWA9s6D7Ak4vm
- 5yZGRrE1PcE+S3pwjzw==
-X-Proofpoint-GUID: P6wMdh5vGrFvkDhjZFexGOTVYiVPU0Oz
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1143,Hydra:6.1.125,FMLib:17.12.100.49
- definitions=2026-06-07_01,2026-06-05_02,2025-10-01_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- clxscore=1011 impostorscore=0 bulkscore=0 adultscore=0 lowpriorityscore=0
- spamscore=0 suspectscore=0 phishscore=0 malwarescore=0 priorityscore=1501
- classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
- reason=mlx scancount=1 engine=8.22.0-2605210000 definitions=main-2606070051
+In-Reply-To: <f825ee51-a2be-46ac-9038-d094ecdf3212@suse.com>
 
-btrfs_reloc_cow_block() reads fs_info->reloc_ctl without holding any
-lock and then uses the obtained rc pointer throughout the function
-(including replace_file_extents which may sleep). Meanwhile, the
-balance error path can concurrently call unset_reloc_control() followed
-by free_reloc_control(), freeing rc while btrfs_reloc_cow_block() is
-still using it.
+On 26-06-07 08:02, Qu Wenruo wrote:
+> 
+> 
+> 在 2026/6/7 03:18, Weiming Shi 写道:
+> > lzo_decompress_bio() validates each on-disk segment length seg_len only
+> > against the workspace cbuf size, not against the compressed input size
+> > (compressed_len, the total folio bytes of the bio).  A crafted extent can
+> > carry a segment whose seg_len passes the cbuf check but runs past the end
+> > of the bio, so copy_compressed_segment() walks off the last folio:
+> > get_current_folio() then returns the NULL folio from bio_next_folio(), and
+> > with CONFIG_BTRFS_ASSERT disabled (default) folio_size(NULL) faults.
+> > 
+> >   BUG: KASAN: null-ptr-deref in lzo_decompress_bio (fs/btrfs/lzo.c:383)
+> >   Read of size 8 at addr 0000000000000000 by task kworker/u8:1/29
+> >   Workqueue: btrfs-endio simple_end_io_work
+> >    kasan_report (mm/kasan/report.c:590)
+> >    lzo_decompress_bio (fs/btrfs/lzo.c:383)
+> >    end_bbio_compressed_read (fs/btrfs/compression.c:1065)
+> >    btrfs_bio_end_io (fs/btrfs/bio.c:135)
+> >    btrfs_check_read_bio (fs/btrfs/bio.c:180 fs/btrfs/bio.c:285)
+> >    simple_end_io_work
+> >    process_one_work
+> >    worker_thread
+> > 
+> > Reject any segment whose payload would extend beyond compressed_len before
+> > copying it.
+> > 
+> > Fixes: a6e66e6f8c1b ("btrfs: rework lzo_decompress_bio() to make it subpage compatible")
+> > Reported-by: Xiang Mei <xmei5@asu.edu>
+> > Assisted-by: Claude:claude-opus-4-8
+> > Signed-off-by: Weiming Shi <bestswngs@gmail.com>
+> > ---
+> >   fs/btrfs/lzo.c | 4 ++++
+> >   1 file changed, 4 insertions(+)
+> > 
+> > diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+> > index 2de18c7b563a..887d740b27aa 100644
+> > --- a/fs/btrfs/lzo.c
+> > +++ b/fs/btrfs/lzo.c
+> > @@ -491,6 +491,10 @@ int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+> >   			return -EIO;
+> >   		}
+> > +		/* The segment must not extend beyond the compressed input. */
+> > +		if (unlikely(cur_in + seg_len > compressed_len))
+> > +			return -EIO;
+> > +
+> 
+> In lzo_decompress() we return -EUCLEAN, please follow that pattern.
+> 
+> Although it would be better to output a message when such -EUCLEAN is
+> returned.
+> 
+> Otherwise looks good to me.
+> 
+> Thanks,
+> Qu
+> 
+> >   		/* Copy the compressed segment payload into workspace */
+> >   		copy_compressed_segment(cb, &fi, &cur_folio_index, workspace->cbuf,
+> >   					seg_len, &cur_in);
+> 
 
-The race window exists because btrfs_commit_current_transaction() in
-relocate_block_group() may return immediately when the filesystem is in
-error state (no running transaction to wait for), allowing
-free_reloc_control() to execute while other threads still hold
-references to rc obtained before unset_reloc_control().
+Thanks for the review. v2 sent.
 
-Fix this by adding a btrfs_commit_current_transaction() call in
-btrfs_relocate_block_group() right before free_reloc_control(). This
-ensures that any concurrent thread that obtained rc via reloc_ctl
-(which requires being in a transaction context) has completed its
-transaction before rc is freed.
-
-Reported-by: syzbot+0eea49bba18051dea35e@syzkaller.appspotmail.com
-Closes: https://syzkaller.appspot.com/bug?extid=0eea49bba18051dea35e
-Signed-off-by: Yun Zhou <yun.zhou@windriver.com>
----
- fs/btrfs/relocation.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 3ebaf5880125..a01262d0b2ab 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -5443,6 +5443,14 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start,
- 	reloc_chunk_end(fs_info);
- out_put_bg:
- 	btrfs_put_block_group(bg);
-+	/*
-+	 * Ensure no concurrent btrfs_reloc_cow_block() is still using rc.
-+	 * After unset_reloc_control() new callers will see reloc_ctl == NULL
-+	 * and return immediately. But callers that read reloc_ctl before unset
-+	 * are still in a transaction. Wait for the current transaction to
-+	 * complete so all such callers have finished using rc.
-+	 */
-+	btrfs_commit_current_transaction(fs_info->tree_root);
- 	free_reloc_control(rc);
- 	return ret;
- }
--- 
-2.43.0
-
+Thanks,
+Weiming Shi

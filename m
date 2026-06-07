@@ -1,147 +1,178 @@
-Received: from mail-pl1-f182.google.com (mail-pl1-f182.google.com [209.85.214.182])
+Received: from mail-ej1-f47.google.com (mail-ej1-f47.google.com [209.85.218.47])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E62364071DD
-	for <linux-btrfs@vger.kernel.org>; Sun,  7 Jun 2026 05:36:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.182
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E4D1823C8A0
+	for <linux-btrfs@vger.kernel.org>; Sun,  7 Jun 2026 06:13:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780810581; cv=none; b=X3g+bK5hNUH+RJctbVNaj+lS1AKY4w5zibVLHtxIF/OZ/Slry9FC27Ag42lBsM7u4+NTYDUrv/Ynr3+m13//WJAniZJeh5h4ffEbDIoZfKMbnKDtAzetOZfjnPqgg1QpQov/8rNSnYV+nPIlI6tVbEXtUa5mXhR9a5nhuvu2AzU=
+	t=1780812792; cv=none; b=dL2Z2yXeDI+qtAU1JRm8Gk/xn1/+wCTCGpB3FgvfcolB6fJh+WBvceqZjpyeM4Wp2wG9Gz5tdvkmoJIiUzagd6X22XWkC+8TC1ggoF8UpYG0OlPdhAjntuNxM9zKRyrgWa9dgdvJbk68fXYbnvsTkoBXqaTPpuywfxfSkd6Ac6E=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780810581; c=relaxed/simple;
-	bh=A8t9hCeoQLlihPIbA+jCrdGv38G25Nk9wq9uA8y4IuQ=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=DcK+2PEK/NOV8tE2O1+jxmMCIlr6d5f1lDmJIryb2+0tPy2CuGU7kZzHLC/C+fxeYISW87KP7PcnV3r8+b8xBLwXy5PEjG7DLDTpb3VmdFtf/AaBIDJvW/FSd0GyjD6DknWWoQGpV66l/9Z7oDTV72aZoF/IA14FU8Zo6CGrtH0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=j85ZdVa/; arc=none smtp.client-ip=209.85.214.182
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1780812792; c=relaxed/simple;
+	bh=jvMXJaUCY1lhUfm+lj7odC2dcaHZliPvX+MnctoTqzQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=tn8boJ2VsZsk293YN6BOCEk2M9/LVtqayjPty32hyJsSCKd1WRn6PVtojMSQOZKDLOC0IGcEsgxE6BUydgI/IQJB9uDpPNu2Do96oAi+qRq+GD1uVXraCiVyOqTncWj1HWvtboGmOSdRCiTe3XEaqdSq81rfd8sUJlVAdt4hRbE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=PNyv3enB; arc=none smtp.client-ip=209.85.218.47
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="j85ZdVa/"
-Received: by mail-pl1-f182.google.com with SMTP id d9443c01a7336-2c0a5354da1so26175945ad.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 06 Jun 2026 22:36:19 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="PNyv3enB"
+Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-bec49f7e35eso429146966b.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 06 Jun 2026 23:13:10 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1780810579; x=1781415379; darn=vger.kernel.org;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :mime-version:references:message-id:subject:cc:to:from:date:from:to
-         :cc:subject:date:message-id:reply-to;
-        bh=YVtSL8TeTzEFKBL7a/lLlvUpjDj1bGLYk7ZIu2zcnaQ=;
-        b=j85ZdVa/4Q26m2ki//0CillodIMfbc9p+Vo2cbzh3laIaPWtJX54dgXFWXyuF2/CHt
-         RXOqsPyzbgU9UO1bnwvsDCLhkMTSS57g6n4MYCXn2YP5L+UqMkLZcxdH8gEfyK8sptXU
-         y3LPEtw4GKp0xC3IGL4YA/zBCMNlrRvA3d8MdQzXk5Ny+DVGTpx0i29vZcYnHXZEyJmd
-         WCAtPIdsN5LwUkMiEcdNFL7vdvVhQzB8Sw5Rg432EaVImiSXAYU/nDos3W+AUCUlCZwI
-         cVZkZhXRNJ9eWe1ZwGe8eJwYpM0f5poAw5zECCW+iq7EwtdVoYMXidkUV2MTdQF/b+bi
-         a+BA==
+        d=suse.com; s=google; t=1780812789; x=1781417589; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=mS+/QNmpV1dtPFXbbW7XLL/rLwGB5ryRDONzWsMOPYs=;
+        b=PNyv3enBSRkHCuuzieOOZ4aH5URpIejGlKiEK3Q88Gr2rJ0oqpjeifeBuOBUZhhVYs
+         q4Q2WSjF1JJATMdEE5B3PMn0+TCYLUYssEInze1TVfbe/HHdGoX/jkj8CLSm9XJ01HeI
+         JBa2v5WyoVlQelXiSY+3IWFklarAHf3GfcwdXl/Vpf+zt3l5G/9o0ETaY+WU4GLPCAjY
+         A806FrdQYK3+Gr2kj/JElTE7CJCRwhkWnvOPQuoSsHeJ732pT7CtV1EDTOskZNSbURc3
+         LPOUpYXEXULJGIvXYvm1SZGHa6/tWDtTb7WiOCIlzr/v83/J13qpoMfoZYmo+bCv+hPb
+         MAzw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780810579; x=1781415379;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :mime-version:references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=YVtSL8TeTzEFKBL7a/lLlvUpjDj1bGLYk7ZIu2zcnaQ=;
-        b=l12r64Be0FtVDDmXunpNMs1q+OEpABtVnfiYHY1ESKQLZ3wVryz9myOr4bF4Ex3Kch
-         KAg+pFDSrAqyAlCkHKCuT3OxU9Sr/mtN51/QPy9GdNwyYNmxb/DepuKDMamq96ahrRJo
-         Nyi+a96lXIvmB1+9dXlHMOhiO0DTKQ0y/F9LQQ5tm3ofJdwZbY1nqwWOInst8PTmXfE8
-         +Cy4KQBgYt0OG+1tuKJBw2FZD2cL6NRWGW2MdaSp1NfFwaZ/RI4IUrJyG3i56aIwqsCo
-         iGJ/anesV5VcfywTDOzS4YmFpRqTUO7WVyt7XrrF+XYSkWLvUq+QvOBTqkM+YaLm5Mk7
-         cHRg==
-X-Forwarded-Encrypted: i=1; AFNElJ/1JoHsh5OzpcdIb/ZILWiPQa9AjfZYCLf9WJ0jtk06ZFUKQYftxlq+oRvEtVjeKhC0uYrWqOMRTnAoAA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwFXGgBbCCHSVjag/CVgAR60HX7HMVEAlBC2mvG9IuvFkxwrHBJ
-	5AtX+zammeoO3I9tycGPYi9ZmBTqrHmTYAUxWageqOggyx43/MlzJ5Tg
-X-Gm-Gg: Acq92OHHJXMmOl6zD1oUj6bdQodkND3VbSkuw/WUKU82Qv2Teetx19rpcpjeU7WFLuC
-	oFli0YUI1tFBS7sAMLocRP5d6RewoU60WNEV6ynyZTs27qCx5kOwAVdDiHji0bGcbzGG1LjUEZr
-	jla6FiufwvVkVOpUAaS5f5FG0IMjApbfcc2Cy0pB3bFZuP2zNAINim/ZnXwzV+6ZUsbjsh3pkL9
-	kR98uLvRyMZKcCGW/+Tr2CO2FjSdwXmEQOQw2SHNFQNTak6Ihu8VmxhTEJIOgP9ePU4QY1dci7S
-	FywWtJC3a1fFddT5OBg9+6ZeU01Ms+PXfiGSgscUnnGJue16fO3MbrsscLiwP9kIj35yW/By3d2
-	We1tDU4ON5NuiUeq9tuSwxnxCxd1IGv7KPKKnvYEGLCI7bZI5K/5OCYY1xfbPhCIEnnMbknOwre
-	ye2CQEyrstSNY6yGa+5y4gGZuXcOHEgnYPHXYdmnaYmL1n6G6NnFbKpL2zLrfhLCArdo0aUODP
-X-Received: by 2002:a17:902:e842:b0:2bc:ac76:c1d0 with SMTP id d9443c01a7336-2c1ec964b51mr90243325ad.17.1780810579043;
-        Sat, 06 Jun 2026 22:36:19 -0700 (PDT)
-Received: from Air.local ([198.176.50.157])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2c164f70660sm139091645ad.11.2026.06.06.22.36.15
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 06 Jun 2026 22:36:18 -0700 (PDT)
-Date: Sun, 7 Jun 2026 13:36:12 +0800
-From: Weiming Shi <bestswngs@gmail.com>
-To: Qu Wenruo <wqu@suse.com>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>, 
-	Xiang Mei <xmei5@asu.edu>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: lzo: reject compressed segment that overflows the
- compressed input
-Message-ID: <aiUDKJ0sBpTvAMGK@Air.local>
-References: <20260606174816.723525-2-bestswngs@gmail.com>
- <f825ee51-a2be-46ac-9038-d094ecdf3212@suse.com>
+        d=1e100.net; s=20251104; t=1780812789; x=1781417589;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=mS+/QNmpV1dtPFXbbW7XLL/rLwGB5ryRDONzWsMOPYs=;
+        b=UnxDEQI0C+J1jyCwl7ZuIzzuFHoZNXmJ1YepN34RZNZ0eTRoVpLO2qKRQKRlmrtmWN
+         sPF4X37o67RCgP6a8VMrWxkJYXtrMUGi1+1JRxQuffDSbATRIsoPZ78RMTZ7wkyAS2Q8
+         SeyRsIIGMdV30ZEuymrGy2hQ6v3xIgJWPx00qvAs9v3VgJg3zCAkh8CqDvsW08dwvnYc
+         eqotgHhlcEnaHr6b3WFYeqd3qTuCVAcni9aE9uKcnKfDSJ10xuo0CJX9Ir6TVg9w/jAz
+         viHrpmU3MhxTjmrQpqFDU7A21lI30zW/2KnwNJpty/wSOv45KT9fxtEFm4zhw3O5gd2O
+         3kLQ==
+X-Forwarded-Encrypted: i=1; AFNElJ+2nqeyrsf9FsiG8F+o7fqPEDjwrTZ9j98Ixfpip8jcXN9PPJxwr/s0f+BbvW1Kqhcm1tqFitgega4xgg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyRE9+haIroz8EZKp8qxDj6TQ1bANnfTlE5zCRa34Qbo+E79hdN
+	8CkJys0UtuN7cM515ja/JFU5kr4w7KK18pSYFXwT2kEkGCDHZg7jrKyNqK3lORmFO6Q=
+X-Gm-Gg: Acq92OEblPTHcjM/3VXM+qwWIHyZtmwPNjSseAQhAe0KE2DYI29HiCe3BQHMu+sV/8b
+	jQy+ACVY2GNEtJQAdVuLuM467Ylqo/V4/QanPIV+w7twrM0UYbzXui5w2h7to0ax4zSYBKmRKtH
+	Evf1WOKhlXbTwLbC199UlhgLj0QCxcQtnbYTQjXTFuSr4FxTmMhIFHZ1DGHlqKvDZujHrqPvBZ3
+	n1SZmrwVza/DkdN3Ezsm3cVYYyenWu0RvyBA7iQTVsrN88CtVIuX6T5w32qt+hKGk95Ao/ocmT/
+	HN3YX1bcWtUxOGrIIbkk9YFcleT5KV8fLu8fRCuAZgh0zZ/qXedPe1dnWSBgo9a84mJJUbeqL2C
+	1y49FWEJFc7nWhMT4ny5OYvA0pi4pbi0t8rkOsb2KyPFbZxqa0sS/U7yZ3Z/CRAmTOXRFnG61LT
+	YBrmv2eX4fMHlYO6QxukePLpbnk4QE4aebmMHwBI2RRjPHOsVsvshCgwVd2TzWU+G6IHtaGIQHB
+	5uDXqfNdmnCishElSbml0HtuZ6WCNd/R7ZBP+7dwCu5NVwZcTbmux3uzQ==
+X-Received: by 2002:a17:907:986:b0:bed:5774:7c17 with SMTP id a640c23a62f3a-bf3701806abmr491817566b.5.1780812789067;
+        Sat, 06 Jun 2026 23:13:09 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-36f6bf8284dsm14033699a91.4.2026.06.06.23.12.55
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sat, 06 Jun 2026 23:13:08 -0700 (PDT)
+Message-ID: <e8cf9678-f746-4184-9f0c-cb3415845537@suse.com>
+Date: Sun, 7 Jun 2026 15:42:52 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] btrfs: lzo: reject compressed segment that overflows
+ the compressed input
+To: Weiming Shi <bestswngs@gmail.com>, David Sterba <dsterba@suse.com>,
+ Chris Mason <clm@fb.com>
+Cc: Xiang Mei <xmei5@asu.edu>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+References: <20260607052511.4131138-3-bestswngs@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260607052511.4131138-3-bestswngs@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <f825ee51-a2be-46ac-9038-d094ecdf3212@suse.com>
 
-On 26-06-07 08:02, Qu Wenruo wrote:
-> 
-> 
-> 在 2026/6/7 03:18, Weiming Shi 写道:
-> > lzo_decompress_bio() validates each on-disk segment length seg_len only
-> > against the workspace cbuf size, not against the compressed input size
-> > (compressed_len, the total folio bytes of the bio).  A crafted extent can
-> > carry a segment whose seg_len passes the cbuf check but runs past the end
-> > of the bio, so copy_compressed_segment() walks off the last folio:
-> > get_current_folio() then returns the NULL folio from bio_next_folio(), and
-> > with CONFIG_BTRFS_ASSERT disabled (default) folio_size(NULL) faults.
-> > 
-> >   BUG: KASAN: null-ptr-deref in lzo_decompress_bio (fs/btrfs/lzo.c:383)
-> >   Read of size 8 at addr 0000000000000000 by task kworker/u8:1/29
-> >   Workqueue: btrfs-endio simple_end_io_work
-> >    kasan_report (mm/kasan/report.c:590)
-> >    lzo_decompress_bio (fs/btrfs/lzo.c:383)
-> >    end_bbio_compressed_read (fs/btrfs/compression.c:1065)
-> >    btrfs_bio_end_io (fs/btrfs/bio.c:135)
-> >    btrfs_check_read_bio (fs/btrfs/bio.c:180 fs/btrfs/bio.c:285)
-> >    simple_end_io_work
-> >    process_one_work
-> >    worker_thread
-> > 
-> > Reject any segment whose payload would extend beyond compressed_len before
-> > copying it.
-> > 
-> > Fixes: a6e66e6f8c1b ("btrfs: rework lzo_decompress_bio() to make it subpage compatible")
-> > Reported-by: Xiang Mei <xmei5@asu.edu>
-> > Assisted-by: Claude:claude-opus-4-8
-> > Signed-off-by: Weiming Shi <bestswngs@gmail.com>
-> > ---
-> >   fs/btrfs/lzo.c | 4 ++++
-> >   1 file changed, 4 insertions(+)
-> > 
-> > diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-> > index 2de18c7b563a..887d740b27aa 100644
-> > --- a/fs/btrfs/lzo.c
-> > +++ b/fs/btrfs/lzo.c
-> > @@ -491,6 +491,10 @@ int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
-> >   			return -EIO;
-> >   		}
-> > +		/* The segment must not extend beyond the compressed input. */
-> > +		if (unlikely(cur_in + seg_len > compressed_len))
-> > +			return -EIO;
-> > +
-> 
-> In lzo_decompress() we return -EUCLEAN, please follow that pattern.
-> 
-> Although it would be better to output a message when such -EUCLEAN is
-> returned.
-> 
-> Otherwise looks good to me.
-> 
-> Thanks,
-> Qu
-> 
-> >   		/* Copy the compressed segment payload into workspace */
-> >   		copy_compressed_segment(cb, &fi, &cur_folio_index, workspace->cbuf,
-> >   					seg_len, &cur_in);
-> 
 
-Thanks for the review. v2 sent.
+
+在 2026/6/7 14:55, Weiming Shi 写道:
+> lzo_decompress_bio() validates each on-disk segment length seg_len only
+> against the workspace cbuf size, not against the compressed input size
+> (compressed_len, the total folio bytes of the bio).  A crafted extent can
+> carry a segment whose seg_len passes the cbuf check but runs past the end
+> of the bio, so copy_compressed_segment() walks off the last folio:
+> get_current_folio() then returns the NULL folio from bio_next_folio(), and
+> with CONFIG_BTRFS_ASSERT disabled (default) folio_size(NULL) faults.
+> 
+>   BUG: KASAN: null-ptr-deref in lzo_decompress_bio (fs/btrfs/lzo.c:383)
+>   Read of size 8 at addr 0000000000000000 by task kworker/u8:1/29
+>   Workqueue: btrfs-endio simple_end_io_work
+>    kasan_report (mm/kasan/report.c:590)
+>    lzo_decompress_bio (fs/btrfs/lzo.c:383)
+>    end_bbio_compressed_read (fs/btrfs/compression.c:1065)
+>    btrfs_bio_end_io (fs/btrfs/bio.c:135)
+>    btrfs_check_read_bio (fs/btrfs/bio.c:180 fs/btrfs/bio.c:285)
+>    simple_end_io_work
+>    process_one_work
+>    worker_thread
+> 
+> Reject any segment whose payload would extend beyond compressed_len before
+> copying it, treating it as corruption like the other on-disk validation
+> failures in this function.
+> 
+> Fixes: a6e66e6f8c1b ("btrfs: rework lzo_decompress_bio() to make it subpage compatible")
+> Reported-by: Xiang Mei <xmei5@asu.edu>
+> Assisted-by: Claude:claude-opus-4-8
+> Signed-off-by: Weiming Shi <bestswngs@gmail.com>
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+And pushed to for-next.
 
 Thanks,
-Weiming Shi
+Qu
+
+> ---
+> v2:
+>    - Return -EUCLEAN instead of -EIO to match lzo_decompress() (Qu Wenruo).
+>    - Emit a btrfs_err() message when rejecting the segment (Qu Wenruo).
+> 
+>   fs/btrfs/lzo.c | 11 +++++++++++
+>   1 file changed, 11 insertions(+)
+> 
+> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+> index 2de18c7b5..6e4aa2285 100644
+> --- a/fs/btrfs/lzo.c
+> +++ b/fs/btrfs/lzo.c
+> @@ -491,6 +491,17 @@ int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+>   			return -EIO;
+>   		}
+>   
+> +		/* The segment must not extend beyond the compressed input. */
+> +		if (unlikely(cur_in + seg_len > compressed_len)) {
+> +			struct btrfs_inode *inode = cb->bbio.inode;
+> +
+> +			btrfs_err(fs_info,
+> +			"lzo segment overflows compressed input, root %llu inode %llu offset %llu cur_in %u len %u compressed len %u",
+> +				  btrfs_root_id(inode->root), btrfs_ino(inode),
+> +				  cb->start, cur_in, seg_len, compressed_len);
+> +			return -EUCLEAN;
+> +		}
+> +
+>   		/* Copy the compressed segment payload into workspace */
+>   		copy_compressed_segment(cb, &fi, &cur_folio_index, workspace->cbuf,
+>   					seg_len, &cur_in);
+

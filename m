@@ -1,59 +1,59 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 146E24204E
-	for <linux-btrfs@vger.kernel.org>; Sun,  7 Jun 2026 23:38:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73BAA192D97
+	for <linux-btrfs@vger.kernel.org>; Mon,  8 Jun 2026 03:02:49 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780875512; cv=none; b=sXAhyfx3fCY0/iRKI5rAzkx33rLFTv/dj2Sw8uW6dexn0miwxc44uSlkeRZurGLZ0DLABgO3IkinHv9vzT+UVC4Cb2YOHKpdku4BCXOCXxCHYOdOrtHNbeEePBzuL470cbadvr724EZ023F8WwRunqe+T0tvpdQ9tvS8eiWlRpk=
+	t=1780887770; cv=none; b=WjkUs6G3ybpc7WGFlUS9MFZ9Ar4qY4lzhAlRqUjUhC0ToYlZY0K2RLAn5am53ZE6uFh+7EoyopFk+VGJRz01VWHTxD8I1e78DBW5+hES0O0mHMk8cDk8eMCXDKlX/+WkKIS6ykG4+oyNQxRsnpk7O52YpJNwlYpzXAPdfXy7lIc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780875512; c=relaxed/simple;
-	bh=EZTkA0hvXYsPluLa/VlzTIwEg6DrPFsVlovq4QdqUnA=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=qnF052dl/VKxeW7l1J9XX80s0V8wucHIQRdQaI2mb9lJ64+D01TM1422hRpn/7T4Kzx19WhW3YvIkp+CHjh1VH+tC1YlaWPKwf63b88e2cL4XlA8dhMudyyVu0vNPLBM3QH0xEyOCYD0uz+q2kcW8yycgd8y5wjywn+gSjiD3nk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pxTxRZkB; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pxTxRZkB; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1780887770; c=relaxed/simple;
+	bh=ASmEpEteE7rElTQYQnod3RC/TvfJhbj2egvBHHcG6Jw=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=FhRAqX9t00gCVmEFfZs6NnCxpJW3DcpBzxSzukkQKN810jIjNSwaQ6HVL+2KBsnGOJw+SIZtE/WI6GCXoeIeGSz8SIT3JJzyTYYvYtGf7xlFSWA5PGIlSoSvVV8MRxYAIeJM4uGsa9yRCG5NilZxXibsnGAA1EBcVpPzmLmg1wM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=O07W0CS7; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=O07W0CS7; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pxTxRZkB";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pxTxRZkB"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="O07W0CS7";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="O07W0CS7"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 7021C6A93B;
-	Sun,  7 Jun 2026 23:38:29 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 9FAB375C85
+	for <linux-btrfs@vger.kernel.org>; Mon,  8 Jun 2026 03:02:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1780875509; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1780887760; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=fawGLGEhqzxZD8pBHImPRmNV1DinKe4G/1LGNGvUdg0=;
-	b=pxTxRZkBOpL27CbcZ7lAuCsbJ4YStQ+dtgfvQU7TaUbycmKnkaYcadAoBRMyV+7vH9IqHt
-	uJtR8BsLb7W+JSQn0uvu3ORrx/FeUyxXCixLeQJCcYWYox5Za8hCPPQ/8EZ2QC9jiKySgV
-	IvvZX9fYgzKX6m/Hmj1vPcd/XEF9wwM=
-Authentication-Results: smtp-out1.suse.de;
+	bh=7ad7DeyGZpVwF/oHhkmuxTD3g+1yDjxUuQze5YtLpbc=;
+	b=O07W0CS7PdRnCM9zZ9/F671ezHvpLze5S5MmmS6xhNY/7WMdrQGqsyCQUvB0IZ70wHIVxh
+	67AIUWJ+HinwymA6lTCl2stRtfKoAU8iVPOZIpUwQOIRwZ7nGub5AqS1Ge4NXwtUuEXEDd
+	gXxChTEvakYkRy3leuquoL4aJKqkMNk=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1780875509; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1780887760; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=fawGLGEhqzxZD8pBHImPRmNV1DinKe4G/1LGNGvUdg0=;
-	b=pxTxRZkBOpL27CbcZ7lAuCsbJ4YStQ+dtgfvQU7TaUbycmKnkaYcadAoBRMyV+7vH9IqHt
-	uJtR8BsLb7W+JSQn0uvu3ORrx/FeUyxXCixLeQJCcYWYox5Za8hCPPQ/8EZ2QC9jiKySgV
-	IvvZX9fYgzKX6m/Hmj1vPcd/XEF9wwM=
+	bh=7ad7DeyGZpVwF/oHhkmuxTD3g+1yDjxUuQze5YtLpbc=;
+	b=O07W0CS7PdRnCM9zZ9/F671ezHvpLze5S5MmmS6xhNY/7WMdrQGqsyCQUvB0IZ70wHIVxh
+	67AIUWJ+HinwymA6lTCl2stRtfKoAU8iVPOZIpUwQOIRwZ7nGub5AqS1Ge4NXwtUuEXEDd
+	gXxChTEvakYkRy3leuquoL4aJKqkMNk=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1A841779A7;
-	Sun,  7 Jun 2026 23:38:27 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A1850779A7
+	for <linux-btrfs@vger.kernel.org>; Mon,  8 Jun 2026 03:02:39 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id qSg6LvMAJmrAPAAAD6G6ig
-	(envelope-from <wqu@suse.com>); Sun, 07 Jun 2026 23:38:27 +0000
+	id x/j6E88wJmpaeAAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Mon, 08 Jun 2026 03:02:39 +0000
 From: Qu Wenruo <wqu@suse.com>
-To: fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-Subject: [PATCH] fstests: btrfs/138: add requirement for datacsum
-Date: Mon,  8 Jun 2026 09:08:01 +0930
-Message-ID: <20260607233801.18453-1-wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 0/2] btrfs: minor fixes and cleanups on direct IO path
+Date: Mon,  8 Jun 2026 12:32:14 +0930
+Message-ID: <cover.1780873489.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -63,73 +63,65 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Spam-Flag: NO
-X-Spam-Score: -2.79
-X-Spamd-Result: default: False [-2.79 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.19)[-0.973];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Level: 
+X-Spam-Score: -2.80
 
-[FALSE ALERT]
-If one has specified "-o nodatasum" as mount options, the test case
-btrfs/138 will fail with the following error:
+[CHANGELOG]
+v2:
+- Drop the first 2 patches
+  The problem with APPEND NOWAIT direct writes needs more consideration.
+  If short writes happened for APPEND NOWAIT write, there are more
+  factors to consider.
 
- MOUNT_OPTIONS -- -o nodatasum /dev/mapper/test-scratch1 /mnt/scratch
+  Firstly we should return -EGAIN so that the caller can retry in a
+  blocking way.
 
- btrfs/138    34s ... - output mismatch (see /home/adam/xfstests/results//btrfs/138.out.bad)
-    --- tests/btrfs/138.out	2022-05-11 11:25:30.743333331 +0930
-    +++ /home/adam/xfstests/results//btrfs/138.out.bad	2026-06-08 09:04:30.627143086 +0930
-    @@ -1,2 +1,5 @@
-     QA output created by 138
-    +ERROR: failed to set compression for /mnt/scratch/zlib: Invalid argument
-    +ERROR: failed to set compression for /mnt/scratch/lzo: Invalid argument
-    +ERROR: failed to set compression for /mnt/scratch/zstd: Invalid argument
-     Silence is golden
-    ...
+  Secondly we should fully revert what has been written so that isize is
+  not increased.
 
-[CAUSE]
-Btrfs compression requires both datacow and datasum, thus nodatasum
-mount option will reject compression completely, causing the above
-failures.
 
-[FIX]
-Add _require_btrfs_no_nodatasum for the test case, so that for nodatasum
-mount option the test case can be properly skipped other than causing
-false failure.
+  For the OE conflicts I have not yet hit with upstream, so it should be
+  something wrong in my previous direct locking changes.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tests/btrfs/138 | 1 +
- 1 file changed, 1 insertion(+)
+There are several small problems inside the direct IO code:
 
-diff --git a/tests/btrfs/138 b/tests/btrfs/138
-index 17bbe28e..57ab1bd3 100755
---- a/tests/btrfs/138
-+++ b/tests/btrfs/138
-@@ -15,6 +15,7 @@ _begin_fstest auto compress
- _require_scratch
- _require_btrfs_command property
- _require_btrfs_no_nodatacow
-+_require_btrfs_no_nodatasum
- 
- algos=($(_btrfs_compression_algos))
- 
+- Duplicated btrfs_dio_data::submitted
+  The iomap_end() callback has @written parameter which provides the
+  same value.
+
+  Fixed in the third patch.
+
+- Badly structured btrfs_dio_iomap_end()
+  Refactored in the last patch.
+
+Qu Wenruo (2):
+  btrfs: remove btrfs_dio_data::submitted
+  btrfs: refactor btrfs_dio_iomap_end()
+
+ fs/btrfs/direct-io.c | 131 ++++++++++++++++++++++---------------------
+ 1 file changed, 66 insertions(+), 65 deletions(-)
+
 -- 
-2.51.2
+2.54.0
 

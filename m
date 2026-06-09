@@ -1,164 +1,176 @@
-Received: from out-189.mta0.migadu.com (out-189.mta0.migadu.com [91.218.175.189])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C4C4640488C;
-	Tue,  9 Jun 2026 13:39:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.189
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A67652E1F06;
+	Tue,  9 Jun 2026 14:37:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781012357; cv=none; b=UP9CFXOUiD+RbIPVhaUrY+oAkCXHWtM+pjO1WHH75bc8XBe9UhkTHU3BvuIoEFqIFafN2sH5i8QoqsIyWUSzcjUmbzV8OiwW9QH/zNSD6SD6J2L8PmbhDcVjx5f4Z0id7KUcU+fFmssDcvaddWVxG2H9qtd3HsaB2VShaNuw9mI=
+	t=1781015868; cv=none; b=ttYT3W0X3hGV8S457QWhDdZOCsLZNQAabYy8yENfYDkzpydMXaBEhWsh3Os4suKqc/KC+9I2sXkilWVRIXF8Vi2t+z5reNHXltBczet1YmE8kd7hpl746U0tbhsDvFgcw9vd5UgOG+2gQtmHW+ZFcFLS3P+1mOkZU9OFtUuC0Ik=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781012357; c=relaxed/simple;
-	bh=Ld0mtuWHZDKcfGoVtJaBqvRcMPaJlO6FFUPg+tsjemA=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Y1nzY8iAicAtcBhx3YNCOY58hLP9nMiipCzN711v5Q/iioaafnwF1i/yR+dr8s9WiY2o9nNjy5uF/L59DUZ6K6ifGjKVJ1bbK9kHCgX+ag9JoOHOFqG9KidSydIkrtWpASQ90GkF/bqc9P9Skom8BqLNh9zj53g2o+OtiiHueCs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=DHA5pvdG; arc=none smtp.client-ip=91.218.175.189
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	s=arc-20240116; t=1781015868; c=relaxed/simple;
+	bh=5V7YN0sGJU82TW7Hx4zLzYRmIOeFqeizIyoHB+R4xH0=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=gtJZe5SlN0Dfu1TsJCURXKJn91bLkkIhYbHQr29ZrRUN8UZhyqjW9Nk++YN3JT6RclZBt00Ph6gRWBb71AdrFpY4zcVTCeqhVmq9elkdQEle5WP7tu6UIoeoW5aBUPoMSo5nODGcxKEQUjxhGXndjhdcuChBovSFeh61HTOnrj4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=X6+bIDKL; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="DHA5pvdG"
-Message-ID: <86575450-1d56-43be-a4fd-6f451e5be4e3@linux.dev>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1781012343;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=YJV2I1pYWH8I5eTLLlBTFWiw8BNl9+kPEFYXmmxRFA0=;
-	b=DHA5pvdG52Z8Irgr/MLUCeE3l55DgnRt1kYMY2LtcWTgvjyHXVXQzZmJRQoBDdVBAzJEN4
-	Rqo+Pc3l9/iqRCZMu3i2P2MnJItVE+ySpQCrTGcA4wmxKkIqwdSPoVVHf8MV1e7lKqzy7O
-	z3+XUebaAMcRd6oZZlVWxxJQ1nu+Jgw=
-Date: Tue, 9 Jun 2026 14:38:58 +0100
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="X6+bIDKL"
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 3A4791F00893;
+	Tue,  9 Jun 2026 14:37:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1781015867;
+	bh=lL08VxpC+fvKfvxxiZW5i89/CQrjnPa2IrCmxpJFjzU=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=X6+bIDKLdkj2W0Lb7IltN17ZG2SOht70RK/4CN90rs/RaFDcXTKPK90ZKgElO8hCT
+	 o9/5CpKIkEISeBQZKusBNnqymcuLjpOYZShxN7CSIq+9fVe/B0lw7FvygEoWlN071n
+	 AoYxrdFZ7Nv2s0FAWgiYFwkbWxroS0smkPCU0UuERhs67aooJYOi5QwmmWl1El5jz4
+	 PM4xcwc+U0QrAZGBvulYq2JfVzUWEjz73k6IvLs/fhIV/ZMpXDPn3tWNVzIB5vWWql
+	 bzUSvmXvNCvSEiHPaPt3sKcHofH04djqtyChyd2wTUpGf9r5cNkLs9HFMdSbI8akKH
+	 mavK6tlp7TALw==
+Date: Tue, 9 Jun 2026 07:37:46 -0700
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: Anand Suveer Jain <asj@kernel.org>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+	linux-f2fs-devel@lists.sourceforge.net, zlang@redhat.com,
+	hch@infradead.org
+Subject: Re: [PATCH v6 01/11] fstests: add _loop_image_create_clone() helper
+Message-ID: <20260609143746.GL6070@frogsfrogsfrogs>
+References: <cover.1779939330.git.asj@kernel.org>
+ <421c7cdd5aae27b99d04dddf08c5d9df79c2f790.1779939330.git.asj@kernel.org>
+ <20260529042743.GB6070@frogsfrogsfrogs>
+ <9c0989d8-202f-42ab-9347-df082c25aa72@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Subject: Re: [PATCH] fs/super: skip non-memcg-aware nr_cached_objects in memcg
- slab shrink
-To: Jan Kara <jack@suse.cz>
-Cc: brauner@kernel.org, linux-fsdevel@vger.kernel.org,
- linux-kernel@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>,
- linux-mm@kvack.org, hughd@google.com, boris@bur.io, clm@fb.com,
- dsterba@suse.com, linux-btrfs@vger.kernel.org, cem@kernel.org,
- linux-xfs@vger.kernel.org, shakeel.butt@linux.dev, hannes@cmpxchg.org,
- riel@surriel.com, kernel-team@meta.com
-References: <20260609123047.1948242-1-usama.arif@linux.dev>
- <5exadtggg276xp5tayiqbbomnms4hjyaopmgu3chfpl2ug56dq@vyhswy2afzmo>
-Content-Language: en-US
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-From: Usama Arif <usama.arif@linux.dev>
-In-Reply-To: <5exadtggg276xp5tayiqbbomnms4hjyaopmgu3chfpl2ug56dq@vyhswy2afzmo>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-X-Migadu-Flow: FLOW_OUT
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <9c0989d8-202f-42ab-9347-df082c25aa72@kernel.org>
 
-
-
-On 09/06/2026 13:52, Jan Kara wrote:
-> On Tue 09-06-26 05:30:47, Usama Arif wrote:
->> The super_block shrinker is registered with SHRINKER_MEMCG_AWARE because its
->> dentry and inode LRUs are memcg-aware (via list_lru). But the optional
->> ->nr_cached_objects() hooks that the shrinker also drives are not memcg-aware:
->> btrfs extent maps and xfs inode reclaim operate on filesystem-global
->> state, and shmem's unused-huge shrinker walks a per-superblock shrinklist.
->> None of them filter by sc->memcg.
->>
->> The mismatch shows up under memcg-heavy slab reclaim. shrink_slab_memcg()
->> calls do_shrink_slab() once per (memcg, NUMA node) pair for every memcg
->> whose bit is set in the per-superblock shrinker bitmap, which on a busy
->> host means hundreds of calls per reclaim pass. Each scan queues the same
->> global shrinker work item that's already kicked from the root path.
->>
->> Because btrfs/xfs global count is typically non-zero on any in-use filesystem,
->> the returned total stays positive even if a memcg's own dentry/inode LRUs
->> are empty. shrink_slab_memcg() therefore never clears the SB shrinker bit
->> in the memcg bitmap, so subsequent reclaim passes from the same memcg
->> re-enter super_cache_count() and pay for the global counter walk again.
->>
->> Restrict ->nr_cached_objects() to the global shrink path (sc->memcg NULL
->> or root). The memcg-aware dentry/inode LRUs keep being counted and
->> scanned per memcg as before; only the global fs-specific hooks are skipped.
->> The root/global shrink path still drives those hooks; only their
->> invocation from non-root memcg slab reclaim is removed.
->>
->> Signed-off-by: Usama Arif <usama.arif@linux.dev>
+On Mon, Jun 08, 2026 at 10:39:04PM +0800, Anand Suveer Jain wrote:
+> On 29/5/26 12:27, Darrick J. Wong wrote:
+> > On Thu, May 28, 2026 at 12:05:32PM +0800, Anand Jain wrote:
+> > > Introduce _loop_image_create_clone() and _loop_image_destroy() to mkfs an
+> > > image file and clone it to another image file, and attach a loop device to
+> > > them. And its destroy part.
+> > > 
+> > > Signed-off-by: Anand Jain <asj@kernel.org>
+> > > ---
+> > >  common/rc | 63 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+> > >  1 file changed, 63 insertions(+)
+> > > 
+> > > diff --git a/common/rc b/common/rc
+> > > index 79189e7e6e94..d7e3e0bdfb1e 100644
+> > > --- a/common/rc
+> > > +++ b/common/rc
+> > > @@ -1520,6 +1520,69 @@ _scratch_resvblks()
+> > >  	esac
+> > >  }
+> > > +# Create a small loop image, run an optional tuning function ($2) on it,
+> > > +# clone it, and attach both to loop devices, returned in ($1).
+> > > +# Args:
+> > > +#   $1: Nameref to return the array of allocated loop devices [base, clone].
+> > > +#   $2: Optional callback function to tune the base filesystem before cloning.
+> > > +_loop_image_create_clone()
+> > > +{
+> > > +	local -n _ret=$1
+> > 
+> > That switch   ^^ is very clever.  I always wondered how one did indirect
+> > variables in bash.
+> > 
+> > > +	local pre_clone_tune_func="$2"
+> > > +	local img_file=$TEST_DIR/${seq}.img
+> > > +	local img_file_clone=$TEST_DIR/${seq}_clone.img
+> > > +	local size=$(_small_fs_size_mb 128) # Smallest possible
+> > > +	local loop_devs
+> > > +
+> > > +	# Since we copy the block device image, we keep its size small.
+> > > +	_require_fs_space $TEST_DIR $((size * 1024))
+> > > +
+> > > +	_create_file_sized $((size * 1024 * 1024)) $img_file ||
+> > > +				_fail "Failed: Create $img_file $size"
+> > > +
+> > > +	loop_devs=$(_create_loop_device $img_file)
+> > > +	_ret=($loop_devs)
+> > 
+> > Should this check that a loopdev actually got created?
+> > 
 > 
-> To me this makes sense. However I'm bit surprised that XFS inode shrinker
-> (which is what gets counted in nr_cached_objects for XFS) isn't memcg
-> aware. I guess since these inodes are on their way to a relatively quick
-> destruction, nobody really bothered. So I'm fine with the change, just
-> I'd like to make sure XFS folks are aware and don't plan anything in this
-> area.
+> Hmm, in the function _create_loop_device(), we are
+> calling _fail if create fails, so no need to duplicate, right?
+
+Oh right.  Question withdrawn.
+
+> > > +	case $FSTYP in
+> > > +	xfs)
+> > > +		_mkfs_dev "-s size=4096" ${loop_devs[0]}
+> > > +		;;
+> > > +	btrfs)
+> > > +		_mkfs_dev ${loop_devs[0]}
+> > > +		;;
+> > > +	*)
+> > > +		_mkfs_dev ${loop_devs[0]}
+> > > +		;;
+> > > +	esac
+> > > +
+> > > +	# Only execute if the function argument is not empty
+> > > +	if [ -n "$pre_clone_tune_func" ]; then
+> > > +		$pre_clone_tune_func ${loop_devs[0]}
+> > > +	fi
+> > > +
+> > > +	sync ${loop_devs[0]}
+> > > +	cp $img_file $img_file_clone
+> > > +
 > 
-
-Thanks for the review!
-
-Yes I am hoping that if there are any objections from xfs or btrfs, it gets
-raised. Have cc'ed the btrfs and xfs maintainers and reviewers.
-
-Thanks!
-Usama
-
-
-> 								Honza
 > 
->> ---
->>  fs/super.c | 19 +++++++++++++++++--
->>  1 file changed, 17 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/super.c b/fs/super.c
->> index 378e81efe643..5216c5dbd4c4 100644
->> --- a/fs/super.c
->> +++ b/fs/super.c
->> @@ -24,6 +24,7 @@
->>  #include <linux/export.h>
->>  #include <linux/slab.h>
->>  #include <linux/blkdev.h>
->> +#include <linux/memcontrol.h>
->>  #include <linux/mount.h>
->>  #include <linux/security.h>
->>  #include <linux/writeback.h>		/* for the emergency remount stuff */
->> @@ -169,6 +170,19 @@ static void super_wake(struct super_block *sb, unsigned int flag)
->>  	wake_up_var(&sb->s_flags);
->>  }
->>  
->> +/*
->> + * The s_op->nr_cached_objects hooks (used for example by btrfs and xfs)
->> + * operate on filesystem-global state and ignore sc->memcg. Driving them
->> + * from per-memcg shrink_slab_memcg() invocations only burns CPU walking
->> + * per-cpu counters and queueing duplicate work: the actual reclaim happens on
->> + * the global path (kswapd or root direct reclaim) regardless. Restrict them
->> + * to that path.
->> + */
->> +static inline bool super_fs_objects_eligible(struct shrink_control *sc)
->> +{
->> +	return !sc->memcg || mem_cgroup_is_root(sc->memcg);
->> +}
->> +
->>  /*
->>   * One thing we have to be careful of with a per-sb shrinker is that we don't
->>   * drop the last active reference to the superblock from within the shrinker.
->> @@ -198,7 +212,7 @@ static unsigned long super_cache_scan(struct shrinker *shrink,
->>  	if (!super_trylock_shared(sb))
->>  		return SHRINK_STOP;
->>  
->> -	if (sb->s_op->nr_cached_objects)
->> +	if (sb->s_op->nr_cached_objects && super_fs_objects_eligible(sc))
->>  		fs_objects = sb->s_op->nr_cached_objects(sb, sc);
->>  
->>  	inodes = list_lru_shrink_count(&sb->s_inode_lru, sc);
->> @@ -259,7 +273,8 @@ static unsigned long super_cache_count(struct shrinker *shrink,
->>  		return 0;
->>  	smp_rmb();
->>  
->> -	if (sb->s_op && sb->s_op->nr_cached_objects)
->> +	if (sb->s_op && sb->s_op->nr_cached_objects &&
->> +	    super_fs_objects_eligible(sc))
->>  		total_objects = sb->s_op->nr_cached_objects(sb, sc);
->>  
->>  	total_objects += list_lru_shrink_count(&sb->s_dentry_lru, sc);
->> -- 
->> 2.52.0
->>
+> > > +	loop_devs="$loop_devs $(_create_loop_device $img_file_clone)"
+> > 
+> > 	local lodev="$(_create_loop_device ...)"
+> > 
+> > 	test -z "$lodev" && _fail "second loopdev not created"
+> > 	_ret+=("$lodev")
+> > 
+> > ?
+> 
+> If the second `_create_loop_device()` happens to fail, it will
+> already have called `_fail`, so "second loopdev..." won't be
+> used at all.
 
+<nod> Both comments withdrawn :)
+
+--D
+
+> 
+> Thanks, Anand
+> 
+> 
+> 
+> > > +
+> > > +	_ret=($loop_devs)
+> > > +}
+> > > +
+> > > +# Teardown loop devices and delete their underlying backing image files.
+> > > +# Accepts a list of loop device paths (e.g., /dev/loop0 /dev/loop1).
+> > > +_loop_image_destroy()
+> > > +{
+> > > +	for d in "$@"; do
+> > > +		# Retrieve the path of the backing file
+> > > +		local f=$(losetup --noheadings --output BACK-FILE $d)
+> > > +
+> > > +		# Detach the loop device from the backing file
+> > > +		_destroy_loop_device "$d"
+> > > +
+> > > +		# Clean up the backing disk image file
+> > > +		[ -n "$f" ] && rm -f "$f"
+> > > +	done
+> > > +}
+> > >  # Repair scratch filesystem.  Returns 0 if the FS is good to go (either no
+> > >  # errors found or errors were fixed) and nonzero otherwise; also spits out
+> > > -- 
+> > > 2.43.0
+> > > 
+> > > 
+> 
+> 

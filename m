@@ -1,206 +1,108 @@
-Received: from mail-pl1-f170.google.com (mail-pl1-f170.google.com [209.85.214.170])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fout-b4-smtp.messagingengine.com (fout-b4-smtp.messagingengine.com [202.12.124.147])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBF5134E744
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 15:20:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.170
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 016423D9DB9
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 15:26:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.147
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781018424; cv=none; b=jOZcUEhAnEG4yLpNHadTu5O2ZKqpyIJOzxjyQln6scqfMCcWQkXbvMgl6r5r+KXAcHszAxqd0aVrGws0xZ94hqXVKN1gB6aS5rgzt2hK05DWmrNC8AGax+1GILosH2qc5AXEIQbAofO09yZxOkkMB8L/uzkI7o52zdYTbQSEUKs=
+	t=1781018771; cv=none; b=O2s7If+CA2ds4uB1FT5FTeZXsMyM8+3zP6ayYJLsHENW4xswEvwEczz58IbeDzCXJS2XAJev60IZhTUteOFDww9AmoaAU/e7fcYR28ShTrS66LZBaLt//7HXbjBJPNO5rAuGjIlcvNbYytlotxVUtXCIjMgR6UuWYQS2s03Qu34=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781018424; c=relaxed/simple;
-	bh=bbaQwjH0ueWOvUp7vofVLG7zdPNe2fEterp4IvclDcE=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=PaBb97WGTEhlpQMpkLISp7HU0YfMK9oyqsRF2vinDKzMc4MmsmgO6zwNypLS6Q1QnH1mtH9jxJtaCFsQn6Kiv2Zg063Jip0slktW2hzWmKB79dGSpA9nduiX4iXHXuCr62RiwKIdTbU9zkPGiTJRIgwokzWVoIUk1lXVnDUTLtk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=AV1Kd5VN; arc=none smtp.client-ip=209.85.214.170
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1781018771; c=relaxed/simple;
+	bh=/p9qGZhZsar3I/4ufOf69CZcO6c6phXxVR+GroQHYtc=;
+	h=MIME-Version:Date:From:To:Message-Id:In-Reply-To:References:
+	 Subject:Content-Type; b=DzdVj548g6ntKdLKzBNLf+Pp4oebz1wfUndrQPP8JItV2G66wQVTj6r+8JySGB31XZNnDVjw/Ele/EbL0PEnPNRGuutINP61PgcCARRjRMWNxGiKquw78+aKHTuI/Y3ZZ7kcEhnO9yYA5r9gI9JGGJLO56FXP0RyedW4NF/04P4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=colorremedies.com; spf=pass smtp.mailfrom=colorremedies.com; dkim=pass (2048-bit key) header.d=colorremedies.com header.i=@colorremedies.com header.b=M9mzFFpz; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=f2fEGHmV; arc=none smtp.client-ip=202.12.124.147
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=colorremedies.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=colorremedies.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AV1Kd5VN"
-Received: by mail-pl1-f170.google.com with SMTP id d9443c01a7336-2c0bd02d97eso64026245ad.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jun 2026 08:20:23 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1781018423; x=1781623223; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=7ep25mQRShZvtAoE+zhCOcr3eqQcangziKu+EpncKHU=;
-        b=AV1Kd5VN4T3f0XIJz4R26bsRsQkt8wNBiBeuH5GOWPKIaBbs6AJvAoNRGCDCMgYF6L
-         gb5MK7GbWVi3PkRD1cIBEkLRKjRRFLyebq0k0My13ES9bHuUJNQvd0vxiaRIxOlJs/y7
-         CxSvBZZmVR9NxfRwTB6Tm0Y5A9B2o+hLDXinRE2R2CGxl7rHNN66Yzlbbof4RR+jMsET
-         jpWal0YHdi4C7O+Hgr27/jQ5S1nILxgZAf3uRUhupoIZVvic243sMfxHQgsbtINJEliY
-         +gk6f6G26fc19ng1k4wgIMaDxRmyN7/4tXjeSfxR2Kb8OEz7//HSTi/0sKCu3NM3xSMH
-         SJdQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781018423; x=1781623223;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=7ep25mQRShZvtAoE+zhCOcr3eqQcangziKu+EpncKHU=;
-        b=JxRFpKatA3Rib3FJx2i0knZBIR1UiIwUkLtFEydASCC0qaRPkaBFG9zbRXF6lft7ny
-         +dxCypc5YOcapqI4WIuwSnQq53DhbmGLOdyonlf2SSS6aqtF9Ne0WCbqZLjc0dKzczbS
-         VQDcXKZCE/W7IqPmDpoQVy7KbqTMidnm7CpwOfYWfAzq/7U63eImndcBlQ5IRxU6Xex0
-         YbVz9k3wx3TPV6JQGlspmYCNkcpQGlZZNtztbdXabzU5m4IkTb2iTap2jikJ2RaqjcFq
-         dwEI3GPzwPGJuFb7BgvA45axcsZY0PrlQqEM/xFriaEGJJTPGum5gu5Hledw3MVkClk7
-         NeGg==
-X-Forwarded-Encrypted: i=1; AFNElJ9CX/vhNaieryC5D0Tu64bVIvUv9GF58zLwzsZE9mnHqeEPlXFR4IgMzZeq1Oh6tkllXypPvIBPx9wn4g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YztVdIPcIf2xKHktL4wnoQFKNpZRFbdithZC2/cASkfO01V5xK4
-	8IoQJPRPMlXs/dlsd02BXXbb5fkeCf0LIU13FLUw/HX7F5hlHJTU5fBf
-X-Gm-Gg: Acq92OHWkK3POuIBIjBcHYq7zlxlL0Bz73Z6ru5QQFE7msRTS8WvNrP3IqS020OzXCa
-	wjwp/sm5ak22U6WbytEcETIClmkGegAFDTMF5N9Qvs/+p1xgVPaGnBxmJSkVJ2MOu0wu53SbplH
-	OUvZjfStLXYID0CQKwcT1js/PY3ZCrCZFNYb/iXTGseIhn0kJ9tCi03tR/W7GZHDNAsIr8DNagZ
-	/CTZGR1SLza2/cFUMfB4lLVdACdwPGaECn6T/i+xoCkUrIdg2AtjDERkJRwRevsVHamoSO6kn1h
-	iZqWRKwjfolY1jtgqIdFSCjvVBjeZMMTAAy0odQtqtdv3MVq3W/wDcNTZrM4VBnZDQ/M0HNol3+
-	YYa/w1VYJ3+EwO1dCSO6ggEbOy9dfjy78OO7AommoSjveIdsIg4utz1TjSvkKtOJU+Xem2l4diX
-	amLyDL/xrG56laPWDyZH3bEyE+
-X-Received: by 2002:a17:903:90c:b0:2c0:b7e1:7f08 with SMTP id d9443c01a7336-2c1e859fc13mr248649055ad.28.1781018423135;
-        Tue, 09 Jun 2026 08:20:23 -0700 (PDT)
-Received: from lgs.. ([152.32.133.247])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2c16609e636sm218443755ad.51.2026.06.09.08.20.20
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 09 Jun 2026 08:20:22 -0700 (PDT)
-From: Guangshuo Li <lgs201920130244@gmail.com>
-To: Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>,
-	Naohiro Aota <naohiro.aota@wdc.com>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Cc: Guangshuo Li <lgs201920130244@gmail.com>
-Subject: [PATCH v2] btrfs: fix zoned sub_group leak on space_info sysfs failure
-Date: Tue,  9 Jun 2026 23:20:15 +0800
-Message-ID: <20260609152015.1586599-1-lgs201920130244@gmail.com>
-X-Mailer: git-send-email 2.43.0
+	dkim=pass (2048-bit key) header.d=colorremedies.com header.i=@colorremedies.com header.b="M9mzFFpz";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="f2fEGHmV"
+Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
+	by mailfout.stl.internal (Postfix) with ESMTP id 39D021D00065;
+	Tue,  9 Jun 2026 11:26:09 -0400 (EDT)
+Received: from phl-imap-01 ([10.202.2.91])
+  by phl-compute-01.internal (MEProxy); Tue, 09 Jun 2026 11:26:09 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	colorremedies.com; h=cc:content-transfer-encoding:content-type
+	:content-type:date:date:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to; s=fm1; t=1781018769; x=1781105169; bh=/p9qGZhZsar3I/4ufOf69
+	CZcO6c6phXxVR+GroQHYtc=; b=M9mzFFpzUjKzVhkCpA80p1NDaSmcXmvx0S+Tj
+	E4JZyvi7MrFq+a/Yjj4qcDt2XCAXgnzv9O+Aht7Kk8zs+tmk0Z2IDXMEtCvfH0Sj
+	bX4BIYdbGuRUnbFfzYApDZshtY9si4IFe67n4YPJ8zBkVJdXFJ+CtQedFRs2PZPk
+	OomgUy7FWTZ9foXAEsGZ+5GSkOuTdXPSoQhalG4H2L2hZnOwZmRrurzf62LVKwug
+	jaZ4SmBtSDcLMCT1mk4QW9p2aH8pbKTwJCORVH94zYD1IGa3IrBXnWwMR9tQhT+0
+	VdHI341MWOYpxmnMG1Isy8CRZ83wYGZzunKok4qqZVgsY4AUQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:content-transfer-encoding:content-type
+	:content-type:date:date:feedback-id:feedback-id:from:from
+	:in-reply-to:in-reply-to:message-id:mime-version:references
+	:reply-to:subject:subject:to:to:x-me-proxy:x-me-sender
+	:x-me-sender:x-sasl-enc; s=fm1; t=1781018769; x=1781105169; bh=/
+	p9qGZhZsar3I/4ufOf69CZcO6c6phXxVR+GroQHYtc=; b=f2fEGHmVSFmggsD7e
+	3VvQkrrARVi6mjW3QMhYzUvNfP3uHV+zkf5VRexOk9/KvSA/sZ8HabGwe4ZcLTf7
+	er+AbyWgNxs2TlnBClaRYaxy3vRkvGXuzGEvY8FbbbY4QMqJlZbCHV4duCkHG5gM
+	WptSNLBkXb88Vouqd/YbAGChU/YoqJ2gqbIS1wplxxEQ5oe1xmYCA/NpBlUpJkLq
+	1o+NYD8jnabQEJqmUceL5ObdTqqPLgg1+BepwIX0+g9w5ViUn51IQf8UaHL7Utyf
+	2UTGcea2qaAZS7wLrL9wXsDd4jXdOMgYWyJUPtE6krAhxaY1DuJNnkvNv1U42xix
+	sD1PA==
+X-ME-Sender: <xms:kDAoag7tTDdlzL62jk_47sAxa5kEcmOWun2BgTCxUTDuCgCxA8mPnQ>
+    <xme:kDAoastWMjEolhzPvj35ote4fUICAFgx_zrWr7XezgLYX7MRdOKmrSEsPvWBiyQ6Y
+    lUH2gSQMZ9BZBHM8cK_loBD6-i4kO9SLZKaBvD2SLxbjdcSqZF7N90>
+X-ME-Proxy-Cause: dmFkZTGxOuqf0J4hY2EsysUoHXkK7RUnAN18pRS2gxr5yd/eBPt6k2BUyZqJhXzgRtIH0f
+    0OwvdOuSpBXwnqgSNHQW6uKygflc4oJYzoi6svYQBwbAygYClklzv14rFfaxvgX1u8d9W9
+    e+61tON8q16LnywIHI7aFIdrEkQW1NNA8sROY43RC7nXdMwhBrZb47j3NHcMAQC9QxHr2I
+    3rRgvbXr+Lbz2cArGOmCUQQJypvbIjq8fgw3c069R4qvzc8IV2U16qSAKFpkMD2HeqJhhK
+    ScyFus+ZZxG0P/irweZW/kGpQplkkRNTOmjosk3K/tz5I9Jxyo7/DFOinAoTLliHuyDmpH
+    hsmB4mMxYrVN4fXJcBp1M9FpmzSYftKAiNt7QKKvBIq1+HkdR8LABfLGcf7nsveBos2FTL
+    x2UyHftJhRxYyRqRfNeZJ3an0GTxfJxZ8pjpZea2MJPB11b2v8KbwVPUpCvaUw1emo6GgH
+    ZmS73HLg3LJqs/UFVmv7Tf11FvkXWqlGGaH5sBAtg9PircBljgxRCZmI2G9dBw9zMhYKYo
+    FUQRBiDTtPlnatCpFhuVXjVuAv/6M0nQ1qdCLaEu131sl7TnuH8Pm/FaOfsbLiBuqnh7iN
+    8tl3azDZAWeRXtn+PP9Va8BKhmf7ee6djJ+Qfyt6MXoAvjtjh5Dm9d/mXBmA
+X-ME-Proxy: <xmx:kDAoarmzBErXOTn-7g8FuKMeB8BWtXnbRIdr_pLE3W0oaAf86pq_tg>
+    <xmx:kDAoaswE3wEi7FTEOCpG__8L93yExkOCulGjN31vTVShnnM9HOAxXg>
+    <xmx:kDAoapPQGmg_Jx5rz8tgNglj2LxY3n-w8HtBCkZl5GntimX03RKp2Q>
+    <xmx:kDAoagTM6slYX8iKm7SA3LoBDzkgD80l_gzqsalJHIIQbcAAGSD7wA>
+    <xmx:kTAoatdiIYqk5BGpM5s0VtgySIhrZEQ0nuB4khNlkOM_ROHs0eFpoYTu>
+Feedback-ID: i06494636:Fastmail
+Received: by mailuser.phl.internal (Postfix, from userid 501)
+	id C4DF118C0068; Tue,  9 Jun 2026 11:26:08 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-ThreadId: A0sQEpqRO37s
+Date: Tue, 09 Jun 2026 09:25:47 -0600
+From: "Chris Murphy" <lists@colorremedies.com>
+To: "Alban Browaeys" <alban.browaeys@gmail.com>,
+ "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
+Message-Id: <43f6ea2b-8b23-49c1-acfe-1d2617f28132@app.fastmail.com>
+In-Reply-To: <abd33b32-aadf-4206-81bc-c2c7832e13dd@gmail.com>
+References: <068e841a-37fd-4fe5-ba2d-0ab93c55830d@gmail.com>
+ <abd33b32-aadf-4206-81bc-c2c7832e13dd@gmail.com>
+Subject: Re: Btrfs ENOSPC / Stuck in RO with "exclusive operation balance paused in
+ progress"
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
 
-On zoned filesystems, create_space_info() creates space_info sub_groups
-for the primary DATA and METADATA space infos.
 
-Before this change, the sub_group was created before registering the
-parent space_info in sysfs. If the sub_group registration succeeded but
-the parent btrfs_sysfs_add_space_info_type() call failed, the parent
-space_info was released through its kobject release path while the
-already published sub_group was left behind. The sub_group also kept its
-logical parent pointer, which then pointed at freed memory.
+Try:
 
-Fix this by making btrfs_sysfs_remove_space_info() responsible for
-removing any sub_groups before removing the space_info itself. Then
-register the parent space_info before creating zoned sub_groups. With
-that order, a parent registration failure has no sub_groups to unwind;
-if sub_group creation fails, btrfs_sysfs_remove_space_info() can tear
-down the parent and any sub_groups created so far.
+mount -o skip_balance,nospace_cache,enospc_debug /dev/sdb3 /var
+btrfs balance start -dlimit=1 /var
 
-This also keeps check_removing_space_info() as a pure checker by moving
-sub_group removal into the common sysfs removal helper.
+If the first command works but the second command does not, you could insert a `btrfs device add` command to add a partition. I'm not such a big fan of adding USB sticks or zram devices because if anything goes wrong, the file system ends up broken.
 
-Fixes: f92ee31e031c7 ("btrfs: introduce btrfs_space_info sub-group")
-Suggested-by: Naohiro Aota <naohiro.aota@wdc.com>
-Signed-off-by: Guangshuo Li <lgs201920130244@gmail.com>
----
-v2:
-  - Make btrfs_sysfs_remove_space_info() remove sub_groups before removing
-    the space_info itself, as suggested by Naohiro.
-  - Register the parent space_info before creating zoned sub_groups in
-    create_space_info().
-  - Use btrfs_sysfs_remove_space_info() to unwind the parent when sub_group
-    creation fails.
-  - Remove sub_group removal from check_removing_space_info(), keeping it as
-    a pure checker.
-  - Use ARRAY_SIZE(space_info->sub_group) instead of
-    BTRFS_SPACE_INFO_SUB_GROUP_MAX.
+This is a bit of a heavy hammer to fix this problem but it might actually be faster than troubleshooting Btrfs enospc:
 
- fs/btrfs/block-group.c |  5 +----
- fs/btrfs/space-info.c  | 14 +++++++-------
- fs/btrfs/sysfs.c       | 16 ++++++++++++++++
- 3 files changed, 24 insertions(+), 11 deletions(-)
+It should still be possible to make the troubled Btrfs a read-only seed device using btrfs-tune; then mount it ro; use `btrfs dev add` using a device that's equal to or bigger; remount rw; then `btrfs dev rem` the 1st device, i.e. the ro seed. This will replicate/clone the file system from device 1 to device 2. And it'll take a while. But in the end you'll have a balanced file system on device 2.
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index b611c64119db..ad8e0a27101a 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -4615,11 +4615,8 @@ static void check_removing_space_info(struct btrfs_space_info *space_info)
- 	if (space_info->subgroup_id == BTRFS_SUB_GROUP_PRIMARY) {
- 		/* This is a top space_info, proceed with its children first. */
- 		for (int i = 0; i < BTRFS_SPACE_INFO_SUB_GROUP_MAX; i++) {
--			if (space_info->sub_group[i]) {
-+			if (space_info->sub_group[i])
- 				check_removing_space_info(space_info->sub_group[i]);
--				btrfs_sysfs_remove_space_info(space_info->sub_group[i]);
--				space_info->sub_group[i] = NULL;
--			}
- 		}
- 	}
- 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index f0436eea1544..42179d89e52b 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -304,6 +304,10 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags)
- 
- 	init_space_info(info, space_info, flags);
- 
-+	ret = btrfs_sysfs_add_space_info_type(space_info);
-+	if (ret)
-+		return ret;
-+
- 	if (btrfs_is_zoned(info)) {
- 		if (flags & BTRFS_BLOCK_GROUP_DATA)
- 			ret = create_space_info_sub_group(space_info, flags,
-@@ -315,21 +319,17 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags)
- 							  0);
- 
- 		if (ret)
--			goto out_free;
-+			goto out_remove;
- 	}
- 
--	ret = btrfs_sysfs_add_space_info_type(space_info);
--	if (ret)
--		return ret;
--
- 	list_add(&space_info->list, &info->space_info);
- 	if (flags & BTRFS_BLOCK_GROUP_DATA)
- 		info->data_sinfo = space_info;
- 
- 	return ret;
- 
--out_free:
--	kfree(space_info);
-+out_remove:
-+	btrfs_sysfs_remove_space_info(space_info);
- 	return ret;
- }
- 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 0d14570c8bc2..ce1109e47cc7 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -1885,6 +1885,22 @@ void btrfs_sysfs_remove_space_info(struct btrfs_space_info *space_info)
- {
- 	int i;
- 
-+	for (i = 0; i < ARRAY_SIZE(space_info->sub_group); i++) {
-+		struct btrfs_space_info *sub_group;
-+
-+		sub_group = space_info->sub_group[i];
-+		if (!sub_group)
-+			continue;
-+
-+		/*
-+		 * Remove sub-groups before removing their parent space_info.
-+		 * Clear the pointer first so recursive removal cannot leave a
-+		 * stale child pointer behind.
-+		 */
-+		space_info->sub_group[i] = NULL;
-+		btrfs_sysfs_remove_space_info(sub_group);
-+	}
-+
- 	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
- 		struct kobject *kobj;
- 
--- 
-2.43.0
+It isn't strictly necessary for device 2 to be equal to or bigger. It is possible to add a smaller device, but before you remove the 1st device, you wlil need to delete files. The bigger files you choose to delete, the fewer you will need to delete to get to the underprovisioned 2nd device size. Then remove the 1st device. Now only the files that have not been deleted will have extents replicated to the 2nd device.
 
+At the very least the seed-device is not being modified and shouldn't get any worse than it is.
+
+
+Chris Murphy

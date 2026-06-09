@@ -1,84 +1,178 @@
-Received: from zeniv.linux.org.uk (zeniv.linux.org.uk [62.89.141.173])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oi1-f208.google.com (mail-oi1-f208.google.com [209.85.167.208])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E440481259;
-	Tue,  9 Jun 2026 17:50:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=62.89.141.173
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 722BC3AFD12
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 23:04:34 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.208
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781027426; cv=none; b=gJuBE4Qrf7Fq99a7SLAInroiY3tafOI+q89fBK7DKXJcwNCdT7gMAWXyHjmdjyqUL5llBhkZZbBvVAZB6mG3i135rNnCVXE27oS05tKhWztG2/EJuUivLAJ6LIb5PFdqpwQFPGrsGHH26rTO71G/ve1Onhr58oPQZnejYHlINR0=
+	t=1781046275; cv=none; b=svxDb7TvMAlvw04UpSkXFwzxgxiOaI3+UHjYlxw3QC2NcLDCaz9+wJrTxIXkDlwrSjaQLYtptPiKvRt2IEWpaI3p1SCfyRFctEZY5TpVDa/muRMWij8nnRmOaNxq3PzAmpUrqHWHDnash5L6+NNC0uXjEaQzHeNbats8oFgljCc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781027426; c=relaxed/simple;
-	bh=szuALeMmtswSAm5ZUQxf0VhMw8eSL/O9P3Llp9PZgZ0=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=RZA3R5rs5/IUlybAEVEVfIvByo+RgeaOFooc7xk1NHkQyUAucRm2IW6HkpgUlF3S7GWua8SB/A0iRkXyN3zjgziin2RCDlZzTxhrCz1OMpUEmCpSKb0y5WjNZjgUe5nPv216Q55UMs/sJH2TASh0CrhBRH2/RydFE95yICuToEs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk; spf=none smtp.mailfrom=ftp.linux.org.uk; dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b=b1ahRbQp; arc=none smtp.client-ip=62.89.141.173
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=ftp.linux.org.uk
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b="b1ahRbQp"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=linux.org.uk; s=zeniv-20220401; h=Sender:In-Reply-To:Content-Type:
-	MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=jrCsj4gn7vi5WO8BmPN7e9LdzveNQRxZdeDb2ikqQ8c=; b=b1ahRbQpgWZaeboUHTlQPeK6QG
-	4C6bX1CjDmyyBL+2vnFNA9juzWdTfpe95sA6bl9DSRjRX8AR2WZX1TqK3QIJzq06zTx65ZB1uerCn
-	rXhIt5aN5/XrR1rCyFXTP/bJaWvM4XuLq31i83tOvBb18FPcl809EzsK3W17mu4JyyHETIh/a2UdZ
-	85TnfU3l3gZRhJOuU+/O7RLKaG2WDbajUlmKXSDgf02Wi2POgV/MnD1YkPH186DDG8C2lq1/pFd5t
-	TzRQijMx49LLlVSXQRm82IUztQRk2CVTaWm+dx+esFY6rY8qLOf0RfRw5en9I5jmeg6jGjLfnGQTL
-	VBFilyCQ==;
-Received: from viro by zeniv.linux.org.uk with local (Exim 4.99.2 #2 (Red Hat Linux))
-	id 1wX0ab-0000000EaZi-3BMR;
-	Tue, 09 Jun 2026 17:50:13 +0000
-Date: Tue, 9 Jun 2026 18:50:13 +0100
-From: Al Viro <viro@zeniv.linux.org.uk>
-To: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
-Cc: Jens Axboe <axboe@kernel.dk>, Bart Van Assche <bvanassche@acm.org>,
-	Christoph Hellwig <hch@lst.de>, Damien Le Moal <dlemoal@kernel.org>,
-	Ming Lei <tom.leiming@gmail.com>,
-	linux-block <linux-block@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
-	linux-fsdevel@vger.kernel.org,
-	Christian Brauner <brauner@kernel.org>,
-	Hillf Danton <hdanton@sina.com>
-Subject: Re: [PATCH v4] loop: Fix NULL pointer dereference in lo_rw_aio()
-Message-ID: <20260609175013.GH2636677@ZenIV>
-References: <20260529220600.1226-1-hdanton@sina.com>
- <b27609f0-59f0-403d-90af-274c55df817e@I-love.SAKURA.ne.jp>
- <3244d4dd-8254-47c0-9609-b1db53450c7c@I-love.SAKURA.ne.jp>
+	s=arc-20240116; t=1781046275; c=relaxed/simple;
+	bh=YUqga8davzo7RXFWDkh6tFdj/a3Vd2XQriJ+oRVKN+w=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=f8hdKKbExDGP3P8Ks/wji4Dpn2gxKDiSHlH5MskzuBBNUIMkXsRO9hhcIKxZZUXdkrw0CXQ4UfiolBTPydaPqbii1rrPNKF6mNrS/72JqXxA0cqouK5M7N+MjZf2mEhVCACtQuAp8TfGMDY7b0LV19LsnXCJtgpUkkRl27GHEZI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.208
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oi1-f208.google.com with SMTP id 5614622812f47-4865626337fso5641905b6e.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jun 2026 16:04:34 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1781046273; x=1781651073;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=xsUWkrQ8rmjNpBE5wMBkO9QXkVTkJMjHrIkMU52dqvA=;
+        b=HEXid92FlK5fiPkHs5cy0vQUd2OzFAofBjWDNQuOrWcyazs21jD7dFEywZxQuR4wg/
+         xj47ma8Px8+S78oLW7y/T4qlaet3t0hlZUkc2LPmnUZqFsRiyRqYem8xdJcd6NSXB8V7
+         kM2azqbrnx8im5HaLKwWghdrpOqL+ONOw0NagtHOWDLjcJuxZoTt9tSOG2/fJuYuEqEM
+         1f8sWrZBrQbUD/swnM9XmBa76D86GDb1rRoa8u13B5lCW+x9zlIU8TTlxMCoJfFGVAIY
+         k1Pejet9QsmKASKDlT2OGhPDccqyXaosRiwEzF++5I+EX41Lmovlg+EY0Nqr3d9tbKkv
+         b86A==
+X-Forwarded-Encrypted: i=1; AFNElJ+KGSaiMs9oL2EyzhgHItMn2ikvsxm8KZWuEjC2Xv3mx5YHQooZSRi/qud9NJTG0+ODofL5Mz5hmeFEDg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzKw4Vpco0tFr8E9JxzdKmns1uFe1bSq4H/soP+rWO/5mtrCqFL
+	y1DEUw/aXpwt54cCzBsl8H0IVUtmvuM3qfhrMfQpK4aaUrW5yN6XRexnYmywh897USk22t7YFrE
+	rRH1fD3vfbiSICWN0CpklT6UxeDSY/+e+5/tn7xVKYVX4QSHZ5ZRS7QIIunw=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <3244d4dd-8254-47c0-9609-b1db53450c7c@I-love.SAKURA.ne.jp>
-Sender: Al Viro <viro@ftp.linux.org.uk>
+X-Received: by 2002:a05:6820:413:b0:67e:251a:bd3e with SMTP id
+ 006d021491bc7-69e68b5f6f6mr10350886eaf.18.1781046273642; Tue, 09 Jun 2026
+ 16:04:33 -0700 (PDT)
+Date: Tue, 09 Jun 2026 16:04:33 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6a289c01.39669fcc.33b062.00aa.GAE@google.com>
+Subject: [syzbot] [btrfs?] WARNING in __alloc_workqueue (2)
+From: syzbot <syzbot+f80c62f371ba6a1e7d79@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-wireless@vger.kernel.org, 
+	syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 
-On Sun, Jun 07, 2026 at 07:54:58PM +0900, Tetsuo Handa wrote:
-> syzbot is reporting NULL pointer dereference in lo_rw_aio() [1][2].
-> An analysis by the Gemini AI collaborator [3] considers that this problem
-> is caused by a timing shift primarily exposed by commit 65565ca5f99b
-> ("block: unify the synchronous bi_end_io callbacks"), along with helper
-> refactorings like commit 92c3737a2473 ("block: add a bio_submit_or_kill
-> helper").
-> 
-> But due to difficulty of reproducing this race, discussion about what is
-> happening and how to fix this problem is stalling. Also, we haven't
-> identified how many filesystems are subjected to this problem.
-> 
-> Therefore, this patch introduces a grace period for flushing pending I/O
-> requests (which should be a good thing from the perspective of defensive
-> programming) so that we won't hit NULL pointer dereference problem, and
-> also emits BUG: message in order to help filesystem developers identify
-> the caller of an I/O request that failed to wait for completion so that
-> filesystem developers can fix such caller to wait for completion.
-> 
-> Note that emitting BUG: message is enabled only if CONFIG_KCOV=y, for
-> this check is a waste of computation resources for almost all users.
+Hello,
 
-Still breaks xfs/259, same as the version in next-20260605...
+syzbot found the following issue on:
+
+HEAD commit:    a87737435cfa Add linux-next specific files for 20260608
+git tree:       linux-next
+console output: https://syzkaller.appspot.com/x/log.txt?x=178a7f2e580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=da47745f686dc823
+dashboard link: https://syzkaller.appspot.com/bug?extid=f80c62f371ba6a1e7d79
+compiler:       Debian clang version 21.1.8 (++20251221033036+2078da43e25a-1~exp1~20251221153213.50), Debian LLD 21.1.8
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=170260ae580000
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=124f11b6580000
+
+Downloadable assets:
+disk image: https://storage.googleapis.com/syzbot-assets/85d19fe6bb4e/disk-a8773743.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/30c683ce26e1/vmlinux-a8773743.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/4db5027513d2/bzImage-a8773743.xz
+
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+f80c62f371ba6a1e7d79@syzkaller.appspotmail.com
+
+usb 1-1: config 0 interface 0 altsetting 0 has an invalid descriptor for endpoint zero, skipping
+usb 1-1: New USB device found, idVendor=0cf3, idProduct=9374, bcdDevice=bc.3b
+usb 1-1: New USB device strings: Mfr=0, Product=0, SerialNumber=0
+usb 1-1: config 0 descriptor??
+------------[ cut here ]------------
+workqueue: ath6kl_wq is using neither WQ_PERCPU or WQ_UNBOUND. Setting WQ_PERCPU.
+WARNING: kernel/workqueue.c:5856 at __alloc_workqueue+0x1d02/0x2070 kernel/workqueue.c:5855, CPU#0: kworker/0:3/5630
+Modules linked in:
+CPU: 0 UID: 0 PID: 5630 Comm: kworker/0:3 Not tainted syzkaller #0 PREEMPT_{RT,(full)} 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/18/2026
+Workqueue: usb_hub_wq hub_event
+RIP: 0010:__alloc_workqueue+0x1d07/0x2070 kernel/workqueue.c:5855
+Code: e9 36 f9 ff ff e8 e9 89 37 00 e9 05 fb ff ff e8 df 89 37 00 e9 92 fb ff ff e8 d5 89 37 00 48 8d 3d 1e b7 43 0e 48 8b 74 24 20 <67> 48 0f b9 3a 81 cd 00 01 00 00 e9 88 e5 ff ff e8 b4 89 37 00 48
+RSP: 0018:ffffc90004606bc8 EFLAGS: 00010293
+RAX: ffffffff818e312b RBX: 0000000000000000 RCX: ffff8880342dbe00
+RDX: 0000000000000000 RSI: ffff8880448f3d68 RDI: ffffffff8fd1e850
+RBP: 0000000000000000 R08: ffff8880342dbe00 R09: 0000000000000002
+R10: 0000000000000100 R11: 0000000000000102 R12: dffffc0000000000
+R13: ffff8880448f3c00 R14: ffffc90004606ce0 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff888125a76000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fdb09f620f5 CR3: 0000000028f60000 CR4: 00000000003526f0
+Call Trace:
+ <TASK>
+ alloc_workqueue_va kernel/workqueue.c:5950 [inline]
+ alloc_workqueue_noprof+0xe3/0x210 kernel/workqueue.c:5966
+ ath6kl_usb_create drivers/net/wireless/ath/ath6kl/usb.c:639 [inline]
+ ath6kl_usb_probe+0xaa/0x1580 drivers/net/wireless/ath/ath6kl/usb.c:1143
+ usb_probe_interface+0x659/0xc70 drivers/usb/core/driver.c:396
+ call_driver_probe drivers/base/dd.c:-1 [inline]
+ really_probe+0x267/0xaf0 drivers/base/dd.c:706
+ __driver_probe_device+0x1e2/0x350 drivers/base/dd.c:868
+ driver_probe_device+0x4f/0x240 drivers/base/dd.c:898
+ __device_attach_driver+0x270/0x410 drivers/base/dd.c:1026
+ bus_for_each_drv+0x25b/0x2f0 drivers/base/bus.c:500
+ __device_attach+0x2c8/0x450 drivers/base/dd.c:1098
+ device_initial_probe+0xa1/0xd0 drivers/base/dd.c:1153
+ bus_probe_device+0x12d/0x220 drivers/base/bus.c:620
+ device_add+0x7ec/0xb90 drivers/base/core.c:3772
+ usb_set_configuration+0x1a87/0x2110 drivers/usb/core/message.c:2268
+ usb_generic_driver_probe+0x8d/0x150 drivers/usb/core/generic.c:250
+ usb_probe_device+0x1c4/0x3b0 drivers/usb/core/driver.c:291
+ call_driver_probe drivers/base/dd.c:-1 [inline]
+ really_probe+0x267/0xaf0 drivers/base/dd.c:706
+ __driver_probe_device+0x1e2/0x350 drivers/base/dd.c:868
+ driver_probe_device+0x4f/0x240 drivers/base/dd.c:898
+ __device_attach_driver+0x270/0x410 drivers/base/dd.c:1026
+ bus_for_each_drv+0x25b/0x2f0 drivers/base/bus.c:500
+ __device_attach+0x2c8/0x450 drivers/base/dd.c:1098
+ device_initial_probe+0xa1/0xd0 drivers/base/dd.c:1153
+ bus_probe_device+0x12d/0x220 drivers/base/bus.c:620
+ device_add+0x7ec/0xb90 drivers/base/core.c:3772
+ usb_new_device+0x9f8/0x16e0 drivers/usb/core/hub.c:2695
+ hub_port_connect drivers/usb/core/hub.c:5567 [inline]
+ hub_port_connect_change drivers/usb/core/hub.c:5707 [inline]
+ port_event drivers/usb/core/hub.c:5871 [inline]
+ hub_event+0x2a49/0x4f60 drivers/usb/core/hub.c:5953
+ process_one_work+0x98b/0x1630 kernel/workqueue.c:3326
+ process_scheduled_works kernel/workqueue.c:3409 [inline]
+ worker_thread+0xb49/0x1140 kernel/workqueue.c:3490
+ kthread+0x388/0x470 kernel/kthread.c:436
+ ret_from_fork+0x514/0xb70 arch/x86/kernel/process.c:158
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
+----------------
+Code disassembly (best guess):
+   0:	e9 36 f9 ff ff       	jmp    0xfffff93b
+   5:	e8 e9 89 37 00       	call   0x3789f3
+   a:	e9 05 fb ff ff       	jmp    0xfffffb14
+   f:	e8 df 89 37 00       	call   0x3789f3
+  14:	e9 92 fb ff ff       	jmp    0xfffffbab
+  19:	e8 d5 89 37 00       	call   0x3789f3
+  1e:	48 8d 3d 1e b7 43 0e 	lea    0xe43b71e(%rip),%rdi        # 0xe43b743
+  25:	48 8b 74 24 20       	mov    0x20(%rsp),%rsi
+* 2a:	67 48 0f b9 3a       	ud1    (%edx),%rdi <-- trapping instruction
+  2f:	81 cd 00 01 00 00    	or     $0x100,%ebp
+  35:	e9 88 e5 ff ff       	jmp    0xffffe5c2
+  3a:	e8 b4 89 37 00       	call   0x3789f3
+  3f:	48                   	rex.W
+
+
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
+
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+
+If the report is already addressed, let syzbot know by replying with:
+#syz fix: exact-commit-title
+
+If you want syzbot to run the reproducer, reply with:
+#syz test: git://repo/address.git branch-or-commit-hash
+If you attach or paste a git patch, syzbot will apply it before testing.
+
+If you want to overwrite report's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
+
+If the report is a duplicate of another one, reply with:
+#syz dup: exact-subject-of-another-report
+
+If you want to undo deduplication, reply with:
+#syz undup

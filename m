@@ -1,289 +1,191 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 815A6370AEE
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 16:09:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781021394; cv=none; b=D6rBuYK30R3sI0wDwudhJbrtIK3Ljxg/mVbQKjGH+FE8kJbLQxIcCIhmrUUXzqkltVIpRwHiCse/3a6fZPHmvcIRKtno0pgmi0aL7kQNm97MlXGMWYFnqWtJSszWBEGlOlXBZcYlRpc0fIsc9FXqoary6u+O5tcZzFMXPnnzAp8=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781021394; c=relaxed/simple;
-	bh=dvE8yILqlAUNGB8c3UDNeMgacVCvrPonMyG2T2pHo1o=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=Bx8B/sVGGuOqPwqNEwuiPcst9SqNvqY0QeQFyQYTzCrJmsN7FgzWWeo5WCPrJD8I5GunMW4w8VCzN9dTSkaMdtx2PJnnT8xGUv+J9eDSxNKoMSaGamvPbJzMa0BDANOoc6D3o95A8SQTMhm+SXrvwJdflpZNpGFXI4LGn69F3FQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=RPzM9G/l; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4B6BB352014;
+	Tue,  9 Jun 2026 17:05:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.154.45
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1781024713; cv=fail; b=imzjNgBVsxQjyhw8mA1enxkfIs2UR24txCq687+Vpk1M9ko6bXyP1Yfql/WXLtkV+gi7WxLTk+cCjLjACwXBoIk4a2qgA5hIe4TXfGWQjoCQBmP8MzcNtHAyyKuMmIX6hw6/JMWOvjdGdJRbDIYoD6KoVnbBgB9rVh96ZZHMIi4=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1781024713; c=relaxed/simple;
+	bh=nD66cIeqp1WWd26XPUyzGNMlqXx3WLM+HuFH3DTlWu4=;
+	h=Message-ID:Date:Subject:To:References:From:In-Reply-To:
+	 Content-Type:MIME-Version; b=sjg5jwZpssOScJY6pU7Gq0m+Y9N0XK0QoF/JxaHxBin03sYg7vvOuk5BCBCxQgVlKIF06qVVdRAKZ54JZflry3RiK+kiRzFtvUzNJmyn1pudUeG6ws2r524scraVvOv8pXepKHiYRuYM6eR2PfHy4uWAN/0LGln4/VvjpZrDazI=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=REVph9Ft; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=oPJ75hTr; arc=fail smtp.client-ip=216.71.154.45
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="RPzM9G/l"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A717E1F00893
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 16:09:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781021392;
-	bh=OZTUQFvbZ5OCbp8G2i7cRu7x329iI9JKZetZGVmGXME=;
-	h=From:To:Subject:Date;
-	b=RPzM9G/l982xb42rWlYW2sI8dwfJT0hpPFWU0fuubAyue8+NIsMViHJ4r16vsGFQA
-	 GMaGjswomQ5bsvU2kI5uJ5qiTHlSl336V2qniM+9AZ4hx0UriEaRzI/OU0By/OQG4t
-	 QQqRHrZtKIGv2SIMkcQCQLqF0I9wc3I7ExLzPyu2bhKBU3TC1iFII6678NH/q22TQ9
-	 M7Rx8VJPh8llU/i2Z/I73oCHVjYNw+ul22Nw15NGnjKKr7qnvfTNt92N2tNW106dlS
-	 +P32nGWHgUsSrcwKo6a36mVK96T+xMgNy5Wza1G4mUBPhqi0YrtqibLDech/XbR1FG
-	 n7cB8DBs0u2Rw==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix use-after-free on reloc root after error in insert_dirty_subvol()
-Date: Tue,  9 Jun 2026 17:09:47 +0100
-Message-ID: <910f7fff6c9a588271afa591b1c533d92246ca85.1781021231.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="REVph9Ft";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="oPJ75hTr"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1781024712; x=1812560712;
+  h=message-id:date:subject:to:references:from:in-reply-to:
+   content-transfer-encoding:mime-version;
+  bh=nD66cIeqp1WWd26XPUyzGNMlqXx3WLM+HuFH3DTlWu4=;
+  b=REVph9FtSNDWmiuGli567N9IKt91NWovS7fg6eqPA1e9QpW3alzMOJQi
+   XyD+p4Oof1Smn8jPjpuI1dgHRGD12kX+h7b0NPgk95X44PhUE0UL/x7Jp
+   p6Id1zxvfBbacrsqTvqEiH1QxXFj402qWd4t+V12S4iSe+ChRITqhORpH
+   eU0bAMENwhv1a+lTWAK3/PsJnUHrGPdVNJRFMuiPmgXNtXJrVc4tcxXZB
+   TCPr437Dj3tcUdNCEE9Rmx/daRfbX0KenCBhYlidgG6TvSPQsqNc/UBik
+   tle5SLl1c9wpADUecukTkRaXziK5R7gL8Z9St7FAn9WRXXI9fVAMVAZuH
+   A==;
+X-CSE-ConnectionGUID: AfPxen/tR6OlVbnks9iGZA==
+X-CSE-MsgGUID: fb9MJ2e8SZOVksIcCRAuBA==
+X-IronPort-AV: E=Sophos;i="6.24,196,1774281600"; 
+   d="scan'208";a="147282135"
+Received: from mail-southcentralusazon11011064.outbound.protection.outlook.com (HELO SN4PR0501CU005.outbound.protection.outlook.com) ([40.93.194.64])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 10 Jun 2026 01:03:48 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=xkg1YoBNOpbo9PVrDIf2lfZcTuM6mA983i6Y/eUNh4Be6HPwio+IQeNGTVajtu6gmSzXIUpbprC9QGeVIaVCjWH/82nJc9nGU9hw4AeSrB/VF+gnpXUcNzXgOl+mEBoJ5I9WGp0wnvgyFVqtzhr0tq3dQ0djD+g4K4idlFO45O0I2GtlfATrzEAXsDecVfLrwh+7X6l6g7oRwom7v3KJeQmAU44D08MRLFFW1qFeLNyLy6M4j3RS/FPpmnTCRSKdMgsmCxb2zUM16S5Kaecf2XjREmzQwj3oQHpdUFkfEhViUJtFJuXN6cq8ABs/ZKJim8I6lwGiyfm9ftiIRra37w==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=dG1GKnB6pODFqSpFAGJyib8wXVjL40p0TTIpkaMSXS0=;
+ b=BaH2SR2dAWcLA4z9N0+TRQpEx30D8qvjjMFa85d3uKO0iutzgzSmNn+p6AMAvBdrMliNYFL0oEA9JYlv91mTvij8t0sKwDBukxu4110G8po3LdSfmLz/pX4qJ8piJGuq9nphAy9vhYyuzSLlIOmkc19l3I/m23Fz6pOCMOkQ6yr7UrUcSkezfbaIrmXxfASc4K2cZv4Hh6wao0iwbuHkiSVxr/bbqrbUqCiPu7sHFSHQlQuRKjgk0mD6zFv7pKpxsPeEQQbdilaNbFW4AJuflNeqYSfM7zE2NSPPc4Y1YmplsupP2OqcQYB39IYhw4MQJVYYhyR5jOMEVP2gL6GgOA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=dG1GKnB6pODFqSpFAGJyib8wXVjL40p0TTIpkaMSXS0=;
+ b=oPJ75hTrhXaQLFUe9HXEMYDjXcZ5V+IYVbVZUcqov3+Lo7O961828SAE6HnUkPfP4AFqpfoxMFx86sK4IHRdrLh5vfbLcNcBOyF5ViFPI7bz2GRhCvioJFUYoSzVu46/fpM2HtaLI1iTOxCV/E9K5+bPlz9sIR1ZwDYXyGaSmyc=
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
+ by CH0PR04MB8019.namprd04.prod.outlook.com (2603:10b6:610:fb::8) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.92.15; Tue, 9 Jun 2026
+ 17:03:45 +0000
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0092.011; Tue, 9 Jun 2026
+ 17:03:45 +0000
+Message-ID: <0820a329-0f33-4f23-83b0-a4b849e9ae1d@wdc.com>
+Date: Tue, 9 Jun 2026 19:03:40 +0200
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] btrfs: fix zoned sub_group leak on space_info sysfs
+ failure
+To: Guangshuo Li <lgs201920130244@gmail.com>, Chris Mason <clm@fb.com>,
+ David Sterba <dsterba@suse.com>, Naohiro Aota <naohiro.aota@wdc.com>,
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20260609152015.1586599-1-lgs201920130244@gmail.com>
+Content-Language: en-US
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+In-Reply-To: <20260609152015.1586599-1-lgs201920130244@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: FR4P281CA0234.DEUP281.PROD.OUTLOOK.COM
+ (2603:10a6:d10:e9::18) To SA6PR04MB9447.namprd04.prod.outlook.com
+ (2603:10b6:806:436::21)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|CH0PR04MB8019:EE_
+X-MS-Office365-Filtering-Correlation-Id: 709cb90c-c55e-4354-4dcc-08dec64910b9
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|19092799006|1800799024|366016|376014|18002099003|22082099003|56012099006|11063799006;
+X-Microsoft-Antispam-Message-Info:
+	v/R+XLMAcbklsOA+V5i5W2mnxQRKq/rV++Oau6Xk1XJEq1FaIPme/XbJ9WkY0JszyokNLc/jbwDiLJE6E45PFl1fOLfry33BVS2ltRQM671ZgYSKh85y+b+sYVS/wfLPIK7PL7T3f8QDFrPxWkIbZ1qB/Ih2v2m0zKtJcSAlRmwloEquV+RThou4IpfCfzFg3z8RzGFzlLeCRiYGzUUB/EQ+ScN4YVT9vT2gt08a8Ms0OojLiiKelUL+TilUvZXHYw/xe5mNliWv2R65kKjX98LnvhYiS8K1+zWk2W8A1AHNcgmBBVJzSzrxUJCn9jesXHNWRtaTHH6DSRV9ZaaNEDay7BluM+LqzHtxLYCfFR90xjfpxypOxnwcvHbXG2I47RcoPhkKATDrGgiLB/DD6+SNQoRqpOkge9w7Uh+4/DAGqTP6O2yuv6noHMxjYaovinwmc0TvAOsbhLpM5DWMpvzlq/YFoRFds2+ilR9sotyWWaWU2TkfDfay5COsPNSw+hxlJgWHbeRJ+qZTsQCI4qh7/1zeFKoOQk5jokX5gV14keyKW3fbza9B5LmET2+IpHruUzj1zY1DXsd9/PZd/zVXc3D+wX+excVaIYZdyVXcBsEbapSt+lqubPsSN1AxNHsjXtInDHgkhJx7kybMoXuV3agCCxmYxA9/Pl7qp3smq1QY3dLrLn9kB3f3ioFV
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(19092799006)(1800799024)(366016)(376014)(18002099003)(22082099003)(56012099006)(11063799006);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?utf-8?B?Ulpqa3pXOWR4Tk1XZUFxVEZEZDY1UU85VzNFS2ZGRlREWTRjYUVlanY4NWdJ?=
+ =?utf-8?B?V2gwMDFOQndHMDBhNFlFZXhGYVdIVnNBWDJzYndQMTVJZmNkeDFhTXg0dzU3?=
+ =?utf-8?B?SXE4elZtTjlDTm1PZEVaVTBtZFVDMW1QNUcwK1hYUDViZFNkeXNRVUhTOHlh?=
+ =?utf-8?B?QWlOM3JJaDMzMDNQUklrdVUzakpoWVkveUxWOUlmQ1VvT0U3ZjFiN3ljTmFv?=
+ =?utf-8?B?anhMQjd3UjdueEZKbmRWZzVWV1g5a3d3SnVzaVIyVFpnZXVzQ1N3Qk03SHNN?=
+ =?utf-8?B?M0VZK3Zudm5IKzVDTklKVTJKMFlnVDNDOUZ3dW9OdXZDTXJ1MHFQZVIzTHYz?=
+ =?utf-8?B?aW9GaGdHSHA3R1FmSDhaR3BRUHVIWm5pRFFYVTB5eU56L3U4Z3hNcVpnR1V0?=
+ =?utf-8?B?eU41QjhYKy9wZWdlRUZjNVVscTVWVEoxNkpHVnkzdTVPSm1rTVA2WCtqL2Jk?=
+ =?utf-8?B?N2drSXVRQzdUc3FJUnZmdVNqempQZUFRUTloRUY1YmxYNVJMMXlxUHY1MGor?=
+ =?utf-8?B?VnVSU0h2M1hkQlczNDR3RWw5QnJyWTBJbk13RUJwSDRsTFVNZWFnVHMrQ0Qv?=
+ =?utf-8?B?eUJia2RuU29YNU01ZmJnZmhUSlZzVjhRZlB6eWNKSHlBSWtOOWQ2dzQrVkYz?=
+ =?utf-8?B?NzBibEcvbUFqWmxRcFRZemRhd2xRdXh6MkdTUFQ5Rm5SMW5wQmhzOUovZkN1?=
+ =?utf-8?B?U3I1MU1JU0lqZ2p0bzI0bTBuRHd0dXJGWG0weS9iRkZPRm9qOUpObEZmZ0Ux?=
+ =?utf-8?B?V0syWjF6Y3VLdHhlQWRSWmFiWGlocHBHRkVDcEc0SFNyUDZpdXI5ZFZjSnNk?=
+ =?utf-8?B?RExmNFNGUTYySFNUTFdWa2pvTzc4MldhNEtrcnJ2R3pkNHhjMWFJTTRUczhz?=
+ =?utf-8?B?OE9wMG55Zk1uMGJwWlpUTWhkdndVQm92ckRjY1dVZ3FRYjgrVEZRb2Q4cUhN?=
+ =?utf-8?B?Qk5hVG9jVDFIZWhIanNIdzFLank0ZTBDZFB2THFnYXBCcWJHNkhoUVh5V2NX?=
+ =?utf-8?B?dERFd1ZhOVJpTW0yL01OYms5Ylo4VUJUVjJOWnA3Q0xCTkRseW1qSjU1MldD?=
+ =?utf-8?B?akt6S3IvUFk3bGxyUjlaWVdZZU1WSko1UzE0S283OWpaQ1BBWVpIdWN3RU5h?=
+ =?utf-8?B?OXFBcHdxcnZST284endBaFhjclV0TzlMTVQwVHN2MTgxSHZUNVhLbHk3Wmgw?=
+ =?utf-8?B?YlViTEF0QThiN3QzR0FBUDk3OERBaERKM2E4Z2hJNXRIZkxNTUYvdG94MGhT?=
+ =?utf-8?B?ZFFwa3haZFFteE1oTGpHajBQd0lsUHE0OGI1VGVFN0JEOHZVbkJJekxrN0dW?=
+ =?utf-8?B?T0lkY1hxOVBzUlQyQ1BxNndwM2J4NHkrVVhxcmRDaUtGSm9FMUJPcVF6OFpX?=
+ =?utf-8?B?bUZSWGhDbjNVRXFpRjg4OWhGY2NHRFdPMTliRTlpZDRYU2VySkI1UUxqMFdy?=
+ =?utf-8?B?dGUxa0dwYWR4Qzl5S2VsZStsdHhveG9rK3RQd0VvWXRLaWFnTy9aY211a1BW?=
+ =?utf-8?B?SjlyaGVFUnE0TmdIL3hyVUFIRnhyOUIwL3FTdFdpcnlobzlTckh5YTRPeW5L?=
+ =?utf-8?B?MmRBOW9FeDFhYnpoRnQzSDRNUmJtUkNnK3QvNUZscUJPTk5aTURYWGpudXRz?=
+ =?utf-8?B?UjU3M1RwaGY5Qmc4MG1nelhVRkpUbUg1bC84bXlvWWZhYmJWWHV5ZmVhRVds?=
+ =?utf-8?B?Ulp2Q2NodHloMlhVbmpJT2ZqQ1pMUW80Q2VINVlVWXRuQmJsNzV0T0lIMjYw?=
+ =?utf-8?B?R0N4MVc4RUNGaEllYmoxYmZzcVk4Tm5rYlRraDdXL3pOdjkrekwyRjA3dTVB?=
+ =?utf-8?B?Q2tXc0VudUpZdlZVSnpUOWJBcFpHd3AvMVJJRGI0SkxDOEpqek9jVk1ibFoy?=
+ =?utf-8?B?ZW5UNkVtNmZKSElKejVOdnFXL3dING9od0ROaXQ4V2NwSzBydS9CMUR1MGNO?=
+ =?utf-8?B?cGdmL1dQamcvTEhSckZod3Z6UURQNGdRSytWemVSUWhvdHZhYUlENkVMNWxz?=
+ =?utf-8?B?dkNvR3RnNUpmQUVFQVMxRzdQbVJtSFJ0L0lRU08yNmJEUU1pQkkwcmhiT1hu?=
+ =?utf-8?B?Q1JpcDd0cTl0Z0xKQTVpaTVFMUZpK2lpR1UzUHdCOTFZZ0xWeFV4bFZkbGw5?=
+ =?utf-8?B?OFF3OWYyZXVsV29FLzhQcm5PUlJ3VWYzMVdGZzhobmU4d3hMeW5Bc1V2Ny85?=
+ =?utf-8?B?YkJGRk13SCtnOVROQXU2cklZYWlnRE9XNzVUQ0tXc0NSQytTRHJVaXRObU5Y?=
+ =?utf-8?B?UUtUem1DcTg2eUdkZnNSQ2VJRnlyNlBaZDVBYmhGVEVYQVpBWUlJSkxLRlJz?=
+ =?utf-8?B?TXpyRFFheHJUZHVzQkZHalA0TXNsMDRmbnhYRVhnaEVITW5WeHllR3kraWkr?=
+ =?utf-8?Q?KR5FDPn8UBhdfQQI=3D?=
+X-Exchange-RoutingPolicyChecked:
+	frTVfONJnJUkSDoFlGhKaP5EtOdP13W4Xq8akyVdT9cR3tO0XOo7Xgdi2pz8DzNgEAKZFyafLySOZK2BjJbpGXBg/bkeNRbBhaJBq7QoUokgQ6DmME8V86GjM1v4h+MKDbBn90yZ5ZTiwPQMRVATbFSiLIoS4ResWbrLZGX8qRGkmB9vGRrNFPQN1erutCpIVcqwxUEslUG/b5oXW/7p9OxorYqpING5P+BEMBoDCrBk6zry8Sih6CEb2eMX7eENUjnOPsKkJil4B8JzulZNnpifJMtmx2pXHLL9cb5gDYoW2WvcwbrruVYXBiO9ub1W2eeb7IaEj04PdsupLxXb3w==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	R7TQRA2DzGFiJFSOkFwzmX/2Ni0ysR3NHJ5qyszOVRrwDTZmHEHhqrR1IwOVhSTwi1xqoLp3kYuc/JpAA6f0tanDu91Nk5whpch4g8YTry7sPnvQxav0nTQPspP7MoOX63qTUaXK1FNnPnNKGpGQOMmEjL/r2apfLsXwR28yq6QWCOahEtmjuo99R2Or3pU62drwP3yEqcrbwuHRK7vPSeoPeHn13s0s6rca3UT4f6RfTjogckEapLFbPen8YAWBgKctzwYceSHC7YLX9Zh6SVVLOpyZKPChL9N95hlL3r1PwbEfaXCHUci4GQAZL0z3zmS4WBLiY7cpUjnNzpb7AVZmHHEiBRSACYPvgmJlH84r01O/MyV/+4XcuXOCtVGbjd4RvmzsdjFjB9Mw+MLToLXwrGoBN9DMcKMguj5iD5bU6U55qFQ48GSC+jl/7zUdBH4TBTlE9lJdUHL8N1Gr22vjH6nr3TnLfc4uMALa8nLK8UTS+v1ATTBD09z5RPN9t826WmZ4xkID+VL9tnRkpvlrSW/WrgBGa3/1ev9rjgt8aUeHwqNJ+GVkhmEdm46d6TYF9L/wFriNpfTnVvLGWC1AMK0W4/YGVcQxQEHyOJhMTb0nj4dm6WZ9GZn3kw7K
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 709cb90c-c55e-4354-4dcc-08dec64910b9
+X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 09 Jun 2026 17:03:44.9815
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: IPlzuxI2QZ+6u03rqe5OKQDy2P/aUTYJ+epJoXAxOKvw5SvKh8OeqE4bsSNCigx78PoAm259klb7nx6sWVZG/ohTOh1aiNt9Bgnkvfuw7r4=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: CH0PR04MB8019
 
-From: Filipe Manana <fdmanana@suse.com>
+On 6/9/26 5:20 PM, Guangshuo Li wrote:
+> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> index 0d14570c8bc2..ce1109e47cc7 100644
+> --- a/fs/btrfs/sysfs.c
+> +++ b/fs/btrfs/sysfs.c
+> @@ -1885,6 +1885,22 @@ void btrfs_sysfs_remove_space_info(struct btrfs_space_info *space_info)
+>   {
+>   	int i;
+>   
+> +	for (i = 0; i < ARRAY_SIZE(space_info->sub_group); i++) {
+> +		struct btrfs_space_info *sub_group;
+> +
+> +		sub_group = space_info->sub_group[i];
+> +		if (!sub_group)
+> +			continue;
 
-If during relocation we fail in insert_dirty_subvol() because
-btrfs_update_reloc_root() returned an error, we will leave a root's
-reloc_root field pointing to a reloc root that was freed instead of NULL,
-resulting later in a use-after-free, or double free attempt during
-unmount.
+I think you can break here instead of continue. space_info->sub_group is 
+not expected to have holes.
 
-The sequence of steps is this:
 
-1) During relocation thel call to btrfs_update_reloc_root() in
-   insert_dirty_subvol() fails, so insert_dirty_subvol() returns the
-   error without adding root X to the rc->dirty_subvol_roots list;
+> +
+> +		/*
+> +		 * Remove sub-groups before removing their parent space_info.
+> +		 * Clear the pointer first so recursive removal cannot leave a
+> +		 * stale child pointer behind.
+> +		 */
+> +		space_info->sub_group[i] = NULL;
+> +		btrfs_sysfs_remove_space_info(sub_group);
 
-2) Then merge_reloc_root() aborts the current transaction because
-   insert_dirty_subvol() return an error;
+That comment IMHO doesn't add any value.
 
-4) Up the call chain, merge_reloc_roots() gets the error, adds the
-   reloc root for root X to the local reloc_roots list and jumps to the
-   'out' label, where it calls free_reloc_roots() to free all the reloc
-   roots in the local reloc_roots list. This free the reloc root for
-   root X;
 
-5) We go up the call chain to relocate_block_group() which calls
-   clean_dirty_subvols() to go over dirty roots and set their
-   ->reloc_root field to NULL, but root X is not in the dirty_subvol_roots
-   list, so it's ->reloc_root still points to a reloc root;
-
-6) Relocation finishes, with an error and a transaction abort, but the
-   ->reloc_root field for root X still points to the reloc root that was
-   freed in step 4;
-
-7) When unmounting the fs we end up calling:
-
-     btrfs_free_fs_roots()
-        btrfs_drop_and_free_fs_root()
-           --> calls btrfs_put_root() against root X's ->reloc_root
-               which is not NULL and points to the already freed
-               reloc root in step 4 above
-
-  Resulting in a use-after-free to a double free attempt.
-
-Syzbot reported this with the following dmesg/syslog:
-
-   [  106.004389][ T5339] BTRFS error (device loop0 state A): Transaction aborted (error -5)
-   [  106.014266][ T5339] BTRFS: error (device loop0 state A) in merge_reloc_root:1655: errno=-5 IO failure
-   [  106.021891][ T1061] BTRFS error (device loop0 state A): error while writing out transaction: -5
-   [  106.026964][ T1061] BTRFS warning (device loop0 state A): Skipping commit of aborted transaction.
-   [  106.033807][ T5340] BTRFS error (device loop0 state A): bdev /dev/loop0 errs: wr 3, rd 0, flush 0, corrupt 0, gen 0
-   [  106.039265][ T1061] BTRFS: error (device loop0 state A) in cleanup_transaction:2067: errno=-5 IO failure
-   [  106.044382][ T5339] BTRFS info (device loop0 state EA): forced readonly
-   [  106.074329][ T5339] BTRFS: error (device loop0 state EA) in merge_reloc_roots:1887: errno=-5 IO failure
-   [  106.081004][ T5356] BTRFS info (device loop0 state EA): scrub: started on devid 1
-   [  106.085611][ T5339] BTRFS info (device loop0 state EA): balance: ended with status: -30
-   [  106.089517][ T5356] BTRFS info (device loop0 state EA): scrub: not finished on devid 1 with status: -30
-   [  106.662365][ T5338] BTRFS info (device loop0 state EA): last unmount of filesystem 3a375e4e-b156-4d76-a2ad-16e198ce1409
-   [  106.682946][ T5338] ==================================================================
-   [  106.686574][ T5338] BUG: KASAN: slab-use-after-free in btrfs_put_root+0x2f/0x250
-   [  106.690090][ T5338] Write of size 4 at addr ffff88803f978630 by task syz.0.0/5338
-   [  106.693173][ T5338]
-   [  106.694279][ T5338] CPU: 0 UID: 0 PID: 5338 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full)
-   [  106.694293][ T5338] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-   [  106.694300][ T5338] Call Trace:
-   [  106.694308][ T5338]  <TASK>
-   [  106.694314][ T5338]  dump_stack_lvl+0xe8/0x150
-   [  106.694331][ T5338]  print_address_description+0x55/0x1e0
-   [  106.694343][ T5338]  ? btrfs_put_root+0x2f/0x250
-   [  106.694358][ T5338]  print_report+0x58/0x70
-   [  106.694368][ T5338]  kasan_report+0x117/0x150
-   [  106.694384][ T5338]  ? btrfs_put_root+0x2f/0x250
-   [  106.694399][ T5338]  kasan_check_range+0x264/0x2c0
-   [  106.694416][ T5338]  btrfs_put_root+0x2f/0x250
-   [  106.694430][ T5338]  btrfs_drop_and_free_fs_root+0x160/0x210
-   [  106.694447][ T5338]  btrfs_free_fs_roots+0x2f9/0x3c0
-   [  106.694464][ T5338]  ? __pfx_btrfs_free_fs_roots+0x10/0x10
-   [  106.694479][ T5338]  ? free_root_pointers+0x5bf/0x5f0
-   [  106.694494][ T5338]  close_ctree+0x798/0x12d0
-   [  106.694511][ T5338]  ? __pfx_close_ctree+0x10/0x10
-   [  106.694526][ T5338]  ? _raw_spin_unlock_irqrestore+0x74/0x80
-   [  106.694599][ T5338]  ? rcu_preempt_deferred_qs_irqrestore+0x906/0xbc0
-   [  106.694620][ T5338]  ? __rcu_read_unlock+0x83/0xe0
-   [  106.694636][ T5338]  ? btrfs_put_super+0x48/0x1c0
-   [  106.694652][ T5338]  ? __pfx_btrfs_put_super+0x10/0x10
-   [  106.694667][ T5338]  generic_shutdown_super+0x13d/0x2d0
-   [  106.694682][ T5338]  kill_anon_super+0x3b/0x70
-   [  106.694695][ T5338]  btrfs_kill_super+0x41/0x50
-   [  106.694710][ T5338]  deactivate_locked_super+0xbc/0x130
-   [  106.694722][ T5338]  cleanup_mnt+0x437/0x4d0
-   [  106.694736][ T5338]  ? _raw_spin_unlock_irq+0x23/0x50
-   [  106.694752][ T5338]  task_work_run+0x1d9/0x270
-   [  106.694769][ T5338]  ? __pfx_task_work_run+0x10/0x10
-   [  106.694784][ T5338]  ? do_raw_spin_unlock+0x4d/0x210
-   [  106.694802][ T5338]  do_exit+0x70f/0x22c0
-   [  106.694817][ T5338]  ? trace_irq_disable+0x3b/0x140
-   [  106.694835][ T5338]  ? __pfx_do_exit+0x10/0x10
-   [  106.694848][ T5338]  ? preempt_schedule_thunk+0x16/0x30
-   [  106.694863][ T5338]  ? preempt_schedule_common+0x82/0xd0
-   [  106.694878][ T5338]  ? preempt_schedule_thunk+0x16/0x30
-   [  106.694892][ T5338]  do_group_exit+0x21b/0x2d0
-   [  106.694906][ T5338]  ? entry_SYSCALL_64_after_hwframe+0x77/0x7f
-   [  106.694918][ T5338]  __x64_sys_exit_group+0x3f/0x40
-   [  106.694932][ T5338]  x64_sys_call+0x221a/0x2240
-   [  106.694944][ T5338]  do_syscall_64+0x174/0x580
-   [  106.694954][ T5338]  ? clear_bhb_loop+0x40/0x90
-   [  106.694967][ T5338]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
-   [  106.694978][ T5338] RIP: 0033:0x7f958ef9ce59
-   [  106.694988][ T5338] Code: Unable to access opcode bytes at 0x7f958ef9ce2f.
-   [  106.694994][ T5338] RSP: 002b:00007fffd4058318 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
-   [  106.695008][ T5338] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f958ef9ce59
-   [  106.695015][ T5338] RDX: 00007f958c3f8000 RSI: 0000000000000000 RDI: 0000000000000000
-   [  106.695022][ T5338] RBP: 0000000000000003 R08: 0000000000000000 R09: 00007f958f1e73e0
-   [  106.695028][ T5338] R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-   [  106.695034][ T5338] R13: 00007f958f1e73e0 R14: 0000000000000003 R15: 00007fffd40583d0
-   [  106.695046][ T5338]  </TASK>
-   [  106.695050][ T5338]
-   [  106.821635][ T5338] Allocated by task 1061:
-   [  106.823446][ T5338]  kasan_save_track+0x3e/0x80
-   [  106.825498][ T5338]  __kasan_kmalloc+0x93/0xb0
-   [  106.827381][ T5338]  __kmalloc_cache_noprof+0x31c/0x660
-   [  106.829525][ T5338]  btrfs_alloc_root+0x75/0x930
-   [  106.831458][ T5338]  read_tree_root_path+0x127/0xb00
-   [  106.833556][ T5338]  btrfs_read_tree_root+0x34/0x60
-   [  106.835553][ T5338]  create_reloc_root+0x6b3/0xcb0
-   [  106.837556][ T5338]  btrfs_init_reloc_root+0x2ec/0x4b0
-   [  106.839557][ T5338]  record_root_in_trans+0x2ab/0x350
-   [  106.841685][ T5338]  btrfs_record_root_in_trans+0x15c/0x180
-   [  106.844237][ T5338]  start_transaction+0x39c/0x1820
-   [  106.846638][ T5338]  btrfs_finish_one_ordered+0x88e/0x2680
-   [  106.849436][ T5338]  btrfs_work_helper+0x37b/0xc20
-   [  106.851549][ T5338]  process_scheduled_works+0xb5d/0x1860
-   [  106.853807][ T5338]  worker_thread+0xa53/0xfc0
-   [  106.855773][ T5338]  kthread+0x389/0x470
-   [  106.857548][ T5338]  ret_from_fork+0x514/0xb70
-   [  106.859493][ T5338]  ret_from_fork_asm+0x1a/0x30
-   [  106.861504][ T5338]
-   [  106.862527][ T5338] Freed by task 5339:
-   [  106.864224][ T5338]  kasan_save_track+0x3e/0x80
-   [  106.866180][ T5338]  kasan_save_free_info+0x46/0x50
-   [  106.868371][ T5338]  __kasan_slab_free+0x5c/0x80
-   [  106.870462][ T5338]  kfree+0x1c5/0x640
-   [  106.872180][ T5338]  __del_reloc_root+0x341/0x3b0
-   [  106.874290][ T5338]  free_reloc_roots+0x5f/0x90
-   [  106.876282][ T5338]  merge_reloc_roots+0x73f/0x8a0
-   [  106.878489][ T5338]  relocate_block_group+0xbcc/0xe70
-   [  106.880742][ T5338]  do_nonremap_reloc+0xa8/0x5b0
-   [  106.882885][ T5338]  btrfs_relocate_block_group+0x7e6/0xc40
-   [  106.885336][ T5338]  btrfs_relocate_chunk+0x115/0x820
-   [  106.887502][ T5338]  __btrfs_balance+0x1db0/0x2ae0
-   [  106.889543][ T5338]  btrfs_balance+0xaf3/0x11b0
-   [  106.891456][ T5338]  btrfs_ioctl_balance+0x3d3/0x610
-   [  106.893672][ T5338]  __se_sys_ioctl+0xfc/0x170
-   [  106.895530][ T5338]  do_syscall_64+0x174/0x580
-   [  106.897518][ T5338]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
-   [  106.900101][ T5338]
-   [  106.901123][ T5338] The buggy address belongs to the object at ffff88803f978000
-   [  106.901123][ T5338]  which belongs to the cache kmalloc-4k of size 4096
-   [  106.906907][ T5338] The buggy address is located 1584 bytes inside of
-   [  106.906907][ T5338]  freed 4096-byte region [ffff88803f978000, ffff88803f979000)
-   [  106.912980][ T5338]
-   [  106.914022][ T5338] The buggy address belongs to the physical page:
-   [  106.916716][ T5338] page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x3f978
-   [  106.920390][ T5338] head: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
-   [  106.923834][ T5338] flags: 0x4fff00000000040(head|node=1|zone=1|lastcpupid=0x7ff)
-   [  106.927104][ T5338] page_type: f5(slab)
-   [  106.928898][ T5338] raw: 04fff00000000040 ffff88801ac42140 dead000000000122 0000000000000000
-   [  106.932507][ T5338] raw: 0000000000000000 0000000800040004 00000000f5000000 0000000000000000
-   [  106.936193][ T5338] head: 04fff00000000040 ffff88801ac42140 dead000000000122 0000000000000000
-   [  106.939856][ T5338] head: 0000000000000000 0000000800040004 00000000f5000000 0000000000000000
-   [  106.943601][ T5338] head: 04fff00000000003 fffffffffffffe01 00000000ffffffff 00000000ffffffff
-   [  106.947268][ T5338] head: ffffffffffffffff 0000000000000000 00000000ffffffff 0000000000000008
-   [  106.950988][ T5338] page dumped because: kasan: bad access detected
-   [  106.953710][ T5338] page_owner tracks the page as allocated
-   [  106.956198][ T5338] page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd2820(GFP_ATOMIC|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 24, tgid 24 (kworker/u4:2), ts 105728970387, free_ts 29540875453
-   [  106.964984][ T5338]  post_alloc_hook+0x22d/0x280
-   [  106.966956][ T5338]  get_page_from_freelist+0x2593/0x2610
-   [  106.969307][ T5338]  __alloc_frozen_pages_noprof+0x18d/0x380
-   [  106.971839][ T5338]  allocate_slab+0x77/0x660
-   [  106.973709][ T5338]  refill_objects+0x339/0x3d0
-   [  106.975696][ T5338]  __pcs_replace_empty_main+0x321/0x720
-   [  106.978136][ T5338]  __kmalloc_node_track_caller_noprof+0x572/0x7b0
-   [  106.981009][ T5338]  __alloc_skb+0x2c1/0x7d0
-   [  106.982983][ T5338]  nsim_dev_trap_report_work+0x29a/0xb90
-   [  106.985356][ T5338]  process_scheduled_works+0xb5d/0x1860
-   [  106.987710][ T5338]  worker_thread+0xa53/0xfc0
-   [  106.989847][ T5338]  kthread+0x389/0x470
-   [  106.991727][ T5338]  ret_from_fork+0x514/0xb70
-   [  106.993722][ T5338]  ret_from_fork_asm+0x1a/0x30
-   [  106.995900][ T5338] page last free pid 77 tgid 77 stack trace:
-   [  106.998479][ T5338]  __free_frozen_pages+0xc1c/0xd30
-   [  107.000819][ T5338]  vfree+0x1d1/0x2f0
-   [  107.002631][ T5338]  delayed_vfree_work+0x55/0x80
-   [  107.004848][ T5338]  process_scheduled_works+0xb5d/0x1860
-   [  107.007366][ T5338]  worker_thread+0xa53/0xfc0
-   [  107.009388][ T5338]  kthread+0x389/0x470
-   [  107.011177][ T5338]  ret_from_fork+0x514/0xb70
-   [  107.013313][ T5338]  ret_from_fork_asm+0x1a/0x30
-   [  107.015454][ T5338]
-   [  107.016460][ T5338] Memory state around the buggy address:
-   [  107.019052][ T5338]  ffff88803f978500: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
-   [  107.022691][ T5338]  ffff88803f978580: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
-   [  107.026264][ T5338] >ffff88803f978600: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
-   [  107.029721][ T5338]                                      ^
-   [  107.032062][ T5338]  ffff88803f978680: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
-   [  107.035547][ T5338]  ffff88803f978700: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
-   [  107.038865][ T5338] ==================================================================
-
-Reported-by: syzbot+b3d472d13f9d7bf20669@syzkaller.appspotmail.com
-Link: https://lore.kernel.org/linux-btrfs/6a1ebde9.c1435f33.112120.0176.GAE@google.com/
-Fixes: 7934133fae5e ("btrfs: handle btrfs_update_reloc_root failure in insert_dirty_subvol")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/relocation.c | 15 +++++++++++----
- 1 file changed, 11 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index fb85bc8b345c..4e3b3c34cc87 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1509,15 +1509,22 @@ static int insert_dirty_subvol(struct btrfs_trans_handle *trans,
- 	btrfs_set_root_drop_level(reloc_root_item, 0);
- 	btrfs_set_root_refs(reloc_root_item, 0);
- 	ret = btrfs_update_reloc_root(trans, root);
--	if (ret)
--		return ret;
--
-+	/*
-+	 * Even if an error happened, add the root to the dirty_subvol_roots
-+	 * list, so that clean_dirty_subvols() will set the root->reloc_root to
-+	 * NULL and merge_reloc_roots() frees the root (with a call to
-+	 * free_reloc_roots()), otherwise we have a use-after-free when
-+	 * btrfs_update_reloc_root() above returns an error, as the root has a
-+	 * ->reloc_root field pointing to a reloc root we already freed and
-+	 * during unmount we will call btrfs_put_root() against this already
-+	 * freed reloc root.
-+	 */
- 	if (list_empty(&root->reloc_dirty_list)) {
- 		btrfs_grab_root(root);
- 		list_add_tail(&root->reloc_dirty_list, &rc->dirty_subvol_roots);
- 	}
- 
--	return 0;
-+	return ret;
- }
- 
- static int clean_dirty_subvols(struct reloc_control *rc)
--- 
-2.47.2
 

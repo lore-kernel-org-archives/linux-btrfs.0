@@ -1,180 +1,206 @@
-Received: from mail-dy1-f171.google.com (mail-dy1-f171.google.com [74.125.82.171])
+Received: from mail-pl1-f170.google.com (mail-pl1-f170.google.com [209.85.214.170])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D4DB946AF00
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 15:06:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.82.171
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781017582; cv=pass; b=FGYtUlyHcvST+clcsaA15XbqPx9KgGlhNECTQ2OTAztSsHXZRgfwfHLi6bI98yT7hn74ZztZjUXm9omDSulyI3YA67HeBHDAdfHQ65q79wTBNAMMLxnMNPVG/yjYJJAPwVbBieSIUfs2ib48RSxTQFAS1i3m83XnBJFehcv2F40=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781017582; c=relaxed/simple;
-	bh=KIawsG2hBsJpQfgnoZ7tEpLVlIGRnLvqb6nrh5+a0ns=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=LKFZ7tg8qqAfXWYgtI4QM8ngKsbUln9IPDVHL7+rf5PT4kTPvQFj8Yj/xCAiduRSHaS6DRNek4wgS5NVJ5xQfu40hKDWehjFPzLyRUBfg9P5FaGMqCMgwov+e81z3sZfMV73hxZQxuUdIIEhmMeFxjqkzjpfo7UgrLqvwc8wQr8=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=UP+h7yLT; arc=pass smtp.client-ip=74.125.82.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBF5134E744
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 15:20:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.170
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1781018424; cv=none; b=jOZcUEhAnEG4yLpNHadTu5O2ZKqpyIJOzxjyQln6scqfMCcWQkXbvMgl6r5r+KXAcHszAxqd0aVrGws0xZ94hqXVKN1gB6aS5rgzt2hK05DWmrNC8AGax+1GILosH2qc5AXEIQbAofO09yZxOkkMB8L/uzkI7o52zdYTbQSEUKs=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1781018424; c=relaxed/simple;
+	bh=bbaQwjH0ueWOvUp7vofVLG7zdPNe2fEterp4IvclDcE=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=PaBb97WGTEhlpQMpkLISp7HU0YfMK9oyqsRF2vinDKzMc4MmsmgO6zwNypLS6Q1QnH1mtH9jxJtaCFsQn6Kiv2Zg063Jip0slktW2hzWmKB79dGSpA9nduiX4iXHXuCr62RiwKIdTbU9zkPGiTJRIgwokzWVoIUk1lXVnDUTLtk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=AV1Kd5VN; arc=none smtp.client-ip=209.85.214.170
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="UP+h7yLT"
-Received: by mail-dy1-f171.google.com with SMTP id 5a478bee46e88-304f590dd91so6174238eec.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jun 2026 08:06:20 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1781017580; cv=none;
-        d=google.com; s=arc-20240605;
-        b=hllc33aJiSccpSctgwR7zjPsQqZ6Hik8ggJkOe930zogqdonN3/1CEDDgxu/NsM1ep
-         jyXmUp184qrSfoUgJUserDhfXyy07MeFDhxLDnn2bICqx8Z5kttPPVlXtoaqo2tJuDkv
-         RnJDKqRZLA/13HAf4BAUC4kHUHtDZEMz/sxx7tLTJUkAlo1+SB+0dONb20+LtZWvNPFa
-         J5sY/6PPnpPUtO5Mto9dozhwfmLcW336UcIG1qgogwCOegEa9kSU+Zh1MtuF/9Fyw4Xk
-         I7aLTZ0IYwKIiSzlRTcIyFdhhXM90sakJ5ZsgAlHxBGsTm0MR4dSAgej6EJUipQJyeIg
-         3W3g==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=1EmzkVfEtGS1lA4rV2+YC9qM03qMLzlB92/94lmWIqs=;
-        fh=sb9FrIwXlWqSn5Lx+CcBjgSG4nw9snky/gEaCoGVX1c=;
-        b=BfFySSVb4PNEPSp7m4o/YbmjIS8b56P8cGQEopfcbdBzQldmKxl0q7jwcXRKdRBaGm
-         xM2yXrgTqgeclC5sdzQCj4Fgm4PAEKwhOzPPiX0+K+7wJcolIsw8h4QEfi9yRyl670Bj
-         2DSq8YD69Ylw24STBxIsF2C/YYXPw9EhaHBnN6WFonD6hlx6OY8sC+phGPtnDubLsd0x
-         vnVDM6l3lcsBZavn5WRbyd5oSx8+wCWVCFO8ZmiPNb4SPTo74jkBtW4aCt4OXrWK9SKx
-         BL7Wk9H71EqjXJiuj4f9uK11ePOYTr9gMjfSbW6Zay7SC5lfeqJYzWGkXyzpqeFYOLNw
-         pxXg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AV1Kd5VN"
+Received: by mail-pl1-f170.google.com with SMTP id d9443c01a7336-2c0bd02d97eso64026245ad.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jun 2026 08:20:23 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1781017580; x=1781622380; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=1EmzkVfEtGS1lA4rV2+YC9qM03qMLzlB92/94lmWIqs=;
-        b=UP+h7yLTcV38b8f5t1atx8LaKtcxBOo1//hFZNzShZJxBN095k099LL1KYWNV7ZTTZ
-         fgK7c+XPBS7Vkqdtt7spxXbUUx8xsgheipor2yQyqVtIM53hHEiG8kIiASPaLvYvnvKk
-         NsKCgyiHOX1H5sjPRVGK3xhNSz+oADz3PDDZomc1XWLRynL6k1sQNdGy45sQ3uvBx9KG
-         sreTcSGc1xnjCWMQIp8GcWxtTr4zoahQjwRIsABvcMKgoGAVMfKwuV2MmKgHJY1LavXF
-         x8yn4ZRYsrRzbEbm8lYyQQjPb2L/2MiHhP4SViOxDuiKCNO1xquBvXFIT+myGsWdBbhn
-         o/4w==
+        d=gmail.com; s=20251104; t=1781018423; x=1781623223; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=7ep25mQRShZvtAoE+zhCOcr3eqQcangziKu+EpncKHU=;
+        b=AV1Kd5VN4T3f0XIJz4R26bsRsQkt8wNBiBeuH5GOWPKIaBbs6AJvAoNRGCDCMgYF6L
+         gb5MK7GbWVi3PkRD1cIBEkLRKjRRFLyebq0k0My13ES9bHuUJNQvd0vxiaRIxOlJs/y7
+         CxSvBZZmVR9NxfRwTB6Tm0Y5A9B2o+hLDXinRE2R2CGxl7rHNN66Yzlbbof4RR+jMsET
+         jpWal0YHdi4C7O+Hgr27/jQ5S1nILxgZAf3uRUhupoIZVvic243sMfxHQgsbtINJEliY
+         +gk6f6G26fc19ng1k4wgIMaDxRmyN7/4tXjeSfxR2Kb8OEz7//HSTi/0sKCu3NM3xSMH
+         SJdQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781017580; x=1781622380;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20251104; t=1781018423; x=1781623223;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=1EmzkVfEtGS1lA4rV2+YC9qM03qMLzlB92/94lmWIqs=;
-        b=hIubQG1WdC23+8niwdds8wocvb7WXJdGDddUoNTg2S/Ujsh90/hXx1ufcuBL6Wgab3
-         e+NU+25bCIJkYl979Lu7E12n+jhS7VZEYFZhxeb12AFRYD93Qd86zKdeUR0/M5uv1xA0
-         eo0BLaq/fbKAES+s1Zf04lXEohawL29RrRgdhdlURQ57GjIeP48LozRe8xt8AtbB6ZDk
-         Eiv/N5VtmYktRyC84AVo1vU64VTn07EUhTZRA89YPAWAzo5yJQreyQ7bVUS44CD6pF8w
-         NVTRJf+j3/ZHhtzkhiakN+9ddSxFetDxPgmCrP3LNQiiTWTVa0McYApX+sdLvuAkapzK
-         8+Kg==
-X-Forwarded-Encrypted: i=1; AFNElJ/vwwSh9lnKL4PcK0ZPt6pIlwtTlX03knd0JmL2WQ0lI+XWgsc7B1bOkijvEtZsXXR3ysccce1wnV3Huw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwH1JPER0uvGQQaXF3BFefsB6GGNhw/8awhRPbPGCP/HAZeGYKJ
-	L2HZCTVoLkKtMDJ+ClqgT41SeapWvAZ7gKBEHmKcree3Hfd51pJ08L3V81wHoGRkNLbtWwBuj0+
-	X+SEhmwUvBrVS2CsCT01jBw4if4yVrko=
-X-Gm-Gg: Acq92OHiO7sMp5YhyVJVDxmtN7zLsg4+oXmqH/XDBfWgzK/a4xLAy/nF2hDobv4tXf7
-	NJOIgsLFKqHNTqCG4UYJTIq4Wctf1B98VKOvubsbwReyAI4zrGcgqiGSxcVIj1M76BILZDNeqzu
-	qJOhUHG4vgZbiInxoBeozpxT4Y3eDsx6UZjiHxaJEmEuEbRYt6MwDkm4ly+hYh6p9B0H2k1d568
-	tzLQwBTHEXbm3nPgraQGl2p88xb1PHLzHkj4y2jHaehUfriwPt9m0VYSYOTmRBaoHdo5qwVWdes
-	EuOX0VLNEZteSQOnUJM=
-X-Received: by 2002:a05:7300:748f:b0:304:29dd:70b6 with SMTP id
- 5a478bee46e88-3077b4004a0mr11910298eec.13.1781017579677; Tue, 09 Jun 2026
- 08:06:19 -0700 (PDT)
+        bh=7ep25mQRShZvtAoE+zhCOcr3eqQcangziKu+EpncKHU=;
+        b=JxRFpKatA3Rib3FJx2i0knZBIR1UiIwUkLtFEydASCC0qaRPkaBFG9zbRXF6lft7ny
+         +dxCypc5YOcapqI4WIuwSnQq53DhbmGLOdyonlf2SSS6aqtF9Ne0WCbqZLjc0dKzczbS
+         VQDcXKZCE/W7IqPmDpoQVy7KbqTMidnm7CpwOfYWfAzq/7U63eImndcBlQ5IRxU6Xex0
+         YbVz9k3wx3TPV6JQGlspmYCNkcpQGlZZNtztbdXabzU5m4IkTb2iTap2jikJ2RaqjcFq
+         dwEI3GPzwPGJuFb7BgvA45axcsZY0PrlQqEM/xFriaEGJJTPGum5gu5Hledw3MVkClk7
+         NeGg==
+X-Forwarded-Encrypted: i=1; AFNElJ9CX/vhNaieryC5D0Tu64bVIvUv9GF58zLwzsZE9mnHqeEPlXFR4IgMzZeq1Oh6tkllXypPvIBPx9wn4g==@vger.kernel.org
+X-Gm-Message-State: AOJu0YztVdIPcIf2xKHktL4wnoQFKNpZRFbdithZC2/cASkfO01V5xK4
+	8IoQJPRPMlXs/dlsd02BXXbb5fkeCf0LIU13FLUw/HX7F5hlHJTU5fBf
+X-Gm-Gg: Acq92OHWkK3POuIBIjBcHYq7zlxlL0Bz73Z6ru5QQFE7msRTS8WvNrP3IqS020OzXCa
+	wjwp/sm5ak22U6WbytEcETIClmkGegAFDTMF5N9Qvs/+p1xgVPaGnBxmJSkVJ2MOu0wu53SbplH
+	OUvZjfStLXYID0CQKwcT1js/PY3ZCrCZFNYb/iXTGseIhn0kJ9tCi03tR/W7GZHDNAsIr8DNagZ
+	/CTZGR1SLza2/cFUMfB4lLVdACdwPGaECn6T/i+xoCkUrIdg2AtjDERkJRwRevsVHamoSO6kn1h
+	iZqWRKwjfolY1jtgqIdFSCjvVBjeZMMTAAy0odQtqtdv3MVq3W/wDcNTZrM4VBnZDQ/M0HNol3+
+	YYa/w1VYJ3+EwO1dCSO6ggEbOy9dfjy78OO7AommoSjveIdsIg4utz1TjSvkKtOJU+Xem2l4diX
+	amLyDL/xrG56laPWDyZH3bEyE+
+X-Received: by 2002:a17:903:90c:b0:2c0:b7e1:7f08 with SMTP id d9443c01a7336-2c1e859fc13mr248649055ad.28.1781018423135;
+        Tue, 09 Jun 2026 08:20:23 -0700 (PDT)
+Received: from lgs.. ([152.32.133.247])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2c16609e636sm218443755ad.51.2026.06.09.08.20.20
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 09 Jun 2026 08:20:22 -0700 (PDT)
+From: Guangshuo Li <lgs201920130244@gmail.com>
+To: Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Cc: Guangshuo Li <lgs201920130244@gmail.com>
+Subject: [PATCH v2] btrfs: fix zoned sub_group leak on space_info sysfs failure
+Date: Tue,  9 Jun 2026 23:20:15 +0800
+Message-ID: <20260609152015.1586599-1-lgs201920130244@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260604121043.1425201-1-lgs201920130244@gmail.com> <DJ0RAMUVW89X.C3T31TKENNYN@wdc.com>
-In-Reply-To: <DJ0RAMUVW89X.C3T31TKENNYN@wdc.com>
-From: Guangshuo Li <lgs201920130244@gmail.com>
-Date: Tue, 9 Jun 2026 23:06:05 +0800
-X-Gm-Features: AVVi8CdVJXmaC85QgrOIJaWgbpj1CWCCDkCXEvEs9RdmEmj82h88ZTwFygF-tSo
-Message-ID: <CANUHTR8JifnJgdUU17Et0ugLZ6RiN1NSnLpE7JV5+eJnWk+9FQ@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix zoned sub_group leak on space_info sysfs failure
-To: Naohiro Aota <Naohiro.Aota@wdc.com>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-Hi Naohiro,
+On zoned filesystems, create_space_info() creates space_info sub_groups
+for the primary DATA and METADATA space infos.
 
-Thank you for your review and suggestion.
+Before this change, the sub_group was created before registering the
+parent space_info in sysfs. If the sub_group registration succeeded but
+the parent btrfs_sysfs_add_space_info_type() call failed, the parent
+space_info was released through its kobject release path while the
+already published sub_group was left behind. The sub_group also kept its
+logical parent pointer, which then pointed at freed memory.
 
-On Fri, 5 Jun 2026 at 10:22, Naohiro Aota <Naohiro.Aota@wdc.com> wrote:
->
-> On Thu Jun 4, 2026 at 9:10 PM JST, Guangshuo Li wrote:
-> > On zoned filesystems, create_space_info() creates a space_info sub_group
-> > before registering the parent space_info in sysfs.
-> >
-> > If the sub_group registration succeeds but the parent
-> > btrfs_sysfs_add_space_info_type() call fails, the parent space_info is
-> > released through its kobject release path, but the already published
-> > sub_group is left behind. The sub_group also keeps its logical parent
-> > pointer, which then points at freed memory.
-> >
-> > Remember the created sub_group before registering the parent and remove it
-> > when parent sysfs registration fails. Cache the sub_group pointer before
-> > calling btrfs_sysfs_add_space_info_type(), as that helper may already have
-> > put and released the parent on failure.
->
-> Thank you for the patch. The logic itself is correct, but I think there
-> is a better alternative. My suggestion is making
-> btrfs_sysfs_remove_space_info() responsible for removing sub-groups (if
-> any) first.
->
-> With that change, we can reverse the space-info creation order in
-> create_space_info(). If the parent space-info registration fails, no
-> sub-groups exist yet, so nothing extra needs to be cleaned up. If
-> sub-group creation fails, we can call btrfs_sysfs_remove_space_info() on
-> the parent to clean everything up.
->
-> This change also has a side benefit. Currently,
-> check_removing_space_info() is also removing sub-groups, which
-> contradicts its name. We can remove those
-> btrfs_sysfs_remove_space_info() calls for sub-groups from the function,
-> making it a pure checker.
->
-> >
-> > Fixes: f92ee31e031c7 ("btrfs: introduce btrfs_space_info sub-group")
-> > Signed-off-by: Guangshuo Li <lgs201920130244@gmail.com>
-> > ---
-> >  fs/btrfs/space-info.c | 7 ++++++-
-> >  1 file changed, 6 insertions(+), 1 deletion(-)
-> >
-> > diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-> > index f0436eea1544..03659dfcb830 100644
-> > --- a/fs/btrfs/space-info.c
-> > +++ b/fs/btrfs/space-info.c
-> > @@ -296,6 +296,7 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags)
-> >  {
-> >
-> >       struct btrfs_space_info *space_info;
-> > +     struct btrfs_space_info *sub_group = NULL;
-> >       int ret = 0;
-> >
-> >       space_info = kzalloc_obj(*space_info, GFP_NOFS);
-> > @@ -316,11 +317,15 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags)
-> >
-> >               if (ret)
-> >                       goto out_free;
-> > +             sub_group = space_info->sub_group[0];
-> >       }
-> >
-> >       ret = btrfs_sysfs_add_space_info_type(space_info);
-> > -     if (ret)
-> > +     if (ret) {
-> > +             if (sub_group)
-> > +                     btrfs_sysfs_remove_space_info(sub_group);
-> >               return ret;
-> > +     }
-> >
-> >       list_add(&space_info->list, &info->space_info);
-> >       if (flags & BTRFS_BLOCK_GROUP_DATA)
->
+Fix this by making btrfs_sysfs_remove_space_info() responsible for
+removing any sub_groups before removing the space_info itself. Then
+register the parent space_info before creating zoned sub_groups. With
+that order, a parent registration failure has no sub_groups to unwind;
+if sub_group creation fails, btrfs_sysfs_remove_space_info() can tear
+down the parent and any sub_groups created so far.
 
-I agree that making btrfs_sysfs_remove_space_info() responsible for
-removing sub-groups first is a cleaner approach. It also makes sense to
-register the parent space_info before creating the zoned sub-groups, so
-the error paths can be handled by the common removal helper.
+This also keeps check_removing_space_info() as a pure checker by moving
+sub_group removal into the common sysfs removal helper.
 
-I will update the patch accordingly and send a v2.
+Fixes: f92ee31e031c7 ("btrfs: introduce btrfs_space_info sub-group")
+Suggested-by: Naohiro Aota <naohiro.aota@wdc.com>
+Signed-off-by: Guangshuo Li <lgs201920130244@gmail.com>
+---
+v2:
+  - Make btrfs_sysfs_remove_space_info() remove sub_groups before removing
+    the space_info itself, as suggested by Naohiro.
+  - Register the parent space_info before creating zoned sub_groups in
+    create_space_info().
+  - Use btrfs_sysfs_remove_space_info() to unwind the parent when sub_group
+    creation fails.
+  - Remove sub_group removal from check_removing_space_info(), keeping it as
+    a pure checker.
+  - Use ARRAY_SIZE(space_info->sub_group) instead of
+    BTRFS_SPACE_INFO_SUB_GROUP_MAX.
 
-Thanks,
-Guangshuo
+ fs/btrfs/block-group.c |  5 +----
+ fs/btrfs/space-info.c  | 14 +++++++-------
+ fs/btrfs/sysfs.c       | 16 ++++++++++++++++
+ 3 files changed, 24 insertions(+), 11 deletions(-)
+
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index b611c64119db..ad8e0a27101a 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -4615,11 +4615,8 @@ static void check_removing_space_info(struct btrfs_space_info *space_info)
+ 	if (space_info->subgroup_id == BTRFS_SUB_GROUP_PRIMARY) {
+ 		/* This is a top space_info, proceed with its children first. */
+ 		for (int i = 0; i < BTRFS_SPACE_INFO_SUB_GROUP_MAX; i++) {
+-			if (space_info->sub_group[i]) {
++			if (space_info->sub_group[i])
+ 				check_removing_space_info(space_info->sub_group[i]);
+-				btrfs_sysfs_remove_space_info(space_info->sub_group[i]);
+-				space_info->sub_group[i] = NULL;
+-			}
+ 		}
+ 	}
+ 
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index f0436eea1544..42179d89e52b 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -304,6 +304,10 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags)
+ 
+ 	init_space_info(info, space_info, flags);
+ 
++	ret = btrfs_sysfs_add_space_info_type(space_info);
++	if (ret)
++		return ret;
++
+ 	if (btrfs_is_zoned(info)) {
+ 		if (flags & BTRFS_BLOCK_GROUP_DATA)
+ 			ret = create_space_info_sub_group(space_info, flags,
+@@ -315,21 +319,17 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags)
+ 							  0);
+ 
+ 		if (ret)
+-			goto out_free;
++			goto out_remove;
+ 	}
+ 
+-	ret = btrfs_sysfs_add_space_info_type(space_info);
+-	if (ret)
+-		return ret;
+-
+ 	list_add(&space_info->list, &info->space_info);
+ 	if (flags & BTRFS_BLOCK_GROUP_DATA)
+ 		info->data_sinfo = space_info;
+ 
+ 	return ret;
+ 
+-out_free:
+-	kfree(space_info);
++out_remove:
++	btrfs_sysfs_remove_space_info(space_info);
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 0d14570c8bc2..ce1109e47cc7 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -1885,6 +1885,22 @@ void btrfs_sysfs_remove_space_info(struct btrfs_space_info *space_info)
+ {
+ 	int i;
+ 
++	for (i = 0; i < ARRAY_SIZE(space_info->sub_group); i++) {
++		struct btrfs_space_info *sub_group;
++
++		sub_group = space_info->sub_group[i];
++		if (!sub_group)
++			continue;
++
++		/*
++		 * Remove sub-groups before removing their parent space_info.
++		 * Clear the pointer first so recursive removal cannot leave a
++		 * stale child pointer behind.
++		 */
++		space_info->sub_group[i] = NULL;
++		btrfs_sysfs_remove_space_info(sub_group);
++	}
++
+ 	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
+ 		struct kobject *kobj;
+ 
+-- 
+2.43.0
+

@@ -1,96 +1,164 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from out-189.mta0.migadu.com (out-189.mta0.migadu.com [91.218.175.189])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3ACDE416CE8
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 13:36:57 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C4C4640488C;
+	Tue,  9 Jun 2026 13:39:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.189
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781012218; cv=none; b=YQAGClnqyx2HNR8Kg2gwsDum8IACLukBeqD+tAsrtJS6ZOwBIAmo2sW0heds+jCdcDx9DsscYDe9CJ2/DjSdVwqV5tav/OnZN/otKJKldlArBHw6K+p75TpREPmE/lvZ4YhPORFOs5EN9fmRU0KS5RBNoVWtX5F7zLznCssooLY=
+	t=1781012357; cv=none; b=UP9CFXOUiD+RbIPVhaUrY+oAkCXHWtM+pjO1WHH75bc8XBe9UhkTHU3BvuIoEFqIFafN2sH5i8QoqsIyWUSzcjUmbzV8OiwW9QH/zNSD6SD6J2L8PmbhDcVjx5f4Z0id7KUcU+fFmssDcvaddWVxG2H9qtd3HsaB2VShaNuw9mI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781012218; c=relaxed/simple;
-	bh=oTue5Qm9lIKGrPwGYq4HQ5n75jhFgHX2Mr6kgTa4SUk=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=qj9t3EYJbfIBGSL3FsMN2jOg+QfGKeQk78ISypHcwSchjxW4kF5l0IsltwIYryl0V9NbpFJ7fvPChVLsehdaRzaJzgQKs26KXx67aSp9w79w00pbGij/ISjOHOvtglXiU83NU4R7uJb/pqo/qR7cWGs5HkdEeT1yELEWqKlN2m8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=AAKsPxLh; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1781012357; c=relaxed/simple;
+	bh=Ld0mtuWHZDKcfGoVtJaBqvRcMPaJlO6FFUPg+tsjemA=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=Y1nzY8iAicAtcBhx3YNCOY58hLP9nMiipCzN711v5Q/iioaafnwF1i/yR+dr8s9WiY2o9nNjy5uF/L59DUZ6K6ifGjKVJ1bbK9kHCgX+ag9JoOHOFqG9KidSydIkrtWpASQ90GkF/bqc9P9Skom8BqLNh9zj53g2o+OtiiHueCs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=DHA5pvdG; arc=none smtp.client-ip=91.218.175.189
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="AAKsPxLh"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EC7EC1F00893
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 13:36:56 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781012217;
-	bh=Nj5VOpe5oIvhvRURdM7OWjVIaolD6e1dVicTzrH+o2E=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=AAKsPxLhC4xYMn3c39nqrQs8QOVWzpX9bacRVshLPIFC8YUVKro8Ii2dq+3sCtayG
-	 cu6ia01Q5cyz0g7nVgmmgz4toOmWVcAOQURiWAPbEfafhzYx0ygzQPsHNIa0b4AhmE
-	 lUySDcHLQlAvfXLeEVH++D8Dou1EirOfhkqU1Mfwd0/vYrt4ganAooWeWTQ5JA46S9
-	 4m/iNXWrPYLIIzuJSrPrcAiNlUK7XdseByvxAA3TtjPbjkpOtw66VsntwiCZsJotkL
-	 7zCk9Wc4+6HX4ZtuqjjPv57TS2nBdV99RpAt/t1QxYtTP/LExoSQu7OyKgyDPnLWKP
-	 1f4hCmY1TSDog==
-Received: by mail-ej1-f46.google.com with SMTP id a640c23a62f3a-bec354815b9so568138066b.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jun 2026 06:36:56 -0700 (PDT)
-X-Gm-Message-State: AOJu0YzKNY0l2xpidyHERpGONg9H7LLAXQ6kV17jhYrdlnY95cWItSUg
-	IcU9+mgbyvCoN+pF6JMA1NvDlEPpQ9tl/yc1LRH889EOubLm6uN6Jr05zM9TIWYnzxqQ/xhA+fG
-	3DDmTYUhBXgwExwv3Fowbp47prtrr6OA=
-X-Received: by 2002:a17:907:3d16:b0:bd4:8b66:c374 with SMTP id
- a640c23a62f3a-bf36ff8e279mr985767266b.9.1781012215485; Tue, 09 Jun 2026
- 06:36:55 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="DHA5pvdG"
+Message-ID: <86575450-1d56-43be-a4fd-6f451e5be4e3@linux.dev>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
+	t=1781012343;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=YJV2I1pYWH8I5eTLLlBTFWiw8BNl9+kPEFYXmmxRFA0=;
+	b=DHA5pvdG52Z8Irgr/MLUCeE3l55DgnRt1kYMY2LtcWTgvjyHXVXQzZmJRQoBDdVBAzJEN4
+	Rqo+Pc3l9/iqRCZMu3i2P2MnJItVE+ySpQCrTGcA4wmxKkIqwdSPoVVHf8MV1e7lKqzy7O
+	z3+XUebaAMcRd6oZZlVWxxJQ1nu+Jgw=
+Date: Tue, 9 Jun 2026 14:38:58 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260609115251.49325-1-johannes.thumshirn@wdc.com>
-In-Reply-To: <20260609115251.49325-1-johannes.thumshirn@wdc.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Tue, 9 Jun 2026 14:36:17 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H5+r1sUQoeny-aRY8ePW-RMXD0KadS-JQktqEC92txDxg@mail.gmail.com>
-X-Gm-Features: AVVi8CdN90HTMAgXkfwrjbN9rNn09PxvWy8KgLQvKXlV_8PN0BzrT7ht-VFVp0Y
-Message-ID: <CAL3q7H5+r1sUQoeny-aRY8ePW-RMXD0KadS-JQktqEC92txDxg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: zoned: fix assertion in btrfs_zoned_reserve_data_reloc_bg
-To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>, 
-	Naohiro Aota <naohiro.aota@wdc.com>, Johannes Thumshirn <joahnnes.thumshirn@wdc.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Subject: Re: [PATCH] fs/super: skip non-memcg-aware nr_cached_objects in memcg
+ slab shrink
+To: Jan Kara <jack@suse.cz>
+Cc: brauner@kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-kernel@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>,
+ linux-mm@kvack.org, hughd@google.com, boris@bur.io, clm@fb.com,
+ dsterba@suse.com, linux-btrfs@vger.kernel.org, cem@kernel.org,
+ linux-xfs@vger.kernel.org, shakeel.butt@linux.dev, hannes@cmpxchg.org,
+ riel@surriel.com, kernel-team@meta.com
+References: <20260609123047.1948242-1-usama.arif@linux.dev>
+ <5exadtggg276xp5tayiqbbomnms4hjyaopmgu3chfpl2ug56dq@vyhswy2afzmo>
+Content-Language: en-US
+X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
+From: Usama Arif <usama.arif@linux.dev>
+In-Reply-To: <5exadtggg276xp5tayiqbbomnms4hjyaopmgu3chfpl2ug56dq@vyhswy2afzmo>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-Migadu-Flow: FLOW_OUT
 
-On Tue, Jun 9, 2026 at 12:54=E2=80=AFPM Johannes Thumshirn
-<johannes.thumshirn@wdc.com> wrote:
->
-> Remove the assertion that we've have a non-empty block-group list because
-> we've picked the 2nd empty block-group. It's not valid anymore.
->
-> Fixes: 06e6e8cc17bd ("btrfs: zoned: always set data_relocation_bg")
-> Singed-off-by: Johannes Thumshirn <joahnnes.thumshirn@wdc.com>
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Thanks.
+On 09/06/2026 13:52, Jan Kara wrote:
+> On Tue 09-06-26 05:30:47, Usama Arif wrote:
+>> The super_block shrinker is registered with SHRINKER_MEMCG_AWARE because its
+>> dentry and inode LRUs are memcg-aware (via list_lru). But the optional
+>> ->nr_cached_objects() hooks that the shrinker also drives are not memcg-aware:
+>> btrfs extent maps and xfs inode reclaim operate on filesystem-global
+>> state, and shmem's unused-huge shrinker walks a per-superblock shrinklist.
+>> None of them filter by sc->memcg.
+>>
+>> The mismatch shows up under memcg-heavy slab reclaim. shrink_slab_memcg()
+>> calls do_shrink_slab() once per (memcg, NUMA node) pair for every memcg
+>> whose bit is set in the per-superblock shrinker bitmap, which on a busy
+>> host means hundreds of calls per reclaim pass. Each scan queues the same
+>> global shrinker work item that's already kicked from the root path.
+>>
+>> Because btrfs/xfs global count is typically non-zero on any in-use filesystem,
+>> the returned total stays positive even if a memcg's own dentry/inode LRUs
+>> are empty. shrink_slab_memcg() therefore never clears the SB shrinker bit
+>> in the memcg bitmap, so subsequent reclaim passes from the same memcg
+>> re-enter super_cache_count() and pay for the global counter walk again.
+>>
+>> Restrict ->nr_cached_objects() to the global shrink path (sc->memcg NULL
+>> or root). The memcg-aware dentry/inode LRUs keep being counted and
+>> scanned per memcg as before; only the global fs-specific hooks are skipped.
+>> The root/global shrink path still drives those hooks; only their
+>> invocation from non-root memcg slab reclaim is removed.
+>>
+>> Signed-off-by: Usama Arif <usama.arif@linux.dev>
+> 
+> To me this makes sense. However I'm bit surprised that XFS inode shrinker
+> (which is what gets counted in nr_cached_objects for XFS) isn't memcg
+> aware. I guess since these inodes are on their way to a relatively quick
+> destruction, nobody really bothered. So I'm fine with the change, just
+> I'd like to make sure XFS folks are aware and don't plan anything in this
+> area.
+> 
 
-> ---
-> I have no idea why fstests didn't catch that trivial bug...
-> Anyways needs to be folded in
-> ---
->  fs/btrfs/zoned.c | 2 --
->  1 file changed, 2 deletions(-)
->
-> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-> index 0f87701e38e3..97f06dd01693 100644
-> --- a/fs/btrfs/zoned.c
-> +++ b/fs/btrfs/zoned.c
-> @@ -2813,8 +2813,6 @@ void btrfs_zoned_reserve_data_reloc_bg(struct btrfs=
-_fs_info *fs_info)
->
->                         down_write(&space_info->groups_sem);
->                         list_del_init(&bg->list);
-> -                       /* We can assume this as we choose the second emp=
-ty one. */
-> -                       ASSERT(!list_empty(&space_info->block_groups[inde=
-x]));
->                         up_write(&space_info->groups_sem);
->
->                         spin_lock(&space_info->lock);
-> --
-> 2.54.0
->
->
+Thanks for the review!
+
+Yes I am hoping that if there are any objections from xfs or btrfs, it gets
+raised. Have cc'ed the btrfs and xfs maintainers and reviewers.
+
+Thanks!
+Usama
+
+
+> 								Honza
+> 
+>> ---
+>>  fs/super.c | 19 +++++++++++++++++--
+>>  1 file changed, 17 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/super.c b/fs/super.c
+>> index 378e81efe643..5216c5dbd4c4 100644
+>> --- a/fs/super.c
+>> +++ b/fs/super.c
+>> @@ -24,6 +24,7 @@
+>>  #include <linux/export.h>
+>>  #include <linux/slab.h>
+>>  #include <linux/blkdev.h>
+>> +#include <linux/memcontrol.h>
+>>  #include <linux/mount.h>
+>>  #include <linux/security.h>
+>>  #include <linux/writeback.h>		/* for the emergency remount stuff */
+>> @@ -169,6 +170,19 @@ static void super_wake(struct super_block *sb, unsigned int flag)
+>>  	wake_up_var(&sb->s_flags);
+>>  }
+>>  
+>> +/*
+>> + * The s_op->nr_cached_objects hooks (used for example by btrfs and xfs)
+>> + * operate on filesystem-global state and ignore sc->memcg. Driving them
+>> + * from per-memcg shrink_slab_memcg() invocations only burns CPU walking
+>> + * per-cpu counters and queueing duplicate work: the actual reclaim happens on
+>> + * the global path (kswapd or root direct reclaim) regardless. Restrict them
+>> + * to that path.
+>> + */
+>> +static inline bool super_fs_objects_eligible(struct shrink_control *sc)
+>> +{
+>> +	return !sc->memcg || mem_cgroup_is_root(sc->memcg);
+>> +}
+>> +
+>>  /*
+>>   * One thing we have to be careful of with a per-sb shrinker is that we don't
+>>   * drop the last active reference to the superblock from within the shrinker.
+>> @@ -198,7 +212,7 @@ static unsigned long super_cache_scan(struct shrinker *shrink,
+>>  	if (!super_trylock_shared(sb))
+>>  		return SHRINK_STOP;
+>>  
+>> -	if (sb->s_op->nr_cached_objects)
+>> +	if (sb->s_op->nr_cached_objects && super_fs_objects_eligible(sc))
+>>  		fs_objects = sb->s_op->nr_cached_objects(sb, sc);
+>>  
+>>  	inodes = list_lru_shrink_count(&sb->s_inode_lru, sc);
+>> @@ -259,7 +273,8 @@ static unsigned long super_cache_count(struct shrinker *shrink,
+>>  		return 0;
+>>  	smp_rmb();
+>>  
+>> -	if (sb->s_op && sb->s_op->nr_cached_objects)
+>> +	if (sb->s_op && sb->s_op->nr_cached_objects &&
+>> +	    super_fs_objects_eligible(sc))
+>>  		total_objects = sb->s_op->nr_cached_objects(sb, sc);
+>>  
+>>  	total_objects += list_lru_shrink_count(&sb->s_dentry_lru, sc);
+>> -- 
+>> 2.52.0
+>>
+

@@ -1,181 +1,221 @@
-Received: from mail-ej1-f51.google.com (mail-ej1-f51.google.com [209.85.218.51])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 86210194AE6
-	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 09:02:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.51
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4D108399372
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 10:02:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1780995753; cv=none; b=mZQ0ZGvpJyycDLuREYf+7Q+x093Y9XBeDVc+Y3p6Ai9dRJAp12VGl2qWuiAaBgfP53arlRLNH9rcwJwwTo8+s27UHKHQ9P00W9qj2ifuNqV+8pgGlJplHp8BlrIO/bvnsMuMDbFki0GTTsCjc0dWhsfSz0wVm50/7s7ppbxv/Rs=
+	t=1780999346; cv=none; b=TmYYixPTM7VW3n8v5TSVR8yvUmXqvdMX9DcbYWjNwoeCmWco1ICyM+xMAFn2fEqroxfwUTwgTUSopmg+KfH9tOIiJmp0EASmErtK3WvJPlMUI9Sx3P9bSvbAEYCrQ6+Z+N+UFLP3apIdnnbc5ZdILWFoIxnWpqxNe5GLi/LA0v0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1780995753; c=relaxed/simple;
-	bh=N4NbdoySNZjLzH8tepn7w4jBfqj3QGbYD423kp1yErg=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=q38pkRhvv6oFS8ElRFyH5+1U4pojZlS4QTb5m2I6pR633+iH6m9TQgkXlLHDUdgUV8Z6v1ctIISy3D8MOdQghYRhY/IrIln6nivCWuV+Xh7xhchzjXmzZrjohiW5JM+yss02Dxd32d8QBqhw8VlwkBCuHgIrbDQN+OJP4rEbqfM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=UunnujJR; arc=none smtp.client-ip=209.85.218.51
+	s=arc-20240116; t=1780999346; c=relaxed/simple;
+	bh=sZ0y1SdGZPNHhasYpj6UtgNATKW6sMFHJ95aKZmQAXg=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=qadvycFALJp1tZv6M+ZT5ek+ZDZIpf6QLL3nTdNiZitfGZ9lSTEJnsylFyaWDEcUuEiEH4J05gQoniTn54w9SlnSq52v9lMNtvgYf3YHplPL6rZF4068OsZwC3ohaR/YCmcCx8eWOkqK0hzaSVqsKLtGlwJkbijmuD2ppmLqfBo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=QN7EitBm; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=QN7EitBm; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="UunnujJR"
-Received: by mail-ej1-f51.google.com with SMTP id a640c23a62f3a-bef1e6423e7so575208866b.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jun 2026 02:02:32 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1780995751; x=1781600551; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=7AqoHxFyJLoJVvHZNfKBCUHXKEymvePs3sxMFGKOzO8=;
-        b=UunnujJRHn4wsfsKOchViIDme+ZrwRxC3TYfRGHnlpS7MuWxtAoIkt7T25y85CgNKD
-         jG8/VjkOB5UBeMKFA2QOaV0C0lSv58vBfRlGnNm1meBOpbFaGo4LR/2RkQFtuG35mT9Y
-         USytXlvOODlh29aVvknOd1CZfRjiiSYsahn48gGlJlZ6xiJ+N4XxWcIoyiUo3O8SaD7R
-         dHHNlbGhZ43YBvuCsQBDyCOJfCsdd/0JlwyAcSlhDcsCgk3Ejk216B9/Y2Zm8PMyNOfO
-         TKKBEhFUb9BdOSJ9My7WXaxd7hlsvyBiQjWqBLCYEARpDh5qBT1bSkK5H0BPiSylTHwW
-         iVkw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1780995751; x=1781600551;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=7AqoHxFyJLoJVvHZNfKBCUHXKEymvePs3sxMFGKOzO8=;
-        b=mVbSeq8uPyF3K9nTJz0tv4Gddfv5aS3GQOVl3dBvXKdXZZFU30pfyX9di+73am5qdi
-         rIwaM6d3YdnzY/f3rTIwGDOKLh/ZMI8UkdR1f79hPoqJSl6Z8QnzXsuESNoTWgABxpun
-         vh3lrcQUimNPvo1Bk2m82HocfKlfxVWwu1HYVSFVX1akivog/JapFzswLoywp4IDIh4P
-         jMk0D82PQQQme+K0UfwGFLrpFmRezofaw9kDeYFFIy8W+3HHG8Hl5PXrxO1ykDB0HuVT
-         xFprABYUTBpcqHmBm7W0d++L4nml/YjFeuR6HL4SoOYwvPxgcPIkd08SLS7cOiJ2ZABk
-         vcBQ==
-X-Forwarded-Encrypted: i=1; AFNElJ98AMA96IZGPO27lItW9Lo4x/ycuu5Rp6FhoEBZ6pgf+DlS8O57P+eAKzayNH9e441R0IbxTBxmiVnO7g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzbnqFyY+J4vkooenz0ryipzPLxna4+Q4HFqt971aqMoMR3YiWd
-	cKxcgyWIFAF9DqegV7krM35DAud/iA3Tkp04TxWgjtBx6AfNdz+iVmKoaHAutz/eAYQ=
-X-Gm-Gg: Acq92OG62SXNop756zgHQ0Z7vAG92YMAJMrWhxiLI70KTKk+YSpATrDGv7rF3CLNFdZ
-	CFwvl9qxeMeCRgEBwVE/DTBSNm+H5IrdgMyHnuaI4sYRMvYg8rrlwb49QNlE0o3RI4/z9pav4VJ
-	WvHuU4oVsQZR6/8xXR6wcm3F5nFkDsuJNjzz+bW+XGxIz8G1VqIyqhqI4oHir52oKldxWMpguRp
-	lSt3gMe0N461HcVevS8uffsgdhqGEIaPN5yzt3Mn83NVdlEXPUdaW/cOvQkfm7K7yU+KKxspc0u
-	JZJJ2R19C2sl/Z0n21R2+byi5LyyRAJjSx+W0oq0WNEA7+vikTIu0T8vDTeGSEUIWYnb0kWg2ae
-	EkXew5TXsgYsxqhMPz6KKTagOvvfvF0BKVFwtqhfWVjPNBIxnsmpL/jnshVB2CHzVxI0eirX4nZ
-	9lbXCdYHFJkxrMfZU/P5ONPcxOWJpnrzU/tlS8AtAk1qgBAN3uPBt9zP7d20q32QNzH/ukSpJ8h
-	T+P0NqkXwqxdboyZgLahY//RNsRgFZ2ko2XuUx5zpkZMqDu1xT5Pctxwg==
-X-Received: by 2002:a17:906:6296:b0:bed:17a8:4ca8 with SMTP id a640c23a62f3a-bf3737eeeddmr830443466b.32.1780995750473;
-        Tue, 09 Jun 2026 02:02:30 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-842828daf76sm21028552b3a.42.2026.06.09.02.02.21
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 09 Jun 2026 02:02:29 -0700 (PDT)
-Message-ID: <5b33a684-f74c-41d5-8f95-11f76a0c7a35@suse.com>
-Date: Tue, 9 Jun 2026 18:32:15 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="QN7EitBm";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="QN7EitBm"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 863AB75952
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 10:02:23 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1780999343; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=APuB4hKlDtvoNFt14oKStZZBS887UsxgHXFUXkCFKDs=;
+	b=QN7EitBmMqSTDDRywQZUon08a6w5mCzP6K8PxPkYQLfdFiWGMsn9ReLuIf2Xj0IMA7x02i
+	3xnx3DwmMqQrFOBj4aEOJFFJtdWaXlsKmBiAA/6mi27YHRg429k4AVQ/9mErQBlYP/5Mf5
+	s8dDIGLBgwcN7gWSFupDg5/8IZR5EDc=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1780999343; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=APuB4hKlDtvoNFt14oKStZZBS887UsxgHXFUXkCFKDs=;
+	b=QN7EitBmMqSTDDRywQZUon08a6w5mCzP6K8PxPkYQLfdFiWGMsn9ReLuIf2Xj0IMA7x02i
+	3xnx3DwmMqQrFOBj4aEOJFFJtdWaXlsKmBiAA/6mi27YHRg429k4AVQ/9mErQBlYP/5Mf5
+	s8dDIGLBgwcN7gWSFupDg5/8IZR5EDc=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8809A779A7
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2026 10:02:22 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id wsIjBa7kJ2rmQgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Tue, 09 Jun 2026 10:02:22 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: disable v1 space cache
+Date: Tue,  9 Jun 2026 19:31:44 +0930
+Message-ID: <0884d7707a725ce5a41ea3931d65dabc76a5c864.1780999298.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH btrfs] btrfs: reject free space cache with more entries
- than pages
-To: Xiang Mei <xmei5@asu.edu>, linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
- Josef Bacik <josef@redhat.com>, Weiming Shi <bestswngs@gmail.com>
-References: <20260609081135.2972081-1-xmei5@asu.edu>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260609081135.2972081-1-xmei5@asu.edu>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	MIME_GOOD(-0.10)[text/plain];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	ARC_NA(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_ONE(0.00)[1];
+	URIBL_BLOCKED(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	TO_DN_NONE(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid]
+X-Spam-Level: 
 
+V2 space cache is already the default mkfs option since btrfs-progs
+v5.15, and commit 1e7bec1f7d65 ("btrfs: emit a warning about space cache
+v1 being deprecated") has already added a warning to show v1 space cache
+is already deprecated.
 
+It has been long enough that we should remove v1 space cache completely.
 
-在 2026/6/9 17:41, Xiang Mei 写道:
-> __load_free_space_cache() reads num_entries/num_bitmaps from the on-disk
-> struct btrfs_free_space_header, which the tree-checker does not validate.
-> The load loops consume that many records, remapping each exhausted page via
-> io_ctl_check_crc() -> io_ctl_map_page() (io_ctl->pages[io_ctl->index++]).
-> The write path bounds this index (io_ctl_add_entry()/io_ctl_add_bitmap()
-> check io_ctl->index >= io_ctl->num_pages before mapping), but the read path
-> does not, so a crafted header reads past the kzalloc'd pages[] array:
-> 
->    BUG: KASAN: slab-out-of-bounds in io_ctl_check_crc
->    Read of size 8 at addr ffff88800f948780 by task kworker/u8:3/58
->    ...
->     io_ctl_check_crc
->     __load_free_space_cache
->     load_free_space_cache
->     caching_thread
->     btrfs_work_helper
->     ...
->
+As the first step, disable v1 space cache by:
 
-This comment applies to all involved poeple, not only you but also 
-Weiming, who I guess are all from asu.edu, that you should provide more 
-info about the context.
+- Make "space_cache" mount option fallback to "nospace_cache"
+- Make "space_cache=v1" to fallback to "nospace_cache"
+  Which is the safer than forcing "space_cache=v2", as forcing v2 cache
+  will require removal of v1 cache and regenerate v2 cache.
+  Such operation can be slow, and will take extra metadata space, thus
+  it is not always safe for existing filesystems.
 
-Not just a simple calltrace makes little sense.
+With this done, v1 cache mount will always fallback to nospace cache,
+and mount option will not be able to force v1 space cache usage.
 
-Since you have a reproducer, you should provide either the 
-reproducer/image (if small enough), or provide a more detailed analyze 
-of the corruption.
+For example, even for a fs with v1 cache:
 
-In your case, I know it's free space cache thus no easy dump, but you 
-should still give an example of the corruption.
+ # btrfs ins dump-super test.img
+ superblock: bytenr=65536, device=test.img
+ ---------------------------------------------------------
+ csum_type		0 (crc32c)
+ csum_size		4
+ csum			0xdce44b2c [match]
+ bytenr			65536
+ flags			0x1
+ 			( WRITTEN )
+ magic			_BHRfS_M [match]
+ fsid			7d7c3bba-8211-4206-868d-10eedd5703f8
+ metadata_uuid		00000000-0000-0000-0000-000000000000
+ label
+ generation		9
+ root			30605312
+ [...]
+ compat_ro_flags		0x0 << No FST feature
+ incompat_flags		0x361
+ 			( MIXED_BACKREF |
+ 			  BIG_METADATA |
+ 			  EXTENDED_IREF |
+ 			  SKINNY_METADATA |
+ 			  NO_HOLES )
+ cache_generation	9 <<< Matches generation
+ uuid_tree_generation	9
 
+Mounting it will lead to no space cache other than v1 space cache:
 
-I'm not saying your reports provides no value, at least they are indeed 
-going to enhance some error handling.
+ # mount test.img /mnt/btrfs
+ # dmesg -t | tail -n 5
+ BTRFS: device fsid 7d7c3bba-8211-4206-868d-10eedd5703f8 devid 1 transid 9 /dev/loop0 (7:0) scanned by mount (1264)
+ BTRFS info (device loop0): first mount of filesystem 7d7c3bba-8211-4206-868d-10eedd5703f8
+ BTRFS info (device loop0): using crc32c checksum algorithm
+ BTRFS info (device loop0): turning on async discard
+ BTRFS info (device loop0): last unmount of filesystem 7d7c3bba-8211-4206-868d-10eedd5703f8
 
-But your and Weiming's reports seldomly explain the full picture, just 
-some random "crafted image", if you have the image, dump the content 
-into the commit message.
+Even forcing v1 cache will not work, but fallback to the usual
+nospace_cache:
 
-The lack of transparency make it harder to review, especially hard to 
-determine if this is really the earliest point that we can detect an 
-index that overflows the page number.
+ # mount test.img -o space_cache=v1 /mnt/btrfs
+ # dmesg -t | tail -n 6
+ BTRFS warning: v1 space cache is deprecated, fallback to no space cache
+ BTRFS: device fsid 7d7c3bba-8211-4206-868d-10eedd5703f8 devid 1 transid 9 /dev/loop0 (7:0) scanned by mount (1264)
+ BTRFS info (device loop0): first mount of filesystem 7d7c3bba-8211-4206-868d-10eedd5703f8
+ BTRFS info (device loop0): using crc32c checksum algorithm
+ BTRFS info (device loop0): turning on async discard
+ BTRFS info (device loop0): last unmount of filesystem 7d7c3bba-8211-4206-868d-10eedd5703f8
 
-> Bound io_ctl->index in io_ctl_check_crc() too. An over-long stream is then
-> treated as a corrupt cache, which the caller drops and rebuilds from the
-> extent tree, so no valid cache is rejected.
-> 
-> Fixes: 5b0e95bf607d ("Btrfs: inline checksums into the disk free space cache")
-> Reported-by: Weiming Shi <bestswngs@gmail.com>
-> Assisted-by: Claude:claude-opus-4-8
-> Signed-off-by: Xiang Mei <xmei5@asu.edu>
-> ---
->   fs/btrfs/free-space-cache.c | 3 +++
->   1 file changed, 3 insertions(+)
-> 
-> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index ab22e4f9ffdd..bbc4db7fe74b 100644
-> --- a/fs/btrfs/free-space-cache.c
-> +++ b/fs/btrfs/free-space-cache.c
-> @@ -555,6 +555,9 @@ static int io_ctl_check_crc(struct btrfs_io_ctl *io_ctl, int index)
->   	u32 crc = ~(u32)0;
->   	unsigned offset = 0;
->   
-> +	if (index >= io_ctl->num_pages)
-> +		return -EIO;
-> +
->   	if (index == 0)
->   		offset = sizeof(u32) * io_ctl->num_pages;
->   
+And there will be no way to force converting a v2 cache back to v1, such
+attempt will only clear free space tree and fallback to no space cache.
+
+ # mkfs.btrfs -f -O fst,^bgt test.img
+ # mount -o clear_cache,space_cache=v1 test.img /mnt/btrfs
+ # dmesg -t | tail -n 11
+ BTRFS warning: v1 space cache is deprecated, fallback to no space cache
+ BTRFS: device fsid f59daad2-3ab5-4f33-b752-a36cfb09b674 devid 1 transid 8 /dev/loop0 (7:0) scanned by mount (1419)
+ BTRFS info (device loop0): first mount of filesystem f59daad2-3ab5-4f33-b752-a36cfb09b674
+ BTRFS info (device loop0): using crc32c checksum algorithm
+ BTRFS info (device loop0): rebuilding free space tree
+ BTRFS info (device loop0): disabling free space tree
+ BTRFS info (device loop0): clearing compat-ro feature flag for FREE_SPACE_TREE (0x1)
+ BTRFS info (device loop0): clearing compat-ro feature flag for FREE_SPACE_TREE_VALID (0x2)
+ BTRFS info (device loop0): checking UUID tree
+ BTRFS info (device loop0): turning on async discard
+ BTRFS info (device loop0): force clearing of disk cache
+ # mount | grep /mnt/btrfs
+ /home/adam/test.img on /mnt/btrfs type btrfs (rw,relatime,discard=async,nospace_cache,subvolid=5,subvol=/)
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/super.c | 19 ++++++++++---------
+ 1 file changed, 10 insertions(+), 9 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 9de67276a8ed..577e945c8214 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -513,19 +513,20 @@ static int btrfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
+ 		btrfs_clear_opt(ctx->mount_opt, NODISCARD);
+ 		break;
+ 	case Opt_space_cache:
+-		if (result.negated) {
+-			btrfs_set_opt(ctx->mount_opt, NOSPACECACHE);
+-			btrfs_clear_opt(ctx->mount_opt, SPACE_CACHE);
+-			btrfs_clear_opt(ctx->mount_opt, FREE_SPACE_TREE);
+-		} else {
+-			btrfs_clear_opt(ctx->mount_opt, FREE_SPACE_TREE);
+-			btrfs_set_opt(ctx->mount_opt, SPACE_CACHE);
+-		}
++		if (!result.negated)
++			btrfs_warn(NULL,
++				   "v1 space cache is deprecated, falling back to no space cache");
++		btrfs_set_opt(ctx->mount_opt, NOSPACECACHE);
++		btrfs_clear_opt(ctx->mount_opt, SPACE_CACHE);
++		btrfs_clear_opt(ctx->mount_opt, FREE_SPACE_TREE);
+ 		break;
+ 	case Opt_space_cache_version:
+ 		switch (result.uint_32) {
+ 		case Opt_space_cache_v1:
+-			btrfs_set_opt(ctx->mount_opt, SPACE_CACHE);
++			btrfs_warn(NULL,
++				   "v1 space cache is deprecated, falling back to no space cache");
++			btrfs_set_opt(ctx->mount_opt, NOSPACECACHE);
++			btrfs_clear_opt(ctx->mount_opt, SPACE_CACHE);
+ 			btrfs_clear_opt(ctx->mount_opt, FREE_SPACE_TREE);
+ 			break;
+ 		case Opt_space_cache_v2:
+-- 
+2.54.0
 

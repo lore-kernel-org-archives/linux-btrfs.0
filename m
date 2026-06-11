@@ -1,348 +1,457 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f50.google.com (mail-wr1-f50.google.com [209.85.221.50])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 64D4C2D3EF2
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 16:20:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C08FD35675B
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 21:19:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.50
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781194831; cv=none; b=qmAsbWvrXBN2KewVz4G5oqx8tGxcTd4JouPdB3fNOmNwg0k5FOhkI/mAHPqxYHv/Stpy3sI9iYArYoGkPo1c7oOPkTgycJaRrFFHtYrktTDK3jDn0zq85qGBshsTq3fB0pSFkycXFhwzmdiVE3Zy2DYKdKrBmMq0q2man7urtXc=
+	t=1781212777; cv=none; b=uYNy/2GliPr3rT/SyojYbKKP4WHVwjwmS1eQjH4DVOKPKqeSuRjw8acgwnk114+zafJEXBuxwtnQZkO77PJVYldOBNH7w4sCpjPDFeNwnSupDOehCqVa2AyxNBuC7xAO2KlsYHRCRekg1vqcTHMN0EUwii4HOXmG93qtueEALBw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781194831; c=relaxed/simple;
-	bh=1xEIYA1CEfKk/Ma2a0jJ+nuBHcq5bLgNVRnEEf8CRVI=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Q51i6ou+DJim7Z1qNX5lzPOl1tvzKFfxn4udS/+fNqR2DFxdhRQ4JHDFe1ZODRgU+IWEJbcR0w0gftl6f4WfR4npMZCo0AKf/R1IhmWszJSLpiSdoCfM76CNv2l4V3pthT+b2z9bn/820h0gqv5ZUaff2Z+vr/PW8AX9wDBStgI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=nG9Xu3zw; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1781212777; c=relaxed/simple;
+	bh=HmwOj2kslRVG2MyPe8VknCctRlP9xJj3C/JRbjLUHAk=;
+	h=Message-ID:Date:MIME-Version:Subject:From:To:References:
+	 In-Reply-To:Content-Type; b=gNQSDJGsrZch4EEbaCZpouJgayXfaYHbCV5kgIArCDnNAL1VB6j5d/QIQaT+clXKEnXFEA9LnkwR6uMGbCb6O05MM+JbuqvH3wmxdjNNSLj046Gmdw/+7zALVM6sRNdaFvORf5qLUMsybF81sWzE9aQ/kqr48Hya3luPQHWGfaA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=jFzvWmVt; arc=none smtp.client-ip=209.85.221.50
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="nG9Xu3zw"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 794121F00898
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 16:20:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781194830;
-	bh=piYE3lOnu0PLNCG6r5nmfHWxBKnpCBTYPh8Pq+UAEOk=;
-	h=From:To:Subject:Date:In-Reply-To:References;
-	b=nG9Xu3zwKPiZr6dk38ryJpohZOAPrNbXPEARWy7GF3UoeK+oS42G069nEdhMlvTnG
-	 cXJF/xSr/HWE8FsvbzqsN7BtANdvtm9gxHDSFZc6IlacjWbB1RdhlCEQv0V5FMC4Qv
-	 Cqx9lcOfyC7NArWGaSax457qCYowMZeReL/pEolUebQQnN2VITKzSZ4d7KPTphTGJ2
-	 Z3cGUmydoqK4fxZ2DUnDEHZt5zKweggdktWX5Boe6nrl3aXUZ4VIFa1uVWa1VwI2Dt
-	 XvR3FbnsCK6FxWRet/7omyefmx0tkRTCETJZkNSGqNQmGN3n7luXCDNSY+f5+yEYeJ
-	 rzGCaj+mgeaPQ==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v5] btrfs: fix use-after-free on reloc root after error in insert_dirty_subvol()
-Date: Thu, 11 Jun 2026 17:20:26 +0100
-Message-ID: <cf84f1a217c719e25b6b69e4298dd7afd36c9427.1781194426.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
-In-Reply-To: <910f7fff6c9a588271afa591b1c533d92246ca85.1781021231.git.fdmanana@suse.com>
-References: <910f7fff6c9a588271afa591b1c533d92246ca85.1781021231.git.fdmanana@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="jFzvWmVt"
+Received: by mail-wr1-f50.google.com with SMTP id ffacd0b85a97d-45eee266c6cso219732f8f.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 14:19:35 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1781212774; x=1781817574; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:content-language:references
+         :to:from:subject:user-agent:mime-version:date:message-id:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=fFGeeqaMAPFToYXy9jP3t82H8YOmi3V8Nt+0wntB8Qw=;
+        b=jFzvWmVtDjwI3OdhSx3+3AiNd+hcnwxhNjHY56TaaFhprf0plzjS87csPFA08ddRp+
+         8Dd3Y3LkBco9Vf/72vBA4JusKzMdMwcxll0LyzhP29/YTKmU9Nf87BfZnK419takjUhO
+         yx4CsjXVVM6rHGuSfUn4O9ePw7aFrYL5oTd6dO7lTVIrISOsaxiWr8NPybaXtizZK5tR
+         GshPplCzOMwYhD1TNIeIU+Umo8Z6OxJyh3JbNIZE7JJpHHgPHqvYJVffAmAChEKYWzRr
+         lX470fi0NbRzxTVya7016qwcrimMxNMNkoxoUAoGnDVKpTfPSh6cJk023ylNSNeAtepI
+         cl/w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1781212774; x=1781817574;
+        h=content-transfer-encoding:in-reply-to:content-language:references
+         :to:from:subject:user-agent:mime-version:date:message-id:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=fFGeeqaMAPFToYXy9jP3t82H8YOmi3V8Nt+0wntB8Qw=;
+        b=jyC/NHwPXhWL3yx7fMPnmSg8CDy+p/XW1EHMwAoM8i7Jmu/hEPRsGpcdPYL8of8Se/
+         taERe06g2hQJ5HPBvvz8nxrVfchdp+am+2GcvaJZBParHYz7JOY+wNSY5tGMh0sc/m9H
+         K9tGxSHhXyEQcRsWgu0iW8Cu0wmRqBe4lJqaYpydW0r51Vcf/0srli++wwxIBV6u6uNi
+         pEH6wZ3Vjzyw532P2P2P/hBDmB84WJPpBgGDIdTXAiUNoRFek5DE6FrBwhxLMUznR8Fr
+         AuyqBDSL4mLeITxm3Pw27HV9Quhxjhr5PSrR2ldRsgLo8IQP7wADj+4Av9dmPMOyVR5O
+         +4rQ==
+X-Forwarded-Encrypted: i=1; AFNElJ90qnG0fa8sOmCb+mKOzRQtAzleKen38W4OCEE29A04ezGxOfmvgdWjHi3Y1BMax1h2CXopgQgNge3qqA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Ywv6olj3cdlsYL7mPKPuU5FkXfFG7RSgDYAGxPEKa/LoUoCcEEM
+	FhsrAojDYdMutQbcvXXA61Aa2G+fny/Y9Hy2cvAAeWgxueQGVbORBIf/4sH0LUvx
+X-Gm-Gg: Acq92OFwHFbozmiAE36fYtwOaPT69lVejm599M6+BCc0sDqCIKrjiO1szUuHezaKBOA
+	YQvAXcu+GA+tjL4kaBHN7VrOKpdCMJK5DbkQ87N9tm/gGpguufYv9gI/RjT7QKUzuRVFnYSL4jO
+	cml5ic0AHXN/2rJAQiYVT98aPYQyVM6Vb26eMXHtffSgzh/QMryZjDg6TlHqYGkxA1lwEJKvuN2
+	E0bBTnkLC70dHt0/NrRgkivtKAt7rRHeCZT7D+B8TLdvB9u3aHQJwcsEYw2E09J4/zvWFrY82WZ
+	vuMHjy7H/kBNcW0laxZmreWV9+4j/uzHpnVaCjT65HM4w5gkCXDSOx7rU4uZ+bSRDmzvKHIEyP2
+	+RbxGjJk2tzr3DB9k/eF6HRxP+buetvYEkunavxAzld5kvJZLb/ZUu2Ls8Pl6WTgW4IHSEkmyuy
+	HDJimsEp6cAWCVInSZnplBWTwFhYe4z68wK1EmRQb9Ogozh+8HUrufeoiAzyxO+tkCrxB06gd75
+	qXnv4nHvzYJzzRGOzoqhc3X
+X-Received: by 2002:a05:6000:1847:b0:45e:ec18:f207 with SMTP id ffacd0b85a97d-4606db9a69bmr148061f8f.25.1781212773435;
+        Thu, 11 Jun 2026 14:19:33 -0700 (PDT)
+Received: from [192.168.10.168] (91-175-163-178.subs.proxad.net. [91.175.163.178])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4606c0c8f19sm1816006f8f.11.2026.06.11.14.19.31
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 11 Jun 2026 14:19:31 -0700 (PDT)
+Message-ID: <f519b8d1-f6d0-4975-9301-74571e87436f@gmail.com>
+Date: Thu, 11 Jun 2026 23:19:31 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: Btrfs ENOSPC / Stuck in RO with "exclusive operation balance
+ paused in progress"
+From: Alban Browaeys <alban.browaeys@gmail.com>
+To: Chris Murphy <lists@colorremedies.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <068e841a-37fd-4fe5-ba2d-0ab93c55830d@gmail.com>
+ <abd33b32-aadf-4206-81bc-c2c7832e13dd@gmail.com>
+ <43f6ea2b-8b23-49c1-acfe-1d2617f28132@app.fastmail.com>
+ <28d08133-999f-4d43-9cd5-67b856246687@gmail.com>
+Content-Language: en-US
+In-Reply-To: <28d08133-999f-4d43-9cd5-67b856246687@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-From: Filipe Manana <fdmanana@suse.com>
+Here is the debug dump of this partition 
+sdb3_var_metadata-only-debug.img at 
+https://drive.google.com/file/d/1OzEZLaTUNpWsL1ohGKOMW4GiR9oQakdP/view?usp=drive_link 
+done with "btrfs-image -c 9 -t 4 /dev/sdb3 
+/mnt/4/hermes-var-20260610-enospc-vanilla/sdb3_var_metadata-only-debug.img".
 
-If during relocation we fail in insert_dirty_subvol() because
-btrfs_update_reloc_root() returned an error, we will leave a root's
-reloc_root field pointing to a reloc root that was freed instead of NULL,
-resulting later in a use-after-free, or double free attempt during
-unmount.
+I tried to btrfs-resotre this partition but I get a lot of errors:
 
-The sequence of steps is this:
+btrfs restore -v -m -x -i /dev/sdb3 
+/mnt/4/hermes-var-20260610-enospc-vanilla/restored_var/
 
-1) During relocation the call to btrfs_update_reloc_root() in
-   insert_dirty_subvol() fails, so insert_dirty_subvol() returns the
-   error to merge_reloc_root() without adding the root to the list
-   rc->dirty_subvol_roots;
+Skipping existing file 
+/mnt/4/hermes-var-20260610-enospc-vanilla/restored_var/@var/backups/group.bak
+If you wish to overwrite use -o
+ERROR: zstd frame incomplete
+ERROR: copying data for 
+/mnt/4/hermes-var-20260610-enospc-vanilla/restored_var/@var/backups/dpkg.arch.5.gz 
+failed
+ERROR: zstd frame incomplete
+(...)
 
-2) Then merge_reloc_root() aborts the current transaction because
-   insert_dirty_subvol() returned an error;
+Alban
 
-3) Up the call chain, merge_reloc_roots() gets the error, adds the
-   reloc root for root X to the local reloc_roots list and jumps to the
-   'out' label, where it calls free_reloc_roots() to free all the reloc
-   roots in the local reloc_roots list. This frees the reloc root for
-   root X;
-
-4) We go up the call chain to relocate_block_group() which calls
-   clean_dirty_subvols() to go over dirty roots and set their
-   ->reloc_root field to NULL, but root X is not in the dirty_subvol_roots
-   list, so its ->reloc_root still points to a reloc root;
-
-5) Relocation finishes, with an error and a transaction abort, but the
-   ->reloc_root field for root X still points to the reloc root that was
-   freed in step 3;
-
-6) When unmounting the fs we end up calling:
-
-     btrfs_free_fs_roots()
-        btrfs_drop_and_free_fs_root()
-           --> calls btrfs_put_root() against root X's ->reloc_root
-               which is not NULL and points to the already freed
-               reloc root in step 4 above
-
-  Resulting in a use-after-free to a double free attempt.
-
-Syzbot reported this with the following dmesg/syslog:
-
-   [  106.004389][ T5339] BTRFS error (device loop0 state A): Transaction aborted (error -5)
-   [  106.014266][ T5339] BTRFS: error (device loop0 state A) in merge_reloc_root:1655: errno=-5 IO failure
-   [  106.021891][ T1061] BTRFS error (device loop0 state A): error while writing out transaction: -5
-   [  106.026964][ T1061] BTRFS warning (device loop0 state A): Skipping commit of aborted transaction.
-   [  106.033807][ T5340] BTRFS error (device loop0 state A): bdev /dev/loop0 errs: wr 3, rd 0, flush 0, corrupt 0, gen 0
-   [  106.039265][ T1061] BTRFS: error (device loop0 state A) in cleanup_transaction:2067: errno=-5 IO failure
-   [  106.044382][ T5339] BTRFS info (device loop0 state EA): forced readonly
-   [  106.074329][ T5339] BTRFS: error (device loop0 state EA) in merge_reloc_roots:1887: errno=-5 IO failure
-   [  106.081004][ T5356] BTRFS info (device loop0 state EA): scrub: started on devid 1
-   [  106.085611][ T5339] BTRFS info (device loop0 state EA): balance: ended with status: -30
-   [  106.089517][ T5356] BTRFS info (device loop0 state EA): scrub: not finished on devid 1 with status: -30
-   [  106.662365][ T5338] BTRFS info (device loop0 state EA): last unmount of filesystem 3a375e4e-b156-4d76-a2ad-16e198ce1409
-   [  106.682946][ T5338] ==================================================================
-   [  106.686574][ T5338] BUG: KASAN: slab-use-after-free in btrfs_put_root+0x2f/0x250
-   [  106.690090][ T5338] Write of size 4 at addr ffff88803f978630 by task syz.0.0/5338
-   [  106.693173][ T5338]
-   [  106.694279][ T5338] CPU: 0 UID: 0 PID: 5338 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full)
-   [  106.694293][ T5338] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-   [  106.694300][ T5338] Call Trace:
-   [  106.694308][ T5338]  <TASK>
-   [  106.694314][ T5338]  dump_stack_lvl+0xe8/0x150
-   [  106.694331][ T5338]  print_address_description+0x55/0x1e0
-   [  106.694343][ T5338]  ? btrfs_put_root+0x2f/0x250
-   [  106.694358][ T5338]  print_report+0x58/0x70
-   [  106.694368][ T5338]  kasan_report+0x117/0x150
-   [  106.694384][ T5338]  ? btrfs_put_root+0x2f/0x250
-   [  106.694399][ T5338]  kasan_check_range+0x264/0x2c0
-   [  106.694416][ T5338]  btrfs_put_root+0x2f/0x250
-   [  106.694430][ T5338]  btrfs_drop_and_free_fs_root+0x160/0x210
-   [  106.694447][ T5338]  btrfs_free_fs_roots+0x2f9/0x3c0
-   [  106.694464][ T5338]  ? __pfx_btrfs_free_fs_roots+0x10/0x10
-   [  106.694479][ T5338]  ? free_root_pointers+0x5bf/0x5f0
-   [  106.694494][ T5338]  close_ctree+0x798/0x12d0
-   [  106.694511][ T5338]  ? __pfx_close_ctree+0x10/0x10
-   [  106.694526][ T5338]  ? _raw_spin_unlock_irqrestore+0x74/0x80
-   [  106.694599][ T5338]  ? rcu_preempt_deferred_qs_irqrestore+0x906/0xbc0
-   [  106.694620][ T5338]  ? __rcu_read_unlock+0x83/0xe0
-   [  106.694636][ T5338]  ? btrfs_put_super+0x48/0x1c0
-   [  106.694652][ T5338]  ? __pfx_btrfs_put_super+0x10/0x10
-   [  106.694667][ T5338]  generic_shutdown_super+0x13d/0x2d0
-   [  106.694682][ T5338]  kill_anon_super+0x3b/0x70
-   [  106.694695][ T5338]  btrfs_kill_super+0x41/0x50
-   [  106.694710][ T5338]  deactivate_locked_super+0xbc/0x130
-   [  106.694722][ T5338]  cleanup_mnt+0x437/0x4d0
-   [  106.694736][ T5338]  ? _raw_spin_unlock_irq+0x23/0x50
-   [  106.694752][ T5338]  task_work_run+0x1d9/0x270
-   [  106.694769][ T5338]  ? __pfx_task_work_run+0x10/0x10
-   [  106.694784][ T5338]  ? do_raw_spin_unlock+0x4d/0x210
-   [  106.694802][ T5338]  do_exit+0x70f/0x22c0
-   [  106.694817][ T5338]  ? trace_irq_disable+0x3b/0x140
-   [  106.694835][ T5338]  ? __pfx_do_exit+0x10/0x10
-   [  106.694848][ T5338]  ? preempt_schedule_thunk+0x16/0x30
-   [  106.694863][ T5338]  ? preempt_schedule_common+0x82/0xd0
-   [  106.694878][ T5338]  ? preempt_schedule_thunk+0x16/0x30
-   [  106.694892][ T5338]  do_group_exit+0x21b/0x2d0
-   [  106.694906][ T5338]  ? entry_SYSCALL_64_after_hwframe+0x77/0x7f
-   [  106.694918][ T5338]  __x64_sys_exit_group+0x3f/0x40
-   [  106.694932][ T5338]  x64_sys_call+0x221a/0x2240
-   [  106.694944][ T5338]  do_syscall_64+0x174/0x580
-   [  106.694954][ T5338]  ? clear_bhb_loop+0x40/0x90
-   [  106.694967][ T5338]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
-   [  106.694978][ T5338] RIP: 0033:0x7f958ef9ce59
-   [  106.694988][ T5338] Code: Unable to access opcode bytes at 0x7f958ef9ce2f.
-   [  106.694994][ T5338] RSP: 002b:00007fffd4058318 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
-   [  106.695008][ T5338] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f958ef9ce59
-   [  106.695015][ T5338] RDX: 00007f958c3f8000 RSI: 0000000000000000 RDI: 0000000000000000
-   [  106.695022][ T5338] RBP: 0000000000000003 R08: 0000000000000000 R09: 00007f958f1e73e0
-   [  106.695028][ T5338] R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-   [  106.695034][ T5338] R13: 00007f958f1e73e0 R14: 0000000000000003 R15: 00007fffd40583d0
-   [  106.695046][ T5338]  </TASK>
-   [  106.695050][ T5338]
-   [  106.821635][ T5338] Allocated by task 1061:
-   [  106.823446][ T5338]  kasan_save_track+0x3e/0x80
-   [  106.825498][ T5338]  __kasan_kmalloc+0x93/0xb0
-   [  106.827381][ T5338]  __kmalloc_cache_noprof+0x31c/0x660
-   [  106.829525][ T5338]  btrfs_alloc_root+0x75/0x930
-   [  106.831458][ T5338]  read_tree_root_path+0x127/0xb00
-   [  106.833556][ T5338]  btrfs_read_tree_root+0x34/0x60
-   [  106.835553][ T5338]  create_reloc_root+0x6b3/0xcb0
-   [  106.837556][ T5338]  btrfs_init_reloc_root+0x2ec/0x4b0
-   [  106.839557][ T5338]  record_root_in_trans+0x2ab/0x350
-   [  106.841685][ T5338]  btrfs_record_root_in_trans+0x15c/0x180
-   [  106.844237][ T5338]  start_transaction+0x39c/0x1820
-   [  106.846638][ T5338]  btrfs_finish_one_ordered+0x88e/0x2680
-   [  106.849436][ T5338]  btrfs_work_helper+0x37b/0xc20
-   [  106.851549][ T5338]  process_scheduled_works+0xb5d/0x1860
-   [  106.853807][ T5338]  worker_thread+0xa53/0xfc0
-   [  106.855773][ T5338]  kthread+0x389/0x470
-   [  106.857548][ T5338]  ret_from_fork+0x514/0xb70
-   [  106.859493][ T5338]  ret_from_fork_asm+0x1a/0x30
-   [  106.861504][ T5338]
-   [  106.862527][ T5338] Freed by task 5339:
-   [  106.864224][ T5338]  kasan_save_track+0x3e/0x80
-   [  106.866180][ T5338]  kasan_save_free_info+0x46/0x50
-   [  106.868371][ T5338]  __kasan_slab_free+0x5c/0x80
-   [  106.870462][ T5338]  kfree+0x1c5/0x640
-   [  106.872180][ T5338]  __del_reloc_root+0x341/0x3b0
-   [  106.874290][ T5338]  free_reloc_roots+0x5f/0x90
-   [  106.876282][ T5338]  merge_reloc_roots+0x73f/0x8a0
-   [  106.878489][ T5338]  relocate_block_group+0xbcc/0xe70
-   [  106.880742][ T5338]  do_nonremap_reloc+0xa8/0x5b0
-   [  106.882885][ T5338]  btrfs_relocate_block_group+0x7e6/0xc40
-   [  106.885336][ T5338]  btrfs_relocate_chunk+0x115/0x820
-   [  106.887502][ T5338]  __btrfs_balance+0x1db0/0x2ae0
-   [  106.889543][ T5338]  btrfs_balance+0xaf3/0x11b0
-   [  106.891456][ T5338]  btrfs_ioctl_balance+0x3d3/0x610
-   [  106.893672][ T5338]  __se_sys_ioctl+0xfc/0x170
-   [  106.895530][ T5338]  do_syscall_64+0x174/0x580
-   [  106.897518][ T5338]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
-   [  106.900101][ T5338]
-   [  106.901123][ T5338] The buggy address belongs to the object at ffff88803f978000
-   [  106.901123][ T5338]  which belongs to the cache kmalloc-4k of size 4096
-   [  106.906907][ T5338] The buggy address is located 1584 bytes inside of
-   [  106.906907][ T5338]  freed 4096-byte region [ffff88803f978000, ffff88803f979000)
-   [  106.912980][ T5338]
-   [  106.914022][ T5338] The buggy address belongs to the physical page:
-   [  106.916716][ T5338] page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x3f978
-   [  106.920390][ T5338] head: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
-   [  106.923834][ T5338] flags: 0x4fff00000000040(head|node=1|zone=1|lastcpupid=0x7ff)
-   [  106.927104][ T5338] page_type: f5(slab)
-   [  106.928898][ T5338] raw: 04fff00000000040 ffff88801ac42140 dead000000000122 0000000000000000
-   [  106.932507][ T5338] raw: 0000000000000000 0000000800040004 00000000f5000000 0000000000000000
-   [  106.936193][ T5338] head: 04fff00000000040 ffff88801ac42140 dead000000000122 0000000000000000
-   [  106.939856][ T5338] head: 0000000000000000 0000000800040004 00000000f5000000 0000000000000000
-   [  106.943601][ T5338] head: 04fff00000000003 fffffffffffffe01 00000000ffffffff 00000000ffffffff
-   [  106.947268][ T5338] head: ffffffffffffffff 0000000000000000 00000000ffffffff 0000000000000008
-   [  106.950988][ T5338] page dumped because: kasan: bad access detected
-   [  106.953710][ T5338] page_owner tracks the page as allocated
-   [  106.956198][ T5338] page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd2820(GFP_ATOMIC|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 24, tgid 24 (kworker/u4:2), ts 105728970387, free_ts 29540875453
-   [  106.964984][ T5338]  post_alloc_hook+0x22d/0x280
-   [  106.966956][ T5338]  get_page_from_freelist+0x2593/0x2610
-   [  106.969307][ T5338]  __alloc_frozen_pages_noprof+0x18d/0x380
-   [  106.971839][ T5338]  allocate_slab+0x77/0x660
-   [  106.973709][ T5338]  refill_objects+0x339/0x3d0
-   [  106.975696][ T5338]  __pcs_replace_empty_main+0x321/0x720
-   [  106.978136][ T5338]  __kmalloc_node_track_caller_noprof+0x572/0x7b0
-   [  106.981009][ T5338]  __alloc_skb+0x2c1/0x7d0
-   [  106.982983][ T5338]  nsim_dev_trap_report_work+0x29a/0xb90
-   [  106.985356][ T5338]  process_scheduled_works+0xb5d/0x1860
-   [  106.987710][ T5338]  worker_thread+0xa53/0xfc0
-   [  106.989847][ T5338]  kthread+0x389/0x470
-   [  106.991727][ T5338]  ret_from_fork+0x514/0xb70
-   [  106.993722][ T5338]  ret_from_fork_asm+0x1a/0x30
-   [  106.995900][ T5338] page last free pid 77 tgid 77 stack trace:
-   [  106.998479][ T5338]  __free_frozen_pages+0xc1c/0xd30
-   [  107.000819][ T5338]  vfree+0x1d1/0x2f0
-   [  107.002631][ T5338]  delayed_vfree_work+0x55/0x80
-   [  107.004848][ T5338]  process_scheduled_works+0xb5d/0x1860
-   [  107.007366][ T5338]  worker_thread+0xa53/0xfc0
-   [  107.009388][ T5338]  kthread+0x389/0x470
-   [  107.011177][ T5338]  ret_from_fork+0x514/0xb70
-   [  107.013313][ T5338]  ret_from_fork_asm+0x1a/0x30
-   [  107.015454][ T5338]
-   [  107.016460][ T5338] Memory state around the buggy address:
-   [  107.019052][ T5338]  ffff88803f978500: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
-   [  107.022691][ T5338]  ffff88803f978580: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
-   [  107.026264][ T5338] >ffff88803f978600: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
-   [  107.029721][ T5338]                                      ^
-   [  107.032062][ T5338]  ffff88803f978680: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
-   [  107.035547][ T5338]  ffff88803f978700: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
-   [  107.038865][ T5338] ==================================================================
-
-Fix this by resetting a root's ->reloc_root if we get an error while
-trying to merge a reloc root.
-
-Reported-by: syzbot+b3d472d13f9d7bf20669@syzkaller.appspotmail.com
-Link: https://lore.kernel.org/linux-btrfs/6a1ebde9.c1435f33.112120.0176.GAE@google.com/
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V5: Update the ref tracking for the reloc root after error from
-    merge_reloc_root(), sashiko was still pointing out issues with
-    this (and was correct about it).
-
-V4: Update comment to avoid confusing sashiko.
-
-V3: Clear reloc root before putting the root, detected by sashiko.
-
-V2: Change the approach since it could possibly still lead to a
-    use-after-free just in an different way (detected by sashiko).
-
- fs/btrfs/relocation.c | 42 +++++++++++++++++++++++++++++++++---------
- 1 file changed, 33 insertions(+), 9 deletions(-)
-
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 9447d009a9a0..74687c75f763 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1520,6 +1520,17 @@ static int insert_dirty_subvol(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
-+static void clear_reloc_root(struct btrfs_root *root)
-+{
-+	root->reloc_root = NULL;
-+	/*
-+	 * Need barrier to ensure clear_bit() only happens after
-+	 * root->reloc_root = NULL. Pairs with have_reloc_root().
-+	 */
-+	smp_wmb();
-+	clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
-+}
-+
- static int clean_dirty_subvols(struct reloc_control *rc)
- {
- 	struct btrfs_root *root;
-@@ -1534,13 +1545,7 @@ static int clean_dirty_subvols(struct reloc_control *rc)
- 			struct btrfs_root *reloc_root = root->reloc_root;
- 
- 			list_del_init(&root->reloc_dirty_list);
--			root->reloc_root = NULL;
--			/*
--			 * Need barrier to ensure clear_bit() only happens after
--			 * root->reloc_root = NULL. Pairs with have_reloc_root.
--			 */
--			smp_wmb();
--			clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
-+			clear_reloc_root(root);
- 			if (reloc_root) {
- 				/*
- 				 * btrfs_drop_snapshot drops our ref we hold for
-@@ -1916,13 +1921,32 @@ void merge_reloc_roots(struct reloc_control *rc)
- 				goto out;
- 			}
- 			ret = merge_reloc_root(rc, root);
--			btrfs_put_root(root);
- 			if (ret) {
--				if (list_empty(&reloc_root->root_list))
-+				/*
-+				 * Clear the reloc root since below we will call
-+				 * free_reloc_roots(), otherwise we leave
-+				 * root->reloc_root pointing to a freed reloc
-+				 * root and trigger a use-after-free during
-+				 * unmount or elsewhere.
-+				 */
-+				clear_reloc_root(root);
-+				btrfs_put_root(root);
-+				/*
-+				 * We are adding the reloc_root to the local
-+				 * reloc_roots list, so we add a ref for this
-+				 * list which will be dropped below by the call
-+				 * to free_reloc_roots().
-+				 */
-+				if (list_empty(&reloc_root->root_list)) {
- 					list_add_tail(&reloc_root->root_list,
- 						      &reloc_roots);
-+					btrfs_grab_root(reloc_root);
-+				}
-+				/* Now drop the ref for root->reloc_root. */
-+				btrfs_put_root(reloc_root);
- 				goto out;
- 			}
-+			btrfs_put_root(root);
- 		} else {
- 			if (!IS_ERR(root)) {
- 				if (root->reloc_root == reloc_root) {
--- 
-2.47.2
-
+Le 10/06/2026 à 23:05, Alban Browaeys a écrit :
+> Le 09/06/2026 à 17:25, Chris Murphy a écrit :
+>> Try:
+>>
+>> mount -o skip_balance,nospace_cache,enospc_debug /dev/sdb3 /var
+>> btrfs balance start -dlimit=1 /var
+>
+>
+> Thanks for the suggestions. Unfortunately, the bypass did not work.
+>
+> # mount -o skip_balance,nospace_cache,enospc_debug /dev/sdb3 /var
+> [117052.507168] BTRFS: device label SSDHOME devid 1 transid 44655875 
+> /dev/sdb3 (8:19) scanned by mount (2004)
+> [117052.526475] BTRFS info (device sdb3): first mount of filesystem 
+> 13af326c-631f-482b-9c34-b59b4f100608
+> [117052.536146] BTRFS info (device sdb3): using crc32c checksum algorithm
+> [117052.543125] BTRFS error (device sdb3): cannot disable free-space-tree
+> [117052.550097] BTRFS error (device sdb3): open_ctree failed: -22
+> mount: /var: wrong fs type, bad option, bad superblock on /dev/sdb3, 
+> missing codepage or helper program, or other error.
+>        dmesg(1) may have more information after failed mount system call.
+>
+>
+> I believe this issue is blocking me:
+>
+> [117052.543125] BTRFS error (device sdb3): cannot disable free-space-tree
+>
+> So I tried with enospc_debug without nospace_cache, to get debug infos:
+>
+> # mount -o skip_balance,enospc_debug /dev/sdb3 /var
+> [117261.590047] BTRFS: device label SSDHOME devid 1 transid 44655875 
+> /dev/sdb3 (8:19) scanned by mount (2008)
+> [117261.612863] BTRFS info (device sdb3): first mount of filesystem 
+> 13af326c-631f-482b-9c34-b59b4f100608
+> [117261.622548] BTRFS info (device sdb3): using crc32c checksum algorithm
+> [117261.662415] BTRFS info (device sdb3): left=0, need=393216, flags=36
+> [117261.669328] BTRFS info (device sdb3): space_info SYSTEM (sub-group 
+> id 0) has 0 free, is not full
+> [117261.678792] BTRFS info (device sdb3): space_info total=33554432, 
+> used=16384, pinned=0, reserved=0, may_use=0, readonly=33538048 
+> zone_unusable=0
+> [117261.692344] BTRFS info (device sdb3): global_block_rsv: size 
+> 190382080 reserved 190382080
+> [117261.701131] BTRFS info (device sdb3): trans_block_rsv: size 0 
+> reserved 0
+> [117261.708349] BTRFS info (device sdb3): chunk_block_rsv: size 0 
+> reserved 0
+> [117261.715571] BTRFS info (device sdb3): remap_block_rsv: size 0 
+> reserved 0
+> [117261.722782] BTRFS info (device sdb3): delayed_block_rsv: size 0 
+> reserved 0
+> [117261.730154] BTRFS info (device sdb3): delayed_refs_rsv: size 0 
+> reserved 0
+> [117261.737462] BTRFS error (device sdb3): allocation failed flags 36, 
+> wanted 16384 tree-log 0, relocation: 0
+> [117261.747497] BTRFS info (device sdb3): space_info METADATA 
+> (sub-group id 0) has -190382080 free, is full
+> [117261.757371] BTRFS info (device sdb3): space_info total=3221225472, 
+> used=2142470144, pinned=0, reserved=0, may_use=190382080, 
+> readonly=1078755328 zone_unusable=0
+> [117261.772172] BTRFS info (device sdb3): global_block_rsv: size 
+> 190382080 reserved 190365696
+> [117261.780844] BTRFS info (device sdb3): trans_block_rsv: size 0 
+> reserved 0
+> [117261.787995] BTRFS info (device sdb3): chunk_block_rsv: size 0 
+> reserved 0
+> [117261.795127] BTRFS info (device sdb3): remap_block_rsv: size 0 
+> reserved 0
+> [117261.802251] BTRFS info (device sdb3): delayed_block_rsv: size 0 
+> reserved 0
+> [117261.809551] BTRFS info (device sdb3): delayed_refs_rsv: size 0 
+> reserved 0
+> [117261.816785] BTRFS info (device sdb3): block group 55856594944 has 
+> 1073741824 bytes, 1007976448 used 0 pinned 0 reserved 0 delalloc 0 
+> super 0 zone_unusable (65765376
+>  bytes available) [readonly]
+> [117261.834327] BTRFS info (device sdb3): block group has cluster?: no
+> [117261.840947] BTRFS info (device sdb3): 0 free space entries at or 
+> bigger than 16384 bytes
+> [117261.849500] BTRFS info (device sdb3): block group 101368987648 has 
+> 1073741824 bytes, 500957184 used 0 pinned 0 reserved 0 delalloc 0 
+> super 0 zone_unusable (57278464
+> 0 bytes available) [readonly]
+> [117261.867163] BTRFS info (device sdb3): block group has cluster?: no
+> [117261.873784] BTRFS info (device sdb3): 0 free space entries at or 
+> bigger than 16384 bytes [117261.882313] BTRFS info (device sdb3): 
+> block group 102442729472 has 1073741824 bytes, 633536512 used 0 pinned 
+> 0 reserved 0 delalloc 0 super 0 zone_unusable (44020531
+> 2 bytes available) [readonly]
+> [117261.899994] BTRFS info (device sdb3): block group has cluster?: no
+> [117261.906630] BTRFS info (device sdb3): 0 free space entries at or 
+> bigger than 16384 bytes
+> [117261.915176] BTRFS info (device sdb3): 1078755328 bytes available 
+> across all block groups
+> [117261.923750] BTRFS warning (device sdb3): Skipping commit of 
+> aborted transaction.
+> [117261.931608] ------------[ cut here ]------------
+> [117261.936687] BTRFS: Transaction aborted (error -28)
+> [117261.941950] WARNING: fs/btrfs/transaction.c:2060 at 
+> btrfs_commit_transaction+0xaaa/0xe20 [btrfs], CPU#6: mount/2008
+> [117261.952905] Modules linked in: ntfs3 btrfs libblake2b raid10 
+> raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor 
+> raid6_pq raid1 raid0 md_mod auto
+> fs4 hid_logitech_hidpp hid_logitech_dj hid_generic usbhid hid sr_mod 
+> cdrom uas usb_storage i915 drm_buddy ttm i2c_algo_bit 
+> drm_display_helper cec sd_mod rc_core drm_cli
+> ent_lib drm_kms_helper iTCO_wdt xhci_pci ahci intel_pmc_bxt drm 
+> libahci watchdog xhci_hcd firewire_ohci libata firewire_core r8169 
+> video realtek crc_itu_t usbcore scsi_
+> mod fan i2c_i801 wmi button usb_common i2c_smbus scsi_common efivarfs
+> [117262.004021] CPU: 6 UID: 0 PID: 2008 Comm: mount Tainted: G        
+> W           7.0.10+deb14-amd64 #1 PREEMPT(lazy)  Debian 7.0.10-1
+> [117262.016343] Tainted: [W]=WARN
+> [117262.019853] Hardware name: LENOVO 10M8S14C42/3102, BIOS M16KT71A 
+> 09/14/2023
+> [117262.027348] RIP: 0010:btrfs_commit_transaction+0xaac/0xe20 [btrfs]
+> [117262.034117] Code: ff 48 8b 7c 24 08 31 c9 48 8d b7 48 01 00 00 e8 
+> 9a 7c 0b 00 48 c7 43 18 00 00 00 00 e9 73 fe ff ff 48 8d 3d 66 fd 34 
+> 00 89 ee <67> 48 0f b9 3a e9
+> f8 fe ff ff 49 8b bc 24 48 03 00 00 be 02 00 00
+> [117262.053426] RSP: 0018:ffffce9fc8b57418 EFLAGS: 00010292
+> [117262.059233] RAX: 0000000000000002 RBX: ffff8ac4d181a738 RCX: 
+> 0000000000000003
+> [117262.066946] RDX: 0000000002040001 RSI: 00000000ffffffe4 RDI: 
+> ffffffffc1028080
+> [117262.074658] RBP: 00000000ffffffe4 R08: 0000000000000000 R09: 
+> ffffce9fc8b57200
+> [117262.082364] R10: ffff8acbe23fff90 R11: 00000000fff7ffff R12: 
+> ffff8ac545885000
+> [117262.090075] R13: ffff8ac4c242ea00 R14: ffff8ac5458854c0 R15: 
+> ffff8ac4cff01b80
+> [117262.097779] FS:  00007f22c28cf940(0000) GS:ffff8acc3a4fc000(0000) 
+> knlGS:0000000000000000
+> [117262.106429] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [117262.112740] CR2: 00007f22c2cdfdd0 CR3: 00000001867ac001 CR4: 
+> 00000000003706f0
+> [117262.120434] Call Trace:
+> [117262.123451]  <TASK>
+> [117262.126121]  ? start_transaction+0x228/0x880 [btrfs]
+> [117262.131676]  flush_space+0x3c3/0x5a0 [btrfs]
+> [117262.136574]  ? btrfs_reduce_alloc_profile+0x5a/0x1d0 [btrfs]
+> [117262.142855]  ? calc_available_free_space.isra.0+0x70/0xc0 [btrfs]
+> [117262.149597]  priority_reclaim_metadata_space+0x96/0x130 [btrfs]
+> [117262.156132]  handle_reserve_ticket+0x5b/0x290 [btrfs]
+> [117262.161800]  ? btrfs_reduce_alloc_profile+0x5a/0x1d0 [btrfs]
+> [117262.168076]  reserve_bytes+0x268/0x4c0 [btrfs] [117262.173127]  
+> btrfs_reserve_metadata_bytes+0x1a/0xe0 [btrfs]
+> [117262.179306]  btrfs_block_rsv_refill+0x60/0x90 [btrfs]
+> [117262.184965]  evict_refill_and_join+0x47/0xe0 [btrfs]
+> [117262.190531]  btrfs_evict_inode+0x332/0x400 [btrfs]
+> [117262.195922]  evict+0xfd/0x270
+> [117262.199441]  btrfs_orphan_cleanup+0x21f/0x390 [btrfs]
+> [117262.205085]  btrfs_start_pre_rw_mount+0x2a0/0x6c0 [btrfs]
+> [117262.211071]  open_ctree+0x12fb/0x1730 [btrfs]
+> [117262.216028]  btrfs_get_tree.cold+0xb/0xb6 [btrfs]
+> [117262.221324]  ? security_inode_permission+0x4a/0x110
+> [117262.226747]  vfs_get_tree+0x29/0xd0
+> [117262.230776]  vfs_cmd_create+0x57/0xd0
+> [117262.234947]  __do_sys_fsconfig+0x2fc/0x5e0
+> [117262.239581]  do_syscall_64+0xcd/0x15f0
+> [117262.243873]  ? __fs_parse+0x68/0x1c0
+> [117262.247989]  ? aa_file_perm+0x18a/0x550
+> [117262.252368]  ? btrfs_parse_param+0x4f/0x960 [btrfs]
+> [117262.257818]  ? apparmor_file_permission+0x44/0xb0
+> [117262.263052]  ? fscontext_read+0x171/0x190
+> [117262.267594]  ? rw_verify_area+0x56/0x180
+> [117262.272039]  ? vfs_read+0xbf/0x390
+> [117262.275964]  ? __fs_parse+0x68/0x1c0
+> [117262.280063]  ? aa_file_perm+0x18a/0x550
+> [117262.284422]  ? btrfs_parse_param+0x4f/0x960 [btrfs]
+> [117262.289858]  ? apparmor_file_permission+0x44/0xb0
+> [117262.295082]  ? fscontext_read+0x171/0x190
+> [117262.299605]  ? rw_verify_area+0x56/0x180
+> [117262.304036]  ? vfs_read+0xbf/0x390
+> [117262.307943]  ? do_syscall_64+0x10a/0x15f0
+> [117262.312451]  ? from_kgid_munged+0x17/0x30
+> [117262.316955]  ? __do_sys_getgid+0x27/0x30
+> [117262.321369]  ? do_syscall_64+0x10a/0x15f0
+> [117262.325856]  ? from_kgid_munged+0x17/0x30
+> [117262.330340]  ? ksys_read+0x73/0xf0
+> [117262.334213]  ? do_syscall_64+0x10a/0x15f0
+> [117262.338694]  ? irqentry_exit+0x78/0x680
+> [117262.343000]  ? exc_page_fault+0x82/0x1d0
+> [117262.347384]  ? __irq_exit_rcu+0x3d/0xe0 [117262.351683]  
+> entry_SYSCALL_64_after_hwframe+0x76/0x7e
+> [117262.357197] RIP: 0033:0x7f22c2d0eb4a
+> [117262.361218] Code: 73 01 c3 48 8b 0d c6 32 0d 00 f7 d8 64 89 01 48 
+> 83 c8 ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 49 89 ca b8 af 01 00 
+> 00 0f 05 <48> 3d 01 f0 ff ff
+> 73 01 c3 48 8b 0d 96 32 0d 00 f7 d8 64 89 01 48
+> [117262.380431] RSP: 002b:00007ffd5d547f68 EFLAGS: 00000246 ORIG_RAX: 
+> 00000000000001af
+> [117262.388464] RAX: ffffffffffffffda RBX: 0000557471e4da50 RCX: 
+> 00007f22c2d0eb4a
+> [117262.396057] RDX: 0000000000000000 RSI: 0000000000000006 RDI: 
+> 0000000000000003
+> [117262.403650] RBP: 0000000000000003 R08: 0000000000000000 R09: 
+> 0000000000000000
+> [117262.411240] R10: 0000000000000000 R11: 0000000000000246 R12: 
+> 0000557471e4ec40
+> [117262.418831] R13: 00007f22c2ea127c R14: 00007f22c2e9f460 R15: 
+> 00007f22c28cf7f0
+> [117262.426410]  </TASK>
+> [117262.429024] ---[ end trace 0000000000000000 ]---
+> [117262.434074] BTRFS info (device sdb3 state A): dumping space info:
+> [117262.440595] BTRFS info (device sdb3 state A): space_info DATA 
+> (sub-group id 0) has 17422925824 free, is not full
+> [117262.451184] BTRFS info (device sdb3 state A): space_info 
+> total=70262980608, used=52839989248, pinned=0, reserved=0, may_use=0, 
+> readonly=65536 zone_unusable=0
+> [117262.465659] BTRFS info (device sdb3 state A): space_info METADATA 
+> (sub-group id 0) has -190382080 free, is full
+> [117262.476171] BTRFS info (device sdb3 state A): space_info 
+> total=3221225472, used=2142470144, pinned=0, reserved=0, 
+> may_use=190382080, readonly=1078755328 zone_unusable=0
+> [117262.491598] BTRFS info (device sdb3 state A): space_info SYSTEM 
+> (sub-group id 0) has 0 free, is not full
+> [117262.501477] BTRFS info (device sdb3 state A): space_info 
+> total=33554432, used=16384, pinned=0, reserved=0, may_use=0, 
+> readonly=33538048 zone_unusable=0
+> [117262.515439] BTRFS info (device sdb3 state A): global_block_rsv: 
+> size 190382080 reserved 190382080
+> [117262.524731] BTRFS info (device sdb3 state A): trans_block_rsv: 
+> size 0 reserved 0
+> [117262.532538] BTRFS info (device sdb3 state A): chunk_block_rsv: 
+> size 0 reserved 0
+> [117262.540337] BTRFS info (device sdb3 state A): remap_block_rsv: 
+> size 0 reserved 0
+> [117262.548136] BTRFS info (device sdb3 state A): delayed_block_rsv: 
+> size 0 reserved 0
+> [117262.556110] BTRFS info (device sdb3 state A): delayed_refs_rsv: 
+> size 0 reserved 0
+> [117262.563998] BTRFS: error (device sdb3 state A) in 
+> cleanup_transaction:2060: errno=-28 No space left
+> [117262.573453] BTRFS info (device sdb3 state EA): space_info METADATA 
+> (sub-group id 0) has -190382080 free, is full
+> [117262.584033] BTRFS info (device sdb3 state EA): space_info 
+> total=3221225472, used=2142470144, pinned=0, reserved=0, 
+> may_use=190382080, readonly=1078755328 zone_unusable=0
+> [117262.599563] BTRFS info (device sdb3 state EA): global_block_rsv: 
+> size 190382080 reserved 190382080
+> [117262.608943] BTRFS info (device sdb3 state EA): trans_block_rsv: 
+> size 0 reserved 0
+> [117262.616846] BTRFS info (device sdb3 state EA): chunk_block_rsv: 
+> size 0 reserved 0
+> [117262.624749] BTRFS info (device sdb3 state EA): remap_block_rsv: 
+> size 0 reserved 0
+> [117262.632643] BTRFS info (device sdb3 state EA): delayed_block_rsv: 
+> size 0 reserved 0
+> [117262.640715] BTRFS info (device sdb3 state EA): delayed_refs_rsv: 
+> size 0 reserved 0
+> [117262.648696] BTRFS info (device sdb3 state EA): space_info METADATA 
+> (sub-group id 0) has -190382080 free, is full
+> [117262.659312] BTRFS info (device sdb3 state EA): space_info 
+> total=3221225472, used=2142470144, pinned=0, reserved=0, 
+> may_use=190382080, readonly=1078755328 zone_unusable=0
+> [117262.674875] BTRFS info (device sdb3 state EA): global_block_rsv: 
+> size 190382080 reserved 190382080
+> [117262.684287] BTRFS info (device sdb3 state EA): trans_block_rsv: 
+> size 0 reserved 0
+> [117262.692225] BTRFS info (device sdb3 state EA): chunk_block_rsv: 
+> size 0 reserved 0
+> [117262.700155] BTRFS info (device sdb3 state EA): remap_block_rsv: 
+> size 0 reserved 0
+> [117262.708086] BTRFS info (device sdb3 state EA): delayed_block_rsv: 
+> size 0 reserved 0
+> [117262.716191] BTRFS info (device sdb3 state EA): delayed_refs_rsv: 
+> size 0 reserved 0
+> [117262.724260] BTRFS warning (device sdb3 state EA): could not 
+> allocate space for delete; will truncate on mount
+> [117262.734622] BTRFS error (device sdb3 state EA): Error removing 
+> orphan entry, stopping orphan cleanup
+> [117262.744220] BTRFS error (device sdb3 state EA): could not do 
+> orphan cleanup -28
+> [117262.752021] BTRFS error (device sdb3 state EA): commit super block 
+> returned -30
+> [117262.760739] BTRFS error (device sdb3 state EA): open_ctree failed: 
+> -28
+> mount: /var: fsconfig() failed: No space left on device.
+>        dmesg(1) may have more information after failed mount system call.
+>
+>
+>
+>
+>> If the first command works but the second command does not, you could 
+>> insert a `btrfs device add` command to add a partition. I'm not such 
+>> a big fan of adding USB sticks or zram devices because if anything 
+>> goes wrong, the file system ends up broken.
+>>
+>> This is a bit of a heavy hammer to fix this problem but it might 
+>> actually be faster than troubleshooting Btrfs enospc:
+>
+> I am all for troubleshooting this enospc issue because it is the first 
+> time I cannot even add a device to fix the enospc... in fact an hour 
+> before this issue I had an enospc issue this time with the root 
+> partition that had very few space left, and adding a device worked 
+> well and it was pretty easy to fix. But here I have gigabytes of 
+> unused data and metadata, I am puzzled.
+>
+> I was switching my SSD btrfs partitions (I plan to merge them all but 
+> for historical reason they are split as separate btrfs partitions 
+> instead of subvolumes of a single btrfs partition) from single to DUP, 
+> the new default.
+>
+>
+>
+>  I believe the main issue here is that the conversion attempted to use 
+> until the last megabyte of metadata before errorring out, preventing 
+> any simple rescue operation afterwards, and even preventing from 
+> balancing data to free chunks for metadata.
+>
+> It would have been fine for the conversion to error out and let me 
+> balance data then resume the conversion. The main issue is that the 
+> conversion used so much metadata space that I cannot even mount the 
+> btrfs partition to balance its data space.
+>
+> Maybe the metadata conversion should guard/ straight error out when 
+> there is not enough space in metadata (here 3GB to duplicate 1,59GB 
+> does not fit) and there is no way to get a new free chunk for metadata 
+> and tell to free chunks first ?
+>
+>
+>> It should still be possible to make the troubled Btrfs a read-only 
+>> seed device using btrfs-tune; then mount it ro; use `btrfs dev add` 
+>> using a device that's equal to or bigger; remount rw; then `btrfs dev 
+>> rem` the 1st device, i.e. the ro seed. This will replicate/clone the 
+>> file system from device 1 to device 2. And it'll take a while. But in 
+>> the end you'll have a balanced file system on device 2.
+>>
+>> It isn't strictly necessary for device 2 to be equal to or bigger. It 
+>> is possible to add a smaller device, but before you remove the 1st 
+>> device, you wlil need to delete files. The bigger files you choose to 
+>> delete, the fewer you will need to delete to get to the 
+>> underprovisioned 2nd device size. Then remove the 1st device. Now 
+>> only the files that have not been deleted will have extents 
+>> replicated to the 2nd device.
+>>
+>> At the very least the seed-device is not being modified and shouldn't 
+>> get any worse than it is.
+>> Chris Murphy
+>
+>
+> I don't know yet how to proceed with such a read-only seed option, I 
+> will look into it. But is there other flags or tune I could do that 
+> could let me cancel the pause operation, the balance the data space, 
+> then retry the conversion ?
+>
+>
+> Alban
+>

@@ -1,457 +1,159 @@
-Received: from mail-wr1-f50.google.com (mail-wr1-f50.google.com [209.85.221.50])
+Received: from mail-qk1-f181.google.com (mail-qk1-f181.google.com [209.85.222.181])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C08FD35675B
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 21:19:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 28F6E36A022
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 21:24:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.181
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781212777; cv=none; b=uYNy/2GliPr3rT/SyojYbKKP4WHVwjwmS1eQjH4DVOKPKqeSuRjw8acgwnk114+zafJEXBuxwtnQZkO77PJVYldOBNH7w4sCpjPDFeNwnSupDOehCqVa2AyxNBuC7xAO2KlsYHRCRekg1vqcTHMN0EUwii4HOXmG93qtueEALBw=
+	t=1781213092; cv=none; b=Z18jnw4jC9crtbWCvqxfgi2nGfPlJCkcxyRlEKPD15QX7UaOzw09dDB4P0ZAXERfMOBbkHwGZm3/+N/bKgm+95MCg15cYqNjie0eReaZctav4pMR6t4sFJrdqhhm2F1xwY23pRlSznclQrvdaH3x9VLxJzgwDBBLK/HIt0/5gmc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781212777; c=relaxed/simple;
-	bh=HmwOj2kslRVG2MyPe8VknCctRlP9xJj3C/JRbjLUHAk=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:References:
-	 In-Reply-To:Content-Type; b=gNQSDJGsrZch4EEbaCZpouJgayXfaYHbCV5kgIArCDnNAL1VB6j5d/QIQaT+clXKEnXFEA9LnkwR6uMGbCb6O05MM+JbuqvH3wmxdjNNSLj046Gmdw/+7zALVM6sRNdaFvORf5qLUMsybF81sWzE9aQ/kqr48Hya3luPQHWGfaA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=jFzvWmVt; arc=none smtp.client-ip=209.85.221.50
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1781213092; c=relaxed/simple;
+	bh=jMN/1aQdUacQw37CoA5G1RDGKU9+Br07yXHh8f3cvGM=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=saZOF82e2j+SWL1XnFo2YKWJaRH2LEBPTY20ONo1iDk5HGLn226XZSQ8RYxpUaWv2GUEitOnKISN8r8IZ2acVkusXQyejjTJURsfmAmP6xCn1wptMyvArVXvAEBCua5j4b/7iOImxbX7L3jyShE6aqGtfKM6R+Pdk+uWfTiLygU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=openai.com; spf=pass smtp.mailfrom=openai.com; dkim=pass (1024-bit key) header.d=openai.com header.i=@openai.com header.b=QiQ7l4z4; arc=none smtp.client-ip=209.85.222.181
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=openai.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=openai.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="jFzvWmVt"
-Received: by mail-wr1-f50.google.com with SMTP id ffacd0b85a97d-45eee266c6cso219732f8f.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 14:19:35 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=openai.com header.i=@openai.com header.b="QiQ7l4z4"
+Received: by mail-qk1-f181.google.com with SMTP id af79cd13be357-9159477c893so42587785a.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 14:24:50 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1781212774; x=1781817574; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :to:from:subject:user-agent:mime-version:date:message-id:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=fFGeeqaMAPFToYXy9jP3t82H8YOmi3V8Nt+0wntB8Qw=;
-        b=jFzvWmVtDjwI3OdhSx3+3AiNd+hcnwxhNjHY56TaaFhprf0plzjS87csPFA08ddRp+
-         8Dd3Y3LkBco9Vf/72vBA4JusKzMdMwcxll0LyzhP29/YTKmU9Nf87BfZnK419takjUhO
-         yx4CsjXVVM6rHGuSfUn4O9ePw7aFrYL5oTd6dO7lTVIrISOsaxiWr8NPybaXtizZK5tR
-         GshPplCzOMwYhD1TNIeIU+Umo8Z6OxJyh3JbNIZE7JJpHHgPHqvYJVffAmAChEKYWzRr
-         lX470fi0NbRzxTVya7016qwcrimMxNMNkoxoUAoGnDVKpTfPSh6cJk023ylNSNeAtepI
-         cl/w==
+        d=openai.com; s=google; t=1781213090; x=1781817890; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=oZb0xO5n0S2OTyc+rJ6TCTi3OZkKPUT9vDDGD9gSnOk=;
+        b=QiQ7l4z4mHeOFhBSUrf9uZFSFGwaPnKViDMg51YBtaxhNGMHQVPrUoDFkPaop5D9pu
+         Cfp95b2NPVcmrHtHjvvkAKUYNzE2LlJKaUmFm52ZBzbkMRb8/wv6XBDqGSNviOjqeytt
+         F59YrlN/7gJT7n5IIVE8VUtKZRtdd9H9rZjOc=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781212774; x=1781817574;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :to:from:subject:user-agent:mime-version:date:message-id:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=fFGeeqaMAPFToYXy9jP3t82H8YOmi3V8Nt+0wntB8Qw=;
-        b=jyC/NHwPXhWL3yx7fMPnmSg8CDy+p/XW1EHMwAoM8i7Jmu/hEPRsGpcdPYL8of8Se/
-         taERe06g2hQJ5HPBvvz8nxrVfchdp+am+2GcvaJZBParHYz7JOY+wNSY5tGMh0sc/m9H
-         K9tGxSHhXyEQcRsWgu0iW8Cu0wmRqBe4lJqaYpydW0r51Vcf/0srli++wwxIBV6u6uNi
-         pEH6wZ3Vjzyw532P2P2P/hBDmB84WJPpBgGDIdTXAiUNoRFek5DE6FrBwhxLMUznR8Fr
-         AuyqBDSL4mLeITxm3Pw27HV9Quhxjhr5PSrR2ldRsgLo8IQP7wADj+4Av9dmPMOyVR5O
-         +4rQ==
-X-Forwarded-Encrypted: i=1; AFNElJ90qnG0fa8sOmCb+mKOzRQtAzleKen38W4OCEE29A04ezGxOfmvgdWjHi3Y1BMax1h2CXopgQgNge3qqA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Ywv6olj3cdlsYL7mPKPuU5FkXfFG7RSgDYAGxPEKa/LoUoCcEEM
-	FhsrAojDYdMutQbcvXXA61Aa2G+fny/Y9Hy2cvAAeWgxueQGVbORBIf/4sH0LUvx
-X-Gm-Gg: Acq92OFwHFbozmiAE36fYtwOaPT69lVejm599M6+BCc0sDqCIKrjiO1szUuHezaKBOA
-	YQvAXcu+GA+tjL4kaBHN7VrOKpdCMJK5DbkQ87N9tm/gGpguufYv9gI/RjT7QKUzuRVFnYSL4jO
-	cml5ic0AHXN/2rJAQiYVT98aPYQyVM6Vb26eMXHtffSgzh/QMryZjDg6TlHqYGkxA1lwEJKvuN2
-	E0bBTnkLC70dHt0/NrRgkivtKAt7rRHeCZT7D+B8TLdvB9u3aHQJwcsEYw2E09J4/zvWFrY82WZ
-	vuMHjy7H/kBNcW0laxZmreWV9+4j/uzHpnVaCjT65HM4w5gkCXDSOx7rU4uZ+bSRDmzvKHIEyP2
-	+RbxGjJk2tzr3DB9k/eF6HRxP+buetvYEkunavxAzld5kvJZLb/ZUu2Ls8Pl6WTgW4IHSEkmyuy
-	HDJimsEp6cAWCVInSZnplBWTwFhYe4z68wK1EmRQb9Ogozh+8HUrufeoiAzyxO+tkCrxB06gd75
-	qXnv4nHvzYJzzRGOzoqhc3X
-X-Received: by 2002:a05:6000:1847:b0:45e:ec18:f207 with SMTP id ffacd0b85a97d-4606db9a69bmr148061f8f.25.1781212773435;
-        Thu, 11 Jun 2026 14:19:33 -0700 (PDT)
-Received: from [192.168.10.168] (91-175-163-178.subs.proxad.net. [91.175.163.178])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4606c0c8f19sm1816006f8f.11.2026.06.11.14.19.31
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 11 Jun 2026 14:19:31 -0700 (PDT)
-Message-ID: <f519b8d1-f6d0-4975-9301-74571e87436f@gmail.com>
-Date: Thu, 11 Jun 2026 23:19:31 +0200
+        d=1e100.net; s=20251104; t=1781213090; x=1781817890;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=oZb0xO5n0S2OTyc+rJ6TCTi3OZkKPUT9vDDGD9gSnOk=;
+        b=iu5mJTbbYVM+KsScLsr/TKJnmI3iiMk8kKSW+PdFFT+e98JUCb73QT1CMKUSNOWPo6
+         M36jMUKTwEbN9mV7aMnk9BzxbhK3mmUhIlDYBDw+Xb3z8yClSHjmAMNVuEugHK171h++
+         /qo6DQBqotHcopbk5iY7J+zxDxqFqhnh40fqYKuCdiiv6vPJu4uxqYinpmOWAdkkGTIR
+         S2vWXKXWiFtLN3h2/IVAaAIFvtntgjVaoJE1lqQZAAODqqnLBbsLKvFMtEHgPoaAmGqU
+         i4GzlZrv+UNr81VPVT6Ad3zkdgMdMWfBTJz8zqkBhoUN4HxCZ86oyTgXX2G9dD4naez9
+         3tbw==
+X-Gm-Message-State: AOJu0Yz3882fbq2Md7H3sEarmeuSnDDp//f+03jQ7bZdnVfUFFMqJfoD
+	7FdzKUTFYEx3CLJVS7ioUjRk118FkGxSa7m/+j8fIeud82eXUcut16vX4QuGz5/RpcHqrxgXd33
+	Q0YUdH8g=
+X-Gm-Gg: Acq92OHpC8xPpWmiUeTerkC9/D3druVTrP2IJRUjiA89oNORZNW3qccvPv5vwo1ZETX
+	JDAyXvKjxNrZkaOEWWNRFK5JZGoITpt3wKDNknIuuqr5eBe+6S/EzIJGEYbhaytTJkRkYoszS/w
+	iuuDjflfcbsckfxJHqh7+HYKG87fL5dqhY4svhUHMPjevTO6CScoWeQMxb3AeFwphT2g3Xg07zV
+	gGljAx9qp6C8gagjwE76cfAkat2sRXvbTDb4a7wE+wHtBbtkz1iDvPgKvnjyNz41ebpQcLqW16f
+	aKINH543YB4pFk31ynH2xcV/zaEgtnwonFRzDcjXNh8GD7xFz7tNe7b+H0qwu4x3EPDC3EMUF7i
+	eQkzvq2xiOY+rIkvr+Ztbz2qWsjnRxkby4mvZnNa/sZTLbgK8M/zQQODJj2mbpWDDENhTMvSL9+
+	4Xyo8m0gBkFDx3fbxzVBPtVUYLRQ0s26PE/VWX+bbLSvWiyACrLeuKK7y6wckr/IjKmq4VV3RyV
+	vr6ZlRO1UIZ5Q8jkMa2GnIeNO1RgB5ZN4c=
+X-Received: by 2002:a05:620a:19a6:b0:914:b65f:6b00 with SMTP id af79cd13be357-9160ac7d1eamr718436685a.6.1781213089949;
+        Thu, 11 Jun 2026 14:24:49 -0700 (PDT)
+Received: from com-75606.node.ndb.openai.org ([209.249.37.146])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-9161a0541d3sm24925085a.39.2026.06.11.14.24.48
+        (version=TLS1_3 cipher=TLS_CHACHA20_POLY1305_SHA256 bits=256/256);
+        Thu, 11 Jun 2026 14:24:49 -0700 (PDT)
+From: Kyle Zeng <kylebot@openai.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>,
+	outbounddisclosures@openai.com,
+	Kyle Zeng <kylebot@openai.com>,
+	stable@vger.kernel.org
+Subject: [PATCH] btrfs: validate root ref item size and name length
+Date: Thu, 11 Jun 2026 14:24:45 -0700
+Message-ID: <20260611212445.4848-1-kylebot@openai.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: Btrfs ENOSPC / Stuck in RO with "exclusive operation balance
- paused in progress"
-From: Alban Browaeys <alban.browaeys@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <068e841a-37fd-4fe5-ba2d-0ab93c55830d@gmail.com>
- <abd33b32-aadf-4206-81bc-c2c7832e13dd@gmail.com>
- <43f6ea2b-8b23-49c1-acfe-1d2617f28132@app.fastmail.com>
- <28d08133-999f-4d43-9cd5-67b856246687@gmail.com>
-Content-Language: en-US
-In-Reply-To: <28d08133-999f-4d43-9cd5-67b856246687@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-Here is the debug dump of this partition 
-sdb3_var_metadata-only-debug.img at 
-https://drive.google.com/file/d/1OzEZLaTUNpWsL1ohGKOMW4GiR9oQakdP/view?usp=drive_link 
-done with "btrfs-image -c 9 -t 4 /dev/sdb3 
-/mnt/4/hermes-var-20260610-enospc-vanilla/sdb3_var_metadata-only-debug.img".
+ROOT_REF and ROOT_BACKREF items contain a struct btrfs_root_ref followed
+by one variable-length name.  The tree checker validates only generic leaf
+geometry for these item types, so corrupted metadata can expose a root-ref
+item whose item size does not match the embedded name_len field.
 
-I tried to btrfs-resotre this partition but I get a lot of errors:
+Several readers later trust the item size or the name_len field when
+copying the name into fixed-size buffers.  For example,
+BTRFS_IOC_GET_SUBVOL_INFO subtracts sizeof(struct btrfs_root_ref) from
+the item size and copies that many bytes into the 256-byte subvolume name
+field.  A crafted ROOT_BACKREF item can therefore trigger a kernel heap
+out-of-bounds write.
 
-btrfs restore -v -m -x -i /dev/sdb3 
-/mnt/4/hermes-var-20260610-enospc-vanilla/restored_var/
+Validate root refs in the tree checker before other Btrfs code consumes
+them.  Reject items that are too small for the fixed header, names larger
+than BTRFS_NAME_LEN, and item sizes that do not exactly match
+sizeof(struct btrfs_root_ref) plus the embedded name length.
 
-Skipping existing file 
-/mnt/4/hermes-var-20260610-enospc-vanilla/restored_var/@var/backups/group.bak
-If you wish to overwrite use -o
-ERROR: zstd frame incomplete
-ERROR: copying data for 
-/mnt/4/hermes-var-20260610-enospc-vanilla/restored_var/@var/backups/dpkg.arch.5.gz 
-failed
-ERROR: zstd frame incomplete
-(...)
+Fixes: 23d0b79dfaed ("btrfs: Add unprivileged version of ino_lookup ioctl")
+Fixes: b64ec075bded ("btrfs: Add unprivileged ioctl which returns subvolume information")
+Cc: stable@vger.kernel.org
+Assisted-by: Codex:gpt-5.5
+Signed-off-by: Kyle Zeng <kylebot@openai.com>
+---
+ fs/btrfs/tree-checker.c | 38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
-Alban
-
-Le 10/06/2026 à 23:05, Alban Browaeys a écrit :
-> Le 09/06/2026 à 17:25, Chris Murphy a écrit :
->> Try:
->>
->> mount -o skip_balance,nospace_cache,enospc_debug /dev/sdb3 /var
->> btrfs balance start -dlimit=1 /var
->
->
-> Thanks for the suggestions. Unfortunately, the bypass did not work.
->
-> # mount -o skip_balance,nospace_cache,enospc_debug /dev/sdb3 /var
-> [117052.507168] BTRFS: device label SSDHOME devid 1 transid 44655875 
-> /dev/sdb3 (8:19) scanned by mount (2004)
-> [117052.526475] BTRFS info (device sdb3): first mount of filesystem 
-> 13af326c-631f-482b-9c34-b59b4f100608
-> [117052.536146] BTRFS info (device sdb3): using crc32c checksum algorithm
-> [117052.543125] BTRFS error (device sdb3): cannot disable free-space-tree
-> [117052.550097] BTRFS error (device sdb3): open_ctree failed: -22
-> mount: /var: wrong fs type, bad option, bad superblock on /dev/sdb3, 
-> missing codepage or helper program, or other error.
->        dmesg(1) may have more information after failed mount system call.
->
->
-> I believe this issue is blocking me:
->
-> [117052.543125] BTRFS error (device sdb3): cannot disable free-space-tree
->
-> So I tried with enospc_debug without nospace_cache, to get debug infos:
->
-> # mount -o skip_balance,enospc_debug /dev/sdb3 /var
-> [117261.590047] BTRFS: device label SSDHOME devid 1 transid 44655875 
-> /dev/sdb3 (8:19) scanned by mount (2008)
-> [117261.612863] BTRFS info (device sdb3): first mount of filesystem 
-> 13af326c-631f-482b-9c34-b59b4f100608
-> [117261.622548] BTRFS info (device sdb3): using crc32c checksum algorithm
-> [117261.662415] BTRFS info (device sdb3): left=0, need=393216, flags=36
-> [117261.669328] BTRFS info (device sdb3): space_info SYSTEM (sub-group 
-> id 0) has 0 free, is not full
-> [117261.678792] BTRFS info (device sdb3): space_info total=33554432, 
-> used=16384, pinned=0, reserved=0, may_use=0, readonly=33538048 
-> zone_unusable=0
-> [117261.692344] BTRFS info (device sdb3): global_block_rsv: size 
-> 190382080 reserved 190382080
-> [117261.701131] BTRFS info (device sdb3): trans_block_rsv: size 0 
-> reserved 0
-> [117261.708349] BTRFS info (device sdb3): chunk_block_rsv: size 0 
-> reserved 0
-> [117261.715571] BTRFS info (device sdb3): remap_block_rsv: size 0 
-> reserved 0
-> [117261.722782] BTRFS info (device sdb3): delayed_block_rsv: size 0 
-> reserved 0
-> [117261.730154] BTRFS info (device sdb3): delayed_refs_rsv: size 0 
-> reserved 0
-> [117261.737462] BTRFS error (device sdb3): allocation failed flags 36, 
-> wanted 16384 tree-log 0, relocation: 0
-> [117261.747497] BTRFS info (device sdb3): space_info METADATA 
-> (sub-group id 0) has -190382080 free, is full
-> [117261.757371] BTRFS info (device sdb3): space_info total=3221225472, 
-> used=2142470144, pinned=0, reserved=0, may_use=190382080, 
-> readonly=1078755328 zone_unusable=0
-> [117261.772172] BTRFS info (device sdb3): global_block_rsv: size 
-> 190382080 reserved 190365696
-> [117261.780844] BTRFS info (device sdb3): trans_block_rsv: size 0 
-> reserved 0
-> [117261.787995] BTRFS info (device sdb3): chunk_block_rsv: size 0 
-> reserved 0
-> [117261.795127] BTRFS info (device sdb3): remap_block_rsv: size 0 
-> reserved 0
-> [117261.802251] BTRFS info (device sdb3): delayed_block_rsv: size 0 
-> reserved 0
-> [117261.809551] BTRFS info (device sdb3): delayed_refs_rsv: size 0 
-> reserved 0
-> [117261.816785] BTRFS info (device sdb3): block group 55856594944 has 
-> 1073741824 bytes, 1007976448 used 0 pinned 0 reserved 0 delalloc 0 
-> super 0 zone_unusable (65765376
->  bytes available) [readonly]
-> [117261.834327] BTRFS info (device sdb3): block group has cluster?: no
-> [117261.840947] BTRFS info (device sdb3): 0 free space entries at or 
-> bigger than 16384 bytes
-> [117261.849500] BTRFS info (device sdb3): block group 101368987648 has 
-> 1073741824 bytes, 500957184 used 0 pinned 0 reserved 0 delalloc 0 
-> super 0 zone_unusable (57278464
-> 0 bytes available) [readonly]
-> [117261.867163] BTRFS info (device sdb3): block group has cluster?: no
-> [117261.873784] BTRFS info (device sdb3): 0 free space entries at or 
-> bigger than 16384 bytes [117261.882313] BTRFS info (device sdb3): 
-> block group 102442729472 has 1073741824 bytes, 633536512 used 0 pinned 
-> 0 reserved 0 delalloc 0 super 0 zone_unusable (44020531
-> 2 bytes available) [readonly]
-> [117261.899994] BTRFS info (device sdb3): block group has cluster?: no
-> [117261.906630] BTRFS info (device sdb3): 0 free space entries at or 
-> bigger than 16384 bytes
-> [117261.915176] BTRFS info (device sdb3): 1078755328 bytes available 
-> across all block groups
-> [117261.923750] BTRFS warning (device sdb3): Skipping commit of 
-> aborted transaction.
-> [117261.931608] ------------[ cut here ]------------
-> [117261.936687] BTRFS: Transaction aborted (error -28)
-> [117261.941950] WARNING: fs/btrfs/transaction.c:2060 at 
-> btrfs_commit_transaction+0xaaa/0xe20 [btrfs], CPU#6: mount/2008
-> [117261.952905] Modules linked in: ntfs3 btrfs libblake2b raid10 
-> raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor 
-> raid6_pq raid1 raid0 md_mod auto
-> fs4 hid_logitech_hidpp hid_logitech_dj hid_generic usbhid hid sr_mod 
-> cdrom uas usb_storage i915 drm_buddy ttm i2c_algo_bit 
-> drm_display_helper cec sd_mod rc_core drm_cli
-> ent_lib drm_kms_helper iTCO_wdt xhci_pci ahci intel_pmc_bxt drm 
-> libahci watchdog xhci_hcd firewire_ohci libata firewire_core r8169 
-> video realtek crc_itu_t usbcore scsi_
-> mod fan i2c_i801 wmi button usb_common i2c_smbus scsi_common efivarfs
-> [117262.004021] CPU: 6 UID: 0 PID: 2008 Comm: mount Tainted: G        
-> W           7.0.10+deb14-amd64 #1 PREEMPT(lazy)  Debian 7.0.10-1
-> [117262.016343] Tainted: [W]=WARN
-> [117262.019853] Hardware name: LENOVO 10M8S14C42/3102, BIOS M16KT71A 
-> 09/14/2023
-> [117262.027348] RIP: 0010:btrfs_commit_transaction+0xaac/0xe20 [btrfs]
-> [117262.034117] Code: ff 48 8b 7c 24 08 31 c9 48 8d b7 48 01 00 00 e8 
-> 9a 7c 0b 00 48 c7 43 18 00 00 00 00 e9 73 fe ff ff 48 8d 3d 66 fd 34 
-> 00 89 ee <67> 48 0f b9 3a e9
-> f8 fe ff ff 49 8b bc 24 48 03 00 00 be 02 00 00
-> [117262.053426] RSP: 0018:ffffce9fc8b57418 EFLAGS: 00010292
-> [117262.059233] RAX: 0000000000000002 RBX: ffff8ac4d181a738 RCX: 
-> 0000000000000003
-> [117262.066946] RDX: 0000000002040001 RSI: 00000000ffffffe4 RDI: 
-> ffffffffc1028080
-> [117262.074658] RBP: 00000000ffffffe4 R08: 0000000000000000 R09: 
-> ffffce9fc8b57200
-> [117262.082364] R10: ffff8acbe23fff90 R11: 00000000fff7ffff R12: 
-> ffff8ac545885000
-> [117262.090075] R13: ffff8ac4c242ea00 R14: ffff8ac5458854c0 R15: 
-> ffff8ac4cff01b80
-> [117262.097779] FS:  00007f22c28cf940(0000) GS:ffff8acc3a4fc000(0000) 
-> knlGS:0000000000000000
-> [117262.106429] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [117262.112740] CR2: 00007f22c2cdfdd0 CR3: 00000001867ac001 CR4: 
-> 00000000003706f0
-> [117262.120434] Call Trace:
-> [117262.123451]  <TASK>
-> [117262.126121]  ? start_transaction+0x228/0x880 [btrfs]
-> [117262.131676]  flush_space+0x3c3/0x5a0 [btrfs]
-> [117262.136574]  ? btrfs_reduce_alloc_profile+0x5a/0x1d0 [btrfs]
-> [117262.142855]  ? calc_available_free_space.isra.0+0x70/0xc0 [btrfs]
-> [117262.149597]  priority_reclaim_metadata_space+0x96/0x130 [btrfs]
-> [117262.156132]  handle_reserve_ticket+0x5b/0x290 [btrfs]
-> [117262.161800]  ? btrfs_reduce_alloc_profile+0x5a/0x1d0 [btrfs]
-> [117262.168076]  reserve_bytes+0x268/0x4c0 [btrfs] [117262.173127]  
-> btrfs_reserve_metadata_bytes+0x1a/0xe0 [btrfs]
-> [117262.179306]  btrfs_block_rsv_refill+0x60/0x90 [btrfs]
-> [117262.184965]  evict_refill_and_join+0x47/0xe0 [btrfs]
-> [117262.190531]  btrfs_evict_inode+0x332/0x400 [btrfs]
-> [117262.195922]  evict+0xfd/0x270
-> [117262.199441]  btrfs_orphan_cleanup+0x21f/0x390 [btrfs]
-> [117262.205085]  btrfs_start_pre_rw_mount+0x2a0/0x6c0 [btrfs]
-> [117262.211071]  open_ctree+0x12fb/0x1730 [btrfs]
-> [117262.216028]  btrfs_get_tree.cold+0xb/0xb6 [btrfs]
-> [117262.221324]  ? security_inode_permission+0x4a/0x110
-> [117262.226747]  vfs_get_tree+0x29/0xd0
-> [117262.230776]  vfs_cmd_create+0x57/0xd0
-> [117262.234947]  __do_sys_fsconfig+0x2fc/0x5e0
-> [117262.239581]  do_syscall_64+0xcd/0x15f0
-> [117262.243873]  ? __fs_parse+0x68/0x1c0
-> [117262.247989]  ? aa_file_perm+0x18a/0x550
-> [117262.252368]  ? btrfs_parse_param+0x4f/0x960 [btrfs]
-> [117262.257818]  ? apparmor_file_permission+0x44/0xb0
-> [117262.263052]  ? fscontext_read+0x171/0x190
-> [117262.267594]  ? rw_verify_area+0x56/0x180
-> [117262.272039]  ? vfs_read+0xbf/0x390
-> [117262.275964]  ? __fs_parse+0x68/0x1c0
-> [117262.280063]  ? aa_file_perm+0x18a/0x550
-> [117262.284422]  ? btrfs_parse_param+0x4f/0x960 [btrfs]
-> [117262.289858]  ? apparmor_file_permission+0x44/0xb0
-> [117262.295082]  ? fscontext_read+0x171/0x190
-> [117262.299605]  ? rw_verify_area+0x56/0x180
-> [117262.304036]  ? vfs_read+0xbf/0x390
-> [117262.307943]  ? do_syscall_64+0x10a/0x15f0
-> [117262.312451]  ? from_kgid_munged+0x17/0x30
-> [117262.316955]  ? __do_sys_getgid+0x27/0x30
-> [117262.321369]  ? do_syscall_64+0x10a/0x15f0
-> [117262.325856]  ? from_kgid_munged+0x17/0x30
-> [117262.330340]  ? ksys_read+0x73/0xf0
-> [117262.334213]  ? do_syscall_64+0x10a/0x15f0
-> [117262.338694]  ? irqentry_exit+0x78/0x680
-> [117262.343000]  ? exc_page_fault+0x82/0x1d0
-> [117262.347384]  ? __irq_exit_rcu+0x3d/0xe0 [117262.351683]  
-> entry_SYSCALL_64_after_hwframe+0x76/0x7e
-> [117262.357197] RIP: 0033:0x7f22c2d0eb4a
-> [117262.361218] Code: 73 01 c3 48 8b 0d c6 32 0d 00 f7 d8 64 89 01 48 
-> 83 c8 ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 49 89 ca b8 af 01 00 
-> 00 0f 05 <48> 3d 01 f0 ff ff
-> 73 01 c3 48 8b 0d 96 32 0d 00 f7 d8 64 89 01 48
-> [117262.380431] RSP: 002b:00007ffd5d547f68 EFLAGS: 00000246 ORIG_RAX: 
-> 00000000000001af
-> [117262.388464] RAX: ffffffffffffffda RBX: 0000557471e4da50 RCX: 
-> 00007f22c2d0eb4a
-> [117262.396057] RDX: 0000000000000000 RSI: 0000000000000006 RDI: 
-> 0000000000000003
-> [117262.403650] RBP: 0000000000000003 R08: 0000000000000000 R09: 
-> 0000000000000000
-> [117262.411240] R10: 0000000000000000 R11: 0000000000000246 R12: 
-> 0000557471e4ec40
-> [117262.418831] R13: 00007f22c2ea127c R14: 00007f22c2e9f460 R15: 
-> 00007f22c28cf7f0
-> [117262.426410]  </TASK>
-> [117262.429024] ---[ end trace 0000000000000000 ]---
-> [117262.434074] BTRFS info (device sdb3 state A): dumping space info:
-> [117262.440595] BTRFS info (device sdb3 state A): space_info DATA 
-> (sub-group id 0) has 17422925824 free, is not full
-> [117262.451184] BTRFS info (device sdb3 state A): space_info 
-> total=70262980608, used=52839989248, pinned=0, reserved=0, may_use=0, 
-> readonly=65536 zone_unusable=0
-> [117262.465659] BTRFS info (device sdb3 state A): space_info METADATA 
-> (sub-group id 0) has -190382080 free, is full
-> [117262.476171] BTRFS info (device sdb3 state A): space_info 
-> total=3221225472, used=2142470144, pinned=0, reserved=0, 
-> may_use=190382080, readonly=1078755328 zone_unusable=0
-> [117262.491598] BTRFS info (device sdb3 state A): space_info SYSTEM 
-> (sub-group id 0) has 0 free, is not full
-> [117262.501477] BTRFS info (device sdb3 state A): space_info 
-> total=33554432, used=16384, pinned=0, reserved=0, may_use=0, 
-> readonly=33538048 zone_unusable=0
-> [117262.515439] BTRFS info (device sdb3 state A): global_block_rsv: 
-> size 190382080 reserved 190382080
-> [117262.524731] BTRFS info (device sdb3 state A): trans_block_rsv: 
-> size 0 reserved 0
-> [117262.532538] BTRFS info (device sdb3 state A): chunk_block_rsv: 
-> size 0 reserved 0
-> [117262.540337] BTRFS info (device sdb3 state A): remap_block_rsv: 
-> size 0 reserved 0
-> [117262.548136] BTRFS info (device sdb3 state A): delayed_block_rsv: 
-> size 0 reserved 0
-> [117262.556110] BTRFS info (device sdb3 state A): delayed_refs_rsv: 
-> size 0 reserved 0
-> [117262.563998] BTRFS: error (device sdb3 state A) in 
-> cleanup_transaction:2060: errno=-28 No space left
-> [117262.573453] BTRFS info (device sdb3 state EA): space_info METADATA 
-> (sub-group id 0) has -190382080 free, is full
-> [117262.584033] BTRFS info (device sdb3 state EA): space_info 
-> total=3221225472, used=2142470144, pinned=0, reserved=0, 
-> may_use=190382080, readonly=1078755328 zone_unusable=0
-> [117262.599563] BTRFS info (device sdb3 state EA): global_block_rsv: 
-> size 190382080 reserved 190382080
-> [117262.608943] BTRFS info (device sdb3 state EA): trans_block_rsv: 
-> size 0 reserved 0
-> [117262.616846] BTRFS info (device sdb3 state EA): chunk_block_rsv: 
-> size 0 reserved 0
-> [117262.624749] BTRFS info (device sdb3 state EA): remap_block_rsv: 
-> size 0 reserved 0
-> [117262.632643] BTRFS info (device sdb3 state EA): delayed_block_rsv: 
-> size 0 reserved 0
-> [117262.640715] BTRFS info (device sdb3 state EA): delayed_refs_rsv: 
-> size 0 reserved 0
-> [117262.648696] BTRFS info (device sdb3 state EA): space_info METADATA 
-> (sub-group id 0) has -190382080 free, is full
-> [117262.659312] BTRFS info (device sdb3 state EA): space_info 
-> total=3221225472, used=2142470144, pinned=0, reserved=0, 
-> may_use=190382080, readonly=1078755328 zone_unusable=0
-> [117262.674875] BTRFS info (device sdb3 state EA): global_block_rsv: 
-> size 190382080 reserved 190382080
-> [117262.684287] BTRFS info (device sdb3 state EA): trans_block_rsv: 
-> size 0 reserved 0
-> [117262.692225] BTRFS info (device sdb3 state EA): chunk_block_rsv: 
-> size 0 reserved 0
-> [117262.700155] BTRFS info (device sdb3 state EA): remap_block_rsv: 
-> size 0 reserved 0
-> [117262.708086] BTRFS info (device sdb3 state EA): delayed_block_rsv: 
-> size 0 reserved 0
-> [117262.716191] BTRFS info (device sdb3 state EA): delayed_refs_rsv: 
-> size 0 reserved 0
-> [117262.724260] BTRFS warning (device sdb3 state EA): could not 
-> allocate space for delete; will truncate on mount
-> [117262.734622] BTRFS error (device sdb3 state EA): Error removing 
-> orphan entry, stopping orphan cleanup
-> [117262.744220] BTRFS error (device sdb3 state EA): could not do 
-> orphan cleanup -28
-> [117262.752021] BTRFS error (device sdb3 state EA): commit super block 
-> returned -30
-> [117262.760739] BTRFS error (device sdb3 state EA): open_ctree failed: 
-> -28
-> mount: /var: fsconfig() failed: No space left on device.
->        dmesg(1) may have more information after failed mount system call.
->
->
->
->
->> If the first command works but the second command does not, you could 
->> insert a `btrfs device add` command to add a partition. I'm not such 
->> a big fan of adding USB sticks or zram devices because if anything 
->> goes wrong, the file system ends up broken.
->>
->> This is a bit of a heavy hammer to fix this problem but it might 
->> actually be faster than troubleshooting Btrfs enospc:
->
-> I am all for troubleshooting this enospc issue because it is the first 
-> time I cannot even add a device to fix the enospc... in fact an hour 
-> before this issue I had an enospc issue this time with the root 
-> partition that had very few space left, and adding a device worked 
-> well and it was pretty easy to fix. But here I have gigabytes of 
-> unused data and metadata, I am puzzled.
->
-> I was switching my SSD btrfs partitions (I plan to merge them all but 
-> for historical reason they are split as separate btrfs partitions 
-> instead of subvolumes of a single btrfs partition) from single to DUP, 
-> the new default.
->
->
->
->  I believe the main issue here is that the conversion attempted to use 
-> until the last megabyte of metadata before errorring out, preventing 
-> any simple rescue operation afterwards, and even preventing from 
-> balancing data to free chunks for metadata.
->
-> It would have been fine for the conversion to error out and let me 
-> balance data then resume the conversion. The main issue is that the 
-> conversion used so much metadata space that I cannot even mount the 
-> btrfs partition to balance its data space.
->
-> Maybe the metadata conversion should guard/ straight error out when 
-> there is not enough space in metadata (here 3GB to duplicate 1,59GB 
-> does not fit) and there is no way to get a new free chunk for metadata 
-> and tell to free chunks first ?
->
->
->> It should still be possible to make the troubled Btrfs a read-only 
->> seed device using btrfs-tune; then mount it ro; use `btrfs dev add` 
->> using a device that's equal to or bigger; remount rw; then `btrfs dev 
->> rem` the 1st device, i.e. the ro seed. This will replicate/clone the 
->> file system from device 1 to device 2. And it'll take a while. But in 
->> the end you'll have a balanced file system on device 2.
->>
->> It isn't strictly necessary for device 2 to be equal to or bigger. It 
->> is possible to add a smaller device, but before you remove the 1st 
->> device, you wlil need to delete files. The bigger files you choose to 
->> delete, the fewer you will need to delete to get to the 
->> underprovisioned 2nd device size. Then remove the 1st device. Now 
->> only the files that have not been deleted will have extents 
->> replicated to the 2nd device.
->>
->> At the very least the seed-device is not being modified and shouldn't 
->> get any worse than it is.
->> Chris Murphy
->
->
-> I don't know yet how to proceed with such a read-only seed option, I 
-> will look into it. But is there other flags or tune I could do that 
-> could let me cancel the pause operation, the balance the data space, 
-> then retry the conversion ?
->
->
-> Alban
->
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 1f15d0793a9c..fb072045ca18 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -1915,6 +1915,40 @@ static int check_inode_extref(struct extent_buffer *leaf,
+ 	return 0;
+ }
+ 
++static int check_root_ref(struct extent_buffer *leaf, int slot)
++{
++	struct btrfs_root_ref *rref;
++	const u32 item_size = btrfs_item_size(leaf, slot);
++	u32 expect_size;
++	u16 name_len;
++
++	if (unlikely(item_size < sizeof(*rref))) {
++		generic_err(leaf, slot,
++			    "invalid root ref item size, have %u expect >= %zu",
++			    item_size, sizeof(*rref));
++		return -EUCLEAN;
++	}
++
++	rref = btrfs_item_ptr(leaf, slot, struct btrfs_root_ref);
++	name_len = btrfs_root_ref_name_len(leaf, rref);
++	if (unlikely(name_len > BTRFS_NAME_LEN)) {
++		generic_err(leaf, slot,
++			    "root ref name too long, have %u max %u",
++			    name_len, BTRFS_NAME_LEN);
++		return -EUCLEAN;
++	}
++
++	expect_size = sizeof(*rref) + name_len;
++	if (unlikely(item_size != expect_size)) {
++		generic_err(leaf, slot,
++			    "invalid root ref item size, have %u expect %u",
++			    item_size, expect_size);
++		return -EUCLEAN;
++	}
++
++	return 0;
++}
++
+ static int check_raid_stripe_extent(const struct extent_buffer *leaf,
+ 				    const struct btrfs_key *key, int slot)
+ {
+@@ -2226,6 +2260,10 @@ static enum btrfs_tree_block_status check_leaf_item(struct extent_buffer *leaf,
+ 	case BTRFS_ROOT_ITEM_KEY:
+ 		ret = check_root_item(leaf, key, slot);
+ 		break;
++	case BTRFS_ROOT_REF_KEY:
++	case BTRFS_ROOT_BACKREF_KEY:
++		ret = check_root_ref(leaf, slot);
++		break;
+ 	case BTRFS_EXTENT_ITEM_KEY:
+ 	case BTRFS_METADATA_ITEM_KEY:
+ 		ret = check_extent_item(leaf, key, slot, prev_key);
+-- 
+2.54.0

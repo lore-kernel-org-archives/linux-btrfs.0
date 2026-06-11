@@ -1,138 +1,338 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ED0943EDE61
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 13:58:37 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AC1FA3F8EBE
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 14:15:49 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781186318; cv=none; b=gc9lEofwPVXT+JQW/WhPnlb68rZ11OjBORurqAi2dAYtTS2cVJRP8nXnitfmcJzaaWTNiqF1We/Slf+z7WZUiFFvsDOX2bDhSHWJWG0uNcjj42LqQ9nzo5PGhSQQM71LDj2SeH0oR+STajVuChZ+tYoxKV6CBxCLx3nrA945qpw=
+	t=1781187351; cv=none; b=Eg6Coc95gWOZIH7Gb0cllNyPsxOSF1rwsbnMJr7huVd7AuPriORJ9Ej52tMhs+OpYEKOK1Ff4TldThppxXHk3RXlPGFW+lvTy1RDL3gog24+kD6BUNo3p4fZe/brNO/NxcEQuUVdRjP5f9A//7trAsQ4gojW8q+x/bRzUiBoVzU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781186318; c=relaxed/simple;
-	bh=xIJdNAINqMHY3wozYjPB/A3uLvZ4O8AYKbA3/Mtoyjo=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=lmPo+TnDWX+zFzYKapD5n+Nbtb1ubEcwYcaC1Lid2bMGsuVynTdBxqzrlG19N/GwynXfwP5pLDhCZWrYN34GaN+22Jvjx2rxWYLa8rir4ft5q+FJ3E2nupZO60/SM1FG0+E02/ecc8kSyE28eBgYCxRGaWBCSbrBGLP/bs5o5yI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LUxdJjvy; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1781187351; c=relaxed/simple;
+	bh=v5VnbzSV76OhuHlhdqG3F5tlL5+F533vl02NBIILfPM=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=Cn1t6+dJ4vA7wuKLFm9Q9Y1283Elnz8vi861+ZX18dYftn+kCcyx8TVg1SO9dancKSzpmhmsk9fBldQ6aOrMQCPAO8u7m6Evmx6bKBH1SKs1bCHas7TxI9aFrc+Oue/BgOIcVkg0uDowbVsRIsEsWp6aoCltUPPWaVdFmn6uaKk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=WiyHqGIQ; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LUxdJjvy"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C6E691F0089E
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 13:58:37 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="WiyHqGIQ"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9CAE71F00893
+	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 14:15:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781186317;
-	bh=qt0rAO3O4OzD7kus6DSawT6EwGSm1ycFDJui1h2LqMM=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=LUxdJjvyIcJRPgXd/+MNJN8uGfhJrjnibJ6v37ZBFA36E16aoiH97y+qCSQQDziFi
-	 IQwCrEE9RyTqnm+CV0OHLrkLelC+Z5+Js3VqyXqB7YQnjPIDujdjw/jxdYMwKAVfpb
-	 OCklcyjRL7WeKtDexn5zKEWoPpxpsZYpkJj+nyKRLgN9eKUUsFgVNhhj3xMkg790yd
-	 txHVvGD+QdQSmPwK6vRTnONx6Q8PLer2EeEkiMjZ/n1hljE/NCDz4sIwK1IY61ACRF
-	 8xBGM/QRtfH8EgGcYEXkQO6ZBZcAAaXyS7lRduxctIAIQf4wCUy/RA1PDyTHIMrTJU
-	 BJ4EDxe5Qer3g==
-Received: by mail-ej1-f49.google.com with SMTP id a640c23a62f3a-bf0170c80f7so1379644166b.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2026 06:58:37 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AFNElJ+Kg3iuvv4unR3fHD2LLry9Vfz+8yZMJYpLytKOCrZdvLtIDrdffpBB6UA1HXnnOEi9KuEDZujNpWlE3g==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yy57Vz4ltoDsixl5TKzocbq6kSrQde0MgQ42MYi4pAcsnSAY8lM
-	e3K1D5WzO0OhZw53RBXLR4cRsO5l4bXjfezFz8KoOXQpHP/eqSiqiciljXe7Kkox+fT5FSwlh4Y
-	b44IunrOKXFlNMP2dNwurobmI9L3jzdA=
-X-Received: by 2002:a17:907:b09:b0:bed:a7d7:82c8 with SMTP id
- a640c23a62f3a-bfc889552fcmr97629666b.37.1781186316400; Thu, 11 Jun 2026
- 06:58:36 -0700 (PDT)
+	s=k20260515; t=1781187349;
+	bh=PruCJdk81kY2T8tGJ/P1O+ktGMXo2LPjhTCW9TdWBbI=;
+	h=From:To:Subject:Date:In-Reply-To:References;
+	b=WiyHqGIQfoD+4OxPHRJzqzmqeeTHEfbfstQpnSQ5ruHCt+tO4kVtj7wbCzApYTQGn
+	 CxkpQhV5sAQh9XdNbqqF6XsPJxMYOLVL8eL+RYIxUaUiSXKJ0r1KwujZ0CZia9QbW/
+	 IsJaCci4eRGWz28nAsv+jttC0ncTo2LbnlclxzDgw1GTP4F4YW5Vo07mr2pu3BTIpj
+	 QQu3zXfrwOKfcn0qNxo62eWHk5KRIc+HLGT9L1YxkfVIZuZPvzxhYUcpxzCxPXOAeJ
+	 tES7U/ulIG251BpJeAiHgzS37tmOwECMg1DjSG+BYKYVh/gd4sk68NF2Vedn63zIno
+	 0OZ7JVXpGvQKg==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3] btrfs: fix use-after-free on reloc root after error in insert_dirty_subvol()
+Date: Thu, 11 Jun 2026 15:15:45 +0100
+Message-ID: <11578e20664c94bea3b8f4c00f40976814c00da8.1781187150.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
+In-Reply-To: <910f7fff6c9a588271afa591b1c533d92246ca85.1781021231.git.fdmanana@suse.com>
+References: <910f7fff6c9a588271afa591b1c533d92246ca85.1781021231.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260611132450.971236-1-runyu.xiao@seu.edu.cn>
-In-Reply-To: <20260611132450.971236-1-runyu.xiao@seu.edu.cn>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 11 Jun 2026 14:57:58 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H46-8+f9MGbQYpB8k7HTyzA6Fy53_TZ5UStT00buPqHFA@mail.gmail.com>
-X-Gm-Features: AVVi8Cf6TYXZDXzFEtHvShl-L8W5UnyyVCpjWZTo4fEuSHH9NhcD7cY_G45ryIc
-Message-ID: <CAL3q7H46-8+f9MGbQYpB8k7HTyzA6Fy53_TZ5UStT00buPqHFA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: zoned: protect sb_write_pointer() reads with
- invalidate lock
-To: Runyu Xiao <runyu.xiao@seu.edu.cn>
-Cc: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	naohiro.aota@wdc.com, linux-kernel@vger.kernel.org, jianhao.xu@seu.edu.cn, 
-	stable@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Thu, Jun 11, 2026 at 2:33=E2=80=AFPM Runyu Xiao <runyu.xiao@seu.edu.cn> =
-wrote:
->
-> When both zoned superblock log zones are full, sb_write_pointer() reads
-> the last superblock page from each zone with read_cache_page_gfp() to
-> compare generations. Those reads go through bdev->bd_mapping without
-> filemap_invalidate_lock(), even though the same zoned discovery flow
-> later reaches btrfs_read_disk_super(), whose final read already takes
-> filemap_invalidate_lock(mapping).
->
-> A running system can reach this while mounting or scanning a zoned
-> filesystem whose superblock log has both zones full. In that state,
-> sb_write_pointer() performs two unprotected page-cache reads before
-> btrfs_read_disk_super() does its later protected final read.
->
-> This leaves the early discovery reads outside the same synchronization
-> domain used by set_blocksize() when it changes the block-device mapping
-> geometry. As a result, read_cache_page_gfp() can race a concurrent
-> block-size/layout update on the same mapping and see inconsistent
-> geometry across folio allocation and mapping state.
->
-> This issue was found by our static analysis tool while scanning
-> read_cache_page_gfp(bdev->bd_mapping, ...) sites for missing
-> filemap_invalidate_lock() coverage, and then manually audited on Linux
-> v6.18.21. The same synchronization requirement is already enforced for
-> the final read in btrfs_read_disk_super().
->
-> A focused QEMU KCSAN test then raced the zoned superblock discovery
-> path against a set_blocksize-style mapping update on the same
-> bdev->bd_mapping. It reported a race between
-> blkbszset_update_mapping() and read_cache_page_gfp(), with the read
-> side reaching:
->
->   sb_write_pointer()
->   sb_log_location()
->   btrfs_sb_log_location_bdev()
->   btrfs_read_disk_super()
->
-> Add filemap_invalidate_lock()/unlock() around the two
-> read_cache_page_gfp() calls in sb_write_pointer() so the zoned
-> superblock discovery path uses the same invalidate-lock contract as the
-> final read in btrfs_read_disk_super().
->
-> Fixes: 12659251ca5d ("btrfs: implement log-structured superblock for ZONE=
-D mode")
-> Cc: stable@vger.kernel.org
-> Signed-off-by: Runyu Xiao <runyu.xiao@seu.edu.cn>
+From: Filipe Manana <fdmanana@suse.com>
 
-There's already a patch for this, and it's in linux-next:
+If during relocation we fail in insert_dirty_subvol() because
+btrfs_update_reloc_root() returned an error, we will leave a root's
+reloc_root field pointing to a reloc root that was freed instead of NULL,
+resulting later in a use-after-free, or double free attempt during
+unmount.
 
-https://lore.kernel.org/linux-btrfs/20260521122945.524890-1-lkangn.kernel@g=
-mail.com/
+The sequence of steps is this:
 
+1) During relocation the call to btrfs_update_reloc_root() in
+   insert_dirty_subvol() fails, so insert_dirty_subvol() returns the
+   error to merge_reloc_root() without adding the root to the list
+   rc->dirty_subvol_roots;
 
-> ---
->  fs/btrfs/zoned.c | 2 ++
->  1 file changed, 2 insertions(+)
->
-> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-> index e14a4234954b..edc797a43fb5 100644
-> --- a/fs/btrfs/zoned.c
-> +++ b/fs/btrfs/zoned.c
-> @@ -130,8 +130,10 @@ static int sb_write_pointer(struct block_device *bde=
-v, struct blk_zone *zones,
->                         u64 bytenr =3D ALIGN_DOWN(zone_end, BTRFS_SUPER_I=
-NFO_SIZE) -
->                                                 BTRFS_SUPER_INFO_SIZE;
->
-> +                       filemap_invalidate_lock(mapping);
->                         page[i] =3D read_cache_page_gfp(mapping,
->                                         bytenr >> PAGE_SHIFT, GFP_NOFS);
-> +                       filemap_invalidate_unlock(mapping);
->                         if (IS_ERR(page[i])) {
->                                 if (i =3D=3D 1)
->                                         btrfs_release_disk_super(super[0]=
-);
-> --
-> 2.34.1
->
+2) Then merge_reloc_root() aborts the current transaction because
+   insert_dirty_subvol() returned an error;
+
+3) Up the call chain, merge_reloc_roots() gets the error, adds the
+   reloc root for root X to the local reloc_roots list and jumps to the
+   'out' label, where it calls free_reloc_roots() to free all the reloc
+   roots in the local reloc_roots list. This frees the reloc root for
+   root X;
+
+4) We go up the call chain to relocate_block_group() which calls
+   clean_dirty_subvols() to go over dirty roots and set their
+   ->reloc_root field to NULL, but root X is not in the dirty_subvol_roots
+   list, so its ->reloc_root still points to a reloc root;
+
+5) Relocation finishes, with an error and a transaction abort, but the
+   ->reloc_root field for root X still points to the reloc root that was
+   freed in step 3;
+
+6) When unmounting the fs we end up calling:
+
+     btrfs_free_fs_roots()
+        btrfs_drop_and_free_fs_root()
+           --> calls btrfs_put_root() against root X's ->reloc_root
+               which is not NULL and points to the already freed
+               reloc root in step 4 above
+
+  Resulting in a use-after-free to a double free attempt.
+
+Syzbot reported this with the following dmesg/syslog:
+
+   [  106.004389][ T5339] BTRFS error (device loop0 state A): Transaction aborted (error -5)
+   [  106.014266][ T5339] BTRFS: error (device loop0 state A) in merge_reloc_root:1655: errno=-5 IO failure
+   [  106.021891][ T1061] BTRFS error (device loop0 state A): error while writing out transaction: -5
+   [  106.026964][ T1061] BTRFS warning (device loop0 state A): Skipping commit of aborted transaction.
+   [  106.033807][ T5340] BTRFS error (device loop0 state A): bdev /dev/loop0 errs: wr 3, rd 0, flush 0, corrupt 0, gen 0
+   [  106.039265][ T1061] BTRFS: error (device loop0 state A) in cleanup_transaction:2067: errno=-5 IO failure
+   [  106.044382][ T5339] BTRFS info (device loop0 state EA): forced readonly
+   [  106.074329][ T5339] BTRFS: error (device loop0 state EA) in merge_reloc_roots:1887: errno=-5 IO failure
+   [  106.081004][ T5356] BTRFS info (device loop0 state EA): scrub: started on devid 1
+   [  106.085611][ T5339] BTRFS info (device loop0 state EA): balance: ended with status: -30
+   [  106.089517][ T5356] BTRFS info (device loop0 state EA): scrub: not finished on devid 1 with status: -30
+   [  106.662365][ T5338] BTRFS info (device loop0 state EA): last unmount of filesystem 3a375e4e-b156-4d76-a2ad-16e198ce1409
+   [  106.682946][ T5338] ==================================================================
+   [  106.686574][ T5338] BUG: KASAN: slab-use-after-free in btrfs_put_root+0x2f/0x250
+   [  106.690090][ T5338] Write of size 4 at addr ffff88803f978630 by task syz.0.0/5338
+   [  106.693173][ T5338]
+   [  106.694279][ T5338] CPU: 0 UID: 0 PID: 5338 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full)
+   [  106.694293][ T5338] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+   [  106.694300][ T5338] Call Trace:
+   [  106.694308][ T5338]  <TASK>
+   [  106.694314][ T5338]  dump_stack_lvl+0xe8/0x150
+   [  106.694331][ T5338]  print_address_description+0x55/0x1e0
+   [  106.694343][ T5338]  ? btrfs_put_root+0x2f/0x250
+   [  106.694358][ T5338]  print_report+0x58/0x70
+   [  106.694368][ T5338]  kasan_report+0x117/0x150
+   [  106.694384][ T5338]  ? btrfs_put_root+0x2f/0x250
+   [  106.694399][ T5338]  kasan_check_range+0x264/0x2c0
+   [  106.694416][ T5338]  btrfs_put_root+0x2f/0x250
+   [  106.694430][ T5338]  btrfs_drop_and_free_fs_root+0x160/0x210
+   [  106.694447][ T5338]  btrfs_free_fs_roots+0x2f9/0x3c0
+   [  106.694464][ T5338]  ? __pfx_btrfs_free_fs_roots+0x10/0x10
+   [  106.694479][ T5338]  ? free_root_pointers+0x5bf/0x5f0
+   [  106.694494][ T5338]  close_ctree+0x798/0x12d0
+   [  106.694511][ T5338]  ? __pfx_close_ctree+0x10/0x10
+   [  106.694526][ T5338]  ? _raw_spin_unlock_irqrestore+0x74/0x80
+   [  106.694599][ T5338]  ? rcu_preempt_deferred_qs_irqrestore+0x906/0xbc0
+   [  106.694620][ T5338]  ? __rcu_read_unlock+0x83/0xe0
+   [  106.694636][ T5338]  ? btrfs_put_super+0x48/0x1c0
+   [  106.694652][ T5338]  ? __pfx_btrfs_put_super+0x10/0x10
+   [  106.694667][ T5338]  generic_shutdown_super+0x13d/0x2d0
+   [  106.694682][ T5338]  kill_anon_super+0x3b/0x70
+   [  106.694695][ T5338]  btrfs_kill_super+0x41/0x50
+   [  106.694710][ T5338]  deactivate_locked_super+0xbc/0x130
+   [  106.694722][ T5338]  cleanup_mnt+0x437/0x4d0
+   [  106.694736][ T5338]  ? _raw_spin_unlock_irq+0x23/0x50
+   [  106.694752][ T5338]  task_work_run+0x1d9/0x270
+   [  106.694769][ T5338]  ? __pfx_task_work_run+0x10/0x10
+   [  106.694784][ T5338]  ? do_raw_spin_unlock+0x4d/0x210
+   [  106.694802][ T5338]  do_exit+0x70f/0x22c0
+   [  106.694817][ T5338]  ? trace_irq_disable+0x3b/0x140
+   [  106.694835][ T5338]  ? __pfx_do_exit+0x10/0x10
+   [  106.694848][ T5338]  ? preempt_schedule_thunk+0x16/0x30
+   [  106.694863][ T5338]  ? preempt_schedule_common+0x82/0xd0
+   [  106.694878][ T5338]  ? preempt_schedule_thunk+0x16/0x30
+   [  106.694892][ T5338]  do_group_exit+0x21b/0x2d0
+   [  106.694906][ T5338]  ? entry_SYSCALL_64_after_hwframe+0x77/0x7f
+   [  106.694918][ T5338]  __x64_sys_exit_group+0x3f/0x40
+   [  106.694932][ T5338]  x64_sys_call+0x221a/0x2240
+   [  106.694944][ T5338]  do_syscall_64+0x174/0x580
+   [  106.694954][ T5338]  ? clear_bhb_loop+0x40/0x90
+   [  106.694967][ T5338]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+   [  106.694978][ T5338] RIP: 0033:0x7f958ef9ce59
+   [  106.694988][ T5338] Code: Unable to access opcode bytes at 0x7f958ef9ce2f.
+   [  106.694994][ T5338] RSP: 002b:00007fffd4058318 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+   [  106.695008][ T5338] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f958ef9ce59
+   [  106.695015][ T5338] RDX: 00007f958c3f8000 RSI: 0000000000000000 RDI: 0000000000000000
+   [  106.695022][ T5338] RBP: 0000000000000003 R08: 0000000000000000 R09: 00007f958f1e73e0
+   [  106.695028][ T5338] R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+   [  106.695034][ T5338] R13: 00007f958f1e73e0 R14: 0000000000000003 R15: 00007fffd40583d0
+   [  106.695046][ T5338]  </TASK>
+   [  106.695050][ T5338]
+   [  106.821635][ T5338] Allocated by task 1061:
+   [  106.823446][ T5338]  kasan_save_track+0x3e/0x80
+   [  106.825498][ T5338]  __kasan_kmalloc+0x93/0xb0
+   [  106.827381][ T5338]  __kmalloc_cache_noprof+0x31c/0x660
+   [  106.829525][ T5338]  btrfs_alloc_root+0x75/0x930
+   [  106.831458][ T5338]  read_tree_root_path+0x127/0xb00
+   [  106.833556][ T5338]  btrfs_read_tree_root+0x34/0x60
+   [  106.835553][ T5338]  create_reloc_root+0x6b3/0xcb0
+   [  106.837556][ T5338]  btrfs_init_reloc_root+0x2ec/0x4b0
+   [  106.839557][ T5338]  record_root_in_trans+0x2ab/0x350
+   [  106.841685][ T5338]  btrfs_record_root_in_trans+0x15c/0x180
+   [  106.844237][ T5338]  start_transaction+0x39c/0x1820
+   [  106.846638][ T5338]  btrfs_finish_one_ordered+0x88e/0x2680
+   [  106.849436][ T5338]  btrfs_work_helper+0x37b/0xc20
+   [  106.851549][ T5338]  process_scheduled_works+0xb5d/0x1860
+   [  106.853807][ T5338]  worker_thread+0xa53/0xfc0
+   [  106.855773][ T5338]  kthread+0x389/0x470
+   [  106.857548][ T5338]  ret_from_fork+0x514/0xb70
+   [  106.859493][ T5338]  ret_from_fork_asm+0x1a/0x30
+   [  106.861504][ T5338]
+   [  106.862527][ T5338] Freed by task 5339:
+   [  106.864224][ T5338]  kasan_save_track+0x3e/0x80
+   [  106.866180][ T5338]  kasan_save_free_info+0x46/0x50
+   [  106.868371][ T5338]  __kasan_slab_free+0x5c/0x80
+   [  106.870462][ T5338]  kfree+0x1c5/0x640
+   [  106.872180][ T5338]  __del_reloc_root+0x341/0x3b0
+   [  106.874290][ T5338]  free_reloc_roots+0x5f/0x90
+   [  106.876282][ T5338]  merge_reloc_roots+0x73f/0x8a0
+   [  106.878489][ T5338]  relocate_block_group+0xbcc/0xe70
+   [  106.880742][ T5338]  do_nonremap_reloc+0xa8/0x5b0
+   [  106.882885][ T5338]  btrfs_relocate_block_group+0x7e6/0xc40
+   [  106.885336][ T5338]  btrfs_relocate_chunk+0x115/0x820
+   [  106.887502][ T5338]  __btrfs_balance+0x1db0/0x2ae0
+   [  106.889543][ T5338]  btrfs_balance+0xaf3/0x11b0
+   [  106.891456][ T5338]  btrfs_ioctl_balance+0x3d3/0x610
+   [  106.893672][ T5338]  __se_sys_ioctl+0xfc/0x170
+   [  106.895530][ T5338]  do_syscall_64+0x174/0x580
+   [  106.897518][ T5338]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+   [  106.900101][ T5338]
+   [  106.901123][ T5338] The buggy address belongs to the object at ffff88803f978000
+   [  106.901123][ T5338]  which belongs to the cache kmalloc-4k of size 4096
+   [  106.906907][ T5338] The buggy address is located 1584 bytes inside of
+   [  106.906907][ T5338]  freed 4096-byte region [ffff88803f978000, ffff88803f979000)
+   [  106.912980][ T5338]
+   [  106.914022][ T5338] The buggy address belongs to the physical page:
+   [  106.916716][ T5338] page: refcount:0 mapcount:0 mapping:0000000000000000 index:0x0 pfn:0x3f978
+   [  106.920390][ T5338] head: order:3 mapcount:0 entire_mapcount:0 nr_pages_mapped:0 pincount:0
+   [  106.923834][ T5338] flags: 0x4fff00000000040(head|node=1|zone=1|lastcpupid=0x7ff)
+   [  106.927104][ T5338] page_type: f5(slab)
+   [  106.928898][ T5338] raw: 04fff00000000040 ffff88801ac42140 dead000000000122 0000000000000000
+   [  106.932507][ T5338] raw: 0000000000000000 0000000800040004 00000000f5000000 0000000000000000
+   [  106.936193][ T5338] head: 04fff00000000040 ffff88801ac42140 dead000000000122 0000000000000000
+   [  106.939856][ T5338] head: 0000000000000000 0000000800040004 00000000f5000000 0000000000000000
+   [  106.943601][ T5338] head: 04fff00000000003 fffffffffffffe01 00000000ffffffff 00000000ffffffff
+   [  106.947268][ T5338] head: ffffffffffffffff 0000000000000000 00000000ffffffff 0000000000000008
+   [  106.950988][ T5338] page dumped because: kasan: bad access detected
+   [  106.953710][ T5338] page_owner tracks the page as allocated
+   [  106.956198][ T5338] page last allocated via order 3, migratetype Unmovable, gfp_mask 0xd2820(GFP_ATOMIC|__GFP_NOWARN|__GFP_NORETRY|__GFP_COMP|__GFP_NOMEMALLOC), pid 24, tgid 24 (kworker/u4:2), ts 105728970387, free_ts 29540875453
+   [  106.964984][ T5338]  post_alloc_hook+0x22d/0x280
+   [  106.966956][ T5338]  get_page_from_freelist+0x2593/0x2610
+   [  106.969307][ T5338]  __alloc_frozen_pages_noprof+0x18d/0x380
+   [  106.971839][ T5338]  allocate_slab+0x77/0x660
+   [  106.973709][ T5338]  refill_objects+0x339/0x3d0
+   [  106.975696][ T5338]  __pcs_replace_empty_main+0x321/0x720
+   [  106.978136][ T5338]  __kmalloc_node_track_caller_noprof+0x572/0x7b0
+   [  106.981009][ T5338]  __alloc_skb+0x2c1/0x7d0
+   [  106.982983][ T5338]  nsim_dev_trap_report_work+0x29a/0xb90
+   [  106.985356][ T5338]  process_scheduled_works+0xb5d/0x1860
+   [  106.987710][ T5338]  worker_thread+0xa53/0xfc0
+   [  106.989847][ T5338]  kthread+0x389/0x470
+   [  106.991727][ T5338]  ret_from_fork+0x514/0xb70
+   [  106.993722][ T5338]  ret_from_fork_asm+0x1a/0x30
+   [  106.995900][ T5338] page last free pid 77 tgid 77 stack trace:
+   [  106.998479][ T5338]  __free_frozen_pages+0xc1c/0xd30
+   [  107.000819][ T5338]  vfree+0x1d1/0x2f0
+   [  107.002631][ T5338]  delayed_vfree_work+0x55/0x80
+   [  107.004848][ T5338]  process_scheduled_works+0xb5d/0x1860
+   [  107.007366][ T5338]  worker_thread+0xa53/0xfc0
+   [  107.009388][ T5338]  kthread+0x389/0x470
+   [  107.011177][ T5338]  ret_from_fork+0x514/0xb70
+   [  107.013313][ T5338]  ret_from_fork_asm+0x1a/0x30
+   [  107.015454][ T5338]
+   [  107.016460][ T5338] Memory state around the buggy address:
+   [  107.019052][ T5338]  ffff88803f978500: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+   [  107.022691][ T5338]  ffff88803f978580: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+   [  107.026264][ T5338] >ffff88803f978600: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+   [  107.029721][ T5338]                                      ^
+   [  107.032062][ T5338]  ffff88803f978680: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+   [  107.035547][ T5338]  ffff88803f978700: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+   [  107.038865][ T5338] ==================================================================
+
+Fix this by resetting a root's ->reloc_root if we get an error while
+trying to merge a reloc root.
+
+Reported-by: syzbot+b3d472d13f9d7bf20669@syzkaller.appspotmail.com
+Link: https://lore.kernel.org/linux-btrfs/6a1ebde9.c1435f33.112120.0176.GAE@google.com/
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V3: Clear reloc root before putting the root, detected by sashiko.
+
+V2: Change the approach since it could possibly still lead to a
+    use-after-free just in an different way (detected by sashiko).
+
+ fs/btrfs/relocation.c | 37 +++++++++++++++++++++++++++++--------
+ 1 file changed, 29 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index fb85bc8b345c..e962a3ee7a5b 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1520,6 +1520,17 @@ static int insert_dirty_subvol(struct btrfs_trans_handle *trans,
+ 	return 0;
+ }
+ 
++static void clear_reloc_root(struct btrfs_root *root)
++{
++	root->reloc_root = NULL;
++	/*
++	 * Need barrier to ensure clear_bit() only happens after
++	 * root->reloc_root = NULL. Pairs with have_reloc_root().
++	 */
++	smp_wmb();
++	clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
++}
++
+ static int clean_dirty_subvols(struct reloc_control *rc)
+ {
+ 	struct btrfs_root *root;
+@@ -1534,13 +1545,7 @@ static int clean_dirty_subvols(struct reloc_control *rc)
+ 			struct btrfs_root *reloc_root = root->reloc_root;
+ 
+ 			list_del_init(&root->reloc_dirty_list);
+-			root->reloc_root = NULL;
+-			/*
+-			 * Need barrier to ensure clear_bit() only happens after
+-			 * root->reloc_root = NULL. Pairs with have_reloc_root.
+-			 */
+-			smp_wmb();
+-			clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
++			clear_reloc_root(root);
+ 			if (reloc_root) {
+ 				/*
+ 				 * btrfs_drop_snapshot drops our ref we hold for
+@@ -1915,13 +1920,29 @@ void merge_reloc_roots(struct reloc_control *rc)
+ 				goto out;
+ 			}
+ 			ret = merge_reloc_root(rc, root);
+-			btrfs_put_root(root);
+ 			if (ret) {
++				/*
++				 * Clear the reloc root since below we will call
++				 * free_reloc_roots(), otherwise we leave
++				 * root->reloc_root pointing to a freed reloc
++				 * root and trigger a use-after-free during
++				 * unmount or elsewhere.
++				 */
++				clear_reloc_root(root);
++				btrfs_put_root(root);
++				/*
++				 * We are adding the reloc_root to reloc_roots
++				 * list, so we call btrfs_put_root(reloc_root),
++				 * as we transfer our ref from the
++				 * rc->reloc_roots into local reloc_roots list.
++				 * free_reloc_roots() below will drop the ref.
++				 */
+ 				if (list_empty(&reloc_root->root_list))
+ 					list_add_tail(&reloc_root->root_list,
+ 						      &reloc_roots);
+ 				goto out;
+ 			}
++			btrfs_put_root(root);
+ 		} else {
+ 			if (!IS_ERR(root)) {
+ 				if (root->reloc_root == reloc_root) {
+-- 
+2.47.2
+

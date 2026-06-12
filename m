@@ -1,36 +1,39 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C0C18368D73
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Jun 2026 12:14:01 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9E45624A078
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Jun 2026 12:14:02 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781266442; cv=none; b=Db7kXsP96QXsUwtSdTev4FgMqFm/tmg+2lV7fTAhJzA8SQ+i71+HMSCDp7g325uAAm6onkzw12x4aeJdTRHFNwKlJvY1LbXvPaLGYwg9GM/JZNy4n4U9bjp4Z97iPt4bjfS3kbDTl4rQxB5vW3Oc7s+YOnQ2VD16Cwr0dbyqqzM=
+	t=1781266443; cv=none; b=YT8C9QrMvyWkLNXoxheXtv8r+oRv2o6GFR1BF69+3QODdpD/i9viMCR2hbKawXZwO/CG2HoAZnKFH1ck2K/JlWWAWRPAJbETop4Wp3iELS5haCiQ/7VjKdZKC1ujzwA6ZQWVn1EaioT/9qodA/gZTaZJ0MQXBDy6LDM3oVU0oaE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781266442; c=relaxed/simple;
-	bh=Y3XsqLynruXpJz8LVb45PsMHCwIEWJUApm+Z6DCgWac=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=JnE1Yhn63sMTPo4QxO/Kuh2abCtypUW1yRPjHN+6yRmWRYtWnHFeWq9Uxe315N+c6ZEafiuOHWtG37D5Ng6Mbs+6Ivue4Fqu3mR+Hzztsjp4FwvmJfyMCH8SDXAVZPfl/b2hsJvcq/r9tTlkymyM8Q9owxEvFQb6cmh68ZtRLzI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QvimuCgJ; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1781266443; c=relaxed/simple;
+	bh=gLhu8LMy+Ip43bLPnMgcyQjkAOHAyr+1Bpl+VrMSQNU=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=OnTw4PnRlqKRi07lgauk+41ZBQniUZ7hnwEuuvbg05DI7YBwD5cUPWEm7RmjbIf1rZuwj7CZ4AMkgNnX0/3AIyFULQK3gruH817+GNNYHr7vfkKoYhpAJzrln/UNI3lUk34Sgxx+AuahnIkNMrSEGul/esq1KClXd0I8/fn8TPQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Fb1ePWLT; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QvimuCgJ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DF0B61F000E9
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Jun 2026 12:14:00 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Fb1ePWLT"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D27661F00A3D
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Jun 2026 12:14:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781266441;
-	bh=WyoZ0Rut9u50eZSY33+IlNBC/b2cBeaadZsktzdKfF0=;
-	h=From:To:Subject:Date;
-	b=QvimuCgJTicZnKxUTqnPaCbLFBj3AcKim+vNw+NsCdhb6Pqb4P5BA9/zhMFu5Ux4W
-	 UwIdfVllhhwPc8I2BW/bPoKcvl/PJTmunyaBJfqDkYVngm0L97PKNxkweLTahGLnrc
-	 Ai/JF9eYEDJPwveZFg59P9+cpRolkLLXojwiBW6N/fthn4ODYnkJM3qtNA4wpBjWLx
-	 jJ0C4npIneIkz0hiQGs6+npfrNMZn2HCUR0didTVN7mq9jNuQTPkpjsMy9iSQzDKEH
-	 xnEONAgWbJ1CYtDAVfxIgOsGgRbOaPpA4SsIB6+PUwbeCfBCTDcnx/5HTcBshyfW/8
-	 93APQ0ArZo54Q==
+	s=k20260515; t=1781266442;
+	bh=pwtkuq34jFVAuIKQlcMAiGo/0P/bu7pc5GdaonumW4M=;
+	h=From:To:Subject:Date:In-Reply-To:References;
+	b=Fb1ePWLTxeUQohV0mFQSg0pKEqvZ4b8F3MyBmFlFxK+F7x5oZ6pt4j/gjz38ddsxe
+	 sQD6V+E8YKnpNL5Fha0EguS3Ky6XyHcOshxgSDH59S0wKdDt6u2aEF+mj+D5C3DX/Q
+	 fB/bgC1GHh1Wd/Zog5R8RCNEKHV7oOPVf3VJyR7xC+bH9UubW3jgy+8QsbyZQsATDS
+	 UGs9Dc0yrfXj9qHZibQ/n3PQC7kxKT8ar6buh0KzbPk+KXLtehRwyHdW2TLh61EiJp
+	 KrIvc7be64TyFZUJlY+0ZfF00waxX2sxjJv5ybq9c6HkhqvzIjzVPITwMQWzL9m/Sm
+	 wH0NT379jopGQ==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] btrfs: fix incorrect barrier usage in relocation
-Date: Fri, 12 Jun 2026 13:13:55 +0100
-Message-ID: <cover.1781263239.git.fdmanana@suse.com>
+Subject: [PATCH 1/2] btrfs: fix reloc root cleanup in merge_reloc_roots()
+Date: Fri, 12 Jun 2026 13:13:56 +0100
+Message-ID: <50682caa6bbf69740c629a26ff6f19a72ce55e03.1781263239.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
+In-Reply-To: <cover.1781263239.git.fdmanana@suse.com>
+References: <cover.1781263239.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -41,17 +44,42 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Sashiko recently detected we are not correctly using memory barriers
-in the relocation code, and these patches address that. Details in
-the change logs.
+If the root we got has zero root refs in its root item, we are resetting
+the root's ->reloc_root without using barriers like we do everywhere else.
+Sashiko complained about this while reviewing another patch, and it's
+correct (see the Link tag below).
 
-Filipe Manana (2):
-  btrfs: fix reloc root cleanup in merge_reloc_roots()
-  btrfs: fix memory barrier order in reloc_root_is_dead()
+Also, we should not clear BTRFS_ROOT_DEAD_RELOC_TREE from the root unless
+the root points to the reloc root we have.
 
- fs/btrfs/relocation.c | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+Fix this by using clear_reloc_root(), which issues the memory barrier
+after setting the root's ->reloc_root to NULL and before clearing the bit
+BTRFS_ROOT_DEAD_RELOC_TREE from the root.
 
+Link: https://sashiko.dev/#/patchset/cf84f1a217c719e25b6b69e4298dd7afd36c9427.1781194426.git.fdmanana%40suse.com
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/relocation.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 74687c75f763..6b5a59cb21bb 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1950,11 +1950,10 @@ void merge_reloc_roots(struct reloc_control *rc)
+ 		} else {
+ 			if (!IS_ERR(root)) {
+ 				if (root->reloc_root == reloc_root) {
+-					root->reloc_root = NULL;
++					clear_reloc_root(root);
++					/* Drop the ref for root->reloc_root. */
+ 					btrfs_put_root(reloc_root);
+ 				}
+-				clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE,
+-					  &root->state);
+ 				btrfs_put_root(root);
+ 			}
+ 
 -- 
 2.47.2
 

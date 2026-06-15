@@ -1,114 +1,130 @@
-Received: from mail-lf1-f50.google.com (mail-lf1-f50.google.com [209.85.167.50])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3EF943EB0F2
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2026 13:12:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B70993E5EF1;
+	Mon, 15 Jun 2026 13:18:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781529147; cv=none; b=aFRBNC1BgLih1R1q8z3Xyhi/S6O30YOAbNCETxhgLFjlXTnifB8eXVGQTW2BT7lnMjHUcuflKc7agUnwSc3SjIkgan78KbGj9RQIMdCeS6QBEcxcYBD6bm3rZxhlNmJDtT4/3dz9d8W0AlEjifP5mQRwjryRXX0efK4NnNPvsg0=
+	t=1781529499; cv=none; b=Czs/2fpMqici/Rq2AFgFbIsEl63clX9aSkrgl2cRxGKl99iiv7t5MLUg1Yjk0ni89h4kUh9O+WWvXEXIcQl/yzqcCM8TLMpvi8xuJiNEvjnYQ1amLGfXV7qXrffKND67OCkUGSnKKgrj9e21tnCl20+uXaYP0fNqrngx23QrdpM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781529147; c=relaxed/simple;
-	bh=DiSjxLpXU3snVqmUYEO6GDTd3fPSbfFGaE7sP09am2o=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=bdTk3MULhyltoP962fBUP1dKMt78tbFwzdnMAtdWSBR5DGTbovZQEZNNTollQ9gycdj1SX88L70pPnDDNWwPa4DDbZBMffOPvUodzPJ0UeMVASZyLJVcofrqKcXK5vI/U/93O9rlnORdNUmDiinnvTnZY1F1ZyjjL2S6VfWFkh0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=ltborPM9; arc=none smtp.client-ip=209.85.167.50
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1781529499; c=relaxed/simple;
+	bh=7IviJDmECLct1mfX+ucUEKM7lpwiYuU/Cv+mO4JFoXk=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=Qj4JgB0ssyTgSGkouDDAjBP3wVq+Wca+GDDbaefTq8MtZn9LyVXGgEZLVRzSWrawEexgyRZvc7d/i1q7FL6nJMKmXlsvbAJdMKle0ATfVoHrJmpNtrdYdChU1EYL0pCWfXi6NxbdpFksIjccrOad0KQ35NsbUaMM8oSPstcGGZI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Nfb/Xlnp; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ltborPM9"
-Received: by mail-lf1-f50.google.com with SMTP id 2adb3069b0e04-5aa68d9d4a3so3733971e87.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2026 06:12:25 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1781529144; x=1782133944; darn=vger.kernel.org;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :mime-version:references:message-id:subject:cc:to:from:date:from:to
-         :cc:subject:date:message-id:reply-to;
-        bh=T77tuf8668SRSEkFMJY2zrWlfBIOLK5mmqNvu173HxU=;
-        b=ltborPM9tqiJSFbqMlEY74VbGkdPh3Px+G+3mBFkd6ceqOqwcxgsyca9CORjUQvOTW
-         BeLIq9qvfwhSF80hjxIWK4wHKrfu0hqodyta9ZrhRQ1y0GyKx5YU7DRpHpPNiB3+2DYD
-         mg71dbC8Nye+vP44ylS7TRJ4Nca2HbDWcw4GF3PNovFvBuVEbjxMB+Ptt1JIJsmhQ4iU
-         KMQC9FWgCHT+eliK8BC7mlujwO9ntmWk3FErYObjOnORFHKcP4SRlhDbv+vfyQfa2K6X
-         vXZliFvb8cvSFCAVt+GM2ZbZPqOsq0sCl4c/L68X0ViGVmXN5BNZpcOR7RBGSSxiosyK
-         rsKg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781529144; x=1782133944;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :mime-version:references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=T77tuf8668SRSEkFMJY2zrWlfBIOLK5mmqNvu173HxU=;
-        b=GoazSCywelE8/ZyKYegVRM5Tnu8+c/l3OGOyJfMRJ1S+uUtSAWHC5a8z9f+F/13/Ia
-         BGmfzIIePokcL3fwE2ATMuVvBQdOy09+DLpP4ac/s/JJf+NGYoGDpmP2U2hSqaX4hyd6
-         6SbtuZ5JXKt5PLV9HCLPG6heT71C9Q+CevVRaJNIldmzJ8oqYU6pH4dU51h4qnrZC41i
-         2/w3NZM++hhslfO0QdC//ORok4GXt00PkH4+VfowVRgbKf4AJ9mn/zeAIokc+j07RXo8
-         e5sooXfvacmI1kOMVcXfu2Gcm2VpkYO4XXNRQElPJDOoD9b7/awKkft+pRSmpVHvR3W8
-         +V3Q==
-X-Forwarded-Encrypted: i=1; AFNElJ/oWYxkj3OXMLO+eqovxSa3NKDULyN+qR19S2WcLHP+1RXFYZl1VWVfzmMxnuR3kQmfPkh47HyIfY+bqw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YylUV2N+vDPXTChsnn90C0SxvKYJZfvRGl7ijyWFrAg/z2ADYp1
-	37hQOEASdhV9/JuozmR9p2GLr86Czf4TTcz19JOGa7/2TxbxyG4VURyS
-X-Gm-Gg: Acq92OFr5oSk8JUUfKbEbJbge0zEh8pHWta8fbjkMb8M75DnMgP4jW5eerTHQQPW6Al
-	VzmwglwEBhKGVaJdhnaS6YslTT3FF9GwbtlOIQD6QF0JTEzDoFHhLmE3Bd3u+UpnEj5ZtBsNS5q
-	4VEEb2C5W2i/3dAqlhdLlNJWxwKln4VuacInhmeou0ouz5TAeDcgclPbl+nEPrYHTc6tTBKYECA
-	Oo4K2yfHKIHDqbFSRuTd2h0ETlwhGDyfTb0e0oqYXXMxIk8rg7Jd+tTOzWfMbcclzqrFoYZS+PX
-	XusDfNg8m4gRVuS602Old36t1SZaEjUd5yQjPXagvx1QZbC3KxRn0Z3pOqQLzkw/UKN1HVky8e0
-	MrcMb3u8rWjzQQ1dcv0SDDqzGKLvhUBxgmBne+v9EL0+lYx1JvCcAehnQIi05VgS0lDs1k+bYzY
-	YY62PhpSEQVqHGlNoy
-X-Received: by 2002:a05:6512:368d:b0:5aa:8823:e311 with SMTP id 2adb3069b0e04-5ad2db73769mr2525858e87.47.1781529144059;
-        Mon, 15 Jun 2026 06:12:24 -0700 (PDT)
-Received: from localhost ([43.225.189.75])
-        by smtp.gmail.com with ESMTPSA id 2adb3069b0e04-5ad2e170386sm2782967e87.30.2026.06.15.06.12.22
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 15 Jun 2026 06:12:23 -0700 (PDT)
-Date: Mon, 15 Jun 2026 16:12:16 +0300
-From: Dan Carpenter <error27@gmail.com>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [bug report] btrfs: fix corrupt read due to bad offset of a
- compressed extent map
-Message-ID: <ai_6MFGvEAD0CJe_@stanley.mountain>
-References: <ai_0QHRa0y-_d72k@stanley.mountain>
- <CAL3q7H7h-JKNLrdjbHHACvQpyCGbCwQiHr1p_GNxqvmp+QH3bw@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Nfb/Xlnp"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C7AC01F000E9;
+	Mon, 15 Jun 2026 13:18:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1781529498;
+	bh=8X0V3Tc4hL+9KAbpOBY/kFW6p/k2S39HHy+Iy9zaNRI=;
+	h=From:Subject:Date:To:Cc;
+	b=Nfb/XlnpXNQYZrUOXcgxFHJRVfNuXIuhTHuztah3LprXzljOXFHelkfY8NaYJHyZJ
+	 /npvHLw2Bhjj+pKCzXwCd6VDtY62dUtC6lk02T+m4AAWeAuoYTVD2kXYlKtmtPF9JH
+	 31Fr9s/PlhP+2uHdk0xyOputTHeiTH+w9KSiz5iWSRKVq7aBsgfM95pDDN0QZ49S2x
+	 WBqYiGTO5yUMYxGQHDAbr+WwXszANiowU1xEYMBWSriqWpsnDguHzTaJkyWK5WuGwB
+	 b3szPPlZIgLrs+fq0NsE+4KIOSSi8BugxQVugFHOzS3APbIZLWq+yMhR71P4mgi0Qs
+	 ci5Lyr2vBzSdg==
+From: Christian Brauner <brauner@kernel.org>
+Subject: [PATCH RFC 0/6] block,btrfs: fix frozen-superblock strand on
+ device add/remove/replace
+Date: Mon, 15 Jun 2026 15:18:03 +0200
+Message-Id: <20260615-work-super-freeze_deny_upstream-v1-0-a6c72b840e7d@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAL3q7H7h-JKNLrdjbHHACvQpyCGbCwQiHr1p_GNxqvmp+QH3bw@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAIv7L2oC/yWNyw6CMBBFf4XM2hogWB9bEz/ArTGkwEUqsTQzg
+ A/Cv0t1eU5uzp1IwBZCh2gixmjFdm6BZBVR2Rh3g7LVwpTGqY51slHPjlslgwermoEP8grunQ9
+ eeoZ5qGy/M9DZVicmpqXiGbV9/R4udD4d6fqXMhR3lH1oh1lhBKpg48omqLGWdVA0z19j6V4Bo
+ wAAAA==
+X-Change-ID: 20260615-work-super-freeze_deny_upstream-498ae64761a0
+To: Chris Mason <clm@fb.com>, Jens Axboe <axboe@kernel.dk>, 
+ David Sterba <dsterba@suse.com>, Jan Kara <jack@suse.cz>
+Cc: Naohiro Aota <naohiro.aota@wdc.com>, Josef Bacik <josef@toxicpanda.com>, 
+ linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org, 
+ linux-fsdevel@vger.kernel.org, 
+ "Christian Brauner (Amutable)" <brauner@kernel.org>
+X-Mailer: b4 0.16-dev-f5839
+X-Developer-Signature: v=1; a=openpgp-sha256; l=3862; i=brauner@kernel.org;
+ h=from:subject:message-id; bh=7IviJDmECLct1mfX+ucUEKM7lpwiYuU/Cv+mO4JFoXk=;
+ b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWTp/56ueNXjMJO+inJ5zqSWxY87vmYoTZ0dt1Uza8aL4
+ Kd5CyoedpSyMIhxMciKKbI4tJuEyy3nqdhslKkBM4eVCWQIAxenAEzkWQfDP0N2kxvaeQ/3+/9M
+ uZZSbnb105OKd/IMM+LPlwnpn9+e84KR4ZjOfrkLOyT65gbJ2if4zorevvlkVuadtt0Hkv5eZHU
+ 25AEA
+X-Developer-Key: i=brauner@kernel.org; a=openpgp;
+ fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
 
-On Mon, Jun 15, 2026 at 01:56:22PM +0100, Filipe Manana wrote:
-> On Mon, Jun 15, 2026 at 1:47 PM Dan Carpenter <error27@gmail.com> wrote:
-> >     957         /*
-> >     958          * Try to add the extent map but with a search range of [140K, 144K),
-> >     959          * this should succeed and adjust the extent map to the range
-> >     960          * [128K, 144K), with a length of 16K and an offset of 20K.
-> >     961          *
-> >     962          * This simulates a scenario where in the subvolume tree of an inode we
-> >     963          * have a compressed file extent item for the range [108K, 144K) and we
-> >     964          * have an overlapping compressed extent map for the range [120K, 128K),
-> >     965          * which was created by an encoded write, but its ordered extent was not
-> >     966          * yet completed, so the subvolume tree doesn't have yet the file extent
-> >     967          * item for that range - we only have the extent map in the inode's
-> >     968          * extent map tree.
-> >     969          */
-> >     970         write_lock(&em_tree->lock);
-> >     971         ret = btrfs_add_extent_mapping(inode, &em, SZ_1K * 140, SZ_4K);
-> >     972         write_unlock(&em_tree->lock);
-> >     973         btrfs_free_extent_map(em);
-> >
-> > This looks like btrfs_free_extent_map() frees "em".
-> 
-> Nop, false alarm.
-> And that's because btrfs_add_extent_mapping() will increase the ref
-> count of the extent map if it returns success (one ref for the tree).
-> So until the extent map is removed from the tree, we can use the em
-> after calling btrfs_free_extent_map().
->
+A block-device freeze that races a btrfs device membership change can leave
+the whole filesystem stuck frozen, recoverable only with a manual FITHAW.
 
-Ah.  Thanks for taking a look...
+btrfs holds each of its devices open with the superblock as the block-device
+holder.  bdev_freeze() - issued by "dmsetup suspend", an LVM snapshot, or
+FIFREEZE on the bare device - resolves that holder to freeze the filesystem,
+and bdev_thaw() ("dmsetup resume") resolves it again to thaw.  If a freeze
+lands while btrfs is adding, removing or replacing a device, it rides in on
+the device's holder link and freezes the filesystem; the membership change
+then drops that link, so the matching thaw can no longer find the
+superblock.  The filesystem stays frozen with no way back short of FITHAW.
 
-regards,
-dan carpenter
+To reproduce on the remove path: build a two-device btrfs with one member
+behind a dm-linear target, write enough data that removing that member
+relocates for a few seconds, start "btrfs device remove" on it, and
+"dmsetup suspend" the dm device while the removal is underway.  The suspend's
+freeze blocks on the remove ioctl's write access and rides in as the ioctl
+drops it; the removal then clears the device's holder link, so the matching
+"dmsetup resume" can no longer reach the superblock.  On an unpatched kernel
+the filesystem is left frozen and the next write hangs in D state until a
+manual FITHAW (fsfreeze -u).
+
+The fix lets a filesystem forbid freezing a device for the duration of a
+membership change, modelled on deny_write_access()/allow_write_access().
+bd_fsfreeze_count becomes signed: > 0 counts active freezes, < 0 counts deny
+holders, and the two are mutually exclusive.  bdev_deny_freeze() reserves the
+device (bdev_freeze() then returns -EBUSY) and bdev_allow_freeze() releases
+it; both are a single lockless atomic, so a filesystem can deny under
+s_umount without inverting against bdev_freeze()'s bd_fsfreeze_mutex.  btrfs
+denies the device across each add, remove and replace, so a racing freeze is
+refused instead of riding in, while a normal freeze of a settled member
+still works.
+
+To re-allow freezing safely on release, bdev_yield_claim() is split out of
+bdev_fput(): the caller yields the holder while the device file is still
+open, re-allows freezing on the now-holderless device, and only then closes
+it.  Re-allowing after the holder is gone avoids re-stranding on a racing
+freeze; doing it while the file is still open keeps the block device alive
+without referencing it after the final fput.
+
+Patch 1 is independent: it fixes a pre-existing target-device leak on the
+mark_block_group_to_copy() failure path in btrfs_dev_replace_start().  The
+replace bracket reuses that 'leave' unwind, so it comes first.
+
+With the fix the racing suspend is refused with -EBUSY mid-removal and the
+filesystem stays writable.
+
+Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
+---
+Christian Brauner (6):
+      btrfs: destroy the target device when mark_block_group_to_copy() fails
+      block: allow making a block device unfreezable
+      block: split bdev_yield_claim() out of bdev_fput()
+      btrfs: deny freezing a device while it is being removed
+      btrfs: deny freezing a device while it is being added
+      btrfs: deny freezing devices undergoing a replace
+
+ block/bdev.c              | 73 ++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/dev-replace.c    | 67 +++++++++++++++++++++++++++++++++-----
+ fs/btrfs/ioctl.c          |  4 +--
+ fs/btrfs/volumes.c        | 83 ++++++++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/volumes.h        |  6 +++-
+ include/linux/blk_types.h |  2 +-
+ include/linux/blkdev.h    |  3 ++
+ 7 files changed, 206 insertions(+), 32 deletions(-)
+---
+base-commit: 254f49634ee16a731174d2ae34bc50bd5f45e731
+change-id: 20260615-work-super-freeze_deny_upstream-498ae64761a0
 

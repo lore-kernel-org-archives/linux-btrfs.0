@@ -1,67 +1,41 @@
-Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 293E438B135
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2026 22:39:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 27D941E9B37;
+	Mon, 15 Jun 2026 22:43:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.19
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781563173; cv=none; b=e4NhIoi2f2Ovuf4yYQjfva0VVT/5laT/cjGsKE/Q6eVhphC7rq/nvH1kOg82u3ao2hijzuaWF2a7czqTWzWx2xFnAtfQWrdl5GeLY1ziyy4+Ub0V5dQ3btLklwNH79HzYfyqPloD181vIHs5lKPLSpgF2ttRuCk8MCwnteDQAMI=
+	t=1781563429; cv=none; b=RH7TxmK7t9N53KHiuRMDnVY66ZMq4I7qDCD4SqlEan29F8wn469T7b8x4Sn8m5fo03hOHJfkATQBV99eiWbINU5c8Ew+3b6JrXehCAHpebpuAh5M25cKjBvpV++9Ccb3Rpt3e2HOutLXMxNgoRoxEnACYdctfKwxOC369ou25O4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781563173; c=relaxed/simple;
-	bh=n4l3O9TGF1RT4mpbVeIkevCRv5aBRbiGDmkf0LzAIxc=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=quevmFyNh+OETnMcU7sDdml3pv9n7F2TYM56FZMHT4cUqEH2Pu0gy0TWHHjRUpkx1AraeFKaJ5xGulXZXzsJAWufnJ/Udbg+EM5HVKxtUD5g0Hcs/kqbRr2ufO+qdtSGYSAPYG7irYZ5c1JUY21EqYhNwebKXaPmLmPES8pbZjg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=HH+RbAZV; arc=none smtp.client-ip=209.85.128.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1781563429; c=relaxed/simple;
+	bh=4sxi6gYXGhIez3YPMoE39fTLsA39BVBnka4+Un9KSmA=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=hKvyBezCOCTGVEyhwj4SzcFMgPV9H1z4xRiW+M6U+piTb1txY9zeBZyAj8pCRraeQhakg8HIO0NR/pub/0JEFBqaP5ldHGxELEKeFADEuUoatPzLntMmAmQfhrRccuGFgNtnjkvnD43T02HE7VT+T09vGaOztgd7Qh2CkRuVXvc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=MDx+3+3Y; arc=none smtp.client-ip=212.227.15.19
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="HH+RbAZV"
-Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-490bc6a7958so38847715e9.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2026 15:39:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1781563170; x=1782167970; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=meO0TV1GQdxcvKDdioA55HfdLlzDFSIW+ckZ6EKtq5I=;
-        b=HH+RbAZVUlaQMdijd3+IBbIb3RttQXa2ZhAcN+Xo+Mt9jmiDd7z2bWdXUEYM7jPtfD
-         2vftukiMXEsWKwNXWXS9klyz4fvcsOkmCauZ+VttdVhTiL4SDsd1U86s+VTrJo/juUiT
-         cPaR8r4uMRSIAjgLXhXgsBMF27/WrWU1xtI0J97tYf3Zm60SuMrwjnJwIowysezZqeI2
-         afEgbDeyB3C8DlnL5zLSnxKQazTUVro3sDX+vENHnkd0U0NWeTylkk0EUhaH6fwEjU/2
-         H5HaO0h8xmz2IYSKSO23yhvZZF/kWL3r9IUkBFJyEqIe5H76nB+WnEDeOf3KLLVtOSd6
-         b1mQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781563170; x=1782167970;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=meO0TV1GQdxcvKDdioA55HfdLlzDFSIW+ckZ6EKtq5I=;
-        b=pDrFTO+w17ORTeY5+nl9YAisYXciysFkAjAB1i8gFgVsIb780XFHLNF8vAqUTbokKx
-         cffJ+nUy5wf4A0DVk9zGNxaQ9JW5LvGHwg/m9mSIvY8ug+h2CBVk+nviJyjEnh/pxFcz
-         OBeAqK581pmfH7yvbJMZ26z9jVsUABt4UktBIXHBEFEE/gQsnz3rFpVzL+vUV6Fz+zhR
-         r9yX7HK8kgQ4iGMJ35RAGYUnz46SN5za1DkWMCszdh/8ZgF0EO1MAU1Y6OrohGEWLIBN
-         9QIWNcq1gGgLc3y6R0osujdc+q7V1G7ix1S30+X1qIIBVzD15BckNSzdnzOuzuIo4bab
-         ZYyQ==
-X-Forwarded-Encrypted: i=1; AFNElJ88xZnWf8XCQN54icLFPIXyrwrUcNE5fvdA4y2CfaOG5G4ohog3aL2/SYOPHlgvnbEJ55HYjyB2qJVR5w==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyZQYTvpcvbj0eN/V1ok2IGcmgkVXBE0yTHLyI/vAppDmk6AWZp
-	jAtVSssYw/UNIJYnonD7StQd7S5jw3XA0wO9Vcf9kkTnx469M7ydyWsjRXfOHuPRP+Q=
-X-Gm-Gg: Acq92OGX3w1UTCyoXtO0gPnLW2C4MVpJqtZknXVa6UEcQ/qwFv5FrTvqwxfxV1NOFII
-	nG6OoY0F0Kyn+uLeCBWRFkamhFe9N5S0nAvBJk1l55S8VjzqRzPQffl4lyILrtMq+W9c2j0M0tW
-	6cU3EllQ62kdyWpUVZHKttAmKUmH/McGkqVF+BJHG6GJhJlaI6DwMmM/4+PC/LzjPRaOcmlIdPl
-	PQqf+tW7DzdIUOL3p4TD7fg2+VBg1y2zIVaRxJqS9ijafrYU9sd3BUfE8z/JKObuOTeclCZ6iVS
-	HNIpaIoo6ChVAnlU6bsg9wFFHIvuDkw8MkKScaBM5HggbhUoRN7bvMJfRdw4LM+drbOc55GLtr6
-	L9RLhJzyCppHZhuUQuJbVG93gQPxzwfBaveIrmUdQzH7FEQcrz3ZhqcpkCHoAiLBXkfRzFBShhK
-	h0wba2KzyBt1mNmNVpFGo1aV6neXO+S4amQRT4ggsVrnfkAf58lXirchJS1xMV6WLovy0rFY5bO
-	Hi9r1WxC4yfNDbSqxLtJ/SjqSpADmfO4EEbO8ASC7t6dQ==
-X-Received: by 2002:a05:600c:4a12:b0:490:bf3d:c7de with SMTP id 5b1f17b1804b1-4922faf9363mr12188025e9.10.1781563170433;
-        Mon, 15 Jun 2026 15:39:30 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-37c521ae039sm648501a91.1.2026.06.15.15.39.25
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 15 Jun 2026 15:39:28 -0700 (PDT)
-Message-ID: <3eed757c-d650-45fd-80a2-735399ff4f99@suse.com>
-Date: Tue, 16 Jun 2026 08:09:18 +0930
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="MDx+3+3Y"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1781563416; x=1782168216; i=quwenruo.btrfs@gmx.com;
+	bh=CkPD4w6VrsJ4Hh75+mt/qnz45CBp7xoSpuCdktFwKI4=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=MDx+3+3Y3ZaLuzskl6VRZaJ/uLESaNa48SeIY72tdiNbk/AtmGevMMxnoOuawmuN
+	 8L0y0PjQwLnEi4SbBYkbgOseLvTCSGJBdhJ+kVYSjyr+LQrTMlo4cV53SHoCRfR43
+	 3L1bd3+HB2A2trmbQzOjV48xM3aCw6oW9t02jr4cEc8IHst+52sFOoQirczGhQAdz
+	 kbZ3m+1s9noboNPUJ5JHjx97ZKyssdnsFF8sHJ4Wx3tVqSmvSIXiKtDMpwzVm+HyA
+	 Zp1/++6r0RXOVOwRcL5Yf3oTFGSJ4R29Jy4UlhpWryUJDK4ThfERHgV+L6MyV6MHZ
+	 x0f5vXRBUbXL6/rLIA==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MhU5R-1x4lQC3qvD-00hZaI; Tue, 16
+ Jun 2026 00:43:36 +0200
+Message-ID: <efa3f1f9-20c2-44c0-914c-5e34a40235a1@gmx.com>
+Date: Tue, 16 Jun 2026 08:13:27 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,140 +43,147 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v3] btrfs: release extent lock per folio in readahead
-To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
- kernel-team@fb.com
-References: <1cdab9f1329c31c69b3d9ef6ec19977004d1bc57.1781545249.git.boris@bur.io>
+Subject: Re: [PATCH v3 3/4] iomap: reject NOWAIT and BOUNCE direct IOs
+To: Christoph Hellwig <hch@infradead.org>, Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org
+References: <cover.1781253428.git.wqu@suse.com>
+ <3d739b6dc37e34ca2a2a3780d12d0288a4060d57.1781253428.git.wqu@suse.com>
+ <ajAU1yLd32BCiCNj@infradead.org>
 Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
  1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
  9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
  gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <1cdab9f1329c31c69b3d9ef6ec19977004d1bc57.1781545249.git.boris@bur.io>
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <ajAU1yLd32BCiCNj@infradead.org>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:hjk/mvMaqia0yhQDNy1OdJodhBj1HKt1unK7SddXDzHQm84qnoP
+ uuxGooLjjLE5mw2U4bDbs4X9FECCU09RPcGHWS7mcB1vpQbH5EzMzncROTocmsdEwZZS4t/
+ KDxpUb/VE8X3VWB4SsgFhGBcMefbLz2bIc3r4aWbxzTWXDt8g7GEAiVzdjH311Ip6IuhK4O
+ OjfaBJLFQrYfSXCEdjiLQ==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:e6YaPMnW80o=;8yIjlWwQiJ+xjmOzY8/AFmWTm6c
+ 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
 
 
 
-在 2026/6/16 03:10, Boris Burkov 写道:
-> In Meta production, we have observed a large number of hosts running
-> kernels newer than 6.13 which hit hung tasks on
-> btrfs_read_folio()->lock_extents_for_read(). Looking through the history
-> in this codepath reveals an interesting history.
-> 
-> in 6.12, we merged
-> commit ac325fc2aad5 ("btrfs: do not hold the extent lock for entire read")
-> which holds the extent lock very narrowly while looking up the
-> extent_map. However, this proved to introduce a serious race with DIO
-> writes which was fixed in 6.14 with
-> commit acc18e1c1d8c0 ("btrfs: fix stale page cache after race between readahead and direct IO write")
-> 
-> That latter fix subtly changed the extent unlock point from the pre-6.12
-> regime. In 6.11, each read endio unlocked the extent it finished
-> reading, but in 6.14, the extent is locked/unlocked as a unit around the
-> entire readahead loop, while the individual folios are still unlocked as
-> the endios finish. This is mostly the same behavior, as all successful
-> reads will populate the page cache, so subsequent reads won't enter
-> btrfs and hit the extent lock. But in the case where the readahead
-> fails, perhaps because of a memory allocation failure doing compressed
-> reads, the page will not be brought up to date and a later read of an
-> overlapping range *will* block on the extent lock.
-> 
-> Why is this a problem?
-> 
-> On sufficiently large loaded systems, I have observed that direct
-> reclaim can run for minutes. Given that, consider two tasks on such a
-> system reading an overlapping range of a compressed file:
-> 
->    Task 1 locks the whole range and starts to read. Some allocation for
->    the compressed read for folio F fails and we carry on while holding the
->    extent lock for the full range.
-> 
->    Task 2 wants to read F, which is not uptodate and in page cache, so it
->    blocks on the extent lock held by Task 1.
-> 
->    Task 1 keeps getting stuck in direct reclaim (likely, we already
->    supposed an allocation failure above)
-> 
->    Task 2 stays blocked on the extent lock the whole time.
-> 
-> If you consider the effects of readahead_expand and imagine a file with
-> a 128k compressed extent followed by many smaller compressed extents,
-> you can imagine that the expanded window will result in subsequent reads
-> hitting many extents (128k/4k = 32) per lock window in the worst case.
-> 
-> The system likeley wouldn't be all that healthy anyway, so this is
-> likely not a critical improvement, but it does alleviate this one source
-> of stress and one thread's slowdown escalating to others.
-> 
-> To bring this behavior back to the old model, we should unlock the
-> extent at each loop of the readahead loop rather than in one shot at the
-> end. This allows such overlapping reads to proceed as they should.
-> Writes are fine because either the page has already been read and has an
-> appropriate state in the page cache to be invalidated (or not uptodate)
-> or it is still-to-be-read and the extent lock is still held protecting
-> it.
-> 
-> Signed-off-by: Boris Burkov <boris@bur.io>
+=E5=9C=A8 2026/6/16 00:35, Christoph Hellwig =E5=86=99=E9=81=93:
+> On Fri, Jun 12, 2026 at 07:21:14PM +0930, Qu Wenruo wrote:
+>> If a direct IO requires bounced pages for stable buffer, it will always
+>> allocate memory, and both bio_iov_iter_bounce_write() and
+>> bio_iov_iter_bounce_read() are allocating pages using GFP_KERNEL, which
+>> can sleep and break NOWAIT requirement.
+>>
+>> So we need to reject such NOWAIT and BOUNCE direct IO in
+>> iomap_dio_bio_iter().
+>=20
+> That's a bit heavy handed. Just do a noretry allocation.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+ From the comment of __GFP_NORETRY:
 
-Thanks,
-Qu
-> ---
->   fs/btrfs/extent_io.c | 17 ++++++++++++++---
->   1 file changed, 14 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index ce9aa0f6bc35..e0d24e69441a 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2745,12 +2745,23 @@ void btrfs_readahead(struct readahead_control *rac)
->   	struct fsverity_info *vi = NULL;
->   
->   	lock_extents_for_read(inode, start, end, &cached_state);
-> +	/* We don't use cached state for a bulk unlock, just free it. */
-> +	btrfs_free_extent_state(cached_state);
->   	if (start < i_size_read(vfs_inode))
->   		vi = fsverity_get_info(vfs_inode);
-> -	while ((folio = readahead_folio(rac)) != NULL)
-> -		btrfs_do_readpage(folio, &em_cached, &bio_ctrl, vi);
-> +	while ((folio = readahead_folio(rac)) != NULL) {
-> +		/*
-> +		 * Read start and end before btrfs_do_readpage(). It unlocks the
-> +		 * folio, so our reference might not be valid after.
-> +		 */
-> +		const u64 folio_start = folio_pos(folio);
-> +		const u64 folio_end = folio_start + folio_size(folio) - 1;
->   
-> -	btrfs_unlock_extent(&inode->io_tree, start, end, &cached_state);
-> +		btrfs_do_readpage(folio, &em_cached, &bio_ctrl, vi);
-> +		/* Only unlock the range we locked, even if readahead expands. */
-> +		if (folio_start >= start && folio_end <= end)
-> +			btrfs_unlock_extent(&inode->io_tree, folio_start, folio_end, NULL);
-> +	}
->   
->   	if (em_cached)
->   		btrfs_free_extent_map(em_cached);
+  * %__GFP_NORETRY: The VM implementation will try only very lightweight
+  * memory direct reclaim to get some memory under memory pressure (thus
+  * it can sleep).
 
+It looks like NORETRY can still sleep, thus again breaking NOWAIT=20
+requirement.
+
+I think you're talking about GFP_NOWAIT?

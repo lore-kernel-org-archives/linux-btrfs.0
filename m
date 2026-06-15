@@ -1,423 +1,208 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5CFCD165F16
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2026 21:29:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 293E438B135
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2026 22:39:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781558962; cv=none; b=Gw4l0qIbP46LbQE/DNJLS5DsW+SZO1LaP79dWuPk7BNf7Tn7OrR/mQuRQtNuVNwD07bAP5dM9ZgbGhqUVEX6MTYfwLBJq5BBIuN7maXVuTJIbMtg5X6Dfn+Hw+q2op9X0Fdl+hMfpFpC+g2DNG5xZIX/RGa9FCK4vQnUD38xj8w=
+	t=1781563173; cv=none; b=e4NhIoi2f2Ovuf4yYQjfva0VVT/5laT/cjGsKE/Q6eVhphC7rq/nvH1kOg82u3ao2hijzuaWF2a7czqTWzWx2xFnAtfQWrdl5GeLY1ziyy4+Ub0V5dQ3btLklwNH79HzYfyqPloD181vIHs5lKPLSpgF2ttRuCk8MCwnteDQAMI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781558962; c=relaxed/simple;
-	bh=rx3nHM/HZavkKsLLal+f2Dx9jboSdEMQGrSJmwL68Lc=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=e7RfRVH3DbuxsvxJHmSZGu2FwLLbaNgO0rYn2Nkf50n0s1uBhutjzrg01N/FA0kP5DGqUJcU9k6bmEjiJS7WHsaAbr/n8bkZOCsKufRK5vQoFxMO5xNIXGCsJjO01c3GuIDyQCaT8SkcF9lJOy8cye2Ainb63eiiQ3DoPCacP0g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gAD8uaBN; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gAD8uaBN; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1781563173; c=relaxed/simple;
+	bh=n4l3O9TGF1RT4mpbVeIkevCRv5aBRbiGDmkf0LzAIxc=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=quevmFyNh+OETnMcU7sDdml3pv9n7F2TYM56FZMHT4cUqEH2Pu0gy0TWHHjRUpkx1AraeFKaJ5xGulXZXzsJAWufnJ/Udbg+EM5HVKxtUD5g0Hcs/kqbRr2ufO+qdtSGYSAPYG7irYZ5c1JUY21EqYhNwebKXaPmLmPES8pbZjg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=HH+RbAZV; arc=none smtp.client-ip=209.85.128.44
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gAD8uaBN";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gAD8uaBN"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 9C5716C593;
-	Mon, 15 Jun 2026 21:29:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1781558958; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding;
-	bh=zHUq5pSUlJ4q/ZZPTrSK7hSUpjCSCDqD9pPtwpOnH1s=;
-	b=gAD8uaBNkWi4WIknsYhDwR43n64mZTiO3lf3500K55bZYWnffHhcySTf7kP466gHozOoHq
-	Lq9lvMTs2PUhRj1KKrEzkpTi18IljpnmpG8mclckO65o6aogSCVybRoF6xqz59JXHZiafZ
-	l4pY/70tpiE4D6NonWywfAGBMDqufJQ=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1781558958; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding;
-	bh=zHUq5pSUlJ4q/ZZPTrSK7hSUpjCSCDqD9pPtwpOnH1s=;
-	b=gAD8uaBNkWi4WIknsYhDwR43n64mZTiO3lf3500K55bZYWnffHhcySTf7kP466gHozOoHq
-	Lq9lvMTs2PUhRj1KKrEzkpTi18IljpnmpG8mclckO65o6aogSCVybRoF6xqz59JXHZiafZ
-	l4pY/70tpiE4D6NonWywfAGBMDqufJQ=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 94F9C779A7;
-	Mon, 15 Jun 2026 21:29:18 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id gYpYJK5uMGqQBgAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Mon, 15 Jun 2026 21:29:18 +0000
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs updates for 7.2
-Date: Mon, 15 Jun 2026 23:29:11 +0200
-Message-ID: <cover.1781558337.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="HH+RbAZV"
+Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-490bc6a7958so38847715e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2026 15:39:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1781563170; x=1782167970; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=meO0TV1GQdxcvKDdioA55HfdLlzDFSIW+ckZ6EKtq5I=;
+        b=HH+RbAZVUlaQMdijd3+IBbIb3RttQXa2ZhAcN+Xo+Mt9jmiDd7z2bWdXUEYM7jPtfD
+         2vftukiMXEsWKwNXWXS9klyz4fvcsOkmCauZ+VttdVhTiL4SDsd1U86s+VTrJo/juUiT
+         cPaR8r4uMRSIAjgLXhXgsBMF27/WrWU1xtI0J97tYf3Zm60SuMrwjnJwIowysezZqeI2
+         afEgbDeyB3C8DlnL5zLSnxKQazTUVro3sDX+vENHnkd0U0NWeTylkk0EUhaH6fwEjU/2
+         H5HaO0h8xmz2IYSKSO23yhvZZF/kWL3r9IUkBFJyEqIe5H76nB+WnEDeOf3KLLVtOSd6
+         b1mQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1781563170; x=1782167970;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=meO0TV1GQdxcvKDdioA55HfdLlzDFSIW+ckZ6EKtq5I=;
+        b=pDrFTO+w17ORTeY5+nl9YAisYXciysFkAjAB1i8gFgVsIb780XFHLNF8vAqUTbokKx
+         cffJ+nUy5wf4A0DVk9zGNxaQ9JW5LvGHwg/m9mSIvY8ug+h2CBVk+nviJyjEnh/pxFcz
+         OBeAqK581pmfH7yvbJMZ26z9jVsUABt4UktBIXHBEFEE/gQsnz3rFpVzL+vUV6Fz+zhR
+         r9yX7HK8kgQ4iGMJ35RAGYUnz46SN5za1DkWMCszdh/8ZgF0EO1MAU1Y6OrohGEWLIBN
+         9QIWNcq1gGgLc3y6R0osujdc+q7V1G7ix1S30+X1qIIBVzD15BckNSzdnzOuzuIo4bab
+         ZYyQ==
+X-Forwarded-Encrypted: i=1; AFNElJ88xZnWf8XCQN54icLFPIXyrwrUcNE5fvdA4y2CfaOG5G4ohog3aL2/SYOPHlgvnbEJ55HYjyB2qJVR5w==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyZQYTvpcvbj0eN/V1ok2IGcmgkVXBE0yTHLyI/vAppDmk6AWZp
+	jAtVSssYw/UNIJYnonD7StQd7S5jw3XA0wO9Vcf9kkTnx469M7ydyWsjRXfOHuPRP+Q=
+X-Gm-Gg: Acq92OGX3w1UTCyoXtO0gPnLW2C4MVpJqtZknXVa6UEcQ/qwFv5FrTvqwxfxV1NOFII
+	nG6OoY0F0Kyn+uLeCBWRFkamhFe9N5S0nAvBJk1l55S8VjzqRzPQffl4lyILrtMq+W9c2j0M0tW
+	6cU3EllQ62kdyWpUVZHKttAmKUmH/McGkqVF+BJHG6GJhJlaI6DwMmM/4+PC/LzjPRaOcmlIdPl
+	PQqf+tW7DzdIUOL3p4TD7fg2+VBg1y2zIVaRxJqS9ijafrYU9sd3BUfE8z/JKObuOTeclCZ6iVS
+	HNIpaIoo6ChVAnlU6bsg9wFFHIvuDkw8MkKScaBM5HggbhUoRN7bvMJfRdw4LM+drbOc55GLtr6
+	L9RLhJzyCppHZhuUQuJbVG93gQPxzwfBaveIrmUdQzH7FEQcrz3ZhqcpkCHoAiLBXkfRzFBShhK
+	h0wba2KzyBt1mNmNVpFGo1aV6neXO+S4amQRT4ggsVrnfkAf58lXirchJS1xMV6WLovy0rFY5bO
+	Hi9r1WxC4yfNDbSqxLtJ/SjqSpADmfO4EEbO8ASC7t6dQ==
+X-Received: by 2002:a05:600c:4a12:b0:490:bf3d:c7de with SMTP id 5b1f17b1804b1-4922faf9363mr12188025e9.10.1781563170433;
+        Mon, 15 Jun 2026 15:39:30 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-37c521ae039sm648501a91.1.2026.06.15.15.39.25
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 15 Jun 2026 15:39:28 -0700 (PDT)
+Message-ID: <3eed757c-d650-45fd-80a2-735399ff4f99@suse.com>
+Date: Tue, 16 Jun 2026 08:09:18 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v3] btrfs: release extent lock per folio in readahead
+To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
+ kernel-team@fb.com
+References: <1cdab9f1329c31c69b3d9ef6ec19977004d1bc57.1781545249.git.boris@bur.io>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <1cdab9f1329c31c69b3d9ef6ec19977004d1bc57.1781545249.git.boris@bur.io>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -3.30
-X-Spamd-Result: default: False [-3.30 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	RCPT_COUNT_THREE(0.00)[4];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo]
-X-Spam-Level: 
 
-Hi,
 
-please pull the following updates. The noticeable change is to enable
-large folios by default, it's been in testing for a few releases.
-Related to that is huge folio support (still under experimental config).
-Otherwise a few ioctl updates, performance improvements and usual fixes
-and core changes.
 
-Thanks.
+在 2026/6/16 03:10, Boris Burkov 写道:
+> In Meta production, we have observed a large number of hosts running
+> kernels newer than 6.13 which hit hung tasks on
+> btrfs_read_folio()->lock_extents_for_read(). Looking through the history
+> in this codepath reveals an interesting history.
+> 
+> in 6.12, we merged
+> commit ac325fc2aad5 ("btrfs: do not hold the extent lock for entire read")
+> which holds the extent lock very narrowly while looking up the
+> extent_map. However, this proved to introduce a serious race with DIO
+> writes which was fixed in 6.14 with
+> commit acc18e1c1d8c0 ("btrfs: fix stale page cache after race between readahead and direct IO write")
+> 
+> That latter fix subtly changed the extent unlock point from the pre-6.12
+> regime. In 6.11, each read endio unlocked the extent it finished
+> reading, but in 6.14, the extent is locked/unlocked as a unit around the
+> entire readahead loop, while the individual folios are still unlocked as
+> the endios finish. This is mostly the same behavior, as all successful
+> reads will populate the page cache, so subsequent reads won't enter
+> btrfs and hit the extent lock. But in the case where the readahead
+> fails, perhaps because of a memory allocation failure doing compressed
+> reads, the page will not be brought up to date and a later read of an
+> overlapping range *will* block on the extent lock.
+> 
+> Why is this a problem?
+> 
+> On sufficiently large loaded systems, I have observed that direct
+> reclaim can run for minutes. Given that, consider two tasks on such a
+> system reading an overlapping range of a compressed file:
+> 
+>    Task 1 locks the whole range and starts to read. Some allocation for
+>    the compressed read for folio F fails and we carry on while holding the
+>    extent lock for the full range.
+> 
+>    Task 2 wants to read F, which is not uptodate and in page cache, so it
+>    blocks on the extent lock held by Task 1.
+> 
+>    Task 1 keeps getting stuck in direct reclaim (likely, we already
+>    supposed an allocation failure above)
+> 
+>    Task 2 stays blocked on the extent lock the whole time.
+> 
+> If you consider the effects of readahead_expand and imagine a file with
+> a 128k compressed extent followed by many smaller compressed extents,
+> you can imagine that the expanded window will result in subsequent reads
+> hitting many extents (128k/4k = 32) per lock window in the worst case.
+> 
+> The system likeley wouldn't be all that healthy anyway, so this is
+> likely not a critical improvement, but it does alleviate this one source
+> of stress and one thread's slowdown escalating to others.
+> 
+> To bring this behavior back to the old model, we should unlock the
+> extent at each loop of the readahead loop rather than in one shot at the
+> end. This allows such overlapping reads to proceed as they should.
+> Writes are fine because either the page has already been read and has an
+> appropriate state in the page cache to be invalidated (or not uptodate)
+> or it is still-to-be-read and the extent lock is still held protecting
+> it.
+> 
+> Signed-off-by: Boris Burkov <boris@bur.io>
 
-User visible changes:
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-- enable large folios by default, added in 6.17 (under experimental
-  build), no feature limitations, a big change internally
+Thanks,
+Qu
+> ---
+>   fs/btrfs/extent_io.c | 17 ++++++++++++++---
+>   1 file changed, 14 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index ce9aa0f6bc35..e0d24e69441a 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2745,12 +2745,23 @@ void btrfs_readahead(struct readahead_control *rac)
+>   	struct fsverity_info *vi = NULL;
+>   
+>   	lock_extents_for_read(inode, start, end, &cached_state);
+> +	/* We don't use cached state for a bulk unlock, just free it. */
+> +	btrfs_free_extent_state(cached_state);
+>   	if (start < i_size_read(vfs_inode))
+>   		vi = fsverity_get_info(vfs_inode);
+> -	while ((folio = readahead_folio(rac)) != NULL)
+> -		btrfs_do_readpage(folio, &em_cached, &bio_ctrl, vi);
+> +	while ((folio = readahead_folio(rac)) != NULL) {
+> +		/*
+> +		 * Read start and end before btrfs_do_readpage(). It unlocks the
+> +		 * folio, so our reference might not be valid after.
+> +		 */
+> +		const u64 folio_start = folio_pos(folio);
+> +		const u64 folio_end = folio_start + folio_size(folio) - 1;
+>   
+> -	btrfs_unlock_extent(&inode->io_tree, start, end, &cached_state);
+> +		btrfs_do_readpage(folio, &em_cached, &bio_ctrl, vi);
+> +		/* Only unlock the range we locked, even if readahead expands. */
+> +		if (folio_start >= start && folio_end <= end)
+> +			btrfs_unlock_extent(&inode->io_tree, folio_start, folio_end, NULL);
+> +	}
+>   
+>   	if (em_cached)
+>   		btrfs_free_extent_map(em_cached);
 
-- new ioctl to return raw checksums to userspace (a bit tricky given
-  compression and tail extents), can be used for mkfs and deduplication
-  optimizations
-
-- provide stable UUID for e.g. overlayfs and temp_fsid, also reflected
-  in statvfs() field f_fsid, internal dev_t is hashed in to allow
-  cloning
-
-- add 32bit compat version of GET_SUBVOL_INFO ioctl
-
-- in experimental build, support huge folios (up to 2M)
-
-Performance related improvements/changes:
-
-- limit bio size to the estimated optimum derived from the queue, this
-  prevents build up of too much data for writeback, which could cause
-  latency spikes (reported improvement 15% on sequential writes)
-
-- don't force direct IO to be serialized, forgotten change during mount
-  API port, brings back +60% of throughput
-
-- lockless calculation of number of shrinkable extent maps, improve
-  performance with many memcg allocated objects
-
-Notable fixes:
-
-- in zoned mode, fix a deadlock due to zone reclaim and relocation when
-  space needs to be flushed
-
-- don't trim device which is internally not tracked as writeable (e.g.
-  when missing device is being rescanned)
-
-- fix deadlock when cloning inline extent and mounted with flushoncommit
-
-- fix false IO failures after direct IO falls back to buffered write in
-  some cases
-
-Core:
-
-- remove COW fixup mechanism completely; detect and fix changes to pages
-  outside of filesystem tracking, guaranteed since 5.8, grace period is
-  over
-
-- remove 2K block size support, experimental to test subpage code on
-  x86_64 but now it would block folio changes
-
-- tree-checker improvements of:
-  - free-space cache and tree items
-  - root reference and backref items
-  - extent state exceptions in reloc tree
-
-- subpage mode updates:
-  - code optimizations, simplify tracking bitmaps
-  - re-enable readahead of compressed extent
-  - extend bitmap size to cover huge folios
-
-- add tracepoints related to sync, tree-log and transactions
-
-- device stats item tracking unification, remove item if there are no
-  stats recorded, also don't leave stale stats on replaced device
-
-- allow extent buffer pages to be allocated as movable, to help page
-  migration
-
-- added checks for proper extent buffer release
-
-- btrfs.ko code size reduction due to transaction abort call
-  simplifications
-
-- several struct size reductions
-
-- more auto free conversions
-
-- more verbose assertions
-
-----------------------------------------------------------------
-The following changes since commit 4549871118cf616eecdd2d939f78e3b9e1dddc48:
-
-  Linux 7.1-rc7 (2026-06-07 15:37:58 -0700)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-tag
-
-for you to fetch changes up to ae2eb64bfd9762536f60b690840adcdf622cdcce:
-
-  btrfs: fix use-after-free after relocation failure with concurrent COW (2026-06-09 18:22:47 +0200)
-
-----------------------------------------------------------------
-Anand Jain (2):
-      btrfs: use on-disk uuid for s_uuid in temp_fsid mounts
-      btrfs: derive f_fsid from on-disk fsid and dev_t
-
-Ben Maurer (1):
-      btrfs: use lockless read in nr_cached_objects shrinker callback
-
-Cen Zhang (1):
-      btrfs: annotate lockless read of defrag_bytes in should_nocow()
-
-Daan De Meyer (1):
-      btrfs: add 32-bit compat ioctl for BTRFS_IOC_GET_SUBVOL_INFO
-
-Dave Chen (1):
-      btrfs: optimize fill_holes() to merge a new hole with both adjacent items
-
-David Sterba (18):
-      btrfs: move condition to WARN_ON in btrfs_set_delalloc_extent()
-      btrfs: replace open coded DEBUG_WARN in extent_writepage()
-      btrfs: lift assertions to beginning of insert_delayed_ref()
-      btrfs: do more kmalloc_obj()/kmalloc_objs() conversions
-      btrfs: convert kmalloc_array to kmalloc_objs in btrfs_calc_avail_data_space()
-      btrfs: convert ioctl handlers to AUTO_KFREE
-      btrfs: make more ASSERTs verbose, part 3
-      btrfs: remove 32bit compat code for VFS inode number
-      btrfs: move transaction abort message to __btrfs_abort_transaction()
-      btrfs: remove fs_info from struct btrfs_backref_iter
-      btrfs: use on stack backref iterator in build_backref_tree()
-      btrfs: validate negative error number passed to btrfs_abort_transaction()
-      btrfs: simplify how first hit is passed to __btrfs_abort_transaction()
-      btrfs: add message format for qgroupid
-      btrfs: send: switch struct fs_path to auto freeing
-      btrfs: use shifts for sectorsize and nodesize
-      btrfs: send: pass bool for pending_move and refs_processed parameters
-      btrfs: switch local indicator variables to bools
-
-Filipe Manana (51):
-      btrfs: use a kmem_cache for block groups
-      btrfs: reduce size of struct btrfs_block_group
-      btrfs: use a kmem_cache for free space control structures
-      btrfs: remove start field from struct btrfs_free_space_ctl
-      btrfs: remove unit field from struct btrfs_free_space_ctl
-      btrfs: reduce size of struct btrfs_free_space_ctl
-      btrfs: remove op field from struct btrfs_free_space_ctl
-      btrfs: remove block group argument from copy_free_space_cache()
-      btrfs: remove unnecessary ctl argument from __btrfs_write_out_cache()
-      btrfs: remove unnecessary ctl argument from write_cache_extent_entries()
-      btrfs: use min_size variable to setup block rsv in btrfs_replace_file_extents()
-      btrfs: use the enums instead of int type in struct btrfs_block_group fields
-      btrfs: add missing unlikely to if branches leading to a DEBUG_WARN()
-      btrfs: change return type from int to bool in check_eb_range()
-      btrfs: make sure report_eb_range() is not inlined
-      btrfs: tracepoints: remove double negation in finish ordered extent event
-      btrfs: tracepoints: remove pointless root field from transaction commit event
-      btrfs: remove call to transaction commit trace in warn_about_uncommitted_trans()
-      btrfs: remove call to transaction commit trace in btrfs_cleanup_transaction()
-      btrfs: tracepoints: pass a transaction handle to transaction commit event
-      btrfs: tracepoints: add in_fsync field to transaction commit event
-      btrfs: tracepoints: add trace event for transaction aborts
-      btrfs: tracepoints: add trace event for the start of a new transaction
-      btrfs: tracepoints: trace transaction states during commit phase
-      btrfs: stop checking for greater then zero return values in btrfs_sync_file()
-      btrfs: remove redundant writeback error check during fsync
-      btrfs: tracepoints: add trace event for when fsync finishes
-      btrfs: tracepoints: add trace event for btrfs_log_inode_parent()
-      btrfs: use a named enum for the log mode in inode log functions
-      btrfs: tracepoints: add trace event for btrfs_log_inode()
-      btrfs: tracepoints: add trace event for btrfs_log_all_parents()
-      btrfs: tracepoints: add trace event for log_all_new_ancestors()
-      btrfs: tracepoints: add trace event for log_new_dir_dentries()
-      btrfs: tracepoints: add trace event for add_conflicting_inode()
-      btrfs: tracepoints: add trace event for log_conflicting_inodes()
-      btrfs: use simple assertions where enough during inode logging and replay
-      btrfs: tracepoints: add trace event for log_new_delayed_dentries()
-      btrfs: tracepoints: add trace event for btrfs_record_unlink_dir()
-      btrfs: tracepoints: add trace event for btrfs_record_snapshot_destroy()
-      btrfs: tracepoints: add trace event for btrfs_record_new_subvolume()
-      btrfs: tracepoints: add trace event for btrfs_log_new_name()
-      btrfs: tracepoints: add trace event for btrfs_sync_log()
-      btrfs: tracepoints: show inode type in btrfs_sync_file_enter() event
-      btrfs: fix invalid pointer dereference in __btrfs_run_delayed_refs()
-      btrfs: fix deadlock cloning inline extent when using flushoncommit
-      btrfs: use mapping shared locking for reading super block
-      btrfs: return real error after lookup failure in btrfs_ioctl_default_subvol()
-      btrfs: use verbose assertions in backref.c
-      btrfs: move locking into btrfs_get_reloc_bg_bytenr()
-      btrfs: move WARN_ON on unexpected error in __add_tree_block()
-      btrfs: fix use-after-free after relocation failure with concurrent COW
-
-Jan Kara (1):
-      btrfs: limit size of bios submitted from writeback
-
-Johannes Thumshirn (6):
-      btrfs: zoned: document RECLAIM_ZONES flush state
-      btrfs: zoned: decode 'RECLAIM_ZONES' state in tracepoints
-      btrfs: zoned: always set data_relocation_bg
-      btrfs: zoned: don't account data relocation space-info in statfs free space
-      btrfs: zoned: fix deadlock waiting for ticket during data relocation
-      btrfs: zoned: always set max_active_zones for zoned devices
-
-KangNing Liao (1):
-      btrfs: protect sb_write_pointer() with invalidate lock
-
-Mark Harmstone (2):
-      btrfs: add ioctl GET_CSUMS to read raw checksums from file range
-      btrfs: don't force DIO writes to be serialized
-
-Matthew Wilcox (Oracle) (3):
-      Revert "btrfs: fix the file offset calculation inside btrfs_decompress_buf2page()"
-      btrfs: replace __free_page with folio_put() in attach_eb_folio_to_filemap()
-      btrfs: use bvec_phys() in compressed_bio_last_folio()
-
-Qu Wenruo (33):
-      btrfs: pass a valid btrfs_tree_parent_check when possible
-      btrfs: remove the COW fixup mechanism
-      btrfs: remove folio checked subpage bitmap tracking
-      btrfs: check and set EXTENT_DELALLOC_NEW before clearing EXTENT_DELALLOC
-      btrfs: remove 2K block size support
-      btrfs: enable cross-folio readahead for bs < ps and large folio cases
-      btrfs: refresh add_ra_bio_pages() to indicate it's using folios
-      btrfs: move large data folios out of experimental features
-      btrfs: warn about extent buffer that can not be released
-      btrfs: unexport and move extent_invalidate_folio()
-      btrfs: simplify the btree folio wait during invalidation
-      btrfs: remove locked subpage bitmap
-      btrfs: detect dirty blocks without an ordered extent more reliably
-      btrfs: unify folio dirty flag clearing
-      btrfs: use dirty flag to check if an ordered extent needs to be truncated
-      btrfs: remove folio_test_ordered() usage
-      btrfs: remove folio ordered flag and subpage bitmap
-      btrfs: tree-checker: extract the shared key check for free space entries
-      btrfs: tree-checker: ensure free space tree entries won't overflow
-      btrfs: tree-checker: add more cross checks for free space tree
-      btrfs: update the out-of-date comments on subpage
-      btrfs: prepare subpage operations to support more than BITS_PER_LONG sub-bitmaps
-      btrfs: migrate btrfs_bio_ctrl::submit_bitmap to support larger bitmaps
-      btrfs: introduce support for huge folios
-      btrfs: remove the dev stats item for replace target device
-      btrfs: remove the dev stats item when removing a device
-      btrfs: always update/create the dev stats item when adding a new device
-      btrfs: avoid unnecessary dev stats updates
-      btrfs: do not trim a device which is not writeable
-      btrfs: print a message when a missing device re-appears
-      btrfs: fix false IO failure after falling back to buffered write
-      btrfs: fix incorrect buffered IO fallback for append direct writes
-      btrfs: retry faulting in the pages after a zero sized short direct write
-
-Rik van Riel (1):
-      btrfs: allocate eb-attached btree pages as movable
-
-Teng Liu (1):
-      btrfs: validate data reloc tree file extent item members
-
-Thorsten Blum (1):
-      btrfs: use QSTR() in __btrfs_ioctl_snap_create()
-
-Weiming Shi (1):
-      btrfs: lzo: reject compressed segment that overflows the compressed input
-
-Zhang Cen (2):
-      btrfs: free-space-tree: reject mismatched extent and bitmap items
-      btrfs: tree-checker: validate names in ROOT_REF and ROOT_BACKREF
-
-ZhengYuan Huang (3):
-      btrfs: balance: fix potential bg lookup failure in chunk_usage_filter()
-      btrfs: balance: fix potential bg lookup failure in chunk_usage_range_filter()
-      btrfs: balance: fix potential bg lookup failure in btrfs_may_alloc_data_chunk()
-
- fs/btrfs/Kconfig                  |   8 +-
- fs/btrfs/backref.c                |  73 ++--
- fs/btrfs/backref.h                |   9 +-
- fs/btrfs/block-group.c            |  48 +-
- fs/btrfs/block-group.h            |  40 +-
- fs/btrfs/btrfs_inode.h            |  37 +-
- fs/btrfs/compression.c            |  83 +---
- fs/btrfs/ctree.c                  |  33 +-
- fs/btrfs/defrag.c                 |  18 -
- fs/btrfs/delalloc-space.c         |   6 +-
- fs/btrfs/delayed-ref.c            |   5 +-
- fs/btrfs/dev-replace.c            |  11 +-
- fs/btrfs/direct-io.c              |  62 ++-
- fs/btrfs/disk-io.c                | 139 ++++--
- fs/btrfs/extent-io-tree.c         |   4 +-
- fs/btrfs/extent-tree.c            |  57 ++-
- fs/btrfs/extent_io.c              | 345 ++++++++-------
- fs/btrfs/extent_io.h              |  25 +-
- fs/btrfs/extent_map.c             |   6 +-
- fs/btrfs/fiemap.c                 |   2 +-
- fs/btrfs/file-item.c              |   6 +-
- fs/btrfs/file.c                   | 120 +++--
- fs/btrfs/free-space-cache.c       | 163 ++++---
- fs/btrfs/free-space-cache.h       |  14 +-
- fs/btrfs/free-space-tree.c        |  51 ++-
- fs/btrfs/fs.h                     |  57 +--
- fs/btrfs/inode.c                  | 327 +++-----------
- fs/btrfs/ioctl.c                  | 757 +++++++++++++++++++++++---------
- fs/btrfs/lzo.c                    |  11 +
- fs/btrfs/ordered-data.c           |  24 +-
- fs/btrfs/ordered-data.h           |   2 +
- fs/btrfs/qgroup.c                 |  41 +-
- fs/btrfs/raid-stripe-tree.c       |   4 +-
- fs/btrfs/raid56.c                 |  18 +-
- fs/btrfs/reflink.c                | 111 ++---
- fs/btrfs/relocation.c             | 348 +++++++++------
- fs/btrfs/relocation.h             |   2 +-
- fs/btrfs/root-tree.c              |   6 +-
- fs/btrfs/scrub.c                  |   3 +-
- fs/btrfs/send.c                   | 162 +++----
- fs/btrfs/space-info.c             |   9 +
- fs/btrfs/space-info.h             |  11 +
- fs/btrfs/subpage.c                | 286 +++++-------
- fs/btrfs/subpage.h                |  33 +-
- fs/btrfs/super.c                  |  58 ++-
- fs/btrfs/tests/btrfs-tests.c      |   1 +
- fs/btrfs/tests/free-space-tests.c |  24 +-
- fs/btrfs/transaction.c            |  39 +-
- fs/btrfs/transaction.h            |  50 ++-
- fs/btrfs/tree-checker.c           | 183 ++++++--
- fs/btrfs/tree-log.c               | 276 ++++++++----
- fs/btrfs/tree-log.h               |   7 +
- fs/btrfs/verity.c                 |   4 +-
- fs/btrfs/volumes.c                | 166 +++++--
- fs/btrfs/volumes.h                |   2 +
- fs/btrfs/zoned.c                  |  79 ++--
- include/trace/events/btrfs.h      | 889 +++++++++++++++++++++++++++++++++++++-
- include/uapi/linux/btrfs.h        |  34 ++
- 58 files changed, 3480 insertions(+), 1909 deletions(-)

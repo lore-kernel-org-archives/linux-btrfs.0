@@ -1,35 +1,35 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B70993E5EF1;
-	Mon, 15 Jun 2026 13:18:18 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A2A4F3E5EF1;
+	Mon, 15 Jun 2026 13:18:21 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781529499; cv=none; b=Czs/2fpMqici/Rq2AFgFbIsEl63clX9aSkrgl2cRxGKl99iiv7t5MLUg1Yjk0ni89h4kUh9O+WWvXEXIcQl/yzqcCM8TLMpvi8xuJiNEvjnYQ1amLGfXV7qXrffKND67OCkUGSnKKgrj9e21tnCl20+uXaYP0fNqrngx23QrdpM=
+	t=1781529502; cv=none; b=GyPAUbWjMUvdUXkKKuGpuT7DjvngBOVMPqDQjcCyFtaiAf2S3BeVuZFEKr3tlPvpJx7YYF1JSZumpzvK53HtBkWTgu0hFIrbShE2Vk/KOV8z7qMAomfAh5MnS14C5UpRfgIlMgcORH8w4uOw4F4S3guIf9B1hnVnPK1HYYKFuXA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781529499; c=relaxed/simple;
-	bh=7IviJDmECLct1mfX+ucUEKM7lpwiYuU/Cv+mO4JFoXk=;
-	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=Qj4JgB0ssyTgSGkouDDAjBP3wVq+Wca+GDDbaefTq8MtZn9LyVXGgEZLVRzSWrawEexgyRZvc7d/i1q7FL6nJMKmXlsvbAJdMKle0ATfVoHrJmpNtrdYdChU1EYL0pCWfXi6NxbdpFksIjccrOad0KQ35NsbUaMM8oSPstcGGZI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Nfb/Xlnp; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1781529502; c=relaxed/simple;
+	bh=/DrPb6bX2UuyLGwe4T7Av3UUK+9G9bPpfxlYExHjrcI=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=gmxPbxnjtHLIlm8l+DrA45ZdTvqC/P8Z9hD2g0XT6YjFIdkZROxPs8z+8mWDsErsDWX1VWE65nI2U1tuJ6847QabWghV8wGTgZ/tn4JwvBh1W9EQJ/dZ0sAOfkyG4q07c+eVXS3Vo0xmX1tCnUkbjj62XugX5E+6oc+p3tyz+TU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=CDpQAuY9; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Nfb/Xlnp"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C7AC01F000E9;
-	Mon, 15 Jun 2026 13:18:15 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="CDpQAuY9"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C9E7C1F00A3A;
+	Mon, 15 Jun 2026 13:18:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781529498;
-	bh=8X0V3Tc4hL+9KAbpOBY/kFW6p/k2S39HHy+Iy9zaNRI=;
-	h=From:Subject:Date:To:Cc;
-	b=Nfb/XlnpXNQYZrUOXcgxFHJRVfNuXIuhTHuztah3LprXzljOXFHelkfY8NaYJHyZJ
-	 /npvHLw2Bhjj+pKCzXwCd6VDtY62dUtC6lk02T+m4AAWeAuoYTVD2kXYlKtmtPF9JH
-	 31Fr9s/PlhP+2uHdk0xyOputTHeiTH+w9KSiz5iWSRKVq7aBsgfM95pDDN0QZ49S2x
-	 WBqYiGTO5yUMYxGQHDAbr+WwXszANiowU1xEYMBWSriqWpsnDguHzTaJkyWK5WuGwB
-	 b3szPPlZIgLrs+fq0NsE+4KIOSSi8BugxQVugFHOzS3APbIZLWq+yMhR71P4mgi0Qs
-	 ci5Lyr2vBzSdg==
+	s=k20260515; t=1781529501;
+	bh=Cn9vOUxJZ9a3ZjrwSO+tGKlFgoYwR1eCxr1/HB4GCgQ=;
+	h=From:Date:Subject:References:In-Reply-To:To:Cc;
+	b=CDpQAuY9kpw/sfIhZH2YRRl+wmvygiRPx24oHJtjU7Ho888Ouo7aFONRIFJUoPunH
+	 hiRMoh8JkRnM1AJc9ZLwCbE/cRh7BtUPc8z/nOrcniJmkmr0vXvj42tVS0Ch/F7kpN
+	 jyLOZwBWUAI8U0YHqf17/yviUy+Hm+GWsQHEFPUNmu3hobfnqmRzUZiYVDAep77xF/
+	 GlQV9fMuqbF7Ak4jz2MuwtXyu8aPYph1nMohPNCmJe6623A8eHWb3j7r5G4KkCuO18
+	 d1DQHQpkETtlUezqTRifJgBzYScpqLSxTByVINe4tglNtnef251CjEHrpk4T/tx2qM
+	 For9FzFLPI3MQ==
 From: Christian Brauner <brauner@kernel.org>
-Subject: [PATCH RFC 0/6] block,btrfs: fix frozen-superblock strand on
- device add/remove/replace
-Date: Mon, 15 Jun 2026 15:18:03 +0200
-Message-Id: <20260615-work-super-freeze_deny_upstream-v1-0-a6c72b840e7d@kernel.org>
+Date: Mon, 15 Jun 2026 15:18:04 +0200
+Subject: [PATCH RFC 1/6] btrfs: destroy the target device when
+ mark_block_group_to_copy() fails
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -38,11 +38,9 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-X-B4-Tracking: v=1; b=H4sIAIv7L2oC/yWNyw6CMBBFf4XM2hogWB9bEz/ArTGkwEUqsTQzg
- A/Cv0t1eU5uzp1IwBZCh2gixmjFdm6BZBVR2Rh3g7LVwpTGqY51slHPjlslgwermoEP8grunQ9
- eeoZ5qGy/M9DZVicmpqXiGbV9/R4udD4d6fqXMhR3lH1oh1lhBKpg48omqLGWdVA0z19j6V4Bo
- wAAAA==
-X-Change-ID: 20260615-work-super-freeze_deny_upstream-498ae64761a0
+Message-Id: <20260615-work-super-freeze_deny_upstream-v1-1-a6c72b840e7d@kernel.org>
+References: <20260615-work-super-freeze_deny_upstream-v1-0-a6c72b840e7d@kernel.org>
+In-Reply-To: <20260615-work-super-freeze_deny_upstream-v1-0-a6c72b840e7d@kernel.org>
 To: Chris Mason <clm@fb.com>, Jens Axboe <axboe@kernel.dk>, 
  David Sterba <dsterba@suse.com>, Jan Kara <jack@suse.cz>
 Cc: Naohiro Aota <naohiro.aota@wdc.com>, Josef Bacik <josef@toxicpanda.com>, 
@@ -50,81 +48,45 @@ Cc: Naohiro Aota <naohiro.aota@wdc.com>, Josef Bacik <josef@toxicpanda.com>,
  linux-fsdevel@vger.kernel.org, 
  "Christian Brauner (Amutable)" <brauner@kernel.org>
 X-Mailer: b4 0.16-dev-f5839
-X-Developer-Signature: v=1; a=openpgp-sha256; l=3862; i=brauner@kernel.org;
- h=from:subject:message-id; bh=7IviJDmECLct1mfX+ucUEKM7lpwiYuU/Cv+mO4JFoXk=;
- b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWTp/56ueNXjMJO+inJ5zqSWxY87vmYoTZ0dt1Uza8aL4
- Kd5CyoedpSyMIhxMciKKbI4tJuEyy3nqdhslKkBM4eVCWQIAxenAEzkWQfDP0N2kxvaeQ/3+/9M
- uZZSbnb105OKd/IMM+LPlwnpn9+e84KR4ZjOfrkLOyT65gbJ2if4zorevvlkVuadtt0Hkv5eZHU
- 25AEA
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1247; i=brauner@kernel.org;
+ h=from:subject:message-id; bh=/DrPb6bX2UuyLGwe4T7Av3UUK+9G9bPpfxlYExHjrcI=;
+ b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWTp/56ekq9v8z/ps0jNqtr69i3LLty77Jn8uNKGQ9J7T
+ a7cscx5HaUsDGJcDLJiiiwO7Sbhcst5KjYbZWrAzGFlAhnCwMUpABORiGdkeHPll/Zko68Llgv+
+ XHHlloda1HYTrwtfkt6InNWWl3Lpfc3IsHQac9bUkxO/vNBsaGqcX8v6WP9+5MK1qz3U/sumlIa
+ f4gEA
 X-Developer-Key: i=brauner@kernel.org; a=openpgp;
  fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
 
-A block-device freeze that races a btrfs device membership change can leave
-the whole filesystem stuck frozen, recoverable only with a manual FITHAW.
+btrfs_dev_replace_start() opens the replacement target with
+btrfs_init_dev_replace_tgtdev(), which adds it to the device list and opens
+its block device.  Every error path after that point reaches the 'leave'
+label to tear the target back down with btrfs_destroy_dev_replace_tgtdev() -
+except the mark_block_group_to_copy() failure, which returns directly.  The
+target is then leaked: it stays on the device list with its block device
+held until the filesystem is unmounted.
 
-btrfs holds each of its devices open with the superblock as the block-device
-holder.  bdev_freeze() - issued by "dmsetup suspend", an LVM snapshot, or
-FIFREEZE on the bare device - resolves that holder to freeze the filesystem,
-and bdev_thaw() ("dmsetup resume") resolves it again to thaw.  If a freeze
-lands while btrfs is adding, removing or replacing a device, it rides in on
-the device's holder link and freezes the filesystem; the membership change
-then drops that link, so the matching thaw can no longer find the
-superblock.  The filesystem stays frozen with no way back short of FITHAW.
+Goto leave like the other post-open error paths so the target is destroyed.
 
-To reproduce on the remove path: build a two-device btrfs with one member
-behind a dm-linear target, write enough data that removing that member
-relocates for a few seconds, start "btrfs device remove" on it, and
-"dmsetup suspend" the dm device while the removal is underway.  The suspend's
-freeze blocks on the remove ioctl's write access and rides in as the ioctl
-drops it; the removal then clears the device's holder link, so the matching
-"dmsetup resume" can no longer reach the superblock.  On an unpatched kernel
-the filesystem is left frozen and the next write hangs in D state until a
-manual FITHAW (fsfreeze -u).
-
-The fix lets a filesystem forbid freezing a device for the duration of a
-membership change, modelled on deny_write_access()/allow_write_access().
-bd_fsfreeze_count becomes signed: > 0 counts active freezes, < 0 counts deny
-holders, and the two are mutually exclusive.  bdev_deny_freeze() reserves the
-device (bdev_freeze() then returns -EBUSY) and bdev_allow_freeze() releases
-it; both are a single lockless atomic, so a filesystem can deny under
-s_umount without inverting against bdev_freeze()'s bd_fsfreeze_mutex.  btrfs
-denies the device across each add, remove and replace, so a racing freeze is
-refused instead of riding in, while a normal freeze of a settled member
-still works.
-
-To re-allow freezing safely on release, bdev_yield_claim() is split out of
-bdev_fput(): the caller yields the holder while the device file is still
-open, re-allows freezing on the now-holderless device, and only then closes
-it.  Re-allowing after the holder is gone avoids re-stranding on a racing
-freeze; doing it while the file is still open keeps the block device alive
-without referencing it after the final fput.
-
-Patch 1 is independent: it fixes a pre-existing target-device leak on the
-mark_block_group_to_copy() failure path in btrfs_dev_replace_start().  The
-replace bracket reuses that 'leave' unwind, so it comes first.
-
-With the fix the racing suspend is refused with -EBUSY mid-removal and the
-filesystem stays writable.
-
+Fixes: 78ce9fc269af ("btrfs: zoned: mark block groups to copy for device-replace")
 Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
 ---
-Christian Brauner (6):
-      btrfs: destroy the target device when mark_block_group_to_copy() fails
-      block: allow making a block device unfreezable
-      block: split bdev_yield_claim() out of bdev_fput()
-      btrfs: deny freezing a device while it is being removed
-      btrfs: deny freezing a device while it is being added
-      btrfs: deny freezing devices undergoing a replace
+ fs/btrfs/dev-replace.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- block/bdev.c              | 73 ++++++++++++++++++++++++++++++++++++-----
- fs/btrfs/dev-replace.c    | 67 +++++++++++++++++++++++++++++++++-----
- fs/btrfs/ioctl.c          |  4 +--
- fs/btrfs/volumes.c        | 83 ++++++++++++++++++++++++++++++++++++++++-------
- fs/btrfs/volumes.h        |  6 +++-
- include/linux/blk_types.h |  2 +-
- include/linux/blkdev.h    |  3 ++
- 7 files changed, 206 insertions(+), 32 deletions(-)
----
-base-commit: 254f49634ee16a731174d2ae34bc50bd5f45e731
-change-id: 20260615-work-super-freeze_deny_upstream-498ae64761a0
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 8f8fa14886de..0112aa6d7ab1 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -624,7 +624,7 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+ 
+ 	ret = mark_block_group_to_copy(fs_info, src_device);
+ 	if (ret)
+-		return ret;
++		goto leave;
+ 
+ 	down_write(&dev_replace->rwsem);
+ 	dev_replace->replace_task = current;
+
+-- 
+2.47.3
 

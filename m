@@ -1,63 +1,164 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3D6C328260;
-	Tue, 16 Jun 2026 07:08:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 103CD3502A9
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2026 08:12:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781593682; cv=none; b=fCMkqCMlyJ3nRtfsoCPHIM61NAWHprm/t3JvfX5GOp/kTKJMh236DIRtN6wSPwRAjr6ABA6Pz5dcFsr1fX2gndD7azodnYMfiTkHaIFlzE3GLCTkfI7JYm5mTw13U+2nkqzFRcsiUUoeamYubwvoT7q6L7vcfQ18zXszIqyDhqI=
+	t=1781597582; cv=none; b=jtfPSdKfQhZvmb4ZYv6GKWNZRglMVU1I3k2YnbaZM1CxaOM1cYOYu0yaUxjxCLsZxRa44KPmSgcv9cVkkqDXm1JxsmV4qzTTq7YjnOTZVVs2pSYq33kSbC1HE/Q5FYvGkRqhRsezvDSn++TNR2MQCsRrDVYgKDDXRWSJtLf5o3Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781593682; c=relaxed/simple;
-	bh=w1zQBnAGZB7q4v0fs/1OCmf7A7iu+O6a1Mp/dQLwc0k=;
-	h=Subject:From:In-Reply-To:References:Message-Id:Date:To:Cc; b=Ity0MQ/FkuaL0bZBW2o5xOXwrI2/5b+uNE2f5tsfuqmXgSZTsLHs3Wix6QFgRvagRuxssz3xtO5tTM5ROB2IiZq+f7D0GaTquiE9tH8kfxiwQHz3CxRSSLypiFiYXS0iHJLdAvAG2KmWw/tyxgJSNNkrfkLu8fFGlhbLa8Mn2YQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Ex3wxGqz; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1781597582; c=relaxed/simple;
+	bh=al9hpuFpqsIjZwH+x7Gha+NtcvGhCsfQ/bjSIc5HaTk=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=goX1405ROifQv+g7wHDY4tIoeMXgBTmgy2RJRj4afLbRI8LxJk0m9zThqvFavYACD+SBxqO5ZdCgv/zpiqDH4Bx6f4eSJSlqCYY5L9p3zorgN4B7LMEeoXNhPpvXB3R0KekoldK3364mRJO7Y83E1/gwLUX/xJLnjI6sL5GxTT8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=AbEOd4MZ; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=AbEOd4MZ; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Ex3wxGqz"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8AEA51F000E9;
-	Tue, 16 Jun 2026 07:08:01 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781593681;
-	bh=+QefDv9TTMXZJYgWMUsB3wPQOZ+A8roB1K9bz/vzIVw=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc;
-	b=Ex3wxGqzWIL675qMDgXVayXu+XikonA7/jP1we/nJDQTl6Wjs+6tgJMBlWC2JWWAX
-	 PiAQhpm1NppWzolnQc/K3CdCBvq46b2MX4FSEykIxWSF137O7u2/29RCe5CtITotsg
-	 zonMwiF5+voS16bUA+6vc7yVNJoykegK6WEL3cMPuK8h/9vf9dJD6m0Ynav4JNAFMS
-	 gubA/m93smILgSzdN4rPBcJM50cCXnwpXDIXN0fxFSo0B8tkUuqWxNGitZBVJWIXRS
-	 CKWXAiTLnsyPNzsuwbsUyDmXi7FpkC2wM7BkXdyaIRjrJvRa0kla84W1meoGwCkLbZ
-	 ODYSXnee6nhtQ==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 93B8D383BF5B;
-	Tue, 16 Jun 2026 07:07:57 +0000 (UTC)
-Subject: Re: [GIT PULL] Btrfs updates for 7.2
-From: pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1781558337.git.dsterba@suse.com>
-References: <cover.1781558337.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-btrfs.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1781558337.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-tag
-X-PR-Tracked-Commit-Id: ae2eb64bfd9762536f60b690840adcdf622cdcce
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 31b706da2cfd8ee3352391181ccf9696bed3d25d
-Message-Id: <178159367612.494683.5268382620088031351.pr-tracker-bot@kernel.org>
-Date: Tue, 16 Jun 2026 07:07:56 +0000
-To: David Sterba <dsterba@suse.com>
-Cc: torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="AbEOd4MZ";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="AbEOd4MZ"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 472E36CAA1;
+	Tue, 16 Jun 2026 08:12:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1781597578; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=YisAiIYXF3a6H38XzU5Fz4HeVYLAdB+0rrEl9RKukZQ=;
+	b=AbEOd4MZiKoHDPEmcTPewGqnhLBK/RQcu0PON3AtV4pBnv9wd1uBEa7JHmHcCYrrSudRI6
+	icOzKxQgFTNiC2gWTR5DDa6Q9rDvIIme9kBxeCa9HtrjOuWbKXJ3xP0cquZ5Uc6G3OpZcT
+	d+JOQLLvrepS7ojZzvxtI+Tf+rxO818=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1781597578; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=YisAiIYXF3a6H38XzU5Fz4HeVYLAdB+0rrEl9RKukZQ=;
+	b=AbEOd4MZiKoHDPEmcTPewGqnhLBK/RQcu0PON3AtV4pBnv9wd1uBEa7JHmHcCYrrSudRI6
+	icOzKxQgFTNiC2gWTR5DDa6Q9rDvIIme9kBxeCa9HtrjOuWbKXJ3xP0cquZ5Uc6G3OpZcT
+	d+JOQLLvrepS7ojZzvxtI+Tf+rxO818=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 45E88779A8;
+	Tue, 16 Jun 2026 08:12:55 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id X5G+OIcFMWrWawAAD6G6ig
+	(envelope-from <wqu@suse.com>); Tue, 16 Jun 2026 08:12:55 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org,
+	linux-block@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-xfs@vger.kernel.org
+Subject: [PATCH v4 0/3] btrfs: use IOMAP_DIO_BOUNCE flag instead of falling back to buffered IO
+Date: Tue, 16 Jun 2026 17:42:34 +0930
+Message-ID: <cover.1781597506.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Level: 
 
-The pull request you sent on Mon, 15 Jun 2026 23:29:11 +0200:
+[CHANGELOG]
+v4:
+- Follow iomap/block layer code style to avoid lines over 80 chars
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-tag
+- Reject NOWAIT BOUNCE direct writes inside btrfs
+  The iomap code still allocates memory with GFP_KERNEL in other
+  locations.
+  For now just disable NOWAIT BOUNCE direct writes and let the caller
+  fall back to blocking mode.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/31b706da2cfd8ee3352391181ccf9696bed3d25d
+v3:
+- Fix a bug in error handling of bio_iov_iter_bounce_write()
+  Which can lead to generic/708 failure on btrfs.
 
-Thank you!
+- Respect nofault flag in bio_iov_iter_bounce_write()
+  To avoid btrfs specific deadlocks.
+
+- Reject NOWAIT and BOUNCE direct IOs
+  Since BOUNCE always allocate pages using GFP_KERNEL, which can sleep
+  and break NOWAIT requirement, has to reject such combination.
+
+v2:
+- Rework the comment in btrfs_dio_write()
+
+Commit 968f19c5b1b7 ("btrfs: always fallback to buffered write if the
+inode requires checksum") solved the csum mismatch caused by unstable
+direct IO buffers, it has a pretty hefty performance penalty.
+
+Meanwhile upstream iomap has introduce IOMAP_DIO_BOUNCE flag to get
+stable buffers meanwhile without falling back to buffered IOs.
+
+Using that flag btrfs can reach 95% of the original zero-copy direct IO
+performance, almost 2x the current buffered fallback performance.
+
+However during my tests, there are several bugs related to iomap that
+can lead to direct IO test case failures:
+
+- generic/708
+  Results garbage in the end of the writes, is a bug in the error
+  handling of a short copy.
+
+  Fixed in the first patch.
+
+- Deadlock if using the page cache as direct IO buffer
+  This is because bio_iov_iter_bounce_write() doesn't respect
+  iov_iter::nofault flag.
+
+  Fixed in the second patch.
+
+- Possible NOWAIT and BOUNCE conflicts
+  BOUNCE flag for both reads and writes will allocate new folios using
+  GFP_KERNEL, which can sleep and break NOWAIT requirement.
+
+  Reject such combination in btrfs when enabling IOMAP_DIO_BOUNCE
+  support.
+
+And the final one will enable btrfs to use IOMAP_DIO_BOUNCE flag, so
+that even with data checksum we do not need to fallback to buffered IO
+and reclaim most of the dropped direct IO performance.
+
+Qu Wenruo (3):
+  block: revert the iov_iter after a short copy in
+    bio_iov_iter_bounce_write()
+  block: respect iov_iter::nofault flag in bio_iov_iter_bounce_write()
+  btrfs: use IOMAP_DIO_BOUNCE flag instead of falling back to buffered
+    IO
+
+ block/bio.c          | 21 +++++++++++++---
+ fs/btrfs/direct-io.c | 58 ++++++++++++++++++++++----------------------
+ 2 files changed, 47 insertions(+), 32 deletions(-)
 
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+2.54.0
+

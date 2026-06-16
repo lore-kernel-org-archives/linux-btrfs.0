@@ -1,35 +1,35 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 69AC6349B19;
-	Tue, 16 Jun 2026 11:41:47 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5675F3DB304;
+	Tue, 16 Jun 2026 11:41:53 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781610108; cv=none; b=GOpdHG+YVkDHdJ3Bh8xsNwglEbzyhymawVd/yLzi7+qI9HDlwgo79zQsKakHI7HXy+TtKGjKc3xUopLmqlWDWpBNXwxY4BZhsn1fs6FfAZ+sKTCKhqmAzY/gFLMCueYKkAzdGrhgbe7toiCrMIxEVUHoKEB3JGn+Nu4OOLTz5vo=
+	t=1781610114; cv=none; b=SIKokFgpKicCFzBLH7KQTVcXKs1PtxFuK/IltiZ0ekr6+fWUpaKKX+55CXlbFjSVPNuEAGNcnP28iOQqyPDAQSLcfj3g/OM0tloWM0vQaVu909pnYq/jmwkuhxD5OQE14NyN3/nRYAHqXoNjDIarJ7HSDmCXHLnCUKVrDzxMNbk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781610108; c=relaxed/simple;
-	bh=iQ/c7WwMFf2YvGr58yE5+rc9rQlcYCHXsCIOXQuojP4=;
+	s=arc-20240116; t=1781610114; c=relaxed/simple;
+	bh=1KKCoCE2EgXQf7cXviwJgYVNdqj8FqW+oyQF+kRv77w=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=foOJ8VI8SGmnscV2uILYXy7VrI0axTk26Dg00Uri108GU5lgx7aEBJOlxPFC9XuYjaHxxQKC7Au1Vg9+PPbqI8zDnpicZ5NvhOipeSJJenkWorzZ2uAp6cTc3hWb+1O8gCSER2FDtk/aP99ZPQmQ1C8crRnWrVjYcLYKhy61V38=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=S41OFjRa; arc=none smtp.client-ip=100.103.45.18
+	 In-Reply-To:To:Cc; b=DeP8VYVBhJmOb1he8WbFNUC4h+65o4YtWMYoygNE1L10tU7mBh9uENV2Fx+5XuuveLot0LbOKpsu6PwpDpImJJjnDsZs/y478AlFInNWAUDG52U37nwYjVj39QSGlSgx0bu9lgiwZxVBTChYXQ0KtDbTwTDnaD6ZzA+y0sR+mqg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=X+yu2QXC; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="S41OFjRa"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DB9AC1F000E9;
-	Tue, 16 Jun 2026 11:41:44 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="X+yu2QXC"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8028C1F000E9;
+	Tue, 16 Jun 2026 11:41:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781610107;
-	bh=4iwT/PwoTkVYTiCGBxS27rU7ACMvuuhbLIMNfCz83xY=;
+	s=k20260515; t=1781610113;
+	bh=I/mYV4YmcLAH02nnAf7KSjFnk4Qwm9BkGka5tJ10L8A=;
 	h=From:Date:Subject:References:In-Reply-To:To:Cc;
-	b=S41OFjRakzf6u50dNiKEAMYtcroxBOjKd0z0KDkGAJEd3jk1+/n2yp1kyFIzmoeNS
-	 y18ObMz7GeC6bUbUg8HYZVTTYob9h0ive6i6CH2e1w/o3zH+TUwZSA2anot+vxvY6B
-	 EuQvIGs6HzJ+bD2A1UsrsoUAU6amXxeL7SiUYo60j65LAxcsEvByYZZvbZg/ad9lpb
-	 SUaXFETwOEMwHd+GRbAQ0H8YH/8KETELMOfX1bUYKWmygMSYpsd7lEE1eCNg28jZqJ
-	 62g5UZ17TStCSRYee+ih5Abv3ynw7Dj+EgbqFBKdEWfJ7e8HkxnwOUQ2JD2C3YR/m1
-	 4rE4zKw6j7cfg==
+	b=X+yu2QXCEB5jUVoNHghBScAWVh3KO23nVguEbQaRpq4Ig+pVMCEkPPQXWwRCSqrNx
+	 TDzGsYLaNqNmg5exBv50iOAh9J3B63+9I0EPdkxw7DuuEIBdEm4yilmU9c+xzNF2Uj
+	 xgBxF0CCtTxS7fGe4VmqbqjGCQ1shsi8I5dHVPqJkfojlxH62b4a9UfJKp2ZRgUQ5d
+	 k5Mk0l9K6OE3MJLAurIY5Qe+D7RkCDkCw0H4D31xXj0D6yUijJIL69ah6VdHvc1ZhI
+	 +Mq/l6ZVgIueBj3tHNVfSug+8DwUVliohFVIjEM3bS2JxHfcM2V16BarEHRq3+7+Nu
+	 dZ8/EsXxgckZQ==
 From: Christian Brauner <brauner@kernel.org>
-Date: Tue, 16 Jun 2026 13:41:13 +0200
-Subject: [PATCH 4/7] btrfs: drain replace writes before freeing the target
- on cancel
+Date: Tue, 16 Jun 2026 13:41:14 +0200
+Subject: [PATCH 5/7] btrfs: don't leave dev-replace STARTED after an early
+ finishing failure
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -38,7 +38,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260616-work-btrfs-preexisting-fixes-v1-4-c4abe2f6d4f0@kernel.org>
+Message-Id: <20260616-work-btrfs-preexisting-fixes-v1-5-c4abe2f6d4f0@kernel.org>
 References: <20260616-work-btrfs-preexisting-fixes-v1-0-c4abe2f6d4f0@kernel.org>
 In-Reply-To: <20260616-work-btrfs-preexisting-fixes-v1-0-c4abe2f6d4f0@kernel.org>
 To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
@@ -48,65 +48,105 @@ Cc: Filipe Manana <fdmanana@suse.com>, Naohiro Aota <naota@elisp.net>,
  Stefan Behrens <sbehrens@giantdisaster.de>, linux-fsdevel@vger.kernel.org, 
  "Christian Brauner (Amutable)" <brauner@kernel.org>, stable@vger.kernel.org
 X-Mailer: b4 0.16-dev-4090c
-X-Developer-Signature: v=1; a=openpgp-sha256; l=2367; i=brauner@kernel.org;
- h=from:subject:message-id; bh=iQ/c7WwMFf2YvGr58yE5+rc9rQlcYCHXsCIOXQuojP4=;
- b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWQZmmXnX8qtZi6ZbaPpksJTvqDk88y0l6bu1lsW3NaXU
- GabvvdNRykLgxgXg6yYIotDu0m43HKeis1GmRowc1iZQIYwcHEKwER2OzH8Yu6Ldz/7v/rFtnPt
- be7Z0z1nTPXhtgqetGm1aopEtIVELMN/Z7sCyWM3zq6W5JT2YpeM46tnmJ5btGse06F+6fzkG4/
- 5AA==
+X-Developer-Signature: v=1; a=openpgp-sha256; l=3803; i=brauner@kernel.org;
+ h=from:subject:message-id; bh=1KKCoCE2EgXQf7cXviwJgYVNdqj8FqW+oyQF+kRv77w=;
+ b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWQZmmXzNP9/Gc+8Suvldaua4uibuWuPLdrs2znLckv0K
+ t5WvV0+HaUsDGJcDLJiiiwO7Sbhcst5KjYbZWrAzGFlAhnCwMUpABdxYfhnzHG688TvXiaf5gBH
+ mXN/psfZ3lb2eR8Uq/DllnJm+FtbRoZNHmJefbGzNue+KUjMWMlqM/edrk1NonWEbkdhvmaKLjs A
 X-Developer-Key: i=brauner@kernel.org; a=openpgp;
  fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
 
-A device replace can be left SUSPENDED while the filesystem stays mounted
-and writable.  btrfs_resume_dev_replace_async() leaves the replace
-SUSPENDED with the target device still present when it cannot claim the
-exclusive operation (e.g. a recovered paused balance owns it), and while
-SUSPENDED btrfs_dev_replace_is_ongoing() stays true, so writes to the
-source device are still duplicated to the target device (see
-btrfs_map_block() and handle_ops_on_dev_replace()), accounted by
-dev_replace->bio_counter.
+btrfs_dev_replace_finishing() can return early, before the source and
+target devices are swapped, if btrfs_start_delalloc_roots() or
+btrfs_start_transaction() fails (e.g. with -ENOMEM):
 
-If the replace is then canceled, btrfs_dev_replace_cancel() takes the
-SUSPENDED case and frees the target with
-btrfs_destroy_dev_replace_tgtdev().  That helper does a synchronize_rcu()
-(to fence readers of the device list) but does not wait for the duplicated
-write bios to drain.  A bio that completes after the free dereferences the
-freed tgt_device (e.g. btrfs_log_dev_io_error() ->
-btrfs_dev_stat_inc_and_print()), and btrfs_close_bdev() tears the block
-device down while I/O is still in flight against it -- a use-after-free.
+	ret = btrfs_start_delalloc_roots(fs_info, LONG_MAX, false);
+	if (ret) {
+		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+		return ret;
+	}
+	...
+	trans = btrfs_start_transaction(root, 0);
+	if (IS_ERR(trans)) {
+		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+		return PTR_ERR(trans);
+	}
 
-btrfs_dev_replace_finishing() handles this correctly on its own error
-path: it calls btrfs_rm_dev_replace_blocked() -- which blocks new bios and
-waits for bio_counter to reach zero -- before
-btrfs_destroy_dev_replace_tgtdev(), then calls
-btrfs_rm_dev_replace_unblocked().  The cancel path omitted the drain.
+These legs leave dev_replace->replace_state as STARTED.  The scrub that
+drives the replace has already exited (btrfs_scrub_dev() has returned),
+and the caller releases the exclusive operation unconditionally: both
+btrfs_dev_replace_kthread() and the BTRFS_IOCTL_DEV_REPLACE_CMD_START
+ioctl call btrfs_exclop_finish() regardless of the return value.
 
-Mirror the finishing error path: drain the in-flight bios before
-destroying the target.
+The result is a replace stuck in STARTED with no running scrub, which
+cannot be canceled.  btrfs_dev_replace_cancel() takes its STARTED case
+and calls btrfs_scrub_cancel(), which returns -ENOTCONN because no scrub
+is running; cancel then reports
+BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED and tears nothing down.  The
+replace stays STARTED -- writes keep being duplicated to the target --
+until the filesystem is unmounted; only then does
+btrfs_dev_replace_suspend_for_unmount() move it to SUSPENDED so the next
+mount can resume it.
 
-Fixes: d189dd70e255 ("btrfs: fix use-after-free due to race between replace start and cancel")
+Demote the replace from STARTED to SUSPENDED on these early-return legs.
+SUSPENDED is exactly the state the rest of the code expects for "no
+scrub running, resumable": btrfs_dev_replace_cancel()'s SUSPENDED case
+cleanly tears the target down, and a resume on the next mount restarts
+the copy.
+
+This does not change that the exclusive operation is released while the
+replace is only suspended; tightening the exclop lifetime so a balance
+cannot start against an in-mount suspended replace is a separate change.
+
+Fixes: e93c89c1aaaa ("Btrfs: add new sources for device replace code")
 Cc: stable@vger.kernel.org
 Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
 ---
- fs/btrfs/dev-replace.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/dev-replace.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
 diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 51665ed09798..e5090fb7fc11 100644
+index e5090fb7fc11..13badbdee06b 100644
 --- a/fs/btrfs/dev-replace.c
 +++ b/fs/btrfs/dev-replace.c
-@@ -1161,8 +1161,11 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
- 			btrfs_dev_name(src_device), src_device->devid,
- 			btrfs_dev_name(tgt_device));
+@@ -861,6 +861,21 @@ static void btrfs_dev_replace_update_device_in_mapping_tree(
+ 	write_unlock(&fs_info->mapping_tree_lock);
+ }
  
-+		/* Drain writes still duplicated to tgtdev before freeing it. */
-+		btrfs_rm_dev_replace_blocked(fs_info);
- 		if (tgt_device)
- 			btrfs_destroy_dev_replace_tgtdev(tgt_device);
-+		btrfs_rm_dev_replace_unblocked(fs_info);
- 		break;
- 	default:
- 		up_write(&dev_replace->rwsem);
++/* Demote a STARTED replace to SUSPENDED on an early finishing failure. */
++static void btrfs_dev_replace_set_suspended(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
++
++	down_write(&dev_replace->rwsem);
++	if (dev_replace->replace_state == BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED) {
++		dev_replace->replace_state =
++			BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED;
++		dev_replace->time_stopped = ktime_get_real_seconds();
++		dev_replace->item_needs_writeback = 1;
++	}
++	up_write(&dev_replace->rwsem);
++}
++
+ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 				       int scrub_ret)
+ {
+@@ -895,6 +910,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	 */
+ 	ret = btrfs_start_delalloc_roots(fs_info, LONG_MAX, false);
+ 	if (ret) {
++		btrfs_dev_replace_set_suspended(fs_info);
+ 		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+ 		return ret;
+ 	}
+@@ -908,6 +924,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	while (1) {
+ 		trans = btrfs_start_transaction(root, 0);
+ 		if (IS_ERR(trans)) {
++			btrfs_dev_replace_set_suspended(fs_info);
+ 			mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+ 			return PTR_ERR(trans);
+ 		}
 
 -- 
 2.47.3

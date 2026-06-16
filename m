@@ -1,147 +1,201 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 58F08326930;
-	Tue, 16 Jun 2026 13:23:30 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C959337688;
+	Tue, 16 Jun 2026 14:08:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781616211; cv=none; b=lbiWHgrVzuowQwsj6oCS8+XqvA/Qd1ULVhLkIwdRoxI26q5yokfTVwBjdaWkeF8osAj5vFrbNGFIJM8QQKlQzPcczVQGpwuT+RjumYR3RAxfFwGkJ4+ivbqj+Xs8dvZ8Ipme5BVP3oeF0HOOb5xcQ0iJqhUFsxpCnQE1IGPl98c=
+	t=1781618916; cv=none; b=K3hsjxHISjLvKWP+XmAwAqvqPv028C3SmNOF8f3SUo48dQtzoPWl94m4TxE1PWs2hfRhL9gPNdVj9yAjZxoyepzew25EDKYUDw/XuKG3JrcLbbtfHShLL4j9AaP8PSgPtNFEyqi1L4meUd9KtVFKr9ZAmjzxDBEVB/eHoNXxct4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781616211; c=relaxed/simple;
-	bh=pVKQJiXc44R1jv08a/uug39IE4eeXPboNcqwbl1INHI=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=oWhd9uieLgoeEilnV1tvsOfg28fORCTPf5hhq2VtR8yYCme8vIq6IJPV7nBHRqKAAeozlFBox3U2MFQiSM90DqMq3cJo8nMw62ro2B/XfCvTTuC40ojau1FRTXu8z9Yg1KcRTutWdZsw+K0oBqZb+xejEAJiggLhfAofpmXNujA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=IhfslXGo; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1781618916; c=relaxed/simple;
+	bh=Do5i3EDmjVE1e/AZzgM+lKWOADPulnojqc5162s3uhI=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=QOMJmE2h1KF84BcpuEr0DW3+mZEvcKuTxJ55jKegEVeR0AicCatoivj9l6Upi87EqQE4U4qkRvKaULoWuymJKKYh81FOkpsMw2TGa6u+cxRrBN0lkEttBYnnRpOsXFWd3dKUKigvRxJsOPxCaFR40h+VlYTnMqHSUjrbIsMDrLU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ZugUIHc6; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="IhfslXGo"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D12CE1F00A3A;
-	Tue, 16 Jun 2026 13:23:24 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ZugUIHc6"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BD56D1F000E9;
+	Tue, 16 Jun 2026 14:08:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781616210;
-	bh=7IYgv1RZ0pUBUMEPBvaPetWKhaFlwNS6ioZboD1f84E=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To;
-	b=IhfslXGoCEm2+XnbCqs6Nn+djLUlmW+cq2LhRTgHwnFnGjy+EhLbD3oyanvvbDHaK
-	 28+EeHm+tnuF6dKx6Vqsyi0oHZOUPe6ofhXKIkRPRfzYIZrkL9xY5ZI1O2Y/1EbHQo
-	 qofWbMeu0+i05N/ATpbKxW9bqN+ivhrVWkazUU1/ba6pPMTCzWHfJPsXh+RDPVkIpr
-	 qNBxoZUX4tJu1L4qYfTP2/F3pKaEOeSdH6JZAuHlkuLu9szvsq0AwXmxcL0H4HxdpD
-	 GlImesBPUbb+u1/WnPCbhY8ZItV7dKiBDqOYhzV74Ueg+qLX0W9nuYMnkwiEaPfIHw
-	 hvIbYl2DwudsQ==
-Message-ID: <1c85ad18-2f1c-4700-8c24-7d06644a3607@kernel.org>
-Date: Tue, 16 Jun 2026 15:23:23 +0200
+	s=k20260515; t=1781618915;
+	bh=vrChKgbTI+0aqivTF5YP6Yuwbv2q4OzzhaoctlYZpaM=;
+	h=From:Subject:Date:To:Cc;
+	b=ZugUIHc6Aq2rgs4tUnGQK0fzxOeCN1jy0iKf7Vf80qCDDLK6ylLvc7KuHXyUyhlJo
+	 AZ4pjovOvM3AIeDSgPv6PO7A3whILphjqK9LHMVXxNFU1VZF7lkNhlYMB1jOWnB6Sz
+	 UhG//CfYLOufFNQ3ZrNvx+91YNRibbLrP0hKQDE9bHZeHr42naAiKqwRFynVRymqLi
+	 tthie1w5XTiStq4bfzD81mlkabTxkvEI+0KDgVDwLsuvBOSI4blFtuQ3tL7AkjR3Th
+	 e+/ppRyquEfTGTEP7bmj54Wozv4CxsR3CgH6qa1mkKZw9x2vuID8QiTAyb+NUfiPxK
+	 UlR6GzLBYJVZg==
+From: Christian Brauner <brauner@kernel.org>
+Subject: [PATCH RFC v2 00/18] fs: support freeze/thaw/mark_dead/sync with
+ shared devices
+Date: Tue, 16 Jun 2026 16:08:16 +0200
+Message-Id: <20260616-work-super-bdev_holder_global-v2-0-7df6b864028e@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v6 14/14] selftests/mm: add writable-file collapse tests
- for khugepaged
-To: Zi Yan <ziy@nvidia.com>, Andrew Morton <akpm@linux-foundation.org>,
- "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- Song Liu <songliubraving@fb.com>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
- Alexander Viro <viro@zeniv.linux.org.uk>,
- Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
- Lorenzo Stoakes <ljs@kernel.org>, Baolin Wang
- <baolin.wang@linux.alibaba.com>, "Liam R. Howlett"
- <Liam.Howlett@oracle.com>, Nico Pache <npache@redhat.com>,
- Ryan Roberts <ryan.roberts@arm.com>, Dev Jain <dev.jain@arm.com>,
- Barry Song <baohua@kernel.org>, Lance Yang <lance.yang@linux.dev>,
- Vlastimil Babka <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>,
- Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
- Shuah Khan <shuah@kernel.org>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-mm@kvack.org, linux-kselftest@vger.kernel.org,
- Liam Howlett <liam@infradead.org>
-References: <20260517135416.1434539-1-ziy@nvidia.com>
- <20260517135416.1434539-15-ziy@nvidia.com>
-From: "David Hildenbrand (Arm)" <david@kernel.org>
-Content-Language: en-US
-Autocrypt: addr=david@kernel.org; keydata=
- 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
- qIws/H2t
-In-Reply-To: <20260517135416.1434539-15-ziy@nvidia.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIANBYMWoC/42OQW6DMBRErxJ5XSPjCIS6ilSpB+i2ipA/HsAJt
+ dE3kKYRdw8mF+hyRjNv5iEi2CGK98NDMBYXXfCb0G8H0fTGd5DOblpopUtVKi1vga8yziNYksV
+ S92Gw4LobAplBVg2ZAoUm2EJsjJHRut+d/y2+Pj/E+WXGmS5opkROMTIRktj4pk9W2sj2jaxl4
+ A+1hb/X8xgnhvlJjd7FKfB9/73kO/6fF5dcKkmkWlvp9liV+ekK9hiywJ04r+v6BAABAjoUAQA
+ A
+X-Change-ID: 20260602-work-super-bdev_holder_global-8cba5e52bed5
+To: Jan Kara <jack@suse.cz>
+Cc: Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>, 
+ Alexander Viro <viro@zeniv.linux.org.uk>, linux-block@vger.kernel.org, 
+ linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+ Carlos Maiolino <cem@kernel.org>, linux-xfs@vger.kernel.org, 
+ Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
+ linux-btrfs@vger.kernel.org, Theodore Ts'o <tytso@mit.edu>, 
+ linux-ext4@vger.kernel.org, Gao Xiang <xiang@kernel.org>, 
+ linux-erofs@lists.ozlabs.org, 
+ "Christian Brauner (Amutable)" <brauner@kernel.org>, 
+ syzbot@syzkaller.appspotmail.com, Gao Xiang <xiang@kernel.org>
+X-Mailer: b4 0.16-dev-4090c
+X-Developer-Signature: v=1; a=openpgp-sha256; l=7470; i=brauner@kernel.org;
+ h=from:subject:message-id; bh=Do5i3EDmjVE1e/AZzgM+lKWOADPulnojqc5162s3uhI=;
+ b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWQZRtybLbr8y1c30W0vfldvvn/t+KZpW5xrNywXP/AsY
+ 8Z9Kb8S3Y5SFgYxLgZZMUUWh3aTcLnlPBWbjTI1YOawMoEMYeDiFICJbJ3LyLDwJO/0vkcmKru2
+ 6XiG/mJda+zzliVE2GuCZfDrg0x9zVUM/1St7sWmptTujS90iCkP2LhzYvzXgFUePaVnmsr+zs5
+ +wQMA
+X-Developer-Key: i=brauner@kernel.org; a=openpgp;
+ fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
 
-On 5/17/26 15:54, Zi Yan wrote:
-> collapse_file() now supports collapsing clean pagecache folios from
-> writable files, so add corresponding tests.
-> 
-> Note that madvise(MADV_COLLAPSE) works for dirty pagecache folios from
-> writable files, because collapse_single_pmd() triggers a synchronous
-> writeback when first attempt of collapse_file() fails.  That writeback
-> makes dirty folios clean and the retry of collapse_file() succeeds.
-> 
-> Signed-off-by: Zi Yan <ziy@nvidia.com>
-> Cc: Al Viro <viro@zeniv.linux.org.uk>
-> Cc: Baolin Wang <baolin.wang@linux.alibaba.com>
-> Cc: Barry Song <baohua@kernel.org>
-> Cc: Chris Mason <clm@fb.com>
-> Cc: Christian Brauner <brauner@kernel.org>
-> Cc: David Hildenbrand (Arm) <david@kernel.org>
-> Cc: David Sterba <dsterba@suse.com>
-> Cc: Dev Jain <dev.jain@arm.com>
-> Cc: Jan Kara <jack@suse.cz>
-> Cc: Lance Yang <lance.yang@linux.dev>
-> Cc: Liam Howlett <liam@infradead.org>
-> Cc: Lorenzo Stoakes <ljs@kernel.org>
-> Cc: Matthew Wilcox (Oracle) <willy@infradead.org>
-> Cc: Michal Hocko <mhocko@suse.com>
-> Cc: Mike Rapoport <rppt@kernel.org>
-> Cc: Nico Pache <npache@redhat.com>
-> Cc: Ryan Roberts <ryan.roberts@arm.com>
-> Cc: Shuah Khan <shuah@kernel.org>
-> Cc: Song Liu <songliubraving@fb.com>
-> Cc: Suren Baghdasaryan <surenb@google.com>
-> Cc: Vlastimil Babka <vbabka@kernel.org>
-> ---
+This is a generalization of the device number to superblock so it works
+for actual block device and anonymous (or even mtd) devices.
 
-Acked-by: David Hildenbrand (Arm) <david@kernel.org>
+fs_holder_ops recovers the affected superblock from bdev->bd_holder. That
+forces the holder of a block device to be exactly one superblock and makes
+it impossible for several superblocks to share a single device.
 
--- 
-Cheers,
+erofs does exactly that. It can mount read-only "blob" devices that are
+shared between many superblocks: a metadata-only erofs that indexes a set
+of per-layer blobs (one filesystem instead of one per OCI layer), or an
+incremental image whose base device is shared by several updates. Because
+the block layer only tracks a single holder, a freeze, thaw, removal or
+sync on such a device is never propagated to all the superblocks using it,
+and the current infrastructure has no way to find them.
 
-David
+This series replaces the bd_holder-based lookup with a global, dev_t-keyed
+table mapping each block device to the superblock(s) using it. The holder
+argument becomes purely the block layer's exclusivity token -- a superblock,
+or the file_system_type for a device shared within one filesystem type --
+and the fs_holder_ops callbacks look the device up in the table and act on
+every superblock registered for it: 1:1 for most filesystems, 1:many for
+erofs.
+
+Filesystems claim and release their devices through new
+fs_bdev_file_open_by_{dev,path}() and fs_bdev_file_release() helpers; the
+per-fs patches convert xfs, btrfs, ext4, f2fs and erofs over to them and
+fix cramfs and romfs, which released the registered main device with a
+raw bdev_fput().
+
+Since every superblock is registered under its s_dev the table also
+replaces the last s_dev-keyed walk of the super_blocks list:
+user_get_super() resolves device numbers through it, so ustat() and
+quotactl() now work on any device a filesystem claims and no longer
+take sb_lock.
+
+The longer-term motivation is to let userspace decide which devices may be
+onlined from one central place, without having to teach every filesystem
+about it individually.
+
+Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
+---
+Changes in v2:
+- super: rework the device-to-superblock table reference counting: each
+  (device, superblock) entry carries a single claim count and holds one
+  passive reference on its superblock for the entry's lifetime. New prep
+  patches convert s_count to refcount_t s_passive and make put_super()
+  self-locking.
+- super: preallocate the entry in alloc_super() and register it from the
+  set callbacks through set_anon_super()/set_bdev_super(); an insert
+  failure unwinds exactly like a set callback failure. The superblock
+  stashes the entry in sb->s_super_dev and kill_super_notify() drops the
+  claim through it.
+- super: initialize the table from mnt_init(); the rootfs and shm mounts
+  are created long before any initcall runs.
+- super: fold the v1 "refuse to claim a frozen block device" patch into
+  the registration helper and restore the EBUSY check for the primary
+  device in setup_bdev_super(): additional devices (the xfs log, the ext4
+  journal, erofs blobs) are now refused while frozen as well, answering
+  Jan's question on v1 3/8.
+- Split the core patch into table/helpers/switch-over and move the
+  xfs/btrfs/ext4 conversions before the fs_holder_ops switch so no
+  freeze/mark_dead events are lost mid-series; erofs follows the switch.
+- New prep patches: the ext4 KUnit tests allocate anonymous devices and
+  ocfs2 stops resetting s_dev on dismount.
+- New: convert user_get_super() to the device table, plus a ustat()
+  selftest.
+- New: fix a pre-existing double release of the realtime device file and
+  dangling buftarg pointers in xfs_open_devices()'s error unwind.
+- New: convert f2fs's additional devices to the helpers; fix cramfs and
+  romfs releasing the registered main device with a raw bdev_fput().
+- erofs: drop the .shutdown() and .remove_bdev() implementations and the
+  per-device "dead" flag. Immutable filesystems don't need them: the block
+  layer sets GD_DEAD before fs_bdev_mark_dead() so in-flight bios fail
+  anyway, erofs has no write path or journal to stop, and the read-only
+  loop_change_fd() case must not be forced to -EIO. Patch from Gao Xiang,
+  applied verbatim - thanks!
+- btrfs: fix a general protection fault in close_fs_devices() on a failed
+  mount (reported by syzbot). The release path took the superblock from
+  device->fs_info, which is still NULL if open_ctree() fails before
+  btrfs_init_devices_late(); it now uses bdev_file->private_data.
+- erofs: the v1 conversion was sent with a generic boilerplate changelog;
+  superseded by Gao's patch above.
+- Collect Reviewed-by from Jan Kara and Tested-by from syzbot.
+- Rebase onto v7.1-rc1.
+- Link to v1: https://patch.msgid.link/20260602-work-super-bdev_holder_global-v1-0-bb0fd82f3861@kernel.org
+
+---
+Christian Brauner (18):
+      xfs: fix the error unwind in xfs_open_devices()
+      super: convert s_count to refcount_t s_passive
+      super: take lock after last reference count
+      fs, block: move blk_mode_t and fop_flags_t into <linux/types.h>
+      ext4: use anonymous devices for KUnit test superblocks
+      ocfs2: don't reset s_dev on dismount
+      fs: maintain a global device-to-superblock table
+      fs: add dedicated block device open helpers for filesystems
+      xfs: port to fs_bdev_file_open_by_path()
+      btrfs: open via dedicated fs bdev helpers
+      ext4: open via dedicated fs bdev helpers
+      fs: look up superblocks via the device table in fs_holder_ops
+      fs: tolerate per-superblock freeze errors on shared devices
+      erofs: open via dedicated fs bdev helpers
+      f2fs: open via dedicated fs bdev helpers
+      super: make fs_holder_ops private
+      fs: look up the superblock via the device table in user_get_super()
+      selftests/filesystems: add ustat() coverage
+
+ fs/btrfs/volumes.c                               |  31 +-
+ fs/cramfs/inode.c                                |   2 +-
+ fs/erofs/super.c                                 |  35 +-
+ fs/ext4/extents-test.c                           |   9 +-
+ fs/ext4/mballoc-test.c                           |   9 +-
+ fs/ext4/super.c                                  |  12 +-
+ fs/f2fs/super.c                                  |   6 +-
+ fs/internal.h                                    |   1 +
+ fs/namespace.c                                   |   2 +
+ fs/ocfs2/super.c                                 |   1 -
+ fs/romfs/super.c                                 |   2 +-
+ fs/super.c                                       | 620 ++++++++++++++++-------
+ fs/xfs/xfs_buf.c                                 |   2 +-
+ fs/xfs/xfs_super.c                               |  13 +-
+ include/linux/blkdev.h                           |   9 -
+ include/linux/fs.h                               |   2 -
+ include/linux/fs/super.h                         |   8 +
+ include/linux/fs/super_types.h                   |   4 +-
+ include/linux/types.h                            |   2 +
+ tools/testing/selftests/filesystems/.gitignore   |   1 +
+ tools/testing/selftests/filesystems/Makefile     |   2 +-
+ tools/testing/selftests/filesystems/ustat_test.c | 135 +++++
+ 22 files changed, 647 insertions(+), 261 deletions(-)
+---
+base-commit: 0c0d974f62e6603d4514e1a8035658edb353c68f
+change-id: 20260602-work-super-bdev_holder_global-8cba5e52bed5
+

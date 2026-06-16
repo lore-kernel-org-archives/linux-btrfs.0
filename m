@@ -1,135 +1,187 @@
-Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa1.hgst.iphmx.com (esa1.hgst.iphmx.com [68.232.141.245])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C888379C59
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2026 06:41:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 145611FC7FB
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2026 06:52:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=68.232.141.245
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781592097; cv=none; b=Xxj2B9K9zu+BBLyPD/mqyXpL3cjp2c1RS7m5s8sdi+K88B7ALltUPxYXSkf7P9+IzddL9o98khi0Q7GaHcqeaYRM70w4LMVX/S8dY9QiYLw+Egm9ARk7A8js9knvC6GBPLCz2ABwMvDwuO5Pv9c/zVifV6l+s5q1fLUR8JOz0gw=
+	t=1781592738; cv=none; b=spl2Gb0e2+bWbg5GoCCiDhfp3UoSENcUgAlRbRoAsEkChsOoMj5DtN6hZJ3DXma5sSU/DSx4wF2lTydmVhQDFsdxwxJfU+7Nkzg7XL0NSbeR0e14GiQawfkjgYdvuzdmuzFK8c6DZqgzxNs58W2ibJEzJ+X31P4+iZLR5bFxEac=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781592097; c=relaxed/simple;
-	bh=I6XMLzW/6+8c4TqA/LAUv5SAqeOKUTZsUYSzU+xLkiY=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=ZyJNqVAQHd3pqnSO0aL4m4tSitdiz9t7Ft1ipVDz7bzHz2EyJEyiJT2X6B+fqaDi+UfEuIDGsRVjZ7j+0cICt/PC+4d63iGOC7VLXfVf7iJ6F/C5KUTb9RAz/W0w4YdE6JYpuCw5LuXfiC2zu5lWV3t1EG1ay6c9poldH7zVePk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=X92UKoY3; arc=none smtp.client-ip=209.85.128.52
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1781592738; c=relaxed/simple;
+	bh=SY2dfqTqYLqEx3o7ACNfRbAAvtg0VWEz0YlfRyfMULc=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=tuQF6vMUgX3LORXVmN4TOf0JVhKoqoMmqYAX4dPynxglmaTCLhxT7SBnV0FOQmCOb7bt5wKg8bCSMTUPuVkiSVDdwpqNnJcE6VjfCvvFqhNJuSyNCBGbIJfQ9H7J1kiWQTdk9gaYnTmXTfY1J5HhQE3vStvFSosBOJ67V+JxmxU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=quqLRYhV; arc=none smtp.client-ip=68.232.141.245
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="X92UKoY3"
-Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-490b1bbcf3aso30820955e9.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2026 23:41:35 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1781592094; x=1782196894; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=andD6MOT9rcRhNzHJ1rQ6R2UuRVgvxL8U7GBv1bd1mI=;
-        b=X92UKoY31lyCkLtb8QJHTAmqz3zbTRTyK452yLSYvwFCQ0aBUZ/mIkqHyD9IfINPOh
-         4WXU2CcDjCs5nO0QWvN9q41uWDxfIj4Tbtm2McDv1nW1yFrMc9FrqWD42qVf0fJSF4M/
-         v7V6yN8zG8pa71gWZPJpW+T3c6FtErH01e7IB8PO3dKRjB8xZ1U+I/zQGDyR4rkuyLeJ
-         eOaeAXFliA0wNefJe+RWb2AfBN9SHtFef3DqYpCo1LZOJLKP9xTyMV5J6SKQ3xwyMmRk
-         7mWc22HWudLCOwLr4/0sFqb/ioUp2m2G//tDqoEUrSB8LEVg6UuYO16bqlckcc/aulqC
-         Kl/Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781592094; x=1782196894;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=andD6MOT9rcRhNzHJ1rQ6R2UuRVgvxL8U7GBv1bd1mI=;
-        b=dMTxRScwN3Z621FP0hbyNk41UABapZYN7A+eKux+wJPZfkbAvB15GDIsLF/ux2nil5
-         0nsT0qwMx4I/DW5nNI1sDKMyZFB/X4wbvl5bFC+gkY0JrD8iET9J0wj5hajDfA3ehuxA
-         OnOOX5ieHfmA4gbE2Z8XYcH5lT/8zp6YDJaJhND/KCLREEApoRYzE13VvY9zQJeXssn5
-         I6jiGCJnxK6Dbt8dq75nA1amQJuwX6hp6ff5fhHJK6ariiDv95DbKQGtBA+XbksIb/nd
-         XoRccBetSq4qb4KGQZcBmfUNSbOHIIfzvsOu16UXYv43OSmYGQ6oGdhcyCgixqPRA48H
-         UHEw==
-X-Gm-Message-State: AOJu0YywhTRbtbfIjCuespgJ6vB6xXkJtGQToSYZCuN5QD69ou3qmVWG
-	ZwbxyYgWYFt1GuxaXhKIcykciqzdhfFgB0KO3yobCM4qRGEsy+EuHJpLMB8A9VO1CtI=
-X-Gm-Gg: Acq92OEavsSNOvg8cwXCWNA/km4+AlqKxfPAZvPXX4XvUKXZ91CMIc+GtdbDIxQNAvQ
-	l+d0cCf2GWqvP0Fm9SrdvOhKibUZgU61Fc1467YJwNcbYG8on6QcCknTcDgl1DWiAb153w2BPdJ
-	xevsOaWFWIBhk7urU2+e4j5BVQfX6HiYFjHH+0zN+wdhaoSnA0BVrfWNHLBtaK/D4l/RST327vW
-	/0awS/Dt+4X6gTSoq1goxBvqnvRxQgx+M/KU9bZIRmyACoEeRNvNgoTHDgmBvGs5Nhq/2WPUKAY
-	dN6ClXzZgPAVuHPHE2LqN5LRTSIiqRVXovbwgoNicUUpo8W+v8klUzSYTYnx975eTUt0tLDgM+6
-	bAQarTzxZroxvlba5uVe6oKZj61637PXF9Vsx87l0WbdgRKD0bxvuF69uGADdnIXHKAN6niSVTP
-	/D0qtzjitrWLghaMH/FlT4OP0tfBfpEVuK7BtWoeWk38zOWnhHzfNlxzDS/mRwN+dCE5UEHPG2M
-	izJmvSdd2tZvjn/LeR1OGa0LmtALWd7JZBLvtsCQM8bIX4YN97R/no3
-X-Received: by 2002:a05:600c:4fc9:b0:490:b446:fb8 with SMTP id 5b1f17b1804b1-4922ff938e3mr34370175e9.11.1781592094431;
-        Mon, 15 Jun 2026 23:41:34 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-379e84e7011sm7772024a91.1.2026.06.15.23.41.31
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 15 Jun 2026 23:41:33 -0700 (PDT)
-Message-ID: <780847cd-3fa7-4b17-af33-0b84bd125cbc@suse.com>
-Date: Tue, 16 Jun 2026 16:11:28 +0930
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="quqLRYhV"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1781592736; x=1813128736;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=SY2dfqTqYLqEx3o7ACNfRbAAvtg0VWEz0YlfRyfMULc=;
+  b=quqLRYhVQuuNGnV8YNWZ/95i3GuBLPNcFitQmBjTpbK9fZE9F66JKDmH
+   u9F0uuKs4SwvujqSNRws47ESD9ziQNsFZHdPLw18elSZ3/P2095KSyhne
+   9kL+29FiDDgVmRrp8dUFxcWG+2OT1+PeGsfkGuNrA+MTEt80uZcpLBo57
+   ZAZuiY1Zsw85PhzoX3uomQ9/vv3XG3v3/b/LvrWUPf7t/hQ5ecFV7aAnG
+   VB/DJgDEGQR1OyOMokkvp3oft0wX/YDDtS3Y6ngOq2GicK36I35A47dLb
+   Y/vrMDdvG3IqXJZPuTe2a6DDy8iONG3LxzcVMBo0fMCjJeRP/YiIzN6JO
+   g==;
+X-CSE-ConnectionGUID: IJeF4cm9TBybhHFa5dVV9A==
+X-CSE-MsgGUID: 6O0P9QPbQMyA7ImrY0Xzpg==
+X-IronPort-AV: E=Sophos;i="6.24,207,1774281600"; 
+   d="scan'208";a="148878248"
+Received: from unknown (HELO uls-op-esad2-o.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 16 Jun 2026 14:52:15 +0800
+X-CSE-ConnectionGUID: 6Cik5XTzQZeTuvEUyWrPDA==
+X-CSE-MsgGUID: oeAsIjWGS2mJcRCWFeL+3g==
+IronPort-SDR: 6a30f277_aPQ0af8WVWJNK97lEMq0CXt6at0vSvBqNe2pW5W8nCJynOq
+ Ekx9v42vNG+zfeniqGV1eFJyxnf5gwl0sP+Nezg==
+Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
+  by uls-op-esad2-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 15 Jun 2026 23:51:34 -0700
+X-CSE-ConnectionGUID: haK9ImHnQFWvUH8Ot0mrBg==
+X-CSE-MsgGUID: /CBdQmf5QSixRQgqwQKmGQ==
+WDCIronportException: Internal
+Received: from wdap-kgxbdpyiyg.ad.shared (HELO neo.fritz.box) ([10.224.19.10])
+  by uls-op-esai1-o.wdc.com with ESMTP; 15 Jun 2026 23:51:35 -0700
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	Damien Le Moal <dlemoal@kernel.org>
+Subject: [PATCH v2] btrfs: zoned: don't force read-only on transient -EAGAIN from reloc merge
+Date: Tue, 16 Jun 2026 08:51:29 +0200
+Message-ID: <20260616065129.318703-1-johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs-progs: re-enable tree search v2 ioctl
-To: You-Kai Zheng <ykzheng@synology.com>, quwenruo.btrfs@gmx.com
-Cc: linux-btrfs@vger.kernel.org
-References: <545cce1f-5da7-410f-8ef2-9779e8864b43@gmx.com>
- <20260616062200.2010804-1-ykzheng@synology.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260616062200.2010804-1-ykzheng@synology.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
+On a zoned FS, btrfs_delayed_refs_rsv_refill() returns -EAGAIN whenever
+the over-committed metadata plus the zone_unusable bytes exceeds the
+usable size in a metadata block-group to avoid heavy over-commit of
+metadata and early ENOSPC in one transaction.
 
+If this happens while doing reclaim, the transaction is getting
+aborted.
 
-在 2026/6/16 15:52, You-Kai Zheng 写道:
-> On Tue, Jun 16, 2026 at 01:44:11PM +0930, Qu Wenruo wrote:
->> Structure btrfs_ioctl_search_args_v2 should use __u8 for the variable
->> sized buffer.
-> 
-> Makes sense. Do you want the kernel uapi header updated as well, or
-> just btrfs-progs for now?
+Treat -EAGAIN as a soft, retryable condition in case of block-group
+reclaim.
 
-I'd prefer both.
+Reported-by: Damien Le Moal <dlemoal@kernel.org>
+Fixes: 7bcb04de982f ("btrfs: zoned: cap delayed refs metadata reservation to avoid overcommit")
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-> 
-> I checked the kernel already casts the buffer to (char __user *) in
-> btrfs_ioctl_tree_search_v2(), so only the struct member type would need
-> to change there, the ABI stays the same.
+---
+Changes in v2:
+- Don't use two 'if()s' for moving a BG to the retry list (Damien)
+- Gracefully handle -EAGAIN in btrfs_relocate_sys_chunks() (Sashiko)
+Link to v1:
+https://lore.kernel.org/r/20260612100429.214341-1-johannes.thumshirn@wdc.com
+---
+ fs/btrfs/block-group.c | 10 +++++++++-
+ fs/btrfs/relocation.c  | 14 ++++++++++----
+ fs/btrfs/volumes.c     |  2 +-
+ 3 files changed, 20 insertions(+), 6 deletions(-)
 
-Yeah, kernel ioctl itself is doing the correct type conversion, just 
-need to update the UAPI header.
-
-Thanks,
-Qu
-
-> 
-> Thanks,
-> You-Kai
-> 
-> Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.
-> 
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index ab76a5173272..77b7f23d0865 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -2047,6 +2047,13 @@ static int btrfs_reclaim_block_group(struct btrfs_block_group *bg, int *reclaime
+ 
+ 	trace_btrfs_reclaim_block_group(bg);
+ 	ret = btrfs_relocate_chunk(fs_info, bg->start, false);
++	if (ret == -EAGAIN) {
++		ASSERT(btrfs_is_zoned(fs_info));
++		btrfs_dec_block_group_ro(bg);
++		btrfs_debug(fs_info, "deferring reclaim of chunk %llu",
++			    bg->start);
++		return ret;
++	}
+ 	if (ret) {
+ 		btrfs_dec_block_group_ro(bg);
+ 		btrfs_err(fs_info, "error relocating chunk %llu",
+@@ -2113,7 +2120,8 @@ void btrfs_reclaim_block_groups(struct btrfs_fs_info *fs_info, unsigned int limi
+ 		spin_unlock(&fs_info->unused_bgs_lock);
+ 		ret = btrfs_reclaim_block_group(bg, &reclaimed);
+ 
+-		if (ret && !READ_ONCE(space_info->periodic_reclaim))
++		if (ret == -EAGAIN ||
++		    (ret && !READ_ONCE(space_info->periodic_reclaim)))
+ 			btrfs_link_bg_list(bg, &retry_list);
+ 		btrfs_put_block_group(bg);
+ 
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 74687c75f763..b2dea3c3b23a 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1871,7 +1871,7 @@ int prepare_to_merge(struct reloc_control *rc, int err)
+ }
+ 
+ static noinline_for_stack
+-void merge_reloc_roots(struct reloc_control *rc)
++int merge_reloc_roots(struct reloc_control *rc)
+ {
+ 	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
+ 	struct btrfs_root *root;
+@@ -1971,7 +1971,8 @@ void merge_reloc_roots(struct reloc_control *rc)
+ 	}
+ out:
+ 	if (ret) {
+-		btrfs_handle_fs_error(fs_info, ret, NULL);
++		if (ret != -EAGAIN)
++			btrfs_handle_fs_error(fs_info, ret, NULL);
+ 		free_reloc_roots(&reloc_roots);
+ 
+ 		/* new reloc root may be added */
+@@ -1996,6 +1997,7 @@ void merge_reloc_roots(struct reloc_control *rc)
+ 	 *
+ 	 * The remaining nodes will be cleaned up by put_reloc_control().
+ 	 */
++	return ret;
+ }
+ 
+ static void free_block_list(struct rb_root *blocks)
+@@ -3725,7 +3727,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
+ 	 */
+ 	err = prepare_to_merge(rc, err);
+ 
+-	merge_reloc_roots(rc);
++	ret = merge_reloc_roots(rc);
++	if (ret && !err)
++		err = ret;
+ 
+ 	rc->merge_reloc_tree = false;
+ 	unset_reloc_control(rc);
+@@ -5694,7 +5698,9 @@ int btrfs_recover_relocation(struct btrfs_fs_info *fs_info)
+ 	if (ret)
+ 		goto out_unset;
+ 
+-	merge_reloc_roots(rc);
++	ret = merge_reloc_roots(rc);
++	if (ret)
++		goto out_unset;
+ 
+ 	unset_reloc_control(rc);
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 6eab4cc73ce4..63dfff0ea99b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3732,7 +3732,7 @@ static int btrfs_relocate_sys_chunks(struct btrfs_fs_info *fs_info)
+ 		if (chunk_type & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 			ret = btrfs_relocate_chunk(fs_info, found_key.offset,
+ 						   true);
+-			if (ret == -ENOSPC)
++			if (ret == -ENOSPC || ret == -EAGAIN)
+ 				failed++;
+ 			else
+ 				BUG_ON(ret);
+-- 
+2.54.0
 

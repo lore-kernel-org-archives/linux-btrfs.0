@@ -1,34 +1,34 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B6C1B43D501;
-	Tue, 16 Jun 2026 11:58:29 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8636943CEF7;
+	Tue, 16 Jun 2026 11:58:32 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781611110; cv=none; b=sUn/JQXPqwwd5+MZIRp9UCN1KhipWAXgqVTNOsvB4vGWodK7OS60Oa1MVmyIPaE/HjvHDOE2MxepI0uWjsRO+hzfSz/LDWsQIFwZTbpM75uOvYINdbQccB7XOXjnhpFgP/oVOEnZ1c3d8Mx58PdAAIauMm47zTqJ0yQGuxv1EL0=
+	t=1781611113; cv=none; b=LNlG2eTTNKRFRHXIwP6wy8JIWfoE2FGlWAjeUcGYnfTfy80RAr/H0SOuC/ViuyH2keeQH0YiLzcqx2GxJRzJvyQwoj+Murlw8V3PzWAeUX20WnYqIgAePA4s+EH/EaEPj9WIcnbi6Caj2xDIFYswqMuPAG9AOq+Yw3uczEq9yGU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781611110; c=relaxed/simple;
-	bh=VRS1IC7cloCBcNKR7T/hW4BzxK3OAgKL9JMIFYcGYeU=;
+	s=arc-20240116; t=1781611113; c=relaxed/simple;
+	bh=Ixzv6yAi5S9Stc1OOoEORXM1J8ggs5ooEZV04a1LyKo=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=dUAxXAWZeTIJyFdeO4tlYNNj5sJKkQYqzn4d9XJUB/IcH1sH/cR6Rp0ge50bvVCDIafyVs5MqorRWT8hZjDFK6B585lZ7Zjd3KLcTOkuZaT1TXJK2OfmBKKBjoOvDcWoeSK9c6kOen8Le2utCca2UuIHHzcCtPIvArBAsdNohTs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=VaAQiLiK; arc=none smtp.client-ip=100.103.45.18
+	 In-Reply-To:To:Cc; b=Md0kLOTOk7X4zzgVAiT46xY5GnD2OiTZl3B+dm/ksEgpWLIsvF1I+i8J2kM2ZOy6lbslFCNZXwsKoDGfa/Xki1Cepcajo/9woui5OoVYZqIQY+jGqZaLJmQ6czu0Zd8kfsZutx93v4C1XR6NjgFpzzu05W3hNGbmNDgxso4wE/A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=i82RHw5X; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="VaAQiLiK"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 449AB1F00A3A;
-	Tue, 16 Jun 2026 11:58:27 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="i82RHw5X"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id DE7511F000E9;
+	Tue, 16 Jun 2026 11:58:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781611109;
-	bh=BOhhyL1mqQEWBjA/K3i3T7B0lYLg5wWaApcO1mPYSRo=;
+	s=k20260515; t=1781611112;
+	bh=3PLiy9WiJPPZXBWXNTUTvDVFuBQH9W/qreDaX4RfTqA=;
 	h=From:Date:Subject:References:In-Reply-To:To:Cc;
-	b=VaAQiLiK1T3Wy1TA/lSI0r4yggYnrlNSViyjO7gM/2aEHEoWuWV8Id9Yhg0ksbaAc
-	 1Bhlj2Xqhsg90wy2mPWDVlJsC3uI0Uxruto/byUgBuTvbBboys3GOBUZs2pmux8PCo
-	 9eNuo0zY8OyCs7u0eKfreR504BtKyPNXexN9q4L00jOYhTPifzwSy2axD6pwz9D0cV
-	 MZCB7zc8TNkDZY6LESA7SXpkuqOTGod1Li7eJjTfshTKYjfnJ+eLXppSQxAf5GG8SF
-	 nq+p2MTFt+WVDdGMZ4GOn2Qb4Te1a6YdEpdicEdyz9MeXXdY6AjHBiswp/ym04LLKZ
-	 Eh6i1RiZEVb/Q==
+	b=i82RHw5XFH5Hb5JbvgDYdwK1nNAw/Y2wMELMi4U/ZoMlKyTd2KTVJPd1NaR9gd3QS
+	 JqRqwakNjeQ4wqM8wyXbdQnO7rj9NJozqszVSt1nLk1rj+NsrZKdkj3TlYOx7qB+bn
+	 a+yt/fnC71Gq3H9PDTLDbXnKnARnh/JhlKvx20EA1/8q1sT5MNymp2GFgU/cj8kkAE
+	 K+N3focEsIRx2kcUTahEiUMOauiMD4CwL0eOM6ZgYJI/0hpYRjW+sAnYZnP8Isk6vj
+	 IrtVCIreMQEcwHWhYZkUGQ4An6I7p4KmxGFd3mQxRDLNAtwuCyZ0/LymVDGDRuvcOd
+	 7qY3EcjA6HBvQ==
 From: Christian Brauner <brauner@kernel.org>
-Date: Tue, 16 Jun 2026 13:58:14 +0200
-Subject: [PATCH v2 1/5] block: allow making a block device unfreezable
+Date: Tue, 16 Jun 2026 13:58:15 +0200
+Subject: [PATCH v2 2/5] block: split bdev_yield_claim() out of bdev_fput()
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -37,7 +37,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260616-work-super-freeze_deny_upstream-v2-1-b3567c7f994b@kernel.org>
+Message-Id: <20260616-work-super-freeze_deny_upstream-v2-2-b3567c7f994b@kernel.org>
 References: <20260616-work-super-freeze_deny_upstream-v2-0-b3567c7f994b@kernel.org>
 In-Reply-To: <20260616-work-super-freeze_deny_upstream-v2-0-b3567c7f994b@kernel.org>
 To: Chris Mason <clm@fb.com>, Jens Axboe <axboe@kernel.dk>, 
@@ -47,164 +47,118 @@ Cc: Naohiro Aota <naohiro.aota@wdc.com>, Josef Bacik <josef@toxicpanda.com>,
  linux-fsdevel@vger.kernel.org, 
  "Christian Brauner (Amutable)" <brauner@kernel.org>
 X-Mailer: b4 0.16-dev-4090c
-X-Developer-Signature: v=1; a=openpgp-sha256; l=5469; i=brauner@kernel.org;
- h=from:subject:message-id; bh=VRS1IC7cloCBcNKR7T/hW4BzxK3OAgKL9JMIFYcGYeU=;
- b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWQZWiWYOiR8qNx/5tTZT13f1j3Mjz88e+ffZS9u/KtQc
- j44pZTZq6OUhUGMi0FWTJHFod0kXG45T8Vmo0wNmDmsTCBDGLg4BWAi524yMtwpdtR1WXBic1ug
- t73Fwu5fd/xiZV+/muCzjuFPa1cBiyUjw5PGcI2rqbVucX9nBp+ta1VjlTO7HTunM1ztuFB0orw
- vAwA=
+X-Developer-Signature: v=1; a=openpgp-sha256; l=3644; i=brauner@kernel.org;
+ h=from:subject:message-id; bh=Ixzv6yAi5S9Stc1OOoEORXM1J8ggs5ooEZV04a1LyKo=;
+ b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWQZWiUkJ3bz/DIrW1l8226T7535pQlM+1WndKT17HwyW
+ +pgieOljlIWBjEuBlkxRRaHdpNwueU8FZuNMjVg5rAygQxh4OIUgInsnsPwP8/9OI/Hk1eTmPvv
+ GK4rbbzYcrLm35SVH/5zRO66/lr31VeGP9y8aoI5+91keOJYDWYyxaXsbxfM+Xpz8T/e92wGdyb
+ eZAcA
 X-Developer-Key: i=brauner@kernel.org; a=openpgp;
  fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
 
-Add bdev_deny_freeze() and bdev_allow_freeze(), modeled on
-deny_write_access()/allow_write_access().  bd_fsfreeze_count becomes a
-signed counter: > 0 counts active freezes, < 0 counts deniers, and the
-two regimes are mutually exclusive.  bdev_freeze() refuses with -EBUSY
-while a deny is held, and bdev_deny_freeze() refuses while the device is
-frozen.
+bdev_fput() yields the holder claim and then closes the file, which is a
+deferred operation.  Split the yield half into bdev_yield_claim() so a caller
+can give up the holder while the file - and therefore the block device - is
+still open, act on the device, and only then bdev_fput().
 
-A filesystem that mutates a device's membership (a btrfs device add,
-remove or replace) denies freezing on the device for the duration, so a
-claim a freeze walk might act on is never added or torn down behind the
-freezer's back.
+A filesystem that made a device unfreezable for a membership change with
+bdev_deny_freeze() undoes the deny on release with
 
-The deny/allow helpers are a single atomic on bd_fsfreeze_count and take
-no lock, so they can be called while holding s_umount without inverting
-against bdev_freeze()'s bd_fsfreeze_mutex -> s_umount order.
+	bdev_yield_claim(bdev_file);
+	bdev_allow_freeze(file_bdev(bdev_file));
+	bdev_fput(bdev_file);
 
-Reviewed-by: Jan Kara <jack@suse.cz>
+Re-allowing only after the holder is yielded avoids stranding the filesystem
+on a racing freeze, and doing it while the file is still open avoids touching
+the block device after bdev_fput().  bdev_fput() yields again, which is a
+no-op once the claim has already been given up.
+
 Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
 ---
- block/bdev.c              | 63 +++++++++++++++++++++++++++++++++++++++--------
- include/linux/blk_types.h |  2 +-
- include/linux/blkdev.h    |  2 ++
- 3 files changed, 56 insertions(+), 11 deletions(-)
+ block/bdev.c           | 50 ++++++++++++++++++++++++++++++++++----------------
+ include/linux/blkdev.h |  1 +
+ 2 files changed, 35 insertions(+), 16 deletions(-)
 
 diff --git a/block/bdev.c b/block/bdev.c
-index bb0ffa3bb4df..a83a3809380c 100644
+index a83a3809380c..54b35a084c36 100644
 --- a/block/bdev.c
 +++ b/block/bdev.c
-@@ -304,7 +304,12 @@ int bdev_freeze(struct block_device *bdev)
- 
- 	mutex_lock(&bdev->bd_fsfreeze_mutex);
- 
--	if (atomic_inc_return(&bdev->bd_fsfreeze_count) > 1) {
-+	/* A device being removed from its filesystem refuses freezes. */
-+	if (!atomic_inc_unless_negative(&bdev->bd_fsfreeze_count)) {
-+		mutex_unlock(&bdev->bd_fsfreeze_mutex);
-+		return -EBUSY;
-+	}
-+	if (atomic_read(&bdev->bd_fsfreeze_count) > 1) {
- 		mutex_unlock(&bdev->bd_fsfreeze_mutex);
- 		return 0;
- 	}
-@@ -340,18 +345,18 @@ int bdev_thaw(struct block_device *bdev)
- 
- 	mutex_lock(&bdev->bd_fsfreeze_mutex);
- 
--	/*
--	 * If this returns < 0 it means that @bd_fsfreeze_count was
--	 * already 0 and no decrement was performed.
--	 */
--	nr_freeze = atomic_dec_if_positive(&bdev->bd_fsfreeze_count);
--	if (nr_freeze < 0)
-+	/* <= 0: not frozen (0) or a freeze deny is held (< 0); leave it. */
-+	nr_freeze = atomic_read(&bdev->bd_fsfreeze_count);
-+	if (nr_freeze <= 0)
- 		goto out;
- 
- 	error = 0;
--	if (nr_freeze > 0)
-+	if (nr_freeze > 1) {
-+		atomic_dec(&bdev->bd_fsfreeze_count);
- 		goto out;
-+	}
- 
-+	/* Keep the count positive across the thaw so a deny is refused. */
- 	mutex_lock(&bdev->bd_holder_lock);
- 	if (bdev->bd_holder_ops && bdev->bd_holder_ops->thaw) {
- 		error = bdev->bd_holder_ops->thaw(bdev);
-@@ -360,14 +365,52 @@ int bdev_thaw(struct block_device *bdev)
- 		mutex_unlock(&bdev->bd_holder_lock);
- 	}
- 
--	if (error)
--		atomic_inc(&bdev->bd_fsfreeze_count);
-+	if (!error)
-+		atomic_dec(&bdev->bd_fsfreeze_count);
- out:
- 	mutex_unlock(&bdev->bd_fsfreeze_mutex);
- 	return error;
+@@ -1200,6 +1200,39 @@ void bdev_release(struct file *bdev_file)
+ 	blkdev_put_no_open(bdev);
  }
- EXPORT_SYMBOL(bdev_thaw);
  
 +/**
-+ * bdev_deny_freeze - make a block device unfreezable
-+ * @bdev: block device
++ * bdev_yield_claim - give up the holder claim on an open block device
++ * @bdev_file: open block device
 + *
-+ * Reserve @bdev against bdev_freeze() the way deny_write_access() reserves a
-+ * file against writers.  bd_fsfreeze_count is sign-encoded: > 0 counts active
-+ * freezes, < 0 counts deniers, so a deny succeeds only while no freeze is in
-+ * progress.  While held, bdev_freeze() returns -EBUSY.  Pair with
-+ * bdev_allow_freeze().
-+ *
-+ * A filesystem removing, adding or replacing a member device denies freezes on
-+ * it for the duration, so a claim a freeze walk might act on is never torn down
-+ * behind the freezer's back.  The deny is device-scoped, not (device,
-+ * superblock)-scoped: a device shared by several superblocks is refused for all
-+ * of them.  No in-tree filesystem removes a shared claim from a live superblock.
-+ *
-+ * Return: 0, or -EBUSY if the device is currently frozen.
++ * Yield the holder and any write access for @bdev_file without closing it, so
++ * the caller can still act on the device - e.g. bdev_allow_freeze() it - before
++ * the final bdev_fput().  bdev_fput() yields too, so calling it afterwards is
++ * safe.
 + */
-+int bdev_deny_freeze(struct block_device *bdev)
++void bdev_yield_claim(struct file *bdev_file)
 +{
-+	return atomic_dec_unless_positive(&bdev->bd_fsfreeze_count) ? 0 : -EBUSY;
-+}
-+EXPORT_SYMBOL_GPL(bdev_deny_freeze);
++	struct block_device *bdev;
++	struct gendisk *disk;
 +
-+/**
-+ * bdev_allow_freeze - allow freezing a block device again
-+ * @bdev: block device
-+ *
-+ * Undo one bdev_deny_freeze().
-+ */
-+void bdev_allow_freeze(struct block_device *bdev)
-+{
-+	/* A deny must be held, i.e. the count must be negative. */
-+	WARN_ON_ONCE(atomic_read(&bdev->bd_fsfreeze_count) >= 0);
-+	atomic_inc(&bdev->bd_fsfreeze_count);
-+}
-+EXPORT_SYMBOL_GPL(bdev_allow_freeze);
++	if (!bdev_file->private_data)
++		return;
 +
- /*
-  * pseudo-fs
-  */
-diff --git a/include/linux/blk_types.h b/include/linux/blk_types.h
-index 8808ee76e73c..5a725a0cd35f 100644
---- a/include/linux/blk_types.h
-+++ b/include/linux/blk_types.h
-@@ -66,7 +66,7 @@ struct block_device {
- 	int			bd_holders;
- 	struct kobject		*bd_holder_dir;
++	bdev = file_bdev(bdev_file);
++	disk = bdev->bd_disk;
++
++	mutex_lock(&disk->open_mutex);
++	bdev_yield_write_access(bdev_file);
++	bd_yield_claim(bdev_file);
++	/*
++	 * Tell release we already gave up our hold on the
++	 * device and if write restrictions are available that
++	 * we already gave up write access to the device.
++	 */
++	bdev_file->private_data = BDEV_I(bdev_file->f_mapping->host);
++	mutex_unlock(&disk->open_mutex);
++}
++EXPORT_SYMBOL_GPL(bdev_yield_claim);
++
+ /**
+  * bdev_fput - yield claim to the block device and put the file
+  * @bdev_file: open block device
+@@ -1213,22 +1246,7 @@ void bdev_fput(struct file *bdev_file)
+ 	if (WARN_ON_ONCE(bdev_file->f_op != &def_blk_fops))
+ 		return;
  
--	atomic_t		bd_fsfreeze_count; /* number of freeze requests */
-+	atomic_t		bd_fsfreeze_count; /* >0 freeze requests, <0 freeze deniers */
- 	struct mutex		bd_fsfreeze_mutex; /* serialize freeze/thaw */
- 
- 	struct partition_meta_info *bd_meta_info;
+-	if (bdev_file->private_data) {
+-		struct block_device *bdev = file_bdev(bdev_file);
+-		struct gendisk *disk = bdev->bd_disk;
+-
+-		mutex_lock(&disk->open_mutex);
+-		bdev_yield_write_access(bdev_file);
+-		bd_yield_claim(bdev_file);
+-		/*
+-		 * Tell release we already gave up our hold on the
+-		 * device and if write restrictions are available that
+-		 * we already gave up write access to the device.
+-		 */
+-		bdev_file->private_data = BDEV_I(bdev_file->f_mapping->host);
+-		mutex_unlock(&disk->open_mutex);
+-	}
+-
++	bdev_yield_claim(bdev_file);
+ 	fput(bdev_file);
+ }
+ EXPORT_SYMBOL(bdev_fput);
 diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 890128cdea1c..cf1951caadb2 100644
+index cf1951caadb2..9fc16e3c8075 100644
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
-@@ -1829,6 +1829,8 @@ static inline int early_lookup_bdev(const char *pathname, dev_t *dev)
- 
- int bdev_freeze(struct block_device *bdev);
- int bdev_thaw(struct block_device *bdev);
-+int bdev_deny_freeze(struct block_device *bdev);
-+void bdev_allow_freeze(struct block_device *bdev);
+@@ -1832,6 +1832,7 @@ int bdev_thaw(struct block_device *bdev);
+ int bdev_deny_freeze(struct block_device *bdev);
+ void bdev_allow_freeze(struct block_device *bdev);
  void bdev_fput(struct file *bdev_file);
++void bdev_yield_claim(struct file *bdev_file);
  
  struct io_comp_batch {
+ 	struct rq_list req_list;
 
 -- 
 2.47.3

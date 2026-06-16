@@ -1,79 +1,73 @@
-Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+Received: from mail.synology.com (mail.synology.com [211.23.38.101])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A40053CF050;
-	Tue, 16 Jun 2026 05:19:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CD5433D0C07
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2026 06:22:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781587188; cv=none; b=KqKFb4GAW233PowwxnbK3SlQA7q/tRR4IlCsTRBBxoEnzdIBImFHhObf54apA9o34uYjjbrSfYfov36pknCfwa/JaKY+FKk96O/ytszmAPf5gBuS8/9rhca6VVuLJvatoYFyclpcZRNePrxHSXyxWgcdbnQT+4QO3LQWAd0iqko=
+	t=1781590976; cv=none; b=o7uq5sJ/6n19ATmNpJw+2wSsWctlcUyLtXhmqzMid9RDoKfVWYIwF2Fp0bGPSqO9j9oB3VAK6ah7X1pp/XCYIZxIJLrmhC+sTlReEXbZjnil0f5FVgbt2ehPOe3Vu12rZZOPrta9Ca3++lHJFpTYU2INZUQk177xVWZ3sxrPvOM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781587188; c=relaxed/simple;
-	bh=sixLjN0FDVO4HUjbBLP7jyXMbln2zQW1kQtx0+j4WBM=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=S9Ttziy4GMW403ZoOq7eEEQTxSxcvnE5EPcHa3ohM3huK6rRQQtpmRw1wrpTSaS20h/Wz1Ntii2OBhMF4FAtPP80AQyP5saCy7nJ6M6oROGHpgsEiAnCuTPuwaEI8YiAVelHnx2xLYlQ3wmpGJfW4TtBKPkAD/96L8PNyCY+nuM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=Qr5Owso0; arc=none smtp.client-ip=198.137.202.133
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
+	s=arc-20240116; t=1781590976; c=relaxed/simple;
+	bh=wgr7VvYydfKVGNgYFfnsYgsnbhqLFqqn03RaTS6WC/U=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=gr1LpK/TPBG2fUBYljI6f6zwcWuMhbVJfdaxmZE3aFxsdRXViFR75ByJtexSlmwajMSaQx0F4D4s+thiMrs1po/rLACndxiiqB0Mf0k/iHewO0BmQmU026n1UK1ERitH9Igk+ljQuZq2fnCJIeKxzt7SPrMvFwAF74ErWvQ4Uk0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=nk6Ou+XV; arc=none smtp.client-ip=211.23.38.101
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="Qr5Owso0"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=lJY3rUCqFWGxeFm4eh9bZ4MnNqzzDeT0NZZ7p/99HHs=; b=Qr5Owso0HsiVXkL0WsUdgjCwX0
-	CbxL8zqgWyoOWKucMhuD8d/aELfkNc/mAtcXlcukfeE8Pkud+j/GzXnX/iMvfgDML3euZfu1I5APo
-	nsEHdJyqZk1PdZAqzfbSj8MEIhriKDOf3X2C4eVJCWANlbPvV8w+UiMhoHyTtOLEDSp0qEPTAaIu8
-	0OhvlDY/1a97WybQO7T5LuAz+4SIn/ALqjgLRt6MvqQeNSHQ6+7w6u6F3tW0MNHiR0tzY/zriM8AO
-	v1iZZVAnVnQgNiG7Ocdv1IAKdm8X/4B/YSWa7XKZDt+TiTobkJJKEqE22FSSKZcGHHhB93UVAhrxX
-	cP1iUxcQ==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
-	id 1wZMDC-0000000FF3y-0et2;
-	Tue, 16 Jun 2026 05:19:46 +0000
-Date: Mon, 15 Jun 2026 22:19:46 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Christoph Hellwig <hch@infradead.org>, Qu Wenruo <wqu@suse.com>,
-	linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org
-Subject: Re: [PATCH v3 3/4] iomap: reject NOWAIT and BOUNCE direct IOs
-Message-ID: <ajDc8nFYyiQ66TOR@infradead.org>
-References: <cover.1781253428.git.wqu@suse.com>
- <3d739b6dc37e34ca2a2a3780d12d0288a4060d57.1781253428.git.wqu@suse.com>
- <ajAU1yLd32BCiCNj@infradead.org>
- <efa3f1f9-20c2-44c0-914c-5e34a40235a1@gmx.com>
- <8a0e1881-fe73-4912-95f9-8eac998840d5@gmx.com>
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="nk6Ou+XV"
+Received: from 97097ad21e24 (unknown [10.17.41.35])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange x25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mail.synology.com (Postfix) with ESMTPSA id 4gfcNs12g1zK6fHlL;
+	Tue, 16 Jun 2026 14:22:53 +0800 (CST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=synology.com;
+	s=123; t=1781590973;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=wgr7VvYydfKVGNgYFfnsYgsnbhqLFqqn03RaTS6WC/U=;
+	b=nk6Ou+XVeFPkoTmVZ8Kn5TkqHGZRYbS8Gyr6rIwguWDORLSCEEATqGWWMVMKVDi52w3TDF
+	9h+yJxecUgidB2hIyen1wPkQ0cvGZh2h0+YEOd0haPlCKIT7O/MeNl2Zl93mOsOGEgQqqe
+	vHg5VL5uYFl6KERqhqCAse9yqgbsrxA=
+From: You-Kai Zheng <ykzheng@synology.com>
+To: quwenruo.btrfs@gmx.com
+Cc: linux-btrfs@vger.kernel.org,
+	ykzheng@synology.com
+Subject: Re: [PATCH] btrfs-progs: re-enable tree search v2 ioctl
+Date: Tue, 16 Jun 2026 14:22:00 +0800
+Message-ID: <20260616062200.2010804-1-ykzheng@synology.com>
+X-Mailer: git-send-email 2.54.0
+In-Reply-To: <545cce1f-5da7-410f-8ef2-9779e8864b43@gmx.com>
+References: <545cce1f-5da7-410f-8ef2-9779e8864b43@gmx.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <8a0e1881-fe73-4912-95f9-8eac998840d5@gmx.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Transfer-Encoding: 8bit
+X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
+X-Synology-Spam-Flag: no
+X-Synology-Virus-Status: no
+X-Synology-MCP-Status: no
+X-Synology-Auth: pass
+Content-Type: text/plain
 
-On Tue, Jun 16, 2026 at 10:30:27AM +0930, Qu Wenruo wrote:
-> After scanning the code for related memory allocation, there are some other
-> locations doing memory allocation, including but not limited to:
-> 
-> - iomap_dio_alloc_bio()
->   This one is a little tricky, if we pass GFP_NOWAIT, we can break the
->   old assumption that the function will always return a bio.
-> 
-> - fscrypt_set_bio_crypt_ctx()
->   This one is fine so far, as neither XFS nor btrfs support fscrypt yet.
-> 
-> And any memory allocation failure in NOWAIT mode should return -EAGAIN, not
-> -ENOMEM so that the caller can retry in blocking mode as a fallback.
-> 
-> To me, considering NOWAIT itself is only an optimistic flag, and caller
-> should always have a blocking mode as fallback, I'd prefer to reject NOWAIT
-> + BOUNCE direct writes completely inside btrfs for now.
+On Tue, Jun 16, 2026 at 01:44:11PM +0930, Qu Wenruo wrote:
+> Structure btrfs_ioctl_search_args_v2 should use __u8 for the variable
+> sized buffer.
 
-If you want to do that in btrfs please do it there.
+Makes sense. Do you want the kernel uapi header updated as well, or
+just btrfs-progs for now?
 
-> And leave all the missing NOWAIT handling in iomap in a dedicated series.
+I checked the kernel already casts the buffer to (char __user *) in
+btrfs_ioctl_tree_search_v2(), so only the struct member type would need
+to change there, the ABI stays the same.
 
-This might be worth looking into.
+Thanks,
+You-Kai
 
+Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.

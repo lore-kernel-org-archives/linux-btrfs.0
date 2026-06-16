@@ -1,41 +1,41 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4EB44351C14
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2026 11:18:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 417953385A1
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2026 11:26:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781608699; cv=none; b=VFWBip1+GsKrz+NcyPBUkAFD6lbPNVaR3vxvW5kUj82W3qJa2flkdnxfwUSX4N/tr6kLpPieDY06/tMDS4aTJBavmNuHmzmQ6CRnwhJu6UeHpvYi3zwwtX+hNpjKrX5VfhnA+oHVFky7iuNiE0f1wM5XosXVSNkmQ9IsAZHe85Q=
+	t=1781609165; cv=none; b=CHJYRz5o1a8yCw6WmeND6wr0NM42PFj41WMsmpalf4YHa9b6S0TO6IkahJ0wVL+49543YG3Ok4Oq9L6h855f3H1sFQM+LXnoil1hDJSr1Btl/CENGrJguElu/o0iW+nrgamTuEvLNUyUE7bUgVf51FtE1swKH5XW/gNFFcSVLl4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781608699; c=relaxed/simple;
-	bh=fs7LhAX7JI/6fsn6aawX0+HnZzxUObtvr+UaGlijANc=;
+	s=arc-20240116; t=1781609165; c=relaxed/simple;
+	bh=AiY25kML1frPc6fBoQ0C2hIm6IB7OsF0OA0JSNvJEtg=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=rp216p0QjeYMvODrFFoqR/DpJyV3j7a5KRT/3mw700BxBCeBA5Xt5T35xwG6uC9DWpNWvNHVw1vWR4BWZXPH6sl2YG+VGzbyVEkWoNoYd1EasDpLWBP9KytD+92Gq/cyR1K1P8cW/wBuF5II1WoqHCYSW0VMeqtkG5q32FEj3Xk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=nRsqQtxZ; arc=none smtp.client-ip=212.227.17.20
+	 In-Reply-To:Content-Type; b=YdPSiPS8vB+wFNeoGyEfmdALsm+rCjpvadsjPDKw6fiEeh9AmOq5hHKhQQy1Qw2WHDkzRmWY/4F4Ztd/74+Yzk54JpyoduLv9+a79QtzTshkikVIBSDAjhHzONe77O9c60o5Mofup0QR3xgG1VCVivsQqx3QS8hKaRhILJ4ScwI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=MeMNHzYs; arc=none smtp.client-ip=212.227.17.21
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="nRsqQtxZ"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="MeMNHzYs"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1781608695; x=1782213495; i=quwenruo.btrfs@gmx.com;
-	bh=F9VwRHdDgE4ACjGUrVOcACMdQ0nC3VSbE+/KYVmPit4=;
+	s=s31663417; t=1781609161; x=1782213961; i=quwenruo.btrfs@gmx.com;
+	bh=hKTty0Lt6tSAcz0flh8Qsl2qvR3jcgMryJHGRDM58N4=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=nRsqQtxZBNfrAoKr1plFSQ8gbbtLg7Ch2UflMfdJgl+2Q1SYFDPb+1skIwxcPNlg
-	 I3n1f9EujyBGwp7ZyoXph2ms7rMZPFx1tgNHVgT1LGKBUrLLeXhHNaX42QkKTNAG8
-	 IGtLNDvEeOKXw4QS/RIHb7ditwrOdWkaXlQVNFGvTeR/vWuN69w4i0CyoLSpGZacJ
-	 YNBT5BiJuJ5zERkM/aQqDH5su4KtR48zaMFoejAVhm58H5dvn04TnSd7D2a5lk8ex
-	 qBkJFLQRgbzK0GipRSoREHHY2ilQVvBDLmKahF43MS2uBaPcqZTXeUAcqmoe3V8jk
-	 HCvdIDAw4f348HMWlQ==
+	b=MeMNHzYsB5GPmcCVPTlabJfoZ9n7Hara9ffZgFy53hq8rH3WXpRUJB9aVryDT4+m
+	 u59wXstQjm0YNdvbrNmyZF96/Lv1U5yRDFm6TRV+NgfuPTqPI/+YPUqGkikJMQQ76
+	 7imr5eh/sHOANPefvkioDNmW37MYMnDE+B7GFQW81P6m3ue2foyuHTAe6IwiQ7vxF
+	 EZiPl3ti2JAXbbNyvwLBFEfuWZ5sCPpM6VTWOvgeObwyKvu2p9anZQjUUyosiRNb5
+	 ivhBS03IyabMMGoO2Zy0RggrAfOkYZxi0NleRnjz2GyTWJtbnoD6Z4TWOUpkAJRlQ
+	 /kjG4AnvLMlZs9AIng==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MXGr8-1whjFA3jSQ-00PRLf; Tue, 16
- Jun 2026 13:18:15 +0200
-Message-ID: <100019a1-636d-48de-ba27-988e7a41e541@gmx.com>
-Date: Tue, 16 Jun 2026 20:48:10 +0930
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1M59GG-1waYOK19am-00CtND; Tue, 16
+ Jun 2026 13:26:00 +0200
+Message-ID: <a9e2a26c-772a-4c4d-9290-9ecb1038d4a5@gmx.com>
+Date: Tue, 16 Jun 2026 20:55:57 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,10 +43,11 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: declare btrfs_ioctl_search_args_v2::buf as __u8
-To: You-Kai Zheng <ykzheng@synology.com>, linux-btrfs@vger.kernel.org
-Cc: Qu Wenruo <wqu@suse.com>
-References: <20260616103907.2157960-1-ykzheng@synology.com>
+Subject: Re: [PATCH v2] btrfs-progs: re-enable tree search v2 ioctl
+To: You-Kai Zheng <ykzheng@synology.com>, wqu@suse.com
+Cc: linux-btrfs@vger.kernel.org
+References: <780847cd-3fa7-4b17-af33-0b84bd125cbc@suse.com>
+ <20260616104308.2159912-1-ykzheng@synology.com>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -73,143 +74,215 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
  +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
  HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260616103907.2157960-1-ykzheng@synology.com>
+In-Reply-To: <20260616104308.2159912-1-ykzheng@synology.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:OZ6pMQC3XkU0EJwykQVEww7GfaFnZ2qt4VMfLBWNRs/eIzqw8Jy
- +ukn0RaUCL7npmd38vWpbIZ3a2cvr2GxHsrlEbNbuv/ci5VRvXSe5908aawMqQMoZhLvix9
- WT9T5TRgVMVQ7dkIUzDTFRAB5sEbZCRtx+NPAuY8Si1rKIbBrKj8XmXasQoN1XLdawa9kq6
- /lErLEA01qf+6XKapjsKQ==
+X-Provags-ID: V03:K1:RCBG//TL8yhJ8Kji9yKlteFHLRzXDeCv4O7iAOo9ye6T49OvI+x
+ ZqAuGyXvYrA8aP64hQWBHRruS7jHe8WLI4yy7PL2OCv2xr3jNHJv0yh2U05bDz7iUfDXiHj
+ YKBc+1Z6XLGDHPrXww5gkGu1ExCaQZoU9oBGDaEQ215cLjr61+6jY5MZ5qWv/erjwKUcVlx
+ UixT4duU5zCRDgdxhrErQ==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:F6asp5buKPA=;r+L4aCWNtxeaHU+sRfefg709Q5F
- 8eKghDaSH8JjHdf3FU5YnjglJegOUpbACzDtNk1zZUUPgzf6Uxp5EfmLUiscgwSZ7DQCuli1G
- 72oPVSnHdyfmSEM4LmG3qpkzieDavyJzeyGh95cBiaSzKbowg04xB3eMVSVn6ogntTT8bKsV0
- h8ro7MfYbCdh8bQ461lgBdCu/zXaUc0OkGlKL2K59S9jXqhxerg6PwrEFGD/SOh8FSxlDMcME
- GD6x+iSIvPPa1wn/i0UTImUkX1c9Cxl+VyviumHOLLsnMzi1G6kVLcU3q2aqQLE76+8VSl+Vh
- xH0WIKWbHO63+93ESlPiw/hk3yF467+iAI+5yJd43MS7jESrl7Xf21fxX/fwFo/y2y77rUZBE
- 4wNR3odgZLsQfoK4T65fXpSwdd86J5RD9eXzZwx4D6g4FdEgJN+J2GGBrRhh4ANVZ0Lm7WXsf
- rbzZSyKj0QJMk1p03OjAL66xXabwT1gmtoaOagFMPkuvSdqsCcak8kGr0t0tWhe4yqfAlyrZZ
- jWfNHcj4x5x9lILBUp6cQIPrBkL4n3kSCxP1+oQ/y4eldMXTxy1GEkyDg0vxEjN0aIaF///+8
- EDz8endgvZSkrIiLGqMDpDjKCnVNd1XoYLjwoR/BvpB3y8xIUGN5+sxIRsTXa3TeYcQnoLA/O
- bM+3uPHBHHdbfw3mMjFaHHimQ9n8noTD2lTDxAgC/0cEOnAg4WuDcj/taxjHfFSDOR0aHkKv8
- nl9CfJ9idNnfoaPMDN6CURyh0H3XDOgL6PUMeBeGhcsXkZWxIrFs+kdJ0suVk2gQl38ZS3VFe
- Eo+cmMAnRqf9cUvbhXpTNUQzr3fNwOn4I2Pk/A3v+4XCKTRFlYwUTUH058FTyUDBryKuJsKQg
- CE1WNlnDhRG+SaTjS2yYR+Dvxm6C9EJcz1TQwQNtoz6BgFmnXHA0Q2VhCPxpda0O5cq5OmiW4
- qkD1TOCq+mSWi1s4UP1Ii78nvCuIRyeccWl0pDs5eNf+xyzDCveRk4AvcfFZSWWyFcHVKeFe5
- FUUyozlYdT+MSpW3JMEXvmTHpgahVt7jAXdZ3fI65jpMfdBDwHfNlu8JEyaQYf4HlRhe+d7Fq
- WXFL/LotM4vsze8Kdomw3VEtPMX+X0cNHgQD04/LD5YHBDEU6SXkatlkvglyLZiKbYwhCa9Wb
- tP/EcopMXHPlr9KqcNZeArE0nSeMDf75RYM6Jt8EJBGDT5ljAgiav+p77R7xvIULYRTP4tN6g
- xuxOIeb3fkAi5JjxNSJWT0DG5rvbWQn9SzL1LspGHkArWvt2ZArYJVud93ddKt5c8lbYXOSJH
- j7/Url3Y6fus2fHJCfIF0Yh6sdkuSmA3d9EpFjV0CsNUChJzi476Mhj+v4vDsbnSV1HQphJ1Q
- u/uDd7EulpCHeXEt021VW2yhiJXXWhXjcQ4J9xQNvpDfFLbIF9LiIvX1pjol7yssbKNQXd1rj
- sM4XOC3ylHScO/dxMxR+9lxP099PQ3F/CSOEPSpLHDmYCrOIPfy54lTYassjktDJQCYnXAzd4
- Z8qn2cKLId6Y1s7eCJK/9X1vvhPJcHewyTdv7oQg7b+iEr4F8npXUmvNSEVZP77hNwiuoIm38
- n4u9ryHHjZST4op4zUOeWMECRt9RqMtpm88Wdc1Te9Hpyig4wMnt4TLQmk+VrOCyPUuxz94uL
- sO2Q2WSne2E3VcizPWFFjSNcKjnU6FteU+/agGJM9SUQImXNLp/DOcrwtiMtouK+Km5gXI+EW
- o8tZBIU+NPwdPXfEppg5Xh6C/nGqTcWEYWdJ37f05nHs8uGu1WvhVKToNPMNIQYvaVWKB3tgU
- umr2BvX4MH4TC0lLNMaJuEDLF0IFyp4P+Lx1RUF/NOqQDw7u2iGmCdgqX6BqYKIQx5+tacSF+
- Cp3MpBXtxGRzcTP46x0AnUeDyjMrA2Z07gzuMeYrmO+4GsXFD8jDbWcs6weJvQSAcInoYSgIj
- 3mcmKd1ners4l1jccUko7iXhYxROV2PMzmNDxpi+YrUWm+/BWxljvvMvjH31nYM66fLkn62fn
- vljOU7dkli01ym/v/5xoqQhbuateX5Y7WV6mogvWM0MZ9xB5VqNUxQdJrGsPYXpi7b3hbW5Gf
- s/RbeULLP4yZat8HtfiyeW//NTSPNiuDyODNzgJY10spOpNkAvnn4zU4XwUu+g7JNn8Da6SuS
- 3YpIPo1a7mJxLeQVhLRd02X7eUIvFRu5mcyH4vwdOSAt+NR4C0+acaDYjDy6DRrEKGIk0ieNq
- zwFV85+dFMZfO6ZYkRjU/RZ3SQIMt6neHsaF16IUp284MyaNxEHmGBWRHlTuV74+u5U+0xkTR
- rU7mgszpNyEdBgrVgfFDAQL2q57Mr8HvKK0oE1o+UvgBVRSeBibl2lNsbD+mwUKNTyC+Bl5KD
- Nlq8EIg4rTnSIrNywwo7Lb+AvlZUv7WugsoJqthsMdfLHyvkCN3X3BA0tUGoJQZgKkUYgVnKq
- qz/tYmwqABRpyvpD9WmAKzVW8c0rckHwUHgxoKIyZwZstl1/tu1hD3LES0anTPEHmZ5T30dVK
- gznvNju6xGROyT6VyqdIx/Skhmv+YHWDyLFL3BCyaDN8Ig/HDMvBNx7JQte6tUIlKCqKZRugE
- PV+omqr0C6AGgLgzaMPmkjXjK0LmjmcbRGL0lQuzbAKUJ2k3IVfbqkkaCjljCkUOCR3swouq7
- nNxuUpEWdhiOFCou6vBCoWe/RHAAV4HEPFUoxextZNwkt7v/FHHtlSh3i3nJ3yKt8TqTkud/2
- Py9Ax2iHbHWi4As4x+28/2hTP5ZkTJVaAa+UFbILjNbAeSecQDFHjUTwt7qbpkyY9s1lPnutp
- 6lB6oi6qE0z7Q4jevQHaDsvm7g+GVDAAmaXsBbNP3I1aVZ8Ff/Ss+vg4Zm2L7i1F9QsNghp9L
- xA3bd8zVtndKQ7jIRnJyicyraFJEmKaOlQsOSkHgGWbmYbEOgAnSNrKEwtIPXacshOQtC/8gf
- NsA3NfFmyLAfa3Nhu36Efh022QpVMDXaeCSXT2rTco7yIndGB/3vt08FvjzArueGZstDRTz9V
- 1JbFKaJ9O2pDFSaaEi8g3ZcdyvwNe3HawpsgB9Nyf65qlibaZaWq8ttSuxRs0sFa+BKpQp3YQ
- SYZHr9qFOGB8MqBGzDeh6rn5MWAeu8yNjSFKjEuigAub343WOgCEcdNxduKha5ITFhvc2ugcY
- 5bApkP/5RLotJ8b61HoLftNr0TwC68rJ0r5fgnXmDoMnZXnX94ewZ2RUMCAm+Kz12Oyn2r6a0
- P5fOURflE7RJscQa7WpyzvWpbdbZt7QGOIP6jZCJCzK2mzpK5JzoCazTxhw1sj2NR6cYzAjnS
- a6oXEDKhhIxXCZdHkkTf05CsIo1U0fdCLAVsZNorWikDKiTGTv+vHb9s5ua/hL1ZfAz8hKDG/
- PsLBTKotBxBoIGXn8ZoYvaVnvoCIbjwDyA+qQyPm/nXVEsc06QqN0IDe4lMmX2GBjbtdElTQg
- ruQLJwHbvY0URn1kfODOjrJr7RrI4lVWHBNQUve44sf5xFqZ57FQfs6X6jyct0sGAq27e2KMU
- nJVHIeDI/oFSgUi56V8W7M8njNa5qUSlKIf43oR5DvPCK9Q3AnCjKU+hbdKRKpmeMxqj5UNTI
- 9QQ8r4ejlKvNPYBJ6LDVtNtyPNbmFEN8lneue5W+02BNz/yAFRDdXJQGVhn4oBZQMPUhKrSLO
- //tzgPJ9RUpqODZ8lCXcvfsYqXlfnHFegKifN5k6BDUDMLTFpr11QKcnW1NvmzJ/+Xzo/FHe7
- Mm/qZWMCHH9BvAznEkqVCypu+EZggAwsXtPxGtzYmvjguY7uwyJMW/WA1c1aAwkl84tiFUqs4
- u5pH/EnCHn3Juw03vt0tOZVAKFNNfr2VDU0uVg9FYtySSQbeuFpLKmlvJLabTvyCQWFgafvgl
- sbKOAI23HG+jJhK/XW8qryNK9yjNvZn/2B68YvmgMPBB7RVb2gfeTRpTlhbcO/Tf/Vkb78E+f
- MUnS98CE3u20stAPMQSSJ3GSj5h42pyHPOL/c7yEX8UW30Sn+iPWfeMRU4Ggo43LMWoevIQ1l
- vNRyCzAxOemYhd7M0upgP+3uV2xTZcu52kq8EJthZ/whKBIyJKeXqdO2nQaXexutEp6xCBZtY
- NF4qt7CY1ALSrS9KqsoQv6PbAgTmaPwaUKZLZtYxQ+93fpdGjq+CsspSdWZWAP3/U9q2b9XlE
- 3iapajki5Ibg0ufgusUJsDBtGiQrP391rO/ooJR6qaSoKmdKPeHQwrf2SzDJa95snlW4WsQt1
- e+pg1GAvPTQAbzLsWDSAwJt9FNxZQkGrBUv1sksYf7lIKNSkiiHKF2wfKaX0emo7yM1TJIZAx
- xOT+2zaFX/4V5KvNurpESVUkSsQ12juOvIcRBs4MfEjwoP+mtnLRf0++KLfVU3pmhNT7DoAno
- 924j6io63fQRTjLeF5nrQfepi3pT1GpSpo1RwjBWU4lZOMksAYtd9ODy+Zfe163V7jeusMGLW
- 6QwbAYYujdAjDe5xeKSjBjThgVQBaXwjQbIOtbFWXVJSaDEaiWln05ALMoIOARluImBFJ0HTq
- KRQ2IN2CHVJmjTd/rjCTg+bThqU/egfYjiP5xtmVJXm/53zEwampitrYvJDHoPcRzrENEKDCZ
- dOmB/yynpLt57J75E8LWUZAxEIrlaEpmEmTLpCNCBaOZTJeajVXkYSYocXNahM9eFnsPMfoky
- mt11/ML1tdE0adJM2Zn5MCwG4i6/HMLptDSb7XoPYonTmxrRnHBi4neh+c/Xu4kjNtzl7pOPQ
- GT1UFjWvHH3UUa1IMTWFmAgVXH3f9ZMk5t9rEp0x0mar7z7B39+jP+D4ROgSvU7s1NYNWS0ny
- 6BF9W7pr07Aa/bf2aXtJRkiLOKE8bijnrtjNPqoQBrZ0C1hA6GlTnqtpjvjwT3MHASxf1xkod
- JpxQM0DT03oeIyU0DMeEv416oE4rROGsiBq8yH2Hia65P2EDK/6qvAeVHxk0K8e/xmcQTtCMX
- TXu6czxWnnkEcBdsnBxS8/M0qcCxOZfD0PgI7oEuuGt/+YyiTcP46MhZDhPzj6V39oY5/s2uJ
- Hn9czc040PrLT16vTIfqTZiny9aC4UP1tPkGLyRPKhzDByuAlbDWaPK7iWFOYjrmHzMlUN26S
- fJR6Smqp9q9Gya0qPi8VcSJqsDxKyTetQAH+AwMEJulf6LRKYXrMf6DObWU43k2fjR5izBwZE
- WlSTLkY7FcNgh2oXV3y/hOzPC1FYI0ofXysxwlVGK4MUFqCgYqq0aCgUUEm/pN9bQZaxX0ieN
- fLEYihD0dOGdmLUHz2ku8jYiAjGxleYU4A38nklpleqLWi78P6TF6gdt/Xg1DL9MVUPQRzu5B
- 6CfxX1uaKxw9uyH8tkM26HyknqM71noNzZjvPe7Rb2SHeBSZqkJTOHUaHhhDz+QlKEAh+L6Ds
- xSinK8+rOy3MLFD8ggXM0XPosM9QIXTe+jMC/lKWqIEXZNaoBxils/UFtMloWEHvST2VTKTdr
- dzSh6z45aQaTKiL6GeXsoaxqWE53wuB48BGbf6diYh6VH7fziXfoEPBzo8YJjQE7NIS/JBOLd
- O57R3w==
+UI-OutboundReport: notjunk:1;M01:P0:6TovB09hs7Q=;yY85A3C6FsM+qTFvv447LKnNm7y
+ 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
 
 
 
-=E5=9C=A8 2026/6/16 20:09, You-Kai Zheng =E5=86=99=E9=81=93:
-> The variable-sized buffer buf in struct btrfs_ioctl_search_args_v2 is
-> declared as __u64[], but it holds a packed byte stream of search results=
-,
-> where all offsets into the buffer are in bytes.
+=E5=9C=A8 2026/6/16 20:13, You-Kai Zheng =E5=86=99=E9=81=93:
+> Commit d73e69824854 ("btrfs-progs: temporarily disable usage of v2 of
+> search tree ioctl") turned off TREE_SEARCH_V2 detection because it led
+> to an infinite loop in load_chunk_info() (reachable via 'btrfs
+> filesystem usage', reproducible by mkfs-tests/001): from the second
+> item in the returned buffer the data read back as all zeros while
+> nr_items was non-zero, so the search key never advanced.
 >=20
-> Declaring buf as __u64[] makes it easy for user space to write incorrect
-> pointer arithmetic: adding a byte offset directly to a __u64 pointer
-> scales the offset by 8, landing at byte position offset*8 instead of
-> offset.
+> The root cause is the type of the variable-sized buffer buf in struct
+> btrfs_ioctl_search_args_v2: it is declared as __u64[], but the buffer
+> holds a packed byte stream addressed by byte offsets. Adding such an
+> offset to a __u64 pointer in btrfs_tree_search_data() scaled it by 8,
+> so every item after the first landed past the valid data and read
+> zeros, which fed a zeroed key back into the search and spun forever.
 >=20
-> This recently caused an infinite loop in btrfs-progs: the accessor read
-> all-zero data from misaddressed items, which fed zeroed search keys back
-> into the ioctl loop and spun forever. The issue was worked around at the
-> time by disabling TREE_SEARCH_V2 entirely in btrfs-progs (d73e69824854:
-> "btrfs-progs: temporarily disable usage of v2 of search tree ioctl").
+> Declare buf as __u8 in all in-tree copies of the struct so the offset
+> arithmetic is in bytes, and restore the tree search autodetection so
+> callers use the v2 ioctl when supported. The struct size is unchanged:
+> buf stays 8-byte aligned after the __u64 buf_size.
 >=20
-> The kernel side already treats buf as a byte buffer, so change the
-> declaration to __u8[] to match the actual semantics and prevent similar
-> misuse in user space. The change is ABI compatible: both the structure s=
-ize
-> and alignment are unchanged.
+> Tested on Linux 7.1.0; the whole mkfs-tests group passes with the v2
+> ioctl enabled.
 >=20
 > Suggested-by: Qu Wenruo <wqu@suse.com>
 > Signed-off-by: You-Kai Zheng <ykzheng@synology.com>
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Although the patch looks pretty good to me, I'd prefer to hide the v2=20
+ioctl search behind the experimental flag.
 
-And thanks for pinning down the btrfs-progs bug.
+This is affecting quite some features, including:
+- subvolume group
+- inspect group
+- qgroup group
+- send group
+
+So if there is still some hidden bug, we're suddenly pushing to end users.
+Thus hidding it behind experimental flag for one or two releases will=20
+give us enough time to shake out bugs.
+
+I'll also run a full selftests along with fstests with this patch applied.
+
+You do not need to resend the patch, I can update this one at merge time.
 
 Thanks,
 Qu
-
 > ---
->   include/uapi/linux/btrfs.h | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
+> v2:
+> - Fix at the UAPI level by declaring buf as __u8 instead of casting in
+>    btrfs_tree_search_data(), per Qu Wenruo's review, and update all
+>    in-tree copies of the struct.
 >=20
-> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-> index 9165154a274d..16ff7beab9ca 100644
-> --- a/include/uapi/linux/btrfs.h
-> +++ b/include/uapi/linux/btrfs.h
-> @@ -598,7 +598,7 @@ struct btrfs_ioctl_search_args_v2 {
+> A corresponding kernel patch has been sent separately:
+>=20
+>    "btrfs: declare btrfs_ioctl_search_args_v2::buf as __u8"
+>=20
+>   common/fsfeatures.c        | 6 ------
+>   kernel-shared/uapi/btrfs.h | 2 +-
+>   libbtrfs/ioctl.h           | 2 +-
+>   libbtrfsutil/btrfs.h       | 2 +-
+>   4 files changed, 3 insertions(+), 9 deletions(-)
+>=20
+> diff --git a/common/fsfeatures.c b/common/fsfeatures.c
+> index 2b19bd6e..9dcd237e 100644
+> --- a/common/fsfeatures.c
+> +++ b/common/fsfeatures.c
+> @@ -708,14 +708,8 @@ int btrfs_tree_search_ioctl(int fd, struct btrfs_tr=
+ee_search_args *sa)
+>   {
+>   	/* On first use check the supported status and save it. */
+>   	if (!tree_search_v2_initialized) {
+> -#if 0
+> -		/*
+> -		 * Keep using v1 until v2 is fully tested, in some cases it
+> -		 * does not return properly formatted results in the buffer.
+> -		 */
+>   		if (btrfs_tree_search2_ioctl_supported(fd) =3D=3D 1)
+>   			tree_search_v2_supported =3D true;
+> -#endif
+>   		tree_search_v2_initialized =3D true;
+>   	}
+>   	sa->use_v2 =3D tree_search_v2_supported;
+> diff --git a/kernel-shared/uapi/btrfs.h b/kernel-shared/uapi/btrfs.h
+> index 33dc1ae4..a765fbc4 100644
+> --- a/kernel-shared/uapi/btrfs.h
+> +++ b/kernel-shared/uapi/btrfs.h
+> @@ -626,7 +626,7 @@ struct btrfs_ioctl_search_args_v2 {
 >   	__u64 buf_size;		   /* in - size of buffer
 >   					    * out - on EOVERFLOW: needed size
 >   					    *       to store item */
 > -	__u64 buf[];                       /* out - found items */
 > +	__u8 buf[];                        /* out - found items */
+>   };
+>   _static_assert(sizeof(struct btrfs_ioctl_search_args_v2) =3D=3D 112);
+>  =20
+> diff --git a/libbtrfs/ioctl.h b/libbtrfs/ioctl.h
+> index 7b53a531..66cdd739 100644
+> --- a/libbtrfs/ioctl.h
+> +++ b/libbtrfs/ioctl.h
+> @@ -385,7 +385,7 @@ struct btrfs_ioctl_search_args_v2 {
+>           __u64 buf_size;			   /* in - size of buffer
+>                                               * out - on EOVERFLOW: need=
+ed size
+>                                               *       to store item */
+> -        __u64 buf[0];                      /* out - found items */
+> +        __u8 buf[0];                       /* out - found items */
+>   };
+>  =20
+>   /* With a @src_length of zero, the range from @src_offset->EOF is clon=
+ed! */
+> diff --git a/libbtrfsutil/btrfs.h b/libbtrfsutil/btrfs.h
+> index 29320b5c..47d9ebf8 100644
+> --- a/libbtrfsutil/btrfs.h
+> +++ b/libbtrfsutil/btrfs.h
+> @@ -590,7 +590,7 @@ struct btrfs_ioctl_search_args_v2 {
+>   	__u64 buf_size;		   /* in - size of buffer
+>   					    * out - on EOVERFLOW: needed size
+>   					    *       to store item */
+> -	__u64 buf[0];                       /* out - found items */
+> +	__u8 buf[0];                        /* out - found items */
 >   };
 >  =20
 >   /* With a @src_length of zero, the range from @src_offset->EOF is clon=

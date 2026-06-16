@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D464F2EC0AE;
-	Tue, 16 Jun 2026 13:21:16 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 58F08326930;
+	Tue, 16 Jun 2026 13:23:30 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781616077; cv=none; b=DTAhk7mhBZicpUOQbQsDSGGpbldD5u4SjMRTqlwOfoPpUn48DlO6R2zMYSx9QpliREI/tyoxAdocbdWWox2Re+j+42IAKfpWCdHphFv4zIZjiftkifPbU1zecvgPqdcGeanb69otdNY9khOZqh339AKqFjezw4N3GyWhEPxK3xU=
+	t=1781616211; cv=none; b=lbiWHgrVzuowQwsj6oCS8+XqvA/Qd1ULVhLkIwdRoxI26q5yokfTVwBjdaWkeF8osAj5vFrbNGFIJM8QQKlQzPcczVQGpwuT+RjumYR3RAxfFwGkJ4+ivbqj+Xs8dvZ8Ipme5BVP3oeF0HOOb5xcQ0iJqhUFsxpCnQE1IGPl98c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781616077; c=relaxed/simple;
-	bh=ZWb7/oDTIMzvzUNlvqDD2fzb69VxF7UsCh/nMx04mt0=;
+	s=arc-20240116; t=1781616211; c=relaxed/simple;
+	bh=pVKQJiXc44R1jv08a/uug39IE4eeXPboNcqwbl1INHI=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=e84DP/v85Wi9h0q7P843HkuKZEK6ghOgtyHmenkALjVVDde3+DZmVxWaqFBA9zlYBoRN1iIVUb/6jfeU17sTeReMIf09cZhKYarUkEFHbqG6DEsQNEp5bGsS02HR4cjdx/ih+nH0/TSIZL4Bg9C6JOBKUZe6LcruD7E12pbo0kc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Ulg/fmBu; arc=none smtp.client-ip=100.103.45.18
+	 In-Reply-To:Content-Type; b=oWhd9uieLgoeEilnV1tvsOfg28fORCTPf5hhq2VtR8yYCme8vIq6IJPV7nBHRqKAAeozlFBox3U2MFQiSM90DqMq3cJo8nMw62ro2B/XfCvTTuC40ojau1FRTXu8z9Yg1KcRTutWdZsw+K0oBqZb+xejEAJiggLhfAofpmXNujA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=IhfslXGo; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Ulg/fmBu"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9EE0F1F00A3A;
-	Tue, 16 Jun 2026 13:21:11 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="IhfslXGo"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D12CE1F00A3A;
+	Tue, 16 Jun 2026 13:23:24 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781616076;
-	bh=Bi5FQSfUbPDKHCzNrneISuINo9zh1OVbKcv/tn2tUwk=;
+	s=k20260515; t=1781616210;
+	bh=7IYgv1RZ0pUBUMEPBvaPetWKhaFlwNS6ioZboD1f84E=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To;
-	b=Ulg/fmBu6gNY1GLLk0TcoBaTZXV3VJBC4PoZ5Mx/UshNakReJjPxGthu+884cc6AY
-	 BhwFOVjN3cYI4WHc/l17Dijrh2eZocZJX5faO9zIMeQ8JBqj+1L6xVNcM4tZqZ6tum
-	 1zMHn7ZuKDn8nw5rXey+0eiBgKbUqccV8A/VO8JOpUOBupxSOWUOftRBjw2AP1IjfD
-	 YimrVCeHAa12Uo7m/zZPGHewwv52s6wPeCf7mU2beJ17JGgvkRRebWhHdSQoaI3Al3
-	 WNBhKJ2+c1guSBwe4AuQWdxbf+Utx7XQRKyOaDP/ZfbN2ehjIbh6o3PDHOfXR635od
-	 zo+RpdlC2vd8w==
-Message-ID: <02aef4b8-294b-4f29-9046-29e6135f51ff@kernel.org>
-Date: Tue, 16 Jun 2026 15:21:10 +0200
+	b=IhfslXGoCEm2+XnbCqs6Nn+djLUlmW+cq2LhRTgHwnFnGjy+EhLbD3oyanvvbDHaK
+	 28+EeHm+tnuF6dKx6Vqsyi0oHZOUPe6ofhXKIkRPRfzYIZrkL9xY5ZI1O2Y/1EbHQo
+	 qofWbMeu0+i05N/ATpbKxW9bqN+ivhrVWkazUU1/ba6pPMTCzWHfJPsXh+RDPVkIpr
+	 qNBxoZUX4tJu1L4qYfTP2/F3pKaEOeSdH6JZAuHlkuLu9szvsq0AwXmxcL0H4HxdpD
+	 GlImesBPUbb+u1/WnPCbhY8ZItV7dKiBDqOYhzV74Ueg+qLX0W9nuYMnkwiEaPfIHw
+	 hvIbYl2DwudsQ==
+Message-ID: <1c85ad18-2f1c-4700-8c24-7d06644a3607@kernel.org>
+Date: Tue, 16 Jun 2026 15:23:23 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,8 +35,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v6 12/14] selftests/mm: remove READ_ONLY_THP_FOR_FS code
- from guard-regions
+Subject: Re: [PATCH v6 14/14] selftests/mm: add writable-file collapse tests
+ for khugepaged
 To: Zi Yan <ziy@nvidia.com>, Andrew Morton <akpm@linux-foundation.org>,
  "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  Song Liu <songliubraving@fb.com>
@@ -55,7 +55,7 @@ Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
  linux-mm@kvack.org, linux-kselftest@vger.kernel.org,
  Liam Howlett <liam@infradead.org>
 References: <20260517135416.1434539-1-ziy@nvidia.com>
- <20260517135416.1434539-13-ziy@nvidia.com>
+ <20260517135416.1434539-15-ziy@nvidia.com>
 From: "David Hildenbrand (Arm)" <david@kernel.org>
 Content-Language: en-US
 Autocrypt: addr=david@kernel.org; keydata=
@@ -102,21 +102,26 @@ Autocrypt: addr=david@kernel.org; keydata=
  3iyY2Nsd7JxfKu1PRhCGwXzRw5TlfEsoRI7V9A8isUCoqE2Dzh3FvYHVeX4Us+bRL/oqareJ
  CIFqgYMyvHj7Q06kTKmauOe4Nf0l0qEkIuIzfoLJ3qr5UyXc2hLtWyT9Ir+lYlX9efqh7mOY
  qIws/H2t
-In-Reply-To: <20260517135416.1434539-13-ziy@nvidia.com>
+In-Reply-To: <20260517135416.1434539-15-ziy@nvidia.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
 On 5/17/26 15:54, Zi Yan wrote:
-> Any file system with large folio support and the supported orders include
-> PMD_ORDER can be used.  There is no need to open a file with read-only.
+> collapse_file() now supports collapsing clean pagecache folios from
+> writable files, so add corresponding tests.
+> 
+> Note that madvise(MADV_COLLAPSE) works for dirty pagecache folios from
+> writable files, because collapse_single_pmd() triggers a synchronous
+> writeback when first attempt of collapse_file() fails.  That writeback
+> makes dirty folios clean and the retry of collapse_file() succeeds.
 > 
 > Signed-off-by: Zi Yan <ziy@nvidia.com>
-> Acked-by: David Hildenbrand (Arm) <david@kernel.org>
 > Cc: Al Viro <viro@zeniv.linux.org.uk>
 > Cc: Baolin Wang <baolin.wang@linux.alibaba.com>
 > Cc: Barry Song <baohua@kernel.org>
 > Cc: Chris Mason <clm@fb.com>
 > Cc: Christian Brauner <brauner@kernel.org>
+> Cc: David Hildenbrand (Arm) <david@kernel.org>
 > Cc: David Sterba <dsterba@suse.com>
 > Cc: Dev Jain <dev.jain@arm.com>
 > Cc: Jan Kara <jack@suse.cz>
@@ -133,8 +138,6 @@ On 5/17/26 15:54, Zi Yan wrote:
 > Cc: Suren Baghdasaryan <surenb@google.com>
 > Cc: Vlastimil Babka <vbabka@kernel.org>
 > ---
-
-Skimmed over it and nothing jumped at me
 
 Acked-by: David Hildenbrand (Arm) <david@kernel.org>
 

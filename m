@@ -1,162 +1,217 @@
-Received: from mail.synology.com (mail.synology.com [211.23.38.101])
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A503C413622
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2026 10:44:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4EB44351C14
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2026 11:18:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781606695; cv=none; b=i4ED7UXWhrvteE3JtmJ4/paxFcEteBOUPzzPZWuPW65ayc2qbMabNx1kEbIvUwOOMSXw958tMjZ73th1Rsql54m8LVW2BcoTmK5SKGTpV43ESTeqhJUST7bzV2ikaBlgM+txRUA59I2JmABqP17Wp+ITeZo4I76YAikIlhwuC0I=
+	t=1781608699; cv=none; b=VFWBip1+GsKrz+NcyPBUkAFD6lbPNVaR3vxvW5kUj82W3qJa2flkdnxfwUSX4N/tr6kLpPieDY06/tMDS4aTJBavmNuHmzmQ6CRnwhJu6UeHpvYi3zwwtX+hNpjKrX5VfhnA+oHVFky7iuNiE0f1wM5XosXVSNkmQ9IsAZHe85Q=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781606695; c=relaxed/simple;
-	bh=ezllmD/A+3sht6FTBQMcRXPLHWpgJvWirfXpLDO5XSg=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=f/TQLaSQNuWt++pNZCbI4fOgR/qU8VDK+7114c/SVwDyYMmoTbTPggF4TSQf/f5P+Qa95aWsHqUIaA2RXMUufAENc7l6xZHdbGvUbWikHIg2JTnCgzNsMUCraYNPAoCUniYSNEK+ife6FkEyH9XsooMriEK5VEZYE0WHaKLvH0k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=Gq09CZal; arc=none smtp.client-ip=211.23.38.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
+	s=arc-20240116; t=1781608699; c=relaxed/simple;
+	bh=fs7LhAX7JI/6fsn6aawX0+HnZzxUObtvr+UaGlijANc=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=rp216p0QjeYMvODrFFoqR/DpJyV3j7a5KRT/3mw700BxBCeBA5Xt5T35xwG6uC9DWpNWvNHVw1vWR4BWZXPH6sl2YG+VGzbyVEkWoNoYd1EasDpLWBP9KytD+92Gq/cyR1K1P8cW/wBuF5II1WoqHCYSW0VMeqtkG5q32FEj3Xk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=nRsqQtxZ; arc=none smtp.client-ip=212.227.17.20
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="Gq09CZal"
-Received: from 97097ad21e24 (unknown [10.17.41.35])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange x25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mail.synology.com (Postfix) with ESMTPSA id 4gfkC72x0zzK6sgb9;
-	Tue, 16 Jun 2026 18:44:51 +0800 (CST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=synology.com;
-	s=123; t=1781606692;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=eGnxLQwuKN167mJgZkFwiS0wQDQHEXXR9JAHTw+I7nk=;
-	b=Gq09CZalBO1owrm6XGsvuVGhz1LPc3wKeVruWG1EcO0NRfPIyK+7w1rERqtN9FrVDJJxHf
-	eHX7tQ7mv8BNPB+cv7tLnVaI3lFF75KEaLkKfZZiF4mrygq+QRzIlULbVLSfJlhLC/EWff
-	jvAiG3DaOfPFgNNPITGg0LCJJeBbJhM=
-From: You-Kai Zheng <ykzheng@synology.com>
-To: wqu@suse.com
-Cc: linux-btrfs@vger.kernel.org,
-	quwenruo.btrfs@gmx.com,
-	ykzheng@synology.com
-Subject: [PATCH v2] btrfs-progs: re-enable tree search v2 ioctl
-Date: Tue, 16 Jun 2026 18:43:08 +0800
-Message-ID: <20260616104308.2159912-1-ykzheng@synology.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <780847cd-3fa7-4b17-af33-0b84bd125cbc@suse.com>
-References: <780847cd-3fa7-4b17-af33-0b84bd125cbc@suse.com>
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="nRsqQtxZ"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1781608695; x=1782213495; i=quwenruo.btrfs@gmx.com;
+	bh=F9VwRHdDgE4ACjGUrVOcACMdQ0nC3VSbE+/KYVmPit4=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=nRsqQtxZBNfrAoKr1plFSQ8gbbtLg7Ch2UflMfdJgl+2Q1SYFDPb+1skIwxcPNlg
+	 I3n1f9EujyBGwp7ZyoXph2ms7rMZPFx1tgNHVgT1LGKBUrLLeXhHNaX42QkKTNAG8
+	 IGtLNDvEeOKXw4QS/RIHb7ditwrOdWkaXlQVNFGvTeR/vWuN69w4i0CyoLSpGZacJ
+	 YNBT5BiJuJ5zERkM/aQqDH5su4KtR48zaMFoejAVhm58H5dvn04TnSd7D2a5lk8ex
+	 qBkJFLQRgbzK0GipRSoREHHY2ilQVvBDLmKahF43MS2uBaPcqZTXeUAcqmoe3V8jk
+	 HCvdIDAw4f348HMWlQ==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MXGr8-1whjFA3jSQ-00PRLf; Tue, 16
+ Jun 2026 13:18:15 +0200
+Message-ID: <100019a1-636d-48de-ba27-988e7a41e541@gmx.com>
+Date: Tue, 16 Jun 2026 20:48:10 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Synology-MCP-Status: no
-X-Synology-Auth: pass
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Spam-Flag: no
-X-Synology-Virus-Status: no
-Content-Type: text/plain
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: declare btrfs_ioctl_search_args_v2::buf as __u8
+To: You-Kai Zheng <ykzheng@synology.com>, linux-btrfs@vger.kernel.org
+Cc: Qu Wenruo <wqu@suse.com>
+References: <20260616103907.2157960-1-ykzheng@synology.com>
+Content-Language: en-US
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <20260616103907.2157960-1-ykzheng@synology.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:OZ6pMQC3XkU0EJwykQVEww7GfaFnZ2qt4VMfLBWNRs/eIzqw8Jy
+ +ukn0RaUCL7npmd38vWpbIZ3a2cvr2GxHsrlEbNbuv/ci5VRvXSe5908aawMqQMoZhLvix9
+ WT9T5TRgVMVQ7dkIUzDTFRAB5sEbZCRtx+NPAuY8Si1rKIbBrKj8XmXasQoN1XLdawa9kq6
+ /lErLEA01qf+6XKapjsKQ==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:F6asp5buKPA=;r+L4aCWNtxeaHU+sRfefg709Q5F
+ 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
+ O57R3w==
 
-Commit d73e69824854 ("btrfs-progs: temporarily disable usage of v2 of
-search tree ioctl") turned off TREE_SEARCH_V2 detection because it led
-to an infinite loop in load_chunk_info() (reachable via 'btrfs
-filesystem usage', reproducible by mkfs-tests/001): from the second
-item in the returned buffer the data read back as all zeros while
-nr_items was non-zero, so the search key never advanced.
-
-The root cause is the type of the variable-sized buffer buf in struct
-btrfs_ioctl_search_args_v2: it is declared as __u64[], but the buffer
-holds a packed byte stream addressed by byte offsets. Adding such an
-offset to a __u64 pointer in btrfs_tree_search_data() scaled it by 8,
-so every item after the first landed past the valid data and read
-zeros, which fed a zeroed key back into the search and spun forever.
-
-Declare buf as __u8 in all in-tree copies of the struct so the offset
-arithmetic is in bytes, and restore the tree search autodetection so
-callers use the v2 ioctl when supported. The struct size is unchanged:
-buf stays 8-byte aligned after the __u64 buf_size.
-
-Tested on Linux 7.1.0; the whole mkfs-tests group passes with the v2
-ioctl enabled.
-
-Suggested-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: You-Kai Zheng <ykzheng@synology.com>
----
-v2:
-- Fix at the UAPI level by declaring buf as __u8 instead of casting in
-  btrfs_tree_search_data(), per Qu Wenruo's review, and update all
-  in-tree copies of the struct.
-
-A corresponding kernel patch has been sent separately:
-
-  "btrfs: declare btrfs_ioctl_search_args_v2::buf as __u8"
-
- common/fsfeatures.c        | 6 ------
- kernel-shared/uapi/btrfs.h | 2 +-
- libbtrfs/ioctl.h           | 2 +-
- libbtrfsutil/btrfs.h       | 2 +-
- 4 files changed, 3 insertions(+), 9 deletions(-)
-
-diff --git a/common/fsfeatures.c b/common/fsfeatures.c
-index 2b19bd6e..9dcd237e 100644
---- a/common/fsfeatures.c
-+++ b/common/fsfeatures.c
-@@ -708,14 +708,8 @@ int btrfs_tree_search_ioctl(int fd, struct btrfs_tree_search_args *sa)
- {
- 	/* On first use check the supported status and save it. */
- 	if (!tree_search_v2_initialized) {
--#if 0
--		/*
--		 * Keep using v1 until v2 is fully tested, in some cases it
--		 * does not return properly formatted results in the buffer.
--		 */
- 		if (btrfs_tree_search2_ioctl_supported(fd) == 1)
- 			tree_search_v2_supported = true;
--#endif
- 		tree_search_v2_initialized = true;
- 	}
- 	sa->use_v2 = tree_search_v2_supported;
-diff --git a/kernel-shared/uapi/btrfs.h b/kernel-shared/uapi/btrfs.h
-index 33dc1ae4..a765fbc4 100644
---- a/kernel-shared/uapi/btrfs.h
-+++ b/kernel-shared/uapi/btrfs.h
-@@ -626,7 +626,7 @@ struct btrfs_ioctl_search_args_v2 {
- 	__u64 buf_size;		   /* in - size of buffer
- 					    * out - on EOVERFLOW: needed size
- 					    *       to store item */
--	__u64 buf[];                       /* out - found items */
-+	__u8 buf[];                        /* out - found items */
- };
- _static_assert(sizeof(struct btrfs_ioctl_search_args_v2) == 112);
- 
-diff --git a/libbtrfs/ioctl.h b/libbtrfs/ioctl.h
-index 7b53a531..66cdd739 100644
---- a/libbtrfs/ioctl.h
-+++ b/libbtrfs/ioctl.h
-@@ -385,7 +385,7 @@ struct btrfs_ioctl_search_args_v2 {
-         __u64 buf_size;			   /* in - size of buffer
-                                             * out - on EOVERFLOW: needed size
-                                             *       to store item */
--        __u64 buf[0];                      /* out - found items */
-+        __u8 buf[0];                       /* out - found items */
- };
- 
- /* With a @src_length of zero, the range from @src_offset->EOF is cloned! */
-diff --git a/libbtrfsutil/btrfs.h b/libbtrfsutil/btrfs.h
-index 29320b5c..47d9ebf8 100644
---- a/libbtrfsutil/btrfs.h
-+++ b/libbtrfsutil/btrfs.h
-@@ -590,7 +590,7 @@ struct btrfs_ioctl_search_args_v2 {
- 	__u64 buf_size;		   /* in - size of buffer
- 					    * out - on EOVERFLOW: needed size
- 					    *       to store item */
--	__u64 buf[0];                       /* out - found items */
-+	__u8 buf[0];                        /* out - found items */
- };
- 
- /* With a @src_length of zero, the range from @src_offset->EOF is cloned! */
--- 
-2.54.0
 
 
-Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.
+=E5=9C=A8 2026/6/16 20:09, You-Kai Zheng =E5=86=99=E9=81=93:
+> The variable-sized buffer buf in struct btrfs_ioctl_search_args_v2 is
+> declared as __u64[], but it holds a packed byte stream of search results=
+,
+> where all offsets into the buffer are in bytes.
+>=20
+> Declaring buf as __u64[] makes it easy for user space to write incorrect
+> pointer arithmetic: adding a byte offset directly to a __u64 pointer
+> scales the offset by 8, landing at byte position offset*8 instead of
+> offset.
+>=20
+> This recently caused an infinite loop in btrfs-progs: the accessor read
+> all-zero data from misaddressed items, which fed zeroed search keys back
+> into the ioctl loop and spun forever. The issue was worked around at the
+> time by disabling TREE_SEARCH_V2 entirely in btrfs-progs (d73e69824854:
+> "btrfs-progs: temporarily disable usage of v2 of search tree ioctl").
+>=20
+> The kernel side already treats buf as a byte buffer, so change the
+> declaration to __u8[] to match the actual semantics and prevent similar
+> misuse in user space. The change is ABI compatible: both the structure s=
+ize
+> and alignment are unchanged.
+>=20
+> Suggested-by: Qu Wenruo <wqu@suse.com>
+> Signed-off-by: You-Kai Zheng <ykzheng@synology.com>
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+And thanks for pinning down the btrfs-progs bug.
+
+Thanks,
+Qu
+
+> ---
+>   include/uapi/linux/btrfs.h | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
+>=20
+> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+> index 9165154a274d..16ff7beab9ca 100644
+> --- a/include/uapi/linux/btrfs.h
+> +++ b/include/uapi/linux/btrfs.h
+> @@ -598,7 +598,7 @@ struct btrfs_ioctl_search_args_v2 {
+>   	__u64 buf_size;		   /* in - size of buffer
+>   					    * out - on EOVERFLOW: needed size
+>   					    *       to store item */
+> -	__u64 buf[];                       /* out - found items */
+> +	__u8 buf[];                        /* out - found items */
+>   };
+>  =20
+>   /* With a @src_length of zero, the range from @src_offset->EOF is clon=
+ed! */
+

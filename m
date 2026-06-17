@@ -1,265 +1,140 @@
-Received: from mout-p-102.mailbox.org (mout-p-102.mailbox.org [80.241.56.152])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9F8922BE7A7;
-	Wed, 17 Jun 2026 11:18:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=80.241.56.152
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B60D39FCCD;
+	Wed, 17 Jun 2026 11:20:49 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781695101; cv=none; b=hkWS9SkDZwWGb2mFYl5xVe1Czq0e0IiwCKJOCqUw7Oy4rpEkEK8/qCmlnv7beZSYyPiUjcC9MsmSL4ovxJHcP5oD+UMJbUv3mj7oxLUhdbl6VGVj2opwYsfG5bObi2xU9uh//dND9D4WsZPq+Um/fnI22oniUaLzHw2qfcSQ3CI=
+	t=1781695252; cv=none; b=fpC/cNmS+JtbQWLE1lK5UAqU7oJ5bdEKnq98p7vNE6z77BZZtHhWjRY7EE9/QGuCMDKjhA//01ksQ0SFmN9m8H9mq6rqdU4Tm5gAXSPDo0oCaQ6F1Urj37gyVgxcvcB6/kWph0FxeM7ePNK/LQnQApq9XGfTVAxSBi3S42PXRDc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781695101; c=relaxed/simple;
-	bh=GHcfBq1dm/TFUdw1M+cPVoBNbNLwnSUyyOhrhhXGPlM=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
-	 MIME-Version:Content-Type; b=HYEZCFLDQoVMAPcsP+YcPJRa78/etYNpqwJJkcLM7b4oyuXucQCk+/WTwTFNd+yW1ykO2RAz8zs+aTtBjYiXIEuKerVIZ716bbg8gApCXPDMPu7j0Ja/jY95CuVJd7/NZsMPxx0Zfz14nYmsyMaJrKr8PpHooOaTRcTm+x+oVy8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mssola.com; spf=fail smtp.mailfrom=mssola.com; dkim=pass (2048-bit key) header.d=mssola.com header.i=@mssola.com header.b=fnPCLHLf; arc=none smtp.client-ip=80.241.56.152
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mssola.com
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=mssola.com
+	s=arc-20240116; t=1781695252; c=relaxed/simple;
+	bh=lviHssK6RfHnHTYn0S/J2+9+idEjvPZ9TLOrfO8+yFc=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=HVmWM5Da4yOI1b5l+/wWesyZjL+B084auUjMUoHTzXGbruocjohcFgtukA+URrRusSPzjswzUGPACesmje12YBNqdydLgN98Wy130UYnbO0zan1TkhAgypZjDcBVxEQTMx9RwOjOoZ9PKg40nGB21ow+QhHCJ0nXAkIpOBdfBA4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=TUel3iRg; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mssola.com header.i=@mssola.com header.b="fnPCLHLf"
-Received: from smtp2.mailbox.org (smtp2.mailbox.org [10.196.197.2])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mout-p-102.mailbox.org (Postfix) with ESMTPS id 4ggLv757kMz9vLs;
-	Wed, 17 Jun 2026 13:18:11 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mssola.com; s=MBO0001;
-	t=1781695091;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=VNr+qsHGEzo3MilQP7dX2VYjgRIlXLSmwRWCfgqti7s=;
-	b=fnPCLHLfIgP3VdO8tAYt2E1HTkxwPLvsN+rtEuwmmnPbsbLaXiQa2/1KQVEoGNxptMntJp
-	6csfIP2mteO9UQYe4Cd27LxdTCJV6gs10Q+vIlR4mQxui+MdsYbSPEEzte3Axtf0DktyXz
-	GDf+TXhgYpJs2INbtJzn7gW79zs37D/ILw4LcxNsIwptYTBEljuPjszrDp1ljvoh6WLMwH
-	zk7eThLntsqDq4NNK/DaO2Vj66TKME++hTWsAd/Y4T7kC/+xYCXMUx2whJUgB2hCqzwfRi
-	IXRYNLznMjeAU1YzHTD7tfN/l/kA3JvT071n5y6vGyUHUtfchHy01jp8pPKuJg==
-From: =?utf-8?Q?Miquel_Sabat=C3=A9_Sol=C3=A0?= <mssola@mssola.com>
-To: Daan De Meyer <daan@amutable.com>
-Cc: linux-btrfs@vger.kernel.org,  linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: add 32-bit compat ioctl for
- BTRFS_IOC_GET_SUBVOL_INFO
-In-Reply-To: <20260521075113.1079519-1-daan@amutable.com> (Daan De Meyer's
-	message of "Thu, 21 May 2026 07:51:13 +0000")
-References: <20260521075113.1079519-1-daan@amutable.com>
-Date: Wed, 17 Jun 2026 13:18:05 +0200
-Message-ID: <87wlvxct5e.fsf@>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="TUel3iRg"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3237B1F000E9;
+	Wed, 17 Jun 2026 11:20:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1781695249;
+	bh=7Zb3aYz8lZNlAUYkdsGBkMuML/PvX4Qn94h9tk/ibUs=;
+	h=From:To:Cc:Subject:Date;
+	b=TUel3iRgpz+g6/pSUIKEmsCkC1dorn7sHn/tFQuj8/LbJULYUa/982I3kp3ptdhgY
+	 /JXJ3ky35/7RNB85s8VcbF7h+sdybpOfW5FfHWJGMhKrk/15KnQ0ioaN5m6t4Kc4P+
+	 kPavcJu4lJYoth+zzDDuMXbgZeYw2LglQnuB4rJL9V0QN3YibzPbiOzH6wGaryNZpl
+	 yvJnhcVIScWAAh0blg7YWToySUvBdc9H3Si0o1lt0y7QgF83743MuTO4VLA8fOW4V8
+	 8djm9FRw6KDFpwC+WabcPpkvT439Ppy3pD2CN2Mm/OhdMPApfgG5oLMKip+CZ4LYTg
+	 HjR7LpfIXWmAg==
+From: Anand Jain <asj@kernel.org>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org,
+	linux-xfs@vger.kernel.org,
+	linux-f2fs-devel@lists.sourceforge.net,
+	zlang@redhat.com,
+	hch@infradead.org,
+	djwong@kernel.org
+Subject: [PATCH v7 0/11] fstests: add test coverage for cloned filesystem ids
+Date: Wed, 17 Jun 2026 19:20:27 +0800
+Message-ID: <cover.1781694879.git.asj@kernel.org>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-	micalg=pgp-sha512; protocol="application/pgp-signature"
+Content-Transfer-Encoding: 8bit
 
---=-=-=
-Content-Type: text/plain
+v7:
+. 803, 806: Trimmed down the UUID checks to only what is required, mountinfo
+   and libblkid.
+. 802: Dropped the unnecessary echo statements previously used for logical
+   flow in the golden output. On second thought, it looks fine without them.
+. Swapped _fixed_by_kernel_commit for _fixed_by_fs_commit.
+. _clone_mount_option(): Now echoes directly from the case block itself.
+. _require_unique_f_fsid(): add the link to the ref. discussions.
 
-Hi,
+v6:
+  https://lore.kernel.org/fstests/cover.1779939330.git.asj@kernel.org
 
-Just a small comment from my side, but feel free to ignore it :)
+v5:
+  https://lore.kernel.org/fstests/cover.1779367627.git.asj@kernel.org
 
-Daan De Meyer @ 2026-05-21 07:51 GMT:
+v4:
+  https://lore.kernel.org/fstests/cover.1777357320.git.asj@kernel.org
 
-> On 64-bit kernels with 32-bit userspace, struct btrfs_ioctl_timespec is
-> laid out as 16 bytes (8B sec + 4B nsec + 4B trailing padding) instead of
-> the 12 bytes a 32-bit userspace expects, because the surrounding struct
-> is not packed. As a result, struct btrfs_ioctl_get_subvol_info_args has
-> a different size and layout in 32-bit userspace than in the 64-bit
-> kernel, and BTRFS_IOC_GET_SUBVOL_INFO returns garbage to 32-bit callers.
->
-> Mirror what was done for BTRFS_IOC_SET_RECEIVED_SUBVOL: add a packed
-> btrfs_ioctl_get_subvol_info_args_32 with btrfs_ioctl_timespec_32 fields,
-> define BTRFS_IOC_GET_SUBVOL_INFO_32 with that struct as the size
-> argument, factor the existing handler into a shared _btrfs_ioctl_get_
-> subvol_info() helper, and add btrfs_ioctl_get_subvol_info_32() which
-> fills the kernel struct and translates field-by-field into the 32-bit
-> struct before copy_to_user().
->
-> Signed-off-by: Daan De Meyer <daan@amutable.com>
-> ---
->  fs/btrfs/ioctl.c | 112 +++++++++++++++++++++++++++++++++++++++++------
->  1 file changed, 99 insertions(+), 13 deletions(-)
->
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index a39460bf68a7..31be2590f1b2 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -82,6 +82,30 @@ struct btrfs_ioctl_received_subvol_args_32 {
->
->  #define BTRFS_IOC_SET_RECEIVED_SUBVOL_32 _IOWR(BTRFS_IOCTL_MAGIC, 37, \
->  				struct btrfs_ioctl_received_subvol_args_32)
-> +
-> +struct btrfs_ioctl_get_subvol_info_args_32 {
-> +	__u64 treeid;
-> +	char name[BTRFS_VOL_NAME_MAX + 1];
-> +	__u64 parent_id;
-> +	__u64 dirid;
-> +	__u64 generation;
-> +	__u64 flags;
-> +	__u8 uuid[BTRFS_UUID_SIZE];
-> +	__u8 parent_uuid[BTRFS_UUID_SIZE];
-> +	__u8 received_uuid[BTRFS_UUID_SIZE];
-> +	__u64 ctransid;
-> +	__u64 otransid;
-> +	__u64 stransid;
-> +	__u64 rtransid;
-> +	struct btrfs_ioctl_timespec_32 ctime;
-> +	struct btrfs_ioctl_timespec_32 otime;
-> +	struct btrfs_ioctl_timespec_32 stime;
-> +	struct btrfs_ioctl_timespec_32 rtime;
-> +	__u64 reserved[8];
-> +} __attribute__ ((__packed__));
-> +
-> +#define BTRFS_IOC_GET_SUBVOL_INFO_32 _IOR(BTRFS_IOCTL_MAGIC, 60, \
-> +				struct btrfs_ioctl_get_subvol_info_args_32)
->  #endif
->
->  #if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
-> @@ -1945,9 +1969,9 @@ static int btrfs_ioctl_ino_lookup_user(struct file *file, void __user *argp)
->  }
->
->  /* Get the subvolume information in BTRFS_ROOT_ITEM and BTRFS_ROOT_BACKREF */
-> -static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
-> +static int _btrfs_ioctl_get_subvol_info(struct inode *inode,
-> +					struct btrfs_ioctl_get_subvol_info_args *subvol_info)
->  {
-> -	struct btrfs_ioctl_get_subvol_info_args *subvol_info;
->  	struct btrfs_fs_info *fs_info;
->  	struct btrfs_root *root;
->  	struct btrfs_path *path;
-> @@ -1964,12 +1988,6 @@ static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
->  	if (!path)
->  		return -ENOMEM;
->
-> -	subvol_info = kzalloc_obj(*subvol_info);
-> -	if (!subvol_info) {
-> -		btrfs_free_path(path);
-> -		return -ENOMEM;
-> -	}
-> -
->  	fs_info = BTRFS_I(inode)->root->fs_info;
->
->  	/* Get root_item of inode's subvolume */
-> @@ -2048,15 +2066,79 @@ static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
->  		}
->  	}
->
-> -	btrfs_free_path(path);
-> -	path = NULL;
-> -	if (copy_to_user(argp, subvol_info, sizeof(*subvol_info)))
-> -		ret = -EFAULT;
-> -
->  out:
->  	btrfs_put_root(root);
->  out_free:
->  	btrfs_free_path(path);
-> +	return ret;
-> +}
-> +
-> +#ifdef CONFIG_64BIT
-> +static int btrfs_ioctl_get_subvol_info_32(struct inode *inode, void __user *argp)
-> +{
-> +	struct btrfs_ioctl_get_subvol_info_args *subvol_info = NULL;
-> +	struct btrfs_ioctl_get_subvol_info_args_32 *subvol_info_32 = NULL;
+v3:
+  https://lore.kernel.org/fstests/cover.1777281778.git.asj@kernel.org
 
-Maybe these two variables could be declared with the AUTO_KFREE helper,
-so you could remove goto's and the cleanup section in the end.
+v2:
+  https://lore.kernel.org/fstests/cover.1774090817.git.asj@kernel.org
 
-> +	int ret;
-> +
-> +	subvol_info = kzalloc_obj(*subvol_info);
-> +	if (!subvol_info)
-> +		return -ENOMEM;
-> +
-> +	subvol_info_32 = kzalloc_obj(*subvol_info_32);
-> +	if (!subvol_info_32) {
-> +		ret = -ENOMEM;
-> +		goto out;
-> +	}
-> +
-> +	ret = _btrfs_ioctl_get_subvol_info(inode, subvol_info);
-> +	if (ret)
-> +		goto out;
-> +
-> +	subvol_info_32->treeid = subvol_info->treeid;
-> +	memcpy(subvol_info_32->name, subvol_info->name, sizeof(subvol_info_32->name));
-> +	subvol_info_32->parent_id = subvol_info->parent_id;
-> +	subvol_info_32->dirid = subvol_info->dirid;
-> +	subvol_info_32->generation = subvol_info->generation;
-> +	subvol_info_32->flags = subvol_info->flags;
-> +	memcpy(subvol_info_32->uuid, subvol_info->uuid, BTRFS_UUID_SIZE);
-> +	memcpy(subvol_info_32->parent_uuid, subvol_info->parent_uuid, BTRFS_UUID_SIZE);
-> +	memcpy(subvol_info_32->received_uuid, subvol_info->received_uuid, BTRFS_UUID_SIZE);
-> +	subvol_info_32->ctransid = subvol_info->ctransid;
-> +	subvol_info_32->otransid = subvol_info->otransid;
-> +	subvol_info_32->stransid = subvol_info->stransid;
-> +	subvol_info_32->rtransid = subvol_info->rtransid;
-> +	subvol_info_32->ctime.sec = subvol_info->ctime.sec;
-> +	subvol_info_32->ctime.nsec = subvol_info->ctime.nsec;
-> +	subvol_info_32->otime.sec = subvol_info->otime.sec;
-> +	subvol_info_32->otime.nsec = subvol_info->otime.nsec;
-> +	subvol_info_32->stime.sec = subvol_info->stime.sec;
-> +	subvol_info_32->stime.nsec = subvol_info->stime.nsec;
-> +	subvol_info_32->rtime.sec = subvol_info->rtime.sec;
-> +	subvol_info_32->rtime.nsec = subvol_info->rtime.nsec;
-> +
-> +	if (copy_to_user(argp, subvol_info_32, sizeof(*subvol_info_32)))
-> +		ret = -EFAULT;
-> +
-> +out:
-> +	kfree(subvol_info_32);
-> +	kfree(subvol_info);
-> +	return ret;
-> +}
-> +#endif
-> +
-> +static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
-> +{
-> +	struct btrfs_ioctl_get_subvol_info_args *subvol_info;
-> +	int ret;
-> +
-> +	subvol_info = kzalloc_obj(*subvol_info);
-> +	if (!subvol_info)
-> +		return -ENOMEM;
-> +
-> +	ret = _btrfs_ioctl_get_subvol_info(inode, subvol_info);
-> +	if (!ret && copy_to_user(argp, subvol_info, sizeof(*subvol_info)))
-> +		ret = -EFAULT;
-> +
->  	kfree(subvol_info);
->  	return ret;
->  }
-> @@ -5273,6 +5355,10 @@ long btrfs_ioctl(struct file *file, unsigned int
->  		return btrfs_ioctl_set_features(file, argp);
->  	case BTRFS_IOC_GET_SUBVOL_INFO:
->  		return btrfs_ioctl_get_subvol_info(inode, argp);
-> +#ifdef CONFIG_64BIT
-> +	case BTRFS_IOC_GET_SUBVOL_INFO_32:
-> +		return btrfs_ioctl_get_subvol_info_32(inode, argp);
-> +#endif
->  	case BTRFS_IOC_GET_SUBVOL_ROOTREF:
->  		return btrfs_ioctl_get_subvol_rootref(root, argp);
->  	case BTRFS_IOC_INO_LOOKUP_USER:
+v1:
+  https://lore.kernel.org/fstests/cover.1772095513.git.asj@kernel.org
 
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
+This series adds fstests infrastructure and test cases to verify correct
+filesystem identity when a filesystem is cloned (block-level copy).
+Test covers inotify, fanotify, f_fsid, libblkid, IMA, exportfs file handles
+and libblkid tools verify with metadata_uuid.
+  New helpers:
+   _loop_image_create_clone() and _loop_image_destroy() to help create fs and clone
+   _clone_mount_option() helper to apply per-filesystem clone mount options
+   _change_metadata_uuid() changes the UUID before the clone
 
------BEGIN PGP SIGNATURE-----
+  New tests:
+  - fanotify events are isolated between cloned filesystems
+  - f_fsid is unique across cloned filesystem instances
+  - libblkid correctly resolves duplicate UUIDs to distinct devices
+    with and without metadata_uuid
+  - IMA distinct identity for each cloned filesystem
+  - exportfs file handles resolve correctly on cloned filesystems
 
-iQJiBAEBCgBMFiEEG6U8esk9yirP39qXlr6Mb9idZWUFAmoygm0bFIAAAAAABAAO
-bWFudTIsMi41KzEuMTIsMiwyEhxtc3NvbGFAbXNzb2xhLmNvbQAKCRCWvoxv2J1l
-ZYAED/wJ7eJg7nclCMEoPi0zgLfjQrwiMpScxReUTw8s4AUvsA21Z+UAH4WT2ObQ
-h4kZndRV/EiowL41cp0oH0AH5fRVao3GF89G5qeafGePOcWLd44+NGZ6+1UZS7C9
-RTFQvrwNSGQWiXWcRtVYVn7nXELkVtZK3HG/EB0pJRxl0YlpQC5E/y7KOpFFOh4H
-atL6PuIOTmkEpzDpG7ijdgu8BzlMbaJHEbJ74CzjOfkchdXHtiN/khhkonT6ClaS
-tAhCesghtVsyQxkx3ZEnT0LAX8x4whNMvfmsrpdXAdwhpEsxcl2wh4fUL82V+S1G
-3QWYm0JqlgWuAzGPSC5sR7ylskfSCU6Ks2+v62ve2rFMjlLKHoyWwG/fr8PIC9EN
-riHlyVp6bdTxyuUL5K+R18ducorZql0uCNeo2XKYfBuDiI417JiAePZBNwW8U9mo
-GQfk+K2YbZ0lusooKc4IbnOFnebD5i9RY6AWmZOL3mCosY1wn4y0k/mq+o/eMqYd
-D08SlXX1G/cYo2ZRzdh7nQhqX0zDsXhoBJwjCgibM3grNooZgNpUImGVzMK0S46L
-oKjfy9aZG5Obwsl4KJ3in0jxja5yG/1uCfgu90dktx9hB5P0+LNJRDTaMEIseix6
-yeJDzMXNSj9B5QS/wv4XknHyt3zUwZF51gPMPvwKhE5nmc+cqA==
-=2866
------END PGP SIGNATURE-----
---=-=-=--
+Kernel Patches:
+  Requires Btrfs kernel patches for all tests to pass.
+   [1] https://lore.kernel.org/linux-btrfs/cover.1777281686.git.asj@kernel.org
+
+Anand Jain (11):
+  fstests: add _loop_image_create_clone() helper
+  fstests: add _clone_mount_option() helper
+  fstests: add FSNOTIFYWAIT_PROG
+  fstests: add _require_unique_f_fsid() helper
+  fstests: verify fanotify isolation on cloned filesystems
+  fstests: verify f_fsid for cloned filesystems
+  fstests: verify libblkid resolution of duplicate UUIDs
+  fstests: verify IMA isolation on cloned filesystems
+  fstests: verify exportfs file handles on cloned filesystems
+  fstests: add _change_metadata_uuid helper
+  fstests: test UUID consistency for clones with metadata_uuid
+
+ common/config         |   1 +
+ common/rc             | 120 +++++++++++++++++++++++++++++++++++++
+ tests/generic/801     | 135 ++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/801.out |   7 +++
+ tests/generic/802     |  64 ++++++++++++++++++++
+ tests/generic/802.out |   4 ++
+ tests/generic/803     |  72 ++++++++++++++++++++++
+ tests/generic/803.out |   6 ++
+ tests/generic/804     | 108 +++++++++++++++++++++++++++++++++
+ tests/generic/804.out |  10 ++++
+ tests/generic/805     |  80 +++++++++++++++++++++++++
+ tests/generic/805.out |   2 +
+ tests/generic/806     |  74 +++++++++++++++++++++++
+ tests/generic/806.out |   6 ++
+ 14 files changed, 689 insertions(+)
+ create mode 100644 tests/generic/801
+ create mode 100644 tests/generic/801.out
+ create mode 100644 tests/generic/802
+ create mode 100644 tests/generic/802.out
+ create mode 100644 tests/generic/803
+ create mode 100644 tests/generic/803.out
+ create mode 100644 tests/generic/804
+ create mode 100644 tests/generic/804.out
+ create mode 100644 tests/generic/805
+ create mode 100644 tests/generic/805.out
+ create mode 100644 tests/generic/806
+ create mode 100644 tests/generic/806.out
+
+-- 
+2.43.0
+

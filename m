@@ -1,191 +1,136 @@
-Received: from mail-ot1-f78.google.com (mail-ot1-f78.google.com [209.85.210.78])
+Received: from mail-ej1-f52.google.com (mail-ej1-f52.google.com [209.85.218.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1FBE71D432D
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2026 01:33:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.78
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0EBBB18872A
+	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2026 03:15:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781660015; cv=none; b=bd7uB+ckP/nCREqOec0gUFgpzRcgLhuCdG3hGL4op/RRdppOAMDeQZq7ZsjUV/R1Ctjt0AbExam6Mssv5T9iEQE2CX8zQMfJSpPl1jgXnlhjsS9iA2QP21I7COFrPCZJd7prvMeQCOZg+VVBQS1aC0CNKjy+49NSu8fSeIFEuyM=
+	t=1781666138; cv=none; b=uhujH/S18ZD95kaC1NA4lIO8ns8YJUVsUK4R212trOWBf08+6iXcx+uJl9Pc24R5sObPuFHicKEPueX2ptXmZlj0YJlhbWxUbhIgVNmMyE3K0xnn3fEDO7XI9AskEzX0sEoeuwfk5VNUlLAO9C8RNXu0mM5+Rk+1amE+IAhYKWo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781660015; c=relaxed/simple;
-	bh=mRv7Eqs7EXZZH4CAmy0L5rN+q2ad8wI/2KEOwHRzLOo=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=NhSP+TbqS+bIQSVLNqkmqAKn9GhZrxRGa46gRTyAsd4+v8AKsSF7KbBycztTNcaQ7cOdy9qy4pwTDCwo2H2uDpjFInQ5BPkoa6nX8cuFp0hoyxtFlgojgPIK/7sFJfrxa16+QKbXIH7CJMI6x/nihJg9pJOuEQvY7sri2z6Oc00=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.210.78
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-ot1-f78.google.com with SMTP id 46e09a7af769-7e60737a964so10152353a34.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2026 18:33:33 -0700 (PDT)
+	s=arc-20240116; t=1781666138; c=relaxed/simple;
+	bh=RSm06Jj+95vQPAeQr3Rpe3V8zMp4iN410HpyGcaDAR4=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=ekKGYrFvhML7PWnkGhZ6T+kePFH2ZkxV8xUy5hJ+4Z9lS0nnTjEJLOCEP04PLBmeuGR6cydXFyceQmqDwMdLq7nP7Bbr/f//b2Cvd2A4wrXrBpVWzsb9iruXBpWuCbfs/sX86lihYN/QRte1kud80lkWY/aKXZ8smVxFyHbbzdc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=V+CbR+L4; arc=none smtp.client-ip=209.85.218.52
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="V+CbR+L4"
+Received: by mail-ej1-f52.google.com with SMTP id a640c23a62f3a-bf0170c80f7so893849966b.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2026 20:15:35 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1781666134; x=1782270934; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=FawX+/Uj4ieUgfBlqLW2ad9nnJ/NBF0TxgVZB5Z/S4A=;
+        b=V+CbR+L42hsxghRLh/0uN7abG4wF9flQwAMsJ/KJMs659mFrDPXgi3ty3uYelavH2n
+         HPZ8HeleTu4G7IVrZxux7QLJQrVUr+CuGmvQ7CxuNvOxMxFnaNQDLSy7jKIyLdXE5WUH
+         xXlQtm94Fuv6rBLgDGrv1auYUgmOhGumBH9Fkhx2qLAULG6HwyzTq8qt5DTnLsy4n/IP
+         TXK8hw3HcLMGC8rswkC/WXAszHHtCWGYRdkSmdcaCLNXbGk/VjmoiuzmIxYWTFa2NIe1
+         JNLGYJm96GtLI0EDq5u6smazL8OcjzRRFsG5/fMPDSGpkOkkRx2uPQIJddRGyREybinT
+         oYug==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781660013; x=1782264813;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=9+ggiXFVPEh/C4DsLvAL8y9CgmsmMf1deiPtKj4kPAE=;
-        b=dPPByk+Eu0r+Qw5jvvyszMDDu5ILlKQeCMAyOYQDcvS8yLIATKM0Ox8dG0Ico29Y79
-         BkllUc4+gT6jmIT4dQ/1So7IqD99lGAZm9dao5wkpbtfA6WWbIKGHjjB1JW5/kzPytV4
-         3uSVlWRacuo27adw7dLJHXE8nXdIMe3hXdf+/bsNsHVIf87vB5lNufWF2N3tHRa6+y0w
-         Y/qQxeYCVLEQJYrOjvgVaND7lAtV09/oOQQ+EKNBUiszXftjPIcg37BmBs820MQ2p9+p
-         3kPwzvoZbDi3D6qPBRX0NPXZlBqEN9Q/yji3EXGrVI3drfwtDaaBAX5Sm0TJelUPg+/Q
-         XUoA==
-X-Forwarded-Encrypted: i=1; AFNElJ8nBWP/gfDThb1efM7gfhCGY0LPRdqg2DAPJsYNoOW5ZblQK6okMhuMkft7FMrKFfFtmvsvS9CisSWXbQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yy2f6Fj1ln8dSe5rVaCq+HDrUFrtJIj0bxnXXVgncDavxbZIm+b
-	d41LqVbbTg0g+Ma3SYmJOFqdz1FJVjdLo5hiuvvJL6S+9PKelxtsGYuh/NI4dakVkN5JvcRMI3p
-	b0rTPLaiG0zxDiBYmXTy1mPDxnyvAmRMsgQy8/eHaZvrgXnfP6mqWxAnTDKI=
+        d=1e100.net; s=20251104; t=1781666134; x=1782270934;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=FawX+/Uj4ieUgfBlqLW2ad9nnJ/NBF0TxgVZB5Z/S4A=;
+        b=nF2Q0X2vczif30jXltYTzNavTPwPVyFRTdvT1GZz/joNW0K1z4bkfLH1BTeMSOIQet
+         6/VmyNQDElTeE7ER9Us1Rn+bmcHW8AapbpyNnV13tkDnd0AK3ggOxM4HAAGTGgEh6U2I
+         5/lcZ9qJd3zQ5Ha5nqkR0K9BT2r+D3KuH439fy97A8JxG65Ag/MQenr/g6Ls3CqDl7Wq
+         H8NxkBGan6S/tl2Oa/ij5+JJlvWVgY7wKDUgJ2+Nv23ueSb9YiEr2/Ag8vl0vmP6wIIG
+         vSgJTVdZ/0L47lUQVyCUO0th/VUFM2Lagk2sVTNjHpVR5WkdF1TnjZUpLPOkKZ4GRpqz
+         YfWw==
+X-Gm-Message-State: AOJu0Yzum3LoJ8pXRYtzbU+gt4IrFNA3RjmRmzZLcDLlDB3GA71OyPif
+	LTFYcx2C+TNeLFAdorAq2UiU7Om/BjEvqufvLM4cUJLYP0YbpvcIYSdoxz3lORevoag=
+X-Gm-Gg: AfdE7ckVUlmlHpGPuoV+oJ2wjVV2YVwK4rISxYpD9NokgiV1oQ6CJnR+SreXrddN0ys
+	7ru/XIzD09Z6UHDPCTh7hF3OaKJXL/W4WqOykgdMb69oiJuZ2QOZd+ZACWp2EvEJnOIWm3ZGafO
+	NL/HT9Z97jFpaCnjP94lxf5j57alq1JU6tJA3H4097bzbTyTFUy1iFbEcQELZ0u0brLZKfpRKUt
+	mf7BQ8O9WcjRKTmfd4reT1kH74laa25eFmeTABClEiTMVPNx2UKhUnJuSrrsqFOmbPBT7IGvwV5
+	+Zb6WBf7KwHzW3HGq9jiBmTOEpI/atusRIA9EYmhMQTll1eSIrDKXCYBJtNnUFP49iofDKXcM/U
+	Xq6K47nUvobzSvv8WiMj0ykHrpZ/AZ7rG/ZnabiYicYExcjgsbii1642b++8qbwLVhVsG7obYte
+	hZeJUWclgqfCyCuqB+CKGFmSiD8yd8uQgBGSyXi7D6BxK/717yFZQs1bR3NxXXR5OGXWNbmFOQE
+	RGBE5rrZfxnaUTY60Wa5HMRm5japlo1tcek
+X-Received: by 2002:a17:907:844:b0:bfe:ed06:5a20 with SMTP id a640c23a62f3a-c05a83a5be6mr122394366b.53.1781666134398;
+        Tue, 16 Jun 2026 20:15:34 -0700 (PDT)
+Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-8434ac9dc96sm14540674b3a.6.2026.06.16.20.15.31
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 16 Jun 2026 20:15:33 -0700 (PDT)
+Message-ID: <62a6fc38-f204-45fd-b924-6cca98c6a2c1@suse.com>
+Date: Wed, 17 Jun 2026 12:45:28 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6808:1797:b0:45c:8fa8:7497 with SMTP id
- 5614622812f47-489429eea8fmr1733053b6e.34.1781660013093; Tue, 16 Jun 2026
- 18:33:33 -0700 (PDT)
-Date: Tue, 16 Jun 2026 18:33:33 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a31f96d.d1b4d54b.11ef78.002d.GAE@google.com>
-Subject: [syzbot] [btrfs?] kernel BUG in btrfs_balance
-From: syzbot <syzbot+dc9291cf132691aeb478@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
-
-Hello,
-
-syzbot found the following issue on:
-
-HEAD commit:    1dadb7e7eb5a Merge tag 'sound-7.1' of git://git.kernel.org..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=10eb83b6580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=b4166e8ea5fbf7e3
-dashboard link: https://syzkaller.appspot.com/bug?extid=dc9291cf132691aeb478
-compiler:       Debian clang version 21.1.8 (++20251221033036+2078da43e25a-1~exp1~20251221153213.50), Debian LLD 21.1.8
-
-Unfortunately, I don't have any reproducer for this issue yet.
-
-Downloadable assets:
-disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-1dadb7e7.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/83a43e146e33/vmlinux-1dadb7e7.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/758209a3afac/bzImage-1dadb7e7.xz
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+dc9291cf132691aeb478@syzkaller.appspotmail.com
-
-loop0: detected capacity change from 0 to 32768
-btrfs: Deprecated parameter 'usebackuproot'
-BTRFS warning: 'usebackuproot' is deprecated, use 'rescue=usebackuproot' instead
-BTRFS: device fsid c9fe44da-de57-406a-8241-57ec7d4412cf devid 1 transid 8 /dev/loop0 (7:0) scanned by syz.0.0 (5338)
-BTRFS info (device loop0): first mount of filesystem c9fe44da-de57-406a-8241-57ec7d4412cf
-BTRFS info (device loop0): using crc32c checksum algorithm
-BTRFS info (device loop0): rebuilding free space tree
-BTRFS info (device loop0): setting nodatasum
-BTRFS info (device loop0): allowing degraded mounts
-BTRFS info (device loop0): setting nodatacow
-BTRFS info (device loop0): enabling ssd optimizations
-BTRFS info (device loop0): using spread ssd allocation scheme
-BTRFS info (device loop0): turning on flush-on-commit
-BTRFS info (device loop0): turning on async discard
-BTRFS info (device loop0): enabling free space tree
-BTRFS info (device loop0): force clearing of disk cache
-BTRFS info (device loop0): trying to use backup root at mount time
-FAULT_INJECTION: forcing a failure.
-name failslab, interval 1, probability 0, space 0, times 1
-CPU: 0 UID: 0 PID: 5338 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-Call Trace:
- <TASK>
- dump_stack_lvl+0xe8/0x150 lib/dump_stack.c:120
- fail_dump lib/fault-inject.c:73 [inline]
- should_fail_ex+0x412/0x560 lib/fault-inject.c:174
- should_failslab+0xa8/0x100 mm/failslab.c:46
- slab_pre_alloc_hook mm/slub.c:4523 [inline]
- slab_alloc_node mm/slub.c:4876 [inline]
- kmem_cache_alloc_noprof+0x87/0x650 mm/slub.c:4906
- btrfs_start_dirty_block_groups+0x340/0x10b0 fs/btrfs/block-group.c:3567
- btrfs_commit_transaction+0x375/0x2fc0 fs/btrfs/transaction.c:2291
- insert_balance_item+0xcd7/0x1610 fs/btrfs/volumes.c:3834
- btrfs_balance+0x7d2/0x11b0 fs/btrfs/volumes.c:4874
- btrfs_ioctl_balance+0x3d3/0x610 fs/btrfs/ioctl.c:3453
- vfs_ioctl fs/ioctl.c:51 [inline]
- __do_sys_ioctl fs/ioctl.c:597 [inline]
- __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
- do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
- do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7f1f1d19ce59
-Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007f1f1e011fe8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-RAX: ffffffffffffffda RBX: 00007f1f1d415fa0 RCX: 00007f1f1d19ce59
-RDX: 0000200000000180 RSI: 00000000c4009420 RDI: 0000000000000008
-RBP: 00007f1f1e012050 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000002
-R13: 00007f1f1d416038 R14: 00007f1f1d415fa0 R15: 00007ffd7ed8ab98
- </TASK>
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/volumes.c:4879!
-Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
-CPU: 0 UID: 0 PID: 5338 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-RIP: 0010:btrfs_balance+0x1196/0x11b0 fs/btrfs/volumes.c:4879
-Code: c9 fd 48 c7 c7 60 42 17 8c 48 c7 c6 20 4c 17 8c 48 c7 c2 e0 3f 17 8c b9 1b 13 00 00 e8 33 91 2b fd 90 0f 0b e8 3b ab c9 fd 90 <0f> 0b e8 33 ab c9 fd 90 0f 0b e8 2b ab c9 fd 90 0f 0b 0f 1f 84 00
-RSP: 0018:ffffc900036efd70 EFLAGS: 00010293
-RAX: ffffffff83fc1bd5 RBX: 0000000000000000 RCX: ffff88801ce1ca80
-RDX: 0000000000000000 RSI: 00000000ffffffef RDI: 00000000ffffffef
-RBP: 00000000ffffffef R08: ffff88801ce1ca80 R09: 0000000000000002
-R10: 00000000ffffffef R11: 0000000000000000 R12: dffffc0000000000
-R13: ffff8880418a0000 R14: ffff8880121a2400 R15: 1ffff11008314002
-FS:  00007f1f1e0126c0(0000) GS:ffff88808c894000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f1f111ff000 CR3: 000000001f443000 CR4: 0000000000352ef0
-Call Trace:
- <TASK>
- btrfs_ioctl_balance+0x3d3/0x610 fs/btrfs/ioctl.c:3453
- vfs_ioctl fs/ioctl.c:51 [inline]
- __do_sys_ioctl fs/ioctl.c:597 [inline]
- __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
- do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
- do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7f1f1d19ce59
-Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007f1f1e011fe8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-RAX: ffffffffffffffda RBX: 00007f1f1d415fa0 RCX: 00007f1f1d19ce59
-RDX: 0000200000000180 RSI: 00000000c4009420 RDI: 0000000000000009
-RBP: 00007f1f1d232d6f R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-R13: 00007f1f1d416038 R14: 00007f1f1d415fa0 R15: 00007ffd7ed8ab98
- </TASK>
-Modules linked in:
----[ end trace 0000000000000000 ]---
-RIP: 0010:btrfs_balance+0x1196/0x11b0 fs/btrfs/volumes.c:4879
-Code: c9 fd 48 c7 c7 60 42 17 8c 48 c7 c6 20 4c 17 8c 48 c7 c2 e0 3f 17 8c b9 1b 13 00 00 e8 33 91 2b fd 90 0f 0b e8 3b ab c9 fd 90 <0f> 0b e8 33 ab c9 fd 90 0f 0b e8 2b ab c9 fd 90 0f 0b 0f 1f 84 00
-RSP: 0018:ffffc900036efd70 EFLAGS: 00010293
-RAX: ffffffff83fc1bd5 RBX: 0000000000000000 RCX: ffff88801ce1ca80
-RDX: 0000000000000000 RSI: 00000000ffffffef RDI: 00000000ffffffef
-RBP: 00000000ffffffef R08: ffff88801ce1ca80 R09: 0000000000000002
-R10: 00000000ffffffef R11: 0000000000000000 R12: dffffc0000000000
-R13: ffff8880418a0000 R14: ffff8880121a2400 R15: 1ffff11008314002
-FS:  00007f1f1e0126c0(0000) GS:ffff88808c894000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 000055697aa6da80 CR3: 000000001f443000 CR4: 0000000000352ef0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: emit BTRFS_SEND_C_FILEATTR during full mode
+To: Mateusz Poliwczak <mpoliwczak34@gmail.com>, clm@fb.com, dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20260616183721.1400225-1-mpoliwczak34@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260616183721.1400225-1-mpoliwczak34@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
 
----
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+在 2026/6/17 04:07, Mateusz Poliwczak 写道:
+> Currently BTRFS_SEND_C_FILEATTR is only emmited during incremental
+> mode when fileattr change between snapshots. This change makes sure
+> we also emit BTRFS_SEND_C_FILEATTR when sending the full snapshot.
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
+Please explain why.
 
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
+And there is no signed-off-by required by upstream.
 
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
+> ---
+>   fs/btrfs/send.c | 4 +++-
+>   1 file changed, 3 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 3ae480c7474b..effbe7ac1a81 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -6575,8 +6575,10 @@ static int finish_inode_if_needed(struct send_ctx *sctx, bool at_end)
+>   
+>   	if (!sctx->parent_root || sctx->cur_inode_new) {
+>   		need_chown = true;
+> -		if (!S_ISLNK(sctx->cur_inode_mode))
+> +		if (!S_ISLNK(sctx->cur_inode_mode)) {
+>   			need_chmod = true;
+> +			need_fileattr = true;
+> +		}
+>   		if (sctx->cur_inode_next_write_offset == sctx->cur_inode_size)
+>   			need_truncate = false;
+>   	} else {
 
-If you want to undo deduplication, reply with:
-#syz undup

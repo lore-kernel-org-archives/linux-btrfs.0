@@ -1,286 +1,205 @@
-Received: from mout-p-201.mailbox.org (mout-p-201.mailbox.org [80.241.56.171])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-dl1-f47.google.com (mail-dl1-f47.google.com [74.125.82.47])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BE0BB3E00B9;
-	Wed, 17 Jun 2026 11:22:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=80.241.56.171
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781695377; cv=none; b=uAcabvlnyJlKuVraPH0ADK8TjV7BtnC3AKov6d1EV/m+1CCSXD0V80FJ4Mj5cF7g7JCTnH+/mludgtXavmwy8TvUdwkRz6RMGw0Eh6sy0lgAo7UmYzLittPqbpKh+e8QwA8nuROBNb5rKgAHUe6dusfSJEaj84vu1NScSOd6mgs=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781695377; c=relaxed/simple;
-	bh=5BC9hRAvNMeKIuAN7ZmrQzUw7JzEAfES1E23HdJlw+w=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
-	 MIME-Version:Content-Type; b=aZCVJRGVShGNOVSN5OQZcLy+oHqMECkGBJClIocyAwXVj9BudIIY5bnao/GO0DkXsnCglGMtxRrpaDWtrMiYiwOAvogEcGzvRZ8YmsDA53CTl34mI72OoahCECYk9b2SJBGtpUBr3XwsTT0G2zIqbM/6bNfqkDgXjTKnTICBVKo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mssola.com; spf=fail smtp.mailfrom=mssola.com; dkim=pass (2048-bit key) header.d=mssola.com header.i=@mssola.com header.b=NWL0Q9Bd; arc=none smtp.client-ip=80.241.56.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mssola.com
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=mssola.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D7BA13E5ED7
+	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2026 11:36:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.82.47
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1781696188; cv=pass; b=a7Vz14d4EzMTPWF+bqeoUYwT4xy2N5BoZgNueAubdFQYeekQzf9OcmtT21VidNiYunh7Mcn8Qz8BFGjIxhCkMiV+bEp4/yOnJXYB849Zx+wYrf6d2nG9bcPHppVkADN74Whno/n2loEKwwWM1IbyLae8Q49BH5dWYEmyWLm4S2A=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1781696188; c=relaxed/simple;
+	bh=ff9cLkSNny/BY8EBh6w3a0YKNwlQGcuVDSLiF0ulRmA=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=RJs7FwYE3Dr/8285qY7WwAwM3SuX7dasBJ1cHPEKNVL6l2jVFRk2qGtyDO6g0NK3N4aRxqSE3A+HacoNKpxOyXeAp8EhuEHRI/6yqgd1tGgytsF37mpDishX3qPEBRLeJrXraXHOefC0USMI7G13PHu3XD+OcRmWB5Rgj+0MqbE=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=OnkRYPYZ; arc=pass smtp.client-ip=74.125.82.47
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=mssola.com header.i=@mssola.com header.b="NWL0Q9Bd"
-Received: from smtp1.mailbox.org (smtp1.mailbox.org [10.196.197.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mout-p-201.mailbox.org (Postfix) with ESMTPS id 4ggM0N2L3Vz9v3X;
-	Wed, 17 Jun 2026 13:22:44 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mssola.com; s=MBO0001;
-	t=1781695364;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2oDkwRAk5ZlFMICRQmplUo/xgJr4/mE+/UO8fTrc3qU=;
-	b=NWL0Q9BdWOSo0IEOGtQBfRU2oqltW5iNKe3bqEOh/nDn2+JvL8t4G3/t5+b2lBS6lvbHbQ
-	DVIiJKlad8jii61LTmE6OWsWED1t06CfgObC+Vhy0JqlQcQ/2DiWCkMtbVFs2/UDexUPYt
-	XnpRkzNP82Oinubd+//Pr2UNzywPrZwxBaCkA7RTwPGM8aoOafoLjW4xMwtRjLOotg9+vs
-	/jqMkW0BnZqVaAOsboQ+VYIBmsPcszFQGEum1rifqAf6SqWLqtH1xQikVkFpfxyn319K7f
-	bN2PEKd5G5dG9u7BqAjytGrdNPnbxJh7tskwPYHpLqSMq/aOGc8okv4+uIwNJQ==
-From: =?utf-8?Q?Miquel_Sabat=C3=A9_Sol=C3=A0?= <mssola@mssola.com>
-To: Daan De Meyer <daan@amutable.com>
-Cc: linux-btrfs@vger.kernel.org,  linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: add 32-bit compat ioctl for
- BTRFS_IOC_GET_SUBVOL_INFO
-In-Reply-To: <87wlvxct5e.fsf@> ("Miquel =?utf-8?Q?Sabat=C3=A9_Sol=C3=A0=22?=
- =?utf-8?Q?'s?= message of "Wed, 17 Jun
-	2026 13:18:05 +0200")
-References: <20260521075113.1079519-1-daan@amutable.com>
-Date: Wed, 17 Jun 2026 13:22:41 +0200
-Message-ID: <87qzm5csxq.fsf@>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="OnkRYPYZ"
+Received: by mail-dl1-f47.google.com with SMTP id a92af1059eb24-138501f8c04so3054963c88.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2026 04:36:26 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1781696186; cv=none;
+        d=google.com; s=arc-20240605;
+        b=OgoDxMVrtTrZuvVBC3ve3brJaE/Zyu+a2NCOsFsu2h80fE86boBUKcxBCWXX5znhnh
+         NI+MrBJQwtKxV9Mcp7xtgu20ahNOeyF3gGPgPHqC5Ei9vnTRXaJfdh0bv6olCCxRFZ7I
+         YoZaS1CQRV9j1NtxM5E3cUKycePP8EN8pBPC9jf19gQqr7wRHjFo6XmtvvzTo7B8SpZ8
+         4QkprhyEhUAKmOriRRkT+CNIqutbzkdRcmdl/XJwduL/JHQWzx+yrOdapX1OzUidJMdB
+         IBO8B0mkPWIxn+pnXPw1oJTPyj4h/tb1P8Ba0SkvTY50VbNjIa3uJhemrGaWa2wIMLtn
+         nUiA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=ff9cLkSNny/BY8EBh6w3a0YKNwlQGcuVDSLiF0ulRmA=;
+        fh=gccavu6KskZuhdxKZGGZqKbRpE8AZv+Jw1v9OVMw784=;
+        b=ZE4Vrbw6Qo4qkM1vyPtysh2OjCu1t9TCzjXMkX6UGoG6+KkCbFRgNIMX7a6BNXmVl0
+         kNLduKAgbRsGe6tFawLlOiGMgPIxcSwy2iTnO9a8uMc5DUfobUlGFp/0fO5b91iI2ZLS
+         H/Q8ZHXxD9cYQNQOlBnlFH43a0RR/00few8zRU1/doPcE+WjYwdgU0RrdAnpV8bs4z4K
+         ROICpq/pupJz+63hWOLuXafSo+RkvREe018oObaueoE5m3N7NhpSF7IJu74KipE9c0Pd
+         wuxat8j0/LGF62sUfmaKFqmNjATXtM8y0o3SpmjGrC+b1OsZ6tqMmp0Xb8COn5evIxTJ
+         QIuA==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1781696186; x=1782300986; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=ff9cLkSNny/BY8EBh6w3a0YKNwlQGcuVDSLiF0ulRmA=;
+        b=OnkRYPYZ15masbyVHxC3il8SQj2waWXXMG5+GLKvzfiddbMij9j+X94DRfimHEBRMq
+         C1fb8oRdrLRj4+MJN8bpXcdfAe8OTu2WeD5wbnKyoi7A9UWy+IfobTrT+RU6/9jq94wE
+         7HJGYDs6rSH/786aAgOmO949tHrzhr3RLPKqOWREOmdqn81De3vidus6OmdVBqFKKTFI
+         KR+cNlE76vwJiaXKoLhAPb858tsfkEAn0xc55cWCX+eB5xKUDbgV64UE9vfXoYU8SR53
+         +nCxkZ5Qbs+VNVMI5elUKMfJ3b7gjvZccHYNgJW1x8Gzo5N8OEoSj8q5d2vD+rn0QtTD
+         yCBg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1781696186; x=1782300986;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=ff9cLkSNny/BY8EBh6w3a0YKNwlQGcuVDSLiF0ulRmA=;
+        b=e7PjkovDBiA30dl0cZbfWqg3PqLQB0mEA4DoQg9Ju2k6gJFr7XYdhRp67/KOzblL9+
+         i15HeXZ8XfPtpQ3w/Dj2PJn9cXyZAoa7Zm32Lk/2MEwYOnk1aCGDW4arIafSA3WEIJTj
+         jnbMhPCKKIF0hGRo7mxkba2vdpwB53YMhQYIYQ6CTZY3W89FaG3BqV7OitF7+BiROk6F
+         fUwxh5elwivW1J2oRGGtF2x3pae43gKdSXAiLhHw9F27CwUDin55ez3B76+bhz/gx4G+
+         K7VCEMFLT2jST2+LSAw89BKjA6ZSSWLT9ygJ0ddXjIuZImJ+nkeTfbpPYwLcU8w/pTDq
+         9cjw==
+X-Gm-Message-State: AOJu0YyM7s9bKinzofu0awggOXbZsmX5lIDjdtsRApz9nxekGcVvnhfn
+	gqmnpQzf8ZjxS2ljhDwRXHTSvAiSPpDpOvUnbDSh4FHaiF37edZVsCbHMaRSmtZdkfybqS6tN3f
+	xr4L8XjFKRzO7iMOBkKT/TVxQKKIB7Itweg==
+X-Gm-Gg: Acq92OHUCCYm3ot7U8wz6Ydt9Ds9YRJJbYzrsX+MY450s+1DvFu96EhK85R0wiO3vN4
+	CtP3N3VVij/dWg9D8O8/jTgbU108BrF6ahCOuWwzkaHQduEe2/JXnEOuYZULfkcRAInkR7pa7eJ
+	8QxveWsL+WwF7dtu+AxMFjU8wkkZwUxv5gAGAT8IqIPQ21f2bR98b9NVtufXSxb1FMxH+F1GXee
+	gsjEvERYgOik4XTUbmTev0/kaS3KipAEYoPGY5mdriyT7/1YqBlnnf7rlXAb/eBC5cQlkK1
+X-Received: by 2002:a05:7022:983:b0:138:3613:dbb with SMTP id
+ a92af1059eb24-1398f6665d7mr1348146c88.5.1781696185661; Wed, 17 Jun 2026
+ 04:36:25 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-	micalg=pgp-sha512; protocol="application/pgp-signature"
-
---=-=-=
-Content-Type: text/plain; charset=utf-8
+References: <CALuM0_aMUsWM0xGOrda7-jizQmmzJ6+cU63FVm-epMwEeifiWA@mail.gmail.com>
+ <310be885-8ec9-435b-9a67-26fa14aab611@suse.com>
+In-Reply-To: <310be885-8ec9-435b-9a67-26fa14aab611@suse.com>
+From: Amber <edoardomonterosso2010@gmail.com>
+Date: Wed, 17 Jun 2026 11:36:13 +0000
+X-Gm-Features: AVVi8Cceeb389oIws2S4YVN5JZCUWjUM6HM1DQ1lJ4RXSTaZbIEprAF6SEK2AEI
+Message-ID: <CALuM0_aSy5KW569Zdu9sOtVejc92HvNDXG8f4_2f7y0Uf-TNQA@mail.gmail.com>
+Subject: Re: Btrfs mount failure; log tree replay error and transid verify failed
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hi,
+I managed to copy the files i care about into an external drive, thanks a l=
+ot.
+What do i do now? Is there any way to fix my system or do you advise a
+clean install at this point?
 
-Just realized I'm commenting on an old thread and that the AUTO_KFREE
-suggestion was already applied by David.
 
-Sorry for the noise.
-
-Miquel Sabat=C3=A9 Sol=C3=A0 @ 2026-06-17 13:18 +02:
-
-> Hi,
+On Tue, Jun 16, 2026 at 11:11=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
 >
-> Just a small comment from my side, but feel free to ignore it :)
 >
-> Daan De Meyer @ 2026-05-21 07:51 GMT:
 >
->> On 64-bit kernels with 32-bit userspace, struct btrfs_ioctl_timespec is
->> laid out as 16 bytes (8B sec + 4B nsec + 4B trailing padding) instead of
->> the 12 bytes a 32-bit userspace expects, because the surrounding struct
->> is not packed. As a result, struct btrfs_ioctl_get_subvol_info_args has
->> a different size and layout in 32-bit userspace than in the 64-bit
->> kernel, and BTRFS_IOC_GET_SUBVOL_INFO returns garbage to 32-bit callers.
->>
->> Mirror what was done for BTRFS_IOC_SET_RECEIVED_SUBVOL: add a packed
->> btrfs_ioctl_get_subvol_info_args_32 with btrfs_ioctl_timespec_32 fields,
->> define BTRFS_IOC_GET_SUBVOL_INFO_32 with that struct as the size
->> argument, factor the existing handler into a shared _btrfs_ioctl_get_
->> subvol_info() helper, and add btrfs_ioctl_get_subvol_info_32() which
->> fills the kernel struct and translates field-by-field into the 32-bit
->> struct before copy_to_user().
->>
->> Signed-off-by: Daan De Meyer <daan@amutable.com>
->> ---
->>  fs/btrfs/ioctl.c | 112 +++++++++++++++++++++++++++++++++++++++++------
->>  1 file changed, 99 insertions(+), 13 deletions(-)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index a39460bf68a7..31be2590f1b2 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -82,6 +82,30 @@ struct btrfs_ioctl_received_subvol_args_32 {
->>
->>  #define BTRFS_IOC_SET_RECEIVED_SUBVOL_32 _IOWR(BTRFS_IOCTL_MAGIC, 37, \
->>  				struct btrfs_ioctl_received_subvol_args_32)
->> +
->> +struct btrfs_ioctl_get_subvol_info_args_32 {
->> +	__u64 treeid;
->> +	char name[BTRFS_VOL_NAME_MAX + 1];
->> +	__u64 parent_id;
->> +	__u64 dirid;
->> +	__u64 generation;
->> +	__u64 flags;
->> +	__u8 uuid[BTRFS_UUID_SIZE];
->> +	__u8 parent_uuid[BTRFS_UUID_SIZE];
->> +	__u8 received_uuid[BTRFS_UUID_SIZE];
->> +	__u64 ctransid;
->> +	__u64 otransid;
->> +	__u64 stransid;
->> +	__u64 rtransid;
->> +	struct btrfs_ioctl_timespec_32 ctime;
->> +	struct btrfs_ioctl_timespec_32 otime;
->> +	struct btrfs_ioctl_timespec_32 stime;
->> +	struct btrfs_ioctl_timespec_32 rtime;
->> +	__u64 reserved[8];
->> +} __attribute__ ((__packed__));
->> +
->> +#define BTRFS_IOC_GET_SUBVOL_INFO_32 _IOR(BTRFS_IOCTL_MAGIC, 60, \
->> +				struct btrfs_ioctl_get_subvol_info_args_32)
->>  #endif
->>
->>  #if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
->> @@ -1945,9 +1969,9 @@ static int btrfs_ioctl_ino_lookup_user(struct file=
- *file, void __user *argp)
->>  }
->>
->>  /* Get the subvolume information in BTRFS_ROOT_ITEM and BTRFS_ROOT_BACK=
-REF */
->> -static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user=
- *argp)
->> +static int _btrfs_ioctl_get_subvol_info(struct inode *inode,
->> +					struct btrfs_ioctl_get_subvol_info_args *subvol_info)
->>  {
->> -	struct btrfs_ioctl_get_subvol_info_args *subvol_info;
->>  	struct btrfs_fs_info *fs_info;
->>  	struct btrfs_root *root;
->>  	struct btrfs_path *path;
->> @@ -1964,12 +1988,6 @@ static int btrfs_ioctl_get_subvol_info(struct ino=
-de *inode, void __user *argp)
->>  	if (!path)
->>  		return -ENOMEM;
->>
->> -	subvol_info =3D kzalloc_obj(*subvol_info);
->> -	if (!subvol_info) {
->> -		btrfs_free_path(path);
->> -		return -ENOMEM;
->> -	}
->> -
->>  	fs_info =3D BTRFS_I(inode)->root->fs_info;
->>
->>  	/* Get root_item of inode's subvolume */
->> @@ -2048,15 +2066,79 @@ static int btrfs_ioctl_get_subvol_info(struct in=
-ode *inode, void __user *argp)
->>  		}
->>  	}
->>
->> -	btrfs_free_path(path);
->> -	path =3D NULL;
->> -	if (copy_to_user(argp, subvol_info, sizeof(*subvol_info)))
->> -		ret =3D -EFAULT;
->> -
->>  out:
->>  	btrfs_put_root(root);
->>  out_free:
->>  	btrfs_free_path(path);
->> +	return ret;
->> +}
->> +
->> +#ifdef CONFIG_64BIT
->> +static int btrfs_ioctl_get_subvol_info_32(struct inode *inode, void __u=
-ser *argp)
->> +{
->> +	struct btrfs_ioctl_get_subvol_info_args *subvol_info =3D NULL;
->> +	struct btrfs_ioctl_get_subvol_info_args_32 *subvol_info_32 =3D NULL;
+> =E5=9C=A8 2026/6/17 07:53, Amber =E5=86=99=E9=81=93:
+> > Hi all,
+> >
+> > I am experiencing a severe Btrfs filesystem failure on an NVMe
+> > partition (/dev/nvme0n1p3) that stops my system from booting. I am
+> > running from a Fedora 40 Live USB to try and find a way to rescue my
+> > data.
+> >
+> > I don't know much about filesystem internals, so I am attaching the
+> > exact outputs of the commands I was told to run below.
+> >
+> > Output of 'uname -r':
+> > 6.8.7-300.fc40.x86_64
+> >
+> > Output of 'btrfs --version':
+> > btrfs-progs v6.8
+> >
+> > Output of 'sudo fdisk -l /dev/nvme0n1':
+> > Disk /dev/nvme0n1: 953.87 GiB, 1024209543168 bytes, 2000409264 sectors
+> > Disk model: TEAM TM8FP7001T
+> > Units: sectors of 1 * 512 =3D 512 bytes
+> > Sector size (logical/physical): 512 bytes / 512 bytes
+> > I/O size (minimum/optimal): 512 bytes / 512 bytes
+> > Disklabel type: gpt
+> > Disk identifier: D2CC4AA6-D32A-4B69-A117-FA5431D953E2
+> >
+> > Device Start End Sectors Size Type
+> > /dev/nvme0n1p1 2048 1230847 1228800 600M EFI System
+> > /dev/nvme0n1p2 1230848 3327997 2097152 1G Linux filesystem
+> > /dev/nvme0n1p3 3328000 2000408575 1997080576 952.3G Linux filesystem
+> >
+> > Important parts of 'smartctl -a /dev/nvme0n1':
+> > SMART overall-health self-assessment test result: PASSED
+> > Available Spare: 100%
+> > Percentage Used: 1%
+> > Unsafe Shutdowns: 80
+> > Media and Data Integrity Errors: 0
+> >
+> > Initial boot crash log:
+> > [ 4.027710] BTRFS critical (device nvme0n1p3 state EAO): log replay
+> > failed in replay_one_extent:880 for root 256, stage 3, with error -5:
+> > failed to lookup data extent for bytenr 13497643008 disk_num_bytes
+> > 32768 inode 993755 root 256
+> > [ 4.027727] BTRFS: error (device nvme0n1p3 state EAO) in
+> > btrfs_recover_log_trees:7789: errno=3D-5 IO failure
 >
-> Maybe these two variables could be declared with the AUTO_KFREE helper,
-> so you could remove goto's and the cleanup section in the end.
+> You definitely missed part of the dmesg, thus that's why we always ask
+> for full dmesg.
 >
->> +	int ret;
->> +
->> +	subvol_info =3D kzalloc_obj(*subvol_info);
->> +	if (!subvol_info)
->> +		return -ENOMEM;
->> +
->> +	subvol_info_32 =3D kzalloc_obj(*subvol_info_32);
->> +	if (!subvol_info_32) {
->> +		ret =3D -ENOMEM;
->> +		goto out;
->> +	}
->> +
->> +	ret =3D _btrfs_ioctl_get_subvol_info(inode, subvol_info);
->> +	if (ret)
->> +		goto out;
->> +
->> +	subvol_info_32->treeid =3D subvol_info->treeid;
->> +	memcpy(subvol_info_32->name, subvol_info->name, sizeof(subvol_info_32-=
->name));
->> +	subvol_info_32->parent_id =3D subvol_info->parent_id;
->> +	subvol_info_32->dirid =3D subvol_info->dirid;
->> +	subvol_info_32->generation =3D subvol_info->generation;
->> +	subvol_info_32->flags =3D subvol_info->flags;
->> +	memcpy(subvol_info_32->uuid, subvol_info->uuid, BTRFS_UUID_SIZE);
->> +	memcpy(subvol_info_32->parent_uuid, subvol_info->parent_uuid, BTRFS_UU=
-ID_SIZE);
->> +	memcpy(subvol_info_32->received_uuid, subvol_info->received_uuid, BTRF=
-S_UUID_SIZE);
->> +	subvol_info_32->ctransid =3D subvol_info->ctransid;
->> +	subvol_info_32->otransid =3D subvol_info->otransid;
->> +	subvol_info_32->stransid =3D subvol_info->stransid;
->> +	subvol_info_32->rtransid =3D subvol_info->rtransid;
->> +	subvol_info_32->ctime.sec =3D subvol_info->ctime.sec;
->> +	subvol_info_32->ctime.nsec =3D subvol_info->ctime.nsec;
->> +	subvol_info_32->otime.sec =3D subvol_info->otime.sec;
->> +	subvol_info_32->otime.nsec =3D subvol_info->otime.nsec;
->> +	subvol_info_32->stime.sec =3D subvol_info->stime.sec;
->> +	subvol_info_32->stime.nsec =3D subvol_info->stime.nsec;
->> +	subvol_info_32->rtime.sec =3D subvol_info->rtime.sec;
->> +	subvol_info_32->rtime.nsec =3D subvol_info->rtime.nsec;
->> +
->> +	if (copy_to_user(argp, subvol_info_32, sizeof(*subvol_info_32)))
->> +		ret =3D -EFAULT;
->> +
->> +out:
->> +	kfree(subvol_info_32);
->> +	kfree(subvol_info);
->> +	return ret;
->> +}
->> +#endif
->> +
->> +static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user=
- *argp)
->> +{
->> +	struct btrfs_ioctl_get_subvol_info_args *subvol_info;
->> +	int ret;
->> +
->> +	subvol_info =3D kzalloc_obj(*subvol_info);
->> +	if (!subvol_info)
->> +		return -ENOMEM;
->> +
->> +	ret =3D _btrfs_ioctl_get_subvol_info(inode, subvol_info);
->> +	if (!ret && copy_to_user(argp, subvol_info, sizeof(*subvol_info)))
->> +		ret =3D -EFAULT;
->> +
->>  	kfree(subvol_info);
->>  	return ret;
->>  }
->> @@ -5273,6 +5355,10 @@ long btrfs_ioctl(struct file *file, unsigned int
->>  		return btrfs_ioctl_set_features(file, argp);
->>  	case BTRFS_IOC_GET_SUBVOL_INFO:
->>  		return btrfs_ioctl_get_subvol_info(inode, argp);
->> +#ifdef CONFIG_64BIT
->> +	case BTRFS_IOC_GET_SUBVOL_INFO_32:
->> +		return btrfs_ioctl_get_subvol_info_32(inode, argp);
->> +#endif
->>  	case BTRFS_IOC_GET_SUBVOL_ROOTREF:
->>  		return btrfs_ioctl_get_subvol_rootref(root, argp);
->>  	case BTRFS_IOC_INO_LOOKUP_USER:
-
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQJiBAEBCgBMFiEEG6U8esk9yirP39qXlr6Mb9idZWUFAmoyg4EbFIAAAAAABAAO
-bWFudTIsMi41KzEuMTIsMiwyEhxtc3NvbGFAbXNzb2xhLmNvbQAKCRCWvoxv2J1l
-ZYJvD/4n1tM2/qkYJh8pMena9PZ5uz37Hz/ChZnKa68JGCiswfigPp61PwuAxNT3
-/UHS4M7BPfb/NOpdvXjwHgFbp5JSo5nsT0njgROpoKhu14D+sgMVi+kE2ei4h5vU
-31AvmILCDPbHJuTqJu/byqKfMn6KhzFVaf+2Q9GszSR6n6DbJw1kYwVFuzwF4Kz8
-VFe8Vxm9+Aad4L59WKQHkhWasiYTqrwknEoNAWEQluFMlZcbpuTROuojJBFpqESJ
-AQJ4LZbZFv9yRSHCnwYTqYigV+rqyTtN0CMaDYyuebCjW64JZYwNNb/XP/gEMHap
-RM+itvCFJ6kj3rlrFtlRIZvZnYwTeFwRA+3LyaauJtBBXPe+Ej3iViB4aRZ16/za
-Bl7t0LCYp/gKbgEhEZKXHbnBzNnlYuk7aSd8cRtm9qec85IE8Zap7HuSWu//ZQ1h
-jeI9YAVv0pak6oClEM6BXyl8ovGGPRygKbvIY+cW4Y0UVauXwpKXXGFxIP7Yd/9k
-Tp4NkQfzXbXaxxMfZQN+8Jzbgc1hQAOxfO2iDhsCS8Kpt247CzxiYLtb6vuS/1S5
-OEUORhPoCzg93uQlnYBIDZUUr4W/C7v9yJ7HwQqEpgY5DA2r+DTMgc/fEtZ9Bu2t
-B8gWEP2OeuO68uGr6xsix8KW5mVcoQfWFpxHpUC2fnw12atAQg==
-=RaCh
------END PGP SIGNATURE-----
---=-=-=--
+> There must be some transid mismatch error message before that.
+>
+> >
+> >
+> > Errors from 'btrfs check':
+> > Important parts of the initial check output:
+> > [2/8] checking root items
+> > parent transid verify failed on 323993370624 wanted 15274 found 14939
+>
+> Again, root tree corruption that caused the log replay bug.
+>
+> And it looks like some bad FUA/FLUSH behavior, some writes are lost thus
+> you got older tree blocks.
+>
+> > [3/8] checking extents
+> > owner ref check failed [323993370624 16384]
+> > ERROR: errors found in extent allocation tree or chunk allocation
+> > [4/8] checking free space tree
+> > there is no free space entry for 13497565184-13500841984
+> > [6/8] checking only csums items (without verifying data)
+> > ERROR: errors found in csum tree
+> >
+> > Final totals from the check:
+> > ERROR: transid errors in file system
+> > found 69424640000 bytes used, error(s) found
+> > total csum bytes: 66219348
+> > total tree bytes: 935608320
+> > total fs tree bytes: 782991360
+> > total extent tree bytes: 71860224
+> >
+> >
+> > I ran 'sudo btrfs check --repair /dev/nvme0n1p3' and hit 'y' when it
+> > asked to clear the log tree.
+> >
+> > It said:
+> > "Clear log tree successfully."
+> >
+> > But right after that, it hit the same error again:
+> > [2/8] checking root items
+> > parent transid verify failed on 323993370624 wanted 15274 found 14939
+> >
+> > Normal mounting still completely fails. Can anyone guide me on how to
+> > save my system?
+>
+> Try "-o rescue=3Dall,ro" mount option, if it works, salvage your data.
+>
+> > Please CC me on replies, as I am not subscribed to the list.
+> >
+> > Thank you,
+> > Amber
+> >
+>

@@ -1,191 +1,347 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E83AE33CEBB
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 19:59:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2A27C33D6F8
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 21:26:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781812766; cv=none; b=BQ8pgj4OnzftQRB8duqij1/jMG42gLy3sFZjBjlns/pbRv272qg7MYrXz0s8Kbtmy6fVtk/V2ZpJ2JiOW4iQ/FusVAfxu6vsKY0Gd8VvsGvQyeauLaTIbNeuj15EVZvv8W6AYBKN92QWY+mzWCEuso8+a5SPOlcEhjGJpPRJBRg=
+	t=1781817982; cv=none; b=kkt7zgF3NP0mHUhjsO5e0nBDTJv1MtFf8f7/VnTBTYgBziyW7afiDvnvu+0dB2ryhjKCNq03IjXzPMZV7ko18nzZRCmNJJeX+NWbvFfnHzWiEIoUJI7x1XFgUWLnb697RNeUf0VR2zb8Nx4Kdrl3G+kt65+BMElIQpbNEqFlAZE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781812766; c=relaxed/simple;
-	bh=+/fxXP7J3vQGVFv2qS3kIjGD4FkCACjhhIbqlpawFS4=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=kFacvAW/06yTPKeXFwDz7qXK1o5BaoJAPAi7VJUavHz7j79NND06nflVUkZZq/7vo2oRtgNJpRzAXEwjoFDi5v4yGKuJnr+DQdgv+ipEhhKAxi0iJQVB3bjhdxerxtfYvkNZywOVuqg6G+R54zU+/QDox5c/Wh0epXZ3kpLQrhU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=V99Goa9f; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1781817982; c=relaxed/simple;
+	bh=9D+SRwOyVh2l68uCLqeyKpG8awEKc5VSZ67/3U6UcDo=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=iAr8eL4bcDgr9/qq5hEItF7jNJ1CwvYCIsrrFctm9cAQ5VDjK8O5oAwQT3yiTK6dDz0lSu4kD/IlPAYd9IXfjIn7R3JXP66je5w6EoN/74IzeNzpEiRcx9HBtJt8yyg5UE0FDiVDhIs4ql4uzdrFqLH2Bvnzd5nfxzMLcaOhCqc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Cg6gRL5k; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Cg6gRL5k; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="V99Goa9f"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 78ACD1F00A3A
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 19:59:24 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781812764;
-	bh=zAW3+xatnYUrcXThLJ5qmW7PVfs89Y4h9D2CpJEOrdM=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=V99Goa9fBjBIq5WoiKxQZJ0AGeG1l17TYSgs4hm2W5W+w4xwrvKyhiDZcAcpT6p8g
-	 YMlFjgZVdjd/gFAp4KlXnB0RFyP3d8lw85FcEOeYHxfPGDUTBI/T5UG1xXcAkyuOJV
-	 PPx5Ux2S4G3tEeTef9fba6mGASMncYlL1QCBKdnHBFTHDdH17LNRPnD+54yPg8x3Xt
-	 LqcDKIF5mg1EnU7YEEBNPZBNAHgUyVD2nLUh8nvBhv3nV5ntb3rPGjvoQHYheI1aed
-	 UcIpp3JCxtzZDEQKhaJMqUiRQBAwCNr+1vp48xUugriq5Y4xt0YgHPiM/ehB5J8cec
-	 PAkdcs/KB4kAQ==
-Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-c07ea058c1aso164235866b.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 12:59:24 -0700 (PDT)
-X-Gm-Message-State: AOJu0YwnNY+ev+VqTd1g3GxTTGZFE/qTCdZuuqBWt9rTsIv565Qx6KpD
-	evlDAMMaQEJj2ROEccu1t6M1Axx+j3NC60l9X9eQP1DDvWNmkX4fj5fYuJlkWW0KQ2TTAHhOlWi
-	SZ9dPT/esL87l/F3grWEzWn/1vOh9Wxg=
-X-Received: by 2002:a17:907:1c22:b0:c07:3dc3:49ac with SMTP id
- a640c23a62f3a-c097add43ddmr31380366b.11.1781812763129; Thu, 18 Jun 2026
- 12:59:23 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Cg6gRL5k";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Cg6gRL5k"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 1A55975E84;
+	Thu, 18 Jun 2026 21:26:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1781817977; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=xX7nir7uloES2uZl5OcgLFm5vbGB1wvsKkepP90F+ro=;
+	b=Cg6gRL5krSPq7E554kZL2cmUnr6unQVRwAecrH4tD+HFd8MqhDmO20dqMO6F01eRcj2b1z
+	fJ0iXO+4t2JeNWcNfveMmcY9yJNnX4wGaBjqFedUxt8GwKEK6UpZam+Ksl8VzGz+wF/Miu
+	sgRp58ntmHIbkplAs6sjv3dFK4s+8gg=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=Cg6gRL5k
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1781817977; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=xX7nir7uloES2uZl5OcgLFm5vbGB1wvsKkepP90F+ro=;
+	b=Cg6gRL5krSPq7E554kZL2cmUnr6unQVRwAecrH4tD+HFd8MqhDmO20dqMO6F01eRcj2b1z
+	fJ0iXO+4t2JeNWcNfveMmcY9yJNnX4wGaBjqFedUxt8GwKEK6UpZam+Ksl8VzGz+wF/Miu
+	sgRp58ntmHIbkplAs6sjv3dFK4s+8gg=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B7576779A8;
+	Thu, 18 Jun 2026 21:26:15 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id QY3BF3diNGrtLgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 18 Jun 2026 21:26:15 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: fstests@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] fstests: add a test case for btrfs get_subvol_info ioctl
+Date: Fri, 19 Jun 2026 06:55:53 +0930
+Message-ID: <20260618212553.9564-1-wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1781263239.git.fdmanana@suse.com> <62602395bf1488aa81645ea59e22405d6c06d3f7.1781263239.git.fdmanana@suse.com>
- <20260618180228.GB1049224@twin.jikos.cz>
-In-Reply-To: <20260618180228.GB1049224@twin.jikos.cz>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 18 Jun 2026 20:58:45 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H44MxkOyaxJR+8hqRt52_r1K=KH0j1YDTroNJWHcRU1fA@mail.gmail.com>
-X-Gm-Features: AVVi8Cdd2ploUYOPmyXz4yUEuakDApPDPJLGoeSbLxzT0imFWcFfyG7wpN77pr0
-Message-ID: <CAL3q7H44MxkOyaxJR+8hqRt52_r1K=KH0j1YDTroNJWHcRU1fA@mail.gmail.com>
-Subject: Re: [PATCH 2/2] btrfs: fix memory barrier order in reloc_root_is_dead()
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: 1A55975E84
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	ARC_NA(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[scaleread.sh:url,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,popdir.pl:url,info.name:url,btrfs_crc32c_forged_name.py:url,suse.com:dkim,suse.com:email,suse.com:mid,popattr.py:url];
+	RCPT_COUNT_TWO(0.00)[2];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 
-On Thu, Jun 18, 2026 at 7:02=E2=80=AFPM David Sterba <dsterba@suse.cz> wrot=
-e:
->
-> On Fri, Jun 12, 2026 at 01:13:57PM +0100, fdmanana@kernel.org wrote:
-> > From: Filipe Manana <fdmanana@suse.com>
-> >
-> > When we set a root's reloc_root to NULL, we do it like this:
-> >
-> >    static void clear_reloc_root(struct btrfs_root *root)
-> >    {
-> >        root->reloc_root =3D NULL;
-> >        /*
-> >         * Need barrier to ensure clear_bit() only happens after
-> >         * root->reloc_root =3D NULL. Pairs with have_reloc_root().
-> >         */
-> >         smp_wmb();
-> >         clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
-> >    }
-> >
-> > So that a NULL reloc_root is always seen before seeing that the bit
-> > BTRFS_ROOT_DEAD_RELOC_TREE was cleared.
-> >
-> > But on the read side we have:
-> >
-> >    static bool reloc_root_is_dead(const struct btrfs_root *root)
-> >    {
-> >         smp_rmb();
-> >         if (test_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state))
-> >             return true;
-> >         return false;
-> >    }
-> >
-> > And then callers of reloc_root_is_dead() access root->reloc_root.
-> >
-> > Because the read memory barrier is placed before testing the bit, the C=
-PU
-> > is completely free to speculatively reorder those two loads. It can rea=
-d
-> > root->reloc_root before it actually checks the dead tree bit.
->
-> The barrier placement was contentious back then when and I don't have
-> the capacity now to analyze it again. The point of placing the barrier
-> before the test_bit() is to have up-to-date value for the check. It does
-> not make sense to place it after, because the test can have stale data
-> and other CPU could have changed the related state, the reloc_root in thi=
-s
-> case.
+There is a regression caused by upstream kernel commit 538e5bdbc899
+("btrfs: add 32-bit compat ioctl for BTRFS_IOC_GET_SUBVOL_INFO"), where
+the unprivileged get_subvol_info ioctl is returning incorrect results.
 
-It only makes sense to place the smp_rmb() after test_bit().
+Unfortunately that bug is not covered by fstests, and only exposed by
+btrfs-progs libbtrfsutil python tests, which is not a short run.
 
-The write side does the following:
+So add a new test case for such btrfs ioctl:
 
-->reloc_root =3D NULL;
-smp_wmb();
-set_bit()
+- Introduce a helper program, btrfs_ioctl
+  Which will call the dedicated ioctl, print all of its structure
+  members.
 
-So the read side must do the following:
+  For now only get_subvol_info is supported, but it can be easily
+  appended for new ones.
 
-test_bit()
-smp_rmb()
-read ->reloc_root
+- Mkfs and create a subvolume on btrfs
 
-Where the reads of ->reloc_root happen in the callers of reloc_root_is_dead=
-().
+- Use "_btrfs_get_subvolid()" to grab the subvolid
+  That function is utilizing "btrfs subvolume list" to grab the info,
+  which is not utilizing the unprivileged ioctl.
 
->
-> As there's part with set bit and clear bit, and using the split
-> read/write barriers it's not the easy case I could have missed
-> something.
->
-> > Sashiko reported this as an existing problem in another patch review, s=
-ee
-> > the link in the Link tag below.
-> >
-> > Fix this by moving the read memory barrier to happen after testing the =
-bit
-> > and update the comment to reflect current reality.
-> >
-> > Link: https://sashiko.dev/#/patchset/cf84f1a217c719e25b6b69e4298dd7afd3=
-6c9427.1781194426.git.fdmanana%40suse.com
-> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > ---
-> >  fs/btrfs/relocation.c | 11 ++++++-----
-> >  1 file changed, 6 insertions(+), 5 deletions(-)
-> >
-> > diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> > index 6b5a59cb21bb..00993505c9c3 100644
-> > --- a/fs/btrfs/relocation.c
-> > +++ b/fs/btrfs/relocation.c
-> > @@ -339,14 +339,15 @@ static struct btrfs_backref_node *walk_down_backr=
-ef(
-> >
-> >  static bool reloc_root_is_dead(const struct btrfs_root *root)
-> >  {
-> > +     if (test_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state))
-> > +             return true;
-> >       /*
-> > -      * Pair with set_bit/clear_bit in clean_dirty_subvols and
-> > -      * btrfs_update_reloc_root. We need to see the updated bit before
-> > -      * trying to access reloc_root
-> > +      * Pairs with set_bit/clear_bit in clear_reloc_root() and
-> > +      * btrfs_update_reloc_root(). We need to see the updated bit befo=
-re
-> > +      * trying to access root->reloc_root in our callers.
->
-> The part "we need to see the updated bit" refers to the original logic
-> where 'updated bit =3D=3D 'smp_rmb; if (test_bit())' and making sure it's
-> consistent with reloc root. So the meaning of the comment hasn't changed
-> apart from the fixups (Pairs, clear_reloc_root, root->reloc_root).
->
-> As your patch changes the logic the comment should be also updated, but
+- Use "btrfs_ioctl get_subvol_info" to grab the subvolid
 
-The comment makes sense as it was left.
-There's the added part states that smp_rmb() is needed to ensure
-callers see the ->reloc_root update after testing the bit.
+- Compare the two subvolids
 
-> then I argue the resulting code is wrong, or at least not entierly
-> correct.
->
-> Alternatively we can drop the barriers completely for the
-> 'dead_reloc_tree' bit and reloc_root synchronization, because we've spent
-> too much time in total on that one.
+This should be enough to detect the regression.
 
-I'm not sure what you are trying to say. Just liteterally dropping the
-barriers does not seem correct to me, in fact they were added to fix
-some races that people were hitting.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+Changelog:
+v2:
+- Fix an incorrect bracket for timestamp output
+  It's only a style problem, all the call sites are passing a
+  subvol_info structure directly, so it doesn't cause any problem.
 
->
-> >        */
-> >       smp_rmb();
-> > -     if (test_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state))
-> > -             return true;
-> > +
-> >       return false;
-> >  }
+- Fix the incorrect uuid output
+
+- Fix the return value when not enough args are provided
+
+- Add a missing newline for the message of open() failure
+---
+ .gitignore          |   1 +
+ src/Makefile        |   2 +-
+ src/btrfs_ioctl.c   | 104 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/351     |  47 ++++++++++++++++++++
+ tests/btrfs/351.out |   2 +
+ 5 files changed, 155 insertions(+), 1 deletion(-)
+ create mode 100644 src/btrfs_ioctl.c
+ create mode 100755 tests/btrfs/351
+ create mode 100644 tests/btrfs/351.out
+
+diff --git a/.gitignore b/.gitignore
+index dd77ee30..0b6b9452 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -215,6 +215,7 @@ tags
+ /src/file_attr
+ /src/truncate
+ /src/t_btrfs_received_uuid_ioctl
++/src/btrfs_ioctl
+ 
+ # Symlinked files
+ /tests/generic/035.out
+diff --git a/src/Makefile b/src/Makefile
+index 31ac43b2..76cf50c3 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -36,7 +36,7 @@ LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
+ 	fscrypt-crypt-util bulkstat_null_ocount splice-test chprojid_fail \
+ 	detached_mounts_propagation ext4_resize t_readdir_3 splice2pipe \
+ 	uuid_ioctl t_snapshot_deleted_subvolume fiemap-fault min_dio_alignment \
+-	rw_hint fs-monitor
++	rw_hint fs-monitor btrfs_ioctl
+ 
+ EXTRA_EXECS = dmerror fill2attr fill2fs fill2fs_check scaleread.sh \
+ 	      btrfs_crc32c_forged_name.py popdir.pl popattr.py \
+diff --git a/src/btrfs_ioctl.c b/src/btrfs_ioctl.c
+new file mode 100644
+index 00000000..d199be7d
+--- /dev/null
++++ b/src/btrfs_ioctl.c
+@@ -0,0 +1,104 @@
++// SPDX-License-Identifier: GPL-2.0
++// Copyright (c) SUSE S.A.
++
++#include <stdio.h>
++#include <string.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <sys/ioctl.h>
++#include <uuid/uuid.h>
++#include <linux/btrfs.h>
++
++#define subvol_info_printf_u64(info, name)	\
++	printf(#name ": %llu\n", (info).name)
++
++#define subvol_info_printf_timestamp(info, name)	\
++	printf(#name ": %llu.%09u\n", (info).name.sec, (info).name.nsec)
++
++#define subvol_info_printf_uuid(info, name)	\
++{						\
++	char uuidbuf[UUID_STR_LEN];		\
++						\
++	uuid_unparse((info).name, uuidbuf);	\
++	printf(#name ": %s\n", uuidbuf);	\
++}
++
++void get_subvol_info(int fd)
++{
++	struct btrfs_ioctl_get_subvol_info_args info = { 0 };
++	int ret;
++
++	ret = ioctl(fd, BTRFS_IOC_GET_SUBVOL_INFO, &info);
++	if (ret < 0) {
++		fprintf(stderr, "ioctl failed: %m\n");
++		return;
++	}
++
++	subvol_info_printf_u64(info, treeid);
++	printf("name: %.*s\n", BTRFS_VOL_NAME_MAX, info.name);
++	subvol_info_printf_u64(info, parent_id);
++	subvol_info_printf_u64(info, dirid);
++	subvol_info_printf_u64(info, generation);
++	printf("flags: 0x%llx\n", info.flags);
++	subvol_info_printf_uuid(info, uuid);
++	subvol_info_printf_uuid(info, parent_uuid);
++	subvol_info_printf_uuid(info, received_uuid);
++	subvol_info_printf_u64(info, ctransid);
++	subvol_info_printf_u64(info, otransid);
++	subvol_info_printf_u64(info, stransid);
++	subvol_info_printf_u64(info, rtransid);
++	subvol_info_printf_timestamp(info, ctime);
++	subvol_info_printf_timestamp(info, otime);
++	subvol_info_printf_timestamp(info, stime);
++	subvol_info_printf_timestamp(info, rtime);
++}
++
++const struct ioctl {
++	const char *name;
++	void (*func)(int fd);
++} supported_ioctls[] = {
++	{
++		.name = "get_subvol_info",
++		.func = get_subvol_info,
++	},
++};
++
++static void usage()
++{
++	fprintf(stderr, "Usage: btrfs_ioctl <ioctl_name> <path>\n");
++}
++
++int main(int argc, char **argv)
++{
++	const char *ioctl_name;
++	int done = 0;
++	int fd;
++	int ret = 0;
++
++	if (argc != 3) {
++		usage();
++		return 1;
++	}
++	fd = open(argv[2], O_RDONLY);
++	if (fd < 0) {
++		fprintf(stderr, "failed to open %s: %m\n", argv[2]);
++		return 1;
++	}
++	ioctl_name = argv[1];
++
++	for (int i = 0; i < sizeof(supported_ioctls) / sizeof(supported_ioctls[0]); i++) {
++		const struct ioctl *ioctl = &supported_ioctls[i];
++
++		if (!strncasecmp(ioctl->name, ioctl_name, strlen(ioctl->name))) {
++			ioctl->func(fd);
++			done = 1;
++			break;
++		}
++	}
++	if (!done) {
++		fprintf(stderr, "ioctl \"%s\" is not recognized\n", ioctl_name);
++		ret = 1;
++	}
++	close(fd);
++	return ret;
++}
+diff --git a/tests/btrfs/351 b/tests/btrfs/351
+new file mode 100755
+index 00000000..e92ddf1b
+--- /dev/null
++++ b/tests/btrfs/351
+@@ -0,0 +1,47 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
++#
++# FS QA Test 351
++#
++# Make sure the unprivileged get_subvol_info ioctl is providing the correct
++# result.
++#
++. ./common/preamble
++_begin_fstest auto quick
++
++_fixed_by_kernel_commit XXXXXXXXXXXX \
++	"Revert \"btrfs: add 32-bit compat ioctl for BTRFS_IOC_GET_SUBVOL_INFO\""
++
++_require_test_program btrfs_ioctl
++_require_scratch
++
++_scratch_mkfs >> $seqres.full
++_scratch_mount
++
++_btrfs subvolume create $SCRATCH_MNT/subv1
++
++# The id is get through "btrfs subvolume list" command, which doesn't utilize the
++# unprivileged version.
++subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT subv1)
++echo "subvolid=$subvolid" >> $seqres.full
++
++# Do a basic check in case "btrfs subvolume list" doesn't get a correct subvolid
++if [ -z "$subvolid" -o "$subvolid" -lt 256 ]; then
++	_fail "\"btrfs subvolume list\" returned an invalid subvolid"
++fi
++
++# Get the id again through the unprivileged get_subvol_info ioctl
++$here/src/btrfs_ioctl get_subvol_info $SCRATCH_MNT/subv1 >> $tmp.output
++cat $tmp.output >> $seqres.full
++ioctl_subvolid=$(grep treeid: $tmp.output | cut -f 2 -d\ )
++
++if [ "$ioctl_subvolid" -ne "$subvolid" ]; then
++	_fail "get_subvol_info ioctl returned an incorrect treeid"
++fi
++
++_scratch_unmount
++
++echo "Silence is golden"
++# success, all done
++_exit 0
+diff --git a/tests/btrfs/351.out b/tests/btrfs/351.out
+new file mode 100644
+index 00000000..49b14639
+--- /dev/null
++++ b/tests/btrfs/351.out
+@@ -0,0 +1,2 @@
++QA output created by 351
++Silence is golden
+-- 
+2.51.2
+

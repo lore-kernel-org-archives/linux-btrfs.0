@@ -1,212 +1,191 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0DA3741C312
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 18:51:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E83AE33CEBB
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 19:59:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781808716; cv=none; b=WCq8kSFWURgty9L0PSzeDvByLTQF7R0Q81KayC9ppbwGkNrFp0rpCu/f0GAeNVSxZKtlhfUJMTMIpexLnh2uSH7Gw6AhVB1CHvIIN6gbp8NcfBEv73mvlNnGz/jb4yB5SNUhoQjUnRmbgB13P7aIqJAzJrlpBaylyNeNdX9yMRk=
+	t=1781812766; cv=none; b=BQ8pgj4OnzftQRB8duqij1/jMG42gLy3sFZjBjlns/pbRv272qg7MYrXz0s8Kbtmy6fVtk/V2ZpJ2JiOW4iQ/FusVAfxu6vsKY0Gd8VvsGvQyeauLaTIbNeuj15EVZvv8W6AYBKN92QWY+mzWCEuso8+a5SPOlcEhjGJpPRJBRg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781808716; c=relaxed/simple;
-	bh=JeUCIZMwjnufJKgr/0tNSGtXTOIq+y19ay0lvOe95sY=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=b/4AYPLyEjrUic+yqYJ2nxj+fBsuset6F51u6Vx+SGAomt+ysxdDEb4z+Elke6V7zz4Q3KpnxGjJKUcmqv4sg/R73ujuQKw/Eio2l7R0xjQRkatS5Vjbj3XdroK2pJWUNOKicOIhFOjVUlrMy9Nre21Z4QxQTvgr8qeUMWUos3M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=xzlva/KE; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=OMMufSs6; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=f/CZzqMc; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=T0b3lFhc; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1781812766; c=relaxed/simple;
+	bh=+/fxXP7J3vQGVFv2qS3kIjGD4FkCACjhhIbqlpawFS4=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=kFacvAW/06yTPKeXFwDz7qXK1o5BaoJAPAi7VJUavHz7j79NND06nflVUkZZq/7vo2oRtgNJpRzAXEwjoFDi5v4yGKuJnr+DQdgv+ipEhhKAxi0iJQVB3bjhdxerxtfYvkNZywOVuqg6G+R54zU+/QDox5c/Wh0epXZ3kpLQrhU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=V99Goa9f; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="xzlva/KE";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="OMMufSs6";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="f/CZzqMc";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="T0b3lFhc"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 1C80E75C38;
-	Thu, 18 Jun 2026 18:51:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1781808713;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=JVqWTWidsgjS1ZR55qKBHXrfR7o1QHnI/p9FiRRbYkI=;
-	b=xzlva/KECNc6DCn7kAOU1AzXfzDvbQPNtl/yYEAL6ssEHhtfz09osi6TZ1pLDOpnSG1aip
-	BVGwF7PIDFr4R2BfAKl8u6uUG3rVRjQ6JSFpX5YRzlS5UP9FboUNbv8uaV1lZ3buy9NN56
-	mnVf+GIM4c2Sk0t/kZqhWvJw3RO2YU8=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1781808713;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=JVqWTWidsgjS1ZR55qKBHXrfR7o1QHnI/p9FiRRbYkI=;
-	b=OMMufSs6URxLoFrxdPsuNXkrDR3Q32f2/GTuJNnjm8AP5pd0+ppg68FjXXg9w7qMM0gs7U
-	Wza9qyD0YRICDqBA==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1781808712;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=JVqWTWidsgjS1ZR55qKBHXrfR7o1QHnI/p9FiRRbYkI=;
-	b=f/CZzqMcf+r8dLm2mgrxEHZSBe2WzOOAdMdcRVcZPdDJGF+S1AxaPVQKWvNlSxxSrYtMWn
-	wzZbLd4bS7TyJGYqgEsAXswAswFKOinGaLTiuAUosekXoFw7TebOCaSbleE7R5tZPEqLfW
-	j6JDid71MpGrrLGNYyg2+clfC8ts/54=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1781808712;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=JVqWTWidsgjS1ZR55qKBHXrfR7o1QHnI/p9FiRRbYkI=;
-	b=T0b3lFhcknqii56ut8sUpbLQrXkq5JfatCtnDtWo49Cmt5w21RR1O/co8bNKmqKT8k5iE6
-	9ElnFfl1nKoCWaDg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0480B779A8;
-	Thu, 18 Jun 2026 18:51:52 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id RVThAEg+NGo1HQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Thu, 18 Jun 2026 18:51:52 +0000
-Date: Thu, 18 Jun 2026 20:51:46 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: disable v1 space cache
-Message-ID: <20260618185146.GD1049224@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <0884d7707a725ce5a41ea3931d65dabc76a5c864.1780999298.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="V99Goa9f"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 78ACD1F00A3A
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 19:59:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1781812764;
+	bh=zAW3+xatnYUrcXThLJ5qmW7PVfs89Y4h9D2CpJEOrdM=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=V99Goa9fBjBIq5WoiKxQZJ0AGeG1l17TYSgs4hm2W5W+w4xwrvKyhiDZcAcpT6p8g
+	 YMlFjgZVdjd/gFAp4KlXnB0RFyP3d8lw85FcEOeYHxfPGDUTBI/T5UG1xXcAkyuOJV
+	 PPx5Ux2S4G3tEeTef9fba6mGASMncYlL1QCBKdnHBFTHDdH17LNRPnD+54yPg8x3Xt
+	 LqcDKIF5mg1EnU7YEEBNPZBNAHgUyVD2nLUh8nvBhv3nV5ntb3rPGjvoQHYheI1aed
+	 UcIpp3JCxtzZDEQKhaJMqUiRQBAwCNr+1vp48xUugriq5Y4xt0YgHPiM/ehB5J8cec
+	 PAkdcs/KB4kAQ==
+Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-c07ea058c1aso164235866b.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 12:59:24 -0700 (PDT)
+X-Gm-Message-State: AOJu0YwnNY+ev+VqTd1g3GxTTGZFE/qTCdZuuqBWt9rTsIv565Qx6KpD
+	evlDAMMaQEJj2ROEccu1t6M1Axx+j3NC60l9X9eQP1DDvWNmkX4fj5fYuJlkWW0KQ2TTAHhOlWi
+	SZ9dPT/esL87l/F3grWEzWn/1vOh9Wxg=
+X-Received: by 2002:a17:907:1c22:b0:c07:3dc3:49ac with SMTP id
+ a640c23a62f3a-c097add43ddmr31380366b.11.1781812763129; Thu, 18 Jun 2026
+ 12:59:23 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <0884d7707a725ce5a41ea3931d65dabc76a5c864.1780999298.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCVD_TLS_ALL(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.cz:replyto,twin.jikos.cz:mid,suse.com:email]
-X-Spam-Level: 
-X-Spam-Score: -4.00
+References: <cover.1781263239.git.fdmanana@suse.com> <62602395bf1488aa81645ea59e22405d6c06d3f7.1781263239.git.fdmanana@suse.com>
+ <20260618180228.GB1049224@twin.jikos.cz>
+In-Reply-To: <20260618180228.GB1049224@twin.jikos.cz>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Thu, 18 Jun 2026 20:58:45 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H44MxkOyaxJR+8hqRt52_r1K=KH0j1YDTroNJWHcRU1fA@mail.gmail.com>
+X-Gm-Features: AVVi8Cdd2ploUYOPmyXz4yUEuakDApPDPJLGoeSbLxzT0imFWcFfyG7wpN77pr0
+Message-ID: <CAL3q7H44MxkOyaxJR+8hqRt52_r1K=KH0j1YDTroNJWHcRU1fA@mail.gmail.com>
+Subject: Re: [PATCH 2/2] btrfs: fix memory barrier order in reloc_root_is_dead()
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Tue, Jun 09, 2026 at 07:31:44PM +0930, Qu Wenruo wrote:
-> V2 space cache is already the default mkfs option since btrfs-progs
-> v5.15, and commit 1e7bec1f7d65 ("btrfs: emit a warning about space cache
-> v1 being deprecated") has already added a warning to show v1 space cache
-> is already deprecated.
-> 
-> It has been long enough that we should remove v1 space cache completely.
-> 
-> As the first step, disable v1 space cache by:
-> 
-> - Make "space_cache" mount option fallback to "nospace_cache"
-> - Make "space_cache=v1" to fallback to "nospace_cache"
->   Which is the safer than forcing "space_cache=v2", as forcing v2 cache
->   will require removal of v1 cache and regenerate v2 cache.
->   Such operation can be slow, and will take extra metadata space, thus
->   it is not always safe for existing filesystems.
-> 
-> With this done, v1 cache mount will always fallback to nospace cache,
-> and mount option will not be able to force v1 space cache usage.
-> 
-> For example, even for a fs with v1 cache:
-> 
->  # btrfs ins dump-super test.img
->  superblock: bytenr=65536, device=test.img
->  ---------------------------------------------------------
->  csum_type		0 (crc32c)
->  csum_size		4
->  csum			0xdce44b2c [match]
->  bytenr			65536
->  flags			0x1
->  			( WRITTEN )
->  magic			_BHRfS_M [match]
->  fsid			7d7c3bba-8211-4206-868d-10eedd5703f8
->  metadata_uuid		00000000-0000-0000-0000-000000000000
->  label
->  generation		9
->  root			30605312
->  [...]
->  compat_ro_flags		0x0 << No FST feature
->  incompat_flags		0x361
->  			( MIXED_BACKREF |
->  			  BIG_METADATA |
->  			  EXTENDED_IREF |
->  			  SKINNY_METADATA |
->  			  NO_HOLES )
->  cache_generation	9 <<< Matches generation
->  uuid_tree_generation	9
-> 
-> Mounting it will lead to no space cache other than v1 space cache:
-> 
->  # mount test.img /mnt/btrfs
->  # dmesg -t | tail -n 5
->  BTRFS: device fsid 7d7c3bba-8211-4206-868d-10eedd5703f8 devid 1 transid 9 /dev/loop0 (7:0) scanned by mount (1264)
->  BTRFS info (device loop0): first mount of filesystem 7d7c3bba-8211-4206-868d-10eedd5703f8
->  BTRFS info (device loop0): using crc32c checksum algorithm
->  BTRFS info (device loop0): turning on async discard
->  BTRFS info (device loop0): last unmount of filesystem 7d7c3bba-8211-4206-868d-10eedd5703f8
-> 
-> Even forcing v1 cache will not work, but fallback to the usual
-> nospace_cache:
-> 
->  # mount test.img -o space_cache=v1 /mnt/btrfs
->  # dmesg -t | tail -n 6
->  BTRFS warning: v1 space cache is deprecated, fallback to no space cache
->  BTRFS: device fsid 7d7c3bba-8211-4206-868d-10eedd5703f8 devid 1 transid 9 /dev/loop0 (7:0) scanned by mount (1264)
->  BTRFS info (device loop0): first mount of filesystem 7d7c3bba-8211-4206-868d-10eedd5703f8
->  BTRFS info (device loop0): using crc32c checksum algorithm
->  BTRFS info (device loop0): turning on async discard
->  BTRFS info (device loop0): last unmount of filesystem 7d7c3bba-8211-4206-868d-10eedd5703f8
-> 
-> And there will be no way to force converting a v2 cache back to v1, such
-> attempt will only clear free space tree and fallback to no space cache.
-> 
->  # mkfs.btrfs -f -O fst,^bgt test.img
->  # mount -o clear_cache,space_cache=v1 test.img /mnt/btrfs
->  # dmesg -t | tail -n 11
->  BTRFS warning: v1 space cache is deprecated, fallback to no space cache
->  BTRFS: device fsid f59daad2-3ab5-4f33-b752-a36cfb09b674 devid 1 transid 8 /dev/loop0 (7:0) scanned by mount (1419)
->  BTRFS info (device loop0): first mount of filesystem f59daad2-3ab5-4f33-b752-a36cfb09b674
->  BTRFS info (device loop0): using crc32c checksum algorithm
->  BTRFS info (device loop0): rebuilding free space tree
->  BTRFS info (device loop0): disabling free space tree
->  BTRFS info (device loop0): clearing compat-ro feature flag for FREE_SPACE_TREE (0x1)
->  BTRFS info (device loop0): clearing compat-ro feature flag for FREE_SPACE_TREE_VALID (0x2)
->  BTRFS info (device loop0): checking UUID tree
->  BTRFS info (device loop0): turning on async discard
->  BTRFS info (device loop0): force clearing of disk cache
->  # mount | grep /mnt/btrfs
->  /home/adam/test.img on /mnt/btrfs type btrfs (rw,relatime,discard=async,nospace_cache,subvolid=5,subvol=/)
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+On Thu, Jun 18, 2026 at 7:02=E2=80=AFPM David Sterba <dsterba@suse.cz> wrot=
+e:
+>
+> On Fri, Jun 12, 2026 at 01:13:57PM +0100, fdmanana@kernel.org wrote:
+> > From: Filipe Manana <fdmanana@suse.com>
+> >
+> > When we set a root's reloc_root to NULL, we do it like this:
+> >
+> >    static void clear_reloc_root(struct btrfs_root *root)
+> >    {
+> >        root->reloc_root =3D NULL;
+> >        /*
+> >         * Need barrier to ensure clear_bit() only happens after
+> >         * root->reloc_root =3D NULL. Pairs with have_reloc_root().
+> >         */
+> >         smp_wmb();
+> >         clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
+> >    }
+> >
+> > So that a NULL reloc_root is always seen before seeing that the bit
+> > BTRFS_ROOT_DEAD_RELOC_TREE was cleared.
+> >
+> > But on the read side we have:
+> >
+> >    static bool reloc_root_is_dead(const struct btrfs_root *root)
+> >    {
+> >         smp_rmb();
+> >         if (test_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state))
+> >             return true;
+> >         return false;
+> >    }
+> >
+> > And then callers of reloc_root_is_dead() access root->reloc_root.
+> >
+> > Because the read memory barrier is placed before testing the bit, the C=
+PU
+> > is completely free to speculatively reorder those two loads. It can rea=
+d
+> > root->reloc_root before it actually checks the dead tree bit.
+>
+> The barrier placement was contentious back then when and I don't have
+> the capacity now to analyze it again. The point of placing the barrier
+> before the test_bit() is to have up-to-date value for the check. It does
+> not make sense to place it after, because the test can have stale data
+> and other CPU could have changed the related state, the reloc_root in thi=
+s
+> case.
 
-Ok great, this should cover the remaining possibilities. Please add it
-to for-next, we can start removing the rest of v1 code afterwards. The
-linux-next will be updated after rc1 so this won't be exposed to testing
-until after that.
+It only makes sense to place the smp_rmb() after test_bit().
+
+The write side does the following:
+
+->reloc_root =3D NULL;
+smp_wmb();
+set_bit()
+
+So the read side must do the following:
+
+test_bit()
+smp_rmb()
+read ->reloc_root
+
+Where the reads of ->reloc_root happen in the callers of reloc_root_is_dead=
+().
+
+>
+> As there's part with set bit and clear bit, and using the split
+> read/write barriers it's not the easy case I could have missed
+> something.
+>
+> > Sashiko reported this as an existing problem in another patch review, s=
+ee
+> > the link in the Link tag below.
+> >
+> > Fix this by moving the read memory barrier to happen after testing the =
+bit
+> > and update the comment to reflect current reality.
+> >
+> > Link: https://sashiko.dev/#/patchset/cf84f1a217c719e25b6b69e4298dd7afd3=
+6c9427.1781194426.git.fdmanana%40suse.com
+> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> > ---
+> >  fs/btrfs/relocation.c | 11 ++++++-----
+> >  1 file changed, 6 insertions(+), 5 deletions(-)
+> >
+> > diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> > index 6b5a59cb21bb..00993505c9c3 100644
+> > --- a/fs/btrfs/relocation.c
+> > +++ b/fs/btrfs/relocation.c
+> > @@ -339,14 +339,15 @@ static struct btrfs_backref_node *walk_down_backr=
+ef(
+> >
+> >  static bool reloc_root_is_dead(const struct btrfs_root *root)
+> >  {
+> > +     if (test_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state))
+> > +             return true;
+> >       /*
+> > -      * Pair with set_bit/clear_bit in clean_dirty_subvols and
+> > -      * btrfs_update_reloc_root. We need to see the updated bit before
+> > -      * trying to access reloc_root
+> > +      * Pairs with set_bit/clear_bit in clear_reloc_root() and
+> > +      * btrfs_update_reloc_root(). We need to see the updated bit befo=
+re
+> > +      * trying to access root->reloc_root in our callers.
+>
+> The part "we need to see the updated bit" refers to the original logic
+> where 'updated bit =3D=3D 'smp_rmb; if (test_bit())' and making sure it's
+> consistent with reloc root. So the meaning of the comment hasn't changed
+> apart from the fixups (Pairs, clear_reloc_root, root->reloc_root).
+>
+> As your patch changes the logic the comment should be also updated, but
+
+The comment makes sense as it was left.
+There's the added part states that smp_rmb() is needed to ensure
+callers see the ->reloc_root update after testing the bit.
+
+> then I argue the resulting code is wrong, or at least not entierly
+> correct.
+>
+> Alternatively we can drop the barriers completely for the
+> 'dead_reloc_tree' bit and reloc_root synchronization, because we've spent
+> too much time in total on that one.
+
+I'm not sure what you are trying to say. Just liteterally dropping the
+barriers does not seem correct to me, in fact they were added to fix
+some races that people were hitting.
+
+>
+> >        */
+> >       smp_rmb();
+> > -     if (test_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state))
+> > -             return true;
+> > +
+> >       return false;
+> >  }

@@ -1,326 +1,335 @@
-Received: from mail-ej1-f49.google.com (mail-ej1-f49.google.com [209.85.218.49])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AB30820E334
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 08:33:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1494D1F30BB
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 10:05:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781771615; cv=none; b=iN+gQa6SJrZ9DDmf85XOKo81YFSxVALx507e2Gqm3tlifjK9ltyMEPFO0vOrEkMXsKlApC73EEOYwb543VZk84T5OW54QV3ydW6TSrPGcNp6KPlGyf22a7DP9afZL9I3cFsxOw8RSDzOCcu090JV1l2vWZALfNoXLXBEhjOyEkM=
+	t=1781777145; cv=none; b=r+vSIhI8gQ7xaW3u2zvUaPt42WB6p5ZB+llHOTL+b+1Cj7TraCYncLx/LyWljsw1Lu6Z5C7sRIfOcGKq8Z1xu4dfFAD2bcLNJkujDzP1IFxJXHG05lVaH+KJD05OJ0EIDKAZVmPvugZKNlpH72LnTr9tf0sKgzw3ud7QscDqW4U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781771615; c=relaxed/simple;
-	bh=BgoDXfxz74u4BxZ83eHXOSB8dN612gSAvBNXlW2ts38=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:References:
-	 In-Reply-To:Content-Type; b=mlQYIwOUIQ1eHOEFgh8AUTZjiUE1ZVOTFxK3oN2+8LHHJBJ4S3Wuzb4LGZ7/PqJddczBtHC+eCq3XQaw1HUtd0K8ct0GXc8lnpQO3gi+05hRq7eYFZft0wvfqxU13MB6l2+6EPov1ToFCerMYnWNbcFUluFUFSNtSPBco2BU7wI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=ZnRCFP/T; arc=none smtp.client-ip=209.85.218.49
+	s=arc-20240116; t=1781777145; c=relaxed/simple;
+	bh=n4jpWT+of/FKbklG3temyOdlIWm9QuId6SZyG0ZTE0Y=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=ENUKJn6b66A/A+O2j+BNpTdKrP59v9Tt8GI4L3L/BDeBwGq5LmNogjnBzFLNwcpNxcJYfRWbiRlEIHbyqx2vgsmXkMkcibaW+4JWBVUoQA6X2vRWmf3XrTuGZUg1APHL0O/TRGarlz8F2V+IO5NTr0LlS0GNcWj+j1b4zVQuWKk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=UJxaT2z0; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PCbx0YSz; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="ZnRCFP/T"
-Received: by mail-ej1-f49.google.com with SMTP id a640c23a62f3a-bf0170c80f7so100243266b.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 01:33:32 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1781771611; x=1782376411; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
-         :references:to:from:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=7kpNF0l0LLRV+W7pffbnLBgyA86zcnV9Q8uViWBeU+c=;
-        b=ZnRCFP/TcNwWuJuq70vq0Mmdyq62OXmZxUejx6mdknkEDzF3DlYyYNqeBAoeqOfhaQ
-         s2g7dfsr2yE4avp8oQ9xkdAI6zM3qLaM3d4LXd5NBRKmaf85JtfRFA6YZk+9vsPqfz7C
-         E833NJXhaM6TUsqOPqsbPJqcMEFACF/zO+ZlP8xnddbGgv0TpmEb9iw3HPVIPkuu4o4W
-         18l32JY+3BXifV7llEB7dm3JZS85cYEckzr/T0uG5DBrhsvknjSA7C0DzLjXTU6zYNZZ
-         CfkdfMs+NFCXWXp994hev4BrC1TuKKUWVc8TV7fR1mBvu8kOxTa24z3qgHXpwfqDlsvt
-         CwNw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1781771611; x=1782376411;
-        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
-         :references:to:from:subject:user-agent:mime-version:date:message-id
-         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=7kpNF0l0LLRV+W7pffbnLBgyA86zcnV9Q8uViWBeU+c=;
-        b=MxxJI9nUdTC7DkxPiFERB/gPYrIVf3IhEODdKlRoZDur6x1rykaJQ4M0IyJ3Ju7yZe
-         HnhP5724QK5xAl6Xe18KrTAginmzY5TnDBKoAKsfWGsniyuOEvEgpI41Ip0i5OoWQXnG
-         FY7nNR0b6qZyfj8B6kapsDPzRq7XwzQ0DnyvDrv0wW2NwtIEthp1UF5M/dD5aiXH7toT
-         lEYDeIR2kA+7sUVT5tRXid+UO1KV3Fufg9ia9dRtgNhvxMky6oRodBPaS34xvHDyFZro
-         UHN6eRnGPBuF/3TnHotWOceqzxi7bpWus/OqbW5W+2QxhW64d+s3j+/inhIGy0oxnNGC
-         lzsQ==
-X-Gm-Message-State: AOJu0YxW8bGL8ICznshcgQZ6BzY/FuPM/Y68GXHcumJjO8GgsXPGdcLx
-	+8s9uKm/W1PZPOXe5fNTUY4j8IGKHGlqohcjTyleObDDnC6/h93Ce4ROVuXxPa3HY6+UW/HjLOj
-	hdlVc8DM=
-X-Gm-Gg: AfdE7cluBFA5MdxcIlrrwy3Jt/3BB212DI1q/CuQrHdeZEE4LN9lDhdn7EFvvm78kSc
-	XX311ibf7EyWARe8Paz7hVpa7QnrPhow/7/l87Ct+tVyW+FP12DpogojFj7MEns8sYwClEOAPxH
-	w0+GwXa9VA5o4MitjxjFR7zzCjMB5rB57mRARca2njKzssMizdUAN0afTgFAf6sYxTp4PG2LfWB
-	8HUcXRe+xR1Y2GunvkiljxvNjrLEAF8Eny8ecTwJmU/mj0cAElO88YPP+KPLFkMQBq6Os/s9F8W
-	RfuE20vLtvtyr00ZplDYeoojIA2E8IyywzDE68mJ0wPTehT41Lm2e962BvXovoLqSowNxY3FU7g
-	Ki/d+tllz5Pn/IEf24F/owgbKVWu8AQwsM7kVG1klHOS69lgt3DNboaT2dXrJssBMsED3xqnYKv
-	U10pkKzLgDa7drdCmydPwqe1I3jUh776jAPqfrZ9V7HX3HOjXcgrInDpRqUQOt7HKW0WX12/GB1
-	hMlnA6shsb+fKtnHqIKBwySS5C1zw+yS7BIke++GE8Wog==
-X-Received: by 2002:a17:907:d0e:b0:bed:a7d7:82c8 with SMTP id a640c23a62f3a-c074dce83bcmr139803466b.37.1781771610839;
-        Thu, 18 Jun 2026 01:33:30 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1:0:2bb5:f164:6e6a:38d8? (2403-580d-fda1-0-2bb5-f164-6e6a-38d8.ip6.aussiebb.net. [2403:580d:fda1:0:2bb5:f164:6e6a:38d8])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-37c52213332sm8544454a91.15.2026.06.18.01.33.27
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 18 Jun 2026 01:33:29 -0700 (PDT)
-Message-ID: <f3f9025e-6ae3-47c3-8cf8-94dc1e3593ef@suse.com>
-Date: Thu, 18 Jun 2026 18:03:25 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UJxaT2z0";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PCbx0YSz"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 15E2B6D1BD;
+	Thu, 18 Jun 2026 10:05:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1781777142; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=LDPRqDyM2I6KpN/mvxylTJDHGGe0TGRrm2+VX34NqJg=;
+	b=UJxaT2z0K5UBjzOjIEV3t5osSviPqkHOTPsdcsY4ZCbiHD4goUb+7bB8HYuifFhlrXA5+R
+	cMBJyIUTAGwgIC/wEDh+3IbaRj8AQP/9JEzl8ZXc0iP00IMm9Am87ONOw8769eImJ4b6L0
+	Qb07GMQieKB8oZQNLRLTvCI2WHvnEzo=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=PCbx0YSz
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1781777141; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=LDPRqDyM2I6KpN/mvxylTJDHGGe0TGRrm2+VX34NqJg=;
+	b=PCbx0YSzfd1X0JGcpesvMidi/Y6AbMv9WURoFD8K83WdjD2tKsNDxHdb0SR3T5jwJ5Bb/V
+	9NsP/sNlMSelK7phOfUW5Ma8NKw610uNtEGZ32VcfHdP3kNMFsrVQKguIf4Ef46xRmCgOz
+	5eZ3dVvXIJsa29gS4tG+yBgrztt1P4E=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B5508779A8;
+	Thu, 18 Jun 2026 10:05:39 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 1OGIGPPCM2orEgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 18 Jun 2026 10:05:39 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: fstests@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+Subject: [PATCH] fstests: add a test case for btrfs get_subvol_info ioctl
+Date: Thu, 18 Jun 2026 19:35:21 +0930
+Message-ID: <20260618100521.91162-1-wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] Revert "btrfs: add 32-bit compat ioctl for
- BTRFS_IOC_GET_SUBVOL_INFO"
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org, Daan De Meyer <daan@amutable.com>
-References: <83e52b702dcad16021067cc9b57a23f44ee4ed3b.1781693491.git.wqu@suse.com>
-Content-Language: en-US
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <83e52b702dcad16021067cc9b57a23f44ee4ed3b.1781693491.git.wqu@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: 15E2B6D1BD
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	ARC_NA(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:email,suse.com:mid];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 
-Hi Daan
+There is a regression caused by upstream kernel commit 538e5bdbc899
+("btrfs: add 32-bit compat ioctl for BTRFS_IOC_GET_SUBVOL_INFO"), where
+the unprivileged get_subvol_info ioctl is returning incorrect results.
 
-Do you any clue why this unprivileged ioctl regressed? So that we can 
-get a proper fix other than a full revert.
+Unfortunately that bug is not covered by fstests, and only exposed by
+btrfs-progs libbtrfsutil python tests, which is not a short run.
 
-Meanwhile I believe we should have a proper btrfs ioctl test case in 
-fstests, so we do not need to use btrfs-progs to test this.
+So add a new test case for such btrfs ioctl:
 
-Thanks,
-Qu
+- Introduce a helper program, btrfs_ioctl
+  Which will call the dedicated ioctl, print all of its structure
+  members.
 
-在 2026/6/17 20:22, Qu Wenruo 写道:
-> This reverts commit 538e5bdbc8996d3f6ce65565dda7df58e6e97e04.
-> 
-> This patch is causing libbtrfsutils regression on 64bit systems, which
-> is the most common cases.
-> 
-> The involved selftests failures look like this, all related to
-> unprivileged ioctls:
-> 
->   ======================================================================
->   FAIL: test_subvolume_get_info_unprivileged (test_subvolume.TestSubvolume.test_subvolume_get_info_unprivileged)
->   ----------------------------------------------------------------------
->   Traceback (most recent call last):
->     File "/home/adam/btrfs-progs/libbtrfsutil/python/tests/test_subvolume.py", line 336, in test_subvolume_get_info_unprivileged
->       self._test_subvolume_info(subvol, snapshot)
->       ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
->     File "/home/adam/btrfs-progs/libbtrfsutil/python/tests/test_subvolume.py", line 196, in _test_subvolume_info
->       self.assertEqual(info.id, 256)
->       ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
->   AssertionError: 140488005556880 != 256
-> 
->   ======================================================================
->   FAIL: test_subvolume_info_unprivileged (test_subvolume.TestSubvolume.test_subvolume_info_unprivileged)
->   ----------------------------------------------------------------------
->   Traceback (most recent call last):
->     File "/home/adam/btrfs-progs/libbtrfsutil/python/tests/test_subvolume.py", line 318, in test_subvolume_info_unprivileged
->       self._test_subvolume_info(subvol, snapshot)
->       ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
->     File "/home/adam/btrfs-progs/libbtrfsutil/python/tests/test_subvolume.py", line 196, in _test_subvolume_info
->       self.assertEqual(info.id, 256)
->       ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
->   AssertionError: 140488005503648 != 256
-> 
->   ======================================================================
->   FAIL: test_subvolume_iterator_unprivileged (test_subvolume.TestSubvolume.test_subvolume_iterator_unprivileged)
->   ----------------------------------------------------------------------
->   Traceback (most recent call last):
->     File "/home/adam/btrfs-progs/libbtrfsutil/python/tests/test_subvolume.py", line 835, in test_subvolume_iterator_unprivileged
->       self._test_subvolume_iterator()
->       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
->     File "/home/adam/btrfs-progs/libbtrfsutil/python/tests/test_subvolume.py", line 700, in _test_subvolume_iterator
->       self.assertEqual(subvol.id, 256)
->       ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
->   AssertionError: 0 != 256
-> 
-> Adding 32bit compatibility should never cause regression on 64bit
-> systems.
-> 
-> Revert the offending commit to avoid regression.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->   fs/btrfs/ioctl.c | 107 ++++++-----------------------------------------
->   1 file changed, 13 insertions(+), 94 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 9d47d16394fc..360637e9edfc 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -83,30 +83,6 @@ struct btrfs_ioctl_received_subvol_args_32 {
->   
->   #define BTRFS_IOC_SET_RECEIVED_SUBVOL_32 _IOWR(BTRFS_IOCTL_MAGIC, 37, \
->   				struct btrfs_ioctl_received_subvol_args_32)
-> -
-> -struct btrfs_ioctl_get_subvol_info_args_32 {
-> -	__u64 treeid;
-> -	char name[BTRFS_VOL_NAME_MAX + 1];
-> -	__u64 parent_id;
-> -	__u64 dirid;
-> -	__u64 generation;
-> -	__u64 flags;
-> -	__u8 uuid[BTRFS_UUID_SIZE];
-> -	__u8 parent_uuid[BTRFS_UUID_SIZE];
-> -	__u8 received_uuid[BTRFS_UUID_SIZE];
-> -	__u64 ctransid;
-> -	__u64 otransid;
-> -	__u64 stransid;
-> -	__u64 rtransid;
-> -	struct btrfs_ioctl_timespec_32 ctime;
-> -	struct btrfs_ioctl_timespec_32 otime;
-> -	struct btrfs_ioctl_timespec_32 stime;
-> -	struct btrfs_ioctl_timespec_32 rtime;
-> -	__u64 reserved[8];
-> -} __attribute__ ((__packed__));
-> -
-> -#define BTRFS_IOC_GET_SUBVOL_INFO_32 _IOR(BTRFS_IOCTL_MAGIC, 60, \
-> -				struct btrfs_ioctl_get_subvol_info_args_32)
->   #endif
->   
->   #if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
-> @@ -1948,9 +1924,9 @@ static int btrfs_ioctl_ino_lookup_user(struct file *file, void __user *argp)
->   }
->   
->   /* Get the subvolume information in BTRFS_ROOT_ITEM and BTRFS_ROOT_BACKREF */
-> -static int _btrfs_ioctl_get_subvol_info(struct inode *inode,
-> -					struct btrfs_ioctl_get_subvol_info_args *subvol_info)
-> +static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
->   {
-> +	struct btrfs_ioctl_get_subvol_info_args AUTO_KFREE(subvol_info);
->   	struct btrfs_fs_info *fs_info;
->   	struct btrfs_root *root;
->   	struct btrfs_path *path;
-> @@ -1966,6 +1942,12 @@ static int _btrfs_ioctl_get_subvol_info(struct inode *inode,
->   	if (!path)
->   		return -ENOMEM;
->   
-> +	subvol_info = kzalloc_obj(*subvol_info);
-> +	if (!subvol_info) {
-> +		btrfs_free_path(path);
-> +		return -ENOMEM;
-> +	}
-> +
->   	fs_info = BTRFS_I(inode)->root->fs_info;
->   
->   	/* Get root_item of inode's subvolume */
-> @@ -2044,6 +2026,11 @@ static int _btrfs_ioctl_get_subvol_info(struct inode *inode,
->   		}
->   	}
->   
-> +	btrfs_free_path(path);
-> +	path = NULL;
-> +	if (copy_to_user(argp, subvol_info, sizeof(*subvol_info)))
-> +		ret = -EFAULT;
-> +
->   out:
->   	btrfs_put_root(root);
->   out_free:
-> @@ -2051,70 +2038,6 @@ static int _btrfs_ioctl_get_subvol_info(struct inode *inode,
->   	return ret;
->   }
->   
-> -#ifdef CONFIG_64BIT
-> -static int btrfs_ioctl_get_subvol_info_32(struct inode *inode, void __user *argp)
-> -{
-> -	struct btrfs_ioctl_get_subvol_info_args AUTO_KFREE(subvol_info);
-> -	struct btrfs_ioctl_get_subvol_info_args_32 AUTO_KFREE(subvol_info_32);
-> -	int ret;
-> -
-> -	subvol_info = kzalloc_obj(*subvol_info);
-> -	if (!subvol_info)
-> -		return -ENOMEM;
-> -
-> -	subvol_info_32 = kzalloc_obj(*subvol_info_32);
-> -	if (!subvol_info_32)
-> -		return -ENOMEM;
-> -
-> -	ret = _btrfs_ioctl_get_subvol_info(inode, subvol_info);
-> -	if (ret)
-> -		return ret;
-> -
-> -	subvol_info_32->treeid = subvol_info->treeid;
-> -	memcpy(subvol_info_32->name, subvol_info->name, sizeof(subvol_info_32->name));
-> -	subvol_info_32->parent_id = subvol_info->parent_id;
-> -	subvol_info_32->dirid = subvol_info->dirid;
-> -	subvol_info_32->generation = subvol_info->generation;
-> -	subvol_info_32->flags = subvol_info->flags;
-> -	memcpy(subvol_info_32->uuid, subvol_info->uuid, BTRFS_UUID_SIZE);
-> -	memcpy(subvol_info_32->parent_uuid, subvol_info->parent_uuid, BTRFS_UUID_SIZE);
-> -	memcpy(subvol_info_32->received_uuid, subvol_info->received_uuid, BTRFS_UUID_SIZE);
-> -	subvol_info_32->ctransid = subvol_info->ctransid;
-> -	subvol_info_32->otransid = subvol_info->otransid;
-> -	subvol_info_32->stransid = subvol_info->stransid;
-> -	subvol_info_32->rtransid = subvol_info->rtransid;
-> -	subvol_info_32->ctime.sec = subvol_info->ctime.sec;
-> -	subvol_info_32->ctime.nsec = subvol_info->ctime.nsec;
-> -	subvol_info_32->otime.sec = subvol_info->otime.sec;
-> -	subvol_info_32->otime.nsec = subvol_info->otime.nsec;
-> -	subvol_info_32->stime.sec = subvol_info->stime.sec;
-> -	subvol_info_32->stime.nsec = subvol_info->stime.nsec;
-> -	subvol_info_32->rtime.sec = subvol_info->rtime.sec;
-> -	subvol_info_32->rtime.nsec = subvol_info->rtime.nsec;
-> -
-> -	if (copy_to_user(argp, subvol_info_32, sizeof(*subvol_info_32)))
-> -		ret = -EFAULT;
-> -
-> -	return ret;
-> -}
-> -#endif
-> -
-> -static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
-> -{
-> -	struct btrfs_ioctl_get_subvol_info_args AUTO_KFREE(subvol_info);
-> -	int ret;
-> -
-> -	subvol_info = kzalloc_obj(*subvol_info);
-> -	if (!subvol_info)
-> -		return -ENOMEM;
-> -
-> -	ret = _btrfs_ioctl_get_subvol_info(inode, subvol_info);
-> -	if (!ret && copy_to_user(argp, subvol_info, sizeof(*subvol_info)))
-> -		ret = -EFAULT;
-> -
-> -	return ret;
-> -}
-> -
->   /*
->    * Return ROOT_REF information of the subvolume containing this inode
->    * except the subvolume name.
-> @@ -5610,10 +5533,6 @@ long btrfs_ioctl(struct file *file, unsigned int
->   		return btrfs_ioctl_set_features(file, argp);
->   	case BTRFS_IOC_GET_SUBVOL_INFO:
->   		return btrfs_ioctl_get_subvol_info(inode, argp);
-> -#ifdef CONFIG_64BIT
-> -	case BTRFS_IOC_GET_SUBVOL_INFO_32:
-> -		return btrfs_ioctl_get_subvol_info_32(inode, argp);
-> -#endif
->   	case BTRFS_IOC_GET_SUBVOL_ROOTREF:
->   		return btrfs_ioctl_get_subvol_rootref(root, argp);
->   	case BTRFS_IOC_INO_LOOKUP_USER:
+  For now only get_subvol_info is supported, but it can be easily
+  appended for new ones.
+
+- Mkfs and create a subvolume on btrfs
+
+- Use "_btrfs_get_subvolid()" to grab the subvolid
+  That function is utilizing "btrfs subvolume list" to grab the info,
+  which is not utilizing the unprivileged ioctl.
+
+- Use "btrfs_ioctl get_subvol_info" to grab the subvolid
+
+- Compare the two subvolids
+
+This should be enough to detect the regression.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ .gitignore          |   1 +
+ src/Makefile        |   2 +-
+ src/btrfs_ioctl.c   | 103 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/351     |  47 ++++++++++++++++++++
+ tests/btrfs/351.out |   2 +
+ 5 files changed, 154 insertions(+), 1 deletion(-)
+ create mode 100644 src/btrfs_ioctl.c
+ create mode 100755 tests/btrfs/351
+ create mode 100644 tests/btrfs/351.out
+
+diff --git a/.gitignore b/.gitignore
+index dd77ee30..0b6b9452 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -215,6 +215,7 @@ tags
+ /src/file_attr
+ /src/truncate
+ /src/t_btrfs_received_uuid_ioctl
++/src/btrfs_ioctl
+ 
+ # Symlinked files
+ /tests/generic/035.out
+diff --git a/src/Makefile b/src/Makefile
+index 31ac43b2..76cf50c3 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -36,7 +36,7 @@ LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
+ 	fscrypt-crypt-util bulkstat_null_ocount splice-test chprojid_fail \
+ 	detached_mounts_propagation ext4_resize t_readdir_3 splice2pipe \
+ 	uuid_ioctl t_snapshot_deleted_subvolume fiemap-fault min_dio_alignment \
+-	rw_hint fs-monitor
++	rw_hint fs-monitor btrfs_ioctl
+ 
+ EXTRA_EXECS = dmerror fill2attr fill2fs fill2fs_check scaleread.sh \
+ 	      btrfs_crc32c_forged_name.py popdir.pl popattr.py \
+diff --git a/src/btrfs_ioctl.c b/src/btrfs_ioctl.c
+new file mode 100644
+index 00000000..4114fa88
+--- /dev/null
++++ b/src/btrfs_ioctl.c
+@@ -0,0 +1,103 @@
++// SPDX-License-Identifier: GPL-2.0
++// Copyright (c) SUSE S.A.
++
++#include <stdio.h>
++#include <string.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <sys/ioctl.h>
++#include <uuid/uuid.h>
++#include <linux/btrfs.h>
++
++#define subvol_info_printf_u64(info, name)	\
++	printf(#name ": %llu\n", (info).name)
++
++#define subvol_info_printf_timestamp(info, name)	\
++	printf(#name ": %llu.%09u\n", (info).name.sec, (info.name.nsec))
++
++#define subvol_info_printf_uuid(info, name)	\
++{						\
++	char uuidbuf[UUID_STR_LEN];		\
++						\
++	uuid_unparse((info).name, uuidbuf);	\
++	printf(#name ": %s\n", (info).name);	\
++}
++
++void get_subvol_info(int fd)
++{
++	struct btrfs_ioctl_get_subvol_info_args info = { 0 };
++	int ret;
++
++	ret = ioctl(fd, BTRFS_IOC_GET_SUBVOL_INFO, &info);
++	if (ret < 0) {
++		fprintf(stderr, "ioctl failed: %m\n");
++		return;
++	}
++
++	subvol_info_printf_u64(info, treeid);
++	printf("name: %.*s\n", BTRFS_VOL_NAME_MAX, info.name);
++	subvol_info_printf_u64(info, parent_id);
++	subvol_info_printf_u64(info, dirid);
++	subvol_info_printf_u64(info, generation);
++	printf("flags: 0x%llx\n", info.flags);
++	subvol_info_printf_uuid(info, uuid);
++	subvol_info_printf_uuid(info, parent_uuid);
++	subvol_info_printf_uuid(info, received_uuid);
++	subvol_info_printf_u64(info, ctransid);
++	subvol_info_printf_u64(info, otransid);
++	subvol_info_printf_u64(info, stransid);
++	subvol_info_printf_u64(info, rtransid);
++	subvol_info_printf_timestamp(info, ctime);
++	subvol_info_printf_timestamp(info, otime);
++	subvol_info_printf_timestamp(info, stime);
++	subvol_info_printf_timestamp(info, rtime);
++}
++
++const struct ioctl {
++	const char *name;
++	void (*func)(int fd);
++} supported_ioctls[] = {
++	{
++		.name = "get_subvol_info",
++		.func = get_subvol_info,
++	},
++};
++
++static void usage()
++{
++	fprintf(stderr, "Usage: btrfs_ioctl <ioctl_name> <path>\n");
++}
++int main(int argc, char **argv)
++{
++	const char *ioctl_name;
++	int done = 0;
++	int fd;
++	int ret = 0;
++
++	if (argc != 3) {
++		usage();
++		return ret;
++	}
++	fd = open(argv[2], O_RDONLY);
++	if (fd < 0) {
++		fprintf(stderr, "failed to open %s: %m", argv[2]);
++		return 1;
++	}
++	ioctl_name = argv[1];
++
++	for (int i = 0; i < sizeof(supported_ioctls) / sizeof(supported_ioctls[0]); i++) {
++		const struct ioctl *ioctl = &supported_ioctls[i];
++
++		if (!strncasecmp(ioctl->name, ioctl_name, strlen(ioctl->name))) {
++			ioctl->func(fd);
++			done = 1;
++			break;
++		}
++	}
++	if (!done) {
++		fprintf(stderr, "ioctl \"%s\" is not recognized\n", ioctl_name);
++		ret = 1;
++	}
++	close(fd);
++	return ret;
++}
+diff --git a/tests/btrfs/351 b/tests/btrfs/351
+new file mode 100755
+index 00000000..e92ddf1b
+--- /dev/null
++++ b/tests/btrfs/351
+@@ -0,0 +1,47 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
++#
++# FS QA Test 351
++#
++# Make sure the unprivileged get_subvol_info ioctl is providing the correct
++# result.
++#
++. ./common/preamble
++_begin_fstest auto quick
++
++_fixed_by_kernel_commit XXXXXXXXXXXX \
++	"Revert \"btrfs: add 32-bit compat ioctl for BTRFS_IOC_GET_SUBVOL_INFO\""
++
++_require_test_program btrfs_ioctl
++_require_scratch
++
++_scratch_mkfs >> $seqres.full
++_scratch_mount
++
++_btrfs subvolume create $SCRATCH_MNT/subv1
++
++# The id is get through "btrfs subvolume list" command, which doesn't utilize the
++# unprivileged version.
++subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT subv1)
++echo "subvolid=$subvolid" >> $seqres.full
++
++# Do a basic check in case "btrfs subvolume list" doesn't get a correct subvolid
++if [ -z "$subvolid" -o "$subvolid" -lt 256 ]; then
++	_fail "\"btrfs subvolume list\" returned an invalid subvolid"
++fi
++
++# Get the id again through the unprivileged get_subvol_info ioctl
++$here/src/btrfs_ioctl get_subvol_info $SCRATCH_MNT/subv1 >> $tmp.output
++cat $tmp.output >> $seqres.full
++ioctl_subvolid=$(grep treeid: $tmp.output | cut -f 2 -d\ )
++
++if [ "$ioctl_subvolid" -ne "$subvolid" ]; then
++	_fail "get_subvol_info ioctl returned an incorrect treeid"
++fi
++
++_scratch_unmount
++
++echo "Silence is golden"
++# success, all done
++_exit 0
+diff --git a/tests/btrfs/351.out b/tests/btrfs/351.out
+new file mode 100644
+index 00000000..49b14639
+--- /dev/null
++++ b/tests/btrfs/351.out
+@@ -0,0 +1,2 @@
++QA output created by 351
++Silence is golden
+-- 
+2.51.2
 

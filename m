@@ -1,219 +1,136 @@
-Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ed1-f52.google.com (mail-ed1-f52.google.com [209.85.208.52])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2B8BA23ED5B
-	for <linux-btrfs@vger.kernel.org>; Fri, 19 Jun 2026 06:32:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.45
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781850769; cv=none; b=OrX0QJWHPBMyvvKf9pn0oBdgurCdUmHVYfru46jLNVVKPuXck/4InITwhyDcxewsuEZhmXFIjxotLwpbBocOOuwolNkCVb7oCzGe1fd3kG1eceoSh1h2sX3cps66VDfNNj8Ncwg/O/1Y+dLn93ScBjxafCVGHPdRn9P4TE1J68Y=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781850769; c=relaxed/simple;
-	bh=5hA9VIHH1p6nZ/l+U4nqisp/1YNKk7hEwkWTzyzdPAw=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Y9zhP81R0MC6F2qLSA3HFw0+j5R9TpBf5H+zgDVG1Bkh/oq8HlqwzmgKB7kH95yhTygpF4F3UP6mZdcrqXQkHjkoN8p/G8Co+3TzXJ639sBzdLlpbcc+M2JNaxRC8tQWkflicrwNVGgECs9eu+t9Xog0dk0azeGq/1+4854zeLo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=fLnW/QvT; arc=none smtp.client-ip=216.71.154.45
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F3BD83358C6
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Jun 2026 07:28:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.208.52
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1781854126; cv=pass; b=lNZA0Va63+6P0BdNdm1eTBbwU0CQA1txIwf7BciNVrFo8JPHwTvp5VE9YGC9yBs9SrPk+O+XDqZv/x+8OujLDyBktjR1EzyWdFxR5t+5okUpSevwjRgDUTr47XmaZFJY+2e+zt4VqVcQ5nkXc2DM5lAECvnd7hwnaFWXvMNdurI=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1781854126; c=relaxed/simple;
+	bh=PLjuf5U1Ldp+lKMspivltGTyqfvutQwDbWwFfF6CvPI=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=FBeLyryBmqRviRnju4nkmhg9HpOdKw02F4Ra+gdXlyXxaHYJcZfeuIzwX19e4htO2wEh/+lIuFf/XMxOtDtHE2eEBOIhH4Jd5pxtahqz6Rgh/A2tb2qUpR+PYwLk6jA3LibGolC0f2M1hiTHZlGGjQnZUwf6stnupN3F4i4l0FA=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=EKTQcXfm; arc=pass smtp.client-ip=209.85.208.52
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="fLnW/QvT"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1781850769; x=1813386769;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=5hA9VIHH1p6nZ/l+U4nqisp/1YNKk7hEwkWTzyzdPAw=;
-  b=fLnW/QvTlHMkSIktS1gq7HQitXJE4HEA0+Ur+j6UlBQSMKLRaImaoLkQ
-   /vNs0IgRcSSozWqyicMWY0C+bw7jvDPcrCS4y1ucXBk6W4mXlX/KOwxOK
-   +4CmUE8bFFmuwr8Iw+eGBUAJjcbldgb3urUhXH43K5faQ0CBhN/BB6HX8
-   QWzmOfC3EDMx5lAUOcAyQqbaDm/VNBxKBcpnSecMDr1L26u2Q0b9bOTtz
-   QvFrogSwZNGy231MytGkrkW92D0oc/ylCR7FfiURzviRuFiRFLFtDVpJ+
-   nvATK5zMRy7TuOmyh8o2hIfchjQkdtO/Pfm4EbAO8yOXYltsL/jweIjKk
-   w==;
-X-CSE-ConnectionGUID: 7S7c75EMS6usdCNUjpn7cQ==
-X-CSE-MsgGUID: XMzxYcO2QHOscLHSyUCjpQ==
-X-IronPort-AV: E=Sophos;i="6.24,213,1774281600"; 
-   d="scan'208";a="147944383"
-Received: from unknown (HELO uls-op-esad1-o.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 19 Jun 2026 14:32:48 +0800
-X-CSE-ConnectionGUID: piMvPXsWTESuvVvbEwSfVg==
-X-CSE-MsgGUID: qt/ZTBWyQJK6T1ecfOSxww==
-IronPort-SDR: 6a34e267_67cuXIPTlTh3qDvo0TarogumDoHGqEu9FVIE69g/MJVVXSc
- OtlY70hBj+RZCfiSFQqRj6ury/UHFjI0pcilNJg==
-Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
-  by uls-op-esad1-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Jun 2026 23:32:06 -0700
-X-CSE-ConnectionGUID: XsvGybuxQFm3WJotafFodw==
-X-CSE-MsgGUID: rNIFli3MRXCpmv0gir3RWA==
-WDCIronportException: Internal
-Received: from wdap-62juwqezoj.ad.shared (HELO neo.fritz.box) ([10.224.19.3])
-  by uls-op-esai1-o.wdc.com with ESMTP; 18 Jun 2026 23:32:06 -0700
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	Damien Le Moal <damien.lemoal@wdc.com>
-Subject: [PATCH v3] btrfs: zoned: don't force read-only on transient -EAGAIN from reloc merge
-Date: Fri, 19 Jun 2026 08:32:03 +0200
-Message-ID: <20260619063203.448055-1-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="EKTQcXfm"
+Received: by mail-ed1-f52.google.com with SMTP id 4fb4d7f45d1cf-693c69b97e7so2886954a12.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Jun 2026 00:28:44 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1781854123; cv=none;
+        d=google.com; s=arc-20240605;
+        b=QlWLRFf7VDiV75Zp3wRLPe/N7sW79w9alGC9vB+SOtvBSZ4vlbx42iFpDmPRhy4KCg
+         zhVUH8rsKVjh+NFxjx/spwxmvN9hr5mzgBCoChm0PqvxOJ6Dvxygo/HclmFOdGhdBEaW
+         P1viiKaoiq70ZY2tUFa80zSY61XxX+vKvhE40Omdn66KhQ9TjvqOuMPuQX0AROmJa+9C
+         hbJpX9PWFZ4yfUaRfL1fZaSp4oyz0c1BpWmzYdEi+eS5JLvaVcn9L+zJpVCv5x/J5Nz/
+         +oyALgENiKU2yBw6XIjrXSAMr7eVdvZ6yrwZbql+r6XPNgpZKXE4dmxCUfurOxwalSW6
+         U/pg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=cXsAttpCRAfo1jUwXpOflkS7AbE4OJcRHMhxuP67MIc=;
+        fh=p6HzpoIWg0MuHfQrPWuH/1YI48b09T0CKg4s6/N0NRI=;
+        b=DFPauJzn6iyP7Mlo2tAp30W/Midw5C8FbGpYaK39AozJejkD7TtoAvQUsx1d/qh5Va
+         c6jsFW8nIm9zpmCMAMUJc+Bsbp6S03p10Dzs5dyJcMN1z3sccIU9jvkxiWFSlHFm/a9V
+         NO7bmNehq8hG/pyQ29duzqNORO33V68T2LkFEEPKrRC9VQb95vQGDaidrUrjnq7Mu1B0
+         TFaZE0tOFtG3pPhprBxAS0bSc8EF29uHu7xUdPPcQHiupor8xkuQJLPQVE5wQU01F8RZ
+         b9+8RxE9+fCjL8SAAhAV0lobEIhB7goxsop1okUk5VX/lHXPZIDDl1ydyJTu6qvRp+zj
+         TloQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1781854123; x=1782458923; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=cXsAttpCRAfo1jUwXpOflkS7AbE4OJcRHMhxuP67MIc=;
+        b=EKTQcXfmTpSi/O7oXABloqzK4/JL++I7lANtSI92FSwbPSaHSyI+Ly8uLgGGwc1czJ
+         YtYQI1UH6Uizdt0GwLZqdw2hO65NG7CfVB0eP71OayhIh1bgU1DaOg15/9a9kMa2zgBW
+         zdQNfNRTcXpnOjFC0pWD2Qy8AAunFSt5GVlRmax9ecbpzBv06uE4YFJ4+8celdU/Mj1B
+         MGNL1NDGi6M4Os0QZhfGMRwpocG1MmdFdOgNugrBvNpnHeADOFto20dQ5EA6cQgJtC5/
+         S6OL7JKPrJ0cmvFh1esu4XnUeP+wn0wTEaOxYUfcyAwVCO0NjXfBZnXTUOLQKFc0fC2I
+         AXOw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1781854123; x=1782458923;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=cXsAttpCRAfo1jUwXpOflkS7AbE4OJcRHMhxuP67MIc=;
+        b=I4Y+PLkW66cch7qugs2Znto9PqnDADXrtr6NHCt5saNHiCSrMBwaJI4RZv1qjXE9X6
+         aMh+UgKGfiwcbYKbOajXBMCHgHY3o0BGqjFD90+Z/JOyrToqwOTKrVDapsuAD5jyGlNX
+         nOVHfPGP5drcpwQv6wIkF/3RqQuS88spWoFu012NZj13tBR2ZGV3BG/Zd59XGT01joFf
+         gZrdGsaFPdbiFrAoV/6ie75qHNzrJgn4h7qLpzGRpSYH900o7h4um6Q/Oq8H8IkDK0aF
+         c2ocZ9H1oy7UnNmO16blH3w+UuU2+Ou5XeMq1ZE2tTpe7zGIOVnBKbg0cQJv88hbYN7x
+         zaPw==
+X-Forwarded-Encrypted: i=1; AFNElJ/gMmhvHv3302N96jycPXlFV6gc7U3w6j251G8Jyl9w0WBN54WYVqkDP3gjgpwYTOt1OFUmUjUpTNlXvQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxHPtnIderybLGBj8yCVnqJL477xCtxwaUz00iloeCVaRLkWBsB
+	yqDCVyhPobH+IlQnLnniWaPlc63t0V3s1iQYmz3xwDoURgMF+MDqjCQPvpknNGw+h5qe5Lqm9g2
+	xxCYDj6O+L8NzzosbInTfrlnMOCDpdNA=
+X-Gm-Gg: AfdE7ckt3+CmrVyFt6M5WNTffAdnpdwYrDJV4iM4J4Hy6xrPwViUEwK5dbAJ5MDKCm2
+	jUy2+bh0c0X1m9o5aMWZov2FgMphh8S+9hpNBJ78iC2c/ngdRyhKp++/4o0MsX4MKKWmbn0avAl
+	m2ttVzRRqUUC9w5gjTu/s7oBFeevqZMp5xtnz7QuzB4pFKADMFQGL2V3ZRPun9lpBMsyxz9illG
+	+qRRgO7PCyRqzG2bOhDtTfoBfCyNfnXASb7mYnr5G9N1YYgG6brpFCYP5id9go1dcV3ktC+ZEU9
+	K5zpnwhnla1Fk1WzetQmfNfAQISshLJ3F0T09U2zFA==
+X-Received: by 2002:a05:6402:5107:b0:695:572a:7ab5 with SMTP id
+ 4fb4d7f45d1cf-69711e00675mr1216968a12.19.1781854123208; Fri, 19 Jun 2026
+ 00:28:43 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20260520123722.405752-1-aalbersh@kernel.org> <20260520123722.405752-4-aalbersh@kernel.org>
+ <20260520190719.GB3424023@google.com>
+In-Reply-To: <20260520190719.GB3424023@google.com>
+From: Amir Goldstein <amir73il@gmail.com>
+Date: Fri, 19 Jun 2026 09:28:31 +0200
+X-Gm-Features: AVVi8CcyPPKNjODd0CeG8qbXXsZeOsRanxA9PmKFMYeTLACw7w0uBX2gqOCDc0w
+Message-ID: <CAOQ4uxh_hfiSwMw8ABhhrz7GguZWjHEiBmvb3eq16Wfqw0+ZrQ@mail.gmail.com>
+Subject: Re: [PATCH v10 03/22] ovl: use core fsverity ensure info interface
+To: Eric Biggers <ebiggers@kernel.org>
+Cc: Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org, 
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, hch@lst.de, 
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
+	linux-btrfs@vger.kernel.org, linux-unionfs@vger.kernel.org, djwong@kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On a zoned FS, btrfs_delayed_refs_rsv_refill() returns -EAGAIN whenever
-the over-committed metadata plus the zone_unusable bytes exceeds the
-usable size in a metadata block-group to avoid heavy over-commit of
-metadata and early ENOSPC in one transaction.
+On Wed, May 20, 2026 at 9:07=E2=80=AFPM Eric Biggers <ebiggers@kernel.org> =
+wrote:
+>
+> On Wed, May 20, 2026 at 02:37:01PM +0200, Andrey Albershteyn wrote:
+> > fsverity now exposes fsverity_ensure_verity_info() which could be used
+> > instead of opening file to ensure that fsverity info is loaded and
+> > attached to inode.
+> >
+> > Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+> > Acked-by: Amir Goldstein <amir73il@gmail.com>
+> > ---
+> >  fs/overlayfs/util.c | 14 +++-----------
+> >  1 file changed, 3 insertions(+), 11 deletions(-)
+>
+> Reviewed-by: Eric Biggers <ebiggers@kernel.org>
+>
+> I'm still confused by the new implementation of fsverity_active() that
+> got introduced by "fsverity: use a hashtable to find the fsverity_info",
+> though.  I should have caught this during review of that commit.  For
+> one its comment is outdated, but also the memory barrier seems to be
+> specific to the fsverity_get_info() caller and probably should be moved
+> to there.  Anyway, that's not directly related to this patch.
 
-If this happens while doing reclaim, the transaction is getting
-aborted.
+Eric, Andrey,
 
-Treat -EAGAIN as a soft, retryable condition in case of block-group
-reclaim.
+Did you see the Sashiko review for this patch and others in this series?
 
-Reported-by: Damien Le Moal <damien.lemoal@wdc.com>
-Fixes: 7bcb04de982f ("btrfs: zoned: cap delayed refs metadata reservation to avoid overcommit")
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
-Changes to v2:
-- Drop the reloc trees on -EAGAIN otherwise create_reloc_roots() will
-  fail with -EEXIST
+https://sashiko.dev/#/patchset/20260520123722.405752-1-aalbersh%40kernel.or=
+g
 
- fs/btrfs/block-group.c | 11 ++++++++-
- fs/btrfs/relocation.c  | 52 ++++++++++++++++++++++++++++++++++++++----
- 2 files changed, 58 insertions(+), 5 deletions(-)
+It annotated some review comments as high and critical.
+For this patch it is about interaction with fscrypt.
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index ab76a5173272..5fc0c20d8e51 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -2047,6 +2047,13 @@ static int btrfs_reclaim_block_group(struct btrfs_block_group *bg, int *reclaime
- 
- 	trace_btrfs_reclaim_block_group(bg);
- 	ret = btrfs_relocate_chunk(fs_info, bg->start, false);
-+	if (ret == -EAGAIN) {
-+		ASSERT(btrfs_is_zoned(fs_info));
-+		btrfs_dec_block_group_ro(bg);
-+		btrfs_debug(fs_info, "deferring reclaim of chunk %llu",
-+			    bg->start);
-+		return ret;
-+	}
- 	if (ret) {
- 		btrfs_dec_block_group_ro(bg);
- 		btrfs_err(fs_info, "error relocating chunk %llu",
-@@ -2113,7 +2120,9 @@ void btrfs_reclaim_block_groups(struct btrfs_fs_info *fs_info, unsigned int limi
- 		spin_unlock(&fs_info->unused_bgs_lock);
- 		ret = btrfs_reclaim_block_group(bg, &reclaimed);
- 
--		if (ret && !READ_ONCE(space_info->periodic_reclaim))
-+		if (ret == -EAGAIN)
-+			btrfs_link_bg_list(bg, &retry_list);
-+		else if (ret && !READ_ONCE(space_info->periodic_reclaim))
- 			btrfs_link_bg_list(bg, &retry_list);
- 		btrfs_put_block_group(bg);
- 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index e1dd9939f4f1..8cac49fa6f6f 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1532,6 +1532,36 @@ static void clear_reloc_root(struct btrfs_root *root)
- 	clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
- }
- 
-+/* Drop the reloc trees of a relocation that is being deferred and retried */
-+static void abort_reloc_roots(struct reloc_control *rc, struct list_head *list)
-+{
-+	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
-+	struct btrfs_root *reloc_root, *tmp;
-+
-+	list_for_each_entry_safe(reloc_root, tmp, list, root_list) {
-+		struct btrfs_root *root;
-+
-+		root = btrfs_get_fs_root(fs_info, reloc_root->root_key.offset,
-+					 false);
-+		if (!IS_ERR(root)) {
-+			if (root->reloc_root == reloc_root) {
-+				clear_reloc_root(root);
-+				btrfs_put_root(reloc_root);
-+			}
-+			btrfs_put_root(root);
-+		}
-+
-+		btrfs_set_root_refs(&reloc_root->root_item, 0);
-+		memset(&reloc_root->root_item.drop_progress, 0,
-+		       sizeof(struct btrfs_disk_key));
-+		btrfs_set_root_drop_level(&reloc_root->root_item, 0);
-+
-+		list_del_init(&reloc_root->root_list);
-+		list_add_tail(&reloc_root->reloc_dirty_list,
-+				&rc->dirty_subvol_roots);
-+	}
-+}
-+
- static int clean_dirty_subvols(struct reloc_control *rc)
- {
- 	struct btrfs_root *root;
-@@ -1871,8 +1901,9 @@ int prepare_to_merge(struct reloc_control *rc, int err)
- 	return err;
- }
- 
-+
- static noinline_for_stack
--void merge_reloc_roots(struct reloc_control *rc)
-+int merge_reloc_roots(struct reloc_control *rc)
- {
- 	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
- 	struct btrfs_root *root;
-@@ -1970,7 +2001,15 @@ void merge_reloc_roots(struct reloc_control *rc)
- 		goto again;
- 	}
- out:
--	if (ret) {
-+	if (ret == -EAGAIN) {
-+		abort_reloc_roots(rc, &reloc_roots);
-+
-+		/* new reloc root may be added */
-+		mutex_lock(&fs_info->reloc_mutex);
-+		list_splice_init(&rc->reloc_roots, &reloc_roots);
-+		mutex_unlock(&fs_info->reloc_mutex);
-+		abort_reloc_roots(rc, &reloc_roots);
-+	} else if (ret) {
- 		btrfs_handle_fs_error(fs_info, ret, NULL);
- 		free_reloc_roots(&reloc_roots);
- 
-@@ -1996,6 +2035,7 @@ void merge_reloc_roots(struct reloc_control *rc)
- 	 *
- 	 * The remaining nodes will be cleaned up by put_reloc_control().
- 	 */
-+	return ret;
- }
- 
- static void free_block_list(struct rb_root *blocks)
-@@ -3725,7 +3765,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 	 */
- 	err = prepare_to_merge(rc, err);
- 
--	merge_reloc_roots(rc);
-+	ret = merge_reloc_roots(rc);
-+	if (ret && !err)
-+		err = ret;
- 
- 	rc->merge_reloc_tree = false;
- 	unset_reloc_control(rc);
-@@ -5694,7 +5736,9 @@ int btrfs_recover_relocation(struct btrfs_fs_info *fs_info)
- 	if (ret)
- 		goto out_unset;
- 
--	merge_reloc_roots(rc);
-+	ret = merge_reloc_roots(rc);
-+	if (ret)
-+		goto out_unset;
- 
- 	unset_reloc_control(rc);
- 
--- 
-2.54.0
+Please take a look and say if this is concerning or false positive.
 
+Thanks,
+Amir.

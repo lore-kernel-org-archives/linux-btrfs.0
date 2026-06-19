@@ -1,57 +1,57 @@
 Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 46EB2360ECF
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 331AA360EC3
 	for <linux-btrfs@vger.kernel.org>; Fri, 19 Jun 2026 09:02:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781859750; cv=none; b=U1qh0bhtnUsdBaIhDhFj/2qsdSGg4IO5q6IYuZldZda7KlfdPNfC+d2bf2M5msp3/WeXtmc+6jYh9NHkFNRFh5SZsGJle8X9uiVg4ReOoCuWWyTCgmieaBtXvifBCSsgWbzVJ6Q3knLg8NmQ66U/291dpGlVm3zKXT2jLZCvPIA=
+	t=1781859750; cv=none; b=g5li3wJbo71X/SwbW+glDmlYlz7Rly3m443Q8MujiflCYf7tDN2SF8p52hemwvoeN+GLRK6GsR6CrAYPbhOgBAajKxBRLfNt4KeyAbWKmtnZGIYMjlslLyWe5xpEmPrTpkHiy12Q6944WbXH3OIgZOMyoeu8ibGjIZ5Crf7GkY0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1781859750; c=relaxed/simple;
-	bh=5dX8pGhTqwvHkLDoBz/1MUmAbJl8wMMT9gdmoUADNuQ=;
+	bh=li18msiuwo6d5haWUStOoEZUp2DcPg5MK246aPNG3Os=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ebO+sHlH68Imcw5XcjkO0sMpNZU3FQotdec+sJLS+Jl5D6Mt0cZbq29DR9bAB2OjMx2QGKNKK4IxW1lxBOUnqiX4PLljufgHpTn6MHB6X4YLt1boKahrlyJ1MF/OUM/SeQtzjYVeDr4VMV9bmnCJhwjkbtZtISTHeYHQdZo6EK8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=GZLNlC2L; arc=none smtp.client-ip=216.71.154.45
+	 MIME-Version; b=telmP20IlKaUG5z00/rl4IFWA+mYPJk/8HDy64Ed0I1PTqCUDlnRF/4OAW/Ee9/HG0ji5HNKBcu2/y/Y2lpSsq4rAwrdVAgFwCs4ziLV4PxtjwMm8aDlxUzIKb0oPtUWRJic0W9mEVGHYwIklDeAwgihmLWK20VnPZ+knr81yP8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=pedIvM0a; arc=none smtp.client-ip=216.71.154.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="GZLNlC2L"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="pedIvM0a"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
   t=1781859750; x=1813395750;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=5dX8pGhTqwvHkLDoBz/1MUmAbJl8wMMT9gdmoUADNuQ=;
-  b=GZLNlC2Lz7O0zW/DmjkbjoqWo4kcqAyajjqKs1bc5Rire88E+34T1Oin
-   wFfmVtYHCq2UydoYZ8sYBEvsc04Kw9sDG7yj2fYOufx9Gr6IX5YdYwj0o
-   4/BwgWVbIvTW8G1AkTMzgAeO9v60ERBGns4Z2pXQTkzYC7MnU7o4kpk+z
-   /aeqPLEKSNWjUJzaZ3IhT5rGXU5woyYXJqn7fkWptM5KXPYThfmv+9ZDL
-   JOXFzUhA+yK7L5gz3pixDqphlhLroLWUYv3BaADvgCx4Qv5KcPRwdb4b6
-   vtNh88OMHpZ/ZRBi1BfJVe3chMeJiwNfA60s0AxmATVvMZ+dayBnhmHhC
-   A==;
-X-CSE-ConnectionGUID: gUPilvcgT62zEkyS4/jmfA==
-X-CSE-MsgGUID: ubenfqZhRNuJNLw2/pq6rg==
+  bh=li18msiuwo6d5haWUStOoEZUp2DcPg5MK246aPNG3Os=;
+  b=pedIvM0a+p/pT/Ar/4VX15ZBHLm1QJtzDh3gONMxe8Ze0ldPA81I18aB
+   zNRT4f3wtQO+CuKwUyjbianClzCZLKlHOfwxoaruPHN9Pjz044qUnZh2m
+   RYyXp7aDJsJKcMb2NzmDory2kgDkCHJLOiS22yIBzKD3XljIbStDYfE47
+   IiiyHSTdRYCTPnu5qRawsg18vmJPo8xFDcMXHhwaLKHZH1CiFyz5SlE5V
+   2TYjufzVdeyUhdClHbugo06gS8s8RIOx/Hre/5a5OcNJulXt79U4kbwBx
+   8hS3fVEkQo2/PDuJdCIEHT4OtWe1L6Dp53qqAERe28zeiwj/B6IusLLsC
+   w==;
+X-CSE-ConnectionGUID: W7+ugvVnQCKBRO7rcfxc+g==
+X-CSE-MsgGUID: kf1mB5luTbSFwcm3R38aGg==
 X-IronPort-AV: E=Sophos;i="6.24,213,1774281600"; 
-   d="scan'208";a="147951271"
+   d="scan'208";a="147951272"
 Received: from unknown (HELO uls-op-esad1-o.wdc.com) ([199.255.45.14])
   by ob1.hgst.iphmx.com with ESMTP; 19 Jun 2026 17:02:27 +0800
-X-CSE-ConnectionGUID: MxGUjYPASPGceMwF74WMIQ==
-X-CSE-MsgGUID: 087lio70T4GwaSnIWE4glw==
-IronPort-SDR: 6a35059a_3CN2VxLBXvqG8iwr8YUqmW6sFJ+cpZRWwQIXtkeSxpE81X6
- osxneIT0Ev5mgBLPwTId0gb1RnRuJdqs3AUSOlQ==
+X-CSE-ConnectionGUID: CIfc7CaTR46n8UqusUrNeA==
+X-CSE-MsgGUID: 9dindfkURRiHvLAflVpKiw==
+IronPort-SDR: 6a35059b_qSCmrPe4lfhZfSkmJucztcjzT5drM+ZoiWDnCZEbcb+Bwfk
+ 5hNJEGN6UEhs7TT4vZoo3X7s7ny6eTk1KLZyFkQ==
 Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
-  by uls-op-esad1-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 19 Jun 2026 02:02:18 -0700
-X-CSE-ConnectionGUID: bvt3x9mbQ6eXaf+VJArC7g==
-X-CSE-MsgGUID: r9rJFVV6RSmz7PKdtXHO0g==
+  by uls-op-esad1-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 19 Jun 2026 02:02:19 -0700
+X-CSE-ConnectionGUID: IOBbOQs4S5O3RJ0TpGjwiQ==
+X-CSE-MsgGUID: BMOHrToxTwqsOekwF8z6mA==
 WDCIronportException: Internal
 Received: from wdap-62juwqezoj.ad.shared (HELO neo.fritz.box) ([10.224.19.3])
-  by uls-op-esai1-o.wdc.com with ESMTP; 19 Jun 2026 02:02:17 -0700
+  by uls-op-esai1-o.wdc.com with ESMTP; 19 Jun 2026 02:02:19 -0700
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [RFC 03/15] btrfs: introduce BTRFS_RAID_STRIPE_PARITY_KEY
-Date: Fri, 19 Jun 2026 11:01:58 +0200
-Message-ID: <20260619090211.497100-4-johannes.thumshirn@wdc.com>
+Subject: [RFC 04/15] btrfs: zoned: align max_zone_append_size to the stripe length for RST
+Date: Fri, 19 Jun 2026 11:01:59 +0200
+Message-ID: <20260619090211.497100-5-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.54.0
 In-Reply-To: <20260619090211.497100-1-johannes.thumshirn@wdc.com>
 References: <20260619090211.497100-1-johannes.thumshirn@wdc.com>
@@ -63,96 +63,48 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Introduce BTRFS_RAID_STRIPE_PARITY_KEY. This key will be used to hold
-parity information for a specific (logical, length) tuple inside the RAID
-stripe-tree.
+On a zoned filesystem fs_info->max_zone_append_size is the minimum of the
+device's zone append limit, max_sectors and max_segments * PAGE_SIZE,
+rounded down to the sectorsize, and it caps fs_info->max_extent_size and
+thus the size of data extents and writeback bios.
 
-The parity information will be encoded in 'struct btrfs_stripe_extent'
-containing one or more 'struct btrfs_raid_stride'. As this is the same
-on-disk format that DATA stripes use, reuse 'print_raid_stripe_key()' to
-pretty print the item.
+For the raid-stripe-tree RAID56 maps every data and parity stripe to a
+BTRFS_STRIPE_LEN window and records its physical location. If
+max_zone_append_size is not a multiple of BTRFS_STRIPE_LEN extents and
+bios end mid-stripe, so consecutive bios start at a drifting intra-stripe
+offset. That fragments the per-stripe writes, splits stripes across zone
+appends and corrupts the stripe-tree mapping, surfacing later as checksum
+failures or -EIO for files larger than a few megabytes.
+
+Align max_zone_append_size down to BTRFS_STRIPE_LEN when the
+raid-stripe-tree feature is enabled, so a stripe is never split across
+appends, and guard against a zero result should the device's append limit
+be smaller than a stripe.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/print-tree.c           |  2 ++
- fs/btrfs/raid-stripe-tree.c     | 10 ++++++++--
- include/uapi/linux/btrfs_tree.h |  1 +
- 3 files changed, 11 insertions(+), 2 deletions(-)
+ fs/btrfs/zoned.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index 87e60a2d4bd8..2698b9184281 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -416,6 +416,7 @@ static void key_type_string(const struct btrfs_key *key, char *buf, int buf_size
- 		[BTRFS_UUID_KEY_SUBVOL]			= "UUID_KEY_SUBVOL",
- 		[BTRFS_UUID_KEY_RECEIVED_SUBVOL]	= "UUID_KEY_RECEIVED_SUBVOL",
- 		[BTRFS_RAID_STRIPE_KEY]			= "RAID_STRIPE",
-+		[BTRFS_RAID_STRIPE_PARITY_KEY]		= "RAID_PARITY",
- 		[BTRFS_IDENTITY_REMAP_KEY]		= "IDENTITY_REMAP",
- 		[BTRFS_REMAP_KEY]			= "REMAP",
- 		[BTRFS_REMAP_BACKREF_KEY]		= "REMAP_BACKREF",
-@@ -571,6 +572,7 @@ void btrfs_print_leaf(const struct extent_buffer *l)
- 					btrfs_item_size(l, i));
- 			break;
- 		case BTRFS_RAID_STRIPE_KEY:
-+		case BTRFS_RAID_STRIPE_PARITY_KEY:
- 			print_raid_stripe_key(l, btrfs_item_size(l, i),
- 				btrfs_item_ptr(l, i, struct btrfs_stripe_extent));
- 			break;
-diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index 1a6ebd10849a..48436b056191 100644
---- a/fs/btrfs/raid-stripe-tree.c
-+++ b/fs/btrfs/raid-stripe-tree.c
-@@ -413,6 +413,7 @@ int btrfs_get_raid_extent_offset(struct btrfs_fs_info *fs_info,
- 	BTRFS_PATH_AUTO_FREE(path);
- 	struct extent_buffer *leaf;
- 	const u64 end = logical + *length;
-+	int type = BTRFS_RAID_STRIPE_KEY;
- 	int num_stripes;
- 	u64 offset;
- 	u64 found_logical;
-@@ -422,7 +423,7 @@ int btrfs_get_raid_extent_offset(struct btrfs_fs_info *fs_info,
- 	int ret;
- 
- 	stripe_key.objectid = logical;
--	stripe_key.type = BTRFS_RAID_STRIPE_KEY;
-+	stripe_key.type = type;
- 	stripe_key.offset = 0;
- 
- 	path = btrfs_alloc_path();
-@@ -440,6 +441,10 @@ int btrfs_get_raid_extent_offset(struct btrfs_fs_info *fs_info,
- 	if (ret) {
- 		if (path->slots[0] != 0)
- 			path->slots[0]--;
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 97f06dd01693..ab386b4afa72 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -781,6 +781,14 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
+ 		     (u64)lim->max_sectors << SECTOR_SHIFT,
+ 		     (u64)lim->max_segments << PAGE_SHIFT),
+ 		fs_info->sectorsize);
 +
-+		btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
-+		if (found_key.type != type && path->slots[0] > 0)
-+			path->slots[0]--;
- 	}
++	if (btrfs_fs_incompat(fs_info, RAID_STRIPE_TREE)) {
++		u64 aligned = ALIGN_DOWN(fs_info->max_zone_append_size,
++					 BTRFS_STRIPE_LEN);
++
++		if (aligned)
++			fs_info->max_zone_append_size = aligned;
++	}
+ 	fs_info->fs_devices->chunk_alloc_policy = BTRFS_CHUNK_ALLOC_ZONED;
  
- 	while (1) {
-@@ -456,7 +461,8 @@ int btrfs_get_raid_extent_offset(struct btrfs_fs_info *fs_info,
- 			goto out;
- 		}
- 
--		if (in_range(logical, found_logical, found_length))
-+		if (in_range(logical, found_logical, found_length) &&
-+		    found_key.type == type)
- 			break;
- 
- 		ret = btrfs_next_item(stripe_root, path);
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index cc3b9f7dccaf..7b2f5f4cf78c 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -284,6 +284,7 @@
- #define BTRFS_CHUNK_ITEM_KEY	228
- 
- #define BTRFS_RAID_STRIPE_KEY	230
-+#define BTRFS_RAID_STRIPE_PARITY_KEY	231
- 
- #define BTRFS_IDENTITY_REMAP_KEY 	234
- #define BTRFS_REMAP_KEY		 	235
+ 	fs_info->max_extent_size = min_not_zero(fs_info->max_extent_size,
 -- 
 2.54.0
 

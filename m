@@ -1,347 +1,188 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-wr1-f43.google.com (mail-wr1-f43.google.com [209.85.221.43])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2A27C33D6F8
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 21:26:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DE60E10F0
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Jun 2026 00:05:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781817982; cv=none; b=kkt7zgF3NP0mHUhjsO5e0nBDTJv1MtFf8f7/VnTBTYgBziyW7afiDvnvu+0dB2ryhjKCNq03IjXzPMZV7ko18nzZRCmNJJeX+NWbvFfnHzWiEIoUJI7x1XFgUWLnb697RNeUf0VR2zb8Nx4Kdrl3G+kt65+BMElIQpbNEqFlAZE=
+	t=1781827523; cv=none; b=nE51vL5dFTajr6O1aUD8WoH/pgO45VgeUuf2ZmNMfNkT24iBngkexWohDrwAr840yQwB8AXRo2Rf1kxwdw4j6gZHSFhlHesmE8dtOFYS2NsTXRdvDSQEWPfeFE5ZeWOiZRUi8qdEOU4Mku+2JTRTuQM1vHDkt2laQX/4ta5iBgs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781817982; c=relaxed/simple;
-	bh=9D+SRwOyVh2l68uCLqeyKpG8awEKc5VSZ67/3U6UcDo=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=iAr8eL4bcDgr9/qq5hEItF7jNJ1CwvYCIsrrFctm9cAQ5VDjK8O5oAwQT3yiTK6dDz0lSu4kD/IlPAYd9IXfjIn7R3JXP66je5w6EoN/74IzeNzpEiRcx9HBtJt8yyg5UE0FDiVDhIs4ql4uzdrFqLH2Bvnzd5nfxzMLcaOhCqc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Cg6gRL5k; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Cg6gRL5k; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1781827523; c=relaxed/simple;
+	bh=clRL7WYo7zRNHTgU8m5+WnXzniqpLY1ZMVmSuDoIaq0=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=cUGdbl4aZiGXC6W/hotJ0PmjXVHzZY7gH9somRxTBEdyTOypQF0Qzr6qXHVsoY3BJItyhgtKmb1Ny4LjarsjvnTqSDP6mQDHdqixHXqUsBkdtNH+jg+rTx9ZTdYdU73ptpfEuc6IyDFdETXxtLNFqdZ/m0wbkI7pmQObNMvsTus=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=YK1EjN08; arc=none smtp.client-ip=209.85.221.43
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Cg6gRL5k";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Cg6gRL5k"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 1A55975E84;
-	Thu, 18 Jun 2026 21:26:17 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1781817977; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=xX7nir7uloES2uZl5OcgLFm5vbGB1wvsKkepP90F+ro=;
-	b=Cg6gRL5krSPq7E554kZL2cmUnr6unQVRwAecrH4tD+HFd8MqhDmO20dqMO6F01eRcj2b1z
-	fJ0iXO+4t2JeNWcNfveMmcY9yJNnX4wGaBjqFedUxt8GwKEK6UpZam+Ksl8VzGz+wF/Miu
-	sgRp58ntmHIbkplAs6sjv3dFK4s+8gg=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=Cg6gRL5k
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1781817977; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=xX7nir7uloES2uZl5OcgLFm5vbGB1wvsKkepP90F+ro=;
-	b=Cg6gRL5krSPq7E554kZL2cmUnr6unQVRwAecrH4tD+HFd8MqhDmO20dqMO6F01eRcj2b1z
-	fJ0iXO+4t2JeNWcNfveMmcY9yJNnX4wGaBjqFedUxt8GwKEK6UpZam+Ksl8VzGz+wF/Miu
-	sgRp58ntmHIbkplAs6sjv3dFK4s+8gg=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B7576779A8;
-	Thu, 18 Jun 2026 21:26:15 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id QY3BF3diNGrtLgAAD6G6ig
-	(envelope-from <wqu@suse.com>); Thu, 18 Jun 2026 21:26:15 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] fstests: add a test case for btrfs get_subvol_info ioctl
-Date: Fri, 19 Jun 2026 06:55:53 +0930
-Message-ID: <20260618212553.9564-1-wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="YK1EjN08"
+Received: by mail-wr1-f43.google.com with SMTP id ffacd0b85a97d-462bb734793so1156758f8f.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2026 17:05:21 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1781827520; x=1782432320; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:to:subject:user-agent:mime-version:date:message-id:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=CJMQehqUUvlPelDGLpUQuY6PSNumumFpzaSKtTf4cks=;
+        b=YK1EjN087kTGh21hIW+2mc2re1zgYRuy4KF/v6rMiTCOmaFxXDzrYpOHyez2ACB7PZ
+         qVXZLt6WUKsXwDFuj8RxoGmPN2u6PEonQNwcgTWKkg8Qa6YpMFK+OM59TaI+LQGYHKJ4
+         TmtP7Bq5sKqoPFRGTuTHG3gpP1/CqVxAWpza34KdtBIy4A3Derjdj0TnD1RZu+qAu6C8
+         tey5siCr3DQcxf/3lwlKCnJuNYHAFiXcv08sy0xvPYTB59Lq7pcqtVw7LAuNwLZ/1y1C
+         A/4YnFeq/FxXokzdLTv2Ez0Eve/6EmInWrzNlNuXBdvMXEMvYGMCAn3SzhlMEx/ctGMD
+         0U7A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1781827520; x=1782432320;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:to:subject:user-agent:mime-version:date:message-id
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=CJMQehqUUvlPelDGLpUQuY6PSNumumFpzaSKtTf4cks=;
+        b=foo1sg80AXhkIVp+Z8p8y8mnZZNIGG6YPHYgkIXvpAoIyCnBi1BwnNggwED6AjO4//
+         LaTeG6cLAOYn2Zokh4nPYvCXVTUPbeovvxZ7gmgAYQp06iKHVoysg30ir0+m8hC9qwhT
+         0pQ4q5dmr7iPwHXJG/Z8L8Hveg8Eu4klN74gW4PBpiYyjzZn5emUAoGvFtf4RZ4XbRee
+         fFVlEqIJOqd4gvC2yi2AW46IPWV+7XCAscHFtGgW+DBnKeGrb+kvfLc9VXi7ytkFUJDl
+         7sTBqAu8TWriLxofn+bshEuVklaFPKIyUnZxKMF4D1VYkHDrHkFjJOuzON0oB7pe2Xz2
+         Hinw==
+X-Forwarded-Encrypted: i=1; AFNElJ/V9bI+hKEzBRjNhV/wet5n7oV5xoF0Gze3zFIg3wud3/DBq66EBmqHFJB3Bq7mg/Krx9dKzOD8QCxP1Q==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyEyxLxBu83U99SMebiYL3T6DVlOFoz/IMVA29P09eBBe4VN5ao
+	bt95UlK7egYb7obkyU0MXyVBa1nO0B5DivVhVlAF4PaAT9euDr1NUVBS
+X-Gm-Gg: AfdE7cnsaij3UiM4dqsL9Aui6TBIrIjWOo+K3kGE6PUf0dtyasyvyYy6dQsPT/tad4j
+	jyu0LmlwTh0ilo+h9HeoqgUgR5IEIwUE7eoQI00L+VEp/l/TqBYxM5Go3sQDcn90BNHPJm1Ho1P
+	7rAHAWkvy70fz04oONyt6FQ2Gmf/YJnnqhh32/mfcc9nPgJOIBc0yhrBGfQ0iIgcNJ6p2O0G5x2
+	f/Xj/JqPBA+mXh7dyANX7RbJMcEGJ/afEUAwDHn2MG/HekhZ6WkpyZ5SSvUBqHVfs9xCe9qC+fE
+	Utr+10NAg/eYlNpMYFDgsuO4Rjr6X2W0BRX66X4He6u4W2PEqDUa44cFkAbXp/ttHfHD/uDZPvL
+	l6ijY9uICNLNBH4UVM4IuW41E7Ay0EuFmXPZEl2VXHJlyJgtfxGf9VtXB8PKvma1LVShQBQ4Sac
+	BDDDqTIdDDNM7M9vqS5yQWLxudzvDaXB2fU1DktNidXHxCOUkMHy1PNRzH95WrEytM6pIxYLLcH
+	tAp6zV7hao7DA==
+X-Received: by 2002:a5d:6303:0:b0:460:3a90:b2b6 with SMTP id ffacd0b85a97d-4650005a302mr2084190f8f.11.1781827519847;
+        Thu, 18 Jun 2026 17:05:19 -0700 (PDT)
+Received: from [192.168.10.168] (91-175-163-178.subs.proxad.net. [91.175.163.178])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4650b67a3e8sm2645644f8f.19.2026.06.18.17.05.18
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 18 Jun 2026 17:05:19 -0700 (PDT)
+Message-ID: <cb72893a-34b2-4937-aabe-4d88921c140d@gmail.com>
+Date: Fri, 19 Jun 2026 02:05:17 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: Btrfs ENOSPC / Stuck in RO with "exclusive operation balance
+ paused in progress"
+To: Chris Murphy <lists@colorremedies.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Qu WenRuo <wqu@suse.com>
+References: <068e841a-37fd-4fe5-ba2d-0ab93c55830d@gmail.com>
+ <abd33b32-aadf-4206-81bc-c2c7832e13dd@gmail.com>
+ <43f6ea2b-8b23-49c1-acfe-1d2617f28132@app.fastmail.com>
+ <28d08133-999f-4d43-9cd5-67b856246687@gmail.com>
+ <f519b8d1-f6d0-4975-9301-74571e87436f@gmail.com>
+ <a0df776c-63a3-4ff8-afb5-dc6bce8768c9@gmail.com>
+ <791bf200-b3b8-4811-bdf7-3ceaadb9a4f3@app.fastmail.com>
+ <a1f5967d-604a-4a4f-aa35-a67ce9cfe3a7@gmail.com>
+ <75a19f88-5370-4a1c-9d95-cb66c5123ceb@app.fastmail.com>
+Content-Language: en-US, fr
+From: Alban Browaeys <alban.browaeys@gmail.com>
+In-Reply-To: <75a19f88-5370-4a1c-9d95-cb66c5123ceb@app.fastmail.com>
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 1A55975E84
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	ARC_NA(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[scaleread.sh:url,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,popdir.pl:url,info.name:url,btrfs_crc32c_forged_name.py:url,suse.com:dkim,suse.com:email,suse.com:mid,popattr.py:url];
-	RCPT_COUNT_TWO(0.00)[2];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 
-There is a regression caused by upstream kernel commit 538e5bdbc899
-("btrfs: add 32-bit compat ioctl for BTRFS_IOC_GET_SUBVOL_INFO"), where
-the unprivileged get_subvol_info ioctl is returning incorrect results.
+Have you seen I posted a link to a btrfs debug image in a previous  email in this thread?
 
-Unfortunately that bug is not covered by fstests, and only exposed by
-btrfs-progs libbtrfsutil python tests, which is not a short run.
+"
+partition sdb3_var_metadata-only-debug.img at https://drive.google.com/file/d/1OzEZLaTUNpWsL1ohGKOMW4GiR9oQakdP/view?usp=drive_link done with "btrfs-image -c 9 -t 4 /dev/sdb3 /mnt/4/hermes-var-20260610-enospc-vanilla/sdb3_var_metadata-only-debug.img". 
+"
 
-So add a new test case for such btrfs ioctl:
+I made an image and a btrfs debug image, is there any use for me to keep the broken on disk partition? I believe I cannot expect to be able to recover this on disk partition in a week and thus should delete it and recreate it if I want the pc back?
+And keep the disk partition image for debugging.
 
-- Introduce a helper program, btrfs_ioctl
-  Which will call the dedicated ioctl, print all of its structure
-  members.
+Le 15/06/2026 à 22:00, Chris Murphy a écrit :
+> 
+> 
+> On Mon, Jun 15, 2026, at 5:06 AM, Alban Browaeys wrote:
+> 
+>>  # btrfs check --readonly /dev/sdb3
+>>  Opening filesystem to check...
+>>  Checking filesystem on /dev/sdb3
+>>  UUID: 13af326c-631f-482b-9c34-b59b4f100608
+>>  [1/8] checking log skipped (none written)
+>>  [2/8] checking root items
+>>  [3/8] checking extents
+>>  [4/8] checking free space tree
+>>  [5/8] checking fs roots
+>>  [6/8] checking only csums items (without verifying data)
+>>  [7/8] checking root refs
+>>  [8/8] checking quota groups skipped (not enabled on this FS)
+>>  found 54982475776 bytes used, no error found
+>>  total csum bytes: 50964248
+>>  total tree bytes: 2142486528
+>>  total fs tree bytes: 1951760384
+>>  total extent tree bytes: 97910784
+>>  btree space waste bytes: 569359506
+>>  file data blocks allocated: 105614794752
+>>   referenced 100030590976
+> 
+> OK so the file system is consistent. And there's no log tree.
+> 
+> For some reason skip_balance is not able to abort the balance/convert before the file system runs into the problem and goes read-only. Read-only prevents us from doing everything else.
+> 
+> Clearly the file system wants to allocate at least one metadata block group but cannot, there's no unallocated space on the device and no way to resize or add more space.
+> 
+> At the moment it appears to be stuck. So it's a bug somewhere.
+> 
+> 
 
-  For now only get_subvol_info is supported, but it can be easily
-  appended for new ones.
 
-- Mkfs and create a subvolume on btrfs
+> 
+>>  Ok. Though I believe that if btrfs-restore find incomplete zstd frame
+>>  it might be that rsync will not be able to copy everything from the ro
+>>  half converted btrfs partition?
+> 
+> I don't know what the btrfs restore complaint about zstd frames is about. That makes me think there is corrupt data blocks, and the block can't be decompressed by zstd. 
 
-- Use "_btrfs_get_subvolid()" to grab the subvolid
-  That function is utilizing "btrfs subvolume list" to grab the info,
-  which is not utilizing the unprivileged ioctl.
 
-- Use "btrfs_ioctl get_subvol_info" to grab the subvolid
+Could it be half transfered data during the conversion ?
 
-- Compare the two subvolids
+> You could try:
+> 
+> mount -o ro $dev1 /mnt
+> btrfs scrub start -Brd /mnt
 
-This should be enough to detect the regression.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Fix an incorrect bracket for timestamp output
-  It's only a style problem, all the call sites are passing a
-  subvol_info structure directly, so it doesn't cause any problem.
+# mount -o ro /dev/sdb3 /var
+[820430.153273] BTRFS: device label SSDHOME devid 1 transid 44655875 /dev/sdb3 (8:19) scanned by mount (13961)
+[820430.175471] BTRFS info (device sdb3): first mount of filesystem 13af326c-631f-482b-9c34-b59b4f100608
+[820430.185087] BTRFS info (device sdb3): using crc32c checksum algorithm
+[820430.221645] BTRFS info (device sdb3): enabling ssd optimizations
+[820430.228181] BTRFS info (device sdb3): turning on async discard
+[820430.234575] BTRFS info (device sdb3): enabling free space tree
+# btrfs scrub start -Brd /var
+WARNING: cannot create scrub data file, mkdir /v[820447.453110] BTRFS info (device sdb3): scrub: started on devid 1
+ar/lib failed: Read-only file system, status recording disabled
+WARNING: failed to open the progress status socket at /var/lib/btrfs/scrub.progress.13af326c-631f-482b-9c34-b59b4f100608: No such file or directory, progress cannot be queried
+Starting scrub on devid 1
+[820598.534072] BTRFS info (device sdb3): scrub: finished on devid 1 with status: 0
 
-- Fix the incorrect uuid output
+Scrub device /dev/sdb3 (id 1) done
+Scrub started:    Fri Jun 19 01:51:24 2026
+Status:           finished
+Duration:         0:02:31
+Total to scrub:   51.21GiB
+Rate:             347.25MiB/s
+Error summary:    no errors found
 
-- Fix the return value when not enough args are provided
 
-- Add a missing newline for the message of open() failure
----
- .gitignore          |   1 +
- src/Makefile        |   2 +-
- src/btrfs_ioctl.c   | 104 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/351     |  47 ++++++++++++++++++++
- tests/btrfs/351.out |   2 +
- 5 files changed, 155 insertions(+), 1 deletion(-)
- create mode 100644 src/btrfs_ioctl.c
- create mode 100755 tests/btrfs/351
- create mode 100644 tests/btrfs/351.out
+# btrfs fi df /var
+Data, single: total=65.44GiB, used=49.21GiB
+System, single: total=32.00MiB, used=16.00KiB
+Metadata, single: total=3.00GiB, used=2.00GiB
+GlobalReserve, single: total=181.56MiB, used=0.00B
 
-diff --git a/.gitignore b/.gitignore
-index dd77ee30..0b6b9452 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -215,6 +215,7 @@ tags
- /src/file_attr
- /src/truncate
- /src/t_btrfs_received_uuid_ioctl
-+/src/btrfs_ioctl
  
- # Symlinked files
- /tests/generic/035.out
-diff --git a/src/Makefile b/src/Makefile
-index 31ac43b2..76cf50c3 100644
---- a/src/Makefile
-+++ b/src/Makefile
-@@ -36,7 +36,7 @@ LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
- 	fscrypt-crypt-util bulkstat_null_ocount splice-test chprojid_fail \
- 	detached_mounts_propagation ext4_resize t_readdir_3 splice2pipe \
- 	uuid_ioctl t_snapshot_deleted_subvolume fiemap-fault min_dio_alignment \
--	rw_hint fs-monitor
-+	rw_hint fs-monitor btrfs_ioctl
- 
- EXTRA_EXECS = dmerror fill2attr fill2fs fill2fs_check scaleread.sh \
- 	      btrfs_crc32c_forged_name.py popdir.pl popattr.py \
-diff --git a/src/btrfs_ioctl.c b/src/btrfs_ioctl.c
-new file mode 100644
-index 00000000..d199be7d
---- /dev/null
-+++ b/src/btrfs_ioctl.c
-@@ -0,0 +1,104 @@
-+// SPDX-License-Identifier: GPL-2.0
-+// Copyright (c) SUSE S.A.
-+
-+#include <stdio.h>
-+#include <string.h>
-+#include <fcntl.h>
-+#include <unistd.h>
-+#include <sys/ioctl.h>
-+#include <uuid/uuid.h>
-+#include <linux/btrfs.h>
-+
-+#define subvol_info_printf_u64(info, name)	\
-+	printf(#name ": %llu\n", (info).name)
-+
-+#define subvol_info_printf_timestamp(info, name)	\
-+	printf(#name ": %llu.%09u\n", (info).name.sec, (info).name.nsec)
-+
-+#define subvol_info_printf_uuid(info, name)	\
-+{						\
-+	char uuidbuf[UUID_STR_LEN];		\
-+						\
-+	uuid_unparse((info).name, uuidbuf);	\
-+	printf(#name ": %s\n", uuidbuf);	\
-+}
-+
-+void get_subvol_info(int fd)
-+{
-+	struct btrfs_ioctl_get_subvol_info_args info = { 0 };
-+	int ret;
-+
-+	ret = ioctl(fd, BTRFS_IOC_GET_SUBVOL_INFO, &info);
-+	if (ret < 0) {
-+		fprintf(stderr, "ioctl failed: %m\n");
-+		return;
-+	}
-+
-+	subvol_info_printf_u64(info, treeid);
-+	printf("name: %.*s\n", BTRFS_VOL_NAME_MAX, info.name);
-+	subvol_info_printf_u64(info, parent_id);
-+	subvol_info_printf_u64(info, dirid);
-+	subvol_info_printf_u64(info, generation);
-+	printf("flags: 0x%llx\n", info.flags);
-+	subvol_info_printf_uuid(info, uuid);
-+	subvol_info_printf_uuid(info, parent_uuid);
-+	subvol_info_printf_uuid(info, received_uuid);
-+	subvol_info_printf_u64(info, ctransid);
-+	subvol_info_printf_u64(info, otransid);
-+	subvol_info_printf_u64(info, stransid);
-+	subvol_info_printf_u64(info, rtransid);
-+	subvol_info_printf_timestamp(info, ctime);
-+	subvol_info_printf_timestamp(info, otime);
-+	subvol_info_printf_timestamp(info, stime);
-+	subvol_info_printf_timestamp(info, rtime);
-+}
-+
-+const struct ioctl {
-+	const char *name;
-+	void (*func)(int fd);
-+} supported_ioctls[] = {
-+	{
-+		.name = "get_subvol_info",
-+		.func = get_subvol_info,
-+	},
-+};
-+
-+static void usage()
-+{
-+	fprintf(stderr, "Usage: btrfs_ioctl <ioctl_name> <path>\n");
-+}
-+
-+int main(int argc, char **argv)
-+{
-+	const char *ioctl_name;
-+	int done = 0;
-+	int fd;
-+	int ret = 0;
-+
-+	if (argc != 3) {
-+		usage();
-+		return 1;
-+	}
-+	fd = open(argv[2], O_RDONLY);
-+	if (fd < 0) {
-+		fprintf(stderr, "failed to open %s: %m\n", argv[2]);
-+		return 1;
-+	}
-+	ioctl_name = argv[1];
-+
-+	for (int i = 0; i < sizeof(supported_ioctls) / sizeof(supported_ioctls[0]); i++) {
-+		const struct ioctl *ioctl = &supported_ioctls[i];
-+
-+		if (!strncasecmp(ioctl->name, ioctl_name, strlen(ioctl->name))) {
-+			ioctl->func(fd);
-+			done = 1;
-+			break;
-+		}
-+	}
-+	if (!done) {
-+		fprintf(stderr, "ioctl \"%s\" is not recognized\n", ioctl_name);
-+		ret = 1;
-+	}
-+	close(fd);
-+	return ret;
-+}
-diff --git a/tests/btrfs/351 b/tests/btrfs/351
-new file mode 100755
-index 00000000..e92ddf1b
---- /dev/null
-+++ b/tests/btrfs/351
-@@ -0,0 +1,47 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-+#
-+# FS QA Test 351
-+#
-+# Make sure the unprivileged get_subvol_info ioctl is providing the correct
-+# result.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick
-+
-+_fixed_by_kernel_commit XXXXXXXXXXXX \
-+	"Revert \"btrfs: add 32-bit compat ioctl for BTRFS_IOC_GET_SUBVOL_INFO\""
-+
-+_require_test_program btrfs_ioctl
-+_require_scratch
-+
-+_scratch_mkfs >> $seqres.full
-+_scratch_mount
-+
-+_btrfs subvolume create $SCRATCH_MNT/subv1
-+
-+# The id is get through "btrfs subvolume list" command, which doesn't utilize the
-+# unprivileged version.
-+subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT subv1)
-+echo "subvolid=$subvolid" >> $seqres.full
-+
-+# Do a basic check in case "btrfs subvolume list" doesn't get a correct subvolid
-+if [ -z "$subvolid" -o "$subvolid" -lt 256 ]; then
-+	_fail "\"btrfs subvolume list\" returned an invalid subvolid"
-+fi
-+
-+# Get the id again through the unprivileged get_subvol_info ioctl
-+$here/src/btrfs_ioctl get_subvol_info $SCRATCH_MNT/subv1 >> $tmp.output
-+cat $tmp.output >> $seqres.full
-+ioctl_subvolid=$(grep treeid: $tmp.output | cut -f 2 -d\ )
-+
-+if [ "$ioctl_subvolid" -ne "$subvolid" ]; then
-+	_fail "get_subvol_info ioctl returned an incorrect treeid"
-+fi
-+
-+_scratch_unmount
-+
-+echo "Silence is golden"
-+# success, all done
-+_exit 0
-diff --git a/tests/btrfs/351.out b/tests/btrfs/351.out
-new file mode 100644
-index 00000000..49b14639
---- /dev/null
-+++ b/tests/btrfs/351.out
-@@ -0,0 +1,2 @@
-+QA output created by 351
-+Silence is golden
--- 
-2.51.2
+> That will do a read-only scrub on the read-only file system. It can't fix anything but it will show if there's corrupted files.
+> 
+> In any case, the file system does mount ro normally. You can reliably get important information out. The most portable backup/restore for podman/docker/mobi is tar - I know they have internal backup commands that use tar but I do not know what options are actually used and therefore how to make a tar backup of your containers rather than relying on rsync - it's not my area. But I would investigate a more generic way of getting important containers out of the broken file system so you can preserve them no matter the file system or graph driver you decide to use.
 
+
+Alban

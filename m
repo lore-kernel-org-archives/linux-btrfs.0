@@ -1,104 +1,122 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from www262.sakura.ne.jp (www262.sakura.ne.jp [202.181.97.72])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 581C81A7264;
-	Sat, 20 Jun 2026 08:20:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D6CF349CE7;
+	Sat, 20 Jun 2026 09:43:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.181.97.72
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781943605; cv=none; b=NHdmP/Y6U6o+tIX5xYgkmOB1ue7ryxbfCrKrd2DTXBptKEp/znoQHZn2/d5QKKEBcAFHxHwWU3AwPKfzE6+XMnOxWE3LOqbS0yhgkECNfyTj14cRj7uM47+lrmNNGPqIbhaMkPacjK3ij5sS4NDtRIl1UX5uVvZF+I87LGuNIpY=
+	t=1781948586; cv=none; b=GJSpEcdCPCm2jy+y3z2MeDE6sFx8g25MsbSTdC9rlJS+DrRc0nXb31Y4vBiQM1SwgM79684K9t5cSHav2gfwDDnrnnVvVzuN0diynpy7nT+HRHlibfzoJPp0OxPz0R0OQW7lvJ16gerx3cD3z0w54slBvKHt9u4SxECDwHsw5Dg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781943605; c=relaxed/simple;
-	bh=7ssq/Nei69hZ/Jq3GYwPeCxIGbzrtdgjURSX/wTTzm0=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=mWv5rB2zU2a/pphrIH+AntMKGuBZkkJeTt6YXqdsW6kUZVrBXbNrJWneV46cfGVd4jFAQ9kvYcZNRl+fIMaDveW7/ihgdYh1CWlZ2Hiqd/LBdUjhgLnl5xP2lUDs/jEd8VoUdkPJspOx5sF8ohHVJhEzb3wNFVhy92P+7z/m1rY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ZoPD1+il; arc=none smtp.client-ip=100.103.45.18
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ZoPD1+il"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 017551F000E9;
-	Sat, 20 Jun 2026 08:20:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1781943604;
-	bh=wfnnJE27fGIp8+gf7G6VDyHuf9cBMl3p2pt89jSm5MU=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=ZoPD1+ilhlBkbXsV5IuWf9hP/lPNl7I0/8F0K7CS428v0IfTbGYvbrVuVTuexieeb
-	 fiRLxbP2krrkR7m6M9fnQlQlkfOS9tcR8KkBhg/gaqXbklNL+iMpvCsi9+WIp6y0oE
-	 fkUfEiatrnLTusajnHzvfG1OzxbnA7l8rhz/Blf2Jdbp2kZjgXOzIs1RLjTutOSV0x
-	 eymWcV+xIvkaYx6A7LjSAdDQvbQ6pFnZCQWQiBgzVHlk9gX3WQFQyVSkxLO9Kav44D
-	 Q6c59Ur3IuBhIeIIfqqV9FfmHaTUBHC89cNhaTJw62GCHtVbttS/NwtYxt6nLSuzg0
-	 Rkpyr5UoJmisw==
-Date: Sat, 20 Jun 2026 10:19:58 +0200
-From: Andrey Albershteyn <aalbersh@kernel.org>
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: Amir Goldstein <amir73il@gmail.com>, linux-xfs@vger.kernel.org, 
-	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, hch@lst.de, 
-	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
-	linux-btrfs@vger.kernel.org, linux-unionfs@vger.kernel.org, djwong@kernel.org
-Subject: Re: [PATCH v10 03/22] ovl: use core fsverity ensure info interface
-Message-ID: <ajZMRWUt3_6VSaIT@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
-References: <20260520123722.405752-1-aalbersh@kernel.org>
- <20260520123722.405752-4-aalbersh@kernel.org>
- <20260520190719.GB3424023@google.com>
- <CAOQ4uxh_hfiSwMw8ABhhrz7GguZWjHEiBmvb3eq16Wfqw0+ZrQ@mail.gmail.com>
- <20260619165448.GB3223@sol>
+	s=arc-20240116; t=1781948586; c=relaxed/simple;
+	bh=BDY6LnHyfiSqNxly7JKFxMIFRGnGAm2SZHM2bQbD3GQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=PKWCaBR0KWLcvjo5aHXrwtqtT4V7m3R3En2tybBm0JtA9VMc7N0BpoqHUMDesKZ2rTrYzZkPGdjM5nPdLu5GZL2ksmR7bDuynkp5JVJeqsJc0mboIqSfuQBwsg5VZyb3FcFEZZbOWdRGKNUJAuL45gKEZZPZcS6T4a4KFO6jCvc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp; arc=none smtp.client-ip=202.181.97.72
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp
+Received: from www262.sakura.ne.jp (localhost [127.0.0.1])
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTP id 65K9gLR5084017;
+	Sat, 20 Jun 2026 18:42:21 +0900 (JST)
+	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Received: from [192.168.1.6] (M106072072000.v4.enabler.ne.jp [106.72.72.0])
+	(authenticated bits=0)
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTPSA id 65K9gLdB084014
+	(version=TLSv1.2 cipher=AES256-GCM-SHA384 bits=256 verify=NO);
+	Sat, 20 Jun 2026 18:42:21 +0900 (JST)
+	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Message-ID: <ebceac56-6a65-4918-b47c-1fb87aa66989@I-love.SAKURA.ne.jp>
+Date: Sat, 20 Jun 2026 18:42:20 +0900
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20260619165448.GB3223@sol>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v4] loop: Fix NULL pointer dereference in lo_rw_aio()
+To: Al Viro <viro@zeniv.linux.org.uk>
+Cc: Jens Axboe <axboe@kernel.dk>, Bart Van Assche <bvanassche@acm.org>,
+        Christoph Hellwig <hch@lst.de>, Damien Le Moal <dlemoal@kernel.org>,
+        Ming Lei <tom.leiming@gmail.com>,
+        linux-block <linux-block@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        linux-fsdevel@vger.kernel.org, Christian Brauner <brauner@kernel.org>,
+        Hillf Danton <hdanton@sina.com>
+References: <20260529220600.1226-1-hdanton@sina.com>
+ <b27609f0-59f0-403d-90af-274c55df817e@I-love.SAKURA.ne.jp>
+ <3244d4dd-8254-47c0-9609-b1db53450c7c@I-love.SAKURA.ne.jp>
+ <20260609175013.GH2636677@ZenIV>
+ <9f8b5ab0-efbc-4cf3-a1f8-b43377416946@I-love.SAKURA.ne.jp>
+ <a9254bf0-fc7a-4b2e-a62f-064e71016fb6@I-love.SAKURA.ne.jp>
+ <20260620073939.GF2636677@ZenIV>
+Content-Language: en-US
+From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+In-Reply-To: <20260620073939.GF2636677@ZenIV>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-Virus-Status: clean
+X-Anti-Virus-Server: fsav203.rs.sakura.ne.jp
 
-On 2026-06-19 09:54:48, Eric Biggers wrote:
-> On Fri, Jun 19, 2026 at 09:28:31AM +0200, Amir Goldstein wrote:
-> > On Wed, May 20, 2026 at 9:07 PM Eric Biggers <ebiggers@kernel.org> wrote:
-> > >
-> > > On Wed, May 20, 2026 at 02:37:01PM +0200, Andrey Albershteyn wrote:
-> > > > fsverity now exposes fsverity_ensure_verity_info() which could be used
-> > > > instead of opening file to ensure that fsverity info is loaded and
-> > > > attached to inode.
-> > > >
-> > > > Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
-> > > > Acked-by: Amir Goldstein <amir73il@gmail.com>
-> > > > ---
-> > > >  fs/overlayfs/util.c | 14 +++-----------
-> > > >  1 file changed, 3 insertions(+), 11 deletions(-)
-> > >
-> > > Reviewed-by: Eric Biggers <ebiggers@kernel.org>
-> > >
-> > > I'm still confused by the new implementation of fsverity_active() that
-> > > got introduced by "fsverity: use a hashtable to find the fsverity_info",
-> > > though.  I should have caught this during review of that commit.  For
-> > > one its comment is outdated, but also the memory barrier seems to be
-> > > specific to the fsverity_get_info() caller and probably should be moved
-> > > to there.  Anyway, that's not directly related to this patch.
-> > 
-> > Eric, Andrey,
-> > 
-> > Did you see the Sashiko review for this patch and others in this series?
-> > 
-> > https://sashiko.dev/#/patchset/20260520123722.405752-1-aalbersh%40kernel.org
-> > 
-> > It annotated some review comments as high and critical.
-> > For this patch it is about interaction with fscrypt.
-> > 
-> > Please take a look and say if this is concerning or false positive.
+On 2026/06/20 16:39, Al Viro wrote:
+> On Fri, Jun 19, 2026 at 11:33:11PM +0900, Tetsuo Handa wrote:
+>> Sending this commit to linux.git will be the fastest way to identify who is issuing
+>> I/O requests too late. Therefore, I want to get a conclusion on xfs/259 breakage.
+>> Al, can you get the same result?
 > 
-> Yes, this patch is broken and should be dropped.  I need to remember to
-> look at the Sashiko reviews for other people's patches and not just
-> trust that the submitter will.  Fortunately this one wasn't applied yet.
-> 
-> I pointed out the HIGHMEM performance bug in
-> "fsverity: generate and store zero-block hash" earlier
-> (https://lore.kernel.org/linux-fsdevel/20260401222717.GH2466@quark/).  I
-> assume it was decided that no one will care about the combination of XFS
-> && fsverity && HIGHMEM.  But the XFS folks should double-check that.
-> 
-> Andrey, could you check the Sashiko reviews for the other patches too?
+> Not a peep in the logs, breakage still there (with cherry-picked fb1d5846e99c8aa4ce
+> and CONFIG_KCOV enabled, that is).
 
-Sure, I will go through them
+Please test with debug printk() patch shown below. What messages do you get?
 
--- 
-- Andrey
+--------------------------------------------------------------------------------
+diff --git a/drivers/block/loop.c b/drivers/block/loop.c
+index c3b607a3ddc4..7408f314a1fa 100644
+--- a/drivers/block/loop.c
++++ b/drivers/block/loop.c
+@@ -1763,6 +1763,8 @@ static void lo_release(struct gendisk *disk)
+ 	mutex_unlock(&lo->lo_mutex);
+ 
+ 	if (need_clear) {
++		printk("Flush: task=%s[%d] dev=loop%d state=%d\n",
++		       current->comm, current->pid, lo->lo_number, lo->lo_state);
+ 		/*
+ 		 * Temporarily release disk->open_mutex in order to flush pending I/O
+ 		 * requests before clearing the backing device.
+@@ -1813,6 +1815,8 @@ static void lo_release(struct gendisk *disk)
+ 		mutex_lock(&lo->lo_disk->open_mutex);
+ 		if (WARN_ON(data_race(READ_ONCE(lo->lo_state)) != Lo_rundown))
+ 			return;
++		printk("Teardown: task=%s[%d] dev=loop%d state=%d\n",
++		       current->comm, current->pid, lo->lo_number, lo->lo_state);
+ 		__loop_clr_fd(lo);
+ 	}
+ }
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 09ab7fc72f86..9710460fb449 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -1893,6 +1893,8 @@ static int do_umount(struct mount *mnt, int flags)
+ 		 */
+ 		lock_mount_hash();
+ 		if (!list_empty(&mnt->mnt_mounts) || mnt_get_count(mnt) != 2) {
++			printk("%s: task=%s[%d] !list_empty(&mnt->mnt_mounts)=%d mnt_get_count(mnt)=%d\n", __func__,
++			       current->comm, current->pid, !list_empty(&mnt->mnt_mounts), mnt_get_count(mnt));
+ 			unlock_mount_hash();
+ 			return -EBUSY;
+ 		}
+@@ -1960,6 +1962,9 @@ static int do_umount(struct mount *mnt, int flags)
+ 		if (!propagate_mount_busy(mnt, 2)) {
+ 			umount_tree(mnt, UMOUNT_PROPAGATE|UMOUNT_SYNC);
+ 			retval = 0;
++		} else {
++			printk("%s: task=%s[%d] propagate_mount_busy()!=0\n", __func__,
++			       current->comm, current->pid);
+ 		}
+ 	}
+ out:
+--------------------------------------------------------------------------------
+
+

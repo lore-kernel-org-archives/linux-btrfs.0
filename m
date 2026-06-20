@@ -1,270 +1,310 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 49BB34A32
-	for <linux-btrfs@vger.kernel.org>; Sat, 20 Jun 2026 03:01:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F351940D57A
+	for <linux-btrfs@vger.kernel.org>; Sat, 20 Jun 2026 05:07:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1781924488; cv=none; b=CIMSPyVZHN9Qdw+zHZGkAK8q4VdaAAdumlYVRBVl0286GIoZSrVvyc21BiSCH0f6rXqjj2038SjtikGJgLHyccAbrCDRiM/9PCt9gZigz6dUgZoxM0Bv7Xv0RcymDSnlSweJNz0rVo1jZlIDD6qWM8DGrG2ExPQm+fyXCCrzvC0=
+	t=1781932053; cv=none; b=u44TeTb9Jh7irBKrSr9STjXkGM8ZxXgee3NRlUaeqPCXl889m3ueisPn1gHxKIO9FXNcneACn+9O54RpZrsZ7SZJLEgxwAIVI8q3B016hDSLgaRCMuJKVCxRTgYHliL4H6G2UL6UfcvgBGlUcfGtzDlmNsy0WKkGheUDX2a/93Q=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1781924488; c=relaxed/simple;
-	bh=5+3Q7Ea3vl14lq9CP08KypOZ1OVnPnSfvvI4br8yGnM=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=coOVY9IyCfzXus3l+wyjKTyZgrz3DEaL0ySyZkID52ny6gHfLT0cq3aBdFWEWdUTM+Te9TD+da9eeuMbdc8uAcPYUOmyidFpFUPCDWW/PSrNsWfVgn1ydzCN7kC3uQMAC6X3uIERI+eB5ZNJbLz6P9ws7cGtxZ/Wq5r73731PUE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=EXx5p4sS; arc=none smtp.client-ip=212.227.17.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1781932053; c=relaxed/simple;
+	bh=ugShM9MC2QiRn6Os2E3nucizcUtnk7NxKgKrfCOfCzQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=oOpM07ITQT35jCv0oVUhjwl5ILHhkihM1D1euXOjnwxGnUr9IAI04IbNGM2GI6HeaRfK5wVbZQaAGgy9ruZlTJMswjICILpTEoMh7Z0yaJ1RnErGcdvimlEGRuTuxvXJuC6FjCMuOGRU4p9Z6EMeJDsetMgl0jZXvpWcVkeCyZw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=H0LYAs0a; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Tq94O0L+; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="EXx5p4sS"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1781924481; x=1782529281; i=quwenruo.btrfs@gmx.com;
-	bh=5+3Q7Ea3vl14lq9CP08KypOZ1OVnPnSfvvI4br8yGnM=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=EXx5p4sS3jJc53Mu/N6t1GR7pCkc7GTK8tmqvzTs+g1m7kxuigUUmxZGSfQvTQeW
-	 6q3cxMhY25pRZaAUsAja0FtnJQV0veeO8udMOvp9Bb/CsLSgEMawcALvt6tsYagqU
-	 LFzdYuYtM2gyANg4KxWAUc1egm1/305wz7Q3EdMvNpLbUj9Cvq+Nqb6uTSecITdAN
-	 OGnpOaP9V5dt6PNmCaunJOqRJfgW88vBHMVEO+2Iy7bneo5cTfJm5/Zwd0AgjvF0+
-	 treXF6JQ+Phx28o+8svFWJSW2yTVlEgCVyl6G8imqrPhyQbzhIq8OqPuh4jg8UCe+
-	 hKMjd9wGNUEgYy8sQA==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1M8hVB-1wWfLi1qsr-00GUfF; Sat, 20
- Jun 2026 05:01:21 +0200
-Message-ID: <0a6b9827-d693-4084-aca9-2a513fef9739@gmx.com>
-Date: Sat, 20 Jun 2026 12:31:07 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="H0LYAs0a";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Tq94O0L+"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id EF2BC6DF2A;
+	Sat, 20 Jun 2026 05:07:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1781932050; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=jUv6v4qy0X+E11EMPWU5aCN1qWP9drCrX67heBreBdw=;
+	b=H0LYAs0aEt0TOLqrdblL4NkC8OmLPWl7sj0MiUtP1ChK4c79D0FZvAo8PkpznoFviyCynw
+	an7DuwGXoTdWoNnKQItL9jll9dKsOY7uZlZd0TH6Pz36eU11ntLtNu+Exo8fJO7gX72Lg6
+	U01NzdKhiLiZaM85wVxXx4MOH1a4HnI=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=Tq94O0L+
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1781932049; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=jUv6v4qy0X+E11EMPWU5aCN1qWP9drCrX67heBreBdw=;
+	b=Tq94O0L+inbGkyytVTkyhJr7vx0wztguAVWB0ccL4UaBTqTLBjIOdO7lyvq/0lQZvgFAXt
+	so0FQy9fInFQuHQLKi2iroMo0B6JEYldsB265wDEfTkZkkEqICdrX83DqZy7hCrzh1axLW
+	31WLY3FAXd2SAeQwJZMAayqBPCjjSMg=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A4A68779A8;
+	Sat, 20 Jun 2026 05:07:28 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id pUImFRAgNmoVVwAAD6G6ig
+	(envelope-from <wqu@suse.com>); Sat, 20 Jun 2026 05:07:28 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Su Yue <glass.su@suse.com>
+Subject: [PATCH] btrfs: make sure EXTENT_BUFFER_READING is cleared under refs_lock
+Date: Sat, 20 Jun 2026 14:37:02 +0930
+Message-ID: <14aca1944da7170799aea08df9af85728a2f2233.1781932019.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: do not check eb->refs to determine if the eb is
- still held
-To: Su Yue <l@damenly.org>, Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, Glass Su <glass.su@suse.com>
-References: <8b5fd5214014615765dfdc66f89347c4ea8b2654.1781921185.git.wqu@suse.com>
- <cxxmszcy.fsf@damenly.org>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <cxxmszcy.fsf@damenly.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: base64
-X-Provags-ID: V03:K1:NYDTO9wq35NYk/87MBIp7+zEa9ovxgLtP0drFhAr8P3LqQgijM0
- rEepl5zgzZSdHJofo7hQfLajd6S8Jr5Y9ThapK5dLiyxDUA3ODP25OSTRkrEA9/5K1WAo2B
- IRmNt3MJNO1CMjXbTRsOuEud6Aw0VTtv3e7ojaVs8nUeaAWTHddXbx7WKssDyKBXPAWV2Wn
- vA11H54EICJGwbPHUKftg==
+Content-Transfer-Encoding: 8bit
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:lFrDTqtKlac=;P8fFx0/u77/+3ykIVl0pzeCp51l
- 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
- /zYDE/K6RpuL/UT9oA=
+X-Rspamd-Action: no action
+X-Spam-Level: 
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim,suse.com:mid];
+	RCVD_COUNT_TWO(0.00)[2];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: EF2BC6DF2A
+X-Spam-Score: -3.01
 
-DQoNCuWcqCAyMDI2LzYvMjAgMTI6MTYsIFN1IFl1ZSDlhpnpgZM6DQo+IE9uIFNhdCAyMCBKdW4g
-MjAyNiBhdCAxMTozNywgUXUgV2VucnVvIDx3cXVAc3VzZS5jb20+IHdyb3RlOg0KPiANCj4+IFtG
-QUxTRSBBTEVSVFNdDQo+PiBUaGVyZSBpcyBhIGJ1ZyByZXBvcnQgdGhhdCB0aGUgd2FybmluZyBp
-bnNpZGUNCj4+IGludmFsaWRhdGVfYW5kX2NoZWNrX2J0cmVlX2ZvbGlvcygpIGdvdCB0cmlnZ2Vy
-ZWQgZHVyaW9uZyBidHJmcy8yOTg6DQo+Pg0KPj4gwqBCVFJGUyBpbmZvIChkZXZpY2Ugc2RkKTog
-Zmlyc3QgbW91bnQgb2YgZmlsZXN5c3RlbSDCoGY5YmY3MzJhLSANCj4+IGExOWItNDRiOS05OWE3
-LTYxNGRkZmYxNjhlMg0KPj4gwqBCVFJGUyBpbmZvIChkZXZpY2Ugc2RkKTogdXNpbmcgY3JjMzJj
-IGNoZWNrc3VtIGFsZ29yaXRobQ0KPj4gwqBCVFJGUyBlcnJvciAoZGV2aWNlIHNkZCk6IGZhaWxl
-ZCB0byBmaW5kIGZzaWQgwqBjYjJmZGI0Mi1iNjM4LTRmMmYtIA0KPj4gYmFkZC00MTI3NDY3YmE2
-NzQgd2hlbiBhdHRlbXB0aW5nIHRvIG9wZW4gwqBzZWVkIGRldmljZXMNCj4+IMKgQlRSRlMgZXJy
-b3IgKGRldmljZSBzZGQpOiBmYWlsZWQgdG8gcmVhZCBjaHVuayB0cmVlOiAtMg0KPj4gwqAtLS0t
-LS0tLS0tLS1bIGN1dCBoZXJlIF0tLS0tLS0tLS0tLS0NCj4+IMKgV0FSTklORzogZGlzay1pby5j
-OjMzNDIgYXQgDQo+PiDCoGludmFsaWRhdGVfYW5kX2NoZWNrX2J0cmVlX2ZvbGlvcysweDI2MC8w
-eDNjMCBbYnRyZnNdLCBDUFUjNDogDQo+PiDCoG1vdW50LzEyNTk5Mw0KPj4gwqBDUFU6IDQgVUlE
-OiAwIFBJRDogMTI1OTkzIENvbW06IG1vdW50IFRhaW50ZWQ6IEfCoMKgwqDCoMKgwqDCoCBXwqAg
-T0UgwqA3LjEuMC0gDQo+PiByYzctY3VzdG9tKyAjMSBQUkVFTVBUKGZ1bGwpDQo+PiDCoEhhcmR3
-YXJlIG5hbWU6IFFFTVUgS1ZNIFZpcnR1YWwgTWFjaGluZSwgQklPUyDCoGVkazItMjAyNTA4MTIt
-MTkuZmM0MiANCj4+IDA4LzEyLzIwMjUNCj4+IMKgQ2FsbCB0cmFjZToNCj4+IMKgIGludmFsaWRh
-dGVfYW5kX2NoZWNrX2J0cmVlX2ZvbGlvcysweDI2MC8weDNjMCBbYnRyZnNdIChQKQ0KPj4gwqAg
-b3Blbl9jdHJlZSsweDFmNTAvMHgyM2IwIFtidHJmc10NCj4+IMKgIGJ0cmZzX2dldF90cmVlKzB4
-ODljLzB4YzQ4IFtidHJmc10NCj4+IMKgIHZmc19nZXRfdHJlZSsweDMwLzB4MTEwDQo+PiDCoCB2
-ZnNfY21kX2NyZWF0ZSsweDU4LzB4ZTgNCj4+IMKgIF9fYXJtNjRfc3lzX2ZzY29uZmlnKzB4Mzlj
-LzB4NTE4DQo+PiDCoCBpbnZva2Vfc3lzY2FsbC5jb25zdHByb3AuMCsweDQ4LzB4MTIwDQo+PiDC
-oCBlbDBfc3ZjX2NvbW1vbi5jb25zdHByb3AuMCsweDQwLzB4ZTgNCj4+IMKgIGRvX2VsMF9zdmMr
-MHgyNC8weDM4DQo+PiDCoCBlbDBfc3ZjKzB4NTAvMHgzMTANCj4+IMKgIGVsMHRfNjRfc3luY19o
-YW5kbGVyKzB4YTAvMHhlOA0KPj4gwqAgZWwwdF82NF9zeW5jKzB4MTk4LzB4MWEwDQo+PiDCoC0t
-LVsgZW5kIHRyYWNlIDAwMDAwMDAwMDAwMDAwMDAgXS0tLQ0KPj4gwqBCVFJGUyB3YXJuaW5nIChk
-ZXZpY2Ugc2RkKTogdW5hYmxlIHRvIHJlbGVhc2UgZXh0ZW50IGJ1ZmZlciANCj4+IMKgMzY1OTg1
-NzkyIG93bmVyIDMgZ2VuIDE3IHJlZnMgMyBmbGFncyAweDUNCj4+DQo+PiBbQ0FVU0VdDQo+PiBJ
-biB0aGF0IGludmFsaWRhdGVfYW5kX2NoZWNrX2J0cmVlX2ZvbGlvcygpIHdlIHdhaXQgZm9yIHRo
-ZSBlYiB0byBmaW5pc2gNCj4+IGl0cyByZWFkLCB0aGVuIGNoZWNrIGlmIGl0J3Mgb25seSBoZWxk
-IGJ5IHVzIGFuZCB0aGUgYnRyZWUgaW5vZGUuDQo+Pg0KPj4gSWYgbm90LCB0aGVuIGRvIGEgd2Fy
-bmluZyBhcyBpdCBtYXkgYmUgc3RpbGwgaGVsZCwgYW5kIGNvdWxkIGNhdXNlDQo+PiBwcm9ibGVt
-cy4NCj4+DQo+PiBCdXQgdGhlcmUgaXMgYSBzbWFsbCB3aW5kb3cgd2hlcmUgdGhlIGNoZWNrIGNh
-biBsZWFkIHRvIGZhbHNlIGFsZXJ0czoNCj4+DQo+PiDCoMKgwqAgVGhyZWFkIEEgKFJlYWQgZW5k
-aW8pwqDCoMKgwqDCoMKgwqDCoCB8wqDCoMKgwqDCoMKgwqAgVGhyZWFkIEIgKFVubW91bnQpDQo+
-PiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tKy0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0NCj4+IMKgZW5kX2JiaW9fbWV0YV9yZWFkKCnCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqAgfA0KPj4gwqB8IFRoZSBlYiBoYXMgb25lIGV4dHJhIHJlZiBoZWxkwqAgfA0K
-Pj4gwqB8IGJ5IHRoZSByZWFkZXIsIGFuZCBoYXPCoMKgwqDCoMKgwqDCoMKgIHwNCj4+IMKgfCBF
-WFRFTlRfQlVGRkVSX1JFQURJTkcgZmxhZyBzZXQgfCDCoGludmFsaWRhdGVfYW5kX2NoZWNrX2J0
-cmVlX2ZvbGlvcygpDQo+PiDCoHzCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCB8IHwNCj4+IMKgfC0gY2xlYXJfZXh0ZW50X2J1ZmZl
-cl9yZWFkaW5nKCkgfCB8DQo+PiDCoHzCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCB8IHwtIHdhaXRfb25fYml0X2lvKCk7DQo+PiDC
-oHzCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoCB8IHzCoCBUaGUgRVhURU5UX0JVRkZFUl9SRUFESU5HIMKgZmxhZyBpcw0KPj4gwqB8
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqAgfCB8wqAgY2xlYXJlZA0KPj4gwqB8wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgfCB8LSBpZiDCoChyZWZjb3VudF9yZWFk
-KGViLT5yZWZzKSA+IDIpDQo+PiDCoHzCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCB8wqDCoMKgIFRoZSBlYiBpcyBoZWxkIGJ5IHRo
-ZSDCoHJlYWQsIHVzDQo+PiDCoHzCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCB8wqDCoMKgIGFuZCBidHJlZSBpbm9kZSwgdGh1cyBp
-dA0KPj4gwqB8wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqAgfMKgwqDCoCB3aWxsIHRyaWdnZXIgdGhlIHdhcm5pbmcNCj4+IMKgfC0g
-ZnJlZV9leHRlbnRfYnVmZmVyKCnCoMKgwqDCoMKgwqDCoMKgwqAgfA0KPj4NCj4+IFtXT1JLQVJP
-VU5EXQ0KPj4gVW5mb3J0dW5hdGVseSBFWFRFTlRfQlVGRkVSX1JFQURJTkcgZmxhZyBjbGVhcmlu
-ZyBpcyBhbHdheXMgYmVmb3JlDQo+PiBleHRlbnQgYnVmZmVyIHB1dCwgdGh1cyB0aGVyZSBpcyBu
-byBzaW1wbGUgd2F5IHRvIG1ha2Ugc3VyZSB0aGUgcmVhZCBpcw0KPj4gZmluaXNoZWQgYWxvbmcg
-d2l0aCBlYiBwdXQuDQo+Pg0KPj4gRm9yIG5vdyBqdXN0IHJlbW92ZSB0aGUgZWItPnJlZnMgY2hl
-Y2sgdW50aWwgYSBwcm9wZXIgcHJvdGVjdGlvbiBpcw0KPj4gaW50cm9kdWNlZCBmb3IgY2xlYXJp
-bmcgRVhURU5UX0JVRkZFUl9SRUFESU5HIGFuZCB1cGRhdGVzIG9mIGViLT5yZWZzLg0KPj4NCj4+
-IFJlcG9ydGVkLWJ5OiBHbGFzcyBTdSA8Z2xhc3Muc3VAc3VzZS5jb20+DQo+Pg0KPiBSZXBvcnRl
-ZC1ieTogU3UgWXVlIDxnbGFzcy5zdUBzdXNlLmNvbT4NCj4gDQo+IEFsc28gZm9yIHRoaXMgcGF0
-Y2g6DQo+IFJldmlld2VkLWJ5OiBTdSBZdWUgPGdsYXNzLnN1QHN1c2UuY29tPg0KDQpJdCB0dXJu
-cyBvdXQgdGhhdCBJIGNhbiBwdXQgdGhlIEVYVEVOVF9CVUZGRVJfUkVBRElORyB1cGRhdGluZyBp
-bnNpZGUgDQpmcmVlX2V4dGVudF9idWZmZXIoKSwgdW5kZXIgdGhlIHJlZnNfbG9jayBwcm90ZWN0
-aW9uLg0KDQpCeSBkb2luZyB0aGF0LCBhbmQgYWxzbyBjaGVja2luZyB0aGUgZWItPnJlZnMgdW5k
-ZXIgcmVmc19sb2NrLCB3ZSBjYW4gDQpyZW1vdmUgdGhlIHJhY2Ugd2luZG93IGNvbXBsZXRlbHku
-DQoNCkknbGwgcnVuIGEgZnVsbCB0ZXN0cyBiZWZvcmUgc2VuZCBvdXQgdGhlIHVwZGF0ZWQgZml4
-Lg0KDQpUaGFua3MsDQpRdQ0KDQo+IA0KPiANCj4+IExpbms6IGh0dHBzOi8vbG9yZS5rZXJuZWwu
-b3JnL2xpbnV4LWJ0cmZzLyANCj4+IERDMEM3NzVFLTEzQjMtNDdEOS05QUIyLTg5NUJCMTFDMDI5
-REBzdXNlLmNvbS8NCj4+IEZpeGVzOiA4M2Y3ZTUyYjdlZDEgKCJidHJmczogd2FybiBhYm91dCBl
-eHRlbnQgYnVmZmVyIHRoYXQgY2FuIG5vdCBiZSANCj4+IHJlbGVhc2VkIikNCj4+IFNpZ25lZC1v
-ZmYtYnk6IFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPg0KPj4gLS0tDQo+PiDCoGZzL2J0cmZzL2Rp
-c2staW8uYyB8IDEwICsrKysrKystLS0NCj4+IMKgMSBmaWxlIGNoYW5nZWQsIDcgaW5zZXJ0aW9u
-cygrKSwgMyBkZWxldGlvbnMoLSkNCj4+DQo+PiBkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvZGlzay1p
-by5jIGIvZnMvYnRyZnMvZGlzay1pby5jDQo+PiBpbmRleCAwYTdkODBkYTljOTQuLjM5YTM4OWNk
-YmRkNCAxMDA2NDQNCj4+IC0tLSBhL2ZzL2J0cmZzL2Rpc2staW8uYw0KPj4gKysrIGIvZnMvYnRy
-ZnMvZGlzay1pby5jDQo+PiBAQCAtMzMyOCwxMCArMzMyOCwxNCBAQCBzdGF0aWMgdm9pZCANCj4+
-IGludmFsaWRhdGVfYW5kX2NoZWNrX2J0cmVlX2ZvbGlvcyhzdHJ1Y3QgYnRyZnNfZnNfaW5mbyAq
-ZnNfaW5mbykNCj4+IMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCB3YWl0X29uX2JpdF9pbygmZWIt
-PmJmbGFncywgRVhURU5UX0JVRkZFUl9SRUFESU5HLA0KPj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBUQVNLX1VOSU5URVJSVVBUSUJMRSk7DQo+PiDCoMKg
-wqDCoMKgwqDCoMKgIC8qDQo+PiAtwqDCoMKgwqDCoMKgwqDCoCAqIFRoZSByZWZzIHRocmVzaG9s
-ZCBpcyAyLCBvbmUgaGVsZCBieSB1cyBhdCB0aGUgYmVnaW5uaW5nDQo+PiAtwqDCoMKgwqDCoMKg
-wqDCoCAqIG9mIHRoZSBsb29wLCBvbmUgZm9yIHRoZSBvd25lcnNoaXAgaW4gdGhlIGJ1ZmZlciB0
-cmVlLg0KPj4gK8KgwqDCoMKgwqDCoMKgwqAgKiBFWFRFTlRfQlVGRkVSX1JFQURJTkcgaXMgY2xl
-YXJlZCB0aGVuIHRoZSBlYiByZWZzIGlzIHB1dCANCj4+IGR1cmluZw0KPj4gK8KgwqDCoMKgwqDC
-oMKgwqAgKiBlbmRfYmJpb19tZXRhX3JlYWQoKSwgd2hpY2ggbGVhdmVzIGEgd2luZG93IHdoZXJl
-IGFib3ZlIHdhaXQNCj4+ICvCoMKgwqDCoMKgwqDCoMKgICogZmluaXNoZWQgYnV0IGViIHJlZiBp
-cyBzdGlsbCBob2xkIGJ5IGVuZGlvLg0KPj4gK8KgwqDCoMKgwqDCoMKgwqAgKg0KPj4gK8KgwqDC
-oMKgwqDCoMKgwqAgKiBUaHVzIHdlIGNhbiBub3QgdXNlIGViLT5yZWZzIHRvIGRldGVybWluZSBp
-ZiB0aGUgZWIgaXMgaG9sZA0KPj4gK8KgwqDCoMKgwqDCoMKgwqAgKiBieSBzb21lb25lIGVsc2Uu
-IEp1c3QgY2hlY2sgaWYgdGhlIGViIGlzIHN0aWxsIHVuZGVyIElPLg0KPj4gwqDCoMKgwqDCoMKg
-wqDCoMKgICovDQo+PiAtwqDCoMKgwqDCoMKgwqAgaWYgKHVubGlrZWx5KHJlZmNvdW50X3JlYWQo
-JmViLT5yZWZzKSA+IDIgfHwgDQo+PiBleHRlbnRfYnVmZmVyX3VuZGVyX2lvKGViKSkpIHsNCj4+
-ICvCoMKgwqDCoMKgwqDCoCBpZiAodW5saWtlbHkoZXh0ZW50X2J1ZmZlcl91bmRlcl9pbyhlYikp
-KSB7DQo+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgV0FSTl9PTl9PTkNFKElTX0VOQUJMRUQo
-Q09ORklHX0JUUkZTX0RFQlVHKSk7DQo+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgYnRyZnNf
-d2Fybihmc19pbmZvLA0KPj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgICJ1bmFibGUgdG8gcmVs
-ZWFzZSBleHRlbnQgYnVmZmVyICVsbHUgb3duZXIgJWxsdSBnZW4gDQo+PiDCoCVsbHUgcmVmcyAl
-dSBmbGFncyAweCVseCIsDQo+IA0KDQo=
+[FALSE ALERTS]
+There is a bug report that the warning inside
+invalidate_and_check_btree_folios() got triggered duriong btrfs/298:
+
+ BTRFS info (device sdd): first mount of filesystem f9bf732a-a19b-44b9-99a7-614ddff168e2
+ BTRFS info (device sdd): using crc32c checksum algorithm
+ BTRFS error (device sdd): failed to find fsid cb2fdb42-b638-4f2f-badd-4127467ba674 when attempting to open seed devices
+ BTRFS error (device sdd): failed to read chunk tree: -2
+ ------------[ cut here ]------------
+ WARNING: disk-io.c:3342 at invalidate_and_check_btree_folios+0x260/0x3c0 [btrfs], CPU#4: mount/125993
+ CPU: 4 UID: 0 PID: 125993 Comm: mount Tainted: G        W  OE       7.1.0-rc7-custom+ #1 PREEMPT(full)
+ Hardware name: QEMU KVM Virtual Machine, BIOS edk2-20250812-19.fc42 08/12/2025
+ Call trace:
+  invalidate_and_check_btree_folios+0x260/0x3c0 [btrfs] (P)
+  open_ctree+0x1f50/0x23b0 [btrfs]
+  btrfs_get_tree+0x89c/0xc48 [btrfs]
+  vfs_get_tree+0x30/0x110
+  vfs_cmd_create+0x58/0xe8
+  __arm64_sys_fsconfig+0x39c/0x518
+  invoke_syscall.constprop.0+0x48/0x120
+  el0_svc_common.constprop.0+0x40/0xe8
+  do_el0_svc+0x24/0x38
+  el0_svc+0x50/0x310
+  el0t_64_sync_handler+0xa0/0xe8
+  el0t_64_sync+0x198/0x1a0
+ ---[ end trace 0000000000000000 ]---
+ BTRFS warning (device sdd): unable to release extent buffer 365985792 owner 3 gen 17 refs 3 flags 0x5
+
+[CAUSE]
+In that invalidate_and_check_btree_folios() we wait for the eb to finish
+its read, then check if it's only held by us and the btree inode.
+
+If not, then do a warning as it may be still held, and could cause
+problems.
+
+But there is a small window where the check can lead to false alerts:
+
+    Thread A (Read endio)         |        Thread B (Unmount)
+----------------------------------+-------------------------------------
+ end_bbio_meta_read()             |
+ | The eb has one extra ref held  |
+ | by the reader, and has         |
+ | EXTENT_BUFFER_READING flag set | invalidate_and_check_btree_folios()
+ |                                | |
+ |- clear_extent_buffer_reading() | |
+ |                                | |- wait_on_bit_io();
+ |                                | |  The EXTENT_BUFFER_READING flag is
+ |                                | |  cleared
+ |                                | |- if (refcount_read(eb->refs) > 2)
+ |                                |    The eb is held by the read, us
+ |                                |    and btree inode, thus it
+ |                                |    will trigger the warning
+ |- free_extent_buffer()          |
+
+[FIX]
+Introduce a helper, free_extent_buffer_clear_reading().
+
+If the new parameter, @clear_reading, is set, we will hold the spinlock
+at the beginning of free_extent_buffer_clear_reading() to make sure the
+READING flag is cleared inside the same critical of decreasing refs.
+
+Now free_extent_buffer() will just call
+free_extent_buffer_clear_reading() with @clear_reading set to false, so
+no behavior change.
+
+But for end_bbio_meta_read(), it will not clear_extent_buffer_reading()
+directly, but pass @clear_reading as true.
+
+Then inside invalidate_and_check_btree_folios(), hold the refs_lock
+before reading refs.
+So that we eliminate the race window completely.
+
+Reported-by: Su Yue <glass.su@suse.com>
+Link: https://lore.kernel.org/linux-btrfs/DC0C775E-13B3-47D9-9AB2-895BB11C029D@suse.com/
+Fixes: 83f7e52b7ed1 ("btrfs: warn about extent buffer that can not be released")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/disk-io.c   | 15 +++++++++++++--
+ fs/btrfs/extent_io.c | 42 ++++++++++++++++++++++++++++++++----------
+ 2 files changed, 45 insertions(+), 12 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0a7d80da9c94..c4143c847827 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3318,6 +3318,8 @@ static void invalidate_and_check_btree_folios(struct btrfs_fs_info *fs_info)
+ 	 */
+ 	rcu_read_lock();
+ 	xa_for_each(&fs_info->buffer_tree, index, eb) {
++		unsigned int refs;
++
+ 		/* Increase the ref so that the eb won't disappear. */
+ 		if (!refcount_inc_not_zero(&eb->refs))
+ 			continue;
+@@ -3327,17 +3329,26 @@ static void invalidate_and_check_btree_folios(struct btrfs_fs_info *fs_info)
+ 		if (test_bit(EXTENT_BUFFER_READING, &eb->bflags))
+ 			wait_on_bit_io(&eb->bflags, EXTENT_BUFFER_READING,
+ 				       TASK_UNINTERRUPTIBLE);
++		/*
++		 * We hold the spinlock to make sure above READING is
++		 * cleared with the held ref dropped.
++		 * Or we can hit a race window and lead to false alerts.
++		 */
++		spin_lock(&eb->refs_lock);
++		refs = refcount_read(&eb->refs);
++		spin_unlock(&eb->refs_lock);
++
+ 		/*
+ 		 * The refs threshold is 2, one held by us at the beginning
+ 		 * of the loop, one for the ownership in the buffer tree.
+ 		 */
+-		if (unlikely(refcount_read(&eb->refs) > 2 || extent_buffer_under_io(eb))) {
++		if (unlikely(refs > 2 || extent_buffer_under_io(eb))) {
+ 			WARN_ON_ONCE(IS_ENABLED(CONFIG_BTRFS_DEBUG));
+ 			btrfs_warn(fs_info,
+ 			"unable to release extent buffer %llu owner %llu gen %llu refs %u flags 0x%lx",
+ 				   eb->start, btrfs_header_owner(eb),
+ 				   btrfs_header_generation(eb),
+-				   refcount_read(&eb->refs), eb->bflags);
++				   refs, eb->bflags);
+ 		}
+ 		free_extent_buffer(eb);
+ 		rcu_read_lock();
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 0edd532174fa..33f50cb89a81 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3709,12 +3709,30 @@ static int release_extent_buffer(struct extent_buffer *eb)
+ 	return 0;
+ }
+ 
+-void free_extent_buffer(struct extent_buffer *eb)
++static void clear_extent_buffer_reading(struct extent_buffer *eb)
++{
++	clear_and_wake_up_bit(EXTENT_BUFFER_READING, &eb->bflags);
++}
++
++static void free_extent_buffer_clear_reading(struct extent_buffer *eb,
++					     bool clear_reading)
+ {
+ 	int refs;
++
+ 	if (!eb)
+ 		return;
+ 
++	/*
++	 * We want to clear READING flag and decrease refs in the same
++	 * critical section.
++	 * This will make sure invalidate_and_check_btree_folios() won't
++	 * see an eb with READING cleared but refs not yet decreased.
++	 */
++	if (clear_reading) {
++		spin_lock(&eb->refs_lock);
++		clear_extent_buffer_reading(eb);
++	}
++
+ 	refs = refcount_read(&eb->refs);
+ 	while (1) {
+ 		if (test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bflags)) {
+@@ -3725,11 +3743,16 @@ void free_extent_buffer(struct extent_buffer *eb)
+ 		}
+ 
+ 		/* Optimization to avoid locking eb->refs_lock. */
+-		if (atomic_try_cmpxchg(&eb->refs.refs, &refs, refs - 1))
++		if (atomic_try_cmpxchg(&eb->refs.refs, &refs, refs - 1)) {
++			if (clear_reading)
++				spin_unlock(&eb->refs_lock);
+ 			return;
++		}
+ 	}
+ 
+-	spin_lock(&eb->refs_lock);
++	if (!clear_reading)
++		spin_lock(&eb->refs_lock);
++
+ 	if (refcount_read(&eb->refs) == 2 &&
+ 	    test_bit(EXTENT_BUFFER_STALE, &eb->bflags) &&
+ 	    !extent_buffer_under_io(eb) &&
+@@ -3743,6 +3766,11 @@ void free_extent_buffer(struct extent_buffer *eb)
+ 	release_extent_buffer(eb);
+ }
+ 
++void free_extent_buffer(struct extent_buffer *eb)
++{
++	return free_extent_buffer_clear_reading(eb, false);
++}
++
+ void free_extent_buffer_stale(struct extent_buffer *eb)
+ {
+ 	if (!eb)
+@@ -3868,11 +3896,6 @@ void set_extent_buffer_uptodate(struct extent_buffer *eb)
+ 		btrfs_meta_folio_set_uptodate(eb->folios[i], eb);
+ }
+ 
+-static void clear_extent_buffer_reading(struct extent_buffer *eb)
+-{
+-	clear_and_wake_up_bit(EXTENT_BUFFER_READING, &eb->bflags);
+-}
+-
+ static void end_bbio_meta_read(struct btrfs_bio *bbio)
+ {
+ 	struct extent_buffer *eb = bbio->private;
+@@ -3896,8 +3919,7 @@ static void end_bbio_meta_read(struct btrfs_bio *bbio)
+ 	else
+ 		clear_extent_buffer_uptodate(eb);
+ 
+-	clear_extent_buffer_reading(eb);
+-	free_extent_buffer(eb);
++	free_extent_buffer_clear_reading(eb, true);
+ 
+ 	bio_put(&bbio->bio);
+ }
+-- 
+2.54.0
+

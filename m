@@ -1,60 +1,67 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3E1AC3B1B4
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Jun 2026 06:13:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F2DFF1A680E
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Jun 2026 06:13:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782022402; cv=none; b=EOiac0a/N19fkOcqXsUJvka+zbTaCOJZ1jrBxLo4WumqPYKvF7JlWUhrloTjM3S3XInsrNe4ZnQ8L4ea10E4wzXy6sfyRucK7bOOUeZWYIs4uTc0xqz/aszfn2+Vhw1S1kM85auWAbsqJt5E9uUtWRrPZ33Jiyup8h8rowz/w7I=
+	t=1782022407; cv=none; b=lupyl29wvfAUou3ECT9wo/y5fFpcTSqR1GHqGRIKFnwhM6qSGHRaIcvhze/nWoyLVGxA5imGhkVbNe+mk6UB/uosTMxd5NW/SI1Op1pZh9jmRgJUC0jn2IPCH9m29u93VrMPJMUoSx6i515uudtsi0XovveSg2K1o2cXC+jSblw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782022402; c=relaxed/simple;
-	bh=8jn538n2kPXhT4k3AxeggW74mrrjL4U/HYwe3OpXKOo=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=VdlDWPd9F8uY4PsDs3dWI4W9wAkiiPpGpiTFgl16eOTDFL8LNigW6IzP2A4vEFz2APMdYAFajCxV5ZGAA0bMKPc92rGtAn/GAhJ5GEJ3PLhi0+zaH3FLXq3R6+Yfw4/1zLrJLgfz3zU7VqIud0MYYvfJid2YNFSypgNR6JnrVOI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=VD8oLzBf; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=VD8oLzBf; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1782022407; c=relaxed/simple;
+	bh=8t9kXQGAqLejLgEVx/YLyculWL/8mskN1UlvkVC7qaI=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=SwqUtgdGI7biP0EQb4qb2xM1btwyfEHNQXv+1qlEUGln414j8RVxSdVoZyRzE2z/HAXC7pTbcKKptzpgoMV/581DwI9HuOfCwT+0BGlo/tNQMHMqU3sZ6KPZXvDyQUGQA3IaJep4p54+w2GbZJgvjiWdPak2I65seZ3BptGMusk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Lj9DR/49; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Lj9DR/49; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="VD8oLzBf";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="VD8oLzBf"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Lj9DR/49";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Lj9DR/49"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 00B7F7004B
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Jun 2026 06:13:19 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 43304758AD;
+	Sun, 21 Jun 2026 06:13:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782022399; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=KRGUrKEmNt4upKNGc6czWVIlCjolRwhdPI4hbQ7Pvss=;
-	b=VD8oLzBfUkEmY/mdKuIxmgHfu9vxODumct0NAsVMFwO4kI2qhVBjaxue3TGLiAtDkpvoER
-	lX1eGFnR76GPtlKWStB0DC6QADjakPnKdo1qDY3jFYGGwhurwTPgPvZQsDc7EtTHzDYaAv
-	FNN8Jqiu70+ssVljcisFykRLAXKcth4=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=VD8oLzBf
+	t=1782022403; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=XQIAKjaP+9jfwA4B7+gi661siv2Vdu2+tgq6Q+zPXfM=;
+	b=Lj9DR/49mVbhRoDeIXHPt7kxCocMIzc1MkQ85Yxo2OElYYKrkavY7AnQ5pGcXMSBpnhCaS
+	Q7FivGWlQo31Dxxy69TZroGF1WrQBccKWEWbZi9hOQ8ytF+0jB3gv4x3ahA5yaA20z+PDN
+	PLh5XdiEweLnrZVEipShP4JMQmVGDQo=
+Authentication-Results: smtp-out2.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782022399; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=KRGUrKEmNt4upKNGc6czWVIlCjolRwhdPI4hbQ7Pvss=;
-	b=VD8oLzBfUkEmY/mdKuIxmgHfu9vxODumct0NAsVMFwO4kI2qhVBjaxue3TGLiAtDkpvoER
-	lX1eGFnR76GPtlKWStB0DC6QADjakPnKdo1qDY3jFYGGwhurwTPgPvZQsDc7EtTHzDYaAv
-	FNN8Jqiu70+ssVljcisFykRLAXKcth4=
+	t=1782022403; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=XQIAKjaP+9jfwA4B7+gi661siv2Vdu2+tgq6Q+zPXfM=;
+	b=Lj9DR/49mVbhRoDeIXHPt7kxCocMIzc1MkQ85Yxo2OElYYKrkavY7AnQ5pGcXMSBpnhCaS
+	Q7FivGWlQo31Dxxy69TZroGF1WrQBccKWEWbZi9hOQ8ytF+0jB3gv4x3ahA5yaA20z+PDN
+	PLh5XdiEweLnrZVEipShP4JMQmVGDQo=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E7C9F779A8
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Jun 2026 06:13:17 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E4B97779AB;
+	Sun, 21 Jun 2026 06:13:21 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id BbHSJP2AN2oJSAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 21 Jun 2026 06:13:17 +0000
+	id QF9BJAGBN2oJSAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Sun, 21 Jun 2026 06:13:21 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] btrfs: fix inlined file extent items in data reloc
-Date: Sun, 21 Jun 2026 15:42:57 +0930
-Message-ID: <cover.1782022263.git.wqu@suse.com>
+Cc: stable@vger.kernel.org
+Subject: [PATCH 2/2] btrfs: reject inline file extent item in get_new_location()
+Date: Sun, 21 Jun 2026 15:42:59 +0930
+Message-ID: <96c2603f3ddf2a84e36758102dce178256696913.1782022263.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
+In-Reply-To: <cover.1782022263.git.wqu@suse.com>
+References: <cover.1782022263.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,58 +69,67 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 00B7F7004B
 X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Level: 
+X-Spam-Score: -2.80
 
-There is a syzbot report that an inlined file extent item in a data
-reloc inode triggered a sanity check in get_new_location().
+Commit a6908f88c9da ("btrfs: validate data reloc tree file extent item
+members") introduced extra checks on file extent items for data reloc
+inodes, but it checks file extent offset without checking if the file
+extent is inlined.
 
-It turns out that we can create inlined file extents for data reloc
-inodes in the first place, which should not happen.
+This can lead to either false alerts (as the offset member is inside the
+inlined data) or even read beyond the item range.
 
-So the first patch will avoid compression for data reloc inodes first,
-then the second patch to reject inlined file extent items in
-get_new_location(), making the checks more robust.
+This has already triggered a warning in a syzbot report.
+Although the root fix is to avoid compression for data reloc inodes, for
+the sake of consistency, reject inlined file extents first.
 
-Qu Wenruo (2):
-  btrfs: do not try compression for data reloc inodes
-  btrfs: reject inline file extent item in get_new_location()
+Fixes: a6908f88c9da ("btrfs: validate data reloc tree file extent item members")
+Cc: stable@vger.kernel.org
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/relocation.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
- fs/btrfs/btrfs_inode.h | 2 ++
- fs/btrfs/relocation.c  | 7 +++++++
- 2 files changed, 9 insertions(+)
-
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index fb85bc8b345c..62b38db00b12 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -892,6 +892,13 @@ static int get_new_location(struct inode *reloc_inode, u64 *new_bytenr,
+ 	leaf = path->nodes[0];
+ 	fi = btrfs_item_ptr(leaf, path->slots[0],
+ 			    struct btrfs_file_extent_item);
++	if (unlikely(btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_INLINE)) {
++		btrfs_print_leaf(leaf);
++		btrfs_err(fs_info,
++	"unexpected inline file extent item for data reloc inode %llu key offset %llu",
++			  btrfs_ino(BTRFS_I(reloc_inode)), bytenr);
++		return -EUCLEAN;
++	}
+ 
+ 	/*
+ 	 * The cluster-boundary key searched above is always written by
 -- 
 2.54.0
 

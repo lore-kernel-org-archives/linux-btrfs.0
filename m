@@ -1,159 +1,167 @@
-Received: from mail-qk2-f4.google.com (mail-qk2-f4.google.com [74.125.230.196])
+Received: from mail-oi1-f207.google.com (mail-oi1-f207.google.com [209.85.167.207])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A5FB22E7391
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 12:00:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.230.196
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782129620; cv=pass; b=GaEchTuT+rUcbmrtFK8x5fwE4a9LE4ELhoFZ98BWYauWLEoGGqBxTE7Wy5cDECESRlxM4BMPRG2Pc9JC2xspZZxD7JCPtpoalYhbiXvyjwtW+X4rrsNf0uGMmI531UGY+2yfp7KV/TY54qZtCHd9ZEsf9ts4IzGQPTzcjLdZXf8=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782129620; c=relaxed/simple;
-	bh=vTwFJylEwnMxtbaQ6O6lAC1stXlat+Z+jFehP6eqhbs=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Content-Type; b=HAGNuow5Ex4fcHIOFMIdEWYEsElI4GfezsN2G8HCinUa5V4x6b8LLSmHGZru1n3LdlfwWCIx2clKy15o201aVAm4JIcGx2spC2zTb4lIYrJAyCrXHeAC16d+lSyg73vgYipQgNhYbIUn8p2mL616jEg8OF3A+b46ce/MAMEN7D4=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Crvhdv5B; arc=pass smtp.client-ip=74.125.230.196
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Crvhdv5B"
-Received: by mail-qk2-f4.google.com with SMTP id d75a77b69052e-519f2d3e368so8681cf.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 05:00:19 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1782129618; cv=none;
-        d=google.com; s=arc-20240605;
-        b=VyRAV7ursg5w+Xo6J7dRH9xva57FOkbp64O3TNotPODNp77+JBiQKSHl/kYq7qobvM
-         AjzrGwsJziD/WaCEfsEj/eHmKS4S8UipInfqLq1XREVkvSkL3qi+xZjz9VWdqVboREFK
-         xiMYi7mBcfdYy5amHAbF4g/aPxsmphO6k8mr4iJkD+YLK7ZDYfbH+GpIggA2VQFj5Y6E
-         srHgKk92CaXgqLlApe+rcKiIFs0KLa1v79q2t8Nbdxhy/dGqXHJgkoE5up7nx+Z3jI8t
-         V6ndRdmZ3zork2oMUpADorRdRVJKLjaEhE4bGkM6Xg+TrScjoP+2luUC01Xv5NNkyNqs
-         Yhng==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
-        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
-         :dkim-signature;
-        bh=jpZPtTGX8n2HJfRJ24Trsr7lU3k3OKGDcVmYvaONqqE=;
-        fh=Zbsw1R8MprFM1My2oUAmRUYW5z+w+nIcfxVYo3OQD34=;
-        b=DcnJzPcif4njkHDv1uvteI6AX7OBDZyNv8hIWUgo4xlIVckW4hOgweM9sG+ks0jm3W
-         QsWM1jSJTZQ6D6qDxFXqGJhgEbroPJ4UtzUs/702z9HDsKaaSew9l37j5gQia0MwBlSl
-         aSlyKpiWJ3S4RZh3LWbMwAKYjw3et9VQzLTJYFpZQV/RF6M6spKvSJF7ISv+wfAereo7
-         PA9+fFsrp9G8Es/qEZLX/lJ5Pcea6Ph3aoQPHL/gXYU9+YfH6AoYV9escSEXtlBvhfsX
-         td86/TPsfiERBfrtJeiDLa4bQ5Bd+EOH6IpHpF9Hijh9+dtmby3eylEgL9/Od2l96pyn
-         tXPg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1782129618; x=1782734418; darn=vger.kernel.org;
-        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=jpZPtTGX8n2HJfRJ24Trsr7lU3k3OKGDcVmYvaONqqE=;
-        b=Crvhdv5BGxQ5JItuQrNShxuZGg2p0hnGKbxlNGupfXO5xmrGxA7h52HP2TpbvOKfb9
-         rj4CA4onpAUY3bAHFqRCxHiBoEObmDynw+9Xo0HdfU1t6JIQ2riTkf8WpRgItr/EtbM/
-         yHflHKQ+f6sGs3njbFVGadUPmrtRv1j/eiEo6t3vUs1fLAf4ZcmMuubdlGnQAPTSGb4w
-         w4Hdn56wjkA4uhxUrwe/f2rpwfLpgwWBcbOu+HQRVnynZ+3PMhwZL7j73XLzq4bl9UMw
-         SjU794fglHWiPdOIbQKkXYoUC8zhShuxx5jkZlZKjVIDSF0CBJ5DJNdAElySenqOZW02
-         h/kw==
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51EA04A23
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 12:15:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.207
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1782130525; cv=none; b=m7DV8cCARcoVfv47oXrktfuvMn4NydKWpcf/GJO8h0EAoyrtSqvE0OWleHbAiF8i5+EPVEFD4FAZj4RWjFOSMQzzcELMX59zBv8cHSLeeWIU6jm4p9L992LIbZnfOem5OhdU6qRI1+TWXPyg0baa4tNtQNoDo1IQQDxR/559cEM=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1782130525; c=relaxed/simple;
+	bh=Zu4rer59LPl1z3PxQxhlPJ/hOA8fx93qfSSZ4HNu90U=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=TwWG7NmdowNWJGzfkb+CBda5XEdG//q8Z2Bn5QbeSFrtPU/KR01nZYPr4uGWCK6yzSE9LFnennj9lPlu1vqtRNy7TM25sjGCzNhCczIjTNEKM3WjfEafJEGMaWI6lLacedNRosOY6TGrdRizA2pQ+mywxLuDadxs9S8BpzB8OJE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.207
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oi1-f207.google.com with SMTP id 5614622812f47-48e5de5a23cso448456b6e.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 05:15:24 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1782129618; x=1782734418;
-        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
-         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=jpZPtTGX8n2HJfRJ24Trsr7lU3k3OKGDcVmYvaONqqE=;
-        b=dXcMpUDR1VkAd+mqxdcphb1V9kaRXDZpuo/Pz+blhMK72ktCpz4OA6VMSm4ubJ5234
-         F659XlYA6zx7trTsmfW+qsmEwyTFrJXd+inEhm4pceJDEl494X3XQPhdGP0xcfx8qyi6
-         VWZOIdckwNTY6spjFMm4+sKD8MwofJp2t1D+4VMoDkjHwebBjr1K7hJ1PqhrjSv9655Q
-         EbCuy9d7qf/wb9K/q1PMPuu668/Odqf6rGxAAcsQ0kV09rkTq2Uqg6um4MaAzw76Nhco
-         4RUYiUQxOD2capIvbNdj9MYkQJkFT3qevR3tPofL5IVSBLZMFTGzR8Fbb14R6c00Ru+6
-         6ITQ==
-X-Forwarded-Encrypted: i=1; AFNElJ/Aab//JVF6v0x6xpeySEjKUVJtRXDrxmjgX7XMhCJVRL3BUFtQjoMWAj4urFvtp5Tvf9ZdV3QF4XDVfw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwkfNvcjbgN3NYnW757Ugp85CJhVWGON1SkA3YNPFeigsQO28Z5
-	TioWgqmaa9lJAcCCjkdxq+NTW0zJMvaKIv0tcjdbohfKyLkRgzCQf7fU1wp8Rqz7FKKsy2YEnIt
-	nYNVrMddrkjd3ifYnJPKAigw+rnFnV8RFtSEh5gnRbEfm
-X-Gm-Gg: AfdE7ckrjMUXIOpZYTS4jS6SsKsBRIYFayZb1XenxVj/RotJxAGRTTwMQspf+w3xGuD
-	b0d0Vlet8LjqkwAGFFJBhqREBYr8V8W05aa0BZYAhUxS7IY7fxj5x5cmihSaqtkHCtQ3/8ZJZJD
-	RlzsdyTe2/BIV0te5jZjE8R8b6fDHsHBxxk5atVkipeoPxh7dRW1206fruqR+JMM7p3kZGEUmCF
-	ND8aDX87VPNuscLWgbOkWFA/26Dw6YlLG6NtfXnJEEIpMIYXWCXQScpV3GJCy4jiNO/RqqmFIVP
-	dDMoBP6CpHVANkcIUqAMUvFJVzpC8w==
-X-Received: by 2002:a05:622a:1a85:b0:517:6a56:accf with SMTP id
- d75a77b69052e-51a4f417e62mr2011731cf.1.1782129618209; Mon, 22 Jun 2026
- 05:00:18 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1782130523; x=1782735323;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=NG4MDUMX1ixV9VQjV+6OX8VhzP/PSPnyFIA443/ypi0=;
+        b=DjGZbaCYqmKIEJ8adMq7lTHpMiAG1UH3d858UZrNJuaTa9eeaNzlrMc8JistgGd+d2
+         /AtrbL6zSa5R8tfp5V9TT5XCzkiSVdRTv/MEjc24kjBG6lHuoCq/EI2FNZmA5e4eQ/u9
+         5+xgJe4Y79+0iesBAEkAwXQVOjNFk0dSN8pxFTPvDTDoLH10WXd/o1PeitgatcZCbvTG
+         UCFO5uhfyOvN5Gq0QvwB38g+P6RkG7XCco295i5HgDiQeOJJKQLxU0lY/Ph2Mt24ufCp
+         UzXuuFE5f8k/C2xXgNoHuOA9hOaBAdzRuUX0bhYVeHgsJOK0sxL+cCkDwg0IEVSG91/r
+         vyWw==
+X-Forwarded-Encrypted: i=1; AFNElJ+g99SObGdqSAqz6Px+jDYJ0hh8pGeHpBC0gv9g547CJo5Roh1Mwnc9jClRnZS9lUwRTBegg+QdhQVHiQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yxv2T6iBSlGyBvoiJeGTlQH6NFB19GB0h+AowWiaSzJqC4isxEY
+	2oillVdJ55VUEJYCsNyzpBI3yJRLHdmOuok8kbhbDwHRSEbzP+ucNJbkCqEHuFNgf/0zlvi8nTA
+	z6Qkb0Ah6g6eZD9l29K0meQyO9OX6OrmWMHQwQiS//iN8RU+ScMyo2Yr80is=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <1344e141511245ec5cbfbeabd5bd733f0c18d940.1782033097.git.wqu@suse.com>
-In-Reply-To: <1344e141511245ec5cbfbeabd5bd733f0c18d940.1782033097.git.wqu@suse.com>
-From: sun k <sunk67188@gmail.com>
-Date: Mon, 22 Jun 2026 20:00:06 +0800
-X-Gm-Features: AVVi8CfrgcbrWccQlQHS_UGkUdAYUWDKkX4CFGWiz0kGdN1JHRIXaqTg-1Hry74
-Message-ID: <CAAuSuOoNE4wgaqx-5MH_cqpeu0MyrUikrVS98K2H4xLnRW5mxA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: print-tree: print header owner as signed
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+X-Received: by 2002:a05:6808:50a0:b0:479:dcb1:dcf8 with SMTP id
+ 5614622812f47-489b0f976f1mr14927999b6e.29.1782130523495; Mon, 22 Jun 2026
+ 05:15:23 -0700 (PDT)
+Date: Mon, 22 Jun 2026 05:15:23 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6a39275b.5031c61f.34f2da.0001.GAE@google.com>
+Subject: [syzbot] [btrfs?] kernel BUG in btrfs_alloc_ordered_extent
+From: syzbot <syzbot+ba2afde329fc27e3f22e@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
 Content-Type: text/plain; charset="UTF-8"
 
-Looks good.
+Hello,
 
-Reviewed-by: Sun YangKai <sunk67188@gmail.com>
+syzbot found the following issue on:
 
-BTW, this reminds me the print-tree result of dir items that points to a
-subvol, which currently looks like this:
+HEAD commit:    1a3746ccbb0a Merge tag 'strncpy-removal-v7.2-rc1' of git:/..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=11b76bd2580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=9519196b0a0d47bc
+dashboard link: https://syzkaller.appspot.com/bug?extid=ba2afde329fc27e3f22e
+compiler:       Debian clang version 22.1.6 (++20260514074242+fc4aad7b5db3-1~exp1~20260514074407.73), Debian LLD 22.1.6
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=1132d7b6580000
 
-item 4 key (256 DIR_ITEM 224155391) itemoff 15967 itemsize 48
-                location key (43123 ROOT_ITEM 18446744073709551615) type DIR
-                transid 896627 data_len 0 name_len 18
-                name: home.20260621T2000
+Downloadable assets:
+disk image: https://storage.googleapis.com/syzbot-assets/d74555c02bc2/disk-1a3746cc.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/8ba08fd52fd4/vmlinux-1a3746cc.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/daed17e06386/bzImage-1a3746cc.xz
+mounted in repro #1: https://storage.googleapis.com/syzbot-assets/b45f0a44ace9/mount_0.gz
+  fsck result: failed (log: https://syzkaller.appspot.com/x/fsck.log?x=1048caae580000)
+mounted in repro #2: https://storage.googleapis.com/syzbot-assets/c015b75738a7/mount_17.gz
+  fsck result: failed (log: https://syzkaller.appspot.com/x/fsck.log?x=157292ae580000)
 
-And I wonder if we can also print the location key's offset field as s64
-to make it easier to read.
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+ba2afde329fc27e3f22e@syzkaller.appspotmail.com
 
-Thanks,
-Sun YangKai
+BTRFS critical (device loop5): panic in insert_ordered_extent:264: overlapping ordered extents, existing oe file_offset 32768 num_bytes 430080 flags 0x1089, new oe file_offset 32768 num_bytes 430080 flags 0x80 (errno=-17 Object already exists)
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/ordered-data.c:264!
+Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 6463 Comm: syz.5.32 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/09/2026
+RIP: 0010:insert_ordered_extent fs/btrfs/ordered-data.c:261 [inline]
+RIP: 0010:btrfs_alloc_ordered_extent+0x943/0xad0 fs/btrfs/ordered-data.c:336
+Code: fb 8d ba 08 01 00 00 b9 ef ff ff ff 49 c7 c0 20 95 17 8c 4d 89 f9 ff 75 00 41 54 41 55 41 56 53 e8 e2 80 2e fd 48 83 c4 28 90 <0f> 0b e8 36 2f ca fd 48 c7 c7 80 8c 17 8c 48 c7 c6 e0 8c 17 8c 48
+RSP: 0018:ffffc90004cbe890 EFLAGS: 00010296
+RAX: fbe9776bb6e42800 RBX: 0000000000069000 RCX: 1ffff92000997cf0
+RDX: 0000000000000000 RSI: ffffffff8c295400 RDI: ffff888035451f00
+RBP: ffff888055183ca0 R08: 0000000000000003 R09: 0000000000000004
+R10: dffffc0000000000 R11: fffffbfff1cfca14 R12: 0000000000069000
+R13: 0000000000008000 R14: 0000000000001089 R15: 0000000000008000
+FS:  00007f4d802736c0(0000) GS:ffff888125253000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f6fbd9eed90 CR3: 0000000075aa9000 CR4: 0000000000350ef0
+Call Trace:
+ <TASK>
+ cow_one_range fs/btrfs/inode.c:1241 [inline]
+ cow_file_range+0x744/0x12a0 fs/btrfs/inode.c:1403
+ fallback_to_cow+0x5ea/0xa00 fs/btrfs/inode.c:1751
+ run_delalloc_nocow+0x110c/0x17a0 fs/btrfs/inode.c:2181
+ btrfs_run_delalloc_range+0xbe4/0x1c20 fs/btrfs/inode.c:2419
+ writepage_delalloc+0x104d/0x1ba0 fs/btrfs/extent_io.c:1558
+ extent_writepage fs/btrfs/extent_io.c:1930 [inline]
+ extent_write_cache_pages fs/btrfs/extent_io.c:2593 [inline]
+ btrfs_writepages+0x1667/0x28b0 fs/btrfs/extent_io.c:2725
+ do_writepages+0x338/0x560 mm/page-writeback.c:2571
+ filemap_writeback mm/filemap.c:388 [inline]
+ filemap_fdatawrite_range+0x1ef/0x2f0 mm/filemap.c:413
+ btrfs_fdatawrite_range+0x54/0xf0 fs/btrfs/file.c:3884
+ btrfs_direct_write+0x69d/0xc20 fs/btrfs/direct-io.c:1038
+ btrfs_do_write_iter+0x325/0x790 fs/btrfs/file.c:1449
+ do_iter_readv_writev+0x612/0x8c0 fs/read_write.c:-1
+ vfs_writev+0x343/0x990 fs/read_write.c:1058
+ do_pwritev fs/read_write.c:1154 [inline]
+ __do_sys_pwritev2 fs/read_write.c:1212 [inline]
+ __se_sys_pwritev2+0x177/0x2a0 fs/read_write.c:1203
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f4d7f39ce59
+Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f4d80273028 EFLAGS: 00000246 ORIG_RAX: 0000000000000148
+RAX: ffffffffffffffda RBX: 00007f4d7f616270 RCX: 00007f4d7f39ce59
+RDX: 0000000000000001 RSI: 0000200000000240 RDI: 0000000000000004
+RBP: 00007f4d7f432e6f R08: 0000000000000000 R09: 0000000000000003
+R10: 0000000000007000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007f4d7f616308 R14: 00007f4d7f616270 R15: 00007fff80ba6368
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:insert_ordered_extent fs/btrfs/ordered-data.c:261 [inline]
+RIP: 0010:btrfs_alloc_ordered_extent+0x943/0xad0 fs/btrfs/ordered-data.c:336
+Code: fb 8d ba 08 01 00 00 b9 ef ff ff ff 49 c7 c0 20 95 17 8c 4d 89 f9 ff 75 00 41 54 41 55 41 56 53 e8 e2 80 2e fd 48 83 c4 28 90 <0f> 0b e8 36 2f ca fd 48 c7 c7 80 8c 17 8c 48 c7 c6 e0 8c 17 8c 48
+RSP: 0018:ffffc90004cbe890 EFLAGS: 00010296
+RAX: fbe9776bb6e42800 RBX: 0000000000069000 RCX: 1ffff92000997cf0
+RDX: 0000000000000000 RSI: ffffffff8c295400 RDI: ffff888035451f00
+RBP: ffff888055183ca0 R08: 0000000000000003 R09: 0000000000000004
+R10: dffffc0000000000 R11: fffffbfff1cfca14 R12: 0000000000069000
+R13: 0000000000008000 R14: 0000000000001089 R15: 0000000000008000
+FS:  00007f4d802736c0(0000) GS:ffff888125253000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f6fbd9eed90 CR3: 0000000075aa9000 CR4: 0000000000350ef0
 
 
-On 2026/6/21 17:11, Qu Wenruo wrote:
-> When dumpping a tree block, btrfs_header::owner is printed as
-> unsigned, which can result in numbers that are hard to read, e.g:
->
->   BTRFS info (device loop0): leaf 8908800 gen 16 total ptrs 28 free space 1676 owner 18446744073709551607
->
-> For the above output, 18446744073709551607 is (s64)-9, the root id of data
-> reloc tree.
->
-> Despite those pre-defined root ids that are already negative, existing
-> subvolume trees will not have any negative values, as subvolume trees can
-> only utilize the lower 48 bits, so there will be no output change for
-> existing subvolumes, thus no extra confusion.
->
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->   fs/btrfs/print-tree.c | 8 ++++----
->   1 file changed, 4 insertions(+), 4 deletions(-)
->
-> diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-> index 87e60a2d4bd8..53e726119ca7 100644
-> --- a/fs/btrfs/print-tree.c
-> +++ b/fs/btrfs/print-tree.c
-> @@ -449,9 +449,9 @@ void btrfs_print_leaf(const struct extent_buffer *l)
->       nr = btrfs_header_nritems(l);
->
->       btrfs_info(fs_info,
-> -                "leaf %llu gen %llu total ptrs %d free space %d owner %llu",
-> +                "leaf %llu gen %llu total ptrs %d free space %d owner %lld",
->                  btrfs_header_bytenr(l), btrfs_header_generation(l), nr,
-> -                btrfs_leaf_free_space(l), btrfs_header_owner(l));
-> +                btrfs_leaf_free_space(l), (s64)btrfs_header_owner(l));
->       print_eb_refs_lock(l);
->       for (i = 0 ; i < nr ; i++) {
->               char key_buf[KEY_TYPE_BUF_SIZE];
-> @@ -600,10 +600,10 @@ void btrfs_print_tree(const struct extent_buffer *c, bool follow)
->               return;
->       }
->       btrfs_info(fs_info,
-> -                "node %llu level %d gen %llu total ptrs %d free spc %u owner %llu",
-> +                "node %llu level %d gen %llu total ptrs %d free spc %u owner %lld",
->                  btrfs_header_bytenr(c), level, btrfs_header_generation(c),
->                  nr, (u32)BTRFS_NODEPTRS_PER_BLOCK(fs_info) - nr,
-> -                btrfs_header_owner(c));
-> +                (s64)btrfs_header_owner(c));
->       print_eb_refs_lock(c);
->       for (i = 0; i < nr; i++) {
->               btrfs_node_key_to_cpu(c, &key, i);
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
+
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+
+If the report is already addressed, let syzbot know by replying with:
+#syz fix: exact-commit-title
+
+If you want syzbot to run the reproducer, reply with:
+#syz test: git://repo/address.git branch-or-commit-hash
+If you attach or paste a git patch, syzbot will apply it before testing.
+
+If you want to overwrite report's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
+
+If the report is a duplicate of another one, reply with:
+#syz dup: exact-subject-of-another-report
+
+If you want to undo deduplication, reply with:
+#syz undup

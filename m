@@ -1,212 +1,130 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-ot1-f80.google.com (mail-ot1-f80.google.com [209.85.210.80])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 96849238C1A
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 16:34:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF7401C2324
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 17:01:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.80
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782146101; cv=none; b=C/SoDZGYfdJMO0vySLmVmgqody5EaeGJolLaDTl4XrFLsneDyopA5LNVTjUoiRNxDEIHpgMab4Qc4eMEpaBjjBvq0sK8KWUcGJRVnQai30x0hS1jf+lt2a7dJWgZEFm8g3/W7u6kSjT9PauoO+i7ek9wblfbgMxlSiEJuZPoQzg=
+	t=1782147688; cv=none; b=lTm1oL/PovbG8ZGiCPr+TXXo3qtQ1sUT1jeHW1yZ//7tmWlxBqgqhNhCzdrwTCXOaCtgSJS2jflJUvUAmMPOgjbeW4MU0b/4ka4Sxi3JGu8ACXQ+bDTDTglNnu+aSNmQIVa8cWfFEZfVUWYGQTP+UZdpBpWku3YRFB+UQlEGIDM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782146101; c=relaxed/simple;
-	bh=+VaXmzuGs7ZjB1hzOKV8Tf7ychJO6jd2T5191/5djeI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=dHOeq+OnZJFmODdX0+FpUl1OLEF8ZwNHJ07FvjK8+66CQZn5NeVdhZ2KFLViMbHrEb7YJPQ0cFSJ4P/kyV6FjOG0fyUgdr5CH8q4HIceP83Td0xFPqvVT8v4GBQLhovKfBDgd+Km1Y6zeQwyawYxj2E6wxfiBdeQT/6ZIcaweNo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Wttf5jNj; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=yf5ZI00v; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Sc6A4Dw/; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=vwqQhrF0; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Wttf5jNj";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="yf5ZI00v";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Sc6A4Dw/";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="vwqQhrF0"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id BD9CD75B12;
-	Mon, 22 Jun 2026 16:34:56 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1782146097; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=zOyzIKJqX7tZFMtlqztdiIbczyvu/PCMQorXmmY+s9w=;
-	b=Wttf5jNjQA9DKN6ckwrKQGIE2piT+zrUI8ktk1AaEcq4AjCir3O3KjiLBTfhcvVN33l2i5
-	r6ezZQC/RENxOtoNaFMmsWcGPubbPZKoGFBAkUlB6zd+YahkQsjGXUQoOgRazL3G6Opv6b
-	iFHcDj85S+palLxzUQE0yil/Wmn+nGI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1782146097;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=zOyzIKJqX7tZFMtlqztdiIbczyvu/PCMQorXmmY+s9w=;
-	b=yf5ZI00vPNh0BcAOmLoS1qx84bokNY9IUkRbKtaAbDcQMyWGvZK32r9i+5OEwLCC0Gqjqe
-	qBVXFs8oRrvCeCDg==
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b="Sc6A4Dw/";
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=vwqQhrF0
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1782146096; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=zOyzIKJqX7tZFMtlqztdiIbczyvu/PCMQorXmmY+s9w=;
-	b=Sc6A4Dw/TGIsMWPgC/z20PyGSzMZXPLnPzOtCPbOPpomuS41q/qQZv748sXOU0aVeINc0t
-	FQHPIqksKweksAUy3y6mHZaXHcqK4kCUMOx2IAvNXGDdlwHZ1VyIZQWjOj5WsytX+746Pk
-	meg+eE6S+ZWhqCSFLshWQ247Uoc6WHg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1782146096;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=zOyzIKJqX7tZFMtlqztdiIbczyvu/PCMQorXmmY+s9w=;
-	b=vwqQhrF0Eqf2paPnD2EIyxxgK0g+9g5ihen5K17JO9lQ61F2qmftn9ds+5MsCdWo77MNwq
-	ghsmUf9Z20qn0qBQ==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B1FB2779A8;
-	Mon, 22 Jun 2026 16:34:56 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id D0dyKzBkOWrZWQAAD6G6ig
-	(envelope-from <jack@suse.cz>); Mon, 22 Jun 2026 16:34:56 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-	id 4EB2EA093E; Mon, 22 Jun 2026 18:34:56 +0200 (CEST)
-Date: Mon, 22 Jun 2026 18:34:56 +0200
-From: Jan Kara <jack@suse.cz>
-To: Christian Brauner <brauner@kernel.org>
-Cc: Jan Kara <jack@suse.cz>, Christoph Hellwig <hch@lst.de>, 
-	Jens Axboe <axboe@kernel.dk>, Alexander Viro <viro@zeniv.linux.org.uk>, 
-	linux-block@vger.kernel.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	Carlos Maiolino <cem@kernel.org>, linux-xfs@vger.kernel.org, Chris Mason <clm@fb.com>, 
-	David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, Theodore Ts'o <tytso@mit.edu>, 
-	linux-ext4@vger.kernel.org, Gao Xiang <xiang@kernel.org>, linux-erofs@lists.ozlabs.org
-Subject: Re: [PATCH RFC v2 08/18] fs: add dedicated block device open helpers
- for filesystems
-Message-ID: <7unybrw7f6nmn5nfxiaxgqm2reneybunc6nha256oez6siixkg@qzdhk474mx7h>
-References: <20260616-work-super-bdev_holder_global-v2-0-7df6b864028e@kernel.org>
- <20260616-work-super-bdev_holder_global-v2-8-7df6b864028e@kernel.org>
- <xlfnmwv2upjia6ozd4z5l5icaewor4a6cgkafnigulndzmt6r7@rhay3h3wablo>
+	s=arc-20240116; t=1782147688; c=relaxed/simple;
+	bh=+4BL8mNe2GpceLMa+B1YZt8aHMj9287TCyLUK2gE5do=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=MQTA1vYYD//dIxc7tDryMG0BpTlLC5XHQDvSLITlRca6muDeVjffXo6MzZNOUgMnQJTnb2lw8KfugwfW1l32NLCA/tZlEJqqyLxOAWJxn4zTGeGUhVYLH18cjEV1z5sQ1NzfP+2szx7SH/LTWgDwtOiP+c5IeZOPVSs1fwgAmQY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.210.80
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-ot1-f80.google.com with SMTP id 46e09a7af769-7e93d7611beso5285684a34.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 10:01:26 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1782147686; x=1782752486;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=9tCt6cV25/HObsnQZBNmdsWShs7zz4P+Smlgan5RGhg=;
+        b=ojvS7lKqngFifEBoPLVNMuc9xugWtjo1awUUXINM9qRf29p5841Vp0lboLhZrzM2Vd
+         SoSSMInepkqAFjdOJ3v6gyFuek9ix68H+eqxNnJLWk+wlG/Sfg3c8G0FEdhN519/jBRu
+         RslW21jWu6Fq2gakOIqnESwGhVFVKRZEsxXVxJFVNzE9yqHAE+WI/7jTyiZlhFKbNnhJ
+         HtOvC7ufLJpSj1MMATqKga+627KdOjN0vsHlIocLl3Vj8KFYTLhyFKQFNZ8H7ULICmyF
+         JoN0Aw+hSuAfBnXQeqjK2c7cDf02uFUWpRDo/bsHKeFjh4MbMRNdxqFm8+FeexgZ07Bv
+         nIMQ==
+X-Forwarded-Encrypted: i=1; AFNElJ+nWTI9z35utLcOeetyVnj/vz1gFH01YUfCFHG1UnB0nVji+gZtGwCJtaP84bDo00KHRgeVaA96vzJKFw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxbSimd6Ma6fPZy9N7kcIUkfFj5J5KXifIqIS8AHYSETto+IJH3
+	nIGkwpv9S+6U3DOD8mID3twZXdNu2NRR0ISUhSyG3UnxBkIj3ukr3HmMWIn4WJecfvscaKpG9z2
+	/Pl57+GD+ZbERo2CiSL38M9cudqQZo2cT81LQzad5gVR7uw09Z7wILVM1JSc=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <xlfnmwv2upjia6ozd4z5l5icaewor4a6cgkafnigulndzmt6r7@rhay3h3wablo>
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: BD9CD75B12
-X-Spam-Flag: NO
-X-Spam-Score: -4.01
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_RHS_NOT_FQDN(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCPT_COUNT_TWELVE(0.00)[17];
-	MISSING_XM_UA(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:email,suse.cz:dkim,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
-	RCVD_COUNT_THREE(0.00)[3];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCVD_TLS_LAST(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_TRACE(0.00)[suse.cz:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Received: by 2002:a05:6830:3749:b0:7de:84b5:88e3 with SMTP id
+ 46e09a7af769-7e92d879fdfmr13601632a34.8.1782147685799; Mon, 22 Jun 2026
+ 10:01:25 -0700 (PDT)
+Date: Mon, 22 Jun 2026 10:01:25 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6a396a65.52ae72c2.136ac7.0001.GAE@google.com>
+Subject: [syzbot] [btrfs?] WARNING in can_finish_ordered_extent
+From: syzbot <syzbot+085adc3f91549d11066a@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 
-On Mon 22-06-26 18:28:50, Jan Kara wrote:
-> On Tue 16-06-26 16:08:24, Christian Brauner wrote:
-> > Add fs_bdev_file_open_by_{dev,path}() and fs_bdev_file_release(). They
-> > open the device with fs_holder_ops and register a claim in the
-> > device-to-superblock table. Claims on the same (device, superblock)
-> > pair share one entry, so when a filesystem claims a device it already
-> > uses (xfs with its log on the data device), no second entry is added
-> > and each superblock will be acted on once.
-> > 
-> > The holder argument remains purely the block layer's exclusivity token:
-> > a superblock, or a file_system_type for a device shared by several
-> > superblocks of that type. The shared case only becomes usable once the
-> > fs_holder_ops callbacks resolve superblocks through the table instead
-> > of bdev->bd_holder.
-> > 
-> > Convert the main device, setup_bdev_super() and kill_block_super(),
-> > over: the open finds the entry registered by sget_fc() and claims it
-> > again. cramfs and romfs bypass kill_block_super() so they can handle
-> > MTD mounts and release the main device with a plain bdev_fput(), which
-> > would leave the claim behind: the (dev, sb) entry would never be
-> > unregistered and the passive reference it holds would keep the
-> > superblock alive forever. Convert their release paths in the same
-> > step.
-> > 
-> > The frozen-device check stays in setup_bdev_super() for the primary
-> > device and is added to fs_bdev_register() for new claims, i.e. every
-> > additional device a filesystem opens through the helpers. Only a
-> > (device, superblock) pair the superblock claimed earlier may be
-> > reopened while frozen (xfs with its log on the data device): the freeze
-> > already covers that superblock through the existing claim, so nothing
-> > escapes it. Without the setup_bdev_super() check a device frozen before
-> > the mount even started (dm lock_fs, loop) could be mounted and written
-> > to (journal replay) under an active freeze, because the primary open
-> > reuses the entry registered by sget_fc() and never takes the new-claim
-> > path.
-> > 
-> > Both checks read bd_fsfreeze_count only after the entry is published
-> > (by sget_fc() for the primary, by fs_bdev_register() for new claims)
-> > and pair with bdev_freeze() incrementing the count before walking the
-> > table: either the mount sees the elevated freeze count and fails with
-> > EBUSY, or the freeze finds the published entry and converges once
-> > SB_BORN is set.
-> > 
-> > Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
+Hello,
 
-...
+syzbot found the following issue on:
 
-> > +/**
-> > + * fs_bdev_file_release - release a block device claimed for a superblock
-> > + * @bdev_file: file returned by fs_bdev_file_open_by_{dev,path}()
-> > + * @sb: superblock the device was claimed for
-> > + *
-> > + * Drop one claim on the {dev, @sb} entry; the last claim unregisters it (a
-> > + * pinning cursor defers the actual unlink).  Then close the block device.
-> > + */
-> > +void fs_bdev_file_release(struct file *bdev_file, struct super_block *sb)
-> > +{
-> > +	dev_t dev = file_bdev(bdev_file)->bd_dev;
-> > +	struct super_dev *sb_dev;
-> > +
-> > +	rcu_read_lock();
-> > +	sb_dev = super_dev_lookup(dev, sb);
-> > +	rcu_read_unlock();
-> > +	super_dev_put(sb_dev);
-> > +	bdev_fput(bdev_file);
-> > +}
-> > +EXPORT_SYMBOL_GPL(fs_bdev_file_release);
-> 
-> Why don't you use sb->s_super_dev in this function?
+HEAD commit:    1a3746ccbb0a Merge tag 'strncpy-removal-v7.2-rc1' of git:/..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=113256ae580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=f5fece1a9477c321
+dashboard link: https://syzkaller.appspot.com/bug?extid=085adc3f91549d11066a
+compiler:       Debian clang version 22.1.6 (++20260514074242+fc4aad7b5db3-1~exp1~20260514074407.73), Debian LLD 22.1.6
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=15b66ba1580000
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=108f07f2580000
 
-Nevermind, I've realized sb can hold multiple bdevs so this is really
-needed.
+Downloadable assets:
+disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-1a3746cc.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/376997b632fc/vmlinux-1a3746cc.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/0920309c4838/bzImage-1a3746cc.xz
+mounted in repro: https://storage.googleapis.com/syzbot-assets/d394e1f93e2a/mount_2.gz
+  fsck result: OK (log: https://syzkaller.appspot.com/x/fsck.log?x=10adbeae580000)
 
-I'd still prefer the __free handling in fs_bdev_register() sorted out but
-regardless feel free to add:
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+085adc3f91549d11066a@syzkaller.appspotmail.com
 
-Reviewed-by: Jan Kara <jack@suse.cz>
+------------[ cut here ]------------
+len > ordered->bytes_left
+WARNING: fs/btrfs/ordered-data.c:390 at can_finish_ordered_extent+0x409/0x830 fs/btrfs/ordered-data.c:390, CPU#0: kworker/u4:9/1149
+Modules linked in:
+CPU: 0 UID: 0 PID: 1149 Comm: kworker/u4:9 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+Workqueue: btrfs-endio simple_end_io_work
+RIP: 0010:can_finish_ordered_extent+0x409/0x830 fs/btrfs/ordered-data.c:390
+Code: 00 00 00 e8 09 81 c8 fd eb 05 e8 02 81 c8 fd 4d 85 ed 0f 94 c0 48 83 c4 38 5b 41 5c 41 5d 41 5e 41 5f 5d e9 09 92 b5 07 cc 90 <0f> 0b 90 e8 2f fd ad fd 48 8d 05 00 00 00 00 48 c7 c7 a0 9b 95 8e
+RSP: 0018:ffffc900015bf968 EFLAGS: 00010287
+RAX: ffffffff83fdc133 RBX: 1ffff11007f3479e RCX: ffff888032faa540
+RDX: 0000000000000000 RSI: 0000000000006000 RDI: 0000000000071000
+RBP: 1ffff11007f347a3 R08: 0000000000000003 R09: 0000000000000004
+R10: dffffc0000000000 R11: fffff520002b7f2c R12: ffff88803f9a3cf0
+R13: fffffffffff95000 R14: 1ffff110084b063c R15: 0000000000071000
+FS:  0000000000000000(0000) GS:ffff88808c848000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fb7eda7a000 CR3: 00000000439b1000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ btrfs_finish_ordered_extent+0xed/0x420 fs/btrfs/ordered-data.c:438
+ end_bbio_data_write+0xad3/0xc80 fs/btrfs/extent_io.c:538
+ btrfs_bio_end_io+0x3ea/0x4d0 fs/btrfs/bio.c:147
+ process_one_work kernel/workqueue.c:3322 [inline]
+ process_scheduled_works+0xa8e/0x14e0 kernel/workqueue.c:3405
+ worker_thread+0xa47/0xfb0 kernel/workqueue.c:3486
+ kthread+0x388/0x470 kernel/kthread.c:436
+ ret_from_fork+0x514/0xb70 arch/x86/kernel/process.c:158
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
+ </TASK>
 
-								Honza
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
+
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+
+If the report is already addressed, let syzbot know by replying with:
+#syz fix: exact-commit-title
+
+If you want syzbot to run the reproducer, reply with:
+#syz test: git://repo/address.git branch-or-commit-hash
+If you attach or paste a git patch, syzbot will apply it before testing.
+
+If you want to overwrite report's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
+
+If the report is a duplicate of another one, reply with:
+#syz dup: exact-subject-of-another-report
+
+If you want to undo deduplication, reply with:
+#syz undup

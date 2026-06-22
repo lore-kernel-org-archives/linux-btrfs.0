@@ -1,130 +1,290 @@
-Received: from mail-ot1-f80.google.com (mail-ot1-f80.google.com [209.85.210.80])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from out162-62-57-64.mail.qq.com (out162-62-57-64.mail.qq.com [162.62.57.64])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF7401C2324
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 17:01:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.80
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 32FC776025
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 20:20:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=162.62.57.64
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782147688; cv=none; b=lTm1oL/PovbG8ZGiCPr+TXXo3qtQ1sUT1jeHW1yZ//7tmWlxBqgqhNhCzdrwTCXOaCtgSJS2jflJUvUAmMPOgjbeW4MU0b/4ka4Sxi3JGu8ACXQ+bDTDTglNnu+aSNmQIVa8cWfFEZfVUWYGQTP+UZdpBpWku3YRFB+UQlEGIDM=
+	t=1782159626; cv=none; b=MSHo4wszYIfZMwEe6kPUP4MotPEDdrXaLTVnrKFbG66lN/0wBKH9SpUESRGzKvj7aIU/xeEurTn+37mNWzLMetMblmQYLeXsKnJPYS+513b8/9aTf8UOhfUigWRduUeKDaE4c9cCiJPWEyb+qaXRPZfpT22WadKhU5rCWAqH5co=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782147688; c=relaxed/simple;
-	bh=+4BL8mNe2GpceLMa+B1YZt8aHMj9287TCyLUK2gE5do=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=MQTA1vYYD//dIxc7tDryMG0BpTlLC5XHQDvSLITlRca6muDeVjffXo6MzZNOUgMnQJTnb2lw8KfugwfW1l32NLCA/tZlEJqqyLxOAWJxn4zTGeGUhVYLH18cjEV1z5sQ1NzfP+2szx7SH/LTWgDwtOiP+c5IeZOPVSs1fwgAmQY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.210.80
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-ot1-f80.google.com with SMTP id 46e09a7af769-7e93d7611beso5285684a34.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 10:01:26 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1782147686; x=1782752486;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=9tCt6cV25/HObsnQZBNmdsWShs7zz4P+Smlgan5RGhg=;
-        b=ojvS7lKqngFifEBoPLVNMuc9xugWtjo1awUUXINM9qRf29p5841Vp0lboLhZrzM2Vd
-         SoSSMInepkqAFjdOJ3v6gyFuek9ix68H+eqxNnJLWk+wlG/Sfg3c8G0FEdhN519/jBRu
-         RslW21jWu6Fq2gakOIqnESwGhVFVKRZEsxXVxJFVNzE9yqHAE+WI/7jTyiZlhFKbNnhJ
-         HtOvC7ufLJpSj1MMATqKga+627KdOjN0vsHlIocLl3Vj8KFYTLhyFKQFNZ8H7ULICmyF
-         JoN0Aw+hSuAfBnXQeqjK2c7cDf02uFUWpRDo/bsHKeFjh4MbMRNdxqFm8+FeexgZ07Bv
-         nIMQ==
-X-Forwarded-Encrypted: i=1; AFNElJ+nWTI9z35utLcOeetyVnj/vz1gFH01YUfCFHG1UnB0nVji+gZtGwCJtaP84bDo00KHRgeVaA96vzJKFw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxbSimd6Ma6fPZy9N7kcIUkfFj5J5KXifIqIS8AHYSETto+IJH3
-	nIGkwpv9S+6U3DOD8mID3twZXdNu2NRR0ISUhSyG3UnxBkIj3ukr3HmMWIn4WJecfvscaKpG9z2
-	/Pl57+GD+ZbERo2CiSL38M9cudqQZo2cT81LQzad5gVR7uw09Z7wILVM1JSc=
+	s=arc-20240116; t=1782159626; c=relaxed/simple;
+	bh=FkE0tWnif62n89eSTIBmqvMveLZ9a3xSa4OoG7tgbnw=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=gT1NBKN3tT84xNy32m9H/phYca/pd/bmYomX5KCs1t8RdsoZ+OfDhvvK+KgKYI1wqeMWEO+KrkJzXeppCZGhEmcQFsOmz5HgaitPqk28Sn4qJoyMyaq+iq+xCPtlUZjrgK7QE+CjNBbXV5S7m2fe7TCvYnmiYUFKt+JS3wX2j7c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com; spf=pass smtp.mailfrom=qq.com; dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b=UQSE2DWi; arc=none smtp.client-ip=162.62.57.64
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=qq.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b="UQSE2DWi"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=qq.com; s=s201512;
+	t=1782159617; bh=O2sAVozDUi5Jl+qCSIvNFeRlX5Ra7+WyqmaiQPiFyfg=;
+	h=Date:Subject:To:References:From:In-Reply-To;
+	b=UQSE2DWiIR+6tm0arqr/QONs4M/k1hygi23tCuqR5t97CghzmdxHbPEPEtgpZYFb1
+	 TdveqimJkt1Lp6Eu77XT3BwfwVocV+Vx1plyAYCUUKRNlNOFGspS4brZgq1NVsKNia
+	 8+So41L7CFvTz5XM930+cdHTliOz8Kw51qP+BC/I=
+Received: from [192.168.3.157] ([115.156.144.140])
+	by newxmesmtplogicsvrsza63-0.qq.com (NewEsmtp) with SMTP
+	id 50F9EC4E; Tue, 23 Jun 2026 04:20:15 +0800
+X-QQ-mid: xmsmtpt1782159615tb2yzmgxx
+Message-ID: <tencent_276F7EF21CF219623E5C48630C8A64190D06@qq.com>
+X-QQ-XMAILINFO: MNcrZJ8uS2untrh1uHkufGqbYsT6RxgySYU6Sm9FMIdTgkFHDEkAYBKNlg84Mj
+	 aiIzc1rMGLKm0/0f3KWRocfFc1FKS7rRyljp2NaedUyS+HL/ViHwi57zjbwTU2M1D6oEXwfh57h5
+	 Fys9CXQpcSLMyZMaD2V5YD3qJz90WZAfhk2fT5z7OH1JjK1gDrSw3ymChDtQOOfKWuJ8VPFC5k7O
+	 N3O26msiOW3eXuw+SK+3p+Y/nUBpC4fRJ+bwjHGtbX2P2TkZqTscN7WilBQYLwBnGmAG4zMmoYCY
+	 yH+2UXgVjz0R32I26mhwQqS48fXuf8d8hhYY3nZGSktjJKPx2hIr6oBQ2qZRi/rnzzX3+sKz20ug
+	 Rnv5kl0xx+7BA/Lci7Fk1Ccw0MCbDy1MT/WqP3BgKkfJ7kwUm7PEC7r2ObMIo2iZDrzN6U4Vs72C
+	 Rk93NSy/Q91nUTbQSGAw6FMVARtVX6o3Q/7FkTQE0qvz1Z3oR0S50wsk9e47u2lX0rTeHanBDv/h
+	 K9RpJeqeWUJqOgxvVpzPm0mfrXzKDoYrbk+Ywm1JJXWt6V4Cg1alZhH3igZW/PfdLFjFsTOhTUC1
+	 rMiBLJMpT2PgbNL+2XmkqT1BjE56fHblqWmBc3KzQRVcQxATVbWCro7DDoxOad1c4LtbeP4HA6CM
+	 0tmajOpDphwDyc0NpRPU5WAcC4ATP0Jr6RYMnCTNO1N1qK6GV+7pSVUDSihCFyEjU44kiV9iTcTb
+	 GOJy7P4Sf9JD3eTR10PLW/EC+05eCd2gReHPvtxMW1RDELRJpHdchILdhjWt8UIi6UQNAq/wH8ma
+	 vZWI785FdCtk2JLiNfBkOt/kNIg/mFVb7+uNUKHNq0DNvZOYMdHeh7KOfBfYPf7SnXlAdwKLnIHy
+	 JNdLfXogyIckL404Hmxt7rZSwtoqwf0w1nrIduXsAdIAZf0f+xuPkwHydgidmwWuhaW3X+B9+BFL
+	 2r1uTTnNmNDHIclrye3ZvPO350tZYI8HvVpduXtDMCibe42lsmdN8CJWPeHARUPdcRfuVB36YLpo
+	 Jslj0QmDMzBSGsAvEXqDjVnyNUtGpVIsPuiaPDCg1WvsBfQAtsoOlegpSaX6CR2Xr81PTYhRkwSD
+	 adMqjs
+X-QQ-XMRINFO: MSVp+SPm3vtSI1QTLgDHQqIV1w2oNKDqfg==
+X-OQ-MSGID: <f7d504ad-b626-4952-90f5-2776799f2209@qq.com>
+Date: Tue, 23 Jun 2026 04:20:15 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6830:3749:b0:7de:84b5:88e3 with SMTP id
- 46e09a7af769-7e92d879fdfmr13601632a34.8.1782147685799; Mon, 22 Jun 2026
- 10:01:25 -0700 (PDT)
-Date: Mon, 22 Jun 2026 10:01:25 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a396a65.52ae72c2.136ac7.0001.GAE@google.com>
-Subject: [syzbot] [btrfs?] WARNING in can_finish_ordered_extent
-From: syzbot <syzbot+085adc3f91549d11066a@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla Thunderbird
+Subject: Re: [RFC 08/15] btrfs: implement RAID stripe-tree RAID5 writes
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+ linux-btrfs@vger.kernel.org
+References: <20260619090211.497100-1-johannes.thumshirn@wdc.com>
+ <20260619090211.497100-9-johannes.thumshirn@wdc.com>
+From: XIAO WU <xiaowu.417@qq.com>
+In-Reply-To: <20260619090211.497100-9-johannes.thumshirn@wdc.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-Hello,
+Hi Johannes,
 
-syzbot found the following issue on:
+I came across the Sashiko AI review [1] of this patch and was able to
+reproduce a null pointer dereference during mount on a RAID5 filesystem
+with the raid-stripe-tree feature enabled.  I wanted to share the
+concrete evidence since it crashes deterministically with KASAN.
 
-HEAD commit:    1a3746ccbb0a Merge tag 'strncpy-removal-v7.2-rc1' of git:/..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=113256ae580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=f5fece1a9477c321
-dashboard link: https://syzkaller.appspot.com/bug?extid=085adc3f91549d11066a
-compiler:       Debian clang version 22.1.6 (++20260514074242+fc4aad7b5db3-1~exp1~20260514074407.73), Debian LLD 22.1.6
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=15b66ba1580000
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=108f07f2580000
+ > +    set->stripe_units[i].pstripe = pstripe;
 
-Downloadable assets:
-disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-1a3746cc.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/376997b632fc/vmlinux-1a3746cc.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/0920309c4838/bzImage-1a3746cc.xz
-mounted in repro: https://storage.googleapis.com/syzbot-assets/d394e1f93e2a/mount_2.gz
-  fsck result: OK (log: https://syzkaller.appspot.com/x/fsck.log?x=10adbeae580000)
+The Sashik identified that btrfs_stripe_set_alloc() stores a
+direct pointer into bioc->stripes[] without taking a reference on the
+bioc.  When the data bios complete first, the bioc can be freed before
+the async parity workqueue dereferences pstripe.  The review also noted
+several other issues in the same patch:
 
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+085adc3f91549d11066a@syzkaller.appspotmail.com
+- raid56_write_end_io_work() completes the data ordered extent before
+   the parity bio finishes — an fsync could return success while data
+   remains without parity protection on disk.
 
-------------[ cut here ]------------
-len > ordered->bytes_left
-WARNING: fs/btrfs/ordered-data.c:390 at can_finish_ordered_extent+0x409/0x830 fs/btrfs/ordered-data.c:390, CPU#0: kworker/u4:9/1149
-Modules linked in:
-CPU: 0 UID: 0 PID: 1149 Comm: kworker/u4:9 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-Workqueue: btrfs-endio simple_end_io_work
-RIP: 0010:can_finish_ordered_extent+0x409/0x830 fs/btrfs/ordered-data.c:390
-Code: 00 00 00 e8 09 81 c8 fd eb 05 e8 02 81 c8 fd 4d 85 ed 0f 94 c0 48 83 c4 38 5b 41 5c 41 5d 41 5e 41 5f 5d e9 09 92 b5 07 cc 90 <0f> 0b 90 e8 2f fd ad fd 48 8d 05 00 00 00 00 48 c7 c7 a0 9b 95 8e
-RSP: 0018:ffffc900015bf968 EFLAGS: 00010287
-RAX: ffffffff83fdc133 RBX: 1ffff11007f3479e RCX: ffff888032faa540
-RDX: 0000000000000000 RSI: 0000000000006000 RDI: 0000000000071000
-RBP: 1ffff11007f347a3 R08: 0000000000000003 R09: 0000000000000004
-R10: dffffc0000000000 R11: fffff520002b7f2c R12: ffff88803f9a3cf0
-R13: fffffffffff95000 R14: 1ffff110084b063c R15: 0000000000071000
-FS:  0000000000000000(0000) GS:ffff88808c848000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007fb7eda7a000 CR3: 00000000439b1000 CR4: 0000000000352ef0
-Call Trace:
- <TASK>
- btrfs_finish_ordered_extent+0xed/0x420 fs/btrfs/ordered-data.c:438
- end_bbio_data_write+0xad3/0xc80 fs/btrfs/extent_io.c:538
- btrfs_bio_end_io+0x3ea/0x4d0 fs/btrfs/bio.c:147
- process_one_work kernel/workqueue.c:3322 [inline]
- process_scheduled_works+0xa8e/0x14e0 kernel/workqueue.c:3405
- worker_thread+0xa47/0xfb0 kernel/workqueue.c:3486
- kthread+0x388/0x470 kernel/kthread.c:436
- ret_from_fork+0x514/0xb70 arch/x86/kernel/process.c:158
- ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
- </TASK>
+- btrfs_submit_raid56_write() overwrites bio->bi_end_io and may leak
+   the base bioc allocation reference on every chunk write.
 
+- btrfs_rst_raid56_write() folds the full unsplit bio size into the
+   parity buffer, which could cause double-folding on the remainder
+   when the caller loops after btrfs_split_bio().
 
----
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+- bio_set_dev(bio, pstripe->dev->bdev) followed by submit_bio()
+   will panic on a degraded array where the missing device's bdev
+   is NULL.
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+[Reproduction]
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
+The PoC creates three loopback devices, makes a RAID5 btrfs, then
+manually flips the raid-stripe-tree incompat flag in each superblock
+(recalculating CRC32C) before mounting.  The null pointer dereference
+occurs deterministically during mount in btrfs_read_block_groups().
 
-If you want syzbot to run the reproducer, reply with:
-#syz test: git://repo/address.git branch-or-commit-hash
-If you attach or paste a git patch, syzbot will apply it before testing.
+[Crash log — kernel 7.1.0-g3b216e369cba, CONFIG_KASAN=y, SMP]
 
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
+   BTRFS info (device loop0): first mount of filesystem df5f7a81-...
+   BTRFS info (device loop0): using crc32c checksum algorithm
 
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
+   Oops: general protection fault, probably for non-canonical address
+   0xdffffc0000000020: 0000 [#1] SMP KASAN NOPTI
+   KASAN: null-ptr-deref in range [0x0000000000000100-0x0000000000000107]
 
-If you want to undo deduplication, reply with:
-#syz undup
+   RIP: 0010:btrfs_update_global_block_rsv+0x452/0x960
+   RAX: 0000000000000020 RBX: 0000000000000000 RCX: 0000000000000000
+   RDX: dffffc0000000000 RBP: 0000000000000000
+
+   Call Trace:
+    <TASK>
+    btrfs_update_global_block_rsv+0x452/0x960
+    btrfs_read_block_groups+0x16ee/0x2e20
+    open_ctree+0x4804/0x8370
+    btrfs_get_tree+0x1346/0x2740
+    vfs_get_tree+0x93/0x340
+    path_mount+0x7c4/0x2390
+    __x64_sys_mount+0x298/0x310
+    do_syscall_64+0x129/0x850
+    entry_SYSCALL_64_after_hwframe+0x77/0x7f
+    </TASK>
+
+   Kernel panic - not syncing: Fatal exception
+
+The PoC is attached below.  It compiles with:
+
+   gcc -o poc poc.c -static
+
+[1] 
+https://sashiko.dev/#/patchset/20260619090211.497100-1-johannes.thumshirn%40wdc.com
+     (Sashiko AI code review — "Use-After-Free", Severity: High)
+
+Thanks,
+XIAOWU
+
+/*
+  * PoC: btrfs RAID stripe-tree RAID5 write Use-After-Free
+  *
+  * Bug: In btrfs_stripe_set_alloc(), raw pointer into bioc->stripes[] is
+  * stored as pstripe without incrementing bioc refcount.
+  */
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/mount.h>
+#include <sys/wait.h>
+
+#define MOUNT_POINT "/mnt"
+
+int main(void)
+{
+     char cmd[1024];
+
+     setbuf(stdout, NULL);
+
+     system("losetup -D 2>/dev/null; umount /mnt 2>/dev/null");
+
+     printf("[*] Creating backing files...\n");
+     for (int i = 0; i < 3; i++) {
+         snprintf(cmd, sizeof(cmd),
+             "dd if=/dev/zero of=/tmp/disk%d.img bs=1M count=512 
+2>/dev/null", i);
+         system(cmd);
+     }
+
+     printf("[*] Setting up loop devices...\n");
+     for (int i = 0; i < 3; i++) {
+         snprintf(cmd, sizeof(cmd), "losetup /dev/loop%d /tmp/disk%d.img 
+2>&1", i, i);
+         system(cmd);
+     }
+
+     printf("[*] Creating RAID5 btrfs...\n");
+     system("mkfs.btrfs -f -d raid5 -m raid5 /dev/loop0 /dev/loop1 
+/dev/loop2 2>&1");
+     system("sync");
+
+     /*
+      * Write Python script for superblock update to a file first
+      * to avoid quoting issues.
+      */
+     printf("[*] Writing and running Python fix script...\n");
+     system("cat > /tmp/fix_sb.py << 'SCRIPT'\n"
+         "#!/usr/bin/env python3\n"
+         "import struct, os, sys\n"
+         "\n"
+         "# CRC32C using polynomial 0x1EDC6F41 (reflected: 0x82F63B78)\n"
+         "table = [0] * 256\n"
+         "for i in range(256):\n"
+         "    crc = i\n"
+         "    for _ in range(8):\n"
+         "        if crc & 1:\n"
+         "            crc = (crc >> 1) ^ 0x82F63B78\n"
+         "        else:\n"
+         "            crc >>= 1\n"
+         "    table[i] = crc\n"
+         "\n"
+         "def crc32c_calc(data):\n"
+         "    crc = 0xFFFFFFFF\n"
+         "    for byte in data:\n"
+         "        crc = (crc >> 8) ^ table[(crc ^ byte) & 0xFF]\n"
+         "    return crc ^ 0xFFFFFFFF\n"
+         "\n"
+         "# Verify with known test vector\n"
+         "test_csum = crc32c_calc(b'\\x00' * 4064)  # 4096-32=4064\n"
+         "print(f'Test CRC32C of 4064 zero bytes: {test_csum:08x}')\n"
+         "\n"
+         "for dev in ['/dev/loop0', '/dev/loop1', '/dev/loop2']:\n"
+         "    for sb_base in [65536, 67108864]:\n"
+         "        try:\n"
+         "            with open(dev, 'r+b') as f:\n"
+         "                f.seek(sb_base)\n"
+         "                sb = bytearray(f.read(4096))\n"
+         "                \n"
+         "                # incompat_flags at offset 0xBC (188)\n"
+         "                val = struct.unpack('<Q', sb[188:196])[0]\n"
+         "                new_val = val | (1 << 14)\n"
+         "                print(f'{dev}@{sb_base}: 0x{val:x} -> 
+0x{new_val:x}')\n"
+         "                struct.pack_into('<Q', sb, 188, new_val)\n"
+         "                \n"
+         "                # Compute CRC32C over bytes 32..4095\n"
+         "                csum = crc32c_calc(bytes(sb[32:4096]))\n"
+         "                struct.pack_into('<I', sb, 0, csum)\n"
+         "                \n"
+         "                f.seek(sb_base)\n"
+         "                f.write(bytes(sb))\n"
+         "        except Exception as e:\n"
+         "            print(f'Error: {e}', file=sys.stderr)\n"
+         "os.sync()\n"
+         "print('Done!')\n"
+         "SCRIPT\n");
+
+     system("python3 /tmp/fix_sb.py 2>&1");
+
+     printf("[*] Attempting mount ro,rescue=ignorebadroots...\n");
+     if (mount("/dev/loop0", MOUNT_POINT, "btrfs", MS_RDONLY,
+           "rescue=ignorebadroots,rescue=usebackuproot") != 0) {
+         perror("mount with rescue");
+         /* Try without usebackuproot */
+         if (mount("/dev/loop0", MOUNT_POINT, "btrfs", MS_RDONLY,
+               "rescue=ignorebadroots") != 0) {
+             perror("mount simple rescue");
+             system("dmesg | tail -5");
+             goto cleanup;
+         }
+     }
+     printf("[+] Mounted ro!\n");
+
+     /* Try to remount rw */
+     if (mount("/dev/loop0", MOUNT_POINT, "btrfs", MS_REMOUNT, NULL) == 0) {
+         printf("[+] Remounted rw!\n");
+         unsigned char *buf = malloc(262144);
+         if (buf) {
+             memset(buf, 0xA5, 262144);
+             int fd = open(MOUNT_POINT "/test", O_CREAT | O_RDWR, 0644);
+             if (fd >= 0) {
+                 for (int i = 0; i < 50; i++) {
+                     write(fd, buf, 262144);
+                     fsync(fd);
+                 }
+                 close(fd);
+             }
+             free(buf);
+         }
+         sync();
+         usleep(500000);
+     }
+     umount(MOUNT_POINT);
+
+cleanup:
+     system("losetup -D 2>/dev/null");
+     for (int i = 0; i < 3; i++) {
+         snprintf(cmd, sizeof(cmd), "rm -f /tmp/disk%d.img", i);
+         system(cmd);
+     }
+     return 0;
+}
+

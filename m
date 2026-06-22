@@ -1,240 +1,159 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-qk2-f4.google.com (mail-qk2-f4.google.com [74.125.230.196])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5664819CCF7
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 11:30:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782127826; cv=none; b=JBrSJtZ/RTSPdZ2+QkDD6tHe8vaqKGS9A81R6EYFCkqSiBHuHFzHctXvIJBdPUjXBPZwDuR6T5epbFRhfppweU0sGUPWHNTWHgcgJ1MnRLN2VCUInHkxYFKSET3wajot4wHfpxUHW7iRzaIPKBzIGejtYu0vnnkm+QQqjkkLVYI=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782127826; c=relaxed/simple;
-	bh=AZ4VOth3FZis0PgRpS4rvmHUuGrmFJDJKIcS0ozE/cU=;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A5FB22E7391
+	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 12:00:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.230.196
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1782129620; cv=pass; b=GaEchTuT+rUcbmrtFK8x5fwE4a9LE4ELhoFZ98BWYauWLEoGGqBxTE7Wy5cDECESRlxM4BMPRG2Pc9JC2xspZZxD7JCPtpoalYhbiXvyjwtW+X4rrsNf0uGMmI531UGY+2yfp7KV/TY54qZtCHd9ZEsf9ts4IzGQPTzcjLdZXf8=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1782129620; c=relaxed/simple;
+	bh=vTwFJylEwnMxtbaQ6O6lAC1stXlat+Z+jFehP6eqhbs=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=K1IOI49BFuAsz5HtdtSGwQOJ7ViM7j03n6HkB1TuNNRbesmnTO4Ln/tndnvI+SMba7ZI8lxiiLWl9v5sRdYXe1Un1i/BF/sJGFDl99zOwQuEsL6S5omiIJtHfzEM/MagUCL7ZGPnocVg+ZSOApxGcEHAY+Q8Sn3rwC1x+1kRov8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ZMt2eoTY; arc=none smtp.client-ip=100.103.45.18
+	 To:Content-Type; b=HAGNuow5Ex4fcHIOFMIdEWYEsElI4GfezsN2G8HCinUa5V4x6b8LLSmHGZru1n3LdlfwWCIx2clKy15o201aVAm4JIcGx2spC2zTb4lIYrJAyCrXHeAC16d+lSyg73vgYipQgNhYbIUn8p2mL616jEg8OF3A+b46ce/MAMEN7D4=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Crvhdv5B; arc=pass smtp.client-ip=74.125.230.196
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ZMt2eoTY"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1853E1F00A3E
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 11:30:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782127825;
-	bh=nZds2CZ4lZNgnZtZODDGA75XEVPC5KjX94+lJi5lVKg=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=ZMt2eoTY7IPDaacYKzqXSQNayu+kZH+BVjq4PO+MqZTQh9Shlgzn0cNToptScRpAX
-	 spg+QzcU/Bu41JHIBo8DP3oRAMYTFLyY0rrftE/8OdDqqVnq1kEAwq8T30EjjA95bR
-	 1Co4wGhU34IeiRVK4LzLWks+LkzTkkRSOajOky8rvWkkqOiyFfuOSMzSrMQYdKZpTZ
-	 IWtOUc2t59s+iT7zA1nb8v7XeEiVPPPijNpKYblmpX7AjgxrhykSWTGYeIJBz+Vo0d
-	 XZT55QzfQhHyjR9WZeSB6KquyiCYKiHQUgJHinWEWTCYAmHYyL56XECg1O1+RnyVUj
-	 fBCDYfXm484Uw==
-Received: by mail-ej1-f49.google.com with SMTP id a640c23a62f3a-c0d6c75c58cso275500566b.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 04:30:25 -0700 (PDT)
-X-Gm-Message-State: AOJu0YyfzX1XGAgkJU8HQtC36DqghUtM22S9Xv5CLT0IVBXUWVJ1LpUc
-	/mUfqkcdldZGR5pvMqwz253MjqjARX3xLAEUIp/vW9fDcz1ax+HdLc333QUCsmEak5lr7YprBAp
-	JYHu4NoRN/jdWuGX3nXNrxNypv9pWHL4=
-X-Received: by 2002:a17:907:7292:b0:bd7:f75a:817c with SMTP id
- a640c23a62f3a-c0c644a1c6amr435238966b.17.1782127823735; Mon, 22 Jun 2026
- 04:30:23 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Crvhdv5B"
+Received: by mail-qk2-f4.google.com with SMTP id d75a77b69052e-519f2d3e368so8681cf.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2026 05:00:19 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1782129618; cv=none;
+        d=google.com; s=arc-20240605;
+        b=VyRAV7ursg5w+Xo6J7dRH9xva57FOkbp64O3TNotPODNp77+JBiQKSHl/kYq7qobvM
+         AjzrGwsJziD/WaCEfsEj/eHmKS4S8UipInfqLq1XREVkvSkL3qi+xZjz9VWdqVboREFK
+         xiMYi7mBcfdYy5amHAbF4g/aPxsmphO6k8mr4iJkD+YLK7ZDYfbH+GpIggA2VQFj5Y6E
+         srHgKk92CaXgqLlApe+rcKiIFs0KLa1v79q2t8Nbdxhy/dGqXHJgkoE5up7nx+Z3jI8t
+         V6ndRdmZ3zork2oMUpADorRdRVJKLjaEhE4bGkM6Xg+TrScjoP+2luUC01Xv5NNkyNqs
+         Yhng==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
+         :dkim-signature;
+        bh=jpZPtTGX8n2HJfRJ24Trsr7lU3k3OKGDcVmYvaONqqE=;
+        fh=Zbsw1R8MprFM1My2oUAmRUYW5z+w+nIcfxVYo3OQD34=;
+        b=DcnJzPcif4njkHDv1uvteI6AX7OBDZyNv8hIWUgo4xlIVckW4hOgweM9sG+ks0jm3W
+         QsWM1jSJTZQ6D6qDxFXqGJhgEbroPJ4UtzUs/702z9HDsKaaSew9l37j5gQia0MwBlSl
+         aSlyKpiWJ3S4RZh3LWbMwAKYjw3et9VQzLTJYFpZQV/RF6M6spKvSJF7ISv+wfAereo7
+         PA9+fFsrp9G8Es/qEZLX/lJ5Pcea6Ph3aoQPHL/gXYU9+YfH6AoYV9escSEXtlBvhfsX
+         td86/TPsfiERBfrtJeiDLa4bQ5Bd+EOH6IpHpF9Hijh9+dtmby3eylEgL9/Od2l96pyn
+         tXPg==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1782129618; x=1782734418; darn=vger.kernel.org;
+        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=jpZPtTGX8n2HJfRJ24Trsr7lU3k3OKGDcVmYvaONqqE=;
+        b=Crvhdv5BGxQ5JItuQrNShxuZGg2p0hnGKbxlNGupfXO5xmrGxA7h52HP2TpbvOKfb9
+         rj4CA4onpAUY3bAHFqRCxHiBoEObmDynw+9Xo0HdfU1t6JIQ2riTkf8WpRgItr/EtbM/
+         yHflHKQ+f6sGs3njbFVGadUPmrtRv1j/eiEo6t3vUs1fLAf4ZcmMuubdlGnQAPTSGb4w
+         w4Hdn56wjkA4uhxUrwe/f2rpwfLpgwWBcbOu+HQRVnynZ+3PMhwZL7j73XLzq4bl9UMw
+         SjU794fglHWiPdOIbQKkXYoUC8zhShuxx5jkZlZKjVIDSF0CBJ5DJNdAElySenqOZW02
+         h/kw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1782129618; x=1782734418;
+        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=jpZPtTGX8n2HJfRJ24Trsr7lU3k3OKGDcVmYvaONqqE=;
+        b=dXcMpUDR1VkAd+mqxdcphb1V9kaRXDZpuo/Pz+blhMK72ktCpz4OA6VMSm4ubJ5234
+         F659XlYA6zx7trTsmfW+qsmEwyTFrJXd+inEhm4pceJDEl494X3XQPhdGP0xcfx8qyi6
+         VWZOIdckwNTY6spjFMm4+sKD8MwofJp2t1D+4VMoDkjHwebBjr1K7hJ1PqhrjSv9655Q
+         EbCuy9d7qf/wb9K/q1PMPuu668/Odqf6rGxAAcsQ0kV09rkTq2Uqg6um4MaAzw76Nhco
+         4RUYiUQxOD2capIvbNdj9MYkQJkFT3qevR3tPofL5IVSBLZMFTGzR8Fbb14R6c00Ru+6
+         6ITQ==
+X-Forwarded-Encrypted: i=1; AFNElJ/Aab//JVF6v0x6xpeySEjKUVJtRXDrxmjgX7XMhCJVRL3BUFtQjoMWAj4urFvtp5Tvf9ZdV3QF4XDVfw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwkfNvcjbgN3NYnW757Ugp85CJhVWGON1SkA3YNPFeigsQO28Z5
+	TioWgqmaa9lJAcCCjkdxq+NTW0zJMvaKIv0tcjdbohfKyLkRgzCQf7fU1wp8Rqz7FKKsy2YEnIt
+	nYNVrMddrkjd3ifYnJPKAigw+rnFnV8RFtSEh5gnRbEfm
+X-Gm-Gg: AfdE7ckrjMUXIOpZYTS4jS6SsKsBRIYFayZb1XenxVj/RotJxAGRTTwMQspf+w3xGuD
+	b0d0Vlet8LjqkwAGFFJBhqREBYr8V8W05aa0BZYAhUxS7IY7fxj5x5cmihSaqtkHCtQ3/8ZJZJD
+	RlzsdyTe2/BIV0te5jZjE8R8b6fDHsHBxxk5atVkipeoPxh7dRW1206fruqR+JMM7p3kZGEUmCF
+	ND8aDX87VPNuscLWgbOkWFA/26Dw6YlLG6NtfXnJEEIpMIYXWCXQScpV3GJCy4jiNO/RqqmFIVP
+	dDMoBP6CpHVANkcIUqAMUvFJVzpC8w==
+X-Received: by 2002:a05:622a:1a85:b0:517:6a56:accf with SMTP id
+ d75a77b69052e-51a4f417e62mr2011731cf.1.1782129618209; Mon, 22 Jun 2026
+ 05:00:18 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260622082720.561049-1-johannes.thumshirn@wdc.com>
-In-Reply-To: <20260622082720.561049-1-johannes.thumshirn@wdc.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 22 Jun 2026 12:29:46 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H5yeNXoSBDB4g4pjMKku2k6-Vctk0uEVTd_MK=Wb1s5iA@mail.gmail.com>
-X-Gm-Features: AVVi8Cd6rxUt5gfPw2Z4T5FU9_wuv25iCJsGU7JyBbng5lc8dynwo8cWQ23wC3Y
-Message-ID: <CAL3q7H5yeNXoSBDB4g4pjMKku2k6-Vctk0uEVTd_MK=Wb1s5iA@mail.gmail.com>
-Subject: Re: [PATCH v4] btrfs: zoned: don't force read-only on transient
- -EAGAIN from reloc merge
-To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc: linux-btrfs@vger.kernel.org, Damien Le Moal <dlemoal@kernel.org>, 
-	Filipe Manana <fdmanana@suse.com>, Damien Le Moal <damien.lemoal@wdc.com>
+References: <1344e141511245ec5cbfbeabd5bd733f0c18d940.1782033097.git.wqu@suse.com>
+In-Reply-To: <1344e141511245ec5cbfbeabd5bd733f0c18d940.1782033097.git.wqu@suse.com>
+From: sun k <sunk67188@gmail.com>
+Date: Mon, 22 Jun 2026 20:00:06 +0800
+X-Gm-Features: AVVi8CfrgcbrWccQlQHS_UGkUdAYUWDKkX4CFGWiz0kGdN1JHRIXaqTg-1Hry74
+Message-ID: <CAAuSuOoNE4wgaqx-5MH_cqpeu0MyrUikrVS98K2H4xLnRW5mxA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: print-tree: print header owner as signed
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 
-On Mon, Jun 22, 2026 at 9:27=E2=80=AFAM Johannes Thumshirn
-<johannes.thumshirn@wdc.com> wrote:
+Looks good.
+
+Reviewed-by: Sun YangKai <sunk67188@gmail.com>
+
+BTW, this reminds me the print-tree result of dir items that points to a
+subvol, which currently looks like this:
+
+item 4 key (256 DIR_ITEM 224155391) itemoff 15967 itemsize 48
+                location key (43123 ROOT_ITEM 18446744073709551615) type DIR
+                transid 896627 data_len 0 name_len 18
+                name: home.20260621T2000
+
+And I wonder if we can also print the location key's offset field as s64
+to make it easier to read.
+
+Thanks,
+Sun YangKai
+
+
+On 2026/6/21 17:11, Qu Wenruo wrote:
+> When dumpping a tree block, btrfs_header::owner is printed as
+> unsigned, which can result in numbers that are hard to read, e.g:
 >
-> On a zoned FS, btrfs_delayed_refs_rsv_refill() returns -EAGAIN whenever
-> the over-committed metadata plus the zone_unusable bytes exceeds the
-> usable size in a metadata block-group to avoid heavy over-commit of
-> metadata and early ENOSPC in one transaction.
+>   BTRFS info (device loop0): leaf 8908800 gen 16 total ptrs 28 free space 1676 owner 18446744073709551607
 >
-> If this happens while doing reclaim, the transaction is getting
-> aborted.
+> For the above output, 18446744073709551607 is (s64)-9, the root id of data
+> reloc tree.
 >
-> Treat -EAGAIN as a soft, retryable condition in case of block-group
-> reclaim.
+> Despite those pre-defined root ids that are already negative, existing
+> subvolume trees will not have any negative values, as subvolume trees can
+> only utilize the lower 48 bits, so there will be no output change for
+> existing subvolumes, thus no extra confusion.
 >
-> Reported-by: Damien Le Moal <damien.lemoal@wdc.com>
-> Fixes: 7bcb04de982f ("btrfs: zoned: cap delayed refs metadata reservation=
- to avoid overcommit")
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
-> Changes to v3:
-> - Don't ASSERT() for zoned in case of EAGAIN in
->   btrfs_reclaim_block_group but check for zoned
+>   fs/btrfs/print-tree.c | 8 ++++----
+>   1 file changed, 4 insertions(+), 4 deletions(-)
 >
->  fs/btrfs/block-group.c | 10 +++++++-
->  fs/btrfs/relocation.c  | 52 ++++++++++++++++++++++++++++++++++++++----
->  2 files changed, 57 insertions(+), 5 deletions(-)
+> diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+> index 87e60a2d4bd8..53e726119ca7 100644
+> --- a/fs/btrfs/print-tree.c
+> +++ b/fs/btrfs/print-tree.c
+> @@ -449,9 +449,9 @@ void btrfs_print_leaf(const struct extent_buffer *l)
+>       nr = btrfs_header_nritems(l);
 >
-> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> index ab76a5173272..1327fd526b06 100644
-> --- a/fs/btrfs/block-group.c
-> +++ b/fs/btrfs/block-group.c
-> @@ -2047,6 +2047,12 @@ static int btrfs_reclaim_block_group(struct btrfs_=
-block_group *bg, int *reclaime
->
->         trace_btrfs_reclaim_block_group(bg);
->         ret =3D btrfs_relocate_chunk(fs_info, bg->start, false);
-> +       if (btrfs_is_zoned(fs_info) && ret =3D=3D -EAGAIN) {
-> +               btrfs_dec_block_group_ro(bg);
-> +               btrfs_debug(fs_info, "deferring reclaim of chunk %llu",
-> +                           bg->start);
-> +               return ret;
-> +       }
->         if (ret) {
->                 btrfs_dec_block_group_ro(bg);
->                 btrfs_err(fs_info, "error relocating chunk %llu",
-> @@ -2113,7 +2119,9 @@ void btrfs_reclaim_block_groups(struct btrfs_fs_inf=
-o *fs_info, unsigned int limi
->                 spin_unlock(&fs_info->unused_bgs_lock);
->                 ret =3D btrfs_reclaim_block_group(bg, &reclaimed);
->
-> -               if (ret && !READ_ONCE(space_info->periodic_reclaim))
-> +               if (ret =3D=3D -EAGAIN)
-> +                       btrfs_link_bg_list(bg, &retry_list);
-> +               else if (ret && !READ_ONCE(space_info->periodic_reclaim))
->                         btrfs_link_bg_list(bg, &retry_list);
->                 btrfs_put_block_group(bg);
->
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 1819d49d19c3..73d9948b5382 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -1530,6 +1530,36 @@ static void clear_reloc_root(struct btrfs_root *ro=
-ot)
->         clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
->  }
->
-> +/* Drop the reloc trees of a relocation that is being deferred and retri=
-ed */
-
-Same comment as in v3: always add punctuation to sentences, this is
-our preferred style.
-
-> +static void abort_reloc_roots(struct reloc_control *rc, struct list_head=
- *list)
-> +{
-> +       struct btrfs_fs_info *fs_info =3D rc->extent_root->fs_info;
-> +       struct btrfs_root *reloc_root, *tmp;
-> +
-> +       list_for_each_entry_safe(reloc_root, tmp, list, root_list) {
-> +               struct btrfs_root *root;
-> +
-> +               root =3D btrfs_get_fs_root(fs_info, reloc_root->root_key.=
-offset,
-> +                                        false);
-> +               if (!IS_ERR(root)) {
-> +                       if (root->reloc_root =3D=3D reloc_root) {
-> +                               clear_reloc_root(root);
-> +                               btrfs_put_root(reloc_root);
-> +                       }
-> +                       btrfs_put_root(root);
-> +               }
-> +
-> +               btrfs_set_root_refs(&reloc_root->root_item, 0);
-> +               memset(&reloc_root->root_item.drop_progress, 0,
-> +                      sizeof(struct btrfs_disk_key));
-> +               btrfs_set_root_drop_level(&reloc_root->root_item, 0);
-> +
-> +               list_del_init(&reloc_root->root_list);
-> +               list_add_tail(&reloc_root->reloc_dirty_list,
-> +                               &rc->dirty_subvol_roots);
-> +       }
-> +}
-> +
->  static int clean_dirty_subvols(struct reloc_control *rc)
->  {
->         struct btrfs_root *root;
-> @@ -1869,8 +1899,9 @@ int prepare_to_merge(struct reloc_control *rc, int =
-err)
->         return err;
->  }
->
-> +
-
-Same comment as in v3: stray, accidental, new line.
-
->  static noinline_for_stack
-> -void merge_reloc_roots(struct reloc_control *rc)
-> +int merge_reloc_roots(struct reloc_control *rc)
->  {
->         struct btrfs_fs_info *fs_info =3D rc->extent_root->fs_info;
->         struct btrfs_root *root;
-> @@ -1968,7 +1999,15 @@ void merge_reloc_roots(struct reloc_control *rc)
->                 goto again;
->         }
->  out:
-> -       if (ret) {
-> +       if (ret =3D=3D -EAGAIN) {
-
-As pointed in v3, missing an:    && (btrfs_is_zoned(fs_info)
-
-> +               abort_reloc_roots(rc, &reloc_roots);
-> +
-> +               /* new reloc root may be added */
-
-Same comment as in v3: always capitalize the first word and add
-punctuation to sentences, this is our preferred style.
-
-Otherwise it looks fine, thanks.
-
-> +               mutex_lock(&fs_info->reloc_mutex);
-> +               list_splice_init(&rc->reloc_roots, &reloc_roots);
-> +               mutex_unlock(&fs_info->reloc_mutex);
-> +               abort_reloc_roots(rc, &reloc_roots);
-> +       } else if (ret) {
->                 btrfs_handle_fs_error(fs_info, ret, NULL);
->                 free_reloc_roots(&reloc_roots);
->
-> @@ -1994,6 +2033,7 @@ void merge_reloc_roots(struct reloc_control *rc)
->          *
->          * The remaining nodes will be cleaned up by put_reloc_control().
->          */
-> +       return ret;
->  }
->
->  static void free_block_list(struct rb_root *blocks)
-> @@ -3723,7 +3763,9 @@ static noinline_for_stack int relocate_block_group(=
-struct reloc_control *rc)
->          */
->         err =3D prepare_to_merge(rc, err);
->
-> -       merge_reloc_roots(rc);
-> +       ret =3D merge_reloc_roots(rc);
-> +       if (ret && !err)
-> +               err =3D ret;
->
->         rc->merge_reloc_tree =3D false;
->         unset_reloc_control(rc);
-> @@ -5692,7 +5734,9 @@ int btrfs_recover_relocation(struct btrfs_fs_info *=
-fs_info)
->         if (ret)
->                 goto out_unset;
->
-> -       merge_reloc_roots(rc);
-> +       ret =3D merge_reloc_roots(rc);
-> +       if (ret)
-> +               goto out_unset;
->
->         unset_reloc_control(rc);
->
-> --
-> 2.54.0
->
->
+>       btrfs_info(fs_info,
+> -                "leaf %llu gen %llu total ptrs %d free space %d owner %llu",
+> +                "leaf %llu gen %llu total ptrs %d free space %d owner %lld",
+>                  btrfs_header_bytenr(l), btrfs_header_generation(l), nr,
+> -                btrfs_leaf_free_space(l), btrfs_header_owner(l));
+> +                btrfs_leaf_free_space(l), (s64)btrfs_header_owner(l));
+>       print_eb_refs_lock(l);
+>       for (i = 0 ; i < nr ; i++) {
+>               char key_buf[KEY_TYPE_BUF_SIZE];
+> @@ -600,10 +600,10 @@ void btrfs_print_tree(const struct extent_buffer *c, bool follow)
+>               return;
+>       }
+>       btrfs_info(fs_info,
+> -                "node %llu level %d gen %llu total ptrs %d free spc %u owner %llu",
+> +                "node %llu level %d gen %llu total ptrs %d free spc %u owner %lld",
+>                  btrfs_header_bytenr(c), level, btrfs_header_generation(c),
+>                  nr, (u32)BTRFS_NODEPTRS_PER_BLOCK(fs_info) - nr,
+> -                btrfs_header_owner(c));
+> +                (s64)btrfs_header_owner(c));
+>       print_eb_refs_lock(c);
+>       for (i = 0; i < nr; i++) {
+>               btrfs_node_key_to_cpu(c, &key, i);

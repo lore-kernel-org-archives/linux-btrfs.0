@@ -1,81 +1,190 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-qk2-f1.google.com (unknown [74.125.230.193])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 79B5536F90C;
-	Tue, 23 Jun 2026 10:14:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782209648; cv=none; b=ovVPA0AZYFbBfxfbcXkga4KFpmW4KfUbpeqBVCHd54rJAHsyobrVQqmo4zY4Lf4UfOfcsoZsqVk5hyVY+EFGE+zBfksTvFByNWjqsgL9JHKydTsaKVzWdqiRdEmaFInEQvNDuHQXgLK0DlqgbKiesendJKMDagHuBJ3ABI8BygE=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782209648; c=relaxed/simple;
-	bh=IWTrcRd2o7VKbxsUGEodjdVeBd/La1Mw6CSkzIMgVG0=;
-	h=From:To:Cc:In-Reply-To:References:Subject:Message-Id:Date:
-	 MIME-Version:Content-Type; b=hgn1cxI7UW/nd2B/sDIuMWTkRFYDBOBD2uPHWclu+rYK+ubmJqJfBeX2uIXNJZA4qFW8tb1XR6ObbdK6tCH0e1X7cdKfvhkpwfmaSG9ak8CRJAjsDxfE6PEmXVEQf9nJN5q9cGgK8DNKi28NInAqL9ZlN3I2v03RRhN2iyJ3Fq0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=X66kPjuQ; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8719C1EB5E3
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Jun 2026 10:41:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.230.193
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1782211278; cv=pass; b=u2UbiSvlni5d5VPYGXGoAqxae2BwxA+FZr4rYr2Aw87EbcaHbw3qmfwR7Odt4F6YyVpMIrXKflo+zrQOrXwZD698WZ35f1USDQqueteBgpgLCVQLubI7la9QOzwUizDiTe71GLjTzE27wUYGnSk0h1406vYtUsxLKWLY5AoN5Xk=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1782211278; c=relaxed/simple;
+	bh=IrMQJmhOhAMtHplWqnKJr5JUIoFUOcZXUT+HDK1olDo=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=c9V7HHWWLKOrVtW8LGU6srLyWSWEDyiZ9nr887lF4/viU2oRhKFekUYdz9qAC+YtrQNP7TUCVDLZBPxz7h0U+mBJt2U3glaBgJZMBwaDNuPW7/smf2oLhD36qsFF4y/tYbOkTdAGnejMKqTPPuoHNXncw4x7gEtwePMFrmekpss=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=lusQxCTW; arc=pass smtp.client-ip=74.125.230.193
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="X66kPjuQ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 98F6F1F000E9;
-	Tue, 23 Jun 2026 10:14:03 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782209647;
-	bh=vtWsU0XCFa6NKrktmgpHdHW3vqPrmoOAPGugptWf8XM=;
-	h=From:To:Cc:In-Reply-To:References:Subject:Date;
-	b=X66kPjuQL1R1Evqe/K6M8qW4WdJCnvx6fj+yPcVoh7NWgn9cEHItYoI1TPZEkZvz7
-	 7WAu7DKUbySEK2bFo4XZd80xIqyNvaUhZygUXXw8YWkqGQRws/T6+zU2lsgZnpyi1u
-	 qDCMjRhPjLZc0eeWFlcrZP88M+u0Rjx5UpwG3o3HKgtlRIwIWAk77QLnZ+1T/k9Xid
-	 Sr8maVIGguXZEmOpaEGTJStKLscU4Kxrcn0r6kefREApyZY1Lexnz84GVu12t2BM9L
-	 QnOhrNxACW+6JEjI3wUys7A+I/YUJgfbqevkqLjnNDwcQX8lyc0lN784NoIW4G++WP
-	 Db1AUvK5XH8qg==
-From: Christian Brauner <brauner@kernel.org>
-To: jack@suse.cz, linux-fsdevel@vger.kernel.org, 
- linux-kernel@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>, 
- linux-mm@kvack.org, Usama Arif <usama.arif@linux.dev>
-Cc: hughd@google.com, boris@bur.io, clm@fb.com, dsterba@suse.com, 
- linux-btrfs@vger.kernel.org, cem@kernel.org, linux-xfs@vger.kernel.org, 
- shakeel.butt@linux.dev, hannes@cmpxchg.org, riel@surriel.com, 
- kernel-team@meta.com
-In-Reply-To: <20260609123047.1948242-1-usama.arif@linux.dev>
-References: <20260609123047.1948242-1-usama.arif@linux.dev>
-Subject: Re: [PATCH] fs/super: skip non-memcg-aware nr_cached_objects in
- memcg slab shrink
-Message-Id: <20260623-drohbrief-messbar-gassen-43977ca126dd@brauner>
-Date: Tue, 23 Jun 2026 12:14:00 +0200
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="lusQxCTW"
+Received: by mail-qk2-f1.google.com with SMTP id af79cd13be357-91d44d3639eso6384585a.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jun 2026 03:41:17 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1782211276; cv=none;
+        d=google.com; s=arc-20240605;
+        b=kDNrUMisnuM+EGL9MCnw/cSkP0MFL9iBRqjWrPu8YuTD8+NkLZ7GNc8dUcCguxgNS/
+         b/9VPGSdfYWuhYJIKKaYWzuQxDhWmipl+3YD6z8jmD2u0p48LVrl33JW8PUy/q0HIKBe
+         a3EYK8pLHzXZCpyDSe8SMb5UHTn0wruSSaWCBT3HOIdZ7dMzagn+nk8MIWR5bGdFX1xK
+         iPSkthw0Xo1KqSNduiueFggws18FkVCQY/yLjyu1+BC9ywgrx7aZ3VJ6DI1WJGuTH0Gj
+         YAh5EImmqp49QQ9IhirDJ46sIYD+l/yiFrEUilbsZg0LYA1GJVQFMlb/O1a//DkE/lSO
+         7Y4Q==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=pt8iL3veCjnJ4Tado/Y8385D92B5zl6PxJxxTB98JTY=;
+        fh=XgyVQL63bakpFfKqPxJJiY5NdZTbMYsxaBXyIXgyd7w=;
+        b=Zi/9D72xExcz3W/i0Ud6djQN1QxZLrMTiQp0D2eMH3/B/5eCTvS8CZXKcqZKTCMoWg
+         F+lGXq2gzCf8CYoh/MI8xDRYxYbrUIc/c9y+lw5ZLKc9DEf5BIyoYkQ7hGc9pf4YLdQR
+         Sud03vAUi4lwd7NMjKS8mp6FRbT1joRL7n8Eu1nCkp7ndupVK51H47gQSsG2l4Bsequa
+         PlDqnychs+sCSJDS6T++PMwfMueB0jO501foYWjKYtj8cFxSciiholWqXsjxccqNkOuV
+         V/sPFSdc5Rugrx0KYCcTBex+L1QqQEqGbLkb0TY955pjR/0ILEpomry6guthqIk7RbT1
+         zC4g==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1782211276; x=1782816076; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=pt8iL3veCjnJ4Tado/Y8385D92B5zl6PxJxxTB98JTY=;
+        b=lusQxCTWAhR1WkMs2xsJmTgEap/vpTfao/V6QWrhWa8bn02fznl7YVtnkszVVRqwTQ
+         hKDmzfxDGIrImE5A8WJVsXnqSxb3Bu4IfCVbje0jcdt8WHflGcO/Efjj01Ov5gUexpDP
+         6NIvVVUme8oZs79CdvBWRU4TV1KrJi5/E1VS2pbGFBbjRta2uXAt0vUfepmcohLHOes8
+         OFxRTdAP2ix9utdi7VGcFJpoJPKY0emf5bUXUv8GA2WfZ2FOjJX3JPA7upGaXibvh1DX
+         t+QOKOhFbCT8/STioXq36b6B5uoYdQ+OQ0F0DAdEepi1njunaT4rEeKwKvCi0Pm5nws4
+         SphQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1782211276; x=1782816076;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=pt8iL3veCjnJ4Tado/Y8385D92B5zl6PxJxxTB98JTY=;
+        b=ZBwdG0EibazCL5cAdZAoG7K4CP9rwcoMmhaPEnBva7W2ABVMe/TkCQHhOIgoSZtIxp
+         c++A51qJY7H/dCQqzkDrNvznlu0eZ57Fyh5J8jDaFn9aXpVlDvZ1L33ryTfff1E/SgH3
+         JC/OFPrrevMt4RDXWY4Ct1Wc80EQVYsFJShYZcyMZ8Hx2v1YSsJ11JXyGCFJCSF0HrO5
+         Q1qj/XtBkKvZ0zzFELLQAwyI1rTJZdkhU/oBFqKwFM73/26qin6102owZrwHlCuWX0E9
+         /RVFyROj9y6Ycb8H/8q09TvwSeaT4GBeZ6z8QKMS6GXuqkxw+wW0UVOhOSueJPZ4dyng
+         Kmdw==
+X-Gm-Message-State: AOJu0Yxc5KPgyBNiMyE8J1siJmixXm76P/ob4O+aEf9jINqh52jCfvap
+	zg+iPKP2VCdYXTKAh4ESVcZq+kWDigRLnCpKOSZaR1qdu2+kOCfpvIrQcn5Q7LlXs2N85chj+tm
+	cyZ2zYcTfJqLk+xpW+F9iv0PBsb+s+7o=
+X-Gm-Gg: AfdE7cmxE6VD1wTDqm/b0EGVdRfaiGqo6tOmX9tW1fIWhkoTdUFTyUGC2v5naFL7CGc
+	VSmsTfU3u1MYh2DFvI9Guf3HJds/BrpzaT0IXmaSs1lW3fhZJ8dT78fgVZjfYL68DJmaePBe8kB
+	WTDo2MnOIxSIiQrnYJydkoyjXPHDhNOc2M03SBHDntA9LWQvEoPrqvQ075tH09rd0pJnbrVBqp6
+	wOh6+9VRHxtytuvx3LMZGh4R3wRfgCIhVws5tFtn6lrhq2807zwTIoddLkxARMNDoYFGHNeSXrv
+	oBDKY9NTLLjCtWYRhtFD6T6+bsbX
+X-Received: by 2002:a05:622a:554:b0:519:51a9:ff67 with SMTP id
+ d75a77b69052e-519fe8a92cfmr146953011cf.0.1782211276000; Tue, 23 Jun 2026
+ 03:41:16 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-X-Mailer: b4 0.16-dev-8bbda
-X-Developer-Signature: v=1; a=openpgp-sha256; l=921; i=brauner@kernel.org;
- h=from:subject:message-id; bh=IWTrcRd2o7VKbxsUGEodjdVeBd/La1Mw6CSkzIMgVG0=;
- b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWRZxWTrRl8TS67ItLn9yN8k84/yyWjTsz9eOEyP0bi2S
- YFh0cU1HaUsDGJcDLJiiiwO7Sbhcst5KjYbZWrAzGFlAhnCwMUpABN5pcjI8P3d5t6/KZeTjVyn
- Zr+KiPjWzvuk+92Blc5z/u1gedL04jUjw6UQh7eJ3K2n/H9bxCpsL52zUCckz9ZgpteqzozJPnY
- FTAA=
-X-Developer-Key: i=brauner@kernel.org; a=openpgp;
- fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
+References: <20260619090211.497100-1-johannes.thumshirn@wdc.com>
+ <CAAuSuOqD+=nHVZu3czFe5JfQ3m1RDt0sWibVjPZdh4HeOom=Fw@mail.gmail.com> <b436c427-1d87-4c36-a159-0f5c03619771@wdc.com>
+In-Reply-To: <b436c427-1d87-4c36-a159-0f5c03619771@wdc.com>
+From: sun k <sunk67188@gmail.com>
+Date: Tue, 23 Jun 2026 18:39:39 +0800
+X-Gm-Features: AVVi8CfPPivGCmKHICxsk2rtJS1WCHfKjyX1q_ZREATqtLS38JD5RJnq_xZaQI4
+Message-ID: <CAAuSuOpZkGX-mCYPKiD_Fni=0XdB2etgGrEkJJqBj4dSRqCZYQ@mail.gmail.com>
+Subject: Re: [RFC 00/15] btrfs: RAID5 with RAID stripe-tree (zoned + non-zoned)
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Tue, 09 Jun 2026 05:30:47 -0700, Usama Arif wrote:
-> fs/super: skip non-memcg-aware nr_cached_objects in memcg slab shrink
+I've just noticed that I'm not sure about your mindset of this raid5/6
+rst feature.
+So I want to know do you think the raid5/6 rst is extent layer raid or
+block layer raid?
+Because they are quite different and I need to align it with you
+before further discussion.
 
-Applied to the vfs-7.3.misc branch of the vfs/vfs.git tree.
-Patches in the vfs-7.3.misc branch should appear in linux-next soon.
+For extent layer raid5/6, it's more like what zfs is doing now: we do
+the "raid" thing on each
+file extent, split big extent into stripes, and write them on
+different disks with parity. The issue
+of this is that the performance and efficiency on small extents is
+bad, but we can always
+do full stripe write, avoiding write hole issues.
 
-Please report any outstanding bugs that were missed during review in a
-new review to the original patch series allowing us to drop it.
+For block layer raid5/6, which is like what we currently have without
+rst, we need to deal with the
+write hole issue, possibly by
+1. totally avoid read-modify-write for a partial stripe update. We
+always write into a new stripe
+  append only instead of modifying an existing stripe, like writing a
+zoned device even on non-zoned device.
+2. or we allow read-modify-write for a partial stripe update, but
+write the D and P elsewhere
+  instead of in-place.
 
-It's encouraged to provide Acked-bys and Reviewed-bys even though the
-patch has now been applied. If possible patch trailers will be updated.
+Option 2 will cause another free space management issue I've mentioned befo=
+re:
+let's take a 4 disk raid 5 as example.
+before the partial stripe update, logical address LA is mapped to
+physical address PA0(D0), PA1(D1), PA2(D2), PA3(P);
+after updating D2, LA is mapped to address PA0(D0), PA1(D1), PA2'(D2'), PA3=
+'(P')
+then we need to allocate PA2' and PA3' , and free PA2 and PA3 on disk 2 and=
+ 3.
+Since currently btrfs manage freespace based on logical address, how
+to manage the allocation and manage physical free space?
 
-Note that commit hashes shown below are subject to change due to rebase,
-trailer updates or similar. If in doubt, please check the listed branch.
 
-tree:   https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git
-branch: vfs-7.3.misc
-
-[1/1] fs/super: skip non-memcg-aware nr_cached_objects in memcg slab shrink
-      https://git.kernel.org/vfs/vfs/c/5eacee52be6b
-
+On Mon, Jun 22, 2026 at 6:23=E2=80=AFPM Johannes Thumshirn
+<johannes.thumshirn@wdc.com> wrote:
+>
+> On 6/19/26 3:28 PM, sun k wrote:
+> > Hi Johannes,
+> >
+> > Glad to know that you're working on btrfs's raid56 and raid stripe tree=
+.
+> > This really a big change and it will really take me quite some time to
+> > dive into the code implementation.
+> >
+> > Before going into code details, I take a glance on the total design and
+> > it seems nice for me. But there's still some details that I'm currently
+> > not sure so please correct me if I got anything wrong.
+> >
+> > First is about partial update. With this RFC they'll not updated
+> > in-place(overwrite) anymore, but use a cow method instead, which means
+> > ... we'll write that data elsewhere on disk, but still share the
+> > previous logical address? This will change address mapping for a
+> > blockgroup while current existing blockgroup profiles will not change
+> > the address mapping in their entire lifetime IIRC so I have no idea if
+> > current free space management things can works with this.
+>
+> I'm not sure I follow here. This is how the RAID stripe tree works, it
+> maps logical to device physical addresses.
+>
+> >
+> > Second is about the new key type in raid stripe tree. It makes the tree
+> > search more complex as we've discussed before. So I wonder if it will
+> > work just putting the parity stripe into RAID_STRIPE_KEY item, and usin=
+g
+> > the last 1 stripe for parity on raid5, the last 2 on raid6.
+>
+> Theoretically yes, but who's guaranteeing the order of IO completions
+> that trigger the tree item insert? So that means we have to build the
+> stripe extent upfront, then submit the IO and then update and send the
+> stripe extent once all data and parity writes are done. Otherwise we
+> can't use zone append on a zoned FS.
+>
+>
+> > Third is about the partial tail. If we have 4 disks for raid 5 setup,
+> > and the extent only fills one and a half stripe, how will things work i=
+n
+> > this RFC? And why use file size to decide it is a genuine tail? I have
+> > no idea why it makes sense.
+>
+>
+> The file size is purely an optimization. If we complete an OE and we're
+> at isize, we know it's the last extent regardless if it's partial or not.
+>
+> > BTW, this might be a little off-topic but I've just read closure.h
+> > recently and I wonder if we could use that to make bio related things
+> > more readable and easier to work with in btrfs.
+> I'd need to look into this, its been a long time since I've looked into i=
+t.

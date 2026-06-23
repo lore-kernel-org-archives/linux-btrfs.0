@@ -1,68 +1,58 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DE29337BE7C
-	for <linux-btrfs@vger.kernel.org>; Tue, 23 Jun 2026 11:37:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6C4172772D
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Jun 2026 11:39:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.153.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782214664; cv=none; b=RWnC6b82KTPG4t1DOM+EDiNgZyX8r2QeDnd4/itTEODvsct4L8TrevzYygk+zR39/dLX0R9XhR7ed1kP2UQhiAHn6RKc7pgxDfXIkqOM+W9VPN9c60wXiiumbmS3jZvW8wDn+AkAovj+FhGu0ETdV44tNEmUb0oih2IA5T/5JUo=
+	t=1782214773; cv=none; b=bEsjO1vLOoLd1keqew3MjmyRbPZXxOUSCuFRlDxscMBX1nANeJTu//apPo9HueaYr419bMn1xY3ngWg1swWTNJBYAUrLyWpTJ09g5XmKw34OkAfKhK5dtqX+50gRqKxy+1/Za8SBCtCm31xwiEA+w5TQvDfSKZ3Io/qRNisk00s=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782214664; c=relaxed/simple;
-	bh=Xu7t+cKPF+EwjZAZnjajT4xCj7gmPCUbCUxOgtEcujE=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=S/biYT1JjW1kZ8QCz5yyS6hQGeFSxezVc01mkE3Ub4bPf3yuVY+oPBjJwdF26PAaezxLXmF8bvxdQ3xa27FEIbgRx4x5ILLBLXi6NXVFNCtzr9zP/r+Q0EbWurXy2uaSlGjvbCfbGS9rNqpeF6K2qFw3pz+ZZJStIkUpnzNr1rs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=GRK4WUuN; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Lop63WGT; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1782214773; c=relaxed/simple;
+	bh=C6QU1lF6KPlr0v2QUJKpfrJVPBwKx1gdPWkXVEVZjlU=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=GNAIv9oxTP2R7qapnz4DKiN7WYv/keSFVL6y4EnFV1+hnb/gznc7ZBl3ZLK1JGIvHza9QkTxtWT91j9XPqyKGF0UskxemmlUGonoLevSigRpWNepnOpx0MoNbhH1THN+Yga4KpyrRUMJ/BCQD6dl1UpMYbaUntuEq6KHs+B4aNE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=SDkeQNgD; arc=none smtp.client-ip=216.71.153.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GRK4WUuN";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Lop63WGT"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 9674275E5C;
-	Tue, 23 Jun 2026 11:37:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782214658; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=CL9yxumRVnFYgGhnjKnvnigfROZ5GpbLesj5lSlnaVo=;
-	b=GRK4WUuNFGU/cx5GdD2K+oEtF9kFr6A6GGZb4qn5Nwn0++9EpNBpIIsHIMD3haXI+hFQr0
-	rGmslD0hVayRayXIBddtXSFC83imupDhnpbG6Ni4M0k5kfNSidc3CO9LvNZSsRYioOs5YB
-	f8n3emNbPG1N22YeWk0Xkb+emvzRakQ=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=Lop63WGT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782214657; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=CL9yxumRVnFYgGhnjKnvnigfROZ5GpbLesj5lSlnaVo=;
-	b=Lop63WGTZwE/8aGPEJkiywLU2Jbgl+oDpbrtpaNhP8c/5BUs6CXPz37tlyTZUbksxA2RTm
-	zHYS7YnE/VaF7bIi0JFoa/v4YcEu5LsHIMK9SHDWlW7DIRFNHDzuu3zEWyxsU5U3QERoi5
-	+TpbmW0jbZqwAnzjeJoMQG7YYBrRESM=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 04447779A8;
-	Tue, 23 Jun 2026 11:37:35 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id oIfqKf9vOmqDBAAAD6G6ig
-	(envelope-from <wqu@suse.com>); Tue, 23 Jun 2026 11:37:35 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="SDkeQNgD"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1782214772; x=1813750772;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=C6QU1lF6KPlr0v2QUJKpfrJVPBwKx1gdPWkXVEVZjlU=;
+  b=SDkeQNgDPAITZj7i60fn+CGzgehAZMUF8UyUX73GNBSYc0aL66LxmKWR
+   sF43K24aWptqso4vDHEyK8Ucd1HI+y1mA/5ubgXvk7doXESVPM1ad+GiW
+   X/KRuDKFV6/1rbAZWlvHNTfbi8R3a1WGzy8qMDv1vTCouMUWfANSnxiew
+   VCh9a9bVfO3qCaIEwxBF+QYO/kgqfzaqMCH1LvaNRRQCo9WB+dQFKrsXS
+   elaPyAkvOrLfDsSamoeN5jQLcAwFoVYrpQQMwtGaB/NMq3bNZ197ONwYv
+   nJibaaJFuVR4s1OSARQKnPVBDgznLUNXL8Y6SmmLHW19e1q2MVBMcGGWm
+   A==;
+X-CSE-ConnectionGUID: bcf42PiXROiyWpOnoa3LTA==
+X-CSE-MsgGUID: AJG0+oFwTnWdhAZ2IUPR/A==
+X-IronPort-AV: E=Sophos;i="6.24,220,1774281600"; 
+   d="scan'208";a="149668424"
+Received: from unknown (HELO uls-op-esad2-o.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 23 Jun 2026 19:39:26 +0800
+X-CSE-ConnectionGUID: ZcptJYxZSsuZKhd7L13bGQ==
+X-CSE-MsgGUID: xjPde6m3Tg2I2tpFYIJbQg==
+IronPort-SDR: 6a3a7054_t5qDC08j00mFXX4zHA/fEAesRWQslaEhWk8W+VFWNuUSmdh
+ ASQ/4ATIHAq6AZONs/CyBUegyj+XZSjwDwrL4Xw==
+Received: from uls-op-esai2-o.wdc.com ([10.248.3.38])
+  by uls-op-esad2-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 23 Jun 2026 04:39:00 -0700
+X-CSE-ConnectionGUID: LpgN9SLeSpeZy0J8rNBzYw==
+X-CSE-MsgGUID: /dzy79odSjGJZPK2XnFcYw==
+WDCIronportException: Internal
+Received: from wdap-m04x2wnwan.ad.shared (HELO neo.fritz.box) ([10.224.28.107])
+  by uls-op-esai2-o.wdc.com with ESMTP; 23 Jun 2026 04:38:59 -0700
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To: linux-btrfs@vger.kernel.org
-Cc: syzbot+d950c6ba09b79f6e1864@syzkaller.appspotmail.com,
-	stable@vger.kernel.org
-Subject: [PATCH v3 1/2] btrfs: do not try compression for data reloc inodes
-Date: Tue, 23 Jun 2026 21:07:14 +0930
-Message-ID: <48f22f6de55d47522ef1a0b9865eebe8a2aa7088.1782214614.git.wqu@suse.com>
+Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	Damien Le Moal <dlemoal@kernel.org>
+Subject: [PATCH v5] btrfs: zoned: don't force read-only on transient -EAGAIN from reloc merge
+Date: Tue, 23 Jun 2026 13:38:51 +0200
+Message-ID: <20260623113851.616247-1-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1782214614.git.wqu@suse.com>
-References: <cover.1782214614.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -70,127 +60,153 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Rspamd-Action: no action
-X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	ARC_NA(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_TLS_ALL(0.00)[];
-	RCPT_COUNT_THREE(0.00)[3];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	TO_DN_NONE(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	TAGGED_RCPT(0.00)[d950c6ba09b79f6e1864];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:email,suse.com:dkim,suse.com:mid,appspotmail.com:email]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 9674275E5C
-X-Spam-Score: -3.01
 
-[BUG]
-There is a syzbot report that the check inside get_new_location()
-triggered:
+On a zoned FS, btrfs_delayed_refs_rsv_refill() returns -EAGAIN whenever
+the over-committed metadata plus the zone_unusable bytes exceeds the
+usable size in a metadata block-group to avoid heavy over-commit of
+metadata and early ENOSPC in one transaction.
 
- BTRFS info (device loop0): found 31 extents, stage: move data extents
- BTRFS info (device loop0): leaf 8908800 gen 16 total ptrs 28 free space 1676 owner 18446744073709551607
-        item 0 key (256 INODE_ITEM 0) itemoff 3835 itemsize 160
-                inode generation 5 transid 0 size 0 nbytes 0
-                block group 0 mode 40755 links 1 uid 0 gid 0
-                rdev 0 sequence 0 flags 0x0
-                atime 1669132761.0
-                ctime 1669132761.0
-                mtime 1669132761.0
-                otime 0.0
-        item 1 key (256 INODE_REF 256) itemoff 3823 itemsize 12
-                index 0 name_len 2
-        item 2 key (258 INODE_ITEM 0) itemoff 3663 itemsize 160
-                inode generation 1 transid 16 size 733184 nbytes 106496
-                block group 0 mode 100600 links 0 uid 0 gid 0
-                rdev 0 sequence 24 flags 0x18
-        item 3 key (258 EXTENT_DATA 0) itemoff 3595 itemsize 68
-                generation 16 type 0
-                inline extent data size 47 ram_bytes 4096 compression 1
- [...]
-        item 27 key (18446744073709551611 ORPHAN_ITEM 258) itemoff 2376 itemsize 0
- BTRFS error (device loop0): unexpected non-zero offset in file extent item for data reloc inode 258 key offset 0 offset 9277520992061368337
- ------------[ cut here ]------------
- btrfs_abort_should_print_stack(__error)
+If this happens while doing reclaim, the transaction is getting
+aborted.
 
-[CAUSE]
-The above dump tree shows the first file extent item is inlined, which
-should make no sense for data reloc inodes, as such inodes just
-represent where the data extents are in the relocation destination chunk.
+Treat -EAGAIN as a soft, retryable condition in case of block-group
+reclaim.
 
-However the relocation path preallocates space for each block,
-then dirties them, cluster by cluster.
-It's possible to have a single block at the beginning of the block
-group, and no other block in the same cluster.
-
-So relocation will preallocate a file extent for that block and dirty
-the first block.
-Then memory pressure forces the data reloc inode to be written back, before
-any other blocks are dirtied/allocated.
-
-Finally commit 3eaf5f082c4c ("btrfs: extract inlined creation into a dedicated
-delalloc helper") changed the sequence of delalloc. Before that commit we
-always tried NOCOW first, so that dirtied block will be written back into
-the preallocated space, and appear as a regular extent.
-
-But with that commit, we always try inline first, and since compression
-is forced, we try compressing the first block, and then inline the
-compressed data, resulting in the above inlined file extent in the data
-reloc tree.
-
-Then the check in get_new_location() will check the file offset, without
-checking if the file extent is inlined or not, resulting in the above
-failure.
-
-[FIX]
-Do not allow compression for data reloc inodes.
-
-Since data reloc inode sizes are always block aligned, as long as we do
-not compress, @data_len will always be at least one block, and
-that will cause can_cow_file_range_inline() to return false, thus no
-inlined extent will be created.
-
-Reported-by: syzbot+d950c6ba09b79f6e1864@syzkaller.appspotmail.com
-Link: https://lore.kernel.org/linux-btrfs/6a373dc5.764cf64f.168fbe.0001.GAE@google.com/
-Fixes: 3eaf5f082c4c ("btrfs: extract inlined creation into a dedicated delalloc helper")
-Cc: stable@vger.kernel.org
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reported-by: Damien Le Moal <dlemoal@kernel.org>
+Fixes: 7bcb04de982f ("btrfs: zoned: cap delayed refs metadata reservation to avoid overcommit")
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/btrfs_inode.h | 2 ++
- 1 file changed, 2 insertions(+)
+Changes to v4:
+- Gate EAGAIN checks behind btrfs_is_zoned()
+- Fix comment style
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index d5d81f9546c3..7fdc6c3fd066 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -476,6 +476,8 @@ static inline bool btrfs_inode_can_compress(const struct btrfs_inode *inode)
- 	if (inode->flags & BTRFS_INODE_NODATACOW ||
- 	    inode->flags & BTRFS_INODE_NODATASUM)
- 		return false;
-+	if (btrfs_is_data_reloc_root(inode->root))
-+		return false;
- 	return true;
+ fs/btrfs/block-group.c |  9 +++++++-
+ fs/btrfs/relocation.c  | 51 ++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 55 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index ab76a5173272..9e937407d12a 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -2047,6 +2047,12 @@ static int btrfs_reclaim_block_group(struct btrfs_block_group *bg, int *reclaime
+ 
+ 	trace_btrfs_reclaim_block_group(bg);
+ 	ret = btrfs_relocate_chunk(fs_info, bg->start, false);
++	if (btrfs_is_zoned(fs_info) && ret == -EAGAIN) {
++		btrfs_dec_block_group_ro(bg);
++		btrfs_debug(fs_info, "deferring reclaim of chunk %llu",
++			    bg->start);
++		return ret;
++	}
+ 	if (ret) {
+ 		btrfs_dec_block_group_ro(bg);
+ 		btrfs_err(fs_info, "error relocating chunk %llu",
+@@ -2113,7 +2119,8 @@ void btrfs_reclaim_block_groups(struct btrfs_fs_info *fs_info, unsigned int limi
+ 		spin_unlock(&fs_info->unused_bgs_lock);
+ 		ret = btrfs_reclaim_block_group(bg, &reclaimed);
+ 
+-		if (ret && !READ_ONCE(space_info->periodic_reclaim))
++		if ((btrfs_is_zoned(fs_info) && ret == -EAGAIN) ||
++		    (ret && !READ_ONCE(space_info->periodic_reclaim)))
+ 			btrfs_link_bg_list(bg, &retry_list);
+ 		btrfs_put_block_group(bg);
+ 
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 1819d49d19c3..df69b401ca8e 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1530,6 +1530,36 @@ static void clear_reloc_root(struct btrfs_root *root)
+ 	clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
  }
+ 
++/* Drop the reloc trees of a relocation that is being deferred and retried. */
++static void abort_reloc_roots(struct reloc_control *rc, struct list_head *list)
++{
++	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
++	struct btrfs_root *reloc_root, *tmp;
++
++	list_for_each_entry_safe(reloc_root, tmp, list, root_list) {
++		struct btrfs_root *root;
++
++		root = btrfs_get_fs_root(fs_info, reloc_root->root_key.offset,
++					 false);
++		if (!IS_ERR(root)) {
++			if (root->reloc_root == reloc_root) {
++				clear_reloc_root(root);
++				btrfs_put_root(reloc_root);
++			}
++			btrfs_put_root(root);
++		}
++
++		btrfs_set_root_refs(&reloc_root->root_item, 0);
++		memset(&reloc_root->root_item.drop_progress, 0,
++		       sizeof(struct btrfs_disk_key));
++		btrfs_set_root_drop_level(&reloc_root->root_item, 0);
++
++		list_del_init(&reloc_root->root_list);
++		list_add_tail(&reloc_root->reloc_dirty_list,
++				&rc->dirty_subvol_roots);
++	}
++}
++
+ static int clean_dirty_subvols(struct reloc_control *rc)
+ {
+ 	struct btrfs_root *root;
+@@ -1870,7 +1900,7 @@ int prepare_to_merge(struct reloc_control *rc, int err)
+ }
+ 
+ static noinline_for_stack
+-void merge_reloc_roots(struct reloc_control *rc)
++int merge_reloc_roots(struct reloc_control *rc)
+ {
+ 	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
+ 	struct btrfs_root *root;
+@@ -1968,7 +1998,15 @@ void merge_reloc_roots(struct reloc_control *rc)
+ 		goto again;
+ 	}
+ out:
+-	if (ret) {
++	if (btrfs_is_zoned(fs_info) && ret == -EAGAIN) {
++		abort_reloc_roots(rc, &reloc_roots);
++
++		/* New reloc root may be added. */
++		mutex_lock(&fs_info->reloc_mutex);
++		list_splice_init(&rc->reloc_roots, &reloc_roots);
++		mutex_unlock(&fs_info->reloc_mutex);
++		abort_reloc_roots(rc, &reloc_roots);
++	} else if (ret) {
+ 		btrfs_handle_fs_error(fs_info, ret, NULL);
+ 		free_reloc_roots(&reloc_roots);
+ 
+@@ -1994,6 +2032,7 @@ void merge_reloc_roots(struct reloc_control *rc)
+ 	 *
+ 	 * The remaining nodes will be cleaned up by put_reloc_control().
+ 	 */
++	return ret;
+ }
+ 
+ static void free_block_list(struct rb_root *blocks)
+@@ -3723,7 +3762,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
+ 	 */
+ 	err = prepare_to_merge(rc, err);
+ 
+-	merge_reloc_roots(rc);
++	ret = merge_reloc_roots(rc);
++	if (ret && !err)
++		err = ret;
+ 
+ 	rc->merge_reloc_tree = false;
+ 	unset_reloc_control(rc);
+@@ -5692,7 +5733,9 @@ int btrfs_recover_relocation(struct btrfs_fs_info *fs_info)
+ 	if (ret)
+ 		goto out_unset;
+ 
+-	merge_reloc_roots(rc);
++	ret = merge_reloc_roots(rc);
++	if (ret)
++		goto out_unset;
+ 
+ 	unset_reloc_control(rc);
  
 -- 
 2.54.0

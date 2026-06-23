@@ -1,78 +1,78 @@
 Received: from fhigh-a4-smtp.messagingengine.com (fhigh-a4-smtp.messagingengine.com [103.168.172.155])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3C8D03A6B99
-	for <linux-btrfs@vger.kernel.org>; Tue, 23 Jun 2026 22:36:55 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B573D371D11
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Jun 2026 22:36:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.155
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782254216; cv=none; b=Mc6Rnf3jze6babxUntfubdJjcg04UvAJeagj253DHc9n4RujcISIYC1eC7GR0xjvw5rZ611kqLTUx8WQVv+CpTxte0gGxEJXAzfT3P7UTGoh1+BHC9CcnqHJPM9Lk9IiwE9b8ZZdUnKIOCwIy9L/1k7sfRrmktxoD0DBGzhHVJU=
+	t=1782254217; cv=none; b=S7RFH2WE5wb6p6T209fqiErqIT9JBLbkVFjcMYF67aLRgCradN2hNnICawcVmIzg9aKNS3eBqTM4GPuzETNbICbzgGNvelUzctFQOYHH97PskdHjPISyU9kgM22w85wFjx5xsb7b1HuMcNn2RLPvZY9rNaCHhKQ+6HdqDLC+uaw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782254216; c=relaxed/simple;
-	bh=NoRagoYk8ZYycM9K8qgrY7GO8X4fSsZFwkkLGeQyaGE=;
+	s=arc-20240116; t=1782254217; c=relaxed/simple;
+	bh=x7jCRnN+XPWxJpKnJd2Srd42gmTnPbhqg6N4Jy/kqSM=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=OTimtyOLI2ZBuIlEv4D9aV/HhSwWCEneY7UO4Wkbzm7WdhTeWPJBQZNL8dq758KwsY4tDYp+UdSp347r6hMjwqEjR3RREbFECGgslmbhxA9Z/ZQYshMLRNMfqruPOwSVKiVwfd87HInit3Ud19cPJdFn4EoOBfxxfxHhF7f1s8o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=AlPL9VM/; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=LDeEKVAY; arc=none smtp.client-ip=103.168.172.155
+	 MIME-Version; b=nnRmGypBzXm4QiLlojWyr1toe5W9xDNqEIXhka0oqe6rb5P6hxH9CU74pvHwRsXN348jXj+YKUDuRMKE3Tcu94AzymPRIYjf6ANEeu+vUuZHTS6dBzg5lLeWzp5kI5AnKlEuHIfR9DmfKC1nQTMMptALOlkUMsbsV8T4K91tVvM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=lSvGIgc3; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=bQvngjBp; arc=none smtp.client-ip=103.168.172.155
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="AlPL9VM/";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="LDeEKVAY"
-Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id 6CCBB14000BD;
-	Tue, 23 Jun 2026 18:36:54 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-02.internal (MEProxy); Tue, 23 Jun 2026 18:36:54 -0400
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="lSvGIgc3";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="bQvngjBp"
+Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
+	by mailfhigh.phl.internal (Postfix) with ESMTP id 2CF1C140001D;
+	Tue, 23 Jun 2026 18:36:56 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-03.internal (MEProxy); Tue, 23 Jun 2026 18:36:56 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
 	:content-transfer-encoding:content-type:date:date:from:from
 	:in-reply-to:in-reply-to:message-id:mime-version:references
-	:reply-to:subject:subject:to:to; s=fm2; t=1782254214; x=
-	1782340614; bh=znwvP5DFZ+iFLNau69oi5qGMOj5Rl7AUikbR5GzxPPI=; b=A
-	lPL9VM/LAtCGsjs03XplqCLsfuQTAJamzB6WOLM9fKkSubNYR3ewgnQTDSNRgOLh
-	KK8/k9BsdNNaPA9yN59LHgsebbtqA4Ii1OKO7xcHaARuijsaXNwk9XqT3JRkqiB6
-	dYEMbwV1jAh0t/7N2kJ8jLWCuar4bh/47H/FLdtz1XGVYIyNfbrN7GiNIY387BVA
-	5lgt7Z1ba+LxuZCOTMOnE7H3iFcjAIA+OKxIDWWzRsCRb4hxHxXER8PGOYqf7tQX
-	aYbT9MBln8FshiQR0H8UAwVkd1Nb8kQk42fzEKEdJ3psF860rPwfq2xVYsQ2Va81
-	0ZjXwv2Hcq2GdtGo8Xhlw==
+	:reply-to:subject:subject:to:to; s=fm2; t=1782254216; x=
+	1782340616; bh=HVtzrckv+RKbyADjK59ExVkEQ3JZTQcy+o9xG7iWMXk=; b=l
+	SvGIgc3IAuKnydagNzw/X/x52Xbf10QBb6Ibtq2gLHkfj1Q0gDtCchpWf+xDlV9g
+	WvmdUyUGCHzvG00Gg29/7oK0QybcZu9VodwCZiDssnkquZtkIIM2uFb/VoJuBx+L
+	N9xFHM7ZqUyfNA/ZLqQW6IwX9g45b8Wm6QJERc/i2lq3DlmgcIm8bYFvwpHtk7I/
+	n7+V/YdaWb80In6GnfjsRiOHD3whKDys5kD9sT87deuaJCALUeOk2hliSDnptEKr
+	symUz4uPKKF7AC16VLRmTLLsBFvwvBv1eLymhz5sUoN0ebNfLdup5tUIYVYpEXxl
+	qJ+GXlzySy3L4aVTqahtQ==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:content-transfer-encoding:content-type
 	:date:date:feedback-id:feedback-id:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
 	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-	fm1; t=1782254214; x=1782340614; bh=znwvP5DFZ+iFLNau69oi5qGMOj5R
-	l7AUikbR5GzxPPI=; b=LDeEKVAYS7odxlJ2JmJ+84q0olq5/bawp3cvcdS9cPDa
-	x7HzSSTIsPtomoYleYgg+caWa3JnZiEyHqEtpzqrBt8cYEf5JTkLYpVPzXXqZQgV
-	RYxVPciR1xqhOFY5aXgUyX/esdlz7hSyeFnDDbPqjBOnQH+BiFxLpFhYlrecDi/n
-	j/Jy6ATAJ7Ba1lXmR4ZvJHf1JReCu82rUTku3/i8txX9kjwl3TY0V2mVCAE5krjY
-	UvsT2q1pKl8iZifaAWPys6jG2rmwtPxPmYJ8QY2/TcZDMK8uuLxYsrVFP87l101I
-	+kTI0qiUrq06dLLr4zJzHTPwurDaCja0vEmNTU6hqA==
-X-ME-Sender: <xms:hgo7amigO4N6Sd_DpS1rUk6IPcoOA9__dUMwui_qIEhBGAIw-usPDw>
-    <xme:hgo7atBb9FpJ_YSRbejVNVvb645etcsRNYsCfF7029_A7uK7oU4pKP9VTLL5gLWKy
-    gQbSuhVjWYNvWU_AEBRz74NuOCRlJGmwDa0JC_wpYEX45fkGRPWS7c>
-X-ME-Received: <xmr:hgo7arvtkHyqfJq7TTPDv8ErTG1ZeTuCvdw4KGcQ4encIdn8A_hFztfHUQp7KjWnEdt90DmM4vCwqMkP5eWfau1E7qo>
-X-ME-Proxy-Cause: dmFkZTGwKjVnY/xwOUtqyO2hAklZ2MB9j6/G2weDdvmdpFnu2uNd4AE/cMUPrN+fqkpPGI
-    DrTrwNBoapQ8yx8baMIORA9lT5be9hjUGha9CIl5NrosF0cuJgG1hSkwZShbgtbcTrWzia
-    7/wPxG6eYx/WaPNA7JyvYY/BbH6NyR8cxueJ853E+XgESFLQeNo+K/b/b5AHWfrcri2cZX
-    Pllgh0tLD5SI5ku8otxlzFoTZ8xuCoMdz+x7de/otxchHbIZfBdUOXZmLLNNa40+TlEMps
-    Jbnv5Xl4wbGktuP+lor28OI9sJRGMNuzYy3xXgAen+dn3gNQ0HKi5hqQWJmwsxXqiL8/BS
-    at0c+BuCf/u00JU1P7TVOTKPUsne2vc9bDwu6MnP5JF7tPVpVZ3Ig9E6UFG9e2AgsUI/hO
-    3SQfac2XMzB3PoPaw7Z9YGYL1BgU5uF4ZtIou4LXmvN4d11wWgoXnoWCdrhOnodzhItWDB
-    Hrp8TnkNyg0D2lROV5BFxvhYdFaSqouG6AfjlJ3O+oB26Dd2TxVnbN9jJqrqSh4tu40Xa3
-    Tbu6HpHyt+dBTZE0F+pidnR/8DHQgr4nqXkswvsWHPWS3OoJhVlb3xmTQTSRaRrapASH6U
-    AaOfqDC2Cv8P+z8RyQorwokkrK/jkHq/Pt27QHhOKHlIFbXF4f2aW7E/6H+w
-X-ME-Proxy: <xmx:hgo7aqaDibkJhtDX_xPCJBSK7OuI1RgRdcfg6VSL3dWdi58uinYyTg>
-    <xmx:hgo7amWvosbkg_bveDdMCtYf2zz6uO31kpQuTIoTqFJSBDxq3rA6_g>
-    <xmx:hgo7am5XjaHaYZg_myDPzXI1RSWV5HhOUueyTFmyIONdnHVcMh-dlA>
-    <xmx:hgo7apjAt57um3CzdSKKrxd5VOvmglFIHYHJV9ImANGMYkZmfEJH1A>
-    <xmx:hgo7ajGORQFYxgQhculx9cY8IJydykN8vbzRwxL36LWamrPaBbH7GMs2>
+	fm1; t=1782254216; x=1782340616; bh=HVtzrckv+RKbyADjK59ExVkEQ3JZ
+	TQcy+o9xG7iWMXk=; b=bQvngjBpdH+XUWrFrdrSmMFOgfBC6Xj74Wqp1fDayvDA
+	j8rA4/9uO/S5pkf/NrVDqATKLKQse8vcq07HcoffeDQL4DOWQPEseVNvP1yDnF/8
+	53NKBAJGKQ6vK8At8gl+rEjiyLZY1yOqM6SYkorSTW5WrZwAix37T7iBhBOKD7vd
+	LeTPXJal/WY/9qznDyscoYpTiEwNn/mBvTEEgX8pCLivgcDawQy9CgjBtEezlWyH
+	c9owA5DdbXgHKkvRUeE5zL1xFUCGDZJkWsXYvtq5nTykv2gIvuKhj10ngCcwq1ux
+	H5n5+8Qdo/kDXDi73bu+gFidQwdvaJGteyEqiiVPgw==
+X-ME-Sender: <xms:iAo7an7XwGNgaTB96SaIssoxeiwYPPz2kHzMAwCoIzwtGxk1Sq4t3g>
+    <xme:iAo7ai6Ucn9JPSM_y6tBgVBpNwwKANL6DQPORC7SH7aTree8TwvTUaSdKaBqLSxGK
+    CvRYp1o3ha28I5jpXONx7AS5tAeoPFDjbFyJu7iQNlB5SMNVjSC3w>
+X-ME-Received: <xmr:iAo7asFhm-cXgSHHX1v-gIq_Vo455OQ0Bbn4TC-2igZ_LnCLC912uElgAljDYXw6vzWJLOpjWPFOxNLBTSNfg505p1w>
+X-ME-Proxy-Cause: dmFkZTFM0Wp6sPpJEkK9bsyZ6YA6pQQcGXcfVMo4LIrpl/vE+Yh8DM6caFGBxxRGtS3Stn
+    xYgxFiBgxns8eaaAUvVS7iRn5Gi5QnRO3iWhoiIDAsm10q//73fvsXO+rADefuA7Gqhbrx
+    vjIio6OLwdHUEJoK4JyAA+dS9g6z+j5E9JeVRu9TU8mQN/a0t43WDCDjSzKH8Q8Jd70YQh
+    YXFZRiZWtCZe/AgrYmt6Yzf6FJUG2jxv+LnTt1iksDgfXV/HmRrGIBUDUh1kEef3r5X6sR
+    8v7CJIUK8W5eOshC6IfmD0GDbKS4pwhq9P5oURR0uZWzafqsY7J41BglfGtsyOYvVn7nGE
+    mf3p2kztDTCFcDL2KT3BGc1+SpgWzYc9xXyuoio5qGpsMuRhJdBC1TYihhW1C1kiKmnPGw
+    1GMh5X4ipg0rYRgXXB4kSHDeBBeeKZtXh86aljelNoRNpK0eq07Weg0IjbGBCqr3Xtd8oU
+    z3YZepQyYjL+xp7wBHNnEoBzKDgSFKR9Tsa+7EVDhs+8Rk2FoCTtDgpIXmlv/zBqcDhqNW
+    OAQtQCP0bJxQU/g2yNEBGT/c/OEiK8yyy0DFAztRncBWGLi5CsQL7bqwYPIziNj1E56pfh
+    8qhUtLylhIj08cseNz19JkxCMLbbY2XL1jnbK5wGsuMQgUszBFX2hGNqVgew
+X-ME-Proxy: <xmx:iAo7ajROwtqzwBfx6XWPC2JPSoz1r_JPQoTbjrg0njUwkwCnGXZTSA>
+    <xmx:iAo7atuBtNC3InvUplLwJnZ0ZHB7GB-2NsoWamfOYb0tkl6-jH3_SQ>
+    <xmx:iAo7aqz3AUcM9yhImG63UpTi4ul7oonCMX-MTTW3Nqml0S_IEQ8pww>
+    <xmx:iAo7av6uf1YegYMssX4K_ueY8ev6gUmFaVJhKcqA2WJD48PRkYGsxA>
+    <xmx:iAo7aqfT72tgfrS2Z55BT8xV7uGgu3nxD2a_jXwWMPlIRq14JQUVmUKX>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 23 Jun 2026 18:36:53 -0400 (EDT)
+ 23 Jun 2026 18:36:55 -0400 (EDT)
 From: Boris Burkov <boris@bur.io>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Subject: [PATCH 4/5] btrfs: probe with GFP_NOWAIT for tree block readahead
-Date: Tue, 23 Jun 2026 15:35:39 -0700
-Message-ID: <e1a8f2e2b28326f7cfd96a1e414ebe73805705eb.1782249000.git.boris@bur.io>
+Subject: [PATCH 5/5] btrfs: use GFP_NOWAIT when inhibiting eb writeback
+Date: Tue, 23 Jun 2026 15:35:40 -0700
+Message-ID: <1f4545756c36e7b3e7aab1f6ace60d72de1ed7cd.1782249000.git.boris@bur.io>
 X-Mailer: git-send-email 2.54.0
 In-Reply-To: <cover.1782249000.git.boris@bur.io>
 References: <cover.1782249000.git.boris@bur.io>
@@ -84,31 +84,43 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-extent_buffer readahead should not be able to painfully stall a
-search_slot and hog tree locks by getting stuck in direct reclaim.
-
-If the allocation fails, that is fine, we simply fail to do the
-readahead in that case.
+Inhibition allocation is already best effort and done while holding
+locks so switch it to NOWAIT.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/extent_io.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 94fa9a6c3978..b40d3c47eb0d 100644
+index b40d3c47eb0d..43c361ef61a2 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -4737,7 +4737,8 @@ void btrfs_readahead_tree_block(struct btrfs_fs_info *fs_info,
- 		.level = level,
- 		.transid = gen
- 	};
--	struct btrfs_eb_prealloc pa = { 0 };
-+	/* Readahead is best effort so prefer to fail rather than block in reclaim. */
-+	struct btrfs_eb_prealloc pa = { .supports_nowait = true };
- 	struct extent_buffer *eb;
- 	int ret;
+@@ -3002,10 +3002,11 @@ static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
+  * @trans:  transaction handle that will own the inhibitor
+  * @eb:      extent buffer to inhibit writeback on
+  *
+- * Attempt to track this extent buffer in the transaction's inhibited set.  If
+- * memory allocation fails, the buffer is simply not tracked. It may be written
+- * back and need re-COW, which is the original behavior.  This is acceptable
+- * since inhibiting writeback is an optimization.
++ * Attempt to track this extent buffer in the transaction's inhibited set.  We
++ * are called under eb->lock, so try with GFP_NOWAIT rather than entering
++ * reclaim under the lock.  If the allocation fails, the buffer is simply not
++ * tracked. It may be written back and need re-COW, which is the original
++ * behavior. This is acceptable since inhibiting writeback is an optimization.
+  */
+ void btrfs_inhibit_eb_writeback(struct btrfs_trans_handle *trans, struct extent_buffer *eb)
+ {
+@@ -3021,7 +3022,7 @@ void btrfs_inhibit_eb_writeback(struct btrfs_trans_handle *trans, struct extent_
+ 	/* Take reference for the xarray entry. */
+ 	refcount_inc(&eb->refs);
  
+-	old = xa_store(&trans->writeback_inhibited_ebs, index, eb, GFP_NOFS);
++	old = xa_store(&trans->writeback_inhibited_ebs, index, eb, GFP_NOWAIT);
+ 	if (xa_is_err(old)) {
+ 		/* Allocation failed, just skip inhibiting this buffer. */
+ 		free_extent_buffer(eb);
 -- 
 2.54.0
 

@@ -1,121 +1,71 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 70E2438AC97;
-	Wed, 24 Jun 2026 08:59:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 69B1A2745E;
+	Wed, 24 Jun 2026 14:05:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782291587; cv=none; b=sStYNrrdl+wjUc71SEu/yjzpccfcjLGe+ZXp+TIhqZdD41qcORjdaomoBKsmRJOf6Hu4RANCliA+vaxSP3pZty9FEn1ZKQu1SUBjmKKvyHkqD4ZiflE4FXSgDN5hTIhJjTM6/3wC7o2MzkRLPU/aWttFf8663VAzj3Jz2OGakq8=
+	t=1782309910; cv=none; b=JdFaPX3hymL5AxDPgGQsthlxYdHs6KQkhl/E5KqwYFXf2ZqExwJRwEiJUm77e9bwyJgQ/XXWJpryb7VIXwBrMzeP4uPTEGo4ZgWj9Jm+v2C+thRMCI7QU1MywWZgcAQDsRAPvDgWbHKfHVgkz7d56jy9Xh5AABYvssibclyYpxE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782291587; c=relaxed/simple;
-	bh=/0Sz/YOr0sVnKyQmmyAwFm230F+4bjpS+AEXLTRDbdU=;
-	h=Content-Type:MIME-Version:Subject:From:Message-Id:Date:References:
-	 In-Reply-To:To:Cc; b=rezDc5tGrTfiPwJAum21uTOfwSjmPrRK8nRapoED8dNm+pmQN+GHH09EPdAUUkkiJP36GyTcagS9FVm1+2nWTeatB16qLeCCHfY4I2TbV6EXlPG4VOmOwkL9+LQGTMRpBohhKuDPizaBJlis9NzdclbFat4C5ZoL0XG8f8JTZAo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ahzIbRZI; arc=none smtp.client-ip=100.103.45.18
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ahzIbRZI"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E54151F000E9;
-	Wed, 24 Jun 2026 08:59:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782291583;
-	bh=H7dnvEvzEKYGFsUTzy9ti4ZW1NJZkg7pmn7MPJihWl4=;
-	h=Subject:From:Date:References:In-Reply-To:To:Cc;
-	b=ahzIbRZIetUQgFo/22vOgZ+uJ+97WPRTt/pD3GlCEztRscpy02/0ux3ViqsxEjkwO
-	 easG6XV6XLRJJVyWE9Z9050kasspIvARRFZ+l6aqhTOBnE1iiYMWKHWeJ+rVNV9mfJ
-	 xI+jJfGnaFu71F5uEdtDR6kUbrg2DaN18xdzdDOmCGP4fORzHuSNP16EfO9WJAjZwJ
-	 zOiIG4gJkvSO6uM5Z8Kyiu1r10iziRQCVv4wj5mgXjIxk2KAFL19/uqEkRlXia6V/1
-	 p+iVRA8Y3rG9f/KUr9NezdPkNUNKX4KZKRf7iTlHbxXfa5t5CMQKTcD5pm+yjhkN0N
-	 dYZZAtdBS9Ghg==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 19A2E39EF964;
-	Wed, 24 Jun 2026 08:59:34 +0000 (UTC)
-Content-Type: text/plain; charset="utf-8"
+	s=arc-20240116; t=1782309910; c=relaxed/simple;
+	bh=7vc/EGqcQD3zdmSkUwy8GjD66tIqq3R3BfQ0AhSjUnI=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=VUWBVU96MTUpIQfqDmeVzqA1EX/iHNhOL3tJM6u3thH/en7L1pA/byF8tOcVvqI0cjxYcy0FMPSoVAQ33A5DwTmwFW3w/HBQrWSEhIDm5rrRcdKFw0RnUyblP6iyJe+LTh3IftgofYnQXB2WjJUlS/e20yhtgmIdS25YabxHGVM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id 786DA68B05; Wed, 24 Jun 2026 16:05:05 +0200 (CEST)
+Date: Wed, 24 Jun 2026 16:05:05 +0200
+From: Christoph Hellwig <hch@lst.de>
+To: Christian Brauner <brauner@kernel.org>
+Cc: Jan Kara <jack@suse.cz>, Christoph Hellwig <hch@lst.de>,
+	Jens Axboe <axboe@kernel.dk>,
+	Alexander Viro <viro@zeniv.linux.org.uk>,
+	linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, Carlos Maiolino <cem@kernel.org>,
+	linux-xfs@vger.kernel.org, Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+	Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
+	Gao Xiang <xiang@kernel.org>, linux-erofs@lists.ozlabs.org
+Subject: Re: [PATCH RFC v2 01/18] xfs: fix the error unwind in
+ xfs_open_devices()
+Message-ID: <20260624140505.GA7692@lst.de>
+References: <20260616-work-super-bdev_holder_global-v2-0-7df6b864028e@kernel.org> <20260616-work-super-bdev_holder_global-v2-1-7df6b864028e@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Subject: Re: [f2fs-dev] [PATCH v9 01/22] fsverity: report validation errors
- through fserror to fsnotify
-From: patchwork-bot+f2fs@kernel.org
-Message-Id: 
- <178229157279.2577930.17428386350924230713.git-patchwork-notify@kernel.org>
-Date: Wed, 24 Jun 2026 08:59:32 +0000
-References: <20260428083332.768693-2-aalbersh@kernel.org>
-In-Reply-To: <20260428083332.768693-2-aalbersh@kernel.org>
-To: Andrey Albershteyn <aalbersh@kernel.org>
-Cc: linux-xfs@vger.kernel.org, fsverity@lists.linux.dev,
- linux-fsdevel@vger.kernel.org, ebiggers@kernel.org, djwong@kernel.org,
- linux-unionfs@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
- linux-ext4@vger.kernel.org, hch@lst.de, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260616-work-super-bdev_holder_global-v2-1-7df6b864028e@kernel.org>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-Hello:
-
-This series was applied to jaegeuk/f2fs.git (dev)
-by Christian Brauner <brauner@kernel.org>:
-
-On Tue, 28 Apr 2026 10:33:07 +0200 you wrote:
-> Reported verification errors to fsnotify through recently added fserror
-> interface.
+On Tue, Jun 16, 2026 at 04:08:17PM +0200, Christian Brauner wrote:
+> Since the rt and log block devices are closed in xfs_free_buftarg() the
+> buftarg owns the device file. The error unwind does not respect that:
+> when the log buftarg allocation fails, out_free_rtdev_targ frees the rt
+> buftarg - releasing rtdev_file - and then falls through to
+> out_close_rtdev and releases it a second time.
 > 
-> Reviewed-by: Darrick J. Wong <djwong@kernel.org>
-> Reviewed-by: Christoph Hellwig <hch@lst.de>
-> Acked-by: Eric Biggers <ebiggers@kernel.org>
-> Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+> The unwind also leaves mp->m_rtdev_targp and mp->m_ddev_targp pointing
+> to the freed buftargs. The failed mount continues into
+> deactivate_locked_super() -> xfs_kill_sb() -> xfs_mount_free(), which
+> frees them again.
 > 
-> [...]
+> Clear the buftarg pointers once the unwind freed them and clear
+> rtdev_file once the rt buftarg owns it, so nothing is released twice.
+> 
+> Reachable when a buftarg allocation fails after the data buftarg was
+> set up: an I/O error in sync_blockdev() or an allocation failure in
+> xfs_init_buftarg() while mounting with external rt and log devices.
 
-Here is the summary with links:
-  - [f2fs-dev,v9,01/22] fsverity: report validation errors through fserror to fsnotify
-    (no matching commit)
-  - [f2fs-dev,v9,02/22] fsverity: expose ensure_fsverity_info()
-    (no matching commit)
-  - [f2fs-dev,v9,03/22] ovl: use core fsverity ensure info interface
-    (no matching commit)
-  - [f2fs-dev,v9,04/22] fsverity: generate and store zero-block hash
-    https://git.kernel.org/jaegeuk/f2fs/c/07d09774e2bf
-  - [f2fs-dev,v9,05/22] fsverity: pass digest size and hash of the all-zeroes block to ->write
-    (no matching commit)
-  - [f2fs-dev,v9,06/22] fsverity: hoist pagecache_read from f2fs/ext4 to fsverity
-    (no matching commit)
-  - [f2fs-dev,v9,07/22] iomap: introduce IOMAP_F_FSVERITY and teach writeback to handle fsverity
-    (no matching commit)
-  - [f2fs-dev,v9,08/22] iomap: teach iomap to read files with fsverity
-    (no matching commit)
-  - [f2fs-dev,v9,09/22] iomap: introduce iomap_fsverity_write() for writing fsverity metadata
-    https://git.kernel.org/jaegeuk/f2fs/c/36a36c4cac91
-  - [f2fs-dev,v9,10/22] xfs: introduce fsverity on-disk changes
-    (no matching commit)
-  - [f2fs-dev,v9,11/22] xfs: initialize fs-verity on file open
-    (no matching commit)
-  - [f2fs-dev,v9,12/22] xfs: don't allow to enable DAX on fs-verity sealed inode
-    (no matching commit)
-  - [f2fs-dev,v9,13/22] xfs: disable direct read path for fs-verity files
-    (no matching commit)
-  - [f2fs-dev,v9,14/22] xfs: handle fsverity I/O in write/read path
-    (no matching commit)
-  - [f2fs-dev,v9,15/22] xfs: use read ioend for fsverity data verification
-    (no matching commit)
-  - [f2fs-dev,v9,16/22] xfs: add fs-verity support
-    (no matching commit)
-  - [f2fs-dev,v9,17/22] xfs: remove unwritten extents after preallocations in fsverity metadata
-    (no matching commit)
-  - [f2fs-dev,v9,18/22] xfs: add fs-verity ioctls
-    (no matching commit)
-  - [f2fs-dev,v9,19/22] xfs: advertise fs-verity being available on filesystem
-    (no matching commit)
-  - [f2fs-dev,v9,20/22] xfs: check and repair the verity inode flag state
-    (no matching commit)
-  - [f2fs-dev,v9,21/22] xfs: introduce health state for corrupted fsverity metadata
-    (no matching commit)
-  - [f2fs-dev,v9,22/22] xfs: enable ro-compat fs-verity flag
-    (no matching commit)
+Looks good:
 
-You are awesome, thank you!
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/patchwork/pwbot.html
+Reviewed-by: Christoph Hellwig <hch@lst.de>
 
+I actually have a major rework of this area pending, but it probably
+won't land for 7.2, so we might as well get this local fix in ASAP.
 

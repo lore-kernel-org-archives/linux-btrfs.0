@@ -1,142 +1,155 @@
-Received: from out-188.mta0.migadu.com (out-188.mta0.migadu.com [91.218.175.188])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3F2B43D905F;
-	Wed, 24 Jun 2026 15:18:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.188
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8A9682857C7
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 15:33:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782314335; cv=none; b=Ue6RFqWxc9xfa8fcw02K3jBFhY8vins58NBq6eAkZ1L1VTSjOgzhbBQGq7XIhQpAYw1QwkSGo/7avHN1FpC4BjOp3l0Sixm6Erqa4oEhUgE2/yd1bmbPbF8dJ3mo4HrLcNzVLAKA0Obe03/RWUuD3lHLhNfQCvX2dQGvOeSqSNk=
+	t=1782315202; cv=none; b=fv4aEUGQfCLudaz2fPj4HfeHnPGZVVoTeJ3Y+U+gDauUcVj8iu61cRX/JpVowow/3JG3eWiv7kHpRYDGTk/wuKJCFKcydhaJETM6Tzi0LpfuHcgpxJjz9p93MccNosGDaceirpH0cqSDKKkPIizKid7g3p1OD30zJQZCd9TBTAg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782314335; c=relaxed/simple;
-	bh=RDOVrx8dKGDFgKMwpgDgmXF+JV66gRwWtkcpoJ9Ycq8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=mZooq7nCj3IP8KyZaQF+3y5FOhJmkHsabhsWh5dGxpY5ZBFs5oa5YJ9OfOLmj1q2B9NffWKVsQyNYQ12v/LTBMhiaM9KSY2rx3VEhQAY9wvBTSRqRELBZnFbnlf9bMYEIlxJV3o1XS8kBBdcfC+SJH3lgTSaGwItL4mhLSQRKMc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=NyWSt8ap; arc=none smtp.client-ip=91.218.175.188
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	s=arc-20240116; t=1782315202; c=relaxed/simple;
+	bh=yXfkXzIZ0GZZdMpLqUJzIB3dE94eT6o4jTSfn3baf9o=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=Y/HYQ284FOnF9uN/86VwIqmg9oA/kvgKG3Sfd/8y0y1GyACT/1Pr2t/OmtYi4qYeVV8ijrxI3LxLqsSP+tSpxcJaCBMhmcwImp9Tsuwec7zBj+ySOw9Qt9FMrpUVEc5oOJOULcN8kx4hhvJL89E/LegsuGsSQNwFfkElL/Jg3Ds=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yIQGitou; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=d/CE+oB/; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yIQGitou; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=d/CE+oB/; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="NyWSt8ap"
-Message-ID: <cfdb8620-ea55-4226-98bf-d006820e6270@linux.dev>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1782314322;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yIQGitou";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="d/CE+oB/";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yIQGitou";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="d/CE+oB/"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 3F4F26DB61;
+	Wed, 24 Jun 2026 15:33:19 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1782315199;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=eCfveZ37ayRh458SUb8Vvs7csErWvvnNaK/RVVo+5fA=;
-	b=NyWSt8apc46t06T04zMNhMchtk3k4ctFbVCiL9c2mP9xyextgm4eGNBGZRMVtokC/pbQ24
-	vU3kdqTh4LXr1cjm4Jsn6oIw3SoC6+9ZfRZnNtDC+QkC0X8TGfqVxfmzeu+69fJRhGzIhQ
-	iIJdk2xZx2BxIFCIz9q4ErwI9vRQK1o=
-Date: Wed, 24 Jun 2026 16:18:38 +0100
+	bh=MSE4rkk2Upul+S7U9xRhL47pZrwLb+quP4b+I+wl5iE=;
+	b=yIQGitou4Df4FFuuW0bO2OkqoGq5fC8EZ3U5Yp3XbhhKeC4/cfngKQsqcLTnjF1jrLfu+n
+	IJdva6jI4ZwSYCOgwzz0xDfxOs62Arsg+FY4JJgBLFPxcN4bsQjmujxhYHk8UoqqbKpRS5
+	GhvAbNKSNcdnjYezkk/mpz/duTh4qR0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1782315199;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=MSE4rkk2Upul+S7U9xRhL47pZrwLb+quP4b+I+wl5iE=;
+	b=d/CE+oB/j21oQOaarg8mi9Z2rPpYzhuaIa6JDLvX8rKOT0ENRUWIBOg3z+Pb1K6x80RaIC
+	55TSomJMZs3o+sCg==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=yIQGitou;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b="d/CE+oB/"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1782315199;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=MSE4rkk2Upul+S7U9xRhL47pZrwLb+quP4b+I+wl5iE=;
+	b=yIQGitou4Df4FFuuW0bO2OkqoGq5fC8EZ3U5Yp3XbhhKeC4/cfngKQsqcLTnjF1jrLfu+n
+	IJdva6jI4ZwSYCOgwzz0xDfxOs62Arsg+FY4JJgBLFPxcN4bsQjmujxhYHk8UoqqbKpRS5
+	GhvAbNKSNcdnjYezkk/mpz/duTh4qR0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1782315199;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=MSE4rkk2Upul+S7U9xRhL47pZrwLb+quP4b+I+wl5iE=;
+	b=d/CE+oB/j21oQOaarg8mi9Z2rPpYzhuaIa6JDLvX8rKOT0ENRUWIBOg3z+Pb1K6x80RaIC
+	55TSomJMZs3o+sCg==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 26913779A8;
+	Wed, 24 Jun 2026 15:33:19 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id OoYrCb/4O2o/BAAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Wed, 24 Jun 2026 15:33:19 +0000
+Date: Wed, 24 Jun 2026 17:33:09 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: remove btrfs_fs_info::stripesize
+Message-ID: <20260624153309.GB150664@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <8a10be3992b88b143585dd1736998b4479c48b46.1782275006.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Subject: Re: [PATCH] fs/super: skip non-memcg-aware nr_cached_objects in memcg
- slab shrink
-To: Shakeel Butt <shakeel.butt@linux.dev>
-Cc: brauner@kernel.org, jack@suse.cz, linux-fsdevel@vger.kernel.org,
- linux-kernel@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>,
- linux-mm@kvack.org, hughd@google.com, boris@bur.io, clm@fb.com,
- dsterba@suse.com, linux-btrfs@vger.kernel.org, cem@kernel.org,
- linux-xfs@vger.kernel.org, hannes@cmpxchg.org, riel@surriel.com,
- kernel-team@meta.com
-References: <20260609123047.1948242-1-usama.arif@linux.dev>
- <ajrHa_JGxQvCMf8t@linux.dev>
-Content-Language: en-US
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-From: Usama Arif <usama.arif@linux.dev>
-In-Reply-To: <ajrHa_JGxQvCMf8t@linux.dev>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-X-Migadu-Flow: FLOW_OUT
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <8a10be3992b88b143585dd1736998b4479c48b46.1782275006.git.wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: 3F4F26DB61
+X-Spam-Flag: NO
+X-Spam-Score: -4.21
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	RCVD_TLS_ALL(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[twin.jikos.cz:mid,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.cz:replyto,suse.cz:dkim,suse.com:email];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 
+On Wed, Jun 24, 2026 at 01:53:28PM +0930, Qu Wenruo wrote:
+> Btrfs does not support variable stripe length yet, all RAID0/5/6/10
+> chunks have the fixed stripe length 64K for now.
 
+The question is if the 'for now' will turn into configurable stripe size
+in the future. This was the plan, but long time ago. I think we can
+remove it anyway, the code is no-op and adding proper support would need
+more changes that just that.
 
-On 23/06/2026 19:08, Shakeel Butt wrote:
-> On Tue, Jun 09, 2026 at 05:30:47AM -0700, Usama Arif wrote:
->> The super_block shrinker is registered with SHRINKER_MEMCG_AWARE because its
->> dentry and inode LRUs are memcg-aware (via list_lru). But the optional
->> ->nr_cached_objects() hooks that the shrinker also drives are not memcg-aware:
->> btrfs extent maps and xfs inode reclaim operate on filesystem-global
->> state, and shmem's unused-huge shrinker walks a per-superblock shrinklist.
->> None of them filter by sc->memcg.
+> Furthermore, btrfs_fs_info::stripesize is not the real chunk stripe
+> length, it's always the same value as sectorsize.
 > 
-> I see the underlying objects whose count is returned by ->nr_cached_objects()
-> hook is memcg charged for shmem and xfs but not for btrfs. Do you envision
-> there might be a rare scenario where we have a lot of memory charged to a memcg
-> consumed by objects which ->nr_cached_objects() tracks and that memory becomes
-> unreclaimable due to this patch?
-
-Hello!
-
-Thanks for the review.
-
-For XFS, xfs_inode is SLAB_ACCOUNT, so a memcg can have memory charged in
-XFS inodes sitting in XFS' internal reclaim state. But the current callback
-does not target that memcg: xfs_fs_free_cached_objects() calls
-xfs_reclaim_inodes_nr(), which walks the mount and reclaims
-XFS_ICI_RECLAIM_TAG inodes without checking sc->memcg. So non-root memcg
-reclaim was only getting an opportunistic mount-wide reclaim pass here; it
-could reclaim the target memcg's inodes by chance, but it could just as well
-reclaim inodes charged to other memcgs. This patch removes that cross-memcg
-side effect, not a correct memcg-targeted reclaim path.
-
-Those XFS inodes are still reclaimed by XFS' own reclaim worker, which is
-queued when reclaimable inodes are tagged and requeues while reclaimable
-inodes remain. With the default xfssyncd_centisecs value, that is about every
-5 seconds. The root/global superblock shrinker path also continues to call
-the XFS callbacks. This will keep the memory reclaimable.
-
-For shmem, shrinklist_len counts inodes whose tail large folio could be                                                                                                                                                                                                                                                                                                                                               
-split — splitting itself doesn't free anything; it just lets normal page                                                                                                                                                                                                                                                                                                                                              
-LRU reclaim the truncated tail. The folios are on the memcg-aware LRU and                                                                                                                                                                                                                                                                                
-will be aged/reclaimed there independently, so skipping the split from                                                                                                                                                                                                                                                                                   
-memcg context just delays the split?
-
-or btrfs extent maps, as you note, these objects are not memcg-charged.
+> Remove btrfs_fs_info::stripesize, and for the only callsite utilizing
+> that member, replace it with fs_info->sectorsize instead.
 > 
->>
->> The mismatch shows up under memcg-heavy slab reclaim. shrink_slab_memcg()
->> calls do_shrink_slab() once per (memcg, NUMA node) pair for every memcg
->> whose bit is set in the per-superblock shrinker bitmap, which on a busy
->> host means hundreds of calls per reclaim pass. Each scan queues the same
->> global shrinker work item that's already kicked from the root path.
->>
->> Because btrfs/xfs global count is typically non-zero on any in-use filesystem,
->> the returned total stays positive even if a memcg's own dentry/inode LRUs
->> are empty. shrink_slab_memcg() therefore never clears the SB shrinker bit
->> in the memcg bitmap, so subsequent reclaim passes from the same memcg
->> re-enter super_cache_count() and pay for the global counter walk again.
-> 
-> What is the main concern? Is it the amount of CPU wasted or are we over
-> reclaiming or reclaiming from unrelated memcgs?
-> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-The primary concern is wasted CPU. On the busy hosts where I saw this,
-hundreds of memcgs all repeating that walk per reclaim pass is what made
-it visible in profiles.
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-Another concern is misattribution. Reclaim from memcg X ends up
-reclaiming another memcg Y, which could have an affect on Y and
-won't provide proper isolation.
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4757,7 +4757,7 @@ static noinline int find_free_extent(struct btrfs_root *root,
+>  
+>  		/* Checks */
+>  		ffe_ctl->search_start = round_up(ffe_ctl->found_offset,
+> -						 fs_info->stripesize);
+> +						 fs_info->sectorsize);
 
->>
->> Restrict ->nr_cached_objects() to the global shrink path (sc->memcg NULL
->> or root). The memcg-aware dentry/inode LRUs keep being counted and
->> scanned per memcg as before; only the global fs-specific hooks are skipped.
->> The root/global shrink path still drives those hooks; only their
->> invocation from non-root memcg slab reclaim is removed.
->>
->> Signed-off-by: Usama Arif <usama.arif@linux.dev>
-> 
-> I am fine with the stopgap but it would be nice to have proper memcg awareness
-> in xfs and shmem callbacks. For btrfs, I am not sure if it makes sense to memcg
-> charge btrfs_extent_map objects but at least to decision to skip memcg reclaim
-> will be inside the fs callbacks i.e. nr_cached_objects.
-> 
-
-Agreed that this is the right long term approach. If the preference is to move this down to
-the fs own callbacks instead of fs/super.c, I can do that in the revision as well.
+This seems to be the only relevant use in case the stripe size would not
+be equal to sector size.

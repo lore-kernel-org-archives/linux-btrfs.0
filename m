@@ -1,145 +1,213 @@
-Received: from mail-ot1-f79.google.com (mail-ot1-f79.google.com [209.85.210.79])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2EEA0248893
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 18:17:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.79
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5231E288C30
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 22:13:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782325053; cv=none; b=IAZ34TsMIqHur5jjXJo5N1PFyHusyii05RKoYX1i3crS5iuQKHGq2qsRk1sw6V4BNYgnvSgzZ9tAE4s2SBmlJaLHjhfmHLjUkKjXzMu2/prHJLPQPHP1zX5Cwg2j2kS6cn0KqHMZuQNIWgW8WpkKVMuBUPshbLMwcChw+tx9T9g=
+	t=1782339211; cv=none; b=Y15iCyzILIxxEF+eBdmMGqVhMX6fI6zdbwGJGKH/utT/7z8QPJ8grdH6OgOails66wFuX+CtAjr70BpwWzxJi8LCcmqMmX3R6l5bUNdOqxcdqKANpPg4CViLQ5I2yR71uvVfRsWucUVnntpbcT3ughp6C9z6cgeFutkNEyqv/BU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782325053; c=relaxed/simple;
-	bh=dg2BAuQcrMYr2XnPTD9YQo533jQ9UdQQQH2jo0dOy7U=;
-	h=MIME-Version:Date:In-Reply-To:Message-ID:Subject:From:To:
-	 Content-Type; b=o0Hdnf1In24bX6ZeeXDt90Ky4oe11B9E+o1pKCoB0BYzrq6PvyNaKYBP6GWDalOCv/3yBmALzxD9cS0U6qC0qKiMc2wFnEarMPbRkndf3jzzETNc3KeAIgegSA92QTjVbLAL02B5DCqs6ErtKKPJ6CP7Mf83v5S69MysUlREaFY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.210.79
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-ot1-f79.google.com with SMTP id 46e09a7af769-7e93d89a044so112032a34.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 11:17:31 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1782325051; x=1782929851;
-        h=to:from:subject:message-id:in-reply-to:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=SSD9I68lTNAcfnkWqHg8KTjWMrVVVp42A4beC/sscgo=;
-        b=gixYdiXFfrs9yklS7EN05YGLKx7rINiu/ztLMEEBPS7yait9HFEUAOqvq0pWOGYbGH
-         uWbojtLJDgB5ZXI0oBZWKnZ2YdpShb1iF2v/aFzi36UMHdV83xjkD5lAuv1FKLvHuhSU
-         gQ8o226Z0egvyMtLr4BeCLPeMr++7ulfvczUeSWm8KhZrzU9bO/udv4UQSj6gdW1P8rv
-         F5mBJYRg7KRjy5OFkujTspfGX6FAothmYW+MJYKue12z6C1c1ym/YwCmwX4f5mkyT6V5
-         zp9MNhZ51yPCwW7mJ1EQA0VuDr5OOxi7QiVUPqzv+R9yZy0HIEx7TepmqBOonW/cQUnH
-         IP7w==
-X-Forwarded-Encrypted: i=1; AFNElJ/xMBYD2iyJjomNYd3drxgCDlDQ+AVVJnAjp/UdHnGsaOaNzHPfjV6N7WP6HLh3NcPnPYmuBt08U89NPg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzZ76eRUp4rxFhTM2J9NGJw4STN9ZawfIizhpiWClptcvlQ1jp3
-	LjgUgrhkkEzkmSiK3jnuTYS3EvB39bE2VtOOCo35SiXnPjf2HMY4wJQoMrrbb7X+ue7j9Ui0ZjO
-	74xg8TjuBLdwuKjefXSOuoqZRlTYNMSF7qRA8al7xRqidPfJcBBo8HPM5Mo8=
+	s=arc-20240116; t=1782339211; c=relaxed/simple;
+	bh=wHlBpHKvfkjTZRGf99ztGteRQFJVmywwf2Rhya3tEiU=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=FT3dRe9I1Ood8t8ZMXAlTPo1E+4CBMKgMvOdtFoa+2eXz55B1IQBL1IBBMPhEezIgz+GGn0S3DPY4Z9WSq+GgUJbgSgiQtkOObdICEPHcPvg+Etqx26XX906JVF+wtNcyclvRGBW0IriJAg5dJ6EROZuCX8J+Sz6QC08ojlk8/g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=f7u61Cya; arc=none smtp.client-ip=212.227.17.20
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="f7u61Cya"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1782339206; x=1782944006; i=quwenruo.btrfs@gmx.com;
+	bh=Vk2belfZjUZv9fUbdo5ZaxAYu0Gb1r00lqS1QCLyGhA=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=f7u61Cyaze1P7KfkwGrUmMU0kCNpqdcOPFQLoAak+3XHqe5ebR20SQE2jBoiEb9B
+	 YhxQQeg0avPVO8Zx3CXqpOeea3HNkOcFqsGXGYgcbBdkQRWWSgZWKUAa2bKvUarrK
+	 R2+Tyk686VRshdPUEhyVjoE6BXtNHVfKPkx3FpgixYPvvEOeik0+IqfNY7XI79obX
+	 5b5bFGX0lKCauCdu6LHRsOwnB4HuKtzPY7jwMH210DUmJ0ofbd06I+nPoWhR0rlVi
+	 jHFgYovO7T5Pbv/x35iUFYBPgz+Ltk3R8lW+qQTRucA9AJFDVtEfkMGalS+VagaB5
+	 2QfEe8mv5iFDd31QOA==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MDhhX-1wTT2S49jz-00Cd1j; Thu, 25
+ Jun 2026 00:13:25 +0200
+Message-ID: <3a8c46ad-3887-4b56-bf44-3528c28c0539@gmx.com>
+Date: Thu, 25 Jun 2026 07:43:19 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6820:2d02:b0:6a1:275d:f585 with SMTP id
- 006d021491bc7-6a1275dff88mr1863281eaf.9.1782325051241; Wed, 24 Jun 2026
- 11:17:31 -0700 (PDT)
-Date: Wed, 24 Jun 2026 11:17:31 -0700
-In-Reply-To: <6a39275b.5031c61f.34f2da.0001.GAE@google.com>
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a3c1f3b.4cbe3da0.2204f7.0162.GAE@google.com>
-Subject: Re: [syzbot] [btrfs?] kernel BUG in btrfs_alloc_ordered_extent
-From: syzbot <syzbot+ba2afde329fc27e3f22e@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: remove btrfs_fs_info::stripesize
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <8a10be3992b88b143585dd1736998b4479c48b46.1782275006.git.wqu@suse.com>
+ <20260624153309.GB150664@twin.jikos.cz>
+Content-Language: en-US
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <20260624153309.GB150664@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:DPB3fSgSUVW3l3FerwVdvB/ikovCOtksZof6esgU2wRj0u24z77
+ /PGTXtOYCR5617ZGH8o+M6ftyrvMT4KjXN1u8Pqhz8Z+DUWMSP+rcxXotPshcHqC++LcZXu
+ khDVB0HPAG0eymazS4JXOVTvHeq3v3HDeZ26A0ve/BICKq3PGJaDzAFnWxPU7q02CDBuhKH
+ l/VK1zq6qvIdmamSlJ9Uw==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:5hTGlB3/dK8=;u5D6kcDb6heM103osy/vB94W2s1
+ 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
+ KvhQUQiCCvX99zwQWAs4sp4gOwA=
 
-syzbot has found a reproducer for the following issue on:
-
-HEAD commit:    840ef6c78e6a Merge tag 'nfs-for-7.2-1' of git://git.linux-..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=154b6591580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=4b70f7c595323ba2
-dashboard link: https://syzkaller.appspot.com/bug?extid=ba2afde329fc27e3f22e
-compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=1005b21c580000
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=11e168dc580000
-
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/21afc0da735a/disk-840ef6c7.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/c89b2edbb4f6/vmlinux-840ef6c7.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/bef6a8464d41/bzImage-840ef6c7.xz
-mounted in repro: https://storage.googleapis.com/syzbot-assets/33eb3874c00f/mount_0.gz
-  fsck result: failed (log: https://syzkaller.appspot.com/x/fsck.log?x=11009d0e580000)
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+ba2afde329fc27e3f22e@syzkaller.appspotmail.com
-
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/ordered-data.c:264!
-Oops: invalid opcode: 0000 [#1] SMP KASAN PTI
-CPU: 1 UID: 0 PID: 6897 Comm: syz.4.79 Not tainted syzkaller #0 PREEMPT_{RT,(full)} 
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/09/2026
-RIP: 0010:insert_ordered_extent fs/btrfs/ordered-data.c:261 [inline]
-RIP: 0010:btrfs_alloc_ordered_extent+0x943/0xad0 fs/btrfs/ordered-data.c:336
-Code: 62 8d ba 08 01 00 00 b9 ef ff ff ff 49 c7 c0 20 15 97 8b 4d 89 f9 ff 75 00 41 54 41 55 41 56 53 e8 a2 54 37 fd 48 83 c4 28 90 <0f> 0b e8 c6 1d d2 fd 48 c7 c7 80 0c 97 8b 48 c7 c6 e0 0c 97 8b 48
-RSP: 0018:ffffc90006e0e890 EFLAGS: 00010296
-RAX: 45aae1616d386000 RBX: 0000000000069000 RCX: 1ffff92000dc1cf0
-RDX: 0000000000000003 RSI: ffffffff8d89f46f RDI: ffff888028618000
-RBP: ffff88806168cfe0 R08: 0000000000000000 R09: 0000000000000000
-R10: dffffc0000000000 R11: fffff52000dc1c61 R12: 0000000000069000
-R13: 0000000000004000 R14: 0000000000001089 R15: 0000000000004000
-FS:  00007f50b1dee6c0(0000) GS:ffff88812621d000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007efc8ea98d50 CR3: 0000000045856000 CR4: 00000000003526f0
-Call Trace:
- <TASK>
- cow_one_range fs/btrfs/inode.c:1241 [inline]
- cow_file_range+0x744/0x12a0 fs/btrfs/inode.c:1403
- fallback_to_cow+0x5ea/0xa00 fs/btrfs/inode.c:1751
- run_delalloc_nocow+0x110c/0x17a0 fs/btrfs/inode.c:2181
- btrfs_run_delalloc_range+0xbe4/0x1c20 fs/btrfs/inode.c:2419
- writepage_delalloc+0x104d/0x1ba0 fs/btrfs/extent_io.c:1558
- extent_writepage fs/btrfs/extent_io.c:1930 [inline]
- extent_write_cache_pages fs/btrfs/extent_io.c:2593 [inline]
- btrfs_writepages+0x1667/0x28b0 fs/btrfs/extent_io.c:2725
- do_writepages+0x338/0x560 mm/page-writeback.c:2571
- filemap_writeback mm/filemap.c:387 [inline]
- filemap_fdatawrite_range+0x1f2/0x300 mm/filemap.c:412
- btrfs_fdatawrite_range+0x54/0xf0 fs/btrfs/file.c:3884
- btrfs_direct_write+0x6a0/0xc30 fs/btrfs/direct-io.c:1038
- btrfs_do_write_iter+0x329/0x790 fs/btrfs/file.c:1449
- do_iter_readv_writev+0x624/0x8d0 fs/read_write.c:-1
- vfs_writev+0x34c/0x990 fs/read_write.c:1058
- do_pwritev fs/read_write.c:1154 [inline]
- __do_sys_pwritev2 fs/read_write.c:1212 [inline]
- __se_sys_pwritev2+0x17a/0x2a0 fs/read_write.c:1203
- do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
- do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7f50b278ce59
-Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007f50b1dee028 EFLAGS: 00000246 ORIG_RAX: 0000000000000148
-RAX: ffffffffffffffda RBX: 00007f50b2a05fa0 RCX: 00007f50b278ce59
-RDX: 0000000000000020 RSI: 0000200000000240 RDI: 0000000000000004
-RBP: 00007f50b2822e6f R08: 0000000000000000 R09: 0000000000000003
-R10: 0000000000003000 R11: 0000000000000246 R12: 0000000000000000
-R13: 00007f50b2a06038 R14: 00007f50b2a05fa0 R15: 00007ffce174b008
- </TASK>
-Modules linked in:
----[ end trace 0000000000000000 ]---
-RIP: 0010:insert_ordered_extent fs/btrfs/ordered-data.c:261 [inline]
-RIP: 0010:btrfs_alloc_ordered_extent+0x943/0xad0 fs/btrfs/ordered-data.c:336
-Code: 62 8d ba 08 01 00 00 b9 ef ff ff ff 49 c7 c0 20 15 97 8b 4d 89 f9 ff 75 00 41 54 41 55 41 56 53 e8 a2 54 37 fd 48 83 c4 28 90 <0f> 0b e8 c6 1d d2 fd 48 c7 c7 80 0c 97 8b 48 c7 c6 e0 0c 97 8b 48
-RSP: 0018:ffffc90006e0e890 EFLAGS: 00010296
-RAX: 45aae1616d386000 RBX: 0000000000069000 RCX: 1ffff92000dc1cf0
-RDX: 0000000000000003 RSI: ffffffff8d89f46f RDI: ffff888028618000
-RBP: ffff88806168cfe0 R08: 0000000000000000 R09: 0000000000000000
-R10: dffffc0000000000 R11: fffff52000dc1c61 R12: 0000000000069000
-R13: 0000000000004000 R14: 0000000000001089 R15: 0000000000004000
-FS:  00007f50b1dee6c0(0000) GS:ffff88812621d000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007efc8ea98d50 CR3: 0000000045856000 CR4: 00000000003526f0
 
 
----
-If you want syzbot to run the reproducer, reply with:
-#syz test: git://repo/address.git branch-or-commit-hash
-If you attach or paste a git patch, syzbot will apply it before testing.
+=E5=9C=A8 2026/6/25 01:03, David Sterba =E5=86=99=E9=81=93:
+> On Wed, Jun 24, 2026 at 01:53:28PM +0930, Qu Wenruo wrote:
+>> Btrfs does not support variable stripe length yet, all RAID0/5/6/10
+>> chunks have the fixed stripe length 64K for now.
+>=20
+> The question is if the 'for now' will turn into configurable stripe size
+> in the future. This was the plan, but long time ago. I think we can
+> remove it anyway, the code is no-op and adding proper support would need
+> more changes that just that.
+
+I'm already working on the per-chunk stripe length.
+
+But even with that feature, we're going to respect per-chunk stripe=20
+length, not the global one.
+
+So the existing naming "stripesize" doesn't even make any sense.
+
+>=20
+>> Furthermore, btrfs_fs_info::stripesize is not the real chunk stripe
+>> length, it's always the same value as sectorsize.
+>>
+>> Remove btrfs_fs_info::stripesize, and for the only callsite utilizing
+>> that member, replace it with fs_info->sectorsize instead.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>=20
+> Reviewed-by: David Sterba <dsterba@suse.com>
+>=20
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -4757,7 +4757,7 @@ static noinline int find_free_extent(struct btrfs=
+_root *root,
+>>  =20
+>>   		/* Checks */
+>>   		ffe_ctl->search_start =3D round_up(ffe_ctl->found_offset,
+>> -						 fs_info->stripesize);
+>> +						 fs_info->sectorsize);
+>=20
+> This seems to be the only relevant use in case the stripe size would not
+> be equal to sector size.
+>=20
+
+I think we can even remove this one. As the extent tree should always=20
+have everything block aligned.
+
+Thanks,
+Qu

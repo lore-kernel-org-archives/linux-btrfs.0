@@ -1,172 +1,117 @@
-Received: from mail-pj2-f1.google.com (mail-pj2-f1.google.com [74.125.227.129])
+Received: from mail-pj2-f3.google.com (mail-pj2-f3.google.com [74.125.227.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0CD5530DED0
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 06:18:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.227.129
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5E3C8388E50
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 07:08:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.227.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782281890; cv=none; b=twrR1apR/iv914mHVnWjdHrmMJJz37rrKODqr5ospITzLq00IPIViRnAkCXu3F4INq2BD/ATfNlydaW2SCCw2UaBFDzlQDHNqPo5IysGSFx4M/Jsjlb+WD9lMRuGCs36cK218kWvJt/UHeAH9dcbh13wH+3WfCocY5jy3HCKViw=
+	t=1782284900; cv=none; b=o7AahA/w4ldNNv43tED/yTm6oyZfRdOqo2L0f59rM8h6SYGo+SZ+Qf5qCie+JzF3Rmg3xBoQm/bcrlGocqIjd4vP5cJCL3jgmSTfwF8JMaTn5IwOtLFQnidpvJ0FO6BhPs1xluAQFFw52U4uSCAOgQBVlWminPwdfBfSNN+kZZU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782281890; c=relaxed/simple;
-	bh=RDR2jF4PUdY1A6mPM+sqM4TZk+cLUfjvgYaEuCChqm8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=XPpq2tqePLnmfQARc0hwCBIfIMjpYG8GsKijYhG8F/fEdAu99VS3CrxSh9ew1a815ZVFGfybhk9PxJnDsC6NtVPHxu1ANxthBd/TaiK/SG75Q+jqnTp2CtGw1R8KlkpWjFOFXQv5S7DD+2R38bv1pxi8jc/xpY0QddvNRlA5UT4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=glVPDZfR; arc=none smtp.client-ip=74.125.227.129
+	s=arc-20240116; t=1782284900; c=relaxed/simple;
+	bh=AMZsavkC8FklpfYctrTLn0ToSzq6Q6hCQGTI+SfFzUw=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=gQINXolVKfjGFx2SdM8kHfH7NoZRcPLR6dWyKYDnUxWG7nXIwSWOp3XGDwEkyBpepUjZdc4w4F00BHdIJC6jEwQnc8vv37HeCvZgGQH+rVWxGsUZyq0ltY3p3EjIdr4sn9z16/JsGsshmpWhSKjJaiPe4z9x4V+6GfWNXxPkZR0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=NXJCc4I+; arc=none smtp.client-ip=74.125.227.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="glVPDZfR"
-Received: by mail-pj2-f1.google.com with SMTP id 98e67ed59e1d1-37c6cc1eb94so32324a91.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jun 2026 23:18:08 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="NXJCc4I+"
+Received: by mail-pj2-f3.google.com with SMTP id d9443c01a7336-2c6cfe68fbeso169205ad.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 00:08:19 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1782281888; x=1782886688; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=Lgs5nCcgwVoEVnhiwYiKqNBjSWtjj/U8zR911yE1bts=;
-        b=glVPDZfRyAe3NryJU0up/EKuZDAQw3ZZ8pwhyoHD/kqToUiSMqFn4+/VeXm7wEy3YS
-         TzU1pkS1+ttvpunKNM1LhvNK94TuaoWSIRZsz/jRn6xolqyL2zmd8TTw9u0bXnYyjdUM
-         MJEK9NfhiFRdeGWp2g9/gzC/xphKuWlq+hfb5vV+KpmOD7U2Bpp3xNiklIe8zFfuqx1j
-         XOdVdtftS9mVt34gp2vWnTWkh4vqboVSIMBuCzOI34mcOgrE2HqqBStEAD0DWApV0vcl
-         Mn0tr+oUHxiZiNSpAUGz/7P+6KRBDdGnZthR6w5rbHNRVGfKSLeengKwv8VMRwPykTeZ
-         TQfQ==
+        d=gmail.com; s=20251104; t=1782284899; x=1782889699; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=DqfAPLivLaEKxEjXrJ1o2niNyIWE3jgdfKWFG2lpuNw=;
+        b=NXJCc4I+OVG/K0UIW10q/iEjs82JVqNbbtEJn5IM5Y5QBXgkhdRVYNZ9RCCvD93whh
+         z/K+hpS6OPjj//uy9LQ5VMo6PQ8fM1D1skY0CID6L58PC/tUMRoxXVOISyTr+lYax+Bg
+         4kCUWh1cpxIiT6hjBI+0cWejKqS7x2Mi7crbomamL1n3m8fbvrv8/Fwo0v9pO+8Sz7mC
+         mI1qEFPP2gDMnZ5g0wHKgMsVM0phokpDoJIIhRlTmclW5pEYRgrf+Umh7EKCKPtdnHDO
+         PLLfYmsUmXOinYGlsk8HSou8cSGVJL6lliw6y06X/XxW0y6mzmjf7hihF+ttGp6g0SP7
+         OXWw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1782281888; x=1782886688;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=Lgs5nCcgwVoEVnhiwYiKqNBjSWtjj/U8zR911yE1bts=;
-        b=dcw5Ov2vA4ArPmvBW4k2bF4jn9b1hPSUB91L8LK30NF7c2XG/oL41fU9xzijPD7QSb
-         1vmi+N8srunvq/p0f5Hfs+u/voKt5OxTQbtHcAL01yPhIqupeOUyu6Yj2n92VB7JOYIE
-         mLsLrUOklWwjC1FYboT5XByy++NkC6Ff7SLGqGYGQb9A7WUQlNKo3Ft+GyGEca5bw1qE
-         4+tL0rKA8HoqY/rJiw+ew7mbpXbbPFIXOngpoSSBxviasWxPi+2RG5FQ9l8VYC+h09S+
-         QQE4af7K04nt9iktx91pAoewyUYbhlE88v8vWgdeQ+OhQn77njj6uUszKRiXgnTskhDF
-         Vj6w==
-X-Gm-Message-State: AOJu0YwSDIsetHUdhF4IXf9eznqf87oJtC2w7h0TMvMgOltDnricaTEF
-	c1+0oatTojVqweWrvzPur9GTGZEDJ57dmPXoGR3GG/pKWlpy138ekXkDw4neqwrlZKcZGg==
-X-Gm-Gg: AfdE7cll/UGQ22mM2vZtPq4HHqCaE7LfdQXCsRqWGep2rT8ydzCcoRC9JMBUDbdl62T
-	W/9/aTc2y7tHp6a9SALxGcdAvoDq5LlA0ETvWq7WOmpNmUJOQ8OfyfBYEONfaDhB2h67faqNo60
-	0WrlJH9VsUgUlAddKXDDKIZ8GRhao47BsoE1jYR0PzK2zdpaFRM6xz+/VopYpsNQAp1KGVeOQ/q
-	tkXqsih7VKv9x4DBMR5uSVhcsvM24AEfAgmVM2Uenr3NQkqLZTgs5xHsN+OxZVk1dRA/k7Vkvhj
-	2oIq96f6gAGZ6NmlkPwZX5aQrQ7RNKzRKjsjLY++Q/J2ntZWRF90gVb8H7NnQs7eci4mgkvEagf
-	L9Wv/RglNSkYBoQoWXXZa+tMRVZaR6zTAfkoD4bRT2GPZ4LJFjvx27WXJqVIkRZX2s59JHrQBZ0
-	eq4cIuQ/2ZfsPovpp4aYyRs8g2q0k4qt4E0b8Ah4Jj3ABfpcU=
-X-Received: by 2002:a17:903:22d0:b0:2c7:ecbd:f48d with SMTP id d9443c01a7336-2c7ecbdf923mr62195ad.7.1782281888201;
-        Tue, 23 Jun 2026 23:18:08 -0700 (PDT)
-Received: from [192.168.10.237] ([154.83.91.239])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2c7436f6395sm127471865ad.28.2026.06.23.23.18.06
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 23 Jun 2026 23:18:07 -0700 (PDT)
-Message-ID: <26f7b745-6a8d-4fcd-9393-70b2345f24ca@gmail.com>
-Date: Wed, 24 Jun 2026 14:18:05 +0800
+        d=1e100.net; s=20251104; t=1782284899; x=1782889699;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=DqfAPLivLaEKxEjXrJ1o2niNyIWE3jgdfKWFG2lpuNw=;
+        b=UHOJ2cSqucNr2QfbmbqEqh9/weUCMRTwj2AzYvWvQVrEM83PmXZrdxdIzFICtRIDDz
+         F2dpvXI4fg55emRvmq2YKN7UwT/r2ilxt7TTh+f/6WEdSJ7O5SlCYHaE25o8Tjf0aLbW
+         ZXFmxRVQWvKiKNK5H/bf5oK+jovlhGEsLhFNrOFzvL6P2lp2iziPRxam/+SfJ2JoKypu
+         j21na5W733ooIXZOU2edXEJumUd3thhwk6l/lI7AP0Z2Qpc7098aqBM17DwXfXg2wIPk
+         Wkyqar2BnK63W80X6WJWJ4hg7NyKtvNHVqKwbGItxU+6aUhAwDgqp/VNpjAcjB1jYgJJ
+         p1FA==
+X-Gm-Message-State: AOJu0Yy5fKqY7+arjUsunK4kCOIRrwpwXPobdERr87R10Qc74bou7mlv
+	fYKbwrCt55MiahmWx4K7K0vHGpBCD7NwYpiL2i5W4JuJSQq7HZeKQI+fkBttk6vxTxkmKg==
+X-Gm-Gg: AfdE7ck6B36J1LnztOfm/3L2a1/7EnzBOPHbjgKcqtEUqB4rE0s6qCL0sQSag+O/kWo
+	0wCraAplcc6DoqOLc3XUJy5H39N3FIg/4xtGApS4oORAgv09ar2/JfS9YvE4OLXUYhtSZxnzH8b
+	lh1Ju8rc1AeNz67MyP5ucdH1AzZcYqgW8zoKkfM1tzF4nwsfUfB7OASG8LIp6o+f15iFib0Kwwz
+	uNcCCaoKeyc0rtySO2cytAhTW4o+46IBe3+/iARFNj6RJcs3FIVPMstHOiiwkEZSeu5L2uGQyuy
+	eaZx/zsB3cd1WClPS9KY5zsGi2czW9wTUTeDi+uBb1us/+k/iVRUYUBcie7zm6EVYSBjvW59V2O
+	KVrqxi2lQWHs7o5kPVYMaCzJUVDZ0vk/nPRq9gkKUZ9RpIVrPPtxOgYnCNxcZigXXyCXHIam/XR
+	o4USf1KOEvY2K3DAKV6kDO2pjqeJ/nv+dRxNh2ZcDw
+X-Received: by 2002:a17:902:d4d0:b0:2c0:b359:99c1 with SMTP id d9443c01a7336-2c7bf10e092mr38442355ad.2.1782284898452;
+        Wed, 24 Jun 2026 00:08:18 -0700 (PDT)
+Received: from SaltyKitkat ([154.83.91.239])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-c8bc563c131sm13378600a12.18.2026.06.24.00.08.17
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 24 Jun 2026 00:08:18 -0700 (PDT)
+From: Sun YangKai <sunk67188@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Sun YangKai <sunk67188@gmail.com>
+Subject: [PATCH] btrfs: uapi: fix stale BTRFS_SYSTEM_CHUNK_ARRAY_SIZE comment
+Date: Wed, 24 Jun 2026 15:08:01 +0800
+Message-ID: <20260624070806.4534-1-sunk67188@gmail.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: change block group reclaim_mark to bool
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org
-References: <20260624040232.30420-1-sunk67188@gmail.com>
- <20260624041909.GA2011094@zen.localdomain>
-Content-Language: en-US
-From: Sun YangKai <sunk67188@gmail.com>
-In-Reply-To: <20260624041909.GA2011094@zen.localdomain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
+The comment claims room for "14 chunks with 3 stripes each", which
+was correct when the structs were smaller.  Since then three additions
+grew each entry:
 
+  commit e17cade25ff8 ("Btrfs: Add chunk uuids and update multi-device back references")
+    added btrfs_chunk.length (+8) and stripe.dev_uuid (+16)
 
-On 2026/6/24 12:19, Boris Burkov wrote:
-> On Wed, Jun 24, 2026 at 12:02:27PM +0800, Sun YangKai wrote:
->> The reclaim_mark field in struct btrfs_block_group was a u64 that was
->> incremented when marking block groups for reclaim during sweeping, but
->> the actual counter value was never used - only the zero/non-zero state
->> mattered for determining if a block group needed reclaim.
->>
->> Convert it to a bool to properly reflect its usage and reduce memory
->> footprint by 8 bytes. Update assignments to use true/false instead of
->> increment and zero.
->>
-> 
-> LGTM, thanks.
-> Reviewed-by: Boris Burkov <boris@bur.io>
-> 
->> Signed-off-by: Sun YangKai <sunk67188@gmail.com>
->> ---
->>   fs/btrfs/block-group.c | 2 +-
->>   fs/btrfs/block-group.h | 7 ++++++-
->>   fs/btrfs/space-info.c  | 2 +-
->>   3 files changed, 8 insertions(+), 3 deletions(-)
->>
->> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
->> index 9e937407d12a9..5829c806c4d48 100644
->> --- a/fs/btrfs/block-group.c
->> +++ b/fs/btrfs/block-group.c
->> @@ -3923,7 +3923,7 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
->>   		old_val += num_bytes;
->>   		cache->used = old_val;
->>   		cache->reserved -= num_bytes;
->> -		cache->reclaim_mark = 0;
->> +		cache->reclaim_mark = false;
->>   		space_info->bytes_reserved -= num_bytes;
->>   		space_info->bytes_used += num_bytes;
->>   		space_info->disk_used += num_bytes * factor;
->> diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
->> index 790c2d467af57..942befdf75df7 100644
->> --- a/fs/btrfs/block-group.h
->> +++ b/fs/btrfs/block-group.h
->> @@ -263,6 +263,12 @@ struct btrfs_block_group {
->>   
->>   	enum btrfs_block_group_size_class size_class:8;
->>   
->> +	/*
->> +	 * Mark this blockgroup is not used for allocation
->> +	 * between two reclaim sweeps.
-> 
-> nit: this grammar doesn't parse great to me. Maybe drop "Mark"?
-> or change it to "We identified this for reclaim on a previous pass, so
-> it stably needs reclaim across passes" or something like that.
+  commit 321aecc65671 ("Btrfs: Add RAID10 support")
+    added btrfs_chunk.sub_stripes (+2)
 
-I also think this comment should be polished but have no idea. Your nit 
-helps a lot. How about this:
+A 3-stripe entry now takes:
 
-Tracks whether this blockgroup has been idle during the previous 
-periodic sweep cycle. It is set to false on allocation, and set to true 
-by the periodic sweep upon first pass. If found true on a subsequent 
-scan, the blockgroup is eligible for reclamation.
+  sizeof(btrfs_disk_key) + btrfs_chunk_item_size(3)
+    = 17 + 80 + 32 * (3 - 1)
+    = 161 bytes
 
->> +	 */
->> +	bool reclaim_mark;
->> +
->>   	/*
->>   	 * Number of extents in this block group used for swap files.
->>   	 * All accesses protected by the spinlock 'lock'.
->> @@ -281,7 +287,6 @@ struct btrfs_block_group {
->>   	struct list_head active_bg_list;
->>   	struct work_struct zone_finish_work;
->>   	struct extent_buffer *last_eb;
->> -	u64 reclaim_mark;
->>   };
->>   
->>   static inline u64 btrfs_block_group_end(const struct btrfs_block_group *block_group)
->> diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
->> index e6641597b321e..39a28e1bec8ad 100644
->> --- a/fs/btrfs/space-info.c
->> +++ b/fs/btrfs/space-info.c
->> @@ -2156,7 +2156,7 @@ static bool do_reclaim_sweep(struct btrfs_space_info *space_info, int raid)
->>   			will_reclaim = true;
->>   			reclaim = true;
->>   		}
->> -		bg->reclaim_mark++;
->> +		bg->reclaim_mark = true;
->>   		spin_unlock(&bg->lock);
->>   		if (reclaim)
->>   			btrfs_mark_bg_to_reclaim(bg);
->> -- 
->> 2.54.0
->>
+2048 / 161 ≈ 12.7, so "14" is no longer achievable.  Update to 12
+and add the explicit calculation so it does not rot again.
+
+Signed-off-by: Sun YangKai <sunk67188@gmail.com>
+---
+ include/uapi/linux/btrfs_tree.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index cc3b9f7dccaf..78404abc4ba2 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -504,7 +504,11 @@ struct btrfs_header {
+ 
+ /*
+  * This is a very generous portion of the super block, giving us room to
+- * translate 14 chunks with 3 stripes each.
++ * translate 12 chunks with 3 stripes each.
++ *
++ * Each entry takes sizeof(btrfs_disk_key) + btrfs_chunk_item_size(n),
++ * which for a 3-stripe chunk is 17 + 80 + 32 * (3 - 1) = 161 bytes.
++ * 2048 / 161 ≈ 12.7, so at most 12 entries fit.
+  */
+ #define BTRFS_SYSTEM_CHUNK_ARRAY_SIZE 2048
+ 
+-- 
+2.54.0
 

@@ -1,16 +1,16 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A08C134D4EA
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 16:52:19 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B0B733E35B
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 16:52:25 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782319940; cv=none; b=QZEmTRieCeX1oZ4QCTD0jAdEvNCcAKRIkEYTPhF3p/bLwdDee0RfwTp99aakGVtrVl8bfDxX4F1g4tz2VQSura5FZvGpC3RDeI1y/Z7xaSUVN6CtHa5w4QjA5YvUn84VW4Jr/j5+mUvUnxNhCN11yknXyg0nXGK8t9wm2N5V72Y=
+	t=1782319946; cv=none; b=m2VrqNHkHEH3t78QQK1j5shnSW1ta1GpYB1U/OX21XUdyD48Cqs5Xrvwzn0dBCxh8proxWYVxx0a3l/LM+inT2jpkgzrELwWEARCLhDvzaJO4OR2hDiZ3ZW8JIEDwYUAxFBkU7Wpr/Q658/lOt8wpfefxFpclmYwOdgJbz1h/v4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782319940; c=relaxed/simple;
-	bh=qjNRDS6XHXAaqS0PwZfBzgrQukeeUDnP8fJAr05fr4A=;
+	s=arc-20240116; t=1782319946; c=relaxed/simple;
+	bh=cPtOyPjRrTOZWmDdebPD769nsrmw6U+FuUUMc1G7m0I=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=YhTrm4u4KApgsmPPFVs8BKI8FrvZR7KVysG6uePoXlQA9i7dEU49dNWYJPNN11Lz/WgdXQrYIjo/HBf35RzqbJTQNOrwmWFThx8eL23fGumTlw8b34MCYyU39hQN5BGRfbEGpmlkN9z4PcYc+OdSVYfHzGXQyUc3lKkbUnwqtdc=
+	 MIME-Version; b=aaPFTfrfROwt5jeXw6RfkuJZDn+72Vb9vnd8YXVwK3UiKtizTPL4kRJxwQb/Epvupaee4BnbO03BYXL3ECTWD1h1rx5XMUVJTjak9c067M53wz2cxL2i/HTBkW3bhSMQpOVqvdQl+MhMbP0Rqoo3xIFCGYg0WfDd5He4bSw5kE8=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
@@ -18,7 +18,7 @@ Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 6A15176061;
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 8970176062;
 	Wed, 24 Jun 2026 16:51:51 +0000 (UTC)
 Authentication-Results: smtp-out2.suse.de;
 	none
@@ -26,22 +26,21 @@ Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 555B6779AC;
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6BCF4779A8;
 	Wed, 24 Jun 2026 16:51:51 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id GOxaFCcLPGrUTgAAD6G6ig
+	id KF/XGScLPGrUTgAAD6G6ig
 	(envelope-from <neelx@suse.com>); Wed, 24 Jun 2026 16:51:51 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: David Sterba <dsterba@suse.com>
 Cc: Daniel Vacek <neelx@suse.com>,
 	linux-fscrypt@vger.kernel.org,
 	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v2 7/8] btrfs-progs: check: update inline extent length checking
-Date: Wed, 24 Jun 2026 18:51:43 +0200
-Message-ID: <20260624165144.556908-8-neelx@suse.com>
+	linux-kernel@vger.kernel.org
+Subject: [PATCH v2 8/8] btrfs-progs: recognize ENCRYPT inode item flag
+Date: Wed, 24 Jun 2026 18:51:44 +0200
+Message-ID: <20260624165144.556908-9-neelx@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260624165144.556908-1-neelx@suse.com>
 References: <20260624165144.556908-1-neelx@suse.com>
@@ -55,82 +54,35 @@ Content-Transfer-Encoding: 8bit
 X-Rspamd-Pre-Result: action=no action;
 	module=replies;
 	Message is reply to one we originated
-X-Rspamd-Queue-Id: 6A15176061
-X-Spam-Flag: NO
-X-Spam-Score: -4.00
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Rspamd-Pre-Result: action=no action;
 	module=replies;
 	Message is reply to one we originated
+X-Spam-Flag: NO
+X-Spam-Score: -4.00
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Spamd-Result: default: False [-4.00 / 50.00];
 	REPLY(-4.00)[]
+X-Rspamd-Queue-Id: 8970176062
+X-Rspamd-Action: no action
 
-From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-
-As part of the encryption changes, encrypted inline file extents record
-their actual data length in ram_bytes, like compressed inline file
-extents, while the item's length records the actual size. As such,
-encrypted inline extents must be treated like compressed ones for
-inode length consistency checking.
-
-Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 Signed-off-by: Daniel Vacek <neelx@suse.com>
 ---
- check/main.c | 24 ++++++++++++------------
- 1 file changed, 12 insertions(+), 12 deletions(-)
+ kernel-shared/print-tree.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/check/main.c b/check/main.c
-index 2df55edc..4902cbd9 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -1722,7 +1722,7 @@ static int process_file_extent(struct btrfs_root *root,
- 	u64 mask = gfs_info->sectorsize - 1;
- 	u32 max_inline_size = min_t(u32, gfs_info->sectorsize,
- 				BTRFS_MAX_INLINE_DATA_SIZE(gfs_info));
--	u8 compression;
-+	u8 compression, encryption;
- 	int extent_type;
- 	int ret;
- 
-@@ -1747,25 +1747,25 @@ static int process_file_extent(struct btrfs_root *root,
- 	fi = btrfs_item_ptr(eb, slot, struct btrfs_file_extent_item);
- 	extent_type = btrfs_file_extent_type(eb, fi);
- 	compression = btrfs_file_extent_compression(eb, fi);
-+	encryption = btrfs_file_extent_encryption(eb, fi);
- 
- 	if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
--		num_bytes = btrfs_file_extent_ram_bytes(eb, fi);
--		if (num_bytes == 0)
-+		u64 num_decoded_bytes = btrfs_file_extent_ram_bytes(eb, fi);
-+		u64 num_disk_bytes =  btrfs_file_extent_inline_item_len(eb, slot);
-+		if (num_decoded_bytes == 0)
- 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
--		if (compression) {
--			if (btrfs_file_extent_inline_item_len(eb, slot) >
--			    max_inline_size ||
--			    num_bytes > gfs_info->sectorsize)
-+		if (compression || encryption) {
-+			if (num_disk_bytes > max_inline_size ||
-+			    num_decoded_bytes > gfs_info->sectorsize)
- 				rec->errors |= I_ERR_FILE_EXTENT_TOO_LARGE;
- 		} else {
--			if (num_bytes > max_inline_size)
-+			if (num_decoded_bytes > max_inline_size)
- 				rec->errors |= I_ERR_FILE_EXTENT_TOO_LARGE;
--			if (btrfs_file_extent_inline_item_len(eb, slot) !=
--			    num_bytes)
-+			if (num_disk_bytes != num_decoded_bytes)
- 				rec->errors |= I_ERR_INLINE_RAM_BYTES_WRONG;
- 		}
--		rec->found_size += num_bytes;
--		num_bytes = (num_bytes + mask) & ~mask;
-+		rec->found_size += num_decoded_bytes;
-+		num_bytes = (num_decoded_bytes + mask) & ~mask;
- 	} else if (extent_type == BTRFS_FILE_EXTENT_REG ||
- 		   extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
- 		num_bytes = btrfs_file_extent_num_bytes(eb, fi);
+diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
+index d68398e9..106708ef 100644
+--- a/kernel-shared/print-tree.c
++++ b/kernel-shared/print-tree.c
+@@ -1011,6 +1011,7 @@ static struct readable_flag_entry inode_flags_array[] = {
+ 	DEF_INODE_FLAG_ENTRY(NOATIME),
+ 	DEF_INODE_FLAG_ENTRY(DIRSYNC),
+ 	DEF_INODE_FLAG_ENTRY(COMPRESS),
++	DEF_INODE_FLAG_ENTRY(ENCRYPT),
+ 	DEF_INODE_FLAG_ENTRY(ROOT_ITEM_INIT),
+ };
+ static const int inode_flags_num = ARRAY_SIZE(inode_flags_array);
 -- 
 2.53.0
 

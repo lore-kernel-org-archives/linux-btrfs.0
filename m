@@ -1,16 +1,16 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78283343890
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 16:52:03 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 71285331222
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 16:52:08 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782319924; cv=none; b=YjtOMJVT8MfDANAav+MQWQOo/4rdUBjM1Dr87CqXJG/eI0p34daPnzT9cxJ53e/MwtJg8KSqd21osvp1pCUgM09klod+V4aW+npWr5VgbvLpZmVLR2JBDWEWCdlKuG5SoPfiQVcQDYuCgr/Sz58RNc6zPO23LX4MqwLvQZy3DpE=
+	t=1782319929; cv=none; b=VRnjlhJaJUzV8lyAHQZnBJ3PIIKUmSgtYVtFAx7t7FO5G9axOgUgTmsrfjS//vY0r6a+mGIplA3p9pQPJBgc8gFPLVekq7TCOkawD0a6PjYNTo3ZAZsrxjJXr3giW8byRuCR9RD/Ogx4Qn2lHBqs4XjHwuUNkeXhDTiNI3NNTr8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782319924; c=relaxed/simple;
-	bh=FEhoGe6/dwUAe/swlMKIquDdilQn7PQ1GjRAFsos8Zc=;
+	s=arc-20240116; t=1782319929; c=relaxed/simple;
+	bh=pAhU6o7EUeCfZWeQcz6Us3VaFo5JAgo8U4nuDq6unoE=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=UKh3Ak3jcfxT7pCpmQaMOOTZEiPpnRJcmmtzhzUtcjzjmlm9ZJKpheYG3FULOvLQaE4PO82tq+ePNJrGkxYFIIMr7nW+yQdgwzRoKouHm4QpgyZHwC//dyaUFUxXxsbD7DD1U0Efth54DPABu4KBUlQxgd3xqv5H0QNUzEXtQvo=
+	 MIME-Version; b=eWOkFTAJVxCY65QLl13gRW/kY/czoJdxOUMCQUpgg2+6dpVHgs9cmkdY8j5KjcKiMKNH3VGnmItf5O/PKuCJ2d55vGYQpxepNOgkmjXg+ntb2qqx25Pv4qPG3O9GiDHKNmZNgtRzP5EZ63LC12SNI2uiJa/qqW0BVm3Nf3mar+Q=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
@@ -18,7 +18,7 @@ Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 3E2EC76059;
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 52C0F7605D;
 	Wed, 24 Jun 2026 16:51:51 +0000 (UTC)
 Authentication-Results: smtp-out2.suse.de;
 	none
@@ -26,11 +26,11 @@ Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 268C5779AC;
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3EEF1779A8;
 	Wed, 24 Jun 2026 16:51:51 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id YPTyCCcLPGrUTgAAD6G6ig
+	id gDvlDicLPGrUTgAAD6G6ig
 	(envelope-from <neelx@suse.com>); Wed, 24 Jun 2026 16:51:51 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: David Sterba <dsterba@suse.com>
@@ -39,9 +39,9 @@ Cc: Daniel Vacek <neelx@suse.com>,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
 	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v2 5/8] btrfs-progs: print encryptin type field of file extents
-Date: Wed, 24 Jun 2026 18:51:41 +0200
-Message-ID: <20260624165144.556908-6-neelx@suse.com>
+Subject: [PATCH v2 6/8] btrfs-progs: handle fscrypt context items
+Date: Wed, 24 Jun 2026 18:51:42 +0200
+Message-ID: <20260624165144.556908-7-neelx@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260624165144.556908-1-neelx@suse.com>
 References: <20260624165144.556908-1-neelx@suse.com>
@@ -55,55 +55,103 @@ Content-Transfer-Encoding: 8bit
 X-Rspamd-Pre-Result: action=no action;
 	module=replies;
 	Message is reply to one we originated
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
+X-Rspamd-Queue-Id: 52C0F7605D
 X-Spam-Flag: NO
 X-Spam-Score: -4.00
 X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Pre-Result: action=no action;
+	module=replies;
+	Message is reply to one we originated
 X-Spamd-Result: default: False [-4.00 / 50.00];
 	REPLY(-4.00)[]
-X-Rspamd-Queue-Id: 3E2EC76059
-X-Rspamd-Action: no action
 
 From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 
-Encrypted file extents now have the 'encryption' field set to an
-encryption type.  Let's print it.
+Encrypted inodes have a new associated item, the fscrypt context, which
+can be printed as a pure hex string in dump-tree.
 
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 Signed-off-by: Daniel Vacek <neelx@suse.com>
 ---
- check/main.c               | 1 -
- kernel-shared/print-tree.c | 2 ++
- 2 files changed, 2 insertions(+), 1 deletion(-)
+ check/main.c                    |  2 ++
+ kernel-shared/print-tree.c      | 20 ++++++++++++++++++++
+ kernel-shared/uapi/btrfs_tree.h |  3 ++-
+ 3 files changed, 24 insertions(+), 1 deletion(-)
 
 diff --git a/check/main.c b/check/main.c
-index dedb4db4..a32247b3 100644
+index a32247b3..2df55edc 100644
 --- a/check/main.c
 +++ b/check/main.c
-@@ -1778,7 +1778,6 @@ static int process_file_extent(struct btrfs_root *root,
- 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
- 		if (extent_type == BTRFS_FILE_EXTENT_PREALLOC &&
- 		    (btrfs_file_extent_compression(eb, fi) ||
--		     btrfs_file_extent_encryption(eb, fi) ||
- 		     btrfs_file_extent_other_encoding(eb, fi)))
- 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
- 		if (compression && rec->nodatasum)
+@@ -1896,6 +1896,8 @@ static int process_one_leaf(struct btrfs_root *root, struct extent_buffer *eb,
+ 			break;
+ 		case BTRFS_VERITY_DESC_ITEM_KEY:
+ 		case BTRFS_VERITY_MERKLE_ITEM_KEY:
++		case BTRFS_FSCRYPT_INODE_CTX_KEY:
++		case BTRFS_FSCRYPT_CTX_KEY:
+ 			break;
+ 		default:
+ 			error("unknown key (%llu %u %llu) found in leaf %llu",
 diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
-index 0afa3696..159f0825 100644
+index 159f0825..d68398e9 100644
 --- a/kernel-shared/print-tree.c
 +++ b/kernel-shared/print-tree.c
-@@ -471,6 +471,8 @@ static void print_file_extent_item(struct extent_buffer *eb,
- 	printf("\t\textent compression %hhu (%s)\n",
- 			btrfs_file_extent_compression(eb, fi),
- 			compress_str);
-+	printf("\t\textent encryption %hhu\n",
-+			btrfs_file_extent_encryption(eb, fi));
+@@ -117,6 +117,20 @@ static void print_dir_item(struct extent_buffer *eb, u32 size,
+ 	}
  }
  
- /* Caller should ensure sizeof(*ret) >= 16("DATA|TREE_BLOCK") */
++static void print_fscrypt_context(struct extent_buffer *eb, int slot)
++{
++	int i;
++	unsigned long ptr = btrfs_item_ptr_offset(eb, slot);
++	u32 item_size = btrfs_item_size(eb, slot);
++	u8 ctx_buf[item_size];
++
++	read_extent_buffer(eb, ctx_buf, ptr, item_size);
++	printf("\t\tvalue: ");
++	for(i = 0; i < item_size; i++)
++		printf("%02x", ctx_buf[i]);
++	printf("\n");
++}
++
+ static void print_inode_extref_item(struct extent_buffer *eb, u32 size,
+ 		struct btrfs_inode_extref *extref)
+ {
+@@ -740,6 +754,8 @@ void print_key_type(FILE *stream, u64 objectid, u8 type)
+ 		[BTRFS_DIR_LOG_ITEM_KEY]	= "DIR_LOG_ITEM",
+ 		[BTRFS_DIR_LOG_INDEX_KEY]	= "DIR_LOG_INDEX",
+ 		[BTRFS_XATTR_ITEM_KEY]		= "XATTR_ITEM",
++		[BTRFS_FSCRYPT_INODE_CTX_KEY]   = "FSCRYPT_INODE_CTX",
++		[BTRFS_FSCRYPT_CTX_KEY]         = "FSCRYPT_CTX",
+ 		[BTRFS_VERITY_DESC_ITEM_KEY]	= "VERITY_DESC_ITEM",
+ 		[BTRFS_VERITY_MERKLE_ITEM_KEY]	= "VERITY_MERKLE_ITEM",
+ 		[BTRFS_ORPHAN_ITEM_KEY]		= "ORPHAN_ITEM",
+@@ -1556,6 +1572,10 @@ void __btrfs_print_leaf(struct extent_buffer *eb, unsigned int mode)
+ 		case BTRFS_XATTR_ITEM_KEY:
+ 			print_dir_item(eb, item_size, ptr);
+ 			break;
++		case BTRFS_FSCRYPT_INODE_CTX_KEY:
++		case BTRFS_FSCRYPT_CTX_KEY:
++			print_fscrypt_context(eb, i);
++			break;
+ 		case BTRFS_DIR_LOG_INDEX_KEY:
+ 		case BTRFS_DIR_LOG_ITEM_KEY: {
+ 			struct btrfs_dir_log_item *dlog;
+diff --git a/kernel-shared/uapi/btrfs_tree.h b/kernel-shared/uapi/btrfs_tree.h
+index 45675dae..b4532237 100644
+--- a/kernel-shared/uapi/btrfs_tree.h
++++ b/kernel-shared/uapi/btrfs_tree.h
+@@ -168,7 +168,8 @@
+ #define BTRFS_VERITY_DESC_ITEM_KEY	36
+ #define BTRFS_VERITY_MERKLE_ITEM_KEY	37
+ 
+-#define BTRFS_FSCRYPT_CTXT_ITEM_KEY	41
++#define BTRFS_FSCRYPT_INODE_CTX_KEY	41
++#define BTRFS_FSCRYPT_CTX_KEY		42
+ 
+ #define BTRFS_ORPHAN_ITEM_KEY		48
+ /* reserve 2-15 close to the inode for later flexibility */
 -- 
 2.53.0
 

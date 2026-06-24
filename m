@@ -1,155 +1,162 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8A9682857C7
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 15:33:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB7163B19D1
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 15:35:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782315202; cv=none; b=fv4aEUGQfCLudaz2fPj4HfeHnPGZVVoTeJ3Y+U+gDauUcVj8iu61cRX/JpVowow/3JG3eWiv7kHpRYDGTk/wuKJCFKcydhaJETM6Tzi0LpfuHcgpxJjz9p93MccNosGDaceirpH0cqSDKKkPIizKid7g3p1OD30zJQZCd9TBTAg=
+	t=1782315335; cv=none; b=lLDdfqpcDGv0beXz7nWfKYUwPS19gXw77aJ+GQ2lGefr5XRQRCPvmsLYHutqQ1ZmPV70TqPAWG4g0ZxLudTe2hR4gVq3bBDP10IVxY5c2im30hTlKe5uIF2KMBXF5mQ83JiMDOGkaU9TQNKr7dy39ltaWiFd5PpUYKW595hWogs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782315202; c=relaxed/simple;
-	bh=yXfkXzIZ0GZZdMpLqUJzIB3dE94eT6o4jTSfn3baf9o=;
+	s=arc-20240116; t=1782315335; c=relaxed/simple;
+	bh=uCVYAvot4MZf3+dFwBs1E3N/KfjPmGdLkhuXLsI5jes=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Y/HYQ284FOnF9uN/86VwIqmg9oA/kvgKG3Sfd/8y0y1GyACT/1Pr2t/OmtYi4qYeVV8ijrxI3LxLqsSP+tSpxcJaCBMhmcwImp9Tsuwec7zBj+ySOw9Qt9FMrpUVEc5oOJOULcN8kx4hhvJL89E/LegsuGsSQNwFfkElL/Jg3Ds=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yIQGitou; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=d/CE+oB/; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yIQGitou; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=d/CE+oB/; arc=none smtp.client-ip=195.135.223.130
+	 Content-Type:Content-Disposition:In-Reply-To; b=q9l4/fphoRrMS34eEQJ5KYKyqUq3iKGlUnqPW95XhvmSYAan26H9kvPA66PsWwGlJotjezsKgsppUzFLv4j6LRxiDYevn8hhOPQsZrEtezldZOVz77vzoUJLRkNsUdZcEFg0pFFo7zdib3bLo7DVF6Y6BOsTPz7djfZ5LavZKkw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=xDpf6NeG; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=bD4pgStI; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=D/mD1mBk; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=T2xkv1Px; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yIQGitou";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="d/CE+oB/";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yIQGitou";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="d/CE+oB/"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="xDpf6NeG";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="bD4pgStI";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="D/mD1mBk";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="T2xkv1Px"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 3F4F26DB61;
-	Wed, 24 Jun 2026 15:33:19 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id F236375F37;
+	Wed, 24 Jun 2026 15:35:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1782315199;
+	t=1782315332;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=MSE4rkk2Upul+S7U9xRhL47pZrwLb+quP4b+I+wl5iE=;
-	b=yIQGitou4Df4FFuuW0bO2OkqoGq5fC8EZ3U5Yp3XbhhKeC4/cfngKQsqcLTnjF1jrLfu+n
-	IJdva6jI4ZwSYCOgwzz0xDfxOs62Arsg+FY4JJgBLFPxcN4bsQjmujxhYHk8UoqqbKpRS5
-	GhvAbNKSNcdnjYezkk/mpz/duTh4qR0=
+	bh=udREYRx4M5uYeIQo6d9UVQsR5jp8kYPf4qli6U4L4LU=;
+	b=xDpf6NeGv0WgFTBe99o3NGWng6nV4Qq7zO5GCfs0GIH+pnneMIa4C+cBBdBFv+ZD0hUcE8
+	g2tUaw6ECqIP9XI75b+sQ/npSJzWQZwYCJqRO1TB/8uI0f8XLclQk1+f43+INYYm78eu2+
+	2BhtmwbypJh3RK13ilpNoWDzjqf6mUs=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1782315199;
+	s=susede2_ed25519; t=1782315332;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=MSE4rkk2Upul+S7U9xRhL47pZrwLb+quP4b+I+wl5iE=;
-	b=d/CE+oB/j21oQOaarg8mi9Z2rPpYzhuaIa6JDLvX8rKOT0ENRUWIBOg3z+Pb1K6x80RaIC
-	55TSomJMZs3o+sCg==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=yIQGitou;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b="d/CE+oB/"
+	bh=udREYRx4M5uYeIQo6d9UVQsR5jp8kYPf4qli6U4L4LU=;
+	b=bD4pgStIvHViw5PI/QzHedBRxFEKSTgusXUHxYI8qab6k4Pv/gldLVEayCJEYXe9ldfQAW
+	NdKAuquzIuZXKqDg==
+Authentication-Results: smtp-out2.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1782315199;
+	t=1782315331;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=MSE4rkk2Upul+S7U9xRhL47pZrwLb+quP4b+I+wl5iE=;
-	b=yIQGitou4Df4FFuuW0bO2OkqoGq5fC8EZ3U5Yp3XbhhKeC4/cfngKQsqcLTnjF1jrLfu+n
-	IJdva6jI4ZwSYCOgwzz0xDfxOs62Arsg+FY4JJgBLFPxcN4bsQjmujxhYHk8UoqqbKpRS5
-	GhvAbNKSNcdnjYezkk/mpz/duTh4qR0=
+	bh=udREYRx4M5uYeIQo6d9UVQsR5jp8kYPf4qli6U4L4LU=;
+	b=D/mD1mBkrfMX9yY8b+hUFblS0YFZzZFZpJqF+bDW/fcz9WAapkkQMRlDJGqUpQBnDmi13x
+	Y2Qv3uR1x5jiCXn78oi86U7R9Xdp3HeeTNO0c/WXlFALMyrrnxgyXFY2sjH+A+MfRvGY7K
+	PEQh1UZCDDleOOlVHzxkd47XlxAtFiU=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1782315199;
+	s=susede2_ed25519; t=1782315331;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=MSE4rkk2Upul+S7U9xRhL47pZrwLb+quP4b+I+wl5iE=;
-	b=d/CE+oB/j21oQOaarg8mi9Z2rPpYzhuaIa6JDLvX8rKOT0ENRUWIBOg3z+Pb1K6x80RaIC
-	55TSomJMZs3o+sCg==
+	bh=udREYRx4M5uYeIQo6d9UVQsR5jp8kYPf4qli6U4L4LU=;
+	b=T2xkv1PxEbfNtmtS0hlsbWJNOfsFfLYImoqUKRN1UGMZwai8UD/CyIG3yra5eoFCKSejDu
+	SCOMALj+3cZ9+zAA==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 26913779A8;
-	Wed, 24 Jun 2026 15:33:19 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DA902779A8;
+	Wed, 24 Jun 2026 15:35:31 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id OoYrCb/4O2o/BAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Wed, 24 Jun 2026 15:33:19 +0000
-Date: Wed, 24 Jun 2026 17:33:09 +0200
+	id rvkYNUP5O2qBBgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Wed, 24 Jun 2026 15:35:31 +0000
+Date: Wed, 24 Jun 2026 17:35:30 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
+To: Sun YangKai <sunk67188@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: remove btrfs_fs_info::stripesize
-Message-ID: <20260624153309.GB150664@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs: uapi: fix stale BTRFS_SYSTEM_CHUNK_ARRAY_SIZE
+ comment
+Message-ID: <20260624153530.GC150664@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <8a10be3992b88b143585dd1736998b4479c48b46.1782275006.git.wqu@suse.com>
+References: <20260624070806.4534-1-sunk67188@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <8a10be3992b88b143585dd1736998b4479c48b46.1782275006.git.wqu@suse.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <20260624070806.4534-1-sunk67188@gmail.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 3F4F26DB61
 X-Spam-Flag: NO
-X-Spam-Score: -4.21
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.21 / 50.00];
+X-Spam-Score: -4.00
+X-Spamd-Result: default: False [-4.00 / 50.00];
 	BAYES_HAM(-3.00)[99.99%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCPT_COUNT_TWO(0.00)[2];
+	FREEMAIL_TO(0.00)[gmail.com];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
 	ARC_NA(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
 	TO_DN_SOME(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
 	RCVD_TLS_ALL(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[twin.jikos.cz:mid,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.cz:replyto,suse.cz:dkim,suse.com:email];
-	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,twin.jikos.cz:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo]
+X-Spam-Level: 
 
-On Wed, Jun 24, 2026 at 01:53:28PM +0930, Qu Wenruo wrote:
-> Btrfs does not support variable stripe length yet, all RAID0/5/6/10
-> chunks have the fixed stripe length 64K for now.
-
-The question is if the 'for now' will turn into configurable stripe size
-in the future. This was the plan, but long time ago. I think we can
-remove it anyway, the code is no-op and adding proper support would need
-more changes that just that.
-
-> Furthermore, btrfs_fs_info::stripesize is not the real chunk stripe
-> length, it's always the same value as sectorsize.
+On Wed, Jun 24, 2026 at 03:08:01PM +0800, Sun YangKai wrote:
+> The comment claims room for "14 chunks with 3 stripes each", which
+> was correct when the structs were smaller.  Since then three additions
+> grew each entry:
 > 
-> Remove btrfs_fs_info::stripesize, and for the only callsite utilizing
-> that member, replace it with fs_info->sectorsize instead.
+>   commit e17cade25ff8 ("Btrfs: Add chunk uuids and update multi-device back references")
+>     added btrfs_chunk.length (+8) and stripe.dev_uuid (+16)
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>   commit 321aecc65671 ("Btrfs: Add RAID10 support")
+>     added btrfs_chunk.sub_stripes (+2)
+> 
+> A 3-stripe entry now takes:
+> 
+>   sizeof(btrfs_disk_key) + btrfs_chunk_item_size(3)
+>     = 17 + 80 + 32 * (3 - 1)
+>     = 161 bytes
+> 
+> 2048 / 161 ≈ 12.7, so "14" is no longer achievable.  Update to 12
+> and add the explicit calculation so it does not rot again.
+> 
+> Signed-off-by: Sun YangKai <sunk67188@gmail.com>
 
 Reviewed-by: David Sterba <dsterba@suse.com>
 
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4757,7 +4757,7 @@ static noinline int find_free_extent(struct btrfs_root *root,
+> --- a/include/uapi/linux/btrfs_tree.h
+> +++ b/include/uapi/linux/btrfs_tree.h
+> @@ -504,7 +504,11 @@ struct btrfs_header {
 >  
->  		/* Checks */
->  		ffe_ctl->search_start = round_up(ffe_ctl->found_offset,
-> -						 fs_info->stripesize);
-> +						 fs_info->sectorsize);
+>  /*
+>   * This is a very generous portion of the super block, giving us room to
+> - * translate 14 chunks with 3 stripes each.
+> + * translate 12 chunks with 3 stripes each.
+> + *
+> + * Each entry takes sizeof(btrfs_disk_key) + btrfs_chunk_item_size(n),
+> + * which for a 3-stripe chunk is 17 + 80 + 32 * (3 - 1) = 161 bytes.
+> + * 2048 / 161 ≈ 12.7, so at most 12 entries fit.
 
-This seems to be the only relevant use in case the stripe size would not
-be equal to sector size.
+Nice, thanks.

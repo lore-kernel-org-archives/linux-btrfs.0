@@ -1,281 +1,165 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fout-b4-smtp.messagingengine.com (fout-b4-smtp.messagingengine.com [202.12.124.147])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 312BA2F8EBE
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 04:13:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 283B1366562
+	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 04:20:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.147
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782274389; cv=none; b=LYHhOjUXrBk0bObm6oV23g0pLmO4xBVH8BIb4u/kYaqeuQas03wMbB1VejbjeMyWJKUi0Gs4BHbxRc3mzgwclbmA5OwKo6ONAh149fdOg5IbgCWslmnGFM1AsQOBE/aGWw9H3BNEMGeBc5nwPbdsTCgOJ9oOltC8J3Xn8320CD8=
+	t=1782274815; cv=none; b=K1edEtji1rpvNVsztk+1gb8b/b7/Vvbk9cHDnahdC26BNyVBJehC4kn5Ati8mfp+ZiSATiifA8qBFbURGKFG3pE1K/hfP9sHOtSx7SvI3eIeqpgG+vcxIamMGogEYixiPxhL5cWkd/MLHuFFSHXjyjRaUVo7pbevqBETWkSdbOE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782274389; c=relaxed/simple;
-	bh=eLNpws6ktOYhkYMKILitKV+x7cgsAme4cOD1/Dxy/8o=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=XWBdJkGtt//z5MARWVLurH0SFPPNGrBS8Ulg62JJr58ydnoImFvW+iOVcqX5WjHAplQvvZW2kuZDjJccN1X+F74G7VnIgx47GJRc4Ns3tv2Xlpn6ixoeFnTTYG7xFmS2/GM/i2gCBblCvUzRDs59v6zuaAV18Uyw5te8HvWEujI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Rbjz0JIV; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Rbjz0JIV; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1782274815; c=relaxed/simple;
+	bh=31LyMc8zp4RHzcuBoQwfIA/sDQ9nvb3tptPGVRsX8Wk=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=jYo15E85CKauLD7e4W7NSibwTKlCU9ATV+SExgVh7fSprDNvDqtVL98rcWK06dtX6v/Fw2rslGbqVxR1crCJbcYlypVI8VALAv4PWbk+bAzd1aIt2L21J+DIzmK1v97C7sAxsB++SLU85FxrKNfbuOWqpBua24rCKUCNXmVQ7WA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=FSi8pfLw; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=gWAcBpF/; arc=none smtp.client-ip=202.12.124.147
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Rbjz0JIV";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Rbjz0JIV"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 4DB127101D
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 04:13:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782274386; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=ePIIppDSTvtiF7O2m03B2uY9e7LrbTnfAF+KMPyqKrM=;
-	b=Rbjz0JIVuW2mGLjd0zT1yB3X0LvhPbkb4f4JEsNb8UkE1s1JCD9dUTAivKOpAsMfZ3qzbv
-	A5UPrpyW/v5rez6jBlcpSO3zkH47XHxy/w/KSq2H7x0+bAq4MJfiOVPVZRzA8QFGIQq4iY
-	uQl1uY5WMEcA0+cECU9EhJQ/lO7C49U=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782274386; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=ePIIppDSTvtiF7O2m03B2uY9e7LrbTnfAF+KMPyqKrM=;
-	b=Rbjz0JIVuW2mGLjd0zT1yB3X0LvhPbkb4f4JEsNb8UkE1s1JCD9dUTAivKOpAsMfZ3qzbv
-	A5UPrpyW/v5rez6jBlcpSO3zkH47XHxy/w/KSq2H7x0+bAq4MJfiOVPVZRzA8QFGIQq4iY
-	uQl1uY5WMEcA0+cECU9EhJQ/lO7C49U=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 51677779A8
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 04:13:05 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id kza+AFFZO2o1NQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 04:13:05 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: use correct type for sectorsize/nodesize/blocksize
-Date: Wed, 24 Jun 2026 13:42:42 +0930
-Message-ID: <f12af6d49a5b04bd7ff537bcdabee176b54416f6.1782274357.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="FSi8pfLw";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="gWAcBpF/"
+Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
+	by mailfout.stl.internal (Postfix) with ESMTP id 6F7551D0011C;
+	Wed, 24 Jun 2026 00:20:12 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-01.internal (MEProxy); Wed, 24 Jun 2026 00:20:12 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm2; t=1782274812; x=1782361212; bh=Hk7pJM2HC0
+	yANp3aYwGyfDLH4pktfgrToVEWkGo+Ot4=; b=FSi8pfLwROv2JrydhD9MQkAYj/
+	cLaz5+qC0TTPS21SAEiGUj9bTwPAGccQRb2n0b9rT8duIns6Blk4uFtqx+bkUnIy
+	QemGAGBSxeSU3e0e65h4SR2pJm0vJlARhztalirbApt+bhLz5iWc0OykHdnuMEr3
+	m/C34hx71QjEeSHvaeSIJaSeyTVBo/0EMs5Pp8CQ36kW0f3iGPGzjmtyfJJE59S9
+	daAXEF1XSR7BjTS3IkUknS25WC+I0sZyN7JZbQIEI5ElP/e4NTUqxmEdCKST++m5
+	KASbMIvQP4791scJhaD7u1O8AQChaiM6jAShYvWxUah8gLk6YBO47lBOqtcw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
+	1782274812; x=1782361212; bh=Hk7pJM2HC0yANp3aYwGyfDLH4pktfgrToVE
+	WkGo+Ot4=; b=gWAcBpF/uubwPg+ZbEDJjlHaxKKbUpqvTWyJygYmkq9yH4UlPiG
+	lxELHrhxoGcjxCEO/2dJPuidgBLJ/vUujfI6sRgNWshb1Rvzsw4ggzR5Sp5zFdm/
+	veFe6sqBTruXmR2fT8/KAtUHNFW1CNGR2QlMdup05+RUvwbFanytWBBDA9vYPM27
+	7LhPd+WDRIBGkfIcubXZfjyx4O02zUDZb2pnhlK8WXUzRyPaJadBAxxK4SaTpkkz
+	qjKv9DL0SZ/ouGC2STwExPAjJ8sTxlnPLR5otyZO9G8ZulrEDNsd4EqqKiP9z79X
+	TEirJJcYjmOsf/3X44PelzyIWtXVOl7Y4+w==
+X-ME-Sender: <xms:_Fo7arPCuEJP6OIIJoZe9xewjiOz8VIAZMT2iAT7ICl_1Nv_DJ3noA>
+    <xme:_Fo7ar9XL_c6UYDqq4ndSA8SY8JhnnUVeMIsFdJUakstGfYeRj37ibkqeKdpkeF85
+    VTlyxmhbSEH8wDjIYLAN5LMoiNL6_LQe5puUxGSLA5Xi7LuyK2KTQ>
+X-ME-Received: <xmr:_Fo7an7sWoLG1RJThfsxBXKHOoN4xUP6QJ1_tqViQRm0B2B2uUYjV9ASUWUiVzfCYrAOZZqQ7WV4rAEtSlRRJYd4_Cs>
+X-ME-Proxy-Cause: dmFkZTFhdIeCN2gl5TILkaQsQGZYzrSVeJ1STTFFaneR7rRUsCBkZP+oZkaL+b5cSkwPyH
+    tI87+pcXujbNXbe1UveMBuD6GFkjmDpzmmglTiCqyjNGrthHltpnUtEnOvIwFEJzMi2VmE
+    BhPb3eSxigVYiaDkNyz0TAirih9AvMZDea6NQiT2Eec5Ipn7xN0pCgbvY9LQY6ZZdDIDac
+    Tr1JeGr5bKZdr3peD90A8OLj2Y1c+n2YCYbas/5g8sWr9FXGo3Dz0lrRKwK6d9ef+DTvTy
+    RSGLHneAqiqiE3mNtnicA3eHN2ap1QvM1UrsMBWs3eJ541b+IzjZTaYbtW+MSmvkHplSZq
+    Sd1SlZGKXk5r2OSp15BqUySLQUIUp8BmjS6ud1A7JNPySxXR84hEJuAzraXFVv2MHCj11O
+    i3TWfukNX+FT6tc+Dhqb/K/NjJb2YBVdjrxlLGgq6lgqtuZTRXi2RlA41kSDrT1LRweN+y
+    /Ns7i8zTZ6iJKCPsS6oCD6i1XYCW29ro6bZIv0DOrbOEzXfI6NpsF2zrNUmcnplqWq8B31
+    WMzVmzyWMrUOPmlavNmm2zgEkoPCkUnp4KiTGTL4dZsUeHV2w3KFlZous5sQ4K1qsfvEWU
+    z1Gjd4u9641F3SksYXjAeXrpC+ntT9EkdPUVhvQM7XkdzHyFmmtQ2f9vVLOw
+X-ME-Proxy: <xmx:_Fo7aq0uMqF0263cHmSobRe2dkpXNgUrumBI_G3ab5T21NvVvJB21Q>
+    <xmx:_Fo7amDLj69s3IVaI2udJfg4_m-sIza2x6T2af4tW8Qmqyl-_pPHig>
+    <xmx:_Fo7ak3DCUuKDLys0PI0_lCxnEVtqJBOtF5rHmjP9XDtqKQ5YIxBSA>
+    <xmx:_Fo7aosIMGWl7NaNslKcXHVIWUwXaksG6p5JGKrQL-43zEAy2n9lIQ>
+    <xmx:_Fo7at9wYau-IsaKHXmjpoXOuEngay1ff3OASsi6PvKFgLJ3E0vFfrxI>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 24 Jun 2026 00:20:11 -0400 (EDT)
+Date: Tue, 23 Jun 2026 21:19:09 -0700
+From: Boris Burkov <boris@bur.io>
+To: Sun YangKai <sunk67188@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: change block group reclaim_mark to bool
+Message-ID: <20260624041909.GA2011094@zen.localdomain>
+References: <20260624040232.30420-1-sunk67188@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
-X-Spam-Score: -2.80
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260624040232.30420-1-sunk67188@gmail.com>
 
-Btrfs' nodesize and sectorsize are all u32 values, there is no need to
-use u64 for local usage.
+On Wed, Jun 24, 2026 at 12:02:27PM +0800, Sun YangKai wrote:
+> The reclaim_mark field in struct btrfs_block_group was a u64 that was
+> incremented when marking block groups for reclaim during sweeping, but
+> the actual counter value was never used - only the zero/non-zero state
+> mattered for determining if a block group needed reclaim.
+> 
+> Convert it to a bool to properly reflect its usage and reduce memory
+> footprint by 8 bytes. Update assignments to use true/false instead of
+> increment and zero.
+> 
 
-Furthermore some call sites also use "blocksize" or "bs" for sectorsize,
-also change them to use the minimal type u32 instead.
+LGTM, thanks.
+Reviewed-by: Boris Burkov <boris@bur.io>
 
-Since we're here, also reorder those local variables so that they won't
-cause extra holes for stack memory, and consitify the
-sectorsize/nodesize/blocksize/bs usage.
+> Signed-off-by: Sun YangKai <sunk67188@gmail.com>
+> ---
+>  fs/btrfs/block-group.c | 2 +-
+>  fs/btrfs/block-group.h | 7 ++++++-
+>  fs/btrfs/space-info.c  | 2 +-
+>  3 files changed, 8 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+> index 9e937407d12a9..5829c806c4d48 100644
+> --- a/fs/btrfs/block-group.c
+> +++ b/fs/btrfs/block-group.c
+> @@ -3923,7 +3923,7 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
+>  		old_val += num_bytes;
+>  		cache->used = old_val;
+>  		cache->reserved -= num_bytes;
+> -		cache->reclaim_mark = 0;
+> +		cache->reclaim_mark = false;
+>  		space_info->bytes_reserved -= num_bytes;
+>  		space_info->bytes_used += num_bytes;
+>  		space_info->disk_used += num_bytes * factor;
+> diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+> index 790c2d467af57..942befdf75df7 100644
+> --- a/fs/btrfs/block-group.h
+> +++ b/fs/btrfs/block-group.h
+> @@ -263,6 +263,12 @@ struct btrfs_block_group {
+>  
+>  	enum btrfs_block_group_size_class size_class:8;
+>  
+> +	/*
+> +	 * Mark this blockgroup is not used for allocation
+> +	 * between two reclaim sweeps.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/disk-io.c | 12 ++++++------
- fs/btrfs/fiemap.c  |  4 ++--
- fs/btrfs/file.c    |  4 ++--
- fs/btrfs/inode.c   |  4 ++--
- fs/btrfs/reflink.c |  8 ++++----
- fs/btrfs/send.c    |  2 +-
- 6 files changed, 17 insertions(+), 17 deletions(-)
+nit: this grammar doesn't parse great to me. Maybe drop "Mark"?
+or change it to "We identified this for reclaim on a previous pass, so
+it stably needs reclaim across passes" or something like that.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 0a7d80da9c94..fa5922a21e51 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2390,8 +2390,8 @@ static int validate_sys_chunk_array(const struct btrfs_fs_info *fs_info,
- int btrfs_validate_super(const struct btrfs_fs_info *fs_info,
- 			 const struct btrfs_super_block *sb, int mirror_num)
- {
--	u64 nodesize = btrfs_super_nodesize(sb);
--	u64 sectorsize = btrfs_super_sectorsize(sb);
-+	const u32 nodesize = btrfs_super_nodesize(sb);
-+	const u32 sectorsize = btrfs_super_sectorsize(sb);
- 	int ret = 0;
- 	const bool ignore_flags = btrfs_test_opt(fs_info, IGNORESUPERFLAGS);
- 
-@@ -2433,24 +2433,24 @@ int btrfs_validate_super(const struct btrfs_fs_info *fs_info,
- 	 */
- 	if (unlikely(!is_power_of_2(sectorsize) || sectorsize < BTRFS_MIN_BLOCKSIZE ||
- 		     sectorsize > BTRFS_MAX_METADATA_BLOCKSIZE)) {
--		btrfs_err(fs_info, "invalid sectorsize %llu", sectorsize);
-+		btrfs_err(fs_info, "invalid sectorsize %u", sectorsize);
- 		ret = -EINVAL;
- 	}
- 
- 	if (unlikely(!btrfs_supported_blocksize(sectorsize))) {
- 		btrfs_err(fs_info,
--			"sectorsize %llu not yet supported for page size %lu",
-+			"sectorsize %u not yet supported for page size %lu",
- 			sectorsize, PAGE_SIZE);
- 		ret = -EINVAL;
- 	}
- 
- 	if (unlikely(!is_power_of_2(nodesize) || nodesize < sectorsize ||
- 		     nodesize > BTRFS_MAX_METADATA_BLOCKSIZE)) {
--		btrfs_err(fs_info, "invalid nodesize %llu", nodesize);
-+		btrfs_err(fs_info, "invalid nodesize %u", nodesize);
- 		ret = -EINVAL;
- 	}
- 	if (unlikely(nodesize != le32_to_cpu(sb->__unused_leafsize))) {
--		btrfs_err(fs_info, "invalid leafsize %u, should be %llu",
-+		btrfs_err(fs_info, "invalid leafsize %u, should be %u",
- 			  le32_to_cpu(sb->__unused_leafsize), nodesize);
- 		ret = -EINVAL;
- 	}
-diff --git a/fs/btrfs/fiemap.c b/fs/btrfs/fiemap.c
-index 6263e837093e..1da1ccea5b03 100644
---- a/fs/btrfs/fiemap.c
-+++ b/fs/btrfs/fiemap.c
-@@ -641,9 +641,9 @@ static int extent_fiemap(struct btrfs_inode *inode,
- 	u64 prev_extent_end;
- 	u64 range_start;
- 	u64 range_end;
--	const u64 sectorsize = inode->root->fs_info->sectorsize;
--	bool stopped = false;
-+	const u32 sectorsize = inode->root->fs_info->sectorsize;
- 	int ret;
-+	bool stopped = false;
- 
- 	cache.entries_size = PAGE_SIZE / sizeof(struct btrfs_fiemap_entry);
- 	cache.entries = kmalloc_objs(struct btrfs_fiemap_entry,
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index a2a2df2df786..df8f6f565070 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2888,8 +2888,8 @@ enum {
- static int btrfs_zero_range_check_range_boundary(struct btrfs_inode *inode,
- 						 u64 offset)
- {
--	const u64 sectorsize = inode->root->fs_info->sectorsize;
- 	struct extent_map *em;
-+	const u32 sectorsize = inode->root->fs_info->sectorsize;
- 	int ret;
- 
- 	offset = round_down(offset, sectorsize);
-@@ -2916,9 +2916,9 @@ static int btrfs_zero_range(struct inode *inode,
- 	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
- 	struct extent_map *em;
- 	struct extent_changeset *data_reserved = NULL;
-+	const u32 sectorsize = fs_info->sectorsize;
- 	int ret;
- 	u64 alloc_hint = 0;
--	const u64 sectorsize = fs_info->sectorsize;
- 	const u64 orig_start = offset;
- 	const u64 orig_end = offset + len - 1;
- 	u64 alloc_start = round_down(offset, sectorsize);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ebd1387fcc76..ea772ec788f9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -860,11 +860,11 @@ static void compress_file_range(struct btrfs_work *work)
- 	struct btrfs_inode *inode = async_chunk->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct compressed_bio *cb = NULL;
--	u64 blocksize = fs_info->sectorsize;
- 	u64 start = async_chunk->start;
- 	u64 end = async_chunk->end;
- 	u64 actual_end;
- 	u64 i_size;
-+	const u32 blocksize = fs_info->sectorsize;
- 	u32 cur_len;
- 	int ret = 0;
- 	unsigned long total_compressed = 0;
-@@ -2865,7 +2865,6 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 				       u64 qgroup_reserved)
- {
- 	struct btrfs_root *root = inode->root;
--	const u64 sectorsize = root->fs_info->sectorsize;
- 	BTRFS_PATH_AUTO_FREE(path);
- 	struct extent_buffer *leaf;
- 	struct btrfs_key ins;
-@@ -2875,6 +2874,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	u64 num_bytes = btrfs_stack_file_extent_num_bytes(stack_fi);
- 	u64 ram_bytes = btrfs_stack_file_extent_ram_bytes(stack_fi);
- 	struct btrfs_drop_extents_args drop_args = { 0 };
-+	const u32 sectorsize = root->fs_info->sectorsize;
- 	int ret;
- 
- 	path = btrfs_alloc_path();
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index 9a49d2ecb949..5205b508127c 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -691,7 +691,7 @@ static int btrfs_extent_same_range(struct btrfs_inode *src, u64 loff, u64 len,
- 	const u64 end = dst_loff + len - 1;
- 	struct extent_state *cached_state = NULL;
- 	struct btrfs_fs_info *fs_info = src->root->fs_info;
--	const u64 bs = fs_info->sectorsize;
-+	const u32 bs = fs_info->sectorsize;
- 	int ret;
- 
- 	/*
-@@ -760,10 +760,10 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 	struct inode *inode = file_inode(file);
- 	struct inode *src = file_inode(file_src);
- 	struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
--	int ret;
- 	u64 len = olen;
--	u64 bs = fs_info->sectorsize;
- 	u64 end;
-+	const u32 bs = fs_info->sectorsize;
-+	int ret;
- 
- 	/*
- 	 * VFS's generic_remap_file_range_prep() protects us from cloning the
-@@ -841,8 +841,8 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- {
- 	struct btrfs_inode *inode_in = BTRFS_I(file_inode(file_in));
- 	struct btrfs_inode *inode_out = BTRFS_I(file_inode(file_out));
--	u64 bs = inode_out->root->fs_info->sectorsize;
- 	u64 wb_len;
-+	const u32 bs = inode_out->root->fs_info->sectorsize;
- 	int ret;
- 
- 	if (!(remap_flags & REMAP_FILE_DEDUP)) {
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index d664e470fd77..48a6667053d8 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -6038,9 +6038,9 @@ static int send_write_or_clone(struct send_ctx *sctx,
- 			       struct clone_root *clone_root)
- {
- 	int ret = 0;
-+	const u32 bs = sctx->send_root->fs_info->sectorsize;
- 	u64 offset = key->offset;
- 	u64 end;
--	u64 bs = sctx->send_root->fs_info->sectorsize;
- 	struct btrfs_file_extent_item *ei;
- 	u64 disk_byte;
- 	u64 data_offset;
--- 
-2.54.0
-
+> +	 */
+> +	bool reclaim_mark;
+> +
+>  	/*
+>  	 * Number of extents in this block group used for swap files.
+>  	 * All accesses protected by the spinlock 'lock'.
+> @@ -281,7 +287,6 @@ struct btrfs_block_group {
+>  	struct list_head active_bg_list;
+>  	struct work_struct zone_finish_work;
+>  	struct extent_buffer *last_eb;
+> -	u64 reclaim_mark;
+>  };
+>  
+>  static inline u64 btrfs_block_group_end(const struct btrfs_block_group *block_group)
+> diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+> index e6641597b321e..39a28e1bec8ad 100644
+> --- a/fs/btrfs/space-info.c
+> +++ b/fs/btrfs/space-info.c
+> @@ -2156,7 +2156,7 @@ static bool do_reclaim_sweep(struct btrfs_space_info *space_info, int raid)
+>  			will_reclaim = true;
+>  			reclaim = true;
+>  		}
+> -		bg->reclaim_mark++;
+> +		bg->reclaim_mark = true;
+>  		spin_unlock(&bg->lock);
+>  		if (reclaim)
+>  			btrfs_mark_bg_to_reclaim(bg);
+> -- 
+> 2.54.0
+> 

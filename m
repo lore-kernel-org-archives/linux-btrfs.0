@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 77CFC28C5CB
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 19:20:21 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 489EC33A6E2
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 19:20:22 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782415222; cv=none; b=WLCIu63Zt4mKCEwP5UsZfcpwDPzzxn/1Pb99RH64xO/bN39cRiAFiTfgG9JWCV/14dJDdCYyIP2XKvUJNJB0Lzf5zvXeHXUhd1d64KfZJ57MhzRgCi6I1USfHALsS6+8iCHCZ85ZkLUzfNjNBqk7WZzf5DB3FJMbo4J974eJxjo=
+	t=1782415223; cv=none; b=bZMP0zx68C637tRutF2SN2fgcfOKFx3AMgUm+gK7jQ5TGbgZurGpDaKpU4QGHH5XxO4xBIUfMAsSwKG9QDPl6ZbXVniQtWCQjD2SE5hNcIWETr/Iqs1eBcR4Udtl7Qop+OLUvaiHTHgXZhS2nLacKKSBAPeRvavbpHQMfPRJHHk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782415222; c=relaxed/simple;
-	bh=4X9TxWZnlb86+MYEx+1ynPkScUTmBN+EEktPqQ08ZxM=;
+	s=arc-20240116; t=1782415223; c=relaxed/simple;
+	bh=gWCOO2Gmf0PcbyrjXFLe7JBkEkaZX1ljbLSeR9FuJcU=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=JQmyvi2NGR59ZFHxpgxd/lxczpUqS8fzsyPfOsdjo6tndRnX91/j7Zgm/UL95t2OjOzAAs9Skn735x/UAKGpHJlyySQjA+S8Yi2vYK0mamfDnAKDfldND72foMeohsKrZNA+wN3rKSbNKXLOBJShNenfA5tpxUMC4Gq7lEatKU4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Kqe3KR6j; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version; b=H/RXgFcmqByjGIlhDbOH5d4/G23e5jqBOzlb3yGrUYmsGuWr4yFDRpRtCQEqYgXgZ5A8IAM5wBjnOIKdfdf38COU8t/5ZL8cKCe0WZ3XcT3DEMvoOHZ8BNKpRXDh92IcuXETOwLILIZNfXLUytx9ZtqNTfsA52CBjKdgJdCpWF0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=OugOJl0M; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Kqe3KR6j"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B5B9D1F00A3A
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 19:20:20 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="OugOJl0M"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A1F881F000E9
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 19:20:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782415221;
-	bh=y+Ouy7E6Y42FcMlSG1Vlg6N/EG3LkGT47mtKXt/2S7Y=;
+	s=k20260515; t=1782415222;
+	bh=gYuHFpCJ1aeAA4FbqBIZYXKAE+J+s+/cKVkIwZlF9l4=;
 	h=From:To:Subject:Date:In-Reply-To:References;
-	b=Kqe3KR6jBDkQ8+7Jjc+a09NfyixaPUQ7xJMtCdwBudhR3zErcRSN46HqhqUQc6wdd
-	 M9sQv/0ltxoueIXNH7gEjN7yz+rwTQZACDUw+4qL8s+3H6Uc/IpItD+MCf+4APvPYT
-	 S2wMiFuRCIX57t7O1pNl5FH1F/VrtL1tlELdqgF22S/QXuEEiJ9fyfJgO+6/OZakph
-	 iYzMsX0W77mmDnU4uehKowbvcZ8PkNMBtJUXOwgcdLES9OQyMjY4P/bNT6Y4IdnOeI
-	 CrrLFBoy21/Lrexne7WYpBNJDYmAuI1GroXHYpEwpp5WR0YJMZEJapp6jVbvZyrM/w
-	 i3f7HjUdLgpZg==
+	b=OugOJl0Miv4T8dQ2BbTQKLZJSmWLogVUIwuL1euXWGTNyRI4pJ22AvvG9wNHhRvkp
+	 t2yzXwTCu0QC6yWuttlNW+GEtLbqNpdbLReW7ivlFxQmNJNF4+yiNMfEDpGvXFxelT
+	 M4R6H/93hxaCmGTvS6/8SGpDfg6xlTQB7dAnzp3/Z1YUOgO0buye6CZcWpV6lWsu4Q
+	 Djbn00mpajKPzf8OcYivcWMqGGY3c0/W+pXuOBFqWhjomEOFybXegbYwSP+Cr3B0SG
+	 3/AjDTZXOuZcRHM4+FWxpgATKQX78rQGjMl4QfCr979EVtIytF61+QqZhQRI2eOYSo
+	 HUENaU/gzaaVw==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/6] btrfs: defrag: fix deadlock between defrag and delalloc space reservation
-Date: Thu, 25 Jun 2026 20:20:11 +0100
-Message-ID: <9ad3db9fd98c7bbbdb74d06270ddce24b22e475c.1782321584.git.fdmanana@suse.com>
+Subject: [PATCH 2/6] btrfs: fix pending delayed iputs when using autodefrag
+Date: Thu, 25 Jun 2026 20:20:12 +0100
+Message-ID: <028ec86d8b83cebedf3b1f5090aaf34d39c55306.1782321584.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1782321584.git.fdmanana@suse.com>
 References: <cover.1782321584.git.fdmanana@suse.com>
@@ -44,283 +44,142 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-While running fsstress with autodefrag and flushoncommit, hit a deadlock
-due to the fact that defrag reserves delalloc space while it's holding
-dirty and locked folios, besides the extent range lock. The stack traces
-are the following:
+Syzbot reported the following warning recently:
 
-   [430958.624136] task:kworker/u50:3   state:D stack:0     pid:20365 tgid:20365 ppid:2      task_flags:0x4208060 flags:0x00080000
-   [430958.626267] Workqueue: events_unbound btrfs_async_reclaim_metadata_space [btrfs]
-   [430958.627821] Call Trace:
-   [430958.628351]  <TASK>
-   [430958.628990]  __schedule+0x4be/0x10f0
-   [430958.629791]  ? preempt_count_add+0x69/0xa0
-   [430958.630605]  schedule+0x26/0xd0
-   [430958.631327]  wait_current_trans+0x102/0x160 [btrfs]
-   [430958.632414]  ? __pfx_autoremove_wake_function+0x10/0x10
-   [430958.633515]  start_transaction+0x374/0x900 [btrfs]
-   [430958.634601]  btrfs_commit_current_transaction+0x1d/0x70 [btrfs]
-   [430958.635982]  flush_space+0xca/0x5e0 [btrfs]
-   [430958.636996]  ? _raw_spin_unlock+0x15/0x30
-   [430958.637894]  ? btrfs_reduce_alloc_profile+0x8c/0x190 [btrfs]
-   [430958.639217]  ? _raw_spin_unlock+0x15/0x30
-   [430958.640030]  ? calc_available_free_space.isra.0+0x6f/0x110 [btrfs]
-   [430958.641462]  do_async_reclaim_metadata_space+0x84/0x190 [btrfs]
-   [430958.642711]  btrfs_async_reclaim_metadata_space+0x64/0x80 [btrfs]
-   [430958.644015]  process_one_work+0x19d/0x3a0
-   [430958.644873]  worker_thread+0x1c4/0x330
-   [430958.645668]  ? __pfx_worker_thread+0x10/0x10
-   [430958.646535]  kthread+0xfc/0x130
-   [430958.647285]  ? __pfx_kthread+0x10/0x10
-   [430958.648068]  ret_from_fork+0x1f7/0x2c0
-   [430958.648894]  ? __pfx_kthread+0x10/0x10
-   [430958.649713]  ret_from_fork_asm+0x1a/0x30
-   [430958.650536]  </TASK>
-   [430958.651036] task:kworker/u49:7   state:D stack:0     pid:52990 tgid:52990 ppid:2      task_flags:0x4208060 flags:0x00080000
-   [430958.653709] Workqueue: writeback wb_workfn (flush-btrfs-334)
-   [430958.655110] Call Trace:
-   [430958.655737]  <TASK>
-   [430958.656284]  __schedule+0x4be/0x10f0
-   [430958.657178]  ? __blk_flush_plug+0xe9/0x140
-   [430958.658188]  schedule+0x26/0xd0
-   [430958.658982]  io_schedule+0x42/0x70
-   [430958.659850]  folio_wait_bit_common+0x12b/0x330
-   [430958.660954]  ? folio_wait_bit_common+0x100/0x330
-   [430958.662157]  ? __pfx_wake_page_function+0x10/0x10
-   [430958.663328]  extent_write_cache_pages+0x599/0x830 [btrfs]
-   [430958.664496]  ? acpi_fwnode_get_reference_args+0x1fa/0x270
-   [430958.665579]  btrfs_writepages+0x77/0x130 [btrfs]
-   [430958.666614]  ? __pfx_end_bbio_data_write+0x10/0x10 [btrfs]
-   [430958.667846]  do_writepages+0xc6/0x160
-   [430958.668596]  __writeback_single_inode+0x42/0x310
-   [430958.669535]  writeback_sb_inodes+0x231/0x570
-   [430958.670583]  wb_writeback+0x8a/0x340
-   [430958.671383]  wb_workfn+0xbf/0x450
-   [430958.672058]  ? finish_task_switch.isra.0+0xc1/0x350
-   [430958.673026]  process_one_work+0x19d/0x3a0
-   [430958.673814]  worker_thread+0x1c4/0x330
-   [430958.674565]  ? __pfx_worker_thread+0x10/0x10
-   [430958.675440]  kthread+0xfc/0x130
-   [430958.676084]  ? __pfx_kthread+0x10/0x10
-   [430958.676832]  ret_from_fork+0x1f7/0x2c0
-   [430958.677582]  ? __pfx_kthread+0x10/0x10
-   [430958.678369]  ret_from_fork_asm+0x1a/0x30
-   [430958.679171]  </TASK>
-   [430958.679644] task:btrfs-cleaner   state:D stack:0     pid:296750 tgid:296750 ppid:2      task_flags:0x208040 flags:0x00080000
-   [430958.681812] Call Trace:
-   [430958.682318]  <TASK>
-   [430958.682762]  __schedule+0x4be/0x10f0
-   [430958.683542]  schedule+0x26/0xd0
-   [430958.684264]  handle_reserve_ticket+0x1b9/0x2c0 [btrfs]
-   [430958.685366]  ? __pfx_autoremove_wake_function+0x10/0x10
-   [430958.686520]  reserve_bytes+0x283/0x4c0 [btrfs]
-   [430958.687610]  btrfs_reserve_metadata_bytes+0x18/0xb0 [btrfs]
-   [430958.688860]  btrfs_delalloc_reserve_metadata+0x121/0x320 [btrfs]
-   [430958.690263]  btrfs_delalloc_reserve_space+0x46/0xb0 [btrfs]
-   [430958.691675]  btrfs_defrag_file+0x903/0x1110 [btrfs]
-   [430958.692879]  btrfs_run_defrag_inodes+0x334/0x430 [btrfs]
-   [430958.694005]  cleaner_kthread+0x97/0x1c0 [btrfs]
-   [430958.694969]  ? __pfx_cleaner_kthread+0x10/0x10 [btrfs]
-   [430958.696232]  kthread+0xfc/0x130
-   [430958.696954]  ? __pfx_kthread+0x10/0x10
-   [430958.697763]  ret_from_fork+0x1f7/0x2c0
-   [430958.698521]  ? __pfx_kthread+0x10/0x10
-   [430958.699348]  ret_from_fork_asm+0x1a/0x30
-   [430958.700217]  </TASK>
-   [430958.716533] task:fsstress        state:D stack:0     pid:296769 tgid:296769 ppid:296768 task_flags:0x400140 flags:0x00080000
-   [430958.718780] Call Trace:
-   [430958.719366]  <TASK>
-   [430958.719817]  __schedule+0x4be/0x10f0
-   [430958.720611]  ? preempt_count_add+0x69/0xa0
-   [430958.721465]  schedule+0x26/0xd0
-   [430958.722150]  wb_wait_for_completion+0x79/0xc0
-   [430958.723109]  ? __pfx_autoremove_wake_function+0x10/0x10
-   [430958.724173]  __writeback_inodes_sb_nr+0xc5/0xf0
-   [430958.725081]  try_to_writeback_inodes_sb+0x55/0x70
-   [430958.726075]  btrfs_commit_transaction+0x19d/0xeb0 [btrfs]
-   [430958.727337]  ? start_transaction+0x343/0x900 [btrfs]
-   [430958.728422]  btrfs_mksubvol+0x28b/0x4e0 [btrfs]
-   [430958.729445]  btrfs_mksnapshot+0x74/0xa0 [btrfs]
-   [430958.730511]  __btrfs_ioctl_snap_create+0x194/0x210 [btrfs]
-   [430958.732245]  btrfs_ioctl_snap_create_v2+0xef/0x150 [btrfs]
-   [430958.733636]  btrfs_ioctl+0x7ec/0x2a70 [btrfs]
-   [430958.734665]  ? __virt_addr_valid+0xe4/0x180
-   [430958.735534]  ? __check_object_size+0x1cd/0x1f0
-   [430958.736613]  ? kmem_cache_free+0x146/0x380
-   [430958.737645]  ? _raw_spin_unlock+0x15/0x30
-   [430958.738660]  ? do_sys_openat2+0x83/0xd0
-   [430958.739637]  __x64_sys_ioctl+0x92/0xe0
-   [430958.740576]  do_syscall_64+0x60/0x590
-   [430958.741512]  ? clear_bhb_loop+0x60/0xb0
-   [430958.742485]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
-   [430958.743772] RIP: 0033:0x7f4431e108db
-   [430958.744668] RSP: 002b:00007ffcd147db20 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-   [430958.746327] RAX: ffffffffffffffda RBX: 0000000000000004 RCX: 00007f4431e108db
-   [430958.747816] RDX: 00007ffcd147eb90 RSI: 0000000050009417 RDI: 0000000000000005
-   [430958.749479] RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
-   [430958.751216] R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffcd147fbf0
-   [430958.752929] R13: 00007ffcd147eb90 R14: 0000000000000005 R15: 0000000000000003
-   [430958.754684]  </TASK>
+   [  157.672472][ T6611] BTRFS info (device loop0): turning on flush-on-commit
+   [  157.672488][ T6611] BTRFS info (device loop0): enabling free space tree
+   [  157.672504][ T6611] BTRFS info (device loop0): enabling auto defrag
+   [  157.672555][ T6611] BTRFS info (device loop0): use lzo compression, level 1
+   [  157.672574][ T6611] BTRFS info (device loop0): max_inline set to 4096
+   [  158.094512][ T5608] BTRFS info (device loop2): last unmount of filesystem c9fe44da-de57-406a-8241-57ec7d4412cf
+   [  160.073968][ T6656] BTRFS info (device loop0 state M): max_inline set to 4096
+   [  160.418911][ T5611] BTRFS info (device loop0): last unmount of filesystem ab8108e1-bea5-4a9f-94c9-a3ff208d732a
+   [  160.432287][ T6662] loop2: detected capacity change from 0 to 32768
+   [  160.438859][ T6662] BTRFS: device fsid c9fe44da-de57-406a-8241-57ec7d4412cf devid 1 transid 8 /dev/loop2 (7:2) scanned by syz.2.74 (6662)
+   [  160.459589][ T6662] BTRFS info (device loop2): first mount of filesystem c9fe44da-de57-406a-8241-57ec7d4412cf
+   [  160.459616][ T6662] BTRFS info (device loop2): using crc32c checksum algorithm
+   [  160.634366][ T1187] ------------[ cut here ]------------
+   [  160.634376][ T1187] test_bit(BTRFS_FS_STATE_NO_DELAYED_IPUT, &fs_info->fs_state)
+   [  160.634387][ T1187] WARNING: fs/btrfs/inode.c:3596 at btrfs_add_delayed_iput+0x2e3/0x340, CPU#0: kworker/u8:10/1187
+   [  160.634412][ T1187] Modules linked in:
+   [  160.634423][ T1187] CPU: 0 UID: 0 PID: 1187 Comm: kworker/u8:10 Not tainted syzkaller #0 PREEMPT_{RT,(full)}
+   [  160.634435][ T1187] Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/18/2026
+   [  160.634442][ T1187] Workqueue: btrfs-endio-write btrfs_work_helper
+   [  160.634456][ T1187] RIP: 0010:btrfs_add_delayed_iput+0x2e3/0x340
+   [  160.634468][ T1187] Code: 53 a3 45 (...)
+   [  160.634482][ T1187] RSP: 0018:ffffc900065d77c8 EFLAGS: 00010293
+   [  160.634490][ T1187] RAX: ffffffff83e5f502 RBX: ffff88805aba0000 RCX: ffff888029768000
+   [  160.634497][ T1187] RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+   [  160.634503][ T1187] RBP: dffffc0000000000 R08: 0000000000000000 R09: 0000000000000000
+   [  160.634509][ T1187] R10: dffffc0000000000 R11: ffffed100b574497 R12: 0000000000000001
+   [  160.634516][ T1187] R13: dffffc0000000000 R14: ffff888061194788 R15: 0000000000000200
+   [  160.634523][ T1187] FS:  0000000000000000(0000) GS:ffff888126186000(0000) knlGS:0000000000000000
+   [  160.634531][ T1187] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+   [  160.634537][ T1187] CR2: 00007fe553a3f000 CR3: 00000000596c2000 CR4: 00000000003526f0
+   [  160.634547][ T1187] Call Trace:
+   [  160.634551][ T1187]  <TASK>
+   [  160.634560][ T1187]  btrfs_put_ordered_extent+0x18f/0x430
+   [  160.634577][ T1187]  btrfs_finish_one_ordered+0xf63/0x2680
+   [  160.634598][ T1187]  ? __pfx_btrfs_finish_one_ordered+0x10/0x10
+   [  160.634611][ T1187]  ? do_raw_spin_lock+0x12b/0x2f0
+   [  160.634622][ T1187]  ? lock_acquire+0x106/0x350
+   [  160.634636][ T1187]  ? __pfx_do_raw_spin_lock+0x10/0x10
+   [  160.634650][ T1187]  btrfs_work_helper+0x38b/0xc20
+   [  160.634666][ T1187]  ? process_scheduled_works+0xa70/0x1860
+   [  160.634679][ T1187]  process_scheduled_works+0xb5d/0x1860
+   [  160.634703][ T1187]  ? __pfx_process_scheduled_works+0x10/0x10
+   [  160.634716][ T1187]  ? assign_work+0x3d5/0x5e0
+   [  160.634729][ T1187]  worker_thread+0xa53/0xfc0
+   [  160.634752][ T1187]  kthread+0x388/0x470
+   [  160.634765][ T1187]  ? __pfx_worker_thread+0x10/0x10
+   [  160.635870][ T1187]  ? __pfx_kthread+0x10/0x10
+   [  160.635891][ T1187]  ret_from_fork+0x514/0xb70
+   [  160.635907][ T1187]  ? __pfx_ret_from_fork+0x10/0x10
+   [  160.635917][ T1187]  ? __switch_to+0xc79/0x1410
+   [  160.635934][ T1187]  ? __pfx_kthread+0x10/0x10
+   [  160.635948][ T1187]  ret_from_fork_asm+0x1a/0x30
+   [  160.635969][ T1187]  </TASK>
+   [  160.635975][ T1187] Kernel panic - not syncing: kernel: panic_on_warn set ...
 
-What happens is the following:
+It means we add a delayed iput created after we last ran delayed iputs in
+close_ctree() and set the flag BTRFS_FS_STATE_NO_DELAYED_IPUT in fs_info.
 
-1) The cleaner kthread is running autodefrag, and in defrag_one_range()
-   it acquired all the folios for the range and locked them.
+This happens when using autodefrag and more likely to happen if we use
+flushoncommit too. The steps are the following:
 
-   Then it locked the extent range in the inode's iotree.
+1) Unmount starts, all delalloc is flushed and we enter close_ctree();
 
-   It got two subranges from defrag_collect_targets(), the first one
-   with folio A and the second one with folio B.
+2) In close_ctree() we park the cleaner kthread, but while we wait for it
+   to park, it's in:
 
-   After it defraged the first subrange, folio A remains locked and
-   dirty - it's only unlocked when defrag_one_range() returns.
+     btrfs_run_defrag_inodes()
+        btrfs_run_defrag_inode()
+           btrfs_defrag_file()
+              defrag_one_cluster()
+                 defrag_one_range()
+                    defrag_one_locked_target()
 
-   When it attempts to defrag the second subrange (containing folio B),
-   btrfs_delalloc_reserve_space() creates a space reservation ticket,
-   due to lack of free metadata space and blocks waiting for the async
-   metadata reclaim task to free space and wake it up;
+   And dirties some folios from an inode;
 
-2) The async reclaim metadata task attempts to commit the current
-   transaction, but it blocks because there is another task that
-   started the commit first;
+3) The cleaner kthread parks and we proceed in close_ctree(), waiting
+   for all ordered extents, running delayed iputs and setting the flag
+   BTRFS_FS_STATE_NO_DELAYED_IPUT in fs_info;
 
-3) A task creating a snapshot is committing the transaction and
-   because the fs was mounted with flushoncommit, it calls
-   try_to_writeback_inodes_sb(), which spawns a task to flush
-   delalloc and waits for it to complete;
+4) Later in close_ctree() we call btrfs_commit_super(), which commits the
+   current transaction. Because we are mounted with flushoncommit, the
+   transaction commit flushes delalloc and waits for the resulting ordered
+   extent to complete;
 
-4) The task flushing delalloc (kworker/u49:7), finds that folio A for
-   the inode being defragged is dirty, so it tries to lock it...
+5) The ordered extents from the flushed dealloc created by autodefrag
+   complete and create delayed iputs, triggering the warning:
 
-   But it blocks because folio A is locked by the defrag task (the
-   cleaner kthread) which is blocked waiting for the reservation
-   ticket to be served, but the async reclaim metadata task is
-   blocked waiting for the transaction commit, which in turn is
-   blocked waiting for the delalloc flush task, which is trying to
-   lock folio A, resulting in a deadlock.
+     WARN_ON_ONCE(test_bit(BTRFS_FS_STATE_NO_DELAYED_IPUT, &fs_info->fs_state));
 
-The same type of problem can happen if the async reclaim task starts to
-flush delalloc, as that requires both locking the folio and the extent
-rannge in the inode's io tree, and in this case we don't need the fs to
-be mounted with flushoncommit. This type of problem has ocurred several
-times in the past with reflinks for example, where we had a dirty folio
-while holding the extent range locked and then starting a transaction
-blocked waiting for the async reclaim task due to lack of free metadata
-space.
+   in btrfs_add_delayed_iput()
 
-So fix this by reserving delalloc space before locking folios and locking
-the extent range in the inode's iotree. We can not simply unlock the
-folios for each subrange given by defrag_collect_targets() after we defrag
-it because the same folio may be present too in the next subrange (due to
-large folios).
+6) Further below in close_ctree() we will hit the following assertion:
 
-Fixes: 22b398eeeed4 ("btrfs: defrag: introduce helper to defrag a contiguous prepared range")
+     ASSERT(list_empty(&fs_info->delayed_iputs));
+
+   Since we don't expect any more delayed iputs.
+
+Fix this by flushing delalloc and waiting for the ordered extents right
+after we parked the cleaner kthread and waiting for autodefrag in
+close_ctree().
+
+Reported-by: syzbot+6a843bf8604711c8fab0@syzkaller.appspotmail.com
+Link: https://lore.kernel.org/linux-btrfs/6a1ee507.b4221f80.1326c5.0004.GAE@google.com/
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/defrag.c | 50 +++++++++++++++++++++++++++++++----------------
- 1 file changed, 33 insertions(+), 17 deletions(-)
+ fs/btrfs/disk-io.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
-index f0c6758b7055..0697b285e05f 100644
---- a/fs/btrfs/defrag.c
-+++ b/fs/btrfs/defrag.c
-@@ -1130,20 +1130,15 @@ static_assert(PAGE_ALIGNED(CLUSTER_SIZE));
-  *
-  * - Extent bits are locked
-  */
--static int defrag_one_locked_target(struct btrfs_inode *inode,
--				    struct defrag_target_range *target,
--				    struct folio **folios, int nr_pages,
--				    struct extent_state **cached_state)
-+static void defrag_one_locked_target(struct btrfs_inode *inode,
-+				     struct defrag_target_range *target,
-+				     struct folio **folios, int nr_pages,
-+				     struct extent_state **cached_state)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	struct extent_changeset *data_reserved = NULL;
- 	const u64 start = target->start;
- 	const u64 len = target->len;
--	int ret = 0;
- 
--	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, start, len);
--	if (ret < 0)
--		return ret;
- 	btrfs_clear_extent_bit(&inode->io_tree, start, start + len - 1,
- 			       EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
- 			       EXTENT_DEFRAG, cached_state);
-@@ -1164,10 +1159,6 @@ static int defrag_one_locked_target(struct btrfs_inode *inode,
- 			continue;
- 		btrfs_folio_clamp_set_dirty(fs_info, folio, start, len);
- 	}
--	btrfs_delalloc_release_extents(inode, len);
--	extent_changeset_free(data_reserved);
--
--	return ret;
- }
- 
- static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
-@@ -1183,6 +1174,8 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
- 	u64 cur = start;
- 	const unsigned int nr_pages = ((start + len - 1) >> PAGE_SHIFT) -
- 				      (start >> PAGE_SHIFT) + 1;
-+	struct extent_changeset *data_reserved = NULL;
-+	u64 last_defrag_end = start;
- 	int ret = 0;
- 
- 	ASSERT(nr_pages <= CLUSTER_SIZE / PAGE_SIZE);
-@@ -1192,6 +1185,22 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
- 	if (!folios)
- 		return -ENOMEM;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index fa5922a21e51..93ca33ca24e7 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4365,6 +4365,21 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 	/* clear out the rbtree of defraggable inodes */
+ 	btrfs_cleanup_defrag_inodes(fs_info);
  
 +	/*
-+	 * Reserve delalloc space before locking the range and before locking
-+	 * and dirtying any folios - otherwise we could deadlock, for example
-+	 * after defrag of one range we dirty folios and keep them locked when
-+	 * we move to the next range, so reserving delalloc space right before
-+	 * each range could trigger flushing of delalloc and deadlock on the
-+	 * extent lock or trigger a transaction commit with flushoncommit, which
-+	 * can either deadlock on the lock of a folio made dirty in the previous
-+	 * range or the extent lock.
++	 * After we entered close_ctree() autodefrag could be running and before
++	 * we parked the cleaner kthread, it dirtied folios of some inode.
++	 * We don't want to leave any delalloc here, it may be flushed any time
++	 * after this point and result in ordered extents that create delayed
++	 * iputs after flushed the ordered extent queues further below, run
++	 * delayed iputs and set BTRFS_FS_STATE_NO_DELAYED_IPUT. If we are
++	 * mounted with flushoncommit, then btrfs_commit_super() called below
++	 * will flush delalloc and wait for ordered extents but we end up
++	 * getting delayed iputs than are never run. So flush delalloc and wait
++	 * for ordered extents.
 +	 */
-+	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, start, len);
-+	if (ret < 0) {
-+		kfree(folios);
-+		return ret;
-+	}
++	writeback_inodes_sb(fs_info->sb, WB_REASON_SYNC);
++	btrfs_wait_ordered_roots(fs_info, U64_MAX, NULL);
 +
- 	/* Prepare all pages */
- 	for (int i = 0; cur < start + len && i < nr_pages; i++) {
- 		folios[i] = defrag_prepare_one_folio(inode, cur >> PAGE_SHIFT);
-@@ -1226,10 +1235,11 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
- 		goto unlock_extent;
- 
- 	list_for_each_entry(entry, &target_list, list) {
--		ret = defrag_one_locked_target(inode, entry, folios, nr_pages,
--					       &cached_state);
--		if (ret < 0)
--			break;
-+		defrag_one_locked_target(inode, entry, folios, nr_pages, &cached_state);
-+		if (entry->start > last_defrag_end)
-+			btrfs_delalloc_release_space(inode, data_reserved, last_defrag_end,
-+						     entry->start - last_defrag_end, true);
-+		last_defrag_end = entry->start + entry->len;
- 	}
- 
- 	list_for_each_entry_safe(entry, tmp, &target_list, list) {
-@@ -1246,6 +1256,12 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
- 		folio_put(folios[i]);
- 	}
- 	kfree(folios);
-+	btrfs_delalloc_release_extents(inode, len);
-+	if (last_defrag_end < start + len)
-+		btrfs_delalloc_release_space(inode, data_reserved, last_defrag_end,
-+					     start + len - last_defrag_end, true);
-+	extent_changeset_free(data_reserved);
-+
- 	return ret;
- }
- 
+ 	/*
+ 	 * Handle the error fs first, as it will flush and wait for all ordered
+ 	 * extents.  This will generate delayed iputs, thus we want to handle
 -- 
 2.47.2
 

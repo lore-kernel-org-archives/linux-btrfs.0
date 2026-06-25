@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6948431E84A
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 19:20:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0F79233BBA2
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 19:20:24 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782415224; cv=none; b=GYoSubvGbozHG8bEz5afgCzyOApW5Mf5Tvviw15fuF1+L6c4Ci4Lk2dAAhhk9QFvQyFme86Vn6J8nblZzAvo6nteMzPKUE29cXLn2g/QH+kdeOy+HQ9r6h7h/8/aLneEaKZS2mu7kQJE6ro0v3Wzw/TLJwaE+0ZDZEHAOEid+70=
+	t=1782415225; cv=none; b=jzUtcks4nYQ2vSK5sup50eziiIJZPUBPegKIVbn0uF/Pr1R0/FFCHhNf+I6AoPFRu7gt0b2lezO3jLhqx5kQGyZXlFWG04clkQZlXdCGgxv7s2mDBbMuvXdVK2OYfbGK8Xu2v0lJTJ0ADVdmPquGz+8+rVBUcP19k376Q2FIZZE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782415224; c=relaxed/simple;
-	bh=yfysTt+oEZFkmMVD+GZQStI2ILxuYTAxWQ1SF+NBUFo=;
+	s=arc-20240116; t=1782415225; c=relaxed/simple;
+	bh=J8JcdTD6Mu7fCSM7fZ8a7KHEpz3jMhdfKlU4FU1xdeU=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=lOmYCkZvco+tnDY7H+1/moVycZ8CN/WnfRacAdDcU7z4hS1TG1OYb8lPmsd/5CaySl4KvEXPPQ3+YEyJa9cEb8xfr94FUKTYcF8XZnbf5aelhgHZbtH62tlm+Zectj9Ak0PjBJ/ELdEdYrJPo3L+HpLJ/GfS75PLOkMg622xE+U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=o1Wbu9n/; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version; b=bb5De7WKrhLeMbuF76aWaaj98A5GviD1p35mkp9zEos/L28bH0/Mf3xP2q9Ztn7BrzIQG6WjgmHKp5KJrkW2L4qVsi1kIhlVuXPcMts5hI2m0zstnhjdEyy5pAVOARyZZAuGJMRj2gVHBIIJj6+8FaIIaB9lYrCLZrP5UsNQmrY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=fntStHw4; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="o1Wbu9n/"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8D2421F00A3D
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 19:20:22 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="fntStHw4"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7822C1F00A3A
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 19:20:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782415223;
-	bh=yrnhj0nX3zabXRSsYUNN25tuxSS6zsfhMEhEYy1BqUA=;
+	s=k20260515; t=1782415224;
+	bh=ys6bHUjukMFEiA01YH7ccdXmBHYmFdaap4h9/RVO3l4=;
 	h=From:To:Subject:Date:In-Reply-To:References;
-	b=o1Wbu9n/0iUOzJGZjqgJxZeae7+JTgN3iiyycaKyxieXJGPUQSjUtgsVr2CcUgbpX
-	 glbprPtrsDLDHa3Km/XYrK4fvFpMT7XFOpGNtxxbEMcMHwv6DfFae0HE4qGGjQ3zB8
-	 wZKANxys0BjozNpErUxMHWxVzualWau06TfQF9OR89I1Cn3MSuZS2emHqLY4iHukrU
-	 hSL5tWxYTXwzFn8OQkLDY4EtXYMpWmtCjauAbqXY+q3CMlxo21W/h3hpskhMd165BC
-	 eA2XDSwI6pWCpbbx4rszqpI5MWoU9Ir9aNtGG8hT3aU/UJd2lh3qSsZ2qwrTw2wPck
-	 0n/q759wCK5iQ==
+	b=fntStHw4vF/o4DvImdsFJepeJJ2uRfNFEK5bSD32f7rKs9a0W6DRNODw29YvMVrAO
+	 ogJ1ET4QyqcFpATp8aE7UBUL9Pyd7Wosk4y7vKoizdVRJ9Lf0engUdP0eBPnFWpPeT
+	 JfBYCPSzRcJ2RO0igLhjjaGNPh/sNIw8ac2oHcdYPjKQaGmkBFFLFYNGNHqWrbfTr6
+	 WfN2SJ6tRW0VHXscS8LOl3M43qS4k4Emv4TMGcvqiuHsCioOBjZ56PSeW/Y/bvibFF
+	 3JX14amFfalPUku1FG8bMizuhk6/e+NBCdXgxJtZBqK1sS608A68LdQ1CJO/kD+Atj
+	 ULyrXysxB7m3w==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/6] btrfs: defrag: use a single list for each loop in defrag_one_range()
-Date: Thu, 25 Jun 2026 20:20:13 +0100
-Message-ID: <20e1226097db10e92c2059cb5ce51205348362a7.1782321584.git.fdmanana@suse.com>
+Subject: [PATCH 4/6] btrfs: defrag: use auto kfree in defrag_one_range() for folios array
+Date: Thu, 25 Jun 2026 20:20:14 +0100
+Message-ID: <b3c3ddd783250773e264ebc76a0984d0276bc664.1782321584.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1782321584.git.fdmanana@suse.com>
 References: <cover.1782321584.git.fdmanana@suse.com>
@@ -44,39 +44,47 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-There's no need to have one list for each loop to defrag each subrange and
-then another one to free each subrange (struct defrag_target_range).
-We can do it in a single loop, freeing each subrange after defragging,
-plus no need to delete each subrange from the list since we immediately
-free it.
+Use AUTO_KFREE() for the folios array, avoiding two kfree() calls, one of
+them in a very specific error path.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/defrag.c | 6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+ fs/btrfs/defrag.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
-index 0697b285e05f..ad1d04d8f165 100644
+index ad1d04d8f165..e454b59d6477 100644
 --- a/fs/btrfs/defrag.c
 +++ b/fs/btrfs/defrag.c
-@@ -1234,16 +1234,12 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
- 	if (ret < 0)
- 		goto unlock_extent;
- 
--	list_for_each_entry(entry, &target_list, list) {
-+	list_for_each_entry_safe(entry, tmp, &target_list, list) {
- 		defrag_one_locked_target(inode, entry, folios, nr_pages, &cached_state);
- 		if (entry->start > last_defrag_end)
- 			btrfs_delalloc_release_space(inode, data_reserved, last_defrag_end,
- 						     entry->start - last_defrag_end, true);
- 		last_defrag_end = entry->start + entry->len;
+@@ -1169,7 +1169,7 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
+ 	struct defrag_target_range *entry;
+ 	struct defrag_target_range *tmp;
+ 	LIST_HEAD(target_list);
+-	struct folio **folios;
++	struct folio AUTO_KFREE(*folios);
+ 	const u32 sectorsize = inode->root->fs_info->sectorsize;
+ 	u64 cur = start;
+ 	const unsigned int nr_pages = ((start + len - 1) >> PAGE_SHIFT) -
+@@ -1196,10 +1196,8 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
+ 	 * range or the extent lock.
+ 	 */
+ 	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, start, len);
+-	if (ret < 0) {
+-		kfree(folios);
++	if (ret < 0)
+ 		return ret;
 -	}
--
--	list_for_each_entry_safe(entry, tmp, &target_list, list) {
--		list_del_init(&entry->list);
- 		kfree(entry);
+ 
+ 	/* Prepare all pages */
+ 	for (int i = 0; cur < start + len && i < nr_pages; i++) {
+@@ -1251,7 +1249,6 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
+ 		folio_unlock(folios[i]);
+ 		folio_put(folios[i]);
  	}
- unlock_extent:
+-	kfree(folios);
+ 	btrfs_delalloc_release_extents(inode, len);
+ 	if (last_defrag_end < start + len)
+ 		btrfs_delalloc_release_space(inode, data_reserved, last_defrag_end,
 -- 
 2.47.2
 

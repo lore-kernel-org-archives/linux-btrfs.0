@@ -1,310 +1,224 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 564CC3DBD74
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 11:30:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782387021; cv=none; b=IPLxoOC+xGcgIBEsmJnYQtele01yHd9p5pRqzwRzg2Aapsz1wZdj3Zb0cjcGyJctgxazvMCc8AovHGNPOJaw/OfQppQ1inRyLb+s0fvZEsXh1GaG6eSmA40H5dM4Ig88b36/wnbBb4M7VU4UAAiR8/yUzcWMVZLaRt/x+FPC3no=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782387021; c=relaxed/simple;
-	bh=X8ossaoM2zPUh0MHR5pcQTMfEroDQ3ITT+S7R2vVsO8=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=FrghdXh1N36IEqrtlz7Z9cON15wvFnyWEiXc7nxcIYYxYtqDBMHD4liqwFeTYAagWwagYPBTpLzeOQ7zcZhG67iL+do7rcs6bWBiBv1w6CCL4uf7r20X49W5oxtRF4shHmF4NYWlaujUiGT4qdhYTJsLoB7S9frHoduK/DqAa1M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=NoyHOcAZ; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FE15332EC1
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 14:27:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=68.232.143.124
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1782397634; cv=fail; b=WCBlmNw6Yf0pVPf15oe5Cn8Qsd9yHWx/AAPYZ51CjMu3s8yIDZmu7aRv2i0VwRwQfIycwwbtZJugxXWR1Uv9vYo+/vjVvsG3vrX/wtPDM8l4pxL226MctPngvdwN6MBrTa03PXqDh22x+K1ycc3bbv0zzPX79bISlW8iTDRzLyM=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1782397634; c=relaxed/simple;
+	bh=cxtnuhh3Gbbwm8HxhLnpCrG7x9StVWA3e+1mdlaGjrM=;
+	h=Message-ID:Date:Subject:To:References:From:In-Reply-To:
+	 Content-Type:MIME-Version; b=bHsZ23AAjqc6ZWNYjJHYNNQsVUbbj5maSa+szVyabaKedMY8LHtemRjH66/HbDR+mRFdo03fLFFqqf2WSBYqRRDHhCPCRc5XzczbusBMIhED13d5L1MDEXoGIOdLjKgSKPVo3uuSRZriuqfSJ/PKG8JHLRQR6IBPkmAvpOd2hR8=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=ElktdbkK; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=HXtc2Eeq; arc=fail smtp.client-ip=68.232.143.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="NoyHOcAZ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EAA1A1F00A3A
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 11:30:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782387020;
-	bh=/PWdKuWngGyrMS6h01Bp6vFnzQ1rhY0QLM6XxT+qqYI=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=NoyHOcAZqxIkszIMMv3SiuzVXYVRnU16D/Cj6LlWw+FTYEOesrdS+FwE0Wwgl6M8L
-	 ZN0XCtkZCO10mWB6KHpv+/ELg6pJOmoFjL09IsVkNNP9Q+E9oqM1ucg7DSMo4fPbGs
-	 2nv/eiPWk7oIeeDiyfrHNpKjmQov+TOaeFij+S2ioUAbPwSp0k8N8Rx2nczadeDVUe
-	 mVEFhhZ8oxA6F7Ni084c7IRDngNjlQE1ymVwvKBrNGDBMRLX+kFYU07gnX4STq3nWt
-	 F0tW3g+DU53YCVZ2Y4d3Mz3XmR+chWAUAfhsj5Aw/RwIJ8tduIbJuuezoJEdbyxQcH
-	 uVDhpqJQysF6w==
-Received: by mail-ej1-f45.google.com with SMTP id a640c23a62f3a-c0e12cb1d90so336784966b.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 04:30:19 -0700 (PDT)
-X-Gm-Message-State: AOJu0YxbhFowY9r0REmZ4aCcvmjXiAkKsieYY0AWF15TnZfCVPyu+32G
-	LPI0X4VFCXEDgdZnCKjrmJDfDNQw+eEyxTAvoLTCRaGR/jYPRnJo5+rlRkWsN0kWE3+YrWTB/dt
-	+LqoyV1LDY4EuZ9NwihUMwZeTLG42GqE=
-X-Received: by 2002:a17:907:3d4e:b0:c0e:883e:e4f2 with SMTP id
- a640c23a62f3a-c1205f66475mr135697866b.30.1782387018480; Thu, 25 Jun 2026
- 04:30:18 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="ElktdbkK";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="HXtc2Eeq"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1782397630; x=1813933630;
+  h=message-id:date:subject:to:references:from:in-reply-to:
+   content-transfer-encoding:mime-version;
+  bh=cxtnuhh3Gbbwm8HxhLnpCrG7x9StVWA3e+1mdlaGjrM=;
+  b=ElktdbkKDA32qb1xfnZS/paNRL9oj7mzfl77f82ZhlDvgVk7zv1L2Ljj
+   /l3uA1ZTj18n32ipZjWHvjn/8lg1JWsogJW+bxw8SA0h+7Z0Wc2I8yreH
+   nTrFzO0g3kBO+/WAjGV+3UdLMz3U0mIQivIFt33ApDQMuV3YU+snJunQz
+   WDxGkR46sM7rRiRZ4UQP0UOV/m6iPX7h2B9qRNYbw9TnSqjoak+Mroc2k
+   rlq0kFp18dMu/j1uPaEfTv8uYf3qNAy/4TX9REKQ5EHApvmGHaR12uV1X
+   qLj+prsbNTdYgDYjbjWie8SQc0t4ccrxYLA+dcRCpHyhtDVjz3+56mgRh
+   w==;
+X-CSE-ConnectionGUID: NBBmQB62SMGV/m35x5Gr+w==
+X-CSE-MsgGUID: cPzJKvd9SJOC5lkI/u+m6A==
+X-IronPort-AV: E=Sophos;i="6.24,224,1774281600"; 
+   d="scan'208";a="150720078"
+Received: from mail-northcentralusazon11012048.outbound.protection.outlook.com (HELO CH5PR02CU005.outbound.protection.outlook.com) ([40.107.200.48])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 25 Jun 2026 22:27:03 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=hNsOQWOYKgE7F/LAW0qEjujbYU9H7QUQ60PNlEs9ysjIB1G/xcq+PwRpkps0TUSstMzCorOsboKvxfXekE2DXkeRgxqv+e2WxWZ8eDzAAGmYPVLTXuIeU00aLOGOqp0opVXf/QsOgQ5kUFXDOdNySf7RrXdqaR5vhTJgVSTir11BYVYTaOuBauh7JYBmJaNWc71RVhAynu0MJYUv64Dx3ZkQ+1EIX52abH0tCbyX/hkeHkgmCNjnT9VhQ3D0FQrPpM9VNX17Zy4rsGtUGpSKKbhjGXEpClF7SoWCpS4ayfOMhrDNK3rDXMiEviBkMrvt9ganYMGkoDxjTbuciemMYA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=T9koJWcox9JaxnpRVIoLvCoWydxn7igNI7hZ8ldepCQ=;
+ b=hikyymGI0qIUwadCj365B14V4FsRJvgGrKhXXkgcbVocMiTjmAHHDKufXHGcCjjUwVK7i0sPoeJ+bF6FP7AVpF+X3wgcH7h2Hti8+CGu+hVNzElJxApgzjLXTwV7zSfVxdKWhbzKfQExpa3Eti6/CyBk00I/SNNw4XTt+kl5otDYRExSLGT/5dh1wC3bF1T9mIOFgd4J6jTuK/KgrMV4BY3MwzQdvYY7QkdYH9tlvSxcfihjokBWh2G2P129TtnMAalpY/QK0VkWeJ8awCHT7Ys5hRECry68nI493VdctBgiNTojGGr7b0khhsuC5cxNxcs/QXVIIEAlYEvjrIwusQ==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=T9koJWcox9JaxnpRVIoLvCoWydxn7igNI7hZ8ldepCQ=;
+ b=HXtc2EeqQ+TX+Oi8uthNoOEYhQnx3o0nLvjtoQfbM+YxuQQXYFWe+TeXbwUzRzHwnNKbvviIpKV1E+eeGW0sqX3lRR/VF9MxpyUDjNcoHx3+IEero/7Aws3x5ZEe/TxDWiXQ13A5Cx603YrE8+uFRlpF/rOtvBCIVNjyAUFRgew=
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
+ by DM8PR04MB8167.namprd04.prod.outlook.com (2603:10b6:8:2::19) with Microsoft
+ SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.21.159.17; Thu, 25 Jun 2026 14:27:00 +0000
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0159.014; Thu, 25 Jun 2026
+ 14:27:00 +0000
+Message-ID: <44af21bb-507a-42af-a908-66fa67c2a273@wdc.com>
+Date: Thu, 25 Jun 2026 16:26:56 +0200
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 1/5] btrfs: factor init_extent_buffer from
+ __alloc_extent_buffer
+To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
+ kernel-team@fb.com
+References: <cover.1782249000.git.boris@bur.io>
+ <420436ec8cb5db154adfd65cfd5fb350b380a4ec.1782249000.git.boris@bur.io>
+Content-Language: en-US
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+In-Reply-To: <420436ec8cb5db154adfd65cfd5fb350b380a4ec.1782249000.git.boris@bur.io>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: FR0P281CA0081.DEUP281.PROD.OUTLOOK.COM
+ (2603:10a6:d10:1e::7) To SA6PR04MB9447.namprd04.prod.outlook.com
+ (2603:10b6:806:436::21)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <aaabe0f2bee07800fb0490d24fab5cd162e5241d.1782366056.git.wqu@suse.com>
-In-Reply-To: <aaabe0f2bee07800fb0490d24fab5cd162e5241d.1782366056.git.wqu@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 25 Jun 2026 12:29:41 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H7+WAQMV76+-AuU=dR_qoe6Gu1_CNmwUFD=zW81d2Hz0g@mail.gmail.com>
-X-Gm-Features: AVVi8CfSV9VTNR7g2L6926zvBT6V0iwEtPwhYCLHWTt-r9tDrxOxLXle4yHYXXg
-Message-ID: <CAL3q7H7+WAQMV76+-AuU=dR_qoe6Gu1_CNmwUFD=zW81d2Hz0g@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: always wait for ordered extents to avoid OE races
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, 
-	syzbot+ba2afde329fc27e3f22e@syzkaller.appspotmail.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|DM8PR04MB8167:EE_
+X-MS-Office365-Filtering-Correlation-Id: 84a6652c-d450-4c6f-c115-08ded2c5d1c0
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|1800799024|366016|19092799006|10070799003|23010399003|376014|11063799006|4143699003|6133799003|56012099006|18002099003|22082099003;
+X-Microsoft-Antispam-Message-Info:
+	lQ0V/5KYy9oMnno3ZhJ3zOZAiwXT9ce2/8Uv13XZPvOHvQYFT03biwDEDWRhaAsTPTadMeuh4xCZmjFQ9Q0/MTw/pa3uB5ztfg3EOx1TIDS6hYSV2gR6635HiX+CQBDPCd3M4JcCliXS9jzgoyU++tn+y6x8R0bCuJISSfoUPujYIHs7Qa45MUfsIOwwK8JCt8jc2hIiFNX7mZfnire8oZ9oJGx2WLTbSt/H2fV9wJxh/RIm9q8TjlKdS5cmkyr4EMU//quDNzF6R5CdrjfVvEfAHz0o4qA8oPIKHNuKGEhL+TsRtnT5AsFfUht7g93+dilxDy7JmHpofoiDVlcTaOMNDfTzIPyO+9I7BBkiuYDUGXsXd8ACngrwXKQMXQzw80k1jpNkZ/WYysjVIUsEcB07IPHrKvTsw/c6LK9DFcKX0w4WcjKn2SIYsbWLj1/jAOZQpoFGb1pv2WVLnXpSG8wvZjJe8QvS0khJ8clLbwDBgUIycOB+GVn+WzUwsZyCqyOy5wsQsGBZKM6ldLrZ7HUzLaMpaIFS1+kknmKKMHSo4DvpHhibv/WgY3UfzEIK6+gtiUB5oERSB3cwHP5dtXeRA5WP//QGcatQAh9ybe68xoBsLc3NHAD458FSrz041zOOuMOuojYipxtUYDKXcwXbah3CY8ZsagZciptILf4=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(366016)(19092799006)(10070799003)(23010399003)(376014)(11063799006)(4143699003)(6133799003)(56012099006)(18002099003)(22082099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?utf-8?B?Yy9OWncrcmZZWXREeVhVSis5bFlJeDM2U0FXUDdIVVlHRzRZV2RiRFhSM3cr?=
+ =?utf-8?B?SmU1VWhtcXFzYThhWXlsVHFxLzF3ayt3YTRuaGo4U1hoWnNDZWhtaDQ4OWMx?=
+ =?utf-8?B?VzJBY2x4c1c0ZENGd2o4MU93b2UyQitNT0dpMTBKYXBpNFNQa01leTRSNGxo?=
+ =?utf-8?B?enBUVFAyc2hRNnlCcnFZNDJmVERucUlsSElDZlFMbUkrY3pINkdRV3pub29x?=
+ =?utf-8?B?WEJkQUxvZWRqc2NzRVZxR1dDMFl6bEhnR1ljU3JjTU1CN1RRUk1lYTY5d2hp?=
+ =?utf-8?B?RkhIYkphK0wxd1ZzTGRkZlJsY0NpU1R0eURMcU91eDRyY0FDbUlROWt1cUQy?=
+ =?utf-8?B?d1dmaUhEVUozcStJVi9DUnZicTlrSFpPTU94Y01Pa0hodzJwMzhZOCtXbVFK?=
+ =?utf-8?B?L3RnMGdWY3dWZnNxNG9GM1RzUWdJZHk4VVR4Z2dIM1dNVHlWZXBvc2ZwK0tr?=
+ =?utf-8?B?c0hieHlTbDNweDRqUzFnaHViSE1VWDEzdHErTCtlZmZ3MDJtSmttUEFxMEVL?=
+ =?utf-8?B?U1VXeHUxcTdWcy93RGtGcGFEdDZTQ3BQTmVJcFVXV1pPcnFNcW1EVlJuTVkz?=
+ =?utf-8?B?dG8zSEZ4cmcwR0VobWNhN0JKVUQxREJhMXg1WEpTMG41WnR0OVYwS1FYcis2?=
+ =?utf-8?B?eTV5TjZ2a3BPTENUckVCYkVhNVdybWxwSGNpOUppTW4xeFAzNHNHYUViUFlM?=
+ =?utf-8?B?QjgyN01lSk5Td2NuQ051RnAxVHdTYXZLMUZEMCtTR3JEckZWWjRyQ09RME1v?=
+ =?utf-8?B?SlNJLy9mN1JXblhsbXZBWURtckkyYkJhMS9LaW1xQzFRWkg3YWxqWUdOekZE?=
+ =?utf-8?B?STJtU3BqLzNtT1QvMXR4N0JzUHBpNmVyVjJJTU55cnY2L3kwWk1yNHV0eGtt?=
+ =?utf-8?B?SnNBRkViSDdMSTFmVmwwN1hWS3JGTWl1NHo5UFR6YWFmKzdzeDVyYjRFSUpW?=
+ =?utf-8?B?bjlFRWtYSWtuWGM2Vm82NWhPUDcrZzh0Si9WdGN4ZE83cDFGV1o4M09Sb0Nu?=
+ =?utf-8?B?R1FxVWxXcEp4dlRlREEyVHgrNlBYVDhwb3JETFc2NkFmb0RrWXBGaVZMZG9u?=
+ =?utf-8?B?Q2YzRUE4S0ZsZGpZMFA3MG1ZOTlXQmc4VFdTRlJDV2R6YjBKbEEvTjU5WXNl?=
+ =?utf-8?B?MkM3Z2VWdllTM29xRnlGS1JKM2JyU3gxMDJBcFJhMmhIdjhWMU05cGtYYm05?=
+ =?utf-8?B?Ly9FQ1JlODhmMzNYbXBzMHNNTTEwOG9jWGxGTklRMDNVSmJLRk1NTHFNVzA2?=
+ =?utf-8?B?RjhRcnpQTUZRbjE2dlR5SVJqN1FyZlAzR3NKZU5vUU5ja0NKTEFFNGtDQzg5?=
+ =?utf-8?B?MDV0Q3hJQWNMWTFSdVlPWllaVHdVVTlsRm4vczhleUNEY29md1lub1ZhdDNT?=
+ =?utf-8?B?ak91dUxtTENTWHowV0M5dmxobTc2dkdEekYwSDJVTzFoUktlSkNrci82Q3RC?=
+ =?utf-8?B?V3BDTHNHa2pwdm4zQThidUJQR1d2S05HMndpeEhhcEpoRDZtY1RSOW9TVTJW?=
+ =?utf-8?B?NTVvNFVjVnRNekFvWmdscjBwaThiVFRDMHIrUXpEblR1a2xyMDhCb1JDajh3?=
+ =?utf-8?B?Ym5LZ3RYUzc1c3QzQVdjeTY1WkRmV041VWtrRUs0YXNBY2hkVUIveTc5MGxU?=
+ =?utf-8?B?M1BwNVJkeDBEUFh2b3RuOXVlQW9RRHFidzVUSW8wM21MZnlDYXV4WHd4cW1H?=
+ =?utf-8?B?SVRDZUEwWkxyKzBPQWNLOXlmNnhTR2lCS29BaU5LQnl1aEx6aHF3QXRSOFpS?=
+ =?utf-8?B?M1VYbmJHOUgzdVRLdDFjMHVwUHEvOU4wRGhEVkFESU04S0ZKeTI3M1N4dmFY?=
+ =?utf-8?B?ekVEMW5udDJIZ2hpbElzRzhQejFxczZFem9RREY3TzhTYVdPY2plckQrbnV6?=
+ =?utf-8?B?a1FVcUcvU0VtL2I0M093K01VWjlSNzlhSjVLQTI1ZEFzdFZDVXFrR1JYMmNQ?=
+ =?utf-8?B?cy9xVUVMRSsvbEpoWG1wYXRITHFxV1pVSWNraXBGYmo2TDZnUDltcTJDRG5u?=
+ =?utf-8?B?bG4rNFdmQ3VIRzY5UEptRlpsUVNEY3JDM25JV0crK1B5M1Z0Mk5INUtlcWhN?=
+ =?utf-8?B?TnM2WmRPSjM3Z2NtemlzTFZXTEdsM0dGUmo2YjIrYytrc1VlMlk3Vm9icW9q?=
+ =?utf-8?B?cVBoWUFkeFJDTDZhUkl2UUY3azY1d0w1L2paMEc5NFpZdnpQU2RTWEQ5QmpQ?=
+ =?utf-8?B?eXdQZFJLRkVTNkFYV3FlQTdhNk11SURCZ2RESXhKeWhETWJweWhDYTZ6SkdK?=
+ =?utf-8?B?OFd0YTRSZEJ6ZUZTSHY5SEs4TFVFY05IVFRQQVZKRFBRb3dSakVCdkx1MTRJ?=
+ =?utf-8?B?dVNvK0NwR0FvYXJaWGhPT3hNY0JLYS8waGwwY1NZU21xZ2VrbnkyVDlHM0g5?=
+ =?utf-8?Q?iGVB7Q1zS5E/tpETd3DF0EMBsLmKzcnH3cUY9wa56Ibkv?=
+X-MS-Exchange-AntiSpam-MessageData-1: Mp1zR063+9Q53A==
+X-Exchange-RoutingPolicyChecked:
+	gn93A7Ql9ut1SUkDQILLWXIXc2doRhE4w19AwTfeiouNSMED3gWLFKRRoBXndIo1e/qdwTY/xLXqEMuDdjWHpd50yDQkr1Tlx7CYFAck7CaH0mlOVbmI+iTPSY2XXbEB4ac5wcVvEeSxHhsTQSS1oE7kwN7DnMYRapV+nMzVRQQTxnc70hZrEv97NLRCnNsap/b2rcmaH309JjP4t1UzPQED2V6quUAadsWDuHGqv2tGaDuYcQiRlgxsdwcAvJUSBYQmxY/utNeUDqDNGhQx/8X+H9CS2lr6ix1TcP0iaYprhh9CUbWwTRWzojLjedaBzWqMt0P1O3+kcv8LB+lpdw==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	LKCRlL+oFFqSVSJpOsexPCsKtqP1yWseP3u/4hgKnlylbhi6hrblLlGq0JbiaCkzoc5AhJ6rGNK6f0bxr8VbuquPBxMFB/gKzZEmKYs0mi3YogutwkkdHl2hPUjQfDN2oGl7v4rJr6K9CpckUceozggnnHpCzKuyh3h7uQHlBCI5zAH+bbVMqfyHfUAkLY8QMTmtWqpvvhP7DSLch2fRfIoivcWe512A1O+Be3JfLjmpXAFjh5Dw+8wQ6bPrZJzoRdCICh7nL0gIBAJ5bQidFNQ2o0UEVYsue8TX0iT87b7bwIsVeTqE+Ilv5FslurWSh5yOyoRBAbNwaGyyms+Lbvh6ire/blorta7OaL0ctR2DnBww1sXt6Gs5VEPMrRMn0P+++bvz86NjMIg8MDiazC5blhEhcqGNhU/RU5JPLJgTmX57RzBhDidKUV7Ohous+bxEXoYaRp2EiIV9Y65o6/wpyfkSsTmwOi9bhUv9obgmLyyazIjDFqQst76826rQJ5/C4wIzN7weGKLWSZ0lPY7Z/lv2QunCcOsOG/5IAILaaY3buDYulnPpx9+ZFP2Yy5z22T7eRwlF8J/7+gEKL5hhBiuZpVfNRqdCD8m0wJ6rPUl8hTxOuzAgZZwtflgm
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 84a6652c-d450-4c6f-c115-08ded2c5d1c0
+X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 25 Jun 2026 14:27:00.4916
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: LlEQWQjaiy7zcefv2AbUJ+IIrXkv9mzZCcF/r4l4aFFRbajwJPxfIL86ag+GniniT1dib2hmtsccRYMt76DxNMUyTpv7eQ4QX857IFNVGiA=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM8PR04MB8167
 
-On Thu, Jun 25, 2026 at 6:41=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+On 6/24/26 12:35 AM, Boris Burkov wrote:
+> In preparation for preallocating extent_buffer data, factor eb
+> initialization away from specifically allocating it. This allows us to
+> allocate the eb, bfs, folios, etc. together in the main search_slot code
+> paths, but still share initialization code with the dummy/test/clone
+> allocation paths.
 >
-> [BUG]
-> Syzbot reported a bug that there can be conflicting OEs for the same
-> range:
->
->  BTRFS critical (device loop4): panic in insert_ordered_extent:264: overl=
-apping ordered extents, existing oe file_offset 16384 num_bytes 430080 flag=
-s 0x1089, new oe file_offset 16384 num_bytes 430080 flags 0x80 (errno=3D-17=
- Object alrea[  179.162726][ T6897] BTRFS critical (device loop4): panic in=
- insert_ordered_extent:264: overlapping ordered extents, existing oe file_o=
-ffset 16384 num_bytes 430080 flags 0x1089, new oe file_offset 16384 num_byt=
-es 430080 flags 0x80 (errno=3D-17 Object already exists)
->  ------------[ cut here ]------------
->  kernel BUG at fs/btrfs/ordered-data.c:264!
->  Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS =
-Google 05/09/2026
->  RIP: 0010:btrfs_alloc_ordered_extent+0x943/0xad0
->  Call Trace:
->   <TASK>
->   cow_file_range+0x744/0x12a0
->   fallback_to_cow+0x5ea/0xa00
->   run_delalloc_nocow+0x110c/0x17a0
->   btrfs_run_delalloc_range+0xbe4/0x1c20
->   writepage_delalloc+0x104d/0x1ba0
->   btrfs_writepages+0x1667/0x28b0
->   do_writepages+0x338/0x560
->   filemap_fdatawrite_range+0x1f2/0x300
->   btrfs_fdatawrite_range+0x54/0xf0
->   btrfs_direct_write+0x6a0/0xc30
->   btrfs_do_write_iter+0x329/0x790
->   do_iter_readv_writev+0x624/0x8d0
->   vfs_writev+0x34c/0x990
->   __se_sys_pwritev2+0x17a/0x2a0
->   do_syscall_64+0x174/0x580
->   entry_SYSCALL_64_after_hwframe+0x77/0x7f
->   </TASK>
->  ---[ end trace 0000000000000000 ]---
->
-> [CAUSE]
-> Since commit ff66fe666233 ("btrfs: fix incorrect buffered IO fallback
-> for append direct writes"), if the direct IO finished short, we will
-> revert the isize back to the original one, so that append writes can be
-> respected during the buffered fallback.
->
-> Normally we rely on lock_and_cleanup_extent_if_needed() function during
-> buffered writeback to wait for any existing ordered extents.
->
-> But that ordered extent waiting only happens if the start_pos is inside
-> the isize.
-> Since we have reverted the isize during failed direct IO, we will not
-> wait for any ordered extents.
->
-> This means we can have a race where the direct IO OE is still in the
-> tree, finished but not yet removed, then we're inserting the OE for the
-> buffered write, causing the above crash.
->
-> [FIX]
-> Make the OE wait to be unconditional, to handle the reverted isize
-> situation.
->
-> And since lock_and_cleanup_extent_if_needed() can no longer turn 0, we
-> can also remove the branches that handles no-extent-locked cases.
->
-> Reported-by: syzbot+ba2afde329fc27e3f22e@syzkaller.appspotmail.com
-> Link: https://syzkaller.appspot.com/bug?extid=3Dba2afde329fc27e3f22e
-> Fixes: ff66fe666233 ("btrfs: fix incorrect buffered IO fallback for appen=
-d direct writes")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Signed-off-by: Boris Burkov <boris@bur.io>
 > ---
->  fs/btrfs/file.c | 77 +++++++++++++++++++------------------------------
->  1 file changed, 30 insertions(+), 47 deletions(-)
+>   fs/btrfs/extent_io.c | 20 ++++++++++++--------
+>   1 file changed, 12 insertions(+), 8 deletions(-)
 >
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index df8f6f565070..ef31140e0942 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -879,7 +879,6 @@ static noinline int prepare_one_folio(struct inode *i=
-node, struct folio **folio_
->   *
->   * Return:
->   * 1 - the extent is locked
-> - * 0 - the extent is not locked, and everything is OK
-
-So it stops making sense to return 1...
-Just change the function to always return 0, meaning the extent range
-is locked, or -EAGAIN.
-
->   * -EAGAIN - need to prepare the folios again
->   */
->  static noinline int
-> @@ -889,6 +888,7 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *i=
-node, struct folio *folio,
->                                 struct extent_state **cached_state)
->  {
->         struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
-> +       struct btrfs_ordered_extent *ordered;
->         u64 start_pos;
->         u64 last_pos;
->         int ret =3D 0;
-
-Here initialized to 0, but we can never return such value anymore.
-
-> @@ -896,42 +896,38 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode =
-*inode, struct folio *folio,
->         start_pos =3D round_down(pos, fs_info->sectorsize);
->         last_pos =3D round_up(pos + write_bytes, fs_info->sectorsize) - 1=
-;
->
-> -       if (start_pos < inode->vfs_inode.i_size) {
-> -               struct btrfs_ordered_extent *ordered;
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 0edd532174fa..fa4cc8bcd1af 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3054,12 +3054,9 @@ void btrfs_uninhibit_all_eb_writeback(struct btrfs_trans_handle *trans)
+>   	xa_destroy(&trans->writeback_inhibited_ebs);
+>   }
+>   
+> -static struct extent_buffer *__alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+> -						   u64 start)
+> +static void init_extent_buffer(struct btrfs_fs_info *fs_info,
+> +			       struct extent_buffer *eb, u64 start)
+>   {
+> -	struct extent_buffer *eb = NULL;
 > -
-> -               if (nowait) {
-> -                       if (!btrfs_try_lock_extent(&inode->io_tree, start=
-_pos,
-> -                                                  last_pos, cached_state=
-)) {
-> -                               folio_unlock(folio);
-> -                               folio_put(folio);
-> -                               return -EAGAIN;
-> -                       }
-> -               } else {
-> -                       btrfs_lock_extent(&inode->io_tree, start_pos, las=
-t_pos,
-> -                                         cached_state);
-> -               }
-> -
-> -               ordered =3D btrfs_lookup_ordered_range(inode, start_pos,
-> -                                                    last_pos - start_pos=
- + 1);
-> -               if (ordered &&
-> -                   ordered->file_offset + ordered->num_bytes > start_pos=
- &&
-> -                   ordered->file_offset <=3D last_pos) {
-> -                       btrfs_unlock_extent(&inode->io_tree, start_pos, l=
-ast_pos,
-> -                                           cached_state);
-> +       if (nowait) {
-> +               if (!btrfs_try_lock_extent(&inode->io_tree, start_pos,
-> +                                          last_pos, cached_state)) {
->                         folio_unlock(folio);
->                         folio_put(folio);
-> -                       btrfs_start_ordered_extent(ordered);
-> -                       btrfs_put_ordered_extent(ordered);
->                         return -EAGAIN;
->                 }
-> -               if (ordered)
-> -                       btrfs_put_ordered_extent(ordered);
-> -
-> -               *lockstart =3D start_pos;
-> -               *lockend =3D last_pos;
-> -               ret =3D 1;
-> +       } else {
-> +               btrfs_lock_extent(&inode->io_tree, start_pos, last_pos,
-> +                                 cached_state);
->         }
->
-> +       ordered =3D btrfs_lookup_ordered_range(inode, start_pos,
-> +                                            last_pos - start_pos + 1);
-> +       if (ordered &&
-> +           ordered->file_offset + ordered->num_bytes > start_pos &&
-> +           ordered->file_offset <=3D last_pos) {
-> +               btrfs_unlock_extent(&inode->io_tree, start_pos, last_pos,
-> +                                   cached_state);
-> +               folio_unlock(folio);
-> +               folio_put(folio);
-> +               btrfs_start_ordered_extent(ordered);
-> +               btrfs_put_ordered_extent(ordered);
-> +               return -EAGAIN;
-> +       }
-> +       if (ordered)
-> +               btrfs_put_ordered_extent(ordered);
+> -	eb = kmem_cache_zalloc(extent_buffer_cache, GFP_NOFS|__GFP_NOFAIL);
+>   	eb->start = start;
+>   	eb->len = fs_info->nodesize;
+>   	eb->fs_info = fs_info;
+> @@ -3072,7 +3069,15 @@ static struct extent_buffer *__alloc_extent_buffer(struct btrfs_fs_info *fs_info
+>   	refcount_set(&eb->refs, 1);
+>   
+>   	ASSERT(eb->len <= BTRFS_MAX_METADATA_BLOCKSIZE);
+> +}
 > +
-> +       *lockstart =3D start_pos;
-> +       *lockend =3D last_pos;
-> +       ret =3D 1;
+> +static struct extent_buffer *__alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+> +						   u64 start)
+> +{
+> +	struct extent_buffer *eb;
+>   
+> +	eb = kmem_cache_zalloc(extent_buffer_cache, GFP_NOFS | __GFP_NOFAIL);
+> +	init_extent_buffer(fs_info, eb, start);
+>   	return eb;
+>   }
+>   
+> @@ -3476,9 +3481,8 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+>   	if (eb)
+>   		return eb;
+>   
+> -	eb = __alloc_extent_buffer(fs_info, start);
+> -	if (!eb)
+> -		return ERR_PTR(-ENOMEM);
+> +	eb = kmem_cache_zalloc(extent_buffer_cache, GFP_NOFS | __GFP_NOFAIL);
+> +	init_extent_buffer(fs_info, eb, start);
+>   
+>   	/*
+>   	 * The reloc trees are just snapshots, so we need them to appear to be
 
-And this is pointless, right below we can use "return 1;" and get rid
-of the 'ret' variable.
+This looks wrong to me. Not the split out code, but how it is used in 
+alloc_extent_buffer(). Either you keep calling __alloc_extent_buffer() 
+in alloc_extent_buffer() OR don't call init_extent_buffer() in 
+__alloc_extent_buffer(). I see this is an intermediate step (and I 
+haven't looked at the rest of the series yet) but it looks wrong.
 
-Since returning 1 no longer makes sense, just make it return 0 and remove '=
-ret'.
-
-Also in the caller, since lock_and_cleanup_extent_if_need() now always
-returns with the extent range locked, we can get rid of it's local
-variable named 'extents_locked' and use 'ret' as it does not make
-sense anymore.
-
-Finally, with this change we now always look for ordered extents and
-lock the range. Previously, we only did this if writes were within
-i_size - which makes sense because, except for his new direct IO case
-falling back to buffered IO, we could never find ordered extents
-beyond i_size.
-
-Have you checked whether performance is affected?
-
-Thanks.
-
-> +
->         /*
->          * We should be called after prepare_one_folio() which should hav=
-e locked
->          * all pages in the range.
-> @@ -1288,11 +1284,8 @@ static int copy_one_range(struct btrfs_inode *inod=
-e, struct iov_iter *iter,
->
->                 /* No copied bytes, unlock, release reserved space and ex=
-it. */
->                 if (copied =3D=3D 0) {
-> -                       if (extents_locked)
-> -                               btrfs_unlock_extent(&inode->io_tree, lock=
-start, lockend,
-> -                                                   &cached_state);
-> -                       else
-> -                               btrfs_free_extent_state(cached_state);
-> +                       btrfs_unlock_extent(&inode->io_tree, lockstart, l=
-ockend,
-> +                                           &cached_state);
->                         btrfs_delalloc_release_extents(inode, reserved_le=
-n);
->                         release_space(inode, *data_reserved, reserved_sta=
-rt, reserved_len,
->                                       only_release_metadata);
-> @@ -1311,17 +1304,7 @@ static int copy_one_range(struct btrfs_inode *inod=
-e, struct iov_iter *iter,
->
->         ret =3D btrfs_dirty_folio(inode, folio, start, copied, &cached_st=
-ate,
->                                 only_release_metadata);
-> -       /*
-> -        * If we have not locked the extent range, because the range's st=
-art
-> -        * offset is >=3D i_size, we might still have a non-NULL cached e=
-xtent
-> -        * state, acquired while marking the extent range as delalloc thr=
-ough
-> -        * btrfs_dirty_page(). Therefore free any possible cached extent =
-state
-> -        * to avoid a memory leak.
-> -        */
-> -       if (extents_locked)
-> -               btrfs_unlock_extent(&inode->io_tree, lockstart, lockend, =
-&cached_state);
-> -       else
-> -               btrfs_free_extent_state(cached_state);
-> +       btrfs_unlock_extent(&inode->io_tree, lockstart, lockend, &cached_=
-state);
->
->         btrfs_delalloc_release_extents(inode, reserved_len);
->         if (ret) {
-> --
-> 2.54.0
->
->

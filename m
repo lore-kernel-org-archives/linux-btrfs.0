@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 046B3331222
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E3CB831F98E
 	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 19:20:25 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782415226; cv=none; b=Snx8YTpaz5H3e4rvmmzJUALAvBaKPDb8Xdq+fe3SPDPS52DLrk2S5SoGZSCbAMyHezStEfZ6e1c0d9o3YIgXt7aAb8B2xT91RTshyX6kTdT2uwvyMPnkuz69ci65kyif0es38Q2fwBCdLzy3iVHIZ1UT96oPoHWSP/8tbOaG+Bo=
+	t=1782415226; cv=none; b=SIePYPn8LsTBtdNMtvk0xutwEOiZaGPqqnGg3nUvWJdZLPvrxLmORKEYCuQO6q5wgfVaJNWWiSED1mI0zq0LNIMsndiDejTmJp6qhcLVA5mSaziXLf18ATjVtQOOc3Jy05nDIE1LYHE2k1vd+CR1M6ncT1h7IbpVs0vDv7Xe/Ms=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1782415226; c=relaxed/simple;
-	bh=p7tSJ3j0FcvQGuG8X6kL/NAUZTMZB/sTHavR7kZt8P0=;
+	bh=PZQydo4eltJYYKeQ/7M6hAnr56Zy/HQqCzwL/Llc+QA=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=FF1JDsERdJKo5Mp0la+UjvEg3MBFai3aZQKkSW6DJu30HyjPJLf6dpLnuzdSTaaF2DUQ9XFVfttz+2KFv3/FqT2n5EWrA66YRn0mzbRfIDHAQtP3cxwpSfJdR3y9KL8nAfN+4n2VuoOLsYF4y/CEYwdKgXY5TsOQF4iJqmw8YaM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=K98Y16R/; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version; b=qerZPZBw2ZDgjzuzWWGQ7ClJsJGEw3kNUtMsZDUKBbX8uFl11k0T/CLJW6VyrQFSS2DAmfuIAfYJXzIBGrKE0XS4VrbfxdMpOWZW7rEr7kju8DafQI34uvM+k+6DncTWHUZY7ORM4jzb6TX/drslrOw5yVcRJr0z+w4StNbysaE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dghQSbAR; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="K98Y16R/"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 639FC1F000E9
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 19:20:24 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dghQSbAR"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5878F1F00A3A
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 19:20:25 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782415224;
-	bh=5BULuP7v2Ae7Ux3QxusW4tnkgWZUJCnS6cETzijtMQg=;
+	s=k20260515; t=1782415225;
+	bh=+5Zso770QEO0ndT4CicLZWfN3DMqgyERTgQ1Dzjj2ns=;
 	h=From:To:Subject:Date:In-Reply-To:References;
-	b=K98Y16R/q0uzyA0rciJ5pA9sMu/nIzBrHDY5u1yFPSZg9/1AdVsFtu3WQww28LJ7B
-	 niwVogpTQwO8eIRPHwlNbZhFIB/CTWdDEUKXRDpIHW2D3DNBI2EFwD6TYKMT61hKG1
-	 l0FSuOcRbe8SQvswe+ubcyfdNwBciO1nECS11htmudhyIJr/V1JYZ3VnegDYs/LiHR
-	 RPhgTTQMtugsPiqGuhFOzAWaAcVdZ5H6a+QYA4PEzpvnhw//14qTqKfz9WhcTHJ6C0
-	 JJS31e4bzv4rCt/L1Cn1r8eyXyPly6dtby4fcho/R6LyMqL2IaCEy5a/TFK+w9O/Ga
-	 rXCbYpooMUEyA==
+	b=dghQSbARCBR8rhCbGDe/M83Ag00wbswykTl+/rRP8GGJclQQ420OAhfzB907VTBw3
+	 yoxvcMQvyQ3ZYW/EMa95itilLdjEWuY820ZEwQLUY0QRl62X65yeCYUeqYZ0giZtv+
+	 KewqsH0zRHAFcFViG5sgbk5kE0YjKsD7vn+CIHQuD6EiJDT/qBC07ZpsFnvVygb+hg
+	 l6ZWFujOT9wrp9DJfby3rfiRsPZV9cwczns7fhc8Gh0ZPm1l+dk1mIOAHs5W3tLFGB
+	 7YTRC282+zeHx7n3ZipPm5hfi6GZ8OZqayJLbTtN4GKiPEExTr5rVw3nRXIz6fCYcl
+	 Z69zU20YwSveA==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/6] btrfs: defrag: use simple list_del() in defrag_collect_targets()
-Date: Thu, 25 Jun 2026 20:20:15 +0100
-Message-ID: <ef417c92283d2b96cdc44c7bba0ac2d47c4f324b.1782321584.git.fdmanana@suse.com>
+Subject: [PATCH 6/6] btrfs: defrag: remove pointless list_del_init() in defrag_one_cluster()
+Date: Thu, 25 Jun 2026 20:20:16 +0100
+Message-ID: <d8b39c1c786efa00d5de3d5ca999e23fcbc6c277.1782321584.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1782321584.git.fdmanana@suse.com>
 References: <cover.1782321584.git.fdmanana@suse.com>
@@ -44,28 +44,30 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When freeing the entries from the list there is no need to initialize
-the list member in an entry, since we are immediately freeing it. So use
-simple list_del() instead of list_del_init().
+There's no need to call list_del_init() against each entry when freeing
+the list, as the list is local and we are freeing the entry.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/defrag.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/defrag.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
-index e454b59d6477..7b3f779775a0 100644
+index 7b3f779775a0..6ec5dd760d42 100644
 --- a/fs/btrfs/defrag.c
 +++ b/fs/btrfs/defrag.c
-@@ -1093,7 +1093,7 @@ static int defrag_collect_targets(struct btrfs_inode *inode,
- 		struct defrag_target_range *tmp;
- 
- 		list_for_each_entry_safe(entry, tmp, target_list, list) {
--			list_del_init(&entry->list);
-+			list_del(&entry->list);
- 			kfree(entry);
- 		}
+@@ -1319,10 +1319,8 @@ static int defrag_one_cluster(struct btrfs_inode *inode,
+ 				      inode->root->fs_info->sectorsize_bits;
  	}
+ out:
+-	list_for_each_entry_safe(entry, tmp, &target_list, list) {
+-		list_del_init(&entry->list);
++	list_for_each_entry_safe(entry, tmp, &target_list, list)
+ 		kfree(entry);
+-	}
+ 	if (ret >= 0)
+ 		*last_scanned_ret = max(*last_scanned_ret, start + len);
+ 	return ret;
 -- 
 2.47.2
 

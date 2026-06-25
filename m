@@ -1,213 +1,277 @@
-Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 67B422BE034
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 05:17:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CDD8F29BD8C
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 05:41:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782364654; cv=none; b=nLu6qSZsC5/iQd5jqNJSNiiY/eiOGvZzdKm970hjlvlE134XLooM4XJNbtNL3WNUSfq2ZvxofdDHyGGILEzG9KAo+COcpmpP0Dy9qTNk4AFowYp3p3D+JHbCUELQkXPRWwPRoYZwTedUkaAHgjY0HUG+dHITUBlakoq3ErX959o=
+	t=1782366105; cv=none; b=Gnk6JUN6Zwd0z+EVSx31peX3qgp8R0FJJI8XNqVVQpbsYII8CpISjvQmGr/FmlZmwzSybs1kqfGuJIWUY5etfyTrDOq92t3bpxuVNO0OM311ajLL8v7Vbvsu0bYJFhlQge4dNGMaVao6tuTEcnhuZFdPcNr9dX+Bo58bz6yHdAY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782364654; c=relaxed/simple;
-	bh=EQimEhg6uOBxFCaFEAkeS4b3ZN2n95BN5koXWSC98YQ=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=qhbGYZVFyI9nbouMansqTX60pNJHKhwjzXqMHWIEM4LrBJVnIfXBusSeU1sixgiVNN+mFzzB7TdLObtPHlmngbpDXKC6f2LKhOHZkdASnNZoAudTsxdJKOIwlt2v1LqV8KvT3WXgYT/a01EPr3W4HyxkcqLngthEJK4K2edSJPE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=R6yDAs1l; arc=none smtp.client-ip=209.85.128.48
+	s=arc-20240116; t=1782366105; c=relaxed/simple;
+	bh=D2uGgZkujgjqZ/ZO6ypSRDpOdYfAA9BdQjiSG17mLR8=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=q7Gw15k07e6wYDARRyU/o51gROEagl09t7Em8cZm+ojZCBFhutiJ+UpboGXGwHKZwOYG+vk1lAqDc8HwiliXm+CF5r2l+RnBhizFMScYm/fu1He25GNVsKUrPw6EozGs/rBniFvXL4ugQJwbdM/HMEms0yZeWII6JLt/dY80H6g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=banBTA+M; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=banBTA+M; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="R6yDAs1l"
-Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-4921eed3fa2so12687005e9.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2026 22:17:32 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1782364651; x=1782969451; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
-         :references:cc:to:from:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=QZDcasHb8Z/6w824Zb2BMHDRyGd+1BT+Ludev7nK0WM=;
-        b=R6yDAs1lLduN2sgEnfLVFpeFJCOswogJnzOaa+iepGcC7QG614FRI1Kz5zslK19Ss0
-         EVaFfPDmwCVUI4zMlOVAVfCsttaCAPAHVlpQmSy+0PoTbEcMexsYF5FYG8ySPCHXppau
-         iVloyvApVFws9K3yRg34FuuYIhwRUfxuZ9oWNiO3MiRJ0KrIBAwcdXdtM+9q7aFQuKwg
-         vZU+L7RB9RfCTCz55h7ZzLYB7bdBReqFZy4tsP2gXItoQ5SVWJYv4fR2fBcyPwNVt69k
-         ZkLhDnBTiwdbC6215PuhFrt7tHg6sa7YRiDMBdyjB3k/DGz7J9SrCSy5td8ptdoc7JuP
-         VRBw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1782364651; x=1782969451;
-        h=content-transfer-encoding:in-reply-to:autocrypt:content-language
-         :references:cc:to:from:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=QZDcasHb8Z/6w824Zb2BMHDRyGd+1BT+Ludev7nK0WM=;
-        b=ahTpQhsV7OxQmU9G/cPyo7dMpfLcv58N6S0yLdMLlUyB5CdoGvQQV2+YLuYDT67ou7
-         EjxEvUT3TRAC727EKYjF4gYFbDk/p6GhU8N05HZq4EBBmMC/IxtIKFMhxnlGJGQKHfFC
-         XnpATbUril9MP/yZp4Geleedp8YeJempsjg/57mvv7ybKjBuDyFMR9Eu+qb6o+kvKJnn
-         mZJwGQm2Lqffhaa7dTgBxwa8/m5bm9bHkcYxjVQXvLOperLRPdAUkc0XyVYNRJaYGdVy
-         leNJ68ImHPDqTrhwtwgtOj0VgKX1p4ELdYz0Gwvfd2TWEmOA8yIzxTvtpLF5uvOj7anc
-         kjWg==
-X-Gm-Message-State: AOJu0YyCNDzpN3VrnsKW7HFqjRrfevxODbecTRiKlQOGNTSMD+En+x5L
-	zWQCzskbZMgSHXFnPdwt1QpHlR4ciRj2NAc3hA3n0Z86H2RvtfXDdCUMEWR9OUqBPzo=
-X-Gm-Gg: AfdE7cmnOLVkZc1pWnw4gfEmLVkjfAzkiIDje9kYxGdUuolrdgZQ++9vPb2f8i5U+l1
-	Apjt9dxp1QVu3kgrDRwrmLHGucuyPAtSEODPG9J5LOc9UJ15f8a8EiYomIyuEy+YInda4B+0kYT
-	VfOwdbzy7eoHfD/3RtQiDUh9t0iFSVLcQkrFDdczrKPfU5mUzwjfcK5IB82jU8WwEA1LztOA2v4
-	eqGvNb4qE1aMj+DJ3U0KlnjhxOktkTngyjLSd1cP8ajZZQf1o8YodATYen8d4ZiLWLuGv6Y6BKM
-	w797F+ylhEUhzDJbWukPNkjlu9UWOU6HnJGP2CE9PHE0zDI8P9PBdPbUP8+iPylXn19BxOAmmpr
-	zl6gKKt/QBdolfLQRS8FKjrpWe4ddkAcWnL8eCxj9TPxgDg618DsJc5Jl7UoDWd3cuiv0v2uSjX
-	Qh/QblDh8GcCjAv0TXAxi0XFEj12IrCznOo2y7Umo=
-X-Received: by 2002:a05:600c:5486:b0:490:601f:d776 with SMTP id 5b1f17b1804b1-492668628admr9867925e9.3.1782364650837;
-        Wed, 24 Jun 2026 22:17:30 -0700 (PDT)
-Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-139d8f318f3sm4080811c88.2.2026.06.24.22.17.27
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 24 Jun 2026 22:17:29 -0700 (PDT)
-Message-ID: <c2afdc0e-6e63-42b8-9a8a-fc77d2ab7383@suse.com>
-Date: Thu, 25 Jun 2026 14:47:25 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="banBTA+M";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="banBTA+M"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id B664B75E74;
+	Thu, 25 Jun 2026 05:41:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1782366101; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=51eKUkR4CfwpsRYfb18HG6SbBAsux8zKXHyGp3bD83w=;
+	b=banBTA+MInWz6u7o1Dduk+esue0FxnAwpo+MBwr7Lh8hsWdckbCcK7eFfkYSqKLpeLyB0U
+	fURSguqtm2BwyF0bUdEj80si3xX6IxbQ9yipCFktKDxOciQxLi+KVhU45ENDthT4fFffEG
+	7dQnOmOX1wvG8l+rchj5B7p3GLHg6Gw=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1782366101; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=51eKUkR4CfwpsRYfb18HG6SbBAsux8zKXHyGp3bD83w=;
+	b=banBTA+MInWz6u7o1Dduk+esue0FxnAwpo+MBwr7Lh8hsWdckbCcK7eFfkYSqKLpeLyB0U
+	fURSguqtm2BwyF0bUdEj80si3xX6IxbQ9yipCFktKDxOciQxLi+KVhU45ENDthT4fFffEG
+	7dQnOmOX1wvG8l+rchj5B7p3GLHg6Gw=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6AFD5779A8;
+	Thu, 25 Jun 2026 05:41:40 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id icneBpS/PGr/GwAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 25 Jun 2026 05:41:40 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: syzbot+ba2afde329fc27e3f22e@syzkaller.appspotmail.com
+Subject: [PATCH] btrfs: always wait for ordered extents to avoid OE races
+Date: Thu, 25 Jun 2026 15:11:21 +0930
+Message-ID: <aaabe0f2bee07800fb0490d24fab5cd162e5241d.1782366056.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: wait for ordered extents before buffered write
- fallback in direct IO
-From: Qu Wenruo <wqu@suse.com>
-To: Yun Zhou <yun.zhou@windriver.com>, clm@fb.com, dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20260625021456.724803-1-yun.zhou@windriver.com>
- <aa009e0d-a629-44ed-bb68-202ff2dc5063@suse.com>
-Content-Language: en-US
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <aa009e0d-a629-44ed-bb68-202ff2dc5063@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.997];
+	MIME_GOOD(-0.10)[text/plain];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_DN_NONE(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TAGGED_RCPT(0.00)[ba2afde329fc27e3f22e];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[syzkaller.appspot.com:url,appspotmail.com:email,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid]
+X-Spam-Level: 
+X-Spam-Score: -2.80
 
+[BUG]
+Syzbot reported a bug that there can be conflicting OEs for the same
+range:
 
+ BTRFS critical (device loop4): panic in insert_ordered_extent:264: overlapping ordered extents, existing oe file_offset 16384 num_bytes 430080 flags 0x1089, new oe file_offset 16384 num_bytes 430080 flags 0x80 (errno=-17 Object alrea[  179.162726][ T6897] BTRFS critical (device loop4): panic in insert_ordered_extent:264: overlapping ordered extents, existing oe file_offset 16384 num_bytes 430080 flags 0x1089, new oe file_offset 16384 num_bytes 430080 flags 0x80 (errno=-17 Object already exists)
+ ------------[ cut here ]------------
+ kernel BUG at fs/btrfs/ordered-data.c:264!
+ Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 05/09/2026
+ RIP: 0010:btrfs_alloc_ordered_extent+0x943/0xad0
+ Call Trace:
+  <TASK>
+  cow_file_range+0x744/0x12a0
+  fallback_to_cow+0x5ea/0xa00
+  run_delalloc_nocow+0x110c/0x17a0
+  btrfs_run_delalloc_range+0xbe4/0x1c20
+  writepage_delalloc+0x104d/0x1ba0
+  btrfs_writepages+0x1667/0x28b0
+  do_writepages+0x338/0x560
+  filemap_fdatawrite_range+0x1f2/0x300
+  btrfs_fdatawrite_range+0x54/0xf0
+  btrfs_direct_write+0x6a0/0xc30
+  btrfs_do_write_iter+0x329/0x790
+  do_iter_readv_writev+0x624/0x8d0
+  vfs_writev+0x34c/0x990
+  __se_sys_pwritev2+0x17a/0x2a0
+  do_syscall_64+0x174/0x580
+  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+  </TASK>
+ ---[ end trace 0000000000000000 ]---
 
-在 2026/6/25 14:43, Qu Wenruo 写道:
-> 
-> 
-> 在 2026/6/25 11:44, Yun Zhou 写道:
->> When btrfs_direct_write() falls back to buffered IO after a failed DIO
->> attempt, it may race with the asynchronous completion of DIO ordered
->> extents.  This leads to a BUG_ON in insert_ordered_extent() due to
->> overlapping ordered extents in the per-inode rb-tree.
->>
->> The race sequence is:
->>   1. DIO creates an ordered extent via btrfs_dio_iomap_begin()
->>   2. Page fault occurs (nofault=true), no bio is submitted (submitted=0)
->>   3. btrfs_dio_iomap_end() truncates and finishes the OE asynchronously
->>      via btrfs_finish_ordered_extent() which queues work
->>   4. iomap returns 0, retry logic faults in pages and retries DIO
->>   5. Second DIO attempt also fails, code reaches buffered: label
->>   6. btrfs_buffered_write() dirties pages for the same range
-> 
-> btrfs_buffered_write()
-> |- copy_one_range()
->     |- lock_and_cleanup_extent_if_needed()
->        |- btrfs_start_ordered_extent()
-> 
-> So your explanation doesn't makes sense. As if there is the direct IO oe 
-> remaining, we will wait for that OE to complete.
-> 
-> There is still something missing.
-> 
->>   7. btrfs_fdatawrite_range() triggers writeback
->>   8. run_delalloc_nocow() -> fallback_to_cow() -> cow_file_range()
->>      tries to insert a new ordered extent for the same file offset
->>   9. The DIO ordered extent hasn't been removed from the rb-tree yet
->>      (btrfs_finish_ordered_io running async in workqueue) -> BUG_ON
->>
->> Fix this by waiting for any pending ordered extents in the target range
->> before starting the buffered write.
->>
->> Reported-by: syzbot+ba2afde329fc27e3f22e@syzkaller.appspotmail.com
->> Closes: https://syzkaller.appspot.com/bug?extid=ba2afde329fc27e3f22e
->> Fixes: acf9ed3a6c00 ("btrfs: retry faulting in the pages after a zero 
->> sized short direct write")
+[CAUSE]
+Since commit ff66fe666233 ("btrfs: fix incorrect buffered IO fallback
+for append direct writes"), if the direct IO finished short, we will
+revert the isize back to the original one, so that append writes can be
+respected during the buffered fallback.
 
-And the fixes tag is also incorrect.
+Normally we rely on lock_and_cleanup_extent_if_needed() function during
+buffered writeback to wait for any existing ordered extents.
 
-Without that commit, we will directly fallback to buffered write without 
-retry faulting in the pages.
+But that ordered extent waiting only happens if the start_pos is inside
+the isize.
+Since we have reverted the isize during failed direct IO, we will not
+wait for any ordered extents.
 
-So by your explanation it will trigger the same problem, with or without 
-that commit.
+This means we can have a race where the direct IO OE is still in the
+tree, finished but not yet removed, then we're inserting the OE for the
+buffered write, causing the above crash.
 
->> Signed-off-by: Yun Zhou <yun.zhou@windriver.com>
->> ---
->>   fs/btrfs/direct-io.c | 24 ++++++++++++++++++++++++
->>   1 file changed, 24 insertions(+)
->>
->> diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
->> index 460326d34143..e8ac9492844c 100644
->> --- a/fs/btrfs/direct-io.c
->> +++ b/fs/btrfs/direct-io.c
->> @@ -844,6 +844,7 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, 
->> struct iov_iter *from)
->>       struct file *file = iocb->ki_filp;
->>       struct inode *inode = file_inode(file);
->>       struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
->> +    struct btrfs_ordered_extent *ordered;
->>       loff_t pos;
->>       ssize_t written = 0;
->>       ssize_t written_buffered;
->> @@ -1025,6 +1026,29 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, 
->> struct iov_iter *from)
->>       }
->>       pos = iocb->ki_pos;
->> +
->> +    /*
->> +     * The DIO path may have created ordered extent(s) that are still 
->> being
->> +     * processed asynchronously in a work queue.  We must wait for 
->> them to
->> +     * be fully completed and removed from the rb-tree before doing a
->> +     * buffered write to the same or overlapping range; otherwise the
->> +     * buffered writeback path (run_delalloc_nocow -> fallback_to_cow ->
->> +     * cow_file_range) may try to insert a new ordered extent that 
->> conflicts
->> +     * with the still-pending DIO one, triggering a BUG_ON in
->> +     * insert_ordered_extent().
->> +     *
->> +     * This happens when DIO creates an ordered extent but has a 
->> short write
->> +     * (submitted < length in btrfs_dio_iomap_end()), which truncates 
->> and
->> +     * finishes the ordered extent asynchronously while we fall back to
->> +     * buffered IO for the same range.
->> +     */
->> +    while ((ordered = btrfs_lookup_ordered_range(BTRFS_I(inode),
->> +                (u64)(pos - written),
->> +                (u64)written + iov_iter_count(from))) != NULL) {
->> +        btrfs_start_ordered_extent(ordered);
->> +        btrfs_put_ordered_extent(ordered);
->> +    }
->> +
->>       written_buffered = btrfs_buffered_write(iocb, from);
->>       if (written_buffered < 0) {
->>           ret = written_buffered;
-> 
-> 
+[FIX]
+Make the OE wait to be unconditional, to handle the reverted isize
+situation.
+
+And since lock_and_cleanup_extent_if_needed() can no longer turn 0, we
+can also remove the branches that handles no-extent-locked cases.
+
+Reported-by: syzbot+ba2afde329fc27e3f22e@syzkaller.appspotmail.com
+Link: https://syzkaller.appspot.com/bug?extid=ba2afde329fc27e3f22e
+Fixes: ff66fe666233 ("btrfs: fix incorrect buffered IO fallback for append direct writes")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/file.c | 77 +++++++++++++++++++------------------------------
+ 1 file changed, 30 insertions(+), 47 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index df8f6f565070..ef31140e0942 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -879,7 +879,6 @@ static noinline int prepare_one_folio(struct inode *inode, struct folio **folio_
+  *
+  * Return:
+  * 1 - the extent is locked
+- * 0 - the extent is not locked, and everything is OK
+  * -EAGAIN - need to prepare the folios again
+  */
+ static noinline int
+@@ -889,6 +888,7 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct folio *folio,
+ 				struct extent_state **cached_state)
+ {
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
++	struct btrfs_ordered_extent *ordered;
+ 	u64 start_pos;
+ 	u64 last_pos;
+ 	int ret = 0;
+@@ -896,42 +896,38 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct folio *folio,
+ 	start_pos = round_down(pos, fs_info->sectorsize);
+ 	last_pos = round_up(pos + write_bytes, fs_info->sectorsize) - 1;
+ 
+-	if (start_pos < inode->vfs_inode.i_size) {
+-		struct btrfs_ordered_extent *ordered;
+-
+-		if (nowait) {
+-			if (!btrfs_try_lock_extent(&inode->io_tree, start_pos,
+-						   last_pos, cached_state)) {
+-				folio_unlock(folio);
+-				folio_put(folio);
+-				return -EAGAIN;
+-			}
+-		} else {
+-			btrfs_lock_extent(&inode->io_tree, start_pos, last_pos,
+-					  cached_state);
+-		}
+-
+-		ordered = btrfs_lookup_ordered_range(inode, start_pos,
+-						     last_pos - start_pos + 1);
+-		if (ordered &&
+-		    ordered->file_offset + ordered->num_bytes > start_pos &&
+-		    ordered->file_offset <= last_pos) {
+-			btrfs_unlock_extent(&inode->io_tree, start_pos, last_pos,
+-					    cached_state);
++	if (nowait) {
++		if (!btrfs_try_lock_extent(&inode->io_tree, start_pos,
++					   last_pos, cached_state)) {
+ 			folio_unlock(folio);
+ 			folio_put(folio);
+-			btrfs_start_ordered_extent(ordered);
+-			btrfs_put_ordered_extent(ordered);
+ 			return -EAGAIN;
+ 		}
+-		if (ordered)
+-			btrfs_put_ordered_extent(ordered);
+-
+-		*lockstart = start_pos;
+-		*lockend = last_pos;
+-		ret = 1;
++	} else {
++		btrfs_lock_extent(&inode->io_tree, start_pos, last_pos,
++				  cached_state);
+ 	}
+ 
++	ordered = btrfs_lookup_ordered_range(inode, start_pos,
++					     last_pos - start_pos + 1);
++	if (ordered &&
++	    ordered->file_offset + ordered->num_bytes > start_pos &&
++	    ordered->file_offset <= last_pos) {
++		btrfs_unlock_extent(&inode->io_tree, start_pos, last_pos,
++				    cached_state);
++		folio_unlock(folio);
++		folio_put(folio);
++		btrfs_start_ordered_extent(ordered);
++		btrfs_put_ordered_extent(ordered);
++		return -EAGAIN;
++	}
++	if (ordered)
++		btrfs_put_ordered_extent(ordered);
++
++	*lockstart = start_pos;
++	*lockend = last_pos;
++	ret = 1;
++
+ 	/*
+ 	 * We should be called after prepare_one_folio() which should have locked
+ 	 * all pages in the range.
+@@ -1288,11 +1284,8 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *iter,
+ 
+ 		/* No copied bytes, unlock, release reserved space and exit. */
+ 		if (copied == 0) {
+-			if (extents_locked)
+-				btrfs_unlock_extent(&inode->io_tree, lockstart, lockend,
+-						    &cached_state);
+-			else
+-				btrfs_free_extent_state(cached_state);
++			btrfs_unlock_extent(&inode->io_tree, lockstart, lockend,
++					    &cached_state);
+ 			btrfs_delalloc_release_extents(inode, reserved_len);
+ 			release_space(inode, *data_reserved, reserved_start, reserved_len,
+ 				      only_release_metadata);
+@@ -1311,17 +1304,7 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *iter,
+ 
+ 	ret = btrfs_dirty_folio(inode, folio, start, copied, &cached_state,
+ 				only_release_metadata);
+-	/*
+-	 * If we have not locked the extent range, because the range's start
+-	 * offset is >= i_size, we might still have a non-NULL cached extent
+-	 * state, acquired while marking the extent range as delalloc through
+-	 * btrfs_dirty_page(). Therefore free any possible cached extent state
+-	 * to avoid a memory leak.
+-	 */
+-	if (extents_locked)
+-		btrfs_unlock_extent(&inode->io_tree, lockstart, lockend, &cached_state);
+-	else
+-		btrfs_free_extent_state(cached_state);
++	btrfs_unlock_extent(&inode->io_tree, lockstart, lockend, &cached_state);
+ 
+ 	btrfs_delalloc_release_extents(inode, reserved_len);
+ 	if (ret) {
+-- 
+2.54.0
 

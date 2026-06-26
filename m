@@ -1,34 +1,65 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f46.google.com (mail-wr1-f46.google.com [209.85.221.46])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 62C7B3EFFD2;
-	Fri, 26 Jun 2026 11:21:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5BD0437F737
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2026 15:18:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.46
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782472883; cv=none; b=SafmUutjMjCDyygyg7SQuEwuHFeVhezE5V0eADVqBdS/GnEIWtPnbR8WZHvGKhgWiStlko7WMqKGFYGU2ZLN88eKvPawKWgmha6JIrjOFZ8L6nxw85ltbc3Ss8A2MosHdRoPiiqZqzD9nYBxf/h8m1boJ2mDwBHoC/ffcuqzoz8=
+	t=1782487134; cv=none; b=i3vMdf90zu8+yOSlfYC4lYg8Hu1zaJ24JmWYnqgVk76jXL/qEwI8QIgmqWnWRnwWyRwpqRvbWr87IuAHzIgF6Xn+Y/aYKkZhiMsQNz5IhBDWcNbHFhHTIbmwXsz3Sk1gIuc5QVYFuPzU4F3jB9B1q8cZoLof7/wyDMOIMfd5gvM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782472883; c=relaxed/simple;
-	bh=5/vHK6smVAo4K0fOyGVx5MarSc9aDmJrNwEGTdE/aW4=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=jsC+499DpUUlWO21zJWE78WFiWaZkB0P2VbszspLROdnWTIIoBMWATDBW0fDZA27WqzJF8ua6zxxp37ek5FUp1WsD3CRpk4pBgx5mgFSW+GugQaNYVVx3OAryOWg1OMBHlC/5bme6m4RS0aIERPcVd/Z88AGP/ZybiUBiIzFse4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Sne5ExHx; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1782487134; c=relaxed/simple;
+	bh=o5Vpn06WgK66yNZF07Aer8lYugPgnyShzwRVpTapXQk=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=gtHTNsPCqECZkwKfjmyJsd+t6FYoK+PxRIUbJJx4Ow7pPXfdO6ADbsIwKKwxS7GlnTzRsznX4Jxm8kebYkdw1PEEePa7V6/CrE2hqBD3sukYhlGGmr8PcBShJsntfTWwUlZB4H92i/gd67qlFDNkUUiMtEJrrCfv5tOv1r7N4SM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=flipper.net; spf=pass smtp.mailfrom=flipper.net; dkim=pass (2048-bit key) header.d=flipper.net header.i=@flipper.net header.b=FPCiKYOD; arc=none smtp.client-ip=209.85.221.46
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=flipper.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flipper.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Sne5ExHx"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 50C461F000E9;
-	Fri, 26 Jun 2026 11:21:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782472881;
-	bh=xWcM9mNBvMsc9PHycbLAuu17G/xM5QiL8WhgXegdwHo=;
-	h=From:Date:Subject:To:Cc;
-	b=Sne5ExHxqDY+E4bwsmVPrUBJiqxGN/TcpC5Yx98tUT7G3cSm5fDMzqL0oEBvo0q5B
-	 ksdmxYrPRDLuQqi9DEjdo10R9iKBVaNqQFXavpAq/PrNafs1oAabdHe/FY9JpB0pZr
-	 Qx3/VwPo+nul0GB0+aauAvBjh1ey22czQ33QzvIiDR5ChEXhl6zGVDktrfAt/jhb9R
-	 5UV0JVTRQs32sRflh7imaP4yzdpV8oF6yqQRwZBxaIypvslkBOB1PANbQmMZXUkOyf
-	 TRno+Hbj+p9Zgvjj1eLPoL3diH4T6gGV2Tt8QXozmrsJ3nBP2OqF2/8ryfy3SXYZty
-	 2+7qp9x8xn8og==
-From: Jeff Layton <jlayton@kernel.org>
-Date: Fri, 26 Jun 2026 07:21:03 -0400
-Subject: [PATCH] btrfs: add EM_WARN_ON_ONCE() to dump the extent map on a
- warning
+	dkim=pass (2048-bit key) header.d=flipper.net header.i=@flipper.net header.b="FPCiKYOD"
+Received: by mail-wr1-f46.google.com with SMTP id ffacd0b85a97d-4626fdc829aso688244f8f.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2026 08:18:50 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=flipper.net; s=google; t=1782487129; x=1783091929; darn=vger.kernel.org;
+        h=cc:to:content-transfer-encoding:mime-version:message-id:date
+         :subject:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=mB5+OHUIEPSbf8N1FunPva1gTx/Axh3cdH+BX9B+jDU=;
+        b=FPCiKYODsSik3Drf4NfefciDHmmnVgQzkYiQyVEAuzDvvjDXekutAIVQq2nE9Dw6Ey
+         KWihQn+OENYpjBEpMPbiOScDuZv+qXHtPml6IlFVo8ziH5yQ1JSS9v8QL3O6wv+ARPOr
+         /+HKoaWZ9OM4gA/Q51d+dmd7wt6BtfUwWLX8SbGUenkjj11ibjW92du73n4VzjtWRv/X
+         Cw55unHpDd9hZUp8yjiOJ13SPoGPB9QzD1rQmB+1gJu+b8++bYOQ4Kh/3T/Y4JtuaUuP
+         XOuIAZ/o2mWb/N/E4FocMGJB4JC3lqZxAvwxq1G+X79fmVaq/vs+VOYJ1wHNkxMYXgx2
+         LwuQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1782487129; x=1783091929;
+        h=cc:to:content-transfer-encoding:mime-version:message-id:date
+         :subject:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=mB5+OHUIEPSbf8N1FunPva1gTx/Axh3cdH+BX9B+jDU=;
+        b=Oaio8JkYclbLZHRx7TKUK5p8ctfWsHkBqZ9guHCrnHkvbAfrMhhHp6NN7GHQ5TKQVK
+         HBARHYa6D1ID3TqiygOxVR3Nf8ZTUMEAxSaQ8XwGOymjT1tF0aridJ1g7f+mAnk71SHE
+         BbEXWIz+poUsUeAwCxjvL+K1QO9SnyBMGst/5DnBNguX2u+Dgtes4/Ob3Bw25W7jSMsO
+         Sj8MK4TqW3dv4NFojhc+EvJ98hkaXjz/NFWVPiIsMQl/+R469Cazam5ssq1wBLohHq2g
+         gaTrNJdzRhDdTN1fLSGNV9iGKNklHC+CYr0tdxZvti3rZLCICp/8X5u4HihTkXaov1LB
+         PGxQ==
+X-Forwarded-Encrypted: i=1; AFNElJ8nYUuIqD2VlvFvbz/SjlMDtllnCCdlWQQ3GCa+hZU9NWck4KiB6vsiy3Rt+WiBZOJwSg6oVSs7GpL+Cg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyZz9ERNRLHi0ax+SSyY5RFOqY7oqzVw/dtEz1+5gSkjRTzHWSY
+	Y9qAXoXTNYzYw5cfWSpO0vvpNHLO9T7IdKuTk3BJ1qOJiZrrCuiKc91BJDJf7ZXDVSc=
+X-Gm-Gg: AfdE7ckOv/0dzM3uIaCyO+VZng2GbzaqgNOqtkcm0UnW6IEVZcixSdZiiUrZRl2NFB3
+	4z/K2iVWB9cZkaHDbpS/VOOo0unmDhtlifBJJ0WAC9JklUnhX5WDsD63phRtKsw5NsD7C8Pqm+9
+	/MV+YKgM0jkiFAq88s7uhhD6BsLfEfeUnSlPqdJfn68nNNtTT4GTGA8eIwqHLbsohrBkwpl6prn
+	yLcGYLH6/at+tDN4QDQwfcdFYnoSHJeqzfl5xmlDQOO6Q7hcjX9j3NKZLRckoso9p7WDcLGfjVt
+	mjTXfOh/FQDENDEjluP0LSlQc4a/cRoGqmazayMYwar4/bOJ5Ov8iKNBOVaaE89IFY62EKflx10
+	NyKGFbJ/iF1vCcMo5+mWJmHyUngPXGSYgRq6j2dtcajlNioZIpDv2lGnR5VlYwYUm1I9WogqYZH
+	xfXyNl6YX5JZqjtOoObOhO3iZGfK/zeQ==
+X-Received: by 2002:a05:600c:4fc7:b0:492:3fb5:4697 with SMTP id 5b1f17b1804b1-492668628d6mr104155135e9.5.1782487129411;
+        Fri, 26 Jun 2026 08:18:49 -0700 (PDT)
+Received: from alchark-surface.localdomain ([5.194.92.128])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-46c221d998esm24860736f8f.24.2026.06.26.08.18.47
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 26 Jun 2026 08:18:48 -0700 (PDT)
+From: Alexey Charkov <alchark@flipper.net>
+Subject: [PATCH v2 0/2] fs: btrfs: add support for readdir
+Date: Fri, 26 Jun 2026 19:18:20 +0400
+Message-Id: <20260626-btrfs-readdir-v2-0-7dd43f72d1b4@flipper.net>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -36,158 +67,78 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260626-em-warn-on-dump-v1-1-365600d9473c@kernel.org>
-X-B4-Tracking: v=1; b=H4sIAAAAAAAC/x3MTQqAIBBA4avIrBuwgaS6SrSIHGsWaij9QHj3p
- OW3eO+FzEk4w6heSHxJlhgq2kbBui9hYxRbDaTJaEMG2eO9pIAxoD39gdzTQERmcNRBrY7ETp7
- /OM2lfFOJdp1hAAAA
-X-Change-ID: 20260626-em-warn-on-dump-e82922269f25
-To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
- kernel-team@fb.com, Jeff Layton <jlayton@kernel.org>
-X-Mailer: b4 0.14.3
-X-Developer-Signature: v=1; a=openpgp-sha256; l=5092; i=jlayton@kernel.org;
- h=from:subject:message-id; bh=5/vHK6smVAo4K0fOyGVx5MarSc9aDmJrNwEGTdE/aW4=;
- b=owEBbQKS/ZANAwAKAQAOaEEZVoIVAcsmYgBqPmCrnELLRguq62DIL3PpbY5EVx0wsbKpOFY6Z
- 3IHKCKcBmmJAjMEAAEKAB0WIQRLwNeyRHGyoYTq9dMADmhBGVaCFQUCaj5gqwAKCRAADmhBGVaC
- FWVpD/98a+lNWiniCZRKD//9ITGR6iE7nSgAujiD+8bCvBIwIvqVbnIw2LD0CjE+e6GGemuj6az
- z/RbArF88uAoxdg/B11Sdb6DUlZCQUDsIZKt0IR2ESNnA3a09OaObYSoN2K6N/tiRfzz23/MpIL
- 64AA9rc9/7DxW4+kL/rWv7he6ZV6gvFyK59CWzquVkTbFe+evtZqaE/NzfxSi3XLZO3cYpvCdMI
- 9Yeg6X6WNfOmo+PT4LBUtD4t9mZSUa5fPFYa+4cBcK9C+Os20cWlKCTCbBM+eX4QYN79lbKaruT
- C5SCy6yvSkbg78g6upKqxf/4Yn51isA7AP3FtnF9mi3n6QGt/py9JF4+pYkK+4B4odcdkIfrl1w
- vx7mflI8uwiURNy+GtegrleeYD7bz7Um94piJKpl7TnQ0ZYSo5LOiO2BVJ6paFVobl+S77bA554
- udl5+QIxzHDP6/9twcJ8VDc1jQ6fcd/yBlo7Ly38vL7pawFmjoeoHott72wecjCLC5LEYJUstbj
- J9/G2uUCvJF7qfFlOP2GMN+djwAlSjf91SnQdbNTkR8wJcu3LEyRbnr6K2Tz3DXBksyffR+opmg
- MdcZPBoocBYxi4ElP53cutNg+8OzdYU7YXZCCMU3xT949taIzIsLTjAnnfiJyH49xIgxO+DwGuy
- 0Dh6O394AVBWuFQ==
-X-Developer-Key: i=jlayton@kernel.org; a=openpgp;
- fpr=4BC0D7B24471B2A184EAF5D3000E684119568215
+Content-Transfer-Encoding: 8bit
+X-B4-Tracking: v=1; b=H4sIAAAAAAAC/3WNyw6CMBBFf4XM2poyhIqu/A/Doo9Bxhgg00o0h
+ H+X4trlSc49d4FIwhThUiwgNHPkcdgADwX43g53Uhw2BtRotMFauSRdVEI2BBbVOLK+sr5G1LB
+ tJqGO33vv1v44vtyDfMqRbPQc0yif/XAus/evPZdKqxBOTWnRVWdTX7snTxPJcaAE7bquX08Fr
+ Fq+AAAA
+X-Change-ID: 20260625-btrfs-readdir-8beac3ac5220
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, 
+ u-boot@lists.denx.de
+Cc: =?utf-8?q?Marek_Beh=C3=BAn?= <kabel@kernel.org>, 
+ Tom Rini <trini@konsulko.com>, Simon Glass <sjg@chromium.org>, 
+ =?utf-8?q?Timo_tp_Prei=C3=9Fl?= <t.preissl@proton.me>, 
+ Peng Fan <peng.fan@nxp.com>, Patrice Chotard <patrice.chotard@foss.st.com>, 
+ Yao Zi <me@ziyao.cc>, Alexey Charkov <alchark@flipper.net>
+X-Mailer: b4 0.15.2
+X-Developer-Signature: v=1; a=openpgp-sha256; l=2041; i=alchark@flipper.net;
+ h=from:subject:message-id; bh=o5Vpn06WgK66yNZF07Aer8lYugPgnyShzwRVpTapXQk=;
+ b=owGbwMvMwCW2adGNfoHIK0sZT6slMWTZzfB9L1IWc3Cmn/i089E8E6zrYm7yl2tYFh5u3PsyQ
+ HJRs3hBx0QWBjEuBksxRZa535bYTjXim7XLw+MrzBxWJpAh0iINDEDAwsCXm5hXaqRjpGeqbahn
+ aKRjrGPEwMUpAFPNV8rIsOQ7Ww0bi/6hqftPtT58Fng/2XZNiF3PIesUed8/zjMK2hj+yia9cC0
+ Vjp3jpfPwugH7s5hnp1SPFrRsahBvUBSO3DSfCQA=
+X-Developer-Key: i=alchark@flipper.net; a=openpgp;
+ fpr=9DF6A43D95320E9ABA4848F5B2A2D88F1059D4A5
 
-When an extent_map trips a consistency check in the free path, the bare
-WARN_ON() only gives a stack trace.  For the checks in
-btrfs_free_extent_map():
+Btrfs in U-boot currently uses a custom callback for ls and doesn't expose
+the standard opendir/readdir/closedir interface, making it harder to use
+in generic code. One area where this would be useful is in discovering BLS
+type 1 entries [1] on a Btrfs filesystem.
 
-	WARN_ON(btrfs_extent_map_in_tree(em));
-	WARN_ON(!list_empty(&em->list));
+Add support for the standard interface, and implement ls in terms of it.
 
-that means the report tells us an extent map was freed while still in the
-tree, or while still linked onto a list (e.g. an inode's modified_extents
-list), but nothing about the map itself: its flags, refcount, or its
-geometry.
+[1] https://lore.kernel.org/u-boot/20260604-bls-v1-0-4ce6d1ee4711@flipper.net/
 
-Borrow the pattern the mm code uses with VM_WARN_ON_ONCE_FOLIO() and
-friends, which dump the offending object via dump_page() before the
-warning.  Add btrfs_dump_extent_map(), a helper that prints an extent
-map's geometry, flags, refcount and list/tree membership, and an
-EM_WARN_ON_ONCE(cond, em) macro that dumps the map before triggering the
-warning and stack trace.  As with the VM_*_ONCE helpers it fires only
-once, which keeps these checks from spamming the log on a filesystem
-that is repeatedly hitting them.
-
-Unlike the existing dump_extent_map() helper (which is gated behind
-CONFIG_BTRFS_DEBUG and calls ASSERT(0)) and unlike the VM_* helpers
-(gated behind CONFIG_DEBUG_VM), EM_WARN_ON_ONCE() is always compiled in,
-since the conditions it guards can be hit on production kernels and the
-extra context is what makes those reports actionable.  No btrfs_fs_info
-is available at the call site, so the helper uses the plain printk helpers
-rather than the device-aware btrfs_*() ones.
-
-Convert both checks in btrfs_free_extent_map() to use it.
-
-Signed-off-by: Jeff Layton <jlayton@kernel.org>
+Signed-off-by: Alexey Charkov <alchark@flipper.net>
 ---
-We've seen a number of crashes in our fleet that have shown WARN_ON()
-pops from the list_empty() check here. I'm hoping this might give us a
-bit more info.
----
- fs/btrfs/extent_map.c | 20 ++++++++++++++++++--
- fs/btrfs/extent_map.h | 22 ++++++++++++++++++++++
- 2 files changed, 40 insertions(+), 2 deletions(-)
+Changes in v2:
+- Cache subvolume id and inode number instead of looking them up on every
+  readdir call (thanks Qu)
+- Split out the dirent type conversion between btrfs and U-Boot filesystem
+  convention into a helper function (thanks Qu)
+- Drop redundant check for XATTR entries in btrfs_next_dir_entry (thanks Qu)
+- Remove btrfs_ls and show_dir which nothing calls after the second patch
+- Use container_of instead of type-casting struct pointers
+- Link to v1: https://patch.msgid.link/20260625-btrfs-readdir-v1-0-dd781a2b3965@flipper.net
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 6b79bff241f2..670143f7d473 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -63,8 +63,8 @@ void btrfs_free_extent_map(struct extent_map *em)
- 	if (!em)
- 		return;
- 	if (refcount_dec_and_test(&em->refs)) {
--		WARN_ON(btrfs_extent_map_in_tree(em));
--		WARN_ON(!list_empty(&em->list));
-+		EM_WARN_ON_ONCE(btrfs_extent_map_in_tree(em), em);
-+		EM_WARN_ON_ONCE(!list_empty(&em->list), em);
- 		kmem_cache_free(extent_map_cache, em);
- 	}
- }
-@@ -316,6 +316,22 @@ static void dump_extent_map(struct btrfs_fs_info *fs_info, const char *prefix,
- 	ASSERT(0);
- }
- 
-+/*
-+ * Dump the contents of an extent map to the kernel log.  Used by
-+ * EM_WARN_ON_ONCE() to print context about the offending map before its
-+ * warning and stack trace.
-+ */
-+void btrfs_dump_extent_map(const struct extent_map *em, const char *prefix)
-+{
-+	pr_crit(
-+"BTRFS: %s: em=%p start=%llu len=%llu disk_bytenr=%llu disk_num_bytes=%llu offset=%llu ram_bytes=%llu generation=%llu flags=0x%x refs=%u in_tree=%d list_empty=%d list=(next=%p prev=%p)\n",
-+		prefix, em, em->start, em->len, em->disk_bytenr,
-+		em->disk_num_bytes, em->offset, em->ram_bytes, em->generation,
-+		em->flags, refcount_read(&em->refs),
-+		btrfs_extent_map_in_tree(em), list_empty(&em->list),
-+		em->list.next, em->list.prev);
-+}
-+
- /* Internal sanity checks for btrfs debug builds. */
- static void validate_extent_map(struct btrfs_fs_info *fs_info, struct extent_map *em)
- {
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index 6f685f3c9327..1d2efd4a5665 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -8,6 +8,8 @@
- #include <linux/rbtree.h>
- #include <linux/list.h>
- #include <linux/refcount.h>
-+#include <linux/bug.h>
-+#include <linux/stringify.h>
- #include "fs.h"
- 
- struct btrfs_inode;
-@@ -175,6 +177,26 @@ int btrfs_split_extent_map(struct btrfs_inode *inode, u64 start, u64 len, u64 pr
- 
- struct extent_map *btrfs_alloc_extent_map(void);
- void btrfs_free_extent_map(struct extent_map *em);
-+void btrfs_dump_extent_map(const struct extent_map *em, const char *prefix);
-+
-+/*
-+ * Warn once about a condition involving an extent map, dumping the offending
-+ * map's contents (geometry, flags, refcount and list/tree membership) before
-+ * the warning and stack trace, much like VM_WARN_ON_ONCE_FOLIO() does for
-+ * folios.
-+ */
-+#define EM_WARN_ON_ONCE(cond, em) ({					\
-+	static bool __section(".data..once") __warned;			\
-+	int __ret_warn_once = !!(cond);					\
-+									\
-+	if (unlikely(__ret_warn_once && !__warned)) {			\
-+		btrfs_dump_extent_map((em),				\
-+			"EM_WARN_ON_ONCE(" __stringify(cond) ")");	\
-+		__warned = true;					\
-+		WARN_ON(1);						\
-+	}								\
-+	unlikely(__ret_warn_once);					\
-+})
- int __init btrfs_extent_map_init(void);
- void __cold btrfs_extent_map_exit(void);
- int btrfs_unpin_extent_cache(struct btrfs_inode *inode, u64 start, u64 len, u64 gen);
+To: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+To: u-boot@lists.denx.de
+Cc: Marek Behún <kabel@kernel.org>
+Cc: Tom Rini <trini@konsulko.com>
+Cc: Alexey Charkov <alchark@flipper.net>
+Cc: Peng Fan <peng.fan@nxp.com>
+Cc: Simon Glass <sjg@chromium.org>
+Cc: Timo tp Preißl <t.preissl@proton.me>
+Cc: Patrice Chotard <patrice.chotard@foss.st.com>
+Cc: Yao Zi <me@ziyao.cc>
 
 ---
-base-commit: eae9071be4d8d386e6530120bdaee42f6da1f70f
-change-id: 20260626-em-warn-on-dump-e82922269f25
+Alexey Charkov (2):
+      fs: btrfs: implement opendir(), readdir() and closedir()
+      fs: btrfs: use fs_ls_generic() and drop custom implementation
+
+ fs/btrfs/btrfs.c    | 199 ++++++++++++++++++++++------------------------------
+ fs/btrfs/ctree.h    |   7 +-
+ fs/btrfs/dir-item.c |  76 ++++++++++++--------
+ fs/fs.c             |   6 +-
+ include/btrfs.h     |   6 +-
+ 5 files changed, 143 insertions(+), 151 deletions(-)
+---
+base-commit: 19eafbadf20f56c1a24abe6b5e8774e776894261
+change-id: 20260625-btrfs-readdir-8beac3ac5220
 
 Best regards,
--- 
-Jeff Layton <jlayton@kernel.org>
+--  
+Alexey Charkov <alchark@flipper.net>
 

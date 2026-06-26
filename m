@@ -1,124 +1,272 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7193033C1AD;
-	Fri, 26 Jun 2026 08:21:22 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 71BC32F7EF4
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2026 09:16:32 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782462088; cv=none; b=r67WLPmcgIdj78kxFfVSWGfTWR5uFFiGwPss+U+sr7mV2lpUXZdUWCV/7mpiDPGa/QRPA2z3gKMaUB6/CmlYAirXxl7rHJDiapOLY69QkkhfFU/LypZjyBQeTK4wpxKo9/RWJSetAnhNClDyUyNI5hPf8XZz5ewn0+RCkjw+AoM=
+	t=1782465393; cv=none; b=i6dcSHuNsSeOmNOSMetCOlok/JdW4dbAFsabG599uRURk0DgsdanbKApEkKQApKh1mKUMko6sn0OH7LcLnlTFCv0xG2ClfmNqGlEIdFyJyT5DAVo0uancrQzPu8nfcQMMTfkN5HVnky5ls7SCxSmQO3fLOsMbHjNsZDob7H6JHg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782462088; c=relaxed/simple;
-	bh=gjxS0uNdvbRMwyFGc5xVYSwTFrigLCR+dmWJeZKb1X0=;
-	h=Content-Type:MIME-Version:Subject:From:Message-Id:Date:References:
-	 In-Reply-To:To:Cc; b=hculBsYa+I+kvH9QRro8M7ZwAD78mPiwHDgXKdmAysW8rbwC64x1Y5rg6Bnew4/lp6MQAiM7xP7SvfwiSBvyE9xsa44KSQDZ1Nvvsy02ZxmD/AXMroYgEOLKnhQJY6ycZXIPY7A9xCAg4bgcdYM7SQwwzYNuYJoM1GGANO55bkE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MC6yAmsd; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1782465393; c=relaxed/simple;
+	bh=4xHFQC2NrbenMsbhHjR1+Fhj880HDtKaQHawo6LE210=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=DOVbbwP0Ij1nm0kYJ9OtGZjwgLheuQTDvDY7cw02IuTN82vC1BGR79Vi91hEr7bfAjOKRIHYeU6SoPsFzxWqXiMschbwifF3f/ZuofaPRkhFHAP+9FUMmy6foAsoMCeVdWmBmCuMMm240bpSho9IBr7+kwUj9ZMByZ4hPDKqWd0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=jHjXNSC3; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MC6yAmsd"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D3FFB1F00AC4;
-	Fri, 26 Jun 2026 08:21:21 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="jHjXNSC3"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 591F21F000E9
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2026 09:16:32 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782462081;
-	bh=cnDZkcdojzG6TP+7FyMqVMauu4QrpFoQrKFZui4fel0=;
-	h=Subject:From:Date:References:In-Reply-To:To:Cc;
-	b=MC6yAmsds/bx8R7anvknX1AQ8wYErykOAlLqPC3rBrW/haRJJv9chUhiwT+CvnTmN
-	 khK/Dcw19LSCUFchb8D/hw+DpMaTb1XpLahGVWuQ2ovAXgjD87gIQurL0gIl9+xHit
-	 ncTog7IyU918i0n0R2d/om837p9tvnVMwNZwfwlMdGa5QlmnH1j/rqWXUCSJ6gUh9Z
-	 brR2GYKjb1zdGevtCBdmugxCTe8YRqU7Ur91VQYGPcJyxomzPIKGl4smPb/Yxi36dG
-	 9lOJILFIUiOpBT1cUYSLvvKVEE9Xu8TR8Q7d0eK5LtRY1OrEVkIWnTXlTpm48x7ej4
-	 4HMiz7mE0JbVg==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 198C839389E8;
-	Fri, 26 Jun 2026 08:21:10 +0000 (UTC)
-Content-Type: text/plain; charset="utf-8"
+	s=k20260515; t=1782465392;
+	bh=T1Eaukj+yOnCV8ruWUa7wQtdUn9TBTDA/GLpzGeIU0U=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=jHjXNSC34SbQqzwxYt4o4Tx/AduHnmq6xIowX6Z4f7L9VXUfa5PE7vPeWR4RF3x0R
+	 HgIXluYdPWT5ExQ5kefZade8egr19ZWkYIpyxRMrEEa7TyhZvDj8P2XES3PF9r1Z6v
+	 oXw4SIaDSLGKo5oXt4Q7mQ0FHvVFK4T9eSoDA0lDDkRZv0J1WeGpZNBqbLXd3zyLIH
+	 Vv9tl0IcJ281mygIvbZiYwIb3MeUukGQ4oj8jJ+fHiKfYd1pyVo8PHXyHEEC+71IPk
+	 hEnMbgr4dZIkGeUILo8cHnAvCpTn+Uk7WM0NKrmq+tZNrRAewXTdoxvVpxK651SlWY
+	 o3fIkvombt0Kw==
+Received: by mail-ed1-f51.google.com with SMTP id 4fb4d7f45d1cf-697ebe536b6so1168799a12.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2026 02:16:32 -0700 (PDT)
+X-Gm-Message-State: AOJu0YyYfTvsnIXSmCwPVJNSs+E8r3I9eqTigkc1XX+as61dH7kGuWtf
+	r7u9tbe9wKOAZz5iwXalEgxSNoohLfvmhgL68DGyM0q543yyFo65zaVA6VatnEIhDIfOQAZV48v
+	WymBs4uSxs+i0NMHQxeC6r2kiu/2h9Pc=
+X-Received: by 2002:a17:907:e895:b0:c05:21a7:6b0d with SMTP id
+ a640c23a62f3a-c120617b59dmr432004566b.47.1782465390976; Fri, 26 Jun 2026
+ 02:16:30 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Subject: Re: [PATCH 01/19] btrfs: require at least 4 devices for RAID 6
-From: patchwork-bot+linux-riscv@kernel.org
-Message-Id: 
- <178246206859.3816447.16178589769412306177.git-patchwork-notify@kernel.org>
-Date: Fri, 26 Jun 2026 08:21:08 +0000
-References: <20260512052230.2947683-2-hch@lst.de>
-In-Reply-To: <20260512052230.2947683-2-hch@lst.de>
-To: Christoph Hellwig <hch@lst.de>
-Cc: linux-riscv@lists.infradead.org, akpm@linux-foundation.org,
- catalin.marinas@arm.com, will@kernel.org, ardb@kernel.org,
- chenhuacai@kernel.org, kernel@xen0n.name, maddy@linux.ibm.com,
- mpe@ellerman.id.au, npiggin@gmail.com, chleroy@kernel.org, pjw@kernel.org,
- palmer@dabbelt.com, aou@eecs.berkeley.edu, alex@ghiti.fr, hca@linux.ibm.com,
- gor@linux.ibm.com, agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
- svens@linux.ibm.com, tglx@kernel.org, mingo@redhat.com, bp@alien8.de,
- dave.hansen@linux.intel.com, x86@kernel.org, hpa@zytor.com,
- herbert@gondor.apana.org.au, dan.j.williams@intel.com, clm@fb.com,
- dsterba@suse.com, arnd@arndb.de, song@kernel.org, yukuai@fnnas.com,
- linan122@huawei.com, linux-kernel@vger.kernel.org,
- linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
- linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
- linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
- linux-arch@vger.kernel.org, linux-raid@vger.kernel.org
+References: <aaabe0f2bee07800fb0490d24fab5cd162e5241d.1782366056.git.wqu@suse.com>
+ <CAL3q7H7+WAQMV76+-AuU=dR_qoe6Gu1_CNmwUFD=zW81d2Hz0g@mail.gmail.com> <9efd034f-fa6b-485c-aca7-a38f526d4083@suse.com>
+In-Reply-To: <9efd034f-fa6b-485c-aca7-a38f526d4083@suse.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Fri, 26 Jun 2026 10:15:53 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H6sNSPqkE+h7PgX+Vv+7o5zTokBi52F5SooMmxEEH-phQ@mail.gmail.com>
+X-Gm-Features: AVVi8CdLni8jTHNxdRzx4_B911SgUphtqbqGbTkCSYeQPSgGteP_n3yV4_LcLTw
+Message-ID: <CAL3q7H6sNSPqkE+h7PgX+Vv+7o5zTokBi52F5SooMmxEEH-phQ@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: always wait for ordered extents to avoid OE races
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, 
+	syzbot+ba2afde329fc27e3f22e@syzkaller.appspotmail.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Hello:
-
-This series was applied to riscv/linux.git (fixes)
-by Andrew Morton <akpm@linux-foundation.org>:
-
-On Tue, 12 May 2026 07:20:41 +0200 you wrote:
-> While the RAID6 algorithm could in theory support 3 devices by just
-> copying the data disk to the two parity disks, this version is not only
-> useless because it is a suboptimal version of 3-way mirroring, but also
-> broken with various crashes and incorrect parity generation in various
-> architecture-optimized implementations.  Disallow it similar to mdraid
-> which requires at least 4 devices for RAID 6.
-> 
+On Thu, Jun 25, 2026 at 11:39=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
+>
+>
+>
+> =E5=9C=A8 2026/6/25 20:59, Filipe Manana =E5=86=99=E9=81=93:
 > [...]
+> >
+> >> @@ -896,42 +896,38 @@ lock_and_cleanup_extent_if_need(struct btrfs_ino=
+de *inode, struct folio *folio,
+> >>          start_pos =3D round_down(pos, fs_info->sectorsize);
+> >>          last_pos =3D round_up(pos + write_bytes, fs_info->sectorsize)=
+ - 1;
+> >>
+> >> -       if (start_pos < inode->vfs_inode.i_size) {
+> >> -               struct btrfs_ordered_extent *ordered;
+> >> -
+> >> -               if (nowait) {
+> >> -                       if (!btrfs_try_lock_extent(&inode->io_tree, st=
+art_pos,
+> >> -                                                  last_pos, cached_st=
+ate)) {
+> >> -                               folio_unlock(folio);
+> >> -                               folio_put(folio);
+> >> -                               return -EAGAIN;
+> >> -                       }
+> >> -               } else {
+> >> -                       btrfs_lock_extent(&inode->io_tree, start_pos, =
+last_pos,
+> >> -                                         cached_state);
+> >> -               }
+> >> -
+> >> -               ordered =3D btrfs_lookup_ordered_range(inode, start_po=
+s,
+> >> -                                                    last_pos - start_=
+pos + 1);
+> >> -               if (ordered &&
+> >> -                   ordered->file_offset + ordered->num_bytes > start_=
+pos &&
+> >> -                   ordered->file_offset <=3D last_pos) {
+> >> -                       btrfs_unlock_extent(&inode->io_tree, start_pos=
+, last_pos,
+> >> -                                           cached_state);
+> >> +       if (nowait) {
+> >> +               if (!btrfs_try_lock_extent(&inode->io_tree, start_pos,
+> >> +                                          last_pos, cached_state)) {
+> >>                          folio_unlock(folio);
+> >>                          folio_put(folio);
+> >> -                       btrfs_start_ordered_extent(ordered);
+> >> -                       btrfs_put_ordered_extent(ordered);
+> >>                          return -EAGAIN;
+> >>                  }
+> >> -               if (ordered)
+> >> -                       btrfs_put_ordered_extent(ordered);
+> >> -
+> >> -               *lockstart =3D start_pos;
+> >> -               *lockend =3D last_pos;
+> >> -               ret =3D 1;
+> >> +       } else {
+> >> +               btrfs_lock_extent(&inode->io_tree, start_pos, last_pos=
+,
+> >> +                                 cached_state);
+> >>          }
+> >>
+> >> +       ordered =3D btrfs_lookup_ordered_range(inode, start_pos,
+> >> +                                            last_pos - start_pos + 1)=
+;
+> >> +       if (ordered &&
+> >> +           ordered->file_offset + ordered->num_bytes > start_pos &&
+> >> +           ordered->file_offset <=3D last_pos) {
+> >> +               btrfs_unlock_extent(&inode->io_tree, start_pos, last_p=
+os,
+> >> +                                   cached_state);
+> >> +               folio_unlock(folio);
+> >> +               folio_put(folio);
+> >> +               btrfs_start_ordered_extent(ordered);
+> >> +               btrfs_put_ordered_extent(ordered);
+> >> +               return -EAGAIN;
+> >> +       }
+> >> +       if (ordered)
+> >> +               btrfs_put_ordered_extent(ordered);
+> >> +
+> >> +       *lockstart =3D start_pos;
+> >> +       *lockend =3D last_pos;
+> >> +       ret =3D 1;
+> >
+> > And this is pointless, right below we can use "return 1;" and get rid
+> > of the 'ret' variable.
+> >
+> > Since returning 1 no longer makes sense, just make it return 0 and remo=
+ve 'ret'.
+> >
+> > Also in the caller, since lock_and_cleanup_extent_if_need() now always
+> > returns with the extent range locked, we can get rid of it's local
+> > variable named 'extents_locked' and use 'ret' as it does not make
+> > sense anymore.
+> >
+> > Finally, with this change we now always look for ordered extents and
+> > lock the range. Previously, we only did this if writes were within
+> > i_size - which makes sense because, except for his new direct IO case
+> > falling back to buffered IO, we could never find ordered extents
+> > beyond i_size.
+> >
+> > Have you checked whether performance is affected?
+>
+> Here is the microbenchmark for the runtime of btrfs_buffered_write() and
+> lock_and_cleanup_extent_if_need().
+>
+> The workload is a very basic xfs_io -f -c "pwrite 0 1m", which is always
+> appending the isize for every 4K block.
+>
+> Before patch:
+> - lock_and_cleanup_extent_if_need():
+>
+>    runtime avg =3D 58.16 ns
+>    runtime stdev =3D 4.2
+>
+> - btrfs_buffered_write():
+>
+>    runtime avg =3D 2115.6 ns
+>    runtime stdev =3D 1822.1
+>
+>
+> Patched:
+> - lock_and_cleanup_extent_if_need():
+>
+>    runtime avg =3D 183.0 ns
+>    runtime stdev =3D 161.6
+>
+> - btrfs_buffered_write():
+>
+>    runtime avg =3D 2973.3 ns
+>    runtime stdev =3D 4225.1
+>
+> So yes, the runtime of lock_and_cleanup_extent_if_need() has greatly
+> increased, by more than 3 times, but still less than 1 micro second.
+>
+> The btrfs_buffered_write() itself is also much slower due to the extra
+> extent unlock, the runtime is increased by 40%, but still less than 3 us.
+>
+> I'm not sure if the cost is acceptable or not. The increased runtime is
+> pretty huge for the affected worst case scenario, and that's undeniable.
+>
+> But the overall runtime of btrfs_buffered_write() itself is still at
+> single digit microsecond level.
+>
+> If acceptable, I'll add the microbenchmark into the commit message in
+> the next update.
 
-Here is the summary with links:
-  - [01/19] btrfs: require at least 4 devices for RAID 6
-    (no matching commit)
-  - [02/19] raid6: turn the userspace test harness into a kunit test
-    (no matching commit)
-  - [03/19] raid6: remove __KERNEL__ ifdefs
-    https://git.kernel.org/riscv/c/3d6beb659ddf
-  - [04/19] raid6: move to lib/raid/
-    (no matching commit)
-  - [05/19] raid6: remove unused defines in pq.h
-    https://git.kernel.org/riscv/c/06d2a66fb7c0
-  - [06/19] raid6: remove raid6_get_zero_page
-    https://git.kernel.org/riscv/c/885d31423183
-  - [07/19] raid6: use named initializers for struct raid6_calls
-    https://git.kernel.org/riscv/c/7e91f76a9668
-  - [08/19] raid6: improve the public interface
-    (no matching commit)
-  - [09/19] raid6: hide internals
-    (no matching commit)
-  - [10/19] raid6: rework the init helpers
-    (no matching commit)
-  - [11/19] raid6: use static_call for gen_syndrom and xor_syndrom
-    https://git.kernel.org/riscv/c/10f4b8e2a164
-  - [12/19] raid6: use static_call for raid6_recov_2data and raid6_recov_datap
-    (no matching commit)
-  - [13/19] raid6: update top of file comments
-    https://git.kernel.org/riscv/c/30bf04bd13a5
-  - [14/19] raid6_kunit: use KUNIT_CASE_PARAM
-    https://git.kernel.org/riscv/c/2175395f76c3
-  - [15/19] raid6_kunit: dynamically allocate data buffers using vmalloc
-    https://git.kernel.org/riscv/c/d67c25712fe3
-  - [16/19] raid6_kunit: cleanup dataptr handling
-    https://git.kernel.org/riscv/c/562bcbfcb99b
-  - [17/19] raid6_kunit: randomize parameters and increase limits
-    (no matching commit)
-  - [18/19] raid6_kunit: randomize parameters and increase limits
-    (no matching commit)
-  - [19/19] raid6_kunit: randomize buffer alignment
-    https://git.kernel.org/riscv/c/8cf0a6c4bb9e
+Instead of this approach, can we wait for the ordered extent(s) in DIO
+path that reverts i_size after the short write?
 
-You are awesome, thank you!
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/patchwork/pwbot.html
-
-
+>
+> Thanks,
+> Qu
+>
+> >
+> > Thanks.
+> >
+> >> +
+> >>          /*
+> >>           * We should be called after prepare_one_folio() which should=
+ have locked
+> >>           * all pages in the range.
+> >> @@ -1288,11 +1284,8 @@ static int copy_one_range(struct btrfs_inode *i=
+node, struct iov_iter *iter,
+> >>
+> >>                  /* No copied bytes, unlock, release reserved space an=
+d exit. */
+> >>                  if (copied =3D=3D 0) {
+> >> -                       if (extents_locked)
+> >> -                               btrfs_unlock_extent(&inode->io_tree, l=
+ockstart, lockend,
+> >> -                                                   &cached_state);
+> >> -                       else
+> >> -                               btrfs_free_extent_state(cached_state);
+> >> +                       btrfs_unlock_extent(&inode->io_tree, lockstart=
+, lockend,
+> >> +                                           &cached_state);
+> >>                          btrfs_delalloc_release_extents(inode, reserve=
+d_len);
+> >>                          release_space(inode, *data_reserved, reserved=
+_start, reserved_len,
+> >>                                        only_release_metadata);
+> >> @@ -1311,17 +1304,7 @@ static int copy_one_range(struct btrfs_inode *i=
+node, struct iov_iter *iter,
+> >>
+> >>          ret =3D btrfs_dirty_folio(inode, folio, start, copied, &cache=
+d_state,
+> >>                                  only_release_metadata);
+> >> -       /*
+> >> -        * If we have not locked the extent range, because the range's=
+ start
+> >> -        * offset is >=3D i_size, we might still have a non-NULL cache=
+d extent
+> >> -        * state, acquired while marking the extent range as delalloc =
+through
+> >> -        * btrfs_dirty_page(). Therefore free any possible cached exte=
+nt state
+> >> -        * to avoid a memory leak.
+> >> -        */
+> >> -       if (extents_locked)
+> >> -               btrfs_unlock_extent(&inode->io_tree, lockstart, locken=
+d, &cached_state);
+> >> -       else
+> >> -               btrfs_free_extent_state(cached_state);
+> >> +       btrfs_unlock_extent(&inode->io_tree, lockstart, lockend, &cach=
+ed_state);
+> >>
+> >>          btrfs_delalloc_release_extents(inode, reserved_len);
+> >>          if (ret) {
+> >> --
+> >> 2.54.0
+> >>
+> >>
+>

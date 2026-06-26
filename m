@@ -1,66 +1,65 @@
-Received: from mail-wm1-f47.google.com (mail-wm1-f47.google.com [209.85.128.47])
+Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5024A3E8C6A
-	for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2026 10:14:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.47
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9191F3EB816
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2026 10:23:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782468842; cv=none; b=XI6DvVXNOuq+iPnS3oE8gEnFRG6rG4RwkLA8vnHp1MEBnd5cM+YMZZCrL//R87ybM9ZGGE1v7a+b7VwYoVpg48J47I0lftNwxZZvJj9V4z/2O54fVztXxyFxQX1ZoE634tUhCus077Ync+Rz5L9ZzDm+4PTLGeGj4dWDN2FCoVY=
+	t=1782469435; cv=none; b=rBfgkMXcYLGXUdZaf6NYdVU27GVTGWNeFR0W3VOI147lKs/IoFjw28qnsW0+uiyNbIZg4hW5q5a8mO05gRn0cAKUgSZoiEwxppGwVo2s6y6bdBTYTUITD2boFd/BUP7xkxOqxSFpNz0k4omgnmn40/I/aEIIqF/HKVV6Cm6f1so=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782468842; c=relaxed/simple;
-	bh=lwjV8g5q3dIj/fCumNwNnPJU15rZozRbzBdwZWXllyY=;
+	s=arc-20240116; t=1782469435; c=relaxed/simple;
+	bh=Qwr+5dp+yFYxmWEa6o91TmGPSDaqXuzprYbrB1s2MoA=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Wr/+9HL/nuD8roai/amDWVIziCRQNgunW+NP2GUSDDqnKledBjvPPuXS5Hs5HUltoY+dIMxxbfmiGcIh7pW4NMcjWkJC3UJ81tfi2je+Tl10WPJcgKRMOtcGjfpQKOeeqSRQ+FCEaJm/33g3OFSVFbRfuElssoDCBHV+m8nRA+4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=U3P7qqSG; arc=none smtp.client-ip=209.85.128.47
+	 In-Reply-To:Content-Type; b=fCK5t21w6OBAiKfo6nexxe3BCvdiMNbtu6gI4SQ8NbQ4F2l6GgU1QkE3mPLtv+ZY2Vhj4XkEBUsjdaWM5SKoMEOuIBs3eRy061fsYJLPY9pXej68T63ndU63G2oOX7HT6jjzPhAr0156482o2JtUWAvVVsDyhA7AoiWMCZARJdY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=C/B5FqqR; arc=none smtp.client-ip=209.85.128.49
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="U3P7qqSG"
-Received: by mail-wm1-f47.google.com with SMTP id 5b1f17b1804b1-49258ac7294so5206165e9.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2026 03:14:01 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="C/B5FqqR"
+Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-4923fb1f095so7592915e9.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2026 03:23:53 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1782468840; x=1783073640; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1782469432; x=1783074232; darn=vger.kernel.org;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=IDyKzV3FvBfX3LLit3ARjtkce+2TqYhVo50jSpJhGxY=;
-        b=U3P7qqSGHjKCeal5WyCQnsa9gQV3ZBByCCKKWMVlTYh9ZnkcDDdEYJkpuUrP3WlSHA
-         yhe/EOnDYCNMV7mXZ3Pvm8+Aj7kV8CuECyJH72i/uiA26TwdEU9XfYu2XtpwbRqc4P8J
-         x7tweoQVuuRIEUcUVhbGo/AiJkT0kGNCBtA6bgBoUJXZrRrEoeG9hZVnmLjy1BRVYfeU
-         DKN8DzVLkPW3rfMrOIuXDTT7mV65YwqVhjmhkH2FDeOsNeyukc1rTWWtrVhzlyCOhYWL
-         UTLNE5dBzrpEDvsiYQLu0mFXr485c1ZuEtXdhQ1/B18GduzivH4BjvNvLHCarkvawmnh
-         /OIQ==
+        bh=Lzs37CHTk7DgicK6OAuLqr6L4003x8EvgSSRyy0ZdYI=;
+        b=C/B5FqqRzQSkRAKBhirVoS+X6FiEcV0h0gcVvtb9oZDgGU42sZoQQAiDtGKYN0mUs1
+         od+gKlvHE8WVosP/mc2KYpUt+tf1e1YCfmGVk/3EjU68zBB/J3el60pPvdkgKxM2eNED
+         KiuNO4OEaZg1IHm52npP8HwhGV4+S7hz4zoaXRbnV4QVFYHL6nVHD0nPoQs4TrzS4qPt
+         24mCVWxUm1hiYFC5zIWYVdTEjvTwhL4XNF9EIBVSC7mYb0ep1T3MVfDl3dXCpWFWFkLX
+         gj/EdA+9bp/VAKqoIhnG5oMiNlc4af1Nd7G5uOJHqMo6RcGOffSv26CnOCodJPDRjT7y
+         bVCQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1782468840; x=1783073640;
+        d=1e100.net; s=20251104; t=1782469432; x=1783074232;
         h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=IDyKzV3FvBfX3LLit3ARjtkce+2TqYhVo50jSpJhGxY=;
-        b=erpFWX3FWEAHV3UYIsGZIqfiChKTC0qk+/LDAHZh0OThHUoXPVK7k4/3P1dcoRQIqA
-         dKtaIrab069y+G7WYsYeUj5/aRP1qP7tkcxKClLyXdSKw4m1lOk3D/7I1J2IvNGFNLbx
-         AjZZKWLEDurirmTZBDUrtFyYo2QZlVuoinTZGGDNsaXX9aVMgOirUFxEeAuny/n5a6Ug
-         ednzhSB6asBI2+xoJEn5iJHICcVB52Q3XY0wzzv5c2q7BSU2cpXHiLm6uYMWcWwH6V56
-         hRT4vGO5iICwJolDASHGxzlzDcF4ZFYNj2EP7Gb/V0cbiAh9uOKMvg+kLjf4by+mxLpD
-         IAjw==
-X-Gm-Message-State: AOJu0Yxnd62NHA9/9Ugv3QFchIHK6t/K7v2jYXeaidl28WOrqplEIpSB
-	2JxXVh3nz3C8bDBJUoPDTAFDhGl+c++5GV5Yr6ND6O613mqCd4rNTuyda6mOttptRF3X0JNDYjq
-	6zI1jdDg=
-X-Gm-Gg: AfdE7cla/E6i6km1Py10WWL8ipfFV08PYe8ygYKx1kGfasd3XchW3E6c/O9w1/2DK2G
-	7vgtFX9w/4Sa4aYLsxRSo1jf5zzhBwFJa6KIkA2TmsXJVpJvdHuv3Q1z0pK5UHjNxGrNcPsKFMW
-	uYPdLLXC+bEU3CSNorVjGRxInUd2SFmB2Qgc9YjcW1C3gWXwovxLvg3OdG/oIbqsoHT1IOYo/6i
-	653ofEnIlbVEJe3k8n+y7Bkdft38AKxKxJ1+Bac7o4Xnj+vjSR/R75ZwpDoE9mFbm0FzGjn2j3r
-	MA6SXJEHS+pKcYJy61CG9jl4d8LlIdirnxbSGmp0TMldqR1pVDZEIche6qvyE4R0G8Gjd5vhCio
-	2JX9zsloXAWeD+pb7S9FPJ1PZXANXKETNyJsaqc8zSUsCmpU8FttIZR7SK1xoUcwMC6Pp8pJJCp
-	4GnbuAODfpmTykWHvpPMaV5plLQysRYHis0CBdx1lr/yhFXxM0Dzk=
-X-Received: by 2002:a05:600c:8b53:b0:490:b294:c652 with SMTP id 5b1f17b1804b1-492668857demr82651345e9.20.1782468839549;
-        Fri, 26 Jun 2026 03:13:59 -0700 (PDT)
+        bh=Lzs37CHTk7DgicK6OAuLqr6L4003x8EvgSSRyy0ZdYI=;
+        b=WAu/XvWkWbGmR1tph9c8kXA219QL1sXRwwytwoatNsqaWw+xd1GlAmJN+Fe98BsTN+
+         f9UK6EFdYNDLB2vKtsznztx/kCx+dzKoX2HQVw99BgQBS5HJhSU+aGQkF51+krimBCFo
+         F3U8eshfANocmIqPmq89bGP4wWKasAM4iNf14SivbMQq1fgLYVl41VkCBkaJwujGy8Gg
+         7sJXvr+efK+RVPt2+QvgD2GZ42CFrG8fomjwMZVeNcjD0szKxVYyOCk14b5GG5um+SDF
+         eMFfhSxI5OXwx1HHHo0Me+AP52tlQZvDF+3RzrsankIHhwTht4seezIPopxh6w9fKPrY
+         v7ew==
+X-Gm-Message-State: AOJu0YzwcLWIXthNiBzk0JmkeVXbu/Pq8d5dZgkF7g2Vn6taaZ44Dpou
+	2z5G+bAK0mIqHbh7ip+tjnbh3Iqf/NNG6U7HD0rYfGQV4wxhj+evJHu5vQn1pcSKhjo=
+X-Gm-Gg: AfdE7cmw7ekg29Qh+4M3gtrkF30qNwsIeyJXkLSr9eLqIe7nXtPLiBj63UJ3JmnYLGk
+	+6au2Euj2gVGbjfsVX/HL9U6fEHa9w5I8XxPVx3V3vDh6KU09yvXylAOf+49ve7WBby0vMgbkwb
+	TkRJdklAjE9uZMjFFGErexAZ1KmBi6Hb1L5CdO90P5jUElBMH0DLxKpT3IL5KhKf409Vef8uInt
+	3GsgfCq75ajk0XHE7c92ZvM2SS+lIgegUNHshJgawW30CybICGmV8K5TP7HOtre3P3UaZEHDWjE
+	FGdejsj6tJKyufyYaqpxsmeFesANe4p0t21Dl0hmwV9Ey+bZ0lrBfMtQGEYKjUGj3sR0cK42+NW
+	fvc/fNhGtRP/b91U2ftI3JjQNLhDGL7lpkUJTA6Prku46hWFmExqsk+ksj8ORNidJJsnxWlBzcI
+	/w5aXK5axkq38gyAAEiSJP5dCMKdMXzejPDYSfytAf
+X-Received: by 2002:a05:600c:1d04:b0:492:4714:2d7e with SMTP id 5b1f17b1804b1-492668b76f4mr94619375e9.36.1782469431884;
+        Fri, 26 Jun 2026 03:23:51 -0700 (PDT)
 Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30c7c52c591sm22444045eec.7.2026.06.26.03.13.56
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30c7c8b1a80sm16265208eec.18.2026.06.26.03.23.47
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 26 Jun 2026 03:13:58 -0700 (PDT)
-Message-ID: <4ef4df7b-6ec4-4f6b-9e17-25432a3c2870@suse.com>
-Date: Fri, 26 Jun 2026 19:43:53 +0930
+        Fri, 26 Jun 2026 03:23:50 -0700 (PDT)
+Message-ID: <46cac806-1f84-4648-a725-6d239763ea0b@suse.com>
+Date: Fri, 26 Jun 2026 19:53:42 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -68,14 +67,19 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: always wait for ordered extents to avoid OE races
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: linux-btrfs@vger.kernel.org,
- syzbot+ba2afde329fc27e3f22e@syzkaller.appspotmail.com
-References: <aaabe0f2bee07800fb0490d24fab5cd162e5241d.1782366056.git.wqu@suse.com>
- <CAL3q7H7+WAQMV76+-AuU=dR_qoe6Gu1_CNmwUFD=zW81d2Hz0g@mail.gmail.com>
- <9efd034f-fa6b-485c-aca7-a38f526d4083@suse.com>
- <CAL3q7H6sNSPqkE+h7PgX+Vv+7o5zTokBi52F5SooMmxEEH-phQ@mail.gmail.com>
+Subject: Re: [PATCH 1/2] fs: btrfs: implement opendir(), readdir() and
+ closedir()
+To: Alexey Charkov <alchark@flipper.net>
+Cc: linux-btrfs@vger.kernel.org, u-boot@lists.denx.de,
+ =?UTF-8?Q?Marek_Beh=C3=BAn?= <kabel@kernel.org>,
+ Tom Rini <trini@konsulko.com>, Simon Glass <sjg@chromium.org>,
+ =?UTF-8?Q?Timo_tp_Prei=C3=9Fl?= <t.preissl@proton.me>,
+ Peng Fan <peng.fan@nxp.com>, Patrice Chotard <patrice.chotard@foss.st.com>,
+ Yao Zi <me@ziyao.cc>
+References: <20260625-btrfs-readdir-v1-0-dd781a2b3965@flipper.net>
+ <20260625-btrfs-readdir-v1-1-dd781a2b3965@flipper.net>
+ <bbeac2f6-685d-4ace-b689-10d64c4e3ce5@suse.com>
+ <CAKTNdwGH2OCWJ1A=jQWiLYQmxG8UFTBGwGh0Qno7OkUfxs4dtw@mail.gmail.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -102,31 +106,85 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <CAL3q7H6sNSPqkE+h7PgX+Vv+7o5zTokBi52F5SooMmxEEH-phQ@mail.gmail.com>
+In-Reply-To: <CAKTNdwGH2OCWJ1A=jQWiLYQmxG8UFTBGwGh0Qno7OkUfxs4dtw@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/6/26 18:45, Filipe Manana 写道:
-> On Thu, Jun 25, 2026 at 11:39 PM Qu Wenruo <wqu@suse.com> wrote:
+在 2026/6/26 18:51, Alexey Charkov 写道:
+> On Fri, Jun 26, 2026 at 10:38 AM Qu Wenruo <wqu@suse.com> wrote:
 [...]
->> If acceptable, I'll add the microbenchmark into the commit message in
->> the next update.
+>>
+>> So it looks like u-boot only supports the above 3 types, and unlike
+>> linux kernel the values doesn't match the btrfs internal ones.
+>>
+>> In that case, I'd still prefer a proper convertor function.
 > 
-> Instead of this approach, can we wait for the ordered extent(s) in DIO
-> path that reverts i_size after the short write?
+> Hmm, but the convertor function would still be the same switch
+> statement, and it's only used in this single place. Would factoring it
+> out actually improve readability?
 
-OK, I think that's possible.
-I didn't see any special context requirement for iomap_end() callback.
+This is mostly a cross-project tendency.
 
-But doing btrfs_start_ordered_extent() at the isize revert timing has 
-one extra problem, it will break nowait.
+Inside kernel, we do not need a conversion because all the BTRFS_FT* 
+flags matches the FT_* inside kernel.
 
-As btrfs_start_ordered_extent() will call wait_event().
+In progs we have btrfs_type_to_imode() to do the conversion to S_IF* flags.
 
-At least the current one we won't directly sleep (the wait is happening 
-on the next buffered write).
+Thus I'd prefer a convertor, even if there is only a single user.
+
+> 
+>> [...]
+>>> +
+>>> +             *offset = key.offset + 1;
+>>> +             type = btrfs_dir_type(path.nodes[0], di);
+>>> +
+>>> +             /* XATTRs share the key space but are not directory entries. */
+>>> +             if (type == BTRFS_FT_XATTR) {
+>>
+>> This doesn't looks correct again.
+>>
+>> XATTR has their own keys, they should not show up among DIR_INDEX keys.
+
+Firstly, xattr is per-inode, not per-dentry.
+Thus I doubt if you can hit an XATTR type inside a DIR_INDEX.
+
+The easily way to test the theory is just create a simple XATTR for 
+compression:
+
+  # mkfs.btrfs -f test.img
+  # mount test.img /mnt/btrfs
+  # touch /mnt/btrfs/foobar
+  # btrfs prop set /mnt/btrfs/foobar compression zstd
+  # sync
+  # btrfs ins dump-tree -t 5 test.img
+  [...]
+	item 6 key (257 XATTR_ITEM 550297449) itemoff 15812 itemsize 51
+		location key (0 UNKNOWN.0 0) type XATTR
+		transid 10 data_len 4 name_len 17
+		name: btrfs.compression
+		data zstd
+
+You can see that XATTR_ITEM key is for that inode 257, not for the 
+parent directory inode (256).
+
+
+Secondly, if you check the tree-checker.c from the kernel, 
+check_dir_item() will reject an XATTR dir type if the key is not 
+XATTR_ITEM_KEY.
+
+So even if you really find a btrfs with XATTR dir type but with 
+DIR_INDEX key, btrfs will refuse to reject that tree block.
 
 Thanks,
 Qu
+
+> 
+> Let me double check and adjust accordingly.
+> 
+> Thanks a lot for your review!
+> 
+> Best regards,
+> Alexey
+

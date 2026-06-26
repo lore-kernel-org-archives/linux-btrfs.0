@@ -1,67 +1,66 @@
-Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
+Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4A4B0340260
-	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 23:50:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BF8DB239567
+	for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2026 06:38:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782431446; cv=none; b=o4vDR6c6SNRDP2oMtMq7fX1bBejZvJ8rRpJkZw91RSg4DxJgulLlkqL7LuwTclu6HdrJHiRgfzSvxYN0x4koRU36ASt10Bb6rsYxIxZ2v1bQhQDe6eVnOEcIKvjbqkr+vzHDv3KSQ3K+YdoCTMmZs+rdlLcqEj3DQ19kfwRD3LI=
+	t=1782455938; cv=none; b=lxbTvpsjcTkWdpqFJt3s2njkmVWA5137rrQKigF2NL4+wgQizSZG6olKKv4WhQwXIthZgGaXB4lVskOsRUy+8e9uKJ33cwcVsJIS7OXZB4zzd8bCvL3E3VS/7Z5uBbY6wjfuIKCqytrRYJjuePQiFwPOiOdlo23CRE9jQDPLds8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782431446; c=relaxed/simple;
-	bh=nT5ippKbARbEmf7+nZfwlljdT4pcoLoJ6SYFvIBYTzo=;
+	s=arc-20240116; t=1782455938; c=relaxed/simple;
+	bh=3DgS81XM3KGEPln5NNDKIXx5YyOcLR807aD4Vz2SnR0=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=AszFyI6NnBIudBLrgniaoiC38UQF+hvwQtXluZTUjX6TVsy5cv+Elt1dQUxEv4vwAVpkpHth5YwpnyXvDVWaeZohnmbEOLOgbbHOQ2AnH/igDG0AKEFmLTRSGDNiEOmGSfWBC/r25fhk6KhCPfvVS94XW8ZTSYHvDBknMju76y8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Qu8jnSCs; arc=none smtp.client-ip=209.85.128.41
+	 In-Reply-To:Content-Type; b=VS580i1/EN8vRIDGW0l68w0UdVE5ZMsLXnXWz1etiyO+CLzwj3KOugMqiHsNOjCxifZvW10qNWIIL5PE9XNSTGRdW5QttAXtepTu+epEtDkfC+KihEo2XAfv9Ls2r7QXAZGluKHUkQkRDGOjsi0PiHNf3+3FbynY99LMzw7M9nY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=IhSCmpCW; arc=none smtp.client-ip=209.85.128.48
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Qu8jnSCs"
-Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-490b64c8311so4156925e9.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 16:50:45 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="IhSCmpCW"
+Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-490b64c8311so6734165e9.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2026 23:38:56 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1782431444; x=1783036244; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+        d=suse.com; s=google; t=1782455935; x=1783060735; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=E0PvYjpYa6mb+iHjFo6oq0Zkj+l2qZIqxdP1OVCfZgI=;
-        b=Qu8jnSCs3wIiiuHvZxqSNuzaSKg8c2yilSxV5Xp47woee+FjCYUISaD+1hNjR/vgZN
-         m2H3UEDwEF0+H/ZjMKEAGj84D+3ERN82BeU1wR8/SWzYrGs4BXGGU3mMXQJ8TQ6z2746
-         gV7Hpzkb7HpezLk2NKJ0Y+bYpw8qTakkOvcMHTQ8fM5ekKitgVrvJVALGfxqfNatKpbH
-         Acy9kUxZtRSSyca99SOKZl5xn/5KU3w8AniRbvKCGTS0UgavSEUvPLLbTFQigqaM3MOW
-         FrdvKaLM6k/W/PZUpyEOBnSXId9T6j6NXZhLDHwaostE011Y01vG+0ZowDnUmLx477dx
-         cESA==
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=MlZjyuLh3+FM/+5q3QBAkx4Y28rvsXbke3N1Fwrq2mI=;
+        b=IhSCmpCWgdKV5q3kujkCSJaOKrvoQ5D4Bc7q34H/gH2jNwmDNQaMhU+OdhbXliGW29
+         17XyP2yeCMuKY6FEHxqjrsgNc04E+bs8Xs2IxS3cqAXwY9O50PscQOvDjiHt2UcFxWru
+         fJV22RFZ/OtpIaGYLAfIuWrSpKzk0kW/mxvYlxkWq2V2D6k90uSafDmpZa1M3wlffh4P
+         LS6xpHVTPy1LsMl4rgGYRsfrdlJ9KmwCMRocEOkaQkbxunFDUhuu6ZBF6MJXrUINZfaC
+         b/8aBO0P1bGiwUaXswkTaVHce5XxztHn5MBPTRO+Bqb5H8vyIj5fdCVA7XOYYPdL3S5Z
+         d0mw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1782431444; x=1783036244;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+        d=1e100.net; s=20251104; t=1782455935; x=1783060735;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=E0PvYjpYa6mb+iHjFo6oq0Zkj+l2qZIqxdP1OVCfZgI=;
-        b=Q8wYRJ75qJxuOgmakIWnSv2ZuiM+3qXpSSnfurjcEI0xS7TTo1hUM8mkwjjLdjJ8O7
-         Ny0MCW1aTssVQrWyxLK9AtCGTamqgQ5XDimOOSMGAQqqb+pwQv/QqBd1hGBMEE5q5m85
-         MMAZdDlpCGzRwLtesvBYSZO2YcoivsniVk1L0PsAut1qnbz3txc8IDIPBkpZTM11b8JJ
-         2IvUswUv12omse2bHZu0IvCq1pJQSAvqA9jd8+OjNJjW5gk+Q/jk/pybr0456seYUqi9
-         x9v4CVxkgzZg6Pf4rDK3nhxnZQmACKUXspGAAeqJ9VGXoCp9EzppMr5xP2VrSEKQ4B5O
-         BNBw==
-X-Forwarded-Encrypted: i=1; AFNElJ8XYanyRZ0a+J41U5obImA/9/MYGzfiy2hLj3zuoTotFLFnCR1VoQCPcgHxN0FIa5sLxJWbRSYHc0Tujg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxF9zOfQtUI5+UgX9sVli+FcrzDr6Sr6MZ1p/BnHNAEObo/4Sd+
-	zsoQRsjCzpJ5wwhjvg0avkDEDh5T4VB/Zo4pTfDL1wQnvSZFieny24dhGOxx9ceefsU=
-X-Gm-Gg: AfdE7clYJ/OuQxT4AuVTm7m2tm1MsehztpCmdc7K7OwDFGbFVT1TRNY5HJ66ClyMbqD
-	GvkVotuRPkETghrJBGku+GujU2sTTUYmWZkqrSMNDVt90ZLD9YohODxbgBpyxW9CV3jBn5yLrfp
-	uCq8SpmHd6nAMBANc1Z7KgV4oHxsEs4Oz4dDV0pu9bzO/kqtH6WKeygOS9BffsEa/K7TP0gLZa+
-	HkCNmed0ckgspY5GXc4+WQMkF3DuIKp0bvLhNB5JyCB6Vj5LpwKuALjheLOeOfMU3mvhPVleRB0
-	xLMbrXIqzxxiZHfh5GK8B/Og0ph1IxUX5c1d9br5YZFNVpohXtbAR/n3GYMZd+deMD7Tbu4ieHB
-	KAUymXO1pI41RoRnhBwPshmTpiXki7308zDS+4O/0zEGqUcLGjkJD9PilMoG0DomSqZ6ygZvIfG
-	E85smcvMbo8GCYgHT4p0D4X1GHjyRhn/rJWx6swYJYkHkgN6fZ21Q=
-X-Received: by 2002:a05:600d:8489:10b0:490:9588:bdae with SMTP id 5b1f17b1804b1-49266899f97mr50891175e9.18.1782431443612;
-        Thu, 25 Jun 2026 16:50:43 -0700 (PDT)
+         :message-id:reply-to;
+        bh=MlZjyuLh3+FM/+5q3QBAkx4Y28rvsXbke3N1Fwrq2mI=;
+        b=kXzEu4VAXUikcG+v3u/jvKxUIgPEQ/LNDkg3y7fh9FTlWWcU9VozhqbXDnNg640Mm+
+         A7GUUcr2jmg2qtJYteK3KB0uz8XRiJVYz6XLtwfHMtrUzYmpd9OwcjlCAIsUuRwc8xkK
+         NHkSJafqruX2c8O9QqewjWJilTzSExAMuEEGXW+TJPN4oidckV6MhPQv5Msm/i7iJpp3
+         6b3iQop5TVlzELKz6S9CQePr4IO85qW+wzaciFFdXWtR4DtwboxHxJaIsMfeSv0dUIGH
+         0kJ3zftKlLLSPwuvbQhmRDckGtFp5tTEJVpNP/kGHW1Q5LXHSgCbZZj6eWPEsXMRnnvd
+         eouA==
+X-Forwarded-Encrypted: i=1; AFNElJ/r1QyAtDTa+6wxBRhD/huktmtvZ9R2zAZMab/jdhNH/2fSJkJYrTpoAQlQwLkTUtUHFIqFfkCzx9n3tA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxLAU8Ap7R8XZI/3EcODAJgprW4vpetIgumm+/mSgC1zWiSrCwk
+	BYjAbpXUafxCrHjxcm9ITEkJBZlJZmm5g74oSnaA8MIua0FFV5nyCsi9vSRWM5znzJ8=
+X-Gm-Gg: AfdE7ckAmL/EKulDiAgrNBC6b/PFcLJQronYnlnpIEGNkAmhSX10x+FWSvexHr7mJSV
+	SA3BVBYQnYrcdRi5kmhSbTKd0xSiGiyYBkATLzLEjcCsDcRsIXNYilUPrC8UCDRAQiV7TWqoJ3M
+	XWTfFrQv39ge87r75QGrVDZBg5MqrXA9bhyZAJ0Ay52hYxLzCDG2mnWjcYLanLy96CD17hKCj3T
+	lF9snTa5U3iIvnKubnUUG0rWpb8fVnt3V6CIBwWj5/Z/gsIfSiWd4BiL+GcieeCisZjoD5lhxbe
+	K0Rq8UDMz3GJRIYTNzEpbo5T6HLak0Izccyre6cVMYuLaS4OhnDnwZgaW90YbTnxHfIV+n/31yK
+	5Zx46lUY2pusmeRj5Ob9oD/v9nr7PTpLZGuX6gjZnUM6ZEYA1YvBLZp2qnRsd6CU6+4NYZb32Vs
+	uTvch8b6Gq6zcmT98Wuft5ZuTxSWhMZ2FNCBVHtgfJ
+X-Received: by 2002:a05:600c:a111:b0:492:68bc:3237 with SMTP id 5b1f17b1804b1-49268bc34e3mr35713465e9.32.1782455935144;
+        Thu, 25 Jun 2026 23:38:55 -0700 (PDT)
 Received: from ?IPV6:2403:580d:fda1::299? (2403-580d-fda1--299.ip6.aussiebb.net. [2403:580d:fda1::299])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-139d8f77602sm11019674c88.8.2026.06.25.16.50.39
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2c7f65088cesm32603075ad.80.2026.06.25.23.38.50
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 25 Jun 2026 16:50:42 -0700 (PDT)
-Message-ID: <867a944d-3a26-4248-b0aa-f10247196502@suse.com>
-Date: Fri, 26 Jun 2026 09:20:37 +0930
+        Thu, 25 Jun 2026 23:38:54 -0700 (PDT)
+Message-ID: <bbeac2f6-685d-4ace-b689-10d64c4e3ce5@suse.com>
+Date: Fri, 26 Jun 2026 16:08:47 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,13 +68,17 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 5/8] btrfs-progs: print encryptin type field of file
- extents
-To: Daniel Vacek <neelx@suse.com>, David Sterba <dsterba@suse.com>
-Cc: linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-References: <20260624165144.556908-1-neelx@suse.com>
- <20260624165144.556908-6-neelx@suse.com>
+Subject: Re: [PATCH 1/2] fs: btrfs: implement opendir(), readdir() and
+ closedir()
+To: Alexey Charkov <alchark@flipper.net>, linux-btrfs@vger.kernel.org,
+ u-boot@lists.denx.de
+Cc: =?UTF-8?Q?Marek_Beh=C3=BAn?= <kabel@kernel.org>,
+ Tom Rini <trini@konsulko.com>, Simon Glass <sjg@chromium.org>,
+ =?UTF-8?Q?Timo_tp_Prei=C3=9Fl?= <t.preissl@proton.me>,
+ Peng Fan <peng.fan@nxp.com>, Patrice Chotard <patrice.chotard@foss.st.com>,
+ Yao Zi <me@ziyao.cc>
+References: <20260625-btrfs-readdir-v1-0-dd781a2b3965@flipper.net>
+ <20260625-btrfs-readdir-v1-1-dd781a2b3965@flipper.net>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -102,57 +105,152 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260624165144.556908-6-neelx@suse.com>
+In-Reply-To: <20260625-btrfs-readdir-v1-1-dd781a2b3965@flipper.net>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/6/25 02:21, Daniel Vacek 写道:
-> From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+在 2026/6/26 02:54, Alexey Charkov 写道:
+> Add support for generic directory iteration with opendir(), readdir() and
+> closedir() in the btrfs filesystem driver, following the ext4fs
+> implementation for opendir()/closedir() and the btrfs_iter_dir() function
+> for readdir().
 > 
-> Encrypted file extents now have the 'encryption' field set to an
-> encryption type.  Let's print it.
-> 
-> Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-> Signed-off-by: Daniel Vacek <neelx@suse.com>
+> Signed-off-by: Alexey Charkov <alchark@flipper.net>
 > ---
->   check/main.c               | 1 -
->   kernel-shared/print-tree.c | 2 ++
->   2 files changed, 2 insertions(+), 1 deletion(-)
+>   fs/btrfs/btrfs.c    | 92 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   fs/btrfs/ctree.h    |  2 ++
+>   fs/btrfs/dir-item.c | 91 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   fs/fs.c             |  4 ++-
+>   include/btrfs.h     |  5 +++
+>   5 files changed, 193 insertions(+), 1 deletion(-)
 > 
-> diff --git a/check/main.c b/check/main.c
-> index dedb4db4..a32247b3 100644
-> --- a/check/main.c
-> +++ b/check/main.c
-> @@ -1778,7 +1778,6 @@ static int process_file_extent(struct btrfs_root *root,
->   			rec->errors |= I_ERR_BAD_FILE_EXTENT;
->   		if (extent_type == BTRFS_FILE_EXTENT_PREALLOC &&
->   		    (btrfs_file_extent_compression(eb, fi) ||
-> -		     btrfs_file_extent_encryption(eb, fi) ||
+> diff --git a/fs/btrfs/btrfs.c b/fs/btrfs/btrfs.c
+> index f3087f690fa4..c647c8dedf4e 100644
+> --- a/fs/btrfs/btrfs.c
+> +++ b/fs/btrfs/btrfs.c
+> @@ -9,6 +9,7 @@
+>   #include <malloc.h>
+>   #include <u-boot/uuid.h>
+>   #include <linux/time.h>
+> +#include <fs.h>
+>   #include "btrfs.h"
+>   #include "crypto/hash.h"
+>   #include "disk-io.h"
+> @@ -159,6 +160,97 @@ int btrfs_ls(const char *path)
+>   	return 0;
+>   }
+>   
+> +struct btrfs_dir_stream {
+> +	struct fs_dir_stream parent;
+> +	struct fs_dirent dirent;
+> +	char *dirname;
+> +	u64 offset;
 
-May I ask why preallocated file extent would have encryption value set?
+This doesn't look correct to me, for an opened dir, we should have at 
+least the root id or pointer, and an inode number.
 
-My common sense says that encryption policy should only be set for 
-regular file extents.
+Not just an @dirname and re-do the path resolution again and again.
+
+In fact, I do not even think we should save @dirname here.
+
+
+> +};
+> +
+> +int btrfs_opendir(const char *dirname, struct fs_dir_stream **dirsp)
+> +{
+> +	struct btrfs_fs_info *fs_info = current_fs_info;
+> +	struct btrfs_dir_stream *dirs;
+> +	struct btrfs_root *root;
+> +	u64 ino;
+> +	u8 type;
+> +	int ret;
+> +
+> +	*dirsp = NULL;
+> +	ASSERT(fs_info);
+> +
+> +	ret = btrfs_lookup_path(fs_info->fs_root, BTRFS_FIRST_FREE_OBJECTID,
+> +				dirname, &root, &ino, &type, 40);
+
+You just discard the most important @root and @ino.
+
+So what is the point here?
+> +	if (ret < 0)
+> +		return ret;
+> +	if (type != BTRFS_FT_DIR)
+> +		return -ENOTDIR;
+> +
+> +	dirs = calloc(1, sizeof(*dirs));
+> +	if (!dirs)
+> +		return -ENOMEM;
+> +	dirs->dirname = strdup(dirname);
+> +	if (!dirs->dirname) {
+> +		free(dirs);
+> +		return -ENOMEM;
+> +	}
+> +
+> +	*dirsp = (struct fs_dir_stream *)dirs;
+> +	return 0;
+> +}
+> +
+> +int btrfs_readdir(struct fs_dir_stream *fs_dirs, struct fs_dirent **dentp)
+> +{
+> +	struct btrfs_dir_stream *dirs = (struct btrfs_dir_stream *)fs_dirs;
+> +	struct btrfs_fs_info *fs_info = current_fs_info;
+> +	struct fs_dirent *dent = &dirs->dirent;
+> +	struct btrfs_root *root;
+> +	u64 ino;
+> +	u8 type;
+> +	int ret;
+> +
+> +	*dentp = NULL;
+> +	ASSERT(fs_info);
+> +
+> +	ret = btrfs_lookup_path(fs_info->fs_root, BTRFS_FIRST_FREE_OBJECTID,
+> +				dirs->dirname, &root, &ino, &type, 40);
+
+No, doing the same path resolution again and again is not sane.
+> +	if (ret < 0)
+> +		return ret;
+> +	if (type != BTRFS_FT_DIR)
+> +		return -ENOTDIR;
+> +
+> +	memset(dent, 0, sizeof(*dent));
+> +	ret = btrfs_next_dir_entry(root, ino, &dirs->offset, dent->name,
+> +				   sizeof(dent->name), &type);
+> +	if (ret < 0)
+> +		return ret;
+> +	if (ret > 0)
+> +		return -ENOENT;
+> +
+> +	switch (type) {
+> +	case BTRFS_FT_DIR:
+> +		dent->type = FS_DT_DIR;
+> +		break;
+> +	case BTRFS_FT_SYMLINK:
+> +		dent->type = FS_DT_LNK;
+> +		break;
+> +	default:
+> +		dent->type = FS_DT_REG;
+> +		break;
+
+So it looks like u-boot only supports the above 3 types, and unlike 
+linux kernel the values doesn't match the btrfs internal ones.
+
+In that case, I'd still prefer a proper convertor function.
+
+[...]
+> +
+> +		*offset = key.offset + 1;
+> +		type = btrfs_dir_type(path.nodes[0], di);
+> +
+> +		/* XATTRs share the key space but are not directory entries. */
+> +		if (type == BTRFS_FT_XATTR) {
+
+This doesn't looks correct again.
+
+XATTR has their own keys, they should not show up among DIR_INDEX keys.
 
 Thanks,
 Qu
-
->   		     btrfs_file_extent_other_encoding(eb, fi)))
->   			rec->errors |= I_ERR_BAD_FILE_EXTENT;
->   		if (compression && rec->nodatasum)
-> diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
-> index 0afa3696..159f0825 100644
-> --- a/kernel-shared/print-tree.c
-> +++ b/kernel-shared/print-tree.c
-> @@ -471,6 +471,8 @@ static void print_file_extent_item(struct extent_buffer *eb,
->   	printf("\t\textent compression %hhu (%s)\n",
->   			btrfs_file_extent_compression(eb, fi),
->   			compress_str);
-> +	printf("\t\textent encryption %hhu\n",
-> +			btrfs_file_extent_encryption(eb, fi));
->   }
->   
->   /* Caller should ensure sizeof(*ret) >= 16("DATA|TREE_BLOCK") */
-

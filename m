@@ -1,469 +1,622 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C995351C27
-	for <linux-btrfs@vger.kernel.org>; Sat, 27 Jun 2026 06:20:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.22
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 83F474315F;
+	Sat, 27 Jun 2026 09:28:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782541231; cv=none; b=XIkDR6PZzYWizIYhVCY88Hn/HaNi0TNU9lUHVq/1cp7R4FZW+jUBnRm3sBg/f2xS03gpBuDhqdTgV/34XecauEGUXGowSBnkTpBclY4qaNnd2D720SabCA3EeJpbTPX5sV6QJQlTuNZeAe9xOJnX+NBfUjqOJEwpqPvDm3jy7rQ=
+	t=1782552499; cv=none; b=n/RnqbcMOYmUMSWeo9mKhGx16gEr3Dd3XMNNdEh36DD7F1OX/MaiV47Ol0SpGoSIEi39ZOTxAiJBCdy05oNthcjLsIGDGVRMFvAe1PNo8qAGHESXHHfiB+HUV+FvyrjzDKnOgnmD9p/sAWIXjHShwkaBtFxe0JuElaOMmRKTVA0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782541231; c=relaxed/simple;
-	bh=viUf50CuuMa1By+K84sgOFA+jeIfPomTXtVA+ErphZA=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=boxJOs+cup1n4VM8633+0njJwOsJ4r57Cwjx/y9CYK8+vPA5kIHAXxVjy1p8UF9kM5uHaghCAMzVI3g3hrrnQztFeSgjkz1y0rB8bwelC9Qauxoq2ZvA/a1fV4CI96KtgDOJQZPqM/bEem/vTPacD+1GPBcTcoBMfVj1de1bfIo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=uVA5mJZ0; arc=none smtp.client-ip=212.227.17.22
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1782552499; c=relaxed/simple;
+	bh=Nl9pUHyxEiGt4xwCkLiF2Adwkn5J3l0qSlEeyvXATaQ=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=pLyMs3S4StsXJuDwkxeCRJA/F9tlehE9g+vWQlvcGdb9W7y/7vYMUjgEkGbh465WtkpAvoriDqaulcfGBY4407dw8hN2hJGJmE3NxCrmPT49KAU8MbwrCdt8gQROaXs9a62xiQnY2jElz1Eql2tCDgHdJIIdEAjgxlId7uK/WRA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=DM6+8uqu; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="uVA5mJZ0"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1782541226; x=1783146026; i=quwenruo.btrfs@gmx.com;
-	bh=Z/XpcxeCadPty/X8btS62sBXnGzUCSNiZKhLf894QIc=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=uVA5mJZ0duyRi0DzQMmtk8el6jWXnvRTXn5kFjuYFIadWst/XbP9qLyAqfXqU4ET
-	 a7OdG3v9OkhKn27dphmd21dTUDvzTBy+T2HUnKY19X9gvD8qcHY1ym8B1BFOGrFmg
-	 GX+683h7iNUL9gze19t/jTJuEkXQ2anF+18dB4l6BQvI2dZj9lYlam9urI/MSMs9P
-	 vO5p2of1QybLDELTrdI8fzZKbW9f4futK/yBq9p0nmBDKjOJkWaku7qgEuXSdu6UJ
-	 yB+vNJ8IniL0HiMdJQYT8fEY04zlOwFlonpYr8EOQVmHVEetDnmqq9dPdt8chS2Jr
-	 MqY5Rs0cgqyj4g3ZqQ==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1Ma20q-1wgZwL1BDg-00UvSw; Sat, 27
- Jun 2026 08:20:25 +0200
-Message-ID: <190abc3d-e6a6-4f83-aec8-b47a529472cf@gmx.com>
-Date: Sat, 27 Jun 2026 15:50:17 +0930
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="DM6+8uqu"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F35901F000E9;
+	Sat, 27 Jun 2026 09:28:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1782552497;
+	bh=Q/0eNKdsfHvMtaLK/+9iF7k4NRMMJLn2GG9LrFdj48c=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=DM6+8uquXvI1/gQKEkpBES+99zxwXEQ4MnBHTJ5IRcAo3irxTIvUJDeQ508zoZket
+	 gE7HELLevawOhknvOp+FWmGfaUTD6+YdeYVGxI4JxplCyltgBbOwOr0/81bpPXHD22
+	 Q7lqg+IIcPqkQ45zE/vnlALV2Y+s2Vdl58+fGg12LFBAd6eGxtU9EGbb5yp8SP82PR
+	 6bxGIkqLo/++QwsXyPP6lv/vjcAZWbbtMOGDgkpzn7VE7iwF+6PtZCNDiSz/omcqQm
+	 TV2A64LuQiZX1xvamlShq6XJjm5f0IruTf2VMJmetF96xiO6WjUn+EuLUeYQT2WwnD
+	 SOQms8oQy7x/w==
+Date: Sat, 27 Jun 2026 10:28:03 +0100
+From: Lorenzo Stoakes <ljs@kernel.org>
+To: Rik van Riel <riel@surriel.com>
+Cc: linux-kernel@vger.kernel.org, kernel-team@meta.com, linux-mm@kvack.org, 
+	david@kernel.org, willy@infradead.org, surenb@google.com, hannes@cmpxchg.org, 
+	ziy@nvidia.com, usama.arif@linux.dev, fvdl@google.com, 
+	Andrew Morton <akpm@linux-foundation.org>, Jonathan Corbet <corbet@lwn.net>, Chris Mason <clm@fb.com>, 
+	David Sterba <dsterba@suse.com>, Vlastimil Babka <vbabka@kernel.org>, 
+	Steven Rostedt <rostedt@goodmis.org>, Masami Hiramatsu <mhiramat@kernel.org>, 
+	"Rafael J. Wysocki" <rafael@kernel.org>, Oscar Salvador <osalvador@suse.de>, 
+	Mike Rapoport <rppt@kernel.org>, linux-doc@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-trace-kernel@vger.kernel.org, linux-pm@vger.kernel.org, linux-cxl@vger.kernel.org, 
+	Linus Torvalds <torvalds@linux-foundation.org>
+Subject: Re: [RFC PATCH 00/40] mm: reliable 1GB page allocation
+Message-ID: <aj9yrlB0TrlYCLlf@lucifer>
+References: <20260520150018.2491267-1-riel@surriel.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 2/2] fs: btrfs: use fs_ls_generic() and drop custom
- implementation
-To: Alexey Charkov <alchark@flipper.net>, Qu Wenruo <wqu@suse.com>,
- linux-btrfs@vger.kernel.org, u-boot@lists.denx.de
-Cc: =?UTF-8?Q?Marek_Beh=C3=BAn?= <kabel@kernel.org>,
- Tom Rini <trini@konsulko.com>, Simon Glass <sjg@chromium.org>,
- =?UTF-8?Q?Timo_tp_Prei=C3=9Fl?= <t.preissl@proton.me>,
- Peng Fan <peng.fan@nxp.com>, Patrice Chotard <patrice.chotard@foss.st.com>,
- Yao Zi <me@ziyao.cc>
-References: <20260626-btrfs-readdir-v2-0-7dd43f72d1b4@flipper.net>
- <20260626-btrfs-readdir-v2-2-7dd43f72d1b4@flipper.net>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260626-btrfs-readdir-v2-2-7dd43f72d1b4@flipper.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:BapK/fVR18DszZv/4kaAB2NmzuDt9UvFz66bwBFvQpW6Xe7SzID
- ArB265190zrTNot0r3APur4p0my4YVvX2g8UHJgbu1SnvYFV3TslQ76BRjGAT7U2S8/S1dj
- hRpxcyd/14NfQ6L1Aydrk2laKkv6BZRkpYwNZHpuXTi5PtzI/gi2jb2qfdaxdaPq9OgFJja
- CD5LYRJRgG2sboVVU4JlQ==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:djbPR73wp/8=;D3YvnvjF4VymHYcg1yjoxk95VVf
- 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
- s+EH1NLlXFakwjHKf7KscuQZ/yjv13pt5NnHwXc
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260520150018.2491267-1-riel@surriel.com>
 
++cc missing maintainers.
++cc Linus for general issues raised.
 
+(Apologies, this email is VERY long, even for me)
 
-=E5=9C=A8 2026/6/27 00:48, Alexey Charkov =E5=86=99=E9=81=93:
-> Now that generic callbacks for opendir/readdir/closedir are implemented,
-> the custom btrfs_ls() implementation is no longer needed, along with the
-> btrfs_iter_dir() callback iterator.
->=20
-> Use fs_ls_generic() instead.
->=20
-> Signed-off-by: Alexey Charkov <alchark@flipper.net>
+Hi Rik,
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+I appreciate this is an RFC, but obviously part of that is early
+feedback. So if this is meant to be an (EXTREMELY) rough pre-RFC
+proof-of-concept then fine (however your 'todo' suggests otherwise).
 
-Thanks,
-Qu
+And of course, before I get critical :) thank you for looking into this,
+it's very interesting work. I want this feature to land. BUT :)
 
-> ---
->   fs/btrfs/btrfs.c    | 129 --------------------------------------------=
-=2D-------
->   fs/btrfs/ctree.h    |   5 --
->   fs/btrfs/dir-item.c |  59 ++----------------------
->   fs/fs.c             |   2 +-
->   include/btrfs.h     |   1 -
->   5 files changed, 4 insertions(+), 192 deletions(-)
->=20
-> diff --git a/fs/btrfs/btrfs.c b/fs/btrfs/btrfs.c
-> index 6f034861da90..e663dda12e80 100644
-> --- a/fs/btrfs/btrfs.c
-> +++ b/fs/btrfs/btrfs.c
-> @@ -17,107 +17,6 @@
->  =20
->   struct btrfs_fs_info *current_fs_info;
->  =20
-> -static int show_dir(struct btrfs_root *root, struct extent_buffer *eb,
-> -		    struct btrfs_dir_item *di)
-> -{
-> -	struct btrfs_fs_info *fs_info =3D root->fs_info;
-> -	struct btrfs_inode_item ii;
-> -	struct btrfs_key key;
-> -	static const char* dir_item_str[] =3D {
-> -		[BTRFS_FT_REG_FILE]	=3D "   ",
-> -		[BTRFS_FT_DIR]		=3D "DIR",
-> -		[BTRFS_FT_CHRDEV]	=3D "CHR",
-> -		[BTRFS_FT_BLKDEV]	=3D "BLK",
-> -		[BTRFS_FT_FIFO]		=3D "FIF",
-> -		[BTRFS_FT_SOCK]		=3D "SCK",
-> -		[BTRFS_FT_SYMLINK]	=3D "SYM",
-> -	};
-> -	u8 type =3D btrfs_dir_type(eb, di);
-> -	char namebuf[BTRFS_NAME_LEN];
-> -	char *target =3D NULL;
-> -	char filetime[32];
-> -	time_t mtime;
-> -	int ret =3D 0;
-> -
-> -	/* skip XATTRs in directory listing */
-> -	if (type =3D=3D BTRFS_FT_XATTR)
-> -		return 0;
-> -
-> -	btrfs_dir_item_key_to_cpu(eb, di, &key);
-> -
-> -	if (key.type =3D=3D BTRFS_ROOT_ITEM_KEY) {
-> -		struct btrfs_root *subvol;
-> -
-> -		/* It's a subvolume, get its mtime from root item */
-> -		subvol =3D btrfs_read_fs_root(fs_info, &key);
-> -		if (IS_ERR(subvol)) {
-> -			ret =3D PTR_ERR(subvol);
-> -			error("Can't find root %llu", key.objectid);
-> -			return ret;
-> -		}
-> -		mtime =3D btrfs_stack_timespec_sec(&subvol->root_item.otime);
-> -	} else {
-> -		struct btrfs_path path;
-> -
-> -		/* It's regular inode, get its mtime from inode item */
-> -		btrfs_init_path(&path);
-> -		ret =3D btrfs_search_slot(NULL, root, &key, &path, 0, 0);
-> -		if (ret > 0)
-> -			ret =3D -ENOENT;
-> -		if (ret < 0) {
-> -			error("Can't find inode %llu", key.objectid);
-> -			btrfs_release_path(&path);
-> -			return ret;
-> -		}
-> -		read_extent_buffer(path.nodes[0], &ii,
-> -			btrfs_item_ptr_offset(path.nodes[0], path.slots[0]),
-> -			sizeof(ii));
-> -		btrfs_release_path(&path);
-> -		mtime =3D btrfs_stack_timespec_sec(&ii.mtime);
-> -	}
-> -	ctime_r(&mtime, filetime);
-> -
-> -	if (type =3D=3D BTRFS_FT_SYMLINK) {
-> -		target =3D malloc(fs_info->sectorsize);
-> -		if (!target) {
-> -			error("Can't alloc memory for symlink %llu",
-> -				key.objectid);
-> -			return -ENOMEM;
-> -		}
-> -		ret =3D btrfs_readlink(root, key.objectid, target);
-> -		if (ret < 0) {
-> -			error("Failed to read symlink %llu", key.objectid);
-> -			goto out;
-> -		}
-> -		target[ret] =3D '\0';
-> -	}
-> -
-> -	if (type < ARRAY_SIZE(dir_item_str) && dir_item_str[type])
-> -		printf("<%s> ", dir_item_str[type]);
-> -	else
-> -		printf("?%3u? ", type);
-> -	if (type =3D=3D BTRFS_FT_CHRDEV || type =3D=3D BTRFS_FT_BLKDEV) {
-> -		ASSERT(key.type =3D=3D BTRFS_INODE_ITEM_KEY);
-> -		printf("%4llu,%5llu  ", btrfs_stack_inode_rdev(&ii) >> 20,
-> -				btrfs_stack_inode_rdev(&ii) & 0xfffff);
-> -	} else {
-> -		if (key.type =3D=3D BTRFS_INODE_ITEM_KEY)
-> -			printf("%10llu  ", btrfs_stack_inode_size(&ii));
-> -		else
-> -			printf("%10llu  ", 0ULL);
-> -	}
-> -
-> -	read_extent_buffer(eb, namebuf, (unsigned long)(di + 1),
-> -			   btrfs_dir_name_len(eb, di));
-> -	printf("%24.24s  %.*s", filetime, btrfs_dir_name_len(eb, di), namebuf)=
-;
-> -	if (type =3D=3D BTRFS_FT_SYMLINK)
-> -		printf(" -> %s", target ? target : "?");
-> -	printf("\n");
-> -out:
-> -	free(target);
-> -	return ret;
-> -}
-> -
->   int btrfs_probe(struct blk_desc *fs_dev_desc,
->   		struct disk_partition *fs_partition)
->   {
-> @@ -133,34 +32,6 @@ int btrfs_probe(struct blk_desc *fs_dev_desc,
->   	return ret;
->   }
->  =20
-> -int btrfs_ls(const char *path)
-> -{
-> -	struct btrfs_fs_info *fs_info =3D current_fs_info;
-> -	struct btrfs_root *root =3D fs_info->fs_root;
-> -	u64 ino =3D BTRFS_FIRST_FREE_OBJECTID;
-> -	u8 type;
-> -	int ret;
-> -
-> -	ASSERT(fs_info);
-> -	ret =3D btrfs_lookup_path(fs_info->fs_root, BTRFS_FIRST_FREE_OBJECTID,
-> -				path, &root, &ino, &type, 40);
-> -	if (ret < 0) {
-> -		printf("Cannot lookup path %s\n", path);
-> -		return ret;
-> -	}
-> -
-> -	if (type !=3D BTRFS_FT_DIR) {
-> -		error("Not a directory: %s", path);
-> -		return -ENOENT;
-> -	}
-> -	ret =3D btrfs_iter_dir(root, ino, show_dir);
-> -	if (ret < 0) {
-> -		error("An error occurred while listing directory %s", path);
-> -		return ret;
-> -	}
-> -	return 0;
-> -}
-> -
->   /*
->    * The fs layer closes and re-probes btrfs between readdir() calls (se=
-e
->    * fs_readdir() in fs/fs.c), freeing and reallocating fs_info, so root=
- cannot
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 7de35aa7efd5..3fa9a8c9c020 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1220,11 +1220,6 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(stru=
-ct btrfs_trans_handle *trans,
->   					     struct btrfs_path *path, u64 dir,
->   					     const char *name, int name_len,
->   					     int mod);
-> -typedef int (*btrfs_iter_dir_callback_t)(struct btrfs_root *root,
-> -					 struct extent_buffer *eb,
-> -					 struct btrfs_dir_item *di);
-> -int btrfs_iter_dir(struct btrfs_root *root, u64 ino,
-> -		   btrfs_iter_dir_callback_t callback);
->   int btrfs_next_dir_entry(struct btrfs_root *root, u64 ino, u64 *offset=
-,
->   			 char *namebuf, int namebuf_len, u8 *ftype);
->   /* inode.c */
-> diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-> index b12298e20c41..c7b87d60d986 100644
-> --- a/fs/btrfs/dir-item.c
-> +++ b/fs/btrfs/dir-item.c
-> @@ -114,65 +114,12 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struc=
-t btrfs_trans_handle *trans,
->   	return btrfs_match_dir_item_name(root, path, name, name_len);
->   }
->  =20
-> -int btrfs_iter_dir(struct btrfs_root *root, u64 ino,
-> -		   btrfs_iter_dir_callback_t callback)
-> -{
-> -	struct btrfs_path path;
-> -	struct btrfs_key key;
-> -	int ret;
-> -
-> -	btrfs_init_path(&path);
-> -	key.objectid =3D ino;
-> -	key.type =3D BTRFS_DIR_INDEX_KEY;
-> -	key.offset =3D 0;
-> -
-> -	ret =3D btrfs_search_slot(NULL, root, &key, &path, 0, 0);
-> -	if (ret < 0)
-> -		return ret;
-> -	/* Should not happen */
-> -	if (ret =3D=3D 0) {
-> -		ret =3D -EUCLEAN;
-> -		goto out;
-> -	}
-> -	if (path.slots[0] >=3D btrfs_header_nritems(path.nodes[0])) {
-> -		ret =3D btrfs_next_leaf(root, &path);
-> -		if (ret < 0)
-> -			goto out;
-> -		if (ret > 0) {
-> -			ret =3D 0;
-> -			goto out;
-> -		}
-> -	}
-> -	do {
-> -		struct btrfs_dir_item *di;
-> -
-> -		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-> -		if (key.objectid !=3D ino || key.type !=3D BTRFS_DIR_INDEX_KEY)
-> -			break;
-> -		di =3D btrfs_item_ptr(path.nodes[0], path.slots[0],
-> -				    struct btrfs_dir_item);
-> -		if (verify_dir_item(root, path.nodes[0], di)) {
-> -			ret =3D -EUCLEAN;
-> -			goto out;
-> -		}
-> -		ret =3D callback(root, path.nodes[0], di);
-> -		if (ret < 0)
-> -			goto out;
-> -	} while (!(ret =3D btrfs_next_item(root, &path)));
-> -
-> -	if (ret > 0)
-> -		ret =3D 0;
-> -out:
-> -	btrfs_release_path(&path);
-> -	return ret;
-> -}
-> -
->   /*
->    * btrfs_next_dir_entry() - read one directory entry at or after a cur=
-sor
->    *
-> - * Streaming counterpart to btrfs_iter_dir() for the fs-layer readdir, =
-which
-> - * is re-entered once per entry: returns the first real entry whose
-> - * BTRFS_DIR_INDEX_KEY offset is >=3D *offset and advances *offset past=
- it.
-> + * Iterator for the fs-layer readdir, which is re-entered once per entr=
-y:
-> + * returns the first real entry whose BTRFS_DIR_INDEX_KEY offset is
-> + * >=3D *offset and advances *offset past it.
->    *
->    * @root, @ino:		directory to read
->    * @offset:		in/out cursor; DIR_INDEX offset to resume from
-> diff --git a/fs/fs.c b/fs/fs.c
-> index 4694a88f776b..1ebda6f4ee2a 100644
-> --- a/fs/fs.c
-> +++ b/fs/fs.c
-> @@ -320,7 +320,7 @@ static struct fstype_info fstypes[] =3D {
->   		.null_dev_desc_ok =3D false,
->   		.probe =3D btrfs_probe,
->   		.close =3D btrfs_close,
-> -		.ls =3D btrfs_ls,
-> +		.ls =3D fs_ls_generic,
->   		.exists =3D btrfs_exists,
->   		.size =3D btrfs_size,
->   		.read =3D btrfs_read,
-> diff --git a/include/btrfs.h b/include/btrfs.h
-> index 6fff45a497ee..3878b7817ea6 100644
-> --- a/include/btrfs.h
-> +++ b/include/btrfs.h
-> @@ -15,7 +15,6 @@ struct fs_dirent;
->  =20
->   int btrfs_probe(struct blk_desc *fs_dev_desc,
->   		struct disk_partition *fs_partition);
-> -int btrfs_ls(const char *);
->   int btrfs_exists(const char *);
->   int btrfs_size(const char *, loff_t *);
->   int btrfs_read(const char *, void *, loff_t, loff_t, loff_t *);
->=20
+So if this in any way resembles what you plan to send upstream un-RFC'd I
+need to pour a fairly large bucket of very cold water over this.
 
+TL;DR: The series is completely unmergeable as it stands. Not even close.
+
+Before we get into the code, please please please make sure you cc- the
+right people. You're doing very invasive, very major work here.
+
+You failed to even cc- the page allocator maintainer (Vlastimil) for a
+series that radically alters page allocation.
+
+MAKE SURE you cc- Vlastimil and all other maintainers and reviewers + lists
+on future (RFC!!) revisions of this please.
+
+If you want to do a quiet off-list pre-RFC that's fine, but it's
+unforgivable to leave Vlastimil out of this even for that.
+
+It's 30 seconds running a script (filtering for maintainers alone to save
+on noise):
+
+$ scripts/get_maintainer.pl --nogit --nogit-fallback --nor 20260520150018.2491267-1-riel@surriel.com.mbx
+Andrew Morton <akpm@linux-foundation.org> (maintainer:MEMORY MANAGEMENT - CORE)
+David Hildenbrand <david@kernel.org> (maintainer:MEMORY MANAGEMENT - CORE)
+Jonathan Corbet <corbet@lwn.net> (maintainer:DOCUMENTATION)
+Chris Mason <clm@fb.com> (maintainer:BTRFS FILE SYSTEM)
+David Sterba <dsterba@suse.com> (maintainer:BTRFS FILE SYSTEM)
+Vlastimil Babka <vbabka@kernel.org> (maintainer:MEMORY MANAGEMENT - PAGE ALLOCATOR)
+Steven Rostedt <rostedt@goodmis.org> (maintainer:TRACING)
+Masami Hiramatsu <mhiramat@kernel.org> (maintainer:TRACING)
+"Rafael J. Wysocki" <rafael@kernel.org> (maintainer:HIBERNATION (aka Software Suspend, aka swsusp))
+Oscar Salvador <osalvador@suse.de> (maintainer:MEMORY HOT(UN)PLUG)
+Mike Rapoport <rppt@kernel.org> (maintainer:MEMBLOCK AND MEMORY MANAGEMENT INITIALIZATION)
+Johannes Weiner <hannes@cmpxchg.org> (maintainer:MEMORY MANAGEMENT - RECLAIM)
+linux-mm@kvack.org (open list:MEMORY MANAGEMENT - CORE)
+linux-doc@vger.kernel.org (open list:DOCUMENTATION)
+linux-kernel@vger.kernel.org (open list)
+linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM)
+linux-trace-kernel@vger.kernel.org (open list:TRACING)
+linux-pm@vger.kernel.org (open list:HIBERNATION (aka Software Suspend, aka swsusp))
+linux-cxl@vger.kernel.org (open list:MEMORY HOT(UN)PLUG)
+HIBERNATION (aka Software Suspend, aka swsusp) status: Supported
+SUSPEND TO RAM status: Supported
+
+OK, so getting into the code. You didn't include an overall diffstat. So let's
+see:
+
+$ git checkout e1914add2799
+...
+$ b4 shazam 20260520150018.2491267-1-riel@surriel.com
+...
+$ git format-patch --cover-letter HEAD~40
+...
+$ tail -31 0000-cover-letter.patch
+ Documentation/admin-guide/sysctl/vm.rst |   21 -
+ Documentation/mm/physical_memory.rst    |   13 +-
+ fs/btrfs/extent_io.c                    |   69 +-
+ fs/btrfs/extent_io.h                    |    4 +-
+ fs/btrfs/inode.c                        |    2 +-
+ fs/btrfs/ioctl.c                        |    2 +-
+ fs/btrfs/raid56.c                       |    6 +-
+ fs/btrfs/relocation.c                   |    2 +-
+ fs/btrfs/scrub.c                        |    3 +-
+ include/linux/mmzone.h                  |  236 +-
+ include/linux/page-flags.h              |    9 +
+ include/linux/pageblock-flags.h         |   10 +
+ include/linux/vm_event_item.h           |   10 +
+ include/trace/events/kmem.h             |  373 ++
+ kernel/power/snapshot.c                 |   35 +-
+ mm/compaction.c                         |  360 +-
+ mm/debug.c                              |   19 +-
+ mm/internal.h                           |   39 +
+ mm/memory_hotplug.c                     |    4 +
+ mm/mm_init.c                            |  400 +-
+ mm/page_alloc.c                         | 5064 ++++++++++++++++++++---
+ mm/page_reporting.c                     |  149 +-
+ mm/show_mem.c                           |   27 +-
+ mm/sparse.c                             |    3 +-
+ mm/vmscan.c                             |  115 +-
+ mm/vmstat.c                             |   71 +-
+ 26 files changed, 6131 insertions(+), 915 deletions(-)
+
+This is completely insane :) I do hope the omission of the diffstat was not
+to hide this, but at any rate, adding ~5,000 lines of code to page_alloc.c
+is a complete non-starter.
+
+In any case I think clearly more files are required, mm/super_pageblock.c
+or whatever it'll be, but at any rate this much code being added to me
+clearly indicates something is terribly wrong here anyway.
+
+And you added no tests whatsoever. I get that some things are hard to test
+in the kernel and mm, but not even an attempt? Surely you have some
+localised stuff that you've been using to exercise this, couldn't some of
+that be made into selftests?
+
+Certainly if tests are not present, this needs to be justified in the cover
+letter.
+
+(Again I appreciate this is an RFC, so perhaps those are coming.)
+
+Anyway let's look at some of this code. Johannes's patches all look
+reasonable, but as soon as we start seeing:
+
+Assisted-by: Claude:claude-opus-4.7
+
+Things start to go awry.
+
+The series is full of extremely dense comments that contain far too much
+specific information to be parseable. E.g.:
+
++	 *  - owner_cpu == this CPU (or no owner): take the local PCP
++	 *    lock with spin_trylock and enqueue normally. The trylock
++	 *    fails only on rare local self re-entry (IRQ/NMI fires
++	 *    while the interrupted task already holds the lock) or
++	 *    while a remote drain is active; either way, fall back to
++	 *    free_one_page (or the zone-llist for FPI_TRYLOCK). No
++	 *    irqsave: the trylock cannot block on self, and remote
++	 *    CPUs never take this pcp->lock (they go via free_llist),
++	 *    so an interruption cannot deadlock against another freer.
+
+This isn't readable. This isn't acceptable. It matches exactly what I've
+found LLMs to do, adding far too much detail in way that isn't
+human-readable.
+
+You must redo all of these.
+
+The patches are all quite dense. 40 patches is already far too many IMO for
+a series this massive, but you're also piling in tonnes of complexity in
+every patch.
+
+The series should really be broken out into separate series that each
+slowly build up the prerequisites, so they are reviewable, parseable, can
+be seen in action before we move to the superblock concept and each having
+tests or means of asserting that they in fact function.
+
+It feels that there are patches that indeed can be broken out sensibly like
+this,
+e.g. https://lore.kernel.org/all/20260520150018.2491267-5-riel@surriel.com/
+(which also seems to be a fix? So maybe should be sent as one with
+appropriate tags?), so I think that's really the only viable way to land
+something this huge.
+
+I see Usama commented on you breaking userspace, and you said you are not
+going to do that after all (thanks)... but it worries me that you
+essentially render the watermark boost broken? I don't think that's OK?
+
+The code in general dumps large blocks of code into already existing huge
+functions but, even more unforgivably, turns small, maintainable, easily
+understood functions into completely disgusting horror shows.
+
+For instance, __rmqueue_smallest() goes from ~20 lines to 604 lines. This
+is completely insane and totally unacceptable.
+
+The code is also full of software engineering 101 fails. For instance in
+__rmqueue_sb_find_fallback():
+
+	if (search_cats & SB_SEARCH_PREFERRED) {
+		...
+		for (full = SB_FULL; full < __NR_SB_FULLNESS; full++) {
+			list_for_each_entry(sb,
+					    &zone->spb_lists[cat][full], list) {
+				...
+				if (movable && cat == SB_TAINTED &&
+				    sb->nr_free <= spb_tainted_reserve(sb))
+					continue;
+				...
+				for (i = 0; i < MIGRATE_PCPTYPES - 1; i++) {
+					...
+					if (page) {
+						...
+					}
+				}
+			}
+		}
+	}
+
+Note the mix of insane nesting AND guard clauses to make it even more
+indecipherable.
+
+There's no world in which I, or any other mm maintainer (I would venture to
+say) want to maintain stuff like this.
+
+A particularly concerning patch is
+https://lore.kernel.org/all/20260520150018.2491267-15-riel@surriel.com/ -
+
+The commit messages suffer from the same issue as the comments - incredibly
+dense material that is far too detailed to the point of absolutely
+clarifying nothing. E.g.:
+
+"The SPB list heads (zone->spb_empty and the spb_lists[cat][full] matrix)
+ are initialized only by setup_superpageblocks(), which is __init and runs
+ only at boot.  Hot-add into a previously-empty zone invokes
+ init_one_superpageblock() with zero-initialized list_heads, and the
+ inlined list_add_tail() NULL-derefs walking ->next->prev."
+
+Is just complete word salad. It may as well be written in Egyptian
+hieroglyphs.
+
+You're explaining spaghetti code using English language which makes it even
+more indecipherable, and not getting to the root of what you are actually
+doing.
+
+Again this feels very LLM-generated. I've noticed that they tend to do this
+'write out the code again but in English' stuff (and is why I do not
+allow LLMs to generate code or comments for me!)
+
+You need to make commit messages and comments as succinct as possible and
+as clear as possible for _human beings_ :)
+
+I also notice you have this huge blocks of word salad comments all over the
+place but I haven't seen a single kdoc comment (EDIT: noticed at least 1 later!)
+
+This is a far more helpful, structured, form of describing functions and
+for anything put in a header you really do need to provide them.
+
+Back to the patch. The diffstat is:
+
+ include/linux/mmzone.h |  10 +
+ mm/compaction.c        |  36 +-
+ mm/internal.h          |  10 +
+ mm/mm_init.c           | 146 +++++--
+ mm/page_alloc.c        | 853 ++++++++++++++++++++++++++++++++---------
+ mm/vmstat.c            |  66 ++--
+ 6 files changed, 883 insertions(+), 238 deletions(-)
+
+This is (generally speaking, and certainly in this case) far, far too much
+for a single patch.
+
+But as per above this is the patch where you commit what are essentially
+code war crimes against __rmqueue_smallest(), adding code so densely nested
+that you have to lop off the end of code to fit:
+
++	if (!movable && !is_migrate_cma(migratetype)) {
++		for (full = SB_FULL; full < __NR_SB_FULLNESS; full++) {
++			list_for_each_entry(sb,
++				&zone->spb_lists[SB_TAINTED][full], list) {
++				if (!sb->nr_free)
++					continue;
++				for (current_order = max_t(unsigned int,
++						order, pageblock_order);
++				     current_order < NR_PAGE_ORDERS;
++				     ++current_order) {
++					area = &sb->free_area[current_order];
++					page = get_page_from_free_area(
++						area, MIGRATE_MOVABLE);
++					if (!page)
++						continue;
++					if (get_pageblock_isolate(page))
++						continue;
++					if (is_migrate_cma(
++					    get_pageblock_migratetype(page)))
++						continue;
++					page = claim_whole_block(zone, page,
++						current_order, order,
++						migratetype, MIGRATE_MOVABLE);
++					trace_mm_page_alloc_zone_locked(
++						page, order, migratetype,
++						pcp_allowed_order(order) &&
++						migratetype < MIGRATE_PCPTYPES);
++					return page;
++				}
++			}
++		}
++	}
+
+I mean in what world are we taking code like this?
+
+https://lore.kernel.org/all/20260520150018.2491267-22-riel@surriel.com/ has
+what seem to be more human comments (good!) but then so densely nested that
+they have to be cropped (bad).
+
+using smaller, separate, functions and a structured programming approach
+here is the way to go.
+
+There's random smaller issues too like
+https://lore.kernel.org/all/20260520150018.2491267-23-riel@surriel.com/
+seems to assume the compiler can't figure out to remove dead code (note the
+wild inconsistency too in comments)
+
+You seem in some commits to undo or correct stuff you did in previous ones
+like
+https://lore.kernel.org/all/20260520150018.2491267-24-riel@surriel.com/
+
+I mean perhaps I'm mistaken, but otherwise, can you instead rebase your
+series please?
+
+And again we see the world salad:
+
++ * Maximum tainted superpageblock candidates per spb_evacuate_for_order call.
++ * Collected under zone->lock, then evacuated without it. Larger than the
++ * contig-allocation candidate cap because evacuation runs from the slowpath
++ * after reclaim/compaction failed: we need a meaningful chance of freeing a
++ * non-MOV-claimable pageblock before the slowpath escalates to dropping
++ * ALLOC_NOFRAGMENT (which lets __rmqueue_claim taint clean SPBs). Sized to
++ * scan a meaningful fraction of a typical tainted-pool population.
+
+No kdocs, some functions/complicated logic missing any comments at all,
+then piles of words thrown at you like a rock.
+
+This isn't pleasant to read, it adds no clarity, it just makes the whole
+thing a mess.
+
+The code in that one is at least vaguely ok (though still too nested).
+
+I feel like where you've manually written code the quality substantially
+improves, where the LLM has, the quality nosedives into oblivion.
+
+For instance
+https://lore.kernel.org/all/20260520150018.2491267-26-riel@surriel.com/
+seems to be radically better, albeit adding far too much code. So I assume
+that was more manual.
+
+Stuff like
+https://lore.kernel.org/all/20260520150018.2491267-27-riel@surriel.com/
+shows more of a structural issue.
+
+In:
+
++	 * Mark callers that have a cheap fallback if the page allocator returns
++	 * NULL, so __rmqueue can refuse to taint a clean SPB when an existing
++	 * tainted SPB still has free pageblocks waiting to be evacuated.
++	 *
++	 * Two shapes qualify:
++	 *
++	 *  1. Explicit fallback declaration: __GFP_NORETRY without
++	 *     __GFP_RETRY_MAYFAIL. Used by THP, slab high-order refill,
++	 *     skb_page_frag_refill on full sockets, etc.
++	 *
++	 *  2. Atomic-context shape: no __GFP_DIRECT_RECLAIM, no __GFP_NOMEMALLOC,
++	 *     no __GFP_NOFAIL. These callers (GFP_ATOMIC, GFP_NOWAIT, including
++	 *     ALLOC_HIGHATOMIC consumers) have implicit fallbacks: drop the
++	 *     packet, demote the slab order, return ENOMEM up the slowpath,
++	 *     retry from process context with GFP_KERNEL, etc. ALLOC_HIGHATOMIC
++	 *     callers also get a second crack at the dedicated MIGRATE_HIGHATOMIC
++	 *     reserve in rmqueue_buddy after __rmqueue returns NULL.
++	 *     Tainting a 1 GiB SPB to satisfy any of them is a long-lived
++	 *     fragmentation event for short-lived data.
++	 *
+
+The comment is vastly better than most, but you seem to be tying far too
+much up in assumptions about what particular workloads do.
+
+This is indicative perhaps of a need to refactor to more reasonably
+determine these.
+
+Adding a function and state, say, that expresses these properties would
+allow you to break out these concepts and have the code be self-documenting
+(as well as adding suitable actual documentation in comments that would be
+more succinct).
+
+https://lore.kernel.org/all/20260520150018.2491267-29-riel@surriel.com/
+also shows some real issues with how you've implemented this, e.g.:
+
++ * Called from each PASS_1/2/2B/2C/2D success path after a successful
++ * allocation against a tainted SPB. If the SPB is below its shrink
++ * high-water mark, queue the SPB-driven slab shrink and try to start
++ * the per-SPB defrag worker. Both have their own cooldown gates inside,
++ * so this is cheap to call on every such allocation.
+
+Now you're putting information from one gargantuan function with labels
+about 'passes' (rather reminiscent of VMA merge 'cases') into another.
+
+This is a clear sign of a broken abstraction and the code not being
+structured correctly.
+
+You should _express_ state encoded in these 'passes' in the _actual code_,
+break that code up sensibly and in a way that can be assessed for
+correctness, not put a bit-rotting comment on top of a function whose
+correctness is much harder to confirm.
+
+Again this patch has similar issues with ridiculously dense indecipherable
+comments, e.g.:
+
++	 * Last-chance defrag trigger before tainting a fresh clean SPB.
++	 * Walk the tainted-SPB list and try to wake the per-SPB defrag
++	 * worker on each. Catches SPBs that are stuck in expired-cooldown
++	 * state because no allocator activity has touched them recently
++	 * (the routine event-driven trigger from spb_update_list only
++	 * fires on bucket transitions, not on every alloc). Once the
++	 * cooldown has expired, spb_maybe_start_defrag() will requeue
++	 * work; otherwise the gate inside spb_needs_defrag() no-ops
++	 * cheaply. Bounded by nr_tainted_spbs and only runs when we are
++	 * already on the slow path of fragmenting the clean pool.
+
+The spoondecker is montiplexed in the fradupple complex dedadderated in the
+splunkyfied concratanator underfined by the transpontaculatoration
+matrixifier... :)
+
+I think this is symptomatic of the abstraction being fundamentally broken.
+
+If you have to establish vast swathes of cognitive context like this mid
+way through a huge function (again poor __rmqueue_smallest() who will never
+forgive you), then you've basically failed to abstract it.
+
+Please I beg you ADD FUNCTIONS :) structured programming is a thing,
+struct's are a thing, abstraction is a thing :)
+
+Pouring spaghetti into a single function is something you expect to see on
+a 1990's PHP website, not in core mm code ;)
+
+https://lore.kernel.org/all/20260520150018.2491267-30-riel@surriel.com/
+seems to be another example of you just rethinking parts of what you
+already submitted midway through the series.
+
+Again I might be missing something here, but if you are doing this, please
+just rebase your series to use $NEWIDEA from the start.
+
+https://lore.kernel.org/all/20260520150018.2491267-35-riel@surriel.com/ is
+another wall of text (newlines! Please :) but it seems like something you
+can break out separately no?
+
+It seems at least reviewable :)
+
+https://lore.kernel.org/all/20260520150018.2491267-36-riel@surriel.com/
+contains more of the same broken abstraction stuff, terrible nesting stuff,
+word salad stuff but is at least mercifully smaller.
+
+https://lore.kernel.org/all/20260520150018.2491267-37-riel@surriel.com/ is
+almost emblematic of the terrible (LLM I hope?) comment issue in the
+series. Overly dense hieroglyphs.
+
+https://lore.kernel.org/all/20260520150018.2491267-38-riel@surriel.com/ is
+another 'why didn't you rebase?' patch (again maybe I'm missing something
+here!)
+
+https://lore.kernel.org/all/20260520150018.2491267-39-riel@surriel.com/
+seems more reasonable although newlines please :)
+
+And finally
+https://lore.kernel.org/all/20260520150018.2491267-40-riel@surriel.com/ -
+while it's a do-not-merge patch in an RFC that changes tracing so maybe
+unfair, but the comments are suffering the same symptoms as the rest of the
+series.
+
+~
+
+So really, you need to start again, from scratch, and without the use of an
+LLM for generating code, or at least with it kept on a (very very short)
+leash.
+
+And to be clear, I _want_ this concept of GB superpageblocks to land. It's
+a really exciting concept.
+
+Pulling compaction kicking and screaming into 2026 stands to significantly
+benefit linux users and developers.
+
+But the execution has to be _completely_ rethought.
+
+I also worry about correctness - I simply cannot see how you can have sense
+of it, given the state of the code. For something so invasive and so
+critical to kernel functionality, code quality is simply not optional here.
+
+Practical thoughts on how to rework the series:
+
+- Properly abstract the concepts
+- Properly separate out functions and data structures
+- Add _human-readable_ comments that are succinct + clear as possible
+- If a function becomes too nested, separate into smaller functions
+- Add tests, if at all or in any way possible (and justify if you can't)
+- Clarify commit messages, don't just rewrite code in English
+- Use newlines for new paragraphs everywhere :)
+- Refactor existing code in preparation for your changes
+- Add a new file to contain your changes (+ add to page alloc MAINTAINERS
+  section)
+- Add kdocs for anything not static, and clearly describe static functions
+- Split into separate series as much as possible, gradually building
+  foundations for your changes
+- Make everything less dense and more abstracted
+
+In general, write the series with reviewers and other kernel developers in
+mind - write clear explanations in comments and commit messages, have the
+series slowly build to what you're implementing.
+
+That way, we can see that correctness is maintained throughout, can review
+what's there sensibly, and the series becomes upstreamable.
+
+IOW I say we take off and nuke the entire site from orbit. It's the only
+way to be sure :)
+
+~
+
+Another issue here is maintainer time - even this _extremely_ light-touch
+review has taken me a few hours (of my weekend :). To review it in detail
+would take probably DAYS of dedicated work.
+
+In general, I'm concerned that we're going to get caught in a cycle of LLM
+code sent - reviewers spending hours reviewing - LLM generates new revision
+- etc.
+
+This simply isn't scalable, maintainers cannot do this in the face of the
+sheer quantity and complexity of code that LLMs can generate.
+
+We are simply going to have to NAK. And that helps nobody.
+
+Luckily for me, this isn't in a sub-(sub-)system I maintain, so I am not
+obliged, but I do have empathy for my fellow maintainers, and am VERY
+concerned about this trend.
+
+There has recently been an absolute wave of LLM code, some acked as such
+(and I think you for doing so here!) but others unacknowledged entirely,
+and the workload, which was already too much, has risen significantly (Jon
+has noted the rise in commit count for instance in LWN).
+
+Treating maintainer time as without value was already an issue, but I fear
+that we'll see a significant increase in maintainer stress and sadly,
+burnout.
+
+As such, I feel that we will have to implement measures at some point to
+deprioritise/quickly dismiss such series, unfortunately.
+
+But series from smart and capable engineers such as yourselfk who are well
+respected in the communityk will likely not bek and thus will suffer from
+this issue indefinitely.
+
+So on that basis, I ask respectfully that you account for this when using
+this tooling.
+
+(Also, I appreciate that this is an RFC, but your recent non-RFC GUP series
+https://lore.kernel.org/all/20260616190300.1509639-1-riel@surriel.com/
+(revision v2 at
+https://lore.kernel.org/all/20260625015053.2445008-1-riel@surriel.com/) has
+all the same hallmarks as this one, so I feel this point needs to be
+underlined).
+
+~
+
+Speaking more generally across the industry, I've been reading about
+companies generating code blindly and running into terrible problems with
+software that ends up becoming totally unmanageable.
+
+I won't tolerate this happening happening in mm, and strongly object to the
+concept (held by some AI proponents) that code is simply an unimportant
+byproduct of AI.
+
+The kernel's code (and especially mm's) is _critically_ important, quite
+literally, as it forms the basis of the world's critical technical
+infrastructure.
+
+I am not opposed to the use of LLMs, but they _must_ serve as tools to
+_assist_ experts at their job, not a means by which code bases are
+degraded.
+
+~
+
+OK with all that said - to be absolutely clear - I respect you a great
+deal, and I KNOW you're (much, much) better than this.
+
+And, to repeat, this idea is very exciting and I _want_ to see this land.
+
+But I feel you've rather let the LLM run amok and it's selling you (very,
+very) short, given just how smart and capable you are.
+
+Let's try again :)
+
+Thanks, Lorenzo

@@ -1,105 +1,277 @@
-Received: from mail.zytor.com (terminus.zytor.com [198.137.202.136])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ed1-f53.google.com (mail-ed1-f53.google.com [209.85.208.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 30A001862;
-	Sat, 27 Jun 2026 01:42:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.136
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782524559; cv=none; b=MgZQoxrhdXS7a6EHjCiRCAfW81V8kj3XiDhd98zOyI725U6Ha5n7TiI2zLZZpIK5vl7mogeFqX4JXlf1CgvaeqtZh7wSwdUCn1Kh29fjiUtYjRkLHltO4MHyULIEuh0d/LEWUX4fyaESqMMNykcMbZt/icO4u5DtGGrrdYXvaBc=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782524559; c=relaxed/simple;
-	bh=jC1FioIpIuBtK6CQyzkvitIy/jJmxmVOYdOtUFK0xSU=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=DXsfUwLl5UlBTJYRA4MHxOpmtLwgUUnfiN0fhRYYMO4B7R/X+4GJjpHcPabqU6u9pfX/Q4JOBFwTpW5RhZs1/jhA0skE2uEPK0p95tSIshw7cL1Cm+eLMUsq8ZZXrKVyDBsXXQtfvnWnuvRErHBEkJiZ8giYzHXzHHDIAD8sEVU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zytor.com; spf=pass smtp.mailfrom=zytor.com; dkim=pass (2048-bit key) header.d=zytor.com header.i=@zytor.com header.b=ieVY684F; arc=none smtp.client-ip=198.137.202.136
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zytor.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zytor.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B84E913B7A3
+	for <linux-btrfs@vger.kernel.org>; Sat, 27 Jun 2026 05:59:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.208.53
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1782539995; cv=pass; b=Gwv2zqE879D71qydmuHORp8sJPEN1QCJXWN9x+9szjXwn/CD/NPzZJqILDodxmcUuep04B/bR/MW+qinm10fe9twrgFSL+iqaHX1QpP/SGf6NzvDVpfOTydEP+NSmiOTjzczSpkchiCGtvE5LQG6j7/oO2qlc8KVV2ncQ80ATyY=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1782539995; c=relaxed/simple;
+	bh=tB4SZpre35Tb5DjNL1P+JmO5F8oE26nhfvePSS2jUwI=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=a9+k5PO/5pdAViTe+IoA9ToaBVf/vLHKmSxPZxiMcCB3gSfKSHcPpRwPqGqIUmKCewYZ/FuwDvtEps/y73y/pxiXs/ppcrv5WLHGwyi6hGdSZbjqaRufRGZluLQcV8i5UxcRyWmFe9cMFcC4jlfMMNyhzmYlJw8Pp6EHJsLsibw=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=flipper.net; spf=pass smtp.mailfrom=flipper.net; dkim=pass (2048-bit key) header.d=flipper.net header.i=@flipper.net header.b=wHQJDNsy; arc=pass smtp.client-ip=209.85.208.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=flipper.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flipper.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=zytor.com header.i=@zytor.com header.b="ieVY684F"
-Received: from [IPV6:2601:646:8081:7da1:dcd4:e1f8:5d79:bdb4] ([IPv6:2601:646:8081:7da1:dcd4:e1f8:5d79:bdb4])
-	(authenticated bits=0)
-	by mail.zytor.com (8.18.1/8.17.1) with ESMTPSA id 65R1EHQ12354017
-	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NO);
-	Fri, 26 Jun 2026 18:14:17 -0700
-DKIM-Filter: OpenDKIM Filter v2.11.0 mail.zytor.com 65R1EHQ12354017
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=zytor.com;
-	s=2026052701; t=1782522861;
-	bh=a3misQc9HlKUNeYqqO4Fnmvv4Fv9RkyhsTgdLQ0BWz0=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=ieVY684FxDj35+1OdJbAri1pdBhTN2gqeIU7j2Y370sBUQ30QPhmIZvW75cKJPbdR
-	 IMWIkamCPLrfWfNgBKcB3PhaMkYzKHTrmnUKLa1e+ZLSJhv19+SOXDBLXcwGBwQUQm
-	 r/XHx5z9usnk9iv+AszJJxJtR+3sMk9VLHHsh52YfG3DsQ64mFPl5qVJWfAy/D+2Rh
-	 S+WMDllsVtD5pOEp++Uf505LlYCJ5QwZinre3Oi8+jbt4xxPtHa6lglEWhLpIlBWBv
-	 8Y8Cvo1WqplQrMHkk6CviVuUOV0LSl6zFgnbsOyQby5POoRmSu/3wfwF+nNtjeJn02
-	 kxE798jNrTxdQ==
-Message-ID: <33ef4e7b-3139-4cb8-9545-6d445bf6e5f1@zytor.com>
-Date: Fri, 26 Jun 2026 18:14:11 -0700
+	dkim=pass (2048-bit key) header.d=flipper.net header.i=@flipper.net header.b="wHQJDNsy"
+Received: by mail-ed1-f53.google.com with SMTP id 4fb4d7f45d1cf-693c69b97e7so3314860a12.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2026 22:59:53 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1782539992; cv=none;
+        d=google.com; s=arc-20260327;
+        b=ba1Esj9K56Vw8Fet1OCAdvl3XoH5/yMM8O0+6ElJPCQk+rKl/WCbRi4+s1fNAjOJ3a
+         v2notKJgXVpOD07rArAw1JpmDbPY4X6b1GICfOn1+EWHwhflF7Zk5tsDJervie9jHzLA
+         IIrUvzY/Ks9KIzwldqSMKLjxX7gavLqYvfbRjCGwxP0WMD/7m3cM1wsh/3xd6lzeolfe
+         cxIjF+/gypmYRdGHrgTs7/Ucs5kg96XHFy/CfauAceXvXgkuoV9vCEOeCSIYBvhEEXY1
+         kqvlrLAgyjo2lgNX7GxL0e50lL2UKWl16SRkcDkbgbeatGOsx3aKTMDhi3IukYkVhjrC
+         t42A==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=3JKBbDAKFHJRuZaoQJHSoT8GFtNjLpM9oT9HpgPx1tg=;
+        fh=Vck4SA8E06ryMKvQOTjUKuKpa3Z1sy/igYcyK3e24JM=;
+        b=HA0uc7jPobsnASgDQ1sRCSHJR+8mzmhvW8hdfbAFFssay7T7QW7vxinccT4aH1m40x
+         F2PpHutkcrmYTHis1l9n1KgCdXAzqSmJ/8lYHFaHqqajuPlfklx51mMmF77/La6NzCAq
+         aqERNn3NVdhihEMSozwQsluS1s5SSVLpRVb00ejUvSI7Otd8r0xnErUpjxWBnaVLQZaa
+         fxXyoUaOwc9rjtMEykZO4VOypV6Uxq3ejI0EQiR9rMjGsJW0gBsMwJIVPDE0EhGe497D
+         S/OdHuSJpeF8ubLF4ZyqEoDKgGrJGLOhE5DK1sMJNu2xoYASZVj8cxjbeGCxTU2aurx9
+         AyEw==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=flipper.net; s=google; t=1782539992; x=1783144792; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=3JKBbDAKFHJRuZaoQJHSoT8GFtNjLpM9oT9HpgPx1tg=;
+        b=wHQJDNsyGW0XrTTaCSgvyvXQ0iO7ROj1twap6hs99LYz5DK/vypvSD9G0B1FCbo6gK
+         Vomv5CVrpH3Rl9RlWS/cOTzv1VND/Xny2O3bLuMHFPPgjxAmxwEdodliZVrJ+vJu4W0b
+         xcVWcgYaeRnnYmRLT6Z/pXjM9unA59B6Betq33jnMlTrqjEQPIRchzEbK6hc8PMaSb0a
+         7mNIGYRZTRjCMdPNKluovRK2I2CxqFdyEmVXgPeGjYxpv/uD4grLZ2B52Y0HwJGsQH1s
+         8XMASjzSetUtd4pblO+u4C424s9Jc8vvBSrRRRs9yOJJwdCmfQRhf8dPazBB/WauP3+m
+         rlSw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1782539992; x=1783144792;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=3JKBbDAKFHJRuZaoQJHSoT8GFtNjLpM9oT9HpgPx1tg=;
+        b=WrGAvLt7LWH2W7tzFvK8jOuEnIVCbrJcLw+zT0VtgOxhZOt7qW8vEpa5k1oq772K/K
+         oP2JNUadqX2cYJSNpU8Uq5OJj3hp3D9+djSWT7YPaGE3VwlJivLFWvX3BE/4IUmpRsdx
+         r1w4RYKtYuMQpX0V8qOz++2Cj8wR65nQVhzoTtlXHK0tigmGy5bq1wofGYeODyO2zDLd
+         3VwaBq5d9QJ3r8hp6dP2usjhRPGRoYhu+FLFPtqQgy0FEhrIZXiVrURKAPldOeyqNrU+
+         330izeLUTxMPCSPTAYxkWwAzsm6eesvBvl1Ev2u7Z0AxZtLV7iUtHdy5/iEavg8N1t0C
+         QybQ==
+X-Forwarded-Encrypted: i=1; AHgh+RoSrIt9NQEN+ENOB01rfBNJ7tcvHR4CCUxgGn+kVsrssjOiz27bGw0NFg25B64P6w3p4iFmJgCQxiFE7A==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzOmlM1nTVSvtq9qYtQntPw8jeu3QbN3Wl/mDmQA+2aOJLJa+nP
+	2A5kuczjrDzrDf2IJVefHtDzWJ/7ozSTH8SeKQ4mamkxiR1M06DVgF3imQoFzZrUDybvnC2aLLK
+	jawl9Wp/IjLH62B63SvjLFh/kedaxiobwS0w/Qu34oA==
+X-Gm-Gg: AfdE7cnN8ACwnaHCk4QOqdtnDz+S5N6wPHBmCTXVDuVibA7rbbs7kmEXx9YJL0RdMJl
+	s+/qwA4W+dvVT5Wc9vZrGIo0inAlx9AMdztk1fQGsLReAd4fxxl8MYVd3r11bs+5UF600BmdAyY
+	Qxabf0JhGoCKUVjgMUX8hLZWmgQoLSiKeqLcGTTOsoRtu3E3M9zO8kn7CKZcVAu+u9G97irOxcA
+	GZ82n0svPh/aIaTMsi+w9/lU2JE/eR3k677da1wR1J+AI6L48T6HYcpN/mM7UCjMbrDGgnWU8ig
+	tLDc6HyOHUZbot/xvPtQi4r4RQIq
+X-Received: by 2002:a17:906:ee84:b0:c10:1c55:8c4e with SMTP id
+ a640c23a62f3a-c1205e7896fmr570502766b.18.1782539991980; Fri, 26 Jun 2026
+ 22:59:51 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 08/18] raid6: warn when using less than four devices
-To: Christoph Hellwig <hch@lst.de>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>,
-        Ard Biesheuvel <ardb@kernel.org>, Huacai Chen <chenhuacai@kernel.org>,
-        WANG Xuerui <kernel@xen0n.name>,
-        Madhavan Srinivasan <maddy@linux.ibm.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        "Christophe Leroy (CS GROUP)" <chleroy@kernel.org>,
-        Paul Walmsley <pjw@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>, Alexandre Ghiti <alex@ghiti.fr>,
-        Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Sven Schnelle <svens@linux.ibm.com>, Thomas Gleixner <tglx@kernel.org>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-        Herbert Xu <herbert@gondor.apana.org.au>,
-        Dan Williams <dan.j.williams@intel.com>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>, Arnd Bergmann <arnd@arndb.de>,
-        Song Liu <song@kernel.org>,
-        Yu Kuai <yukuai@alb-78bjiv52429oh8qptp.cn-shenzhen.alb.aliyuncs.com>,
-        Li Nan <linan122@huawei.com>, linux-kernel@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-crypto@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux-raid@vger.kernel.org
-References: <20260518051804.462141-1-hch@lst.de>
- <20260518051804.462141-9-hch@lst.de>
-Content-Language: en-US, sv-SE
-From: "H. Peter Anvin" <hpa@zytor.com>
-In-Reply-To: <20260518051804.462141-9-hch@lst.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+References: <20260626-btrfs-readdir-v2-0-7dd43f72d1b4@flipper.net>
+ <20260626-btrfs-readdir-v2-1-7dd43f72d1b4@flipper.net> <09eca73c-1f50-46b2-a307-76eef0408159@gmx.com>
+In-Reply-To: <09eca73c-1f50-46b2-a307-76eef0408159@gmx.com>
+From: Alexey Charkov <alchark@flipper.net>
+Date: Sat, 27 Jun 2026 09:59:41 +0400
+X-Gm-Features: AVVi8CcQPm_ZXAylGJpdx1I355VWn0TWOOa-Nt3eytYhyywARLCHf7On_OyDLLw
+Message-ID: <CAKTNdwEdonby8W9=iD54Fw1UVH88CBmjf+3L9r-jCUfhZrxzpw@mail.gmail.com>
+Subject: Re: [PATCH v2 1/2] fs: btrfs: implement opendir(), readdir() and closedir()
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, u-boot@lists.denx.de, 
+	=?UTF-8?B?TWFyZWsgQmVow7pu?= <kabel@kernel.org>, 
+	Tom Rini <trini@konsulko.com>, Simon Glass <sjg@chromium.org>, 
+	=?UTF-8?Q?Timo_tp_Prei=C3=9Fl?= <t.preissl@proton.me>, 
+	Peng Fan <peng.fan@nxp.com>, Patrice Chotard <patrice.chotard@foss.st.com>, Yao Zi <me@ziyao.cc>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 2026-05-17 22:17, Christoph Hellwig wrote:
-> Quoting H. Peter Anvin who came up with the RAID6 P/Q algorithm, and
-> who wrote the initial implementation, then still part of the md driver:
-> 
->   The RAID-6 code has *never* supported only 3 units, and if it ever
->   worked for *any* of the implementations it was purely by accident.
->   Speaking as the original author I should know; this was deliberate as
->   in some cases the degenerate case (3) would have required extra trays
+On Sat, Jun 27, 2026 at 2:27=E2=80=AFAM Qu Wenruo <quwenruo.btrfs@gmx.com> =
+wrote:
+>
+>
+>
+> =E5=9C=A8 2026/6/27 00:48, Alexey Charkov =E5=86=99=E9=81=93:
+> > Add support for generic directory iteration with opendir(), readdir() a=
+nd
+> > closedir() in the btrfs filesystem driver.
+> >
+> > Signed-off-by: Alexey Charkov <alchark@flipper.net>
+> > ---
+> >   fs/btrfs/btrfs.c    | 98 ++++++++++++++++++++++++++++++++++++++++++++=
++++++++++
+> >   fs/btrfs/ctree.h    |  2 ++
+> >   fs/btrfs/dir-item.c | 73 +++++++++++++++++++++++++++++++++++++++
+> >   fs/fs.c             |  4 ++-
+> >   include/btrfs.h     |  5 +++
+> >   5 files changed, 181 insertions(+), 1 deletion(-)
+> >
+> > diff --git a/fs/btrfs/btrfs.c b/fs/btrfs/btrfs.c
+> > index f3087f690fa4..6f034861da90 100644
+> > --- a/fs/btrfs/btrfs.c
+> > +++ b/fs/btrfs/btrfs.c
+> > @@ -8,7 +8,9 @@
+> >   #include <config.h>
+> >   #include <malloc.h>
+> >   #include <u-boot/uuid.h>
+> > +#include <linux/kernel.h>
+> >   #include <linux/time.h>
+> > +#include <fs.h>
+> >   #include "btrfs.h"
+> >   #include "crypto/hash.h"
+> >   #include "disk-io.h"
+> > @@ -159,6 +161,102 @@ int btrfs_ls(const char *path)
+> >       return 0;
+> >   }
+> >
+> > +/*
+> > + * The fs layer closes and re-probes btrfs between readdir() calls (se=
+e
+> > + * fs_readdir() in fs/fs.c), freeing and reallocating fs_info, so root=
+ cannot
+> > + * be stored directly. The subvolume id and inode number are stable th=
+ough, so
+> > + * re-resolve the root from the current fs_info by subvolume id, which=
+ avoids
+> > + * a full path walk and is much faster.
+> > + */
+> > +struct btrfs_dir_stream {
+> > +     struct fs_dir_stream parent;
+> > +     struct fs_dirent dirent;
+> > +     u64 subvolid;
+> > +     u64 ino;
+> > +     u64 offset;
+> > +};
+> > +
+> > +int btrfs_opendir(const char *dirname, struct fs_dir_stream **dirsp)
+> > +{
+> > +     struct btrfs_fs_info *fs_info =3D current_fs_info;
+> > +     struct btrfs_dir_stream *dirs;
+> > +     struct btrfs_root *root;
+> > +     u64 ino;
+> > +     u8 type;
+> > +     int ret;
+> > +
+> > +     *dirsp =3D NULL;
+> > +     ASSERT(fs_info);
+> > +
+> > +     ret =3D btrfs_lookup_path(fs_info->fs_root, BTRFS_FIRST_FREE_OBJE=
+CTID,
+> > +                             dirname, &root, &ino, &type, 40);
+> > +     if (ret < 0)
+> > +             return ret;
+> > +     if (type !=3D BTRFS_FT_DIR)
+> > +             return -ENOTDIR;
+> > +
+> > +     dirs =3D calloc(1, sizeof(*dirs));
+> > +     if (!dirs)
+> > +             return -ENOMEM;
+> > +     dirs->subvolid =3D root->root_key.objectid;
+> > +     dirs->ino =3D ino;
+> > +
+> > +     *dirsp =3D &dirs->parent;
+> > +     return 0;
+> > +}
+> > +
+> > +static unsigned int btrfs_dirent_type_to_fs_type(u8 dirent_type)
+> > +{
+> > +     switch (dirent_type) {
+> > +     case BTRFS_FT_DIR:
+> > +             return FS_DT_DIR;
+> > +     case BTRFS_FT_SYMLINK:
+> > +             return FS_DT_LNK;
+> > +     default:
+> > +             return FS_DT_REG;
+> > +     }
+> > +}
+> > +
+> > +int btrfs_readdir(struct fs_dir_stream *fs_dirs, struct fs_dirent **de=
+ntp)
+> > +{
+> > +     struct btrfs_dir_stream *dirs =3D container_of(fs_dirs, struct bt=
+rfs_dir_stream, parent);
+> > +     struct btrfs_fs_info *fs_info =3D current_fs_info;
+> > +     struct fs_dirent *dent =3D &dirs->dirent;
+> > +     struct btrfs_root *root;
+> > +     struct btrfs_key key;
+> > +     u8 type;
+> > +     int ret;
+> > +
+> > +     *dentp =3D NULL;
+> > +     ASSERT(fs_info);
+> > +
+> > +     key.objectid =3D dirs->subvolid;
+> > +     key.type =3D BTRFS_ROOT_ITEM_KEY;
+> > +     key.offset =3D (u64)-1;
+> > +     root =3D btrfs_read_fs_root(fs_info, &key);
+>
+> You can save the root pointer into btrfs_dir_stream, so we can avoid
+> subvolume root lookup for each dentry.
 
-Stupid autocorrect. That was of course supposed to be "tests" (as in extra
-code paths) not "trays" :)
+That was in fact the first thing I tried, but turns out that it
+doesn't work because a root pointer created with one fs_info structure
+stops working once fs_close at the end of the generic fs opendir
+caller closes the fs and deallocates the fs_info structure, due to it
+referencing trees allocated for that instance of fs_info. The result
+is a synchronous abort.
 
->   in the code to no user benefit.
-> 
-> While md never allowed less than 4 devices, btrfs does.  This new
-> warning will trigger for such file systems, but given how it already
-> causes havoc that is a good thing.  If btrfs wants to fix third, it
-> should switch to transparently use three-way mirroring underneath,
-> which will work as P and Q are copies of the single data device by
-> the definition of the Linux RAID 6 P/Q algorithm.
+Hence the comment above the btrfs_dir_stream definition and this
+second-best solution.
 
-For what it's worth, this is also true in the degenerate two-drive RAID-4|5
-case (D = P).
+Please let me know if I've missed a more elegant option!
 
-	-hpa
+Closing and reopening the fs at every call which the FS layer does
+sounds like a huge overhead, but I must assume it was unavoidable when
+the interface was designed.
 
+> You do not need to bother the lifespan of subvolume roots either, they
+> are properly released during the close of the fs.
+>
+> Otherwise looks good to me, except an unrelated question just lines below=
+.
+>
+> > +     if (IS_ERR(root))
+> > +             return PTR_ERR(root);
+> > +
+> > +     memset(dent, 0, sizeof(*dent));
+> > +     ret =3D btrfs_next_dir_entry(root, dirs->ino, &dirs->offset, dent=
+->name,
+> > +                                sizeof(dent->name), &type);
+> > +     if (ret < 0)
+> > +             return ret;
+> > +     if (ret > 0)
+> > +             return -ENOENT;
+>
+> I'm not sure what is the proper/preferred/sane handling of end of directo=
+ry.
+>
+> Ext4/fat returns -ENOENT, squashfs returned -1, erofs return 1, exfat
+> returns 0 but without populating @dentp.
+>
+> Personally I found the exfat behavior more sane, but considering the
+> caller fs_ls_generic() doesn't really bother the return value but only
+> cares if @dent is populated, it should be fine either way.
+>
+> But still, returning -ENOENT will populate errno, which may be confusing
+> for debugging.
+>
+> Anyway it's an unrelated nitpick.
+
+Happy to switch to exfat-like behavior. I was only looking at ext4
+implementation as that is likely the most widely used and tested in
+various corner cases, but it sounds like either way should work.
+
+Thanks a lot,
+Alexey

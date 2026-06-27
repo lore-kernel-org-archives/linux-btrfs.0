@@ -1,39 +1,39 @@
 Received: from mail.zytor.com (terminus.zytor.com [198.137.202.136])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1C57146D5A;
-	Sat, 27 Jun 2026 01:36:56 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 30A001862;
+	Sat, 27 Jun 2026 01:42:37 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.136
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782524217; cv=none; b=GG3z24Y8jgsaEmL9lYxfbBnRYAZD4n4SQRWf8IYId9y5KnjeR7XAwCxAugYOix5PKG7+2kD7fK2emsExyso5+NN8DNDEKnUURHaOtezhINYZSpFWf1sB+eZCBmIov3A9VzpO/Zx5mu6T4M+A2U2BKrl+1U2i/6PHFTXG9YN0Qgk=
+	t=1782524559; cv=none; b=MgZQoxrhdXS7a6EHjCiRCAfW81V8kj3XiDhd98zOyI725U6Ha5n7TiI2zLZZpIK5vl7mogeFqX4JXlf1CgvaeqtZh7wSwdUCn1Kh29fjiUtYjRkLHltO4MHyULIEuh0d/LEWUX4fyaESqMMNykcMbZt/icO4u5DtGGrrdYXvaBc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782524217; c=relaxed/simple;
-	bh=vlFmuIXNikKGJcM/rV+RwQGeISv45Ze+30sLXQvpSug=;
+	s=arc-20240116; t=1782524559; c=relaxed/simple;
+	bh=jC1FioIpIuBtK6CQyzkvitIy/jJmxmVOYdOtUFK0xSU=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=szZyCKuy/+bRIchGnwD3bXDx7kkZ4Y4QSSXOTc2F+K7GA7xscXv0EVxgIMIh1APr7aBDTmwpzRlAETlSak9PqVgwXLzV9UNJfNB4l10yBKHCC6POVMGoCqj6ime4K2WtlAZrIsHj4E3i9yBShpAEI5DJOoB+1C+JUoUzqZ3k1w4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zytor.com; spf=pass smtp.mailfrom=zytor.com; dkim=pass (2048-bit key) header.d=zytor.com header.i=@zytor.com header.b=qMyBFc1g; arc=none smtp.client-ip=198.137.202.136
+	 In-Reply-To:Content-Type; b=DXsfUwLl5UlBTJYRA4MHxOpmtLwgUUnfiN0fhRYYMO4B7R/X+4GJjpHcPabqU6u9pfX/Q4JOBFwTpW5RhZs1/jhA0skE2uEPK0p95tSIshw7cL1Cm+eLMUsq8ZZXrKVyDBsXXQtfvnWnuvRErHBEkJiZ8giYzHXzHHDIAD8sEVU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zytor.com; spf=pass smtp.mailfrom=zytor.com; dkim=pass (2048-bit key) header.d=zytor.com header.i=@zytor.com header.b=ieVY684F; arc=none smtp.client-ip=198.137.202.136
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zytor.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zytor.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=zytor.com header.i=@zytor.com header.b="qMyBFc1g"
+	dkim=pass (2048-bit key) header.d=zytor.com header.i=@zytor.com header.b="ieVY684F"
 Received: from [IPV6:2601:646:8081:7da1:dcd4:e1f8:5d79:bdb4] ([IPv6:2601:646:8081:7da1:dcd4:e1f8:5d79:bdb4])
 	(authenticated bits=0)
-	by mail.zytor.com (8.18.1/8.17.1) with ESMTPSA id 65R0qN0N2285168
+	by mail.zytor.com (8.18.1/8.17.1) with ESMTPSA id 65R1EHQ12354017
 	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NO);
-	Fri, 26 Jun 2026 17:52:24 -0700
-DKIM-Filter: OpenDKIM Filter v2.11.0 mail.zytor.com 65R0qN0N2285168
+	Fri, 26 Jun 2026 18:14:17 -0700
+DKIM-Filter: OpenDKIM Filter v2.11.0 mail.zytor.com 65R1EHQ12354017
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=zytor.com;
-	s=2026052701; t=1782521550;
-	bh=CoKSivJMaQDV2sSkRTRw7olGkcZfQ72Xwmih/Aa0td0=;
+	s=2026052701; t=1782522861;
+	bh=a3misQc9HlKUNeYqqO4Fnmvv4Fv9RkyhsTgdLQ0BWz0=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=qMyBFc1gnGXRksBwsJ1/rUznZgiE7lPuLPv/lWpmOM+5Q3Fqu1GkBtPV/i01hTsmm
-	 FyrrwODPBIMXlAoyCpEVfCiClmUhwPWsNagz78j3LDMf+Ut0XXJAAidVe9l1aTOAut
-	 7WQuEQASgzET2NWeiLHKYC5brvZfsPACaGhvlYNW5X1iG8c+02aTJiS4yaJSFbtRty
-	 RzVpKhz70FSqCBKm8TK2gLW8sDPukFdgs1lqJ60AGqtpglwDIA/PnerR6f0L+dvu0f
-	 tzL0aZnBm0Ed9q+Fj1E4zhVGr5LPAVMhZk4GFV4YP0Rst/9nwzTfe9CuWNPpW58FjU
-	 Q8Foj51/YA5sw==
-Message-ID: <7d8efc7c-65e3-49f8-9381-910de7affef2@zytor.com>
-Date: Fri, 26 Jun 2026 17:52:18 -0700
+	b=ieVY684FxDj35+1OdJbAri1pdBhTN2gqeIU7j2Y370sBUQ30QPhmIZvW75cKJPbdR
+	 IMWIkamCPLrfWfNgBKcB3PhaMkYzKHTrmnUKLa1e+ZLSJhv19+SOXDBLXcwGBwQUQm
+	 r/XHx5z9usnk9iv+AszJJxJtR+3sMk9VLHHsh52YfG3DsQ64mFPl5qVJWfAy/D+2Rh
+	 S+WMDllsVtD5pOEp++Uf505LlYCJ5QwZinre3Oi8+jbt4xxPtHa6lglEWhLpIlBWBv
+	 8Y8Cvo1WqplQrMHkk6CviVuUOV0LSl6zFgnbsOyQby5POoRmSu/3wfwF+nNtjeJn02
+	 kxE798jNrTxdQ==
+Message-ID: <33ef4e7b-3139-4cb8-9545-6d445bf6e5f1@zytor.com>
+Date: Fri, 26 Jun 2026 18:14:11 -0700
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -41,7 +41,7 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: cleanup the RAID6 P/Q library v3
+Subject: Re: [PATCH 08/18] raid6: warn when using less than four devices
 To: Christoph Hellwig <hch@lst.de>, Andrew Morton <akpm@linux-foundation.org>
 Cc: Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>,
         Ard Biesheuvel <ardb@kernel.org>, Huacai Chen <chenhuacai@kernel.org>,
@@ -70,27 +70,36 @@ Cc: Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>,
         linux-btrfs@vger.kernel.org, linux-arch@vger.kernel.org,
         linux-raid@vger.kernel.org
 References: <20260518051804.462141-1-hch@lst.de>
- <20260518141205.c100f76eec5f58e78bbbf7af@linux-foundation.org>
- <20260519082432.GA14956@lst.de>
+ <20260518051804.462141-9-hch@lst.de>
 Content-Language: en-US, sv-SE
 From: "H. Peter Anvin" <hpa@zytor.com>
-In-Reply-To: <20260519082432.GA14956@lst.de>
+In-Reply-To: <20260518051804.462141-9-hch@lst.de>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 2026-05-19 01:24, Christoph Hellwig wrote:
+On 2026-05-17 22:17, Christoph Hellwig wrote:
+> Quoting H. Peter Anvin who came up with the RAID6 P/Q algorithm, and
+> who wrote the initial implementation, then still part of the md driver:
 > 
-> raid6: rework registration of optimized algorithms
+>   The RAID-6 code has *never* supported only 3 units, and if it ever
+>   worked for *any* of the implementations it was purely by accident.
+>   Speaking as the original author I should know; this was deliberate as
+>   in some cases the degenerate case (3) would have required extra trays
+
+Stupid autocorrect. That was of course supposed to be "tests" (as in extra
+code paths) not "trays" :)
+
+>   in the code to no user benefit.
 > 
->  - avx2 instead of avx512 is probably the right thing for no
->    benchmarking, but if it was intentional (it wasn't), that should
->    be document.  So I'll just switch back to the previous version to
->    keep the state of the art
+> While md never allowed less than 4 devices, btrfs does.  This new
+> warning will trigger for such file systems, but given how it already
+> causes havoc that is a good thing.  If btrfs wants to fix third, it
+> should switch to transparently use three-way mirroring underneath,
+> which will work as P and Q are copies of the single data device by
+> the definition of the Linux RAID 6 P/Q algorithm.
 
-It is unlikely to be the right thing *going forward*, though.
-
-The very unfortunate performance inversion is likely model-specific. It is one
-of those things where you largely would have to have a list of quirks :(
+For what it's worth, this is also true in the degenerate two-drive RAID-4|5
+case (D = P).
 
 	-hpa
 

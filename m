@@ -1,250 +1,237 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E321243C061
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 15:48:07 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B17025B0B0
+	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 17:06:31 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782748089; cv=none; b=dqBwbD6xXpHm+Gb9cRLXD/GtfSrtmvhbRO6wZPsKAcT709oUqP+vcAeoTedCoZb1jwkYC+cUTaf5we0kDPF9aBwzAlMRkp8tkAowWPqmLxmzIXFJ/2GMICvudhE7+sftAaofWzs9veIYKzOUVH2xhv774E3UPcqgHcJrddyDC3g=
+	t=1782752792; cv=none; b=OtW4C7ytifthR7QuF3LsIH1RXT12ynnPD3aMrvgI/Nf5HoK5ICNrsX2qMKYcaVuY9ebYusZU/yPyAhRl+AzKrm9vwrlNHV397Q5w4yi4A+RQXssiB/BK7oTVrA8l3eWuQ48kg+mpblfnU49eKkmTTtVKb7VAiXFlWY8SVcolnCg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782748089; c=relaxed/simple;
-	bh=pMYBfAyQrREVKK3ZhINcPindahZyGoLfbdTeiuNWxBU=;
+	s=arc-20240116; t=1782752792; c=relaxed/simple;
+	bh=Al/NND7cCjivilp0IX2LvK1bCDn9xWf19f8i+SGEXCI=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=kW4YePW4SIztjAv1ZBLL6LZDa2slmYme6yzxhiD+KtuXVwvL+J5CdVzCQOYkJAcAJ1nGLVMy5oE4qkTUYlGzGMboCqRaIcfLeWDV0u0RmvFhqPCOKgqadww/ADN6XOgfCwb5wT57AFmodevGB8Q8vGcPchvAyEmmC+LMC5QlnLw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=EyTVPj3r; arc=none smtp.client-ip=100.103.45.18
+	 To:Cc:Content-Type; b=aC0guUBqgdLSyuw3nkpdDzh9r3TgNCdWCiSX/hNCeXj6N6vWTdE3TLh1mWm4X+P3GhtZWGnXEbVHacDCntaeQedxRJ0b29RdzyUIyU6YAmpseVL6dUKT7Om8IEzKejPOZTiiDmyjoBurLIRhn2yvESChaiES2snJxfnBgxJ1+i4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=KLRU6XjE; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="EyTVPj3r"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 95E011F00A3F
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 15:48:07 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="KLRU6XjE"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 177911F00A3E
+	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 17:06:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782748087;
-	bh=o3FyyRYl5908EABWzCXsXYbAncKihYWYQ0CyEe7djaY=;
+	s=k20260515; t=1782752791;
+	bh=56CFrCIiPdn47z2X3rviJHyHR1U8k94eo5nTSKE/KPM=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=EyTVPj3rBvATAKjitimJzp1plreY8+/XjuF5CMH74QhwfJWVHpdtbPzUuLZpWqU4p
-	 J11mvU0sQ7DqqCl6TR7OZg7bi6TV3hMfH/0ZL90Sd97oXwX3hdoh3eaItRI658EUHV
-	 Fmk4LzG72YjKovs+ghEqyZdrDdYNV2T6w7f9TiyR5wa2XQD4pfAN1qqCRP3KWFrrwI
-	 EW260b93S08dTMhQ+9aI1HDQRaR7S0lyBNPsFm83QAjX9FRlk7Kql+b11mP7wzMKjb
-	 4IEaYu60MbIws7iPsH33u42f9Z7wEaqy1LVOk57fdpVKj+gKNRhsvP2E42NMpzB9VD
-	 yffz7KWxJSaQg==
-Received: by mail-ej1-f54.google.com with SMTP id a640c23a62f3a-c1214350188so435284266b.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 08:48:07 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+RrpAjQktbVxVXDt+HyAvlRaMuZ9fQe/tzJH96laAJDc97Unm4R1FWGijXtkd+paUoNKGkys7LMzuVyN/Q==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwmKIEp5Ksk6O8PQVFciScT5BjJc5J/ADY8rB2mCqkTdeiADVhp
-	RyIq9TCkRKrGqptqDpyBTs/fWGTitfnULzQq8sBNVi2YwUkpViEguNCrjitTkPN9weOAoGfbGEb
-	hrcoLFw0ZWUxUi0Xtfg7FMAoOFQEBLxw=
-X-Received: by 2002:a17:907:c25:b0:c12:5013:4b7e with SMTP id
- a640c23a62f3a-c1250134e4cmr319608466b.18.1782748086229; Mon, 29 Jun 2026
- 08:48:06 -0700 (PDT)
+	b=KLRU6XjE7owSkvybevcscys48drt2ICz64kTKWMUNgUwGT6EJy2TOiybtIH3j3AzB
+	 lBwSf/KnFZYvH921txoo6eRe3MfDcP6f6ZM3TcSM9m63jr9Juf6cjqtwBVryduGGbt
+	 f9CaaRn4p6E2Kqh4dg3uX7l1p067m8oNvA5VuENlDnNOmT3JO5ZNpa/Zu1PfYybHfb
+	 l5C9lIsZkq9THYhSJNykoTaYyeg03oqY2jgNIch1/x4cc3tZy5P4kHBs+iuzNBtnm1
+	 dFGZr8OYpNiH5Lbau4yNUQdJnD/EK9+t00kMxhG/+eOctBoMhH9O07dRhX9lzQPEw/
+	 COw2HASGw4KJw==
+Received: by mail-ej1-f48.google.com with SMTP id a640c23a62f3a-c126fe7d0f3so121001966b.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 10:06:31 -0700 (PDT)
+X-Gm-Message-State: AOJu0YyFFWsUCy3Ry34mn11djNDnm930rNUqBGYl6FYtQYTqelhftrNJ
+	45cOra5MGwsBj0UtLg/+DFXqu5lxFLlREV10wN+XZwtXC4HnNGDI5PbC8CVvUmrdkNAptm6KI1k
+	j4HFz/0XSzZBSCL/3NBNTK+VeA0Ib0k4=
+X-Received: by 2002:a17:907:bb42:b0:c12:4055:6c1a with SMTP id
+ a640c23a62f3a-c128731fc4amr5062266b.56.1782752789728; Mon, 29 Jun 2026
+ 10:06:29 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260629-btrfs-skip-logging-v1-1-4e3a28c1acaf@kernel.org>
- <CAL3q7H5o6vKOcQ0G4shQw6q7vCpfZYo8KO6Rg6VdChDoMB+C=g@mail.gmail.com>
- <5084d9c6b6a7025be156354194cf7d3fffebb0e2.camel@kernel.org> <CAL3q7H6cHCrcSY+Rj5TX6tEkcX33WmcF73oZbfycuCRAajYzfg@mail.gmail.com>
-In-Reply-To: <CAL3q7H6cHCrcSY+Rj5TX6tEkcX33WmcF73oZbfycuCRAajYzfg@mail.gmail.com>
+References: <20260629142056.309300-1-mssola@mssola.com>
+In-Reply-To: <20260629142056.309300-1-mssola@mssola.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 29 Jun 2026 16:47:28 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H4nCvmMN8iO4+eVbP3aEm8oxmyfarb4bCyBPLEwU48O7w@mail.gmail.com>
-X-Gm-Features: AVVi8Ccg6XQlZ9Kp8tz_NAdEbbZZRxOtM9m4I9T7jaLdxtbVfqi_mIV4C1Vh-LY
-Message-ID: <CAL3q7H4nCvmMN8iO4+eVbP3aEm8oxmyfarb4bCyBPLEwU48O7w@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: don't let shrinker touch extent_maps that are
- being logged
-To: Jeff Layton <jlayton@kernel.org>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>, 
-	Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org, 
+Date: Mon, 29 Jun 2026 18:05:52 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H5jh+e80OM_wKfT6f98j6oCOuYpctf846d0KT98vio48A@mail.gmail.com>
+X-Gm-Features: AVVi8Ce1vhymVLw7ROhSKGncDkCXM090KOPFPSjWeuU3w75Mp8hy7aSIIe85ZRk
+Message-ID: <CAL3q7H5jh+e80OM_wKfT6f98j6oCOuYpctf846d0KT98vio48A@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: don't pass tree_id in btrfs_search_path_in_tree()
+To: =?UTF-8?B?TWlxdWVsIFNhYmF0w6kgU29sw6A=?= <mssola@mssola.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, 
 	linux-kernel@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, Jun 29, 2026 at 4:06=E2=80=AFPM Filipe Manana <fdmanana@kernel.org>=
- wrote:
+On Mon, Jun 29, 2026 at 5:29=E2=80=AFPM Miquel Sabat=C3=A9 Sol=C3=A0 <mssol=
+a@mssola.com> wrote:
 >
-> On Mon, Jun 29, 2026 at 3:56=E2=80=AFPM Jeff Layton <jlayton@kernel.org> =
-wrote:
-> >
-> > On Mon, 2026-06-29 at 15:19 +0100, Filipe Manana wrote:
-> > > On Mon, Jun 29, 2026 at 2:41=E2=80=AFPM Jeff Layton <jlayton@kernel.o=
-rg> wrote:
-> > > >
-> > > > The extent map shrinker can free an extent map that is still owned =
-by an
-> > > > in-flight fsync and still linked on the inode's modified_extents li=
-st,
-> > > > corrupting that list and eventually causing an RCU stall.
-> > > >
-> > > > btrfs_scan_inode() currently skips EXTENT_FLAG_PINNED maps, then ca=
-lls
-> > > > btrfs_remove_extent_mapping() followed by btrfs_free_extent_map():
-> > > >
-> > > >         if (em->flags & EXTENT_FLAG_PINNED)
-> > > >                 goto next;
-> > > >         ...
-> > > >         btrfs_remove_extent_mapping(inode, em);
-> > > >         btrfs_free_extent_map(em);
-> > > >
-> > > > But btrfs_remove_extent_mapping() deliberately does NOT unlink a ma=
-p that
-> > > > has EXTENT_FLAG_LOGGING set:
-> > > >
-> > > >         if (!(em->flags & EXTENT_FLAG_LOGGING))
-> > > >                 list_del_init(&em->list);
-> > > >         remove_em(inode, em);
-> > > >
-> > > > This sets up a UAF situation where a later fsync() can trip over th=
-e
-> > > > now-freed extent_map still on the modified_extents() list.
-> > >
-> > > I don't see how that can happen, because fsync always takes the
-> > > inode's i_mmap_lock (in write/exclusive mode), and btrfs_scan_inode()
-> > > takes the same lock too (in shared/read mode).
-> > > EXTENT_FLAG_LOGGING is only set and cleared during fsync, so how can
-> > > the shrinker race with fsync?
-> > >
-> >
-> > ...and yet, the vmcore shows that the shrinker hit an extent_map that
-> > had LOGGING set while holding the i_mmap_lock.
+> The 'tree_id' parameter in btrfs_search_path_in_tree() was only being
+> used in order to fetch the root tree to be considered for the
+> search. For this same reason this function was also requiring a 'struct
+> btrfs_fs_info' parameter. This commit replaces these two parameters with
+> a single 'struct btrfs_root' one, which identifies from which root tree
+> the search should happen.
 >
-> Yes, but we need to understand why...
+> This function only has one caller, the inode lookup ioctl, which knows
+> how to provide the root tree for each case. In fact, if args->treeid =3D=
+=3D
+> 0, then we don't even have to allocate a new root tree object, and we
+> can reuse the one provided by the ioctl system call, thus avoiding an
+> extra allocation.
 >
-> >
-> > I had hoped to add an assertion here that LOGGING couldn't be set on
-> > the em's after taking the i_mmap_lock, but that's not viable:
-> >
-> > The problem is that the i_mmap_lock coverage isn't complete. I had
-> > Claude assist me with some analysis so take it with a hefty grain of
-> > salt but the problem is that the em tree can contain em's from other
-> > inodes where the i_mmap_lock is not held:
+> Signed-off-by: Miquel Sabat=C3=A9 Sol=C3=A0 <mssola@mssola.com>
+> ---
+>  fs/btrfs/ioctl.c | 54 ++++++++++++++++++++++--------------------------
+>  1 file changed, 25 insertions(+), 29 deletions(-)
 >
-> And that is the problem: an em tree, which belongs to an inode, should
-> only have extent maps for that inode...
-> An extent map can only belong to an inode.
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 1ed16ff4007b..00897a66187c 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1664,13 +1664,11 @@ static noinline int btrfs_ioctl_tree_search_v2(st=
+ruct btrfs_root *root,
+>  }
 >
-> So that's what needs investigation. The bug is elsewhere.
+>  /*
+> - * Search INODE_REFs to identify path name of 'dirid' directory
+> - * in a 'tree_id' tree. and sets path name to 'name'.
+> + * Search for an INODE_REF in a 'root' tree which identifies the path na=
+me of
+> + * 'dirid'. When found, it sets 'name' with the path name.
+>   */
+> -static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info=
+,
+> -                               u64 tree_id, u64 dirid, char *name)
+> +static noinline int btrfs_search_path_in_tree(struct btrfs_root *root, u=
+64 dirid, char *name)
+>  {
+> -       struct btrfs_root *root;
+>         struct btrfs_key key;
+>         char *ptr;
+>         int ret =3D -1;
+> @@ -1682,7 +1680,7 @@ static noinline int btrfs_search_path_in_tree(struc=
+t btrfs_fs_info *info,
+>         BTRFS_PATH_AUTO_FREE(path);
 >
-> Thanks.
->
-> >
-> > -----------------------8<---------------------
-> >
-> > ...that inode is in progress, therefore no em in its tree should have L=
-OGGING set. Your invariant is the right one.
-> >
-> >  But it's violated, because the i_mmap_lock interlock is incomplete. Tw=
-o facts:
-> >
-> >   1. tree-log.c never takes i_mmap_lock =E2=80=94 grep returns 0 occurr=
-ences. Only btrfs_sync_file takes it (file.c:1608/1610), and only
-> >   on the one inode being fsync'd.
-> >   2. A single fsync logs many other inodes, and each can set LOGGING on=
- its own ems via btrfs_log_changed_extents().
+>         if (dirid =3D=3D BTRFS_FIRST_FREE_OBJECTID) {
+> -               name[0]=3D'\0';
+> +               name[0] =3D '\0';
 
-A single fsync can log other inodes yes, and without taking their
-i_mmap_lock, but the inodes are logged in LOG_INODE_EXISTS mode, so
-extents are not logged.
-The only exception is for symlink inodes, but those are logged in full
-mode, only have one extent (inlined), and always have
-BTRFS_INODE_NEEDS_FULL_SYNC set, so we never end up in
-btrfs_log_changed_extents() for symlinks.
+Please don't make changes like this. We don't fix indentation/spacing
+on lines we don't change.
 
-> >   btrfs_log_inode() is called recursively on conflicting inodes, parent=
- directories, and referenced inodes:
-> >   tree-log.c:5982  btrfs_log_inode(di_inode, log_mode)        # dir den=
-tries
-> >   tree-log.c:6339  btrfs_log_inode(inode, LOG_INODE_ALL)      # conflic=
-ting inodes
-> >   tree-log.c:6900  btrfs_log_inode(di_inode, log_mode)        # new dir=
- dentries
-> >   tree-log.c:7389  btrfs_log_inode(dir_inode, LOG_INODE_ALL)  # log_all=
-_parents
-> >   tree-log.c:7488  btrfs_log_inode(inode, ...)                # referen=
-ced inodes
-> >
-> >   2. For all of these, btrfs_sync_file holds i_mmap_lock on the origina=
-l fsync'd inode =E2=80=94 not on these side inodes. So a side
-> >   inode X gets LOGGING set on its ems while X's own i_mmap_lock is free=
-.
+>                 return 0;
+>         }
+>
+> @@ -1692,13 +1690,6 @@ static noinline int btrfs_search_path_in_tree(stru=
+ct btrfs_fs_info *info,
+>
+>         ptr =3D &name[BTRFS_INO_LOOKUP_PATH_MAX - 1];
+>
+> -       root =3D btrfs_get_fs_root(info, tree_id, true);
+> -       if (IS_ERR(root)) {
+> -               ret =3D PTR_ERR(root);
+> -               root =3D NULL;
+> -               goto out;
+> -       }
+> -
+>         key.objectid =3D dirid;
+>         key.type =3D BTRFS_INODE_REF_KEY;
+>         key.offset =3D (u64)-1;
+> @@ -1706,11 +1697,9 @@ static noinline int btrfs_search_path_in_tree(stru=
+ct btrfs_fs_info *info,
+>         while (1) {
+>                 ret =3D btrfs_search_backwards(root, &key, path);
+>                 if (ret < 0)
+> -                       goto out;
+> -               else if (ret > 0) {
+> -                       ret =3D -ENOENT;
+> -                       goto out;
+> -               }
+> +                       return ret;
+> +               else if (ret > 0)
+> +                       return -ENOENT;
+>
+>                 l =3D path->nodes[0];
+>                 slot =3D path->slots[0];
+> @@ -1719,10 +1708,8 @@ static noinline int btrfs_search_path_in_tree(stru=
+ct btrfs_fs_info *info,
+>                 len =3D btrfs_inode_ref_name_len(l, iref);
+>                 ptr -=3D len + 1;
+>                 total_len +=3D len + 1;
+> -               if (ptr < name) {
+> -                       ret =3D -ENAMETOOLONG;
+> -                       goto out;
+> -               }
+> +               if (ptr < name)
+> +                       return -ENAMETOOLONG;
+>
+>                 *(ptr + len) =3D '/';
+>                 read_extent_buffer(l, ptr, (unsigned long)(iref + 1), len=
+);
+> @@ -1737,10 +1724,8 @@ static noinline int btrfs_search_path_in_tree(stru=
+ct btrfs_fs_info *info,
+>         }
+>         memmove(name, ptr, total_len);
+>         name[total_len] =3D '\0';
+> -       ret =3D 0;
+> -out:
+> -       btrfs_put_root(root);
+> -       return ret;
+> +
+> +       return 0;
+>  }
+>
+>  static int btrfs_search_path_in_tree_user(struct mnt_idmap *idmap,
+> @@ -1884,6 +1869,7 @@ static int btrfs_search_path_in_tree_user(struct mn=
+t_idmap *idmap,
+>  static noinline int btrfs_ioctl_ino_lookup(struct btrfs_root *root,
+>                                            void __user *argp)
+>  {
+> +       bool new_root =3D false;
+>         struct btrfs_ioctl_ino_lookup_args AUTO_KFREE(args);
+>         int ret =3D 0;
+>
+> @@ -1897,6 +1883,8 @@ static noinline int btrfs_ioctl_ino_lookup(struct b=
+trfs_root *root,
+>          */
+>         if (args->treeid =3D=3D 0)
+>                 args->treeid =3D btrfs_root_id(root);
+> +       else
+> +               new_root =3D true;
 
-Nop, see above.
+If any of the 'if' statements below execute a 'goto out' before
+btrfs_get_fs_root() is called, then under 'out' we call
+btrfs_put_root() when we shouldn't...
+>
+>         if (args->objectid =3D=3D BTRFS_FIRST_FREE_OBJECTID) {
+>                 args->name[0] =3D 0;
+> @@ -1908,13 +1896,21 @@ static noinline int btrfs_ioctl_ino_lookup(struct=
+ btrfs_root *root,
+>                 goto out;
+>         }
+>
+> -       ret =3D btrfs_search_path_in_tree(root->fs_info,
+> -                                       args->treeid, args->objectid,
+> -                                       args->name);
+> +       if (new_root) {
+> +               root =3D btrfs_get_fs_root(root->fs_info, args->treeid, t=
+rue);
+> +               if (IS_ERR(root)) {
+> +                       ret =3D PTR_ERR(root);
+> +                       new_root =3D false;
+> +                       goto out;
+> +               }
+> +       }
+> +       ret =3D btrfs_search_path_in_tree(root, args->objectid, args->nam=
+e);
+>
+>  out:
+>         if (ret =3D=3D 0 && copy_to_user(argp, args, sizeof(*args)))
+>                 return -EFAULT;
 
-> >
-> >   So the shrinker can down_read_trylock(X->i_mmap_lock) successfully (n=
-obody holds it) and walk X's tree while X's ems are
-> >   LOGGING-flagged =E2=86=92 it removes+frees one =E2=86=92 corruption. =
-The interlock only protects the directly-fsync'd inode, not the inodes
-> >   logged as its dependencies.
+If we return -EFAUT we leak the root when new_root is true.
 
-Nop. Unless you can show an actual code path where while fsyncing one
-inode we log another inode in LOG_INODE_ALL mode
-Again, the exception is symlinks, but for those, the
-BTRFS_INODE_NEEDS_FULL_SYNC flag is always set, so we never end up in
-btrfs_log_changed_extents().
+Thanks.
 
-> >
-> >
-> > > Also, there should be no () after modified_extents (it's not a functi=
-on name).
-> > >
-> > >
-> >
-> > Sorry, early morning typo. Fixed in my local repo.
-> >
-> > >
-> > > >
-> > > > Fix it by having the shrinker skip maps that are being logged, the =
-same
-> > > > way it skips pinned maps. Such a map is owned by the in-flight fsyn=
-c and
-> > > > will become reclaimable again once logging clears the flag.
-> > > >
-> > > > Fixes: 956a17d9d050 ("btrfs: add a shrinker for extent maps")
-> > > > Signed-off-by: Jeff Layton <jlayton@kernel.org>
-> > > > ---
-> > > > We've started hitting a number of these problems in our fleet. It
-> > > > seems to mostly happen on ARM64 architecture, but there have been s=
-ome
-> > > > WARN_ONs that popped on x86_64 too.
-> > > > ---
-> > > >  fs/btrfs/extent_map.c | 8 +++++++-
-> > > >  1 file changed, 7 insertions(+), 1 deletion(-)
-> > > >
-> > > > diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-> > > > index fce9c5cc0122..128f7800e101 100644
-> > > > --- a/fs/btrfs/extent_map.c
-> > > > +++ b/fs/btrfs/extent_map.c
-> > > > @@ -1166,7 +1166,13 @@ static long btrfs_scan_inode(struct btrfs_in=
-ode *inode, struct btrfs_em_shrink_c
-> > > >                 em =3D rb_entry(node, struct extent_map, rb_node);
-> > > >                 ctx->scanned++;
-> > > >
-> > > > -               if (em->flags & EXTENT_FLAG_PINNED)
-> > > > +               /*
-> > > > +                * Skip extent maps that are pinned or are being lo=
-gged. The
-> > > > +                * i_mmap_lock should prevent this from seeing LOGG=
-ING on extent_maps
-> > > > +                * directly associated with inode, but em may be as=
-sociated with
-> > > > +                * other, dependent inodes and their locks are not =
-held.
-> > > > +                */
-> > > > +               if (em->flags & (EXTENT_FLAG_PINNED | EXTENT_FLAG_L=
-OGGING))
-> > > >                         goto next;
-> > > >
-> > > >                 /*
-> > > >
-> > > > ---
-> > > > base-commit: dc59e4fea9d83f03bad6bddf3fa2e52491777482
-> > > > change-id: 20260629-btrfs-skip-logging-3e31701d9647
-> > > >
-> > > > Best regards,
-> > > > --
-> > > > Jeff Layton <jlayton@kernel.org>
-> > > >
-> > > >
-> >
-> > --
-> > Jeff Layton <jlayton@kernel.org>
+> +       if (new_root)
+> +               btrfs_put_root(root);
+>
+>         return ret;
+>  }
+> --
+> 2.54.0
+>
+>

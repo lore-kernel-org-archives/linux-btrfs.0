@@ -1,237 +1,441 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-dy1-f178.google.com (mail-dy1-f178.google.com [74.125.82.178])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B17025B0B0
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 17:06:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3688731985C
+	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 20:01:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.178
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782752792; cv=none; b=OtW4C7ytifthR7QuF3LsIH1RXT12ynnPD3aMrvgI/Nf5HoK5ICNrsX2qMKYcaVuY9ebYusZU/yPyAhRl+AzKrm9vwrlNHV397Q5w4yi4A+RQXssiB/BK7oTVrA8l3eWuQ48kg+mpblfnU49eKkmTTtVKb7VAiXFlWY8SVcolnCg=
+	t=1782763283; cv=none; b=bc7Qmx7mV5oP3X6zVMGRjlUgotVZwNzM6vrIF/CLHoUnyDdqww8QgBz0AcS9MPPijLF6sHIXB5xQFRlmxnQKSaPCJQ6Ycjxlx8Bx6Fm8Y4m/pzKOXEPkmCzztBzUTab3CH6/ceYIaNr5rK8u9Tr8OQNOq7sSMOWDz5W9Isc8XXk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782752792; c=relaxed/simple;
-	bh=Al/NND7cCjivilp0IX2LvK1bCDn9xWf19f8i+SGEXCI=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=aC0guUBqgdLSyuw3nkpdDzh9r3TgNCdWCiSX/hNCeXj6N6vWTdE3TLh1mWm4X+P3GhtZWGnXEbVHacDCntaeQedxRJ0b29RdzyUIyU6YAmpseVL6dUKT7Om8IEzKejPOZTiiDmyjoBurLIRhn2yvESChaiES2snJxfnBgxJ1+i4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=KLRU6XjE; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1782763283; c=relaxed/simple;
+	bh=F5UsF8blNj+MAIKtase0TimbmrK/C9lRkNPtmBnACt0=;
+	h=Mime-Version:Content-Type:Date:Message-Id:Cc:Subject:From:To:
+	 References:In-Reply-To; b=b0u38RRvRuu9SQ3Woep8fy61jue4hmMi8nURUgNV30zfo8mGzttJzODdXX8G57nhRGhnpAUXCWIvVSO2NbS/tm7Gr4mXfupPu8WgvFs8G4uS765oGl6akiUA6nzLR/ToQGNxMArsGg+WIbYLTlh6e6CpHfAqPEVqPQldhVcjWmk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=UHhzikC1; arc=none smtp.client-ip=74.125.82.178
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="KLRU6XjE"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 177911F00A3E
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 17:06:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782752791;
-	bh=56CFrCIiPdn47z2X3rviJHyHR1U8k94eo5nTSKE/KPM=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=KLRU6XjE7owSkvybevcscys48drt2ICz64kTKWMUNgUwGT6EJy2TOiybtIH3j3AzB
-	 lBwSf/KnFZYvH921txoo6eRe3MfDcP6f6ZM3TcSM9m63jr9Juf6cjqtwBVryduGGbt
-	 f9CaaRn4p6E2Kqh4dg3uX7l1p067m8oNvA5VuENlDnNOmT3JO5ZNpa/Zu1PfYybHfb
-	 l5C9lIsZkq9THYhSJNykoTaYyeg03oqY2jgNIch1/x4cc3tZy5P4kHBs+iuzNBtnm1
-	 dFGZr8OYpNiH5Lbau4yNUQdJnD/EK9+t00kMxhG/+eOctBoMhH9O07dRhX9lzQPEw/
-	 COw2HASGw4KJw==
-Received: by mail-ej1-f48.google.com with SMTP id a640c23a62f3a-c126fe7d0f3so121001966b.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 10:06:31 -0700 (PDT)
-X-Gm-Message-State: AOJu0YyFFWsUCy3Ry34mn11djNDnm930rNUqBGYl6FYtQYTqelhftrNJ
-	45cOra5MGwsBj0UtLg/+DFXqu5lxFLlREV10wN+XZwtXC4HnNGDI5PbC8CVvUmrdkNAptm6KI1k
-	j4HFz/0XSzZBSCL/3NBNTK+VeA0Ib0k4=
-X-Received: by 2002:a17:907:bb42:b0:c12:4055:6c1a with SMTP id
- a640c23a62f3a-c128731fc4amr5062266b.56.1782752789728; Mon, 29 Jun 2026
- 10:06:29 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="UHhzikC1"
+Received: by mail-dy1-f178.google.com with SMTP id 5a478bee46e88-30cac93dfd7so1810109eec.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 13:01:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1782763273; x=1783368073; darn=vger.kernel.org;
+        h=in-reply-to:references:to:from:subject:cc:message-id:date
+         :content-transfer-encoding:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=4XD8phgf43akGVTDQARcCjwmlWkMrNHOFtFyR4sgC2k=;
+        b=UHhzikC1IEesxI/5jEreLzibxWId1gxm3x4vhxxyDNasAXm9nKBpsbSUw05a/pmh86
+         ESk52TH/i1vofyCI6cxBOTIzwyXxyLuAr5jxjBPycKGSnhYkffWMcZCPQLn8ZgTSgCk8
+         +394QPak9TepkRR9LpP+XdKOCqmByENRQh7wWgphgsud1I4Kh4D5CSSGyVzVUQ7qKIDG
+         TFLUHjfE0HXaZdMH5A7vHkL50jzx5zgWv6ebM7qD7qJF9TL6MZ2XVyyq3FlUyoT6ZV+8
+         iXJptXfehVrPDojVjyvc5pZaDp+VC4ig/E8xIXaaZXXGGI7qpgTqC+EfEqnbMShkDsAc
+         YYTQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1782763273; x=1783368073;
+        h=in-reply-to:references:to:from:subject:cc:message-id:date
+         :content-transfer-encoding:mime-version:x-gm-gg:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=4XD8phgf43akGVTDQARcCjwmlWkMrNHOFtFyR4sgC2k=;
+        b=NPfRF9Zo97ddsJ+lgauWXDaxRaVCiaPAjncYVaq++iDfq/t38nPZZ8uDd0evx7MKi/
+         PLhnoSt9MlMihX4JC+YbOvK53t0K0PYhYqzBZ+Oxs0Z5ij+vLLtY56yrLcJGlAfvY/yL
+         gi7kHvqA2iKqiLANQUEJ8Ae2JjHIOPzejFHypt9RGvfmAnZCNZjIEum2dhOrQSW/wtUI
+         rPuW0nyoIBlczbg0ekq6ETSGy9bIawnb+OgVrYtyNiqE+Iip7Xb/7dyqwJw1nxgt9mGJ
+         oDZYZc4cebHkc94Xif+U5qgn6OvgkVKcbqsSHLY46jBQjwCyacz4hiAWJM4fFdewQREO
+         bi+Q==
+X-Forwarded-Encrypted: i=1; AHgh+Ro4EYcIx1bhvcWDx0lNl1QbeQyWgLtOs7eu4o1adjRm7N2ufCuYO+ccFfeCDU9HuXhNrTWkIkMs3ZI01A==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yz01mQb2FCQunhkYfmO2Wg2MUly05C/T+PD39xX1oMmWoxhJiVw
+	gB7+z+AH3dCjO1XoVyfIYeqYVgusDusSmiMiUUFs0aBmy8Yl+88u6aKi
+X-Gm-Gg: AfdE7cnSH3Brh36GSgrPRFXaYM0z0Z8QKsHNqRb7BZro+GbgJ52uHvKBsi2wS6STeCt
+	EPfUEMNHCVTiZDbhO2CvMEsFgv0d2N1um6ekBlANk0h4kUKLDDaGRwWoKunnOqHSJtKbau12GLb
+	900aHjaRDNBz7MOp1aioycd1EYqp2hKEpDK60jSmb2C2cGNU0WO/tqe5N/vQKT7FarOAYBHSps/
+	h94rnQ4vPEkFeUsYP74hPreyTfgGQ9H6aVautFsUcJuYvG3N4nvm0CZJg+hJ2aF86G6+yVstlnB
+	LFbZFw4Yr8TWR6WL4jXx0/RE0IkHs+tseQ2U4kTFm3zfSsBRqn1qeb1F+FLqEfAB43qB5R1jT4X
+	2W3K7RgUVutS2hkUB3oGXnAYtWewYNUxxdNklmMyg9TESb4tJNcZ6RLO/wc9Oirxyo410Fs6M9c
+	7NLkg1eSqwD6HEV14FL3kRR8oWDPNGfjPLQ8X+xmf2BjFQ3OPfou3chQCjHrC/ut+BXKEX9DlNU
+	TDJJv3og0+19ORRmEov
+X-Received: by 2002:a05:7300:8809:b0:30c:9bf9:d9c8 with SMTP id 5a478bee46e88-30ee1816d67mr415487eec.13.1782763272477;
+        Mon, 29 Jun 2026 13:01:12 -0700 (PDT)
+Received: from localhost ([2601:644:8000:7a86::e34])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-30ee2f5e4dcsm629262eec.5.2026.06.29.13.01.10
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 29 Jun 2026 13:01:11 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-References: <20260629142056.309300-1-mssola@mssola.com>
-In-Reply-To: <20260629142056.309300-1-mssola@mssola.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 29 Jun 2026 18:05:52 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H5jh+e80OM_wKfT6f98j6oCOuYpctf846d0KT98vio48A@mail.gmail.com>
-X-Gm-Features: AVVi8Ce1vhymVLw7ROhSKGncDkCXM090KOPFPSjWeuU3w75Mp8hy7aSIIe85ZRk
-Message-ID: <CAL3q7H5jh+e80OM_wKfT6f98j6oCOuYpctf846d0KT98vio48A@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: don't pass tree_id in btrfs_search_path_in_tree()
-To: =?UTF-8?B?TWlxdWVsIFNhYmF0w6kgU29sw6A=?= <mssola@mssola.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, 
-	linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
+Date: Mon, 29 Jun 2026 13:01:09 -0700
+Message-Id: <DJLSU3WAYLS8.231KSC8VIWTBB@gmail.com>
+Cc: "Chris Mason" <clm@fb.com>, "David Sterba" <dsterba@suse.com>, "open
+ list" <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: raid56: use async_tx API for parity operations
+From: "Rosen Penev" <rosenp@gmail.com>
+To: "Qu Wenruo" <wqu@suse.com>, "Rosen Penev" <rosenp@gmail.com>,
+ <linux-btrfs@vger.kernel.org>
+X-Mailer: aerc 0.21.0-0-g5549850facc2
+References: <20260629023912.2102700-1-rosenp@gmail.com>
+ <d96ddcc0-a62f-40e4-9f80-34929dc3bcfd@suse.com>
+In-Reply-To: <d96ddcc0-a62f-40e4-9f80-34929dc3bcfd@suse.com>
 
-On Mon, Jun 29, 2026 at 5:29=E2=80=AFPM Miquel Sabat=C3=A9 Sol=C3=A0 <mssol=
-a@mssola.com> wrote:
+On Sun Jun 28, 2026 at 10:11 PM PDT, Qu Wenruo wrote:
 >
-> The 'tree_id' parameter in btrfs_search_path_in_tree() was only being
-> used in order to fetch the root tree to be considered for the
-> search. For this same reason this function was also requiring a 'struct
-> btrfs_fs_info' parameter. This commit replaces these two parameters with
-> a single 'struct btrfs_root' one, which identifies from which root tree
-> the search should happen.
 >
-> This function only has one caller, the inode lookup ioctl, which knows
-> how to provide the root tree for each case. In fact, if args->treeid =3D=
-=3D
-> 0, then we don't even have to allocate a new root tree object, and we
-> can reuse the one provided by the ioctl system call, thus avoiding an
-> extra allocation.
+> =E5=9C=A8 2026/6/29 12:09, Rosen Penev =E5=86=99=E9=81=93:
+>> Replace the kmap-local + synchronous library call + kunmap-local
+>> pattern in raid56 compute and recovery paths with the async_tx API
+>> (async_xor_offs, async_gen_syndrome, async_raid6_datap_recov,
+>> async_raid6_2data_recov, async_memcpy).  The async_tx API provides
+>> DMA offloading when a suitable engine is available and falls back to
+>> the same software implementations (xor_gen, raid6_gen_syndrome, etc.)
+>> otherwise.
+>>
+>> Step-loop operations inside each vertical stripe are chained as DMA
+>> dependency chains with ASYNC_TX_FENCE.  The chains are then extended
+>> across all sectors in a stripe so that the DMA engine can pipeline
+>> the entire stripe's parity computation before the CPU waits for
+>> completion.  For RMW writes, all sectors' parity generation is
+>> issued as a single chain; for recovery reads, the recovery chains
+>> for every sector are submitted together, then the CPU verifies
+>> checksums and marks uptodate bits after a single wait.
+>>
+>> Each DMA chain is fully waited on before the caller touches any
+>> buffer pages, so there is never an in-flight DMA operation during
+>> cleanup.  For the typical stripe size of 4 KiB--64 KiB, per-operation
+>> overhead from DMA submission may outweigh the offload benefit, making
+>> the software fallback (which runs synchronously, returning NULL) the
+>> common fast path.  This trade-off is inherent in the async_tx API's
+>> unified interface, but on platforms with a DMA engine (e.g. Marvell
+>> mv_xor) and larger sectors the batching provides measurable offload.
 >
-> Signed-off-by: Miquel Sabat=C3=A9 Sol=C3=A0 <mssola@mssola.com>
-> ---
->  fs/btrfs/ioctl.c | 54 ++++++++++++++++++++++--------------------------
->  1 file changed, 25 insertions(+), 29 deletions(-)
+> Do you have any benchmark?
+Not at this time.
 >
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 1ed16ff4007b..00897a66187c 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1664,13 +1664,11 @@ static noinline int btrfs_ioctl_tree_search_v2(st=
-ruct btrfs_root *root,
->  }
+> You do not need to do a full comprehensive workload, just some fixed
+> basic workloads, then measure the runtime of the converted functions,
+> and major entrances like rmw_rbio()/recover_rbio().
 >
->  /*
-> - * Search INODE_REFs to identify path name of 'dirid' directory
-> - * in a 'tree_id' tree. and sets path name to 'name'.
-> + * Search for an INODE_REF in a 'root' tree which identifies the path na=
-me of
-> + * 'dirid'. When found, it sets 'name' with the path name.
->   */
-> -static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info=
-,
-> -                               u64 tree_id, u64 dirid, char *name)
-> +static noinline int btrfs_search_path_in_tree(struct btrfs_root *root, u=
-64 dirid, char *name)
->  {
-> -       struct btrfs_root *root;
->         struct btrfs_key key;
->         char *ptr;
->         int ret =3D -1;
-> @@ -1682,7 +1680,7 @@ static noinline int btrfs_search_path_in_tree(struc=
-t btrfs_fs_info *info,
->         BTRFS_PATH_AUTO_FREE(path);
+> And do you have ever run the fstests on a system with async offload?
+No. The system in question runs Debian 12, so I assume it would be
+trivial to do so.
 >
->         if (dirid =3D=3D BTRFS_FIRST_FREE_OBJECTID) {
-> -               name[0]=3D'\0';
-> +               name[0] =3D '\0';
+>>
+>> Also select ASYNC_RAID6_RECOV and ASYNC_MEMCPY in Kconfig so that
+>> the async_tx function implementations are linked; previously the
+>> code used the synchronous RAID6_PQ / XOR_BLOCKS libraries directly,
+>> but async_tx functions require their own Kconfig symbols.
+>>
+>> Converted functions:
+>>    - generate_pq_vertical_step() / generate_pq_vertical()
+>>    - recover_vertical_step() / recover_vertical() / recover_sectors()
+>>    - verify_one_parity_step() / verify_one_parity_sector()
+>>    - finish_parity_scrub()
+>>    - recover_scrub_rbio()
+>>    - memcpy_from_bio_to_stripe()
+>>    - raid56_parity_cache_data_folios()
+>>
+>> Removed the now-unused btrfs_raid_bio::finish_pointers field and
+>> the no-longer-needed #include <linux/raid/pq.h> and
+>> #include <linux/raid/xor.h>.
+>>
+>> Assisted-by: opencode:big-pickle
+>> Signed-off-by: Rosen Penev <rosenp@gmail.com>
+>> ---
+>>   fs/btrfs/Kconfig  |   4 +-
+>>   fs/btrfs/raid56.c | 654 ++++++++++++++++++++++++++++++++--------------
+>>   fs/btrfs/raid56.h |   3 -
+>>   3 files changed, 454 insertions(+), 207 deletions(-)
+>>
+>> diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
+>> index 43dd8ef763b8..8223b40d8ecb 100644
+>> --- a/fs/btrfs/Kconfig
+>> +++ b/fs/btrfs/Kconfig
+>> @@ -15,7 +15,9 @@ config BTRFS_FS
+>>   	select ZSTD_DECOMPRESS
+>>   	select FS_IOMAP
+>>   	select RAID6_PQ
+>> -	select XOR_BLOCKS
+>> +	select ASYNC_RAID6_RECOV
+>> +	select ASYNC_MEMCPY
+>> +	select ASYNC_XOR
+>>   	select XXHASH
+>>   	depends on PAGE_SIZE_LESS_THAN_256KB
+>>
+>> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+>> index 00a01b97cc0c..6e98e46df752 100644
+>> --- a/fs/btrfs/raid56.c
+>> +++ b/fs/btrfs/raid56.c
+>> @@ -8,11 +8,10 @@
+>>   #include <linux/bio.h>
+>>   #include <linux/slab.h>
+>>   #include <linux/blkdev.h>
+>> -#include <linux/raid/pq.h>
+>>   #include <linux/hash.h>
+>>   #include <linux/list_sort.h>
+>> -#include <linux/raid/xor.h>
+>>   #include <linux/mm.h>
+>> +#include <linux/async_tx.h>
+>>   #include "messages.h"
+>>   #include "ctree.h"
+>>   #include "disk-io.h"
+>> @@ -154,7 +153,6 @@ static void free_raid_bio_pointers(struct btrfs_raid=
+_bio *rbio)
+>>   	kfree(rbio->stripe_pages);
+>>   	kfree(rbio->bio_paddrs);
+>>   	kfree(rbio->stripe_paddrs);
+>> -	kfree(rbio->finish_pointers);
+>>   }
+>>
+>>   static void free_raid_bio(struct btrfs_raid_bio *rbio)
+>> @@ -231,18 +229,33 @@ int btrfs_alloc_stripe_hash_table(struct btrfs_fs_=
+info *info)
+>>   static void memcpy_from_bio_to_stripe(struct btrfs_raid_bio *rbio, uns=
+igned int sector_nr)
+>>   {
+>>   	const u32 step =3D min(rbio->bioc->fs_info->sectorsize, PAGE_SIZE);
+>> +	struct dma_async_tx_descriptor *tx =3D NULL;
+>>
+>>   	ASSERT(sector_nr < rbio->nr_sectors);
+>>   	for (int i =3D 0; i < rbio->sector_nsteps; i++) {
+>>   		unsigned int index =3D sector_nr * rbio->sector_nsteps + i;
+>>   		phys_addr_t dst =3D rbio->stripe_paddrs[index];
+>>   		phys_addr_t src =3D rbio->bio_paddrs[index];
+>> +		struct async_submit_ctl submit;
+>>
+>>   		ASSERT(dst !=3D INVALID_PADDR);
+>>   		ASSERT(src !=3D INVALID_PADDR);
+>>
+>> -		memcpy_page(phys_to_page(dst), offset_in_page(dst),
+>> -			    phys_to_page(src), offset_in_page(src), step);
+>> +		init_async_submit(&submit, ASYNC_TX_FENCE, tx, NULL, NULL, NULL);
+>> +		tx =3D async_memcpy(phys_to_page(dst), phys_to_page(src),
+>> +				  offset_in_page(dst), offset_in_page(src),
+>> +				  step, &submit);
+>
+> This doesn't look sane at all.
+>
+> If async_memcpy() returned an @tx, the next iteration will just overwrite=
+.
+>
+> I believe most LLM review can detect this problem, you may want to
+> choose a better model.
+Probably.
+>> +	}
+>> +	/*
+>> +	 * All steps are chained via ASYNC_TX_FENCE.  issue_pending and
+>> +	 * dma_wait_for_async_tx on the last descriptor walk the entire
+>> +	 * chain, so earlier descriptors are submitted and waited on too.
+>> +	 * If every step completed synchronously, tx is NULL and no wait
+>> +	 * is needed.
+>> +	 */
+>> +	if (tx) {
+>> +		async_tx_issue_pending(tx);
+>> +		dma_wait_for_async_tx(tx);
+>>   	}
+>>   }
+>>
+>> @@ -1079,12 +1092,11 @@ static struct btrfs_raid_bio *alloc_rbio(struct =
+btrfs_fs_info *fs_info,
+>>   	rbio->stripe_paddrs =3D kzalloc_objs(phys_addr_t,
+>>   					   num_sectors * sector_nsteps,
+>>   					   GFP_NOFS);
+>> -	rbio->finish_pointers =3D kcalloc(real_stripes, sizeof(void *), GFP_NO=
+FS);
+>>   	rbio->error_bitmap =3D bitmap_zalloc(num_sectors, GFP_NOFS);
+>>   	rbio->stripe_uptodate_bitmap =3D bitmap_zalloc(num_sectors, GFP_NOFS)=
+;
+>>
+>>   	if (!rbio->stripe_pages || !rbio->bio_paddrs || !rbio->stripe_paddrs =
+||
+>> -	    !rbio->finish_pointers || !rbio->error_bitmap || !rbio->stripe_upt=
+odate_bitmap) {
+>> +	    !rbio->error_bitmap || !rbio->stripe_uptodate_bitmap) {
+>>   		free_raid_bio_pointers(rbio);
+>>   		kfree(rbio);
+>>   		return ERR_PTR(-ENOMEM);
+>> @@ -1385,49 +1397,98 @@ static inline void *kmap_local_paddr(phys_addr_t=
+ paddr)
+>>   	return kmap_local_page(phys_to_page(paddr)) + offset_in_page(paddr);
+>>   }
+>>
+>> -static void generate_pq_vertical_step(struct btrfs_raid_bio *rbio, unsi=
+gned int sector_nr,
+>> -				      unsigned int step_nr)
+>> +/*
+>> + * The page/offset array model used by the async_tx helpers below repla=
+ces the
+>> + * old kmap-local pointer array.  Each entry in pages[] + offsets[] rep=
+resents
+>> + * what was previously a single kmap_local_paddr() return value.
+>> + *
+>> + * For example, the old pattern:
+>> + *   pointers[i] =3D kmap_local_paddr(paddr);
+>> + *   raid6_gen_syndrome(..., pointers);
+>> + *   kunmap_local(pointers[i]);
+>> + *
+>> + * becomes:
+>> + *   pages[i] =3D phys_to_page(paddr);
+>> + *   offsets[i] =3D offset_in_page(paddr);
+>> + *   async_gen_syndrome(pages, offsets, ...);
+>> + *
+>> + * The async_tx API handles any necessary kmap internally.
+>> + */
+>
+> What the comment is for? There is no code.
+Probably stale from various iterations.
+>
+> If you want to explain the change, commit message is your choice.
+>
+>> +
+>> +/*
+>> + * Maximum number of sectors per stripe.
+>> + * BTRFS_STRIPE_LEN (64 KiB) divided by the minimum sector size (PAGE_S=
+IZE,
+>> + * typically 4 KiB) gives at most 16 entries.  If stripe length ever ch=
+anges,
+>> + * update this to BTRFS_STRIPE_LEN >> fs_info->sectorsize_bits.
+>> + */
+>> +#define RECOVER_MAX_STRIPE_SECTORS 16
+>
+> Leave a new line between macro and function.
+>
+> Move the macro either at the beginning of the file, or just before where
+> it is utilized.
+>
+> And do not use immediate number, use (BTRFS_STRIPE_LEN /
+> BTRFS_MIN_BLOCKSIZE) instead.
+Sure.
+>
+>> +static struct dma_async_tx_descriptor *
+>> +generate_pq_vertical_step(struct btrfs_raid_bio *rbio, unsigned int sec=
+tor_nr,
+>> +			  unsigned int step_nr,
+>> +			  struct page **pages, unsigned int *offsets,
+>> +			  struct dma_async_tx_descriptor *depend_tx)
+>>   {
+>> -	void **pointers =3D rbio->finish_pointers;
+>>   	const u32 step =3D min(rbio->bioc->fs_info->sectorsize, PAGE_SIZE);
+>> -	int stripe;
+>>   	const bool has_qstripe =3D rbio->bioc->map_type & BTRFS_BLOCK_GROUP_R=
+AID6;
+>> +	struct async_submit_ctl submit;
+>> +	struct dma_async_tx_descriptor *tx;
+>> +	int stripe;
+>>
+>> -	/* First collect one sector from each data stripe */
+>> -	for (stripe =3D 0; stripe < rbio->nr_data; stripe++)
+>> -		pointers[stripe] =3D kmap_local_paddr(
+>> -				sector_paddr_in_rbio(rbio, stripe, sector_nr, step_nr, 0));
+>> +	for (stripe =3D 0; stripe < rbio->nr_data; stripe++) {
+>> +		phys_addr_t paddr =3D sector_paddr_in_rbio(rbio, stripe, sector_nr, s=
+tep_nr, 0);
+>>
+>> -	/* Then add the parity stripe */
+>> -	pointers[stripe++] =3D kmap_local_paddr(rbio_pstripe_paddr(rbio, secto=
+r_nr, step_nr));
+>> +		pages[stripe] =3D phys_to_page(paddr);
+>> +		offsets[stripe] =3D offset_in_page(paddr);
+>> +	}
+>> +
+>> +	{
+>> +		phys_addr_t paddr =3D rbio_pstripe_paddr(rbio, sector_nr, step_nr);
+>> +
+>> +		pages[stripe] =3D phys_to_page(paddr);
+>> +		offsets[stripe] =3D offset_in_page(paddr);
+>> +	}
+>
+> A code block for what? Just to keep paddr as a local variable?
+>
+> Just big NO NO, declare @paddr at the beginning of the function and
+> remove the brackets.
+Will do.
+>
+>> +	stripe++;
+>>
+>>   	if (has_qstripe) {
+>> -		/*
+>> -		 * RAID6, add the qstripe and call the library function
+>> -		 * to fill in our p/q
+>> -		 */
+>> -		pointers[stripe++] =3D kmap_local_paddr(
+>> -				rbio_qstripe_paddr(rbio, sector_nr, step_nr));
+>> +		phys_addr_t paddr =3D rbio_qstripe_paddr(rbio, sector_nr, step_nr);
+>> +
+>> +		pages[stripe] =3D phys_to_page(paddr);
+>> +		offsets[stripe] =3D offset_in_page(paddr);
+>>
+>>   		assert_rbio(rbio);
+>> -		raid6_gen_syndrome(rbio->real_stripes, step, pointers);
+>> +		init_async_submit(&submit, ASYNC_TX_FENCE, depend_tx, NULL, NULL, NUL=
+L);
+>> +		tx =3D async_gen_syndrome(pages, offsets, rbio->real_stripes, step, &=
+submit);
+>>   	} else {
+>> -		/* raid5 */
+>> -		memcpy(pointers[rbio->nr_data], pointers[0], step);
+>> -		xor_gen(pointers[rbio->nr_data], pointers + 1, rbio->nr_data - 1,
+>> -				step);
+>> +		init_async_submit(&submit, ASYNC_TX_FENCE | ASYNC_TX_XOR_ZERO_DST,
+>> +				  depend_tx, NULL, NULL, NULL);
+>> +		tx =3D async_xor_offs(pages[rbio->nr_data], offsets[rbio->nr_data],
+>> +				    pages, offsets, rbio->nr_data, step, &submit);
+>>   	}
+>> -	for (stripe =3D stripe - 1; stripe >=3D 0; stripe--)
+>> -		kunmap_local(pointers[stripe]);
+>> +	return tx;
+>
+> I do not like the returning of an tx.
+>
+> Can't you just wait for the @tx to finish and keep the old void return ty=
+pe?
+>
+>
+>>   }
+>>
+>> -/* Generate PQ for one vertical stripe. */
+>> -static void generate_pq_vertical(struct btrfs_raid_bio *rbio, int secto=
+rnr)
+>> +/*
+>> + * Generate PQ for one vertical stripe, chaining into @depend_tx.
+>> + * The caller must issue_pending + wait for the returned descriptor
+>> + * (which may be NULL if the operation completed synchronously),
+>> + * then call generate_pq_vertical_finish() to mark parity uptodate.
+>> + */
+>> +static struct dma_async_tx_descriptor *
+>> +generate_pq_vertical(struct btrfs_raid_bio *rbio, int sectornr,
+>> +		     struct page **pages, unsigned int *offsets,
+>> +		     struct dma_async_tx_descriptor *depend_tx)
+>>   {
+>> -	const bool has_qstripe =3D (rbio->bioc->map_type & BTRFS_BLOCK_GROUP_R=
+AID6);
+>> +	struct dma_async_tx_descriptor *tx =3D depend_tx;
+>>
+>>   	for (int i =3D 0; i < rbio->sector_nsteps; i++)
+>> -		generate_pq_vertical_step(rbio, sectornr, i);
+>> +		tx =3D generate_pq_vertical_step(rbio, sectornr, i, pages, offsets, t=
+x);
+>
+> Again, isn't @tx overwritten for each step?
+>
+> Also, sashiko is reporting several critical level problems, please refer
+> to the review:
+>
+> https://sashiko.dev/#/patchset/20260629023912.2102700-1-rosenp%40gmail.co=
+m
+will check out.
 
-Please don't make changes like this. We don't fix indentation/spacing
-on lines we don't change.
+Although based on Cristoph's comment, this should probably be abandoned.
 
->                 return 0;
->         }
->
-> @@ -1692,13 +1690,6 @@ static noinline int btrfs_search_path_in_tree(stru=
-ct btrfs_fs_info *info,
->
->         ptr =3D &name[BTRFS_INO_LOOKUP_PATH_MAX - 1];
->
-> -       root =3D btrfs_get_fs_root(info, tree_id, true);
-> -       if (IS_ERR(root)) {
-> -               ret =3D PTR_ERR(root);
-> -               root =3D NULL;
-> -               goto out;
-> -       }
-> -
->         key.objectid =3D dirid;
->         key.type =3D BTRFS_INODE_REF_KEY;
->         key.offset =3D (u64)-1;
-> @@ -1706,11 +1697,9 @@ static noinline int btrfs_search_path_in_tree(stru=
-ct btrfs_fs_info *info,
->         while (1) {
->                 ret =3D btrfs_search_backwards(root, &key, path);
->                 if (ret < 0)
-> -                       goto out;
-> -               else if (ret > 0) {
-> -                       ret =3D -ENOENT;
-> -                       goto out;
-> -               }
-> +                       return ret;
-> +               else if (ret > 0)
-> +                       return -ENOENT;
->
->                 l =3D path->nodes[0];
->                 slot =3D path->slots[0];
-> @@ -1719,10 +1708,8 @@ static noinline int btrfs_search_path_in_tree(stru=
-ct btrfs_fs_info *info,
->                 len =3D btrfs_inode_ref_name_len(l, iref);
->                 ptr -=3D len + 1;
->                 total_len +=3D len + 1;
-> -               if (ptr < name) {
-> -                       ret =3D -ENAMETOOLONG;
-> -                       goto out;
-> -               }
-> +               if (ptr < name)
-> +                       return -ENAMETOOLONG;
->
->                 *(ptr + len) =3D '/';
->                 read_extent_buffer(l, ptr, (unsigned long)(iref + 1), len=
-);
-> @@ -1737,10 +1724,8 @@ static noinline int btrfs_search_path_in_tree(stru=
-ct btrfs_fs_info *info,
->         }
->         memmove(name, ptr, total_len);
->         name[total_len] =3D '\0';
-> -       ret =3D 0;
-> -out:
-> -       btrfs_put_root(root);
-> -       return ret;
-> +
-> +       return 0;
->  }
->
->  static int btrfs_search_path_in_tree_user(struct mnt_idmap *idmap,
-> @@ -1884,6 +1869,7 @@ static int btrfs_search_path_in_tree_user(struct mn=
-t_idmap *idmap,
->  static noinline int btrfs_ioctl_ino_lookup(struct btrfs_root *root,
->                                            void __user *argp)
->  {
-> +       bool new_root =3D false;
->         struct btrfs_ioctl_ino_lookup_args AUTO_KFREE(args);
->         int ret =3D 0;
->
-> @@ -1897,6 +1883,8 @@ static noinline int btrfs_ioctl_ino_lookup(struct b=
-trfs_root *root,
->          */
->         if (args->treeid =3D=3D 0)
->                 args->treeid =3D btrfs_root_id(root);
-> +       else
-> +               new_root =3D true;
+I originally wanted to implement:
 
-If any of the 'if' statements below execute a 'goto out' before
-btrfs_get_fs_root() is called, then under 'out' we call
-btrfs_put_root() when we shouldn't...
->
->         if (args->objectid =3D=3D BTRFS_FIRST_FREE_OBJECTID) {
->                 args->name[0] =3D 0;
-> @@ -1908,13 +1896,21 @@ static noinline int btrfs_ioctl_ino_lookup(struct=
- btrfs_root *root,
->                 goto out;
->         }
->
-> -       ret =3D btrfs_search_path_in_tree(root->fs_info,
-> -                                       args->treeid, args->objectid,
-> -                                       args->name);
-> +       if (new_root) {
-> +               root =3D btrfs_get_fs_root(root->fs_info, args->treeid, t=
-rue);
-> +               if (IS_ERR(root)) {
-> +                       ret =3D PTR_ERR(root);
-> +                       new_root =3D false;
-> +                       goto out;
-> +               }
-> +       }
-> +       ret =3D btrfs_search_path_in_tree(root, args->objectid, args->nam=
-e);
->
->  out:
->         if (ret =3D=3D 0 && copy_to_user(argp, args, sizeof(*args)))
->                 return -EFAULT;
+https://lore.kernel.org/all/20210106123738.GS6430@twin.jikos.cz/
 
-If we return -EFAUT we leak the root when new_root is true.
+The LLM told me it would result in worse performance as the async-tx API
+requires batching. So I moved on to XOR.
 
-Thanks.
+My current setup for my RAID is md-raid5 > btrfs instead of the latter
+directly as I assume the former performs better based on
+/proc/interrupts output.
 
-> +       if (new_root)
-> +               btrfs_put_root(root);
->
->         return ret;
->  }
-> --
-> 2.54.0
->
->

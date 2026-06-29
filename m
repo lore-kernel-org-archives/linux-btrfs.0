@@ -1,132 +1,250 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A63C13BFAE0
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 15:09:21 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E321243C061
+	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 15:48:07 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782745762; cv=none; b=iremvJPlSYW+3J3jgCFB/EgxRVmMKE/ZBKASawOFuY3aRfz2QA0WmJeBvzVeK9cPeo7Va5wD48xDemSjyABPnT214V5khVSIcqpKFqoUMXvey3NEvmUNkY4XR+MOuU6cfKR1BDYkPGxRp40Rsvr1ivImJ74GItP7QO6kLslXa9U=
+	t=1782748089; cv=none; b=dqBwbD6xXpHm+Gb9cRLXD/GtfSrtmvhbRO6wZPsKAcT709oUqP+vcAeoTedCoZb1jwkYC+cUTaf5we0kDPF9aBwzAlMRkp8tkAowWPqmLxmzIXFJ/2GMICvudhE7+sftAaofWzs9veIYKzOUVH2xhv774E3UPcqgHcJrddyDC3g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782745762; c=relaxed/simple;
-	bh=xbrw9x1WsoLHW5NeooYMAdsqnFzaIdfB6xxsTj4kpw8=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=QSzKFZcllviY6GUqkvkTGOAV1a8E0qWycMGDJfdpNn20Apv1noTPlJJP6pwGGg6K88V97NPFoNqDoPDuWkf8T/WzBLc9KriVXPQgEojqo2zUIUhi4Ax8uYxwapW51lGTwLcioHXtZj3vEtOMp7DmhyYY7MHN0jp++Y/fcMMS344=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=St4HRg/E; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1782748089; c=relaxed/simple;
+	bh=pMYBfAyQrREVKK3ZhINcPindahZyGoLfbdTeiuNWxBU=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=kW4YePW4SIztjAv1ZBLL6LZDa2slmYme6yzxhiD+KtuXVwvL+J5CdVzCQOYkJAcAJ1nGLVMy5oE4qkTUYlGzGMboCqRaIcfLeWDV0u0RmvFhqPCOKgqadww/ADN6XOgfCwb5wT57AFmodevGB8Q8vGcPchvAyEmmC+LMC5QlnLw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=EyTVPj3r; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="St4HRg/E"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id CAA321F000E9
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 15:09:20 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="EyTVPj3r"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 95E011F00A3F
+	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 15:48:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782745761;
-	bh=MY05w2wUcl3+tHVtndrgqxZtXJ5kdtxrPXb+au674h8=;
-	h=From:To:Subject:Date;
-	b=St4HRg/EP8FH4Jv0v+mKGK0uCqC+9jc7S2LeNCmCEsdqDwLj5eCJaj4pVzwSAHkPC
-	 hYxSjoaumNiMGDKWAsgb1QQBP7z0SChsPbGswxGtMOkiAqBa9kib423y+f5V8l2t/v
-	 D65KQk+rw8dEmIAj7iZXAnN7Zqp5lBAeRUMaZfQFONsfXaXL2umsnJ9olKpsFhV0DN
-	 wEkDP9EQ9y2WuZi1T6A8kwkj473YXJY40ERuMS3Yj8qyapRoQSu6w3xntDrXpq4lIV
-	 VfvEACoaxjPPz/cdZGyIffm6tUcFMqsXkFCuCXlqCEdHk+iAezGj67Z0/m7cjAkYI+
-	 z4bICHf4/GPxA==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix NULL pointer deref during assertion in btrfs_backref_free_node()
-Date: Mon, 29 Jun 2026 16:09:17 +0100
-Message-ID: <8bc196601d6cd471a97a175a3f328425e1efc62f.1782745731.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
+	s=k20260515; t=1782748087;
+	bh=o3FyyRYl5908EABWzCXsXYbAncKihYWYQ0CyEe7djaY=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=EyTVPj3rBvATAKjitimJzp1plreY8+/XjuF5CMH74QhwfJWVHpdtbPzUuLZpWqU4p
+	 J11mvU0sQ7DqqCl6TR7OZg7bi6TV3hMfH/0ZL90Sd97oXwX3hdoh3eaItRI658EUHV
+	 Fmk4LzG72YjKovs+ghEqyZdrDdYNV2T6w7f9TiyR5wa2XQD4pfAN1qqCRP3KWFrrwI
+	 EW260b93S08dTMhQ+9aI1HDQRaR7S0lyBNPsFm83QAjX9FRlk7Kql+b11mP7wzMKjb
+	 4IEaYu60MbIws7iPsH33u42f9Z7wEaqy1LVOk57fdpVKj+gKNRhsvP2E42NMpzB9VD
+	 yffz7KWxJSaQg==
+Received: by mail-ej1-f54.google.com with SMTP id a640c23a62f3a-c1214350188so435284266b.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 08:48:07 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AHgh+RrpAjQktbVxVXDt+HyAvlRaMuZ9fQe/tzJH96laAJDc97Unm4R1FWGijXtkd+paUoNKGkys7LMzuVyN/Q==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwmKIEp5Ksk6O8PQVFciScT5BjJc5J/ADY8rB2mCqkTdeiADVhp
+	RyIq9TCkRKrGqptqDpyBTs/fWGTitfnULzQq8sBNVi2YwUkpViEguNCrjitTkPN9weOAoGfbGEb
+	hrcoLFw0ZWUxUi0Xtfg7FMAoOFQEBLxw=
+X-Received: by 2002:a17:907:c25:b0:c12:5013:4b7e with SMTP id
+ a640c23a62f3a-c1250134e4cmr319608466b.18.1782748086229; Mon, 29 Jun 2026
+ 08:48:06 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20260629-btrfs-skip-logging-v1-1-4e3a28c1acaf@kernel.org>
+ <CAL3q7H5o6vKOcQ0G4shQw6q7vCpfZYo8KO6Rg6VdChDoMB+C=g@mail.gmail.com>
+ <5084d9c6b6a7025be156354194cf7d3fffebb0e2.camel@kernel.org> <CAL3q7H6cHCrcSY+Rj5TX6tEkcX33WmcF73oZbfycuCRAajYzfg@mail.gmail.com>
+In-Reply-To: <CAL3q7H6cHCrcSY+Rj5TX6tEkcX33WmcF73oZbfycuCRAajYzfg@mail.gmail.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Mon, 29 Jun 2026 16:47:28 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H4nCvmMN8iO4+eVbP3aEm8oxmyfarb4bCyBPLEwU48O7w@mail.gmail.com>
+X-Gm-Features: AVVi8Ccg6XQlZ9Kp8tz_NAdEbbZZRxOtM9m4I9T7jaLdxtbVfqi_mIV4C1Vh-LY
+Message-ID: <CAL3q7H4nCvmMN8iO4+eVbP3aEm8oxmyfarb4bCyBPLEwU48O7w@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: don't let shrinker touch extent_maps that are
+ being logged
+To: Jeff Layton <jlayton@kernel.org>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>, 
+	Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-From: Filipe Manana <fdmanana@suse.com>
+On Mon, Jun 29, 2026 at 4:06=E2=80=AFPM Filipe Manana <fdmanana@kernel.org>=
+ wrote:
+>
+> On Mon, Jun 29, 2026 at 3:56=E2=80=AFPM Jeff Layton <jlayton@kernel.org> =
+wrote:
+> >
+> > On Mon, 2026-06-29 at 15:19 +0100, Filipe Manana wrote:
+> > > On Mon, Jun 29, 2026 at 2:41=E2=80=AFPM Jeff Layton <jlayton@kernel.o=
+rg> wrote:
+> > > >
+> > > > The extent map shrinker can free an extent map that is still owned =
+by an
+> > > > in-flight fsync and still linked on the inode's modified_extents li=
+st,
+> > > > corrupting that list and eventually causing an RCU stall.
+> > > >
+> > > > btrfs_scan_inode() currently skips EXTENT_FLAG_PINNED maps, then ca=
+lls
+> > > > btrfs_remove_extent_mapping() followed by btrfs_free_extent_map():
+> > > >
+> > > >         if (em->flags & EXTENT_FLAG_PINNED)
+> > > >                 goto next;
+> > > >         ...
+> > > >         btrfs_remove_extent_mapping(inode, em);
+> > > >         btrfs_free_extent_map(em);
+> > > >
+> > > > But btrfs_remove_extent_mapping() deliberately does NOT unlink a ma=
+p that
+> > > > has EXTENT_FLAG_LOGGING set:
+> > > >
+> > > >         if (!(em->flags & EXTENT_FLAG_LOGGING))
+> > > >                 list_del_init(&em->list);
+> > > >         remove_em(inode, em);
+> > > >
+> > > > This sets up a UAF situation where a later fsync() can trip over th=
+e
+> > > > now-freed extent_map still on the modified_extents() list.
+> > >
+> > > I don't see how that can happen, because fsync always takes the
+> > > inode's i_mmap_lock (in write/exclusive mode), and btrfs_scan_inode()
+> > > takes the same lock too (in shared/read mode).
+> > > EXTENT_FLAG_LOGGING is only set and cleared during fsync, so how can
+> > > the shrinker race with fsync?
+> > >
+> >
+> > ...and yet, the vmcore shows that the shrinker hit an extent_map that
+> > had LOGGING set while holding the i_mmap_lock.
+>
+> Yes, but we need to understand why...
+>
+> >
+> > I had hoped to add an assertion here that LOGGING couldn't be set on
+> > the em's after taking the i_mmap_lock, but that's not viable:
+> >
+> > The problem is that the i_mmap_lock coverage isn't complete. I had
+> > Claude assist me with some analysis so take it with a hefty grain of
+> > salt but the problem is that the em tree can contain em's from other
+> > inodes where the i_mmap_lock is not held:
+>
+> And that is the problem: an em tree, which belongs to an inode, should
+> only have extent maps for that inode...
+> An extent map can only belong to an inode.
+>
+> So that's what needs investigation. The bug is elsewhere.
+>
+> Thanks.
+>
+> >
+> > -----------------------8<---------------------
+> >
+> > ...that inode is in progress, therefore no em in its tree should have L=
+OGGING set. Your invariant is the right one.
+> >
+> >  But it's violated, because the i_mmap_lock interlock is incomplete. Tw=
+o facts:
+> >
+> >   1. tree-log.c never takes i_mmap_lock =E2=80=94 grep returns 0 occurr=
+ences. Only btrfs_sync_file takes it (file.c:1608/1610), and only
+> >   on the one inode being fsync'd.
+> >   2. A single fsync logs many other inodes, and each can set LOGGING on=
+ its own ems via btrfs_log_changed_extents().
 
-In btrfs_backref_free_node() we have the following assertion:
+A single fsync can log other inodes yes, and without taking their
+i_mmap_lock, but the inodes are logged in LOG_INODE_EXISTS mode, so
+extents are not logged.
+The only exception is for symlink inodes, but those are logged in full
+mode, only have one extent (inlined), and always have
+BTRFS_INODE_NEEDS_FULL_SYNC set, so we never end up in
+btrfs_log_changed_extents() for symlinks.
 
-  ASSERT(node->eb == NULL, "node->eb->start=%llu", node->eb->start);
+> >   btrfs_log_inode() is called recursively on conflicting inodes, parent=
+ directories, and referenced inodes:
+> >   tree-log.c:5982  btrfs_log_inode(di_inode, log_mode)        # dir den=
+tries
+> >   tree-log.c:6339  btrfs_log_inode(inode, LOG_INODE_ALL)      # conflic=
+ting inodes
+> >   tree-log.c:6900  btrfs_log_inode(di_inode, log_mode)        # new dir=
+ dentries
+> >   tree-log.c:7389  btrfs_log_inode(dir_inode, LOG_INODE_ALL)  # log_all=
+_parents
+> >   tree-log.c:7488  btrfs_log_inode(inode, ...)                # referen=
+ced inodes
+> >
+> >   2. For all of these, btrfs_sync_file holds i_mmap_lock on the origina=
+l fsync'd inode =E2=80=94 not on these side inodes. So a side
+> >   inode X gets LOGGING set on its ems while X's own i_mmap_lock is free=
+.
 
-and a user reported the following crash:
+Nop, see above.
 
-  Oops: general protection fault, probably for non-canonical address 0xdffffc0000000000: 0000 [#1] SMP KASAN NOPTI
-  KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]
-  CPU: 0 UID: 0 PID: 10422 Comm: syz.0.17 Not tainted 7.1.0-02765-g6b5a2b7d9bc1-dirty #44 PREEMPT(full)
-  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.15.0-1 04/01/2014
-  RIP: 0010:btrfs_backref_free_node fs/btrfs/backref.c:3057 [inline]
-  RIP: 0010:btrfs_backref_free_node+0xb9/0x200 fs/btrfs/backref.c:3051
-  Code: 00 fc ff (...)
-  RSP: 0018:ffa0000006b0f3c0 EFLAGS: 00010246
-  RAX: dffffc0000000000 RBX: 0000000000000000 RCX: ffffffff840eb78b
-  RDX: 0000000000000000 RSI: ffffffff840eafa5 RDI: ff110000742ab768
-  RBP: ff110000742ab700 R08: 0000000000000000 R09: 0000000000000000
-  R10: ff110000742ab700 R11: 00000000000a81f9 R12: ff11000107a92020
-  R13: ff1100005c182ea8 R14: 0000000000000000 R15: dffffc0000000000
-  FS:  0000555575536500(0000) GS:ff11000183985000(0000) knlGS:0000000000000000
-  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-  CR2: 00007fa3d0e9d580 CR3: 000000002232a000 CR4: 0000000000753ef0
-  PKRU: 00000000
-  Call Trace:
-   <TASK>
-   btrfs_backref_cleanup_node+0x27/0x30 fs/btrfs/backref.c:3133
-   relocate_tree_block fs/btrfs/relocation.c:2604 [inline]
-   relocate_tree_blocks+0x11b0/0x1a20 fs/btrfs/relocation.c:2707
-   relocate_block_group+0x499/0xf30 fs/btrfs/relocation.c:3635
-   do_nonremap_reloc fs/btrfs/relocation.c:5323 [inline]
-   btrfs_relocate_block_group+0x1749/0x5fb0 fs/btrfs/relocation.c:5490
-   btrfs_relocate_chunk+0x12b/0x950 fs/btrfs/volumes.c:3647
-   __btrfs_balance fs/btrfs/volumes.c:4586 [inline]
-   btrfs_balance+0x1c7f/0x55c0 fs/btrfs/volumes.c:4973
-   btrfs_ioctl_balance fs/btrfs/ioctl.c:3474 [inline]
-   btrfs_ioctl+0x38a4/0x5d20 fs/btrfs/ioctl.c:5570
-   vfs_ioctl fs/ioctl.c:51 [inline]
-   __do_sys_ioctl fs/ioctl.c:597 [inline]
-   __se_sys_ioctl fs/ioctl.c:583 [inline]
-   __x64_sys_ioctl+0x18f/0x210 fs/ioctl.c:583
-   do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
-   do_syscall_64+0x11f/0x860 arch/x86/entry/syscall_64.c:94
-   entry_SYSCALL_64_after_hwframe+0x77/0x7f
-   RIP: 0033:0x7fb38e3b56dd
-   Code: 02 b8 ff (...)
-   RSP: 002b:00007fff04115788 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-   RAX: ffffffffffffffda RBX: 00007fb38f6b0020 RCX: 00007fb38e3b56dd
-   RDX: 00002000000003c0 RSI: 00000000c4009420 RDI: 0000000000000004
-   RBP: 00007fb38e451b48 R08: 0000000000000000 R09: 0000000000000000
-   R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-   R13: 0000000000000000 R14: 00007fb38f6b0020 R15: 00007fb38f6b002c
-   </TASK>
+> >
+> >   So the shrinker can down_read_trylock(X->i_mmap_lock) successfully (n=
+obody holds it) and walk X's tree while X's ems are
+> >   LOGGING-flagged =E2=86=92 it removes+frees one =E2=86=92 corruption. =
+The interlock only protects the directly-fsync'd inode, not the inodes
+> >   logged as its dependencies.
 
-It seems that this happens on some systems for some reason, when the
-ASSERT() macro calls the inline function verify_assert_printk_format()
-to evaluate the format string and arguments, causing the NULL pointer
-dereference on node->eb.
+Nop. Unless you can show an actual code path where while fsyncing one
+inode we log another inode in LOG_INODE_ALL mode
+Again, the exception is symlinks, but for those, the
+BTRFS_INODE_NEEDS_FULL_SYNC flag is always set, so we never end up in
+btrfs_log_changed_extents().
 
-So change the assertion to check for a NULL node->eb before dereferencing
-it. Also, while at it, make the assertion more useful by printing the
-owner of the extent buffer as well as its level.
-
-Reported-by: Yue Sun <samsun1006219@gmail.com>
-Link: https://lore.kernel.org/linux-btrfs/20260626065542.38413-1-samsun1006219@gmail.com/
-Fixes: c4e7778580d6 ("btrfs: use verbose assertions in backref.c")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/backref.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 23c3eeb58dc1..1be632c742bd 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -3054,7 +3054,10 @@ void btrfs_backref_free_node(struct btrfs_backref_cache *cache,
- 	if (node) {
- 		ASSERT(list_empty(&node->list));
- 		ASSERT(list_empty(&node->lower));
--		ASSERT(node->eb == NULL, "node->eb->start=%llu", node->eb->start);
-+		ASSERT(node->eb == NULL, "node->eb->start=%llu level=%d owner=%llu",
-+		       node->eb ? node->eb->start : 0,
-+		       node->eb ? btrfs_header_level(node->eb) : 0,
-+		       node->eb ? btrfs_header_owner(node->eb) : 0);
- 		cache->nr_nodes--;
- 		btrfs_put_root(node->root);
- 		kfree(node);
--- 
-2.47.2
-
+> >
+> >
+> > > Also, there should be no () after modified_extents (it's not a functi=
+on name).
+> > >
+> > >
+> >
+> > Sorry, early morning typo. Fixed in my local repo.
+> >
+> > >
+> > > >
+> > > > Fix it by having the shrinker skip maps that are being logged, the =
+same
+> > > > way it skips pinned maps. Such a map is owned by the in-flight fsyn=
+c and
+> > > > will become reclaimable again once logging clears the flag.
+> > > >
+> > > > Fixes: 956a17d9d050 ("btrfs: add a shrinker for extent maps")
+> > > > Signed-off-by: Jeff Layton <jlayton@kernel.org>
+> > > > ---
+> > > > We've started hitting a number of these problems in our fleet. It
+> > > > seems to mostly happen on ARM64 architecture, but there have been s=
+ome
+> > > > WARN_ONs that popped on x86_64 too.
+> > > > ---
+> > > >  fs/btrfs/extent_map.c | 8 +++++++-
+> > > >  1 file changed, 7 insertions(+), 1 deletion(-)
+> > > >
+> > > > diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+> > > > index fce9c5cc0122..128f7800e101 100644
+> > > > --- a/fs/btrfs/extent_map.c
+> > > > +++ b/fs/btrfs/extent_map.c
+> > > > @@ -1166,7 +1166,13 @@ static long btrfs_scan_inode(struct btrfs_in=
+ode *inode, struct btrfs_em_shrink_c
+> > > >                 em =3D rb_entry(node, struct extent_map, rb_node);
+> > > >                 ctx->scanned++;
+> > > >
+> > > > -               if (em->flags & EXTENT_FLAG_PINNED)
+> > > > +               /*
+> > > > +                * Skip extent maps that are pinned or are being lo=
+gged. The
+> > > > +                * i_mmap_lock should prevent this from seeing LOGG=
+ING on extent_maps
+> > > > +                * directly associated with inode, but em may be as=
+sociated with
+> > > > +                * other, dependent inodes and their locks are not =
+held.
+> > > > +                */
+> > > > +               if (em->flags & (EXTENT_FLAG_PINNED | EXTENT_FLAG_L=
+OGGING))
+> > > >                         goto next;
+> > > >
+> > > >                 /*
+> > > >
+> > > > ---
+> > > > base-commit: dc59e4fea9d83f03bad6bddf3fa2e52491777482
+> > > > change-id: 20260629-btrfs-skip-logging-3e31701d9647
+> > > >
+> > > > Best regards,
+> > > > --
+> > > > Jeff Layton <jlayton@kernel.org>
+> > > >
+> > > >
+> >
+> > --
+> > Jeff Layton <jlayton@kernel.org>

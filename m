@@ -1,154 +1,304 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 00A173DA5B2
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 09:26:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 91B24378824;
+	Mon, 29 Jun 2026 09:29:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782725187; cv=none; b=IVZJdG0H8xpA/kF4JCahuCtCwyYmZ292P+qj8iea0YjT4hnD8nB8VY0AqYVXF/V4NjkMaiQkzDxAXCQ7UCeYHImCfnWglvN7ReD5QzX83f3BAAVf8twnRmcTbt/e8t6Kfq8NBGR7AiyedN460soONL31mmqc0Qg/HmA0ly/Y6UM=
+	t=1782725393; cv=none; b=Q9K5WWFObcG2v39ulZslxLZxkJpgYEU0o9PVv+DZRCDiIzD6qcRJVb6Kvg3JJ3WJCy5yh/AS01EDbILL04/5JL5/TIXrYZbDR8kM3zNpJ3lqs+EvgUxkhf5q3ZLLpSB4ak82QEZ3nyfnWDE3V2nvjAr5chox9J0q+dKNrwyA1ZA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782725187; c=relaxed/simple;
-	bh=6ORF9l+1dayDThXN6kKckQ6gcol2TZ2IgpAwd+r5Xw0=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Hr/HvIe8YkdxO0x1QKbYXUFqkpJyxkRBxcs1TN7OoCJW4WCT1Pi3WQZmW6xNirOvXUi1WWuGigpA4zSTSOZfOaDzLeNoy+Mif9occxqGhHdZEP7nxQtmaNumPToWrCtLdgm1Q4klG0mZ/vjWv/KV0rulKHfbzabfj+11wCp7J/k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SkNIoHO7; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SkNIoHO7; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1782725393; c=relaxed/simple;
+	bh=jSMKyhpwOoBN2kN4mXySQg7+N1xIK06zgQcIqssIhNo=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=C3wW7zdWHMULkuSSrvCt9ETJBtZUNCn/8oxlFUaoLV4ps1H5UE2EFX7gxQxwCnLW559Uf6Lw3OIk1WI5qXmuYTuQkMJ2h1PPJspSr6HCESSY9GsMN1YAx4/2qlF/lA+zwhl0DeC6FH1WDU8KSqWUJKaD0LYq/+W+Ah3BdvyBiY8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=VtA7MjXR; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SkNIoHO7";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SkNIoHO7"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id D711F72FC8
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 09:26:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782725178; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=XO5+ybZZVqoVb3/AJKWj+Y7UAaUrYcKQxSPlK8ClpiU=;
-	b=SkNIoHO71FRedau+L5RvzSPBVOgJQXZaBVALK9hwErmXtjuA0y60Z9rMH5oZdABgdmiRt6
-	78Pdnz6E/r6HOjGBp8a/Rp3FSXiATLAJMc0nTlXlgtRYhLbOClQKTbq+Rka6gmbZ2vIJfg
-	C4aE/lylNaVdkbWCtJ+XuVs0UQYdat0=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=SkNIoHO7
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782725178; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=XO5+ybZZVqoVb3/AJKWj+Y7UAaUrYcKQxSPlK8ClpiU=;
-	b=SkNIoHO71FRedau+L5RvzSPBVOgJQXZaBVALK9hwErmXtjuA0y60Z9rMH5oZdABgdmiRt6
-	78Pdnz6E/r6HOjGBp8a/Rp3FSXiATLAJMc0nTlXlgtRYhLbOClQKTbq+Rka6gmbZ2vIJfg
-	C4aE/lylNaVdkbWCtJ+XuVs0UQYdat0=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DEBA2779AB
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 09:26:17 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id GOdpIzk6QmojWQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 09:26:17 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 1/2] btrfs: remove SCRUB_MAX_SECTORS_PER_BLOCK
-Date: Mon, 29 Jun 2026 18:55:52 +0930
-Message-ID: <04c42fe35460477ebfa619dc8d37a7d83c6d5f96.1782725129.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1782725129.git.wqu@suse.com>
-References: <cover.1782725129.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="VtA7MjXR"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 047F41F00A3A;
+	Mon, 29 Jun 2026 09:29:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1782725392;
+	bh=Npk92WP4+iddnwXb26xetSuG1nU9c64h3XFMA6XCVrA=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=VtA7MjXRZVQaaJ9Ih/X8IeykXC9h1JN3ed+nWlG+FOYdWGYUVvUlIiRfl8oubtyCi
+	 gOmZrcpZ7qUUKF3WHd8F3vWIfsakqRyVS0nU1BabmH05MWinufmuagmMR+lVYMj/Sh
+	 9ISoLFdQ38FmmGnyJP1nwUcRyG0El5hYGkYeIa6RyCDutA2wHCodwkG3HhA7gvREzN
+	 MsT+C+WV88u/DYSwuWI7DQ+2llBIY3R3Qte+cAsQs4hVNlZSfO9axLXh/C6eHPvdII
+	 qSVdM5bqj/+BDniFj4HC3c2DUW0+1pD55OJ1rVvyJoYtl/NFw0Nax2r+VvCkGMmUgh
+	 O6dPgtCAjuZSg==
+Date: Mon, 29 Jun 2026 10:29:41 +0100
+From: Lorenzo Stoakes <ljs@kernel.org>
+To: Rik van Riel <riel@surriel.com>
+Cc: linux-kernel@vger.kernel.org, kernel-team@meta.com, linux-mm@kvack.org, 
+	david@kernel.org, willy@infradead.org, surenb@google.com, hannes@cmpxchg.org, 
+	ziy@nvidia.com, usama.arif@linux.dev, fvdl@google.com, 
+	Andrew Morton <akpm@linux-foundation.org>, Jonathan Corbet <corbet@lwn.net>, Chris Mason <clm@fb.com>, 
+	David Sterba <dsterba@suse.com>, Vlastimil Babka <vbabka@kernel.org>, 
+	Steven Rostedt <rostedt@goodmis.org>, Masami Hiramatsu <mhiramat@kernel.org>, 
+	"Rafael J. Wysocki" <rafael@kernel.org>, Oscar Salvador <osalvador@suse.de>, 
+	Mike Rapoport <rppt@kernel.org>, linux-doc@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-trace-kernel@vger.kernel.org, linux-pm@vger.kernel.org, linux-cxl@vger.kernel.org, 
+	Linus Torvalds <torvalds@linux-foundation.org>
+Subject: Re: [RFC PATCH 00/40] mm: reliable 1GB page allocation
+Message-ID: <akIjA_dqh4OHAYo4@lucifer>
+References: <20260520150018.2491267-1-riel@surriel.com>
+ <aj9yrlB0TrlYCLlf@lucifer>
+ <528e3a5fbc27c9dc7a098121c32b7679b4c9962a.camel@surriel.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Rspamd-Action: no action
-X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_NONE(0.00)[];
-	DWL_DNSWL_BLOCKED(0.00)[suse.com:dkim];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:email,suse.com:dkim,suse.com:mid]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: D711F72FC8
-X-Spam-Score: -3.01
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <528e3a5fbc27c9dc7a098121c32b7679b4c9962a.camel@surriel.com>
 
-The last user of this macro is removed in commit 001e3fc263ce ("btrfs:
-scrub: remove scrub_block and scrub_sector structures").
+TL;DR - please don't send unfiltered LLM code to list _at all_. If you want
+to share it, link to a repo.
 
-Now that macro is only utilized in an ASSERT(), which no longer makes
-much sense.
+On Sat, Jun 27, 2026 at 09:36:51AM -0400, Rik van Riel wrote:
+> That is the one reason I sent out RFC code before it
+> is ready. I am looking for feedback on the concepts
+> in this series.
+...
+> Once I know what I need to do, coming up with a
+> cleaner implementation is very doable.
+...
+> The mess in the RFC is the result of trying something
+> that seemed right, watching it fail in some subtle
+> way, and trying to fix it up.
+...
+> > But the execution has to be _completely_ rethought.
+>
+> There's no argument there.
+...
+> > Another issue here is maintainer time - even this _extremely_ light-
+> > touch
+> > review has taken me a few hours (of my weekend :). To review it in
+> > detail
+> > would take probably DAYS of dedicated work.
+>
+> I suspect there is a mismatch in expectations here.
+>
+> I already knew this code has to be totally redone.
 
-Just remove it completely.
+I'm glad we are in agreement on this :)
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/scrub.c | 14 --------------
- 1 file changed, 14 deletions(-)
+But in general I feel you have sent this and at least one other series like this
+without being as clear as you should have been.
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index d2f7ac5b6e96..5ec04c91e12d 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -57,12 +57,6 @@ struct scrub_ctx;
- 
- #define SCRUB_TOTAL_STRIPES		(SCRUB_GROUPS_PER_SCTX * SCRUB_STRIPES_PER_GROUP)
- 
--/*
-- * The following value times PAGE_SIZE needs to be large enough to match the
-- * largest node/leaf/sector size that shall be supported.
-- */
--#define SCRUB_MAX_SECTORS_PER_BLOCK	(BTRFS_MAX_METADATA_BLOCKSIZE / SZ_4K)
--
- /* Represent one sector and its needed info to verify the content. */
- struct scrub_sector_verification {
- 	union {
-@@ -3091,14 +3085,6 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 	/* At mount time we have ensured nodesize is in the range of [4K, 64K]. */
- 	ASSERT(fs_info->nodesize <= BTRFS_STRIPE_LEN);
- 
--	/*
--	 * SCRUB_MAX_SECTORS_PER_BLOCK is calculated using the largest possible
--	 * value (max nodesize / min sectorsize), thus nodesize should always
--	 * be fine.
--	 */
--	ASSERT(fs_info->nodesize <=
--	       SCRUB_MAX_SECTORS_PER_BLOCK << fs_info->sectorsize_bits);
--
- 	/* Allocate outside of device_list_mutex */
- 	sctx = scrub_setup_ctx(fs_info, is_dev_replace);
- 	if (IS_ERR(sctx))
--- 
-2.54.0
+I hate to belabour the point but just to be clear:
 
+* You label one patch [DO-NOT-MERGE], but none of the others (implying they
+  are candidates for being merged) [0] and the cover letter has TODOs,
+  including trivia like naming, but nothing about the code.
+
+* You sent a non-RFC series with identical code quality issues [1]
+  recently.
+
+* Until I pointed it out, you were responding to other review here as if
+  the series was genuinely was intended for (eventual) merge:
+
+  - "This is a userspace-visible removal. Writes to
+     /proc/sys/vm/watermark_boost_factor will now return -ENOENT instead of
+     being accepted, breaking userspace." [2]
+
+     <-: "I'll just drop this patch for now." [3]
+
+  - "I left a small code nit inline, but whether you take that suggestion
+     or leave it, you can add Reviewed-by: ..." [4]
+
+    <-: "I sent it with this series mostly because it's needed to make the
+    series work, and to provide context on why it's needed. I'm happy to
+    resend it with a GFP mask passed in by each caller. That would look
+    better, indeed!" [5]
+
+So to be concrete, if you send really rough code, Use [pre-RFC] or [DO NOT
+MERGE] (on the series as a whole) to make that clear and say so in the
+cover letter VERY VERY clearly.
+
+Or, you can put it in a repo somewhere and link it in an email discussing
+the concepts (like I did with scalable CoW for instance).
+
+Also if people respond to the series as if it isn't pre-RFC, I'd suggest in
+your replies saying something like 'I intend to completely rework all this
+anyway' or something like that! :)
+
+> How do people feel about splitting up the free lists,
+> so each gigabyte (well, PUD sized) chunk of memory
+> has its own free lists?
+>
+> How can we balance the desire for higher-order kernel
+> allocations, against the desire to preserve gigabyte
+> sized chunks of memory that can be used for user space?
+...
+> That's another big question. How do we balance the
+> desire to keep compaction overhead low with the desire
+> to do higher order allocations almost everywhere?
+>
+> >
+...
+>
+> I am just hoping to figure out what I should be
+> doing on a conceptual level, before figuring out
+> how to do it cleanly.
+>
+...
+>
+> I was looking for feedback on the basic concepts
+> and design in the patch series, but failed to
+> clearly communicate that.
+>
+> You provided some detailed feedback on the code,
+> but as of yet nobody has really provided any
+> opinions on things like whether it is desirable
+> at all to have the free lists per gigablock,
+> or whether we need to come up with some totally
+> different approach.
+>
+> How do we better communicate that kind of thing
+> in the future?
+>
+> Is that something to spell out more clearly in
+> the cover letter?
+>
+> Is that kind of feedback something developers
+> could even reasonably ask for? (if not, how do
+> we figure out what maintainers want?)
+
+As above, firstly make it clear that the code you are sending for review is
+not to be reviewed so people don't waste highly contended maintainer time
+on that! :)
+
+Also, you didn't respond to my point regarding cc'ing the right people -
+but that's clearly something you need to get right if you want this kind of
+feedback to start with.
+
+For instance, you didn't cc- the page allocator maintainer (Vlastimil) on a
+series that is fundamentally changing the page allocator. That's not going
+to help with feedback.
+
+In general, this area of the page allocator and compaction isn't my
+specialism in the kernel so I can't give you the in-depth feedback you need
+on that.
+
+But I do have thoughts in general as to how to achieve what you want here:
+
+Firstly - you should try to summarise what you're doing here and what
+you're changing alongside the trade-offs as clearly as you can in the cover
+letter.
+
+Then highlight what it is you need feedback on, broken out into clear
+questions or points that make it easy for people to respond to.
+
+And _you have already done this_ in your reply here:
+
+* "How do people feel about splitting up the free lists, so each gigabyte
+   (well, PUD sized) chunk of memory has its own free lists?"
+
+* "How can we balance the desire for higher-order kernel allocations,
+  against the desire to preserve gigabyte sized chunks of memory that can
+  be used for user space?"
+
+* "How do we balance the desire to keep compaction overhead low with the
+   desire to do higher order allocations almost everywhere?"
+
+I think a really good way of doing this would be to start out with
+something like:
+
+	Right now compaction often fails to achieve what we need, with
+	fragmentation occurring anyway and (for instance) THP stalling on
+	the availability of higher order folios.
+
+etc. etc.
+
+Summarising _the problem_.
+
+Then a section about your proposed solution, e.g.:
+
+	I propose a means by which we proactively achieve gigabyte-sized
+	pageblocks with logic which maintains these as physically
+	contiguous under both ordinary and contended workloads
+
+Then list out the "secret sauce" of your approach, e.g.:
+
+	This works by arranging memory such that unmovable allocations are
+	grouped at <blah blah blah> etc.
+
+Then raise your questions e.g.:
+
+	I'd like to ask the community - how do people feel about splitting
+	up the free lists, so each gigabyte (well, PUD sized) chunk of
+	memory has its own free lists? <etc. etc.>
+
+Then make it clear whether this is an RFC that is ready for primetime or
+not:
+
+	This series is simply intended as a proof-of-concept - PLEASE DO
+	NOT REVIEW THE CODE per-se, but rather comment on the concepts!
+
+(And obviously as above, if that _is_ what you intend, underline it with
+[DO NOT MERGE] or [pre-RFC] or something like that).
+
+I'd also very strongly suggest (as I did in my original reply) breaking out
+parts that can be broken out as prerequisite series.
+
+If you're doing something good or useful _anyway_ then just send that
+separately first, and have later work rely on the earlier work.
+
+There's no rush, this is huge and will take time.
+
+A final KEY point:
+
+NEVER submit unfiltered code generated by an LLMs to the list in _any_
+form. If you want people to access code like that to test or something,
+then put it in a remote repo and link to it.
+
+The code is SO overly complicated and SO messy that it's really difficult
+for people to understand what's actually going on.
+
+At the heart of what you need here is CLARITY.
+
+You need to CLEARLY communicate what it is you're doing so busy maintainers
+can examine it. That's the _only_ way you're going to get something like
+this merged.
+
+The LLM-generated code is so awful that ain't nobody got the time to try to
+understand what it's doing.
+
+The workload for this really has to be on submitters, not maintainers.
+
+And what you've done, even if not intended, is workslopping, and that's
+really not acceptable. Quoting the kernel process on tool-generated content
+[6]:
+
+"If tools permit you to generate a contribution automatically, expect
+additional scrutiny in proportion to how much of it was generated.
+
+As with the output of any tooling, the result may be incorrect or
+inappropriate. You are expected to understand and to be able to defend
+everything you submit. If you are unable to do so, then do not submit the
+resulting changes.
+
+If you do so anyway, maintainers are entitled to reject your series without
+detailed review."
+
+As per this and my previous reply, AI slop doesn't scale, even as an RFC -
+I won't have time to reply like this in future, and we will just have to
+reject your series out of hand, which helps nobody.
+
+>
+>
+> --
+> All Rights Reversed.
+
+Thanks, Lorenzo
+
+[0]:https://lore.kernel.org/all/20260520150018.2491267-41-riel@surriel.com/
+[1]:https://lore.kernel.org/linux-mm/20260616190300.1509639-1-riel@surriel.com/
+[2]:https://lore.kernel.org/all/20260526140204.1390573-1-usama.arif@linux.dev/
+[3]:https://lore.kernel.org/all/2ecf71858845e7d14c718b1a6845389cb78b986e.camel@surriel.com/
+[4]:https://lore.kernel.org/all/20260520174749.GA1458531@zen.localdomain/
+[5]:https://lore.kernel.org/all/daa29c92f055d028a5b3ec0e42cfb1ee1496a593.camel@surriel.com/
+[6]:https://docs.kernel.org/process/generated-content.html

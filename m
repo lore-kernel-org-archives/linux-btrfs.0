@@ -1,71 +1,138 @@
-Received: from nt.romanrm.net (nt.romanrm.net [185.213.174.59])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pl1-f170.google.com (mail-pl1-f170.google.com [209.85.214.170])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 508D04C92
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 00:02:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.213.174.59
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5820C40D585
+	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2026 00:25:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.170
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782691324; cv=none; b=T7YMDF+ZppBmymyvNALg7Z5Z0L06LiQ5BgxTsCkElArzZTsJwFZRnh8VWq4OkCHa47WdVuOvXC9kW+NNjbdIyWm3Dsdv9TazIEBQYNQou8/gtnwXQ7E9kuXIC//Hq3VEH+QpVaRlu+v0FROx+1dBVBJmN3U7Wr0e2IyCE3U7ufU=
+	t=1782692709; cv=none; b=WYoDtRX1JNbw6/4nm3eibLOSyHaMR7vBfYrdvO4aStq6YdMYXl3L7Pb61+r7cqdJmf8xcDXgZQID+cNs2V3erBzSzVaOsWXGQJJjy70C8/ADaYpcJj721b3iXNls5sS7YafxBJsVHOqa75+weTZJL89hYCFIM07u0mWzaMlWfls=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782691324; c=relaxed/simple;
-	bh=zVeHGXtOJ5XmIYPRtxK+M7rNxokrAhnuoNtn0YQgxcU=;
-	h=Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=ef0V6Sw27s2/lbgk9eoM2HEM2766lQ5thjX6PFaZm4m0YWCEnS+NCh+ocIkglM5HqvwWn+j+qKGpQauhcgyw9GMNm+6BPJKrxcexp9YLhA1zCyXp/eifREur5TdIbVoe19vtDLgnQ/b7MAUG6w+ze569M82RWAu0Oshm4jw57xY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=romanrm.net; spf=pass smtp.mailfrom=romanrm.net; arc=none smtp.client-ip=185.213.174.59
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=romanrm.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=romanrm.net
-Received: from nvm (umi.0.romanrm.net [IPv6:fd39:ade8:5a17:b555:7900:fcd:12a3:6181])
-	by nt.romanrm.net (Postfix) with SMTP id 7A99B401C7;
-	Sun, 28 Jun 2026 23:54:13 +0000 (UTC)
-Date: Mon, 29 Jun 2026 04:54:11 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: shrink btrfs partition - recommended way?
-Message-ID: <20260629045411.75f3d6d7@nvm>
-In-Reply-To: <20260628233658.GA3404176@tik.uni-stuttgart.de>
-References: <20260628233658.GA3404176@tik.uni-stuttgart.de>
-X-Mailer: Claws Mail 3.11.1 (GTK+ 2.24.31; x86_64-pc-linux-gnu)
+	s=arc-20240116; t=1782692709; c=relaxed/simple;
+	bh=Mo2yl8h22iAeedEefGbsjzYeGACnksm2mu1kISAkWFQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=aIbIDYLXtvf692Kg+XiR88MR0L6RiGzLtDvNW0nqLR3e+ri82UctdG4qdnsggyH/pkUE8UvX0iY3rZj7QLL4ueA353Ud9SJ88hVmhOOHxRC8bDTXM+TLOtpv+ukfUx71j3CjMdD14xlAxT7MD6MHsIQEp0QGiBplX0Bh55z3U2E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=iJZx5x9R; arc=none smtp.client-ip=209.85.214.170
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iJZx5x9R"
+Received: by mail-pl1-f170.google.com with SMTP id d9443c01a7336-2c80879c36eso15140735ad.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Jun 2026 17:25:08 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1782692707; x=1783297507; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=P41Rhb2N/xDdm2LPMemS4Ju4/6Yg9XM5U4XcDkcrBgw=;
+        b=iJZx5x9R2W36VUEOdBJ1wc4r4JxHUWtFXV/V3L24TWa1Vxo6cg9c46Vy9onhTS3+6K
+         PTSCAZpK6YieODaIW5pFPuG2MXWNI5BHbBRRysadBRA/f/C2vfnXoaQcWOehFJ3ian+U
+         lzWkywus0z7baDc96USL+Hi0qkcku4bSef11BISx5S5jL3cNj6PBL8TTfraaJJHHnHhL
+         nMXvi8o8Xwbc6dQ1G/PDEm3wv4vLsUb+goAPKIvvQ4S43LaK+3Pewo5Fzf5EzNpKSnun
+         PQsT2rch8oCOE4NVFhiOT0JleVy7tlWHwy74/dNL3F4TTr0oMBS4N8DO4A2VM+Qf5jjs
+         uEhQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1782692707; x=1783297507;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=P41Rhb2N/xDdm2LPMemS4Ju4/6Yg9XM5U4XcDkcrBgw=;
+        b=HL4gzbUBOWDWJ5iyOVgTb5o+/gnKWXnUmjHgCiwof74U9FHyjan8gpwEBJ6e5aqdPu
+         xPBcUWT+ebOnlOSkzlhBeUIJBCZPklFjrk3iQeGzDPCNtc39kFafW+n5Hs8IXC0Y8kvX
+         /9CWYREEWE4mtcTwjlAz8BxLl6jscC0DletMdBgMCvtxVhfxKJxaS8rXpBO0dfsHpXLI
+         q4S1gEIipU7XI3MllfnqUNhSFrAsbDyoapAowPsYV5HsoWCyCukoklMiwVIvmBzK9/EK
+         kxM3zGMfqJOwZl+L9puzYY+hJ8/CbUkifl6W6Z0xmXBpOuaQXqpbXOlTOv2T31EFJPRy
+         0yjQ==
+X-Gm-Message-State: AOJu0YxYjOYOTcZI1A+maRzepuRCdoUrwc0G5fBOmDFjaMfkv2R+kRYM
+	uGgTqbxtYWVc+AG9PRGixVfG3vyihuB33mCaAfchE4u3ZBr6+PpSANIbXN0HQg==
+X-Gm-Gg: AfdE7cngqf0tointR6otBNtwIUsgYA7MPs7U9NCtDk/l0BHdP1ju8/cfjijz7LudJ0d
+	lD/NGV9McHKcW2esbD0i/oGfTY8E1eNi9gfJbQ1Apyx3krCKjcQCAYIZcSm4XPhTYHfJEP5wCX6
+	s5E397OcX2B6kgqA5XuwsF/h6Za3GS8SOwqjTO0nlHTzrKJV3O1mqJV60hMlFw+6bGrX6Bv8tFl
+	RIOUoDKDItGfpZWFyjE4yCzj5d7YhiRrqpOSVlI8Bh4qAUlvVYimpzWjm+huXFESR5AfP2FjlX6
+	Cql95mLuaa6dLz+NcVaOBsJz8D5dLQoJ2Dr27cfYygFdUImdPYZL0X4rBPOivadA6TWjFXDEkAL
+	jG5l1Fu80wYQZiurP7Lbg1hC+ghO/dyE00m63b3JCXtwPzUw869kXY1GK2YHs3QAw2lnHZHeZNx
+	iAGyOL1AMkWpZU8VmTlpTrEob2IVymtkUkDeRmcQx03dHz3hIgmC+6aE+AoZdJPNJ8LdxfwJcrj
+	aZvC30x3w==
+X-Received: by 2002:a17:902:cf0f:b0:2bd:73f4:8e4f with SMTP id d9443c01a7336-2c7fca76990mr108263835ad.0.1782692707529;
+        Sun, 28 Jun 2026 17:25:07 -0700 (PDT)
+Received: from ryzen.lan ([2601:644:8000:7a86::e34])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2c9e67a5d0dsm17093135ad.1.2026.06.28.17.25.05
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 28 Jun 2026 17:25:06 -0700 (PDT)
+From: Rosen Penev <rosenp@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>,
+	linux-kernel@vger.kernel.org (open list)
+Subject: [PATCH] btrfs: compression: allocate buckets with workspace
+Date: Sun, 28 Jun 2026 17:25:05 -0700
+Message-ID: <20260629002505.1552238-1-rosenp@gmail.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 
-On Mon, 29 Jun 2026 01:36:58 +0200
-Ulli Horlacher <framstag@rus.uni-stuttgart.de> wrote:
+Convert 3 allocations into one. Simplifies code slightly.
 
-> 
-> Is there a recommended way (or tool) to shrink a btrfs partition?
-> 
-> I have:
-> 
-> root@zoo:~# lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINTS /dev/sdc
-> NAME    SIZE FSTYPE MOUNTPOINTS
-> sdc     256G
-> `-sdc1  256G btrfs  /LXC
-> 
-> root@zoo:~# df -Th /LXC
-> Filesystem     Type   Size  Used Avail Use% Mounted on
-> /dev/sdc1      btrfs  256G   19G  236G   8% /LXC
-> 
-> And want to shrink /dev/sdc1 to 200 GB
-> 
-> I know, I can use btrfs filesystem resize and afterwards use fdisk to
-> delete /dev/sdc1, create a new smaller /dev/sdc1 and then add a new
-> /dev/sdc2 
-> BUT if make a calculation error with fdisk the btrfs filesystem will be
-> damaged.
-> gparted can do it all together in one step, but it needs X11, which I do
-> not have on host zoo. I have only text console access, no X11.
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ fs/btrfs/compression.c | 18 +++++-------------
+ 1 file changed, 5 insertions(+), 13 deletions(-)
 
-I'd shrink it to like 180GB first, to avoid most chances of calculation and
-GiB vs GB errors. As for shrinking the partition, 'cfdisk' has a resize
-function. Then expand Btrfs to 'max'.
-
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index ffb6b52863a7..da6749ff5924 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -650,11 +650,11 @@ struct heuristic_ws {
+ 	/* Partial copy of input data */
+ 	u8 *sample;
+ 	u32 sample_size;
+-	/* Buckets store counters for each byte value */
+-	struct bucket_item *bucket;
+ 	/* Sorting buffer */
+ 	struct bucket_item *bucket_b;
+ 	struct list_head list;
++	/* Buckets store counters for each byte value */
++	struct bucket_item bucket[];
+ };
+ 
+ static void free_heuristic_ws(struct list_head *ws)
+@@ -664,8 +664,6 @@ static void free_heuristic_ws(struct list_head *ws)
+ 	workspace = list_entry(ws, struct heuristic_ws, list);
+ 
+ 	kvfree(workspace->sample);
+-	kfree(workspace->bucket);
+-	kfree(workspace->bucket_b);
+ 	kfree(workspace);
+ }
+ 
+@@ -673,22 +671,16 @@ static struct list_head *alloc_heuristic_ws(struct btrfs_fs_info *fs_info)
+ {
+ 	struct heuristic_ws *ws;
+ 
+-	ws = kzalloc_obj(*ws);
++	ws = kzalloc(struct_size(ws, bucket, BUCKET_SIZE * 2), GFP_KERNEL);
+ 	if (!ws)
+ 		return ERR_PTR(-ENOMEM);
+ 
++	ws->bucket_b = ws->bucket + BUCKET_SIZE;
++
+ 	ws->sample = kvmalloc(MAX_SAMPLE_SIZE, GFP_KERNEL);
+ 	if (!ws->sample)
+ 		goto fail;
+ 
+-	ws->bucket = kzalloc_objs(*ws->bucket, BUCKET_SIZE);
+-	if (!ws->bucket)
+-		goto fail;
+-
+-	ws->bucket_b = kzalloc_objs(*ws->bucket_b, BUCKET_SIZE);
+-	if (!ws->bucket_b)
+-		goto fail;
+-
+ 	INIT_LIST_HEAD(&ws->list);
+ 	return &ws->list;
+ fail:
 -- 
-With respect,
-Roman
+2.54.0
+

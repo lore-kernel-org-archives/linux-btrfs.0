@@ -1,89 +1,120 @@
-Received: from shelob.surriel.com (shelob.surriel.com [96.67.55.147])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2B86F41B36D;
-	Mon, 29 Jun 2026 14:39:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=96.67.55.147
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC8093EAC90;
+	Mon, 29 Jun 2026 14:56:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782743971; cv=none; b=gzUnWHfJMOCGsVnk7mlwYGHxhlr7+KMq+Inj7FNB9nF8rz12sGgX6Kh3gAgUOhuXsTTwKpsbDn9JVnOZpxwFKSnHOtqXlfUaIdRWnsQxVJa3YFd4MrGp8nlrc21Xu0HoMpkLIpZ2/LoKNJM1gSlyrBP427cj1yNIMwx3h1yh0AY=
+	t=1782744970; cv=none; b=qXKaroovqPZkVkfj9hWVr4v+WRl7o/Fs0ZrDyRM5wfcysvr9Z9cCbpxzBrBlhr40Hjegf2gzVw7nDA9EwDVU4spSe0MVLlb+iCHhS/IPb7ZtRRLAz1FybK3wiTydZHrZPRg4v8DEKjt4TLQKkiO0uPp1vbIh2BN8yAgb6g19ZEE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782743971; c=relaxed/simple;
-	bh=tIgmvkbVGgsAFw9O5XEwFGKEfBQkgY3RT+doQ9R/e5A=;
+	s=arc-20240116; t=1782744970; c=relaxed/simple;
+	bh=IMDYlYkmjNZwCd98Nzj9Zb+VjSJnlKtJVRbIJ+wWLtw=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=dXGvES5WJc5ep0IbhSg/FJW/Pdkav1ZAfGTwSZdQ+EO7y6rbfeJ8FXzeytV3Qcfr0SmX3lihSCJHlvzjq+A//WPwprmKDPhrxeZsFkkX+3bd0ujE4W/xn5mElnfWlveVw3SJrhEGOhnHJMLAh4Q+ZpHYqMGDcukf9elzER85uew=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=surriel.com; spf=pass smtp.mailfrom=surriel.com; dkim=pass (2048-bit key) header.d=surriel.com header.i=@surriel.com header.b=BlIR7eoq; arc=none smtp.client-ip=96.67.55.147
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=surriel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=surriel.com
+	 Content-Type:MIME-Version; b=WIaPi4unLRRk6kSvYA1yPqHaKksCYaQl4reK4egsdRwOdkNxXdIpbQHpkBEG+YMjf9/JmLHI7HCwjfJvrXiYAswuKJd9q8EmcQTGKg4zh0c522eIAfI0A3WfkLXODf9un1YqZnsmO11/l8lAF0nH/IRm84/PF37MEBUxOPnDTwA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=KrgWKuuo; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=surriel.com header.i=@surriel.com header.b="BlIR7eoq"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=surriel.com
-	; s=mail; h=MIME-Version:Content-Transfer-Encoding:Content-Type:References:
-	In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender:Reply-To:Content-ID:
-	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-	:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:List-Subscribe:
-	List-Post:List-Owner:List-Archive;
-	bh=tIgmvkbVGgsAFw9O5XEwFGKEfBQkgY3RT+doQ9R/e5A=; b=BlIR7eoqUhI1rLk2ZjKvXK65XF
-	ul1b3Jicl/kzWBqFFYfTW2921ScvcTwoLQ7D7BoW0xono/v0ezOQgDtoxXPq8xKg9MqyJQHmaTZhG
-	3N1FL0vYN2X8TFLjAVPYDdDvGPGx1uft0Pa7GoBvSEuiVgDaK3EgcJG8dImxaUrlrgvLYWMIxQyn1
-	mqWkLM7qeLR9Typ4qRZCwCK3lq9Oq4RFiCgyZ2raRaTMiE9Vts5062yaD5qjjHcCL8sVUyeLo3GWz
-	+cuYSucxEx9Gj/nM3pCzyJgsqsJA+OZVuo9vlhAoQJX3s1SIwfIZUWajLmBCV7g8w4yjJ5+x20fez
-	cWgAlFmw==;
-Received: from fangorn.home.surriel.com ([10.0.13.7])
-	by shelob.surriel.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-	(Exim 4.97.1)
-	(envelope-from <riel@surriel.com>)
-	id 1weD8d-000000007rY-1v7G;
-	Mon, 29 Jun 2026 10:39:07 -0400
-Message-ID: <ec4d1acc0d01cd9d9b6f4c9da4033f8591f9436a.camel@surriel.com>
-Subject: Re: [RFC PATCH 00/40] mm: reliable 1GB page allocation
-From: Rik van Riel <riel@surriel.com>
-To: "Vlastimil Babka (SUSE)" <vbabka@kernel.org>, Lorenzo Stoakes
-	 <ljs@kernel.org>
-Cc: linux-kernel@vger.kernel.org, kernel-team@meta.com, linux-mm@kvack.org, 
-	david@kernel.org, willy@infradead.org, surenb@google.com,
- hannes@cmpxchg.org, 	ziy@nvidia.com, usama.arif@linux.dev, fvdl@google.com,
- Andrew Morton	 <akpm@linux-foundation.org>, Jonathan Corbet
- <corbet@lwn.net>, Chris Mason	 <clm@fb.com>, David Sterba
- <dsterba@suse.com>, Steven Rostedt	 <rostedt@goodmis.org>, Masami Hiramatsu
- <mhiramat@kernel.org>, "Rafael J. Wysocki" <rafael@kernel.org>, Oscar
- Salvador <osalvador@suse.de>, Mike Rapoport <rppt@kernel.org>, 
-	linux-doc@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-trace-kernel@vger.kernel.org, linux-pm@vger.kernel.org, 
-	linux-cxl@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>
-Date: Mon, 29 Jun 2026 10:39:07 -0400
-In-Reply-To: <361fd2e5-a5f9-42fe-90fc-bc0af109553e@kernel.org>
-References: <20260520150018.2491267-1-riel@surriel.com>
-	 <aj9yrlB0TrlYCLlf@lucifer>
-	 <528e3a5fbc27c9dc7a098121c32b7679b4c9962a.camel@surriel.com>
-	 <akIjA_dqh4OHAYo4@lucifer>
-	 <361fd2e5-a5f9-42fe-90fc-bc0af109553e@kernel.org>
-Autocrypt: addr=riel@surriel.com; prefer-encrypt=mutual;
- keydata=mQENBFIt3aUBCADCK0LicyCYyMa0E1lodCDUBf6G+6C5UXKG1jEYwQu49cc/gUBTTk33A
- eo2hjn4JinVaPF3zfZprnKMEGGv4dHvEOCPWiNhlz5RtqH3SKJllq2dpeMS9RqbMvDA36rlJIIo47
- Z/nl6IA8MDhSqyqdnTY8z7LnQHqq16jAqwo7Ll9qALXz4yG1ZdSCmo80VPetBZZPw7WMjo+1hByv/
- lvdFnLfiQ52tayuuC1r9x2qZ/SYWd2M4p/f5CLmvG9UcnkbYFsKWz8bwOBWKg1PQcaYHLx06sHGdY
- dIDaeVvkIfMFwAprSo5EFU+aes2VB2ZjugOTbkkW2aPSWTRsBhPHhV6dABEBAAG0HlJpayB2YW4gU
- mllbCA8cmllbEByZWRoYXQuY29tPokBHwQwAQIACQUCW5LcVgIdIAAKCRDOed6ShMTeg05SB/986o
- gEgdq4byrtaBQKFg5LWfd8e+h+QzLOg/T8mSS3dJzFXe5JBOfvYg7Bj47xXi9I5sM+I9Lu9+1XVb/
- r2rGJrU1DwA09TnmyFtK76bgMF0sBEh1ECILYNQTEIemzNFwOWLZZlEhZFRJsZyX+mtEp/WQIygHV
- WjwuP69VJw+fPQvLOGn4j8W9QXuvhha7u1QJ7mYx4dLGHrZlHdwDsqpvWsW+3rsIqs1BBe5/Itz9o
- 6y9gLNtQzwmSDioV8KhF85VmYInslhv5tUtMEppfdTLyX4SUKh8ftNIVmH9mXyRCZclSoa6IMd635
- Jq1Pj2/Lp64tOzSvN5Y9zaiCc5FucXtB9SaWsgdmFuIFJpZWwgPHJpZWxAc3VycmllbC5jb20+iQE
- +BBMBAgAoBQJSLd2lAhsjBQkSzAMABgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRDOed6ShMTe
- g4PpB/0ZivKYFt0LaB22ssWUrBoeNWCP1NY/lkq2QbPhR3agLB7ZXI97PF2z/5QD9Fuy/FD/jddPx
- KRTvFCtHcEzTOcFjBmf52uqgt3U40H9GM++0IM0yHusd9EzlaWsbp09vsAV2DwdqS69x9RPbvE/Ne
- fO5subhocH76okcF/aQiQ+oj2j6LJZGBJBVigOHg+4zyzdDgKM+jp0bvDI51KQ4XfxV593OhvkS3z
- 3FPx0CE7l62WhWrieHyBblqvkTYgJ6dq4bsYpqxxGJOkQ47WpEUx6onH+rImWmPJbSYGhwBzTo0Mm
- G1Nb1qGPG+mTrSmJjDRxrwf1zjmYqQreWVSFEt26tBpSaWsgdmFuIFJpZWwgPHJpZWxAZmIuY29tP
- okBPgQTAQIAKAUCW5LbiAIbIwUJEswDAAYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQznneko
- TE3oOUEQgAsrGxjTC1bGtZyuvyQPcXclap11Ogib6rQywGYu6/Mnkbd6hbyY3wpdyQii/cas2S44N
- cQj8HkGv91JLVE24/Wt0gITPCH3rLVJJDGQxprHTVDs1t1RAbsbp0XTksZPCNWDGYIBo2aHDwErhI
- omYQ0Xluo1WBtH/UmHgirHvclsou1Ks9jyTxiPyUKRfae7GNOFiX99+ZlB27P3t8CjtSO831Ij0Ip
- QrfooZ21YVlUKw0Wy6Ll8EyefyrEYSh8KTm8dQj4O7xxvdg865TLeLpho5PwDRF+/mR3qi8CdGbkE
- c4pYZQO8UDXUN4S+pe0aTeTqlYw8rRHWF9TnvtpcNzZw==
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="KrgWKuuo"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D9B691F00A3A;
+	Mon, 29 Jun 2026 14:56:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1782744968;
+	bh=pRNh9BtnZCGX1do1vvMu/LN6jH/9U5QYoFoUa0UEtf4=;
+	h=Subject:From:To:Cc:Date:In-Reply-To:References;
+	b=KrgWKuuojMvGf7r51WDpTkcCVyrcOxmFR/LFWz/vhDp7z5bhd4j6pk/HFAbwmLsPb
+	 D2PV860I19iBp/odh9UIqU6fYTG3b4feyh4qiouKOeI5iwZHQfYSAmuJ2hQ5dzfQo6
+	 Mw92BMPzfdTVdpbvCz1OSE4sgTHmJo2pMzpPtqoV8Q1gzq3XwJRfeoHV2Wt/xnP9hB
+	 9yixtVYZnEE6zhTVSkLmSjt6rUXWEyMaMt+EnObxyEPGwq3N5lZaOQ7dE8R0uuV79M
+	 tGWWaOB62zKzx/vUIBFCR4xYDSQpaPV3+SrvgkPXJY7DBH7XfhVUQCogIyr0DK1zOU
+	 R2iCXa7dBtH6w==
+Message-ID: <5084d9c6b6a7025be156354194cf7d3fffebb0e2.camel@kernel.org>
+Subject: Re: [PATCH] btrfs: don't let shrinker touch extent_maps that are
+ being logged
+From: Jeff Layton <jlayton@kernel.org>
+To: Filipe Manana <fdmanana@kernel.org>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, Filipe Manana
+	 <fdmanana@suse.com>, Josef Bacik <josef@toxicpanda.com>, 
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Date: Mon, 29 Jun 2026 10:56:06 -0400
+In-Reply-To: <CAL3q7H5o6vKOcQ0G4shQw6q7vCpfZYo8KO6Rg6VdChDoMB+C=g@mail.gmail.com>
+References: <20260629-btrfs-skip-logging-v1-1-4e3a28c1acaf@kernel.org>
+	 <CAL3q7H5o6vKOcQ0G4shQw6q7vCpfZYo8KO6Rg6VdChDoMB+C=g@mail.gmail.com>
+Autocrypt: addr=jlayton@kernel.org; prefer-encrypt=mutual;
+ keydata=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
+ QZIQXVeAA+smfTT0tDrisj1U5x6ZB9b3nBg65kc=
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.56.2 (3.56.2-2.fc42) 
+User-Agent: Evolution 3.60.2 (3.60.2-1.fc44) 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -91,120 +122,174 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 
-On Mon, 2026-06-29 at 12:03 +0200, Vlastimil Babka (SUSE) wrote:
-> On 6/29/26 11:29, Lorenzo Stoakes wrote:
+On Mon, 2026-06-29 at 15:19 +0100, Filipe Manana wrote:
+> On Mon, Jun 29, 2026 at 2:41=E2=80=AFPM Jeff Layton <jlayton@kernel.org> =
+wrote:
 > >=20
-> > So to be concrete, if you send really rough code, Use [pre-RFC] or
-> > [DO NOT
-> > MERGE] (on the series as a whole) to make that clear and say so in
-> > the
-> > cover letter VERY VERY clearly.
->=20
-> Yes please. [POC NOT-FOR-MERGE] perhaps?
->=20
-> > Or, you can put it in a repo somewhere and link it in an email
-> > discussing
-> > the concepts (like I did with scalable CoW for instance).
->=20
-> Indeed.
-
-I'll do that for the next version.
-
-I suspect it will take a while to beat this thing
-into shape.
->=20
-> > And _you have already done this_ in your reply here:
+> > The extent map shrinker can free an extent map that is still owned by a=
+n
+> > in-flight fsync and still linked on the inode's modified_extents list,
+> > corrupting that list and eventually causing an RCU stall.
 > >=20
-> > * "How do people feel about splitting up the free lists, so each
-> > gigabyte
-> > =C2=A0=C2=A0 (well, PUD sized) chunk of memory has its own free lists?"
->=20
-> My immediate response is that now we'd need to search multiple sets
-> of lists
-> instead of a single one? What about the overhead?
-
-The current code is clearly not good enough. It
-has to try several gigablocks almost blindly,
-because there is no efficient way to find the
-right gigablock.
-
-I have an idea on how to fix that with bitmaps.
-
-We could have one bitmap per order, indicating which
-gigablocks have order 0 pages, order 1 pages, etc
-
-Then a second set of bitmaps indicating which gigablocks
-have unmovable / reclaimable pages.
-
-At that point, finding a good gigablock to allocate
-from can be done with a bitmap_and and a search.
-
-These bitmaps would only need to be changed when the
-status of a gigablock changes, eg. going from having
-order 0 pages free, to not having any order 0 pages
-free.
-
-Does that seem like a workable approach?
-
-Once we can quickly pinpoint a gigablock for the
-page allocator to grab pages from, we can also
-split out the "pick a gigablock" code from the
-"allocate a page" code.
-
->=20
-> > * "How can we balance the desire for higher-order kernel
-> > allocations,
-> > =C2=A0 against the desire to preserve gigabyte sized chunks of memory
-> > that can
-> > =C2=A0 be used for user space?"
+> > btrfs_scan_inode() currently skips EXTENT_FLAG_PINNED maps, then calls
+> > btrfs_remove_extent_mapping() followed by btrfs_free_extent_map():
 > >=20
-> > * "How do we balance the desire to keep compaction overhead low
-> > with the
-> > =C2=A0=C2=A0 desire to do higher order allocations almost everywhere?"
->=20
-> How can we have a cake and eat it too? :)
-
-Pretty much :/
-
-I suspect it's going to require some fun interactions=C2=A0
-between allocation, reclaim, and compaction.
-
-However, with everybody from networking, to filesystems,
-to anonymous memory wanting to use higher order allocations
-of differing sizes, it seems like we're going to have to=C2=A0
-tackle this somehow.
-
->=20
-> > I'd also very strongly suggest (as I did in my original reply)
-> > breaking out
-> > parts that can be broken out as prerequisite series.
+> >         if (em->flags & EXTENT_FLAG_PINNED)
+> >                 goto next;
+> >         ...
+> >         btrfs_remove_extent_mapping(inode, em);
+> >         btrfs_free_extent_map(em);
 > >=20
-> > If you're doing something good or useful _anyway_ then just send
-> > that
-> > separately first, and have later work rely on the earlier work.
+> > But btrfs_remove_extent_mapping() deliberately does NOT unlink a map th=
+at
+> > has EXTENT_FLAG_LOGGING set:
+> >=20
+> >         if (!(em->flags & EXTENT_FLAG_LOGGING))
+> >                 list_del_init(&em->list);
+> >         remove_em(inode, em);
+> >=20
+> > This sets up a UAF situation where a later fsync() can trip over the
+> > now-freed extent_map still on the modified_extents() list.
 >=20
-That becomes cleaner with the "post a link to
-a tree" thing, as well.
+> I don't see how that can happen, because fsync always takes the
+> inode's i_mmap_lock (in write/exclusive mode), and btrfs_scan_inode()
+> takes the same lock too (in shared/read mode).
+> EXTENT_FLAG_LOGGING is only set and cleared during fsync, so how can
+> the shrinker race with fsync?
+>=20
 
-The pcpbuddy stuff is likely to go in separately.
-Johannes is still working on that code.
+...and yet, the vmcore shows that the shrinker hit an extent_map that
+had LOGGING set while holding the i_mmap_lock.
 
-The "make btrfs inode cache pages movable" thing
-already went in.
+I had hoped to add an assertion here that LOGGING couldn't be set on
+the em's after taking the i_mmap_lock, but that's not viable:
 
-I think I have a few more things in the tree that
-can go in separately, but hopefully that will grow
-as this code solidifies.
+The problem is that the i_mmap_lock coverage isn't complete. I had
+Claude assist me with some analysis so take it with a hefty grain of
+salt but the problem is that the em tree can contain em's from other
+inodes where the i_mmap_lock is not held:
 
-On the flip side, things like "making compaction
-scale" may well end up depending on the gigablock
-stuff, because lack of targeting data seems like a
-likely cause for why compaction has to try so hard.
+-----------------------8<---------------------
 
-I'll make sure to go over every point raised by
-you guys before writing the next version of the
-code, and again before posting a link to the
-tree.
+...that inode is in progress, therefore no em in its tree should have LOGGI=
+NG set. Your invariant is the right one.
+
+ But it's violated, because the i_mmap_lock interlock is incomplete. Two fa=
+cts:                                                                       =
+                                                                 =20
+                                                                           =
+                                                                           =
+                                                                  =20
+  1. tree-log.c never takes i_mmap_lock =E2=80=94 grep returns 0 occurrence=
+s. Only btrfs_sync_file takes it (file.c:1608/1610), and only              =
+                                                                          =
+=20
+  on the one inode being fsync'd.                                          =
+                                                                           =
+                                                                  =20
+  2. A single fsync logs many other inodes, and each can set LOGGING on its=
+ own ems via btrfs_log_changed_extents().                                  =
+                                                                  =20
+  btrfs_log_inode() is called recursively on conflicting inodes, parent dir=
+ectories, and referenced inodes:                                           =
+                                                                  =20
+  tree-log.c:5982  btrfs_log_inode(di_inode, log_mode)        # dir dentrie=
+s                                                                          =
+                                                                  =20
+  tree-log.c:6339  btrfs_log_inode(inode, LOG_INODE_ALL)      # conflicting=
+ inodes                                                                    =
+                                                                  =20
+  tree-log.c:6900  btrfs_log_inode(di_inode, log_mode)        # new dir den=
+tries                                                                      =
+                                                                  =20
+  tree-log.c:7389  btrfs_log_inode(dir_inode, LOG_INODE_ALL)  # log_all_par=
+ents                                                                       =
+                                                                  =20
+  tree-log.c:7488  btrfs_log_inode(inode, ...)                # referenced =
+inodes                                                                     =
+                                                                  =20
+
+  2. For all of these, btrfs_sync_file holds i_mmap_lock on the original fs=
+ync'd inode =E2=80=94 not on these side inodes. So a side                  =
+                                                                          =
+=20
+  inode X gets LOGGING set on its ems while X's own i_mmap_lock is free.   =
+                                                                           =
+                                                                  =20
+                                                                           =
+                                                                           =
+                                                                  =20
+  So the shrinker can down_read_trylock(X->i_mmap_lock) successfully (nobod=
+y holds it) and walk X's tree while X's ems are                            =
+                                                                  =20
+  LOGGING-flagged =E2=86=92 it removes+frees one =E2=86=92 corruption. The =
+interlock only protects the directly-fsync'd inode, not the inodes         =
+                                                                           =
+       =20
+  logged as its dependencies.                                              =
+                                                                           =
+                                                                  =20
+
+
+> Also, there should be no () after modified_extents (it's not a function n=
+ame).
+>=20
+>=20
+
+Sorry, early morning typo. Fixed in my local repo.
+
+>=20
+> >=20
+> > Fix it by having the shrinker skip maps that are being logged, the same
+> > way it skips pinned maps. Such a map is owned by the in-flight fsync an=
+d
+> > will become reclaimable again once logging clears the flag.
+> >=20
+> > Fixes: 956a17d9d050 ("btrfs: add a shrinker for extent maps")
+> > Signed-off-by: Jeff Layton <jlayton@kernel.org>
+> > ---
+> > We've started hitting a number of these problems in our fleet. It
+> > seems to mostly happen on ARM64 architecture, but there have been some
+> > WARN_ONs that popped on x86_64 too.
+> > ---
+> >  fs/btrfs/extent_map.c | 8 +++++++-
+> >  1 file changed, 7 insertions(+), 1 deletion(-)
+> >=20
+> > diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+> > index fce9c5cc0122..128f7800e101 100644
+> > --- a/fs/btrfs/extent_map.c
+> > +++ b/fs/btrfs/extent_map.c
+> > @@ -1166,7 +1166,13 @@ static long btrfs_scan_inode(struct btrfs_inode =
+*inode, struct btrfs_em_shrink_c
+> >                 em =3D rb_entry(node, struct extent_map, rb_node);
+> >                 ctx->scanned++;
+> >=20
+> > -               if (em->flags & EXTENT_FLAG_PINNED)
+> > +               /*
+> > +                * Skip extent maps that are pinned or are being logged=
+. The
+> > +                * i_mmap_lock should prevent this from seeing LOGGING =
+on extent_maps
+> > +                * directly associated with inode, but em may be associ=
+ated with
+> > +                * other, dependent inodes and their locks are not held=
+.
+> > +                */
+> > +               if (em->flags & (EXTENT_FLAG_PINNED | EXTENT_FLAG_LOGGI=
+NG))
+> >                         goto next;
+> >=20
+> >                 /*
+> >=20
+> > ---
+> > base-commit: dc59e4fea9d83f03bad6bddf3fa2e52491777482
+> > change-id: 20260629-btrfs-skip-logging-3e31701d9647
+> >=20
+> > Best regards,
+> > --
+> > Jeff Layton <jlayton@kernel.org>
+> >=20
+> >=20
 
 --=20
-All Rights Reversed.
+Jeff Layton <jlayton@kernel.org>

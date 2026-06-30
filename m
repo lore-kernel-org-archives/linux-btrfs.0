@@ -1,79 +1,137 @@
-Received: from mail.synology.com (mail.synology.com [211.23.38.101])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E6733BC68E
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 02:49:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7257F2BEFF5
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 08:24:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782787762; cv=none; b=rCVcV1NGwkdWzIORX3VArWEuhZYjeB8+LojjmSwxxCvdF/iYNqAYw6gR35AaLrTOFXPa5ER1uEAbuobGDo0VO6IvwKpUaS/afBeifB2EcwY/BSQz6CNyu1zXJFkBHndQ1houYyfVjbI/PzJ/iym75jmkks6lAYUmpK74OFWCOaU=
+	t=1782807855; cv=none; b=X4pJm4DGp0+GsiPvr4gDv8BYgnxMNV6ZNsRdfSFg3ru4DXnWYsWnZYfcC1sm6/A8B5S/sUV5rB2z1+FDZN2gJIb8wgyPyN0l7CpFGdLjwq8Y14rrR91abLp9eUGBpBu6zVXmA2ZLPMiXvIjuubIr3swePY2x6AMGR7/X2yieL5A=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782787762; c=relaxed/simple;
-	bh=TuYPrxTOYduc8BCgy6Gb6v7n32ZoU6FBA3DhE8GOzuw=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=S2dic5j/NFgQZC3Zd9XO/RH/UomehTKTl5nO9GFBva1VrTh8yVOJJJgT/8xldMw3CvAqHUV7qP3OVyOteGYmOt+bapynVVHNISkPAFxuQufj45bu3ykYMSS9+8LRpfYoSTPaRiC+NBm2Wf7kT2IE2pDG7XNhuNYI/XaYHh3DFdU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=AZf9j23f; arc=none smtp.client-ip=211.23.38.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
+	s=arc-20240116; t=1782807855; c=relaxed/simple;
+	bh=I1ELFZ8+l+9Tg9RVAHkTBSoDJ2vWb782NVv0laguFUA=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=hpJJCBQJ+jpAfvQVnxpBWCdY4TkCirI9yBowdhXivAiS6mxfIsDFF1E/iTRzLtMbDt+ozygnfSlU9AJDVXmL7p09dH1Qkc76zJvj8v2D03gqaj6cgrJPDtuN4ORZbu79QkVaw20UA9dRPucd6dHWb+XnsMFMUqcEwfUtjixWP0U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dROKKCrh; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dROKKCrh; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="AZf9j23f"
-Received: from 11212-DT-014.. (unknown [10.17.40.185])
-	by mail.synology.com (Postfix) with ESMTPA id 4gq6zy5gSfzKMrKkH;
-	Tue, 30 Jun 2026 10:49:18 +0800 (CST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=synology.com;
-	s=123; t=1782787758;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=DTGlhBYdBaoJsKoJCHyqp1MlGaP0b3HP/VCV7g+n9VU=;
-	b=AZf9j23fqYXbU3heG0gw6e7J+TWFUb14loqq3puUoxDv/QOdtzW0uAG8dJX3W6p9ZpzryD
-	O78UbXqxy+ZP1/qhpu732Z4S6SR7zRAVW34S9Z0WJusAMBro59AnSYSmXi77Z85VFNe0yo
-	VohUL9NexNVnK/MGRHgDynHVHigdPYI=
-From: Dave Chen <davechen@synology.com>
-To: fdmanana@kernel.org
-Cc: cccheng@synology.com,
-	davechen@synology.com,
-	dsterba@suse.com,
-	linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix u32 to s64 type conversion in dirty_metadata_bytes accounting
-Date: Tue, 30 Jun 2026 10:49:16 +0800
-Message-ID: <20260630024917.449937-1-davechen@synology.com>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <CAL3q7H5x_nz79nJv418DpWCeU=Pk3Q7zL3cCDpNNtj2to0ij9w@mail.gmail.com>
-References: <CAL3q7H5x_nz79nJv418DpWCeU=Pk3Q7zL3cCDpNNtj2to0ij9w@mail.gmail.com>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dROKKCrh";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dROKKCrh"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C456B73553
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 08:24:11 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1782807851; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=qoCki5qhw3RB8rUilN5jeDRbql6zYBRFdAt14YL6Vu0=;
+	b=dROKKCrhDPNBOd3XANdYhDy2XQ+BF6UxIB62jNks2E3O271PMhL3/rnNkcqixyvILd7/nv
+	MGT47MelDQOp8K9Qna6dM0rXOKrW/M8ERi3aycMiIIk81ymiBmXSxX7Jes+duYsxDRdeYo
+	wV7H+lu74uU+mBpA0H0It5stiBxluXs=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1782807851; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=qoCki5qhw3RB8rUilN5jeDRbql6zYBRFdAt14YL6Vu0=;
+	b=dROKKCrhDPNBOd3XANdYhDy2XQ+BF6UxIB62jNks2E3O271PMhL3/rnNkcqixyvILd7/nv
+	MGT47MelDQOp8K9Qna6dM0rXOKrW/M8ERi3aycMiIIk81ymiBmXSxX7Jes+duYsxDRdeYo
+	wV7H+lu74uU+mBpA0H0It5stiBxluXs=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C8D5F779A8
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 08:24:10 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id W63XHSp9Q2oBEAAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 08:24:10 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v4 0/3] btrfs: simplify the stripe buffer handling
+Date: Tue, 30 Jun 2026 17:53:48 +0930
+Message-ID: <cover.1782795330.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Synology-MCP-Status: no
-X-Synology-Auth: pass
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Spam-Flag: no
-X-Synology-Virus-Status: no
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Level: 
 
-On Mon, Jun 29, 2026 at 01:08:05PM +0100, Filipe Manana wrote:
-> Curious, do you have any performance data to give an idea of the impact?
->
-> I'm asking not only for clarity but also to determine if adding a
-> Fixes tag for stable backports makes sense.
+[CHANGELOG]
+v4:
+- Add a patch to extract the common handling of scrub read endios
+  This is to reduce duplication and allow a single
+  invalidate_kernel_vmap_range() call to be added with proper comments.
 
-We don't have upstream performance benchmark data for this.  We
-discovered the issue while debugging an unrelated internal bug —
-dirty_metadata_bytes had grown to petabyte-range values on a filesystem
-with a fraction of that in actual dirty metadata, which led us to trace
-it back to the u32 negation.
+- Add a comment on why we need to call invalidate_kernel_vmap_range()
+  for vmallocated memory
+  It's mostly copied from dma-api doc.
 
-The writeback impact described in the commit message
-(balance_dirty_pages_ratelimited() being called unconditionally) is
-based on code analysis, not measured.
+v3:
+- Add a patch to remove a unused macro
 
-I'll leave the Fixes tag decision to you and David.
+- Add new ASSERT()s to make sure the kvmallocated memory is page aligned
+  The size is 64K, which is page aligned and power of 2, thus the
+  resulted memory should at least be page aligned.
 
-Thanks for the review.
+  Furthermore, we have several call sites using (BTRFS_STRIPE_LEN /
+  PAGE_SIZE) or (BTRFS_STRIPE_LEN >> PAGE_SHIFT), add an build time
+  assert to make sure our PAGE_SIZE is not larger than BTRFS_STRIPE_LEN.
 
+v2:
+- Fix a potential double-free during release_scrub_stripe()
+  Reported by sashiko.
 
-Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.
+- Enlarge the scrub bbio to be able to contain the full buffer
+  Since the buffer is allocated by kvmalloc(), it's possible that not
+  all pages are physically contiguous.
+
+  In that case we have to enlarge the bbio to contain
+  (BTRFS_STRIPE_LEN >> PAGE_SHIFT) bvecs.
+
+This is to use kvmalloc() to allocate a buffer for scrub, so that we do
+not need to bother page-switching, and simplify the scrub progress.
+
+Qu Wenruo (3):
+  btrfs: remove SCRUB_MAX_SECTORS_PER_BLOCK
+  btrfs: extract the common scrub read endio into a helper
+  btrfs: use kvmalloc() for stripe buffer of scrub_stripe
+
+ fs/btrfs/raid56.c |  18 +---
+ fs/btrfs/raid56.h |   2 +-
+ fs/btrfs/scrub.c  | 235 +++++++++++++++++++++-------------------------
+ 3 files changed, 111 insertions(+), 144 deletions(-)
+
+-- 
+2.54.0
+

@@ -1,124 +1,234 @@
-Received: from mail-yx1-f67.google.com (mail-yx1-f67.google.com [74.125.224.67])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7BD4D367F4D
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 19:58:10 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.67
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 08F9032FA29
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 20:05:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782849491; cv=none; b=Brr/FBJdioEL+c9u4oTysl98BiNLclT1Rgrp9+JwkzqAW5pRrM884zLB6qBW8bSRAg8E7/PDJIEksHz2tDx+rRxlL4PNlSk3/TPZBCsdK3z2xr1Fc6a0pXErC7Md4G4ITdcfaU/XTz19urPWPg7di1cUPyN1Tfie7Qh8Wp/e5JI=
+	t=1782849907; cv=none; b=RNr4Bfb+0Z+Pi2xnBsrzfmLe0QR0ZGz2S5V6YCwiuYQjjcEczl018w6rAN4Rtv1VnNSo9TF1z36kkliTxE6P650tIriROQUv3u3hcidn6YkJlL4bm+XGh+19hDAlwZ3aSlFxMkjeyvOAC4kbD3VTXRrJLLOeZMRiqzEfa+26mUA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782849491; c=relaxed/simple;
-	bh=Cqf+fYgaW5FZ/wbNzA1vTJdiF/p7IWUp/b76k+UJ0IM=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=G/KK7BCykOcy/snUfHOHOPdj443PRbWqnxskMtsxAf+7NTkgs4HfAa0KbQKNndGfaXLcxC5gr0HskA/17X+Rwqk6pfy1FwClKMniUvY6njlv2Y85qAuNBaZfL90WYb0yH7XNiFljZRlvoE2Xa/hKVkCW/lXGl7nQTKWIqIgcbk0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=mSpPyFoV; arc=none smtp.client-ip=74.125.224.67
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1782849907; c=relaxed/simple;
+	bh=WX/rakNg99ceKdS0+n2DcHZuOpV80iNP8u2pggP0xDg=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=ediquJccN5+tC1PnE7FX93XwJuLZv/SE3So5zU4uabyNG4nNuo8s25ESbqTTDWqdMNEq/lGPZauEFSTNs/sgw+JnfFs2uu9vZAy1Xsw+J27yhaWNKdZrrW+OsC/4Jvz14GPMF45xiKfZPFUfogB3jVoPwCzKWEodByCRU/Qmxl4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=EgUAfYRF; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=LpKRET6z; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=EgUAfYRF; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=LpKRET6z; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="mSpPyFoV"
-Received: by mail-yx1-f67.google.com with SMTP id 956f58d0204a3-664eb8cb631so2336659d50.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 12:58:10 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1782849489; x=1783454289; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=Iij4IQddMHH7Jghh1X3cKV/SlufmHXvI7snr2dEsADo=;
-        b=mSpPyFoV/ztdm3+j+JZYK5z+P/17CvG4Zzd4dM4lJQyitv8ofjImlWgLJpFgxO1eRR
-         aq03wbgc38/TXNy2flXGRx9VPV2XFUDl8eX/PBosGLFtm4iQYxHy4kXqtfrEJF0YRkKj
-         xC3/qI2low81E0Zns/nJR9URoNRssV0c3ib01GnFAsRfQcK22QRh3fZF5niqq6Rqam2B
-         N1/ZwjlWiBFlWYdSgiejdl8wZvWkGPgSqYqZbCdgXrSSHdbRAo3RuHPDVaSdGHLughUb
-         Sp5sGCCHz9kT/7k6axR/ftVret7T8xj4FoxhKNcAa3w2dKBQdxAyeWwOKlqevZAox0/H
-         PdbA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1782849489; x=1783454289;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=Iij4IQddMHH7Jghh1X3cKV/SlufmHXvI7snr2dEsADo=;
-        b=Ur/a8areZJlF1knwhngyWkmErLJCD0Cy2reuq1zi4hOLpl1xJaW01oSJoLNodz+cVG
-         fiN5sbFxqowbKGothNdSNv/bBYHD6sRXjj5ab5CcP+zggldAleTPGocYOl4f6cWtpL6v
-         sf+O9gEJcapbyZqEnfZx9JpmXUgw+qpX8Ni+DU72k6b6qGMfOqsc471ohk0qKPtJe6w7
-         BpIk4On01bNGoOijH9tD50ymcOo9LI6swvQHwyX2OL5LH3fbsiDEQDjk3HlBY+TNjJs/
-         OQDmo7AilafSf9Tu2HFGyzMq8rDlwGvNYjGDE0Uc84y2dCg59LxJjDqGW3dtSEmYXsuf
-         2yrQ==
-X-Gm-Message-State: AOJu0YwOOEozTiMBDc3QHPs7R8Cd8jBnWVt01oUNcKj4OexLBdbfsz33
-	y0NLdNabAtMzLoB58FMcL9AxLH4Rcvn9z4AUsCYpR2BCVv9gzcUV3jvOgcwMcUNM
-X-Gm-Gg: AfdE7cmaEpRAkrxbsFJm5LC/jyhPQEjOhKsaNc8Q9aP5TweZUBvHq+DnFhHe8dp4W1k
-	QRe7/WsmHc6iWfia+UOTorkrw4wj6Kb3+5Q4QS0Bm3+7DlbxISz8yJrazZD7OXYZpr7PsaQPk0M
-	fgMOvAWefrq5PtYeUdSIl/K62K4jdlvl2d0JXpQLycd4HSSyJcnu0SGhdiBXNtUcV5cEUSMIWST
-	nD6p9kWfAYu01YZ1yeF3a/iHiyEQzchzqt8nUgPM5EqjqEXYy3QESDHs5pD+FEggaNPidIXC3p6
-	1vIz1AEi+CTIXRvL/zIGo91Ba01qDPvhushqbuNXq1+5KuVu9TQhT2XgEdAluTvRkd+HM/a42pj
-	+IxuSlb7R5bylxSOpHUJJ4a2fLfFcW4zyi4ugsT0FTS+K/OGNcnAsQXwqr/W6seDseBBj70rlnd
-	QWL2eJer9QPsiT7YLd
-X-Received: by 2002:a53:cc03:0:b0:664:f523:30d4 with SMTP id 956f58d0204a3-664f98cb391mr3795605d50.50.1782849489412;
-        Tue, 30 Jun 2026 12:58:09 -0700 (PDT)
-Received: from localhost ([2a03:2880:25ff:8::])
-        by smtp.gmail.com with ESMTPSA id 956f58d0204a3-665014bbd31sm1315397d50.10.2026.06.30.12.58.08
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 30 Jun 2026 12:58:09 -0700 (PDT)
-From: Leo Martins <loemra.dev@gmail.com>
-To: linux-btrfs@vger.kernel.org,
-	kernel-team@fb.com
-Cc: Filipe Manana <fdmanana@suse.com>,
-	David Sterba <dsterba@suse.com>,
-	Jeff Layton <jlayton@kernel.org>,
-	Boris Burkov <boris@bur.io>
-Subject: [PATCH] btrfs: don't propagate EXTENT_FLAG_LOGGING to split extent maps
-Date: Tue, 30 Jun 2026 12:58:05 -0700
-Message-ID: <77d71e99f792c80c4841b33ed07530543dca897a.1782849374.git.loemra.dev@gmail.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="EgUAfYRF";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="LpKRET6z";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="EgUAfYRF";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="LpKRET6z"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 09C6C75F09;
+	Tue, 30 Jun 2026 20:05:04 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1782849904;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=FySk1zVUE+buclvEy+Fe3jvgEv5GPKkzfGtk5qvgjMw=;
+	b=EgUAfYRFGmdZrESKLxMNMs+rlPDj003tJA2uEkmRkBKN1SeE04IemAZBPvYrDqOD8RFlJU
+	13qKBSqQEBXGHPZxk72BoM+0icvHa1bp0dwYRTdG2niaFk0SnOc19hQknOByufcAFelEP9
+	8E5XzdkZGJbUisaU58DLTPdHV21Y1zo=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1782849904;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=FySk1zVUE+buclvEy+Fe3jvgEv5GPKkzfGtk5qvgjMw=;
+	b=LpKRET6z74qJNcbS0EoK6KspgMoq+oaJKECeCgTGnWqXyX3tpyezBZWsCnYurip3/jhPt+
+	mjqMWjAbuUBI1ICA==
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=EgUAfYRF;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=LpKRET6z
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1782849904;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=FySk1zVUE+buclvEy+Fe3jvgEv5GPKkzfGtk5qvgjMw=;
+	b=EgUAfYRFGmdZrESKLxMNMs+rlPDj003tJA2uEkmRkBKN1SeE04IemAZBPvYrDqOD8RFlJU
+	13qKBSqQEBXGHPZxk72BoM+0icvHa1bp0dwYRTdG2niaFk0SnOc19hQknOByufcAFelEP9
+	8E5XzdkZGJbUisaU58DLTPdHV21Y1zo=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1782849904;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=FySk1zVUE+buclvEy+Fe3jvgEv5GPKkzfGtk5qvgjMw=;
+	b=LpKRET6z74qJNcbS0EoK6KspgMoq+oaJKECeCgTGnWqXyX3tpyezBZWsCnYurip3/jhPt+
+	mjqMWjAbuUBI1ICA==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DFC30779A8;
+	Tue, 30 Jun 2026 20:05:03 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id R1neNW8hRGpESwAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 30 Jun 2026 20:05:03 +0000
+Date: Tue, 30 Jun 2026 22:05:02 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Filipe Manana <fdmanana@kernel.org>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/6] btrfs: defrag: use auto kfree in defrag_one_range()
+ for folios array
+Message-ID: <20260630200502.GB2907432@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1782321584.git.fdmanana@suse.com>
+ <b3c3ddd783250773e264ebc76a0984d0276bc664.1782321584.git.fdmanana@suse.com>
+ <20260629225508.GA2398896@twin.jikos.cz>
+ <CAL3q7H6MEAeoCf+n7wT_823vUX5JuDYXFPiU_3fiauZiK6Sdiw@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAL3q7H6MEAeoCf+n7wT_823vUX5JuDYXFPiU_3fiauZiK6Sdiw@mail.gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Flag: NO
+X-Rspamd-Action: no action
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	TO_DN_SOME(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	RCPT_COUNT_THREE(0.00)[3];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 09C6C75F09
+X-Spam-Score: -4.21
 
-When btrfs_drop_extent_map_range() splits an extent map, the new split
-maps inherit the original map's flags through a local 'flags' variable.
-Commit f86f7a75e2fb ("btrfs: use the flags of an extent map to identify
-the compression type") changed the EXTENT_FLAG_LOGGING clearing to
-operate on em->flags instead of that local 'flags' copy, so a split of
-an extent map that is currently being logged wrongly inherits
-EXTENT_FLAG_LOGGING.
+On Tue, Jun 30, 2026 at 10:53:54AM +0100, Filipe Manana wrote:
+> On Mon, Jun 29, 2026 at 11:55 PM David Sterba <dsterba@suse.cz> wrote:
+> > > @@ -1251,7 +1249,6 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
+> > >               folio_unlock(folios[i]);
+> > >               folio_put(folios[i]);
+> > >       }
+> > > -     kfree(folios);
+> >
+> > There's non-trivial work following this freeing, down from
+> 
+> I'd rather disagree it's non-trivial work.
+> Everything below kfree() is trivial, and it was placed there in patch
+> 1 by chance.
 
-The flag is then never cleared on the split, and when it is freed while
-still on the inode's modified_extents list (for example by the extent
-map shrinker) it trips the WARN_ON(!list_empty(&em->list)) in
-btrfs_free_extent_map() and leads to a use-after-free.
+See a rough call graph of functions below the removed kfree, that's far
+beyond trivial. We follow the principle of not holding resources for
+longer than necessary, this applies to memory too.
 
-Clear EXTENT_FLAG_LOGGING from the local 'flags' copy used for the
-splits and only clear EXTENT_FLAG_PINNED from em->flags, restoring the
-behaviour prior to f86f7a75e2fb.
+What I count as trivial is:
 
-Fixes: f86f7a75e2fb ("btrfs: use the flags of an extent map to identify the compression type")
-Cc: Jeff Layton <jlayton@kernel.org>
-Cc: Boris Burkov <boris@bur.io>
-Signed-off-by: Leo Martins <loemra.dev@gmail.com>
----
- fs/btrfs/extent_map.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+- several asignments of local variables, ponter dererences are ok
+- one shallow function call
+- called functions do simple expressions only
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index fce9c5cc0122..6ad7b39ae358 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -866,13 +866,13 @@ void btrfs_drop_extent_map_range(struct btrfs_inode *inode, u64 start, u64 end,
- 			goto next;
- 		}
- 
--		flags = em->flags;
- 		/*
- 		 * In case we split the extent map, we want to preserve the
- 		 * EXTENT_FLAG_LOGGING flag on our extent map, but we don't want
- 		 * it on the new extent maps.
- 		 */
--		em->flags &= ~(EXTENT_FLAG_PINNED | EXTENT_FLAG_LOGGING);
-+		flags = em->flags & ~EXTENT_FLAG_LOGGING;
-+		em->flags &= ~EXTENT_FLAG_PINNED;
- 		modified = !list_empty(&em->list);
- 
- 		/*
--- 
-2.53.0-Meta
+Indicators of what's not trivial:
+
+- spin locks
+- structure traversal
+- unbounded calls like waiting
+- more allocations
+- nesting deeper than 2 calls
+
+
+defrag_one_range:
+
+  btrfs_delalloc_release_extents
+    spin_lock inode
+      btrfs_mod_outstanding_extents - minor things, trace point call
+      btrfs_calculate_inode_block_rsv_size
+        - several clculations
+        - block rsv spin lock
+    spin_unlock
+    btrfs_inode_rsv_release (1)
+      btrfs_block_rsv_release
+        block_rsv_release_bytes
+          spin lock block group
+          spin lock space info
+          - lots of assignments, pointer derefs, calculations
+      btrfs_qgroup_free_meta_prealloc (branched on qgroups)
+        - qgroup calculations, spin locks taken
+        btrfs_qgroup_free_refroot (2)
+          - spin locks for qgroups
+          find_qgroup_rb
+          - qgroup list traversal
+      btrfs_qgroup_convert_reserved_meta
+        - spin locks for qgroups
+        qgroup_convert_meta
+          - spin locks for qgroups
+          - qgroup iteration
+          - resource releases
+        add_root_meta_rsv
+          - spin lock for reservations
+
+  btrfs_delalloc_release_space
+    btrfs_delalloc_release_metadata
+      - spin lock of inode
+      btrfs_calculate_inode_block_rsv_size
+        - calculations, spin locks
+      btrfs_inode_rsv_release
+        - see (1)
+    btrfs_free_reserved_data_space
+      btrfs_free_reserved_data_space_noquota
+        btrfs_space_info_free_bytes_may_use
+          - spin lock for space info
+          btrfs_try_granting_tickets
+            - reservation processing
+      btrfs_qgroup_free_data
+        __btrfs_qgroup_release_data
+          btrfs_clear_record_extent_bits (no qgroups) (3)
+            btrfs_clear_extent_bit_changeset
+              - tree traversal
+          qgroup_free_reserved_data
+            - ulist traversal
+            btrfs_clear_record_extent_bits
+	      - see (3)
+            btrfs_qgroup_free_refroot
+              - see (2)
+          btrfs_clear_record_extent_bits (qgroups)
+	    - see (3)
+            btrfs_clear_extent_bit_changeset
+              - tree traversal
+          btrfs_qgroup_free_refroot
+            - see (2)
+
+  extent_changeset_free
+    ulist_release
+      - enumerate nodes, kfree
+    kfree
 

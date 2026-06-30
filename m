@@ -1,306 +1,168 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ADC1F36B054
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 14:06:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9A59532AACB
+	for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 15:11:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782828412; cv=none; b=Y9ZUVHADSQ5zFD+ki9hzTw9TP8N1unwDrW0FbkRvoNxC8Q/2GQWGKzrteifO8BtehJXjP5Cmq+darnddgAiuka26jDt8wYLTO7jFXg/8H6qPa9p2s53tWUcb585jeNna0AwrQwmm3AHSj5lbf1QQhwXW9OoyMy8/IQEjuMvlawo=
+	t=1782832319; cv=none; b=WLAce7LKiQcS40x+xdLHavbRTKiqNR4NYuRl12nxOTW+ByzGPKfiyYtYKZQygJUBQD4nGYv4QNAsCJDyIaQp6aE+GFztE+SviFTeFkYC3idi4q5Btt1JIGlkTfbvhekpQc1Ff0xWQ7PnH/B7ieZTld4puBGjvXZqV5HxSxT2Dy4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782828412; c=relaxed/simple;
-	bh=bFZS6Qac6uT9L82WG6KbRKJDwRQ+z/NJUPBBpvMDSsc=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=AByAbaqBS03q6DgTR2BpMa38WHb49XrOZBWSanMSyKb24RlcDM6ULALQYLIIVNUoI1WtRwgZ0laPXLG+RD9CQCi/9fK90znS77qAg0WrZ5eee5nvdEVBVq/rdhqwbu6J2J1JtCwcSC722KBYGEOfd/uiwFSOQBDq9/xwidZk8f0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=eCxLlU5m; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1782832319; c=relaxed/simple;
+	bh=Xl97sexu2b7afrKiBr4H5EC86HAhV+tqsfxcszsAL4Q=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=J/KXzdbt7CLFsFM1SvvFbCjhbEcXITYal/bYI57a6AoZzQSX4Z2ThYjQmCPRFkrAEeyrVyS5bUUQdYRudq/Tup9cG9LwODeGlf6vUxkgzVh76RhGMRHe8Obgje6mah/LfWetGDnBe86oaty1YpOiFDiG8Zh4+6anvS149ROaUO4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=20oow+QW; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=cKynzAzr; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=qZOdn/l0; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=0thdJM3a; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="eCxLlU5m"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7876D1F00A3D
-	for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 14:06:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782828409;
-	bh=1u6u5ydd0u31m8rFPh7+2Q0cgGC4FiVYyCG9LUizmkI=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=eCxLlU5mIvAuOHCvZnmsz+Z6JeO8qaaQlOZHUJCCyJeLBFI4dg9dyVhFI2AenIro2
-	 pc72ftDzlaHvZSbdY7IWIYFpIl4f/OjTGACIDD12yBDARdFBo7YqMcyJ+zhr+8aX95
-	 c0d1+/5vkXlWE7pvdGUxRYaWVq+oaZU83J4/6v94/fnilRbogW8O8vRqkOn7nKLZdy
-	 ZbpiS+nJoH9MLAURms25xZNqUNyL2Z0xlHoLi3aUKc7UAp/AhZcNTOnakvgD3GpfEb
-	 utj9+9HgT8GSrAakFlBNEesShXZ0j+VKu7r4eRpMdBRh3+WJVhY+En7bst+Okv3J5X
-	 LcLyhKZXRJlZA==
-Received: by mail-qv1-f46.google.com with SMTP id 6a1803df08f44-8f29ec73064so2787746d6.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 07:06:49 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+Rous/KpBo268wo/r69i1UbN+X3rJ6R1+SjHT9ZXT+18Q6vTY90PoVdyEgfWlCfiqkn/2XJK4n768mkuZQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwJcNzGK4TUneEhYJs8svpZg1W5pi+ph0V7pM292bbbnpBHrzu/
-	YTn18aj8JGFmsbCVoFkANvqpQTobBJaYtBYUCmCZL72iPbzOeI/FxSu2C//EvfRPzyH9NH1QxAS
-	ZisTmkUMvm4Hh7yT282Reez464qOjZiM=
-X-Received: by 2002:ad4:4305:0:b0:8cc:e87b:2cc with SMTP id
- 6a1803df08f44-8f1bb32d00cmr41977886d6.34.1782828408613; Tue, 30 Jun 2026
- 07:06:48 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="20oow+QW";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="cKynzAzr";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="qZOdn/l0";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="0thdJM3a"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id CF9DF75F51;
+	Tue, 30 Jun 2026 15:11:54 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1782832316;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=EI/OgqgRY/EKWgoKaSeyLXyRRrr2pSBHkCzWMKZMlWQ=;
+	b=20oow+QWdA1/GK5mHHJMnVGKwKmHKxWAJIiuP1EUt4GF92Q4ENflMytNjqetcszR0psnJf
+	PswxZw3L2WVs3R/lix1mjPoUaOGOcIolM66dg/okLzImtbC30TyugD4N2piP9sjve34P/t
+	vVQN/WQ/U2CAbzbwEcqZAoYs6EA0OQg=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1782832316;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=EI/OgqgRY/EKWgoKaSeyLXyRRrr2pSBHkCzWMKZMlWQ=;
+	b=cKynzAzrrQlizVCA/c0kXgAooKxYxS7VxXSAhpU/FvhqETR4fi2SfCLGIRrWXvOdTeBb2C
+	Jl52W+STX+zSPTDA==
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1782832314;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=EI/OgqgRY/EKWgoKaSeyLXyRRrr2pSBHkCzWMKZMlWQ=;
+	b=qZOdn/l0XraOti9Rej/qYiN/hKelGIZwgu7ZchTge+SQ8TBfjxwbDXMuwvTt3Za8FbECBf
+	Tb39ONSWP7ZdjFTqpAd4qaRp0VEmXpJigm/K0e9YYjZd5MYkA1qAtqJRu0hrR7Zz2OKcOD
+	OuIrB1mgpJXW71cTT9oyddeYMI66VIc=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1782832314;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=EI/OgqgRY/EKWgoKaSeyLXyRRrr2pSBHkCzWMKZMlWQ=;
+	b=0thdJM3at96HD8gKIXDgWvOsR8sxi6Tkhga6F2h0sNuOSfMteeInJHxfQNJagw2rrJUhj0
+	9EjZ7nWLpeguSZCA==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C22DC779A8;
+	Tue, 30 Jun 2026 15:11:54 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id gr85L7rcQ2pGKwAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 30 Jun 2026 15:11:54 +0000
+Date: Tue, 30 Jun 2026 17:11:45 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org
+Subject: Re: [PATCH v4 3/3] btrfs: use IOMAP_DIO_BOUNCE flag instead of
+ falling back to buffered IO
+Message-ID: <20260630151145.GA2907432@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1781597506.git.wqu@suse.com>
+ <1a89047dac91b6b12d190c37cd7bb3d8328b2073.1781597506.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260629-btrfs-skip-logging-v1-1-4e3a28c1acaf@kernel.org>
- <CAL3q7H5o6vKOcQ0G4shQw6q7vCpfZYo8KO6Rg6VdChDoMB+C=g@mail.gmail.com>
- <5084d9c6b6a7025be156354194cf7d3fffebb0e2.camel@kernel.org>
- <CAL3q7H6cHCrcSY+Rj5TX6tEkcX33WmcF73oZbfycuCRAajYzfg@mail.gmail.com>
- <CAL3q7H4nCvmMN8iO4+eVbP3aEm8oxmyfarb4bCyBPLEwU48O7w@mail.gmail.com> <2a2f3722ae7b822a48ec4ac3c641ecacc2ab052d.camel@kernel.org>
-In-Reply-To: <2a2f3722ae7b822a48ec4ac3c641ecacc2ab052d.camel@kernel.org>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Tue, 30 Jun 2026 15:06:08 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H5Gdz2jE1_=JhaU1wXR8izbHb_3a76zuYdBKEWDXVjN0w@mail.gmail.com>
-X-Gm-Features: AVVi8CeseDBO9duzsZOBiSSL6SjnQvDdJIprYEiZxCNFGb1m4AYVs-FM4NoTXXk
-Message-ID: <CAL3q7H5Gdz2jE1_=JhaU1wXR8izbHb_3a76zuYdBKEWDXVjN0w@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: don't let shrinker touch extent_maps that are
- being logged
-To: Jeff Layton <jlayton@kernel.org>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>, 
-	Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <1a89047dac91b6b12d190c37cd7bb3d8328b2073.1781597506.git.wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Flag: NO
+X-Spam-Score: -4.00
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCVD_TLS_ALL(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_FIVE(0.00)[5];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,imap1.dmz-prg2.suse.org:helo,suse.com:email,twin.jikos.cz:mid];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Level: 
 
-On Tue, Jun 30, 2026 at 1:28=E2=80=AFPM Jeff Layton <jlayton@kernel.org> wr=
-ote:
->
-> On Mon, 2026-06-29 at 16:47 +0100, Filipe Manana wrote:
-> > On Mon, Jun 29, 2026 at 4:06=E2=80=AFPM Filipe Manana <fdmanana@kernel.=
-org> wrote:
-> > >
-> > > On Mon, Jun 29, 2026 at 3:56=E2=80=AFPM Jeff Layton <jlayton@kernel.o=
-rg> wrote:
-> > > >
-> > > > On Mon, 2026-06-29 at 15:19 +0100, Filipe Manana wrote:
-> > > > > On Mon, Jun 29, 2026 at 2:41=E2=80=AFPM Jeff Layton <jlayton@kern=
-el.org> wrote:
-> > > > > >
-> > > > > > The extent map shrinker can free an extent map that is still ow=
-ned by an
-> > > > > > in-flight fsync and still linked on the inode's modified_extent=
-s list,
-> > > > > > corrupting that list and eventually causing an RCU stall.
-> > > > > >
-> > > > > > btrfs_scan_inode() currently skips EXTENT_FLAG_PINNED maps, the=
-n calls
-> > > > > > btrfs_remove_extent_mapping() followed by btrfs_free_extent_map=
-():
-> > > > > >
-> > > > > >         if (em->flags & EXTENT_FLAG_PINNED)
-> > > > > >                 goto next;
-> > > > > >         ...
-> > > > > >         btrfs_remove_extent_mapping(inode, em);
-> > > > > >         btrfs_free_extent_map(em);
-> > > > > >
-> > > > > > But btrfs_remove_extent_mapping() deliberately does NOT unlink =
-a map that
-> > > > > > has EXTENT_FLAG_LOGGING set:
-> > > > > >
-> > > > > >         if (!(em->flags & EXTENT_FLAG_LOGGING))
-> > > > > >                 list_del_init(&em->list);
-> > > > > >         remove_em(inode, em);
-> > > > > >
-> > > > > > This sets up a UAF situation where a later fsync() can trip ove=
-r the
-> > > > > > now-freed extent_map still on the modified_extents() list.
-> > > > >
-> > > > > I don't see how that can happen, because fsync always takes the
-> > > > > inode's i_mmap_lock (in write/exclusive mode), and btrfs_scan_ino=
-de()
-> > > > > takes the same lock too (in shared/read mode).
-> > > > > EXTENT_FLAG_LOGGING is only set and cleared during fsync, so how =
-can
-> > > > > the shrinker race with fsync?
-> > > > >
-> > > >
-> > > > ...and yet, the vmcore shows that the shrinker hit an extent_map th=
-at
-> > > > had LOGGING set while holding the i_mmap_lock.
-> > >
-> > > Yes, but we need to understand why...
-> > >
-> > > >
-> > > > I had hoped to add an assertion here that LOGGING couldn't be set o=
-n
-> > > > the em's after taking the i_mmap_lock, but that's not viable:
-> > > >
-> > > > The problem is that the i_mmap_lock coverage isn't complete. I had
-> > > > Claude assist me with some analysis so take it with a hefty grain o=
-f
-> > > > salt but the problem is that the em tree can contain em's from othe=
-r
-> > > > inodes where the i_mmap_lock is not held:
-> > >
-> > > And that is the problem: an em tree, which belongs to an inode, shoul=
-d
-> > > only have extent maps for that inode...
-> > > An extent map can only belong to an inode.
-> > >
-> > > So that's what needs investigation. The bug is elsewhere.
-> > >
-> > > Thanks.
-> > >
-> > > >
-> > > > -----------------------8<---------------------
-> > > >
-> > > > ...that inode is in progress, therefore no em in its tree should ha=
-ve LOGGING set. Your invariant is the right one.
-> > > >
-> > > >  But it's violated, because the i_mmap_lock interlock is incomplete=
-. Two facts:
-> > > >
-> > > >   1. tree-log.c never takes i_mmap_lock =E2=80=94 grep returns 0 oc=
-currences. Only btrfs_sync_file takes it (file.c:1608/1610), and only
-> > > >   on the one inode being fsync'd.
-> > > >   2. A single fsync logs many other inodes, and each can set LOGGIN=
-G on its own ems via btrfs_log_changed_extents().
-> >
-> > A single fsync can log other inodes yes, and without taking their
-> > i_mmap_lock, but the inodes are logged in LOG_INODE_EXISTS mode, so
-> > extents are not logged.
-> > The only exception is for symlink inodes, but those are logged in full
-> > mode, only have one extent (inlined), and always have
-> > BTRFS_INODE_NEEDS_FULL_SYNC set, so we never end up in
-> > btrfs_log_changed_extents() for symlinks.
-> >
->
-> Thanks for the explanation. It sounds like we should wire some warnings
-> into the shrinker around these invariants. Like, if LOGGING is set and
-> the inode's not a symlink, do a WARN_ON_ONCE()? I'll plan to look into
-> that as well.
->
-> FWIW, internally at Meta, we're turning the WARN_ON() calls in
-> btrfs_free_extent_map() into BUG() calls across a swath of machines in
-> the hopes we can get a vmcore earlier. We'll keep you posted.
+On Tue, Jun 16, 2026 at 05:42:37PM +0930, Qu Wenruo wrote:
+> Previously btrfs forces direct writes to fall back to buffered ones if the
+> inode has data checksum or the profile has duplication.
+> 
+> That fallback is to avoid the content being modified that the final
+> content may mismatch with the checksum or the other mirrors.
+> 
+> That brings a pretty huge performance cost, which already caused some
+> concern at that time.
+> 
+> But later upstream commit c9d114846b38 ("iomap: add a flag to bounce
+> buffer direct I/O") introduced a new method by copying the content into
+> new pages, and do all the operations based on the newly allocated pages.
+> 
+> So let btrfs to utilize the new flag for direct writes if we require
+> stable folios.
+> 
+> There is a quick benchmark, using the following fio setup:
+> 
+>  fio --name=randwrite --filename $mnt/foobar --ioengine=libaio --size=4G \
+>      --rw=randwrite --iodepth=64 --runtime=60 --time_based --direct=1 \
+>      --bs=$blocksize
+> 
+> Unit is MiB/s.
+> 
+>  Blocksize | Zero-copy (*) | Buffered |   Bounce
+> -----------+---------------+----------+-----------
+>         4K |          35.1 |     17.1 |      33.8
+>        64K |           522 |      251 |       492
+> 
+> *: This is done by reverting the commit 968f19c5b1b7 ("btrfs: always
+>    fallback to buffered write if the inode requires checksum")
+> 
+> Although with page bouncing the performance is only around 95% of
+> true-zero copy, it's still almost double the performance of buffered
+> fallback.
+> 
+> There will be a small change in behavior, since we're using
+> IOMAP_DIO_BOUNCE flag to allocate new folios, NOWAIT flag will
+> immediately fail.
+> 
+> So for true NOWAIT direct IOs, NODATASUM and RAID0/SINGLE profiles are
+> still required.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-To make it as simple as possible:
-
-An fsync can only log extent maps for the inode being fsynced; other
-inodes can be logged, but not their extent maps.
-In order to log extent maps, we need to have the i_mmap_lock (in
-write/exclusive mode) and the vfs lock on the inode too.
-
-Symlinks have an inline extent but no extent map.
-Directories never have extents.
-
-So if the shrinker gets an extent map with the LOGGING flag, one of
-two things is happening:
-
-1) An fsync of one inode is logging extent maps of another. This bug
-can cause corruption and data loss, because we must hold those two
-locks to prevent races with writes (buffered, direct IO, mmap) and
-other operations (truncate, hole punching, etc.), as previously
-stated.
-
-2) Something is corrupting an extent map, either inside or outside
-(most likely) the fsync code.
-
-Thanks.
-
->
-> Thanks for the help so far!
->
-> > > >   btrfs_log_inode() is called recursively on conflicting inodes, pa=
-rent directories, and referenced inodes:
-> > > >   tree-log.c:5982  btrfs_log_inode(di_inode, log_mode)        # dir=
- dentries
-> > > >   tree-log.c:6339  btrfs_log_inode(inode, LOG_INODE_ALL)      # con=
-flicting inodes
-> > > >   tree-log.c:6900  btrfs_log_inode(di_inode, log_mode)        # new=
- dir dentries
-> > > >   tree-log.c:7389  btrfs_log_inode(dir_inode, LOG_INODE_ALL)  # log=
-_all_parents
-> > > >   tree-log.c:7488  btrfs_log_inode(inode, ...)                # ref=
-erenced inodes
-> > > >
-> > > >   2. For all of these, btrfs_sync_file holds i_mmap_lock on the ori=
-ginal fsync'd inode =E2=80=94 not on these side inodes. So a side
-> > > >   inode X gets LOGGING set on its ems while X's own i_mmap_lock is =
-free.
-> >
-> > Nop, see above.
-> >
-> > > >
-> > > >   So the shrinker can down_read_trylock(X->i_mmap_lock) successfull=
-y (nobody holds it) and walk X's tree while X's ems are
-> > > >   LOGGING-flagged =E2=86=92 it removes+frees one =E2=86=92 corrupti=
-on. The interlock only protects the directly-fsync'd inode, not the inodes
-> > > >   logged as its dependencies.
-> >
-> > Nop. Unless you can show an actual code path where while fsyncing one
-> > inode we log another inode in LOG_INODE_ALL mode
-> > Again, the exception is symlinks, but for those, the
-> > BTRFS_INODE_NEEDS_FULL_SYNC flag is always set, so we never end up in
-> > btrfs_log_changed_extents().
-> >
-> > > >
-> > > >
-> > > > > Also, there should be no () after modified_extents (it's not a fu=
-nction name).
-> > > > >
-> > > > >
-> > > >
-> > > > Sorry, early morning typo. Fixed in my local repo.
-> > > >
-> > > > >
-> > > > > >
-> > > > > > Fix it by having the shrinker skip maps that are being logged, =
-the same
-> > > > > > way it skips pinned maps. Such a map is owned by the in-flight =
-fsync and
-> > > > > > will become reclaimable again once logging clears the flag.
-> > > > > >
-> > > > > > Fixes: 956a17d9d050 ("btrfs: add a shrinker for extent maps")
-> > > > > > Signed-off-by: Jeff Layton <jlayton@kernel.org>
-> > > > > > ---
-> > > > > > We've started hitting a number of these problems in our fleet. =
-It
-> > > > > > seems to mostly happen on ARM64 architecture, but there have be=
-en some
-> > > > > > WARN_ONs that popped on x86_64 too.
-> > > > > > ---
-> > > > > >  fs/btrfs/extent_map.c | 8 +++++++-
-> > > > > >  1 file changed, 7 insertions(+), 1 deletion(-)
-> > > > > >
-> > > > > > diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-> > > > > > index fce9c5cc0122..128f7800e101 100644
-> > > > > > --- a/fs/btrfs/extent_map.c
-> > > > > > +++ b/fs/btrfs/extent_map.c
-> > > > > > @@ -1166,7 +1166,13 @@ static long btrfs_scan_inode(struct btrf=
-s_inode *inode, struct btrfs_em_shrink_c
-> > > > > >                 em =3D rb_entry(node, struct extent_map, rb_nod=
-e);
-> > > > > >                 ctx->scanned++;
-> > > > > >
-> > > > > > -               if (em->flags & EXTENT_FLAG_PINNED)
-> > > > > > +               /*
-> > > > > > +                * Skip extent maps that are pinned or are bein=
-g logged. The
-> > > > > > +                * i_mmap_lock should prevent this from seeing =
-LOGGING on extent_maps
-> > > > > > +                * directly associated with inode, but em may b=
-e associated with
-> > > > > > +                * other, dependent inodes and their locks are =
-not held.
-> > > > > > +                */
-> > > > > > +               if (em->flags & (EXTENT_FLAG_PINNED | EXTENT_FL=
-AG_LOGGING))
-> > > > > >                         goto next;
-> > > > > >
-> > > > > >                 /*
-> > > > > >
-> > > > > > ---
-> > > > > > base-commit: dc59e4fea9d83f03bad6bddf3fa2e52491777482
-> > > > > > change-id: 20260629-btrfs-skip-logging-3e31701d9647
-> > > > > >
-> > > > > > Best regards,
-> > > > > > --
-> > > > > > Jeff Layton <jlayton@kernel.org>
-> > > > > >
-> > > > > >
-> > > >
-> > > > --
-> > > > Jeff Layton <jlayton@kernel.org>
->
-> --
-> Jeff Layton <jlayton@kernel.org>
+The block layer patches have been merged and our for-next is now based
+on 7.2-rc1 so pleaase add this one too so we can get back the dio
+performance. Thanks.

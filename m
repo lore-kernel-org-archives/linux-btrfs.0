@@ -1,60 +1,81 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-ot1-f49.google.com (mail-ot1-f49.google.com [209.85.210.49])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B0DD4C6D
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jul 2026 00:09:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E293F1EEE6
+	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jul 2026 00:11:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782864575; cv=none; b=t8J8+T5KU/W7uDp/uSWV4Zygqhv36e06DTN5vH5NtBOdKn8ceXf1uSke4GXA149sF15jdUsz4p92YY5Z4hoWxKLx/QS5cXTa2t554sWmlOv8NOJeibcItBFkq4GbeHxgbYNkDKErbsKPpCzs/5O04u+gZgvfTEOoj1WLyRKhd/E=
+	t=1782864687; cv=none; b=EmXXCB7e/Yxhv8KPY+GdSLDDtdkEpngqIKygO4AKQcfbys7/4rx9RfW7vEGobZwku71ndWpgE3ky3bD8i0jFBmzbsdNeGsyZbdJrgm8mvJq6Ed865Ez4w7kUD5Yq6XQ2+vVvT5YDEw5/tUW1O9cu3qpG0LLszHALJhnUyw5rrCM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782864575; c=relaxed/simple;
-	bh=w2mUuHj4zexnUpUgbu7rmHQt27e9i93uR/z/h2OuoKk=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=YCF1p1ByFcBDjYfjZbkTT5MUOcA8ZaamLCmzJLvpZaqNJaYe1Bbhx5FxMepaYDAHCkxymuUFjBf90HGBPUmAsM1IIkReMj1jR0OA28eNOXaCidgRAvg/FA1RmnEIvV91PW+KAxymJNYYvttCtGcYn2bwT9DuPzDp5fIdGGd1Vwc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pV5+G71C; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pV5+G71C; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1782864687; c=relaxed/simple;
+	bh=9jDUUSF45JpFQnRkUrWsjS/oeR43J06XYXTdT3am7Eg=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=KMl6zEd87MQ11HqDjAvICFBYRelG9Qj7mS3ubF+p2a8/nmyTLR50BklXHRqUAylZFeiqaL9fPUgpEkDqYpqRjqWjmNXELKZ5ewWP30DKSEElWfD+A2yV049G4xfhGxKXDCKQmvRJaKhdLLMotk0oid1oxA64BF3Ik6t4Z7lMJ6w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=cNCQQuP3; arc=none smtp.client-ip=209.85.210.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pV5+G71C";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pV5+G71C"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id D534371E0F
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jul 2026 00:09:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782864571; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=zV2QhXV68K/zoBdyzsCsA5FV0WMGS4Fzx0Vml5HTZy8=;
-	b=pV5+G71C3vQy/eRc1wUS6XMLPWILV+bhBhA67guR1Ie5f3jt+mbvXqtPYG2oskiu3oEl2n
-	Cbl+54Iur4cWupChRk3Cmjm8lFTVNlVQ4YbsSALqtTmiW+rPmzHDAusijmKTFO40+i5IEG
-	Zg8+FEVsAAYdagQ/A4TYtzgz8mGKmN0=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782864571; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=zV2QhXV68K/zoBdyzsCsA5FV0WMGS4Fzx0Vml5HTZy8=;
-	b=pV5+G71C3vQy/eRc1wUS6XMLPWILV+bhBhA67guR1Ie5f3jt+mbvXqtPYG2oskiu3oEl2n
-	Cbl+54Iur4cWupChRk3Cmjm8lFTVNlVQ4YbsSALqtTmiW+rPmzHDAusijmKTFO40+i5IEG
-	Zg8+FEVsAAYdagQ/A4TYtzgz8mGKmN0=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DB3F9779AA
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jul 2026 00:09:30 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 5IupIrpaRGqASgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 01 Jul 2026 00:09:30 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: update the direct IO behavior notes for version 7.3
-Date: Wed,  1 Jul 2026 09:39:12 +0930
-Message-ID: <ae799abcfe1a52d8cc73f1a43565fa2f558999e5.1782864511.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="cNCQQuP3"
+Received: by mail-ot1-f49.google.com with SMTP id 46e09a7af769-7e9c7174e98so46735a34.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2026 17:11:25 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1782864685; x=1783469485; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=9IPoaiq299I1HUPiBAuCUjHeHK2h2Bef04kfA8xK7zE=;
+        b=cNCQQuP3W3pFkkb3usWtu7yr3/i298KPBttEJBqlfXp4lHEXScOnW7qe3b4KjbyXmZ
+         yyVxtHV89YWtgOAm94xhaQhfhLDM1AgLmzB/QAVF1YC/qJTTSbGgAZEfMkkD5AUeCDve
+         ldKZxa9frb5FVsc8MKmHp/1hzFl96CGAFbPe9Doun+O6TRpE39OenTQM7ZZDAhP2anvg
+         rdGmGXBt4PcqQBWzowxy2+l/aTN19pGU/KcxMMaZxaxFAxFNt+Paqbm/4EEVWsm3EKwP
+         ZyGGyx6oSla/0ktMbz00JgAbvVFuby8/JWON2P9PzDniCZbbv+qMpY/2J+N4tKj4LidD
+         bDFQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1782864685; x=1783469485;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=9IPoaiq299I1HUPiBAuCUjHeHK2h2Bef04kfA8xK7zE=;
+        b=R6aKpwHlsFMFY8YcICTmnypGJzUNH35X/qvyJqR2NPSmYFgABXyNhfZWU2qbIHRYno
+         aGHfKuV9aK1m2UiTIn+yhk9xiy4j493YRc0O9QRbBJUM1wRelON4HCHiHTj94uM83eEH
+         vFKD7OsaHmcVBTvfQ3ENxZnjJVNosR6gMN2W1uGQ3SX7MCf15OywmH0rYcKZ6F4VdSd+
+         +66qj5MArPemzv3ewp7xg4DpwjPUWN/vysFPfLnW33knln4yF6wqUmgd7mwBACdSLviV
+         VXldCkZ1RJ2E7CiCKdcYMh5mumYyPiYy481zvgUpGVXu0AOJJ96jBgZOqlHp2aDcHKVi
+         uVsA==
+X-Forwarded-Encrypted: i=1; AFNElJ/RTYxY/NQeF335E/qBpqXXA97OQXvWKixmjl171Lsoj0Q7n3WFJre4nLGzh9fEAfQ3RVwYmwijGD5PuA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yw/tSdOLtlQGCoRM6jftxMNqWAY8YqqJDz8TKGveFN5g0eIOew1
+	8uuVcqa/qMRE0d/zPLjzh41nJcmf2HOaCGad9a7RLLCHjzOfNqFv13DLbb2Stg==
+X-Gm-Gg: AfdE7cnLsnosrqQhk3ryi+YZd34gE5V80MN3GzMk5NR4rMk20jsXggxUgc+tvAYlP34
+	gdgJQccHx2/vVuMMMw8Z28uPkkiSZpvoL4UoG+k/S3FdPToDRc7IB5qSGw2qyID9kL9lDggyige
+	RsjrCBO5D8ziqi5dyFbJBoO9/UaCw3aHy1/WK2nPrdnOsID9cZg2Rqk2Z02sNehUOSIacNmS4zE
+	JOspREgM8n39vPggnp8Jv8yAbHShA90gyPSw5naZNqUnMU+xfQGgWON+4/utw944yujg3+3WAj0
+	xKzcq94q8xVKGOFFAm0jIy7F+XtHiAYTIfuxNqRRqVWh8ufySUWVsFSAmehKKpsb8CmIpWnbKk6
+	BlGqV8Yad2O1WDu6p5Vh6H1C5SdxvR6Jd6XuYr3zIxyb5lscDpnIsiG+YWcpeXHx+1kNlJV4YI/
+	51aG+9Z0m+dN6scmGBrU/wbfiVNe/uKm7B00XBCMk3F1ObU24Q3v6/iAT0Td2gWyY=
+X-Received: by 2002:a05:6808:1924:b0:48c:b2d1:8c97 with SMTP id 5614622812f47-495fd7c3489mr1618454b6e.40.1782864684945;
+        Tue, 30 Jun 2026 17:11:24 -0700 (PDT)
+Received: from localhost ([2a03:2880:ff:8::])
+        by smtp.gmail.com with ESMTPSA id 5614622812f47-49606b5d273sm255437b6e.17.2026.06.30.17.11.22
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 30 Jun 2026 17:11:23 -0700 (PDT)
+From: Joanne Koong <joannelkoong@gmail.com>
+To: brauner@kernel.org,
+	hch@lst.de
+Cc: djwong@kernel.org,
+	willy@infradead.org,
+	hsiangkao@linux.alibaba.com,
+	linux-fsdevel@vger.kernel.org,
+	linux-xfs@vger.kernel.org,
+	Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>,
+	linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM),
+	linux-kernel@vger.kernel.org (open list)
+Subject: [PATCH v2 03/18] btrfs: convert iomap ops to ->iomap_next()
+Date: Tue, 30 Jun 2026 17:09:18 -0700
+Message-ID: <20260701000949.1666714-4-joannelkoong@gmail.com>
+X-Mailer: git-send-email 2.52.0
+In-Reply-To: <20260701000949.1666714-1-joannelkoong@gmail.com>
+References: <20260701000949.1666714-1-joannelkoong@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,92 +83,38 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
-X-Spam-Score: -2.80
 
-Since v7.3 will use IOMAP_DIO_BOUNCE flag to address the performance
-drop of falling back to buffer IO, update the direct IO behavior notes
-to avoid confusion.
+Convert btrfs iomap_ops to the new ->iomap_next() callback. This uses the
+iomap_process() helper, which finishes the previous mapping if needed
+and produces the next one. No functional changes are intended.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Joanne Koong <joannelkoong@gmail.com>
 ---
- Documentation/ch-checksumming.rst |  7 ++++++-
- Documentation/ch-compression.rst  | 13 ++++++++-----
- 2 files changed, 14 insertions(+), 6 deletions(-)
+ fs/btrfs/direct-io.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/ch-checksumming.rst b/Documentation/ch-checksumming.rst
-index 39dc79079aef..8ccdb79e25e4 100644
---- a/Documentation/ch-checksumming.rst
-+++ b/Documentation/ch-checksumming.rst
-@@ -17,10 +17,15 @@ has a detached checksum stored in the checksum tree.
+diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
+index 460326d34143..46dd72982fba 100644
+--- a/fs/btrfs/direct-io.c
++++ b/fs/btrfs/direct-io.c
+@@ -798,9 +798,15 @@ static void btrfs_dio_submit_io(const struct iomap_iter *iter, struct bio *bio,
+ 	btrfs_submit_bbio(bbio, 0);
+ }
  
-    To avoid this, kernel starting with version 6.14 will force a direct
-    write to fall back to buffered, if the inode requires a data checksum.
--   This will bring a small performance penalty. If you require true zero-copy
-+   This will bring an observable performance penalty. If you require true zero-copy
-    direct writes, then set the ``NODATASUM`` flag for the inode and make
-    sure the direct IO buffer is fully aligned to block size.
- 
-+   The kernel starting with version 7.3 will address the unstable buffer by bouncing
-+   the buffer if the inode requires data checksums.
-+   Although this is not true zero-copy, it's still better than falling back to buffered,
-+   achieving 95% of true zero-copy performance.
++static int btrfs_dio_iomap_next(const struct iomap_iter *iter,
++				struct iomap *iomap, struct iomap *srcmap)
++{
++	return iomap_process(iter, iomap, srcmap, btrfs_dio_iomap_begin,
++			     btrfs_dio_iomap_end);
++}
 +
- There are several checksum algorithms supported. The default and backward
- compatible algorithm is *crc32c*. Since kernel 5.5 there are three more with different
- characteristics and trade-offs regarding speed and strength. The following list
-diff --git a/Documentation/ch-compression.rst b/Documentation/ch-compression.rst
-index df0ed188faa2..7a53fc5b9832 100644
---- a/Documentation/ch-compression.rst
-+++ b/Documentation/ch-compression.rst
-@@ -171,17 +171,20 @@ Compatibility
- Compression requires both data checksums and COW, so either *nodatasum* or
- *nodatasum* mount option/inode flag will result in no compression.
+ static const struct iomap_ops btrfs_dio_iomap_ops = {
+-	.iomap_begin            = btrfs_dio_iomap_begin,
+-	.iomap_end              = btrfs_dio_iomap_end,
++	.iomap_next             = btrfs_dio_iomap_next,
+ };
  
--Direct IO reads of compressed data will always fallback to buffered reads.
-+Direct IO reads of compressed data will always falls back to buffered reads.
- 
--Direct IO write behavior depends on the inode flag.
--For inodes with data checksum, direct IO writes always fallback to buffered
--writes, thus can generate compressed data if the mount option/inode flags
--allows that.
-+Direct IO write behavior depends on the inode flag and kernel version.
-+
-+Before v7.3, for inodes with data checksums, direct IO writes always fallback
-+to buffered writes, thus can generate compressed data if the mount option/inode
-+flags allow that.
- 
- For inodes without data checksums, direct IO writes will not populate page cache,
- and since the inode has no data checksums, no compressed data will be generated
- anyway.
- 
-+Starting with kernel v7.3, no compression is performed, no matter if the inode has data checksums or not.
-+
- The compression algorithms have been added over time so the version
- compatibility should be also considered, together with other tools that may
- access the compressed data like bootloaders.
+ static const struct iomap_dio_ops btrfs_dio_ops = {
 -- 
-2.54.0
+2.52.0
 

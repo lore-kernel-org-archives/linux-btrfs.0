@@ -1,168 +1,273 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E9D1371D04;
-	Wed,  1 Jul 2026 17:33:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 903EA3546FD;
+	Wed,  1 Jul 2026 22:22:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782927196; cv=none; b=QVYokTjKAGTgCXmpy5tVXNiHibD5leggif8GIre2wu3ZTf8bokxPjGW27pgJpgXcyU69SL/4luz0c5yutMq7Uthz22bBc0+eE4nrSkT3b2r4EUiZPyRpM2lHP36kWdKxJjhjMnebBhC6Knc/NqLgEE7tNgwYjagXteeHMSLVzTI=
+	t=1782944575; cv=none; b=PF2lo4sNf7YoqB7Ws5zNSyVAXrpo6oHZQ/3lLL3gqCRN8vZzqL5z1U/OgNF4ezamSm90XObMqThMe3Wmk8VCssui6es5sx7eti/WYtUTnb9QnZYLmcxjh9TTbwv8Z3LT63jsscFMYii4QNkQCmUScu/rXOKwuG6mlOa5ShdJ9SY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782927196; c=relaxed/simple;
-	bh=S3fQfD/NMhE5Whz/J1/eQ/0OXtvxJUW3Rrj3+sDAinQ=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=e+3sNCsIbcYJnS5d33QDPae81a9K++y4/4WjNFbHeKnELBORf+v3Bq+dXRsZ/U9yhGUY6ef3g7Ff8opUcJY2ERl6nVFr0EdnZt9sBg+DcWt5r3L8y8B/xjHtZh4Ab4hXjxqjFfof2a/dY7IlVIEebSZfuHtL34DbFDqyN2AVtag=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=lw9nn/qL; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1782944575; c=relaxed/simple;
+	bh=MNOGfkTMgonyNqAj8nAGCIAavJ5ByckO9dC3aCwoPjQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=LuroSLD8PYBv8a926G+dOL9NkdJXiaFO6WybcnnBwanUOFnPObaKuqaGfqrbpWakTkM1/0xrzoid0iu5JgrEnEHGsChwhKysd865wbcVJt3Wkn5ceVv0qgRvs19rlW24KquUZyy2MgYtGBVbjaTnZ0kIt6iigFJPtkUhA2N2iF4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=FQ7Vj5fY; arc=none smtp.client-ip=212.227.17.21
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="lw9nn/qL"
-Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id BDEFF1F000E9;
-	Wed,  1 Jul 2026 17:33:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1782927195;
-	bh=DT72m6PijCAONOaUhwmjfXMlmjpfNBh8evoXPnX3jsk=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=lw9nn/qLQ4Jc7ZVwBb+skja3MPB21ut1EmQrQpaW6bQk1dBTy3VMrs4pVxIky1sXS
-	 ea+HTBJwXzUCdQxnTe6xsFrAtZjNyOddMQft8OC9pCK47Aqks21U+m1mmA9Lg+eodn
-	 t/4u6QRC23xMGO5m8fD5fCPyCGQ2BVjmVIY9wg45Pl3tnnVJHzAJ27t7RubuXZmAeJ
-	 9786jE8nnWG0qu4Cii2c5Y3dgK+rw4BFqKojuon7gFRh5/XL7Zmnaos8ezZrRX+dzu
-	 ndEFFTPoANoOO/+78f4Nioxiy/eUccv9mDuxUhab0wD8Y3i8DeX6UnQxEhGBPvyM/P
-	 oBnkghFi+eKBg==
-Date: Wed, 1 Jul 2026 10:33:14 -0700
-From: "Darrick J. Wong" <djwong@kernel.org>
-To: Anand Jain <asj@kernel.org>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
-	linux-f2fs-devel@lists.sourceforge.net, zlang@redhat.com,
-	hch@infradead.org
-Subject: Re: [PATCH v7 06/11] fstests: verify f_fsid for cloned filesystems
-Message-ID: <20260701173314.GH6517@frogsfrogsfrogs>
-References: <cover.1781694879.git.asj@kernel.org>
- <2ac5fb22fd6b51973d11082a1ee8fe354926c63c.1781694879.git.asj@kernel.org>
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="FQ7Vj5fY"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1782944571; x=1783549371; i=quwenruo.btrfs@gmx.com;
+	bh=qE9t+w/zlVXzKpcAgJz+lx5jVLucUbw/9HaNwW8DFSQ=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=FQ7Vj5fYAM2o+4AVbo0lWq8U7CJSpboaokbbPaQNSJoiHTFOYW5Y5jviuG1oDScX
+	 NB2eS7zmVRyrmB8lFByqQ9b+j//FSs7mfBYLXgWTe3huIhFCYiohiyH3xs91hitGZ
+	 gcBXnEPhpHcTMtQuLrEUviufOG7RSGyy7APvZuaVzQWWRRPEoOBr6vcNxupW3WgA1
+	 D7WPAnJRGk0eHt/Ay8+Ti2A+pjhHHinysMcZDVMKnNXTBSiWGk24DbPaRJsSjhdQ7
+	 Ix+7o81CUIth7J2dtHZt03m5ZI/Jd6ol47bGSGI0qzqYrLD+2SAp1jyOQhXlFoAXA
+	 9pUv4hdpVh1Ricd6Kw==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MY6Cb-1wbZl142En-00XOgP; Thu, 02
+ Jul 2026 00:22:51 +0200
+Message-ID: <2da4b215-165f-4bd6-a2da-07c9012586b7@gmx.com>
+Date: Thu, 2 Jul 2026 07:52:45 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <2ac5fb22fd6b51973d11082a1ee8fe354926c63c.1781694879.git.asj@kernel.org>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2 1/8] btrfs-progs: check: fix max inline extent size
+To: Daniel Vacek <neelx@suse.com>, Qu Wenruo <wqu@suse.com>
+Cc: David Sterba <dsterba@suse.com>, linux-fscrypt@vger.kernel.org,
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ Josef Bacik <josef@toxicpanda.com>
+References: <20260624165144.556908-1-neelx@suse.com>
+ <20260624165144.556908-2-neelx@suse.com>
+ <7d4ab06d-6cd0-4eb6-a355-d2b51d132713@suse.com>
+ <CAPjX3FdE8REFdGT06k2RehJMfETgrxPzHZ3+V7FPaM_c1UwfcQ@mail.gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <CAPjX3FdE8REFdGT06k2RehJMfETgrxPzHZ3+V7FPaM_c1UwfcQ@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:uc/mpct0u9sAvGnAZaidfmoJXpX0Z9CeTW5MLNm8eKLe6QDcnp5
+ lQY2texzKaITOOF3lVN9vFuDQRRz9mxCphJaW27xb1RWXZ0yvC6qEqnarg1j8ZYFX4uszQ+
+ LSB9+OwECyzsa2Jv2/vCTzqR20WhWzzQ0Ln95ZvmhkuSP9v6TdR4Cq9NOVwsEm+puPbumah
+ k4DK9oa4dxbdpQDJ2Y1tQ==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:r1BXPU+WB/g=;NuW2YVfz/BgghJ8QpuNOwpuN07M
+ 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
+ GJhwyUV/8=
 
-On Wed, Jun 17, 2026 at 07:20:33PM +0800, Anand Jain wrote:
-> Verify that the cloned filesystem provides an f_fsid that is persistent
-> across mount cycles, yet unique from the original filesystem's f_fsid.
-> 
-> Signed-off-by: Anand Jain <asj@kernel.org>
-> ---
->  tests/generic/802     | 64 +++++++++++++++++++++++++++++++++++++++++++
->  tests/generic/802.out |  4 +++
->  2 files changed, 68 insertions(+)
->  create mode 100644 tests/generic/802
->  create mode 100644 tests/generic/802.out
-> 
-> diff --git a/tests/generic/802 b/tests/generic/802
-> new file mode 100644
-> index 000000000000..910807c11584
-> --- /dev/null
-> +++ b/tests/generic/802
-> @@ -0,0 +1,64 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 Anand Jain <asj@kernel.org>.  All Rights Reserved.
-> +#
-> +# FS QA Test 802
-> +# Check that the cloned filesystem provides an f_fsid that is persistent
-> +# across mount cycles if the block device maj:min remains unchanged.
-> +
-> +. ./common/preamble
-> +
-> +_begin_fstest auto quick mount clone
-> +
-> +_require_test
-> +_require_block_device $TEST_DEV
-> +_require_loop
-> +
-> +_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
-> +	"btrfs: use on-disk uuid for s_uuid in temp_fsid mounts"
-> +_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
-> +	"btrfs: derive f_fsid from on-disk fsuuid and dev_t"
-> +
-> +_cleanup()
-> +{
-> +	cd /
-> +	rm -r -f $tmp.*
-> +	umount $mnt1 $mnt2 2>/dev/null
-> +	_loop_image_destroy "${devs[@]}" 2> /dev/null
-> +}
-> +
-> +# Setup base loop device and its clone
-> +devs=()
-> +_loop_image_create_clone devs
-> +mkdir -p $TEST_DIR/$seq
-> +mnt1=$TEST_DIR/$seq/mnt1
-> +mnt2=$TEST_DIR/$seq/mnt2
-> +mkdir -p $mnt1
-> +mkdir -p $mnt2
-> +
-> +# Mount both filesystems simultaneously using mandatory clone mount options
-> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[0]} $mnt1 || \
-> +						_fail "Failed to mount dev1"
-> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[1]} $mnt2 || \
-> +						_fail "Failed to mount dev2"
-> +
-> +# Capture baseline filesystem IDs for comparison
-> +fsid_scratch=$(stat -f -c "%i" $mnt1)
-> +fsid_clone=$(stat -f -c "%i" $mnt2)
-> +
-> +# Verify that the fsids remain stable after a mount cycle, even when the
-> +# mount order is reversed.
-> +echo "**** fsid after mount cycle ****"
-> +_unmount $mnt1
-> +_unmount $mnt2
-> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[1]} $mnt2 || \
-> +						_fail "Failed to mount dev2"
-> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[0]} $mnt1 || \
-> +						_fail "Failed to mount dev1"
-> +
-> +# Compare post mount-cycle values against the baseline
-> +stat -f -c "%i" $mnt1 | sed -e "s/$fsid_scratch/FSID_SCRATCH/g"
-> +stat -f -c "%i" $mnt2 | sed -e "s/$fsid_clone/FSID_CLONE/g"
 
-This is where I continue getting stuck on this patchset -- fsid is so
-poorly defined that I don't think the rest of these fsid tests make
-sense at all.  Nobody mandates that fsid is persistent or stable across
-remounts.  Nobody even mandates that two cloned filesystems don't have
-the same fsid value.
 
-The statfs manpage says:
+=E5=9C=A8 2026/7/2 01:17, Daniel Vacek =E5=86=99=E9=81=93:
+> On Fri, 26 Jun 2026 at 01:41, Qu Wenruo <wqu@suse.com> wrote:
+>> =E5=9C=A8 2026/6/25 02:21, Daniel Vacek =E5=86=99=E9=81=93:
+>>> From: Josef Bacik <josef@toxicpanda.com>
+>>>
+>>> Fscrypt will use our entire inline extent range for symlinks, which
+>>> uncovered a bug in btrfs check where we set the maximum inline extent
+>>> size to
+>>>
+>>> min(sectorsize - 1, BTRFS_MAX_INLINE_DATA_SIZE)
+>>>
+>>> which isn't correct, we have always allowed sectorsize sized inline
+>>> extents, so fix check to use the correct maximum inline extent size.
+>>
+>> No, we only allow sector sized inline extent when it is compressed.
+>> The de-compressed size can be sector sized, but the compressed size
+>> still can not reach sector size.
+>>
+>> So this doesn't seems correct to me.
+>=20
+> With encryption it's the other way around. Even shorter data (symlink
+> path) is always padded to multiple of the cipher block size (16 bytes
+> with AES). Inlining a full sector size is perfectly valid. The dump
+> from my test looks like this:
+>=20
+> ~~~
+>      item 45 key (290 DIR_ITEM 3363472967) itemoff 11425 itemsize 62
+>          location key (300 INODE_ITEM 0) type SYMLINK
+>          transid 14 data_len 0 name_len 32
+>          name: \243\365@;\312\321\240\367\377\234_{\245\vW\
+> \035\rS\222ryN\323\031g\243\nt3\321+
+>=20
+>      item 58 key (290 DIR_INDEX 11) itemoff 10077 itemsize 62
+>          location key (300 INODE_ITEM 0) type SYMLINK
+>          transid 14 data_len 0 name_len 32
+>          name: \243\365@;\312\321\240\367\377\234_{\245\vW\
+> \035\rS\222ryN\323\031g\243\nt3\321+
+>=20
+>      item 86 key (300 INODE_ITEM 0) itemoff 7197 itemsize 160
+>          generation 14 transid 14 size 4096 nbytes 4096
+>          block group 0 mode 120777 links 1 uid 0 gid 0 rdev 0
+>          sequence 1829 flags 0x1000(ENCRYPT)
+>          atime 1782916271.8000000 (2026-07-01 16:31:11)
+>          ctime 1782916271.8000000 (2026-07-01 16:31:11)
+>          mtime 1782916271.8000000 (2026-07-01 16:31:11)
+>          otime 1782916271.8000000 (2026-07-01 16:31:11)
+>      item 87 key (300 INODE_REF 290) itemoff 7155 itemsize 42
+>          index 11 namelen 32 name:
+> \243\365@;\312\321\240\367\377\234_{\245\vW\
+> \035\rS\222ryN\323\031g\243\nt3\321+
+>      item 88 key (300 FSCRYPT_INODE_CTX 0) itemoff 7115 itemsize 40
+>          value: 02010403000000005f0642cd89f66ce3ed930fe3ac518b7381bcd760=
+0f7ae1f08195bda44461ed5d
+>      item 89 key (300 EXTENT_DATA 0) itemoff 2998 itemsize 4117
+>          generation 14 type 0 (inline)
+>          inline extent data size 4096 ram_bytes 4096 compression 0 (none=
+)
+> ~~~
+>=20
+> Perhaps this would better be folded into patch 7?
+>=20
+> Or do you rather mean special-casing for compression (with the limits
+> as you mentioned) and encryption (with full sector size allowed)?
 
-"Nobody knows what f_fsid is supposed to contain (but see below)"
+In that case, I'd prefer the limit to be only loosen for encryption.
 
-and then:
+So we won't have unexpected non-encrypted inlined extents to reach the=20
+limit.
 
-"The general idea is that f_fsid contains some random stuff such that
-the pair (f_fsid,ino) uniquely determines a file."
+BTW, it would be great if the progs dump-tree also prints encryption=20
+value for the inlined extent.
 
-Based on that very weak statement, at most it might make sense to check
-that two separate and simultaneously mounted filesystems don't end up
-with the same fsid just in case there *are* programs foolish enough to
-use (fsid,ino) as a uniqueness check.
+Thanks,
+Qu
 
---D
+>=20
+> --nX
+>=20
+>>> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+>>> Signed-off-by: Daniel Vacek <neelx@suse.com>
+>>> ---
+>>>    check/main.c | 2 +-
+>>>    1 file changed, 1 insertion(+), 1 deletion(-)
+>>>
+>>> diff --git a/check/main.c b/check/main.c
+>>> index 5e29e2c5..dedb4db4 100644
+>>> --- a/check/main.c
+>>> +++ b/check/main.c
+>>> @@ -1720,7 +1720,7 @@ static int process_file_extent(struct btrfs_root=
+ *root,
+>>>        u64 disk_bytenr =3D 0;
+>>>        u64 extent_offset =3D 0;
+>>>        u64 mask =3D gfs_info->sectorsize - 1;
+>>> -     u32 max_inline_size =3D min_t(u32, mask,
+>>> +     u32 max_inline_size =3D min_t(u32, gfs_info->sectorsize,
+>>>                                BTRFS_MAX_INLINE_DATA_SIZE(gfs_info));
+>>>        u8 compression;
+>>>        int extent_type;
+>>
+>=20
 
-> +
-> +status=0
-> +exit
-> diff --git a/tests/generic/802.out b/tests/generic/802.out
-> new file mode 100644
-> index 000000000000..0202a9a2c108
-> --- /dev/null
-> +++ b/tests/generic/802.out
-> @@ -0,0 +1,4 @@
-> +QA output created by 802
-> +**** fsid after mount cycle ****
-> +FSID_SCRATCH
-> +FSID_CLONE
-> -- 
-> 2.43.0
-> 
-> 

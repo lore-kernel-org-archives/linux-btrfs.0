@@ -1,371 +1,176 @@
-Received: from mail-yx2-f1.google.com (mail-yx2-f1.google.com [74.125.224.129])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.10])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 323F3356759
-	for <linux-btrfs@vger.kernel.org>; Wed,  1 Jul 2026 23:47:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.129
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782949636; cv=none; b=h9d7XOkwc3H+lK/5XGPmj2AzIj2aBs5NC3eus2b6h1wh4thlFpuG4gLEjuQx6QlN2HBfkEe2bUwWdZ0JzV5woAixJn8YKH0m+zxJVr3E58Sgv5RgCxHAlU5J+Ppw3SiX2FiKu/B+EsOppSHtso+lpQ7RBbFlojF8IAsV3w68k2o=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782949636; c=relaxed/simple;
-	bh=Ovo6thZfoTj+wJ72HLhzzoCQZa/MM6BWIY0EkLPgHq0=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=d6NoLuY8WcjMNKyRWHwZYtd0R5zVglUfc6PqitB8dcHBscAMqdLcQrf9GymKqEuvJJllMx4+jur2xJTdCnRkdar10pdbhX7Y+xE+M3tc8C2+f6fiuBiChhEWIgAegNWAGEY2BRSxU16/rWkbS7hzRiGA3td/AyPQqwkaOEeqCJ0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=eT/TBBlg; arc=none smtp.client-ip=74.125.224.129
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B9F732DCC1C
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 01:56:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=198.175.65.10
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1782957373; cv=fail; b=iP00A1KU8VtEZ4TQQtWp1eGSgWKpAo3t2PcvZegcfbgnG6SyDgjlnhnAMm0Zj4vbupIq3EN3ZYQRwKKT79BMSzWOh3QMD0dQ71zUBU9UBV/vjaJuOSx4Tu2ex3/mHy+cy7kixvYBro6bbRX0AflwYslnmK5QxaxEHGYqwJc1RU8=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1782957373; c=relaxed/simple;
+	bh=qSljXHzAYhMP2EJthAaGvh6dc4okFJUhk7tLbgG+0V0=;
+	h=Date:From:To:CC:Subject:Message-ID:References:Content-Type:
+	 Content-Disposition:In-Reply-To:MIME-Version; b=DahS2sv0Y5nxaUCsHEe+BooSdbOqWxY9MJS+zDOL42/Xtgy7t0noE1/W9T40tQMvGt2t79a9ZVIzIpb2Ci39nYO+5w7se1qwnl6WopN44/2j9oSc8qT7N79imibX5mJNKMa4bojSTZFdlW+gBTc6RK8GjzinqnB0lc5MYfTwwXE=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=M4ElsnKt; arc=fail smtp.client-ip=198.175.65.10
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="eT/TBBlg"
-Received: by mail-yx2-f1.google.com with SMTP id 00721157ae682-80247dc83e0so8757657b3.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Jul 2026 16:47:14 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1782949633; x=1783554433; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=dv224JNw24oDXgTnp7Xqr6pWwOmraj367ykV1xwtZjM=;
-        b=eT/TBBlgeNWmM4Iuvthq+llzUYvZCbooLP6TcNfAmf6PtphNgSx0djCg9SV/UNTZi/
-         GHuOCBE2gnt58HxzKI5K/Hx6HDgxMoVF5K+/UIqHXAAC6VHHwoW0TZJaGiSKOb8KhJq6
-         TLpoX34EPcGtea1gBwXqb1r53N1fFxPwlD9nz9E9UGDH2Yj3B5C+a/lb2LYuO9nfIv3i
-         oV9Rt1hrJcR2rW0//vtBeoLSy8fU7vmFKFaVnhZC8/wIl++ni3PW7MO56tI4QHSz7DdW
-         UWwX54b7cASgH2Xss9Ku/EHnWb2vmvDAbFUe8LAAKTDaw5Z9revjO0j/DZBqMhnvmAEC
-         ln5w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1782949633; x=1783554433;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=dv224JNw24oDXgTnp7Xqr6pWwOmraj367ykV1xwtZjM=;
-        b=V9p9rhhnmAWlLviTPeVoxuINbtDk1IKZB17iDp3EweNZ1OfE3TtjR3ipcLZN99Bliq
-         416D7YMtJ5ZcUZd/CjHgh9p7bNIFz96dL1xy68GV5wGv5s18GHLJK4R9vwNKmkZsBbZc
-         tKqiAyEP90IldiGn71lUy74LyhT8ZI85EN8ckb+6lMG/O5puR2EhJGrDSOE1/ad0ArXW
-         8XjoiSVpbhuYbQCYNIBkF4vR8zTGYOBSerNZtPQ7gGAurfNA8X+OuS0izM7tnn4CubZZ
-         Q6PbLtbICkCTkA8ClNfUTwG4EBPwPkc9jXktLmxSNt3SrbSinXZ+VAXW7fcR0A7V2n8t
-         A49w==
-X-Forwarded-Encrypted: i=1; AHgh+Rq3y1Ac1KSsHAJ9aWRS3yzj5ImGj9AuU0w7StuNkhPdYYksmuIiI05nh6gKbl308Zh1ib8QZyeaNRLOrA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyjMj+0ThmqYungIaOP2cUihQxJgKnKHRyutWxhjuCIZRNO98Av
-	QWtCfMmf/OOsmMeSvJARe20tw3YJ5T3kfiNBSctRfdiA+LnA7qgPRXaO
-X-Gm-Gg: AfdE7cm6jyQJVcHqhabb8zAjQxUBNGDWfarsWltAuqIm9mx4UkZ7tQuMAjaHwGkEEiR
-	9ObkfFSICuhOCHl8Fne5KELw53pXwLgzHz0bcHl2qfdpZT5kYmHjaIJpJ2G4QsmVNQBz+kTCrUY
-	DldH15FdaTz+SKE4QTTBXQfamCvsWHcEw0fSYshE1k1C4XqXtD9ZWcajDcXgGo9WGtbkYzGYV0u
-	7wixOysjF17l0VQJeADVmsq81O+32t8IJ56cT+PCmANXc4S8AcyQWquJOOM7QcoMd+iCp66SSEa
-	jyptI8uKTTK3dS9qjzKh2oUUqzDTlYsaxyxLGfDcDqoNn4u7KgeCwFl/8SWRqsXk4e80No3fld4
-	fyGqUnbXbfljU4bCGutXF7Mexq68pTsnPw0VyTp8olRWFj7BSLmYPVQrOzMjaeeG5LCacTooFKV
-	ijlaB15A==
-X-Received: by 2002:a05:690c:6a0c:b0:80c:e8d3:114e with SMTP id 00721157ae682-812eae80502mr45443477b3.38.1782949633151;
-        Wed, 01 Jul 2026 16:47:13 -0700 (PDT)
-Received: from localhost ([2a03:2880:25ff:e::])
-        by smtp.gmail.com with ESMTPSA id 00721157ae682-81448dd0217sm6235517b3.22.2026.07.01.16.47.12
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 01 Jul 2026 16:47:12 -0700 (PDT)
-From: Leo Martins <loemra.dev@gmail.com>
-To: David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com,
-	Filipe Manana <fdmanana@suse.com>,
-	Boris Burkov <boris@bur.io>,
-	Sun YangKai <sunk67188@gmail.com>,
-	kernel test robot <oliver.sang@intel.com>
-Subject: [PATCH v2] btrfs: replace writeback inhibition xarray with a fixed inline buffer
-Date: Wed,  1 Jul 2026 16:47:10 -0700
-Message-ID: <12d3c3f07b8610ca13b0f3f792d420541afb7b33.1782949130.git.loemra.dev@gmail.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="M4ElsnKt"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1782957371; x=1814493371;
+  h=date:from:to:cc:subject:message-id:references:
+   in-reply-to:mime-version;
+  bh=qSljXHzAYhMP2EJthAaGvh6dc4okFJUhk7tLbgG+0V0=;
+  b=M4ElsnKtAkzanL299blxt2QGqG8iFtx9vzr+Ss8Wse0daFbWqwH87pxu
+   jwF8wCKMQf3chnFSpac2gKotA7ILfVODbZePqer31zp61gXaBX+bNz4Qp
+   ZxZRyCbzj8xC9YB128M6hNzTS2ewM9QfIZJtj30zRoiVjc7eoA6U+4me4
+   Z/KrdTQnnAPi8IMqPAkWizXbU67MShzKPAiOrpn1ejPaAS2ZzbrLYS7J7
+   ilrUPdrdDPTna8JbmFAiAloX4+A/wSbXWjSsov+T3+hCtVJxZYALYw5CO
+   113yg591sy7daCYCRwTYSikyEalDC0BCuTOHiKe1hbNnYOfdiY4kLSpDd
+   Q==;
+X-CSE-ConnectionGUID: rwgZvXWTQqa5i31bbkXq0A==
+X-CSE-MsgGUID: OaxA4qCHT7SJQy1kLJ3RRw==
+X-IronPort-AV: E=McAfee;i="6800,10657,11834"; a="101122638"
+X-IronPort-AV: E=Sophos;i="6.25,142,1779174000"; 
+   d="scan'208";a="101122638"
+Received: from orviesa004.jf.intel.com ([10.64.159.144])
+  by orvoesa102.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Jul 2026 18:56:11 -0700
+X-CSE-ConnectionGUID: kX1CDpk2Rf6Tiye2ND43bg==
+X-CSE-MsgGUID: M1/8hAY0QQaXrgQVVrWy0Q==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.25,142,1779174000"; 
+   d="scan'208";a="256639547"
+Received: from fmsmsx902.amr.corp.intel.com ([10.18.126.91])
+  by orviesa004.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Jul 2026 18:56:10 -0700
+Received: from FMSMSX901.amr.corp.intel.com (10.18.126.90) by
+ fmsmsx902.amr.corp.intel.com (10.18.126.91) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.43; Wed, 1 Jul 2026 18:56:09 -0700
+Received: from fmsedg901.ED.cps.intel.com (10.1.192.143) by
+ FMSMSX901.amr.corp.intel.com (10.18.126.90) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.43 via Frontend Transport; Wed, 1 Jul 2026 18:56:09 -0700
+Received: from CH5PR02CU005.outbound.protection.outlook.com (40.107.200.17) by
+ edgegateway.intel.com (192.55.55.81) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.43; Wed, 1 Jul 2026 18:56:09 -0700
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=L0V+aWNtwfMl264QjywlMFaxvHd/wAFbldIvdPpPL16Eixox4UNf2Rq/pJO+2m9dVPg/hS/certQZp0Yr/Y1vDzAUe5eTE4iC/ZY5JuZkrc0UGvTIEXhcaieccuETUMt86Rtiudov80nijwgC3WXsshGq6Z/YkzqhiI+An0GMo8MZa8wacK2IeJzKtaauHQOG7gZId/kmqGG8ZV5r+M5HIzryeg1bEusKWG9IMzwBMndbCFr8mEhZXTV3F5ATghaz97jEnOzD2YZmO2e5SOD2W+91tExoeCOnh4TZ8KqFgx7fRs6D6VtUi8NkvvXzpmc2DNXFmCo9sLw3cf8cCxFWQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=HWKJQITaqQfV515UX5oD9cJfqgzRy6V278MMCvwjC6U=;
+ b=ZXGa+eSChvZ34rNWT7mFiAMba5cpvqY4xwlYRLXxj4QMIeXI9ODsTm9HG5meAuOjnHIuolE5ao4DfTcwwMN+zjVIDj+TgmnLdm2Y6gIvQbmAWzSC/ODfxB3X1YKI+Atn2QErnEpUN2stK4J+0WxaNg9jIcZGbFjW0dIjffntnbzCLne2snjaTKSPFEDpkladMwcc5MsLordcMwrakC/3ZNXfxcZXNC7Fs/PBcnK0lT1iFQdLBMRQCaOmtaVjgLl8WMekUjP8tMriLxJej/k9no/7zjEmw+2WLOMWvyS2nF4zDr4x2XR24OFMlLgyUTJefyulNSyTVP0etApy9XnBCA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=intel.com; dmarc=pass action=none header.from=intel.com;
+ dkim=pass header.d=intel.com; arc=none
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=intel.com;
+Received: from SJ0PR11MB5815.namprd11.prod.outlook.com (2603:10b6:a03:426::9)
+ by DSWPR11MB9692.namprd11.prod.outlook.com (2603:10b6:8:353::16) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.181.9; Thu, 2 Jul 2026
+ 01:56:08 +0000
+Received: from SJ0PR11MB5815.namprd11.prod.outlook.com
+ ([fe80::7c33:9702:ea7:13d7]) by SJ0PR11MB5815.namprd11.prod.outlook.com
+ ([fe80::7c33:9702:ea7:13d7%3]) with mapi id 15.21.0181.008; Thu, 2 Jul 2026
+ 01:56:07 +0000
+Date: Thu, 2 Jul 2026 09:55:59 +0800
+From: Oliver Sang <oliver.sang@intel.com>
+To: Leo Martins <loemra.dev@gmail.com>
+CC: <oe-lkp@lists.linux.dev>, <lkp@intel.com>, <linux-btrfs@vger.kernel.org>,
+	<kernel-team@fb.com>, David Sterba <dsterba@suse.com>,
+	<oliver.sang@intel.com>
+Subject: Re: [linux-next:master] [btrfs]  9a8eec6165:  fio.write_iops 22.6%
+ regression
+Message-ID: <akXFL+G8wOgFEM/9@xsang-OptiPlex-9020>
+References: <202603112240.f7605968-lkp@intel.com>
+ <20260701234412.4048647-1-loemra.dev@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Disposition: inline
+In-Reply-To: <20260701234412.4048647-1-loemra.dev@gmail.com>
+X-ClientProxiedBy: SI1PR02CA0051.apcprd02.prod.outlook.com
+ (2603:1096:4:1f5::6) To SJ0PR11MB5815.namprd11.prod.outlook.com
+ (2603:10b6:a03:426::9)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SJ0PR11MB5815:EE_|DSWPR11MB9692:EE_
+X-MS-Office365-Filtering-Correlation-Id: aa1e0975-72d2-440f-a947-08ded7dd1515
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;ARA:13230040|1800799024|376014|23010399003|366016|22082099003|18002099003|4143699003|11063799006|56012099006;
+X-Microsoft-Antispam-Message-Info: C7NzNBXg1o/Y01P+lE2sP1IemNAtTnuY+kTJGmTWDi1hqqrZmjtQfKUU8KPH7/px9QbpDAFPa9AqdNisIQSeuLnH8bz9N5j+CZIe/xBLhn4c1GXPDmlCOJ9U2+Kh+ZPgkd1TaU4t6npYDqD/Z59ssu1r+Tvi2mekBQ9SioUJwFGPfecfS4exXVqfqP5uXvSt3BfUy0VwYjU0OiPv2FkYftE0eTRyDPbuMgRVLQfqyD3M2+fsJeSGK9q7WJO/kPu6Vj6Av4omxHuvMlILO4DvLWsfaRG9RxpVFulGQtdeYgFmkXnQ4E+wXpgrmEYFjTS5775k6qwanhwCpW5QtVUtjWL84ciKuQ53jhlVJvIpUoXt2lCZ8jwNxrCmBKyelICVqE1wvI65pLC9BQ4ju/DSlmh/QP9ny+8o4i1uvj0jzK4s5Orwi2XZps+J8yYzufXQp2KOKJQgl1Dg2hmavvjeZQ6Yxwoiw6z6uqN8rw9uURSfYx2VJrfH2utF3rgBfbjRp41VIL8BJqHaGjblaBnocSnHHlhGsSNXJbCN8wyQSik++V1vCfRQWU1Vh182HHvIM2Wjo0Hq3D2d3YezB0mVry4LslfaEvuqQmjWleVRtRI7Cj27f2k8tJJSGDNAv+nyrxGM1kfijaZfqBMfPxif27Kqa882Glnys3ZHiFehBVU=
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SJ0PR11MB5815.namprd11.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(376014)(23010399003)(366016)(22082099003)(18002099003)(4143699003)(11063799006)(56012099006);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?us-ascii?Q?n+D740T9MFVGxLHFRDAAJDbj6xC7yr6hVZpqtXgyO2c5RIdtr1hiqfQdu87S?=
+ =?us-ascii?Q?7/72mC3d9FU/n6iX2A1a50kEw1TqL7jsBcLRK2hgiILlM45qfMGN2ZcMQ4ao?=
+ =?us-ascii?Q?/C53dKyfZ121+Qpra8M+VQqHOwnc/rFnRRajJuloQa6eHthbF7jRsje3iASj?=
+ =?us-ascii?Q?LYUBOOTFFP8ITR+sV+k93DGhcGtP9kYHtchzAzVOG/JO+oIh2IXLEnSaHj3Q?=
+ =?us-ascii?Q?oY5wGmAEoH1SbTb/P7oAI0lEc2ZEKx7uI0Pu1OhliBbABYs43yZp3C/d+Ra5?=
+ =?us-ascii?Q?hkixiO5rKo4pSs+Ln4YfPoa98lqvPtyB9mG/Nghp3Jl/zTdihQVpuTdtRgAN?=
+ =?us-ascii?Q?9BQuZvA0KiVQVsaWCY5zPmS4hnV5gy/vYS/V/c0YgLMsWy3+REtm78M90DMJ?=
+ =?us-ascii?Q?FuL0sG1JsWWN9JYf7G1CBYAV7oUcN1uwdthjEYD3yzoY+4ljhI70Zd+kz0lj?=
+ =?us-ascii?Q?PSnsIyd7Ix7i2T2rzjopv5PZqCsnksNjIoQuR88wfh/RBSz5EinSbrT2+Pg0?=
+ =?us-ascii?Q?1rex8VP7fdEMhlMo88s7lon5nsZ6eWSXAWD1UWssjGBX/luA18re2KdWQL61?=
+ =?us-ascii?Q?Nj7VJ1xEpJC9mVbsvNe+7A/rnepo9L10k5qyHURCD2DTpxe7TlM2PdOc2OfA?=
+ =?us-ascii?Q?6p+a2DgmUylWdqwDCxVDpncaPx57h57/ag3vkQvs22mYPbqwOl8LjQ5BP1Yo?=
+ =?us-ascii?Q?c7IyculBo9r3RzT71MrWXj7tvXfTuKkww9EavCWw6/ZgglIUu3/06FfgfHSf?=
+ =?us-ascii?Q?siVA3JfexcUpVEZW/qMimv9dinsctLp2r9axgVB7MgBff795jri7eefnPGPE?=
+ =?us-ascii?Q?ELKD86cJ1656Zlcez6Bg1UpOsM3liP3o27fdm062X5KCvLay4MyDQXje8TE/?=
+ =?us-ascii?Q?HIF+wuKsG5Ez63PMZuzFo01q+gNEDjF8JSEB085ejkq+FKrEf4Du2Hq7rZns?=
+ =?us-ascii?Q?lD91ZqfjYw2F9vZEzZpppVWA5c3c1hN958MOGUk9hjBsIUB6P1lM2s7ZU6ow?=
+ =?us-ascii?Q?0gZLTN/XlUhNICWspPsj8leYPK2gF9omB7HKVvQ5/8u52XcLrZG77SvGpPjM?=
+ =?us-ascii?Q?er4Bi04NUr8HZCxJ4fsvmEgMumb6M0rEPdhCMZOP1vjmZc9wS5QRDFLY2ytQ?=
+ =?us-ascii?Q?4zY/ss159YVSxEeA1OagaQDgjczIr9v1o+Qs+jHfVsFB1I9/5ppFkvuApMIF?=
+ =?us-ascii?Q?kziOudOl9G3zd8dswBj59hbLTN1COkzwDUu84d6NnWa8/3STD2Y24CHrPa9v?=
+ =?us-ascii?Q?OQppkS+vOZdp3KZg/zUSKGFfRUhiTG5WvD7tDojoo34Jzdyz1qsXSnHqLQ3n?=
+ =?us-ascii?Q?tkgL//8YiwWz0qZ/wR4e/qbiX2zEDga0UDHYK7HBjkb9crgb2XKIb1/3QHzy?=
+ =?us-ascii?Q?DrogHAiW3s6CSWKLraZ4SHGtfqp9BEZW5sg6aQMOVo8vCYYe+vnyywkKfCT7?=
+ =?us-ascii?Q?Tl2pxA+BKRKyIi/PLQ1VvVSCr+M7dHmT6OWqvZ7crhkqmfHJmMb61SLVBeUT?=
+ =?us-ascii?Q?Prmm9pkPXkkzjrLXoCvP+FCd0Qpv3Lf1PlIIr/W8ExEKWr6vf344MxkcUaXy?=
+ =?us-ascii?Q?VrJDL43KX7H8HnZCXHLcoQRGjEjOrZc9UNSObvAV6KKpuu1Zuoc1bVvcKDt4?=
+ =?us-ascii?Q?7ZiJJzCcZekbqijU6Hr7G9ERpW7R2O0VsuPbeWYbhmsbG/DAxLho/S/6EMrl?=
+ =?us-ascii?Q?D088ATayF7cmp/3jMPwKfQ62eyuLhXazb7rI1uMCG4Q+ipbuGMxKeGKOMDsX?=
+ =?us-ascii?Q?xhcDdY8IaQ=3D=3D?=
+X-Exchange-RoutingPolicyChecked: ihyho+3pStpaqzHrolNCQ3SmWpDsZ+haivqz/7Wbv8JkR6Wn6iXYM3kbY3SzxWKZV2PdQYyTjshcm6KsSJDBEOMlGzu5cGTIe8hmZ2eagFtodsa66buazB7xv5iXUrrK4lCV+sUJGDwEeRBWCk3Ky0WPnQiLdccrK3YiZdye6gOLs5ePTYhmLreg4rxO8G7gPke6oUBf60ay40jgJQmUB591nFBwCQz2nSUvyBwI91offtJB+sjCcbjmSmjQyW8Kn1tdbDzs25ZL1nRRK0iFioIOcybDCy8zEUXbsuy9H92Z4lJ+DloITHY3YNkqyVVxSVwcabsYDEfteKy1kf1TGQ==
+X-MS-Exchange-CrossTenant-Network-Message-Id: aa1e0975-72d2-440f-a947-08ded7dd1515
+X-MS-Exchange-CrossTenant-AuthSource: SJ0PR11MB5815.namprd11.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 02 Jul 2026 01:56:07.7952
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 46c98d88-e344-4ed4-8496-4ed7712e255d
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: 5XEQA2QkHKiP/TAj6m/fg62mdqVOJhLdbgZU3ymyd2UczQoZLTR8Z6giZdqzBY4b9FcIo1Rn2qMtFyIluMhkBw==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DSWPR11MB9692
+X-OriginatorOrg: intel.com
 
-Commit f9a48549a15a ("btrfs: inhibit extent buffer writeback to prevent
-COW amplification") tracks the extent buffers a transaction handle has
-inhibited in a per-handle xarray. Keying the tracking to the transaction
-handle is correct, but using an xarray for it causes two problems in
-production.
+hi, Leo,
 
-First, a write_iops regression. Every COW calls
-btrfs_inhibit_eb_writeback() from btrfs_force_cow_block() and
-should_cow_block(), which does an xa_store() keyed by eb->start. The
-kernel test robot reported a 22.6% fio.write_iops regression on a
-single-task 4k randwrite workload (ftruncate ioengine, buffered IO) on
-btrfs. The cost is the per-COW xarray store done on every COW'd block.
-Replacing it with a non-allocating fixed buffer recovers the lost
-throughput, and that buffer does more per-COW bookkeeping yet still
-recovers, so the cost is the xarray operation itself rather than the
-extra tracking work.
+On Wed, Jul 01, 2026 at 04:44:11PM -0700, Leo Martins wrote:
+> Hi Oliver,
+> 
+> Thanks for the report. I'm aware of this regression and the cause is
+> understood: the flagged commit adds a per-COW xarray store on every
+> COW'd metadata block, and on this single-task 4k randwrite ftruncate
+> workload that store is what costs the write_iops.
+> 
+> A fix has been posted to linux-btrfs that replaces the xarray with a
+> non-allocating fixed inline buffer and recovers the lost throughput:
+> 
+>   "btrfs: replace writeback inhibition xarray with a fixed inline buffer"
+> 
+> It carries the Reported-by and Closes tags pointing at this report.
 
-Second, an unbounded cleanup walk. btrfs_uninhibit_all_eb_writeback()
-iterates every eb the handle inhibited with xa_for_each(). A single
-handle that COWs a very large number of blocks (inode eviction, or
-truncate of a file with many extents, where btrfs_truncate_inode_items()
-loops over many search_again descents under one handle) makes that walk
-arbitrarily long. It runs in __btrfs_end_transaction() before
-num_writers is dropped, so it blocks the committing thread; this shows up
-as multi-second stalls and RCU stall reports.
+thanks a lot for information! it's always our great pleasure that our reports
+are helpful :)
 
-Replace the xarray with a fixed inline array on btrfs_trans_handle,
-managed with a CLOCK (second-chance) eviction policy. Inhibiting a buffer
-becomes an array append with no allocation and no tree walk, and the
-end-of-handle cleanup is bounded by the array size.
-
-The set that actually needs protection is the working set the handle
-revisits across search_again descents, the search path frontier, which is
-on the order of the tree height. It is not every block the handle ever
-COWs. should_cow_block() re-inhibiting an already tracked buffer marks it
-referenced, so revisited buffers survive eviction while write-once buffers
-are reclaimed first. A small fixed buffer is therefore enough where a
-non-evicting array would either overflow or have to grow without bound.
-BTRFS_INHIBITED_EBS_SLOTS is 8 and the reference bits pack into a u32.
-
-The CLOCK eviction is what justifies the extra complexity over a plain
-non-evicting array. The test workload stresses amplification: it removes
-16 heavily fragmented 64 MiB files in one transaction while background
-writeback keeps writing out in-use metadata. A re-COW event is a buffer
-already COWed in the running transaction that was written back and then
-COWed again; the figure below is the ratio of re-COW events to first-COW
-events summed across the eviction (n=5, lower is better):
-
-  tracking                           re-COW per first-COW
-  no inhibition                      6.1
-  non-evicting array, 32 slots       3.8
-  CLOCK array, 8 slots (this patch)  1.6
-  unbounded xarray (reverted)        1.4
-
-The non-evicting array fills with write-once buffers and stops covering
-the buffers the handle keeps revisiting, so even at four times the slots
-it leaves most of the amplification. CLOCK evicts the cold buffers and
-keeps the revisited ones, recovering almost all of the unbounded benefit.
-The eviction policy, not the buffer size, is what closes the gap.
-
-eb->writeback_inhibitors and the WB_SYNC_ALL bypass in
-lock_extent_buffer_for_io() are unchanged, so fsync and commit behavior
-are unaffected. A reference is taken on each tracked buffer so it cannot
-be freed while the array points at it; eviction drops that reference and
-the inhibitor count.
-
-Fixes: f9a48549a15a ("btrfs: inhibit extent buffer writeback to prevent COW amplification")
-Reported-by: kernel test robot <oliver.sang@intel.com>
-Closes: https://lore.kernel.org/oe-lkp/202603112240.f7605968-lkp@intel.com
-Signed-off-by: Leo Martins <loemra.dev@gmail.com>
-Reviewed-by: Sun YangKai <sunk67188@gmail.com>
----
-v2:
-- Present the amplification numbers as a table instead of prose (David Sterba).
-- Use int for the loop indices and the slot local instead of u32 (David Sterba).
-- Replace the BTRFS_INHIBITED_EBS_SLOTS comment with static_assert checks for
-  the <= 32 bound and the power-of-two size (David Sterba).
-- Widen inhibited_ebs_hand from u8 to u32; the handle stays in the same slab
-  bucket and the u8 only left an alignment hole (David Sterba).
-- Factor slot selection and eviction into btrfs_inhibit_claim_slot()
-  (Sun YangKai).
-- Add Reviewed-by from Sun YangKai.
-
-v1: https://lore.kernel.org/linux-btrfs/e0d3d3ac7c585b023c2e14cec7e2b995b247b68e.1781728340.git.loemra.dev@gmail.com/
-
- fs/btrfs/extent_io.c   | 93 +++++++++++++++++++++++++++---------------
- fs/btrfs/transaction.c |  2 -
- fs/btrfs/transaction.h | 21 ++++++++--
- 3 files changed, 78 insertions(+), 38 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 9d7ca80477fd..145b6cf37331 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2982,47 +2982,75 @@ static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
- 	kmem_cache_free(extent_buffer_cache, eb);
- }
- 
-+/*
-+ * Claim a slot to track an extent buffer in, evicting the coldest tracked buffer
-+ * when the array is full.
-+ *
-+ * Slots fill in order until the array is full. After that a CLOCK (second
-+ * chance) scan advances the hand, clearing one reference bit per step, until it
-+ * lands on an unreferenced slot whose buffer is evicted. Clearing a bit per step
-+ * bounds the scan to BTRFS_INHIBITED_EBS_SLOTS iterations.
-+ */
-+static int btrfs_inhibit_claim_slot(struct btrfs_trans_handle *trans)
-+{
-+	int slot;
-+
-+	if (trans->nr_inhibited_ebs < BTRFS_INHIBITED_EBS_SLOTS)
-+		return trans->nr_inhibited_ebs++;
-+
-+	while (trans->inhibited_ebs_referenced &
-+	       (1U << trans->inhibited_ebs_hand)) {
-+		trans->inhibited_ebs_referenced &=
-+			~(1U << trans->inhibited_ebs_hand);
-+		trans->inhibited_ebs_hand =
-+			(trans->inhibited_ebs_hand + 1) %
-+			BTRFS_INHIBITED_EBS_SLOTS;
-+	}
-+	slot = trans->inhibited_ebs_hand;
-+	trans->inhibited_ebs_hand =
-+		(trans->inhibited_ebs_hand + 1) % BTRFS_INHIBITED_EBS_SLOTS;
-+
-+	atomic_dec(&trans->inhibited_ebs[slot]->writeback_inhibitors);
-+	free_extent_buffer(trans->inhibited_ebs[slot]);
-+	return slot;
-+}
-+
- /*
-  * Inhibit writeback on buffer during transaction.
-  *
-  * @trans:  transaction handle that will own the inhibitor
-  * @eb:      extent buffer to inhibit writeback on
-  *
-- * Attempt to track this extent buffer in the transaction's inhibited set.  If
-- * memory allocation fails, the buffer is simply not tracked. It may be written
-- * back and need re-COW, which is the original behavior.  This is acceptable
-- * since inhibiting writeback is an optimization.
-+ * Attempt to track this extent buffer in the transaction's inhibited set.  When
-+ * the set is full the coldest tracked buffer is evicted instead.  An untracked
-+ * buffer may be written back and need re-COW, which is the original behavior.
-+ * This is acceptable since inhibiting writeback is an optimization.
-  */
--void btrfs_inhibit_eb_writeback(struct btrfs_trans_handle *trans, struct extent_buffer *eb)
-+void btrfs_inhibit_eb_writeback(struct btrfs_trans_handle *trans,
-+				struct extent_buffer *eb)
- {
--	unsigned long index = eb->start >> trans->fs_info->nodesize_bits;
--	void *old;
-+	int slot;
- 
- 	lockdep_assert_held(&eb->lock);
--	/* Check if already inhibited by this handle. */
--	old = xa_load(&trans->writeback_inhibited_ebs, index);
--	if (old == eb)
--		return;
- 
--	/* Take reference for the xarray entry. */
--	refcount_inc(&eb->refs);
--
--	old = xa_store(&trans->writeback_inhibited_ebs, index, eb, GFP_NOFS);
--	if (xa_is_err(old)) {
--		/* Allocation failed, just skip inhibiting this buffer. */
--		free_extent_buffer(eb);
--		return;
-+	/* Already tracked: set its reference bit (second chance) and return. */
-+	for (int i = 0; i < trans->nr_inhibited_ebs; i++) {
-+		if (trans->inhibited_ebs[i] == eb) {
-+			trans->inhibited_ebs_referenced |= 1U << i;
-+			return;
-+		}
- 	}
- 
--	/* Handle replacement of different eb at same index. */
--	if (old && old != eb) {
--		struct extent_buffer *old_eb = old;
--
--		atomic_dec(&old_eb->writeback_inhibitors);
--		free_extent_buffer(old_eb);
--	}
-+	slot = btrfs_inhibit_claim_slot(trans);
- 
-+	/*
-+	 * Pin the eb while the array holds a raw pointer to it; the counter is
-+	 * what lock_extent_buffer_for_io() checks.
-+	 */
-+	refcount_inc(&eb->refs);
- 	atomic_inc(&eb->writeback_inhibitors);
-+	trans->inhibited_ebs[slot] = eb;
-+	trans->inhibited_ebs_referenced |= 1U << slot;
- }
- 
- /*
-@@ -3030,14 +3058,13 @@ void btrfs_inhibit_eb_writeback(struct btrfs_trans_handle *trans, struct extent_
-  */
- void btrfs_uninhibit_all_eb_writeback(struct btrfs_trans_handle *trans)
- {
--	struct extent_buffer *eb;
--	unsigned long index;
--
--	xa_for_each(&trans->writeback_inhibited_ebs, index, eb) {
--		atomic_dec(&eb->writeback_inhibitors);
--		free_extent_buffer(eb);
-+	for (int i = 0; i < trans->nr_inhibited_ebs; i++) {
-+		atomic_dec(&trans->inhibited_ebs[i]->writeback_inhibitors);
-+		free_extent_buffer(trans->inhibited_ebs[i]);
- 	}
--	xa_destroy(&trans->writeback_inhibited_ebs);
-+	trans->nr_inhibited_ebs = 0;
-+	trans->inhibited_ebs_referenced = 0;
-+	trans->inhibited_ebs_hand = 0;
- }
- 
- static struct extent_buffer *__alloc_extent_buffer(struct btrfs_fs_info *fs_info,
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 4358f4b63057..b4b8d587effb 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -697,8 +697,6 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
- 		goto alloc_fail;
- 	}
- 
--	xa_init(&h->writeback_inhibited_ebs);
--
- 	/*
- 	 * If we are JOIN_NOLOCK we're already committing a transaction and
- 	 * waiting on this guy, so we don't need to do the sb_start_intwrite
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 7d70fe486758..e918dde76920 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -7,12 +7,12 @@
- #define BTRFS_TRANSACTION_H
- 
- #include <linux/atomic.h>
-+#include <linux/build_bug.h>
- #include <linux/refcount.h>
- #include <linux/list.h>
- #include <linux/time64.h>
- #include <linux/mutex.h>
- #include <linux/wait.h>
--#include <linux/xarray.h>
- #include "btrfs_inode.h"
- #include "delayed-ref.h"
- 
-@@ -23,6 +23,7 @@ struct btrfs_fs_info;
- struct btrfs_root_item;
- struct btrfs_root;
- struct btrfs_path;
-+struct extent_buffer;
- 
- /*
-  * Signal that a direct IO write is in progress, to avoid deadlock for sync
-@@ -136,6 +137,17 @@ enum {
- 
- #define TRANS_EXTWRITERS	(__TRANS_START | __TRANS_ATTACH)
- 
-+/*
-+ * Number of extent buffers a transaction handle tracks for writeback
-+ * inhibition. The CLOCK reference bits pack into a u32 so this must not exceed
-+ * 32, and keeping it a power of two lets the compiler reduce the CLOCK hand
-+ * modulo to a mask.
-+ */
-+#define BTRFS_INHIBITED_EBS_SLOTS	8
-+static_assert(BTRFS_INHIBITED_EBS_SLOTS <= 32);
-+static_assert(BTRFS_INHIBITED_EBS_SLOTS != 0 &&
-+	      (BTRFS_INHIBITED_EBS_SLOTS & (BTRFS_INHIBITED_EBS_SLOTS - 1)) == 0);
-+
- struct btrfs_trans_handle {
- 	u64 transid;
- 	u64 bytes_reserved;
-@@ -163,8 +175,11 @@ struct btrfs_trans_handle {
- 	struct btrfs_fs_info *fs_info;
- 	struct list_head new_bgs;
- 	struct btrfs_block_rsv delayed_rsv;
--	/* Extent buffers with writeback inhibited by this handle. */
--	struct xarray writeback_inhibited_ebs;
-+	/* Extent buffers this handle has inhibited writeback on. */
-+	struct extent_buffer *inhibited_ebs[BTRFS_INHIBITED_EBS_SLOTS];
-+	u32 inhibited_ebs_referenced;	/* CLOCK reference bit per slot */
-+	u32 nr_inhibited_ebs;
-+	u32 inhibited_ebs_hand;		/* CLOCK hand */
- };
- 
- /*
-
-base-commit: 12cdfd13afd5e929f359f0f9c0443e0cbd7f43fa
--- 
-2.53.0-Meta
-
+> 
+> Thanks,
+> Leo

@@ -1,240 +1,79 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from va-2-39.ptr.blmpb.com (va-2-39.ptr.blmpb.com [209.127.231.39])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2953F3CBE69
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 11:14:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6AAA647CC80
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 11:57:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.39
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782990850; cv=none; b=uDJUqbphQjh+AlCjLhObKys9ilDjllTKBr9ZO6X9eF8E/3Ne/Xy4VdjF/Vk9XNVB24AjC6EYjgy4efCseTulqXSOidqvSiIHCW4IPmbBw6NrARI/fcLI+FE2HWSrTyrWrmPTMz6JUuHu1uYrMxWDC9LQTMu9bUZoWS5M/eOlrdQ=
+	t=1782993428; cv=none; b=RT4lh5wsKgWiP84clQgqyuheeswn39fgqRmFB+mcyuQFTkIogR74ecGL5jQqavUXdioMNQjBjmAHf5nvZQKNfx+8+oSljdq03eXkHH9Lvg13lOJh23ZMCAb2M6XARStFRZ7/Rb09+8s7qaEQ7ATKKs09QKNvIn7dXjTaTWM4i6g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782990850; c=relaxed/simple;
-	bh=nx0k7LUcpWmnPyvQFNO5qEuuuBf1goF3fg4HmUbDfTI=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=SGgG/JwJ6mW/66y2GGRyTGRuurVbHciyX7ubiw4k/0FfD57e2SivspXUajGcr5Hs9efLD9UtuU4bulSnX+r2pZjElxoCWyHtPKk+0UWc9dZfQOcNFVCk6IpBDw4Uib8lAPJGqtrBWDmrkzcHC/PRaM0tNeMvoSWSHTR0MDepfuk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=C4rnL668; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=C4rnL668; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1782993428; c=relaxed/simple;
+	bh=LDeG3w7d1Zam7Y81E/pg7n3OrK2aOsil2pVTKJJ/jPQ=;
+	h=Content-Type:Cc:Date:Subject:Message-Id:To:From:Mime-Version; b=NuNYYuMbrXzu5Sy+dqP61a5bqgyC5zFu+5I3zw/XtxJTC+gATcKI8hOgM5IqxkRDrZFOGsn2HK/nHaTY7EncjzWjUQ/Um+mpCSmWek3wAPVjnBuaMLUyE1uTY1lJY+rjSK+hAFZTRiN8e1hJRkRNPHylyIQ5sFtikBZCtR9Gwl4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com; spf=none smtp.mailfrom=fnnas.com; dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b=TFUMl60P; arc=none smtp.client-ip=209.127.231.39
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=fnnas.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="C4rnL668";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="C4rnL668"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 7EFF875901
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 11:13:59 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782990839; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=z87HIX8/wdv8UV4Ncg2eumQwRsLEgfkN42plDF8WG+M=;
-	b=C4rnL668MapMCsseIADazZCtrXQTxJHUrMJLtRxe06O0Cvg1g9LiIHWcWrPAKVKcIFh4AH
-	xxTwZgHUsAPNwB+BBGxVnUCKHHypG9awJqVQesbAIgux6R2jzvg9ZvvwnfbGboxa6wtN2c
-	EVQcAmeMhONXxTT28hkoORcTzNQ1vu4=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1782990839; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=z87HIX8/wdv8UV4Ncg2eumQwRsLEgfkN42plDF8WG+M=;
-	b=C4rnL668MapMCsseIADazZCtrXQTxJHUrMJLtRxe06O0Cvg1g9LiIHWcWrPAKVKcIFh4AH
-	xxTwZgHUsAPNwB+BBGxVnUCKHHypG9awJqVQesbAIgux6R2jzvg9ZvvwnfbGboxa6wtN2c
-	EVQcAmeMhONXxTT28hkoORcTzNQ1vu4=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 86A71779AA
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 11:13:58 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id cH4DDvZHRmrYZgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 02 Jul 2026 11:13:58 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/3] btrfs: use a shared helper to calculate data checksum for a bio
-Date: Thu,  2 Jul 2026 20:43:35 +0930
-Message-ID: <0719ae574ed244c3497acf4a07be584ad53b5ed2.1782990655.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1782990655.git.wqu@suse.com>
-References: <cover.1782990655.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b="TFUMl60P"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ s=s1; d=fnnas-com.20200927.dkim.feishu.cn; t=1782993414;
+  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
+ reply-to:content-type:mime-version:in-reply-to:message-id;
+ bh=jexPKJYAWrel5WRk+qem+1tO/gU/bIhzXbUs+nRK1yg=;
+ b=TFUMl60POllHtgfNZ/h8V+z0/v2ttiTT7bwuJAyD1i52WCUA5z85bfpWOM6zdgaCXOT0GD
+ VwstqpFH5VvnED9kn2vuxJYVAHom5NhWW/qr3rTw2xqblF+llzxMZAAymaJf262OIWuRjw
+ e0DYbSpt+mwKvLDuxMkrLbV3jknYQZ8snvK6PNCn3mGHY3BCdHFNzFE/cPag3FHz5eagZU
+ jKMfKZCtA37WnnOtWBzlQnrm0XBcyKKokcgvd59xNwXdL3FwOPGE8z7N6atiHuyLpcV1oq
+ xCaRKE3Rg3/rT1fthbchQ98/y8w4QpvReMWatBBl/HeI4Vdj1qCS1LgYjFbxJg==
+X-Lms-Return-Path: <lba+26a465205+e5984f+vger.kernel.org+zhudongjiang@fnnas.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: <dsterba@suse.com>
+Date: Thu,  2 Jul 2026 19:56:21 +0800
+X-Mailer: git-send-email 2.39.5
+Received: from pdzhu.teiron-inc.cn ([183.34.161.232]) by smtp.feishu.cn with ESMTPS; Thu, 02 Jul 2026 19:56:52 +0800
+Subject: [PATCH] btrfs: set clear_cache for rescue=usebackuproot
+Message-Id: <20260702115621.1151339-1-zhudongjiang@fnnas.com>
+Content-Transfer-Encoding: 7bit
+To: <linux-btrfs@vger.kernel.org>
+From: "Dongjiang Zhu" <zhudongjiang@fnnas.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
+Mime-Version: 1.0
+X-Original-From: Dongjiang Zhu <zhudongjiang@fnnas.com>
 
-Since we are already calculating data checksum using bio interface,
-extract the generation part into btrfs_bio_gen_data_csum(), and use that
-to replace the paddrs[] array based solution in csum_one_bio().
+The change that moved setting CLEAR_CACHE from the backup root loading
+path to mount option parsing updated the deprecated usebackuproot and
+recovery options, but missed rescue=usebackuproot.
 
-This will reduce 128 bytes on-stack memory usage.
+rescue=usebackuproot is the preferred spelling for the same mount
+option, so it should also set CLEAR_CACHE. Otherwise the deprecated
+usebackuproot option clears or rebuilds the free space cache/tree while
+the recommended rescue=usebackuproot option does not.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Set CLEAR_CACHE when parsing rescue=usebackuproot as well.
+
+Fixes: 9fb3b1a7fed7 ("btrfs: set clear_cache if we use usebackuproot")
+Signed-off-by: Dongjiang Zhu <zhudongjiang@fnnas.com>
 ---
- fs/btrfs/btrfs_inode.h |  2 ++
- fs/btrfs/file-item.c   | 19 +++++------------
- fs/btrfs/inode.c       | 48 +++++++++++++++++++++++++-----------------
- 3 files changed, 36 insertions(+), 33 deletions(-)
+ fs/btrfs/super.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 940cc1b24d1b..00fdbae44d85 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -515,6 +515,8 @@ int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8
- 			   const u8 * const csum_expected);
- bool btrfs_bio_data_csum_ok(struct btrfs_bio *bbio, const struct bvec_iter *orig_iter,
- 			    struct btrfs_device *dev);
-+void btrfs_bio_gen_data_csum(struct btrfs_bio *bbio, const struct bvec_iter *orig_iter,
-+			     u8 *csum);
- noinline int can_nocow_extent(struct btrfs_inode *inode, u64 offset, u64 *len,
- 			      struct btrfs_file_extent *file_extent,
- 			      bool nowait);
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index cf50fd623f41..a1629c13935c 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -801,25 +801,16 @@ static void csum_one_bio(struct btrfs_bio *bbio, struct bvec_iter *src)
- {
- 	struct btrfs_inode *inode = bbio->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	struct bio *bio = &bbio->bio;
- 	struct btrfs_ordered_sum *sums = bbio->sums;
--	struct bvec_iter iter = *src;
--	phys_addr_t paddr;
-+	struct bvec_iter iter;
- 	const u32 blocksize = fs_info->sectorsize;
--	const u32 step = min(blocksize, PAGE_SIZE);
--	const u32 nr_steps = blocksize / step;
--	phys_addr_t paddrs[BTRFS_MAX_BLOCKSIZE / PAGE_SIZE];
--	u32 offset = 0;
- 	int index = 0;
- 
--	btrfs_bio_for_each_block(paddr, bio, &iter, step) {
--		paddrs[(offset / step) % nr_steps] = paddr;
--		offset += step;
-+	for (iter = *src; iter.bi_size;
-+	     bio_advance_iter(&bbio->bio, &iter, blocksize)) {
-+		btrfs_bio_gen_data_csum(bbio, &iter, sums->sums + index);
- 
--		if (IS_ALIGNED(offset, blocksize)) {
--			btrfs_calculate_block_csum_pages(fs_info, paddrs, sums->sums + index);
--			index += fs_info->csum_size;
--		}
-+		index += fs_info->csum_size;
- 	}
- }
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9c960cf7ccbe..23afdd18c59b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3342,6 +3342,34 @@ int btrfs_check_block_csum(struct btrfs_fs_info *fs_info, phys_addr_t paddr, u8
- 	return 0;
- }
- 
-+/* Generate data checksum for a single fs block, pointed by @orig_iter. */
-+void btrfs_bio_gen_data_csum(struct btrfs_bio *bbio, const struct bvec_iter *orig_iter,
-+			     u8 *csum)
-+{
-+	struct btrfs_inode *inode = bbio->inode;
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	struct btrfs_csum_ctx cctx;
-+	struct bvec_iter iter = *orig_iter;
-+	const u32 blocksize = fs_info->sectorsize;
-+	u32 cur = 0;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index c946bccf0748..b83391537c52 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -597,6 +597,9 @@ static int btrfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
+ 		switch (result.uint_32) {
+ 		case Opt_rescue_usebackuproot:
+ 			btrfs_set_opt(ctx->mount_opt, USEBACKUPROOT);
 +
-+	btrfs_csum_init(&cctx, fs_info->csum_type);
-+	while (cur < blocksize) {
-+		struct page *page = bio_iter_page(&bbio->bio, iter);
-+		const u32 pg_off = bio_iter_offset(&bbio->bio, iter);
-+		const u32 cur_len = min(bio_iter_len(&bbio->bio, iter), blocksize - cur);
-+		void *kaddr;
-+
-+		kaddr = kmap_local_page(page) + pg_off;
-+		btrfs_csum_update(&cctx, kaddr, cur_len);
-+		kunmap_local(kaddr);
-+
-+		bio_advance_iter_single(&bbio->bio, &iter, cur_len);
-+		cur += cur_len;
-+	}
-+	btrfs_csum_final(&cctx, csum);
-+}
-+
- /*
-  * Verify the checksum of a single data sector, which can be scattered at
-  * different noncontiguous pages.
-@@ -3362,7 +3390,6 @@ bool btrfs_bio_data_csum_ok(struct btrfs_bio *bbio,
- 	struct btrfs_inode *inode = bbio->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct bvec_iter iter = *orig_iter;
--	struct btrfs_csum_ctx cctx;
- 	const u32 blocksize = fs_info->sectorsize;
- 	const u32 bio_offset = (iter.bi_sector - bbio->saved_iter.bi_sector) << SECTOR_SHIFT;
- 	u64 file_offset = bbio->file_offset + bio_offset;
-@@ -3387,22 +3414,7 @@ bool btrfs_bio_data_csum_ok(struct btrfs_bio *bbio,
- 
- 	csum_expected = bbio->csum + (bio_offset >> fs_info->sectorsize_bits) *
- 				fs_info->csum_size;
--	btrfs_csum_init(&cctx, fs_info->csum_type);
--	while (cur < blocksize) {
--		struct page *page = bio_iter_page(&bbio->bio, iter);
--		const u32 pg_off = bio_iter_offset(&bbio->bio, iter);
--		const u32 cur_len = min(bio_iter_len(&bbio->bio, iter), blocksize - cur);
--		void *kaddr;
--
--		kaddr = kmap_local_page(page) + pg_off;
--		btrfs_csum_update(&cctx, kaddr, cur_len);
--		kunmap_local(kaddr);
--
--		bio_advance_iter_single(&bbio->bio, &iter, cur_len);
--		cur += cur_len;
--	}
--	btrfs_csum_final(&cctx, csum);
--
-+	btrfs_bio_gen_data_csum(bbio, orig_iter, csum);
- 	if (unlikely(memcmp(csum, csum_expected, fs_info->csum_size) != 0))
- 		goto zeroit;
- 	return true;
-@@ -3412,8 +3424,6 @@ bool btrfs_bio_data_csum_ok(struct btrfs_bio *bbio,
- 				    bbio->mirror_num);
- 	if (dev)
- 		btrfs_dev_stat_inc_and_print(dev, BTRFS_DEV_STAT_CORRUPTION_ERRS);
--	cur = 0;
--	iter = *orig_iter;
- 	while (cur < blocksize) {
- 		struct page *page = bio_iter_page(&bbio->bio, iter);
- 		const u32 pg_off = bio_iter_offset(&bbio->bio, iter);
++			/* If we're loading the backup roots we can't trust the space cache. */
++			btrfs_set_opt(ctx->mount_opt, CLEAR_CACHE);
+ 			break;
+ 		case Opt_rescue_nologreplay:
+ 			btrfs_set_opt(ctx->mount_opt, NOLOGREPLAY);
 -- 
-2.54.0
-
+2.39.5

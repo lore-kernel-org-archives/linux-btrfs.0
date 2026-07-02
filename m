@@ -1,76 +1,194 @@
-Received: from mxex2.tik.uni-stuttgart.de (mxex2.tik.uni-stuttgart.de [129.69.192.21])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B21CB42885F
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 08:20:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=129.69.192.21
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8AFC3282F36
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 11:13:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782980439; cv=none; b=Y6tgLn43NNy9p5Y9hjuG0CaciGcdHZiMaJA0TfOTw/3r4D6k24qZAJud6hZc396XVzDm2KXFKa9SgnlGrssS2oOwndFr3gKmD2k3FhDanvZV3zugDSPp/HUog1vAJPOzucgtxlB8sKugDA0rpX3i36HwodbI98yaPZaTBb7jTPU=
+	t=1782990837; cv=none; b=MB5VMFD/PEG6S2TqumrckjiQ9EI/uyP928BXrkyc7sELHc9VGbaZuCE0Vry8j3xIBTyegQBH3DcuZfkowekM17/0ASMvaycgDMF1W04Pt3D6wM8U9wAAoSro5biSbabiBjzAQhDr41xlMNJph5uEhahbUZzewJvBPLHW65S8p3I=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782980439; c=relaxed/simple;
-	bh=lDPRYsBJWOWG7F4iiBEV7prYNqaY0iH0sZoN/vLocRY=;
-	h=Date:From:To:Subject:Message-ID:MIME-Version:Content-Type:
-	 Content-Disposition; b=Gt2YhbHC1lGZH5jCe5GJEJgYYuYu+nnrgEQIQgGyNc7w2eM1zrpljZ7/3KPiwmxgn4I3CHhKNs9bhVQEjgV6BLGBpGWfGi3HOOKIV1PfnjbGE3uZmFxqVClhwdxS5bBDr9NwA5T5knbBHDnwX1HxGtWbyMx6QQdcvddKwjPcJzM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de; spf=pass smtp.mailfrom=rus.uni-stuttgart.de; dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b=ttDplDtL; arc=none smtp.client-ip=129.69.192.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=rus.uni-stuttgart.de
+	s=arc-20240116; t=1782990837; c=relaxed/simple;
+	bh=JDCKyqhScSNf8PJxuZUCtrtS7UbFahxS9cg9aiBTnjQ=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=o+6m8nDKW/SXUKjuwGbPRd8zZlwk0sJQN2lwyGpj0keZWVWHFWBuhGJ6agEWO7nyjukhT7jNbI9uubg0Jz/8lgM5UZkrVlLVEYBq8835KP7B7YJVzwvhwVPeWcLAyLJu3H5T0g0vLGV9dP95GSWwDg7WT8LFB7OScmato3i9Wno=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nUfv3XKk; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nUfv3XKk; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b="ttDplDtL"
-Received: from localhost (localhost [127.0.0.1])
-	by mxex2.tik.uni-stuttgart.de (Postfix) with ESMTP id 21D8C60C4C
-	for <linux-btrfs@vger.kernel.org>; Thu, 02 Jul 2026 10:12:55 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=uni-stuttgart.de;
-	 h=user-agent:content-disposition:content-type:content-type
-	:mime-version:message-id:subject:subject:from:from:date:date; s=
-	dkim; i=@rus.uni-stuttgart.de; t=1782979973; x=1784718774; bh=lD
-	PRYsBJWOWG7F4iiBEV7prYNqaY0iH0sZoN/vLocRY=; b=ttDplDtLxIJgRTWupD
-	KTXxC3++eOZAlBHjBy0kaUpokhmQlmtyJ+ICeYyuUUN0/1imfrCDLWqfYf1sW2JX
-	U30LcxsGqNycpQtRsrxeOyzSA/+GUvZVtrYcjOJoddT5M9YwAWev7P12C+qilI0h
-	HO5huSRP6RGtMDnsGOJXpGKQ/s44lqVYXsKHZ8+6Jw63cyWUENhMmPOWkdk7s3gc
-	qD0QHoZ1rx4WE4d0cYJx9hO+LH++KgJK77GXPddSnaJSMGjVrrv3H/AXtDkMJ+Vr
-	joHIiac1fuAKe3NYeBfBqtuN3nadsY9098+C5yXYQpyz8NJMe01AJ8KV2nKZju2R
-	B28A==
-X-Virus-Scanned: USTUTT mailrelay AV services at mxex2.tik.uni-stuttgart.de
-Received: from mxex2.tik.uni-stuttgart.de ([127.0.0.1])
- by localhost (mxex2.tik.uni-stuttgart.de [127.0.0.1]) (amavis, port 10031)
- with ESMTP id TqJTQRqRkQ-d for <linux-btrfs@vger.kernel.org>;
- Thu,  2 Jul 2026 10:12:53 +0200 (CEST)
-Received: from authenticated client
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nUfv3XKk";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nUfv3XKk"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange secp256r1 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by mxex2.tik.uni-stuttgart.de (Postfix) with ESMTPSA
-Date: Thu, 2 Jul 2026 10:12:52 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+	by smtp-out2.suse.de (Postfix) with ESMTPS id BCD5F75901
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 11:13:54 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1782990834; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=78QyX6e+bUTAN/lrRaHfyjfyLQxQb//kmeomv1SOGdE=;
+	b=nUfv3XKkiP0HaY4gfR6Z8VcyMxbC8lPX+zuGyd6sAH3X9l+diewl05+E1KNrnb4g1E7Oo7
+	IIa9kb+yyFcJpp/9oWUPKjph0SSRKHNLgi1syCjkq1Y/Ms9L904haSx3WGrM1+ILaLVE0z
+	/MmTtL+k4ptnvUMiGvBCbDoEJ6+6g0o=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=nUfv3XKk
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1782990834; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=78QyX6e+bUTAN/lrRaHfyjfyLQxQb//kmeomv1SOGdE=;
+	b=nUfv3XKkiP0HaY4gfR6Z8VcyMxbC8lPX+zuGyd6sAH3X9l+diewl05+E1KNrnb4g1E7Oo7
+	IIa9kb+yyFcJpp/9oWUPKjph0SSRKHNLgi1syCjkq1Y/Ms9L904haSx3WGrM1+ILaLVE0z
+	/MmTtL+k4ptnvUMiGvBCbDoEJ6+6g0o=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C3E5E779AA
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 11:13:53 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 7Un+HPFHRmrYZgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Thu, 02 Jul 2026 11:13:53 +0000
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: comparision table Btrfs/ZFS
-Message-ID: <20260702081252.GA4036251@tik.uni-stuttgart.de>
-Mail-Followup-To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 0/3] btrfs: removal of on-stack paddrs[], part 1
+Date: Thu,  2 Jul 2026 20:43:32 +0930
+Message-ID: <cover.1782990655.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-User-Agent: Mutt/1.5.23 (2014-03-12)
+Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Rspamd-Action: no action
+X-Spam-Level: 
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	MIME_TRACE(0.00)[0:+];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: BCD5F75901
+X-Spam-Score: -3.01
+
+[CHANGELOG]
+v2:
+- Fix a missing assignment for metadata repair
+  The logical should be assigned before passing it to
+  btrfs_repair_bbio_failure().
+
+- Move the commit message of error message change to the correct patch
+  It's changed in the first patch not the last one.
+
+Since the experimental bs > ps support, several on-stack fixed paddrs[]
+arrays are introduced, for assemble mutli-page sized fs blocks.
+
+However that on-stack memory usage is always there for 4K page sized
+systems, no matter if the block size of the filesystem.
+
+This series is part 1 of such on-stack paddrs[] cleanup.
+
+The idea is to use bio interface for page iterations, the core idea is
+to use a const bvec_iter as the pointer to where the block is.
+
+Then we save a local bevc_iter, and use the local iter to check the next
+few pages until we fill a full block.
+
+Furthermore, with the help of bvec_iter, we can remove a lot of
+parameters:
+
+- file_offset
+- logical
+- bio_offset
+  All can be generated by using the @iter passed in and the
+  bbio->saved_iter to calculate the old @bio_offset.
+
+  @bio_offset is the (iter.bi_sector - saved_iter.bi_sector) <<
+  SECTOR_SHIFT.
+  As when bvec_iter is advanced, its bi_sector is also increased.
+
+  @logical is simpler, just iter.bi_sector << SECTOR_SHIFT.
+
+  @file_offset is the bbio->file_offset + bio_offset.
+
+This means we no longer need to use on-stack paddrs[] to csum
+generation.
+
+With bio interfaces, the iteration of an fs block is as simple as the
+following: (I tried to change the page/pg_off/cur_len into a macro just
+like btrfs_bio_for_each_block(), but failed)
+
+	u32 cur = 0;
+
+	btrfs_csum_init(&cctx, fs_info->csum_type);
+	while (cur < blocksize) {
+		struct page *page = bio_iter_page(&bbio->bio, iter);
+		const u32 pg_off = bio_iter_offset(&bbio->bio, iter);
+		const u32 cur_len = min(bio_iter_len(&bbio->bio, iter), blocksize - cur);
+		void *kaddr;
+
+		kaddr = kmap_local_page(page) + pg_off;
+		btrfs_csum_update(&cctx, kaddr, cur_len);
+		kunmap_local(kaddr);
+
+		bio_advance_iter_single(&bbio->bio, &iter, cur_len);
+		cur += cur_len;
+	}
+	btrfs_csum_final(&cctx, csum);
+
+However there are still some callers left:
+
+- Scrub
+  That's already addressed in another series accidentially
+  (https://lore.kernel.org/linux-btrfs/cover.1782795330.git.wqu@suse.com/)
+
+  That will be last user of btrfs_check_block_csum().
+
+- RAID56
+  That will be only location left without a bio.
+  In that case we can easily craft a local helper to do csum generation
+  without using on-stack paddrs[].
 
 
-Btrfs and ZFS have some similar properties and commands - and of course
-many differences.
+Qu Wenruo (3):
+  btrfs: replace btrfs_repair_io_failure() to use bio for page iteration
+  btrfs: enhance btrfs_data_csum_ok() to use bio for page iteration
+  btrfs: use a shared helper to calculate data checksum for a bio
 
-For (admin) users without Btrfs or ZFS knowledge I have written a
-comparision table:
-
-https://fex.rus.uni-stuttgart.de/Btrfs_ZFS.html
-
-It is not a full feature table/list, just a quick overview.
+ fs/btrfs/bio.c         | 140 +++++++++++++++++++----------------------
+ fs/btrfs/bio.h         |   5 +-
+ fs/btrfs/btrfs_inode.h |   6 +-
+ fs/btrfs/disk-io.c     |  25 +++++---
+ fs/btrfs/file-item.c   |  19 ++----
+ fs/btrfs/inode.c       |  59 ++++++++++++++---
+ 6 files changed, 141 insertions(+), 113 deletions(-)
 
 -- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    https://www.tik.uni-stuttgart.de/
-REF:<20260702081252.GA4036251@tik.uni-stuttgart.de>
+2.54.0
+

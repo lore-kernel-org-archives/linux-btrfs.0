@@ -1,79 +1,84 @@
-Received: from va-2-39.ptr.blmpb.com (va-2-39.ptr.blmpb.com [209.127.231.39])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6AAA647CC80
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 11:57:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.39
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 89363481FB9;
+	Thu,  2 Jul 2026 14:07:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782993428; cv=none; b=RT4lh5wsKgWiP84clQgqyuheeswn39fgqRmFB+mcyuQFTkIogR74ecGL5jQqavUXdioMNQjBjmAHf5nvZQKNfx+8+oSljdq03eXkHH9Lvg13lOJh23ZMCAb2M6XARStFRZ7/Rb09+8s7qaEQ7ATKKs09QKNvIn7dXjTaTWM4i6g=
+	t=1783001233; cv=none; b=PzkBtdKnWs41VyDAX2BjGa399bxWuoV0pnmzRAzI3hAbC4uJpzS/N178giBdqK1pXETq4AKdPembg4XOhRNFsez5lfB0oKpjVqQOstTUGpa34N0LEgiiHAbDYvlJpfOfTHFCETcm6fnaiIOxJqH05Ni1ARzy0AJCOYM6a43akfs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782993428; c=relaxed/simple;
-	bh=LDeG3w7d1Zam7Y81E/pg7n3OrK2aOsil2pVTKJJ/jPQ=;
-	h=Content-Type:Cc:Date:Subject:Message-Id:To:From:Mime-Version; b=NuNYYuMbrXzu5Sy+dqP61a5bqgyC5zFu+5I3zw/XtxJTC+gATcKI8hOgM5IqxkRDrZFOGsn2HK/nHaTY7EncjzWjUQ/Um+mpCSmWek3wAPVjnBuaMLUyE1uTY1lJY+rjSK+hAFZTRiN8e1hJRkRNPHylyIQ5sFtikBZCtR9Gwl4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com; spf=none smtp.mailfrom=fnnas.com; dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b=TFUMl60P; arc=none smtp.client-ip=209.127.231.39
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=fnnas.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b="TFUMl60P"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fnnas-com.20200927.dkim.feishu.cn; t=1782993414;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=jexPKJYAWrel5WRk+qem+1tO/gU/bIhzXbUs+nRK1yg=;
- b=TFUMl60POllHtgfNZ/h8V+z0/v2ttiTT7bwuJAyD1i52WCUA5z85bfpWOM6zdgaCXOT0GD
- VwstqpFH5VvnED9kn2vuxJYVAHom5NhWW/qr3rTw2xqblF+llzxMZAAymaJf262OIWuRjw
- e0DYbSpt+mwKvLDuxMkrLbV3jknYQZ8snvK6PNCn3mGHY3BCdHFNzFE/cPag3FHz5eagZU
- jKMfKZCtA37WnnOtWBzlQnrm0XBcyKKokcgvd59xNwXdL3FwOPGE8z7N6atiHuyLpcV1oq
- xCaRKE3Rg3/rT1fthbchQ98/y8w4QpvReMWatBBl/HeI4Vdj1qCS1LgYjFbxJg==
-X-Lms-Return-Path: <lba+26a465205+e5984f+vger.kernel.org+zhudongjiang@fnnas.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: <dsterba@suse.com>
-Date: Thu,  2 Jul 2026 19:56:21 +0800
-X-Mailer: git-send-email 2.39.5
-Received: from pdzhu.teiron-inc.cn ([183.34.161.232]) by smtp.feishu.cn with ESMTPS; Thu, 02 Jul 2026 19:56:52 +0800
-Subject: [PATCH] btrfs: set clear_cache for rescue=usebackuproot
-Message-Id: <20260702115621.1151339-1-zhudongjiang@fnnas.com>
-Content-Transfer-Encoding: 7bit
-To: <linux-btrfs@vger.kernel.org>
-From: "Dongjiang Zhu" <zhudongjiang@fnnas.com>
+	s=arc-20240116; t=1783001233; c=relaxed/simple;
+	bh=F/tM2eAzg331w2LaSdd/nlcr+scQCGc/VlLA8+T5PuU=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=t4aYpOKKs2cWrMz3wfzaGjLWNJsNGDcH/Pmm7xbeYS8bE6DBGZkocFL4swVxTvpDVjBCm1EYhwDTXNUVhigkP4/iG5LKxk+oWUHBZ7s8L7QXEnV/7Us+0oaxax/fbkBEoFoTG6vVnAKoZSZU3JvsxW0iWmVmqy2z5TIDwHNeiMw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id 90D9968BEB; Thu,  2 Jul 2026 16:07:05 +0200 (CEST)
+Date: Thu, 2 Jul 2026 16:07:05 +0200
+From: Christoph Hellwig <hch@lst.de>
+To: Joanne Koong <joannelkoong@gmail.com>
+Cc: brauner@kernel.org, hch@lst.de, djwong@kernel.org, willy@infradead.org,
+	hsiangkao@linux.alibaba.com, linux-fsdevel@vger.kernel.org,
+	linux-xfs@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
+	Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+	Alexander Viro <viro@zeniv.linux.org.uk>, Jan Kara <jack@suse.cz>,
+	Dan Williams <djbw@kernel.org>, Gao Xiang <xiang@kernel.org>,
+	Chao Yu <chao@kernel.org>, Yue Hu <zbestahu@gmail.com>,
+	Jeffle Xu <jefflexu@linux.alibaba.com>,
+	Sandeep Dhavale <dhavale@google.com>,
+	Hongbo Li <lihongbo22@huawei.com>,
+	Chunhai Guo <guochunhai@vivo.com>,
+	Namjae Jeon <linkinjeon@kernel.org>,
+	Sungjong Seo <sj1557.seo@samsung.com>,
+	Yuezhang Mo <yuezhang.mo@sony.com>, Theodore Ts'o <tytso@mit.edu>,
+	Andreas Dilger <adilger.kernel@dilger.ca>,
+	Baokun Li <libaokun@linux.alibaba.com>,
+	Ojaswin Mujoo <ojaswin@linux.ibm.com>,
+	"Ritesh Harjani (IBM)" <ritesh.list@gmail.com>,
+	Zhang Yi <yi.zhang@huawei.com>, Jaegeuk Kim <jaegeuk@kernel.org>,
+	Miklos Szeredi <miklos@szeredi.hu>,
+	Andreas Gruenbacher <agruenba@redhat.com>,
+	Mikulas Patocka <mikulas@artax.karlin.mff.cuni.cz>,
+	Hyunchul Lee <hyc.lee@gmail.com>,
+	Konstantin Komarov <almaz.alexandrovich@paragon-software.com>,
+	Carlos Maiolino <cem@kernel.org>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
+	Johannes Thumshirn <jth@kernel.org>,
+	"open list:BLOCK LAYER" <linux-block@vger.kernel.org>,
+	open list <linux-kernel@vger.kernel.org>,
+	"open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>,
+	"open list:FILESYSTEM DIRECT ACCESS (DAX)" <nvdimm@lists.linux.dev>,
+	"open list:EROFS FILE SYSTEM" <linux-erofs@lists.ozlabs.org>,
+	"open list:EXT2 FILE SYSTEM" <linux-ext4@vger.kernel.org>,
+	"open list:F2FS FILE SYSTEM" <linux-f2fs-devel@lists.sourceforge.net>,
+	"open list:FUSE FILESYSTEM [CORE]" <fuse-devel@lists.linux.dev>,
+	"open list:GFS2 FILE SYSTEM" <gfs2@lists.linux.dev>,
+	"open list:NTFS3 FILESYSTEM" <ntfs3@lists.linux.dev>
+Subject: Re: [PATCH v2 17/18] iomap: pass iomap_next_fn directly instead of
+ struct iomap_ops
+Message-ID: <20260702140705.GE21339@lst.de>
+References: <20260701000949.1666714-1-joannelkoong@gmail.com> <20260701000949.1666714-18-joannelkoong@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-X-Original-From: Dongjiang Zhu <zhudongjiang@fnnas.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260701000949.1666714-18-joannelkoong@gmail.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-The change that moved setting CLEAR_CACHE from the backup root loading
-path to mount option parsing updated the deprecated usebackuproot and
-recovery options, but missed rescue=usebackuproot.
+Looks good:
 
-rescue=usebackuproot is the preferred spelling for the same mount
-option, so it should also set CLEAR_CACHE. Otherwise the deprecated
-usebackuproot option clears or rebuilds the free space cache/tree while
-the recommended rescue=usebackuproot option does not.
+Reviewed-by: Christoph Hellwig <hch@lst.de>
 
-Set CLEAR_CACHE when parsing rescue=usebackuproot as well.
+In terms of merge logistics, I wonder if we should delay this and
+the previous patch to the next merge window so that we can minimize the
+cross-subsystem merge pain with more file system iomap conversion.
+If none of them actually happen until rc6 or so, orif  the merges aren't
+painful we could still pick them up late in the merge window.
 
-Fixes: 9fb3b1a7fed7 ("btrfs: set clear_cache if we use usebackuproot")
-Signed-off-by: Dongjiang Zhu <zhudongjiang@fnnas.com>
----
- fs/btrfs/super.c | 3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index c946bccf0748..b83391537c52 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -597,6 +597,9 @@ static int btrfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
- 		switch (result.uint_32) {
- 		case Opt_rescue_usebackuproot:
- 			btrfs_set_opt(ctx->mount_opt, USEBACKUPROOT);
-+
-+			/* If we're loading the backup roots we can't trust the space cache. */
-+			btrfs_set_opt(ctx->mount_opt, CLEAR_CACHE);
- 			break;
- 		case Opt_rescue_nologreplay:
- 			btrfs_set_opt(ctx->mount_opt, NOLOGREPLAY);
--- 
-2.39.5

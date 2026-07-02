@@ -1,176 +1,205 @@
-Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.10])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f47.google.com (mail-wr1-f47.google.com [209.85.221.47])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B9F732DCC1C
-	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 01:56:10 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=198.175.65.10
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C5A5333B6EF
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2026 05:34:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.47
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1782957373; cv=fail; b=iP00A1KU8VtEZ4TQQtWp1eGSgWKpAo3t2PcvZegcfbgnG6SyDgjlnhnAMm0Zj4vbupIq3EN3ZYQRwKKT79BMSzWOh3QMD0dQ71zUBU9UBV/vjaJuOSx4Tu2ex3/mHy+cy7kixvYBro6bbRX0AflwYslnmK5QxaxEHGYqwJc1RU8=
+	t=1782970484; cv=pass; b=B4vrpiHC+3BW8Fxw3RITrwPq2ETFLICJjzQThhA+G/u4z9vgNHtUVOXJdoURRQDc8nPfmvHVFkUBIB9fBwsirmMjNcckg9sLdJSedl0Z9VRmaQN0Pcl7f1u+fLTVW8A9nYaImHP+L49VDQ1C06POEE5USZTWps/KxjK/hh6g/LM=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1782957373; c=relaxed/simple;
-	bh=qSljXHzAYhMP2EJthAaGvh6dc4okFJUhk7tLbgG+0V0=;
-	h=Date:From:To:CC:Subject:Message-ID:References:Content-Type:
-	 Content-Disposition:In-Reply-To:MIME-Version; b=DahS2sv0Y5nxaUCsHEe+BooSdbOqWxY9MJS+zDOL42/Xtgy7t0noE1/W9T40tQMvGt2t79a9ZVIzIpb2Ci39nYO+5w7se1qwnl6WopN44/2j9oSc8qT7N79imibX5mJNKMa4bojSTZFdlW+gBTc6RK8GjzinqnB0lc5MYfTwwXE=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=M4ElsnKt; arc=fail smtp.client-ip=198.175.65.10
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+	s=arc-20240116; t=1782970484; c=relaxed/simple;
+	bh=ItnPtemJpDXlGtts7MlHqHToeHX5qB8k3Tzsfi3ttJE=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=hxIa8a5p2Kn9MRCXYhddmVKLiPd7zxTYyXy2UHatYNSRyJcr+ytITGZRAmZkHiyMCmtiWkgRcsmZR6T7Gj6sEJ8bbuM1caR/I+F8Ge0FLAsGgFf5iQo7Wcxz5jz1G59lHy0VSbAR7b54ArRrokDBp5tLirMPAyBVtUzqbehHYtY=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=QKNWFPDB; arc=pass smtp.client-ip=209.85.221.47
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="M4ElsnKt"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1782957371; x=1814493371;
-  h=date:from:to:cc:subject:message-id:references:
-   in-reply-to:mime-version;
-  bh=qSljXHzAYhMP2EJthAaGvh6dc4okFJUhk7tLbgG+0V0=;
-  b=M4ElsnKtAkzanL299blxt2QGqG8iFtx9vzr+Ss8Wse0daFbWqwH87pxu
-   jwF8wCKMQf3chnFSpac2gKotA7ILfVODbZePqer31zp61gXaBX+bNz4Qp
-   ZxZRyCbzj8xC9YB128M6hNzTS2ewM9QfIZJtj30zRoiVjc7eoA6U+4me4
-   Z/KrdTQnnAPi8IMqPAkWizXbU67MShzKPAiOrpn1ejPaAS2ZzbrLYS7J7
-   ilrUPdrdDPTna8JbmFAiAloX4+A/wSbXWjSsov+T3+hCtVJxZYALYw5CO
-   113yg591sy7daCYCRwTYSikyEalDC0BCuTOHiKe1hbNnYOfdiY4kLSpDd
-   Q==;
-X-CSE-ConnectionGUID: rwgZvXWTQqa5i31bbkXq0A==
-X-CSE-MsgGUID: OaxA4qCHT7SJQy1kLJ3RRw==
-X-IronPort-AV: E=McAfee;i="6800,10657,11834"; a="101122638"
-X-IronPort-AV: E=Sophos;i="6.25,142,1779174000"; 
-   d="scan'208";a="101122638"
-Received: from orviesa004.jf.intel.com ([10.64.159.144])
-  by orvoesa102.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Jul 2026 18:56:11 -0700
-X-CSE-ConnectionGUID: kX1CDpk2Rf6Tiye2ND43bg==
-X-CSE-MsgGUID: M1/8hAY0QQaXrgQVVrWy0Q==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="6.25,142,1779174000"; 
-   d="scan'208";a="256639547"
-Received: from fmsmsx902.amr.corp.intel.com ([10.18.126.91])
-  by orviesa004.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Jul 2026 18:56:10 -0700
-Received: from FMSMSX901.amr.corp.intel.com (10.18.126.90) by
- fmsmsx902.amr.corp.intel.com (10.18.126.91) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.2562.43; Wed, 1 Jul 2026 18:56:09 -0700
-Received: from fmsedg901.ED.cps.intel.com (10.1.192.143) by
- FMSMSX901.amr.corp.intel.com (10.18.126.90) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.2562.43 via Frontend Transport; Wed, 1 Jul 2026 18:56:09 -0700
-Received: from CH5PR02CU005.outbound.protection.outlook.com (40.107.200.17) by
- edgegateway.intel.com (192.55.55.81) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.2562.43; Wed, 1 Jul 2026 18:56:09 -0700
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=L0V+aWNtwfMl264QjywlMFaxvHd/wAFbldIvdPpPL16Eixox4UNf2Rq/pJO+2m9dVPg/hS/certQZp0Yr/Y1vDzAUe5eTE4iC/ZY5JuZkrc0UGvTIEXhcaieccuETUMt86Rtiudov80nijwgC3WXsshGq6Z/YkzqhiI+An0GMo8MZa8wacK2IeJzKtaauHQOG7gZId/kmqGG8ZV5r+M5HIzryeg1bEusKWG9IMzwBMndbCFr8mEhZXTV3F5ATghaz97jEnOzD2YZmO2e5SOD2W+91tExoeCOnh4TZ8KqFgx7fRs6D6VtUi8NkvvXzpmc2DNXFmCo9sLw3cf8cCxFWQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=HWKJQITaqQfV515UX5oD9cJfqgzRy6V278MMCvwjC6U=;
- b=ZXGa+eSChvZ34rNWT7mFiAMba5cpvqY4xwlYRLXxj4QMIeXI9ODsTm9HG5meAuOjnHIuolE5ao4DfTcwwMN+zjVIDj+TgmnLdm2Y6gIvQbmAWzSC/ODfxB3X1YKI+Atn2QErnEpUN2stK4J+0WxaNg9jIcZGbFjW0dIjffntnbzCLne2snjaTKSPFEDpkladMwcc5MsLordcMwrakC/3ZNXfxcZXNC7Fs/PBcnK0lT1iFQdLBMRQCaOmtaVjgLl8WMekUjP8tMriLxJej/k9no/7zjEmw+2WLOMWvyS2nF4zDr4x2XR24OFMlLgyUTJefyulNSyTVP0etApy9XnBCA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=intel.com; dmarc=pass action=none header.from=intel.com;
- dkim=pass header.d=intel.com; arc=none
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=intel.com;
-Received: from SJ0PR11MB5815.namprd11.prod.outlook.com (2603:10b6:a03:426::9)
- by DSWPR11MB9692.namprd11.prod.outlook.com (2603:10b6:8:353::16) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.181.9; Thu, 2 Jul 2026
- 01:56:08 +0000
-Received: from SJ0PR11MB5815.namprd11.prod.outlook.com
- ([fe80::7c33:9702:ea7:13d7]) by SJ0PR11MB5815.namprd11.prod.outlook.com
- ([fe80::7c33:9702:ea7:13d7%3]) with mapi id 15.21.0181.008; Thu, 2 Jul 2026
- 01:56:07 +0000
-Date: Thu, 2 Jul 2026 09:55:59 +0800
-From: Oliver Sang <oliver.sang@intel.com>
-To: Leo Martins <loemra.dev@gmail.com>
-CC: <oe-lkp@lists.linux.dev>, <lkp@intel.com>, <linux-btrfs@vger.kernel.org>,
-	<kernel-team@fb.com>, David Sterba <dsterba@suse.com>,
-	<oliver.sang@intel.com>
-Subject: Re: [linux-next:master] [btrfs]  9a8eec6165:  fio.write_iops 22.6%
- regression
-Message-ID: <akXFL+G8wOgFEM/9@xsang-OptiPlex-9020>
-References: <202603112240.f7605968-lkp@intel.com>
- <20260701234412.4048647-1-loemra.dev@gmail.com>
-Content-Type: text/plain; charset="us-ascii"
-Content-Disposition: inline
-In-Reply-To: <20260701234412.4048647-1-loemra.dev@gmail.com>
-X-ClientProxiedBy: SI1PR02CA0051.apcprd02.prod.outlook.com
- (2603:1096:4:1f5::6) To SJ0PR11MB5815.namprd11.prod.outlook.com
- (2603:10b6:a03:426::9)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="QKNWFPDB"
+Received: by mail-wr1-f47.google.com with SMTP id ffacd0b85a97d-4629051c9d1so903532f8f.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Jul 2026 22:34:41 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1782970480; cv=none;
+        d=google.com; s=arc-20260327;
+        b=obqHayOiBJS4ujY5/amrcSNtzZ1eEHzJMrbC1HQQRb2orUj9ZhS1HQRHLFbj2fnhpt
+         EoMTyBOUHAe78EocRfrDdzPpvZLGOUsNmPiUCT0CZg/mEjnX/tWvgDKJoJBE+/qQXrxq
+         Ad3AtgZ5vg/qWU7OfvdRhJvexc+WkmheX2UCxh4nUwdzrnluRkN+kvjDXdBys9xYYww/
+         ezcmEyQJCHl79+r3wqItiXy3em0up+W9WFk2jFsK288JHs6CZs7AqnK5GWq4PlVk2Ekz
+         YMrNK8iNg7XqML9BngAbW1hdy+9R0KD6GN8i/XgtIffcCXSvIJVxjXQSgaYi0G72D1aD
+         gNGQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=BYsyg1w1FxKnl5Rmpm2QTYiGYkStq4XPapOVCuKQhzY=;
+        fh=Bl5PXF93ZP0Et3SfKwkVjyTTyQopoN4XmTpjF5UU4hE=;
+        b=lQewr0oa2abXU1neMHB+4HtgIUrns19vcgszf2MJpOKpwOhIFYfnOMolM0Z4y9pYN7
+         q8gPT/TPYhKzZ5IY9lNyGwkxWILcaoQ+fujukr6knff+u62g0Ouildcn1VwmFLCAF9rP
+         2RvtU/zBKXvsgQPJLmWZqZD6r/cOmJrGp5a3LeTzfvm8qcFU4qx9+gJWo1zlUmEQdBZ8
+         VRyCVxMZ+3MHMnuiDpZWCWAf7OJJDpjlDWAMQBkWIf8bdcLpt8+r+HfjtSJZf5HH4+3p
+         VaR9O5QbeR7A7anbrWDebvE2kgaD3jTa+CFfBBLQaoGDmnaSVUcbksie79VGTKCfwBOo
+         EA6Q==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1782970480; x=1783575280; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=BYsyg1w1FxKnl5Rmpm2QTYiGYkStq4XPapOVCuKQhzY=;
+        b=QKNWFPDBSn1Cy5ieD1DhuE6LxCJmwLGvvxkGZCwnxJ3p+joOgef1o9Z9WjfD38qgEd
+         lPxFyHl3M3uFXYcmeBJiLDlmek5vij7ORn721xRdORRp2Fu5r9RA5+SUHfECIxgmvcez
+         DIA9TbKM9/kNkA1dtsTBnTCdtW/Sz5GFFlwcT348pF/MyEU0nmR97tGLGU9da5buNdyd
+         nq9evbx6+2mlDrKsg9vCkvo8m/cUoTrjn+6fpNbiG2rvd6iggqU1dJzTyjG2KTG8hTgF
+         OIKU26oK77EvDSXIuEmMBIESDal/wbtx4AIZaQ9mngifJqPo3dcWiN95pvbbaUFDjIH+
+         2WMA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1782970480; x=1783575280;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=BYsyg1w1FxKnl5Rmpm2QTYiGYkStq4XPapOVCuKQhzY=;
+        b=E/CclvT4uIKBeRTXQaeZGtM9JwEqHp9a8U1Y0IsSjXP4BLbZc7Yr7OAe80T/UWQQk1
+         p81DVs942cPamRpU0d2b26+z0wBUbRM7ABt3xwcjNFyVGUhA+PZYYlVrUXLZ3jCjPwCG
+         /VpbVM0IE1YfGUcqESeHk5v/aWcau9BWaK/1QCFWBSDMHUxVTH8qbMYpvsQA3GvjEES2
+         4kF/msMaF9C9yUPEENZqjJTIBe5qirqm5o4xvyHGewuc/JcQJMAtzaOo97yVga6IuiZa
+         qurRTUXnbBwMLJ6F91JvBC568xkRJH4bTtXNb7ENF+bxCs6Y+LMMpebWUE8yZ0sEcYRa
+         GC7w==
+X-Forwarded-Encrypted: i=1; AHgh+RrKNHrA8EWEOKifZ3LVPtOOX+507eSKr6bd5tYze9bAOjixkR3nV8l6CSIkc5h5ypmpE7iyNZREjNa6oA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyUIcfrZ3d8jTIpa0xEbJVBmeyFWiq2EOD8/yZV1Yk+I07Oo5kf
+	/0eS1MxWrIEJC7+EUN1XuvDCParuqwQUVR0qGWonK3lNu6hI0ix7EtZK+mMNAfio/SmdSDxPEtl
+	N0e4R8EJ/uRDiTeDeReidmRefclhrVqpWylf4c2R0Lw==
+X-Gm-Gg: AfdE7ckMQxkrY96lbXaKodOGbN6b7RnoudzHaKqdaLOa7BBSLqyVeZTvEA8ifypjuxB
+	mB1ViP76J9MZ8efXCS2EOvKLYx5nGBi7OVtFiB3W2KaMoWA9qGdxrFRPRiA7oeMWXryLs+L5dtH
+	hb7x+mAT8YPgtsB4EsCbAYh1HpFst07e4Ir40Ermb32/4q8m33yP8e4bqy07tDEYZmWQW0jbgCa
+	9tu2YKy3yKcXCHm1vJ4EMOrV3BYPrVNMqw5JgP4KlJo9DVkUVaTmwjAx6u9kTEQ64DNhZNSvxky
+	SufQn4xM1XXkCQbbfj6QFwjL2A8RdPJPhPa9IfGOjaViHUwY9GSqpuo6dypxRkuKSrT/Mw==
+X-Received: by 2002:a05:6000:468a:b0:475:f0f0:9ec9 with SMTP id
+ ffacd0b85a97d-477b5a526f4mr3430690f8f.52.1782970480175; Wed, 01 Jul 2026
+ 22:34:40 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: SJ0PR11MB5815:EE_|DSWPR11MB9692:EE_
-X-MS-Office365-Filtering-Correlation-Id: aa1e0975-72d2-440f-a947-08ded7dd1515
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam: BCL:0;ARA:13230040|1800799024|376014|23010399003|366016|22082099003|18002099003|4143699003|11063799006|56012099006;
-X-Microsoft-Antispam-Message-Info: C7NzNBXg1o/Y01P+lE2sP1IemNAtTnuY+kTJGmTWDi1hqqrZmjtQfKUU8KPH7/px9QbpDAFPa9AqdNisIQSeuLnH8bz9N5j+CZIe/xBLhn4c1GXPDmlCOJ9U2+Kh+ZPgkd1TaU4t6npYDqD/Z59ssu1r+Tvi2mekBQ9SioUJwFGPfecfS4exXVqfqP5uXvSt3BfUy0VwYjU0OiPv2FkYftE0eTRyDPbuMgRVLQfqyD3M2+fsJeSGK9q7WJO/kPu6Vj6Av4omxHuvMlILO4DvLWsfaRG9RxpVFulGQtdeYgFmkXnQ4E+wXpgrmEYFjTS5775k6qwanhwCpW5QtVUtjWL84ciKuQ53jhlVJvIpUoXt2lCZ8jwNxrCmBKyelICVqE1wvI65pLC9BQ4ju/DSlmh/QP9ny+8o4i1uvj0jzK4s5Orwi2XZps+J8yYzufXQp2KOKJQgl1Dg2hmavvjeZQ6Yxwoiw6z6uqN8rw9uURSfYx2VJrfH2utF3rgBfbjRp41VIL8BJqHaGjblaBnocSnHHlhGsSNXJbCN8wyQSik++V1vCfRQWU1Vh182HHvIM2Wjo0Hq3D2d3YezB0mVry4LslfaEvuqQmjWleVRtRI7Cj27f2k8tJJSGDNAv+nyrxGM1kfijaZfqBMfPxif27Kqa882Glnys3ZHiFehBVU=
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SJ0PR11MB5815.namprd11.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(376014)(23010399003)(366016)(22082099003)(18002099003)(4143699003)(11063799006)(56012099006);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0: =?us-ascii?Q?n+D740T9MFVGxLHFRDAAJDbj6xC7yr6hVZpqtXgyO2c5RIdtr1hiqfQdu87S?=
- =?us-ascii?Q?7/72mC3d9FU/n6iX2A1a50kEw1TqL7jsBcLRK2hgiILlM45qfMGN2ZcMQ4ao?=
- =?us-ascii?Q?/C53dKyfZ121+Qpra8M+VQqHOwnc/rFnRRajJuloQa6eHthbF7jRsje3iASj?=
- =?us-ascii?Q?LYUBOOTFFP8ITR+sV+k93DGhcGtP9kYHtchzAzVOG/JO+oIh2IXLEnSaHj3Q?=
- =?us-ascii?Q?oY5wGmAEoH1SbTb/P7oAI0lEc2ZEKx7uI0Pu1OhliBbABYs43yZp3C/d+Ra5?=
- =?us-ascii?Q?hkixiO5rKo4pSs+Ln4YfPoa98lqvPtyB9mG/Nghp3Jl/zTdihQVpuTdtRgAN?=
- =?us-ascii?Q?9BQuZvA0KiVQVsaWCY5zPmS4hnV5gy/vYS/V/c0YgLMsWy3+REtm78M90DMJ?=
- =?us-ascii?Q?FuL0sG1JsWWN9JYf7G1CBYAV7oUcN1uwdthjEYD3yzoY+4ljhI70Zd+kz0lj?=
- =?us-ascii?Q?PSnsIyd7Ix7i2T2rzjopv5PZqCsnksNjIoQuR88wfh/RBSz5EinSbrT2+Pg0?=
- =?us-ascii?Q?1rex8VP7fdEMhlMo88s7lon5nsZ6eWSXAWD1UWssjGBX/luA18re2KdWQL61?=
- =?us-ascii?Q?Nj7VJ1xEpJC9mVbsvNe+7A/rnepo9L10k5qyHURCD2DTpxe7TlM2PdOc2OfA?=
- =?us-ascii?Q?6p+a2DgmUylWdqwDCxVDpncaPx57h57/ag3vkQvs22mYPbqwOl8LjQ5BP1Yo?=
- =?us-ascii?Q?c7IyculBo9r3RzT71MrWXj7tvXfTuKkww9EavCWw6/ZgglIUu3/06FfgfHSf?=
- =?us-ascii?Q?siVA3JfexcUpVEZW/qMimv9dinsctLp2r9axgVB7MgBff795jri7eefnPGPE?=
- =?us-ascii?Q?ELKD86cJ1656Zlcez6Bg1UpOsM3liP3o27fdm062X5KCvLay4MyDQXje8TE/?=
- =?us-ascii?Q?HIF+wuKsG5Ez63PMZuzFo01q+gNEDjF8JSEB085ejkq+FKrEf4Du2Hq7rZns?=
- =?us-ascii?Q?lD91ZqfjYw2F9vZEzZpppVWA5c3c1hN958MOGUk9hjBsIUB6P1lM2s7ZU6ow?=
- =?us-ascii?Q?0gZLTN/XlUhNICWspPsj8leYPK2gF9omB7HKVvQ5/8u52XcLrZG77SvGpPjM?=
- =?us-ascii?Q?er4Bi04NUr8HZCxJ4fsvmEgMumb6M0rEPdhCMZOP1vjmZc9wS5QRDFLY2ytQ?=
- =?us-ascii?Q?4zY/ss159YVSxEeA1OagaQDgjczIr9v1o+Qs+jHfVsFB1I9/5ppFkvuApMIF?=
- =?us-ascii?Q?kziOudOl9G3zd8dswBj59hbLTN1COkzwDUu84d6NnWa8/3STD2Y24CHrPa9v?=
- =?us-ascii?Q?OQppkS+vOZdp3KZg/zUSKGFfRUhiTG5WvD7tDojoo34Jzdyz1qsXSnHqLQ3n?=
- =?us-ascii?Q?tkgL//8YiwWz0qZ/wR4e/qbiX2zEDga0UDHYK7HBjkb9crgb2XKIb1/3QHzy?=
- =?us-ascii?Q?DrogHAiW3s6CSWKLraZ4SHGtfqp9BEZW5sg6aQMOVo8vCYYe+vnyywkKfCT7?=
- =?us-ascii?Q?Tl2pxA+BKRKyIi/PLQ1VvVSCr+M7dHmT6OWqvZ7crhkqmfHJmMb61SLVBeUT?=
- =?us-ascii?Q?Prmm9pkPXkkzjrLXoCvP+FCd0Qpv3Lf1PlIIr/W8ExEKWr6vf344MxkcUaXy?=
- =?us-ascii?Q?VrJDL43KX7H8HnZCXHLcoQRGjEjOrZc9UNSObvAV6KKpuu1Zuoc1bVvcKDt4?=
- =?us-ascii?Q?7ZiJJzCcZekbqijU6Hr7G9ERpW7R2O0VsuPbeWYbhmsbG/DAxLho/S/6EMrl?=
- =?us-ascii?Q?D088ATayF7cmp/3jMPwKfQ62eyuLhXazb7rI1uMCG4Q+ipbuGMxKeGKOMDsX?=
- =?us-ascii?Q?xhcDdY8IaQ=3D=3D?=
-X-Exchange-RoutingPolicyChecked: ihyho+3pStpaqzHrolNCQ3SmWpDsZ+haivqz/7Wbv8JkR6Wn6iXYM3kbY3SzxWKZV2PdQYyTjshcm6KsSJDBEOMlGzu5cGTIe8hmZ2eagFtodsa66buazB7xv5iXUrrK4lCV+sUJGDwEeRBWCk3Ky0WPnQiLdccrK3YiZdye6gOLs5ePTYhmLreg4rxO8G7gPke6oUBf60ay40jgJQmUB591nFBwCQz2nSUvyBwI91offtJB+sjCcbjmSmjQyW8Kn1tdbDzs25ZL1nRRK0iFioIOcybDCy8zEUXbsuy9H92Z4lJ+DloITHY3YNkqyVVxSVwcabsYDEfteKy1kf1TGQ==
-X-MS-Exchange-CrossTenant-Network-Message-Id: aa1e0975-72d2-440f-a947-08ded7dd1515
-X-MS-Exchange-CrossTenant-AuthSource: SJ0PR11MB5815.namprd11.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 02 Jul 2026 01:56:07.7952
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 46c98d88-e344-4ed4-8496-4ed7712e255d
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: 5XEQA2QkHKiP/TAj6m/fg62mdqVOJhLdbgZU3ymyd2UczQoZLTR8Z6giZdqzBY4b9FcIo1Rn2qMtFyIluMhkBw==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DSWPR11MB9692
-X-OriginatorOrg: intel.com
+References: <20260624165144.556908-1-neelx@suse.com> <20260624165144.556908-2-neelx@suse.com>
+ <7d4ab06d-6cd0-4eb6-a355-d2b51d132713@suse.com> <CAPjX3FdE8REFdGT06k2RehJMfETgrxPzHZ3+V7FPaM_c1UwfcQ@mail.gmail.com>
+ <2da4b215-165f-4bd6-a2da-07c9012586b7@gmx.com>
+In-Reply-To: <2da4b215-165f-4bd6-a2da-07c9012586b7@gmx.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Thu, 2 Jul 2026 07:34:28 +0200
+X-Gm-Features: AVVi8CcG5zLelgQO4v3GpjE5Ypjk5fHhbLOCXs6uMnb_UaodAS4nCGHym-UkL70
+Message-ID: <CAPjX3Fe_S2oJeEo_qpXv5VgWYq-DNe_Lj5JU0M7m1p-MN8jVdQ@mail.gmail.com>
+Subject: Re: [PATCH v2 1/8] btrfs-progs: check: fix max inline extent size
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>, linux-fscrypt@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	Josef Bacik <josef@toxicpanda.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-hi, Leo,
+On Thu, 2 Jul 2026 at 00:22, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+> =E5=9C=A8 2026/7/2 01:17, Daniel Vacek =E5=86=99=E9=81=93:
+> > On Fri, 26 Jun 2026 at 01:41, Qu Wenruo <wqu@suse.com> wrote:
+> >> =E5=9C=A8 2026/6/25 02:21, Daniel Vacek =E5=86=99=E9=81=93:
+> >>> From: Josef Bacik <josef@toxicpanda.com>
+> >>>
+> >>> Fscrypt will use our entire inline extent range for symlinks, which
+> >>> uncovered a bug in btrfs check where we set the maximum inline extent
+> >>> size to
+> >>>
+> >>> min(sectorsize - 1, BTRFS_MAX_INLINE_DATA_SIZE)
+> >>>
+> >>> which isn't correct, we have always allowed sectorsize sized inline
+> >>> extents, so fix check to use the correct maximum inline extent size.
+> >>
+> >> No, we only allow sector sized inline extent when it is compressed.
+> >> The de-compressed size can be sector sized, but the compressed size
+> >> still can not reach sector size.
+> >>
+> >> So this doesn't seems correct to me.
+> >
+> > With encryption it's the other way around. Even shorter data (symlink
+> > path) is always padded to multiple of the cipher block size (16 bytes
+> > with AES). Inlining a full sector size is perfectly valid. The dump
+> > from my test looks like this:
+> >
+> > ~~~
+> >      item 45 key (290 DIR_ITEM 3363472967) itemoff 11425 itemsize 62
+> >          location key (300 INODE_ITEM 0) type SYMLINK
+> >          transid 14 data_len 0 name_len 32
+> >          name: \243\365@;\312\321\240\367\377\234_{\245\vW\
+> > \035\rS\222ryN\323\031g\243\nt3\321+
+> >
+> >      item 58 key (290 DIR_INDEX 11) itemoff 10077 itemsize 62
+> >          location key (300 INODE_ITEM 0) type SYMLINK
+> >          transid 14 data_len 0 name_len 32
+> >          name: \243\365@;\312\321\240\367\377\234_{\245\vW\
+> > \035\rS\222ryN\323\031g\243\nt3\321+
+> >
+> >      item 86 key (300 INODE_ITEM 0) itemoff 7197 itemsize 160
+> >          generation 14 transid 14 size 4096 nbytes 4096
+> >          block group 0 mode 120777 links 1 uid 0 gid 0 rdev 0
+> >          sequence 1829 flags 0x1000(ENCRYPT)
+> >          atime 1782916271.8000000 (2026-07-01 16:31:11)
+> >          ctime 1782916271.8000000 (2026-07-01 16:31:11)
+> >          mtime 1782916271.8000000 (2026-07-01 16:31:11)
+> >          otime 1782916271.8000000 (2026-07-01 16:31:11)
+> >      item 87 key (300 INODE_REF 290) itemoff 7155 itemsize 42
+> >          index 11 namelen 32 name:
+> > \243\365@;\312\321\240\367\377\234_{\245\vW\
+> > \035\rS\222ryN\323\031g\243\nt3\321+
+> >      item 88 key (300 FSCRYPT_INODE_CTX 0) itemoff 7115 itemsize 40
+> >          value: 02010403000000005f0642cd89f66ce3ed930fe3ac518b7381bcd76=
+00f7ae1f08195bda44461ed5d
+> >      item 89 key (300 EXTENT_DATA 0) itemoff 2998 itemsize 4117
+> >          generation 14 type 0 (inline)
+> >          inline extent data size 4096 ram_bytes 4096 compression 0 (non=
+e)
+> > ~~~
+> >
+> > Perhaps this would better be folded into patch 7?
+> >
+> > Or do you rather mean special-casing for compression (with the limits
+> > as you mentioned) and encryption (with full sector size allowed)?
+>
+> In that case, I'd prefer the limit to be only loosen for encryption.
+>
+> So we won't have unexpected non-encrypted inlined extents to reach the
+> limit.
+>
+> BTW, it would be great if the progs dump-tree also prints encryption
+> value for the inlined extent.
 
-On Wed, Jul 01, 2026 at 04:44:11PM -0700, Leo Martins wrote:
-> Hi Oliver,
-> 
-> Thanks for the report. I'm aware of this regression and the cause is
-> understood: the flagged commit adds a per-COW xarray store on every
-> COW'd metadata block, and on this single-task 4k randwrite ftruncate
-> workload that store is what costs the write_iops.
-> 
-> A fix has been posted to linux-btrfs that replaces the xarray with a
-> non-allocating fixed inline buffer and recovers the lost throughput:
-> 
->   "btrfs: replace writeback inhibition xarray with a fixed inline buffer"
-> 
-> It carries the Reported-by and Closes tags pointing at this report.
+Makes sense. I'll drop this one and rework patch 7 then. Thanks.
 
-thanks a lot for information! it's always our great pleasure that our reports
-are helpful :)
+--nX
 
-> 
 > Thanks,
-> Leo
+> Qu
+>
+> >
+> > --nX
+> >
+> >>> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> >>> Signed-off-by: Daniel Vacek <neelx@suse.com>
+> >>> ---
+> >>>    check/main.c | 2 +-
+> >>>    1 file changed, 1 insertion(+), 1 deletion(-)
+> >>>
+> >>> diff --git a/check/main.c b/check/main.c
+> >>> index 5e29e2c5..dedb4db4 100644
+> >>> --- a/check/main.c
+> >>> +++ b/check/main.c
+> >>> @@ -1720,7 +1720,7 @@ static int process_file_extent(struct btrfs_roo=
+t *root,
+> >>>        u64 disk_bytenr =3D 0;
+> >>>        u64 extent_offset =3D 0;
+> >>>        u64 mask =3D gfs_info->sectorsize - 1;
+> >>> -     u32 max_inline_size =3D min_t(u32, mask,
+> >>> +     u32 max_inline_size =3D min_t(u32, gfs_info->sectorsize,
+> >>>                                BTRFS_MAX_INLINE_DATA_SIZE(gfs_info));
+> >>>        u8 compression;
+> >>>        int extent_type;
+> >>
+> >
+>

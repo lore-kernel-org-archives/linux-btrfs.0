@@ -1,124 +1,149 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from mout-p-101.mailbox.org (mout-p-101.mailbox.org [80.241.56.151])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BFC913161A4;
-	Fri,  3 Jul 2026 10:37:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AD46C356754;
+	Fri,  3 Jul 2026 11:46:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=80.241.56.151
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783075048; cv=none; b=NBkBuqmD3Z5C6dTQsW77a+YcJFPPOziPoA3ob4nzYFi0JXEIw8x2g9QYDQmozRLcLVEA0UJGuHjbeCObklCztB8zGF1djZxm3mAj3mTlR9BmgBVbwzmjfhW2VoAYsaSveP50I99WnYb+0O/azEyB85v2gFiRxUEHMbc4w5uyiCk=
+	t=1783079194; cv=none; b=EIGTihfsnUMk2py2YUcqynhabKu+gGU7aKBN9tdlE5LbcsBw2Dv3r/UQXGuTM1L4BfSg5+qM1By1suqtzU2ZQDSiovfTiAcdYk1JjubDGpwugjEeNY3Qo2lafH8tm0U4e7hEWK40l3LNXBs8w+TDpR2BuZw9TStazu023z35XO8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783075048; c=relaxed/simple;
-	bh=d4s4dMLniDIuK4LTsTNvbrHzQ5sC7wrFJBhb2lMg/u0=;
-	h=MIME-Version:Content-Type:Subject:From:To:Cc:In-Reply-To:
-	 References:Date:Message-Id; b=hzO8GDLQc6WIhHSjeerGPh7k8fUjKV3P+oVBPa2o1gs+zNEJx+gYtkqBlQQ5HUpwLj+7mv44jiOXvB/4BAY5MGZeeyRc4VvUXBxU5NC1yv16WkrII7ia2zP+UU3CK1ipCkODCRnJj6SEesA7ax/OBI8S6aVfKX1GgUs4K/JiFvM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=W8LzFtRD; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1783079194; c=relaxed/simple;
+	bh=sGrf/1wcBYwf2qq0py12iLKgY8IWKaYthWYb/NqEouc=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
+	 MIME-Version:Content-Type; b=hUT8SHKeYdzUSXErmgCAfulTG5S0LPyY4JxvdFE8Zt3qO+OQ++cn3pwovA23IwYvo01CXc7WgsH+AYTl9g6VqE5nFEW2dUIj6cWv5wOPHsJZ56tRoJ/b9Z736BVqk0lBjaPK8U6ub7uF4pP+Q1liv6McFuJ2Z05XXNwDywnCS8c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mssola.com; spf=fail smtp.mailfrom=mssola.com; dkim=pass (2048-bit key) header.d=mssola.com header.i=@mssola.com header.b=0HEPMvON; arc=none smtp.client-ip=80.241.56.151
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=mssola.com
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=mssola.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="W8LzFtRD"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E6CFA1F000E9;
-	Fri,  3 Jul 2026 10:37:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1783075047;
-	bh=ibq5yGoOYYUKiAiXchC0WA0gL3l+/26cw0R84LkFjaY=;
-	h=Subject:From:To:Cc:In-Reply-To:References:Date;
-	b=W8LzFtRDEJ+LA4ga+f6QzIP5wIjhPrvbgSkeN5H9fdUp8ldRpYac+VP2pbFWqLIaZ
-	 VOZRYcIErzh7ZZVI1opgKNPyPdXZNYzLlXZRZvIfpIEGsP8CRSvmh6dp1f1DUAQ8eT
-	 REmssNKn6FgP95Nylwk1jyDskOejoq/ZtxJV6+SZMcueW6AmnmkTRlSc0afIY2ZaY4
-	 0j6EQgUmekHKxLsbkP1RtsOiATrm0qsMc/rLKl6p2+xyg60HQXm8THGcRmHmGEbsA5
-	 +KIVTrOUxI8EdD77tZ08aAlBNDaVgctnhdPNMu6u++MTrLUeeidjuDh4Pwu7QdGwKu
-	 L34A4eoQ9xeiA==
+	dkim=pass (2048-bit key) header.d=mssola.com header.i=@mssola.com header.b="0HEPMvON"
+Received: from smtp1.mailbox.org (smtp1.mailbox.org [IPv6:2001:67c:2050:b231:465::1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange x25519 server-signature RSA-PSS (4096 bits) server-digest SHA512)
+	(No client certificate requested)
+	by mout-p-101.mailbox.org (Postfix) with ESMTPS id 4gsBmK3N4nz8tys;
+	Fri, 03 Jul 2026 13:46:25 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mssola.com; s=MBO0001;
+	t=1783079185;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Xkbjq85tWAeo3PRPsB3s6iEDUUdxOC/4B213PD2McXg=;
+	b=0HEPMvON1FsPisZPkQuIvRgL3qKuSJd1nf9FZJqSrlWVvUVD99WpuWNMalmJF29qgj++PC
+	5YbdxNQHeR+QDDLcf6B6eF8IcClNqv4/7Nq+Lyk33Dohid/WrThz+sjpYPOxu0aJLqXqAm
+	C+ksn5L8TsMHhNZgDtNkVPwjrG5o5KfxEKPWjyaROBhh65KwE3G0eEtFYOkIs6UvCVMsrk
+	7OTQ7I0rynymSLrOd3bwxKJOtBhn+E9V1dwne0EBTm8HtgsclGR8oSe/P2j5+7/WXqUCxJ
+	9FipVbaytqZ2Sjf7rz+XOV9RXd79BLnIJgl9BrG/VDgF5+TC1CDHBgF4i820QQ==
+Authentication-Results: outgoing_mbo_mout;
+	dkim=none;
+	spf=softfail (outgoing_mbo_mout: 2001:67c:2050:b231:465::1 is neither permitted nor denied by domain of mssola@mssola.com) smtp.mailfrom=mssola@mssola.com
+From: =?utf-8?Q?Miquel_Sabat=C3=A9_Sol=C3=A0?= <mssola@mssola.com>
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org,  stable@vger.kernel.org
+Subject: Re: [PATCH] btrfs: zoned: reset active_meta_bg on zone finish
+In-Reply-To: <9c8421f2-7f17-430a-9f87-26fab7b1d73d@wdc.com> (Johannes
+	Thumshirn's message of "Fri, 3 Jul 2026 12:01:22 +0200")
+References: <20260703084559.136605-1-johannes.thumshirn@wdc.com>
+	<9c8421f2-7f17-430a-9f87-26fab7b1d73d@wdc.com>
+Date: Fri, 03 Jul 2026 13:46:22 +0200
+Message-ID: <87jyrc70tt.fsf@>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-Subject: Re: [PATCH v2 17/18] iomap: pass iomap_next_fn directly instead of
- struct iomap_ops
-From: Christian Brauner <brauner@kernel.org>
-To: Joanne Koong <joannelkoong@gmail.com>
-Cc: "Darrick J. Wong" <djwong@kernel.org>, Christoph Hellwig <hch@lst.de>, 
- brauner@kernel.org, willy@infradead.org, hsiangkao@linux.alibaba.com, 
- linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org, 
- Jens Axboe <axboe@kernel.dk>, Chris Mason <clm@fb.com>, 
- David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>, 
- Jan Kara <jack@suse.cz>, Dan Williams <djbw@kernel.org>, 
- Gao Xiang <xiang@kernel.org>, Chao Yu <chao@kernel.org>, 
- Yue Hu <zbestahu@gmail.com>, Jeffle Xu <jefflexu@linux.alibaba.com>, 
- Sandeep Dhavale <dhavale@google.com>, Hongbo Li <lihongbo22@huawei.com>, 
- Chunhai Guo <guochunhai@vivo.com>, Namjae Jeon <linkinjeon@kernel.org>, 
- Sungjong Seo <sj1557.seo@samsung.com>, Yuezhang Mo <yuezhang.mo@sony.com>, 
- Theodore Ts'o <tytso@mit.edu>, Andreas Dilger <adilger.kernel@dilger.ca>, 
- Baokun Li <libaokun@linux.alibaba.com>, 
- Ojaswin Mujoo <ojaswin@linux.ibm.com>, 
- "Ritesh Harjani (IBM)" <ritesh.list@gmail.com>, 
- Zhang Yi <yi.zhang@huawei.com>, Jaegeuk Kim <jaegeuk@kernel.org>, 
- Miklos Szeredi <miklos@szeredi.hu>, 
- Andreas Gruenbacher <agruenba@redhat.com>, 
- Mikulas Patocka <mikulas@artax.karlin.mff.cuni.cz>, 
- Hyunchul Lee <hyc.lee@gmail.com>, 
- Konstantin Komarov <almaz.alexandrovich@paragon-software.com>, 
- Carlos Maiolino <cem@kernel.org>, Damien Le Moal <dlemoal@kernel.org>, 
- Naohiro Aota <naohiro.aota@wdc.com>, Johannes Thumshirn <jth@kernel.org>, 
- "open list:BLOCK LAYER" <linux-block@vger.kernel.org>, 
- open list <linux-kernel@vger.kernel.org>, 
- "open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>, 
- "open list:FILESYSTEM DIRECT ACCESS (DAX)" <nvdimm@lists.linux.dev>, 
- "open list:EROFS FILE SYSTEM" <linux-erofs@lists.ozlabs.org>, 
- "open list:EXT2 FILE SYSTEM" <linux-ext4@vger.kernel.org>, 
- "open list:F2FS FILE SYSTEM" <linux-f2fs-devel@lists.sourceforge.net>, 
- "open list:FUSE FILESYSTEM [CORE]" <fuse-devel@lists.linux.dev>, 
- "open list:GFS2 FILE SYSTEM" <gfs2@lists.linux.dev>, 
- "open list:NTFS3 FILESYSTEM" <ntfs3@lists.linux.dev>
-In-Reply-To: <CAJnrk1b8j5WHtbHOWNXc4=QBFOxde1f2QxTOeui7Ta8O-xWcTA@mail.gmail.com>
-References: <20260701000949.1666714-1-joannelkoong@gmail.com>
- <20260701000949.1666714-18-joannelkoong@gmail.com>
- <20260702140705.GE21339@lst.de> <20260702165117.GK9392@frogsfrogsfrogs>
- <CAJnrk1b8j5WHtbHOWNXc4=QBFOxde1f2QxTOeui7Ta8O-xWcTA@mail.gmail.com>
-Date: Fri, 03 Jul 2026 12:37:14 +0200
-Message-Id: <20260703-nachrangig-gegeben-befestigen-8219a53648c7@brauner>
-X-Mailer: b4 0.16-dev-4217c
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1636; i=brauner@kernel.org;
- h=from:subject:message-id; bh=d4s4dMLniDIuK4LTsTNvbrHzQ5sC7wrFJBhb2lMg/u0=;
- b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWS5T7iz7fS6t1kzwm8fcparv3KDyXRbpMKKF15fNPbwT
- dVe5OMk1lHKwiDGxSArpsji0G4SLrecp2KzUaYGzBxWJpAhDFycAjCRtgxGhmMbHf76zT147eA7
- nZiMnzu9Q+v+PNtl5pjYUP6f6/XP/z8YGe7siubVVw14xJBz7G+cn2VOrNK0S08/rfgQ3Ddj8wq
- eCi4A
-X-Developer-Key: i=brauner@kernel.org; a=openpgp;
- fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
+Content-Type: multipart/signed; boundary="=-=-=";
+	micalg=pgp-sha512; protocol="application/pgp-signature"
+X-Rspamd-Queue-Id: 4gsBmK3N4nz8tys
 
-On 2026-07-02 18:47 -0700, Joanne Koong wrote:
-> On Thu, Jul 2, 2026 at 9:51 AM Darrick J. Wong <djwong@kernel.org> wrote:
-> >
-> > On Thu, Jul 02, 2026 at 04:07:05PM +0200, Christoph Hellwig wrote:
-> > > Looks good:
-> > >
-> > > Reviewed-by: Christoph Hellwig <hch@lst.de>
-> > >
-> > > In terms of merge logistics, I wonder if we should delay this and
-> > > the previous patch to the next merge window so that we can minimize the
-> > > cross-subsystem merge pain with more file system iomap conversion.
-> > > If none of them actually happen until rc6 or so, orif  the merges aren't
-> > > painful we could still pick them up late in the merge window.
-> >
-> > I'd say everything but this patch should go in during the merge window
-> > for 7.3, along with clear instructions to brauner/torvalds to expect
-> > this patch to appear right before 7.3-rc1 gets tagged, to clean up all
-> > the other changes that come in.
-> 
-> Just to clarify, did you mean this patch and the previous one? If i'm
-> interpreting Christoph's concern correctly, I think he's worried about
-> other filesystems converting to iomap using the ->iomap_begin() /
-> ->iomap_end() functions still? That sounds like a good plan to me, for
-> v3 I'll submit everything but this patch and the last one and then
+--=-=-=
+Content-Type: text/plain
 
-Ok, so we'll do the prep for vfs-7.3.iomap (aka to be merged in the
-v7.3-rc1 cycle)...
+Johannes Thumshirn @ 2026-07-03 12:01 +02:
 
-> submit these patches (and any cleanup ones that become necessary) to
-> Christian right before 7.3-rc1 gets tagged (which as I understand it,
-> is when the merge window is about to close).
+> On 7/3/26 10:45 AM, Johannes Thumshirn wrote:
+>> do_zone_finish() clears BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE and removes the
+>> block group from zone_active_bgs, but only the path in
+>> check_bg_is_active() resets fs_info->active_meta_bg / active_system_bg.
+>> Any other finish path leaves active_meta_bg / active_system_bg pointing
+>> at an inactive, fully written block group.
+>>
+>> Reset the corresponding active_{meta,system}_bg pointer in do_zone_finish()
+>> so it can never go stale.
+>>
+>> Fixes: 13bb483d32ab ("btrfs: zoned: activate metadata block group on write time")
+>> Cc: stable@vger.kernel.org
+>> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+>> ---
+>>   fs/btrfs/zoned.c | 15 +++++++++++++++
+>>   1 file changed, 15 insertions(+)
+>>
+>> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+>> index 44a13ed6b8b2..c8c850de1702 100644
+>> --- a/fs/btrfs/zoned.c
+>> +++ b/fs/btrfs/zoned.c
+>> @@ -2539,6 +2539,7 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
+>>   	const bool is_metadata = (block_group->flags &
+>>   			(BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM));
+>>   	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
+>> +	struct btrfs_block_group **active_bg = NULL;
+>>   	int ret = 0;
+>>   	int i;
+>>   @@ -2636,6 +2637,20 @@ static int do_zone_finish(struct btrfs_block_group
+>> *block_group, bool fully_writ
+>>   	/* For active_bg_list */
+>>   	btrfs_put_block_group(block_group);
+>>   +	if (block_group->flags & BTRFS_BLOCK_GROUP_SYSTEM)
+>> +		active_bg = &fs_info->active_system_bg;
+>> +	else if (block_group->flags & BTRFS_BLOCK_GROUP_METADATA)
+>> +		active_bg = &fs_info->active_meta_bg;
+>> +
+>> +	if (active_bg) {
+>> +		btrfs_zoned_meta_io_lock(fs_info);
+>> +		if (*active_bg == block_group) {
+>> +			btrfs_put_block_group(block_group);
+>> +			*active_bg = NULL;
+>> +		}
+>> +		btrfs_zoned_meta_io_unlock(fs_info);
+>> +	}
+>> +
+>>   	clear_and_wake_up_bit(BTRFS_FS_NEED_ZONE_FINISH, &fs_info->flags);
+>>     	return 0;
+>
+> I think Sashiko has a point here:
+>
+> https://sashiko.dev/#/patchset/20260703084559.136605-1-johannes.thumshirn%40wdc.com
+>
+> check_bg_is_active() should take a reference before calling into
+> do_zone_finish() or actually clearing fs_info->active_{meta,system}_bg can even
+> be done in check_bg_is_active() after calling do_zone_finish().
+>
+> That'll then also eliminate Miquel's concerns.
 
-and merge these _after_ v7.3-rc1 has been tagged...
+I'd maybe take the latter to avoid adding more complexity to an already
+complex do_zone_finish(). Besides, I see that do_zone_finish() is
+already called in many other places throughout btrfs/zoned.c, so I
+wonder if having the changes in do_zone_finish() would also "spill" over
+there.
 
+--=-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQJiBAEBCgBMFiEEG6U8esk9yirP39qXlr6Mb9idZWUFAmpHoQ4bFIAAAAAABAAO
+bWFudTIsMi41KzEuMTIsMiwyEhxtc3NvbGFAbXNzb2xhLmNvbQAKCRCWvoxv2J1l
+Za2AD/4q8vKER+44H86pKGnSr+12cK98Uo510nLSg0xOZaTTw9DbPDDg1Shb/Bcg
+qolF0/i5zsdXXE5CuKUduPECDgUXpMeB0DvS251BqSbOv1PMX69zXfT0bQFEQipu
+w7fJIPfd08gwoyAIyHN2BPdnnyoe7f8w8oNtHPGDEg5nIp0z+iyEOdhCFkv6ta3P
+xaynLdiDTCDLN43+8dtTQQoErf4r24l4TaO3ndo5gyZ294iMNvzQA9tdrmiGPA5J
+vdwVNDvNOsMij3Rk5x/b2w4SJRXFYnbbP5HZk4m/dFxdBF8HgZ+vf5BC06J2TL1Y
+KiNty8mKoB9zJux30/IctEs53l1ioCKjMmamClORJ0vs97Mm/sdkkt7Y8WQsCktV
+2kO0vbhkr7MNOBbp6VbdLQ7gS1rwLOgj5iXDo6z5yIrcHhWzFcHnWjKcZo/r10Wx
+M9mmW3pn7I52dubPHjZy8MdsK1C5dTTQXnjNf4gN0LkUAObm0a15GKytxZnRhHPT
+ppNe2ah37GFFBCwkDOu3fF/9mparqD9D1ai8qDktKEkBa2ZQa/OmfOUkl9p/0eGR
+IUn9GrVishpIdmwqEboiR7Vvd0WA9cq+6n9Wu9gEGreyswqTePY40lE3IUUkM+Jw
+HtPd7q0XGWIc4C4whInzPBtuqq/YHatHqRn6qO8vAXzCMACosA==
+=bcxr
+-----END PGP SIGNATURE-----
+--=-=-=--

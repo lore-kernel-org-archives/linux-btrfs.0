@@ -1,56 +1,59 @@
-Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B665535AC33
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jul 2026 07:14:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=68.232.143.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 493CF370D5C
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jul 2026 08:41:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783062844; cv=none; b=VVwJ69FBOAwImfEJ+GKWEYXRUuSTJ9ddYkKrkww2T5ne4Fo8zTKWsMXD5x5LPUrZO5C92mpLGiOq+nIr9xFTf1cZf6xipxDDPNDKUuW7189MQqmRSnd+StOH0qLF0MGiwVEQZdlQs4PyzXnWo08OylLO0QYOjQ6xu6i/95QKBeU=
+	t=1783068108; cv=none; b=pSM4RRb1w2/Nckx7AUuJxcCk6S8oAwGt3q/YmQiXRdG9mfCnUIxNd3HjhFqVCjb1nptfgXkdSeRZhOy91yGrhM6yupCxSztHL4WNrHA35g2NFMKONpGrATgZ8QaHvtg9I56XFOPsu72yaHM4jJwqWvDEIq9D2P1BJsgRZSleegw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783062844; c=relaxed/simple;
-	bh=T1Hi7WLPJIBMEj/KQnAat36kCmgIjKnSrfaHhxa9tpE=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=tpjgYBFBZzhRe5f2S5Mpeeuv6pDYzs/O6UPCxQKOQBkMUHr/MkUodG8I697kwCUTx68KizPIP5tw5Msn3oVtWpRTTb6qhL5NbASGt3FXe+4uYEHvijAcvs9nUY1ulB0uuNcnKVobb4K75yoMmuYwVJLbDVzNea7fLtNMktyR2w0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=e5KpYeEE; arc=none smtp.client-ip=68.232.143.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	s=arc-20240116; t=1783068108; c=relaxed/simple;
+	bh=LLvaEnmcxeVxOgF9Y5xn9mDWzyaDttfIjZZwSuoXwcY=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=b8hOAinRAmrseS647WtwlBKUfSUhAR2AnF9k1CUtRaVjHcCfWt0cky8/OJmtz1lQ7Rqe25xSmISiKlP+NI6xVMDRlJNdcYlQWdVeQncRqsHMh7kPBEyHJmxEhFZnppc40YBbnrXXo/WzPp34qdkhrCISzTn4wnQwGvWnTWtB/V4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gRCqJdUm; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gRCqJdUm; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="e5KpYeEE"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1783062842; x=1814598842;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=T1Hi7WLPJIBMEj/KQnAat36kCmgIjKnSrfaHhxa9tpE=;
-  b=e5KpYeEEKPHOmM1h5yvFoBQw5kjWOayevRoxZrEm6rlMvVMVKn7kKVz+
-   iW1HR5ca8hlboVmBMJRwpoS7KZL8HOxg/PQ/nWT76ZZ4eg/vnWZUhHvrI
-   LEk9jPwXHoZI5UcVFI1QQkSAhZSMHmrx7c+PLwdKbALF5dxA0OzP0/wO3
-   SpmitPN8czQ3oEqbEtmovdCQEF+DuueXdr1LRp6IWaf3zcE0JBaT6eJ54
-   L5QPDr/CoGqe/SiaPqUhUAaVJmmVRl+9Ho4scEeExlVnfcugsKozly+O+
-   3khlUCN6baj8+qh8qo7KhIV8JDBr4PQ5vpOAAmq7sE9FbzHoFC4GZmrSV
-   Q==;
-X-CSE-ConnectionGUID: g19kDiiFQdSZZ0S71YaM/A==
-X-CSE-MsgGUID: N4uo9eaRTzG96G0u3v2cUA==
-X-IronPort-AV: E=Sophos;i="6.25,145,1779120000"; 
-   d="scan'208";a="151208858"
-Received: from unknown (HELO uls-op-esad2-o.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 03 Jul 2026 15:14:02 +0800
-X-CSE-ConnectionGUID: RW+Q4aW9TFuTiZPCcwuGYA==
-X-CSE-MsgGUID: BXgG8cyhSxKDojyyZuivhQ==
-IronPort-SDR: 6a476123_lkeHR3Ga49x8pbJZKrSMyWIDdPJ+bRqqkczV4jr/ZUhb87e
- PF3k7EJL3fsUXTAjTj0Fd86Wjrq0ftazb+MJkrw==
-Received: from uls-op-esai2-o.wdc.com ([10.248.3.38])
-  by uls-op-esad2-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 03 Jul 2026 00:13:38 -0700
-X-CSE-ConnectionGUID: wH3YjiLlQr2+IbMwRjdQ4w==
-X-CSE-MsgGUID: Sbi7uUEAR0qvGuV9OKHQuw==
-WDCIronportException: Internal
-Received: from cnd1221spb.ad.shared (HELO neo.wdc.com) ([10.224.28.133])
-  by uls-op-esai2-o.wdc.com with ESMTP; 03 Jul 2026 00:13:38 -0700
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gRCqJdUm";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gRCqJdUm"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5CBFC72A7E
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jul 2026 08:41:44 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1783068104; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Zvr9qB8F/5ZEaFpPgQ06DSRk8vlrKuHIJqquXL8SahQ=;
+	b=gRCqJdUmc6l99gPR2HTUleAsDOZS7GebiwjyWMWIh2So1vYbG+9YYy7iJ0fw/PfJfKFh4Q
+	tcbE68Y/sd3JqycX7hLUzGgqYQzrFFBbxJAXlBtVGfu2fwhkMzcP/i2T1Vmyz2gDjBi8+j
+	vE0eS42vyMggp0gHTxnCkKfk85o2jQg=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1783068104; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Zvr9qB8F/5ZEaFpPgQ06DSRk8vlrKuHIJqquXL8SahQ=;
+	b=gRCqJdUmc6l99gPR2HTUleAsDOZS7GebiwjyWMWIh2So1vYbG+9YYy7iJ0fw/PfJfKFh4Q
+	tcbE68Y/sd3JqycX7hLUzGgqYQzrFFBbxJAXlBtVGfu2fwhkMzcP/i2T1Vmyz2gDjBi8+j
+	vE0eS42vyMggp0gHTxnCkKfk85o2jQg=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5AAAA779AA
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jul 2026 08:41:43 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id sZgIA8d1R2p6RAAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Fri, 03 Jul 2026 08:41:43 +0000
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH] btrfs-progs: zoned: open host-managed devices with O_DIRECT for read-only
-Date: Fri,  3 Jul 2026 09:13:35 +0200
-Message-ID: <20260703071335.124167-1-johannes.thumshirn@wdc.com>
+Subject: [PATCH v2 0/3] btrfs: small changes to "usebackuproot" mount
+Date: Fri,  3 Jul 2026 18:11:13 +0930
+Message-ID: <cover.1783068013.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -59,52 +62,52 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Level: 
+X-Spam-Score: -2.80
 
-On host-managed zoned devices the page cache is not coherent with the
-on-disk contents, so all IO must use O_DIRECT. Both device-open paths only
-added O_DIRECT for O_RDWR opens, so read-only tools like "btrfs check" used
-buffered IO and could read stale zero pages for one mirror of duplicated
-metadata, reporting a spurious
+[CHANGELOG]
+v2:
+- Also include "rescue=usebackroot" into "rescue=all" shortcut
 
-	checksum verify failed on <bytenr> wanted 0x00000000 found 0xb6bde3e4
+"rescue=usebackuproot" mount option is not requiring a read-only mount,
+which is different from all the other options in the "rescue=" group.
+Address that in the first patch.
 
-even though both copies are intact on disk.
+Standalone "usebackuproot" mount option is already marked deprecated
+since v5.9, I see no practical reason to keep supporting it in 2026.
+Just remove it in the second patch.
 
-Drop the O_RDWR condition so host-managed zoned devices always use
-O_DIRECT, matching btrfstune.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- kernel-shared/disk-io.c | 2 +-
- kernel-shared/volumes.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+Qu Wenruo (3):
+  btrfs: add "rescue=usebackuproot" into forced read-only options
+  btrfs: add "rescue=usebackuproot" into "rescue=all" shortcut
+  btrfs: remove "usebackuproot" mount option
 
-diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
-index 7f87e567..8b9c6dca 100644
---- a/kernel-shared/disk-io.c
-+++ b/kernel-shared/disk-io.c
-@@ -1722,7 +1722,7 @@ struct btrfs_fs_info *open_ctree_fs_info(struct open_ctree_args *oca)
- 	if (!(oca->flags & OPEN_CTREE_WRITES))
- 		oflags = O_RDONLY;
- 
--	if ((oflags & O_RDWR) && zoned_model(oca->filename) == ZONED_HOST_MANAGED)
-+	if (zoned_model(oca->filename) == ZONED_HOST_MANAGED)
- 		oflags |= O_DIRECT;
- 
- 	fp = open(oca->filename, oflags);
-diff --git a/kernel-shared/volumes.c b/kernel-shared/volumes.c
-index a54ea4dd..24971c09 100644
---- a/kernel-shared/volumes.c
-+++ b/kernel-shared/volumes.c
-@@ -697,7 +697,7 @@ int btrfs_open_devices(struct btrfs_fs_info *fs_info,
- 			continue;
- 		}
- 
--		if ((flags & O_RDWR) && zoned_model(device->name) == ZONED_HOST_MANAGED)
-+		if (zoned_model(device->name) == ZONED_HOST_MANAGED)
- 			flags |= O_DIRECT;
- 
- 		fd = open(device->name, flags);
+ fs/btrfs/super.c | 15 +++------------
+ 1 file changed, 3 insertions(+), 12 deletions(-)
+
 -- 
 2.54.0
 

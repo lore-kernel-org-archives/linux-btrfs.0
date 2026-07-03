@@ -1,115 +1,91 @@
-Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from va-2-39.ptr.blmpb.com (va-2-39.ptr.blmpb.com [209.127.231.39])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EA7CD385D6B;
-	Fri,  3 Jul 2026 08:47:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.42
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A6CAD381EBB
+	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jul 2026 09:21:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.39
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783068469; cv=none; b=NH2n10zq+XZSiR24HEE7mir205ZqZjsm34Kbks7O577IhG9RylfN2vtByvxpGT8iombHMWMaQ85+2NWPaglFjoS0o/HDXLxWJZMqSdnvLQeds4dzW8dN8sw09N+W6iz+iPnP9/OBEB+Vr/yqpONXO8WCb1BEw4Usjc3M48u+leY=
+	t=1783070487; cv=none; b=Ko4IaqzeNrAitiR/1Dd/oPYYhFaBnB1MAOmAPTjctlrlEHTb1DnsPmFzKrRaYjdbzDM0V5TP8dbPYh4Hp8xSBNhrnMQ1vslI2zOrVWe8dwWjNy+ZPFhbPjriOfCQbimbdIhQYKtFmzSKj1/Y5ogRuR+DkVX6EU4eOT6uz1z20sM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783068469; c=relaxed/simple;
-	bh=w0fsexi7MXFeOO/xpoXkxYO8P4fqzMLwCCWXGi46M7Y=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=ljhewm8b+0OUUV1rGU9AbsogcDtpYrHqiE+of70gjN56wDCCMrNlJFLrt3jp4c+4VJOv0T40w0wSywVjw5s9cGEI2lB5Kit+1FyiDMR2JwQhlshlrUJOM7LUOaRQQPn64n1UamrqfeFmBv50qiIuoOL5hmc/j/qM9eRJ3BquwTk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=A8FNESOM; arc=none smtp.client-ip=216.71.154.42
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	s=arc-20240116; t=1783070487; c=relaxed/simple;
+	bh=2yqlUoGxhFTZG8X+sSDUHje22NeRHdjX5WjyEf+0Cp0=;
+	h=From:Mime-Version:Content-Type:To:Subject:References:In-Reply-To:
+	 Message-Id:Date; b=hf3Ettu5W48HlSQQk4l2lXyezOWJpX2ea7/xCZZdRjXdBEkdNoKqb5xnqHVMc+6YBX5Jw1qFnAL+7jvfAOoaCbyOednAkY0Te8g6KSUNBb6OTg3B8ONYfp70nnk8AkYT0MvzENqbMgqYiGaqDE3UMk7gHKAyWkQGSZ9Pg3Scx/4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com; spf=pass smtp.mailfrom=fnnas.com; dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b=uiupD2n5; arc=none smtp.client-ip=209.127.231.39
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fnnas.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="A8FNESOM"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1783068468; x=1814604468;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=w0fsexi7MXFeOO/xpoXkxYO8P4fqzMLwCCWXGi46M7Y=;
-  b=A8FNESOMHLIXM12GNLSRqC1EujAR8+gve0isWguvV6khXWhVHknMUFyL
-   CMo/w1dhRdTnw1kLBBKxXfXBI03GoqQeJFW/wF6nSmrHNE4l1iZ9ZAxjT
-   fMuk8rnIGElwQlvbmlmLg3ILEqeB3xFeiWbUef6mTNygXmOQT5HvGTsle
-   3088LmSuncHsVDMfXtLO6jhrK5kNpxkcQvxcrJZCZrxdgZJJCIqZZZ6LG
-   USp3G5QfMllxsD2L9HwI+pbcHhdVIevwxRHEWepxzvyzQA4ea5yz6Iamm
-   W7sfdrDx2KjCAxUjIunWEMjw0UbMNx+XJTz8vzlSgZYZnVBZnR5UWCWXj
-   A==;
-X-CSE-ConnectionGUID: nLx0nX/aT+ad1jWYn8yufQ==
-X-CSE-MsgGUID: NTYvehg9QBmEJ0bIWLh/dw==
-X-IronPort-AV: E=Sophos;i="6.25,145,1779120000"; 
-   d="scan'208";a="146156545"
-Received: from unknown (HELO uls-op-esad1-o.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 03 Jul 2026 16:46:39 +0800
-X-CSE-ConnectionGUID: 2o3jtba8QFqyvKqxWNpalg==
-X-CSE-MsgGUID: wX43H3AhT1yyKFrVBqOyCg==
-IronPort-SDR: 6a4776ca_389QZrYmFe4dZYXsDIK0pkMFQu7PAIunTztzKA8HaEuGvvg
- WJ9y0n/AnLRpQ9ftY6HQnpIZh+Be+ZivmtCNt1w==
-Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
-  by uls-op-esad1-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 03 Jul 2026 01:46:02 -0700
-X-CSE-ConnectionGUID: Y3VWgAeaRiuXi/yd5oSxAA==
-X-CSE-MsgGUID: /2b9ukckQzqgzNxkr+o39w==
-WDCIronportException: Internal
-Received: from wdap-kpvfcmq4pw.ad.shared (HELO neo.wdc.com) ([10.224.28.134])
-  by uls-op-esai1-o.wdc.com with ESMTP; 03 Jul 2026 01:46:01 -0700
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	stable@vger.kernel.org
-Subject: [PATCH] btrfs: zoned: reset active_meta_bg on zone finish
-Date: Fri,  3 Jul 2026 10:45:59 +0200
-Message-ID: <20260703084559.136605-1-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b="uiupD2n5"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ s=s1; d=fnnas-com.20200927.dkim.feishu.cn; t=1783070479;
+  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
+ reply-to:content-type:mime-version:in-reply-to:message-id;
+ bh=oVyLd/LDaUQ5sj9bVainblVmON4Xysk/wdanlg2iu6c=;
+ b=uiupD2n5vTLHbMlxhckwG+258MFzm3oZ+1096uYyI2CHec8B6bcQ+ZRaLTvIrrfxOTBgUf
+ HzF4nClt5oxYTyHnvBWNXhQXGhuXPhRcrB8sS2fIzErsNPnIaWpDi6B3un8ywXJmlzkVLa
+ +lX+QXBgECfsacstfGaIBQueRPKA0mxX6fltPUUJPnqRYiQCc0GxjiiQR8Tp0pni4iHC4r
+ iydPUGhvqm9MoHntpBUZrzsv7fhVdRS6wMZkiBDyXTRbxI14c2vuMBtV0xKM4Ath3PP/oS
+ gT7dLOsPS27xYZGm6mCkT9b871DX1Q+ErVj0WCjUmSsNjwgpvVhmjyqZURrNBQ==
+From: "Dongjiang Zhu" <zhudongjiang@fnnas.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Received: from [192.168.8.64] ([183.34.165.6]) by smtp.feishu.cn with ESMTPS; Fri, 03 Jul 2026 17:21:16 +0800
+To: "Qu Wenruo" <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+Content-Transfer-Encoding: quoted-printable
+Subject: Re: [PATCH v2 1/3] btrfs: add "rescue=usebackuproot" into forced read-only options
+User-Agent: Mozilla Thunderbird
+References: <cover.1783068013.git.wqu@suse.com> <dc5a344a2f4fcb63f78cb3e95beb1efbee9928f4.1783068013.git.wqu@suse.com>
+In-Reply-To: <dc5a344a2f4fcb63f78cb3e95beb1efbee9928f4.1783068013.git.wqu@suse.com>
+X-Original-From: Dongjiang Zhu <zhudongjiang@fnnas.com>
+X-Lms-Return-Path: <lba+26a477f0d+ad3b28+vger.kernel.org+zhudongjiang@fnnas.com>
+Message-Id: <c20f62ae-eef2-4eb5-9290-a7bebe6a259d@fnnas.com>
+Date: Fri, 3 Jul 2026 17:21:15 +0800
 
-do_zone_finish() clears BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE and removes the
-block group from zone_active_bgs, but only the path in
-check_bg_is_active() resets fs_info->active_meta_bg / active_system_bg.
-Any other finish path leaves active_meta_bg / active_system_bg pointing
-at an inactive, fully written block group.
+=E5=9C=A8 2026/7/3 16:41, Qu Wenruo =E5=86=99=E9=81=93:
+> According to btrfs(5) man page, all rescue options should require an
+> read-only mount.
+>
+> But that read-only check is only introduced for newer rescue options,
+> not for the pre-existing "usebackuproot" one.
+>
+> Unify the behavior to match the document.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>   fs/btrfs/super.c | 3 ++-
+>   1 file changed, 2 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 0a6ce6c19d8c..fef9025a2f76 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -692,7 +692,8 @@ bool btrfs_check_options(const struct btrfs_fs_info *=
+info,
+>   	bool ret =3D true;
+>  =20
+>   	if (!(flags & SB_RDONLY) &&
+> -	    (check_ro_option(info, *mount_opt, BTRFS_MOUNT_NOLOGREPLAY, "nologr=
+eplay") ||
+> +	    (check_ro_option(info, *mount_opt, BTRFS_MOUNT_USEBACKUPROOT, "useb=
+ackuproot") ||
+> +	     check_ro_option(info, *mount_opt, BTRFS_MOUNT_NOLOGREPLAY, "nologr=
+eplay") ||
+>   	     check_ro_option(info, *mount_opt, BTRFS_MOUNT_IGNOREBADROOTS, "ig=
+norebadroots") ||
+>   	     check_ro_option(info, *mount_opt, BTRFS_MOUNT_IGNOREDATACSUMS, "i=
+gnoredatacsums") ||
+>   	     check_ro_option(info, *mount_opt, BTRFS_MOUNT_IGNOREMETACSUMS, "i=
+gnoremetacsums") ||
 
-Reset the corresponding active_{meta,system}_bg pointer in do_zone_finish()
-so it can never go stale.
+Hi Qu,
 
-Fixes: 13bb483d32ab ("btrfs: zoned: activate metadata block group on write time")
-Cc: stable@vger.kernel.org
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/zoned.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+One more thing I noticed: should BTRFS_MOUNT_USEBACKUPROOT also be added
+to BTRFS_MOUNT_FULL_RO_MASK?
 
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 44a13ed6b8b2..c8c850de1702 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -2539,6 +2539,7 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
- 	const bool is_metadata = (block_group->flags &
- 			(BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM));
- 	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
-+	struct btrfs_block_group **active_bg = NULL;
- 	int ret = 0;
- 	int i;
- 
-@@ -2636,6 +2637,20 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
- 	/* For active_bg_list */
- 	btrfs_put_block_group(block_group);
- 
-+	if (block_group->flags & BTRFS_BLOCK_GROUP_SYSTEM)
-+		active_bg = &fs_info->active_system_bg;
-+	else if (block_group->flags & BTRFS_BLOCK_GROUP_METADATA)
-+		active_bg = &fs_info->active_meta_bg;
-+
-+	if (active_bg) {
-+		btrfs_zoned_meta_io_lock(fs_info);
-+		if (*active_bg == block_group) {
-+			btrfs_put_block_group(block_group);
-+			*active_bg = NULL;
-+		}
-+		btrfs_zoned_meta_io_unlock(fs_info);
-+	}
-+
- 	clear_and_wake_up_bit(BTRFS_FS_NEED_ZONE_FINISH, &fs_info->flags);
- 
- 	return 0;
--- 
-2.54.0
-
+Thanks,
+Dongjiang

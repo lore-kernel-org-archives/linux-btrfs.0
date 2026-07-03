@@ -1,67 +1,58 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3C29336CDE0
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jul 2026 08:42:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EA7CD385D6B;
+	Fri,  3 Jul 2026 08:47:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=216.71.154.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783068125; cv=none; b=aI1Vsn1OeelZdnhXO/DY/7VEhQIG9uWVj4e7KfXIWCC3Qs1Wx73fUNNHLFx2j/0kXzgBKNz+qCw6d8y0UbwyuFaxsCCDsx2MzP5+eP9b1Z/PnprlMg4nsKd+ULs/ZYlOhh06X80vt1QS1TVYHaS5Uk+M7w/6WYeAyHlYALfiEcc=
+	t=1783068469; cv=none; b=NH2n10zq+XZSiR24HEE7mir205ZqZjsm34Kbks7O577IhG9RylfN2vtByvxpGT8iombHMWMaQ85+2NWPaglFjoS0o/HDXLxWJZMqSdnvLQeds4dzW8dN8sw09N+W6iz+iPnP9/OBEB+Vr/yqpONXO8WCb1BEw4Usjc3M48u+leY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783068125; c=relaxed/simple;
-	bh=6c/GC/6YAbMqEp1Da1kaAQUeC1gVZkJ/25IvdR/wUBc=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=pPujwAfuVeYeCg94gXiVXNOT/jal0PgO/gYEjmOzFEoNW8UDPNmvmq3bWn9CHEp7cRfgndHBZulZUbKen3Yppe/TOyyrs/X8D1Qb1jj68Y7aAfwVuirrbWUt8VIbTwOE84uUSUL/x5kI+sXtZR+In2rwzabU1wcZo556aukFTmM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=sOJAwsA+; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=sOJAwsA+; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1783068469; c=relaxed/simple;
+	bh=w0fsexi7MXFeOO/xpoXkxYO8P4fqzMLwCCWXGi46M7Y=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=ljhewm8b+0OUUV1rGU9AbsogcDtpYrHqiE+of70gjN56wDCCMrNlJFLrt3jp4c+4VJOv0T40w0wSywVjw5s9cGEI2lB5Kit+1FyiDMR2JwQhlshlrUJOM7LUOaRQQPn64n1UamrqfeFmBv50qiIuoOL5hmc/j/qM9eRJ3BquwTk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=A8FNESOM; arc=none smtp.client-ip=216.71.154.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="sOJAwsA+";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="sOJAwsA+"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 19F16762B3
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jul 2026 08:41:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1783068109; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Yw8LKMrd1o+HKZdbBmI1G+JIoLiRej9rEjWzs35TAlE=;
-	b=sOJAwsA+1rR0PoBgcnix4bq/bCTFOpkC6r6KE9qPW97aEveOyopOzHVvLp35IyHCD5hBgI
-	1+X9ALaCVY14QDS5xrVbjjslnvxKHILuVJfULNvzAwU/lEvNkn4UTQMBGKWS24ht3o3WPC
-	R4/lepaGfRFIU56JAfUr3IBLsNpXjN0=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1783068109; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Yw8LKMrd1o+HKZdbBmI1G+JIoLiRej9rEjWzs35TAlE=;
-	b=sOJAwsA+1rR0PoBgcnix4bq/bCTFOpkC6r6KE9qPW97aEveOyopOzHVvLp35IyHCD5hBgI
-	1+X9ALaCVY14QDS5xrVbjjslnvxKHILuVJfULNvzAwU/lEvNkn4UTQMBGKWS24ht3o3WPC
-	R4/lepaGfRFIU56JAfUr3IBLsNpXjN0=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 21676779AA
-	for <linux-btrfs@vger.kernel.org>; Fri,  3 Jul 2026 08:41:47 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id aCgCMct1R2p6RAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 03 Jul 2026 08:41:47 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="A8FNESOM"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1783068468; x=1814604468;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=w0fsexi7MXFeOO/xpoXkxYO8P4fqzMLwCCWXGi46M7Y=;
+  b=A8FNESOMHLIXM12GNLSRqC1EujAR8+gve0isWguvV6khXWhVHknMUFyL
+   CMo/w1dhRdTnw1kLBBKxXfXBI03GoqQeJFW/wF6nSmrHNE4l1iZ9ZAxjT
+   fMuk8rnIGElwQlvbmlmLg3ILEqeB3xFeiWbUef6mTNygXmOQT5HvGTsle
+   3088LmSuncHsVDMfXtLO6jhrK5kNpxkcQvxcrJZCZrxdgZJJCIqZZZ6LG
+   USp3G5QfMllxsD2L9HwI+pbcHhdVIevwxRHEWepxzvyzQA4ea5yz6Iamm
+   W7sfdrDx2KjCAxUjIunWEMjw0UbMNx+XJTz8vzlSgZYZnVBZnR5UWCWXj
+   A==;
+X-CSE-ConnectionGUID: nLx0nX/aT+ad1jWYn8yufQ==
+X-CSE-MsgGUID: NTYvehg9QBmEJ0bIWLh/dw==
+X-IronPort-AV: E=Sophos;i="6.25,145,1779120000"; 
+   d="scan'208";a="146156545"
+Received: from unknown (HELO uls-op-esad1-o.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 03 Jul 2026 16:46:39 +0800
+X-CSE-ConnectionGUID: 2o3jtba8QFqyvKqxWNpalg==
+X-CSE-MsgGUID: wX43H3AhT1yyKFrVBqOyCg==
+IronPort-SDR: 6a4776ca_389QZrYmFe4dZYXsDIK0pkMFQu7PAIunTztzKA8HaEuGvvg
+ WJ9y0n/AnLRpQ9ftY6HQnpIZh+Be+ZivmtCNt1w==
+Received: from uls-op-esai1-o.wdc.com ([10.248.3.45])
+  by uls-op-esad1-o.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 03 Jul 2026 01:46:02 -0700
+X-CSE-ConnectionGUID: Y3VWgAeaRiuXi/yd5oSxAA==
+X-CSE-MsgGUID: /2b9ukckQzqgzNxkr+o39w==
+WDCIronportException: Internal
+Received: from wdap-kpvfcmq4pw.ad.shared (HELO neo.wdc.com) ([10.224.28.134])
+  by uls-op-esai1-o.wdc.com with ESMTP; 03 Jul 2026 01:46:01 -0700
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/3] btrfs: remove "usebackuproot" mount option
-Date: Fri,  3 Jul 2026 18:11:16 +0930
-Message-ID: <7d88c119203678c74174a8960b0e3cf00a1296ba.1783068013.git.wqu@suse.com>
+Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	stable@vger.kernel.org
+Subject: [PATCH] btrfs: zoned: reset active_meta_bg on zone finish
+Date: Fri,  3 Jul 2026 10:45:59 +0200
+Message-ID: <20260703084559.136605-1-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1783068013.git.wqu@suse.com>
-References: <cover.1783068013.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,78 +60,56 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.998];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
-X-Spam-Score: -2.80
 
-This mount option is marked deprecated since the introduction of
-"rescue=" mount option group, in v5.9.
+do_zone_finish() clears BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE and removes the
+block group from zone_active_bgs, but only the path in
+check_bg_is_active() resets fs_info->active_meta_bg / active_system_bg.
+Any other finish path leaves active_meta_bg / active_system_bg pointing
+at an inactive, fully written block group.
 
-That's already a long long time ago, and it should be safe to completely
-remove the old "usebackuproot" mount option now.
+Reset the corresponding active_{meta,system}_bg pointer in do_zone_finish()
+so it can never go stale.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Fixes: 13bb483d32ab ("btrfs: zoned: activate metadata block group on write time")
+Cc: stable@vger.kernel.org
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/super.c | 11 -----------
- 1 file changed, 11 deletions(-)
+ fs/btrfs/zoned.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 742f646ec12c..2558801f483c 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -128,7 +128,6 @@ enum {
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 44a13ed6b8b2..c8c850de1702 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -2539,6 +2539,7 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
+ 	const bool is_metadata = (block_group->flags &
+ 			(BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM));
+ 	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
++	struct btrfs_block_group **active_bg = NULL;
+ 	int ret = 0;
+ 	int i;
  
- 	/* Rescue options */
- 	Opt_rescue,
--	Opt_usebackuproot,
+@@ -2636,6 +2637,20 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
+ 	/* For active_bg_list */
+ 	btrfs_put_block_group(block_group);
  
- 	/* Debugging options */
- 	Opt_enospc_debug,
-@@ -248,8 +247,6 @@ static const struct fs_parameter_spec btrfs_fs_parameters[] = {
++	if (block_group->flags & BTRFS_BLOCK_GROUP_SYSTEM)
++		active_bg = &fs_info->active_system_bg;
++	else if (block_group->flags & BTRFS_BLOCK_GROUP_METADATA)
++		active_bg = &fs_info->active_meta_bg;
++
++	if (active_bg) {
++		btrfs_zoned_meta_io_lock(fs_info);
++		if (*active_bg == block_group) {
++			btrfs_put_block_group(block_group);
++			*active_bg = NULL;
++		}
++		btrfs_zoned_meta_io_unlock(fs_info);
++	}
++
+ 	clear_and_wake_up_bit(BTRFS_FS_NEED_ZONE_FINISH, &fs_info->flags);
  
- 	/* Rescue options. */
- 	fsparam_enum("rescue", Opt_rescue, btrfs_parameter_rescue),
--	/* Deprecated, with alias rescue=usebackuproot */
--	__fsparam(NULL, "usebackuproot", Opt_usebackuproot, fs_param_deprecated, NULL),
- 	/* For compatibility only, alias for "rescue=nologreplay". */
- 	fsparam_flag("norecovery", Opt_norecovery),
- 
-@@ -560,14 +557,6 @@ static int btrfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
- 		else
- 			btrfs_set_opt(ctx->mount_opt, AUTO_DEFRAG);
- 		break;
--	case Opt_usebackuproot:
--		btrfs_warn(NULL,
--			   "'usebackuproot' is deprecated, use 'rescue=usebackuproot' instead");
--		btrfs_set_opt(ctx->mount_opt, USEBACKUPROOT);
--
--		/* If we're loading the backup roots we can't trust the space cache. */
--		btrfs_set_opt(ctx->mount_opt, CLEAR_CACHE);
--		break;
- 	case Opt_skip_balance:
- 		btrfs_set_opt(ctx->mount_opt, SKIP_BALANCE);
- 		break;
+ 	return 0;
 -- 
 2.54.0
 

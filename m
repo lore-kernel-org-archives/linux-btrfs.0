@@ -1,126 +1,97 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-oa1-f72.google.com (mail-oa1-f72.google.com [209.85.160.72])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E3589271456
-	for <linux-btrfs@vger.kernel.org>; Sat,  4 Jul 2026 09:05:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 372AA3AEF57
+	for <linux-btrfs@vger.kernel.org>; Sat,  4 Jul 2026 12:32:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.160.72
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783155957; cv=none; b=J7ivwxPeVx2uz3Ydqz7g0QmjQsTeYSnbHCly0H1f71MgozMYpw2zmiFbl+gq1wbkjEgOpekH/0iqcrFw2ivcBFIF9Jb0YDGtLavFozqPZAdCucMKqpcrrbKWSZBDpw1Tc9NbSj/XiA2vUeTPlUJx3X832onDkUXdvJeJ5O6TCkA=
+	t=1783168353; cv=none; b=tD7POY6ubDdNnwYOowI7BIrQJEt2Q3BLGF18I2F2u/KeE5VoOvbe0AaMfO82C/uD1XAz++5Ic86chjm/INYF9YOGcEZoQDxv2adjdgtP+hEM5bKNJzPmSALPX5gUK6oU9GVtCdY1AKM5e0ENgBrK4zy5TzuLZcou5W9ForpydBI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783155957; c=relaxed/simple;
-	bh=C2SV43j/nbRjLK+XY18Ni82mG7mcVomqvQQPYKNLq6Y=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=lIZQJlSA92V1F1xFVphAGXvMTDOz2pLptCeyhYoudWjKLk77Ej1nZGj/mjQNeYMDxIkB4JeyHt17H2qJYTddvUDkPPBGVY/MpBUIf1k1IAnAwjiK3TtSCgijBUfg/P2yEZ1wPJBc+hxGtAe8cnqMrJYim5FYBnZtN0pS4Gc0RdI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qdKOkGLQ; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qdKOkGLQ; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qdKOkGLQ";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qdKOkGLQ"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 1C5F375C4D
-	for <linux-btrfs@vger.kernel.org>; Sat,  4 Jul 2026 09:05:54 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1783155954; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=QLZ8vvpeLKdKbRX7qSlhdJniM/igXUK6jEhjd20Etfk=;
-	b=qdKOkGLQTJrHP6arVCgXICnaE4sLUxMPag0RzOeOGMQ32rtvDp9zCZYeA4B3ekGAynB+67
-	pq9YmicFrAV9Tw+FNOxT8tL9UNM/UeugeuUXzksjswYnvoIkkPLDnWkOWz0rhMLaKnBOtw
-	1VhPfe2/ybSzCmZ5ESPWcdma6FMYhAI=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1783155954; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=QLZ8vvpeLKdKbRX7qSlhdJniM/igXUK6jEhjd20Etfk=;
-	b=qdKOkGLQTJrHP6arVCgXICnaE4sLUxMPag0RzOeOGMQ32rtvDp9zCZYeA4B3ekGAynB+67
-	pq9YmicFrAV9Tw+FNOxT8tL9UNM/UeugeuUXzksjswYnvoIkkPLDnWkOWz0rhMLaKnBOtw
-	1VhPfe2/ybSzCmZ5ESPWcdma6FMYhAI=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1C8A7779AA
-	for <linux-btrfs@vger.kernel.org>; Sat,  4 Jul 2026 09:05:52 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id MLfsLvDMSGoJIQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sat, 04 Jul 2026 09:05:52 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: docs: mark "usebackuproot" mount option as removed
-Date: Sat,  4 Jul 2026 18:35:30 +0930
-Message-ID: <cbb4fd969d5f07477adc09449c609084cbd14c33.1783155928.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	s=arc-20240116; t=1783168353; c=relaxed/simple;
+	bh=6bkXxoQ0MUAAybl4GWHMrj/sIH/xfFP2gv6NzTyNBCU=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=b73KRxXb4109h2GLHm2fEQdYZ3iqhuSIHDkr49po/GrbLMIh4PJpNdw9kJSsB2ZxoEbTSsax4nAOmBapdKYleYIO+OjNDKRHIopk2G+kVT4/49KqoG9l2zi8xoN8IKvaLVwdlIbHtVPt9BgXIlP59f6FLhhHTrhCGkjEttqsMew=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.160.72
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oa1-f72.google.com with SMTP id 586e51a60fabf-43cd2d12617so2301943fac.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 04 Jul 2026 05:32:30 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1783168350; x=1783773150;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=6q0V0DRxWTWBy9oTh1mmUXpQMvbnHaiO3Zjc4WCO/yc=;
+        b=jDbmBQ7Qr4kVqej2m1oXldjyTvYfQGi4fKRLzbO/VpXUHoOGtNxxdKatWXE/CI4jar
+         DBDsraYqt7CCP/GZPgc4NAeLFjPkzUbUpHd8/UVhQX57pu2VRVGzmqtlI4ajSk7IIEo0
+         fBhhcN71klKDVRImi3ilJOvG9Yh0OkZSGG4sQIpwAkVq2KRDRR46YyF0IVWG5rRUeiWY
+         N7FJPpbLD8gq6pfP3YHWqHeQFvqtngPOpsV/aKYM1X6kyUIt9bOZwxeolWhz44GTCw9Y
+         jCw9+SAiMlx1Eab98mWE15uGiM5NdUR9BEz9JzZt3Hq28Vj40VBFo+3ODsZCqEPkYUlb
+         jMXg==
+X-Forwarded-Encrypted: i=1; AFNElJ+8cnASuCE6irgd6AUPJvDWgYUPc6B3oGrx1lHeXrRTuo0WBpzLiBV133tH4wfcNERQLWE6oV3pt/7yEw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxAmiSboBIKNiRMMYQVwbxd8GLpvgUbYHlEA8ANyMYLnEFvkibH
+	MF/ix9t3VlXIczyADuk0WvBNeGle827v6fOR7/SNspl+eGjXHs4PNFu2hxtlwMXMl3N7F4NB3rY
+	51zJqHntoUCVtjp2n/kZb17YP2ghLy0lAbJ2Z9G3r+pTqbsDV2eREe1FDf4U=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
+X-Received: by 2002:a05:6808:3a0d:b0:495:d0dd:c6d4 with SMTP id
+ 5614622812f47-499b78013a4mr2230999b6e.13.1783168349967; Sat, 04 Jul 2026
+ 05:32:29 -0700 (PDT)
+Date: Sat, 04 Jul 2026 05:32:29 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6a48fd5d.34acba0d.1e07b.000a.GAE@google.com>
+Subject: [syzbot] Monthly btrfs report (Jul 2026)
+From: syzbot <syzbot+listce982f98d810f528a2ee@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 
-Since the kernel patch is going to land in v7.3, update the man page to
-reflect that change.
+Hello btrfs maintainers/developers,
 
-Also, just in case end users are using the latest progs but on a much
-older kernel, keep the "usebackuproot" mount option entry, but
-explicitly mark it as "removed", along with the history of deprecation.
+This is a 31-day syzbot report for the btrfs subsystem.
+All related reports/information can be found at:
+https://syzkaller.appspot.com/upstream/s/btrfs
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+During the period, 3 new issues were detected and 2 were fixed.
+In total, 24 issues are still open and 118 have already been fixed.
+There are also 13 low-priority issues.
+
+Some of the still happening issues:
+
+Ref  Crashes Repro Title
+<1>  66      No    possible deadlock in btrfs_dirty_inode (2)
+                   https://syzkaller.appspot.com/bug?extid=415a049af48761105c01
+<2>  47      No    possible deadlock in btrfs_quota_enable (2)
+                   https://syzkaller.appspot.com/bug?extid=3a88c590edd72179657c
+<3>  43      Yes   WARNING in btrfs_destroy_inode (3)
+                   https://syzkaller.appspot.com/bug?extid=25df068cd8509f8c0fe1
+<4>  8       Yes   WARNING in can_finish_ordered_extent
+                   https://syzkaller.appspot.com/bug?extid=085adc3f91549d11066a
+<5>  6652    Yes   kernel BUG in close_ctree
+                   https://syzkaller.appspot.com/bug?extid=2665d678fffcc4608e18
+<6>  890     Yes   WARNING in btrfs_chunk_alloc
+                   https://syzkaller.appspot.com/bug?extid=e8e56d5d31d38b5b47e7
+<7>  484     Yes   WARNING in btrfs_remove_chunk
+                   https://syzkaller.appspot.com/bug?extid=e8582cc16881ec70a430
+<8>  53      Yes   INFO: rcu detected stall in sys_readlink (5)
+                   https://syzkaller.appspot.com/bug?extid=23e14ec82f3c8692eaa9
+<9>  32      Yes   WARNING in btrfs_free_reserved_data_space_noquota (3)
+                   https://syzkaller.appspot.com/bug?extid=9064acebb06685edb243
+<10> 31      Yes   WARNING in btrfs_finish_one_ordered
+                   https://syzkaller.appspot.com/bug?extid=6e54e639e7b934d64304
+
 ---
- Documentation/ch-mount-options.rst | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
 
-diff --git a/Documentation/ch-mount-options.rst b/Documentation/ch-mount-options.rst
-index 8f65b8311e7e..8dac29d8aa52 100644
---- a/Documentation/ch-mount-options.rst
-+++ b/Documentation/ch-mount-options.rst
-@@ -462,14 +462,15 @@ treelog, notreelog
-         a mounted filesystem if the log is not replayed.
- 
- usebackuproot
--        (since: 4.6, default: off)
-+        (since: 4.6, removed since: 7.3, default: off)
- 
-         Enable autorecovery attempts if a bad tree root is found at mount time.
-         Currently this scans a backup list of several previous tree roots and tries to
-         use the first readable. This can be used with read-only mounts as well.
- 
-         .. note::
--                This option has replaced *recovery* which has been deprecated.
-+		This option has replaced *recovery* which has been deprecated in v5.9.
-+		This option is fully removed since v7.3.
- 
- user_subvol_rm_allowed
-         (default: off)
--- 
-2.54.0
+To disable reminders for individual bugs, reply with the following command:
+#syz set <Ref> no-reminders
 
+To change bug's subsystems, reply with:
+#syz set <Ref> subsystems: new-subsystem
+
+You may send multiple commands in a single email message.

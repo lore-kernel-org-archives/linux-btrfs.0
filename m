@@ -1,97 +1,131 @@
-Received: from mail-oa1-f72.google.com (mail-oa1-f72.google.com [209.85.160.72])
+Received: from mail-qk1-f169.google.com (mail-qk1-f169.google.com [209.85.222.169])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 372AA3AEF57
-	for <linux-btrfs@vger.kernel.org>; Sat,  4 Jul 2026 12:32:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.160.72
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B345E27F728
+	for <linux-btrfs@vger.kernel.org>; Sun,  5 Jul 2026 04:42:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.169
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783168353; cv=none; b=tD7POY6ubDdNnwYOowI7BIrQJEt2Q3BLGF18I2F2u/KeE5VoOvbe0AaMfO82C/uD1XAz++5Ic86chjm/INYF9YOGcEZoQDxv2adjdgtP+hEM5bKNJzPmSALPX5gUK6oU9GVtCdY1AKM5e0ENgBrK4zy5TzuLZcou5W9ForpydBI=
+	t=1783226527; cv=none; b=LJw0nmHl+HDR0DhVk459OLw0qxKb7F3ii1zTvaJQyAZ7vfIbQHJS+CWQRjCU1AW8BwG7jbm6jMH99knV0Xau8cWNW8t3MR8fohEftTnfBGf8fyovrINts4m32CHhguvkkBWXRv18NSdPQLkSLA8mllXQK/2gbz3odqJmmcZuYYo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783168353; c=relaxed/simple;
-	bh=6bkXxoQ0MUAAybl4GWHMrj/sIH/xfFP2gv6NzTyNBCU=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=b73KRxXb4109h2GLHm2fEQdYZ3iqhuSIHDkr49po/GrbLMIh4PJpNdw9kJSsB2ZxoEbTSsax4nAOmBapdKYleYIO+OjNDKRHIopk2G+kVT4/49KqoG9l2zi8xoN8IKvaLVwdlIbHtVPt9BgXIlP59f6FLhhHTrhCGkjEttqsMew=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.160.72
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oa1-f72.google.com with SMTP id 586e51a60fabf-43cd2d12617so2301943fac.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 04 Jul 2026 05:32:30 -0700 (PDT)
+	s=arc-20240116; t=1783226527; c=relaxed/simple;
+	bh=XLicVvxrsv5GEevi03jCRKV9BCCB/Co+G/79Cd/uAW4=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=so/hxDqNgDiNr2Du9nDs766xcRS2/jFib64kHtGpuNBxRY6eclvrvN8HUZfD2V5kCvJyGst576gIV5lEFiRF+N51E2SSYZ16pHb84XBRAMIbdrUEpyZJ8xdQlREsbg0xN07KRWdeTmeFSY/Md99m3Oft4F1brnmVXA7yoLpU154=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=QXNUgI6F; arc=none smtp.client-ip=209.85.222.169
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="QXNUgI6F"
+Received: by mail-qk1-f169.google.com with SMTP id af79cd13be357-92e53581361so87245785a.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 04 Jul 2026 21:42:05 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1783226525; x=1783831325; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=Z2TC8LUxSZjfYaDFbttt5ROeXawmqiGcsqMnNwL0UQw=;
+        b=QXNUgI6FwYy9g2D+Wv+HmT3/oe1otHb+3PWeVAwjElQDlp1ELKZ0BiT8skwsr5PkUS
+         9tRfqKeTXy7TxMHCx0+0b1lhXdR+0+F8uWtdKqQI4Rp1TnHxRu8eJnWUjYljnQt6TXAt
+         LidcLp//C5gd0GSvrAh4UXy5HCVetTQ+nl0elI5/O4VksGmv7pdTFqogT9OU9T0nqtRH
+         IE7DEZFE0EK7n3AyEkMOqP0db3Af+p7KpKaxtC3+Tp3Br+D8q/SBGiEI6jAHh0QFWm56
+         H2Zg5TTG3xa1qNaQKkb1YUZp7cMhdpBPkC1IvUH3kZLHhBQCi/ky+ZBm12fxXqT5dn93
+         07sg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783168350; x=1783773150;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=6q0V0DRxWTWBy9oTh1mmUXpQMvbnHaiO3Zjc4WCO/yc=;
-        b=jDbmBQ7Qr4kVqej2m1oXldjyTvYfQGi4fKRLzbO/VpXUHoOGtNxxdKatWXE/CI4jar
-         DBDsraYqt7CCP/GZPgc4NAeLFjPkzUbUpHd8/UVhQX57pu2VRVGzmqtlI4ajSk7IIEo0
-         fBhhcN71klKDVRImi3ilJOvG9Yh0OkZSGG4sQIpwAkVq2KRDRR46YyF0IVWG5rRUeiWY
-         N7FJPpbLD8gq6pfP3YHWqHeQFvqtngPOpsV/aKYM1X6kyUIt9bOZwxeolWhz44GTCw9Y
-         jCw9+SAiMlx1Eab98mWE15uGiM5NdUR9BEz9JzZt3Hq28Vj40VBFo+3ODsZCqEPkYUlb
-         jMXg==
-X-Forwarded-Encrypted: i=1; AFNElJ+8cnASuCE6irgd6AUPJvDWgYUPc6B3oGrx1lHeXrRTuo0WBpzLiBV133tH4wfcNERQLWE6oV3pt/7yEw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxAmiSboBIKNiRMMYQVwbxd8GLpvgUbYHlEA8ANyMYLnEFvkibH
-	MF/ix9t3VlXIczyADuk0WvBNeGle827v6fOR7/SNspl+eGjXHs4PNFu2hxtlwMXMl3N7F4NB3rY
-	51zJqHntoUCVtjp2n/kZb17YP2ghLy0lAbJ2Z9G3r+pTqbsDV2eREe1FDf4U=
+        d=1e100.net; s=20251104; t=1783226525; x=1783831325;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=Z2TC8LUxSZjfYaDFbttt5ROeXawmqiGcsqMnNwL0UQw=;
+        b=eDSNHK/EgGNgKOVhd7W7Vde4fLADw3eZ0R5OMFhC/kAm4zMGvkjD1GFjpSkX2FZfzj
+         SDg9Z8U0T8TiUv7F6bTmrP/CHyqVjvOcLA++S5maAAQNr/LOUM7FLTCOT9qjqv2U+IqF
+         HXO9nf5HxMc+K7EaxcxDJo8dXdZBIt/cg9f1DBmSzsAnH5TZmbJdL6TV7UCxFTeSzLq9
+         e07trM7SqoKcsscWJD+l42Wtjc8XhR+uegXzez+aOwRhmwUQgKJFyj1rgW+0GkbnHaPK
+         Ru2e+1RoumdB9F0vqUPpQjisJE1PQGFOP96gOTzh0jRrwk7P8vd6u5DuUSHt5AmYWBHB
+         JE1w==
+X-Gm-Message-State: AOJu0Yzd/52M6mUKt55oBThDVuPjEXEhSmMnJKxB9n/dR1/tc/11W5LP
+	jcmvxIeRQuCSF714CuFB3/mGg30bR4TVh1/kEMDDwvj2gW+q1drPFmVEG4SJNA==
+X-Gm-Gg: AfdE7cnN6xrqgml+6uMfcqIl14MxOR1ZT965CviqQjzoh1JzkQmq2Fgj9N0lK86L5QA
+	cRvEWZgjr/NeCgdR+ykExAgHTK2FWilZcDi8h6dns6gcdnhAu1lvyDD1XI1DGB5UApRwiArxkbE
+	9FHpLEloXlQZcWTsulQr+emjw+E7Ux4HiIphfbcTV9WxZg8yOhsKg9f88/f2DAiE/cEUT03+YNE
+	ttKIczWxuzC93YegaaLqNARPE6R0lYoiXGp8pQn4PYyAm8nmRj0/NDyvs1uvMAA+qy41wXgwq3+
+	8GJPzQVmISasnbnyn94UJgSjMEeyX+YgZBT4+trW4ZottqnT+AiE/vdPAn34HAnHofMrlQeViFc
+	1Oq5iLuQA+S+mF4ykdCfbxGkFDREplIaDFiK1CNv8N4gkXayCtL5yCXO8RVUG9LR2Q5XZ8BmzgI
+	oQRFoVi5598BwZjkT7Rmn1WKhIfUnPCgqbSp+vUAUdrQ==
+X-Received: by 2002:a05:620a:272a:b0:92e:7b45:768c with SMTP id af79cd13be357-92e9a502dfbmr788512785a.62.1783226524636;
+        Sat, 04 Jul 2026 21:42:04 -0700 (PDT)
+Received: from i4-l-hqh5357-03.ad.psu.edu ([130.203.139.71])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-92e90cfa470sm587562385a.44.2026.07.04.21.42.04
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 04 Jul 2026 21:42:04 -0700 (PDT)
+From: Shuangpeng Bai <shuangpeng.kernel@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org,
+	clm@fb.com,
+	dsterba@suse.com,
+	fdmanana@suse.com,
+	jbacik@fb.com,
+	stable@vger.kernel.org,
+	Shuangpeng Bai <shuangpeng.kernel@gmail.com>
+Subject: [PATCH] btrfs: fix extent map leak in NOCOW direct I/O write
+Date: Sun,  5 Jul 2026 00:41:52 -0400
+Message-ID: <20260705044154.42627-1-shuangpeng.kernel@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6808:3a0d:b0:495:d0dd:c6d4 with SMTP id
- 5614622812f47-499b78013a4mr2230999b6e.13.1783168349967; Sat, 04 Jul 2026
- 05:32:29 -0700 (PDT)
-Date: Sat, 04 Jul 2026 05:32:29 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a48fd5d.34acba0d.1e07b.000a.GAE@google.com>
-Subject: [syzbot] Monthly btrfs report (Jul 2026)
-From: syzbot <syzbot+listce982f98d810f528a2ee@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-Hello btrfs maintainers/developers,
+btrfs_dio_iomap_begin() calls btrfs_get_extent(), which returns an
+extent map reference that must be dropped on all exit paths.
 
-This is a 31-day syzbot report for the btrfs subsystem.
-All related reports/information can be found at:
-https://syzkaller.appspot.com/upstream/s/btrfs
+For direct writes into a NOCOW range, btrfs_get_blocks_direct_write()
+keeps using that extent map and asks btrfs_create_dio_extent() to
+allocate the ordered extent. If that fails, for example because
+btrfs_alloc_ordered_extent() fails, the function returns the error
+without dropping the input extent map. The PREALLOC path avoided this by
+dropping the input extent map before replacing it with the newly
+created one.
 
-During the period, 3 new issues were detected and 2 were fixed.
-In total, 24 issues are still open and 118 have already been fixed.
-There are also 13 low-priority issues.
+Check the error from btrfs_create_dio_extent() before replacing the
+map and drop the input extent map on failure.
 
-Some of the still happening issues:
-
-Ref  Crashes Repro Title
-<1>  66      No    possible deadlock in btrfs_dirty_inode (2)
-                   https://syzkaller.appspot.com/bug?extid=415a049af48761105c01
-<2>  47      No    possible deadlock in btrfs_quota_enable (2)
-                   https://syzkaller.appspot.com/bug?extid=3a88c590edd72179657c
-<3>  43      Yes   WARNING in btrfs_destroy_inode (3)
-                   https://syzkaller.appspot.com/bug?extid=25df068cd8509f8c0fe1
-<4>  8       Yes   WARNING in can_finish_ordered_extent
-                   https://syzkaller.appspot.com/bug?extid=085adc3f91549d11066a
-<5>  6652    Yes   kernel BUG in close_ctree
-                   https://syzkaller.appspot.com/bug?extid=2665d678fffcc4608e18
-<6>  890     Yes   WARNING in btrfs_chunk_alloc
-                   https://syzkaller.appspot.com/bug?extid=e8e56d5d31d38b5b47e7
-<7>  484     Yes   WARNING in btrfs_remove_chunk
-                   https://syzkaller.appspot.com/bug?extid=e8582cc16881ec70a430
-<8>  53      Yes   INFO: rcu detected stall in sys_readlink (5)
-                   https://syzkaller.appspot.com/bug?extid=23e14ec82f3c8692eaa9
-<9>  32      Yes   WARNING in btrfs_free_reserved_data_space_noquota (3)
-                   https://syzkaller.appspot.com/bug?extid=9064acebb06685edb243
-<10> 31      Yes   WARNING in btrfs_finish_one_ordered
-                   https://syzkaller.appspot.com/bug?extid=6e54e639e7b934d64304
-
+Fixes: 5f9a8a51d8b9 ("Btrfs: add semaphore to synchronize direct IO writes with fsync")
+Cc: stable@vger.kernel.org
+Signed-off-by: Shuangpeng Bai <shuangpeng.kernel@gmail.com>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+ fs/btrfs/direct-io.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
 
-To disable reminders for individual bugs, reply with the following command:
-#syz set <Ref> no-reminders
+diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
+index 460326d34143..2b1a55769ec6 100644
+--- a/fs/btrfs/direct-io.c
++++ b/fs/btrfs/direct-io.c
+@@ -281,17 +281,19 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
+ 		em2 = btrfs_create_dio_extent(BTRFS_I(inode), dio_data, start,
+ 					      &file_extent, type);
+ 		btrfs_dec_nocow_writers(bg);
++		if (IS_ERR(em2)) {
++			ret = PTR_ERR(em2);
++			btrfs_free_extent_map(em);
++			*map = NULL;
++			goto out;
++		}
++
+ 		if (type == BTRFS_ORDERED_PREALLOC) {
+ 			btrfs_free_extent_map(em);
+ 			*map = em2;
+ 			em = em2;
+ 		}
+ 
+-		if (IS_ERR(em2)) {
+-			ret = PTR_ERR(em2);
+-			goto out;
+-		}
+-
+ 		dio_data->nocow_done = true;
+ 	} else {
+ 		/* Our caller expects us to free the input extent map. */
+-- 
+2.43.0
 
-To change bug's subsystems, reply with:
-#syz set <Ref> subsystems: new-subsystem
-
-You may send multiple commands in a single email message.

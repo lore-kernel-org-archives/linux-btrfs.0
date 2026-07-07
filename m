@@ -1,63 +1,74 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 24337372661;
-	Tue,  7 Jul 2026 11:09:32 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9BB943F7873
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Jul 2026 11:18:17 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783422574; cv=none; b=XixMpstmdtWUSmrRkP9/aFWoI7xQUJ50wuxbMAZ0983sFm7nQYrFfmfd8c53FC1x5mlwD8G6U+oUJykfgQVPz9RYOGJ1ro9s/xIE/RTehF0m1C3joTk79Tpz5dMecNGPApdswzjdz4bt7rG07BqlUWcPzHyUWrBGMHGxwnXgdAg=
+	t=1783423098; cv=none; b=hcvqddPF6gKZ08Ae830qP7KMdufoKyC29JdE/OrYp9ZfV/qkYgut36QYviDl9IiFwn/ep8Y6SPM+wutrGN54SE2MZHC2wpeuF37X4NyiC7AFsjL0dvIM1QwIzFRuJm/Jwn1J2lwEy2zV3rHM6Rj8apV6DVefQtWBayGaoj4mNd4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783422574; c=relaxed/simple;
-	bh=IxDoCG++Zl/an30TuIlHkqFiObjHFAgE0M6So04dHN8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=p2Vp2yY30y9IuRjSnKyD5nA1q0l0eZ6q5VoemJtU9PK5ZhQFmOG1dFdl5NZpfFBOWSdayLJsiYF58483BcF59SJZ+Jhorg4uLMYusfr9x8I6RVX8LmL2W4RC26aslkRt1ZfJlFo/7bQOtcfzh6/CWFi8uDiSsbk+oVVHTdxC6cc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LUUEaAxN; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1783423098; c=relaxed/simple;
+	bh=1JGzI55ucxt67EibmbfV65jnonsLKezSijN7FNwUQpY=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=fJmZzraPVsn9ksDfUlbVuT0JLN1KzghxmxKCsM6IlfUczxG4W7hSVOh+KfThdoZmQti5InAzIZ8W4l+bfBbzZC6yE47BoT3RUU2/i96FXyu8Dl58JNA98uvRgVoxXcShnCUHaJo/a4TbWyCUnXpU8KPO4iN7mzdOaTol5D01sFE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=mgdWlyhW; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LUUEaAxN"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0A0BB1F000E9;
-	Tue,  7 Jul 2026 11:09:31 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="mgdWlyhW"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 500BB1F00A3D
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Jul 2026 11:18:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1783422572;
-	bh=/druuVNRLX/zTJ8E5KrSZZFq2RPfkm+gR3zfqyvs/Zo=;
-	h=Date:Subject:To:References:From:In-Reply-To;
-	b=LUUEaAxN9oEGBN/RvOxDw90uwtg4fII/bgHBdrSEJFRYc4BM4TkOPmAeeLabNsE0k
-	 kRfrghPJOxV7pRsoBNrKyIgta7iXfAyreLt4ZSZMGbA+lIoe/RcDfPIyy6tm/XFhdP
-	 lP4h2hPsj0VoMzpQuJ42EjIySK+MbMsQ0e5/s84lHvoJh8rS5fcMsqfAZ5AEXP7uLl
-	 3esEJaGgi+DSrTfL9JddOqtTjJeiBpncWK4QoCQyzzuSGHp/ughjvWMO/tLJvv6mX3
-	 gYnFsO7sH+fJn711syQqy16vOW8bTIl8L+jqD3orm6BQw7IWAUrfyIRxHlhp+FGi9I
-	 OKVmpdn+bSPeQ==
-Message-ID: <43a58866-1bb4-474a-a4da-d5cae5ff02f3@kernel.org>
-Date: Tue, 7 Jul 2026 19:09:30 +0800
+	s=k20260515; t=1783423097;
+	bh=jy7ezTspCIw3pJ9UrimstwZTAZPJ1WzNBwosqkTwSyM=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=mgdWlyhWLmizHda9jkDc9rUu1oZh1yFb2nTaguo/IBaZZ4UYPoNCNeUPTWZZE5JwX
+	 8ASQBhDb870GSm5WtkrF1WPaq5ftNo+N5bFhCxBG4K6z5iL8FcqzpmgBVN+whbchbk
+	 6KxawQi9QYTqzVXr369/v7YbS0OOG12TX+mVkg0GDSbt1MzWdF2hfSr5d/5BQiyt7k
+	 oK1inmOSOPG0+hCyvNtksky1PJIiU91OmT+pr9GOUytxcFKigT83lMD77fWYTq8ruy
+	 Afq6wxlh+JBuFjhd7bByboVfmemgYH2Pb0kBlvpZt5NR/oKt7EEnugadnKQ1nezZVf
+	 S6et0nmi9MxNA==
+Received: by mail-ej1-f53.google.com with SMTP id a640c23a62f3a-c12a1a3cdb9so402742466b.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jul 2026 04:18:17 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AFNElJ/iyeAdUW09Km1yN/UWmU3wrMgPgwBtrhWf4yjCzVWBduCiws0y3ZqhXj+5wW3XC7oFIVuDaI8Z0usLaQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzAoFV6UV2Ozx100M9VQW/TY/ON8zBwqdRHxuapa9rqo/T3tRdt
+	EW2XEtNS6+dH7Ewu8yJXQoERGrlNhfD6eRlHDs7Y5BjPAPuT2ZW0Q3yBTWA5+APphhsWRwaxtLU
+	TkTJ/rso7n/rD5Mzj3AQIKzN0JSgfSu0=
+X-Received: by 2002:a17:906:7f81:b0:c12:4f19:fad5 with SMTP id
+ a640c23a62f3a-c15a691b8admr168503166b.59.1783423095872; Tue, 07 Jul 2026
+ 04:18:15 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] fstests: generic: add a basic cachestat test case
-To: Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org,
- linux-btrfs@vger.kernel.org
 References: <20260707001807.31931-1-wqu@suse.com>
-Content-Language: en-US
-From: Anand Suveer Jain <asj@kernel.org>
 In-Reply-To: <20260707001807.31931-1-wqu@suse.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Tue, 7 Jul 2026 12:17:38 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H4FtJAQ88VfgWsh11DGV1V7gFN1cAvfqoLxTEmg+d2FJg@mail.gmail.com>
+X-Gm-Features: AVVi8CcTOXuCH8t-wpDsnrYcnThjQpXRB7eCH2lA45s1dpuvEa_cU-FiTZia7Yk
+Message-ID: <CAL3q7H4FtJAQ88VfgWsh11DGV1V7gFN1cAvfqoLxTEmg+d2FJg@mail.gmail.com>
+Subject: Re: [PATCH] fstests: generic: add a basic cachestat test case
+To: Qu Wenruo <wqu@suse.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 7/7/26 08:18, Qu Wenruo wrote:
+On Tue, Jul 7, 2026 at 1:20=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+>
 > The test case is inspired by LTP, where there is a regression on 64K
 > page size systems with btrfs, that after a fsync, cachestat() still
 > report dirty pages.
-> 
-> The test case itself is pretty simple, fill the file with a buffered write that is
+>
+> The test case itself is pretty simple, fill the file with a buffered writ=
+e that is
 > 1/2/4/8/16 page sized, call cachestat() to make sure the cached/dirtied
 > number match the page number.
-> 
+>
 > Then do a fsync(), and make sure the dirty page number reduced to 0
 > meanwhile cached is still the same.
-> 
-> Link: https://bugzilla.suse.com/show_bug.cgi?id=1270397
+>
+> Link: https://bugzilla.suse.com/show_bug.cgi?id=3D1270397
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
 >  tests/generic/798     | 57 +++++++++++++++++++++++++++++++++++++++++++
@@ -65,7 +76,7 @@ On 7/7/26 08:18, Qu Wenruo wrote:
 >  2 files changed, 59 insertions(+)
 >  create mode 100755 tests/generic/798
 >  create mode 100644 tests/generic/798.out
-> 
+>
 > diff --git a/tests/generic/798 b/tests/generic/798
 > new file mode 100755
 > index 00000000..4328475e
@@ -86,45 +97,57 @@ On 7/7/26 08:18, Qu Wenruo wrote:
 > +_require_xfs_io_command "cachestat"
 > +_require_scratch
 > +
-> +pagesize=$(_get_page_size)
+> +pagesize=3D$(_get_page_size)
 > +
 > +for num_page in 1 2 4 8 16; do
-> +	size=$(($pagesize * $num_page))
+> +       size=3D$(($pagesize * $num_page))
 > +
-> +	echo "=== Test with $num_page pages ===" >> $seqres.full
-> +	_scratch_mkfs > /dev/null
-> +	_scratch_mount
+> +       echo "=3D=3D=3D Test with $num_page pages =3D=3D=3D" >> $seqres.f=
+ull
+> +       _scratch_mkfs > /dev/null
+> +       _scratch_mount
 > +
-> +	# Basic cached number reporting
-> +	$XFS_IO_PROG -f -c "pwrite -b $pagesize 0 $size" \
-> +		$SCRATCH_MNT/foobar >> $seqres.full
-> +	$XFS_IO_PROG -c "cachestat 0 $size" $SCRATCH_MNT/foobar > $tmp.output
-> +	cat $tmp.output >> $seqres.full
-> +	cached=$(cat $tmp.output | cut -f1 -d, | awk '{print $2}')
-> +	dirtied=$(cat $tmp.output | cut -f2 -d, | awk '{print $2}')
+> +       # Basic cached number reporting
+> +       $XFS_IO_PROG -f -c "pwrite -b $pagesize 0 $size" \
+> +               $SCRATCH_MNT/foobar >> $seqres.full
+> +       $XFS_IO_PROG -c "cachestat 0 $size" $SCRATCH_MNT/foobar > $tmp.ou=
+tput
+> +       cat $tmp.output >> $seqres.full
+> +       cached=3D$(cat $tmp.output | cut -f1 -d, | awk '{print $2}')
+
+Use $AWK_PROG everywhere.
+
+> +       dirtied=3D$(cat $tmp.output | cut -f2 -d, | awk '{print $2}')
 > +
-> +	if [ "$cached" -ne "$num_page" ]; then
-> +		_fail "cached not matching the page number"
-> +	fi
+> +       if [ "$cached" -ne "$num_page" ]; then
+> +               _fail "cached not matching the page number"
+> +       fi
 > +
-> +	if [ "$cached" -ne "$dirtied" ]; then
-> +		_fail "dirited not matching the page number"
-> +	fi
-> +	$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar >> $seqres.full
+> +       if [ "$cached" -ne "$dirtied" ]; then
+> +               _fail "dirited not matching the page number"
+> +       fi
+> +       $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar >> $seqres.full
+
+The redirection isn't needed; on success the fsync command sends
+nothing to stdout.
+
+Thanks.
+
 > +
-> +	# Test dirty page number reporting after a fsync.
-> +	$XFS_IO_PROG -c "cachestat 0 $size" $SCRATCH_MNT/foobar > $tmp.output
-> +	cat $tmp.output >> $seqres.full
-> +	_scratch_unmount
-> +	cached=$(cat $tmp.output | cut -f1 -d, | awk '{print $2}')
-> +	dirtied=$(cat $tmp.output | cut -f2 -d, | awk '{print $2}')
+> +       # Test dirty page number reporting after a fsync.
+> +       $XFS_IO_PROG -c "cachestat 0 $size" $SCRATCH_MNT/foobar > $tmp.ou=
+tput
+> +       cat $tmp.output >> $seqres.full
+> +       _scratch_unmount
+> +       cached=3D$(cat $tmp.output | cut -f1 -d, | awk '{print $2}')
+> +       dirtied=3D$(cat $tmp.output | cut -f2 -d, | awk '{print $2}')
 > +
-> +	if [ "$cached" -ne "$num_page" ]; then
-> +		_fail "cached not matching the page number"
-> +	fi
-> +	if [ "$dirtied" -ne 0 ]; then
-> +		_fail "dirtied pages not zero"
-> +	fi
+> +       if [ "$cached" -ne "$num_page" ]; then
+> +               _fail "cached not matching the page number"
+> +       fi
+> +       if [ "$dirtied" -ne 0 ]; then
+> +               _fail "dirtied pages not zero"
+> +       fi
 > +done
 > +
 > +echo "Silence is golden"
@@ -137,11 +160,7 @@ On 7/7/26 08:18, Qu Wenruo wrote:
 > @@ -0,0 +1,2 @@
 > +QA output created by 798
 > +Silence is golden
-
-
-Nice.
-
-Reviewed-by: Anand Jain <asj@kernel.org>
-
-
-Thanks
+> --
+> 2.51.2
+>
+>

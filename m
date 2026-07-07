@@ -1,81 +1,84 @@
-Received: from fhigh-b7-smtp.messagingengine.com (fhigh-b7-smtp.messagingengine.com [202.12.124.158])
+Received: from fout-b1-smtp.messagingengine.com (fout-b1-smtp.messagingengine.com [202.12.124.144])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B44504C81
-	for <linux-btrfs@vger.kernel.org>; Tue,  7 Jul 2026 23:47:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.158
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4AA7D4C81
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Jul 2026 23:48:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.144
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783468037; cv=none; b=QCHGgVUTnD2/ytV17AVoomgK2dn4fmjAoude8VHuKczl/LyNlDz6/mjvVc7gynRI1nd6iMjgUNcubQG0WHiavMSI0G/H6HalOG9S2y/4E3b/MgV8zsFhL7psT+vnwHTCb997OJ7Eskzu4vXjFIV1Lwohm4XdOEVL+Y4EsW1iBMU=
+	t=1783468113; cv=none; b=Zc/rjRRe48E25DYSKcykbiw6fJ545ksBbehrH0WIcQ+k6qcjP9uHCjZVb/L6CkPKm6owXEUJ4mwBX/h7rGH7pAD1qxlLvWv4jQo1bSTOt7BP+wYc5LUnVZVmNhf5N+qahTgcjhyaW//MsTYqKRvdSlbFcDXA19h5HLPLlVaTIZ4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783468037; c=relaxed/simple;
-	bh=MJsbUn2+KOygXFIqH5CGQYgCGX/rloql00rknTvsXXI=;
+	s=arc-20240116; t=1783468113; c=relaxed/simple;
+	bh=hSqzf4eAi85U8Cm+wXT0NqXuCn3y3lD1700LS54HO8Q=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=bLG1kLfUV/9zW45TYulk9gkINphrIVcVfbnU7eeYYihJt8Y9XOdByJEGa19UcUGlGB0cj1N/OhF0+J/b+CkotO3BkHFpH0jdVkKWwvfMHlub80+HPO4szw/KJrHHp+ELarXf3wWIw4SgPc+aVgc9wJ5APugD9O0hkJMmrBsHyeU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=fN9YowCE; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=HdA8EkyG; arc=none smtp.client-ip=202.12.124.158
+	 Content-Type:Content-Disposition:In-Reply-To; b=mvPYomPGIX951PvlhCIyWowHhIHXMsfpumchO7qYzEYWkICRuX1W5AQzq0Lg71Mi60mMzIgZ/unNmEy+U+oxeIab+ouRKxQnV8RDyJqfrYWss2udWBYju8O7OJFOpLLrSvuPGa6Dg1mC8KjDcW4NHkzhjCGq0XOePxa6NB3Ipoc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=LI2WuxuL; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=dZVpWbhU; arc=none smtp.client-ip=202.12.124.144
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="fN9YowCE";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="HdA8EkyG"
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="LI2WuxuL";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="dZVpWbhU"
 Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 0B5CC7A00E1;
-	Tue,  7 Jul 2026 19:47:15 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-04.internal (MEProxy); Tue, 07 Jul 2026 19:47:15 -0400
+	by mailfout.stl.internal (Postfix) with ESMTP id 7F6F71D000AC;
+	Tue,  7 Jul 2026 19:48:30 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-04.internal (MEProxy); Tue, 07 Jul 2026 19:48:30 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
 	:content-transfer-encoding:content-type:content-type:date:date
 	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm3; t=1783468034;
-	 x=1783554434; bh=5xAsyp6xfllKNeXdQ2SS43qR69Tg8AYDSY3z0RyJ5E0=; b=
-	fN9YowCEZ9iT7CUfDAHtd8OQnJbOu21PPle22mQBiSrprIHlVQVcCMN4qb1LLAjC
-	HT6xRHthaBN+aJHe07DRZ3wMFtd4iYwYHJYQ1fSml86AGZbWvVfwecCBTypNGyHp
-	XvDXToKAtHfXN9kur5sc0y16xObF8wp1mFX9jtIElewwv1tseXIfvSYcf33z1qK2
-	h3sodRIeC8gdcW+6R6PWQJCSWchpndJuJilBhn3tBbCTzDzHKImkJLZzExBUJqW2
-	Nig2AMTlIkTSilRDa8CAJdKMNkIvbA7fBtv2Sqy3uD6EkseorDCNrPmwJbv6EaOw
-	Z+RLvDeNBpsiXZkT0caBXw==
+	:references:reply-to:subject:subject:to:to; s=fm3; t=1783468110;
+	 x=1783554510; bh=mXGEdFISvRH3pz0C0zODiJ4mGT9VVRy3XcVQPSl3z/M=; b=
+	LI2WuxuLIDN0kxYRMBbUW6FSedEWUiObbP1f0AVxS7KiHXW7KdGFXImyEt67X73d
+	swZk6+L7mmS9+dqWSrbbwykUemtoEdQC+Cj0LnIbPNUwjIeDuWvjzEFO6Xe9KGx7
+	sqrqtBAzV1/LAL0f+H1WIc8fi4foj2KdzfPx1H4NvrzS3XiQ5IfcbVm/ZGZrpPlg
+	hzySMkteMbIZDuKCA9Y39WTBAHsoSpYBiPC41Nn4rzWH+wjtln324CUpQfaVNNgg
+	lvPlaWMfeNsaLZDXOIHc3SCXzNi8ZT82s7m48iIS3eij/Pu082c5o5i+7qN/T6gi
+	81qd4RT6SWC2Egu14/0BdQ==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-transfer-encoding
 	:content-type:content-type:date:date:feedback-id:feedback-id
 	:from:from:in-reply-to:in-reply-to:message-id:mime-version
 	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1783468034; x=
-	1783554434; bh=5xAsyp6xfllKNeXdQ2SS43qR69Tg8AYDSY3z0RyJ5E0=; b=H
-	dA8EkyG63DUXmHJdQvLGf4igXNutDZVjBUI7CwvOm24jLTokxpZ2wUxb/Xf1J/fl
-	J1PmGmu+QayAdyo+76PbTlt9KnWWS0XLoQVUaQ11JzxQVbYnflkDB8Cnxyhivtp+
-	cOxvDzOdRs60UHjyzTLTMM/RJDLz8+TC37jf9s9yATD3JjsWRpREjqU5IJv+QTlW
-	Su510A0AC7UzDhXWILO+1v/DeNS6QdIRhA7ewJlgGpQ1cW+zXtNd7WVTbunrAkd5
-	5yvWdr9aWMCkJ1aSns7TKfKbatI7reKKSiQoI0Ac7vHCk1n/eBLyu6UL1ClQmYJZ
-	TJVw6yeEKtaoOQ0ax54IQ==
-X-ME-Sender: <xms:ApBNahzgbGQEUlGUuzzvOKiqU0h1CUHV_ElEzlhIk0NGqFBKOIk2tw>
-    <xme:ApBNanQzGE4FxoKV-gpC0AeJAtiJpHCYP7Fd4HadqczmYhPxPP7_S-nkZyxSdf9y4
-    f9daWiOt11o81-NCFBs2bxh-fBli-RtDFVf2xtTTwMw198YJQowSlM>
-X-ME-Received: <xmr:ApBNao8WwTm0vetntAIX7bkEAp0VoHrwI5Zjidof5XXCzzkbfdXwmgCaTfZNI4KFozLgOti5WlE1IU7tJlMj1ELER7s>
-X-ME-Proxy-Cause: dmFkZTGtLZAi/rw6dYdyw3nseEjI3brKGH/97HDKjJYt2RUYE/E3CrCawXc3KAK5HP/DG0
-    URsdd0KX4nLkHK5rEtEzEVN+0za26HwcYLu6pax75ykKS5wJSbUjn7FdLzVtOn69BQaPUd
-    oQk8fvEeSaFeQ8JQSPEnCqCdKovkNpw7Fgd2eFIAx53fNndfC+gUafAU5Jh21XOVheO4cD
-    adBvOuE4BznljWWTYx5pgg9VxY+U960a0aiYupn2WRLn8vlctST2/+qWor40g6yjSIkDP0
-    MF9EIKtzrNuZiwjfFisbYTlQ3T4yDGs+EuQoEtEiN6pd/HjNXidv/rNoZLPXaPi9xC4FOn
-    j8Z6XUJ2kAnVBxHtiHLE3TlhJGO/NbzlleAHt9ZJNjZg+q/1eCXVNGniqzZ9R8BFNcGzKG
-    NeikrXm3KJgHZxU6pc4IWYALRVahzM6Qz111Sq1ONXQWmpiP/zJnGbbDF6iLdg5HIcWI4C
-    BO4vGHDXwu/hS0oI2II/wEtCtXo5jEw9SEQPWoDVyED9VcIWLm96eriMvNjnMnKcSgIoIA
-    n8hmlv1MzL/2gGS/JHRR82rMByCFfcHlteUMhRz+bvkZ0+gJq1WdVmNp7rxqRDwzOyLsgr
-    KdNuJGIfQphHukVj7AHyzxeSIGkW+ltuXNIpAz1Kq5luHQwahANGwXARkRnQ
-X-ME-Proxy: <xmx:ApBNaupdKQcbgclaprr2mj6XbqYBFQifa4ZwN6pQjW7YPiMx-8jlDA>
-    <xmx:ApBNalm2e6Bu4h6uE1zcndGZI03qw39iF7HAazQM29T_GDkB9G6xhg>
-    <xmx:ApBNalKFJGCCJjt_Eicz6GO4VVluvAAl8Gy3w5KwJ0c6DWxBKnj5Kw>
-    <xmx:ApBNaqwigZ4DCqJKDErQl9nSk2pryhBABxR76wzmsbIabmBGL0u_MA>
-    <xmx:ApBNap8deQh1u0pRNfAb56LverzKw_OKwc1h9__0feoDMhf9GLpUwsiZ>
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1783468110; x=
+	1783554510; bh=mXGEdFISvRH3pz0C0zODiJ4mGT9VVRy3XcVQPSl3z/M=; b=d
+	ZVpWbhU3evIjeb4OQ9cD7dYlMATxhyr1HdbiFQs0TX5qmApnXWMi+oLFHNILDdT6
+	pTQr/MjUNA13txAbgO/dpSxf8riRIQCEYvoVhJanDxy221hq8idwaKq5nIF3VRLr
+	nUNJv6d7xHwl77I7snsh7Pp8CKI2j6A+xXiEmpK8E6S+2HjPHbCOFBu3DWuVhBQI
+	BfoUxJPpw439xPlfNbn6BteLsUtUniW4BJKOenMal5Im+w7CAO8vc1ksxPOXt4r+
+	cmimT2AwXJMFzBYBpQVH3KghoG5w8KYhYig104vZ7d9LWi7mypWbWU1Rnk8Zv9xW
+	N23yBjekd91WWWVeCOU9Q==
+X-ME-Sender: <xms:TpBNaiitfayBmTdwj_rhZE0ObPbdm0K8Ac4uIoqRNRmJAqM2yaihoA>
+    <xme:TpBNamSycuCrqKZhIChloJKeRql3qNbF6026RfhiuDpTARmpLwb_8OYWbuGJxgrs4
+    ywU-k-sYroZj5ys8h9Kq0ykC_caMwZr8AdB19L-NTzA3ZjDyUx6DRw>
+X-ME-Received: <xmr:TpBNajhQFrKIhQ6smG-vfYeZo3lidkOzpVVQnB16JcZbBkGotoSV_i0JGAU6xM9dNZzSeXQ21bwwgUAs-1R_x3ytBIQ>
+X-ME-Proxy-Cause: dmFkZTF2ZEWfGCHRUaFtlys0DFl1bSS1fM+8pb7Ri7sIam14w67yz+RxkPHpwZu7WslBP4
+    uEFPiQEb0sOMHvGYYWpjKirMdk78aOqKJJESwxKZtyq2lUg5JcGdxRqF4dAE+YtM0GgkL5
+    8sbo5MagZYSSuClsP3JWHE2Rz4dUZ6C622BVleX57rOb/dVLBJYuQSlrp9quIlMMjBVdO4
+    oH1bH6PmeJ5SrWdcr25nhY7cPUcE3y+ZAkDayv4ytvwajTc1YBk/Ae34r4A6o3EQuQab7Z
+    im7U/LB3XMvv4lIMFLdyfuOovipL+qAYSjox+2tc3+pAqtTG4J/rncmC1HnFaUMDcqsZmR
+    X6SKxIa04OVaK/Avpz1XjTvj4P0LODRJxpkd2zmlxUMKUcCbTtDG5+aA6rurAmtZiK7Qg6
+    M3JDvYMNL069qW141ZQYVitM3wsFH8l/u6fFha3w2IJci1Aip30VaQptNrbbLZiaKnpc54
+    51g68oLNnjGN2tDHLbbr4+PRQvCpYqTDel526a32b1JQ1zOS/t26dCv7yAVAuJK+d3hg7G
+    PESh9ZXB/iahoGelmkwqQ2043TxrNDOtd496yHnwzP691sS4B6c2TYqSJGGJkkQU+7Wmuv
+    EVhqhbN7tP7PtrUm4aMwD9zcPQO2kSVMN6QJhyCfy0kJStDT0k8RF72UzrhQ
+X-ME-Proxy: <xmx:TpBNam7zk81HBGxVwdECf5jEKM6oPpTWL9ZVUOS5N96N4b9gcwA4jw>
+    <xmx:TpBNagD7rEyLQ0rWjg68VH8zJwWqlkVfBabxXH_Qtmyj_PiM4S52NA>
+    <xmx:TpBNatbo--DAcsBxMusSMl9enJgOso2ilnltqQkOH2o8wMJlvs1VCA>
+    <xmx:TpBNarYn6bpW8WajcGUH-hL0kuZWTNAKhz7ZtzI3ioZNvaHdayEC-A>
+    <xmx:TpBNajlC8VvfOlHHRb2VO7ssrAaB2QTs0U25omVciMX89YeBYQSJGK8G>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 7 Jul 2026 19:47:14 -0400 (EDT)
-Date: Tue, 7 Jul 2026 16:47:31 -0700
+ 7 Jul 2026 19:48:29 -0400 (EDT)
+Date: Tue, 7 Jul 2026 16:48:46 -0700
 From: Boris Burkov <boris@bur.io>
 To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: fix a regression where PAGECACHE_TAG_DIRTY is
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix a regression where PAGECACHE_TAG_DIRTY is
  never cleared
-Message-ID: <20260707234731.GA83688@zen.localdomain>
-References: <d47af8cae38e32462d61cb62139c2732e4e8fdbe.1783407237.git.wqu@suse.com>
+Message-ID: <20260707234846.GB83688@zen.localdomain>
+References: <20260707191208.GA516053@zen.localdomain>
+ <58a76be5-12b2-469e-a9a0-146bfeb55773@gmx.com>
+ <20260707231632.GA690447@zen.localdomain>
+ <9a5f8318-fb44-4f0c-b8b0-5f8af1fbbfa3@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -85,203 +88,182 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <d47af8cae38e32462d61cb62139c2732e4e8fdbe.1783407237.git.wqu@suse.com>
+In-Reply-To: <9a5f8318-fb44-4f0c-b8b0-5f8af1fbbfa3@suse.com>
 
-On Tue, Jul 07, 2026 at 04:24:30PM +0930, Qu Wenruo wrote:
-> [BUG]
-> The following script (already submitted as generic/798) will report
-> incorrect dirty page numbers, with 64K page size systems and 4K fs block
-> size:
+On Wed, Jul 08, 2026 at 09:00:39AM +0930, Qu Wenruo wrote:
 > 
->  # mkfs.btrfs -s 4k -f $dev
->  # mount $dev $mnt
->  # xfs_io -f -c "pwrite 0 64K" -c fsync -c "cachestat 0 64K" $mnt/foobar
->  Cached: 1, Dirty: 1, Writeback: 0, Evicted: 0, Recently Evicted: 0
 > 
-> Note that the dirtied page number is still 1.
+> 在 2026/7/8 08:46, Boris Burkov 写道:
+> > On Wed, Jul 08, 2026 at 08:06:26AM +0930, Qu Wenruo wrote:
+> > > 
+> > > 
+> > > 在 2026/7/8 04:42, Boris Burkov 写道:
+> > > > On Tue, Jul 07, 2026 at 03:10:20PM +0930, Qu Wenruo wrote:
+> > > [...]
+> > > > > 
+> > > > > > 
+> > > > > > Second, and worse, it results in a deadlock which should show on btrfs/062
+> > > > > > and btrfs/070, I believe. The problem is that clearing dirty at this point
+> > > > > > results in a truncate being allowed to clean pages past the end of the
+> > > > > > new file size without calling btrfs_mark_ordered_io_finished() so we
+> > > > > > leak that OE unfinished and get stuck.
+> > > > > 
+> > > > > Mind to explain exactly where the missing btrfs_mark_ordered_io_finished()
+> > > > > is?
+> > > > > 
+> > > > > The point here is, we always have the folio locked already, the difference
+> > > > > is just in the timing where the folio dirty flag is cleared.
+> > > > > 
+> > > > > I didn't see a problem that the changed timing can cause problem related to
+> > > > > btrfs_mark_ordered_io_finished().
+> > > > 
+> > > > Sorry, my explanation last night was rushed and clumsy, let me try to be
+> > > > much more clear and specific!
+> > > > 
+> > > > The key change is your recent one, that went together with the removal
+> > > > of folio_clear_dirty_for_io():
+> > > > 
+> > > > 334509ce9d07 ("btrfs: use dirty flag to check if an ordered extent needs to be truncated")
+> > > > 
+> > > > and specifically the lines:
+> > > > 
+> > > >     /*
+> > > >     * If the range is not dirty, the range has been submitted and
+> > > >     * since we have waited for the writeback, endio has been
+> > > >     * executed, thus we must skip the range to avoid double
+> > > >     * accounting for the ordered extent.
+> > > >     */
+> > > >     if (!btrfs_folio_test_dirty(fs_info, folio, cur, range_len))
+> > > >       goto next;
+> > > > 
+> > > > 
+> > > > and quoting from the changelog:
+> > > > 
+> > > >     If the OE range is dirty, it means we have allocated an ordered extent but
+> > > >     have not yet submitted the range. And that's exactly the case where we need
+> > > >     to truncate the ordered extent.
+> > > > 
+> > > > But with this new fix, which returns folio_clear_dirty_for_io before
+> > > > submission, the comment, skip, and changelog argument are no longer
+> > > > true.
+> > > > 
+> > > > Suppose we dirty folios [F,F+K] at the end of a file and start writeback
+> > > > on them, creating a single OE for [F, F+K]. extent_writepage will keep
+> > > > looping through the folios submitting them.
+> > > > 
+> > > > Now suppose a truncate races in and shrinks i_size (taking i_rwsem but
+> > > > no folio locks or blocking on OEs) via:
+> > > > btrfs_setsize
+> > > >     truncate_setsize
+> > > >       i_size_write // shrinks i_size to M <= F
+> > > >         truncate_pagecache
+> > > >           folio_wait_writeback (not yet marked writeback)
+> > > >           folio_invalidate
+> > > >             btrfs_invalidate_folio (folio clean, skipped, this is the bug)
+> > > 
+> > > Just a small nitpick, the problem is not from the truncate_setsize() call
+> > > site, as truncate_pagecache() is grabbing the folio with FGP_LOCK, so it can
+> > > not grab the folio locked by writeback.
+> > > 
+> > 
+> > Good point, but I think the issue is as soon as you do i_size_write(),
+> > so the rest is just my explanation being a little misleading, I think.
+> > 
+> > > > 
+> > > > extent_writepage hits the code
+> > > > 
+> > > >     if (folio->index > end_index ||
+> > > >       (folio->index == end_index && !pg_offset)) {
+> > > >         folio_invalidate(folio, 0, folio_size(folio));
+> > > >         folio_unlock(folio);
+> > > >         return 0;
+> > > >     }
+> > > > 
+> > > > which calls btrfs_folio_invalidate() which needs to mark the OE past
+> > > > isize finished but skips it because the folio is clean (same issue as in
+> > > > truncate above)
+> > > 
+> > > Thanks a lot! Now I understand how things are going wrong now.
+> > > 
+> > > But I still have a question, I thought we should have some kind of inode
+> > > lock or something else to prevent i_size_read() from getting stale results.
+> > > 
+> > > And digging deeper, for the btrfs_setsize(), the inode is already locked.
+> > > E.g. inside notify_change() there is a WARN_ON_ONCE() if the inode is not
+> > > locked.
+> > > 
+> > > Would the root cause of the problem is that we did not lock the inode for
+> > > writeback?
+> > 
+> > yes, I think this path to the hang definitely requires the fact that
+> > writeback does not hold i_rwsem while reading i_size.
+> > 
+> > > 
+> > > And if we do not have proper inode lock for writeback, then I think write
+> > > back should never bother the isize check, and always do the writeback no
+> > > matter isize.
+> > > 
+> > 
+> > Don't we risk weird truncate vs writeback races where they undo each
+> > other, then?
 > 
-> [CAUSE]
-> The cachestat() goes through the XArray of the page cache, but
-> instead of checking each folio's flag, it uses the
-> PAGECACHE_TAG_DIRTY tag to report dirty pages.
+> Writeback still has the folio locked, so truncation should wait for the
+> writeback first then invalidate it.
 > 
-> Since commit 095be159f3eb ("btrfs: unify folio dirty flag clearing"),
-> btrfs replaced a folio_clear_dirty_for_io() call inside
-> extent_write_cache_pages() with folio_test_dirty().
+> The other direction would also be true, if the invalidation invalidated the
+> page first, then writeback should not got a dirty folio anymore.
 > 
-> This will cause the following call sequence for the folio at file offset
-> 0:
+> But I can be totally wrong considering how complex things are.
 > 
->  extent_write_cache_pages()
->  |- folio_test_dirty()
->  |  The folio is still dirty, continue to writeback.
->  |
->  |- extent_writepage()
->     |- extent_writepage_io()
->        |- submit_one_sector() for range [0, 4K)
->        |  |- btrfs_folio_clear_dirty()
->        |  |- btrfs_folio_set_writeback()
->        |     |- folio_start_writeback()
->        |        It's the first writeback block, we set the writeback
->        |	flag for the folio.
->        |	But the folio is still dirty, PAGECACHE_TAG_DIRTY is
->        |	kept
->        |
->        |- submit_one_sector() for range [4K, 8K)
->        |  |- btrfs_folio_clear_dirty()
->        |  |- btrfs_folio_set_writeback()
->        |     The folio already has writeback flag, no need to call
->        |     folio_start_writeback()
->        |
->        | ...
->        |- submit_one_sector() for range [60K, 64K)
-> 	  |- btrfs_folio_clear_dirty()
-> 	  |- btrfs_folio_set_writeback()
->              The folio already has writeback flag, no need to call
->              folio_start_writeback()
+> I can explore if this idea won't break the existing runs first.
+> > > 
+> > > Mind to explain why folio_mkclean() is required? Is it for the same OE hang
+> > > or something else?
+> > > 
+> > 
+> > No it's a csum corruption with mmap being allowed to write to folios
+> > that are under writeback (and thus computing csums)
+> > 
+> > Since we got rid of folio_clear_dirty_for_io() (and thus
+> > folio_mkclean()), then if we mmap a large folio, then start writeback on
+> > it, we never write protect the folios while they are under writeback so
+> > the mmap user can trigger write faults and mess up the csums. We have
+> > observed this in practice in our early testing of btrfs large folios in
+> > production and we also have a racy reproducer that enables large folios,
+> > mmaps a file and has a bunch of threads racing between touching each
+> > sector with some new random data and fsyncing the file. We do that a bunch
+> > of times, then drop caches and read everything. Do that whole thing in a
+> > loop a few times and eventually you hit it. I can share the exact LLM
+> > reproducer slop code if you would like, but that is the rough shape, to
+> > explain the point.
+> > 
+> > I can send my holistic fix proposal with your v2 included in a series?
 > 
-> So the PAGECACHE_TAG_DIRTY is never cleared.
+> Sounds great. Feel free to include the v2 fix:
+> https://lore.kernel.org/linux-btrfs/d47af8cae38e32462d61cb62139c2732e4e8fdbe.1783407237.git.wqu@suse.com/T/
 > 
-> Meanwhile for the old code, before that commit, the sequence looks
-> like:
-> 
->  extent_write_cache_pages()
->  |- folio_clear_dirty_for_io()
->  |  The folio is still dirty, so continue to writeback.
->  |  But the folio dirty flag is cleared now.
->  |
->  |- extent_writepage()
->     |- extent_writepage_io()
->        |- submit_one_sector() for range [0, 4K)
->        |  |- btrfs_folio_clear_dirty()
->        |  |- btrfs_folio_set_writeback()
->        |     |- folio_start_writeback()
->        |        |- xas_clear(PAGECACHE_TAG)
->        |
->        |        It's the first writeback block, we set the writeback
->        |	flag for the folio.
->        |	And the folio is not dirty, PAGECACHE_TAG_DIRTY is
->        |        cleared
->        |
->        |- submit_one_sector() for range [4K, 8K)
->        |  |- btrfs_folio_clear_dirty()
->        |  |- btrfs_folio_set_writeback()
->        |     The folio already has writeback flag, no need to call
->        |     folio_start_writeback()
->        |
->        | ...
->        |- submit_one_sector() for range [60K, 64K)
-> 	  |- btrfs_folio_clear_dirty()
-> 	  |- btrfs_folio_set_writeback()
->              The folio already has writeback flag, no need to call
->              folio_start_writeback()
-> 
-> Unlike the new code, old code will clear PAGECACHE_TAG_DIRTY for the
-> first writeback block.
-> 
-> There is a deeper problem, dirty and writeback folio flags are updated
-> at very different timing.
-> The dirty flag is only cleared when the last sub-folio block has dirty
-> flag cleared.
-> But the writeback flag is set when the first block starts writeback, and
-> later blocks that go through writeback will not call
-> folio_start_writeback() again.
-> 
-> If we rely on folio_start_writeback() to update the
-> PAGECACHE_TAG_DIRTY and PAGECACHE_TAG_TOWRITE, it will always be
-> incorrect in one way or another.
-> 
-> [FIX]
-> Do not let folio_start_writeback() do any PAGECACHE_TAG_TOWRITE
-> handling.
-> 
-> Instead, manually clear both PAGECACHE_TAG_TOWRITE and
-> PAGECACHE_TAG_DIRTY flags when the folio is no longer dirty during
-> btrfs_subpage_set_writeback().
-> 
-> However this is only a hot-fix, for the long term solution we will
-> follow iomap, by calling folio_start_writeback() immediately for the
-> whole folio, and folio_end_writeback() after all writeback finished
-> for the folio.
-> 
+> Although considering this is already breaking cachestat() and will cause
+> extra overhead for writeback, I'd prefer the v2 as a hot fix first.
 
-Since I was planning to include exactly this as part of fixing the other
-issue I found and this doesn't regress anything on its own, I agree we
-should just get it in as is.
+I gave your v2 my r-b, and will send the patch to fix the corruption
+next, separately. It shouldn't affect your patch, as it only conflicted
+if we went back to folio_clear_dirty_for_io().
 
-Reviewed-by: Boris Burkov <boris@bur.io>
-
-> Fixes: 095be159f3eb ("btrfs: unify folio dirty flag clearing")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Changelog:
-> v2:
-> - Completely decouple the PAGECACHE_TAG_* handling from
->   folio_start_writeback()
->   Since folio dirty and writeback flags are only updated once, but at
->   very different timings (the last dirty block cleared vs the first
->   writeback block started), we have to manually handle the
->   PAGECACHE_TAG_* update by ourselves.
 > 
-> - Add a mention about the proper fix using the same solution
->   as iomap
-> ---
->  fs/btrfs/subpage.c | 26 +++++++++++++++++++++++---
->  1 file changed, 23 insertions(+), 3 deletions(-)
+> Thanks,
+> Qu
 > 
-> diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-> index 56060acac2e9..2a9397be8116 100644
-> --- a/fs/btrfs/subpage.c
-> +++ b/fs/btrfs/subpage.c
-> @@ -359,6 +359,23 @@ void btrfs_subpage_set_dirty(const struct btrfs_fs_info *fs_info,
->  	folio_mark_dirty(folio);
->  }
->  
-> +static void folio_clear_tags(struct folio *folio)
-> +{
-> +	struct address_space *mapping = folio_mapping(folio);
-> +	XA_STATE(xas, &mapping->i_pages, folio->index);
-> +	unsigned long flags;
-> +
-> +	ASSERT(folio_test_locked(folio));
-> +	ASSERT(mapping);
-> +	ASSERT(mapping_use_writeback_tags(mapping));
-> +
-> +	xas_lock_irqsave(&xas, flags);
-> +	xas_load(&xas);
-> +	xas_clear_mark(&xas, PAGECACHE_TAG_DIRTY);
-> +	xas_clear_mark(&xas, PAGECACHE_TAG_TOWRITE);
-> +	xas_unlock_irqrestore(&xas, flags);
-> +}
-> +
->  /*
->   * Extra clear_and_test function for subpage dirty bitmap.
->   *
-> @@ -403,7 +420,6 @@ void btrfs_subpage_set_writeback(const struct btrfs_fs_info *fs_info,
->  	unsigned int start_bit = subpage_calc_start_bit(fs_info, folio,
->  							writeback, start, len);
->  	unsigned long flags;
-> -	bool keep_write;
->  
->  	spin_lock_irqsave(&bfs->lock, flags);
->  	bitmap_set(bfs->bitmaps, start_bit, len >> fs_info->sectorsize_bits);
-> @@ -413,10 +429,14 @@ void btrfs_subpage_set_writeback(const struct btrfs_fs_info *fs_info,
->  	 * folio. Doing so can cause WB_SYNC_ALL writepages() to overlook it,
->  	 * assume writeback is complete, and exit too early — violating sync
->  	 * ordering guarantees.
-> +	 *
-> +	 * Instead we manually clear the DIRTY and TOWRITE tags after the folio
-> +	 * is no longer dirty.
->  	 */
-> -	keep_write = folio_test_dirty(folio);
->  	if (!folio_test_writeback(folio))
-> -		__folio_start_writeback(folio, keep_write);
-> +		__folio_start_writeback(folio, true);
-> +	if (!folio_test_dirty(folio))
-> +		folio_clear_tags(folio);
->  	spin_unlock_irqrestore(&bfs->lock, flags);
->  }
->  
-> -- 
-> 2.54.0
+> 
+> > 
+> > > Thanks,
+> > > Qu
+> > > 
+> > > > 
+> > > > Thanks,
+> > > > Boris
+> > > > 
+> > > > > 
+> > > > > Thanks,
+> > > > > Qu
+> > > > > 
 > 

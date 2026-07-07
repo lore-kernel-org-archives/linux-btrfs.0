@@ -1,77 +1,170 @@
-Received: from mailgw.kylinos.cn (mailgw.kylinos.cn [124.126.103.232])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 56FA8316197;
-	Tue,  7 Jul 2026 09:16:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=124.126.103.232
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D7F3B3B5306;
+	Tue,  7 Jul 2026 09:45:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783415778; cv=none; b=MkYo7Cp+zaRjctrpTaO1lOXLRaXN0uD89jwvJMjdqzk7waZkToNJtmKoQ99epx+q65LycemECibluEzK4B7wflHGxNJ9ZD2uPNHt7/BAx2Vm3Xb46QG56xjY+LGuOVLqzVpblQwu2lTv+vl9xjf0+V/PgMuDw448hVlv8mGQIgc=
+	t=1783417502; cv=none; b=cgbmIYRv1e0CUrWpUEf1NkNo34zHx7Qjg3RlYb9aUmYD4E8/OgcIdioLg80jQTPiv8NzWqX0+Yvsq17Flrb3FRoNGpMReZgc6WMw3LPMo0/TieMQEc9MP3+KcbtohfSa6YKeyOFEcH83HV+BeNjR39zd7Ueh20iXNN4V+57ziz8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783415778; c=relaxed/simple;
-	bh=+k9NlimLL1ajeyCdrVJRBBbK4+fcDwkB13bDWQDP5Lw=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=bPhuRQYuF/H6tmvE/zCxVwYQfSjOqPLMmkokQ9awnbqnKIJwylYxxBdfzO5Bo6j4G0oZwLQl3/TKu6Kp5i+UYf2/+rkX/5SubrqQbpglwAfpTuwWZIKZQMiB5m1nO8QZ6CXE8i3WKt84ow21kB88ibIaPO1yvVTZWm3olvud/aM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=kylinos.cn; arc=none smtp.client-ip=124.126.103.232
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kylinos.cn
-X-UUID: 7dcec57e79e411f1aa26b74ffac11d73-20260707
-X-CID-P-RULE: Release_Ham
-X-CID-O-INFO: VERSION:1.3.12,REQID:ae6f71e6-52e8-463d-a859-34f03ba0235f,IP:0,U
-	RL:0,TC:0,Content:0,EDM:0,RT:0,SF:0,FILE:0,BULK:0,RULE:Release_Ham,ACTION:
-	release,TS:0
-X-CID-META: VersionHash:e7bac3a,CLOUDID:59aa1a6c8ba2b3ee9541dc2c9cecd4ae,BulkI
-	D:nil,BulkQuantity:0,Recheck:0,SF:102|850|865|898,TC:nil,Content:0|15|50,E
-	DM:-3,IP:nil,URL:0,File:nil,RT:nil,Bulk:nil,QS:nil,BEC:nil,COL:0,OSI:0,OSA
-	:0,AV:0,LES:1,SPR:NO,DKR:0,DKP:0,BRR:0,BRE:0,ARC:0
-X-CID-BVR: 2,SSN|SDN
-X-CID-BAS: 2,SSN|SDN,0,_
-X-CID-FACTOR: TF_CID_SPAM_SNR
-X-CID-RHF: D41D8CD98F00B204E9800998ECF8427E
-X-UUID: 7dcec57e79e411f1aa26b74ffac11d73-20260707
-X-User: zenghongling@kylinos.cn
-Received: from localhost.localdomain [(10.44.16.150)] by mailgw.kylinos.cn
-	(envelope-from <zenghongling@kylinos.cn>)
-	(Generic MTA with TLSv1.3 TLS_AES_256_GCM_SHA384 256/256)
-	with ESMTP id 49481697; Tue, 07 Jul 2026 17:16:09 +0800
-From: Hongling Zeng <zenghongling@kylinos.cn>
-To: clm@fb.com,
-	dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	zhongling0719@126.com,
-	Hongling Zeng <zenghongling@kylinos.cn>
-Subject: [PATCH] btrfs: Add missing sctx check in cleanup path
-Date: Tue,  7 Jul 2026 17:16:04 +0800
-Message-Id: <20260707091604.207222-1-zenghongling@kylinos.cn>
-X-Mailer: git-send-email 2.25.1
+	s=arc-20240116; t=1783417502; c=relaxed/simple;
+	bh=2S9yd9fLAO85LsOBO7roqAB0derg/n3kyJ+bXKqa0+k=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=tbP/jJbAWO0Kqic0Dv2+7YDhQcrBbJqLQmCbaKBR47FPIOfGPuSRJqCeEE/ebbzx5+h0yo9oiiMUUDCZLNX2o3RqINS40Utt54rxNY0AV4DOrJRQ7WrbdKPMv+5F5U/Vd4QXKCWCODFncoNRtQ1Wdtn2oL73nG9rzehNZ4JGl9Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=mNeiJR45; arc=none smtp.client-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="mNeiJR45"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D93331F000E9;
+	Tue,  7 Jul 2026 09:44:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1783417500;
+	bh=kiDc7shEh7OxRVl3ZerxDgGIpR2Va9iAm1QgqF51tTc=;
+	h=Date:Subject:To:References:From:In-Reply-To;
+	b=mNeiJR45zZPlPgkjVCgbc9hz/toQwssGu4qIke2fVijFvN5ZcSwYZ7pos3AvnNlH9
+	 4X/riPB13yc46GfJkX3eoILg0wfLOw+oX7fyO/dEDEZMmxEW/n9JOnQsRhZMYR3JPT
+	 JkIy5PVnua/R91X2bB8QjVJMdjDtqIbsQy0c6cPm8bXkO+xkxYiUkQlJUSY3kJ7LPQ
+	 nUdwUWjwOxtvHjEb/SY/EIQrvD9b+6+mFOZFbOlII8MpeZkO1Q5qHkex7fwK8uqLKN
+	 nApfhxBe7kqy0J/cBvVjTr80x84n3275C/o0ad47fNwn/leLE7FJULgIxuhBoxjm6k
+	 o8auZ1ZlUSxeg==
+Message-ID: <8aa304b0-99bb-4940-923a-27abf9bd6b9b@kernel.org>
+Date: Tue, 7 Jul 2026 17:44:57 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] fstests: btrfs: new test case for leaking
+ BTRFS_FS_STATE_REMOUNTING flag
+To: Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org,
+ linux-btrfs@vger.kernel.org
+References: <20260704085208.86039-1-wqu@suse.com>
+Content-Language: en-US
+From: Anand Suveer Jain <asj@kernel.org>
+In-Reply-To: <20260704085208.86039-1-wqu@suse.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-Add sctx NULL check in the sort_clone_roots cleanup path for
-consistency with other cleanup paths in the function.
+On 4/7/26 16:52, Qu Wenruo wrote:
+> This is a regression test for the patch "btrfs: fix leaking
+> BTRFS_FS_STATE_REMOUNTING flag", where conflicting mount options can
+> cause btrfs leave BTRFS_FS_STATE_REMOUNTING set.
+> 
+> Such set BTRFS_FS_STATE_REMOUNTING will interrupt several features, and
+> the test case will use "btrfs qgroup rescan" to catch the
+> BTRFS_FS_STATE_REMOUNTING flag.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  tests/btrfs/352     | 53 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/352.out |  2 ++
+>  2 files changed, 55 insertions(+)
+>  create mode 100755 tests/btrfs/352
+>  create mode 100644 tests/btrfs/352.out
+> 
+> diff --git a/tests/btrfs/352 b/tests/btrfs/352
+> new file mode 100755
+> index 00000000..2ccf7fab
+> --- /dev/null
+> +++ b/tests/btrfs/352
+> @@ -0,0 +1,53 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+> +#
+> +# FS QA Test 352
+> +#
+> +# A regression test to make sure failed remount won't leave
+> +# BTRFS_FS_STATE_REMOUNTING flag set, which can interrupt several features,
+> +# one of them is btrfs qgroup rescan.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick remount
+> +
+> +_fixed_by_kernel_commit XXXXXXXXXXXX \
+> +	"btrfs: fix leaking BTRFS_FS_STATE_REMOUNTING flag"
+> +
 
-Signed-off-by: Hongling Zeng <zenghongling@kylinos.cn>
----
- fs/btrfs/send.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 3ae480c7474b..2d81fac03a3d 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -8250,7 +8250,7 @@ long btrfs_ioctl_send(struct btrfs_root *send_root, const struct btrfs_ioctl_sen
- 		free_orphan_dir_info(sctx, odi);
- 	}
- 
--	if (sort_clone_roots) {
-+	if (sctx && sort_clone_roots) {
- 		for (i = 0; i < sctx->clone_roots_cnt; i++) {
- 			btrfs_root_dec_send_in_progress(
- 					sctx->clone_roots[i].root);
--- 
-2.25.1
+
+We can replace this section with the existing helpers or,
+even better, with a new one as shown below. I am not too
+particular about creating a new helper, that is up to you.
+However, the use of existing helpers such as
+_require_btrfs_fs_sysfs and _require_btrfs_fs_feature
+will be better. Thanks
+
+
+> +rescue_opts="/sys/fs/btrfs/features/supported_rescue_options"
+> +if [ ! -f "$rescue_opts" ]; then
+> +	_notrun "No supported_rescue_options sysfs interface"
+> +fi
+> +
+> +if ! grep -q "ignorebadroots" "$rescue_opts"; then
+> +	_notrun "\"rescue=ignorebadroots\" mount option not supported"
+> +fi
+> +
+
+
+diff --git a/common/btrfs b/common/btrfs
+index 30288f07b61a..57453fb39893 100644
+--- a/common/btrfs
++++ b/common/btrfs
+@@ -100,6 +100,29 @@ _require_btrfs_mkfs_uuid_option()
+ 	fi
+ }
+
++# Check for the availability of a specific option within a btrfs
+feature set
++# Arguments:
++#   $1 - Feature attribute of /sys/fs/btrfs/features/
++#   $2 - Option string to verify inside that file
++_require_btrfs_fs_feature_option()
++{
++	local feat=$1
++	local feat_type=$2
++
++	if [ -z "$feat" ] || [ -z "$feat_type" ]; then
++		echo "Missing argument(s) for _require_btrfs_fs_feature_type"
++		_exit 1
++	fi
++
++	modprobe btrfs > /dev/null 2>&1
++
++	_require_btrfs_fs_feature "$feat"
++
++	if ! grep -qw "$feat_type" "/sys/fs/btrfs/features/$feat"; then
++		_notrun "Feature type '$feat_type' not supported by the available
+btrfs version"
++	fi
++}
++
+ _require_btrfs_fs_feature()
+ {
+ 	if [ -z $1 ]; then
+diff --git a/tests/btrfs/352 b/tests/btrfs/352
+index 2ccf7fabdb71..14e357dbaa37 100755
+--- a/tests/btrfs/352
++++ b/tests/btrfs/352
+@@ -14,15 +14,8 @@ _begin_fstest auto quick remount
+ _fixed_by_kernel_commit XXXXXXXXXXXX \
+ 	"btrfs: fix leaking BTRFS_FS_STATE_REMOUNTING flag"
+
+-rescue_opts="/sys/fs/btrfs/features/supported_rescue_options"
+-if [ ! -f "$rescue_opts" ]; then
+-	_notrun "No supported_rescue_options sysfs interface"
+-fi
+-
+-if ! grep -q "ignorebadroots" "$rescue_opts"; then
+-	_notrun "\"rescue=ignorebadroots\" mount option not supported"
+-fi
+-
++_require_btrfs_fs_sysfs
++_require_btrfs_fs_feature_option "supported_rescue_options"
+"ignorebadroots"
+ _require_btrfs_command quota rescan -w
+ _require_scratch
+ _scratch_mkfs >> $seqres.full
+
 

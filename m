@@ -1,58 +1,58 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 800293B2D0D
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E2A7F42A169
 	for <linux-btrfs@vger.kernel.org>; Tue,  7 Jul 2026 14:27:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783434479; cv=none; b=b1ULflHxbIyXSPPFkl63zObm1PWzGE/GpOUXnHdcAfOSFgU+0G5P/TKlu75wsvFRw++2uSzGypVdpLJD3KUmZosOIGyoHtT6WGUpAqbzY8QEBQyugBqcyfL9akzP2YJWp38hacrvvPR+mXg+jGM6aCUb+DQCTF3w+z2CDeT5m00=
+	t=1783434479; cv=none; b=YdkaQG/R8/20qQm5YR9cfm0Nmr7eLkUNitOopYDwwAD/w4z1zQuN2MmEGQ9Pu6XVRdb+ZsCoIGKygwDfng/WmCltohGF8sIY/Wkn9qZwinlJMoC+c8TxaJqBYBCAqisW7IelJ268FF7SLiryAfkS8LJGJE+UWOD/VeQjHZLLBGM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1783434479; c=relaxed/simple;
-	bh=xagaHRcjzEHGNolFIpLfZe4032gfUFMAmBd3ZZApIj8=;
+	bh=/SPdENCM8RBJQwYHIyTDuyJJVoa2AGAZfGzAKrbYXMY=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=L9hHUFJuE7o4ON1lWHKlvRqQu24uaTJp6lBevpX6mY5cO1hIdqXXCF8GXuo2hZFonWzrdVUIA/835G1M55Wq5eLe5ZCOFGhIEqzSttnQVHB1b3RT5Mnum2+QV/6OU/3W+gMuyjXHZHGI9WUC0IiacIHv5D/GqbAuIDFVrTXpzCU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=uMyu1W3a; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=uMyu1W3a; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=V9WHHzeY3XGItKKIgzt5WM13Cw59du+9UVhQQd1U8MgKxK7iyCzkjS1HAzVrQ6P1af/lX0LFDP0ED4G0j/99W7JC9GxgLmvSCEJiNZhXXcGaI/QZ7ojTIf8APGwwwUvJduKV9IU3mh+83NKQwo1HEjimomMXQnFB6kVeyVBip9M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=g+CS243f; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=g+CS243f; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="uMyu1W3a";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="uMyu1W3a"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="g+CS243f";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="g+CS243f"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 027E475C20;
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 37E6F75D22;
 	Tue,  7 Jul 2026 14:27:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
 	t=1783434467; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=q8WFrdgxkPXzm4bjuwjrD+TEHnFQ05VmWZCgamA7Tik=;
-	b=uMyu1W3aGHTAs/AvAnH6S4/RJRWm+mQscfpNT5wUSp671KH/iVcdqgTikTdTgwEicLN+6a
-	K1w0OVfdPR7GVg401T0xM+NSbOMOI5G5pqOE5U/CtCZaDtRJiYfRC03ZaBcLPpylNitucx
-	ynFiPjgigKUQaXe9aEQHkyAZxw844ug=
-Authentication-Results: smtp-out1.suse.de;
+	bh=kymj+BTqfjpAWE7WH3Kg3Vndt4dAXmZuH404tDn0T1I=;
+	b=g+CS243f2Fkl4sq/9MGn+k1n97hTuzltvUr0B14DKZ5Ws86VPLek9rNdjVsruR7oVS9kIL
+	PzxOmg4sGWLYl0BQB17aKobwBSaRIcsdTMZ6luDzuXtsX0Hw4l5fXlZ9RM85u9SUrgZQ95
+	IuiAjMweJ4HDbpfeZd4N/kobU0PrPDM=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
 	t=1783434467; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=q8WFrdgxkPXzm4bjuwjrD+TEHnFQ05VmWZCgamA7Tik=;
-	b=uMyu1W3aGHTAs/AvAnH6S4/RJRWm+mQscfpNT5wUSp671KH/iVcdqgTikTdTgwEicLN+6a
-	K1w0OVfdPR7GVg401T0xM+NSbOMOI5G5pqOE5U/CtCZaDtRJiYfRC03ZaBcLPpylNitucx
-	ynFiPjgigKUQaXe9aEQHkyAZxw844ug=
+	bh=kymj+BTqfjpAWE7WH3Kg3Vndt4dAXmZuH404tDn0T1I=;
+	b=g+CS243f2Fkl4sq/9MGn+k1n97hTuzltvUr0B14DKZ5Ws86VPLek9rNdjVsruR7oVS9kIL
+	PzxOmg4sGWLYl0BQB17aKobwBSaRIcsdTMZ6luDzuXtsX0Hw4l5fXlZ9RM85u9SUrgZQ95
+	IuiAjMweJ4HDbpfeZd4N/kobU0PrPDM=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E0B3E779AE;
-	Tue,  7 Jul 2026 14:27:46 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1EF5E779B1;
+	Tue,  7 Jul 2026 14:27:47 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id sM9YNuIMTWoLaQAAD6G6ig
-	(envelope-from <neelx@suse.com>); Tue, 07 Jul 2026 14:27:46 +0000
+	id +GMLB+MMTWoLaQAAD6G6ig
+	(envelope-from <neelx@suse.com>); Tue, 07 Jul 2026 14:27:47 +0000
 From: Daniel Vacek <neelx@suse.com>
 To: David Sterba <dsterba@suse.com>
 Cc: Daniel Vacek <neelx@suse.com>,
@@ -60,9 +60,9 @@ Cc: Daniel Vacek <neelx@suse.com>,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
 	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v3 2/7] btrfs-progs: start tracking extent encryption context info
-Date: Tue,  7 Jul 2026 16:27:31 +0200
-Message-ID: <20260707142736.2330146-3-neelx@suse.com>
+Subject: [PATCH v3 4/7] btrfs-progs: print encryptin type field of file extents
+Date: Tue,  7 Jul 2026 16:27:33 +0200
+Message-ID: <20260707142736.2330146-5-neelx@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260707142736.2330146-1-neelx@suse.com>
 References: <20260707142736.2330146-1-neelx@suse.com>
@@ -74,6 +74,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Spam-Flag: NO
+X-Spam-Score: -6.80
 X-Spamd-Result: default: False [-6.80 / 50.00];
 	REPLY(-4.00)[];
 	BAYES_HAM(-3.00)[100.00%];
@@ -93,85 +94,62 @@ X-Spamd-Result: default: False [-6.80 / 50.00];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
 	RCPT_COUNT_FIVE(0.00)[6];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Level: 
-X-Spam-Score: -6.80
 
 From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 
-This recapitulates the kernel change named 'btrfs: start tracking extent
-encryption context info".
+Encrypted file extents now have the 'encryption' field set to an
+encryption type.  Let's print it.
 
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 Signed-off-by: Daniel Vacek <neelx@suse.com>
 ---
- kernel-shared/tree-checker.c    | 17 ++++++++++-------
- kernel-shared/uapi/btrfs_tree.h |  6 ++++++
- 2 files changed, 16 insertions(+), 7 deletions(-)
+ check/main.c               | 1 -
+ kernel-shared/print-tree.c | 7 +++++--
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/kernel-shared/tree-checker.c b/kernel-shared/tree-checker.c
-index 5e716422..cd3d5d27 100644
---- a/kernel-shared/tree-checker.c
-+++ b/kernel-shared/tree-checker.c
-@@ -239,6 +239,8 @@ static int check_extent_data_item(struct extent_buffer *leaf,
- 	u32 sectorsize = fs_info->sectorsize;
- 	u32 item_size = btrfs_item_size(leaf, slot);
- 	u64 extent_end;
-+	u8 policy;
-+	u8 fe_type;
+diff --git a/check/main.c b/check/main.c
+index 5e29e2c5..7f438302 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -1778,7 +1778,6 @@ static int process_file_extent(struct btrfs_root *root,
+ 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
+ 		if (extent_type == BTRFS_FILE_EXTENT_PREALLOC &&
+ 		    (btrfs_file_extent_compression(eb, fi) ||
+-		     btrfs_file_extent_encryption(eb, fi) ||
+ 		     btrfs_file_extent_other_encoding(eb, fi)))
+ 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
+ 		if (compression && rec->nodatasum)
+diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
+index 0afa3696..2c0168b0 100644
+--- a/kernel-shared/print-tree.c
++++ b/kernel-shared/print-tree.c
+@@ -445,11 +445,12 @@ static void print_file_extent_item(struct extent_buffer *eb,
+ 			extent_type, file_extent_type_to_str(extent_type));
  
- 	if (unlikely(!IS_ALIGNED(key->offset, sectorsize))) {
- 		file_extent_err(leaf, slot,
-@@ -269,12 +271,12 @@ static int check_extent_data_item(struct extent_buffer *leaf,
- 				SZ_4K);
- 		return -EUCLEAN;
+ 	if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+-		printf("\t\tinline extent data size %u ram_bytes %llu compression %hhu (%s)\n",
++		printf("\t\tinline extent data size %u ram_bytes %llu compression %hhu (%s) encryption %hhu\n",
+ 				btrfs_file_extent_inline_item_len(eb, slot),
+ 				btrfs_file_extent_ram_bytes(eb, fi),
+ 				btrfs_file_extent_compression(eb, fi),
+-				compress_str);
++				compress_str,
++				btrfs_file_extent_encryption(eb, fi));
+ 		return;
  	}
--	if (unlikely(btrfs_file_extent_type(leaf, fi) >=
--		     BTRFS_NR_FILE_EXTENT_TYPES)) {
-+
-+	fe_type = btrfs_file_extent_type(leaf, fi);
-+	if (unlikely(fe_type >= BTRFS_NR_FILE_EXTENT_TYPES)) {
- 		file_extent_err(leaf, slot,
- 		"invalid type for file extent, have %u expect range [0, %u]",
--			btrfs_file_extent_type(leaf, fi),
--			BTRFS_NR_FILE_EXTENT_TYPES - 1);
-+			fe_type, BTRFS_NR_FILE_EXTENT_TYPES - 1);
- 		return -EUCLEAN;
- 	}
+ 	if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
+@@ -471,6 +472,8 @@ static void print_file_extent_item(struct extent_buffer *eb,
+ 	printf("\t\textent compression %hhu (%s)\n",
+ 			btrfs_file_extent_compression(eb, fi),
+ 			compress_str);
++	printf("\t\textent encryption %hhu\n",
++			btrfs_file_extent_encryption(eb, fi));
+ }
  
-@@ -290,10 +292,11 @@ static int check_extent_data_item(struct extent_buffer *leaf,
- 			BTRFS_NR_COMPRESS_TYPES - 1);
- 		return -EUCLEAN;
- 	}
--	if (unlikely(btrfs_file_extent_encryption(leaf, fi))) {
-+	policy = btrfs_file_extent_encryption(leaf, fi);
-+	if (unlikely(policy >= BTRFS_NR_ENCRYPTION_TYPES)) {
- 		file_extent_err(leaf, slot,
--			"invalid encryption for file extent, have %u expect 0",
--			btrfs_file_extent_encryption(leaf, fi));
-+			"invalid encryption for file extent, have %u expect range [0, %u]",
-+			policy, BTRFS_NR_ENCRYPTION_TYPES - 1);
- 		return -EUCLEAN;
- 	}
- 	if (btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_INLINE) {
-diff --git a/kernel-shared/uapi/btrfs_tree.h b/kernel-shared/uapi/btrfs_tree.h
-index 1ca63711..74d307f1 100644
---- a/kernel-shared/uapi/btrfs_tree.h
-+++ b/kernel-shared/uapi/btrfs_tree.h
-@@ -1072,6 +1072,12 @@ enum {
- 	BTRFS_NR_FILE_EXTENT_TYPES = 3,
- };
- 
-+enum {
-+	BTRFS_ENCRYPTION_NONE,
-+	BTRFS_ENCRYPTION_FSCRYPT,
-+	BTRFS_NR_ENCRYPTION_TYPES,
-+};
-+
- struct btrfs_file_extent_item {
- 	/*
- 	 * transaction id that created this extent
+ /* Caller should ensure sizeof(*ret) >= 16("DATA|TREE_BLOCK") */
 -- 
 2.53.0
 

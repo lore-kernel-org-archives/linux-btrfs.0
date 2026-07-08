@@ -1,172 +1,161 @@
-Received: from mail-wr1-f41.google.com (mail-wr1-f41.google.com [209.85.221.41])
+Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C8943002B3
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Jul 2026 04:38:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.41
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783485516; cv=pass; b=iQ8M4WA8+7guGjds6Bcy8I108184XFtSWMtyItvNqT8sif6lxbMRRlQFvHFoA560VJHB75W36Kv9RiXQsYfN3qQy1YQDTAP0hZzssbxjvZqTQ5XWdtUYco/6lSlnsCI7pnQLTs/rqK0plQQxvmznPgssY/zFgx3fAzA7hJm2BMM=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783485516; c=relaxed/simple;
-	bh=4grEvqA8v78lMwC7X3s28Pu+9LYDK0ama6zo80Xg2rU=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=ZE7/MISLGTUIBRl0PuUnSwxexl2KBbWR3PEgiSQMsRDSUpDckv3CBs+F9oMwt5EVfuQCGJfnr8TnxWUqtj8k9OeTBjIxrY6QkPO/sStJgmqVMupxCbRcsb9twgxfO05QMa3PGCeDHCx5/Ff8Xnr/sidLL+fgoJzkB+jptdARiIE=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=KH3XvfV3; arc=pass smtp.client-ip=209.85.221.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 02F6E38423D
+	for <linux-btrfs@vger.kernel.org>; Wed,  8 Jul 2026 05:00:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1783486803; cv=none; b=Tn2sGHTlMVLMjWczc8fFHV8XkSGHveFXWgsw4P9+S2dGcNAGlnsvLYLQ5grdTSdEpIUKC12fDtiC9xnz4QUp8Z9z6OCIFHfMtCLVEfWSEHzDzISqH+mWt902l5jVprRVQ2g3BlLHg9YBnfq1kQhcWLusWb0UHO6DotzPOTqY91E=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1783486803; c=relaxed/simple;
+	bh=aiRvngYu0wQzvd5NIwJdWcVTbb1MK6lqsUlROSLAJGs=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=cd76hPgu6yNGLbJICHvHBUYByuUCdHh0CWqu+adfyyzR/7xvoQtkIs24W9nLfE9+unyJx1a+llo/OVmW3JRt7m4HuIkG3sX1A8Mq7LZ5KTDTVtQa7YT3QPjYabmCzcNN+5q5G+Hxz7pYLKib+zcozrIcg1891uHkVotmnCDvB18=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=bsHL+dcp; arc=none smtp.client-ip=209.85.128.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="KH3XvfV3"
-Received: by mail-wr1-f41.google.com with SMTP id ffacd0b85a97d-474560436c3so187098f8f.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jul 2026 21:38:33 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1783485512; cv=none;
-        d=google.com; s=arc-20260327;
-        b=kyf79U10y7UFT7AUZ+yApO1ecaDdvcNTHoptgg0Okm1l55PKHfvXWic6jf5zWx8pbL
-         ALs58FVXusRXEtnwIkEAlk+r/VY8zEu4yumav+GZFcF/vkkpHV4arwODDxZwfqCUg6Ps
-         D5PP0QMICqtEo/EPHShxRGx5xStyrhNAaYleq1oli0Pt6WfHgmpKMa55isso2PBEsIF3
-         5RHeDS0RfHbBTaqeKt0eWTTaXLTgAT3cgS7oC8oLZq02/tLRP4BM6tRI5Nb2/B1h2Z0A
-         gCU4JagetOJZLdmKRYLUjnzDRRBNzWC7Jntf/Cecrud64z0oYibvgXjnEznsyGQ40k5m
-         QEbA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=cpGKqEyelFTLpS18Regrq0L45LljXUVPN4qikMPr514=;
-        fh=hr3xsQdRoecHsdeflUQVUhlaiOVPFfTGgkkVp4uThdU=;
-        b=nxR45uTaUGGHfy8K2nXt+oBcT8Iysu2DJ0Es5OXeEDf/7Q2LpvA+AtErEFcPfzNYyK
-         fjChzqXEwFL79j/OvZzieWePYwfZZbHix4h0REFrqxhG6/WvLYxK9T0+Vy/DLeOSi3W2
-         1emXS8Dip+XyzgW0I58NBMSOVHr9unWtBzvptKrDn6KvJkXS3XC59V7OywZJFgMDoDgT
-         /gQHO/t4P+ZvWLncUDnMmOX6NlWCfKJOAdH5P2EmQtf+o0RDnXoFlcf48/xLDGKi/gby
-         5tfsSDQPrJFJeUmoCxDHAm3x1Fc7R8RlC5ya2GtiL2ipsFZpx49GMa4MJ4DPtTfgZdRs
-         VwXg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="bsHL+dcp"
+Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-493c59f740cso1289195e9.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jul 2026 22:00:01 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1783485512; x=1784090312; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=cpGKqEyelFTLpS18Regrq0L45LljXUVPN4qikMPr514=;
-        b=KH3XvfV3DiCE9z7QyzEx9gkKgrPwKtQIHf0sKau+pM3o+1+2BTESUmrzevxCALPq9A
-         /r2fNshfA+TpsM8LBHGoKWUpaLXD+G6JLIo+NI16W0SzDk+sA2qzBQlehASD9KjLO+to
-         tidQo/WoWXDNkbdeZmO4afK0tEM5Ex+9b+XMB+B5dLC/IL6AVK4xvv5WX6bDZAFB1ekj
-         kRYlkX99R7WHtt+czsdNUY7ZE2pIF6ONhdYxJWV7ltr5i1MzFDR9YFTjBNHpcy6CK5Wt
-         syRuye7NV+9mtC/WGLhb7iDBPgZ1UhJEpWe3j0tMDSkPhuMpdGBkiaWMtPE/rU1PrCtY
-         woUg==
+        d=suse.com; s=google; t=1783486800; x=1784091600; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=ons391aOclsitBsK8iiaHFgob/0VEgooq6ORYm8rMog=;
+        b=bsHL+dcpVC+DhlIDqfOxoFms/ikVSTkvOeA8W1lnm8iSWBj8qW59H2gh+E4v3JmAGE
+         yr73w+R63puhzFLHP8tdfcMMrzKZ7iOxDai4vcC4q64d6JD49+gELl+d7vRVXAfmx5hQ
+         x/4/jVMLo48K5xM9PYR7qcJoNqUE3G7GclFAen1gXjiMzPPDk2ak1T+QHIFHezuooCCk
+         aXZO9VUmBFJaU/C99gf1fcC8mzP39d+TDNs2SZGdh7S2mK4m7XzRJW4gtyY5zfdXr44g
+         ZQ4dgYUs5uW8m/NHQNWpy4fhfeZeohIhrhQQk9usvkA9QtMLs2xYCG8SXBJgHqEJUmEP
+         HpBg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783485512; x=1784090312;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=cpGKqEyelFTLpS18Regrq0L45LljXUVPN4qikMPr514=;
-        b=tOSa0c19IC4d93ZKUnph3WCxMpGlPBoinDriEQnx/4hj0rAEAy0I8mhdlbZ15KPqOF
-         7/yShFnbJ840UGw7SiyEXMjxugMVqhmNOhLAESCgtKooyvAW5IUvH/uzyChAKd2M58ZU
-         fW/BwOdxk4KmsN1XNTAQltXL38Q22/Vh3uq8jNk6tJjbcoR6Nse1gBOo6tV60+E3JrUy
-         c+VGncOeTAyeQBH9CngsnNV3WOc0ag24YLQIZRhGRzEjMF88+tLhE51+lrJUVfv+8aAw
-         IFq/0dqkycwsMRunTgdeQkDEs6MFSbFBfAUx0z0SAt7A+2PKSvpgV63ZgC3kgPDqE1iQ
-         axJQ==
-X-Forwarded-Encrypted: i=1; AHgh+RqvqMWFsCkm4p13feIxNF3cVXaMTGEU72WjXJ4MOMXauYRJPLjMz2S6J8gRYNwv+5UKB8rIGVqeOErXdg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyQrbBDn/5Su0nEgsajJnEEdUT6h4Q1U4VGd1j/x/yKRVWmq0LB
-	tqNYsKaKrp4McQVTBRKG5mqyU3Shre8WPgxjqlTK9/2DBQAwyGDHdL3mHXtB1StgCDMEhEROpIk
-	N8WlHeZ2VO9z0Ar6LQY2eajRX+ktXufi/2gYbqR+J7Q==
-X-Gm-Gg: AfdE7cl/sRQPOGDnYwHD9DeHrQGffQv5Qooxw/ptaThd4kPhekbX+I+ZiIrDcovaWF3
-	5O9w6ArpeOZtw5e9OtqzvKR/lHZA1l2WM61KyIROJyU9KDNuVXpyp2eofURkIzMGAv/dcZUECRy
-	DsgxnKYdpWzd//KkEX0dW5lHYRwEBhAg7RQFavQuDfHZfvcbojrCD4M8kTGyO6IfCMpn40l1SNz
-	g8wQQY/DRspsn24593LNhTz3kXi1o15KpVi9APdZ6TKWxXcyarbWEX6x0+Y3wSViZxJoPAZwOAt
-	YHa3K5x/BY7zBuTYvRWGWUkscwMU7iCtuWcfC/qlEPE5vx0oLJoJHfdPuRiHF7fPQmKS9w==
-X-Received: by 2002:a05:6000:25c8:b0:47a:d4d6:a21c with SMTP id
- ffacd0b85a97d-47df073b08bmr579527f8f.2.1783485512489; Tue, 07 Jul 2026
- 21:38:32 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1783486800; x=1784091600;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=ons391aOclsitBsK8iiaHFgob/0VEgooq6ORYm8rMog=;
+        b=HGXT0sCmBund8enLSL4JavO3b/6mqtJU8DmZL+rs/ZXFgPHDSxMFKoS5f29Tgy89AP
+         7IWd7ed+6RtivzRzNeLw/E/C0LTBEM0TKLyBqPrqFzyCrueV5kBPZKqgtLFrkETZzgkE
+         he+BCuXylnk/skPOzk+4CyjhnwqIzyvUlK8SQg6MJp2P+0X5Pdct/PLfSwrQac99rgVM
+         gbDPi28RpgKmqkl36dA6ZxViEKfQ/HCF4pH0fD4XAeTQXbXbDi7Kh4FnuwhfamApib7G
+         2dgqvlL2OWt22YQeZogHKKlKfLDINKJtAEtiI4ysm3AHiCCMm93AYrzYOFk4vE5G/At0
+         HrzQ==
+X-Forwarded-Encrypted: i=1; AHgh+Rr5IEaxP98rrp0txX/fZih6oZ89hbQDIX/dC1ocNqHDz+KtEhn9Wxsn0picrqZlgCIfjt4xWAHXhz4ykQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0Ywvbg5OtRfcv2f4OdOlyN5/pvJF94gkKJt21nq3tiCpbBfDqzlL
+	hvMom89Dv1q5XbHOTwpcg6623zSL9/1LM8Du8BXQvb078AoIdNFUsJ9MIxrOlrYIB60=
+X-Gm-Gg: AfdE7cnYLY/bq/XL7KBLaerCHQNZRr1djsUo1Lwh9gTZ9mKIhbL05UXoFmSWBVFQ+v7
+	0T064K4sVP5mAVJr6n/okpVF3hjBVBbFBjsPvq8EihWtooS23yDpvg4Yn3d0EbK+c2KERoCO63k
+	zMJFWR7pHDvuOmlRxAXuV3sw9MAl3kj0WeTizISrVK6O74ThH0sCb9TphvWUqj7nqicNuOXHEkQ
+	HXxV4wAeEE8yqmvYPR34zwdTWi4Ar8kk96T5cskI5k2rUwRjcShMK330alc1vwDmXSUfJLOQ1d/
+	bTm5bJjVCFthGxVTpbF+m8KQYo0Vlzln/owxyTNLqaOoVmEPSugKUnFtm1UIvtJfTSr0zulireU
+	cVUIVFU3t4kjpDGQ8Ds7fcNbYj/zhybfQ3nzWB24rkbEx0tUf97OWQljnapPR9JhR1hZVvZxx6m
+	tPF9aRkw==
+X-Received: by 2002:a05:600c:8889:20b0:493:bdf1:fcde with SMTP id 5b1f17b1804b1-493e68c6e44mr4259475e9.19.1783486800335;
+        Tue, 07 Jul 2026 22:00:00 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-13b658a99afsm15687745c88.0.2026.07.07.21.59.57
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 07 Jul 2026 21:59:59 -0700 (PDT)
+Message-ID: <b7861828-64d1-4fef-b094-86d1c87e32c6@suse.com>
+Date: Wed, 8 Jul 2026 14:29:55 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260707142736.2330146-1-neelx@suse.com> <20260707142736.2330146-5-neelx@suse.com>
- <8ef7b7fa-b3ef-4a7b-b882-d851e9c9eb09@suse.com>
-In-Reply-To: <8ef7b7fa-b3ef-4a7b-b882-d851e9c9eb09@suse.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Wed, 8 Jul 2026 06:38:21 +0200
-X-Gm-Features: AVVi8Ce9Wze29QgTRYSDCuR6ZKAi7umkxbAcP53q_tjq4n9DG7Ko-vw9QXIE-aA
-Message-ID: <CAPjX3FfYxEepvr=PeZ_tcpn96+=-TNm7L7pCyH0DX5X29-1sfQ@mail.gmail.com>
-Subject: Re: [PATCH v3 4/7] btrfs-progs: print encryptin type field of file extents
-To: Qu Wenruo <wqu@suse.com>
-Cc: David Sterba <dsterba@suse.com>, linux-fscrypt@vger.kernel.org, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v3 0/7] btrfs-progs: fscrypt updates
+To: Daniel Vacek <neelx@suse.com>, David Sterba <dsterba@suse.com>
+Cc: linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+References: <20260707142736.2330146-1-neelx@suse.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260707142736.2330146-1-neelx@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On Wed, 8 Jul 2026 at 00:40, Qu Wenruo <wqu@suse.com> wrote:
-> =E5=9C=A8 2026/7/7 23:57, Daniel Vacek =E5=86=99=E9=81=93:
-> > From: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-> >
-> > Encrypted file extents now have the 'encryption' field set to an
-> > encryption type.  Let's print it.
-> >
-> > Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-> > Signed-off-by: Daniel Vacek <neelx@suse.com>
-> > ---
-> >   check/main.c               | 1 -
-> >   kernel-shared/print-tree.c | 7 +++++--
-> >   2 files changed, 5 insertions(+), 3 deletions(-)
-> >
-> > diff --git a/check/main.c b/check/main.c
-> > index 5e29e2c5..7f438302 100644
-> > --- a/check/main.c
-> > +++ b/check/main.c
-> > @@ -1778,7 +1778,6 @@ static int process_file_extent(struct btrfs_root =
-*root,
-> >                       rec->errors |=3D I_ERR_BAD_FILE_EXTENT;
-> >               if (extent_type =3D=3D BTRFS_FILE_EXTENT_PREALLOC &&
-> >                   (btrfs_file_extent_compression(eb, fi) ||
-> > -                  btrfs_file_extent_encryption(eb, fi) ||
->
-> I think this is a leaf-over change?
 
-For now it is to match the kernel part to allow for wider testing in
-the open. If we decide to change the kernel we can revert this later.
 
---nX
+在 2026/7/7 23:57, Daniel Vacek 写道:
+> This series is a rebase of an older set of fscrypt related changes from
+> Sweet Tea Dorminy and Josef Bacik found here:
+> https://github.com/josefbacik/btrfs-progs/tree/fscrypt
+> 
+> It passed all my tests. Hopefully nothing blows. Enjoy testing.
 
-> Thanks,
-> Qu
->
-> >                    btrfs_file_extent_other_encoding(eb, fi)))
-> >                       rec->errors |=3D I_ERR_BAD_FILE_EXTENT;
-> >               if (compression && rec->nodatasum)
-> > diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
-> > index 0afa3696..2c0168b0 100644
-> > --- a/kernel-shared/print-tree.c
-> > +++ b/kernel-shared/print-tree.c
-> > @@ -445,11 +445,12 @@ static void print_file_extent_item(struct extent_=
-buffer *eb,
-> >                       extent_type, file_extent_type_to_str(extent_type)=
-);
-> >
-> >       if (extent_type =3D=3D BTRFS_FILE_EXTENT_INLINE) {
-> > -             printf("\t\tinline extent data size %u ram_bytes %llu com=
-pression %hhu (%s)\n",
-> > +             printf("\t\tinline extent data size %u ram_bytes %llu com=
-pression %hhu (%s) encryption %hhu\n",
-> >                               btrfs_file_extent_inline_item_len(eb, slo=
-t),
-> >                               btrfs_file_extent_ram_bytes(eb, fi),
-> >                               btrfs_file_extent_compression(eb, fi),
-> > -                             compress_str);
-> > +                             compress_str,
-> > +                             btrfs_file_extent_encryption(eb, fi));
-> >               return;
-> >       }
-> >       if (extent_type =3D=3D BTRFS_FILE_EXTENT_PREALLOC) {
-> > @@ -471,6 +472,8 @@ static void print_file_extent_item(struct extent_bu=
-ffer *eb,
-> >       printf("\t\textent compression %hhu (%s)\n",
-> >                       btrfs_file_extent_compression(eb, fi),
-> >                       compress_str);
-> > +     printf("\t\textent encryption %hhu\n",
-> > +                     btrfs_file_extent_encryption(eb, fi));
-> >   }
-> >
-> >   /* Caller should ensure sizeof(*ret) >=3D 16("DATA|TREE_BLOCK") */
->
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Although I still think some corner cases may change in the future, but 
+considering it's already hidden behind experimental, we should have 
+plenty time before pushing it to end users.
+
+Will push it to devel after a full selftest.
+
+Thanks,
+Qu
+
+
+> 
+> v3:
+>   * dropped first patch and improved inline extent length checking
+>   * correctly squashed the context key definitions into "btrfs-progs: add
+>     inode encryption contexts"
+>   * inline extents also show the encryption field now in tree dump
+> 
+> v2: https://lore.kernel.org/linux-btrfs/20260624165144.556908-1-neelx@suse.com/
+>   * works with v7 of the kernel fscrypt series
+>   * the on-disk format changed and parts of the series had to be reworked
+>     - particularly the encryption context is now stored as dedicated item
+>       and not glued onto extent data item
+>   * also parses the ENCRYPT inode item flag
+> 
+> Daniel Vacek (1):
+>    btrfs-progs: recognize ENCRYPT inode item flag
+> 
+> Sweet Tea Dorminy (6):
+>    btrfs-progs: add new FEATURE_INCOMPAT_ENCRYPT flag
+>    btrfs-progs: start tracking extent encryption context info
+>    btrfs-progs: add inode encryption contexts
+>    btrfs-progs: print encryptin type field of file extents
+>    btrfs-progs: handle fscrypt context items
+>    btrfs-progs: check: update inline extent length checking
+> 
+>   check/main.c                    | 34 ++++++++++++++++++---------------
+>   kernel-shared/ctree.h           |  1 +
+>   kernel-shared/print-tree.c      | 28 +++++++++++++++++++++++++--
+>   kernel-shared/tree-checker.c    | 17 ++++++++++-------
+>   kernel-shared/uapi/btrfs.h      |  1 +
+>   kernel-shared/uapi/btrfs_tree.h | 11 +++++++++++
+>   libbtrfsutil/btrfs.h            |  1 +
+>   7 files changed, 69 insertions(+), 24 deletions(-)
+> 
+

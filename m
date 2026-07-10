@@ -1,126 +1,55 @@
-Received: from va-2-26.ptr.blmpb.com (va-2-26.ptr.blmpb.com [209.127.231.26])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5EC673955FF
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Jul 2026 09:03:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.26
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1E81D3E3D90;
+	Fri, 10 Jul 2026 10:39:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783674222; cv=none; b=oBylUcbrn8SQZ2WxNBX7EzM1zdDUehTIc5qVUm782vk/YfiGgOg3ixBJix7/A1LaEgeGwoAurCZ1hPljLegMP+Uj52Dlq46V+vhR1kUecApSGN0NHSi/1z4vqRqoYQ8NO0HBHasbXnVFArD+KtD6QQZunm5d0I00zMv8a4IiCgU=
+	t=1783679944; cv=none; b=ghyKO9w68IqHsuamNjE3K2KO3G7RZeeQnW3DYXEbs7Lsf58/WKVOisWSPAsfzXoSv3VW3GcIRoTwjzC0QGUFwTUYHYf6ByDY6i8yclRe7fV0yrSfRmoftw85WJsMmKOat/qkrY482bTBk+/x+Qx4aWMZbdlrW1Uz0r1KHjH7Tcw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783674222; c=relaxed/simple;
-	bh=3nJKdaXWSeVWuq+7OoGVS2ffG0alCkQPYkNFUYCvlPA=;
-	h=Message-Id:Mime-Version:Subject:Cc:From:To:In-Reply-To:References:
-	 Content-Type:Date; b=CVSYHjCz3k36NPfQhM7EihGguobi0cfOpcMgLu/12+AnK86rayD8KtrAvSjZ+Shoj8KjL1OBWu7XGlJ3tpeCDGznu4cFszLFREXbYC+7bYuwGNis9lKcDLcZpVm5uifrKRghbP581egpqu51A46qoRFmlLxYIUA1YMRgU+1Nb6k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com; spf=none smtp.mailfrom=fnnas.com; dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b=kKPBIVXe; arc=none smtp.client-ip=209.127.231.26
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=fnnas.com
+	s=arc-20240116; t=1783679944; c=relaxed/simple;
+	bh=w7qW3stQuIsLqkR2o5vwdFCbRPLYd8v/m9KwvRDEfo0=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=E1m0eGMEOo92dKbs9lBwZi9fCBaCKLawSSHCY2d0RP7jqoqpUk37Rs2XWfNu7Kcfd2EbNPC7CxeR2bykTYyjSmu9+Z9Ys/Iz/buPpkzj/jSn5TWa/5I5uCpRlpdpgFlnw97cdJU6BEIY6cWovAupEBy78GtObHeplHSud0roJCg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=WKcRXOri; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b="kKPBIVXe"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fnnas-com.20200927.dkim.feishu.cn; t=1783674208;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=Zufe88Yzk1fjouxp855ie1Qg0SbUjOV9l280vfMOtIc=;
- b=kKPBIVXeyr3OYWwk/boECQGK56dQjRKJCK7tgBU+C7YFy9NntddVH0rfqEMWg8umnwhLYb
- FSkArHbihXwlpUTIU6LOGheOYF/h8sBwUzgrnmLzrL3+D8Ao0ySpsAxexk+Dq3Zfa7bOjG
- bETTfcbHNx9MKPf8otnC03829QwuesnYWZvHG5Do1Iq3GfT3YF4jGrcGjeF3PRF9Cm8/97
- Celh9jEO6DIRc3SeE93QVsUMBN5vQz4WzIlHjlSsDJj9poix/PZ9Kyt64IeLt9MKEzJZlw
- nL/pjcwQ7Ab0SLYJVNzn66LJXF1+rvngKPBsOChlJTumnI+xLyhJQ2IirampJQ==
-Message-Id: <2edb04cd-4939-41d5-a696-ab40aba6e85f@fnnas.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="WKcRXOri"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id DA3D81F000E9;
+	Fri, 10 Jul 2026 10:38:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1783679942;
+	bh=O0b9QDRqZks374+uiS/Ng/4ACV0jy52ju7+YMc5MnWE=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=WKcRXOrijkWnmhJEB2CvAJdJ2aE5JPJfRn5rv0eO+C6DJXqIzMS0k5QbGouU2OR0t
+	 sXf9f4HQnvEMxMD13g2lcI5SogKWvNITPGSwx3BLMuJA8ev17vY4GZRSWFJ5ajMMvu
+	 ENkAyCvlK2fRdwkyrOe7ZZMIutJg0mvewLr1mJTrL0rVgta7SzYHKUlx4ID0eipLdD
+	 DdDJHYfoLHhqlX1llZSdt2BIcvVrrSCqDwuhHH3wO6ocJMzNlLt2zKS+9Iv81lSwTK
+	 tvXfnoIvz/X2fq9oTz6T9nBosJFkIAvAiMfXAt+Ij/L3ICPSL5qfIIKkDti27rP6cr
+	 Dnlim9yUwP4nQ==
+Date: Fri, 10 Jul 2026 12:38:56 +0200
+From: Andrey Albershteyn <aalbersh@kernel.org>
+To: linux-xfs@vger.kernel.org, fsverity@lists.linux.dev, 
+	linux-fsdevel@vger.kernel.org, ebiggers@kernel.org
+Cc: hch@lst.de, linux-ext4@vger.kernel.org, 
+	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org, djwong@kernel.org, 
+	linux-unionfs@vger.kernel.org, david@fromorbit.com
+Subject: Re: [PATCH v11 00/20] fs-verity support for XFS with post EOF merkle
+ tree
+Message-ID: <alDJjTPiKRQ0d8bi@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
+References: <20260710085256.3464201-1-aalbersh@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-X-Original-From: Sun YangKai <sunyangkai@fnnas.com>
-Subject: Re: [PATCH v2] btrfs: check if root is readonly when setting posix acl
-Content-Transfer-Encoding: quoted-printable
-Cc: <linux-btrfs@vger.kernel.org>, <sunk67188@gmail.com>
-From: "Sun YangKai" <sunyangkai@fnnas.com>
-X-Lms-Return-Path: <lba+26a50b55e+2d3208+vger.kernel.org+sunyangkai@fnnas.com>
-To: "Filipe Manana" <fdmanana@kernel.org>
-Received: from [192.168.10.239] ([183.34.167.72]) by smtp.feishu.cn with ESMTPS; Fri, 10 Jul 2026 17:03:24 +0800
-User-Agent: Mozilla Thunderbird
-In-Reply-To: <CAL3q7H6wxWNKWcXD7u58O4JJ_0z0_XMpAHc6eQfAiBOPNbKkQw@mail.gmail.com>
-References: <20260709082500.17907-2-sunk67188@gmail.com> <CAL3q7H6wxWNKWcXD7u58O4JJ_0z0_XMpAHc6eQfAiBOPNbKkQw@mail.gmail.com>
-Content-Language: en-US
-Content-Type: text/plain; charset=UTF-8
-Date: Fri, 10 Jul 2026 17:03:22 +0800
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260710085256.3464201-1-aalbersh@kernel.org>
 
-On 2026/7/9 18:43, Filipe Manana wrote:
-> On Thu, Jul 9, 2026 at 9:26=E2=80=AFAM Sun YangKai <sunk67188@gmail.com> =
-wrote:
->>
->> From: Sun YangKai <sunyangkai@fnnas.com>
->>
->> For a filesystem which has btrfs read-only property set to true, all
->> write operations including acl and xattr should be denied. However,
->> acl can still be set even if btrfs ro property is true.
->>
->> This happens because no function on the set_acl code path checks the roo=
-t
->> is readonly or not. It was checked in btrfs_setxattr_trans() but got
->> removed in
->> commit 353c2ea735e4 ("btrfs: remove redundant readonly root check in btr=
-fs_setxattr_trans")
->>
->> That commit didn't check if all the callers properly check the root's
->> read-only flag. A previous fix is
->> commit b51111271b03("btrfs: check if root is readonly while setting secu=
-rity xattr")
->>
->> Always check if the root is read-only before performing the set acl
->> operation.
->>
->> Fixes: 353c2ea735e4 ("btrfs: remove redundant readonly root check in btr=
-fs_setxattr_trans")
->> Signed-off-by: Sun YangKai <sunyangkai@fnnas.com>
->=20
-> Test case please (fstests).
+I will go through the new round of sashiko.dev comments and check if
+there's more fixes to be done (looks like double unlock is valid
+one).
 
-Ok, I'll work on that later.
-
-I've noticed the test case btrfs/275 for b51111271b03 and I'll take that=20
-as reference.
-
-Thanks,
-Sun YangKai
-
->=20
->> ---
->> Changes to v1:
->> - add the missing header file
->>
->> ---
->>   fs/btrfs/acl.c | 4 ++++
->>   1 file changed, 4 insertions(+)
->>
->> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
->> index e55b686fe1ab..662cdd1cbdef 100644
->> --- a/fs/btrfs/acl.c
->> +++ b/fs/btrfs/acl.c
->> @@ -15,6 +15,7 @@
->>   #include "xattr.h"
->>   #include "acl.h"
->>   #include "misc.h"
->> +#include "btrfs_inode.h"
->>
->>   struct posix_acl *btrfs_get_acl(struct inode *inode, int type, bool rc=
-u)
->>   {
->> @@ -107,6 +108,9 @@ int btrfs_set_acl(struct mnt_idmap *idmap, struct de=
-ntry *dentry,
->>          struct inode *inode =3D d_inode(dentry);
->>          umode_t old_mode =3D inode->i_mode;
->>
->> +       if (btrfs_root_readonly(BTRFS_I(inode)->root))
->> +               return -EROFS;
->> +
->>          if (type =3D=3D ACL_TYPE_ACCESS && acl) {
->>                  ret =3D posix_acl_update_mode(idmap, inode,
->>                                              &inode->i_mode, &acl);
->> --
->> 2.54.0
->>
->>
+-- 
+- Andrey

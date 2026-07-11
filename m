@@ -1,103 +1,105 @@
-Received: from mail-oo1-f54.google.com (mail-oo1-f54.google.com [209.85.161.54])
+Received: from va-2-40.ptr.blmpb.com (va-2-40.ptr.blmpb.com [209.127.231.40])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 26A0739FD4
-	for <linux-btrfs@vger.kernel.org>; Sat, 11 Jul 2026 00:17:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 25F1B4086A
+	for <linux-btrfs@vger.kernel.org>; Sat, 11 Jul 2026 05:19:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.40
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783729050; cv=none; b=MWP2GP7ANZmALl70Ehufbgh2hud9QS+rFyUq/AEikkMFpJdXFav2v0ETEt3Db+tJOvE5q9mkrs0m7gejKfGy34ob20RYNfThrkHvjIM67vFe3xopIqR4CZ5l6fnImkGO9ZpOXG2XA00FTWzs3CxHoK1IW6HA8JtsAFjttUhyuYI=
+	t=1783747190; cv=none; b=TDgsurgvX2r+V2kMiOHe9MeQT6MQNo6OKRp2/BBhlch/5fa96dSB0Hclw7W8rhNr6tfDzMHaKzWPsLlmIu8S5QKfV9uZdzONNZLX2qfHI8udDYK0QfMgiCCn2SzZWa7+jhsaFj3GgCoB7RlTTfTBJzPmVGl6q8oOiGDk0Q82xe0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783729050; c=relaxed/simple;
-	bh=nk2cHNfZ9/eE5haUhDunf1Pwc3/nweKKN/bcUQ7XCY0=;
-	h=From:To:Cc:In-Reply-To:References:Subject:Message-Id:Date:
-	 MIME-Version:Content-Type; b=GYu3JwBDG3YPKserTwWxN/DSZuT03qNqoGKxQuLf0ARM5wRHF1n/hZjNDYAtTpGBcgWk1p1sKNjjD6CUDjb7Sc0c9ZQRMPmoDehXaVtecD0OF5gxi9ue2QE9OifPBkqBiNa0LNOEhu9duJpo/8mGDnT11e6hMTLmDfS2TriZLJI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=konsulko.com; spf=pass smtp.mailfrom=konsulko.com; dkim=pass (1024-bit key) header.d=konsulko.com header.i=@konsulko.com header.b=lSFr0QpI; arc=none smtp.client-ip=209.85.161.54
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=konsulko.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=konsulko.com
+	s=arc-20240116; t=1783747190; c=relaxed/simple;
+	bh=TKtCw8CUBHA7Mxnst6Y7PAByDFgbbD/fCc5ISzMkw24=;
+	h=Content-Type:Subject:Date:References:To:Cc:Mime-Version:
+	 In-Reply-To:From:Message-Id; b=C52w7fnfbHwblZrVFLWYw2wFSvZ+oJSJhukaAPccNMhaJKenXh4bGxTxx2fotXwZZue86lHt6Zr2dVf8Pr6NvvArwXDeJ5DfxQDcYwQfYReKt1j7+UEZ5KlMMiNM2CNBBa/i4WYxH1ep4J4YvZ/8fDONx8HJWAoJZ18vRepQ0mc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com; spf=pass smtp.mailfrom=fnnas.com; dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b=0tTOQuJx; arc=none smtp.client-ip=209.127.231.40
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fnnas.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=konsulko.com header.i=@konsulko.com header.b="lSFr0QpI"
-Received: by mail-oo1-f54.google.com with SMTP id 006d021491bc7-6a168dc590cso1076976eaf.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jul 2026 17:17:28 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=konsulko.com; s=google; t=1783729048; x=1784333848; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:mime-version:date:message-id
-         :subject:references:in-reply-to:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=e/vhfpQf4OV2qMLQtG4Mk/3KvquVjRSLEAPXaxUkjFc=;
-        b=lSFr0QpIGx+lRoNyQq2YxmxQYflxTZIyUcchaHQ1U3kSYfXxz6v9k9I2kGLvocNkzn
-         KR6UvLWAP8nWHz+aV3rDt4DtdEDjAdAMvv+x0gFTX1hC2bv3tV3GFNNCNjVm1HRQgqpD
-         jhU+sYBDO7ist2dJ0a69Mt2PvbJYj3PHNlW+M=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783729048; x=1784333848;
-        h=content-transfer-encoding:content-type:mime-version:date:message-id
-         :subject:references:in-reply-to:cc:to:from:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=e/vhfpQf4OV2qMLQtG4Mk/3KvquVjRSLEAPXaxUkjFc=;
-        b=ouuiNbEf/h6zAxVZCOaPJqBxyOnunSUnkstTGT/8Dmkgsb84kZoLn63uFCqCMaG3Wj
-         310E88ixAwsmH7mtzsqgvgF8h4C+DOKz7YEdhZ/C/yKDtpznTN+g1YxQceakyeHj7sPq
-         FJDUnrkfQP5NPDD6nPVJ1UCFo66JlR7VO6ZZtFs810BjM0rEiWYqDCy+B1L+VMBFJpDq
-         PSD5mAcvamK8/yPj7jhHxw1XNv/PEsxOn8Qfmx4ikPek5Ywj6XPzM4zg67Gpg58emCD9
-         qr6NeSIwTaqYF5H0WMYx4cK3oyBtsDT5wHCSgVcD9AF0vWM3zJWtcV//cBcx6qwE1gGY
-         G4UA==
-X-Forwarded-Encrypted: i=1; AFNElJ+OSczh6rIQGKW3zV5rUXdGc4btpRhfsnphlVF/7TfuAvnfyp8jdJs3JvN8gVq7CYRyuuy0r80X0XrhnA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwArBGG0th4F8+PiJm5TkF557xSEs1zu9S7g5/xAlZSt5UzCAR/
-	DzVJB94XueZ//C/ky36w1G+yYxbpvSIvgeePuZRUTdFL9lKUV9DtSQU4+NC94cz/Cd0=
-X-Gm-Gg: AfdE7clRN4ZbWAWr2wefZV/ACtM4mVHEDHD0wdGSlsxWvspARDDT4c71TOhXVI83WU1
-	oFwPLFJuNLmEowQ6FjXqJvZz12GmzRYnLaT/SR0GAfqG8yLpER9GMNHBmNZObXVb0rvFR3iNzgy
-	iDLZFlHSqWWmLvw1rdEeq55omQEh2Ej+RIDlaFrieYJlnzcpYyKgs+9OMOhnWT4Hn6WfiADBisP
-	FnlAjboyejE09RX/faKSrHeObJz/dK9vQiCICl7L6xH+CKK3DovpSRmE/Qrals6aUfduYu3F6Qq
-	aybm5CJJDLMUJeV4x4lzyXTKalY4bW0FrAIxX3/TpqpCjeC37l17XHPJRpHI5Qad3UpuelG4M7j
-	CASi1GMX66Mek2tq1It9Vka3WtxqOj1Qv9QVUDMtHOfNJtFi+YtB7cWa3oG0b66NKmPHx09jel7
-	/nnINMYZZ5eqquZnocICwD0R/h6bBJIkZTOm1HkcSKT56o+xQEqOSIddSc3KqIU2ekq/CgrRLXc
-	2dAyf4T5twt/LfRjtfCpYUV12cNbmIJ7ojX8CtWEjUDK8Y=
-X-Received: by 2002:a4a:e845:0:b0:6a1:77ce:1b09 with SMTP id 006d021491bc7-6a39a56f825mr947347eaf.6.1783729048128;
-        Fri, 10 Jul 2026 17:17:28 -0700 (PDT)
-Received: from [127.0.1.1] (fixed-189-203-100-56.totalplay.net. [189.203.100.56])
-        by smtp.gmail.com with ESMTPSA id 006d021491bc7-6a39af0e953sm651312eaf.3.2026.07.10.17.17.26
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 10 Jul 2026 17:17:27 -0700 (PDT)
-From: Tom Rini <trini@konsulko.com>
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, 
- u-boot@lists.denx.de, Alexey Charkov <alchark@flipper.net>
-Cc: =?utf-8?q?Marek_Beh=C3=BAn?= <kabel@kernel.org>, 
- Simon Glass <sjg@chromium.org>, 
- =?utf-8?q?Timo_tp_Prei=C3=9Fl?= <t.preissl@proton.me>, 
- Peng Fan <peng.fan@nxp.com>, Patrice Chotard <patrice.chotard@foss.st.com>, 
- Yao Zi <me@ziyao.cc>
-In-Reply-To: <20260626-btrfs-readdir-v2-0-7dd43f72d1b4@flipper.net>
-References: <20260626-btrfs-readdir-v2-0-7dd43f72d1b4@flipper.net>
-Subject: Re: [PATCH v2 0/2] fs: btrfs: add support for readdir
-Message-Id: <178372904690.2905849.8798963092987519032.b4-ty@konsulko.com>
-Date: Fri, 10 Jul 2026 18:17:26 -0600
+	dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b="0tTOQuJx"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ s=s1; d=fnnas-com.20200927.dkim.feishu.cn; t=1783747182;
+  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
+ reply-to:content-type:mime-version:in-reply-to:message-id;
+ bh=bOM7KCX7007KsVYXLXCTImIaDuDeP372UurnpHiWcZk=;
+ b=0tTOQuJxB2NDEY5fJreMvo89ZQFqTuNuj0LwiViWHpmr+WCBC9yEMwzj3Ewb7JwTAvE4MI
+ MXYGNwxYP16orsa+gIg9RuxEIFpolSJ1ms2/eNH3GY2usAwrEiBHBzhP6u71WgvjJKlGHp
+ rqAGr6OkFdhQXme6vXqTKO8eC0YhXWG2Ho6dHMXhgczpEjCnhKPKfmP0Iu4Um3fFzpZ6Pj
+ qISnL+hIfOaSL5lekQ88IA1t3gEMar9B5eRtjdyucNsrtu13sZBwX7hk2H0MPHCGirLl/U
+ yt6wsXyB8KiuQdfsUadC4MGjYjZRriNIF0vdBy/MoKzoOVioCSpAPu9itORXYQ==
+X-Original-From: Dongjiang Zhu <zhudongjiang@fnnas.com>
+Content-Type: text/plain; charset=UTF-8
+Subject: [PATCH 2/3] btrfs: avoid NULL pointer dereference when raid stripe tree root is missing
+Date: Sat, 11 Jul 2026 13:19:08 +0800
+References: <20260711051909.1313584-1-zhudongjiang@fnnas.com>
+To: <linux-btrfs@vger.kernel.org>
+Cc: <dsterba@suse.com>
+Received: from pdzhu.teiron-inc.cn ([183.34.162.102]) by smtp.feishu.cn with ESMTPS; Sat, 11 Jul 2026 13:19:39 +0800
+X-Lms-Return-Path: <lba+26a51d26c+0609e9+vger.kernel.org+zhudongjiang@fnnas.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
-X-Mailer: b4 0.14.3
+In-Reply-To: <20260711051909.1313584-1-zhudongjiang@fnnas.com>
+X-Mailer: git-send-email 2.39.5
+From: "Dongjiang Zhu" <zhudongjiang@fnnas.com>
+Message-Id: <20260711051909.1313584-3-zhudongjiang@fnnas.com>
 
-On Fri, 26 Jun 2026 19:18:20 +0400, Alexey Charkov wrote:
+[BUG]
+For a filesystem using the raid stripe tree feature, corrupting the raid
+stripe tree root and mounting with rescue=ibadroots triggers the following
+NULL pointer dereference:
 
-> Btrfs in U-boot currently uses a custom callback for ls and doesn't expose
-> the standard opendir/readdir/closedir interface, making it harder to use
-> in generic code. One area where this would be useful is in discovering BLS
-> type 1 entries [1] on a Btrfs filesystem.
-> 
-> Add support for the standard interface, and implement ls in terms of it.
-> 
-> [...]
+  BTRFS warning (device loop1 state E): checksum verify failed on logical 30523392 mirror 1 wanted 0x74eeb205 found 0x9fa5ae1b level 0
+  BTRFS warning (device loop1 state E): checksum verify failed on logical 30523392 mirror 2 wanted 0x74eeb205 found 0x9fa5ae1b level 0
+  BUG: kernel NULL pointer dereference, address: 0000000000000100
+  #PF: supervisor read access in kernel mode
+  #PF: error_code(0x0000) - not-present page
+  Oops: Oops: 0000 [#1] SMP NOPTI
+  RIP: 0010:btrfs_update_global_block_rsv+0xb5/0x1c0 [btrfs]
+  Call Trace:
+   btrfs_read_block_groups+0x7d1/0xa10 [btrfs]
+   open_ctree+0xc6e/0x1ca0 [btrfs]
+   btrfs_get_tree+0x50d/0xa40 [btrfs]
 
-Applied to u-boot/master, thanks!
+[CAUSE]
+With rescue=ibadroots, btrfs_read_roots() ignores a failure to read the
+raid stripe tree root and leaves fs_info->stripe_root NULL.
 
-[1/2] fs: btrfs: implement opendir(), readdir() and closedir()
-      commit: 5f064aef5d766e291982f9cba6dc728dcdb53868
-[2/2] fs: btrfs: use fs_ls_generic() and drop custom implementation
-      commit: 31cf3f177823362a42bf4630ec85370ea768ddf1
+After reading the block groups, btrfs_read_block_groups() initializes the
+global block reserve.  btrfs_update_global_block_rsv() checks only the
+RAID_STRIPE_TREE feature bit before dereferencing fs_info->stripe_root.
+
+[FIX]
+Check that the raid stripe tree root was successfully loaded before
+accounting it in the global block reserve.  A missing root cannot
+contribute to the reserve calculation, so skip both its size and minimum
+item count.
+
+This does not affect regular mounts, which fail earlier if the root cannot
+be loaded.
+
+Fixes: 515020900d44 ("btrfs: read raid stripe tree from disk")
+Signed-off-by: Dongjiang Zhu <zhudongjiang@fnnas.com>
+---
+ fs/btrfs/block-rsv.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
+index 647a065356f4..114342ef500c 100644
+--- a/fs/btrfs/block-rsv.c
++++ b/fs/btrfs/block-rsv.c
+@@ -353,7 +353,8 @@ void btrfs_update_global_block_rsv(struct btrfs_fs_info *fs_info)
+ 		min_items++;
+ 	}
+ 
+-	if (btrfs_fs_incompat(fs_info, RAID_STRIPE_TREE)) {
++	if (btrfs_fs_incompat(fs_info, RAID_STRIPE_TREE) &&
++	    fs_info->stripe_root) {
+ 		num_bytes += btrfs_root_used(&fs_info->stripe_root->root_item);
+ 		min_items++;
+ 	}
 -- 
-Tom
-
-
+2.39.5

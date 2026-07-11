@@ -1,81 +1,103 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oo1-f54.google.com (mail-oo1-f54.google.com [209.85.161.54])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 46FF9313539;
-	Fri, 10 Jul 2026 23:46:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 26A0739FD4
+	for <linux-btrfs@vger.kernel.org>; Sat, 11 Jul 2026 00:17:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.54
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783727207; cv=none; b=mPzN4TuOuNHGoBE8f8QVuqqanBtdZqIm5T9R3rp/JcHMazejneo77r5lhpOGGu1lDeDGuAMj8AjoO52VQ3I3yrCUc3BvBzZZjqOTX8hJ8FLPhGune8lNaxzoNlvLr7XlhbV8MI8uHV6Shb1i6vcNDWJw7UnzL3DJbhOgpYcCbu8=
+	t=1783729050; cv=none; b=MWP2GP7ANZmALl70Ehufbgh2hud9QS+rFyUq/AEikkMFpJdXFav2v0ETEt3Db+tJOvE5q9mkrs0m7gejKfGy34ob20RYNfThrkHvjIM67vFe3xopIqR4CZ5l6fnImkGO9ZpOXG2XA00FTWzs3CxHoK1IW6HA8JtsAFjttUhyuYI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783727207; c=relaxed/simple;
-	bh=c1o4i0yMAiQO42ywmir9kBPguDPE+ayMkOeVSpJ5eNM=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=qdY5XK5QcnVr7/UV7Pw8FDvft+G+fOq8Z+b67XI9mnh3mpjso8aVV9WMOJGxTpWMxigTjN+ygOrIvhVxupKeC6xPILyO2CR4/KAX200lLrzMhJsc0dpOOSu87AdwjwFYcknXl/nbbRTnGW+KBVsE95H+YVSLzhqbxKLai+DUJII=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PWVBCaww; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1783729050; c=relaxed/simple;
+	bh=nk2cHNfZ9/eE5haUhDunf1Pwc3/nweKKN/bcUQ7XCY0=;
+	h=From:To:Cc:In-Reply-To:References:Subject:Message-Id:Date:
+	 MIME-Version:Content-Type; b=GYu3JwBDG3YPKserTwWxN/DSZuT03qNqoGKxQuLf0ARM5wRHF1n/hZjNDYAtTpGBcgWk1p1sKNjjD6CUDjb7Sc0c9ZQRMPmoDehXaVtecD0OF5gxi9ue2QE9OifPBkqBiNa0LNOEhu9duJpo/8mGDnT11e6hMTLmDfS2TriZLJI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=konsulko.com; spf=pass smtp.mailfrom=konsulko.com; dkim=pass (1024-bit key) header.d=konsulko.com header.i=@konsulko.com header.b=lSFr0QpI; arc=none smtp.client-ip=209.85.161.54
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=konsulko.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=konsulko.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PWVBCaww"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 492571F000E9;
-	Fri, 10 Jul 2026 23:46:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1783727206;
-	bh=zAbiTc7SV8WiZhtg1dsCTH30vdfKHqz6tA06wbzCfJc=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=PWVBCawwijQB/x3en5NPn3juXXtN9ssNB2wEo1g8Hl5QS0+9MAwyDUQ8g1GYPbCky
-	 GVh7NfQh7RDSfNvhDuENXbffBuPwDUsTlebfZuonKA9vYyts+e3wNy3afdXkTn1cpM
-	 ohcgttvVFx1xb2AcGJdSkpCk2DMuLtzRtREuRy8tgZjFz471v0YOjJl/3Nl6/yFZ7X
-	 wCc6Q6Y9d1+8qRLgOqHBkMqH6XmuUtc8CgMkqtqZE18+vWI2wIKHzj+Tyjnbx5d5lQ
-	 jYllwlbEIDK3xm4CkL+6J114aktvnqw5qfk+3JYcc2ea5fM3idvU08Iq1JtAOlJ5g/
-	 J4hKNV5Lc+Z6Q==
-Date: Fri, 10 Jul 2026 19:46:43 -0400
-From: Eric Biggers <ebiggers@kernel.org>
-To: Andrey Albershteyn <aalbersh@kernel.org>
-Cc: linux-xfs@vger.kernel.org, fsverity@lists.linux.dev,
-	linux-fsdevel@vger.kernel.org, hch@lst.de,
-	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-	linux-btrfs@vger.kernel.org, djwong@kernel.org
-Subject: Re: [PATCH v11 06/20] fsverity: don't allow setting DAX file
- attribute on fsverity files
-Message-ID: <20260710234643.GF1911@quark>
-References: <20260710085256.3464201-1-aalbersh@kernel.org>
- <20260710085256.3464201-7-aalbersh@kernel.org>
+	dkim=pass (1024-bit key) header.d=konsulko.com header.i=@konsulko.com header.b="lSFr0QpI"
+Received: by mail-oo1-f54.google.com with SMTP id 006d021491bc7-6a168dc590cso1076976eaf.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jul 2026 17:17:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=konsulko.com; s=google; t=1783729048; x=1784333848; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:mime-version:date:message-id
+         :subject:references:in-reply-to:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=e/vhfpQf4OV2qMLQtG4Mk/3KvquVjRSLEAPXaxUkjFc=;
+        b=lSFr0QpIGx+lRoNyQq2YxmxQYflxTZIyUcchaHQ1U3kSYfXxz6v9k9I2kGLvocNkzn
+         KR6UvLWAP8nWHz+aV3rDt4DtdEDjAdAMvv+x0gFTX1hC2bv3tV3GFNNCNjVm1HRQgqpD
+         jhU+sYBDO7ist2dJ0a69Mt2PvbJYj3PHNlW+M=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1783729048; x=1784333848;
+        h=content-transfer-encoding:content-type:mime-version:date:message-id
+         :subject:references:in-reply-to:cc:to:from:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=e/vhfpQf4OV2qMLQtG4Mk/3KvquVjRSLEAPXaxUkjFc=;
+        b=ouuiNbEf/h6zAxVZCOaPJqBxyOnunSUnkstTGT/8Dmkgsb84kZoLn63uFCqCMaG3Wj
+         310E88ixAwsmH7mtzsqgvgF8h4C+DOKz7YEdhZ/C/yKDtpznTN+g1YxQceakyeHj7sPq
+         FJDUnrkfQP5NPDD6nPVJ1UCFo66JlR7VO6ZZtFs810BjM0rEiWYqDCy+B1L+VMBFJpDq
+         PSD5mAcvamK8/yPj7jhHxw1XNv/PEsxOn8Qfmx4ikPek5Ywj6XPzM4zg67Gpg58emCD9
+         qr6NeSIwTaqYF5H0WMYx4cK3oyBtsDT5wHCSgVcD9AF0vWM3zJWtcV//cBcx6qwE1gGY
+         G4UA==
+X-Forwarded-Encrypted: i=1; AFNElJ+OSczh6rIQGKW3zV5rUXdGc4btpRhfsnphlVF/7TfuAvnfyp8jdJs3JvN8gVq7CYRyuuy0r80X0XrhnA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwArBGG0th4F8+PiJm5TkF557xSEs1zu9S7g5/xAlZSt5UzCAR/
+	DzVJB94XueZ//C/ky36w1G+yYxbpvSIvgeePuZRUTdFL9lKUV9DtSQU4+NC94cz/Cd0=
+X-Gm-Gg: AfdE7clRN4ZbWAWr2wefZV/ACtM4mVHEDHD0wdGSlsxWvspARDDT4c71TOhXVI83WU1
+	oFwPLFJuNLmEowQ6FjXqJvZz12GmzRYnLaT/SR0GAfqG8yLpER9GMNHBmNZObXVb0rvFR3iNzgy
+	iDLZFlHSqWWmLvw1rdEeq55omQEh2Ej+RIDlaFrieYJlnzcpYyKgs+9OMOhnWT4Hn6WfiADBisP
+	FnlAjboyejE09RX/faKSrHeObJz/dK9vQiCICl7L6xH+CKK3DovpSRmE/Qrals6aUfduYu3F6Qq
+	aybm5CJJDLMUJeV4x4lzyXTKalY4bW0FrAIxX3/TpqpCjeC37l17XHPJRpHI5Qad3UpuelG4M7j
+	CASi1GMX66Mek2tq1It9Vka3WtxqOj1Qv9QVUDMtHOfNJtFi+YtB7cWa3oG0b66NKmPHx09jel7
+	/nnINMYZZ5eqquZnocICwD0R/h6bBJIkZTOm1HkcSKT56o+xQEqOSIddSc3KqIU2ekq/CgrRLXc
+	2dAyf4T5twt/LfRjtfCpYUV12cNbmIJ7ojX8CtWEjUDK8Y=
+X-Received: by 2002:a4a:e845:0:b0:6a1:77ce:1b09 with SMTP id 006d021491bc7-6a39a56f825mr947347eaf.6.1783729048128;
+        Fri, 10 Jul 2026 17:17:28 -0700 (PDT)
+Received: from [127.0.1.1] (fixed-189-203-100-56.totalplay.net. [189.203.100.56])
+        by smtp.gmail.com with ESMTPSA id 006d021491bc7-6a39af0e953sm651312eaf.3.2026.07.10.17.17.26
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 10 Jul 2026 17:17:27 -0700 (PDT)
+From: Tom Rini <trini@konsulko.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, 
+ u-boot@lists.denx.de, Alexey Charkov <alchark@flipper.net>
+Cc: =?utf-8?q?Marek_Beh=C3=BAn?= <kabel@kernel.org>, 
+ Simon Glass <sjg@chromium.org>, 
+ =?utf-8?q?Timo_tp_Prei=C3=9Fl?= <t.preissl@proton.me>, 
+ Peng Fan <peng.fan@nxp.com>, Patrice Chotard <patrice.chotard@foss.st.com>, 
+ Yao Zi <me@ziyao.cc>
+In-Reply-To: <20260626-btrfs-readdir-v2-0-7dd43f72d1b4@flipper.net>
+References: <20260626-btrfs-readdir-v2-0-7dd43f72d1b4@flipper.net>
+Subject: Re: [PATCH v2 0/2] fs: btrfs: add support for readdir
+Message-Id: <178372904690.2905849.8798963092987519032.b4-ty@konsulko.com>
+Date: Fri, 10 Jul 2026 18:17:26 -0600
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260710085256.3464201-7-aalbersh@kernel.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-Mailer: b4 0.14.3
 
-On Fri, Jul 10, 2026 at 10:52:34AM +0200, Andrey Albershteyn wrote:
-> When fsverity is enabled on the file, with FS_IOC_ENABLE_VERITY ioctl(),
-> it checks if file has DAX enabled and fails if that's true. However, the
-> opposite case is not checked.
+On Fri, 26 Jun 2026 19:18:20 +0400, Alexey Charkov wrote:
+
+> Btrfs in U-boot currently uses a custom callback for ls and doesn't expose
+> the standard opendir/readdir/closedir interface, making it harder to use
+> in generic code. One area where this would be useful is in discovering BLS
+> type 1 entries [1] on a Btrfs filesystem.
 > 
-> Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
-> ---
->  fs/file_attr.c | 5 +++++
->  1 file changed, 5 insertions(+)
+> Add support for the standard interface, and implement ls in terms of it.
 > 
-> diff --git a/fs/file_attr.c b/fs/file_attr.c
-> index bfb00d256dd5..5424ec4e3949 100644
-> --- a/fs/file_attr.c
-> +++ b/fs/file_attr.c
-> @@ -246,6 +246,11 @@ static int fileattr_set_prepare(struct inode *inode,
->  	if (fa->fsx_cowextsize == 0)
->  		fa->fsx_xflags &= ~FS_XFLAG_COWEXTSIZE;
->  
-> +	/* Can not enable DAX on fsverity file */
-> +	if ((old_ma->fsx_xflags & FS_XFLAG_VERITY) &&
-> +			fa->fsx_xflags & FS_XFLAG_DAX)
-> +		return -EINVAL;
-> +
+> [...]
 
-This sounds like a bug fix.  But actually ext4 already checks this in
-dax_compatible(), and the other filesystems that already supported
-fsverity (f2fs and btrfs) don't support DAX.  So I guess this is really
-lifting that to common code?  But the existing check is still being left
-in place because it's still needed for ext4 specific flags anyway?
+Applied to u-boot/master, thanks!
 
-- Eric
+[1/2] fs: btrfs: implement opendir(), readdir() and closedir()
+      commit: 5f064aef5d766e291982f9cba6dc728dcdb53868
+[2/2] fs: btrfs: use fs_ls_generic() and drop custom implementation
+      commit: 31cf3f177823362a42bf4630ec85370ea768ddf1
+-- 
+Tom
+
+

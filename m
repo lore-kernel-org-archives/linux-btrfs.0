@@ -1,59 +1,59 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D85E336B07E
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:57:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E3B51399346
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:58:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783850254; cv=none; b=WHtI9Yx+vIvDMlvSh9K3BVWznPU7SZd1TUTgmYrj663fGVkDvZ+SHY1xWafjETjiCX2BU6k/1rVMynNOQDPhJngu6OUAjFjsBkQxGSqIW0uXy6a6N571BKtmCCm8Rq+E6wPGrk56g4deKG/QdcHztP1nhVGWUEfAG2U66/elXIU=
+	t=1783850306; cv=none; b=s42LDNdBguOsb3xRROxdh6ZF733uAWtR5fcFcIsFaViw7D9jpEkc/qI2wRiK0QuPo0oUXI6YIxX3Llo7RHxRbDyEEkLGbzQV/gVtZK/CmR6RMgLasUdAgnoXcFRhK4llDXMzBDURgK1fwBuEng2CBgVI5+j+gR3GRDNx9PtGrwo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783850254; c=relaxed/simple;
+	s=arc-20240116; t=1783850306; c=relaxed/simple;
 	bh=aU2eoxhPR3Ev/cevWaV9mqzTovHjauipDfKVhYCVsgI=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=Tg8oy6bPhW7jOJHlAnrZohHZ8f5zZqtWpa3if14vl5Kf2zmgiKCsYDGQkPxQvFPiFv4C8qF8KLoKCbTuyo8tuhsKIOShi6P84cnPSj+lMlbw4ryAlraZVV/HFT1QhlMUC31xLstwTbsUTwF+M1YSUssVjHCMg1LRP6ldqPYyQPM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nBmNKl+/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nBmNKl+/; arc=none smtp.client-ip=195.135.223.130
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=Puu1G9RX0Uxp21ALmbH2Z2Z5QHsDAwVBHZkBOs+A4MHTdfKJxCppOAZOJN3VS6KeZFAXqX9xvF7wCVSHIjOqb0GY7XhdoBRWKK7Cp97YwJzYcUjZbxgYObPi5gyp/Bm+NxXIU2ebDrugu75ANMploye158KJLhuMdvfgW9NOGos=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=F2zWX/us; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=F2zWX/us; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nBmNKl+/";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nBmNKl+/"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="F2zWX/us";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="F2zWX/us"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id CA4A077245
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:57:30 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id ECE1B76F61;
+	Sun, 12 Jul 2026 09:58:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1783850250; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1783850302; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
 	bh=pM0bLkkzM+k2UWVaPtkJtyCQH5zWywBGZWPLZ5PpVfI=;
-	b=nBmNKl+/jH9wmthdFU/CWFZKigQQv5eN4P9SEFiHbGsX/Own+nvvcjaGucNxz9HwmhAo+4
-	1Q3P5N4vo4P+P1tpLp5dUMULktuKutGcw9mXOw4y4QuYmLGR2li5R4wlJMLGgAXRSbVI0b
-	/+pE2gRnGROkJ3HflEZVycwKn4B0vbc=
-Authentication-Results: smtp-out1.suse.de;
-	none
+	b=F2zWX/us7oH9re9hHWaYFebVRUYhIwVckOkB7bWOk106A0Y5ED4K5BFLVM2DvsUZLfrDJm
+	GCocPJaTY+ExZ8FkSWbzMyybZtcAwwwRD8pMyfae0fPeuy85KLHYHY2mJfHKxExgySYxLU
+	nZ6NpD9XKuokWeGDW96c6y+qNxyq0GY=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b="F2zWX/us"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1783850250; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1783850302; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
 	bh=pM0bLkkzM+k2UWVaPtkJtyCQH5zWywBGZWPLZ5PpVfI=;
-	b=nBmNKl+/jH9wmthdFU/CWFZKigQQv5eN4P9SEFiHbGsX/Own+nvvcjaGucNxz9HwmhAo+4
-	1Q3P5N4vo4P+P1tpLp5dUMULktuKutGcw9mXOw4y4QuYmLGR2li5R4wlJMLGgAXRSbVI0b
-	/+pE2gRnGROkJ3HflEZVycwKn4B0vbc=
+	b=F2zWX/us7oH9re9hHWaYFebVRUYhIwVckOkB7bWOk106A0Y5ED4K5BFLVM2DvsUZLfrDJm
+	GCocPJaTY+ExZ8FkSWbzMyybZtcAwwwRD8pMyfae0fPeuy85KLHYHY2mJfHKxExgySYxLU
+	nZ6NpD9XKuokWeGDW96c6y+qNxyq0GY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 06375779B5
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:57:29 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id EF6E3779B5;
+	Sun, 12 Jul 2026 09:58:20 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id jA9uLQllU2qfPQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:57:29 +0000
+	id 0Z3xKzxlU2rBPgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Sun, 12 Jul 2026 09:58:20 +0000
 From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
+To: fstests@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
 Subject: [PATCH] fstests: btrfs: add a new regression test for RAID56 RWM
-Date: Sun, 12 Jul 2026 19:27:08 +0930
-Message-ID: <20260712095708.182997-1-wqu@suse.com>
+Date: Sun, 12 Jul 2026 19:27:59 +0930
+Message-ID: <20260712095759.183211-1-wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -62,29 +62,34 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: ECE1B76F61
 X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_NONE(0.00)[];
+	MX_GOOD(-0.01)[];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_COUNT_TWO(0.00)[2];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	TO_DN_NONE(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	ARC_NA(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FROM_EQ_ENVFROM(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	RCVD_COUNT_TWO(0.00)[2];
+	RCVD_TLS_ALL(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	MIME_TRACE(0.00)[0:+];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
-X-Spam-Score: -2.80
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 
 There is a regression in btrfs RAID56 RMW, that data checksum
 verification can be skipped incorrectly, causing RMW to use the already

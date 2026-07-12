@@ -1,378 +1,131 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oa1-f52.google.com (mail-oa1-f52.google.com [209.85.160.52])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5AC00248896;
-	Sun, 12 Jul 2026 14:37:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F1084338936
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 15:06:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.160.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783867048; cv=none; b=qEww6D7PLyPeoRnGWotl40oGemDtKxTc3NMxnPCJxSGjQ6p38d07UJPXong1gY4vgBs2jNBzfhBHWWF40IsrqVfLl90UvOU4N3vgtOeONM8TWESjlOqRREtrAEfvx23Hf4G0dCo7AWsZx5zoai9crM6u23CEuz6cA0lPQY5uuzc=
+	t=1783868799; cv=none; b=QojFkGOLDgqh1LgTV54NXvKA0q3ITZsxBfuKsH2MDnvfE7IreJ1YjA7QdAI3q6yWx6eeAUrySqnF11cJk43+w/Tm7f5q2RRwdZbEH0cBsD7rRGZQOJV3XCrLdIiYde9GdmATnWEkzExkzGqZ8w06p5brxFWIiOBaikxDWgGFGsQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783867048; c=relaxed/simple;
-	bh=38UuTXzPO8nm8kpewaI4Y/ViyVZeTbAhUF58X37ll2E=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=uwYrIIuNw1jdFFN3/N8tSN10pbvVkFJ7F8pjq7mmFxqlP3/rI2r1n4IvaYAijRfHP8dpIjIs5pGDu2TqpDiHAdF0zVAqNLGiLcZdtr5Nkogg2hLf9XMost6cB1L+XhsIx/PHbxQ8fC+Nage9PSMtsf0sDQCfXvBlPZInwGxllx8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ARNlSHNi; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ARNlSHNi"
-Received: by smtp.kernel.org (Postfix) with ESMTPS id D2147C2BCB7;
-	Sun, 12 Jul 2026 14:37:27 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1783867047;
-	bh=38UuTXzPO8nm8kpewaI4Y/ViyVZeTbAhUF58X37ll2E=;
-	h=From:Date:Subject:To:Cc:Reply-To:From;
-	b=ARNlSHNi83/9xnR6+hpwnHWnrY3pCV9HcN6HisxnM6aOEjgPQ3iVeg0yG9ROiJV3B
-	 H00pAK8Wn+z5VICds2uM5Id3lG4irL4Sp77Vw3TBB3Kdbi7xUVFOyGqsTAVO51DbRm
-	 HA2NMeULQX/G83OtdCFrE/2CGkXmL2hJHBiGgg3Q4jCI4/GiXB/Ix+KV4EbwoHSHFc
-	 ASnQ5hj3NqMfGMVYfmtDcBsbxySgNjyk3IujX/pdJ3YDB31+IPNMcVxaGkvXyWlqiH
-	 uP0DVhFT9V/6n8wIkCUQRB5f0lz4P82zlxegO+iQddMZT3LuwP7NvihX2K6VIM+Mnx
-	 3NDvLgoGMKRyA==
-Received: from aws-us-west-2-korg-lkml-1.web.codeaurora.org (localhost.localdomain [127.0.0.1])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AF89CC43458;
-	Sun, 12 Jul 2026 14:37:27 +0000 (UTC)
-From: Daan De Meyer via B4 Relay <devnull+daan.amutable.com@kernel.org>
-Date: Sun, 12 Jul 2026 16:37:22 +0200
-Subject: [PATCH] btrfs: test checksum handling for clone, dedupe and swap
- on NOCOW files
+	s=arc-20240116; t=1783868799; c=relaxed/simple;
+	bh=8gIGndJDRf7JgPXBED6EmrFm9hh9tKjJ1kOV2dL0NT4=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=ZmVeYs6AY31TDhp/1Pyn1pXofJhyHaZ/D/wEmJgXqH0Wsvl5g+iC+H/+en6aRPboiVrUsfeNyAiFZaVLrZZ98TWKDSdKogx97UudZmJRrDZf7xv+xvyQiEncUDjs01hZMnFyUph63pHZZ6InRfSao6C8+i2uB5GUhvpqVFH59xI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=gompa.dev; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.160.52
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=gompa.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-oa1-f52.google.com with SMTP id 586e51a60fabf-448479e0eb6so1358469fac.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 08:06:37 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1783868797; x=1784473597;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=88hvktTu0KZHeu02mXoEzw2BIFJy4M/j3xm/aWChyjQ=;
+        b=U+y9t/8sUY4gyDCu8dx7OQRS/feziNydetjwAfH4NzsLnkq46KWhuVShaENMUWoT+D
+         k7w/Qca8E2m+S0NDxvNYMidXwv1Mp1tjWEN8sNtnj4DsM+kKYOE6hBdrYpE/b1u2rFVv
+         maLgaWQdhgEI2598eoL+x5Xl+gmKvtFSjwatYN5XZxfSYc7ujH66Nnz2+6aWO6CxaJxy
+         zTkVz0ag80R6ou7yIUbI+PVLpBb7BKJDCHvd67T9equFH9HrR1wXeIVuIiJdAdmxf2OK
+         fAlzik4WwWEFeVwGbehyDJKOHHvDjW6YEw2/THt954ME6HskbSPzQrk8mhQs2S5VzW7O
+         c/uQ==
+X-Forwarded-Encrypted: i=1; AHgh+RpyBRlVmYqs2o3FVWnhqR2K3ZQdILfSKtMkzaTlh7Ex7earxMm/ogg6lAMbTpFv+NRefb+rNXh9wL7G9g==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzRRAZM4qLBlwhw6MMuSouSyOyICe02JLhUm5Xal1d2zYlOOlEp
+	JLlMu8kfHnwyeYJ/RZMcjjLWS+LaYOQgxv7xN6WQrIh+6UslgqvGjIsHxMkhLw==
+X-Gm-Gg: AfdE7ck743FZBfGZtd0fRAKLYFzFLY+rQTWTeXKybjcJzyXU0de/ifGpGLLId70D/gZ
+	o3cEYNz3e4FXNApOaPaSYLZXOMfJymH53/rNt2XMCeJp1uSXwrOjQixswYpBYnvlvHNOEQ9vs82
+	N9l+iNWsUpSmsiMDP6RbqkD/R4pzzn2CYBjr8h+00tK7WNHxLRdtxnfWcyJOHMCi/raqazSWUGO
+	5kwBjpNJDiiZkm/C1X5QLLAeMgvU4cs8ZzIwq3rd3UeAjQnEv6uZxQh/PoNF/wpRJVJg3n0rKwO
+	OVfkwpkJytGoyoqx3HAReeUp+77hxeTc1VzM5375mvGQ9/2iTkdbUo0kXzPXiF8QaJ3mz7J9s62
+	h8Z/Qz6flNbHAvAa9y3bPIe18zKmSDBUbo7ztjfPs0X6xYFK36wp91b5jP02BQJ7gvj27LMoASp
+	HEFTuyCCKxWVOFMKUM+ec+nkUmW6PXPh3WU4VsnLoqCoHAEOCZmqCnju2ynYlTfHD87XvdeJbUc
+	1Z+AU34DkuQw+a7UHBPLtrXqvQsAEnsNMzrsXnf5ZWdYYkaxMOR2hhutdENOt0=
+X-Received: by 2002:a05:6870:168e:b0:446:eba3:a1ad with SMTP id 586e51a60fabf-451f1097b9dmr3376443fac.10.1783868796889;
+        Sun, 12 Jul 2026 08:06:36 -0700 (PDT)
+Received: from mail-ot1-f45.google.com (mail-ot1-f45.google.com. [209.85.210.45])
+        by smtp.gmail.com with ESMTPSA id 586e51a60fabf-4519d89f7desm9740323fac.7.2026.07.12.08.06.36
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 12 Jul 2026 08:06:36 -0700 (PDT)
+Received: by mail-ot1-f45.google.com with SMTP id 46e09a7af769-7eb5bdb50fcso1908205a34.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 08:06:36 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AFNElJ9sluKCpLpCCKQ6NJaCqXRqKvxxadQcL4BzkvhR007URolqN1i/0OMxtrY5GZ0+KI6P8NjVtL3xzYZaOQ==@vger.kernel.org
+X-Received: by 2002:a05:6830:81f3:b0:7e3:d199:3164 with SMTP id
+ 46e09a7af769-7ec096ee194mr3373053a34.11.1783868796457; Sun, 12 Jul 2026
+ 08:06:36 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260712-push-kwzqkrlxwvnv-v1-1-e2466aff1bfd@amutable.com>
-X-B4-Tracking: v=1; b=H4sIAAAAAAAC/yWMQQ6CMBBFr0JmbROoAolXMS6mZbAVrTgDhUi4u
- 60u389/bwMh9iRwLjZgil78KySoDgVYh+FGyneJQZe6KdtKq3EWp4bl8x74sS4xRHVErBukk+l
- aC8kbmXq//pqX659lNneyUw7lh0EhZRiDdXl6okzEsO9fT8JUfI4AAAA=
-X-Change-ID: 20260712-push-kwzqkrlxwvnv-3aa56ae4bd7c
-To: Zorro Lang <zlang@kernel.org>, Anand Jain <asj@kernel.org>, 
- Filipe Manana <fdmanana@suse.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
- Daan De Meyer <daan@amutable.com>
-X-Mailer: b4 0.15.2
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1783867046; l=10412;
- i=daan@amutable.com; s=20260712; h=from:subject:message-id;
- bh=FR63JniEZ2028iGYTflhLnIFarsSaqEaFzU2/w/MTqc=;
- b=M7KjmG2Z7zNcfX+s1xsWCzQH9SQyTI+IrXPYOYjoHtk8EshwvfTAK2xv+yR7hSa6De06WGy8X
- xKIs3jBhm6VDaceXNUqX/WGCsy0euz5qF59OdppNw00qYiMSnIbz6Mm
-X-Developer-Key: i=daan@amutable.com; a=ed25519;
- pk=I1l+WwrtmzRgofA5SQ1wTuJi18fjh91w+f5uRkFeZEA=
-X-Endpoint-Received: by B4 Relay for daan@amutable.com/20260712 with
- auth_id=868
-X-Original-From: Daan De Meyer <daan@amutable.com>
-Reply-To: daan@amutable.com
+References: <20260712-reflink-into-nodatasum-v1-0-9f27ef836073@amutable.com>
+In-Reply-To: <20260712-reflink-into-nodatasum-v1-0-9f27ef836073@amutable.com>
+From: Neal Gompa <neal@gompa.dev>
+Date: Sun, 12 Jul 2026 11:06:00 -0400
+X-Gmail-Original-Message-ID: <CAEg-Je86cbtNvESfK5MeVXVezZfMFE8qVdX900F3ayQsC+yQNg@mail.gmail.com>
+X-Gm-Features: AVVi8Cd2-p1zTlGWQGpQGZf-1g42rHsDM1sB7d20uoAFfIyhS_ZBfMdr40Cq_aI
+Message-ID: <CAEg-Je86cbtNvESfK5MeVXVezZfMFE8qVdX900F3ayQsC+yQNg@mail.gmail.com>
+Subject: Re: [PATCH 0/2] btrfs: allow reflinks into NODATASUM files
+To: daan@amutable.com
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-From: Daan De Meyer <daan@amutable.com>
+On Sun, Jul 12, 2026 at 10:25=E2=80=AFAM Daan De Meyer via B4 Relay
+<devnull+daan.amutable.com@kernel.org> wrote:
+>
+> The primary use case for this series is building a NOCOW VM image from
+> individual partition images that are COW and checksummed. Today those
+> partitions cannot be cloned into the NODATACOW and NODATASUM destination,
+> so tools fall back to a full copy. This makes provisioning slower and
+> duplicates all of the image data up front.
+>
+> Allow cloning and deduplication from a checksummed file into a NODATASUM
+> file. The VM image can then share extents with the partition images.
+> Existing checksummed extents are COWed once when modified, protecting the
+> source checksums, while newly allocated extents use the destination's
+> normal NOCOW behavior.
+>
+> The reverse direction remains rejected because the destination would
+> expect checksums that do not exist.
+>
+> Patch 1 prevents swap activation from bypassing the COW protection when a
+> NODATASUM file references checksummed extents. Patch 2 relaxes the reflin=
+k
+> restriction in the safe direction.
+>
+> The xfstests branch is available at:
+> https://github.com/kdave/xfstests/pull/6
+>
+> Signed-off-by: Daan De Meyer <daan@amutable.com>
+> ---
+> Daan De Meyer (2):
+>       btrfs: reject swapfile activation if any extent has checksums
+>       btrfs: allow reflinking from checksummed files into nodatasum files
+>
+>  fs/btrfs/inode.c   | 29 +++++++++++++++++++++++++++++
+>  fs/btrfs/reflink.c | 18 ++++++++++++++----
+>  2 files changed, 43 insertions(+), 4 deletions(-)
+> ---
+> base-commit: cab9e339cfbc1a4e075e53e281dfb00391e1a6bb
+> change-id: 20260712-reflink-into-nodatasum-aff962f3794e
+>
 
-Add two tests covering how checksummed and NOCOW extents interact.
+The patch series looks good to me.
 
-btrfs/348 verifies that checksummed extents can be cloned and
-deduplicated into NOCOW files, and that the reverse direction stays
-rejected because NOCOW extents do not have checksums.
+Reviewed-by: Neal Gompa <neal@gompa.dev>
 
-btrfs/349 verifies that a NOCOW swap file containing a checksummed
-extent is rejected even after the checksummed source is deleted and the
-extent is no longer shared.
+That said, I have a question: Is there no reason we couldn't reflink
+into a checksummed area and generate *new* checksums for that purpose?
+That would be useful for staging for regular backup.
 
-Signed-off-by: Daan De Meyer <daan@amutable.com>
----
-These tests cover the kernel series available at:
-https://lore.kernel.org/linux-btrfs/20260712-reflink-into-nodatasum-v1-0-9f27ef836073@amutable.com/
----
- tests/btrfs/348     | 180 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/348.out |   2 +
- tests/btrfs/349     |  73 +++++++++++++++++++++
- tests/btrfs/349.out |   2 +
- 4 files changed, 257 insertions(+)
-
-diff --git a/tests/btrfs/348 b/tests/btrfs/348
-new file mode 100755
-index 00000000..4faf994e
---- /dev/null
-+++ b/tests/btrfs/348
-@@ -0,0 +1,180 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 Daan De Meyer. All Rights Reserved.
-+#
-+# FS QA Test 348
-+#
-+# Verify that checksummed extents can be cloned and deduplicated into NOCOW
-+# files.  The reverse direction must remain rejected because NOCOW extents do
-+# not have checksums.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick clone dedupe scrub
-+
-+. ./common/reflink
-+
-+_require_scratch_reflink
-+_require_scratch_dedupe
-+_require_chattr C
-+_require_btrfs_no_nodatacow
-+_require_btrfs_no_nodatasum
-+_require_btrfs_command inspect-internal dump-tree
-+
-+_fixed_by_kernel_commit 28ce1d263f4d \
-+	"btrfs: allow reflinking from checksummed files into nodatasum files"
-+
-+filesize=128K
-+
-+write_pattern()
-+{
-+	local file=$1
-+	local pattern=$2
-+
-+	$XFS_IO_PROG -f -c "pwrite -q -S $pattern 0 $filesize" \
-+		-c fsync "$file" || _fail "failed to write $file"
-+}
-+
-+make_nocow_file()
-+{
-+	local file=$1
-+
-+	touch "$file"
-+	$CHATTR_PROG +C "$file" || _fail "failed to set NOCOW on $file"
-+}
-+
-+get_extent_bytenr()
-+{
-+	local file=$1
-+	local offset=${2:-0}
-+
-+	extent_bytenr=$(_btrfs_get_file_extent_item_bytenr "$file" "$offset")
-+	[ -n "$extent_bytenr" ] || _fail "failed to find an extent for $file"
-+}
-+
-+check_contents()
-+{
-+	local file=$1
-+	local expected=$2
-+
-+	cmp -s "$file" "$expected" || _fail "unexpected contents in $file"
-+}
-+
-+# Generate reference files outside the scratch filesystem.
-+write_pattern "$tmp.pattern_a" 0x61
-+write_pattern "$tmp.pattern_b" 0x62
-+write_pattern "$tmp.pattern_c" 0x63
-+
-+_scratch_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
-+_scratch_mount
-+
-+# Clone a checksummed extent into a NOCOW file.
-+source=$SCRATCH_MNT/clone_source
-+dest=$SCRATCH_MNT/clone_dest
-+write_pattern "$source" 0x61
-+make_nocow_file "$dest"
-+_reflink_range "$source" 0 "$dest" 0 "$filesize" > /dev/null 2>&1
-+
-+# Remount so that the data checks below cannot be satisfied from page cache.
-+_scratch_cycle_mount
-+get_extent_bytenr "$source"
-+source_bytenr=$extent_bytenr
-+get_extent_bytenr "$dest"
-+dest_bytenr=$extent_bytenr
-+[ "$source_bytenr" = "$dest_bytenr" ] || \
-+	_fail "clone did not share the source extent"
-+check_contents "$source" "$tmp.pattern_a"
-+check_contents "$dest" "$tmp.pattern_a"
-+
-+# The first write to the NOCOW destination must COW because the shared extent
-+# has checksums.  This keeps the source data and its checksums intact.
-+write_pattern "$dest" 0x62
-+get_extent_bytenr "$dest"
-+first_write_bytenr=$extent_bytenr
-+[ "$first_write_bytenr" != "$source_bytenr" ] || \
-+	_fail "first NOCOW destination write did not COW"
-+_scratch_cycle_mount
-+check_contents "$source" "$tmp.pattern_a"
-+check_contents "$dest" "$tmp.pattern_b"
-+
-+# Once the destination has a private extent without checksums, NOCOW writes
-+# should resume modifying that extent in place.
-+write_pattern "$dest" 0x63
-+get_extent_bytenr "$dest"
-+second_write_bytenr=$extent_bytenr
-+[ "$second_write_bytenr" = "$first_write_bytenr" ] || \
-+	_fail "subsequent NOCOW destination write was not in place"
-+check_contents "$dest" "$tmp.pattern_c"
-+
-+# The checksums must also force the first write to COW after the checksummed
-+# source is deleted and the destination is the extent's only remaining owner.
-+source=$SCRATCH_MNT/unshared_source
-+dest=$SCRATCH_MNT/unshared_dest
-+write_pattern "$source" 0x61
-+make_nocow_file "$dest"
-+_reflink_range "$source" 0 "$dest" 0 "$filesize" > /dev/null 2>&1
-+get_extent_bytenr "$source"
-+source_bytenr=$extent_bytenr
-+get_extent_bytenr "$dest"
-+shared_bytenr=$extent_bytenr
-+[ "$source_bytenr" = "$shared_bytenr" ] || \
-+	_fail "clone did not share the source extent"
-+rm "$source"
-+_scratch_cycle_mount
-+write_pattern "$dest" 0x62
-+get_extent_bytenr "$dest"
-+unshared_write_bytenr=$extent_bytenr
-+[ "$unshared_write_bytenr" != "$shared_bytenr" ] || \
-+	_fail "write to unshared checksummed extent did not COW"
-+check_contents "$dest" "$tmp.pattern_b"
-+
-+# Dedupe uses the same remap preparation path and must allow the same
-+# checksummed source to NOCOW destination direction.
-+source=$SCRATCH_MNT/dedupe_source
-+dest=$SCRATCH_MNT/dedupe_dest
-+write_pattern "$source" 0x61
-+make_nocow_file "$dest"
-+$XFS_IO_PROG -f -c "pwrite -q -S 0x61 0 384K" -c fsync "$dest" || \
-+	_fail "failed to write $dest"
-+_dedupe_range "$source" 0 "$dest" "$filesize" "$filesize" \
-+	> /dev/null 2>&1
-+_scratch_cycle_mount
-+get_extent_bytenr "$source"
-+source_bytenr=$extent_bytenr
-+get_extent_bytenr "$dest" "$((128 * 1024))"
-+dest_bytenr=$extent_bytenr
-+[ "$source_bytenr" = "$dest_bytenr" ] || \
-+	_fail "dedupe did not share the source extent"
-+_compare_range "$source" 0 "$dest" "$((128 * 1024))" "$((128 * 1024))" || \
-+	_fail "deduped range contents differ from the source"
-+
-+# Scrub must handle the NOCOW destination's mixture of checksummed and
-+# non-checksummed extents without reporting an error.
-+$BTRFS_UTIL_PROG scrub start -B "$SCRATCH_MNT" >> $seqres.full 2>&1 || \
-+	_fail "scrub found errors"
-+
-+# Cloning or deduplicating a NOCOW source into a checksummed destination must
-+# not share the source extent, since it has no checksums for destination reads.
-+source=$SCRATCH_MNT/reverse_source
-+clone_dest=$SCRATCH_MNT/reverse_clone_dest
-+dedupe_dest=$SCRATCH_MNT/reverse_dedupe_dest
-+make_nocow_file "$source"
-+write_pattern "$source" 0x61
-+touch "$clone_dest"
-+_reflink_range "$source" 0 "$clone_dest" 0 "$filesize" > /dev/null 2>&1
-+get_extent_bytenr "$source"
-+source_bytenr=$extent_bytenr
-+clone_bytenr=$(_btrfs_get_file_extent_item_bytenr "$clone_dest" 0)
-+if [ -n "$clone_bytenr" ] && [ "$clone_bytenr" = "$source_bytenr" ]; then
-+	_fail "NOCOW to checksummed clone succeeded"
-+fi
-+write_pattern "$dedupe_dest" 0x61
-+_dedupe_range "$source" 0 "$dedupe_dest" 0 "$filesize" > /dev/null 2>&1
-+get_extent_bytenr "$dedupe_dest"
-+dedupe_bytenr=$extent_bytenr
-+if [ "$dedupe_bytenr" = "$source_bytenr" ]; then
-+	_fail "NOCOW to checksummed dedupe succeeded"
-+fi
-+
-+echo "Silence is golden"
-+
-+_exit 0
-diff --git a/tests/btrfs/348.out b/tests/btrfs/348.out
-new file mode 100644
-index 00000000..ec5e4701
---- /dev/null
-+++ b/tests/btrfs/348.out
-@@ -0,0 +1,2 @@
-+QA output created by 348
-+Silence is golden
-diff --git a/tests/btrfs/349 b/tests/btrfs/349
-new file mode 100755
-index 00000000..66e0935a
---- /dev/null
-+++ b/tests/btrfs/349
-@@ -0,0 +1,73 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 Daan De Meyer. All Rights Reserved.
-+#
-+# FS QA Test 349
-+#
-+# Verify that a NOCOW swap file containing a checksummed extent is rejected
-+# even after the checksummed source is deleted and the extent is no longer
-+# shared.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick clone swap
-+
-+_cleanup()
-+{
-+	cd /
-+	test -n "$swap_file" && swapoff "$swap_file" > /dev/null 2>&1
-+	rm -f $tmp.*
-+}
-+
-+. ./common/reflink
-+
-+_require_scratch_swapfile
-+_require_scratch_reflink
-+_require_chattr C
-+_require_btrfs_no_nodatacow
-+_require_btrfs_no_nodatasum
-+_require_btrfs_command inspect-internal dump-tree
-+
-+_fixed_by_kernel_commit 8e4ef5e540bb \
-+	"btrfs: reject swapfile activation if any extent has checksums"
-+_fixed_by_kernel_commit 28ce1d263f4d \
-+	"btrfs: allow reflinking from checksummed files into nodatasum files"
-+
-+_scratch_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
-+_scratch_mount
-+
-+swap_file=$SCRATCH_MNT/swapfile
-+source=$SCRATCH_MNT/checksummed_source
-+swap_size=$((16 * 1024 * 1024))
-+extent_size=$((128 * 1024))
-+dest_offset=$((1024 * 1024))
-+
-+# First verify that this filesystem and configuration can activate a regular
-+# NOCOW swap file.
-+_format_swapfile "$swap_file" "$swap_size" >> $seqres.full
-+_swapon_file "$swap_file" >> $seqres.full 2>&1 || \
-+	_fail "failed to activate plain NOCOW swap file"
-+swapoff "$swap_file" >> $seqres.full 2>&1 || \
-+	_fail "failed to deactivate plain NOCOW swap file"
-+
-+# Replace a range away from the swap header with a checksummed extent.  Delete
-+# the source and commit the deletion so that sharedness cannot be the reason
-+# for rejecting swap activation.
-+$XFS_IO_PROG -f -c "pwrite -q -S 0x61 0 $extent_size" -c fsync "$source" || \
-+	_fail "failed to write checksummed source"
-+_reflink_range "$source" 0 "$swap_file" "$dest_offset" "$extent_size" \
-+	> /dev/null 2>&1
-+source_bytenr=$(_btrfs_get_file_extent_item_bytenr "$source" 0)
-+swap_bytenr=$(_btrfs_get_file_extent_item_bytenr "$swap_file" "$dest_offset")
-+[ -n "$source_bytenr" ] && [ "$source_bytenr" = "$swap_bytenr" ] || \
-+	_fail "checksummed extent was not cloned into the swap file"
-+rm "$source"
-+_scratch_cycle_mount
-+
-+if _swapon_file "$swap_file" >> $seqres.full 2>&1; then
-+	swapoff "$swap_file" > /dev/null 2>&1
-+	_fail "activated swap file containing a checksummed extent"
-+fi
-+
-+echo "Silence is golden"
-+
-+_exit 0
-diff --git a/tests/btrfs/349.out b/tests/btrfs/349.out
-new file mode 100644
-index 00000000..aac66ede
---- /dev/null
-+++ b/tests/btrfs/349.out
-@@ -0,0 +1,2 @@
-+QA output created by 349
-+Silence is golden
-
----
-base-commit: cac9fe2b8dc3e6dbc0c2383b9e3b4d3c1b9e7dd0
-change-id: 20260712-push-kwzqkrlxwvnv-3aa56ae4bd7c
-
-Best regards,
---  
-Daan De Meyer <daan@amutable.com>
+I can foresee that being useful for archiving OS trees or VM images as
+snapshots by creating checksums for the newly created snapshots...
 
 
+
+--
+=E7=9C=9F=E5=AE=9F=E3=81=AF=E3=81=84=E3=81=A4=E3=82=82=E4=B8=80=E3=81=A4=EF=
+=BC=81/ Always, there's only one truth!

@@ -1,149 +1,146 @@
-Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B8B7236E47E
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 05:28:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E4F2A2FFF81
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:00:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783834107; cv=none; b=BHKvv8e5CHpAevxKNkCkstKjyZ9IinUvOVSUwba0ZLP3TG4RdMQ8WXF1BXL7FWS+tQlsQSC8h50ypgFCItdpPGty95RFAP//XIMxourHB8m90DERGYL8T0ZTBkNjXX8mrrmLjJ478JS5YJD1LG5XkrvIeC9/9xX1EAH7bb3XH6o=
+	t=1783846824; cv=none; b=BUvrA8RT6ZS7+LYs2jfZtVfslw07gNVKpOj+JwCCemC91coN0jNxZq/GSJoRrw6AcRatP/JJAEQstmzwYEVmgIASMzX6C+bvzCOYyRuoZzKvm9P8lXEQ78x0sV553qJW56SjM3Hu0PMqDJgjPOuR6ieXmXLGwUbe1qg5PntXNLI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783834107; c=relaxed/simple;
-	bh=nOEmK3XB/2Nv0UqKvH+Vxs5Hqf/h1+tTy8igs7+ETwU=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=iwIWoXawkIjIen6KqJhVzQFpyid7qjn92x5P5ruK2RRC3+2a4dW9llg+30yA96iyqEZH3yoaO5Y0bbN1oRC8889ZBlK3tyU6FqeYMZ+x86y7mqAE52+RUCs3JPDmpQ5DKY9RTEcJBRomts/5WgteVVzDpE5d3+koC6z78KWpZSQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=aDiCM6Fp; arc=none smtp.client-ip=209.85.128.48
+	s=arc-20240116; t=1783846824; c=relaxed/simple;
+	bh=9dgolWs8lgRCXAuWoE7ul8jyERYUKbLUhG6RZyVRkzw=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=G90Y/AUA4qjSmBuqHhxUg4+Kh/9anaCtkFM5JHXCNe0+wtThk5/Vw//Nif7NFB8g6KDZPs/YKjOiCdaNldqMmkfEDZ++/t+bWEgmADdTtT4FRfswX4PcjMxaZnMRgwNm/gOIx5izEoc/E4soOj93PPeNkphKOtVDtoewF8ApJXA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=RcbrpfE4; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=RcbrpfE4; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="aDiCM6Fp"
-Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-493bfe9f886so10370675e9.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Jul 2026 22:28:25 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1783834104; x=1784438904; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=Q8PFErrnCxf8I5BwHWz04TLQefkdEzOrr9DLWjdlF1M=;
-        b=aDiCM6Fpteflo+eLwqRNvPduxN60BFxuSCtuckULf4Ya/9b7d0hVFJV0JIJFmcQ4DC
-         d0Nx+aQNtMMn4UO4o2U40S1mq5gd815LnaU/OT2zM0yxPVrTZorsYnpcMiaphq8xhsfV
-         uBoha/chj/JQkUx5DeuuX3oS760mu76sPD7hAXIffLpreeF4CxwhncQrvtSKCPhEvyeg
-         tU0VjV+rBoksvyZCPyvTLHTGqIsNwJ0PAdxQ/Mo0ytlKWkzF2+aVr2VzSmp7ZfuEQ/Bg
-         NH/Cr8YWBN1zJFVlZo7LdsMuzwq8/P9RF7rrGRkOUEOFEAmuPfrm3muVGaLIPv4ivM7S
-         buLA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783834104; x=1784438904;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=Q8PFErrnCxf8I5BwHWz04TLQefkdEzOrr9DLWjdlF1M=;
-        b=Rbl91U7ZDdw/MvU47lLuU1BnM73NwIV4wUs/gcNPGyqMxKeL0zNIyBnITrQPICmqHr
-         o7PPm99j36TtwTZoOF3Ty5FSHurKG+Q+vfFyMc2J+1gRv/JF//kxv/M3emfoVCaDrXRc
-         SIqbsHYXNz5K6IPyDwec7D0NuiJVCj5dtuchB4f5w++I9putnHaUe/DgGOanYvaqn5Sf
-         JDm9m5BHNe328Hi/nivQcaPiLhox3d0sAxyFg4tuelrcg3afYEU5e3gK2lNik60Va0ce
-         VuwBYPq2d131Nm+NHW2vYurt8GCPIwotm0GgZg9MYEsExsz+FqW+T6VADhdOQFOBjU58
-         FevQ==
-X-Gm-Message-State: AOJu0YylrBVj/7o+MnLzvr5hkjwwyAzCB+WwgCTG1LerhGjQkuACWoZy
-	u6dO0bNcnVVmkkfMCwEokPlzc3WESkW5VN3O/aSKFTbMjKjSpyCEkgvI1SEN4fctcNk=
-X-Gm-Gg: AfdE7clM1chONd3LHMIeMp6WXexbWLOn3fc+wkgoAuvrH+m+Jd8ooi8PDz9i+Uxzuag
-	pBOsEEVGKVd9DdcWg67VCdLXMDf48uU37dQW63SWu+nIYLncYDoeEx0xZKm1coZsWlw7AqlZQGi
-	xKP5IDsW9OMJyLcqeB01wNJN1TD3RMkF4UVE6YSurrOXrZP5ccbg++EURYx45ufuvOiaygymLCE
-	cv+h+XkNULh+oYBEw4yr9s4W1c1YOzLDaScLzb2NOMuZvaRmmculm/kvWkkSdqs9ClBjjSVmNoL
-	g6UnmrqF3wXIFWVr7JLkBdAF2/hMDfirmGG3gfogvq8iba1PGcMQQukq7z7H5P6w24189AHmFE0
-	FmFWHpW8prL75/msZN9Tu1zx3C8EiDcDtHykU1t2VBRsssEbqKd+hiOS/vcUV8xD8xGOGIYKM/R
-	RK+HxZIA==
-X-Received: by 2002:a05:600c:6216:b0:493:f6f0:d66b with SMTP id 5b1f17b1804b1-4940033a949mr2317865e9.1.1783834104165;
-        Sat, 11 Jul 2026 22:28:24 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-38a55557f25sm4847558a91.5.2026.07.11.22.28.21
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 11 Jul 2026 22:28:23 -0700 (PDT)
-Message-ID: <79875d25-0476-4330-b6f5-51d213cf6270@suse.com>
-Date: Sun, 12 Jul 2026 14:58:17 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="RcbrpfE4";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="RcbrpfE4"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 443D07720B
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:00:21 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1783846821; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=e4Mfe/Jdeb6LQSCZjYTUKXEa1x3uhU16Ycc2ncuBJ5Y=;
+	b=RcbrpfE4xupmAJSUlL6Ony8KotWglcu+HXE3n4KMhTe2VmwnWwPIumMiJiO1blb4Kuuk6V
+	p5I7hqgUx6ozd7R5MJaPeUseUBmrVxvtf2oPF6T4J8yboqdCvmz98+aMF5dDJSN3ABt8EI
+	569xK3foy4PjKBG3vIblipvjHNj8Q9w=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1783846821; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=e4Mfe/Jdeb6LQSCZjYTUKXEa1x3uhU16Ycc2ncuBJ5Y=;
+	b=RcbrpfE4xupmAJSUlL6Ony8KotWglcu+HXE3n4KMhTe2VmwnWwPIumMiJiO1blb4Kuuk6V
+	p5I7hqgUx6ozd7R5MJaPeUseUBmrVxvtf2oPF6T4J8yboqdCvmz98+aMF5dDJSN3ABt8EI
+	569xK3foy4PjKBG3vIblipvjHNj8Q9w=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 82787779B5
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:00:20 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 6HVTEaRXU2reCQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:00:20 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: raid56: fix an incorrect csum skip during rmw
+Date: Sun, 12 Jul 2026 18:30:02 +0930
+Message-ID: <757cd3e5422b7a880fc853a32037a031e189149c.1783846776.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: free mapping node on duplicate reloc root
- insert
-To: Guanghui Yang <3497809730@qq.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <tencent_39D68A519E8921206E77105E313354703C08@qq.com>
- <tencent_9F36B70488B79803AA2A9E02C52C4FC41007@qq.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <tencent_9F36B70488B79803AA2A9E02C52C4FC41007@qq.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Level: 
 
+Commit 7425a2894019 ("btrfs: introduce btrfs_bio_for_each_block_all()
+helper") uses the new helper to replace the nested loop inside
+verify_bio_data_sectors(), which simplifies the code.
 
+However that also changed the behavior of "continue" when a block has no
+data checksum.
 
-在 2026/7/12 12:47, Guanghui Yang 写道:
-> __add_reloc_root() allocates a mapping_node before inserting it into
-> rc->reloc_root_tree.  If rb_simple_insert() finds an existing entry, it
-> returns the existing rb_node and leaves the newly allocated node unlinked.
-> 
-> The error path then returns -EEXIST without freeing the new node.  Since
-> the node was never inserted into reloc_root_tree, the later cleanup in
-> put_reloc_control() cannot find it either.
-> 
-> Free the newly allocated node before returning -EEXIST.
-> 
-> The callers currently assert that -EEXIST should not happen, so this is a
-> defensive cleanup for an unexpected duplicate insert path.  If the path is
-> ever reached, the local allocation should still be released.
-> 
-> Fixes: 57a304cfd43b ("btrfs: do not panic in __add_reloc_root")
-> Signed-off-by: Guanghui Yang <3497809730@qq.com>
+Previously the "continue" will skip the old for() loop, which will also
+increase @total_sector_nr.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Now the "continue" will skip the new btrfs_bio_for_each_block_all()
+loop, which doesn't update @total_sector_nr.
 
-> ---
-> Changes in v2:
-> - Add Fixes tag as requested by Qu Wenruo.
-> 
->   fs/btrfs/relocation.c | 1 +
->   1 file changed, 1 insertion(+)
-> 
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index fb85bc8b345c..7e451e587726 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -588,6 +588,7 @@ static int __add_reloc_root(struct btrfs_root *root, struct reloc_control *rc)
->   		btrfs_err(fs_info,
->   			    "Duplicate root found for start=%llu while inserting into relocation tree",
->   			    node->bytenr);
-> +		kfree(node);
->   		return -EEXIST;
->   	}
->   
+This will affect RMW workflow, as RMW will load the data checksum, and
+rely on that to recover any corruption before generating P/Q stripes.
+Now if we hit a single block without checksum, we will skip verifying
+the remaining data, and will use corrupted data to generate P/Q, killing
+the old chance of recovery.
+
+Thankfully this doesn't affect recover nor scrub.
+For recover we never populate the data checksum and rely on the caller
+to do the verification.
+For scrub it's pretty much the same, the data stripe verification is
+done by scrub before updating P/Q stripes.
+
+Fix it by increasing @total_sector_nr before calling "continue".
+
+Fixes: 7425a2894019 ("btrfs: introduce btrfs_bio_for_each_block_all() helper")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+Changelog:
+v2:
+- Update the subject and commit message
+  This doesn't affect scrub nor rebuild, but RMW.
+---
+ fs/btrfs/raid56.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index baaa18b3c958..885602ab6448 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -1679,8 +1679,10 @@ static void verify_bio_data_sectors(struct btrfs_raid_bio *rbio,
+ 			continue;
+ 
+ 		/* No csum for this sector, skip to the next sector. */
+-		if (!test_bit(total_sector_nr, rbio->csum_bitmap))
++		if (!test_bit(total_sector_nr, rbio->csum_bitmap)) {
++			total_sector_nr++;
+ 			continue;
++		}
+ 
+ 		expected_csum = rbio->csum_buf + total_sector_nr * fs_info->csum_size;
+ 		btrfs_calculate_block_csum_pages(fs_info, paddrs, csum_buf);
+-- 
+2.54.0
 

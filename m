@@ -1,81 +1,139 @@
-Received: from out162-62-57-64.mail.qq.com (out162-62-57-64.mail.qq.com [162.62.57.64])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 49BC5C8EB;
-	Sun, 12 Jul 2026 03:34:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=162.62.57.64
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 39EEEC8EB
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 03:43:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783827301; cv=none; b=Xx9fP5zT8BA/JjsD+Vfg7+CCgJNWo9oYIqP9ExTKt6u5pmaXDpB/uGsiCNQ2yRsV8ElLDEpDkjwO9wnxDd/fJl51C2vSqZXe+OK6340MArtur2GdVkWlTHaaDEn60OQacQkQBi0VJpGHnPnInt7zGoldA6H6eVSEHNezhPNM0rY=
+	t=1783827793; cv=none; b=AkyPBTkNaglfvvjWCQLU3/7rlXQOSGDgSL+9AlS9jnkQypegBpEBhZ+MpNJgfWzyzaEC9uSIp4ucPGbZfteX2kSOMdnHCRNecqWyC3kn/ppyyXbcPz/ylnZrSmmpUoOSavxddQE2kzU6adYjfmqWKjRSmuwJguMNXXBY9ZBAjTg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783827301; c=relaxed/simple;
-	bh=3YyLkfxZWsSQqjyZuj6clz8rVMZcC/tqYo0B/sQQasA=;
-	h=Message-ID:From:To:Cc:Subject:Date:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=sk/kQVisEi+iDx6FUOdwN8AFLg7gDGEZYusp5MuvKYN9YMF/eX2R71CftOkfnG8p8dG+kOL3LxVsLGZfanU12gjCAe3qxSEt14lLvKyPu2LmridUYjbKfBWlyWAIvsAaw9UX5El5c1+Eb6i7dKs7dPwxwJ6XUJAP+KbSrWJ4Q58=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com; spf=pass smtp.mailfrom=qq.com; dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b=IpvhtGqe; arc=none smtp.client-ip=162.62.57.64
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=qq.com
+	s=arc-20240116; t=1783827793; c=relaxed/simple;
+	bh=w+GTGA7YsIQTgz6RPy2DWwTgBXxXKvunYj081K8/jsA=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=Fy9tRFO98vBir0wrBXjmlS6phZedIb3g9sg9UF0KZ9tVvD5pEGrF26LK9hKWATsWm36j+QVAS4PqKCCY7QUDTpPaQmANylpsTR5gN9NKmMVV3ICE5BBV6rnzoAo07w+SKhUY4Evz6eGScJBqKccnjiul1RDb3e95ggB0ur/8U4A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gxJJWGMZ; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ajrXjU9I; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b="IpvhtGqe"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=qq.com; s=s201512;
-	t=1783827287; bh=3YyLkfxZWsSQqjyZuj6clz8rVMZcC/tqYo0B/sQQasA=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=IpvhtGqen6uxdEU5V2hmZyLE5fsUy7Xsq8KLTFNvuSTXWv3mMghynz8xR3baF7nNC
-	 3t3LrIt8DHQ+AUrfTCKtzzL9nH1iIBylDjw4OzqvpWQZux0KHXm61HOZWuOqqzDBl3
-	 nDjj5wpZvNnkpatm94Zs7KTGA60e9k7Oe/TK3H4U=
-Received: from ubuntu.. ([123.52.25.101])
-	by newxmesmtplogicsvrszc56-0.qq.com (NewEsmtp) with SMTP
-	id 6D02F814; Sun, 12 Jul 2026 11:27:16 +0800
-X-QQ-mid: xmsmtpt1783826836tzcu8ke08
-Message-ID: <tencent_E6FC5059F3B82A7A78EA85B8B90D41F8C50A@qq.com>
-X-QQ-XMAILINFO: Nx5J06Esz7r7n7pUYDREYkzmrzyPdB7iUukYcJCh/ugzUIDrHamUPa6FGsP1Ii
-	 jpaRCXr7Iw9Awgj1UimzCYcL73YNhNhPvwtmYbVemppD0jfMLD8PbprKvnM1/WF8VUCg6i9758gr
-	 0cgtGSU1CzbNORUgALomqmD1zdsNXk7tmorsKwK6SXcXomuHvqPLNOjapBCBGoKsCj37ZBjmndBG
-	 pdo+QGQntY/3AEmntQzjeX+SWY07JXWhns1XV9k3yqS9k9LQLvmMj1TsgzrtP/L4WqV2ieE4hSAI
-	 MuQMrFdmFBhoLhoQA+hXbFyzI4nNd6TG1tfE6D6Amh32lXexVjXfa9esVztx5DGqnrNn+6u0J5xN
-	 FVHo72lGZ/1RvJ4ub0kPIqRj9wkO9iR+QggKotz0L8d72kZo6pIn2tCJFGMc8R8vH9s0qmPNacru
-	 Vl1c9qQWpYCR1VNYXKWBMeBluzeTF9auJhDf8tzpVuKf4pitgfdYw7HFmfNMrJs6J6tQ/UVI7IT8
-	 TeCeZqqlkJuJf5d88WggvoPeGaMHWxL6rzNIzl5T8MItcwkmkyHVSep8HRXPq9ukGDH0fij8tFmh
-	 0TTH+AgrmeTdaW9tMYFezNTP3+BmUUELUIlBvwsKh81PNla4Kv4n7owONj7E8W9s/4OM0HOvzZHk
-	 FWawe58m1Opl012zJfaJmhUEcj0nJ7ptwRBdDRN/KcErkiNgLehyd+KQAfANaQOW9p3FGQ7T2+9B
-	 8stnDe5P7HWJJ8lp59BowXzkTzPdmJRFmhpbuqUiEto3qPRyF2nwlYZV1s9MQ7VZZXD1/3tQBe7A
-	 FPxFWF7fMmJOHQgQ4U9AeZXf0+QEXlBVkoPaRPNIHXpX6/bDTvn98mGEDhVlyCJ9iqlPuQJFWYC4
-	 sqvFDgzoeZlowSXQ3xFCrxn+8nVeXPtwP402ZgO6GdrEhalCODeFq7ho8BKsqZpGpww6E1boPKI9
-	 fNzMoLSXnV+12E5tZek372Vqe5NKaxnP0ssaHMW+62jfJ9prr3oOSmdAaOxbClPI3+tZZtIcdAI+
-	 SZZw03HBzwRtxtDNbTCA0mD4oerAeN2zBf7uZkWw==
-X-QQ-XMRINFO: MSVp+SPm3vtSI1QTLgDHQqIV1w2oNKDqfg==
-From: Guanghui Yang <3497809730@qq.com>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>,
-	Qu Wenruo <wqu@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	stable@vger.kernel.org,
-	Guanghui Yang <3497809730@qq.com>
-Subject: Re: [PATCH v2] ext4: propagate errors from fast commit range replay
-Date: Sun, 12 Jul 2026 03:27:05 +0000
-X-OQ-MSGID: <20260712032705.1700150-1-3497809730@qq.com>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <7fdbed91-beb5-41c0-a181-e14a384c05b4@gmx.com>
-References: <7fdbed91-beb5-41c0-a181-e14a384c05b4@gmx.com>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gxJJWGMZ";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ajrXjU9I"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id DCB8E76DD7
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 03:43:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1783827790; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=ErpRnTXh89vd67icLIkmb1g1AS/H6LrRk+Ee461KiSU=;
+	b=gxJJWGMZ57e7H2z1td6/U03k5EkldErUNZfEVwYq+kSfs0Opd9o9sKjOVmiKkpTVzUKe22
+	XndBD1RQ8aqmppVLUyLV++JSQu4SKueVTpSZx2AHx5Nt46tHDb/WH2a6KmdThvHa1Ek+PZ
+	Re3lCIdBpgFkATR1L3i23zP+bJ3iET0=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=ajrXjU9I
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1783827789; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=ErpRnTXh89vd67icLIkmb1g1AS/H6LrRk+Ee461KiSU=;
+	b=ajrXjU9ISFfHRmyf/tFJIBOJkEY5L5xbxrjoeTfB53bElz+33JZvzsUybl3CRlFBN59sAD
+	XApOIAodECiTiPC+38GzAt0d3SgX+FMeevXMuPfwQeYiUqLwcfDQk92wphIoZeBefPQpMt
+	M7hKPTYuvn4lGj9jGAVVVRqZyL0s4SA=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 26590779B5
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 03:43:08 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 0Ph6NkwNU2qAaQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 03:43:08 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: raid56: fix an incorrect csum skip during scrub
+Date: Sun, 12 Jul 2026 13:12:51 +0930
+Message-ID: <d687c3aa28b09bcd90bfea33afc9e907f2ee57ef.1783827722.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Rspamd-Action: no action
+X-Spam-Level: 
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: DCB8E76DD7
+X-Spam-Score: -3.01
 
-You are right. This was my mistake.
+Commit 7425a2894019 ("btrfs: introduce btrfs_bio_for_each_block_all()
+helper") uses the new helper to replace the nested loop inside
+verify_bio_data_sectors(), which simplifies the code.
 
-I accidentally mixed the btrfs v2 Fixes tag into the unrelated ext4
-patch while preparing two patches at the same time.
+However that also changed the behavior of "continue" when a block has no
+data checksum.
 
-Please disregard the ext4 v2 email entirely. The correct btrfs v2 was
-sent separately and is the only patch relevant to the btrfs thread.
+Previously the "continue" will skip the old for() loop, which will also
+increase @total_sector_nr.
 
-Sorry for the confusion.
+Now the "continue" will skip the new btrfs_bio_for_each_block_all()
+loop, which doesn't update @total_sector_nr.
 
-Guanghui
+This means if we hit a block that has no data checksum, we will skip all
+the remaining blocks no matter if they have data checksum.
+As @total_sector_nr will never be updated, and that test_bit() will
+always return false.
+
+Fix it by increasing @total_sector_nr before calling "continue".
+
+Fixes: 7425a2894019 ("btrfs: introduce btrfs_bio_for_each_block_all() helper")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/raid56.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index baaa18b3c958..885602ab6448 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -1679,8 +1679,10 @@ static void verify_bio_data_sectors(struct btrfs_raid_bio *rbio,
+ 			continue;
+ 
+ 		/* No csum for this sector, skip to the next sector. */
+-		if (!test_bit(total_sector_nr, rbio->csum_bitmap))
++		if (!test_bit(total_sector_nr, rbio->csum_bitmap)) {
++			total_sector_nr++;
+ 			continue;
++		}
+ 
+ 		expected_csum = rbio->csum_buf + total_sector_nr * fs_info->csum_size;
+ 		btrfs_calculate_block_csum_pages(fs_info, paddrs, csum_buf);
+-- 
+2.54.0
 

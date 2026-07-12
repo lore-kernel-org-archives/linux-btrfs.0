@@ -1,265 +1,102 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E3B51399346
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:58:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 182981F4611;
+	Sun, 12 Jul 2026 14:25:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783850306; cv=none; b=s42LDNdBguOsb3xRROxdh6ZF733uAWtR5fcFcIsFaViw7D9jpEkc/qI2wRiK0QuPo0oUXI6YIxX3Llo7RHxRbDyEEkLGbzQV/gVtZK/CmR6RMgLasUdAgnoXcFRhK4llDXMzBDURgK1fwBuEng2CBgVI5+j+gR3GRDNx9PtGrwo=
+	t=1783866324; cv=none; b=kNtzvTdvEO6+hUY8EnJJg7tZTi7S1/9lHemYjA+m70umA5b94CI+HfwMzYUdifozqsi1vZx4yhflhFZsWvOvPTqkppvlAyz19OF752/vGsF8KFhSvmvLAeY4qojm/+NQcTVBe5aRXmB8gu/an4a/HXYGdbfGsCbDmnA9M94wbI4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783850306; c=relaxed/simple;
-	bh=aU2eoxhPR3Ev/cevWaV9mqzTovHjauipDfKVhYCVsgI=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=Puu1G9RX0Uxp21ALmbH2Z2Z5QHsDAwVBHZkBOs+A4MHTdfKJxCppOAZOJN3VS6KeZFAXqX9xvF7wCVSHIjOqb0GY7XhdoBRWKK7Cp97YwJzYcUjZbxgYObPi5gyp/Bm+NxXIU2ebDrugu75ANMploye158KJLhuMdvfgW9NOGos=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=F2zWX/us; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=F2zWX/us; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1783866324; c=relaxed/simple;
+	bh=qaXEC32MfQGt8UOFvwvDkdREPyI2tYc6ieR1JjlanBY=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=b6z2f0DK1Cql6rC7L8J3Lk9N8IrllwqauyJrsOA6RlJtLjwt99cexkd8TraLWCIvmAxL2SBOQHR9iID7fcBxPP/bgVKsdU/aKizkvn84+veZOv4o/5mh0yUntHsvRglAoM0UWB5+sEExb/P7JhBaGJY0VW2VIWIdhAGkrysnuiY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Cv+1Z5rC; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="F2zWX/us";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="F2zWX/us"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id ECE1B76F61;
-	Sun, 12 Jul 2026 09:58:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1783850302; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=pM0bLkkzM+k2UWVaPtkJtyCQH5zWywBGZWPLZ5PpVfI=;
-	b=F2zWX/us7oH9re9hHWaYFebVRUYhIwVckOkB7bWOk106A0Y5ED4K5BFLVM2DvsUZLfrDJm
-	GCocPJaTY+ExZ8FkSWbzMyybZtcAwwwRD8pMyfae0fPeuy85KLHYHY2mJfHKxExgySYxLU
-	nZ6NpD9XKuokWeGDW96c6y+qNxyq0GY=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="F2zWX/us"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1783850302; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=pM0bLkkzM+k2UWVaPtkJtyCQH5zWywBGZWPLZ5PpVfI=;
-	b=F2zWX/us7oH9re9hHWaYFebVRUYhIwVckOkB7bWOk106A0Y5ED4K5BFLVM2DvsUZLfrDJm
-	GCocPJaTY+ExZ8FkSWbzMyybZtcAwwwRD8pMyfae0fPeuy85KLHYHY2mJfHKxExgySYxLU
-	nZ6NpD9XKuokWeGDW96c6y+qNxyq0GY=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id EF6E3779B5;
-	Sun, 12 Jul 2026 09:58:20 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 0Z3xKzxlU2rBPgAAD6G6ig
-	(envelope-from <wqu@suse.com>); Sun, 12 Jul 2026 09:58:20 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-Subject: [PATCH] fstests: btrfs: add a new regression test for RAID56 RWM
-Date: Sun, 12 Jul 2026 19:27:59 +0930
-Message-ID: <20260712095759.183211-1-wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Cv+1Z5rC"
+Received: by smtp.kernel.org (Postfix) with ESMTPS id AC0C6C2BCB7;
+	Sun, 12 Jul 2026 14:25:23 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1783866323;
+	bh=qaXEC32MfQGt8UOFvwvDkdREPyI2tYc6ieR1JjlanBY=;
+	h=From:Subject:Date:To:Cc:Reply-To:From;
+	b=Cv+1Z5rCH3aig77YeegRGn/McOg9Lv1G8eUwb4/A+yFKuM10V2iQj0aAYQwbraq38
+	 H5v0sqLOUsshlnhBll93rUWfUTLDE7hiAS9NOoQAqNa7R/2BBzxtfD5sEonyK2DkdH
+	 caBrBpM3gJxs6cvSi/f6URYM2p7dWfiSub9agrVMXb3xAiaacXLyXli8gp2UL94v3+
+	 Zr+JLA/5iPOlbW59MRk0kioxxc95uC/TAjQpgzDl8d65sN1mfdIJhyxQ8TDa6Xe47E
+	 FCmD7NGLfOOozLztLRRLcXPaLqUUiZ8FWj8qm3PWud+UQ4KbZzIc/WDeiXlhY6jkMM
+	 A9NaTaHf3BYMQ==
+Received: from aws-us-west-2-korg-lkml-1.web.codeaurora.org (localhost.localdomain [127.0.0.1])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88BA6C43458;
+	Sun, 12 Jul 2026 14:25:23 +0000 (UTC)
+From: Daan De Meyer via B4 Relay <devnull+daan.amutable.com@kernel.org>
+Subject: [PATCH 0/2] btrfs: allow reflinks into NODATASUM files
+Date: Sun, 12 Jul 2026 16:25:12 +0200
+Message-Id: <20260712-reflink-into-nodatasum-v1-0-9f27ef836073@amutable.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: ECE1B76F61
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	TO_DN_NONE(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	ARC_NA(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAAAAAAAC/yWMQQ6CMBBFr0JmbROoBoJXMS6mZSqjMjWdYkwId
+ 7fV5ft5/22glJgUzs0Gid6sHKVAd2jAzyg3MjwVBtvavh06axKFJ8vDsORoJE6YUdfFYAhjb8N
+ xGE8E5fwqHn9+4cv1z7q6O/lca9VwqGRcQvFznRbUTAn2/QvP6psfkwAAAA==
+X-Change-ID: 20260712-reflink-into-nodatasum-aff962f3794e
+To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ Daan De Meyer <daan@amutable.com>
+X-Mailer: b4 0.15.2
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1783866322; l=1580;
+ i=daan@amutable.com; s=20260712; h=from:subject:message-id;
+ bh=qaXEC32MfQGt8UOFvwvDkdREPyI2tYc6ieR1JjlanBY=;
+ b=vNqE8SGJ6710yEKKP1HPWKT1TlfVE9R+k90beYLrBA2RExdy4fn/nIlYELTYqZaTyOBgESCOc
+ IzHU400w4eXB8ifm3bSZ4kHuhWe8FcPtxX+w6JG5/4IOQX9GYI5m2OV
+X-Developer-Key: i=daan@amutable.com; a=ed25519;
+ pk=I1l+WwrtmzRgofA5SQ1wTuJi18fjh91w+f5uRkFeZEA=
+X-Endpoint-Received: by B4 Relay for daan@amutable.com/20260712 with
+ auth_id=868
+X-Original-From: Daan De Meyer <daan@amutable.com>
+Reply-To: daan@amutable.com
 
-There is a regression in btrfs RAID56 RMW, that data checksum
-verification can be skipped incorrectly, causing RMW to use the already
-corrupted data to generate parity, killing the last chance to recover
-the data.
+The primary use case for this series is building a NOCOW VM image from
+individual partition images that are COW and checksummed. Today those
+partitions cannot be cloned into the NODATACOW and NODATASUM destination,
+so tools fall back to a full copy. This makes provisioning slower and
+duplicates all of the image data up front.
 
-The test case create a special raid5 full stripe layout initially:
+Allow cloning and deduplication from a checksummed file into a NODATASUM
+file. The VM image can then share extents with the partition images.
+Existing checksummed extents are COWed once when modified, protecting the
+source checksums, while newly allocated extents use the destination's
+normal NOCOW behavior.
 
-            0                      32K                               64K
-  Data 1    |    file1, no csum    |   file 2, has csum               |
-  Data 2    |                  Unused                                 |
-  Parity    |                Parity                                   |
+The reverse direction remains rejected because the destination would
+expect checksums that do not exist.
 
-Then corrupt the on-disk data of file 2:
+Patch 1 prevents swap activation from bypassing the COW protection when a
+NODATASUM file references checksummed extents. Patch 2 relaxes the reflink
+restriction in the safe direction.
 
-            0                      32K                               64K
-  Data 1    |    file1, no csum    |   file 2, corrupted, has csum    |
-  Data 2    |                  Unused                                 |
-  Parity    |                Parity                                   |
+The xfstests branch is available at:
+https://github.com/kdave/xfstests/pull/6
 
-At this stage, if we read out file2, we can still rebuild the data using
-Data 2 + Parity.
-
-Instead do a new write to populate the unused data stripe:
-
-            0                      32K                               64K
-  Data 1    |    file1, no csum    |   file 2, corrupted, has csum    |
-  Data 2    |    file3, new write                                     |
-  Parity    |                Parity                                   |
-
-During RMW we should only skip data checksum for range [0, 32K) of data
-stripe 1, and still do checksum verification for range [32K, 64K) of
-data stripe 1.
-
-But a regression cause the kernel to skip data checksum verification for
-the whole range of [0, 64K).
-So RMW will use the corrupted data of file 2 to generate parity, and
-cause file2 to be permanently corrupted.
-
-For patched kernel or before the regression, RMW will verify the
-checksum of range [32K, 64K) of data 1, and rebuild using parity and
-data 2 before the new write.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Daan De Meyer <daan@amutable.com>
 ---
- tests/btrfs/352     | 103 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/352.out |   4 ++
- 2 files changed, 107 insertions(+)
- create mode 100755 tests/btrfs/352
- create mode 100644 tests/btrfs/352.out
+Daan De Meyer (2):
+      btrfs: reject swapfile activation if any extent has checksums
+      btrfs: allow reflinking from checksummed files into nodatasum files
 
-diff --git a/tests/btrfs/352 b/tests/btrfs/352
-new file mode 100755
-index 00000000..435a3ec7
---- /dev/null
-+++ b/tests/btrfs/352
-@@ -0,0 +1,103 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-+#
-+# FS QA Test 352
-+#
-+# Make sure RAID5 RMW detects corruption correctly.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick volume raid scrub
-+
-+# For _btrfs_get_first_logical()
-+. ./common/filter
-+
-+# No compression/nodatasum/nodatacow, as we require every
-+# data write to be as is on-disk, and we need to control
-+# datacsum on a per-file basis, so no global nodatacow/nodatasum
-+# mount options allowed
-+_require_btrfs_no_compress
-+_require_btrfs_no_nodatacow
-+_require_btrfs_no_nodatasum
-+_require_chattr C
-+
-+if ! _check_btrfs_raid_type raid5; then
-+	_notrun "requires either raid5 or raid6 support"
-+fi
-+
-+# The file layout are all based on 4K block size.
-+_require_btrfs_support_sectorsize 4096
-+_require_scratch_dev_pool 3
-+
-+_fixed_by_kernel_commit xxxxxxxxxxxx \
-+	"btrfs: raid56: fix an incorrect csum skip during rmw"
-+
-+_require_non_zoned_device "${SCRATCH_DEV}"
-+_require_scratch_dev_pool 3
-+_scratch_dev_pool_get 3
-+_scratch_pool_mkfs -d raid5 -m raid1  >> $seqres.full 2>&1
-+
-+# Use v2 cache, as v1 cache will use data space and screw up
-+# the data layout inside a full stripe.
-+_scratch_mount -o space_cache=v2,datasum
-+
-+# Balance data so that new data writes can always start at the beginning
-+# of the data chunk.
-+# The mkfs may put the first data stripe at a location that covers the
-+# 2nd super block, that will cause the first data to be at the middle of the chunk
-+# making it very hard to force the file layout.
-+$BTRFS_UTIL_PROG balance start -d $SCRATCH_MNT >> $seqres.full
-+
-+chunk_logical=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t chunk $SCRATCH_DEV |\
-+	grep -B1 RAID5 | grep -o "[[:digit:]]\+)" | sed 's/)//')
-+if [ -z "$chunk_logical" ]; then
-+	_scratch_unmount
-+	_scratch_dev_pool_put
-+	_fail "failed to grab the chunk logical bytenr"
-+fi
-+
-+touch $SCRATCH_MNT/file1
-+chattr +C $SCRATCH_MNT/file1
-+$XFS_IO_PROG -c "pwrite -S 0xcd 0 32K" -c sync \
-+	$SCRATCH_MNT/file1 >> $seqres.full
-+logical=$(_btrfs_get_first_logical $SCRATCH_MNT/file1)
-+
-+if [ "$logical" -ne "$chunk_logical" ]; then
-+	_scratch_unmount
-+	_scratch_dev_pool_put
-+	_notrun "unable to ensure the required file layout"
-+fi
-+
-+# The next 32K data will have data checksum
-+$XFS_IO_PROG -f -c "pwrite -S 0xdc 0 32K" -c sync \
-+	$SCRATCH_MNT/file2 >> $seqres.full
-+
-+logical=$(_btrfs_get_first_logical $SCRATCH_MNT/file2)
-+
-+# Corrupt the data stripe which has checksum
-+physical_d=$(_btrfs_get_physical ${logical} 1)
-+devpath_d=$(_btrfs_get_device_path ${logical} 1)
-+
-+_scratch_unmount
-+
-+echo "Corrupt data stripe at devpath $devpath_d physical $physical_d" \
-+	>> $seqres.full
-+$XFS_IO_PROG -c "pwrite -S 0x00 $physical_d 64K" -c sync $devpath_d \
-+	>> $seqres.full
-+
-+$BTRFS_UTIL_PROG check --check-data-csum $SCRATCH_DEV >> $seqres.full 2>&1
-+_scratch_mount -o space_cache=v2,datasum
-+
-+# Do a write that updates part of the stripe. This requires RMW, and
-+# with unpatched kernel, the csum verification will be skipped and generate
-+# parity using the corrupted data.
-+$XFS_IO_PROG -f -c "pwrite -S 0x42 0 64K" $SCRATCH_MNT/file3 -c sync \
-+	>> $seqres.full
-+
-+# Now check if we can still read out the data at stripe offset 32K
-+_hexdump $SCRATCH_MNT/file2
-+
-+_scratch_unmount
-+_scratch_dev_pool_put
-+# success, all done
-+_exit 0
-diff --git a/tests/btrfs/352.out b/tests/btrfs/352.out
-new file mode 100644
-index 00000000..972993b6
---- /dev/null
-+++ b/tests/btrfs/352.out
-@@ -0,0 +1,4 @@
-+QA output created by 352
-+000000 dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc  >................<
-+*
-+008000
--- 
-2.51.2
+ fs/btrfs/inode.c   | 29 +++++++++++++++++++++++++++++
+ fs/btrfs/reflink.c | 18 ++++++++++++++----
+ 2 files changed, 43 insertions(+), 4 deletions(-)
+---
+base-commit: cab9e339cfbc1a4e075e53e281dfb00391e1a6bb
+change-id: 20260712-reflink-into-nodatasum-aff962f3794e
+
+Best regards,
+--  
+Daan De Meyer <daan@amutable.com>
+
 

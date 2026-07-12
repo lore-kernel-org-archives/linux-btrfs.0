@@ -1,159 +1,260 @@
-Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 600DE3770B
-	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:29:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=68.232.143.124
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783848594; cv=fail; b=IywyyKZUdKnM6zPIIWq0JYAs5s6sY50BfslbD0vX5mJhq7ItkUL0+u5hl428LgK+Lalyctx6AfTWz26jG7PcR5OBKb2qpm/LJiA+MgeBjjKA+afj4s73Lvh4rYQVXXXUdfL/1oI2Q8JJWQupmEpB92KXZJo+vQ3HUlnyuhQUbgk=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783848594; c=relaxed/simple;
-	bh=h1UF7RGtB1Pbog0NUMV8tDJBLwjc+mTRVhKiphrplxs=;
-	h=Message-ID:Date:Subject:To:References:From:In-Reply-To:
-	 Content-Type:MIME-Version; b=IBYtDNXLVoHMpttIZj2w0qVQff6f63O/lAz/d7EWpnQTiBRjR4mdB5eVGxcEUcv507QM0JXPpVoqBMyaGbif5fYc/4JzoJUEE7LoLmQla0tV5bdfxwhjycRO+7FbQxeAsGXiarVDBB0AqE6MkYF81Zybx42OskeNaSXDUtCqTxE=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=le8XMMaI; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=JWwISYBn; arc=fail smtp.client-ip=68.232.143.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D85E336B07E
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:57:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1783850254; cv=none; b=WHtI9Yx+vIvDMlvSh9K3BVWznPU7SZd1TUTgmYrj663fGVkDvZ+SHY1xWafjETjiCX2BU6k/1rVMynNOQDPhJngu6OUAjFjsBkQxGSqIW0uXy6a6N571BKtmCCm8Rq+E6wPGrk56g4deKG/QdcHztP1nhVGWUEfAG2U66/elXIU=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1783850254; c=relaxed/simple;
+	bh=aU2eoxhPR3Ev/cevWaV9mqzTovHjauipDfKVhYCVsgI=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=Tg8oy6bPhW7jOJHlAnrZohHZ8f5zZqtWpa3if14vl5Kf2zmgiKCsYDGQkPxQvFPiFv4C8qF8KLoKCbTuyo8tuhsKIOShi6P84cnPSj+lMlbw4ryAlraZVV/HFT1QhlMUC31xLstwTbsUTwF+M1YSUssVjHCMg1LRP6ldqPYyQPM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nBmNKl+/; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nBmNKl+/; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="le8XMMaI";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="JWwISYBn"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1783848593; x=1815384593;
-  h=message-id:date:subject:to:references:from:in-reply-to:
-   content-transfer-encoding:mime-version;
-  bh=h1UF7RGtB1Pbog0NUMV8tDJBLwjc+mTRVhKiphrplxs=;
-  b=le8XMMaIjhfaRizggRMG/6ptFQDZEvVpgY3vf6ZZf38iLOPIMWDmmL/T
-   IpNyp29QMBSP6GK+QJXSSMhPk7p47SWhl2FVzcnGIEgH/eRHa2nfRMUq/
-   BJ7ClK/s2ddeNh4ok9NyYPdc23MzKYxrKa8uUXLaK6HN3WG1yfh7louk2
-   N7FQOrxxi+kJ3dQaHWlM8CMHeZ+JYdn4cpLDYtmiRDhSPm4DuaStzybOn
-   dNAQWi3AvSYSi4LyNe62Okg2wlPHmrr0KoRaQU7AEKVJlJVKcqble/DXQ
-   ZXNG2l1CX0sW42CIvbilRaf5WYlO7CIAcT++8tE2EQKBVMHqt8zwCHEmk
-   g==;
-X-CSE-ConnectionGUID: IWhiYcSiR/m9Sn00i1Ln5g==
-X-CSE-MsgGUID: UzapB2b4RHWrEq37gZ8WUQ==
-X-IronPort-AV: E=Sophos;i="6.25,154,1779120000"; 
-   d="scan'208";a="151773090"
-Received: from mail-southcentralusazon11012026.outbound.protection.outlook.com (HELO SN4PR2101CU001.outbound.protection.outlook.com) ([40.93.195.26])
-  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 12 Jul 2026 17:28:45 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=iPW23PHjcM91G0JgizBTppQ/n4IpPXrVCXWBSLUoSZUBKIe1af4qtHuyQ9yV/lAMqqhdzyF2zZlYMCwNBO9kfbrMLuEr9cLREcaCMN8V2CJqxVtO4ts+xehQcfhdf7k7eG8zE33/83kSWAW5fb7IrwQjN12KE5LkoDaaf78bqkfX4x3K/MDqn52TpFzh+lekj0P6wNxkKC4NMxlSLTaGM0td7seNh4bcHSMKvx6pUhpRbnzzr0BuuSXRzgLnthMwLZvDuRML09t4xjDhIkX+Iw/2bYWrLgXgC/Dy/haXf3D9ju9di/Ph8jcfCtADSw1gRcTqPqwoG1V5RwHeWDfhaw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=h1UF7RGtB1Pbog0NUMV8tDJBLwjc+mTRVhKiphrplxs=;
- b=kUwE4NblzynqELeBXx48zYLJMN3YlSfoucqHm5vJs4yelLE3PG8eqba9GLH0W9AWSeiJoAAjJpMGMj49hpEFJ4qch9WkkcDOZ2Ll37kB2DXVqyVNniC8YdyWmNt5tmKKOlkPKYVjATe1cKcGp/76J+4cVRG1u5iE90gmHrH7Amq9u8SEHPRdQOXtZ4OREZR2aGNZW8zmyM11EgvC66iSj1ejulGEWmdwHUu/ux1xyVg45Hn6vkp3W2sZLjBadPIoLg5SJg9H/Ma/YWRbqxslqKtffKM/zFf9AKIG49rwXyAeTfW3mdkaIgl+omSRn42kD0yD8lenLa+gjj8zzqdCAg==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=h1UF7RGtB1Pbog0NUMV8tDJBLwjc+mTRVhKiphrplxs=;
- b=JWwISYBn1JA3zPErHY4J0wvJ2Byd1pOf//YxFlWjltewxi4Bs9Y+/KgSzgCRU27/o7ZrIdLkc+D/EFSvrKh7/xfVISxogOwmtKsHWkt03U10b4j1Fnu3iNsuS8QP66VSdThNnbjrxQPPxQ6HOeVOQ5O5tD9JAT9E2wMldSMCqmE=
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
- by CH5PR04MB9645.namprd04.prod.outlook.com (2603:10b6:610:20e::12) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.181.18; Sun, 12 Jul
- 2026 09:28:43 +0000
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0181.019; Sun, 12 Jul 2026
- 09:28:42 +0000
-Message-ID: <e36ab0e2-47fd-4b50-948b-2d13a7b9b88d@wdc.com>
-Date: Sun, 12 Jul 2026 11:28:38 +0200
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix leaking BTRFS_FS_STATE_REMOUNTING flag
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <60a629f78bbd03c07e8907101a23368722c47662.1783153727.git.wqu@suse.com>
-Content-Language: en-GB
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-In-Reply-To: <60a629f78bbd03c07e8907101a23368722c47662.1783153727.git.wqu@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: FR5P281CA0006.DEUP281.PROD.OUTLOOK.COM
- (2603:10a6:d10:f2::16) To SA6PR04MB9447.namprd04.prod.outlook.com
- (2603:10b6:806:436::21)
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nBmNKl+/";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nBmNKl+/"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id CA4A077245
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:57:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1783850250; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=pM0bLkkzM+k2UWVaPtkJtyCQH5zWywBGZWPLZ5PpVfI=;
+	b=nBmNKl+/jH9wmthdFU/CWFZKigQQv5eN4P9SEFiHbGsX/Own+nvvcjaGucNxz9HwmhAo+4
+	1Q3P5N4vo4P+P1tpLp5dUMULktuKutGcw9mXOw4y4QuYmLGR2li5R4wlJMLGgAXRSbVI0b
+	/+pE2gRnGROkJ3HflEZVycwKn4B0vbc=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1783850250; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=pM0bLkkzM+k2UWVaPtkJtyCQH5zWywBGZWPLZ5PpVfI=;
+	b=nBmNKl+/jH9wmthdFU/CWFZKigQQv5eN4P9SEFiHbGsX/Own+nvvcjaGucNxz9HwmhAo+4
+	1Q3P5N4vo4P+P1tpLp5dUMULktuKutGcw9mXOw4y4QuYmLGR2li5R4wlJMLGgAXRSbVI0b
+	/+pE2gRnGROkJ3HflEZVycwKn4B0vbc=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 06375779B5
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:57:29 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id jA9uLQllU2qfPQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2026 09:57:29 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] fstests: btrfs: add a new regression test for RAID56 RWM
+Date: Sun, 12 Jul 2026 19:27:08 +0930
+Message-ID: <20260712095708.182997-1-wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|CH5PR04MB9645:EE_
-X-MS-Office365-Filtering-Correlation-Id: bcda2f58-1088-4398-5661-08dedff7f6bb
-X-LD-Processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
-WDCIPOUTBOUND: EOP-TRUE
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
- BCL:0;ARA:13230040|10070799003|23010399003|376014|19092799006|366016|1800799024|22082099003|18002099003|56012099006|11063799006;
-X-Microsoft-Antispam-Message-Info:
- /yuy4TF4xlhUhfulnpw34bOeN7ldVGAi3364eCiawrNRiuojIBf2xPkJsE2rh7deK9eZnyG8x05BjIMWJZLpMO3dY1BJwZ3zOEelu6JfG56vYqfA3AXL87aOfptkeCwa+nRdVIQbi/bu31Lh7S+2KsBdScmuEEZVz7A/PsiUmLjqCtfeqFerEYoNt3IvtT0rzgoqDG9U+HmBR8icE+Abrl2L3C6wPLx1sr0bNNNLXfQXxRmHOtEqy/UspZrBel2Zawc8Reuo6niaMDexobDt0EnPVNUdoCylTDaX5arUODILoklW2qIYsA7x8eaPtqzl5yOoSiBCCK86Ddzrvfa/jZvD4rkik3We1uTW3lRQuTwsf+y5WeSSL9H149C2NaktbhNzvkY2JqHcw0g7+YGBIh+Cle6MEepDs/saZCR+ExCMIjRr8BjVOXAPhkU8/z8+phwuGLBOB8OfrmKX3nW+zhyfOqrJgfQwt+JiDlXZReiB5dc/8RE1bbGm8+sFBqAPNcmz5gx6iyM+58SllQMe30EMXSaiusDcrNkZM1jwRpwQ+JDw+lEKzSKt6PpnPWtwNbOlf197dt8TbxF6ORbWscgZ9BATl6/tiFMvxXZEoNXxcMhdi/EetYNq7jZ/4/ByPOWEPgzUT9xDOAMEN632fisYz3YNQTJBegM1Fh71mEs=
-X-Forefront-Antispam-Report:
- CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(10070799003)(23010399003)(376014)(19092799006)(366016)(1800799024)(22082099003)(18002099003)(56012099006)(11063799006);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
-X-MS-Exchange-AntiSpam-MessageData-0:
- =?utf-8?B?SlRmbjloSFUxWjVOVXNGV2RNclJuZ3ZmNU56eUpFc1dyZWUyQ2xWMHdoMGsv?=
- =?utf-8?B?NGtVbktvUFliTU8rL2tpcFd0VVdlYzY5b0xsenFITTEwVU5qU21mMTVhS0ZN?=
- =?utf-8?B?cjBVODJZQnRKSWxMK2pzeTVUczBVdmsvbWI5eHI5M0dRbDRuTFVPNE0xWU1K?=
- =?utf-8?B?Y2tqRWpWOThnb1FpSVVCR3J0ck5QWi9BQjJoWHQ5VVNhVWtIL2c0cEk1Z3d4?=
- =?utf-8?B?TTQxVG4wdFpDYWVBTDhweU9SRjUyL2w1QzN2M1hicFYvT3dzRzh4aWFNckZs?=
- =?utf-8?B?YU05ZWRYeDJ6ZnkzRFNxZXJQRVJrd0NaZ1FzdS9ScTJJb1J0amxTbExlM1po?=
- =?utf-8?B?d3dRczRMUlhqa1M4SWtVbldSdzJSQmx2YTZqQnJ3aGRRQ2YrbGY3OXJCMnQ4?=
- =?utf-8?B?eDlJZk1hc0JTeEZlMy84RUU5Ykdxc1ZGOVpFanNNRlJxMWFNcVRGbW5lRElL?=
- =?utf-8?B?NkJMTjljcnhQNkZRVDhBZWtnVERjTllCaFlVTElVekFhN1lIRVdJRlM2TXVq?=
- =?utf-8?B?azRqeDh1NXplWkFLc1hWN2o4dWdZVCt6djUxZytDRTJSYW1aL2xROGFWYnJR?=
- =?utf-8?B?WlphVU1HTmVqWVNXeElEOEhMMnNpdXQwYmFyTExCTHFBSnBQWnZCTExPUFhF?=
- =?utf-8?B?RmxacjY4Zjk1MDFCTWZScXYrelFQSGRRRnJrU1ZXU1ZUckpOQmlXOVFvem5l?=
- =?utf-8?B?RjdzRlMyOUlLYkdNd3hSN2hvNG9mRmlMTStGVmRkb3orQVNGWCs4NzhkTnJn?=
- =?utf-8?B?NUFWV25zQUVXQy9MODNMdmM2VVRzL0xIS1dpdFo3WjBEWTlhcGZPaUxoL0hO?=
- =?utf-8?B?d0MxalgxSmc5SU9zcDJGUEwvVkJobC8vT21mK1dtNkh6d01jZ0o3ZFFqRUR1?=
- =?utf-8?B?UUg0V3FVYkVlQUNobnlqbjdGOFBrNU5hbmp3U1Y1TStMT2xIOUhvZFE3a0Zj?=
- =?utf-8?B?b0RjVWNJcHc2K3Jjd1FDTjh2Vy9CbVAvZ1hDTFV1Uy9CMjNDbGl5YktaRU9J?=
- =?utf-8?B?am9hT2J2VjRlL21ocEtwVWJna3dmb0FlTHI3Ri9xcFBqTUVVQ01CeVVBaVRD?=
- =?utf-8?B?TXNNcjhuSDZSV2ZaVEhMcC9xcWJxZ3ZUU2ZpVzRIRlp0dnJoOG5mckMvS2lu?=
- =?utf-8?B?QnNQT1gyR0x5dkJjRHdvUStKNlhnL3ZXSTJWZmxxZ2dLSEd1RFBGWXNmb1N1?=
- =?utf-8?B?OEVkREFnNnpVV21WcnNPUGRHbWcyWEdZdStTY1V1a0VGL2dxcE00aXZnWmVt?=
- =?utf-8?B?ZEk3YklxNWJHSUEvNEVZMWdYd3F6UnVlWUY3ZFducXpISGR5MFZQT3RVY0lS?=
- =?utf-8?B?TWQ0WGtEVFI1SkdhVjR0MVhmeitXMCtEQVFObU9vSXY3WnJMZVFjQlFmVDhV?=
- =?utf-8?B?dlpRTjFvOElWdE12L1lSLzNXbWVPa0NlT2JhRGZCbUg1cGVldjlTbkpUeG5u?=
- =?utf-8?B?ZnZSQytpTG4rSDQ3QU8vamg1Y0JicW1tdEhicFFyQUQraERFZGI0SFJIMDJ2?=
- =?utf-8?B?WjYvZEFjZ2xaUnA4Z1UrckhCZURpSkNXbVozRUV0NmRpbU5SSWFUT1dLYUFr?=
- =?utf-8?B?S01xTktubnMxc2xwSkFCT2FpTVVMSWlrZjlrYk1BMUhJeW1KVWJUM3JsN2xB?=
- =?utf-8?B?U0hzODdsN2ljR3hiam1OZmdhQTdLM0NiYUYrMERZaGlpM0ZQcldFbmpnbFQ2?=
- =?utf-8?B?Q0hhV1VkRWpWcWw1Ym1jNjNuWFdhaXZGZUlUODlOc29PNTMyVDkyUW04bE40?=
- =?utf-8?B?Uks2Nml3YVF5QWo4VytnWXNveVQwWlR2NER4d2pBdEc3R3VOUVo5UUNPNVgz?=
- =?utf-8?B?OWwwQ3ZvY2VsRWZJbGtVdDZtTGdTZWh5bDk2Yy94T2dBM2VDcHFjS0pKWWMy?=
- =?utf-8?B?bEcwMi84ejUrdnF2YnVQbTc4YmsxWnllTlBQTDZ1MlRuemVxZEVKV3Yzemg4?=
- =?utf-8?B?YnZnZEhQb0J2eDQyOElmRWFLRUhOSC9Ta1l4bWExNXN3RlM2SllGODNvOWFx?=
- =?utf-8?B?eU5SOW1yeW1pSGNnMkg0Rkx2TTlWK3JWb3F1WmY3UTJvMG1OSVR1dEYzWGxl?=
- =?utf-8?B?OHVzcHZQa09rekhPV1hVSDNpcTUwZnl0WlRPZzgwalkyM1JUOW5ONEh1akVS?=
- =?utf-8?B?YVAvL1VuSmc3MW9KTlY5MHAwRFdSUzVLQk80L0syYmF4c0RaTVJqdGtwdGI0?=
- =?utf-8?B?dWN2S1R0bkdjNFFHM1poVEN1MFJBUkVYdnNNMUtrMUVDSGZXREdtZkxLR1NF?=
- =?utf-8?B?Mk4xemhzVDk2T20yY3lieW5PZG84YkxXN2VQWTdtc2l1elFlR3hZWGZseE9Q?=
- =?utf-8?B?RUdPL1JiY1E4YUVySVNmSnNhQlVqWllVQkhNcWU3ekl3MGo2dG8yUE5kTGtt?=
- =?utf-8?Q?bEqAfSnQ7lwye605WrJ0i/dLOX0wHJ6N1pb7MqpOsuQ3J?=
-X-MS-Exchange-AntiSpam-MessageData-1: muTGmiux8UaLapDI1VI4OzgAUpYlr3l45XQ=
-X-Exchange-RoutingPolicyChecked:
-	JQ2+FaA9hO7bnjqYhkjiuaehGmJn7BKFBVYRGF28fShPcxP86ZIZ9Eqw8mweZD4AO33bbpc56r3C+Cm2jphUC6R3VnrklWL6eU4WHT/ry/GD1Do0A2U+0Q52CztoiIAo0Hx4LoS9GJe60KedhBJtPmv8vlsUMS+aQr3DRygWoPBfsrt4edLthzhsZfaGzZQGJIBKlsPewfcj+njsa+t+1fjltNeOE9jxIRnnd+R4nUEKiRCVBhQjSxYHSFzICBLrr8tKZEUc+YhCVIrO2/WeIYa9nOlBeJtqsd/HFvCS52qFk8fsG9wC2YCvlTcgGad+MqfhW6r+90WT6c7xDAb3uw==
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	D5S0HdL6eUymwIEqrygRWQ8DmPTHmClA+H8cjxB0pPKscVeJ8m4DorqNweuqmads8ZYl0i7HEMr01aYdnYcsh48xurKjtcxJ/byVOblSBGoZaqdDouS1ES3+8swuC67B/YuxKhyMt2fcNYaZZKK3u1huxt/Mig2DXRKhS0TammeRz7JTV0d5fZG/L3friB7dLv2g/+y3T9RQTk+zOAYs5KDlBoJSmODaPEmV+e88YLBSI1rMunKw1ZTOU7UMEXznMc+TyQrhgEfje/RlI6I+Y68ZVccCRzi52w3i9RX7HdnygtTpbxCrNiC91fw4kvhQiNN6OXe1G5YUjibD5LW1RFP8yxZTYva+zhkvUNwJEWcMww2DdDqmV4m5B/4sfNzyZKVUi+1QrF7f+hCfaKp81gNQhXscB0kPEOoJqv4SAOb2epwO87p/wqnewGdAa4JT/hdfTd110Q0REwmM6EHMT2X6GRmoW/PJPzUFs9KnokmjzHR5P3q4bj14FrGWqxCDD955fcXTfZQxRVfsQhML24+RJxfp6tixtDIKNS5cRYutj6P9xbflHUTAmS9dtgu88PY2GOCsBHYJF6wuSOqJWE83XZ5qU1DK3+pCR5ltWMNhRYjpt/UvDzIWTNGee3hX
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: bcda2f58-1088-4398-5661-08dedff7f6bb
-X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 12 Jul 2026 09:28:42.5141
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: TJgbZQKFpu13l6S9liaC7re1alSKE3BaIA6Za3Srv4YOa38SEGcw74m0BYjuyLCO6ENM0BYV6EkHorS3slKAJSngbPQgJJu3eWLVDMD8Q3c=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: CH5PR04MB9645
+Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_NONE(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_COUNT_TWO(0.00)[2];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Level: 
+X-Spam-Score: -2.80
 
-Looks good,
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+There is a regression in btrfs RAID56 RMW, that data checksum
+verification can be skipped incorrectly, causing RMW to use the already
+corrupted data to generate parity, killing the last chance to recover
+the data.
+
+The test case create a special raid5 full stripe layout initially:
+
+            0                      32K                               64K
+  Data 1    |    file1, no csum    |   file 2, has csum               |
+  Data 2    |                  Unused                                 |
+  Parity    |                Parity                                   |
+
+Then corrupt the on-disk data of file 2:
+
+            0                      32K                               64K
+  Data 1    |    file1, no csum    |   file 2, corrupted, has csum    |
+  Data 2    |                  Unused                                 |
+  Parity    |                Parity                                   |
+
+At this stage, if we read out file2, we can still rebuild the data using
+Data 2 + Parity.
+
+Instead do a new write to populate the unused data stripe:
+
+            0                      32K                               64K
+  Data 1    |    file1, no csum    |   file 2, corrupted, has csum    |
+  Data 2    |    file3, new write                                     |
+  Parity    |                Parity                                   |
+
+During RMW we should only skip data checksum for range [0, 32K) of data
+stripe 1, and still do checksum verification for range [32K, 64K) of
+data stripe 1.
+
+But a regression cause the kernel to skip data checksum verification for
+the whole range of [0, 64K).
+So RMW will use the corrupted data of file 2 to generate parity, and
+cause file2 to be permanently corrupted.
+
+For patched kernel or before the regression, RMW will verify the
+checksum of range [32K, 64K) of data 1, and rebuild using parity and
+data 2 before the new write.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ tests/btrfs/352     | 103 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/352.out |   4 ++
+ 2 files changed, 107 insertions(+)
+ create mode 100755 tests/btrfs/352
+ create mode 100644 tests/btrfs/352.out
+
+diff --git a/tests/btrfs/352 b/tests/btrfs/352
+new file mode 100755
+index 00000000..435a3ec7
+--- /dev/null
++++ b/tests/btrfs/352
+@@ -0,0 +1,103 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
++#
++# FS QA Test 352
++#
++# Make sure RAID5 RMW detects corruption correctly.
++#
++. ./common/preamble
++_begin_fstest auto quick volume raid scrub
++
++# For _btrfs_get_first_logical()
++. ./common/filter
++
++# No compression/nodatasum/nodatacow, as we require every
++# data write to be as is on-disk, and we need to control
++# datacsum on a per-file basis, so no global nodatacow/nodatasum
++# mount options allowed
++_require_btrfs_no_compress
++_require_btrfs_no_nodatacow
++_require_btrfs_no_nodatasum
++_require_chattr C
++
++if ! _check_btrfs_raid_type raid5; then
++	_notrun "requires either raid5 or raid6 support"
++fi
++
++# The file layout are all based on 4K block size.
++_require_btrfs_support_sectorsize 4096
++_require_scratch_dev_pool 3
++
++_fixed_by_kernel_commit xxxxxxxxxxxx \
++	"btrfs: raid56: fix an incorrect csum skip during rmw"
++
++_require_non_zoned_device "${SCRATCH_DEV}"
++_require_scratch_dev_pool 3
++_scratch_dev_pool_get 3
++_scratch_pool_mkfs -d raid5 -m raid1  >> $seqres.full 2>&1
++
++# Use v2 cache, as v1 cache will use data space and screw up
++# the data layout inside a full stripe.
++_scratch_mount -o space_cache=v2,datasum
++
++# Balance data so that new data writes can always start at the beginning
++# of the data chunk.
++# The mkfs may put the first data stripe at a location that covers the
++# 2nd super block, that will cause the first data to be at the middle of the chunk
++# making it very hard to force the file layout.
++$BTRFS_UTIL_PROG balance start -d $SCRATCH_MNT >> $seqres.full
++
++chunk_logical=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t chunk $SCRATCH_DEV |\
++	grep -B1 RAID5 | grep -o "[[:digit:]]\+)" | sed 's/)//')
++if [ -z "$chunk_logical" ]; then
++	_scratch_unmount
++	_scratch_dev_pool_put
++	_fail "failed to grab the chunk logical bytenr"
++fi
++
++touch $SCRATCH_MNT/file1
++chattr +C $SCRATCH_MNT/file1
++$XFS_IO_PROG -c "pwrite -S 0xcd 0 32K" -c sync \
++	$SCRATCH_MNT/file1 >> $seqres.full
++logical=$(_btrfs_get_first_logical $SCRATCH_MNT/file1)
++
++if [ "$logical" -ne "$chunk_logical" ]; then
++	_scratch_unmount
++	_scratch_dev_pool_put
++	_notrun "unable to ensure the required file layout"
++fi
++
++# The next 32K data will have data checksum
++$XFS_IO_PROG -f -c "pwrite -S 0xdc 0 32K" -c sync \
++	$SCRATCH_MNT/file2 >> $seqres.full
++
++logical=$(_btrfs_get_first_logical $SCRATCH_MNT/file2)
++
++# Corrupt the data stripe which has checksum
++physical_d=$(_btrfs_get_physical ${logical} 1)
++devpath_d=$(_btrfs_get_device_path ${logical} 1)
++
++_scratch_unmount
++
++echo "Corrupt data stripe at devpath $devpath_d physical $physical_d" \
++	>> $seqres.full
++$XFS_IO_PROG -c "pwrite -S 0x00 $physical_d 64K" -c sync $devpath_d \
++	>> $seqres.full
++
++$BTRFS_UTIL_PROG check --check-data-csum $SCRATCH_DEV >> $seqres.full 2>&1
++_scratch_mount -o space_cache=v2,datasum
++
++# Do a write that updates part of the stripe. This requires RMW, and
++# with unpatched kernel, the csum verification will be skipped and generate
++# parity using the corrupted data.
++$XFS_IO_PROG -f -c "pwrite -S 0x42 0 64K" $SCRATCH_MNT/file3 -c sync \
++	>> $seqres.full
++
++# Now check if we can still read out the data at stripe offset 32K
++_hexdump $SCRATCH_MNT/file2
++
++_scratch_unmount
++_scratch_dev_pool_put
++# success, all done
++_exit 0
+diff --git a/tests/btrfs/352.out b/tests/btrfs/352.out
+new file mode 100644
+index 00000000..972993b6
+--- /dev/null
++++ b/tests/btrfs/352.out
+@@ -0,0 +1,4 @@
++QA output created by 352
++000000 dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc dc  >................<
++*
++008000
+-- 
+2.51.2
+

@@ -1,59 +1,59 @@
-Received: from out162-62-57-210.mail.qq.com (out162-62-57-210.mail.qq.com [162.62.57.210])
+Received: from out203-205-221-210.mail.qq.com (out203-205-221-210.mail.qq.com [203.205.221.210])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1CFB73603C7;
-	Sun, 12 Jul 2026 03:13:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=162.62.57.210
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AA10E7478;
+	Sun, 12 Jul 2026 03:17:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=203.205.221.210
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783825992; cv=none; b=k6E1w4T1msnHfA6A08LjIg0QIO40udDWSXp4J13XNTepIroXed4Kr/JTuxEsMOaCkSNbDoadQ34yzj1hsa52jYf7V62bxFdWPeE95VmWk8t/O+E7SMmjZ8tdnW5u4rGGUR2CYNTXinsS5W1+H/EHPYGtTQ2dv49t6TSfFUVKeqY=
+	t=1783826275; cv=none; b=ApimkiicrnUgp1rYm+fByZP+by1QmWa6xdL4k9Ngr15Kg2NDDWeeUhFzc2g/AkDklQtvhjkSpp/GJrijEcKO5PvgZ3t0Q9AmFaixNYMcJz6I70iV52o4v7COyPeQeoIDbLN9W+ebFHz66LVL9Jhjxj28Zobay1QkQDYWG9uM7bs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783825992; c=relaxed/simple;
-	bh=yGktTK0x2UtIBGxjVkpIi2ZqHMtiUdKXXpl3AtPz60I=;
+	s=arc-20240116; t=1783826275; c=relaxed/simple;
+	bh=tW3LrhxpvkYaxfBk7LB1LK1YgLjEyNDzr6CXNckSnmE=;
 	h=Message-ID:From:To:Cc:Subject:Date:In-Reply-To:References:
-	 MIME-Version; b=YEL7kXHKQo4fJk92OwmmDni1QNvJPTpiqrBs65dd8/VbZWnB1eYZZ7DlGX6WFnRT8Ai3jNSckWuI5ruvY4UagWJ4sbRtoP4iWucFhQJ4kn/b5p+wqq/DJBJ/4i97zH0nFJhRe6o8R1lQQVinj4/NQAjJqjUaXobZj+3Un4oXuh4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com; spf=pass smtp.mailfrom=qq.com; dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b=sDcKK5uP; arc=none smtp.client-ip=162.62.57.210
+	 MIME-Version; b=BQo8lBBfpvLC40b40E9peemuHTelPKiyoxsGZTlsomZGkTcS+H2IQXebTePV4//5gfi9KbS9Zokd7/YXDIrmCht6ny8sW+yeOKcx4AhwB/mSQrBgY1r4eBhOqs0zUFUmmIcKj6TCwT1DvEfmHH0nSP5BARFNtD8qGCYhZ8wcLXI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com; spf=pass smtp.mailfrom=qq.com; dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b=jxvYxpNr; arc=none smtp.client-ip=203.205.221.210
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=qq.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b="sDcKK5uP"
+	dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b="jxvYxpNr"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=qq.com; s=s201512;
-	t=1783825975; bh=SdNWpuryue/SUm0h/v11nfUAhB9C52OKJqMi6OSF0VY=;
+	t=1783826264; bh=keaGbqQUWrQv6yJ4G371G5+fnEtJrhavL5LB5rAKcPg=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=sDcKK5uPjy9bhbPWS9XN8IeJXbu70tq9UKL3+mJmdy+9Gn3HhUcPRl3sftOVMbJrB
-	 tl9C/Aid4lATdmwqvw4WGlIxvvvqAMJjPf0nvz5BAQHGaf99fUe20hq0hWnFLMa1LM
-	 cjSy0pBt+jasjxVP/kRONtzq3uLv7AKGnc5sPaZM=
+	b=jxvYxpNr9dW02GjJDbjHVAdDp3ElncpDbN+wrYPjQlKLOuwP7OWFaH/JdBMpz9JCj
+	 kTmYB43XmNyq5fyxqI6XvymkStD3JAGginHDSNVBB/1GUjJJnbW+NBaj4y4pF0rKha
+	 L9ux44/S+na+NEuoedO0EGq4G/Nz+YvsKGReHQWQ=
 Received: from ubuntu.. ([218.196.207.7])
-	by newxmesmtplogicsvrszb51-0.qq.com (NewEsmtp) with SMTP
-	id 2DC3F2A1; Sun, 12 Jul 2026 11:11:28 +0800
-X-QQ-mid: xmsmtpt1783825888tsl81ynxp
-Message-ID: <tencent_19048AD99E6321356E0F10A131F254603C08@qq.com>
-X-QQ-XMAILINFO: N/WmRbclY25GRqBOdTRBTfYM/6LE4yuhZFijENdHQnpv1PdH906zFt4nLfoBYG
-	 FaAXzsB6NWrWHQxUrvh2LOXFhKWBGG2GP7sDTWyTUjLX433BTnVIC9dFmvfaqdeVE0EdccFGZZLE
-	 QkvbgECMlUNCEg0hOZ+pufGokwtPZZbanhKwwdAKontM8z9tpA3jU6ERu3Tytco2C77dx5xlKF84
-	 L+nPNzjXMDpVH6LjCF6SdMOmKDv45yCtfNJPw6TcQtXUhkAl0Zh6aC7E0D6eiQd0/zjaa8ee5o6R
-	 QM3vCDzhTNkW/QL3jeuPu7hEquGf4ULUNUD6jVuz63HauDk2r7LerFVpQerbQg8hvV0zD8gK2nhL
-	 xGBCtQfP71PDUciRowgQPJKMkmCOfFeUdvNMR7cLmTvBcIg4tLc3Nt77AXf9ST6CsTozUq4dtJpG
-	 vI0tttWrwEf15W1sCI2lAVJtxqTRVQ3x3Tuzf2LilRvynqulKrsgmn9xX4Ck9FqFdvewVDykkxJ1
-	 TRnYvDGrAA+vaKGmIQ3+3cVByID/SC61YYnLe1Ao5BuuWZ48TyztSS77FnwgAM9H7tfZwjJSqR4p
-	 n2H+4yV21U0zeeNx6zCC7mf375j72FLeMUrd0I51LD0RB3NBtYgx4/Z+FcOOiDy0TrKfku+9u7QQ
-	 5wU6XCuxDcOlpiSel1lQIo+7Us9VP9qRldktCkR04u5hMMcIF6Be3jMR93nYbQSXd+AV38EsGiRd
-	 og/9ymPBqjh9uImbxQkAoidN142xChtB00g/p2FVhiTP8RquSLCKBpo1xWtNWdkgTE8uOaJxYTTx
-	 exqN4zmMAP396yJ4cWPnN8+q77bpKqZMZ1/xRaozwYXYHGNLZ8uhQfmx9rU24DazKQoooF+Y0lpC
-	 UF2/QWVFYRUPvEYRUDHMum1mpfRWnqOhRhYrP9e9Otpdo+NQI9SEDNLYyU3ARJ26fZOIjvF0H+zR
-	 XPDEwDoc5qFJqtQEK73ltHh5pdVcq0l7fKCOfUYRYf5/16WxTq0s2aVrLnxsgZZ9lTZRE4JPCIGV
-	 BT8prlKv/sxUjb+olt977BbvICzMY=
-X-QQ-XMRINFO: Nq+8W0+stu50tPAe92KXseR0ZZmBTk3gLg==
+	by newxmesmtplogicsvrszc56-0.qq.com (NewEsmtp) with SMTP
+	id 46A13441; Sun, 12 Jul 2026 11:17:42 +0800
+X-QQ-mid: xmsmtpt1783826262t5p6z940u
+Message-ID: <tencent_9F36B70488B79803AA2A9E02C52C4FC41007@qq.com>
+X-QQ-XMAILINFO: MxdSvGmuhzbKh5OFHbV26xXRTr06j6uUic3n5pukRDQNYrks8J27yHtb0me08N
+	 LuumBA3O60+HqrieouHGo0SnozNnE58U30ssZeS9oTgam9yvHwnkr5sfgTc53s3Yj+QWNkJvIN9s
+	 TwiqatI3UhorE26BXqdnQAGE3tVDsw82BMOsD5M3ITTyHBZjtY5ZhpzjBY+3Giu19EukqYiV+w9u
+	 cKmjkwDN/V5WwI8Dg3dPldSftf+o9ImUe/5LfZQ4ZshX/dmnyuKXCfuDoI08Et6GkIbs/nc72VcK
+	 8Bkh5el358JRWhvx+FO0zGzXQYzRu4KWtEe9M1QmdKjSQz4pQjFsVUHW2tKVKlhU0eRxrZRgzlYt
+	 SzAtVh0QuVOzxQZKxr8ghwqrk2OtGAItshiqShNfDtix8sG614cXqYgAQBXmwIT/Dw3l8saEhgEZ
+	 Gntjfq4821r/8bx8sUIsg3aR65TsEE8sqBuGAY+9RltudddhM+C80ueumOKNwdOeblw6YOE/LHTh
+	 N+72K2RlQQ10yXwv97TOAC6PDDr3+oeozJBkYZ0fkHVJzfzZDnqiBLfxPfnDr6CxMCgyLvcgRN3k
+	 MrT/xgGLhE5kJebghLneDqhskNyDNL3duEcNqJesIchSGQkZO0Qq+63P0UP0Cq8jqJ+wGsIlgW44
+	 1KpWhmQk7esPtVBiY7dHRbyeoDJ5SMazTT+UXC8SGCTb//bstHshU48U3K5CTdli+gh3I+qpFKOY
+	 0ZWiGKmsG6JYhn7sZk+ay/okza2J5HRr9k3YLRCGoTz7OvNNaKrWhpsy+PPCTUj/NJedcrSzAns3
+	 gzPIRtvEm11CppJKiyfsygKMXa6gniy4Cl8hKUuqmxUPf+uRcHmDGc4Jg0vLSfNkxhAAwupidZZf
+	 +1fGYiOw2jFS2R9pS6JiR1VfF2iK/lhuYzCt4vL2ksX+9f8xhTSfEf2HuQYqcWLDEzGKbeTAD/0W
+	 7RkapUop49cFuRxlUCPwzbDhLwnC2+9U4vKgP4JgfdrEOe7+VT2SQEaF3ce6VIS4pWHHSIsPIggh
+	 /3TFJN5zbJM5fj7lz9HQW7tQqiT7IVZ9e9FhmXEKY9aomTu7Gq/ntxnVrBLRZBY67gAclNBel0XN
+	 +ws6ITs/yEG96nvC0=
+X-QQ-XMRINFO: MPJ6Tf5t3I/ylTmHUqvI8+Wpn+Gzalws3A==
 From: Guanghui Yang <3497809730@qq.com>
 To: Chris Mason <clm@fb.com>,
 	David Sterba <dsterba@suse.com>
 Cc: Qu Wenruo <wqu@suse.com>,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
-	Guanghui Yang <3497809730@qq.com>,
-	stable@vger.kernel.org
-Subject: [PATCH v2] ext4: propagate errors from fast commit range replay
-Date: Sun, 12 Jul 2026 03:11:25 +0000
-X-OQ-MSGID: <20260712031125.1699521-1-3497809730@qq.com>
+	Guanghui Yang <3497809730@qq.com>
+Subject: [PATCH v2] btrfs: free mapping node on duplicate reloc root insert
+Date: Sun, 12 Jul 2026 03:17:28 +0000
+X-OQ-MSGID: <20260712031728.1699856-1-3497809730@qq.com>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <tencent_39D68A519E8921206E77105E313354703C08@qq.com>
 References: <tencent_39D68A519E8921206E77105E313354703C08@qq.com>
@@ -65,91 +65,41 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-ext4_fc_replay() stops replaying fast commit tags only when a tag
-handler returns a negative error. However, ext4_fc_replay_add_range()
-and ext4_fc_replay_del_range() currently return 0 from their common
-exit paths even after internal failures.
+__add_reloc_root() allocates a mapping_node before inserting it into
+rc->reloc_root_tree.  If rb_simple_insert() finds an existing entry, it
+returns the existing rb_node and leaves the newly allocated node unlinked.
 
-This hides errors from ext4_fc_record_modified_inode(),
-ext4_map_blocks(), ext4_find_extent(), ext4_ext_insert_extent(),
-ext4_ext_replay_update_ex(), and ext4_ext_remove_space(). As a result,
-a failed ADD_RANGE or DEL_RANGE replay can be treated as successful and
-the replay code may continue with subsequent fast commit tags.
+The error path then returns -EEXIST without freeing the new node.  Since
+the node was never inserted into reloc_root_tree, the later cleanup in
+put_reloc_control() cannot find it either.
 
-This is particularly problematic for DEL_RANGE because it may already
-have marked blocks as free before ext4_ext_remove_space() fails. If the
-error is swallowed, replay may continue from a partially applied range
-operation.
+Free the newly allocated node before returning -EEXIST.
 
-Return the saved error from the common exit paths and make the
-ERR_PTR() cases in ADD_RANGE store PTR_ERR() before jumping to out.
+The callers currently assert that -EEXIST should not happen, so this is a
+defensive cleanup for an unexpected duplicate insert path.  If the path is
+ever reached, the local allocation should still be released.
 
-Fixes: 8016e29f4362 ("ext4: fast commit recovery path")
-Cc: stable@vger.kernel.org
 Fixes: 57a304cfd43b ("btrfs: do not panic in __add_reloc_root")
 Signed-off-by: Guanghui Yang <3497809730@qq.com>
 ---
 Changes in v2:
-- Add Fixes tag for the commit that made the duplicate-insert error path reachable.
+- Add Fixes tag as requested by Qu Wenruo.
 
- fs/ext4/fast_commit.c | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+ fs/btrfs/relocation.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/fs/ext4/fast_commit.c b/fs/ext4/fast_commit.c
-index 8e2259799614..fbb486d917b0 100644
---- a/fs/ext4/fast_commit.c
-+++ b/fs/ext4/fast_commit.c
-@@ -2196,8 +2196,11 @@ static int ext4_fc_replay_add_range(struct super_block *sb, u8 *val)
- 		if (ret == 0) {
- 			/* Range is not mapped */
- 			path = ext4_find_extent(inode, cur, path, 0);
--			if (IS_ERR(path))
-+			if (IS_ERR(path)) {
-+				ret = PTR_ERR(path);
-+				path = NULL;
- 				goto out;
-+			}
- 			memset(&newex, 0, sizeof(newex));
- 			newex.ee_block = cpu_to_le32(cur);
- 			ext4_ext_store_pblock(
-@@ -2209,8 +2212,11 @@ static int ext4_fc_replay_add_range(struct super_block *sb, u8 *val)
- 			path = ext4_ext_insert_extent(NULL, inode,
- 						      path, &newex, 0);
- 			up_write((&EXT4_I(inode)->i_data_sem));
--			if (IS_ERR(path))
-+			if (IS_ERR(path)) {
-+				ret = PTR_ERR(path);
-+				path = NULL;
- 				goto out;
-+			}
- 			goto next;
- 		}
- 
-@@ -2257,10 +2263,11 @@ static int ext4_fc_replay_add_range(struct super_block *sb, u8 *val)
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index fb85bc8b345c..7e451e587726 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -588,6 +588,7 @@ static int __add_reloc_root(struct btrfs_root *root, struct reloc_control *rc)
+ 		btrfs_err(fs_info,
+ 			    "Duplicate root found for start=%llu while inserting into relocation tree",
+ 			    node->bytenr);
++		kfree(node);
+ 		return -EEXIST;
  	}
- 	ext4_ext_replay_shrink_inode(inode, i_size_read(inode) >>
- 					sb->s_blocksize_bits);
-+	ret = 0;
- out:
- 	ext4_free_ext_path(path);
- 	iput(inode);
--	return 0;
-+	return ret;
- }
  
- /* Replay DEL_RANGE tag */
-@@ -2320,9 +2327,10 @@ ext4_fc_replay_del_range(struct super_block *sb, u8 *val)
- 	ext4_ext_replay_shrink_inode(inode,
- 		i_size_read(inode) >> sb->s_blocksize_bits);
- 	ext4_mark_inode_dirty(NULL, inode);
-+	ret = 0;
- out:
- 	iput(inode);
--	return 0;
-+	return ret;
- }
- 
- static void ext4_fc_set_bitmaps_and_counters(struct super_block *sb)
 -- 
 2.34.1
 

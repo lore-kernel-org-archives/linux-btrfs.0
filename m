@@ -1,131 +1,158 @@
-Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BACA032D0F5
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2026 16:09:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.158.5
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 60D58335BB4
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2026 18:35:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783958981; cv=none; b=qFeD/L7VC9Ho+EtNVll3HtEHCvyYacWh3Xmppx1ThPTYFAQcrmayHCY0sjofRhfasBiYdcCjBT1Ez9KoU4HFNtO+KQPMtns1HbCqdngHphQWiiSh4BuhAGospEbfQe2P+k6iumkkMcc+DQJCv0172Q1VMQkzlbDZ6KgrPb/SYfE=
+	t=1783967718; cv=none; b=BfwT4aa1hel7RiVIOXRC9gBnO9LNTdqzE0YFj2IrJjUqOypc8C8oyooCfpkBrLg1nfVk0b0eq6UzvLhJW+/vHDjFGOumeG2It4/d87+iHxB9G8iJf8ghRaGvnqzsqC0qR2fduZqGIr7L1Ry5ZjfeFNdeM4Km5VlxeH1seuLZa1w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783958981; c=relaxed/simple;
-	bh=s8w9VfSHAdI6tOsd/o3bKxrQ55C1CPICE3ClYQ0NYTQ=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=CdtzOeJ2qrcVQHtChOqawoId9Q3BohYrfqdI7oHR4qGhP2gpD5U8ZIy6p58yJWComX2X1bnHyCAndk33KLhOhsDFpKxKObnmY565UwMroAKXCF6oU9Ne9XZ5wQft89Fe9dKRcxTGAqvD6HhOxPmzQBhOtaAx4plOmtobJWBld+w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=YiiWY6ql; arc=none smtp.client-ip=148.163.158.5
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
+	s=arc-20240116; t=1783967718; c=relaxed/simple;
+	bh=gO43hj00QUMbX6Hl1kz27SMMISYdWOvo3a1NkDoqY70=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=hP50DvGGdd8qRzT35SdVpt6CFz1mj0gvl7k/F6gBFBc8rRvTe21usOqkYhFtf2WIdQmfSOO1eGJZNY6r0aSoE1o89eU+9UlWKNNJkaRBdmzz3fh0+SEsT/0iouYw2cCL3KQggTfRGtikhd3rcdl/yVM5H4eOaGg7du84PTff2Es=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Lvczl0c1; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=tdmLvrc6; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=vKpkzqR6; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Rv2a3opP; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="YiiWY6ql"
-Received: from pps.filterd (m0356516.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 66DFER962774024;
-	Mon, 13 Jul 2026 16:09:36 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=cc
-	:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pp1; bh=UbHk0o
-	LS8T+8YPRbqDue+fKpI70AtEJm0oKyyoetT8w=; b=YiiWY6qlLaFgmwAa6FeNv5
-	beHkTyKGU2n8i8pV+rHsUX7SaqeMABxPYmthYR6MdDI1iX52uqAOgDdnvydz3VTR
-	pnaOI1ESAxbQlw4b++CWLCFvk4j/7YHhQhfPDUfe5s3nhwJbSeaVQ/NekUnRSREP
-	84jE4ds4MVLtgogSdbGGTaoiggRnOyMPZcLkPElLNBAOHgI2zpFyyexhjYmhpt8r
-	B+PZMxF2oFPLBwVLgTNpPFoaAtB1oqPrsI1T6Mp5+ckOeU4WHmj12Vwo1nCUCawB
-	LcNULVEpfouqoc2c1FFvW079QwPqD4rfDtH4c0EEQJ+kckJjvfndNFLXSjcQpfkA
-	==
-Received: from ppma11.dal12v.mail.ibm.com (db.9e.1632.ip4.static.sl-reverse.com [50.22.158.219])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 4fbf2a179r-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 13 Jul 2026 16:09:36 +0000 (GMT)
-Received: from pps.filterd (ppma11.dal12v.mail.ibm.com [127.0.0.1])
-	by ppma11.dal12v.mail.ibm.com (8.18.1.7/8.18.1.7) with ESMTP id 66DG4aFV027590;
-	Mon, 13 Jul 2026 16:09:35 GMT
-Received: from smtprelay01.fra02v.mail.ibm.com ([9.218.2.227])
-	by ppma11.dal12v.mail.ibm.com (PPS) with ESMTPS id 4fc2uxx6qf-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 13 Jul 2026 16:09:35 +0000 (GMT)
-Received: from smtpav06.fra02v.mail.ibm.com (smtpav06.fra02v.mail.ibm.com [10.20.54.105])
-	by smtprelay01.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 66DG9XPB61800882
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 13 Jul 2026 16:09:33 GMT
-Received: from smtpav06.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 86DFE20049;
-	Mon, 13 Jul 2026 16:09:33 +0000 (GMT)
-Received: from smtpav06.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 46FBB20040;
-	Mon, 13 Jul 2026 16:09:33 +0000 (GMT)
-Received: from [9.111.32.211] (unknown [9.111.32.211])
-	by smtpav06.fra02v.mail.ibm.com (Postfix) with ESMTP;
-	Mon, 13 Jul 2026 16:09:33 +0000 (GMT)
-Message-ID: <8cff9612-e5f4-4621-843e-0582493119fe@linux.ibm.com>
-Date: Mon, 13 Jul 2026 18:09:32 +0200
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Lvczl0c1";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="tdmLvrc6";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="vKpkzqR6";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Rv2a3opP"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 8BDE377A6F;
+	Mon, 13 Jul 2026 18:35:13 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1783967715;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gyyYLVCgbh2lDrdJSvE0jtlq+Hjv06FvQbleHNZ0ATI=;
+	b=Lvczl0c1RtIHcrWXX5SWFm7PMIsvTRyn/c1p1w1JV61Bzarw8aRtBrrxKfEjixJYXOQ8CX
+	K1ZrqE8kLq1Ax/beMMBz+qPVDUYGDxfeCW8QqtL0GANZ3TmKCiSVH46f7EGIsDAnDcJq8z
+	wHMeSZJvF6cfdQYKC6nyo6vZGxICuIs=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1783967715;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gyyYLVCgbh2lDrdJSvE0jtlq+Hjv06FvQbleHNZ0ATI=;
+	b=tdmLvrc6RjP8+2YJAieKdLBrGoQrkqPy5Txdk01wqx3O487d4G2J0xGbbiJfubAtt+nRCa
+	hqoJuwkij4U7sSAQ==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=vKpkzqR6;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=Rv2a3opP
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1783967713;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gyyYLVCgbh2lDrdJSvE0jtlq+Hjv06FvQbleHNZ0ATI=;
+	b=vKpkzqR6LUJwN3U6jn7z+/C7TdlTwtU5A3aBD9pyiCo6j1OAYTC/rYo1ZY99EsLweRSK8I
+	Bz+Fy5tjnJC/iRHV3XwWEMvXQumvGuzSaBuM+/kJVzjZutRshkwSc4gS607z6zHrHTffv3
+	1zcidtOAJJtIl8J5zn1kLaOTMKSZxNk=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1783967713;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gyyYLVCgbh2lDrdJSvE0jtlq+Hjv06FvQbleHNZ0ATI=;
+	b=Rv2a3opPhKeFrxoyPBoT5b9EXCfh0ytVfQxkeqZUuOF06CUGt34YTQPACluPRr2lQteFm+
+	WvprIx+iWBvOS9BQ==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 71167779AE;
+	Mon, 13 Jul 2026 18:35:13 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id +39bG+EvVWq4HgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 13 Jul 2026 18:35:13 +0000
+Date: Mon, 13 Jul 2026 20:35:08 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Hongling Zeng <zenghongling@kylinos.cn>
+Cc: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, zhongling0719@126.com
+Subject: Re: [PATCH] btrfs: Add missing sctx check in cleanup path
+Message-ID: <20260713183508.GA8426@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20260707091604.207222-1-zenghongling@kylinos.cn>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: btrfs lockdep issue
-From: Christian Borntraeger <borntraeger@linux.ibm.com>
-To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <5a9d9847-4ae6-43c4-afdc-6e5fa51d6117@linux.ibm.com>
-Content-Language: en-US
-In-Reply-To: <5a9d9847-4ae6-43c4-afdc-6e5fa51d6117@linux.ibm.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-Spam-Info: AW1haW4tMjYwNzEzMDE2MyBTYWx0ZWRfXz1bGlca2PrZ+
- FheEDEzHdObz7KkqWQnfYoyxbUUaqGdO1iHlUGyHqcCzrsnGGvhenjbhYbNtSLc5nSlw3BUVq0N
- jQvSoTNOMCulRTdcPHFJCbQ6sjDz5eg=
-X-Proofpoint-GUID: gbow-90xrARTgZOJdJ6vSZq22OylZs3G
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwNzEzMDE2MyBTYWx0ZWRfX3SSIOj9e1nof
- Qsz4vj1Pgi2sI/cHVP4+sjo3+91yq/11x+m6RSNeOJJJf1THw/04z4/RwplFu+JL99FvIucPuc7
- iDXYm7n2CdaSaeIROxJJcdLK2jfLS8Ym1rUE/iNei5BgupxVjSPwMmbzZtG0qqsBRElWr94AaX8
- ruHIF9cOPccBfkiN0F9vP6mmV3LSHCazj1VlvYg9ZiZYDiNWha4ppdnuqN7dLktrYBYMiBYWt2F
- LQ2VkxT/rT3Hlp7hPC4L0ixfvozHra62RB0bzIu+mIP3gTpb2RCXnNfglh8AdaVTO2VkjW1TCkJ
- aWnBOyP9h82yK73WioldcL5njphdoO+lX0Drpsssi/S4jia4LR7kUSjq9uQRCuJpVoKstamy3uB
- TgXMXLQVZ2ucbQA10JHSsVkVANRQU0PmwMPU0VgBXg8ywGLlrTrnGpJZ8uweWwQWPQ2smtyVwIp
- eAOoBROspl8V3wAOYeg==
-X-Proofpoint-ORIG-GUID: gbow-90xrARTgZOJdJ6vSZq22OylZs3G
-X-Authority-Analysis: v=2.4 cv=PvajqQM3 c=1 sm=1 tr=0 ts=6a550dc0 cx=c_pps
- a=aDMHemPKRhS1OARIsFnwRA==:117 a=aDMHemPKRhS1OARIsFnwRA==:17
- a=IkcTkHD0fZMA:10 a=RAioF0-LDSMA:10 a=VkNPw1HP01LnGYTKEx00:22
- a=RnoormkPH1_aCDwRdu11:22 a=Y2IxJ9c9Rs8Kov3niI8_:22 a=pxOOfproQsSi8mq9Or4A:9
- a=3ZKOabzyN94A:10 a=QEXdDO2ut3YA:10
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1143,Hydra:6.1.134,FMLib:17.12.100.49
- definitions=2026-07-13_04,2026-07-10_01,2025-10-01_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- priorityscore=1501 malwarescore=0 bulkscore=0 impostorscore=0 adultscore=0
- clxscore=1011 lowpriorityscore=0 spamscore=0 suspectscore=0 phishscore=0
- classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
- reason=mlx scancount=1 engine=8.22.0-2606150000 definitions=main-2607130163
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260707091604.207222-1-zenghongling@kylinos.cn>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Flag: NO
+X-Rspamd-Action: no action
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FREEMAIL_ENVRCPT(0.00)[126.com];
+	FREEMAIL_CC(0.00)[fb.com,suse.com,vger.kernel.org,126.com];
+	RCPT_COUNT_FIVE(0.00)[6];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,suse.cz:dkim,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 8BDE377A6F
+X-Spam-Score: -4.21
 
-Am 13.07.26 um 14:07 schrieb Christian Borntraeger:
-[...]
+On Tue, Jul 07, 2026 at 05:16:04PM +0800, Hongling Zeng wrote:
+> Add sctx NULL check in the sort_clone_roots cleanup path for
+> consistency with other cleanup paths in the function.
+> 
+> Signed-off-by: Hongling Zeng <zenghongling@kylinos.cn>
+> ---
+>  fs/btrfs/send.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 3ae480c7474b..2d81fac03a3d 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -8250,7 +8250,7 @@ long btrfs_ioctl_send(struct btrfs_root *send_root, const struct btrfs_ioctl_sen
+>  		free_orphan_dir_info(sctx, odi);
+>  	}
+>  
+> -	if (sort_clone_roots) {
+> +	if (sctx && sort_clone_roots) {
 
->   Possible unsafe locking scenario:
->         CPU0                    CPU1
->         ----                    ----
->    lock(&fs_devs->device_list_mutex);
->                                 lock(&fs_info->tree_log_mutex);
->                                 lock(&fs_devs->device_list_mutex);
->    rlock(&type->i_mutex_dir_key#2);
->   *** DEADLOCK ***
-> 2 locks held by (udev-worker)/1653:
->   #0: 0000016c727051c8 (uuid_mutex){+.+.}-{3:3}, at: btrfs_control_ioctl+0x102/0x1e0
->   #1: 00000069238564d8 (&fs_devs->device_list_mutex){+.+.}-{3:3}, at: device_list_add.constprop.0+0x148/0xc60    
+The check for sctx is indeed missing but in the else branch the
+condition is inside the for loop:
 
-So some additional detauls
--------
-            
-this was a udev-triggered btrfs device scan (BTRFS_IOC_SCAN_DEV) of
-/dev/dm-8. The scanned device belongs to the mounted btrfs root filesystem
-(multipath, the path flapped between /dev/mapper/mpathg2 and /dev/dm-8),
+  for (i = 0; sctx && i < clone_sources_to_rollback; i++) {
 
----snip---
-BTRFS info: devid 1 device path /dev/mapper/mpathg2 changed to /dev/dm-8 scanned by (udev-worker) (1653)
----snip---
-            
-Could this be due to  commit 2e8b6bc0ab41ce41e6dfcc204b6cc01d5abbc952
-("btrfs: avoid unnecessary device path update for the same device")
-?
+It would be better to place it there for consistency.
+
+Overall in the function many of the sctx checks can be removed if the
+allocation is moved to the beginning.

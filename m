@@ -1,140 +1,154 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 38B7330C16D
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2026 18:50:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9174B3438BD
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2026 21:50:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783968616; cv=none; b=pJ0tTSk03BDxOpUmftuNaC+weD2Yafg5vvGX02su+uOEsd76Qhf11ysBkv5RIQbiGW7jXz68nbpJQKamTg5x4gUMNzM0JKcAfYvj6SRfx2nvkzslhcoggKtOEtJROBHUltasx0u9vs6IxWClMQPvqm2ofNqpb1ZvSog6RQnfXgs=
+	t=1783979458; cv=none; b=D1vEnV/YDk3tj2S6Gs/tWw4CXq/XUD2b4smEZGlQOARfJUGIHUn/x+Gwm0YsB2enFO5VCVQkANkzVFk6BTfqIK2+aS0Hgv0BepdGat9834pF2EVh7VZ3NEbrokg/HbXmZa2/TqsHk/lULa3q+4HUBaiUKBquMIkLomLhBlzOvP8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783968616; c=relaxed/simple;
-	bh=xJ0sUqkAZiHUSswYqOHEV5C2G8GewaERBTnaiTYr5b0=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=LwJ/ylQ0/HrbGvqpGcWNNt1GGi0s+Lcw8z0i2vckhN8OX6baowl4jeOBU5D+tb/FfUotCBoxp9IYWEOE5I5bP7Duz7jMV/yBw1vGR3KpCiLRK+P/DVR/KMMxZRCp+6VpxlvWVS2nzpJsU2iwA6fPwUNHKZVG9PTYVHkAtmg5av0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=OYZi/KTX; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=SBe69RYw; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=OYZi/KTX; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=SBe69RYw; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1783979458; c=relaxed/simple;
+	bh=lkNXmYTKJfNwzbgPkYkyyH8S/iJOXghBtWYAennis2Y=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=jxWLqk1PJy2HzC7mK0k6eE40XVs6xwoQ/bo7D5s9KFM9pxJVK7mURcQxYB1FwTx+fzvUsSdM4SbZ6c/u9wgsz66vUPnqg7p9jU23HPrKPYWu+1anMN1GOR0poCRK+CwdEL26Ngh+Do9PUsQcLGQtPhqmg+vxXabchWsOyn30C1w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=bbaFrJ3N; arc=none smtp.client-ip=209.85.128.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="OYZi/KTX";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="SBe69RYw";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="OYZi/KTX";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="SBe69RYw"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id EED303E41;
-	Mon, 13 Jul 2026 18:50:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1783968613;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=dt/bpt71GjhxgX49mcz8fiqlgMEE1ZH6azIQPo17irQ=;
-	b=OYZi/KTXkleH9Ntq37KkYAsURtXaeapwCy2SP4BvXv9nxsq7KqVVnhoMtsn8CluswlojoW
-	osLcOXtjaqxofPAOnwZS9CJ6CFc2vMpZEqqCYsEJ5YdvZsQX9fFb14cev9PZ223bul+LyE
-	tpfgY5acDxZ0XmQgo+4tbko58mDxLOE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1783968613;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=dt/bpt71GjhxgX49mcz8fiqlgMEE1ZH6azIQPo17irQ=;
-	b=SBe69RYwam8P9IB3lf+ho7dmi3GODZNg8nGFYgYbwayMbNLS/czc9AXr0y2YCqVR3HyfAP
-	ngt2DfmAonGgS3Cg==
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b="OYZi/KTX";
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=SBe69RYw
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1783968613;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=dt/bpt71GjhxgX49mcz8fiqlgMEE1ZH6azIQPo17irQ=;
-	b=OYZi/KTXkleH9Ntq37KkYAsURtXaeapwCy2SP4BvXv9nxsq7KqVVnhoMtsn8CluswlojoW
-	osLcOXtjaqxofPAOnwZS9CJ6CFc2vMpZEqqCYsEJ5YdvZsQX9fFb14cev9PZ223bul+LyE
-	tpfgY5acDxZ0XmQgo+4tbko58mDxLOE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1783968613;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=dt/bpt71GjhxgX49mcz8fiqlgMEE1ZH6azIQPo17irQ=;
-	b=SBe69RYwam8P9IB3lf+ho7dmi3GODZNg8nGFYgYbwayMbNLS/czc9AXr0y2YCqVR3HyfAP
-	ngt2DfmAonGgS3Cg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E2884779AE;
-	Mon, 13 Jul 2026 18:50:12 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 8ywON2QzVWqiLAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 13 Jul 2026 18:50:12 +0000
-Date: Mon, 13 Jul 2026 20:50:07 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Sun YangKai <sunk67188@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, Boris Burkov <boris@bur.io>
-Subject: Re: [PATCH] btrfs: change block group reclaim_mark to bool
-Message-ID: <20260713185007.GB8426@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20260624040232.30420-1-sunk67188@gmail.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="bbaFrJ3N"
+Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-493bfe9f886so19804295e9.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2026 14:50:56 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1783979455; x=1784584255; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=PfN53+GVezmBU87bZUIh0oDndUVaTtCNFje2ZOvEQxY=;
+        b=bbaFrJ3NZdfR1bOIn8dmfbLJfirZ1VQ70bmgBZ+67aEGKjSEUgQRoCE/HGQxkkQ0HA
+         b/Mmz2gPhMmZUJlADLwipK7WSluCyo2OR5QHJ4dPxBIMB66KlbbaPCI6KsJq9feXr/dg
+         Y0Ymw1mcUzutr76J8C6zEt+W0wjYOHpo9hgvSeDIDDNo7kuQtT1q0NKch2/MLjnbv1Cz
+         5lIdQ47AHeHS/ScgEMPI9VHhddhrsB/Tii+ywq6v5oIRDgwc9vvgonPD0kNLq9mFqtUG
+         KehTQhnZCnzW70ECGAgoNoCMUKWZFdNYWoqMWF7UKbydqSQf3akLwFlP74XfAMvsl28E
+         +n4Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1783979455; x=1784584255;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=PfN53+GVezmBU87bZUIh0oDndUVaTtCNFje2ZOvEQxY=;
+        b=U2LFYEdTqnV0BLEEgoRVMXYEW97+ew2KspZn1veSGFTxgrfM2Lzvv+QpKR3J/vMylb
+         Dw1qWKwE/ldPblF7RBGl+3TmE3ekOoHTmlQxaqNM+718xGcx8WIJnzbPJVCSm4IDy2qx
+         +A5rFRxvLAllVDzovedQK2jS9pQpNDEqjU5Jbwzb1oEhrJ6dfFm6EeHHe9fFdLSeIBJH
+         BietFifcv+P4180Le0A7Pd091cJ5+M/7GP4fECNqsGK+OxVOG5OC/rJRKgjJU9DKqpiL
+         L+WHgnZURhR2F2XlkfxejhiLahWnBSHyTbPQ3LLGbrBzEXTAEIHh0LO5G/cF7N2mL/Fn
+         Psqg==
+X-Gm-Message-State: AOJu0YzNAGoH4p947UNbI9lBq/TPsmfOyTHa/bfxmH83tHWAMIOqnk30
+	m1ddvHBEIRrEkSen8hid55/Jr19gS4m2MfimObPmV57BtKPwk124n1uGc+KCSQREt/A=
+X-Gm-Gg: AfdE7cmzG1FZVr9waS2GzyvrCtZmIbcb1hCu+lDfNwVA5tamBD9A3zmK5KCFVXr/1bU
+	/l79EV3ECmnp/FpdXJ3sNK8pgjbVhqx5h0xMENxiD3yTZfSvDL0VR6lBt7XQulTr4LFOl3xxmHd
+	UrE1QYHruUbcXvKiEhVn0zMpgBoK3CFNQoPk2hwoguhA3DQheNcOTDhZlt25AV2HuH4qrfMCM2J
+	7bt2zJRg25DHEXlkDdytCYGAEAMTPshS9nv9XAgFewNPQvivdhbImIg3FX8xk42odq/g3y4QrGy
+	b2e4vnZbH3ZPiUH6QXXO4FgMibnkC/DcYNup/QKLV2C6GsfUQZeWq0hYW4OQKoLTZA0ql4L6BiU
+	JMpDD3shUwXhOuT9XMwQt3U6sQqTmdDjcC7w27aPOE2jfHkZtgZEs5ah676Z637Wzw7ENqE6HMd
+	Dr/XcUbfnk0fCvHMoE
+X-Received: by 2002:a05:600c:8b88:b0:494:e456:4596 with SMTP id 5b1f17b1804b1-494e45645ccmr22254645e9.21.1783979454832;
+        Mon, 13 Jul 2026 14:50:54 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-31174accb0esm76035575eec.30.2026.07.13.14.50.51
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 13 Jul 2026 14:50:53 -0700 (PDT)
+Message-ID: <f9131134-9c8f-48c6-938a-0bbfe9695111@suse.com>
+Date: Tue, 14 Jul 2026 07:20:49 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260624040232.30420-1-sunk67188@gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Flag: NO
-X-Rspamd-Action: no action
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_SOME(0.00)[];
-	FREEMAIL_TO(0.00)[gmail.com];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCPT_COUNT_THREE(0.00)[3];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,suse.cz:dkim,twin.jikos.cz:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: EED303E41
-X-Spam-Score: -4.21
+User-Agent: Mozilla Thunderbird
+Subject: Re: btrfs lockdep issue
+To: Christian Borntraeger <borntraeger@linux.ibm.com>,
+ Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <5a9d9847-4ae6-43c4-afdc-6e5fa51d6117@linux.ibm.com>
+ <8cff9612-e5f4-4621-843e-0582493119fe@linux.ibm.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <8cff9612-e5f4-4621-843e-0582493119fe@linux.ibm.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On Wed, Jun 24, 2026 at 12:02:27PM +0800, Sun YangKai wrote:
-> The reclaim_mark field in struct btrfs_block_group was a u64 that was
-> incremented when marking block groups for reclaim during sweeping, but
-> the actual counter value was never used - only the zero/non-zero state
-> mattered for determining if a block group needed reclaim.
-> 
-> Convert it to a bool to properly reflect its usage and reduce memory
-> footprint by 8 bytes. Update assignments to use true/false instead of
-> increment and zero.
-> 
-> Signed-off-by: Sun YangKai <sunk67188@gmail.com>
 
-Added to for-next, with updated comment. Thanks.
+
+在 2026/7/14 01:39, Christian Borntraeger 写道:
+> Am 13.07.26 um 14:07 schrieb Christian Borntraeger:
+> [...]
+> 
+>>   Possible unsafe locking scenario:
+>>         CPU0                    CPU1
+>>         ----                    ----
+>>    lock(&fs_devs->device_list_mutex);
+>>                                 lock(&fs_info->tree_log_mutex);
+>>                                 lock(&fs_devs->device_list_mutex);
+>>    rlock(&type->i_mutex_dir_key#2);
+>>   *** DEADLOCK ***
+>> 2 locks held by (udev-worker)/1653:
+>>   #0: 0000016c727051c8 (uuid_mutex){+.+.}-{3:3}, at: 
+>> btrfs_control_ioctl+0x102/0x1e0
+>>   #1: 00000069238564d8 (&fs_devs->device_list_mutex){+.+.}-{3:3}, at: 
+>> device_list_add.constprop.0+0x148/0xc60 
+> 
+> So some additional detauls
+> -------
+> this was a udev-triggered btrfs device scan (BTRFS_IOC_SCAN_DEV) of
+> /dev/dm-8. The scanned device belongs to the mounted btrfs root filesystem
+> (multipath, the path flapped between /dev/mapper/mpathg2 and /dev/dm-8),
+> 
+> ---snip---
+> BTRFS info: devid 1 device path /dev/mapper/mpathg2 changed to /dev/dm-8 
+> scanned by (udev-worker) (1653)
+> ---snip---
+> Could this be due to  commit 2e8b6bc0ab41ce41e6dfcc204b6cc01d5abbc952
+> ("btrfs: avoid unnecessary device path update for the same device")
+> ?
+
+I believe you're right.
+
+That commit introduced extra path resolution when we're still holding 
+device_list_mutex, meanwhile the path resolution will cause directory 
+lookup, thus lead to the above report.
+
+I think I can change the is_same_device() lookup to get rid of the path 
+resolution and completely rely on path_devt and device->devt and avoid 
+the path resolution completely.
+
+Will send out a patch for you to test soon.
+
+Thanks,
+Qu

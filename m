@@ -1,159 +1,255 @@
-Received: from mail-ej1-f44.google.com (mail-ej1-f44.google.com [209.85.218.44])
+Received: from mail-pj2-f4.google.com (mail-pj2-f4.google.com [74.125.227.132])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 14FC43B47D7
-	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2026 08:58:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 85D7E3D954C
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2026 09:17:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.227.132
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783933108; cv=none; b=hzcuWLl9Buv7lNJZ1SAAgTMSM4sywTl0U9VZEqlHdmF/1MzFY0GnRzbcsnxR0LevbBSkcXc7p0CKQUbP9nM5SK8hY0jPJuEPHqNKVQLLA8gPi+6uuz1VUHlhm0q0mKuxD0o8nV4VlukOL2nmHdsBJIfRBRmBNQuM3ozEDXcc6FY=
+	t=1783934245; cv=none; b=A0Gxx1lHPwGMKYRiislKXZuBF7tokUQAQEjJ0oD23+LNxFRv/DCe969IX5LiWPLHPTGvGOXvRatzJJVKyPS/hkT6yI2dE/7C471nRls7Wh6TbZ6eyui4PARrcs4TGs611kGz3ZweKs+AKQejNPxrFMfjR1Qjs+c7I4IEFLhuMTs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783933108; c=relaxed/simple;
-	bh=cfoXx2Gu6eWP06EQd9LIn5CZenTw6H1T3e0nWzxS/bg=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=sqvYKoRrTfXMsqEuvrF2jeaztrEzv+I5Or3KdoV8OShqFv6OBc6Qph6CsJ4XKpAAxW/8CrbWaTFe4SC5oAo55j2PW4Hn5Ne2oZS4lNxSsCFgSvXqyE3Cts9Umh0JL3QvFm81dyTeRmMLdhZlyiRRHpFI20SmDnYJXrxHOEQgn/w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=aRIfiYqh; arc=none smtp.client-ip=209.85.218.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1783934245; c=relaxed/simple;
+	bh=nGJVNWIGTlh3Ve2rtxXhO8Lwyjsbz0tmH8VzXSPm6zQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=p27U/3XA6EqgwIjoE3EAen/0PYAbUjH6gfxrwq0Khjgobcjl+UnJ6q8EKexOJ/Zrvnm8zV2p4Ms4hqUbLePwJgW66aEmGkob+SFC3snTJVTchO3fHWaVMqz3lIQ8hJ8kUx2K7qa8fbw7KhRkG6N4gPpjRpG2ObWTFHj+bWzv1yo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=ojNH0b8s; arc=none smtp.client-ip=74.125.227.132
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="aRIfiYqh"
-Received: by mail-ej1-f44.google.com with SMTP id a640c23a62f3a-c15e03c2763so574363266b.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2026 01:58:26 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ojNH0b8s"
+Received: by mail-pj2-f4.google.com with SMTP id 98e67ed59e1d1-383fd2d12f5so332993a91.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2026 02:17:23 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1783933105; x=1784537905; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=chzWcFRnD/TdaVAm5esRRzurRYbCYIKUX5eMcXQsoYg=;
-        b=aRIfiYqhHFyPA76YxzeFZmfqCjUPvYV3faVJ/mU7OWurVif7tZxIXKXDhEquEoZcwd
-         PfUldQdSmxnHPIbjOkkg6u3l3FyBY/QLnKtZmb0qfurjbAhKOg8mnZ1bXgWFbt5p9gxt
-         woAkL6Xn5wVFsP5PHizEPglbOVbLBaprh4L5QScqjFEU8cSIDKvANZ330FC++ZQI8EON
-         Wf8XEQNvLPaxxyY0UczD3oX3nTv0adXIN9d9rdhqzIRgx+uZOJKqduD6V8XP+thNu4VE
-         l2VeF9Dt49tLPtwX16NuV7BdjvUaWjzKv/Zg7CnoG4ZIS1NAtEZzMMdCF2O9N4/W/5EB
-         E3Jw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1783933105; x=1784537905;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=gmail.com; s=20251104; t=1783934243; x=1784539043; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=chzWcFRnD/TdaVAm5esRRzurRYbCYIKUX5eMcXQsoYg=;
-        b=UWjtcrIxgyGimZK4R7nwKl0d7SS3BlG+1ND5FOfhz0/LCGUWJCncUX7bDwJTPNaZqW
-         B4sKjp0R8Ds31wKPfw7Yx2Hc4wxWUq2jx53zW4N2jsDPbfSPszYaCRUrM67cpub5Dgzu
-         wMfg9HnKEPUCMJDkpga5wBpbwoHhjfH5gtNbeLQDaMeenE9VXG+Qgzo7ScrpcS5kKFcc
-         1nizidaayTtRv4robQUPCpNeVkIvjTWwAE+EOgGZCV5nihzLVSwqsQq+C6piMfPo3VkE
-         xVVOyvwXodrcM3H+UoMd/demw/42pWFSS8dey7R6tWbedi29hI739eXyW48mWkvCZe52
-         Er/A==
-X-Forwarded-Encrypted: i=1; AHgh+RrrvI71zAD425MJPSvcQ+H/iW4ZchaAZ8mwJpYB9LwMS/gdNea58J4etBztwVYQMxx5yXpcgM8BBIz1iw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwfgpbhGN4bQn8ciE/I5+z/Y4GdBNa5p+0ftasNBx7wfxCCsKBU
-	FYDOVwvJ8zrdRYKp/J6VDud2ABsFKjkOUdMu6YlWnjcBBk1Dsk6XvlBT2VxcQm7eL8mSeAqE9xx
-	eZBb0C5JFXg==
-X-Gm-Gg: AfdE7cm7tYUxmPKt+VWFHLT6pwOn24zMtVO1wKz8rYGZ9k/hZRrhFEh64BSyAzs+eC+
-	NwPEgvNSVTk6A31YVbajZfKzGywKjqFDh6zt5nHuI0PDLgCPTeahJdLSEeqZ1rohFaWrP5/PSZ4
-	q8ctZT9iNNdyNMwbHSirJPmdGrlLp92iTOeZpFy1ZFwqW9cB0GmlWrWetqzea14DOLxi/75SFdC
-	1+mxK2OcUyQgIHADKDFap/+7uQAOYDwnFFTnih0gS8ro+TCy2fQbqjHQynkXi5ciw5iiUh8zc/P
-	XdGrOIejYpRsiWGI3BoEutiw0sMkz2cf8BxFOI8r8PYCHfMu8zD5la+pFWPw9px7vLj3SDdFZ/G
-	6alBt1gOORUtcV9XNnw0lShJLCilh5yo+IoaaP+BU5VZ2lcZJQJf/q4k+PYS8mK2rPw3GZmC7Dv
-	qM5iVwww==
-X-Received: by 2002:a17:907:6b07:b0:c16:e0b:bd2d with SMTP id a640c23a62f3a-c160e0bc2bbmr491896866b.27.1783933105418;
-        Mon, 13 Jul 2026 01:58:25 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2ccc9d1f030sm95717105ad.51.2026.07.13.01.58.22
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 13 Jul 2026 01:58:24 -0700 (PDT)
-Message-ID: <8179a878-729b-4298-80c9-252d51df0f5d@suse.com>
-Date: Mon, 13 Jul 2026 18:28:20 +0930
+        bh=YS9HSQYLWxfpBGl81FLqKvaHWT/gifA7Uzz1bJeYLjU=;
+        b=ojNH0b8sYyIJR6EIfay50FOmQkM2jpj2qkVfWPxLUDO1SiN8qzHdD4kIQlKIYGdL/f
+         mR4KVjUSl1XHgLX9zPSeMoVVnZGQCXxa5u+JoXhhZeh91035gJsUvbW4NiJ2mob//oMs
+         7C6Fd5YKAK6WPSPKVRqxIo6YxAhZG34aOi0d7/va1T6dHSTYr0+xeg1vYYNC/+byr9Vo
+         h5FgqZu1iayYJh2jpdE5FIiD94aBdsr0vD0IXu4d7uJ/NY+mQLtT/X/CPoxzYeDOtl7r
+         /ovpGh4HkiNFlCBAz5bFmPHD33192JEex3FunOr5RAeFFqkuXueFaw+JaOI9ekurScgw
+         r6vg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1783934243; x=1784539043;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=YS9HSQYLWxfpBGl81FLqKvaHWT/gifA7Uzz1bJeYLjU=;
+        b=N4YSblXcsALaIhaqM+A+ea1BoOqVVTuCeP66+TaAtrhmzRO8xIMaGSmlQQ46Ot4On1
+         gxJN0sMUv8THNWU9dMvF2vqLnG5os5wVwZKzKCQYO1cSUG7lL3xWRHvj6y68z2p/gGzM
+         qjpBkjVfOb3QEoR6G+H4cv7OTeTSn/UqihaxU+dSqxSyXLKus7KUQHlnCD1fIz0KgsYA
+         QlFNeFuf24Y6FGnTZE6uJzdH3fYIoIKwPPPcaHisR7TlDRQF1XpaXa2j1fLTuGI6RZ1a
+         1bOpsxZoHUwE1SWj6BiUdqUOF3AW3BFNKO3aS4fsoFxDw1wWyeNjmW1ivicwBPskLAFR
+         cDug==
+X-Gm-Message-State: AOJu0YwJDRm7Ice4SgtVlunspb6K1Uo8EnQTEz4dfHpdtBlRPdQ0BjLQ
+	L4MgipCywHdrYt9sAwCvwVHl4u348RAW5lTx3FsEwCfxmpmCBJW0x+wfuudTx3ffDrilmQ==
+X-Gm-Gg: AfdE7cny7bQ2u7nEgBYNo00KRIwf1cUuQiOvTeOeDamBhLcSiPUt2m0l+f3G1LyegNy
+	bwUktQzXrWmQnIAde2OeGEOxlyHYk1NmXIslVWmC1H1JcGhMY4jMXhJWPCKJFMM4HCuMxCA2JLx
+	Nj2awfazEYTUgCy2Vi8Xw993UGmp2xj92QIH0FJkeeae96UsHYw4Nmfsk6LNPRXfcsEbo9MTa68
+	xHUauMM/XNpEJEx3qcOwuguCg3vWnIny1juekSjPnNyvLdx2ELhK35hcpW7v/3gd/QomFYfiTT2
+	kDB4XnQmRu33JOHop1LLFAsThW5eHbg3oD68d/P3t1Z36zGwK7to/dgFXFGrIVUcm2XVZiNdDK/
+	obQ/xX/OQd4U2P7S6rNsIM1L2oU58T7xJQzKNGPOYM4vCUX6jnBxpWq5OxKvoHUWNDClDuUnllE
+	V6M3qoBHyECxOtC+lK/COTkryjXlEmKJL/nqus7F/G
+X-Received: by 2002:a05:6a00:4b4e:b0:848:7e85:f210 with SMTP id d2e1a72fcca58-8488985ddf7mr5437136b3a.4.1783934242683;
+        Mon, 13 Jul 2026 02:17:22 -0700 (PDT)
+Received: from SaltyKitkat ([154.83.91.239])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-847f6b975a0sm13768349b3a.14.2026.07.13.02.17.21
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 13 Jul 2026 02:17:22 -0700 (PDT)
+From: Sun YangKai <sunk67188@gmail.com>
+To: linux-btrfs@vger.kernel.org,
+	fstests@vger.kernel.org
+Cc: Sun YangKai <sunyangkai@fnnas.com>
+Subject: [PATCH] btrfs: test POSIX ACL changes for RO btrfs property
+Date: Mon, 13 Jul 2026 17:06:45 +0800
+Message-ID: <20260713091659.4981-1-sunk67188@gmail.com>
+X-Mailer: git-send-email 2.54.0
+In-Reply-To: <20260709082500.17907-2-sunk67188@gmail.com>
+References: <20260709082500.17907-2-sunk67188@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 0/3] btrfs: handle missing block group and raid stripe
- tree roots
-To: Dongjiang Zhu <zhudongjiang@fnnas.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com
-References: <20260713085010.1123273-1-zhudongjiang@fnnas.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260713085010.1123273-1-zhudongjiang@fnnas.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
+From: Sun YangKai <sunyangkai@fnnas.com>
 
+Test creation, modification and deletion of POSIX ACLs for a btrfs
+filesystem which has the read-only property set to true.
 
-在 2026/7/13 18:20, Dongjiang Zhu 写道:
-> The rescue=ignorebadroots mount option allows mounting to continue when
-> some tree roots cannot be loaded. For the block group tree and raid stripe
-> tree, this leaves the corresponding root pointer NULL while the on-disk
-> feature bit remains set.
-> 
-> btrfs_update_global_block_rsv() accounts both trees based only on their
-> feature bits, so it dereferences the missing root while mounting. Rescue
-> mounts are fully read-only and cannot start transactions, so they do not
-> need a real global block reserve.
-> 
-> This series moves the full read-only helper to fs.h and uses it to skip
-> global reserve accounting for rescue mounts. It also reports a missing
-> raid stripe tree root explicitly if a later data read requires a raid
-> stripe lookup.
-> 
-> Changes in v2:
-> - Replace the per-root NULL checks with a dummy global block reserve for
->    full read-only mounts, as suggested by Qu Wenruo.
-> - Move and rename fs_is_full_ro() so the global reserve code can use it.
-> 
-> v1:
-> https://lore.kernel.org/linux-btrfs/20260711051909.1313584-1-zhudongjiang@fnnas.com/
+Re-test the same after the read-only property is set to false.
 
-Looks good to me overall.
+This complements btrfs/275, which covers the generic ->setxattr path.
+POSIX ACLs are set and removed through the ->set_acl inode operation
+(btrfs_set_acl), which is a separate code path that is not covered by
+the RO check added for security xattrs in commit b51111271b03 ("btrfs:
+check if root is readonly while setting security xattr").  As a result,
+ACLs could still be modified on a read-only subvolume, bypassing the RO
+protection that applies to every other xattr.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+The test exercises the set, get and remove cycle of an access ACL on a
+regular file, and expects all modifications to fail with EROFS while the
+subvolume is read-only.
 
-> 
-> Dongjiang Zhu (3):
->    btrfs: move the full read-only helper to fs.h
->    btrfs: skip global block reserve accounting for rescue mounts
+Signed-off-by: Sun YangKai <sunyangkai@fnnas.com>
+---
+ tests/btrfs/353     | 97 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/353.out | 39 ++++++++++++++++++
+ 2 files changed, 136 insertions(+)
+ create mode 100755 tests/btrfs/353
+ create mode 100644 tests/btrfs/353.out
 
-I'll squash the btrfs_is_full_ro() commit into this one, as that is the 
-only commit utilizing it.
-
-I can do this at merge time so no need to refresh the series.
-
-Thanks,
-Qu
-
->    btrfs: report missing raid stripe tree root during lookup
-> 
->   fs/btrfs/block-rsv.c        | 19 +++++++++++++++++--
->   fs/btrfs/disk-io.c          | 11 +----------
->   fs/btrfs/fs.h               |  9 +++++++++
->   fs/btrfs/raid-stripe-tree.c |  7 +++++++
->   4 files changed, 34 insertions(+), 12 deletions(-)
-> 
+diff --git a/tests/btrfs/353 b/tests/btrfs/353
+new file mode 100755
+index 00000000..60059d4a
+--- /dev/null
++++ b/tests/btrfs/353
+@@ -0,0 +1,97 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2026 YOUR NAME HERE. All Rights Reserved.
++#
++# FS QA Test No. 353
++#
++# Test that POSIX ACLs cannot be changed once a btrfs subvolume has the
++# read-only property set.
++#
++# Setting or removing a POSIX ACL goes through the ->set_acl inode
++# operation, which is a different code path from the generic ->setxattr
++# one covered by btrfs/275.  It used to be allowed on a read-only
++# subvolume and thus bypassed the RO protection.  Such modifications must
++# fail with EROFS, just like any other xattr.
++#
++. ./common/preamble
++_begin_fstest auto quick acl attr
++
++. ./common/filter
++. ./common/attr
++
++# TODO: fill in the kernel commit hash that fixes the ->set_acl path once
++# it is merged.
++# _fixed_by_kernel_commit <HASH> \
++#	"btrfs: check if root is readonly when setting posix acl"
++
++_require_acls
++_require_btrfs_command "property"
++_require_scratch
++
++_scratch_mkfs >> $seqres.full 2>&1
++_scratch_mount
++
++FILENAME=$SCRATCH_MNT/foo
++
++set_acl()
++{
++	local perm=$1
++
++	# Use -n so setfacl does not recalculate the mask, keeping the
++	# golden output deterministic regardless of the named user's
++	# permissions.
++	setfacl -n -m u:$acl2:$perm,m::rwx $FILENAME 2>&1 | _filter_scratch
++}
++
++get_acl()
++{
++	getfacl --absolute-names -n $FILENAME | _filter_scratch | _getfacl_filter_id
++}
++
++del_acl()
++{
++	setfacl -b $FILENAME 2>&1 | _filter_scratch
++}
++
++_acl_setup_ids
++
++# Create a test file.
++echo "hello world" > $FILENAME
++
++# Set an initial ACL while the subvolume is writable.
++set_acl rwx
++
++# Attempt to change the ACL once the subvolume is read-only.  This must
++# fail with EROFS.
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT ro true
++$BTRFS_UTIL_PROG property get $SCRATCH_MNT ro
++
++set_acl r--
++
++# The ACL must not have changed.
++get_acl
++
++# Attempt to remove the ACL from the read-only subvolume.  This must
++# fail with EROFS as well.
++del_acl
++
++# The ACL must still be present.
++get_acl
++
++# Make the subvolume writable again.
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT ro false
++$BTRFS_UTIL_PROG property get $SCRATCH_MNT ro
++
++# Now changing the ACL must succeed.
++set_acl r--
++
++get_acl
++
++# And removing it must succeed too.
++del_acl
++
++# Check the ACL is really gone.
++get_acl
++
++status=0
++exit
+diff --git a/tests/btrfs/353.out b/tests/btrfs/353.out
+new file mode 100644
+index 00000000..66f4a0e5
+--- /dev/null
++++ b/tests/btrfs/353.out
+@@ -0,0 +1,39 @@
++QA output created by 353
++ro=true
++setfacl: SCRATCH_MNT/foo: Read-only file system
++# file: SCRATCH_MNT/foo
++# owner: 0
++# group: 0
++user::rw-
++user:id2:rwx
++group::r--
++mask::rwx
++other::r--
++
++setfacl: SCRATCH_MNT/foo: Read-only file system
++# file: SCRATCH_MNT/foo
++# owner: 0
++# group: 0
++user::rw-
++user:id2:rwx
++group::r--
++mask::rwx
++other::r--
++
++ro=false
++# file: SCRATCH_MNT/foo
++# owner: 0
++# group: 0
++user::rw-
++user:id2:r--
++group::r--
++mask::rwx
++other::r--
++
++# file: SCRATCH_MNT/foo
++# owner: 0
++# group: 0
++user::rw-
++group::r--
++other::r--
++
+-- 
+2.54.0
 

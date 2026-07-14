@@ -1,291 +1,156 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-pf1-f179.google.com (mail-pf1-f179.google.com [209.85.210.179])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 874EB49553B
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 15:20:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 901C547DF90
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 16:11:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.179
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784042462; cv=none; b=ubc+ptYygYJxzgAADFJUxsBqwmNJ4XIQwlDoQX0fK185UcX6lvmK7KMbnhETZWC+XHBuHZCCuOhvwBUe7cFzVNxJxQrXFNgzRY5XLVyqNRae/+eG+V5XCpfTXqgC9W5Pf1CBOS4oUZKiacPgTvFOWFeP2NNQ+EpEoeXDP5GAeTo=
+	t=1784045478; cv=none; b=Js92Z7H+3+Ba8et8lurcYO2MrJ/MObu4s9SgvGyp9y4PotUfBNYfkvsvaXwfX5m1L+gw0c+lhfuNLtr+2TARhz8Gx4/DobXcD6e/8Yv6ZmsBZaP/FgHxIqNBv2T7rpLk5IGBnPBqtOXoVZaJ3VIj7jQDArIsFqNyJ1I29Ko8PoI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784042462; c=relaxed/simple;
-	bh=wqFfTlkEbOdYZZvKD6m8yjmVTIDP1K1kzr/Ncxyd3eI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=lbh9OeCxfgkn+OVcnJa5lXVAPkZbfWkN6e0axF4Lng8WXuyqz5GxjFcBonsgjHHYZLbXiro2LLY9eooNUN9Q+AmjXLAdzGJUvCLNqKucijl/gDtrhGKF+7j0mPk5A5W4/stTjRh9kq4mhqtQU9OQawfBruijmfIyTnzxWnRfiVo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=dASCRtRt; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=xIE1j4Cr; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=dASCRtRt; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=xIE1j4Cr; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1784045478; c=relaxed/simple;
+	bh=3NiGYzJjQ067mKb5Ca+qNWWTlUvepgqvNM+Y2dzgzSI=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type; b=c+W9kTTVYyaFZlPXe1RS/7rK2QlOAP+wW3oZgCQcXLS5hhOL2ZMsKjN7GfoM35pRzLdtTk3yU8oxr6ac8RbYz5O0CAsfAeb6unV/yG9D2E8RRKQaCnyZuHrEnE43b/AKwzJQCHweHtt8eEtYVPJtVVhNWEuOhryZnfVxuy1ziPc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=H2dSwfs3; arc=none smtp.client-ip=209.85.210.179
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="dASCRtRt";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="xIE1j4Cr";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="dASCRtRt";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="xIE1j4Cr"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 8AB1C3E09;
-	Tue, 14 Jul 2026 15:20:57 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1784042457; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kptdctJwrqYn1JC5emwU/TK/4EX/o+cOyDQJ6bNpNg8=;
-	b=dASCRtRtL//gOyKnlywttPlWck8xL5wEGvxxYkQp+GLBVb2rYuh+DGwUc2nRYVlZOUDPmm
-	wnFOEOtHrErBl+e8ffFFpOjtMSGZci8GJ4S0j0TKuxldeSqAs5ui1yJbWv5/HCtAhWRDn9
-	z6R5ubb0NJj+8sTlcOmyNdlZO9mw54o=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1784042457;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kptdctJwrqYn1JC5emwU/TK/4EX/o+cOyDQJ6bNpNg8=;
-	b=xIE1j4CrqNVRYt8d6Dk4AJ1wPbp4OzW9GO1U+7vd/ZbLByovfW2xse3D6P3ox9jVuQNqoO
-	7bvrJ3ceM2buSsBA==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1784042457; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kptdctJwrqYn1JC5emwU/TK/4EX/o+cOyDQJ6bNpNg8=;
-	b=dASCRtRtL//gOyKnlywttPlWck8xL5wEGvxxYkQp+GLBVb2rYuh+DGwUc2nRYVlZOUDPmm
-	wnFOEOtHrErBl+e8ffFFpOjtMSGZci8GJ4S0j0TKuxldeSqAs5ui1yJbWv5/HCtAhWRDn9
-	z6R5ubb0NJj+8sTlcOmyNdlZO9mw54o=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1784042457;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kptdctJwrqYn1JC5emwU/TK/4EX/o+cOyDQJ6bNpNg8=;
-	b=xIE1j4CrqNVRYt8d6Dk4AJ1wPbp4OzW9GO1U+7vd/ZbLByovfW2xse3D6P3ox9jVuQNqoO
-	7bvrJ3ceM2buSsBA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7A0B8779AE;
-	Tue, 14 Jul 2026 15:20:57 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id ZnPZHNlTVmrnUAAAD6G6ig
-	(envelope-from <jack@suse.cz>); Tue, 14 Jul 2026 15:20:57 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-	id 22BE9A1319; Tue, 14 Jul 2026 17:20:57 +0200 (CEST)
-Date: Tue, 14 Jul 2026 17:20:57 +0200
-From: Jan Kara <jack@suse.cz>
-To: Usama Arif <usama.arif@linux.dev>
-Cc: brauner@kernel.org, qi.zheng@linux.dev, jack@suse.cz, 
-	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>, 
-	linux-mm@kvack.org, hughd@google.com, boris@bur.io, clm@fb.com, dsterba@suse.com, 
-	linux-btrfs@vger.kernel.org, cem@kernel.org, linux-xfs@vger.kernel.org, 
-	shakeel.butt@linux.dev, hannes@cmpxchg.org, riel@surriel.com, kernel-team@meta.com
-Subject: Re: [PATCH] fs: push nr_cached_objects memcg gating into individual
- filesystems
-Message-ID: <7yhd7nfbeukx5ycm4tpk2mc37b6cqpiw4q4gbf3elmtbfaoftb@txp5gavwasxv>
-References: <20260714101454.1202449-1-usama.arif@linux.dev>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="H2dSwfs3"
+Received: by mail-pf1-f179.google.com with SMTP id d2e1a72fcca58-8484f229529so943847b3a.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 09:11:17 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1784045477; x=1784650277; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:mime-version:message-id:date
+         :subject:cc:to:from:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=xN4ElnyPBXmv4bsesjCQ8obvXtneP+HkSrF4llGdWy8=;
+        b=H2dSwfs3vOx1tTPHBPKdCK78gBRtpHjYiIz/RXlhbkSxCpdSp3rWvMVigHiDuEzlCS
+         RCaARkNr4cm6vHYpCtDdGTmab8GxESL3y6cY42ZPvIvZYccSb5btAw2D0mEf8dNONSQq
+         cQZxtPI97V/ClYHy7LiXQYfubnduAKA/cHW6jr5UshYBt7Y81q17U1kx8ZO0fmK9ZIcI
+         Ei+dDTa9SIUsMSPT8KsJFlxiwS+PHZlry+0j3W/hNWGIzVVJqjFtUZEErpxlZvsDOkJw
+         rYj/Ph+I61ztUOVMt+pIBc/3AR32VDxGdLZ+GNgCJFA0Sa5eOevrllAW40wH74qSBZkU
+         TGIQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1784045477; x=1784650277;
+        h=content-transfer-encoding:content-type:mime-version:message-id:date
+         :subject:cc:to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=xN4ElnyPBXmv4bsesjCQ8obvXtneP+HkSrF4llGdWy8=;
+        b=alz5UueMTvlHBgZCrqBn6VCIEEGAtJOpqmFgLCg8wBNlD28z6Mbbk4z7fHVNJvf1At
+         xAUzrSvg5y/EpwONfllNOlHN1/t3A1UV3p0QMI54NfM+t+RlOLP4akh49mT0I09W7jvz
+         y1OsSoN16sjzJJz5fzhj15+nczg2s3RP37Nxb7Z6zfyD9C5NRF5Umbw9l+ixFkErTPNC
+         I07Alk4zyLMSlSAlscXhLD2PzcmPYODHywljNGfts14aNX1JHE1kXb6AcnXwK7THbiGx
+         DKyZnWn9ipYqzkuM1sCkK8Lgjqd9nrrF74qOiQuVouBmaBdhxWw5j9ulbjvaMSqtynEK
+         5rMg==
+X-Gm-Message-State: AOJu0Ywh5KVk9Y8TcN/5HQrbBSep3Yi1mcdoQzp01SB01Jc4jXi3OcEI
+	426KRdMw3DTFiA4kTBtIeNHdINYGU5Q2bSY4DEV++5SAhQoaJeKW8G6yx6SNsQ==
+X-Gm-Gg: AfdE7ckvkyUnG1adA2Ops/3cGQg9MXbS94negM/4LJfOTpFtY6qWy67CLWEOgCU5i8X
+	KOWkrcEMG6YSO4MOy5SZ6JLduN1uZSRhPjgKdptdZBTxHWbwWxMunzSt2q4yuOfW3cxhcL4Y/+x
+	VQJMk87z1fSS/FQkaQt2gyOIm3DRUThNubNZ/e4CuHbLVSmYRqzsFmKz7oodCpnNif+iKLKMQqW
+	nnaWLTeMt4Onoe4+pdXRf5wS582vO1Fkc/gmgChGwqolqE4SQS9cLA5Cxf2a5wjV+KstM7oJW88
+	1wQXRcqh0JnxpH5r8ZF4c7W0bMmA+xAzdSJ8WGysGW+YpmUKivw1ush4lsm53gAa9It7OrhpyYD
+	d55bHhrbWb4zj1xj1RL5q3PfCt4SSV0Hm4BfFK1+xDWy7skX4K+2U9Sy6if9fuyl1ruM0raQ2eV
+	TveenYV0cOpegjsWvsDtbgwAtTB5eUQtAVxShC6d30UM23S7NiwL9RWNOerl5ogdDaiXo6mqipX
+	Gy7ADFPmlOmjRf95w==
+X-Received: by 2002:a05:6a00:228f:b0:847:e2c7:59b6 with SMTP id d2e1a72fcca58-848896bebdfmr12746806b3a.11.1784045476861;
+        Tue, 14 Jul 2026 09:11:16 -0700 (PDT)
+Received: from localhost.localdomain (ec2-13-113-80-70.ap-northeast-1.compute.amazonaws.com. [13.113.80.70])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-84a4f26f703sm1825073b3a.17.2026.07.14.09.11.14
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 14 Jul 2026 09:11:16 -0700 (PDT)
+From: Zhang Boyang <zhangboyang.id@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>,
+	Qu Wenruo <wqu@suse.com>,
+	Filipe Manana <fdmanana@kernel.org>
+Subject: [BUG] two raid consistency bugs
+Date: Wed, 15 Jul 2026 00:10:42 +0800
+Message-Id: <20260714161044.7330-1-zhangboyang.id@gmail.com>
+X-Mailer: git-send-email 2.30.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260714101454.1202449-1-usama.arif@linux.dev>
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-3.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_RHS_NOT_FQDN(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.996];
-	MIME_GOOD(-0.10)[text/plain];
-	RCVD_COUNT_THREE(0.00)[3];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	FROM_HAS_DN(0.00)[];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_TWELVE(0.00)[19];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCVD_TLS_LAST(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MISSING_XM_UA(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:email,suse.com:email,linux.dev:email,imap1.dmz-prg2.suse.org:helo]
-X-Spam-Level: 
-X-Spam-Score: -3.80
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-On Tue 14-07-26 03:14:54, Usama Arif wrote:
-> Commit 0baad6f9b997 ("fs/super: skip non-memcg-aware nr_cached_objects
-> in memcg slab shrink") added a check in fs/super.c that skips the
-> ->nr_cached_objects() hook whenever the shrinker is invoked for a
-> non-root memcg, because none of the current implementations (btrfs,
-> xfs, shmem huge) honour sc->memcg.
-> 
-> That policy is really a filesystem-owned property: fs/super.c should
-> not encode the assumption that these hooks are never memcg-aware,
-> since a future implementation might legitimately filter by sc->memcg.
-> Move the check into btrfs_nr_cached_objects(), xfs_fs_nr_cached_objects()
-> and shmem_unused_huge_count() so each filesystem can lift the
-> restriction independently once its underlying counters/scans become
-> memcg-aware, without needing a coordinated change to fs/super.c.
-> 
-> Behaviour is unchanged: calls into these hooks from shrink_slab_memcg()
-> still early-return 0 for non-root memcg contexts, keeping the shrinker
-> bit clearable in each memcg's bitmap; the global (kswapd or root
-> direct reclaim) path still drives them as before.
-> 
-> Signed-off-by: Usama Arif <usama.arif@linux.dev>
+Hello btrfs devs,
 
-Makes sense to me. Feel free to add:
+I found two raid-related bugs in btrfs. Two test cases are provided.
 
-Reviewed-by: Jan Kara <jack@suse.cz>
 
-								Honza
+BUG 1. fstests: btrfs/348: test ambiguous generation handling on raid1 profile
 
-> ---
->  fs/btrfs/super.c   | 11 +++++++++++
->  fs/super.c         | 19 ++-----------------
->  fs/xfs/xfs_super.c | 12 ++++++++++++
->  mm/shmem.c         | 11 +++++++++++
->  4 files changed, 36 insertions(+), 17 deletions(-)
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index a7d804219bec..16c24bccc897 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -22,6 +22,7 @@
->  #include <linux/namei.h>
->  #include <linux/miscdevice.h>
->  #include <linux/magic.h>
-> +#include <linux/memcontrol.h>
->  #include <linux/slab.h>
->  #include <linux/ratelimit.h>
->  #include <linux/crc32c.h>
-> @@ -2434,6 +2435,16 @@ static long btrfs_nr_cached_objects(struct super_block *sb, struct shrink_contro
->  	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
->  	const s64 nr = percpu_counter_read_positive(&fs_info->evictable_extent_maps);
->  
-> +	/*
-> +	 * The evictable extent map counter is filesystem-global and does not
-> +	 * honour sc->memcg, so it is only meaningful on the global (kswapd or
-> +	 * root direct reclaim) shrink path. Skip the per-memcg iterations of
-> +	 * shrink_slab_memcg() to avoid queueing duplicate global work and
-> +	 * pinning the shrinker bit in every memcg's bitmap.
-> +	 */
-> +	if (sc->memcg && !mem_cgroup_is_root(sc->memcg))
-> +		return 0;
-> +
->  	trace_btrfs_extent_map_shrinker_count(fs_info, nr);
->  
->  	return nr;
-> diff --git a/fs/super.c b/fs/super.c
-> index d2d04a6f4f84..a8fd61136aaf 100644
-> --- a/fs/super.c
-> +++ b/fs/super.c
-> @@ -24,7 +24,6 @@
->  #include <linux/export.h>
->  #include <linux/slab.h>
->  #include <linux/blkdev.h>
-> -#include <linux/memcontrol.h>
->  #include <linux/mount.h>
->  #include <linux/security.h>
->  #include <linux/writeback.h>		/* for the emergency remount stuff */
-> @@ -170,19 +169,6 @@ static void super_wake(struct super_block *sb, unsigned int flag)
->  	wake_up_var(&sb->s_flags);
->  }
->  
-> -/*
-> - * The s_op->nr_cached_objects hooks (used for example by btrfs and xfs)
-> - * operate on filesystem-global state and ignore sc->memcg. Driving them
-> - * from per-memcg shrink_slab_memcg() invocations only burns CPU walking
-> - * per-cpu counters and queueing duplicate work: the actual reclaim happens on
-> - * the global path (kswapd or root direct reclaim) regardless. Restrict them
-> - * to that path.
-> - */
-> -static inline bool super_fs_objects_eligible(struct shrink_control *sc)
-> -{
-> -	return !sc->memcg || mem_cgroup_is_root(sc->memcg);
-> -}
-> -
->  /*
->   * One thing we have to be careful of with a per-sb shrinker is that we don't
->   * drop the last active reference to the superblock from within the shrinker.
-> @@ -212,7 +198,7 @@ static unsigned long super_cache_scan(struct shrinker *shrink,
->  	if (!super_trylock_shared(sb))
->  		return SHRINK_STOP;
->  
-> -	if (sb->s_op->nr_cached_objects && super_fs_objects_eligible(sc))
-> +	if (sb->s_op->nr_cached_objects)
->  		fs_objects = sb->s_op->nr_cached_objects(sb, sc);
->  
->  	inodes = list_lru_shrink_count(&sb->s_inode_lru, sc);
-> @@ -273,8 +259,7 @@ static unsigned long super_cache_count(struct shrinker *shrink,
->  		return 0;
->  	smp_rmb();
->  
-> -	if (sb->s_op && sb->s_op->nr_cached_objects &&
-> -	    super_fs_objects_eligible(sc))
-> +	if (sb->s_op && sb->s_op->nr_cached_objects)
->  		total_objects = sb->s_op->nr_cached_objects(sb, sc);
->  
->  	total_objects += list_lru_shrink_count(&sb->s_dentry_lru, sc);
-> diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
-> index eac7f9503805..f0d8251fad3b 100644
-> --- a/fs/xfs/xfs_super.c
-> +++ b/fs/xfs/xfs_super.c
-> @@ -54,6 +54,7 @@
->  #include "scrub/rcbag_btree.h"
->  
->  #include <linux/magic.h>
-> +#include <linux/memcontrol.h>
->  #include <linux/fs_context.h>
->  #include <linux/fs_parser.h>
->  #include <linux/fserror.h>
-> @@ -1242,6 +1243,17 @@ xfs_fs_nr_cached_objects(
->  	/* Paranoia: catch incorrect calls during mount setup or teardown */
->  	if (WARN_ON_ONCE(!sb->s_fs_info))
->  		return 0;
-> +
-> +	/*
-> +	 * The reclaimable inode count is filesystem-global and does not honour
-> +	 * sc->memcg, so it is only meaningful on the global (kswapd or root
-> +	 * direct reclaim) shrink path. Skip the per-memcg iterations of
-> +	 * shrink_slab_memcg() to avoid queueing duplicate global work and
-> +	 * pinning the shrinker bit in every memcg's bitmap.
-> +	 */
-> +	if (sc->memcg && !mem_cgroup_is_root(sc->memcg))
-> +		return 0;
-> +
->  	return xfs_reclaim_inodes_count(XFS_M(sb));
->  }
->  
-> diff --git a/mm/shmem.c b/mm/shmem.c
-> index 5789a0f5a346..3ba812e4f5ba 100644
-> --- a/mm/shmem.c
-> +++ b/mm/shmem.c
-> @@ -846,6 +846,17 @@ static long shmem_unused_huge_count(struct super_block *sb,
->  		struct shrink_control *sc)
->  {
->  	struct shmem_sb_info *sbinfo = SHMEM_SB(sb);
-> +
-> +	/*
-> +	 * The per-superblock shrinklist is filesystem-global and does not
-> +	 * honour sc->memcg, so it is only meaningful on the global (kswapd or
-> +	 * root direct reclaim) shrink path. Skip the per-memcg iterations of
-> +	 * shrink_slab_memcg() to avoid queueing duplicate global work and
-> +	 * pinning the shrinker bit in every memcg's bitmap.
-> +	 */
-> +	if (sc->memcg && !mem_cgroup_is_root(sc->memcg))
-> +		return 0;
-> +
->  	return READ_ONCE(sbinfo->shrinklist_len);
->  }
->  #else /* !CONFIG_TRANSPARENT_HUGEPAGE */
-> -- 
-> 2.53.0-Meta
-> 
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+This test simulates a ambiguous generation which can be caused by, for
+example, two successive power failures. Please note this is not related
+to degraded mounts or nodatacow.
+
+This bug may affect several raid levels, take raid1 (say disk A and B)
+as an example:
+
+At first power failure during transaction N, metadata trees of
+generation N are written to disk A, but super is not committed. Nothing
+is written to disk B.
+
+At second power failure during a different transaction N, nothing is
+written to disk A, but metadata trees and super is committed to disk B.
+
+This creates a ambiguous generation N in two disks. Currently btrfs
+can't detect this, and can lead to severe damages. 
+
+I'd like to discuss possible solutions:
+
+1) Turn btrfs metadata trees into merkle trees
+
+This is the most CoW flavor solution. With a strong checksum algorithm,
+merkle tree can gurantee ambiguous is detected and fixed.  However it is
+difficult to implement because metadata checksumming is done at bio time
+(not at tree manipulation time), also on-disk format is changed. 
+
+2) A write-intent bitmap
+
+This is the traditional solution to raid consistency problem. This can
+also helps resync nodatacow data. However it seems there is an anandoned
+series of write-intent patches in btrfs mailing list.
+
+3) Generation redzone
+
+Introduce a generation redzone value to superblock, which is updated at
+mount time, for example:
+
+1st mount: generation=N redzone=N   -> next generation id is N+1
+2nd mount: generation=N redzone=N+1 -> next generation id is N+2
+3rd mount: generation=N redzone=N+2 -> next generation id is N+3
+
+However it seems there can be infinte TRANS_STATE_UNBLOCKED
+transactions, so it's hard to decide how may delta should we add to
+redzone value to get next generation id. 
+
+Also, this redzone value is not applicable to tree-log, so BUG 2 (see
+below) can't be solved.
+
+4) Dirty workaround
+
+Pin metadata to a dedicated device (which can be LVM raid1) and ask user
+to run single metadata profile. This is too dirty and should not used.
+
+
+BUG 2. fstests: btrfs/349: test if latest tree-log is choosen at mount time on raid1 profile
+
+This test simulate a scenario that tree-log only exists in secondary
+device, and test if latest tree-log is choosen at mount time. Currently,
+the tree-log in the device with lowest devid is choosen. So fsync'ed
+data may loss if tree-log only exists in secondary device.
+
+A proposed draft fix is available at:
+
+https://lore.kernel.org/linux-btrfs/20260605102607.23786-1-zhangboyang.id@gmail.com/
+
+However, this draft fix also suffers from the above ambiguous generation
+problem.
+
+
+Zhang Boyang
+
+

@@ -1,60 +1,67 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 448133A5431
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8D3533DA5B4
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784011780; cv=none; b=EvPFlcllrz+vMx9HfjCYd73eaW3vOINDpqoF3kicpYOvtMa5YpRrEvo9uXKxrh3rjzsnUl9LQgXTq8nUbaMl8o3g9Frdas9ZAFo6n5EsurIYT4PkNReq4Cbcii1/1Pew6xfCjIvExo56vWG8bu4+b7hPwnnCJ10ihTFutp4g1Xc=
+	t=1784011782; cv=none; b=rDdYpXMLP092x4O4k00i8vgLdqV9Z8YymUEnh0/T1cMBNwtZM+xZ/ZMjIvSmaoPvAsguiqcsxvejqOQOCTVShMWfps7NeEPJ0xcOE8nqm70NElZDgx1oMsz11uMJtlp7frP1onUC5ANi9fr+EO1JWt/S1mPblosmkTSCLM3dzdQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784011780; c=relaxed/simple;
-	bh=2VrQT/eKZoZblO2/6szFh1Z5D+Y4+nmeeox4pcFhVN4=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=s+ZxwwoeQ6CoeUuUch1UXgnWY3c0TglMNHmxzKJ3BPbbexkH0WM8jqUoSkdJdY0sscQMBH2Sex103QFySc8LZGpqCyGopd11RFJmgWzBs8/vBHOshlPwNPMfVMjXiZmLab7P4wVoBoeaXEG4GbmGG3UL8OTt0oTlWK2jwLExyaU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=t/NZpGmt; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=t/NZpGmt; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1784011782; c=relaxed/simple;
+	bh=D1AOWtOwNpvFof6pv//JfFURI4XU2byWp8zFMrFDeUo=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=EXbM3ezXxUH+mIpc4lfJOGuzyod/M4VOgzPMsPaLOLwCQNZnNJvNP+oEyKwkohlEgjQogQ7I1KX4RT9A9qyEMOGePVmce/9j1boEN5wVJOuFA+mkKODBqx2Vh+bAZ2V5GLEyDk+bh6DoP5+0ZSRjTwFJd0gClIjtk98/FdUCwYw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=e9Hgpp3n; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=e9Hgpp3n; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="t/NZpGmt";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="t/NZpGmt"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="e9Hgpp3n";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="e9Hgpp3n"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id C953377D11
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:35 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 075A63E23
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:37 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784011775; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=IwdnZkLklKo/hu0fcM+NEmgaW9QUNII5Rn5I1WVM2/I=;
-	b=t/NZpGmtGmKPzxxrS/76rd6HPLKdkc37jqaJ7w6/SwBNAE7fAChV0IaPmAiwds+WyWuCUD
-	zw0NMhGQyFqD354QDeF+9TdYfLSO0R3WqbKA46mTAaqxgqDtuzxWPuMKLp0wg+/bv4H/3L
-	Ox5Nl+vBvLixhP1QqIhF3ZM0KDB003A=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="t/NZpGmt"
+	t=1784011777; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=jScngd1ZEBETQ5PShB+YBxsphNiRt/DegbHtWoiJ2bE=;
+	b=e9Hgpp3n5f2MGTFvOCDKoPhMoYoV5QBRHlGzl1s+5nK8CBmEu6qB3Ui20X4Q/SMXSq5R3K
+	JTZqQKB/LDQaxpfN67Tj3Ja7sXkIQv6NvwMvvJp9M1ihTLff7mpIDsfpyjvhYEcewoRthp
+	QlV4puAEpTpaNg6d2whDkl5MZNIxAD0=
+Authentication-Results: smtp-out2.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784011775; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=IwdnZkLklKo/hu0fcM+NEmgaW9QUNII5Rn5I1WVM2/I=;
-	b=t/NZpGmtGmKPzxxrS/76rd6HPLKdkc37jqaJ7w6/SwBNAE7fAChV0IaPmAiwds+WyWuCUD
-	zw0NMhGQyFqD354QDeF+9TdYfLSO0R3WqbKA46mTAaqxgqDtuzxWPuMKLp0wg+/bv4H/3L
-	Ox5Nl+vBvLixhP1QqIhF3ZM0KDB003A=
+	t=1784011777; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=jScngd1ZEBETQ5PShB+YBxsphNiRt/DegbHtWoiJ2bE=;
+	b=e9Hgpp3n5f2MGTFvOCDKoPhMoYoV5QBRHlGzl1s+5nK8CBmEu6qB3Ui20X4Q/SMXSq5R3K
+	JTZqQKB/LDQaxpfN67Tj3Ja7sXkIQv6NvwMvvJp9M1ihTLff7mpIDsfpyjvhYEcewoRthp
+	QlV4puAEpTpaNg6d2whDkl5MZNIxAD0=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 145B0779AE
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:34 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 46EDC779AE
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:36 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id jg4UMv7bVWp+TAAAD6G6ig
+	id AOLyAgDcVWp+TAAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:34 +0000
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:36 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 0/4] btrfs: removal of on-stack paddrs[], final part
-Date: Tue, 14 Jul 2026 16:19:13 +0930
-Message-ID: <cover.1784011485.git.wqu@suse.com>
+Subject: [PATCH v3 1/4] btrfs: replace btrfs_repair_io_failure() to use bio for page iteration
+Date: Tue, 14 Jul 2026 16:19:14 +0930
+Message-ID: <9fd1ee9cdbc40822723c5fb9279a25b0690c1182.1784011485.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
+In-Reply-To: <cover.1784011485.git.wqu@suse.com>
+References: <cover.1784011485.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -63,142 +70,245 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Spam-Flag: NO
-X-Rspamd-Action: no action
-X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_COUNT_TWO(0.00)[2];
-	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,smap.dev:url,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	FROM_EQ_ENVFROM(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim];
+	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: C953377D11
-X-Spam-Score: -3.01
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Level: 
 
-[CHANGELOG]
-v3:
-- Rebased to the latest for-next
-  There is a fix in RAID56, which can cause conflicts with the last
-  patch
+Currently btrfs_repair_io_failure() uses a @paddrs[] array to iterate
+pages.
 
-- Remove all remaining on-stack paddrs[] usage
-  There are two last ones in RAID56, one can be converted to use bio
-  interface, the other is not using on-stack paddrs[] array.
+Such a parameter is required for bs > ps cases, so that one fs block may
+cross several pages.
 
-  So we can finally remove all on-stack paddrs[] usage.
+However there is a much simpler and existing way to iterate pages: bio
+and bvec_iter.
 
-v2:
-- Fix a missing assignment for metadata repair
-  The logical should be assigned before passing it to
-  btrfs_repair_bbio_failure().
+This changes btrfs_repair_io_failure() by:
 
-- Move the commit message of error message change to the correct patch
-  It's changed in the first patch not the last one.
+- Use a const @bvec_iter pointer to locate where the pages are
+- Extract file offset/logical from the @bbio
+- Require no @step parameter
+  Above features allow us to shorten the parameter list.
 
-Since the experimental bs > ps support, several on-stack fixed paddrs[]
-arrays are introduced, for assemble mutli-page sized fs blocks.
+- Rename the function to btrfs_repair_bbio_failure()
 
-However that on-stack memory usage is always there for 4K page sized
-systems, no matter if the block size of the filesystem.
+- Change the caller in btrfs_repair_eb_io_failure() to allocate a bbio
+  Unlike the data read path, we do not have a handy bbio in that case.
+  So we need to allocate one just for btrfs_repair_bbio_failure().
 
-This series is part 1 of such on-stack paddrs[] cleanup.
+- Change the error reporting in btrfs_repair_bbio_failure() to include
+  root id and use inode number directly
+  Now for btree inode we will report a proper inode number (1).
 
-The idea is to use bio interface for page iterations, the core idea is
-to use a const bvec_iter as the pointer to where the block is.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/bio.c     | 61 ++++++++++++++++++++++++++--------------------
+ fs/btrfs/bio.h     |  5 ++--
+ fs/btrfs/disk-io.c | 25 +++++++++++++------
+ 3 files changed, 55 insertions(+), 36 deletions(-)
 
-Then we save a local bevc_iter, and use the local iter to check the next
-few pages until we fill a full block.
-
-Furthermore, with the help of bvec_iter, we can remove a lot of
-parameters:
-
-- file_offset
-- logical
-- bio_offset
-  All can be generated by using the @iter passed in and the
-  bbio->saved_iter to calculate the old @bio_offset.
-
-  @bio_offset is the (iter.bi_sector - saved_iter.bi_sector) <<
-  SECTOR_SHIFT.
-  As when bvec_iter is advanced, its bi_sector is also increased.
-
-  @logical is simpler, just iter.bi_sector << SECTOR_SHIFT.
-
-  @file_offset is the bbio->file_offset + bio_offset.
-
-This means we no longer need to use on-stack paddrs[] to csum
-generation.
-
-With bio interfaces, the iteration of an fs block is as simple as the
-following: (I tried to change the page/pg_off/cur_len into a macro just
-like btrfs_bio_for_each_block(), but failed)
-
-	u32 cur = 0;
-
-	btrfs_csum_init(&cctx, fs_info->csum_type);
-	while (cur < blocksize) {
-		struct page *page = bio_iter_page(&bbio->bio, iter);
-		const u32 pg_off = bio_iter_offset(&bbio->bio, iter);
-		const u32 cur_len = min(bio_iter_len(&bbio->bio, iter), blocksize - cur);
-		void *kaddr;
-
-		kaddr = kmap_local_page(page) + pg_off;
-		btrfs_csum_update(&cctx, kaddr, cur_len);
-		kunmap_local(kaddr);
-
-		bio_advance_iter_single(&bbio->bio, &iter, cur_len);
-		cur += cur_len;
-	}
-	btrfs_csum_final(&cctx, csum);
-
-However there are still some callers left:
-
-- Scrub
-  That's already addressed in another series accidentially
-  (https://lore.kernel.org/linux-btrfs/cover.1782795330.git.wqu@suse.com/)
-
-  That will be last user of btrfs_check_block_csum().
-
-- RAID56
-  That will be only location left without a bio.
-  In that case we can easily craft a local helper to do csum generation
-  without using on-stack paddrs[].
-
-Qu Wenruo (4):
-  btrfs: replace btrfs_repair_io_failure() to use bio for page iteration
-  btrfs: enhance btrfs_data_csum_ok() to use bio for page iteration
-  btrfs: use a shared helper to calculate data checksum for a bio
-  btrfs: remove on-stack paddrs[] array usage
-
- fs/btrfs/bio.c         | 140 +++++++++++++++++++----------------------
- fs/btrfs/bio.h         |   5 +-
- fs/btrfs/btrfs_inode.h |  12 ++--
- fs/btrfs/disk-io.c     |  25 +++++---
- fs/btrfs/file-item.c   |  20 ++----
- fs/btrfs/inode.c       | 114 +++++++++++----------------------
- fs/btrfs/raid56.c      |  47 ++++++++------
- 7 files changed, 159 insertions(+), 204 deletions(-)
-
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index cc0bd03048ba..9d0f72cc37ca 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -186,7 +186,6 @@ static void btrfs_end_repair_bio(struct btrfs_bio *repair_bbio,
+ 	 */
+ 	struct bvec_iter saved_iter = repair_bbio->saved_iter;
+ 	const u32 step = min(fs_info->sectorsize, PAGE_SIZE);
+-	const u64 logical = repair_bbio->saved_iter.bi_sector << SECTOR_SHIFT;
+ 	const u32 nr_steps = repair_bbio->saved_iter.bi_size / step;
+ 	int mirror = repair_bbio->mirror_num;
+ 	phys_addr_t paddrs[BTRFS_MAX_BLOCKSIZE / PAGE_SIZE];
+@@ -220,9 +219,8 @@ static void btrfs_end_repair_bio(struct btrfs_bio *repair_bbio,
+ 
+ 	do {
+ 		mirror = prev_repair_mirror(fbio, mirror);
+-		btrfs_repair_io_failure(fs_info, btrfs_ino(inode),
+-				  repair_bbio->file_offset, fs_info->sectorsize,
+-				  logical, paddrs, step, mirror);
++		btrfs_repair_bbio_failure(repair_bbio, &repair_bbio->saved_iter,
++					  fs_info->sectorsize, mirror);
+ 	} while (mirror != fbio->bbio->mirror_num);
+ 
+ done:
+@@ -925,21 +923,23 @@ void btrfs_submit_bbio(struct btrfs_bio *bbio, int mirror_num)
+  * The I/O is issued synchronously to block the repair read completion from
+  * freeing the bio.
+  *
+- * @ino:	Offending inode number
+- * @fileoff:	File offset inside the inode
++ * @bbio:	Original bbio where the repair is needed
++ * @orig_iter:	Points to where the repair start is
+  * @length:	Length of the repair write
+- * @logical:	Logical address of the range
+- * @paddrs:	Physical address array of the content
+- * @step:	Length of for each paddrs
+  * @mirror_num: Mirror number to write to. Must not be zero
+  */
+-int btrfs_repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 fileoff,
+-			    u32 length, u64 logical, const phys_addr_t paddrs[],
+-			    unsigned int step, int mirror_num)
++int btrfs_repair_bbio_failure(struct btrfs_bio *bbio, const struct bvec_iter *orig_iter,
++			      u32 length, int mirror_num)
+ {
+-	const u32 nr_steps = DIV_ROUND_UP_POW2(length, step);
++	struct btrfs_inode *inode = bbio->inode;
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct btrfs_io_stripe smap = { 0 };
+-	struct bio *bio = NULL;
++	struct bvec_iter iter = *orig_iter;
++	struct bio *repair_bio = NULL;
++	const u64 logical = iter.bi_sector << SECTOR_SHIFT;
++	const u64 fileoff = bbio->file_offset +
++			    ((iter.bi_sector - bbio->saved_iter.bi_sector) << SECTOR_SHIFT);
++	u32 cur = 0;
+ 	int ret = 0;
+ 
+ 	BUG_ON(!mirror_num);
+@@ -950,8 +950,9 @@ int btrfs_repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 fileoff,
+ 	ASSERT(IS_ALIGNED(fileoff, fs_info->sectorsize));
+ 	/* Either it's a single data or metadata block. */
+ 	ASSERT(length <= BTRFS_MAX_BLOCKSIZE);
+-	ASSERT(step <= length);
+-	ASSERT(is_power_of_2(step));
++
++	/* Our current iter should not be before the original bbio saved_iter. */
++	ASSERT(iter.bi_sector >= bbio->saved_iter.bi_sector);
+ 
+ 	/*
+ 	 * The fs either mounted RO or hit critical errors, no need
+@@ -979,15 +980,22 @@ int btrfs_repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 fileoff,
+ 		goto out_counter_dec;
+ 	}
+ 
+-	bio = bio_alloc(smap.dev->bdev, nr_steps, REQ_OP_WRITE | REQ_SYNC, GFP_NOFS);
+-	bio->bi_iter.bi_sector = smap.physical >> SECTOR_SHIFT;
+-	for (int i = 0; i < nr_steps; i++) {
+-		ret = bio_add_page(bio, phys_to_page(paddrs[i]), step, offset_in_page(paddrs[i]));
+-		/* We should have allocated enough slots to contain all the different pages. */
+-		ASSERT(ret == step);
++	repair_bio = bio_alloc(smap.dev->bdev, max(1, length >> PAGE_SHIFT),
++			REQ_OP_WRITE | REQ_SYNC, GFP_NOFS);
++	repair_bio->bi_iter.bi_sector = smap.physical >> SECTOR_SHIFT;
++	while (cur < length) {
++		struct page *page = bio_iter_page(&bbio->bio, iter);
++		const u32 pg_off = bio_iter_offset(&bbio->bio, iter);
++		const u32 cur_len = min(bio_iter_len(&bbio->bio, iter), length - cur);
++
++		ret = bio_add_page(repair_bio, page, cur_len, pg_off);
++		ASSERT(ret == cur_len);
++		bio_advance_iter_single(&bbio->bio, &iter, cur_len);
++		cur += cur_len;
+ 	}
+-	ret = submit_bio_wait(bio);
+-	bio_put(bio);
++
++	ret = submit_bio_wait(repair_bio);
++	bio_put(repair_bio);
+ 	if (ret) {
+ 		/* try to remap that extent elsewhere? */
+ 		btrfs_dev_stat_inc_and_print(smap.dev, BTRFS_DEV_STAT_WRITE_ERRS);
+@@ -995,8 +1003,9 @@ int btrfs_repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 fileoff,
+ 	}
+ 
+ 	btrfs_info_rl(fs_info,
+-		"read error corrected: ino %llu off %llu (dev %s sector %llu)",
+-			     ino, fileoff, btrfs_dev_name(smap.dev),
++		"read error corrected: root %llu ino %llu off %llu (dev %s sector %llu)",
++			     btrfs_root_id(inode->root), btrfs_ino(inode), fileoff,
++			     btrfs_dev_name(smap.dev),
+ 			     smap.physical >> SECTOR_SHIFT);
+ 	ret = 0;
+ 
+diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
+index 303ed6c7103d..b7bd377a0162 100644
+--- a/fs/btrfs/bio.h
++++ b/fs/btrfs/bio.h
+@@ -126,8 +126,7 @@ void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_status_t status);
+ 
+ void btrfs_submit_bbio(struct btrfs_bio *bbio, int mirror_num);
+ void btrfs_submit_repair_write(struct btrfs_bio *bbio, int mirror_num, bool dev_replace);
+-int btrfs_repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 fileoff,
+-			    u32 length, u64 logical, const phys_addr_t paddrs[],
+-			    unsigned int step, int mirror_num);
++int btrfs_repair_bbio_failure(struct btrfs_bio *bbio, const struct bvec_iter *orig_iter,
++			      u32 length, int mirror_num);
+ 
+ #endif
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 52593423bdc3..01b3287126ea 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -176,19 +176,24 @@ static int btrfs_repair_eb_io_failure(const struct extent_buffer *eb,
+ 				      int mirror_num)
+ {
+ 	struct btrfs_fs_info *fs_info = eb->fs_info;
+-	const u32 step = min(fs_info->nodesize, PAGE_SIZE);
+-	const u32 nr_steps = eb->len / step;
+-	phys_addr_t paddrs[BTRFS_MAX_BLOCKSIZE / PAGE_SIZE];
++	struct btrfs_bio *bbio;
++	int ret;
+ 
+ 	if (sb_rdonly(fs_info->sb))
+ 		return -EROFS;
+ 
++	/*
++	 * This bbio is only to queue all pages for btrfs_repair_bbio_failure().
++	 * Thus it will never get its endio called.
++	 */
++	bbio = btrfs_bio_alloc(max(1, fs_info->nodesize >> PAGE_SHIFT), REQ_OP_READ,
++			       BTRFS_I(fs_info->btree_inode), eb->start, NULL, NULL);
++	bbio->bio.bi_iter.bi_sector = eb->start >> SECTOR_SHIFT;
+ 	for (int i = 0; i < num_extent_pages(eb); i++) {
+ 		struct folio *folio = eb->folios[i];
+ 
+ 		/* No large folio support yet. */
+ 		ASSERT(folio_order(folio) == 0);
+-		ASSERT(i < nr_steps);
+ 
+ 		/*
+ 		 * For nodesize < page size, there is just one paddr, with some
+@@ -197,11 +202,17 @@ static int btrfs_repair_eb_io_failure(const struct extent_buffer *eb,
+ 		 * For nodesize >= page size, it's one or more paddrs, and eb->start
+ 		 * must be aligned to page boundary.
+ 		 */
+-		paddrs[i] = page_to_phys(&folio->page) + offset_in_page(eb->start);
++		ret = bio_add_page(&bbio->bio, &folio->page, min(PAGE_SIZE, fs_info->nodesize),
++				   offset_in_page(eb->start));
++		ASSERT(ret == min(PAGE_SIZE, fs_info->nodesize));
+ 	}
++	/* Since the bbio is never submitted, we have to save the iter manually. */
++	bbio->saved_iter = bbio->bio.bi_iter;
+ 
+-	return btrfs_repair_io_failure(fs_info, 0, eb->start, eb->len,
+-				       eb->start, paddrs, step, mirror_num);
++	ret = btrfs_repair_bbio_failure(bbio, &bbio->saved_iter,
++					fs_info->nodesize, mirror_num);
++	bio_put(&bbio->bio);
++	return ret;
+ }
+ 
+ /*
 -- 
 2.54.0
 

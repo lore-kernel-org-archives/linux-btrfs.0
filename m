@@ -1,156 +1,330 @@
-Received: from mail-pf1-f179.google.com (mail-pf1-f179.google.com [209.85.210.179])
+Received: from mail-pf1-f174.google.com (mail-pf1-f174.google.com [209.85.210.174])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 901C547DF90
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 16:11:17 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.179
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 073AF47DF90
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 16:11:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.174
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784045478; cv=none; b=Js92Z7H+3+Ba8et8lurcYO2MrJ/MObu4s9SgvGyp9y4PotUfBNYfkvsvaXwfX5m1L+gw0c+lhfuNLtr+2TARhz8Gx4/DobXcD6e/8Yv6ZmsBZaP/FgHxIqNBv2T7rpLk5IGBnPBqtOXoVZaJ3VIj7jQDArIsFqNyJ1I29Ko8PoI=
+	t=1784045484; cv=none; b=P7HwPw2xwyWbPQjQ4jWYEOlVkY0GEL7fNlujP3wlkxjcX5zAEkh5bJtjFWCVzCnAKWwKd+ntkIdP+jydr4tKKq7sDuyUhDhsstFIQzYf1FbphSWzMGvgyrsGWFX6/3n5p3yCJaPN8n8/vnXAXllbtpHR0BE9974924YSTif1yaU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784045478; c=relaxed/simple;
-	bh=3NiGYzJjQ067mKb5Ca+qNWWTlUvepgqvNM+Y2dzgzSI=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type; b=c+W9kTTVYyaFZlPXe1RS/7rK2QlOAP+wW3oZgCQcXLS5hhOL2ZMsKjN7GfoM35pRzLdtTk3yU8oxr6ac8RbYz5O0CAsfAeb6unV/yG9D2E8RRKQaCnyZuHrEnE43b/AKwzJQCHweHtt8eEtYVPJtVVhNWEuOhryZnfVxuy1ziPc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=H2dSwfs3; arc=none smtp.client-ip=209.85.210.179
+	s=arc-20240116; t=1784045484; c=relaxed/simple;
+	bh=HgR+vaP0ftok1YOg1zvxT0FJXWX6fQcTj/z4wHD3P2A=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version; b=LV06KmZHDhK2eeiWqLFQWBnPjZZpYv/A1uSkwTFXm7KpKU1UcCJNbyE2HSDzlt/gaANkx/xFWvEBs6+BsF6fDNF4h+zrcHs027hGr76kobQSXWBuPysKgvqOMZZAOYVYUJpMIWpHDiAgAUGbXJIWcNL1auq7CRqjYrfK+guEyJU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=pew4GNXX; arc=none smtp.client-ip=209.85.210.174
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="H2dSwfs3"
-Received: by mail-pf1-f179.google.com with SMTP id d2e1a72fcca58-8484f229529so943847b3a.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 09:11:17 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="pew4GNXX"
+Received: by mail-pf1-f174.google.com with SMTP id d2e1a72fcca58-8484f229529so944000b3a.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 09:11:22 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1784045477; x=1784650277; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:mime-version:message-id:date
-         :subject:cc:to:from:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=xN4ElnyPBXmv4bsesjCQ8obvXtneP+HkSrF4llGdWy8=;
-        b=H2dSwfs3vOx1tTPHBPKdCK78gBRtpHjYiIz/RXlhbkSxCpdSp3rWvMVigHiDuEzlCS
-         RCaARkNr4cm6vHYpCtDdGTmab8GxESL3y6cY42ZPvIvZYccSb5btAw2D0mEf8dNONSQq
-         cQZxtPI97V/ClYHy7LiXQYfubnduAKA/cHW6jr5UshYBt7Y81q17U1kx8ZO0fmK9ZIcI
-         Ei+dDTa9SIUsMSPT8KsJFlxiwS+PHZlry+0j3W/hNWGIzVVJqjFtUZEErpxlZvsDOkJw
-         rYj/Ph+I61ztUOVMt+pIBc/3AR32VDxGdLZ+GNgCJFA0Sa5eOevrllAW40wH74qSBZkU
-         TGIQ==
+        d=gmail.com; s=20251104; t=1784045482; x=1784650282; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=hHaDzTv+02Ry+SI62VG6o4I19RhBd4v/v7EzLbl5k3s=;
+        b=pew4GNXX5sa+sdHorUxGj35VZ3L5sjbrIEvKsv2XjvHvrAevnmC8tKqd8MUfhfSvu8
+         2NI3Fk6HJcPG1i+svns5HTNrAXRUwwOFeswDqAUKPyVKQFsCZRIuXTUNitz4kwaYc/Aq
+         fHoJ89jtmZ2sX08VqX45iiml+hXpNcXUOn2/+yIUPZW/Nr0MFPr21ID5DJf9LUkf4ro8
+         LpNs7NRK0JLJsTp62Gdpx/u3nCV2NWQ0Jti9otGCZ+97J4FDFxvf9ud0P6zzKLci+NfI
+         70Zu73m9+jUyNurbBKK05YdgyezRC/DL4B/E/Ul9tCx1MKXUtDnWoQV9QCK0l3OOWaEQ
+         J0bg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1784045477; x=1784650277;
-        h=content-transfer-encoding:content-type:mime-version:message-id:date
-         :subject:cc:to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=xN4ElnyPBXmv4bsesjCQ8obvXtneP+HkSrF4llGdWy8=;
-        b=alz5UueMTvlHBgZCrqBn6VCIEEGAtJOpqmFgLCg8wBNlD28z6Mbbk4z7fHVNJvf1At
-         xAUzrSvg5y/EpwONfllNOlHN1/t3A1UV3p0QMI54NfM+t+RlOLP4akh49mT0I09W7jvz
-         y1OsSoN16sjzJJz5fzhj15+nczg2s3RP37Nxb7Z6zfyD9C5NRF5Umbw9l+ixFkErTPNC
-         I07Alk4zyLMSlSAlscXhLD2PzcmPYODHywljNGfts14aNX1JHE1kXb6AcnXwK7THbiGx
-         DKyZnWn9ipYqzkuM1sCkK8Lgjqd9nrrF74qOiQuVouBmaBdhxWw5j9ulbjvaMSqtynEK
-         5rMg==
-X-Gm-Message-State: AOJu0Ywh5KVk9Y8TcN/5HQrbBSep3Yi1mcdoQzp01SB01Jc4jXi3OcEI
-	426KRdMw3DTFiA4kTBtIeNHdINYGU5Q2bSY4DEV++5SAhQoaJeKW8G6yx6SNsQ==
-X-Gm-Gg: AfdE7ckvkyUnG1adA2Ops/3cGQg9MXbS94negM/4LJfOTpFtY6qWy67CLWEOgCU5i8X
-	KOWkrcEMG6YSO4MOy5SZ6JLduN1uZSRhPjgKdptdZBTxHWbwWxMunzSt2q4yuOfW3cxhcL4Y/+x
-	VQJMk87z1fSS/FQkaQt2gyOIm3DRUThNubNZ/e4CuHbLVSmYRqzsFmKz7oodCpnNif+iKLKMQqW
-	nnaWLTeMt4Onoe4+pdXRf5wS582vO1Fkc/gmgChGwqolqE4SQS9cLA5Cxf2a5wjV+KstM7oJW88
-	1wQXRcqh0JnxpH5r8ZF4c7W0bMmA+xAzdSJ8WGysGW+YpmUKivw1ush4lsm53gAa9It7OrhpyYD
-	d55bHhrbWb4zj1xj1RL5q3PfCt4SSV0Hm4BfFK1+xDWy7skX4K+2U9Sy6if9fuyl1ruM0raQ2eV
-	TveenYV0cOpegjsWvsDtbgwAtTB5eUQtAVxShC6d30UM23S7NiwL9RWNOerl5ogdDaiXo6mqipX
-	Gy7ADFPmlOmjRf95w==
-X-Received: by 2002:a05:6a00:228f:b0:847:e2c7:59b6 with SMTP id d2e1a72fcca58-848896bebdfmr12746806b3a.11.1784045476861;
-        Tue, 14 Jul 2026 09:11:16 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1784045482; x=1784650282;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=hHaDzTv+02Ry+SI62VG6o4I19RhBd4v/v7EzLbl5k3s=;
+        b=DP0Wg5aFHTwgJLspw5vze2KbyJyCxF9TUo5S1y56MxaxUartEWfBHEMsZr5CYh1tHu
+         nAF/syMzzNOKT1KAKDTWHQ7Evm36STInvmKlI373rPxvI4E7SxPpwSchrOqwVrnj0axW
+         eGjkU4z/lXce+i+nwn0d3A9LX8cL7EHG1Wsr7Ne0TfOxvXPBaeG1eWgHsmr9TNYGLLTO
+         zVIbzCjFLEmO8lKZalT0X4ADhOo5HVRjTYw5AAi2Bqk9A4fqDn/hwy6ywUgUDyy6R8tA
+         NFkuHc9O4Y/f23xPbl67rRRFmxZw7MNSGrcCKR22YB/zVtT7mcbNadKiEyr3hQdi/Hgq
+         6yog==
+X-Gm-Message-State: AOJu0Yzi7DQDY/j0SLK4D54PcWO7DtxI/UP0Cn8n9ZUi3mt492iJ1sen
+	9u0JUWn9yN0ViaUk7SuP3iPketLn+5WcEwyePRWWXWcu8zdhfS6kbwePB3w6Vg==
+X-Gm-Gg: AfdE7cmcIS/V49DFQrxZwO7qQ8ihL2wKoPt9KydiQ8Xi1oPDopdCh/cV026lQXlNXkm
+	cFVEHR4CgxddBnV1a9muFmq3DjT3kwgCqONL3ik7cMj9gpIsJXnRm1P5/dlawxrEb0V//EyxCqd
+	u1ebu3zASjXQAPTlip/MRRNHsQI1eZrs+yU7gY0KgpwvUL6ZcJAMzC8SRbQ8bNsIpk9vE6eZ4vb
+	EQkAAfVL4Qgk0qJJpUyFn+pfZeu0q9Y4EdUOWdk4n9anReF1vniM9x/4QQY8T7TfbR0Iwb6Oe4U
+	QLUnLkrsdSytmAmLGfMsIruLnSxYE2or8CYT0MKB29U1g+XM1FbRpfJxeWN5Ltg9KYuqVBbDKML
+	fouJX0ZA4R/DuvwYbv9S0Fv2NIRnQFRyJMU2tSmd+bXn1LPf+oeqst0ZWwBIrA4CSaHBB9nRqAa
+	MwT11SPcLtHIs6H6IbMuODCZB+A+Zz+aV54ckqyK6FVF2dkXEI5fCa6vrieAavjzOCBhNZ/GnpJ
+	Qexr0OLqcFg6/0cwTwGQ6RAVW0m
+X-Received: by 2002:a05:6a00:c88:b0:848:82f0:6793 with SMTP id d2e1a72fcca58-8488986195dmr12064256b3a.70.1784045481974;
+        Tue, 14 Jul 2026 09:11:21 -0700 (PDT)
 Received: from localhost.localdomain (ec2-13-113-80-70.ap-northeast-1.compute.amazonaws.com. [13.113.80.70])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-84a4f26f703sm1825073b3a.17.2026.07.14.09.11.14
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-84a4f26f703sm1825073b3a.17.2026.07.14.09.11.20
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 14 Jul 2026 09:11:16 -0700 (PDT)
+        Tue, 14 Jul 2026 09:11:21 -0700 (PDT)
 From: Zhang Boyang <zhangboyang.id@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>,
 	Qu Wenruo <wqu@suse.com>,
-	Filipe Manana <fdmanana@kernel.org>
-Subject: [BUG] two raid consistency bugs
-Date: Wed, 15 Jul 2026 00:10:42 +0800
-Message-Id: <20260714161044.7330-1-zhangboyang.id@gmail.com>
+	Filipe Manana <fdmanana@kernel.org>,
+	Zhang Boyang <zhangboyang.id@gmail.com>
+Subject: [PATCH 1/2] fstests: btrfs/348: test ambiguous generation handling on raid1 profile
+Date: Wed, 15 Jul 2026 00:10:43 +0800
+Message-Id: <20260714161044.7330-2-zhangboyang.id@gmail.com>
 X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20260714161044.7330-1-zhangboyang.id@gmail.com>
+References: <20260714161044.7330-1-zhangboyang.id@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Hello btrfs devs,
-
-I found two raid-related bugs in btrfs. Two test cases are provided.
-
-
-BUG 1. fstests: btrfs/348: test ambiguous generation handling on raid1 profile
-
 This test simulates a ambiguous generation which can be caused by, for
-example, two successive power failures. Please note this is not related
-to degraded mounts or nodatacow.
+example, two successive power failures.
 
-This bug may affect several raid levels, take raid1 (say disk A and B)
-as an example:
+Please note this is not related to degraded mounts or nodatacow.
 
-At first power failure during transaction N, metadata trees of
-generation N are written to disk A, but super is not committed. Nothing
-is written to disk B.
+Unfortunately, there is currently no fix for this problem.
 
-At second power failure during a different transaction N, nothing is
-written to disk A, but metadata trees and super is committed to disk B.
+Signed-off-by: Zhang Boyang <zhangboyang.id@gmail.com>
+---
+ tests/btrfs/348     |  79 +++++++++++++++++++++++++
+ tests/btrfs/348.out | 141 ++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 220 insertions(+)
+ create mode 100755 tests/btrfs/348
+ create mode 100644 tests/btrfs/348.out
 
-This creates a ambiguous generation N in two disks. Currently btrfs
-can't detect this, and can lead to severe damages. 
-
-I'd like to discuss possible solutions:
-
-1) Turn btrfs metadata trees into merkle trees
-
-This is the most CoW flavor solution. With a strong checksum algorithm,
-merkle tree can gurantee ambiguous is detected and fixed.  However it is
-difficult to implement because metadata checksumming is done at bio time
-(not at tree manipulation time), also on-disk format is changed. 
-
-2) A write-intent bitmap
-
-This is the traditional solution to raid consistency problem. This can
-also helps resync nodatacow data. However it seems there is an anandoned
-series of write-intent patches in btrfs mailing list.
-
-3) Generation redzone
-
-Introduce a generation redzone value to superblock, which is updated at
-mount time, for example:
-
-1st mount: generation=N redzone=N   -> next generation id is N+1
-2nd mount: generation=N redzone=N+1 -> next generation id is N+2
-3rd mount: generation=N redzone=N+2 -> next generation id is N+3
-
-However it seems there can be infinte TRANS_STATE_UNBLOCKED
-transactions, so it's hard to decide how may delta should we add to
-redzone value to get next generation id. 
-
-Also, this redzone value is not applicable to tree-log, so BUG 2 (see
-below) can't be solved.
-
-4) Dirty workaround
-
-Pin metadata to a dedicated device (which can be LVM raid1) and ask user
-to run single metadata profile. This is too dirty and should not used.
-
-
-BUG 2. fstests: btrfs/349: test if latest tree-log is choosen at mount time on raid1 profile
-
-This test simulate a scenario that tree-log only exists in secondary
-device, and test if latest tree-log is choosen at mount time. Currently,
-the tree-log in the device with lowest devid is choosen. So fsync'ed
-data may loss if tree-log only exists in secondary device.
-
-A proposed draft fix is available at:
-
-https://lore.kernel.org/linux-btrfs/20260605102607.23786-1-zhangboyang.id@gmail.com/
-
-However, this draft fix also suffers from the above ambiguous generation
-problem.
-
-
-Zhang Boyang
-
+diff --git a/tests/btrfs/348 b/tests/btrfs/348
+new file mode 100755
+index 00000000..3fcaf744
+--- /dev/null
++++ b/tests/btrfs/348
+@@ -0,0 +1,79 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 Zhang Boyang.  All Rights Reserved.
++#
++# FS QA Test 348
++#
++# Test btrfs ambiguous generation handling on raid1 profile.
++# This can be caused by, for example, two successive power failures.
++#
++. ./common/preamble
++_begin_fstest auto quick read_repair raid
++
++. ./common/filter
++. ./common/fail_make_request
++. ./common/dmdust
++
++_require_fail_make_request
++_require_scratch_dev_pool 2
++_require_dm_target dust
++
++_scratch_dev_pool_get 2
++_check_minimal_fs_size $(( 1024 * 1024 * 1024 ))
++# a strong checksum like sha256 can't protect you
++_scratch_pool_mkfs "-m raid1 -d raid1 -b 1G -n 4K --csum sha256" >> $seqres.full 2>&1
++dev2=`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $2}'`
++_allow_fail_make_request
++
++echo "Step 1: prepare filesystem"
++_scratch_mount -o notreelog
++# create a 2-level FS_TREE, this is not strictly necessary
++# however this helps improve test result reproducibility (see below)
++for ((i = 0; i < 1000; i++)); do
++    $XFS_IO_PROG -f -c "pwrite -S 0xff 0 2K" $SCRATCH_MNT/foobar$i >> $seqres.full 2>&1
++done
++# the test file should reside in a leaf which is not read at mount time
++# so we can control which mirror to use by using _btrfs_buffered_read_on_mirror
++testfile="$SCRATCH_MNT/foobar42"
++_scratch_unmount
++
++echo "Step 2: simulate failure #1"
++_init_dust
++_mount_dust -o notreelog
++# simulate dev1 disappears just before writing superblock
++for ((i = 0; i < 4096 / 512; i++)); do
++    $DMSETUP_PROG message $DUST_NAME 0 addbadblock $((0x10000 / 512 + $i)) 255
++done
++$DMSETUP_PROG message $DUST_NAME 0 enable
++# simulate dev2 disappears before writing anything
++_bdev_fail_make_request $dev2 1
++# this write should fail
++$XFS_IO_PROG -f -c "pwrite -W -S 0xaa 0 2K" "$testfile" | _filter_xfs_io
++_cleanup_dust
++_bdev_fail_make_request $dev2 0
++
++echo "Step 3: simulate failure #2"
++_scratch_mount -o notreelog
++# simulate dev1 disappears before writing anything
++_bdev_fail_make_request $SCRATCH_DEV 1
++# this write should success
++$XFS_IO_PROG -f -c "pwrite -W -S 0xbb 0 2K" "$testfile" | _filter_xfs_io
++# simulate dev2 disappears after writing superblock
++_bdev_fail_make_request $dev2 1
++_scratch_unmount
++_bdev_fail_make_request $SCRATCH_DEV 0
++_bdev_fail_make_request $dev2 0
++
++echo "Step 4: simulate recovery"
++_scratch_mount -o notreelog
++# this read should trigger resync
++_btrfs_buffered_read_on_mirror 0 2 "$testfile" 0 2K
++echo "Step 5: verify written data"
++# read data should be 0xbb
++$XFS_IO_PROG -c "pread -v 0 2K" "$testfile" | _filter_xfs_io_offset
++_scratch_unmount
++
++_disallow_fail_make_request
++_scratch_dev_pool_put
++# success, all done
++_exit 0
+diff --git a/tests/btrfs/348.out b/tests/btrfs/348.out
+new file mode 100644
+index 00000000..645c8b36
+--- /dev/null
++++ b/tests/btrfs/348.out
+@@ -0,0 +1,141 @@
++QA output created by 348
++Allow global fail_make_request feature
++Step 1: prepare filesystem
++Step 2: simulate failure #1
++fsync: Input/output error
++Step 3: simulate failure #2
++wrote 2048/2048 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++Step 4: simulate recovery
++Step 5: verify written data
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++XXXXXXXX:  bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  ................
++read 2048/2048 bytes
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++Disallow global fail_make_request feature
+-- 
+2.53.0
 

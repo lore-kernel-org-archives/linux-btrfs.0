@@ -1,63 +1,53 @@
-Received: from xmbghk7.mail.qq.com (xmbghk7.mail.qq.com [43.163.128.43])
+Received: from out-189.mta1.migadu.com (out-189.mta1.migadu.com [95.215.58.189])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2D17715E5DC;
-	Tue, 14 Jul 2026 09:55:57 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=43.163.128.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 39867366566
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 10:15:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.189
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784022961; cv=none; b=QwfUv/Fgtt4/onJMwv7wrOuE0y9pgItqWVewmwtILpxbEmAl9e4+A6IbUDR/TCwtW2aoxs11E34MCgIdIBKZlxULskllkcuogRBRh1GlnQAjui3N86Wq8sPGaVb7gyAk/vKqVEfGiOvwGXQZCyVObzLFsTBvq9a3IXkFFys1Qzc=
+	t=1784024120; cv=none; b=U2yZeJJDQW3xxjyyJTGWdooaED0qDXpqyTkoOlBFjbMzm9ftYsjcob2eH6eEXB6tk+aakxHYTjdZo+m0fJou2FZpioJa3WnXu0Fd2uLha3fy4sp9th7cG03oC4JtJHmjnCtOe6n1Io8WavjEJDwn8ySdoB0eAYk7U3ZVx14AeSk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784022961; c=relaxed/simple;
-	bh=Czl1a3vjWJkd9UVpn7P3qE6klnHjIGtpIEO0BK4B2zU=;
-	h=Message-ID:From:To:Cc:Subject:Date:In-Reply-To:References:
-	 MIME-Version; b=AvfCh9qP87uyOelLSX2+UiZAtC3BloG8FOIp+LXifG+ojwAwYaYhe6TSookR032QbnqL86UGb4p5iMYewpVF09mkwHVEzpnqJCu/mVnJ0py9ShiIpy/mH8RVjAsW1/Fs/IFQF/CU2y0eW5D5JHUU+vE6iLq96ds6bSqpB7wk20g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com; spf=pass smtp.mailfrom=qq.com; dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b=IfUNk7uV; arc=none smtp.client-ip=43.163.128.43
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=qq.com
+	s=arc-20240116; t=1784024120; c=relaxed/simple;
+	bh=kPrNgsDRivRDPcvksQTGjuyrSS+KOZO65V4bh/N3t8A=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=a26LJZx5Fg771+ppUQmQwD59Q3lFp8mTMYRop5SVBJgmAi6p7GayZAQ2Odcl9CdJje/EuiJo9DL8tq2Px/S9XzNHut/4tSVgcPfZ+RJZjS4Lov6xAoctY1/yiPrlAjPo/PoelMHV9u/a5MHPhvRHw9mEJcVG5eHHsMdAiOw2nEk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=o7OshBKp; arc=none smtp.client-ip=95.215.58.189
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b="IfUNk7uV"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=qq.com; s=s201512;
-	t=1784022950; bh=11j/NZ2olRIA3EKe/4buA3yuUuWstguLgmXBdlHlVF0=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=IfUNk7uVg3aYWbU0/y/fbvwVTM0ebG/PQ/hufkimT6SzVGevjiwCelcun6dQFJp0G
-	 FtfqNaX656iVO0c/k/pTn10xUo8fGUEpA9WB9kYDFmwQluuUdLveT6+M7IGrryuixd
-	 Oq4kxS5k3Y0sHKOzZ52jKc4bqBc+xJHNKQZnMZKU=
-Received: from ikun ([2001:250:480c:2501::42d])
-	by newxmesmtplogicsvrsza53-0.qq.com (NewEsmtp) with SMTP
-	id DEF1FC5F; Tue, 14 Jul 2026 17:55:47 +0800
-X-QQ-mid: xmsmtpt1784022947t20zeyj3v
-Message-ID: <tencent_7498732A1B9E13C552CFF1101E377288C407@qq.com>
-X-QQ-XMAILINFO: M1rD3f8svNznwjnRTPwg1G/oinVO/apQqZC2b8zjtDqRUd5KXZtm77jhMeQaRs
-	 JZP49wwz3NmbtuFCZ9XVdg2LL3YvG9iS+cdY7PUqhnNUyfZ4jT4RH3csTirgLRVXfoyAjxqoRUde
-	 PWkD2n+kJcU1KwO7tlgOp2RmSAISZExaO/Ily910TZrD5SfRXA3DytgSmGLdUS4J7K0lC5kSUNtQ
-	 AMH1FAdDeE+6lmtqs3nGNe77K8OteoR9/Mdw5P0di6GzfzPnIRgfqKSC5RJLJ2OPP08WAPrUu4aD
-	 n0YG1rFQiHumxeHUcrAGDSdx5xcUebvEqTxOwvEzZenEgFf4BZXfww0k8eseSH8cJZQW7GiRno06
-	 G0IwrkS8fvQ/5KBsEOp/cs7we/9xpM4Wxm7MNp+Cw+J65n0YXL9FZ8ihrXuSPJkUJQnYjB2ci9xd
-	 Zz8g/vCJyPv+3zu7g2wZA9K2Y0DUASIWoWqhptPvuOUI7rGUKz9/1Wbm+E6pWB7XT1ZTXZA93hF4
-	 DR9woy1eSrb8qWnz1AXHex0IB5mQBUU8x6/QJEdtste02PTtPwTe0vbeVPO1IdtvWl3pQv++EWcg
-	 wAiGfj8M3P5LuanMfPkCzHV4jwtIkSI5zncQqGIg1rlIJJPpF+b6qkbE5NO2sRRz8E50oo5wrjX4
-	 qNdwG4LjzI22D1uKVAJ6JAU94Zg0ikrgSsC8tVIKgJMhXvQlwNycYpHGMigwTZN+z9VyhPhLT1Zw
-	 RGjmT0XYcNUJkxl1GuhOAmnmtlJpPzWcxGxBiZRGgKVsMI6mNSKpSnEO7ou2Ynv6tzpnFCVSWw7V
-	 7xB1oBtJ+FojUNo1ZdzoktlO9+vrHxdP0ZC4BbdTogJMuSmYz0hqo9J2eCvIdaKf0mrzO5GVCDUC
-	 vG3qYAFUgP2DMPS8jz3Kj5cabJRS5zDVIyf5dHzEcv2boCF7ycCOz9bBDpXZdqZpT5T08mWRcRVp
-	 TL56AI0DuEsGyFSCOoC7dz2IurO9kG6VxXV4Cj1HAYrb8d7dI/hj35/qo9/EmpqsX1hBSudH8Gcl
-	 j4P/Y/R9UqP1U5K6EEyRJS9lMUgNY=
-X-QQ-XMRINFO: MSVp+SPm3vtSI1QTLgDHQqIV1w2oNKDqfg==
-From: Guanghui Yang <3497809730@qq.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com,
-	dsterba@suse.com,
-	naohiro.aota@wdc.com,
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="o7OshBKp"
+X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
+	t=1784024106;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=56WaBc6KXQyiipU+GOph11PsAxOVbA6Vo71DO1epUmU=;
+	b=o7OshBKpJ96UBIQa6AkejMkZQiPGv9LV20o8q96VoBIHxr5DI02vQGJoH6/Rms4+sbJWYo
+	l3+EccFU9tEcAmYpRR7YTLNB6Bx69xoTQMKcDdqKvi2CC7Gh7W6W71zYW4zTaAVUEPL87x
+	Adi41BX+7qZ8wEaW2Sx8IuXJzH1/fEM=
+From: Usama Arif <usama.arif@linux.dev>
+To: brauner@kernel.org,
+	qi.zheng@linux.dev,
+	jack@suse.cz,
+	linux-fsdevel@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
-	Guanghui Yang <3497809730@qq.com>,
-	stable@vger.kernel.org,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v2] btrfs: zoned: fix missing chunk metadata reservation
-Date: Tue, 14 Jul 2026 17:55:43 +0800
-X-OQ-MSGID: <20260714095543.32-1-3497809730@qq.com>
-X-Mailer: git-send-email 2.52.0.windows.1
-In-Reply-To: <tencent_860054603C488A379E3D21126EA610D63108@qq.com>
-References: <tencent_860054603C488A379E3D21126EA610D63108@qq.com>
+	Al Viro <viro@zeniv.linux.org.uk>,
+	linux-mm@kvack.org
+Cc: hughd@google.com,
+	boris@bur.io,
+	clm@fb.com,
+	dsterba@suse.com,
+	linux-btrfs@vger.kernel.org,
+	cem@kernel.org,
+	linux-xfs@vger.kernel.org,
+	shakeel.butt@linux.dev,
+	hannes@cmpxchg.org,
+	riel@surriel.com,
+	kernel-team@meta.com,
+	Usama Arif <usama.arif@linux.dev>
+Subject: [PATCH] fs: push nr_cached_objects memcg gating into individual filesystems
+Date: Tue, 14 Jul 2026 03:14:54 -0700
+Message-ID: <20260714101454.1202449-1-usama.arif@linux.dev>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -65,88 +55,167 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Migadu-Flow: FLOW_OUT
 
-reserve_chunk_space() stores the return value of
-btrfs_zoned_activate_one_bg() in ret. The helper can return 1 after
-successfully activating a block group, but ret is later used to decide
-whether to reserve metadata for chunk tree updates.
+Commit 0baad6f9b997 ("fs/super: skip non-memcg-aware nr_cached_objects
+in memcg slab shrink") added a check in fs/super.c that skips the
+->nr_cached_objects() hook whenever the shrinker is invoked for a
+non-root memcg, because none of the current implementations (btrfs,
+xfs, shmem huge) honour sc->memcg.
 
-As a result, successful activation skips btrfs_block_rsv_add() and leaves
-trans->chunk_bytes_reserved unchanged. Use a separate variable for the
-activation result so positive success does not affect the later
-reservation. Keep activation failures in ret instead of returning early so
-the function uses the common tail path.
+That policy is really a filesystem-owned property: fs/super.c should
+not encode the assumption that these hooks are never memcg-aware,
+since a future implementation might legitimately filter by sc->memcg.
+Move the check into btrfs_nr_cached_objects(), xfs_fs_nr_cached_objects()
+and shmem_unused_huge_count() so each filesystem can lift the
+restriction independently once its underlying counters/scans become
+memcg-aware, without needing a coordinated change to fs/super.c.
 
-Fixes: b6a98021e401 ("btrfs: zoned: activate necessary block group")
-Cc: stable@vger.kernel.org
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Signed-off-by: Guanghui Yang <3497809730@qq.com>
+Behaviour is unchanged: calls into these hooks from shrink_slab_memcg()
+still early-return 0 for non-root memcg contexts, keeping the shrinker
+bit clearable in each memcg's bitmap; the global (kswapd or root
+direct reclaim) path still drives them as before.
+
+Signed-off-by: Usama Arif <usama.arif@linux.dev>
 ---
-Changes since v1:
-- Keep activation failures in ret instead of returning early from
-  reserve_chunk_space(), as suggested by Johannes / sashiko.
+ fs/btrfs/super.c   | 11 +++++++++++
+ fs/super.c         | 19 ++-----------------
+ fs/xfs/xfs_super.c | 12 ++++++++++++
+ mm/shmem.c         | 11 +++++++++++
+ 4 files changed, 36 insertions(+), 17 deletions(-)
 
-Testing:
-- Targeted zoned null_blk reproducer with 4G host-managed device,
-  256MiB zones and zone_max_active=8. The helper returned 1 and
-  btrfs_block_rsv_add() reserved 393216 bytes in the reproduced path.
-- xfstests was not run because the test host does not have an xfstests
-  tree installed.
-
- fs/btrfs/block-group.c | 34 +++++++++++++++++++---------------
- 1 file changed, 19 insertions(+), 15 deletions(-)
-
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index ab76a5173272..8def7abb728f 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -4532,25 +4532,29 @@ static void reserve_chunk_space(struct btrfs_trans_handle *trans,
- 		if (IS_ERR(bg)) {
- 			ret = PTR_ERR(bg);
- 		} else {
-+			int activate_ret;
-+
- 			/*
- 			 * We have a new chunk. We also need to activate it for
- 			 * zoned filesystem.
- 			 */
--			ret = btrfs_zoned_activate_one_bg(info, true);
--			if (ret < 0)
--				return;
--
--			/*
--			 * If we fail to add the chunk item here, we end up
--			 * trying again at phase 2 of chunk allocation, at
--			 * btrfs_create_pending_block_groups(). So ignore
--			 * any error here. An ENOSPC here could happen, due to
--			 * the cases described at do_chunk_alloc() - the system
--			 * block group we just created was just turned into RO
--			 * mode by a scrub for example, or a running discard
--			 * temporarily removed its free space entries, etc.
--			 */
--			btrfs_chunk_alloc_add_chunk_item(trans, bg);
-+			activate_ret = btrfs_zoned_activate_one_bg(info, true);
-+			if (activate_ret < 0) {
-+				ret = activate_ret;
-+			} else {
-+				/*
-+				 * If we fail to add the chunk item here, we end
-+				 * up trying again at phase 2 of chunk allocation,
-+				 * at btrfs_create_pending_block_groups(). So
-+				 * ignore any error here. An ENOSPC here could
-+				 * happen, due to the cases described at
-+				 * do_chunk_alloc() - the system block group we
-+				 * just created was just turned into RO mode by a
-+				 * scrub for example, or a running discard
-+				 * temporarily removed its free space entries, etc.
-+				 */
-+				btrfs_chunk_alloc_add_chunk_item(trans, bg);
-+			}
- 		}
- 	}
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index a7d804219bec..16c24bccc897 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -22,6 +22,7 @@
+ #include <linux/namei.h>
+ #include <linux/miscdevice.h>
+ #include <linux/magic.h>
++#include <linux/memcontrol.h>
+ #include <linux/slab.h>
+ #include <linux/ratelimit.h>
+ #include <linux/crc32c.h>
+@@ -2434,6 +2435,16 @@ static long btrfs_nr_cached_objects(struct super_block *sb, struct shrink_contro
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+ 	const s64 nr = percpu_counter_read_positive(&fs_info->evictable_extent_maps);
  
-
-base-commit: a13c140cc289c0b7b3770bce5b3ad42ab35074aa
++	/*
++	 * The evictable extent map counter is filesystem-global and does not
++	 * honour sc->memcg, so it is only meaningful on the global (kswapd or
++	 * root direct reclaim) shrink path. Skip the per-memcg iterations of
++	 * shrink_slab_memcg() to avoid queueing duplicate global work and
++	 * pinning the shrinker bit in every memcg's bitmap.
++	 */
++	if (sc->memcg && !mem_cgroup_is_root(sc->memcg))
++		return 0;
++
+ 	trace_btrfs_extent_map_shrinker_count(fs_info, nr);
+ 
+ 	return nr;
+diff --git a/fs/super.c b/fs/super.c
+index d2d04a6f4f84..a8fd61136aaf 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -24,7 +24,6 @@
+ #include <linux/export.h>
+ #include <linux/slab.h>
+ #include <linux/blkdev.h>
+-#include <linux/memcontrol.h>
+ #include <linux/mount.h>
+ #include <linux/security.h>
+ #include <linux/writeback.h>		/* for the emergency remount stuff */
+@@ -170,19 +169,6 @@ static void super_wake(struct super_block *sb, unsigned int flag)
+ 	wake_up_var(&sb->s_flags);
+ }
+ 
+-/*
+- * The s_op->nr_cached_objects hooks (used for example by btrfs and xfs)
+- * operate on filesystem-global state and ignore sc->memcg. Driving them
+- * from per-memcg shrink_slab_memcg() invocations only burns CPU walking
+- * per-cpu counters and queueing duplicate work: the actual reclaim happens on
+- * the global path (kswapd or root direct reclaim) regardless. Restrict them
+- * to that path.
+- */
+-static inline bool super_fs_objects_eligible(struct shrink_control *sc)
+-{
+-	return !sc->memcg || mem_cgroup_is_root(sc->memcg);
+-}
+-
+ /*
+  * One thing we have to be careful of with a per-sb shrinker is that we don't
+  * drop the last active reference to the superblock from within the shrinker.
+@@ -212,7 +198,7 @@ static unsigned long super_cache_scan(struct shrinker *shrink,
+ 	if (!super_trylock_shared(sb))
+ 		return SHRINK_STOP;
+ 
+-	if (sb->s_op->nr_cached_objects && super_fs_objects_eligible(sc))
++	if (sb->s_op->nr_cached_objects)
+ 		fs_objects = sb->s_op->nr_cached_objects(sb, sc);
+ 
+ 	inodes = list_lru_shrink_count(&sb->s_inode_lru, sc);
+@@ -273,8 +259,7 @@ static unsigned long super_cache_count(struct shrinker *shrink,
+ 		return 0;
+ 	smp_rmb();
+ 
+-	if (sb->s_op && sb->s_op->nr_cached_objects &&
+-	    super_fs_objects_eligible(sc))
++	if (sb->s_op && sb->s_op->nr_cached_objects)
+ 		total_objects = sb->s_op->nr_cached_objects(sb, sc);
+ 
+ 	total_objects += list_lru_shrink_count(&sb->s_dentry_lru, sc);
+diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
+index eac7f9503805..f0d8251fad3b 100644
+--- a/fs/xfs/xfs_super.c
++++ b/fs/xfs/xfs_super.c
+@@ -54,6 +54,7 @@
+ #include "scrub/rcbag_btree.h"
+ 
+ #include <linux/magic.h>
++#include <linux/memcontrol.h>
+ #include <linux/fs_context.h>
+ #include <linux/fs_parser.h>
+ #include <linux/fserror.h>
+@@ -1242,6 +1243,17 @@ xfs_fs_nr_cached_objects(
+ 	/* Paranoia: catch incorrect calls during mount setup or teardown */
+ 	if (WARN_ON_ONCE(!sb->s_fs_info))
+ 		return 0;
++
++	/*
++	 * The reclaimable inode count is filesystem-global and does not honour
++	 * sc->memcg, so it is only meaningful on the global (kswapd or root
++	 * direct reclaim) shrink path. Skip the per-memcg iterations of
++	 * shrink_slab_memcg() to avoid queueing duplicate global work and
++	 * pinning the shrinker bit in every memcg's bitmap.
++	 */
++	if (sc->memcg && !mem_cgroup_is_root(sc->memcg))
++		return 0;
++
+ 	return xfs_reclaim_inodes_count(XFS_M(sb));
+ }
+ 
+diff --git a/mm/shmem.c b/mm/shmem.c
+index 5789a0f5a346..3ba812e4f5ba 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -846,6 +846,17 @@ static long shmem_unused_huge_count(struct super_block *sb,
+ 		struct shrink_control *sc)
+ {
+ 	struct shmem_sb_info *sbinfo = SHMEM_SB(sb);
++
++	/*
++	 * The per-superblock shrinklist is filesystem-global and does not
++	 * honour sc->memcg, so it is only meaningful on the global (kswapd or
++	 * root direct reclaim) shrink path. Skip the per-memcg iterations of
++	 * shrink_slab_memcg() to avoid queueing duplicate global work and
++	 * pinning the shrinker bit in every memcg's bitmap.
++	 */
++	if (sc->memcg && !mem_cgroup_is_root(sc->memcg))
++		return 0;
++
+ 	return READ_ONCE(sbinfo->shrinklist_len);
+ }
+ #else /* !CONFIG_TRANSPARENT_HUGEPAGE */
 -- 
-2.52.0.windows.1
+2.53.0-Meta
 

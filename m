@@ -1,60 +1,63 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from xmbghk7.mail.qq.com (xmbghk7.mail.qq.com [43.163.128.43])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 14D6B318ECD
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 09:08:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2D17715E5DC;
+	Tue, 14 Jul 2026 09:55:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=43.163.128.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784020098; cv=none; b=j2beu+j7CHqVI+AJy+Rwaj9yphIaNd7s2f0+MliFVdnme+COLc2zvG2td8SK0wDMLkemdMxUy+CfVnUqRWPQwYb2a1DmoepwMVUMkC4vBxDjiqQ5TVJdAKXNACFkz2O8mnAfZwQ4TjtjSHUCKugt75T8N82VcpFk22ULinSD5QY=
+	t=1784022961; cv=none; b=QwfUv/Fgtt4/onJMwv7wrOuE0y9pgItqWVewmwtILpxbEmAl9e4+A6IbUDR/TCwtW2aoxs11E34MCgIdIBKZlxULskllkcuogRBRh1GlnQAjui3N86Wq8sPGaVb7gyAk/vKqVEfGiOvwGXQZCyVObzLFsTBvq9a3IXkFFys1Qzc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784020098; c=relaxed/simple;
-	bh=NJo7MlhG03XZ95eyKjganVgYCzFt7x8XxLl5h68wULA=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=dTh8xfTKN01GlRDPGx/ORsQqkTTOnhxnPYND+Xka+DXM/TGwofdgDRdBE6tPddnf2eWNOAD+X3gFC75Anv3aeHD24WPbalYos32Poei2sIr+o+4V5LxG63r/2u1Q0iEg1qvRGzqFOw6T6SP0oXFgzd/IPx9uEyIPmrYbKX29JSM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qA7XEVE8; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qA7XEVE8; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1784022961; c=relaxed/simple;
+	bh=Czl1a3vjWJkd9UVpn7P3qE6klnHjIGtpIEO0BK4B2zU=;
+	h=Message-ID:From:To:Cc:Subject:Date:In-Reply-To:References:
+	 MIME-Version; b=AvfCh9qP87uyOelLSX2+UiZAtC3BloG8FOIp+LXifG+ojwAwYaYhe6TSookR032QbnqL86UGb4p5iMYewpVF09mkwHVEzpnqJCu/mVnJ0py9ShiIpy/mH8RVjAsW1/Fs/IFQF/CU2y0eW5D5JHUU+vE6iLq96ds6bSqpB7wk20g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com; spf=pass smtp.mailfrom=qq.com; dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b=IfUNk7uV; arc=none smtp.client-ip=43.163.128.43
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=qq.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qA7XEVE8";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qA7XEVE8"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 2264D3E0A;
-	Tue, 14 Jul 2026 09:08:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784020093; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=fp0ZRjg/oOEFcNQzC5Wgr2V0kNXwMTWRpG8kllYk3QQ=;
-	b=qA7XEVE8kmjnmUDq8BmivtXUnyPhaZNTv/iAqzG5Lm89s6HEKbobpr98IA+tfPvh9hkN41
-	WXr+fcSQg6KJDfwxAKL1tngtv7oOn4/+InK5jO1k/YDfbRtDeOJpq4WJbVAVbGBsH6dR5C
-	hlLFAA4n8Qz5EQh/BfPvaNRFYBUt6jo=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784020093; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=fp0ZRjg/oOEFcNQzC5Wgr2V0kNXwMTWRpG8kllYk3QQ=;
-	b=qA7XEVE8kmjnmUDq8BmivtXUnyPhaZNTv/iAqzG5Lm89s6HEKbobpr98IA+tfPvh9hkN41
-	WXr+fcSQg6KJDfwxAKL1tngtv7oOn4/+InK5jO1k/YDfbRtDeOJpq4WJbVAVbGBsH6dR5C
-	hlLFAA4n8Qz5EQh/BfPvaNRFYBUt6jo=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1D607779AE;
-	Tue, 14 Jul 2026 09:08:11 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id zsPjM3v8VWrXVQAAD6G6ig
-	(envelope-from <wqu@suse.com>); Tue, 14 Jul 2026 09:08:11 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org,
-	linux-block@vger.kernel.org
-Subject: [PATCH] block: do not warn when doing greedy allocation in folio_alloc_greedy()
-Date: Tue, 14 Jul 2026 18:37:39 +0930
-Message-ID: <d10571445ee505d95ba6eaad7558fc1f556d2921.1784020005.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b="IfUNk7uV"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=qq.com; s=s201512;
+	t=1784022950; bh=11j/NZ2olRIA3EKe/4buA3yuUuWstguLgmXBdlHlVF0=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References;
+	b=IfUNk7uVg3aYWbU0/y/fbvwVTM0ebG/PQ/hufkimT6SzVGevjiwCelcun6dQFJp0G
+	 FtfqNaX656iVO0c/k/pTn10xUo8fGUEpA9WB9kYDFmwQluuUdLveT6+M7IGrryuixd
+	 Oq4kxS5k3Y0sHKOzZ52jKc4bqBc+xJHNKQZnMZKU=
+Received: from ikun ([2001:250:480c:2501::42d])
+	by newxmesmtplogicsvrsza53-0.qq.com (NewEsmtp) with SMTP
+	id DEF1FC5F; Tue, 14 Jul 2026 17:55:47 +0800
+X-QQ-mid: xmsmtpt1784022947t20zeyj3v
+Message-ID: <tencent_7498732A1B9E13C552CFF1101E377288C407@qq.com>
+X-QQ-XMAILINFO: M1rD3f8svNznwjnRTPwg1G/oinVO/apQqZC2b8zjtDqRUd5KXZtm77jhMeQaRs
+	 JZP49wwz3NmbtuFCZ9XVdg2LL3YvG9iS+cdY7PUqhnNUyfZ4jT4RH3csTirgLRVXfoyAjxqoRUde
+	 PWkD2n+kJcU1KwO7tlgOp2RmSAISZExaO/Ily910TZrD5SfRXA3DytgSmGLdUS4J7K0lC5kSUNtQ
+	 AMH1FAdDeE+6lmtqs3nGNe77K8OteoR9/Mdw5P0di6GzfzPnIRgfqKSC5RJLJ2OPP08WAPrUu4aD
+	 n0YG1rFQiHumxeHUcrAGDSdx5xcUebvEqTxOwvEzZenEgFf4BZXfww0k8eseSH8cJZQW7GiRno06
+	 G0IwrkS8fvQ/5KBsEOp/cs7we/9xpM4Wxm7MNp+Cw+J65n0YXL9FZ8ihrXuSPJkUJQnYjB2ci9xd
+	 Zz8g/vCJyPv+3zu7g2wZA9K2Y0DUASIWoWqhptPvuOUI7rGUKz9/1Wbm+E6pWB7XT1ZTXZA93hF4
+	 DR9woy1eSrb8qWnz1AXHex0IB5mQBUU8x6/QJEdtste02PTtPwTe0vbeVPO1IdtvWl3pQv++EWcg
+	 wAiGfj8M3P5LuanMfPkCzHV4jwtIkSI5zncQqGIg1rlIJJPpF+b6qkbE5NO2sRRz8E50oo5wrjX4
+	 qNdwG4LjzI22D1uKVAJ6JAU94Zg0ikrgSsC8tVIKgJMhXvQlwNycYpHGMigwTZN+z9VyhPhLT1Zw
+	 RGjmT0XYcNUJkxl1GuhOAmnmtlJpPzWcxGxBiZRGgKVsMI6mNSKpSnEO7ou2Ynv6tzpnFCVSWw7V
+	 7xB1oBtJ+FojUNo1ZdzoktlO9+vrHxdP0ZC4BbdTogJMuSmYz0hqo9J2eCvIdaKf0mrzO5GVCDUC
+	 vG3qYAFUgP2DMPS8jz3Kj5cabJRS5zDVIyf5dHzEcv2boCF7ycCOz9bBDpXZdqZpT5T08mWRcRVp
+	 TL56AI0DuEsGyFSCOoC7dz2IurO9kG6VxXV4Cj1HAYrb8d7dI/hj35/qo9/EmpqsX1hBSudH8Gcl
+	 j4P/Y/R9UqP1U5K6EEyRJS9lMUgNY=
+X-QQ-XMRINFO: MSVp+SPm3vtSI1QTLgDHQqIV1w2oNKDqfg==
+From: Guanghui Yang <3497809730@qq.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com,
+	dsterba@suse.com,
+	naohiro.aota@wdc.com,
+	linux-kernel@vger.kernel.org,
+	Guanghui Yang <3497809730@qq.com>,
+	stable@vger.kernel.org,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH v2] btrfs: zoned: fix missing chunk metadata reservation
+Date: Tue, 14 Jul 2026 17:55:43 +0800
+X-OQ-MSGID: <20260714095543.32-1-3497809730@qq.com>
+X-Mailer: git-send-email 2.52.0.windows.1
+In-Reply-To: <tencent_860054603C488A379E3D21126EA610D63108@qq.com>
+References: <tencent_860054603C488A379E3D21126EA610D63108@qq.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,80 +65,88 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
 
-[WARNING]
-During one of my local btrfs fstests runs, folio_alloc() inside
-folio_alloc_greedy() triggered an allocation failure report when trying
-to allocate an order-4 folio.
+reserve_chunk_space() stores the return value of
+btrfs_zoned_activate_one_bg() in ret. The helper can return 1 after
+successfully activating a block group, but ret is later used to decide
+whether to reserve metadata for chunk tree updates.
 
-The kernel is from the latest development branch, which is utilizing
-the IOMAP_DIO_BOUNCE flag for direct writes when the inode requires
-checksum.
+As a result, successful activation skips btrfs_block_rsv_add() and leaves
+trans->chunk_bytes_reserved unchanged. Use a separate variable for the
+activation result so positive success does not affect the later
+reservation. Keep activation failures in ret instead of returning early so
+the function uses the common tail path.
 
-Unfortunately I didn't save the full log, only the function and the
-order.
-
-[CAUSE]
-When the IOMAP_DIO_BOUNCE flag is utilized, we will hit the following call
-chain:
-
- bio_iov_iter_bounce_write()
- |- folio_alloc_greedy()
-    |- folio_alloc(gfp | __GFP_NORETRY, get_order(*size));
-
-However __GFP_NORETRY will still emit an allocation failure report
-when it fails.
-
-And folio_alloc_greedy() will retry with a smaller order anyway, there
-is no point in emitting that allocation failure report.
-
-[FIX]
-Append the __GFP_NOWARN flag to folio_alloc() for the larger-order folio
-attempts.
-
-Fixes: 8dd5e7c75d7b ("block: add helpers to bounce buffer an iov_iter into bios")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Fixes: b6a98021e401 ("btrfs: zoned: activate necessary block group")
+Cc: stable@vger.kernel.org
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Signed-off-by: Guanghui Yang <3497809730@qq.com>
 ---
- block/bio.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Changes since v1:
+- Keep activation failures in ret instead of returning early from
+  reserve_chunk_space(), as suggested by Johannes / sashiko.
 
-diff --git a/block/bio.c b/block/bio.c
-index f2a5f4d0a967..5ac954c70dd0 100644
---- a/block/bio.c
-+++ b/block/bio.c
-@@ -1285,7 +1285,8 @@ static struct folio *folio_alloc_greedy(gfp_t gfp, size_t *size,
- 	struct folio *folio;
+Testing:
+- Targeted zoned null_blk reproducer with 4G host-managed device,
+  256MiB zones and zone_max_active=8. The helper returned 1 and
+  btrfs_block_rsv_add() reserved 393216 bytes in the reproduced path.
+- xfstests was not run because the test host does not have an xfstests
+  tree installed.
+
+ fs/btrfs/block-group.c | 34 +++++++++++++++++++---------------
+ 1 file changed, 19 insertions(+), 15 deletions(-)
+
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index ab76a5173272..8def7abb728f 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -4532,25 +4532,29 @@ static void reserve_chunk_space(struct btrfs_trans_handle *trans,
+ 		if (IS_ERR(bg)) {
+ 			ret = PTR_ERR(bg);
+ 		} else {
++			int activate_ret;
++
+ 			/*
+ 			 * We have a new chunk. We also need to activate it for
+ 			 * zoned filesystem.
+ 			 */
+-			ret = btrfs_zoned_activate_one_bg(info, true);
+-			if (ret < 0)
+-				return;
+-
+-			/*
+-			 * If we fail to add the chunk item here, we end up
+-			 * trying again at phase 2 of chunk allocation, at
+-			 * btrfs_create_pending_block_groups(). So ignore
+-			 * any error here. An ENOSPC here could happen, due to
+-			 * the cases described at do_chunk_alloc() - the system
+-			 * block group we just created was just turned into RO
+-			 * mode by a scrub for example, or a running discard
+-			 * temporarily removed its free space entries, etc.
+-			 */
+-			btrfs_chunk_alloc_add_chunk_item(trans, bg);
++			activate_ret = btrfs_zoned_activate_one_bg(info, true);
++			if (activate_ret < 0) {
++				ret = activate_ret;
++			} else {
++				/*
++				 * If we fail to add the chunk item here, we end
++				 * up trying again at phase 2 of chunk allocation,
++				 * at btrfs_create_pending_block_groups(). So
++				 * ignore any error here. An ENOSPC here could
++				 * happen, due to the cases described at
++				 * do_chunk_alloc() - the system block group we
++				 * just created was just turned into RO mode by a
++				 * scrub for example, or a running discard
++				 * temporarily removed its free space entries, etc.
++				 */
++				btrfs_chunk_alloc_add_chunk_item(trans, bg);
++			}
+ 		}
+ 	}
  
- 	while (*size > minsize) {
--		folio = folio_alloc(gfp | __GFP_NORETRY, get_order(*size));
-+		folio = folio_alloc(gfp | __GFP_NORETRY | __GFP_NOWARN,
-+				    get_order(*size));
- 		if (folio)
- 			return folio;
- 		*size = rounddown_pow_of_two(*size - 1);
+
+base-commit: a13c140cc289c0b7b3770bce5b3ad42ab35074aa
 -- 
-2.54.0
+2.52.0.windows.1
 

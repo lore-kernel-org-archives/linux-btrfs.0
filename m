@@ -1,118 +1,66 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from out-181.mta0.migadu.com (out-181.mta0.migadu.com [91.218.175.181])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0C7EA36A004
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 22:54:10 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0888F41B8E6
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 22:55:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.181
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784069652; cv=none; b=H+eNS+/5MzBMGsd2KKC/OuWT3upIuaj4hgTi2qelsyIRc+cdiR7U0THFYt5L8Mfae68dq2hZbr62Gh91v0kpNYXp3cah7BvwxCUoWTDA51JVoJoFYssHJWpWwI7AVLiVl2DJn07rRrcW92kqV+utVxWf2B4GM0n/+e18FcyTygA=
+	t=1784069707; cv=none; b=GvlmjzetGAYOL5EAaGk1A3O5WGaLjnc6gVRl5PQL+nQj3ezWb2ehDz7+i5HeetegP8BkRx7PNrV8f4Wn5rRO9pN3NEFlYiWnfUClXU7wZC5vFYkwcsGMgHqi2A7hbBhB41Z9+BgPFrRqGz/6hHjh5+XHxc+QrTodslNoQDAxsw8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784069652; c=relaxed/simple;
-	bh=t8dsh5415XSw6Rfkwmff7zJ/jkGMxFjtUauKtMBsgak=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=WN1IXkgveVsVClfTNnIAeNStuJ+5D7nFbc/d36iF+s2Fjav/gIeoj1S35d0FlU9KsvwR340QVYRbronydCERnX7fhWIoc5lsCA+LJ+jUom6r42mNu5yYOU8W3cb2nc0HfQ7fGbXnaJ6TfyCBb/Iw92XxOzFpP+rPp1W1IEvYEY0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=eodlWaIz; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=VnR1dVIf; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1784069707; c=relaxed/simple;
+	bh=9PFKAy8sk84dn8y2/weMvZWqWDtDNWEVqqLxbrZNbO8=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=l83rI+TvP46KTQ3K/cqmxms4oRfqvo+lR2ZGbO1Zq0L6j/vAK9m8hwkjSqHo/ObBVj0NvrvhVduZ7HpwTsVl1BP04YINAlcbsyOOgvyGlXX7gCsU8JlCFG1tFdfGYGEhilG+wadMXFrfsWugWzCUCSlZZi3FrxLp19gB5RSiHaI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=SwvzaJ0e; arc=none smtp.client-ip=91.218.175.181
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="eodlWaIz";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="VnR1dVIf"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id C6DD87808A
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 22:54:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784069649; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=bCnrzbdU2KlNou00bClIP/GorQV/wWzKgmNfhunc2ac=;
-	b=eodlWaIzQI4pp445A3GaAXcl+BnCwY0eApYP92OtXBYQlRKyxRsDX50fzc53ldZ+ZlhWCr
-	5Xd+CExmaRriNx079eYp0KgikIXK+SrRN7GHlVtBlyjNZPCy4/kz9WQmkln7LiadUB2Cf6
-	tiVt4N0AQFVkKVNEu7czlvaft+QynoA=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784069647; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=bCnrzbdU2KlNou00bClIP/GorQV/wWzKgmNfhunc2ac=;
-	b=VnR1dVIfL9s560O8EszjTo2e+k9NHTfcQ7mWkbmMNjUu+a0HjiXkOcXH23hPiAvY2vQj8a
-	em/lOFn/NgQDo7Q0GVj8xIDN7iqCuAg7X+svFiSxMk5q/vDRkA+CSdia42LylUjuzjGk7L
-	jX9QR0u6GsnsHR+oGGSWwfgM59BnHlQ=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BAF7C779AE
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 22:54:07 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id Zto+LQ++VmogCAAAD6G6ig
-	(envelope-from <dsterba@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 22:54:07 +0000
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Btrfs progs release 7.1
-Date: Wed, 15 Jul 2026 00:54:04 +0200
-Message-ID: <20260714225407.688358-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.55.0
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="SwvzaJ0e"
+Date: Tue, 14 Jul 2026 15:54:47 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
+	t=1784069693;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Zex7fDtrxgjxYmJUwLrkUDR7R6DM3+vGl+Fsw51hImE=;
+	b=SwvzaJ0e32GKnb/IHDdbJGWcQMPFtprKZ5M7WJPOChLZno05mzZGYITi5vokDQfCvVKL9H
+	eXnB8MS4Iwszhr0srjYTlYi9B3f60SyohAGHTF+qeacRYU6NebMWPXqoykvRpPQpmCtcT9
+	VrpwxW5FXHRxHVx0Xm13USBckm+pZjg=
+X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
+From: Shakeel Butt <shakeel.butt@linux.dev>
+To: Dave Chinner <dgc@kernel.org>
+Cc: Usama Arif <usama.arif@linux.dev>, brauner@kernel.org, 
+	qi.zheng@linux.dev, jack@suse.cz, linux-fsdevel@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>, linux-mm@kvack.org, 
+	hughd@google.com, boris@bur.io, clm@fb.com, dsterba@suse.com, 
+	linux-btrfs@vger.kernel.org, cem@kernel.org, linux-xfs@vger.kernel.org, hannes@cmpxchg.org, 
+	riel@surriel.com, kernel-team@meta.com
+Subject: Re: [PATCH] fs: push nr_cached_objects memcg gating into individual
+ filesystems
+Message-ID: <ala6pd9jmPccGjgC@linux.dev>
+References: <20260714101454.1202449-1-usama.arif@linux.dev>
+ <ala2rDHrFDjql3Qg@dread>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,pypi.org:url,suse.com:mid];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ala2rDHrFDjql3Qg@dread>
+X-Migadu-Flow: FLOW_OUT
 
-Hi,
+On Wed, Jul 15, 2026 at 08:22:36AM +1000, Dave Chinner wrote:
+> On Tue, Jul 14, 2026 at 03:14:54AM -0700, Usama Arif wrote:
+> > Commit 0baad6f9b997 ("fs/super: skip non-memcg-aware nr_cached_objects
+> > in memcg slab shrink") added a check in fs/super.c that skips the
+> > ->nr_cached_objects() hook whenever the shrinker is invoked for a
+> > non-root memcg, because none of the current implementations (btrfs,
+> > xfs, shmem huge) honour sc->memcg.
+> 
+> I don't see that commit in an upstream tree. I'm guessing I wasn't
+> cc'd on it, either, because I don't recall seeing that as a patch,
+> either.
 
-btrfs-progs version 7.1 have been released.
-
-Changelog:
-
-* mkfs:
-  * use GET_CSUMS ioctl (if provided by kernel, 7.2) to reuse existing
-    checksums for --rootdir, works with --reflink to avoid reading file data
-  * fix last block handling for reflink
-  * fix handling of incompressible data extents
-  * fix --rootdir size estimation when using hardlinks
-* fi mkswapfile: add option to specify page size, useful on ARM64
-* check: add option to skip qgroup verification to speed up check
-* in experimental build, use V2 of tree search ioctl, this can use larger
-  buffer
-* preliminary fscrypt support
-* enhance filesystem opening modes with more fine-grained support of
-  partially damaged trees and allow to skip non-essential trees
-* other:
-  * stability and error handling fixes
-  * CI updates
-  * updated tests
-  * documentation updates
-
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-Release: https://github.com/kdave/btrfs-progs/releases/tag/v7.1
-Python: https://pypi.org/project/btrfsutil/
+https://lore.kernel.org/all/20260609123047.1948242-1-usama.arif@linux.dev/

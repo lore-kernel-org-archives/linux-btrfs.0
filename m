@@ -1,145 +1,204 @@
-Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2C5C837A488
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:41:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.52
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784011277; cv=pass; b=r5EPMiV+7TRA7lLQs9S7bjvF1gOlTFFRxCXSKE53ptv2Eki0rHtnVF4UpgMM91gLhVt+5OxL5d/llNVL7mScQ6GO5f6voCp8InWvtlJhkAS2dYrwgc2tDMpZO1snskoXDLoZKDCGHLTFpFY+8MikjQR67lW7wcYbKQaLaRD4qRU=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784011277; c=relaxed/simple;
-	bh=ir8BQBRCKwTf+RogCk13Rm84PoG+rCErYXpsd8jDRqg=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=AIesLkgFmAeYQ5x9Axih5mWr6rTxI1HYu1Bu9plm0q1KOOWnJBbkuwstfQBd66YirCmJs/TONTFUp3Oqa+EGv4YjPCrjyD1Xw6NjIoV6gFNn7NcUTepQThvSPz0y7icT62hCHksY1XyYCwZB/QKUeHLeCFfoKHdDcB/4kg7grh4=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=F4KmT1XT; arc=pass smtp.client-ip=209.85.128.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 448133A5431
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1784011780; cv=none; b=EvPFlcllrz+vMx9HfjCYd73eaW3vOINDpqoF3kicpYOvtMa5YpRrEvo9uXKxrh3rjzsnUl9LQgXTq8nUbaMl8o3g9Frdas9ZAFo6n5EsurIYT4PkNReq4Cbcii1/1Pew6xfCjIvExo56vWG8bu4+b7hPwnnCJ10ihTFutp4g1Xc=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1784011780; c=relaxed/simple;
+	bh=2VrQT/eKZoZblO2/6szFh1Z5D+Y4+nmeeox4pcFhVN4=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=s+ZxwwoeQ6CoeUuUch1UXgnWY3c0TglMNHmxzKJ3BPbbexkH0WM8jqUoSkdJdY0sscQMBH2Sex103QFySc8LZGpqCyGopd11RFJmgWzBs8/vBHOshlPwNPMfVMjXiZmLab7P4wVoBoeaXEG4GbmGG3UL8OTt0oTlWK2jwLExyaU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=t/NZpGmt; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=t/NZpGmt; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="F4KmT1XT"
-Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-493b7612475so30584175e9.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2026 23:41:15 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1784011274; cv=none;
-        d=google.com; s=arc-20260327;
-        b=HlGt3ezXR6LqgOk1jCAFkBrmEXRpz6NkAOxAgLtDyl+KtfKgoucgJ5/uyKh1Pb4XDb
-         jiyqzGH5VjavRyElsEf3h2lmlRv5FImo1GtiGxkiaiHuEoZitcoFr4NAkWhU4JyitsoI
-         RaNJYg2uixiCVHBtQ85qjhJ8sHG+mFS3/h5Szhg2ZQ4ttl86GIK/3NbydFGuFinv9aPT
-         /Piufi6XFjRkbFyYeaum/TPW2N/wc/82SB9qejZyQvZEYoJ0/aFMu1WWNedkIIa21I8r
-         BFBV+q8JamxyjXyNqZoef/n1mS/3zCEemOsiKwx9tfZE2MTTP2tkYMXhRhUDCSlgOJnX
-         kqRQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=5GYexmfLYE7f6AsYpjFBmtbGsKj7qeN8Aupm6bbq2Wk=;
-        fh=gccavu6KskZuhdxKZGGZqKbRpE8AZv+Jw1v9OVMw784=;
-        b=sxpKwA2ysC+N+nZHNd9+IER5iRGzzSpu1+4tFJgAz4iNs3m0KKazVRXMhMRLX/pxTK
-         0Kd5cxeVH5cOQONsXi0SttqogaDawZOTGOGfPXewpxUeSKnXYWvOZj9rptMzWiiye6Jj
-         r9Wq9Hur/OcIlIVWrG1dJKKidcu6XQn6zMbwOo+szz4TKiuMDoHs20E392zzgvCBKT9C
-         P+h21YyTfa/NJCgFOWVk37uNksyrV0fnRjbp1IyPefh0ox4O+lTaOu1/e5WwTeSs/S11
-         CFQmBb7sY6kxmNKQqnBjT5mQT71qkMoccNePpY6TMWkm81JaxUzfs77ew6uSWIQyvv6N
-         Uv0g==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1784011274; x=1784616074; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=5GYexmfLYE7f6AsYpjFBmtbGsKj7qeN8Aupm6bbq2Wk=;
-        b=F4KmT1XTC4GOdEHbF0cxlVengWLluYb/OP7kvbWnroiIOGAwrGj6QHWO5qBTsOXwoX
-         yUFXmYFXRcd/OryXu4wrMtvqowcSOCBBSjfHldtZ41miGUsrK9eH4vW7P/uO6DIpJqTt
-         apkUp4OCVIvdeQF906ODi++oz6KmrGvNoquqbjLTIWNChb3+26CjrMByb3JIujBCtb2L
-         b14u8vN1cUIwuldb9WXibuqvhwEX0C8n/oFpm8bO5l1re9Zf7S8/2K7nvD7fT73ooCPb
-         Yryc/TaGdcXIht9Gag5sZaKxALYTQIAlY3eTL/bJYopnnIxgP85q/cBtUKgRolcfNpWG
-         YqZw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1784011274; x=1784616074;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=5GYexmfLYE7f6AsYpjFBmtbGsKj7qeN8Aupm6bbq2Wk=;
-        b=GWNzCk2IJbpY9lfe9//DxfSAaab8ilAzxRqbCexkJ+npyGFma9cbZnoZSc+A4KuhWd
-         7pVebG5j+qaPTFOuV/SLlNZNiNnACtDliQ8J4L/w4wO3sHToFpyK7suJllYcM6GQyRcv
-         fimq3HjKsbm8k6NKqRYROmSfqNybtVxG3qb+hPil9Q9TV+SSTs4nYawCb23FELrVhGxB
-         3BCORTg2HaXbu7VEDJACLi7xlVtEHN5iJjyfmXzmyrPJRIHZncikyeuCrbPyCBXbCRGt
-         BBsQSFVANYwIH9RPDVVN5xQ6kVM7Wvc6TE/id3sa9CnIMxlGOth+1nPrNq4rDgCnEYge
-         GYYw==
-X-Gm-Message-State: AOJu0YwzQiNPZej81bEai567rWtWaEYUSp7nPxfcMeJFPCZad3zZy8GY
-	D982PYp/uqLt1IbS3GiQ3NqaGePeUZFROBXkMXy4hkPF8KPMoXQZre9mBquZbo8m+hVJVOU9O0x
-	fyYM5SMRcje6cTvETxVDWu/rKU1V00yb7L6Lp6ZaDJwdt/BVqU/m1x+I=
-X-Gm-Gg: AfdE7ckqV8Un4Vyc0U8XnPUbBuTSW9i/VnXZ4+d2up9uknMHyQJFUGq8RL7rxe3X360
-	70Tb6JFAaDsrrb87TzpB36lLfPJj695ex76z5E6GN0GTZzAZC7rAfK+9JJWPX+wJGazE6bUdJ92
-	BMCaHFZKOMQiarl5My4/57TsYo8u5n5yhows75GlOmoXyZFVzDl2fItXvqrJWCCKWkI3B38oFNh
-	Sskqwa/9aQlSIbATuoDJ5CEqHI471jebbfMu3BJPaUtKk4JjVK3Gj2uDWtQhIXNKkSAR9moY7lR
-	tHUXcsqj+bSxextwXo0C4wSgt/TNtt5e/AiUJwsEXPT+vw5yc2yvtDbxZCtqbDP7cOZsPA==
-X-Received: by 2002:a05:600c:1d9a:b0:493:c535:3934 with SMTP id
- 5b1f17b1804b1-495384a43aemr14974755e9.36.1784011274563; Mon, 13 Jul 2026
- 23:41:14 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="t/NZpGmt";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="t/NZpGmt"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C953377D11
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:35 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1784011775; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=IwdnZkLklKo/hu0fcM+NEmgaW9QUNII5Rn5I1WVM2/I=;
+	b=t/NZpGmtGmKPzxxrS/76rd6HPLKdkc37jqaJ7w6/SwBNAE7fAChV0IaPmAiwds+WyWuCUD
+	zw0NMhGQyFqD354QDeF+9TdYfLSO0R3WqbKA46mTAaqxgqDtuzxWPuMKLp0wg+/bv4H/3L
+	Ox5Nl+vBvLixhP1QqIhF3ZM0KDB003A=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b="t/NZpGmt"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1784011775; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=IwdnZkLklKo/hu0fcM+NEmgaW9QUNII5Rn5I1WVM2/I=;
+	b=t/NZpGmtGmKPzxxrS/76rd6HPLKdkc37jqaJ7w6/SwBNAE7fAChV0IaPmAiwds+WyWuCUD
+	zw0NMhGQyFqD354QDeF+9TdYfLSO0R3WqbKA46mTAaqxgqDtuzxWPuMKLp0wg+/bv4H/3L
+	Ox5Nl+vBvLixhP1QqIhF3ZM0KDB003A=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 145B0779AE
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:34 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id jg4UMv7bVWp+TAAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 06:49:34 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/4] btrfs: removal of on-stack paddrs[], final part
+Date: Tue, 14 Jul 2026 16:19:13 +0930
+Message-ID: <cover.1784011485.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <d687c3aa28b09bcd90bfea33afc9e907f2ee57ef.1783827722.git.wqu@suse.com>
-In-Reply-To: <d687c3aa28b09bcd90bfea33afc9e907f2ee57ef.1783827722.git.wqu@suse.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Tue, 14 Jul 2026 08:41:03 +0200
-X-Gm-Features: AUfX_mwWrTgyY2NKZc9xSoYC22CKNbj6K1bwb35z9YjF2vROjX7HT48Zxzo49Ns
-Message-ID: <CAPjX3FdHP-cU0HQj-ibUbWZscvOFRceL9=A+PGTU875KWGdqyA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: raid56: fix an incorrect csum skip during scrub
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Rspamd-Action: no action
+X-Spam-Level: 
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_COUNT_TWO(0.00)[2];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	FROM_EQ_ENVFROM(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: C953377D11
+X-Spam-Score: -3.01
 
-On Sun, 12 Jul 2026 at 05:43, Qu Wenruo <wqu@suse.com> wrote:
-> Commit 7425a2894019 ("btrfs: introduce btrfs_bio_for_each_block_all()
-> helper") uses the new helper to replace the nested loop inside
-> verify_bio_data_sectors(), which simplifies the code.
->
-> However that also changed the behavior of "continue" when a block has no
-> data checksum.
->
-> Previously the "continue" will skip the old for() loop, which will also
-> increase @total_sector_nr.
->
-> Now the "continue" will skip the new btrfs_bio_for_each_block_all()
-> loop, which doesn't update @total_sector_nr.
->
-> This means if we hit a block that has no data checksum, we will skip all
-> the remaining blocks no matter if they have data checksum.
-> As @total_sector_nr will never be updated, and that test_bit() will
-> always return false.
->
-> Fix it by increasing @total_sector_nr before calling "continue".
->
-> Fixes: 7425a2894019 ("btrfs: introduce btrfs_bio_for_each_block_all() helper")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+[CHANGELOG]
+v3:
+- Rebased to the latest for-next
+  There is a fix in RAID56, which can cause conflicts with the last
+  patch
 
-Thanks
+- Remove all remaining on-stack paddrs[] usage
+  There are two last ones in RAID56, one can be converted to use bio
+  interface, the other is not using on-stack paddrs[] array.
 
-Reviewed-by: Daniel Vacek <neelx@suse.com>
+  So we can finally remove all on-stack paddrs[] usage.
 
-> ---
->  fs/btrfs/raid56.c | 4 +++-
->  1 file changed, 3 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> index baaa18b3c958..885602ab6448 100644
-> --- a/fs/btrfs/raid56.c
-> +++ b/fs/btrfs/raid56.c
-> @@ -1679,8 +1679,10 @@ static void verify_bio_data_sectors(struct btrfs_raid_bio *rbio,
->                         continue;
->
->                 /* No csum for this sector, skip to the next sector. */
-> -               if (!test_bit(total_sector_nr, rbio->csum_bitmap))
-> +               if (!test_bit(total_sector_nr, rbio->csum_bitmap)) {
-> +                       total_sector_nr++;
->                         continue;
-> +               }
->
->                 expected_csum = rbio->csum_buf + total_sector_nr * fs_info->csum_size;
->                 btrfs_calculate_block_csum_pages(fs_info, paddrs, csum_buf);
-> --
-> 2.54.0
->
->
+v2:
+- Fix a missing assignment for metadata repair
+  The logical should be assigned before passing it to
+  btrfs_repair_bbio_failure().
+
+- Move the commit message of error message change to the correct patch
+  It's changed in the first patch not the last one.
+
+Since the experimental bs > ps support, several on-stack fixed paddrs[]
+arrays are introduced, for assemble mutli-page sized fs blocks.
+
+However that on-stack memory usage is always there for 4K page sized
+systems, no matter if the block size of the filesystem.
+
+This series is part 1 of such on-stack paddrs[] cleanup.
+
+The idea is to use bio interface for page iterations, the core idea is
+to use a const bvec_iter as the pointer to where the block is.
+
+Then we save a local bevc_iter, and use the local iter to check the next
+few pages until we fill a full block.
+
+Furthermore, with the help of bvec_iter, we can remove a lot of
+parameters:
+
+- file_offset
+- logical
+- bio_offset
+  All can be generated by using the @iter passed in and the
+  bbio->saved_iter to calculate the old @bio_offset.
+
+  @bio_offset is the (iter.bi_sector - saved_iter.bi_sector) <<
+  SECTOR_SHIFT.
+  As when bvec_iter is advanced, its bi_sector is also increased.
+
+  @logical is simpler, just iter.bi_sector << SECTOR_SHIFT.
+
+  @file_offset is the bbio->file_offset + bio_offset.
+
+This means we no longer need to use on-stack paddrs[] to csum
+generation.
+
+With bio interfaces, the iteration of an fs block is as simple as the
+following: (I tried to change the page/pg_off/cur_len into a macro just
+like btrfs_bio_for_each_block(), but failed)
+
+	u32 cur = 0;
+
+	btrfs_csum_init(&cctx, fs_info->csum_type);
+	while (cur < blocksize) {
+		struct page *page = bio_iter_page(&bbio->bio, iter);
+		const u32 pg_off = bio_iter_offset(&bbio->bio, iter);
+		const u32 cur_len = min(bio_iter_len(&bbio->bio, iter), blocksize - cur);
+		void *kaddr;
+
+		kaddr = kmap_local_page(page) + pg_off;
+		btrfs_csum_update(&cctx, kaddr, cur_len);
+		kunmap_local(kaddr);
+
+		bio_advance_iter_single(&bbio->bio, &iter, cur_len);
+		cur += cur_len;
+	}
+	btrfs_csum_final(&cctx, csum);
+
+However there are still some callers left:
+
+- Scrub
+  That's already addressed in another series accidentially
+  (https://lore.kernel.org/linux-btrfs/cover.1782795330.git.wqu@suse.com/)
+
+  That will be last user of btrfs_check_block_csum().
+
+- RAID56
+  That will be only location left without a bio.
+  In that case we can easily craft a local helper to do csum generation
+  without using on-stack paddrs[].
+
+Qu Wenruo (4):
+  btrfs: replace btrfs_repair_io_failure() to use bio for page iteration
+  btrfs: enhance btrfs_data_csum_ok() to use bio for page iteration
+  btrfs: use a shared helper to calculate data checksum for a bio
+  btrfs: remove on-stack paddrs[] array usage
+
+ fs/btrfs/bio.c         | 140 +++++++++++++++++++----------------------
+ fs/btrfs/bio.h         |   5 +-
+ fs/btrfs/btrfs_inode.h |  12 ++--
+ fs/btrfs/disk-io.c     |  25 +++++---
+ fs/btrfs/file-item.c   |  20 ++----
+ fs/btrfs/inode.c       | 114 +++++++++++----------------------
+ fs/btrfs/raid56.c      |  47 ++++++++------
+ 7 files changed, 159 insertions(+), 204 deletions(-)
+
+-- 
+2.54.0
+

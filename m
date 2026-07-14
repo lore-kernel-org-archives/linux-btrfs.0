@@ -1,176 +1,63 @@
-Received: from mail-pf1-f173.google.com (mail-pf1-f173.google.com [209.85.210.173])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8713C47D94A
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 16:11:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.173
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CB2AF481FB0;
+	Tue, 14 Jul 2026 16:15:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784045485; cv=none; b=Z26a2tmLhfaGHzaOQx3Tau8CV3ufW8h5+nxtfj0pGH1zXRiO1J8wLS9t0AnwI310C9/OrwIGMHEEe0ALFZB22UIu6zaOA1yiyqXYCWDHcZsrXufW3DMns7dTnJyAUelZFkyGTZHjX3BM+5KSL2Ic2sMDmzSijMDxnjLtrkHdR+A=
+	t=1784045760; cv=none; b=i5JBfXtipgArkUnV3znrsSzlFa6FHBjNsFO2aStXsIq+hi6D+kISyFsFWxwCAvVKuzF1seHWn3VRWv1Ir6M50xuG3YQZC9P8sbyybLe662ZeTEkbVnwPH81VS0XYcd4jjmeYJPi2VDU40KTQ58xOWagyb6QFjkuTn55H8uTekow=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784045485; c=relaxed/simple;
-	bh=+TFYhRNR4sYWL12dCRbjZG2Sx9acI9+CTe/ELY3nut4=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=GrPGDNSJFi+9uZcTuexiG9uSolfVKwj9hc7Cj9ZNYK0F6MYQsckJ6G+Z4lydRgtR3QxKkwkDu//jh6C1sWKNpm2kRPBJT6WSzFxGA5+EpH1AzC88Gl+5brplOwFdanFjHlUMKPJaIhs+eGx0zwMrBZyaQbilAOVmLPAnCpcICQI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=nXJc/p0W; arc=none smtp.client-ip=209.85.210.173
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1784045760; c=relaxed/simple;
+	bh=R9k794ZCEfphev6hy9jkuPTchiJs9Wq0lMvkTVirirI=;
+	h=Subject:From:In-Reply-To:References:Message-Id:Date:To:Cc; b=TI6JhbcBqIeRcmJzrVSKL1hzc3BbRt1rYJMAKu4ai7VqsOuqHIvBYn+iS+8P0w7Jc1mSxmCN9F3dPjOiD0JRtZJr3tELAcefPuE/CylQ4q9lNbRt/cdy7V3AXpzbn25q1YLiSedzCM+fjj400e6OEfe4swE78UsVU/p0ynHaDBc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=cjWGbxO3; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nXJc/p0W"
-Received: by mail-pf1-f173.google.com with SMTP id d2e1a72fcca58-8423f236418so1070788b3a.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 09:11:24 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1784045484; x=1784650284; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=c46Y7wImNBTVm5JDUvX6497nRUQHo8d1HA5FFYk4Zkg=;
-        b=nXJc/p0WqGdRYtwh48fWonDlcRsoYXhpFTF8/0gUYXHvaRNb77FFYy3/JB6L1+Gw6g
-         CgkscpiBmD4JIe+4nsP3H5wSDrThm5rjCnrBVfFLDm9rJW2xkfl02oGA4jTdjB4uM7SA
-         xx5w3kOLa3MPJjQ1v9C0vyaku7oJi6uhhesfhGXUIrieqUy8ChSmyX6/G5C3q3IRjE/Y
-         olfvcnCZlBoW60+1i+nmiRP6bjzKePK0mQS8S0JORuOyfTgcuIQ8Ehuitckx/2OvhNJu
-         2DCoQrDAr2vyO6oPiPA7lIH/Qmi7uu6lH6IosMLCssrFF4EunrKAbhT39HjxlPyeju9r
-         G1Qw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1784045484; x=1784650284;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=c46Y7wImNBTVm5JDUvX6497nRUQHo8d1HA5FFYk4Zkg=;
-        b=nnjKHyllctp9x5o7bnVQ5sc/sCj2yzcN8iEYZQDZ/qDEcNWe9zeEFlY2/vuZ3C7wFH
-         RwyOEKAMbPmofktGknpX71RQtwF1R7W3llNjOE4NJ1YZzLBYKCT2bQp3xYYUoEphmlNq
-         E5WGdGGEK61+jQaM4rLxXFlkqfvl76J/lH6KEoCPlAuTRGUsvhOj1yQjKk5xxf9rOStZ
-         90M9mQZwuALfziDI4IgLlh2TvYbGL3ukh8uuifDpCuSwyGjYwwrbBp4Yz0vsduJO/DeQ
-         a9ta48VPGUalGxGsGZ9qPTPs310ypx4nhsi0dnQ/mFTmOoneOp1UMoQX6/0bM806wZle
-         B5Vg==
-X-Gm-Message-State: AOJu0YyCZIfBYkAmNuKSLAo3GtHKIgxCRUih+T2JmNvwSMrCNWcmZRZf
-	8ta2S3jHfAVbK1ygVLZFSoRsedJxADwWlNjij8dEXxbxb/XFJxJF7aWgMx/sBQ==
-X-Gm-Gg: AfdE7ckT+o9j1QYeOiDTXBe8eWLDT+c1yVFERjHDSTmg4QqXl8XJBNQuv0wDwulB/dp
-	1U4zNynreP3hpkjxXHNzm4IunqsQJVhZ8eewJdpTgY+PQkWyW+KoHmn19Ul3uVD/7mg36ZHM/ua
-	HY3DkRdrckwymqUSpfHuCuhJRRSlttZKEQEekcW2EZijKYbbhN5FXChe3XlIW08JSlBruayxoac
-	JBS5rZ6I8Y7wogzX3lmu7GjVfRcQn2HM71rcJLbgRutmdA+nw8dcQ1XfDNzErRYsdRSrQPj/c6K
-	p0+1f1I7JLwjTk7MJHTsz9jg9BO7tAWmEwIOOMpS8gUsOxvF0d+qzrg1dSfugPhykCn3A9OQqBS
-	NU/UwVOH58aZR+RklvaD1IuFBQ2fbVGGA+hUW1k7N3g2L5ZKbQuPVG5JmsSiq7Zhm0exSBxFLT7
-	mnxTrUT/gQfcV0meorUCgrrubr6k5sXEzEljA4d8sukNhRl5Mnrm1IwM/tY7fQEp5VAb54x+mmv
-	q+1YTqYkiXr5GVWlg==
-X-Received: by 2002:a05:6a00:94c8:b0:847:759e:f61c with SMTP id d2e1a72fcca58-848896bacb9mr12252711b3a.47.1784045483864;
-        Tue, 14 Jul 2026 09:11:23 -0700 (PDT)
-Received: from localhost.localdomain (ec2-13-113-80-70.ap-northeast-1.compute.amazonaws.com. [13.113.80.70])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-84a4f26f703sm1825073b3a.17.2026.07.14.09.11.22
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 14 Jul 2026 09:11:23 -0700 (PDT)
-From: Zhang Boyang <zhangboyang.id@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>,
-	Qu Wenruo <wqu@suse.com>,
-	Filipe Manana <fdmanana@kernel.org>,
-	Zhang Boyang <zhangboyang.id@gmail.com>
-Subject: [PATCH 2/2] fstests: btrfs/349: test if latest tree-log is choosen at mount time on raid1 profile
-Date: Wed, 15 Jul 2026 00:10:44 +0800
-Message-Id: <20260714161044.7330-3-zhangboyang.id@gmail.com>
-X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20260714161044.7330-1-zhangboyang.id@gmail.com>
-References: <20260714161044.7330-1-zhangboyang.id@gmail.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="cjWGbxO3"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 832CB1F000E9;
+	Tue, 14 Jul 2026 16:15:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1784045759;
+	bh=AV7AsJDOlBQTutwgIa4hSlFRBN7O6wfH2x6ni05qpx8=;
+	h=Subject:From:In-Reply-To:References:Date:To:Cc;
+	b=cjWGbxO3jMPHZbj1klEWb5KZlXK/LDBNwrynqtmfrcBhSbvGZr34m1oWshFvvTVfH
+	 5nEHBlgDO1rdND0nrtRjnNNWX6cwOfXvcWy6Cw8AM2MHZverIkkUIIqRPaVWv17Fsl
+	 2m9ivoPz6RGgWItsNmuCu12sxMef9mmxErxhTuS/0Ha1C5czbqVBHB2HH0S9mXIiBc
+	 o8QAZQBLgnkd+27X3gDv/LG2qBNJJiaq/EpryCbGzWmEYlvYIyDhrs4xndObkcxVhe
+	 GeJzuSEIDNl1uVa76ATT37w5upH9A7BAjVKAjSj98duL0dXOveCf39IOokuJqVEp44
+	 ls6cNIwf6p53A==
+Received: from [10.30.226.235] (localhost [IPv6:::1])
+	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 585DC39253FB;
+	Tue, 14 Jul 2026 16:15:35 +0000 (UTC)
+Subject: Re: [GIT PULL] Btrfs fixes for 7.2-rc4
+From: pr-tracker-bot@kernel.org
+In-Reply-To: <cover.1784004728.git.dsterba@suse.com>
+References: <cover.1784004728.git.dsterba@suse.com>
+X-PR-Tracked-List-Id: <linux-btrfs.vger.kernel.org>
+X-PR-Tracked-Message-Id: <cover.1784004728.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-rc3-tag
+X-PR-Tracked-Commit-Id: c0041b502e579a5c52e5cae918b90678f03faddd
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 7059bdf4f04a3e14f4fafb3ac35fdca913e3e21a
+Message-Id: <178404573404.3675086.16279043409058615949.pr-tracker-bot@kernel.org>
+Date: Tue, 14 Jul 2026 16:15:34 +0000
+To: David Sterba <dsterba@suse.com>
+Cc: torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
 
-This test simulate a scenario that tree-log only exists in secondary
-device, and test if latest tree-log is choosen at mount time.
+The pull request you sent on Tue, 14 Jul 2026 07:00:53 +0200:
 
-Currently, the tree-log in the device with lowest devid is choosen. So
-fsync'ed data may loss if tree-log only exists in secondary device.
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-rc3-tag
 
-Signed-off-by: Zhang Boyang <zhangboyang.id@gmail.com>
----
- tests/btrfs/349     | 53 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/349.out | 14 ++++++++++++
- 2 files changed, 67 insertions(+)
- create mode 100755 tests/btrfs/349
- create mode 100644 tests/btrfs/349.out
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/7059bdf4f04a3e14f4fafb3ac35fdca913e3e21a
 
-diff --git a/tests/btrfs/349 b/tests/btrfs/349
-new file mode 100755
-index 00000000..40e966c6
---- /dev/null
-+++ b/tests/btrfs/349
-@@ -0,0 +1,53 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 Zhang Boyang.  All Rights Reserved.
-+#
-+# FS QA Test 349
-+#
-+# Test if latest tree-log is choosen at mount time on raid1 profile.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick read_repair raid
-+
-+. ./common/filter
-+. ./common/fail_make_request
-+
-+_require_fail_make_request
-+_require_scratch_dev_pool 2
-+
-+_scratch_dev_pool_get 2
-+_check_minimal_fs_size $(( 1024 * 1024 * 1024 ))
-+# a strong checksum like sha256 can't protect you
-+_scratch_pool_mkfs "-m raid1 -d raid1 -b 1G --csum sha256" >> $seqres.full 2>&1
-+dev2=`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $2}'`
-+_allow_fail_make_request
-+
-+echo "Step 1: prepare filesystem"
-+_scratch_mount -o treelog
-+$XFS_IO_PROG -f -c "pwrite -W -S 0xaa 0 8" $SCRATCH_MNT/foobar | _filter_xfs_io
-+_scratch_unmount
-+
-+echo "Step 2: simulate failure"
-+_scratch_mount -o treelog
-+# simulate dev1 disappears before writing anything
-+_bdev_fail_make_request $SCRATCH_DEV 1
-+# this write should success
-+$XFS_IO_PROG -f -c "pwrite -W -S 0xbb 0 8" $SCRATCH_MNT/foobar | _filter_xfs_io
-+# simulate dev2 disappears after writing TREE_LOG
-+_bdev_fail_make_request $dev2 1
-+_scratch_unmount
-+_bdev_fail_make_request $SCRATCH_DEV 0
-+_bdev_fail_make_request $dev2 0
-+
-+echo "Step 3: simulate recovery"
-+# this mount should start tree-log replay
-+_scratch_mount -o treelog
-+echo "Step 4: verify written data"
-+# read data should be 0xbb
-+$XFS_IO_PROG -c "pread -v 0 8" $SCRATCH_MNT/foobar | _filter_xfs_io_offset
-+_scratch_unmount
-+
-+_disallow_fail_make_request
-+_scratch_dev_pool_put
-+# success, all done
-+_exit 0
-diff --git a/tests/btrfs/349.out b/tests/btrfs/349.out
-new file mode 100644
-index 00000000..1ebf4dc9
---- /dev/null
-+++ b/tests/btrfs/349.out
-@@ -0,0 +1,14 @@
-+QA output created by 349
-+Allow global fail_make_request feature
-+Step 1: prepare filesystem
-+wrote 8/8 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Step 2: simulate failure
-+wrote 8/8 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Step 3: simulate recovery
-+Step 4: verify written data
-+XXXXXXXX:  bb bb bb bb bb bb bb bb  ........
-+read 8/8 bytes
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Disallow global fail_make_request feature
+Thank you!
+
 -- 
-2.53.0
-
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html

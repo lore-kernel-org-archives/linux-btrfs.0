@@ -1,54 +1,62 @@
-Received: from mail3-165.sinamail.sina.com.cn (mail3-165.sinamail.sina.com.cn [202.108.3.165])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 047591C6FF5
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 04:38:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.108.3.165
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 455E11C84DC
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 05:01:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784003940; cv=none; b=EpyocFRv12fCariazn8jiBj6d3rVVpZkrvGTmV3YNtLimE/NhMXsZbnuRnkn6hoY3TuRQjIWf8c47ejz0uxldPzlm/1kxqJmAomuj+w1Lyt5j+5gMPpIULf7vl9nHJBp9D0haauwAxQdoW8qJf/PhwzEy+gI1gunYsVDJsea0aA=
+	t=1784005263; cv=none; b=g5QaNykrvaBN0M9n6Boy4jFEiEUozncyOClH/tKflZ3rTPTfvy88wuru3JwBCrSUpKmPitVlKFe9SfbK1/OgIGoTKbIsyugHZ2FkaWHW7oMQBFdSo57tyvYESX3cFD24zUWk1Xuhf3bbZ/rP/LEwsxIdoAE3V0g0a/KCjpUMUSI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784003940; c=relaxed/simple;
-	bh=63iCjLzjUGgIPWgpXrZGHZFDsLVx5r5fTToGdyRWLC4=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=K7Xe7r3DelfmsuPbWtUQV0uZ4+6s/ieTQWrJArYFoaoKNnJFPVGYEWq5XRYcpGzaVEmj2WAksKz3UUT1aNTBn0+gqANrv4au+fdu1oafI/2NZGwVMGIyapnq6KhdHVa1GG0i//G7ufNDjAm/Tv3uMPOrqWzNaEgBLRiNOYBk24c=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sina.com; spf=pass smtp.mailfrom=sina.com; dkim=pass (1024-bit key) header.d=sina.com header.i=@sina.com header.b=IaTzZsK7; arc=none smtp.client-ip=202.108.3.165
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sina.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sina.com
+	s=arc-20240116; t=1784005263; c=relaxed/simple;
+	bh=q7go7UaziO9W/+d+jciSEvdotrQiSjPtX/yFROVW2NY=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=ZhwrWeXXLVyiNBmnxAT7P7rDKRKJ3SHQSsldtijb6PAtf8zH6S/sSI/4ETQIaZ/HwjlqQM/cNsuyD9Z3RZhrIvK2qFkWB/cUW2qGp7933Q2aCQbA5R14lAaHvow3tXWfWmlIBHxhVh8/dWxBcu3h9tAoFc1bsYbz4ryfGZB7pkk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=MPxkjG6J; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=MPxkjG6J; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=sina.com header.i=@sina.com header.b="IaTzZsK7"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sina.com; s=201208; t=1784003937;
-	bh=E+DqH9w0CFDT+FpgETLE+ky0m/kkR8WsjPHPbAseKBI=;
-	h=From:Subject:Date:Message-ID;
-	b=IaTzZsK7OLSdN8/jQwtyffRKZ+RlJ8NEYrER/R4OT3QjJFWBCGgAdt7uN1tWIIfpt
-	 9Hs8EODmZ78q/EWuz3l93EyUyvIRehQ6d3h+0UAUz/2w/dQj5oC3X02XypniOZjYuq
-	 ffbkqnYHOVwEEbImelUYNI9sFJ9cGDOMJyD8wKV8=
-X-SMAIL-HELO: localhost.localdomain
-Received: from unknown (HELO localhost.localdomain)([114.249.62.144])
-	by sina.com (10.54.253.33) with ESMTP
-	id 6A55BD5400007C9F; Tue, 14 Jul 2026 12:38:47 +0800 (CST)
-X-Sender: hdanton@sina.com
-X-Auth-ID: hdanton@sina.com
-Authentication-Results: sina.com;
-	 spf=none smtp.mailfrom=hdanton@sina.com;
-	 dkim=none header.i=none;
-	 dmarc=none action=none header.from=hdanton@sina.com
-X-SMAIL-MID: 3282726685363
-X-SMAIL-UIID: 5C427D2DEC9C42C9A88BBEA97C916B4E-20260714-123847-1
-From: Hillf Danton <hdanton@sina.com>
-To: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
-Cc: Jens Axboe <axboe@kernel.dk>,
-	Christoph Hellwig <hch@lst.de>,
-	linux-block <linux-block@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="MPxkjG6J";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="MPxkjG6J"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 657E177CA0;
+	Tue, 14 Jul 2026 05:01:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1784005260; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=3aObJVwYYjlWV6bz7uWOLeKclvVKbSvz1b8aK/Pz9Z4=;
+	b=MPxkjG6Jk/dhDWOVzm6p+rKD+/hlo1F0TqzIcplDvA7vp0UscDAhJZFpfCvb7C+RUjkL31
+	BknG1UkToVOzbANLoP3zuCcHZSLI/FPRckNJQb/BkfKWnKOtXV2NVmD6SAL1U8/qE58YhV
+	s0hY27NNLhmC7OjrXfNtbdZz+tZAwCE=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1784005260; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=3aObJVwYYjlWV6bz7uWOLeKclvVKbSvz1b8aK/Pz9Z4=;
+	b=MPxkjG6Jk/dhDWOVzm6p+rKD+/hlo1F0TqzIcplDvA7vp0UscDAhJZFpfCvb7C+RUjkL31
+	BknG1UkToVOzbANLoP3zuCcHZSLI/FPRckNJQb/BkfKWnKOtXV2NVmD6SAL1U8/qE58YhV
+	s0hY27NNLhmC7OjrXfNtbdZz+tZAwCE=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5EDA4779AE;
+	Tue, 14 Jul 2026 05:01:00 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id qrgmF4zCVWriYwAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Tue, 14 Jul 2026 05:01:00 +0000
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>,
 	linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	Christian Brauner <brauner@kernel.org>
-Subject: Re: [PATCH v4] loop: Fix NULL pointer dereference in lo_rw_aio()
-Date: Tue, 14 Jul 2026 12:38:33 +0800
-Message-ID: <20260714043834.554-1-hdanton@sina.com>
-In-Reply-To: <33277fd6-0479-4f6c-bc21-f25f7179d2dc@I-love.SAKURA.ne.jp>
-References: 
+	linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 7.2-rc4
+Date: Tue, 14 Jul 2026 07:00:53 +0200
+Message-ID: <cover.1784004728.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -56,39 +64,92 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	MIME_TRACE(0.00)[0:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	ARC_NA(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCVD_TLS_ALL(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid]
+X-Spam-Level: 
 
-On Mon, 13 Jul 2026 20:02:52 +0900 Tetsuo Handa wrote:
->On 2026/07/13 12:04, Hillf Danton wrote:
->> On Tue, 9 Jun 2026 18:50:13 +0100 Al Viro wrote:
->>> On Sun, Jun 07, 2026 at 07:54:58PM +0900, Tetsuo Handa wrote:
->>>> syzbot is reporting NULL pointer dereference in lo_rw_aio() [1][2].
->>>> An analysis by the Gemini AI collaborator [3] considers that this problem
->>>> is caused by a timing shift primarily exposed by commit 65565ca5f99b
->>>> ("block: unify the synchronous bi_end_io callbacks"), along with helper
->>>> refactorings like commit 92c3737a2473 ("block: add a bio_submit_or_kill
->>>> helper").
->>>>
->>>> But due to difficulty of reproducing this race, discussion about what is
->>>> happening and how to fix this problem is stalling. Also, we haven't
->>>> identified how many filesystems are subjected to this problem.
->>>>
->>>> Therefore, this patch introduces a grace period for flushing pending I/O
->>>> requests (which should be a good thing from the perspective of defensive
->>>> programming) so that we won't hit NULL pointer dereference problem, and
->>>> also emits BUG: message in order to help filesystem developers identify
->>>> the caller of an I/O request that failed to wait for completion so that
->>>> filesystem developers can fix such caller to wait for completion.
->>>>
->>>> Note that emitting BUG: message is enabled only if CONFIG_KCOV=y, for
->>>> this check is a waste of computation resources for almost all users.
->>>
->>> Still breaks xfs/259, same as the version in next-20260605...
->>>
->> And syzbot report [1]
->> 
->> [1] https://lore.kernel.org/lkml/6a54399f.278cdcd2.e885.0023.GAE@google.com/
->
-> No. This report is from upstream tree where "loop: Fix NULL pointer dereference
-> in lo_rw_aio()" is not yet applied.
->
-The issue remains but this work stalls.
+Hi,
+
+please pull a few fixes. Thanks.
+
+- fix root structure leak after relocation error
+
+- fix optimization when checksums are read from commit root, fall back
+  to checksum root during relocation
+
+- in tree-checker, validate length of inode reference in items
+
+- validate properties before setting them
+
+- validate free space cache entries on load
+
+- transaction abort fixes
+
+- fix printing of internal trees as signed numbers
+
+- add error messages after critical lzo compression errors
+
+----------------------------------------------------------------
+The following changes since commit ae2eb64bfd9762536f60b690840adcdf622cdcce:
+
+  btrfs: fix use-after-free after relocation failure with concurrent COW (2026-06-09 18:22:47 +0200)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-rc3-tag
+
+for you to fetch changes up to c0041b502e579a5c52e5cae918b90678f03faddd:
+
+  btrfs: print-tree: print header owner as signed (2026-06-30 02:02:03 +0200)
+
+----------------------------------------------------------------
+Boris Burkov (1):
+      btrfs: fallback to transaction csum tree on a commit root csum miss
+
+Filipe Manana (3):
+      btrfs: validate properties before setting them
+      btrfs: fix transaction abort logic in btrfs_fileattr_set()
+      btrfs: fix root leak if its reloc root is unexpected in merge_reloc_roots()
+
+Johannes Thumshirn (1):
+      btrfs: decentralize transaction aborts in create_reloc_root()
+
+Qu Wenruo (2):
+      btrfs: lzo: add error message for invalid headers
+      btrfs: print-tree: print header owner as signed
+
+Weiming Shi (1):
+      btrfs: tree-checker: validate INODE_REF's namelen
+
+Xiang Mei (1):
+      btrfs: reject free space cache with more entries than pages
+
+ fs/btrfs/file-item.c        | 26 +++++++++++++++++++++++++-
+ fs/btrfs/free-space-cache.c |  3 +++
+ fs/btrfs/ioctl.c            | 18 ++++++++++++------
+ fs/btrfs/lzo.c              | 15 ++++++++++++---
+ fs/btrfs/print-tree.c       |  8 ++++----
+ fs/btrfs/props.c            | 16 +++++++++++++---
+ fs/btrfs/relocation.c       | 15 +++++++--------
+ fs/btrfs/tree-checker.c     |  6 ++++++
+ 8 files changed, 82 insertions(+), 25 deletions(-)

@@ -1,107 +1,107 @@
-Received: from out-189.mta1.migadu.com (out-189.mta1.migadu.com [95.215.58.189])
+Received: from out203-205-221-245.mail.qq.com (out203-205-221-245.mail.qq.com [203.205.221.245])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E46C437A48D
-	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 02:09:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.189
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CBAB13812FE;
+	Tue, 14 Jul 2026 03:29:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=203.205.221.245
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1783995002; cv=none; b=G5Qysq4skTkcDXp5QPGx6ox5+Enn052tlaRSWnHVOwFslwffgPyhv3xBWwL7jw8LZk8jlDnNz1q/Dw84PbI3R7SxvbM1uTN+dil5kT1kyPLBQhv0sUgpU2WjRndHINOxLZZllbbkA98iRprDttyltxUOXikTprX60Mko4DisFR8=
+	t=1783999768; cv=none; b=q1A6aiKwSoKpvU6FS/XdirZD9pGExs8qP9ab+1BYfwehW5F4zxacJqHlODyNBx3IkCGfQXZWUVfY3V7KLGDsbVLZC+tsMMMI77BTxG5cEPvcOxboIObZ4YYcsuLcoFaTrsIOwKAijecvdDaCq80jvaTYRzP9pSgK4DV+4w3qp3o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1783995002; c=relaxed/simple;
-	bh=b1VaFDW/vJ6wqPMInCCKdkHSqzW6apkl8NBOxKd9a6c=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=d8DyflJXPPcfjacgjGtQU0Ud5q25ZAucHhbqkOqkk9myG/Wr3Jotd9uNr//svOPfm9OaOsnN9o9A34s0g9liCsNwqlNz+syBjeDHgBcELCpcpbiEidylsEjPlwnIamvA84nVAB9UpJ1gTJ6BgK5KTgsiL6e7GtwRLRZmlR9SldA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=pOTIrFDv; arc=none smtp.client-ip=95.215.58.189
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	s=arc-20240116; t=1783999768; c=relaxed/simple;
+	bh=Ybb0lo/pQie1JRy4DnkGKEXpzXEG/DqyvhyLUo2loIE=;
+	h=Message-ID:From:To:Cc:Subject:Date:MIME-Version; b=XukK9sRAFgNZl+TsFMO/W/Zm12yln1HZ9kNU5M77YYcGKrnfo2f1DwOsCMg0B3W9uVkomv1yz62PfMWxYlWHP73l5a/UEVrqXJmNTVET5N24MmOBiCbhLoA6g4PhSih2DPBpp0rSFwck4TOdZ8mYa24sDbjQaSehDC40sP8Zo1U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com; spf=pass smtp.mailfrom=qq.com; dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b=xuFK0id7; arc=none smtp.client-ip=203.205.221.245
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=qq.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="pOTIrFDv"
-Message-ID: <d39f8258-66d5-4ce3-8080-69dc4e2ab197@linux.dev>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1783994996;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Oe29OFRdQWxJG3Qa1xsqDVWRullOweBuH8zwQOt47ZU=;
-	b=pOTIrFDv42shfz0GqiuCI0/zTy5N++vrqD4K3ff7oohYi86VnOG9XBajIscXw1p+JVsfbO
-	0X1+teKSyDwqVoKUvlT4KGfdQHHrzM7cMtJy5FntL1v+23Hjb491lk9x1zAlbb6iHwMMl5
-	mAiHSfrz4kFTtflqlSt/VVu2EBvFe+g=
-Date: Tue, 14 Jul 2026 10:09:26 +0800
+	dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b="xuFK0id7"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=qq.com; s=s201512;
+	t=1783999755; bh=x3YFPqYulkzGRS7IgpvrQmkvKvQcBY/dmHArhbt5OI4=;
+	h=From:To:Cc:Subject:Date;
+	b=xuFK0id7DMwosCnjQzwLtB6PcllvuWZLLQR9xR3GOrh4Oib8xt/CZuuLZrwlEKGMB
+	 zvT2FDnDhHeYutbzs5FVm9HzlvBVov5mW50uirRwj7Zkfq8Mvuh7+kgsJHAODmi2Kr
+	 kEGtcJbSEHAIMx6fM4mVjtcvcnxvx4VcTev8wm8I=
+Received: from ikun ([221.176.157.250])
+	by newxmesmtplogicsvrszb51-1.qq.com (NewEsmtp) with SMTP
+	id 74B93286; Tue, 14 Jul 2026 11:29:11 +0800
+X-QQ-mid: xmsmtpt1783999751t0wfz2fy0
+Message-ID: <tencent_860054603C488A379E3D21126EA610D63108@qq.com>
+X-QQ-XMAILINFO: MpYZqmNm/7vMjHZFhA1jjMTVnmzJGsaWhB2/E/6C4EevcVcW9JITgXyqTPH0SG
+	 3K/gMAbpuTxY8uqRQ2snNf6tAA10m+F0i3TgXfgNHcj92Rc/cm80kg0vtlhBeP2YTWCgtYkRAu2U
+	 nEVwMj+kz6Q3Gw02xfDn0Occ+EQz1mmHAqyE7eMqRAFDBnUGnK0RGMVtbeWfeZ9/f/tamEhnqjDq
+	 2f7kny298ejGJBowP650XyI1nFieGR7n86HC+/DItUx0JBZnF9SqV9GeJPYSEC/WgjtNAaZ0f5uV
+	 fTn/CBSamoIBFbj6EPOaKbog95scdHgQKgZsMgWcQDvbisi57Q3h8zsdLEOOF+QEMlBNQMjccByQ
+	 pY5Y3Xn3ZDDcrDmV1xbfIpHyksBfbkDMtALHKSog6mG+IYt4t6C27AMSfhWVJQFy5refL/mAoJd2
+	 9RAdWEZdf1+8DBZza8QSW9MXGRHorZx73QUQ+tkk13+n6R0y/Nx4ibmKlu6VqIj75Lws0/UG0Iuy
+	 7+ezK+CNmwgSjPYAUWRBAIjwTo3D7Yb6VGDhs7tjkaXU6V7OTgxTKmiAcZZ6TIgDqqytVA8k7Tet
+	 +zlCR1Nla5WQ8Xn1xMB014hog89NPpgs8xPYLOb83wXToED5GrhUxYLIqrZK7hTakyUt7dEzt3Qo
+	 13JW1+sHkaXBET/9EK0GWCUG9wTm1LAgxPcN69P8x4THHqZl+7IsGQmENJZdMfSTTqkITgcbVtut
+	 SVEDl0hhE+1f1Sv+2KqhUoKm8ycfOO57fHnUTYlbKXKTTeUdDsUSOG5l0ADtrenocksrxKpmkvYa
+	 wDsUa3KeUtKq30KvPohd76TI8030Or6q8YyX0wGCpylB0X8nzf+TThokTyl4mAI6lZKXkB0AGq3Q
+	 qZjJWdDYR69augOBszOnmJPZYNKQfYw9bdPAVDnSre3nXllWL7HT8hxMwL5+b2e+csIK/sbmRFoE
+	 xpkGAHnarrYPs+IA6+VUDvqTy2of8ZRpEgBQ04o/iGKXHEeau01lnW4gBM0p9PDfEyZFldPlr0uK
+	 hiq2ski/BjSpryngd+oX0Z0fBn4VeL9xYz7f15e1BDIl85wt4M
+X-QQ-XMRINFO: Nq+8W0+stu50tPAe92KXseR0ZZmBTk3gLg==
+From: Guanghui Yang <3497809730@qq.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com,
+	dsterba@suse.com,
+	naohiro.aota@wdc.com,
+	linux-kernel@vger.kernel.org,
+	Guanghui Yang <3497809730@qq.com>,
+	stable@vger.kernel.org
+Subject: [PATCH] btrfs: zoned: fix missing chunk metadata reservation
+Date: Tue, 14 Jul 2026 11:29:08 +0800
+X-OQ-MSGID: <20260714032908.595-1-3497809730@qq.com>
+X-Mailer: git-send-email 2.52.0.windows.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Subject: Re: [PATCH] fs/super: skip non-memcg-aware nr_cached_objects in memcg
- slab shrink
-To: Usama Arif <usama.arif@linux.dev>, brauner@kernel.org, jack@suse.cz,
- linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
- Al Viro <viro@zeniv.linux.org.uk>, linux-mm@kvack.org
-Cc: hughd@google.com, boris@bur.io, clm@fb.com, dsterba@suse.com,
- linux-btrfs@vger.kernel.org, cem@kernel.org, linux-xfs@vger.kernel.org,
- shakeel.butt@linux.dev, hannes@cmpxchg.org, riel@surriel.com,
- kernel-team@meta.com
-References: <20260609123047.1948242-1-usama.arif@linux.dev>
- <4752c658-7b61-4636-ab5b-bd172e11a42c@linux.dev>
- <a0c0a578-9334-4540-b469-4c368d07953e@linux.dev>
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-From: Qi Zheng <qi.zheng@linux.dev>
-In-Reply-To: <a0c0a578-9334-4540-b469-4c368d07953e@linux.dev>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-Migadu-Flow: FLOW_OUT
+Content-Transfer-Encoding: 8bit
 
-Hi Usama,
+reserve_chunk_space() stores the return value of
+btrfs_zoned_activate_one_bg() in ret. The helper can return 1 after
+successfully activating a block group, but ret is later used to decide
+whether to reserve metadata for chunk tree updates.
 
-On 7/13/26 11:34 PM, Usama Arif wrote:
-> 
-> 
-> On 13/07/2026 14:12, Qi Zheng wrote:
->> Hi Usama,
->>
->> On 6/9/26 8:30 PM, Usama Arif wrote:
->>> The super_block shrinker is registered with SHRINKER_MEMCG_AWARE because its
->>> dentry and inode LRUs are memcg-aware (via list_lru). But the optional
->>> ->nr_cached_objects() hooks that the shrinker also drives are not memcg-aware:
->>> btrfs extent maps and xfs inode reclaim operate on filesystem-global
->>> state, and shmem's unused-huge shrinker walks a per-superblock shrinklist.
->>> None of them filter by sc->memcg.
->>
->> This makes sense for now, but how should we handle this if these
->> shrinkers are made memcg-aware in the future?
->>
->> I've recently been working on making the shmem huge shrinker
->> memcg-aware, but noticed my changes broke after rebasing onto the latest
->> tree, which led me to this patch.
->>
->> As for the shmem huge shrinker, I can work around this limitation by
->> making it a separate shrinker. But this feels more like an overall
->> design decision, effectively meaning that all nr_cached_objects are
->> precluded from being memcg-aware.
->>
->> Thanks,
->> Qi
->>
-> 
-> 
-> Hi Qi,
-> 
-> Thanks for raising this. I think the alternative is what I mentioned in
-> https://lore.kernel.org/all/cfdb8620-ea55-4226-98bf-d006820e6270@linux.dev/
-> move this down to the fs own callbacks instead of here. Would that
-> be better?
+As a result, successful activation skips btrfs_block_rsv_add() and leaves
+trans->chunk_bytes_reserved unchanged. Use a separate variable for the
+activation result so positive success does not affect the later
+reservation.
 
-Yes, I think this is a better approach.
+Fixes: b6a98021e401 ("btrfs: zoned: activate necessary block group")
+Cc: stable@vger.kernel.org
+Signed-off-by: Guanghui Yang <3497809730@qq.com>
+---
+ fs/btrfs/block-group.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-Later on, shrinkers that are converted to be memcg-aware can lift this 
-restriction themselves.
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index ab76a5173272..00540b96c163 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -4532,12 +4532,14 @@ static void reserve_chunk_space(struct btrfs_trans_handle *trans,
+ 		if (IS_ERR(bg)) {
+ 			ret = PTR_ERR(bg);
+ 		} else {
++			int activate_ret;
++
+ 			/*
+ 			 * We have a new chunk. We also need to activate it for
+ 			 * zoned filesystem.
+ 			 */
+-			ret = btrfs_zoned_activate_one_bg(info, true);
+-			if (ret < 0)
++			activate_ret = btrfs_zoned_activate_one_bg(info, true);
++			if (activate_ret < 0)
+ 				return;
+ 
+ 			/*
 
-Thanks,
-Qi
-
-> 
-> Thanks,
-> Usama
+base-commit: a13c140cc289c0b7b3770bce5b3ad42ab35074aa
+-- 
+2.52.0.windows.1
 

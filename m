@@ -1,195 +1,187 @@
-Received: from mail-ej1-f54.google.com (mail-ej1-f54.google.com [209.85.218.54])
+Received: from mail-qk1-f173.google.com (mail-qk1-f173.google.com [209.85.222.173])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 269362F12AB
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2026 08:36:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5CC0D3E7BA4
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2026 09:05:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.173
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784104590; cv=none; b=qXxi3dvucY5PWKElml1g3hLZyu57f1afQcufvWIT4vvyZel05nL9TOfWlXJaPWegn3OyJaqGQnW7zG8Vv1zpQqcxYECQbh/eKJkZUn8WI+XqEscV+di2aFhVa5koEuDgEbiSPniaF+M8YVSFq/t6aEKkoZjxvhGRByIvqXG1rik=
+	t=1784106322; cv=none; b=FTqSSfEA1nC7SK8PTu3itP4Q9ih/NmxI76I3MD4/sgyLSF1v3DkrlAdN0HG/wTk7WLWkHnCQ5x0WS8pD9MeXRpOUa5sn/7fmFFxIVKoPrjQbSQHuV7WMkCcsQtyd2v474DlPtMlUbLWXzyLlxseR9f7DV8RK2Jpbwn5425ZfrMk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784104590; c=relaxed/simple;
-	bh=GAa37XiTfPVeownbQJR3Sb2ocRzPWWO3fIquqgvpPuA=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=huPgk8kgo3tgCusz+eB94qdzuYSs8deUNlMiFcRA0SMGgm219NJjKNDntSbwRKx1Xt7sYiZqZp1tpCmCZtBkyE58+rdkgvB31jC5rEiLNtQX/CjsDB8tPap4bXpTF2JH90lrLbD/iM/r/iLk2iqrnz7mm0XroJzNKPv7HeNjfBE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=UylaNxsb; arc=none smtp.client-ip=209.85.218.54
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1784106322; c=relaxed/simple;
+	bh=nsDvvDqBROSj9wugf55dAdBWPwtjUGQ4NFvFqQ68ewo=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=dBhge3jQkl8kaOP+M5bKFh7qlIZLf7tnLhfPB+TvHBDhNti3EvBjr9469iuJZbtHoh6VFqoDLe0K4S68G88hzgmtgFYEtWpFH1QRsz/BwaKYTYN28ogD9N3qIjqVpyvRgGxYq7a5kXWZtTIpMInk4vhWigq9LXpKBH8YG2Cx414=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=trailofbits.com; spf=pass smtp.mailfrom=trailofbits.com; dkim=pass (2048-bit key) header.d=trailofbits.com header.i=@trailofbits.com header.b=CJQj8vs/; arc=none smtp.client-ip=209.85.222.173
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=trailofbits.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=trailofbits.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="UylaNxsb"
-Received: by mail-ej1-f54.google.com with SMTP id a640c23a62f3a-c15b509c323so675429366b.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2026 01:36:28 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=trailofbits.com header.i=@trailofbits.com header.b="CJQj8vs/"
+Received: by mail-qk1-f173.google.com with SMTP id af79cd13be357-92e7c6ec9dbso221205085a.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2026 02:05:20 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1784104587; x=1784709387; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=k38sBdLMbGONuypYtaNK+jTJJBRsToY/SEh6Oq2yFVY=;
-        b=UylaNxsbXSrWMtMdDJPj4a5PQXuV2K57CCCQ9Ci6oelfO0z9FaazGg6AmA4PaQBXXX
-         rFFn6SAXhOjC4LfJkjSNr1DT0Bo59IgreKOXl4Wd3zZevMKiHTuUCvw7qwZGFhRQJLyW
-         YwUBk7AsJQjwjqaCLLm3twWP0DAryBZW+/L47OE+m5hMbSv+bONZrDRmnRFEeiOzTKr9
-         magejcxZUhexYGbBC3Urv9uzC6WTMJ7+LCQYftHRqY10o41H7+z/m2k2ndxbqfBzuPs5
-         MDZAbPY7VN2Wdf7e7u7uzGjKiWhUr5vCedoqEIZ0yQ/LBIcsmqMs9xLsPwXs92S3Ig+u
-         j/+g==
+        d=trailofbits.com; s=google; t=1784106319; x=1784711119; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=089eDpthIT2HjjrbB9W67LaNgfnrjDuNPRAcNI9k8R4=;
+        b=CJQj8vs/H6D0iGXj2sQCsMtTFEOCa1bFac6DVvkBx0hHkjdJ08EBr2jZaFAwlHIPlR
+         r4PhELjdN5dVQsvQxu/HTirPMwXnK9l7ou5WUvdHziayXVRLegGpMOv8PX4Axu6jzTGo
+         wn5kGEwqCvZRdI3NSH0U63uGCmumg7qAmjIYrse5aqsvViumGOL6kAyIz4fn5beX7mak
+         hz3FdZuWMzPICA3alZv3py+O5cHvwaBiJRQTvB3a/w2MMjjnkvMwJ+HfGxzSAx1Aj7Fl
+         FL51RBCvFcEc/Fr7vOd+vi0YOkwy1qKR5nL6GsUQ0wdYg98Vax2cm6zPcn5VFz010UG8
+         zOxA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1784104587; x=1784709387;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20251104; t=1784106319; x=1784711119;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=k38sBdLMbGONuypYtaNK+jTJJBRsToY/SEh6Oq2yFVY=;
-        b=p4MNenrC0aQPCfIeiI0W9fK4R3Hv/iBZE0hu6jcWC1t2IsDbCRWMkaKv0R6BzgdbVr
-         XLUkl5QAdFAuOh/GQUkVDAs8JGv4CscMIt141qN0bShW0Nz7WpHqd8YfZavRxezlcx/W
-         wp54PiB1DN1BR9kblqVaE3ebuznFzjM7hwArzlQtDIZ4AMqXTA5sqF3Fk6wMC57jN9Cm
-         AA6IWdzP0e5GQlftv1rMTbWLxxKgccA6bpGkImsv8D9yDrdra/DvyK0BNQvAwTfOCcLC
-         xi8mvlkW8isTb/uz8A5Osm8B5inZWzwW+geBheXMabEbMw72S52ko8hBfyEoJBCY+Acp
-         lPkg==
-X-Forwarded-Encrypted: i=1; AHgh+Rp1qQzQAT0ecbZeG0dwCJsgocW4UBNQvpNPNyc27aD5voBA9Ejg2hTf/IANOWIXcqJIypnHzt40rrwlXQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxoDs8VkAZnVtrezeDwGdsYuqy7J+XNinacERR1vuzQRfSqOzz/
-	aXSLTjIPYoMk+SItTou4aJ9l2mnaPac5yEDsmD4iglJEY7KokCORlavK3pi4pOw53W4=
-X-Gm-Gg: AfdE7clkWLtGRmR386+D/kW7A77xvOoEhh7r+JMeNZSsi92Tav5icAAPVqYYhOmI4at
-	YF/oDdm82Cs2zad3aHSYEryUy4Z2yZjv6z3NNBS8yLzQDiNffas1ePmUTS6N0I9sPZXAsGOnVxz
-	ZlBGtmUppDT0TrB0FUmn6lR3MtKMGtbSPcwuPzMup2oemuiA3/JN9o57WG94hV2XrBkyjLUhTzM
-	tR7pgEdu0tZjHgBv9vwtg5G7JJSpYmOOHIlcx+vBEaJ0ISPW9sO7utye8GpHdbF7LAWGUKW1G6v
-	RHOj5A2WJbMyBNb/yW++YgEbYl7QqDyhnGhabXpQZ/fIq9HQZNIfTixRisy/E6IGxZbrN7AdJtA
-	NsEbt66eHAyHDaEzvl56PbwAk8pZKcMvNf/g5EebpWvqWHn/KCs+g3Q/hZy2UNYVYbXbfr6IVYy
-	i2Hf0p3w==
-X-Received: by 2002:a17:907:3f22:b0:c16:64e5:1777 with SMTP id a640c23a62f3a-c166793e894mr321048966b.17.1784104587156;
-        Wed, 15 Jul 2026 01:36:27 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2ccc9bfe040sm130297785ad.31.2026.07.15.01.36.23
+        bh=089eDpthIT2HjjrbB9W67LaNgfnrjDuNPRAcNI9k8R4=;
+        b=kmzi6/6UEAwnpYJ4qgXU7Sp3veLl2nefQgHQ2Z6DTlCm+tcSUVjhvEcjuUXe0Hek62
+         gNw/QPCRJZXDMqKzozvw+/jOYOlpHiKhC3Ucich4WEOwrO4KJBKoFV33lWyA+TM/S6R1
+         5qNdzV/4yWSqivyf5cHjcYcT+uKPfojStIsT7CFRx8w8h+IH1xY8DK/P+3jLAojLmckH
+         hNNyZkmuzDRWs+VD6ykTVUDCU7u9uxdFyELzudw9cfcTSHJfDVkpU4Afz1ArndHI33QQ
+         25ouBKGRAcJ83BPlknTGebFUfU6wvYhDmkjrxfEjxJf7FkmHyjmSAcOj6PKht7lIRhRh
+         SEqQ==
+X-Forwarded-Encrypted: i=1; AHgh+RrxdufhMmCFlWqKiJgV7XemEvPW9EAnKv/EbDdVBLYNpxNIozHXeUDZy4UDGzg7Cwcy6//ExY2j/inBTw==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yxg9nqj5u9MNFfPeSloVcIlabvst+ROys6Ts3FNYyELG88TaV8d
+	q3+7XKhc5pj/JT3dfV/v4/vnHt2ofI0l2Ds8X6Nu5kSGp0HnH6SyW1lH7pHAwUMBzP8=
+X-Gm-Gg: AfdE7cnte2xI2izMMZqQArDjuG5WkPrrTLpRWdnuknHLbwm+HT4KDLoQAAAf0iOFwdH
+	VwJHFUlN7YXaUOF4Fb0Ei25HQHSm9yx+Mo886++OCN6zU1uN4Jg5bcIdN+eECRbrQfRh9dXpHO/
+	CA+KuUDuCWq3cDPOkZSaFjK2dh58isMjUcT4HZ2In3Q/6CBfLmT94BnENh2jDtSinl9ZV5O07aW
+	e2VdEz/RFijT74dmITHZpIAM87K6RAqZcsCe7M09h0hBiwPUxRkzxmO3xRx26SqkterPSXXXt0o
+	f8y5GHkvs8OxJwItEac+ptaWCFEt3cMIV6eFF5IFrXOX6F2HKLco57j2TwHtPFSxB3B1r9+r57j
+	RGPIMte/PMLBT92Fs6OlcjID07MjCjpVS776/1Y6RKHgxrS6i18QuWlQ8bH0/6S7y2Lcxo91HHD
+	n7TPE/eRoU3nOxDi0X+w==
+X-Received: by 2002:a05:620a:408c:b0:92e:9cb3:3f71 with SMTP id af79cd13be357-93086a5a11emr593970485a.36.1784106319079;
+        Wed, 15 Jul 2026 02:05:19 -0700 (PDT)
+Received: from localhost ([146.190.222.192])
+        by smtp.gmail.com with UTF8SMTPSA id af79cd13be357-9309adc5a98sm42751685a.4.2026.07.15.02.05.18
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 15 Jul 2026 01:36:25 -0700 (PDT)
-Message-ID: <8248f43d-d6ab-47e4-9ed9-65bb5c281f4b@suse.com>
-Date: Wed, 15 Jul 2026 18:06:21 +0930
+        Wed, 15 Jul 2026 02:05:18 -0700 (PDT)
+From: David Lee <david.lee@trailofbits.com>
+To: Chris Mason <clm@fb.com>
+Cc: David Lee <david.lee@trailofbits.com>,
+	Qu Wenruo <quwenruo.btrfs@gmx.com>,
+	David Sterba <dsterba@suse.com>,
+	Dominik 'Disconnect3d' Czarnota <dominik.czarnota@trailofbits.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH v2] btrfs: lzo: reject inline extents without compressed data
+Date: Wed, 15 Jul 2026 09:05:14 +0000
+Message-ID: <20260715090516.512417-1-david.lee@trailofbits.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [BUG] two raid consistency bugs
-To: Zhang Boyang <zhangboyang.id@gmail.com>,
- Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@kernel.org>
-References: <20260714161044.7330-1-zhangboyang.id@gmail.com>
- <67cff567-1070-4908-a253-a8907d237734@gmx.com>
- <4289be1b-285c-4641-a7b6-6b8e66f458c6@gmail.com>
- <5eaba968-b8b9-4705-9027-9169942e105f@suse.com>
- <8e02253e-2bd2-4ca1-8def-f91afaac4cd6@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <8e02253e-2bd2-4ca1-8def-f91afaac4cd6@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
+inline Btrfs LZO payload shorter than two LZO headers.
 
+Fix the validation or lifetime rule at the vulnerable boundary so malformed
+or racing input cannot reach the faulting path.
 
-在 2026/7/15 17:08, Zhang Boyang 写道:
-> Hi,
-> 
-> On 2026/7/15 14:10, Qu Wenruo wrote:
->>
->>
->> 在 2026/7/15 15:16, Zhang Boyang 写道:
->>> Hi,
->>>
->>> On 2026/7/15 05:40, Qu Wenruo wrote:
->>>>> At first power failure during transaction N, metadata trees of
->>>>> generation N are written to disk A, but super is not committed. 
->>>>> Nothing
->>>>> is written to disk B.
->>>>>
->>>>> At second power failure during a different transaction N,
->>>>
->>>> If it's a different transaction, why it will still have the same 
->>>> transid N?
->>>>
->>>
->>> Because the power failure occurred just before writing superblock 
->>> (transid N). The superblock on disk still has transid N-1.
->>>
->>> After reboot, looking at superblock which transid is N-1, btrfs has 
->>> no idea of transid N existed previously, so it uses transid N for new 
->>> transcation.
->>
->> Then there should be no problem at least at the next mount after the 
->> power loss.
->>
->>>
->>>>> nothing is
->>>>> written to disk A, but metadata trees and super is committed to 
->>>>> disk B.
->>>>>
->>>>> This creates a ambiguous generation N in two disks. Currently btrfs
->>>>> can't detect this, and can lead to severe damages.
->>
->> At the next mount, btrfs should detect device B has the latest super 
->> block, and use that as the super block to mount.
->>
->> Since metadata are all written to device B, even disk A may have some 
->> stale tree blocks with transid N, stale tree blocks still need to meet 
->> other conditions like root owner, level, first key checks.
->>
->> I won't say that's impossible, and won't say we shouldn't do anything 
->> to address it, but this is a variant of the split brain problems 
->> mentioned in the past.
->>
-> 
-> I think this is a very special variant of split brain problem. This bug 
-> can occur even if no degraded mounts are involved. All devices are 
-> presented to btrfs at every mounts. Personally I don't like to call this 
-> bug as a split brain problem because I think split brain should only 
-> related to degraded mounts.
-> 
->> I strongly recommend to find out that thread and check if any of the 
->> ideas are explored before and if they have their limits.
->>
-> 
-> I did read some of these threads. If split brain problems are solved, 
-> this bug can be solved as well. But I think fixing this particular bug 
-> is also beneficial.
+A four-byte extent produced the following KASAN report on Linux 7.2-rc2:
 
-I do not agree.
+  BUG: KASAN: slab-out-of-bounds in lzo_decompress+0x57d/0x700
+  Read of size 4 at addr ffff888006f2e644 by task btrfs_lzo_inlin/77
 
-You're introducing more and more code just to handle some very specific 
-corner cases.
+  Call Trace:
+   <TASK>
+   dump_stack_lvl+0x5b/0x70
+   print_report+0xd1/0x610
+   ? _raw_spin_lock_irqsave+0x78/0xc0
+   ? kasan_complete_mode_report_info+0x2a/0x200
+   kasan_report+0xe0/0x110
+   ? lzo_decompress+0x57d/0x700
+   ? lzo_decompress+0x57d/0x700
+   __asan_report_load_n_noabort+0x13/0x20
+   lzo_decompress+0x57d/0x700
+   ? lzo_decompress_bio+0x1e80/0x1e80
+   btrfs_decompress+0x140/0x1c0
+   uncompress_inline+0x147/0x1b0
+   btrfs_get_extent+0xb23/0x10a0
+   ? btrfs_rename2+0xb0/0xb0
+   ? _raw_spin_lock+0x72/0xb0
+   ? _raw_read_lock_irq+0x50/0x50
+   ? __kasan_check_read+0x15/0x20
+   ? btrfs_folio_test_uptodate+0xc8/0x140
+   btrfs_do_readpage.constprop.0+0x538/0x1ac0
+   ? btrfs_lookup_ordered_extent+0x2c0/0x2c0
+   ? xa_load+0xb0/0x1e0
+   btrfs_readahead+0x32f/0x5f0
+   ? btrfs_writepages+0x180/0x180
+   ? lruvec_stat_mod_folio+0x240/0x330
+   ? write_one_eb+0xb30/0xb30
+   read_pages+0x16f/0x850
+   ? __kasan_check_read+0x15/0x20
+   ? __folio_batch_add_and_move+0x134/0x1c0
+   ? ractl_alloc_folio.constprop.0+0x90/0x90
+   ? filemap_add_folio+0x1cd/0x4f0
+   ? __folio_alloc_noprof+0x69/0xa0
+   page_cache_ra_unbounded+0x296/0x490
+   do_page_cache_ra+0xd9/0x130
+   page_cache_sync_ra+0x3ee/0x6f0
+   filemap_get_pages+0x306/0x15c0
+   ? is_bpf_text_address+0x14/0x30
+   ? kernel_text_address+0x89/0xf0
+   ? filemap_add_folio+0x4f0/0x4f0
+   ? putname+0x78/0xc0
+   filemap_read+0x329/0xd00
+   ? kasan_save_track+0x18/0x40
+   ? __kasan_slab_free+0x44/0x60
+   ? putname+0x78/0xc0
+   ? entry_SYSCALL_64_after_hwframe+0x4b/0x53
+   ? filemap_get_pages+0x15c0/0x15c0
+   btrfs_file_read_iter+0x1f8/0x2b0
+   vfs_read+0x4ef/0x720
+   ? putname+0x78/0xc0
+   ? __kasan_slab_free+0x56/0x60
+   ? kernel_read+0x180/0x180
+   ? putname+0x78/0xc0
+   ? __kasan_check_read+0x15/0x20
+   ksys_read+0xf8/0x1d0
+   ? vfs_write+0xa30/0xa30
+   ? __x64_sys_open+0x180/0x180
+   __x64_sys_read+0x71/0xb0
+   ? __kasan_check_read+0x15/0x20
+   x64_sys_call+0x1ab0/0x1b70
+   do_syscall_64+0x61/0x470
+   entry_SYSCALL_64_after_hwframe+0x4b/0x53
+   </TASK>
 
-E.g. for your particular case, you will need a very specific write 
-situation. You're introducing a feature that is very hard to hit under 
-most situations, but we will always bear the burden.
+Link: https://lore.kernel.org/all/20260714071054.1715464-1-david.lee@trailofbits.com/
+Fixes: a6fa6fae40ec ("btrfs: Add lzo compression support")
+Assisted-by: Codex:gpt-5.5
+Signed-off-by: David Lee <david.lee@trailofbits.com>
+---
+Changes in v2:
+- Reject an eight-byte extent containing headers but no compressed data.
+- Rebase onto btrfs for-next and update the invalid-header diagnostic.
+- Include the complete KASAN call trace.
 
-I am not even sure if you'll still contribute in the next 5 years, thus 
-I won't bet my 5 cents on that this feature will be properly maintained.
+Trail of Bits has a reproducer for this bug demonstrating Kernel Panic which can be shared further if needed.
 
+ fs/btrfs/lzo.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-To me, if you really bother this particular situation for whatever 
-reason, just introduce a special harden mount option, that any 
-barrier/super block write failure will mark the fs error.
+diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+index 1531adb117d1..2f0996692da0 100644
+--- a/fs/btrfs/lzo.c
++++ b/fs/btrfs/lzo.c
+@@ -552,9 +552,10 @@ int lzo_decompress(struct list_head *ws, const u8 *data_in,
+ 	size_t max_segment_len = workspace_buf_length(fs_info);
+ 	int ret;
+ 
+-	if (unlikely(srclen < LZO_LEN || srclen > max_segment_len + LZO_LEN * 2)) {
++	if (unlikely(srclen <= LZO_LEN * 2 ||
++		     srclen > max_segment_len + LZO_LEN * 2)) {
+ 		btrfs_err(fs_info, "invalid lzo header length, has %zu expect (%u, %zu)",
+-			  srclen, LZO_LEN, max_segment_len + LZO_LEN * 2);
++			  srclen, LZO_LEN * 2, max_segment_len + LZO_LEN * 2);
+ 		return -EUCLEAN;
+ 	}
+ 
 
-That will be a much safer bet than any of your proposal.
+-- 
+2.43.0

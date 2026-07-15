@@ -1,67 +1,67 @@
-Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
+Received: from mail-pl1-f179.google.com (mail-pl1-f179.google.com [209.85.214.179])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 34A4446B5
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2026 00:36:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 44A173603DD
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2026 05:47:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.179
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784075793; cv=none; b=dcF7iwE9d36ip5DWk2x3sDpwRbOPrMhGBbX+oiZ9w59XoGDkKCo2Rb2C9WDO2PNqDrB6kPEjp0zet8h6o9EkdKrqhBoSQeZ1SUdUKl2FP6e6/mY5aG5qUi6V43qwaKV4BWNIa7Pog8eN1eJ8mAaHVYi5PElEcq5D9h/o+xtheiI=
+	t=1784094421; cv=none; b=cRurHHQC+h/VkAKMNY07fHeCqKOrD/Ff7kcyAnCtaUbZuytOqVuaxOe7r5YDdaB8IfYisFBj296po8Smv8rl3Q/yI6m0hWw17gKaKuDijJAbfUAxojYJCZjnFVZhhUyNrpMv0NTNlwJbVfR3kdNozeCNEgQrsXbpgMrtaeMCGes=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784075793; c=relaxed/simple;
-	bh=UIfpi+rgyqLylhFLmfT9iY4mzbBgZuiTp+hiWxi4QUc=;
+	s=arc-20240116; t=1784094421; c=relaxed/simple;
+	bh=du8kGNgVNIqSF1/8MzzzF8llfeiKwV8ibKupVAbtGlc=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=ZsG+LvPYlbshHUQHFeDTHlluwweU+lUgKRU/O8qTG6QGPhc+nn+W3cUqBuJ5McR0kKbaJmeF8J95xQceIalYIs5JzN/oEONBgaSZa+oHJ9X6u2Qx93kJyyFFH7y06tj6uW/IYFhUpt1+BLJLWoimuHekssySx5aRBfIq8sGWw7o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=RskYTDh/; arc=none smtp.client-ip=209.85.128.49
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	 In-Reply-To:Content-Type; b=co/+r9FQOb0hBK7rmCUGWomisyWnH8npjGIH6UxJSsum9teDPwHiqEQk9vE6R98rad93Op0q3aTBFHS/O62GFzw+CHzAYCOicm+Xi4y8r+GJmgDfFuIZxeW+DZgnwlSI8IummL/lP8qh7D3mWWRXKKM9Er6s09lNpZEFCZAy4U8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=IumRkNQR; arc=none smtp.client-ip=209.85.214.179
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="RskYTDh/"
-Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-493ba701891so12268405e9.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 17:36:26 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="IumRkNQR"
+Received: by mail-pl1-f179.google.com with SMTP id d9443c01a7336-2cc7e86e7aeso17685085ad.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2026 22:47:00 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1784075785; x=1784680585; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+        d=gmail.com; s=20251104; t=1784094420; x=1784699220; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=rAscYM0wdOrOKnbIbc3sjkISmgejxKyFJX7YQ2d+Wbo=;
-        b=RskYTDh/yON0s6/MKLyhivuOFGz1K1Epcc5oSvNXdx+/yeUtgSPMqG8UGTXF8kQyuk
-         o1xy+/wPVfu4ctqaKVP4QS8W+aibHgL0/u906DBJYbp08H28wrhnqAvXQPd0Sx2L9VD7
-         A3UeVqJ0Ot6X4ml/DgVA14E53PtNmeU8kwvE66sK0D38sQpjou15R4eIBKtKNc7kZcxc
-         EEACOiaE40wb6UeVBu4x9NJhvku0d4LuKjT17V/gv0LPExL2OaG2DDKhVEs8L+HpmFHA
-         Da41LRc10yy6MJE1O6+Z73ykIyt81cULrCy+nW8BDRpSVOsNcvZBz5C5PNDQ2GZrCAhR
-         gwyw==
+        bh=XdgiXm/2rERlWYwGbue3CmGXaxx/DV9PAEW/S9MqEsw=;
+        b=IumRkNQRhch3F5n6W4D3vctD7Oy7aVgf+gcted6SPaS/dXH74P0pE/E7B0R8sryEs+
+         NoB5cS17UaD9Bop+DESRvfWOmWISidBQTznh5AUICPx7FkFGGHoRiRPvywCHTjQgk26S
+         iviyVICniOIEtN5r8PbrlttXANkIBxS9hRotSsKt6BoRIMAdSzalU6t20AKcy/Ys0Vq9
+         TDZtcxg/SCGhpA2OsueI8cmRgyAM0ALNQOM4b/iaUKRMGBWTYZSN6fhNMvrKLIT22S6f
+         oRFB3Dbfebqbk7bmSh1hAmerskq/I8GfQP42O7G8LtdlmtruqfEEIN4/opuaPWsxRVqB
+         22Uw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1784075785; x=1784680585;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+        d=1e100.net; s=20251104; t=1784094420; x=1784699220;
+        h=content-transfer-encoding:content-type:in-reply-to:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=rAscYM0wdOrOKnbIbc3sjkISmgejxKyFJX7YQ2d+Wbo=;
-        b=jZTKW9ADQTVWh4s3fstrE6IBrS5dzBkYxWEGnSdjiNGhmchF/8q8rOyPHFjFZvWe9g
-         w28MwT0Xp0hSH2lu1ABHP0DoZpF3ZZK8EsvB2Tvbqt22gwOM7UYGCKE2N18LP9KZ3ubY
-         xz4H1yBaKzigSO9cAIZCnJsfKX5ovLM5gBfh2d9STBGNjpEKaMT2C53Lno+Z7wR9AK/b
-         eDOMScv3GCf2x+WnZsAdW6ZF7B9X1E9J6p4AfiiVqSMCs7LYdOjvQbBz5v/l+4qxfqX5
-         I3m9oTS976Mg8xUHdUehUF8vpVTZEniRt18UsPbqrxUHQEywWZofd/lp603CeT3mnoJj
-         rb4A==
-X-Forwarded-Encrypted: i=1; AHgh+Rr4aSunuTPGQmf9VSpjoDw8kC0R7iCWc2AToCDj21OHgI0jPsxE6gzUQ6BOIL9v7bipbes+wv/Z7iKjfg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw291ECmsi1a3MTeBh7G2gtm9vRQqr37T7N4ELMGnq6kHbRhmx9
-	uVmEEUhhe9A1lWVXgIJPPwcXKVMDVg8o+VRk314bpBRnUu1F+tUZ0eIQPIFi5yYlHc0=
-X-Gm-Gg: AfdE7cneRCfg8kh13ba/mpXlvg6ujCjgsz0cjOlyrgK6PHXN1+Ombz3H+ujGfNqCS1y
-	+wbSJsNmKIY3RSqhbRT7DUFQrEOmIFzbPukVl0dPOg8P1enwutru+5EG2c7rjYxWwIkEUb0ZXG/
-	cOI5TJdAXaB4GFDI67Yd5VbOyRWM/desLtoH69OlCecfYqYyEwkdw91JlSwec5zet8f1XIAqpTj
-	y2Y72QUfets10oo7KBfTtGq4GegTjykEWAN52WLBq/xI+c4PVJYAc0WaMM0qCD5I9QktD/5Lln0
-	o2k7N8XlWegWXo7cET58IK0d3qGG4kLaptNp5GcbTolTXQqLyTvvfkWw5CY7R+++dO0/fDWSj5N
-	LT6kfL6+jvVeTJLER0J0hddoU7+ErJKdHpGh3dS2ST2sJjCJ+2J54WVimVk+79c8Zc0dtrKtEWp
-	keXv1Bpw==
-X-Received: by 2002:a05:600c:2e15:b0:493:eb71:5cc6 with SMTP id 5b1f17b1804b1-493f88280bamr99414865e9.27.1784075785237;
-        Tue, 14 Jul 2026 17:36:25 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-13b659c865asm92137543c88.11.2026.07.14.17.36.22
+        bh=XdgiXm/2rERlWYwGbue3CmGXaxx/DV9PAEW/S9MqEsw=;
+        b=cspkZsym9w+24hl4sDn8J18th2dOJOKI63080IS0D9kskair7Wlmeigl02366AQdac
+         sDgV7r7ab/3wDy8HP7qk86UbEUS9L42cHe7Y09KmzG/jkivrZN1J2POjoKvCMnrp0+7n
+         OPKI3Qlqa5qRHRzF5Btx5Y6QsPKl1s5OxSrrxxULRTmY2gnFHDwA5KCEDbsZsuc769Ho
+         SIJ5Dg17aTWnr1N8jdsCX3TFM68oHbCWu5sJhtBZWmt+FuIORR5nvCut22MvkzUot9FF
+         viQcYv0u/bkMKQbZ5jjAEl0DcNTtyHoKImRGhH7NZRuoFLrE5PLka2HFlCJQOCDPTtBq
+         WUcg==
+X-Forwarded-Encrypted: i=1; AHgh+RpGFfaNF4aIakfVJCN/Gi0uVT+oARt9LREXWq3uqhs+vShJUq+yOgwJ4YUlzGw4N2cx0eIMFuJaX5TyBg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwiQklT+Vn7eCSfLe6zQL/qd5O4wFTP5JMnrRQaDSYuPKGanyBJ
+	mVaMqHOAhP/SXvQ3f8V1/Upuuv2nciiGd1lGoJB/IZ5saehpWrrheySD
+X-Gm-Gg: AfdE7ckaGve/LoiFrByajvPxsCaSwKXethcEXfssZ+bJNrrJV4WGChZOloIjGZ3+mk5
+	+QOeiyxWyQwiFL7sDOWDittipj5669DvGTwDm5iPnHMt77nuWqhrc7oF45Di6Az2XU1VH/Ss4e9
+	NkesRzVxKuppCQ7uXOQ6ydGA+NiQgOdtbvoK+x6Leqz7/YLMzagtdkqvKKhZv3o5FeetseYvWZ0
+	JWhGaMqMhk2vKe5gPDYd+m3EGP312X1ZVGY9PiSXNw6aNu79JS5PU+cS7UlNxM7SvYfy2XmPMTq
+	45/qm1xycRcQR9l/fLngIr8SDe7TKYhGD+iWfTFw7KCeeKiKMLtMx6tob+oOV6/TbCk++cbe/C/
+	VmvST+sn5Jd0yvkD/hPUyOB69FBqTH6NrE5Onrmb/8aL+Y9V//zoQxuO9719ZerKQqU/ux0YXGN
+	Bg6dlSVFyMHHxgzNxs5ZmXESdvKBr15zl5ITg2oFQUo+KS+qB/kFz0d1/sDbbBXNg=
+X-Received: by 2002:a17:902:d98b:b0:2c8:f34c:82c0 with SMTP id d9443c01a7336-2ce9e5a55c5mr156518865ad.2.1784094419535;
+        Tue, 14 Jul 2026 22:46:59 -0700 (PDT)
+Received: from [0.0.0.0] (ec2-13-113-80-70.ap-northeast-1.compute.amazonaws.com. [13.113.80.70])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2ccc9bdb7ddsm128255315ad.1.2026.07.14.22.46.57
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 14 Jul 2026 17:36:24 -0700 (PDT)
-Message-ID: <6b84c548-4ccd-443a-bc3c-586df797ed0f@suse.com>
-Date: Wed, 15 Jul 2026 10:06:19 +0930
+        Tue, 14 Jul 2026 22:46:59 -0700 (PDT)
+Message-ID: <4289be1b-285c-4641-a7b6-6b8e66f458c6@gmail.com>
+Date: Wed, 15 Jul 2026 13:46:56 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,288 +69,54 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: write-protect folios during data writeback
-To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
- kernel-team@fb.com
-Cc: willy@infradead.org
-References: <e4721e5fdeec2f5a448c6bf25d896d58d35406bb.1784074799.git.boris@bur.io>
+Subject: Re: [BUG] two raid consistency bugs
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
+ Filipe Manana <fdmanana@kernel.org>
+References: <20260714161044.7330-1-zhangboyang.id@gmail.com>
+ <67cff567-1070-4908-a253-a8907d237734@gmx.com>
 Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <e4721e5fdeec2f5a448c6bf25d896d58d35406bb.1784074799.git.boris@bur.io>
+From: Zhang Boyang <zhangboyang.id@gmail.com>
+In-Reply-To: <67cff567-1070-4908-a253-a8907d237734@gmx.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
+
+Hi,
+
+On 2026/7/15 05:40, Qu Wenruo wrote:
+>> At first power failure during transaction N, metadata trees of
+>> generation N are written to disk A, but super is not committed. Nothing
+>> is written to disk B.
+>>
+>> At second power failure during a different transaction N,
+> 
+> If it's a different transaction, why it will still have the same transid N?
+> 
+
+Because the power failure occurred just before writing superblock 
+(transid N). The superblock on disk still has transid N-1.
+
+After reboot, looking at superblock which transid is N-1, btrfs has no 
+idea of transid N existed previously, so it uses transid N for new 
+transcation.
+
+>> nothing is
+>> written to disk A, but metadata trees and super is committed to disk B.
+>>
+>> This creates a ambiguous generation N in two disks. Currently btrfs
+>> can't detect this, and can lead to severe damages.
+
+By the way, I came up another solution:
+
+If generation mismatch between devices (or log-tree mismatch) is 
+detected at mount time, set a dirty flag in superblock on device which 
+is behind.
+
+If dirty flag is set for a device, disable read load balancing for that 
+device. So (meta)data only read from latest device(s).
+
+If dirty flag is detected, ask user to run a scrub. The dirty flag is 
+cleared after a successful scrub.
 
 
-
-在 2026/7/15 09:51, Boris Burkov 写道:
-> commit 095be159f3eb ("btrfs: unify folio dirty flag clearing") replaced
-> the folio_clear_dirty_for_io() call in extent_write_cache_pages() with a
-> plain folio_test_dirty() check. Besides clearing the dirty flag,
-> folio_clear_dirty_for_io() also calls folio_mkclean(), which write-protects
-> the shared mmap PTEs mapping the folio. Note that we still do call
-> folio_clear_dirty_for_io() later in submit_one_sector() when we clear
-> dirty on the last sector of the folio (the only sector for non-subpage
-> cases). But we lost this early call in extent_write_cache_pages().
-> 
-> Without the extra write-protection, a process with the file mmap-ed can
-> modify a sector while it is being used by writeback in a way that
-> expects a stable folio (checksumming, compressing, copying, etc...)
-> without faulting, which manifests as a handful of concrete bugs.
-> 
-> 1. For large folios or subpage sectorsize, it is possible to submit a bio
-> which does not cover the whole folio. When this happens, we will have a
-> bio in flight for a folio that we have *not* called
-> folio_clear_dirty_for_io() on. If a task with an existing mmap-ed PTE
-> writes (without faulting..) in this window, it can result in
-> corruptions. If the write arrives while the checksumming or writing itself
-> is underway, this can result in an invalid checksum and later corruption
-> reports on read. If the write arrives after checksumming/writing is done
-> but before the last sector dirty is cleared, then the write is present
-> in page cache but doesn't affect the dirty tracking and will be lost
-> when the the folio is fully finished being submitted and the dirty bit
-> is cleared. This results in losing the write even if fsync() is called.
-> 
-> 2. For zoned submissions which are done in batch separate from the main
-> extent_writepage() loop, we also risk csum violations for those
-> submissions. Zoned writes are clamped to max_zone_append_size and are
-> not aligned with folios, so a submission can span two folios. The first
-> folio being processed in extent_write_cache_pages() will call
-> extent_write_locked_range() which will submit the partial range of the
-> next folio, while the rest of that folio could still be dirty. So
-> clearing dirty on the submitted sectors doesn't call
-> folio_clear_dirty_for_io() and we have the same issue. Since
-> extent_write_cache_pages() skips these batch submitted folios (they are
-> already marked for writeback from submission by the preceding folio), we
-> must add the extra write protection in lock_delalloc_folios().
-> 
-> 3. For inline extents this will subtly risk losing writes that happen
-> after/while we copy the inline extent but before we clear dirty on
-> the folio.
-> 
-> 4. For folios spanning EOF, mmap could tamper with the zeroed bytes past
-> EOF and cause them to be persisted where future faults would improperly
-> see them instead of zeros.
-> 
-> 5. Finally, for compressed extents, we risk modifying the folios while we
-> work on compressing them which will result in corrupted compressed data.
-> Specifically, in run_delalloc_compressed() we queue up work to do
-> compress_file_range() in BTRFS_COMPRESSION_CHUNK_SIZE (512K) chunks which
-> will call btrfs_folio_clamp_clear_dirty() on the range. For non-subpage,
-> this will always clear the whole folio, safely. For subpage, we risk a
-> partial clear here as well. In particular, imagine a 2M folio broken up
-> into 512K chunks of work which might start compression work on one chunk
-> before all the chunks compress_file_range() workers have gotten far
-> enough to finish clearing all the dirty bitmaps of the folio and getting
-> to folio_clear_dirty_for_io(). Large folios on the edges of submission
-> ranges are similarly at risk to be only partly cleared.
-> This particular gap was introduced by a second patch in the same series:
-> commit a4ef54dbb576 ("btrfs: make extent_range_clear_dirty_for_io() to handle sector size < page size cases")
-> 
-> We cannot simply restore the call to folio_clear_dirty_for_io() because
-> that also drops the dirty flag off the folio which violates invariants
-> introduced for large folios by
-> commit 334509ce9d07 ("btrfs: use dirty flag to check if an ordered extent needs to be truncated")
-> and results in failing to invalidate clean folios past i_size, resulting
-> in deadlocks.
-> 
-> Therefore, to fix it, leave the existing semantics w.r.t. the folio's
-> dirty flag (to preserve the correct invalidate behavior) but ensure that
-> the other aspect of folio_clear_dirty_for_io(), folio_mkclean(), is run
-> on the folio when we lock it for writeback.
-> 
-> Finally, to help prevent similar regressions in the future, add a debug
-> warning that triggers at the known corruption sites if we have failed to
-> write protect the folio.
-> 
-> Assisted-by: LLM (debug, reproduce, research fix, review patch)
-> Fixes: 095be159f3eb ("btrfs: unify folio dirty flag clearing")
-> Fixes: a4ef54dbb576 ("btrfs: make extent_range_clear_dirty_for_io() to handle sector size < page size cases")
-> Signed-off-by: Boris Burkov <boris@bur.io>
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
-
-> ---
-> Changelog:
-> v2:
-> - improved changelog to cover more details of the conditions needed to
->    cause the bugs.
-> 
->   fs/btrfs/extent_io.c | 31 +++++++++++++++++++++++++++++++
->   fs/btrfs/extent_io.h |  5 +++++
->   fs/btrfs/inode.c     | 23 +++++++++++++++++------
->   3 files changed, 53 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 8fbb798767ca..647b109ef61b 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -6,6 +6,7 @@
->   #include <linux/mm.h>
->   #include <linux/pagemap.h>
->   #include <linux/page-flags.h>
-> +#include <linux/rmap.h>
->   #include <linux/sched/mm.h>
->   #include <linux/spinlock.h>
->   #include <linux/blkdev.h>
-> @@ -299,6 +300,25 @@ static noinline void unlock_delalloc_folio(const struct inode *inode,
->   				PAGE_UNLOCK);
->   }
->   
-> +#ifdef CONFIG_BTRFS_DEBUG
-> +/*
-> + * Writeback must write-protect a folio when locking it for IO, before
-> + * anything consumes its data (zeroing, inline copy, compression,
-> + * checksumming). If this fails, then an mmap writer would be able to
-> + * modify the data concurrently while we need it to be stable.
-> + */
-> +void btrfs_check_folio_write_protected(struct folio *folio)
-> +{
-> +	if (folio_mkclean(folio)) {
-> +		const struct btrfs_inode *inode = BTRFS_I(folio->mapping->host);
-> +
-> +		DEBUG_WARN("writable mmap PTEs, root %llu ino %llu pos %llu order %u",
-> +			   btrfs_root_id(inode->root), btrfs_ino(inode), folio_pos(folio),
-> +			   folio_order(folio));
-> +	}
-> +}
-> +#endif
-> +
->   static noinline int lock_delalloc_folios(struct inode *inode,
->   					 struct folio *locked_folio,
->   					 u64 start, u64 end)
-> @@ -332,6 +352,8 @@ static noinline int lock_delalloc_folios(struct inode *inode,
->   				folio_unlock(folio);
->   				goto out;
->   			}
-> +			/* Locked for writeback; revoke writable mmap PTEs before using the data. */
-> +			folio_mkclean(folio);
->   			range_start = max_t(u64, folio_pos(folio), start);
->   			range_len = min_t(u64, folio_next_pos(folio), end + 1) - range_start;
->   			btrfs_folio_set_lock(fs_info, folio, range_start, range_len);
-> @@ -1780,6 +1802,13 @@ static noinline_for_stack int extent_writepage_io(struct btrfs_inode *inode,
->   	ASSERT(end <= folio_end, "start=%llu len=%u folio_start=%llu folio_size=%zu",
->   	       start, len, folio_start, folio_size(folio));
->   
-> +	/*
-> +	 * We are about to checksum and write out the data, so it must not be
-> +	 * mmap writeable, or we could corrupt the data and end up with invalid
-> +	 * checksums.
-> +	 */
-> +	btrfs_check_folio_write_protected(folio);
-> +
->   	/* Truncate the submit bitmap to the current range. */
->   	if (start > folio_start)
->   		bitmap_clear(bio_ctrl->submit_bitmap, 0,
-> @@ -2590,6 +2619,8 @@ static int extent_write_cache_pages(struct address_space *mapping,
->   				continue;
->   			}
->   
-> +			/* Locked for writeback; revoke writable mmap PTEs before using the data. */
-> +			folio_mkclean(folio);
->   			ret = extent_writepage(folio, bio_ctrl);
->   			if (ret < 0) {
->   				done = true;
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index 9896e15ddc40..869925337699 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -255,6 +255,11 @@ bool try_release_extent_mapping(struct folio *folio, gfp_t mask);
->   int try_release_extent_buffer(struct folio *folio);
->   
->   int btrfs_read_folio(struct file *file, struct folio *folio);
-> +#ifdef CONFIG_BTRFS_DEBUG
-> +void btrfs_check_folio_write_protected(struct folio *folio);
-> +#else
-> +static inline void btrfs_check_folio_write_protected(struct folio *folio) { }
-> +#endif
->   void extent_write_locked_range(struct inode *inode, const struct folio *locked_folio,
->   			       u64 start, u64 end, struct writeback_control *wbc,
->   			       bool pages_dirty);
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index b47e2aa5071d..636196705fa3 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -775,19 +775,28 @@ static inline void inode_should_defrag(struct btrfs_inode *inode,
->   
->   static int extent_range_clear_dirty_for_io(struct btrfs_inode *inode, u64 start, u64 end)
->   {
-> +	pgoff_t index = start >> PAGE_SHIFT;
->   	const pgoff_t end_index = end >> PAGE_SHIFT;
->   	struct folio *folio;
->   	int ret = 0;
->   
-> -	for (pgoff_t index = start >> PAGE_SHIFT; index <= end_index; index++) {
-> +	while (index <= end_index) {
->   		folio = filemap_get_folio(inode->vfs_inode.i_mapping, index);
->   		if (IS_ERR(folio)) {
->   			if (!ret)
->   				ret = PTR_ERR(folio);
-> +			index++;
->   			continue;
->   		}
-> +		/*
-> +		 * We are about to compress the folio, so it must not be mmap
-> +		 * writeable or we could corrupt the data as we attempt to
-> +		 * compress it.
-> +		 */
-> +		btrfs_check_folio_write_protected(folio);
->   		btrfs_folio_clamp_clear_dirty(inode->root->fs_info, folio, start,
->   					      end + 1 - start);
-> +		index = folio_next_index(folio);
->   		folio_put(folio);
->   	}
->   	return ret;
-> @@ -877,11 +886,6 @@ static void compress_file_range(struct btrfs_work *work)
->   
->   	inode_should_defrag(inode, start, end, end - start + 1, SZ_16K);
->   
-> -	/*
-> -	 * We need to call clear_page_dirty_for_io on each page in the range.
-> -	 * Otherwise applications with the file mmap'd can wander in and change
-> -	 * the page contents while we are compressing them.
-> -	 */
->   	ret = extent_range_clear_dirty_for_io(inode, start, end);
->   
->   	/*
-> @@ -2317,6 +2321,13 @@ static int run_delalloc_inline(struct btrfs_inode *inode, struct folio *locked_f
->   	int ret;
->   
->   	ASSERT(folio_pos(locked_folio) == 0);
-> +	/*
-> +	 * If an mmap writer could modify the folio while we copy it into an
-> +	 * inline extent we might see only part of their modification then
-> +	 * wrongly mark it clean again after copying, losing that write. So the
-> +	 * folio must be write protected here.
-> +	 */
-> +	btrfs_check_folio_write_protected(locked_folio);
->   
->   	if (btrfs_inode_can_compress(inode) &&
->   	    inode_need_compress(inode, 0, blocksize, true)) {
-
+Zhang Boyang

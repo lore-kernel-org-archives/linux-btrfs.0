@@ -1,78 +1,82 @@
-Received: from mail-pf1-f182.google.com (mail-pf1-f182.google.com [209.85.210.182])
+Received: from mail-pf1-f178.google.com (mail-pf1-f178.google.com [209.85.210.178])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B3F443C7A9
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2026 10:41:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.182
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2D10942046E
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2026 13:12:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.178
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784112089; cv=none; b=hV1DQ19c5Bg2pSaKMAmcSxHwrNJ8kvPBPHD6Avz493HXaLi1fbaMIV5v1qzclh3vqS6xIPSkueKryW5iTeoBXOjsrhf5hjzetpyPhPCq5R2fV8iPYsNk2Cq/h2KYAUoZPctHYrVIWCEdvCNk4V7x2dy1cMbh1u1KyxZLEkwcOrQ=
+	t=1784121125; cv=none; b=GPScjdm+TCMesquV+teo84UTYPTE4XhQy68ud+fuGZfyVvXBGPCf3YP2cBy6c/Kf46VF9QBN6ZKtXTP+quInhl4pyQRL3hWsOCjz+aXF2qmmlDE2JYobn1PcfPeErR0vb7csk0AtlgJs12IX2h4a501R4rgSH6E9aWKZ6QDbY4w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784112089; c=relaxed/simple;
-	bh=PHyClpK9phqHGDVTjsNdB6YNa41U6zj5hqmEpuRbXf0=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=ocA6Zq6wOc12aiSVU0zLgqetIqAZOIasjpnzj/q65GyDaH0ii4+T1aZDdSfq6zU0k2p9OS6nACfMzedUCc7C713Jj5MsOyqIADx5W54SuUb+/LqIQkCLej459qsjneS2rMDy2++Y+uAdM/gmYLT3xUxhr5MrjTMtmfw0zFqbv18=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=nvikc1vP; arc=none smtp.client-ip=209.85.210.182
+	s=arc-20240116; t=1784121125; c=relaxed/simple;
+	bh=9mYhiuKdThu+xbQ2NfwnMl6eddWerZFMJDSKBQdWp3o=;
+	h=Content-Type:Mime-Version:Subject:From:In-Reply-To:Date:Cc:
+	 Message-Id:References:To; b=im+nt+xd49GIcSaHhXqjrQgKPpqVzmI8ZC+HrwnBjLvN9PXqcyQ57HlkxIkqKvULD8UFKu7ovh926Xp7S1u2CkvU/BudMNBhuWEuMrL2Z4ohyS0cRQL3jBtXe2j/yduv+XKaw4Prwik6++Ua5z2+Gzs4gkaJ2amVOKjDNo9tLbE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=suIdy3R4; arc=none smtp.client-ip=209.85.210.178
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nvikc1vP"
-Received: by mail-pf1-f182.google.com with SMTP id d2e1a72fcca58-84536ecfc5bso1820852b3a.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2026 03:41:28 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="suIdy3R4"
+Received: by mail-pf1-f178.google.com with SMTP id d2e1a72fcca58-84867f07d63so6135030b3a.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2026 06:12:03 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1784112088; x=1784716888; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=C1V0/bjj6Tkqz7TMbPWdzZqfQ4IAEFe78FNpOzUj2Yo=;
-        b=nvikc1vPxUVho3YhAbgSutmUBzgLDJBLFI/978wlarjecmmpb2QPfD8o4suK44FAfx
-         xyDGqz9NA/nXPPaw1i2OlwmKDYSxFKFVu7nIduQiKtEgUd8eqCaJOB9sKbaLVxtswlah
-         TLggoY9u1/CKWTLz4ZxmzLo97tAyAKTvhHw5qPXJpWuljzBOHvPjmMljubzSISxwTYy5
-         M/kREFW4QaD9HzCrAsm3vI7MhpsJydDWG2K35Z5ijLZy9ikHAs9ojE0ga6/WcdC+cgHo
-         vauGjVs8TONu8bBR94J/u1EUNYNq8DyLvdH4Mge8y7fEZQsXG5MebT7i8Q/3NX0lHmhc
-         0u8Q==
+        d=gmail.com; s=20251104; t=1784121123; x=1784725923; darn=vger.kernel.org;
+        h=to:references:message-id:content-transfer-encoding:cc:date
+         :in-reply-to:from:subject:mime-version:content-type:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=9mYhiuKdThu+xbQ2NfwnMl6eddWerZFMJDSKBQdWp3o=;
+        b=suIdy3R4Z6ow4KY8QWMjJ2m8Xe6WlLSic9z/NWmQt/ykWsWJqFkYgGjLJlIN/Vm38j
+         I1fNRl1gOaLc5wwA3n4CJwSGCVJUvR/WF13knK9wLkuOyU2Qd0io6ceStuMLKE2pX8GY
+         /XEJix406HaKtbDDASBAP9IoWirmODkmN3UL9REntM0/KjFfXcs6qiACfUaxFND+9Mpd
+         RHxhdoKBuKkFCQcv/JLMowXWZCmkwviNBMAP4wLI6VWHxvVEi+cWBNvgGnOYJCA8d7JO
+         zA63rOeyzbS4oJoh0rfDYtOcgv93nUDOjZuFAAB0zh2cu62pL8F/ubi2gHxpO/aAfn9/
+         OVXQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1784112088; x=1784716888;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=C1V0/bjj6Tkqz7TMbPWdzZqfQ4IAEFe78FNpOzUj2Yo=;
-        b=PdXqp7H7ynKU9LzeFLJOd/5QYSPiY1bfPiwDSJhqPTlJL17dFJzBEkwB1orlmvdx+R
-         WA4nLgGFzwcyqG++lSh2vYgDQCl2ypYQZw/67CLJTN7q8dUPROa2ExgNZ+zA2z9rNtnx
-         P6gInlrwTvmDWi4bnhCdz8FjIeWA9/TxA5RKRqMGYmz1bVVz8W4AyGP5z31ERft0oZmI
-         L2oF2EZTwiGrec4D/+A+xw+BrSAruSaYwOLi+2JdoBUu+J2iCSZE4vvzqEg6Mll3eSUP
-         hiUpln8jUVlNVOGUHURb0q4A0BZogCfu/4L0r8kraq4n49ROotGGCFQVvflJjUX4ONFx
-         BxLQ==
-X-Forwarded-Encrypted: i=1; AHgh+RpiivdIWaHPEtqexjsXmMz49rgBtViycr7sortFdkpExowsHdcQPxSlXAeSOVqDRJ7FYqmsEVqrDa5YKw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxMhWV8w7dp3c5hO/o7QQyEtzXlXF7jVOCqDSZJ1F2IXc3D1NN6
-	ssYsklrvDZr9jWiL9VBHP3gNNFqel+IdxbjZlQo1B37CxryMZOrfVo8tN7gbLw==
-X-Gm-Gg: AfdE7cngJI2Vyc/OJcTBBMPDA0IBj6uis8v/Nb+NZDkIodS8GZ5wQIFLWWutzsyrb8f
-	qvbUFHUuOI7i7WsS3OQ/y3h0yOIL9FMf+3mKHbvbw/0RZbB7RMbwaLngiKkd8TvdeJmqLapt5sU
-	6dhLRZHZe3OyaQOOeX8/EgXbJ2UbZcgzw+UfKKuMlv/G2XfXFGz3QL+EA7F0nMvCR8aJk6GepUf
-	6fRX8dYQy8wNK55Hhlr5ZHDb8AP5sMjiZMFgd8tH7SdMR6cg2dtybcvwSm1LMYx/0prD7S2ltqe
-	MgLcnpShNXBezp+ngw3NAHgvt9JnZf+q/a1AJ9XzfNz4Y39RSjHyRyUeDZwz4uETGGridlTMxpe
-	/UfUVEb9VDopDTXCfLnTrW6rFlG8Dlavr7qVci9rWMMwRYeixqeFs067ZkHFPs6L+r8B5P2Uign
-	MznAQnK4VAvG44yhvluHzjLOys9Dnie/MEGR5ZBCzMZy7gFto/0DBpO96q1PTzh9s=
-X-Received: by 2002:a05:6a00:3e24:b0:848:2f84:f435 with SMTP id d2e1a72fcca58-84a67394888mr2131198b3a.78.1784112087804;
-        Wed, 15 Jul 2026 03:41:27 -0700 (PDT)
-Received: from [0.0.0.0] (ec2-13-113-80-70.ap-northeast-1.compute.amazonaws.com. [13.113.80.70])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-84a4f6be65csm2940449b3a.36.2026.07.15.03.41.26
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 15 Jul 2026 03:41:27 -0700 (PDT)
-Message-ID: <130adcc1-75e2-4c14-8cfe-ef5b2719814e@gmail.com>
-Date: Wed, 15 Jul 2026 18:41:25 +0800
+        d=1e100.net; s=20251104; t=1784121123; x=1784725923;
+        h=to:references:message-id:content-transfer-encoding:cc:date
+         :in-reply-to:from:subject:mime-version:content-type:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=9mYhiuKdThu+xbQ2NfwnMl6eddWerZFMJDSKBQdWp3o=;
+        b=HSZ7BAFeC8IEueK7fv8QsxWvRZ7JMvIuUHvQQuJIYFgRIn5GLXmb+VdT+qtj5Xl1Et
+         5lGxUjcnxcaL4l7nO+r+JbwK+VZ7oe03a3hSOnURqYgBzhhyqOdfy+i1KCiB/YoyQxKc
+         Kwoa+lbRzoHBvY9a8Hmbhsow3syKVhzNQ181ysyjDwmIe84yG3jYTaKeyCdxwj3tmgs6
+         73z4Uht3Gp/VYYShKvSCpLcO2GGl4fjWrBY5dnF064HMtagLZnjN78FSn5UO8wWFo3iP
+         rFUNy34Uj7bDNkFQBklk7Qonb4RdH47SpEKWEcfdXvNsZDzxYZqI4rhmV5RkY4KPgZ1/
+         b8Xg==
+X-Forwarded-Encrypted: i=1; AHgh+RpWKnIjfdLwdt6yA3RCt+ijNToJQHZ15m86CubXvl9WwNtLXwHQhzPYhXl4a9Raf5AwrsknItpkRtgW3w==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzWQAjyQzvbSnrT7yY4Sw2aNJGfK+nWb4USuFpW9De/w6fcDZcO
+	0peHil//5NJzW4WT/CqG3zYR/W4kqUgmcLpDrCOugEM9VJnIs9MpQtD+
+X-Gm-Gg: AfdE7cmMZ/UxDSiXS0xzkGTeluhl51gfK2HKUKYfrY7j7ooF3mEg9OMM/vau1f70837
+	ra9dWizw/DdI2wqvou8ZXdVtTZWGCmPXXSaOAQc4bcKoL200Iu40z26IymG6hPQAXvqZOxUpWjA
+	Ptwu+auvilojzRJcftMFi8TRJtWalZPgk92t3uXqOa7kjPGviMUmlPzWSPRCLi2uge6KzDgcT7n
+	vvIjTnDmWP8ZTCOPmCIbt8f5vL+5x4JdO8mgZacjP0VLQcEmLoPKmyY76PY9wL2iiYtE8o0IHh8
+	ZnIrNjrmC9yGwzJPQycisZIINlzRRKaA6evheS2CZKlK1XNLq2EDKSte52KWWZg6vJzbcc3HNCZ
+	IIbmHAyZ+r6ZMpMfbnR22YrnZzdWKgeTRWy1dWEDtpA06lniOQ6e86W1jRPzUvS367cq1pjY=
+X-Received: by 2002:a05:6a20:c98b:b0:3bf:6c08:fb87 with SMTP id adf61e73a8af0-3c36c3e74edmr3304676637.55.1784121123299;
+        Wed, 15 Jul 2026 06:12:03 -0700 (PDT)
+Received: from smtpclient.apple ([2402:d0c0:11:86::1])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-cb258ff8d80sm190458a12.26.2026.07.15.06.11.57
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 15 Jul 2026 06:12:01 -0700 (PDT)
+Content-Type: text/plain;
+	charset=utf-8
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
+Mime-Version: 1.0 (Mac OS X Mail 16.0 \(3864.600.51.1.1\))
 Subject: Re: [BUG] two raid consistency bugs
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
- linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@kernel.org>
+From: Alan Huang <mmpgouride@gmail.com>
+In-Reply-To: <4674023f-1b70-4be4-ae0c-c65669901feb@gmx.com>
+Date: Wed, 15 Jul 2026 21:11:41 +0800
+Cc: Zhang Boyang <zhangboyang.id@gmail.com>,
+ Qu Wenruo <wqu@suse.com>,
+ linux-btrfs@vger.kernel.org,
+ David Sterba <dsterba@suse.com>,
+ Filipe Manana <fdmanana@kernel.org>
+Content-Transfer-Encoding: quoted-printable
+Message-Id: <48B84595-8BBD-42B5-AFDF-754EE2D24B1C@gmail.com>
 References: <20260714161044.7330-1-zhangboyang.id@gmail.com>
  <67cff567-1070-4908-a253-a8907d237734@gmx.com>
  <4289be1b-285c-4641-a7b6-6b8e66f458c6@gmail.com>
@@ -83,51 +87,62 @@ References: <20260714161044.7330-1-zhangboyang.id@gmail.com>
  <59657910-edd1-4427-8141-ed57d7ffdbe1@gmx.com>
  <ebf9c527-2181-4afe-b88a-4d24fda6d8d9@gmail.com>
  <4674023f-1b70-4be4-ae0c-c65669901feb@gmx.com>
-Content-Language: en-US
-From: Zhang Boyang <zhangboyang.id@gmail.com>
-In-Reply-To: <4674023f-1b70-4be4-ae0c-c65669901feb@gmx.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+X-Mailer: Apple Mail (2.3864.600.51.1.1)
 
-Hi,
-
-On 2026/7/15 18:11, Qu Wenruo wrote:
->> That's exactly what I'm doing. I'm not requesting devs to fix this bug 
->> immediately or implement my fancy idea. I wrote two test cases and 
->> hope it will be helpful to btrfs development. It would be better if 
->> these two test cases can be merged to test suite.
-> 
+On Jul 15, 2026, at 18:11, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>=20
+>=20
+>=20
+> =E5=9C=A8 2026/7/15 19:37, Zhang Boyang =E5=86=99=E9=81=93:
+>> Hi,
+>> On 2026/7/15 17:44, Qu Wenruo wrote:
+>>>> Personally I like the idea of turning metadata trees into merkle =
+trees (so I wrote it first). But since you are the maintainer, I will =
+let you decide which way is appropriate=E2=80=8C.
+>>>=20
+>>> I'm not the maintainer, I just default to not trust ideas/features =
+from unproven contributors, especially when the idea/feature is not =
+simple.
+>>>=20
+>>> Especially considering the increased patches generated by LLMs.
+>>>=20
+>> I understand your concern.
+>>>=20
+>>> So my suggestion is, if you really want to do long-term =
+contributions, stop coming up with fancy ideas, start from basics like =
+doing proper fstests runs with various combinations, report real bugs =
+and fix simple ones by yourself.
+>>>=20
+>>> Earn your name first then consider fancy ideas.
+>>>=20
+>> That's exactly what I'm doing. I'm not requesting devs to fix this =
+bug immediately or implement my fancy idea. I wrote two test cases and =
+hope it will be helpful to btrfs development. It would be better if =
+these two test cases can be merged to test suite.
+>=20
 > No, we will not push for test cases without a fix.
-> 
-> There is already a known failure, generic/747, and at least I'm not the 
-> only one regretting pushing that.
-> 
+>=20
+> There is already a known failure, generic/747, and at least I'm not =
+the only one regretting pushing that.
 
-That's a strange policy. Is this a btrfs policy only or it applies to 
-whole xfstests?
+Then why not delete it ?
 
->>
->> I even wrote a draft patch to fix the second bug. However, the first 
->> bug is not easily solvable. So I had to discuss possible solutions. If 
->> possible, I would have written‌ a draft patch for the first bug, too.
-> 
+>=20
+>> I even wrote a draft patch to fix the second bug. However, the first =
+bug is not easily solvable. So I had to discuss possible solutions. If =
+possible, I would have written=E2=80=8C a draft patch for the first bug, =
+too.
+>=20
 > This is already what I call fancy ideas.
-> 
-> Anyway, this will mostly just get yourself ignored if you really choose 
-> to start from fancy projects.
+>=20
+> Anyway, this will mostly just get yourself ignored if you really =
+choose to start from fancy projects.
 > Those long existing problems are still there for a reason.
-> 
+>=20
+> If you believe you're smarter than everyone else, then go ahead, no =
+one is going to make you change your mind.
+>=20
+>> Zhang Boyang
 
-Ok, the first bug is a bit fancy, but what about the second one? I don't 
-think the second bug is hard to solve (if you ignore the first bug).
-
-> If you believe you're smarter than everyone else, then go ahead, no one 
-> is going to make you change your mind.
-> 
-
-This is a strange accusation‌ and I don't like your attitude. I never 
-thought I am smarter than everyone else.
-
-
-Zhang Boyang
 

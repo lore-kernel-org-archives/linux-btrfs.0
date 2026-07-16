@@ -1,168 +1,152 @@
-Received: from fhigh-a5-smtp.messagingengine.com (fhigh-a5-smtp.messagingengine.com [103.168.172.156])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-lf1-f49.google.com (mail-lf1-f49.google.com [209.85.167.49])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 156B2347537;
-	Thu, 16 Jul 2026 16:23:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.156
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784219041; cv=none; b=Wl+m5C5eD2YvpQkGrG5pHGM86tyBjSdZDDmuzeAZtlw9VwfblXJUbEmLeen+crpZ1EQS4USM9aAoVFyZvmuKhS6wM6rljbQhFmF54Oi7WMW10GRlT/92lfAVXBgnXC4dsg9sVhaXWcyxvjkUdbJNuCeb0HX4+j4kIrvyxLapCiE=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784219041; c=relaxed/simple;
-	bh=Bms5EDbmnWXQRHmtaZmCawgNpyUgkCpj5UqdU1fBgKg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ene76cXrNtjo5uaZH3hR6lHqw/lQ0fC+dAX70bBLC0GXeykG9U9UIybTcQvEbnVkUEuOzewOYrb3X5Bt7bwHEJNF2uB9fuFqhE51Ibr2yfGwqxEslqc4VXz3Nf4BLiP087+O7odb30qwyuxA0faAoAnbWEKdajQw+dEpycYx3hI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=BMZZrmE2; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=ElU4m75N; arc=none smtp.client-ip=103.168.172.156
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 222983A7F51
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jul 2026 17:11:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.167.49
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1784221889; cv=pass; b=c9pNk395Ig6t9e65nXVuI2CgLi+C5Nt9AQXcR2s5arsONvPs0j6+jvfoCb7oigxaIYMNvk8O1w9stNgfICrpllYJrABvlpQNld94e+8KhuWk0/VYZwr5rSwGp9NpyLaFWQvJbYJiG89l/b3wQ4JsB2qFuyhdGM0atOceVsO376s=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1784221889; c=relaxed/simple;
+	bh=XAo9vfAbN7W0cUc5rcT/TQJq2dzvk7LSDQr3E/oLmOw=;
+	h=MIME-Version:From:Date:Message-ID:Subject:To:Cc:Content-Type; b=buROTQ/86e7nOkWzvs0HqX72b+fXol0VdvPH772z7pI0DxgtJSymNaIQQ58SiciAXRLoitss1rpXnHfsEgWwSaXH5jGIxGlvhJDMU3rmZcL6D2eW1F1BXzGa9dVyxd2l4p+ZsdP6dcGp7UltSiNI9s+5ihu3dbWjx+fMRyUkJV8=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=loXtKNgB; arc=pass smtp.client-ip=209.85.167.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="BMZZrmE2";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="ElU4m75N"
-Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id 330F71400076;
-	Thu, 16 Jul 2026 12:23:58 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-05.internal (MEProxy); Thu, 16 Jul 2026 12:23:58 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1784219038; x=1784305438; bh=KpCNfkrxoy
-	UX23CwWt1xfaC7RL/4HASoGRcBNnmkktQ=; b=BMZZrmE2XdPD9VRyPujc5JB8hs
-	gkRBWGXHDKqeT6rScOoTbFWUU6yya/GLH5c1Eg8jEYI8xRzzeKDE4+6o0+LrCfby
-	pFASjwXFz0/XoKH9iBQC4LFDgeMpEVLKSd0KdpEHafcwRM3aEMwIvvZvxH0eqe62
-	hr6hUtZEIOoYmjlupNdr3sSzAHSyZ+XN3dYbrwjV7dAJ+vp5BTufSgcVPsC2Obnj
-	nqVCQ2E6jsbdmdOXO0JoijVCA+KQQIPxGEew6pCAiYx32yfXwfOYs7tOCSNd1hpo
-	lq7sSyS5MAGzLa66JrFccQV3JMv+sco24ta7QSYlfofsBVX6Ug0LOy8FHP/g==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1784219038; x=1784305438; bh=KpCNfkrxoyUX23CwWt1xfaC7RL/4HASoGRc
-	BNnmkktQ=; b=ElU4m75NkA6dWmWcltZ6D9oCAzokuEz0nocc7O+WvW0Csc3X5PB
-	OalsgnJA2SgSqILKL6OA+AiQT39OfmxTqbfW81ibSgn6QNTZix3JwzS+f+RVfVSx
-	ovjoScnfJsWzjMguVCzjKWBvqEcJWN4KaK4LDWSgmRqmuYzYO2rDIEkz+ELT/TXI
-	DuAXdelyUnZIkteQZ8pJF4QjDAZzrIza9LVtGoqO55NJ7VMkt3IZnXpSfFMFDfpp
-	gJnXUPgoMwxKNE176LiKqO0LAs1jb1kCJRsB1Kz9u6hqYWHo0D+G2mYZueDE3uwN
-	wwqIYpaf2qvEUvyrRACuwmak3BtI13aLs9g==
-X-ME-Sender: <xms:nQVZar62nhYiRx4ojD0JHU13t7ryT-1eyRDFYu9h_RakUgKcKLVs0w>
-    <xme:nQVZaqPy11jjJkXwRT7NEiDHBpiq3-L9XRU6BuLaUosW0IgmtKNEoYvVx2lQdm163
-    aTQhtvz0_3K70psAtkNbYaeK2lOzq6QQhRXxELOK-Ip3hC5hxeWScog>
-X-ME-Received: <xmr:nQVZapuQqkYjnTwGN_A-92hJ8zQ8Ew-E4h7DPKkSD7_bwR6pe2xJ8I_G4v-u1DQ9dtiRthsaJLhW0yjl3iOgtPSBycw>
-X-ME-Proxy-Cause: dmFkZTE+krbDGQHkyGx79YZxqLzZonJOCAvsuap32/rDStdH4s5YDkrYCylW3YJajp8WeD
-    Wxy5aGD3+x5lX64xH11WWFHIMDdQCui5q/atK7keBG0REGe/xnzIqnfOg4VGG/E69XNAq5
-    wq5ie/PkcHtBEeTWrrhFjR4d8rkSJd6u+c0JTKm9MC0QYPlI64D6FMJ5PYuNErXhghfFX1
-    OTRDtS/4bSbLc3WQWg8mxjWxws2jScb5uJNt6laYDk0X5B7uTGGeqGlonMEpnyGCTKiUTN
-    da4S8AmPeH56sQrhthU8R235b6V7TtumvkKcInZAXtD/j6RGa8ANemTJ1uY3/omGn/toG6
-    J/bj47MfMVepOxOqQTlD+hPkNC04rik92xVR1HutSJBVlLHSgvKrijwDr/daYedq22hTiI
-    gislKC1If8KoSt19Sh/LA2g5Qpr8VpKHtf5DoUnWAUPN3wNONcK/LC/yLQeQhjTvu6Cgec
-    DrDl7+QUctMrRipli1bWhEBGo0g0/a24v/8WiNyuyB3nH7VKL+it3jTzukJIKb+7utNbOA
-    0ChABIMNSc1J85HRhxeVMocYMZgi+lRtUuSoZAYmySI9Aq9X34sjEmkYH+2M/3DLFo7uHU
-    FyOkHCffLivOEL/cybSNXJLxifD+iU2s4XejaeHm5Im6tlDhcJ3vvGKNIxbQ
-X-ME-Proxy: <xmx:nQVZatbynpzLzaUvSUtgRGNwlmc75mxYX4XPJWs8FHLSsvYBwhP3WQ>
-    <xmx:nQVZarwfKv1mUJZz1zcz0-Gb40JbiGEscI7y9hv0bph0AmAF8Xc1qg>
-    <xmx:nQVZalhvkOvc3nBLmP_BFaBs9mKGZ4OLKrq9PvQ3ge-gv0XzzZmFzA>
-    <xmx:nQVZanlU7PBee7ZONLlW8p5HVow_W4Q94xtXBecj6qFowy935kkAtg>
-    <xmx:ngVZajz-2Vcu1U1Nc2L_FK48LBw61URErjAqBvKaUVvTxZOiPTeyplOh>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 16 Jul 2026 12:23:57 -0400 (EDT)
-Date: Thu, 16 Jul 2026 09:23:49 -0700
-From: Boris Burkov <boris@bur.io>
-To: Yichong Chen <chenyichong@uniontech.com>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-	Matthew Wilcox <willy@infradead.org>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: add verity Merkle folio to page cache after
- reading it
-Message-ID: <20260716162349.GA3278562@zen.localdomain>
-References: <20260706053907.544337-1-chenyichong@uniontech.com>
- <20260707055517.570586-1-chenyichong@uniontech.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="loXtKNgB"
+Received: by mail-lf1-f49.google.com with SMTP id 2adb3069b0e04-5b013084dc2so3039368e87.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jul 2026 10:11:25 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1784221884; cv=none;
+        d=google.com; s=arc-20260327;
+        b=FGe/sYyu5yZKTB1MEDBAiDRVm3JfN9Zdb9515iSn7qxIg7Ej4nY5LAxtpHqRNmPZfm
+         RPHuxzInN4xz0Ic4TYBrTYgVo+LrmflT+pCWIRn/CKjkvDRQp38jHjqel0QQuIJ9bUDL
+         DyorhjmpdjvwYQPR2GkoqXHOj83r31bLjxdJpqLjabWBaYXtU3PwTRMGTzyHZDj/uJW2
+         XCl1MeWd7qKEeFU5qAyDw7bDQKvaMIyJpCD5iE+7PWp+v92iDBqHAqzAqT/L/Nn7pqaA
+         ajyko0qGPDkQpKcoc92jh2Ur9nPH2O8UPgOUXBY5a9Kezm859IjXDKdaQ+C2dBGJCQmj
+         0xXQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:mime-version:dkim-signature;
+        bh=QafzE1E5CSS3q3rQGn6jTvtg2tR0LheomrUdACA0pO4=;
+        fh=0NpNUQ2Uz9fPpDJrD5vn/cV7qUXz4qZBahwbL8iw9e0=;
+        b=r3yvqEo6yXR2paXSSdey4DY2uXTCX46B7CCi2soJ+eUXxBtLzii05LsAyZngVCH6E4
+         ykBQAaRjrwpViASYkjYxztuDGCLjYkkMAUB2dZGNcuP9cqY47fgxDQmyiAk/317QTv9S
+         g04PiubTl/M6hPfbFkuTcrAOAYjVPs9/tjwq7CUb5MPmNdqamyOCgwdVZIn2O9IuyNfg
+         tbq+hsdUkjdIrZa/qPuyQ1CKTgFJVbDTIi7KpMNSsjYsmJZ/SVG+b5WLPD3hJ2jpEdyN
+         Cz2AptHWvwQxZgz87cMpC0h29WGAwD4fAiXeDwSh6H8Z2gaGRDhc5Rm3ptP/WwaO6j1H
+         wIZg==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1784221884; x=1784826684; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:mime-version:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=QafzE1E5CSS3q3rQGn6jTvtg2tR0LheomrUdACA0pO4=;
+        b=loXtKNgB6JrMbpJqo95wQ23lyAmGC6KA8/6d433zYccnSQBe5K0ftUVBgxyRDFQNku
+         NOMjRd0HFmNV6S0WRS407j/rB2hK4kIbp/wHkbD5tZ+KilEdQw/M0smvGN1C6M8PMdZn
+         uR3WwljtfKTU23C0U0RWjWI8A+dgUi+orOIvBo3J8MS0RDR2nuxheQmZoAQa48UPHn7+
+         gU/X+/WHileJe8bixekszvlIelFKTkrOUbBys/ppna+S3bT3OdGoDtP62tvvDJYJf3q1
+         RLkjVL4sACafJODqvMf5B2woGGKE6h1NOQi7cZabmed0kwrNqbJM1vGNbFJxQBriPK1h
+         od0g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1784221884; x=1784826684;
+        h=content-type:cc:to:subject:message-id:date:from:mime-version
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=QafzE1E5CSS3q3rQGn6jTvtg2tR0LheomrUdACA0pO4=;
+        b=MUHiYLd0lYGVu0ntS3VVtbh0XNwubm7jXvQGV7VIPoyubcs6+GoknSYN7gbNcqYpZB
+         HW686DtMbzFm9p1J48AOKBcE7gszx24PTDB91d+2OsfFqX1dsOSRqyMAhW+ncQha7qrW
+         BwuBKiQkqTD0/Ej+YIDrAUjg+ZNGmfq/a9yJxIIznxLJpUmaNHBiQP56C936wvPUR8pV
+         YAHknCKqMTmLO0xHemtWUoj1C6RkGEDE/bZaxLYnsJm3FQ654CO7eeNO563Wr0eeeYj+
+         gZN3x2qzZq5l/daEcpJlRQqSfylL725UGvwOxX4Avoot2zdLh+KLJlghAGehOnHlAW0g
+         YzAg==
+X-Forwarded-Encrypted: i=1; AHgh+RrbB+9KklfrFMVOzUm1TtX90/gLV6TQ7LoWNn7uxaWkCAx5iRemDaQY+TESJdu2r2W1Fdp6YIloFpw2yQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwiHCYV75dSLT+eUP1+Zfhn2Ek/E09yXqG0j2x9QyjNsG4SInB8
+	pHRysUpy+kmftnZ00Q/FIUCx/niNMPAuAE3o0g826dNRP86UPOOSgybTjeTEtJMVvO47YyzNqgv
+	CtSVIIeScK7FNZnG8M3V5DP5oRlwLwbI=
+X-Gm-Gg: AfdE7cm9nLo5CSHgcAXKiWktpMmJ0AACdAVyT3/la+sXvZAlmD4i2GBFLrq0l6+4Fa0
+	6dTLfhaPw1RhlBUrAXreXYl2Q07IPHI5MuC3weC04E4W8bnCMVizqKOjLCl8ytoLJcH9TbP98jT
+	szZ9aFM96v0Ev2y3Xcg3cQkeGe3DnbTF7r//oWa3hu7s8pHoE7Z5bmLlOo4VgQo1zYKUcmk4qnF
+	E3p0avCsdLaJQjk7uI1Mh8PWifbQTGR66WyGG1uxFGnHpPI++oiOzZH+XqW
+X-Received: by 2002:a05:6512:65d2:10b0:5b0:1dd0:f20b with SMTP id
+ 2adb3069b0e04-5b023561501mr3613763e87.6.1784221883351; Thu, 16 Jul 2026
+ 10:11:23 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260707055517.570586-1-chenyichong@uniontech.com>
+From: Chengfeng Lin <lin2530632123@gmail.com>
+Date: Fri, 17 Jul 2026 01:11:11 +0800
+X-Gm-Features: AUfX_mwNOWBcxm54equ_vRawnkvZnXXehNmEk3_wgj-yOseLVARzyxMqIWlyWkI
+Message-ID: <CANGjgd=fQkHht2PdDi-+EAdzWH7UtxxWhhJ7b80Rr17PbpgxOw@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: replace writeback inhibition xarray with a
+ fixed inline buffer
+To: Leo Martins <loemra.dev@gmail.com>
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, kernel-team@fb.com, 
+	Filipe Manana <fdmanana@kernel.org>, Boris Burkov <boris@bur.io>, Sun YangKai <sunk67188@gmail.com>, 
+	kernel test robot <oliver.sang@intel.com>
+Content-Type: text/plain; charset="UTF-8"
 
-On Tue, Jul 07, 2026 at 01:55:17PM +0800, Yichong Chen wrote:
-> btrfs_read_merkle_tree_page() allocates a folio and adds it to the page
-> cache before reading the Merkle tree data from btree items.
+Hi Leo,
 
-So does ext4 via (eventually) do_read_cache_folio().
+I independently tested the exact v2 code diff on a physical x86-64 machine.
+In this narrow synthetic Btrfs remap-range microbenchmark, it was consistently
+faster than the unpatched xarray control.  This is not an application
+workload.  It also differs from the LKP fio 4 KiB random-write case: this test
+exercises the same Btrfs writeback-inhibition functions through 4 KiB clone
+and dedupe ioctls.
 
-> 
-> If read_key_bytes() fails, the folio is still locked and present in the
-> page cache.  A later read can find the locked, not-uptodate folio instead
-> of retrying the read.
+I applied the code diff from this v2 message to a frozen Linux 7.1.0 source
+snapshot containing the Btrfs change at
+f9a48549a15aa369d42cebc08a6a72b71a53d547.  The exact saved diff used for the
+build has SHA-256
+5ec741be5a89d6dae0c0608cc036512770b55d6a49e9b576b4aa3115ebfdffd3.
+Aside from the v2 diff, the control and patched kernels used the same base
+source snapshot, normalized config, GCC 15.2.0 toolchain and Kbuild metadata,
+with `CONFIG_PREEMPT_DYNAMIC=y` and `preempt=none`.
 
-I think the better fix is to fall through to retrying when we see a
-not-uptodate folio in the mapping after __filemap_get_folio(), which I
-believe is how the ext4 code will behave in that case.
+The machine was an Intel Core i7-12700KF system with 20 logical CPUs and
+32 GiB RAM.  For each kernel point I created a fresh Btrfs filesystem on a
+1 GiB RAM-backed brd device.  The timed process was pinned to P-core logical
+CPU 2 with the `intel_pstate` `performance` governor.  Each point ran 15
+rounds; each round performed 10,000 4 KiB FICLONERANGE operations and 10,000
+4 KiB FIDEDUPERANGE operations.
 
-> 
-> Avoid installing the folio in the page cache until after the Merkle tree
-> read has succeeded.  This keeps the failure path simple: the newly
-> allocated folio is not visible to the page cache yet and only needs to be
-> released.
+In a control -> v2 -> control sandwich, the means across all 15 rounds were in
+ns/op (lower is better):
 
-I don't think this order is correct. filemap_add_folio() locks the folio
-so if you do it in this order, you no longer lock the folio while
-reading which is a non-trivial change. I don't immediately see what is
-wrong with that off the top of my head for read only verity past eof
-pages but it feels sloppy at the very least.
+  operation          control A   v2         control B   v2 vs control midpoint
+  FICLONERANGE 4 KiB  2943.790    2159.123   2970.446    -26.986%
+  FIDEDUPERANGE 4 KiB 3535.456    2762.835   3546.942    -21.980%
+
+The two control points drifted by only 0.905% for clone and 0.325% for dedupe.
+Dropping the first round from each point produced deltas of -27.178% and
+-22.128%.
+
+All 90 timing rows passed the semantic checks: expected_match_ratio=100 and
+unexpected_results=0.  A separate ftrace direct-hit run on the v2 kernel with
+1,000 clone plus 1,000 dedupe operations observed 2,000 calls to
+btrfs_remap_file_range, 7,473 to btrfs_inhibit_eb_writeback, and 2,033 to
+btrfs_uninhibit_all_eb_writeback.
+
+For this specific brd-backed 4 KiB clone/dedupe workload, v2 reduced the
+measured per-operation latency relative to the unpatched xarray control by
+about 27% for clone and 22% for dedupe.  I have not tested application-level
+impact, physical-storage impact, or a broad filesystem matrix.  The Tested-by
+below applies to the v2 code diff identified by this message and the SHA-256
+above.
+
+Evidence bundle:
+
+  https://github.com/lcf0399/linux-regression-evidence/tree/7e47ea94a4d151610f16e98429efc3c3b8865265/btrfs-remap-writeback-inhibition-v2
+
+Standalone workload:
+
+  https://github.com/lcf0399/linux-regression-evidence/tree/7e47ea94a4d151610f16e98429efc3c3b8865265/btrfs-remap-writeback-inhibition-v2/reproducer
+
+Tested-by: Chengfeng Lin <lin2530632123@gmail.com>
 
 Thanks,
-Boris
-
-> 
-> Fixes: 06ed09351b67 ("btrfs: convert btrfs_read_merkle_tree_page() to use a folio")
-> Signed-off-by: Yichong Chen <chenyichong@uniontech.com>
-> ---
-> v2:
-> - Avoid calling filemap_remove_folio(), which is not exported.
-> - Add the folio to the page cache only after read_key_bytes() succeeds.
-> 
->  fs/btrfs/verity.c | 18 +++++++++---------
->  1 file changed, 9 insertions(+), 9 deletions(-)
-> 
-> diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-> index 983365a73541..d705ce3b386a 100644
-> --- a/fs/btrfs/verity.c
-> +++ b/fs/btrfs/verity.c
-> @@ -735,15 +735,6 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
->  	if (!folio)
->  		return ERR_PTR(-ENOMEM);
->  
-> -	ret = filemap_add_folio(inode->i_mapping, folio, index, GFP_NOFS);
-> -	if (ret) {
-> -		folio_put(folio);
-> -		/* Did someone else insert a folio here? */
-> -		if (ret == -EEXIST)
-> -			goto again;
-> -		return ERR_PTR(ret);
-> -	}
-> -
->  	/*
->  	 * Merkle item keys are indexed from byte 0 in the merkle tree.
->  	 * They have the form:
-> @@ -759,6 +750,15 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
->  	if (ret < PAGE_SIZE)
->  		folio_zero_segment(folio, ret, PAGE_SIZE);
->  
-> +	ret = filemap_add_folio(inode->i_mapping, folio, index, GFP_NOFS);
-> +	if (ret) {
-> +		folio_put(folio);
-> +		/* Did someone else insert a folio here? */
-> +		if (ret == -EEXIST)
-> +			goto again;
-> +		return ERR_PTR(ret);
-> +	}
-> +
->  	folio_mark_uptodate(folio);
->  	folio_unlock(folio);
->  
-> -- 
-> 2.51.0
+Chengfeng

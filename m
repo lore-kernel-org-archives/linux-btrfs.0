@@ -1,176 +1,144 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7742B3B8111
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jul 2026 10:05:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AE79A40A94F
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jul 2026 10:33:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.41
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784196316; cv=none; b=VAJtqv4gFSVNniFGc0Xebi7pUTukZdkHc4KgPRrmqbFLhTzdvu250YQ0wDqv1DLuEP6rwmrZ5INg/KE35st6C8bSGCGCbC0LBo7sgho8YKMqAUKIfZVipEKQyRbIGo+BFcj8+7jkmes0biPsoh/+U7RURA0iDNLSip7+XYy8Kjk=
+	t=1784198006; cv=none; b=sL0wuZ/eRwC+IlRNtzps4iG8hTkXojAzZFE2eZUlMMtV4lEQNNq74eDFafxJhPxqmfd9k0I1q4+y2sCbi03i06EPSUq3ZXb6KM0CNH4m0jtPpzo8R0KAh9xe5xFL9jKZtSp+fwv2CjP8LaUXbdRQzwwInCgQK3kVHeL2XzHE5tU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784196316; c=relaxed/simple;
-	bh=BgBToixEvidZUtjJ0CRiH8gNaOivp4xK6i/KkYkQ6ZM=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=VyUJG+/mKxSnJEFe5sE+5gHQbN2ZMw8y7A5XTQCc0g3dEWCZK32oPGXhvhUdcZj97cplGOknRHZX0Quw9rKvJla/sHyxxyijbfkvFnkNS+PgK1w9ENbKW+FHvqsvLoBtSehXhybV2yBbn4ydNalIdW86FTX/CP71/ph17U3jMQk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=aKtRX8wU; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1784198006; c=relaxed/simple;
+	bh=uLyUUCEYVf5dUuQD4VVStlzoppk/nyTFiJdHU9un7RQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=G4QZIzCmVtUydlUj0Nrhn37iGixizCcXh9mP5F5Jsop4YQjWZGRGSq+uFH4hraob33ktvLIOW72AIT+VMsvTTh9EmFURXETNFrCEldoJWcPAbk9TKDhfhDhrsORcbrQ/02ItIQyEZOuxOPt6JUV+OVfHp/xJkgxO5uPdDVLJyvU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Vll3ds2F; arc=none smtp.client-ip=209.85.128.41
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="aKtRX8wU"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1784196314;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=DI+PDORv1aJVAQtbMTNnHI2lUR6TrryOZGxBa77OmvQ=;
-	b=aKtRX8wU/8nltuHr+gdGyqh2Wj6VVhepi4QV3kmSrjRa3BJN/7jJ+NBuMpSe9sZkEcCJGm
-	2BEw2oCE4OFDLMLtsab5X/V5b2yYGELVxzFeT/Vsc1xWM6qbAAbz/CM8kdoj1Zcg+AgfUH
-	M+eRPDJn1X8LLrPeSJ25RfbezDqetPk=
-Received: from mx-prod-mc-03.mail-002.prod.us-west-2.aws.redhat.com
- (ec2-54-186-198-63.us-west-2.compute.amazonaws.com [54.186.198.63]) by
- relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-623-p1E7IKNGMo6nFj3jYYpVEA-1; Thu,
- 16 Jul 2026 06:05:09 -0400
-X-MC-Unique: p1E7IKNGMo6nFj3jYYpVEA-1
-X-Mimecast-MFC-AGG-ID: p1E7IKNGMo6nFj3jYYpVEA_1784196307
-Received: from mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.17])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mx-prod-mc-03.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id C478B1956053;
-	Thu, 16 Jul 2026 10:05:07 +0000 (UTC)
-Received: from bfoster (unknown [10.22.88.111])
-	by mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id E6B771955F74;
-	Thu, 16 Jul 2026 10:05:06 +0000 (UTC)
-Date: Thu, 16 Jul 2026 06:05:04 -0400
-From: Brian Foster <bfoster@redhat.com>
-To: Qu Wenruo <wqu@suse.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	Anand Jain <asj@kernel.org>, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] fstests: generic: add a basic cachestat test case
-Message-ID: <alis0DbcUX9Dd897@bfoster>
-References: <20260715223716.5965-1-wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Vll3ds2F"
+Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-493f4638f4aso26633835e9.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jul 2026 03:33:24 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1784198003; x=1784802803; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=RBW772IIzN3rpC8gm1mWVIDJyHthIxVrQHVZAttG0Rw=;
+        b=Vll3ds2FlxHMcJS6Tsn47Omt/RqUgX8ZYuDcQQDdc4oBMRoxuxpDtpn2g/PP9iXeRq
+         ToKSw6idfM1aJ/9TWKwnLlBTgBE7WTjA20hqnOQjRjtxofvcmYri7tAj3+09KucIofme
+         WbtC9p4hQCDRd9DEIkF2p6hEuaLRMVmCNSNV/GhBjzMeuWBVxOkTSHjRYLkwMPTwT7lv
+         1Rg0TwY1ht8k+QrBpAXPDZYO8no8lpHoVCgzyKq9HMtnIMFfmyXA9Gkz5/kB8BvcUvxA
+         iceDuLveq6wDYz0FjTuOJtygyh/UUZGqdFUBxYMBznvMg6+KkVV/O4Z+KtVZ5fcpKz53
+         LMKQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1784198003; x=1784802803;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=RBW772IIzN3rpC8gm1mWVIDJyHthIxVrQHVZAttG0Rw=;
+        b=D0g85Ylre1XizqE6weMoQTAgHSvqifVqEvQomDC4YMim9oH9hH4+IblYW0W5ga+YX+
+         wYwRBwFlcgTYCGsiVsl9aS7xXhehYnhH3GgaknxOv87/pPPZajdtaqtQBjEQayVyRcn4
+         lrH9j1R4x0C1W1fJ9nXhIKo77fpZtKStoD2ST2STkf6egt0Uu5n7+sL+kAPFdbm2Rgb1
+         jItZN82oqtx/qFO+n/0+71q+FNnCeQKXKM4gk0OQiqNLWGGM/Lso1GSWu+p3LBA3EN7Y
+         nqIB0W+qOemMsLy0o+AaGvq2cukemymwRPXB+feOK2sihuWkvw/eyTwYqzRnV1DWNyAa
+         QjYg==
+X-Gm-Message-State: AOJu0Yw13ujC4CZ6L5y5jvkg2FeCsBr8WcXl5jZLFdVD+osVZFmbpwOZ
+	FaX1QEwTgRjCxZhZyQJyhehYeb7aD3MLF5Rse7f0k4nGQxNK3WOOP/R2+W8E1iTgVRg=
+X-Gm-Gg: AfdE7cmp8emtXe8Ny3zPp1KWNoaoIBTNI1M3wdxPSLiWJuVh9uT3jaI95RiLe2rdqqg
+	jyDuB0uOeYL4Vn4KRvsg0Cil8Y0Q0pbuDu94r5xTzUvkucXschoXPKjtzovZeqhlJcsnlpgv32z
+	6eJnExHRSbGAp9TDmpQfa/DxVhERm+y3D/DKuhqaEh40e1q9HrATKii8f8/doIvXV1SdshCJsMa
+	Mqa3/1miEk7sf+rzbC+lngQ5RNHCZVr/Bybu1QP8JHpD7uAusc1SNpOHZ3U/LmeSQILxkEbqGM2
+	5BFpKZstLhuKUBMw/wxOuY+4PBdYNkmjU7qs+C2OVuZf1OWO5adDaCPSAqCOD90ds8td5zQG03U
+	g8LjJHFE+Mu6G2ZcY9lXGUPg2xKJL4zVMBTDMbGIjpWTz6vfjBjFh4zfK2Umrsl5FZCrdjKI=
+X-Received: by 2002:a05:600c:16ca:b0:493:c1bc:79bd with SMTP id 5b1f17b1804b1-493f88180f9mr142497875e9.20.1784198002781;
+        Thu, 16 Jul 2026 03:33:22 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3140e538368sm14920979eec.12.2026.07.16.03.33.17
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 16 Jul 2026 03:33:21 -0700 (PDT)
+Message-ID: <929ed316-664e-47d9-a4cf-7ec8750fbfb0@suse.com>
+Date: Thu, 16 Jul 2026 20:03:14 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260715223716.5965-1-wqu@suse.com>
-X-Scanned-By: MIMEDefang 3.0 on 10.30.177.17
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] block: do not warn when doing greedy allocation in
+ folio_alloc_greedy()
+To: "Vlastimil Babka (SUSE)" <vbabka@kernel.org>,
+ Christoph Hellwig <hch@infradead.org>,
+ Andrew Morton <akpm@linux-foundation.org>,
+ Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>,
+ Brendan Jackman <jackmanb@google.com>, Johannes Weiner <hannes@cmpxchg.org>,
+ Zi Yan <ziy@nvidia.com>, Matthew Wilcox <willy@infradead.org>
+Cc: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+ linux-mm@kvack.org
+References: <d10571445ee505d95ba6eaad7558fc1f556d2921.1784020005.git.wqu@suse.com>
+ <alikjtke-YNWdd1I@infradead.org>
+ <eb4d4f50-f60f-4a4e-8e9b-6dbb69b8e0e4@kernel.org>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <eb4d4f50-f60f-4a4e-8e9b-6dbb69b8e0e4@kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On Thu, Jul 16, 2026 at 08:07:16AM +0930, Qu Wenruo wrote:
-> The test case is inspired by LTP, where there is a regression on 64K
-> page size systems with btrfs, that after a fsync, cachestat() still
-> report dirty pages.
-> 
-> The test case itself is pretty simple, fill the file with a buffered write that is
-> 1/2/4/8/16 page sized, call cachestat() to make sure the cached/dirtied
-> number match the page number.
-> 
-> Then do a fsync(), and make sure the dirty page number reduced to 0
-> meanwhile cached is still the same.
-> 
-> Link: https://bugzilla.suse.com/show_bug.cgi?id=1270397
-> Reviewed-by: Anand Jain <asj@kernel.org>
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Changelog:
-> v3:
-> - Use golden output to greatly simplify the test case
-> 
-> - Do not mkfs for each size, just remove the original file
-> 
-> v2:
-> - Reject "sync" and "dax" mount options
->   Those mount options write back data synchronously, will screw up the
->   buffered write dirtied page reporting.
-> 
-> - Use AWK_PROG everywhere.
-> 
-> - Remove the unnecessary redirection for fsync
-> ---
 
-Nice. Thanks for the tweaks!
 
-Reviewed-by: Brian Foster <bfoster@redhat.com>
-
->  tests/generic/798     | 39 +++++++++++++++++++++++++++++++++++++++
->  tests/generic/798.out | 16 ++++++++++++++++
->  2 files changed, 55 insertions(+)
->  create mode 100755 tests/generic/798
->  create mode 100644 tests/generic/798.out
+在 2026/7/16 19:35, Vlastimil Babka (SUSE) 写道:
+> On 7/16/26 11:29, Christoph Hellwig wrote:
+>> On Tue, Jul 14, 2026 at 06:37:39PM +0930, Qu Wenruo wrote:
+>>>   	while (*size > minsize) {
+>>> -		folio = folio_alloc(gfp | __GFP_NORETRY, get_order(*size));
+>>> +		folio = folio_alloc(gfp | __GFP_NORETRY | __GFP_NOWARN,
+>>> +				    get_order(*size));
+>>
+>> I though I read somewhere that we now don't have to specify
+>> __GFP_NOWARN when using __GFP_NORETRY, but a quick dive into the page
+>> allocator suggest that no such thing exists.
 > 
-> diff --git a/tests/generic/798 b/tests/generic/798
-> new file mode 100755
-> index 00000000..0fe37646
-> --- /dev/null
-> +++ b/tests/generic/798
-> @@ -0,0 +1,39 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> +#
-> +# FS QA Test 798
-> +#
-> +# Basic tests for cachestat()
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick
-> +
-> +_require_xfs_io_command "cachestat"
-> +_require_scratch
-> +# Any mount option that writes data back synchronously should be rejected.
-> +# Or it will screw up the dirtied page reporting for buffered writes.
-> +_exclude_scratch_mount_option "dax"
-> +_exclude_scratch_mount_option "sync"
-> +
-> +pagesize=$(_get_page_size)
-> +
-> +_scratch_mkfs > /dev/null
-> +_scratch_mount
-> +
-> +for num_page in 1 2 4 8 16; do
-> +	size=$(($pagesize * $num_page))
-> +
-> +	echo "=== Test with $num_page pages ==="
-> +
-> +	rm -f $SCRATCH_MNT/foobar
-> +	$XFS_IO_PROG -f -c "pwrite -b $pagesize 0 $size" $SCRATCH_MNT/foobar > /dev/null
-> +	# Basic cached number reporting
-> +	$XFS_IO_PROG -c "cachestat 0 $size" $SCRATCH_MNT/foobar
-> +
-> +	# Test dirty page number reporting after a fsync.
-> +	$XFS_IO_PROG -c "fsync" -c "cachestat 0 $size" $SCRATCH_MNT/foobar
-> +done
-> +
-> +_scratch_unmount
-> +_exit 0
-> diff --git a/tests/generic/798.out b/tests/generic/798.out
-> new file mode 100644
-> index 00000000..ca6ead3c
-> --- /dev/null
-> +++ b/tests/generic/798.out
-> @@ -0,0 +1,16 @@
-> +QA output created by 798
-> +=== Test with 1 pages ===
-> +Cached: 1, Dirty: 1, Writeback: 0, Evicted: 0, Recently Evicted: 0
-> +Cached: 1, Dirty: 0, Writeback: 0, Evicted: 0, Recently Evicted: 0
-> +=== Test with 2 pages ===
-> +Cached: 2, Dirty: 2, Writeback: 0, Evicted: 0, Recently Evicted: 0
-> +Cached: 2, Dirty: 0, Writeback: 0, Evicted: 0, Recently Evicted: 0
-> +=== Test with 4 pages ===
-> +Cached: 4, Dirty: 4, Writeback: 0, Evicted: 0, Recently Evicted: 0
-> +Cached: 4, Dirty: 0, Writeback: 0, Evicted: 0, Recently Evicted: 0
-> +=== Test with 8 pages ===
-> +Cached: 8, Dirty: 8, Writeback: 0, Evicted: 0, Recently Evicted: 0
-> +Cached: 8, Dirty: 0, Writeback: 0, Evicted: 0, Recently Evicted: 0
-> +=== Test with 16 pages ===
-> +Cached: 16, Dirty: 16, Writeback: 0, Evicted: 0, Recently Evicted: 0
-> +Cached: 16, Dirty: 0, Writeback: 0, Evicted: 0, Recently Evicted: 0
-> -- 
-> 2.51.2
+> There was a change a while ago that added __GFP_NOWARN to GFP_NOWAIT, maybe
+> that's what you read about?
 > 
+>> But can we make it happen?  Having to specify __GFP_NOWARN when the
+>> caller clearly indicated that failure is perfectly fine using
+>> __GFP_NORETRY is silly.  The same probably applies to
+>> __GFP_RETRY_MAYFAIL.
+> 
+> It makes sense to me. The risk of missing some useful warning due to a
+> coding error (conjuring up an unexpected __GFP_NORETRY/__GFP_RETRY_MAYFAIL
+> in whatever way and then silently failing) is probably low here and it makes
+> the API better.
 
+Yep, making NORETRY and NOWAIT to imply NOWARN looks very reasonable to 
+me too.
+
+Thanks,
+Qu

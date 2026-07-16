@@ -1,206 +1,235 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from www262.sakura.ne.jp (www262.sakura.ne.jp [202.181.97.72])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8853E3BE156
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2026 22:37:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 92E26800;
+	Thu, 16 Jul 2026 00:06:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.181.97.72
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784155068; cv=none; b=S8ZIdwqeCZn73QU2ApITqQy6xO+pmD6abhRrfIBjMs9BWfOolq0mzELstOGCTynaY+z8tKgP8H6WjoavUasrrarjg9V5+Qx44QLX39xzPUDgl/8KfJ3oX7pnFc3MZ81QOXBjZguVNRlkx8KpKepMJoQcriWEDpbvanl4yQ2z8ZI=
+	t=1784160394; cv=none; b=dG2i6JHYJzA6eKUL2zQ+/Pt5aQIih6Y0ltBfkl4j/BLYkNIu/B9Ojn9ZUwvybOj8K1cbkv18+Qswze1a5zcZRsGMlVM4pa+oSnqj05I+vsc9hhui/wpN0vEpviHhNizZUGveZCCM6MvYQjvGzKdZBq1r+UKDLYI1NoUzFMPNjBY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784155068; c=relaxed/simple;
-	bh=QHM/lOWkuX8GJgsKVUcNlUvtp249kxd4fdYE/V98ei0=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=cmOAt2A0gLJnMP3cA5bQCXccW9MW8N4oEiWihzGd+ry/ivBB05dlcchP2Qjt6ou7XoA1jEVX18APodMHulyy1/+JLGfTgSnM+h15uVbwlZy8YkPkS+E2XIMHbkLUPtJ/Yj7SqAgLE26cqgGsUksa/iOtx89loQ/PmQPPb1T00EE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XbOmJU79; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XbOmJU79; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XbOmJU79";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XbOmJU79"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 5404F3E32;
-	Wed, 15 Jul 2026 22:37:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784155064; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Wsow2x/PFYLyOT7adFwiW56NTFy4e0sLDcL4EkZ8Peg=;
-	b=XbOmJU79etT3HTDhZlGs+S46/WOCP8+HssY73Ztf6FvljmPXm+dS9FccnPib0TX4BegkMB
-	t8MmoEF+AfTjQUqNtcMbGQXNjqBAzGWT7IMoVnskGURfXFfaMPdgJ1UfFhAB4DRjw2PRjY
-	yXE+JI6lozDdyqsCoF+sCImz+y0C0vU=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=XbOmJU79
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784155064; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Wsow2x/PFYLyOT7adFwiW56NTFy4e0sLDcL4EkZ8Peg=;
-	b=XbOmJU79etT3HTDhZlGs+S46/WOCP8+HssY73Ztf6FvljmPXm+dS9FccnPib0TX4BegkMB
-	t8MmoEF+AfTjQUqNtcMbGQXNjqBAzGWT7IMoVnskGURfXFfaMPdgJ1UfFhAB4DRjw2PRjY
-	yXE+JI6lozDdyqsCoF+sCImz+y0C0vU=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 97699779AD;
-	Wed, 15 Jul 2026 22:37:42 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id qmxzFrYLWGqQJgAAD6G6ig
-	(envelope-from <wqu@suse.com>); Wed, 15 Jul 2026 22:37:42 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-Cc: bfoster@redhat.com,
-	Anand Jain <asj@kernel.org>,
-	Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: generic: add a basic cachestat test case
-Date: Thu, 16 Jul 2026 08:07:16 +0930
-Message-ID: <20260715223716.5965-1-wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	s=arc-20240116; t=1784160394; c=relaxed/simple;
+	bh=loSeqtYK/NiwA8y+TJKqU21Bz/sXV4REkqmYxgZEsnI=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=Pz+HQZ6wezHiBAc25OdXwMacN3ZqGMpotR5k/78bnzktbOuHTtrP97CQfJMKwE+FVJP6/EXzYlMuXX4CtZLoWJ5kx0B7CaN49KUtyP6jGiWXT4+qyzIkocFrlUW/B3MLxNsxYs55sFUuwloMWn4JTYJqp3r8xqJ7z9yQv5WzKd8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp; arc=none smtp.client-ip=202.181.97.72
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp
+Received: from www262.sakura.ne.jp (localhost [127.0.0.1])
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTP id 66G05doR008344;
+	Thu, 16 Jul 2026 09:05:39 +0900 (JST)
+	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Received: from [192.168.1.6] (M106072072000.v4.enabler.ne.jp [106.72.72.0])
+	(authenticated bits=0)
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTPSA id 66G05cIj008339
+	(version=TLSv1.2 cipher=AES256-GCM-SHA384 bits=256 verify=NO);
+	Thu, 16 Jul 2026 09:05:38 +0900 (JST)
+	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Message-ID: <30ccdd3c-6353-4a0f-bdc7-230ec3bf4765@I-love.SAKURA.ne.jp>
+Date: Thu, 16 Jul 2026 09:05:38 +0900
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 5404F3E32
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:dkim,suse.com:email,suse.com:url,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	FROM_EQ_ENVFROM(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_TLS_ALL(0.00)[];
-	RCPT_COUNT_FIVE(0.00)[5];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+User-Agent: Mozilla Thunderbird
+Subject: [PATCH v5] loop: Fix NULL pointer dereference in lo_rw_aio()
+To: Jens Axboe <axboe@kernel.dk>, Bart Van Assche <bvanassche@acm.org>,
+        Damien Le Moal <dlemoal@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>
+Cc: Christoph Hellwig <hch@lst.de>, linux-block
+ <linux-block@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        Christian Brauner <brauner@kernel.org>,
+        Christoph Hellwig <hch@infradead.org>, Mark Brown <broonie@kernel.org>,
+        Linux-Next Mailing List <linux-next@vger.kernel.org>,
+        oe-lkp@lists.linux.dev, kernel test robot <oliver.sang@intel.com>,
+        kbuild test robot <lkp@intel.com>, Hillf Danton <hdanton@sina.com>
+References: <20260714043834.554-1-hdanton@sina.com>
+Content-Language: en-US
+From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+In-Reply-To: <20260714043834.554-1-hdanton@sina.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-Virus-Status: clean
+X-Anti-Virus-Server: fsav404.rs.sakura.ne.jp
 
-The test case is inspired by LTP, where there is a regression on 64K
-page size systems with btrfs, that after a fsync, cachestat() still
-report dirty pages.
+syzbot is reporting NULL pointer dereference in lo_rw_aio() [1][2].
+An analysis by the Gemini AI collaborator [3] considers that this problem
+is caused by a timing shift primarily exposed by commit 65565ca5f99b
+("block: unify the synchronous bi_end_io callbacks"), along with helper
+refactorings like commit 92c3737a2473 ("block: add a bio_submit_or_kill
+helper").
 
-The test case itself is pretty simple, fill the file with a buffered write that is
-1/2/4/8/16 page sized, call cachestat() to make sure the cached/dirtied
-number match the page number.
+But due to difficulty of reproducing this race, discussion about what is
+happening and how to fix this problem is stalling. Also, we haven't
+identified how many filesystems are subjected to this problem.
 
-Then do a fsync(), and make sure the dirty page number reduced to 0
-meanwhile cached is still the same.
+Therefore, this patch introduces a grace period for flushing pending I/O
+requests (which should be a good thing from the perspective of defensive
+programming) so that we won't hit NULL pointer dereference problem, and
+also emits BUG: message in order to help filesystem developers identify
+the caller of an I/O request that failed to wait for completion so that
+filesystem developers can fix such caller to wait for completion.
 
-Link: https://bugzilla.suse.com/show_bug.cgi?id=1270397
-Reviewed-by: Anand Jain <asj@kernel.org>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Note that emitting BUG: message is enabled only if CONFIG_KCOV=y, for
+this check is a waste of computation resources for almost all users.
+
+Link: https://syzkaller.appspot.com/bug?extid=cd8a9a308e879a4e2c28 [1]
+Link: https://syzkaller.appspot.com/bug?extid=bc273027d5643e48e5b3 [2]
+Link: https://lkml.kernel.org/r/fbb3edda-f108-4e5b-acf2-266f043f8125@I-love.SAKURA.ne.jp [3]
+Fixes: 65565ca5f99b ("block: unify the synchronous bi_end_io callbacks")
+Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
 ---
-Changelog:
-v3:
-- Use golden output to greatly simplify the test case
+syzbot has tested this patch (with debug printk() added) using linux-next,
+and I confirmed that this patch does not cause new problems for syzbot.
 
-- Do not mkfs for each size, just remove the original file
+I was expecting that Al Viro can reproduce xfs/259 problem with debug printk(),
+but I have to remove this patch (with debug printk() added) from linux-next
+because the debug printk() causes performance problem for unmount stress tests
+( https://lkml.kernel.org/r/202607151655.9d74999d-lkp@intel.com ).
 
-v2:
-- Reject "sync" and "dax" mount options
-  Those mount options write back data synchronously, will screw up the
-  buffered write dirtied page reporting.
+Anyway, like I have explained in
+https://lkml.kernel.org/r/9f8b5ab0-efbc-4cf3-a1f8-b43377416946@I-love.SAKURA.ne.jp ,
+I think that the xfs/259 problem should be addressed by updating the "umount" user,
+for the "target is busy" problem can be reproduced with 7.0 and 7.1 kernels if
+delay injection is used.
 
-- Use AWK_PROG everywhere.
+Therefore, I think that we should proceed to the next step; i.e. identify
+who is issuing I/O requests too late and fix such users. But I had to stop
+testing this patch using linux-next before syzbot succeeds to find such users.
 
-- Remove the unnecessary redirection for fsync
----
- tests/generic/798     | 39 +++++++++++++++++++++++++++++++++++++++
- tests/generic/798.out | 16 ++++++++++++++++
- 2 files changed, 55 insertions(+)
- create mode 100755 tests/generic/798
- create mode 100644 tests/generic/798.out
+We can't use "#syz test" because this problem has no reproducers. Since I can
+no longer continue floating debug printk() for this problem, sending this patch
+to upstream will become the only way to identify who is issuing I/O requests
+too late.
 
-diff --git a/tests/generic/798 b/tests/generic/798
-new file mode 100755
-index 00000000..0fe37646
---- /dev/null
-+++ b/tests/generic/798
-@@ -0,0 +1,39 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-+#
-+# FS QA Test 798
-+#
-+# Basic tests for cachestat()
-+#
-+. ./common/preamble
-+_begin_fstest auto quick
+drivers/block/loop.c | 83 ++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 81 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/block/loop.c b/drivers/block/loop.c
+index 310de0463beb..c3b607a3ddc4 100644
+--- a/drivers/block/loop.c
++++ b/drivers/block/loop.c
+@@ -85,8 +85,27 @@ struct loop_cmd {
+ 	struct bio_vec *bvec;
+ 	struct cgroup_subsys_state *blkcg_css;
+ 	struct cgroup_subsys_state *memcg_css;
++#ifdef CONFIG_KCOV
++	unsigned long stack_entries[30];
++	int stack_nr;
++	pid_t pid;
++	char comm[TASK_COMM_LEN];
++#endif
+ };
+ 
++static void loop_check_io_race(struct loop_device *lo, struct loop_cmd *cmd)
++{
++#ifdef CONFIG_KCOV
++	if (unlikely(data_race(READ_ONCE(lo->lo_state)) == Lo_rundown &&
++		     disk_openers(lo->lo_disk) == 0)) {
++		pr_err("BUG: %s/%u is doing I/O request on loop%d in Lo_rundown state.\n",
++		       cmd->comm, cmd->pid, lo->lo_number);
++		printk("Call Trace:\n");
++		stack_trace_print(cmd->stack_entries, cmd->stack_nr, 4);
++	}
++#endif
++}
 +
-+_require_xfs_io_command "cachestat"
-+_require_scratch
-+# Any mount option that writes data back synchronously should be rejected.
-+# Or it will screw up the dirtied page reporting for buffered writes.
-+_exclude_scratch_mount_option "dax"
-+_exclude_scratch_mount_option "sync"
+ #define LOOP_IDLE_WORKER_TIMEOUT (60 * HZ)
+ #define LOOP_DEFAULT_HW_Q_DEPTH 128
+ 
+@@ -1743,8 +1762,59 @@ static void lo_release(struct gendisk *disk)
+ 	need_clear = (lo->lo_state == Lo_rundown);
+ 	mutex_unlock(&lo->lo_mutex);
+ 
+-	if (need_clear)
++	if (need_clear) {
++		/*
++		 * Temporarily release disk->open_mutex in order to flush pending I/O
++		 * requests before clearing the backing device.
++		 *
++		 * This is a layering violation. But since bdev->bd_disk->fops->release()
++		 * (which is mapped to lo_release()) is the final function which
++		 * blkdev_put_whole() from bdev_release() calls immediately before
++		 * releasing disk->open_mutex, this changes nothing except opens a new
++		 * race window for allowing disk->fops->open() (which is mapped to
++		 * lo_open()) to be called.
++		 *
++		 * Even if lo_open() is called from blkdev_get_whole() due to this race,
++		 * the Lo_rundown state guarantees that lo_open() will fail with -ENXIO.
++		 * Thus, there will be effectively no change caused by this violation.
++		 */
++		mutex_unlock(&lo->lo_disk->open_mutex);
++		/*
++		 * Now that loop_queue_rq() sees lo->lo_state != Lo_bound,
++		 * wait for already started loop_queue_rq() to complete.
++		 */
++		synchronize_rcu();
++		/*
++		 * Now that no more works are scheduled by loop_queue_rq(),
++		 * wait for already scheduled works to complete.
++		 */
++		drain_workqueue(lo->workqueue);
++		/*
++		 * Now that no more AIO requests are scheduled by lo_rw_aio(),
++		 * wait for already started AIO to complete.
++		 *
++		 * Due to synchronize_rcu() + drain_workqueue() sequence above,
++		 * calling blk_mq_unfreeze_queue() immediately after blk_mq_freeze_queue()
++		 * returns has to be safe, for loop_queue_rq() no longer schedules new
++		 * lo_rw_aio() works and lo_rw_aio() no longer submits new AIO requests.
++		 *
++		 * Deferring blk_mq_unfreeze_queue() does not help because we are about
++		 * to clear the backing device and drop the refcount for the backing device.
++		 * There is nothing we can do if blk_mq_freeze_queue() fails to flush.
++		 */
++		blk_mq_unfreeze_queue(lo->lo_queue, blk_mq_freeze_queue(lo->lo_queue));
++		/*
++		 * Perform remaining cleanup, with disk->open_mutex held.
++		 *
++		 * The lo->lo_state should remain Lo_rundown despite we temporarily
++		 * released disk->open_mutex, for I am the only and the last user of
++		 * this loop device because lo_open() cannot succeed.
++		 */
++		mutex_lock(&lo->lo_disk->open_mutex);
++		if (WARN_ON(data_race(READ_ONCE(lo->lo_state)) != Lo_rundown))
++			return;
+ 		__loop_clr_fd(lo);
++	}
+ }
+ 
+ static void lo_free_disk(struct gendisk *disk)
+@@ -1851,10 +1921,18 @@ static blk_status_t loop_queue_rq(struct blk_mq_hw_ctx *hctx,
+ 	struct loop_cmd *cmd = blk_mq_rq_to_pdu(rq);
+ 	struct loop_device *lo = rq->q->queuedata;
+ 
++#ifdef CONFIG_KCOV
++	cmd->stack_nr = stack_trace_save(cmd->stack_entries, ARRAY_SIZE(cmd->stack_entries), 0);
++	cmd->pid = current->pid;
++	get_task_comm(cmd->comm, current);
++#endif
 +
-+pagesize=$(_get_page_size)
-+
-+_scratch_mkfs > /dev/null
-+_scratch_mount
-+
-+for num_page in 1 2 4 8 16; do
-+	size=$(($pagesize * $num_page))
-+
-+	echo "=== Test with $num_page pages ==="
-+
-+	rm -f $SCRATCH_MNT/foobar
-+	$XFS_IO_PROG -f -c "pwrite -b $pagesize 0 $size" $SCRATCH_MNT/foobar > /dev/null
-+	# Basic cached number reporting
-+	$XFS_IO_PROG -c "cachestat 0 $size" $SCRATCH_MNT/foobar
-+
-+	# Test dirty page number reporting after a fsync.
-+	$XFS_IO_PROG -c "fsync" -c "cachestat 0 $size" $SCRATCH_MNT/foobar
-+done
-+
-+_scratch_unmount
-+_exit 0
-diff --git a/tests/generic/798.out b/tests/generic/798.out
-new file mode 100644
-index 00000000..ca6ead3c
---- /dev/null
-+++ b/tests/generic/798.out
-@@ -0,0 +1,16 @@
-+QA output created by 798
-+=== Test with 1 pages ===
-+Cached: 1, Dirty: 1, Writeback: 0, Evicted: 0, Recently Evicted: 0
-+Cached: 1, Dirty: 0, Writeback: 0, Evicted: 0, Recently Evicted: 0
-+=== Test with 2 pages ===
-+Cached: 2, Dirty: 2, Writeback: 0, Evicted: 0, Recently Evicted: 0
-+Cached: 2, Dirty: 0, Writeback: 0, Evicted: 0, Recently Evicted: 0
-+=== Test with 4 pages ===
-+Cached: 4, Dirty: 4, Writeback: 0, Evicted: 0, Recently Evicted: 0
-+Cached: 4, Dirty: 0, Writeback: 0, Evicted: 0, Recently Evicted: 0
-+=== Test with 8 pages ===
-+Cached: 8, Dirty: 8, Writeback: 0, Evicted: 0, Recently Evicted: 0
-+Cached: 8, Dirty: 0, Writeback: 0, Evicted: 0, Recently Evicted: 0
-+=== Test with 16 pages ===
-+Cached: 16, Dirty: 16, Writeback: 0, Evicted: 0, Recently Evicted: 0
-+Cached: 16, Dirty: 0, Writeback: 0, Evicted: 0, Recently Evicted: 0
+ 	blk_mq_start_request(rq);
+ 
+-	if (data_race(READ_ONCE(lo->lo_state)) != Lo_bound)
++	if (data_race(READ_ONCE(lo->lo_state)) != Lo_bound) {
++		loop_check_io_race(lo, cmd);
+ 		return BLK_STS_IOERR;
++	}
+ 
+ 	switch (req_op(rq)) {
+ 	case REQ_OP_FLUSH:
+@@ -1897,6 +1975,7 @@ static void loop_handle_cmd(struct loop_cmd *cmd)
+ 	int ret = 0;
+ 	struct mem_cgroup *old_memcg = NULL;
+ 
++	loop_check_io_race(lo, cmd);
+ 	if (write && (lo->lo_flags & LO_FLAGS_READ_ONLY)) {
+ 		ret = -EIO;
+ 		goto failed;
 -- 
-2.51.2
+2.52.0
+
 

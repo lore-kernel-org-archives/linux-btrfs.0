@@ -1,254 +1,118 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from fhigh-b8-smtp.messagingengine.com (fhigh-b8-smtp.messagingengine.com [202.12.124.159])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BF98E42DA5F;
-	Fri, 17 Jul 2026 16:53:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BA21A388E74;
+	Fri, 17 Jul 2026 19:51:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.159
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784307190; cv=none; b=hOQ7QNxNBOWQYiEaa66DKNkgLCalZbwF/j7Mdtu5dEPPN0lxFcYMGpDlW8NLwfoXdgfCSLFf5U2N3DSvU5KyAF11fNMdH2BkW+hRXRFVIsOTn7uKK1X2V9qfAXE4htrvgyhiSEC8Zir5f1VKpXwfZZkDKlF1Mi0F3+v/T4sAeos=
+	t=1784317872; cv=none; b=SsB+hQtGuqWb8sMWs15luEhqPLG6ahbW1U6t9dDKAqNDQQ3tsuMxSnotTHgs6eiT4zL8y9TD9zae0+VGmTpjtA8Fx4/9YZGp7IficempZbcoKtXIgE3akVOMdlGOHunx1LN1FDTmnUWocatBMUZn8i+nu8v24jbiXjiUpuk1WFk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784307190; c=relaxed/simple;
-	bh=GiFkt3z4iWkrkW0beJu+hXDQGatXHi0Pk0MMlGkGZbg=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=L0uru1Cvsj0j8JE9btP8oAL5yHVbgCzrgvoaXVD6Rr24nrlpGcp2mI9iK53fbtBsNiOHiciGHdkE2wZyL3XHvBNcwHTlO0Wi1m5UgB1nEtPl5I0ZXLIdnvxkhjPUj0rrnS9Bzb/tP1R6a7M/6OvSKr1hjumK8ucU9ktRqaBRJ+8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=fvCv+b0r; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1784317872; c=relaxed/simple;
+	bh=pV62I1bqm1RXBPlQ9h2Bz1Ysmo6D/OHQcZqdYBoSxp0=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=ZCpCtIJYCCp9R+VJyD9VDPbWkkMB+egZiSTn3+mgyOncmJGHQN4QjAqJkXCW9nsho/od+z/UVvCZiDl+BPB0E5VjZPWs+TpcdVIHim040dcqQDWACqyUY7Eq4agUFiSxo2DAlh1H/726sFPhMPX0l9j/pXfWSyhB0HvKi+FCS6E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=lJFJ8e0p; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=mTvH2BXh; arc=none smtp.client-ip=202.12.124.159
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="fvCv+b0r"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EC55A1F00A3D;
-	Fri, 17 Jul 2026 16:53:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1784307188;
-	bh=PCojI2O4xN+3K0m+1+ou+NHnFebGObdzYZMuDTbziz8=;
-	h=From:Date:Subject:References:In-Reply-To:To:Cc;
-	b=fvCv+b0rqLE8v/sWBt9PYNJbeCckhNd7AIiiRNarSUOfcq0Cl4xD5mU+ncj4Vs/md
-	 rMc8Zu7tuuYwHQg/KUANvlfUrpPYUQob0RClnQJotJT/zqCofofITSgwOBXojEF6yx
-	 FtqE/smsSiALGwkDkjDM7xJWUZbpgl/ZqauTQSmE/QdWF6bnT1OM7z6M6TokY7CbK6
-	 2yLkXf+6wZFTYRnse442Ns7yZ0UHB+NG+hQcISXwKjXV1lncxTOeGeGbH6O9QrSKEN
-	 0860f57yiFYM7YH5EBxBptlRRPagcqUAeEhoQbZyKBWw8JQ/PxbUC/bQJv1pKek9Hy
-	 ETKvz/1Z4zqEA==
-From: Jeff Layton <jlayton@kernel.org>
-Date: Fri, 17 Jul 2026 12:52:39 -0400
-Subject: [PATCH 4/4] btrfs: pre-allocate delayed dir index for
- non-overwrite rename
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="lJFJ8e0p";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="mTvH2BXh"
+Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
+	by mailfhigh.stl.internal (Postfix) with ESMTP id C58EA7A0059;
+	Fri, 17 Jul 2026 15:51:09 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-05.internal (MEProxy); Fri, 17 Jul 2026 15:51:10 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm3; t=1784317869; x=1784404269; bh=OLVlQmVcA6
+	D8vgzrlLhR9CAgVadj3C+V6nFwOTgISY0=; b=lJFJ8e0pTY8vh+7PSGXTeJmReH
+	XEp/HQZjh7ggLy7IxdkDF+ptAYfcix8g+PPrPfffbMUW3HXqPOikfY3CIPsqmcKW
+	69SZZABeb4FsS/IuI+XUnlZ9QdKoE9nSUy62YVevEQBwGMi3u1Bs6/j9WWjYboFV
+	vRAD/6F6ILNASVYsdgsibyFlr0POVWgoUOBbqy1Nhbp/wdA5WTswmxm2EH6WC5jO
+	o2LXPaOaAgUjjhjj6DEZNqjyN3sSrorJK0wjonyqoC2bpTiaks3f4qqitBkPNiXO
+	ulSqE7nnPrxyU8v4UZnux13EweC7G1XMMxxuDjPTFZzLRFPS3wkqnThlwHBg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+	1784317869; x=1784404269; bh=OLVlQmVcA6D8vgzrlLhR9CAgVadj3C+V6nF
+	wOTgISY0=; b=mTvH2BXhFIMXWZksTM3yRXZpp2RTBlI4kWAqgDY8CWhuM+ERuWh
+	LOEC9RCaLF88q71uKPAUGG5+uMh3obEntVS3Tt3h54ZFZv4UFL1og6KYecLoYiqa
+	MhdSRLtEmTOV13B7SeWwc7j1R06cEDsbRJnGND3lys34BjNzMZnf2HJyC4Bh/mDt
+	LpAJpQn4XzYfX0lGgcjadcuRh312Ee/9bw/4jyQmjkOCyK+atWJqBlHKSfwb9NlZ
+	DN01JsF2CK8LpMlHI4ZeZMauNfHVpitTNiPQ7ICtuuimQDZpN6Dw+sCne6QFT+HS
+	SAIEDI9hAI9rNcnRvFN9BLskLQtwjG0CN7w==
+X-ME-Sender: <xms:rIdaahdXGFRrVaSWvuWIIvIlEjAg0JyTganxBwfTLwFa8SuFyU0BDQ>
+    <xme:rIdaav4sf3YZG9ou6z2cILNJThuLvy1AcvYvbF26XjF5YS1-kqgx5gakwDLsehimG
+    zVnwFr1OM4Q2IY_3uc9AOn5UibHwGXrliraTLvRmmMRuGGG59YwGEY>
+X-ME-Received: <xmr:rIdaaoswb7y3qsEjYLXBMMMiWN_Svxv6iUHhTFhbnu1rJHK119Hra7SMO5cmEcnMefBVBg40ZQBM6SCMdO8Ite34tSY>
+X-ME-Proxy-Cause: dmFkZTEANgQtK1/uqqIhiQM7tyz/wBu8peqz3VQLLWP3arN1HL5+KzIjmDvtciAI0Mj1pZ
+    P7lxMQK6ubV5rPUSjnayD0EqN4Yn8uu6NJP+EFmamTBaIqn0kEZzsN25RJuIWeSU8Sxgre
+    3Vvw9BGDat/Dv7zZJ88PW0pqtIxqmAyUPLloUTwoU8M4s31Wn8x8ChXb3wou7VvwH8R5w9
+    iqOfOxw/RQdpxQFMuvFX/AFc0/TBWXD6CHMEcfTRpwYPks5wZHbWwCMPH9MmW1akfuJHta
+    Kxs7uirucuBHW/QtEMKKtKZDnIiqG2ROoq2/IBvroT2P10dGU4doPr5IhwFzlJYowcpbYu
+    kJPfmwES60P6dwUKu0qRrsi2f1qrHrD/WCfxXDIV8AwQ58oDYEvKCMzLaw1UBdkjpUlG3k
+    KaRQqRORFuWAyP3/0LCFJUmIcGvG66222zJhPKkNtFw/s35PSj+3JMTM569cqQK+l/IFGN
+    BJZZlp0MYb97IMnge07EEu2ELlQDreBbQmpEL5delElmReUPtRmJnNIBlxYXRsTv9NO35f
+    0V3TIAyjpF+4eX7Ul+lm/gJhzja4IvM5oqiNMwtZKTBAp+Cg8oqeaMe/mw56BhFNVlNoDW
+    2FoQR4GS3BDy/S4G9jU9FQky/W6P6grFjo3s/mcJnIbY8Be2WkhGafy858SA
+X-ME-Proxy: <xmx:rIdaavjsZb1ZlPvdJNIqWgP9Hud9-4CH9aHSReqmgDHsw8THadSqlA>
+    <xmx:rIdaajoRxy8odPHJGYeoOEHVGrLN1feyW5LG3fUy9uyr4WCp9Mhu5A>
+    <xmx:rIdaastsHe2xuiEshxoYedyhugBN2dK7XdAs0XbVzjHSaBTqy6LcvA>
+    <xmx:rIdaamZy9k0BHkB09B-lfsqzJxbOWk3N8TxCZ3HdRElueUx3C4s1sw>
+    <xmx:rYdaasygL-2IMcbaWSCkeL1Vd7wQWUXOC3BSiX0UOkNU9wKdrIBONjJA>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
+ 17 Jul 2026 15:51:07 -0400 (EDT)
+Date: Fri, 17 Jul 2026 12:51:03 -0700
+From: Boris Burkov <boris@bur.io>
+To: Hongling Zeng <zenghongling@kylinos.cn>
+Cc: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, zhongling0719@126.com,
+	David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH v2] btrfs: Add missing sctx check in cleanup path
+Message-ID: <20260717195103.GA142812@zen.localdomain>
+References: <20260714012850.611545-1-zenghongling@kylinos.cn>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260717-btrfs-enomem-v1-4-cdc9c0e265d0@kernel.org>
-References: <20260717-btrfs-enomem-v1-0-cdc9c0e265d0@kernel.org>
-In-Reply-To: <20260717-btrfs-enomem-v1-0-cdc9c0e265d0@kernel.org>
-To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
- kernel-team@fb.com, Jeff Layton <jlayton@kernel.org>
-X-Mailer: b4 0.14.3
-X-Developer-Signature: v=1; a=openpgp-sha256; l=7257; i=jlayton@kernel.org;
- h=from:subject:message-id; bh=GiFkt3z4iWkrkW0beJu+hXDQGatXHi0Pk0MMlGkGZbg=;
- b=owEBbQKS/ZANAwAKAQAOaEEZVoIVAcsmYgBqWl3wFsdn2Yvj+T+zTE/iLBeX/f+ys/hHqr1JR
- kwb+oaD9YiJAjMEAAEKAB0WIQRLwNeyRHGyoYTq9dMADmhBGVaCFQUCalpd8AAKCRAADmhBGVaC
- FRuDD/wK6+Q9n8eW02QzFdLbK8nn3MNSIFdecU+fLX5CMuZrANw04yjxzlZfd4k/z/D3kzBX4Kw
- 1LGloCxb0yUDi8ZKYVgembPsDS5n/HAywikQKXy4XGrhiD5biC/Zfuz3bZBdPTse0Readf3qcEp
- FYRR34wD1le4I+NiTM1YIZDRu5J4XV/UOaza5onDGMgzFBZTnpP3aZL3SN/APXhVseZXi7UDNpT
- lnjFLBOYuBjBQB2rtBtVvxCum2MJqYC0pOEzwOsJyKevsnE8KZQ8hL8UAA7/X8W8gg/U+j6aSgv
- WqZm6/dr4NFP8+G8x9Nz1ZPQu6u5bmI5gUG/aH4gdyXc7wgzL1otDJ1eACBmrglYSEVgoieJa31
- YhrvbWTSVdFJa5VH7qUTbkTckfa2xndTIyjfEHJpuxkLJA0JnnJaGv5qzFdwrIJ78R0fPR6F9tQ
- vJL1qxDHlxx/P+WyGYh0kzpgugZODhRuplet2m48z/FPB880OWVNMzFR3OD4SDlq/QxzCYOGag3
- HQL5ZgXoykeF+kkZa3s4xmcCiNVyr9ATiQmI9yu+x0+dU/8jtApraogM55ihiX88/b5lWcPqmBc
- djcZhVr98fMpQQTHFoOhO+o7vHPeRtCdF4FLJbxy/kKSvhMEsvWyIx9GFYFNIB9p9KoM2EO8PUk
- ivEd6h4y5lcv+/g==
-X-Developer-Key: i=jlayton@kernel.org; a=openpgp;
- fpr=4BC0D7B24471B2A184EAF5D3000E684119568215
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260714012850.611545-1-zenghongling@kylinos.cn>
 
-For rename() without an overwrite target, pre-allocate the delayed
-dir index before any btree modifications so that ENOMEM can be returned
-before the source is unlinked from the old directory.
-
-Add a prealloc parameter to btrfs_add_link() that allows callers to
-pass pre-allocated delayed dir index resources. When provided,
-btrfs_add_link() takes ownership: it either passes the prealloc to
-btrfs_insert_dir_item() (which commits or frees it), or frees it
-on early error. All existing callers pass NULL to preserve the current
-behavior.
-
-In btrfs_rename(), when new_inode is NULL (no overwrite), call
-btrfs_prealloc_delayed_dir_index() before the first btree modification
-and pass the result through to btrfs_add_link(). If the prealloc fails,
--ENOMEM is returned before any btree state has changed.
-
-For overwrite rename (new_inode != NULL), the transaction still aborts
-on ENOMEM since earlier unlink operations have already made irreversible
-btree modifications.
-
-Assisted-by: LLM
-Signed-off-by: Jeff Layton <jlayton@kernel.org>
----
- fs/btrfs/btrfs_inode.h |  4 +++-
- fs/btrfs/inode.c       | 43 +++++++++++++++++++++++++++++++++++--------
- fs/btrfs/tree-log.c    |  4 ++--
- 3 files changed, 40 insertions(+), 11 deletions(-)
-
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index d5d81f9546c3..176648f6e7b6 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -523,9 +523,11 @@ int btrfs_set_inode_index(struct btrfs_inode *dir, u64 *index);
- int btrfs_unlink_inode(struct btrfs_trans_handle *trans,
- 		       struct btrfs_inode *dir, struct btrfs_inode *inode,
- 		       const struct fscrypt_str *name);
-+struct btrfs_dir_index_prealloc;
- int btrfs_add_link(struct btrfs_trans_handle *trans,
- 		   struct btrfs_inode *parent_inode, struct btrfs_inode *inode,
--		   const struct fscrypt_str *name, bool add_backref, u64 index);
-+		   const struct fscrypt_str *name, bool add_backref, u64 index,
-+		   struct btrfs_dir_index_prealloc *prealloc);
- int btrfs_delete_subvolume(struct btrfs_inode *dir, struct dentry *dentry);
- int btrfs_truncate_block(struct btrfs_inode *inode, u64 offset, u64 start, u64 end);
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4d9947ae08f7..9a717d21f713 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6675,7 +6675,7 @@ int btrfs_create_new_inode(struct btrfs_trans_handle *trans,
- 		}
- 	} else {
- 		ret = btrfs_add_link(trans, BTRFS_I(dir), BTRFS_I(inode), name,
--				     false, BTRFS_I(inode)->dir_index);
-+				     false, BTRFS_I(inode)->dir_index, NULL);
- 		if (ret == -ENOMEM) {
- 			/*
- 			 * The ENOMEM came before the DIR_ITEM was inserted,
-@@ -6720,7 +6720,8 @@ int btrfs_create_new_inode(struct btrfs_trans_handle *trans,
-  */
- int btrfs_add_link(struct btrfs_trans_handle *trans,
- 		   struct btrfs_inode *parent_inode, struct btrfs_inode *inode,
--		   const struct fscrypt_str *name, bool add_backref, u64 index)
-+		   const struct fscrypt_str *name, bool add_backref, u64 index,
-+		   struct btrfs_dir_index_prealloc *prealloc)
- {
- 	int ret = 0;
- 	struct btrfs_key key;
-@@ -6746,11 +6747,14 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
- 	}
- 
- 	/* Nothing to clean up yet */
--	if (ret)
-+	if (ret) {
-+		if (prealloc)
-+			btrfs_free_delayed_dir_index_prealloc(trans, prealloc);
- 		return ret;
-+	}
- 
- 	ret = btrfs_insert_dir_item(trans, name, parent_inode, &key,
--				    btrfs_inode_type(inode), index, NULL);
-+				    btrfs_inode_type(inode), index, prealloc);
- 	if (ret == -EEXIST || ret == -EOVERFLOW || ret == -ENOMEM)
- 		goto fail_dir_item;
- 	else if (unlikely(ret)) {
-@@ -6904,7 +6908,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 	inode_set_ctime_current(inode);
- 
- 	ret = btrfs_add_link(trans, BTRFS_I(dir), BTRFS_I(inode),
--			     &fname.disk_name, true, index);
-+			     &fname.disk_name, true, index, NULL);
- 	if (ret)
- 		goto fail;
- 
-@@ -8311,14 +8315,14 @@ static int btrfs_rename_exchange(struct inode *old_dir,
- 	}
- 
- 	ret = btrfs_add_link(trans, BTRFS_I(new_dir), BTRFS_I(old_inode),
--			     new_name, false, old_idx);
-+			     new_name, false, old_idx, NULL);
- 	if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 		goto out_fail;
- 	}
- 
- 	ret = btrfs_add_link(trans, BTRFS_I(old_dir), BTRFS_I(new_inode),
--			     old_name, false, new_idx);
-+			     old_name, false, new_idx, NULL);
- 	if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 		goto out_fail;
-@@ -8391,6 +8395,7 @@ static int btrfs_rename(struct mnt_idmap *idmap,
- 	struct inode *new_inode = d_inode(new_dentry);
- 	struct inode *old_inode = d_inode(old_dentry);
- 	struct btrfs_rename_ctx rename_ctx;
-+	struct btrfs_dir_index_prealloc prealloc = { };
- 	u64 index = 0;
- 	int ret;
- 	int ret2;
-@@ -8514,6 +8519,24 @@ static int btrfs_rename(struct mnt_idmap *idmap,
- 	if (ret)
- 		goto out_fail;
- 
-+	/*
-+	 * When not overwriting an existing entry, pre-allocate the delayed
-+	 * dir index now so that ENOMEM is returned before any btree
-+	 * modifications. For the overwrite case, too many btree changes
-+	 * have already happened by the time btrfs_add_link() is called.
-+	 */
-+	if (!new_inode) {
-+		ret = btrfs_prealloc_delayed_dir_index(
-+				BTRFS_I(new_dir),
-+				new_fname.disk_name.name,
-+				new_fname.disk_name.len,
-+				&prealloc);
-+		if (ret)
-+			goto out_fail;
-+		memcpy(prealloc.item->data + sizeof(struct btrfs_dir_item),
-+		       new_fname.disk_name.name, new_fname.disk_name.len);
-+	}
-+
- 	BTRFS_I(old_inode)->dir_index = 0ULL;
- 	if (unlikely(old_ino == BTRFS_FIRST_FREE_OBJECTID)) {
- 		/* force full log commit if subvolume involved. */
-@@ -8609,7 +8632,9 @@ static int btrfs_rename(struct mnt_idmap *idmap,
- 	}
- 
- 	ret = btrfs_add_link(trans, BTRFS_I(new_dir), BTRFS_I(old_inode),
--			     &new_fname.disk_name, false, index);
-+			     &new_fname.disk_name, false, index,
-+			     prealloc.item ? &prealloc : NULL);
-+	prealloc.item = NULL;
- 	if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 		goto out_fail;
-@@ -8634,6 +8659,8 @@ static int btrfs_rename(struct mnt_idmap *idmap,
- 		}
- 	}
- out_fail:
-+	if (prealloc.item)
-+		btrfs_free_delayed_dir_index_prealloc(trans, &prealloc);
- 	if (logs_pinned) {
- 		btrfs_end_log_trans(root);
- 		btrfs_end_log_trans(dest);
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 875e4ddc68ea..86a924d7cd43 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1700,7 +1700,7 @@ static noinline int add_inode_ref(struct walk_control *wc)
- 			}
- 
- 			/* insert our name */
--			ret = btrfs_add_link(trans, dir, inode, &name, false, ref_index);
-+			ret = btrfs_add_link(trans, dir, inode, &name, false, ref_index, NULL);
- 			if (ret) {
- 				btrfs_abort_log_replay(wc, ret,
- "failed to add link for inode %llu in dir %llu ref_index %llu name %.*s root %llu",
-@@ -2048,7 +2048,7 @@ static noinline int insert_one_name(struct btrfs_trans_handle *trans,
- 		return PTR_ERR(dir);
- 	}
- 
--	ret = btrfs_add_link(trans, dir, inode, name, true, index);
-+	ret = btrfs_add_link(trans, dir, inode, name, true, index, NULL);
- 
- 	/* FIXME, put inode into FIXUP list */
- 
-
--- 
-2.55.0
-
+On Tue, Jul 14, 2026 at 09:28:50AM +0800, Hongling Zeng wrote:
+> Add sctx NULL check in the for loop condition of the sort_clone_roots
+> cleanup path for consistency with the else branch
+> 
+Reviewed-by: Boris Burkov <boris@bur.io>
+> Signed-off-by: Hongling Zeng <zenghongling@kylinos.cn>
+> Suggested-by: David Sterba <dsterba@suse.cz>
+> ---
+>  Change in v2:
+>  -Uses the same pattern: for (i = 0; sctx && i < clone_sources_to_rollback; i++)
+>   ,suggested by David
+> ---
+>  fs/btrfs/send.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 3ae480c7474b..297704edf1b4 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -8251,7 +8251,7 @@ long btrfs_ioctl_send(struct btrfs_root *send_root, const struct btrfs_ioctl_sen
+>  	}
+>  
+>  	if (sort_clone_roots) {
+> -		for (i = 0; i < sctx->clone_roots_cnt; i++) {
+> +		for (i = 0; sctx && i < sctx->clone_roots_cnt; i++) {
+>  			btrfs_root_dec_send_in_progress(
+>  					sctx->clone_roots[i].root);
+>  			btrfs_put_root(sctx->clone_roots[i].root);
+> -- 
+> 2.25.1
+> 

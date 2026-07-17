@@ -1,137 +1,92 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from phd-imap.ethz.ch (phd-imap.ethz.ch [129.132.80.51])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 61DA13DA7F8
-	for <linux-btrfs@vger.kernel.org>; Fri, 17 Jul 2026 07:07:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A8AB43A168C
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Jul 2026 09:20:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=129.132.80.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784272059; cv=none; b=eT0qPHwDj4qNpPWMHYFGe6MTnBsq9foFS5VUYpiJDO+hIADYfsNhg2WU164nK5V+suaG0GD+yXOsGBzo70CLUsnUEG3YbI3kHj0JMeuRK4c3FTcjYZ02PoQDYWWWeJNeBKgeUp44mdhGNwxmdOvUvgQFi66gr5E3sM12s4CbQhs=
+	t=1784280046; cv=none; b=VFD5bcmnyeQshaEYukJW1y2TIPKJFO56ECU+VEAdlDQo2tkqqI6Z95X1wW6ZKUSlnbyOGve9dc8Q6QSoKoNQ8Fh/I/LF15yNd0AF+lf0lq2Yv/I+4ELbl7x6M7MYMZl+IJeBwSrDX8wSsQ/Jffqd+mpkymsR9EVxYDB9JpZRP7k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784272059; c=relaxed/simple;
-	bh=Se6FgeiLE4IJBAdWrogPZ4SMnscez9Le0lcFNl/LIiQ=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=EB6AjsbGyZD+ZVL9LOZi42ABi8bd9sy/ZWROxGKttVU07MyYWnJo7i+3s49ryDc4d0LoRc2+YHMqi+ig1MOzzvSRrYa7ncNoFC+sy+1tZ/IS1IHEwTeYKt2miuispJoiOYkB0qrGwv6N5xiHFPhzaE0+h9uyqp0UAIHSRPPVvQ8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=b8Kw7Jgu; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=b8Kw7Jgu; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1784280046; c=relaxed/simple;
+	bh=oE9uSzV9BgkuvGQ0GJ7pviyAwCohZa9ZhjXN8InCv3s=;
+	h=MIME-Version:Date:From:To:Subject:Message-ID:Content-Type; b=ngatD+bSD6Y5iXgq7PKcbNJGccDcep7KmLOh474GdrSm19UanN07QkkrgkIOKNUnDS8hRBPGiRAryByjSQ6Xz7dktNcGGa1+/Fmuqoe8zu8v2BbTslHAqFoMgSiKYnUjJZ/ETku14ZWGlfYNTpLGaI/JTu9lwgzZvns3fwPAZSU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=phys.ethz.ch; spf=pass smtp.mailfrom=phys.ethz.ch; dkim=pass (2048-bit key) header.d=phys.ethz.ch header.i=@phys.ethz.ch header.b=EXv0AuhL; arc=none smtp.client-ip=129.132.80.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=phys.ethz.ch
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=phys.ethz.ch
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="b8Kw7Jgu";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="b8Kw7Jgu"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 7ECD678D88;
-	Fri, 17 Jul 2026 07:07:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784272056; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=kQFcQBfrd1ei6Xfh9tdrBykU2TBH0pZct8isXwZ9F2o=;
-	b=b8Kw7JguBm2lFv4cRntULYt1T9sLhPoXyyMze+KpK2UL1on4/NvueK9lOjQ4C3Pzo8UsM6
-	ITMRBT7ZIAXa4VWj88+XQ24A6RufgXNIvcj9JXr/RoTyJFzxF/KdfwV3Iq9tYs4XA+h7kz
-	rQEN9pH9PCW+V7a9uMP/DVd/iK72oUc=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784272056; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=kQFcQBfrd1ei6Xfh9tdrBykU2TBH0pZct8isXwZ9F2o=;
-	b=b8Kw7JguBm2lFv4cRntULYt1T9sLhPoXyyMze+KpK2UL1on4/NvueK9lOjQ4C3Pzo8UsM6
-	ITMRBT7ZIAXa4VWj88+XQ24A6RufgXNIvcj9JXr/RoTyJFzxF/KdfwV3Iq9tYs4XA+h7kz
-	rQEN9pH9PCW+V7a9uMP/DVd/iK72oUc=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 84161779AA;
-	Fri, 17 Jul 2026 07:07:35 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id A7TsEbfUWWodbwAAD6G6ig
-	(envelope-from <wqu@suse.com>); Fri, 17 Jul 2026 07:07:35 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-Subject: [PATCH] fstests: vfstest: skip rejected tmpfile creation
-Date: Fri, 17 Jul 2026 16:37:17 +0930
-Message-ID: <20260717070717.113517-1-wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=phys.ethz.ch header.i=@phys.ethz.ch header.b="EXv0AuhL"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=phys.ethz.ch;
+	s=2023; t=1784279727;
+	bh=s71c/2XDHvt4hS0ax013MxvqxSff6OPLyGNsSusUlds=;
+	h=Date:From:To:Subject:From;
+	b=EXv0AuhLHQi6zJA3XG8pwU/8l6t+4Jmd51TByRGuGW6ISjI3OKvsB6ZkxSns/S+eC
+	 MrQM6Dq8ruo7YINptIdpRQLxmB14Pyl7awNTGuE7c278p/znxnTsKiponm7ypDScft
+	 lRlnWqXqImY/9/IiCWUf7D4bEtdLglOH+LqfCw5yna6JnCc4yeGGkKdKuJMDihNLL1
+	 6T+ew+RwFvAkxaiMAvCukCD1bUrefmErfYXxZac0OgqXBhxN+J21BmKQoev+pkdp+8
+	 XhP/kkuTuaXeFhTpf7is6B6zD9GOZsmDXmwGPGlvdRvMTPEI037HhcVtTkV7mrDp6M
+	 FCXEveEH8Kfmg==
+Received: from localhost (192-168-127-49.net4.ethz.ch [192.168.127.49])
+	by phd-imap.ethz.ch (Postfix) with ESMTP id 4h1klg2vMpzKQ
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Jul 2026 11:15:27 +0200 (CEST)
+X-Virus-Scanned: Debian amavis at phys.ethz.ch
+Received: from phd-mxin.ethz.ch ([192.168.127.53])
+ by localhost (phd-mailscan.ethz.ch [192.168.127.49]) (amavis, port 10024)
+ with LMTP id gqGbNQmzDbpJ for <linux-btrfs@vger.kernel.org>;
+ Fri, 17 Jul 2026 11:15:27 +0200 (CEST)
+Received: from webmail.phys.ethz.ch (192-168-127-51.net4.ethz.ch [192.168.127.51])
+	by phd-mxin.ethz.ch (Postfix) with ESMTP id 4h1klg22f2zHm
+	for <linux-btrfs@vger.kernel.org>; Fri, 17 Jul 2026 11:15:27 +0200 (CEST)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Date: Fri, 17 Jul 2026 11:15:27 +0200
+From: Stephan Mueller <stepmueller@phys.ethz.ch>
+To: linux-btrfs@vger.kernel.org
+Subject: pause device removal
+Message-ID: <9a39301eb2542756e730be92c8b79ca9@phys.ethz.ch>
+X-Sender: stepmueller@phys.ethz.ch
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Level: 
-X-Spam-Score: -2.80
 
-Since kernel commit 539dce114465 ("fs: refuse O_TMPFILE creation with an
-unmapped fsuid or fsgid"), tmpfile creation can be rejected with
-EOVERFLOW, so also skip that error number to avoid false alerts like the
-following:
+Hello
 
- FSTYP         -- ext4
- PLATFORM      -- Linux/x86_64 btrfs-vm 7.2.0-rc3-custom+ #411 SMP PREEMPT_DYNAMIC Fri Jul 17 16:24:34 ACST 2026
- MKFS_OPTIONS  -- -F /dev/mapper/test-scratch1
- MOUNT_OPTIONS -- -o acl,user_xattr /dev/mapper/test-scratch1 /mnt/scratch
+we have 140T btrfs made from 10 LUNs. This file system is quite full 
+with backups (and snapshots). Now we need to free one of the LUNs. A 
+`btrfs device remove` is quite slow and also slows down nightly backups 
+a lot.
 
- generic/633  1s ... - output mismatch (see /home/adam/xfstests/results//generic/633.out.bad)
-    --- tests/generic/633.out	2022-05-11 11:25:30.816666664 +0930
-    +++ /home/adam/xfstests/results//generic/633.out.bad	2026-07-17 16:25:45.033967541 +0930
-    @@ -1,2 +1,4 @@
-     QA output created by 633
-     Silence is golden
-    +utils.c: 948: openat_tmpfile_supported - Value too large for defined data type - failure: create
-    +utils.c: 948: openat_tmpfile_supported - Value too large for defined data type - failure: create
-    ...
-    (Run 'diff -u /home/adam/xfstests/tests/generic/633.out /home/adam/xfstests/results//generic/633.out.bad'  to see the entire diff)
- Ran: generic/633
- Failures: generic/633
- Failed 1 of 1 tests
+So we run the device remove during the day and the backups during the 
+night. On another btrfs this worked quite well. But here, the backups 
+fill the device we want to remove and currently we are not moving 
+anywhere regarding the usage the LUN.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- src/vfs/utils.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+Do you have an idea how can resolve this?
+Can we somehow mark the device as unusable for new writes, or set it 
+size, so that it is not written to?
+Do you think it's safe to cgroup freeze the removal during the night?
 
-diff --git a/src/vfs/utils.c b/src/vfs/utils.c
-index 0b435afe..d2922cc3 100644
---- a/src/vfs/utils.c
-+++ b/src/vfs/utils.c
-@@ -941,7 +941,11 @@ bool openat_tmpfile_supported(int dirfd)
- 
- 	fd = openat(dirfd, ".", O_TMPFILE | O_RDWR, S_IXGRP | S_ISGID);
- 	if (fd == -1) {
--		if (errno == ENOTSUP) {
-+		/*
-+		 * Kernel commit 539dce114465 ("fs: refuse O_TMPFILE creation
-+		 * with an unmapped fsuid or fsgid") will reject such operation.
-+		 */
-+		if (errno == ENOTSUP || errno == EOVERFLOW) {
- 			errno = 0; /* Don't report misleading errno. */
- 			return false;
- 		} else {
+   Have a nice day
+   Stephan
+
+Total devices 10 FS bytes used 144.08TiB
+devid    1 size 0.00B used 6.81TiB path /dev/sdgb     <--- currently in 
+removal
+devid    3 size 1.88TiB used 546.00GiB path /dev/sdv
+devid    5 size 20.00TiB used 17.16TiB path /dev/sdw
+devid    6 size 20.00TiB used 17.16TiB path /dev/sdo
+devid    7 size 20.00TiB used 17.16TiB path /dev/sdu
+devid    8 size 20.00TiB used 17.16TiB path /dev/sdn
+devid    9 size 20.00TiB used 17.16TiB path /dev/sdj
+devid   10 size 20.00TiB used 17.16TiB path /dev/sdk
+devid   11 size 20.00TiB used 17.16TiB path /dev/sdm
+devid   12 size 20.00TiB used 17.16TiB path /dev/sdbc
+
 -- 
-2.51.2
-
+Stephan Müller <stephan.mueller@phys.ethz.ch>
+IT Services Group, HPT H 8
+Physics Department, ETH Zurich
+CH-8093 Zurich, Switzerland

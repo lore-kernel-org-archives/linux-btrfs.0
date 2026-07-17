@@ -1,82 +1,78 @@
 Received: from fout-b7-smtp.messagingengine.com (fout-b7-smtp.messagingengine.com [202.12.124.150])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3CD633B6D3;
-	Fri, 17 Jul 2026 20:18:07 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D38783890EF;
+	Fri, 17 Jul 2026 20:19:20 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.150
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784319489; cv=none; b=gcGaear80c+8Weo1YkkIASX6GOB6tTUZ3j8WFI4MCuNx0rj7G7039bJ/z1aquJWmKz99pRmAZton/PFLTZFw4HMCC0421vSPe+g9RAyvtTbzQchC18y5TdHmWXYge+lKxTgDDY4/hW1ES+m43iPiX8KcW4MDhYB/FlZjRJn46Ig=
+	t=1784319565; cv=none; b=bBPlxRKdBGj6n71QnXf+jCqXdQpoVhY24ZfVbGMugp4gMAyue5728twv2eqT5kaiay5hn2Hu7J8s85Po3X6Cvdj1LYrY/gg9zdx8hJdU9+7BTcsrNicTo6vgJFR7q0mu4QOyzLDtL+A5sVxA9VGOd4xkB77d8VRxKgjx8+8dojk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784319489; c=relaxed/simple;
-	bh=DGfAoUOE2UQawP2OxkwCcY94zeZxhYRGK6QehuhRpbQ=;
+	s=arc-20240116; t=1784319565; c=relaxed/simple;
+	bh=nQSzkIaSW8QzyrsLMgKcH7jhsBlah+NRAkip2KcthAo=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=qHyUYDFMWe1KrwaoXTQB/yvrntekpw5EjBFSzK8hHxwLmozqX7azb6xrxQp25rASffXA0VH2SYgLn/y3koNxIBc6QGdmisxRAcNkyfiWJ/e2ilxIqde+aUmTVJFH2HLGuUtNcBsXcwJWhYvos7n7B6ORErdVEMNLcDMd0S+E2zk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=S/KDRgRW; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=kLIkYC2X; arc=none smtp.client-ip=202.12.124.150
+	 Content-Type:Content-Disposition:In-Reply-To; b=fi7FB6BIRhQ9gOyFn8hxmekNO2rTAciptFxKb5afygcWdp0ODT7D1kP+pJji6YFt7r77J5Wdv3c2T87w1GzcpfHo9m/nfk+vMPJtg+ljLSGjjc9dYYIXXq7blJCwAjc0T5BCVepc+tNlY+YqAFD2a73QKcEerdDmDYKlOJBt4mc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=FEwwJ5J/; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=OO/iPXsw; arc=none smtp.client-ip=202.12.124.150
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="S/KDRgRW";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="kLIkYC2X"
-Received: from phl-compute-09.internal (phl-compute-09.internal [10.202.2.49])
-	by mailfout.stl.internal (Postfix) with ESMTP id A3AB21D00119;
-	Fri, 17 Jul 2026 16:18:06 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-09.internal (MEProxy); Fri, 17 Jul 2026 16:18:06 -0400
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="FEwwJ5J/";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="OO/iPXsw"
+Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
+	by mailfout.stl.internal (Postfix) with ESMTP id 5356F1D0011A;
+	Fri, 17 Jul 2026 16:19:18 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-05.internal (MEProxy); Fri, 17 Jul 2026 16:19:18 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
 	:content-type:content-type:date:date:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1784319486; x=1784405886; bh=N8GQiWZQFR
-	eVeUzyIhET0hYjQGIOYiS2Viap9TAOyuw=; b=S/KDRgRWhQ25O/TSXyJwEyMKS9
-	FnL7A+lHhQhys5tKatBeF8BdlsoS5QbdKK/1G4sUx2zOUGfPT3Q8xdPT8PZpIn/e
-	QfhXoaV6qLO1UQ+ZVZxf0BJZumAgIwOC8JdZb/9MuThRWeerA90DNx+CiWEmPN9G
-	ezXQ7VYN0UpNOHijbdV9dybWjvYWxQQADX161TlXm6FzbUHXwOnv4jdTpwiycc7H
-	lBat4OUKHUMNCbzIf21hOx0EmGdh0KF213v+IScFYzLnsfZkWME6nhyMFEfhRxA/
-	0gKY1nyfETHh1an305PNvNj4gQWoCQo7nZt5m8mrXu0nmQO+GNeC8UB5+ygA==
+	:subject:to:to; s=fm3; t=1784319558; x=1784405958; bh=XwWhpKe+zg
+	oCPc+X2dDWX0mC4YEUiVRkJqlgHL92Ub4=; b=FEwwJ5J/eK4+rkG8ttDrnvDl69
+	0wW+VngOCC3NSGovdv9ipqd0Vygamnx2KdjUKFnr59OFjOm86NjFvYD2uW7R3Bit
+	SmOAQ0653DgTy+G6NHwvo7zUkelIl1SaowjTMVg+znO/TV9Fo3T8X4KsCA73bLt5
+	pI2CfiYsjclJLbfXuX3Azkj3HXqtM4s1dkzwFzApsMrZ2ewn/b0RdulwKqv5zJnP
+	TKCoFKefMwgMAU1UJLTwOE/5PqlpZxzjS/uAdFiimuO/GK5e7SyLUJManLanst5R
+	z5SLCnmN35d3d8FYMBFDY4apHpb8Ni+kw6NIVtbuAcFgR3diB3eyXIX895VA==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-type:content-type:date:date
 	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
 	:message-id:mime-version:references:reply-to:subject:subject:to
 	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1784319486; x=1784405886; bh=N8GQiWZQFReVeUzyIhET0hYjQGIOYiS2Via
-	p9TAOyuw=; b=kLIkYC2XvqQpzilUie6C9oV2s3Ns2T9+DfnV+PrXLyq52rfIuKT
-	Sbtii7e2y039QSbAx4jyyw+oJCT9trBiY/J0B83+IBPbVkb7TZNB5GeMOmiMU6Qq
-	Q/4TcykYMRalX09CBJGf67ezAr7OaevVn55scHzVujq76Nad1DtO3PDJ6Kym6G8C
-	EHD7ImYoM3AMiOgREZIFhQph1LgRYSaJ6luaJB7K9yJJcQcTn4pmwTRnQnS6+jdl
-	LSaBVskqwDt0F0BvJNvZuKFKH4Ad3TGIugtp+exbwqk+RsQ682yQw+3msjr7fOc6
-	DXrr6rBrhmhXzrn6QAncI4+fXvBO0IT8wmw==
-X-ME-Sender: <xms:_o1aai9L72urxJA9PMy4oXhDVwgYtPwJLeGYAeZ4BXNOlnh5hz5QsA>
-    <xme:_o1aasCssOdc06UVT19Uz4_eaO0fHj_qQPHuFkYQg4wQQH_ym1EymTGp5HyE8ptJ1
-    lA-5yvvLMKNGlc2bLpxTnjPI95_AICLtatVM8GqpDoJ2OmtLhJZt-8>
-X-ME-Received: <xmr:_o1aavTc44jlGGdsxEP_qpVgA6UG4emQ2UZaEGCeUCQGxarxYefGODhXN3Jz_BtyM2Fanx3J93t_jzUng1ko1J4OwyE>
+	1784319558; x=1784405958; bh=XwWhpKe+zgoCPc+X2dDWX0mC4YEUiVRkJql
+	gHL92Ub4=; b=OO/iPXswkwX0QnYyewJnfM4T2U+KRcPE2Wl5ouObqRTSflV8DW3
+	olivurzwQ6z79jfT4HecCsvLTuySw+AjRlcMqidG0GCd9kCK42dWUlF7ke5Fcn7k
+	dvhMNZJGizL8CN93xImZCq5yc47+01kt/Re/QZ6695Pth9sHvBP249kD+e9km9K1
+	XiI6DyilH/DmGe4wcQtqH6XqT/SqknGTJbtyIP0PmaPA4loVHURCfzPNR3sOMQq/
+	ke9pkWFJlHkZusiUnXCSSErjzc8k9QhqtAcG7z/jWtlq8hC9EtGinxCpLM9pLvVh
+	azwXMRUpv0fBLuejpmOgQLC99N61ZjYevKw==
+X-ME-Sender: <xms:Ro5aap0-ptsfpitivo3Utolob7_UVkNcQIXm3piarn2o4qjPiYAOZg>
+    <xme:Ro5aan06kKlkx-GDuzRNE4pAleI67cMAYPDF_pzG721Ylav3Th-UgSwcQZxu54HAW
+    zELJ1-a9KZYaNbF6FCnL78QVtXqEupgBcIoocFLdEZLtQSh_etKC20>
+X-ME-Received: <xmr:Ro5aas-wkoLx5DCnI_EZLKZXHnhRQw4iOzbl9Lug9-iaIaQ4m8oYCohL4dP1ciILGVEmpYjW-C0_WjjpP9Ar8F7FyBw>
 X-ME-Proxy-Cause: dmFkZTEp4VLN8UNatxjtjNlXDw615hXCDJXjEmAyUzet/LRA+2UxfLLbcFMZlLIepOi46m
     vQd+o3RLDS7L0SabDxla/wPUb+OgzyjwAvO+CHOjK0oAvpnGKN/0Wlnx3xG1UhpAsXqtv5
     TIc/soGpVwrMq+wH7OhndGU54lHK8AJ8UUW/iM0lmrf0GlVTwZPnKRnvOcqpB0Jko69BCq
     eJrvOrABlZDAm+IzgUtHACR6QVIs2IDG5LsefZULpsyGvSLhTf6o1s93MMkse01CwhFCgE
-    kRpMvqZE+o6FOZ8jvJxGI+q1Y2TYoS+TRpGs3PJTH8L05gJNikKijJGfJu4S1ViFZVpWj3
-    fBsZNhFQ3tg0G6Gb5A9znTUuJtjL8D1/FfVKezD/hI1djGeyj878TVmHjM2oTtsxq+Qqfc
-    EXzyzWiZK4oSsqOig++WWDYtrPDUM3ymJLZFzAxF6Q1/OCTG9McgAu4Bcs3oefQ0n3m6QT
-    VyTJD5F92WykPdfAVxh7sZO238+TdLRQfZxhizB019wpaMON6RBk9cokl1iA7nc9Brswk3
-    KzL6HUrrwXZsqXiz4duxAXCYXi/2WKOn0WIX/SNvYNMBgGUzNvYm75EGPiSw39KgqwpBnh
-    9Se+W3A7Gobm3IrQnx8iAvL+ieSl2+u3cnEA+ZVprRuJ4BLH6aQr7ZsCpdhg
-X-ME-Proxy: <xmx:_o1aartqqNkwDrtAFWsFg_nCX88-pP2gxZ2bZ50JCmBJEehgmRaT2A>
-    <xmx:_o1aaj3qBZlBmOKuKxnnCsD_NKmMJrfhYv6cms1z0hA6iL2Mkjys2A>
-    <xmx:_o1aakWOAU1eBUC4q_LLj7Ku_Z0_WArQUqJbiPTL49hwFZjxFpkgVg>
-    <xmx:_o1aamJtWxgU2tV-QrePvv9UAfh3QT-74ywx_yN1JpWAxMUg9PwMqg>
-    <xmx:_o1aak9StJ5glWZ9tpL0JYDWGK54iBlfl0bpul0R2vcpfonoCA2POsjS>
+    kRpMvqZE+o6FOZ8jvJxGI+q1Y2TYoS+TRpGs3PJTH8L05gJNikKijJGfJu4S1ViFZVpWNA
+    RTHVIEG6Yv79AisuFGKZE66cdk7kgZ+u9dJ/Q2zbgJEQxsCBEPvMiqVcULZLU5ffFiCaKI
+    kGY5cBRQbcSikh9AewgWllgYhriSDxV73rk/xucju78MI8ra+Y3uskThwmTJ5FuZ+lOKfw
+    xfI4RDWlkRMMgyQSsz4gDzAV4+P6Y1MSDYA/vC0EfR7j3rlR339uiYrh7afVe09NDbQgMj
+    86xYLTXbzBME5r6/Fr4QHhhjTBi6OgLEC9QwJnGV8CMh08GzXqST1Hetiqqk45fBVGmDoa
+    e+1ks72rsZRMZEDKig2w4T5+7i08/icvZZHKK9yhppSfKxQ2K5+p8HniTu3Q
+X-ME-Proxy: <xmx:Ro5aak3DtO6k80vfKRW0heXi2IEvJ7U1AsX8U4lipLm0CpErcAq72A>
+    <xmx:Ro5aap9fPUljNvGZAH9uHuMszN8YzHNXItv5Mu_CGCXHMO91A053hg>
+    <xmx:Ro5aaktRzb4hLRJ0fQK9JPcsmr_HupRXLUx5pZaHTk2PehNYYaVlnA>
+    <xmx:Ro5aasAMgx3cVp29JJ3wRe4sbCfVmbaaWnTAWZfzVd5qzzOm9Q4Ibw>
+    <xmx:Ro5aatknAwKoQ9c0wH5BvpXtz-FhFmSla7bA4J7naBXUHwUF0eUzPrGn>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
- 17 Jul 2026 16:18:05 -0400 (EDT)
-Date: Fri, 17 Jul 2026 13:18:05 -0700
+ 17 Jul 2026 16:19:17 -0400 (EDT)
+Date: Fri, 17 Jul 2026 13:19:16 -0700
 From: Boris Burkov <boris@bur.io>
-To: Jeff Layton <jlayton@kernel.org>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	kernel-team@fb.com
-Subject: Re: [PATCH 3/4] btrfs: handle ENOMEM from btrfs_insert_dir_item()
- without aborting
-Message-ID: <20260717201805.GB142812@zen.localdomain>
-References: <20260717-btrfs-enomem-v1-0-cdc9c0e265d0@kernel.org>
- <20260717-btrfs-enomem-v1-3-cdc9c0e265d0@kernel.org>
+To: Qu Wenruo <wqu@suse.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fstests: vfstest: skip rejected tmpfile creation
+Message-ID: <20260717201916.GC142812@zen.localdomain>
+References: <20260717070717.113517-1-wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -85,93 +81,56 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260717-btrfs-enomem-v1-3-cdc9c0e265d0@kernel.org>
+In-Reply-To: <20260717070717.113517-1-wqu@suse.com>
 
-On Fri, Jul 17, 2026 at 12:52:38PM -0400, Jeff Layton wrote:
-> Now that btrfs_insert_dir_item() returns -ENOMEM before modifying the
-> btree (thanks to delayed dir index pre-allocation), callers can handle
-> ENOMEM gracefully instead of aborting the transaction.
+On Fri, Jul 17, 2026 at 04:37:17PM +0930, Qu Wenruo wrote:
+> Since kernel commit 539dce114465 ("fs: refuse O_TMPFILE creation with an
+> unmapped fsuid or fsgid"), tmpfile creation can be rejected with
+> EOVERFLOW, so also skip that error number to avoid false alerts like the
+> following:
 > 
-> In btrfs_add_link(), add -ENOMEM to the set of recoverable errors
-> alongside -EEXIST and -EOVERFLOW. The fail_dir_item cleanup path
-> unwinds the inode_ref/root_ref and returns the error to userspace.
+>  FSTYP         -- ext4
+>  PLATFORM      -- Linux/x86_64 btrfs-vm 7.2.0-rc3-custom+ #411 SMP PREEMPT_DYNAMIC Fri Jul 17 16:24:34 ACST 2026
+>  MKFS_OPTIONS  -- -F /dev/mapper/test-scratch1
+>  MOUNT_OPTIONS -- -o acl,user_xattr /dev/mapper/test-scratch1 /mnt/scratch
 > 
-> In btrfs_create_new_inode(), when btrfs_add_link() fails with -ENOMEM,
-> convert the newly-created inode into an orphan instead of aborting.
-> This is done by clearing nlink and adding an orphan item, which ensures
-> btrfs_evict_inode() will delete the INODE_ITEM and INODE_REF, and
-> crash-recovery will clean it up via orphan processing. If
-> btrfs_orphan_add() itself fails, we fall back to aborting.
+>  generic/633  1s ... - output mismatch (see /home/adam/xfstests/results//generic/633.out.bad)
+>     --- tests/generic/633.out	2022-05-11 11:25:30.816666664 +0930
+>     +++ /home/adam/xfstests/results//generic/633.out.bad	2026-07-17 16:25:45.033967541 +0930
+>     @@ -1,2 +1,4 @@
+>      QA output created by 633
+>      Silence is golden
+>     +utils.c: 948: openat_tmpfile_supported - Value too large for defined data type - failure: create
+>     +utils.c: 948: openat_tmpfile_supported - Value too large for defined data type - failure: create
+>     ...
+>     (Run 'diff -u /home/adam/xfstests/tests/generic/633.out /home/adam/xfstests/results//generic/633.out.bad'  to see the entire diff)
+>  Ran: generic/633
+>  Failures: generic/633
+>  Failed 1 of 1 tests
 > 
-> This turns a filesystem-killing transaction abort into a graceful
-> -ENOMEM return to userspace for create(), mkdir(), mknod(), symlink(),
-> and link() operations under memory pressure.
-> 
-> Assisted-by: LLM
-> Signed-off-by: Jeff Layton <jlayton@kernel.org>
+Reviewed-by: Boris Burkov <boris@bur.io>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/inode.c | 17 +++++++++++++++--
->  1 file changed, 15 insertions(+), 2 deletions(-)
+>  src/vfs/utils.c | 6 +++++-
+>  1 file changed, 5 insertions(+), 1 deletion(-)
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index b7b4e6177135..4d9947ae08f7 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -6676,7 +6676,20 @@ int btrfs_create_new_inode(struct btrfs_trans_handle *trans,
->  	} else {
->  		ret = btrfs_add_link(trans, BTRFS_I(dir), BTRFS_I(inode), name,
->  				     false, BTRFS_I(inode)->dir_index);
-> -		if (unlikely(ret)) {
-> +		if (ret == -ENOMEM) {
-> +			/*
-> +			 * The ENOMEM came before the DIR_ITEM was inserted,
-> +			 * so the btree has our INODE_ITEM + INODE_REF but no
-> +			 * directory entry. Convert this into an orphan so
-> +			 * eviction (or crash-recovery) cleans up the inode.
-> +			 */
-> +			clear_nlink(inode);
-> +			ret = btrfs_orphan_add(trans, BTRFS_I(inode));
-> +			if (unlikely(ret))
-> +				btrfs_abort_transaction(trans, ret);
-
-I feel like the crux of this series to me is whether you have practical
-conditions where the allocation of the delayed_node is failing, but the
-allocations involved in btrfs_orphan_add() succeed. It allocates a
-btrfs_path and has to walk the btree which might have to read the node
-at every level which might need to allocate 16k extent buffers and
-extent buffer objects and xarray storage for each one. For size
-reference, on my build (maybe debug..?) a delayed_node is 552 bytes,
-while a btrfs_path is 112 and an extent_buffer is 432. So they are
-pretty similar in size (not to mention the 16k of node file backed
-memory we are sort of likely to have to allocate if we are under
-reclaim)
-
-Were you able to reproduce this issue and help in practice or is this a
-theoretical / structural improvement?
-
-With that said, all the prealloc wiring looks good to me in general, and
-it seems to be a pretty clean win for the "name exists" case in the next
-patch.
-
-Thanks,
-Boris
-
-> +			ret = -ENOMEM;
-> +			goto discard;
-> +		} else if (unlikely(ret)) {
->  			btrfs_abort_transaction(trans, ret);
->  			goto discard;
->  		}
-> @@ -6738,7 +6751,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+> diff --git a/src/vfs/utils.c b/src/vfs/utils.c
+> index 0b435afe..d2922cc3 100644
+> --- a/src/vfs/utils.c
+> +++ b/src/vfs/utils.c
+> @@ -941,7 +941,11 @@ bool openat_tmpfile_supported(int dirfd)
 >  
->  	ret = btrfs_insert_dir_item(trans, name, parent_inode, &key,
->  				    btrfs_inode_type(inode), index, NULL);
-> -	if (ret == -EEXIST || ret == -EOVERFLOW)
-> +	if (ret == -EEXIST || ret == -EOVERFLOW || ret == -ENOMEM)
->  		goto fail_dir_item;
->  	else if (unlikely(ret)) {
->  		btrfs_abort_transaction(trans, ret);
-> 
+>  	fd = openat(dirfd, ".", O_TMPFILE | O_RDWR, S_IXGRP | S_ISGID);
+>  	if (fd == -1) {
+> -		if (errno == ENOTSUP) {
+> +		/*
+> +		 * Kernel commit 539dce114465 ("fs: refuse O_TMPFILE creation
+> +		 * with an unmapped fsuid or fsgid") will reject such operation.
+> +		 */
+> +		if (errno == ENOTSUP || errno == EOVERFLOW) {
+>  			errno = 0; /* Don't report misleading errno. */
+>  			return false;
+>  		} else {
 > -- 
-> 2.55.0
+> 2.51.2
 > 

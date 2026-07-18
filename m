@@ -1,48 +1,48 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 776601F5825;
-	Sat, 18 Jul 2026 13:24:56 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F3DB5313552;
+	Sat, 18 Jul 2026 13:27:46 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784381097; cv=none; b=cEC3VtJaHaDJF5Ue3hsT8JFmjKB+CLC2b/3d/ev3o8FEF2XyWF91v/q86FP1gfCTJCwzPVSzoZ9cMcZNMTvILuIuv5tLhOk0PVzHJLNPh7qUYvfJn8LNmV3pxPKoNuv/2EVDNDLbYvXOFjh8HTbqxE/DflK1v5wAHipPkhDS4us=
+	t=1784381268; cv=none; b=VJWWkIhr64h9ZF/gs0ZjGr9/8/XM+cv1sDpTbFkVUMjcHkmA2DGwaCONQyhwYLwsjnxYxsXMswjXjqpAlkKyq+WY8uREa3X9ritV+r8EgaBzaP9XuIOZIS4dHx2m0udEh1nN2K8niph+ELQRculKf0AVQCbllZJ0SaUXc9pHg4g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784381097; c=relaxed/simple;
-	bh=syJoGfLZ/n5UCSijl4FZvTNA1poRtcs2BrySoRyMxCg=;
+	s=arc-20240116; t=1784381268; c=relaxed/simple;
+	bh=wJQn9dt/OTGA/Bw8LXVw+ivM5XP2+IHKZ+skbqGQeQA=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=pFTAYEnIx6XIWWr+GJf76iuFKzdtzjOMc88awlqqBkWGLDBBFeIP9Y31K1DyHBPCGyMBTaoNU15LqRjwYFb8fcvv1wbGtj7A5aH5lvx97Xi7MnEPsYvy/crcVEaqE2CArK+7lXc/CZjAm65jQhVG2cPNgrFgSVvfNEXBKgz0Re4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=NnlLvmrp; arc=none smtp.client-ip=100.103.45.18
+	 Content-Type:MIME-Version; b=i63GVfY0oTnGxbEPHa44T4mpYK6G5SiPWINEG1+9Z9tpBar5aZ5fyy0pWykyx33+ta3O2c921UDwhSGwegLL5UfJ4S/rDK79ibOQXKoTbmZPvwS/q72TmpDy30L6KF93KXF/JpPU+T/gOQZjwiR1ZbHCwJJu8i1HnropDHJTDyI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=T9TQTS4a; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="NnlLvmrp"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 72D741F000E9;
-	Sat, 18 Jul 2026 13:24:55 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="T9TQTS4a"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0EA551F000E9;
+	Sat, 18 Jul 2026 13:27:45 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1784381096;
-	bh=K1HEfc/2HHJNK+xUj/h4VmdZQGKVT8UdG69/3PwMLA0=;
+	s=k20260515; t=1784381266;
+	bh=qrvvzcx4gjJ7GXHnj2buieV/FlsGxdd0zXqNqfrlm3Q=;
 	h=Subject:From:To:Cc:Date:In-Reply-To:References;
-	b=NnlLvmrp6vbDFGXrQxga7kLctZxX10baNnRV48slIWPiYD3CKpd8re4Arc60AuREv
-	 gJTQqpaF1O02Mo3hfdLMfcGnr68dd3vUgpUkiIUemq+oFUeFxTe8W8xLmmDS+12WsG
-	 XtZDPmEWZ/p9RxYBGf+LLV5RryykFDSlkBfR3RT+oLiXEaifFsHrV78xqjPj0nDf2e
-	 Kg1FjnBV1B+UEOCCN//xmb31uMc97PPiJCQHkLWOP69btVK2Vks0/pFm5vd0sk0TaK
-	 F1cbquvNZ1F8hkr0iRLvqD1gcDVpCEmRvkaVklpDMZRQyN2YHBqj10nXq9jM4bhtBK
-	 +2zM7YAjZEY8w==
-Message-ID: <79df76bfcd8a13f886a1af0760c2c7607842725d.camel@kernel.org>
+	b=T9TQTS4aCCjs0iNjgCzLmsWQ4BBRWOF54QPV9qcNv1WvCTeaa0SkMDpsEQmfJwbW1
+	 88V4ciul4cVJD/PYFfy8TIqO1G33O6BP7o6rXG45EAYGw114LYj3AEmhqHE/pXZ+1n
+	 oq/BKG9TECPNCtQU3riHfrRnlyEaUAUi4RtypVoY3ghWTKM7I8NfFZt3tLw/nlgPN3
+	 wK73ySaJ6t0fDLld7GfrBIjww88jW8MWDvdjSTyyy1RPPZY/FTq/C9R8OYNKi25r7z
+	 S2OCzF98JZWWLmWGI08p/3gs8lsaCmtTwECj6jcA3TB9+zraUAGnvCIPlsrm+imj7q
+	 kZfTZW9sWGNqA==
+Message-ID: <022ba61d615e08d031fa63d396801ab4bfa44bc2.camel@kernel.org>
 Subject: Re: [PATCH 3/4] btrfs: handle ENOMEM from btrfs_insert_dir_item()
  without aborting
 From: Jeff Layton <jlayton@kernel.org>
-To: Qu Wenruo <wqu@suse.com>, Boris Burkov <boris@bur.io>
+To: Boris Burkov <boris@bur.io>
 Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
 	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
  kernel-team@fb.com
-Date: Sat, 18 Jul 2026 09:24:53 -0400
-In-Reply-To: <8b0bbede-a79b-47db-bddb-91c2fd9f40cc@suse.com>
+Date: Sat, 18 Jul 2026 09:27:44 -0400
+In-Reply-To: <20260718001309.GA420230@zen.localdomain>
 References: <20260717-btrfs-enomem-v1-0-cdc9c0e265d0@kernel.org>
 	 <20260717-btrfs-enomem-v1-3-cdc9c0e265d0@kernel.org>
 	 <20260717201805.GB142812@zen.localdomain>
 	 <c0672fee4d99be98cc85f7f22f31667121ae4100.camel@kernel.org>
 	 <20260717230455.GA251596@zen.localdomain>
 	 <223c999d96a6a69f5824f145cabe3bec891c5956.camel@kernel.org>
-	 <8b0bbede-a79b-47db-bddb-91c2fd9f40cc@suse.com>
+	 <20260718001309.GA420230@zen.localdomain>
 Autocrypt: addr=jlayton@kernel.org; prefer-encrypt=mutual;
  keydata=mQINBE6V0TwBEADXhJg7s8wFDwBMEvn0qyhAnzFLTOCHooMZyx7XO7dAiIhDSi7G1NPxw
  n8jdFUQMCR/GlpozMFlSFiZXiObE7sef9rTtM68ukUyZM4pJ9l0KjQNgDJ6Fr342Htkjxu/kFV1Wv
@@ -127,9 +127,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 
-On Sat, 2026-07-18 at 09:49 +0930, Qu Wenruo wrote:
->=20
-> =E5=9C=A8 2026/7/18 09:25, Jeff Layton =E5=86=99=E9=81=93:
+On Fri, 2026-07-17 at 17:13 -0700, Boris Burkov wrote:
+> On Fri, Jul 17, 2026 at 07:55:35PM -0400, Jeff Layton wrote:
 > > On Fri, 2026-07-17 at 16:04 -0700, Boris Burkov wrote:
 > > > On Fri, Jul 17, 2026 at 06:40:42PM -0400, Jeff Layton wrote:
 > > > > On Fri, 2026-07-17 at 13:18 -0700, Boris Burkov wrote:
@@ -152,9 +151,8 @@ ENOMEM,
 > > > > > > convert the newly-created inode into an orphan instead of abort=
 ing.
 > > > > > > This is done by clearing nlink and adding an orphan item, which=
- ensures
-> > > > > > btrfs_evict_inode() will delete the INODE_ITEM and INODE_REF, a=
-nd
+ ensures > > > > > btrfs_evict_inode() will delete the INODE_ITEM and INODE=
+_REF, and
 > > > > > > crash-recovery will clean it up via orphan processing. If
 > > > > > > btrfs_orphan_add() itself fails, we fall back to aborting.
 > > > > > >=20
@@ -167,8 +165,8 @@ link(),
 > > > > > > Assisted-by: LLM
 > > > > > > Signed-off-by: Jeff Layton <jlayton@kernel.org>
 > > > > > > ---
-> > > > > >   fs/btrfs/inode.c | 17 +++++++++++++++--
-> > > > > >   1 file changed, 15 insertions(+), 2 deletions(-)
+> > > > > >  fs/btrfs/inode.c | 17 +++++++++++++++--
+> > > > > >  1 file changed, 15 insertions(+), 2 deletions(-)
 > > > > > >=20
 > > > > > > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
 > > > > > > index b7b4e6177135..4d9947ae08f7 100644
@@ -176,12 +174,15 @@ link(),
 > > > > > > +++ b/fs/btrfs/inode.c
 > > > > > > @@ -6676,7 +6676,20 @@ int btrfs_create_new_inode(struct btrfs_=
 trans_handle *trans,
-> > > > > >   	} else {
-> > > > > >   		ret =3D btrfs_add_link(trans, BTRFS_I(dir), BTRFS_I(inode),=
- name,
-> > > > > >   				     false, BTRFS_I(inode)->dir_index);
+> > > > > >  	} else {
+> > > > > >  		ret =3D btrfs_add_link(trans, BTRFS_I(dir), BTRFS_I(inode), =
+name,
+> > > > > >  				     false, BTRFS_I(inode)->dir_index);
 > > > > > > -		if (unlikely(ret)) {
 > > > > > > +		if (ret =3D=3D -ENOMEM) {
+>=20
+> So we are now handling ENOMEM from btrfs_add_link()
+>=20
 > > > > > > +			/*
 > > > > > > +			 * The ENOMEM came before the DIR_ITEM was inserted,
 > > > > > > +			 * so the btree has our INODE_ITEM + INODE_REF but no
@@ -190,8 +191,15 @@ trans_handle *trans,
 > > > > > > +			 */
 > > > > > > +			clear_nlink(inode);
 > > > > > > +			ret =3D btrfs_orphan_add(trans, BTRFS_I(inode));
+>=20
+> And when we get ENOMEM, we call btrfs_orphan_add() isntead of
+> unilaterally aborting. I contend that this call is now likely to ENOMEM
+>=20
 > > > > > > +			if (unlikely(ret))
 > > > > > > +				btrfs_abort_transaction(trans, ret);
+>=20
+> And abort here.
+>=20
 > > > > >=20
 > > > > > I feel like the crux of this series to me is whether you have pra=
 ctical
@@ -246,22 +254,31 @@ en
 > > it will have returned -ENOMEM before that point. But, you do have a
 > > good point that we could allocate these objects successfully, and then
 > > hit an error in btrfs_orphan_add() anyway.
+>=20
+> I am still a bit confused. I made comments inline closer to the the code.
+> Sorry if I am being dense or missing the point!
+>=20
+
+Nope, you're correct. I missed which bit you were talking about.
+
 > >=20
 > > One thought: It looks like the main allocation in that codepath is
 > > btrfs_alloc_path()? We could consider preallocating that too -- maybe
 > > stash it in a new pointer in btrfs_trans_handle?
+> >=20
+> > Thanks! This is good food for thought.
 >=20
-> For btrfs_alloc_path(), you can just use on-stack memory for that.
+> Take a peek at https://lore.kernel.org/linux-btrfs/cover.1782249000.git.b=
+oris@bur.io/
 >=20
-> That's the practice we utilize for btrfs-progs, and it's still=20
-> acceptable for kernel, since that structure is only 112 bytes.
+> which I need to RESEND :)
 >=20
-> We should not switch all btrfs_path to on-stack ones, but for critical=
-=20
-> ones that memory allocation can lead to trans abort, I'd say it's=20
-> definitely worth the extra on-stack memory usage.
 >=20
 
-Thanks Qu, I'll plan to take that approach in v2.
+Interesting. Between that approach and Qu's suggestion we should be
+able fix this up. I'll look at doing that for v2.
+
+Thanks again for the review!
+
 --=20
 Jeff Layton <jlayton@kernel.org>

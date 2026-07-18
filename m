@@ -1,68 +1,267 @@
-Received: from aarghimedes.fi (unknown [92.223.105.234])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 32FCF383C9F
-	for <linux-btrfs@vger.kernel.org>; Sat, 18 Jul 2026 09:10:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=92.223.105.234
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 776601F5825;
+	Sat, 18 Jul 2026 13:24:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784365816; cv=none; b=slz4Mpo47J1PsRP8hrBdl9BsOlrBq85Zu6GvX3cqW4O09VARD3ZwrKRAeNQeZ/XVeTKwGfigpZQ31vgGog7Mvj+3y1CYrgYNyXLdMP/ZKj8IPaq63gXxrmlsTlpt8wOhfeatDAOX26XjzZuILAIldaEvApLfn1vSf5JSDSFoZxg=
+	t=1784381097; cv=none; b=cEC3VtJaHaDJF5Ue3hsT8JFmjKB+CLC2b/3d/ev3o8FEF2XyWF91v/q86FP1gfCTJCwzPVSzoZ9cMcZNMTvILuIuv5tLhOk0PVzHJLNPh7qUYvfJn8LNmV3pxPKoNuv/2EVDNDLbYvXOFjh8HTbqxE/DflK1v5wAHipPkhDS4us=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784365816; c=relaxed/simple;
-	bh=2LmZBUmEFCPJF83hYsEYd0PBtTCJpjtTnbV6y7Yfunc=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=gU1gaeWTEgY1V0T1Prm81AQF1M2d+E5YFxX7hR/rrkPJLXFVQ6L8yGqktSz2bdyeLEs9C6RN2WUkeP584QVsFC/dKUxSnRlGgKjCgisdTXjngQr3fHOZzlTCNoltJhTDRyE40lKhvWVxohfkCV8DXI3Zp0PorDYDlk7HtMxxWik=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=aarghimedes.fi; spf=pass smtp.mailfrom=aarghimedes.fi; dkim=pass (2048-bit key) header.d=aarghimedes.fi header.i=@aarghimedes.fi header.b=qJHwMK4W; arc=none smtp.client-ip=92.223.105.234
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=aarghimedes.fi
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=aarghimedes.fi
+	s=arc-20240116; t=1784381097; c=relaxed/simple;
+	bh=syJoGfLZ/n5UCSijl4FZvTNA1poRtcs2BrySoRyMxCg=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=pFTAYEnIx6XIWWr+GJf76iuFKzdtzjOMc88awlqqBkWGLDBBFeIP9Y31K1DyHBPCGyMBTaoNU15LqRjwYFb8fcvv1wbGtj7A5aH5lvx97Xi7MnEPsYvy/crcVEaqE2CArK+7lXc/CZjAm65jQhVG2cPNgrFgSVvfNEXBKgz0Re4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=NnlLvmrp; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=aarghimedes.fi header.i=@aarghimedes.fi header.b="qJHwMK4W"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=aarghimedes.fi;
-	s=default; t=1784365299;
-	bh=2LmZBUmEFCPJF83hYsEYd0PBtTCJpjtTnbV6y7Yfunc=;
-	h=Date:Subject:To:References:From:In-Reply-To:From;
-	b=qJHwMK4Wk2IfBBp5XgKSSU1cHAa7cQYrFm3u5RfFPR6SP8p3s361GQbct7ejft//B
-	 38+A64siGMDev687OEgc3wz3zzvNXg9UnuGbDh1YHsuQuaMjYCDbdfj9AOb+Uhl+xA
-	 INMHKa9j2eWESYfJxELJmvtkaOg1/oWXYLyQvmt6c5vcK86b8FgC0sm4n54+mID3MV
-	 q/MRlYNoG9XI3XSv3HMvG+9NMKmT6/zj8uNbRB++O6w5d5Dnd44/ed7UCuJOUtbAit
-	 UNWl2cL9bGHkUqaHypKhFK6QLGqZIoGPs7VXhxDGBEbIOBxVXGbJ8ygvob6tEUh+yx
-	 LzT2POnYyYmZg==
-Received: from [192.168.122.149] (79-134-115-245.cust.suomicom.net [79.134.115.245])
-	by aarghimedes.fi (Postfix) with ESMTPSA id 4880520354;
-	Sat, 18 Jul 2026 12:01:39 +0300 (EEST)
-Message-ID: <0331d608-a7e8-40ea-ae75-4f3e407c2473@aarghimedes.fi>
-Date: Sat, 18 Jul 2026 12:01:38 +0300
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="NnlLvmrp"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 72D741F000E9;
+	Sat, 18 Jul 2026 13:24:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1784381096;
+	bh=K1HEfc/2HHJNK+xUj/h4VmdZQGKVT8UdG69/3PwMLA0=;
+	h=Subject:From:To:Cc:Date:In-Reply-To:References;
+	b=NnlLvmrp6vbDFGXrQxga7kLctZxX10baNnRV48slIWPiYD3CKpd8re4Arc60AuREv
+	 gJTQqpaF1O02Mo3hfdLMfcGnr68dd3vUgpUkiIUemq+oFUeFxTe8W8xLmmDS+12WsG
+	 XtZDPmEWZ/p9RxYBGf+LLV5RryykFDSlkBfR3RT+oLiXEaifFsHrV78xqjPj0nDf2e
+	 Kg1FjnBV1B+UEOCCN//xmb31uMc97PPiJCQHkLWOP69btVK2Vks0/pFm5vd0sk0TaK
+	 F1cbquvNZ1F8hkr0iRLvqD1gcDVpCEmRvkaVklpDMZRQyN2YHBqj10nXq9jM4bhtBK
+	 +2zM7YAjZEY8w==
+Message-ID: <79df76bfcd8a13f886a1af0760c2c7607842725d.camel@kernel.org>
+Subject: Re: [PATCH 3/4] btrfs: handle ENOMEM from btrfs_insert_dir_item()
+ without aborting
+From: Jeff Layton <jlayton@kernel.org>
+To: Qu Wenruo <wqu@suse.com>, Boris Burkov <boris@bur.io>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ kernel-team@fb.com
+Date: Sat, 18 Jul 2026 09:24:53 -0400
+In-Reply-To: <8b0bbede-a79b-47db-bddb-91c2fd9f40cc@suse.com>
+References: <20260717-btrfs-enomem-v1-0-cdc9c0e265d0@kernel.org>
+	 <20260717-btrfs-enomem-v1-3-cdc9c0e265d0@kernel.org>
+	 <20260717201805.GB142812@zen.localdomain>
+	 <c0672fee4d99be98cc85f7f22f31667121ae4100.camel@kernel.org>
+	 <20260717230455.GA251596@zen.localdomain>
+	 <223c999d96a6a69f5824f145cabe3bec891c5956.camel@kernel.org>
+	 <8b0bbede-a79b-47db-bddb-91c2fd9f40cc@suse.com>
+Autocrypt: addr=jlayton@kernel.org; prefer-encrypt=mutual;
+ keydata=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
+ QZIQXVeAA+smfTT0tDrisj1U5x6ZB9b3nBg65kc=
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 (3.60.2-1.fc44) 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: pause device removal
-To: Stephan Mueller <stepmueller@phys.ethz.ch>, linux-btrfs@vger.kernel.org
-References: <9a39301eb2542756e730be92c8b79ca9@phys.ethz.ch>
-From: Jukka Larja <roskakori@aarghimedes.fi>
-In-Reply-To: <9a39301eb2542756e730be92c8b79ca9@phys.ethz.ch>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
 
-Stephan Mueller kirjoitti 17.7.2026 klo 12.15:
+On Sat, 2026-07-18 at 09:49 +0930, Qu Wenruo wrote:
+>=20
+> =E5=9C=A8 2026/7/18 09:25, Jeff Layton =E5=86=99=E9=81=93:
+> > On Fri, 2026-07-17 at 16:04 -0700, Boris Burkov wrote:
+> > > On Fri, Jul 17, 2026 at 06:40:42PM -0400, Jeff Layton wrote:
+> > > > On Fri, 2026-07-17 at 13:18 -0700, Boris Burkov wrote:
+> > > > > On Fri, Jul 17, 2026 at 12:52:38PM -0400, Jeff Layton wrote:
+> > > > > > Now that btrfs_insert_dir_item() returns -ENOMEM before modifyi=
+ng the
+> > > > > > btree (thanks to delayed dir index pre-allocation), callers can=
+ handle
+> > > > > > ENOMEM gracefully instead of aborting the transaction.
+> > > > > >=20
+> > > > > > In btrfs_add_link(), add -ENOMEM to the set of recoverable erro=
+rs
+> > > > > > alongside -EEXIST and -EOVERFLOW. The fail_dir_item cleanup pat=
+h
+> > > > > > unwinds the inode_ref/root_ref and returns the error to userspa=
+ce.
+> > > > > >=20
+> > > > > > In btrfs_create_new_inode(), when btrfs_add_link() fails with -=
+ENOMEM,
+> > > > > > convert the newly-created inode into an orphan instead of abort=
+ing.
+> > > > > > This is done by clearing nlink and adding an orphan item, which=
+ ensures
+> > > > > > btrfs_evict_inode() will delete the INODE_ITEM and INODE_REF, a=
+nd
+> > > > > > crash-recovery will clean it up via orphan processing. If
+> > > > > > btrfs_orphan_add() itself fails, we fall back to aborting.
+> > > > > >=20
+> > > > > > This turns a filesystem-killing transaction abort into a gracef=
+ul
+> > > > > > -ENOMEM return to userspace for create(), mkdir(), mknod(), sym=
+link(),
+> > > > > > and link() operations under memory pressure.
+> > > > > >=20
+> > > > > > Assisted-by: LLM
+> > > > > > Signed-off-by: Jeff Layton <jlayton@kernel.org>
+> > > > > > ---
+> > > > > >   fs/btrfs/inode.c | 17 +++++++++++++++--
+> > > > > >   1 file changed, 15 insertions(+), 2 deletions(-)
+> > > > > >=20
+> > > > > > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > > > > > index b7b4e6177135..4d9947ae08f7 100644
+> > > > > > --- a/fs/btrfs/inode.c
+> > > > > > +++ b/fs/btrfs/inode.c
+> > > > > > @@ -6676,7 +6676,20 @@ int btrfs_create_new_inode(struct btrfs_=
+trans_handle *trans,
+> > > > > >   	} else {
+> > > > > >   		ret =3D btrfs_add_link(trans, BTRFS_I(dir), BTRFS_I(inode),=
+ name,
+> > > > > >   				     false, BTRFS_I(inode)->dir_index);
+> > > > > > -		if (unlikely(ret)) {
+> > > > > > +		if (ret =3D=3D -ENOMEM) {
+> > > > > > +			/*
+> > > > > > +			 * The ENOMEM came before the DIR_ITEM was inserted,
+> > > > > > +			 * so the btree has our INODE_ITEM + INODE_REF but no
+> > > > > > +			 * directory entry. Convert this into an orphan so
+> > > > > > +			 * eviction (or crash-recovery) cleans up the inode.
+> > > > > > +			 */
+> > > > > > +			clear_nlink(inode);
+> > > > > > +			ret =3D btrfs_orphan_add(trans, BTRFS_I(inode));
+> > > > > > +			if (unlikely(ret))
+> > > > > > +				btrfs_abort_transaction(trans, ret);
+> > > > >=20
+> > > > > I feel like the crux of this series to me is whether you have pra=
+ctical
+> > > > > conditions where the allocation of the delayed_node is failing, b=
+ut the
+> > > > > allocations involved in btrfs_orphan_add() succeed. It allocates =
+a
+> > > > > btrfs_path and has to walk the btree which might have to read the=
+ node
+> > > > > at every level which might need to allocate 16k extent buffers an=
+d
+> > > > > extent buffer objects and xarray storage for each one. For size
+> > > > > reference, on my build (maybe debug..?) a delayed_node is 552 byt=
+es,
+> > > > > while a btrfs_path is 112 and an extent_buffer is 432. So they ar=
+e
+> > > > > pretty similar in size (not to mention the 16k of node file backe=
+d
+> > > > > memory we are sort of likely to have to allocate if we are under
+> > > > > reclaim)
+> > > > >=20
+> > > > > Were you able to reproduce this issue and help in practice or is =
+this a
+> > > > > theoretical / structural improvement?
+> > > > >=20
+> > > >=20
+> > > > I didn't really try to reproduce this in earnest. We only see it in=
+ our
+> > > > fleet under heavy memory pressure, and even then at such low freque=
+ncy,
+> > > > I doubt our chances of hitting this on anything other than a huge s=
+et
+> > > > of machines.
+> > > >=20
+> > > > So, theoretical / structural, but we have record of filesystem abor=
+ts
+> > > > where the stack indicates that this would have prevented it. Userla=
+nd
+> > > > would have gotten an -ENOMEM back but the fs wouldn't have aborted.
+> > > >=20
+> > >=20
+> > > My concern is not that we don't hit ENOMEM in btrfs_add_link(), since
+> > > like you said we can observe that in abort logs. I am worried that ev=
+en
+> > > if we try to handle it gracefully, we will just ENOMEM in
+> > > btrfs_orphan_add() and abort anyway. That is why I was wanting to see
+> > > some more concrete evidence this actually helps to make it worth the
+> > > complexity.
+> > >=20
+> >=20
+> > In the case where we handle this gracefully, we won't hit that because
+> > it will have returned -ENOMEM before that point. But, you do have a
+> > good point that we could allocate these objects successfully, and then
+> > hit an error in btrfs_orphan_add() anyway.
+> >=20
+> > One thought: It looks like the main allocation in that codepath is
+> > btrfs_alloc_path()? We could consider preallocating that too -- maybe
+> > stash it in a new pointer in btrfs_trans_handle?
+>=20
+> For btrfs_alloc_path(), you can just use on-stack memory for that.
+>=20
+> That's the practice we utilize for btrfs-progs, and it's still=20
+> acceptable for kernel, since that structure is only 112 bytes.
+>=20
+> We should not switch all btrfs_path to on-stack ones, but for critical=
+=20
+> ones that memory allocation can lead to trans abort, I'd say it's=20
+> definitely worth the extra on-stack memory usage.
+>=20
 
-> we have 140T btrfs made from 10 LUNs. This file system is quite full with 
-> backups (and snapshots). Now we need to free one of the LUNs. A `btrfs 
-> device remove` is quite slow and also slows down nightly backups a lot.
-> 
-> So we run the device remove during the day and the backups during the night. 
-> On another btrfs this worked quite well. But here, the backups fill the 
-> device we want to remove and currently we are not moving anywhere regarding 
-> the usage the LUN.
-
-You can use btrfs device resize to incrementally decrease the device size, 
-then finally remove it with normal delete.
-
-Like so: btrfs fi resize 1:-100G path-to-device
-
-This will resize devid 1 100 gigabytes smaller. It will be a somewhat slower 
-process than just device delete, but not hugely so (in my experience anyway).
-
--- 
-      ...Elämälle vierasta toimintaa...
-     Jukka Larja, Roskakori@aarghimedes.fi
+Thanks Qu, I'll plan to take that approach in v2.
+--=20
+Jeff Layton <jlayton@kernel.org>

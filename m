@@ -1,159 +1,185 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CAE17330B11
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 11:19:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 37FBE3D88E3
+	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 14:25:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784546368; cv=none; b=T1GEPy173HRuwJv6xRlQsA1CZluzh8sa1sPk1mQ1TQUXoCjyYSICsRX13PV6qXgitx0ZmJtKU/nzEWU/Q28FwfLM3MKmOk5BlCp4u/prYfXecga/8Up+mfyhDuKT7cGF59cGDsj126OuBRlBlY2QJlyPL2TzC2k9MsWkmYbEC7o=
+	t=1784557558; cv=none; b=ucxjJw4hu7uMR7wxnO8NrqNnqQ4/JDgWKUP8Z299L3Q8fB87o3O7TlNso0V8+nyGmtqmJKFgcmO0lBfBZPO59sg2yGf5PECqF67LD/wjFSs4kbY+gucJun4nP/HTVgDIWHO16x5zY86TwREr6n/w/sI44KpTCGu9SZaNriL4yR0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784546368; c=relaxed/simple;
-	bh=0/7vyfn3ez2gQVNAZTrNqxNynKaQbM82xBSRTVyMLVw=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=CQacpXXPkQ/97qn/MSM2FW+n9uy78VcjTXBqg22izijNL1HYYPoix/caiA7yMtVTO1DjljYsg3YwEBAoZHyuTy7NT5CsrUsUb+K75obB5pNam2n+OwehrSNabsegFS+VsrZO+orS8TlviioSiSjCwttS5qeil9iZeLeX/FwEp9g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=yX7kGdlH; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=5PJz4dnP; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=x5euKueh; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=IQXrD4ih; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1784557558; c=relaxed/simple;
+	bh=X6KBQknTcSZAj2eCcgwpoqpVuxYAtav15opjnlX4nS8=;
+	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=bHx3s/FDb/Jx5T2M+gdRhEvKWZeCRVSNaVsmt4eFqIB6IFautI8PSsjUKaKlQOlpl1YnPJ7ZGh5hZ4ypYX3TS7ZMozUZHHB7vUL7yJ2etmkLRaueE15ok0+1NOq70acJqhnnT3k15fZ5N1+YwUQzIcaxYygBfp+8u97AXIAdC1A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=CVj1PvN4; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="yX7kGdlH";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="5PJz4dnP";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="x5euKueh";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="IQXrD4ih"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 9AD873DF9;
-	Mon, 20 Jul 2026 11:19:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1784546363;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=T32nYv4gIl3iKHMR4R1EXlrLvwS5FcxtQ883X4X50no=;
-	b=yX7kGdlH9LcO6Xm3qqSKCjlAaOdJBBtBvOaBA5N6fdb9W4VMGj4GblZpG/2pDizYviiAkj
-	kqe63U04ZznJoHPgbr4FYmX+ej8G+rAoK93/sQgHQ6KXKr3dLgQUHFjxY8E7LqJrUXh0p+
-	sqJQFpha1xglnWilVvsukTn1hTdmHHc=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1784546363;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=T32nYv4gIl3iKHMR4R1EXlrLvwS5FcxtQ883X4X50no=;
-	b=5PJz4dnPEzEYKeD2JtKML8A0rven5RkFae947gPMx0qAo+31coLRyUhuwH71jEOkxvmF69
-	8MjDO9ZcOagRKnBw==
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=x5euKueh;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=IQXrD4ih
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1784546362;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=T32nYv4gIl3iKHMR4R1EXlrLvwS5FcxtQ883X4X50no=;
-	b=x5euKuehojfz/cho1rRNd4Gix8GJRzrowd7zgwWdBw2VNrzTHCdfZbljHTqxRVij+s8ls0
-	DAyRImGTMlLFJYf37MyGrlcnp3vs9kgv5S2sXH9o5czf6pYpPl3O6JeA1B/DJEGboGFle7
-	JnUpJfW213etazRzAIebq8+74IPJAFM=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1784546362;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=T32nYv4gIl3iKHMR4R1EXlrLvwS5FcxtQ883X4X50no=;
-	b=IQXrD4ihJBBRx8wCPFseKwW6/4ot2vkUCvu3qqocm17ULLemyeKuVa3+bLq8m6n5szcgx5
-	4Pk6KATI1w1fK/BQ==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7A8CA779AA;
-	Mon, 20 Jul 2026 11:19:22 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id PyEmHToEXmoMEgAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 20 Jul 2026 11:19:22 +0000
-Date: Mon, 20 Jul 2026 13:19:13 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Guanghui Yang <3497809730@qq.com>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>, linux-kernel@vger.kernel.org,
-	stable@vger.kernel.org
-Subject: Re: [PATCH] btrfs: drop recovered reloc root refs on recovery failure
-Message-ID: <20260720111913.GE10684@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <tencent_73CA9825AA069E0BC5194FA9102FB7618807@qq.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="CVj1PvN4"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A42881F000E9;
+	Mon, 20 Jul 2026 14:25:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1784557556;
+	bh=TXMbPozoVap2DD4MBZgOrWH3GURg6EMyvkK/QoTR/bo=;
+	h=Subject:From:To:Date:In-Reply-To:References;
+	b=CVj1PvN4cfL9xxFtHNJ6n3ZF9ZQvu/plPgSw0XfW6CpJQbSx/fm3zjczmhPemA7BG
+	 TRjXCfh6vkhlrFMzWWZN4kvP18VJHzTu4tueetf/CJoBUpbCseJoskgLp/Qn0vKYXW
+	 GIaANY8bhT9a4w0xo9/1WScXUXFzZo+DtN13+7EaSKpUqT66Bjtz+oFmbWciMKyFRv
+	 5y8iKfzobMcAXiD541ObFGH4EwMz5M2zmCwxGoPJQwQr5kEK2XZf50sJ2BYipgliHF
+	 a8LBry3wAU3s3PK6ZWYdFudvVmMNh3IgDgle8RSJ98wUVMNSH7Uj3cXJUW16kYOnFf
+	 t9BcRFiTuOdHQ==
+Message-ID: <7107c7c9508e385b449d2e6c5a1f39d0fc7d67ee.camel@kernel.org>
+Subject: Re: [PATCH 0/5] allocate extent_buffer GFP_NOFAIL with unlocked
+ retry
+From: Jeff Layton <jlayton@kernel.org>
+To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org, 
+	kernel-team@fb.com
+Date: Mon, 20 Jul 2026 10:25:54 -0400
+In-Reply-To: <cover.1782249000.git.boris@bur.io>
+References: <cover.1782249000.git.boris@bur.io>
+Autocrypt: addr=jlayton@kernel.org; prefer-encrypt=mutual;
+ keydata=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
+ QZIQXVeAA+smfTT0tDrisj1U5x6ZB9b3nBg65kc=
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 (3.60.2-1.fc44) 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <tencent_73CA9825AA069E0BC5194FA9102FB7618807@qq.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 9AD873DF9
-X-Spam-Flag: NO
-X-Spam-Score: -4.21
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.21 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FREEMAIL_TO(0.00)[qq.com];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	FREEMAIL_ENVRCPT(0.00)[qq.com];
-	ARC_NA(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_FIVE(0.00)[6];
-	RCVD_COUNT_TWO(0.00)[2];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[twin.jikos.cz:mid,suse.cz:replyto,suse.cz:dkim,qq.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 
-On Sun, Jul 12, 2026 at 04:22:32AM +0000, Guanghui Yang wrote:
-> During relocation recovery, each fs root gets a reference to its relocation
-> root. If loading or adding a later root fails, or if the first transaction
-> commit fails, btrfs_recover_relocation() jumps to out_unset before
-> merge_reloc_roots() and clean_dirty_subvols().
-> 
-> put_reloc_control() drops the list-owned relocation root references, but it
-> does not clear fs_root->reloc_root or drop the references owned by those
-> pointers. Mount cleanup only drops them when BTRFS_FS_ERROR is set, so an
-> error such as -ENOMEM while processing a later root can leave references
-> behind.
-> 
-> Keep temporary references to the fs roots associated during recovery. On
-> failure, clear their reloc_root pointers and drop the corresponding
-> references. Once the first transaction commit succeeds, drop only the
-> temporary fs root references and let the normal merge and cleanup paths
-> handle the relocation roots.
-> 
-> Fault injection on a pending-relocation image confirmed the cleanup gap.
-> With an injected first-commit failure, 25 fs roots had reloc_root set with
-> fs_error=0. With this fix, the same failure path drops that count to 0
-> before mount fails.
-> 
-> Fixes: f44deb7442ed ("btrfs: hold a ref on the root->reloc_root")
-> Cc: stable@vger.kernel.org
-> Signed-off-by: Guanghui Yang <3497809730@qq.com>
+On Tue, 2026-06-23 at 15:35 -0700, Boris Burkov wrote:
+> From sampled fleet data measuring lock holders that go into direct
+> reclaim with a waiter present when they eventually unlock, we have
+> observed ~15% of those are btrfs extent_buffer allocations in
+> btrfs_search_slot() done while holding btree locks. This is the single
+> largest category. Additionally, a large source of hung_task timeouts is
+> both btree waiters and direct reclaiming btree allocations, which
+> further motivates the desire to drive down this source of stalls and
+> contention.
+>=20
+> The aim of this series is to allow us to allocate the extent_buffer,
+> btrfs_folio_state, and the extent_buffer folios with GFP_NOWAIT then
+> fallback with EAGAIN to outside the critical section to retry with
+> GFP_NOFS | GFP_NOFAIL without any locks held.
+>=20
+> This is analogous to how we must drop locks to read an extent_buffer and
+> then EAGAIN.
+>=20
+> The series does not manage to completely eliminate allocations from this
+> lock holding path, as we also allocate inside xarray functions for the
+> extent_buffer xarray and the btree_inode mapping xarray, the latter of
+> which is done via filemap_add_folio() with no reserve type API. Luckily,
+> those particular allocations are small cached slab allocations and have
+> nearly no contribution to the production reclaim fueled contention.
+>=20
+> Boris Burkov (5):
+>   btrfs: factor init_extent_buffer from __alloc_extent_buffer
+>   btrfs: add struct btrfs_eb_prealloc
+>   btrfs: enable unlocked NOFAIL retry for eb allocations
+>   btrfs: probe with GFP_NOWAIT for tree block readahead
+>   btrfs: use GFP_NOWAIT when inhibiting eb writeback
+>=20
+>  fs/btrfs/ctree.c       |  36 ++++++-
+>  fs/btrfs/disk-io.c     |   6 +-
+>  fs/btrfs/disk-io.h     |   2 +
+>  fs/btrfs/extent-tree.c |   6 +-
+>  fs/btrfs/extent_io.c   | 224 ++++++++++++++++++++++++++++-------------
+>  fs/btrfs/extent_io.h   |  23 +++++
+>  fs/btrfs/subpage.c     |   7 +-
+>  fs/btrfs/subpage.h     |   3 +-
+>  fs/btrfs/tree-log.c    |   3 +-
+>  9 files changed, 226 insertions(+), 84 deletions(-)
 
-Added to for-next, thanks.
+Nice work, Boris! This all looks good to me. You can add:
+
+    Reviewed-by: Jeff Layton <jlayton@kernel.org>
+
+Note that LLM review noted a couple of minor nits you might want to
+address if/when you post a v2:
+
+  - [N1] Dead code: commit 3 repoints the wrapper's only caller to the _pre=
+alloc variant, so
+  btrfs_insert_delayed_dir_index() (kept "to preserve behavior" in commit=
+=C2=A02) ends the series with
+  zero callers in-tree. Suggest removing it + its prototype in commit 3 or =
+a follow-up.
+
+  - [N2] Latent (unreachable) leak: in btrfs_insert_dir_item, a non-NULL pr=
+ealloc with
+  need_delayed_index =3D=3D false is neither committed nor freed. Only btrf=
+s_rename passes a prealloc
+  and its root is never tree_root, so it can't fire today =E2=80=94 a defen=
+sive else if (prealloc) free
+  would harden it.

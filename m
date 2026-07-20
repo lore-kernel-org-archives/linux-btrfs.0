@@ -1,185 +1,128 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 37FBE3D88E3
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 14:25:57 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2945442378D
+	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 16:04:16 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784557558; cv=none; b=ucxjJw4hu7uMR7wxnO8NrqNnqQ4/JDgWKUP8Z299L3Q8fB87o3O7TlNso0V8+nyGmtqmJKFgcmO0lBfBZPO59sg2yGf5PECqF67LD/wjFSs4kbY+gucJun4nP/HTVgDIWHO16x5zY86TwREr6n/w/sI44KpTCGu9SZaNriL4yR0=
+	t=1784563457; cv=none; b=bXaU8zyYrnjB0gThEutIPcuCVmQxUyVXm1tPV8/84NXPFeRix/OUJJ+78odb6UHUd7EfcNnUiroqVu+Uk6o2PSoP7CA4V9Aivo4+80pWhwmbB3H0H0nVCwUe+Jn8WDVjsB150QxGxtb94JKkKslYk2iNmXC7huH+WyCLQI0XxSg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784557558; c=relaxed/simple;
-	bh=X6KBQknTcSZAj2eCcgwpoqpVuxYAtav15opjnlX4nS8=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=bHx3s/FDb/Jx5T2M+gdRhEvKWZeCRVSNaVsmt4eFqIB6IFautI8PSsjUKaKlQOlpl1YnPJ7ZGh5hZ4ypYX3TS7ZMozUZHHB7vUL7yJ2etmkLRaueE15ok0+1NOq70acJqhnnT3k15fZ5N1+YwUQzIcaxYygBfp+8u97AXIAdC1A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=CVj1PvN4; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1784563457; c=relaxed/simple;
+	bh=YZmEi6gZo4R7MCtu9Oe6CC/34IabkRvY7Zq8DxCAVnA=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=XimVji/W2KaPQdd2eCrmJggO4iCxIkcsBPeQ48VN7a/eLnoTpl694a6GbXGTmwqV0edrgRZyUIc2Ss9Ie/ruN0xceEaVXhJuJBpSoA5qpfwJnVqiYBIYWDrtarheO4m4cu1eSYCxvcX9kiG/qbqnVUABqnMJ5V0+QLB++/bDFhI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Gv2z5JBS; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="CVj1PvN4"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A42881F000E9;
-	Mon, 20 Jul 2026 14:25:56 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Gv2z5JBS"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0ED431F000E9
+	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 16:04:16 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1784557556;
-	bh=TXMbPozoVap2DD4MBZgOrWH3GURg6EMyvkK/QoTR/bo=;
-	h=Subject:From:To:Date:In-Reply-To:References;
-	b=CVj1PvN4cfL9xxFtHNJ6n3ZF9ZQvu/plPgSw0XfW6CpJQbSx/fm3zjczmhPemA7BG
-	 TRjXCfh6vkhlrFMzWWZN4kvP18VJHzTu4tueetf/CJoBUpbCseJoskgLp/Qn0vKYXW
-	 GIaANY8bhT9a4w0xo9/1WScXUXFzZo+DtN13+7EaSKpUqT66Bjtz+oFmbWciMKyFRv
-	 5y8iKfzobMcAXiD541ObFGH4EwMz5M2zmCwxGoPJQwQr5kEK2XZf50sJ2BYipgliHF
-	 a8LBry3wAU3s3PK6ZWYdFudvVmMNh3IgDgle8RSJ98wUVMNSH7Uj3cXJUW16kYOnFf
-	 t9BcRFiTuOdHQ==
-Message-ID: <7107c7c9508e385b449d2e6c5a1f39d0fc7d67ee.camel@kernel.org>
-Subject: Re: [PATCH 0/5] allocate extent_buffer GFP_NOFAIL with unlocked
- retry
-From: Jeff Layton <jlayton@kernel.org>
-To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org, 
-	kernel-team@fb.com
-Date: Mon, 20 Jul 2026 10:25:54 -0400
-In-Reply-To: <cover.1782249000.git.boris@bur.io>
-References: <cover.1782249000.git.boris@bur.io>
-Autocrypt: addr=jlayton@kernel.org; prefer-encrypt=mutual;
- keydata=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
- QZIQXVeAA+smfTT0tDrisj1U5x6ZB9b3nBg65kc=
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 (3.60.2-1.fc44) 
+	s=k20260515; t=1784563456;
+	bh=DCgD3KrQvsa4q5XX53UJqVMe3LeHgHuohLoADGm3Pus=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=Gv2z5JBSqA5STuvY3goa+L2nloEXqk2/4pf4GD45WH/pOgRdbBpTbZwnR4ol7Zi9Z
+	 yUDEUR6eMEy1uj0cq4P5hnDLPSHor3ZX71StJdpgJpGo+J0kJDuuLU5H/nY3VlQ2gb
+	 wKCIYXXFTh+QliF6HhgKx/PDUjhtSrqzUx2LHJvTTAgmEyO0XHk2pn2lvZHKTGXoBU
+	 0eivKvLKXE/W+0oJa4bN6eOfsh/2ILfODrkYdF6t9Hplr7ANEuAdM4DWPoftHAnLeI
+	 81RQylVgDbcsj35ukTbmb33GxW+RQ/PGFGNMtJnqBPepk9rjKiFRssReiXmRDq07Or
+	 q3Ohi/z4ghd6g==
+Received: by mail-vk1-f178.google.com with SMTP id 71dfb90a1353d-5bf94664327so3823300e0c.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 09:04:16 -0700 (PDT)
+X-Gm-Message-State: AOJu0YwuYMnZN8R8Ld9HR6NVEUNuSFlAJwI/otxtoIAKa04gKMkziKSj
+	0gfIHsQcHx/7NYlfsyLBEpEHBblN6boo5KfUDqH4aR5swUOxLxCXB3b9gPMbWEXDNmdoyuYH3uv
+	9jBG8iwdA66X56yP7I3/5vGVlN3LPyZk=
+X-Received: by 2002:a05:6122:4895:b0:5ab:26f:49e3 with SMTP id
+ 71dfb90a1353d-5c1b650ca9dmr3362878e0c.3.1784563455261; Mon, 20 Jul 2026
+ 09:04:15 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+References: <20260709082500.17907-2-sunk67188@gmail.com>
+In-Reply-To: <20260709082500.17907-2-sunk67188@gmail.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Mon, 20 Jul 2026 17:03:38 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H5n5-TJMkFmUCnN5-xoVAcqDc7zNFNGR3ywF7Dx+PRetQ@mail.gmail.com>
+X-Gm-Features: AUfX_mx2W2otwGTfV-_5Y46NBSqGXEgN-oSOhKtVCfYRcD9QqSGEnILCkrQYMsU
+Message-ID: <CAL3q7H5n5-TJMkFmUCnN5-xoVAcqDc7zNFNGR3ywF7Dx+PRetQ@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: check if root is readonly when setting posix acl
+To: Sun YangKai <sunk67188@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, Sun YangKai <sunyangkai@fnnas.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Tue, 2026-06-23 at 15:35 -0700, Boris Burkov wrote:
-> From sampled fleet data measuring lock holders that go into direct
-> reclaim with a waiter present when they eventually unlock, we have
-> observed ~15% of those are btrfs extent_buffer allocations in
-> btrfs_search_slot() done while holding btree locks. This is the single
-> largest category. Additionally, a large source of hung_task timeouts is
-> both btree waiters and direct reclaiming btree allocations, which
-> further motivates the desire to drive down this source of stalls and
-> contention.
->=20
-> The aim of this series is to allow us to allocate the extent_buffer,
-> btrfs_folio_state, and the extent_buffer folios with GFP_NOWAIT then
-> fallback with EAGAIN to outside the critical section to retry with
-> GFP_NOFS | GFP_NOFAIL without any locks held.
->=20
-> This is analogous to how we must drop locks to read an extent_buffer and
-> then EAGAIN.
->=20
-> The series does not manage to completely eliminate allocations from this
-> lock holding path, as we also allocate inside xarray functions for the
-> extent_buffer xarray and the btree_inode mapping xarray, the latter of
-> which is done via filemap_add_folio() with no reserve type API. Luckily,
-> those particular allocations are small cached slab allocations and have
-> nearly no contribution to the production reclaim fueled contention.
->=20
-> Boris Burkov (5):
->   btrfs: factor init_extent_buffer from __alloc_extent_buffer
->   btrfs: add struct btrfs_eb_prealloc
->   btrfs: enable unlocked NOFAIL retry for eb allocations
->   btrfs: probe with GFP_NOWAIT for tree block readahead
->   btrfs: use GFP_NOWAIT when inhibiting eb writeback
->=20
->  fs/btrfs/ctree.c       |  36 ++++++-
->  fs/btrfs/disk-io.c     |   6 +-
->  fs/btrfs/disk-io.h     |   2 +
->  fs/btrfs/extent-tree.c |   6 +-
->  fs/btrfs/extent_io.c   | 224 ++++++++++++++++++++++++++++-------------
->  fs/btrfs/extent_io.h   |  23 +++++
->  fs/btrfs/subpage.c     |   7 +-
->  fs/btrfs/subpage.h     |   3 +-
->  fs/btrfs/tree-log.c    |   3 +-
->  9 files changed, 226 insertions(+), 84 deletions(-)
+On Thu, Jul 9, 2026 at 9:26=E2=80=AFAM Sun YangKai <sunk67188@gmail.com> wr=
+ote:
+>
+> From: Sun YangKai <sunyangkai@fnnas.com>
+>
+> For a filesystem which has btrfs read-only property set to true, all
+> write operations including acl and xattr should be denied. However,
+> acl can still be set even if btrfs ro property is true.
+>
+> This happens because no function on the set_acl code path checks the root
+> is readonly or not. It was checked in btrfs_setxattr_trans() but got
+> removed in
+> commit 353c2ea735e4 ("btrfs: remove redundant readonly root check in btrf=
+s_setxattr_trans")
 
-Nice work, Boris! This all looks good to me. You can add:
+This can be split across multiple lines, the only place it shouldn't
+be is in the Fixes tag.
 
-    Reviewed-by: Jeff Layton <jlayton@kernel.org>
+>
+> That commit didn't check if all the callers properly check the root's
+> read-only flag. A previous fix is
+> commit b51111271b03("btrfs: check if root is readonly while setting secur=
+ity xattr")
 
-Note that LLM review noted a couple of minor nits you might want to
-address if/when you post a v2:
+Please always leave a space between the commit hash and the opening parenth=
+esis.
 
-  - [N1] Dead code: commit 3 repoints the wrapper's only caller to the _pre=
-alloc variant, so
-  btrfs_insert_delayed_dir_index() (kept "to preserve behavior" in commit=
-=C2=A02) ends the series with
-  zero callers in-tree. Suggest removing it + its prototype in commit 3 or =
-a follow-up.
+I've amended that and pushed to for-next on github, thanks.
 
-  - [N2] Latent (unreachable) leak: in btrfs_insert_dir_item, a non-NULL pr=
-ealloc with
-  need_delayed_index =3D=3D false is neither committed nor freed. Only btrf=
-s_rename passes a prealloc
-  and its root is never tree_root, so it can't fire today =E2=80=94 a defen=
-sive else if (prealloc) free
-  would harden it.
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+>
+> Always check if the root is read-only before performing the set acl
+> operation.
+>
+> Fixes: 353c2ea735e4 ("btrfs: remove redundant readonly root check in btrf=
+s_setxattr_trans")
+> Signed-off-by: Sun YangKai <sunyangkai@fnnas.com>
+> ---
+> Changes to v1:
+> - add the missing header file
+>
+> ---
+>  fs/btrfs/acl.c | 4 ++++
+>  1 file changed, 4 insertions(+)
+>
+> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+> index e55b686fe1ab..662cdd1cbdef 100644
+> --- a/fs/btrfs/acl.c
+> +++ b/fs/btrfs/acl.c
+> @@ -15,6 +15,7 @@
+>  #include "xattr.h"
+>  #include "acl.h"
+>  #include "misc.h"
+> +#include "btrfs_inode.h"
+>
+>  struct posix_acl *btrfs_get_acl(struct inode *inode, int type, bool rcu)
+>  {
+> @@ -107,6 +108,9 @@ int btrfs_set_acl(struct mnt_idmap *idmap, struct den=
+try *dentry,
+>         struct inode *inode =3D d_inode(dentry);
+>         umode_t old_mode =3D inode->i_mode;
+>
+> +       if (btrfs_root_readonly(BTRFS_I(inode)->root))
+> +               return -EROFS;
+> +
+>         if (type =3D=3D ACL_TYPE_ACCESS && acl) {
+>                 ret =3D posix_acl_update_mode(idmap, inode,
+>                                             &inode->i_mode, &acl);
+> --
+> 2.54.0
+>
+>

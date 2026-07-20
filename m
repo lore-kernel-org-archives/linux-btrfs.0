@@ -1,139 +1,173 @@
-Received: from mail-oi1-f206.google.com (mail-oi1-f206.google.com [209.85.167.206])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1D708291C10
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 09:18:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.206
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 33AF53D567F
+	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 09:50:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784539111; cv=none; b=icVp60++ifwpAy7CJNLZGbkFoKtcG/lJJcJ+qWfpXBQpWFc5P1a/oxiZPXydNQWQE2+pu0r85zT0DNkl+UAaJMrbD8EJbcCLFwfvRMnoVa6kd2yZe8sH5btJaM/MqN+6wqpKoCc/o8omGjReFvb6M8aWEr1i8Mx+R6khBQt89og=
+	t=1784541008; cv=none; b=bxfGVodIjXvbcqy7O6i9xfumKKfcEC+JYsQ2EB1CbtH5oyypk2LRd3OJfCCUGVKIMdWAsI/MW46rG2l6OushjT7WxzIOm7VQRxdZRYMfjxGwWguO29R/NGFQ/6KLs+hKx5YC2WQ3x6RBz8TWhIoZPn5Grxdxkp3ki+WqCeJbEqQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784539111; c=relaxed/simple;
-	bh=OjSlO7L/47/oCEhL5nfm2cuZjo/rGLmL1KAsnWVmuMc=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=qYsQpnt8WZtjEsxI6VsROK6sYijGgNwDFbQZS64YFholb+6AK4GKyAFNWfQzsTz8Mh6D7b8cW/mYYqBFI9xTF6xWi4WoNty1V82ekuMF3MeiOdFiu46dXfHspnM/2LrMUdqqg4fwkgrrj7stBe4/ZVa3P3poqqeAazxX9kYe3gE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.206
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oi1-f206.google.com with SMTP id 5614622812f47-4a46a76f236so1825016b6e.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 02:18:29 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1784539109; x=1785143909;
-        h=content-type:to:from:subject:message-id:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=5N8a9xJAEh3ZFvP5fC1UnjnIGPW/J8eDuSUC835aYp4=;
-        b=qHJ8DDBtxfifgqCa5CTkPipMzovzm8k8Pf0HUIH9vncF/bBgbRlai7YZZpuXtUNzQF
-         fVt2Mh81bbegLQvjxoPondKdsSGXq1/MX3+4GI+IPf7ipY2gD/J0qw96dytkz3Ld2UII
-         amH6HxFJIA8RMwMjZ1/sjQZuGru+jIMqmovRvI4umkq4M2xPRWv8UUqlSRfufJ03EVgO
-         SKG90mWwYZftwCdAuc5HuCgpl457jh/oLS3sq2+FR7QK1nXp4wEdcmTEIuz0o5Ywnx+7
-         1sLQNfYtHp8t4iRmJxi4OY6ixebxH6Si3mK9VGZZPPS7EAX+CqkDQutP8at9NTadTFOX
-         5Z+A==
-X-Forwarded-Encrypted: i=1; AHgh+RrIVYceZ3WN52CmamP28TG5/bEfnTOHmkLjDrRz8VJ7AHDCLPAThYNcopuFLBzhDa2p6omwS1kXtpNwbg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yy9gzEWR6F9cexDZPHy/uEcl+9H2tZHtaihZOOZTkfGNABmFXFq
-	tetPV2wZF5uQIdhF2p2wAaC3iUAYgH3iHr4TBLP0VJ8+1Y3IQAHQrGwowuK753CzEjgWbSrWmeK
-	zAUIldsnvcllrTprPTrFiyXO0nNO1IRgWYq/c9AzKRHUBjNAZ+i8u3O/r8hk=
+	s=arc-20240116; t=1784541008; c=relaxed/simple;
+	bh=37UNphOcNNQnFLHFRkwR0EzrszIQrZq35gCFofzCCO4=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=e3FgXK8JXe6ZkkQ3m7ygHTgLMJTUTR3S9bvzbE/2BS1gCmssGRXb4so2QPZG0+TUX601CfTR2AIiqofV+31M9iwpPy3SnOahCqa8SrafDj0RYAdNdm3xb32Zc3fK9ep0qawVTxoMQxETIkmNac378kGqPxhBoR4d+QbN7llTED4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SVd9SnJn; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SVd9SnJn; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SVd9SnJn";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SVd9SnJn"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 3B7AC3E18
+	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 09:50:04 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1784541004; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=NPBkgfC4u77ljgWao1/e8NForHzxWzPQJobkFcs0miM=;
+	b=SVd9SnJnhyS+TRtGd41NDgOB6fPYi2ZwereF1peXUGsJ99xCMPFXNEcvN9YouXLceUDGZc
+	M8jZIRfmrdIeK/oubVA4iTA6pHpOAMMoJsVR9xOKlbJN/zy5Om0DU4uZyrtpSrAJeIN3gl
+	+6fhkRl2smy9QMbn/Q2pFSBOlwB+0/U=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=SVd9SnJn
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1784541004; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=NPBkgfC4u77ljgWao1/e8NForHzxWzPQJobkFcs0miM=;
+	b=SVd9SnJnhyS+TRtGd41NDgOB6fPYi2ZwereF1peXUGsJ99xCMPFXNEcvN9YouXLceUDGZc
+	M8jZIRfmrdIeK/oubVA4iTA6pHpOAMMoJsVR9xOKlbJN/zy5Om0DU4uZyrtpSrAJeIN3gl
+	+6fhkRl2smy9QMbn/Q2pFSBOlwB+0/U=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7838E779AA
+	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 09:50:03 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id nIjcDkvvXWpbOQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 09:50:03 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: disable large folios for systems with highmem
+Date: Mon, 20 Jul 2026 19:19:41 +0930
+Message-ID: <555623ad2f49989444fd60eb2bd11f0371086670.1784540975.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6808:4fde:b0:497:dedc:605c with SMTP id
- 5614622812f47-4a4d01f0c8cmr9230992b6e.7.1784539109035; Mon, 20 Jul 2026
- 02:18:29 -0700 (PDT)
-Date: Mon, 20 Jul 2026 02:18:29 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a5de7e5.f1649fcc.2a4208.052f.GAE@google.com>
-Subject: [syzbot] [btrfs?] kernel BUG in radix_tree_tag_set
-From: syzbot <syzbot+edbd404a2566556eed08@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Rspamd-Action: no action
+X-Spam-Level: 
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim,suse.com:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: 3B7AC3E18
+X-Spam-Score: -3.01
 
-Hello,
+[BUG]
+There is a bug report that on 32bit systems (i686), btrfs crashes when
+trying to do zstd compression:
 
-syzbot found the following issue on:
+ BUG: unable to handle page fault for address: fffbc000
+ #PF: supervisor read access in kernel mode
+ #PF: error_code(0x0000) - not-present page
+ CPU: 0 UID: 0 PID: 61 Comm: kworker/u8:5 Tainted: G                 N  7.2.0-rc3-P3 #2 PREEMPTLAZY
+ Hardware name: LENOVO 2007F2G/2007F2G, BIOS 79ETE7WW (2.27 ) 03/21/2011
+ Workqueue: btrfs-delalloc btrfs_work_helper
+ EIP: ZSTD_compressStream2+0x221/0x5fc
+ Call Trace:
+  ZSTD_compressStream+0xd/0x48
+  zstd_compress_stream+0x8/0x10
+  zstd_compress_bio+0x20a/0x564
+  btrfs_compress_bio+0x94/0xc0
+  compress_file_range+0x20a/0x380
+  btrfs_work_helper+0xc1/0x1b4
+  process_scheduled_works+0x15f/0x204
+  worker_thread+0x10c/0x178
+  kthread+0xe1/0xe8
+  ret_from_fork+0x1d/0x14c
+  ret_from_fork_asm+0x12/0x18
+  entry_INT80_32+0xf0/0xf0
+ CR2: 00000000fffbc000
+ ---[ end trace 0000000000000000 ]---
 
-HEAD commit:    37e2f878a7a6 Merge tag 'linux_kselftest-kunit-fixes-7.2-rc..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=13878b46580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=98da55a882774dfe
-dashboard link: https://syzkaller.appspot.com/bug?extid=edbd404a2566556eed08
-compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
+[CAUSE]
+Inside zstd_compress_bio(), we assume the whole page cache folio can be
+mapped in one go.
 
-Unfortunately, I don't have any reproducer for this issue yet.
+However that assumption is not true on systems with CONFIG_HIGHMEM, the
+pages of the large folio can be in HIGHMEM, which needs to be mapped
+before access.
 
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/fe4eac79f31b/disk-37e2f878.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/3befde5dfc88/vmlinux-37e2f878.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/6e5c89a0b86b/bzImage-37e2f878.xz
+Meanwhile zstd_compress_bio() only map the page of a large folio where
+the start filepos is, the remaining pages are not mapped, and accessing
+the remaining pages will trigger the above crash.
 
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+edbd404a2566556eed08@syzkaller.appspotmail.com
+[FIX]
+Do not enable large folios when the kernel has CONFIG_HIGHMEM enabled.
 
-------------[ cut here ]------------
-kernel BUG at lib/radix-tree.c:974!
-Oops: invalid opcode: 0000 [#1] SMP KASAN PTI
-CPU: 0 UID: 0 PID: 1429 Comm: kworker/u8:10 Not tainted syzkaller #0 PREEMPT_{RT,(full)} 
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/25/2026
-Workqueue: btrfs-endio-write btrfs_work_helper
-RIP: 0010:radix_tree_tag_set+0x3ff/0x410 lib/radix-tree.c:974
-Code: c7 c7 20 10 96 8f 48 8b 14 24 e8 ac 26 c2 f9 e9 dc fe ff ff e8 12 3b 88 f6 90 0f 0b e8 0a 3b 88 f6 90 0f 0b e8 02 3b 88 f6 90 <0f> 0b 66 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 90 90 90 90 90
-RSP: 0018:ffffc900063376e0 EFLAGS: 00010293
-RAX: ffffffff8b3cfd8e RBX: 0000000000000005 RCX: ffff88802924be00
-RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
-RBP: dffffc0000000000 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: ffffffff8e1c3000 R12: ffff88805e3fc188
-R13: 1ffff110072500c4 R14: 0000000000000000 R15: ffff888065c981f8
-FS:  0000000000000000(0000) GS:ffff888125c49000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f8125d8a6b0 CR3: 0000000053ae4000 CR4: 00000000003526f0
-Call Trace:
- <TASK>
- record_root_in_trans+0x23a/0x330 fs/btrfs/transaction.c:437
- btrfs_record_root_in_trans+0x15a/0x180 fs/btrfs/transaction.c:508
- start_transaction+0x3a4/0x1880 fs/btrfs/transaction.c:794
- btrfs_finish_one_ordered+0x8bb/0x1f00 fs/btrfs/inode.c:3077
- btrfs_work_helper+0x338/0xc30 fs/btrfs/async-thread.c:312
- process_one_work kernel/workqueue.c:3322 [inline]
- process_scheduled_works+0xa8e/0x14e0 kernel/workqueue.c:3405
- worker_thread+0xa47/0xfb0 kernel/workqueue.c:3486
- kthread+0x388/0x470 kernel/kthread.c:436
- ret_from_fork+0x514/0xb70 arch/x86/kernel/process.c:158
- ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
- </TASK>
-Modules linked in:
----[ end trace 0000000000000000 ]---
-RIP: 0010:radix_tree_tag_set+0x3ff/0x410 lib/radix-tree.c:974
-Code: c7 c7 20 10 96 8f 48 8b 14 24 e8 ac 26 c2 f9 e9 dc fe ff ff e8 12 3b 88 f6 90 0f 0b e8 0a 3b 88 f6 90 0f 0b e8 02 3b 88 f6 90 <0f> 0b 66 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 90 90 90 90 90
-RSP: 0018:ffffc900063376e0 EFLAGS: 00010293
-RAX: ffffffff8b3cfd8e RBX: 0000000000000005 RCX: ffff88802924be00
-RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
-RBP: dffffc0000000000 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: ffffffff8e1c3000 R12: ffff88805e3fc188
-R13: 1ffff110072500c4 R14: 0000000000000000 R15: ffff888065c981f8
-FS:  0000000000000000(0000) GS:ffff888125c49000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f8125d8a6b0 CR3: 0000000053ae4000 CR4: 00000000003526f0
+This is the same handling for bs > ps support.
 
-
+Link: https://github.com/kdave/btrfs-progs/issues/1146
+Fixes: 9bce95edb1b4 ("btrfs: move large data folios out of experimental features")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+ fs/btrfs/disk-io.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 37fc0d6b960d..5de8210070eb 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3477,7 +3477,15 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 	fs_info->sectorsize = sectorsize;
+ 	fs_info->sectorsize_bits = ilog2(sectorsize);
+ 	fs_info->block_min_order = ilog2(round_up(sectorsize, PAGE_SIZE) >> PAGE_SHIFT);
+-	fs_info->block_max_order = calc_block_max_order(fs_info->sectorsize_bits);
++	/*
++	 * For HIGHMEM, a large folio cannot be mapped in one go, breaking a lot
++	 * of basic assumptions for btrfs IOs.
++	 * Disable large folios for such 32-bit systems.
++	 */
++	if (IS_ENABLED(CONFIG_HIGHMEM))
++		fs_info->block_max_order = fs_info->block_min_order;
++	else
++		fs_info->block_max_order = calc_block_max_order(fs_info->sectorsize_bits);
+ 	fs_info->csums_per_leaf = BTRFS_MAX_ITEM_SIZE(fs_info) / fs_info->csum_size;
+ 	fs_info->fs_devices->fs_info = fs_info;
+ 
+-- 
+2.54.0
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
-
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
-
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup

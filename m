@@ -1,183 +1,141 @@
-Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DF51642DA36
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 21:33:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 21473400E1A
+	for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2026 02:58:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784583193; cv=none; b=kiyxNdjamsk7WSy4zEON4TfBGMUrBnHVIxxD5KljqI0l3lmEA7oKyaor05gqhdUGwpKzIeeZztaCn80jDuyx4aocXFx4BcVw5mlYVTDrFi89AjD7veN1tv5AsNUHurd1Kzy+9Wn6PP5o9CQtkluMIev8bfTp8NgomGgEWZWaj/U=
+	t=1784602696; cv=none; b=HFU6UU/j4pmhp4Jmu+s3lR6W4CLXMVVhldlCjugdO1JHWyTkFpTNy7WldZ2jjP99VeMon6VS25yn3iTZwYYDrqRJzoX+4laQbJFuxEHUWRPO1Vo2V99Rxo+aTgbVOxiMuel8ZIRKtR/Pp4WrHwjVFo6Vdn+jhAOR18pNGW/PDhA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784583193; c=relaxed/simple;
-	bh=3AO7vgS4AVoAdeVqxMSXn1p/FHZFo2Rb7DvChu3o02M=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:References:
-	 In-Reply-To:Content-Type; b=aUNF5Tsi/WwV71mbJHpWrgRlNHrz1mIobnZDMLneys4snjLSPCu4ZdOCjcykpMTV/ag9Yt8PMhWOEW15F6tadNPlhjhXC7xPPKoLk6rJ/LE6uZWdriWtxWsNutvxGjWKPLGQlsD1ZUrf3Xg4XxrAwvdGxcHLbXA45Jr1/q0E6iw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=RhjclwoH; arc=none smtp.client-ip=209.85.128.52
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1784602696; c=relaxed/simple;
+	bh=tIa7gsZ3/GTK+8vC+dJ36Qe7Oz0mb9Oo0EBCkOtMl+Q=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=iCNYslNCTQbff5HMpEtmw0iMiAAJv3nAHu32XOi24fMF2OYxrlVdVkzXW6P7aMW/cTa7ATu8I7nXXan4NJgZW5eQcP6HO15YInAMzZ/D4T5PVJFu2kU9ebw4jpgzY/sdMrnb8AkkKg6tGXYiuqCBv8TWBU+iubV/LXSXSoU2eHE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=vayez1f4; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=1GOgq7Dm; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=vayez1f4; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=1GOgq7Dm; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="RhjclwoH"
-Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-4955aa106b1so15121145e9.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2026 14:33:11 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1784583190; x=1785187990; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:to:from:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=dJHhf7EBAOcId21KnFQ3u0O8RD5jGS+0VySIlmkbgdM=;
-        b=RhjclwoHrLXKmm5IjG5/y1T3eZU7wM2QuDZ17YD325HJH9e+8Gscq6acoMNuzi/7dr
-         N1bIMrowYus3Bqs/qN8VtVPdexkN7oMudgAQQlIHqKeBrNCWOX8E5mMecm3qn67zxK6b
-         Yb5RNQ9gMVNj669hFXeKWLShAfJZl2z2LMCJAImmAlcfRW0XhL2j5UJYP/DwVYKNWqiQ
-         SGINyyNS1Erv53i5il0WC1lNwmUzZY3tnrj8ypttHjqriPqVNoal/0dV2gmjmB7lLWro
-         qFoNkKWCFGMe3D8kkTpKafG0MNkehUQx4YsxsBwt9vppNl+Q2pWmx8BrH52kzupMqQlR
-         KIdg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1784583190; x=1785187990;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:to:from:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=dJHhf7EBAOcId21KnFQ3u0O8RD5jGS+0VySIlmkbgdM=;
-        b=qdrCwwgK7/hwz0AA6RxYIEZ07WnGXRNL09vW1ql1oKzyoddhE82wRP4Qz14Fr43kdt
-         f4AYL7yfomqAjB+5M1+HktHpinnpr4T8PfK71gu6XmKhDntxw38ezO98hRq+/FCAVw5O
-         N/YgRJEQYttVnCBlid2LOQTYisj279kUtkcxQcQLKsRTS+GrEucdk6RKrn9j0VTTbu2q
-         vc4B1gr9xHciCm7l77w90UqPCdkDpVNkW5pxUZagSuXVtOHE7PhhtkTh8xK/51Yx/Jfe
-         sgtZGD3jqoDsOt4coYCXfNG7iOekppE11Ba+Q8aY655H05y+lDqFiaheKDI6ZPKSKPI0
-         41mw==
-X-Gm-Message-State: AOJu0YzGan69XLhEotjBmkruZvMLO6FF9I6SrqIVZqHp5d4HbNvU7QPs
-	je2DWLtAkrNnZH4ybblkSSGTDP5Fwbkck45y4V8eox5uG+UftxcPqeuDstrQh0KiOqUQFXsJtZb
-	K++fDfe4=
-X-Gm-Gg: AfdE7clgJJM9hF5Pl9SDes/BDOzAo9RFTKj9Zk4Lpwm/dJ7H8xx49IhZoCqDO3zswal
-	Val9JoCH/y2Gsudmq3ayxrDC53UAgPCFtzRWfy8yqosAiAte41avKVvaBPZ0wKNi4P1ZMeGVaZ1
-	4HL1ECb5D11eRs+x57vU5WHFq7WctCVNUJe5PK78Gk21JINoMU/MdkiKETKi5Q9jc3OZKKyRnJV
-	ZcN65kHd4IQavCWVji62cUqbs6+l1oYf/XZJR2ac1kOyZJHixRAg/DjlCPN6o5VPoQZVso7YjlF
-	bkM35eOoHPF3UW64hLMflENTp1KKT/q98GaBleYTUZst5LlpJlOamnZkK43oc1645MOTvXY6wS5
-	qWrHqp85QXXFlQg4LlyrTXNCr6KjPRkJR1bPO8qAnTibFpWwRZlFB+u6fBher6ufPAQIfqoY=
-X-Received: by 2002:a05:600c:4585:b0:492:437a:a653 with SMTP id 5b1f17b1804b1-4954a50b811mr168324305e9.26.1784583189994;
-        Mon, 20 Jul 2026 14:33:09 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3142a1dd90fsm38930009eec.22.2026.07.20.14.33.07
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 20 Jul 2026 14:33:09 -0700 (PDT)
-Message-ID: <f295bae8-29ba-4982-aed8-8b5072367535@suse.com>
-Date: Tue, 21 Jul 2026 07:03:05 +0930
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="vayez1f4";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="1GOgq7Dm";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="vayez1f4";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="1GOgq7Dm"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 282887A33E;
+	Tue, 21 Jul 2026 02:58:13 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1784602693;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=7JD/okLtrTfrWA/8kEFlGhqpktN40fdQr75rS3L+eAA=;
+	b=vayez1f4tSWBX7T5Y0ws7I/LftAeF55dKiJq2yCl12/k+qcbcKGf0ntNQ4H3xS1Oa5Smxw
+	BiPwzLop3YAUAgKAirWN9+pqW1GV12HmBR1d6WOWUy0jfbKO7IahBMXfnt9tbEMm8r8TUE
+	+BDwxzaCIsfGo4V4Z9MpnAgHB5X3MYs=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1784602693;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=7JD/okLtrTfrWA/8kEFlGhqpktN40fdQr75rS3L+eAA=;
+	b=1GOgq7DmNyCGizojBidkjn+uWADLnzAVOuf+syzirWXAbLn0q8yBXzMrO+3Tk+bSlSDXlz
+	qtWhihvUXjTeJyAg==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=vayez1f4;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=1GOgq7Dm
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1784602693;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=7JD/okLtrTfrWA/8kEFlGhqpktN40fdQr75rS3L+eAA=;
+	b=vayez1f4tSWBX7T5Y0ws7I/LftAeF55dKiJq2yCl12/k+qcbcKGf0ntNQ4H3xS1Oa5Smxw
+	BiPwzLop3YAUAgKAirWN9+pqW1GV12HmBR1d6WOWUy0jfbKO7IahBMXfnt9tbEMm8r8TUE
+	+BDwxzaCIsfGo4V4Z9MpnAgHB5X3MYs=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1784602693;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=7JD/okLtrTfrWA/8kEFlGhqpktN40fdQr75rS3L+eAA=;
+	b=1GOgq7DmNyCGizojBidkjn+uWADLnzAVOuf+syzirWXAbLn0q8yBXzMrO+3Tk+bSlSDXlz
+	qtWhihvUXjTeJyAg==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1381D779AA;
+	Tue, 21 Jul 2026 02:58:13 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id wN4mBEXgXmpIHgAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 21 Jul 2026 02:58:13 +0000
+Date: Tue, 21 Jul 2026 04:58:11 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Andrey Albershteyn <aalbersh@kernel.org>
+Cc: linux-xfs@vger.kernel.org, fsverity@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org, ebiggers@kernel.org, hch@lst.de,
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+	linux-btrfs@vger.kernel.org, djwong@kernel.org
+Subject: Re: [PATCH v12 03/21] fsverity: pass digest size and hash of the
+ all-zeroes block to ->write
+Message-ID: <20260721025811.GF10684@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20260720090410.3487990-1-aalbersh@kernel.org>
+ <20260720090410.3487990-4-aalbersh@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: disable large folios for systems with highmem
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-References: <555623ad2f49989444fd60eb2bd11f0371086670.1784540975.git.wqu@suse.com>
-Content-Language: en-US
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <555623ad2f49989444fd60eb2bd11f0371086670.1784540975.git.wqu@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260720090410.3487990-4-aalbersh@kernel.org>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: 282887A33E
+X-Spam-Flag: NO
+X-Spam-Score: -4.21
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	FUZZY_RATELIMITED(0.00)[rspamd.com];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_TLS_ALL(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_SEVEN(0.00)[10];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,suse.cz:dkim,suse.com:email];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 
-
-
-在 2026/7/20 19:19, Qu Wenruo 写道:
-> [BUG]
-> There is a bug report that on 32bit systems (i686), btrfs crashes when
-> trying to do zstd compression:
+On Mon, Jul 20, 2026 at 11:03:31AM +0200, Andrey Albershteyn wrote:
+> Let filesystem iterate over hashes in the block and check if these are
+> hashes of zeroed data blocks. XFS will use this to decide if it want to
+> store tree block full of these hashes.
 > 
->   BUG: unable to handle page fault for address: fffbc000
->   #PF: supervisor read access in kernel mode
->   #PF: error_code(0x0000) - not-present page
->   CPU: 0 UID: 0 PID: 61 Comm: kworker/u8:5 Tainted: G                 N  7.2.0-rc3-P3 #2 PREEMPTLAZY
->   Hardware name: LENOVO 2007F2G/2007F2G, BIOS 79ETE7WW (2.27 ) 03/21/2011
->   Workqueue: btrfs-delalloc btrfs_work_helper
->   EIP: ZSTD_compressStream2+0x221/0x5fc
->   Call Trace:
->    ZSTD_compressStream+0xd/0x48
->    zstd_compress_stream+0x8/0x10
->    zstd_compress_bio+0x20a/0x564
->    btrfs_compress_bio+0x94/0xc0
->    compress_file_range+0x20a/0x380
->    btrfs_work_helper+0xc1/0x1b4
->    process_scheduled_works+0x15f/0x204
->    worker_thread+0x10c/0x178
->    kthread+0xe1/0xe8
->    ret_from_fork+0x1d/0x14c
->    ret_from_fork_asm+0x12/0x18
->    entry_INT80_32+0xf0/0xf0
->   CR2: 00000000fffbc000
->   ---[ end trace 0000000000000000 ]---
-> 
-> [CAUSE]
-> Inside zstd_compress_bio(), we assume the whole page cache folio can be
-> mapped in one go.
-> 
-> However that assumption is not true on systems with CONFIG_HIGHMEM, the
-> pages of the large folio can be in HIGHMEM, which needs to be mapped
-> before access.
-> 
-> Meanwhile zstd_compress_bio() only map the page of a large folio where
-> the start filepos is, the remaining pages are not mapped, and accessing
-> the remaining pages will trigger the above crash.
-> 
-> [FIX]
-> Do not enable large folios when the kernel has CONFIG_HIGHMEM enabled.
-> 
-> This is the same handling for bs > ps support.
-> 
-> Link: https://github.com/kdave/btrfs-progs/issues/1146
-
-Reported-by: Erhard Furtner <erhard_f@mailbox.org>
-
-> Fixes: 9bce95edb1b4 ("btrfs: move large data folios out of experimental features")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+> Reviewed-by: "Darrick J. Wong" <djwong@kernel.org>
+> Acked-by: Eric Biggers <ebiggers@kernel.org>
 > ---
->   fs/btrfs/disk-io.c | 10 +++++++++-
->   1 file changed, 9 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 37fc0d6b960d..5de8210070eb 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3477,7 +3477,15 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
->   	fs_info->sectorsize = sectorsize;
->   	fs_info->sectorsize_bits = ilog2(sectorsize);
->   	fs_info->block_min_order = ilog2(round_up(sectorsize, PAGE_SIZE) >> PAGE_SHIFT);
-> -	fs_info->block_max_order = calc_block_max_order(fs_info->sectorsize_bits);
-> +	/*
-> +	 * For HIGHMEM, a large folio cannot be mapped in one go, breaking a lot
-> +	 * of basic assumptions for btrfs IOs.
-> +	 * Disable large folios for such 32-bit systems.
-> +	 */
-> +	if (IS_ENABLED(CONFIG_HIGHMEM))
-> +		fs_info->block_max_order = fs_info->block_min_order;
-> +	else
-> +		fs_info->block_max_order = calc_block_max_order(fs_info->sectorsize_bits);
->   	fs_info->csums_per_leaf = BTRFS_MAX_ITEM_SIZE(fs_info) / fs_info->csum_size;
->   	fs_info->fs_devices->fs_info = fs_info;
->   
 
+>  fs/btrfs/verity.c        | 6 +++++-
+
+Acked-by: David Sterba <dsterba@suse.com>

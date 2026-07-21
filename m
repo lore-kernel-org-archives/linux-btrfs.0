@@ -1,114 +1,177 @@
 Received: from fout-b5-smtp.messagingengine.com (fout-b5-smtp.messagingengine.com [202.12.124.148])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ABF5843F4C3
-	for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2026 22:42:52 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B5ED1415F10;
+	Tue, 21 Jul 2026 22:55:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.148
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784673773; cv=none; b=S9BLS/e+n3yf4FhOujd508beOIsBeHX7eUFC7M61wYrZf3bOgqycLWAo7NOq3ayOY6FzNzklRUwmOLvZTYJwhdXixBifBW4bRx0VtXDF3Ph7dunkPoU/kWpQAKCJOS/mnBwtjg5mRXond0NDr4k949FzfjoW1RU+acfogBmkwNM=
+	t=1784674558; cv=none; b=WKS8OFnf1GjckRBb3hZguC3pdhIfOAZd9rV2J6jQ43JOWQj2+hcwNnIRJpR5Ut1ITish1FGt2FnoPxIftl7FqvTus4svdeYJjCW+agFDJNf42wlGsCzWhxc96AtRruu2+IIqEoV0raZhZS1ikCFKLvRYSNPvIX0+LR/UwxpiTrY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784673773; c=relaxed/simple;
-	bh=y83VL+OO4zzC7k0PsJkmBOBZpUv2xpZsnCu3MmO2HqU=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=FefqWPBukNYEf4NmmZi00NJbueyr5yTurPqL/l0Z+0mRf7V1FlOLtuWN0kuY5emoi4m45iM99Iwjo7tf8vVJKwfmnJ7a08uyUhYKenhTrID/1bzv8/2PzEbWpf6EtMR2Y8QZsJmx4QF6k7H2whk3lv856vgW+dUDpPqt/FLSO/U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=F9dkmA64; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=KpZdnAHz; arc=none smtp.client-ip=202.12.124.148
+	s=arc-20240116; t=1784674558; c=relaxed/simple;
+	bh=tM/BCv2CQq/ORLJdWaH5bhF1GV8bGR8p0Wwgd+wHgcQ=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=q6LH4CbjNzwFuRtYS2MYeDpRyufG3oF+z88znrtRA6ZQgUqI+RwbCYbhHN+2fAZk6jdxfUo48zBBpm45ngSS2zETMrDycYUWjaJEShlpfZYYFvBdqSCfU5bz6UMKC3AGDyVhfM1SkfnTYW/QmjepxGWmGAcuLLNxHIKWYswMen0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=ZxoxXa5A; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=EEy2ZV5J; arc=none smtp.client-ip=202.12.124.148
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="F9dkmA64";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="KpZdnAHz"
-Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
-	by mailfout.stl.internal (Postfix) with ESMTP id D9D171D00094;
-	Tue, 21 Jul 2026 18:42:51 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-01.internal (MEProxy); Tue, 21 Jul 2026 18:42:51 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
-	:content-transfer-encoding:content-type:date:date:from:from
-	:in-reply-to:in-reply-to:message-id:mime-version:references
-	:reply-to:subject:subject:to:to; s=fm3; t=1784673771; x=
-	1784760171; bh=AN5NmaSxKjd3jTIuEf3g+ncTMxL1e10sXbBIh5Sv0MQ=; b=F
-	9dkmA64YVJZmmymrUtCR/yq8OgML1pGNBfeyBjTTQgT3A6j677yOSBTOCmVwUjHo
-	hty4Fm6JXLmA1eXSgOcqczx9F0dg6jq4iq2QnREV/WsgPoW3EoRVYkae3CZwinMb
-	iWRw9UBEKJ9/o0dHMtvoCi+o4Gl2BVGnG9VSWhOJUvVVdj+cqR7VRpWg2OR3VWyD
-	dvQFdlrngKnVH08ZMDllGAoA+n39oxIbg8+1oqmzgOpDTH883bKFPXw4QaIQn5QK
-	LvezCsr5uKdzNw5HXkQKVIA761PqdynhnDP53Y8WfDSKtLP25QVekjDsQHLiMWOG
-	vBirmEG4AO92OcAmPEY7g==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:content-transfer-encoding:content-type
-	:date:date:feedback-id:feedback-id:from:from:in-reply-to
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="ZxoxXa5A";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="EEy2ZV5J"
+Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
+	by mailfout.stl.internal (Postfix) with ESMTP id CF8741D000F1;
+	Tue, 21 Jul 2026 18:55:55 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-06.internal (MEProxy); Tue, 21 Jul 2026 18:55:56 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-	fm2; t=1784673771; x=1784760171; bh=AN5NmaSxKjd3jTIuEf3g+ncTMxL1
-	e10sXbBIh5Sv0MQ=; b=KpZdnAHzTRaZ+7SCrDVRxYNn8UIT37M3NGazgdWntxjM
-	Tu+8cKnmkyMEAVgD4A/yIra6wtmf5n3SMMyXyQtDPjD5IVGvy+mD/9wruE6RCONb
-	jrfqOavkhMj1e4ply8AQypUN412onX5llcsXItGz0LqMjny6bXgvMwkghEB+ioq5
-	5gYpP1fgy7zNSV6C7XCc4pZFD3tbnP51CcOBcuhIjDT2URmDnPlSZp37QAArK+/x
-	RMkIQ9Aa9UE3ENYbEBI6zqKQCLg3j037daesX3iJaV997Ps+kBLJP7kLcRkw377/
-	Bk+ugyWSy6UDE9ADeNH4LEVnMO9EMdFzBXLJmrpwvg==
-X-ME-Sender: <xms:6_VfauPesqsu3OiaLjJD0XczyU98em2NoVs-D0OXTIdUOvEGVQ5ibA>
-    <xme:6_Vfai94QPvfaewmDU9M30YiiNOaUorIG_sS_ew6xrlntRS0hnG9HfS6CWSRxwkTr
-    MOZBCTPuJVndYmUAHh8rJeDD7up0QujhzN2pufx3zh6hZfCKzUtcw>
-X-ME-Received: <xmr:6_Vfai5cCqjVFQ2nAax7GkSvaaLKQzrGlQqHSXUUQMCPk9ZfHAPpRh9Bar6xurY9PtIX0QFK56fz9Okrl4BGUY1zL8c>
-X-ME-Proxy-Cause: dmFkZTGBCwxC6oMW01w8JBsONjbwY2XazUSqlhI6hsJJIXJJtbpNM1XHpACObMIF+Q8TzE
-    BNuxVp6FNKpEGztukwDgpIlZf90ekeUh1++e8QpTGVO6iIYIzz3RryAtQgBaP+QCD+1IZi
-    nlkpOX29IfID919nzPkm+9/IFOg0SyJiHDCKarkFzScQuTg5PDU1Zm6Y29Is7Oy8nRrbW2
-    2wv8Ux/xSLsS7mglqFBisgL2s75saNK6tG9X8GqWRjFSj+qdfRMb1NxUF7RuFdhmK7Kfq8
-    Tdxefors63EMWTocRgRAHx03tZaf+jgfkJNohVnh16ID5ji+8RLeAqZI5Fz/WfymzsnLRX
-    UokJBA3wXC4xcgXiUcQ9uQtkPYnAjSdAP5y6x24mCV43kGGo5tMshUJz3NpZNgKh8IKoj/
-    MrwBX5qqQZIhziU+jEQJSMd9Tddq85ej3jD3+FLToqgkI/j+kOac6/+xusL4n/mt1mHLJb
-    XD/7uDT1pHDUhVb3ugUVhKD0VEUSi0HAHpyv2D5+en0c9du33o54G6C3sdW9hGoWyjleX2
-    BNVj6dtCMInVbIuc0s2leSHo5RYcPxEWT8fpoePZyRkgqLMXBf5m/HFcPv7H/QVzQP+hZX
-    WeolXX5En+FWtYH4mo/YBAGednMmw/nv2AWPWOQBb/pR/UI+y1nvMjnvvVpw
-X-ME-Proxy: <xmx:6_Vfap3cfOH7JLupDgaFDC1hDDTBTUY9IB-c5dy6Gm-r4C6OWHT6Mw>
-    <xmx:6_VfapB64aAWnqWpxVTjRUGDyi70qzrfm8Uur2EsOt7txHf85YXYfw>
-    <xmx:6_Vfar16do5d16ZVu3YJ301yYBKYhVpIeKZ7Fx3_q5Kw0qU0jw06Ng>
-    <xmx:6_VfajvDiALi8_1GUh80tZp0JgnsscyPaVJt9ruGdc250xjrO34NTw>
-    <xmx:6_VfatxKmOczzL9piutgrVQM7SuxpMqXjdOnTL0hqwO8SIj2cNPik8nV>
+	:subject:to:to; s=fm3; t=1784674555; x=1784760955; bh=zs/gxexyoL
+	oB/q5D5NvIaAeMDA3y9jkOxCDROa9ZTvE=; b=ZxoxXa5A/nV+hLCn9Beibe/NX7
+	W7LT4SWfbMbVBfLkjUm7EmWYhyGYzYjKLgWVRXGsAp7rHngms/rQgsof0bSAf5kw
+	ehidPz+OHiy05z8BxmzpXkAabzUogWrH2eGpVbulwz9xDOa/xPKVZn9BDQRG37X7
+	zFvhoy3p3BbuOjpajnu5GoxyUCSgt3uTUVutu8oRID8r8p04sUyWD0swH6MKGfJk
+	KVF4lC1RDYfmCp3MGAddNdbPx+yVj8PWta4Fwazu8w8YWI7JLRMbI9Km8NWgCIvb
+	VJGtyNfwKd7S9aBHFwGqWY2BjRUPYUgCWY3m/EaAozF7zIbG8y5eEAx685ww==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+	1784674555; x=1784760955; bh=zs/gxexyoLoB/q5D5NvIaAeMDA3y9jkOxCD
+	ROa9ZTvE=; b=EEy2ZV5JUtXUdlZrtFxyiCgkH7DqJYgdsWlDjke5/MRgPvRBRmN
+	f6439PrQNWZwtqfpHYiQr61GTghD5OHpfojEzsdT7PxmIOZ8Je00zMRCLWnGaOio
+	nJMO+mkckuLfjn8PuSNnssnDHW8wsOi85Werpg7hG1UyulCAwIg35/GYyVF0HFQo
+	3caERUs0lanFCov15KZI/vELFhwmjqamTjxXdlyG59POXHDDjXKJ5F+qcj2dnHBK
+	iaatyRGUWRIjRWhayOo5/HQ2cT9Jc/uJF04crRnqF6Wx7JPPuhWyr6apbsdbfBmM
+	QggnRV/fY0AvyYMCz1L1CGAT/XSAX3mAAVg==
+X-ME-Sender: <xms:-_hfauWiAp0a9fAMnGQfIv2lzktOoEjyLC7t56ZxIZgpNWnwdTkZ3g>
+    <xme:-_hfaj6Jgt0WNwn504Eb0pRiDV9vMNv_MMai2rz7_7YAi-t9_02DVZDbHLl6XsmXa
+    Dz4PZtPoMBc1aIqCD1SFhPKr5ZPkIzELU7j4Ko7FDyONiJyt7lNesay>
+X-ME-Received: <xmr:-_hfapryf0c6_EORtAS4NdrGxzHSTPOWWmhyLTq-9fDMXDhzwOk1Jfuxijqfm6_lJ9nzninFgtx47CVFDdDBc_y-lr0>
+X-ME-Proxy-Cause: dmFkZTFlpAfmrSaomoSjOggapVvURcf7jZCr7hK89fdxIV0moye+wjV1H4aeZ/mHl9FKdn
+    VePN62H6Dr27AhFDTSF/qRPtgCiYNK6w50ft9PFNW/5NmIvQHBwT3AAyf6hcQeV8YnBJzu
+    XIcBEt+m4mL9j9Klm40UHj03819GdDgIb6wXR/PEMfRQSnCV3XfYuzIWxf00hu62eYSsrd
+    tKzrfpIVEfAmXSkpeV6kcw/g5tkZdY/YJTyy/TpANsrbZXTSjkElOJYIU03FwBsM9VkQe1
+    c5NuDSkajKCWTqEITsPJW48+zap7OHu8R83JPWDlYnYelr+iSjRXbTlN/Zgju87ZUpParD
+    WUxQVNEJiYcc12kYdm68XUgcq7d7pJxuGtn3oU4k/N1Lh01KfdjjnQcivpk85x+NK2kfbF
+    cahRpCZ62baVwcxWQi4SxNqRS/mHWIF5Humn8HfrokMdvyoAVWRrKh8DDGa7ulQBQg2Zqv
+    mxkaul4px63Mrqzpdgm+khS9MX2I72ZulPKacNCRNbNp4tYsQY6fK5y9GmkhOVv5Tgaowu
+    5LDcVNFVnhnIrfI2yMUNBQFhhmEV4+eVIwB8xTRnuu5RgEKVHUuLLIBOBqDqmpjelPmZ5H
+    3cTTE0F+AQSb02qEhLGi1ESz4lZBZKnN0Ptt1h9MPoN+gXuyOppr0U+1aXcA
+X-ME-Proxy: <xmx:-_hfamnGmCbc4QzyIUCLZI8uD29791gRYbsnyZA0283Cb-GhxTYl-w>
+    <xmx:-_hfalNHI7YmWm_Hlo_K4o3yGlXCzHTB-cdASPxxyASXJ0HP36b1qA>
+    <xmx:-_hfaqP0a_gGzwkxZKAmzTt7k0_shyPQQ1uqBXZ8kOChWeaTttX7EA>
+    <xmx:-_hfamh3SY_0Q2a-9mDVAq5NF8cq8XwfhJlRnkMh8Ls56KgfxpptcA>
+    <xmx:-_hfarOwPzaD1VKx2wv5Zsik92U0132dnXuRcBSxMHxqbfmfyBpk2TTM>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 21 Jul 2026 18:42:51 -0400 (EDT)
+ 21 Jul 2026 18:55:54 -0400 (EDT)
+Date: Tue, 21 Jul 2026 15:55:47 -0700
 From: Boris Burkov <boris@bur.io>
-To: linux-btrfs@vger.kernel.org,
-	kernel-team@fb.com
-Subject: [PATCH v2 4/4] btrfs: use GFP_NOWAIT for tree block readahead
-Date: Tue, 21 Jul 2026 15:42:15 -0700
-Message-ID: <ee8a445ea0791b92cb4902ef8cc5da531f5a12bd.1784673567.git.boris@bur.io>
-X-Mailer: git-send-email 2.55.0
-In-Reply-To: <cover.1784673567.git.boris@bur.io>
-References: <cover.1784673567.git.boris@bur.io>
+To: Yichong Chen <chenyichong@uniontech.com>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+	Matthew Wilcox <willy@infradead.org>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v3] btrfs: retry verity reads for not-uptodate Merkle
+ folios
+Message-ID: <20260721225547.GA3719379@zen.localdomain>
+References: <20260720062820.1386340-1-chenyichong@uniontech.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260720062820.1386340-1-chenyichong@uniontech.com>
 
-extent_buffer readahead should not be able to painfully stall a
-search_slot and hog tree locks by getting stuck in direct reclaim.
+On Mon, Jul 20, 2026 at 02:28:20PM +0800, Yichong Chen wrote:
+> btrfs_read_merkle_tree_page() can find a folio in the mapping that is
+> not uptodate.  After taking the folio lock, the current code treats that
+> state as a read error and returns -EIO.
+> 
+> That can make a previous transient read failure sticky.  If the failed
+> read left a not-uptodate folio in the mapping, later callers find that
+> folio and fail instead of retrying the read.
+> 
+> Keep the existing page-cache insertion and locking order, but retry the
+> Merkle item read when a not-uptodate folio is found in the mapping.  Also
+> unlock the folio when read_key_bytes() fails so that a later caller can
+> lock it and retry the read.
+> 
+> Fixes: 06ed09351b67 ("btrfs: convert btrfs_read_merkle_tree_page() to use a folio")
+> Signed-off-by: Yichong Chen <chenyichong@uniontech.com>
+> ---
+> v3:
+> - Keep the existing filemap_add_folio() and read ordering.
+> - Retry the Merkle item read when a not-uptodate folio is found, as
+>   suggested by Boris.
+> - Unlock the folio on read_key_bytes() failure so later callers can retry.
+> 
+> v2:
+> - Avoid calling filemap_remove_folio(), which is not exported.
+> - Add the folio to the page cache only after read_key_bytes() succeeds.
+> 
+>  fs/btrfs/verity.c | 15 ++++++++++-----
+>  1 file changed, 10 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
+> index 983365a73541..25f021b04ce4 100644
+> --- a/fs/btrfs/verity.c
+> +++ b/fs/btrfs/verity.c
+> @@ -720,14 +720,17 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
+>  			goto out;
+>  
+>  		folio_lock(folio);
+> -		/* If it's not uptodate after we have the lock, we got a read error. */
+> -		if (!folio_test_uptodate(folio)) {
+> +		/* Folio was truncated from mapping. */
+> +		if (!folio->mapping) {
+>  			folio_unlock(folio);
+>  			folio_put(folio);
+> -			return ERR_PTR(-EIO);
+> +			goto again;
+>  		}
+> -		folio_unlock(folio);
+> -		goto out;
 
-If the allocation fails, that is fine, we simply fail to do the
-readahead in that case.
+The filemap comment on this is helpful imo, otherwise it's sort of
+surprising to see folio_test_uptodate() getting checked "for no good
+reason" twice in a row. First outside the lock (presumably to not bother
+locking if uptodate, so that one is an optimization, then we have this
+one after we lock to be certain someone hasn't beaten us the the lock
+and brought it uptodate.
 
-Signed-off-by: Boris Burkov <boris@bur.io>
----
- fs/btrfs/extent_io.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+So maybe a comment on the one before the lock? Or here as in filemap.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1a40250e1e83..3c014bd653ae 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4814,7 +4814,8 @@ void btrfs_readahead_tree_block(struct btrfs_fs_info *fs_info,
- 		.level = level,
- 		.transid = gen
- 	};
--	struct btrfs_eb_prealloc pa = { 0 };
-+	/* Readahead is best effort so prefer to fail rather than block in reclaim. */
-+	struct btrfs_eb_prealloc pa = { .supports_nowait = true };
- 	struct extent_buffer *eb;
- 	int ret;
- 
--- 
-2.55.0
+Other than that, it looks good, thank you for fixing this.
 
+Reviewed-by: Boris Burkov <boris@bur.io>
+
+> +		if (folio_test_uptodate(folio)) {
+> +			folio_unlock(folio);
+> +			goto out;
+> +		}
+> +		goto read_folio;
+>  	}
+>  
+>  	folio = filemap_alloc_folio(mapping_gfp_constraint(inode->i_mapping, ~__GFP_FS),
+> @@ -744,6 +747,7 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
+>  		return ERR_PTR(ret);
+>  	}
+>  
+> +read_folio:
+>  	/*
+>  	 * Merkle item keys are indexed from byte 0 in the merkle tree.
+>  	 * They have the form:
+> @@ -753,6 +757,7 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
+>  	ret = read_key_bytes(BTRFS_I(inode), BTRFS_VERITY_MERKLE_ITEM_KEY, off,
+>  			     folio_address(folio), PAGE_SIZE, folio);
+>  	if (ret < 0) {
+> +		folio_unlock(folio);
+>  		folio_put(folio);
+>  		return ERR_PTR(ret);
+>  	}
+> -- 
+> 2.51.0

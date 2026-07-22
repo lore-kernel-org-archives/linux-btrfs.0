@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 37ED333ADBF
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 12:41:54 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 82B5032B9B5
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 12:41:52 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784724117; cv=none; b=m6KRuns4vgksSPCHqVJNF+Xz/JAhxogsWYy9Oi6O7QgtRCW0y6vB56yYL/DYyeCdUdd68dLLU2tZs6d3p5dmtKWBJkreoo6bAigd9wXtM/NcZ77RKfXkzP+D2bCVFgDfxI4dn+oOdRN4jWO8M5OgQdxehqQvUZyfdAod+QfxzIw=
+	t=1784724117; cv=none; b=I/Spgov+Mi/QajdlH1p4ne094HcF+XQvhfNEPDKxtD4ZDDoXMZ8vmrI/CqmRyFpRTg6tti9hsAv2/RWzDGrk6cUsm+O1LHmhUfDch3Ay8kaeB+aFSjpuPsedSQEx48BbexE6ndgbUxXEwrG+Gxcqs8+1NLpzT3hWo4wt019TPPA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1784724117; c=relaxed/simple;
-	bh=DIrdL2zRChfwB8P/JT1FcZMq7/Wtu1Vg7Le9UJsNTNA=;
+	bh=RWdL3l/xuuNibAjg5LIWMoPGdXu4+IZLu9J8r6dtMv4=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ncxOvGa7E5b9uVl+MRMZtsUlawyr3NgkRddGyWnNQdXz4aNdOS5gkOjfaYNZAAmHNwXpiXTVj0zPNXpTxm3sPyQZyswNO6SgNbCAVFWoU4EHzuztTSrqkaVDzvdEUrS9OODJb0JDIKyKG1GMsjgZyCUyZtK2tN8U8wxBjXU+E14=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=L/P/3EMy; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version; b=jhHen1plHQsZMqGvmzL+mWLPWmv+J8P1e3vrhtseOssNPNuHc5/RvO/nQqnFvA6UiIv41B0gFaGcHMFGBzJKpOBfL6PuW/tO2H4s+GNJK1FrSlRh3ANrsjDFRXBgmwqKYycxrQ+cwEHWz2C1qKzdu3qyk2dWXMvVVIde/OxexM0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=R/YGasjz; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="L/P/3EMy"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 992C31F00AC4
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 12:41:50 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="R/YGasjz"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id DC1FB1F00A3D
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 12:41:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1784724111;
-	bh=VTRwoASwdtzSDcQ1YWAKAcP9U/xx9lk8QI7FiEwvsfQ=;
+	s=k20260515; t=1784724108;
+	bh=e+V5VcrH8AsICfwh2A6bCqHeF5vl9p3H8RUlwFEuUA8=;
 	h=From:To:Subject:Date:In-Reply-To:References;
-	b=L/P/3EMyHNDx2QA/Ecl5h4f+yx1s1Qfsqd8uvRzAJT5hYp9ItwF1V8n+9zdMA5GEg
-	 qTH+FvypYQUyrrJxC8uUOFHuoIRe5dDYR4/tkr1K0AEMitbDID0W/ZArfLa/0ki+RO
-	 2/mB46E7PUJKXGPYy/r7UTk+dyWo1OgYEnT5d8S5CY3SEXEdWxuLQVPksSjvaO2LJK
-	 GCitCqqGUR8dcWOL5UVgw8tExBZLFVUc7/YB4t1bNYM+MXnoDkhrqg8luZ4Im5rvOo
-	 YrxD1n6ZEdYgbxk/CJeJs1b+dOIWyl8ha1l2u6bjfo1vv0AVSPHUD5ABvtn4ZqnWQB
-	 nOtB/vqvgmNwg==
+	b=R/YGasjzOb0eDC7PfeUBypDSNj5t6u9VetR9WmiEjJmQdd8Pi2n0AgsqLvcVd0E+O
+	 UpM970X5m2elhbKtt22vtE79LZrI2unZENzCHdzAydBchuoDOd6pn1nkjbFz41AbLK
+	 +LrFHTphwKBd/egRLQpgLRVc8bagjTLerMxdwR+Z8NY5tJ/ser6TRFWJaUjKe6LvFi
+	 S8kTU93JHlsF6mYn7Zr0onbPxqByRggXEcRCNy+8ToVb5fTtL49cyUUQXiCy2KlhgL
+	 207h3d5jQAdsNOtq6cP5DAFN7p60eVNeB2lORDpcqtQftm4EoWoTy8tq4tnZn/TJ9o
+	 ANvzATPoyaB+w==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/7] btrfs: move condition for log commit wait into wait_log_commit()
-Date: Wed, 22 Jul 2026 13:41:41 +0100
-Message-ID: <08265bae62c5366ec73e1f958863ba2449270215.1784656641.git.fdmanana@suse.com>
+Subject: [PATCH 2/7] btrfs: remove log batch counter use for fsync
+Date: Wed, 22 Jul 2026 13:41:38 +0100
+Message-ID: <209626ef986b9ad05af59d99e234c370517f6637.1784656641.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1784656641.git.fdmanana@suse.com>
 References: <cover.1784656641.git.fdmanana@suse.com>
@@ -44,139 +44,99 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Instead of having every caller check for root->log_commit[] being non-zero
-and then call wait_log_commit(), move the check into wait_log_commit() and
-have the callers call it unconditionally.
+We have the log batch counter defined per root which is now useless after
+the previous patch (titled: "btrfs: stop sleeping for one jiffy in non-ssd
+mounts during log commit"). The counter is incremented early in the fsync
+path, before and after flushing dellaloc and waiting for writeback, and
+then the counter is read during the log sync path. The goal was to wait
+for tasks that are about to join a log transaction, so that we could
+reduce the amount of IO and log syncing (flush all log tree extent buffers
+and write super blocks), but that mechanism does not work since if there
+are currently no log writers, btrfs_sync_log() does not unlock the root's
+log_mutex, so no new log writers can join the log transaction. Having
+concurrent fsync tasks increasing the log_batch counter only makes us loop
+unncessarily in btrfs_sync_log() - that is always true since the previous
+patch mentioned above and was true before that patch only when not using
+the "-o ssd" mount option (which is activated by default if the filesystem
+does not have rotational devices).
+
+So remove the log batch counter. No performance changes were observed
+after removing it.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 38 +++++++++++++++-----------------------
- 1 file changed, 15 insertions(+), 23 deletions(-)
+ fs/btrfs/ctree.h    | 2 --
+ fs/btrfs/disk-io.c  | 1 -
+ fs/btrfs/file.c     | 4 ----
+ fs/btrfs/tree-log.c | 8 +-------
+ 4 files changed, 1 insertion(+), 14 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0f2653182405..d5d8b3899258 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -196,8 +196,6 @@ struct btrfs_root {
+ 	/* Used only for log trees of subvolumes, not for the log root tree */
+ 	atomic_t log_writers;
+ 	atomic_t log_commit[2];
+-	/* Used only for log trees of subvolumes, not for the log root tree */
+-	atomic_t log_batch;
+ 	/*
+ 	 * Protected by the 'log_mutex' lock but can be read without holding
+ 	 * that lock to avoid unnecessary lock contention, in which case it
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 37fc0d6b960d..1ee0a19e40a8 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -669,7 +669,6 @@ static struct btrfs_root *btrfs_alloc_root(struct btrfs_fs_info *fs_info,
+ 	atomic_set(&root->log_commit[0], 0);
+ 	atomic_set(&root->log_commit[1], 0);
+ 	atomic_set(&root->log_writers, 0);
+-	atomic_set(&root->log_batch, 0);
+ 	refcount_set(&root->refs, 1);
+ 	atomic_set(&root->snapshot_force_cow, 0);
+ 	atomic_set(&root->nr_swapfiles, 0);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 8f078c58e940..aeecf1121b51 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1573,8 +1573,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	else
+ 		btrfs_inode_lock(inode, BTRFS_ILOCK_MMAP);
+ 
+-	atomic_inc(&root->log_batch);
+-
+ 	/*
+ 	 * Before we acquired the inode's lock and the mmap lock, someone may
+ 	 * have dirtied more pages in the target range. We need to make sure
+@@ -1657,8 +1655,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	if (ret)
+ 		goto out_release_extents;
+ 
+-	atomic_inc(&root->log_batch);
+-
+ 	if (skip_inode_logging(&ctx)) {
+ 		/*
+ 		 * We've had everything committed since the last time we were
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 08af1e66c758..f33392da78ef 100644
+index ccc262833a7c..580f2aabc065 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -221,7 +221,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- static int link_to_fixup_dir(struct walk_control *wc, u64 objectid);
- static noinline int replay_dir_deletes(struct walk_control *wc,
- 				       u64 dirid, bool del_all);
--static void wait_log_commit(struct btrfs_root *root, int transid);
-+static bool wait_log_commit(struct btrfs_root *root, int transid);
+@@ -3336,13 +3336,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	if (atomic_read(&root->log_commit[(index1 + 1) % 2]))
+ 		wait_log_commit(root, log_transid - 1);
  
- /*
-  * tree logging is a special write ahead log used to make sure that
-@@ -305,17 +305,13 @@ static int start_log_trans(struct btrfs_trans_handle *trans,
- 
- again:
- 	if (root->log_root) {
--		int index = (root->log_transid + 1) % 2;
+-	while (1) {
+-		int batch = atomic_read(&root->log_batch);
 -
- 		if (btrfs_need_log_full_commit(trans)) {
- 			ret = BTRFS_LOG_FORCE_COMMIT;
- 			goto out;
- 		}
- 
--		if (zoned && atomic_read(&root->log_commit[index])) {
--			wait_log_commit(root, root->log_transid - 1);
-+		if (zoned && wait_log_commit(root, root->log_transid - 1))
- 			goto again;
--		}
- 	} else {
- 		/*
- 		 * This means fs_info->log_root_tree was already created
-@@ -363,13 +359,9 @@ static int join_running_log_trans(struct btrfs_root *root)
- 	mutex_lock(&root->log_mutex);
- again:
- 	if (root->log_root) {
--		int index = (root->log_transid + 1) % 2;
--
- 		ret = 0;
--		if (zoned && atomic_read(&root->log_commit[index])) {
--			wait_log_commit(root, root->log_transid - 1);
-+		if (zoned && wait_log_commit(root, root->log_transid - 1))
- 			goto again;
--		}
- 		atomic_inc(&root->log_writers);
- 	}
- 	mutex_unlock(&root->log_mutex);
-@@ -3172,11 +3164,15 @@ static int update_log_root(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--static void wait_log_commit(struct btrfs_root *root, int transid)
-+/* Returns true if we had to wait, false otherwise. */
-+static bool wait_log_commit(struct btrfs_root *root, int transid)
- {
- 	DEFINE_WAIT(wait);
- 	int index = transid % 2;
- 
-+	if (atomic_read(&root->log_commit[index]) == 0)
-+		return false;
-+
- 	/*
- 	 * we only allow two pending log transactions at a time,
- 	 * so we know that if ours is more than 2 older than the
-@@ -3195,6 +3191,8 @@ static void wait_log_commit(struct btrfs_root *root, int transid)
- 		mutex_lock(&root->log_mutex);
- 	}
- 	finish_wait(&root->log_commit_wait[index], &wait);
-+
-+	return true;
- }
- 
- static void wait_for_writer(struct btrfs_root *root)
-@@ -3298,8 +3296,6 @@ static inline void btrfs_remove_all_log_ctxs(struct btrfs_root *root,
- int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 		   struct btrfs_root *root, struct btrfs_log_ctx *ctx)
- {
--	int index1;
--	int index2;
- 	int mark;
- 	int ret;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-@@ -3307,6 +3303,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *log_root_tree = fs_info->log_root_tree;
- 	struct btrfs_root_item new_root_item;
- 	int log_transid = ctx->log_transid;
-+	int index1 = log_transid % 2;
-+	int index2;
- 	struct btrfs_log_ctx root_log_ctx;
- 	struct blk_plug plug;
- 	u64 log_root_start;
-@@ -3327,9 +3325,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 		return ctx->log_ret;
- 	}
- 
--	index1 = log_transid % 2;
--	if (atomic_read(&root->log_commit[index1])) {
--		wait_log_commit(root, log_transid);
-+	if (wait_log_commit(root, log_transid)) {
- 		trace_btrfs_sync_log_exit(trans, root, ctx, ctx->log_ret);
- 		mutex_unlock(&root->log_mutex);
- 		return ctx->log_ret;
-@@ -3339,8 +3335,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	atomic_set(&root->log_commit[index1], 1);
- 
- 	/* wait for previous tree log sync to complete */
--	if (atomic_read(&root->log_commit[(index1 + 1) % 2]))
--		wait_log_commit(root, log_transid - 1);
-+	wait_log_commit(root, log_transid - 1);
- 
- 	wait_for_writer(root);
- 
-@@ -3473,10 +3468,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 		root_log_ctx.log_transid, log_root_tree->log_transid);
- 	atomic_set(&log_root_tree->log_commit[index2], 1);
- 
--	if (atomic_read(&log_root_tree->log_commit[(index2 + 1) % 2])) {
--		wait_log_commit(log_root_tree,
--				root_log_ctx.log_transid - 1);
+-		wait_for_writer(root);
+-		if (batch == atomic_read(&root->log_batch))
+-			break;
 -	}
-+	wait_log_commit(log_root_tree, root_log_ctx.log_transid - 1);
++	wait_for_writer(root);
  
- 	/*
- 	 * now that we've moved on to the tree of log tree roots,
+ 	/* bail out if we need to do a full commit */
+ 	if (btrfs_need_log_full_commit(trans)) {
 -- 
 2.47.2
 

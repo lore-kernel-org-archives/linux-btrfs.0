@@ -1,65 +1,60 @@
-Received: from mail-ej1-f49.google.com (mail-ej1-f49.google.com [209.85.218.49])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0494428CF5F
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 09:25:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48D823A7F57;
+	Wed, 22 Jul 2026 09:30:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.156.1
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784712318; cv=none; b=BCLbzpOTh+nIxMEAV/76UPeRIlufO6wBNt+fyUBIJpJU/y12FkPfHlaI3gWanpsv1RV8ihKLnpQertKY59Qc0yARDF+tsx5pLyWKt7Mcpogn9kjsdhU7ofSeNEkzc/WhxDYCQtiwULDrprNDTu60dyh2I+GtSHPB5EusgZP7uxw=
+	t=1784712604; cv=none; b=cFeUSx5WVG8sdZqlkJMegEV5DqKmOKcwbKYj/8pxmmztEp/gSuab9f2eNqCsUkhX4uWdrBZwPe6IG6Z6kQHLycnw3FjUweFdyPE55RbT/skn2SEdVqMBUDzFNhXznJqk7y3NTIOcYk32EI/UThldr6Lf6Mpwg2mN9z0OUtTIJVg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784712318; c=relaxed/simple;
-	bh=w+kh/cRRJQcD2CexzJE/NsgP6MBV4QvKIreQYplfT1I=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=n7ssbr5ZSKIpZP2nM1tg8/78EFAbM2o7SBzlD2hh6HH2nq5vlOVKC0Q/MjTvh9zXRKQ4NhQQM1ijUJqUJDINVuk98/8Uu/HuWgJC4R277Eql+Z05Bni3hAmo4CouCdYRCaOKog9iWN5H3Al6RgHZTws1TLKSqCQTmArwesY30Dg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=IkHv0Naw; arc=none smtp.client-ip=209.85.218.49
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1784712604; c=relaxed/simple;
+	bh=JkfAdIzyNsw8WMMq+mi464SPw1EFDAa8P72tVz4PdQI=;
+	h=Content-Type:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To; b=m53eNnqtGWOuwtqo4y01+6ybIqxXH/MiKy0Qbmzuv+RWl0y4uUWvp2naIFe6YvdGLJ+flbWyD9Ypi06UyfJsO8pFpUQdxJlBMzQYdDwX8jiGLbs1/Ttqupw2eo1jrzYL3EYffolUVAzPmhQKFhahwNgQjPaMLoiZwBGwSLpvWIA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=DRAolk1k; arc=none smtp.client-ip=148.163.156.1
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="IkHv0Naw"
-Received: by mail-ej1-f49.google.com with SMTP id a640c23a62f3a-c1601d552a8so1299805566b.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 02:25:15 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1784712314; x=1785317114; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=IxGy9jUkSPos1lzmBXsp2yTEvbHdEsG8KYX6ta8Ughg=;
-        b=IkHv0NawOqltUrgtmFHqVQtkkOqvn+y9kq3BqX7/L1EvpcSKU3YMdjUbc/4T/tAA5J
-         nOvI19429HPv4yddMbPeuJrCCuszGVevmdOdwY8kdthkUmB8ow/o8qwU92ES+1jh8gTw
-         5GPVOl6fjXUj0oOAWsMLRe7l++4BDzKFwW7K35u5hZeBb4qL6wamBpUgRT8t1zXalX0O
-         TdZKClLSLYoYVlPppnvK2L0V3tFJ4Xtz1gNF4olYpKT9anx1vkCAdjnduTu/0W71cd8p
-         iGbdbfs4pp1gZT7tW3wc/TBtNqGqG6EaBE6hWyn4a8QuP5VURNKUepP3JU2q52RH+maD
-         pysA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1784712314; x=1785317114;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=IxGy9jUkSPos1lzmBXsp2yTEvbHdEsG8KYX6ta8Ughg=;
-        b=c8IHgazok+RLcP6s+fHZnG7fD6xsqbKwVe6ubJrIy075pS3dttFf2rCwL3dkH8KXdY
-         GYUfvW7ChBg9u4U6Qj4zSKZqhs9Vuqfr22IxexWDXzupO28+MI7hacPEJWaaiaEj8u1O
-         Hn+WVPAnLOEKzZ3bBUfXZYb5DK8i5sSQ8fIlSu4f0iOT8H1fPjn7pfwK6tHRbkRKbDHL
-         /1/vDiFivpBlBFpSS6SpbcbXO1ESTVa1TkXKF4xJ30UIZSPUuyiFUtUqIFqWwsuQOEP8
-         9ZK4dEX2IGFqs5X2qUCsvNEtJopUH6HRifzVY6L14H2RaaVtoKd/rcSjtvqA98Gy1Woz
-         sVvA==
-X-Forwarded-Encrypted: i=1; AHgh+Rp4R/31zANjJF6H4oLfsLEQ32XoP0kwKkWWVZiN8CZX2yTy1lPqZ6WOmeWtF7TVpf/Vg7Z66i1X58YH2w==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwfKidbLt6zkYqiMJU9TXIANC/C7TgUjm+IY2QA96ZRvqyMPPAG
-	YwbCcmh+uxKIM0acZVP0TqP6/gDDENo2dJNAtgbY2DLryGEna2y6VWpQ5hfO3d0084Q=
-X-Gm-Gg: AR+sD135nTAIPTR/tvzag3kW2SdtZuSjlVy25nfP4pGblWcrwwvEBuMZ0JC/PGNVy25
-	L3pnM118X93QMILMwyxpMghdWQeUCmN1zEikazYP99YiJQcywMrGwpfAedGToczn/4C414EpMtP
-	I6o2LvH7aMxFMzZIbiks//IkwpWz/niko/R5S8iazCtB6307FXl9H/yLX+d91+3uzHlL/ufGafK
-	Yw8lO6MCR1ELQOlsk+TcYKDqplbUxvf9w97RcvDocdBmF1mCYJPsGwSiGQUh7beOu85QbsBQ1d+
-	DUxh8+Hr2Iwk9vjZuFeqXgop0//T/DYIIXLjM81hfNLmP3GdmCveL57DyKCkS3YZiudjmbygHAO
-	widWbZGKhHgIO3t2HqO1eyM7ufxUYX0SuS8w5nBALYHePbLQZNf5TpsgoP0OOJhnvY6lMn2s=
-X-Received: by 2002:a17:907:d22:b0:c1c:254c:16c1 with SMTP id a640c23a62f3a-c1c254c27bcmr213237666b.0.1784712313795;
-        Wed, 22 Jul 2026 02:25:13 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-38ea5986b9fsm553733a91.4.2026.07.22.02.25.07
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 22 Jul 2026 02:25:12 -0700 (PDT)
-Message-ID: <5b91fb7e-479d-4e6f-8d34-40eaf1d675d2@suse.com>
-Date: Wed, 22 Jul 2026 18:55:03 +0930
+	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="DRAolk1k"
+Received: from pps.filterd (m0360083.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 66M9Bcbn3662518;
+	Wed, 22 Jul 2026 09:29:41 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=cc
+	:content-type:date:from:in-reply-to:message-id:mime-version
+	:references:subject:to; s=pp1; bh=8A0Dd01/1z7STbmzKw4n87DtiETOan
+	xjT7SJfVerPzU=; b=DRAolk1kk5AX1/21Es+AZR06iSQnejfd7AQ/2ndD6C95az
+	rATdgQtRVr57Yme+WVRi7gC6LQ3m1UnNkcaAhf0UBDFb2zMb7rlZEJ4Gjul8x+9a
+	MX/srizRC+IL2/mGeCbHb0fmUOxcRgXgtjiFrIq3YdebCj4Ye/f+P478dra0pPyu
+	Gkds+y81NzHv15Rq57nTNgQyAghrv+ZlGB9fp2X7UhYhkxTk3Qg1PFrSzEpAI+Ea
+	BSvICPn4WiqebS7nEZhMQvQ9XPzPyP/wn2Gmt9Gg9uoahpxO0Rq9zgZG7eA+nFm6
+	JpagTMB4tdrGnm4SVIoBCDiqxxzdDrBJ/cN7/O5A==
+Received: from ppma22.wdc07v.mail.ibm.com (5c.69.3da9.ip4.static.sl-reverse.com [169.61.105.92])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 4fg7abhc6u-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 22 Jul 2026 09:29:40 +0000 (GMT)
+Received: from pps.filterd (ppma22.wdc07v.mail.ibm.com [127.0.0.1])
+	by ppma22.wdc07v.mail.ibm.com (8.18.1.7/8.18.1.7) with ESMTP id 66M9JeZl012933;
+	Wed, 22 Jul 2026 09:29:39 GMT
+Received: from smtprelay05.fra02v.mail.ibm.com ([9.218.2.225])
+	by ppma22.wdc07v.mail.ibm.com (PPS) with ESMTPS id 4fgm6w6qd7-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Wed, 22 Jul 2026 09:29:39 +0000 (GMT)
+Received: from smtpav04.fra02v.mail.ibm.com (smtpav04.fra02v.mail.ibm.com [10.20.54.103])
+	by smtprelay05.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 66M9Tb5b48955758
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Wed, 22 Jul 2026 09:29:37 GMT
+Received: from smtpav04.fra02v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 3DE0A20043;
+	Wed, 22 Jul 2026 09:29:37 +0000 (GMT)
+Received: from smtpav04.fra02v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 9325720040;
+	Wed, 22 Jul 2026 09:29:36 +0000 (GMT)
+Received: from [9.224.77.173] (unknown [9.224.77.173])
+	by smtpav04.fra02v.mail.ibm.com (Postfix) with ESMTP;
+	Wed, 22 Jul 2026 09:29:36 +0000 (GMT)
+Content-Type: multipart/mixed; boundary="------------uGF6w02qFA3LZDIF9td4sMgh"
+Message-ID: <f12f70e5-d84d-4a9f-ac94-693be4c863ac@linux.ibm.com>
+Date: Wed, 22 Jul 2026 11:29:36 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -67,812 +62,393 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH RFC] btrfs: implement a new compat RO feature,
- data_io_size
-To: Sun YangKai <sunyangkai@fygo.io>, linux-btrfs@vger.kernel.org
-References: <f67b00bbe7b5fb4c59a45a6390c98add303a83c1.1782627906.git.wqu@suse.com>
- <647fd7cc-f948-4260-b26e-122a61ca7a16@fygo.io>
+Subject: Re: [PATCH/RFC] btrfs: fix folio lock leak in writepage_delalloc()
+ for folios dirtied behind btrfs' back
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org,
+        Qu Wenruo <wqu@suse.com>,
+        Linux Memory Management List <linux-mm@kvack.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>, linux-kernel@vger.kernel.org,
+        kvm@vger.kernel.org, linux-s390@vger.kernel.org
+References: <20260721191152.101118-1-borntraeger@linux.ibm.com>
+ <20260721191152.101118-2-borntraeger@linux.ibm.com>
+ <b226a6e9-fef2-49bd-b17e-9f9b015626c1@gmx.com>
+ <83290932-cb8b-4741-bff0-6a7d8df2c637@linux.ibm.com>
+ <224d56d2-fcad-41bf-afe3-6f5f5108172a@gmx.com>
 Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <647fd7cc-f948-4260-b26e-122a61ca7a16@fygo.io>
+From: Christian Borntraeger <borntraeger@linux.ibm.com>
+In-Reply-To: <224d56d2-fcad-41bf-afe3-6f5f5108172a@gmx.com>
+X-TM-AS-GCONF: 00
+X-Proofpoint-Reinject: loops=2 maxloops=12
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwNzIyMDA4NyBTYWx0ZWRfX8J4GrKze0+Ep
+ mt78fnLCLbQRmugAgtmILiYB4zbbRo5VXBkXty3NVKXZM9uz3p3qqD5403NOauqrQPW/40la//J
+ ZYUEKQgVbYjs44BiRPJxezE4qwtiC+yy/x5aPjI4X3u/xkVfT1kBAbEairkRjCboDjr2Gz95GXi
+ rOuzLB4z3hPqy5XBoAsTtvQgUgujpnozbjARliSa3ACURcTufZ9Wz3aT+3VAmobD8XYpy69q2sH
+ hG1y+xHHYFURdXgZ/NFIt0DvGuRb/9wbbjmZmegF+dkqEoj+dVmmQjv46Corrgo4V1Ho60dmOTK
+ g87QyAilUKfq4S3NPWy/QWTA2WFvrb9DvXFcNKSvqRh/25xZ4wr95VIMeCR2XbFJ70JYV206exZ
+ uEM/Q86peAg0lqml7u+cJoQ8rlBbnUEdZbvH9MgVp4rGXXAE+wCLzGjedBa0bwiVB03gdK4TbaK
+ 8x1jv8CzlNV8Qx99dyQ==
+X-Authority-Analysis: v=2.4 cv=F7ZnsKhN c=1 sm=1 tr=0 ts=6a608d85 cx=c_pps
+ a=5BHTudwdYE3Te8bg5FgnPg==:117 a=5BHTudwdYE3Te8bg5FgnPg==:17
+ a=RAioF0-LDSMA:10 a=VkNPw1HP01LnGYTKEx00:22 a=RnoormkPH1_aCDwRdu11:22
+ a=iQ6ETzBq9ecOQQE5vZCe:22 a=r77TgQKjGQsHNAKrUKIA:9 a=PrgrqC_M_MTsSvafbmIA:9
+ a=3ZKOabzyN94A:10 a=QEXdDO2ut3YA:10 a=yz1lJfyc6laaJMd4pNoA:9
+ a=JMNH9X61SiQA:10
+X-Proofpoint-ORIG-GUID: U3i6O-zkGp4m8fu6yclLwcPU6FDggnbG
+X-Proofpoint-Spam-Info: AW1haW4tMjYwNzIyMDA4NyBTYWx0ZWRfX1PMvxxiOnIml
+ 7RmJbdn8LdU2gEAKiMkbhHEE46UbKQuOjkFAhyMOlfOw81Ywl0LLne+8dJSCix0saKLoy/A/qbP
+ 8hMAh0oS3+sDKyHEpfak3RpB02k6OqI=
+X-Proofpoint-GUID: 9CTY8Ih_ti3YJd1FxqUl6nPxNBFuIZyC
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1143,Hydra:6.1.134,FMLib:17.12.100.49
+ definitions=2026-07-22_03,2026-07-21_01,2025-10-01_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ spamscore=0 phishscore=0 bulkscore=0 clxscore=1011 priorityscore=1501
+ impostorscore=0 lowpriorityscore=0 suspectscore=0 malwarescore=0 adultscore=0
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2606150000 definitions=main-2607220087
+
+This is a multi-part message in MIME format.
+--------------uGF6w02qFA3LZDIF9td4sMgh
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-
-
-在 2026/7/22 18:52, Sun YangKai 写道:
-> On 2026/6/28 14:27, Qu Wenruo wrote:
->> To address the btrfs RAID56 write-hole problem, there is one idea to
->> solve it:
->>
->>    Make sure all data writes are full stripe aligned
->>
->> However based on that idea, we can have two different directions to
->> implement:
->>
->> - Keep the sector size untouched, introduce a newer io size for data
->>     E.g. sector size is still 4K, but data io size is 16K, and RAID56
->>     full stripe size is also set to 16K.
+Am 22.07.26 um 10:59 schrieb Qu Wenruo:
 > 
-> Sorry, I cannot follow you here about "RAID56 full stripe size is also
-> set to 16K".
-
-Just as what it reads.
-
-Not using the fixed 64K stripe size, but per-chunk full stripe size.
-
 > 
-> Currently I think we have a 64KiB chunk on each disk, and for n disks
-> RAID5, we have (n-1) * 64KiB as data's full stripe size and one more
-> 64KiB for parity if I understand it correctly. Then how can we limit the
-> full stripe size to 16K with n devices?
+> 在 2026/7/22 18:05, Christian Borntraeger 写道:
+>> Am 21.07.26 um 23:07 schrieb Qu Wenruo:
+>>
+>> First, thank you for taking the time to look into this and trying to understand
+>> things and trying to explain things. this is highly appreciated.
+>> I am still trying to fully understand this myself. A question:
+>>
+>>> 在 2026/7/22 04:41, Christian Borntraeger 写道:
+>>>> A folio can carry the folio-level dirty flag while its btrfs subpage
+>>>> dirty bitmap is empty: btrfs data mappings use filemap_dirty_folio(),
+>>>> so a generic folio_mark_dirty() call sets only the folio flag and the
+>>>> xarray tag, without setting any subpage dirty bit and without a
+>>>> delalloc reservation.  The typical source is set_page_dirty_lock() on
+>>>> a GUP pin,
+>>>
+>>> Shouldn't such folio got its ->page_mkwrite() callback get called first?
+>>
+>> Isnt that called implicitely at pin time?
 > 
-> 16K/(n-1) bytes on each disk is insane. Or we just limit device count
-> for RAID5 to a specific number like 3 disks so we can have 2 device for
-> data, 1 for parity and can get a 8KiB chunk on each disk?
+> I have to admit, I'm not an expert on the MM part, I'm mostly a simple user of the existing MM interfaces.
 > 
->>     This allows us to reuse the existing sector size based
->>     read-repair/scrub.
->>
->>     And this patch is the PoC of this idea.
->>
->>     The problems are also obvious, we need to not only introduce a
->>     dedicated compat RO flag, but also convert almost all sectorsize users
->>     to use the new data_io_size, except data checksum and read-repair
->>     related code.
->>
->> - Use larger block size, introduce a newer sub-block RAID56 repair
->>     E.g. sector size is 16K, and RAID56 full stripe size is also set to
->>     16K.
->>
->>     This allows us to reuse the existing experimental bs > ps support.
->>
->>     The problems are that we need a completely new RAID56 sub-block
->>     rebuild handling.
->>     And the new rebuild can be very slow. Since we do not know exact which
->>     sub-block is corrupted, we have to exhaust all combinations just for a
->>     single block.
->>
->>     And the current btrfs_map_block() also need to support sub-block
->>     splitting, which is completely new, and will also affect checksum
->>     handling.
->>
->> So far it looks like the new data io size is the easier solution, thus
->> here is the RFC patch.
->>
->> But in reality, this RFC patch is already super huge, almost touching
->> all call sites using fs_info->sectorsize, and there are still a lot of
->> left-over and causing all kinds of warnings.
->>
->> For now I'm wondering if it would be better just to replace sectorsize
->> with data_io_size, and introduce a dedicated member for checksum/scrub.
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->> Reason for RFC:
->> This patch is still very unstable, there are still a lot of sites not
->> properly converted to use the new fs_info->data_io_size.
->>
->> This is only for proof-of-concept purpose.
->> ---
->>    fs/btrfs/accessors.h            |  2 +
->>    fs/btrfs/direct-io.c            |  6 +--
->>    fs/btrfs/disk-io.c              | 23 ++++++++++-
->>    fs/btrfs/file.c                 | 68 ++++++++++++++++-----------------
->>    fs/btrfs/fs.h                   |  9 ++++-
->>    fs/btrfs/inode.c                | 60 ++++++++++++++---------------
->>    fs/btrfs/lzo.c                  |  2 +-
->>    fs/btrfs/sysfs.c                |  2 +
->>    fs/btrfs/tests/btrfs-tests.c    |  1 +
->>    include/uapi/linux/btrfs.h      |  7 ++++
->>    include/uapi/linux/btrfs_tree.h |  3 +-
->>    11 files changed, 112 insertions(+), 71 deletions(-)
->>
->> diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
->> index 8938357fcb40..7a5206db2224 100644
->> --- a/fs/btrfs/accessors.h
->> +++ b/fs/btrfs/accessors.h
->> @@ -889,6 +889,8 @@ BTRFS_SETGET_STACK_FUNCS(super_remap_root_generation, struct btrfs_super_block,
->>    			 remap_root_generation, 64);
->>    BTRFS_SETGET_STACK_FUNCS(super_remap_root_level, struct btrfs_super_block,
->>    			 remap_root_level, 8);
->> +BTRFS_SETGET_STACK_FUNCS(super_data_io_size, struct btrfs_super_block,
->> +			 data_io_size, 32);
->>    
->>    /* struct btrfs_file_extent_item */
->>    BTRFS_SETGET_STACK_FUNCS(stack_file_extent_type, struct btrfs_file_extent_item,
->> diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
->> index 3e227292b0ac..df1b2f2725ca 100644
->> --- a/fs/btrfs/direct-io.c
->> +++ b/fs/btrfs/direct-io.c
->> @@ -186,7 +186,7 @@ static struct extent_map *btrfs_new_extent_direct(struct btrfs_inode *inode,
->>    
->>    	alloc_hint = btrfs_get_extent_allocation_hint(inode, start, len);
->>    again:
->> -	ret = btrfs_reserve_extent(root, len, len, fs_info->sectorsize,
->> +	ret = btrfs_reserve_extent(root, len, len, fs_info->data_io_size,
->>    				   0, alloc_hint, &ins, true, true);
->>    	if (ret == -EAGAIN) {
->>    		ASSERT(btrfs_is_zoned(fs_info));
->> @@ -395,7 +395,7 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
->>    	 * to allocate a contiguous array for the checksums.
->>    	 */
->>    	if (!write)
->> -		len = min_t(u64, len, fs_info->sectorsize * BIO_MAX_VECS);
->> +		len = min_t(u64, len, fs_info->data_io_size * BIO_MAX_VECS);
->>    
->>    	lockstart = start;
->>    	lockend = start + len - 1;
->> @@ -829,7 +829,7 @@ static struct iomap_dio *btrfs_dio_write(struct kiocb *iocb, struct iov_iter *it
->>    static ssize_t check_direct_IO(struct btrfs_fs_info *fs_info,
->>    			       const struct iov_iter *iter, loff_t offset)
->>    {
->> -	const u32 blocksize_mask = fs_info->sectorsize - 1;
->> +	const u32 blocksize_mask = fs_info->data_io_size - 1;
->>    
->>    	if (offset & blocksize_mask)
->>    		return -EINVAL;
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index e4ffcd49d7af..29797b767df7 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -2508,6 +2508,23 @@ int btrfs_validate_super(const struct btrfs_fs_info *fs_info,
->>    		ret = -EINVAL;
->>    	}
->>    
->> +	if (btrfs_fs_compat_ro(fs_info, DATA_IO_SIZE)) {
->> +		const u32 data_io_size = btrfs_super_data_io_size(sb);
->> +
->> +		/*
->> +		 * If data io size is set, make sure it is not smaller than
->> +		 * sectorsize.
->> +		 * And for now we only support data io size up to MAX_BLOCKSIZE.
->> +		 */
->> +		if (unlikely(!is_power_of_2(data_io_size) ||
->> +			     data_io_size < sectorsize ||
->> +			     data_io_size > BTRFS_MAX_BLOCKSIZE)) {
->> +			btrfs_err(fs_info,
->> +	"invalid data io size, has %u expect power of 2 number in range [%u, %u]",
->> +				  data_io_size, sectorsize, BTRFS_MAX_BLOCKSIZE);
->> +			ret = -EINVAL;
->> +		}
->> +	}
->>    	if (btrfs_fs_incompat(fs_info, REMAP_TREE)) {
->>    		/*
->>    		 * Reduce test matrix for remap tree by requiring block-group-tree
->> @@ -3472,8 +3489,12 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
->>    	fs_info->nodesize = nodesize;
->>    	fs_info->nodesize_bits = ilog2(nodesize);
->>    	fs_info->sectorsize = sectorsize;
->> +	if (btrfs_fs_compat_ro(fs_info, DATA_IO_SIZE))
->> +		fs_info->data_io_size = btrfs_super_data_io_size(disk_super);
->> +	else
->> +		fs_info->data_io_size = sectorsize;
->>    	fs_info->sectorsize_bits = ilog2(sectorsize);
->> -	fs_info->block_min_order = ilog2(round_up(sectorsize, PAGE_SIZE) >> PAGE_SHIFT);
->> +	fs_info->block_min_order = ilog2(round_up(fs_info->data_io_size, PAGE_SIZE) >> PAGE_SHIFT);
->>    	fs_info->block_max_order = calc_block_max_order(fs_info->sectorsize_bits);
->>    	fs_info->csums_per_leaf = BTRFS_MAX_ITEM_SIZE(fs_info) / fs_info->csum_size;
->>    	fs_info->fs_devices->fs_info = fs_info;
->> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
->> index df8f6f565070..8397d96a5992 100644
->> --- a/fs/btrfs/file.c
->> +++ b/fs/btrfs/file.c
->> @@ -45,8 +45,8 @@
->>    static void btrfs_drop_folio(struct btrfs_fs_info *fs_info, struct folio *folio,
->>    			     u64 pos, u64 copied)
->>    {
->> -	u64 block_start = round_down(pos, fs_info->sectorsize);
->> -	u64 block_len = round_up(pos + copied, fs_info->sectorsize) - block_start;
->> +	u64 block_start = round_down(pos, fs_info->data_io_size);
->> +	u64 block_len = round_up(pos + copied, fs_info->data_io_size) - block_start;
->>    
->>    	ASSERT(block_len <= U32_MAX);
->>    	folio_unlock(folio);
->> @@ -78,8 +78,8 @@ int btrfs_dirty_folio(struct btrfs_inode *inode, struct folio *folio, loff_t pos
->>    	if (noreserve)
->>    		extra_bits |= EXTENT_NORESERVE;
->>    
->> -	start_pos = round_down(pos, fs_info->sectorsize);
->> -	num_bytes = round_up(end_pos - start_pos, fs_info->sectorsize);
->> +	start_pos = round_down(pos, fs_info->data_io_size);
->> +	num_bytes = round_up(end_pos - start_pos, fs_info->data_io_size);
->>    	ASSERT(num_bytes <= U32_MAX);
->>    	ASSERT(folio_pos(folio) <= pos && folio_next_pos(folio) >= end_pos);
->>    
->> @@ -395,7 +395,7 @@ int btrfs_drop_extents(struct btrfs_trans_handle *trans,
->>    			    extent_type == BTRFS_FILE_EXTENT_INLINE) {
->>    				args->bytes_found += extent_end - key.offset;
->>    				extent_end = ALIGN(extent_end,
->> -						   fs_info->sectorsize);
->> +						   fs_info->data_io_size);
->>    			} else if (update_refs && disk_bytenr > 0) {
->>    				struct btrfs_ref ref = {
->>    					.action = BTRFS_DROP_DELAYED_REF,
->> @@ -788,7 +788,7 @@ static int prepare_uptodate_folio(struct inode *inode, struct folio *folio, u64
->>    {
->>    	u64 clamp_start = max_t(u64, pos, folio_pos(folio));
->>    	u64 clamp_end = min_t(u64, pos + len, folio_next_pos(folio));
->> -	const u32 blocksize = inode_to_fs_info(inode)->sectorsize;
->> +	const u32 blocksize = inode_to_fs_info(inode)->data_io_size;
->>    	int ret = 0;
->>    
->>    	if (folio_test_uptodate(folio))
->> @@ -893,8 +893,8 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct folio *folio,
->>    	u64 last_pos;
->>    	int ret = 0;
->>    
->> -	start_pos = round_down(pos, fs_info->sectorsize);
->> -	last_pos = round_up(pos + write_bytes, fs_info->sectorsize) - 1;
->> +	start_pos = round_down(pos, fs_info->data_io_size);
->> +	last_pos = round_up(pos + write_bytes, fs_info->data_io_size) - 1;
->>    
->>    	if (start_pos < inode->vfs_inode.i_size) {
->>    		struct btrfs_ordered_extent *ordered;
->> @@ -978,9 +978,9 @@ int btrfs_check_nocow_lock(struct btrfs_inode *inode, loff_t pos,
->>    	if (!btrfs_drew_try_write_lock(&root->snapshot_lock))
->>    		return -EAGAIN;
->>    
->> -	lockstart = round_down(pos, fs_info->sectorsize);
->> +	lockstart = round_down(pos, fs_info->data_io_size);
->>    	lockend = round_up(pos + *write_bytes,
->> -			   fs_info->sectorsize) - 1;
->> +			   fs_info->data_io_size) - 1;
->>    
->>    	if (nowait) {
->>    		if (!btrfs_try_lock_ordered_range(inode, lockstart, lockend,
->> @@ -1067,7 +1067,7 @@ int btrfs_write_check(struct kiocb *iocb, size_t count)
->>    	oldsize = i_size_read(inode);
->>    	if (pos > oldsize) {
->>    		/* Expand hole size to cover write data, preventing empty gap */
->> -		loff_t end_pos = round_up(pos + count, fs_info->sectorsize);
->> +		loff_t end_pos = round_up(pos + count, fs_info->data_io_size);
->>    
->>    		ret = btrfs_cont_expand(BTRFS_I(inode), oldsize, end_pos);
->>    		if (ret)
->> @@ -1090,7 +1090,7 @@ static void release_space(struct btrfs_inode *inode, struct extent_changeset *da
->>    		const struct btrfs_fs_info *fs_info = inode->root->fs_info;
->>    
->>    		btrfs_delalloc_release_space(inode, data_reserved,
->> -					     round_down(start, fs_info->sectorsize),
->> +					     round_down(start, fs_info->data_io_size),
->>    					     len, true);
->>    	}
->>    }
->> @@ -1107,7 +1107,7 @@ static ssize_t reserve_space(struct btrfs_inode *inode,
->>    			     bool *only_release_metadata)
->>    {
->>    	const struct btrfs_fs_info *fs_info = inode->root->fs_info;
->> -	const unsigned int block_offset = (start & (fs_info->sectorsize - 1));
->> +	const unsigned int block_offset = (start & (fs_info->data_io_size - 1));
->>    	size_t reserve_bytes;
->>    	int ret;
->>    
->> @@ -1132,7 +1132,7 @@ static ssize_t reserve_space(struct btrfs_inode *inode,
->>    		*only_release_metadata = true;
->>    	}
->>    
->> -	reserve_bytes = round_up(*len + block_offset, fs_info->sectorsize);
->> +	reserve_bytes = round_up(*len + block_offset, fs_info->data_io_size);
->>    	WARN_ON(reserve_bytes == 0);
->>    	ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes,
->>    					      reserve_bytes, nowait);
->> @@ -1192,7 +1192,7 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *iter,
->>    	struct extent_state *cached_state = NULL;
->>    	size_t write_bytes = calc_write_bytes(inode, iter, start);
->>    	size_t copied;
->> -	const u64 reserved_start = round_down(start, fs_info->sectorsize);
->> +	const u64 reserved_start = round_down(start, fs_info->data_io_size);
->>    	u64 reserved_len;
->>    	struct folio *folio = NULL;
->>    	int extents_locked;
->> @@ -1301,7 +1301,7 @@ static int copy_one_range(struct btrfs_inode *inode, struct iov_iter *iter,
->>    		}
->>    
->>    		/* Release the reserved space beyond the last block. */
->> -		last_block = round_up(start + copied, fs_info->sectorsize);
->> +		last_block = round_up(start + copied, fs_info->data_io_size);
->>    
->>    		shrink_reserved_space(inode, *data_reserved, reserved_start,
->>    				      reserved_len, last_block - reserved_start,
->> @@ -1938,7 +1938,7 @@ static vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
->>    	}
->>    
->>    	if (folio_contains(folio, (size - 1) >> PAGE_SHIFT)) {
->> -		reserved_space = round_up(size - page_start, fs_info->sectorsize);
->> +		reserved_space = round_up(size - page_start, fs_info->data_io_size);
->>    		if (reserved_space < fsize) {
->>    			const u64 to_free = fsize - reserved_space;
->>    
->> @@ -2182,8 +2182,8 @@ static int find_first_non_hole(struct btrfs_inode *inode, u64 *start, u64 *len)
->>    	int ret = 0;
->>    
->>    	em = btrfs_get_extent(inode, NULL,
->> -			      round_down(*start, fs_info->sectorsize),
->> -			      round_up(*len, fs_info->sectorsize));
->> +			      round_down(*start, fs_info->data_io_size),
->> +			      round_up(*len, fs_info->data_io_size));
->>    	if (IS_ERR(em))
->>    		return PTR_ERR(em);
->>    
->> @@ -2396,7 +2396,7 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
->>    	struct btrfs_root *root = inode->root;
->>    	struct btrfs_fs_info *fs_info = root->fs_info;
->>    	const u64 min_size = btrfs_calc_insert_metadata_size(fs_info, 1);
->> -	u64 ino_size = round_up(inode->vfs_inode.i_size, fs_info->sectorsize);
->> +	u64 ino_size = round_up(inode->vfs_inode.i_size, fs_info->data_io_size);
->>    	struct btrfs_trans_handle *trans = NULL;
->>    	struct btrfs_block_rsv rsv;
->>    	unsigned int rsv_count;
->> @@ -2667,7 +2667,7 @@ static int btrfs_punch_hole(struct file *file, loff_t offset, loff_t len)
->>    	if (ret)
->>    		goto out_only_mutex;
->>    
->> -	ino_size = round_up(inode->i_size, fs_info->sectorsize);
->> +	ino_size = round_up(inode->i_size, fs_info->data_io_size);
->>    	ret = find_first_non_hole(BTRFS_I(inode), &offset, &len);
->>    	if (ret < 0)
->>    		goto out_only_mutex;
->> @@ -2681,15 +2681,15 @@ static int btrfs_punch_hole(struct file *file, loff_t offset, loff_t len)
->>    	if (ret)
->>    		goto out_only_mutex;
->>    
->> -	lockstart = round_up(offset, fs_info->sectorsize);
->> -	lockend = round_down(offset + len, fs_info->sectorsize) - 1;
->> +	lockstart = round_up(offset, fs_info->data_io_size);
->> +	lockend = round_down(offset + len, fs_info->data_io_size) - 1;
->>    	same_block = (BTRFS_BYTES_TO_BLKS(fs_info, offset))
->>    		== (BTRFS_BYTES_TO_BLKS(fs_info, offset + len - 1));
->>    	/*
->>    	 * Only do this if we are in the same block and we aren't doing the
->>    	 * entire block.
->>    	 */
->> -	if (same_block && len < fs_info->sectorsize) {
->> +	if (same_block && len < fs_info->data_io_size) {
->>    		if (offset < ino_size) {
->>    			truncated_block = true;
->>    			ret = btrfs_truncate_block(BTRFS_I(inode), offset + len - 1,
->> @@ -2858,8 +2858,8 @@ static int btrfs_fallocate_update_isize(struct inode *inode,
->>    	if (mode & FALLOC_FL_KEEP_SIZE || end <= i_size_read(inode))
->>    		return 0;
->>    
->> -	range_start = round_down(i_size_read(inode), root->fs_info->sectorsize);
->> -	range_end = round_up(end, root->fs_info->sectorsize);
->> +	range_start = round_down(i_size_read(inode), root->fs_info->data_io_size);
->> +	range_end = round_up(end, root->fs_info->data_io_size);
->>    
->>    	ret = btrfs_inode_set_file_extent_range(BTRFS_I(inode), range_start,
->>    						range_end - range_start);
->> @@ -2889,7 +2889,7 @@ static int btrfs_zero_range_check_range_boundary(struct btrfs_inode *inode,
->>    						 u64 offset)
->>    {
->>    	struct extent_map *em;
->> -	const u32 sectorsize = inode->root->fs_info->sectorsize;
->> +	const u32 sectorsize = inode->root->fs_info->data_io_size;
->>    	int ret;
->>    
->>    	offset = round_down(offset, sectorsize);
->> @@ -2916,7 +2916,7 @@ static int btrfs_zero_range(struct inode *inode,
->>    	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
->>    	struct extent_map *em;
->>    	struct extent_changeset *data_reserved = NULL;
->> -	const u32 sectorsize = fs_info->sectorsize;
->> +	const u32 sectorsize = fs_info->data_io_size;
->>    	int ret;
->>    	u64 alloc_hint = 0;
->>    	const u64 orig_start = offset;
->> @@ -3065,7 +3065,7 @@ static int btrfs_zero_range(struct inode *inode,
->>    		}
->>    		ret = btrfs_prealloc_file_range(inode, mode, alloc_start,
->>    						alloc_end - alloc_start,
->> -						fs_info->sectorsize,
->> +						fs_info->data_io_size,
->>    						offset + len, &alloc_hint);
->>    		btrfs_unlock_extent(&BTRFS_I(inode)->io_tree, lockstart, lockend,
->>    				    &cached_state);
->> @@ -3105,7 +3105,7 @@ static long btrfs_fallocate(struct file *file, int mode,
->>    	u64 data_space_reserved = 0;
->>    	u64 qgroup_reserved = 0;
->>    	struct extent_map *em;
->> -	int blocksize = BTRFS_I(inode)->root->fs_info->sectorsize;
->> +	int blocksize = BTRFS_I(inode)->root->fs_info->data_io_size;
->>    	int ret;
->>    
->>    	if (btrfs_is_shutdown(inode_to_fs_info(inode)))
->> @@ -3414,7 +3414,7 @@ bool btrfs_find_delalloc_in_range(struct btrfs_inode *inode, u64 start, u64 end,
->>    				  struct extent_state **cached_state,
->>    				  u64 *delalloc_start_ret, u64 *delalloc_end_ret)
->>    {
->> -	u64 cur_offset = round_down(start, inode->root->fs_info->sectorsize);
->> +	u64 cur_offset = round_down(start, inode->root->fs_info->data_io_size);
->>    	u64 prev_delalloc_end = 0;
->>    	bool search_io_tree = true;
->>    	bool ret = false;
->> @@ -3602,10 +3602,10 @@ static loff_t find_desired_extent(struct file *file, loff_t offset, int whence)
->>    	 */
->>    	start = max_t(loff_t, 0, offset);
->>    
->> -	lockstart = round_down(start, fs_info->sectorsize);
->> -	lockend = round_up(i_size, fs_info->sectorsize);
->> +	lockstart = round_down(start, fs_info->data_io_size);
->> +	lockend = round_up(i_size, fs_info->data_io_size);
->>    	if (lockend <= lockstart)
->> -		lockend = lockstart + fs_info->sectorsize;
->> +		lockend = lockstart + fs_info->data_io_size;
->>    	lockend--;
->>    
->>    	path = btrfs_alloc_path();
->> diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
->> index ab5ed7b4f639..cee4c772cfd9 100644
->> --- a/fs/btrfs/fs.h
->> +++ b/fs/btrfs/fs.h
->> @@ -299,7 +299,7 @@ enum {
->>    #define BTRFS_FEATURE_COMPAT_SAFE_SET		0ULL
->>    #define BTRFS_FEATURE_COMPAT_SAFE_CLEAR		0ULL
->>    
->> -#define BTRFS_FEATURE_COMPAT_RO_SUPP			\
->> +#define BTRFS_FEATURE_COMPAT_RO_SUPP_STABLE		\
->>    	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE |	\
->>    	 BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID | \
->>    	 BTRFS_FEATURE_COMPAT_RO_VERITY |		\
->> @@ -335,11 +335,17 @@ enum {
->>    	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2 | \
->>    	 BTRFS_FEATURE_INCOMPAT_REMAP_TREE)
->>    
->> +#define BTRFS_FEATURE_COMPAT_RO_SUPP		\
->> +	(BTRFS_FEATURE_COMPAT_RO_SUPP_STABLE |	\
->> +	 BTRFS_FEATURE_COMPAT_RO_DATA_IO_SIZE)
->>    #else
->>    
->>    #define BTRFS_FEATURE_INCOMPAT_SUPP		\
->>    	(BTRFS_FEATURE_INCOMPAT_SUPP_STABLE)
->>    
->> +#define BTRFS_FEATURE_COMPAT_RO_SUPP		\
->> +	(BTRFS_FEATURE_COMPAT_RO_SUPP_STABLE)
->> +
->>    #endif
->>    
->>    #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
->> @@ -892,6 +898,7 @@ struct btrfs_fs_info {
->>    	u32 csum_size;
->>    	u32 csums_per_leaf;
->>    	u32 csum_type;
->> +	u32 data_io_size;
->>    
->>    	/*
->>    	 * Maximum size of an extent. BTRFS_MAX_EXTENT_SIZE on regular
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index b696dd329fd7..de0364ce950b 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -190,7 +190,7 @@ static int data_reloc_print_warning_inode(u64 inum, u64 offset, u64 num_bytes,
->>    		btrfs_warn(fs_info,
->>    "checksum error at logical %llu mirror %u root %llu inode %llu offset %llu length %u links %u (path: %s)",
->>    			   warn->logical, warn->mirror_num, root, inum, offset,
->> -			   fs_info->sectorsize, nlink,
->> +			   fs_info->data_io_size, nlink,
->>    			   (char *)(unsigned long)ipath->fspath->val[i]);
->>    	}
->>    
->> @@ -1397,7 +1397,7 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
->>    	if (btrfs_is_data_reloc_root(root))
->>    		min_alloc_size = num_bytes;
->>    	else
->> -		min_alloc_size = fs_info->sectorsize;
->> +		min_alloc_size = fs_info->data_io_size;
->>    
->>    	while (num_bytes > 0) {
->>    		ret = cow_one_range(inode, locked_folio, &ins, &cached, start,
->> @@ -2783,7 +2783,7 @@ int btrfs_set_extent_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
->>    			      unsigned int extra_bits,
->>    			      struct extent_state **cached_state)
->>    {
->> -	const u32 blocksize = inode->root->fs_info->sectorsize;
->> +	const u32 blocksize = inode->root->fs_info->data_io_size;
->>    
->>    	/* Basic alignment check. */
->>    	ASSERT(IS_ALIGNED(start, blocksize), "start=%llu blocksize=%u",
->> @@ -2820,7 +2820,7 @@ int btrfs_set_extent_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
->>    int btrfs_reset_extent_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
->>    				unsigned int extra_bits, struct extent_state **cached_state)
->>    {
->> -	const u32 blocksize = inode->root->fs_info->sectorsize;
->> +	const u32 blocksize = inode->root->fs_info->data_io_size;
->>    
->>    	/* The @extra_bits can only be EXTENT_NORESERVE for now. */
->>    	ASSERT(!(extra_bits & ~EXTENT_NORESERVE), "extra_bits=0x%x", extra_bits);
->> @@ -2874,7 +2874,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
->>    	u64 num_bytes = btrfs_stack_file_extent_num_bytes(stack_fi);
->>    	u64 ram_bytes = btrfs_stack_file_extent_ram_bytes(stack_fi);
->>    	struct btrfs_drop_extents_args drop_args = { 0 };
->> -	const u32 sectorsize = root->fs_info->sectorsize;
->> +	const u32 sectorsize = root->fs_info->data_io_size;
->>    	int ret;
->>    
->>    	path = btrfs_alloc_path();
->> @@ -4040,7 +4040,7 @@ static int btrfs_read_locked_inode(struct btrfs_inode *inode, struct btrfs_path
->>    	if (ret)
->>    		goto out;
->>    	btrfs_inode_set_file_extent_range(inode, 0,
->> -			  round_up(i_size_read(vfs_inode), fs_info->sectorsize));
->> +			  round_up(i_size_read(vfs_inode), fs_info->data_io_size));
->>    
->>    	if (!maybe_acls)
->>    		cache_no_acl(vfs_inode);
->> @@ -4879,7 +4879,7 @@ int btrfs_truncate_block(struct btrfs_inode *inode, u64 offset, u64 start, u64 e
->>    	struct extent_state *cached_state = NULL;
->>    	struct extent_changeset *data_reserved = NULL;
->>    	bool only_release_metadata = false;
->> -	u32 blocksize = fs_info->sectorsize;
->> +	u32 blocksize = fs_info->data_io_size;
->>    	pgoff_t index = (offset >> PAGE_SHIFT);
->>    	struct folio *folio;
->>    	gfp_t mask = btrfs_alloc_write_mask(mapping);
->> @@ -5117,8 +5117,8 @@ int btrfs_cont_expand(struct btrfs_inode *inode, loff_t oldsize, loff_t size)
->>    	struct extent_io_tree *io_tree = &inode->io_tree;
->>    	struct extent_map *em = NULL;
->>    	struct extent_state *cached_state = NULL;
->> -	u64 hole_start = ALIGN(oldsize, fs_info->sectorsize);
->> -	u64 block_end = ALIGN(size, fs_info->sectorsize);
->> +	u64 hole_start = ALIGN(oldsize, fs_info->data_io_size);
->> +	u64 block_end = ALIGN(size, fs_info->data_io_size);
->>    	u64 last_byte;
->>    	u64 cur_offset;
->>    	u64 hole_size;
->> @@ -5147,7 +5147,7 @@ int btrfs_cont_expand(struct btrfs_inode *inode, loff_t oldsize, loff_t size)
->>    			break;
->>    		}
->>    		last_byte = min(btrfs_extent_map_end(em), block_end);
->> -		last_byte = ALIGN(last_byte, fs_info->sectorsize);
->> +		last_byte = ALIGN(last_byte, fs_info->data_io_size);
->>    		hole_size = last_byte - cur_offset;
->>    
->>    		if (!(em->flags & EXTENT_FLAG_PREALLOC)) {
->> @@ -5253,7 +5253,7 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
->>    
->>    		if (btrfs_is_zoned(fs_info)) {
->>    			ret = btrfs_wait_ordered_range(BTRFS_I(inode),
->> -					ALIGN(newsize, fs_info->sectorsize),
->> +					ALIGN(newsize, fs_info->data_io_size),
->>    					(u64)-1);
->>    			if (ret)
->>    				return ret;
->> @@ -7323,7 +7323,7 @@ noinline int can_nocow_extent(struct btrfs_inode *inode, u64 offset, u64 *len,
->>    		u64 range_end;
->>    
->>    		range_end = round_up(offset + nocow_args.file_extent.num_bytes,
->> -				     root->fs_info->sectorsize) - 1;
->> +				     root->fs_info->data_io_size) - 1;
->>    		ret = btrfs_test_range_bit_exists(io_tree, offset, range_end,
->>    						  EXTENT_DELALLOC);
->>    		if (ret)
->> @@ -7653,8 +7653,8 @@ static int btrfs_truncate(struct btrfs_inode *inode, bool skip_writeback)
->>    	int ret;
->>    	struct btrfs_trans_handle *trans;
->>    	const u64 min_size = btrfs_calc_metadata_size(fs_info, 1);
->> -	const u64 lock_start = round_down(inode->vfs_inode.i_size, fs_info->sectorsize);
->> -	const u64 i_size_up = round_up(inode->vfs_inode.i_size, fs_info->sectorsize);
->> +	const u64 lock_start = round_down(inode->vfs_inode.i_size, fs_info->data_io_size);
->> +	const u64 i_size_up = round_up(inode->vfs_inode.i_size, fs_info->data_io_size);
->>    
->>    	/* Our inode is locked and the i_size can't be changed concurrently. */
->>    	btrfs_assert_inode_locked(inode);
->> @@ -8038,7 +8038,7 @@ static int btrfs_getattr(struct mnt_idmap *idmap,
->>    	u64 delalloc_bytes;
->>    	u64 inode_bytes;
->>    	struct inode *inode = d_inode(path->dentry);
->> -	u32 blocksize = btrfs_sb(inode->i_sb)->sectorsize;
->> +	u32 blocksize = btrfs_sb(inode->i_sb)->data_io_size;
->>    	u32 bi_flags = BTRFS_I(inode)->flags;
->>    	u32 bi_ro_flags = BTRFS_I(inode)->ro_flags;
->>    
->> @@ -9124,8 +9124,8 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
->>    			 * to truncate disk_i_size to the start of the gap,
->>    			 * making the persisted size smaller than i_size.
->>    			 */
->> -			range_start = round_down(inode->i_size, fs_info->sectorsize);
->> -			range_end = round_up(i_size, fs_info->sectorsize);
->> +			range_start = round_down(inode->i_size, fs_info->data_io_size);
->> +			range_end = round_up(i_size, fs_info->data_io_size);
->>    			ret = btrfs_inode_set_file_extent_range(BTRFS_I(inode),
->>    					range_start, range_end - range_start);
->>    			if (ret) {
->> @@ -9272,10 +9272,10 @@ int btrfs_encoded_io_compression_from_extent(struct btrfs_fs_info *fs_info,
->>    		 * The LZO format depends on the sector size. 64K is the maximum
->>    		 * sector size that we support.
->>    		 */
->> -		if (fs_info->sectorsize < SZ_4K || fs_info->sectorsize > SZ_64K)
->> +		if (fs_info->data_io_size < SZ_4K || fs_info->data_io_size > SZ_64K)
->>    			return -EINVAL;
->>    		return BTRFS_ENCODED_IO_COMPRESSION_LZO_4K +
->> -		       (fs_info->sectorsize_bits - 12);
->> +		       (ilog2(fs_info->data_io_size) - 12);
->>    	case BTRFS_COMPRESS_ZSTD:
->>    		return BTRFS_ENCODED_IO_COMPRESSION_ZSTD;
->>    	default:
->> @@ -9563,7 +9563,7 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, struct iov_iter *iter,
->>    		btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
->>    		return 0;
->>    	}
->> -	start = ALIGN_DOWN(iocb->ki_pos, fs_info->sectorsize);
->> +	start = ALIGN_DOWN(iocb->ki_pos, fs_info->data_io_size);
->>    	/*
->>    	 * We don't know how long the extent containing iocb->ki_pos is, but if
->>    	 * it's compressed we know that it won't be longer than this.
->> @@ -9676,7 +9676,7 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, struct iov_iter *iter,
->>    		count = start + *disk_io_size - iocb->ki_pos;
->>    		encoded->len = count;
->>    		encoded->unencoded_len = count;
->> -		*disk_io_size = ALIGN(*disk_io_size, fs_info->sectorsize);
->> +		*disk_io_size = ALIGN(*disk_io_size, fs_info->data_io_size);
->>    	}
->>    	btrfs_free_extent_map(em);
->>    	em = NULL;
->> @@ -9720,7 +9720,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
->>    	int compression;
->>    	size_t orig_count;
->>    	const u32 min_folio_size = btrfs_min_folio_size(fs_info);
->> -	const u32 blocksize = fs_info->sectorsize;
->> +	const u32 blocksize = fs_info->data_io_size;
->>    	u64 start, end;
->>    	u64 num_bytes, ram_bytes, disk_num_bytes;
->>    	struct btrfs_key ins;
->> @@ -9743,7 +9743,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
->>    		/* The sector size must match for LZO. */
->>    		if (encoded->compression -
->>    		    BTRFS_ENCODED_IO_COMPRESSION_LZO_4K + 12 !=
->> -		    fs_info->sectorsize_bits)
->> +		    ilog2(blocksize))
->>    			return -EINVAL;
->>    		compression = BTRFS_COMPRESS_LZO;
->>    		break;
->> @@ -9785,7 +9785,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
->>    
->>    	/* The extent must start on a sector boundary. */
->>    	start = iocb->ki_pos;
->> -	if (!IS_ALIGNED(start, fs_info->sectorsize))
->> +	if (!IS_ALIGNED(start, fs_info->data_io_size))
->>    		return -EINVAL;
->>    
->>    	/*
->> @@ -9794,15 +9794,15 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
->>    	 * up the extent size and set i_size to the unaligned end.
->>    	 */
->>    	if (start + encoded->len < inode->vfs_inode.i_size &&
->> -	    !IS_ALIGNED(start + encoded->len, fs_info->sectorsize))
->> +	    !IS_ALIGNED(start + encoded->len, fs_info->data_io_size))
->>    		return -EINVAL;
->>    
->>    	/* Finally, the offset in the unencoded data must be sector-aligned. */
->> -	if (!IS_ALIGNED(encoded->unencoded_offset, fs_info->sectorsize))
->> +	if (!IS_ALIGNED(encoded->unencoded_offset, fs_info->data_io_size))
->>    		return -EINVAL;
->>    
->> -	num_bytes = ALIGN(encoded->len, fs_info->sectorsize);
->> -	ram_bytes = ALIGN(encoded->unencoded_len, fs_info->sectorsize);
->> +	num_bytes = ALIGN(encoded->len, fs_info->data_io_size);
->> +	ram_bytes = ALIGN(encoded->unencoded_len, fs_info->data_io_size);
->>    	end = start + num_bytes - 1;
->>    
->>    	/*
->> @@ -9810,7 +9810,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
->>    	 * sector-aligned. For convenience, we extend it with zeroes if it
->>    	 * isn't.
->>    	 */
->> -	disk_num_bytes = ALIGN(orig_count, fs_info->sectorsize);
->> +	disk_num_bytes = ALIGN(orig_count, fs_info->data_io_size);
->>    
->>    	cb = btrfs_alloc_compressed_write(inode, start, num_bytes);
->>    	for (int i = 0; i * min_folio_size < disk_num_bytes; i++) {
->> @@ -10222,7 +10222,7 @@ static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
->>    	atomic_inc(&root->nr_swapfiles);
->>    	spin_unlock(&root->root_item_lock);
->>    
->> -	isize = ALIGN_DOWN(inode->i_size, fs_info->sectorsize);
->> +	isize = ALIGN_DOWN(inode->i_size, fs_info->data_io_size);
->>    
->>    	btrfs_lock_extent(io_tree, 0, isize - 1, &cached_state);
->>    	while (prev_extent_end < isize) {
->> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
->> index 1531adb117d1..0235530fd0f8 100644
->> --- a/fs/btrfs/lzo.c
->> +++ b/fs/btrfs/lzo.c
->> @@ -414,7 +414,7 @@ int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
->>    {
->>    	struct workspace *workspace = list_entry(ws, struct workspace, list);
->>    	struct btrfs_fs_info *fs_info = cb->bbio.inode->root->fs_info;
->> -	const u32 sectorsize = fs_info->sectorsize;
->> +	const u32 sectorsize = fs_info->data_io_size;
->>    	const u32 compressed_len = bio_get_size(&cb->bbio.bio);
->>    	struct folio_iter fi;
->>    	char *kaddr;
->> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
->> index 0d14570c8bc2..8ca7b7e304e3 100644
->> --- a/fs/btrfs/sysfs.c
->> +++ b/fs/btrfs/sysfs.c
->> @@ -301,6 +301,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(extent_tree_v2, EXTENT_TREE_V2);
->>    BTRFS_FEAT_ATTR_INCOMPAT(raid_stripe_tree, RAID_STRIPE_TREE);
->>    /* Remove once support for remap tree is feature complete. */
->>    BTRFS_FEAT_ATTR_INCOMPAT(remap_tree, REMAP_TREE);
->> +BTRFS_FEAT_ATTR_COMPAT_RO(data_io_size, DATA_IO_SIZE);
->>    #endif
->>    #ifdef CONFIG_FS_VERITY
->>    BTRFS_FEAT_ATTR_COMPAT_RO(verity, VERITY);
->> @@ -334,6 +335,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
->>    	BTRFS_FEAT_ATTR_PTR(extent_tree_v2),
->>    	BTRFS_FEAT_ATTR_PTR(raid_stripe_tree),
->>    	BTRFS_FEAT_ATTR_PTR(remap_tree),
->> +	BTRFS_FEAT_ATTR_PTR(data_io_size),
->>    #endif
->>    #ifdef CONFIG_FS_VERITY
->>    	BTRFS_FEAT_ATTR_PTR(verity),
->> diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
->> index 6287d940323d..e3e7bbee7cd7 100644
->> --- a/fs/btrfs/tests/btrfs-tests.c
->> +++ b/fs/btrfs/tests/btrfs-tests.c
->> @@ -140,6 +140,7 @@ struct btrfs_fs_info *btrfs_alloc_dummy_fs_info(u32 nodesize, u32 sectorsize)
->>    	fs_info->nodesize = nodesize;
->>    	fs_info->sectorsize = sectorsize;
->>    	fs_info->sectorsize_bits = ilog2(sectorsize);
->> +	fs_info->data_io_size = sectorsize;
->>    
->>    	/* CRC32C csum size. */
->>    	fs_info->csum_size = 4;
->> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
->> index 0a13baf3d8d1..858a37811586 100644
->> --- a/include/uapi/linux/btrfs.h
->> +++ b/include/uapi/linux/btrfs.h
->> @@ -314,6 +314,13 @@ struct btrfs_ioctl_fs_info_args {
->>     */
->>    #define BTRFS_FEATURE_COMPAT_RO_BLOCK_GROUP_TREE	(1ULL << 3)
->>    
->> +/*
->> + * Force all IOs (including buffered, direct, compressed) to be aligned
->> + * to btrfs_super_block::data_io_size other than sectorsize.
->> + * Meanwhile still data checksum to be calculated based on sectorsize.
->> + */
->> +#define BTRFS_FEATURE_COMPAT_RO_DATA_IO_SIZE		(1ULL << 4)
->> +
->>    #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
->>    #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
->>    #define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 2)
->> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
->> index cc3b9f7dccaf..3b979ba5a3fc 100644
->> --- a/include/uapi/linux/btrfs_tree.h
->> +++ b/include/uapi/linux/btrfs_tree.h
->> @@ -724,9 +724,10 @@ struct btrfs_super_block {
->>    	__le64 remap_root;
->>    	__le64 remap_root_generation;
->>    	__u8 remap_root_level;
->> +	__u32 data_io_size;
->>    
->>    	/* Future expansion */
->> -	__u8 reserved[199];
->> +	__u8 reserved[195];
->>    	__u8 sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
->>    	struct btrfs_root_backup super_roots[BTRFS_NUM_BACKUP_ROOTS];
+> AFAIK, the last time I brought this thing up, Christoph mentioned that dirtying-folio-without-notifying-fs is a bug, and fs should not and is not able to handle such situation anyway.
+> 
+> And that idea makes a lot of sense to me.
+> 
+> So adding MM list for more help.
+So I now have an userspace O_DIRECT reproducer outside of KVM. (attached) which gave me (on an s390 system, though)
+
+[  189.067731] sysrq: Show Blocked State
+[  189.067872] task:kworker/u1665:5 state:D stack:0     pid:1363  tgid:1363  ppid:2      task_flags:0x4208060 flags:0x00000000
+[  189.067877] Workqueue: writeback wb_workfn (flush-btrfs-1)
+[  189.067884] Call Trace:
+[  189.067886]  [<000003a8b2e19284>] __schedule+0x374/0x900
+[  189.067891]  [<000003a8b2e1984c>] schedule+0x3c/0xf0
+[  189.067894]  [<000003a8b2e1996c>] io_schedule+0x2c/0x40
+[  189.067896]  [<000003a8b219d158>] folio_wait_bit_common+0x198/0x3b0
+[  189.067902]  [<000003a8b263e2e8>] extent_write_cache_pages+0x348/0x4d0
+[  189.067907]  [<000003a8b263ea0a>] btrfs_writepages+0x6a/0xd0
+[  189.067910]  [<000003a8b21ad444>] do_writepages+0xd4/0x190
+[  189.067915]  [<000003a8b2324590>] __writeback_single_inode+0x50/0x310
+[  189.067917]  [<000003a8b2324b1a>] writeback_sb_inodes+0x2ca/0x690
+[  189.067919]  [<000003a8b2324f36>] __writeback_inodes_wb+0x56/0x140
+[  189.067921]  [<000003a8b2325498>] wb_writeback+0x368/0x460
+[  189.067923]  [<000003a8b23258c6>] wb_do_writeback+0x336/0x3d0
+[  189.067925]  [<000003a8b2325d2a>] wb_workfn+0x5a/0x1d0
+[  189.067927]  [<000003a8b1f0cee2>] process_one_work+0x1d2/0x480
+[  189.067932]  [<000003a8b1f0df30>] worker_thread+0x210/0x420
+[  189.067935]  [<000003a8b1f190b8>] kthread+0x148/0x170
+[  189.067939]  [<000003a8b1e90358>] __ret_from_fork+0x48/0x220
+[  189.067941]  [<000003a8b2e2426a>] ret_from_fork+0xa/0x30
+[  189.067994] task:oob-dirty-repro state:D stack:0     pid:8152  tgid:8151  ppid:7260   task_flags:0x400040 flags:0x00000800
+[  189.067997] Call Trace:
+[  189.067998]  [<000003a8b2e19284>] __schedule+0x374/0x900
+[  189.068050]  [<000003a8b2e1984c>] schedule+0x3c/0xf0
+[  189.068052]  [<000003a8b2e1996c>] io_schedule+0x2c/0x40
+[  189.068054]  [<000003a8b219d158>] folio_wait_bit_common+0x198/0x3b0
+[  189.068057]  [<000003a8b263e2e8>] extent_write_cache_pages+0x348/0x4d0
+[  189.068061]  [<000003a8b263ea0a>] btrfs_writepages+0x6a/0xd0
+[  189.068063]  [<000003a8b21ad444>] do_writepages+0xd4/0x190
+[  189.068066]  [<000003a8b2199dec>] filemap_writeback+0xbc/0x100
+[  189.068069]  [<000003a8b2199e5a>] filemap_fdatawrite_range+0x2a/0x40
+[  189.068072]  [<000003a8b2637d3c>] btrfs_start_ordered_extent_nowriteback+0x18c/0x1d0
+[  189.068074]  [<000003a8b26260ce>] btrfs_page_mkwrite+0x22e/0x8d0
+[  189.068079]  [<000003a8b21f89d0>] do_page_mkwrite+0x60/0xf0
+[  189.068084]  [<000003a8b21ffa64>] do_wp_page+0x134/0x660
+[  189.068086]  [<000003a8b2206584>] __handle_mm_fault+0x1c4/0x5a0
+[  189.068088]  [<000003a8b22069f0>] handle_mm_fault+0x90/0x230
+[  189.068090]  [<000003a8b1ebfbd0>] do_exception+0x190/0x560
+[  189.068094]  [<000003a8b2e136c0>] __do_pgm_check+0x1b0/0x370
+[  189.068098]  [<000003a8b2e243a4>] pgm_check_handler+0x114/0x160
+[  189.068101]  [<000003a8b283135e>] _copy_to_iter+0x6e/0x870
+[  189.068106]  [<000003a8b2831c4a>] copy_page_to_iter+0xea/0x160
+[  189.068108]  [<000003a8b219ff8c>] filemap_read+0x1ec/0x400
+[  189.068109]  [<000003a8b22d0a70>] vfs_read+0x210/0x370
+[  189.068112]  [<000003a8b22d1694>] ksys_pread64+0xa4/0xd0
+[  189.068114]  [<000003a8b2e13b7e>] __do_syscall+0x14e/0x590
+[  189.068117]  [<000003a8b2e24242>] system_call+0x72/0x90
+[  189.068120] task:oob-dirty-repro state:D stack:0     pid:8153  tgid:8151  ppid:7260   task_flags:0x400040 flags:0x00000000
+[  189.068123] Call Trace:
+[  189.068124]  [<000003a8b2e19284>] __schedule+0x374/0x900
+[  189.068126]  [<000003a8b2e1984c>] schedule+0x3c/0xf0
+[  189.068128]  [<000003a8b2e1996c>] io_schedule+0x2c/0x40
+[  189.068130]  [<000003a8b219d158>] folio_wait_bit_common+0x198/0x3b0
+[  189.068133]  [<000003a8b263e2e8>] extent_write_cache_pages+0x348/0x4d0
+[  189.068136]  [<000003a8b263ea0a>] btrfs_writepages+0x6a/0xd0
+[  189.068138]  [<000003a8b21ad444>] do_writepages+0xd4/0x190
+[  189.068141]  [<000003a8b2199dec>] filemap_writeback+0xbc/0x100
+[  189.068144]  [<000003a8b2199e5a>] filemap_fdatawrite_range+0x2a/0x40
+[  189.068146]  [<000003a8b2637d3c>] btrfs_start_ordered_extent_nowriteback+0x18c/0x1d0
+[  189.068149]  [<000003a8b26260ce>] btrfs_page_mkwrite+0x22e/0x8d0
+[  189.068152]  [<000003a8b21f89d0>] do_page_mkwrite+0x60/0xf0
+[  189.068154]  [<000003a8b21ffa64>] do_wp_page+0x134/0x660
+[  189.068156]  [<000003a8b2206584>] __handle_mm_fault+0x1c4/0x5a0
+[  189.068158]  [<000003a8b22069f0>] handle_mm_fault+0x90/0x230
+[  189.068160]  [<000003a8b1ebfbd0>] do_exception+0x190/0x560
+[  189.068163]  [<000003a8b2e136c0>] __do_pgm_check+0x1b0/0x370
+[  189.068165]  [<000003a8b2e243a4>] pgm_check_handler+0x114/0x160
+[  189.068168]  [<000003a8b283135e>] _copy_to_iter+0x6e/0x870
+[  189.068170]  [<000003a8b2831c4a>] copy_page_to_iter+0xea/0x160
+[  189.068172]  [<000003a8b219ff8c>] filemap_read+0x1ec/0x400
+[  189.068174]  [<000003a8b22d0a70>] vfs_read+0x210/0x370
+[  189.068176]  [<000003a8b22d1694>] ksys_pread64+0xa4/0xd0
+[  189.068178]  [<000003a8b2e13b7e>] __do_syscall+0x14e/0x590
+[  189.068181]  [<000003a8b2e24242>] system_call+0x72/0x90
+[  189.068184] task:oob-dirty-repro state:D stack:0     pid:8154  tgid:8151  ppid:7260   task_flags:0x400040 flags:0x00000000
+[  189.068187] Call Trace:
+[  189.068188]  [<000003a8b2e19284>] __schedule+0x374/0x900
+[  189.068190]  [<000003a8b2e1984c>] schedule+0x3c/0xf0
+[  189.068192]  [<000003a8b2e1996c>] io_schedule+0x2c/0x40
+[  189.068193]  [<000003a8b219d158>] folio_wait_bit_common+0x198/0x3b0
+[  189.068196]  [<000003a8b26260fc>] btrfs_page_mkwrite+0x25c/0x8d0
+[  189.068199]  [<000003a8b21f89d0>] do_page_mkwrite+0x60/0xf0
+[  189.068202]  [<000003a8b21ffa64>] do_wp_page+0x134/0x660
+[  189.068203]  [<000003a8b2206584>] __handle_mm_fault+0x1c4/0x5a0
+[  189.068206]  [<000003a8b22069f0>] handle_mm_fault+0x90/0x230
+[  189.068208]  [<000003a8b1ebfbd0>] do_exception+0x190/0x560
+[  189.068210]  [<000003a8b2e136c0>] __do_pgm_check+0x1b0/0x370
+[  189.068213]  [<000003a8b2e243a4>] pgm_check_handler+0x114/0x160
+[  189.068215]  [<000003a8b283135e>] _copy_to_iter+0x6e/0x870
+[  189.068218]  [<000003a8b2831c4a>] copy_page_to_iter+0xea/0x160
+[  189.068219]  [<000003a8b219ff8c>] filemap_read+0x1ec/0x400
+[  189.068221]  [<000003a8b22d0a70>] vfs_read+0x210/0x370
+[  189.068223]  [<000003a8b22d1694>] ksys_pread64+0xa4/0xd0
+[  189.068225]  [<000003a8b2e13b7e>] __do_syscall+0x14e/0x590
+[  189.068228]  [<000003a8b2e24242>] system_call+0x72/0x90
+[  189.068231] task:oob-dirty-repro state:D stack:0     pid:8155  tgid:8151  ppid:7260   task_flags:0x400040 flags:0x00000000
+[  189.068234] Call Trace:
+[  189.068235]  [<000003a8b2e19284>] __schedule+0x374/0x900
+[  189.068237]  [<000003a8b2e1984c>] schedule+0x3c/0xf0
+[  189.068239]  [<000003a8b2e1996c>] io_schedule+0x2c/0x40
+[  189.068241]  [<000003a8b219d158>] folio_wait_bit_common+0x198/0x3b0
+[  189.068244]  [<000003a8b263e2e8>] extent_write_cache_pages+0x348/0x4d0
+[  189.068246]  [<000003a8b263ea0a>] btrfs_writepages+0x6a/0xd0
+[  189.068249]  [<000003a8b21ad444>] do_writepages+0xd4/0x190
+[  189.068252]  [<000003a8b2199dec>] filemap_writeback+0xbc/0x100
+[  189.068255]  [<000003a8b2199e5a>] filemap_fdatawrite_range+0x2a/0x40
+[  189.068257]  [<000003a8b2637d3c>] btrfs_start_ordered_extent_nowriteback+0x18c/0x1d0
+[  189.068260]  [<000003a8b26260ce>] btrfs_page_mkwrite+0x22e/0x8d0
+[  189.068263]  [<000003a8b21f89d0>] do_page_mkwrite+0x60/0xf0
+[  189.068265]  [<000003a8b21ffa64>] do_wp_page+0x134/0x660
+[  189.068267]  [<000003a8b2206584>] __handle_mm_fault+0x1c4/0x5a0
+[  189.068269]  [<000003a8b22069f0>] handle_mm_fault+0x90/0x230
+[  189.068271]  [<000003a8b1ebfbd0>] do_exception+0x190/0x560
+[  189.068274]  [<000003a8b2e136c0>] __do_pgm_check+0x1b0/0x370
+[  189.068277]  [<000003a8b2e243a4>] pgm_check_handler+0x114/0x160
+[  189.068279]  [<000003a8b283135e>] _copy_to_iter+0x6e/0x870
+[  189.068281]  [<000003a8b2831c4a>] copy_page_to_iter+0xea/0x160
+[  189.068283]  [<000003a8b219ff8c>] filemap_read+0x1ec/0x400
+[  189.068285]  [<000003a8b22d0a70>] vfs_read+0x210/0x370
+[  189.068287]  [<000003a8b22d1694>] ksys_pread64+0xa4/0xd0
+[  189.068289]  [<000003a8b2e13b7e>] __do_syscall+0x14e/0x590
+[  189.068292]  [<000003a8b2e24242>] system_call+0x72/0x90
+[  189.068294] task:oob-dirty-repro state:D stack:0     pid:8156  tgid:8151  ppid:7260   task_flags:0x400040 flags:0x00000000
+[  189.068297] Call Trace:
+[  189.068298]  [<000003a8b2e19284>] __schedule+0x374/0x900
+[  189.068300]  [<000003a8b2e1984c>] schedule+0x3c/0xf0
+[  189.068302]  [<000003a8b2e1996c>] io_schedule+0x2c/0x40
+[  189.068304]  [<000003a8b219d158>] folio_wait_bit_common+0x198/0x3b0
+[  189.068307]  [<000003a8b263e2e8>] extent_write_cache_pages+0x348/0x4d0
+[  189.068310]  [<000003a8b263ea0a>] btrfs_writepages+0x6a/0xd0
+[  189.068313]  [<000003a8b21ad444>] do_writepages+0xd4/0x190
+[  189.068315]  [<000003a8b2199dec>] filemap_writeback+0xbc/0x100
+[  189.068318]  [<000003a8b2199e5a>] filemap_fdatawrite_range+0x2a/0x40
+[  189.068320]  [<000003a8b232bbf2>] sync_file_range+0x122/0x150
+[  189.068323]  [<000003a8b232bc84>] ksys_sync_file_range+0x64/0xb0
+[  189.068326]  [<000003a8b232bd0a>] __s390x_sys_sync_file_range+0x3a/0x50
+[  189.068328]  [<000003a8b2e13b7e>] __do_syscall+0x14e/0x590
+[  189.068331]  [<000003a8b2e24242>] system_call+0x72/0x90
+--------------uGF6w02qFA3LZDIF9td4sMgh
+Content-Type: text/x-csrc; charset=UTF-8; name="oob-dirty-repro.c"
+Content-Disposition: attachment; filename="oob-dirty-repro.c"
+Content-Transfer-Encoding: base64
+
+Ly8gU1BEWC1MaWNlbnNlLUlkZW50aWZpZXI6IEdQTC0yLjAKLyoKICogb29iLWRpcnR5LXJl
+cHJvLmMgLSByZXByb2R1Y2Ugb3V0LW9mLWJhbmQgZGlydHkgZm9saW9zIG9uIGJ0cmZzCiAq
+ICAgICAgICAgICAgICAgICAgICAgKGZvbGlvIGxvY2sgbGVhayBpbiB3cml0ZXBhZ2VfZGVs
+YWxsb2MoKSkKICoKICogRGVtb25zdHJhdGVzIHRoYXQgYSAiZm9saW8tbGV2ZWwgZGlydHkg
+ZmxhZyBzZXQsIGZzIG5ldmVyIG5vdGlmaWVkIgogKiBzdGF0ZSBjYW4gYmUgcHJvZHVjZWQg
+b24gYW55IGFyY2hpdGVjdHVyZSB3aXRoIHNhbmN0aW9uZWQsIGluLXRyZWUKICogQVBJcyAt
+IG5vIHMzOTAsIG5vIEtWTSByZXF1aXJlZDoKICoKICogICAxLiBBIGZpbGUgb24gYnRyZnMg
+aXMgd3JpdHRlbiB3aXRoIGxhcmdlIGJ1ZmZlcmVkIHdyaXRlcyBzbyB0aGUKICogICAgICBw
+YWdlIGNhY2hlIGJhY2tzIGl0IHdpdGggbGFyZ2UgZGF0YSBmb2xpb3MgKHY3LjItcmMxKyku
+CiAqICAgMi4gVGhlIGZpbGUgaXMgbW1hcCdlZCBNQVBfU0hBUkVELgogKiAgIDMuIFRocmVh
+ZCBBIGxvb3BzIE9fRElSRUNUIHJlYWRzICppbnRvKiB0aGF0IG1hcHBpbmcuICBUaGUgZGly
+ZWN0CiAqICAgICAgSS9PIHJlYWQgcGF0aCBwaW5zIHRoZSBkZXN0aW5hdGlvbiBwYWdlcyAo
+R1VQOyB0aGUgaW5pdGlhbAogKiAgICAgIGZhdWx0IHJ1bnMgLT5wYWdlX21rd3JpdGUoKSBh
+bmQgcmVzZXJ2ZXMgZGVsYWxsb2MgcHJvcGVybHkpCiAqICAgICAgYW5kIG9uIGJpbyBjb21w
+bGV0aW9uIHJlLWRpcnRpZXMgdGhlbSB2aWEKICogICAgICBiaW9fY2hlY2tfcGFnZXNfZGly
+dHkoKSAtPiBiaW9fcmVsZWFzZV9wYWdlcyh0cnVlKQogKiAgICAgIC0+IHVucGluX3VzZXJf
+cGFnZXNfZGlydHlfbG9jaygpIC0+IHNldF9wYWdlX2RpcnR5X2xvY2soKS4KICogICA0LiBU
+aHJlYWQgQiBsb29wcyBzeW5jX2ZpbGVfcmFuZ2UoV1JJVEV8V0FJVCkgb24gdGhlIHRhcmdl
+dCBmaWxlLgogKiAgICAgIFdoZW5ldmVyIGEgZnVsbCBjbGVhbiBjeWNsZSAoY2xlYXJfcGFn
+ZV9kaXJ0eV9mb3JfaW8oKSwKICogICAgICB3cml0ZWJhY2ssIGJpdHMgY2xlYXJlZCkgY29t
+cGxldGVzIGluc2lkZSB0aHJlYWQgQSdzCiAqICAgICAgc3VibWlzc2lvbi0+Y29tcGxldGlv
+biB3aW5kb3csIHRoZSBjb21wbGV0aW9uLXRpbWUKICogICAgICBzZXRfcGFnZV9kaXJ0eV9s
+b2NrKCkgaGl0cyBhICpjbGVhbiogZm9saW86IGZpbGVtYXBfZGlydHlfZm9saW8oKQogKiAg
+ICAgIHNldHMgb25seSB0aGUgZm9saW8gZmxhZyBhbmQgdGhlIHhhcnJheSB0YWcgLSBubyBi
+dHJmcyBzdWJwYWdlCiAqICAgICAgZGlydHkgYml0LCBubyBkZWxhbGxvYyByZXNlcnZhdGlv
+bi4gIFNlZSB0aGUgMjAteWVhci1vbGQgY29tbWVudAogKiAgICAgIGFib3ZlIGJpb19zZXRf
+cGFnZXNfZGlydHkoKSBpbiBibG9jay9iaW8uYyBkZXNjcmliaW5nIGV4YWN0bHkKICogICAg
+ICB0aGlzICgib3RoZXIgY29kZSAoZWcsIGZsdXNoZXIgdGhyZWFkcykgY291bGQgY2xlYW4g
+dGhlIHBhZ2VzIikuCiAqICAgNS4gVGhlIG5leHQgd3JpdGViYWNrIG9mIHRoYXQgZm9saW8g
+ZW50ZXJzIHdyaXRlcGFnZV9kZWxhbGxvYygpCiAqICAgICAgd2l0aCBhbiBlbXB0eSBzdWJw
+YWdlIGRpcnR5IGJpdG1hcCwgdGFrZXMgdGhlCiAqICAgICAgYml0bWFwX2VtcHR5KCkgLT4g
+cmV0dXJuIDEgcGF0aCBhbmQgbGVha3MgdGhlIGZvbGlvIGxvY2suCiAqICAgICAgRXZlcnkg
+c3Vic2VxdWVudCBsb2NrZXIgKG1rd3JpdGUgZmF1bHRzLCBzeW5jLCBmbHVzaGVyKSB0aGVu
+CiAqICAgICAgaGFuZ3MgaW4gRCBzdGF0ZS4KICoKICogVGhyZWFkIEMgc3RvcmVzIGludG8g
+dGhlIG1hcHBpbmcgKG1rd3JpdGUgdHJhZmZpYywgbGlrZSBLVk0gdkNQVXMpCiAqIGFuZCBh
+IHdhdGNoZG9nIHJlcG9ydHMgd2hlbiBhbGwgdGhyZWFkcyBzdG9wIG1ha2luZyBwcm9ncmVz
+cy4KICoKICogVXNhZ2U6ICBnY2MgLU8yIC1wdGhyZWFkIC1XYWxsIC1vIG9vYi1kaXJ0eS1y
+ZXBybyBvb2ItZGlydHktcmVwcm8uYwogKiAgICAgICAgIC4vb29iLWRpcnR5LXJlcHJvIDxk
+aXItb24tYnRyZnM+IFtydW50aW1lLXNlY29uZHNdCiAqCiAqIEV4cGVjdGVkIG9uIDcuMi1y
+YyAobGFyZ2UgZGF0YSBmb2xpb3MgZW5hYmxlZCk6IHdpdGhpbiBtaW51dGVzIHRoZQogKiB3
+YXRjaGRvZyByZXBvcnRzIGEgc3RhbGw7IHRoZSBzeW5jL3N0b3JlL2lvIHRocmVhZHMgYXJl
+IGluIEQgc3RhdGUsCiAqICJlY2hvIHcgPiAvcHJvYy9zeXNycS10cmlnZ2VyIiBzaG93cyB0
+aGVtIHF1ZXVlZCBvbiBhIGZvbGlvIGxvY2sKICogKGZvbGlvX3dhaXRfYml0X2NvbW1vbiA8
+LSBidHJmc19wYWdlX21rd3JpdGUgLyBleHRlbnRfd3JpdGVfY2FjaGVfcGFnZXMpLgogKiBP
+biBrZXJuZWxzIHdpdGhvdXQgbGFyZ2UgZGF0YSBmb2xpb3MgdGhlIGxlYWsgcGF0aCBpcyBu
+b3QgcmVhY2hhYmxlCiAqIChzaW5nbGUtYmxvY2sgZm9saW9zIGdldCBiaXQgMCBmb3JjZWQg
+aW4gYnRyZnNfY29weV9zdWJwYWdlX2RpcnR5X2JpdG1hcCgpKTsKICogdGhlIHNhbWUgcmFj
+ZSB0aGVuIHByb2R1Y2VzIHRoZSBvdXQtb2YtYmFuZCBzdGF0ZSB0aGF0IHRoZSAocmVtb3Zl
+ZCkKICogQ09XIGZpeHVwIC8gInJlamVjdCBvdXQtb2YtYmFuZCBkaXJ0eSBmb2xpb3MiIGNv
+ZGUgdXNlZCB0byBjYXRjaC4KICoKICogV0FSTklORzogb24gYWZmZWN0ZWQga2VybmVscyB0
+aGlzIHdlZGdlcyB3cml0ZWJhY2sgb2YgdGhlIHRhcmdldAogKiBmaWxlc3lzdGVtICh1bmtp
+bGxhYmxlIEQtc3RhdGUgdGFza3MsIHN5bmNmcyBoYW5ncykgdW50aWwgcmVib290LgogKiBS
+dW4gaXQgb24gYSBzY3JhdGNoIG1hY2hpbmUuCiAqLwojZGVmaW5lIF9HTlVfU09VUkNFCiNp
+bmNsdWRlIDxlcnJuby5oPgojaW5jbHVkZSA8ZmNudGwuaD4KI2luY2x1ZGUgPGxpbnV4L2Zz
+Lmg+CiNpbmNsdWRlIDxzeXMvaW9jdGwuaD4KI2luY2x1ZGUgPHB0aHJlYWQuaD4KI2luY2x1
+ZGUgPHN0ZGF0b21pYy5oPgojaW5jbHVkZSA8c3RkaW50Lmg+CiNpbmNsdWRlIDxzdGRpby5o
+PgojaW5jbHVkZSA8c3RkbGliLmg+CiNpbmNsdWRlIDxzdHJpbmcuaD4KI2luY2x1ZGUgPHN5
+cy9tbWFuLmg+CiNpbmNsdWRlIDxzeXMvc3RhdC5oPgojaW5jbHVkZSA8c3lzL3N0YXRmcy5o
+PgojaW5jbHVkZSA8dGltZS5oPgojaW5jbHVkZSA8dW5pc3RkLmg+CgojZGVmaW5lIEJUUkZT
+X1NVUEVSX01BR0lDIDB4OTEyMzY4M0UKCiNkZWZpbmUgVEFSR0VUX1NaCSgxNlVMIDw8IDIw
+KQkvKiBtbWFwJ2VkIHRhcmdldCBmaWxlICAgICAgICAgICovCiNkZWZpbmUgU1JDX1NaCQko
+NFVMIDw8IDIwKQkvKiBPX0RJUkVDVCByZWFkIHNvdXJjZSAgICAgICAgICovCiNkZWZpbmUg
+SU9fU1oJCSgyVUwgPDwgMjApCS8qIHBlci1yZWFkIHNpemUgKHdpZGUgd2luZG93KSAgKi8K
+I2RlZmluZSBXUklURV9DSFVOSwkoMVVMIDw8IDIwKQkvKiBidWZmZXJlZCBpbml0IHdyaXRl
+cyAobGFyZ2UgZm9saW9zKSAqLwojZGVmaW5lIFNUQUxMX1NFQ1MJMjAKI2RlZmluZSBOUl9J
+T19USFJFQURTCTQKCnN0YXRpYyBjaGFyICptYXA7CnN0YXRpYyBpbnQgdGFyZ2V0X2ZkLCBz
+cmNfZmQ7CnN0YXRpYyBhdG9taWNfdWxvbmcgaW9faXRlcnMsIHN5bmNfaXRlcnMsIHN0b3Jl
+X2l0ZXJzOwpzdGF0aWMgYXRvbWljX2ludCBzdG9wOwpzdGF0aWMgdW5zaWduZWQgbG9uZyBy
+dW50aW1lID0gNjAwOwoKc3RhdGljIHZvaWQgZGllKGNvbnN0IGNoYXIgKndoYXQpCnsKCXBl
+cnJvcih3aGF0KTsKCWV4aXQoMSk7Cn0KCnN0YXRpYyB2b2lkICppb190aHJlYWQodm9pZCAq
+YXJnIF9fYXR0cmlidXRlX18oKHVudXNlZCkpKQp7CgkvKgoJICogT25seSB0aGUgbG93ZXIg
+aGFsZjogYnRyZnMgdmVyaWZpZXMgcmVhZCBjc3VtcyBpbiB0aGUgKHBpbm5lZCkKCSAqIGRl
+c3RpbmF0aW9uIHBhZ2VzIGFmdGVyIERNQSwgc28gdGhlIHN0b3JlIHRocmVhZCBtdXN0IG5v
+dCBwb2tlCgkgKiB0aGUgc2FtZSBwYWdlcywgYW5kIHRoZSBOT0NPVyBzb3VyY2UgYXZvaWRz
+IGNzdW1zIGFsdG9nZXRoZXIuCgkgKi8KCXVuc2lnbmVkIGxvbmcgbnJhbmdlcyA9IChUQVJH
+RVRfU1ogLyAyKSAvIElPX1NaOwoKCXdoaWxlICghYXRvbWljX2xvYWQoJnN0b3ApKSB7CgkJ
+b2ZmX3Qgb2ZmID0gKHJhbmRvbSgpICUgbnJhbmdlcykgKiBJT19TWjsKCQlzc2l6ZV90IHIg
+PSBwcmVhZChzcmNfZmQsIG1hcCArIG9mZiwgSU9fU1osIDApOwoKCQlpZiAociA8IDAgJiYg
+ZXJybm8gIT0gRUlOVFIgJiYgZXJybm8gIT0gRUlPKQoJCQlkaWUoIk9fRElSRUNUIHByZWFk
+IGludG8gbWFwcGluZyIpOwoJCWF0b21pY19mZXRjaF9hZGQoJmlvX2l0ZXJzLCAxKTsKCX0K
+CXJldHVybiBOVUxMOwp9CgpzdGF0aWMgdm9pZCAqc3luY190aHJlYWQodm9pZCAqYXJnIF9f
+YXR0cmlidXRlX18oKHVudXNlZCkpKQp7Cgl3aGlsZSAoIWF0b21pY19sb2FkKCZzdG9wKSkg
+ewoJCWlmIChzeW5jX2ZpbGVfcmFuZ2UodGFyZ2V0X2ZkLCAwLCBUQVJHRVRfU1osCgkJCQkg
+ICAgU1lOQ19GSUxFX1JBTkdFX1dBSVRfQkVGT1JFIHwKCQkJCSAgICBTWU5DX0ZJTEVfUkFO
+R0VfV1JJVEUgfAoJCQkJICAgIFNZTkNfRklMRV9SQU5HRV9XQUlUX0FGVEVSKSA8IDApCgkJ
+CWRpZSgic3luY19maWxlX3JhbmdlIik7CgkJYXRvbWljX2ZldGNoX2FkZCgmc3luY19pdGVy
+cywgMSk7Cgl9CglyZXR1cm4gTlVMTDsKfQoKc3RhdGljIHZvaWQgKnN0b3JlX3RocmVhZCh2
+b2lkICphcmcgX19hdHRyaWJ1dGVfXygodW51c2VkKSkpCnsKCXN0cnVjdCB0aW1lc3BlYyB0
+cyA9IHsgMCwgMTAwMDAwMCB9OwkvKiAxbXMgKi8KCgl3aGlsZSAoIWF0b21pY19sb2FkKCZz
+dG9wKSkgewoJCXVuc2lnbmVkIGxvbmcgb2ZmID0gVEFSR0VUX1NaIC8gMiArCgkJCShyYW5k
+b20oKSAlIChUQVJHRVRfU1ogLyAyIC8gNDA5NikpICogNDA5NjsKCgkJbWFwW29mZl0gXj0g
+MTsJCQkvKiBta3dyaXRlIGZhdWx0IHRyYWZmaWMgKi8KCQlhdG9taWNfZmV0Y2hfYWRkKCZz
+dG9yZV9pdGVycywgMSk7CgkJbmFub3NsZWVwKCZ0cywgTlVMTCk7Cgl9CglyZXR1cm4gTlVM
+TDsKfQoKaW50IG1haW4oaW50IGFyZ2MsIGNoYXIgKiphcmd2KQp7CgljaGFyIHBhdGhbNDA5
+Nl0sICpidWY7CglzdHJ1Y3Qgc3RhdGZzIHNmczsKCXB0aHJlYWRfdCBpb1tOUl9JT19USFJF
+QURTXSwgc3ksIHN0OwoJdW5zaWduZWQgbG9uZyBsYXN0X2lvID0gMCwgbGFzdF9zeW5jID0g
+MDsKCXVuc2lnbmVkIGxvbmcgZWxhcHNlZCA9IDAsIHN0YWxsZWQgPSAwOwoKCXNldHZidWYo
+c3Rkb3V0LCBOVUxMLCBfSU9MQkYsIDApOwoJaWYgKGFyZ2MgPCAyKSB7CgkJZnByaW50Zihz
+dGRlcnIsICJ1c2FnZTogJXMgPGRpci1vbi1idHJmcz4gW3J1bnRpbWUtc2Vjc11cbiIsCgkJ
+CWFyZ3ZbMF0pOwoJCXJldHVybiAxOwoJfQoJaWYgKGFyZ2MgPiAyKQoJCXJ1bnRpbWUgPSBz
+dHJ0b3VsKGFyZ3ZbMl0sIE5VTEwsIDApOwoKCWlmIChzdGF0ZnMoYXJndlsxXSwgJnNmcykg
+PCAwKQoJCWRpZSgic3RhdGZzIik7CglpZiAoKHVuc2lnbmVkIGludClzZnMuZl90eXBlICE9
+IEJUUkZTX1NVUEVSX01BR0lDKQoJCWZwcmludGYoc3RkZXJyLCAid2FybmluZzogJXMgaXMg
+bm90IG9uIGJ0cmZzLCAiCgkJCSJ0aGUgd3JpdGVwYWdlX2RlbGFsbG9jKCkgcGF0aCB3aWxs
+IG5vdCBiZSBoaXRcbiIsCgkJCWFyZ3ZbMV0pOwoKCS8qIFRhcmdldCBmaWxlOiBsYXJnZSBi
+dWZmZXJlZCB3cml0ZXMgLT4gbGFyZ2UgZGF0YSBmb2xpb3MuICovCglzbnByaW50ZihwYXRo
+LCBzaXplb2YocGF0aCksICIlcy9vb2ItdGFyZ2V0LmRhdCIsIGFyZ3ZbMV0pOwoJdGFyZ2V0
+X2ZkID0gb3BlbihwYXRoLCBPX1JEV1IgfCBPX0NSRUFUIHwgT19UUlVOQywgMDYwMCk7Cglp
+ZiAodGFyZ2V0X2ZkIDwgMCkKCQlkaWUoIm9wZW4gdGFyZ2V0Iik7CglidWYgPSBhbGlnbmVk
+X2FsbG9jKDQwOTYsIFdSSVRFX0NIVU5LKTsKCWlmICghYnVmKQoJCWRpZSgiYWxpZ25lZF9h
+bGxvYyIpOwoJbWVtc2V0KGJ1ZiwgMHg1YSwgV1JJVEVfQ0hVTkspOwoJZm9yICh1bnNpZ25l
+ZCBsb25nIG8gPSAwOyBvIDwgVEFSR0VUX1NaOyBvICs9IFdSSVRFX0NIVU5LKQoJCWlmIChw
+d3JpdGUodGFyZ2V0X2ZkLCBidWYsIFdSSVRFX0NIVU5LLCBvKSAhPSBXUklURV9DSFVOSykK
+CQkJZGllKCJwd3JpdGUgdGFyZ2V0Iik7CglpZiAoZnN5bmModGFyZ2V0X2ZkKSA8IDApCgkJ
+ZGllKCJmc3luYyB0YXJnZXQiKTsKCgkvKiBTb3VyY2UgZmlsZSBmb3IgdGhlIE9fRElSRUNU
+IHJlYWRzLiAqLwoJc25wcmludGYocGF0aCwgc2l6ZW9mKHBhdGgpLCAiJXMvb29iLXNyYy5k
+YXQiLCBhcmd2WzFdKTsKCXNyY19mZCA9IG9wZW4ocGF0aCwgT19SRFdSIHwgT19DUkVBVCB8
+IE9fVFJVTkMgfCBPX0RJUkVDVCwgMDYwMCk7CglpZiAoc3JjX2ZkIDwgMCkKCQlkaWUoIm9w
+ZW4gc291cmNlIChPX0RJUkVDVCkiKTsKCXsJLyogTk9DT1cvbm9kYXRhc3VtOiBrZWVwIGNz
+dW0gdmVyaWZpY2F0aW9uIG91dCBvZiB0aGUgcGljdHVyZSAqLwoJCWludCBhdHRyID0gMDsK
+CgkJaW9jdGwoc3JjX2ZkLCBGU19JT0NfR0VURkxBR1MsICZhdHRyKTsKCQlhdHRyIHw9IEZT
+X05PQ09XX0ZMOwoJCWlvY3RsKHNyY19mZCwgRlNfSU9DX1NFVEZMQUdTLCAmYXR0cik7Cgl9
+Cglmb3IgKHVuc2lnbmVkIGxvbmcgbyA9IDA7IG8gPCBTUkNfU1o7IG8gKz0gV1JJVEVfQ0hV
+TkspCgkJaWYgKHB3cml0ZShzcmNfZmQsIGJ1ZiwgV1JJVEVfQ0hVTkssIG8pICE9IFdSSVRF
+X0NIVU5LKQoJCQlkaWUoInB3cml0ZSBzb3VyY2UiKTsKCWlmIChmc3luYyhzcmNfZmQpIDwg
+MCkKCQlkaWUoImZzeW5jIHNvdXJjZSIpOwoJZnJlZShidWYpOwoKCW1hcCA9IG1tYXAoTlVM
+TCwgVEFSR0VUX1NaLCBQUk9UX1JFQUQgfCBQUk9UX1dSSVRFLCBNQVBfU0hBUkVELAoJCSAg
+IHRhcmdldF9mZCwgMCk7CglpZiAobWFwID09IE1BUF9GQUlMRUQpCgkJZGllKCJtbWFwIik7
+CgoJcHJpbnRmKCJydW5uaW5nOiBPX0RJUkVDVCByZWFkcyBpbnRvIE1BUF9TSEFSRUQgYnRy
+ZnMgbWFwcGluZyB2cy4gIgoJICAgICAgICJzeW5jX2ZpbGVfcmFuZ2UsICVsdXMgbWF4XG4i
+LCBydW50aW1lKTsKCglmb3IgKGludCBuID0gMDsgbiA8IE5SX0lPX1RIUkVBRFM7IG4rKykK
+CQlwdGhyZWFkX2NyZWF0ZSgmaW9bbl0sIE5VTEwsIGlvX3RocmVhZCwgTlVMTCk7CglwdGhy
+ZWFkX2NyZWF0ZSgmc3ksIE5VTEwsIHN5bmNfdGhyZWFkLCBOVUxMKTsKCXB0aHJlYWRfY3Jl
+YXRlKCZzdCwgTlVMTCwgc3RvcmVfdGhyZWFkLCBOVUxMKTsKCglmb3IgKGVsYXBzZWQgPSAw
+OyBlbGFwc2VkIDwgcnVudGltZTsgZWxhcHNlZCArPSA1KSB7CgkJdW5zaWduZWQgbG9uZyBp
+LCBzLCB3OwoKCQlzbGVlcCg1KTsKCQlpID0gYXRvbWljX2xvYWQoJmlvX2l0ZXJzKTsKCQlz
+ID0gYXRvbWljX2xvYWQoJnN5bmNfaXRlcnMpOwoJCXcgPSBhdG9taWNfbG9hZCgmc3RvcmVf
+aXRlcnMpOwoJCXByaW50ZigiICB0PSU0bHVzIGlvPSVsdSBzeW5jPSVsdSBzdG9yZT0lbHVc
+biIsCgkJICAgICAgIGVsYXBzZWQgKyA1LCBpLCBzLCB3KTsKCgkJaWYgKGkgPT0gbGFzdF9p
+byAmJiBzID09IGxhc3Rfc3luYykgewoJCQlzdGFsbGVkICs9IDU7CgkJCWlmIChzdGFsbGVk
+ID49IFNUQUxMX1NFQ1MpIHsKCQkJCXByaW50ZigiXG4qKiogaW8rc3luYyBUSFJFQURTIFNU
+QUxMRUQgZm9yICV1cyAtICIKCQkJCSAgICAgICAiZm9saW8gbG9jayBsZWFrIHJlcHJvZHVj
+ZWQ/ICoqKlxuIgoJCQkJICAgICAgICJDaGVjazogIGdyZXAgLWwgLiAvcHJvYy8lZC90YXNr
+Lyovc3RhY2sgIgoJCQkJICAgICAgICJ8IHhhcmdzIGNhdFxuIgoJCQkJICAgICAgICIgICAg
+ICAgIGVjaG8gdyA+IC9wcm9jL3N5c3JxLXRyaWdnZXI7ICIKCQkJCSAgICAgICAiZG1lc2cg
+fCB0YWlsIC0xMDBcbiIKCQkJCSAgICAgICAiRXhwZWN0OiBmb2xpb193YWl0X2JpdF9jb21t
+b24gPC0gIgoJCQkJICAgICAgICJidHJmc19wYWdlX21rd3JpdGUgL1xuIgoJCQkJICAgICAg
+ICIgICAgICAgIGV4dGVudF93cml0ZV9jYWNoZV9wYWdlcyBpbiAiCgkJCQkgICAgICAgIkQt
+c3RhdGUgdGhyZWFkcy5cbiIsCgkJCQkgICAgICAgU1RBTExfU0VDUywgZ2V0cGlkKCkpOwoJ
+CQkJLyogbGVhdmUgdGhlIGh1bmcgcHJvY2VzcyBmb3IgaW5zcGVjdGlvbiAqLwoJCQkJcGF1
+c2UoKTsKCQkJfQoJCX0gZWxzZSB7CgkJCXN0YWxsZWQgPSAwOwoJCX0KCQlsYXN0X2lvID0g
+aTsKCQlsYXN0X3N5bmMgPSBzOwoKCX0KCglhdG9taWNfc3RvcmUoJnN0b3AsIDEpOwoJZm9y
+IChpbnQgbiA9IDA7IG4gPCBOUl9JT19USFJFQURTOyBuKyspCgkJcHRocmVhZF9qb2luKGlv
+W25dLCBOVUxMKTsKCXB0aHJlYWRfam9pbihzeSwgTlVMTCk7CglwdGhyZWFkX2pvaW4oc3Qs
+IE5VTEwpOwoJcHJpbnRmKCJmaW5pc2hlZCB3aXRob3V0IHN0YWxsIC0gbm90IHJlcHJvZHVj
+ZWQgaW4gJWx1cyAiCgkgICAgICAgIih0cnkgYSBsb25nZXIgcnVudGltZTsgdGhlIHJhY2Ug
+d2luZG93IGlzXG4iCgkgICAgICAgInN1Ym1pc3Npb24tPmNvbXBsZXRpb24gb2YgdGhlIE9f
+RElSRUNUIHJlYWQgdnMuIG9uZSBmdWxsICIKCSAgICAgICAid3JpdGViYWNrIGN5Y2xlKVxu
+IiwgcnVudGltZSk7CglyZXR1cm4gMDsKfQo=
+
+--------------uGF6w02qFA3LZDIF9td4sMgh--
 

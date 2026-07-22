@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBF013264EB
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 12:41:48 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8721D3368B2
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 12:41:52 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784724112; cv=none; b=Kk1xVGHGRjBiKvrsffli+hI5Jp0W3Rx07Q+jnKoQw63XXeuo5PeN6SM2GIjFFs4cN+5SnTwenXhqOCDka1l6tn6OKMz/k1CvaQajBIkET/L9JPttwX7L8RSdRMsrGVE+/30TDGSTu+5+n3Fd7As9fIFdcvvhpehJ/7qL20wFTao=
+	t=1784724116; cv=none; b=V7/AmvsSbje6nQVNuXObMosQw7LuzgCZyUpKrzqXeEvgwPcRKbgU8HfS2paHynLZIP6Tg3hWHMDJag+lJkBSSi0ASY16bRvdsHik9ILDZo0GJDMg+AGGdLBWcRUy7ooHHcFPcPdTTj+fFtjRZbKAKHMnb7XH68LQVRvtRVmxZJs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784724112; c=relaxed/simple;
-	bh=bY++5UZjUjIijY2DmkqIy/eGJls2u0cViyNIn7QclQk=;
+	s=arc-20240116; t=1784724116; c=relaxed/simple;
+	bh=e0zlBFJvIUzR3isk3Pn4K0t9lcgt6nfj3fMtPZOQGyE=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=L2lGun9fg3OH6Bu3HdNcAuWdIB0H1otZt5/ivI8vTzcDopho1lEWayJv8iK9N3MqEzePrjvYQS3cBrpKohExboZZPlatQDmEOcOdh0YOcyIHkokUSx4n5wMYbislAdFElGX/pdGa88/N82sr5CD9U8bNCIzF4k0ZLuNjRyOoIvc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dMhCaabv; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version; b=ZNmMZ41Mrrm+wyY+HSN8/35HoDQoBRbTJxw0xGOFDvMfZR5/H622OkQkW07tXceMau/LYHHgCY6MItLayupMPFNepFWtkiZaT0FBiITxWaX0iH0g+igpqRnIHYWrC7t37I0K2qFt52UbHpDnIWCRaliWb+anrfZf/u/fjziXqkE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MuUW1NxB; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dMhCaabv"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id F2F3F1F00A3A
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 12:41:46 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MuUW1NxB"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AFC0A1F00A3F
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 12:41:49 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1784724107;
-	bh=84gD9EtlNbYISkXGtokYVsHeoPRH6kDcdvRwZwhEw7s=;
+	s=k20260515; t=1784724110;
+	bh=oM6a6e4Z9xc7P47pddqzgLQR1ysGLSWt0yMc+0wjVVQ=;
 	h=From:To:Subject:Date:In-Reply-To:References;
-	b=dMhCaabv/z+zoW1nJJ6nEx9I0FxrdiIYNCOkUKVbP+LyvBkZHG6/Aq4Hawrd5u2lh
-	 x3arzPvFgLneyERGJDSGAO53RhT5m3oamrHfcYITVA+nHq5S+1Y5KYPZtwyHI34jqg
-	 lg+JotWSSGEUwXeVsN3qevRMOqlqRBa/ZbxXJr5/ALbZyyy+pCOXInXHHV0a4PnN3o
-	 KE977hEBomgjIv/aDVId9lhCwf63Yoa/oUkjcOtyth6P8Mam3LPSSVWEItQKBWTQDE
-	 DnPjiwd88jpxkR17uBGOWMYjw714hs8GkKi4VkjNEGVBpQnkmhu894U7YTtkt8eT1W
-	 YcEjs/0cNk/ew==
+	b=MuUW1NxBuF64znVvdeGUnpNrXQ+qfxc+AENCgIlEEkM6mHZzJyF7di0VBbJvDanRv
+	 Jqv+UIa6QRWTAyZ0W6RAPakjpusSIwl4uhJXbxfBkaG2Oycbp7ZnfsAtKDH8NploSq
+	 HbMKiSJAowp5jTklGjGqdJcYu10LBngQVk5Xr3ibMGm8zEu4Env9Q8CbC+QoNNxhl1
+	 B+LzNdhjxz9eA1IVh9iWBYUULdGlM436UErewGuN4lTStbcerV+S1BySbGDaO1CM97
+	 mkyTHleSTfRuDn7Bo6mMydsi7b4ed9/ZBOkfSX9aRtGUQE7Lq96pYWXAVzkidfkUED
+	 WwAEzQLJrmk5A==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/7] btrfs: stop sleeping for one jiffy in non-ssd mounts during log commit
-Date: Wed, 22 Jul 2026 13:41:37 +0100
-Message-ID: <13fd7ba0d00232d4126531173e9f43e079449775.1784656641.git.fdmanana@suse.com>
+Subject: [PATCH 4/7] btrfs: check for log writers count first in wait_for_writer()
+Date: Wed, 22 Jul 2026 13:41:40 +0100
+Message-ID: <e8c75f644119b2ce31a5846c9f04ffe0f75bf3c5.1784656641.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1784656641.git.fdmanana@suse.com>
 References: <cover.1784656641.git.fdmanana@suse.com>
@@ -44,172 +44,37 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Joining/starting a log transaction tracks if we ever had more than one task
-concurrently logging by setting the flag BTRFS_ROOT_MULTI_LOG_TASKS in the
-respective root. Once set, this flag remains for the rest of the lifetime
-of the transaction, only cleared when we don't have a log root and need to
-create a new one (transaction commits drop log roots).
-
-During log commit, if we are not on a ssd mount (or use the -o nossd mount
-option) and the BTRFS_ROOT_MULTI_LOG_TASKS flag is set, we sleep for one
-jiffy with the excuse to allow future log writers to join and log inodes
-and then commit a larger log transaction to reduce overall IO. However
-this is extremely inefficient because:
-
-1) If at some point we had multiple tasks logging concurrently but now
-   we have only one task at a time, we force it to wait for 1 jiffy;
-
-2) One jiffy can vary between 1ms to 10ms, depending on the kernel
-   config option CONFIG_HZ, which by default has a value of 250HZ and
-   that corresponds to 4ms - that is a lot.
-
-This massively reduces the latency of fsyncs for non-ssd mounts, even
-on consumer grade spinning disks.
-
-Remove this mechanism to track if we have (or ever had) multiple tasks
-logging and wait for 1 jiffy.
-
-The following fio test was used to benchmark:
-
-   $ cat fio-buffered-fsync.sh
-   DEV=/dev/sdj
-   MNT=/mnt/sdj
-   MOUNT_OPTIONS=""
-   MKFS_OPTIONS=""
-
-   if [ $# -ne 6 ]; then
-      echo "Use $0 NUM_JOBS FILE_SIZE IO_SIZE FSYNC_FREQ BLOCK_SIZE [write|randwrite]"
-      exit 1
-   fi
-
-   NUM_JOBS=$1
-   FILE_SIZE=$2
-   IO_SIZE=$3
-   FSYNC_FREQ=$4
-   BLOCK_SIZE=$5
-   WRITE_MODE=$6
-
-   if [ "$WRITE_MODE" != "write" ] && [ "$WRITE_MODE" != "randwrite" ]; then
-      echo "Invalid WRITE_MODE, must be 'write' or 'randwrite'"
-      exit 1
-   fi
-
-   cat <<EOF > /tmp/fio-job.ini
-   [writers]
-   rw=$WRITE_MODE
-   fsync=$FSYNC_FREQ
-   fallocate=none
-   group_reporting=1
-   direct=0
-   bs=$BLOCK_SIZE
-   ioengine=psync
-   filesize=$FILE_SIZE
-   io_size=$IO_SIZE
-   directory=$MNT
-   numjobs=$NUM_JOBS
-   EOF
-
-   echo
-   echo "Using config:"
-   echo
-   cat /tmp/fio-job.ini
-   echo
-
-   umount $MNT &> /dev/null
-   mkfs.btrfs -f $MKFS_OPTIONS $DEV
-   mount $MOUNT_OPTIONS $DEV $MNT
-
-   fio /tmp/fio-job.ini
-   umount $MNT
-
-Running the script as:  ./fio-buffered-fsync.sh 8 64M 64M 1 4K randwrite
-
-Before patch:
-
-  WRITE: bw=2647KiB/s (2711kB/s), 2647KiB/s-2647KiB/s (2711kB/s-2711kB/s), io=512MiB (537MB), run=198055-198055msec
-
-After patch:
-
-  WRITE: bw=14.9MiB/s (15.6MB/s), 14.9MiB/s-14.9MiB/s (15.6MB/s-15.6MB/s), io=512MiB (537MB), run=34471-34471msec
-
-That's about 5.7 times faster.
+In wait_for_writer() we first add the wait queue entry to the wait queue
+and then check for the number of log writers. In case where right in the
+first iteration of the loop we have no log writers, we end up wasting time
+adding the wait queue entry to the wait queue (function call, locking the
+queue with irq disable and enable on unlock, etc). So check first for the
+number of log writers before adding to the wait queue.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.h    |  2 --
- fs/btrfs/tree-log.c | 18 +-----------------
- 2 files changed, 1 insertion(+), 19 deletions(-)
+ fs/btrfs/tree-log.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6de7ad191e04..0f2653182405 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -131,7 +131,6 @@ enum {
- 	BTRFS_ROOT_ORPHAN_ITEM_INSERTED,
- 	BTRFS_ROOT_DEFRAG_RUNNING,
- 	BTRFS_ROOT_FORCE_COW,
--	BTRFS_ROOT_MULTI_LOG_TASKS,
- 	BTRFS_ROOT_DIRTY,
- 	BTRFS_ROOT_DELETING,
- 
-@@ -216,7 +215,6 @@ struct btrfs_root {
- 	 * to access this field.
- 	 */
- 	int last_log_commit;
--	pid_t log_start_pid;
- 
- 	u64 last_trans;
- 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 875e4ddc68ea..ccc262833a7c 100644
+index 191308982e9c..08af1e66c758 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -316,13 +316,6 @@ static int start_log_trans(struct btrfs_trans_handle *trans,
- 			wait_log_commit(root, root->log_transid - 1);
- 			goto again;
- 		}
--
--		if (!root->log_start_pid) {
--			clear_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
--			root->log_start_pid = current->pid;
--		} else if (root->log_start_pid != current->pid) {
--			set_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
--		}
- 	} else {
- 		/*
- 		 * This means fs_info->log_root_tree was already created
-@@ -340,8 +333,6 @@ static int start_log_trans(struct btrfs_trans_handle *trans,
- 			goto out;
+@@ -3202,11 +3202,11 @@ static void wait_for_writer(struct btrfs_root *root)
+ 	DEFINE_WAIT(wait);
  
- 		set_bit(BTRFS_ROOT_HAS_LOG_TREE, &root->state);
--		clear_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
--		root->log_start_pid = current->pid;
- 	}
- 
- 	atomic_inc(&root->log_writers);
-@@ -3347,13 +3338,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 
- 	while (1) {
- 		int batch = atomic_read(&root->log_batch);
--		/* when we're on an ssd, just kick the log commit out */
--		if (!btrfs_test_opt(fs_info, SSD) &&
--		    test_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state)) {
--			mutex_unlock(&root->log_mutex);
--			schedule_timeout_uninterruptible(1);
--			mutex_lock(&root->log_mutex);
--		}
-+
- 		wait_for_writer(root);
- 		if (batch == atomic_read(&root->log_batch))
+ 	for (;;) {
+-		prepare_to_wait(&root->log_writer_wait, &wait,
+-				TASK_UNINTERRUPTIBLE);
+-		if (!atomic_read(&root->log_writers))
++		if (atomic_read(&root->log_writers) == 0)
  			break;
-@@ -3414,7 +3399,6 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
  
- 	btrfs_set_root_log_transid(root, root->log_transid + 1);
- 	log->log_transid = root->log_transid;
--	root->log_start_pid = 0;
- 	/*
- 	 * IO has been started, blocks of the log tree have WRITTEN flag set
- 	 * in their headers. new modifications of the log will be written to
++		prepare_to_wait(&root->log_writer_wait, &wait,
++				TASK_UNINTERRUPTIBLE);
+ 		mutex_unlock(&root->log_mutex);
+ 		schedule();
+ 		mutex_lock(&root->log_mutex);
 -- 
 2.47.2
 

@@ -1,40 +1,39 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CEB8B35E1D4
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 15:35:19 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 487B138E8DA
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 15:41:30 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784734522; cv=none; b=vFr9UejAjvL/dtjG2pUw2XzQmBO30Q97pYk3iMyM4ibcyhP8CgBDL6LheI0D7x6OVHdopRHw/xsTiJKeCcMZaoQv19m0DMMEGgTyvBGCigpWnJa+4A44+QcDTXr+fF35D9DofNex9fUpn0cdU39GA/cxvDbEzukt4rhBUhphRxA=
+	t=1784734893; cv=none; b=KufBw+Izl7D9DAteD11gwEO7UpKzWjeC8wwCMjVd8f6DUOqsZLE9rMxxLzFf3/bn0145Zf1yulI+sZwZRIObjbAV2ZF9m7HfBxwQIxlvCHXcrdg+c5fr95LEeC/I95/xHd0nVmjGN/Qkd9BIbe/KtYGfw/uRFjiHecgrgehosBk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784734522; c=relaxed/simple;
-	bh=8TZCL8oRuM5pQNYeX3CkVCvRQgIW3fZrU66u0BhoRdQ=;
+	s=arc-20240116; t=1784734893; c=relaxed/simple;
+	bh=4fVCrWau87WTKizhfYTIvtFkCrcImWaV2dnVjBpufGE=;
 	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=ibR6ouKc29Zk+j55a1fWt+0tgI2ZUWSW3EBX5uUSSOL6ALUx5834pQAiBnI0esGWQCfIRlsk+suni+f/AWBhWkJEhCatzJhYFkItNRIiNvzjnlRjzEPIlblh/4PgymVaj1bQia/maPatouKJ1AKFMXuO4EvlbQDOsqixL2gE2mY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=jtUxV57o; arc=none smtp.client-ip=100.103.45.18
+	 Content-Type:MIME-Version; b=DsCSAJan8JSkTG23QPmWSiWXozZCmVKs9RKnqgSz4xYiIRWDTZH0nESaqUftGCQL0oziWgnP7S6y11Enj7WDCEufQmPrBke1zbFFze3DBsDhJUMpPDvM/kqNqhpx2vTYjhaK1jjMQaS/WMbUY+n9XS943vaEI5gpCM0FfjzG+B8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=T4NHORWj; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="jtUxV57o"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8C2AA1F000E9;
-	Wed, 22 Jul 2026 15:35:19 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="T4NHORWj"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 24DF61F000E9;
+	Wed, 22 Jul 2026 15:41:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1784734519;
-	bh=tTddXr0EMupK0oU9x3Dhz6UzF/ofA2yw6IZUCW9m6jg=;
+	s=k20260515; t=1784734890;
+	bh=gyyGcB1gReBR5T4Z+x43ctlOmkIXhXJnDISMcCUbDlE=;
 	h=Subject:From:To:Date:In-Reply-To:References;
-	b=jtUxV57o/l+Me1pM+vwGjLXrqBGrX1TH3uIDp/BnOcd5uTDqPyam3GU/ptc70pU6M
-	 cmlWL+Z3oJmXlxxIP+EpPVilNbo0Fe45eM370bZwf18w6M80aTxVLrFXTIRPWCwmCB
-	 t0k8nfznvMCA30A5JPytage+WM9VQVSh+ihHsOZzpDnKNa6cD4Zk5CuUXEGn/F/d/H
-	 GRNr3ht/pDX84OSUMwTzCb6re0vGRECgkWiirZ10JjWZeijr+w2HF8vFUgq/aSwc5S
-	 NdALDnUi+1FdLQi7kxdGVkPxQI67Ge0vv+6ymsf7C1d3wlursKE7HZu48jmXWYxFIu
-	 QjehtL0RjrF9g==
-Message-ID: <52afd7310aff7fe4caaa999ec09cbefefb56c220.camel@kernel.org>
-Subject: Re: [PATCH v2 0/5] btrfs: some optimizations and cleanups for log
- syncing
+	b=T4NHORWjyRKwztNjUjvqNpPWUL3ozW2qJ3xDwfcndCj95TIwA5Q5dFQGj0QSqIFEl
+	 8qwHKvn+Z+ySCQphKpbSt6v8U+sGiONSY1SB69FEn/PqiUJlKbP9wnId6wbTSzTFEs
+	 hVgqqGKf1Q28O8TS5I4blDSagG261IgsCU9VLgbI5fPJFols6BJA8lWplFGezfXE7M
+	 OCcPvW/TidTt3+jMNCIbbPC2vyxHTuhmZae6nhXUMrn2Ux6FVTP6fSc21VWBX1ljJH
+	 EKGUywNcZahKDaFJSog4eUYS6W5OsOztmuGtmGoxNDqpYP0CBag8lH53/rcsFBA+bm
+	 kMnJ5csXStvgA==
+Message-ID: <9dab12847c3737a168e4323831e3f29bc92152b5.camel@kernel.org>
+Subject: Re: [PATCH] btrfs: disable large folios for systems with highmem
 From: Jeff Layton <jlayton@kernel.org>
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-Date: Wed, 22 Jul 2026 11:35:17 -0400
-In-Reply-To: <cover.1784733395.git.fdmanana@suse.com>
-References: <cover.1784656641.git.fdmanana@suse.com>
-	 <cover.1784733395.git.fdmanana@suse.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Date: Wed, 22 Jul 2026 11:41:28 -0400
+In-Reply-To: <555623ad2f49989444fd60eb2bd11f0371086670.1784540975.git.wqu@suse.com>
+References: 
+	<555623ad2f49989444fd60eb2bd11f0371086670.1784540975.git.wqu@suse.com>
 Autocrypt: addr=jlayton@kernel.org; prefer-encrypt=mutual;
  keydata=mQINBE6V0TwBEADXhJg7s8wFDwBMEvn0qyhAnzFLTOCHooMZyx7XO7dAiIhDSi7G1NPxw
  n8jdFUQMCR/GlpozMFlSFiZXiObE7sef9rTtM68ukUyZM4pJ9l0KjQNgDJ6Fr342Htkjxu/kFV1Wv
@@ -119,33 +118,55 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 
-On Wed, 2026-07-22 at 16:24 +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Mon, 2026-07-20 at 19:19 +0930, Qu Wenruo wrote:
+> [BUG]
+> There is a bug report that on 32bit systems (i686), btrfs crashes when
+> trying to do zstd compression:
 >=20
-> Some optimizations for log syncing, specially for non-sdd mounts, and
-> some cleanups. Details in the changelogs of each patch.
+>  BUG: unable to handle page fault for address: fffbc000
+>  #PF: supervisor read access in kernel mode
+>  #PF: error_code(0x0000) - not-present page
+>  CPU: 0 UID: 0 PID: 61 Comm: kworker/u8:5 Tainted: G                 N  7=
+.2.0-rc3-P3 #2 PREEMPTLAZY
+>  Hardware name: LENOVO 2007F2G/2007F2G, BIOS 79ETE7WW (2.27 ) 03/21/2011
+>  Workqueue: btrfs-delalloc btrfs_work_helper
+>  EIP: ZSTD_compressStream2+0x221/0x5fc
+>  Call Trace:
+>   ZSTD_compressStream+0xd/0x48
+>   zstd_compress_stream+0x8/0x10
+>   zstd_compress_bio+0x20a/0x564
+>   btrfs_compress_bio+0x94/0xc0
+>   compress_file_range+0x20a/0x380
+>   btrfs_work_helper+0xc1/0x1b4
+>   process_scheduled_works+0x15f/0x204
+>   worker_thread+0x10c/0x178
+>   kthread+0xe1/0xe8
+>   ret_from_fork+0x1d/0x14c
+>   ret_from_fork_asm+0x12/0x18
+>   entry_INT80_32+0xf0/0xf0
+>  CR2: 00000000fffbc000
+>  ---[ end trace 0000000000000000 ]---
 >=20
-> V2: Removed two patches which sashiko found problematic, the benefits of
->     fixing them up versus the complexity required to fix them is not wort=
-h
->     it. Updated last patch to add the data_race() annotation in the trace
->     events.
+> [CAUSE]
+> Inside zstd_compress_bio(), we assume the whole page cache folio can be
+> mapped in one go.
 >=20
-> Filipe Manana (5):
->   btrfs: stop sleeping for one jiffy in non-ssd mounts during log commit
->   btrfs: remove log batch counter use for fsync
->   btrfs: move condition for log commit wait into wait_log_commit()
->   btrfs: check for exit condition after waking in wait_log_commit()
->   btrfs: use simple booleans for log_commit field in struct btrfs_root
+> However that assumption is not true on systems with CONFIG_HIGHMEM, the
+> pages of the large folio can be in HIGHMEM, which needs to be mapped
+> before access.
 >=20
->  fs/btrfs/ctree.h             |  6 +--
->  fs/btrfs/disk-io.c           |  3 --
->  fs/btrfs/file.c              |  4 --
->  fs/btrfs/transaction.c       |  8 +---
->  fs/btrfs/tree-log.c          | 85 ++++++++++++------------------------
->  include/trace/events/btrfs.h |  4 +-
->  6 files changed, 32 insertions(+), 78 deletions(-)
+> Meanwhile zstd_compress_bio() only map the page of a large folio where
+> the start filepos is, the remaining pages are not mapped, and accessing
+> the remaining pages will trigger the above crash.
+>=20
 
-These all look like good cleanups, and the diffstat is nice!
+Yechh. The fact that kmap_local_folio() only maps the page at the
+particular offset in the highmem case seems like a landmine waiting for
+someone to step on.
+
+OTOH, who cares about highmem these days? I think there was some
+discussion of getting rid of it at LSF this year?
+
+In any case...
 
 Reviewed-by: Jeff Layton <jlayton@kernel.org>

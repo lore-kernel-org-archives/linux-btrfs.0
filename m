@@ -1,172 +1,238 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from fout-a4-smtp.messagingengine.com (fout-a4-smtp.messagingengine.com [103.168.172.147])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 487B138E8DA
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 15:41:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 46E0D43CE5B
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 17:08:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.147
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784734893; cv=none; b=KufBw+Izl7D9DAteD11gwEO7UpKzWjeC8wwCMjVd8f6DUOqsZLE9rMxxLzFf3/bn0145Zf1yulI+sZwZRIObjbAV2ZF9m7HfBxwQIxlvCHXcrdg+c5fr95LEeC/I95/xHd0nVmjGN/Qkd9BIbe/KtYGfw/uRFjiHecgrgehosBk=
+	t=1784740128; cv=none; b=I1b5vl/UN6R8YXzTjgPNvanSBHmpxPSJ2Ed79vyqRFFF6QSX/zdu3S7v8+rDNFpltq01aNSBYsxZXdqS46Kb/TepESZpQDApXAuiBpuypPlqM7JpkzeOKG1VHXOaQe2Tmaehfm3x84YMS+OGYPt9bzjaLvV3TOs4Su3aQKp9S3k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784734893; c=relaxed/simple;
-	bh=4fVCrWau87WTKizhfYTIvtFkCrcImWaV2dnVjBpufGE=;
-	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=DsCSAJan8JSkTG23QPmWSiWXozZCmVKs9RKnqgSz4xYiIRWDTZH0nESaqUftGCQL0oziWgnP7S6y11Enj7WDCEufQmPrBke1zbFFze3DBsDhJUMpPDvM/kqNqhpx2vTYjhaK1jjMQaS/WMbUY+n9XS943vaEI5gpCM0FfjzG+B8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=T4NHORWj; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1784740128; c=relaxed/simple;
+	bh=bsyDdArxZh1Jw2bCX2pLJ3eyPQYYITPykgA1o/GNnzA=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=bpdYOt8XGl+15Rllgw5EOGGbapcSL54/Y7THbb9w4FG6ZrQCwzndngQtqlS9f8R9f4z7pSQEXtRAn4rl57O8oqp6XNkoD2p8/kW70sB0Kku/QqIokBJmIR80m6CppDCGdoQz5pPXH2dtHzEoniphuj46zePUSigfozGb2/bVRhw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=lXG3DSQX; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=KmYDsFiv; arc=none smtp.client-ip=103.168.172.147
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="T4NHORWj"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 24DF61F000E9;
-	Wed, 22 Jul 2026 15:41:30 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1784734890;
-	bh=gyyGcB1gReBR5T4Z+x43ctlOmkIXhXJnDISMcCUbDlE=;
-	h=Subject:From:To:Date:In-Reply-To:References;
-	b=T4NHORWjyRKwztNjUjvqNpPWUL3ozW2qJ3xDwfcndCj95TIwA5Q5dFQGj0QSqIFEl
-	 8qwHKvn+Z+ySCQphKpbSt6v8U+sGiONSY1SB69FEn/PqiUJlKbP9wnId6wbTSzTFEs
-	 hVgqqGKf1Q28O8TS5I4blDSagG261IgsCU9VLgbI5fPJFols6BJA8lWplFGezfXE7M
-	 OCcPvW/TidTt3+jMNCIbbPC2vyxHTuhmZae6nhXUMrn2Ux6FVTP6fSc21VWBX1ljJH
-	 EKGUywNcZahKDaFJSog4eUYS6W5OsOztmuGtmGoxNDqpYP0CBag8lH53/rcsFBA+bm
-	 kMnJ5csXStvgA==
-Message-ID: <9dab12847c3737a168e4323831e3f29bc92152b5.camel@kernel.org>
-Subject: Re: [PATCH] btrfs: disable large folios for systems with highmem
-From: Jeff Layton <jlayton@kernel.org>
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Date: Wed, 22 Jul 2026 11:41:28 -0400
-In-Reply-To: <555623ad2f49989444fd60eb2bd11f0371086670.1784540975.git.wqu@suse.com>
-References: 
-	<555623ad2f49989444fd60eb2bd11f0371086670.1784540975.git.wqu@suse.com>
-Autocrypt: addr=jlayton@kernel.org; prefer-encrypt=mutual;
- keydata=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
- QZIQXVeAA+smfTT0tDrisj1U5x6ZB9b3nBg65kc=
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.60.2 (3.60.2-1.fc44) 
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="lXG3DSQX";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="KmYDsFiv"
+Received: from phl-compute-12.internal (phl-compute-12.internal [10.202.2.52])
+	by mailfout.phl.internal (Postfix) with ESMTP id 66AA3EC021B;
+	Wed, 22 Jul 2026 13:08:45 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-12.internal (MEProxy); Wed, 22 Jul 2026 13:08:45 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm3; t=1784740125; x=1784826525; bh=LNL4mfdy0J
+	kQ7XWeeIlC6Ne5EzLj9ywe0dDXWwmTtiU=; b=lXG3DSQXLvmtO48BkkjGD69mxi
+	zfVzDXwG0eEj2QCp6D0i01QJbk1382z1nD4mzevYoNieFsNN8dBImouvoZ1zP3NP
+	eb/02R0h7+fRJgfZCGy9ste9WolxA0QGdCLiHXQYe6OguAm+W8wXKszvUitp73CV
+	JUSt7xbPmdzsifV/8SDzyk/lhMsyZQ9b3WRGovnV9p++3BELfqk32MRFyuaZ4McG
+	hYyV4irg5uNEEH0HjR13Lg/7VTtBrPrg/eBRcW/+I0Rr/p6CESf3byMW4kydam11
+	Uo7UH3Ha6j1mMHNAmtNLj0zqntqRb2QfAo0wlFCGAHbFS9ZzDyRt7Lrj0OCQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+	1784740125; x=1784826525; bh=LNL4mfdy0JkQ7XWeeIlC6Ne5EzLj9ywe0dD
+	XWwmTtiU=; b=KmYDsFivhLBwpiYjalg1LgTIU/DER7sfMCzzeVM4LmZUXOFsJmb
+	3ylb8YYFX7W1B0n/6fUoOgsOUOcJrH1DM5wjW9V7tc9aGxe62eynvClSiqtN6OIh
+	MFj1PioNL4+CsxV+tJ882oKWuean0dZNtLYkkETQoi4jOkY8zFw4bVIWbiZvLXbL
+	9A/NRxbnPx8oUFzTpjPtpljUPnVR0QfEd8sQR83pL874AtM9UZF5thxzb6+5h5Ke
+	qTfoiGCQ/1Gr4V9oqEjmzUYnhn0ln0uSWcU0XngvDvPdY8zQvpG7ZUeW501ANStc
+	uNRTFEKioNJm0Va4FGJi5sYLPMyP32G+cOg==
+X-ME-Sender: <xms:Hflgaq0hQCuBzX49Nrc8vxq4VcoAXhnw34ndWs4zAYe5RFGazEvrsw>
+    <xme:Hflgaj-rODWU025BpcmQ4ixKaW33Kb_m9gmMaJS9GDK-wjBtLEpVVvG_NVGnSqO6Z
+    F_FkMqNgDVF2a3X8LFEA-QwPTjjm6Wl6uxj3nO0RuW6g7aS6-MxclSb>
+X-ME-Received: <xmr:HflgarMWIra-pPLR9LR6nWR_6rPwyLC1F1bBhpY3X9bLJH3rqJOxIdYCFGJPqXjZsL_FALq5hrWswJCkgjcY6Sx-4_E>
+X-ME-Proxy-Cause: dmFkZTF34rlrCJ91SvsS2LxZQheJtmlSS8tPH0QiJtZjIAD58gc+V9eZcvISkhnY557Nr2
+    4iJKuQzTcZD0J9dfIKKokpl5hYdogZh8c77mAPFpumlBuBXLMc7aBs1yyOB8MPsMsNKg8n
+    fAWc5eD75WX9b7njjuiDpMI9twlsu5UbVb4b7f29xGXyZg0Jb4gMKKZutCKm++8OxbU+22
+    4BufkiavXU57c9fMmY1OgI1I3sckK/F71qdnCX7j9do2oHfC/SzZTNyC6dWHQ526xWGud2
+    mAjEODRGSyCu2E9RuW4J9yppYGTOF8IUistnMmassP5HI5F4mNOAVJPIjNG/CxJbrTDJHO
+    ywrbmIP7ImBl9gFeTgZETPRTrk6K/QsLH3V+QvG2FGPWkZMKfTrkrVSeIvTu58p6n/S51L
+    0RIukrfit/mceF5KEVZnD/GuauS1Vdrtgt5mLBnS168aanAghLeYjnhD61gdLiMkMHqhCU
+    S/g6rT8s/86CDcwiV4mNxmc0FogCxtPmSqxQxW8nLsp8SzuO5A0XGnq0MTVcnKq9UNkCue
+    PGd6LXrhmYQpOuYSOHo5j4TS0kgA2Wg28OqbHzxf6CxjOvhLrgAst2fVxyiAojv0su81uu
+    cEHtodSoMvNMlpz4cxLgJSeZFhDCz7CnHuFFq9jtRKMW5RlwEF+tZ8QCBsdw
+X-ME-Proxy: <xmx:HflganemjdkhALUxS4CIL9N4s8EFomIawqLuoqPLviBW6d2M5qmI1w>
+    <xmx:HflgaqWHqMHrMC0XEWYyxD8pcTAq0I2OWq6ZDXynmbiY0ZqN_-E5FA>
+    <xmx:HflgavhYuAQButVhJwZB9IdviguXG1jOCENnMWtZH5V1lIev48bs9Q>
+    <xmx:Hflgap_5RQ1xGWONsMj13ycwcfvrEYLih9AjMrDxIWFU3ZKwKKdLEA>
+    <xmx:HflgaqBb6pZwonylZeixtYojWoo1z2A1b94FKcdcEEnjwMwsAWBS-gWv>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 22 Jul 2026 13:08:44 -0400 (EDT)
+Date: Wed, 22 Jul 2026 10:08:35 -0700
+From: Boris Burkov <boris@bur.io>
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>,
+	Qu Wenruo <wqu@suse.com>, Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH 1/4] btrfs: zoned: flush active metadata block group at
+ btree_writepages() start
+Message-ID: <20260722170835.GB26033@zen.localdomain>
+References: <20260722113016.1896990-1-johannes.thumshirn@wdc.com>
+ <20260722113016.1896990-2-johannes.thumshirn@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260722113016.1896990-2-johannes.thumshirn@wdc.com>
 
-On Mon, 2026-07-20 at 19:19 +0930, Qu Wenruo wrote:
-> [BUG]
-> There is a bug report that on 32bit systems (i686), btrfs crashes when
-> trying to do zstd compression:
->=20
->  BUG: unable to handle page fault for address: fffbc000
->  #PF: supervisor read access in kernel mode
->  #PF: error_code(0x0000) - not-present page
->  CPU: 0 UID: 0 PID: 61 Comm: kworker/u8:5 Tainted: G                 N  7=
-.2.0-rc3-P3 #2 PREEMPTLAZY
->  Hardware name: LENOVO 2007F2G/2007F2G, BIOS 79ETE7WW (2.27 ) 03/21/2011
->  Workqueue: btrfs-delalloc btrfs_work_helper
->  EIP: ZSTD_compressStream2+0x221/0x5fc
->  Call Trace:
->   ZSTD_compressStream+0xd/0x48
->   zstd_compress_stream+0x8/0x10
->   zstd_compress_bio+0x20a/0x564
->   btrfs_compress_bio+0x94/0xc0
->   compress_file_range+0x20a/0x380
->   btrfs_work_helper+0xc1/0x1b4
->   process_scheduled_works+0x15f/0x204
->   worker_thread+0x10c/0x178
->   kthread+0xe1/0xe8
->   ret_from_fork+0x1d/0x14c
->   ret_from_fork_asm+0x12/0x18
->   entry_INT80_32+0xf0/0xf0
->  CR2: 00000000fffbc000
->  ---[ end trace 0000000000000000 ]---
->=20
-> [CAUSE]
-> Inside zstd_compress_bio(), we assume the whole page cache folio can be
-> mapped in one go.
->=20
-> However that assumption is not true on systems with CONFIG_HIGHMEM, the
-> pages of the large folio can be in HIGHMEM, which needs to be mapped
-> before access.
->=20
-> Meanwhile zstd_compress_bio() only map the page of a large folio where
-> the start filepos is, the remaining pages are not mapped, and accessing
-> the remaining pages will trigger the above crash.
->=20
+On Wed, Jul 22, 2026 at 01:30:13PM +0200, Johannes Thumshirn wrote:
+> On a zoned filesystem btree_writepages() writes metadata in ascending
 
-Yechh. The fact that kmap_local_folio() only maps the page at the
-particular offset in the highmem case seems like a landmine waiting for
-someone to step on.
+wording nit: isn't this true on non-zoned too? Maybe something like:
+btree_writepages() writes metadata in ascending logical order. On a
+zoned filsystem, which keeps a single .... <something terrible happens>
 
-OTOH, who cares about highmem these days? I think there was some
-discussion of getting rid of it at LSF this year?
+> logical address order and keeps a single active metadata/system block group,
+> pivoting it via btrfs_check_meta_write_pointer() -> check_bg_is_active() as
+> writeback moves between block groups.
+> 
+> If the active block group is at a higher address than another block group
+> that also has dirty metadata, the walk reaches the lower one first and the
+> pivot must finish the active block group. It cannot finish one that still has
+> unsent IO, and refuses to wait for it during WB_SYNC_ALL commit writeback, so
 
-In any case...
+Can you add some more detail on why it refuses? Or why the pivot can't
+be the one to do these submissions? I think that would help fully
+motivate this change.
 
-Reviewed-by: Jeff Layton <jlayton@kernel.org>
+> btrfs_check_meta_write_pointer() returns -EAGAIN and the transaction is
+> aborted, forcing the filesystem read-only. This happens intermittently under
+> metadata-heavy relocation (e.g. fstests btrfs/187).
+> 
+> Flush the active metadata and system block groups at the start of
+> btree_writepages(), under the fs_info->zoned_meta_io_lock it already holds, so
+> they have no unsent IO and the later pivot can finish them.
+> 
+> Fixes: 13bb483d32ab ("btrfs: zoned: activate metadata block group on write time")
+> Assisted-by: LLM (debugging, commit message)
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  fs/btrfs/extent_io.c | 62 ++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 62 insertions(+)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 97bd18d515af..bac3edabe7c9 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2383,6 +2383,52 @@ void btrfs_btree_wait_writeback_range(struct btrfs_fs_info *fs_info, u64 start,
+>  	}
+>  }
+>  
+> +/* Write out the dirty metadata extent buffers of a single block group. */
+
+This comment is quite generic, and not zoned specific, but the function
+name is much more zoned focused (and we assert zoned)
+
+I am also not a huge fan of this code mostly duplicating the loop in
+btree_writepages while just leaving that spot open coded. Is that an
+intentional decision because of important distinctions between the two?
+Is there a variant we could lift to "write a range" and make
+flush_active_meta_bg() and btree_writepages share it? (like the while
+loop basically? or maybe the per-eb bit?)
+
+note the missing call to btrfs_schedule_zone_finish_bg() I noted inline
+as a concrete reason it's helpful to not duplicate.
+
+> +static void flush_active_meta_bg(struct address_space *mapping,
+> +				 struct writeback_control *wbc,
+> +				 struct btrfs_eb_write_context *ctx,
+> +				 struct btrfs_block_group *bg)
+> +{
+> +	struct btrfs_fs_info *fs_info = inode_to_fs_info(mapping->host);
+> +	unsigned long index = bg->start >> fs_info->nodesize_bits;
+> +	unsigned long end = (btrfs_block_group_end(bg) - 1) >> fs_info->nodesize_bits;
+> +	struct eb_batch batch;
+> +	unsigned int nr_ebs;
+> +
+> +	ASSERT(btrfs_is_zoned(fs_info));
+> +	lockdep_assert_held(&fs_info->zoned_meta_io_lock);
+> +
+> +	eb_batch_init(&batch);
+> +	while (index <= end &&
+> +	       (nr_ebs = buffer_tree_get_ebs_tag(fs_info, &index, end,
+> +						 PAGECACHE_TAG_DIRTY, &batch))) {
+> +		struct extent_buffer *eb;
+> +
+> +		while ((eb = eb_batch_next(&batch)) != NULL) {
+> +			ctx->eb = eb;
+> +
+> +			/*
+> +			 * Best effort: if the eb is not writable at the write
+> +			 * pointer (e.g. a hole), stop flushing this bg and let
+> +			 * the main walk deal with it.
+> +			 */
+> +			if (btrfs_check_meta_write_pointer(eb->fs_info, ctx)) {
+> +				eb_batch_release(&batch);
+> +				return;
+> +			}
+> +
+> +			if (!lock_extent_buffer_for_io(eb, wbc))
+> +				continue;
+> +
+> +			if (ctx->zoned_bg)
+
+the btree_writepages code also calls btrfs_schedule_zone_finish_bg()
+here, is that intentionally omitted?
+
+> +				ctx->zoned_bg->meta_write_pointer += eb->len;
+> +			write_one_eb(eb, wbc);
+> +		}
+> +		eb_batch_release(&batch);
+> +		cond_resched();
+> +	}
+> +}
+> +
+>  int btree_writepages(struct address_space *mapping, struct writeback_control *wbc)
+>  {
+>  	struct btrfs_eb_write_context ctx = { .wbc = wbc };
+> @@ -2418,6 +2464,22 @@ int btree_writepages(struct address_space *mapping, struct writeback_control *wb
+>  	else
+>  		tag = PAGECACHE_TAG_DIRTY;
+>  	btrfs_zoned_meta_io_lock(fs_info);
+> +
+> +	/*
+> +	 * On a zoned filesystem, flush the currently active metadata/system
+> +	 * block group(s) first, under this same lock, so the ascending-address
+> +	 * walk below can pivot the active block group instead of aborting the
+> +	 * commit with -EAGAIN.
+> +	 */
+> +	if (btrfs_is_zoned(fs_info) && wbc->sync_mode == WB_SYNC_ALL &&
+> +	    !wbc->for_sync) {
+> +		if (fs_info->active_meta_bg)
+> +			flush_active_meta_bg(mapping, wbc, &ctx,
+> +					     fs_info->active_meta_bg);
+> +		if (fs_info->active_system_bg)
+> +			flush_active_meta_bg(mapping, wbc, &ctx,
+> +					     fs_info->active_system_bg);
+> +	}
+
+I think this placement makes sense, but I also wouldn't mind just having
+a more generic "eb ordering" concept that zoned could use to plug the
+active ebs to the front of the list then fallback to the normal order,
+or something. Not a deal breaker for me, just food for thought.
+
+I think fewer "tricks" for zoned writeback and more "it falls out
+correctly from a generic form" would make it easier to maintain in the
+long run. Obviously there are real, important differences so this kind
+of thing is never free...
+
+Thanks,
+Boris
+
+>  retry:
+>  	if (wbc->sync_mode == WB_SYNC_ALL)
+>  		buffer_tree_tag_for_writeback(fs_info, index, end);
+> -- 
+> 2.54.0
+> 

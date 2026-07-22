@@ -1,66 +1,41 @@
-Received: from mail-pz2-f0.google.com (mail-pz2-f0.google.com [74.125.228.0])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 00FE62FFF89
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 06:22:17 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.0
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5A7722135AD;
+	Wed, 22 Jul 2026 07:22:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.22
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784701340; cv=none; b=RslxTcbi9o8q7r80908T9qHYUKi4ozJV02L+iNsbbzLS2l6l/xbXlPlqaNV6gt4C5SqpbweXBRCABPLHCtImaxEqkRZ6RVjaB9XuW2U8QHBJNIEalwu1DvZHZXzgdDwwzYvce+W5VDJbL+LLaod3KPOSXAxTH40YhrMFbv4wZzI=
+	t=1784704926; cv=none; b=fxJmCvAu52XGmVes2KR8rWyv1708XU7lFX1eoSrOUrvv+C+UzQL1u1YojnfygW61/D6ZaICXnRQyBQSFmlbfd1NGnl6OeCt6Dh+yg3alm1Pw6fm8qPB5yOS7l3XyEUbi+XvMWe666wG94O8v1PqexlEGyi3hoejUmrCPSHq71J0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784701340; c=relaxed/simple;
-	bh=Jm9TxWuO8zF7tZSH4LBEt7MpUJQBggemOILFFz3kDU0=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=J6inVMxWD6jRNsu3CtJ/ygX8OOXBJIVv9TCWQzrd3ixNooI2BKdJNllnGhlUkmiGsAivWHfa/qiS4xSc2+pyH0A5C89eiAPuhl4mb+8qTDvNOekdeyiunGyM+fyYYbVth29JvUVqS1Ts5Zb1LJWw9Pl8ajQ0bTV/aB10HG+f75o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=rS84GgYp; arc=none smtp.client-ip=74.125.228.0
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1784704926; c=relaxed/simple;
+	bh=Rbgk3KRg98turYTv6dBDrOhY+2L1Yt5jg1Gvb1wvz40=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=NyvQwXaWrQmEwmyQ7RNaUtTP5+6fm4HNQRLbeoDQHUSMPrWTXbMQTvoGUcPy+Zoequ18DW7yAZxOp4SXyAelRgJZWPO7lPTZKl0njrF3NAjU9mqHnfgpJkFjAbG//iG1LyqNlvarujrirTWGDy5u69Ss7uwyMZ2vOD3cMs+/1Ik=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=Z+zUDdXr; arc=none smtp.client-ip=212.227.17.22
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="rS84GgYp"
-Received: by mail-pz2-f0.google.com with SMTP id 41be03b00d2f7-ca989f9e6d3so216149a12.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2026 23:22:17 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1784701337; x=1785306137; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=i76dw8MqBiosc6JdHuVyXehMVvX2zr07u3Kobcz40+k=;
-        b=rS84GgYpjUu+8wQk1L6EdaWVEh3NLrgZkAh+nNGgSeOMj/F4NEjFj+jYSkaQtnwiaU
-         bdV+/c1qP5qNVKn+eR8ktG1LUYcgVO7yAMoSaS7r7yLUoCO7UHSu6VBKSSJUvKU/AIIO
-         iAn8QbCufaQdUNrKY6m7iaEnlVhk2wokmZwxDgebgKoLP4Jiv6zoGgddEmf/4iHwE6by
-         FHGuu/7SSaKw0kFXp0fybkxQMqK/PDTZG2By0ZeMsGcEukHknig07CuC5dNE7eqB7ysD
-         uXSPUroPBrhxuknjWz1nmLcQxXnqTG6JUjQCiNdLgacNxnsFj4aumvovCHcg4anUQYhl
-         a5Ew==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1784701337; x=1785306137;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=i76dw8MqBiosc6JdHuVyXehMVvX2zr07u3Kobcz40+k=;
-        b=fv6NMs0GIO4L7rmcIsgl6Y0gc4QOaHAdP0TWSK+1b4Fi63Qk+ylIoIRgPqbbGajuwU
-         87qJ7vThWP+GoEFilfoGing2wleu4GK/75wn5DsYiumdSup4Z9Vz80Z//b41GfNcTXPJ
-         7KgdPGHkVReEAh5WUd//IqRPVtxJuCMZq3b9aVGmbBof/I2Gb7pdxl4XGqhzXeMY2ks4
-         GKnlqWl97ftPbUFV10ZKM5RuNRn94Ky0qaXNUHPjGKP/kmKrzBY/2v56cpQRyJOavFW+
-         wrABnnSZyK6jFEbUG78CycpP2ZemxMDgjrD/UfdymiILnLsmDFL9GC76pxOf4fY+1JtS
-         MXbQ==
-X-Forwarded-Encrypted: i=1; AHgh+Ro/GoD0vWwhgi+kqYBkKt16HGS/TTOyklhDOzrJscuQpHB/ZFTFbGcpbfzFWyo3ekbZzpkMwNQy8oQD1g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzHcl4oxgDM3dNT7rlVASST1cfF9+lv3O074zQ9dP1t+fLq5sdH
-	DpMzCgZp3KklTcH6pOZbGclTj5BH3bPboZiD4ViLWcPGKgXf2NPPpJLx
-X-Gm-Gg: AR+sD13bt7WmjSaf7mg3SqGKyPXqmIeomSwdrZUG9dM5MoD8K3Dm1VIrMp2DVN3kcNq
-	d21b+sJerKw1N3ZvC85Nh8Dxna+oPFB2rbW8DeskgjXTqDew7OP9OrL9qlaC2SUkJiEv5Uv4Mg1
-	zgsRcCyUbMj0sAmpNUXSQzI96MNZe/o7KpQO9ck9XP8qXoCNkTKpBraz29Uxt89mMziCzO0iNKz
-	MUmZF0RChceLlY+ykghKFN+CTFF7YvRy17MsvlXUTXuGJRBebsNoceNP2CHofTpNXCSgvdxCX1z
-	bovIqITcetIcA+yB74U0haBgR120PZ8S97HBsN8AOrx4dLeuHo4mh1sBdLntcuP3GEssC7boq1r
-	IHnzMpgamiuleFzpNmoyDkZbqU0eAMb0IcVFpkNSc3Q34mhNkF1zI9Tg1Hi7PfA0tUwF69p9gQV
-	r02UrSY251wxDHCBn2YlWWTxbKUYdrQGK2pezr
-X-Received: by 2002:a17:903:4b46:b0:2ca:d344:7743 with SMTP id d9443c01a7336-2cf805d3298mr51218205ad.7.1784701336839;
-        Tue, 21 Jul 2026 23:22:16 -0700 (PDT)
-Received: from [192.168.10.244] ([154.83.91.239])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2cf8efa2f83sm8931875ad.1.2026.07.21.23.22.15
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 21 Jul 2026 23:22:16 -0700 (PDT)
-Message-ID: <261076e6-d5e5-4767-b319-070ff11665cd@gmail.com>
-Date: Wed, 22 Jul 2026 14:22:13 +0800
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="Z+zUDdXr"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1784704914; x=1785309714; i=quwenruo.btrfs@gmx.com;
+	bh=l41LH8Rx4hAje2YIlzm853zPiNBm0v93I0bg53wXMR8=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=Z+zUDdXrnAOxYibFBOBtDGqaKKTm/y6JgVf74zziSc83GtdvwTcKK5x7TySYh+bQ
+	 tdg1ydxQUiE1juaP8i92aRL68Q+LtXHHCPUkb2JjuFn7QYGqaHqCPdTvD4dJuB2rv
+	 n7tuNUsc7U7mcnIXcM3P1LnBGjXSlZBy7fmjzDoRUevHgbc651u3BZQsVYYtdQxAH
+	 Dilg/OvNDpIywNF8GzGeUY8YDMKn8LPgPCZ8y4DU+5WYYTUfJeuXkCUn/YbCwBnFt
+	 qxW13Jd/THFZxLE5kamHKPkkmXEsQW3mOqE90ZITQlnt2h4sociXLdVnG+GSaPpvR
+	 ewaMicWhDtsEJYweZg==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MysW2-1x94SZ3GyY-00sgOF; Wed, 22
+ Jul 2026 09:21:54 +0200
+Message-ID: <79b9b1b2-0455-4a7c-85fd-929f4103f198@gmx.com>
+Date: Wed, 22 Jul 2026 16:51:49 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -68,734 +43,351 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: use %pe for error code output
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <08c4b7fe0087c6a04abf313a4e52d88c0666249d.1784675107.git.wqu@suse.com>
+Subject: Re: 7.2-rc1 regression Folio lock leak in writepage_delalloc()
+To: Christian Borntraeger <borntraeger@linux.ibm.com>,
+ linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+ Josef Bacik <josef@toxicpanda.com>, linux-kernel@vger.kernel.org,
+ kvm@vger.kernel.org, linux-s390@vger.kernel.org
+References: <20260721191152.101118-1-borntraeger@linux.ibm.com>
 Content-Language: en-US
-From: Sun YangKai <sunk67188@gmail.com>
-In-Reply-To: <08c4b7fe0087c6a04abf313a4e52d88c0666249d.1784675107.git.wqu@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <20260721191152.101118-1-borntraeger@linux.ibm.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:3c24Va3/BGdIWjPY8MAJ1WpMPEKt3KgWW5OyCWKcOZt+eZxHFid
+ GZMNfwUYpykAZg5GFZ5mXaWU4618YL9pDaAQn7RJlbhc3KuWGEJ0g4AI4YCcX5gwR8OyoRx
+ YKGDtOIbrf/0fG2nwPxY/oy4NdCtDAwjp9dlh0bIeGGhHn4Jdo3+1kvIxlafs5ZT2uK8SXJ
+ F8TO+Uda2cWEiLm4Ehzog==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:W5r62/q36e8=;wA59sZ8/kcnNcmJQ0exT+I5Pnxm
+ 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
+ mzCOht/udSd34epZamByW
 
 
 
-On 2026/7/22 07:05, Qu Wenruo wrote:
-> During an interrupted mount, I got the following messages:
-> 
->   workqueue: Failed to create a rescuer kthread for wq "btrfs-qgroup-rescan": -EINTR
->   BTRFS error (device dm-3): open_ctree failed: -12
-> 
-> Workqueue code is outputting a human readable error string, meanwhile
-> we're still using a numeric error code.
-> 
-> So follow the workqueue code to use "%pe" format, which will
-> automatically convert an error pointer to the human readable string.
-> 
-> However this is a minor pitfall, if the return value is not an error
-> code, e.g. a plus number, "%pe" with "ERR_PTR(ret)" will output the
-> pointer as a hash value, e.g.:
-> 
->   ret=1 %pe out=0000000019414716
->   ret=-22 %pe out=-EINVAL
-> 
-> But I'd argue that, if we hit such hashed result, it means the return
-> value is not following the common pattern, and should be fixed instead.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> The call sites are sorted out by using both "btrfs_err" and "ret);" as
-> search keys, so I may miss some minor ones, but the most common ones
-> like transaction abort and other obvious ones should all be covered now.
-> ---
->   fs/btrfs/backref.c       |  4 +--
->   fs/btrfs/delayed-inode.c | 12 +++----
->   fs/btrfs/disk-io.c       | 76 +++++++++++++++++++++-------------------
->   fs/btrfs/extent-tree.c   | 20 +++++------
->   fs/btrfs/extent_io.c     |  8 ++---
->   fs/btrfs/inode.c         | 31 ++++++++--------
->   fs/btrfs/ioctl.c         |  4 +--
->   fs/btrfs/messages.c      | 10 +++---
->   fs/btrfs/qgroup.c        |  8 ++---
->   fs/btrfs/root-tree.c     |  6 ++--
->   fs/btrfs/super.c         |  2 +-
->   fs/btrfs/transaction.c   |  8 ++---
->   fs/btrfs/verity.c        |  2 +-
->   13 files changed, 96 insertions(+), 95 deletions(-)
-> 
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index 1be632c742bd..18dd9398cc58 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -2393,8 +2393,8 @@ static int iterate_leaf_refs(struct btrfs_fs_info *fs_info,
->   		ret = iterate(eie->inum, eie->offset, eie->num_bytes, root, ctx);
->   		if (ret) {
->   			btrfs_debug(fs_info,
-> -				    "stopping iteration for %llu due to ret=%d",
-> -				    extent_item_objectid, ret);
-> +				    "stopping iteration for %llu due to ret=%pe",
-> +				    extent_item_objectid, ERR_PTR(ret));
+=E5=9C=A8 2026/7/22 04:41, Christian Borntraeger =E5=86=99=E9=81=93:
+> We have seen random hangs in our daily CI run where qemu/KVM
+> processes  deadlocks guests with file-backed RAM on btrfs (large data fo=
+lios)
+>=20
+> With the help of claude I think we found the/one problem on an s390
+> KVM host running 7.2.0-rc3 (KASAN test kernel, but the issue is not
+> KASAN related). And to be honest here, most of the writeup was created
+> by claude and I added things where appropriate. Also the patch was
+> mostly done with the help of claude.
+>=20
+> A KVM guest with its RAM backed by a file on btrfs (zstd compression
+> enabled) locked up together with the host's writeback: two vCPU
+> threads, an irqfd worker, two flusher workers, khugepaged and a
+> syncfs caller (dnf) were all stuck in D state for hours.  Analysis
+> of the crash dump shows a leaked folio lock in btrfs'
+> writepage_delalloc(); a proposed fix is in the reply mail.
+>=20
+> I still need to verify that this patches fixes the deadlock in our
+> CI but wanted some feedback first.
+>=20
+> Dump analysis (shortened)
+> -------------------------
+> All blocked tasks funnel into one 64-page (256K) large data folio of
+> the guest RAM file:
+>=20
+>    folio 0x800083fb000, inode 1881035 (the 1.25G s390.ram file)
+>    flags: PG_locked | PG_waiters | PG_dirty | PG_private | PG_uptodate
+>           (PG_writeback NOT set)
+>    btrfs_folio_state: nr_locked =3D=3D 0, subpage dirty bitmap empty
+>    still mapped (63/64 PTEs) and on the LRU, no outstanding block I/O
+>=20
+> Waiters on that folio lock:
+>    - 2 vCPU threads + 1 irqfd kworker, all in
+>      btrfs_page_mkwrite() -> folio_lock, holding mmap_lock (read)
+> crash> bt 66448
+> PID: 66448    TASK: 9e934a00          CPU: 9    COMMAND: "CPU 1/KVM"
+>   #0 [b8b25dbe7d8] __schedule at c0b186d5e78
+>   #1 [b8b25dbe908] schedule at c0b186d7040
+>   #2 [b8b25dbe948] io_schedule at c0b186d723c
+>   #3 [b8b25dbe978] folio_wait_bit_common at c0b167e719c
+>   #4 [b8b25dbeaf0] btrfs_page_mkwrite at c0b172816fc
+>   #5 [b8b25dbec98] do_page_mkwrite at c0b168a4ada
+>   #6 [b8b25dbecf0] do_wp_page at c0b168b2350
+>   #7 [b8b25dbed70] handle_pte_fault at c0b168bfaf4
+>   #8 [b8b25dbee58] __handle_mm_fault at c0b168c003e
+>   #9 [b8b25dbefc0] handle_mm_fault at c0b168c09b6
+> #10 [b8b25dbf020] __get_user_pages at c0b16899cfc
+> #11 [b8b25dbf148] get_user_pages_unlocked at c0b1689af1c
+> #12 [b8b25dbf248] hva_to_pfn at c0a9711e20e [kvm]
+> #13 [b8b25dbf3f0] __kvm_faultin_pfn at c0a9711ea26 [kvm]
+> #14 [b8b25dbf4e8] kvm_s390_faultin_gfn at c0a971c092c [kvm]
+> #15 [b8b25dbf5f8] vcpu_post_run_handle_fault at c0a97148b5e [kvm]
+> #16 [b8b25dbf6f0] __vcpu_run at c0a9715c1f2 [kvm]
+> #17 [b8b25dbf808] kvm_arch_vcpu_ioctl_run at c0a9715d3e4 [kvm]
+> #18 [b8b25dbfbb8] kvm_vcpu_ioctl at c0a97117bd8 [kvm]
+> #19 [b8b25dbfdd8] __s390x_sys_ioctl at c0b16aa3614
+> #20 [b8b25dbfe40] __do_syscall at c0b186cdaee
+> #21 [b8b25dbfe98] system_call at c0b186ebd42
+>   USER-MODE INTERRUPT FRAME; pt_regs at b8b25dbff38:
+>   PSW:  0705000180000000 000003ff8a92662c (user space)
+>   GPRS: 000003ff627faf50 0000000000000036 ffffffffffffffda 000000000000a=
+e80
+>         0000000000000000 000003ff627fc8c0 000002aa1f8a7880 000003ff8a8ad=
+310
+>         000002aa1e1f3c60 0000000000000000 000000000000ae80 000002aa1f8a2=
+f60
+>         000003ff8d3adfa8 000003ff627fc8c0 000003ff627faff0 000003ff627fa=
+e88
+>=20
+>=20
+>    - flusher: extent_write_cache_pages() -> folio_lock
+>    - delalloc space reclaim worker: same, while holding
+>      fs_info->delalloc_root_mutex (which in turn blocks
+>      btrfs_async_reclaim_metadata_space on the mutex)
+> Behind those: khugepaged in down_write(mmap_lock), and syncfs.
+>=20
+> No task in the system owns the folio lock; nothing references the
+> folio except the six waiters.  The lock was leaked.
+>=20
+> Root cause
+> ----------
+> A folio can carry the folio-level dirty flag with an EMPTY btrfs
+> subpage dirty bitmap.  btrfs data mappings use filemap_dirty_folio(),
+> so a generic folio_mark_dirty() sets only the folio flag and xarray
+> tag - no subpage dirty bits, no delalloc reservation.  On s390 this
+> happens all the time: the KVM irq adapter path
+> (arch/s390/kvm/interrupt.c, adapter_indicators_set()) pins the guest
+> interrupt indicator page with pin_user_pages_remote(FOLL_WRITE),
+> sets the indicator bit and calls set_page_dirty_lock().  Once a
+> previously written folio has gone through one complete writeback
+> cycle (subpage dirty bitmap empty again), the next adapter interrupt
+> re-dirties it with only the folio flag.
 
-There's one case in send.c, where we call iterate_extent_inodes() with 
-@iterate=iterate_backrefs(), which may return 
-BTRFS_ITERATE_EXTENT_INODES_STOP,
-and later we pass @iterate to iterate_leaf_refs() in 
-iterate_extent_inodes().
+No, that's not how things should work.
 
-So we may get ret=BTRFS_ITERATE_EXTENT_INODES_STOP here.
+I have explained the problem in the RFC patch. I am only going to add=20
+some extra explanation inlined below.
 
->   			break;
->   		}
->   	}
-> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-> index 09795439b9fb..db2ffab0941a 100644
-> --- a/fs/btrfs/delayed-inode.c
-> +++ b/fs/btrfs/delayed-inode.c
-> @@ -1523,10 +1523,10 @@ int btrfs_insert_delayed_dir_index(struct btrfs_trans_handle *trans,
->   	ret = __btrfs_add_delayed_item(delayed_node, delayed_item);
->   	if (unlikely(ret)) {
->   		btrfs_err(trans->fs_info,
-> -"error adding delayed dir index item, name: %.*s, index: %llu, root: %llu, dir: %llu, dir->index_cnt: %llu, delayed_node->index_cnt: %llu, error: %d",
-> +"error adding delayed dir index item, name: %.*s, index: %llu, root: %llu, dir: %llu, dir->index_cnt: %llu, delayed_node->index_cnt: %llu, error: %pe",
->   			  name_len, name, index, btrfs_root_id(delayed_node->root),
->   			  delayed_node->inode_id, dir->index_cnt,
-> -			  delayed_node->index_cnt, ret);
-> +			  delayed_node->index_cnt, ERR_PTR(ret));
->   		btrfs_release_delayed_item(delayed_item);
->   		btrfs_release_dir_index_item_space(trans);
->   		mutex_unlock(&delayed_node->mutex);
-> @@ -1645,8 +1645,8 @@ int btrfs_delete_delayed_dir_index(struct btrfs_trans_handle *trans,
->   	 */
->   	if (ret < 0) {
->   		btrfs_err(trans->fs_info,
-> -"metadata reservation failed for delayed dir item deletion, index: %llu, root: %llu, inode: %llu, error: %d",
-> -			  index, btrfs_root_id(node->root), node->inode_id, ret);
-> +"metadata reservation failed for delayed dir item deletion, index: %llu, root: %llu, inode: %llu, error: %pe",
-> +			  index, btrfs_root_id(node->root), node->inode_id, ERR_PTR(ret));
->   		btrfs_release_delayed_item(item);
->   		goto end;
->   	}
-> @@ -1655,8 +1655,8 @@ int btrfs_delete_delayed_dir_index(struct btrfs_trans_handle *trans,
->   	ret = __btrfs_add_delayed_item(node, item);
->   	if (unlikely(ret)) {
->   		btrfs_err(trans->fs_info,
-> -"failed to add delayed dir index item, root: %llu, inode: %llu, index: %llu, error: %d",
-> -			  btrfs_root_id(node->root), node->inode_id, index, ret);
-> +"failed to add delayed dir index item, root: %llu, inode: %llu, index: %llu, error: %pe",
-> +			  btrfs_root_id(node->root), node->inode_id, index, ERR_PTR(ret));
->   		btrfs_delayed_item_release_metadata(dir->root, item);
->   		btrfs_release_delayed_item(item);
->   	}
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 37fc0d6b960d..d8e4e6e9896b 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2047,7 +2047,7 @@ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
->   	if (IS_ERR(log_tree_root->node)) {
->   		ret = PTR_ERR(log_tree_root->node);
->   		log_tree_root->node = NULL;
-> -		btrfs_err(fs_info, "failed to read log tree with error: %d", ret);
-> +		btrfs_err(fs_info, "failed to read log tree with error: %pe", ERR_PTR(ret));
->   		btrfs_put_root(log_tree_root);
->   		return ret;
->   	}
-> @@ -2057,7 +2057,7 @@ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
->   	btrfs_put_root(log_tree_root);
->   	if (unlikely(ret)) {
->   		ASSERT(BTRFS_FS_ERROR(fs_info) != 0);
-> -		btrfs_err(fs_info, "failed to recover log trees with error: %d", ret);
-> +		btrfs_err(fs_info, "failed to recover log trees with error: %pe", ERR_PTR(ret));
->   		return ret;
->   	}
->   
-> @@ -2298,8 +2298,8 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
->   
->   	return 0;
->   out:
-> -	btrfs_warn(fs_info, "failed to read root (objectid=%llu): %d",
-> -		   location.objectid, ret);
-> +	btrfs_warn(fs_info, "failed to read root (objectid=%llu): %pe",
-> +		   location.objectid, ERR_PTR(ret));
->   	return ret;
->   }
->   
-> @@ -2973,8 +2973,8 @@ static int btrfs_uuid_rescan_kthread(void *data)
->   	ret = btrfs_uuid_tree_iterate(fs_info);
->   	if (ret < 0) {
->   		if (ret != -EINTR)
-> -			btrfs_warn(fs_info, "iterating uuid_tree failed %d",
-> -				   ret);
-> +			btrfs_warn(fs_info, "iterating uuid_tree failed %pe",
-> +				   ERR_PTR(ret));
->   		up(&fs_info->uuid_tree_rescan_sem);
->   		return ret;
->   	}
-> @@ -3077,7 +3077,7 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
->   		ret = btrfs_rebuild_free_space_tree(fs_info);
->   		if (ret) {
->   			btrfs_warn(fs_info,
-> -				   "failed to rebuild free space tree: %d", ret);
-> +				   "failed to rebuild free space tree: %pe", ERR_PTR(ret));
->   			return ret;
->   		}
->   	}
-> @@ -3088,7 +3088,7 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
->   		ret = btrfs_delete_free_space_tree(fs_info);
->   		if (ret) {
->   			btrfs_warn(fs_info,
-> -				   "failed to disable free space tree: %d", ret);
-> +				   "failed to disable free space tree: %pe", ERR_PTR(ret));
->   			return ret;
->   		}
->   	}
-> @@ -3099,7 +3099,8 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
->   	 */
->   	ret = btrfs_delete_orphan_free_space_entries(fs_info);
->   	if (ret < 0) {
-> -		btrfs_err(fs_info, "failed to delete orphan free space tree entries: %d", ret);
-> +		btrfs_err(fs_info, "failed to delete orphan free space tree entries: %pe",
-> +			  ERR_PTR(ret));
->   		return ret;
->   	}
->   	/*
-> @@ -3133,7 +3134,7 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
->   	ret = btrfs_recover_relocation(fs_info);
->   	mutex_unlock(&fs_info->cleaner_mutex);
->   	if (ret < 0) {
-> -		btrfs_warn(fs_info, "failed to recover relocation: %d", ret);
-> +		btrfs_warn(fs_info, "failed to recover relocation: %pe", ERR_PTR(ret));
->   		return ret;
->   	}
->   
-> @@ -3143,7 +3144,7 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
->   		ret = btrfs_create_free_space_tree(fs_info);
->   		if (ret) {
->   			btrfs_warn(fs_info,
-> -				"failed to create free space tree: %d", ret);
-> +				"failed to create free space tree: %pe", ERR_PTR(ret));
->   			return ret;
->   		}
->   	}
-> @@ -3171,7 +3172,7 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
->   		ret = btrfs_create_uuid_tree(fs_info);
->   		if (ret) {
->   			btrfs_warn(fs_info,
-> -				   "failed to create the UUID tree %d", ret);
-> +				   "failed to create the UUID tree %pe", ERR_PTR(ret));
->   			return ret;
->   		}
->   	}
-> @@ -3544,7 +3545,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
->   	ret = btrfs_read_sys_array(fs_info);
->   	mutex_unlock(&fs_info->chunk_mutex);
->   	if (ret) {
-> -		btrfs_err(fs_info, "failed to read the system array: %d", ret);
-> +		btrfs_err(fs_info, "failed to read the system array: %pe", ERR_PTR(ret));
->   		goto fail_sb_buffer;
->   	}
->   
-> @@ -3563,7 +3564,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
->   
->   	ret = btrfs_read_chunk_tree(fs_info);
->   	if (ret) {
-> -		btrfs_err(fs_info, "failed to read chunk tree: %d", ret);
-> +		btrfs_err(fs_info, "failed to read chunk tree: %pe", ERR_PTR(ret));
->   		goto fail_tree_roots;
->   	}
->   
-> @@ -3593,7 +3594,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
->   	ret = btrfs_get_dev_zone_info_all_devices(fs_info);
->   	if (ret) {
->   		btrfs_err(fs_info,
-> -			  "zoned: failed to read device zone info: %d", ret);
-> +			  "zoned: failed to read device zone info: %pe", ERR_PTR(ret));
->   		goto fail_block_groups;
->   	}
->   
-> @@ -3616,72 +3617,73 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
->   	ret = btrfs_verify_dev_extents(fs_info);
->   	if (ret) {
->   		btrfs_err(fs_info,
-> -			  "failed to verify dev extents against chunks: %d",
-> -			  ret);
-> +			  "failed to verify dev extents against chunks: %pe",
-> +			  ERR_PTR(ret));
->   		goto fail_block_groups;
->   	}
->   	ret = btrfs_recover_balance(fs_info);
->   	if (ret) {
-> -		btrfs_err(fs_info, "failed to recover balance: %d", ret);
-> +		btrfs_err(fs_info, "failed to recover balance: %pe", ERR_PTR(ret));
->   		goto fail_block_groups;
->   	}
->   
->   	ret = btrfs_init_dev_stats(fs_info);
->   	if (ret) {
-> -		btrfs_err(fs_info, "failed to init dev_stats: %d", ret);
-> +		btrfs_err(fs_info, "failed to init dev_stats: %pe", ERR_PTR(ret));
->   		goto fail_block_groups;
->   	}
->   
->   	ret = btrfs_init_dev_replace(fs_info);
->   	if (ret) {
-> -		btrfs_err(fs_info, "failed to init dev_replace: %d", ret);
-> +		btrfs_err(fs_info, "failed to init dev_replace: %pe", ERR_PTR(ret));
->   		goto fail_block_groups;
->   	}
->   
->   	ret = btrfs_check_zoned_mode(fs_info);
->   	if (ret) {
-> -		btrfs_err(fs_info, "failed to initialize zoned mode: %d",
-> -			  ret);
-> +		btrfs_err(fs_info, "failed to initialize zoned mode: %pe",
-> +			  ERR_PTR(ret));
->   		goto fail_block_groups;
->   	}
->   
->   	ret = btrfs_sysfs_add_fsid(fs_devices);
->   	if (ret) {
-> -		btrfs_err(fs_info, "failed to init sysfs fsid interface: %d",
-> -				ret);
-> +		btrfs_err(fs_info, "failed to init sysfs fsid interface: %pe",
-> +			  ERR_PTR(ret));
->   		goto fail_block_groups;
->   	}
->   
->   	ret = btrfs_sysfs_add_mounted(fs_info);
->   	if (ret) {
-> -		btrfs_err(fs_info, "failed to init sysfs interface: %d", ret);
-> +		btrfs_err(fs_info, "failed to init sysfs interface: %pe", ERR_PTR(ret));
->   		goto fail_fsdev_sysfs;
->   	}
->   
->   	ret = btrfs_init_space_info(fs_info);
->   	if (ret) {
-> -		btrfs_err(fs_info, "failed to initialize space info: %d", ret);
-> +		btrfs_err(fs_info, "failed to initialize space info: %pe", ERR_PTR(ret));
->   		goto fail_sysfs;
->   	}
->   
->   	ret = btrfs_read_block_groups(fs_info);
->   	if (ret) {
-> -		btrfs_err(fs_info, "failed to read block groups: %d", ret);
-> +		btrfs_err(fs_info, "failed to read block groups: %pe", ERR_PTR(ret));
->   		goto fail_sysfs;
->   	}
->   
->   	if (btrfs_fs_incompat(fs_info, REMAP_TREE)) {
->   		ret = btrfs_populate_fully_remapped_bgs_list(fs_info);
->   		if (ret) {
-> -			btrfs_err(fs_info, "failed to populate fully_remapped_bgs list: %d", ret);
-> +			btrfs_err(fs_info, "failed to populate fully_remapped_bgs list: %pe",
-> +				  ERR_PTR(ret));
->   			goto fail_sysfs;
->   		}
->   	}
->   
->   	ret = btrfs_init_writeback_bio_size(fs_info);
->   	if (ret) {
-> -		btrfs_err(fs_info, "failed to get optimum writeback size: %d",
-> -			  ret);
-> +		btrfs_err(fs_info, "failed to get optimum writeback size: %pe",
-> +			  ERR_PTR(ret));
->   		goto fail_sysfs;
->   	}
->   
-> @@ -3737,7 +3739,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
->   	fs_info->fs_root = btrfs_get_fs_root(fs_info, BTRFS_FS_TREE_OBJECTID, true);
->   	if (IS_ERR(fs_info->fs_root)) {
->   		ret = PTR_ERR(fs_info->fs_root);
-> -		btrfs_err(fs_info, "failed to read fs tree: %d", ret);
-> +		btrfs_err(fs_info, "failed to read fs tree: %pe", ERR_PTR(ret));
->   		fs_info->fs_root = NULL;
->   		goto fail_qgroup;
->   	}
-> @@ -3758,7 +3760,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
->   		btrfs_info(fs_info, "checking UUID tree");
->   		ret = btrfs_check_uuid_tree(fs_info);
->   		if (ret) {
-> -			btrfs_err(fs_info, "failed to check the UUID tree: %d", ret);
-> +			btrfs_err(fs_info, "failed to check the UUID tree: %pe", ERR_PTR(ret));
->   			close_ctree(fs_info);
->   			return ret;
->   		}
-> @@ -3874,8 +3876,8 @@ static int write_dev_supers(struct btrfs_device *device,
->   			continue;
->   		} else if (ret < 0) {
->   			btrfs_err(device->fs_info,
-> -			  "couldn't get super block location for mirror %d error %d",
-> -			  i, ret);
-> +			  "couldn't get super block location for mirror %d error %pe",
-> +			  i, ERR_PTR(ret));
->   			atomic_inc(&device->sb_write_errors);
->   			continue;
->   		}
-> @@ -3893,8 +3895,8 @@ static int write_dev_supers(struct btrfs_device *device,
->   					    GFP_NOFS);
->   		if (IS_ERR(folio)) {
->   			btrfs_err(device->fs_info,
-> -			  "couldn't get super block page for bytenr %llu error %ld",
-> -			  bytenr, PTR_ERR(folio));
-> +			  "couldn't get super block page for bytenr %llu error %pe",
-> +			  bytenr, folio);
->   			atomic_inc(&device->sb_write_errors);
->   			continue;
->   		}
-> @@ -4500,7 +4502,7 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
->   		if (!btrfs_is_shutdown(fs_info)) {
->   			ret = btrfs_commit_super(fs_info);
->   			if (ret)
-> -				btrfs_err(fs_info, "commit super block returned %d", ret);
-> +				btrfs_err(fs_info, "commit super block returned %pe", ERR_PTR(ret));
->   		}
->   	}
->   
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 235381b31298..365735c54e56 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -5880,8 +5880,8 @@ static int maybe_drop_reference(struct btrfs_trans_handle *trans, struct btrfs_r
->   		ret = btrfs_qgroup_trace_subtree(trans, next, generation, level - 1);
->   		if (ret) {
->   			btrfs_err_rl(root->fs_info,
-> -"error %d accounting shared subtree, quota is out of sync, rescan required",
-> -				     ret);
-> +"error %pe accounting shared subtree, quota is out of sync, rescan required",
-> +				     ERR_PTR(ret));
->   		}
->   	}
->   
-> @@ -6096,8 +6096,8 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
->   				ret = btrfs_qgroup_trace_leaf_items(trans, eb);
->   				if (ret) {
->   					btrfs_err_rl(fs_info,
-> -	"error %d accounting leaf items, quota is out of sync, rescan required",
-> -					     ret);
-> +	"error %pe accounting leaf items, quota is out of sync, rescan required",
-> +					     ERR_PTR(ret));
->   				}
->   			}
->   		}
-> @@ -6498,8 +6498,8 @@ int btrfs_drop_snapshot(struct btrfs_root *root, bool update_ref, bool for_reloc
->   		ret = btrfs_qgroup_cleanup_dropped_subvolume(fs_info, rootid);
->   		if (ret < 0)
->   			btrfs_warn_rl(fs_info,
-> -				      "failed to cleanup qgroup 0/%llu: %d",
-> -				      rootid, ret);
-> +				      "failed to cleanup qgroup 0/%llu: %pe",
-> +				      rootid, ERR_PTR(ret));
->   		ret = 0;
->   	}
->   	/*
-> @@ -6914,8 +6914,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
->   
->   	if (bg_failed)
->   		btrfs_warn(fs_info,
-> -			"failed to trim %llu block group(s), first error %d",
-> -			bg_failed, bg_ret);
-> +			"failed to trim %llu block group(s), first error %pe",
-> +			bg_failed, ERR_PTR(bg_ret));
->   
->   	if (ret == -ERESTARTSYS || ret == -EINTR)
->   		return ret;
-> @@ -6925,8 +6925,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
->   
->   	if (dev_failed)
->   		btrfs_warn(fs_info,
-> -			"failed to trim %llu device(s), first error %d",
-> -			dev_failed, dev_ret);
-> +			"failed to trim %llu device(s), first error %pe",
-> +			dev_failed, ERR_PTR(dev_ret));
->   	range->len = trimmed;
->   	if (ret == -ERESTARTSYS || ret == -EINTR)
->   		return ret;
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index d285bc98b0fb..d119dcf9e34b 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -1585,13 +1585,13 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
->   				last_finished_delalloc_end = found_start + found_len;
->   			if (unlikely(ret < 0))
->   				btrfs_err_rl(fs_info,
-> -"failed to run delalloc range, root=%lld ino=%llu folio=%llu submit_bitmap=%*pbl start=%llu len=%u: %d",
-> +"failed to run delalloc range, root=%lld ino=%llu folio=%llu submit_bitmap=%*pbl start=%llu len=%u: %pe",
->   					     btrfs_root_id(inode->root),
->   					     btrfs_ino(inode),
->   					     folio_pos(folio),
->   					     blocks_per_folio,
->   					     bio_ctrl->submit_bitmap,
-> -					     found_start, found_len, ret);
-> +					     found_start, found_len, ERR_PTR(ret));
->   		} else {
->   			/*
->   			 * We've hit an error during previous delalloc range,
-> @@ -1968,10 +1968,10 @@ static int extent_writepage(struct folio *folio, struct btrfs_bio_ctrl *bio_ctrl
->   		return 0;
->   	if (unlikely(ret < 0))
->   		btrfs_err_rl(fs_info,
-> -"failed to submit blocks, root=%lld inode=%llu folio=%llu submit_bitmap=%*pbl: %d",
-> +"failed to submit blocks, root=%lld inode=%llu folio=%llu submit_bitmap=%*pbl: %pe",
->   			     btrfs_root_id(inode->root), btrfs_ino(inode),
->   			     folio_pos(folio), blocks_per_folio,
-> -			     bio_ctrl->submit_bitmap, ret);
-> +			     bio_ctrl->submit_bitmap, ERR_PTR(ret));
->   
->   	bio_ctrl->wbc->nr_to_write--;
->   
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 636196705fa3..bbcbd9c44a47 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -250,8 +250,8 @@ static void print_data_reloc_error(const struct btrfs_inode *inode, u64 file_off
->   
->   	ret = extent_from_logical(fs_info, logical, &path, &found_key, &flags);
->   	if (ret < 0) {
-> -		btrfs_err_rl(fs_info, "failed to lookup extent item for logical %llu: %d",
-> -			     logical, ret);
-> +		btrfs_err_rl(fs_info, "failed to lookup extent item for logical %llu: %pe",
-> +			     logical, ERR_PTR(ret));
->   		return;
->   	}
->   	eb = path.nodes[0];
-> @@ -1019,9 +1019,10 @@ static void submit_uncompressed_range(struct btrfs_inode *inode,
->   			btrfs_folio_end_lock(inode->root->fs_info, locked_folio,
->   					     start, async_extent->ram_size);
->   		btrfs_err_rl(inode->root->fs_info,
-> -			"%s failed, root=%llu inode=%llu start=%llu len=%llu: %d",
-> +			"%s failed, root=%llu inode=%llu start=%llu len=%llu: %pe",
->   			     __func__, btrfs_root_id(inode->root),
-> -			     btrfs_ino(inode), start, async_extent->ram_size, ret);
-> +			     btrfs_ino(inode), start, async_extent->ram_size,
-> +			     ERR_PTR(ret));
->   	}
->   }
->   
-> @@ -1508,10 +1509,10 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
->   				       end - start - cur_alloc_size + 1, NULL);
->   	}
->   	btrfs_err(fs_info,
-> -"%s failed, root=%llu inode=%llu start=%llu len=%llu cur_offset=%llu cur_alloc_size=%u: %d",
-> +"%s failed, root=%llu inode=%llu start=%llu len=%llu cur_offset=%llu cur_alloc_size=%u: %pe",
->   		  __func__, btrfs_root_id(inode->root),
->   		  btrfs_ino(inode), orig_start, end + 1 - orig_start,
-> -		  start, cur_alloc_size, ret);
-> +		  start, cur_alloc_size, ERR_PTR(ret));
->   	return ret;
->   }
->   
-> @@ -1962,9 +1963,9 @@ static int nocow_one_range(struct btrfs_inode *inode, struct folio *locked_folio
->   				     PAGE_UNLOCK | PAGE_START_WRITEBACK |
->   				     PAGE_END_WRITEBACK);
->   	btrfs_err(inode->root->fs_info,
-> -		  "%s failed, root=%lld inode=%llu start=%llu len=%llu: %d",
-> +		  "%s failed, root=%lld inode=%llu start=%llu len=%llu: %pe",
->   		  __func__, btrfs_root_id(inode->root), btrfs_ino(inode),
-> -		  file_pos, len, ret);
-> +		  file_pos, len, ERR_PTR(ret));
->   	return ret;
->   }
->   
-> @@ -2285,10 +2286,10 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
->   	}
->   	btrfs_free_path(path);
->   	btrfs_err(fs_info,
-> -"%s failed, root=%llu inode=%llu start=%llu len=%llu cur_offset=%llu oe_cleanup=%llu oe_cleanup_len=%llu untouched_start=%llu untouched_len=%llu: %d",
-> +"%s failed, root=%llu inode=%llu start=%llu len=%llu cur_offset=%llu oe_cleanup=%llu oe_cleanup_len=%llu untouched_start=%llu untouched_len=%llu: %pe",
->   		  __func__, btrfs_root_id(inode->root), btrfs_ino(inode),
->   		  start, end + 1 - start, cur_offset, oe_cleanup_start, oe_cleanup_len,
-> -		  untouched_start, untouched_len, ret);
-> +		  untouched_start, untouched_len, ERR_PTR(ret));
->   	return ret;
->   }
->   
-> @@ -3733,7 +3734,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
->   
->   out:
->   	if (ret)
-> -		btrfs_err(fs_info, "could not do orphan cleanup %d", ret);
-> +		btrfs_err(fs_info, "could not do orphan cleanup %pe", ERR_PTR(ret));
->   	return ret;
->   }
->   
-> @@ -4035,8 +4036,8 @@ static int btrfs_read_locked_inode(struct btrfs_inode *inode, struct btrfs_path
->   		ret = btrfs_load_inode_props(inode, path);
->   		if (ret)
->   			btrfs_err(fs_info,
-> -				  "error loading props for ino %llu (root %llu): %d",
-> -				  btrfs_ino(inode), btrfs_root_id(root), ret);
-> +				  "error loading props for ino %llu (root %llu): %pe",
-> +				  btrfs_ino(inode), btrfs_root_id(root), ERR_PTR(ret));
->   	}
->   
->   	/*
-> @@ -6650,8 +6651,8 @@ int btrfs_create_new_inode(struct btrfs_trans_handle *trans,
->   	}
->   	if (ret) {
->   		btrfs_err(fs_info,
-> -			  "error inheriting props for ino %llu (root %llu): %d",
-> -			  btrfs_ino(BTRFS_I(inode)), btrfs_root_id(root), ret);
-> +			  "error inheriting props for ino %llu (root %llu): %pe",
-> +			  btrfs_ino(BTRFS_I(inode)), btrfs_root_id(root), ERR_PTR(ret));
->   	}
->   
->   	/*
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 5cb927c6e53d..ebfb258161c8 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2839,8 +2839,8 @@ static long btrfs_ioctl_default_subvol(struct file *file, void __user *argp)
->   		else
->   			ret = -ENOENT;
->   		btrfs_err(fs_info,
-> -			  "could not find default diritem for dir %llu: %d",
-> -			  dir_id, ret);
-> +			  "could not find default diritem for dir %llu: %pe",
-> +			  dir_id, ERR_PTR(ret));
->   		goto out_free;
->   	}
->   
-> diff --git a/fs/btrfs/messages.c b/fs/btrfs/messages.c
-> index 7c60c14e60fa..198d1747c80a 100644
-> --- a/fs/btrfs/messages.c
-> +++ b/fs/btrfs/messages.c
-> @@ -279,7 +279,6 @@ void __btrfs_panic(const struct btrfs_fs_info *fs_info, const char *function,
->   		   unsigned int line, int error, const char *fmt, ...)
->   {
->   	char *s_id = "<unknown>";
-> -	const char *errstr;
->   	struct va_format vaf = { .fmt = fmt };
->   	va_list args;
->   
-> @@ -289,13 +288,12 @@ void __btrfs_panic(const struct btrfs_fs_info *fs_info, const char *function,
->   	va_start(args, fmt);
->   	vaf.va = &args;
->   
-> -	errstr = btrfs_decode_error(error);
->   	if (fs_info && (btrfs_test_opt(fs_info, PANIC_ON_FATAL_ERROR)))
-> -		panic(KERN_CRIT "BTRFS panic (device %s) in %s:%d: %pV (errno=%d %s)\n",
-> -			s_id, function, line, &vaf, error, errstr);
-> +		panic(KERN_CRIT "BTRFS panic (device %s) in %s:%d: %pV (errno=%d %pe)\n",
-> +			s_id, function, line, &vaf, error, ERR_PTR(error));
->   
-> -	btrfs_crit(fs_info, "panic in %s:%d: %pV (errno=%d %s)",
-> -		   function, line, &vaf, error, errstr);
-> +	btrfs_crit(fs_info, "panic in %s:%d: %pV (errno=%d %pe)",
-> +		   function, line, &vaf, error, ERR_PTR(error));
->   	va_end(args);
->   	/* Caller calls BUG() */
->   }
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 502fb4a55cb2..210af4d7d4b5 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -3915,8 +3915,8 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
->   			ret = PTR_ERR(trans);
->   			trans = NULL;
->   			btrfs_err(fs_info,
-> -				  "fail to start transaction for status update: %d",
-> -				  ret);
-> +				  "fail to start transaction for status update: %pe",
-> +				  ERR_PTR(ret));
->   		}
->   	} else {
->   		trans = NULL;
-> @@ -3931,7 +3931,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
->   
->   		if (ret2 < 0) {
->   			ret = ret2;
-> -			btrfs_err(fs_info, "fail to update qgroup status: %d", ret);
-> +			btrfs_err(fs_info, "fail to update qgroup status: %pe", ERR_PTR(ret));
->   		}
->   	}
->   	fs_info->qgroup_rescan_running = false;
-> @@ -3952,7 +3952,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
->   		btrfs_info(fs_info, "qgroup scan completed%s",
->   			ret > 0 ? " (inconsistency flag cleared)" : "");
->   	} else {
-> -		btrfs_err(fs_info, "qgroup scan failed with %d", ret);
-> +		btrfs_err(fs_info, "qgroup scan failed with %pe", ERR_PTR(ret));
->   	}
->   }
->   
-> diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-> index 90659b287d90..2e4c3efbd02f 100644
-> --- a/fs/btrfs/root-tree.c
-> +++ b/fs/btrfs/root-tree.c
-> @@ -265,15 +265,15 @@ int btrfs_find_orphan_roots(struct btrfs_fs_info *fs_info)
->   			if (IS_ERR(trans)) {
->   				ret = PTR_ERR(trans);
->   				btrfs_err(fs_info,
-> -			  "failed to join transaction to delete orphan item: %d",
-> -					  ret);
-> +			  "failed to join transaction to delete orphan item: %pe",
-> +					  ERR_PTR(ret));
->   				return ret;
->   			}
->   			ret = btrfs_del_orphan_item(trans, tree_root, root_objectid);
->   			btrfs_end_transaction(trans);
->   			if (ret) {
->   				btrfs_err(fs_info,
-> -				  "failed to delete root orphan item: %d", ret);
-> +				  "failed to delete root orphan item: %pe", ERR_PTR(ret));
->   				return ret;
->   			}
->   			continue;
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 5843254e3aaf..805a1ffc8ab6 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -972,7 +972,7 @@ static int btrfs_fill_super(struct super_block *sb,
->   
->   	ret = open_ctree(sb, fs_devices);
->   	if (ret) {
-> -		btrfs_err(fs_info, "open_ctree failed: %d", ret);
-> +		btrfs_err(fs_info, "open_ctree failed: %pe", ERR_PTR(ret));
->   		return ret;
->   	}
->   
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 45149d027740..a1a3043a2cad 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1640,7 +1640,7 @@ static int qgroup_account_snapshot(struct btrfs_trans_handle *trans,
->   	ret = btrfs_write_and_wait_transaction(trans);
->   	if (unlikely(ret)) {
->   		btrfs_err(fs_info,
-> -"error while writing out transaction during qgroup snapshot accounting: %d", ret);
-> +"error while writing out transaction during qgroup snapshot accounting: %pe", ERR_PTR(ret));
->   		return ret;
->   	}
->   
-> @@ -2586,7 +2586,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->   
->   	ret = btrfs_write_and_wait_transaction(trans);
->   	if (unlikely(ret)) {
-> -		btrfs_err(fs_info, "error while writing out transaction: %d", ret);
-> +		btrfs_err(fs_info, "error while writing out transaction: %pe", ERR_PTR(ret));
->   		mutex_unlock(&fs_info->tree_log_mutex);
->   		goto scrub_continue;
->   	}
-> @@ -2747,8 +2747,8 @@ void __cold __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
->   	WRITE_ONCE(trans->transaction->aborted, error);
->   	trace_btrfs_transaction_abort(trans);
->   	if (first_hit) {
-> -		btrfs_err(fs_info, "Transaction %llu aborted (error %d)",
-> -			  trans->transid, error);
-> +		btrfs_err(fs_info, "Transaction %llu aborted (%pe)",
-> +			  trans->transid, ERR_PTR(error));
->   		if (error == -ENOSPC)
->   			btrfs_dump_space_info_for_trans_abort(fs_info);
->   	}
-> diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-> index 983365a73541..ebada817bd33 100644
-> --- a/fs/btrfs/verity.c
-> +++ b/fs/btrfs/verity.c
-> @@ -638,7 +638,7 @@ static int btrfs_end_enable_verity(struct file *filp, const void *desc,
->   	rollback_ret = rollback_verity(inode);
->   	if (rollback_ret)
->   		btrfs_err(inode->root->fs_info,
-> -			  "failed to rollback verity items: %d", rollback_ret);
-> +			  "failed to rollback verity items: %pe", ERR_PTR(rollback_ret));
->   	return ret;
->   }
->   
+>=20
+> Writeback then does:
+>=20
+>    extent_write_cache_pages(): folio_lock(), folio is dirty -> proceed
+>    extent_writepage() -> writepage_delalloc():
+>      - btrfs_copy_subpage_dirty_bitmap() -> submit_bitmap is EMPTY
+>      - the btrfs_folio_set_lock() loop sets nothing (nr_locked stays 0)
+>      - find_lock_delalloc_range() finds nothing -> goto out
+>      - out: bitmap_empty(submit_bitmap) is true -> return 1
+>=20
+> The "return 1" path means "all dirty ranges were submitted
+> asynchronously, the async submission owns the folio unlock" - but
+> nothing was submitted, so extent_writepage() returns and the folio
+> stays locked forever.  This matches every flag of the dump folio
+> (locked, dirty, nr_locked =3D=3D 0, no writeback, still mapped/LRU).
+>=20
+> Verifying this in the dump:
+>=20
+> - uptodate =3D 0xffffffffffffffff =E2=80=94 all 64 blocks uptodate (cons=
+istent with PG_uptodate)
+> - dirty =3D 0x0 =E2=80=94 the subpage dirty bitmap is EMPTY, exactly as =
+the root cause predicts
+> - writeback =3D 0x0 =E2=80=94 no writeback in flight (consistent with PG=
+_writeback clear)
+>=20
+>=20
+> Exposure
+> --------
+> - Single-block folios are immune: btrfs_copy_subpage_dirty_bitmap()
+>    unconditionally reports bit 0 for blocks_per_folio =3D=3D 1.
+
+Unfortunately no.
+
+One of the biggest problem is, all the other things, from extent map to=20
+ordered extent are not properly prepared.
+
+E.g. even if btrfs_copy_subpage_dirty_bitmap() returns bit 0 set, later=20
+EXTENT_DELALLOC is not set.
+
+So find_lock_delalloc_range() will return false, and since we found no=20
+delalloc range, @last_delalloc_end is still zero, we goto out label,=20
+without creating any ordered extent/extent map.
+
+Then we go into extent_writepage_io(), which will rely on the extent_map=
+=20
+created by run_delalloc_range() for IO submission.
+
+But since we have no OE/EM created, we will grab one from on-disk=20
+metadata, and if the original on-disk metadata shows there is a hole, we=
+=20
+will trigger the ASSERT() inside submit_one_sector(), about the EM is a=20
+hole.
+
+Before v7.2-rc1, we have a lot of extra handling (folio ordered flag) to=
+=20
+exactly catch such situation.
+But since we haven't really hit such case anymore for a while, in=20
+v7.2-rc we also remove the that flag, otherwise it should catch such=20
+problem much earilier.
+
+> - Subpage setups (e.g. 64K page size with 4K sectorsize) have been
+>    exposed since the submission bitmap rework in v6.12
+>    (bd610c0937aa "btrfs: only unlock the to-be-submitted ranges
+>    inside a folio").
+> - 4K page size systems became exposed with large data folio support
+>    in v7.2-rc1, which routes every large folio through the subpage
+>    machinery.  That is why we only started seeing this now.
+>=20
+> Any GUP-style dirtier can trigger it (KVM adapter interrupts on
+> s390, vfio, RDMA, io_uring fixed buffers, ...) as long as the target
+> is a multi-block folio of a btrfs data mapping that was clean at the
+> time of set_page_dirty_lock().
+>=20
+> Reproducer outline: KVM guest on s390 with memory-backend-file on
+> btrfs + virtio devices using irqfd adapter indicators;
+
+I strongly doubt if it's a specific S390 feature breaking the assumption.
+
+As io uring is also heavily tested, and IIRC there is already a huge GUP=
+=20
+work to address the long existing unexpected dirty page behavior in v5.15.
+
+So I strongly doubt if it's some S390x feature not properly following=20
+the existing scheme.
+
+At least on both x86_64 and arm64 (64K page size), since the=20
+introduction of experimental large folios, I haven't seen something=20
+similar like this.
+
+If it's S390X specific, then I do not think it's something we can handle=
+=20
+by ourselves.
+
+Thanks,
+Qu
+
+> hangs within
+> ~25 minutes of guest uptime in our setup.  A targeted reproducer
+> should also work on x86: mmap a file on btrfs, write it, fsync, let
+> writeback finish, then pin_user_pages(FOLL_WRITE) +
+> set_page_dirty_lock() on a page of a large folio and trigger sync.
+>=20
+> Proposed fix
+> ------------
+> Detect the empty-at-entry bitmap right after it has been copied,
+> before any range lock is set up, clear the stale folio dirty flag
+> (nothing can ever be written back for it; all dirty flag setters
+> serialize on the folio lock we hold) and unlock the folio.  Patch
+> attached below; it survives our compile test and we are preparing a
+> test run on the affected machine.  Comments welcome - especially on
+> whether clearing the folio dirty flag is the desired semantic here,
+> versus e.g. routing such folios through the cow fixup worker to
+> actually persist GUP-written data.
+>=20
+> Thanks
+>=20
+> Christian
+>=20
+>=20
+>=20
+>=20
+>=20
 

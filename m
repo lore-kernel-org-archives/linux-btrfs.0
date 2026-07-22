@@ -1,76 +1,76 @@
-Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
+Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 108222E737B
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 11:30:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.153.141
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 62904480941
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 11:30:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=68.232.143.124
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784719853; cv=fail; b=EV74cX4+KeQjGtPIwEOuc6Z1aYuqgmBwaKPdFNSQYTWt/ab10HhdLWPSIJzFFyzJFPEWQp8y/ZINDx1URKEIfRcUrWbduAE8O6OR/wYqNujblVGfgPkZQysf9BVg4cOLFb5sUu8+0PovjfA6RzBZnYUG4Kk98y1f36aWR09pTzM=
+	t=1784719854; cv=fail; b=Tj9sfb3szRJ7cBAeRStuyY8vlK0lRDSgPBjDWEhCmQoLF+Gy6EnJSIj6T7VzbjZFvu/xTG0fjMxDLNpW1kWvYJVIBeoMMNK790kU7blQ91zuq//ceAWh6+NFUGMBTk1QgHAkbyg+4cOjVrFBxqoVh/MFXxfR6ZyoYla/d3Dnt28=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784719853; c=relaxed/simple;
-	bh=KkbMi2NAW31maqxmP3atGIPLK1VKaU7DHdTrKlB5ypA=;
+	s=arc-20240116; t=1784719854; c=relaxed/simple;
+	bh=l6ez+bCaU1kfsGhTpSZXkDmj01P68JA1cKoQdBA2UMQ=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=aq3Zzl6IeUtjOWI1b+94iil5BdORCCodqld/J3qRzzTyiCWN3KQt89wQ+btyZGb0kfikRL5jj8Uo51/I+xCQSGX1a4nmbuXPTIYjth864xdCmgTu6m63yojM3rNDKclowSwqnLdeAmjMq4g6sH9Et8Qn4m8M1dZEYOgu0KF6fN0=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=Fxqecyqh; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=twvgZxQG; arc=fail smtp.client-ip=216.71.153.141
+	 Content-Type:MIME-Version; b=UXE5SsnE3QVq/a23dLF89In6kgogwb488o37SRUANb33U3F/ABcxNHaWozWuJhENKcaC35jIGLTDnHjnxfFHXLEzQ4QLdhTI2Gjgyhnaqfpge4vCPg3iG5cjKO2PRy0aS4RwH9eI958yCBDdjUVlW+rQIV0a2i9sZiiRJD0ib1s=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=UoxjghNu; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=upQfRgtb; arc=fail smtp.client-ip=68.232.143.124
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="Fxqecyqh";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="twvgZxQG"
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="UoxjghNu";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="upQfRgtb"
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1784719850; x=1816255850;
+  t=1784719848; x=1816255848;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:content-transfer-encoding:mime-version;
-  bh=KkbMi2NAW31maqxmP3atGIPLK1VKaU7DHdTrKlB5ypA=;
-  b=FxqecyqhA8xG5FowKOpcqCS/yrNkXV3nGuKKnP/HGamNINYSbfNCuMJf
-   vPb2jRk+CgBDW+UCdlgHy6p1oE4nDWY0bLDxwLnHl/iXY7tfk1xZzwoD5
-   9NP2kfCVtK0KYJXm5pWD5UOYYuzcrFYDiN/+qnjiroWDbT8f9Ecn8tvfc
-   JDs02C2bi3SImnzoxTNs7SKfqu2Gw9zhZ8fbsF6v0sBL9QvMrgF/7RLn7
-   bZAyTdJ7i4KwoWFcAcskFnyvE112SSjtnXkFuoT4tdNSB0GGKCr/IpOwf
-   JafRox9a3M5Af08PGMibOyjD198efaUU7AuBnG75wi9N6AA6uGMg7fp2L
-   Q==;
-X-CSE-ConnectionGUID: 00pitF5US5SRqa+cPyxSkQ==
-X-CSE-MsgGUID: SG/5uJUbQcaCsdQyTq6MTw==
+  bh=l6ez+bCaU1kfsGhTpSZXkDmj01P68JA1cKoQdBA2UMQ=;
+  b=UoxjghNu8cr72KzXe6Y+TBP6nk2cUybbMpuViabYLD77LNPlG+kyjTAM
+   WL4nTQCqYKCUv3e1mXJPpE6MlXfnJ5ioLvshb1uNSD1rRDDv2DY2cNu3J
+   jgxpNmnBkTJathVs8hqYSJ/64lBwg7AhegsVjdF2ZMv4dSbcRpvHhBd3y
+   HgZUCz1LBEztyAmlggxceErZR1zxx8ZEBDFmGI7hZqWmmqaa6OUHnPqMW
+   9SessGbvwLMhhI/MCWcCwLQ63kGLjInPFroo36Is2nokZKO5y7mY4+qkO
+   R8P05SiwYjo7L585VYmEDYiCiPxMDQxbzwDirXiAGqhdEowJtWqMb7lz3
+   g==;
+X-CSE-ConnectionGUID: 2rnAAKaBSdu7J8jEg9fWvw==
+X-CSE-MsgGUID: TyQVJueiTWi7NkwLlla1QQ==
 X-IronPort-AV: E=Sophos;i="6.25,178,1779120000"; 
-   d="scan'208";a="151556167"
-Received: from mail-westus3azon11012017.outbound.protection.outlook.com (HELO PH8PR06CU001.outbound.protection.outlook.com) ([40.107.209.17])
-  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 22 Jul 2026 19:30:37 +0800
+   d="scan'208";a="152464646"
+Received: from mail-centralusazon11011050.outbound.protection.outlook.com (HELO DM5PR21CU001.outbound.protection.outlook.com) ([52.101.62.50])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 22 Jul 2026 19:30:39 +0800
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=cvWS0tWpYg9KKCIeh+e9aOn9v0M7JYgnj7xObrr4T21yIQqvTO5tvgnxGFdDYDmdq+u4v3dRd8x6PNCq+XRpVQCGSJLL1YYT67Cm/i69vsWxZEHSMNBkMqGhnhs2Cs9yKUjQMSj1UqEXbsceErmeeU0/6UU+kriKSxwXpyve2KUQeUICGeNA+o03oQVZsLodMM2yF+oi70kvPvwthJloAZNSmxpknTrAvK2L1tl+qJ829mG7TAFctRZb+pT40OqjLYUXA0Q/tRv5Qls8AhwBiEBscyOEazYxyxpSlZHxaCNmHEYopZK1gd3zmLBzNvTHhktDwdxN2668almYmvIgRQ==
+ b=RSQaxwAZOpztU5HsbOZJSrc6LcPVABzZLh/ZTOg7TBHdDqVFRBe7z9wb7ig7GuU88XXrJItBTDdNUgEa7543q1KW4kckFZKXsFJMCyQZi2eCGuMtNU4sUxxU+jWNORuz/rgaiwl0sTz8sngv/KCkEZuOJGdI+39mH6JMfV9Cg9x8qiWhhPDbOwjD6pKodUX37eC5XNYjOj/k8ZC53fQkHl+IHq2SBOjUtUJaA1SsU7EJvMyRx61yxx8Z64yTIIlIGpsvVPIHBU5NPUtfmWdyHOBs+vnPpuImkbwEh2bv0lOMJxyTAVmMXr0lbkZX3ta3hkvO4eLcPM6S93l/IBWDgw==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector10001;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=zMyfW2PZlBeqQERvXib2O6qzmbisxyyV1r3vz42RYPk=;
- b=oqEipJhpLFSgoUq59trHcFpu4AqZLS0zVQ5Zg0/008VeyaNvuHFmM1ghP0PK0ny/0V9sMJNFdSpclqAJFYHv/f1QZdq8vJ2HDv+HkJcRRmnjENqoeEIsU5B/JMjFuu6r3Oi5WsPP/wkcOkb5NZrdKPK1q5nPmkC4xolgEiIGzmSURrm1mevDrpxIo1Q99YjOyupT+Ai+3qU4TmXlCos2/QO8a7unTMsbBqRyBc737tI/KIjqdCHr/sz/jeXpWqEmrsZIq1tZRrjq7m83/9A3DLz+f473bAoOj7t7Pwe1tdpWeHT77lyb1wTgPEu22UD4qAYBUybQOP/6KB+XkHmjSw==
+ bh=v01ntJcwqKaSNo1cM8tBxfDIA6nELvUPHpSyxodI2J4=;
+ b=uScQ0LLI2pvbxIlkstK6wqoXOAeSKX3r4RnlIXwPV23J9M2Juu0FpSp1XnWvoqOLGHllhmZWXZ79ZoqgbbdnngiBtS1eueUw89nvmyMmUt6zSYZUYWgJyzxaeG/u/jZoByBWXjz4K2++4xZDsimEwe+sLdNs3tlthKSS7fnYaWpezEgYz3f+pJ2SojDPhGp2r0EjlkHRF1kh5xuN5bIavsdtgM4o6LajCZTwn4Ho7MdV/RjaL8/ialxNR2xXthZtGJvewXvPzldIihbFwYw/MAzUJCjLnUfGOgQMRKPV1K4Wyc55iyo6NVJt6n5FwgjJx0klMrqgcayVTrIlmQYrrA==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
  smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
  header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=zMyfW2PZlBeqQERvXib2O6qzmbisxyyV1r3vz42RYPk=;
- b=twvgZxQGLj/hs9g2g2PfUR2qhQULcHPOGpzhNtWmL6x+qT5Novw4Kh4x5j6RJ7GG9sR/JoRCZ5YUOKTYdu4FR0uaeBYv/ACFhr+VB3MVkFocON3fJR+0b2tWmqGDCNnQZnw4yvFL7Pi4tgzoQsszYubN6A+6aKDWTVU1hztgM+8=
+ bh=v01ntJcwqKaSNo1cM8tBxfDIA6nELvUPHpSyxodI2J4=;
+ b=upQfRgtb0bIPcBzzLncYXiwkJAkZaZVP7sV44LonjMKJsbuz8KBEHb7ShLHmKcFbBiomgfJB4/pfVQVxKyvZTPrccy7wj+iy/cfEPFU1UXwH4CC8uPMInMGedmEPvzQlAUJPvT8X7prj3DEvWv92zBS2QiHAnY5OfU0ftDrG/Ro=
 Authentication-Results: dkim=none (message not signed)
  header.d=none;dmarc=none action=none header.from=wdc.com;
 Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
  by DM6PR04MB6810.namprd04.prod.outlook.com (2603:10b6:5:245::15) with
  Microsoft SMTP Server (version=TLS1_2,
  cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.245.10; Wed, 22 Jul
- 2026 11:30:35 +0000
+ 2026 11:30:37 +0000
 Received: from SA6PR04MB9447.namprd04.prod.outlook.com
  ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
  ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0245.009; Wed, 22 Jul 2026
- 11:30:35 +0000
+ 11:30:37 +0000
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Naohiro Aota <naohiro.aota@wdc.com>,
 	Qu Wenruo <wqu@suse.com>,
 	Filipe Manana <fdmanana@suse.com>,
 	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 3/4] btrfs: zoned: drop stranded dirty metadata buffers at unmount
-Date: Wed, 22 Jul 2026 13:30:15 +0200
-Message-ID: <20260722113016.1896990-4-johannes.thumshirn@wdc.com>
+Subject: [PATCH 4/4] btrfs: zoned: don't clobber the extent buffer when zeroing it out
+Date: Wed, 22 Jul 2026 13:30:16 +0200
+Message-ID: <20260722113016.1896990-5-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.54.0
 In-Reply-To: <20260722113016.1896990-1-johannes.thumshirn@wdc.com>
 References: <20260722113016.1896990-1-johannes.thumshirn@wdc.com>
@@ -87,106 +87,179 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 X-MS-PublicTrafficType: Email
 X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|DM6PR04MB6810:EE_
-X-MS-Office365-Filtering-Correlation-Id: dff26450-078e-477e-3f65-08dee7e4a607
+X-MS-Office365-Filtering-Correlation-Id: fd5377f6-8c3e-40d7-b8e6-08dee7e4a6e9
 X-LD-Processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
 WDCIPOUTBOUND: EOP-TRUE
 X-MS-Exchange-SenderADCheck: 1
 X-MS-Exchange-AntiSpam-Relay: 0
 X-Microsoft-Antispam:
- BCL:0;ARA:13230040|23010399003|1800799024|10070799003|366016|19092799006|376014|11063799006|56012099006|10067099003|18002099003|22082099003;
+ BCL:0;ARA:13230040|23010399003|1800799024|10070799003|366016|19092799006|376014|11063799006|56012099006|5023799004|10067099003|18002099003|22082099003;
 X-Microsoft-Antispam-Message-Info:
- VUc//YoeHfsHHzt4+I3VVeP1jonyyYb9Pxw+d9EtPx27GZdIR3A8Fme4XhGPWOZRixYNkFaLVpw/nigyi/RYC832MYBz1Fqdunlnv5758FBf8+KikXbU/Y4QYcU9av17tBsNmhLlCdfGw3jPyjxr2OuPa+9PZGBFRLMmp0sq+sNDBc50KbYC0djxZyO+UJC7Bqx3Y1zQOdWj4PzrS6Br4zJHaCqgNl/48Ot1P3j5E28WI+c2A37aPIo9ESjOEDuKAVqiLdlQbTLgKpCT9R0lxLDfEPAVpFLFrOy/E2XSPlMnWM//sFFdVaorh04ATJZZsXFytC9fxdO13Y4frEa6ApI6jD3IEB68o629yG/K1MZRrI/5ZgZTi3t0nlg3DUz4H2unIUVsMmJqq9AhJNLQv1vohhTKvPd96gCXBZTEq/qgNf+SAgN15tgGzVIuFx1rQ4KeV2c4+UhDCrt9gIiITOc3dpqeGX+DlyLgvjHKV/5j1WApj+pu7S9aAKWHFkUNkRfc0xXazuOstdLJh16t0aaTQQVxuvNyTM2RHlTJf5tqllp8i4Jc/03kfM6i8HT/F359HTxG5m2vb+yj+xlMPbiCcoeNDY7czqhps9VxuS7Wske+rXE6+5acxhs6xNer0FkF3l9eXO/bQUQnTPqPxmAr0pQa3Ro2/xnWLu7MknU=
+ Hz0H4N7VScaT4oDFSHuwn+6uNrFozH6cB8CRRy/GL1a7dA8MgQwG3IZJYE2XBt7CaWEEGZpuZsLRK6mi1PGR+ZSV5hP66gd6cHfwE4gfjadXu9GtFfnQIimjsrLWbzlZq0YiExv72yfmFBbWHRYZnyHmLp+vRqcMJ+H47lEUojHPpdjIzWHW6cGcvtGCEuCsxlBLbew9LQzjowO9CY6lqm/IC1zJcI+dVUakntPqJuEhhEh80ZdiksmR/Zp8Qjb9fk5apf4w0EVNpNP/Fqt9svGRrRZZe+DEex6xF9q0oVF7UaP6v0iWmvKhnObtrLsWDuE7Y4kZ9JR3ZnQZ8ek6y69mFD0UfsLo9yHz9byrtHHLLGIdS1iD20Gv5ISE8it2EvDVpjsTUVLiVQexM4K02onOw2qqSdKQhLNIw8SuCmRlNxPTx5n1LA37ohoPcXXLO2djxZuUiSth2lVWAEnNV+iA0WU6aKUk4S97WEEKdGK+FaB8Rc/649y/YzL5+A4x85OeWc5OovQQMEyHMuxsyhsVRHvVhnlT3pHF0mrHcO+SPSn3xxyUu0rUTXl69z4WyYqBLeEasBgv7E7oHJS8ceNKvaoDDojSrcEuQMbH3VkPxgMC4ytKSgFMRsCLedz8LtrX66wNy7hNNaQtOpUwe8dH6i7HRevkiLxrd9OEpMI=
 X-Forefront-Antispam-Report:
- CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(23010399003)(1800799024)(10070799003)(366016)(19092799006)(376014)(11063799006)(56012099006)(10067099003)(18002099003)(22082099003);DIR:OUT;SFP:1101;
+ CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(23010399003)(1800799024)(10070799003)(366016)(19092799006)(376014)(11063799006)(56012099006)(5023799004)(10067099003)(18002099003)(22082099003);DIR:OUT;SFP:1101;
 X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
 X-MS-Exchange-AntiSpam-MessageData-0:
- =?us-ascii?Q?W3PbEYi38SKE9mxLGcYTqNtOq3zJY3ievt91QHf9pydYCVDNr84pXWDr/RLg?=
- =?us-ascii?Q?saKixSpO2RWnGZXdPIe2QrD0pBJY8dlTk+wSzctm8Wnua64d72LgkGgVup8W?=
- =?us-ascii?Q?NPWT9VbtVbVcV5gghjv59gwqQKJHWTfJAnX2tEtmh6laXO0wGgovARMZTDnX?=
- =?us-ascii?Q?aWBohOJv2wXyQxmvTqj+wC/qEW46gcAYRV4V1tv3BI6HxNdgEkyL5upjnmgC?=
- =?us-ascii?Q?cH1ADpf0sbQ58S8qR2SYJ1N/Bd/iPNQDzoDcRDXWztxMtdPIHSqY+gAJ9bBE?=
- =?us-ascii?Q?IgGxnhRmRRyIogDsvWZq98MSPy4No4V/SPsVd4Q3G/2M81DGCwt/t9kpIA9t?=
- =?us-ascii?Q?QQCMefr/Y0CvhqHoWDkyC5k4fVjflTUMgz7WCyC4lCW6E56jAuu5ZgJsTNCE?=
- =?us-ascii?Q?mkWT7IHgQDzS0UkNHuWbDFrRdqChHGZ/bbT/V0v1Ob1fKttZFZxQ+pJN6tPz?=
- =?us-ascii?Q?0tvNrRZ5gv/e2uqGo3rMcxW/y3M04Ru77nHcSDC59rcN2u/IJ0bYgAI8rNPD?=
- =?us-ascii?Q?cMMpg4iphmpiVHsoEbARbmfaJOwB6dWx2ZwFeBh0LPG1ynN00bajUCxE2B8H?=
- =?us-ascii?Q?PehOvkbYuvv4XBCDDb2U5oiSh+0nbvvSSzj7R4owGJOLZbIHTPcPm4WpzTNJ?=
- =?us-ascii?Q?yW4XSZHWB2hOzIwJFDyUZ7RghD27x8AQShn2Xu/CW+ptf/jEd7PO92RvhbBy?=
- =?us-ascii?Q?OOK2mu7+K1Xgr2L5AHOI6ZLZHKPHH7RY45d1rCcQGD9+NKNDrajFF2RUlZKl?=
- =?us-ascii?Q?QxmwCFht42I58LDVhBu9vWNwxh9HBJWKk7XSYPH0vVE0oQUI1dIZbkXwkxOk?=
- =?us-ascii?Q?EXxcQQ5i9SaPDPEvxhhv3+OFgDbg2ZDK9GD1qqucKbDqVzsxRBAmwSWpO08b?=
- =?us-ascii?Q?+vYzZIJkL8NBQQV9OQD6gay2miqbLShmyAtF+RAFyEcfx/sky+fRZ/9Gq+OX?=
- =?us-ascii?Q?l8ZiNJSU8k3EJna2Az5DNb9v1XBYFWsTGrU5vOGSFfWynMRWEIQEiiN2X6HJ?=
- =?us-ascii?Q?xyXuHNI2h9uosg8wpCUi2jTWnE4Y0Z5/Gk+Elj9YlazkiGkmIrxQpEtjjGzZ?=
- =?us-ascii?Q?/VsEAyz/gMeEkhIUPGJRtGwxzIWn4FEne/UvGL/f3AyaBDsiTYp361m20V2A?=
- =?us-ascii?Q?V2zTFSE76N9sNn+q7w8J+iLqBK5WTcV8H1EjMiLogS71rvjAp30XnNaxXhUq?=
- =?us-ascii?Q?DRII4VRHyizgTNZk1MKDPvbv0LkwixeDlQzdOLDaAWKrKi3SRUjvwlb4Nc1R?=
- =?us-ascii?Q?STze+dfMIftYIwcvIe/yBZp5MRS7+piFHbGQ5CM+EoBMl79xUPJWGmivVoUb?=
- =?us-ascii?Q?/lbgE4Hq7Km9Byj7Xr48VCDDxQubmjVCdT6ijoeALYqnDSPxUwbJtyTiTYzO?=
- =?us-ascii?Q?SNQZMAs0GNcmtM6F65QHaQOgSAC7Wvn3gmNfDhTI1EWozZXXc7h4z5OwodHF?=
- =?us-ascii?Q?SiBqYVfcpnLSTSiLUFQYs8lBB/RbARsQUfZgiXLOjJch/WKq/79qEx4Vyok5?=
- =?us-ascii?Q?Mqr2SiKgYi+mrW0CBpgqsSIXyFSkanKhFNuk9LGSsMe+FHAzvIuyo/ZkIvHG?=
- =?us-ascii?Q?tIiwKLDCSHMKM+XMNT/chnMtMMWxohzC/psFfmAkGXP0/KtRKwlhPtIAxKO1?=
- =?us-ascii?Q?wMPQeEjGl+hBFnaOypkOJGiVBrTRrrGGj4BoEQZ9ZgXwoYGZH6i1M+Fo3PtX?=
- =?us-ascii?Q?fuGK+4SeayhoOH0Sl7MqYQboq/2JGog/PVhbMEryo54vxv1JcyslrcHoBc+u?=
- =?us-ascii?Q?PYaQ/8riH7R00ZX+hjxnOJP1Lb1ZQufWPcKIRX3UFLijY6O8lqQV8lf23ibl?=
-X-MS-Exchange-AntiSpam-MessageData-1: 0reuHhhkFdvk6Q==
+ =?us-ascii?Q?N1koOZwG3cfqtjjD56TsdTr0rvzaPxNzme+PmB/mC6ozv/zPGt0xWOS2Le1k?=
+ =?us-ascii?Q?myI7h1mYzWyRey4kCfMqgqNdZbusWdqsw8s/ghRInvsjBma8psIJn9h+IEGg?=
+ =?us-ascii?Q?RIL+YQ+FcfWwilBvu2olMDv0XdZv6wpgyUnmd3nPPfhJd/LfpXXxrvPXNmX+?=
+ =?us-ascii?Q?/YnwOvQL8o+qzE2e12jGi8VYvLTn9bbk0MslNwqOAOrNQ7bXUucdCev9+9pU?=
+ =?us-ascii?Q?yRWh/Oiv00Ox2Tq9b01TDqEP5L+jTK8af3MhnDpfwK8WngyCTVISKu+2Ch3g?=
+ =?us-ascii?Q?W5teKqZ7mYAZG+7I3n+ktikQNM1xag7PMl3Yz+3xBedbQnMoSWcBTvxnpHNV?=
+ =?us-ascii?Q?qGGZDFCea0+T1LGQWevJ8eLCOkvlK/wbN/9F1iTN6s3830soq9cOYP/1ULDq?=
+ =?us-ascii?Q?csO/jUmAhcMjCKn07hmeoQQ6jeXXY/SUl23DIOFd25RPnqfMfW4Qu0S9DdUr?=
+ =?us-ascii?Q?iNIpIlhoyzrqg2eyuLdGCSiO34MlfWZkStMBIV1hS38gu4S0zbLCD8SK7d5s?=
+ =?us-ascii?Q?Wdtq+Q+1VOYeb4brc9yibYDR251NiLG/1UGglakH09BOm52GizKM+/ybDp2K?=
+ =?us-ascii?Q?z5/hTkBEgXr2NJqQFiXW/zsAkZQ607x8zfBZvfSfuGM16g9zsWMg7FRbe8V5?=
+ =?us-ascii?Q?Gi9kr3CVqpQ8jtZL4gy6QyRBI4Du/ghPxgXedLdakvjehszcuymOpQ84qtQQ?=
+ =?us-ascii?Q?JOpEB/cfTmEqJIeaIEqycmZrEiHVf7ZgJz+j7GohMeciUU6p9WrFS7whY28H?=
+ =?us-ascii?Q?C710mr5+cRhIn07JQAw5W4b791B9ECMdVu4NVm44gyVGdjMCW7MMyB/1gGLo?=
+ =?us-ascii?Q?a7BIL9SImYO1c4HoDDIG5KVclA9vp5u+J392G0vVVAIxTb3izJSrNoSRsXmC?=
+ =?us-ascii?Q?6jj6bg5j5vuuhZ6KRSP7Zvl/w0M0BEUHTyrOtBIPNGfssv/hmQsX7fcLds9K?=
+ =?us-ascii?Q?Lru4udto7KBi+rkvfMQeK8zQvuzhKqXvdaURhOPw8X1HkS7GNC6nAFApbBGH?=
+ =?us-ascii?Q?DTErkNdAArISB+l+c9IxT06AmtEkVYtEa94GWP+miuAwQ8IH7sqXM/Ig7oz4?=
+ =?us-ascii?Q?RxnJ98mHCPtYlt2cTlR+o/8HfJZoyZhLphednHFROUuwCpFAnp9/ReDLiNBu?=
+ =?us-ascii?Q?lRETFBxRX+51yQuLWNwklXhW2YDMLEWLkiiMpiI/sfPZp9snJ+dly3BaOi8C?=
+ =?us-ascii?Q?yXFhokjrvds6rI+ITY0uLsFHL7THhKd1kZoPZKudT+WVxFYIU5/aubhIP3SD?=
+ =?us-ascii?Q?nYh9o0rbzFT1aQqkLokLvrynMJfWIPLfzDKfFoDm0NBqU+JcxpVhlA9gS3Ur?=
+ =?us-ascii?Q?0zOkrLfzMEkEV+lwu44+4YlsBMoY6Ksg5h9VY29ubpWyZFejHdj5SqPCIhQU?=
+ =?us-ascii?Q?8+MNmgs+AqN0IyqTbFFVlvGfHnfEt1HCas0eEIy9MNn8Kuzpsy4KFf99w6nH?=
+ =?us-ascii?Q?HcaCoJ+FcgUgUvSNjzv4ybsE+BBLXMqOMK/6iS8bPA1VKIIgxSw6jy/lUUu9?=
+ =?us-ascii?Q?2RCBw6BhA5EX6ESW31KGIgLVSLbCwGewXC0ZyvF7kHsEJWXqbiOPM3uvh9p2?=
+ =?us-ascii?Q?oXIET9S6zvsZm0qWCsB/NplV845flvKRfUU7zseDcmvo0U1g7Ivw28R6Kitp?=
+ =?us-ascii?Q?OzoK70HXFZ1ngpbV2xx6U9KZfxqmRoQoTQBUJyAoVLFUFZxIVPtc11DbWXG/?=
+ =?us-ascii?Q?Ap0sS/k3XCJ8ZBxzhzae8nuBJafZbUNqd7IGyhGf9K//h4EW4+yjFzbhx05e?=
+ =?us-ascii?Q?ww7y8BRWtzEvuTKBDZc5yy5RHEs1Jj41kyIHi8g0UAVDgYvMPR2yi8+VAtJ5?=
+X-MS-Exchange-AntiSpam-MessageData-1: heaAJI0/Z/i1wg==
 X-Exchange-RoutingPolicyChecked:
-	RORewnsApwI5kZJCKdoNeJwdXhoOWA8e9R9mpaT+aITyvKPX9eBZFIIt25BLCIWttruSOm8zdTZIbmyr1WsWLCLScF1kcIuSA3wxcYR1LO2YvkHRhHvVsrONgnG02nQ71Nxkq/p0gID/eG4ZD2vVjsNNJ8z4zLZU5BxqmhRLFXOL4ohVl4h7fb/E+uc/SaQ+IMDRko2r6oFOIjFDOCfEGMEFAzL8yeIJw0EWQ0RS00GD1T16Lu3cp64AcZJyGApO6jeRNXHeXJoxbm8T9OqJNJVTRVOs9jOeqpSLPs6INLxJbBNu4tYGimr3Ttl2i2A5MKlRAtsfbFZgJmpLcO28pQ==
+	VGAFYO4We5PPQfP1pXxpqD1ra7RTxYfBuyScG3/j44esN5o0/yzipPzTaWLhibXbR63QYfbp2fEyvM0jaBQVALxRwJnLJf/NZ2gwrKuD94z27Mzu78JmhFPf+J7/777rL8xuRp4zLJ3ji7saJ7htAtqdY7NLf5vkjpLL7FlQXO4vUxEg72Bn7IAQdB0rmm6tA2K+Wqcc+Q3tZfU0O5kjzaYdUXxOOIy99jErfJfSVK5UqBi2HHKGJz978XyqnoU8L11SZAKvrCODXyPr1HyZTll5TUV15QeUcYW4AyAl2aBcs81IkiyMv31ncZO5fLbNYo8cRVY4FIf0EeICFNCTMg==
 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	wYuh+HwXZOx0cCS6Ttm/eQ4R61prbh7f/8vO25fPbVd+RkjjgAgbQAs5mPJbQaUh3nECJbosvVwu6QCy1ign+VgoFCEl4lYgZomLsMi/ykckPhEvpSAbWbOy8nUBegeu+xjFA3NnSPBfFLLfwtoQ9ccMPcv4IYwfvwgPvMu+bOre6ROZV+JYsPlkK92KmLpGIAp/Ls5iYHY56v6d4zK+WjV89DVu+PxRwQuMYEwhRI45F6d8zQsGMvEB4OLKRfvcXIXJ7+sdShIIPxjW9i5KZeKbdW6lWXtdKMV37Z+5SnEf2bljYc2wyqj9V0/PKrkFWl/TRb6OiSxqea1IqIytJT44eldSNhGGH6vuK9Phd+5vqKbNkb664kdMLYqqoclvPUSTg7YamMPmGyjvBQPgOjR1avmHioddZxxtK7IGcMtGnhJpaG4bYaJ2Z/ryHLTH340GtawOVf1wInFN2TLegsat/zpw+1/R31xtnRAfwIdfszfrKn9Tzd1y7lyoVtszkB5owaVKmoVz6LAhDoixvUmPGeLP4moEo2nLTefgRelQiQmLU3FztNR/pC8il2A7zpkaNxYKjHQpl9pI3DFdo5ZiX5mFp6KAi+xXY7lZlnT84PD0kgosEJ1qyPF0YUVN
+	lIykd6AC0ECXeCV+fd/TqES0XWTLb8y4DR4gWXgOc67gCL8Dwp00JUxifSAr4EtwsdC1Fg1F+Yl/jNrtSVM5QyASJQJZMfhRpPdRdwdSGEuiQsrW9KsaBpCBMH1kT3FYLdmPnII9hZJnRbW1hfn+V+J1F4M+xFhfelQ63r3boSbA4wzph6A/DHjTT/UKqdZQtceGAhitIm1BhiK4I452SfcIzzjjKoVA7Qyr8D4Bhs3e+3bso+5UHun4Bo2iS8APepyIfMkSdXqjXmmdQpiewQtWrGeTsd16AZjw0xQSNzAQfm5G5nT/R4y1sbw1t3CKP9Oaap+MrqL6b8Nsdkn6SZa44omCSFka6d8CG0WgM3fDRgtFpTfNrUfp3N0ccrEJz5z1skzxyoT0jKrXXTsKvoCv4RuqsRAjUQ3mCSfZ26lMRPa0rKMScLcfBj0kWReG8uTop0IHjP+r4vvEj/fqMn1XJbRib3VZGyEZEdSZ59kwIqKFfmSjiaVSsnousi6eqE9kzr1mHJY8EAFeavTvVvZ0DTyBhcfniFzW3C84CL1wy5YCCdg6dqjEsDd+vxprgKyOGcDiMcEfuejzOCQ1DscrGlg7ya4hk9m9YsfTLx3axLjmlhFA0mncc4+OW/0Q
 X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: dff26450-078e-477e-3f65-08dee7e4a607
+X-MS-Exchange-CrossTenant-Network-Message-Id: fd5377f6-8c3e-40d7-b8e6-08dee7e4a6e9
 X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 22 Jul 2026 11:30:35.8224
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 22 Jul 2026 11:30:37.3833
  (UTC)
 X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
 X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
 X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: dSYQcIK5JELJuiBn1qRZzUQHsFtlpSRkwN0Kd6RNWM66O0VGHileAWJgk8MBnBFZZHgLlcLUA6SMX61F+74LXhpqQTt7dpoypjAq/hT46r0=
+X-MS-Exchange-CrossTenant-UserPrincipalName: APFbTS/LyInMmuWPvk+drr+LdqV7AmWqa6FB6vghvkaxTYsO5xmnz2Iqkskc8DykrbPB0yg83hLEKYQS30fLFFAyAeoSrvcAE8kSVRTGkHs=
 X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM6PR04MB6810
 
-On a zoned filesystem a freed tree block is kept dirty and flagged
-EXTENT_BUFFER_ZONED_ZEROOUT so a later writeback zeroes it out and advances the
-zone write pointer. Unsynced tree-log updates (e.g. from rename or link) leave
-such buffers behind when the log is freed at commit, and across log generations
-they can end up ahead of the write pointer behind a hole, so btree_writepages()
-can never write them. During normal operation the space is later reclaimed by a
-zone reset; at unmount it is not, and the buffers survive to the final iput() of
-the btree inode, which hangs in folio_wait_writeback() once the endio
-workqueues are stopped.
+On a zoned filesystem a freed-but-still-dirty tree block is written out as
+zeros (EXTENT_BUFFER_ZONED_ZEROOUT) only to keep the zone write pointer
+advancing. btree_csum_one_bio() implemented this by memzeroing the extent
+buffer's own folios before submission.
 
-They cannot be written back from where they are freed (free_log_tree(), inside
-the committing transaction) without deadlocking against that commit, and they
-are stale anyway, not referenced by the committed superblock. Drop their dirty
-state in close_ctree(), before btrfs_stop_all_workers().
+That destroys the in-memory buffer while it may still be referenced. In
+particular btrfs_free_tree_block() can run on it afterwards and reads the
+header to add a delayed reference; once the header has been zeroed it frees
+bytenr 0 and corrupts the extent tree (the btrfs_header_bytenr(buf) != 0
+ASSERT in btrfs_free_tree_block(), or an "unable to find ref" abort). It is
+flaky and reproduces under fsstress, e.g. generic/461 and generic/013.
+
+Write the zeros to disk from the shared zero page instead and leave the
+extent buffer content untouched, so any later reference - including the
+delayed reference from btrfs_free_tree_block() - still sees a valid header.
+end_bbio_meta_write() now clears writeback on the buffer's own folios, as the
+bio no longer carries them.
 
 Fixes: aa6313e6ff2b ("btrfs: zoned: don't clear dirty flag of extent buffer")
+Assisted-by: LLM (debugging, commit message)
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/disk-io.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ fs/btrfs/disk-io.c   | 13 +++++++------
+ fs/btrfs/extent_io.c | 31 ++++++++++++++++++++++++-------
+ 2 files changed, 31 insertions(+), 13 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index e84ee395ac7f..48374cec77d8 100644
+index 48374cec77d8..4583adb50367 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -4539,6 +4539,13 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
- 	free_root_pointers(fs_info, true);
- 	btrfs_free_fs_roots(fs_info);
+@@ -271,14 +271,15 @@ int btree_csum_one_bio(struct btrfs_bio *bbio)
+ 		return -EIO;
  
-+	/*
-+	 * Drop metadata left stranded ahead of a zone write pointer while the
-+	 * endio workqueues are still up, so the final iput() of the btree inode
-+	 * below does not hang submitting a write that can no longer complete.
-+	 */
-+	btrfs_zoned_release_dirty_metadata(fs_info);
-+
  	/*
- 	 * We must make sure there is not any read request to
- 	 * submit after we stop all workers.
+-	 * If an extent_buffer is marked as EXTENT_BUFFER_ZONED_ZEROOUT, don't
+-	 * checksum it but zero-out its content. This is done to preserve
+-	 * ordering of I/O without unnecessarily writing out data.
++	 * An extent_buffer marked EXTENT_BUFFER_ZONED_ZEROOUT is written out as
++	 * zeros to preserve ordering of I/O without persisting the now
++	 * unnecessary block. The bio is fed from the shared zero page (see
++	 * write_one_eb()), so there is nothing to checksum here. Crucially, the
++	 * buffer's own content is left intact: it may still be referenced, e.g.
++	 * btrfs_free_tree_block() reads its header to add a delayed reference.
+ 	 */
+-	if (test_bit(EXTENT_BUFFER_ZONED_ZEROOUT, &eb->bflags)) {
+-		memzero_extent_buffer(eb, 0, eb->len);
++	if (test_bit(EXTENT_BUFFER_ZONED_ZEROOUT, &eb->bflags))
+ 		return 0;
+-	}
+ 
+ 	if (WARN_ON_ONCE(found_start != eb->start))
+ 		return -EIO;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 042093470312..f1579633a996 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2266,14 +2266,17 @@ static struct extent_buffer *find_extent_buffer_nolock(
+ static void end_bbio_meta_write(struct btrfs_bio *bbio)
+ {
+ 	struct extent_buffer *eb = bbio->private;
+-	struct folio_iter fi;
+ 
+ 	if (bbio->bio.bi_status != BLK_STS_OK)
+ 		set_btree_ioerr(eb);
+ 
+-	bio_for_each_folio_all(fi, &bbio->bio) {
+-		btrfs_meta_folio_clear_writeback(fi.folio, eb);
+-	}
++	/*
++	 * Clear writeback on the buffer's own folios. The bio may carry the
++	 * shared zero page instead (EXTENT_BUFFER_ZONED_ZEROOUT), so iterate
++	 * the extent buffer folios rather than the bio folios.
++	 */
++	for (int i = 0; i < num_extent_folios(eb); i++)
++		btrfs_meta_folio_clear_writeback(eb->folios[i], eb);
+ 
+ 	buffer_tree_clear_mark(eb, PAGECACHE_TAG_WRITEBACK);
+ 	clear_and_wake_up_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags);
+@@ -2314,7 +2317,8 @@ static noinline_for_stack void write_one_eb(struct extent_buffer *eb,
+ 	struct btrfs_fs_info *fs_info = eb->fs_info;
+ 	struct btrfs_bio *bbio;
+ 
+-	prepare_eb_write(eb);
++	if (!test_bit(EXTENT_BUFFER_ZONED_ZEROOUT, &eb->bflags))
++		prepare_eb_write(eb);
+ 
+ 	bbio = btrfs_bio_alloc(INLINE_EXTENT_BUFFER_PAGES,
+ 			       REQ_OP_WRITE | REQ_META | wbc_to_write_flags(wbc),
+@@ -2334,8 +2338,21 @@ static noinline_for_stack void write_one_eb(struct extent_buffer *eb,
+ 		btrfs_meta_folio_set_writeback(folio, eb);
+ 		if (!folio_test_dirty(folio))
+ 			wbc->nr_to_write -= folio_nr_pages(folio);
+-		bio_add_folio_nofail(&bbio->bio, folio, range_len,
+-				     offset_in_folio(folio, range_start));
++		if (test_bit(EXTENT_BUFFER_ZONED_ZEROOUT, &eb->bflags)) {
++			u32 off = 0;
++
++			while (off < range_len) {
++				u32 add = min_t(u32, PAGE_SIZE, range_len - off);
++
++				bio_add_folio_nofail(&bbio->bio,
++						     page_folio(ZERO_PAGE(0)),
++						     add, 0);
++				off += add;
++			}
++		} else {
++			bio_add_folio_nofail(&bbio->bio, folio, range_len,
++					     offset_in_folio(folio, range_start));
++		}
+ 		wbc_account_cgroup_owner(wbc, folio, range_len);
+ 		folio_unlock(folio);
+ 	}
 -- 
 2.54.0
 

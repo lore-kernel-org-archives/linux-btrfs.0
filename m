@@ -1,205 +1,151 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 74B1A39AD51
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 15:25:02 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CEB8B35E1D4
+	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 15:35:19 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784733907; cv=none; b=N+KEqa4wo2UUaIxlPhGzl9HpwAIpwepT48i5rR2e7BKzPVujPaszPYoIYegb8WQqDi5qBteq6a/7vg6mFkxDhyMo07hbgQ38pKY8z7cdMSe8aeStQ/EpnCc8Tf8fWB0FKjFxblOR9ltUvvOFKN/JzlJeR2w/ZfKXS5SsiCUlT04=
+	t=1784734522; cv=none; b=vFr9UejAjvL/dtjG2pUw2XzQmBO30Q97pYk3iMyM4ibcyhP8CgBDL6LheI0D7x6OVHdopRHw/xsTiJKeCcMZaoQv19m0DMMEGgTyvBGCigpWnJa+4A44+QcDTXr+fF35D9DofNex9fUpn0cdU39GA/cxvDbEzukt4rhBUhphRxA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784733907; c=relaxed/simple;
-	bh=F8nFN9UJLdyIvpR+8t6u8mGz0vdZJt7malPlQRMrhXo=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=VkPx7lxcEpNn9NPuGmsrLdRQ3NMyuCKxuNgKaQPXBK8RTLeRW2feO6H89/M3ZHL7wfvPLwW2MJRHAkrAMboi2xGOURv8ZyRKgrp4nAPzYjOKfCFsJ2xoKrQizuDOdWZamh9sgBznGNyKxOBhJqpP57WQBddSuAGaoR1+0soo/F8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=C20t843h; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1784734522; c=relaxed/simple;
+	bh=8TZCL8oRuM5pQNYeX3CkVCvRQgIW3fZrU66u0BhoRdQ=;
+	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=ibR6ouKc29Zk+j55a1fWt+0tgI2ZUWSW3EBX5uUSSOL6ALUx5834pQAiBnI0esGWQCfIRlsk+suni+f/AWBhWkJEhCatzJhYFkItNRIiNvzjnlRjzEPIlblh/4PgymVaj1bQia/maPatouKJ1AKFMXuO4EvlbQDOsqixL2gE2mY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=jtUxV57o; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="C20t843h"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2971A1F00AC4
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 15:24:49 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="jtUxV57o"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8C2AA1F000E9;
+	Wed, 22 Jul 2026 15:35:19 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1784733890;
-	bh=LQHE0EHMEtd8pRRy8wFw4cIKBuVbqSqFWnOWVd50Wp4=;
-	h=From:To:Subject:Date:In-Reply-To:References;
-	b=C20t843hDbKu5ECYpctAfB4jwPw0w71SMO5nA4nOwwRcrU45Zd3PS6MA8lGjvdjbZ
-	 brI7hRIjFaYJgEKGeTqx/4iJt3QdWz3l2VjCtDw3axwLNOACh3geNzrGS5kUjmqqNK
-	 k0qno2Cb3r+Ziw42v1yPUVD0uVII1FrAhkaFyECpbJ9MXSmIwbW60mhgqyOqpRHuh9
-	 FA3kI9XbUwg/0CG5HHrMC3dxYtfQN70X2LUaxICgxBMuZ626r8G5+SCzvxd+Y+hTy6
-	 dJ8c0ZDpcL6FH31kL/zSLZegkIGRKD5TvbbShjRWP9zoOBhJzSh1mghZt+bZ9MO2La
-	 KtK5TnGAG1bog==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 5/5] btrfs: use simple booleans for log_commit field in struct btrfs_root
-Date: Wed, 22 Jul 2026 16:24:42 +0100
-Message-ID: <8a7f183a713d5fb06be83e5ec1d2d6f9a0921e97.1784733396.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
+	s=k20260515; t=1784734519;
+	bh=tTddXr0EMupK0oU9x3Dhz6UzF/ofA2yw6IZUCW9m6jg=;
+	h=Subject:From:To:Date:In-Reply-To:References;
+	b=jtUxV57o/l+Me1pM+vwGjLXrqBGrX1TH3uIDp/BnOcd5uTDqPyam3GU/ptc70pU6M
+	 cmlWL+Z3oJmXlxxIP+EpPVilNbo0Fe45eM370bZwf18w6M80aTxVLrFXTIRPWCwmCB
+	 t0k8nfznvMCA30A5JPytage+WM9VQVSh+ihHsOZzpDnKNa6cD4Zk5CuUXEGn/F/d/H
+	 GRNr3ht/pDX84OSUMwTzCb6re0vGRECgkWiirZ10JjWZeijr+w2HF8vFUgq/aSwc5S
+	 NdALDnUi+1FdLQi7kxdGVkPxQI67Ge0vv+6ymsf7C1d3wlursKE7HZu48jmXWYxFIu
+	 QjehtL0RjrF9g==
+Message-ID: <52afd7310aff7fe4caaa999ec09cbefefb56c220.camel@kernel.org>
+Subject: Re: [PATCH v2 0/5] btrfs: some optimizations and cleanups for log
+ syncing
+From: Jeff Layton <jlayton@kernel.org>
+To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+Date: Wed, 22 Jul 2026 11:35:17 -0400
 In-Reply-To: <cover.1784733395.git.fdmanana@suse.com>
-References: <cover.1784733395.git.fdmanana@suse.com>
+References: <cover.1784656641.git.fdmanana@suse.com>
+	 <cover.1784733395.git.fdmanana@suse.com>
+Autocrypt: addr=jlayton@kernel.org; prefer-encrypt=mutual;
+ keydata=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
+ QZIQXVeAA+smfTT0tDrisj1U5x6ZB9b3nBg65kc=
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 (3.60.2-1.fc44) 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, 2026-07-22 at 16:24 +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+>=20
+> Some optimizations for log syncing, specially for non-sdd mounts, and
+> some cleanups. Details in the changelogs of each patch.
+>=20
+> V2: Removed two patches which sashiko found problematic, the benefits of
+>     fixing them up versus the complexity required to fix them is not wort=
+h
+>     it. Updated last patch to add the data_race() annotation in the trace
+>     events.
+>=20
+> Filipe Manana (5):
+>   btrfs: stop sleeping for one jiffy in non-ssd mounts during log commit
+>   btrfs: remove log batch counter use for fsync
+>   btrfs: move condition for log commit wait into wait_log_commit()
+>   btrfs: check for exit condition after waking in wait_log_commit()
+>   btrfs: use simple booleans for log_commit field in struct btrfs_root
+>=20
+>  fs/btrfs/ctree.h             |  6 +--
+>  fs/btrfs/disk-io.c           |  3 --
+>  fs/btrfs/file.c              |  4 --
+>  fs/btrfs/transaction.c       |  8 +---
+>  fs/btrfs/tree-log.c          | 85 ++++++++++++------------------------
+>  include/trace/events/btrfs.h |  4 +-
+>  6 files changed, 32 insertions(+), 78 deletions(-)
 
-We are using atomic types for the log_commit array of struct btrfs_root
-but all we need is simple booleans. The log_commit array elements are
-always protected by the root's log_mutex, both for writes and reads, so
-we can use a simple boolean. The use of atomics if from the very early
-days of the log tree code where the access to the fields was not protected
-by any lock.
+These all look like good cleanups, and the diffstat is nice!
 
-So switch to simple booleans, which results in cheaper code and slightly
-reduces the object size too.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.h             |  2 +-
- fs/btrfs/disk-io.c           |  2 --
- fs/btrfs/transaction.c       |  8 ++------
- fs/btrfs/tree-log.c          | 16 ++++++++--------
- include/trace/events/btrfs.h |  4 ++--
- 5 files changed, 13 insertions(+), 19 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index d5d8b3899258..22ba2b4505b3 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -195,7 +195,7 @@ struct btrfs_root {
- 	struct list_head log_ctxs[2];
- 	/* Used only for log trees of subvolumes, not for the log root tree */
- 	atomic_t log_writers;
--	atomic_t log_commit[2];
-+	bool log_commit[2];
- 	/*
- 	 * Protected by the 'log_mutex' lock but can be read without holding
- 	 * that lock to avoid unnecessary lock contention, in which case it
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 1ee0a19e40a8..d17e087b9cbe 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -666,8 +666,6 @@ static struct btrfs_root *btrfs_alloc_root(struct btrfs_fs_info *fs_info,
- 	init_waitqueue_head(&root->log_commit_wait[1]);
- 	INIT_LIST_HEAD(&root->log_ctxs[0]);
- 	INIT_LIST_HEAD(&root->log_ctxs[1]);
--	atomic_set(&root->log_commit[0], 0);
--	atomic_set(&root->log_commit[1], 0);
- 	atomic_set(&root->log_writers, 0);
- 	refcount_set(&root->refs, 1);
- 	atomic_set(&root->snapshot_force_cow, 0);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 45149d027740..91b41f55a3ce 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1517,12 +1517,8 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans)
- 			ASSERT(atomic_read(&root->log_writers) == 0,
- 			       "atomic_read(&root->log_writers)=%d",
- 			       atomic_read(&root->log_writers));
--			ASSERT(atomic_read(&root->log_commit[0]) == 0,
--			       "atomic_read(&root->log_commit[0])=%d",
--			       atomic_read(&root->log_commit[0]));
--			ASSERT(atomic_read(&root->log_commit[1]) == 0,
--			       "atomic_read(&root->log_commit[1])=%d",
--			       atomic_read(&root->log_commit[1]));
-+			ASSERT(!root->log_commit[0]);
-+			ASSERT(!root->log_commit[1]);
- 
- 			radix_tree_tag_clear(&fs_info->fs_roots_radix,
- 					(unsigned long)btrfs_root_id(root),
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index fe96810d3363..e59569770b7b 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3170,7 +3170,7 @@ static bool wait_log_commit(struct btrfs_root *root, int transid)
- 	DEFINE_WAIT(wait);
- 	int index = transid % 2;
- 
--	if (atomic_read(&root->log_commit[index]) == 0)
-+	if (!root->log_commit[index])
- 		return false;
- 
- 	/*
-@@ -3187,7 +3187,7 @@ static bool wait_log_commit(struct btrfs_root *root, int transid)
- 		mutex_lock(&root->log_mutex);
- 
- 		if (!(root->log_transid_committed < transid &&
--		      atomic_read(&root->log_commit[index]) != 0))
-+		      root->log_commit[index]))
- 			break;
- 	}
- 	finish_wait(&root->log_commit_wait[index], &wait);
-@@ -3325,7 +3325,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	}
- 	ASSERT(log_transid == root->log_transid,
- 	       "log_transid=%d root->log_transid=%d", log_transid, root->log_transid);
--	atomic_set(&root->log_commit[index1], 1);
-+	root->log_commit[index1] = true;
- 
- 	/* wait for previous tree log sync to complete */
- 	wait_log_commit(root, log_transid - 1);
-@@ -3445,7 +3445,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
--	if (atomic_read(&log_root_tree->log_commit[index2])) {
-+	if (log_root_tree->log_commit[index2]) {
- 		blk_finish_plug(&plug);
- 		ret = btrfs_wait_tree_log_extents(log, mark);
- 		wait_log_commit(log_root_tree,
-@@ -3459,7 +3459,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	ASSERT(root_log_ctx.log_transid == log_root_tree->log_transid,
- 	       "root_log_ctx.log_transid=%d log_root_tree->log_transid=%d",
- 		root_log_ctx.log_transid, log_root_tree->log_transid);
--	atomic_set(&log_root_tree->log_commit[index2], 1);
-+	log_root_tree->log_commit[index2] = true;
- 
- 	wait_log_commit(log_root_tree, root_log_ctx.log_transid - 1);
- 
-@@ -3559,7 +3559,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 
- 	/*
- 	 * We know there can only be one task here, since we have not yet set
--	 * root->log_commit[index1] to 0 and any task attempting to sync the
-+	 * root->log_commit[index1] to false and any task attempting to sync the
- 	 * log must wait for the previous log transaction to commit if it's
- 	 * still in progress or wait for the current log transaction commit if
- 	 * someone else already started it. We use <= and not < because the
-@@ -3575,7 +3575,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	btrfs_remove_all_log_ctxs(log_root_tree, index2, ret);
- 
- 	log_root_tree->log_transid_committed++;
--	atomic_set(&log_root_tree->log_commit[index2], 0);
-+	log_root_tree->log_commit[index2] = false;
- 	mutex_unlock(&log_root_tree->log_mutex);
- 
- 	/*
-@@ -3588,7 +3588,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	mutex_lock(&root->log_mutex);
- 	btrfs_remove_all_log_ctxs(root, index1, ret);
- 	root->log_transid_committed++;
--	atomic_set(&root->log_commit[index1], 0);
-+	root->log_commit[index1] = false;
- 	mutex_unlock(&root->log_mutex);
- 
- 	/*
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 4c5c47c5edb7..f9d22cd71768 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -1578,9 +1578,9 @@ TRACE_EVENT(btrfs_sync_log_enter,
- 		__entry->log_transid_committed	=
- 			data_race(root->log_transid_committed);
- 		__entry->log_committing		=
--			atomic_read(&root->log_commit[ctx->log_transid % 2]);
-+			data_race(root->log_commit[ctx->log_transid % 2]);
- 		__entry->log_committing_prev	=
--			atomic_read(&root->log_commit[(ctx->log_transid + 1) % 2]);
-+			data_race(root->log_commit[(ctx->log_transid + 1) % 2]);
- 		__entry->log_writers		= atomic_read(&root->log_writers);
- 	),
- 
--- 
-2.47.2
-
+Reviewed-by: Jeff Layton <jlayton@kernel.org>

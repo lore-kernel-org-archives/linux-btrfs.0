@@ -1,295 +1,155 @@
-Received: from va-2-29.ptr.blmpb.com (va-2-29.ptr.blmpb.com [209.127.231.29])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtpbguseast2.qq.com (smtpbguseast2.qq.com [54.204.34.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2C36735E958
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 01:41:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.29
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 058C1390CB4;
+	Wed, 22 Jul 2026 02:55:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=54.204.34.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784684485; cv=none; b=gYOuTs12mpyVwAcHlo6BHSu/hjFxGVZRNrpHf2Ou84+ZOp1CsMaMh46tWMkpK6krxQAR8dZ96MF/lRSLfERcsQVjRgmYcd24esRYSWtXnRE3kC3bAIgP1Wi6+qCC0crtKyaMWyC+HQRVkUMF77oP7dKYNN4Fuz4NvZp8BW2O+Z0=
+	t=1784688955; cv=none; b=IPWiFqjyHYX2YCbXpZzSi2uC4656YY08OL+IB2He9vCxQlMpA+gGuZDUcWyzrpm22HZIfA5CEQij+fwXFVVVpUk26JW3itfjmF9bFdZcJAANPtgigziVpeByJkyv1UgfpNaZvBUzaPvzwN6QYUO7bkeEffkIlKjea80WH78kRq0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784684485; c=relaxed/simple;
-	bh=JRyjwZaJvakR50fv/H9rJrvH8iIRDicO8iEjIrG2Y7w=;
-	h=Cc:Date:Message-Id:In-Reply-To:To:Subject:References:From:
-	 Mime-Version:Content-Type; b=iIzgIP2R/UGWCCMGiAuAeEZd5dM5+zL5foEcqM54XJ4hMCzqGQ0Ij6Ldw2SncutIiWMFk01KHPyqWDXMG+2bVFI9Sb6i/GtCvFL6UwY8pwyM9lscxjr312pN8xjkVFxYpB/DIEcYnsWM15qFTIyjNoIsPfxSGMYK3YIrDllilcU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com; spf=pass smtp.mailfrom=fnnas.com; dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b=L0psx1bE; arc=none smtp.client-ip=209.127.231.29
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=fnnas.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fnnas.com
+	s=arc-20240116; t=1784688955; c=relaxed/simple;
+	bh=5WmrYCnHswAV6gOPjDVcohIx/F1VtpZqqOUSlPGLSNQ=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=bgwPGRwpiOGCp9BujOxh3khsoAfo25WIj7cddiX2l1Fj+eCpH6IoLpng0Leh9Nzfr/5VKzFHueneS9zpyEt9PJ/dVJzxru3uou0O5HbEuckK08L/omR1h5z2Q7d2XcM5oT4FOsemEnMyjWDq0nrWt33A7yH3I+htSKP7yat2ojs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=uniontech.com; spf=pass smtp.mailfrom=uniontech.com; dkim=pass (1024-bit key) header.d=uniontech.com header.i=@uniontech.com header.b=jOYTJ0gT; arc=none smtp.client-ip=54.204.34.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=uniontech.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=uniontech.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fnnas-com.20200927.dkim.feishu.cn header.i=@fnnas-com.20200927.dkim.feishu.cn header.b="L0psx1bE"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fnnas-com.20200927.dkim.feishu.cn; t=1784684473;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=BrA68DRO+4HbSp9tlbSGx3d+JQI6YM9S/PalwWuElcE=;
- b=L0psx1bE4QpT8wKR09BUL7665Rgv1ef6V1TBKzqUFz556Lirgf4Ipw52K8bb103dx3ls2w
- uptAulTrPDmBmZz0+roNWctCQv0dpfg7gKPp2SBUBcXGzALmBbETwb8Woz613Q7gSHByw0
- vFIY9ebT2+tamx++UNgoc3qNQesZyRwmAsLE5lO/vW6EWGSx7unuSmtppqqyTevkyGvRZA
- Oa3xf1y+5Xp0nsim0Y4NpOUeTyBRoYqmtYwy4N2i4Q2bcLGTE9aM0oVy2Zp/IglmzJzV3a
- zHuX3nt8dkpaJ0zMiuh8QfPxs/e/rGIrbynEz772QXM9NBiOklLNB+iUsj/MiA==
-Cc: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>, 
-	"Sun YangKai" <sunyangkai@fnnas.com>
-Date: Wed, 22 Jul 2026 09:41:03 +0800
-Message-Id: <202dfd21-9876-4092-9ed6-99e9ba73bb74@fnnas.com>
-Content-Language: en-US
-In-Reply-To: <CAL3q7H7WBKk70cRmURvwx5O+hHouFH-Dt_6W3pJmsR85ODP4sw@mail.gmail.com>
-To: "Filipe Manana" <fdmanana@kernel.org>
-Subject: Re: [PATCH v2] btrfs: test POSIX ACL changes for RO btrfs property
-Received: from [192.168.10.244] ([183.34.163.75]) by smtp.feishu.cn with ESMTPS; Wed, 22 Jul 2026 09:41:10 +0800
-References: <20260709082500.17907-2-sunk67188@gmail.com> <20260713094611.19703-1-sunk67188@gmail.com> <CAL3q7H7WBKk70cRmURvwx5O+hHouFH-Dt_6W3pJmsR85ODP4sw@mail.gmail.com>
-From: "Sun YangKai" <sunyangkai@fnnas.com>
+	dkim=pass (1024-bit key) header.d=uniontech.com header.i=@uniontech.com header.b="jOYTJ0gT"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=uniontech.com;
+	s=onoh2408; t=1784688896;
+	bh=5z2NFCD7uwvQ9aEVx0qETNbEzHoeryVqIAmA5QhLmi8=;
+	h=From:To:Subject:Date:Message-Id:MIME-Version;
+	b=jOYTJ0gT7C8R/ku3QXpdW/yMJzRzKU9a+7kgVhyLMpvMo58l9QQgL2OxjO9k9b1nx
+	 hOwRt5x2PZIFvhYu3VxZAK9ttJS03xmkFqt0O3A3HnmV3nh+JKFraa24MJVdAd2OET
+	 Fb1VSr+WH0obG3ZPjYw1emsh3qpWnU4jkC7Ae/8M=
+X-QQ-mid: esmtpsz19t1784688879tb657f3d9
+X-QQ-Originating-IP: pqggaNU5xEv3Fejq//XWqolNvGwmowI8eEUmYAUDvOE=
+Received: from uniontech.com ( [113.57.152.160])
+	by bizesmtp.qq.com (ESMTP) with 
+	id ; Wed, 22 Jul 2026 10:54:37 +0800 (CST)
+X-QQ-SSF: 0000000000000000000000000000000
+X-QQ-GoodBg: 1
+X-BIZMAIL-ID: 12053945533611148655
+EX-QQ-RecipientCnt: 7
+From: Yichong Chen <chenyichong@uniontech.com>
+To: Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>
+Cc: Boris Burkov <boris@bur.io>,
+	Matthew Wilcox <willy@infradead.org>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Yichong Chen <chenyichong@uniontech.com>
+Subject: [PATCH v4] btrfs: retry verity reads for not-uptodate Merkle folios
+Date: Wed, 22 Jul 2026 10:54:35 +0800
+Message-Id: <20260722025435.1493093-1-chenyichong@uniontech.com>
+X-Mailer: git-send-email 2.20.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-X-Original-From: Sun YangKai <sunyangkai@fnnas.com>
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Mozilla Thunderbird
-Content-Type: text/plain; charset=UTF-8
-X-Lms-Return-Path: <lba+26a601fb7+9085b6+vger.kernel.org+sunyangkai@fnnas.com>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-QQ-SENDSIZE: 520
+Feedback-ID: esmtpsz:uniontech.com:qybglogicsvrgz:qybglogicsvrgz3a-0
+X-QQ-XMAILINFO: NGizNBd3uSau8WknIU3/9Sjl7zg237X+pjY5tNMUQxabIXznXGcUAdVC
+	ShcTfJoEDgHRVJqIA3AUveeu3cgiy329RqsnZkBcmkZ/fZoJRNGv41h4+lcdY0/FEzuKuEn
+	EfczsW1N7ZT6UXRDKK8juIDHPQhfDOI+lxMAiEe+gIVy7RfbkmGFFZBIqLhoo93e3e1dK6q
+	bGYXNmWCXtmNeIgp7g3cxnZjkD5t0h3M0MClKTU+gO79NriMxwc9cBsZS8+IoVW6+iMdaS0
+	HTMgBTkTf7qE1OzS9m4uolyuoaqnLRuVzW4O6zWqD6vOD4qDTgU0NXMn3S8y6CwKe6oxuyn
+	Mya5IlUwiWsKYMcMwlBNC1WibUFjYiDS9Yxr/mw7EkTrCwfU4yQXi6tiA/b+d5gWy9quZ5F
+	QpZq8XU4J9srZuyDlj3+df9C2tTmpr6Pd817bUluUKRrxcMFzfrFnABT40FcLexHmz2IGa0
+	bfueO4kiKuuapQYyNAMNw4Faj8/DEJaXsWXgw0qcNwqY2p6xbsan8aJDIXgfmlYbm06LLjW
+	kvYSTIySlVuzksm/sqdOD19jSTfr0hU7yklz632npz4F8ZLB7Xz4vE4R00+MagC73WLNyMz
+	WJvEDniRkYOArDsvIexkI0MvCxFLKrOlZNeDrEa/c6DdCukwfbAD8bg2rpm2by4/T1JCLcJ
+	cfuRCBfik4aWMjWZpCsAegqdA4B410Oz0ykSsXdCvDDEgczmmZQJzeWkVqQl3RThZC5q46F
+	lwRsE+1INw4DYZA2WC8HHqjSqmwLZ/9Q5Vcm9HtWuZ4ZkR2pbgS9NFqpVp6x4Fk8RXOYvgX
+	4P1K4UBB7+fxh6RCcqgk/BqZs7+v4Pi820U/L1NTz6iD+S9hX5qPFeOp2kX+F/RzkhLGHAu
+	z6Ac/REiwfC3JUFsgvgWE+b5k3RE/NX09Fb/GXQDK75KCVuKg6x5UDPbCgdyJBd4ysvu1nT
+	OfwePR6mmuMrk2JLb6LwUc4QUN7w1Ao8/ofvOLaQ3fjfXLwJBw1CikFu8EZ8YMs5HZfbxR7
+	RJJGuQkEz77+HP2H3ikJJsSVRLuT8h0h0/fT2/mkf0Sc7NFIGuGZBSunqi9MpgqxbL/Sxb1
+	i+49sFCjCwhvD8XM+rG01IvETNl2qsKRA==
+X-QQ-XMRINFO: NI4Ajvh11aEjEMj13RCX7UuhPEoou2bs1g==
+X-QQ-RECHKSPAM: 0
 
-This is my first time to contribute to fstests project so thanks a lot=20
-for pointing those things out and it really helps a lot. I'll fix them=20
-and send a v2 version later.
+btrfs_read_merkle_tree_page() can find a folio in the mapping that is not
+uptodate.  After taking the folio lock, the current code treats that state
+as a read error and returns -EIO.
 
-Thanks,
-Sun YangKai
+That can make a previous transient read failure sticky.  If the failed read
+left a not-uptodate folio in the mapping, later callers find that folio and
+fail instead of retrying the read.
 
-On 2026/7/21 00:16, Filipe Manana wrote:
-> On Mon, Jul 13, 2026 at 10:50=E2=80=AFAM Sun YangKai <sunk67188@gmail.com=
-> wrote:
->>
->> From: Sun YangKai <sunyangkai@fnnas.com>
->>
->> Test creation, modification and deletion of POSIX ACLs on a btrfs
->> filesystem that has the read-only property set to true, and re-test the
->> same after the property is cleared.
->>
->> Commit 353c2ea735e4 ("btrfs: remove redundant readonly root check in
->> btrfs_setxattr_trans") removed the read-only root check from
->> btrfs_setxattr_trans() under the assumption that none of its callers can
->> run on a read-only root.  That assumption does not hold for the ->set_ac=
-l
->> path: btrfs_set_acl() -> __btrfs_set_acl() reaches
->> btrfs_setxattr_trans() directly, bypassing the handler-level read-only
->> checks that were later (re)added by commit b51111271b03 ("btrfs: check
->> if root is readonly while setting security xattr").  As a result, ACLs
->> could still be set or removed on a read-only subvolume, bypassing the RO
->> protection that applies to every other xattr.
->=20
-> You don't need to explain this in a test case, those are details for
-> the kernel patch...
->=20
-> Just say what the test does and that it exercises a bug fixed by a
-> kernel patch that has the subject:
->=20
->       "btrfs: check if root is readonly when setting posix acl"
+Keep the existing page-cache insertion and locking order, but retry the
+Merkle item read when a not-uptodate folio is found in the mapping.  Also
+unlock the folio when read_key_bytes() fails so that a later caller can
+lock it and retry the read.
 
->>
->> The restoring kernel fix adds the read-only check directly to
->> btrfs_set_acl().  This test complements btrfs/275, which covers the
->> generic ->setxattr path.
->>
->> The test exercises the set, get and remove cycle of an access ACL on a
->> regular file, and expects all modifications to fail with EROFS while the
->> subvolume is read-only, then succeed once it is writable again.
->>
->> Signed-off-by: Sun YangKai <sunyangkai@fnnas.com>
->> ---
->> Changes from v1:
->>
->> - fix copywrite header
->> - better wording for commit message
->>
->> Sorry for bothering.
->>
->> ---
->>   tests/btrfs/353     | 97 +++++++++++++++++++++++++++++++++++++++++++++
->>   tests/btrfs/353.out | 39 ++++++++++++++++++
->>   2 files changed, 136 insertions(+)
->>   create mode 100755 tests/btrfs/353
->>   create mode 100644 tests/btrfs/353.out
->>
->> diff --git a/tests/btrfs/353 b/tests/btrfs/353
->> new file mode 100755
->> index 00000000..586f722a
->> --- /dev/null
->> +++ b/tests/btrfs/353
->> @@ -0,0 +1,97 @@
->> +#! /bin/bash
->> +# SPDX-License-Identifier: GPL-2.0
->> +# Copyright (C) 2026 Fygo OS. All Rights Reserved.
->> +#
->> +# FS QA Test No. 353
->> +#
->> +# Test that POSIX ACLs cannot be changed once a btrfs subvolume has the
->> +# read-only property set.
->> +#
->> +# Setting or removing a POSIX ACL goes through the ->set_acl inode
->> +# operation, which is a different code path from the generic ->setxattr
->> +# one covered by btrfs/275.  It used to be allowed on a read-only
->> +# subvolume and thus bypassed the RO protection.  Such modifications mu=
-st
->> +# fail with EROFS, just like any other xattr.
->> +#
->> +. ./common/preamble
->> +_begin_fstest auto quick acl attr
->> +
->> +. ./common/filter
->> +. ./common/attr
->> +
->> +# TODO: fill in the kernel commit hash that fixes the ->set_acl path on=
-ce
->> +# it is merged.
->> +# _fixed_by_kernel_commit <HASH> \
->> +#      "btrfs: check if root is readonly when setting posix acl"
->=20
-> That's not how we handle patches not yet in Linus' tree.
-> First don't comment it, second use xxxxxxxxxxxx for the hash.
-> Like this:
->=20
-> _fixed_by_kernel_commit xxxxxxxxxxxx \
->       "btrfs: check if root is readonly when setting posix acl"
->=20
-> We normally find and update tests that need the hash by greping with
-> something like:  egrep -ri 'commit xxxxx' tests/
->=20
->=20
->=20
->> +
->> +_require_acls
->> +_require_btrfs_command "property"
->> +_require_scratch
->> +
->> +_scratch_mkfs >> $seqres.full 2>&1
->=20
-> Nowadays we have the practice of also adding:   || _fail "mkfs failed"
->=20
->> +_scratch_mount
->> +
->> +FILENAME=3D$SCRATCH_MNT/foo
->=20
-> Don't use upper case variable names.
->=20
-> With that fixed:
->=20
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
->=20
-> Thanks.
->=20
->=20
->> +
->> +set_acl()
->> +{
->> +       local perm=3D$1
->> +
->> +       # Use -n so setfacl does not recalculate the mask, keeping the
->> +       # golden output deterministic regardless of the named user's
->> +       # permissions.
->> +       setfacl -n -m u:$acl2:$perm,m::rwx $FILENAME 2>&1 | _filter_scra=
-tch
->> +}
->> +
->> +get_acl()
->> +{
->> +       getfacl --absolute-names -n $FILENAME | _filter_scratch | _getfa=
-cl_filter_id
->> +}
->> +
->> +del_acl()
->> +{
->> +       setfacl -b $FILENAME 2>&1 | _filter_scratch
->> +}
->> +
->> +_acl_setup_ids
->> +
->> +# Create a test file.
->> +echo "hello world" > $FILENAME
->> +
->> +# Set an initial ACL while the subvolume is writable.
->> +set_acl rwx
->> +
->> +# Attempt to change the ACL once the subvolume is read-only.  This must
->> +# fail with EROFS.
->> +$BTRFS_UTIL_PROG property set $SCRATCH_MNT ro true
->> +$BTRFS_UTIL_PROG property get $SCRATCH_MNT ro
->> +
->> +set_acl r--
->> +
->> +# The ACL must not have changed.
->> +get_acl
->> +
->> +# Attempt to remove the ACL from the read-only subvolume.  This must
->> +# fail with EROFS as well.
->> +del_acl
->> +
->> +# The ACL must still be present.
->> +get_acl
->> +
->> +# Make the subvolume writable again.
->> +$BTRFS_UTIL_PROG property set $SCRATCH_MNT ro false
->> +$BTRFS_UTIL_PROG property get $SCRATCH_MNT ro
->> +
->> +# Now changing the ACL must succeed.
->> +set_acl r--
->> +
->> +get_acl
->> +
->> +# And removing it must succeed too.
->> +del_acl
->> +
->> +# Check the ACL is really gone.
->> +get_acl
->> +
->> +status=3D0
->> +exit
->> diff --git a/tests/btrfs/353.out b/tests/btrfs/353.out
->> new file mode 100644
->> index 00000000..66f4a0e5
->> --- /dev/null
->> +++ b/tests/btrfs/353.out
->> @@ -0,0 +1,39 @@
->> +QA output created by 353
->> +ro=3Dtrue
->> +setfacl: SCRATCH_MNT/foo: Read-only file system
->> +# file: SCRATCH_MNT/foo
->> +# owner: 0
->> +# group: 0
->> +user::rw-
->> +user:id2:rwx
->> +group::r--
->> +mask::rwx
->> +other::r--
->> +
->> +setfacl: SCRATCH_MNT/foo: Read-only file system
->> +# file: SCRATCH_MNT/foo
->> +# owner: 0
->> +# group: 0
->> +user::rw-
->> +user:id2:rwx
->> +group::r--
->> +mask::rwx
->> +other::r--
->> +
->> +ro=3Dfalse
->> +# file: SCRATCH_MNT/foo
->> +# owner: 0
->> +# group: 0
->> +user::rw-
->> +user:id2:r--
->> +group::r--
->> +mask::rwx
->> +other::r--
->> +
->> +# file: SCRATCH_MNT/foo
->> +# owner: 0
->> +# group: 0
->> +user::rw-
->> +group::r--
->> +other::r--
->> +
->> --
->> 2.54.0
->>
->>
+Fixes: 06ed09351b67 ("btrfs: convert btrfs_read_merkle_tree_page() to use a folio")
+Reviewed-by: Boris Burkov <boris@bur.io>
+Signed-off-by: Yichong Chen <chenyichong@uniontech.com>
+---
+v4:
+- Add a comment explaining the locked uptodate recheck.
+- Add Boris' Reviewed-by.
+
+v3:
+- Keep the existing filemap_add_folio() and read ordering.
+- Retry the Merkle item read when a not-uptodate folio is found, as
+  suggested by Boris.
+- Unlock the folio on read_key_bytes() failure so later callers can retry.
+
+v2:
+- Avoid calling filemap_remove_folio(), which is not exported.
+- Add the folio to the page cache only after read_key_bytes() succeeds.
+---
+ fs/btrfs/verity.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
+index 983365a73541..1133a56c0568 100644
+--- a/fs/btrfs/verity.c
++++ b/fs/btrfs/verity.c
+@@ -720,14 +720,18 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
+ 			goto out;
+ 
+ 		folio_lock(folio);
+-		/* If it's not uptodate after we have the lock, we got a read error. */
+-		if (!folio_test_uptodate(folio)) {
++		/* Folio was truncated from mapping. */
++		if (!folio->mapping) {
+ 			folio_unlock(folio);
+ 			folio_put(folio);
+-			return ERR_PTR(-EIO);
++			goto again;
+ 		}
+-		folio_unlock(folio);
+-		goto out;
++		/* Another reader may have filled the folio while we waited. */
++		if (folio_test_uptodate(folio)) {
++			folio_unlock(folio);
++			goto out;
++		}
++		goto read_folio;
+ 	}
+ 
+ 	folio = filemap_alloc_folio(mapping_gfp_constraint(inode->i_mapping, ~__GFP_FS),
+@@ -744,6 +748,7 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
+ 		return ERR_PTR(ret);
+ 	}
+ 
++read_folio:
+ 	/*
+ 	 * Merkle item keys are indexed from byte 0 in the merkle tree.
+ 	 * They have the form:
+@@ -753,6 +758,7 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
+ 	ret = read_key_bytes(BTRFS_I(inode), BTRFS_VERITY_MERKLE_ITEM_KEY, off,
+ 			     folio_address(folio), PAGE_SIZE, folio);
+ 	if (ret < 0) {
++		folio_unlock(folio);
+ 		folio_put(folio);
+ 		return ERR_PTR(ret);
+ 	}
+-- 
+2.51.0
+

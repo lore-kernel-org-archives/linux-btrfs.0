@@ -1,100 +1,86 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 316152C3268;
-	Wed, 22 Jul 2026 12:49:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B79C288AD;
+	Wed, 22 Jul 2026 13:19:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784724563; cv=none; b=kHOz9lZDGQyvdbD3+BhCMYfeUmirESx6ikx0YZZKfiw4xqzDyaCohSvq6gMJEEOmWIvkeuhCZpH2Wx/CWIZc2Oxq3CzctlgM5A1xP9EnMlOZVAAlM+ivtb29b9WoDPAfL7aR55NRkzORnlcyeituBq7d/ZQsKPAIiGB8jgQRjIk=
+	t=1784726351; cv=none; b=kQ/czqUfEI9pu/8cukSI6BN/0PuSrzG4cg2EawwzfIsxePGh2n81jwCgw0j84PQtD5CjnLjQV4/AU2qnLy2UX2WgA2q6xlyPvbkHkRbF7E/QIRAQ7MWlWYuEfPuyJlzvRkwPeEnCYveWQZ4jdXI0RkXffGVV950EKLh1sbBMe0g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784724563; c=relaxed/simple;
-	bh=R4lwR2krL8rDm05gOVEVLYSIGQhSIkV6zk93iZH1jAw=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=azuIDu+FgUpXBVLZLkP8s1JmLNcB4qaATZWQTc0xEj6QwG5in7/5rYbUILMGEUGFZWY2oGrl2WE8QvRiqUEAGu2aSmdEssUpam5aOZgRjC1KKz3fa3zeeYeRA/4fCm2r6kefz1AOkiWzZJUXsRrGmaj2EK0iz+8IjMFcolc4pQU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=copHAS9J; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1784726351; c=relaxed/simple;
+	bh=2jhms3a97sjBCG3gNAMoONl1Ow2P28h2CfyK1fXroMM=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=eI7DERnhJ7KABjAqkz3cUHi+O/Z2DUq2V6+cQ2+d/fBqJKBjGrHrCllfxcoCEQckPhiop5JV1CS/D/1lq7Wx1ZrYonbjZDSJmIt/P8Bal6m4V4ZLy8JOAiUUD2ELPE8FW3b/9Modog4r1cCQAN9YYQ6wwxRdS60GneiY6c5nJlc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=pass smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=FG8Vnnr5; arc=none smtp.client-ip=90.155.50.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="copHAS9J"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 284381F000E9;
-	Wed, 22 Jul 2026 12:49:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1784724560;
-	bh=D2YIgmQapfsI908fDaPOy3Pgzq8a+dr07ChrPz1kB34=;
-	h=From:To:Cc:Subject:Date;
-	b=copHAS9JP0tENLb0t3VGGw0V62xz7dfJRhxnoy1rlAbGyPK9uq5dJ9/T6tai9L6M8
-	 GOxXY8C+y9TZBF1G4KUE49/kooDCuvg9zlIz9vSGAJPGz9yDqqJZdq+vtoJMd6q9Gh
-	 mlB1ygHLZT0OCT2xaVfYTzqNTXh2N38DA/dzAaRnqRxhS6FaO5l984N9Vh50GcNRmV
-	 9XkBlOp6rLE9fR/DmEqFlufiB1kILcdun8ydebPDwHjfC7NFp/RdIbGFBeZtC1skLq
-	 D2q+yumGnUbHR1oL8dWO9mvc5lZH70m4GafmGm/pctIbRvSmo43sP9yrQgN/mcewfz
-	 G17FNi67AZVzQ==
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org,
-	Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: add missing commit IDs to kernel fixes of some tests
-Date: Wed, 22 Jul 2026 13:49:14 +0100
-Message-ID: <62602f730db0955ab0c486640f7ad3eee75bb2e1.1784724364.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="FG8Vnnr5"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=p59Nbp/0h4piYzBzwlGNI1UeD/BfGw1h5BEhep/TnC0=; b=FG8Vnnr5vsMTMQEAvY86l+uFLk
+	MFr03IMgedD7PxKczlkMDex/jp2DPkTKFje3UCyjtQZZAkg+SjdPknKc3cowMxn2i6EKmGRSHhKkF
+	cJA622u2TDgVKKTu44nTU7Rlb3gfh3GJXCSY6H3Og4K1kpvqIEGvOt+DMqOEiE2rFpXNefa+/Roj8
+	43NDfueASEFzxNzaIeGozY4SiAGGrLXtaxHrqBvXh4GMU4yrHaNYH/N6hl03LbudAPHPTQWK0c2Xo
+	9JK+ej6shPeaCnznYybCTdecAoTPclBpMXdu3dmrgEqvSxsEAIOsa6LDT+fnLE5vOS4WzoaXz2e67
+	4R4wRhaQ==;
+Received: from willy by casper.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wmWVb-0000000Fdb3-3ARC;
+	Wed, 22 Jul 2026 12:57:11 +0000
+Date: Wed, 22 Jul 2026 13:57:11 +0100
+From: Matthew Wilcox <willy@infradead.org>
+To: Christian Borntraeger <borntraeger@linux.ibm.com>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org,
+	Qu Wenruo <wqu@suse.com>,
+	Linux Memory Management List <linux-mm@kvack.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+	Josef Bacik <josef@toxicpanda.com>, linux-kernel@vger.kernel.org,
+	kvm@vger.kernel.org, linux-s390@vger.kernel.org
+Subject: Re: [PATCH/RFC] btrfs: fix folio lock leak in writepage_delalloc()
+ for folios dirtied behind btrfs' back
+Message-ID: <amC-J7yzwk4Z5tHW@casper.infradead.org>
+References: <20260721191152.101118-1-borntraeger@linux.ibm.com>
+ <20260721191152.101118-2-borntraeger@linux.ibm.com>
+ <b226a6e9-fef2-49bd-b17e-9f9b015626c1@gmx.com>
+ <83290932-cb8b-4741-bff0-6a7d8df2c637@linux.ibm.com>
+ <224d56d2-fcad-41bf-afe3-6f5f5108172a@gmx.com>
+ <f12f70e5-d84d-4a9f-ac94-693be4c863ac@linux.ibm.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <f12f70e5-d84d-4a9f-ac94-693be4c863ac@linux.ibm.com>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, Jul 22, 2026 at 11:29:36AM +0200, Christian Borntraeger wrote:
+>  *   4. Thread B loops sync_file_range(WRITE|WAIT) on the target file.
+>  *      Whenever a full clean cycle (clear_page_dirty_for_io(),
+>  *      writeback, bits cleared) completes inside thread A's
+>  *      submission->completion window, the completion-time
+>  *      set_page_dirty_lock() hits a *clean* folio: filemap_dirty_folio()
+>  *      sets only the folio flag and the xarray tag - no btrfs subpage
+>  *      dirty bit, no delalloc reservation.  See the 20-year-old comment
+>  *      above bio_set_pages_dirty() in block/bio.c describing exactly
+>  *      this ("other code (eg, flusher threads) could clean the pages").
 
-Some kernel fixes were already merged into Linus' tree, so add their IDs
-and in the case of btrfs/351, update the subject of the kernel fix, since
-the original patch was dropped due to another fix.
+There's your problem.  filemap_dirty_folio() documents that btrfs is
+doing it wrongly:
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/349 | 2 +-
- tests/btrfs/350 | 2 +-
- tests/btrfs/351 | 4 ++--
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ * Filesystems which do not use buffer heads should call this function
+ * from their dirty_folio address space operation.  It ignores the
+ * contents of folio_get_private(), so if the filesystem marks individual
+ * blocks as dirty, the filesystem should handle that itself.
 
-diff --git a/tests/btrfs/349 b/tests/btrfs/349
-index c6632dda..48ac9212 100755
---- a/tests/btrfs/349
-+++ b/tests/btrfs/349
-@@ -18,7 +18,7 @@ _require_scratch_reflink
- _require_cp_reflink
- _require_scratch_enable_simple_quota
- 
--_fixed_by_kernel_commit XXXXXXXXXXXX \
-+_fixed_by_kernel_commit 1e92637722ae \
- 	"btrfs: check for subvolume before deleting squota qgroup"
- _fixed_by_kernel_commit 0c309d66dacd \
- 	"btrfs: forbid creating subvol qgroups"
-diff --git a/tests/btrfs/350 b/tests/btrfs/350
-index 7cc04b63..44b40410 100755
---- a/tests/btrfs/350
-+++ b/tests/btrfs/350
-@@ -9,7 +9,7 @@
- . ./common/preamble
- _begin_fstest auto quick volume trim raid
- 
--_fixed_by_kernel_commit XXXXXXXXXXXX \
-+_fixed_by_kernel_commit 1b1937eb08f5 \
- 	"btrfs: do not trim a device which is not writeable"
- 
- _require_btrfs_forget_or_module_loadable
-diff --git a/tests/btrfs/351 b/tests/btrfs/351
-index e92ddf1b..7829d5da 100755
---- a/tests/btrfs/351
-+++ b/tests/btrfs/351
-@@ -10,8 +10,8 @@
- . ./common/preamble
- _begin_fstest auto quick
- 
--_fixed_by_kernel_commit XXXXXXXXXXXX \
--	"Revert \"btrfs: add 32-bit compat ioctl for BTRFS_IOC_GET_SUBVOL_INFO\""
-+_fixed_by_kernel_commit 75a41e3e51eb \
-+	"btrfs: fix GET_SUBVOL_INFO after compat refactor"
- 
- _require_test_program btrfs_ioctl
- _require_scratch
--- 
-2.47.2
+fs/btrfs/inode.c:       .dirty_folio    = filemap_dirty_folio,
+
+so btrfs should have its own btrfs_dirty_folio() which does whatever
+metadata updates it needs to and then call filemap_dirty_folio() to
+take care of the page cache business.  See iomap_dirty_folio() as
+an example, but many other filesystems also do this.
 

@@ -1,170 +1,131 @@
-Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
+Received: from fout-b2-smtp.messagingengine.com (fout-b2-smtp.messagingengine.com [202.12.124.145])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ED5E6486BB8
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2026 18:23:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=68.232.143.124
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784831002; cv=fail; b=Y/ElkPvdp5LbBO3LTEd/XU5Wh24zQMBY82okgVcmlVniYZz9KORQ4ZuSTftkLOdyYusSLW2/RCEPsagiR5g4G/75RCix2HioCz4qlG+yFjNaPjklg0xGJrXUHzwfjeILJS9tM3jbdyLwdLS46SkemrFQOWYMzmuo25VJ+swxOfg=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784831002; c=relaxed/simple;
-	bh=KURahh/UDbnAGetINKgaVITSMMIgthB9uYos0W8XmBU=;
-	h=Message-ID:Date:Subject:To:Cc:References:From:In-Reply-To:
-	 Content-Type:MIME-Version; b=HBlNr0gJIFgdIqGYY80Q44PcWU6sSsCqPc9RxEl5BdBqG0/ccQnMoEyq8mEjmxzj2mHyYIZvpSgF+0ofmadr6gQyL+pzQBjqSGYo/dL0riZsA1fadNFB+rdeZb4AMTKDqGr6FDAbWyj7kFYhv8qbs6v9z9urK2L1aRzrD7pUaak=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=P1wyhGAp; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=AYfQSHUj; arc=fail smtp.client-ip=68.232.143.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ECEAC456DFF
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2026 18:28:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.145
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1784831312; cv=none; b=scCUnajmZdtQyEqWE9p5n4jYMS0qr7QgG6Am474+3VD7Ft/lJDQSViq7ud04sC0UZbdWrogqBW0hjcDf4ouwMiQtG5kdSaVBrofQvIoK33jo/FFNo6vS9CI4BSs+5XmnzqwOcH1jY5NcCah0/CxFAY5v6cEebBaCcg9FhDa7rtI=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1784831312; c=relaxed/simple;
+	bh=RDnJOg7il/vGjTNucUrzAXwzAn3rxgANIxjFzqjr+n8=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=sIyyZ8cKUXO/3/8I2+rfx/7/+NLo1d6zSEwTsdCPayVPpZB9Xk/v/RHQbEXkZbs9IUKeVEZy8Bm7V+e1MK3idyBCgr0RttOGfuSjQS1gM7Phd7bdS74CWjWGaCh+ssQbCtP5WJFSYEFi7ZdEemQGiWE+1SVAPc4IoOJmNikHg+A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=F3KMFhEb; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=Dp/E+8t8; arc=none smtp.client-ip=202.12.124.145
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="P1wyhGAp";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="AYfQSHUj"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1784830992; x=1816366992;
-  h=message-id:date:subject:to:cc:references:from:
-   in-reply-to:content-transfer-encoding:mime-version;
-  bh=KURahh/UDbnAGetINKgaVITSMMIgthB9uYos0W8XmBU=;
-  b=P1wyhGAplKFOHQriE4mQDAiaagsTIdjDaVZB1OaPuTy2iyTYOX4uRET+
-   eWgGgrDd8/ZNy5eHE6CaLJPXV4vPTaThnn7/hxmhj7lYTkTGubDDidpcH
-   Gbvw49VMiV/tqup8QKl2k0S4WQOtyEbtousRUZQakagOT14JrWesuH/rf
-   hg5O2z1jKnVjxXqxy9XYhGKPGK3+i9ggcwCOR6gOYl4Gv7tJvS1rh2rLd
-   K4prgm0lqOKjhpZ/xYLXX2hYIX3yBuq2K2k3B5BXGDdFMCKwx7Z8ho35w
-   TNuulOQTvrkqsLFLF027G1E+kdSUpd66hP03+PyFkNiA64VSkjL4++5FT
-   w==;
-X-CSE-ConnectionGUID: z1iEU5IeTrSCCNPjgon+WA==
-X-CSE-MsgGUID: nUQhTAnlSkqxa1c7g6SMSQ==
-X-IronPort-AV: E=Sophos;i="6.25,181,1779120000"; 
-   d="scan'208";a="152569761"
-Received: from mail-westcentralusazon11010019.outbound.protection.outlook.com (HELO CY7PR03CU001.outbound.protection.outlook.com) ([40.93.198.19])
-  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 24 Jul 2026 02:23:03 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=QqMx8sImmPn0uZE3k8t7UycE6y09QWOPhyY3i2RbKGp7odsDTddArf6u52UgVMmnj+fTlwLKbqmK9gpGEi6aN26c/lYRSj+ENu5zIwSnSC123hueGL4ePZNDT5Vmo/fUx65Zo1OgCs7R21nsC5KPxxoQj5rcRLPB1qD3gRxxoFPcRX7/SMNve9HmoSW+fHJI/km7cNvXw+k632sVQZglyDMfnHIcUh6R769i9cix16W9/YiLHHuMLbryoUN3ib9H4rKaue22T9IkDjoM7LNC+s6eGlg7AE9R2AKAeitNfJynM0c2dFL6hEWVX39Gn9UvQqrRmf+odMhiOgWLLv4Uzw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=KURahh/UDbnAGetINKgaVITSMMIgthB9uYos0W8XmBU=;
- b=dF4LGgPVZ0NqAQ+QFOEC7TU/6OW+dbnlRBHN+yvVycnglOXpRKDqoLFw8PBNJvcux/VXGoteNhXKqMm2xFiaCUcmrb/7YMCO/EMpShVJ+c0q7FFIapBeNQhvbOyf6dP6/PknbpjA7YyOMOvNE81sumtRPkzIPPyoIV+X49CS3lamNlo+vucyrJGIwKv3Jd/N2XYiuIY3E7gWhInwv4XKuGvdfPNZH/sMXYpfV96pDha25NoOvaX1LlUKQo88G3JrJasCTv4Ul8JkI7w20OfpO6Kpj2rO3ykDnvmnBOGJ7r2xkmOis8ZwWlXoYdF89mHvZp5ym1LsnXCBAR9xqg2F1Q==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=KURahh/UDbnAGetINKgaVITSMMIgthB9uYos0W8XmBU=;
- b=AYfQSHUjNaqJ4R3UJH6TVo+rQl3SvCg8qe/EtTqf9m9PBoYXkBT5Qv+ex0H2U7e3VYanJ2CkvlEasuJkA0vnZXOwt49H3YOuiuX9cGABEJNy/1dmDbNHbRqnY3/ka7/+kteM1Rh4zDL+HbjhcdPo5dQUE1LEuB2YRbrgCPGGlME=
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
- by SJ0PR04MB7678.namprd04.prod.outlook.com (2603:10b6:a03:319::23) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.245.11; Thu, 23 Jul
- 2026 18:22:59 +0000
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0245.009; Thu, 23 Jul 2026
- 18:22:59 +0000
-Message-ID: <d96120ef-31cb-4e7c-a871-2aa9881db6fd@wdc.com>
-Date: Thu, 23 Jul 2026 20:22:55 +0200
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 3/4] btrfs: zoned: drop stranded dirty metadata buffers
- at unmount
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
- Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
- Naohiro Aota <naohiro.aota@wdc.com>
-References: <20260723155428.94187-1-johannes.thumshirn@wdc.com>
- <20260723155428.94187-4-johannes.thumshirn@wdc.com>
- <20260723170218.GC752950@zen.localdomain>
-Content-Language: en-US
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-In-Reply-To: <20260723170218.GC752950@zen.localdomain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: FR2P281CA0068.DEUP281.PROD.OUTLOOK.COM
- (2603:10a6:d10:9a::12) To SA6PR04MB9447.namprd04.prod.outlook.com
- (2603:10b6:806:436::21)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="F3KMFhEb";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Dp/E+8t8"
+Received: from phl-compute-07.internal (phl-compute-07.internal [10.202.2.47])
+	by mailfout.stl.internal (Postfix) with ESMTP id 7201A1D000F6;
+	Thu, 23 Jul 2026 14:28:14 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-07.internal (MEProxy); Thu, 23 Jul 2026 14:28:14 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm3; t=1784831294; x=1784917694; bh=QyAWd3fCgR
+	BpV9NDAYQ5siXn0GSsoGtug9eyoFwQ2q4=; b=F3KMFhEbWJ7ahoyoI9lfddTBUK
+	H+76Ap2HDgoUzJkHJl5IpczRNaFTZjJ0Y3jMxzWWuR1Lmc5CHb1kn+az12BCzTn7
+	/k7dhGA51ghapbmZ94ez6CXL6+toy7bP+fRFqy5yf7rto7bZ6cH9JugP0X+T6TuW
+	OYBV5rFII/2YN2UoIv+h80rlz9J6prw2lcF/dhhAptfbX9LKoCOFTNc8CE0SsCPT
+	KFc5HpSO96Y4o3S0/bZVT9YCn4jPP/hOwev9yA0f2b8jrYfxT41th6MToxQgYXB8
+	RePgaawj69q+zDt/B21vU3A8BI4bKPcLwoSCDp9FJjRlSPrFKEOkA9AXZ5cA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+	1784831294; x=1784917694; bh=QyAWd3fCgRBpV9NDAYQ5siXn0GSsoGtug9e
+	yoFwQ2q4=; b=Dp/E+8t8U2yEnByufsNXKxPfAUqL6vBcEri0y3Sx+Zy+Z5AAdoW
+	rQVk8QLHjLQPzsNvXH3dyi3v+ge8/map6/MRqY3zIQEA1OAVwjZgs9K1l35D8AfQ
+	BwKjgv/fhy3UAdYr+v6EHGD0jqbEse0I4d6MNxmX++xXTTNN+P6iRYd/G6LdggLE
+	LMRCrxlMBupuSWyDNTtIEQ1CQOH3hCmCJEGvCHVcOVhfnC1eq4Ba+2S3fPrNUwdQ
+	s3awzSMrBzEoHCmWe0wykoMvgudIENEBvr+owV1TyM+S6+6+TxASYE74nzN6kkcp
+	Be/jgwzUZVE0mFT5BTF8hZ+RS8F8ruNHz0A==
+X-ME-Sender: <xms:PV1iapxobmnAOqX4Ekvfq5mymVTxO8NP_x2Y4x3Ga-uFCg3HLnckrA>
+    <xme:PV1iaguqoH9SSbMWL1lQPMON9jZBsxpN_okvWKvlSG854--lVJAnyoHxOSGT49lVh
+    PUDFvr8t_Ov_6Bu5jgKUeBNxFIkjlRbkURoUFSsSnEqwKMw3K89KLg>
+X-ME-Received: <xmr:PV1iagtR0DCXw_gPOgly6xuOHtM5qcG7FU08lAlqlKf9dw1pdhy8TvXQ0vpW--sbMG5S3Xp_m1Nt7GqlZitnO_YFIo8>
+X-ME-Proxy-Cause: dmFkZTEAAX1TWPYhXrlsTPkVvNZiO5s8dTY1RiHE3hf3ygUN498PfiNNAOeKb5KIxlsoEr
+    r0WI9ctxQfsFtQnyWaMYRHOih4LCScGdQF+h7mIbqrC6BILU3ol/pYZOq8fgp/KULKkusC
+    fIO7rBAl2vESqIAT3EhiBOKqh0FKRbhzmWMDEW9d+1NOWmuQwhNjMAE2Kws/86HepGZUwe
+    0vn0HNCYKa7JqHAT+sqMeKesL5zm5ZwSZfzld7gSu4KlNlltrKEd0TKGaqkjvv0X47rxcb
+    MWwMY+mOoUm281iawixBxb/nm5Tx6YyhTF0F+TgDt0d5Gh6dw8lgbSx0XK3+4graUYrbCM
+    GLLSLLd4NM3KabIa4AEnvjLD6rPFvMUjwVmlhP9++fuGpyCpWD7wQ3jy52JI+hlUm5BKiH
+    HmRq81fQdtcOlR2Q7tGchK+reUbFLsio6VrjT8duRctUTXpRVdeBWhn9lsagN2THq3BlMa
+    V6ZyEN33j+AfALP/+l+WKzXGIvGsku/r2N71haWYvdfjlQ0fyhhlWir/T7j3/xWKTtahfU
+    FgcX38qFqEji7VfmWcLIZ9yL/6uAxYEwjbMaxdWe/ktpWbQLpxjb7vJPhgl7N35+pgiQwy
+    qwpp71EWfP487EH18p5DYgwRLYcOCAUTf7O0pmF4/XfHgYuKN77qdTb1LCsA
+X-ME-Proxy: <xmx:PV1ialPncBqkGfEgU-SDD-10rVeQK5n7i0tC6l_90rm2WpAWtAE3uw>
+    <xmx:Pl1iau2LzFYbggNRyUZGyeTbtOrZXOUHPQdKjYsLWmGZvqNCbNZXvw>
+    <xmx:Pl1iahMD3Ek0cP6M96Bv20F5wE28i79HTPNzsT8Q_bfvBFnINqNpgA>
+    <xmx:Pl1iau1qx9pgcSPuBDD5QhFBTxyRq_W1a3TIPbNzzMdXhPXRrkONXg>
+    <xmx:Pl1iavSr-JyeMvVvYNXOwMOy5VlSvDgLdH9mfhFXBzEmM-oLOAGaALon>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
+ 23 Jul 2026 14:28:13 -0400 (EDT)
+Date: Thu, 23 Jul 2026 11:28:02 -0700
+From: Boris Burkov <boris@bur.io>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v2 0/4] allocate extent_buffer GFP_NOFAIL with unlocked
+ retry
+Message-ID: <20260723182802.GA788943@zen.localdomain>
+References: <cover.1784673567.git.boris@bur.io>
+ <20260723025857.GO10684@twin.jikos.cz>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|SJ0PR04MB7678:EE_
-X-MS-Office365-Filtering-Correlation-Id: b2ae1d49-421d-4e4b-6444-08dee8e76cda
-X-LD-Processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
-WDCIPOUTBOUND: EOP-TRUE
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
- BCL:0;ARA:13230040|23010399003|19092799006|1800799024|376014|10070799003|366016|10067099003|56012099006|4143699003|11063799006|22082099003|18002099003;
-X-Microsoft-Antispam-Message-Info:
- vC0WT/JeeSy6UrBVH0ytc6frXcrSVN4Mfaob9ghDIW6CjNX1Mk+cuO45/fp4m35QX+4IASBI0d0OJBlzTnlaSc98nStxW14s0hvIhlUo9lci8As8rmxdJRv8zbKvtDMTkszyAoZ9DPeGYneLDeqYk2OAZfiL7oAXnR+4kh5f4aSbN0bLweCUvx+UKEJkgkhLCg/rWWC04dvRucaGuZh6+Cwb0/kr8XfUax6ss2DSu1xT+WUz0SyM2Rtez89iyQdwfNGg13VWS7CBBOZiSM4F+au2+rxQqfkro38gz71WdXbTZSuHp2PJ4LVMJD+rAleCTIZTqXoin+KwqAGe4Fel1PmQmH0/9DRvJwPh2j9V9G44dnHLQ5A0aCbJz7oNFkRnpUDjG1bH6Iux7KaQci5nf4jAjOJ2FCwL6Ls/jELQLwR5+y03WAP/dVKe5TA0wBlKyL1EVJ9cKfnmKpzL0OmcFpUbQLawlXmmQkijWKGQr9pAFRbQXsTanLAMQ6nxxHrSvlVFvMj4yndQTpG1wMnlSoaS2p+tB+J0QNL613wA1ZMs3v7RcTWXQoez/rfDB7clVqns0+X6Fy4iG1PMrWvnPjTk1tdcPPvVhF0RFvxCQLl4ZV9WI6JIjC0IcKHe0L25AYOnXRm5KKSK1N/aTfiAE1h/yqAlzsag+bM1EPNFxjg=
-X-Forefront-Antispam-Report:
- CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(23010399003)(19092799006)(1800799024)(376014)(10070799003)(366016)(10067099003)(56012099006)(4143699003)(11063799006)(22082099003)(18002099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
-X-MS-Exchange-AntiSpam-MessageData-0:
- =?utf-8?B?eXhtUEpNVmtwdnllZTNwNHRtYjhHRE1tSGw5U3ZnTW54SGxtaFJsVS9KbVRB?=
- =?utf-8?B?REZJU3ZjMUZzcmFaWnI1Qk9aVHdkYmhHSTQxSkhCRTlIVGY5RXhpa25YVm40?=
- =?utf-8?B?UzQxMUlSTVBRVmRvbFV3NitTQVFPYjYyMENoY2w1a2ROVXAveUYzUjEydjdJ?=
- =?utf-8?B?bDJRNnZINitsRG5yelpIY1pscFRLQ0ZBOERreEhNN290YmpBQUhVMUNCdXVn?=
- =?utf-8?B?Y1R2L2tyeXgvZ3duUjlwY3hWS0lHRzI1UlVkNFE2aGY4UVU0cmNtL1BPWXlS?=
- =?utf-8?B?ZnpSOHNLUVBYZmg4T1ZpYkFIRlVOZStsNllYVk91cXlJempOR3FPN3NEKzZD?=
- =?utf-8?B?Unp5RkpTMjNZOFhWbDlOencyemZTV0x3UTNFaXpubkdubW0vb1dLcG9vWjlG?=
- =?utf-8?B?eFNFdkFwZWdSNDRzMXpXSTQwMWNORlBGVjF3NklsWFBpZEVRa0QxVStLWGg3?=
- =?utf-8?B?cG9rMFA1UjFld1VxWlYwbkJsSHRqQWpMU2N5d0JMZVR4dWc2dG0wRlRhTkpq?=
- =?utf-8?B?RUZrNnpSU3BMK2tzbzAyemF3Um10bU15UGFjQ09aTDNLMEY1TEpoYVBrUTJq?=
- =?utf-8?B?YzRwdU90VXpwUVcxdWQwN3d3R1JQMjFUU3NZUVBaR2owSlNNaWpaRGxBck5L?=
- =?utf-8?B?NU5XRDZTR1VHd0o0Y3ZJNGNoWWZlSlFxOXZNejZwem1JR2xBUkNzTFVrUkNC?=
- =?utf-8?B?RjdBSWgvSE9QbDdYVS9iOXZJR3pLQlVQMU80QWF3cTlsVm9mY0ZvVUVSaUli?=
- =?utf-8?B?SWlYaWZtVWNpSFVzUFNxQlkzWkozeHRleUcyQnIrQlFMbU94Z3pSMnZ1Vm5j?=
- =?utf-8?B?RHl6cGRBeUFGZm9nTEZlR1hTbnRpZkFYaUh4VWRFbnhLKzBsSVd4MzMycVhB?=
- =?utf-8?B?di9vTG9kWjZLWDU4ZldCcmRqMHArb1lNbnhYa0lCblhXNXBnbWNZdUdGY1or?=
- =?utf-8?B?Q0tMdW54a09mMEJoVDFwL2lMYlh1VFNtaVZZK0tvUkRxSDhRRWg5UFJzSk0z?=
- =?utf-8?B?TU56K0JUM1RkY0tCUXJHWk1sS3J0OWZhVUw2c3h4dVA2YSs2WjJ4c2dCUVF6?=
- =?utf-8?B?eElEZ3Fpd3hlaFhNNjR3UUFFcUNRUlF6bklpUk9hYWtXa1lmaWZPMWttcVBa?=
- =?utf-8?B?cnprQmxyN1JuNnBjMTZPOVBqbjBnME4vTEZCUUtTUi80VFNUamNLSENvSU4z?=
- =?utf-8?B?Rk5KNHdVVnNkTiswL1hmR0JCU21IWHN6N2prMFpudGpQNVJyeVJWRXMyM2VX?=
- =?utf-8?B?d2dKajBNMEhOUkJoWDFrQ1VNZTUycjBDOWMwMkF5eGZBQTV0M0ZGeEh3blJD?=
- =?utf-8?B?Mnd3S3E3VFBVWlVKcXJJaVg3b0RaQ0NBKzg2aEJhVzVWbWlVZnJCOEh6dWJN?=
- =?utf-8?B?UmRhZkxTSjZkczd0U3F0MGM4enVoV2RHMnh4bEFvRWJMNWxEWUhUb3JYODBH?=
- =?utf-8?B?VUE5bjcrTGNwNnVuWjhnbEVFdnpHMGJRRjBLaHZVemZ3dm1OSzVkaE1SVzFl?=
- =?utf-8?B?SXBQTXVUak54UXF5SHVUUDdiUlA4TStaeDl6Wk1XeC9nbGtjRnVJbVZEQ2Y1?=
- =?utf-8?B?bnVCU05iTFNlamRzS0Q0V2J1ODZKUHVSZDhpd0ZLRXpVYm8wVGs0b21vRVE5?=
- =?utf-8?B?Mkc2c3BaWDhIeStHdUQ5THBVbWJUYXVFd0ZLZ1gyOVNtWGN1ZHZvQnRNWjNU?=
- =?utf-8?B?WXl6dDRrZFFtVytiT0YvQ0o0aklJcldOQlBxZnNlLzBaR1JsU3pzMkVNTitG?=
- =?utf-8?B?c0RiWlg0TFJMUXArODNEMlJnWlJWeEhlY3lwdWpPcTR2UWhQODF3S3cxKzJR?=
- =?utf-8?B?UU5jU2NFckk1TDJxSElzSXFBd2cwMzRjckNaaUV4RWZPaUdsLzhERmpDZDhE?=
- =?utf-8?B?RDhXWmFXajQxNDc1UmNmR1dKbk5JQmJoUFYrQStqMlp3NUNqd2NMMlhCRVhr?=
- =?utf-8?B?UWk0TUU5T1k4SUE2Z25Veit0SFB3dHg0enluN2JOaS9sZEtVOGhoYmc2L2wv?=
- =?utf-8?B?MTRMa0hnSkdDMUtDUGFOTzhTSy8rUzBWaEw1c3BXVVgyWCt3YWg4NytWZnVo?=
- =?utf-8?B?eHpGYjBrZnk5SndqT3Y5VmpiNDBHdzdVMEw2N0ZLWkpKb0NOMkhSOFp5ZXF6?=
- =?utf-8?B?T3RaRS9VcjcrK0t5NGt4WWNEQS9HN0xZRU55YytUQ3NnWDY3ZzlDYWdzbXUr?=
- =?utf-8?B?dHpuaTgvb21GbWFrQVpqUTdHalpoTnRFaTdZL2c1MXNkdG1NdUdPSnVIc0tI?=
- =?utf-8?B?QjVNUkFsWWxTUk8rZ2pnUFI0d2xXUk1Uc2dCRkNoT29Bc2o2MEM0TGg5cEZW?=
- =?utf-8?B?aUlkZmlwYmdFTDh1NENLdUJiL0ZSWWJUY1hIeXdjTENoNmFQQ2hVYjEzMUFK?=
- =?utf-8?Q?Gjq6RGahqkpAS0/DuFLBmqSFL6LVPn7LdYhOWuFDqdQLv?=
-X-MS-Exchange-AntiSpam-MessageData-1: IPrSaAEubEzamDQ0uRI36m5WQN8j3HdzDw0=
-X-Exchange-RoutingPolicyChecked:
-	JFnp8Ui9zVPJPQd5SF1w+mNVCqQXiLoegyhOQgcMH9wdrXYgWbIrYo7vDW1KgY1QNivRLZmUpJD/BDyhREryqhrKld1qXYb2E5feiyY3WRR20oww+1h977GWfplkXZUeNoGNBL/WFKlFiwSzS8u/32sb0Y6x+Tu+u0fnxNzozOxQhYa1EXAkZVe4Db3R57Ldue+wMfQaIAzbVf0SQduP2CeVSOmyGOw3+UYvWft9U95JWB7+WGLYYIho1gVMrDbQWiU180afDplfRUJ6ycRmpx6snZMJVjRQBmEH51+QLJzurTbAmSytwvtEKr3CoTRsS/xr/OnYARjLKmp1Z26+cQ==
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	gxZY/Qq0WZUBVrbCv5fM0F4r47XyXat/yzyjb3dXdHYVYSDy4n39XDa+6ixcFy3qCuQKfGnaD6OZdmiG75HAzRAa3Z6/rP49FDv/H4b/b5B352F4jN4nnuY/zmoDU5Roa1+zXsiBsPXaU8MB2OQydkR0YQgl3JxhpT/b9vVDGfHeU71SciTBE8qvnU7WNNxFpeV5lDOMt7QQ5H63mbunK+VXYU6mnSiFuqOv11rwSuoj2DToQvb7mlZ9SwoUPBB6d+64vbvA4l0fUmQiQZJCfmQHg7HoUhY/cvjcvfoI3bDlzqbgj11dr+zGjMjRVWQ/992FW+ovZ1UoUx3Sg/D4b/Y0SHUIdhsX9glVyi0FbVMOnOVde+APylNe43q9AcWk3P2/8aYBBjqfKm21+PAK62OKWRPzqZrMTRseIs7l2/5y5G0Xjd8YUBFeOViIQlI8zH9ZseRu5dmzrX46U67Wj+9epRHytEa4L8gbo7h2RtD9JGxZbImT/WBsyhVqe9ra0pX2QlVtGkyIRyY0pZ8daxXTfu9GFq9AzmTsmWo5lr+UcHXEHAZunA4Abtfl+jB/TEsKOi5JL5C34KDeiBNJcmko7OGAKoCrVPA0upOHY57Q0Q2YVgBwLCh5RAhZQ/Vb
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: b2ae1d49-421d-4e4b-6444-08dee8e76cda
-X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 23 Jul 2026 18:22:59.7561
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: NZ2yn7U8Ze/9GP/ScMdxLcvX0bM5YpiXakA2gUl1oo1HrUDE94WMYeTPTctlJpSusOv5PO6O53NobEmoihmkufJjxcivnDO+c2Usn7rbwxg=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SJ0PR04MB7678
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260723025857.GO10684@twin.jikos.cz>
 
-On 7/23/26 7:02 PM, Boris Burkov wrote:
-> Immediate fix looks fine, but the underlying issue is a little hacky.
-> Can we detect that we have staled them from free_log_tree() and release
-> the dirty there? Am I correct in understanding that this means we can
-> overestimate dirty? By an arbitrary amount if I do lots of unsynced
-> tree log updates?
-I did try that, but it deadlocked pretty reliably :/
+On Thu, Jul 23, 2026 at 04:58:57AM +0200, David Sterba wrote:
+> On Tue, Jul 21, 2026 at 03:42:11PM -0700, Boris Burkov wrote:
+> > >From sampled fleet data measuring lock holders that go into direct
+> > reclaim with a waiter present when they eventually unlock, we have
+> > observed ~15% of those are btrfs extent_buffer allocations in
+> > btrfs_search_slot() done while holding btree locks. This is the single
+> > largest category. Additionally, a large source of hung_task timeouts is
+> > both btree waiters and direct reclaiming btree allocations, which
+> > further motivates the desire to drive down this source of stalls and
+> > contention.
+> > 
+> > The aim of this series is to allow us to allocate the extent_buffer,
+> > btrfs_folio_state, and the extent_buffer folios with GFP_NOWAIT then
+> > fallback with EAGAIN to outside the critical section to retry with
+> > GFP_NOFS | GFP_NOFAIL without any locks held.
+> > 
+> > This is analogous to how we must drop locks to read an extent_buffer and
+> > then EAGAIN.
+> > 
+> > The series does not manage to completely eliminate allocations from this
+> > lock holding path, as we also allocate inside xarray functions for the
+> > extent_buffer xarray and the btree_inode mapping xarray, the latter of
+> > which is done via filemap_add_folio() with no reserve type API. Luckily,
+> > those particular allocations are small cached slab allocations and have
+> > nearly no contribution to the production reclaim fueled contention.
+> > 
+> > Changelog:
+> > v2: 
+> > - rebase
+> > - dropped the inhibit array allocation patch
+> 
+> Reviewed-by: David Sterba <dsterba@suse.com>
+> 
+> The logic makes sense to avoid the stalls. There's no sashiko review
+> because the patches did not apply. You may want to resend a rebased
+> version to see if I have missed something, there are minor typos or
+> style things but that can be fixed during merge.
+
+Hmm, interesting. I rebased on the btrfs
+(git@github.com:btrfs/linux.git) for-next branch before resending, and
+it just rebased cleanly, and I was able to 'b4 shazam' this version onto
+for-next as well.
+
+Am I messing up and using the wrong branch? Is sashiko?

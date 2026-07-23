@@ -1,148 +1,134 @@
-Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EAC44471439
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2026 11:45:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.158.5
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ADF8443B3D1;
+	Thu, 23 Jul 2026 12:00:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784807124; cv=none; b=id16WPXGbdIIdsNG+ApugWvu2yLvh7U+pcyy2N7r0iB3ga4w8dq0DxWnwDuGi/nbO2XKUetcj2Q2FEKPOC7wYwd9drhQ4txeTXl7Uqamel5z8ZYwWaGisCdYyKobc5jLKEy4yNKAM1glNO9AqbYdl1CHHcq2ns3hYc1YI+Q5R4s=
+	t=1784808011; cv=none; b=s6E31JpJIX+eSzul7NEd4P1lDbEGjCnLesEYf+V3L4OU8qZfeXU6n5byKr4l0s6Qmr2S082PzM+gACLwT6Q1f/1hLBWQk5dFTCubaSXVm62ffcAAR/TyMAvn/gpA+RQkJoIyLUO3XA+Zc+oDQw0gOHoxFHj0wZUm2tfR4fxsK7Q=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784807124; c=relaxed/simple;
-	bh=2kwOhcBZKWPaAMH60AHfcYu2QaOSbX22GsY8lUtlOug=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=DQaQqqpF0fPadMAYhFWwyMSqa2NfRoerVOdgMZj+u3FXpiWcTv17tcHyCNqKaxLjwiotQDSmIOSbbnjbHXONY3+Y/q7tc9dQuUf6oL0mNx26pOXeHWAclphvLjGn/D25Ch3WCJHw0mbjkrODbG6eh0/pGH2R1qBwMaXqeE3g78g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=QqUCcBLp; arc=none smtp.client-ip=148.163.158.5
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
+	s=arc-20240116; t=1784808011; c=relaxed/simple;
+	bh=vl0TeuTcWnosTAVKcGI0I4lkggB1UVzt9mBoGeLJF0A=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=CLEgURe8nFt6rFUZAh92c+Srpc9AbeIYAJw8Ue4NI/5fYpnqfZkExBAUNijo1a6FuHZGLKPKlmMyBxePUEoJiXiCl5zLIZ4ovJsC2Pr11Qio1pd+R43AAtw5LWx2Q046clU7rc+eRZJalSnxk5zmjSI+UBbAKzJzojdg4G0y5mQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=pass smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=MHyabGz3; arc=none smtp.client-ip=90.155.50.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="QqUCcBLp"
-Received: from pps.filterd (m0360072.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 66N9BoxV2585853;
-	Thu, 23 Jul 2026 11:45:19 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=cc
-	:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pp1; bh=ve56yA
-	AY6xLykonIN4rdwEfZjT5YYVFdE2k6h0iIUbs=; b=QqUCcBLpnVSCCpRRAbHE2j
-	cwSjO5/3io/Mw4ddLRY8VygA9CcDV7Eoyc2Nno5aH0u50T5yttzHMrer77FZNd3w
-	Uhy6lmAZ+CYIXnLHvyplt2KPzxsDFTEbwyZEmiXT60/fBezo9E64rvUfZmdrQdyo
-	cGcsRL3U1G8uBPlKkMy14XUGra762NJG+QQ7zQFsmVWR5dmq/XfD+GdcXn643O8Z
-	HRbvGEJ0cWsUyB9LHh00j0v2GL6jm9KeQVZxe2Poh7kfN3IEGNqstP3NhXcZBkp4
-	3RSGJA5sasFJ5TfxgJGEY22bMFTDggdZEDCjgbgRRAM7ZPIt6i9iavG6iOGjXp/A
-	==
-Received: from ppma22.wdc07v.mail.ibm.com (5c.69.3da9.ip4.static.sl-reverse.com [169.61.105.92])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 4fg7ahenqy-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 23 Jul 2026 11:45:18 +0000 (GMT)
-Received: from pps.filterd (ppma22.wdc07v.mail.ibm.com [127.0.0.1])
-	by ppma22.wdc07v.mail.ibm.com (8.18.1.7/8.18.1.7) with ESMTP id 66NBYcTP007057;
-	Thu, 23 Jul 2026 11:45:18 GMT
-Received: from smtprelay07.fra02v.mail.ibm.com ([9.218.2.229])
-	by ppma22.wdc07v.mail.ibm.com (PPS) with ESMTPS id 4fgm6wc1hf-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 23 Jul 2026 11:45:18 +0000 (GMT)
-Received: from smtpav03.fra02v.mail.ibm.com (smtpav03.fra02v.mail.ibm.com [10.20.54.102])
-	by smtprelay07.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 66NBjGnQ51315116
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Thu, 23 Jul 2026 11:45:16 GMT
-Received: from smtpav03.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 2E0A620043;
-	Thu, 23 Jul 2026 11:45:16 +0000 (GMT)
-Received: from smtpav03.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id CCA1F2004B;
-	Thu, 23 Jul 2026 11:45:15 +0000 (GMT)
-Received: from [9.224.77.173] (unknown [9.224.77.173])
-	by smtpav03.fra02v.mail.ibm.com (Postfix) with ESMTP;
-	Thu, 23 Jul 2026 11:45:15 +0000 (GMT)
-Message-ID: <be2eff36-fbff-4451-9a63-84f95968370c@linux.ibm.com>
-Date: Thu, 23 Jul 2026 13:45:15 +0200
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="MHyabGz3"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Transfer-Encoding:
+	Content-Type:MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:
+	Sender:Reply-To:Content-ID:Content-Description;
+	bh=c4hElVqmYpqUsdMIDfblHdUXoaZAp8PegjmWKWhCfi0=; b=MHyabGz3a+YQkwKLmY93en+C9q
+	V3KyBg0TsuClrun8CjqP00/AdTEnKuRdi0xjGvsJ0thjHbQPuiMXgPmZu/3ticfErRaRG+XTDJg31
+	WqoM4h3w8B/SknpDK78zm6lk+beGWfs1oGFFRDgoUSS2yVqDFVGNDBiTGCGiIPNmGY5YJ9WqQIh3R
+	b3Bmqvmn7Ejq0BXm+oMUDJuRBiYdLpERczqWZwKrLGutLbmpZRQtmt6saykl6+AOnzslJi43hJjit
+	VBeX/GbxaWFqD8g6BNzaebWGbKWvRQwBtIoi3TS90ETdg6JGTLyAboSWSBi7IslW/LgW785QvN8Nw
+	uB6TxpWw==;
+Received: from willy by casper.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wms5p-00000000S92-3D48;
+	Thu, 23 Jul 2026 12:00:01 +0000
+Date: Thu, 23 Jul 2026 13:00:01 +0100
+From: Matthew Wilcox <willy@infradead.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Christian Borntraeger <borntraeger@linux.ibm.com>,
+	linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
+	Linux Memory Management List <linux-mm@kvack.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+	Josef Bacik <josef@toxicpanda.com>, linux-kernel@vger.kernel.org,
+	kvm@vger.kernel.org, linux-s390@vger.kernel.org
+Subject: Re: [PATCH/RFC] btrfs: fix folio lock leak in writepage_delalloc()
+ for folios dirtied behind btrfs' back
+Message-ID: <amICQYTK9Xu4KLtH@casper.infradead.org>
+References: <20260721191152.101118-1-borntraeger@linux.ibm.com>
+ <20260721191152.101118-2-borntraeger@linux.ibm.com>
+ <b226a6e9-fef2-49bd-b17e-9f9b015626c1@gmx.com>
+ <83290932-cb8b-4741-bff0-6a7d8df2c637@linux.ibm.com>
+ <224d56d2-fcad-41bf-afe3-6f5f5108172a@gmx.com>
+ <f12f70e5-d84d-4a9f-ac94-693be4c863ac@linux.ibm.com>
+ <amC-J7yzwk4Z5tHW@casper.infradead.org>
+ <ad6eebbd-07f8-41ce-b04c-edd50d91a6e3@gmx.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH RFC v2] btrfs: disable direct reads to avoid dirty folios
- without fs knowing
-To: Filipe Manana <fdmanana@kernel.org>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <c6dfdac9fc51c94183e51a861eec269185239660.1784787211.git.wqu@suse.com>
- <CAL3q7H55GkjjCougzD3w2qarX0x6XoQu5G680xv3iuqTMgQ0YA@mail.gmail.com>
- <f4f41f37-304f-41e7-af53-d7037e54cde9@gmx.com>
- <CAL3q7H4yxeAXzh+hHBsiD0ovotWpcoaK2byvS_5qz2cJybhNoQ@mail.gmail.com>
-Content-Language: en-US
-From: Christian Borntraeger <borntraeger@linux.ibm.com>
-In-Reply-To: <CAL3q7H4yxeAXzh+hHBsiD0ovotWpcoaK2byvS_5qz2cJybhNoQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-Reinject: loops=2 maxloops=12
-X-Proofpoint-ORIG-GUID: SwqJg7K7BAgFsQgnvBN2x20-wnaTRnmW
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwNzIzMDExNSBTYWx0ZWRfX4CEs1dasAnoY
- qMhSZOnFhafMi50xJgiccCA8DcZQlKxPg+sPBCuiC4fdxrYT/vsWKIAR3Dw3jNUaNXu7rGUAtlu
- u6m2wRM4WdW5bKmBwcPzX0cesSbkf09USYn/UUWOhPalc98QDC0nT3N8Sx50O7aUDZBfsBpkpmA
- Dk29hPrZ/VtqmKrrrQ8Evhr6SpYNd1pPj6xkQxRZgQzGJiD0KdkYZ944Z0cCfQbBzu8vKsanVWQ
- cSeOYFAx1VnLhOR8+TqVuRkY46sxq6LeOdvxCzOaFx9nUAKcb/k+qsJSn018sgz+20u3j1hBFOy
- ibWMuJJn9/ge+bqElFYlkicM45LXQ9tOrpiHMpVNVwRrPH42nSn6+k0MvxiiTt2PAu17ZjLIRYG
- YY03ruP5YuYZP7+g+S/6wBkOBECHtDOqwcAY6t0OWbJS/SRhhoUuYFuQYiHdW9WvRkwCR8vImVQ
- sMY23l0la8Q45KNMt2Q==
-X-Proofpoint-Spam-Info: AW1haW4tMjYwNzIzMDExNSBTYWx0ZWRfX1h7dV/o0UjG0
- SNlV+lqFSnSQNu1980VjcVCnZ+RPHb1tTinYgwyx9JwLa7wNYe2VLyn2CTXfqxcEHITpWq1QqIt
- rDpXbfxcH53yi7pjb7+WOqB/JLTwzpU=
-X-Proofpoint-GUID: ozrzs0igYP0fPiGsRXRlbg6qWwTLmnQB
-X-Authority-Analysis: v=2.4 cv=SM5ykuvH c=1 sm=1 tr=0 ts=6a61fecf cx=c_pps
- a=5BHTudwdYE3Te8bg5FgnPg==:117 a=5BHTudwdYE3Te8bg5FgnPg==:17
- a=IkcTkHD0fZMA:10 a=RAioF0-LDSMA:10 a=VkNPw1HP01LnGYTKEx00:22
- a=RnoormkPH1_aCDwRdu11:22 a=RzCfie-kr_QcCd8fBx8p:22 a=VwQbUJbxAAAA:8
- a=7YfXLusrAAAA:8 a=iox4zFpeAAAA:8 a=0ESMOZCiN0YSb6BcWVMA:9 a=3ZKOabzyN94A:10
- a=QEXdDO2ut3YA:10 a=SLz71HocmBbuEhFRYD3r:22 a=WzC6qhA0u3u7Ye7llzcV:22
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1143,Hydra:6.1.134,FMLib:17.12.100.49
- definitions=2026-07-23_03,2026-07-22_02,2025-10-01_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- clxscore=1011 lowpriorityscore=0 bulkscore=0 suspectscore=0 adultscore=0
- spamscore=0 malwarescore=0 priorityscore=1501 phishscore=0 impostorscore=0
- classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
- reason=mlx scancount=1 engine=8.22.0-2606150000 definitions=main-2607230115
+In-Reply-To: <ad6eebbd-07f8-41ce-b04c-edd50d91a6e3@gmx.com>
 
-
-Am 23.07.26 um 13:23 schrieb Filipe Manana:
-> On Thu, Jul 23, 2026 at 12:17 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>
->>
->>
->> 在 2026/7/23 20:08, Filipe Manana 写道:
->>> On Thu, Jul 23, 2026 at 7:16 AM Qu Wenruo <wqu@suse.com> wrote:
->>>>
->>>> There is a bug report that a reproducer which doing the following
->>>> workloads in two threads:
->>>>
->>>> - Direct read into memory mapped from page cache
->>>> - Sync the above range
->>>>
->>>> This can lead to dirty folios without fs knowing, this can be a huge
->>>
->>> Can you please explain where, and why, the folio is dirtied?
->>
->>
->> btrfs_check_read_bio()
->> |- __iomap_dio_bio_end_io() from btrfs_bio_end_io()
->>      |- bio_check_pages_dirty()
->>         |- bio_dirty_fn()
->>            |- bio_release_pages(bio, true)
->>               |- __bio_release_pages(bio, mark_dirty == true)
->>                  |- folio_mark_dirty()
->>
->> At least this is the one from the reproducer.
+On Thu, Jul 23, 2026 at 10:12:27AM +0930, Qu Wenruo wrote:
 > 
-> That should be part of the change log, it's not obvious at all.
-> I also wonder why a direct IO read dirties the folio if it's not
-> supposed to change file data.
 > 
->>
-See also the initial discussion here
-https://lore.kernel.org/linux-s390/79b9b1b2-0455-4a7c-85fd-929f4103f198@gmx.com/T/#m31c388aa6bbfb77c689ff95b5a35c4db5fc231c3
+> 在 2026/7/22 22:27, Matthew Wilcox 写道:
+> > On Wed, Jul 22, 2026 at 11:29:36AM +0200, Christian Borntraeger wrote:
+> > >   *   4. Thread B loops sync_file_range(WRITE|WAIT) on the target file.
+> > >   *      Whenever a full clean cycle (clear_page_dirty_for_io(),
+> > >   *      writeback, bits cleared) completes inside thread A's
+> > >   *      submission->completion window, the completion-time
+> > >   *      set_page_dirty_lock() hits a *clean* folio: filemap_dirty_folio()
+> > >   *      sets only the folio flag and the xarray tag - no btrfs subpage
+> > >   *      dirty bit, no delalloc reservation.  See the 20-year-old comment
+> > >   *      above bio_set_pages_dirty() in block/bio.c describing exactly
+> > >   *      this ("other code (eg, flusher threads) could clean the pages").
+> > 
+> > There's your problem.  filemap_dirty_folio() documents that btrfs is
+> > doing it wrongly:
+> > 
+> >   * Filesystems which do not use buffer heads should call this function
+> >   * from their dirty_folio address space operation.  It ignores the
+> >   * contents of folio_get_private(), so if the filesystem marks individual
+> >   * blocks as dirty, the filesystem should handle that itself.
+> > 
+> > fs/btrfs/inode.c:       .dirty_folio    = filemap_dirty_folio,
+> > 
+> > so btrfs should have its own btrfs_dirty_folio() which does whatever
+> > metadata updates it needs to and then call filemap_dirty_folio() to
+> > take care of the page cache business.  See iomap_dirty_folio() as
+> > an example, but many other filesystems also do this.
+> 
+> Thanks a lot for the advice.
+> 
+> However it looks like the sub-folio dirty block tracking is a little
+> different between iomap and btrfs.
 
-In essence any gup+set_page_dirty_lock user can trigger inconsistencies. We found that
-as this resulted in lockups and the O_DIRECT use case was just a reproducer that does
-not need a kernel module.
+My point is not that "you should do it the exact same way as iomap".
+Rather "the dirty_folio op is the entry point to tell the filesystem
+that a folio is being dirtied".  And you aren't taking advantage of
+that, you're just calling the VFS so the VFS can do its own tracking.
+
+> E.g. iomap will mark the full folio range dirty even if the EOF is inside
+> the folio, but btrfs will only mark the range inside EOF as dirty.
+> 
+> 
+> Another thing is, even if we follow iomap to mark the full folio dirty, it's
+> still not the end of the story.
+> 
+> We have other supporting mechanisms required to tracking the dirty range.
+> E.g. EXTENT_DELALLOC flags inside extent-io-tree, indicating we have already
+> reserved space for the dirty range.
+> 
+> Only with EXTENT_DELALLOC flag set, we will do the real delayed allocation,
+> allocating the on-disk extents etc.
+> 
+> So even if we always mark the full folio dirty, the writeback path will not
+> handle them correctly either.
+> 
+> 
+> Finally, even without large folios, the reproducer can already cause
+> problems on btrfs. E.g. on x86_64, with mapping_set_folio_order_range()
+> disabled.
+> 
+> The symptom there is that, ordered extent accounting underflows, which may
+> also contribute to the stall observed.
+> 
+> I'll keep digging for this bug.
+> 
+> Thanks,
+> Qu
+> 
+> 

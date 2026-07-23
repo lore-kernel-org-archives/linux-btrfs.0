@@ -1,59 +1,59 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E13773ACA64
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2026 05:41:20 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 26A33382379
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2026 06:14:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784785284; cv=none; b=Rm6svEK0YD1MmSYQ5LEnX3c4YRVvLU47gK6ywO2HX022kT2DD4S7I5Njqz0OCHBnsiOoHkIvV5dUZbkG1MTMoSBvrTxROd+G4glbGzQx9XDqcBuSCo0SJgkfFB1ZZB9ceSwPTmQTKpNTODhk5TY6XJJxmkv8K5Qw/53CET8ea6s=
+	t=1784787246; cv=none; b=YLH23pW5zORzzq/ekhJuEUlGjr972wqF5VdYYVqg+82pSseJ0Pn+ZiwWFLb+H8E/hiZx2CwKANnjAQzcRdvt8nDhn4VLLHV89lc759dWWm7qe5wXDeXwEjX8g8S+cCXqa9atc0CepQ5zu0ThOfcBQDt4LEN5lYlZCvCYIOgiqY4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784785284; c=relaxed/simple;
-	bh=CgFnzyeiH3/TiAZgdBl9/26mx7/4tcM3JzHoEOJiPqY=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=BuTjvtnvRc6C4bhKEX55e6/Xq60rJ3ncNDPxgHeI2yfiaMOFGaUkJjPu4u3OAqw16wiYPWPK9DUtP0QN0rUjsk8DjPEsD5S/ayjBgLEN6Pu4u6+axLKAHdCHT+oZlE90pDLU15o3QBsWD6qxq1SBv7z6B+USXfP4CJC0Bv2yknY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gkEQT5TI; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=gkEQT5TI; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1784787246; c=relaxed/simple;
+	bh=y1WRn4oG+2eZ6rirtOcKjDe5hkMy5yz5Waurxq2OOF4=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=qsA3NxFVCdSRgucnLKWFANrpgqSwv6jqkDSO5QbLfmUbaSpDm7xtCuoB0mijz7A3tM7hHRL/juwVemaGqGxQhXF6aH1gKEdstFSwdUhCmJ9by1rVZB/WT9oLNfphcK0wn62sSaFLUV1MLTNTba9u2ekOnZ2yKjyxgtWIne7CXhQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YSGzCHO8; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YSGzCHO8; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gkEQT5TI";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="gkEQT5TI"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YSGzCHO8";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YSGzCHO8"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id B422A3E38;
-	Thu, 23 Jul 2026 05:41:17 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 0AADE3E4C;
+	Thu, 23 Jul 2026 06:14:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784785277; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1784787243; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=eJEZNn3400d095D6oCSLmu9xMdDYVwKtFn+01ufgD64=;
-	b=gkEQT5TIPYnv7scLMj424Pn1ENUmg+uL2loCmB9JLPxGt70FWX+yIkbUyNFbKBCJV6JF/+
-	VZY6lBw0dIhdoYqzjbaaPG7iGIBpaVTCWUDH1vcBq2SL3k1gM8BWEgi4jbOwtlTIoKarwj
-	I5a65l1NNAAqXRptXkORmVprciclbyU=
+	bh=i+m9XRYQL/NHrhnb6CON2KidYa3IhH6lUnBnuh4oBUI=;
+	b=YSGzCHO8FIzII4LCeu5aPvrk/InpcoexOv5BunmFMKrdZGCaU7ZHduneXAfg12e1Z1YB7S
+	U8Q6Ewy6bDkgic9+6B37d8MihRYfFJVeHrHrXg46tfbvP/2iMNfbXOyzk+YucL/wLfw810
+	vcB5MLpdkfbOcnB+ecvNrxsNXvQ4M7I=
 Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=gkEQT5TI
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784785277; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1784787243; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=eJEZNn3400d095D6oCSLmu9xMdDYVwKtFn+01ufgD64=;
-	b=gkEQT5TIPYnv7scLMj424Pn1ENUmg+uL2loCmB9JLPxGt70FWX+yIkbUyNFbKBCJV6JF/+
-	VZY6lBw0dIhdoYqzjbaaPG7iGIBpaVTCWUDH1vcBq2SL3k1gM8BWEgi4jbOwtlTIoKarwj
-	I5a65l1NNAAqXRptXkORmVprciclbyU=
+	bh=i+m9XRYQL/NHrhnb6CON2KidYa3IhH6lUnBnuh4oBUI=;
+	b=YSGzCHO8FIzII4LCeu5aPvrk/InpcoexOv5BunmFMKrdZGCaU7ZHduneXAfg12e1Z1YB7S
+	U8Q6Ewy6bDkgic9+6B37d8MihRYfFJVeHrHrXg46tfbvP/2iMNfbXOyzk+YucL/wLfw810
+	vcB5MLpdkfbOcnB+ecvNrxsNXvQ4M7I=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B6B61779C6;
-	Thu, 23 Jul 2026 05:41:16 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 06352779B5;
+	Thu, 23 Jul 2026 06:14:01 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 9hQtHnypYWoQXQAAD6G6ig
-	(envelope-from <wqu@suse.com>); Thu, 23 Jul 2026 05:41:16 +0000
+	id 888fLimxYWoxfAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 23 Jul 2026 06:14:01 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Christian Borntraeger <borntraeger@linux.ibm.com>
-Subject: [PATCH RFC] btrfs: disable direct IOs to avoid dirty folios without fs knowing
-Date: Thu, 23 Jul 2026 15:10:54 +0930
-Message-ID: <3c7926222aa6e35b7d6efd381550fe93241fd18e.1784785202.git.wqu@suse.com>
+Subject: [PATCH RFC v2] btrfs: disable direct reads to avoid dirty folios without fs knowing
+Date: Thu, 23 Jul 2026 15:43:40 +0930
+Message-ID: <c6dfdac9fc51c94183e51a861eec269185239660.1784787211.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -62,36 +62,29 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
 	FUZZY_RATELIMITED(0.00)[rspamd.com];
 	RCPT_COUNT_TWO(0.00)[2];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,suse.com:dkim];
 	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: B422A3E38
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
+	FROM_EQ_ENVFROM(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_DN_SOME(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
 
 There is a bug report that a reproducer which doing the following
 workloads in two threads:
@@ -131,7 +124,7 @@ single commit to bring it back.
 And without doubt, that old cow fixup mechanism is not support larger
 folios.
 
-As a hot fix, disable btrfs direct IOs for non-experimental builds for
+As a hot fix, disable btrfs direct reads for non-experimental builds for
 now, so this can buy some time before we find out a proper way to address
 this.
 
@@ -139,43 +132,37 @@ Reported-by: Christian Borntraeger <borntraeger@linux.ibm.com>
 Link: https://lore.kernel.org/linux-btrfs/f12f70e5-d84d-4a9f-ac94-693be4c863ac@linux.ibm.com/
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
+Changelog:
+v2:
+- Fallback to buffered IO to avoid failing existing direct IO users
+
+- Allow direct writes
+
 Reason for RFC:
 I'm not 100% sure if disabling direct IOs can fill all the holes.
 
 We still allow mmapping page cache into user spaces, thus I'm not sure
 if this is the only hole.
 ---
- fs/btrfs/file.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ fs/btrfs/direct-io.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 818c53c445f8..d458ab12e7f5 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1420,6 +1420,11 @@ ssize_t btrfs_do_write_iter(struct kiocb *iocb, struct iov_iter *from,
- 	if (encoded && (iocb->ki_flags & IOCB_NOWAIT))
- 		return -EOPNOTSUPP;
+diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
+index ed1779ccb4de..32b29a4faaf2 100644
+--- a/fs/btrfs/direct-io.c
++++ b/fs/btrfs/direct-io.c
+@@ -1093,6 +1093,11 @@ ssize_t btrfs_direct_read(struct kiocb *iocb, struct iov_iter *to)
+ 	if (check_direct_read(inode_to_fs_info(inode), to, iocb->ki_pos))
+ 		return 0;
  
 +#ifndef CONFIG_BTRFS_EXPERIMENTAL
-+	if (iocb->ki_flags & IOCB_DIRECT)
-+		return -EOPNOTSUPP;
++	/* To avoid dirty folios without fs knowing through */
++	return 0;
 +#endif
 +
- 	if (encoded) {
- 		num_written = btrfs_encoded_write(iocb, from, encoded);
- 		num_sync = encoded->len;
-@@ -3798,6 +3803,11 @@ static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
- 	if (btrfs_is_shutdown(inode_to_fs_info(file_inode(iocb->ki_filp))))
- 		return -EIO;
- 
-+#ifndef CONFIG_BTRFS_EXPERIMENTAL
-+	if (iocb->ki_flags & IOCB_DIRECT)
-+		return -EOPNOTSUPP;
-+#endif
-+
- 	if (iocb->ki_flags & IOCB_DIRECT) {
- 		ret = btrfs_direct_read(iocb, to);
- 		if (ret < 0 || !iov_iter_count(to) ||
+ 	btrfs_inode_lock(BTRFS_I(inode), BTRFS_ILOCK_SHARED);
+ again:
+ 	/*
 -- 
 2.54.0
 

@@ -1,60 +1,66 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej1-f47.google.com (mail-ej1-f47.google.com [209.85.218.47])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E7283CBE6D
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2026 06:49:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.156.1
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D4CA470E91
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2026 06:59:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784789368; cv=none; b=gBXgp26Cw8Qw1qETL/xWx+GRhfnM1V4UsgSuwspB4rrLP6q6itmbF/XTKeus9CHhGLIVVAKLiLysamBd32ExRq3iNz49zgMPw8lGnUZNywc7/kKm/GIpupBN0NoFIz/ojpQEUNDJoSD+NI5gCVX75CHlHh2CufIBvLFtZKEHU8E=
+	t=1784789977; cv=none; b=U1Q2FjuWE0ORLCtsKWjjmyfR/tnegZuazwlhFSfSQrARCQ0h9DL0POGlC/GvR1Li7CWXmjW6WZlHFzHNhxZH0LWOlRdNZFxzkY5RxdTX++aUio7ZOiU5bnl7j2m+J0a5ZKa8yIY73sQ9hjV/+hKYIspSMt0y6gGm4zj3mmtp8i0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784789368; c=relaxed/simple;
-	bh=1phmm5YvjLat5nUC6gH0u+Whsw3zqxLqU6OC2D4VKP4=;
+	s=arc-20240116; t=1784789977; c=relaxed/simple;
+	bh=baAvwbcsFghvd5HVpQGRXMbrsRHkj4CSobgk39KkoYA=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=HPwaIL5S+mdhhjSpeDDFJtsJTXPEZ5O4kBEJt7RPeyb5urfakgnD4Z2YWOD4xtNd4YKPH/gmKUk78KWFhDw5diK0C/O3ktcNcz/GbPy/7ahbOWdoqrow6+LXBe7aQScm8/cYclusp0DUyMcPsC5fxF+CJlPr1aLE9tLATVC/sUU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=Kk9eh9kz; arc=none smtp.client-ip=148.163.156.1
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
+	 In-Reply-To:Content-Type; b=kfvcvYQ86841qwcFgAimthMTts42qUKqmrKakoM4H86MqDDUPAedUwc/31tdSto9t95RbFp/AX4bLpYHdBTXyB/wJGC0hc4l5J5mdOnp34Iq+Ne4DVGMAG8/kltk1cUKWIKGpaObP3KwUltre0yA1NnHUHCb3A6Yp100rQVobZ4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Sfvgtqad; arc=none smtp.client-ip=209.85.218.47
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="Kk9eh9kz"
-Received: from pps.filterd (m0353729.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 66N5BYXN191404;
-	Thu, 23 Jul 2026 06:49:21 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=
-	content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pp1; bh=4W8SgK
-	huDbjb2uA7V729opEtZTUkvS51d8iIHLsG7jg=; b=Kk9eh9kzPe3rxRi4ZfchPp
-	K72yoE06ZUbUIdgLvFUW0ptFvozK0GPHYJ74hHy8yw6MQ4Oz/bzbt2majGsP1UtG
-	qwUhDfYRLCddzsZtu90f06KvZuhM7YoxoE6yaygoENuKQpVr79bFzkdQ8/GAnXL8
-	gG/WZKkuo2kbv2Vk0J3IhchgyunSbohUXsWZlQCYbiSpdxS4wRJGWepgbxpg6j7H
-	XetbEmypp2PDHY1jK1ZzkSJureG7FKsG1RMuh9z1trXmlQWlqcUP2XHdPiWGW/Xh
-	0ftYEXTUD46CVwDvw79JrNFR3Ge8C5BxzS+XiQQRVS48Wih0xkFIsrzTiuYaZNgg
-	==
-Received: from ppma21.wdc07v.mail.ibm.com (5b.69.3da9.ip4.static.sl-reverse.com [169.61.105.91])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 4fg77ap5h2-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 23 Jul 2026 06:49:21 +0000 (GMT)
-Received: from pps.filterd (ppma21.wdc07v.mail.ibm.com [127.0.0.1])
-	by ppma21.wdc07v.mail.ibm.com (8.18.1.7/8.18.1.7) with ESMTP id 66N6Yb3q011123;
-	Thu, 23 Jul 2026 06:49:20 GMT
-Received: from smtprelay04.fra02v.mail.ibm.com ([9.218.2.228])
-	by ppma21.wdc07v.mail.ibm.com (PPS) with ESMTPS id 4fgmtk2y1s-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Thu, 23 Jul 2026 06:49:20 +0000 (GMT)
-Received: from smtpav07.fra02v.mail.ibm.com (smtpav07.fra02v.mail.ibm.com [10.20.54.106])
-	by smtprelay04.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 66N6nIpn14745994
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Thu, 23 Jul 2026 06:49:18 GMT
-Received: from smtpav07.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 2D1CF20043;
-	Thu, 23 Jul 2026 06:49:18 +0000 (GMT)
-Received: from smtpav07.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 178D220040;
-	Thu, 23 Jul 2026 06:49:18 +0000 (GMT)
-Received: from [9.224.77.173] (unknown [9.224.77.173])
-	by smtpav07.fra02v.mail.ibm.com (Postfix) with ESMTP;
-	Thu, 23 Jul 2026 06:49:18 +0000 (GMT)
-Message-ID: <9b1d42c4-2c3f-410e-aceb-92400b8bc24f@linux.ibm.com>
-Date: Thu, 23 Jul 2026 08:48:40 +0200
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Sfvgtqad"
+Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-c197eaaab00so58931166b.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 23:59:35 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1784789974; x=1785394774; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=FVp9mBc1fFdFYfFXuYkDZvF3OCEpttNjQA0OBfeXzaU=;
+        b=SfvgtqadlsPOQzLsWco14nOGrOMGc2egsmj4+kNLSdGAKwP56qO2MhcwCEpPbK2dHq
+         M6jaiBwQoMIb1iyGr60DyHkGLhDXiuVag4SrMHRRJ/BM7b/ExFkmyfc2pUAhWVkiBNvo
+         eszgvJZowc0PC32bgzXLb5heGSA+J47h5IyKCOpDCq3CdrLNjhBzWJz7kfdii7fIC7VA
+         rG4wXHAAqrCecJFMuGccG2jLLIBlzF2nwyuq63/8zBLPoxvPtd9PG1HSU9yObY+LDkUE
+         1ZoQWYPxyllesjecP6CJDho6fZ/lwkIkTY/Uuzaj83ahjaQxN2hPGoASWtF7MtXW+CO4
+         egEA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1784789974; x=1785394774;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=FVp9mBc1fFdFYfFXuYkDZvF3OCEpttNjQA0OBfeXzaU=;
+        b=nFNod3vDzSzSOJdIYfX52dm6e2VboT3hBBfDvyaX2ysvg5KMHgmyN/msR44cE5gL9Z
+         aU+biWx2v+N7OBh0/EZUkykNY/RXxiha77MrXdoqOauXXgtWHAA3XjfA+1ePVwVF3Ga3
+         KrzLlacPL6iwAKRofT8AxqmC27Le4CXocvOaeBgQ0QTKdgdxvkzuP/KOvwKU+exw2pLO
+         fQsbr69cnk7vx82XFwuVcNsePxJvjW9sU4O1lmsdghMWBT4239qsByZamhurSHoRXbx5
+         ubXSUEmdRNo/ny93avwAFP9rgNYv39tdBEzQG/in7FAAIaKju4H5nrQCrwsRhyi1DWNp
+         Y6UA==
+X-Forwarded-Encrypted: i=1; AHgh+RpSDGCRVjl2oPruSOup93xSs8jTrtmqaJxMTipy825h3QS8eAJ/EMWqEI508p5GlyW6/84ZSE6uf4ALAA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Ywr8eJwLpGT9c62tISg7cH6Jh9ghW+wmwY1z3vlbJ2CQ8OX5Fsr
+	koehAPscj+kRVVoY9EIVYRHpRnXxyJP23DRsdoPQxLxPDVcd4Q0zEUEeOyNAxRQmRo/X9Vsbjaf
+	4uMI/UhT6Dg==
+X-Gm-Gg: AR+sD113X8/Ox1E6ZDQ+RxIxgEEtMW8HA35HAeiDqswNiMFojNWaZYa+QUIvVIUVgyz
+	/EFSCTQkJilAitRURBVO2tc6Y1wfegUn4F+/KAB8yPDnAK1zZ2Qx3DGykWN2gclAZsypiRr2YwH
+	1zXjqW/QTMcYVhTqmf8wZVXjFJKen1PdzbyHIgHPMNWjHYF4i2wYSS8NJ2C8gcdBo3b8XmIWowu
+	Th8TVph0lA9xxm3RIM2vN49VpzVwnqfIsu7lV7EWTcYwy+kL5E3oWsMhaeFVg2ErVZm6/9agK1n
+	iGGXswoKP4z74Z1BS52JFeDNpD9uRl5WCRfDoVj1935coelmrg7FbZVDSHc6Lrv+XPrUbiKmT6D
+	twf4Oa/IMJNt1oTpcCmX4bQMoGDl+xoxJFA5aBa18/TOXb+YuXGcf/xITwaewlnAoIjuNa04=
+X-Received: by 2002:a17:907:7a8b:b0:c16:12ff:dc8b with SMTP id a640c23a62f3a-c1c50c8cd13mr82622266b.54.1784789973503;
+        Wed, 22 Jul 2026 23:59:33 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2cf8edea703sm27910045ad.0.2026.07.22.23.59.28
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 22 Jul 2026 23:59:31 -0700 (PDT)
+Message-ID: <f49478be-70fc-4cd6-a640-fb008c21c092@suse.com>
+Date: Thu, 23 Jul 2026 16:29:25 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -64,95 +70,134 @@ MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
 Subject: Re: [PATCH RFC v2] btrfs: disable direct reads to avoid dirty folios
  without fs knowing
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+To: Christian Borntraeger <borntraeger@linux.ibm.com>,
+ linux-btrfs@vger.kernel.org
 References: <c6dfdac9fc51c94183e51a861eec269185239660.1784787211.git.wqu@suse.com>
+ <9b1d42c4-2c3f-410e-aceb-92400b8bc24f@linux.ibm.com>
 Content-Language: en-US
-From: Christian Borntraeger <borntraeger@linux.ibm.com>
-In-Reply-To: <c6dfdac9fc51c94183e51a861eec269185239660.1784787211.git.wqu@suse.com>
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <9b1d42c4-2c3f-410e-aceb-92400b8bc24f@linux.ibm.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: IiA6g2MTWtnHHq9jdSigOm0UpTRrgFWz
-X-Proofpoint-Spam-Info: AW1haW4tMjYwNzIzMDA2NiBTYWx0ZWRfX9XuslmJ1Pp9U
- b7PoHE7JYj1k6f1PDg9UNzzs3PP2FCmGqPzNU7uN8IqLAmJ8OSh4X84pUd4ZIeXXgRbeW81BAZw
- b8pn5faJqiuAdWl7nHEQc56YLR36Sj4=
-X-Proofpoint-GUID: IiA6g2MTWtnHHq9jdSigOm0UpTRrgFWz
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwNzIzMDA2NiBTYWx0ZWRfXx4ZBbcBbKxe2
- vzk8F+I16/qlxZkq4whZ4Ebj5EdlWShf33QeGbBZQM6DmfX95YBKq18Nrgj5taKluyGpYA9tooL
- e05n2HPn8qVIXRH4sL3AxcP+POmFNz7wj0vsc2wSxtq8BxmLGBY+jctB+T1SuqNWSn4TUqNQikE
- s45+cyPMQmjv8AZV6jFt8qBcLcyvkxSBuumCYhp5CV+Jcg0K1aJPIdqm9E3pPu34u7o+T3xe6zb
- esw+078GKr/DZlaIW+pr5x2YJ0W8NY0f69wXUiRfB5wwqH8lTnZ/al7pw8HPkhK4Z3z0CoVFEAd
- 2xA1OkZec3+Zxvb681VPc28/PqNRsQ/TgqIF46eBY13Om8CQxr87nR+n0vCaD4fqMxH27eOhwXc
- H7aqJPhYkjfrCXFWRJko/zSNwgeEms1d5OIwC4Z9D6Lgbo4E6a8kRrM5Og19t3fy1T2otQbnfyv
- VVXNIMEoy/QPvSBYYAQ==
-X-Authority-Analysis: v=2.4 cv=K7AS2SWI c=1 sm=1 tr=0 ts=6a61b971 cx=c_pps
- a=GFwsV6G8L6GxiO2Y/PsHdQ==:117 a=GFwsV6G8L6GxiO2Y/PsHdQ==:17
- a=IkcTkHD0fZMA:10 a=RAioF0-LDSMA:10 a=VkNPw1HP01LnGYTKEx00:22
- a=RnoormkPH1_aCDwRdu11:22 a=uAbxVGIbfxUO_5tXvNgY:22 a=VwQbUJbxAAAA:8
- a=VnNF1IyMAAAA:8 a=iox4zFpeAAAA:8 a=sVdqr26G1iB9TVzeq4kA:9 a=QEXdDO2ut3YA:10
- a=WzC6qhA0u3u7Ye7llzcV:22
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1143,Hydra:6.1.134,FMLib:17.12.100.49
- definitions=2026-07-23_02,2026-07-22_02,2025-10-01_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- lowpriorityscore=0 suspectscore=0 bulkscore=0 clxscore=1015
- priorityscore=1501 spamscore=0 phishscore=0 malwarescore=0 adultscore=0
- impostorscore=0 classifier=typeunknown authscore=0 authtc= authcc=
- route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2606150000
- definitions=main-2607230066
-
-Am 23.07.26 um 08:13 schrieb Qu Wenruo:
-> There is a bug report that a reproducer which doing the following
-> workloads in two threads:
-> 
-> - Direct read into memory mapped from page cache
-> - Sync the above range
-> 
-> This can lead to dirty folios without fs knowing, this can be a huge
-> problem for btrfs, as even on the very basic bs == ps cases without
-> large folios, such reproducer can screw up the ordered extent accounting
-> already:
-> 
->   ------------[ cut here ]------------
->   WARNING: fs/btrfs/ordered-data.c:390 at can_finish_ordered_extent.isra.0+0x56/0x1f0 [btrfs], CPU#1: kworker/u42:0/68
->   CPU: 1 UID: 0 PID: 68 Comm: kworker/u42:0 Tainted: G            E       7.2.0-rc4-custom+ #415 PREEMPT(full)  74dbeafab12c410178747d5bec9fb200ae56949f
->   Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 02/02/2022
->   Workqueue: btrfs-endio simple_end_io_work [btrfs]
->   RIP: 0010:can_finish_ordered_extent.isra.0+0x56/0x1f0 [btrfs]
->   Call Trace:
->    <TASK>
->    btrfs_finish_ordered_extent+0x39/0xd0 [btrfs 7d1ffd99bb9696179883f257e5fd838e2d1a0ca3]
->    end_bbio_data_write+0x1ff/0x280 [btrfs 7d1ffd99bb9696179883f257e5fd838e2d1a0ca3]
->    btrfs_bio_end_io+0x76/0xf0 [btrfs 7d1ffd99bb9696179883f257e5fd838e2d1a0ca3]
->    process_one_work+0x198/0x380
->    worker_thread+0x1c8/0x330
->    kthread+0xee/0x120
->    ret_from_fork+0x28f/0x310
->    ret_from_fork_asm+0x11/0x20
->    </TASK>
->   ---[ end trace 0000000000000000 ]---
->   BTRFS critical (device dm-3): bad ordered extent accounting, root=5 ino=257 OE offset=3465216 OE len=2826240 to_dec=319488 left=135168
-> 
-> Unfortunately we have removed cow fixup mechanism, which is to work
-> around such dirty folios by re-dirtying them and reserve space for them,
-> across several kernel releases, meaning we can not easily revert a
-> single commit to bring it back.
-> And without doubt, that old cow fixup mechanism is not support larger
-> folios.
-> 
-> As a hot fix, disable btrfs direct reads for non-experimental builds for
-> now, so this can buy some time before we find out a proper way to address
-> this.
-> 
-> Reported-by: Christian Borntraeger <borntraeger@linux.ibm.com>
-> Link: https://lore.kernel.org/linux-btrfs/f12f70e5-d84d-4a9f-ac94-693be4c863ac@linux.ibm.com/
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Content-Transfer-Encoding: 8bit
 
 
-Wow that is a big hammer. Doesnt that break typical usecases (like databases on a file,
-qemu/kvm aio+direct image files etc)?
 
-Even worse, this does not fix the other GUP use cases that still exist? So its only
-a partial fix. Have you considered to add my RFC patch on top to close another
-problem that I can reproduce easily.
+在 2026/7/23 16:18, Christian Borntraeger 写道:
+> Am 23.07.26 um 08:13 schrieb Qu Wenruo:
+>> There is a bug report that a reproducer which doing the following
+>> workloads in two threads:
+>>
+>> - Direct read into memory mapped from page cache
+>> - Sync the above range
+>>
+>> This can lead to dirty folios without fs knowing, this can be a huge
+>> problem for btrfs, as even on the very basic bs == ps cases without
+>> large folios, such reproducer can screw up the ordered extent accounting
+>> already:
+>>
+>>   ------------[ cut here ]------------
+>>   WARNING: fs/btrfs/ordered-data.c:390 at 
+>> can_finish_ordered_extent.isra.0+0x56/0x1f0 [btrfs], CPU#1: kworker/ 
+>> u42:0/68
+>>   CPU: 1 UID: 0 PID: 68 Comm: kworker/u42:0 Tainted: G            
+>> E       7.2.0-rc4-custom+ #415 PREEMPT(full)  
+>> 74dbeafab12c410178747d5bec9fb200ae56949f
+>>   Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 
+>> 02/02/2022
+>>   Workqueue: btrfs-endio simple_end_io_work [btrfs]
+>>   RIP: 0010:can_finish_ordered_extent.isra.0+0x56/0x1f0 [btrfs]
+>>   Call Trace:
+>>    <TASK>
+>>    btrfs_finish_ordered_extent+0x39/0xd0 [btrfs 
+>> 7d1ffd99bb9696179883f257e5fd838e2d1a0ca3]
+>>    end_bbio_data_write+0x1ff/0x280 [btrfs 
+>> 7d1ffd99bb9696179883f257e5fd838e2d1a0ca3]
+>>    btrfs_bio_end_io+0x76/0xf0 [btrfs 
+>> 7d1ffd99bb9696179883f257e5fd838e2d1a0ca3]
+>>    process_one_work+0x198/0x380
+>>    worker_thread+0x1c8/0x330
+>>    kthread+0xee/0x120
+>>    ret_from_fork+0x28f/0x310
+>>    ret_from_fork_asm+0x11/0x20
+>>    </TASK>
+>>   ---[ end trace 0000000000000000 ]---
+>>   BTRFS critical (device dm-3): bad ordered extent accounting, root=5 
+>> ino=257 OE offset=3465216 OE len=2826240 to_dec=319488 left=135168
+>>
+>> Unfortunately we have removed cow fixup mechanism, which is to work
+>> around such dirty folios by re-dirtying them and reserve space for them,
+>> across several kernel releases, meaning we can not easily revert a
+>> single commit to bring it back.
+>> And without doubt, that old cow fixup mechanism is not support larger
+>> folios.
+>>
+>> As a hot fix, disable btrfs direct reads for non-experimental builds for
+>> now, so this can buy some time before we find out a proper way to address
+>> this.
+>>
+>> Reported-by: Christian Borntraeger <borntraeger@linux.ibm.com>
+>> Link: https://lore.kernel.org/linux-btrfs/f12f70e5-d84d-4a9f- 
+>> ac94-693be4c863ac@linux.ibm.com/
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> 
+> 
+> Wow that is a big hammer. Doesnt that break typical usecases (like 
+> databases on a file,
+> qemu/kvm aio+direct image files etc)?
 
+It falls back to buffered read, which has a good side effect that if the 
+reader is also modifying the buffer, it will not cause a csum mismatch 
+warning.
+
+Although it causes huge performance drop.
+
+> 
+> Even worse, this does not fix the other GUP use cases that still exist? 
+> So its only
+> a partial fix. Have you considered to add my RFC patch on top to close 
+> another
+> problem that I can reproduce easily.
+
+Because that doesn't fix the problem at all.
+It's just masking a corner error.
+
+With or without your RFC, on x86_64 with large folios disable 
+intentionally, it still triggers the OE accounting problem mentioned in 
+the commit message.
+
+I believe if you switch an older kernel, or disable large folios 
+manually (reverting commit 9bce95edb1b4d2802de9273b5170bfcff3090d24), 
+then you should hit the same warning on s390x, and also fail the 
+reproducer (error out, not hang though).
+
+
+Again, dirty folios without fs knowing is the root cause, your RFC is 
+only avoiding one symptom, all the other problems are still not 
+addressed, and those problems are not any less serious than the hang.
+
+Thanks,
+Qu

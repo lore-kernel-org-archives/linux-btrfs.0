@@ -1,256 +1,245 @@
-Received: from fhigh-b1-smtp.messagingengine.com (fhigh-b1-smtp.messagingengine.com [202.12.124.152])
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E80761FBEA6
-	for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2026 19:01:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.152
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E294E27FB1F;
+	Thu, 23 Jul 2026 00:42:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.22
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784746953; cv=none; b=lQe2HfLD/s6BDBaKhJr5+eYfPCFYbh80R22+mYFq8tdQx+Ye3hpBlnKI+VeVZJOqcMsPODnPYf2omJH4fcofO9yNYUulvUgDSxb0yIuQZDY9iA7DVkLajJ6D/H6nbIJZONUrBDm62LoakMyPLqXDUjtseDcftAw2+4+fzLjMLQw=
+	t=1784767364; cv=none; b=KAn8SUm/hRYNUiQ8UvORnErwf7SWMdQ6tRQ8VnBOM/iRgWfDOxDfsPm3FKhXZ1as1AjQMk2KIDj3nOhJ78y0cWzoOFufCL54FpvRLTzY2JwfYrcrxoo4ZYTpK42r7FVXmnHgDPqOVWGywJBjJ+EZOZcZLhEWZvi+x8szgrTgtQA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784746953; c=relaxed/simple;
-	bh=gMopYG/OSdzIoLaMECT7b8vCEeRfaYt507I+a7HDflA=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Z5pgwhXfkZXpqaLOyVo+am7fIo8pUUWELn20p6d2KP8Y3Elo1dwA3V2O9oIrvw3GBauSr0+C9FoSXB5IqfFtaKGHXXpXBxGbA/LfpFVW3CFkoF+n97rqUsr2uDXb32fvTt2UoyOwalaziyZoBtOEdkNClgq5v0tibEhK1O6sTJU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=oGx91o08; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=UN5TowG0; arc=none smtp.client-ip=202.12.124.152
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1784767364; c=relaxed/simple;
+	bh=0X8IrlXTZBi6eGo0i4zFUtCBKcAanmmJ2YCT+Pwq12k=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=QygGMg9I1E1nQ9JIIfSn9crWZfTlY1ch/KSxsnAD3gvrhJup5wGHgWxeSbXmjSMQz9DOcMmO23NVbLE+4516XsLmsZmuXaw4+bO/vUJA49aXyaAWyNegPdP8LoCgcSOmjiEPgzbISANCkzB7pP70JctdWhvjhpFzZL4xJtjzAeY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=OMFZh65i; arc=none smtp.client-ip=212.227.17.22
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="oGx91o08";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="UN5TowG0"
-Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id D8F9C7A00EC;
-	Wed, 22 Jul 2026 15:01:48 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-01.internal (MEProxy); Wed, 22 Jul 2026 15:01:49 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1784746908; x=1784833308; bh=1Wie/lDfl7
-	0MfZg33tPrpskVaOfCeTL554/Raz67qiw=; b=oGx91o08XpoLplOsMOVGnOLEXj
-	tBm7w25cts6Wj9e4d9S+yj7F2oNZ5pXGJQkS6JQJgXJfsKnIVdMfPb7BdTp+XlRR
-	DvqLSusgR7iSD8DoRfElNmK/FF5zXwR/CZl66pFQCvOkJTo0WDg4CEKDZinQp/CH
-	2YBobLBrlI2UiJLJimzJMZw45wlpWIvLuTyJESFrO6nzzfoMc9tnPK+BuzkLgxBa
-	F4kHKHW5Sj2oE/UuHZxUUFS3C5vC94JsrxRTbmtzDGtxPPFBdHGp+STaJnBJ6PYJ
-	WBnECdBFpyjfpY65WxgAA+E3HOnqKYSO3L6gAzxGWj7cp4AJFn5XMI4HGJAw==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1784746908; x=1784833308; bh=1Wie/lDfl70MfZg33tPrpskVaOfCeTL554/
-	Raz67qiw=; b=UN5TowG0yl0rxyESPngbrmUqlhvGHEeZg/gLmYVa1YTjfvPL2C2
-	8Yj5zBA0gIWPMMOJGFkthgc9F4EI22oi7MYBtT0WJBpI6jXF45ir+xKVGCDkgM0Y
-	E3LXnkf6DkubDkTCsMBjUJZBpZbKm3w9R8HZtKlf7M+YI7caWX3awQiRYvX6hXWK
-	btfDgMA4ZN8p7Iljft6HxHc7lHb9gibCNgZDn0HOSVk1372hO3GLECqjVv2nGsdz
-	eCgbLsdp0Yy/o41Li0vw+sJ3a3of9NxWyp0BN6DKt970u9KXbAndePQlO4RsA4Hc
-	v5j58bP9lQEqcSysNhk8Z4JfNfAaacFGXQA==
-X-ME-Sender: <xms:nBNhapCiJz7En2pPqO3ojNJpw7jk7vBSqT2D7oge46njSdpGbR28Tg>
-    <xme:nBNhauZ92uoj0_C6NwbW2ulV_URTwFkcRafGOwUAeLkd2orOJPUIsxrD5kXmVfDdd
-    7pEQ9DkdVfq38V9WT30LsMdisxfODPSJxuTNj1Pz279CB5jj3g8rQ0>
-X-ME-Received: <xmr:nBNhas7RPnOKwfhkzLj4cQH3IKBtRRGt45SGDTtFWf4PzoFrO2iMSTlpQhQIWIB_BSNGilDburN-7_qp80u-yVtLri0>
-X-ME-Proxy-Cause: dmFkZTErB0mXE1ys7uVSIbwZTE0VEWhN36dGtzT1z9+bTK7EuxVs4PPyiBDEXnTtlXXhBc
-    QWxfnx3L+cTrfiW1Y6CmMOdVuo5N+jxVufJBFtNSahNcyHw0YU1+qVrJasPXIZt3gGoWSM
-    WXx3kOLI+QYZeL9oePU9eSMiMyrmMced23vu9FjG0Zhkd8RmsZOdelwpXACL3LqdE/tq9/
-    pY/z2We4U/cuFBnY/BgLxIa9ASpy6Y7PbMqR5k8ylxZShBUHjKHEu+Ohlb+GPFk2StTvXS
-    ZPLPJlOHEcT0HphijiPuukKQe9YARRimNyBTEsR4PhEmJUXEa0v2S0l8YIkpFfP5AufNPH
-    EH26npntqVGTceGu4vE1CUGUuo5O1a5b8doRuPWesCIM7itWWgc6UQUSlLNL9qy4OtBsml
-    z4hIYk0ANeCLdUcbP55RoE18A3nby0PWeQWS9YrFYLgnhOnYiyeqEpJ+Ti/5VWUacd4jD4
-    /intaQV6gC+PAaaCS3WDiMBTxF4DUjQDwNBv8fITBBhBH392hmsT54dM3fcQBdAaI48Jy8
-    YOP/Q1Vk7GwRqezDldQLMuj1yDtqB5N/8kV+RZYyZ8i1c09OTJyO6DIDR/MWrr3kgLvJAA
-    EoUAexu2tD5bQHwwA7R/8kRKHdIoHfaPm3OkvWCaOrKe9Lo+tHHN7E3k8UPg
-X-ME-Proxy: <xmx:nBNhavaSxxXkNswnYnICCjtWJQ4s5WNSOpIy3BOxwJHQ7mkJZusOxQ>
-    <xmx:nBNharhT4JdyEvjxBsa4mmnPOvP3UNvZ4hw0bEcRPJG6kBRk5jEmrQ>
-    <xmx:nBNhag9PV_dhPDN-xFzEqHWhodD8y0eYoen3GVivSkZi0OzI93Xyhg>
-    <xmx:nBNhamprQftRC2D2n3cgfl-3phL9bYJ1hdtITJH0zCjUeZ4yk40Zbw>
-    <xmx:nBNhahel5jKQWPbjCnuu-MtEjb-mOarPqaO0ukO4Ouszk5bQeAKcjNju>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 22 Jul 2026 15:01:48 -0400 (EDT)
-Date: Wed, 22 Jul 2026 12:01:38 -0700
-From: Boris Burkov <boris@bur.io>
-To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc: linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>,
-	Qu Wenruo <wqu@suse.com>, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH 1/4] btrfs: zoned: flush active metadata block group at
- btree_writepages() start
-Message-ID: <20260722190138.GA107842@zen.localdomain>
-References: <20260722113016.1896990-1-johannes.thumshirn@wdc.com>
- <20260722113016.1896990-2-johannes.thumshirn@wdc.com>
- <20260722170835.GB26033@zen.localdomain>
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="OMFZh65i"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1784767356; x=1785372156; i=quwenruo.btrfs@gmx.com;
+	bh=72rD37V4RsYtifWkhcvHdKCeXRydgQkWFU7HsaPnWjQ=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=OMFZh65inZssy3Hx1YaD4ut7t9/gOoIxUhZgAd7+R28JcZlfjiTl5iMYd3+b5fbO
+	 vZmVaZVLlQ63aTQ7lnDsICwE+TslMDFrod1wip4xWoJG3DactWBt9214EoW5vBCZy
+	 HMACVR53MD7sCENhSUFYACUlbfwf0irt0TZeL9+dzPP9KZA6WB9+EgwaxjAlDBCrk
+	 C7qIBvzg5AaUeahQZ+RdLlXE11ZseLkfkukewwz3zVsQwZu9Tdo8V6cTa+PcyWWD7
+	 j0K49zbYd4WpkOmXepXoU4i6ISseQBBlqDsTUXtrsnfXTK5blmhlla0pBO2mwabPu
+	 dczlDUyLyfN7uKciLw==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MTRMi-1wPVn51qF2-00QU0L; Thu, 23
+ Jul 2026 02:42:36 +0200
+Message-ID: <ad6eebbd-07f8-41ce-b04c-edd50d91a6e3@gmx.com>
+Date: Thu, 23 Jul 2026 10:12:27 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260722170835.GB26033@zen.localdomain>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH/RFC] btrfs: fix folio lock leak in writepage_delalloc()
+ for folios dirtied behind btrfs' back
+To: Matthew Wilcox <willy@infradead.org>,
+ Christian Borntraeger <borntraeger@linux.ibm.com>
+Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
+ Linux Memory Management List <linux-mm@kvack.org>,
+ "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+ David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+ Josef Bacik <josef@toxicpanda.com>, linux-kernel@vger.kernel.org,
+ kvm@vger.kernel.org, linux-s390@vger.kernel.org
+References: <20260721191152.101118-1-borntraeger@linux.ibm.com>
+ <20260721191152.101118-2-borntraeger@linux.ibm.com>
+ <b226a6e9-fef2-49bd-b17e-9f9b015626c1@gmx.com>
+ <83290932-cb8b-4741-bff0-6a7d8df2c637@linux.ibm.com>
+ <224d56d2-fcad-41bf-afe3-6f5f5108172a@gmx.com>
+ <f12f70e5-d84d-4a9f-ac94-693be4c863ac@linux.ibm.com>
+ <amC-J7yzwk4Z5tHW@casper.infradead.org>
+Content-Language: en-US
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <amC-J7yzwk4Z5tHW@casper.infradead.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:+MEPxw/Y1t5b82ICW+5xecgHp44NMWCYm9Zbs65/tr5kGBev5Kg
+ pxui9HwSy3xzbFU8Rge/Eb/VbVj5V3gWbjtn5G2O2yce0WGRIj8xV7atsB9EsLqpKJripMU
+ hY7KyioLTP/E1r1Ggr85kotDxr7w52h6RhAnLaYK6P/YtFBdbNMhxiSezwSFubN2ZUOKI6Y
+ yw/QxGcJra/1956LbovaA==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:HjO7+iri6Bk=;mCqRS1TkiIZII7I5qK1q6kM244g
+ hpxxRtsdxbcSJDyZ5Xz6tmAXDDspKBNOWi5k3twBRIcSo+yP/uYzW/cNHJ5cSMVAOg8Ef+th1
+ EGnjNF2zUKnhci0KzROwZ9h6fgQhO1k0+2pLgydeHhbnETIGEDcyQIhDORMOMWzfQNMQqrrv3
+ rz9IlJULu5MvWQHP4vUuPLsAOrR6Tj66GSjpqDkHsy+aeSgnL4QCbZbCXmGVuye3UcLm6gdVE
+ ofQ/R1O2a85JWoiToiwc3GOG1xRgK2lOdGHqicKIgy5B0eyNKwDjwHxObyYcVleHJbInE4CMp
+ UsJ7Qz90xKHoEc/AFUHWygTo0l0pGhQK+MUSH7EyXLdOF/jdwEbRMlN3/TlGyREsNhsojTZ3/
+ CppbDLB91DoXVT64mBPPn2yrZl5+JpOFNGgv6kUKAASiZ8BZVIN2I/0RbJ6vNghsztgh9FHPx
+ /f/QzZEKazPwsZtfdCcafgPriQtpy/UngfkrXyirbIlNaCD1qmCKO4QysWEzJ9xmovr6AG6Sl
+ tsItQthI7moyphe4f8vHj4rK29gqzcDxULqoqHvnqXhZUsSB+RUNU+D/ZjDC5opii52Ain7Ol
+ gqpxcEibnl+GBJz7ny4iS+XaupGPGeu/xu4P9F8HV0lg7iKKTMg9NlTKOoKS8IW0DLfibOZx2
+ G91XNOppofmeKR98s8GRW36pN6+deQ+s0d1kBXe3V5Gj9Z1mi7StghhSQ3KI6pnOQhWF84KIz
+ 55wvprwCtR3EJsc+19AWyIEOu0FcMPlfhlgM6qx2KmLJym8+loztF/ysGzlKqspXBd/3M+Rtp
+ yZMK37YIT8sk1YDGApH+w800iXdHhGR9IFAcjBR+tnKIwQ/Z57AThI24r11TaYmTcj4+HXhpP
+ xEqne2W5DQCZ/L2P3pdhGVUVIgN8CWeMp3t/fdR88hTjWmnAjkyHv8siSV9ailO2AkD0JSsSW
+ 0wXZqGZ48nwcPsC4UxJBb1AR28gtVVPVrgs34xGUmJzJa92DQa72qRhGyUKyfMEfbCMHISQjm
+ LC3p6cBh0sMjQhVoYAXJDWcKsUn1BiIelWz+/vjyxyUO9Lh+CD+lxNDOGm7GnxTqddvxYngOy
+ v82HojmNB9XBFbq81SZ8gEBcP+6KMN2TBgbRlfzl6Jop/xckFZ9GPQFM1jerCL9TxWwwHoair
+ SIclIgzhtAzKviChI3lZR04j5W6r+PzsDbjjVtyPrfpdLpnKid2zE8BOlD49FdiFn9+/FT/jb
+ EUdKqFScYzbhLvEwMHG3isfbNOKZUV5M7SCH4EhpLFmcV8/VwPrGfkIxqNeaybBWZer9NedYM
+ zcA3XAF9JgfpMklodp9bNXKlARRk4xu78Xw7ISmTNlj5kbiX6Kbgn6aTL8bOr/KzrTh0fviwI
+ IoqWpE02TR7QDrIWzS2UJN4XpoDN+uT+po+/AmaCxhQjN1A3WT3CahFSnp3ohErtF0HMoKA0V
+ 4LMo5vO7n4BVrY6AhODlT0WRE/efVYCb0b5Uot31F66df2axQvCOXSsYuYP2iO6kgJpE9xnQB
+ M5Os0v9NboSaR9fjqHOWwMyo9ds2ut0oMLEBr0p/ei9hzvjuzXMuu6Up4W0eQZv5AISHR38FZ
+ 8nSY/aCT2NoTcy+LTI02EQyak6p2rqrx0Cr/vjr8ehjzVNArwVsFf7AXbsAqZPlBufHKEj+2Z
+ vpz9LYUWtnniqhugVWqy1BZqB/xzcE4Sjo3m3qUcBjGDHRKXk4JkeUVfLS2UWLVCLOaHzlP22
+ x7Pv6IlCE0lK8sVtPNnCSqMz61kwJ3uriN+t2atyZ5f5Vhmk9CREkAKEVeSdCHOv0TlrOc69X
+ Octa7VWC3nMfQnqzLxh7McmVN4aoaDdYqJaV0j5iLwq3rNRqT0PESfrxEKUbQz2ydYq4VULcQ
+ 9hBBu51FX1eOiMhKAJcXZ93aQG4ytG6OxjOI/qLNoKxSR49WVrETvm4XsH1v/hiS2rYCTL3J7
+ pG/3Ncy9egGgZ7RLIrmNHdpom6jzneBUNegkLzYswmR4cDUUB4lWkFThdWY4p1uhDrvjLMXpx
+ IM9kQr1Wes6kPhWIBwEsNgnTJYSUYFKWx/FT4c/CR+m/zX7MpDjmCmGBAg/wfpIver34XScBK
+ lxnudE8Rl4HLvgaU671k6rXvso2vBeWxjD37e0pjqCn/MrA4pllmPHTcjcPIzI2d6NiywvQi8
+ YQS92rloYB+GlPrVE84HiX2xGQNsX01yz+NigNBfrSbcfbBzI+fnQ5Qj5rhm4l7ESQNdaEAZ2
+ yVT7apC9gtg6kvQ97pXL04WE2YIY9pvBFwZEDdPCVoCzJN+po4sqIc1UeyIj5HjBHFQ4VFTOJ
+ yfoXl+jLE5WK4ywUNQlbZIa83tjx1C3Jhqmvhoi7FFe5InbkCsNJT8RouWsni0xxsM4SjaYKH
+ ZW8RkhbO695kxNbIRaIQ44JHl8EMU7cbkN4WAcSE8NMtbOJASvVcRsURU8VI4zUJyOWgOlO9j
+ 9bTXFVmepmUQT2uQ/O51qR/LZ2EYVtxElZye/eP53p7Qo8kdrF5r8CSerbGc4hFJoKSRp4B2X
+ Nl2BH97A+n8ggXzD7UT2GPL5Z5xTSWavYjqDboQQwtNZ79oh82zFFJel+1tNyQ9HMOh1biqqL
+ bLHTvnZcxwuzPWpw7H/BhwBacrmzz7rSziv52Oa7a4g1TuVnk9OgpHUzrTZg2tE6TcnoDJR7l
+ x2QbgwBeo5vgtquZ3oT51NfEpOVa0VCHrS3UQhaXwVSwqv0MTcCZsAlEvT8CXUvM41tNZZRxH
+ ESyIKq64xDEguQ7s/rP/GJxCkoYwQCUpcWzp3ZYZBHgVl8unJY6MlOT77KlxTgRhc4UBiT11e
+ I2Ejg9xiUZK+xGnHnlRbQ0HVvNVabKoDJatoqR4w2SLF52GyGyy9wHHMnj3+CwMn7JOTa8en5
+ RcxK4oVXdJpfwpzx9YbSTKKW5oIL1kp0/tXZtt6POVLN4Xs7MMVxLoF9RDOtGkBOvljtGmjLO
+ KezHCvav42QsWKPVJhKdwq8sMoY9xvxaBnvlsYqENbFy+tsAD1PkTlI79Jpm3OuiAhRdF+to7
+ Xgw8ssRKK+gYzrzUs3b6aJIxvkKYluemky9ZI4an6AtG5kG9gb5NgOLHG9FxjOaengI7/Dz2C
+ y4FwcyJsFbky/ToFOhLe67tx5rufR9dhSzNLpotLoz+Tu6ZYps+ezWcPah5pUyt3UiBm7+wae
+ H6uNyt1YkbWge4JusEwlm2YPhAjoOnDmZyYnlfJnF1nu3dlA7n4Ltpvd/hNYXSSFCRg02uOn3
+ a4bcZgDQ61VfmQZm2GQzbhUEwQ8QC+EeZr6QMjmKyGbQGo1ruaWPbSW99+5j3MLLOOtdPmOjv
+ 0s8FzUB6HW8+qle1LmJmQX7xNYewjQuzCks5l+v829S9ZKJdulXN6Dk40TB1ZC+sUaY7pm+Ej
+ ItVt2IGtC6vwu5409VVHTl8b8CZV9Tajtf0LkNvyLm2ytJHWKaxfBOxsC5krSZ0/j/9/VUJhe
+ NeXQo37CNBSJxzsBB/4wpmJz7Zog2ogjMm+xiVXqmSvHWnJkQopC4I9V7p7QTl4Tnq78ov2P0
+ 8ABn97l0hPrR4UeYakLaCr7G3j+a8d+1BF8p9/LDkvc88niNJScNthtrOh5OBesz6inLGfp/F
+ 15bCYxvt+y/Lg6letm9YDgoN0npjXpXPLBlhTu6jOPAe1HgVlb2rc0N/1Xc2p1a6MT7RLon30
+ CRzZ3ABhWTX+eXiC6K4Izlu1120eY73dDPFsR9ZDkSdGukr1Svs6lm/Xv9/azANA+qPiiDFne
+ 3lAVlJR7hj7HFuxnw7NN8w208hJzkjC3T/0Y9qtlGsX4yz6i448kEv1TqWK+hmmSO1+N2E5L1
+ yUnpK9fHOT3buIYnqNRG4b+mBFlw1x/xBU5XGFcTDbYOfm+c6lmb3HzuIYkZRy3ki5H8LIa7r
+ S3vOKXNXcT1AC9umyHXXsMcjrQZ1ZFMT6iyvMQ1TTk+3ulIugcvSzeFZ84tjgcQHgVHkvm7X2
+ pwGUg54A1xf3qjd+SAoP9PN8iG0ZGJQXUv8pOYeZOB0Kba9mWiK4qrr2sisFtLVRgOtwMLRr5
+ kSFNe/c0rY4BMl0uLJZjRcnA5KG/63yblN9SwT/q83ErjU0E/wJSuIfBo661HCXF+bShwjA2m
+ OMojUpbPyowuvaN49CwTMatL5YBEoOoYaXYMAcQeNqV1xWJM/pIxz3ajQGg8ZJnTQ2RY/s3Z9
+ regeojvrvAkeH/O2p7UwjSgcokTNLD5rK0Xq0gylAcku/3NRyRRnoJrOn8rNcH7J3UKRjEdyx
+ GDzX1px8lP69+efYe5WQL/8NwJti/PVKvOX1bXQPxQLlrTb2FPLWgomp9hhHQ0uENRGQqXKmu
+ 2Mnxz66UoPFT2+5KepO3Xm0sJqXrDoKcOEasAUTNSsFs6h2LfgyTlhV64UNBjHNuibwpJ1Tv5
+ IW1T6w2pxGKtg8AxJgn6ZE/s1y9vs/oIgkc11+KoKElgwcn9Ki1RH3eLyOz3fbf7tPvMOyMc0
+ xI/g1VqOdWDx0MvOLvlPRpbDRi2xAkuzdSn84QkxJPKQFpq5mkWnTUBCUyxFnv1W+KQxhq/hT
+ 7RDD2zTlUANutnC3oQq9TrSi5EzLrcfLopVjZnUOdEoylOEMcSDDKFNB0g4enhpvXHYmRBm0O
+ UgP4YSZQRKB1oHU9dVBzCJP4p61VTHRan+irzSXvKJXxr6s5Btaulh2vYyZH2CThpOfL9vveo
+ g/y3EYG7MeOZYiupJxY9AwHykjBRpQta5UnbMhTJ10UdlrgogM4nF3I0Fl78JkcGCgIvSr6FV
+ jGSAybZ1YrGFzc75+fQlFi28QseLP5aMSwG9jAzg5l5XNGlCVrxymFmykOIccycb6ZOOzh5O3
+ JuNaQ6WOdzoPNBAxr/BiNXv7g7EQntTNEzgT5+oFWe8FdhdQ/wuxSCvyX501l5+gC+xO5H823
+ rIHKTrVy4A1ut0S2NoeiEim3tUio6SFPNOmvuzWZ+wX2yt5gR+1rZQkzb4sbduzu6q38HPF6c
+ Lw1LXNkG/yu/w3rWcWzouKbGGobtM7ZGL6iBWjAAywA+Tu8PKv8oHl/7oS2WC/vDP9+a+ty8A
+ NMQLMCrEltNbhsoXpg9yIy66FB7BuzaalHvgzG9qHncfDdtbU6RuGAllWCOwTOaBq+1bCyTH/
+ i0v1cVQvQ7HXD1SMLw6iqGBrmP9CS/XcUTD3MSLquNXYZ28jyuNTnXGTLIuTdykDSJ1uD5TwM
+ cW682dhtcwS/13PGHoqjRwv3GObI8jpiYwvtVKPbOi4pV+z1ZL7S7k58nC5a6ZJG+xd3VHtvm
+ B0uxez2VxZrw2BWhIQKko5tQ+nPCfyDfBWqMbyt7JR4CDJ7VbF1P2Le9/rAcqV2ziekaEKent
+ mWY25B82clOQ6iDF/fYP5OKIwLQaQbnsJnQsU2u0vt6HQ9qx/Wrqed09lG55LsCU+8SnlvBAe
+ jsbmtdFs/q1upuquY04B0xBSdncpPBulyjoqWFk4XpTnoZXneUZElOnvzGZTHJQaJ/h4IKuyO
+ LwjLa6a48cymnb+16aPpD36ebfLTyrHmapULASjlu09jYCUZOkuHCYfsD08EBglbpjKwXMKoO
+ f4CzzRRnbgEax/1Unw4DAO8YY7DPoNAF04GGtAFmDsX6VPEvpgv0nAlWtH2/2u6kofoMMrw0b
+ 3qDGTKIX2HduD6/QZdNXwvOMMQutEbJxC+OeAoy
 
-On Wed, Jul 22, 2026 at 10:08:35AM -0700, Boris Burkov wrote:
-> On Wed, Jul 22, 2026 at 01:30:13PM +0200, Johannes Thumshirn wrote:
-> > On a zoned filesystem btree_writepages() writes metadata in ascending
-> 
-> wording nit: isn't this true on non-zoned too? Maybe something like:
-> btree_writepages() writes metadata in ascending logical order. On a
-> zoned filsystem, which keeps a single .... <something terrible happens>
-> 
-> > logical address order and keeps a single active metadata/system block group,
-> > pivoting it via btrfs_check_meta_write_pointer() -> check_bg_is_active() as
-> > writeback moves between block groups.
-> > 
-> > If the active block group is at a higher address than another block group
-> > that also has dirty metadata, the walk reaches the lower one first and the
-> > pivot must finish the active block group. It cannot finish one that still has
-> > unsent IO, and refuses to wait for it during WB_SYNC_ALL commit writeback, so
-> 
-> Can you add some more detail on why it refuses? Or why the pivot can't
-> be the one to do these submissions? I think that would help fully
-> motivate this change.
-> 
-> > btrfs_check_meta_write_pointer() returns -EAGAIN and the transaction is
-> > aborted, forcing the filesystem read-only. This happens intermittently under
-> > metadata-heavy relocation (e.g. fstests btrfs/187).
-> > 
-> > Flush the active metadata and system block groups at the start of
-> > btree_writepages(), under the fs_info->zoned_meta_io_lock it already holds, so
-> > they have no unsent IO and the later pivot can finish them.
-> > 
-> > Fixes: 13bb483d32ab ("btrfs: zoned: activate metadata block group on write time")
-> > Assisted-by: LLM (debugging, commit message)
-> > Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> > ---
-> >  fs/btrfs/extent_io.c | 62 ++++++++++++++++++++++++++++++++++++++++++++
-> >  1 file changed, 62 insertions(+)
-> > 
-> > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> > index 97bd18d515af..bac3edabe7c9 100644
-> > --- a/fs/btrfs/extent_io.c
-> > +++ b/fs/btrfs/extent_io.c
-> > @@ -2383,6 +2383,52 @@ void btrfs_btree_wait_writeback_range(struct btrfs_fs_info *fs_info, u64 start,
-> >  	}
-> >  }
-> >  
-> > +/* Write out the dirty metadata extent buffers of a single block group. */
-> 
-> This comment is quite generic, and not zoned specific, but the function
-> name is much more zoned focused (and we assert zoned)
-> 
-> I am also not a huge fan of this code mostly duplicating the loop in
-> btree_writepages while just leaving that spot open coded. Is that an
-> intentional decision because of important distinctions between the two?
-> Is there a variant we could lift to "write a range" and make
-> flush_active_meta_bg() and btree_writepages share it? (like the while
-> loop basically? or maybe the per-eb bit?)
-> 
-> note the missing call to btrfs_schedule_zone_finish_bg() I noted inline
-> as a concrete reason it's helpful to not duplicate.
-> 
-> > +static void flush_active_meta_bg(struct address_space *mapping,
-> > +				 struct writeback_control *wbc,
-> > +				 struct btrfs_eb_write_context *ctx,
-> > +				 struct btrfs_block_group *bg)
-> > +{
-> > +	struct btrfs_fs_info *fs_info = inode_to_fs_info(mapping->host);
-> > +	unsigned long index = bg->start >> fs_info->nodesize_bits;
-> > +	unsigned long end = (btrfs_block_group_end(bg) - 1) >> fs_info->nodesize_bits;
-> > +	struct eb_batch batch;
-> > +	unsigned int nr_ebs;
-> > +
-> > +	ASSERT(btrfs_is_zoned(fs_info));
-> > +	lockdep_assert_held(&fs_info->zoned_meta_io_lock);
-> > +
-> > +	eb_batch_init(&batch);
-> > +	while (index <= end &&
-> > +	       (nr_ebs = buffer_tree_get_ebs_tag(fs_info, &index, end,
-> > +						 PAGECACHE_TAG_DIRTY, &batch))) {
-> > +		struct extent_buffer *eb;
-> > +
-> > +		while ((eb = eb_batch_next(&batch)) != NULL) {
-> > +			ctx->eb = eb;
-> > +
-> > +			/*
-> > +			 * Best effort: if the eb is not writable at the write
-> > +			 * pointer (e.g. a hole), stop flushing this bg and let
-> > +			 * the main walk deal with it.
-> > +			 */
-> > +			if (btrfs_check_meta_write_pointer(eb->fs_info, ctx)) {
-> > +				eb_batch_release(&batch);
-> > +				return;
-> > +			}
-> > +
-> > +			if (!lock_extent_buffer_for_io(eb, wbc))
-> > +				continue;
-> > +
-> > +			if (ctx->zoned_bg)
-> 
-> the btree_writepages code also calls btrfs_schedule_zone_finish_bg()
-> here, is that intentionally omitted?
-> 
-> > +				ctx->zoned_bg->meta_write_pointer += eb->len;
-> > +			write_one_eb(eb, wbc);
-> > +		}
-> > +		eb_batch_release(&batch);
-> > +		cond_resched();
-> > +	}
-> > +}
-> > +
-> >  int btree_writepages(struct address_space *mapping, struct writeback_control *wbc)
-> >  {
-> >  	struct btrfs_eb_write_context ctx = { .wbc = wbc };
-> > @@ -2418,6 +2464,22 @@ int btree_writepages(struct address_space *mapping, struct writeback_control *wb
-> >  	else
-> >  		tag = PAGECACHE_TAG_DIRTY;
-> >  	btrfs_zoned_meta_io_lock(fs_info);
-> > +
-> > +	/*
-> > +	 * On a zoned filesystem, flush the currently active metadata/system
-> > +	 * block group(s) first, under this same lock, so the ascending-address
-> > +	 * walk below can pivot the active block group instead of aborting the
-> > +	 * commit with -EAGAIN.
-> > +	 */
-> > +	if (btrfs_is_zoned(fs_info) && wbc->sync_mode == WB_SYNC_ALL &&
-> > +	    !wbc->for_sync) {
-> > +		if (fs_info->active_meta_bg)
-> > +			flush_active_meta_bg(mapping, wbc, &ctx,
-> > +					     fs_info->active_meta_bg);
-> > +		if (fs_info->active_system_bg)
-> > +			flush_active_meta_bg(mapping, wbc, &ctx,
-> > +					     fs_info->active_system_bg);
-> > +	}
-> 
-> I think this placement makes sense, but I also wouldn't mind just having
-> a more generic "eb ordering" concept that zoned could use to plug the
-> active ebs to the front of the list then fallback to the normal order,
-> or something. Not a deal breaker for me, just food for thought.
-> 
 
-Furthermore, I feel like this is actually quite redundant with the whole
-EBUSY pivot logic.
 
-So for random reclaim writeback, we walk the ebs in index order and skip
-any not in the active bg if the active bg has dirty ebs. Then we reach
-the active bg and flush it, submitting everything. Subsequent tries to
-writeback the non-active will now wait on that submitted IO and
-ultimately win and get to become active, and do more submission.
+=E5=9C=A8 2026/7/22 22:27, Matthew Wilcox =E5=86=99=E9=81=93:
+> On Wed, Jul 22, 2026 at 11:29:36AM +0200, Christian Borntraeger wrote:
+>>   *   4. Thread B loops sync_file_range(WRITE|WAIT) on the target file.
+>>   *      Whenever a full clean cycle (clear_page_dirty_for_io(),
+>>   *      writeback, bits cleared) completes inside thread A's
+>>   *      submission->completion window, the completion-time
+>>   *      set_page_dirty_lock() hits a *clean* folio: filemap_dirty_foli=
+o()
+>>   *      sets only the folio flag and the xarray tag - no btrfs subpage
+>>   *      dirty bit, no delalloc reservation.  See the 20-year-old comme=
+nt
+>>   *      above bio_set_pages_dirty() in block/bio.c describing exactly
+>>   *      this ("other code (eg, flusher threads) could clean the pages"=
+).
+>=20
+> There's your problem.  filemap_dirty_folio() documents that btrfs is
+> doing it wrongly:
+>=20
+>   * Filesystems which do not use buffer heads should call this function
+>   * from their dirty_folio address space operation.  It ignores the
+>   * contents of folio_get_private(), so if the filesystem marks individu=
+al
+>   * blocks as dirty, the filesystem should handle that itself.
+>=20
+> fs/btrfs/inode.c:       .dirty_folio    =3D filemap_dirty_folio,
+>=20
+> so btrfs should have its own btrfs_dirty_folio() which does whatever
+> metadata updates it needs to and then call filemap_dirty_folio() to
+> take care of the page cache business.  See iomap_dirty_folio() as
+> an example, but many other filesystems also do this.
 
-But we could save the bother and make things more direct and simple if
-we just had btree_writepages() always write out the active bg first then
-the rest. I don't know if we could fully delete the EBUSY, though, maybe
-there is some racy case where it would still happen a bit, even if
-mostly it didn't?
+Thanks a lot for the advice.
 
-> I think fewer "tricks" for zoned writeback and more "it falls out
-> correctly from a generic form" would make it easier to maintain in the
-> long run. Obviously there are real, important differences so this kind
-> of thing is never free...
-> 
-> Thanks,
-> Boris
-> 
-> >  retry:
-> >  	if (wbc->sync_mode == WB_SYNC_ALL)
-> >  		buffer_tree_tag_for_writeback(fs_info, index, end);
-> > -- 
-> > 2.54.0
-> > 
+However it looks like the sub-folio dirty block tracking is a little=20
+different between iomap and btrfs.
+
+E.g. iomap will mark the full folio range dirty even if the EOF is=20
+inside the folio, but btrfs will only mark the range inside EOF as dirty.
+
+
+Another thing is, even if we follow iomap to mark the full folio dirty,=20
+it's still not the end of the story.
+
+We have other supporting mechanisms required to tracking the dirty=20
+range. E.g. EXTENT_DELALLOC flags inside extent-io-tree, indicating we=20
+have already reserved space for the dirty range.
+
+Only with EXTENT_DELALLOC flag set, we will do the real delayed=20
+allocation, allocating the on-disk extents etc.
+
+So even if we always mark the full folio dirty, the writeback path will=20
+not handle them correctly either.
+
+
+Finally, even without large folios, the reproducer can already cause=20
+problems on btrfs. E.g. on x86_64, with mapping_set_folio_order_range()=20
+disabled.
+
+The symptom there is that, ordered extent accounting underflows, which=20
+may also contribute to the stall observed.
+
+I'll keep digging for this bug.
+
+Thanks,
+Qu
+

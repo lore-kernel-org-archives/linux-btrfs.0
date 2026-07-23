@@ -1,82 +1,82 @@
 Received: from fout-a6-smtp.messagingengine.com (fout-a6-smtp.messagingengine.com [103.168.172.149])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 29E3938C42B
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2026 16:54:21 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 720AD484248
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2026 17:02:34 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.149
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784825663; cv=none; b=lUBcmvFUhCNzcp0UUJtQi7YjvSomNoYdarJl9gjLYbFG64h5ROsW8D7dc4YKabKtXtQslC0EeMAQFQm5ewt4uq/jw7Fs57L3A1Bl15X5aAiPrIGKp/qtAp5k5OyrwvEObJ00eQa1E1VvpwaYwqOEYl1qrSeDadFSWxr9MOTaHn8=
+	t=1784826160; cv=none; b=PbPzHNNoerBmGTBVR4oWyhhBrMAnuDuW2dRlrE8jBV3Cnat9Qk3qEi8BcCo+J0axgRlhauXDYAXVjoLGbYCQlrYMG9PwxuKct96Xrvw7socbonyKMoFDBz/ReJswHhTYyZ+deLlqRjThRJP+w0Gnvq6uIPZLP+SMpnOOKF0owRM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784825663; c=relaxed/simple;
-	bh=cB5pufHzNKczw2scHsFT8T9joeRAv0Uc3hNCH19Hx9w=;
+	s=arc-20240116; t=1784826160; c=relaxed/simple;
+	bh=LYpJimFIVL7H2Nhbkuh3YGRcz3YeJH0WATjl9/38h5k=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=AUBSwSPDWcXX7FxEKyHaXSkH0Xq1u51C6h3yVpAV6om8IEF0v6lxl0Wjc+U7/XLQTmkJwbN3R9ByCinnL12SeDl6SjJZc98UuK0OmKPfgGYt0YbDO3/1LILqApkFidsfcZwUiDLx1citxmUfeZjsX2lWZzGMLcZscCf7Z2o7Gx8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=VWgqvVNk; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=ptXYrE5o; arc=none smtp.client-ip=103.168.172.149
+	 Content-Type:Content-Disposition:In-Reply-To; b=crD1FT1UW8P7J4wkHlptMsSIJrEx8jhBiE2JjjguRhAwn5XgRUkMTkPoa7l6oD97QsP8nVYJ/GerHoI5VfYOmkF6ku3pb8o4CdHsQV0UuvTZ65Vq8eGrqdGP4g7q0zIRxqbiCBw3PYPlbKrRbq051DPRuY+FdUQgsAGkXTmVebI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=guHplND1; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=XAuRyG0G; arc=none smtp.client-ip=103.168.172.149
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="VWgqvVNk";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="ptXYrE5o"
-Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
-	by mailfout.phl.internal (Postfix) with ESMTP id 4949EEC02E0;
-	Thu, 23 Jul 2026 12:54:21 -0400 (EDT)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="guHplND1";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="XAuRyG0G"
+Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
+	by mailfout.phl.internal (Postfix) with ESMTP id C67D9EC02F6;
+	Thu, 23 Jul 2026 13:02:29 -0400 (EDT)
 Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-02.internal (MEProxy); Thu, 23 Jul 2026 12:54:21 -0400
+  by phl-compute-05.internal (MEProxy); Thu, 23 Jul 2026 13:02:29 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
 	:content-type:content-type:date:date:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm3; t=1784825661; x=1784912061; bh=sEKiA8q434
-	ORhWM6yfQkrlxZ7Ov7K7Rz4c/R7ZGQmhI=; b=VWgqvVNkl1ZzQrDxSaaNbz3efp
-	el0mI+DqtE8ACNSY+YoVzuv5wwFQHq8YL95Exfw8EN1M1+5HmW+a4pr7nq8CsNsR
-	pwriYY2ZtigZLXw+zmKk4qmtD3Bkf5AgEv2OKvPRF9gR1kGr7qiEPZ2VEFQCdUxN
-	/4IXB4mIPCMbrwFjMDP5wN0ylDQAnX4xtSwvqVGq9lW8YchroNpg3HEzR959TC8j
-	CEjMVQs7sYzaVHPfZQ09JxREYQy0QE6CnWMnUY7jC3BC2NsK6TJUo3tdFWt0vkNU
-	ndpJlk+cEQaPTGM5EfWuSf5arVEuJJQATqg1xq2rWqZay8uYFzpLCmxU8eUg==
+	:subject:to:to; s=fm3; t=1784826149; x=1784912549; bh=20/2Gw3o/J
+	U1HHuXp7MVfRkB71OLIU//9I+N2uoaXYs=; b=guHplND1El2cuFn4DlodEHJ+Kj
+	hZcp6Gzngd8/ofP3MGKl8vb2fp7aT8VHa5dyitdwFeZJK6u54a2PmgZaEvfa2XCL
+	A5rHLxHX3ALb9jWxk6L9rZEF72iIJ93Vf7LVXzvgWl2OMsBuEbedPdHItF/FaerV
+	4qm1rjjfJwRr28IjQMj9IcHPW/cYsftaRV3K159kxA3ulHOiqwICHPKLqVAD+/Y9
+	HJm4Ym10lxHFWpF+4lbMcXZIDnygPy//E4k3yO+EMKo/jOSvh9Eb1Bk3tRzymn9j
+	K88S9/4wbW0RRXcjEGqkWhD0Pb9uSN4sE7QRAhN69kxXmQTid7MRKD7ifFXA==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-type:content-type:date:date
 	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
 	:message-id:mime-version:references:reply-to:subject:subject:to
 	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-	1784825661; x=1784912061; bh=sEKiA8q434ORhWM6yfQkrlxZ7Ov7K7Rz4c/
-	R7ZGQmhI=; b=ptXYrE5okIDxpYOPUBVraUsY/dNidlLQYCHuDfIqW42khGBoYSs
-	aKclPdfqmYqeB0bOO3APaYFD3B/dZdP7B5vF4sGrd6E2H+ZISE2lEMeABgAvuW5w
-	EwX0TWHS8JeiX9UPBp3xX+Q1cIU8msi5OAMyNAASHAz+nin7XqrJtndMGdEWDG0P
-	on73AlOEKgRn6bP4JZMPVLNWqwYrxHCQTMs8148v0xOLSOHq3bQ4NHjaqyB0wlNm
-	HKFJW3/FAbzvKmDOg9fy2O22kiez9WqTWX4BSAauZ33rm0Ekc92wBjHuc8t9hxq2
-	T5vn3+hLDoMrIsyUYT4TbUrXNTAKTHQJUQg==
-X-ME-Sender: <xms:PUdiappHNV6PfVjs2x-VuW5UWgPr6l62ogK4IJSp0ejjfCsjDfRHxQ>
-    <xme:PUdiavUZbYANkzTM2bBCOuQquu2GMT2gWmqOnhjMjlKKeFbtDDfZ7FglW44f04q2S
-    xMndtPX83gDqLQUGNr4PWQ6huUZU6LrAdQ7i_V6s5-zyFeO4IO1954>
-X-ME-Received: <xmr:PUdiagCGZWAoDBTxysd8d4dL5ZJXYaQDcMjtNMIKSD40NPxEbrWvRZwq6pj73GaJX-JmW1r73q6tW1iPIcKH43b2zcM>
-X-ME-Proxy-Cause: dmFkZTGdaVIsy0MYksNn9Rpewd7yyliVgcelsvG9Bm7lT6lhIiJqARxdSflxNs+c40xDsL
-    4j4Tox2Go8P6zpxPvpLmUIY0pmfX/Mhx3T1hj3Hfon9pROwxvjmwGIU3vmehMepR/LJdC4
-    Am4ki2aEYyZksym/f1yI4hWqyAdRppfcteCVoQLtoYa3tuLeLqnUMZEhQTgduzRViumAu1
-    OXC4OMNWdohZF235zKbWHXH/ZgudxpVnrnnNorYKkF/ExHtbYjfF0WkKFfvmOLoIl79kxM
-    hXTsdtpCxsJZ+t4kuyYecgehI4Mr4utePl3YLQb5P8nL9xTsldu8ybxdAcbOaKB2C9ddEb
-    aJrShj+LhxwN5hWFXKdZHxsiL3qJkouV4RsCPdEzMXe+jjnKajgobn5tJh0EHJNtH3zA9E
-    bGEUz8HVKHgTmpVVG+Nrl448c1AT+D09sfDWodklRwyO1UKkJhmosj74ENetvB0R6WaRxT
-    XK5FSLviSkRFWTguu3bsjTR3KPFQ1/tzNbNCTLkylkxyy3GaKc7iZBv1AyBOrU+H1Ydmu/
-    8+KtngXHRT4RNNJKSeJg5bWvKvZ0nfAgOmkXc3ip1qsAgzdEjWXjcMLV0lf16DYO5+lqQy
-    5uu5mSpjHeaOb0feYwOL8lOLopgaNosvGdFCWWCCsnZhRNMde3cqLEXx6vmQ
-X-ME-Proxy: <xmx:PUdiar19i61vkZDLCRmdcvRgYK28ItazKS7b1M6qX3ICjDm5hgiefQ>
-    <xmx:PUdiaq0mDm7rxgMaeIi0YuG3gl7geCQyp63a5lVrTBeFTO2OElbAFQ>
-    <xmx:PUdiaoAEcs8ChTeVD6KAp1tZwX3y5PrVyAOC1X1kaQmoHG7JwGE-Dg>
-    <xmx:PUdiah5hn_dz_LyGf526plFkWanlffORD-_hM_LlzN8rbCdtCdJogg>
-    <xmx:PUdiasJmtXDNDGmjp927wGzh7zP_5Chmdtl7oK-YrEIqfqJSYw2uJG5e>
+	1784826149; x=1784912549; bh=20/2Gw3o/JU1HHuXp7MVfRkB71OLIU//9I+
+	N2uoaXYs=; b=XAuRyG0GGcFaTKukWlqEqCEl6oLioQd6D/5b6HVEJOVR48l8sbA
+	8jPADblKPvZEhFZK8pFRGgayxIrdhLpnhSSAZdTPy0JYrcKbFxAD7mGXPSgpM3Cc
+	6kIyp7u1YfFrQBz7dLwziCKW5nyHqUZHRyh7/M7fYCEmDove0bYMFoc5exCIT/EP
+	2BCj/bmZ6fmlGCAqSUGHGNtyXj49wSg+9XmJnSmq8jmVoomPyTlWCPX0XXV4/d+3
+	WJzS8E5biFeIYFcAG7QsM5yAZ3dmDrzQAI7yGR8GEkiPcLAPZ54sGfMwCt7ZPghD
+	83VALns9yWGu5FrJnbmoy8kAsRpZb5DjIxQ==
+X-ME-Sender: <xms:JUlianRUTHA1hB_Ww-6yGwidlCqZcNmmdW-wPQE94gB5poZoo0vl4A>
+    <xme:JUliasduwc5YvNhb7LaTjnQV8ZksEM0jbb62gXj-pdzqnA_25v1UMSz7XUz6o3Kh4
+    KvJToJ760bjfVWWZD2svvkP9_own0spGbd0HxJ42ZLaums6l1F9mBw>
+X-ME-Received: <xmr:JUliampPGszbQYyFO0lDytWhcUtRrUTpTy8IFgAApGDyUldKpk3GplNYQel7BW2ir6gi5U2YKZX7kUZpXwtm-ehdN2s>
+X-ME-Proxy-Cause: dmFkZTEkkDjtgXS8gmLpxzTpJb4mxL/rQvFZjO/WU/rzSXm6YRqPAOqCvuZWVFI4EYMBTn
+    aQcgR5/GDcmdLU1SfHvG5Kbv0KF3goR9wv6EqkKBsfWgJaghG3ySH1d7S6lhGeRchTfGmm
+    rDaaye1tm+Bw7nmBzZF4v7oFYG0vwL8chtCQUHxZ7z9pvihYJLvdOLKZlulecazhQD2pOV
+    1niIHbrJ+mtgz6zFLi+9pXcAEWju/ZwOA14KUvV5I1wq72wxVIpUKoj4e0U1Bp+EKP6Ie2
+    ZJK2Rpd7NLifjJazWkoq6mshd0iT85Vxu3QHL4zjN0FieObmVBSHYizSedpRxS1HvZO2kp
+    IiSNXPrqnrSTH46la7i5NG/HxaXDfppt/HnHRECoHRi1pvzVsG6LIMNzMsxIX88g+NLGL9
+    gcvoxcaXyjO5/QLFE3FqhmcDZ/7jsKq8ijC40MhDYsHq6CgRHS0oHjCM1SYd/ux/7ynYzE
+    X/UIJCIP6Ijib9j1ojjtipfB9uTeAmQ319rGiuJDXwEszEX5csHCgbibJHwQ3U2bjYJjgb
+    TlHpP/rw31nJQUbMKXAdAhezlUQAx17T/cPM0RBsAa9Jk+meMvx99gTRxgGgvmuM2Fc+Oc
+    0/MrfLdaq9LSh2ZAZOQWzKrTKd6U6YdzSB4/UCxOy1u0AYXLiIcRlgXgdXMQ
+X-ME-Proxy: <xmx:JUliat97MpAz0m6wG94xiWxQm_Ah9Arx8sjmmgi6Q9-kodInwnOEgQ>
+    <xmx:JUliaifn0rot7kPFtKAC3R1tX8I88Ifrw0tHWpVKlA-YlCviYZY6ew>
+    <xmx:JUlianKUnYBocrj2xh-GO-C-BmHlkUnoMbArfIFGeYE21rcn70YiYQ>
+    <xmx:JUliaigXlxkN2966PulD-BCnzPrxht3umEcD1pIOzJ4gGdmHQKEeCg>
+    <xmx:JUliagyBiAhaK1NmUWMZH2c9bwAJeUO0MuSQiOgzrxh6UXA9eQMz9Ite>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 23 Jul 2026 12:54:20 -0400 (EDT)
-Date: Thu, 23 Jul 2026 09:54:10 -0700
+ 23 Jul 2026 13:02:29 -0400 (EDT)
+Date: Thu, 23 Jul 2026 10:02:18 -0700
 From: Boris Burkov <boris@bur.io>
 To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
 	Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
 	Naohiro Aota <naohiro.aota@wdc.com>
-Subject: Re: [PATCH v2 2/4] btrfs: zoned: drop stranded dirty metadata on
- transaction abort
-Message-ID: <20260723165410.GB752950@zen.localdomain>
+Subject: Re: [PATCH v2 3/4] btrfs: zoned: drop stranded dirty metadata
+ buffers at unmount
+Message-ID: <20260723170218.GC752950@zen.localdomain>
 References: <20260723155428.94187-1-johannes.thumshirn@wdc.com>
- <20260723155428.94187-3-johannes.thumshirn@wdc.com>
+ <20260723155428.94187-4-johannes.thumshirn@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -85,152 +85,59 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260723155428.94187-3-johannes.thumshirn@wdc.com>
+In-Reply-To: <20260723155428.94187-4-johannes.thumshirn@wdc.com>
 
-On Thu, Jul 23, 2026 at 05:54:26PM +0200, Johannes Thumshirn wrote:
-> On a zoned filesystem a freed tree block is not cleared but kept dirty
-> and flagged EXTENT_BUFFER_ZONED_ZEROOUT, so a later writeback zeroes it
-> out and advances the zone write pointer. A transaction abort turns the
-> filesystem read-only before that writeback runs, so these buffers stay
-> dirty and stranded ahead of the write pointer where btree_writepages()
-> can no longer write them. They survive to the final iput() of the btree
-> inode at unmount, which submits the write after the endio workqueues are
-> gone, hanging unmount in folio_wait_writeback().
+On Thu, Jul 23, 2026 at 05:54:27PM +0200, Johannes Thumshirn wrote:
+> On a zoned filesystem a freed tree block is kept dirty and flagged
+> EXTENT_BUFFER_ZONED_ZEROOUT so a later writeback zeroes it out and
+> advances the zone write pointer. Unsynced tree-log updates (e.g. from
+> rename or link) leave such buffers behind when the log is freed at
+> commit, and across log generations they can end up ahead of the write
+> pointer behind a hole, so btree_writepages() can never write them.
+> During normal operation the space is later reclaimed by a zone reset; at
+> unmount it is not, and the buffers survive to the final iput() of the
+> btree inode, which hangs in folio_wait_writeback() once the endio
+> workqueues are stopped.
 > 
-> Clear the dirty state of such buffers when cleaning up the aborted
-> transaction, where the buffer tree still references all of them.
+> They cannot be written back from where they are freed (free_log_tree(),
+> inside the committing transaction) without deadlocking against that
+> commit, and they are stale anyway, not referenced by the committed
+> superblock. Drop their dirty state in close_ctree(), before
+> btrfs_stop_all_workers().
 > 
-> Assisted-by: LLM (debugging, commit message)
 
-Reviewed-by: Boris Burkov <boris@bur.io>
+Immediate fix looks fine, but the underlying issue is a little hacky.
+Can we detect that we have staled them from free_log_tree() and release
+the dirty there? Am I correct in understanding that this means we can
+overestimate dirty? By an arbitrary amount if I do lots of unsynced
+tree log updates?
+
+Either way,
+Reviewed-by: Boris Burkov
 
 > Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 > ---
->  fs/btrfs/disk-io.c   |  1 +
->  fs/btrfs/extent_io.c | 74 ++++++++++++++++++++++++++++++++++----------
->  fs/btrfs/extent_io.h |  1 +
->  3 files changed, 60 insertions(+), 16 deletions(-)
+>  fs/btrfs/disk-io.c | 7 +++++++
+>  1 file changed, 7 insertions(+)
 > 
 > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 67171e0d41b3..8d0afc2842cc 100644
+> index 8d0afc2842cc..01d01e10d000 100644
 > --- a/fs/btrfs/disk-io.c
 > +++ b/fs/btrfs/disk-io.c
-> @@ -4997,6 +4997,7 @@ static int btrfs_cleanup_transaction(struct btrfs_fs_info *fs_info)
->  	btrfs_assert_delayed_root_empty(fs_info);
->  	btrfs_destroy_all_delalloc_inodes(fs_info);
->  	btrfs_drop_all_logs(fs_info);
+> @@ -4549,6 +4549,13 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+>  	free_root_pointers(fs_info, true);
+>  	btrfs_free_fs_roots(fs_info);
+>  
+> +	/*
+> +	 * Drop metadata left stranded ahead of a zone write pointer while the
+> +	 * endio workqueues are still up, so the final iput() of the btree inode
+> +	 * below does not hang submitting a write that can no longer complete.
+> +	 */
 > +	btrfs_zoned_release_dirty_metadata(fs_info);
->  	btrfs_free_all_qgroup_pertrans(fs_info);
->  	mutex_unlock(&fs_info->transaction_kthread_mutex);
->  
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index e3125ef701ce..fa473476b7db 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -3911,6 +3911,32 @@ void free_extent_buffer_stale(struct extent_buffer *eb)
->  	release_extent_buffer(eb);
->  }
->  
-> +static void clear_extent_buffer_dirty(struct extent_buffer *eb)
-> +{
-> +	struct btrfs_fs_info *fs_info = eb->fs_info;
 > +
-> +	if (!test_and_clear_bit(EXTENT_BUFFER_DIRTY, &eb->bflags))
-> +		return;
-> +
-> +	buffer_tree_clear_mark(eb, PAGECACHE_TAG_DIRTY);
-> +	percpu_counter_add_batch(&fs_info->dirty_metadata_bytes, -(s64)eb->len,
-> +				 fs_info->dirty_metadata_batch);
-> +
-> +	for (int i = 0; i < num_extent_folios(eb); i++) {
-> +		struct folio *folio = eb->folios[i];
-> +		bool last;
-> +
-> +		if (!folio_test_dirty(folio))
-> +			continue;
-> +		folio_lock(folio);
-> +		last = btrfs_meta_folio_clear_and_test_dirty(folio, eb);
-> +		if (last)
-> +			btrfs_clear_folio_dirty_tag(folio);
-> +		folio_unlock(folio);
-> +	}
-> +	WARN_ON(refcount_read(&eb->refs) == 0);
-> +}
-> +
->  void btrfs_clear_buffer_dirty(struct btrfs_trans_handle *trans,
->  			      struct extent_buffer *eb)
->  {
-> @@ -3935,26 +3961,42 @@ void btrfs_clear_buffer_dirty(struct btrfs_trans_handle *trans,
->  		return;
->  	}
->  
-> -	if (!test_and_clear_bit(EXTENT_BUFFER_DIRTY, &eb->bflags))
-> -		return;
-> +	clear_extent_buffer_dirty(eb);
-> +}
->  
-> -	buffer_tree_clear_mark(eb, PAGECACHE_TAG_DIRTY);
-> -	percpu_counter_add_batch(&fs_info->dirty_metadata_bytes, -(s64)eb->len,
-> -				 fs_info->dirty_metadata_batch);
-> +/*
-> + * On a zoned filesystem a freed tree block is kept dirty and flagged as
-> + * EXTENT_BUFFER_ZONED_ZEROOUT so a later writeback zeroes it out and advances
-> + * the zone write pointer. Such buffers still dirty when the filesystem is torn
-> + * down can no longer be written back and are stale; if left dirty they hang the
-> + * final iput() of the btree inode. Drop their dirty state, and the deferred
-> + * zero-out along with it.
-> + */
-> +void btrfs_zoned_release_dirty_metadata(struct btrfs_fs_info *fs_info)
-> +{
-> +	struct eb_batch batch;
-> +	unsigned long index = 0;
->  
-> -	for (int i = 0; i < num_extent_folios(eb); i++) {
-> -		struct folio *folio = eb->folios[i];
-> -		bool last;
-> +	if (!btrfs_is_zoned(fs_info))
-> +		return;
->  
-> -		if (!folio_test_dirty(folio))
-> -			continue;
-> -		folio_lock(folio);
-> -		last = btrfs_meta_folio_clear_and_test_dirty(folio, eb);
-> -		if (last)
-> -			btrfs_clear_folio_dirty_tag(folio);
-> -		folio_unlock(folio);
-> +	btrfs_zoned_meta_io_lock(fs_info);
-> +	eb_batch_init(&batch);
-> +	while (buffer_tree_get_ebs_tag(fs_info, &index, ULONG_MAX,
-> +				       PAGECACHE_TAG_DIRTY, &batch)) {
-> +		struct extent_buffer *eb;
-> +
-> +		while ((eb = eb_batch_next(&batch)) != NULL) {
-> +			btrfs_tree_lock(eb);
-> +			if (test_and_clear_bit(EXTENT_BUFFER_ZONED_ZEROOUT,
-> +					       &eb->bflags))
-> +				clear_extent_buffer_dirty(eb);
-> +			btrfs_tree_unlock(eb);
-> +		}
-> +		eb_batch_release(&batch);
-> +		cond_resched();
->  	}
-> -	WARN_ON(refcount_read(&eb->refs) == 0);
-> +	btrfs_zoned_meta_io_unlock(fs_info);
->  }
->  
->  void set_extent_buffer_dirty(struct extent_buffer *eb)
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index 869925337699..ad4ffce32702 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -393,6 +393,7 @@ void extent_clear_unlock_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
->  				  u32 bits_to_clear, unsigned long page_ops);
->  void btrfs_clear_buffer_dirty(struct btrfs_trans_handle *trans,
->  			      struct extent_buffer *buf);
-> +void btrfs_zoned_release_dirty_metadata(struct btrfs_fs_info *fs_info);
->  
->  static inline void btrfs_clear_folio_dirty_tag(struct folio *folio)
->  {
+>  	/*
+>  	 * We must make sure there is not any read request to
+>  	 * submit after we stop all workers.
 > -- 
 > 2.55.0
 > 

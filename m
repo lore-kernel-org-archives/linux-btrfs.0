@@ -1,340 +1,138 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-oi1-f206.google.com (mail-oi1-f206.google.com [209.85.167.206])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 11E2F39CD1C
-	for <linux-btrfs@vger.kernel.org>; Sat, 25 Jul 2026 11:07:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0BA4731ED8B
+	for <linux-btrfs@vger.kernel.org>; Sat, 25 Jul 2026 18:06:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.206
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1784977678; cv=none; b=P45LQER69T0hekteR7IlNC4UrRZj5qEgExwWSIaexwdZsyRZFXgHmMHTyW44adqdfWe+rAWCRNUfHKqlVjtVLR4obSHmOeCywLj8aWhJ38AHXb6uRUY4Yt/UfmU96nmIGHUXo0LpR6QhtW9CYK9edM3ZyxwwscBCaBhMYvPP7RY=
+	t=1785002788; cv=none; b=Qn+X2UWE/LP39NBkTgTpzkVpgz73no9koFPAZqMfOcS5nvBV8cc5adzobbGya/mZQfBvRYwYDvHFxPN3nHBVK1wFR00At18keUJ/nlfRaI7hLMzmkDsljTfeFD0ylM3kehODo57cUr2XHlJafH/5c1D/RYP1gWQsq1qeGF04dd0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1784977678; c=relaxed/simple;
-	bh=7Cw1ziZ1tqjn3rAbrM8UJ2Dus02fWx8KcLfj7i6MyV8=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=r2yJTZAcJVD9KUgJ8Ot5HeDA74Kzfyi6zD1gJdqy5IjGPN+c9WkVO/cN+Vep5aiG5vqE1dKnVLb1F6/NwR1CCs8sasROnFrcP0gLnkHRPpSGtzl5GefYU9tusvBUBrP/QakwBkNhLFWj9scg8Gl1N4C3PLl7+UcqtMZwSTbY/n0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qahssnS2; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qahssnS2; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qahssnS2";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qahssnS2"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 97AC07C845;
-	Sat, 25 Jul 2026 11:07:48 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784977668; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Ipiji5dXJaoJSst2FmAGhuUOvSXHh5XA8A7fXz+MM3c=;
-	b=qahssnS2elXCXGCQsF34gx+lOB1ckAw8ie8FmfaVGGzsyqMcO2xDPF/A3U9Yd4bccoLEYD
-	qMgib3VLXGn+zydjqCPTxbioyPO6pGgvYPIdLs7mKzg3E0u0TZP936tHx7p7kzozjGdV4C
-	zrhjuaaHNZbpBM4Yg+pBspoMA4/Bnjc=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1784977668; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Ipiji5dXJaoJSst2FmAGhuUOvSXHh5XA8A7fXz+MM3c=;
-	b=qahssnS2elXCXGCQsF34gx+lOB1ckAw8ie8FmfaVGGzsyqMcO2xDPF/A3U9Yd4bccoLEYD
-	qMgib3VLXGn+zydjqCPTxbioyPO6pGgvYPIdLs7mKzg3E0u0TZP936tHx7p7kzozjGdV4C
-	zrhjuaaHNZbpBM4Yg+pBspoMA4/Bnjc=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id F2A9C779B9;
-	Sat, 25 Jul 2026 11:07:46 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id d5zRJwKZZGqWSQAAD6G6ig
-	(envelope-from <wqu@suse.com>); Sat, 25 Jul 2026 11:07:46 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-Cc: Christian Borntraeger <borntraeger@linux.ibm.com>
-Subject: [PATCH] fstests: add a dio-read-into-mmap and sync race test case
-Date: Sat, 25 Jul 2026 20:37:24 +0930
-Message-ID: <20260725110724.75124-1-wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	s=arc-20240116; t=1785002788; c=relaxed/simple;
+	bh=XDt4EWlz36rUGzsVP3bs/XGPatV/qbXVAxuuuS4k0KQ=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=d5EYXJQYV2WV0hwsJ5girFBLdSegs3KpeCqhqiRe0ScxXyQatf9joxZU7eMmwSXhjuZZpD65+9OuotthbVjoayJ9h95zIbIw5bLM7HoQXeDBdW2T5/6fzVv4kux6f7XAtv9DSvXQSCvohErMoIhyhBJBC5irSe5rAmMlqowqKZE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.206
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oi1-f206.google.com with SMTP id 5614622812f47-4a7de733fa9so1863719b6e.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 25 Jul 2026 11:06:26 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1785002785; x=1785607585;
+        h=content-type:to:from:subject:message-id:date:mime-version
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=7ZDy09wiHC8UUs73jGqHYwI9KWgvrdpaQ6QB1ceyg2s=;
+        b=coXcpU2aGbI7lnA0z3G8HzFp92PxbzVO8EkDGDHrgZNJKnC/932g7d30f9kONdj8ko
+         nIEGT+FWWz+N1ZTbZFTzcfbWdYmFS63YSsErjnI4SAhADUha5nYN2IPeg64f683h+/jC
+         LXO0dhrGMXOOjtfQg1hvYGRzWAK9hkDnJILpMQPmXv//p6W/w4d9NvhhIy7vwKx+YrcV
+         rHze5WL1hG8V1N2GY+16aPUoGJdyKyFPeZB2c9eLhXvwka8i5KE8MnA3M74Vdl37fHPf
+         A8n2NgUqf/T5hPFFCGOXX8xyJs8YIZm595EnaBxe1oEa/MT7ka3kMUXBX2fz4WjSe6Ow
+         Xjrw==
+X-Forwarded-Encrypted: i=1; AHgh+Ro/qd6bMVQM5f6H/BBgJDyx8cSmZSMT/0rGHthIjXj3HzhpAkVkv+fj0zCjYoFU22KFJV3LqxA+lH7hhA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxFqdnyRI1OiBzlb/3XerLwjTMsoGcl74OxS1bbGmelSqW5/SH+
+	ZIUDFD9w23uLlO6w5iSOqU7zRK6ckXCndvGJDQwtRWoZwUbESj680C9hO1K5OhTelZtCZkLoKhS
+	NW5NQuNH+mT/cEMbCKHfKorgjaxu+neUcmyCU1LLfbX/TfjWql15DVOvYBY8=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.993];
-	MIME_GOOD(-0.10)[text/plain];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FUZZY_RATELIMITED(0.00)[rspamd.com];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_THREE(0.00)[3];
-	RCVD_TLS_ALL(0.00)[]
+X-Received: by 2002:a05:6808:220a:b0:49b:c387:36c5 with SMTP id
+ 5614622812f47-4ab6a10d714mr3374919b6e.17.1785002785629; Sat, 25 Jul 2026
+ 11:06:25 -0700 (PDT)
+Date: Sat, 25 Jul 2026 11:06:25 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6a64fb21.073198cf.94f0f.0019.GAE@google.com>
+Subject: [syzbot] [btrfs?] WARNING in prepare_to_merge
+From: syzbot <syzbot+bb14fd4ddd0269623f20@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 
-There is a report that on btrfs, if the following workload are running,
-btrfs can fail:
+Hello,
 
-- A dio read into a mmaped range
-  Only the mmap range needs to be on btrfs.
-  The dio read source makes no difference.
+syzbot found the following issue on:
 
-- Sync_range on the mapped range
+HEAD commit:    b95f03f04d47 Merge tag 'mm-hotfixes-stable-2026-07-20-11-3..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=148b4ab9580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=20c9876b0f77b546
+dashboard link: https://syzkaller.appspot.com/bug?extid=bb14fd4ddd0269623f20
+compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
 
-The btrfs errors include:
+Unfortunately, I don't have any reproducer for this issue yet.
 
-- Hang during data writeback
-- Filesystem flips RO
+Downloadable assets:
+disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-b95f03f0.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/46cc4d5161ad/vmlinux-b95f03f0.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/4cb305677dbb/bzImage-b95f03f0.xz
 
-The mmap range is dirtied but written back by the sync_range process,
-then dio read finished and found that the folios are no longer dirty,
-so dio endio will mark those folios dirty again so that the fs can write
-them back again.
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+bb14fd4ddd0269623f20@syzkaller.appspotmail.com
 
-However for non-experimental btrfs with 4K block size and 4K page size,
-there is a regression in v7.2 that such case is no longer handled
-properly, due to the enablement of large folios and removal of cow
-fixup.
-And btrfs can never handle it for bs < ps from day 1.
+BTRFS info (device loop0): balance: start -d -m
+BTRFS info (device loop0): relocating block group 6881280 flags data|metadata
+------------[ cut here ]------------
+btrfs_abort_should_print_stack(__error)
+WARNING: fs/btrfs/relocation.c:1850 at prepare_to_merge+0x11a7/0x1740 fs/btrfs/relocation.c:1850, CPU#0: syz.0.0/5325
+Modules linked in:
+CPU: 0 UID: 0 PID: 5325 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+RIP: 0010:prepare_to_merge+0x11a7/0x1740 fs/btrfs/relocation.c:1850
+Code: fc ef ff ff 4c 89 e7 e8 d7 24 0c fe e9 ef ef ff ff e8 1d 4b a8 07 e8 f8 f8 9c fd eb 10 e8 f1 f8 9c fd eb 09 e8 ea f8 9c fd 90 <0f> 0b 90 44 89 e1 f7 d9 4c 8b 6c 24 38 e9 5c f9 ff ff 89 f9 80 e1
+RSP: 0018:ffffc9000e63f700 EFLAGS: 00010287
+RAX: ffffffff842988e6 RBX: ffff888052c2c001 RCX: 0000000000100000
+RDX: ffffc90020001000 RSI: 00000000000723ec RDI: 00000000000723ed
+RBP: ffffc9000e63f810 R08: ffff88801f4d2540 R09: 0000000000000003
+R10: 00000000fffffffb R11: 0000000000000002 R12: 00000000ffffffe4
+R13: ffff8880122865e8 R14: dffffc0000000000 R15: ffff88803fbda538
+FS:  00007f43e4dd66c0(0000) GS:ffff88808c549000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000000 CR3: 000000004478f000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ relocate_block_group+0xbc6/0xe90 fs/btrfs/relocation.c:3700
+ do_nonremap_reloc+0xa7/0x560 fs/btrfs/relocation.c:5322
+ btrfs_relocate_block_group+0x6e2/0xaf0 fs/btrfs/relocation.c:5489
+ btrfs_relocate_chunk+0x114/0x810 fs/btrfs/volumes.c:3647
+ __btrfs_balance+0x1b5f/0x29d0 fs/btrfs/volumes.c:4586
+ btrfs_balance+0xaa6/0x1180 fs/btrfs/volumes.c:4973
+ btrfs_ioctl_balance+0x3da/0x640 fs/btrfs/ioctl.c:3480
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:597 [inline]
+ __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f43e3f9de99
+Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f43e4dd5fe8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007f43e4226090 RCX: 00007f43e3f9de99
+RDX: 0000200000000180 RSI: 00000000c4009420 RDI: 0000000000000008
+RBP: 00007f43e4033eaf R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007f43e4226128 R14: 00007f43e4226090 R15: 00007ffdeedc4388
+ </TASK>
 
-Add a regression test for it.
 
-Reported-by: Christian Borntraeger <borntraeger@linux.ibm.com>
-Link: https://lore.kernel.org/linux-btrfs/20260721191152.101118-1-borntraeger@linux.ibm.com/
-Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- .gitignore               |  1 +
- src/Makefile             |  2 +-
- src/dio-read-into-mmap.c | 81 ++++++++++++++++++++++++++++++++++++++++
- tests/generic/799        | 81 ++++++++++++++++++++++++++++++++++++++++
- tests/generic/799.out    |  2 +
- 5 files changed, 166 insertions(+), 1 deletion(-)
- create mode 100644 src/dio-read-into-mmap.c
- create mode 100755 tests/generic/799
- create mode 100644 tests/generic/799.out
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
 
-diff --git a/.gitignore b/.gitignore
-index 0b6b9452..d52ba4ad 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -216,6 +216,7 @@ tags
- /src/truncate
- /src/t_btrfs_received_uuid_ioctl
- /src/btrfs_ioctl
-+/src/dio-read-into-mmap
- 
- # Symlinked files
- /tests/generic/035.out
-diff --git a/src/Makefile b/src/Makefile
-index 76cf50c3..f64e153a 100644
---- a/src/Makefile
-+++ b/src/Makefile
-@@ -21,7 +21,7 @@ TARGETS = dirstress fill fill2 getpagesize holes lstat64 \
- 	t_mmap_writev_overlap checkpoint_journal mmap-rw-fault allocstale \
- 	t_mmap_cow_memory_failure fake-dump-rootino dio-buf-fault rewinddir-test \
- 	readdir-while-renames dio-append-buf-fault dio-write-fsync-same-fd \
--	dio-writeback-race unlink-fsync truncate
-+	dio-writeback-race unlink-fsync truncate dio-read-into-mmap
- 
- LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
- 	preallo_rw_pattern_writer ftrunc trunc fs_perms testx looptest \
-diff --git a/src/dio-read-into-mmap.c b/src/dio-read-into-mmap.c
-new file mode 100644
-index 00000000..07842c48
---- /dev/null
-+++ b/src/dio-read-into-mmap.c
-@@ -0,0 +1,81 @@
-+// SPDX-License-Identifier: GPL-2.0
-+// Copyright (c) SUSE S.A.
-+
-+#include <fcntl.h>
-+#include <stdlib.h>
-+#include <stdio.h>
-+#include <unistd.h>
-+#include <string.h>
-+#include <errno.h>
-+#include <sys/mman.h>
-+#include <sys/stat.h>
-+#include <err.h>
-+
-+static int read_source_fd = -1;
-+static int mmap_dest_fd = -1;
-+static void *buf = NULL;
-+static int iosize = 4 * 1024 * 1024;
-+
-+static void usage()
-+{
-+	fprintf(stderr,
-+	"Usage: dio-read-into-mmap <read_source> <mmap_dest>\n");
-+}
-+
-+int main(int argc, char **argv)
-+{
-+	int ret = -EINVAL;
-+	const int pagesize = sysconf(_SC_PAGESIZE);
-+	unsigned int cur = 0;
-+
-+	if (argc != 3) {
-+		usage();
-+		goto error;
-+	}
-+	if (iosize < pagesize) {
-+		ret = -EINVAL;
-+		fprintf(stderr, "blocksize smaller than pagesize\n");
-+		goto error;
-+	}
-+
-+	read_source_fd = open(argv[1], O_RDONLY | O_DIRECT, 0600);
-+	if (read_source_fd < 0) {
-+		ret = -errno;
-+		fprintf(stderr, "failed to open '%s': %m", argv[1]);
-+		goto error;
-+	}
-+	mmap_dest_fd = open(argv[2], O_RDWR, 0600);
-+	if (mmap_dest_fd < 0) {
-+		ret = -errno;
-+		fprintf(stderr, "failed to open '%s': %m", argv[2]);
-+		goto error;
-+	}
-+	buf = mmap(NULL, iosize, PROT_WRITE, MAP_SHARED, mmap_dest_fd, 0);
-+	if (buf == MAP_FAILED) {
-+		buf = NULL;
-+		fprintf(stderr, "failed to mmap: %m");
-+		return -errno;
-+	}
-+	while (cur < iosize) {
-+		ret = pread(read_source_fd, buf, iosize - cur, cur);
-+		if (ret == 0) {
-+			ret = -EINVAL;
-+			fprintf(stderr, "reached EOF");
-+			goto error;
-+		}
-+		if (ret < 0) {
-+			ret = -errno;
-+			fprintf(stderr, "failed to read: %m");
-+			goto error;
-+		}
-+		cur += ret;
-+	}
-+error:
-+	close(read_source_fd);
-+	close(mmap_dest_fd);
-+	if (buf)
-+		munmap(buf, iosize);
-+	if (ret < 0)
-+		return EXIT_FAILURE;
-+	return EXIT_SUCCESS;
-+}
-diff --git a/tests/generic/799 b/tests/generic/799
-new file mode 100755
-index 00000000..b6851f69
---- /dev/null
-+++ b/tests/generic/799
-@@ -0,0 +1,81 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-+#
-+# FS QA Test 799
-+#
-+# Test direct read into a mmaped range meanwhile doing data sync for the mmaped
-+# range.
-+# Such racy workload should cause direct endio function to mark the folio
-+# dirty without going through buffered write nor page_mkwrite().
-+#
-+# Make sure the fs can handle such ->dirty_folio() callback correctly.
-+#
-+. ./common/preamble
-+. ./common/filter
-+_begin_fstest auto rw mmap
-+
-+_require_test_program dio-read-into-mmap
-+_require_scratch
-+_require_test
-+
-+_fixed_by_fs_commit btrfs xxxxxxxxxxxxxx \
-+	"btrfs: trigger cow fixup via dirty_folio()"
-+
-+_cleanup()
-+{
-+	cd /
-+	[ -n "$mount_pid" ] && kill $mount_pid &> /dev/null
-+	[ -n "$remount_pid" ] && kill $remount_pid &> /dev/null
-+	wait
-+}
-+
-+trap "_cleanup; exit \$status" SIGINT SIGTERM
-+_scratch_mkfs >> $seqres.full
-+_scratch_mount
-+
-+# Create the 4MiB target file on TEST_MNT as the read source.
-+$XFS_IO_PROG -f -c "pwrite -i /dev/urandom 0 4M" "$TEST_MNT/dio-read-source" >> $seqres.full
-+
-+# Another 4MiB target file on SCRATCH_MNT as the mmap dest
-+$XFS_IO_PROG -f -c "pwrite 0 4M" "$SCRATCH_MNT/mmap-dest" >> $seqres.full
-+
-+read_workload()
-+{
-+	trap "wait; exit" SIGTERM
-+	while true; do
-+		$here/src/dio-read-into-mmap "$TEST_MNT/dio-read-source" \
-+			"$SCRATCH_MNT/mmap-dest" &> /dev/null
-+		if [ $? -ne 0 ]; then
-+			echo "dio read failed"
-+			break;
-+		fi
-+	done
-+}
-+
-+sync_workload()
-+{
-+	trap "wait; exit" SIGTERM
-+	while true; do
-+		$XFS_IO_PROG -c "sync_range 0 4m" "$SCRATCH_MNT/mmap-dest"
-+		if [ $? -ne 0 ]; then
-+			echo "sync_range failed"
-+			break;
-+		fi
-+	done
-+}
-+
-+read_workload &
-+read_pid=$!
-+
-+sync_workload &
-+sync_pid=$!
-+
-+sleep $((15 * $TIME_FACTOR))
-+
-+kill "$read_pid" "$sync_pid" &> /dev/null
-+unset "$read_pid" "$sync_pid"
-+wait
-+
-+echo "Silence is golden"
-+_exit 0
-diff --git a/tests/generic/799.out b/tests/generic/799.out
-new file mode 100644
-index 00000000..f3fd9fa2
---- /dev/null
-+++ b/tests/generic/799.out
-@@ -0,0 +1,2 @@
-+QA output created by 799
-+Silence is golden
--- 
-2.51.2
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
 
+If the report is already addressed, let syzbot know by replying with:
+#syz fix: exact-commit-title
+
+If you want to overwrite report's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
+
+If the report is a duplicate of another one, reply with:
+#syz dup: exact-subject-of-another-report
+
+If you want to undo deduplication, reply with:
+#syz undup

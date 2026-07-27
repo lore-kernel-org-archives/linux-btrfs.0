@@ -1,147 +1,132 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+Received: from forward101b.mail.yandex.net (forward101b.mail.yandex.net [178.154.239.148])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBEF83ABD82
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 11:40:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 674DC35674C
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 11:54:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=178.154.239.148
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785152408; cv=none; b=K37uo1PLpluGkhNvj7WWuX76DUEBDwDQPGej1kxtQ2oHC1eOk6jdynpKOx+CWiSxapdiKghOmlp+MBIA4PNGWKl2YiKXs+lzNdVogAiJBOzBnhH6dsmqD4eF4A2T8wlRLeedL68vEiSsZ+gy5lKzmU4whSCnBkZaLvl7snUhAQY=
+	t=1785153246; cv=none; b=HfiFV1p5U9Pc/Ua41HeKTfNfLeegRMkJvhHbQiWiQI2pTcLfBaBtIzrRWOOAjdRAPcAUB0NyFsbahY9R0vGFFuz/f5tHiaX4ib9EXG7+7UfB6qob61U69CojCHG6vbBsDjLrNC5dJLRrWm7t7VIsg9BGjYA42e5PHuh18dUA0iY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785152408; c=relaxed/simple;
-	bh=bi8BA5oS5R3RGDXFaAMjH9VjI7t5/jzE6E9xn3TWcOI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=iawMaitU3EhETIkNTb3hwihgX8wFdEJChtDSxDybJHvf36e426yp/XhW4ORhZCXiJENKJAYM1MNfP0NOs1F+QO3m03Cc0uQredFta0D+5f4Pm5JwCWbThYWDc9ZbRJjQNLnYPerPQIsQibfoFdLi3NFF6MjYl4JjU1N1Ch4QpuY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=Fl/eAaJb; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=sCH0xysY; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1785153246; c=relaxed/simple;
+	bh=ngX/Tttsq5fbM0YNwm+3WBHpbvXYdu6/ptpNqW+lihg=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=mQWmYgZQ2zHDg8WQ1FjfoCVpTnEiGDiETwWnLoljJuG8E5DODkacb5Hly1ylrIcFx1+zkf+J0qFVqvmHRj/4fFiZrfarluUn+WMtXXJp5bdIdn4kkbeJfPOhXzk5SzBw1t5ZTGeWVl9X+67YPtiW7KRH8pJ/f9NiEGMxrxB1jbY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=yandex.ru; spf=pass smtp.mailfrom=yandex.ru; dkim=pass (1024-bit key) header.d=yandex.ru header.i=@yandex.ru header.b=txOjP0mj; arc=none smtp.client-ip=178.154.239.148
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=yandex.ru
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=yandex.ru
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="Fl/eAaJb";
-	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="sCH0xysY"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1785152405;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=XjT/PIWbG/51hlsr95HE/1iGTwI0BlJqCQFAOLtkIYs=;
-	b=Fl/eAaJbLNmn6K3f9B5SxPuJAICi/lgV+d7k+IV9asTpWoFDWA2LPJXvH3LE4CunB22ssP
-	mDQerjG6OfvMipxfa1L1hh9jtKo+z+pg+38ynG7x6x00OvyWS+D7AQZlpgPETU5zOIpDZg
-	trA+/S9jP9rh6ik7YrCngBdz2D3vR6o=
-Received: from mail-wm1-f69.google.com (mail-wm1-f69.google.com
- [209.85.128.69]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-413-mvb0VS_pMEifGrTlj_3ZgQ-1; Mon, 27 Jul 2026 07:40:04 -0400
-X-MC-Unique: mvb0VS_pMEifGrTlj_3ZgQ-1
-X-Mimecast-MFC-AGG-ID: mvb0VS_pMEifGrTlj_3ZgQ_1785152403
-Received: by mail-wm1-f69.google.com with SMTP id 5b1f17b1804b1-4955d314945so18737875e9.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 04:40:04 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redhat.com; s=google; t=1785152403; x=1785757203; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=XjT/PIWbG/51hlsr95HE/1iGTwI0BlJqCQFAOLtkIYs=;
-        b=sCH0xysYgEIstUl7aHJV13gWXGcHqK3vteCbmXo+v/y8na5SUTj32Ol4E7VRzya6wD
-         6L5WAmI4EVYmHDJFp39XC5FEDKqbLdGtaS1VDaBpGkmSS7O9F4eHITqr4umPc/0ZsH3k
-         H7ng5WvdoFhw4U4MEznbW8TzKVCwHKXhH2zjlAC3atFWv9vW4xUA3onvXzckYE7T6kEq
-         qSBbvz7GEyCbvm0Mxi9Ut6KNIPQh/l55QvuQlc/rVw2uhg6prR/OIdr9tM9LPlrYOfkW
-         a7IH9P5KqayRyS4iw2b0kX6T5a6c3+SmQbtsjvy+KmjzBu377fHj+2GP185CWbJZq56u
-         zY8A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785152403; x=1785757203;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=XjT/PIWbG/51hlsr95HE/1iGTwI0BlJqCQFAOLtkIYs=;
-        b=cg1SELEaQx7DJfn98nDgHYbQjZRzietgcJ3VSwcCfvlwBOaMizLFoyp3hMvlFlkP1Q
-         TTi2S0517a7VXleLYqkhtdjTp3jX+kDutbpueQvHYxdjADS01C9IdLVpFkZVCJKvx0zf
-         0pARl2Xq4LP0+qFyXik9uDMZGlo8evHLvj8J7FMIQopX93m8yhtCGdZii4QB1/JSQ0ls
-         Cw67cGYYfXOQJUsKe3mPv/Q1knY9btENOnsFWb/rKqjkWtQACVkX8BMVmmiNpLOJFLWl
-         1bgfoddV5+NEHuoRmPUEFo0XEbtgjJabweghs0Z6YMw6OMm1MNTFYhd72CcADdiURACo
-         tF6g==
-X-Forwarded-Encrypted: i=1; AHgh+RooRCiWnDlhDRx67CZY7Pct5NzuYjIwQZJdmL8IeuHshI/gRIbRlu5MN/PjT+VcSpNxys4T2l9DOQSckg==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyuoOfI7n9IXzgWMBk6716SN+2neKeoVCJVn82Ain0F/uiECSip
-	0pa0ygICgpcbIHRLJsk+UHlJu1rzzvkegY+Rc1KdDmq9YiFl+9lt7NKO0ZTXwmspxJVkKzhdrbi
-	tfIkAEbNXLFPgXpDFnelabXmV21ES30Bs/l54kdwWLE4buxoST6RF3MsT4ZwTJgQ=
-X-Gm-Gg: AR+sD11ZCC+ZqkIF4lE1/Lj4S5zWK1SBDCWPQp+aAL1Hg1PLyKu1Z7tA6NchXAebxg/
-	Gdx+l8NAZpf/BE8LBQxy04A9Uqp+QGg+hcqGIOKt6s9Jq54bv0AJz5T14UvCIIjsILKaGeqx5Ra
-	oG07aoDyMd+aba0GPm8NhTvgijZEqno82tlYoks8v+or3CLbWiBlZ5ppPIPOCMYJuQwUNomAUhA
-	ul9TeW7DxcqPyiXaLzuSJ9POz4wSZLSubBAtdO1/hrA8EoJd+ZQw9XdGJM3n/HyhRaWQDwQmmp/
-	spctVYSzMc2+iR1MucBUXf+RAVHXG/wOIKihhyIG5/1DakaZxS7W1JQ9O/wueA8eHaUr9Ubb04p
-	hHbyWYnbmPLH+2ssIqvu7K4l3F4OXOdeF2A0=
-X-Received: by 2002:a05:600c:c87:b0:493:fa66:4861 with SMTP id 5b1f17b1804b1-496b5747df9mr103190435e9.25.1785152402903;
-        Mon, 27 Jul 2026 04:40:02 -0700 (PDT)
-X-Received: by 2002:a05:600c:c87:b0:493:fa66:4861 with SMTP id 5b1f17b1804b1-496b5747df9mr103189935e9.25.1785152402345;
-        Mon, 27 Jul 2026 04:40:02 -0700 (PDT)
-Received: from aalbersh-thinkpadx1carbongen13.rmtcz.csb ([217.30.74.39])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-496b499ccb4sm225617015e9.10.2026.07.27.04.40.01
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 27 Jul 2026 04:40:02 -0700 (PDT)
-Date: Mon, 27 Jul 2026 13:40:01 +0200
-From: Andrey Albershteyn <aalbersh@redhat.com>
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org, 
-	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, hch@lst.de, 
-	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
-	linux-btrfs@vger.kernel.org, djwong@kernel.org
-Subject: Re: [PATCH v13 02/23] fsverity: expose ensure_fsverity_info()
-Message-ID: <amcy2KC3veaniXof@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
-References: <20260721184346.416657-1-aalbersh@kernel.org>
- <20260721184346.416657-3-aalbersh@kernel.org>
- <20260724233744.GB1901@sol>
+	dkim=pass (1024-bit key) header.d=yandex.ru header.i=@yandex.ru header.b="txOjP0mj"
+Received: from mail-nwsmtp-smtp-production-main-73.sas.yp-c.yandex.net (mail-nwsmtp-smtp-production-main-73.sas.yp-c.yandex.net [IPv6:2a02:6b8:c11:f85:0:640:673a:0])
+	by forward101b.mail.yandex.net (postfix) with ESMTPS id 5E639C1CAC;
+	Mon, 27 Jul 2026 14:53:54 +0300 (MSK)
+Received: by mail-nwsmtp-smtp-production-main-73.sas.yp-c.yandex.net (smtp) with ESMTPSA id rraoOQud8uQ0-kviCkKdn;
+	Mon, 27 Jul 2026 14:53:53 +0300
+X-Yandex-Fwd: 1
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yandex.ru; s=mail;
+	t=1785153233; bh=ONXe8WeVqF6cV8/HYoj6l5CqABZqsXUHbcT0qEMlGes=;
+	h=Message-ID:Date:Cc:Subject:To:From;
+	b=txOjP0mjFX5H+Mwd9n74fbvVagvHC5ar8AOX43IF3Aukzf8ml3LhcMytI/eTcO38b
+	 cMKsYV0qw834+9E5wmhHB1n4cbdz+yxMLIqVTsV9MGb+tqcarUE9cb++R243eaKZ47
+	 ZaqlUbFF8YrE3iNoIay+WjZEQAlystQJc9a12R2E=
+Authentication-Results: mail-nwsmtp-smtp-production-main-73.sas.yp-c.yandex.net; dkim=pass header.i=@yandex.ru
+From: Dmitry Antipov <dmantipov@yandex.ru>
+To: David Sterba <dsterba@suse.com>,
+	Chris Mason <clm@fb.com>
+Cc: linux-btrfs@vger.kernel.org,
+	lvc-project@linuxtesting.org,
+	Dmitry Antipov <dmantipov@yandex.ru>
+Subject: [PATCH] btrfs: fix memory leak in btrfs_do_encoded_write()
+Date: Mon, 27 Jul 2026 14:53:52 +0300
+Message-ID: <20260727115352.12622-1-dmantipov@yandex.ru>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260724233744.GB1901@sol>
+Content-Transfer-Encoding: 8bit
 
-On 2026-07-24 16:37:44, Eric Biggers wrote:
-> On Tue, Jul 21, 2026 at 08:40:39PM +0200, Andrey Albershteyn wrote:
-> > +/**
-> > + * fsverity_ensure_verity_info() - cache verity info if it's not already cached
-> > + * @inode: the inode for which verity info should be cached
-> > + *
-> > + * Ensure this inode has verity info attached to it, it's assumed the inode
-> > + * already has fsverity enabled. Read fsverity descriptor and creates verity
-> > + * based on that.
-> > + *
-> > + * This needs to be called at least once before any of the inode's data
-> > + * can be verified (and thus read at all) or the inode's fsverity digest
-> > + * retrieved.  fsverity_file_open() calls this already, which handles
-> > + * normal file accesses.  If a filesystem does any internal (i.e. not
-> > + * associated with a file descriptor) reads of the file's data or
-> > + * fsverity digest, it must call this explicitly before doing so.
-> > + *
-> > + * Return: 0 on success, -errno on failure
-> > + */
-> > +int fsverity_ensure_verity_info(struct inode *inode)
-> 
-> There really should be a note here that if the file is also encrypted,
-> then the encryption key has to have been set up first.  This was already
-> gotten wrong when it was proposed for overlayfs to call this.
+Local fuzzing of 6.12.94 has found the following memory leak:
 
-Sure I will add a note.
+Unreferenced object 0xffff888018050a80 (size 64):
+  comm "syz.0.17", pid 10297, jiffies 4294953601
+  hex dump (first 32 bytes):
+    00 10 00 00 00 00 00 00 01 00 00 00 00 00 00 00  ................
+    10 0a 05 18 80 88 ff ff 10 0a 05 18 80 88 ff ff  ................
+  backtrace (crc a8a6fc29):
+    kmemleak_alloc_recursive include/linux/kmemleak.h:42 [inline]
+    slab_post_alloc_hook mm/slub.c:4152 [inline]
+    slab_alloc_node mm/slub.c:4197 [inline]
+    __kmalloc_cache_noprof+0x168/0x2c0 mm/slub.c:4358
+    kmalloc_noprof include/linux/slab.h:878 [inline]
+    extent_changeset_alloc fs/btrfs/extent_io.h:207 [inline]
+    qgroup_reserve_data+0x1c5/0x7d0 fs/btrfs/qgroup.c:4305
+    btrfs_qgroup_reserve_data+0x2e/0xb0 fs/btrfs/qgroup.c:4355
+    btrfs_do_encoded_write+0x92e/0x1040 fs/btrfs/inode.c:9746
+    btrfs_encoded_write fs/btrfs/file.c:1482 [inline]
+    btrfs_do_write_iter+0x280/0x610 fs/btrfs/file.c:1507
+    btrfs_ioctl_encoded_write+0x3d6/0x490 fs/btrfs/ioctl.c:4738
+    btrfs_ioctl+0x6f9/0xc90 fs/btrfs/ioctl.c:-1
+    vfs_ioctl fs/ioctl.c:51 [inline]
+    __do_sys_ioctl fs/ioctl.c:906 [inline]
+    __se_sys_ioctl+0xf9/0x170 fs/ioctl.c:892
+    do_syscall_x64 arch/x86/entry/common.c:47 [inline]
+    do_syscall_64+0xbe/0x1a0 arch/x86/entry/common.c:78
+    entry_SYSCALL_64_after_hwframe+0x77/0x7f
 
-> Do we also need a more specific contract than "-errno on failure"?  The
-> caller in xchk_inode_setup_verity() tries to distinguish between
-> "metadata validation errors" and "runtime errors" by checking for a
-> bunch of different error codes, and I'm not sure what that means
-> exactly.
+Unreferenced object 0xffff888018050a00 (size 64):
+  comm "syz.0.17", pid 10297, jiffies 4294953601
+  hex dump (first 32 bytes):
+    00 00 00 00 00 00 00 00 ff 0f 00 00 00 00 00 00  ................
+    90 0a 05 18 80 88 ff ff 90 0a 05 18 80 88 ff ff  ................
+  backtrace (crc cb5c9580):
+    kmemleak_alloc_recursive include/linux/kmemleak.h:42 [inline]
+    slab_post_alloc_hook mm/slub.c:4152 [inline]
+    slab_alloc_node mm/slub.c:4197 [inline]
+    __kmalloc_cache_noprof+0x168/0x2c0 mm/slub.c:4358
+    kmalloc_noprof include/linux/slab.h:878 [inline]
+    kzalloc_noprof include/linux/slab.h:1014 [inline]
+    ulist_prealloc+0x9c/0x110 fs/btrfs/ulist.c:114
+    extent_changeset_prealloc fs/btrfs/extent_io.h:217 [inline]
+    __set_extent_bit+0x16b/0x1a70 fs/btrfs/extent-io-tree.c:1086
+    set_record_extent_bits+0x50/0x90 fs/btrfs/extent-io-tree.c:1821
+    qgroup_reserve_data+0x274/0x7d0 fs/btrfs/qgroup.c:4312
+    btrfs_qgroup_reserve_data+0x2e/0xb0 fs/btrfs/qgroup.c:4355
+    btrfs_do_encoded_write+0x92e/0x1040 fs/btrfs/inode.c:9746
+    btrfs_encoded_write fs/btrfs/file.c:1482 [inline]
+    btrfs_do_write_iter+0x280/0x610 fs/btrfs/file.c:1507
+    btrfs_ioctl_encoded_write+0x3d6/0x490 fs/btrfs/ioctl.c:4738
+    btrfs_ioctl+0x6f9/0xc90 fs/btrfs/ioctl.c:-1
+    vfs_ioctl fs/ioctl.c:51 [inline]
+    __do_sys_ioctl fs/ioctl.c:906 [inline]
+    __se_sys_ioctl+0xf9/0x170 fs/ioctl.c:892
+    do_syscall_x64 arch/x86/entry/common.c:47 [inline]
+    do_syscall_64+0xbe/0x1a0 arch/x86/entry/common.c:78
+    entry_SYSCALL_64_after_hwframe+0x77/0x7f
 
-The scrub checks that if incore fsverity flag is set on the inode
-we should be able to read verity info. If metadata is invalid,
-"metadata validation error" happens, then scrub will clear fsverity
-flag on incore and on-disk inode.
+Fix this by freeing an extent changeset before returning from
+'btrfs_do_encoded_write()'.
 
-Not sure if this can be improved much, any new error codes won't
-trigger scrub. Passing int *corrupted everywhere also doesn't seem
-to help and changing everything to EFSCORRUPTED will change
-file_open return code.
+Signed-off-by: Dmitry Antipov <dmantipov@yandex.ru>
+---
+To whom it may be interesting, C reproducer is available at:
+https://drive.google.com/file/d/1KxCiyW9Ewsh9ySEyxaz1FWN9s9FdJLIY/view?usp=sharing
+---
+ fs/btrfs/inode.c | 1 +
+ 1 file changed, 1 insertion(+)
 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index b446c3014b24..1ad41087b94c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9954,6 +9954,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+ 	if (cb)
+ 		cleanup_compressed_bio(cb);
+ out:
++	extent_changeset_free(data_reserved);
+ 	if (ret >= 0)
+ 		iocb->ki_pos += encoded->len;
+ 	return ret;
 -- 
-- Andrey
+2.55.0
 

@@ -1,60 +1,66 @@
-Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1F8D1368D42;
-	Mon, 27 Jul 2026 08:11:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.158.5
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C8AE23E316B
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 08:38:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785139902; cv=none; b=PVnGVvzHZBdl6ttN9uu2XS/0/b1uXEmN1Thmn+jciEzqiqbxUgKnsVYMOuJHiKvz8i3h7RJjVQyPrUoQtkQeQvVLk4locwSxgCfY8RIADa4IN4XziYzzAty4exbyC4WIJQrweXD8KB5PltYtShd3nXJe6JdcFaB79x60+LmuO18=
+	t=1785141500; cv=none; b=mJzwGeBiXUWfhv8sidM1mmW+8EbNHGRgBKNV0cFFV1U7XWz6jPSwZ0H8tkg31jue9ge+cQZI6hKXcEDzZ3xKYRGBDRfHOKyPR8wTiChA906mu7yesadoWcbyUHQQEQAynsUiT324qB16Bv9z1ZgqHnt/im8OhElrsfBxzwHXLK4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785139902; c=relaxed/simple;
-	bh=SnNAuNycz5x7e3dlleiHX2E2Wv0eo8QEj7/xy9bv5A4=;
+	s=arc-20240116; t=1785141500; c=relaxed/simple;
+	bh=/EqyqfkBKxZ5+pMr5EqltkNxP0Z7LTHGJ5LqW/iOTyY=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=h966oHRTsqz5d8pY9nL9fpQ+NmexQrOVTodOm3P+8I7NxcNgdLFY7bd2Co5hHbiCbiXqhVfwWgXVkcFrIColgmMSqU4D+lBAPt8DtrryMiVzZkC1jaUtBQHb0PFoLJ4QvoOX+gGJbJOj6Qmm+1hZJEAp8fz4yXPGlAW8K7SSHKU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=MfZt1x//; arc=none smtp.client-ip=148.163.158.5
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
+	 In-Reply-To:Content-Type; b=M3R4C16qU47tPrp3Qzg5eY39mWInBbGdbCa65AVmyCAeu6CcihUzdyO6MCTp3bOVCP/PO/qiOrHDj+HPPK542/WOgH5HYfUGTN2DT58PbQl0BQOGuMJ6FYFvgPJ2xRV5wcdxo8zD8lRYBFDkWZRBnxEA1vA/pyZz0w+TVPRal20=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=chs5PnFo; arc=none smtp.client-ip=209.85.128.48
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="MfZt1x//"
-Received: from pps.filterd (m0360072.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 66R7m8vu1638939;
-	Mon, 27 Jul 2026 08:11:24 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=cc
-	:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pp1; bh=3bvZWs
-	SBZZi2WnC9Vyfq+J4KpSotF5UFdrCqbN230VU=; b=MfZt1x//TP1vANPc7ySDc5
-	6WRZLzITWPhltmy6KDxyE0cKuKciVjG3fNXL3B3bLtAacGfJMU4UsQdh2Wq7zw7k
-	lT+gbSLMtxVeEbePUJK6lbuofxp/jviQYpNR3OPO0jjUNiNga4MAJe0Ud7Ji8P9U
-	y+pxmVhrnWGOnrN5aAoRJGcTPPK0lrgNXuQGmLCMaEliwvPUIUoDyMJLZBwChKrA
-	qM9HCXgc9aZyR1bAzDXQPJU+Nni97ehEzIEEmi5DOi1VwBkF8GwkvKpo9Ud4uNRQ
-	YtiVJgjifvyYv5fbjiAGiF5ey3Mko4/hhdoUIDWn+cRja9Gz6Gx0K4iRwKBF7Uqg
-	==
-Received: from ppma21.wdc07v.mail.ibm.com (5b.69.3da9.ip4.static.sl-reverse.com [169.61.105.91])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 4fmuwcpjuh-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 27 Jul 2026 08:11:23 +0000 (GMT)
-Received: from pps.filterd (ppma21.wdc07v.mail.ibm.com [127.0.0.1])
-	by ppma21.wdc07v.mail.ibm.com (8.18.1.7/8.18.1.7) with ESMTP id 66R8BFHP005637;
-	Mon, 27 Jul 2026 08:11:23 GMT
-Received: from smtprelay04.fra02v.mail.ibm.com ([9.218.2.228])
-	by ppma21.wdc07v.mail.ibm.com (PPS) with ESMTPS id 4fn8fjvg3a-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 27 Jul 2026 08:11:23 +0000 (GMT)
-Received: from smtpav03.fra02v.mail.ibm.com (smtpav03.fra02v.mail.ibm.com [10.20.54.102])
-	by smtprelay04.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 66R8BLd527788010
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Mon, 27 Jul 2026 08:11:21 GMT
-Received: from smtpav03.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id EE852201E2;
-	Mon, 27 Jul 2026 08:11:20 +0000 (GMT)
-Received: from smtpav03.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 7E04B201E1;
-	Mon, 27 Jul 2026 08:11:20 +0000 (GMT)
-Received: from [9.224.77.173] (unknown [9.224.77.173])
-	by smtpav03.fra02v.mail.ibm.com (Postfix) with ESMTP;
-	Mon, 27 Jul 2026 08:11:20 +0000 (GMT)
-Message-ID: <4f7b99e5-62b6-48ac-a141-24f25af125c1@linux.ibm.com>
-Date: Mon, 27 Jul 2026 10:11:20 +0200
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="chs5PnFo"
+Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-495757ccbc1so22484315e9.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 01:38:16 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1785141495; x=1785746295; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=YosLvDkB9h/G3eVEuQgq8C9VDZxfaJ+1RkYLHw2lclQ=;
+        b=chs5PnFo/c4syxIn4/ytnbuynn8zXgLfdtfwEaBTyAoLTPnlhJ/jSYqUzuo/P1prJZ
+         lBu3FdhkM1FwVenqWuYs9T3ct1DKZO+VfVENnqW0ivqCvHQwEXttSNNKqWpYwf109AxR
+         OqdnBtIYhEUiB59HXRUst2kCX8GpLyGC05jbPIyWmq+eFR7MDObJRU9jb/yxJPXbYkuG
+         WazyWrTpiAJN4F1TSroIOZljgxLdjQO8MuIi+H21DBtdT31JkspFgMTRH/sjCPTtNdFM
+         hOD8BkFTHh1DjaAm6sksu0JwMKkytfMH1aenCgz1LvUWSyXDBZwAufzX0P4MNekkHDO8
+         aQpA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1785141495; x=1785746295;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=YosLvDkB9h/G3eVEuQgq8C9VDZxfaJ+1RkYLHw2lclQ=;
+        b=Iyjdc+Ultp+MSM+SHO54oZIl3kPUluG7YneC0+vPpSDnPIu8jXNUsGNSriTDked12G
+         U5Y9uHNLZqeq/W6cUvkP0onShYGxUEuYV2N7m5WgwEKp1Ty+I7hrnNCCnu+n6pE1i3nx
+         bYVQzEwJVMhuzVBlg9uCt3wEsEsZ295x0FkWFiLH/2IGpobYj8svHwoXR8z7HMJnBI+H
+         phzJlAVAh6qaZC0BgqQ7Uz3XaDg6D1HWaodZDjmSs7r3WZoHQM+AvKXFQBTWisc4/En6
+         hCyJAkMgpgoynzZkSX7RsTiImBU5Wcv2s7knqPHWvCMToaIZR8zl9hTE1TRx1G/oZY9h
+         mReQ==
+X-Forwarded-Encrypted: i=1; AHgh+Rp22x1jteAWlWj4v8RxTQzxxlNd/KABsEgRNqs/A6Y0g4gyuPlJG5AVC47PcSUVmA6Yj+daHjhz321C8Q==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yy9c4wmd5u0jQswPrub9DqKEkEka8SEpCdDc2fuk7pM1SmRbj8E
+	orKIiONq+TgQESrIR/SnwxUGNyTJSzV4X855znW5pHMDnLtdV7X6n6sTmCKa1BGRn+s=
+X-Gm-Gg: AR+sD11S1Y0IJ/9JYxxgSBCnPg7roprExvfjyUX4gkLt3vM3O2kHPoWSDHbGvNV3qon
+	gtk/O9fhjX/kWckiyG2/o9lBWmkYUVKbh6X+nr92yIhUQABgXEx58SBJk4OUgtgQ7BlslVGlzPf
+	f4i56toVupnJ0qf/7GxgGkRVWRlNNO8pPu6jy0Y7Dhy3OcuTG0ejCSYqgEmkS9bn1AtJI6pnN3P
+	kbaARTT1wYvzz8tOO+Aror+QHGea3NZoPxdJsCxmBkj6wt3+o5+VIQ/bIwEQDG2mGZVzCdcaUYZ
+	VFsTBqEoqp/v/IXBQfEvU0pccs4xnl8x95LXZjLq+R5QkRVmGvpCi+xCQ/yxs2ygKQR+AvWwhSq
+	DRW1+X5O3NALkPi5osNgnDECRfk8uHtPepI5iUxOgWI6LC/0QAUMA7cKio0j6R0uQDAnOCUQ=
+X-Received: by 2002:a05:600c:35d0:b0:493:e79e:da63 with SMTP id 5b1f17b1804b1-496b5708bacmr93093375e9.34.1785141494361;
+        Mon, 27 Jul 2026 01:38:14 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-13e52f0c6f2sm23981332c88.11.2026.07.27.01.38.11
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 27 Jul 2026 01:38:13 -0700 (PDT)
+Message-ID: <5b2694a2-a5cd-47bd-b225-8d7c74426e2d@suse.com>
+Date: Mon, 27 Jul 2026 18:08:08 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,122 +68,384 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH/RFC] btrfs: fix folio lock leak in writepage_delalloc()
- for folios dirtied behind btrfs' back
-To: Boris Burkov <boris@bur.io>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Matthew Wilcox <willy@infradead.org>, linux-btrfs@vger.kernel.org,
-        Qu Wenruo <wqu@suse.com>,
-        Linux Memory Management List <linux-mm@kvack.org>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>, linux-kernel@vger.kernel.org,
-        kvm@vger.kernel.org, linux-s390@vger.kernel.org
-References: <20260721191152.101118-1-borntraeger@linux.ibm.com>
- <20260721191152.101118-2-borntraeger@linux.ibm.com>
- <b226a6e9-fef2-49bd-b17e-9f9b015626c1@gmx.com>
- <83290932-cb8b-4741-bff0-6a7d8df2c637@linux.ibm.com>
- <224d56d2-fcad-41bf-afe3-6f5f5108172a@gmx.com>
- <f12f70e5-d84d-4a9f-ac94-693be4c863ac@linux.ibm.com>
- <amC-J7yzwk4Z5tHW@casper.infradead.org>
- <ad6eebbd-07f8-41ce-b04c-edd50d91a6e3@gmx.com>
- <amICQYTK9Xu4KLtH@casper.infradead.org>
- <d948c88b-dec5-4e29-b30a-3ea368997ceb@gmx.com>
- <20260725062614.GA2792359@zen.localdomain>
+Subject: Re: [PATCH v2] btrfs: trigger cow fixup via dirty_folio()
+To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
+ kernel-team@fb.com
+Cc: willy@infradead.org
+References: <9f7a81cdd022d9e3f69d347a17c0a25438ccec14.1785131713.git.boris@bur.io>
 Content-Language: en-US
-From: Christian Borntraeger <borntraeger@linux.ibm.com>
-In-Reply-To: <20260725062614.GA2792359@zen.localdomain>
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <9f7a81cdd022d9e3f69d347a17c0a25438ccec14.1785131713.git.boris@bur.io>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-TM-AS-GCONF: 00
-X-Proofpoint-Reinject: loops=2 maxloops=12
-X-Proofpoint-ORIG-GUID: AlLRKo7elEF5sqU-sDOskeQ0vInREgy1
-X-Proofpoint-Spam-Info: AW1haW4tMjYwNzI3MDA3NyBTYWx0ZWRfXxAIMAqqxzUCL
- gG9H0fw+IsRKa9r2UqdPioQMj551U7gpC5RW/9slMrOBWyS+i7Z3xQ8fGiJ16iwt2d9bkjmySQX
- 9JdiDf7+xRsrgMe4hwBO1d7IyyOrBVs=
-X-Authority-Analysis: v=2.4 cv=E/z9Y6dl c=1 sm=1 tr=0 ts=6a6712ac cx=c_pps
- a=GFwsV6G8L6GxiO2Y/PsHdQ==:117 a=GFwsV6G8L6GxiO2Y/PsHdQ==:17
- a=IkcTkHD0fZMA:10 a=RAioF0-LDSMA:10 a=VkNPw1HP01LnGYTKEx00:22
- a=RnoormkPH1_aCDwRdu11:22 a=RzCfie-kr_QcCd8fBx8p:22 a=VwQbUJbxAAAA:8
- a=bahnriwoLXFS9mbAnGMA:9 a=3ZKOabzyN94A:10 a=QEXdDO2ut3YA:10
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwNzI3MDA3NyBTYWx0ZWRfX/HpPyWiH2srM
- wqien8I0GgjXlBEaAgyXkO7a3ZBIEbv7fNeMX6I8lSa48ximj9qPn/LWlEeqGjizY1yLeBKcxZp
- BDAp7JvmNEGX7ZpkR/nKI4iaGfME0hfwpS4e3KoVqjVjRJP6PeG1VKHJG0z2YZvfOSn1OcZa15H
- Er5VWv4mjJUxO47SGrS9oysdD4/lObMGoIJEdLLTHM0OLzY+jnpn0LBMfdbxF/F4RXDUwZ074nH
- 18f2znk/62OumAQqJPi61y2w5p6LE4uNhXes+RhdeSUz7kNGFuY2y4mRG+XUdtiwvHREm3u9Q1K
- txNLO58nFgCKzxnWyMxi6iwNSu6z8/tfd5shrn7NvGOQdz6UuFzQjnlyR8M49ygWNfWLzFiC0u9
- H9WF3dXNkukD8uhDxQhDf8eBCODjpEAqre7Q7UIe9Jx6D9O6fX11mRwJzh0FvBSX6eShuk/rm3N
- 3QUHsaUnxvil7o3zyFQ==
-X-Proofpoint-GUID: hyf8waAb68BtR7PhhX7GqTwuJjhi11Ht
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1143,Hydra:6.1.134,FMLib:17.12.100.49
- definitions=2026-07-27_02,2026-07-24_02,2025-10-01_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- adultscore=0 priorityscore=1501 spamscore=0 clxscore=1011 phishscore=0
- lowpriorityscore=0 bulkscore=0 malwarescore=0 impostorscore=0 suspectscore=0
- classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
- reason=mlx scancount=1 engine=8.22.0-2606150000 definitions=main-2607270077
 
-Am 25.07.26 um 08:26 schrieb Boris Burkov:
-> On Fri, Jul 24, 2026 at 08:10:36AM +0930, Qu Wenruo wrote:
->>
->>
->> 在 2026/7/23 21:30, Matthew Wilcox 写道:
->>> On Thu, Jul 23, 2026 at 10:12:27AM +0930, Qu Wenruo wrote:
->>>>
->>>>
->>>> 在 2026/7/22 22:27, Matthew Wilcox 写道:
->>>>> On Wed, Jul 22, 2026 at 11:29:36AM +0200, Christian Borntraeger wrote:
->>>>>>     *   4. Thread B loops sync_file_range(WRITE|WAIT) on the target file.
->>>>>>     *      Whenever a full clean cycle (clear_page_dirty_for_io(),
->>>>>>     *      writeback, bits cleared) completes inside thread A's
->>>>>>     *      submission->completion window, the completion-time
->>>>>>     *      set_page_dirty_lock() hits a *clean* folio: filemap_dirty_folio()
->>>>>>     *      sets only the folio flag and the xarray tag - no btrfs subpage
->>>>>>     *      dirty bit, no delalloc reservation.  See the 20-year-old comment
->>>>>>     *      above bio_set_pages_dirty() in block/bio.c describing exactly
->>>>>>     *      this ("other code (eg, flusher threads) could clean the pages").
->>>>>
->>>>> There's your problem.  filemap_dirty_folio() documents that btrfs is
->>>>> doing it wrongly:
->>>>>
->>>>>     * Filesystems which do not use buffer heads should call this function
->>>>>     * from their dirty_folio address space operation.  It ignores the
->>>>>     * contents of folio_get_private(), so if the filesystem marks individual
->>>>>     * blocks as dirty, the filesystem should handle that itself.
->>>>>
->>>>> fs/btrfs/inode.c:       .dirty_folio    = filemap_dirty_folio,
->>>>>
->>>>> so btrfs should have its own btrfs_dirty_folio() which does whatever
->>>>> metadata updates it needs to and then call filemap_dirty_folio() to
->>>>> take care of the page cache business.  See iomap_dirty_folio() as
->>>>> an example, but many other filesystems also do this.
->>>>
->>>> Thanks a lot for the advice.
->>>>
->>>> However it looks like the sub-folio dirty block tracking is a little
->>>> different between iomap and btrfs.
->>>
->>> My point is not that "you should do it the exact same way as iomap".
->>> Rather "the dirty_folio op is the entry point to tell the filesystem
->>> that a folio is being dirtied".
->> And since dirty_folio() is not allowed to sleep, we should introduce some
->> extra mechanism, e.g. page private 2/checked, to notify the fs that the
->> folio is marked dirty without proper preparation.
->>
->> Then during writeback, detect such folio and do needed preparation for it
->> since at writeback we're allowed to sleep.
->>
->> That sounds feasible, but I haven't seen anyone doing that (including the
->> older btrfs cow fixup).
->>
->> Will explore that path. Thanks a lot again for the dirty_folio() help.
->>
->> Thanks,
->> Qu
-> 
-> Here is my proposal for a candidate fix. It passes the reproducer in
-> this thread as well as several more intense reproducers (alluded to but
-> not yet included)
-> 
-> https://lore.kernel.org/linux-btrfs/6758d4f27be0bbdb865cee7dd5adc435c969f4a3.1784960646.git.boris@bur.io/T/#u
-I am willing to give it a try, but that does not seem to apply on 7.2-rc4
+
+
+在 2026/7/27 15:30, Boris Burkov 写道:
+[...]
+> +static noinline_for_stack int writepage_fixup(struct btrfs_inode *inode,
+> +					      struct folio *folio,
+> +					      struct btrfs_bio_ctrl *bio_ctrl)
+> +{
+> +	struct btrfs_fs_info *fs_info = inode_to_fs_info(&inode->vfs_inode);
+> +	const unsigned int blocks_per_folio = btrfs_blocks_per_folio(fs_info, folio);
+> +	const u32 sectorsize = fs_info->sectorsize;
+> +	const u64 page_start = folio_pos(folio);
+> +	bool found_fixup = false;
+> +	unsigned int bit;
+> +
+> +	/*
+> +	 * A folio was dirtied without calling aops->dirty_folio() which we
+> +	 * explicitly assert is not allowed.
+> +	 */
+> +	if (unlikely(bitmap_empty(bio_ctrl->submit_bitmap, blocks_per_folio))) {
+> +		DEBUG_WARN();
+> +		btrfs_err_rl(fs_info,
+> +			     "root %lld ino %llu folio %llu is dirty with an empty dirty bitmap",
+> +			     btrfs_root_id(inode->root), btrfs_ino(inode),
+> +			     folio_pos(folio));
+> +		return -EUCLEAN;
+> +	}
+> +
+> +	/* Cheap check on the folio flag. Set iff the fixup bitmap is non-empty. */
+> +	if (likely(!folio_test_fixup_pending(folio)))
+> +		return 0;
+> +
+> +	for_each_set_bit(bit, bio_ctrl->submit_bitmap, blocks_per_folio) {
+> +		const u64 start = page_start + (bit << fs_info->sectorsize_bits);
+> +		const bool needs_fixup = btrfs_folio_test_fixup(fs_info, folio,
+> +								start, sectorsize);
+> +
+> +		debug_check_writepage_fixup(inode, start, sectorsize, needs_fixup);
+> +		if (needs_fixup) {
+> +			bitmap_clear(bio_ctrl->submit_bitmap, bit, 1);
+> +			found_fixup = true;
+> +		}
+> +	}
+> +	if (likely(found_fixup)) {
+> +		btrfs_queue_writepage_fixup(inode, folio);
+
+Missing the error handling of -ENOMEM.
+
+> +		folio_redirty_for_writepage(bio_ctrl->wbc, folio);
+> +		if (bitmap_empty(bio_ctrl->submit_bitmap, blocks_per_folio)) {
+> +			folio_unlock(folio);
+> +			return 1;
+> +		}
+> +		return 0;
+> +	}
+> +	/* We should always find fixup if the folio fixup flag was set. */
+> +	DEBUG_WARN();
+> +	btrfs_err_rl(fs_info,
+> +		     "root %lld ino %llu folio %llu is fixup with an empty fixup bitmap",
+> +		     btrfs_root_id(inode->root), btrfs_ino(inode),
+> +		     folio_pos(folio));
+> +
+> +	return -EUCLEAN;
+> +}
+> +
+>   /*
+>    * Do all of the delayed allocation setup.
+>    *
+> @@ -1514,6 +1623,10 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
+>   	/* Save the dirty bitmap as our submission bitmap will be a subset of it. */
+>   	btrfs_copy_subpage_dirty_bitmap(fs_info, folio, bio_ctrl->submit_bitmap);
+>   
+> +	ret = writepage_fixup(inode, folio, bio_ctrl);
+> +	if (ret)
+> +		return ret;
+> +
+>   	for_each_set_bitrange(start_bit, end_bit, bio_ctrl->submit_bitmap,
+>   			      blocks_per_folio) {
+>   		u64 start = page_start + (start_bit << fs_info->sectorsize_bits);
+> diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+> index 06b5884a9bcd..11503848a64d 100644
+> --- a/fs/btrfs/fs.h
+> +++ b/fs/btrfs/fs.h
+> @@ -714,6 +714,8 @@ struct btrfs_fs_info {
+>   	struct btrfs_workqueue *endio_write_workers;
+>   	struct btrfs_workqueue *endio_freespace_worker;
+>   	struct btrfs_workqueue *caching_workers;
+> +
+> +	struct btrfs_workqueue *fixup_workers;
+
+Do we need btrfs_workqueue? This workload doesn't need to complex async 
+submission and sequential ending.
+
+Thus a regular workqueue should be enough.
+
+> +static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
+> +{
+> +	struct btrfs_writepage_fixup *fixup =
+> +		container_of(work, struct btrfs_writepage_fixup, work);
+> +	struct extent_state *cached_state = NULL;
+> +	struct extent_changeset *data_reserved = NULL;
+> +	unsigned long delalloc_bitmap[BITS_TO_LONGS(BTRFS_MAX_BLOCKS_PER_FOLIO)] = { 0 };
+> +	struct folio *folio = fixup->folio;
+> +	struct btrfs_inode *inode = fixup->inode;
+> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> +	const unsigned int blocks_per_folio = btrfs_blocks_per_folio(fs_info, folio);
+> +	const u32 sectorsize = fs_info->sectorsize;
+> +	const u64 page_start = folio_pos(folio);
+> +	const u64 page_end = folio_next_pos(folio) - 1;
+> +	unsigned int start_bit;
+> +	unsigned int end_bit;
+> +	unsigned int bit;
+> +	bool reserved;
+> +	int ret;
+> +
+> +	/*
+> +	 * We would prefer to reserve under the folio lock when we know exactly
+> +	 * which blocks need a reservation. Unfortunately, since the reservation
+> +	 * can go into flushers which can go into writeback, which takes folio
+> +	 * locks, that is not possible. Therefore, we have to reserve for the
+> +	 * whole folio here, then release what we didn't end up needing once we
+> +	 * figure it out.
+> +	 *
+> +	 * Also note the slightly strange error checking. If fixup is actually
+> +	 * not set, we don't need to mark an error on the mapping. So hang on to
+> +	 * ret until after we lock and find out if we actually care.
+> +	 */
+> +	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
+> +					   folio_size(folio));
+> +	reserved = (ret == 0);
+> +again:
+> +	folio_lock(folio);
+> +
+> +	if (!folio->mapping || !folio_test_fixup_pending(folio))
+> +		goto out;
+> +	if (ret)
+> +		goto out_error;
+> +
+> +	btrfs_lock_extent(&inode->io_tree, page_start, page_end, &cached_state);
+> +
+> +	for (bit = 0; bit < blocks_per_folio; bit++) {
+> +		struct btrfs_ordered_extent *ordered;
+> +		const u64 start = page_start + (bit << fs_info->sectorsize_bits);
+> +
+> +		if (test_bit(bit, delalloc_bitmap))
+
+Dead check. It's always false, as the delalloc_bitmap is initialized to 
+all zero.
+> +			continue;
+> +		if (!btrfs_folio_test_fixup(fs_info, folio, start, sectorsize))
+> +			continue;
+> +		/*
+> +		 * Any task that sets EXTENT_DELALLOC clears the fixup bits
+> +		 * under the folio lock, so it should be impossible to observe
+> +		 * both under the lock. Setting delalloc twice would wrongly
+> +		 * double account the space.
+> +		 */
+> +		if (IS_ENABLED(CONFIG_BTRFS_DEBUG) &&
+> +		    unlikely(btrfs_test_range_bit_exists(&inode->io_tree, start,
+> +							 start + sectorsize - 1,
+> +							 EXTENT_DELALLOC))) {
+> +			DEBUG_WARN("fixup worker: delalloc and fixup conflict. ino %llu start %llu",
+> +				   btrfs_ino(inode), start);
+> +			btrfs_folio_clear_fixup(fs_info, folio, start, sectorsize);
+> +			continue;
+> +		}
+> +		ordered = btrfs_lookup_ordered_range(inode, start, sectorsize);
+> +		if (ordered) {
+> +			trace_btrfs_writepage_fixup_defer(inode, ordered);
+> +			btrfs_unlock_extent(&inode->io_tree, page_start,
+> +					    page_end, &cached_state);
+> +			folio_unlock(folio);
+> +			btrfs_start_ordered_extent(ordered);
+> +			btrfs_put_ordered_extent(ordered);
+> +			goto again;
+> +		}
+> +		ret = btrfs_set_extent_delalloc(inode, start,
+> +						start + sectorsize - 1, 0,
+> +						&cached_state);
+> +		if (ret) {
+> +			btrfs_unlock_extent(&inode->io_tree, page_start,
+> +					    page_end, &cached_state);
+> +			goto out_error;
+> +		}
+> +		trace_btrfs_writepage_fixup_reserve(inode, start, sectorsize);
+> +		btrfs_folio_clear_fixup(fs_info, folio, start, sectorsize);
+> +		set_bit(bit, delalloc_bitmap);
+> +	}
+> +
+> +	btrfs_unlock_extent(&inode->io_tree, page_start, page_end, &cached_state);
+> +	goto out;
+> +
+> +out_error:
+
+This goto out; to skip error handling looks a little weird.
+
+Considering we never overwrite @ret during error path, I'd prefer to hid 
+the two error handling lines behide an "if (ret < 0) {}", and remove 
+"out_error:" label, and the above "goto out;".
+
+
+> +	/* Failure here is analagous to failure in writeback. */
+> +	mapping_set_error(folio->mapping, ret);
+> +	btrfs_folio_clear_fixup_dirty(fs_info, folio, page_start,
+> +				      folio_size(folio));
+> +out:
+> +	if (reserved) {
+> +		btrfs_delalloc_release_extents(inode, folio_size(folio));
+> +		for_each_clear_bitrange(start_bit, end_bit, delalloc_bitmap,
+> +					blocks_per_folio)
+> +			btrfs_delalloc_release_space(inode, data_reserved,
+> +				page_start + (start_bit << fs_info->sectorsize_bits),
+> +				(end_bit - start_bit) << fs_info->sectorsize_bits,
+> +				true);
+> +	}
+> +	folio_unlock(folio);
+> +	folio_put(folio);
+> +	kfree(fixup);
+> +	extent_changeset_free(data_reserved);
+> +	btrfs_add_delayed_iput(inode);
+> +}
+> +
+> +/*
+> + * Queue space reservation fixup work for blocks dirtied without a space reservation.
+> + *
+> + * Should be used by writeback while holding the folio locked.
+> + */
+> +int btrfs_queue_writepage_fixup(struct btrfs_inode *inode, struct folio *folio)
+> +{
+> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> +	struct btrfs_writepage_fixup *fixup;
+> +
+> +	fixup = kzalloc_obj(*fixup, GFP_NOFS);
+> +	if (!fixup)
+> +		return -ENOMEM;
+> +
+> +	/*
+> +	 * The worker's space reservation happens outside the folio lock, and
+> +	 * folio->mapping cannot be trusted outside of it. Pin the inode
+> +	 * alongside the folio.
+> +	 */
+> +	ihold(&inode->vfs_inode);
+> +	folio_get(folio);
+> +	btrfs_init_work(&fixup->work, btrfs_writepage_fixup_worker, NULL);
+> +	fixup->folio = folio;
+> +	fixup->inode = inode;
+> +	btrfs_queue_work(fs_info->fixup_workers, &fixup->work);
+> +	return 0;
+> +}
+> +
+>   /*
+>    * Clear the old accounting flags and set EXTENT_DELALLOC for the range.
+>    *
+> @@ -7519,6 +7676,12 @@ static void btrfs_invalidate_folio(struct folio *folio, size_t offset,
+>   	folio_wait_writeback(folio);
+>   	wait_subpage_spinlock(folio);
+>   
+> +	/*
+> +	 * The invalidated blocks are going away; drop any fixup blocks among
+> +	 * them, data included, as they have no space reservation.
+> +	 */
+> +	btrfs_folio_clear_fixup_dirty(fs_info, folio, page_start + offset, length);
+> +
+>   	/*
+>   	 * For subpage case, we have call sites like
+>   	 * btrfs_punch_hole_lock_range() which passes range not aligned to
+> @@ -10584,6 +10747,31 @@ static const struct file_operations btrfs_dir_file_operations = {
+>   	.setlease	= generic_setlease,
+>   };
+>   
+> +/*
+> + * The folio is going dirty without a btrfs delalloc space reservation.
+> + * This requires a fixup before writeback which we might sleep so cannot
+> + * run in this context, so we merely set state on the folio indicating it
+> + * needs fixup before writeback.
+> + *
+> + * Note that there is no range in the input, so the whole folio is marked
+> + * dirty and fixup.
+> + */
+> +static bool btrfs_data_dirty_folio(struct address_space *mapping,
+> +				   struct folio *folio)
+> +{
+> +	struct btrfs_inode *inode = BTRFS_I(mapping->host);
+> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> +	const u64 page_start = folio_pos(folio);
+> +	const u64 range_end = min_t(u64, folio_next_pos(folio),
+> +				    round_up(i_size_read(&inode->vfs_inode),
+> +					     fs_info->sectorsize));
+
+Not sure if we need to handle anything beyond EOF yet.
+
+If it's beyond EOF, we still re-dirty them, at during writeback it will 
+trigger the beyond EOF handling.
+
+Thus it looks like we do not need to do this here.
+
+> +
+> +	if (range_end > page_start)
+> +		btrfs_folio_set_fixup_dirty(fs_info, folio, page_start,
+> +					    range_end - page_start);
+> +	return filemap_dirty_folio(mapping, folio);
+> +}
+> +
+>   /*
+>    * btrfs doesn't support the bmap operation because swapfiles
+>    * use bmap to make a mapping of extents in the file.  They assume
+> @@ -10604,7 +10792,7 @@ static const struct address_space_operations btrfs_aops = {
+>   	.launder_folio	= btrfs_launder_folio,
+>   	.release_folio	= btrfs_release_folio,
+>   	.migrate_folio	= btrfs_migrate_folio,
+> -	.dirty_folio	= filemap_dirty_folio,
+> +	.dirty_folio	= btrfs_data_dirty_folio,
+>   	.error_remove_folio = generic_error_remove_folio,
+>   	.swap_activate	= btrfs_swap_activate,
+>   	.swap_deactivate = btrfs_swap_deactivate,
+> diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
+> index 2a9397be8116..a986a4bf61c9 100644
+> --- a/fs/btrfs/subpage.c
+> +++ b/fs/btrfs/subpage.c
+> @@ -345,18 +345,57 @@ void btrfs_subpage_clear_uptodate(const struct btrfs_fs_info *fs_info,
+>   	spin_unlock_irqrestore(&bfs->lock, flags);
+>   }
+>   
+> +/*
+> + * folio_mark_dirty() for a folio we are dirtying with a space reservation.
+> + *
+> + * dirtiers without a reservation use btrfs_data_dirty_folio().
+> + */
+> +static void btrfs_folio_mark_dirty(struct folio *folio)
+> +{
+> +	struct address_space *mapping = folio_mapping(folio);
+> +
+> +	if (!mapping || !mapping->host || !is_data_inode(BTRFS_I(mapping->host))) {
+
+Oh, you have find out the better way to distinguish metadata inode.
+
+If the folio has no mapping, it must belong to a dummy eb, thus it must 
+not be data folio.
+
+Kudos to that.
+
+Otherwise looks good to me.
+
+Great thanks for the fix,
+Qu
+

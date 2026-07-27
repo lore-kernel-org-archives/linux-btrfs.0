@@ -1,138 +1,147 @@
-Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 077143EC6B0
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 09:27:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.46
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBEF83ABD82
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 11:40:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785144449; cv=none; b=BIiEiU0YzGYPNhuuPH6LQlFneEFY2R+O1+tvaevgcd/K4jIawzcl+q//dpvCTujIvRO9RILAtD25ImYY0XJHawspp1S/xw9wFI36+VSc9cxd3B9/oHaaHooOMGYz0JflyRvh7nV7jMUD6iq8MTIIpVYQ/HCSdyWHbzVqmomm3iE=
+	t=1785152408; cv=none; b=K37uo1PLpluGkhNvj7WWuX76DUEBDwDQPGej1kxtQ2oHC1eOk6jdynpKOx+CWiSxapdiKghOmlp+MBIA4PNGWKl2YiKXs+lzNdVogAiJBOzBnhH6dsmqD4eF4A2T8wlRLeedL68vEiSsZ+gy5lKzmU4whSCnBkZaLvl7snUhAQY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785144449; c=relaxed/simple;
-	bh=qahJq7BU1zlzJl2I9wBQStNp4Xc7xu8e3QIefUfM6xg=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=diDtbSiLG6a38iq/0BV+QS9xPd4vNoEkPdOfifQOvDMG2K74zi3Qvk6ACQPNp7svNQxLwgjUuUo2jZtQMugMoSjN9X6bI88+3YZEJ5l020NBBo46UJCbF3IyZWJHZW0tAITI5Q7aHhTgwz5MXsMdal8halxFrCNwWRgnbwZGZHg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=GgIBRjfY; arc=none smtp.client-ip=209.85.128.46
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1785152408; c=relaxed/simple;
+	bh=bi8BA5oS5R3RGDXFaAMjH9VjI7t5/jzE6E9xn3TWcOI=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=iawMaitU3EhETIkNTb3hwihgX8wFdEJChtDSxDybJHvf36e426yp/XhW4ORhZCXiJENKJAYM1MNfP0NOs1F+QO3m03Cc0uQredFta0D+5f4Pm5JwCWbThYWDc9ZbRJjQNLnYPerPQIsQibfoFdLi3NFF6MjYl4JjU1N1Ch4QpuY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=Fl/eAaJb; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=sCH0xysY; arc=none smtp.client-ip=170.10.129.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="GgIBRjfY"
-Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-495590dde14so26913545e9.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 02:27:27 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="Fl/eAaJb";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="sCH0xysY"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1785152405;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=XjT/PIWbG/51hlsr95HE/1iGTwI0BlJqCQFAOLtkIYs=;
+	b=Fl/eAaJbLNmn6K3f9B5SxPuJAICi/lgV+d7k+IV9asTpWoFDWA2LPJXvH3LE4CunB22ssP
+	mDQerjG6OfvMipxfa1L1hh9jtKo+z+pg+38ynG7x6x00OvyWS+D7AQZlpgPETU5zOIpDZg
+	trA+/S9jP9rh6ik7YrCngBdz2D3vR6o=
+Received: from mail-wm1-f69.google.com (mail-wm1-f69.google.com
+ [209.85.128.69]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-413-mvb0VS_pMEifGrTlj_3ZgQ-1; Mon, 27 Jul 2026 07:40:04 -0400
+X-MC-Unique: mvb0VS_pMEifGrTlj_3ZgQ-1
+X-Mimecast-MFC-AGG-ID: mvb0VS_pMEifGrTlj_3ZgQ_1785152403
+Received: by mail-wm1-f69.google.com with SMTP id 5b1f17b1804b1-4955d314945so18737875e9.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 04:40:04 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1785144446; x=1785749246; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:cc:to:from:subject:user-agent
-         :mime-version:date:message-id:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=akppgifv7/v7Y83JM0bcVzkMzStsYZWlZ76Hf99KRvo=;
-        b=GgIBRjfYf8FinwV452g9osBztyo2YSBnxXQV8UTUT1ZFO+yGhE7o7GNJolZHkIb1pO
-         pxMlflx3iv8nPLv/P3mtOmxdZoqQm0u2swvMrNOubVY4cFd1EOI2SsL3sC6BWi0B0ZK/
-         z0ckoaAg3gRh0jEJ+lZbnSVFHbasbkMU6ImWMeX/TyxUwFQyweVKKquBx+pIZArRZfVK
-         XPVmWjw39mIR9X85IZZT7cVmBKuqFhIhmPrzbQ7DV3nJDeiItgK8ssaJMxn7eJz3AJZ0
-         l7pvtGcXn7rqrniMb3axxqABoQZ++rg3NbfuDLjgC/XZi+wPUDHd4e7p/Xwl/HCZow6e
-         yRBQ==
+        d=redhat.com; s=google; t=1785152403; x=1785757203; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:content-type:mime-version
+         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=XjT/PIWbG/51hlsr95HE/1iGTwI0BlJqCQFAOLtkIYs=;
+        b=sCH0xysYgEIstUl7aHJV13gWXGcHqK3vteCbmXo+v/y8na5SUTj32Ol4E7VRzya6wD
+         6L5WAmI4EVYmHDJFp39XC5FEDKqbLdGtaS1VDaBpGkmSS7O9F4eHITqr4umPc/0ZsH3k
+         H7ng5WvdoFhw4U4MEznbW8TzKVCwHKXhH2zjlAC3atFWv9vW4xUA3onvXzckYE7T6kEq
+         qSBbvz7GEyCbvm0Mxi9Ut6KNIPQh/l55QvuQlc/rVw2uhg6prR/OIdr9tM9LPlrYOfkW
+         a7IH9P5KqayRyS4iw2b0kX6T5a6c3+SmQbtsjvy+KmjzBu377fHj+2GP185CWbJZq56u
+         zY8A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785144446; x=1785749246;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:cc:to:from:subject:user-agent
-         :mime-version:date:message-id:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=akppgifv7/v7Y83JM0bcVzkMzStsYZWlZ76Hf99KRvo=;
-        b=kCk0/d9K7C3caEe4CmE/IvVHdEr/4I8XzhjgapNsYiU5V4FzLu4wRJiTPVnfM0xKDy
-         2Mrh3eBTix49R8icW0ONPGbZbo56KPPyU6Ae9EGQ919oLxkGXdQjLqfHaT474DA90ZWk
-         ph0CmxKj1CNiEXYNNF8th5Encu84CXPrShzDGd6JgQDcm8UE/6pJlhJApPNoiYsw9CXV
-         vMituZJdHSuezso9DdSltQClPEqNrrdMs3AYEbnZZn5blvg7wm7t5A46M4Rd77LYxM6o
-         z/lynQgCPr8XEMZ05zkO4ikTz+9y4bEJaO28irzWW1Cs6mHhuCsZohx2aD4avX44GRui
-         mpOQ==
-X-Forwarded-Encrypted: i=1; AHgh+Rq/PbCQdQRBgsUKsHiH1haeOeXQ8XMtigwRPjVVg70Ib0Lgc0HLymBbWmN5F/2fWPpuQRfnbQlFjpu8Gg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yyog1vHWHGJyJTM3c6wxJP1quluthmvadleaoc0pGsG9MuSL34i
-	iorPLF/yNK77OwfveC9gW/Vo/5G9fXJ858v7MmHLEnV1uKd8AABAQ6bzvowQNASafLA=
-X-Gm-Gg: AR+sD12vnsn6nlB76cdn1GuJrmnSgwEPPusG8OeiegbLx1lO+G2YZ5H4c7Ehmniz63e
-	V49R61iT1Q95DrEUkZyOJHy6dPQvP5PQQBX7DCRcRDaOp6dK0S9Pvn5M1eeq7gDoEWGCqRmCvF4
-	bPVIgkK2X2zR4wPf9r7TtAfvf8iCD2S9hOaanW3v4DD2MgWAo2A4uL/50UIpDdOdqaxZp7roHkX
-	oqgQUlmh4ECM/qtZqEjUWZ90DqbQU9Mi54IEzqL7rFD3Ser80O1ceO1KvVuAQFZb0rv/Pn3g1+l
-	pmwhdLFuX8VSVemm5PysqLRoPpT+z2XsEjO8SCYMPBKdryL6LJ/u7W8gsR1l8Zj/dlavueRNaLN
-	FjZmvlQpodh1SMWRK+Va9SIh7uCC6k93cDJFL2MLeiUb4VH+Sow8YmGcoSz+2XBSWQ8F1BR4=
-X-Received: by 2002:a7b:cd92:0:b0:493:e365:7630 with SMTP id 5b1f17b1804b1-496b56f9850mr62167585e9.14.1785144445967;
-        Mon, 27 Jul 2026 02:27:25 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-13e6054598asm10908277c88.1.2026.07.27.02.27.22
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 27 Jul 2026 02:27:25 -0700 (PDT)
-Message-ID: <805c2b93-ad23-4b17-9e5b-63f6bebf233b@suse.com>
-Date: Mon, 27 Jul 2026 18:57:12 +0930
+        d=1e100.net; s=20251104; t=1785152403; x=1785757203;
+        h=in-reply-to:content-disposition:content-type:mime-version
+         :references:message-id:subject:cc:to:from:date:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=XjT/PIWbG/51hlsr95HE/1iGTwI0BlJqCQFAOLtkIYs=;
+        b=cg1SELEaQx7DJfn98nDgHYbQjZRzietgcJ3VSwcCfvlwBOaMizLFoyp3hMvlFlkP1Q
+         TTi2S0517a7VXleLYqkhtdjTp3jX+kDutbpueQvHYxdjADS01C9IdLVpFkZVCJKvx0zf
+         0pARl2Xq4LP0+qFyXik9uDMZGlo8evHLvj8J7FMIQopX93m8yhtCGdZii4QB1/JSQ0ls
+         Cw67cGYYfXOQJUsKe3mPv/Q1knY9btENOnsFWb/rKqjkWtQACVkX8BMVmmiNpLOJFLWl
+         1bgfoddV5+NEHuoRmPUEFo0XEbtgjJabweghs0Z6YMw6OMm1MNTFYhd72CcADdiURACo
+         tF6g==
+X-Forwarded-Encrypted: i=1; AHgh+RooRCiWnDlhDRx67CZY7Pct5NzuYjIwQZJdmL8IeuHshI/gRIbRlu5MN/PjT+VcSpNxys4T2l9DOQSckg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyuoOfI7n9IXzgWMBk6716SN+2neKeoVCJVn82Ain0F/uiECSip
+	0pa0ygICgpcbIHRLJsk+UHlJu1rzzvkegY+Rc1KdDmq9YiFl+9lt7NKO0ZTXwmspxJVkKzhdrbi
+	tfIkAEbNXLFPgXpDFnelabXmV21ES30Bs/l54kdwWLE4buxoST6RF3MsT4ZwTJgQ=
+X-Gm-Gg: AR+sD11ZCC+ZqkIF4lE1/Lj4S5zWK1SBDCWPQp+aAL1Hg1PLyKu1Z7tA6NchXAebxg/
+	Gdx+l8NAZpf/BE8LBQxy04A9Uqp+QGg+hcqGIOKt6s9Jq54bv0AJz5T14UvCIIjsILKaGeqx5Ra
+	oG07aoDyMd+aba0GPm8NhTvgijZEqno82tlYoks8v+or3CLbWiBlZ5ppPIPOCMYJuQwUNomAUhA
+	ul9TeW7DxcqPyiXaLzuSJ9POz4wSZLSubBAtdO1/hrA8EoJd+ZQw9XdGJM3n/HyhRaWQDwQmmp/
+	spctVYSzMc2+iR1MucBUXf+RAVHXG/wOIKihhyIG5/1DakaZxS7W1JQ9O/wueA8eHaUr9Ubb04p
+	hHbyWYnbmPLH+2ssIqvu7K4l3F4OXOdeF2A0=
+X-Received: by 2002:a05:600c:c87:b0:493:fa66:4861 with SMTP id 5b1f17b1804b1-496b5747df9mr103190435e9.25.1785152402903;
+        Mon, 27 Jul 2026 04:40:02 -0700 (PDT)
+X-Received: by 2002:a05:600c:c87:b0:493:fa66:4861 with SMTP id 5b1f17b1804b1-496b5747df9mr103189935e9.25.1785152402345;
+        Mon, 27 Jul 2026 04:40:02 -0700 (PDT)
+Received: from aalbersh-thinkpadx1carbongen13.rmtcz.csb ([217.30.74.39])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-496b499ccb4sm225617015e9.10.2026.07.27.04.40.01
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 27 Jul 2026 04:40:02 -0700 (PDT)
+Date: Mon, 27 Jul 2026 13:40:01 +0200
+From: Andrey Albershteyn <aalbersh@redhat.com>
+To: Eric Biggers <ebiggers@kernel.org>
+Cc: Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org, 
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, hch@lst.de, 
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
+	linux-btrfs@vger.kernel.org, djwong@kernel.org
+Subject: Re: [PATCH v13 02/23] fsverity: expose ensure_fsverity_info()
+Message-ID: <amcy2KC3veaniXof@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
+References: <20260721184346.416657-1-aalbersh@kernel.org>
+ <20260721184346.416657-3-aalbersh@kernel.org>
+ <20260724233744.GB1901@sol>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: trigger cow fixup via dirty_folio()
-From: Qu Wenruo <wqu@suse.com>
-To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
- kernel-team@fb.com
-Cc: willy@infradead.org
-References: <9f7a81cdd022d9e3f69d347a17c0a25438ccec14.1785131713.git.boris@bur.io>
- <5b2694a2-a5cd-47bd-b225-8d7c74426e2d@suse.com>
-Content-Language: en-US
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <5b2694a2-a5cd-47bd-b225-8d7c74426e2d@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260724233744.GB1901@sol>
 
-
-
-在 2026/7/27 18:08, Qu Wenruo 写道:
-[...]
->> +again:
->> +    folio_lock(folio);
->> +
->> +    if (!folio->mapping || !folio_test_fixup_pending(folio))
->> +        goto out;
->> +    if (ret)
->> +        goto out_error;
->> +
->> +    btrfs_lock_extent(&inode->io_tree, page_start, page_end, 
->> &cached_state);
->> +
->> +    for (bit = 0; bit < blocks_per_folio; bit++) {
->> +        struct btrfs_ordered_extent *ordered;
->> +        const u64 start = page_start + (bit << fs_info- 
->> >sectorsize_bits);
->> +
->> +        if (test_bit(bit, delalloc_bitmap))
+On 2026-07-24 16:37:44, Eric Biggers wrote:
+> On Tue, Jul 21, 2026 at 08:40:39PM +0200, Andrey Albershteyn wrote:
+> > +/**
+> > + * fsverity_ensure_verity_info() - cache verity info if it's not already cached
+> > + * @inode: the inode for which verity info should be cached
+> > + *
+> > + * Ensure this inode has verity info attached to it, it's assumed the inode
+> > + * already has fsverity enabled. Read fsverity descriptor and creates verity
+> > + * based on that.
+> > + *
+> > + * This needs to be called at least once before any of the inode's data
+> > + * can be verified (and thus read at all) or the inode's fsverity digest
+> > + * retrieved.  fsverity_file_open() calls this already, which handles
+> > + * normal file accesses.  If a filesystem does any internal (i.e. not
+> > + * associated with a file descriptor) reads of the file's data or
+> > + * fsverity digest, it must call this explicitly before doing so.
+> > + *
+> > + * Return: 0 on success, -errno on failure
+> > + */
+> > +int fsverity_ensure_verity_info(struct inode *inode)
 > 
-> Dead check. It's always false, as the delalloc_bitmap is initialized to 
-> all zero.
+> There really should be a note here that if the file is also encrypted,
+> then the encryption key has to have been set up first.  This was already
+> gotten wrong when it was proposed for overlayfs to call this.
 
-I'm an idiot, we can retry from again label, so this is the correct way 
-to handle it.
+Sure I will add a note.
 
-Please ignore this one.
+> Do we also need a more specific contract than "-errno on failure"?  The
+> caller in xchk_inode_setup_verity() tries to distinguish between
+> "metadata validation errors" and "runtime errors" by checking for a
+> bunch of different error codes, and I'm not sure what that means
+> exactly.
 
-Thanks,
-Qu
+The scrub checks that if incore fsverity flag is set on the inode
+we should be able to read verity info. If metadata is invalid,
+"metadata validation error" happens, then scrub will clear fsverity
+flag on incore and on-disk inode.
+
+Not sure if this can be improved much, any new error codes won't
+trigger scrub. Passing int *corrupted everywhere also doesn't seem
+to help and changing everything to EFSCORRUPTED will change
+file_open return code.
+
+-- 
+- Andrey
+

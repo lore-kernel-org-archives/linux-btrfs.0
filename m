@@ -1,297 +1,426 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC7CF36DA03;
-	Mon, 27 Jul 2026 08:41:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785141715; cv=none; b=SDpLuwvykRmhtWguKRTJ5AxICA9jSDjfimeB0OnIeFW1UQYRNoW9WJesqXhK6IVACJFHA9VfmBaIwRaxKYNZ4hCvnRTP/Ily/FmShfQChamXW1sLb6lSJYpCKxcfpjgtpMtaBKbt1pEJMvAW9TMhk6+EGmBZAU+hqRtgo3mr9xo=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785141715; c=relaxed/simple;
-	bh=yz8q4ud4t5/b4a8hIV7xN1REz9OUXOr3fuwWSMNQWGA=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=gGhDBA82XC6dRlC+S7d6YmtgIs7y29y2EnJo7sH5A+kZDKAcRIxYYcvOjrhZuaQoPWl6ggVAuM+kVEqG9cuNaK17XAQ7/Cod4lSsqiC5JHV/cNZAeEM3LaK3BJMJjEdRXJHDS57efIycENz3X/7x2xeiv+TVquwgVILthz6D8Ho=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=KcEZG2xL; arc=none smtp.client-ip=212.227.17.20
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4638831714F
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 08:43:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.41
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1785141830; cv=pass; b=POCuR0mkV7tVP46vyfUy/Y/cVcNCqC6C3CWqXOnchpvcaj7t+ecJJK7m5wz66bqIr18a3NRDeqCTiNNe3H1WMBtm8CesdnPkxn4iCiOOCjz03KEygvPvkn4+YyHgLtcKAKnyADxD5BxN4pk+1izn/XrQX5UCwa1zhFLJoE64DXU=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1785141830; c=relaxed/simple;
+	bh=NqjSIjq3Hto+izLhh9wf+S20YdAZ51IrTg6YW6lJk38=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=Lnm5/Sbwt5BzE40QNnZOaK7aA/pBc0wIG5OAOab1HNVinmVdE9232H+Q4D8K5M2OVPk38Vq9TGI3lqfeDiAy7AL9+jaHxDIhBJ11ALqfJ+EVWdASwBJclHV5XfX1jpO0+OAvtrqRcjpzR0KnsazOCr7qlDE7EU0+ex3nzp8tBVU=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=WATBBvWK; arc=pass smtp.client-ip=209.85.128.41
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="KcEZG2xL"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1785141704; x=1785746504; i=quwenruo.btrfs@gmx.com;
-	bh=yz8q4ud4t5/b4a8hIV7xN1REz9OUXOr3fuwWSMNQWGA=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=KcEZG2xLaPrdeUlRVIjY4wZo1D751NJOYnxltTYIT4PlI85haD7wsKbt0YE0tnqt
-	 27H9tJZRgx/rnR3dIQwvhNQqRxWIYztpwh5K+WPO3s06baWuouR4d/U072XQ6PpDA
-	 naT6DZzQh2vVuhUREriSDFEPe94CKFHdXERslpcCuQOqC0p2pStAlMbaB4pHe7FGc
-	 hCi2HKbGaDrIJEYbI2y/WojwBNdov5AQh2qWvzmCEQV3AtpAU+V/YQ6NbmQZcspUA
-	 FB0jqCaGDd8qltSrkvVeeme8Jn9Soa8J7dsOTiP1t3XK4uKEnzfcGeLV0xhfqOZoV
-	 vMRc5BP75ulWKzundg==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MRCKC-1wa1oJ1eRo-00OJuC; Mon, 27
- Jul 2026 10:41:43 +0200
-Message-ID: <0b0dc988-61e5-4dd5-b2a1-52699fd4391c@gmx.com>
-Date: Mon, 27 Jul 2026 18:11:34 +0930
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="WATBBvWK"
+Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-49550ec592cso21564245e9.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 01:43:47 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1785141826; cv=none;
+        d=google.com; s=arc-20260327;
+        b=OgsJRSPB6gGpRSlC5xDcOLYN6jyDrZSGerIn4HLdV4ralqQaEIsvGqTSTrcsijY3YM
+         5NKOI02pcbkvWQp8AsbQBrxIiLdg1WgRfHSFbiXdUdI/uWHfODU5NkqrcViIeUGQDd2n
+         j+LS6wLMPzGygV2K1+xbZcAieVA4ff/HwQtJSnu70c0bDEILgcczBtdvOe1TDqVKpP5s
+         u0l2yuPSNJxOxiJRMJYWjcXe9E8SOOHD0Vq+J0ucJOOBKZldbpqIRN9l7vmvxzw4dwz7
+         ODt7MPEq5rS545H/aIYNgOATSbHKbaHO/bgkrYQlkrQfS0vopjPaCnoqwvU7PIFieJ7C
+         iMqw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=aC0OmtiCKoTlc/uLaZgba/Jwdxxjf3ffy2kkrft60vA=;
+        fh=gccavu6KskZuhdxKZGGZqKbRpE8AZv+Jw1v9OVMw784=;
+        b=jqiODd6GI1axKDJyNj9g+vRTpw/uGLeILM8ljHScAwF+m4913IGtAhTb2ysabZcSZ6
+         S9eMQ/qW3iqCdwQO7LlBZqhAGT0sHWxOPSDxd4pXvE/BXMR4J3udVtO6mwBi1yBJ1jHl
+         kRAoYTlpKp8Kv//U3YGX1xnjb8gCbVZL/qZ3S1mde6M4j3RGz1YHpZSy9vSDs3yComUe
+         q5EiWnsszwwVAx3G1Xkes+RY085nyEG7t9rV//Hx3eKbXbiGSM/dwk81Qxi1+TXdbwrP
+         MhfOl0UaudsiRRL13/FRX8mG880KxNiJXSbRJ6uuOihEYk/vv63nZtpu7PJGhV0snJJ+
+         fqyw==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1785141826; x=1785746626; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=aC0OmtiCKoTlc/uLaZgba/Jwdxxjf3ffy2kkrft60vA=;
+        b=WATBBvWKhod75Z82RtshMiQAAu2G3CZKiT6l044glxJ5Iwmd5qK0I4+H75qQ/7a5MG
+         hhQS7XrDUUi2eBwHLmu392hMgidFW9m3QQ/hioJmuRcZtqXOEiKxylRUL3YseYLGhfPT
+         4fjVW1dPNFsyCw90muqYoWMpLWfivhv8KxkdBQ2/SfQH2v3TNbmwsdGvNdu4MgXCbfYw
+         XuhgAfWIS4ZPa29C9DEoXOtbqfPLTBZ5yG76y3FYbjaqd4QhSp0ajUfwMaXscyWYPTNH
+         MXgEVt2PK2gkTol18yU9qK5dvyoDKdWFdPx+hJqtGQ53PR+ENGpTsZuULgRwgmmzyyB6
+         eoRA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1785141826; x=1785746626;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=aC0OmtiCKoTlc/uLaZgba/Jwdxxjf3ffy2kkrft60vA=;
+        b=MhGNgpsoOwamJEBBG/Rmxn4uoexvb39PFtT0be2iFpDP7oXAQuo3Lpt9fRYysarmXe
+         SCDXBKvPYmNXUCcGIMa4D52QO5RaRpYw9fq0hBOK+mz1lzt0QbQXCZgopC/9gIDiDEqs
+         LHytIZNoZ0rbl8pDoksjsn9wm3IxPYAE6bJG1BOKIwjlpk3idrpDe0yPuyXrWbxTezTS
+         SkeR9gZBO3qhw/W+WKlOKOtd0CpMKUDDS3iMVFMK4Ga+mfaK53fcV7UP9KqKGO1uNO51
+         960XKn5qPmLXyIT4LzgJ+FnYlwGngCqC7OVm0Lqfj/Q6o51XiynCMJQNXa0RWwmJXXkd
+         /Baw==
+X-Gm-Message-State: AOJu0YwfWD+/7x2TAItiPgaixqaVPD55EpKmP+mmcEAyODiMeaGMQ1Nr
+	BbFtkKwWm6TWRgcanw05iRufR0Cac39tjWqNwws8L67X+NANkB1ILh8P2Ms2PMRF7HM2ErPBUoy
+	S9QeB8AIH6/Pa+PQOL8hcMrKN/K5XfIbJivqPVIsi+g==
+X-Gm-Gg: AR+sD12CVEfDTHf13wuahroBBvp4NgcTYzqUd+GK/FZKGteKkaAcOqLgUQGoF6aTd/5
+	m2JhRZy/mFLHefoW4sKcSW3oGZ6kyg96NiDrdMzFbw2YFDFmy+HxZXAktqNIorUDo2lNnQ2Xeko
+	YXtHrxN0gCtGIi5FzoYIWyL/tLtlTqpiyubOLxl6T/1wxgzKSCIM7l6zo/ihACUVY64YegNZzaH
+	0wyDy4SsrDsD+WWUAWYXSy30mvOv7h9UwL7v1jxbLz7kXbMV9kjlOSgsXSqgvf59UVYYvi60aEW
+	7qpMoaE3QcxJZ7ghHOGz1N9avuGh4eUn7gTDbNrrnptoa/NqT02vo1xNJfFm3BFvZnZT2y1Fu/T
+	XyMhn
+X-Received: by 2002:a05:600c:e548:10b0:495:71e9:d92b with SMTP id
+ 5b1f17b1804b1-496b4f1e284mr66017815e9.10.1785141826287; Mon, 27 Jul 2026
+ 01:43:46 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH/RFC] btrfs: fix folio lock leak in writepage_delalloc()
- for folios dirtied behind btrfs' back
-To: Christian Borntraeger <borntraeger@linux.ibm.com>,
- Boris Burkov <boris@bur.io>
-Cc: Matthew Wilcox <willy@infradead.org>, linux-btrfs@vger.kernel.org,
- Qu Wenruo <wqu@suse.com>, Linux Memory Management List <linux-mm@kvack.org>,
- "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
- David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
- Josef Bacik <josef@toxicpanda.com>, linux-kernel@vger.kernel.org,
- kvm@vger.kernel.org, linux-s390@vger.kernel.org
-References: <20260721191152.101118-1-borntraeger@linux.ibm.com>
- <20260721191152.101118-2-borntraeger@linux.ibm.com>
- <b226a6e9-fef2-49bd-b17e-9f9b015626c1@gmx.com>
- <83290932-cb8b-4741-bff0-6a7d8df2c637@linux.ibm.com>
- <224d56d2-fcad-41bf-afe3-6f5f5108172a@gmx.com>
- <f12f70e5-d84d-4a9f-ac94-693be4c863ac@linux.ibm.com>
- <amC-J7yzwk4Z5tHW@casper.infradead.org>
- <ad6eebbd-07f8-41ce-b04c-edd50d91a6e3@gmx.com>
- <amICQYTK9Xu4KLtH@casper.infradead.org>
- <d948c88b-dec5-4e29-b30a-3ea368997ceb@gmx.com>
- <20260725062614.GA2792359@zen.localdomain>
- <4f7b99e5-62b6-48ac-a141-24f25af125c1@linux.ibm.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <4f7b99e5-62b6-48ac-a141-24f25af125c1@linux.ibm.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:xRjn7h5/Ox57ttqKDvfs41ToZ8zwfuRIS9fQuBXSLLycV6HDkH2
- g8GDORD1oQ8lEOFKESR8/69/Jmj/ALJf67MxCaOq/tsojH3T/+nIqrLCPrmwQnPene2ZH4e
- Yhi1XDzkc/BXo+nYv39bDVLhE/BQ/f/5P5XyqE9lzTQFshStDXOiNmisH6VcvAMVXA/1D1N
- chlNyuawXFt4+7quGGRMw==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:/ZDT30pmVDI=;HVywJ2bO0Tm6swwZkB2EDn3Qw0y
- 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
+References: <36ca71a749dbd364736747bc23c3ca8c44ef6cbc.1785107778.git.wqu@suse.com>
+In-Reply-To: <36ca71a749dbd364736747bc23c3ca8c44ef6cbc.1785107778.git.wqu@suse.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Mon, 27 Jul 2026 10:43:35 +0200
+X-Gm-Features: AUfX_mzo3hMLpl5Sfd2ko52FOL4N__zOFd579N5ckYBYZPWh4roIZV5Jv7xF_kU
+Message-ID: <CAPjX3Fdk=XRpOnOr6RnwjGUcoaVk7O=qvst68eH3DE8QnC-fUg@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: convert reflink.c to use btrfs_inode as parameters
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
+On Mon, 27 Jul 2026 at 01:20, Qu Wenruo <wqu@suse.com> wrote:
+> Inside reflink.c we still have a lot of functions passing vanilla inode
+> pointers, then internally convert them into btrfs_inode pointers.
+>
+> For example, inside btrfs_clone(), we have 12 BTRFS_I() call sites,
+> meanwhile only 3 callsites that really require a vanilla inode pointer.
+>
+> This patch do the cleanup to convert the following functions to pass a
+> btrfs_inode pointer instead of a vanilla inode pointer:
+>
+> - btrfs_clone()
+> - btrfs_extent_same_range()
+> - clone_finish_inode_update().
+>
+> Which covers all ad-hoc BTRFS_I() call sites inside reflink.c.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
+Looks good to me.
+Reviewed-by: Daniel Vacek <neelx@suse.com>
 
-=E5=9C=A8 2026/7/27 17:41, Christian Borntraeger =E5=86=99=E9=81=93:
-> Am 25.07.26 um 08:26 schrieb Boris Burkov:
->> On Fri, Jul 24, 2026 at 08:10:36AM +0930, Qu Wenruo wrote:
->>>
->>>
->>> =E5=9C=A8 2026/7/23 21:30, Matthew Wilcox =E5=86=99=E9=81=93:
->>>> On Thu, Jul 23, 2026 at 10:12:27AM +0930, Qu Wenruo wrote:
->>>>>
->>>>>
->>>>> =E5=9C=A8 2026/7/22 22:27, Matthew Wilcox =E5=86=99=E9=81=93:
->>>>>> On Wed, Jul 22, 2026 at 11:29:36AM +0200, Christian Borntraeger=20
->>>>>> wrote:
->>>>>>> =C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0 4. Thread B loops sync_file_range=
-(WRITE|WAIT) on the=20
->>>>>>> target file.
->>>>>>> =C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 Whenever a full=
- clean cycle (clear_page_dirty_for_io(),
->>>>>>> =C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 writeback, bits=
- cleared) completes inside thread A's
->>>>>>> =C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 submission->com=
-pletion window, the completion-time
->>>>>>> =C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 set_page_dirty_=
-lock() hits a *clean* folio:=20
->>>>>>> filemap_dirty_folio()
->>>>>>> =C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 sets only the f=
-olio flag and the xarray tag - no btrfs=20
->>>>>>> subpage
->>>>>>> =C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 dirty bit, no d=
-elalloc reservation.=C2=A0 See the 20-year-=20
->>>>>>> old comment
->>>>>>> =C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 above bio_set_p=
-ages_dirty() in block/bio.c describing=20
->>>>>>> exactly
->>>>>>> =C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 this ("other co=
-de (eg, flusher threads) could clean=20
->>>>>>> the pages").
->>>>>>
->>>>>> There's your problem.=C2=A0 filemap_dirty_folio() documents that bt=
-rfs is
->>>>>> doing it wrongly:
->>>>>>
->>>>>> =C2=A0=C2=A0=C2=A0 * Filesystems which do not use buffer heads shou=
-ld call this=20
->>>>>> function
->>>>>> =C2=A0=C2=A0=C2=A0 * from their dirty_folio address space operation=
-.=C2=A0 It ignores the
->>>>>> =C2=A0=C2=A0=C2=A0 * contents of folio_get_private(), so if the fil=
-esystem marks=20
->>>>>> individual
->>>>>> =C2=A0=C2=A0=C2=A0 * blocks as dirty, the filesystem should handle =
-that itself.
->>>>>>
->>>>>> fs/btrfs/inode.c:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 .dirty_folio=
-=C2=A0=C2=A0=C2=A0 =3D filemap_dirty_folio,
->>>>>>
->>>>>> so btrfs should have its own btrfs_dirty_folio() which does whateve=
-r
->>>>>> metadata updates it needs to and then call filemap_dirty_folio() to
->>>>>> take care of the page cache business.=C2=A0 See iomap_dirty_folio()=
- as
->>>>>> an example, but many other filesystems also do this.
->>>>>
->>>>> Thanks a lot for the advice.
->>>>>
->>>>> However it looks like the sub-folio dirty block tracking is a little
->>>>> different between iomap and btrfs.
->>>>
->>>> My point is not that "you should do it the exact same way as iomap".
->>>> Rather "the dirty_folio op is the entry point to tell the filesystem
->>>> that a folio is being dirtied".
->>> And since dirty_folio() is not allowed to sleep, we should introduce=
-=20
->>> some
->>> extra mechanism, e.g. page private 2/checked, to notify the fs that th=
-e
->>> folio is marked dirty without proper preparation.
->>>
->>> Then during writeback, detect such folio and do needed preparation=20
->>> for it
->>> since at writeback we're allowed to sleep.
->>>
->>> That sounds feasible, but I haven't seen anyone doing that (including=
-=20
->>> the
->>> older btrfs cow fixup).
->>>
->>> Will explore that path. Thanks a lot again for the dirty_folio() help.
->>>
->>> Thanks,
->>> Qu
->>
->> Here is my proposal for a candidate fix. It passes the reproducer in
->> this thread as well as several more intense reproducers (alluded to but
->> not yet included)
->>
->> https://lore.kernel.org/linux-=20
->> btrfs/6758d4f27be0bbdb865cee7dd5adc435c969f4a3.1784960646.git.boris@bur=
-.io/T/#u
-> I am willing to give it a try, but that does not seem to apply on 7.2-rc=
-4
->=20
+Just one small nit below..
 
-The latest version is out:
+> ---
+>  fs/btrfs/reflink.c | 96 +++++++++++++++++++++++-----------------------
+>  1 file changed, 48 insertions(+), 48 deletions(-)
+>
+> diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+> index 28bb05a92106..a3b71d2067b7 100644
+> --- a/fs/btrfs/reflink.c
+> +++ b/fs/btrfs/reflink.c
+> @@ -20,17 +20,18 @@
+>  #define BTRFS_MAX_DEDUPE_LEN   SZ_16M
+>
+>  static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
+> -                                    struct inode *inode,
+> +                                    struct btrfs_inode *inode,
+>                                      u64 endoff,
+>                                      const u64 destoff,
+>                                      const u64 olen,
+>                                      bool no_time_update)
+>  {
+> +       struct inode *vfs_inode = &inode->vfs_inode;
+>         int ret;
+>
+> -       inode_inc_iversion(inode);
+> +       inode_inc_iversion(vfs_inode);
+>         if (!no_time_update) {
+> -               inode_set_mtime_to_ts(inode, inode_set_ctime_current(inode));
+> +               inode_set_mtime_to_ts(vfs_inode, inode_set_ctime_current(vfs_inode));
+>         }
+>         /*
+>          * We round up to the block size at eof when determining which
+> @@ -38,12 +39,12 @@ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
+>          */
+>         if (endoff > destoff + olen)
+>                 endoff = destoff + olen;
+> -       if (endoff > inode->i_size) {
+> -               i_size_write(inode, endoff);
+> -               btrfs_inode_safe_disk_i_size_write(BTRFS_I(inode), 0);
+> +       if (endoff > vfs_inode->i_size) {
+> +               i_size_write(vfs_inode, endoff);
+> +               btrfs_inode_safe_disk_i_size_write(inode, 0);
+>         }
+>
+> -       ret = btrfs_update_inode(trans, BTRFS_I(inode));
+> +       ret = btrfs_update_inode(trans, inode);
+>         if (unlikely(ret)) {
+>                 btrfs_abort_transaction(trans, ret);
+>                 btrfs_end_transaction(trans);
+> @@ -392,11 +393,11 @@ static int clone_copy_inline_extent(struct btrfs_inode *inode,
+>   * @destoff:         Offset within @inode to start clone
+>   * @no_time_update:  Whether to update mtime/ctime on the target inode
+>   */
+> -static int btrfs_clone(struct inode *src, struct inode *inode,
+> +static int btrfs_clone(struct btrfs_inode *src, struct btrfs_inode *inode,
+>                        const u64 off, const u64 olen, const u64 olen_aligned,
+>                        const u64 destoff, bool no_time_update)
+>  {
+> -       struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
+> +       struct btrfs_fs_info *fs_info = inode->root->fs_info;
+>         BTRFS_PATH_AUTO_FREE(path);
+>         struct extent_buffer *leaf;
+>         struct btrfs_trans_handle *trans;
+> @@ -420,7 +421,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>
+>         path->reada = READA_FORWARD;
+>         /* Clone data */
+> -       key.objectid = btrfs_ino(BTRFS_I(src));
+> +       key.objectid = btrfs_ino(src);
+>         key.type = BTRFS_EXTENT_DATA_KEY;
+>         key.offset = off;
+>
+> @@ -436,8 +437,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>                 u64 drop_start;
+>
+>                 /* Note the key will change type as we walk through the tree */
+> -               ret = btrfs_search_slot(NULL, BTRFS_I(src)->root, &key, path,
+> -                               0, 0);
+> +               ret = btrfs_search_slot(NULL, src->root, &key, path, 0, 0);
+>                 if (ret < 0)
+>                         goto out;
+>                 /*
+> @@ -455,7 +455,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>                 nritems = btrfs_header_nritems(path->nodes[0]);
+>  process_slot:
+>                 if (path->slots[0] >= nritems) {
+> -                       ret = btrfs_next_leaf(BTRFS_I(src)->root, path);
+> +                       ret = btrfs_next_leaf(src->root, path);
+>                         if (ret < 0)
+>                                 goto out;
+>                         if (ret > 0)
+> @@ -467,7 +467,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>
+>                 btrfs_item_key_to_cpu(leaf, &key, slot);
+>                 if (key.type > BTRFS_EXTENT_DATA_KEY ||
+> -                   key.objectid != btrfs_ino(BTRFS_I(src)))
+> +                   key.objectid != btrfs_ino(src))
+>                         break;
+>
+>                 ASSERT(key.type == BTRFS_EXTENT_DATA_KEY, "key.type=%u", key.type);
+> @@ -514,7 +514,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>                 btrfs_release_path(path);
+>
+>                 memcpy(&new_key, &key, sizeof(new_key));
+> -               new_key.objectid = btrfs_ino(BTRFS_I(inode));
+> +               new_key.objectid = btrfs_ino(inode);
+>                 if (off <= key.offset)
+>                         new_key.offset = key.offset + destoff - off;
+>                 else
+> @@ -558,7 +558,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>                         clone_info.extent_buf = buf;
+>                         clone_info.is_new_extent = false;
+>                         clone_info.update_times = !no_time_update;
+> -                       ret = btrfs_replace_file_extents(BTRFS_I(inode), path,
+> +                       ret = btrfs_replace_file_extents(inode, path,
+>                                         drop_start, new_key.offset + datal - 1,
+>                                         &clone_info, &trans);
+>                         if (ret)
+> @@ -582,7 +582,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>                                 goto out;
+>                         }
+>
+> -                       ret = clone_copy_inline_extent(BTRFS_I(inode), path, &new_key,
+> +                       ret = clone_copy_inline_extent(inode, path, &new_key,
+>                                                        drop_start, datal, size,
+>                                                        comp, buf, &trans);
+>                         if (ret)
+> @@ -605,9 +605,9 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>                  * the checksums problem on fsync.
+>                  */
+>                 if (extent_gen == trans->transid && disko > 0)
+> -                       BTRFS_I(src)->last_reflink_trans = trans->transid;
+> +                       src->last_reflink_trans = trans->transid;
+>
+> -               BTRFS_I(inode)->last_reflink_trans = trans->transid;
+> +               inode->last_reflink_trans = trans->transid;
+>
+>                 last_dest_end = ALIGN(new_key.offset + datal,
+>                                       fs_info->sectorsize);
+> @@ -653,10 +653,10 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>                  * set by previous calls to btrfs_replace_file_extents() that
+>                  * replaced file extent items.
+>                  */
+> -               if (last_dest_end >= i_size_read(inode))
+> -                       btrfs_set_inode_full_sync(BTRFS_I(inode));
+> +               if (last_dest_end >= i_size_read(&inode->vfs_inode))
+> +                       btrfs_set_inode_full_sync(inode);
+>
+> -               ret = btrfs_replace_file_extents(BTRFS_I(inode), path,
+> +               ret = btrfs_replace_file_extents(inode, path,
+>                                 last_dest_end, destoff + len - 1, NULL, &trans);
+>                 if (ret)
+>                         goto out;
+> @@ -666,7 +666,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>         }
+>
+>  out:
+> -       clear_bit(BTRFS_INODE_NO_DELALLOC_FLUSH, &BTRFS_I(inode)->runtime_flags);
+> +       clear_bit(BTRFS_INODE_NO_DELALLOC_FLUSH, &inode->runtime_flags);
+>
+>         return ret;
+>  }
+> @@ -701,8 +701,7 @@ static int btrfs_extent_same_range(struct btrfs_inode *src, u64 loff, u64 len,
+>          * mode.
+>          */
+>         btrfs_lock_extent(&dst->io_tree, dst_loff, end, &cached_state);
+> -       ret = btrfs_clone(&src->vfs_inode, &dst->vfs_inode, loff, len,
+> -                         ALIGN(len, bs), dst_loff, true);
+> +       ret = btrfs_clone(src, dst, loff, len, ALIGN(len, bs), dst_loff, true);
+>         btrfs_unlock_extent(&dst->io_tree, dst_loff, end, &cached_state);
+>
+>         btrfs_btree_balance_dirty(fs_info);
+> @@ -710,12 +709,12 @@ static int btrfs_extent_same_range(struct btrfs_inode *src, u64 loff, u64 len,
+>         return ret;
+>  }
+>
+> -static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+> -                            struct inode *dst, u64 dst_loff)
+> +static int btrfs_extent_same(struct btrfs_inode *src, u64 loff, u64 olen,
+> +                            struct btrfs_inode *dst, u64 dst_loff)
+>  {
+>         int ret = 0;
+>         u64 i, tail_len, chunk_count;
+> -       struct btrfs_root *root_dst = BTRFS_I(dst)->root;
+> +       struct btrfs_root *root_dst = dst->root;
+>
+>         spin_lock(&root_dst->root_item_lock);
+>         if (root_dst->send_in_progress) {
+> @@ -733,8 +732,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>         chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
+>
+>         for (i = 0; i < chunk_count; i++) {
+> -               ret = btrfs_extent_same_range(BTRFS_I(src), loff, BTRFS_MAX_DEDUPE_LEN,
+> -                                             BTRFS_I(dst), dst_loff);
+> +               ret = btrfs_extent_same_range(src, loff, BTRFS_MAX_DEDUPE_LEN,
+> +                                             dst, dst_loff);
+>                 if (ret)
+>                         goto out;
+>
+> @@ -743,8 +742,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>         }
+>
+>         if (tail_len > 0)
+> -               ret = btrfs_extent_same_range(BTRFS_I(src), loff, tail_len,
+> -                                             BTRFS_I(dst), dst_loff);
+> +               ret = btrfs_extent_same_range(src, loff, tail_len,
+> +                                             dst, dst_loff);
+>  out:
+>         spin_lock(&root_dst->root_item_lock);
+>         root_dst->dedupe_in_progress--;
+> @@ -757,9 +756,11 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+>                                         u64 off, u64 olen, u64 destoff)
+>  {
+>         struct extent_state *cached_state = NULL;
+> -       struct inode *inode = file_inode(file);
+> -       struct inode *src = file_inode(file_src);
+> -       struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
+> +       struct btrfs_inode *inode = BTRFS_I(file_inode(file));
+> +       struct btrfs_inode *src = BTRFS_I(file_inode(file_src));
+> +       struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> +       const u64 src_isize = src->vfs_inode.i_size;
+> +       const u64 inode_isize = inode->vfs_inode.i_size;
+>         int ret;
+>         u64 len = olen;
+>         const u32 bs = fs_info->sectorsize;
+> @@ -771,13 +772,13 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+>          * if the file size is not blocksize aligned. So we don't need to check
+>          * for that case here.
+>          */
+> -       if (off + len == src->i_size)
+> -               len = ALIGN(src->i_size, bs) - off;
+> +       if (off + len == src_isize)
+> +               len = ALIGN(src_isize, bs) - off;
+>
+> -       if (destoff > inode->i_size) {
+> -               const u64 wb_start = ALIGN_DOWN(inode->i_size, bs);
+> +       if (destoff > inode_isize) {
+> +               const u64 wb_start = ALIGN_DOWN(inode_isize, bs);
+>
+> -               ret = btrfs_cont_expand(BTRFS_I(inode), inode->i_size, destoff);
+> +               ret = btrfs_cont_expand(inode, inode_isize, destoff);
+>                 if (ret)
+>                         return ret;
+>                 /*
+> @@ -789,7 +790,7 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+>                  * we found the previous extent covering eof and before we
+>                  * attempted to increment its reference count).
+>                  */
+> -               ret = btrfs_wait_ordered_range(BTRFS_I(inode), wb_start,
+> +               ret = btrfs_wait_ordered_range(inode, wb_start,
+>                                                destoff - wb_start);
 
-https://lore.kernel.org/linux-btrfs/9f7a81cdd022d9e3f69d347a17c0a25438ccec=
-14.1785131713.git.boris@bur.io/
+This could have been a single line.
 
-And you can apply it on the latest btrfs for-next branch without any=20
-conflict:
+--nX
 
-https://github.com/btrfs/linux.git for-next
+>                 if (ret)
+>                         return ret;
+> @@ -802,9 +803,9 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+>          * mode.
+>          */
+>         end = destoff + len - 1;
+> -       btrfs_lock_extent(&BTRFS_I(inode)->io_tree, destoff, end, &cached_state);
+> +       btrfs_lock_extent(&inode->io_tree, destoff, end, &cached_state);
+>         ret = btrfs_clone(src, inode, off, olen, len, destoff, false);
+> -       btrfs_unlock_extent(&BTRFS_I(inode)->io_tree, destoff, end, &cached_state);
+> +       btrfs_unlock_extent(&inode->io_tree, destoff, end, &cached_state);
+>         if (ret < 0)
+>                 return ret;
+>
+> @@ -818,7 +819,7 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+>          * could come from some range other than the copied inline extent's
+>          * destination range and we have no way to know that.
+>          */
+> -       ret = btrfs_wait_ordered_range(BTRFS_I(inode), destoff, len);
+> +       ret = btrfs_wait_ordered_range(inode, destoff, len);
+>         if (ret < 0)
+>                 return ret;
+>
+> @@ -826,7 +827,7 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+>          * Invalidate page cache so that future reads will see the cloned data
+>          * immediately and not the previous data.
+>          */
+> -       ret = filemap_invalidate_inode(inode, false, destoff, end);
+> +       ret = filemap_invalidate_inode(&inode->vfs_inode, false, destoff, end);
+>         if (ret < 0)
+>                 return ret;
+>
+> @@ -934,7 +935,7 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
+>         bool same_inode = dst_inode == src_inode;
+>         int ret;
+>
+> -       if (btrfs_is_shutdown(inode_to_fs_info(file_inode(src_file))))
+> +       if (btrfs_is_shutdown(src_inode->root->fs_info))
+>                 return -EIO;
+>
+>         if (remap_flags & ~(REMAP_FILE_DEDUP | REMAP_FILE_ADVISORY))
+> @@ -953,8 +954,7 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
+>                 goto out_unlock;
+>
+>         if (remap_flags & REMAP_FILE_DEDUP)
+> -               ret = btrfs_extent_same(&src_inode->vfs_inode, off, len,
+> -                                       &dst_inode->vfs_inode, destoff);
+> +               ret = btrfs_extent_same(src_inode, off, len, dst_inode, destoff);
+>         else
+>                 ret = btrfs_clone_files(dst_file, src_file, off, len, destoff);
+>
+> --
+> 2.54.0
+>
+>

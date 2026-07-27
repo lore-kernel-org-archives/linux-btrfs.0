@@ -1,415 +1,586 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fout-a3-smtp.messagingengine.com (fout-a3-smtp.messagingengine.com [103.168.172.146])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 842E01F1513
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 Jul 2026 23:20:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2DDA418A6CF
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2026 03:57:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.146
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785108022; cv=none; b=flLpECVhwCzyE/O3ElFO5ZFkOa956VmRvfh+1+bskq3+J06m0U6in5L9ZjGWNlcmlpMMiHbBPPxpt212FrcUpstNePaKN4DcnPBqWhAj5b5t/avW7pzvuelrF5J1FE/7B9mbJ+wkUHlnJ/LNcKe+PyFqmR5YwcxcGeEewXIJMXI=
+	t=1785124643; cv=none; b=UvxynI0uWJ+6N6O8bQvF41qAp8OzLPMmv3lb+4AKVH8f8ErejrQKZlQf7HtSUf3hHNUmrCtZ5XQ48QyBiHgc1Mfu4VuUc09ZO9dje0FhXGPjqvp8RzKXGKBjNtvL+ZFEdpPgVQvbiKyMxwUL1N/3gLVgQlUSbYovLMbznzZuzug=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785108022; c=relaxed/simple;
-	bh=RL2C+sSSVU+abGQw8zzMqg9vL3tZTTIkR8iby57Kv3M=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=UNJpo+aAYMA86bZP+S+Tx+bXiShVGAs+9YMTsIyq0FfOVdawWUmzTQQdvyCN0wTcObJLrlmQsn6fQkeB9NCXndExvfrSTu1LZaXFbc/A9fLsly9W8eo8ODtvPWmIY09O/zwMzAfF4ShmuyMutrQCBel3ADTmBT3RlN6cHKMJsOo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=COC4c9RW; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Sr/0X1y4; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1785124643; c=relaxed/simple;
+	bh=IYzeGl1v/2aYfPHSKdfO1NKBpzElEtgj8yTZlnz9p1c=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=TKlnkeTw3yPUhpD8dRHjbOmrFRt7Kk2xfIAMSpQE/hKhK21O5yJwJ272kU3cfe1OEO0P464Q0OPTvga2NglE6+16rd5CDGayItITDkoknBzan6lysARwqC3Kx+7Mb7Au0SqsANOxfXCue+8uiRk1UDGzBiQ8woOHwZbiUfr4pcg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=Nyf24nG4; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=lcK0lwP9; arc=none smtp.client-ip=103.168.172.146
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="COC4c9RW";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Sr/0X1y4"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 1E2BA7D836
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 Jul 2026 23:20:10 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785108014; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=lYkNSm6E0ekh1gwRvbOA2FEasmoAZtk8fsy2xpCsWxs=;
-	b=COC4c9RWSB7bqCsogOEM48H+J1K4SuCB7Bd/BUwpkRqYMpRfihz63C1K8uuZafauyfBVqm
-	58+5+ShjGFt284DtsGA28yMlIaCJPn2p7IcHPBgT2I6N49G/+OJFMcZqhGVsXz4iMxgsWw
-	PnBJRC7wQADmWhHAU2tTAN91tcYzco8=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="Sr/0X1y4"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785108010; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=lYkNSm6E0ekh1gwRvbOA2FEasmoAZtk8fsy2xpCsWxs=;
-	b=Sr/0X1y4Yjtx8HPbm6Fnzg1QQ2Ij+T1dd3u/FdJoF6MxJ2uciEAA80hxUTUrbGjLM43nXn
-	vPaHU74oCDEHOFbHKH2zv6N7Sp87aI4rxX0FW/0EqD7rLSD383ReTzudH1aZAeoUB7fSxM
-	57GX5aMtO/Ge0mDnjH/9C8QEegynGrI=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1EBC8779B9
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 Jul 2026 23:20:08 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id dluYLyiWZmoKawAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 26 Jul 2026 23:20:08 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: convert reflink.c to use btrfs_inode as parameters
-Date: Mon, 27 Jul 2026 08:49:46 +0930
-Message-ID: <36ca71a749dbd364736747bc23c3ca8c44ef6cbc.1785107778.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="Nyf24nG4";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="lcK0lwP9"
+Received: from phl-compute-09.internal (phl-compute-09.internal [10.202.2.49])
+	by mailfout.phl.internal (Postfix) with ESMTP id 37D1EEC024C;
+	Sun, 26 Jul 2026 23:57:20 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-09.internal (MEProxy); Sun, 26 Jul 2026 23:57:20 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-transfer-encoding:content-type:content-type:date:date
+	:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to; s=fm3; t=1785124640;
+	 x=1785211040; bh=M7hurA9/rwGOLwQwH1K8GJW2nhJSZ5CV1fA/CcS/0aQ=; b=
+	Nyf24nG4o762ieiz21Dt0wLO3Gb4EjUjJZUrZaHz/EM5ur9VrcjN+M1qrsQhz4Lv
+	4tU/gVuIbHqKow0qCqS/4L3Yh7VKqLwopBrOr0Oc6nmohL8EhWc25QUHNAp6KFB5
+	HnGLiQebE0S/w8mO7DR6ZpvGkWk8MYZuaMEUNUeaphwDyF9bv+q4U6niuOhfw8cL
+	6Cbk4GmgIZ1mJksn/sciL45ijn4iyIyHKowG2wpG1HJJa9wK/Mc2ZVBdgxmS8m4v
+	MfnXypmHwfSeajpm1qsdc8U0ALT5Of2ZzSw/f+pCaudWNOpxLJuW1yxjcOrhXf6y
+	NbCl0EFDqOGnQdoo0u+3/g==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:content-type:date:date:feedback-id:feedback-id
+	:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to:x-me-proxy
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1785124640; x=
+	1785211040; bh=M7hurA9/rwGOLwQwH1K8GJW2nhJSZ5CV1fA/CcS/0aQ=; b=l
+	cK0lwP93y6rKAnVqpu8EFQ5aJEIpa8V18BiJYOYbiazgFIzh8UnCfpuSm2HRk1MJ
+	eULIrems7pErpzXvP0z+/EcOx2+wtFD1dMIIsBb1xqOy9GSdIR3g7qQXwBQPoizN
+	7FKRkIWUFdtWxR30IXCx+lPZC0M9PDBEP6I2oQEAwtSLmZ870+LSyI6G7YUHk9qZ
+	sOjmBj4fNVLCf2G7tHNwB/2E8TxyfqVTqpGwtcopaDlQjcAgP80CA3uNClUOh/VT
+	Gn7RUPWr5F76McEv0YFOGdtVZNGzupI2lwXQvb+fJhNCiGH0FnaXt8tfYea4yDTl
+	sZ1c+dDNyFZfR+73Pu+Tw==
+X-ME-Sender: <xms:H9dmajqxf3fwc-p1kAuf3tG6qLcnMHRPOt4J1YhePpBAJnjRTNehgA>
+    <xme:H9dmalGJ4vkBsvpCxjvLo7rPjUL4rTQMpKzgAhpzqIpys_VgJ3sZnfshTDJ7uUSSP
+    W7exoiS26HpsGWxVARv3dSKLcvXPxw60HA4CQbsMel4AahxBmWW0Cc>
+X-ME-Received: <xmr:H9dmatlF_fVpFwi-GYKdOgGxI_I4VY4IIrRNyWK-6Y6GnX4yOddD5lW4KpfUhq28DpdeBIqChjfRygsURyMs-2LD5x4>
+X-ME-Proxy-Cause: dmFkZTFH3wTVrB3fv/FRIc50l0Nlfi3usDsOL6obZE8bbhoLYzE700AMnGbrr1tvxIstEk
+    MJeMhZsV/6Ff7YM6iXLwIDvnQP/B3W3Az682YdRBkX9XQbOocVEjIgMXt0IxO78QvhfrZT
+    sbrXM+I0H2R79mUAcED11K9BeGGjMZbcYvVn8sjFaShKzdqnEFEnkjKgkqRckP2n/VMcls
+    DcJCP5VCzuCgXrBiJB+VhumZD0zMSdPP+9MZlNZ2LFnDVbkgzKQUpSqJ2C7jDzeo+ypFJy
+    b+oPvL6xNMNY2uq20mdFxcNAKvAtBxHlAb2TjeeBOZzZbk2NG3gNhQ6AxdEn0DJFccfst6
+    RuJ5PYouNQXhGlfB6h8+aYmDwjdIaeHJTJnB1uE0Si2gNsjAsCFzb+oK1Z3nre+9WLXrg7
+    pFiVQyi8ItinR0bt8mo0u5x/Mr2beIy/GDECqT3bacrb5mK+tn/RdL1UrveRa7QUiEeIP8
+    +i4yqnLi+G4PLuvybYewfI1N+6R/HN/uMwbuk0K3etPpoEFvmOgUpfs1O/KNFSsdWHN6jB
+    yb0PW14orPOeEGPMfaOo9wM1yj7J1NxBgAfr6RsNoNHbG/KWBnQZXhesbHcm82aJ4xAX5C
+    6DIMNQCN3AKpdIvYvrIEgY9kP2KXWmsOWmwjUW6UGI3FWrQ0CN6k1xUnvI6A
+X-ME-Proxy: <xmx:H9dmagk3bsSk3XGB_f0rq-so4I6IWzWQaNwHer3J9OYB744fwdpigg>
+    <xmx:H9dmamsADZ2fM9r9uH6-rTGVFZqZ-gqZMdMRJ5ZGZyfFd8Y7boEsvw>
+    <xmx:H9dmarnQHsTIOmsxVMmSFhMGrUCiIP2lLR8BgevnVEizRC7NS0EbbQ>
+    <xmx:H9dmapseBHdqLM-bxI6VuIY7o2NxXH-A1BmwQycqlK9mNKm3ExdxCA>
+    <xmx:INdmarrDVPPDGn1jUHojlwUx9YsmkDrMBzyKJrMSp5iD2qwystGhK9_K>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Sun,
+ 26 Jul 2026 23:57:19 -0400 (EDT)
+Date: Sun, 26 Jul 2026 20:57:02 -0700
+From: Boris Burkov <boris@bur.io>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [RFC PATCH] btrfs: trigger cow fixup via dirty_folio()
+Message-ID: <20260727035702.GA302657@zen.localdomain>
+References: <6758d4f27be0bbdb865cee7dd5adc435c969f4a3.1784960646.git.boris@bur.io>
+ <dbb0e4ec-cdce-4852-9c1c-21634cc6fa4e@gmx.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid,suse.com:dkim];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: 1E2BA7D836
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
+In-Reply-To: <dbb0e4ec-cdce-4852-9c1c-21634cc6fa4e@gmx.com>
 
-Inside reflink.c we still have a lot of functions passing vanilla inode
-pointers, then internally convert them into btrfs_inode pointers.
+On Sat, Jul 25, 2026 at 07:34:46PM +0930, Qu Wenruo wrote:
+> 
+> 
+> 在 2026/7/25 15:54, Boris Burkov 写道:
+> [...]>
+> > Link: https://lore.kernel.org/linux-btrfs/20260721191152.101118-1-borntraeger@linux.ibm.com/
+> > Signed-off-by: Boris Burkov <boris@bur.io>
+> > Assisted-by: LLM
+> 
+> Without LLM it's very hard to come up with such huge change in such a short
+> time, especially considering this fix is a little urgent due to both large
+> folio and removal of cow fixup are in the same release.
+> 
+> So I'm totally fine with the involvement of LLM, just we will spend quite
+> some time reworking/removing a lot of comments/commit message.
+> 
+> Not because they are not not grammarly sound (unlike my replies), but a lot
+> of time they are too lengthy but brings not too much value compared to the
+> number of lines.
+> 
+> But still, very impressed to see a working RFC this soon.
+> 
+> > ---
+> >   fs/btrfs/btrfs_inode.h       |   1 +
+> >   fs/btrfs/defrag.c            |   1 +
+> >   fs/btrfs/disk-io.c           |   6 +-
+> >   fs/btrfs/extent_io.c         | 127 +++++++++++++++++
+> >   fs/btrfs/file.c              |   2 +
+> >   fs/btrfs/fs.h                |  20 +++
+> >   fs/btrfs/inode.c             | 262 ++++++++++++++++++++++++++++++++++-
+> >   fs/btrfs/reflink.c           |   1 +
+> >   fs/btrfs/relocation.c        |   1 +
+> >   fs/btrfs/subpage.c           |  93 +++++++++++++
+> >   fs/btrfs/subpage.h           |  43 +++++-
+> >   include/trace/events/btrfs.h |  35 +++++
+> >   12 files changed, 585 insertions(+), 7 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> > index 7fdc6c3fd066..037445586b31 100644
+> > --- a/fs/btrfs/btrfs_inode.h
+> > +++ b/fs/btrfs/btrfs_inode.h
+> > @@ -600,6 +600,7 @@ int btrfs_prealloc_file_range_trans(struct inode *inode,
+> >   				    loff_t actual_len, u64 *alloc_hint);
+> >   int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct folio *locked_folio,
+> >   			     u64 start, u64 end, struct writeback_control *wbc);
+> > +int btrfs_queue_writepage_fixup(struct btrfs_inode *inode, struct folio *folio);
+> >   int btrfs_encoded_io_compression_from_extent(struct btrfs_fs_info *fs_info,
+> >   					     int compress_type);
+> >   int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
+> > diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
+> > index 6ec5dd760d42..7de5febee9d1 100644
+> > --- a/fs/btrfs/defrag.c
+> > +++ b/fs/btrfs/defrag.c
+> > @@ -1158,6 +1158,7 @@ static void defrag_one_locked_target(struct btrfs_inode *inode,
+> >   		    start + len <= folio_pos(folio))
+> >   			continue;
+> >   		btrfs_folio_clamp_set_dirty(fs_info, folio, start, len);
+> > +		btrfs_folio_cancel_fixup(fs_info, folio, start, len);
+> 
+> This call is very frequent, and to be honest, it's redundant.
+> 
+> We can merge the cancel into btrfs_folio*_set_dirty(), as the
+> btrfs_folio_*set_dirty() is the "proper dirty" entrance, so we know if we're
+> going through that interface, we are ensured to cancel the fixup.
+> 
+> > +
+> > +	if (!folio_test_fixup_pending(folio))
+> 
+> if (likely())
+> 
+> > +		return 0;
+> > +
+> > +	for_each_set_bit(bit, bio_ctrl->submit_bitmap, blocks_per_folio) {
+> > +		const u64 start = page_start + (bit << fs_info->sectorsize_bits);
+> > +
+> > +		if (btrfs_test_range_bit_exists(&inode->io_tree, start,
+> > +						start + sectorsize - 1,
+> > +						EXTENT_DELALLOC))
+> 
+> Can we simplify the check to just check if the fixup bit is not set?
+> 
+> To me, without fixup bit it means it went through the regular write
+> preparation, thus should have EXTENT_DELALLOC.
+> And checking a bit is way faster than check an extent range.
+> 
+> > +			continue;
+> > +		if (btrfs_is_subpage(fs_info, folio) &&
+> > +		    !btrfs_subpage_test_fixup(fs_info, folio, start, sectorsize)) {
+> 
+> Again, we prefer not to use btrfs_is_subpage() and btrfs_subpage_*() out of
+> subpage.c when possible.
+> 
+> So just some helper, like btrfs_folio_test_fixup() would make it more
+> readable.
+> 
+> > +			struct btrfs_ordered_extent *ordered;
+> > +
+> > +			/*
+> > +			 * Not a suspect: the only legal explanation for a
+> > +			 * dirty, unfunded block is that it is pending its own
+> > +			 * submission into a covering ordered extent - punting
+> > +			 * it would starve that ordered extent forever, and
+> > +			 * the worker could not see it anyway (its work list
+> > +			 * is the fixup bits). Verify the ordered extent
+> > +			 * exists; if not, the invariant is broken - leave the
+> > +			 * block in the bitmap so submission fails loudly
+> > +			 * (EUCLEAN) instead of silently repairing.
+> > +			 */
+> 
+> The block can be dirtied properly before, then ->dirty_folio() callback is
+> triggered.
+> 
+> In that case, we may have not run delalloc for the folio, thus there may be
+> no OE created yet.
+> 
+> It looks like the assumption is not correct to me, and may cause false
+> alerts.
+> 
+> But on the other hand, it's already very hard to hit a case where we have
+> some proper dirty blocks, and ->dirty_folio() is called.
+> E.g. for the direct IO case, ->dirty_folio() is only called when the folio
+> is clean.
+> 
+> Thus this false alerts case is not easy to test.
+> 
+> > +			ordered = btrfs_lookup_ordered_range(inode, start,
+> > +							     sectorsize);
+> 
+> Doing this is a little overkilled.
+> 
+> As the recent patch "btrfs: use ordered extent to grab the logical address
+> for submission" will do it at submission time, with better cached OE usage.
+> 
+> I'd prefer skip the OE lookup completely, and let the final submission path
+> to grab the OE (which can reuse bbio->ordered when possible).
+> > +			if (unlikely(!ordered))
+> > +				DEBUG_WARN();
+> > +			else
+> > +				btrfs_put_ordered_extent(ordered);
+> > +			continue;
+> > +		}
+> > +		/*
+> > +		 * Block re-dirtied via dirty_folio(), requires async fixup.
+> > +		 * All other blocks in the folio should proceed as normal so
+> > +		 * that their OEs can make progress and complete.
+> > +		 */
+> > +		bitmap_clear(bio_ctrl->submit_bitmap, bit, 1);
+> > +		punt = true;
+> 
+> The variable naming choice is definitely very LLM.
+> 
+> Non-native speaker like me may need to google the word first...
+> 
+> > +	}
+> > +	if (punt) {
+> > +		btrfs_queue_writepage_fixup(inode, folio);
+> > +		/*
+> > +		 * Keep the folio dirty for the punted blocks.  If nothing
+> > +		 * is left to submit this pass, the folio is done and we own
+> > +		 * the unlock, matching the async-submission contract.
+> > +		 */
+> > +		folio_redirty_for_writepage(bio_ctrl->wbc, folio);
+> 
+> We haven't yet cleared any bit nor folio dirty in the first place.
+> So not sure if this is really needed, nor the comment.
+> 
 
-For example, inside btrfs_clone(), we have 12 BTRFS_I() call sites,
-meanwhile only 3 callsites that really require a vanilla inode pointer.
+This was just inherited from the original fixup which had similar
+conditions of dirtiness. I think it is probably vestigial. I am leaving
+it in v2 for now since that is what I have tested the most, but I think
+it is likely very possible to remove.
 
-This patch do the cleanup to convert the following functions to pass a
-btrfs_inode pointer instead of a vanilla inode pointer:
+> > +		if (bitmap_empty(bio_ctrl->submit_bitmap, blocks_per_folio)) {
+> > +			folio_unlock(folio);
+> > +			return 1;
+> > +		}
+> > +		return 0;
+> > +	}
+> > +	/* Every dirty block is now covered; the folio is ordinary again. */
+> > +	if (btrfs_is_subpage(fs_info, folio))
+> > +		btrfs_subpage_clear_fixup(fs_info, folio, page_start,
+> > +					  folio_size(folio));
+> 
+> Again, a btrfs_folio_clear_fixup() is more helpful.
+> 
+> [...]
+> > +/*
+> > + * The folio has (or, for single-block folios, is) dirty blocks that were
+> > + * dirtied without notifying the filesystem (e.g. set_page_dirty_lock() on a
+> > + * GUP pin) and carry no reservation.  Set by btrfs_data_dirty_folio(), which
+> > + * records the affected blocks in the subpage fixup bitmap; cleared when the
+> > + * writepage fixup has covered every dirty block, or by a reserving write
+> > + * that covers the whole folio.  Reuses the PG_owner_2 bit that the folio
+> > + * ordered flag occupied before it was removed.
+> 
+> Again, very LLM comments. That's why always delete all comments from LLM by
+> default.
+> 
+> The older, removed comment is very simple for folio_ordered:
+> 
+>  * We use folio flag owner_2 to indicate there is an ordered extent with
+>  * unfinished IO.
+> 
+> 
+> [...]
+> > +static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
+> > +{
+> > +	struct btrfs_writepage_fixup *fixup =
+> > +		container_of(work, struct btrfs_writepage_fixup, work);
+> > +	struct extent_state *cached_state = NULL;
+> > +	struct extent_changeset *data_reserved = NULL;
+> > +	unsigned long funded[BITS_TO_LONGS(BTRFS_MAX_BLOCKS_PER_FOLIO)] = { 0 };
+> > +	struct folio *folio = fixup->folio;
+> > +	struct btrfs_inode *inode = fixup->inode;
+> > +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> > +	const unsigned int blocks_per_folio = btrfs_blocks_per_folio(fs_info, folio);
+> > +	const u32 sectorsize = fs_info->sectorsize;
+> > +	const u64 page_start = folio_pos(folio);
+> > +	const u64 page_end = folio_next_pos(folio) - 1;
+> > +	unsigned int start_bit;
+> > +	unsigned int end_bit;
+> > +	unsigned int bit;
+> > +	bool reserved;
+> > +	int ret;
+> > +
+> > +	/*
+> > +	 * Reserve for the whole folio before taking the folio lock, like
+> > +	 * page_mkwrite: the reservation may flush, and flushing writeback
+> > +	 * takes folio locks.  Which blocks actually need funding is only
+> > +	 * knowable under the lock, so reserve the worst case and release
+> > +	 * the unused ranges once the funded set is known.
+> > +	 */
+> > +	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
+> > +					   folio_size(folio));
+> 
+> You fall into the same pitfall I'm worried about, but unfortunately or
+> fortunately, it's very hard to hit.
+> 
+> The problem here is, we can over-reserve, e.g. some range is already
+> properly dirtied, thus they have already space reserved.
+> 
+> And you can not release the reserved space for them, because release will
+> also clear the qgroup reserved extent flag.
+> 
+> This is the biggest problem that I have no way to fix.
+> As there is no way to ensure the space we reserved is really needed before
+> holding the folio lock.
+> 
+> 
+> But since it's really hard to get a dirty folio to be called with
+> ->dirty_folio(), thus it may not be exposed through tests.
+> 
+> > +	reserved = (ret == 0);
+> > +again:
+> > +	folio_lock(folio);
+> > +
+> > +	/*
+> > +	 * The queueing writeback pass took references on the folio and the
+> > +	 * inode, but nothing else is stable: an in-band write may have funded
+> > +	 * the blocks and cancelled the fixup state, or the folio may have
+> > +	 * been invalidated.  Then there is nothing left to do - and a failed
+> > +	 * reservation against a folio that no longer needs one is no error.
+> > +	 */
+> > +	if (!folio->mapping || !folio_test_dirty(folio) ||
+> > +	    !folio_test_fixup_pending(folio)) {
+> > +		ret = 0;
+> > +		goto out;
+> > +	}
+> > +
+> > +	/* The folio still needs funding we could not get. */
+> > +	if (ret)
+> > +		goto out_error;
+> > +
+> > +	btrfs_lock_extent(&inode->io_tree, page_start, page_end, &cached_state);
+> > +
+> > +	for (bit = 0; bit < blocks_per_folio; bit++) {
+> > +		struct btrfs_ordered_extent *ordered;
+> > +		const u64 start = page_start + (bit << fs_info->sectorsize_bits);
+> > +
+> > +		if (test_bit(bit, funded))
+> > +			continue;
+> > +		if (btrfs_is_subpage(fs_info, folio) &&
+> > +		    !btrfs_subpage_test_fixup(fs_info, folio, start, sectorsize))
+> > +			continue;
+> > +		/* An in-band write may have funded the block while we waited. */
+> > +		if (btrfs_test_range_bit_exists(&inode->io_tree, start,
+> > +						start + sectorsize - 1,
+> > +						EXTENT_DELALLOC))
+> > +			continue;
+> > +		ordered = btrfs_lookup_ordered_range(inode, start, sectorsize);
+> > +		if (ordered) {
+> > +			trace_btrfs_writepage_fixup_defer(inode, ordered);
+> > +			btrfs_unlock_extent(&inode->io_tree, page_start,
+> > +					    page_end, &cached_state);
+> > +			folio_unlock(folio);
+> > +			btrfs_start_ordered_extent(ordered);
+> > +			btrfs_put_ordered_extent(ordered);
+> > +			goto again;
+> > +		}
+> > +		ret = btrfs_set_extent_delalloc(inode, start,
+> > +						start + sectorsize - 1, 0,
+> > +						&cached_state);
+> > +		if (ret) {
+> > +			btrfs_unlock_extent(&inode->io_tree, page_start,
+> > +					    page_end, &cached_state);
+> > +			goto out_error;
+> > +		}
+> > +		trace_btrfs_writepage_fixup_reserve(inode, start, sectorsize);
+> > +		if (btrfs_is_subpage(fs_info, folio))
+> > +			btrfs_subpage_clear_fixup(fs_info, folio, start,
+> > +						  sectorsize);
+> > +		__set_bit(bit, funded);
+> 
+> Why __set_bit() not set_bit()?
+> 
 
-- btrfs_clone()
-- btrfs_extent_same_range()
-- clone_finish_inode_update().
+I think just being cute cause it's a local variable. I'll use set_bit to
+not make it stick out as if it's an important choice.
 
-Which covers all ad-hoc BTRFS_I() call sites inside reflink.c.
+> > +	}
+> > +
+> > +	/* Every fixup block is funded; the folio is ordinary again. */
+> > +	folio_clear_fixup_pending(folio);
+> > +	btrfs_unlock_extent(&inode->io_tree, page_start, page_end, &cached_state);
+> > +	goto out;
+> > +
+> > +out_error:
+> > +	/*
+> > +	 * The remaining unnotified blocks cannot be funded.  There is no
+> > +	 * syscall to return this through, so surface it the way a failed
+> > +	 * writeback would - record the error on the mapping - and drop the
+> > +	 * blocks, or writeback would find and requeue them forever.
+> > +	 */
+> > +	mapping_set_error(folio->mapping, ret);
+> > +	if (btrfs_is_subpage(fs_info, folio)) {
+> > +		bool last = false;
+> > +
+> > +		for (bit = 0; bit < blocks_per_folio; bit++) {
+> 
+> Again, a proper btrfs_folio_clear_fixup() and pass the folio range into it
+> should handle the loop.
+> 
+> > +			const u64 start = page_start +
+> > +					  (bit << fs_info->sectorsize_bits);
+> > +
+> > +			if (!btrfs_subpage_test_fixup(fs_info, folio, start,
+> > +						      sectorsize))
+> > +				continue;
+> > +			last = btrfs_subpage_clear_and_test_dirty(fs_info,
+> > +							folio, start,
+> > +							sectorsize);
+> > +		}
+> > +		btrfs_folio_cancel_fixup(fs_info, folio, page_start,
+> > +					 folio_size(folio));
+> > +		if (last)
+> > +			folio_clear_dirty_for_io(folio);
+> 
+> Again, the regular btrfs_folio_clear_dirty() is going to handle all these,
+> and no need for a special subpage branch.
+> 
+> > +	} else {
+> > +		folio_clear_dirty_for_io(folio);
+> > +	}
+> > +	folio_clear_fixup_pending(folio);
+> > +out:
+> > +	if (reserved) {
+> > +		btrfs_delalloc_release_extents(inode, folio_size(folio));
+> > +		for_each_clear_bitrange(start_bit, end_bit, funded,
+> > +					blocks_per_folio)
+> > +			btrfs_delalloc_release_space(inode, data_reserved,
+> > +				page_start + (start_bit << fs_info->sectorsize_bits),
+> > +				(end_bit - start_bit) << fs_info->sectorsize_bits,
+> > +				true);
+> > +	}
+> > +	folio_unlock(folio);
+> > +	folio_put(folio);
+> > +	kfree(fixup);
+> > +	extent_changeset_free(data_reserved);
+> > +	/*
+> > +	 * As a precaution, do a delayed iput in case it would be the last
+> > +	 * iput that could need flushing space. Recursing back to the fixup
+> > +	 * worker would deadlock.
+> > +	 */
+> > +	btrfs_add_delayed_iput(inode);
+> > +}
+> [...]
+> > +static bool btrfs_data_dirty_folio(struct address_space *mapping,
+> > +				   struct folio *folio)
+> > +{
+> > +	struct btrfs_inode *inode = BTRFS_I(mapping->host);
+> > +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> > +	bool marked = false;
+> > +
+> > +	if (btrfs_is_subpage(fs_info, folio)) {
+> > +		const struct btrfs_folio_state *bfs = folio_get_private(folio);
+> > +		const u64 page_start = folio_pos(folio);
+> > +		const u64 range_end = min_t(u64, page_start + folio_size(folio),
+> > +					    round_up(i_size_read(&inode->vfs_inode),
+> > +						     fs_info->sectorsize));
+> > +
+> > +		if (!READ_ONCE(bfs->reserving_dirty) &&
+> > +		    folio_test_uptodate(folio) && range_end > page_start)
+> > +			marked = btrfs_subpage_set_fixup_dirty(fs_info, folio,
+> > +							       page_start,
+> > +							       range_end - page_start);
+> > +	} else if (!folio_test_dirty(folio) &&
+> > +		   !btrfs_test_range_bit_exists(&inode->io_tree,
+> > +						folio_pos(folio),
+> > +						folio_next_pos(folio) - 1,
+> > +						EXTENT_DELALLOC)) {
+> 
+> Again, the same question why the folio_test_dirty() check is not enough.
+> 
+> The subpage part has no such check.
+> 
+> > +		marked = true;
+> > +	}
+> > +	if (marked)
+> > +		folio_set_fixup_pending(folio);
+> > +	return filemap_dirty_folio(mapping, folio);
+> > +}
+> > +
+> [..]
+> > --- a/fs/btrfs/subpage.c
+> > +++ b/fs/btrfs/subpage.c
+> > @@ -356,7 +356,17 @@ void btrfs_subpage_set_dirty(const struct btrfs_fs_info *fs_info,
+> >   	spin_lock_irqsave(&bfs->lock, flags);
+> >   	bitmap_set(bfs->bitmaps, start_bit, len >> fs_info->sectorsize_bits);
+> >   	spin_unlock_irqrestore(&bfs->lock, flags);
+> > +	/*
+> > +	 * Every caller of this helper is a reserving write path dirtying
+> > +	 * exactly the range it reserved; the dirty_folio callback must not
+> > +	 * treat it as potentially unnotified and drag the folio's clean
+> > +	 * sibling blocks into COW (that breaks reflink sharing of the
+> > +	 * untouched blocks, among other things).  Unnotified dirtiers call
+> > +	 * folio_mark_dirty() directly and never pass through here.
+> > +	 */
+> > +	WRITE_ONCE(bfs->reserving_dirty, true);
+> >   	folio_mark_dirty(folio);
+> 
+> My solution in my initial patchset is to not call folio_mark_dirty() as it
+> will call back to the ->dirty_folio() call back.
+> 
+> So I implemented an local version which call back to filemap_mark_dirty(),
+> other than ->dirty_folio() which sets the fixup bits.
+> 
+> > +	WRITE_ONCE(bfs->reserving_dirty, false);
+> >   }
+> >   static void folio_clear_tags(struct folio *folio)
+> > @@ -457,6 +467,88 @@ void btrfs_subpage_clear_writeback(const struct btrfs_fs_info *fs_info,
+> >   	spin_unlock_irqrestore(&bfs->lock, flags);
+> >   }
+> > +void btrfs_subpage_clear_fixup(const struct btrfs_fs_info *fs_info,
+> > +			       struct folio *folio, u64 start, u32 len)
+> > +{
+> > +	struct btrfs_folio_state *bfs = folio_get_private(folio);
+> > +	unsigned int start_bit = subpage_calc_start_bit(fs_info, folio,
+> > +							fixup, start, len);
+> > +	unsigned long flags;
+> > +
+> > +	spin_lock_irqsave(&bfs->lock, flags);
+> > +	bitmap_clear(bfs->bitmaps, start_bit, len >> fs_info->sectorsize_bits);
+> > +	spin_unlock_irqrestore(&bfs->lock, flags);
+> 
+> Shouldn't we also check if we have cleared the last fixup bit and clear the
+> folio fixup flag?
+> [...]
+> > +void btrfs_folio_cancel_fixup(const struct btrfs_fs_info *fs_info,
+> > +			      struct folio *folio, u64 start, u32 len)
+> 
+> Why not let IMPLEMNT_BTRFS_PAGE_OPS() to implement all the fixup helpers?
+> 
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/reflink.c | 96 +++++++++++++++++++++++-----------------------
- 1 file changed, 48 insertions(+), 48 deletions(-)
+I think the level 0 answer is it doesn't apply to metadata and the llm
+also went nuts messing with the macros when it tried to use them.
 
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index 28bb05a92106..a3b71d2067b7 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -20,17 +20,18 @@
- #define BTRFS_MAX_DEDUPE_LEN	SZ_16M
- 
- static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
--				     struct inode *inode,
-+				     struct btrfs_inode *inode,
- 				     u64 endoff,
- 				     const u64 destoff,
- 				     const u64 olen,
- 				     bool no_time_update)
- {
-+	struct inode *vfs_inode = &inode->vfs_inode;
- 	int ret;
- 
--	inode_inc_iversion(inode);
-+	inode_inc_iversion(vfs_inode);
- 	if (!no_time_update) {
--		inode_set_mtime_to_ts(inode, inode_set_ctime_current(inode));
-+		inode_set_mtime_to_ts(vfs_inode, inode_set_ctime_current(vfs_inode));
- 	}
- 	/*
- 	 * We round up to the block size at eof when determining which
-@@ -38,12 +39,12 @@ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
- 	 */
- 	if (endoff > destoff + olen)
- 		endoff = destoff + olen;
--	if (endoff > inode->i_size) {
--		i_size_write(inode, endoff);
--		btrfs_inode_safe_disk_i_size_write(BTRFS_I(inode), 0);
-+	if (endoff > vfs_inode->i_size) {
-+		i_size_write(vfs_inode, endoff);
-+		btrfs_inode_safe_disk_i_size_write(inode, 0);
- 	}
- 
--	ret = btrfs_update_inode(trans, BTRFS_I(inode));
-+	ret = btrfs_update_inode(trans, inode);
- 	if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 		btrfs_end_transaction(trans);
-@@ -392,11 +393,11 @@ static int clone_copy_inline_extent(struct btrfs_inode *inode,
-  * @destoff:         Offset within @inode to start clone
-  * @no_time_update:  Whether to update mtime/ctime on the target inode
-  */
--static int btrfs_clone(struct inode *src, struct inode *inode,
-+static int btrfs_clone(struct btrfs_inode *src, struct btrfs_inode *inode,
- 		       const u64 off, const u64 olen, const u64 olen_aligned,
- 		       const u64 destoff, bool no_time_update)
- {
--	struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	BTRFS_PATH_AUTO_FREE(path);
- 	struct extent_buffer *leaf;
- 	struct btrfs_trans_handle *trans;
-@@ -420,7 +421,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 
- 	path->reada = READA_FORWARD;
- 	/* Clone data */
--	key.objectid = btrfs_ino(BTRFS_I(src));
-+	key.objectid = btrfs_ino(src);
- 	key.type = BTRFS_EXTENT_DATA_KEY;
- 	key.offset = off;
- 
-@@ -436,8 +437,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 		u64 drop_start;
- 
- 		/* Note the key will change type as we walk through the tree */
--		ret = btrfs_search_slot(NULL, BTRFS_I(src)->root, &key, path,
--				0, 0);
-+		ret = btrfs_search_slot(NULL, src->root, &key, path, 0, 0);
- 		if (ret < 0)
- 			goto out;
- 		/*
-@@ -455,7 +455,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 		nritems = btrfs_header_nritems(path->nodes[0]);
- process_slot:
- 		if (path->slots[0] >= nritems) {
--			ret = btrfs_next_leaf(BTRFS_I(src)->root, path);
-+			ret = btrfs_next_leaf(src->root, path);
- 			if (ret < 0)
- 				goto out;
- 			if (ret > 0)
-@@ -467,7 +467,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 
- 		btrfs_item_key_to_cpu(leaf, &key, slot);
- 		if (key.type > BTRFS_EXTENT_DATA_KEY ||
--		    key.objectid != btrfs_ino(BTRFS_I(src)))
-+		    key.objectid != btrfs_ino(src))
- 			break;
- 
- 		ASSERT(key.type == BTRFS_EXTENT_DATA_KEY, "key.type=%u", key.type);
-@@ -514,7 +514,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 		btrfs_release_path(path);
- 
- 		memcpy(&new_key, &key, sizeof(new_key));
--		new_key.objectid = btrfs_ino(BTRFS_I(inode));
-+		new_key.objectid = btrfs_ino(inode);
- 		if (off <= key.offset)
- 			new_key.offset = key.offset + destoff - off;
- 		else
-@@ -558,7 +558,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 			clone_info.extent_buf = buf;
- 			clone_info.is_new_extent = false;
- 			clone_info.update_times = !no_time_update;
--			ret = btrfs_replace_file_extents(BTRFS_I(inode), path,
-+			ret = btrfs_replace_file_extents(inode, path,
- 					drop_start, new_key.offset + datal - 1,
- 					&clone_info, &trans);
- 			if (ret)
-@@ -582,7 +582,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 				goto out;
- 			}
- 
--			ret = clone_copy_inline_extent(BTRFS_I(inode), path, &new_key,
-+			ret = clone_copy_inline_extent(inode, path, &new_key,
- 						       drop_start, datal, size,
- 						       comp, buf, &trans);
- 			if (ret)
-@@ -605,9 +605,9 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 		 * the checksums problem on fsync.
- 		 */
- 		if (extent_gen == trans->transid && disko > 0)
--			BTRFS_I(src)->last_reflink_trans = trans->transid;
-+			src->last_reflink_trans = trans->transid;
- 
--		BTRFS_I(inode)->last_reflink_trans = trans->transid;
-+		inode->last_reflink_trans = trans->transid;
- 
- 		last_dest_end = ALIGN(new_key.offset + datal,
- 				      fs_info->sectorsize);
-@@ -653,10 +653,10 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 		 * set by previous calls to btrfs_replace_file_extents() that
- 		 * replaced file extent items.
- 		 */
--		if (last_dest_end >= i_size_read(inode))
--			btrfs_set_inode_full_sync(BTRFS_I(inode));
-+		if (last_dest_end >= i_size_read(&inode->vfs_inode))
-+			btrfs_set_inode_full_sync(inode);
- 
--		ret = btrfs_replace_file_extents(BTRFS_I(inode), path,
-+		ret = btrfs_replace_file_extents(inode, path,
- 				last_dest_end, destoff + len - 1, NULL, &trans);
- 		if (ret)
- 			goto out;
-@@ -666,7 +666,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 	}
- 
- out:
--	clear_bit(BTRFS_INODE_NO_DELALLOC_FLUSH, &BTRFS_I(inode)->runtime_flags);
-+	clear_bit(BTRFS_INODE_NO_DELALLOC_FLUSH, &inode->runtime_flags);
- 
- 	return ret;
- }
-@@ -701,8 +701,7 @@ static int btrfs_extent_same_range(struct btrfs_inode *src, u64 loff, u64 len,
- 	 * mode.
- 	 */
- 	btrfs_lock_extent(&dst->io_tree, dst_loff, end, &cached_state);
--	ret = btrfs_clone(&src->vfs_inode, &dst->vfs_inode, loff, len,
--			  ALIGN(len, bs), dst_loff, true);
-+	ret = btrfs_clone(src, dst, loff, len, ALIGN(len, bs), dst_loff, true);
- 	btrfs_unlock_extent(&dst->io_tree, dst_loff, end, &cached_state);
- 
- 	btrfs_btree_balance_dirty(fs_info);
-@@ -710,12 +709,12 @@ static int btrfs_extent_same_range(struct btrfs_inode *src, u64 loff, u64 len,
- 	return ret;
- }
- 
--static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
--			     struct inode *dst, u64 dst_loff)
-+static int btrfs_extent_same(struct btrfs_inode *src, u64 loff, u64 olen,
-+			     struct btrfs_inode *dst, u64 dst_loff)
- {
- 	int ret = 0;
- 	u64 i, tail_len, chunk_count;
--	struct btrfs_root *root_dst = BTRFS_I(dst)->root;
-+	struct btrfs_root *root_dst = dst->root;
- 
- 	spin_lock(&root_dst->root_item_lock);
- 	if (root_dst->send_in_progress) {
-@@ -733,8 +732,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
- 
- 	for (i = 0; i < chunk_count; i++) {
--		ret = btrfs_extent_same_range(BTRFS_I(src), loff, BTRFS_MAX_DEDUPE_LEN,
--					      BTRFS_I(dst), dst_loff);
-+		ret = btrfs_extent_same_range(src, loff, BTRFS_MAX_DEDUPE_LEN,
-+					      dst, dst_loff);
- 		if (ret)
- 			goto out;
- 
-@@ -743,8 +742,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	}
- 
- 	if (tail_len > 0)
--		ret = btrfs_extent_same_range(BTRFS_I(src), loff, tail_len,
--					      BTRFS_I(dst), dst_loff);
-+		ret = btrfs_extent_same_range(src, loff, tail_len,
-+					      dst, dst_loff);
- out:
- 	spin_lock(&root_dst->root_item_lock);
- 	root_dst->dedupe_in_progress--;
-@@ -757,9 +756,11 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 					u64 off, u64 olen, u64 destoff)
- {
- 	struct extent_state *cached_state = NULL;
--	struct inode *inode = file_inode(file);
--	struct inode *src = file_inode(file_src);
--	struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
-+	struct btrfs_inode *inode = BTRFS_I(file_inode(file));
-+	struct btrfs_inode *src = BTRFS_I(file_inode(file_src));
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	const u64 src_isize = src->vfs_inode.i_size;
-+	const u64 inode_isize = inode->vfs_inode.i_size;
- 	int ret;
- 	u64 len = olen;
- 	const u32 bs = fs_info->sectorsize;
-@@ -771,13 +772,13 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 	 * if the file size is not blocksize aligned. So we don't need to check
- 	 * for that case here.
- 	 */
--	if (off + len == src->i_size)
--		len = ALIGN(src->i_size, bs) - off;
-+	if (off + len == src_isize)
-+		len = ALIGN(src_isize, bs) - off;
- 
--	if (destoff > inode->i_size) {
--		const u64 wb_start = ALIGN_DOWN(inode->i_size, bs);
-+	if (destoff > inode_isize) {
-+		const u64 wb_start = ALIGN_DOWN(inode_isize, bs);
- 
--		ret = btrfs_cont_expand(BTRFS_I(inode), inode->i_size, destoff);
-+		ret = btrfs_cont_expand(inode, inode_isize, destoff);
- 		if (ret)
- 			return ret;
- 		/*
-@@ -789,7 +790,7 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 		 * we found the previous extent covering eof and before we
- 		 * attempted to increment its reference count).
- 		 */
--		ret = btrfs_wait_ordered_range(BTRFS_I(inode), wb_start,
-+		ret = btrfs_wait_ordered_range(inode, wb_start,
- 					       destoff - wb_start);
- 		if (ret)
- 			return ret;
-@@ -802,9 +803,9 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 	 * mode.
- 	 */
- 	end = destoff + len - 1;
--	btrfs_lock_extent(&BTRFS_I(inode)->io_tree, destoff, end, &cached_state);
-+	btrfs_lock_extent(&inode->io_tree, destoff, end, &cached_state);
- 	ret = btrfs_clone(src, inode, off, olen, len, destoff, false);
--	btrfs_unlock_extent(&BTRFS_I(inode)->io_tree, destoff, end, &cached_state);
-+	btrfs_unlock_extent(&inode->io_tree, destoff, end, &cached_state);
- 	if (ret < 0)
- 		return ret;
- 
-@@ -818,7 +819,7 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 	 * could come from some range other than the copied inline extent's
- 	 * destination range and we have no way to know that.
- 	 */
--	ret = btrfs_wait_ordered_range(BTRFS_I(inode), destoff, len);
-+	ret = btrfs_wait_ordered_range(inode, destoff, len);
- 	if (ret < 0)
- 		return ret;
- 
-@@ -826,7 +827,7 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 	 * Invalidate page cache so that future reads will see the cloned data
- 	 * immediately and not the previous data.
- 	 */
--	ret = filemap_invalidate_inode(inode, false, destoff, end);
-+	ret = filemap_invalidate_inode(&inode->vfs_inode, false, destoff, end);
- 	if (ret < 0)
- 		return ret;
- 
-@@ -934,7 +935,7 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
- 	bool same_inode = dst_inode == src_inode;
- 	int ret;
- 
--	if (btrfs_is_shutdown(inode_to_fs_info(file_inode(src_file))))
-+	if (btrfs_is_shutdown(src_inode->root->fs_info))
- 		return -EIO;
- 
- 	if (remap_flags & ~(REMAP_FILE_DEDUP | REMAP_FILE_ADVISORY))
-@@ -953,8 +954,7 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
- 		goto out_unlock;
- 
- 	if (remap_flags & REMAP_FILE_DEDUP)
--		ret = btrfs_extent_same(&src_inode->vfs_inode, off, len,
--					&dst_inode->vfs_inode, destoff);
-+		ret = btrfs_extent_same(src_inode, off, len, dst_inode, destoff);
- 	else
- 		ret = btrfs_clone_files(dst_file, src_file, off, len, destoff);
- 
--- 
-2.54.0
-
+> [...]
+> > @@ -50,6 +65,14 @@ enum {
+> >   struct btrfs_folio_state {
+> >   	/* Common members for both data and metadata pages */
+> >   	spinlock_t lock;
+> > +	/*
+> > +	 * Set across the folio_mark_dirty() that a reserving write path
+> > +	 * issues from btrfs_subpage_set_dirty(), so that the dirty_folio
+> > +	 * callback does not treat the dirtying as potentially unnotified
+> > +	 * and mark the folio's still-clean sibling blocks.  Written under
+> > +	 * the folio lock, which every reserving path holds.
+> > +	 */
+> > +	bool reserving_dirty;
+> 
+> As I mentioned, this is only for dirty_folio() to skip setting fixup bit.
+> 
+> We can get rid of it, if the btrfs_folio_set_dirty() helper doesn't go
+> through folio_mark_dirty().
+> 
+> Thanks,
+> Qu

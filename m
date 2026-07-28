@@ -1,68 +1,106 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 636653A2551;
-	Tue, 28 Jul 2026 06:09:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 341913AA182
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 06:39:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785218966; cv=none; b=t0eRFBYmvN1JuPuTnUz/vCKlnM5hIXzM43OtMWmOU/F4i6rLnWjQKQlWp0DAUHr01Kyr2dgZJn9N8U2DlxSt5DeqIKQA/MGNFAoOjcdUSfwm2Cf6IFZvQ9mL8vZge7EdPQHpkI6o7Vx2JYUHdqX66MHmHYx0d1/YOPsjPQEUPoA=
+	t=1785220779; cv=none; b=ODbfJRx+vhSCzQY/1E+nQ39DdqyYYiKZJvGUZv/cB4AD7z4V5k0iR9sA9R1LtaFOqP4aNR+gZPN5d/W2ZUZ6/rLRdynClDJRL0A7SI3cK7A+NZlgE0DvPMfqZ60CLdeEtod6ZOHRFf1PjH9UbfuUizW/4yRYmg3nU3ODcN09S3k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785218966; c=relaxed/simple;
-	bh=Ma7TRiS6vfpbL6jVuhzx/24ir1JuVN/wg5GCnRKxuzg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=LdKBlPFEEYoV6Rg3HQ96dLFpo1+3bgmtnBvLaOYf7qn2ksZ8V6+CqHmQ+vPvjwWZVEYqMvueTMlp2mv4RfHhMjgelncTPDvu8nL/n6PXp1/RPjM1VZCukEcKtc1lTC+SkQhCIbMM2RSDJKdQ4rTG8IQ+xq4u388mDpfmpklLLM8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=M70NaZTM; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1785220779; c=relaxed/simple;
+	bh=Ir2Hub7zvisuhIFqbYdNozP6IQGp57wxSOiKGS3u5Q0=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=VEnjGpvhRVZY8/CDDs4vObLUQFByhDh+H3KGYH3nL/qFfH5YQ4O2bxdKJRV8TmJJZo4U7Ok0YqSJSIKI80+2ifQivHLt8eW0gh9/fSQtO/z/sKgLxoIme002WzqUBJ1cuFZ6L3SkmFmeiWuy5vd5nH/5lQ+CfGhV6w+OKvIjpxM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=r/MAEHYn; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=LCKMlSi8; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="M70NaZTM"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9C1001F000E9;
-	Tue, 28 Jul 2026 06:09:24 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1785218965;
-	bh=lDNd1D8ooHkbyGjHA6UcmCnxY9qHLFiB/wayD816snE=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=M70NaZTMczMcW6kreE90OnxKmFXc/B/f9SZN6hg5rS7wyYg9RSvyxAozJPNsHs/jm
-	 ggZ5fFYa7jgKv3hvmxObVx9K2/++KwOB3FschJW7rqxbVSCBRrQRQpksyVIkE/qq/O
-	 RCZuImHMX74Jj+HJmsytYYYzJp1aev6whaFnQeAba4Yyp9akgYnjgSov/LNANVtjVF
-	 fc1hCU0L785OgYy0fxSaF5XgKlQIx9Hr/IsEhltOMy/tEOUQuxC4cSJDgBHhipHESi
-	 wCrk9j4MD5NmR1vTHYLepTPzNrDQJfSjf9vOLg3aM1bBMBRVrM+vXO+vMzZvO/bePX
-	 1hwL2GPGcXd0A==
-Date: Mon, 27 Jul 2026 23:07:30 -0700
-From: Eric Biggers <ebiggers@kernel.org>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Daniel Vacek <neelx@suse.com>, fstests@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-xfs@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-	zlang@redhat.com, djwong@kernel.org,
-	David Sterba <dsterba@suse.com>, linux-fscrypt@vger.kernel.org
-Subject: Re: [PATCH 00/12] fstests: introduce fscrypt support for btrfs
-Message-ID: <20260728060730.GC99797@sol>
-References: <20260724133328.1837318-1-neelx@suse.com>
- <amgfuk12imPN2XJe@infradead.org>
- <CAPjX3Fd1KPswrsNe=BeDpkDwi8CmL9HNKcPScMsgGN16MDyVEQ@mail.gmail.com>
- <20260728054847.GB99797@sol>
- <amhGiIsvNIni_VAE@infradead.org>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="r/MAEHYn";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="LCKMlSi8"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id B58923E18
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 06:39:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1785220771; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=MfoI5Y020SrWeR8nWHf8Gd/az0dYrspeEqcJB6bhBKI=;
+	b=r/MAEHYnPJ3oOffOMf7KHIXt0lnO0eFgzpjTiU+oYScsY5X5W4RNJpOG+o8xg35qfT/ymy
+	VR4wVori082xzTa2G/XaGkkJz008/t3KEBhHCdkAxpZeEncWAI3tmRozur0eYg6efQ1mcY
+	xaG+MHO00GgschwlfbbAchbQYzpfG4g=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1785220767; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=MfoI5Y020SrWeR8nWHf8Gd/az0dYrspeEqcJB6bhBKI=;
+	b=LCKMlSi8f1p5BNPDSnsLyNmcmqW4PnxWurq6s7qnMBQ121a6sRnKnmAJJAabMZNQb/BR9L
+	LF4m+vNnJJvSqouTzj7SIu/VcPx7Aunk5+jAV1DjEfc1jRnEJvoGMeH6ZoDsue8TCqOAzY
+	ECCqPzTvtgaYs9ERFOVDfMH4ba0rtno=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id AC881779B1
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 06:39:26 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id A1PKFp5OaGrkSAAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 06:39:26 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: add basic alignment checks for extent_state
+Date: Tue, 28 Jul 2026 16:09:02 +0930
+Message-ID: <cover.1785220613.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <amhGiIsvNIni_VAE@infradead.org>
+Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.992];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
 
-On Mon, Jul 27, 2026 at 11:04:56PM -0700, Christoph Hellwig wrote:
-> On Mon, Jul 27, 2026 at 10:48:47PM -0700, Eric Biggers wrote:
-> > Please keep sending out the tests along with the kernel patches.  But
-> > yes, they aren't for immediate merging and should be tagged with RFC,
-> > and the cover letter should mention that the kernel patches are pending.
-> > Thanks!
-> 
-> I think the split of the v1 vs v2 policy tests might actually be useful
-> as-is now, but I'll defer to you.
-> 
+Commit 3f255ece2f1e ("btrfs: introduce extra sanity checks for extent
+maps") introduced sanity checks for extent maps, but for extent state we
+do not have any extra sanity checks.
 
-Yes, I haven't looked at those closely yet, but splitting them out
-should work.
+This series will introduce the check in the 2nd patch, meanwhile the
+first one is to fix an exposed unaligned access in extent_fiemap().
 
-- Eric
+Qu Wenruo (2):
+  btrfs: use proper inclusive end in extent_fiemap()
+  btrfs: add validation for extent states
+
+ fs/btrfs/extent-io-tree.c | 21 +++++++++++++++++++++
+ fs/btrfs/fiemap.c         |  8 ++++----
+ 2 files changed, 25 insertions(+), 4 deletions(-)
+
+-- 
+2.54.0
+

@@ -1,166 +1,191 @@
-Received: from mail-wr1-f44.google.com (mail-wr1-f44.google.com [209.85.221.44])
+Received: from mail-ej1-f45.google.com (mail-ej1-f45.google.com [209.85.218.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8EE453D3D11
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 08:05:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.44
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785225960; cv=pass; b=fgbrPmn3At2oSuDJCqZHx7o+AFHX6/sJVrx+jMez0k0hylSvOd/suD5vXTBh1Je70zu7ibXFXFd6kdrnMTVijzdhUEKGK5h5ENmuwTLmtF/ZuypRomcqz/Urn0ec74ShaFpsQGgUScjCdREd/0f9p2Zm0IX/n+Lz0HPvh03pi+g=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785225960; c=relaxed/simple;
-	bh=MUTKe3vgk3OYipgQAj01lcZUTW7Bp98VhC7DJlNmuPs=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=Je99kEzmmcRfH08zlbbLtjwrk9CZ015f3/9BdE4++9lWZKW+Nco0UXCgkS/iEkfv3XLitvK62XZtDwpmyyhEdiNPyg4W55URalbs8zRMAxkNoZY5nlx9ckGhOtlkMFCy+CxW8p8WT91f6T9RKCbmM9BRLU8Kobdq3Crlos852nM=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=AqXlMamw; arc=pass smtp.client-ip=209.85.221.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9F17C3FF883
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 08:40:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.45
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1785228053; cv=none; b=tgZEKtdnhOuPEICZAZKjeK96t4Xwqho9msZHDeI6gkB4Pc4SMUaQL2O8F9nOHkKji0Z4iLtObxRkt2WhxPe/26zpZY/oOHKy4SX5oqcdc3oLClILE/Xng+5TLpCrS+ZX20f4pvQO6IhEuj9Xarv5wtu0PCtQwEF86CpP0murWws=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1785228053; c=relaxed/simple;
+	bh=DZo3t/w3u8HCdUZWTHhEJBDDbzM3+1lw3BS9jKjQXS4=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=u/EWsYkm/5lAQjgRGQBwEdwVyuv/lNUdaqoBzZuTSFLF4k/m4U5k9M1cFS0aevEsg3gf5/HhcPElaDG4izKPct2N4b+wMRxu1wdnz5c9Q1RVlOnU6JCMCX/+jJwkQcOaDviZynYGEA5H39rk0GuA99avZ7dpaDv3W/B6XThC6U0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=ahp1E/1h; arc=none smtp.client-ip=209.85.218.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="AqXlMamw"
-Received: by mail-wr1-f44.google.com with SMTP id ffacd0b85a97d-47f93b2fe4cso2560540f8f.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 01:05:58 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1785225957; cv=none;
-        d=google.com; s=arc-20260327;
-        b=k/0llac0kpNg+sG22Wc7LzExvhrxWTwBl5K1dvUbwRgPKd1iGwOcMxBKh++ARXjA4C
-         pAzKT00sGALsaGwmiWpNpSa1hqOY9Z4rpEP4LO7oPmcHsk7mAwix4AGTAIULXZx+mJGj
-         I2euldppNd538Wg4eXPp0nLoAn6kYsiotGCWTLKyBnUtEMfxtcr+cocjXCvw12kYlfQd
-         QrKw0p0V8ePLjNYkM9cAsFYcPeZz3FG4NZ1fR0GmGQ2VIhjy5IF8/0/w75I10mFiqE2t
-         ayLHnHsxcffNeLXlOeDBDkE1e006XgSNUPjjD+4mAj1RHxt461Cj5NmeqVBasYK9Zlri
-         lwpg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=MFW/PjvuguQ/9XlTC2uqhs/NNJnubbPxBggxrHHjhkw=;
-        fh=gccavu6KskZuhdxKZGGZqKbRpE8AZv+Jw1v9OVMw784=;
-        b=r0alxnYUp/SkSOCkmGOmUrkO8ZPETGiDaxOFr5HY2GLV5j+ZhhOQ033RYPWQjjhV7Z
-         iC9k8qGKyltNaychZAhnsbHnHCL01/d3rRQ/MZc7Q2sL3RlinCDU9kvm6h/bJy4OhvZO
-         ZZlhiGLXacfVohqrP6rdUiIeQ8RkX0D9g+95hKKiHAwvm2HX6b6Gy8qfMWIYrc2f5JIQ
-         RN4KdhgIeIUca6UFFIFVL287u14rEgM90r20C8kbzhkLflVO5bM+YW167pvu00OGwYdn
-         57IijUuK+FKf40fOc7t7WmnwO3hdD8VCXVLV9u99nJNJsvg7jB5auBFggXLTdrmk8toS
-         AXCg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="ahp1E/1h"
+Received: by mail-ej1-f45.google.com with SMTP id a640c23a62f3a-c15ba3a2b4bso430261166b.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 01:40:50 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1785225957; x=1785830757; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+        d=suse.com; s=google; t=1785228049; x=1785832849; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=MFW/PjvuguQ/9XlTC2uqhs/NNJnubbPxBggxrHHjhkw=;
-        b=AqXlMamw/HK1Q9VNlZpclhLZws3XWPREnBvyFdpv1fE7KKVR7hfc9fGPrxSiZLQtAz
-         H0B5ifISjors27NMvqR1nlrsgg5+s6HuB8wwkZDd1TaAO6qVvD+hyPpi7BSBS3F5+EMR
-         lY30quiLLUc8t2tClQa2Jow29Vwtc1DqB1OId4ycdGIgRr6fceyMmWJZQIryeHo3WNYy
-         IduBY+OgSeW+Rc0eT4G1GL0NxCYfYgrtbKkVcyS3au/s6/Op2ng3yfTWKxQiYJjNX/7N
-         j/PIGWMXpou/liuIXskvqpU6nOAmycDxPhbzbRYaA1fDKK6JM82nSLjb1Wb2mKNF545L
-         TWuQ==
+        bh=GsKiS8Jtp3dg3HkB10N/jZxFWzwlDIMIBD4i7IWQtds=;
+        b=ahp1E/1hy13eKbQ1bIZPxZNn5vwzvFwhhvxuyIChFCNDrEVo6GYtCkKytgcs4rnFdf
+         UQ5VkFftXQuvs2WqJ4LJAH4LQI+oQqAXWHgmSTsk2fGEVCNOi/V8Pf0kAudQJ0MVSUDO
+         cxZ3Y5LUIlwl0VwOQUqP53gArl/YWP8iqd4ukQQ5pF7z+qKp2avevudlJCR8zIPONacW
+         2+kN2qvkuZ7+4fFPLWl5J1VHg0vwRPKdjXwYLjp33oPXBUVgkt7Ks6/LTTZJHWf/fOev
+         Xg15R6ziyAfYNrapzvrrQ/jH/lc5NOGen6UstoQ3NoyGeTSx3muYDF6NHq+XeU/o7z4I
+         W7wQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785225957; x=1785830757;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=MFW/PjvuguQ/9XlTC2uqhs/NNJnubbPxBggxrHHjhkw=;
-        b=djt+MM80GfgjuUot7en4dCTiitUg6PDD0UiqEu+DHsFCIjfwWfAwxlqa7wO0MpU5mD
-         L95oanOPPyUeUyJ8NgtzblfQtgisc99IfP635YvkDsccBMPvBuRX922hDduWxadecYkh
-         TuhBeXauOck9vvZgZNXQJN7LSs18FK91yvq+kD/u+s+tr9/oNd0gjeMcU7u+W9SdZULR
-         wOZZMGEUzim6S7+qOzbQkShHjZcvC6ReMKbSX7gC/SOTdeF+x7J/G7WOK+gOkjzA0njr
-         FjGlioWKb+tuTAdNJh7z0puVNfjZuZz+gAVHLEsCcIibU2JHUlHQBHMeqY75+NiRfGBh
-         40Rg==
-X-Gm-Message-State: AOJu0YyGHdEwZqbJl1aQ55TG7StebikBfKV4dvtfTJOd9yw7tPKrz8BI
-	S8zBBe/a+ZTlkWIvIc47qj70VtUPEW1kZ6pnBOXX3Xm0S0nQBLRD0jOiVlAMhORg3KBA7fhSi3n
-	ZTop1kVJInmZI4hEU8+5W7piACwL9YZIERugt9P/XEYGAiF7dLrD8b3rnZg==
-X-Gm-Gg: AR+sD10qfMcHXBvyo1csMyKpQIyfxAIwzal/0eJPSC/AJ+IIOKjxNdOFfp0F2LKRnGi
-	Uso3klOkisO18w3azgWjfucv8cC9Pf4n275Omjn7fUwUm2+DeiSB/8aret2cov+eni46Cl4DA4G
-	J6Ah/vINT9nFR723uiBRm+x4o9T1oMEzDhxrr9Xh3s2TAEld8u2CKrK2ofuveQn6+TcbL3vhif1
-	I6flNHnfP24b/e0NnOKaxtBDPZPfNSEYhEJX7Ppd3IYtuXX3YSjnPL4z9EU9vpbEdoppHzVcghM
-	bnomnuhsMqY8yMuNTdrvFWLoEPeczFhUcm/yLp2Ba4xmIftjf2DF5G6QQoU=
-X-Received: by 2002:a05:6000:2002:b0:47f:6d4e:4cdf with SMTP id
- ffacd0b85a97d-47fb1ee755bmr1381464f8f.58.1785225956649; Tue, 28 Jul 2026
- 01:05:56 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1785228049; x=1785832849;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=GsKiS8Jtp3dg3HkB10N/jZxFWzwlDIMIBD4i7IWQtds=;
+        b=T/Sh8/LDw4torh2m/DSEdrWPTdReWmDV6kDdckzCzCVooAFr8yq0LxXK9t27UtVEBG
+         unFoCTE+GFXq9x9zg8UNYpA5aLccQI071rWU9DheenZ721+WhB5pb7NQZGlyzNrooMjs
+         WT1A/nx3aR7peU1t4y6JF0urAdCMCkoIa+1jmaq866k78hf/chnjRiACfwiuv8xjlmfo
+         FSQ1zKQ2jruYMr/B+Tw7er2LP5WAt1CwCyONBorqgWO2YaWTL6ULMBBkyDwggmvx55R9
+         xiNZH8Nn3TgB0kE5LmLE+9GR4vgD2h4gAXu6HnaeQwp+ooNqFeTXJCY9Yv7oBqWcAD0b
+         XLjg==
+X-Gm-Message-State: AOJu0YwQvxfXiRlIPx2greE0pgpmaStyjPoktBzpZEZSyV2IzooeyiFP
+	hUZ1zTVfygODwZ0wYVGWPbz/AFtFCgQAlm2npDD/ClioQgggk5vLl4mIx9NnguybeI4=
+X-Gm-Gg: AR+sD13Zk/UOsco0LxR9YP+LHxvnCA/5s8/Cudq0DUKK5eSlLB3g9TrAJxV9UMVHMH0
+	stbbN2fCfLbRNcWuYTE7PwKYJVZGM2xC9Tkd56Wg0gmIzrsRymrlL4Wpdi+NnbeluWel8zpb2p6
+	GOe41MfcEysv+YdNFEtkSx2qODIbJhBdLjtptTu+eS2f0fUAm62UW62jd/B4M2zPRXxtn/rUFPb
+	YGGkDnylzy3ihphQ02DaBYgrhsTG2vbK+OTbmu6VXHZ1CsjBpPZ4NhyE8P3rOPKv/RM5N0c0L+W
+	flWz+qTUgDtPYZA6m2QSd/dOXg2ef2FSda1IRIowO6RsexQtlorbIlaHd/BunzUl1Sq0eb2E/cy
+	Q31p4498rPQmGpauLTK3D5wHnTL37N0TBpKpYrbzqsKqrIq8NRwkmRQDLFhYFeSv00u06wB3fk1
+	TPEBb4rA==
+X-Received: by 2002:a17:907:3e95:b0:c15:9350:dfa6 with SMTP id a640c23a62f3a-c1f72195c9fmr81105466b.60.1785228048605;
+        Tue, 28 Jul 2026 01:40:48 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2cfde7bc4f4sm48154485ad.39.2026.07.28.01.40.45
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 28 Jul 2026 01:40:47 -0700 (PDT)
+Message-ID: <9b591ffd-808f-45ac-8109-85de8ba2b798@suse.com>
+Date: Tue, 28 Jul 2026 18:10:41 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1785220613.git.wqu@suse.com> <44822c23fc6764aa93a855648a1533a5faf4925c.1785220613.git.wqu@suse.com>
-In-Reply-To: <44822c23fc6764aa93a855648a1533a5faf4925c.1785220613.git.wqu@suse.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Tue, 28 Jul 2026 10:05:44 +0200
-X-Gm-Features: AUfX_myszNZEUn4lA1zRJkzftkLh5F28scViMlKOhPUnAOLFYCP7P1V_cbKctgc
-Message-ID: <CAPjX3Fez2At9ZX1ga3YJt-rs+TGcXsV8WfJLXcmr64-4gjVQnQ@mail.gmail.com>
+User-Agent: Mozilla Thunderbird
 Subject: Re: [PATCH 1/2] btrfs: use proper inclusive end in extent_fiemap()
-To: Qu Wenruo <wqu@suse.com>
+To: Daniel Vacek <neelx@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+References: <cover.1785220613.git.wqu@suse.com>
+ <44822c23fc6764aa93a855648a1533a5faf4925c.1785220613.git.wqu@suse.com>
+ <CAPjX3Fez2At9ZX1ga3YJt-rs+TGcXsV8WfJLXcmr64-4gjVQnQ@mail.gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <CAPjX3Fez2At9ZX1ga3YJt-rs+TGcXsV8WfJLXcmr64-4gjVQnQ@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On Tue, 28 Jul 2026 at 08:46, Qu Wenruo <wqu@suse.com> wrote:
-> The @end parameter for all extent io tree helpers is inclusive, but
-> the call site in extent_fiemap() is passing exclusive end.
->
-> Fix it to follow the common pattern.
->
-> Fixes: ac3c0d36a2a2 ("btrfs: make fiemap more efficient and accurate reporting extent sharedness")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/fiemap.c | 8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
->
-> diff --git a/fs/btrfs/fiemap.c b/fs/btrfs/fiemap.c
-> index ba6a360074c0..2f2ae0b76799 100644
-> --- a/fs/btrfs/fiemap.c
-> +++ b/fs/btrfs/fiemap.c
-> @@ -657,7 +657,7 @@ static int extent_fiemap(struct btrfs_inode *inode,
->
->  restart:
->         range_start = round_down(start, sectorsize);
-> -       range_end = round_up(start + len, sectorsize);
-> +       range_end = round_up(start + len, sectorsize) - 1;
->         prev_extent_end = range_start;
->
->         btrfs_lock_extent(&inode->io_tree, range_start, range_end, &cached_state);
-> @@ -710,7 +710,7 @@ static int extent_fiemap(struct btrfs_inode *inode,
->
->                 /* We have in implicit hole (NO_HOLES feature enabled). */
->                 if (prev_extent_end < key.offset) {
-> -                       const u64 hole_end = min(key.offset, range_end) - 1;
-> +                       const u64 hole_end = min(key.offset - 1, range_end);
->
->                         ret = fiemap_process_hole(inode, fieinfo, &cache,
->                                                   &delalloc_cached_state,
-> @@ -812,10 +812,10 @@ static int extent_fiemap(struct btrfs_inode *inode,
->         if (!stopped && prev_extent_end < range_end) {
->                 ret = fiemap_process_hole(inode, fieinfo, &cache,
->                                           &delalloc_cached_state, backref_ctx,
-> -                                         0, 0, 0, prev_extent_end, range_end - 1);
-> +                                         0, 0, 0, prev_extent_end, range_end);
->                 if (ret < 0)
->                         goto out_unlock;
-> -               prev_extent_end = range_end;
-> +               prev_extent_end = range_end + 1;
->         }
->
->         if (cache.cached && cache.offset + cache.len >= last_extent_end) {
-> --
-> 2.54.0
 
-I don't really get why you left out these:
 
-@@ -680,7 +680,7 @@ static int extent_fiemap(struct btrfs_inode *inode,
-                goto check_eof_delalloc;
-        }
+在 2026/7/28 17:35, Daniel Vacek 写道:
+> On Tue, 28 Jul 2026 at 08:46, Qu Wenruo <wqu@suse.com> wrote:
+>> The @end parameter for all extent io tree helpers is inclusive, but
+>> the call site in extent_fiemap() is passing exclusive end.
+>>
+>> Fix it to follow the common pattern.
+>>
+>> Fixes: ac3c0d36a2a2 ("btrfs: make fiemap more efficient and accurate reporting extent sharedness")
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>   fs/btrfs/fiemap.c | 8 ++++----
+>>   1 file changed, 4 insertions(+), 4 deletions(-)
+>>
+>> diff --git a/fs/btrfs/fiemap.c b/fs/btrfs/fiemap.c
+>> index ba6a360074c0..2f2ae0b76799 100644
+>> --- a/fs/btrfs/fiemap.c
+>> +++ b/fs/btrfs/fiemap.c
+>> @@ -657,7 +657,7 @@ static int extent_fiemap(struct btrfs_inode *inode,
+>>
+>>   restart:
+>>          range_start = round_down(start, sectorsize);
+>> -       range_end = round_up(start + len, sectorsize);
+>> +       range_end = round_up(start + len, sectorsize) - 1;
+>>          prev_extent_end = range_start;
+>>
+>>          btrfs_lock_extent(&inode->io_tree, range_start, range_end, &cached_state);
+>> @@ -710,7 +710,7 @@ static int extent_fiemap(struct btrfs_inode *inode,
+>>
+>>                  /* We have in implicit hole (NO_HOLES feature enabled). */
+>>                  if (prev_extent_end < key.offset) {
+>> -                       const u64 hole_end = min(key.offset, range_end) - 1;
+>> +                       const u64 hole_end = min(key.offset - 1, range_end);
+>>
+>>                          ret = fiemap_process_hole(inode, fieinfo, &cache,
+>>                                                    &delalloc_cached_state,
+>> @@ -812,10 +812,10 @@ static int extent_fiemap(struct btrfs_inode *inode,
+>>          if (!stopped && prev_extent_end < range_end) {
+>>                  ret = fiemap_process_hole(inode, fieinfo, &cache,
+>>                                            &delalloc_cached_state, backref_ctx,
+>> -                                         0, 0, 0, prev_extent_end, range_end - 1);
+>> +                                         0, 0, 0, prev_extent_end, range_end);
+>>                  if (ret < 0)
+>>                          goto out_unlock;
+>> -               prev_extent_end = range_end;
+>> +               prev_extent_end = range_end + 1;
+>>          }
+>>
+>>          if (cache.cached && cache.offset + cache.len >= last_extent_end) {
+>> --
+>> 2.54.0
+> 
+> I don't really get why you left out these:
+> 
+> @@ -680,7 +680,7 @@ static int extent_fiemap(struct btrfs_inode *inode,
+>                  goto check_eof_delalloc;
+>          }
+> 
+> -       while (prev_extent_end < range_end) {
+> +       while (prev_extent_end <= range_end) {
+>                  struct extent_buffer *leaf = path->nodes[0];
+>                  struct btrfs_file_extent_item *ei;
+>                  struct btrfs_key key;
+> @@ -809,13 +809,13 @@ static int extent_fiemap(struct btrfs_inode *inode,
+>          }
+> 
+>   check_eof_delalloc:
+> -       if (!stopped && prev_extent_end < range_end) {
+> +       if (!stopped && prev_extent_end <= range_end) {
+>                  ret = fiemap_process_hole(inode, fieinfo, &cache,
+>                                            &delalloc_cached_state, backref_ctx,
+> 
+> Am I missing something?
 
--       while (prev_extent_end < range_end) {
-+       while (prev_extent_end <= range_end) {
-                struct extent_buffer *leaf = path->nodes[0];
-                struct btrfs_file_extent_item *ei;
-                struct btrfs_key key;
-@@ -809,13 +809,13 @@ static int extent_fiemap(struct btrfs_inode *inode,
-        }
+Because we won't reach the == case at all.
 
- check_eof_delalloc:
--       if (!stopped && prev_extent_end < range_end) {
-+       if (!stopped && prev_extent_end <= range_end) {
-                ret = fiemap_process_hole(inode, fieinfo, &cache,
-                                          &delalloc_cached_state, backref_ctx,
+The start is always increased by a value aligned to sectorsize.
 
-Am I missing something?
+For inclusive range_end, we either completely pass it by 1, or smaller 
+than it.
 
---nX
+So that "==" will never be hit.>
+> --nX
+

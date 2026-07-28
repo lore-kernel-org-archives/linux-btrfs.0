@@ -1,167 +1,137 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F4079348C54
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 06:39:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6E783377550
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 07:36:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785220787; cv=none; b=ulyODmJQmp8CArMKN+i2O8YzikOQJZPFTYQJZThSom/Ip4bB2Sg0VZA5m/wqNzSs8N/BZ6J5N3vIgBUTRTsBTAciZHpXIB2bYhxawLIo462Mx0IfTkPiQyZdcITHQlGUhwxwVa6ktxGsX44yC0XMCwSZFfZLimGVnH3USyV7KnQ=
+	t=1785224188; cv=none; b=ahX5X0XmkYYrfyFLlvUB/PB3kY7KGtcXq4eumgB1ZhkSrAEos22smXrzx7BZ8B6E18N28mJ7sE0/X8eA3VmkxaXy76MKazN+XNMjTtbFeN6/NkSl+f+WSa467DS68DB7F0ZRW4hBHL8TE56K0tD2UVmBcd3mXPGIUHLpE5nSSHw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785220787; c=relaxed/simple;
-	bh=oA1w3+OfOjviNPSA8kGGwityH0/RaMZblYiQF2Z2Los=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=rB9FqZeUs7gIfPUiCJ0JXTeV+B6v4qb3Baipn31zbm9PbqXc6HKD4KSN5x/QUN9S7zH4CZ2k64g6RKa7bhiNQSBoy3p2oHGEyOv9FTDUXGb9qvgGiflrVhDX4T3nPhXVV0uTpyhM0l6W4djKxR/E3iA1ppfk6jJLRHY2WqVXcP8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XuGpIC1K; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Ph73q/hT; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1785224188; c=relaxed/simple;
+	bh=C+QM69xvxF141JXniQQhtkP7JAlW1v5te95htzx7f6g=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=GJQjQ47cTOe6aWQYmuCWdQYi6rBXIqS3RCEdyi72ddlqLo+fHBRLYHiP6j3rGTQ8AAEBwj/ZqgX9gb9yFrKwu9hzvlvCUEG90do/paUVOjAlGfKSOPjWKMYJ984ck1cG2OVWIi5R0njV9TeTS/kLeeQzxgMIJPT3PGfcSAe2QbA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=XygUWc/m; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XuGpIC1K";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Ph73q/hT"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 0206B7BED5
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 06:39:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785220775; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=VljeH3r6wNjlpLnsbrUcLUFjDTpZzynCxsxG5pQVg4s=;
-	b=XuGpIC1KA5lIj2ig+ddODYLnvX2EGVq9uFQ2jm5LE3UogUJ2YM7uaeHJ9O7obPbt9mdmlr
-	EL5Pa3HwnU/q4U9OZN9OEkAos730BdqA9aiIYr7dD7R/UT+aqNFoHrE09rWLO7zJKwqmhl
-	KzliDYrA8Y69dCSXNZPOJbYqGIlQF5E=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785220771; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=VljeH3r6wNjlpLnsbrUcLUFjDTpZzynCxsxG5pQVg4s=;
-	b=Ph73q/hTB/YaNr8E+evFmAFJA5N8bORdiEvD53yno4npeMp46pm7ZfmnE9NxO6fpry58pb
-	X9sDNg6KCf++xOyxPytPSU5uEJ2WEKznJtHtM3Au3pqdr+6aWpHjGe6RGA6lbrJzmpkByG
-	J36LOn1Csx7gCJt7NZVVmZg2TjhmARE=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id F202B779B9
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 06:39:29 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id aLG5J6FOaGrkSAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 06:39:29 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: add validation for extent states
-Date: Tue, 28 Jul 2026 16:09:04 +0930
-Message-ID: <b9f436fc89e7bdb5411ff8e6b5eb8e90ea6043a0.1785220613.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1785220613.git.wqu@suse.com>
-References: <cover.1785220613.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="XygUWc/m"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 082BF1F000E9
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 07:36:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1785224187;
+	bh=pwr4HVCjelx95RjpjcvLGbh4EKRZdyGc06OGJ5mHoq8=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=XygUWc/m3uyY/yl/tCzwzS8tIqKJDSk7g7ttsqe8vv29SNk7ECMmSEu6KhqcK7wJP
+	 5qAyxW1Km4mRKMu/JSy6joGsOICRS1Oi3ocSJB8d12QH1p4TnRDV4jTwEwTPm8v0o/
+	 h4fqIo7Ecaeqyms8vOIklx/uEu7B7EGQ3AcuHlexAgckw6X/S7h1oxDfQ076kk4tI2
+	 /uwu6rRXdU27efaZVrcpZm116z5at2qwc5XIGGKn0CvBKR9jzOEFKXBC3XIixMnrq+
+	 0zJKrPVn4wze3vNdEHKNvBABGy8FACdx/8Kp+zzSMxvzmrIl1HawVFEDgFcqTOaReo
+	 uf2BNeix2CGZA==
+Received: by mail-vs1-f48.google.com with SMTP id ada2fe7eead31-74dceb46291so1261603137.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 00:36:26 -0700 (PDT)
+X-Gm-Message-State: AOJu0YwMit4YzfIJJ1/HYLnIksW0GOGi+01N1EYRi11kUivF1qZ38tRJ
+	5XHntzrIbJUDD9RW+0VJcc0G8H/7rlwMfW5zDceF9USWz4juRRUO6/gOU+oBeySVL/RPVLkn3Bx
+	zLr3uZpYsoxVRypUG6UFukbAAwR26yMs=
+X-Received: by 2002:a05:6102:2906:b0:737:4cac:52f7 with SMTP id
+ ada2fe7eead31-754a1cad77dmr530643137.19.1785224186229; Tue, 28 Jul 2026
+ 00:36:26 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.993];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
+References: <cover.1785220613.git.wqu@suse.com> <44822c23fc6764aa93a855648a1533a5faf4925c.1785220613.git.wqu@suse.com>
+In-Reply-To: <44822c23fc6764aa93a855648a1533a5faf4925c.1785220613.git.wqu@suse.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Tue, 28 Jul 2026 08:35:48 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H53Vy4aGRui9L_GTkzuKJfHJXRSP0dtybGRJhJRdFLSqw@mail.gmail.com>
+X-Gm-Features: AUfX_mwQn6B_jTtm9EzGZXSy-d9zyZk7xAf3AxnWT2nSMVsEATEUKAqstaeUPJA
+Message-ID: <CAL3q7H53Vy4aGRui9L_GTkzuKJfHJXRSP0dtybGRJhJRdFLSqw@mail.gmail.com>
+Subject: Re: [PATCH 1/2] btrfs: use proper inclusive end in extent_fiemap()
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Extent maps have the extra validation since commit 3f255ece2f1e ("btrfs:
-introduce extra sanity checks for extent maps"), but extent states do
-not have a similar check.
+On Tue, Jul 28, 2026 at 7:47=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+>
+> The @end parameter for all extent io tree helpers is inclusive, but
+> the call site in extent_fiemap() is passing exclusive end.
+>
+> Fix it to follow the common pattern.
+>
+> Fixes: ac3c0d36a2a2 ("btrfs: make fiemap more efficient and accurate repo=
+rting extent sharedness")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/fiemap.c | 8 ++++----
+>  1 file changed, 4 insertions(+), 4 deletions(-)
+>
+> diff --git a/fs/btrfs/fiemap.c b/fs/btrfs/fiemap.c
+> index ba6a360074c0..2f2ae0b76799 100644
+> --- a/fs/btrfs/fiemap.c
+> +++ b/fs/btrfs/fiemap.c
+> @@ -657,7 +657,7 @@ static int extent_fiemap(struct btrfs_inode *inode,
+>
+>  restart:
+>         range_start =3D round_down(start, sectorsize);
+> -       range_end =3D round_up(start + len, sectorsize);
+> +       range_end =3D round_up(start + len, sectorsize) - 1;
 
-Introduce a basic alignment check for the following call sites, so that
-we can cover all extent maps inserted into the tree:
+Here it was an exclusive end.
 
-- insert_state_fast()
-- insert_state()
-- split_state()
+>         prev_extent_end =3D range_start;
+>
+>         btrfs_lock_extent(&inode->io_tree, range_start, range_end, &cache=
+d_state);
+> @@ -710,7 +710,7 @@ static int extent_fiemap(struct btrfs_inode *inode,
+>
+>                 /* We have in implicit hole (NO_HOLES feature enabled). *=
+/
+>                 if (prev_extent_end < key.offset) {
+> -                       const u64 hole_end =3D min(key.offset, range_end)=
+ - 1;
+> +                       const u64 hole_end =3D min(key.offset - 1, range_=
+end);
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent-io-tree.c | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+Here we guaranteed hole_end is not exclusive, by subtracting 1 from
+the result of min(), and both arguments passed to min() are exclusive.
 
-diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index c18ea5ef2974..4f1ef33f17ac 100644
---- a/fs/btrfs/extent-io-tree.c
-+++ b/fs/btrfs/extent-io-tree.c
-@@ -403,6 +403,21 @@ static void set_state_bits(struct extent_io_tree *tree,
- 	state->state |= bits_to_set;
- }
- 
-+static void validate_extent_state(const struct extent_io_tree *tree,
-+				  struct extent_state *state)
-+{
-+	u32 blocksize;
-+
-+	if (tree->owner != IO_TREE_INODE_IO)
-+		return;
-+
-+	blocksize = btrfs_extent_io_tree_to_fs_info(tree)->sectorsize;
-+	ASSERT(IS_ALIGNED(state->start, blocksize) &&
-+	       IS_ALIGNED(state->end + 1, blocksize),
-+	       "unaligned extent state, blocksize=%u start=%llu end=%llu state=0x%x",
-+	       blocksize, state->start, state->end, state->state);
-+}
-+
- /*
-  * Insert an extent_state struct into the tree.  'bits' are set on the
-  * struct before it is inserted.
-@@ -429,6 +444,8 @@ static struct extent_state *insert_state(struct extent_io_tree *tree,
- 	const u64 end = state->end + 1;
- 	const bool try_merge = !(bits & (EXTENT_LOCK_BITS | EXTENT_BOUNDARY));
- 
-+	validate_extent_state(tree, state);
-+
- 	set_state_bits(tree, state, bits, changeset);
- 
- 	node = &tree->state.rb_node;
-@@ -481,6 +498,8 @@ static void insert_state_fast(struct extent_io_tree *tree,
- 			      struct rb_node *parent, unsigned bits,
- 			      struct extent_changeset *changeset)
- {
-+	validate_extent_state(tree, state);
-+
- 	set_state_bits(tree, state, bits, changeset);
- 	rb_link_node(&state->rb_node, parent, node);
- 	rb_insert_color(&state->rb_node, &tree->state);
-@@ -533,6 +552,8 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
- 		}
- 	}
- 
-+	validate_extent_state(tree, orig);
-+	validate_extent_state(tree, prealloc);
- 	rb_link_node(&prealloc->rb_node, parent, node);
- 	rb_insert_color(&prealloc->rb_node, &tree->state);
- 
--- 
-2.54.0
+>
+>                         ret =3D fiemap_process_hole(inode, fieinfo, &cach=
+e,
+>                                                   &delalloc_cached_state,
+> @@ -812,10 +812,10 @@ static int extent_fiemap(struct btrfs_inode *inode,
+>         if (!stopped && prev_extent_end < range_end) {
+>                 ret =3D fiemap_process_hole(inode, fieinfo, &cache,
+>                                           &delalloc_cached_state, backref=
+_ctx,
+> -                                         0, 0, 0, prev_extent_end, range=
+_end - 1);
+> +                                         0, 0, 0, prev_extent_end, range=
+_end);
 
+And here range_end was exclusive, we subtracted 1 to make it inclusive.
+
+>                 if (ret < 0)
+>                         goto out_unlock;
+> -               prev_extent_end =3D range_end;
+> +               prev_extent_end =3D range_end + 1;
+
+Here range_end was exclusive so there was no need to sum 1.
+
+In other words, this change doesn't fix anything; it's just rewriting
+the calculations in a different way to reach the same results.
+
+Where exactly do you think you saw a wrong end offset being used?
+
+Thanks.
+
+>         }
+>
+>         if (cache.cached && cache.offset + cache.len >=3D last_extent_end=
+) {
+> --
+> 2.54.0
+>
+>

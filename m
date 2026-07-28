@@ -1,93 +1,63 @@
-Received: from mail-ej1-f47.google.com (mail-ej1-f47.google.com [209.85.218.47])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 43A5430568D
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 15:38:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.47
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B85E739DBF7;
+	Tue, 28 Jul 2026 17:27:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785253126; cv=none; b=NJ/G1ISBhSp4gn5OvG18oer0y/JXhLUsq+UdVhZMeuZBpxZikpEBKwp4Fk0/ePnMwR+MDsEnWkSyuoo6GNgRTUDZ8UIwLT9QcsJ+qC7U6kETpPUPY2F/bfi7Il5ryCJC/euTgFnEdATWQRUbmipreSpaqS020fXvUnwjLNWTVNA=
+	t=1785259662; cv=none; b=ATBuiwBRYNFAwB7Xmws5fZ2QaHHjcqk81nU6KkMDUO8lRykIuGgFhWPxUw8ytzGdb84YxK8AXrViw58OMaBtzhshSrVuTzTjH5XzJ8AhUpSiawqb0Aj8s5JxuHppGGFYMCm5Rwz1BCv/H4x/LeE+SaTm5N4yuvUyIugK0OtKlxM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785253126; c=relaxed/simple;
-	bh=by4p+tUelnvKOV6LN/svUDk5d6hILMv0whqswTbgH+4=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=ljzzKsEzqrHO0wegWEyhPjDX50qebjw7J9oRqjrdvl3JyDgcyHc9x7ouasCP/fs3GKOESyUiia3rLREluONu84tduYeyQ5irJBdXvrXiEjrxL96c+v5OdMRl9hDqVtAx5PqyryyVMtHNb5t7pRUpX2O1gj26qZOeqavbg9BGTt0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org; spf=pass smtp.mailfrom=linuxfoundation.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=AJcdyiB/; arc=none smtp.client-ip=209.85.218.47
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linuxfoundation.org
+	s=arc-20240116; t=1785259662; c=relaxed/simple;
+	bh=ukIuRjJdGHkAnQenTwxN5Izhb0zFTwZ9Mx1P1PDBv6U=;
+	h=Subject:From:In-Reply-To:References:Message-Id:Date:To:Cc; b=Z5EPI5lZVjc6897hWSSxC5hjek4KN5I3hE+3F618qUMYdP5gCjn3sDy1odj+ETw2qt0/xaKseK+h8e6y3WNvI3aRhJ3nB39j3ksXYeOtrz00cdKkCtgQ9gNG2jhzSmVxMtxxYDcTdUjC6acNGcRmUopbcloYt9RUMMLcPKXxDAs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=G0XPvcrL; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="AJcdyiB/"
-Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-c169ae1cb26so192665566b.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 08:38:44 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google; t=1785253122; x=1785857922; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=AKw3n7wVTjlHjI7qBp6R9/RnufPbGuLg8YNXSKa7mF0=;
-        b=AJcdyiB/eaGdyFn5wQtAPxmR48YGIntSF/H6k0/kW6+zChQQmEOPXUYJxXA39b7lF2
-         AJy1MZhmdbcKYantaZnGHtvOOFw8ydguA1wUQ91jUZhhGT9xmqG9zas973B2A1XO7EKK
-         gnqZeZ4pyoqqZ+dgexT0/2iiOswxPnWC9p7/o=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785253122; x=1785857922;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=AKw3n7wVTjlHjI7qBp6R9/RnufPbGuLg8YNXSKa7mF0=;
-        b=gJ6gYY1+FR5TuNFX+xPM203oIGhn36QRQyhJ6MOnphs/UEICtEU9m+jIewlZkKucRo
-         i2kcbiqqW/MBG6Knimsw4W9aH+PO2ienIf3K/LA5ZRLlxP7OEPZekq0gq7qtWJrAv0i/
-         0T32WuHQaNQPapiRua6ffg/63FPAVgSrEGBOqTA8cKiRILZxwrbB/VdOd/vVSsibGXWd
-         wN49MBNbL6eOkspRZ0vKJg0PennZlQof55DL1d/N7mcC8I3xeJR31pAK3j3JQ4WoLcMq
-         3fjYoP9bpuz8pK0+xy9D/QCjLegIEMSk1pDsR2xot7GC71CkEt1aP6HuFFaCpmmNmHgz
-         F7wQ==
-X-Gm-Message-State: AOJu0YzjOX+RULxOM1GApaUbtpLrEbuI7sQzAjMRDW+xdVqfNJDHq20A
-	sYJZC2KPAlGOicusFJp7glmP73ynPHdo3+yDVeZzWlDmAAbbe23W5KnCrtbJjzKP2x37kVJuOc8
-	penqUA4Y=
-X-Gm-Gg: AR+sD11ucbgf9qtcMWBdlUH4UeL7KTmSFuHMZIV0+4Ygvtp34vCuhknsH8+E1leFnbV
-	Cm1DVL0vUHKYjosGQHI/yjcr2UleSTXRP7ABAQb9gsXajHdWeiSoFG2AFMJsyrNwfVPMtiaiZIq
-	rH1AGY5Hw2WMv3eD6Lqzs55bpTMQS/aKahqtYhIjluAMwg9W2uJUX8FHEqFUAM5ka+MGgfY/c0B
-	nDDAISg6WIxhn9er4Nydc20LBnKgoCYP431lCsSBawwNn/Ey8Uhq+tZoFCJT9OQCEpaBGChTBkX
-	dexYVcL2hS+utj1WPzqySKnibCfQQdVfvPF0OeAl32m62+UbrVqDM4p1pYHNSMBLYECSWUCroN/
-	AbIAL58EoQmzDiCjbOd7Z6bvAwMjmqvkHiiJT64zAhevS/T93mz2+lDsFMW/ZG5hujVz3Y+NPf0
-	NNuofkbYnqs79JnfKPePYpfMxHC4Aiek6AoP5cMWB9UNopDm2sENc=
-X-Received: by 2002:a17:907:94d2:b0:c1c:4c72:e6df with SMTP id a640c23a62f3a-c1f716a6f58mr170562866b.0.1785253122515;
-        Tue, 28 Jul 2026 08:38:42 -0700 (PDT)
-Received: from mail-ej1-f50.google.com (mail-ej1-f50.google.com. [209.85.218.50])
-        by smtp.gmail.com with ESMTPSA id 4fb4d7f45d1cf-69fb5746da2sm4098034a12.21.2026.07.28.08.38.41
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 28 Jul 2026 08:38:41 -0700 (PDT)
-Received: by mail-ej1-f50.google.com with SMTP id a640c23a62f3a-c15e03c2763so206512966b.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 08:38:41 -0700 (PDT)
-X-Received: by 2002:a17:907:944d:b0:c16:6be0:77d4 with SMTP id
- a640c23a62f3a-c1f71cc9410mr175648366b.14.1785253121400; Tue, 28 Jul 2026
- 08:38:41 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="G0XPvcrL"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 532481F000E9;
+	Tue, 28 Jul 2026 17:27:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1785259661;
+	bh=nxUfvWkiZYIfwkAGFso1XOzkdlhF0Od4XTbQEzlK1Dw=;
+	h=Subject:From:In-Reply-To:References:Date:To:Cc;
+	b=G0XPvcrLvDau7bSL9k2c0W8oysOR91xBAfNNBvYq7503agUt/O89ktLyGI1XbYwov
+	 frQyQKaR3c+Ic3YghruREffGsfGD38njFDdCAefaE+UoK8GYPWY3N2Je1LyBBNL5i+
+	 S5fIR+BCB7iJAO8DEKj00usfe2+565KuTTZvcADxvrIbmYzaK1xmNO610fnMDC89k7
+	 cpWzNIWfN/Ce/R88Qv2CVsm75hwCLtmhr1+AwPwZzIaILdpS/hDeQaO/vjMy5txeDb
+	 6KxZxEImumitAETPbMDQTpv74TVcSB0QAsJCll86+iz2Y/b4BN6u+Ip4dSaJZ2Q8zT
+	 np2iZN17XEHNg==
+Received: from [10.30.226.235] (localhost [IPv6:::1])
+	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 56A753924462;
+	Tue, 28 Jul 2026 17:27:07 +0000 (UTC)
+Subject: Re: [GIT PULL] Btrfs fixes for 7.2-rc6
+From: pr-tracker-bot@kernel.org
+In-Reply-To: <cover.1785171953.git.dsterba@suse.com>
+References: <cover.1785171953.git.dsterba@suse.com>
+X-PR-Tracked-List-Id: <linux-btrfs.vger.kernel.org>
+X-PR-Tracked-Message-Id: <cover.1785171953.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-rc5-tag
+X-PR-Tracked-Commit-Id: c4c0673e4cb15b0c127e6d00732a2427bdd12c11
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 3b5f4b83c4abc0c9b0a7b9e2b44e816611b7f2ec
+Message-Id: <178525962593.1830982.8991390597028418475.pr-tracker-bot@kernel.org>
+Date: Tue, 28 Jul 2026 17:27:05 +0000
+To: David Sterba <dsterba@suse.com>
+Cc: torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-References: <cover.1785171953.git.dsterba@suse.com>
-In-Reply-To: <cover.1785171953.git.dsterba@suse.com>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Tue, 28 Jul 2026 08:38:25 -0700
-X-Gmail-Original-Message-ID: <CAHk-=wioZpQZHObXOKW27Fvrxgc2H7t0TR6p5Hx1atsOjC3gsw@mail.gmail.com>
-X-Gm-Features: AUfX_myXF0-iRssUBWSlyooCZKRqIMy81o1pU6uW86lCjix0TIAJ93ptmaxqvXk
-Message-ID: <CAHk-=wioZpQZHObXOKW27Fvrxgc2H7t0TR6p5Hx1atsOjC3gsw@mail.gmail.com>
-Subject: Re: [GIT PULL] Btrfs fixes for 7.2-rc6
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
 
-On Tue, 28 Jul 2026 at 02:25, David Sterba <dsterba@suse.com> wrote:
->
-> A heads up for one more fix, for a problem that resurfaced last week. In
-> short we have to bring back the "fixup worker", detect and handle pages
-> set dirty without filesystem notification. There's a reliable reproducer
-> for at least one such case. The fix heavily builds on the removed code
-> so we have a solid base, the new changes are wrt folios and subpage mode.
+The pull request you sent on Tue, 28 Jul 2026 11:25:14 +0200:
 
-Ok, not optimal timing, but I guess if it's mostly resurrecting old
-tested code it's all good.
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-rc5-tag
 
-          Linus
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/3b5f4b83c4abc0c9b0a7b9e2b44e816611b7f2ec
+
+Thank you!
+
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html

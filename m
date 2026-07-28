@@ -1,159 +1,67 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC30F27CCE0
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 02:40:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ACC182C21DF;
+	Tue, 28 Jul 2026 03:19:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785206403; cv=none; b=msIGymKOUzjj8NqDkc8vV2PB62uSC7CmTQfo6hp/RVrybnBxAz71w3+qliwUqKMRtOexBAqQGYf/XVhprk1WCq9KAe5h4WK3ntwL91FMzh9su8Ul7lswQdvPjsuV6kuDl7tihBm6ar/TExKXhjKH2Xk8yNKLPbJDq/5VkQKK0Eg=
+	t=1785208764; cv=none; b=oh2+zQUODF23FixfQIrdFa/9TIwnVJlKWxM2qyrV1YZG0xD4d/ZHL6SIfh6BdEW64qGr2g6WKFKbkXTd4tc9/yYsMyuTWMniiehVtT6DO993i+ITXLfsSSghnuulByE0WcUxr/3mNFozj4gNGzVFzIw2BXJ3VZBPiHDdsSDZsTY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785206403; c=relaxed/simple;
-	bh=dIhyL5Tsey8Bsa3OLQpoEmeVefBnxkdk3we0E8Cnssk=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=Ke6LLbZ3dK3j2cjRK17gbX/YDBlTzeB7wfd/8U2uxvruqdujsvJUPCIkTEGVCDV9ymrSpYxDMjD6b8YieojiEsUGgOs0LpD2X+u7XbVvU9lvWSWCnsNXuz8QhCsxE/ICnlE3GRUY+imBQnLKJReXGc0R90Y+BtBm+hf1p6kAFoc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=c9QW7Pfy; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=reuPbg1q; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1785208764; c=relaxed/simple;
+	bh=xSdhEtN2PiUGg1VMGAg7W4TmVSqAh9ZHoSwcvtwCMTk=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=k8xWAxJB/HSrZ+P5qyPBPQU2+rNc5mYZrd8y4MQx+tYCmzsIlk0RFGEtkyoi1zl9uW57s18IsXKEEqv4zdZkk2Znr7C/lGVxJR/5W+KSwMwys2rHvSjIRrX7/szH9lNEIyBBn/ez/SKmuuk6UpDh57mazBk5b8bVUrLFIHqBT94=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=0mXvgFf/; arc=none smtp.client-ip=198.137.202.133
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="c9QW7Pfy";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="reuPbg1q"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id CA3733E0C
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 02:39:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785206389; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=n3nt3HIb76nY+y+0fCz+HBoD/a+L/7DmLiWFuWkny90=;
-	b=c9QW7PfyiXeiydwkjX/I6d5ZKuAjOK5d0TrQWjpdswPpSj55TLBs0Zb2zpf8S4jWkoFT6I
-	md2dm4tmse3xVLN4k0hmXmf4ufKgkLCpM9Fw1TWIX61DD81yjb+Zm86ZjUnPRXmFY0hMsd
-	HQLchaZxz7L4bk0i1ozaOd0SZOyJlm4=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=reuPbg1q
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785206385; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=n3nt3HIb76nY+y+0fCz+HBoD/a+L/7DmLiWFuWkny90=;
-	b=reuPbg1qnf8FFMxV5BsKxz+tXb8g8BR1fdSH3GRAEMxNEFm5j7tPalZePoDU7D3tEt25LG
-	pusCcfzgDs/jxlK8+A/O4e/eZvysZ+jxdoDlaDKoJ2oS2lARsqIKTrpmKdCBeS9npuqfHV
-	nTEU50uOVAOwS69a6+nqDJQP7rBPhGw=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C81F7779B1
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 02:39:44 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id xvgwHXAWaGr+bAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 02:39:44 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: qgroup: fix a wrong length calculation in qgroup_free_reserved_data()
-Date: Tue, 28 Jul 2026 12:09:26 +0930
-Message-ID: <96ff0c2dd662dc6247d4400d10e6179f0d3b5565.1785206364.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="0mXvgFf/"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=xSdhEtN2PiUGg1VMGAg7W4TmVSqAh9ZHoSwcvtwCMTk=; b=0mXvgFf/6FbI/Zy5fdrPBTq2n0
+	MSsJdKT01Tp8F4Sd+8R0GAIB0XBX6aXiEjhov1lj0t4IcbE/Wov09YjFcFEIzR+7JW+JeDaYrZwCt
+	vMzAW7Z8bXlQnpPg4RxW34Rs1x4683CADzdcAbkl/Up2ziDgWg1ADpB9m9uS9Od2Oy2VBb46U2kpU
+	vgsMCcn3NJ9o/kPdgfTVGw3TwGsOJL0nvkQN5yaKP0jdioSUxMN5I1CWZPgaLkw6uvQNlM3sPkvBu
+	dgBBJZMJPwYDC8ezwZy39y8rvjrmbXEGojzkWgJITIPUvL/AuHPmPutufSkqbNXQaK2Qnwr88183+
+	XWhV9r3g==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1woYLi-00000004Jxz-0oFO;
+	Tue, 28 Jul 2026 03:19:22 +0000
+Date: Mon, 27 Jul 2026 20:19:22 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Daniel Vacek <neelx@suse.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+	linux-f2fs-devel@lists.sourceforge.net, zlang@redhat.com,
+	hch@infradead.org, djwong@kernel.org,
+	David Sterba <dsterba@suse.com>, linux-fscrypt@vger.kernel.org
+Subject: Re: [PATCH 00/12] fstests: introduce fscrypt support for btrfs
+Message-ID: <amgfuk12imPN2XJe@infradead.org>
+References: <20260724133328.1837318-1-neelx@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,suse.com:dkim];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: CA3733E0C
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260724133328.1837318-1-neelx@suse.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-In that function, we round down the start position and round up the
-ending position.
+On Fri, Jul 24, 2026 at 03:33:16PM +0200, Daniel Vacek wrote:
+> This is a rebase and cleanup of older patches [0] from Sweet Tea and Josef
+> fixed to work with the recent kernel and btrfs-progs changes.
 
-But during the calculation of @len, we use "round_up(start + len,
-sectorsize)", which is the rounded up end position, not the rounded up
-length.
+I'm not sure if you post this just for reference or what the intent here
+is, especially with a cover letter like this that doesn't have much
+information.
 
-Which results a much larger length, and later we are still using "start
-+ len", which is completely incorrect.
+Before we doing anything for the btrfs-specific fscrypt changes in
+xfstests, those changes should be accepted upstream first.
 
-Fix it by declaring a local @algined_start and @aligned_len and use them
-instead.
-
-Fixes: bc42bda22345 ("btrfs: qgroup: Fix qgroup reserved space underflow by only freeing reserved ranges")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 18 +++++++++++-------
- 1 file changed, 11 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 210af4d7d4b5..f68b696b4bf7 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -4339,12 +4339,13 @@ static int qgroup_free_reserved_data(struct btrfs_inode *inode,
- 	struct ulist_node *unode;
- 	struct ulist_iterator uiter;
- 	struct extent_changeset changeset;
-+	const u32 sectorsize = root->fs_info->sectorsize;
-+	const u64 aligned_start = round_down(start, sectorsize);
-+	const u64 aligned_len = round_up(start + len, sectorsize) - aligned_start;
- 	u64 freed = 0;
- 	int ret;
- 
- 	extent_changeset_init_bytes_only(&changeset);
--	len = round_up(start + len, root->fs_info->sectorsize);
--	start = round_down(start, root->fs_info->sectorsize);
- 
- 	ULIST_ITER_INIT(&uiter);
- 	while ((unode = ulist_next(&reserved->range_changed, &uiter))) {
-@@ -4356,12 +4357,15 @@ static int qgroup_free_reserved_data(struct btrfs_inode *inode,
- 
- 		extent_changeset_release(&changeset);
- 
--		/* Only free range in range [start, start + len) */
--		if (range_start >= start + len ||
--		    range_start + range_len <= start)
-+		/*
-+		 * Only free the range within
-+		 * [aligned_start, aligned_start + aligned_len).
-+		 */
-+		if (range_start >= aligned_start + aligned_len ||
-+		    range_start + range_len <= aligned_start)
- 			continue;
--		free_start = max(range_start, start);
--		free_len = min(start + len, range_start + range_len) -
-+		free_start = max(range_start, aligned_start);
-+		free_len = min(aligned_start + aligned_len, range_start + range_len) -
- 			   free_start;
- 		/*
- 		 * TODO: To also modify reserved->ranges_reserved to reflect
--- 
-2.54.0
+Maybe some thing like splitting tests might make sense without that,
+but then it should be posted separately.
 

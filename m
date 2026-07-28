@@ -1,204 +1,179 @@
-Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE48641F35D
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 09:20:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1EFD73B8D70
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 09:25:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785230410; cv=none; b=A7mKCVHsHBSc5rqwKOxvUlZooVmXF5HscbFtbRk6nvOPJlZ1JAAggd8pduM/68Ld7G3q/9Z4Sv4sKEtCIeNXSNFlUWSa0sganjfv3x0UsH8dHqUaLKzv/J2rFaRtBB+jl+gRNLZIz466coNRQsHaQZkzIV2//GfEUj3TOz7kGNI=
+	t=1785230727; cv=none; b=abK2472Vdu8K6VdXRB6wyzmVmXNIKXvXp6JHeRgwiPa+Gqzbd8W+di1TJ8f0HseTyh5Iw64UpAB5+99qmJPmXGleA6HHAhOd1t2qpRSKr3LQF60SsaLXHMwS6Xm0Zd7Il4kD8UFfe0sIggai1NAKPojh5khR1LJLNMKsHCp5p/Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785230410; c=relaxed/simple;
-	bh=/skars76S/4PNdBawKN7KUZlVTQxFjBhor6301hxaeY=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=XuxQGIOUsvgEG8FM9cI4AZHim6shkwfFNqdi63RUOdLn+xmc+uXck+JAoPh7dxAHVHSylqldxBJq5eqQ8TMF0kUJEDenO1YweJV58+k5nAibPCOrGM+eTkW3XGB24ozrP2V7sdiwHgyCOzPh5PzbN2PQk4qh+MyfVbJRyQ3EhgM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=H7UhwzQ2; arc=none smtp.client-ip=209.85.128.54
+	s=arc-20240116; t=1785230727; c=relaxed/simple;
+	bh=2NMaRQUrKz93sVvc37yzMt+12UpdUtpKVdCJG3cv61U=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=WEdoBKro/S4ShibUXee3EyYrn6NZgfOfnKB80hMd8zS1IErVaxlu1S749W9yOW3QVQB8I3apY36kOuJBrAFZdJTZ6zjfCYABZa2MOb0mdg3Em7SMlQt4+fVDCUQo7rcojohmmWjwF5iDgoROOzS5qTJgyCGCizwjkcarfC5t/5k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Ncjm3g5e; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=cuq8GE3B; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="H7UhwzQ2"
-Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4955158f26aso23148445e9.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2026 02:20:08 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1785230407; x=1785835207; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=ysum7WT4jQiE5UnnOJe7DgmKfAAjLTYmbrrDRNx1QvY=;
-        b=H7UhwzQ2mXtZpLn9w1saYUBGL/8siRj5YMVsK6bNCJ7x7X5uETdfIdRBcJfWqk3cq0
-         Cj8aIWZkXGW7ztIB2T3A8tDaiu9d1I8xFI7PkiqI1D62gy0pKOxHtflTdVVgEmZduwq3
-         ABxdFhgVtdZweEyyhyg8L+A0ub9Ktn3DgJViOyKatj38T+Pi2jNK6T3x7vHw6XAw28EL
-         6bzCBHawMphC6K8ynKynPiGxZDsGqrAISkHjxgLn6MllyD7ycxBPxUXX8S7hUWOwnI+r
-         pJImOHJkIvsJ1w1IOHb3CndspHszftWx5Jef7WP8A9e2zwp3ZW00tMR9owfA0HtwiszH
-         VcmA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785230407; x=1785835207;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=ysum7WT4jQiE5UnnOJe7DgmKfAAjLTYmbrrDRNx1QvY=;
-        b=MV7N/g9GseHoSBcgyjiHJCXATRB53e1+6FlUmtjLpqQ5Yg6lgs/+Uy6XstZhfc8Obq
-         eSrXX0A8IHYEwvX1NGIRJaU3cXJq0EK9uRuaTxjVmlEskWn285Y/h8AlrwgKLQxjuNKa
-         p2Eo7t6TaulxCEk3Zgjlrf7RrC4gBKQRoQcF3yjem74W1bMb+URmT2eB+LXr1CXAeH3j
-         vsXBfkElX9qFePn4RwBLvsHkXbmQEgEN/sg4l/IKZ1Qoqo5RC74E525r9kldyL+eMEFu
-         xvZ0RYEML+2SdyP60jYDIhMBe4WLcInDCapVyB+OwOcbxUbw6XRB4WZvF0KQVPGfnYP3
-         Pl4A==
-X-Gm-Message-State: AOJu0YwG/5Jd+u8+pdaVKTt27nPX9lL8Ka7x/F7NBGVYHp9ND+KBTVyb
-	wBBYg/ycPyhtc7arAk0T0IBTVyfI3/CHjsrfPKgd/dgtsh4xq2wUrHjtYRb5Jku8p1I=
-X-Gm-Gg: AR+sD10x5CmnxRSLL9RjqUd1m12PcWujUvogH0weTzdOqx2ugyAS0FSZPSZm5TyXEQt
-	xjRITrSVQoDJb6KxEayE5XaIwrWItNWvzaD/exWBtAzDXUNHcdB/NbEXBINjDceOIP5BQiSs2Cn
-	loOIK3Phu1PLH/dnuvdynTnq3yW+Fcuu0xVb2ypBjzGcDe/8wn7XkAanhuZssGhl8sEHYiUbfbQ
-	Xj2r40BJ6BsRNBX6I8Zrb+6b9qGjOkeUcG5vvl0pFJm6BfO9Cw0nibgOoD1k/TxtUGptcV6HJlK
-	q5DeYUsenLZpgg2vFEAyio5Loxu6qfU20CxZRxBaBFZeg/emy+SYN0U6Qnuu6hLJE4url4CfjoX
-	aQkcmwTJMr5qEsGPMieITDhomRbBsMtbQhO910Uue6HFOYFEsXnJIsEbJxCHLQz8/73yn9swLtO
-	6Yi6KUOA==
-X-Received: by 2002:a7b:c00b:0:b0:493:d741:5d72 with SMTP id 5b1f17b1804b1-496c65a5ab0mr11176455e9.38.1785230407084;
-        Tue, 28 Jul 2026 02:20:07 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-13e52f0c6f2sm35116038c88.11.2026.07.28.02.20.04
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 28 Jul 2026 02:20:06 -0700 (PDT)
-Message-ID: <982bfba1-d2e6-45ee-9204-0029bd9daa8d@suse.com>
-Date: Tue, 28 Jul 2026 18:50:01 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Ncjm3g5e";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="cuq8GE3B"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 202BD7C03A;
+	Tue, 28 Jul 2026 09:25:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1785230720; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=aVpi+4JMQkIel3WFLvEEJVOeBtmj3UWBlLNlfy4s0RI=;
+	b=Ncjm3g5erz56fLAQ8ksZMZv/CtqIEObUj5dq5RgD6kdgFYH+C30uLOFEVc1dnvSSqtDURf
+	06af26H6tGhgSIG2d9oCn0+y/pLZE3Q0GH2zmKBsa1B3k8GTUjI/A+XAnKtuKhkbyFmVP6
+	MVdRnLr/7tHzuw1uAuxBnraWVFd6CsY=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1785230716; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=aVpi+4JMQkIel3WFLvEEJVOeBtmj3UWBlLNlfy4s0RI=;
+	b=cuq8GE3BnEkPuNPrgbklxe0fiZhiZAe/2MvPHpvu5pdNajDiqsnrCAOPq/SX/cN9WiR/1B
+	HFTX5iCjr4OM/OJ4NhKv3fubND6dnfJzlZsGByqLhXE+FyeVdIB4Jw6KqXt4vlY3xhv+nX
+	ucp3banUhdmCdzGlD/CrHmRCdlb0NFY=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 19D4C779B1;
+	Tue, 28 Jul 2026 09:25:16 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id b6RIBnx1aGpwagAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Tue, 28 Jul 2026 09:25:16 +0000
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 7.2-rc6
+Date: Tue, 28 Jul 2026 11:25:14 +0200
+Message-ID: <cover.1785171953.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 1/2] btrfs: use proper inclusive end in extent_fiemap()
-To: Daniel Vacek <neelx@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <cover.1785220613.git.wqu@suse.com>
- <44822c23fc6764aa93a855648a1533a5faf4925c.1785220613.git.wqu@suse.com>
- <CAPjX3Fez2At9ZX1ga3YJt-rs+TGcXsV8WfJLXcmr64-4gjVQnQ@mail.gmail.com>
- <9b591ffd-808f-45ac-8109-85de8ba2b798@suse.com>
- <CAPjX3FenCVAukra4Djz8r4ShRi4M6DxpHH5-Lm1XyrsahFn=nQ@mail.gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <CAPjX3FenCVAukra4Djz8r4ShRi4M6DxpHH5-Lm1XyrsahFn=nQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
+X-Spam-Score: -3.30
+X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-3.30 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	ARC_NA(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	FROM_EQ_ENVFROM(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo]
+
+Hi,
+
+please pull the following btrfs fixes. They're one-liners or short
+focused fixes (I've removed other less serious ones).
+
+A heads up for one more fix, for a problem that resurfaced last week. In
+short we have to bring back the "fixup worker", detect and handle pages
+set dirty without filesystem notification. There's a reliable reproducer
+for at least one such case. The fix heavily builds on the removed code
+so we have a solid base, the new changes are wrt folios and subpage mode.
+
+The v3 [1] seems to be the final one, we'll give it a test, estimated
+time of the pull request is next week.
+
+[1] https://lore.kernel.org/linux-btrfs/69d0043e0f6a3d17048dfde857127ab0bf331154.1785190866.git.boris@bur.io/
+
+This was not expected and we hoped to leave the fixup worker in the
+past, but it's hard to argue with a reproducer. The remaining time
+before release should be sufficient to get the fix finalized.
+
+Thanks.
 
 
+- zoned mode:
+  - fix assertion and handle case of finished zone and truncated extent
+  - fix zone metadata write pointer on actual zone reset
+  - fix deadlock caused metadata writeback and transaction commit
+  - fix return value reuse leading to confusion about chunk reservations
 
-在 2026/7/28 18:47, Daniel Vacek 写道:
-> On Tue, 28 Jul 2026 at 10:40, Qu Wenruo <wqu@suse.com> wrote:
->> 在 2026/7/28 17:35, Daniel Vacek 写道:
->>> On Tue, 28 Jul 2026 at 08:46, Qu Wenruo <wqu@suse.com> wrote:
->>>> The @end parameter for all extent io tree helpers is inclusive, but
->>>> the call site in extent_fiemap() is passing exclusive end.
->>>>
->>>> Fix it to follow the common pattern.
->>>>
->>>> Fixes: ac3c0d36a2a2 ("btrfs: make fiemap more efficient and accurate reporting extent sharedness")
->>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>>> ---
->>>>    fs/btrfs/fiemap.c | 8 ++++----
->>>>    1 file changed, 4 insertions(+), 4 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/fiemap.c b/fs/btrfs/fiemap.c
->>>> index ba6a360074c0..2f2ae0b76799 100644
->>>> --- a/fs/btrfs/fiemap.c
->>>> +++ b/fs/btrfs/fiemap.c
->>>> @@ -657,7 +657,7 @@ static int extent_fiemap(struct btrfs_inode *inode,
->>>>
->>>>    restart:
->>>>           range_start = round_down(start, sectorsize);
->>>> -       range_end = round_up(start + len, sectorsize);
->>>> +       range_end = round_up(start + len, sectorsize) - 1;
->>>>           prev_extent_end = range_start;
->>>>
->>>>           btrfs_lock_extent(&inode->io_tree, range_start, range_end, &cached_state);
->>>> @@ -710,7 +710,7 @@ static int extent_fiemap(struct btrfs_inode *inode,
->>>>
->>>>                   /* We have in implicit hole (NO_HOLES feature enabled). */
->>>>                   if (prev_extent_end < key.offset) {
->>>> -                       const u64 hole_end = min(key.offset, range_end) - 1;
->>>> +                       const u64 hole_end = min(key.offset - 1, range_end);
->>>>
->>>>                           ret = fiemap_process_hole(inode, fieinfo, &cache,
->>>>                                                     &delalloc_cached_state,
->>>> @@ -812,10 +812,10 @@ static int extent_fiemap(struct btrfs_inode *inode,
->>>>           if (!stopped && prev_extent_end < range_end) {
->>>>                   ret = fiemap_process_hole(inode, fieinfo, &cache,
->>>>                                             &delalloc_cached_state, backref_ctx,
->>>> -                                         0, 0, 0, prev_extent_end, range_end - 1);
->>>> +                                         0, 0, 0, prev_extent_end, range_end);
->>>>                   if (ret < 0)
->>>>                           goto out_unlock;
->>>> -               prev_extent_end = range_end;
->>>> +               prev_extent_end = range_end + 1;
->>>>           }
->>>>
->>>>           if (cache.cached && cache.offset + cache.len >= last_extent_end) {
->>>> --
->>>> 2.54.0
->>>
->>> I don't really get why you left out these:
->>>
->>> @@ -680,7 +680,7 @@ static int extent_fiemap(struct btrfs_inode *inode,
->>>                   goto check_eof_delalloc;
->>>           }
->>>
->>> -       while (prev_extent_end < range_end) {
->>> +       while (prev_extent_end <= range_end) {
->>>                   struct extent_buffer *leaf = path->nodes[0];
->>>                   struct btrfs_file_extent_item *ei;
->>>                   struct btrfs_key key;
->>> @@ -809,13 +809,13 @@ static int extent_fiemap(struct btrfs_inode *inode,
->>>           }
->>>
->>>    check_eof_delalloc:
->>> -       if (!stopped && prev_extent_end < range_end) {
->>> +       if (!stopped && prev_extent_end <= range_end) {
->>>                   ret = fiemap_process_hole(inode, fieinfo, &cache,
->>>                                             &delalloc_cached_state, backref_ctx,
->>>
->>> Am I missing something?
->>
->> Because we won't reach the == case at all.
->>
->> The start is always increased by a value aligned to sectorsize.
-> 
-> I understand round_down() possibly decreases not increases. So if
-> start and start + len - 1 fall into the same block you get the ==
-> case. Am I wrong?
+- raid56 scrub
+  - fix tracking of sector checksums when there are not checksums found
+  - fix inverted logic when submitting parity read bio
 
-The only case when that happen is when @len is 0, which is already 
-rejected by fiemap_prep()
+- mount/remount fixes
+  - fix leaking 'remount in progress' state which can break other
+    operations to work (qgroup rescan, autodefrag, reclaim)
+  - adjust using global block reserve after read-only mount when using
+    rescue= option
+  - handle missing raid stripe tree when mounted with 'ignorebadroots'
 
-> 
->> For inclusive range_end, we either completely pass it by 1, or smaller
->> than it.
->>
->> So that "==" will never be hit.>
->>> --nX
->>
+- fix -Wmaybe-uninitialized warning in GET_CSUMS ioctl
 
+----------------------------------------------------------------
+The following changes since commit 75a41e3e51eb0d6f7a4969c5056298c2aa3e85f2:
+
+  btrfs: fix GET_SUBVOL_INFO after compat refactor (2026-07-14 07:05:10 +0200)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-rc5-tag
+
+for you to fetch changes up to c4c0673e4cb15b0c127e6d00732a2427bdd12c11:
+
+  btrfs: raid56: fix scrub read assembly submitting no reads (2026-07-21 06:44:08 +0200)
+
+----------------------------------------------------------------
+Dongjiang Zhu (2):
+      btrfs: skip global block reserve accounting for rescue mounts
+      btrfs: report missing raid stripe tree root during lookup
+
+Guanghui Yang (1):
+      btrfs: zoned: fix missing chunk metadata reservation
+
+Johannes Thumshirn (3):
+      btrfs: zoned: fix deadlock between metadata writeback and transaction commit
+      btrfs: zoned: reset meta_write_pointer on zone reset
+      btrfs: zoned: skip fully truncated ordered extents at zone finish
+
+Mykola Lysenko (1):
+      btrfs: raid56: fix scrub read assembly submitting no reads
+
+Paul E. McKenney (1):
+      btrfs: initialize 'args' to avoid compiler warning in btrfs_ioctl_get_csums()
+
+Qu Wenruo (2):
+      btrfs: fix leaking BTRFS_FS_STATE_REMOUNTING flag
+      btrfs: raid56: fix an incorrect csum skip during scrub
+
+ fs/btrfs/block-group.c      | 34 +++++++++++++++++++---------------
+ fs/btrfs/block-rsv.c        | 19 +++++++++++++++++--
+ fs/btrfs/disk-io.c          | 11 +----------
+ fs/btrfs/fs.h               |  9 +++++++++
+ fs/btrfs/ioctl.c            |  2 +-
+ fs/btrfs/raid-stripe-tree.c |  6 ++++++
+ fs/btrfs/raid56.c           | 15 ++++++++-------
+ fs/btrfs/super.c            |  8 +++++---
+ fs/btrfs/zoned.c            | 27 ++++++++++++++++++++++++++-
+ 9 files changed, 92 insertions(+), 39 deletions(-)

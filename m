@@ -1,22 +1,22 @@
 Received: from verein.lst.de (verein.lst.de [213.95.11.211])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 76436391E74;
-	Wed, 29 Jul 2026 07:07:50 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CB4663BF677;
+	Wed, 29 Jul 2026 07:10:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785308871; cv=none; b=NOt5CvyMUDQZJZBIGXkDmCyaOzk3TeAuBCZPjl88oqE4lS7J0C5tHfolCWrcBjOD5WND/N38sR+ejf1O5VOvfrJz05hbfIMaq/r/Q//eHQ5f+iMR5j+tMU7cnH39gZ/cVVLsJVoqn5fw9AgEnFWnq1bHwZhZF01zuS3MQYbTgOc=
+	t=1785309058; cv=none; b=PQBqU4YeCgEgnrnOZW++Jg1HQHbJX61PqweN/mK/IfqA3wlOHpz7rQ4qUUCIMmytjMGhl6zixmgQJ3F+BUZuTvgPI4ajKZUB0hX5judFPNTWc+L4f/Bire0WRGf+y8mqJ5ESbzFj+HGVkX4dzVjs/LI8pBi4nR4A4fSISvtBcWU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785308871; c=relaxed/simple;
-	bh=M7NmYC/Iylm9myghHwqILim55SAUt9QrM+UZYk0eJlw=;
+	s=arc-20240116; t=1785309058; c=relaxed/simple;
+	bh=WVZDQkhUnu9duG3GjcIsETE7tFgsSaQLorUhvqWmBNg=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=PVdX0YM4o21QRodCTTqu5a11DV8iS3Bsn4JYKWsDeV8Qp9P9v++Cgd6+bSld5zSskCWZWRTt50CmgfdropTSSXOmvAfh+y0vKscJ4grS9ejN2d9EqjGzkEJ7I8GX6o9QLY8SElfxNQSwVsZAnZOUcTkRHj+r3ZWOJjtORc9H9ys=
+	 Content-Type:Content-Disposition:In-Reply-To; b=RhKhMt9jQuA5nGYWULvHVnGEgZf3Qlmaf11PTPKU8RXdrQiX5Dur1ByertYah+whhjKyXlVV938BplNOvt7LUW1Vfr+VrNhYTBPpxpHlQjSAngGiAe00bu0sc1ggc5hGhdGTVUkRKhSMm3ONjWeb3/tnExkkahO5rODWIo4O4nY=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
 Received: by verein.lst.de (Postfix, from userid 2407)
-	id 6470968AFE; Wed, 29 Jul 2026 09:07:46 +0200 (CEST)
-Date: Wed, 29 Jul 2026 09:07:46 +0200
+	id 4BC6668BEB; Wed, 29 Jul 2026 09:10:49 +0200 (CEST)
+Date: Wed, 29 Jul 2026 09:10:48 +0200
 From: Christoph Hellwig <hch@lst.de>
 To: Pavel Begunkov <asml.silence@gmail.com>
 Cc: Jens Axboe <axboe@kernel.dk>, Keith Busch <kbusch@kernel.org>,
@@ -45,9 +45,9 @@ Cc: Jens Axboe <axboe@kernel.dk>, Keith Busch <kbusch@kernel.org>,
 	David Sterba <dsterba@suse.com>, Ilya Dryomov <idryomov@gmail.com>,
 	dm-devel@lists.linux.dev, nvdimm@lists.linux.dev,
 	linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org
-Subject: Re: [PATCH v4 07/14] block: forward init_dma_buf_io_ctx to drivers
-Message-ID: <20260729070746.GG9534@lst.de>
-References: <cover.1785274111.git.asml.silence@gmail.com> <e0cc82a15419ba7b38eb0bb00ae34cf3d0c3a938.1785274111.git.asml.silence@gmail.com>
+Subject: Re: [PATCH v4 08/14] nvme-pci: implement dma_token backed requests
+Message-ID: <20260729071048.GH9534@lst.de>
+References: <cover.1785274111.git.asml.silence@gmail.com> <19e5c945ea8114320c10f7951d19197d48b59249.1785274111.git.asml.silence@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -56,10 +56,18 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <e0cc82a15419ba7b38eb0bb00ae34cf3d0c3a938.1785274111.git.asml.silence@gmail.com>
+In-Reply-To: <19e5c945ea8114320c10f7951d19197d48b59249.1785274111.git.asml.silence@gmail.com>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 
-Looks good:
+> +static int nvme_init_dma_buf_io_ctx(struct block_device *bdev,
+> +				    struct dma_buf_io_ctx *ctx)
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+Please stick to two-tab indents for function declaration continuation
+for the nvme code to keep the code easy to maintain.
 
+> +#if defined(CONFIG_DMA_SHARED_BUFFER)
+
+This should be good old #ifdef.  Same in a few other places over
+the series.
+
+Modulo these minor nits the patch looks good.

@@ -1,115 +1,73 @@
-Received: from mailout1.samsung.com (mailout1.samsung.com [203.254.224.24])
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 83CA23D3305;
-	Thu, 30 Jul 2026 11:36:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=203.254.224.24
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3CAF242C4F8;
+	Thu, 30 Jul 2026 12:01:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785411387; cv=none; b=nKRa0LR8pIVYIlZZPI4iCMqpqb/gsL1RsqoGSTsQAM/FWvza5ukSo82IjY4RxDSAJPcb7BguuCymvUN9QLBERdlDGCNZTRiKWFcaZKATWS1dzOggVEEayCSkeYKLYEVkR7SuRLLXQLLqDwfFFyuRG+kDShFoz192pFS4yVTdK1U=
+	t=1785412871; cv=none; b=acKf8ce/gZ8OZbBbE2LagPflE1tobZ8ELEvds+HTZRHKbwbKBYaO77ZrsdgRA2iL/GxdFwvrUd6jhtTa3WHjTX0quJ84FnDj2ScHIrY+qfuwLtOksNcUb+M6GG2vS4OTXIeXYIBbMnEMCJFmjzfAB+6u8auTToqaXyj23ouS8xo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785411387; c=relaxed/simple;
-	bh=zLysCEEqoEuWyM6opQgluK5L0ojRhH4UN4NK8AHNaik=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:From:In-Reply-To:
-	 Content-Type:References; b=MllZcHfvKioAX+u6vs9Lpgr61IP0sotV0y2UaC1N6kmPH/T6fu54VRnFkYyui3lp0SwlpcP3bN809a4eLzpg2wervCr3MokZril8s5mmN7/jaLNtsv/L3YgznaOMnX5BMVhSkpAN7qjKwOhbhtSYB/IxrEIuM1AADbnQYJHa/hw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com; spf=pass smtp.mailfrom=samsung.com; dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b=G1m0nOj5; arc=none smtp.client-ip=203.254.224.24
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=samsung.com
+	s=arc-20240116; t=1785412871; c=relaxed/simple;
+	bh=1yZOI8wIw/VNu8Ygr/+tkAvokVE2AMmq1nQCRFZqLzk=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=AXQqMXL8mMKIbhkoY3WFSsSHsiF352bWvI9/NCRyAdmLYo//D5Sk8PHLJje6lfb8HdW9Rl3ngR4ULFqRBxi4kxWUxOO7m4BuFhocsMw3Esn18L6VnlQOGTrYta5F2s6uQ8E3mvRFf+LFt2xHNMe0Gcppc4xZ6TcGtNBiWDKhdH0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=tj4LlkDZ; arc=none smtp.client-ip=198.137.202.133
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b="G1m0nOj5"
-Received: from epcas5p4.samsung.com (unknown [182.195.41.42])
-	by mailout1.samsung.com (KnoxPortal) with ESMTP id 20260730113622epoutp01cd551f2ca3195d893edf957daba54315~HDjFDmUL01609216092epoutp01Y;
-	Thu, 30 Jul 2026 11:36:22 +0000 (GMT)
-DKIM-Filter: OpenDKIM Filter v2.11.0 mailout1.samsung.com 20260730113622epoutp01cd551f2ca3195d893edf957daba54315~HDjFDmUL01609216092epoutp01Y
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=samsung.com;
-	s=mail20170921; t=1785411382;
-	bh=mERFm4283SSrRFHo9/1ATS072a+0UIQwbggX9r32jfU=;
-	h=Date:Subject:To:Cc:From:In-Reply-To:References:From;
-	b=G1m0nOj55iDA9Dd+o78RP1b6wsb5owePEsyB2HLZpWZ6TNjoaPNBKS3Bl9iVZZRQV
-	 leVdqeIcsnTbKQnqgOQLWCGR3KeuMAqMAHOvOQ5XtXOayIBD6utXS6XH8KTkELKZgr
-	 zEcrc4MUK5bcbMdqpy2eFgv3VLAU+aJAnTZlwZ/4=
-Received: from epsnrtp01.localdomain (unknown [182.195.42.153]) by
-	epcas5p2.samsung.com (KnoxPortal) with ESMTPS id
-	20260730113620epcas5p2cd2dd6e62a21b0504d36dfba298dab5e~HDjD3F8l_1787417874epcas5p2O;
-	Thu, 30 Jul 2026 11:36:20 +0000 (GMT)
-Received: from epcas5p2.samsung.com (unknown [182.195.38.88]) by
-	epsnrtp01.localdomain (Postfix) with ESMTP id 4h9nGC3jq9z6B9m4; Thu, 30 Jul
-	2026 11:36:19 +0000 (GMT)
-Received: from epsmtip1.samsung.com (unknown [182.195.34.30]) by
-	epcas5p2.samsung.com (KnoxPortal) with ESMTPA id
-	20260730113618epcas5p2fa034480e41d3e4e7b6c61c98a1ee498~HDjB8riTb1788217882epcas5p2K;
-	Thu, 30 Jul 2026 11:36:18 +0000 (GMT)
-Received: from [107.122.10.194] (unknown [107.122.10.194]) by
-	epsmtip1.samsung.com (KnoxPortal) with ESMTPA id
-	20260730113614epsmtip13123c94af622f6e0e15c09cb30ff8023~HDi9_RAYA0540705407epsmtip1s;
-	Thu, 30 Jul 2026 11:36:14 +0000 (GMT)
-Message-ID: <09134617-6d9e-4963-9319-1855e88a4df9@samsung.com>
-Date: Thu, 30 Jul 2026 17:06:13 +0530
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="tj4LlkDZ"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=rnppetcb2tfpWkLN16GLZ+CKN9eTsL7d4/gwEpcDIIs=; b=tj4LlkDZCWbgqwwRDdSYSxkZM6
+	Rob0lX2Hz7g2wPGOaYEJyGDi8SRM1dR8kYWJ2w0q67EkW19EYPEDhJeP81nduUU42gnX63VGNi1ED
+	pEuoYwlbZwVlHdqywVuDiA7uGI3Ks+ylzImoaLHMo1LlZREhxtiTLC/nzM2RtAxVcr7nB5AKD9Q3R
+	NgvevoDDAbF+wRSQtVmo1bgBExBH5NvPprxvNB5dUnVDtOPoRm91W9g8/nRwVKPy3rEBzVO8n2gnO
+	FqADlfoJ082zUvhtPLJo3Ms7apUuCsB+WXw8ikQKgeNtPIEhKZH5jc3OQC9OOISU3fdnL0YxKzy9s
+	Eoasijxw==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wpPRj-0000000APNj-06Lj;
+	Thu, 30 Jul 2026 12:01:07 +0000
+Date: Thu, 30 Jul 2026 05:01:06 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Qu Wenruo <wqu@suse.com>
+Cc: Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org
+Subject: Re: [PATCH] iomap: follow the alignment requirement for
+ iomap_dio_hole_iter()
+Message-ID: <ams9Agj_C0DhBF54@infradead.org>
+References: <e69cc8a4a9c3f641b97872b50f04c397880077cd.1785374485.git.wqu@suse.com>
+ <amsBEVNnsYJjKGpK@infradead.org>
+ <30f0bdfb-c8ee-4459-8137-773020960f7b@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v4 08/14] nvme-pci: implement dma_token backed requests
-To: Pavel Begunkov <asml.silence@gmail.com>, Caleb Sander Mateos
-	<csander@purestorage.com>
-Cc: Jens Axboe <axboe@kernel.dk>, Keith Busch <kbusch@kernel.org>, Christoph
-	Hellwig <hch@lst.de>, Sagi Grimberg <sagi@grimberg.me>,
-	linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-nvme@lists.infradead.org, linux-fsdevel@vger.kernel.org,
-	io-uring@vger.kernel.org, linux-media@vger.kernel.org,
-	dri-devel@lists.freedesktop.org, linaro-mm-sig@lists.linaro.org, Alexander
-	Viro <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>, Sumit Semwal
-	<sumit.semwal@linaro.org>, =?UTF-8?Q?Christian_K=C3=B6nig?=
-	<christian.koenig@amd.com>, Nitesh Shetty <nj.shetty@samsung.com>, Kanchan
-	Joshi <joshi.k@samsung.com>, Jason Gunthorpe <jgg@nvidia.com>, Damien Le
-	Moal <dlemoal@kernel.org>, Alasdair Kergon <agk@redhat.com>, Mike Snitzer
-	<snitzer@kernel.org>, Mikulas Patocka <mpatocka@redhat.com>, Benjamin
-	Marzinski <bmarzins@redhat.com>, David Sterba <dsterba@suse.com>, Ilya
-	Dryomov <idryomov@gmail.com>, dm-devel@lists.linux.dev,
-	nvdimm@lists.linux.dev, linux-btrfs@vger.kernel.org,
-	ceph-devel@vger.kernel.org
-Content-Language: en-US
-From: Anuj Gupta/Anuj Gupta <anuj20.g@samsung.com>
-In-Reply-To: <de4ec386-42ba-41c3-bcbe-1fe8b2f71ba9@gmail.com>
-Content-Transfer-Encoding: 7bit
-X-CMS-MailID: 20260730113618epcas5p2fa034480e41d3e4e7b6c61c98a1ee498
-X-Msg-Generator: CA
-Content-Type: text/plain; charset="utf-8"
-CMS-TYPE: 105P
-cpgsPolicy: CPGSC10-542,Y
-X-CFilter-Loop: Reflected
-X-CMS-RootMailID: 20260730104131epcas5p4b52720519486f7ac774c317923a79c81
-References: <cover.1785274111.git.asml.silence@gmail.com>
-	<19e5c945ea8114320c10f7951d19197d48b59249.1785274111.git.asml.silence@gmail.com>
-	<CADUfDZpwF0jp2e=+c3w_NjWPbnQ858bkSD731M6+x27jzgcJiw@mail.gmail.com>
-	<CGME20260730104131epcas5p4b52720519486f7ac774c317923a79c81@epcas5p4.samsung.com>
-	<de4ec386-42ba-41c3-bcbe-1fe8b2f71ba9@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <30f0bdfb-c8ee-4459-8137-773020960f7b@suse.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-On 7/30/2026 4:11 PM, Pavel Begunkov wrote:
->>
->> I wonder if it's possible to perform the PRP list page allocations and
->> initialization in nvme_dma_buf_io_map() instead of the I/O path. The
->> NVMe dma_pools are per-NUMA-node linked lists protected by spinlocks,
->> making them significant CPU hotspots. If the dmabuf registration set
->> up a contiguous DMA-coherent list of PRP entries for the pages of the
->> registered buffer, any command using the dmabuf and requiring at most
->> 1 PRP list page (i.e. length <= 2 MB) could just set its PRP list
->> pointer to an offset into the dmabuf's PRP list.
+On Thu, Jul 30, 2026 at 06:06:17PM +0930, Qu Wenruo wrote:
+> > iomap generall expects extents to be block aligned, how do you end up
+> > with non-aligned reporting here?
 > 
-> Possible to an extent, predecessor patches tried that, I left it for
-> later to keep the series simpler. I guess chaining won't work in
-> general case.
-> I mentioned this to Kanchan, Anuj and Nitesh before, they were up to
-> playing with nvme optimisations in general, and since sgl from Anuj
-> is ready, maybe they already have a prototype somewhere for that.
+> The dio read buffer is 2 pages (matching the 8K alignment), but only the
+> first page is faulted in.
 > 
+> Furthermore btrfs has disabled page fault during dio read, so the 2nd page
+> will not be faulted in.
+> 
+> Thus iov_iter_zero() only got to zero the first page.
+> 
+> Btrfs always returned a hole that is properly aligned, but as long as bs >
+> ps, the page fault can always break in the middle, causing unaligned range.
 
-Right, I have prototyped the PRP list optimisation before. I will send 
-it once the initial version of this series lands, to avoid adding new 
-review churn while the rest of the series is pretty settled.
-> -- 
-> Pavel Begunkov
+Urgg, we really need to get rid of this nofault behavior rather sooner
+than later.  But I think the iomap should always be fsblock alignment.
+While we can support smaller I/O, the mapping should always be block
+aligned.
 

@@ -1,144 +1,94 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B4C833B42DC
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jul 2026 07:08:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1129F48986A;
+	Thu, 30 Jul 2026 07:45:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785395297; cv=none; b=F1UviK0k4lQgXD1VIkx5Ujdb3p9HxyA6lD7SN46WdGtQUsBYszfvWsWYBanwcJQhK3V0EBm0juy/Qv7w/7YhtxvYNtiTsv0/qoPzXODsd5Urq5KfiflgO3XSpFAmg1HcMYZbGZyAuqOyJlKsX6PMias8dwu0uNAGWNEyNQdXBX4=
+	t=1785397523; cv=none; b=QpB8bfj7A+S2ebG771kOdNLra4WZUc5oaviOP8s5bYNGZsyZRPOSOc+G1y0od5QkM0iM20MCrah80bsTWkHyLvm62Jbr7KAo6YI6oao9Jpcfaj4D2EXqOJ6FJd2EKJPYK/5XqAmJiG5XMXm9Cg3P2k4QKgoKCD7GMeXFb80rQjY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785395297; c=relaxed/simple;
-	bh=lKxbCxiC/mXrR1MPYlTQCTZ+5ySrrAKoQyM85P7dwZA=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=Nnx618XepnrekEz8DUdzo7Hh2xmba93wjjwHFzoPwa5aNcXXYWPjOn7SAkfTiZjD9dJEgJhan8bQfpYMURhd8fH9LTIc/6igbEN1D/ItmhCw8UD/5VxrAk7SEhSMtW3DLNo5cHEFQ3MfnFyvyfOCawfHftlLy7TK0tfq3W9S4+4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=aIMbTdWO; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Evl5Gdyr; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1785397523; c=relaxed/simple;
+	bh=GmoWq6ygORDJSWwNT1d7flWz3XJXqdT/v36xiXmHo2Q=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=rrWqiCMUejj1omKFBVl8eoh+U2earaVs0uBRb3/vDODDo9s6X60A+sDYTM759bcofAGcQvfV2gMaQhtgFnVXZ2Jkekr4dyNl0j9oNqEv2QoVOyfSt9NJLNZvrxvIbqlabnxOgOuRi6H+MCPZ5og0y4ki3vcahukNU3xj7lmmB5Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=QyPg+PLG; arc=none smtp.client-ip=198.137.202.133
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="aIMbTdWO";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Evl5Gdyr"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 815FF3E21
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jul 2026 07:07:59 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785395283; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=C5F6W/Nsrin+eU8uE3eHzDyJJlP32yylKDjIdc2ufp0=;
-	b=aIMbTdWOTMH1bbox7RJ+/HYnQqy4UZB+Vls5WBY9CxNfrMKWyj1FksRpaRXZfb1wlOejQz
-	apTc7mVSiKsa+yeoas5fzs7lMyKlUN8HbNb1covC9Aiqxt7wcSHLXjwaNuNE3ab0iBfKQn
-	6qJ+oiivYkDvVezDESA9vSHZHFrcqvU=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=Evl5Gdyr
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785395279; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=C5F6W/Nsrin+eU8uE3eHzDyJJlP32yylKDjIdc2ufp0=;
-	b=Evl5Gdyrz3L6tu9lZ0QiLUY0moAqyE6mv833whBNU3vN36szNUMq4MTDkQxVKlsmkBoxik
-	T6C8fncSMhm5nF6Il8dS3mHsXvzj9fjkofkhCBgXnothEvl/g76dNgOv7i0psuYlo1XYHy
-	72dwy0K1eppth9nZqGcOy3NjDU6WNns=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 870DC779CC
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jul 2026 07:07:58 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id eCQKDk74amp8aAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jul 2026 07:07:58 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: disable bs > ps support if no transparent hugepage support
-Date: Thu, 30 Jul 2026 16:37:39 +0930
-Message-ID: <7a79cac71ca43f63cdcf21ee9bba95be05f16230.1785395252.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="QyPg+PLG"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=cgLmjrZdzGqgeCNG77DjIF5Q6BGAm3Y+Yu8lukm+PrE=; b=QyPg+PLGl6TDU/rgEY/+9CmGDe
+	rNBadit96JAnbA+qf3xFOey3uJ1SbQXmzTt2+Bxpa02MuoNucHwbMZTRKo8O96+BS7Ek7nCY+SYLR
+	YVVTAeF/uByCjNWlrtg+oJzYg66nZAqH4Os+3+apzzJIUjSOKNsaErwyDaxiwG7AGmU+XgR+aaCPF
+	OvrZ1TjVDzNl3LEVii4x1p1uVe1ar7PrSqB8n974K89zZYkrUypGbOnvkmTJPzG2QnjavTOqwJw1s
+	SVwXJ5hbTznmvubaeHXWz633W7/7g8wLgYaduARTjJPPvw1r7m8A4l1veXSP6iKLlOxe5DQ8fEU64
+	QFJ+oiKw==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wpLSD-00000009lzN-1nsx;
+	Thu, 30 Jul 2026 07:45:21 +0000
+Date: Thu, 30 Jul 2026 00:45:21 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-xfs@vger.kernel.org
+Subject: Re: [PATCH] iomap: follow the alignment requirement for
+ iomap_dio_hole_iter()
+Message-ID: <amsBEVNnsYJjKGpK@infradead.org>
+References: <e69cc8a4a9c3f641b97872b50f04c397880077cd.1785374485.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	MIME_TRACE(0.00)[0:+];
-	FROM_HAS_DN(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid,suse.com:dkim];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: 815FF3E21
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <e69cc8a4a9c3f641b97872b50f04c397880077cd.1785374485.git.wqu@suse.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-Btrfs relies one mapping_set_folio_order_range() to set the minimal
-folio order for all its data inodes, but that function will be nop if
-transparent hugepage is not enabled.
+On Thu, Jul 30, 2026 at 10:52:10AM +0930, Qu Wenruo wrote:
+> [BUG]
+> On the latest development branch, btrfs with 8K block size on 4K page
+> sized systems will fail the following fsstress workload:
+> 
+>  # $fsstress -n 4 -d $mnt -s 1785675805 -v
 
-Guard the bs > ps support behind CONFIG_TRANSPARENT_HUGEPAGE, just like
-all other filesystems.
+Please add this to xfstests.
 
-Fixes: 98077f7f2180 ("btrfs: enable experimental bs > ps support")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/Kconfig | 3 ++-
- fs/btrfs/fs.c    | 6 +++++-
- 2 files changed, 7 insertions(+), 2 deletions(-)
+> +/*
+> + * File systems that write out of place and always allocate new blocks
+> + * need each bio to be block aligned as that's the unit of allocation.
+> + */
+> +static unsigned int iomap_dio_alignment(const struct iomap_iter *iter,
+> +					const struct iomap_dio *dio)
+> +{
+> +	if (dio->flags & IOMAP_DIO_FSBLOCK_ALIGNED)
+> +		return i_blocksize(iter->inode);
+> +	return bdev_logical_block_size(iter->iomap.bdev);
+> +}
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 9de04c37e11a..4b10d78ed99b 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -106,7 +106,8 @@ config BTRFS_EXPERIMENTAL
- 
- 	  - extent tree v2 - complex rework of extent tracking
- 
--	  - block size > page size support
-+	  - block size > page size support - needs transparent huge page and
-+					     non-HIGHMEM system
- 
- 	  - huge folios for data - folios can be as large as 2MiB now
- 
-diff --git a/fs/btrfs/fs.c b/fs/btrfs/fs.c
-index 5015d0148841..77544ee5e6db 100644
---- a/fs/btrfs/fs.c
-+++ b/fs/btrfs/fs.c
-@@ -155,8 +155,12 @@ bool __attribute_const__ btrfs_supported_blocksize(u32 blocksize)
- 	 *
- 	 * Considering HIGHMEM is such a pain to deal with and it's going
- 	 * to be deprecated eventually, just reject HIGHMEM && bs > ps cases.
-+	 *
-+	 * Finally, for bs > ps cases, we need to set the minimal folio order,
-+	 * which requires transparent hugepage.
- 	 */
--	if (IS_ENABLED(CONFIG_HIGHMEM) && blocksize > PAGE_SIZE)
-+	if (blocksize > PAGE_SIZE &&
-+	    (IS_ENABLED(CONFIG_HIGHMEM) || !IS_ENABLED(CONFIG_TRANSPARENT_HUGEPAGE)))
- 		return false;
- 	return true;
- #endif
--- 
-2.54.0
+This already exists in the VFS iomap tree (with a slightly different
+prototype).
 
+>  static int iomap_dio_hole_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+>  {
+> -	loff_t length = iov_iter_zero(iomap_length(iter), dio->submit.iter);
+> +	loff_t copied = iov_iter_zero(iomap_length(iter), dio->submit.iter);
+> +	const unsigned int alignment = iomap_dio_alignment(iter, dio);
+> +	const loff_t aligned_copied = round_down(copied, alignment);
+>  
+> -	dio->size += length;
+> -	if (!length)
+> +	iov_iter_revert(dio->submit.iter, copied - aligned_copied);
+> +	dio->size += aligned_copied;
+> +	if (!aligned_copied)
+>  		return -EFAULT;
+> -	return iomap_iter_advance(iter, length);
+> +	return iomap_iter_advance(iter, aligned_copied);
+>  }
+
+iomap generall expects extents to be block aligned, how do you end up
+with non-aligned reporting here?

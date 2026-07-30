@@ -1,302 +1,221 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 68FB31624C0
-	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jul 2026 01:08:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.15
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ACF54351C20
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jul 2026 01:22:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785373721; cv=none; b=K9BL5OIt3WWCsqM1jqhTwR44hzhK5RcOQbSyFoXwrCOjfRzCrvN2JX1VHfiDximzu3e5jPzIJKeUKk2AY9TnUzFOrYkN2/Mhzq8upqRU+Wk/jurGwUt5jGdJnpLIww8ETdkIhoUvLVj0aeRsgEBpli1zBw9npMxNNCquL0pM0y4=
+	t=1785374563; cv=none; b=rYj5bjyrW1LPnrKiAdGvUtYGfWHr7CBUbsMfTCc6ijBgiaJWS3XQ9oXkF9QZFefXMmjqlW++DMVb4ySvDWC4bCelFPoAjcyb9d2lTxWTEN2AZVHHYLVw8ymev4GS3O4RiQkm/E2Xwsv2QYTcrF5AWViHD+6Z9BfVFBMPcO+D/98=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785373721; c=relaxed/simple;
-	bh=QbGY5znD80w6P0wVn9L+LNsZC5xA+AXsrhTLSw7RjEc=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=u9shuJ9nn/yYHpEkKqSRhisv5R3qvULjRFwasziaVwUbY1e6WPa8cHGLowRROgcNBk0RMbQVPYcgvi8RjQuOkQiuWEkvM5jl2hMbqsO3LPiV1wyFozjcX3hkYuD3YUSPRaIj9gmJay8nTFk0IzXAJFTeoZt6qo7UZkc5wF0lLBQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=iM7lhcWB; arc=none smtp.client-ip=212.227.15.15
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1785374563; c=relaxed/simple;
+	bh=/4qAEzUQBFKLtCXPBStUoJsGxRzkUMLWb4q0GwsVhfo=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=mxNNObCqm0sN/gMLe5O4Np0BZXv6joDFIfhbohWpm4L63tRZCTdO482J30re8n1SsmDF6CFN2b60/GXKIAYwgZFhF+1nlc5VcPgvaZcgWDcrNZHcXsjTc4QxL5GfmIlkb8qEAZMYhAyhb1L4ShHy0xYWUJQyDmsW3IQrTRtcliM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=glFDgoi0; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SI6JH9Oa; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="iM7lhcWB"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1785373710; x=1785978510; i=quwenruo.btrfs@gmx.com;
-	bh=7gF42/TwKAenxbkKGtE+yfJx+MAhFXRFQfwTc+hfRZ0=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=iM7lhcWBNvhfE6H9ADSdDxCi4HYxM7XO5a0O2DDtf81hIKx1ka99xqNDNbZGifuZ
-	 O9CWQHqkjOh3n0sP60jvHEzzcNEZcgtB4sa7A9ZkEPSte+GJEtIqgl45LfL9VKtlt
-	 2l9eES1FzXh1ItrDOeHVm6QPmvC9A5P6TRu76k4Ubp+Cp6CgVNl1j5gDaSWRMlbDx
-	 HUeHPYABsKpoV2ZUpQFSN6TbfGL7g7iG4Bgpq3HRkBSusew8f7V6LDPt1vSSwx2IQ
-	 TEvlgiH88g0w1juGOEpYHm8Q9dpcqbcmnb657BF/vCgONStRtIGzIsjse0jJ7fCyL
-	 H3wYvHeN3NvOsOcFDg==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1N6sn7-1x0zYo45T5-00yXvs; Thu, 30
- Jul 2026 03:08:30 +0200
-Message-ID: <60324a9c-6506-4583-9961-e8d9ecd43754@gmx.com>
-Date: Thu, 30 Jul 2026 10:38:26 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="glFDgoi0";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SI6JH9Oa"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 7D0EE7CD71;
+	Thu, 30 Jul 2026 01:22:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1785374554; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Nv/Vy1FGQZPL9hLmzLnXj02eJ10QS/d3Ra28Ulno1rs=;
+	b=glFDgoi0Jx+XW7v9VHXxv+6xeGMJr7Zmv4Wn7iPHw4fXemV5WY2Z/CmMTsfrwKK19Id0AA
+	zRzQIDkQAnm//88b9EGz7OZ7U8gQ2eOgGD+h6QzayXLt9ebFsrp/9w1t+j61rk8E4YSEEi
+	wIb8TqDEThfJQm7NcaEKWrji/89NsqQ=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1785374550; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Nv/Vy1FGQZPL9hLmzLnXj02eJ10QS/d3Ra28Ulno1rs=;
+	b=SI6JH9Oab6t8pZGQcBAbPuInI+ppgQ1Zbvfw0BrlQgeV9ChdjPo9zWH3Sg8q7ZsoH1fgLd
+	r1sa1EAqeOtucQe02E+Ptk9/15gKuzNraKAE77D48z5hhaIgr5DZD2DX527T+etCUXvoLm
+	LgXB+f5kZajxPETd6/N9hrTwqK8gEsk=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D974E779CC;
+	Thu, 30 Jul 2026 01:22:28 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 1+rhIVSnamquJgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 30 Jul 2026 01:22:28 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-xfs@vger.kernel.org
+Subject: [PATCH] iomap: follow the alignment requirement for iomap_dio_hole_iter()
+Date: Thu, 30 Jul 2026 10:52:10 +0930
+Message-ID: <e69cc8a4a9c3f641b97872b50f04c397880077cd.1785374485.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v1] btrfs: flush the fixup workers during close_ctree
-To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
- kernel-team@fb.com
-References: <8b2ac16ef9cce964c2546a71249514899268cfa5.1785373134.git.boris@bur.io>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <8b2ac16ef9cce964c2546a71249514899268cfa5.1785373134.git.boris@bur.io>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:VS773GH8EjhtIrcejfArKcp/EblXXnxMk4YrFuuRyA6gqlhdHq7
- By31mTckMP10nt3w3SBrapgyKh1qWMRRQ8Mb6LA2H3jSFrQ/0zTYmHpYAZtfUN2Oxsd1wui
- BxQK95WY+iDK4wQ2Q6lVWNkPNWSBGNr+c/UFrZ9zMJFvJV4KzS+GFIHg4pcSM9mASI7RD7f
- e79NWjftwgDPyqlYY/xoQ==
+Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.80
+X-Spam-Level: 
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:3K+RpFOIaW4=;hLSUaZWiwqH8S8u5LGmQEupvbur
- gm9sNCu6EAnPJ3GaIwn1ZJ2A0oF/qS1FLwxq2iMujeb13i6HVNbkNTbdgLxFIArSMSXBkuhFt
- xlOxUH/AFpimnF6YtckcGsLy1tQ396azI0ym0aKPSj4QpzrUwOOqiN2uPOQigwchK9uG1jx8C
- swJBwh56uZW2P0v9TvwX9mGDLmk48GbXrXyFFP7RWpIjxRNc9nyk0jCZvU7nI3ztyKvLo5krX
- J44RSF8JxPXSIhtdcyRq5tPdYkbR6WsZ1kX+w/2+5EU2sfRC1vEqISEVD3/wMieyqOmtL8341
- B5KXrhtKIGWWZbnSPVP5oD94c+ff4JZW3C+2xctcTv8EiY7CdbKvKkJX0Q7CqgytgqRUzNDMM
- UejwrCqkfQdgFF8Aq1jAzyJQhMJUmCLOvQqkKmJx2UK/uR9ZCWqc48+LKcGboPYARHW5+V+N4
- 4o3tLVyahPENnKOKH0nLzEtMdCV9DadbzxISvmKwNKDtTNwPS7mANHLpFBJz/yxuUnzeuTWZh
- cJGJXBL7rJTph4iqB8kYX3LwSy0wCCuROagNgMTxBC44xa0US9/orxStCLLiFN/dtm6jCK8if
- M4RvpQpEPJ8OoV12JZL120RvEu3c5VhXM+UwUuJkDrZJroFmlMDPpZrBRRvCryI9ewHjSgZ7q
- P/qyjWFJVhNFS9rGM6sZNVx3OW16C6UDcxFyaeaBeFLJYmOohBgDf55/o5GurYJKMHL3ZExSV
- h1N49zDC/67fiXR+HXmcPxuGaZREryDfGarQdiN596QejaxbSsjkpsQGomXnQitO1jNSs7sWK
- CfsFbt6kjpbXdnL0DXQldWS+lYUfgqaC/VDSZsauGz9IcT5ehh4eYX4aQpa6s31v10k6KQB2k
- pYpIKIwkMYmR4YYY64LIL9eAb8Kq6MpFxIbTK6hV38i4fJeL5fXKbJWhSPq/RJkPyrZ3OokXK
- 94/Q46HmEz5IfCbvcmI3KyTw4IOIOJBW24l0KL9tR/smliEz603KuP9qrj8Cx29JLzYpz3zLe
- UVkCJ+jDUw113gYDSl67mAw4poCgG5V9kYSk5TYhRFt2Tvs2sja1dsGVN9kow8UR6kA8bbFgj
- 05WdOrPFGsLwQhljo6tDlDGqAnUX0nBrG07GxBhOLJswMzD+sfjtaMJSq+RVQQk0iTkj9gNbo
- VjCICy6C3r5NjRl8gHHpoQJnn7BlIh20rjaA1PIswAtfQZFgcIWNvvSIK8Y7GFFASAIN0i1+V
- +xDVhzHiumy62AQNveu32fpD0sPTVVD9CafueT8iBNUBj5M/0y7C3Bzkm/4gDriLeBjtqq6Qv
- laI/EFEOsDtgbCpDcbt2bFSfM5WVv1ZPUiz/vgh5dWYADfpdHHvPZ4HqpCoQ2ilRrw3mZrCM0
- lOlZwj3EuHRtzXfnchSOMOw1EIFuW69Tyy8KoVHYhs8mA8rGkVBv9RVhUthmWFEbUbWZzLFlk
- b0NMWIOW36ObmX5fjnL8SlVy4WbUaSnhQpxeWQT+9sSmhRwp1KPeInVoo3nI9tmrRWHtfMOsj
- BJQhn+clUUxn3D+1gXbPA1/63P+G5ZEioV57aEZWxrSHG5eUY6828y4gH5Og2zsiyqxkwGJh1
- 6PfcLHwMozUg/irnPV/u3qzgywQJ/1WIQZh/8BrXVgBzd9L3S2Dpg80uaOdETR6ah+U75ra7H
- 0eDIrHUg/wwFkRBFA3r/wC24Zo0hidSzYUBeJYgYlieztUOw6H6rLwp/VW5ebRKjlXa4aLJWl
- PbKrIV4r6/JfHzuN9ZLLwpn0Kb6lucZu8rABil1gyQXfZv+ybUPdyTYGl3OxEqs2bqX7GVKnL
- 2y/BNESNVZFp++ykNMAGs1Lwkj+vJW9ROKWHx0L9giUTvJraQI0rEEhfMMP/vwi+UTV8GJFsV
- A0TJxBWJH2cLJE12yxaE7yoCJ620QonXNQQUwgeXXyTyFyp3ss6XqLhdxwZwCmoNoucWIk60p
- KRUJLvmhhOfxK8QIZhKnyUrQbw1tIq/+zkQN/ddq8g0anXbAsMUnKavkf3wbQZydrGeCaZSh1
- vnYhFeioZ/yjee+77OZPUNYtLCBExMxT5/HVLFZdIBF2Tll+SOB/5aUx1MhLxF+RUR71/euwm
- 98jNaTsqPpT6SasD+vJvF6nKwXfe6iiyqsc2tLbn5+WyHkSoL2TJNoj4YSoVrXRLPat8poGu5
- zc34puBOPlaQXveFc/n9gB7Czl+C9Al6xmMzHZ9S9Swn/1njKblbOvdqdMfFbdKinni1wYw/S
- NKdb+Nh62to1EvuecJyhRKzOiP/DegB8gAiesxiIS9zJlFkBUVviRWpGtdlOKnsXmafV1LXGj
- 4fLhkmoo6BWvEf7K5pBzHCasQGd+4qFHAU8f1qXyPHMSFlakmTnKnjfYNTGFh36pQ1g3t2+eI
- Bh4plUgYSSnc1c4EWEkGQyhy0fb12+2VXIdf075o2ZKv9LvPwv6a+1HpOy2BNHzTjkxqkvxX2
- WLnv2a59x73wQ0w5PMn/GKUmxD+Q/kLMAsUBfFZqPT+YYVnyw9kJf/N2nY90PZwlgvb6RP9nK
- kAFavPttFujHGtYhsZa2Zwc6fgob4tzvk9KDcnkdMMb0KFDE/QMNbU2FCGUYxoHvAcXc5c2w3
- 8iUDFxvBH0uP0Z1Ez7NbBD8w8U3lVPGaZUUjUHQAazA6SkoLjASzZWeT8ZTaAY/8OZN9dQ3IF
- gvqHuhmbrcdacjGxPWWO/wHlIxBl0A1P4Jf46q2Z+2SyCH+h4rFQ8NFYiajFEcl/h+pgDAw9R
- /wbUXbgajlC3+LVU/QvaZ06PxHUCQXovcm2NCXmreTXGpdcvLWVi5yOQQlm4jLW2mYbL6feZn
- RQ6LqC8PgMYWh9zgm2cpRzL3McZCR4hPMMJyg/pAyPFdV2FOB6oj8mOGAx/xHBl8wfPoxZ8LI
- pI+bOMO5PIm7rXOYF+eeeJxLHBBFJI14HGCNNJ9WCXhienX+K5rmsx17ubjoTEIcHXKHmFPDP
- asFTNmhUmvqX03U6rntPCi9zZQqVUObXSIp5+pVhsxUWH+dbggJT/VoWVzO+/5Ov3/g0CvoWO
- 6De5o5tDAopKUrUYOJ9su3PSu3irGoR2Hle7B0RjO1xvT2cCnLvDWZ9f3w/JYuAl8VmxUIYvH
- X/pD2EAtlL2FOqadCv0udmkVKsbZfZQ11ybcuhkYQIQUct3k2x2C06N/mgWZOoud9YC4vCK9d
- u4mypTtywsv4rQTyCYwZI2EoeSDr5UABeaZZY/c1n6pKCexcaPunj25GOGeD7lRquV8c+GssT
- o3zzI6qEF7I+Qtp/FdG6lDQWkvKvs0WFAsqjG8D1MG46fxYkICagIWEXwyb9xlfuucN3EZMO4
- m5gXdRUq8Ci+mEr909IWOPdX2qAFE9MqKZXxaeK+8gk7kv1AVgJysbJVVR5zbsHvs0meH2lwA
- hwT8i5otadNvx+gORXJTuQV+AcJeN2PwMJ+qehlNJIl6X/Thys7nDShH6F/M61DJmCD61Szn1
- 2IFVoAIIt4d1+xTqQSdSqV2WhwMhH1o1bcdGX2lENoQdN+3XN/dkj+MJ2/1A0S5atmqAp0Vjk
- C/1ykyknDBMIuvVIn2LtvvDqzaqYo8+nbcb9NhpK/wpS3qtSiUKDHL+WJOuo1O7I/XY0BBNI9
- GmroqL010RWz6b3HQGI8Sdx3rdcqnpKHs8ToYpO19u8RDF5W33nryulgEeCZKCYXpW3y4LDGX
- yCN1k7cfb0LJ0ccen3S/TKl9SyWYVbfi5KbwH3CCfiT38mBlpNhxTs3mWLE+bQir3l2D0dgVF
- aHT9OvqB97cbnGkgbFCWfNn+Szcdj317OZFL0TdCNQQJAPrxamr+pw/uuOGuxz6bj/QLG/ogx
- jycMbkmUQWwkJKL1nLu67slwPbUHZtmT4zqIpKJyegVrDUKyJR6kH6h0GibRkMkaqYDE3cnLk
- 3nVakFw/FPudaP0rKY7oZd3nwcUMZSUjjsDAM0bq4Mv+Hn5XB1SwhPfnwvRHXkoE7YwxnuzXq
- uy8RJ39m1G87xudo7nhGJrn5p7KEPZzaXq/X2MXVI0+s3JX/KvjfE0RYsfNrKxxpzAfwOzPns
- YlEFOOe2t3DMOA1ZRM6MGkCpEC1S3yfxpUvK62FH5o3D8izQS8uS8CnSfkqFIY1fvOO+x3I+U
- AVEXviUJcw4J2XC8yxCOfJLxqVJcAJ/QAboajYKh/mIoT1KHLoZIsy5dbsNMoZ9Gt63MPbhbr
- aEHg6aVlZL1kDj9CokvuzeOQDesz7X+eI+v/dft30NP1q9qPrPfwiWWbZs9YOqanGXjz06bLt
- uCeH+uBtl22Ny7pYMCLzLX6dJUrRlM0czRXpH/Gr2i8XssUjEgmdgfpaFlhCJkCChkQLzDEku
- YxLGzorbp5lx6uWCY4C8nLcIRQBq08e/XGPYdrZA8eTpYBJQDwIiTxxeGd4b/60rn8xKrNCLq
- cvt/+VpOkZCBjfe1Upk2E7YfAHlDd+LZhXQUg/MWbrVjvv+EJzYr73JMSsNth5AJ6AFgOQxKj
- sxjhCl0ZuTAuh3K4dAR147Xvaq04BChw2Xl/TMHFPVNWjv5o6ksavZSZXfMrz1hRIHzIFwesY
- Y7qFDmQt08qqO+f4e2EZTDIBElVdric5tfDZ1DYxVLSXyCyoWcBXezUOw4CEtEZ9zBjkS8KDM
- K0lnpbmGRjmdZwWZBjLD5F8WshmHMxNVUnj5l65lLDSKrF3OE+3cSo6qgrmNsxHBY6j6x9LJS
- DoHyrCNkNeexqo4LyDGi4ogq0Ca/xEMXff2F+jTVpC73DtvOFhkrwqzvrHj59alWy18eXrNMo
- cLGkvKvGcPN97/YKa8Px0/efeu1uGekhtEOHIpLVKau1jtxPRGHrFBxH1fgiggr1mP9PP28RG
- v/xmDjZoqz49QGdX4ZmCnSBo2jxafAw5taCWWoR5jGibuO/SKrCQY9rNyNAifdQRyMbxVOuxJ
- mpzVEKzGYHdn3iKEDck8OeVDlrIlizyOB2M9s1GbVamiqALMcY9DgOBmMCXKvV2f33WTOpeuD
- XvJigBFRjqfqBcqfCitcVURuIcZYZ2X5VFKTm3croyEwhj47jRY0Jl+uAgJ7D7h7BdieLxH1p
- q94KEStHSapJ792G1PKlA6ZtLzmKXd47r9Qw2UMWF876Zae1oBBCDNmXUsW4t8UQeZ/PX1BK3
- DyCbNems6sTgWjE24O9JfYOcYNQhSiELeEDzwMPn00bV14LphsOurDFyiFBJuwwq7+3prT1Fs
- B8tP+drn+YeEftSfU3HlBTYQNrDeUoq6g1NpvidIgCp+COs1Vw8Fb4RLeun9WQIwlpWL/JM8R
- 2/fyFpxpz/Hv2PrINotPnq/fNaL8TuOHW1iJ/Orcddozx5mIjIrZBxLFLLS2eu/taK7Vz7L6H
- z3uv7AaEAMnl2RCxjgCkMV/h8d/QMMXGC8hb1smRwkch7PbV0CnQgzpmGRwAe9VtAgk7FrSci
- 8b5pOzLVWaPvazX72ocRONpRiFBjdLBjjBBYIWYmv9PNQMhvGCof4/ApZQBCsQ7cph0RPwCyR
- JL6/sO5n0tkN96YJIUEmMefziRyJkXieJSQG+H2ovNMhaSpChJjH3qigvT8RsJBNFckoiC6pU
- jy7qvYlSrJlXDiDKJASPAI8scIHi2Yg4RIMv8RLGPKfSBFG38VP/xJGqzCUBIBTVtR98D3lDG
- 5KN4e6oCfG/0vt3lnhosY4y0z7TUKETaCMvEvpTRVhJTV3Bf1wdKwJTMFVWeGGsPPpcLcfa8z
- E4hjujFZR8wT7E8xam5VCfQkxttw17TIKy4CboLzO2EPvfQKXvjOd+W911Uv7FQh50CiyKZnR
- NI/00r4g8Ozxvt8BNDk5hBlI3xcXX+62sJ69rqBmHQWi7pb8uBRj3kwhK25fP0TaSZkXzZLes
- qmsw8VoaDQRHFtfVJOb90DJrxTHm6iByUw==
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_THREE(0.00)[3];
+	FROM_EQ_ENVFROM(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	RCVD_TLS_ALL(0.00)[]
 
+[BUG]
+On the latest development branch, btrfs with 8K block size on 4K page
+sized systems will fail the following fsstress workload:
 
+ # $fsstress -n 4 -d $mnt -s 1785675805 -v
+ 0/0: dwrite - no filename
+ 0/1: creat f0 x:0 0 0
+ 0/1: creat add id=0,parent=-1
+ 0/2: write dontcache f0[259 1 0 0 0 0] [816411,3620] 0
+ 0/3: dread - xfsctl(XFS_IOC_DIOINFO) f0[259 1 0 0 32 820031] return 25, fallback to stat()
+ 0/3: dread f0[259 1 0 0 32 820031] [483328,81920] 0
 
-=E5=9C=A8 2026/7/30 10:29, Boris Burkov =E5=86=99=E9=81=93:
-> Reintroducing the COW fixup worker brought back the unmount race fixed
-> by commit 41fd1e94066a ("btrfs: wait for fixup workers before stopping
-> cleaner kthread during umount") without bringing back the fix.
->=20
-> A fixup work item queued by the final writeback pass can still be in fli=
-ght
-> when close_ctree() stops the cleaner kthread and frees the fs roots.
-> While destroy_workqueue() drains the queue, that happens after the
-> cleaner thread was freed, so btrfs_add_delayed_iput() called from the
-> fixup worker is no longer safe (not to mention that we are already in
-> BTRFS_FS_STATE_NO_DELAYED_IPUT when it runs).
->=20
-> Therefore we need to bring back explicitly flushing the fixup workqueue
-> as in Filipe's original fix. The first flush will catch all the fixup
-> writeback queued during the final sync before umount, but some of that
-> might hit memory allocation errors and stay fixup in the blocks/folio,
-> leading any subsequent writeback triggered *inside* umount (e.g. reclaim
-> workers shutting down) to hit it and queue again. To fix that, and the
-> possibility of any really long-lived pinned folios getting marked, deny
-> queueing new fixup during umount. That allows us to flush twice (once
-> before doing a real writeback pass to get the actual data, second time
-> to clean up any rather unlikely stragglers right before declaring
-> BTRFS_FS_STATE_NO_DELAYED_IPUT) and be certain nothing got re-queued.
->=20
-> Reproduced by injecting a one-shot 30s sleep at the head of
-> btrfs_writepage_fixup_worker() on a KASAN kernel, running the normal
-> reproducing read dio workload before unmount and then observing:
->=20
->    BUG: KASAN: slab-use-after-free in _raw_spin_lock_irqsave+0x35/0x50
->    Read of size 1 at addr ffff88810b4b08f8 by task kworker/u32:5/219
->    Workqueue: btrfs-fixup btrfs_writepage_fixup_worker [btrfs]
->    Call Trace:
->     _raw_spin_lock_irqsave+0x35/0x50
->     try_to_wake_up+0xc0/0x18c0
->     btrfs_writepage_fixup_worker+0x7f3/0xf20 [btrfs]
->    ...
->=20
-> Fixes: 4be9c7da6860 ("btrfs: trigger cow fixup via dirty_folio()")
-> Assisted-by: LLM (reproduction, analysis)
-> Signed-off-by: Boris Burkov <boris@bur.io>
-> ---
->   fs/btrfs/disk-io.c | 21 +++++++++++++++++++++
->   fs/btrfs/inode.c   | 15 +++++++++++++++
->   2 files changed, 36 insertions(+)
->=20
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 7a2f7006085d..cc4dcd10631a 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -4377,6 +4377,18 @@ void __cold close_ctree(struct btrfs_fs_info *fs_=
-info)
->   	/* clear out the rbtree of defraggable inodes */
->   	btrfs_cleanup_defrag_inodes(fs_info);
->  =20
-> +	/*
-> +	 * Before the unmount, we sync down all the writeback which can
-> +	 * generate fixup work. We are about to run delalloc for autodefrag so
-> +	 * piggy back on that by also flushing the fixup work which can also
-> +	 * generate delalloc we would like to get run.
-> +	 *
-> +	 * After this, it is still possible that some thread doing writeback i=
-s
-> +	 * in btrfs_queue_writepage_fixup() and might finish queueing some fin=
-al
-> +	 * work, racing the btrfs_fs_closing() check there.
-> +	 */
-> +	flush_workqueue(fs_info->fixup_workers);
-> +
->   	/*
->   	 * After we entered close_ctree() autodefrag could be running and bef=
-ore
->   	 * we parked the cleaner kthread, it dirtied folios of some inode.
-> @@ -4469,6 +4481,15 @@ void __cold close_ctree(struct btrfs_fs_info *fs_=
-info)
->   	cancel_work_sync(&fs_info->preempt_reclaim_work);
->   	cancel_work_sync(&fs_info->em_shrinker_work);
->  =20
-> +	/*
-> +	 * Reclaim workers can run writeback which can queue fixup.
-> +	 * After the above cancel_work_sync() calls, any such queueing attempt=
-s are
-> +	 * guaranteed to see btrfs_fs_closing(), so at this point we can genui=
-nely fully
-> +	 * flush the fixup workqueue. This relies on the belief that *now* no =
-thread can
-> +	 * still be sitting in btrfs_queue_writepage_fixup().
-> +	 */
-> +	flush_workqueue(fs_info->fixup_workers);
-> +
->   	/*
->   	 * Run delayed iputs again because an async reclaim worker may have
->   	 * added new ones if it was flushing delalloc:
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 78143e241ca4..51d460572317 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -2964,6 +2964,21 @@ void btrfs_queue_writepage_fixup(struct btrfs_ino=
-de *inode, struct folio *folio)
->   	struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
->   	struct btrfs_writepage_fixup *fixup;
->  =20
-> +	/*
-> +	 * Disallow queueing more fixup during unmount to break the cycle
-> +	 * of writeback queuing fixup queuing writeback etc.
-> +	 *
-> +	 * If it actually hit, then something which was fixup wasn't written
-> +	 * which we should warn about.
-> +	 */
-> +	if (btrfs_fs_closing(fs_info)) {
+Which triggered the following ASSERT():
 
-Shouldn't we also clear the fixup and dirty bitmaps for this case?
+ assertion failed: IS_ALIGNED(state->start, blocksize) && IS_ALIGNED(state->end + 1, blocksize), in fs/btrfs/extent-io-tree.c:346 (unaligned extent state, blocksize=8192 start=487424 end=565247 state=0x0)
+ ------------[ cut here ]------------
+ kernel BUG at fs/btrfs/extent-io-tree.c:346!
+ Oops: invalid opcode: 0000 [#1] SMP
+ CPU: 4 UID: 0 PID: 648 Comm: fsstress Tainted: G            E       7.2.0-rc5-custom+ #431 PREEMPT(full)  7c507bd40d65e4d871e698b22d80f1306bbec543
+ Tainted: [E]=UNSIGNED_MODULE
+ Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 02/02/2022
+ RIP: 0010:validate_extent_state.part.0.isra.0.cold+0x24/0x26 [btrfs]
+ Call Trace:
+  <TASK>
+  insert_state+0x34/0x1a0 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  set_extent_bit+0x440/0x8d0 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  btrfs_lock_extent_bits+0x58/0x380 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  btrfs_dio_iomap_begin+0x319/0xb70 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  iomap_iter+0x1a2/0x370
+  __iomap_dio_rw+0x236/0x8d0
+  iomap_dio_rw+0x12/0x30
+  btrfs_direct_read+0x15f/0x290 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  btrfs_file_read_iter+0x42/0x90 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  vfs_read+0x25e/0x380
+  ksys_read+0x73/0xe0
+  do_syscall_64+0xe1/0x790
+  entry_SYSCALL_64_after_hwframe+0x4b/0x53
+ RIP: 0033:0x7fc3f129318e
+  </TASK>
 
-As the folio is still dirty, and will never really go through writeback=20
-until fixup work is done.
+[CAUSE]
+Btrfs has recently introduced more strict extent_state alignment checks,
+which means functions like btrfs_lock_extent() will require the range
+to be block size aligned.
 
-Thus canceling the corresponding dirty/fixup bits looks more reasonable.
+But in the above workload, iomap_dio_hole_iter() only zeroed 4K, then
+hit a page fault. In that case the iov_iter is still advanced 4K bytes,
+then btrfs_dio_iomap_begin() is called for the remaining range, which is
+no longer block size (8K) aligned, triggering the ASSERT().
 
-Thanks,
-Qu
+This shows that, although iomap_dio_bio_iter() is properly respecting
+the alignment requirement, iomap_dio_hole_iter() is not doing the same
+thing.
 
-> +		btrfs_warn_rl(fs_info,
-> +	"dropping unqueued fixup blocks at unmount. root %lld ino %llu folio %=
-llu",
-> +			      btrfs_root_id(inode->root), btrfs_ino(inode),
-> +			      folio_pos(folio));
-> +		return;
-> +	}
-> +
->   	fixup =3D kzalloc_obj(*fixup, GFP_NOFS);
->   	if (!fixup)
->   		return;
+[FIX]
+Extract a helper, iomap_dio_alignment(), to calculate the alignment first.
+
+Then for iomap_dio_hole_iter() round down the copied length, and revert
+any excessive range that is beyond the aligned copied length.
+Also use @aligned_copied for the size increment and iter advancement.
+
+Fixes: 001397f5ef49 ("iomap: add IOMAP_DIO_FSBLOCK_ALIGNED flag")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/iomap/direct-io.c | 34 ++++++++++++++++++++--------------
+ 1 file changed, 20 insertions(+), 14 deletions(-)
+
+diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
+index e2cd5f92babe..94747963cb1f 100644
+--- a/fs/iomap/direct-io.c
++++ b/fs/iomap/direct-io.c
+@@ -403,6 +403,18 @@ static ssize_t iomap_dio_bio_iter_one(struct iomap_iter *iter,
+ 	return ret;
+ }
+ 
++/*
++ * File systems that write out of place and always allocate new blocks
++ * need each bio to be block aligned as that's the unit of allocation.
++ */
++static unsigned int iomap_dio_alignment(const struct iomap_iter *iter,
++					const struct iomap_dio *dio)
++{
++	if (dio->flags & IOMAP_DIO_FSBLOCK_ALIGNED)
++		return i_blocksize(iter->inode);
++	return bdev_logical_block_size(iter->iomap.bdev);
++}
++
+ static int iomap_dio_bio_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+ {
+ 	const struct iomap *iomap = &iter->iomap;
+@@ -414,18 +426,9 @@ static int iomap_dio_bio_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+ 	bool need_zeroout = false;
+ 	u64 copied = 0;
+ 	size_t orig_count;
+-	unsigned int alignment;
++	const unsigned int alignment = iomap_dio_alignment(iter, dio);
+ 	ssize_t ret = 0;
+ 
+-	/*
+-	 * File systems that write out of place and always allocate new blocks
+-	 * need each bio to be block aligned as that's the unit of allocation.
+-	 */
+-	if (dio->flags & IOMAP_DIO_FSBLOCK_ALIGNED)
+-		alignment = fs_block_size;
+-	else
+-		alignment = bdev_logical_block_size(iomap->bdev);
+-
+ 	if ((pos | length) & (alignment - 1))
+ 		return -EINVAL;
+ 
+@@ -588,12 +591,15 @@ static int iomap_dio_bio_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+ 
+ static int iomap_dio_hole_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+ {
+-	loff_t length = iov_iter_zero(iomap_length(iter), dio->submit.iter);
++	loff_t copied = iov_iter_zero(iomap_length(iter), dio->submit.iter);
++	const unsigned int alignment = iomap_dio_alignment(iter, dio);
++	const loff_t aligned_copied = round_down(copied, alignment);
+ 
+-	dio->size += length;
+-	if (!length)
++	iov_iter_revert(dio->submit.iter, copied - aligned_copied);
++	dio->size += aligned_copied;
++	if (!aligned_copied)
+ 		return -EFAULT;
+-	return iomap_iter_advance(iter, length);
++	return iomap_iter_advance(iter, aligned_copied);
+ }
+ 
+ static int iomap_dio_inline_iter(struct iomap_iter *iomi, struct iomap_dio *dio)
+-- 
+2.54.0
 

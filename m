@@ -1,525 +1,194 @@
-Received: from mail-oi1-f182.google.com (mail-oi1-f182.google.com [209.85.167.182])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fhigh-b6-smtp.messagingengine.com (fhigh-b6-smtp.messagingengine.com [202.12.124.157])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C5B4E3C942B
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Jul 2026 19:44:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.167.182
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785354253; cv=pass; b=EyDsHZHkZj2+rnaCpmeX1ssfTPRvNqW56nzphDo7G9yM6doQzr//43wPtH7q78zjss4c+6ojwCz2h3anaPoSb6+dIay+FKrPFGivTXYLFAvh+3h+Z+BwSY6ySd9b7Rk9OGuyg3AwLIoP8Y2IKDO8+0qu55G6gLC41hwWyKygoRY=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785354253; c=relaxed/simple;
-	bh=z5prSsmGreU+ARDbc2TiWvp5IrCc0YZDiE0i+rJkl44=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=EfdRG+11+98twgVGNaTKn66jz76CFQoz7Ea2yvrjTqQ6julVP4iZ0FPWW1tVLU6UEtAnBykT9uMlTC8c0M4NF3jWzFT3e2rJ4KHR8F1gEoyHcLUwwMSaPGI7dudyEW+Lvm+o36fx5Jjt3qfPHty84ecnRhXEVoNE99I79776GTg=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=purestorage.com; spf=pass smtp.mailfrom=purestorage.com; dkim=pass (2048-bit key) header.d=purestorage.com header.i=@purestorage.com header.b=N7PaQBIn; arc=pass smtp.client-ip=209.85.167.182
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=purestorage.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=purestorage.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE0CB54652
+	for <linux-btrfs@vger.kernel.org>; Thu, 30 Jul 2026 00:58:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.157
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1785373136; cv=none; b=R0x2uRGl34JuH0KSUCjSrB483KsvGs8P1JtJoFRYi0AEZmJ+eblrb5/PBbt2waljn7Ep3UqrH2y3s4L6sJBN+dLgog6UWkSTw2qSopBDa4hwrwcfOyN+eHS4zcz16ySfce4TKY51p2rY+o/fZt/zYiEr2VYuB00Qqz0ReA/p4gc=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1785373136; c=relaxed/simple;
+	bh=c6TWExPFrMYAwbfDK62thCDb1w3dahQxyBw0XzR3qII=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=A01/VSxxJ5SQ4GpKSouUyHS8KS7RBQGzbhpQAJNbj3NTO6dMmlXfCj5NJeXCE+tnu+vFRwmfduC8MZJ3ZwnghW/FbA0qlXFU9nCh42zZFDEMOp+h7TLZlqjnsOA4arfI/laZY1snzaZVhiwFXN8JbOmhzP//8q+KHw/2qki+F80=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=HwTjRCmu; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=kC7QgRzL; arc=none smtp.client-ip=202.12.124.157
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=purestorage.com header.i=@purestorage.com header.b="N7PaQBIn"
-Received: by mail-oi1-f182.google.com with SMTP id 5614622812f47-4ab246dfc90so81690b6e.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Jul 2026 12:44:03 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1785354242; cv=none;
-        d=google.com; s=arc-20260327;
-        b=DYLCFhl+cSxRFI4xF4zqz9RZaZdHIeEmM0MIjSHS7Pruyz8MDOOdXWxXZdvg9UAsQU
-         h8UP4vfZkEY/WMjHEv3nDR7lNJl0WjrmPvDnmVFB+UG35P1zLYuY4OHgtx8jT6ijlFBP
-         +1fUgPj/PedZ9XuCzQsjHpb99UPFlhykGE67YtdZWiQ4Ee7SzCtfRUjAdsWZ6zsNdYrX
-         AcnizHtRhwfTbllPnx6cHwV2VycTCY58dUby6FCVhzLNkzrDSJgW9UdRSWRF90T1ZO9z
-         8PUZ1S7WmPkcz2jdaUZgmnb1OikSXN8MiBT4VV7Fbx3u1qPj5p54RWCfg1Gm3u7WrCW1
-         lu+A==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=LnSKdBsI5P4yNxKlVDAgX6ZRyHfaTBwJq6vRswotV/I=;
-        fh=Ymvwl+hYjHapyxgJLM68xjUdogdMQ5ENMK0Vphf7sFI=;
-        b=VcX2vmpTp1wo64tbdGm+i0JaZOyzKoFPVMn4GZWhfaDUF8lIG/MMqHXApBSy6ZcAGv
-         PdHQ0Fqd/GYFHYgXs78yqw+oVaqiSfMc0PYxOo/TMV9aDFLinAYRPc+68XkDJ5/4+BqD
-         8Qjz5nGBw+yKe+zCNEkvFRd7dNL1FJvDcnuJHW9YjOttLBdsKUnWxBEOLFk89HKmCwm7
-         lQ03ymMFzEe0fBzcI7uQzPHQZCpLdLu5k9X8Kgbe5hnxzHgYdU8oHFEsoIetVwKMlUBK
-         md0F6aTVh/WTKMq+cAO1fQ7uwaczNmGqtxdkBliAOMCXgIYwSMsC7rhHa0tVyiqlQCoN
-         UmyQ==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=purestorage.com; s=google2022; t=1785354242; x=1785959042; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=LnSKdBsI5P4yNxKlVDAgX6ZRyHfaTBwJq6vRswotV/I=;
-        b=N7PaQBInFGNB6UppKXJWrZJYLsRH3a/Cpq75oe27/kpPNUCChU4Hy7yTJzuBVHF40w
-         ncK0atTVaYKz69fuheLOkYPYdB/isIPD28XhQpr3ISnRPDGf4gEC4/Zw6xNcnP4JsBeQ
-         BWf7VUQZQXWq0U5fbDt6+eEaB0/nikkD8evi5kzeaNx1y2orsRmHTNeYsObh3COc6drG
-         ew3NnyQA9AjfH1Z4DcJ2y7Tf7ypY1zHDnMkCv1Eu20rT3we30Jk7APNQ10CJeXS+p6CZ
-         xy0ah6hGEw1C/D/vWMSbKtc9AGLS4GNsqFVddhwdYTSQT7hlBnaWZozfxvlxZ7JQxT8D
-         Q2Mw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785354242; x=1785959042;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=LnSKdBsI5P4yNxKlVDAgX6ZRyHfaTBwJq6vRswotV/I=;
-        b=cBVbjY1k6ycRTG2Qr2z/vYDasgWpByjmrBjjeezXpkYKWM5c7mNK658AjytbIocZLh
-         5j4oV3wjf+PFM1ZXCmw6AnRu2ZsqOQ4BeOSr5YGmwknw8OG1PEuNe2Ocg2zQRBBAea9A
-         4kt3GNNrsOef7ORvnddsQTGDdCSF2AGCEY3qdgqiyzlz9m4tCpRCuDYe6GQOmTXeo3TC
-         rqBHeTuhKRxQm8YFPhTEpZnAkhChT5gqZd+A7s6zPDd5e3dkgtEPQg+7y1WmaFuYW5fZ
-         P0ei0B2BnWbJgJg5xozVSM5n2HuCYKpejm5dNt/INBgQKW8QSvesyvnSeSYJAUCxp6iS
-         worQ==
-X-Forwarded-Encrypted: i=1; AHgh+RqmanJVPt6599SW6MdVNDNQJxr40T9WQON3CMEKtop7XGnSjcM/ghESePU4Zqw819RpEJPmHFXgC5pSxQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyRUYt0LaRGljrqHiBh54E6Fwg2L+1UAGO4zRBy4Y5qyfG1qXFm
-	HiScmSMn5VXhi9Unv0670FMgDuTp6tQUx5jFalhpFjjDiJeATVxkZNPpwQsOrPJkRhNjaTQiUon
-	HJT7FQXjbhJEVwm757PsrNgwr0LfRNyKo7IoMq2QUew==
-X-Gm-Gg: AR+sD11OkBwF7d6o3PUs0/NXM8aqxr5d2PAS5tuURhYOph2R9MnEgmMb2Aagik7KdpM
-	uPW63endLyoK+1njmShGwbSYYFzJJ+X3lZ8X1cH9Ma1oRs0D/oCeLxzkMYXgJKYgZN9is52LJ2G
-	fVI+OZQpfvQ/KFQbEOEZE1922mKDaswm33of3I1t2UC3pknQQJD+qMVGBgAtu2MPn3rRTltfIoX
-	pT9R/JJTPILr8uuGiCEaseUNgMi8w3KqR428HmRtk5kv5v+BybGHucfWep6MjWBR4B/dQNugOQp
-	E1aqayeJplIr63rkmbXGfs5yG8R69nRhKmjU2NB92PW7
-X-Received: by 2002:a05:6871:441:b0:457:9007:a35f with SMTP id
- 586e51a60fabf-458bc1eaa28mr97408fac.1.1785354241430; Wed, 29 Jul 2026
- 12:44:01 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="HwTjRCmu";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="kC7QgRzL"
+Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
+	by mailfhigh.stl.internal (Postfix) with ESMTP id 25D147A053F;
+	Wed, 29 Jul 2026 20:58:53 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-06.internal (MEProxy); Wed, 29 Jul 2026 20:58:53 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
+	:content-transfer-encoding:content-type:date:date:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to; s=fm3; t=1785373133; x=1785459533; bh=EFTGtn3+Faj//vKsxFt9Q
+	UAR0pAstgbCWE+bdSut9zs=; b=HwTjRCmuOcb/rl8o2B/uXivEKtxMhHak88+wu
+	gwl9gSwrBGmE3uHGYOXeNnGHxvrLU9sodwJC88o6AuNbM8dhVmFxEEwLvFPNjleg
+	KVJ9DIGnQGd21/wfbzGw4LxvI4ad3oXoUknFF3LqbVb9seEcglXkqdFXowm21780
+	Lg+El68un1C4pgzY+rnIHJuEbIDFquyI3Sg92gDwbUcK/N4RlfoZm99cNkbnRqRS
+	1eLnlu2uDIjP+1cwxlHeBfIFWX/52VonpJiLh36Sj/o4a+LqnaT9WMZPeE1glG08
+	jWkpQmw80ACjH5bTJIYgRdHa9D19zzYnnOQi/WHhRxTcADMGQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:content-transfer-encoding:content-type
+	:date:date:feedback-id:feedback-id:from:from:in-reply-to
+	:message-id:mime-version:reply-to:subject:subject:to:to
+	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+	1785373133; x=1785459533; bh=EFTGtn3+Faj//vKsxFt9QUAR0pAstgbCWE+
+	bdSut9zs=; b=kC7QgRzL47OF9RZQi1iymNfgNzmc/YuSYgof9uU6p1qnzf1t2Zm
+	usdoKPDGlcHZfcyRrNpKguhGJTgaY5Ez7n0ybBy2RC6Kz9v6EM0q7ZJZsHZITWmv
+	I/J+lkrAkxuhxkmz76dP5icXoKaHThPBB35rRyR/IRtbXSBNq5JfKpz/6iJGlwGX
+	9+sgc/5Rsj7oD2xpBl9UHIStYrd9aewUZTivKTzaRUZ7t8sGhSGriN/49W2RyMYh
+	74ML6/kVazsf6vWaKarvhDD9ZMrBm6uCPzvBgbC/DUyu3427Rfi+G/XQMgX6dlm7
+	dXXFpLIvHSEcWpQD1I5At7yeWByVGX7FksQ==
+X-ME-Sender: <xms:zKFqai4qYk6nRE0I6T8AyWrlTdOuxhHTWl-JUruUXS_rcrRIVkqd_A>
+    <xme:zKFqah7prDAtyOn25yhYSE-RuhnM1CoH_3C3IombDKIB3VTtgYBhB--k9PvUi3AvK
+    vTgW5Qnf5kVNjGZ1ic-lMhHeoLJk_MdcakUPMjCLsA4g9uP7iVKgNo>
+X-ME-Received: <xmr:zKFqavErATOEnYVvVX9TkJwadv1351jDVoJ64_pv6zPE7iTE8AxmsxGUVtYoEd8zO0nhtAFm0KDQUD72h_fE2bdt6Jk>
+X-ME-Proxy-Cause: dmFkZTEzCEiCAsiSuy1CJeluZwLcHk/l8E6RQgob1R2VxHSzJuwf/PhHdYAtXK6NN2oYWz
+    3i8x0bW/iMq+qs7/oSGA/ZM8bCHIVMa61oN1T/jkl/S9/xSTG6/NWbwgpLjNMIAV4oC4wM
+    BREfOYHcQkX2g4T0SQMbybuDZbMbIqeJCs3bTy+QJ6i3751BTIYH1DYISUlwm0va3N0FJ6
+    RKn3ng3TeAgNw6wIkJLzydutj8ZeMEtYv6+97ME6p7eF+bw0e8nbNjDfWAUOJFc9HCny97
+    ZgUFEn+vwFQmS/3JYbyF781iobXVOQ/6B8mcNalb2LBK6sLGACyf7wdxGXXH9NmTswgoYH
+    Z7DG/yte/446DR9qRuoHXN9cBWJuynMvsdEXUvDkkh7LVjajVLWaBnbYVrhBpXt0TEu9aF
+    et6HcGEUiQSJ6nwiBoBkOVCy3jHg2jUQUKYLUGbXzG7ZOnD+gq01/g4Fm89D+2+c7yCwMJ
+    3bSNkqyCKWGKN8x7+WdkHeZRGFJkY2R1oNrdcXZReTkFYBn9OE3OBoKZahQOqOwhOftUUW
+    pUXfQefdU22JKPBDs3aOa7fokg/kDV4SzXU6Awls76jVzr/NGnuqYrB6MvxYC+QRJz10Hp
+    0neeYwO4poOhKnzAJEjWNA01y0Y5Z10rZyRkZWG7hCRxXMntq79dKsxG/Waw
+X-ME-Proxy: <xmx:zKFqaqSEAG3Nney3fUvRJc9ekQnhBFRNwLAVgujk36foKnUK9ERuAg>
+    <xmx:zKFqaotPWknPVQ5jqxuXFe0PgCTL4HlG-EwD--I_nD8s1oNJsBBcYg>
+    <xmx:zKFqapyrpto3vQCS8Alk76bk6jiPWpB6YvTaiQXCRuwSBrJEmIyq_Q>
+    <xmx:zKFqai7siS5WBSRsLu0M7hMo8aiRNcTTCMJxDwpJGSqYjuUp8-YjkA>
+    <xmx:zaFqalc5fncrZNUXg14vLw3XHpCpUkjor46k4ZmwLqiBJ3bmjrXtCNQT>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 29 Jul 2026 20:58:52 -0400 (EDT)
+From: Boris Burkov <boris@bur.io>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Subject: [PATCH v1] btrfs: flush the fixup workers during close_ctree
+Date: Wed, 29 Jul 2026 17:59:10 -0700
+Message-ID: <8b2ac16ef9cce964c2546a71249514899268cfa5.1785373134.git.boris@bur.io>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1785274111.git.asml.silence@gmail.com> <19e5c945ea8114320c10f7951d19197d48b59249.1785274111.git.asml.silence@gmail.com>
-In-Reply-To: <19e5c945ea8114320c10f7951d19197d48b59249.1785274111.git.asml.silence@gmail.com>
-From: Caleb Sander Mateos <csander@purestorage.com>
-Date: Wed, 29 Jul 2026 12:43:50 -0700
-X-Gm-Features: AUfX_mzj7jaY2dlfE4GHJvNcQHfDZNxuFZTdOCDHOZZK5KuWQBBj743IB8eIF1Q
-Message-ID: <CADUfDZpwF0jp2e=+c3w_NjWPbnQ858bkSD731M6+x27jzgcJiw@mail.gmail.com>
-Subject: Re: [PATCH v4 08/14] nvme-pci: implement dma_token backed requests
-To: Pavel Begunkov <asml.silence@gmail.com>
-Cc: Jens Axboe <axboe@kernel.dk>, Keith Busch <kbusch@kernel.org>, Christoph Hellwig <hch@lst.de>, 
-	Sagi Grimberg <sagi@grimberg.me>, linux-block@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, linux-nvme@lists.infradead.org, 
-	linux-fsdevel@vger.kernel.org, io-uring@vger.kernel.org, 
-	linux-media@vger.kernel.org, dri-devel@lists.freedesktop.org, 
-	linaro-mm-sig@lists.linaro.org, Alexander Viro <viro@zeniv.linux.org.uk>, 
-	Christian Brauner <brauner@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, 
-	Sumit Semwal <sumit.semwal@linaro.org>, =?UTF-8?Q?Christian_K=C3=B6nig?= <christian.koenig@amd.com>, 
-	Nitesh Shetty <nj.shetty@samsung.com>, Kanchan Joshi <joshi.k@samsung.com>, 
-	Anuj Gupta <anuj20.g@samsung.com>, Tushar Gohad <tushar.gohad@intel.com>, 
-	William Power <william.power@intel.com>, Phil Cayton <phil.cayton@intel.com>, 
-	Jason Gunthorpe <jgg@nvidia.com>, Damien Le Moal <dlemoal@kernel.org>, Alasdair Kergon <agk@redhat.com>, 
-	Mike Snitzer <snitzer@kernel.org>, Mikulas Patocka <mpatocka@redhat.com>, 
-	Benjamin Marzinski <bmarzins@redhat.com>, Vishal Verma <vishal.l.verma@intel.com>, 
-	David Sterba <dsterba@suse.com>, Ilya Dryomov <idryomov@gmail.com>, dm-devel@lists.linux.dev, 
-	nvdimm@lists.linux.dev, linux-btrfs@vger.kernel.org, 
-	ceph-devel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Tue, Jul 28, 2026 at 2:35=E2=80=AFPM Pavel Begunkov <asml.silence@gmail.=
-com> wrote:
->
-> Enable BIO_DMABUF_MAP backed requests. It creates a prp list for the
-> dmabuf when it's mapped, which is then used to initialise requests.
->
-> Suggested-by: Keith Busch <kbusch@kernel.org>
-> Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>
-> ---
->  drivers/nvme/host/core.c |  12 ++
->  drivers/nvme/host/nvme.h |   2 +
->  drivers/nvme/host/pci.c  | 259 +++++++++++++++++++++++++++++++++++++++
->  3 files changed, 273 insertions(+)
->
-> diff --git a/drivers/nvme/host/core.c b/drivers/nvme/host/core.c
-> index 453c1f0b2dd0..ce66a1843bec 100644
-> --- a/drivers/nvme/host/core.c
-> +++ b/drivers/nvme/host/core.c
-> @@ -2676,6 +2676,17 @@ static int nvme_report_zones(struct gendisk *disk,=
- sector_t sector,
->  #define nvme_report_zones      NULL
->  #endif /* CONFIG_BLK_DEV_ZONED */
->
-> +static int nvme_init_dma_buf_io_ctx(struct block_device *bdev,
-> +                                   struct dma_buf_io_ctx *ctx)
-> +{
-> +       struct nvme_ns *ns =3D bdev->bd_disk->private_data;
-> +       struct nvme_ctrl *ctrl =3D ns->ctrl;
-> +
-> +       if (!ctrl->ops->init_dma_buf_io_ctx)
-> +               return -EINVAL;
-> +       return ctrl->ops->init_dma_buf_io_ctx(ctrl, ctx);
-> +}
-> +
->  const struct block_device_operations nvme_bdev_ops =3D {
->         .owner          =3D THIS_MODULE,
->         .ioctl          =3D nvme_ioctl,
-> @@ -2686,6 +2697,7 @@ const struct block_device_operations nvme_bdev_ops =
-=3D {
->         .get_unique_id  =3D nvme_get_unique_id,
->         .report_zones   =3D nvme_report_zones,
->         .pr_ops         =3D &nvme_pr_ops,
-> +       .init_dma_buf_io_ctx =3D nvme_init_dma_buf_io_ctx,
->  };
->
->  static int nvme_wait_ready(struct nvme_ctrl *ctrl, u32 mask, u32 val,
-> diff --git a/drivers/nvme/host/nvme.h b/drivers/nvme/host/nvme.h
-> index 824651cc898d..034c31af8fec 100644
-> --- a/drivers/nvme/host/nvme.h
-> +++ b/drivers/nvme/host/nvme.h
-> @@ -652,6 +652,8 @@ struct nvme_ctrl_ops {
->         int (*get_address)(struct nvme_ctrl *ctrl, char *buf, int size);
->         void (*print_device_info)(struct nvme_ctrl *ctrl);
->         bool (*supports_pci_p2pdma)(struct nvme_ctrl *ctrl);
-> +       int (*init_dma_buf_io_ctx)(struct nvme_ctrl *ctrl,
-> +                                  struct dma_buf_io_ctx *ctx);
->         unsigned long (*get_virt_boundary)(struct nvme_ctrl *ctrl, bool i=
-s_admin);
->  };
->
-> diff --git a/drivers/nvme/host/pci.c b/drivers/nvme/host/pci.c
-> index 69932d640b53..f1b67c191892 100644
-> --- a/drivers/nvme/host/pci.c
-> +++ b/drivers/nvme/host/pci.c
-> @@ -27,6 +27,8 @@
->  #include <linux/io-64-nonatomic-lo-hi.h>
->  #include <linux/io-64-nonatomic-hi-lo.h>
->  #include <linux/sed-opal.h>
-> +#include <linux/dma-buf-io.h>
-> +#include <linux/dma-resv.h>
->
->  #include "trace.h"
->  #include "nvme.h"
-> @@ -393,6 +395,13 @@ struct nvme_queue {
->         struct completion delete_done;
->  };
->
-> +struct nvme_dmabuf_map {
-> +       struct dma_buf_io_map base;
-> +       struct sg_table *sgt;
-> +       unsigned nr_entries;
-> +       dma_addr_t dma_list[];
-> +};
-> +
->  /* bits for iod->flags */
->  enum nvme_iod_flags {
->         /* this command has been aborted by the timeout handler */
-> @@ -859,6 +868,138 @@ static void nvme_free_descriptors(struct request *r=
-eq)
->         }
->  }
->
-> +static inline struct nvme_dmabuf_map *
-> +to_nvme_dmabuf_map(struct dma_buf_io_map *map)
-> +{
-> +       return container_of(map, struct nvme_dmabuf_map, base);
-> +}
-> +
-> +static void nvme_dmabuf_map_sync_for_cpu(struct nvme_dev *nvme_dev,
-> +                                        struct request *req)
-> +{
-> +       struct device *dev =3D nvme_dev->dev;
-> +       enum dma_data_direction dma_dir;
-> +       struct bio *bio =3D req->bio;
-> +       struct nvme_dmabuf_map *map =3D to_nvme_dmabuf_map(bio->bi_dmabuf=
-_map);
-> +       dma_addr_t *dma_list =3D map->dma_list;
-> +       unsigned offset =3D bio->bi_iter.bi_offset;
-> +       unsigned map_idx =3D offset / NVME_CTRL_PAGE_SIZE;
-> +       int length =3D blk_rq_payload_bytes(req) +
-> +                    (offset & (NVME_CTRL_PAGE_SIZE - 1));
-> +
-> +       dma_dir =3D rq_data_dir(req) =3D=3D READ ? DMA_FROM_DEVICE : DMA_=
-TO_DEVICE;
-> +
-> +       while (length > 0) {
-> +               dma_sync_single_for_cpu(dev, dma_list[map_idx++],
-> +                                       NVME_CTRL_PAGE_SIZE, dma_dir);
-> +               length -=3D NVME_CTRL_PAGE_SIZE;
-> +       }
-> +}
-> +
-> +static void nvme_dmabuf_map_sync_for_device(struct nvme_dev *nvme_dev,
-> +                                           struct request *req)
-> +{
-> +       struct device *dev =3D nvme_dev->dev;
-> +       enum dma_data_direction dma_dir;
-> +       struct bio *bio =3D req->bio;
-> +       struct nvme_dmabuf_map *map =3D to_nvme_dmabuf_map(bio->bi_dmabuf=
-_map);
-> +       dma_addr_t *dma_list =3D map->dma_list;
-> +       unsigned offset =3D bio->bi_iter.bi_offset;
-> +       unsigned map_idx =3D offset / NVME_CTRL_PAGE_SIZE;
-> +       int length =3D blk_rq_payload_bytes(req) +
-> +                    (offset & (NVME_CTRL_PAGE_SIZE - 1));
-> +
-> +       dma_dir =3D rq_data_dir(req) =3D=3D READ ? DMA_FROM_DEVICE : DMA_=
-TO_DEVICE;
-> +
-> +       while (length > 0) {
-> +               dma_sync_single_for_device(dev, dma_list[map_idx++],
-> +                                          NVME_CTRL_PAGE_SIZE, dma_dir);
-> +               length -=3D NVME_CTRL_PAGE_SIZE;
-> +       }
-> +}
-> +
-> +static void nvme_rq_clean_dmabuf_map(struct nvme_dev *dev,
-> +                                     struct request *req)
-> +{
-> +       struct nvme_iod *iod =3D blk_mq_rq_to_pdu(req);
-> +
-> +       nvme_dmabuf_map_sync_for_cpu(dev, req);
-> +
-> +       if (!(iod->flags & IOD_SINGLE_SEGMENT))
-> +               nvme_free_descriptors(req);
-> +}
-> +
-> +static blk_status_t nvme_rq_setup_dmabuf_map(struct request *req,
-> +                                            struct nvme_queue *nvmeq)
-> +{
-> +       struct nvme_iod *iod =3D blk_mq_rq_to_pdu(req);
-> +       struct bio *bio =3D req->bio;
-> +       struct nvme_dmabuf_map *map =3D to_nvme_dmabuf_map(bio->bi_dmabuf=
-_map);
-> +       unsigned bvec_done =3D bio->bi_iter.bi_offset;
-> +       unsigned map_idx =3D bvec_done / NVME_CTRL_PAGE_SIZE;
-> +       unsigned offset =3D bvec_done & (NVME_CTRL_PAGE_SIZE - 1);
-> +       int length =3D blk_rq_payload_bytes(req) - (NVME_CTRL_PAGE_SIZE -=
- offset);
-> +       dma_addr_t *dma_list =3D map->dma_list;
-> +       u64 prp1_dma =3D dma_list[map_idx++] + offset;
-> +       u64 dma_addr, prp2_dma;
-> +       dma_addr_t prp_dma;
-> +       __le64 *prp_list;
-> +       unsigned i;
-> +
-> +       nvme_dmabuf_map_sync_for_device(nvmeq->dev, req);
-> +
-> +       if (length <=3D 0) {
-> +               prp2_dma =3D 0;
-> +               goto done;
-> +       }
-> +
-> +       if (length <=3D NVME_CTRL_PAGE_SIZE) {
-> +               prp2_dma =3D dma_list[map_idx];
-> +               goto done;
-> +       }
-> +
-> +       if (DIV_ROUND_UP(length, NVME_CTRL_PAGE_SIZE) <=3D
-> +           NVME_SMALL_POOL_SIZE / sizeof(__le64))
-> +               iod->flags |=3D IOD_SMALL_DESCRIPTOR;
-> +
-> +       prp_list =3D dma_pool_alloc(nvme_dma_pool(nvmeq, iod), GFP_ATOMIC=
-,
-> +                       &prp_dma);
+Reintroducing the COW fixup worker brought back the unmount race fixed
+by commit 41fd1e94066a ("btrfs: wait for fixup workers before stopping
+cleaner kthread during umount") without bringing back the fix.
 
-I wonder if it's possible to perform the PRP list page allocations and
-initialization in nvme_dma_buf_io_map() instead of the I/O path. The
-NVMe dma_pools are per-NUMA-node linked lists protected by spinlocks,
-making them significant CPU hotspots. If the dmabuf registration set
-up a contiguous DMA-coherent list of PRP entries for the pages of the
-registered buffer, any command using the dmabuf and requiring at most
-1 PRP list page (i.e. length <=3D 2 MB) could just set its PRP list
-pointer to an offset into the dmabuf's PRP list.
+A fixup work item queued by the final writeback pass can still be in flight
+when close_ctree() stops the cleaner kthread and frees the fs roots.
+While destroy_workqueue() drains the queue, that happens after the
+cleaner thread was freed, so btrfs_add_delayed_iput() called from the
+fixup worker is no longer safe (not to mention that we are already in
+BTRFS_FS_STATE_NO_DELAYED_IPUT when it runs).
 
-Best,
-Caleb
+Therefore we need to bring back explicitly flushing the fixup workqueue
+as in Filipe's original fix. The first flush will catch all the fixup
+writeback queued during the final sync before umount, but some of that
+might hit memory allocation errors and stay fixup in the blocks/folio,
+leading any subsequent writeback triggered *inside* umount (e.g. reclaim
+workers shutting down) to hit it and queue again. To fix that, and the
+possibility of any really long-lived pinned folios getting marked, deny
+queueing new fixup during umount. That allows us to flush twice (once
+before doing a real writeback pass to get the actual data, second time
+to clean up any rather unlikely stragglers right before declaring
+BTRFS_FS_STATE_NO_DELAYED_IPUT) and be certain nothing got re-queued.
 
+Reproduced by injecting a one-shot 30s sleep at the head of
+btrfs_writepage_fixup_worker() on a KASAN kernel, running the normal
+reproducing read dio workload before unmount and then observing:
 
-> +       if (!prp_list)
-> +               return BLK_STS_RESOURCE;
-> +
-> +       iod->descriptors[iod->nr_descriptors++] =3D prp_list;
-> +       prp2_dma =3D prp_dma;
-> +       i =3D 0;
-> +       for (;;) {
-> +               if (i =3D=3D NVME_CTRL_PAGE_SIZE >> 3) {
-> +                       __le64 *old_prp_list =3D prp_list;
-> +
-> +                       prp_list =3D dma_pool_alloc(nvmeq->descriptor_poo=
-ls.large,
-> +                                       GFP_ATOMIC, &prp_dma);
-> +                       if (!prp_list)
-> +                               goto free_prps;
-> +                       iod->descriptors[iod->nr_descriptors++] =3D prp_l=
-ist;
-> +                       prp_list[0] =3D old_prp_list[i - 1];
-> +                       old_prp_list[i - 1] =3D cpu_to_le64(prp_dma);
-> +                       i =3D 1;
-> +               }
-> +
-> +               dma_addr =3D dma_list[map_idx++];
-> +               prp_list[i++] =3D cpu_to_le64(dma_addr);
-> +
-> +               length -=3D NVME_CTRL_PAGE_SIZE;
-> +               if (length <=3D 0)
-> +                       break;
-> +       }
-> +done:
-> +       iod->cmd.common.dptr.prp1 =3D cpu_to_le64(prp1_dma);
-> +       iod->cmd.common.dptr.prp2 =3D cpu_to_le64(prp2_dma);
-> +       return BLK_STS_OK;
-> +free_prps:
-> +       nvme_free_descriptors(req);
-> +       return BLK_STS_RESOURCE;
-> +}
-> +
->  static void nvme_free_prps(struct request *req, unsigned int attrs)
->  {
->         struct nvme_iod *iod =3D blk_mq_rq_to_pdu(req);
-> @@ -937,6 +1078,11 @@ static void nvme_unmap_data(struct request *req)
->         struct device *dma_dev =3D nvmeq->dev->dev;
->         unsigned int attrs =3D 0;
->
-> +       if (blk_mq_rq_is_dmabuf(req)) {
-> +               nvme_rq_clean_dmabuf_map(nvmeq->dev, req);
-> +               return;
-> +       }
-> +
->         if (iod->flags & IOD_SINGLE_SEGMENT) {
->                 static_assert(offsetof(union nvme_data_ptr, prp1) =3D=3D
->                                 offsetof(union nvme_data_ptr, sgl.addr));
-> @@ -1251,6 +1397,9 @@ static blk_status_t nvme_map_data(struct request *r=
-eq)
->         struct blk_dma_iter iter;
->         blk_status_t ret;
->
-> +       if (blk_mq_rq_is_dmabuf(req))
-> +               return nvme_rq_setup_dmabuf_map(req, nvmeq);
-> +
->         /*
->          * Try to skip the DMA iterator for single segment requests, as t=
-hat
->          * significantly improves performances for small I/O sizes.
-> @@ -2269,6 +2418,112 @@ static int nvme_create_queue(struct nvme_queue *n=
-vmeq, int qid, bool polled)
->         return result;
->  }
->
-> +#if defined(CONFIG_DMA_SHARED_BUFFER)
-> +static void nvme_dmabuf_invalidate_mappings(struct dma_buf_attachment *a=
-ttach)
-> +{
-> +       struct dma_buf_io_ctx *ctx =3D attach->importer_priv;
-> +
-> +       dma_buf_io_invalidate_mappings(ctx);
-> +}
-> +
-> +const struct dma_buf_attach_ops nvme_dmabuf_importer_ops =3D {
-> +       .invalidate_mappings    =3D nvme_dmabuf_invalidate_mappings,
-> +       .allow_peer2peer        =3D true,
-> +};
-> +
-> +static struct dma_buf_io_map *nvme_dma_buf_io_map(struct dma_buf_io_ctx =
-*ctx)
-> +{
-> +       unsigned nr_entries =3D ctx->dmabuf->size / NVME_CTRL_PAGE_SIZE;
-> +       struct dma_buf_attachment *attach =3D ctx->dev_priv;
-> +       unsigned long tmp, i =3D 0;
-> +       struct nvme_dmabuf_map *map;
-> +       struct scatterlist *sg;
-> +       struct sg_table *sgt;
-> +       int ret;
-> +
-> +       dma_resv_assert_held(ctx->dmabuf->resv);
-> +
-> +       map =3D kmalloc_flex(*map, dma_list, nr_entries);
-> +       if (!map)
-> +               return ERR_PTR(-ENOMEM);
-> +
-> +       sgt =3D dma_buf_map_attachment(attach, ctx->dir);
-> +       if (IS_ERR(sgt)) {
-> +               ret =3D PTR_ERR(sgt);
-> +               sgt =3D NULL;
-> +               goto err;
-> +       }
-> +
-> +       for_each_sgtable_dma_sg(sgt, sg, tmp) {
-> +               dma_addr_t dma_addr =3D sg_dma_address(sg);
-> +               unsigned long sg_len =3D sg_dma_len(sg);
-> +
-> +               if (sg_len % NVME_CTRL_PAGE_SIZE) {
-> +                       ret =3D -EINVAL;
-> +                       goto err;
-> +               }
-> +
-> +               while (sg_len) {
-> +                       map->dma_list[i++] =3D dma_addr;
-> +                       dma_addr +=3D NVME_CTRL_PAGE_SIZE;
-> +                       sg_len -=3D NVME_CTRL_PAGE_SIZE;
-> +               }
-> +       }
-> +
-> +       ret =3D dma_buf_io_init_map(ctx, &map->base);
-> +       if (ret)
-> +               goto err;
-> +       map->nr_entries =3D nr_entries;
-> +       map->sgt =3D sgt;
-> +       return &map->base;
-> +err:
-> +       if (sgt)
-> +               dma_buf_unmap_attachment(attach, sgt, ctx->dir);
-> +       kfree(map);
-> +       return ERR_PTR(ret);
-> +}
-> +
-> +static void nvme_dma_buf_io_unmap(struct dma_buf_io_ctx *ctx,
-> +                                 struct dma_buf_io_map *map_base)
-> +{
-> +       struct dma_buf_attachment *attach =3D ctx->dev_priv;
-> +       struct nvme_dmabuf_map *map =3D to_nvme_dmabuf_map(map_base);
-> +
-> +       dma_resv_assert_held(ctx->dmabuf->resv);
-> +
-> +       dma_buf_unmap_attachment(attach, map->sgt, ctx->dir);
-> +}
-> +
-> +static void nvme_dma_buf_io_release(struct dma_buf_io_ctx *ctx)
-> +{
-> +       struct dma_buf_attachment *attach =3D ctx->dev_priv;
-> +
-> +       dma_buf_detach(ctx->dmabuf, attach);
-> +}
-> +
-> +const struct dma_buf_io_ops nvme_dma_buf_io_ops =3D {
-> +       .map            =3D nvme_dma_buf_io_map,
-> +       .unmap          =3D nvme_dma_buf_io_unmap,
-> +       .release        =3D nvme_dma_buf_io_release,
-> +};
-> +
-> +static int nvme_pci_init_dma_buf_io_ctx(struct nvme_ctrl *ctrl,
-> +                                       struct dma_buf_io_ctx *ctx)
-> +{
-> +       struct dma_buf_attachment *attach;
-> +       struct nvme_dev *dev =3D to_nvme_dev(ctrl);
-> +
-> +       attach =3D dma_buf_dynamic_attach(ctx->dmabuf, dev->dev,
-> +                                       &nvme_dmabuf_importer_ops, ctx);
-> +       if (IS_ERR(attach))
-> +               return PTR_ERR(attach);
-> +
-> +       ctx->dev_priv =3D attach;
-> +       ctx->dev_ops =3D &nvme_dma_buf_io_ops;
-> +       return 0;
-> +}
-> +#endif
-> +
->  static const struct blk_mq_ops nvme_mq_admin_ops =3D {
->         .queue_rq       =3D nvme_queue_rq,
->         .complete       =3D nvme_pci_complete_rq,
-> @@ -3563,6 +3818,9 @@ static const struct nvme_ctrl_ops nvme_pci_ctrl_ops=
- =3D {
->         .print_device_info      =3D nvme_pci_print_device_info,
->         .supports_pci_p2pdma    =3D nvme_pci_supports_pci_p2pdma,
->         .get_virt_boundary      =3D nvme_pci_get_virt_boundary,
-> +#if defined(CONFIG_DMA_SHARED_BUFFER)
-> +       .init_dma_buf_io_ctx    =3D nvme_pci_init_dma_buf_io_ctx,
-> +#endif
->  };
->
->  static int nvme_dev_map(struct nvme_dev *dev)
-> @@ -4327,5 +4585,6 @@ MODULE_AUTHOR("Matthew Wilcox <willy@linux.intel.co=
-m>");
->  MODULE_LICENSE("GPL");
->  MODULE_VERSION("1.0");
->  MODULE_DESCRIPTION("NVMe host PCIe transport driver");
-> +MODULE_IMPORT_NS("DMA_BUF");
->  module_init(nvme_init);
->  module_exit(nvme_exit);
-> --
-> 2.54.0
->
->
+  BUG: KASAN: slab-use-after-free in _raw_spin_lock_irqsave+0x35/0x50
+  Read of size 1 at addr ffff88810b4b08f8 by task kworker/u32:5/219
+  Workqueue: btrfs-fixup btrfs_writepage_fixup_worker [btrfs]
+  Call Trace:
+   _raw_spin_lock_irqsave+0x35/0x50
+   try_to_wake_up+0xc0/0x18c0
+   btrfs_writepage_fixup_worker+0x7f3/0xf20 [btrfs]
+  ...
+
+Fixes: 4be9c7da6860 ("btrfs: trigger cow fixup via dirty_folio()")
+Assisted-by: LLM (reproduction, analysis)
+Signed-off-by: Boris Burkov <boris@bur.io>
+---
+ fs/btrfs/disk-io.c | 21 +++++++++++++++++++++
+ fs/btrfs/inode.c   | 15 +++++++++++++++
+ 2 files changed, 36 insertions(+)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 7a2f7006085d..cc4dcd10631a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4377,6 +4377,18 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 	/* clear out the rbtree of defraggable inodes */
+ 	btrfs_cleanup_defrag_inodes(fs_info);
+ 
++	/*
++	 * Before the unmount, we sync down all the writeback which can
++	 * generate fixup work. We are about to run delalloc for autodefrag so
++	 * piggy back on that by also flushing the fixup work which can also
++	 * generate delalloc we would like to get run.
++	 *
++	 * After this, it is still possible that some thread doing writeback is
++	 * in btrfs_queue_writepage_fixup() and might finish queueing some final
++	 * work, racing the btrfs_fs_closing() check there.
++	 */
++	flush_workqueue(fs_info->fixup_workers);
++
+ 	/*
+ 	 * After we entered close_ctree() autodefrag could be running and before
+ 	 * we parked the cleaner kthread, it dirtied folios of some inode.
+@@ -4469,6 +4481,15 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 	cancel_work_sync(&fs_info->preempt_reclaim_work);
+ 	cancel_work_sync(&fs_info->em_shrinker_work);
+ 
++	/*
++	 * Reclaim workers can run writeback which can queue fixup.
++	 * After the above cancel_work_sync() calls, any such queueing attempts are
++	 * guaranteed to see btrfs_fs_closing(), so at this point we can genuinely fully
++	 * flush the fixup workqueue. This relies on the belief that *now* no thread can
++	 * still be sitting in btrfs_queue_writepage_fixup().
++	 */
++	flush_workqueue(fs_info->fixup_workers);
++
+ 	/*
+ 	 * Run delayed iputs again because an async reclaim worker may have
+ 	 * added new ones if it was flushing delalloc:
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 78143e241ca4..51d460572317 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2964,6 +2964,21 @@ void btrfs_queue_writepage_fixup(struct btrfs_inode *inode, struct folio *folio)
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct btrfs_writepage_fixup *fixup;
+ 
++	/*
++	 * Disallow queueing more fixup during unmount to break the cycle
++	 * of writeback queuing fixup queuing writeback etc.
++	 *
++	 * If it actually hit, then something which was fixup wasn't written
++	 * which we should warn about.
++	 */
++	if (btrfs_fs_closing(fs_info)) {
++		btrfs_warn_rl(fs_info,
++	"dropping unqueued fixup blocks at unmount. root %lld ino %llu folio %llu",
++			      btrfs_root_id(inode->root), btrfs_ino(inode),
++			      folio_pos(folio));
++		return;
++	}
++
+ 	fixup = kzalloc_obj(*fixup, GFP_NOFS);
+ 	if (!fixup)
+ 		return;
+-- 
+2.55.0
+

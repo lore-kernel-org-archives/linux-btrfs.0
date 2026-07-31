@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 69D2A298CC4
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 00:45:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 76D0023393A
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 00:45:34 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785458732; cv=none; b=nEEiRDakgexF0kN0pHhaORemmPyJwZu7AKpc5l8c1j20SrvgtDdoFuoJ1LP8U4D8b3/nRXyekWj5YJyUGOIeeTWLsM1+a6I2bnTTkuB88D1AO6BSoYmQeVgZOpGgrZGS1rj5mHtCFupvoSUhR5PrLF5LvY6E5js7P//TSbrfhz0=
+	t=1785458735; cv=none; b=qTNtKJfC0WUIhmeVcV5tlmn3ldjqrZ5N3/KeeEF3klRCVMhQF/9iSq5lsMsjKTHaYgC2JJjnM1qvQl1OXTsJS2FppUXA/TdlUnDm48T2ymTskHgjwtV3XSnA48YY+yjKRrauygs9iom/8eA6+4BnwHgD+n3HYkKAE34fbk6Qc4A=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785458732; c=relaxed/simple;
-	bh=BzUg1vrNL7qcLUwJdqm8f6vH/rfeER7kubVAB3CeN/k=;
+	s=arc-20240116; t=1785458735; c=relaxed/simple;
+	bh=X3sy3qT460iKj9BOeANEaeTsgdCUZmIJ5gk6jv4+Tdk=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Y0LyPBvn5MyFSrSdS8t/s/1fUZnwOG+uwK8z8RU9cIkEStwM1aEY6v+aQHunJjYNWKYQHcis/JCBNte6quj7bhXn2F6mAGekxVjKLQgFwZxwOL3O5adSc17j/f8ETEefIen8Q6Rw33SsfZ0eZ9pqoP//28+VswRuUHZqhK3hlK0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=u11wj1IG; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nA7Gr1gQ; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=VoUnDAqlZQmxy83Wtb/pMFdsphWsoJpp3A5pQxL+q77+PiaLMnrz7bFFslXB53uHTgLGzYxXOWp5nPW8mPbIQsfdtPpBl+P4FSsp9vyjIoORCIqP+QtxHYVaqOFDBPYAts+gbsUz7/Vf/BGzmZgfTsd0h1T0op/A5QYjpjw5d2g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=MGUfV7vP; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=OC/pOvfD; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="u11wj1IG";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nA7Gr1gQ"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="MGUfV7vP";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="OC/pOvfD"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 029683F69
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 00:45:21 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 64B077DC83
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 00:45:19 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785458725; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1785458723; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=OneAryGj9u+XGCeILQNS7oGgGG6z6n+gbmlzBoLNzg4=;
-	b=u11wj1IGS2n/oA3ztdnAGo2mtFKa+4o9Zc+8MrBR3Jvz1omuVd1U7eW/uWXhyyG/3zfZLR
-	lNFb3iye47CmUw/JuFURPB/3nJH3npMOOnFA+/hiwG7YWVwCrSFPpxSrSnjBK+7NsokTgX
-	8C5f3k8BIoka4yhr6RNFaQtJbyHB0jk=
-Authentication-Results: smtp-out2.suse.de;
+	bh=En3CNgSpmePXklCYCxza+rn/cMUFdRR/nVICMtzMBGk=;
+	b=MGUfV7vPatwTzdp8ik/zNYI5T/ACFG3ElM9NlUCSpABr7jJ7Cw2jfoh5QdvIbzLaUcVGMi
+	bEXLGqD6v7zHS4F6oAyb5PqFcsDddxNEG/X4Qrr+IjwxpL8n6kklFCBxMEQceYg6BuGH1O
+	/3G8VUp8JznvKsY2YsmUr7q3IMyWgWc=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785458721; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1785458719; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=OneAryGj9u+XGCeILQNS7oGgGG6z6n+gbmlzBoLNzg4=;
-	b=nA7Gr1gQ2VeiERLnXuoariKHQEkxhv84AbXQCsuYlwOeLdhCG0L/RIhUPeF8qWF4Tc2OgV
-	xZCtJsIXNvqJl1QY41dzL3I90F7v21OZelZ/HqVTpLCXtlAc8HTx2dSHa0OY5Jass4oUUp
-	tKFciNTSPm6Ko7OGOw/UXvfFBMu+jxI=
+	bh=En3CNgSpmePXklCYCxza+rn/cMUFdRR/nVICMtzMBGk=;
+	b=OC/pOvfDl6vXQwMqgmwtKWxVYj867NdXzJ2KWf9mmEiX0K1AAGpTE1BkbSi0YNQdB0R2ep
+	/h4y1OykwiTThNOa4EKG88izqifXgNumsRsf5nGCSH/wRieFw/rGkQFhnYDCyEqwo7nUfA
+	vSY8chVTQO8yKmEOEsasfl2rp9CgxAs=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 03870779C7
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 00:45:19 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 64457779C6
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 00:45:18 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id aH9iKR/wa2qCZgAAD6G6ig
+	id OItpBR7wa2qCZgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 00:45:19 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 00:45:18 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: add extra ASSERT()s to make sure the folio size is correct
-Date: Fri, 31 Jul 2026 10:14:50 +0930
-Message-ID: <b3bfbf9e4941eff362b6d987c88be91365748500.1785457950.git.wqu@suse.com>
+Subject: [PATCH 1/2] btrfs: initialize inode mapping flags for cached inodes
+Date: Fri, 31 Jul 2026 10:14:49 +0930
+Message-ID: <8492f6ffce48e46865c9c0b014774608c74840c0.1785457950.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
 In-Reply-To: <cover.1785457950.git.wqu@suse.com>
 References: <cover.1785457950.git.wqu@suse.com>
@@ -93,74 +93,118 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	TO_DN_NONE(0.00)[];
 	RCVD_TLS_ALL(0.00)[]
 
-Inspired by the previous crash exposed by generic/795, we want to make
-sure every folio from btrfs page cache is properly aligned to block
-size.
+[BUG]
+When running generic/795 with 8K block size, 4K page size, the test
+always fails, triggering some ASSERT()s related to folio size:
 
-This is especially important for bs > ps support, as every btrfs
-infrastructure, e.g. extent map and extent state, requires strong block
-alignment checks.
+ 795 (241074): drop_caches: 3
+ assertion failed: IS_ALIGNED(start, blocksize) && IS_ALIGNED(end + 1, blocksize), in extent_io.c:1404 (blocksize=8192 root=262 ino=258 start=16826368 end=16830463 mapping min order=0)
+ ------------[ cut here ]------------
+ kernel BUG at extent_io.c:1404!
+ Oops: invalid opcode: 0000 [#1] SMP
+ CPU: 8 UID: 0 PID: 241105 Comm: fsstress Tainted: G           OE       7.2.0-rc5-custom+ #442 PREEMPT(full)  f4bfb352566f3949f29c233ce6f735050a03b245
+ Tainted: [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+ Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 02/02/2022
+ RIP: 0010:assert_folio_range.cold+0x3d/0x3f [btrfs]
+ Call Trace:
+  <TASK>
+  btrfs_read_folio+0x9e/0x170 [btrfs 4cd1dd93b341b8ef766643f9512f4a86259567a3]
+  prepare_one_folio.constprop.0+0x104/0x2a0 [btrfs 4cd1dd93b341b8ef766643f9512f4a86259567a3]
+  btrfs_buffered_write+0x285/0xa50 [btrfs 4cd1dd93b341b8ef766643f9512f4a86259567a3]
+  btrfs_do_write_iter+0x1aa/0x210 [btrfs 4cd1dd93b341b8ef766643f9512f4a86259567a3]
+  iter_file_splice_write+0x31a/0x540
+  direct_splice_actor+0x53/0x170
+  splice_direct_to_actor+0xe9/0x240
+  do_splice_direct+0x76/0xb0
+  vfs_copy_file_range+0x1fd/0x630
+  __x64_sys_copy_file_range+0xf9/0x220
+  do_syscall_64+0xe1/0x790
+  entry_SYSCALL_64_after_hwframe+0x4b/0x53
+  </TASK>
+ ---[ end trace 0000000000000000 ]---
 
-Furthermore, also output the minimal folio order from the inode mapping,
-which is the determining factor during debugging, helping a lot pinning
-down the final cause.
+The ASSERT() itself is added by a later patch.
+The crash is triggered with that new debug patch, and without this fix.
 
+[CAUSE]
+In the above case, the start 16826368 is properly 8K aligned, but the
+end (16830463 + 1) is not 8K aligned.
+Furthermore the mapping's minimal folio order is 0, not the expected 1
+for 8K block size with 4K page size.
+
+So this means some inodes do not have btrfs_set_inode_mapping_order()
+called on it.
+
+The missing btrfs_set_inode_mapping_order() call happens for cached
+inodes, through the following events:
+
+- btrfs_create_new_inode() called for inode X
+  Which properly sets minimal folio order for the vfs inode.
+
+- btrfs_update_inode() called for inode X
+  Which calls btrfs_delayed_update_inode() to create a delayed_node
+  into root->delayed_nodes xarray.
+
+- Drop cache/memory pressure, evicting in-memory inode X
+  Which evicted the inode X, but delayed_node is still in
+  root->delayed_nodes for future reuse.
+
+- btrfs_iget() for inode X called again
+
+  btrfs_iget()
+  |- btrfs_iget_locked()
+  |  |- iget5_locked_rcu()
+  |     Which creates a new vfs_inode for btrfs, whose mapping still
+  |     has the minimal order as 0.
+  |
+  |- btrfs_read_locked_inode()
+     |- btrfs_fill_inode()
+     |  |- btrfs_get_delayed_node()
+     |     Which found out the previous node, and use that delayed
+     |     node to initialize the new inode.
+     |
+     |- filled = true;
+     |- if (filled) goto cache_index;
+        Which skips the btrfs_update_inode_mapping_flags() and
+	btrfs_set_inode_mapping_order() calls.
+	So the inode still has minimal folio order set as 0, not
+	the required 1.
+
+Thus later page cache read will get a folio whose size is smaller than
+block size, as the mapping has its minimal folio order set as 0 not 1,
+then trigger the ASSERT().
+
+[FIX]
+Move the btrfs_update_inode_mapping_flags() and
+btrfs_set_inode_mapping_order() calls under cache_index label,
+so that the mapping flags and minimal folio order is always set
+no matter if we have a cached inode.
+
+Assisted-by: LLM (analysis)
+Fixes: ecde48a1a6b3 ("btrfs: expose per-inode stable writes flag")
+Fixes: cc38d178ff33 ("btrfs: enable large data folio support under CONFIG_BTRFS_EXPERIMENTAL")
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ fs/btrfs/inode.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index c7c3f138fb69..5641eb88e3d0 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1392,6 +1392,22 @@ static void lock_extents_for_read(struct btrfs_inode *inode, u64 start, u64 end,
- 	}
- }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 78143e241ca4..fafd7a74eaa7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4107,10 +4107,11 @@ static int btrfs_read_locked_inode(struct btrfs_inode *inode, struct btrfs_path
  
-+static void assert_folio_range(const struct btrfs_inode *inode,
-+			       u64 start, u64 end)
-+{
-+	const u32 blocksize = inode->root->fs_info->sectorsize;
+ 	btrfs_inode_split_flags(btrfs_inode_flags(leaf, inode_item),
+ 				&inode->flags, &inode->ro_flags);
 +
-+	/*
-+	 * For btrfs page cache, a folio always contains at least one block,
-+	 * so the range should always be block size aligned.
-+	 */
-+	ASSERT(IS_ALIGNED(start, blocksize) && IS_ALIGNED(end + 1, blocksize),
-+	       "blocksize=%u root=%lld ino=%llu start=%llu end=%llu mapping min order=%u",
-+	       blocksize, btrfs_root_id(inode->root), btrfs_ino(inode),
-+	       start, end,
-+	       mapping_min_folio_order(inode->vfs_inode.i_mapping));
-+}
-+
- int btrfs_read_folio(struct file *file, struct folio *folio)
- {
- 	struct inode *vfs_inode = folio->mapping->host;
-@@ -1407,6 +1423,7 @@ int btrfs_read_folio(struct file *file, struct folio *folio)
- 	struct fsverity_info *vi = NULL;
- 	int ret;
++cache_index:
+ 	btrfs_update_inode_mapping_flags(inode);
+ 	btrfs_set_inode_mapping_order(inode);
  
-+	assert_folio_range(inode, start, end);
- 	lock_extents_for_read(inode, start, end, &cached_state);
- 	if (folio_pos(folio) < i_size_read(vfs_inode))
- 		vi = fsverity_get_info(vfs_inode);
-@@ -1914,6 +1931,7 @@ static noinline_for_stack int extent_writepage_io(struct btrfs_inode *inode,
- 	ASSERT(start >= folio_start, "start=%llu folio_start=%llu", start, folio_start);
- 	ASSERT(end <= folio_end, "start=%llu len=%u folio_start=%llu folio_size=%zu",
- 	       start, len, folio_start, folio_size(folio));
-+	assert_folio_range(inode, folio_start, folio_end - 1);
- 
+-cache_index:
  	/*
- 	 * We are about to checksum and write out the data, so it must not be
-@@ -2976,6 +2994,7 @@ void btrfs_readahead(struct readahead_control *rac)
- 	struct extent_map *em_cached = NULL;
- 	struct fsverity_info *vi = NULL;
- 
-+	assert_folio_range(inode, start, end);
- 	lock_extents_for_read(inode, start, end, &cached_state);
- 	/* We don't use cached state for a bulk unlock, just free it. */
- 	btrfs_free_extent_state(cached_state);
+ 	 * If we were modified in the current generation and evicted from memory
+ 	 * and then re-read we need to do a full sync since we don't have any
 -- 
 2.54.0
 

@@ -1,176 +1,132 @@
-Received: from mail-oi1-f198.google.com (mail-oi1-f198.google.com [209.85.167.198])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A315E3EB10F
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 11:41:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.198
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 324E33E9C0E;
+	Fri, 31 Jul 2026 11:47:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785498076; cv=none; b=MTDb7Ule7/CuVuf1MoT0x/rjU/2kxHaL3GW8fuQnJAl9mplLtQHOqC/PKb7N1P4J+zuQDpS4g6w/5DJ8qjgXQ4pYJmibzkekEnM8szxu/BSghf5E1YiG5V1oxFyayXcnktBTsqeTNSZAdAUQkfM5v6FvDH1v+h2DKoz2FYYMKco=
+	t=1785498452; cv=none; b=H9ajruUZzhED4XYKMo7fdkqa1ddnY3bO/0J+MjA/5oAoUhYMO7qFMqQ60mBO8WmiL+bT48Or6LdO2gJZT+cEGFquw64yG/49vbg+ExO8gnDaw9Yh+PVk+RsYjS1intqjvjDk5ZDjWpwAfZYKfj+br9YlM9qCv+bVDtjufcMFpFM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785498076; c=relaxed/simple;
-	bh=e2vjSttxcoNtyW6JrbhYTnqq7Pxo0YsnVImfEbqlRQk=;
-	h=MIME-Version:Date:In-Reply-To:Message-ID:Subject:From:To:Cc:
-	 Content-Type; b=cGMTzpiml007vcfXLKRB42SVJIxSdAJAK3NiKWVzf4z7tnusnA4f1LbgRxK0HzFlhpVga1FLG+rb+zSZEgC2zVE0cbHqBF7e4vHb7Mwdj37HWnboBVdwbcdB25ZOdDBJDmG+3zIsZqpSWiRdrhQIvQUmqewiXTqLTGN1mEqoj3k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.198
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oi1-f198.google.com with SMTP id 5614622812f47-4a49f09233dso618815b6e.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 04:41:14 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785498073; x=1786102873;
-        h=content-type:cc:to:from:subject:message-id:in-reply-to:date
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=m8VUZ3s3LYwXHsVpWfjVPQGrgQzqZfc/ZafskNEpMqk=;
-        b=MKGBaOova7cwL+tmiVS7WtDZR+MU85JBCJh60tF7EUNrFtvv5TER+XlFRVyRxXDMmv
-         KKlXcraJvssa/93lKkpzree0uwCy8YuQfGvzJLSI7h6VMIsaIpT0aVyfrcbdhiRcCjO1
-         lXy+HBAnQ9lQsHkhXk5luLvrrzZ3RBHP1jYCd2xmLk4il7rW0dA3YvcfH1K4t6wXQ0P6
-         7puRA68govc0Xc0wdZp7Egp/40UlWlVhd7kiRFhhPTmwtifOauM7KLljBr5rg51yH+nC
-         ++gLU5wlEEFyVkEKFEGxf6TNklMYJRaCRTfTEMYYdO/lg1w6QOs9z64VpWG82cf+Ke3O
-         0H9w==
-X-Gm-Message-State: AOJu0YyYF+uDBT9B4ccjvwTI9dxEeaAbP30RYB+UkicomofUblWUAqy1
-	J8WkYBXZWK9N3mzMnIzXfLflEule44v/aYO9FxMFot73Cg3gxw23CedkAijet/eVrGLWJvMXyy9
-	i23uzJ5QE1EBAF/o5KPRH5Jpwiqpx5xejRpLMqfPfyQT4VuckFztEDotCVWM=
+	s=arc-20240116; t=1785498452; c=relaxed/simple;
+	bh=j2kbiZ5d8UQhC+qi/rNVK+FxGOolPsy+b5VZUgzbrL8=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=ZnTXzWxoc5+Jgk58gZvkJo/Y7ulA+j5eWdQTKQl2FNXo9LuSG2PUvUAetytxjcUgCdBB+brAnDnOncuRzf9f7OXQuc7GO1+V2v8CmtMVZHBEw7WWl1hqlNQcskuXErdVWRrnMk09b+BXNxNdn7ukNV7D1syyQxukhrCq+KnLq3U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org; spf=pass smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=HRUp6FdU; arc=none smtp.client-ip=82.195.75.108
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=debian.org
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="HRUp6FdU"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:Cc:To:Message-Id:
+	Content-Transfer-Encoding:Content-Type:MIME-Version:Subject:Date:From:
+	Reply-To:Content-ID:Content-Description:In-Reply-To:References;
+	bh=+pbm0Een0iQxQXUEvmirzUJcQ5Ofri5wp66TU1kbRZI=; b=HRUp6FdU1H9t/xgNQevXqEkfNq
+	r7DQFbmIi/jW/glvE63cyvWIJ6rXngYpFWQY2BiK78DZYN+0mQiSSbaRzt+s2BI2mOiEo81b3pTOM
+	TkBlMi/YlhN03xlcpw/umTJaKbNCmXaWkgethJJLQ5QRYMa0mn8yLZesyqoR0YqCxHW2LNOns9gyr
+	8pJtqUGcWhcol1+8azNtA/EKywdYSHQSLQQ82JVajyYF9aUoQ0R8Cr989rSRvazpPDVBBHNDJBmxl
+	lo8VQtn7y1BQSB89keBxkigcgWJ7FTSTNHIMisYWAEJdsadn37eS8P6CUSk3WYpPlJ3hay7/KLBu6
+	qLlFDXNQ==;
+Received: from authenticated-user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.96)
+	(envelope-from <leitao@debian.org>)
+	id 1wpli1-009zI8-2t;
+	Fri, 31 Jul 2026 11:47:26 +0000
+From: Breno Leitao <leitao@debian.org>
+Date: Fri, 31 Jul 2026 04:45:50 -0700
+Subject: [PATCH] btrfs: fix extent changeset leak in encoded writes
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6808:10cc:b0:4a4:c12:49d9 with SMTP id
- 5614622812f47-4ae4c4de8a7mr1992011b6e.3.1785498073711; Fri, 31 Jul 2026
- 04:41:13 -0700 (PDT)
-Date: Fri, 31 Jul 2026 04:41:13 -0700
-In-Reply-To: <e69cc8a4a9c3f641b97872b50f04c397880077cd.1785374485.git.wqu@suse.com>
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a6c89d9.77639fcc.3d4fd0.0026.GAE@google.com>
-Subject: [syzbot ci] Re: iomap: follow the alignment requirement for iomap_dio_hole_iter()
-From: syzbot ci <syzbot+ci731b4119b755b229@syzkaller.appspotmail.com>
-To: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	linux-xfs@vger.kernel.org, wqu@suse.com
-Cc: syzbot@lists.linux.dev, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260731-btrfs_kmemleak-v1-1-9600453eef4e@debian.org>
+X-B4-Tracking: v=1; b=H4sIAO6KbGoC/x3M2QmAMBAFwFaW923AxJO0IiJqVl08SUQEsXfBK
+ WAeBPbCAZYeeL4kyL7Bko4I/dRuIytxsAQTmzwuEq260w+hmVdeF25n5dI0T4rOmUyXiAiH50H
+ uP6zq9/0AqNBvTmAAAAA=
+X-Change-ID: 20260731-btrfs_kmemleak-d44637bd2518
+To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
+ Omar Sandoval <osandov@fb.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ jlayton@kernel.org, boris@bur.io, kernel-team@meta.com, 
+ stable@vger.kernel.org, Breno Leitao <leitao@debian.org>
+X-Mailer: b4 0.16-dev-d5d98
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1933; i=leitao@debian.org;
+ h=from:subject:message-id; bh=j2kbiZ5d8UQhC+qi/rNVK+FxGOolPsy+b5VZUgzbrL8=;
+ b=owEBbQKS/ZANAwAIATWjk5/8eHdtAcsmYgBqbItJwOlTEEd8zWRzDAZ6Z+t3U564Ifegc+feq
+ 7Ozz94s/xiJAjMEAAEIAB0WIQSshTmm6PRnAspKQ5s1o5Of/Hh3bQUCamyLSQAKCRA1o5Of/Hh3
+ bZ3hD/9tM3cjsxHgH73UbggPsJa2rfwxTpLSHx7leb3+ep/Vs4aeM71G+tS1GCDv1AvIXz2lkP/
+ 7E1cDnr/8k949hS2QlvYkEHHsXFO1D7bQlrZfVOKowTZgRw5pZL7Fovze/WAV/vyPlyf/gbbNW9
+ yw2A86xuamBkJJ3T2UtkhCx6p7M+Qt0nSlBxw/YD1Lx1Tpzx9DGl6KcNTxJSXbk8ulSXPdoEkdX
+ CVg+WqKtFe61IG0mR9v+z+Hyl4wIA8QIGX6PuXGXlTJQdBMMJH8zYunlH7fzXn3kToDUwkg0lsY
+ +DCmCQN8CxvULz1weFyNAjGKbSXncTSdGtB85U5oahOFO2fhbo0C9+CEyTuadJv1WyRkG7SsFsW
+ bXJbP2k03rxnOV0QQCJzCDliQ8aTcBpvdwy7Zx9Eev9Wr+Ao++xOWNvCeVohX75QswYX9XArwRa
+ q2Dle4I3vCO+ClUTkiOuFB+JSu5vXHK2pGYHUvmcSnf8bais2ZXNwr3hmuqq89Guie6Bk6m08du
+ PWFXDR71xm4fG/u+4xZoTLxt8emoDJdylabvsHgrij4kl6FaIX/YtwlKuKa5WDQ7SEvnlEjV0Va
+ 1XMsH7UHoYaTcUXYrt/4VnTNYlM2dq7g3CxMdVygJ1QBqDIOmYVyCssEiwLm0wY0COb5GHBPyXq
+ 4Y39Ywi9UD/JZzA==
+X-Developer-Key: i=leitao@debian.org; a=openpgp;
+ fpr=AC8539A6E8F46702CA4A439B35A3939FFC78776D
+X-Debian-User: leitao
 
-syzbot ci has tested the following series
+Investigating some machines with kmemleak, I am constantly seeing
+the following memory leak that seems real.
 
-[v1] iomap: follow the alignment requirement for iomap_dio_hole_iter()
-https://lore.kernel.org/all/e69cc8a4a9c3f641b97872b50f04c397880077cd.1785374485.git.wqu@suse.com
-* [PATCH] iomap: follow the alignment requirement for iomap_dio_hole_iter()
+  kmemleak: unreferenced object 0xffff88869f7d01c0 (size 64):
+  kmemleak:   comm "btrfs", pid 1613416, jiffies 4316358595
+  kmemleak:   backtrace (crc ab59040a):
+  kmemleak:     __kmalloc_cache_noprof
+  kmemleak:     qgroup_reserve_data
+  kmemleak:     btrfs_qgroup_reserve_data
+  kmemleak:     btrfs_do_encoded_write
+  kmemleak:     btrfs_do_write_iter
+  kmemleak:     btrfs_ioctl_encoded_write
+  kmemleak:     btrfs_ioctl
+  kmemleak:   ... and 2 more object(s) with the same backtrace
 
-and found the following issue:
-general protection fault in __iomap_dio_rw
+and
 
-Full report is available here:
-https://ci.syzbot.org/series/81e0fbae-4715-4d62-8e9e-bcd19e46b164
+  kmemleak: unreferenced object 0xffff88830d94edc0 (size 64):
+  kmemleak:   comm "btrfs", pid 1613416, jiffies 4316358595
+<snip>
+  kmemleak:   ... and 2 more object(s) with the same backtrace
 
-***
+Looking at the code, it seems we don't free data_reserved, but
+we should (!?). I was able to come up with a xfstest test that exposes
+the kmemleak above:
 
-general protection fault in __iomap_dio_rw
+https://github.com/leitao/xfstest/commit/81c83a3fbb20b4ad695055ede7fcb73d3ffa2e52
 
-tree:      vfs
-URL:       https://kernel.googlesource.com/pub/scm/linux/kernel/git/vfs/vfs.git
-base:      70c2cbf8600c7d3a622b77e31136b83d6ac7d86c
-arch:      amd64
-compiler:  Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
-config:    https://ci.syzbot.org/builds/8d5fee65-291c-46a2-9f9a-d512f8fad82b/config
-syz repro: https://ci.syzbot.org/findings/c9f79a18-3316-44ec-b805-b805b1c49325/syz_repro
+Free the changeset on the way out, as every other caller of
+btrfs_qgroup_reserve_data() already does.
 
-loop0: rw=2049, sector=53248, nr_sectors = 976 limit=40427
-Oops: general protection fault, probably for non-canonical address 0xdffffc0000000003: 0000 [#1] SMP KASAN PTI
-KASAN: null-ptr-deref in range [0x0000000000000018-0x000000000000001f]
-CPU: 0 UID: 0 PID: 5842 Comm: syz.0.17 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
-RIP: 0010:bdev_get_queue include/linux/blkdev.h:1058 [inline]
-RIP: 0010:bdev_logical_block_size include/linux/blkdev.h:1403 [inline]
-RIP: 0010:iomap_dio_alignment fs/iomap/direct-io.c:415 [inline]
-RIP: 0010:iomap_dio_hole_iter fs/iomap/direct-io.c:595 [inline]
-RIP: 0010:iomap_dio_iter fs/iomap/direct-io.c:643 [inline]
-RIP: 0010:__iomap_dio_rw+0x1142/0x2130 fs/iomap/direct-io.c:815
-Code: e2 5a ff 83 e3 08 75 5c e8 ab de 5a ff 48 8b 9c 24 68 01 00 00 48 83 c3 18 48 89 d8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 74 08 48 89 df e8 d0 75 c8 ff 48 8b 1b b8 58 01 00 00
-RSP: 0018:ffffc90003fef560 EFLAGS: 00010206
-RAX: 0000000000000003 RBX: 0000000000000018 RCX: dffffc0000000000
-RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
-RBP: ffffc90003fef860 R08: ffff8881148d8fff R09: 0000000000000000
-R10: ffff8881148d8000 R11: ffffed102291b200 R12: 1ffff920007fdecc
-R13: 0000000000000000 R14: ffff888166b45340 R15: 0000000000001000
-FS:  00007fd77743d6c0(0000) GS:ffff88818d951000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000200000078000 CR3: 000000011606a000 CR4: 00000000000006f0
-Call Trace:
- <TASK>
- f2fs_dio_read_iter fs/f2fs/file.c:4887 [inline]
- f2fs_file_read_iter+0x60b/0x940 fs/f2fs/file.c:4950
- copy_splice_read+0x5ff/0xaa0 fs/splice.c:362
- do_splice_read fs/splice.c:979 [inline]
- splice_direct_to_actor+0x4b6/0xcb0 fs/splice.c:1084
- do_splice_direct_actor fs/splice.c:1202 [inline]
- do_splice_direct+0x195/0x290 fs/splice.c:1228
- do_sendfile+0x52e/0x7c0 fs/read_write.c:1371
- __do_sys_sendfile64 fs/read_write.c:1432 [inline]
- __se_sys_sendfile64+0x144/0x1a0 fs/read_write.c:1418
- do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
- do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7fd77659df99
-Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007fd77743d028 EFLAGS: 00000246 ORIG_RAX: 0000000000000028
-RAX: ffffffffffffffda RBX: 00007fd776825fa0 RCX: 00007fd77659df99
-RDX: 0000000000000000 RSI: 0000000000000004 RDI: 0000000000000004
-RBP: 00007fd776634ec4 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000800000009 R11: 0000000000000246 R12: 0000000000000000
-R13: 00007fd776826038 R14: 00007fd776825fa0 R15: 00007fff168f4a18
- </TASK>
-Modules linked in:
----[ end trace 0000000000000000 ]---
-RIP: 0010:bdev_get_queue include/linux/blkdev.h:1058 [inline]
-RIP: 0010:bdev_logical_block_size include/linux/blkdev.h:1403 [inline]
-RIP: 0010:iomap_dio_alignment fs/iomap/direct-io.c:415 [inline]
-RIP: 0010:iomap_dio_hole_iter fs/iomap/direct-io.c:595 [inline]
-RIP: 0010:iomap_dio_iter fs/iomap/direct-io.c:643 [inline]
-RIP: 0010:__iomap_dio_rw+0x1142/0x2130 fs/iomap/direct-io.c:815
-Code: e2 5a ff 83 e3 08 75 5c e8 ab de 5a ff 48 8b 9c 24 68 01 00 00 48 83 c3 18 48 89 d8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 74 08 48 89 df e8 d0 75 c8 ff 48 8b 1b b8 58 01 00 00
-RSP: 0018:ffffc90003fef560 EFLAGS: 00010206
-RAX: 0000000000000003 RBX: 0000000000000018 RCX: dffffc0000000000
-RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
-RBP: ffffc90003fef860 R08: ffff8881148d8fff R09: 0000000000000000
-R10: ffff8881148d8000 R11: ffffed102291b200 R12: 1ffff920007fdecc
-R13: 0000000000000000 R14: ffff888166b45340 R15: 0000000000001000
-FS:  00007fd77743d6c0(0000) GS:ffff8882a8f51000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007faa8f64dc80 CR3: 000000011606a000 CR4: 00000000000006f0
-----------------
-Code disassembly (best guess):
-   0:	e2 5a                	loop   0x5c
-   2:	ff 83 e3 08 75 5c    	incl   0x5c7508e3(%rbx)
-   8:	e8 ab de 5a ff       	call   0xff5adeb8
-   d:	48 8b 9c 24 68 01 00 	mov    0x168(%rsp),%rbx
-  14:	00
-  15:	48 83 c3 18          	add    $0x18,%rbx
-  19:	48 89 d8             	mov    %rbx,%rax
-  1c:	48 c1 e8 03          	shr    $0x3,%rax
-  20:	48 b9 00 00 00 00 00 	movabs $0xdffffc0000000000,%rcx
-  27:	fc ff df
-* 2a:	80 3c 08 00          	cmpb   $0x0,(%rax,%rcx,1) <-- trapping instruction
-  2e:	74 08                	je     0x38
-  30:	48 89 df             	mov    %rbx,%rdi
-  33:	e8 d0 75 c8 ff       	call   0xffc87608
-  38:	48 8b 1b             	mov    (%rbx),%rbx
-  3b:	b8 58 01 00 00       	mov    $0x158,%eax
+Fixes: 7c0c7269f7b5 ("btrfs: add BTRFS_IOC_ENCODED_WRITE")
+Cc: stable@vger.kernel.org
+Signed-off-by: Breno Leitao <leitao@debian.org>
+---
+ fs/btrfs/inode.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-
-***
-
-If these findings have caused you to resend the series or submit a
-separate fix, please add the following tag to your commit message:
-  Tested-by: syzbot@syzkaller.appspotmail.com
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0fcbfc3939462..f8ad96256ff67 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9965,6 +9965,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+ 	if (cb)
+ 		cleanup_compressed_bio(cb);
+ out:
++	extent_changeset_free(data_reserved);
+ 	if (ret >= 0)
+ 		iocb->ki_pos += encoded->len;
+ 	return ret;
 
 ---
-This report is generated by a bot. It may contain errors.
-syzbot ci engineers can be reached at syzkaller@googlegroups.com.
+base-commit: 95d6a9ccef99117115e41e9adb271243bd5e985b
+change-id: 20260731-btrfs_kmemleak-d44637bd2518
 
-To test a patch for this bug, please reply with `#syz test`
-(should be on a separate line).
+Best regards,
+--  
+Breno Leitao <leitao@debian.org>
 
-The patch should be attached to the email.
-Note: arguments like custom git repos and branches are not supported.

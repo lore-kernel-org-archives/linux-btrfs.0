@@ -1,61 +1,39 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B50C3859E2
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 09:11:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A62A3A9870
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 09:19:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785489114; cv=none; b=dy59MoK4xUPjTbDUPKlIVk9nrrb2b68hDgv6Hgm6yHUUVWH6ZG6SYuZ4QkF0IQlY+8NjPsmDzUIw5XPLduHi7xne/g9zjdyPPAcuvYehHv6/uKjF4r/fKkDf0FL7jPNsCHYAeA9IBSPuzT3ZbVpWLfrjEvcLXR5NVeQtf1Afm/8=
+	t=1785489600; cv=none; b=ovcy1DMeKVKCR1yy582pjcD5uX06xyCO4Q8DV69u9dz7zE5/f4VFMWWevpPKRVsfkILHzuEnlzecq7vq7rinevSGGetky7xfb4LSuM6CKZEdHxzbNkEqhYCIGDkAB1He73cGk1k4x8K8wzKoMaR1/9Ub/JfIb1NZ6ODNsWic1vo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785489114; c=relaxed/simple;
-	bh=EXDgL32CU8+11JRWs2p8ED9vG88KYSWEcXRA6aX/piU=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=FLoRcRvC7hsJh7gRCNVzcfAT2a/fzA3daVAXfyGGAO/NUFCEycaLlH+h+g96VPaqaTbmrCd3aLQrAkR6ndKDrObg3/A3iSgStwQp6I4R1UBNtlV1Vi1z8a+Iq/Wu4xUQbMnQFWbdXuB83wXyovlj1/8ZJkMkGKZms2ogxA8DwQ0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nNiivWOZ; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=BaN1pOX9; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1785489600; c=relaxed/simple;
+	bh=YNlt1mant49hcw/DpUlghlzZnB/GzPG/1xFOWwA4vKY=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=BlyZiq/+VMKR9y5Yzrkx+6JOi7m8NCbmI+GSi9h6N3zS17GocFYAbG0/oQIz2BKeX30xoWeH5xfHyeqGbee9PQDbkeEph2x9lSYpqGi2+GuGmVdGxrkokxygv8P31MOE9dRoiW6bA8wbEL/0WdbYOno2RPpSx/OVpygLkHfD804=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Allw4iAp; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nNiivWOZ";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="BaN1pOX9"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 4498F7DE71;
-	Fri, 31 Jul 2026 09:11:42 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785489106; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=ZWmVuvs2r9X/ORunpHEg56gXXQpdK5iG70eQZZEdo5Q=;
-	b=nNiivWOZx538Meu+S9TbzgjqQDnJ6LF4NpzXd1mO6qbvn6OpsDkGSdg7w3E3izBbikCSHc
-	KCXxaUx2EaCaalUFFPR7/30t+IYbPZAPuf93PEBTkJfI4rF6jXXP6rCE/5EHOxQIVbLJ4f
-	48ZWFdFJIpiYO+T0mmBZSdNAVoX50Io=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=BaN1pOX9
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785489102; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=ZWmVuvs2r9X/ORunpHEg56gXXQpdK5iG70eQZZEdo5Q=;
-	b=BaN1pOX9Q7KAOHotOFS9SsvJw13kSoOZ9BKZcAqGLoh9CRfT8JyUpvS2hVIcAIs+Qxg5iM
-	9iS2eQrr28Bva3BkR11H2rhE++1BJuNrTfFV/UIQgNVJsl9KM6dtHIIszG+Ks2twNmdymJ
-	ky3NN/hdb2KwLb507hdh18HJCvtO7Pw=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A54C3779B0;
-	Fri, 31 Jul 2026 09:11:40 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id Nr5uFcxmbGojRAAAD6G6ig
-	(envelope-from <wqu@suse.com>); Fri, 31 Jul 2026 09:11:40 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-xfs@vger.kernel.org
-Subject: [PATCH v2] iomap: follow the alignment requirement for iomap_dio_hole_iter()
-Date: Fri, 31 Jul 2026 18:41:14 +0930
-Message-ID: <9209e7204fc6b7b60c28f196750084be8a2faba8.1785489008.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Allw4iAp"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0C27D1F00A3A
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 09:19:53 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1785489594;
+	bh=8XhEg2wk3DWsXsag9hzIKK2+iRsQ6t1q94oXXCa2DE4=;
+	h=From:To:Subject:Date:In-Reply-To:References;
+	b=Allw4iApedLPJ+aiAlfE7TFZXr7QoVPepCmEPAW7FfGHCdMerS8OZ2EGMqdtWrqgx
+	 fERmLp9OGDzm45UYEuQ/Wwx4qtKCQ71fKHqROrIVKO6VuirdPmAVBI7sMLyLcyyUP1
+	 7N8QFOvyxVaKG3BHrBD9KSS3Q7/vrW8j+TNrBJXke+R64lbOb+YOc/bzzN9E4Ry5vB
+	 7Sf/pIweWY1y2eU+jB6yYAHVl+UI/XoRvS60tYAbJDYZaTcH0GKl+iHtT7xhZvIeih
+	 VkGTauCmEQXe5xh2eDffSW5VSbTXBuqMao6JwzSvO4OJ8xbbG/+ny9++cEtVjv5xbl
+	 0emK2Neh56laA==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: skip hole detection during full fsync for files without holes
+Date: Fri, 31 Jul 2026 10:19:42 +0100
+Message-ID: <8a62eeb9c24994929aa697d2125a197e82bb7c02.1785488972.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
+In-Reply-To: <2673cd12fadb5269b39417694d82e02b90a482f7.1785429154.git.fdmanana@suse.com>
+References: <2673cd12fadb5269b39417694d82e02b90a482f7.1785429154.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -63,146 +41,101 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 4498F7DE71
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:email,suse.com:dkim];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_TLS_ALL(0.00)[];
-	RCPT_COUNT_THREE(0.00)[3];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Flag: NO
 
-[BUG]
-On the latest development branch, btrfs with 8K block size on 4K page
-sized systems will fail all test cases that run fsstress.
+From: Filipe Manana <fdmanana@suse.com>
 
-One very short example would be:
+If we the no-holes feature is enabled (a default since btrfs-progs 5.15),
+when doing a full fsync we always iterate of all leaves in the subvolume
+root that contain file extent items in order to detect holes between them.
 
- # $fsstress -n 4 -d $mnt -s 1785675805 -v
- 0/0: dwrite - no filename
- 0/1: creat f0 x:0 0 0
- 0/1: creat add id=0,parent=-1
- 0/2: write dontcache f0[259 1 0 0 0 0] [816411,3620] 0
- 0/3: dread - xfsctl(XFS_IOC_DIOINFO) f0[259 1 0 0 32 820031] return 25, fallback to stat()
- 0/3: dread f0[259 1 0 0 32 820031] [483328,81920] 0
+This can take a lot of time for files with a large number of extents.
+But if we know there are no prealloc extents and the amount of space
+(uncompressed space) is greater than or equals to the i_size of the
+inode, then we cannot have holes and therefore avoid searching for
+them. So skip the search if those conditions are met.
 
-Which triggered the following ASSERT():
+The following test script was used:
 
- assertion failed: IS_ALIGNED(state->start, blocksize) && IS_ALIGNED(state->end + 1, blocksize), in fs/btrfs/extent-io-tree.c:346 (unaligned extent state, blocksize=8192 start=487424 end=565247 state=0x0)
- ------------[ cut here ]------------
- kernel BUG at fs/btrfs/extent-io-tree.c:346!
- Oops: invalid opcode: 0000 [#1] SMP
- CPU: 4 UID: 0 PID: 648 Comm: fsstress Tainted: G            E       7.2.0-rc5-custom+ #431 PREEMPT(full)  7c507bd40d65e4d871e698b22d80f1306bbec543
- Tainted: [E]=UNSIGNED_MODULE
- Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 02/02/2022
- RIP: 0010:validate_extent_state.part.0.isra.0.cold+0x24/0x26 [btrfs]
- Call Trace:
-  <TASK>
-  insert_state+0x34/0x1a0 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
-  set_extent_bit+0x440/0x8d0 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
-  btrfs_lock_extent_bits+0x58/0x380 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
-  btrfs_dio_iomap_begin+0x319/0xb70 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
-  iomap_iter+0x1a2/0x370
-  __iomap_dio_rw+0x236/0x8d0
-  iomap_dio_rw+0x12/0x30
-  btrfs_direct_read+0x15f/0x290 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
-  btrfs_file_read_iter+0x42/0x90 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
-  vfs_read+0x25e/0x380
-  ksys_read+0x73/0xe0
-  do_syscall_64+0xe1/0x790
-  entry_SYSCALL_64_after_hwframe+0x4b/0x53
- RIP: 0033:0x7fc3f129318e
-  </TASK>
+  $ cat test.sh
+  #!/bin/bash
 
-[CAUSE]
-iomap_dio_hole_iter() is responsible for zeroing out the buffer for a
-hole, which calls iov_iter_zero() to zero the range.
+  MNT=/mnt/nullb0
+  DEV=/dev/nullb0
 
-However btrfs disables page fault during its __iomap_dio_rw() call, so
-iov_iter_zero() can fail at any page boundary.
+  umount $MNT &> /dev/null
+  mkfs.btrfs -f $DEV
+  mount $DEV $MNT
 
-When the fs block size is larger than page size, iov_iter_zero() may
-only have zeroed one page, which is not aligned to the fs block size.
+  # 256M gives 64K extents of 4K each.
+  FILE_SIZE=$((256 * 1024 * 1024))
+  touch $MNT/foobar
 
-Such one page long range is passed back to btrfs, which triggers the
-above ASSERT().
+  for ((i = 0; i < $FILE_SIZE; i += 8192)); do
+      xfs_io -c "pwrite -S 0xab $i 4K" $MNT/foobar > /dev/null
+  done
 
-[FIX]
-For iomap_dio_hole_iter() round down the copied length, and revert
-any excessive range that is beyond the aligned copied length.
-Also use @aligned_copied for the size increment and iter advancement.
+  xfs_io -c "fsync" $MNT/foobar
 
-This should only affect btrfs, which is the only fs utilizing iomap dio
-with page fault disabled.
+  for ((i = 4096; i < $FILE_SIZE; i += 8192)); do
+     xfs_io -c "pwrite -S 0xab $i 4K" $MNT/foobar > /dev/null
+  done
 
-Fixes: 001397f5ef49 ("iomap: add IOMAP_DIO_FSBLOCK_ALIGNED flag")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+  # unmount and mount, clear caches and ensure the next fsync is a
+  # full sync.
+  umount $MNT
+  mount $DEV $MNT
+
+  # Do some change to the file in order to fsync.
+  xfs_io -c "pwrite -S 0xcd 0 4K" $MNT/foobar > /dev/null
+
+  T0=$(date +%s%N)
+  xfs_io -c "fsync" $MNT/foobar
+  T1=$(date +%s%N)
+
+  echo
+  echo "Took $(( (T1 - T0) / 1000 ))us"
+
+  umount $MNT
+
+Before this change:
+
+  Took 28721us
+
+After this change:
+
+  Took 5453us
+
+That's about 5.3x times faster.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-Changelog:
-v2:
-- Rebased to the latest vfs tree
 
-- Slightly rewords the reproducer
-  In fact no special reproducer needed, any test case running fsstress
-  can easily trigger it.
+V2: Support the case where i_size is not sector size aligned and so
+    i_size <= nbytes.
 
-  The example provided is just the shortest sequence I used to debug the
-  crash.
----
- fs/iomap/direct-io.c | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+ fs/btrfs/tree-log.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
-index 64c6b7286c20..f170976d9de0 100644
---- a/fs/iomap/direct-io.c
-+++ b/fs/iomap/direct-io.c
-@@ -594,12 +594,20 @@ static int iomap_dio_bio_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 47046dd14997..88b6258f2e3f 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5591,6 +5591,15 @@ static int btrfs_log_holes(struct btrfs_trans_handle *trans,
+ 	if (!btrfs_fs_incompat(fs_info, NO_HOLES) || i_size == 0)
+ 		return 0;
  
- static int iomap_dio_hole_iter(struct iomap_iter *iter, struct iomap_dio *dio)
- {
--	loff_t length = iov_iter_zero(iomap_length(iter), dio->submit.iter);
-+	loff_t copied = iov_iter_zero(iomap_length(iter), dio->submit.iter);
-+	unsigned int bs = iomap_dio_alignment(iter->inode, iter->iomap.bdev,
-+					      dio->flags);
-+	loff_t aligned_copied = round_down(copied, bs);
- 
--	dio->size += length;
--	if (!length)
 +	/*
-+	 * If fs block size is larger than page size, page fault failure
-+	 * can cause @copied to be page aligned but not fs block aligned.
++	 * If there are no prealloc extents (which can be located past i_size),
++	 * and disk space used is greater than or equals to i_size, then there
++	 * are no holes.
 +	 */
-+	iov_iter_revert(dio->submit.iter, copied - aligned_copied);
-+	dio->size += aligned_copied;
-+	if (!aligned_copied)
- 		return -EFAULT;
--	return iomap_iter_advance(iter, length);
-+	return iomap_iter_advance(iter, aligned_copied);
- }
- 
- static int iomap_dio_inline_iter(struct iomap_iter *iomi, struct iomap_dio *dio)
++	if (!(inode->flags & BTRFS_INODE_PREALLOC) &&
++	    i_size <= inode_get_bytes(&inode->vfs_inode))
++		return 0;
++
+ 	key.objectid = ino;
+ 	key.type = BTRFS_EXTENT_DATA_KEY;
+ 	key.offset = 0;
 -- 
-2.54.0
+2.47.2
 

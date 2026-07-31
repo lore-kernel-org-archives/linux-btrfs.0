@@ -1,141 +1,87 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A62A3A9870
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 09:19:57 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 897E534EF07
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 09:23:27 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785489600; cv=none; b=ovcy1DMeKVKCR1yy582pjcD5uX06xyCO4Q8DV69u9dz7zE5/f4VFMWWevpPKRVsfkILHzuEnlzecq7vq7rinevSGGetky7xfb4LSuM6CKZEdHxzbNkEqhYCIGDkAB1He73cGk1k4x8K8wzKoMaR1/9Ub/JfIb1NZ6ODNsWic1vo=
+	t=1785489808; cv=none; b=tjMBw+Y4puZq0ZKLe/WGDiwDGo1lEptV/CCAfKaul+IK2LOTR/xFGMDk+IGEUnmT1l01sD6c3bGNex9840rKOyXL6XST55MxgwOS5P18wCVjdjYsxMjlnn/0Zv0vQnGhsEnCDA5njy80egsMopeFjputnESrYe6yopqrd3kTwjQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785489600; c=relaxed/simple;
-	bh=YNlt1mant49hcw/DpUlghlzZnB/GzPG/1xFOWwA4vKY=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=BlyZiq/+VMKR9y5Yzrkx+6JOi7m8NCbmI+GSi9h6N3zS17GocFYAbG0/oQIz2BKeX30xoWeH5xfHyeqGbee9PQDbkeEph2x9lSYpqGi2+GuGmVdGxrkokxygv8P31MOE9dRoiW6bA8wbEL/0WdbYOno2RPpSx/OVpygLkHfD804=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Allw4iAp; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1785489808; c=relaxed/simple;
+	bh=Jkhfmd5RoNJO8GBdkHzxRgMChg5nXDrYar87mS9cV28=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=pTg9isb5NAY7QZQHuY5UfZoLelFxfz8LpaGP5XJUw9zQcVGevohhrQ9YQchqwj8m1B6OMzH5zN9WPI9PtCPnDmRjWA3ZsNojcYVbMe1no00ukeF2ayq9Ry4zj+uIQlfgzPzhi+Lbf52wnwxgTyucHlnqax3xztGVNxAeJFAlFQk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=adntV4Yj; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Allw4iAp"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0C27D1F00A3A
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 09:19:53 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="adntV4Yj"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 364301F00A3A
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 09:23:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1785489594;
-	bh=8XhEg2wk3DWsXsag9hzIKK2+iRsQ6t1q94oXXCa2DE4=;
-	h=From:To:Subject:Date:In-Reply-To:References;
-	b=Allw4iApedLPJ+aiAlfE7TFZXr7QoVPepCmEPAW7FfGHCdMerS8OZ2EGMqdtWrqgx
-	 fERmLp9OGDzm45UYEuQ/Wwx4qtKCQ71fKHqROrIVKO6VuirdPmAVBI7sMLyLcyyUP1
-	 7N8QFOvyxVaKG3BHrBD9KSS3Q7/vrW8j+TNrBJXke+R64lbOb+YOc/bzzN9E4Ry5vB
-	 7Sf/pIweWY1y2eU+jB6yYAHVl+UI/XoRvS60tYAbJDYZaTcH0GKl+iHtT7xhZvIeih
-	 VkGTauCmEQXe5xh2eDffSW5VSbTXBuqMao6JwzSvO4OJ8xbbG/+ny9++cEtVjv5xbl
-	 0emK2Neh56laA==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: skip hole detection during full fsync for files without holes
-Date: Fri, 31 Jul 2026 10:19:42 +0100
-Message-ID: <8a62eeb9c24994929aa697d2125a197e82bb7c02.1785488972.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
-In-Reply-To: <2673cd12fadb5269b39417694d82e02b90a482f7.1785429154.git.fdmanana@suse.com>
-References: <2673cd12fadb5269b39417694d82e02b90a482f7.1785429154.git.fdmanana@suse.com>
+	s=k20260515; t=1785489807;
+	bh=8KrLAAOAIX6u+3WzGbXmHmMKSVkI+6Zo/BfxjyxiChk=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=adntV4YjN/4y6P/2Q/t6Oa/lrPl8x0iTctDzwK0PtEviK+iCdUOTO94eFTQ+xtFQ+
+	 fF2VdlBbjn2APDrdSu4Lv4h+Q/SjTF6HoMhuceo2yP6KtHWy+4DdX8MjCFe+TODCyI
+	 DSJyBrqtytnthlG/dzV5RB1JHBVfsgGCfeeMkxbtt/tKlqg8JuIuakFZ9NWoreto5S
+	 mKewFLykr4Qbucr0CyVdGA9XonBOzsK3boPBDjyNliCQKQqcKsjVSSjOmxiLU4r9Ea
+	 mux7y2VT7S9fy75YNLUEkwqfGvN1kb5f1LAJT5+jaDDQNLs2MGhqhkEghEkGALqg2f
+	 AkZCVAIudga9w==
+Received: by mail-vs1-f51.google.com with SMTP id ada2fe7eead31-738bcf9a573so257285137.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 02:23:27 -0700 (PDT)
+X-Gm-Message-State: AOJu0Ywh7GSE5H3dyoeBZT4Dr5+ywXbUmAPN3KMoMuUdiR9znLC0JkLY
+	b64mgqAKwsnf2/pBTdA4z2Ck1UdW01sructEBmEGHLM2M5o1g6kGYJEEwDoxXByAADK+wtG1ZQI
+	lse+q0bbw5HiFn5rrfTqG2ckKtdRLwkg=
+X-Received: by 2002:a05:6102:3f48:b0:740:22ba:8a4e with SMTP id
+ ada2fe7eead31-758f6475cf2mr321601137.6.1785489806416; Fri, 31 Jul 2026
+ 02:23:26 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <cover.1785457950.git.wqu@suse.com>
+In-Reply-To: <cover.1785457950.git.wqu@suse.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Fri, 31 Jul 2026 10:22:49 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H4giGJqO1MmkdF86xQkH2p6QEhU4QUiAwHuppP6muWQ=w@mail.gmail.com>
+X-Gm-Features: AUfX_mx-LteUK4e1N4iwm-U16_sInjigXTFCOcUdr4MIc01tZk3EeWftqHgDPA8
+Message-ID: <CAL3q7H4giGJqO1MmkdF86xQkH2p6QEhU4QUiAwHuppP6muWQ=w@mail.gmail.com>
+Subject: Re: [PATCH 0/2] btrfs: fix generic/795 crash for bs > ps cases
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-From: Filipe Manana <fdmanana@suse.com>
+On Fri, Jul 31, 2026 at 1:46=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+>
+> During my development of the incoming data_size feature, it turns out
+> that we have a new crash triggered by the new test case, generic/795 on
+> bs > ps cases.
+>
+> It turns out that for cached inode items (btrfs_delayed_node) we can
+> skip the inode mapping flag settings.
+>
+> This bug is fixed by the first path.
+>
+> The second patch is to introduce the extra debug ASSERT()s, which
+> greatly reduced the search range by showing the mapping's minimal folio
+> order.
+>
+> Qu Wenruo (2):
+>   btrfs: initialize inode mapping flags for cached inodes
+>   btrfs: add extra ASSERT()s to make sure the folio size is correct
 
-If we the no-holes feature is enabled (a default since btrfs-progs 5.15),
-when doing a full fsync we always iterate of all leaves in the subvolume
-root that contain file extent items in order to detect holes between them.
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-This can take a lot of time for files with a large number of extents.
-But if we know there are no prealloc extents and the amount of space
-(uncompressed space) is greater than or equals to the i_size of the
-inode, then we cannot have holes and therefore avoid searching for
-them. So skip the search if those conditions are met.
+Thanks.
 
-The following test script was used:
-
-  $ cat test.sh
-  #!/bin/bash
-
-  MNT=/mnt/nullb0
-  DEV=/dev/nullb0
-
-  umount $MNT &> /dev/null
-  mkfs.btrfs -f $DEV
-  mount $DEV $MNT
-
-  # 256M gives 64K extents of 4K each.
-  FILE_SIZE=$((256 * 1024 * 1024))
-  touch $MNT/foobar
-
-  for ((i = 0; i < $FILE_SIZE; i += 8192)); do
-      xfs_io -c "pwrite -S 0xab $i 4K" $MNT/foobar > /dev/null
-  done
-
-  xfs_io -c "fsync" $MNT/foobar
-
-  for ((i = 4096; i < $FILE_SIZE; i += 8192)); do
-     xfs_io -c "pwrite -S 0xab $i 4K" $MNT/foobar > /dev/null
-  done
-
-  # unmount and mount, clear caches and ensure the next fsync is a
-  # full sync.
-  umount $MNT
-  mount $DEV $MNT
-
-  # Do some change to the file in order to fsync.
-  xfs_io -c "pwrite -S 0xcd 0 4K" $MNT/foobar > /dev/null
-
-  T0=$(date +%s%N)
-  xfs_io -c "fsync" $MNT/foobar
-  T1=$(date +%s%N)
-
-  echo
-  echo "Took $(( (T1 - T0) / 1000 ))us"
-
-  umount $MNT
-
-Before this change:
-
-  Took 28721us
-
-After this change:
-
-  Took 5453us
-
-That's about 5.3x times faster.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Support the case where i_size is not sector size aligned and so
-    i_size <= nbytes.
-
- fs/btrfs/tree-log.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 47046dd14997..88b6258f2e3f 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -5591,6 +5591,15 @@ static int btrfs_log_holes(struct btrfs_trans_handle *trans,
- 	if (!btrfs_fs_incompat(fs_info, NO_HOLES) || i_size == 0)
- 		return 0;
- 
-+	/*
-+	 * If there are no prealloc extents (which can be located past i_size),
-+	 * and disk space used is greater than or equals to i_size, then there
-+	 * are no holes.
-+	 */
-+	if (!(inode->flags & BTRFS_INODE_PREALLOC) &&
-+	    i_size <= inode_get_bytes(&inode->vfs_inode))
-+		return 0;
-+
- 	key.objectid = ino;
- 	key.type = BTRFS_EXTENT_DATA_KEY;
- 	key.offset = 0;
--- 
-2.47.2
-
+>
+>  fs/btrfs/extent_io.c | 19 +++++++++++++++++++
+>  fs/btrfs/inode.c     |  3 ++-
+>  2 files changed, 21 insertions(+), 1 deletion(-)
+>
+> --
+> 2.54.0
+>
+>

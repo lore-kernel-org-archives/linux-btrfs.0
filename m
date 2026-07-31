@@ -1,176 +1,146 @@
-Received: from mail-24417.protonmail.ch (mail-24417.protonmail.ch [109.224.244.17])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f44.google.com (mail-wr1-f44.google.com [209.85.221.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 66BA634D916
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 20:08:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=109.224.244.17
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ED9F737F8C0
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 21:25:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785528489; cv=none; b=M/KkRR4dUPIEQV9KOLxyqQ9PXvU5t2ara/tkC8ZaqJ8/SMhyaOY50tK5wVo6YvBpG/aOXiEAWauRrTKINM/EhDUq/8urruvZfcXlsIvs6iguu7/9wJEKxAEp1K+6+r6JrJdQazPPXjbtCF6RkGzLKyX580RICp+oK9cNUvajrWc=
+	t=1785533115; cv=none; b=d0g/mc1OGEm2iPi0Gf9hRR8F3mipFN6woNvcjX8dI9dPeCkUSidZQ8gz0sOqPNuODk3z0qICTz4yAksfq2D2XDYYhMJ/DbX+h1GvSvCR32G52LyHIS8/eKDvX37iCbgpo3V0gQfusaclYFSNi5VnsBiyzSA4GV4voXbTWZ+RKzg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785528489; c=relaxed/simple;
-	bh=3pyi4cyF55KZEhtZ9FN8A02G2ErjRkynWzqLnqgl4A4=;
-	h=Date:To:From:Cc:Subject:Message-ID:MIME-Version:Content-Type; b=u+xZqRgkxyWGVwngb14xAPgHpEkuZVjBKG95rtPBPYK7dZdif+Y3yrKdQMAxa1ymzIL8bSa8Y+vBf6dok8Z0I/1HT6JVD0pwLcUfdTDETYu0+d9fRNpSJh66wZC3ve5mBrHJI3QwHmXSgVo7VpSbo9AnY/lWkHYRoznC1lE/eKQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=proton.me; spf=pass smtp.mailfrom=proton.me; dkim=pass (2048-bit key) header.d=proton.me header.i=@proton.me header.b=GyfG8V9O; arc=none smtp.client-ip=109.224.244.17
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=proton.me
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=proton.me
+	s=arc-20240116; t=1785533115; c=relaxed/simple;
+	bh=WZzs3ggZ6TpYKopsSnLCMfyT0/lF5tuyyAPNJEnaeNw=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=aigVkhpYSDEfePqnOntCzeytInTuSlyz3pz2mav1zMHUWR9KE9JDMXtrWRy07r3FTsSMCdk6TjpFZhkeThHDFWJIUMSNf4gC5+xCApj52kCoXsz4hf2rf/QiCJVimKotok2gLeHroITCqF/OgGVwfNr94FjWVSpA8i7HB/Wjvo0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=eZ/SHztW; arc=none smtp.client-ip=209.85.221.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=proton.me header.i=@proton.me header.b="GyfG8V9O"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=proton.me;
-	s=protonmail; t=1785528483; x=1785787683;
-	bh=5deJwqeZ/boejxKg2KpO7perGULhpFRPmq9bPZmnqiU=;
-	h=Date:To:From:Cc:Subject:Message-ID:Feedback-ID:From:To:Cc:Date:
-	 Subject:Reply-To:Feedback-ID:Message-ID:BIMI-Selector;
-	b=GyfG8V9OkubsMTZU1Ekp/c/6HS8n760JchZmtjoHqRbTWk+wVaYaqNBjUbN0uB9IZ
-	 LR7BpddHA+smnm2Oe6oOyqjbAkcvUxusWltId1KvaS43AecK38td15EQWIhtUoCHyF
-	 32lIORnhZpiJxS75V68YG2yHBCjYTrAPX1MXFYHHU45C7UJ7JkJAv4FaxzWnVNZ8Am
-	 /1Wi/5PhGCAaR3Hrtu4Xt3jCBkKgm5LnOn+xc6dd2j9D54b7he+gvFDDJFhjBo6sXC
-	 OW01TPM0mhK4zFDagwPPd6QWJsp6hhs+LKrrlwZYeJLZWjOw01B8MwodSV2uBj4tia
-	 66UM6KJkjihJA==
-Date: Fri, 31 Jul 2026 20:07:59 +0000
-To: =?utf-8?Q?Marek_Beh=C3=BAn?= <kabel@kernel.org>, Tom Rini <trini@konsulko.com>
-From: Cole Munz <Munzzyy1@proton.me>
-Cc: Qu Wenruo <wqu@suse.com>, Simon Glass <sjg@chromium.org>, u-boot@lists.denx.de, linux-btrfs@vger.kernel.org
-Subject: [PATCH] fs: btrfs: fix zstd decompression of sector-padded extents
-Message-ID: <9acf406b5e73fa83001e1951e883143e2afb8b2d.1785528314.git.Munzzyy1@proton.me>
-Feedback-ID: 209578162:user:proton
-X-Pm-Message-ID: 489277cc8b32bd96ba4b078068c52bf3d942620d
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="eZ/SHztW"
+Received: by mail-wr1-f44.google.com with SMTP id ffacd0b85a97d-47fd66a094eso321085f8f.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 14:25:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1785533112; x=1786137912; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=qwnnl6rP9qnjMvhn5jD74O4m/9T7mCXz4j2ffIU9ClA=;
+        b=eZ/SHztWzyuaeCyUzeQgxsgoqHyglmgO18Fkv5cM2VJYvLEICFto0ooE2cmMki/ECB
+         tPamHGP5D9gC5cR5trNRHBVJuxKIy2KM2DYLngf+DL6P3LUvoyF08YQyvuA0fmEdh+jm
+         zMJIWMfFr9gra+z33RbQWgF84xkteO1HSXgEkLKoHgFQaBZ0bE0xkkf2fa45jQ2cfLdU
+         6+KHLLEYYIbRGp2GPhFJxiuxfP+A2pwpoaD8SzzEv4+rfB88RHjV24WdwfIlScKcKawT
+         nC6VIDli6Ry98IC22s7uGxxeO66cMK9ymD56tHiGOsB135ZLdxPMP3D+Z6VOkAECjyH0
+         vSvw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1785533112; x=1786137912;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=qwnnl6rP9qnjMvhn5jD74O4m/9T7mCXz4j2ffIU9ClA=;
+        b=N6IqYi1VMsi+RdV8lWA391R2agU2kX/ZxdBgbAgWZGZ/GkCUDOBKoet8DgdbTh4LGn
+         xk4WwaG9o0nxWZc8FGQwadhOSNCNqse9f7JCmqxiv2G7T7i8phOOX6rqE9NILnHSntqq
+         KuQVR6rbP441pb6CRQwXNrGZIRx8YPq+AnZVCbpgSeMo0hCcH1PoabM8g7+AJHammLJO
+         yZvn21LtroKWdjt16RnoFqQ7Rm4HV2Z+e8VmDINe75vJVtqBTWMbNyc+fpVj8FwAXLbM
+         HbJPuV/UB0fQPaf5pRawS1jVaJ0mWcSrXMtf1Ps3HQsCORHApi/cL48Rdjabg3KrMt0D
+         Ppkw==
+X-Forwarded-Encrypted: i=1; AHgh+RrDaLampePWDDG+EFB1+aEXRVHqxt8G3NW6ClFxgehsroZY4Ut6WwXvj3PonkMAS9hlb3vYYBO+jlRCPg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxWacBXM4U7BJjKk1+yIaHDG0WQd/vz7jchriGN9zHxDXLhPsl4
+	pduw7mf34A+AU86HQBCxtd8a4pzdmEMdWPAEksdoYw/P/MZrfSi0ovV5O/9GCbgT+rS5SSeG5hm
+	/pAtUuK8=
+X-Gm-Gg: AR+sD10T5GpmV5ncfGsgZpRwo20ykSr1jgcLfTKapt0K+EY2UNYQs+ikvYAMVfr2dCa
+	ZAFjTO13l3WX8Hu8ZrBf3ktF2/NKYiXqUiRqt9IeqyDmNIEJst4z7btqLoQUb4rMDMFKLB5Qx5L
+	B04oM6G6qMjN4m/9/o87hRAwjQkmJ9N1O0ZjrE8dVFzVUNu0rK6ELBoPa0IsVySMNYseqGzbVX/
+	EuHIhBqxZ/fPQvtSm35knmMADXUKtFEb6H/Fdvv68lvoi+zrw9BmKEAi4Wqa4sKZOUgrx5IYwF/
+	4KLDYjDUy3h8gKL8TxQBKOzVbxQj5xwOBE7w2O5ksIJR6VK/Yykr79jq5Ue745xnD4LpjXh6MKV
+	AQ4BU6vfNq31xqhP9L+j/HmQ6ptHMBKGrPh/Xr+ZL9gNsXbrnu402QIuGa253fAFgET3tPtjMGx
+	HWQ+2MoCDJ/nytfCX0eeCC+sopxI07gAKm2M4isfPyOUNwBIEuLG0asQ==
+X-Received: by 2002:a5d:4992:0:b0:47f:81fe:12fb with SMTP id ffacd0b85a97d-47fd7307a2amr1538179f8f.47.1785533112024;
+        Fri, 31 Jul 2026 14:25:12 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3153e06f88fsm8816478eec.20.2026.07.31.14.25.09
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 31 Jul 2026 14:25:10 -0700 (PDT)
+Message-ID: <b741686a-d101-4529-b74a-4e1277caf84e@suse.com>
+Date: Sat, 1 Aug 2026 06:55:07 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-
-Btrfs pads compressed extents up to a sector boundary, so a file whose
-size isn't sector-aligned still gets compressed as a frame whose
-declared content size is the sector-rounded length, larger than the
-extent's ram_bytes. zstd_decompress_dctx()'s one-shot API requires the
-destination buffer to cover the whole frame and fails with
-ZSTD_error_dstSize_tooSmall otherwise, even though
-btrfs_read_extent_reg() and btrfs_read_extent_inline() already
-zero-fill any short tail. The file then reads back truncated or the
-read fails outright, which is what breaks fdt apply on zstd-compressed
-overlays.
-
-Decompress into a bounce buffer sized to the frame when the declared
-content size exceeds ram_bytes, and copy out only what the caller
-asked for. Also trim the input with zstd_find_frame_compressed_size()
-first, since the on-disk extent may carry trailing sector padding
-after the frame.
-
-The fix lives here rather than in the shared lib/zstd/zstd.c wrapper
-on purpose: for FIT images, ximg and ubifs an undersized destination
-really does mean a corrupt input and should keep failing hard. Armbian
-carries the same caller-side fix for this exact failure on RK3399 and
-ODROID-N2 boards (armbian/build#9651, #10208), where it showed up as
-"zstd_decompress: failed to decompress: 70".
-
-Fixes: 918adf8e0733 ("btrfs: Use U-Boot API for decompression")
-Signed-off-by: Cole Munz <Munzzyy1@proton.me>
----
- fs/btrfs/compression.c | 76 +++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 71 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index c69524d38ecc..017e61242a68 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -6,7 +6,7 @@
-  */
-=20
- #include "btrfs.h"
--#include <abuf.h>
-+#include <limits.h>
- #include <log.h>
- #include <malloc.h>
- #include <linux/lzo.h>
-@@ -137,12 +137,78 @@ static u32 decompress_zlib(const u8 *_cbuf, u32 clen,=
- u8 *dbuf, u32 dlen)
-=20
- static u32 decompress_zstd(const u8 *cbuf, u32 clen, u8 *dbuf, u32 dlen)
- {
--=09struct abuf in, out;
-+=09zstd_dctx *ctx;
-+=09zstd_frame_header fh;
-+=09size_t wsize, len, dst_capacity =3D dlen;
-+=09void *workspace;
-+=09u8 *dst =3D dbuf, *bounce =3D NULL;
-+=09u32 ret;
-+
-+=09wsize =3D zstd_dctx_workspace_bound();
-+=09workspace =3D malloc(wsize);
-+=09if (!workspace)
-+=09=09return -1;
-+
-+=09ctx =3D zstd_init_dctx(workspace, wsize);
-+=09if (!ctx) {
-+=09=09ret =3D -1;
-+=09=09goto out;
-+=09}
-=20
--=09abuf_init_set(&in, (u8 *)cbuf, clen);
--=09abuf_init_set(&out, dbuf, dlen);
-+=09/*
-+=09 * Compressed extents are padded up to a sector boundary, so clen may
-+=09 * include trailing junk after the actual zstd frame.
-+=09 */
-+=09len =3D zstd_find_frame_compressed_size(cbuf, clen);
-+=09if (zstd_is_error(len)) {
-+=09=09ret =3D -1;
-+=09=09goto out;
-+=09}
-=20
--=09return zstd_decompress(&in, &out);
-+=09/*
-+=09 * Btrfs compresses whole sectors, so a file whose size is not a
-+=09 * multiple of the sector size still yields a frame whose content
-+=09 * size is the sector-rounded length, which can be larger than dlen
-+=09 * (ram_bytes from the extent item). zstd_decompress_dctx() requires
-+=09 * its output buffer to cover the whole frame and would otherwise
-+=09 * fail with ZSTD_error_dstSize_tooSmall, even though the extra bytes
-+=09 * are just padding the caller is going to discard: both
-+=09 * btrfs_read_extent_reg() and btrfs_read_extent_inline() already
-+=09 * zero-fill any tail beyond what we return here. Decompress into a
-+=09 * bounce buffer sized to the frame when that happens.
-+=09 */
-+=09if (!zstd_get_frame_header(&fh, cbuf, len) &&
-+=09    fh.frameContentSize !=3D ZSTD_CONTENTSIZE_UNKNOWN &&
-+=09    fh.frameContentSize > dlen) {
-+=09=09if (fh.frameContentSize > SIZE_MAX) {
-+=09=09=09ret =3D -1;
-+=09=09=09goto out;
-+=09=09}
-+=09=09bounce =3D malloc(fh.frameContentSize);
-+=09=09if (!bounce) {
-+=09=09=09ret =3D -1;
-+=09=09=09goto out;
-+=09=09}
-+=09=09dst =3D bounce;
-+=09=09dst_capacity =3D fh.frameContentSize;
-+=09}
-+
-+=09len =3D zstd_decompress_dctx(ctx, dst, dst_capacity, cbuf, len);
-+=09if (zstd_is_error(len)) {
-+=09=09ret =3D -1;
-+=09=09goto out;
-+=09}
-+
-+=09if (bounce) {
-+=09=09memcpy(dbuf, bounce, dlen);
-+=09=09ret =3D dlen;
-+=09} else {
-+=09=09ret =3D len;
-+=09}
-+out:
-+=09free(bounce);
-+=09free(workspace);
-+=09return ret;
- }
-=20
- u32 btrfs_decompress(u8 type, const char *c, u32 clen, char *d, u32 dlen)
---=20
-2.55.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH RFC] btrfs: implement a new compat RO feature,
+ data_io_size
+To: Sun YangKai <sunyangkai@fygo.io>, linux-btrfs@vger.kernel.org
+References: <f67b00bbe7b5fb4c59a45a6390c98add303a83c1.1782627906.git.wqu@suse.com>
+ <647fd7cc-f948-4260-b26e-122a61ca7a16@fygo.io>
+ <5b91fb7e-479d-4e6f-8d34-40eaf1d675d2@suse.com>
+ <ca3eeaeb-76d4-4a23-a019-d3a5f4ceb431@fygo.io>
+ <110adc02-4e4e-437d-867d-c8fd3a50aba9@suse.com>
+ <0758b840-f48e-4693-af9b-04793319382d@fygo.io>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <0758b840-f48e-4693-af9b-04793319382d@fygo.io>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
 
+
+在 2026/7/31 21:10, Sun YangKai 写道:
+> On 2026/7/22 18:03, Qu Wenruo wrote:
+>>
+>> Full stripe 16K, then the new RAID5F chunks will require power-of-2
+>> disks, and no more than 16K/4K disks.
+>>
+>> So no 4 disks RAID5F chunk in the first place.
+> 
+> I've got your idea and got the following 2 concerns:
+> 
+> 1. the device count is limited to 3 or 5 device for RAID5, and 4 or 6
+> devices for RAID6, losing the flexibility currently btrfs have;
+
+Why you think 16K is the only block size?
+
+You can go as large as 64K, which means 16 data devices which is more 
+than enough for common usages.
+
+In fact, I do not think you should have overly flex design, which is 
+contributing to the write-hole in the first place.
+
+> 
+> 2. On each device, we will send a lot of 4KiB or 8KiB io, which might be
+> not good for performance;
+
+It can always be solved usings blk plugs.
+
+> 
+> So I personally don't think this is a good way to fix the write hole issue.
+
+I do not think so.
+
+As I have already said, at least I know XFS is planning doing something 
+similar. Although not to solve write-hole.

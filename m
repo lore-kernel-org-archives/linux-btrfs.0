@@ -1,131 +1,74 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 288163F65FB
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 11:56:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 613EF3E1225
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 12:13:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785499020; cv=none; b=Os+PMoVQObRYXnk+YB+5dUtXrX3CIfu0k+zs/SmUU7pF1mBWjmOwXOE9fNMnB0JTYGiV3UrwV4qFVYdtG3pMoEDaExU9NNDI6ZK+AYAm21UcZZpJFa4PGf4DGg8jB39KyRvicunvdM/gTaYHP/PcBBColl9AsAoewjCDTBUVw7g=
+	t=1785500019; cv=none; b=LR8nIRtF5sqGh+CPtV9iop2erdDGZanXpu6qKGe5PetoVmJzqOLZykGZXfyjfxyUb+K6iSpr7nUx8qB093BDJYYy+RHm9yc9mVEwOjvTTeuiDUcJphteV5uW7PNNQ2IQG8rG1DdsC0zvx+8KF8rPOh3TRFE+yecEV5XleJg57/8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785499020; c=relaxed/simple;
-	bh=ApRNz3FzWVQMCuZ6XgLo6gydV9mGNaSyz1BAaUo1H4c=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=lq02/R2TqSGvnq14RPgKDsjFxI/TSo10x27OHA4IdvmtqaWJyUKb8iJUsorcUUgAgF7olgnLBF2O2rMA2geyuVpif0mdNgb572rYhRmYBDr30ovcnnniJCz9UrpSGP0uY7YJdiXS2Zqq8cT3kHTvepEzUoma5K5LVMZGboWsFTQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=U1GKHGCd; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1785500019; c=relaxed/simple;
+	bh=poAdgPSDKUQNgOIOvqxkj1X5zNb/vulpuzSTEtW1mIw=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=hXRShRxFD/rJIYtJ8pG9ICXSk41ZWiteEWLmQ7xEnxS4pcZaT0N5dSJJYaMMPj0gfiW2u3VO3Oi9+vrk99xK3D3VQ9Tx9aJyTk+ZK79yZfdJycuNqazL7/9BoWhR997NTygUSXLhshplg0gj3q/hku3bFQAXZ7+9TfJpiQjEHII=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org; spf=pass smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=jY9GwEhE; arc=none smtp.client-ip=82.195.75.108
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=debian.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="U1GKHGCd"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D40661F00ADE
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 11:56:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1785499018;
-	bh=+HnlsQJ3tnor6cbdGME0wtt4wsQOJDX+Bt0sMn99N6o=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=U1GKHGCdIAm5jhVBmju3GAymUq5bgF6/9ol2RtG5Dpu0mE4LD5G1zBkOdl6vcag9T
-	 UDLQjMte0RQ7BYTPIqhoDZGC2a4Mav0uvwEjMkCRGeifRVWIDZjyROlzVXhbd34Ly4
-	 534erzZZmYJOxnFD3gXB2Jd2eD5wC034Dopmg+T45rxIwwDU7b7NJHfOxF7bd0+FRe
-	 +Qlug9UEd3sN4x8aEYR0wp28t2NOhBgGzDXXGIe+Kd8c1lQvaGgs/tUeN8/girPPff
-	 WXpdhvUqlEvDMVZAVXGqngiYYSaUn0rYOexTj/tsSBneSQj3VSJ2gnb/zex/PM9xYt
-	 z5b/MH7F3XOpA==
-Received: by mail-vk1-f180.google.com with SMTP id 71dfb90a1353d-5bf8e1edc3aso512545e0c.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 04:56:58 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+RqGHOigfiVx1iPCX2Qsv6m2lNFXKYKxj52myv3AUCHD4umh2H7V1Bb8WtLIBh1xEVC56YWiD6cnhsM+Ww==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yymx2WyAdFlv/Ka8BX/fsie8LdV44WjT41JZha9Ko6XAfCTfyK0
-	W1srwPy0g/C6Xcq1ofgPQIdsZU+RXU3mSnC07Ed+TLPf29ZiQOtxHQY30GFxw5t7o8XIfKrmpPs
-	qqYbEbg3Nrdca3U03IRkAqr3Ozi3jmf0=
-X-Received: by 2002:a05:6122:2210:b0:55b:d85:5073 with SMTP id
- 71dfb90a1353d-5c37e36f12dmr582502e0c.4.1785499018011; Fri, 31 Jul 2026
- 04:56:58 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="jY9GwEhE"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:In-Reply-To:Content-Transfer-Encoding:
+	Content-Type:MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:
+	Reply-To:Content-ID:Content-Description;
+	bh=QdeG1gs5Qq7tDNg5WIuopujPZrFT43pDvUdOC5M7rbA=; b=jY9GwEhE9rsBtm6gTcdwHRL+q+
+	l2U3qnzqj1uDQjY0zKK2H1T4r4Zv4afTodoAqV9GhtNHgYX82WX8qABr6/w20apkhZUaXfGwP6CP+
+	AswVbpT09n2pKI4jTpHx3QGpfXB6FuOqej5fPmeIrCT2w1p3TJurXgjRiqGqyauszhWclZebi77hy
+	pdWilCxQFerGRtmeYq6cW18H5bphhFYSM9Jg6TsFOGx+ozNexfG62Jb6sLXrvPyFUzq8C51XG6Uju
+	+Vj9dENdQgOerlBmCQqqqBZ5v6wyPgY03/5FFeByD1wn9A3zgvdgUNZb88zD7lI62i+vP7kAbPT4z
+	3rS9BEJg==;
+Received: from authenticated-user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.96)
+	(envelope-from <leitao@debian.org>)
+	id 1wpm7F-00A08y-29;
+	Fri, 31 Jul 2026 12:13:29 +0000
+Date: Fri, 31 Jul 2026 05:13:25 -0700
+From: Breno Leitao <leitao@debian.org>
+To: Filipe Manana <fdmanana@kernel.org>
+Cc: Dmitry Antipov <dmantipov@yandex.ru>, David Sterba <dsterba@suse.com>, 
+	Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org, lvc-project@linuxtesting.org
+Subject: Re: [PATCH] btrfs: fix memory leak in btrfs_do_encoded_write()
+Message-ID: <amyRDM7N4GOHtskk@gmail.com>
+References: <20260727115352.12622-1-dmantipov@yandex.ru>
+ <CAL3q7H4ZQVwTMUEKyME=Hv0RupZEQ5-EaRm72jmg+Wc3aVgj1Q@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260731-btrfs_kmemleak-v1-1-9600453eef4e@debian.org>
-In-Reply-To: <20260731-btrfs_kmemleak-v1-1-9600453eef4e@debian.org>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Fri, 31 Jul 2026 12:56:20 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H5P6XngF7O8Pfp_WawazCeq26V+=G7OQnnNLsnD4EbZDA@mail.gmail.com>
-X-Gm-Features: AUfX_mzSfc25Hh6uCprxdI-uahMwrD1XOiroRhpR17tsLAfZ_sI0kS20vo37teg
-Message-ID: <CAL3q7H5P6XngF7O8Pfp_WawazCeq26V+=G7OQnnNLsnD4EbZDA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix extent changeset leak in encoded writes
-To: Breno Leitao <leitao@debian.org>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, Omar Sandoval <osandov@fb.com>, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, jlayton@kernel.org, 
-	boris@bur.io, kernel-team@meta.com, stable@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAL3q7H4ZQVwTMUEKyME=Hv0RupZEQ5-EaRm72jmg+Wc3aVgj1Q@mail.gmail.com>
+X-Debian-User: leitao
 
-On Fri, Jul 31, 2026 at 12:52=E2=80=AFPM Breno Leitao <leitao@debian.org> w=
-rote:
->
-> Investigating some machines with kmemleak, I am constantly seeing
-> the following memory leak that seems real.
->
->   kmemleak: unreferenced object 0xffff88869f7d01c0 (size 64):
->   kmemleak:   comm "btrfs", pid 1613416, jiffies 4316358595
->   kmemleak:   backtrace (crc ab59040a):
->   kmemleak:     __kmalloc_cache_noprof
->   kmemleak:     qgroup_reserve_data
->   kmemleak:     btrfs_qgroup_reserve_data
->   kmemleak:     btrfs_do_encoded_write
->   kmemleak:     btrfs_do_write_iter
->   kmemleak:     btrfs_ioctl_encoded_write
->   kmemleak:     btrfs_ioctl
->   kmemleak:   ... and 2 more object(s) with the same backtrace
->
-> and
->
->   kmemleak: unreferenced object 0xffff88830d94edc0 (size 64):
->   kmemleak:   comm "btrfs", pid 1613416, jiffies 4316358595
-> <snip>
->   kmemleak:   ... and 2 more object(s) with the same backtrace
->
-> Looking at the code, it seems we don't free data_reserved, but
-> we should (!?). I was able to come up with a xfstest test that exposes
-> the kmemleak above:
->
-> https://github.com/leitao/xfstest/commit/81c83a3fbb20b4ad695055ede7fcb73d=
-3ffa2e52
->
-> Free the changeset on the way out, as every other caller of
-> btrfs_qgroup_reserve_data() already does.
->
+On Mon, Jul 27, 2026 at 06:01:34PM +0100, Filipe Manana wrote:
+> On Mon, Jul 27, 2026 at 12:54 PM Dmitry Antipov <dmantipov@yandex.ru> wrote:
+> > Fix this by freeing an extent changeset before returning from
+> > 'btrfs_do_encoded_write()'.
+> >
+> > Signed-off-by: Dmitry Antipov <dmantipov@yandex.ru>
+> 
+> Looks good, thans. I added it to the github for-next branch with the
+> addition of:
+> 
 > Fixes: 7c0c7269f7b5 ("btrfs: add BTRFS_IOC_ENCODED_WRITE")
-> Cc: stable@vger.kernel.org
-> Signed-off-by: Breno Leitao <leitao@debian.org>
 
-This is already fixed here:
+That looks correct from my investigation as well.
 
-https://lore.kernel.org/linux-btrfs/20260727115352.12622-1-dmantipov@yandex=
-.ru/
+I've spent some time on this one, and this fix looks like correct. Feel
+free to add:
 
-Thanks.
-
-> ---
->  fs/btrfs/inode.c | 1 +
->  1 file changed, 1 insertion(+)
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 0fcbfc3939462..f8ad96256ff67 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -9965,6 +9965,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, =
-struct iov_iter *from,
->         if (cb)
->                 cleanup_compressed_bio(cb);
->  out:
-> +       extent_changeset_free(data_reserved);
->         if (ret >=3D 0)
->                 iocb->ki_pos +=3D encoded->len;
->         return ret;
->
-> ---
-> base-commit: 95d6a9ccef99117115e41e9adb271243bd5e985b
-> change-id: 20260731-btrfs_kmemleak-d44637bd2518
->
-> Best regards,
-> --
-> Breno Leitao <leitao@debian.org>
->
->
+Reviewed-by: Breno Leitao <leitao@debian.org>
+Tested-by: Breno Leitao <leitao@debian.org>

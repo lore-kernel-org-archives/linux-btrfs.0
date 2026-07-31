@@ -1,164 +1,214 @@
-Received: from mail-wr1-f53.google.com (mail-wr1-f53.google.com [209.85.221.53])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B482037F730
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 21:43:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ED5D930E0E5
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 21:48:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785534182; cv=none; b=F6t1PHMSoI44XBOCDZp0rYI+puVlBbBtyCobSZZMPE2cZFt1/mw3NjTVYeZx6DsqcklH3pKCbL7lr4uMQz2v+nzWkgXFvYo0+7oFvXCyTV13cUzth64QndKmDZClwpgkebmAKrIMYVqt/LmmZ00o4k+etPM5BlpqLaRC0MiGGxM=
+	t=1785534488; cv=none; b=pt1ABzg/2VlbeCWRdeU18F3wqpyzxKY7Jzc838r+OLfKCHH2c33lhK0piX5wa+fduWKQf4VDxmRmTv9SPYp9pQ0tVTCVNWUvX6/LHJxfFgVxzJNeeQ1gX9sJIUudY+wpLGKtXaEeS0yZ7un5z390X5qoFzRH3PMJpLnhYbLzpFk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785534182; c=relaxed/simple;
-	bh=jPYlAzxLWHXcdSjRDHMxg8typewUe+qx/NOKOLVn7fg=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:References:
-	 In-Reply-To:Content-Type; b=B4uxjSfqlkBeQEWPyJEgM3PH4K40MyUEvifZTVFDZqs/rRDoLJBGRrZcmkpOBVpXQ4ASW21/gx6xdCLFtEYJmKsESwIb16M937i2xFBAkFe4UUbaKZN9//vL9+fiUAulszMED4LRPy6jnYdY3A7A8S+9oJ6MAI8kLhjOwizgbVc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=SeMfOFo9; arc=none smtp.client-ip=209.85.221.53
+	s=arc-20240116; t=1785534488; c=relaxed/simple;
+	bh=KSXQJIKZ5NNst2ix6LMmrfZ3I3RflXv9i9SD/rG+b6o=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=MKRACtdczsjdfYigUhblcyzvlDth0kfTRFyU3mGhcweLLre516nbVXZA47GoFJ2B8Z9igy7qUhIwUoQtBmnmEeagHqkp7KCdG9APHw6EvB1edaasXFDVv2y1r3FWeJKwiMWu9RxcyHZAgQ7VXRGLCq5VQiDlxZEpsKAITdKw8jA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=EYljdsgw; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ivgVSixr; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="SeMfOFo9"
-Received: by mail-wr1-f53.google.com with SMTP id ffacd0b85a97d-47640541585so1151687f8f.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 14:43:00 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1785534179; x=1786138979; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:to:from:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=d98RldLH1ayA405FgCHv1XO/889KDmH4oW+87SPMZZw=;
-        b=SeMfOFo9TULTEAgwy/zLYcKue5s90Sr0xFAr23AUx+VDc6j8rMPz5V4dwHdaZW62Sd
-         sW9reIFEGu9Ayv3Ow75vn0MrzizU08MAK0t02wW3HEOf48JLvfdmHBR4EAp2Bk2G42yC
-         jrKw8gfjWvW4MZfF9xuZ9zCG86UVRlV7rRnLsgw0LL2qyC5HrUNbnWRY/OT0F92Ivfgg
-         GpbbCaj8LNhvFYvzZswbACglvRjE7llEIBwUtgxUV1O90mAXmU8AUJ0wno3/G6pTlmUQ
-         KL6LeBMsZlxoXxadmZFdCZcgY6tQrwGlS3fwJZeQn86tJ3ol7D0rT/ScV6HlpZAKw6cT
-         DhkQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785534179; x=1786138979;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:to:from:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=d98RldLH1ayA405FgCHv1XO/889KDmH4oW+87SPMZZw=;
-        b=Y4/vbV9/hmKMUV8ZtnRduKQMlIEiqBCAoJ1Hs/mNCV/aJjuGGOzQk+1saJt0IJLeMw
-         VCbrJbVyOvbY7m4JCM2CK6HHcVRhB8uQijSOj9Hv2Z5YN34KWAZ93dxTqTGg/vUfA+bL
-         4M0LkqEfPbRZE5tBPWX014eBXE6ddr/0D7nAGejHwXEFOWyN0zGSSZhSuFlCooJtKHvE
-         rUC4odAF0CDerI5qwyJQYeXnJbxVHKhfJizzA2xTtuaL3abqUr0fGM7MQUQDLQAt2TrK
-         3zCBIWalA0AaMpB51sWI6OOgERTP44WT8C6WWqjpJdKlYRcR5SlY/GVOuVWrg0DtcyjA
-         kJcw==
-X-Forwarded-Encrypted: i=1; AHgh+RpPobVRhuCuGjwElQwIPGMxEuIxyFy4Z6tEXnOM9pbaBVAnlnlWhBD8SReQHLCRqYtLZ2D71OxLz0DqJA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yx806cDhZbatZCLii6IqDv/lrB3465e5FQp/h5FjRFpq5jyPeWM
-	MSWrOOF9WGHwoFjSM9Bs2jzgTqEZ8Ab1M74H8i8UptmRvWFGZu5CiXkmfi65uzViicso0cxI82F
-	MxgGtrbw=
-X-Gm-Gg: AR+sD13Ks//Pv/Mk8gdGMJ7pQk0ncCXlvfw/1+yiamzjY/5+EtfWOuAlHpwWzOJVMa6
-	LpmsCcL3Bi6eu1Vsh3ZUYc52QfB75bAtwGHhHZJa9wD7ee11i6s8Ydl5qsRLHjpPyRnRINIZUDm
-	27ZQ9z3NTWDoZNy6TlsQgOOi16CdBgEbkuPDc9o/iyDuLn5w1AqOjiDWkzRGR8QrONRtnnHypDl
-	6c6nVKPbqoKAdqVKlsVwJKaUMk1J7ENgLUpvxZrZRUUfEoAhzdLyKRJaB4opk4sTpxCs8n96X9a
-	/sOnRuxGsgK0mYifbv5eAlGycqNLzJn8UjfbI4zsqKi/OzgjNH0ZM9j48ErSUH54Py1/hjknZKL
-	kbRDrDWxqaK/PTTP73OcGvu1Jvq+oYZbw8Yf8txe3X7c37UHk3V0kJMJs1l6G6JzPGM2UohtiA2
-	xssBbhq/Oc1RI9AbCj2Pp7bBZztsfDZI54mMjZIBu+Wiz003/BmPBikw==
-X-Received: by 2002:a05:6000:4202:b0:47f:6c6c:5301 with SMTP id ffacd0b85a97d-47fd731c93cmr2334554f8f.59.1785534178989;
-        Fri, 31 Jul 2026 14:42:58 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-13fab24ec10sm6468512c88.6.2026.07.31.14.42.56
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 31 Jul 2026 14:42:57 -0700 (PDT)
-Message-ID: <ff905d52-9c25-48fe-9950-61c52ce53f63@suse.com>
-Date: Sat, 1 Aug 2026 07:12:54 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="EYljdsgw";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ivgVSixr"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id E474B7E17F;
+	Fri, 31 Jul 2026 21:47:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1785534475; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=QF8GMKK/aqemwW333dK1AaELIB9NNkDCp4uJFkv1Npw=;
+	b=EYljdsgwPUX3CsBkqlqgZlJ/vc4zxOzrbLejvb2z/7YeyZV6SM3dOoWfGkrjz2W2bjAGgN
+	ioSMyPZPB1218faV7bGUQR0mij3/opskXTzqaSzcbsGZNrWeQk4+cEbVa4OQeZPLHSPvSV
+	AHeeACd/PQ/hAfLyJbuwVC6YAvVsN0A=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1785534470; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=QF8GMKK/aqemwW333dK1AaELIB9NNkDCp4uJFkv1Npw=;
+	b=ivgVSixrQKafqCYCKyhBvrOlRyT5VEpafHo3oB3rkTJkfYJWBp/oXgOidKpP8JgHJrO8Ok
+	6ZyHh9kGFgytYTx816f32CbyxqIgqzTxQ/sNhbv6DwPfc+Aq3u0l2/vThPvoW3LlHclaoz
+	N8IbWq9vAkF2Kj29ZEXqO9MvhBzz/jo=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4B872779B0;
+	Fri, 31 Jul 2026 21:47:48 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id XZlzOgQYbWreGwAAD6G6ig
+	(envelope-from <wqu@suse.com>); Fri, 31 Jul 2026 21:47:48 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-xfs@vger.kernel.org
+Subject: [PATCH v3] iomap: follow the alignment requirement for iomap_dio_hole_iter()
+Date: Sat,  1 Aug 2026 07:17:26 +0930
+Message-ID: <596ee3b5d0d23c42eefac651d24fae914fa16312.1785534430.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH RFC] btrfs: implement a new compat RO feature,
- data_io_size
-From: Qu Wenruo <wqu@suse.com>
-To: Sun YangKai <sunyangkai@fygo.io>, linux-btrfs@vger.kernel.org
-References: <f67b00bbe7b5fb4c59a45a6390c98add303a83c1.1782627906.git.wqu@suse.com>
- <647fd7cc-f948-4260-b26e-122a61ca7a16@fygo.io>
- <5b91fb7e-479d-4e6f-8d34-40eaf1d675d2@suse.com>
- <ca3eeaeb-76d4-4a23-a019-d3a5f4ceb431@fygo.io>
- <110adc02-4e4e-437d-867d-c8fd3a50aba9@suse.com>
- <0758b840-f48e-4693-af9b-04793319382d@fygo.io>
- <b741686a-d101-4529-b74a-4e1277caf84e@suse.com>
-Content-Language: en-US
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <b741686a-d101-4529-b74a-4e1277caf84e@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_THREE(0.00)[3];
+	FROM_EQ_ENVFROM(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	RCVD_TLS_ALL(0.00)[]
 
+[BUG]
+On the latest development branch, btrfs with 8K block size on 4K page
+sized systems will fail all test cases that run fsstress.
 
+One very short example would be:
 
-在 2026/8/1 06:55, Qu Wenruo 写道:
-> 
-> 
-> 在 2026/7/31 21:10, Sun YangKai 写道:
->> On 2026/7/22 18:03, Qu Wenruo wrote:
->>>
->>> Full stripe 16K, then the new RAID5F chunks will require power-of-2
->>> disks, and no more than 16K/4K disks.
->>>
->>> So no 4 disks RAID5F chunk in the first place.
->>
->> I've got your idea and got the following 2 concerns:
->>
->> 1. the device count is limited to 3 or 5 device for RAID5, and 4 or 6
->> devices for RAID6, losing the flexibility currently btrfs have;
-> 
-> Why you think 16K is the only block size?
-> 
-> You can go as large as 64K, which means 16 data devices which is more 
-> than enough for common usages.
+ # $fsstress -n 4 -d $mnt -s 1785675805 -v
+ 0/0: dwrite - no filename
+ 0/1: creat f0 x:0 0 0
+ 0/1: creat add id=0,parent=-1
+ 0/2: write dontcache f0[259 1 0 0 0 0] [816411,3620] 0
+ 0/3: dread - xfsctl(XFS_IOC_DIOINFO) f0[259 1 0 0 32 820031] return 25, fallback to stat()
+ 0/3: dread f0[259 1 0 0 32 820031] [483328,81920] 0
 
-Furthermore, even with 16K full stripe size, you can still go less than 
-(2+1) and (4+1), you can also go (1+1).
+Which triggered the following ASSERT():
 
-So I do not think there is any inflexibility.
+ assertion failed: IS_ALIGNED(state->start, blocksize) && IS_ALIGNED(state->end + 1, blocksize), in fs/btrfs/extent-io-tree.c:346 (unaligned extent state, blocksize=8192 start=487424 end=565247 state=0x0)
+ ------------[ cut here ]------------
+ kernel BUG at fs/btrfs/extent-io-tree.c:346!
+ Oops: invalid opcode: 0000 [#1] SMP
+ CPU: 4 UID: 0 PID: 648 Comm: fsstress Tainted: G            E       7.2.0-rc5-custom+ #431 PREEMPT(full)  7c507bd40d65e4d871e698b22d80f1306bbec543
+ Tainted: [E]=UNSIGNED_MODULE
+ Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 02/02/2022
+ RIP: 0010:validate_extent_state.part.0.isra.0.cold+0x24/0x26 [btrfs]
+ Call Trace:
+  <TASK>
+  insert_state+0x34/0x1a0 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  set_extent_bit+0x440/0x8d0 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  btrfs_lock_extent_bits+0x58/0x380 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  btrfs_dio_iomap_begin+0x319/0xb70 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  iomap_iter+0x1a2/0x370
+  __iomap_dio_rw+0x236/0x8d0
+  iomap_dio_rw+0x12/0x30
+  btrfs_direct_read+0x15f/0x290 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  btrfs_file_read_iter+0x42/0x90 [btrfs 6924944583e4bc91a7c5183a1e7908e745a9b0c8]
+  vfs_read+0x25e/0x380
+  ksys_read+0x73/0xe0
+  do_syscall_64+0xe1/0x790
+  entry_SYSCALL_64_after_hwframe+0x4b/0x53
+ RIP: 0033:0x7fc3f129318e
+  </TASK>
 
-If you think (3+1) or some other weird combination is a good idea, 
-please tell me what this weird combination can provide that 
-(1+1)/(2+1)/(4+1) can not do.
+[CAUSE]
+iomap_dio_hole_iter() is responsible for zeroing out the buffer for a
+hole, which calls iov_iter_zero() to zero the range.
 
-> 
-> In fact, I do not think you should have overly flex design, which is 
-> contributing to the write-hole in the first place.
-> 
->>
->> 2. On each device, we will send a lot of 4KiB or 8KiB io, which might be
->> not good for performance;
-> 
-> It can always be solved usings blk plugs.
-> 
->>
->> So I personally don't think this is a good way to fix the write hole 
->> issue.
-> 
-> I do not think so.
-> 
-> As I have already said, at least I know XFS is planning doing something 
-> similar. Although not to solve write-hole.
-> 
+However btrfs disables page fault during its __iomap_dio_rw() call, so
+iov_iter_zero() can fail at any page boundary.
+
+When the fs block size is larger than page size, iov_iter_zero() may
+only have zeroed one page, which is not aligned to the fs block size.
+
+Such one page long range is passed back to btrfs, which triggers the
+above ASSERT().
+
+[FIX]
+For iomap_dio_hole_iter() round down the copied length, and revert
+any excessive range that is beyond the aligned copied length.
+Also use @aligned_copied for the size increment and iter advancement.
+
+This should only affect btrfs, which is the only fs utilizing iomap dio
+with page fault disabled.
+
+Fixes: 001397f5ef49 ("iomap: add IOMAP_DIO_FSBLOCK_ALIGNED flag")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+v3:
+- Fix a NULL pointer dereference where @bdev can be NULL for holes
+
+v2:
+- Rebased to the latest vfs tree
+
+- Slightly rewords the reproducer
+  In fact no special reproducer needed, any test case running fsstress
+  can easily trigger it.
+
+  The example provided is just the shortest sequence I used to debug the
+  crash.
+---
+ fs/iomap/direct-io.c | 21 ++++++++++++++++-----
+ 1 file changed, 16 insertions(+), 5 deletions(-)
+
+diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
+index b3368d64e81b..10f0020de477 100644
+--- a/fs/iomap/direct-io.c
++++ b/fs/iomap/direct-io.c
+@@ -409,7 +409,10 @@ static inline unsigned int iomap_dio_alignment(struct inode *inode,
+ {
+ 	if (dio_flags & IOMAP_DIO_FSBLOCK_ALIGNED)
+ 		return i_blocksize(inode);
+-	return bdev_logical_block_size(bdev);
++	/* @bdev can be NULL for hole cases. */
++	if (bdev)
++		return bdev_logical_block_size(bdev);
++	return SECTOR_SIZE;
+ }
+ 
+ static int iomap_dio_bio_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+@@ -594,12 +597,20 @@ static int iomap_dio_bio_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+ 
+ static int iomap_dio_hole_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+ {
+-	loff_t length = iov_iter_zero(iomap_length(iter), dio->submit.iter);
++	loff_t copied = iov_iter_zero(iomap_length(iter), dio->submit.iter);
++	unsigned int bs = iomap_dio_alignment(iter->inode, iter->iomap.bdev,
++					      dio->flags);
++	loff_t aligned_copied = round_down(copied, bs);
+ 
+-	dio->size += length;
+-	if (!length)
++	/*
++	 * If fs block size is larger than page size, page fault failure
++	 * can cause @copied to be page aligned but not fs block aligned.
++	 */
++	iov_iter_revert(dio->submit.iter, copied - aligned_copied);
++	dio->size += aligned_copied;
++	if (!aligned_copied)
+ 		return -EFAULT;
+-	return iomap_iter_advance(iter, length);
++	return iomap_iter_advance(iter, aligned_copied);
+ }
+ 
+ static int iomap_dio_inline_iter(struct iomap_iter *iomi, struct iomap_dio *dio)
+-- 
+2.54.0
 

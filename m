@@ -1,41 +1,41 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6562432E6BC;
-	Fri, 31 Jul 2026 21:29:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8007931E85B
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 21:38:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785533392; cv=none; b=ZDnkWAY0xJIqtfHglUrZaQ7Yba9crm/+AAG1cttfkvDQhDX2NepbkK9EWSxQwNXyszDVJGBhLZRaPrI3C1RrEe44x1ElwSIl+fQyqEkr0sRI9eovKqryIfkJ718IVmn5mISRvJoNoGD5kmsqiyMvBJGFDIbAj6KIad/O/yBhEDE=
+	t=1785533919; cv=none; b=Qky3H1wr7g7/i34Lgp//rpy6AhHCybaBDCRT3PIzgO7WKtDgstgXn05i9KpuYkkUIyMud4wu40ncMxq9whMT1AEVQcSAb5A71UaiK4uBMQ688gxg7iJjeDI/Zcv2zlMs5KwFagoRlxDzwMv5Xo4TmsNZ7x5ISGcZ5AFFGoMuuhU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785533392; c=relaxed/simple;
-	bh=mw2X0JhM/ZvPxvciZTmnWy/8YDUT1/16MCVAztTMHiA=;
+	s=arc-20240116; t=1785533919; c=relaxed/simple;
+	bh=e4ZlHPIhWDTfCIIS3hTcJz3kAX1mK+YWN3tJ65jJaxE=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=q2bmtROLWVGWoGQDBDee1AKynLiSjyGvDn5Nqg/TpfMF/vV3DIGfK8w+8skG00EfPxhtkF8yhkKFWlEn9KjArXS6ydk8lESceJRnHxqfaJPdgm1MeYEoZ8c1jofffzx/5XC6qI6Xb2+SMpeE1OAzzxnDE0ZCQmZVUTtsyhQfOyU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=FIlaoQTq; arc=none smtp.client-ip=212.227.17.20
+	 In-Reply-To:Content-Type; b=gBCU+iTH1pz1FGgmfo6ITD2/qkhC6eAKYvl+Dolpx4H3IA3oLzcOxY6/kCx768ucBO9Ku6qQjOpErhQSj5bPpig58d6gBqTR3fR540En4lOl0UNPCVvhmeYj978N8sBbLIQXrIsKClZi5MiGq02p5TtTnKq50fsI1k4efis2qEQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=qSqc1ECz; arc=none smtp.client-ip=212.227.17.21
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="FIlaoQTq"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="qSqc1ECz"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1785533388; x=1786138188; i=quwenruo.btrfs@gmx.com;
-	bh=no9Y2aVtEAf0uZ7mul7hOghjXFJZpEk/v9jp9yYbLPY=;
+	s=s31663417; t=1785533914; x=1786138714; i=quwenruo.btrfs@gmx.com;
+	bh=46Ch5DCnW+k8cFa30L/SzITzlNDG0w5eAdN3tX3sPXU=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=FIlaoQTqDHdxEZDcjlHmS+RPAMnt1ZFTxve06d6N6cMeynNmRQC2vgk9BeHcNKVg
-	 7SXpjoz4xDXxl1BYrhWEYX5v4Cim5toBrJkg3hhD8gA8FlkObZVn1uLgQRtvEIOnV
-	 RM9+dNhpDIiAY/7k+G30SgUUIaCxWYdpNKf/c45zRK6KVYDdYJ8ispiSyXlyw5iPL
-	 0d5lWKme1Njda8vZhBVeG7DX+0GnpLaQje8NRl48FaTpwlqV4O9H/PN94FkeJmzCQ
-	 erf2+YsgoYBhwnmmIO226XYfdM2Tgp2P2gO4KDDo3V7qk7mLjyIzxCOL01qV2lrpe
-	 iyI5udbc/PZJ54HVRA==
+	b=qSqc1ECzt1AG9H6sKUCaeQMdrkNjh6HZu07jXMT9jxCm5pyWIO8D7zygw9htttdu
+	 10STf6NCsYWL4iil0yyz9X6YplguGf+QOoQCmQTt9vmZVB3FjEbWoyFq9Smao6tMw
+	 pifbmMLmyJgAnPkpZHzXJDMExHAm1lRheMW0S9GV9WbHVEquAfyVEOZHGXjB5vQD/
+	 AKWmPYvro9aPkqamGSGPgJsX8ii50obWFoT+cc5d8qpSqDJwon3qDQK6jTJTZwQkp
+	 oZQz97Uzg36vvzThcspO/mrgcXZg5ur5n8MdIAFoKBrM4bDNoGxme7HZD/N/X5Vz2
+	 Ruo4dnPcS6gVyhwaVA==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
 Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MxDou-1x9uWh1yjA-00w01a; Fri, 31
- Jul 2026 23:29:48 +0200
-Message-ID: <5dde7abf-97f2-45d5-b6ed-0422bee777b6@gmx.com>
-Date: Sat, 1 Aug 2026 06:59:42 +0930
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1N9Mtg-1x2Ed34AKK-01842X; Fri, 31
+ Jul 2026 23:38:34 +0200
+Message-ID: <3659c07e-7f73-460c-8391-e2b8508e2bd4@gmx.com>
+Date: Sat, 1 Aug 2026 07:08:29 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,13 +43,13 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [syzbot ci] Re: iomap: follow the alignment requirement for
- iomap_dio_hole_iter()
-To: syzbot ci <syzbot+ci731b4119b755b229@syzkaller.appspotmail.com>,
- linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-xfs@vger.kernel.org, wqu@suse.com
-Cc: syzbot@lists.linux.dev, syzkaller-bugs@googlegroups.com
-References: <6a6c89d9.77639fcc.3d4fd0.0026.GAE@google.com>
+Subject: Re: [PATCH] fs: btrfs: fix zstd decompression of sector-padded
+ extents
+To: Cole Munz <Munzzyy1@proton.me>, =?UTF-8?Q?Marek_Beh=C3=BAn?=
+ <kabel@kernel.org>, Tom Rini <trini@konsulko.com>
+Cc: Qu Wenruo <wqu@suse.com>, Simon Glass <sjg@chromium.org>,
+ u-boot@lists.denx.de, linux-btrfs@vger.kernel.org
+References: <9acf406b5e73fa83001e1951e883143e2afb8b2d.1785528314.git.Munzzyy1@proton.me>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -76,252 +76,250 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
  +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
  HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <6a6c89d9.77639fcc.3d4fd0.0026.GAE@google.com>
+In-Reply-To: <9acf406b5e73fa83001e1951e883143e2afb8b2d.1785528314.git.Munzzyy1@proton.me>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:7aXo6vp9hJB04aZ77IYgkUxJPZ7e5Opm36BY6faZAuNYGrDqDLs
- qA/RQCeG/z6BDx4R1bzQOkMIIwH5rffczlMqo7IfhcwX2XfZhpu8uX2Y6mgW1xavLTnpMLM
- UqrR0sMMfCA5/v9svHy9L7BiqqWgbGt7on/mru1n1fmo/aAw0m+Bq2fJ2WQ90fYUb3B+DwC
- 6ZNznHUu6N5FkOWL6t/3g==
+X-Provags-ID: V03:K1:8r7Ov7VJu7pmDKCj6NB90YqVGBKonikncpTHdvsJNh8G+jDykfZ
+ WQSk9ZktfQo1MPdnYmV9DKX47bftAqHBzCt0n9nhuDnZBvN4mwNIZBEkE3T4i0zqPMcodTD
+ XZDZ6OfxoYkTNXezFiGYPHRlWLTA8eZyrWgkEBJbC+HK4Ez+FgYk/aG0lNh07uct2jwmgs2
+ hlR9nNEtfH47J3Jb4XZdA==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:Z55y99Oo0FM=;mt6+ja1niDY1eq1vHVBg6akFMRq
- 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
- LY+ykHRjJ5XZuGAwf62YINmX9vcnMk7PuhDWo=
+UI-OutboundReport: notjunk:1;M01:P0:cIuFLUIVs9c=;eCXV7OYvAtvjq1hVDz8+Bl+ZtUC
+ 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
+ PtS+2yXr1Nq4Z18myCk736wH4VKpZgFHwdR28=
 
 
 
-=E5=9C=A8 2026/7/31 21:11, syzbot ci =E5=86=99=E9=81=93:
-> syzbot ci has tested the following series
->=20
-> [v1] iomap: follow the alignment requirement for iomap_dio_hole_iter()
-> https://lore.kernel.org/all/e69cc8a4a9c3f641b97872b50f04c397880077cd.178=
-5374485.git.wqu@suse.com
-> * [PATCH] iomap: follow the alignment requirement for iomap_dio_hole_ite=
-r()
->=20
-> and found the following issue:
-> general protection fault in __iomap_dio_rw
->=20
-> Full report is available here:
-> https://ci.syzbot.org/series/81e0fbae-4715-4d62-8e9e-bcd19e46b164
->=20
-> ***
->=20
-> general protection fault in __iomap_dio_rw
->=20
-> tree:      vfs
-> URL:       https://kernel.googlesource.com/pub/scm/linux/kernel/git/vfs/=
-vfs.git
-> base:      70c2cbf8600c7d3a622b77e31136b83d6ac7d86c
-> arch:      amd64
-> compiler:  Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~=
-exp1~20260613092250.77), Debian LLD 22.1.8
-> config:    https://ci.syzbot.org/builds/8d5fee65-291c-46a2-9f9a-d512f8fa=
-d82b/config
-> syz repro: https://ci.syzbot.org/findings/c9f79a18-3316-44ec-b805-b805b1=
-c49325/syz_repro
->=20
-> loop0: rw=3D2049, sector=3D53248, nr_sectors =3D 976 limit=3D40427
-> Oops: general protection fault, probably for non-canonical address 0xdff=
-ffc0000000003: 0000 [#1] SMP KASAN PTI
-> KASAN: null-ptr-deref in range [0x0000000000000018-0x000000000000001f]
-> CPU: 0 UID: 0 PID: 5842 Comm: syz.0.17 Not tainted syzkaller #0 PREEMPT(=
-full)
-> Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1=
-.16.2-1 04/01/2014
-> RIP: 0010:bdev_get_queue include/linux/blkdev.h:1058 [inline]
-> RIP: 0010:bdev_logical_block_size include/linux/blkdev.h:1403 [inline]
-> RIP: 0010:iomap_dio_alignment fs/iomap/direct-io.c:415 [inline]
-> RIP: 0010:iomap_dio_hole_iter fs/iomap/direct-io.c:595 [inline]
-> RIP: 0010:iomap_dio_iter fs/iomap/direct-io.c:643 [inline]
-> RIP: 0010:__iomap_dio_rw+0x1142/0x2130 fs/iomap/direct-io.c:815
-> Code: e2 5a ff 83 e3 08 75 5c e8 ab de 5a ff 48 8b 9c 24 68 01 00 00 48 =
-83 c3 18 48 89 d8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 =
-74 08 48 89 df e8 d0 75 c8 ff 48 8b 1b b8 58 01 00 00
-> RSP: 0018:ffffc90003fef560 EFLAGS: 00010206
-> RAX: 0000000000000003 RBX: 0000000000000018 RCX: dffffc0000000000
-> RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
-> RBP: ffffc90003fef860 R08: ffff8881148d8fff R09: 0000000000000000
-> R10: ffff8881148d8000 R11: ffffed102291b200 R12: 1ffff920007fdecc
-> R13: 0000000000000000 R14: ffff888166b45340 R15: 0000000000001000
-> FS:  00007fd77743d6c0(0000) GS:ffff88818d951000(0000) knlGS:000000000000=
-0000
-> CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> CR2: 0000200000078000 CR3: 000000011606a000 CR4: 00000000000006f0
-> Call Trace:
->   <TASK>
->   f2fs_dio_read_iter fs/f2fs/file.c:4887 [inline]
+=E5=9C=A8 2026/8/1 05:37, Cole Munz =E5=86=99=E9=81=93:
+> Btrfs pads compressed extents up to a sector boundary, so a file whose
+> size isn't sector-aligned still gets compressed as a frame whose
+> declared content size is the sector-rounded length, larger than the
+> extent's ram_bytes.
 
-This looks like f2fs is not populating iomap->bdev for holes, which is=20
-not unreasonable for a hole.
+The padding at plain text level is completely common, since btrfs like=20
+all other major fses are block device based, all IO including=20
+compression is done at fs block level, so is the compressed data, which=20
+still needs to be block aligned.
 
-So I need to update iomap_dio_alignment() for @bdev =3D=3D NULL cases.
+But your "larger than the extent's ram_bytes" is where I do not get.
 
-Thanks for the report,
+The ram_bytes described the decompressed size of a compressed extent,=20
+except inlined extents, the ram_bytes should always be fs block aligned.
+
+I didn't see how things can go "larger than the extent's ram_bytes".
+
+Can you provide more info about this, or better, provide the dump-tree=20
+output for the involved files?
+
+Thanks,
 Qu
 
-
->   f2fs_file_read_iter+0x60b/0x940 fs/f2fs/file.c:4950
->   copy_splice_read+0x5ff/0xaa0 fs/splice.c:362
->   do_splice_read fs/splice.c:979 [inline]
->   splice_direct_to_actor+0x4b6/0xcb0 fs/splice.c:1084
->   do_splice_direct_actor fs/splice.c:1202 [inline]
->   do_splice_direct+0x195/0x290 fs/splice.c:1228
->   do_sendfile+0x52e/0x7c0 fs/read_write.c:1371
->   __do_sys_sendfile64 fs/read_write.c:1432 [inline]
->   __se_sys_sendfile64+0x144/0x1a0 fs/read_write.c:1418
->   do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
->   do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94
->   entry_SYSCALL_64_after_hwframe+0x77/0x7f
-> RIP: 0033:0x7fd77659df99
-> Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 =
-f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 =
-ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-> RSP: 002b:00007fd77743d028 EFLAGS: 00000246 ORIG_RAX: 0000000000000028
-> RAX: ffffffffffffffda RBX: 00007fd776825fa0 RCX: 00007fd77659df99
-> RDX: 0000000000000000 RSI: 0000000000000004 RDI: 0000000000000004
-> RBP: 00007fd776634ec4 R08: 0000000000000000 R09: 0000000000000000
-> R10: 0000000800000009 R11: 0000000000000246 R12: 0000000000000000
-> R13: 00007fd776826038 R14: 00007fd776825fa0 R15: 00007fff168f4a18
->   </TASK>
-> Modules linked in:
-> ---[ end trace 0000000000000000 ]---
-> RIP: 0010:bdev_get_queue include/linux/blkdev.h:1058 [inline]
-> RIP: 0010:bdev_logical_block_size include/linux/blkdev.h:1403 [inline]
-> RIP: 0010:iomap_dio_alignment fs/iomap/direct-io.c:415 [inline]
-> RIP: 0010:iomap_dio_hole_iter fs/iomap/direct-io.c:595 [inline]
-> RIP: 0010:iomap_dio_iter fs/iomap/direct-io.c:643 [inline]
-> RIP: 0010:__iomap_dio_rw+0x1142/0x2130 fs/iomap/direct-io.c:815
-> Code: e2 5a ff 83 e3 08 75 5c e8 ab de 5a ff 48 8b 9c 24 68 01 00 00 48 =
-83 c3 18 48 89 d8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 =
-74 08 48 89 df e8 d0 75 c8 ff 48 8b 1b b8 58 01 00 00
-> RSP: 0018:ffffc90003fef560 EFLAGS: 00010206
-> RAX: 0000000000000003 RBX: 0000000000000018 RCX: dffffc0000000000
-> RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
-> RBP: ffffc90003fef860 R08: ffff8881148d8fff R09: 0000000000000000
-> R10: ffff8881148d8000 R11: ffffed102291b200 R12: 1ffff920007fdecc
-> R13: 0000000000000000 R14: ffff888166b45340 R15: 0000000000001000
-> FS:  00007fd77743d6c0(0000) GS:ffff8882a8f51000(0000) knlGS:000000000000=
-0000
-> CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> CR2: 00007faa8f64dc80 CR3: 000000011606a000 CR4: 00000000000006f0
-> ----------------
-> Code disassembly (best guess):
->     0:	e2 5a                	loop   0x5c
->     2:	ff 83 e3 08 75 5c    	incl   0x5c7508e3(%rbx)
->     8:	e8 ab de 5a ff       	call   0xff5adeb8
->     d:	48 8b 9c 24 68 01 00 	mov    0x168(%rsp),%rbx
->    14:	00
->    15:	48 83 c3 18          	add    $0x18,%rbx
->    19:	48 89 d8             	mov    %rbx,%rax
->    1c:	48 c1 e8 03          	shr    $0x3,%rax
->    20:	48 b9 00 00 00 00 00 	movabs $0xdffffc0000000000,%rcx
->    27:	fc ff df
-> * 2a:	80 3c 08 00          	cmpb   $0x0,(%rax,%rcx,1) <-- trapping instr=
-uction
->    2e:	74 08                	je     0x38
->    30:	48 89 df             	mov    %rbx,%rdi
->    33:	e8 d0 75 c8 ff       	call   0xffc87608
->    38:	48 8b 1b             	mov    (%rbx),%rbx
->    3b:	b8 58 01 00 00       	mov    $0x158,%eax
+> zstd_decompress_dctx()'s one-shot API requires the
+> destination buffer to cover the whole frame and fails with
+> ZSTD_error_dstSize_tooSmall otherwise, even though
+> btrfs_read_extent_reg() and btrfs_read_extent_inline() already
+> zero-fill any short tail. The file then reads back truncated or the
+> read fails outright, which is what breaks fdt apply on zstd-compressed
+> overlays.
 >=20
+> Decompress into a bounce buffer sized to the frame when the declared
+> content size exceeds ram_bytes, and copy out only what the caller
+> asked for. Also trim the input with zstd_find_frame_compressed_size()
+> first, since the on-disk extent may carry trailing sector padding
+> after the frame.
 >=20
-> ***
+> The fix lives here rather than in the shared lib/zstd/zstd.c wrapper
+> on purpose: for FIT images, ximg and ubifs an undersized destination
+> really does mean a corrupt input and should keep failing hard. Armbian
+> carries the same caller-side fix for this exact failure on RK3399 and
+> ODROID-N2 boards (armbian/build#9651, #10208), where it showed up as
+> "zstd_decompress: failed to decompress: 70".
 >=20
-> If these findings have caused you to resend the series or submit a
-> separate fix, please add the following tag to your commit message:
->    Tested-by: syzbot@syzkaller.appspotmail.com
->=20
+> Fixes: 918adf8e0733 ("btrfs: Use U-Boot API for decompression")
+> Signed-off-by: Cole Munz <Munzzyy1@proton.me>
 > ---
-> This report is generated by a bot. It may contain errors.
-> syzbot ci engineers can be reached at syzkaller@googlegroups.com.
+>   fs/btrfs/compression.c | 76 +++++++++++++++++++++++++++++++++++++++---
+>   1 file changed, 71 insertions(+), 5 deletions(-)
 >=20
-> To test a patch for this bug, please reply with `#syz test`
-> (should be on a separate line).
->=20
-> The patch should be attached to the email.
-> Note: arguments like custom git repos and branches are not supported.
->=20
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index c69524d38ecc..017e61242a68 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -6,7 +6,7 @@
+>    */
+>  =20
+>   #include "btrfs.h"
+> -#include <abuf.h>
+> +#include <limits.h>
+>   #include <log.h>
+>   #include <malloc.h>
+>   #include <linux/lzo.h>
+> @@ -137,12 +137,78 @@ static u32 decompress_zlib(const u8 *_cbuf, u32 cl=
+en, u8 *dbuf, u32 dlen)
+>  =20
+>   static u32 decompress_zstd(const u8 *cbuf, u32 clen, u8 *dbuf, u32 dle=
+n)
+>   {
+> -	struct abuf in, out;
+> +	zstd_dctx *ctx;
+> +	zstd_frame_header fh;
+> +	size_t wsize, len, dst_capacity =3D dlen;
+> +	void *workspace;
+> +	u8 *dst =3D dbuf, *bounce =3D NULL;
+> +	u32 ret;
+> +
+> +	wsize =3D zstd_dctx_workspace_bound();
+> +	workspace =3D malloc(wsize);
+> +	if (!workspace)
+> +		return -1;
+> +
+> +	ctx =3D zstd_init_dctx(workspace, wsize);
+> +	if (!ctx) {
+> +		ret =3D -1;
+> +		goto out;
+> +	}
+>  =20
+> -	abuf_init_set(&in, (u8 *)cbuf, clen);
+> -	abuf_init_set(&out, dbuf, dlen);
+> +	/*
+> +	 * Compressed extents are padded up to a sector boundary, so clen may
+> +	 * include trailing junk after the actual zstd frame.
+> +	 */
+> +	len =3D zstd_find_frame_compressed_size(cbuf, clen);
+> +	if (zstd_is_error(len)) {
+> +		ret =3D -1;
+> +		goto out;
+> +	}
+>  =20
+> -	return zstd_decompress(&in, &out);
+> +	/*
+> +	 * Btrfs compresses whole sectors, so a file whose size is not a
+> +	 * multiple of the sector size still yields a frame whose content
+> +	 * size is the sector-rounded length, which can be larger than dlen
+> +	 * (ram_bytes from the extent item). zstd_decompress_dctx() requires
+> +	 * its output buffer to cover the whole frame and would otherwise
+> +	 * fail with ZSTD_error_dstSize_tooSmall, even though the extra bytes
+> +	 * are just padding the caller is going to discard: both
+> +	 * btrfs_read_extent_reg() and btrfs_read_extent_inline() already
+> +	 * zero-fill any tail beyond what we return here. Decompress into a
+> +	 * bounce buffer sized to the frame when that happens.
+> +	 */
+> +	if (!zstd_get_frame_header(&fh, cbuf, len) &&
+> +	    fh.frameContentSize !=3D ZSTD_CONTENTSIZE_UNKNOWN &&
+> +	    fh.frameContentSize > dlen) {
+> +		if (fh.frameContentSize > SIZE_MAX) {
+> +			ret =3D -1;
+> +			goto out;
+> +		}
+> +		bounce =3D malloc(fh.frameContentSize);
+> +		if (!bounce) {
+> +			ret =3D -1;
+> +			goto out;
+> +		}
+> +		dst =3D bounce;
+> +		dst_capacity =3D fh.frameContentSize;
+> +	}
+> +
+> +	len =3D zstd_decompress_dctx(ctx, dst, dst_capacity, cbuf, len);
+> +	if (zstd_is_error(len)) {
+> +		ret =3D -1;
+> +		goto out;
+> +	}
+> +
+> +	if (bounce) {
+> +		memcpy(dbuf, bounce, dlen);
+> +		ret =3D dlen;
+> +	} else {
+> +		ret =3D len;
+> +	}
+> +out:
+> +	free(bounce);
+> +	free(workspace);
+> +	return ret;
+>   }
+>  =20
+>   u32 btrfs_decompress(u8 type, const char *c, u32 clen, char *d, u32 dl=
+en)
 

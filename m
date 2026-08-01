@@ -1,135 +1,148 @@
-Received: from mail-oi1-f207.google.com (mail-oi1-f207.google.com [209.85.167.207])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mail-10630.protonmail.ch (mail-10630.protonmail.ch [79.135.106.30])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F007A79CD
-	for <linux-btrfs@vger.kernel.org>; Sat,  1 Aug 2026 00:25:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.207
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3949A395ACB
+	for <linux-btrfs@vger.kernel.org>; Sat,  1 Aug 2026 00:55:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=79.135.106.30
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785543941; cv=none; b=UnPN8fmQo5Um+JUnaktq9bPecYXtmHN20OQIT2ORxOwDM7Ou2TmIZTu9ubDlIATYUquFXv5y3uqq18q5YVwhZt1AeHQ73Cbzn7hTQbqYPH3GLEnwMiKz2oyUtKmjQ2Np8ZlG0uAYbap43Y6j4Tin9/Of9uE/YaPmVeQRndBLJ68=
+	t=1785545733; cv=none; b=nhhlEV5EFVQpnRH1AYOOo+gsbai7X1k4au3f9VFFypOas/3LCQDhCvg3oiJuTuTr2n3y71vXIjUFRSnWtPv1dewVDagk1BnPxk5hU+znYatgVSEYLCS4hBykJXMf1vS18rztVNeYnZetW1Eib1D9d3NrY4XmFyJ0qqsYcb+tZ0k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785543941; c=relaxed/simple;
-	bh=teS2M+Gr3NrnWJBamGACrt+abN/YxOlxendnBGbV/Mg=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=sWQpLgF9bsUVzJEqmuCBdY8Ul9/7uF62ttfD1EXonKfVe8npLxY/cPLM4bVXcAo2hID1ddiikghZOFA4o8WpLc0xpzhdTDNMAn1M4WN3ZaIjSgLHg4wIATTdLguk6pkfIeVkC7HVvuhz1HhKJAvPMapAOV4zeWU/D4VOWTWhZY8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.207
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oi1-f207.google.com with SMTP id 5614622812f47-4a41f46d629so2061253b6e.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2026 17:25:39 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785543939; x=1786148739;
-        h=content-type:to:from:subject:message-id:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=o3OPq0jqvY17fQ39pGJqE4mxVrdLjtr7qic51IJSppc=;
-        b=rYYgIRewsApCFDZoYSX2Pt1hbtUYJn+DeGMfksLpaRQ/t4WaZSB8u0cqyi7WozhBf8
-         dTjvazhSoHnYGjzL8EJEJ9B9bNYwMfhRDqHSvgC898QYJlHZwEmYQqHopQDViiyUc3pp
-         V2lu65IxNu9z9amngC2uVgYONNBgpntFD0UmBGUjkd9LJLpcmrsNE0SnSWziIWwRo7bU
-         u5Fu5mGhoHJVWYR1AxCempNSpBh5TUy0kgrMg0+0OmXJhtnIa2TgMQrue+Z3/ifnSK+o
-         d1+SjFlphrQXfEyfGIKM7Dx11P7exUsrQCa7aSsp/HBxRlONopXz+fZImUdg3dAgFtMC
-         XC2g==
-X-Forwarded-Encrypted: i=1; AHgh+Rpbt2hnfHgpIpzo4t4DSQOFm7NzY36OleefjRIT0Qx8E46g56FtQ9sgp2itvSJ+L81BQsRIVQViSIPY2w==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw6wGUsSLtNgnkwGsCEAUbJxDINGO+vTDtkcKjZ1RzwdOc8UTsX
-	4mrwOVgR66lLFICHuLYQuMbSSBdJpaP2rEybhtzt2YeZT308O4kJcRz5ZsMnjLh1Poi59CkiM6P
-	mcIyVO3XypzfG5a2GKUD2evvm38ZtMdWYOGQTmgBYmBfpEnvNy6UImNEczZ8=
+	s=arc-20240116; t=1785545733; c=relaxed/simple;
+	bh=QMISE5Wq7QFTdK1Rjs6MUHXWIPyshzgLqE9JvjnhBjI=;
+	h=Date:To:From:Cc:Subject:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=jzCLn0hGxSYmJtlLurshZgH69kFPf+Koy0eJkSPX5mWhZs3OsP4XEMmpmvO9Ve8EON5m1nwTQAzx30xKGxFhCRVNKYne1v74neeEYAMp1T2jnpEZxAl99KeEPZ2mDEhi2eHZUesOWOEKwyjG4YZ1kvkIUf0BtFFJkIJyYhyylBQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=proton.me; spf=pass smtp.mailfrom=proton.me; dkim=pass (2048-bit key) header.d=proton.me header.i=@proton.me header.b=AcTjr2za; arc=none smtp.client-ip=79.135.106.30
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=proton.me
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=proton.me
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=proton.me header.i=@proton.me header.b="AcTjr2za"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=proton.me;
+	s=protonmail; t=1785545723; x=1785804923;
+	bh=pkHMFKmNJnJUddebBPqPaq+HQK9yaG/nhCavMmztCvs=;
+	h=Date:To:From:Cc:Subject:Message-ID:In-Reply-To:References:
+	 Feedback-ID:From:To:Cc:Date:Subject:Reply-To:Feedback-ID:
+	 Message-ID:BIMI-Selector;
+	b=AcTjr2za/pchPvTnAnocdjJkpO2ec7IRsPaMG64qwRCWFvz8+II4C0FBrcX4Wjhd6
+	 WnvjOkFveWnszm23wbmsB5RLxFo5SEuoOHQC51PgZWrfTRuee6oir+a/u1p/L+KLJI
+	 k90bLRzwSYWOzpl7a+dBv+V6LFJTOWdFDdq/361BHKMGDdWnj36S4kx8VSw8DDcHYZ
+	 gUtF9CD6pJhE4DaqMZVJOHfs/nFyIlCL2yC4eGqsOrsG2Je8YxXZ75vCor893UYZfS
+	 G+F7FbQADF2cpLQ7Djp3vjrL8lrKd04mF3Ep5KMiFZ4cbGKhTxXvY3d7TpPRMakcCy
+	 dDr9U+frJnpAA==
+Date: Sat, 01 Aug 2026 00:55:20 +0000
+To: kabel@kernel.org, trini@konsulko.com
+From: Cole Munz <Munzzyy1@proton.me>
+Cc: quwenruo.btrfs@gmx.com, sjg@chromium.org, u-boot@lists.denx.de, linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] fs: btrfs: fix zstd decompression of compressed inline extents
+Message-ID: <f6ac2bbdb9b559041cb0c82efccf89ea7262cb43.1785545440.git.Munzzyy1@proton.me>
+In-Reply-To: <9acf406b5e73fa83001e1951e883143e2afb8b2d.1785528314.git.Munzzyy1@proton.me>
+References: <9acf406b5e73fa83001e1951e883143e2afb8b2d.1785528314.git.Munzzyy1@proton.me>
+Feedback-ID: 209578162:user:proton
+X-Pm-Message-ID: 35b1dcb1d958db46f6d16eb7b27bedfbc33e538f
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6808:2225:b0:4ab:230c:5faa with SMTP id
- 5614622812f47-4af5e3e5522mr3478488b6e.18.1785543939027; Fri, 31 Jul 2026
- 17:25:39 -0700 (PDT)
-Date: Fri, 31 Jul 2026 17:25:39 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a6d3d03.2d659fcc.1d46f5.01aa.GAE@google.com>
-Subject: [syzbot] [btrfs?] kernel BUG in compress_file_range
-From: syzbot <syzbot+db04810ad3d91a0a4697@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Hello,
+The kernel compresses an inline extent as a whole block:
+run_delalloc_inline() calls btrfs_compress_bio(inode, 0, blocksize, ...),
+so the data is zero-filled past EOF and the resulting zstd frame declares
+a content size of one block. The extent item records the unaligned file
+size though - __cow_file_range_inline() passes i_size down to
+insert_inline_extent(), which stores it as ram_bytes.
 
-syzbot found the following issue on:
+btrfs_read_extent_inline() sizes its decompression buffer from ram_bytes,
+so for a 1900-byte file the destination is 1900 bytes while the frame
+decodes to 4096. Since commit 918adf8e0733 ("btrfs: Use U-Boot API for
+decompression") btrfs decompresses through the common U-Boot helper,
+which uses the one-shot zstd_decompress_dctx(). That API requires the
+destination to cover the whole frame and fails with dstSize_tooSmall,
+error 70, otherwise. The streaming ZSTD_decompressStream() path it
+replaced stopped once the output buffer was full, so it never hit this.
 
-HEAD commit:    f5098b6bae76 Linux 7.2-rc5
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=17829632580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=b7079b368dcec295
-dashboard link: https://syzkaller.appspot.com/bug?extid=db04810ad3d91a0a4697
-compiler:       gcc (Debian 14.2.0-19) 14.2.0, GNU ld (GNU Binutils for Debian) 2.44
+The kernel side does not notice because fs/btrfs/zstd.c streams into its
+own buffer and copies out at most destlen.
 
-Unfortunately, I don't have any reproducer for this issue yet.
+Allocate a full block for the decompression buffer and copy only
+ram_bytes back to the caller. An inline extent never spans more than one
+block, which bounds the allocation.
 
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/b18067cdf26c/disk-f5098b6b.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/2b364c33a0f2/vmlinux-f5098b6b.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/2dfce6f90a4d/bzImage-f5098b6b.xz
+This shows up on RK3399 and ODROID-N2 as "zstd_decompress: failed to
+decompress: 70" (armbian/build#9651, #10208), where it breaks fdt apply
+on zstd-compressed overlays. Images built with mkfs.btrfs --rootdir
+--compress zstd do not reproduce it, since btrfs-progs writes a frame
+whose content size already equals ram_bytes. Only files written at
+runtime through the kernel trip it.
 
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+db04810ad3d91a0a4697@syzkaller.appspotmail.com
-
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/inode.c:977!
-Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
-CPU: 1 UID: 0 PID: 752 Comm: kworker/u8:6 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/16/2026
-Workqueue: btrfs-delalloc btrfs_work_helper
-RIP: 0010:compress_file_range+0x1e27/0x2430 fs/btrfs/inode.c:977
-Code: af 0c 01 e8 db 39 8a fd e9 55 fd ff ff e8 51 fc ae fd 48 c7 c6 20 1d 28 8c 48 89 df e8 a2 ab ff fd 90 0f 0b e8 3a fc ae fd 90 <0f> 0b e8 32 fc ae fd 48 8b 54 24 78 48 b8 00 00 00 00 00 fc ff df
-RSP: 0018:ffffc9000454fac0 EFLAGS: 00010293
-RAX: 0000000000000000 RBX: 0000000000020000 RCX: ffffffff845b3929
-RDX: ffff8880272e9f00 RSI: ffffffff845b42e6 RDI: ffff8880272e9f00
-RBP: 00000000fffffff4 R08: 0000000000000005 R09: 0000000000000000
-R10: 00000000fffffff4 R11: 0000000000000000 R12: 000000000001ffff
-R13: 0000000000000fea R14: ffff888068d78000 R15: 0000000000000016
-FS:  0000000000000000(0000) GS:ffff888123ede000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 000000110c3ea6fb CR3: 000000001cbb3000 CR4: 0000000000350ef0
-Call Trace:
- <TASK>
- btrfs_work_helper+0x214/0xc70 fs/btrfs/async-thread.c:312
- process_one_work+0xa23/0x1940 kernel/workqueue.c:3322
- process_scheduled_works kernel/workqueue.c:3405 [inline]
- worker_thread+0x5ef/0xe50 kernel/workqueue.c:3486
- kthread+0x370/0x450 kernel/kthread.c:436
- ret_from_fork+0x72b/0xd50 arch/x86/kernel/process.c:158
- ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
- </TASK>
-Modules linked in:
----[ end trace 0000000000000000 ]---
-RIP: 0010:compress_file_range+0x1e27/0x2430 fs/btrfs/inode.c:977
-Code: af 0c 01 e8 db 39 8a fd e9 55 fd ff ff e8 51 fc ae fd 48 c7 c6 20 1d 28 8c 48 89 df e8 a2 ab ff fd 90 0f 0b e8 3a fc ae fd 90 <0f> 0b e8 32 fc ae fd 48 8b 54 24 78 48 b8 00 00 00 00 00 fc ff df
-RSP: 0018:ffffc9000454fac0 EFLAGS: 00010293
-RAX: 0000000000000000 RBX: 0000000000020000 RCX: ffffffff845b3929
-RDX: ffff8880272e9f00 RSI: ffffffff845b42e6 RDI: ffff8880272e9f00
-RBP: 00000000fffffff4 R08: 0000000000000005 R09: 0000000000000000
-R10: 00000000fffffff4 R11: 0000000000000000 R12: 000000000001ffff
-R13: 0000000000000fea R14: ffff888068d78000 R15: 0000000000000016
-FS:  0000000000000000(0000) GS:ffff888123dde000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f16bf558fb0 CR3: 000000007c548000 CR4: 0000000000350ef0
-
-
+Fixes: 918adf8e0733 ("btrfs: Use U-Boot API for decompression")
+Signed-off-by: Cole Munz <Munzzyy1@proton.me>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+v2:
+ - Move the fix into btrfs_read_extent_inline() and size the decompression
+   buffer to a full block, as Qu suggested. decompress_zstd() is left alone=
+.
+ - Rewrite the commit message. The failing case is compressed inline
+   extents, not sector-padded regular extents: Qu pointed out that
+   ram_bytes is always block aligned for regular extents.
+ - Drop the zstd_find_frame_compressed_size() input trimming from v1. The
+   inline item length is already exact, so it was doing nothing.
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+v1: https://lore.kernel.org/u-boot/9acf406b5e73fa83001e1951e883143e2afb8b2d=
+.1785528314.git.Munzzyy1@proton.me/
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
+ fs/btrfs/inode.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
 
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3998ffc2c819..53f1059e1ef8 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -362,9 +362,11 @@ int btrfs_read_extent_inline(struct btrfs_path *path,
+ =09=09=09     struct btrfs_file_extent_item *fi, char *dest)
+ {
+ =09struct extent_buffer *leaf =3D path->nodes[0];
++=09struct btrfs_fs_info *fs_info =3D leaf->fs_info;
+ =09int slot =3D path->slots[0];
+ =09char *cbuf =3D NULL;
+ =09char *dbuf =3D NULL;
++=09u32 dbuf_size;
+ =09u32 csize;
+ =09u32 dsize;
+ =09int ret;
+@@ -380,8 +382,17 @@ int btrfs_read_extent_inline(struct btrfs_path *path,
+=20
+ =09/* Compressed extent, prepare the compressed and data buffer */
+ =09dsize =3D btrfs_file_extent_ram_bytes(leaf, fi);
++=09/*
++=09 * The kernel compresses an inline extent as a whole block, zero-fillin=
+g
++=09 * the tail past EOF, so the stream can decompress to more than
++=09 * ram_bytes.  zstd's one-shot API rejects a destination that cannot
++=09 * hold the entire frame, so give the decompressor a full block and cop=
+y
++=09 * only ram_bytes back out.  An inline extent never spans more than one
++=09 * block, which bounds the allocation.
++=09 */
++=09dbuf_size =3D max_t(u32, dsize, fs_info->sectorsize);
+ =09cbuf =3D malloc(csize);
+-=09dbuf =3D malloc(dsize);
++=09dbuf =3D malloc(dbuf_size);
+ =09if (!cbuf || !dbuf) {
+ =09=09ret =3D -ENOMEM;
+ =09=09goto out;
+@@ -389,7 +400,7 @@ int btrfs_read_extent_inline(struct btrfs_path *path,
+ =09read_extent_buffer(leaf, cbuf, btrfs_file_extent_inline_start(fi),
+ =09=09=09   csize);
+ =09ret =3D btrfs_decompress(btrfs_file_extent_compression(leaf, fi),
+-=09=09=09       cbuf, csize, dbuf, dsize);
++=09=09=09       cbuf, csize, dbuf, dbuf_size);
+ =09if (ret < 0) {
+ =09=09ret =3D -EIO;
+ =09=09goto out;
+--=20
+2.55.0
 
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
 
-If you want to undo deduplication, reply with:
-#syz undup

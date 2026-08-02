@@ -1,233 +1,175 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oi1-f197.google.com (mail-oi1-f197.google.com [209.85.167.197])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DB1791F2380;
-	Sun,  2 Aug 2026 10:02:10 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12F2E3093D3
+	for <linux-btrfs@vger.kernel.org>; Sun,  2 Aug 2026 19:14:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.197
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785664932; cv=none; b=siUc1ikIFPlCOfUQGkoBS4Ki0uyPovsKVXmB0k7f/O9ryyo96QfN3MZfd2VV8jAE3fSx/y1PqEgJzo5ZaYLN6vkqj4GYU/rPGiy5LNHCCJfd+WozIKZAO2sMhDHpFUitv6K/ckh1ADnbW0c9pF66rLEaVoMO1tP8T2L4kP71e0M=
+	t=1785698051; cv=none; b=uHVJ6askHTuLLFbTiKCWZ6qRShut1T0HASUSUMHdBLnImOXo9LLIBpTkgR0NcXCFcRPx0dH6Shefssku1Avc8nsVR4MJpR7F+MhR41DD7W1R/iq2GmFH+uOV/w+aeTw09QBUe3DTbZ2K6Cy/rzRE30qZk4+R1+K1Y7jOg5LyddE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785664932; c=relaxed/simple;
-	bh=1r6wMMqs0wLC5I3DwPhqdui1QguOAUmSRsw+MiOQ0UI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Jgx3aYjtMpw0TLcmXALO0bVzUBomuHGwvRrKgtAOZ9Zth01NGOhfq3QJvwSKOszhaKmSQOgvlZ26e/93aVG7Ww4Ht2KXlT0M+BtcCACuPba6d17cR8zB5RT2fOHcz63NTZdivj8woTNn7ebz4COEjTXrOsxpvU0qjaCNOe5Yluc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=d341c/vg; arc=none smtp.client-ip=100.103.45.18
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="d341c/vg"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 87B7F1F000E9;
-	Sun,  2 Aug 2026 10:02:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1785664930;
-	bh=6xLY+/gzaI2p32FqUFncbXzwcspctY8No06jdHaWzDI=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=d341c/vgPwzbIzSQpiCIAUK2utsZSJMZa+V6rmuPVXCCifRDsYYj8nwpbiN91vRgR
-	 8xIQLHkzCUaG4l7K+U0PF/9ZL+qLc+VyQnR6U0YzWV8Z9lmeB27pp759nr+lgiKAca
-	 9BbG+cLXJJnx+YlI1hZqtsFOrmZ9pf4mgzH2CRKz8LzvMtVRDfBu6HWicUZFUSp1VL
-	 uHzndyWSNAQOJMz8pdfkMYdPi9608C6aVr7AnN6b7WmCBdJZ09/Rq/095PdFwluD7m
-	 T4o79AYXlAuSyi1mrawcVa1pe5ew8jif3tDnvBcQ7/q1VtGhqUiaNjySKBSVKw0pMO
-	 U3XpkXaLHNtyQ==
-Date: Sun, 2 Aug 2026 18:02:02 +0800
-From: Zorro Lang <zlang@kernel.org>
-To: Sun YangKai <sunk67188@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, 
-	sunyangkai@fygo.io, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH v3] btrfs: test POSIX ACL changes for RO btrfs property
-Message-ID: <am8JhAnr7H1-Ovw9@zlang-mailbox>
-Mail-Followup-To: Sun YangKai <sunk67188@gmail.com>, 
-	linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, sunyangkai@fygo.io, 
-	Filipe Manana <fdmanana@suse.com>
-References: <20260709082500.17907-2-sunk67188@gmail.com>
- <20260722075347.26639-1-sunk67188@gmail.com>
+	s=arc-20240116; t=1785698051; c=relaxed/simple;
+	bh=PNkPQ00M4cug6cnINhKqePsxzOVYzVtwcuGLIK2Vg14=;
+	h=MIME-Version:Date:In-Reply-To:Message-ID:Subject:From:To:Cc:
+	 Content-Type; b=l1uY7z6Ff3yfNAao9dqyvcH6sfsxgsd6ldnVnvTGswuSPJPylFSGZJpyGlAlmQfGPUGs7HZMyUzOitqTrQABzhn4JzZpWlyv96/1HInTaWwqQyjoAxMyA75Qcwd9wmUB0FjsknQBTIp2cHPF5/hgQ9vBYQul8+tgQ3yjBVwJpuY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.197
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oi1-f197.google.com with SMTP id 5614622812f47-4ad778bacbeso3985216b6e.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Aug 2026 12:14:09 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1785698049; x=1786302849;
+        h=content-type:cc:to:from:subject:message-id:in-reply-to:date
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=TeXFxPT1F5icdtJbwoponQFYgcfJt3/FmWXGCthR0WY=;
+        b=B4m0Z/42SJRRpgtNkdL+Ro7XuNsdrOFkXJb4Ag/eUJE5LEHbZcLKraZk6wyciFfhYh
+         dwxyKT9AHVBqKMIXVPyAyU7w1kajX3lWHDwp7boPtrWOXc9iUpJVJSbs25OWd35lp1kU
+         wArVHzJzphNmBVdr8skH+cuBPtjWcyhq/eEisddy8ztpA9U6aiXyc9dYQ4nXI/mc1YoK
+         fDUl63gmLebogXIim+7TOjpOvpZX0PWml7DLFWfy8WTowFM+YmHVNsEbHlieBlL0f8ih
+         NBOuYp63Ai8OTePyw/IS17x66hYRP7JgF34KD4gDshqHGU2Z0/dUkUMm6EK27Dgr8tz7
+         BulA==
+X-Gm-Message-State: AOJu0YxWrn3LB+afQ3o+3h+BdSJDDjt/vExfBqU1XlW2jdD6NYm6xJ/y
+	YP3TBwYhSWrSClcwFzW0nCbU8RbEzll0pz9drGslkMnjY/V52kO19aQaFzK/uAXlf98HYQ3VbGJ
+	XgmJbA5nzAf4GSBeI0mh0u3ZbSxgy9rUmPwdLtCDdH4bA4pp90REI+/oYdG4=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260722075347.26639-1-sunk67188@gmail.com>
+X-Received: by 2002:a05:6808:1a1c:b0:4af:5d69:1cb4 with SMTP id
+ 5614622812f47-4af5e25091dmr11802434b6e.15.1785698049130; Sun, 02 Aug 2026
+ 12:14:09 -0700 (PDT)
+Date: Sun, 02 Aug 2026 12:14:09 -0700
+In-Reply-To: <9209e7204fc6b7b60c28f196750084be8a2faba8.1785489008.git.wqu@suse.com>
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6a6f9701.1aa927e4.17d4bf.001c.GAE@google.com>
+Subject: [syzbot ci] Re: iomap: follow the alignment requirement for iomap_dio_hole_iter()
+From: syzbot ci <syzbot+cif06ef19c5d178998@syzkaller.appspotmail.com>
+To: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-xfs@vger.kernel.org, wqu@suse.com
+Cc: syzbot@lists.linux.dev, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 
-On Wed, Jul 22, 2026 at 03:52:47PM +0800, Sun YangKai wrote:
-> From: Sun YangKai <sunyangkai@fygo.io>
-> 
-> Test creation, modification and deletion of POSIX ACLs on a btrfs
-> filesystem that has the read-only property set to true.
-> 
-> This exercises a bug fixed by the kernel patch with subject:
-> "btrfs: check if root is readonly when setting posix acl"
-> 
-> Signed-off-by: Sun YangKai <sunyangkai@fygo.io>
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
-> ---
-> Changes since v2:
-> 
-> - updated commit message
-> - proper format for fixed_by_kernel_commit
-> - lower case variable name
-> - handle mkfs failure
-> 
-> Suggested by Filipe Manana
-> ---
+syzbot ci has tested the following series
 
-This version is good to me, if no more review points form btrfs list, I'll
-merge it.
+[v2] iomap: follow the alignment requirement for iomap_dio_hole_iter()
+https://lore.kernel.org/all/9209e7204fc6b7b60c28f196750084be8a2faba8.1785489008.git.wqu@suse.com
+* [PATCH v2] iomap: follow the alignment requirement for iomap_dio_hole_iter()
 
-Reviewed-by: Zorro Lang <zlang@kernel.org>
+and found the following issue:
+general protection fault in iomap_dio_hole_iter
 
->  tests/btrfs/353     | 95 +++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/353.out | 39 +++++++++++++++++++
->  2 files changed, 134 insertions(+)
->  create mode 100755 tests/btrfs/353
->  create mode 100644 tests/btrfs/353.out
-> 
-> diff --git a/tests/btrfs/353 b/tests/btrfs/353
-> new file mode 100755
-> index 00000000..63ba4681
-> --- /dev/null
-> +++ b/tests/btrfs/353
-> @@ -0,0 +1,95 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (C) 2026 Fygo OS. All Rights Reserved.
-> +#
-> +# FS QA Test No. 353
-> +#
-> +# Test that POSIX ACLs cannot be changed once a btrfs subvolume has the
-> +# read-only property set.
-> +#
-> +# Setting or removing a POSIX ACL goes through the ->set_acl inode
-> +# operation, which is a different code path from the generic ->setxattr
-> +# one covered by btrfs/275.  It used to be allowed on a read-only
-> +# subvolume and thus bypassed the RO protection.  Such modifications must
-> +# fail with EROFS, just like any other xattr.
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick acl attr
-> +
-> +. ./common/filter
-> +. ./common/attr
-> +
-> +_fixed_by_kernel_commit xxxxxxxxxxxx \
-> +	"btrfs: check if root is readonly when setting posix acl"
-> +
-> +_require_acls
-> +_require_btrfs_command "property"
-> +_require_scratch
-> +
-> +_scratch_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
-> +_scratch_mount
-> +
-> +filename=$SCRATCH_MNT/foo
-> +
-> +set_acl()
-> +{
-> +	local perm=$1
-> +
-> +	# Use -n so setfacl does not recalculate the mask, keeping the
-> +	# golden output deterministic regardless of the named user's
-> +	# permissions.
-> +	setfacl -n -m u:$acl2:$perm,m::rwx $filename 2>&1 | _filter_scratch
-> +}
-> +
-> +get_acl()
-> +{
-> +	getfacl --absolute-names -n $filename | _filter_scratch | _getfacl_filter_id
-> +}
-> +
-> +del_acl()
-> +{
-> +	setfacl -b $filename 2>&1 | _filter_scratch
-> +}
-> +
-> +_acl_setup_ids
-> +
-> +# Create a test file.
-> +echo "hello world" > $filename
-> +
-> +# Set an initial ACL while the subvolume is writable.
-> +set_acl rwx
-> +
-> +# Attempt to change the ACL once the subvolume is read-only.  This must
-> +# fail with EROFS.
-> +$BTRFS_UTIL_PROG property set $SCRATCH_MNT ro true
-> +$BTRFS_UTIL_PROG property get $SCRATCH_MNT ro
-> +
-> +set_acl r--
-> +
-> +# The ACL must not have changed.
-> +get_acl
-> +
-> +# Attempt to remove the ACL from the read-only subvolume.  This must
-> +# fail with EROFS as well.
-> +del_acl
-> +
-> +# The ACL must still be present.
-> +get_acl
-> +
-> +# Make the subvolume writable again.
-> +$BTRFS_UTIL_PROG property set $SCRATCH_MNT ro false
-> +$BTRFS_UTIL_PROG property get $SCRATCH_MNT ro
-> +
-> +# Now changing the ACL must succeed.
-> +set_acl r--
-> +
-> +get_acl
-> +
-> +# And removing it must succeed too.
-> +del_acl
-> +
-> +# Check the ACL is really gone.
-> +get_acl
-> +
-> +status=0
-> +exit
-> diff --git a/tests/btrfs/353.out b/tests/btrfs/353.out
-> new file mode 100644
-> index 00000000..66f4a0e5
-> --- /dev/null
-> +++ b/tests/btrfs/353.out
-> @@ -0,0 +1,39 @@
-> +QA output created by 353
-> +ro=true
-> +setfacl: SCRATCH_MNT/foo: Read-only file system
-> +# file: SCRATCH_MNT/foo
-> +# owner: 0
-> +# group: 0
-> +user::rw-
-> +user:id2:rwx
-> +group::r--
-> +mask::rwx
-> +other::r--
-> +
-> +setfacl: SCRATCH_MNT/foo: Read-only file system
-> +# file: SCRATCH_MNT/foo
-> +# owner: 0
-> +# group: 0
-> +user::rw-
-> +user:id2:rwx
-> +group::r--
-> +mask::rwx
-> +other::r--
-> +
-> +ro=false
-> +# file: SCRATCH_MNT/foo
-> +# owner: 0
-> +# group: 0
-> +user::rw-
-> +user:id2:r--
-> +group::r--
-> +mask::rwx
-> +other::r--
-> +
-> +# file: SCRATCH_MNT/foo
-> +# owner: 0
-> +# group: 0
-> +user::rw-
-> +group::r--
-> +other::r--
-> +
-> -- 
-> 2.54.0
-> 
-> 
+Full report is available here:
+https://ci.syzbot.org/series/9d98023b-4249-4697-ab21-ea7cf83805c8
+
+***
+
+general protection fault in iomap_dio_hole_iter
+
+tree:      vfs
+URL:       https://kernel.googlesource.com/pub/scm/linux/kernel/git/vfs/vfs.git
+base:      fa20f6cb6063f7f1a6a56693d4a8713f19058d23
+arch:      amd64
+compiler:  Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
+config:    https://ci.syzbot.org/builds/a53b891c-9ac3-484a-a77e-61c04d35157f/config
+syz repro: https://ci.syzbot.org/findings/8ed3b1e3-7e4e-4c2c-b0f6-934cfea6e536/syz_repro
+
+syz.0.17: attempt to access beyond end of device
+loop0: rw=2049, sector=53248, nr_sectors = 976 limit=40427
+Oops: general protection fault, probably for non-canonical address 0xdffffc0000000003: 0000 [#1] SMP KASAN PTI
+KASAN: null-ptr-deref in range [0x0000000000000018-0x000000000000001f]
+CPU: 1 UID: 0 PID: 6257 Comm: syz.0.17 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014
+RIP: 0010:bdev_get_queue include/linux/blkdev.h:1056 [inline]
+RIP: 0010:bdev_logical_block_size include/linux/blkdev.h:1401 [inline]
+RIP: 0010:iomap_dio_alignment fs/iomap/direct-io.c:412 [inline]
+RIP: 0010:iomap_dio_hole_iter+0x1bf/0x390 fs/iomap/direct-io.c:598
+Code: fc ff df 80 3c 08 00 74 08 4c 89 ef e8 aa d7 c7 ff 49 8b 6d 00 48 83 c5 18 48 89 e8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 74 08 48 89 ef e8 83 d7 c7 ff 41 bd 58 01 00 00 4c 03
+RSP: 0018:ffffc90003eff500 EFLAGS: 00010206
+RAX: 0000000000000003 RBX: ffffc90003eff680 RCX: dffffc0000000000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000018 R08: ffff88816dc38fff R09: 0000000000000000
+R10: ffff88816dc38000 R11: ffffed102db87200 R12: 0000000000001000
+R13: ffffc90003eff6c8 R14: ffff88816b839c00 R15: 1ffff1102d707388
+FS:  00007ffb1678d6c0(0000) GS:ffff8882a8f4b000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000563ae8dcd0a8 CR3: 0000000110cf4000 CR4: 00000000000006f0
+Call Trace:
+ <TASK>
+ iomap_dio_iter fs/iomap/direct-io.c:-1 [inline]
+ __iomap_dio_rw+0xe56/0x1ac0 fs/iomap/direct-io.c:823
+ f2fs_dio_read_iter fs/f2fs/file.c:4887 [inline]
+ f2fs_file_read_iter+0x60b/0x940 fs/f2fs/file.c:4950
+ copy_splice_read+0x5ff/0xaa0 fs/splice.c:362
+ do_splice_read fs/splice.c:979 [inline]
+ splice_direct_to_actor+0x4b6/0xcb0 fs/splice.c:1084
+ do_splice_direct_actor fs/splice.c:1202 [inline]
+ do_splice_direct+0x195/0x290 fs/splice.c:1228
+ do_sendfile+0x52e/0x7c0 fs/read_write.c:1371
+ __do_sys_sendfile64 fs/read_write.c:1432 [inline]
+ __se_sys_sendfile64+0x144/0x1a0 fs/read_write.c:1418
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7ffb1599e019
+Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007ffb1678d028 EFLAGS: 00000246 ORIG_RAX: 0000000000000028
+RAX: ffffffffffffffda RBX: 00007ffb15c25fa0 RCX: 00007ffb1599e019
+RDX: 0000000000000000 RSI: 0000000000000004 RDI: 0000000000000004
+RBP: 00007ffb15a3500c R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000800000009 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007ffb15c26038 R14: 00007ffb15c25fa0 R15: 00007ffc15b4ab58
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:bdev_get_queue include/linux/blkdev.h:1056 [inline]
+RIP: 0010:bdev_logical_block_size include/linux/blkdev.h:1401 [inline]
+RIP: 0010:iomap_dio_alignment fs/iomap/direct-io.c:412 [inline]
+RIP: 0010:iomap_dio_hole_iter+0x1bf/0x390 fs/iomap/direct-io.c:598
+Code: fc ff df 80 3c 08 00 74 08 4c 89 ef e8 aa d7 c7 ff 49 8b 6d 00 48 83 c5 18 48 89 e8 48 c1 e8 03 48 b9 00 00 00 00 00 fc ff df <80> 3c 08 00 74 08 48 89 ef e8 83 d7 c7 ff 41 bd 58 01 00 00 4c 03
+RSP: 0018:ffffc90003eff500 EFLAGS: 00010206
+RAX: 0000000000000003 RBX: ffffc90003eff680 RCX: dffffc0000000000
+RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 0000000000000018 R08: ffff88816dc38fff R09: 0000000000000000
+R10: ffff88816dc38000 R11: ffffed102db87200 R12: 0000000000001000
+R13: ffffc90003eff6c8 R14: ffff88816b839c00 R15: 1ffff1102d707388
+FS:  00007ffb1678d6c0(0000) GS:ffff8882a8f4b000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000558d8b221b40 CR3: 0000000110cf4000 CR4: 00000000000006f0
+----------------
+Code disassembly (best guess), 2 bytes skipped:
+   0:	df 80 3c 08 00 74    	filds  0x7400083c(%rax)
+   6:	08 4c 89 ef          	or     %cl,-0x11(%rcx,%rcx,4)
+   a:	e8 aa d7 c7 ff       	call   0xffc7d7b9
+   f:	49 8b 6d 00          	mov    0x0(%r13),%rbp
+  13:	48 83 c5 18          	add    $0x18,%rbp
+  17:	48 89 e8             	mov    %rbp,%rax
+  1a:	48 c1 e8 03          	shr    $0x3,%rax
+  1e:	48 b9 00 00 00 00 00 	movabs $0xdffffc0000000000,%rcx
+  25:	fc ff df
+* 28:	80 3c 08 00          	cmpb   $0x0,(%rax,%rcx,1) <-- trapping instruction
+  2c:	74 08                	je     0x36
+  2e:	48 89 ef             	mov    %rbp,%rdi
+  31:	e8 83 d7 c7 ff       	call   0xffc7d7b9
+  36:	41 bd 58 01 00 00    	mov    $0x158,%r13d
+  3c:	4c                   	rex.WR
+  3d:	03                   	.byte 0x3
+
+
+***
+
+If these findings have caused you to resend the series or submit a
+separate fix, please add the following tag to your commit message:
+  Tested-by: syzbot@syzkaller.appspotmail.com
+
+---
+This report is generated by a bot. It may contain errors.
+syzbot ci engineers can be reached at syzkaller@googlegroups.com.
+
+To test a patch for this bug, please reply with `#syz test`
+(should be on a separate line).
+
+The patch should be attached to the email.
+Note: arguments like custom git repos and branches are not supported.

@@ -1,503 +1,76 @@
-Received: from mail-pl1-f175.google.com (mail-pl1-f175.google.com [209.85.214.175])
+Received: from mail-oi1-f198.google.com (mail-oi1-f198.google.com [209.85.167.198])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B03473368A3
-	for <linux-btrfs@vger.kernel.org>; Sat,  1 Aug 2026 15:52:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.175
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 59DB11F3B85
+	for <linux-btrfs@vger.kernel.org>; Sun,  2 Aug 2026 04:24:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.198
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785599554; cv=none; b=IGjwTGWcscx0o4Ef9Vxm95o/dCXKzzJuPexTy3SJ1y33bEJzHuy2y9+hRWOoZygCB3PMcfvRpsn0Mh7FIYobyEnzodCj7bfX5xIVS0aRt1te3WA/7Jqf2IV+FF3fjgX/mMUnGfA4rZaU2DEJoV5PBqjaBWFA/V9bzXdy6+IqWto=
+	t=1785644644; cv=none; b=N15w4gVHq8+5730kJtzW1L0CR9iLLDev/EMcPTWZsykDeY/7Q2Lje0BnZ1p8/94zzxPlpEVyGx8b5a18rZYXA6hWI3iSqTW6u6PViqPJKDCH0q0v1fYYpw820LjdNYqt/4ZAcdS6jRsDvHs3xh6lPqMBU6iPpME4eFM72aeeqO8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785599554; c=relaxed/simple;
-	bh=xQSghJzaUYqDPB1ggORLjLa8iy+vN2lmRYgeYFBaKdE=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=c2UJIeXs5gomJqHQw3ZpEoVmusl/a+mCYCxxRx0phNrch7b3+z5nwkxTXCMk3G9WFRF4ynq9T7IL6RALr/EbIPScaI0ZkwUsc8OlXccvpVr16XI1Xmwf6yplHcz+nTXWKdIqig8ppQqU3nrrTx39Y/w93hh9s4Dm/3BdWNdCMBo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=G8iTKkgT; arc=none smtp.client-ip=209.85.214.175
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="G8iTKkgT"
-Received: by mail-pl1-f175.google.com with SMTP id d9443c01a7336-2cacb8416a1so20117025ad.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Aug 2026 08:52:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1785599551; x=1786204351; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=xsD2wsQNoOd5TnS/nE5N1rbXimmf2sYMA/5eIflw47E=;
-        b=G8iTKkgT8TIOThO29caVbsRYEAJmzY1HjfZgbrNb9vDFlq5XV/jo6toSmh6e3CDasa
-         juKI/CTqz3Zlirc4eje9DflMGLV4JrnDRIyQbEWqa/rFLOznV87WWYHQEl4sz3j2YMBP
-         NvawH46IZWOM0d1+kxmAFnM9fnhMVJcmoSD6jWQtnGYqd8SMvWC3UG6CCilaQZ30smIG
-         /Fn2jdv3rGMb/I0b25pe9I2XWMkO8yV8p0InyHJXFXlX8L1ZGlDQudjdEwmkMA928ePM
-         GAteNWoSlKiyC7qbc8OY0Wof4Vz+CGE5pfQ1YMAjW4xzQnHNHdwD+7erROpvsKmnK7sx
-         KV6g==
+	s=arc-20240116; t=1785644644; c=relaxed/simple;
+	bh=KOrt880ok+b2ybm+gIaenK028UTcVFXcsjYmgBwOjEk=;
+	h=MIME-Version:Date:In-Reply-To:Message-ID:Subject:From:To:
+	 Content-Type; b=G8SNtweVpeck4lY5H14cyWdT708vf8KC59Mu5Vklyex9IzYiII9NPDIRTgIWhyenwZmDxA1xYWk2ejQTKyEO65Zh0jnvX1CmAmJ+LNVJHXoCTUEh3Pz94F05XZeS15Xopotvg0/2y0xMTjXyloWzdTStVlr/ADaKmD7mw/q6lrM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.198
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oi1-f198.google.com with SMTP id 5614622812f47-4a7de733fa9so2982953b6e.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 01 Aug 2026 21:24:03 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785599551; x=1786204351;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=xsD2wsQNoOd5TnS/nE5N1rbXimmf2sYMA/5eIflw47E=;
-        b=M3ss8l2L3PZ4AkjHTQ6DL7KKokyJ6ovB79RjQu/yR10P1Np87O9zZq/YVNUf8VUdzD
-         lPlPmXAFR5JZhA8oJhxJOBDL12f2hLprIfLGRuONGqY8ynyjNA3XrkiC7s4NxvjwnpVp
-         zHA870PnPO1ugG2EEaOaV2UNdoF9GDEQib63MsA7dCLXGJqpF/XAFYjEal+yVmHrMqFQ
-         DZ2x56kIURFXsDX9QQZO+KL+VOhcDYFdJy5cfmFGDuIMjqHs/4shPrhMbl13ZNe9bcVN
-         y19Oi7CwHPWA+HfL0HKIhrTnfnvT+usuTW/ZueDgTc4GX9Wb/UA7JAANQxH7KtwDvmQz
-         sfTA==
-X-Forwarded-Encrypted: i=1; AHgh+Rr120xEueSy4lWOp1hJCgmXLAKlRt4dAMKkBi1uAk63INU60Jl+LTDVYSYyyG4K2Qp1xZzGhwauGfzJTg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw10G9/m1+r/xoPgjY2rl8eHI0n0TDaJFpxkds8wCFHCTa/0psl
-	4v6vcBDB03jMEyLiTkhsSsfG0cQw65wZN6aHrAZKxuUYG1PEPTwd7IKg
-X-Gm-Gg: AR+sD11c4eBC8FUKpjCrtmP2RoEMvCtozWMNDWnHQPTWfex1AYsK1bliUJd++YOFiVk
-	4nfjAEaQCb15FcwHsgVJVmD2haEVfR+h9jYHTndTG3CQbMImmZf7gsFo64hKKmhANwWW39eyxQi
-	KuvUzPHWVpgdML7gQ/kFtUNCRpZCoKeNuorMC3Z652CdXaf225gnPc9qsYGQYTaN/wMAOJQcTVO
-	xZmKwBafHT3ebwBi1WsPsCaIbL1s/pifHIFBMnal+9OVEtEKZSsTaqzETh8akn7o/sJyRs586q9
-	o3QLTxvlDd8mAbfvLK5IJ4168aHl9AdH1pi4DPKtYuo3+gnWS+e4jDURUPbXPJ2/P1+F11kEbll
-	3Nf7pLydncT8Jot7O+rinwAg92oO1+IT2oxPkrGIQ29GUz5hoaA8VdfbCSwYM4/FUCV4lBf4tQM
-	MtrycAezfbVv60YT9OS6WHPYmYIXHYeyB5zSsGzV1mDFz++ocqdJHKIPzODwjKz7LenJuaoOQLG
-	5Lh2FROV602kDtX+mz/UhLnyQg8/hNbV46duYhwSMtKW38=
-X-Received: by 2002:a17:902:cecf:b0:2c9:97a8:aff4 with SMTP id d9443c01a7336-2d0523f7772mr36487975ad.45.1785599550923;
-        Sat, 01 Aug 2026 08:52:30 -0700 (PDT)
-Received: from 127.net ([2620:10d:c092:600::1:61d0])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2d04b12202bsm18287605ad.66.2026.08.01.08.52.10
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 01 Aug 2026 08:52:30 -0700 (PDT)
-From: Pavel Begunkov <asml.silence@gmail.com>
-To: Jens Axboe <axboe@kernel.dk>,
-	Keith Busch <kbusch@kernel.org>,
-	Christoph Hellwig <hch@lst.de>,
-	Sagi Grimberg <sagi@grimberg.me>,
-	linux-block@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-nvme@lists.infradead.org,
-	linux-fsdevel@vger.kernel.org,
-	io-uring@vger.kernel.org,
-	linux-media@vger.kernel.org,
-	dri-devel@lists.freedesktop.org,
-	linaro-mm-sig@lists.linaro.org
-Cc: asml.silence@gmail.com,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Christian Brauner <brauner@kernel.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Sumit Semwal <sumit.semwal@linaro.org>,
-	=?UTF-8?q?Christian=20K=C3=B6nig?= <christian.koenig@amd.com>,
-	Nitesh Shetty <nj.shetty@samsung.com>,
-	Kanchan Joshi <joshi.k@samsung.com>,
-	Anuj Gupta <anuj20.g@samsung.com>,
-	Tushar Gohad <tushar.gohad@intel.com>,
-	William Power <william.power@intel.com>,
-	Phil Cayton <phil.cayton@intel.com>,
-	Jason Gunthorpe <jgg@nvidia.com>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Alasdair Kergon <agk@redhat.com>,
-	Mike Snitzer <snitzer@kernel.org>,
-	Mikulas Patocka <mpatocka@redhat.com>,
-	Benjamin Marzinski <bmarzins@redhat.com>,
-	Vishal Verma <vishal.l.verma@intel.com>,
-	David Sterba <dsterba@suse.com>,
-	Ilya Dryomov <idryomov@gmail.com>,
-	dm-devel@lists.linux.dev,
-	nvdimm@lists.linux.dev,
-	linux-btrfs@vger.kernel.org,
-	ceph-devel@vger.kernel.org
-Subject: [PATCH v5 16/16] io_uring/rsrc: add dmabuf backed registered buffers
-Date: Sat,  1 Aug 2026 16:46:28 +0100
-Message-ID: <830cd62ae8958351a9fcd6d663dea3430921f95b.1785596451.git.asml.silence@gmail.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1785596451.git.asml.silence@gmail.com>
-References: <cover.1785596451.git.asml.silence@gmail.com>
+        d=1e100.net; s=20251104; t=1785644642; x=1786249442;
+        h=content-type:to:from:subject:message-id:in-reply-to:date
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=zbFq40ZlW5pYZSpdbNJCeHp3/iKAKdIa3b1hd8I0LLg=;
+        b=Uu1tkQdD9yiJX07UcrwuRRip1Cd0GJ3J03GJAum8TISPZ7UsnSTRDtiUYSdoZrQZOo
+         PckHZtY5W7ee5RurXoKsejjlQGorNIt6lROhGH7AJbAVCIjLjyyUJJfMBPiwoo3NQ/lx
+         FKRe/O/mNkc7RA82AZ5/cHkBiMtYWAQFuVY8dw6KuSj7jNikJ86H0Z76Lw+6MBkDZJBZ
+         kDsvl4rssrwaWXVgfDQAh7C1hdS/6CFttQ45OBxqal8Fu12sIzp6U33alWRpxz1oz0RT
+         +jQTPAlZ2pc0tGx9HI+hEVpLqqqxKSFquSfDgXv2DxsWD1Q1ThgyqP3+F/crC2idKVpW
+         gOVA==
+X-Forwarded-Encrypted: i=1; AHgh+RrFvuC5IOldyCAeRtaHHir9gSdgxp3EV/iaQAM5ZJHNfSDcYtgbui732Q0RArcoXGCLwXGw1peWWCl/cQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0Ywyt6rKYOm4+Aov1b/1KA4PsEemoxIU8vA875Z1z+8t3DddM+qQ
+	8PhlssSQo/ve0UuJvwbkr6bmkPhgwnzhDpQyxLSdOuKfENY87uA7TmGhNWl5oa98EpNCGHhSNB5
+	fWoroHThbl0Dw7Zo/aNdIN/nntdLelM0G3rRHCW+6YHwq9Al8w1cb1hDVKa4=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-Received: by 2002:a05:6808:3a12:b0:4a3:fefb:899b with SMTP id
+ 5614622812f47-4af5e06ad5fmr10394073b6e.7.1785644642289; Sat, 01 Aug 2026
+ 21:24:02 -0700 (PDT)
+Date: Sat, 01 Aug 2026 21:24:02 -0700
+In-Reply-To: <000000000000e93ea70620fe777a@google.com>
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6a6ec662.6ce73036.24301b.001b.GAE@google.com>
+Subject: Re: [syzbot] [btrfs?] WARNING in __btrfs_free_extent (3)
+From: syzbot <syzbot+480676efc0c3a76b5214@syzkaller.appspotmail.com>
+To: boris@bur.io, clm@fb.com, dsterba@suse.com, josef@toxicpanda.com, 
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, nogikh@google.com, 
+	quwenruo.btrfs@gmx.com, syzkaller-bugs@googlegroups.com, wqu@suse.com
+Content-Type: text/plain; charset="UTF-8"
 
-Implement dmabuf backed registered buffers. To register them, the user
-should specify IO_REGBUF_TYPE_DMABUF for the regitration and pass the
-desired dmabuf fd and a file for which it should be registered.
+syzbot suspects this issue was fixed by commit:
 
-From there, it can be used with io_uring read/write requests
-IORING_OP_{READ,WRITE}_FIXED) as normal. The requests should be issued
-against the file specified during registration, and otherwise they'll be
-failed. The user should also be prepared to handle spurious -EAGAIN by
-reissuing the request.
+commit 1e92637722ae4bd417f7a37e8d1485dc23b93935
+Author: Boris Burkov <boris@bur.io>
+Date:   Mon May 11 20:07:11 2026 +0000
 
-Internally, dmabuf registered buffers is an optin feature for io_uring
-request opcodes and they should pass a special flag on import to use it.
+    btrfs: check for subvolume before deleting squota qgroup
 
-Suggested-by: David Wei <dw@davidwei.uk>
-Suggested-by: Vishal Verma <vishal1.verma@intel.com>
-Suggested-by: Tushar Gohad <tushar.gohad@intel.com>
-Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>
----
- include/linux/io_uring_types.h |   5 +
- include/uapi/linux/io_uring.h  |   6 +-
- io_uring/io_uring.c            |   3 +-
- io_uring/rsrc.c                | 167 ++++++++++++++++++++++++++++++++-
- io_uring/rsrc.h                |  18 ++++
- io_uring/rw.c                  |   6 +-
- 6 files changed, 197 insertions(+), 8 deletions(-)
+bisection log:  https://syzkaller.appspot.com/x/bisect.txt?x=17e815b9580000
+start commit:   f5459048c38a Merge tag 'i2c-for-7.0-final' of git://git.ke..
+git tree:       upstream
+kernel config:  https://syzkaller.appspot.com/x/.config?x=45cb3c58fd963c27
+dashboard link: https://syzkaller.appspot.com/bug?extid=480676efc0c3a76b5214
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=10c65106580000
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=15261036580000
 
-diff --git a/include/linux/io_uring_types.h b/include/linux/io_uring_types.h
-index a2c623a67a25..f90586d353c1 100644
---- a/include/linux/io_uring_types.h
-+++ b/include/linux/io_uring_types.h
-@@ -10,6 +10,7 @@
- 
- struct iou_loop_params;
- struct io_uring_bpf_ops;
-+struct dma_buf_io_map;
- 
- enum {
- 	/*
-@@ -594,6 +595,7 @@ enum {
- 	REQ_F_IMPORT_BUFFER_BIT,
- 	REQ_F_SQE_COPIED_BIT,
- 	REQ_F_IOPOLL_BIT,
-+	REQ_F_DROP_DMABUF_BIT,
- 
- 	/* not a real bit, just to check we're not overflowing the space */
- 	__REQ_F_LAST_BIT,
-@@ -689,6 +691,8 @@ enum {
- 	REQ_F_SQE_COPIED	= IO_REQ_FLAG(REQ_F_SQE_COPIED_BIT),
- 	/* request must be iopolled to completion (set in ->issue()) */
- 	REQ_F_IOPOLL		= IO_REQ_FLAG(REQ_F_IOPOLL_BIT),
-+	/* there is a dma map attached to request that needs to be dropped */
-+	REQ_F_DROP_DMABUF	= IO_REQ_FLAG(REQ_F_DROP_DMABUF_BIT),
- };
- 
- struct io_tw_req {
-@@ -811,6 +815,7 @@ struct io_kiocb {
- 	/* custom credentials, valid IFF REQ_F_CREDS is set */
- 	const struct cred		*creds;
- 	struct io_wq_work		work;
-+	struct dma_buf_io_map		*dmabuf_map;
- 
- 	struct io_big_cqe {
- 		u64			extra1;
-diff --git a/include/uapi/linux/io_uring.h b/include/uapi/linux/io_uring.h
-index 98b259901185..c39297e8beb6 100644
---- a/include/uapi/linux/io_uring.h
-+++ b/include/uapi/linux/io_uring.h
-@@ -810,6 +810,7 @@ enum io_uring_rsrc_reg_flags {
- enum io_uring_regbuf_type {
- 	IO_REGBUF_TYPE_EMPTY,
- 	IO_REGBUF_TYPE_UADDR,
-+	IO_REGBUF_TYPE_DMABUF,
- 
- 	__IO_REGBUF_TYPE_MAX,
- };
-@@ -819,7 +820,10 @@ struct io_uring_regbuf_desc {
- 	__u32 flags;
- 	__u64 size;
- 	__u64 uaddr;
--	__u64 __resv[7];
-+
-+	__s32 dmabuf_fd;
-+	__s32 target_fd;
-+	__u64 __resv[6];
- };
- 
- /* Skip updating fd indexes set to this value in the fd table */
-diff --git a/io_uring/io_uring.c b/io_uring/io_uring.c
-index 4c83a94b4bdc..d1d748b5c5dc 100644
---- a/io_uring/io_uring.c
-+++ b/io_uring/io_uring.c
-@@ -109,7 +109,7 @@
- 
- #define IO_REQ_CLEAN_SLOW_FLAGS (REQ_F_REFCOUNT | IO_REQ_LINK_FLAGS | \
- 				 REQ_F_REISSUE | REQ_F_POLLED | \
--				 IO_REQ_CLEAN_FLAGS)
-+				 IO_REQ_CLEAN_FLAGS | REQ_F_DROP_DMABUF)
- 
- #define IO_TCTX_REFS_CACHE_NR	(1U << 10)
- 
-@@ -1114,6 +1114,7 @@ static void io_free_batch_list(struct io_ring_ctx *ctx,
- 				io_queue_next(req);
- 			if (unlikely(req->flags & IO_REQ_CLEAN_FLAGS))
- 				io_clean_op(req);
-+			io_req_drop_dmabuf(req);
- 		}
- 		io_put_file(req);
- 		io_req_put_rsrc_nodes(req);
-diff --git a/io_uring/rsrc.c b/io_uring/rsrc.c
-index fcdc4edd2858..5074b1e4b050 100644
---- a/io_uring/rsrc.c
-+++ b/io_uring/rsrc.c
-@@ -10,6 +10,7 @@
- #include <linux/compat.h>
- #include <linux/io_uring.h>
- #include <linux/io_uring/cmd.h>
-+#include <linux/dma-buf-io.h>
- 
- #include <uapi/linux/io_uring.h>
- 
-@@ -881,6 +882,94 @@ bool io_check_coalesce_buffer(struct page **page_array, int nr_pages,
- 	return true;
- }
- 
-+struct io_regbuf_dma {
-+	struct dma_buf_io_ctx		ctx;
-+	struct file			*target_file;
-+};
-+
-+static void io_release_reg_dmabuf(void *priv)
-+{
-+	struct io_regbuf_dma *db = priv;
-+
-+	fput(db->target_file);
-+	dma_buf_io_ctx_release(&db->ctx);
-+}
-+
-+static struct io_rsrc_node *io_register_dmabuf(struct io_ring_ctx *ctx,
-+						struct io_uring_regbuf_desc *desc)
-+{
-+	struct io_rsrc_node *node = NULL;
-+	struct io_mapped_ubuf *imu = NULL;
-+	struct io_regbuf_dma *regbuf = NULL;
-+	struct file *target_file = NULL;
-+	struct dma_buf *dmabuf = NULL;
-+	int ret;
-+
-+	if (!IS_ENABLED(CONFIG_DMA_SHARED_BUFFER))
-+		return ERR_PTR(-EOPNOTSUPP);
-+	if (ctx->flags & IORING_SETUP_IOPOLL)
-+		return ERR_PTR(-EOPNOTSUPP);
-+	if (desc->uaddr || desc->size)
-+		return ERR_PTR(-EINVAL);
-+
-+	ret = -ENOMEM;
-+	node = io_rsrc_node_alloc(ctx, IORING_RSRC_BUFFER);
-+	if (!node)
-+		return ERR_PTR(-ENOMEM);
-+	imu = io_alloc_imu(ctx, 0);
-+	if (!imu)
-+		goto err;
-+	regbuf = kzalloc(sizeof(*regbuf), GFP_KERNEL);
-+	if (!regbuf)
-+		goto err;
-+
-+	ret = -EBADF;
-+	target_file = fget(desc->target_fd);
-+	if (!target_file)
-+		goto err;
-+
-+	dmabuf = dma_buf_get(desc->dmabuf_fd);
-+	if (IS_ERR(dmabuf)) {
-+		ret = PTR_ERR(dmabuf);
-+		dmabuf = NULL;
-+		goto err;
-+	}
-+	if (dmabuf->size > SZ_1G) {
-+		ret = -EINVAL;
-+		goto err;
-+	}
-+
-+	ret = dma_buf_io_ctx_create(target_file, &regbuf->ctx, dmabuf,
-+				    DMA_BIDIRECTIONAL);
-+	if (ret)
-+		goto err;
-+
-+	regbuf->target_file = target_file;
-+	imu->nr_bvecs = 0;
-+	imu->ubuf = 0;
-+	imu->len = dmabuf->size;
-+	imu->folio_shift = 0;
-+	imu->release = io_release_reg_dmabuf;
-+	imu->priv = regbuf;
-+	imu->flags = IO_REGBUF_F_DMABUF;
-+	imu->dir = IO_IMU_DEST | IO_IMU_SOURCE;
-+	refcount_set(&imu->refs, 1);
-+	node->buf = imu;
-+	dma_buf_put(dmabuf);
-+	return node;
-+err:
-+	kfree(regbuf);
-+	if (imu)
-+		io_free_imu(ctx, imu);
-+	if (node)
-+		io_cache_free(&ctx->node_cache, node);
-+	if (target_file)
-+		fput(target_file);
-+	if (dmabuf)
-+		dma_buf_put(dmabuf);
-+	return ERR_PTR(ret);
-+}
-+
- static struct io_rsrc_node *io_sqe_buffer_register(struct io_ring_ctx *ctx,
- 						   struct io_uring_regbuf_desc *desc)
- {
-@@ -899,6 +988,12 @@ static struct io_rsrc_node *io_sqe_buffer_register(struct io_ring_ctx *ctx,
- 	if (!mem_is_zero(&desc->__resv, sizeof(desc->__resv)) || desc->flags)
- 		return ERR_PTR(-EINVAL);
- 
-+	if (desc->type == IO_REGBUF_TYPE_DMABUF)
-+		return io_register_dmabuf(ctx, desc);
-+
-+	if (desc->dmabuf_fd || desc->target_fd)
-+		return ERR_PTR(-EINVAL);
-+
- 	if (desc->type == IO_REGBUF_TYPE_EMPTY) {
- 		if (uaddr || size)
- 			return ERR_PTR(-EFAULT);
-@@ -1170,9 +1265,64 @@ static int io_import_kbuf(int ddir, struct iov_iter *iter,
- 	return 0;
- }
- 
--static int io_import_fixed(int ddir, struct iov_iter *iter,
-+void io_drop_dmabuf_node(struct io_kiocb *req)
-+{
-+	struct io_mapped_ubuf *imu;
-+
-+	if (!IS_ENABLED(CONFIG_DMA_SHARED_BUFFER))
-+		return;
-+	if (WARN_ON_ONCE(req->buf_node->type != IORING_RSRC_BUFFER))
-+		return;
-+	imu = req->buf_node->buf;
-+	if (WARN_ON_ONCE(!(imu->flags & IO_REGBUF_F_DMABUF)))
-+		return;
-+	dma_buf_io_map_drop(req->dmabuf_map);
-+	req->flags &= ~REQ_F_DROP_DMABUF;
-+}
-+
-+static int io_import_dmabuf(struct io_kiocb *req,
-+			   int ddir, struct iov_iter *iter,
-+			   struct io_mapped_ubuf *imu,
-+			   size_t len, size_t offset,
-+			   unsigned issue_flags)
-+{
-+	struct io_regbuf_dma *db = imu->priv;
-+	struct dma_buf_io_map *map;
-+
-+	if (!IS_ENABLED(CONFIG_DMA_SHARED_BUFFER))
-+		return -EOPNOTSUPP;
-+	if (!len)
-+		return -EFAULT;
-+	if (req->file != db->target_file)
-+		return -EBADF;
-+
-+	if (req->flags & REQ_F_DROP_DMABUF) {
-+		map = req->dmabuf_map;
-+		goto init_iter;
-+	}
-+
-+	map = dma_buf_io_get_map(&db->ctx);
-+	if (unlikely(!map)) {
-+		if (!(issue_flags & IO_URING_F_IOWQ))
-+			return -EAGAIN;
-+		map = dma_buf_io_create_map(&db->ctx);
-+		if (IS_ERR(map))
-+			return PTR_ERR(map);
-+	}
-+
-+	req->dmabuf_map = map;
-+	req->flags |= REQ_F_DROP_DMABUF;
-+init_iter:
-+	iov_iter_dmabuf_map(iter, ddir, map, offset, len);
-+	return 0;
-+}
-+
-+static int io_import_fixed(struct io_kiocb *req,
-+			   int ddir, struct iov_iter *iter,
- 			   struct io_mapped_ubuf *imu,
--			   u64 buf_addr, size_t len)
-+			   u64 buf_addr, size_t len,
-+			   unsigned issue_flags,
-+			   unsigned import_flags)
- {
- 	const struct bio_vec *bvec;
- 	size_t folio_mask;
-@@ -1192,6 +1342,12 @@ static int io_import_fixed(int ddir, struct iov_iter *iter,
- 
- 	offset = buf_addr - imu->ubuf;
- 
-+	if (imu->flags & IO_REGBUF_F_DMABUF) {
-+		if (!(import_flags & IO_REGBUF_IMPORT_ALLOW_DMABUF))
-+			return -EFAULT;
-+		return io_import_dmabuf(req, ddir, iter, imu, len, offset,
-+					issue_flags);
-+	}
- 	if (imu->flags & IO_REGBUF_F_KBUF)
- 		return io_import_kbuf(ddir, iter, imu, len, offset);
- 
-@@ -1254,7 +1410,8 @@ int __io_import_reg_buf(struct io_kiocb *req, struct iov_iter *iter,
- 	node = io_find_buf_node(req, issue_flags);
- 	if (!node)
- 		return -EFAULT;
--	return io_import_fixed(ddir, iter, node->buf, buf_addr, len);
-+	return io_import_fixed(req, ddir, iter, node->buf, buf_addr, len,
-+				issue_flags, import_flags);
- }
- 
- static int io_buffer_acct_cloned_hpages(struct io_ring_ctx *ctx,
-@@ -1676,7 +1833,9 @@ int __io_import_reg_vec(int ddir, struct iov_iter *iter,
- 	iovec_off = vec->nr - nr_iovs;
- 	iov = vec->iovec + iovec_off;
- 
--	if (imu->flags & IO_REGBUF_F_KBUF) {
-+	if (imu->flags & IO_REGBUF_F_DMABUF) {
-+		return -EOPNOTSUPP;
-+	} else if (imu->flags & IO_REGBUF_F_KBUF) {
- 		int ret = io_kern_bvec_size(iov, nr_iovs, imu, &nr_segs);
- 
- 		if (unlikely(ret))
-diff --git a/io_uring/rsrc.h b/io_uring/rsrc.h
-index f12abaf63270..3cb9b57f159b 100644
---- a/io_uring/rsrc.h
-+++ b/io_uring/rsrc.h
-@@ -31,6 +31,11 @@ enum {
- enum {
- 	IO_REGBUF_F_KBUF		= 1 << 0,
- 	IO_REGBUF_F_UNCLONEABLE		= 1 << 1,
-+	IO_REGBUF_F_DMABUF		= 1 << 3,
-+};
-+
-+enum {
-+	IO_REGBUF_IMPORT_ALLOW_DMABUF		= 1 << 1,
- };
- 
- struct io_mapped_ubuf {
-@@ -173,4 +178,17 @@ static inline void io_alloc_cache_vec_kasan(struct iou_vec *iv)
- 		io_vec_free(iv);
- }
- 
-+void io_drop_dmabuf_node(struct io_kiocb *req);
-+
-+static inline void io_req_drop_dmabuf(struct io_kiocb *req)
-+{
-+	if (!IS_ENABLED(CONFIG_DMA_SHARED_BUFFER))
-+		return;
-+	if (!(req->flags & REQ_F_DROP_DMABUF))
-+		return;
-+	if (WARN_ON_ONCE(!(req->flags & REQ_F_BUF_NODE)))
-+		return;
-+	io_drop_dmabuf_node(req);
-+}
-+
- #endif
-diff --git a/io_uring/rw.c b/io_uring/rw.c
-index 95038cfda615..11ff7b5a1164 100644
---- a/io_uring/rw.c
-+++ b/io_uring/rw.c
-@@ -380,8 +380,8 @@ static int io_init_rw_fixed(struct io_kiocb *req, unsigned int issue_flags,
- 	if (io->bytes_done)
- 		return 0;
- 
--	ret = io_import_reg_buf(req, &io->iter, rw->addr, rw->len, ddir,
--				issue_flags);
-+	ret = __io_import_reg_buf(req, &io->iter, rw->addr, rw->len, ddir,
-+				  issue_flags, IO_REGBUF_IMPORT_ALLOW_DMABUF);
- 	iov_iter_save_state(&io->iter, &io->iter_state);
- 	return ret;
- }
-@@ -591,6 +591,8 @@ static void io_complete_rw(struct kiocb *kiocb, long res)
- 	struct io_rw *rw = container_of(kiocb, struct io_rw, kiocb);
- 	struct io_kiocb *req = cmd_to_io_kiocb(rw);
- 
-+	io_req_drop_dmabuf(req);
-+
- 	__io_complete_rw_common(req, res);
- 	io_req_set_res(req, io_fixup_rw_res(req, res), 0);
- 	req->io_task_work.func = io_req_rw_complete;
--- 
-2.54.0
+If the result looks correct, please mark the issue as fixed by replying with:
 
+#syz fix: btrfs: check for subvolume before deleting squota qgroup
+
+For information about bisection process see: https://goo.gl/tpsmEJ#bisection

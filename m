@@ -1,254 +1,347 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1E59E363C60;
-	Mon,  3 Aug 2026 09:44:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2E31133937D;
+	Mon,  3 Aug 2026 10:36:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785750285; cv=none; b=Ejs3YPbjbiEg5QeEKqjlW3H3XuZ6Vc7iXpLcQ33aq1hIG11qE5zfo6IztiTdUcOZIu5MjUuYmFhty7HHm3UjXLgIDt2Kh/lLD6sGlSw1XxiN1JUW8RUIUF/Cr9NzmhcFdU2qhkbmKIGOV/0pZCbmcHz1p8j88vvnKtYm63EJlsg=
+	t=1785753361; cv=none; b=qxv1of1rzR5MhlPrpXAOtYAy94nwdTlBl2NFCYw0OcROkG7IGjkHku5F3T10hFhMuJwetDNshw3PH9i9zw6BkDnn+X39pVs4akAVlm5nSE9XWD8Osvy96LbLIQ73ZhFxGM6ofCz/fm2oAt0oIVkiHlo8Sadkf5HJZZJsgRk26Ow=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785750285; c=relaxed/simple;
-	bh=V++4j25IMe4tvIIWQ8I2FKkLw+I88TUbeTEChoQHTBs=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=IDf/gHSl7mLwsEx8mu5YDVvXAk9GFXzbstauRF+1/egvZxnnERbh6OZnwkX4Uw/FpquzrGtFcP99vC1DZxQbGb2yhuPDh3B6fdBOSms9iVRxZko8XgEkTgoSeg8T1uEmL2ws1fR/xbIl6ZeQhOBu4M53lyOI4V2mX+oZ1v2OIVc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=tnU58PNt; arc=none smtp.client-ip=212.227.15.18
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1785753361; c=relaxed/simple;
+	bh=70jrXQm3Y5T/5abE/86FAPGdZSAeQC2Zyv44Lh4Gs0U=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=JPYminVcI41ImImUQrStt96ElcHl91arWueqkDf+y3BZYjdroHiUk8AHstnlufHO6SFwqUdpb8S4OdpD1zzK4WKgGv0UZTj2idWlPYYC7pkCFfsvED+E1RiLkpqHbiydcTUZT+V0lRFdjSXO2tZFVMYPax7RYwOo0kD0ezyPfGM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MydjvTYN; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="tnU58PNt"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1785750274; x=1786355074; i=quwenruo.btrfs@gmx.com;
-	bh=gY7FJ7gX7VhwLqR4HrvvwD0GU2qilOPOq9kqhdqzmp0=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=tnU58PNtPxxoEIwsoeln/er66QZPtreuhdYFsd+rIUXFY9ETWR++xBuEU3g4TdSd
-	 4vUl3B0OedOnXuzBBsJRSJcyboSnBKDwqueM7Q72VCO3kSGm5y1kQaLwLbbybshEP
-	 cP+Ls0QnzWRlMUVDX4GzgPjlhLnBnIG33LPQLdbKtoZNwvet0b5LZPAIlTIZtewd3
-	 JT/IygzLS87B/RtcveqDK6hIJiN8WIzcC6nc6W/iW+sCdxApIEaswin4lJOEzXU6q
-	 aH9wzy8c1oWXNdoNj953H2DCTL341mvr3B8PvpiA4ZfJqyxom1BZxtup9+UmgxhA+
-	 lYfi50jPpcAgXu0pIQ==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MrhUE-1xE36M0Okm-00h1rC; Mon, 03
- Aug 2026 11:44:34 +0200
-Message-ID: <d98fc5c9-c107-4e67-a145-eca566b10e83@gmx.com>
-Date: Mon, 3 Aug 2026 19:14:30 +0930
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MydjvTYN"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id EC7431F000E9;
+	Mon,  3 Aug 2026 10:35:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1785753359;
+	bh=LrRSxbbl1lSdwJVlRx0yjXe3cKVkB7SOQ5yrK3I68CM=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=MydjvTYNS6FHpLXFppsdFxLy3+ZykqfM7myMgLXrUFCnlIlG8H4Kfk+bwjAyd9w44
+	 bgAU8jhyRNdjRlHi9oZgpAGNVBscqkKxh6qeXi4rEAKJnV7iSrbQLzHT0c5eW7AWzG
+	 FT4mSkB+gcKenGktsfsGF9ofzZ2JqwH/kCWTkNa4z9vo59mVZ2+p4MYZTeSZSaqy9V
+	 4tD5czKKLkcId+Vp5uq1UA8e+cSlIZY6IPP1QPmXIQH7fFIOGWZpz+bhqQ8dasdfXT
+	 jCOpXPAv62iyM2/MdRYaJcd2LYi1DXjpL+jwryFQkI+yI/jcuMnRMXXAUsvwPvVC6X
+	 tsIv1Bet5Urcw==
+Date: Mon, 3 Aug 2026 18:35:51 +0800
+From: Zorro Lang <zlang@kernel.org>
+To: Qu Wenruo <wqu@suse.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	Christian Borntraeger <borntraeger@linux.ibm.com>
+Subject: Re: [PATCH] fstests: add a dio-read-into-mmap and sync race test case
+Message-ID: <anBiV3ta3qe5Kzfo@zlang-mailbox>
+Mail-Followup-To: Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, Christian Borntraeger <borntraeger@linux.ibm.com>
+References: <20260725110724.75124-1-wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: Lockdep circular dependency: btrfs_swap_activate() calls
- sysfs_notify()
-To: Christian Borntraeger <borntraeger@linux.ibm.com>,
- Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
- Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org,
- "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-References: <782c4d5c-d93b-42b3-b4ca-58deb3d8a894@linux.ibm.com>
- <11be35c2-7ede-4c83-b21f-39e52c3b04a2@gmx.com>
- <6a5c7341-6e88-4eaf-8311-0de81b3d1015@linux.ibm.com>
- <bb5e1ba4-5062-4a92-a9ee-1ca0a0dcc992@linux.ibm.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <bb5e1ba4-5062-4a92-a9ee-1ca0a0dcc992@linux.ibm.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:rzHZBOgHc4rthr6Gg+1kxm6jJRYnEYmmFDVr0SLI3wmcLwqTl4H
- 4Se5H7+iEvIlcpUgubJw7PBXS3Nkx+bshL1+JDblxirayC/whTDOtVhzBwRhpatjy+TIe8T
- 424+s3pMTucmCAqbkxBTbteUwyT3aiFH60aFivsBvn2SHKYClaIBT4LD8J7I70Ux9D1Hxof
- Ub/DoYZAxHG7xBTnttiig==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:l+HkFEzlFfE=;OXNa160cUlTyb0yFmYTIVpn7SJw
- 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
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260725110724.75124-1-wqu@suse.com>
 
+On Sat, Jul 25, 2026 at 08:37:24PM +0930, Qu Wenruo wrote:
+> There is a report that on btrfs, if the following workload are running,
+> btrfs can fail:
+> 
+> - A dio read into a mmaped range
+>   Only the mmap range needs to be on btrfs.
+>   The dio read source makes no difference.
+> 
+> - Sync_range on the mapped range
+> 
+> The btrfs errors include:
+> 
+> - Hang during data writeback
+> - Filesystem flips RO
+> 
+> The mmap range is dirtied but written back by the sync_range process,
+> then dio read finished and found that the folios are no longer dirty,
+> so dio endio will mark those folios dirty again so that the fs can write
+> them back again.
+> 
+> However for non-experimental btrfs with 4K block size and 4K page size,
+> there is a regression in v7.2 that such case is no longer handled
+> properly, due to the enablement of large folios and removal of cow
+> fixup.
+> And btrfs can never handle it for bs < ps from day 1.
+> 
+> Add a regression test for it.
+> 
+> Reported-by: Christian Borntraeger <borntraeger@linux.ibm.com>
+> Link: https://lore.kernel.org/linux-btrfs/20260721191152.101118-1-borntraeger@linux.ibm.com/
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
 
+Hi Wenruo,
 
-=E5=9C=A8 2026/8/3 18:37, Christian Borntraeger =E5=86=99=E9=81=93:
->=20
->=20
-> Am 31.07.26 um 13:14 schrieb Christian Borntraeger:
->>
->>
->> Am 31.07.26 um 13:12 schrieb Qu Wenruo:
->>>
->>>
->>> =E5=9C=A8 2026/7/31 20:27, Christian Borntraeger =E5=86=99=E9=81=93:
->>>> One or more of the following files ( btrfs-swapon-kernfs-repro.sh )=
-=20
->>>> violates IBM policy and all attachment(s) have been removed from the=
-=20
->>>> message.
->>
->> Oh.
->>
->>
->> Lets try this:
->> #!/bin/bash
->> # Reproducer for the lockdep circular dependency
->> #
-> Can you reproduce the lockdep message?
->=20
+Thanks for this new test!
 
-Sorry, I am on vacation since the last reply, until Wednesday.
+>  .gitignore               |  1 +
+>  src/Makefile             |  2 +-
+>  src/dio-read-into-mmap.c | 81 ++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/799        | 81 ++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/799.out    |  2 +
+>  5 files changed, 166 insertions(+), 1 deletion(-)
+>  create mode 100644 src/dio-read-into-mmap.c
+>  create mode 100755 tests/generic/799
+>  create mode 100644 tests/generic/799.out
+> 
+> diff --git a/.gitignore b/.gitignore
+> index 0b6b9452..d52ba4ad 100644
+> --- a/.gitignore
+> +++ b/.gitignore
+> @@ -216,6 +216,7 @@ tags
+>  /src/truncate
+>  /src/t_btrfs_received_uuid_ioctl
+>  /src/btrfs_ioctl
+> +/src/dio-read-into-mmap
+>  
+>  # Symlinked files
+>  /tests/generic/035.out
+> diff --git a/src/Makefile b/src/Makefile
+> index 76cf50c3..f64e153a 100644
+> --- a/src/Makefile
+> +++ b/src/Makefile
+> @@ -21,7 +21,7 @@ TARGETS = dirstress fill fill2 getpagesize holes lstat64 \
+>  	t_mmap_writev_overlap checkpoint_journal mmap-rw-fault allocstale \
+>  	t_mmap_cow_memory_failure fake-dump-rootino dio-buf-fault rewinddir-test \
+>  	readdir-while-renames dio-append-buf-fault dio-write-fsync-same-fd \
+> -	dio-writeback-race unlink-fsync truncate
+> +	dio-writeback-race unlink-fsync truncate dio-read-into-mmap
+>  
+>  LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
+>  	preallo_rw_pattern_writer ftrunc trunc fs_perms testx looptest \
+> diff --git a/src/dio-read-into-mmap.c b/src/dio-read-into-mmap.c
+> new file mode 100644
+> index 00000000..07842c48
+> --- /dev/null
+> +++ b/src/dio-read-into-mmap.c
+> @@ -0,0 +1,81 @@
+> +// SPDX-License-Identifier: GPL-2.0
+> +// Copyright (c) SUSE S.A.
+> +
+> +#include <fcntl.h>
+> +#include <stdlib.h>
+> +#include <stdio.h>
+> +#include <unistd.h>
+> +#include <string.h>
+> +#include <errno.h>
+> +#include <sys/mman.h>
+> +#include <sys/stat.h>
+> +#include <err.h>
+> +
+> +static int read_source_fd = -1;
+> +static int mmap_dest_fd = -1;
+> +static void *buf = NULL;
+> +static int iosize = 4 * 1024 * 1024;
+> +
+> +static void usage()
+> +{
+> +	fprintf(stderr,
+> +	"Usage: dio-read-into-mmap <read_source> <mmap_dest>\n");
+> +}
+> +
+> +int main(int argc, char **argv)
+> +{
+> +	int ret = -EINVAL;
+> +	const int pagesize = sysconf(_SC_PAGESIZE);
+> +	unsigned int cur = 0;
+> +
+> +	if (argc != 3) {
+> +		usage();
+> +		goto error;
+> +	}
+> +	if (iosize < pagesize) {
+> +		ret = -EINVAL;
+> +		fprintf(stderr, "blocksize smaller than pagesize\n");
+> +		goto error;
+> +	}
+> +
+> +	read_source_fd = open(argv[1], O_RDONLY | O_DIRECT, 0600);
+> +	if (read_source_fd < 0) {
+> +		ret = -errno;
+> +		fprintf(stderr, "failed to open '%s': %m", argv[1]);
+> +		goto error;
+> +	}
+> +	mmap_dest_fd = open(argv[2], O_RDWR, 0600);
+> +	if (mmap_dest_fd < 0) {
+> +		ret = -errno;
+> +		fprintf(stderr, "failed to open '%s': %m", argv[2]);
+> +		goto error;
+> +	}
+> +	buf = mmap(NULL, iosize, PROT_WRITE, MAP_SHARED, mmap_dest_fd, 0);
+> +	if (buf == MAP_FAILED) {
+> +		buf = NULL;
+> +		fprintf(stderr, "failed to mmap: %m");
+> +		return -errno;
+> +	}
+> +	while (cur < iosize) {
+> +		ret = pread(read_source_fd, buf, iosize - cur, cur);
 
-However the script seems to have several minor problems that got=20
-rejected by my VM:
+Don't we need "(char *)buf + cur" at here?
 
-- EOF not matching
-   The involved python scripts expects "EOF" without any other prefix,
-   but the script is using "\tEOF", which failed to end the file.
+> +		if (ret == 0) {
+> +			ret = -EINVAL;
+> +			fprintf(stderr, "reached EOF");
+> +			goto error;
+> +		}
+> +		if (ret < 0) {
+> +			ret = -errno;
+> +			fprintf(stderr, "failed to read: %m");
+> +			goto error;
+> +		}
+> +		cur += ret;
+> +	}
+> +error:
+> +	close(read_source_fd);
+> +	close(mmap_dest_fd);
+> +	if (buf)
+> +		munmap(buf, iosize);
+> +	if (ret < 0)
+> +		return EXIT_FAILURE;
+> +	return EXIT_SUCCESS;
+> +}
+> diff --git a/tests/generic/799 b/tests/generic/799
+> new file mode 100755
+> index 00000000..b6851f69
+> --- /dev/null
+> +++ b/tests/generic/799
+> @@ -0,0 +1,81 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+> +#
+> +# FS QA Test 799
+> +#
+> +# Test direct read into a mmaped range meanwhile doing data sync for the mmaped
+> +# range.
+> +# Such racy workload should cause direct endio function to mark the folio
+> +# dirty without going through buffered write nor page_mkwrite().
+> +#
+> +# Make sure the fs can handle such ->dirty_folio() callback correctly.
+> +#
+> +. ./common/preamble
+> +. ./common/filter
+> +_begin_fstest auto rw mmap
+> +
+> +_require_test_program dio-read-into-mmap
+> +_require_scratch
+> +_require_test
 
-   My bash version is 5.3.3, not sure if this is version specific.
+_require_odirect ?
 
-- Bad indent rejected by python3
-   The python version is 3.13.7, which rejects any weird indent, so
-   it fails like:
+> +
+> +_fixed_by_fs_commit btrfs xxxxxxxxxxxxxx \
+> +	"btrfs: trigger cow fixup via dirty_folio()"
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	[ -n "$mount_pid" ] && kill $mount_pid &> /dev/null
+> +	[ -n "$remount_pid" ] && kill $remount_pid &> /dev/null
+> +	wait
 
-     File "<stdin>", line 1
-       import mmap, os, sys
-   IndentationError: unexpected indent
+rm -r -f $tmp.*
 
-Even with all those minor problems fixed, it still didn't trigger on my VM=
-.
+> +}
+> +
+> +trap "_cleanup; exit \$status" SIGINT SIGTERM
 
-I tried 128 runs, the script is triggered for a newly created btrfs in a=
-=20
-loop, no lockdep warning triggered, all the same successful runs:
+If you need extra signal, you can run _register_cleanup, but as you
+just need INT and TERM, so this line can be removed.
 
-[repro] kernel 7.2.0-rc5-custom+, lockdep active
-[repro] using existing btrfs at /mnt/btrfs/
-[repro] dirtying a btrfs file mapping (mmap_lock -> sb_pagefaults ->=20
-i_mmap_lock)
-[repro] reading sysfs directories (kernfs_rwsem -> mmap_lock)
-[repro] creating swap file /mnt/btrfs//lockdep-swapfile
-[repro] swapon -- this is the call that closes the cycle
-[repro] swapon succeeded
-[repro] no lockdep splat
-[repro] PASS: the i_mmap_lock -> kernfs_rwsem edge was not taken
-[repro] (expected on a kernel carrying btrfs-swapon-kernfs-fix.patch)
-[repro] swapoff /mnt/btrfs//lockdep-swapfile
+> +_scratch_mkfs >> $seqres.full
+> +_scratch_mount
+> +
+> +# Create the 4MiB target file on TEST_MNT as the read source.
+> +$XFS_IO_PROG -f -c "pwrite -i /dev/urandom 0 4M" "$TEST_MNT/dio-read-source" >> $seqres.full
+> +
+> +# Another 4MiB target file on SCRATCH_MNT as the mmap dest
+> +$XFS_IO_PROG -f -c "pwrite 0 4M" "$SCRATCH_MNT/mmap-dest" >> $seqres.full
+> +
+> +read_workload()
+> +{
+> +	trap "wait; exit" SIGTERM
+> +	while true; do
+> +		$here/src/dio-read-into-mmap "$TEST_MNT/dio-read-source" \
+> +			"$SCRATCH_MNT/mmap-dest" &> /dev/null
+> +		if [ $? -ne 0 ]; then
+> +			echo "dio read failed"
+> +			break;
+> +		fi
+> +	done
+> +}
+> +
+> +sync_workload()
+> +{
+> +	trap "wait; exit" SIGTERM
+> +	while true; do
+> +		$XFS_IO_PROG -c "sync_range 0 4m" "$SCRATCH_MNT/mmap-dest"
 
-The kernel has LOCKDEP and DEBUG_ATOMIC_SLEEP set.
+_require_xfs_io_command sync_range
 
-Although this is on a newer branch, based on btrfs' for-next.
+> +		if [ $? -ne 0 ]; then
+> +			echo "sync_range failed"
+> +			break;
+> +		fi
+> +	done
+> +}
+> +
+> +read_workload &
+> +read_pid=$!
+> +
+> +sync_workload &
+> +sync_pid=$!
+> +
+> +sleep $((15 * $TIME_FACTOR))
+> +
+> +kill "$read_pid" "$sync_pid" &> /dev/null
 
-Thus not sure if there is anything new, or if it's really too timing=20
-specific.
+How about:
+  kill -TERM -"$read_pid" -"$sync_pid" &> /dev/null
+?
 
-You may want to send out your fix for extra reviews, other developers=20
-may provide extra review on the fix.
+As the (man 1 kill) says:
 
-Thanks,
-Qu
+  pid
+    Each pid can be expressed in one of the following ways:
+    ...
+    -n
+       where n is larger than 1. All processes in process group n are signaled.
+       When an argument of the form '-n' is given, and it is meant to denote a
+       process group, either a signal must be specified first, or the argument
+       must be preceded by a '--' option, otherwise it will be taken as the
+       signal to send.
+
+I didn't give it a try, but I think this might help to kill the
+dio-read-into-mmap and sync_range process too.
+
+(same in _cleanup)
+
+> +unset "$read_pid" "$sync_pid"
+
+unset read_pid sync_pid
+
+> +wait
+> +
+> +echo "Silence is golden"
+> +_exit 0
+> diff --git a/tests/generic/799.out b/tests/generic/799.out
+> new file mode 100644
+> index 00000000..f3fd9fa2
+> --- /dev/null
+> +++ b/tests/generic/799.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 799
+> +Silence is golden
+> -- 
+> 2.51.2
+> 
+> 

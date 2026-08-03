@@ -1,138 +1,126 @@
-Received: from mail-qv1-f41.google.com (mail-qv1-f41.google.com [209.85.219.41])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 350823375C3
-	for <linux-btrfs@vger.kernel.org>; Sun,  2 Aug 2026 23:28:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CEBE53ACEFE;
+	Mon,  3 Aug 2026 09:07:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.158.5
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785713321; cv=none; b=SzA+eK+4GAjLZo9zSN/Uo+YsBQMyPW/M4DM2USxeYRfzuLBNQRYFKKtmXrD9mMiT1aKkMuGATIyTGs/JKEEKgownQiGXoPrA9iQTRpSwRAO+HwYVDErNRQwK/D6REpnBuLe57jfiPYDyQaeTlrugFoyhHUmVazWpVdrZ5zsARVc=
+	t=1785748040; cv=none; b=OpjXqLC3dW1E9Qyimq5UH/lxApUzqfBHewncDyTWDaM6wQcRIuWrZI7JhP+IbYWpt4eJx+QCa70QbwY9rqWycamgpPxBom/ZKUoqd2SuGbGmvETzO5Gy3PatigdWbZ3M1qRmhHFQO83XKTlZ4sgMWO83eNMBgywYca5LrVlNh24=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785713321; c=relaxed/simple;
-	bh=H1lVJxUhCPfGvC+UgDjNS363K4vk26nMs63+FyWoKGE=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=tg1nXO+N8aKWdyIk0f4UUK019E/KU/1xyzCS1YvPgGALDqTSfrVuBEquQaA78sm25RF0Ex98snqj2df/W1DictJ3yfag6wgQ3fFCcvKhrvH2Yhc9LxsvBP39PD/VfCi/kBB6L0kZXtt/H1vZIp8CeIYDRBxCPH/0s/XFkdUnsKU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=kKVIZi4+; arc=none smtp.client-ip=209.85.219.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1785748040; c=relaxed/simple;
+	bh=lloAQZzEPOJ9Hp5APUskUtSz1NX3u8iOQkaJenygS8Q=;
+	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
+	 In-Reply-To:Content-Type; b=taaKymAMoqy4OTxoqoN2ovzp0SH89lbq13HbR7cEwQYt8dTcFLn8q7qvMW79CA6NgtLVLQyCtDRHdu3Btld1C14/FA5RZxfippsIjX7biD1roWwtB9kzmPMfMZ2o+w6Yhp1+QJWwVXOzaoC8bORnSthqV9v83yLgvVY7IoKDn5c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=jF5x0FV0; arc=none smtp.client-ip=148.163.158.5
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="kKVIZi4+"
-Received: by mail-qv1-f41.google.com with SMTP id 6a1803df08f44-8efcfdb2b43so20970016d6.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 02 Aug 2026 16:28:40 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1785713319; x=1786318119; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=WtWsszqVORiGbzEMc9bRW/MM4TSHLERgRdJFuPi15b0=;
-        b=kKVIZi4+M3TllcaS1qmc9g4A3LGTI/xfky+DSw8dowpWrrON6MANHTirI/KM98XC5W
-         QYgQC3+neni0VXmvwjwPrOCoqImsQLapAMcUjvtzxM8e7sI1rEL0mgPaMjLZ/cWFU30x
-         eKFgPz7LJ6OIHmvkCm5Dpfo12jJeBP7Qu50LHPIvuLGQbZzXdhDZad2jNjVIy560yfpO
-         U6T5uQj6UFZRLXLjU96Tl0xgczjuH84aXsOwSpRNklepMcIZpeVNpa9pxNeszqaWSCCa
-         vWfApC+qHN6LAoomCA5cznj8pAfF8WCYwfCYwZ047Wv8jLkkJzb/FJ1jRVz+FCAZQTN7
-         8T2Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785713319; x=1786318119;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=WtWsszqVORiGbzEMc9bRW/MM4TSHLERgRdJFuPi15b0=;
-        b=fyVLvW+koJc3NrqY6KbnbDzOULlpWD624IVGDB0w14uyseo5Bncjkti9S0RvWfEXwJ
-         dCo8AcL5Ez31F9GgaBma4djaN/dNheAVlROypWZNwjfTd3X83Y44mg5Wt44YbHgbIsJF
-         5mllQ4SrGUXlKlZQLIF8CQCbT3hA8arGtip/IvhoXs509Jg0LxmAvgTM4ny9x8ilO7rR
-         3e0o/6o0Q08QgGjAQF5JCWy/wrBwhTsTsENARDyCmcMQqR5A7DvBMMmnRrD+gDNvNAVh
-         Zp53pL8h/vLjmhEXe8gz5LsLQtCbKsL1w+FBowrewzYvBMQO6QrVPwO/AITr5hzrZR6j
-         4KsA==
-X-Gm-Message-State: AOJu0YwDrkyI6pVZWZdUHS2Bi3XlVNilOuQ84p57AF0Upwmhj5YmhO7G
-	u2o9/4XyvOJji9LNayIVUy6qpZfCq69oON4pO5rilFspM4BMdGAMJNf4MWxikBNK
-X-Gm-Gg: AR+sD11k6smeAK1iQSXIQwt5f5mno6kWxGFrVwK3o4mQlX2P++EYBJ6DD0x2h5xb+JQ
-	DOqOt1nbe9opFyvTrBAhPdmNbf2zM1H0pKFN8mbeIJKpQNozu1Wut4cfeDOA4S9BK9GmSoZ1Qra
-	9fbQn+siCCbmbRu0RA26HXvqFwgymCFtDzR0BVJRHl9xhriyFGq7n1H7BV3/ClDOCHvsJPBUfoD
-	3HLl2s26Qz/OxJBJbTfYwwll15YqNA+unc3JIlsCmohkMmrG75el9B/xEhtu2y+/YFJHQMGnF+X
-	v1WU4jSWG7/4Rb8641HGSFzH5VwhB7JpXiWdsACLG9jCIJubcJfGOFA3IKHwa3JJKeCtEFAvVCz
-	Km3vYSEiQn9cPPnXEXaAs7lWscghTEjHy5x5lVwpVr5wTa7yXQjwQzDhArRg5/1O1We/lpUPjRv
-	JO7XKDjBWGM4Fgd9YJ+mOGuHg69/ZUC3btH1w4XK4KGKMTgyTIpmkO2oVtgfWryxZh0LN1ta2w5
-	AkT5VIvw8nlv1xzIPqbmWoTfZ6R
-X-Received: by 2002:ac8:690e:0:b0:51b:fc67:c73c with SMTP id d75a77b69052e-52b566dbe08mr183487601cf.16.1785713319079;
-        Sun, 02 Aug 2026 16:28:39 -0700 (PDT)
-Received: from i4-l-hqh5357-03.ad.psu.edu ([130.203.139.71])
-        by smtp.gmail.com with ESMTPSA id d75a77b69052e-52b4eb6a862sm50621961cf.16.2026.08.02.16.28.37
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 02 Aug 2026 16:28:38 -0700 (PDT)
-From: Shuangpeng Bai <shuangpeng.kernel@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com,
-	dsterba@suse.com,
-	naohiro.aota@wdc.com,
-	linux-kernel@vger.kernel.org,
-	Shuangpeng Bai <shuangpeng.kernel@gmail.com>,
-	stable@vger.kernel.org
-Subject: [PATCH] btrfs: zoned: fix use-after-free in btrfs_reset_unused_block_groups()
-Date: Sun,  2 Aug 2026 19:28:15 -0400
-Message-ID: <20260802232815.3180433-1-shuangpeng.kernel@gmail.com>
-X-Mailer: git-send-email 2.43.0
+	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="jF5x0FV0"
+Received: from pps.filterd (m0353725.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 672LmFGb168792;
+	Mon, 3 Aug 2026 09:07:15 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=cc
+	:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=pp1; bh=xusHSS
+	kc3LwKj+Cvg+QKBfNf0euQiacnL8qX7jeWCG8=; b=jF5x0FV0r5pkNeCxwHFNv/
+	FP1dwJOzKfByUFIV41ok3Z2cdEakaD8UQyxRu560Sh7/bDGJBn1NG4cZM1OyBPxU
+	Dg0CWQso5H+/nODjb2SiMDbpfZwgaqN3TfZzQAgI68DF132OixPzXTDgdoB2rv/J
+	M6BdOe3kEbSjdsqOWdOHGxDmMzifXbI92yqBr6XRKmAPTgJhOw1N/YAC1mGQ5iya
+	7YKYLfy2cmTPudOhKSRbg45Y+gNejm1Na0K3ClTw6e0EV1f0VbD+W/bFsM4WkQsh
+	eHesLxw7ogpBWhoUdXxZC9q8F4ZH+zXdZTwaPHVm4aaRYHhjny8aPzby7X7C2ndQ
+	==
+Received: from ppma12.dal12v.mail.ibm.com (dc.9e.1632.ip4.static.sl-reverse.com [50.22.158.220])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 4fs77fyrgu-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Mon, 03 Aug 2026 09:07:14 +0000 (GMT)
+Received: from pps.filterd (ppma12.dal12v.mail.ibm.com [127.0.0.1])
+	by ppma12.dal12v.mail.ibm.com (8.18.1.7/8.18.1.7) with ESMTP id 6738uK9i006286;
+	Mon, 3 Aug 2026 09:07:14 GMT
+Received: from smtprelay06.fra02v.mail.ibm.com ([9.218.2.230])
+	by ppma12.dal12v.mail.ibm.com (PPS) with ESMTPS id 4fsu4qct7h-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Mon, 03 Aug 2026 09:07:14 +0000 (GMT)
+Received: from smtpav04.fra02v.mail.ibm.com (smtpav04.fra02v.mail.ibm.com [10.20.54.103])
+	by smtprelay06.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 67397Ci128115310
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Mon, 3 Aug 2026 09:07:12 GMT
+Received: from smtpav04.fra02v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 471C12004B;
+	Mon,  3 Aug 2026 09:07:12 +0000 (GMT)
+Received: from smtpav04.fra02v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 28B2720040;
+	Mon,  3 Aug 2026 09:07:12 +0000 (GMT)
+Received: from [9.224.77.173] (unknown [9.224.77.173])
+	by smtpav04.fra02v.mail.ibm.com (Postfix) with ESMTP;
+	Mon,  3 Aug 2026 09:07:12 +0000 (GMT)
+Message-ID: <bb5e1ba4-5062-4a92-a9ee-1ca0a0dcc992@linux.ibm.com>
+Date: Mon, 3 Aug 2026 11:07:11 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: Lockdep circular dependency: btrfs_swap_activate() calls
+ sysfs_notify()
+From: Christian Borntraeger <borntraeger@linux.ibm.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+References: <782c4d5c-d93b-42b3-b4ca-58deb3d8a894@linux.ibm.com>
+ <11be35c2-7ede-4c83-b21f-39e52c3b04a2@gmx.com>
+ <6a5c7341-6e88-4eaf-8311-0de81b3d1015@linux.ibm.com>
+Content-Language: en-US
+In-Reply-To: <6a5c7341-6e88-4eaf-8311-0de81b3d1015@linux.ibm.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-Reinject: loops=2 maxloops=12
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwODAzMDA3NyBTYWx0ZWRfX1R5W5BUM2rQn
+ oASwArK0jSCIK5d0aGCYBVFHoExKcsk/Cw4jS5LCyhXZLQ5ocG7RYLJjYgPeGYno2aN2IY4DcR0
+ NK9msKQY1uDkK3A2izKzeXXfu5Wce0Nfk7Ze2t37xej286nUec6K9eyvmcIRLsrXJaetIQw0iv2
+ 4gTY8tAOn7/n1ZyS5IPN9o7OAuejWEZ6OJr99JTSem2eSAGTda9cEJTwEANyFi0vzcme/maiYkM
+ wDbPHPyvhspPGpzmEGZq7/MtgL9Nfi1291WlnF2Q4+QkaaxLf8Uorbjdgy/halYilpwJ3u1ncrE
+ qwgDtACWfsLrh0ehwzflzHlkFM5c9vcBMDLbT+8gvNn4txgV+veoljOfAU4HAqawBpTR4XslbgA
+ /LpTM+xIy9zMWir9tQ7qeQN0pVgSqgBoNF8pQgBwGqIs47S3pWgHTQsoEw6rRES+6O1dG24wfPS
+ hlB6z1yCEnSaXBSRw1g==
+X-Authority-Analysis: v=2.4 cv=WIFPmHsR c=1 sm=1 tr=0 ts=6a705a43 cx=c_pps
+ a=bLidbwmWQ0KltjZqbj+ezA==:117 a=bLidbwmWQ0KltjZqbj+ezA==:17
+ a=IkcTkHD0fZMA:10 a=Sv0fKeRqtYgA:10 a=VkNPw1HP01LnGYTKEx00:22
+ a=RnoormkPH1_aCDwRdu11:22 a=V8glGbnc2Ofi9Qvn3v5h:22 a=QQJeTcF6qchfQrgI5ZUA:9
+ a=3ZKOabzyN94A:10 a=QEXdDO2ut3YA:10
+X-Proofpoint-GUID: ZrbWQOtSPzuRdBXR-l0k-XHnOv66y5cO
+X-Proofpoint-ORIG-GUID: zcpar5YZdA9v1vJ8izQ6e0Y0_15ANhDp
+X-Proofpoint-Spam-Info: AW1haW4tMjYwODAzMDA3NyBTYWx0ZWRfX3Rmg6rzBbn0f
+ LnsCYdzqR/EBwxIk+UcavNqq4f8mlLIMCHYl1eO5hoxwzUmZ0O8PqXN+WV+CklTO8Jf8cw4Q8PT
+ d72EhYeYXJtOWnH9wzZnMmWe0qKVbjM=
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1143,Hydra:6.1.134,FMLib:17.12.100.49
+ definitions=2026-08-02_06,2026-07-30_01,2025-10-01_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ spamscore=0 lowpriorityscore=0 priorityscore=1501 phishscore=0 malwarescore=0
+ suspectscore=0 clxscore=1015 impostorscore=0 bulkscore=0 adultscore=0
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2606150000 definitions=main-2608030077
 
-btrfs_mark_bg_unused() takes a block group reference when adding it to
-unused_bgs. btrfs_reset_unused_block_groups() removes a selected block
-group from the list and immediately drops that reference before accessing
-bg->physical_map and updating the block group.
 
-A concurrent unused block group deletion can then drop the remaining
-references and free both bg and its physical_map, resulting in a
-use-after-free.
 
-Keep the unused_bgs reference as a local processing reference after
-removing the block group from the list, and drop it only after the zone
-reset and block group update have finished. Also release it on the error
-and read-only paths.
-
-Fixes: 453a73c3069a ("btrfs: zoned: reclaim unused zone by zone resetting")
-Cc: stable@vger.kernel.org
-Signed-off-by: Shuangpeng Bai <shuangpeng.kernel@gmail.com>
----
- fs/btrfs/zoned.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index a016cb471beb..e30b6a61c781 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -3158,7 +3158,6 @@ int btrfs_reset_unused_block_groups(struct btrfs_space_info *space_info, u64 num
- 		}
- 
- 		list_del_init(&bg->bg_list);
--		btrfs_put_block_group(bg);
- 		spin_unlock(&fs_info->unused_bgs_lock);
- 
- 		/*
-@@ -3182,6 +3181,7 @@ int btrfs_reset_unused_block_groups(struct btrfs_space_info *space_info, u64 num
- 
- 			if (ret) {
- 				up_read(&fs_info->dev_replace.rwsem);
-+				btrfs_put_block_group(bg);
- 				return ret;
- 			}
- 		}
-@@ -3193,6 +3193,7 @@ int btrfs_reset_unused_block_groups(struct btrfs_space_info *space_info, u64 num
- 		if (bg->ro) {
- 			spin_unlock(&bg->lock);
- 			spin_unlock(&space_info->lock);
-+			btrfs_put_block_group(bg);
- 			continue;
- 		}
- 
-@@ -3221,6 +3222,7 @@ int btrfs_reset_unused_block_groups(struct btrfs_space_info *space_info, u64 num
- 		spin_unlock(&bg->lock);
- 		btrfs_return_free_space(space_info, reclaimed);
- 		spin_unlock(&space_info->lock);
-+		btrfs_put_block_group(bg);
- 
- 		if (num_bytes <= reclaimed)
- 			break;
--- 
-2.43.0
-
+Am 31.07.26 um 13:14 schrieb Christian Borntraeger:
+> 
+> 
+> Am 31.07.26 um 13:12 schrieb Qu Wenruo:
+>>
+>>
+>> 在 2026/7/31 20:27, Christian Borntraeger 写道:
+>>> One or more of the following files ( btrfs-swapon-kernfs-repro.sh ) violates IBM policy and all attachment(s) have been removed from the message.
+> 
+> Oh.
+> 
+> 
+> Lets try this:
+> #!/bin/bash
+> # Reproducer for the lockdep circular dependency
+> #
+Can you reproduce the lockdep message?

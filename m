@@ -1,61 +1,60 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 711BF3C660C
-	for <linux-btrfs@vger.kernel.org>; Mon,  3 Aug 2026 23:55:12 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B22F13B4EBF
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Aug 2026 23:55:47 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785801315; cv=none; b=b401wYXNkPE3vgT9BjP3mQs5QgcDPJrW0QhOLG2xJVSGIXg+3lckiP8FIYoYBgWcoJEtGSh7I2D+M2XfSR+QEmdoRf8OeySDzqHHd8BH3D2NX1by4em6/Qc3AAnyQTefcjTmHnG7CxI+1FfkdWHuAe/1MpjafR9f70gieYMXr2w=
+	t=1785801349; cv=none; b=DSlltcgluenKYm91VRRs2KP9T8ecMtwEzqboY18bISfB5byX0oCN5A2pqL58G8OvJWyGsWVHt+baZLTVmmOtTr5cMrDtpdlesDkrMFNTel25o1f2yCOGcneZI56yEABAJMUGlFTTaQMnoh5ZsNVkwTgWl136kho2rSywd7KinbQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785801315; c=relaxed/simple;
+	s=arc-20240116; t=1785801349; c=relaxed/simple;
 	bh=fGvviV+vYU7uX5NqfLxSXffOZxCnI+jmw4PzZSTFLaQ=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=jjTh22nlCtK6OqEBtuAG6tG5gdK62gQrmEP6zDdB3MPWWr10d1ZZXBz6l8XcF+3H70a+PRSX1BLGvdoTLnI5r4cr8zSh2i2nrAXmJktwlGK8ZJ8gvabMTGAKP9bhrty/PKmwFn4pk2pB4UKAWnHOGrfgCRCgyS7tqa5fUP1zIcc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=rlX27Gbl; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tmv+KSXu; arc=none smtp.client-ip=195.135.223.130
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=gfesDYJg5ao6o2sp+kdav+Ks6lanTcynjQnFnK7Mvt0DLIKdXkzZskESvb0kJZqUO9MIhQ1+Kz2FYheZqEM6O/we8Ab4ThGpPm0xjot3jxchzCHZh5P2G5TwCaLK2yBY+2GFTYfPhvKt/QfU4nwtFxyHMmnmDlqJsDb6v9vOeDU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NKOzbnJB; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=aybpHRJ4; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="rlX27Gbl";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tmv+KSXu"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NKOzbnJB";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="aybpHRJ4"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 55A5E7F434;
-	Mon,  3 Aug 2026 23:55:02 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C99857F43E;
+	Mon,  3 Aug 2026 23:55:37 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785801306; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1785801341; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
 	bh=y/wPOgGtSbruc5STgM5zCVYa97ouCUDc3Xi/bSAUNWg=;
-	b=rlX27Gbl3uohzIMdFJ11l9CvvfWjnPGA0BppEp+HZ7vyKIpHkFRPtTX7ZT5cZTs/XMTvdF
-	uK15Vipw0SQomlABL3mbGfQ40SeytCk3GnMbN+iiIMTZj/DzTmmRE+WyXAcTRed3n1Y/7t
-	5B7/NkatgXtO0Rdo37vCM1g9UDXOJh8=
+	b=NKOzbnJBRGq1BMyde1xx9grpk/BPEtwLwgCIKupNRCUcRzUyoBO0zQ0wzQgkYN44WTcjWQ
+	9hJbw478bUP4p+Th5p8Qe/ix5B5a1RyO0GDkS59DP/AGPDtc7qInaIJLU9KRL28RNTIwa0
+	QimNAXs9KrfLfZHEwYe0OIEiF4QhWLc=
 Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=tmv+KSXu
+	dkim=pass header.d=suse.com header.s=susede1 header.b=aybpHRJ4
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785801302; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1785801337; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
 	bh=y/wPOgGtSbruc5STgM5zCVYa97ouCUDc3Xi/bSAUNWg=;
-	b=tmv+KSXuyQ3j+8kp4xdozfQtEcTN57vL0U6u95tYd/HaEmUcglHq5EbtGjNz0nJ55W3u9F
-	4yHU5P+6rB2nbO7VIKGhxy+V2CbT1UlkxCUNIVSjx9jIzsfx8Bzm94ByWC+c04CZoSdonG
-	KaoHaDi76ARq/giS7359cnY0eHT1ye4=
+	b=aybpHRJ4KcWmpvjLCch3QL4+ooEAg+UhvnKvCg9h7Yij35RNftwhVsO72zfQ47eHy0iM8+
+	8L/GCpmeXse78kSu62/DMOuuQxospYXEWJuUeU6L5o77WeDhk4VMNqdQ1jn6l/xp1xW5jE
+	R7MmTHIhapUFp246PRHAyx11iOxi1Uc=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CF471779A1;
-	Mon,  3 Aug 2026 23:55:00 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8EE12779A1;
+	Mon,  3 Aug 2026 23:55:36 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id XeSTI1QqcWrhZwAAD6G6ig
-	(envelope-from <wqu@suse.com>); Mon, 03 Aug 2026 23:55:00 +0000
+	id GGRUFHgqcWobaAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Mon, 03 Aug 2026 23:55:36 +0000
 From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-xfs@vger.kernel.org
+To: fstests@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
 Cc: Christian Borntraeger <borntraeger@linux.ibm.com>
 Subject: [PATCH v2] fstests: add a dio-read-into-mmap and sync race test case
-Date: Tue,  4 Aug 2026 09:24:39 +0930
-Message-ID: <20260803235439.25785-1-wqu@suse.com>
+Date: Tue,  4 Aug 2026 09:25:14 +0930
+Message-ID: <20260803235514.25815-1-wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -64,35 +63,36 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 55A5E7F434
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spamd-Result: default: False [-4.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
+	DWL_DNSWL_LOW(-1.00)[suse.com:dkim];
 	R_MISSING_CHARSET(0.50)[];
 	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid,suse.com:dkim];
 	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:email,suse.com:dkim];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_THREE(0.00)[4];
-	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,suse.com:dkim];
+	TO_DN_SOME(0.00)[];
 	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+	RCPT_COUNT_THREE(0.00)[3];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,suse.com:dkim]
 X-Spam-Flag: NO
+X-Spam-Score: -4.01
+X-Spam-Level: 
+X-Rspamd-Queue-Id: C99857F43E
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
 
 There is a report that on btrfs, if the following workload are running,
 btrfs can fail:

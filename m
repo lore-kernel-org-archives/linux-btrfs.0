@@ -1,44 +1,46 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9500A3EB0FA;
-	Tue,  4 Aug 2026 18:37:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C3A8C34F46D;
+	Tue,  4 Aug 2026 18:46:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785868675; cv=none; b=n/LnL/BnY3P35FpL618sFEL0ZsRmyZbDQ3G+HsyCaqDgMlOz7IZ3gtLQ0qlynmH5mrKhjlxu9/fUGn1kaAY0Qyrce9ckKPOpKCESKUE2xGI8w9fuh9sEqxpeZAkRtDvfQ+wUjUSysD3mf4Jyz5zoe+Z17MNkhWX0cxWry/dWOSw=
+	t=1785869170; cv=none; b=g7MRvey33OaKB94N97RGnEK7meI47a5+7fqX73WVgHkn4gbocKK+xaj/axjO6dJoS8grprLVGf0eWiJ7SbaJMt2nckeAZppnwcU5rzbOKF1IiRkbxLYKSLlTq0+mCXR9ixN/39blMfdmA7Lc3+EAYonjVqgQtLIMG1KtlUw0WYQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785868675; c=relaxed/simple;
-	bh=07cBacEHSGLAxN3NJZwdLIVfQa/OQXOqaKqYUGKOKZE=;
+	s=arc-20240116; t=1785869170; c=relaxed/simple;
+	bh=DmPkr4gw4tpMES9HPzUjrPXjk5IhGZ0GPckfHPNBG9g=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Lf8n0dsNOUhEeA5EaqHSWg28RjxaAFbZZovQffrLs+dQieM//j5sJbrIJdk+c+5I/rrXJfkPsbm2opW9y9SdE5I7z34NA2cNm0OxIMCJPVfn6axyPCLexJHb2ZZbxcVjM2SN1pVX7gktLuhFrb4h0kKTcrrx5sgOAkMoHkC07u8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=hp6rw9ri; arc=none smtp.client-ip=100.103.45.18
+	 Content-Type:Content-Disposition:In-Reply-To; b=gf3DhdtGWBl8kii/TbciQZDk1wKAdIAQUGngl8U8cGEmO0ObEpnmzNmtYASrJde4HtFyH/lackQNsA/IlcwLXhp89j190wOcxdQh8rWCKjtaIGg+/td7+ay19UJawaeViPwtX65X4+kjoaZcUh8bKw1URRl9LAnMSfzXA1mJ0xg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=pass smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=S5gEwsVZ; arc=none smtp.client-ip=90.155.50.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hp6rw9ri"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E667A1F000E9;
-	Tue,  4 Aug 2026 18:37:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1785868674;
-	bh=ehEaXeyHsLmTxWK7M3YlgnXecFCsvwQ93NjgKqgcras=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=hp6rw9rizyKhIpvcVktLWi5HXvQ43+URj/96MqC/d6VpvipumAblyalS02HPyiNQ4
-	 GzV7jGX0AtHAfEpB80iiBXIHiUXDbI8QQPLD1BEfbdO9uOyojdPHa9k1CZ8a+B6RPN
-	 AOBX9+l2BbKq/L1nXUv/cpgVq83P4204ulINDCB/U5N1mcUYYZjNUybxC5/u3aFMqH
-	 g/TaV2sSxtDpl9Uzhazk0F0X8pna/Cm05hUe2YeCRHdCWjd5y5ywbqssoA1TwEqD+y
-	 Jurd8kjKsAC90UmXeVdAsZOHZ9rV1GQrtRJgzNveyUq/LTUycW9SN1YU43paaP2zZP
-	 TMPtGi8b0HoBQ==
-Date: Tue, 4 Aug 2026 18:37:52 +0000
-From: Eric Biggers <ebiggers@kernel.org>
-To: Christoph Hellwig <hch@lst.de>
-Cc: Andrey Albershteyn <aalbersh@kernel.org>, linux-xfs@vger.kernel.org,
-	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org,
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="S5gEwsVZ"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=YEg8nX4QR7Tnv1Pjl2JIvJuTWffr1MeWTUmFwQGwg3Q=; b=S5gEwsVZR1pLMAenBZ15Zq/7rH
+	wxFDRQqwxNXNaQ7AX1yKsc9SBc1k/SG44ZHUwpLoRvEeuPx/OjrX/pEXSCOJ1H5KXLblGcoswVXzu
+	OEI7spEqXl2vUF5i7ATHNOmBfaKeiRygC1edO3wGpTEV91rggC/V1/7OQo4iCgvHN10ODQm5JOE/F
+	gWQHqvYhrh4UlanIfxG3h8Io9FWh+G4upcuq8CZ/0sRvLUyKxp3pZ2AHd8UBcBHe4HaFlkj5nDY7D
+	Sq9AY5JQTM6p1cgbblFFN6lJ9u785f/DNycwQw9uTJtREy3d95eLYx3tG0LQmWI0ef8IiMZn+V7rk
+	C5+AfzlA==;
+Received: from willy by casper.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wrK9L-00000004Wkx-1OWC;
+	Tue, 04 Aug 2026 18:46:03 +0000
+Date: Tue, 4 Aug 2026 19:46:03 +0100
+From: Matthew Wilcox <willy@infradead.org>
+To: Andrey Albershteyn <aalbersh@kernel.org>
+Cc: linux-xfs@vger.kernel.org, fsverity@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org, ebiggers@kernel.org, hch@lst.de,
 	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
 	linux-btrfs@vger.kernel.org, djwong@kernel.org
 Subject: Re: [PATCH v14 05/21] fsverity: improve flushing performance of
  fsverity_fill_zerohash
-Message-ID: <20260804183752.GC2904385@google.com>
+Message-ID: <anIzawflI11C0FT2@casper.infradead.org>
 References: <20260803200820.393203-1-aalbersh@kernel.org>
  <20260803200820.393203-6-aalbersh@kernel.org>
- <20260804174223.GB14046@lst.de>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -47,40 +49,18 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260804174223.GB14046@lst.de>
+In-Reply-To: <20260803200820.393203-6-aalbersh@kernel.org>
 
-On Tue, Aug 04, 2026 at 07:42:23PM +0200, Christoph Hellwig wrote:
-> On Mon, Aug 03, 2026 at 10:07:55PM +0200, Andrey Albershteyn wrote:
-> > The current version calls flush_dcache_folio(), in memcpy_to_folio(), to
-> > flush whole folio on every digest (which is 128 for 4k) on the HIGHMEM
-> > systems. Open code folio mapping and flushing to copy all digests at
-> > once.
-> 
-> This looks correct, although to me optimizing for this feels like
-> premature optimizations not worth the ugly code unless we have numbers
-> to justify it.
-> 
-> If Eric wants it:
-> 
-> Reviewed-by: Christoph Hellwig <hch@lst.de>
-> 
-> > +		if (folio_test_partial_kmap(folio) &&
-> > +		    off > PAGE_SIZE - offset_in_page(offset))
-> > +			off = PAGE_SIZE - offset_in_page(offset);
-> > +		for (; to < (vaddr + off); to += vi->tree_params.digest_size)
-> 
-> Style nitpick: no need for braces when comparing with simple
-> integer arithmetics like this.
-> 
-> > +	for (off = offset; off < (offset + len);
-> 
-> Same here.
+On Mon, Aug 03, 2026 at 10:07:55PM +0200, Andrey Albershteyn wrote:
+> The current version calls flush_dcache_folio(), in memcpy_to_folio(), to
+> flush whole folio on every digest (which is 128 for 4k) on the HIGHMEM
+> systems. Open code folio mapping and flushing to copy all digests at
+> once.
 
-Well I didn't ask for it per se, but I pointed it out and asked whether
-anyone will care about the combination of XFS && FS_VERITY && HIGHMEM.
-Based on Darrick's email it seems the answer may be no?
+Have you looked at the implementations of flush_dcache_folio()?  On
+any architecture we actually care about, all it does is set one bit
+in folio->flags noting that the folio will need to be flushed if
+it's going to be accessed by userspace.
 
-If it's kept as-is, adding a comment mentioning that it doesn't need to
-be optimized for HIGHMEM would help preempt any questions about it.
-
-- Eric
+But, um, do we support mapping folios containing fsverity data into
+userspace?  Can't we just delete the calls to flush_dcache_folio()?

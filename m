@@ -1,152 +1,229 @@
-Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
+Received: from mail-wr1-f47.google.com (mail-wr1-f47.google.com [209.85.221.47])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E7F4C41A511
-	for <linux-btrfs@vger.kernel.org>; Wed,  5 Aug 2026 09:58:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B53FD420E71
+	for <linux-btrfs@vger.kernel.org>; Wed,  5 Aug 2026 10:59:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785923941; cv=none; b=Bexh8BfQuuzqMhs3ppTqdRCzF1F9kg0IIDJCU6FrNfYb1tHbR+CDTRSwn/SVQCMMo3IBdihqAUgIN1o9SPekXPAR724+hOrFqoqgJUbGOwvnj/3TMSKLRyz/oFPv9ue3+Nod58I42T/9+Ya+WdccHOeamb80CT1GisQ8Y/vrE2g=
+	t=1785927553; cv=none; b=rNbBHfKMM7qWvFMNEE5VVTXFREkTo8nzwMxQlIHZszaAuok6EcyQNIRus7BimWFO1Z2Un22i/OAYb0qquAh3BFBn0jYqWrspVUpcqHi1l3ZZA1jWi/o5ECCC+Q/sjERGWiPI9yRMPUi6YcwHWsPn+A/ZEqcM4BwN4dSJuseMHYA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785923941; c=relaxed/simple;
-	bh=c7YIVA+SG+qzFPXxkLgUdQa2D+RAa4Xove/Ai1/Z7uA=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=MO5bAEypaPbiefY+I2POzWWxBEqVtAwRgWveEvmQDGPrWVSNLEOtUOWKRd5YjMix7AF2pZxPfM7t67aAWRodShK6mSvNi43lcyOmRNVTnRe1F9zU/fBuAI7nxFKENdqFf61HIkEWLkTpt8bPm9PHZWI/5t6fqPw0botaa9Whrho=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=r6eA/tXE; arc=none smtp.client-ip=209.85.128.45
+	s=arc-20240116; t=1785927553; c=relaxed/simple;
+	bh=/1dtEFjUK+P0pvRVxCDasuHqjQBqBeraGQRhegPMj5o=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=ISFVpk6tSRrQNTrZEZrEyfKE/DDCpJbyQXmzvIQ4+1PjUX8PpXbuk5JwNCDLLdcfiKLZT+/vk/TGR/3+ZbinfpZKpHJH7GrR5WMoXU8ROepsPas7WYbRtIVyuTK8Aue/3LuDPKnFndoJaRom7dPIIH0nZo/2YJvmWLz6deou9IY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=SZEXOh1K; arc=none smtp.client-ip=209.85.221.47
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="r6eA/tXE"
-Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-4954aff6088so7950135e9.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 05 Aug 2026 02:58:59 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SZEXOh1K"
+Received: by mail-wr1-f47.google.com with SMTP id ffacd0b85a97d-4799b3f7c83so500557f8f.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 05 Aug 2026 03:59:08 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1785923938; x=1786528738; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=1/iHo2xERAnExVG+3ChTm788wqBgAkaZ40GV3g2etAI=;
-        b=r6eA/tXE09Kip4snbq7u/0XVP9PWdBp7FSOZk7wm8NrugIVK9ZC8VZEPUNQ43x5X7U
-         GBiWbOBIWQ9brrsvsmYd7FnO7fFfbq/EUSMHeBznFfPCsM8Ezw0nogUZBZ8fGesNXTtc
-         Pa+oRaYTDTWT/2w7eVEHcqyEeyXnp4oxXJ4hNc+e5hyL+ceA27N3Cfjt7wyKki8G+/oZ
-         1FLzrrkZDOOETwUtUgnUBSVjBPmEelPAW800te+Ni8L8AKGP06V7RPffeob7eTTIu9Cc
-         gMfp3fkO1ZdB57EZ9anYRU5dEzhYGLjFv5+l6FB2pqC1wrwv97VIm5kTb+fU2rRQhY3t
-         sM8Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785923938; x=1786528738;
-        h=in-reply-to:content-disposition:content-type:mime-version
-         :references:message-id:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+        d=gmail.com; s=20251104; t=1785927546; x=1786532346; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=1/iHo2xERAnExVG+3ChTm788wqBgAkaZ40GV3g2etAI=;
-        b=aqoCwo4UACR4YrOPfvZvhLEerT2eOJtnL54whN5RdJxORehHka74xXSEvMsn0RjkZr
-         8A27o9oo2Di/ZGTgzdd/dzAIEFa5A12ekdZlwsxTw8D+EVCYdI3V9qr+/8Vk6Oysm3fV
-         /JDFStXEq4/vIy1ZANlGexROMQTbw9YSPS459r9reNCfhkEHOtBzMu5lG8hy6Y5joFQt
-         FAvdQrh4047hgBK1gjJcV4syD8SPUkoismc4T8YXPLWWm3RMYiiruM0vXEzr6WtsBy/v
-         +rFULWg8wf7bGLK8oUS61Jdapr6LBbpDVSM+nuqlIw4zWq7eFEcU14bZzDbatm0cVnup
-         GA2A==
-X-Forwarded-Encrypted: i=1; AHgh+RrM7+ivQx92w1tj6rzAONezQgh9cqwDu0simOcWjLnZgFUEKuYMn2OYHZBHtQ1WtToX2EP8rlBOFMspOg==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw1qVz3Iwx2AlhEkn8agyNA1bGUQumJoapJqQBSGjwzPC4nMAVr
-	suTSOccNaqhXMTa4K4IgR5Nf6hViicGiFgB7vgSMXdodDYxt6bTpG0DK
-X-Gm-Gg: AR+sD11yPlvODrh0mGxqayzlCVMYhtBtiklqTuJ45pJCYpp+AzhWGoXOA9n0y2tn5Wi
-	ac9trpc1cRd32rTI5DZgc75pM+PKUpZNFVRb82IFD5yY8tZ5/Z2k8a3LJ9Z7xCq48JknKd1mxdh
-	ST1RjZUpbmkrrU+9wXP5Tsq9DZ59Goa0Z0UBIQwV84kigSHXhEXI9q4qexWOdoHAcegBp7lfh9E
-	FbeYCitio5B9K5DsEIAadmvmy0RgyZzxA4NA159jFdp5VsTfHQ0p5qNkdvZ4nqzaf5NX+fbxAtw
-	7Wcpm8BkB11YMrGlAJWKY/rO05Dx85ybPb1fTddNBb/Yx3UQgvFv2JWVQE+EZvFCKylx0jG3Ict
-	44+fI1RSlVYfxr70JUTbH/9wzUdIQu1u+3H62aR0sGr6Cq+kcdHM+/u5K1CnsuFomM2GLIZdVAE
-	AkqsU2qHpylLP6WvMU8B681PHfLk2ef9rAIjIsGNZpU931vQRwzs8fzBuYDzFMPLZWNbBi/o6GK
-	llu7ixI13AyMQ==
-X-Received: by 2002:a05:600c:4e87:b0:493:e365:ace9 with SMTP id 5b1f17b1804b1-4994e7c0356mr61353515e9.11.1785923937984;
-        Wed, 05 Aug 2026 02:58:57 -0700 (PDT)
-Received: from localhost ([37.30.50.82])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-49949fcb46esm188721605e9.5.2026.08.05.02.58.57
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 05 Aug 2026 02:58:57 -0700 (PDT)
-Date: Wed, 5 Aug 2026 11:58:56 +0200
-From: Bartosz Chronowski <immersa.bartosz.chronowski@gmail.com>
-To: syzbot <syzbot@kernel.org>
-Cc: syzkaller-bugs@googlegroups.com, Chris Mason <clm@fb.com>, 
-	David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, "Yan, Zheng" <zheng.yan@oracle.com>, 
-	linux-kernel@vger.kernel.org, syzbot@lists.linux.dev
-Subject: Re: [PATCH] btrfs: commit current transaction in
- btrfs_relocate_block_group
-Message-ID: <qh7zryk22vobwtwcf2swvi4hnspqu2rdrgqv7k6el64oxlyo7c@lqxxk46og5ju>
-References: <a06b5077-baa5-473f-9c65-bf72ac651b14@mail.kernel.org>
+        bh=qChqnXEV/RUrII3F6FtB3OpL17H6S0GQj9i1G4DFOPk=;
+        b=SZEXOh1KpuYJfaF3im7hVoma9sONKG+vqzLlaf7ooZ3+DAVgQF2n8nHiu3IBzKzRRw
+         dp61JCqy4D2c2x5T+fFsho0Kc4LPfYzRhYnaRPQxTWRUmJNY2O3uEtNUJ9g0jtsQzB78
+         acwHo/V/p7Z+a/CycbdYZGZ0/BQXrBPXtv82DmWLOJ6CXmegiDSc5Vpr9pIheKRjGqMF
+         r+UcPmzDpbWcI8H13x2BkfrjOdsL8Xsy75IrRzcWKT2gi+twbWrzsVK/oIe0qJM2wJoa
+         yEryF/AJxdc6tNkssc5mLthTAMvFEWY1cWRMtRboKcJGJ7HfUeRlxV4Ne690/an9Vv8/
+         6wYA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1785927546; x=1786532346;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=qChqnXEV/RUrII3F6FtB3OpL17H6S0GQj9i1G4DFOPk=;
+        b=bzMA2ks9SrhuNNwNJbHc5w0rD8xioXUppCOCJbo3PpF1e+AFFzJwNPGIbbPhduTeCs
+         QSsWvvqJeFGvZCVKhoj5iqLo6g661k1NNl+Z39QDPiAOxtv5bfYJk2nxf4yBH2JNC0e0
+         8P+UyveqjNnnzgIgsoRllTE5FKaWetX+NCMa/lgg7OrF5fwMylHxwIzRVZ2dA/8n1Aqi
+         PHDFfRg3R17LUVsnS3rupCI8Oe0zmb/4x9bnge31nYSwGQFQmBDjDl1IdRWAIuX8V5W1
+         w6SCAQc8JlSqJ2RyRcGWnB3PIBidAvOij52lIHX7U7FlA/SvvyBaCPo3cHATDX/HcFHd
+         iCDw==
+X-Forwarded-Encrypted: i=1; AHgh+RqDzVfIizz0hNg+w0bTxLNXsLzVWxrwbEw6lWaHLkmWqleVq5vGKYE9V46+RF9jCfiaZ0SvpLkmh2MK0g==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyLffK0PJJBjXp5O0ZvsljkatC2NC9qNKIbo3XSYheKYlhY9oi9
+	r77Qeerlsui6SuhcBcM/gx1arj+5qu/QVPLubtytEWH4h9r6EmGrX4QV
+X-Gm-Gg: AR+sD11tZgMLMIXd17e8EnA++9CgFBnl3EhnSK7tpwGP1OHsM2ngicJxPGVeLOQ1BvW
+	nMJynseHWtnG5BFJOiUnkdNu/woXgoC/MmsWwh2hHoP1rzs9iAAyXE6TyPWpgN3+nBC5k7spQDq
+	PQC6I2zZaqX66rDE7vDnXdVit1DV5nXHdwTdVxJbqQpUjN/YFto+gxkDYv/9vYapZ6WJByrz//G
+	kMDoYmSYR+tCZ6LJJdFzTFm9SeubHZvCTxYlnVSE0afT9eNfd4A03UOMgSLUgsA+mEGQ8thQEfy
+	9pclLH15GzerVSKyYNRQQM8oIDcxwYsg8Ey/TBlJK7eJ/EwzZKvRl/VaS8s6d99ejoqNLNho8eP
+	MkY7/0Ya5bcF2Ds6WQw8UA5/X+C1SPwP93Hm9bnL/GR11nVQuWnhkQrNIdREQ4Dz951dfwbraNI
+	2BIdA6ewrfPnZLH52ZMMQvDILkZS//R2i6D0/nKu+ZVghx0Jmm1iTjpfFN2jL1LJblToZ3z2ozl
+	2ezx0O+0/LfwaVK0aksTnsGYVlPKynbaFJkMUeBKDAOcJRnnF52kIPfVDkzw2BXhGfhJRzNOq6g
+	RI6Pf020IImYZUWD4XgmXmVyA9gBqP4ZSzI3iOL6Nv1114uT
+X-Received: by 2002:a05:600c:4e94:b0:497:ff73:68d5 with SMTP id 5b1f17b1804b1-4994e6c5eafmr60022735e9.0.1785927545848;
+        Wed, 05 Aug 2026 03:59:05 -0700 (PDT)
+Received: from ?IPV6:2a01:4b00:bd21:4f00:7cc6:d3ca:494:116c? ([2a01:4b00:bd21:4f00:7cc6:d3ca:494:116c])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4994e035900sm80665575e9.11.2026.08.05.03.59.04
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 05 Aug 2026 03:59:05 -0700 (PDT)
+Message-ID: <8285ede8-bebb-403a-8a37-b9987cd37a8f@gmail.com>
+Date: Wed, 5 Aug 2026 11:59:10 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <a06b5077-baa5-473f-9c65-bf72ac651b14@mail.kernel.org>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v4 01/14] dma-buf: introduce initial file I/O
+ infrastructure
+To: =?UTF-8?Q?Christian_K=C3=B6nig?= <christian.koenig@amd.com>,
+ Jens Axboe <axboe@kernel.dk>, Keith Busch <kbusch@kernel.org>,
+ Christoph Hellwig <hch@lst.de>, Sagi Grimberg <sagi@grimberg.me>,
+ linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-nvme@lists.infradead.org, linux-fsdevel@vger.kernel.org,
+ io-uring@vger.kernel.org, linux-media@vger.kernel.org,
+ dri-devel@lists.freedesktop.org, linaro-mm-sig@lists.linaro.org
+Cc: Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>,
+ Andrew Morton <akpm@linux-foundation.org>,
+ Sumit Semwal <sumit.semwal@linaro.org>, Nitesh Shetty
+ <nj.shetty@samsung.com>, Kanchan Joshi <joshi.k@samsung.com>,
+ Anuj Gupta <anuj20.g@samsung.com>, Tushar Gohad <tushar.gohad@intel.com>,
+ William Power <william.power@intel.com>, Phil Cayton
+ <phil.cayton@intel.com>, Jason Gunthorpe <jgg@nvidia.com>,
+ Damien Le Moal <dlemoal@kernel.org>, Alasdair Kergon <agk@redhat.com>,
+ Mike Snitzer <snitzer@kernel.org>, Mikulas Patocka <mpatocka@redhat.com>,
+ Benjamin Marzinski <bmarzins@redhat.com>,
+ Vishal Verma <vishal.l.verma@intel.com>, David Sterba <dsterba@suse.com>,
+ Ilya Dryomov <idryomov@gmail.com>, dm-devel@lists.linux.dev,
+ nvdimm@lists.linux.dev, linux-btrfs@vger.kernel.org,
+ ceph-devel@vger.kernel.org
+References: <cover.1785274111.git.asml.silence@gmail.com>
+ <bc20381e8daf85ac58811c344325d8192cde9d1e.1785274111.git.asml.silence@gmail.com>
+ <181b08be-04bc-4ae9-bb88-15321a82440f@amd.com>
+Content-Language: en-US
+From: Pavel Begunkov <asml.silence@gmail.com>
+In-Reply-To: <181b08be-04bc-4ae9-bb88-15321a82440f@amd.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-#syz reject
+On 8/5/26 09:27, Christian König wrote:
+...>> +struct dma_buf_io_fence {
+>> +	struct dma_fence base;
+>> +	spinlock_t lock;
+>> +};
+> 
+> Upstream has change to allow embedding the spinlock into the dma_fence, so this structure here is most likely not necessary any more.
 
-On Tue, Jul 28, 2026 at 08:45:36AM +0000, syzbot wrote:
-> From: Bartosz Chronowski <immersa.bartosz.chronowski@gmail.com>
+ok
+
+>> +static const char *dma_buf_io_fence_drv_name(struct dma_fence *fence)
+>> +{
+>> +	/* default fence release kfree's the base pointer */
+>> +	BUILD_BUG_ON(offsetof(struct dma_buf_io_fence, base));
+>> +
+>> +	return "dma-buf-io-ctx";
+>> +}
+...>> +static void dma_buf_io_map_release_work(struct work_struct *work)
+>> +{
+>> +	struct dma_buf_io_map *map = container_of(work, struct dma_buf_io_map,
+>> +						  release_work);
+>> +	struct dma_buf_io_fence *fence = map->fence;
+>> +	struct dma_buf_io_ctx *ctx = map->ctx;
+>> +	struct dma_buf *dmabuf = ctx->dmabuf;
+>> +
+>> +	/* the release path must wait for fences */
+>> +	if (WARN_ON_ONCE(refcount_read(&ctx->refs) == 0))
+>> +		return;
 > 
-> During block group relocation, btrfs_relocate_block_group() is called to
-> relocate a block group. It first makes the block group read-only by calling
-> btrfs_inc_block_group_ro(). If there are pending space reservations or
-> pinned extents in the current transaction, making the block group read-only
-> can fail, leading to a transaction abort and a warning in
-> cleanup_transaction() during the transaction commit in
-> prepare_to_relocate().
+> Stuff like that is usually illegal.
+
+Should be fine, it's just a warning. The map holds a ctx
+reference so can't be 0. IIRC, it was synchronised a bit
+differently before. I can kill it, refcount_inc() has the
+same warning anyway.
+
+> And why are you using refcount directly instead of kref?
+
+Not sure it'd make much difference here.
+
 > 
-> To fix this, commit the current transaction before calling
-> btrfs_inc_block_group_ro() in btrfs_relocate_block_group(). This drains the
-> current transaction before the block group becomes read-only, ensuring that
-> pending extents are unpinned and space reservations are committed. This
-> does not claim global settlement of every reservation or later transaction,
-> but it provides a clean state for marking the block group read-only. The
-> setup commit in prepare_to_relocate() remains necessary because it commits
-> the transaction started during the relocation setup (such as creating the
-> reloc tree) to ensure everything is in a consistent state before starting
-> to move extents.
+>> +
+>> +	/* Prevent from destoying the ctx while unmapping */
+>> +	refcount_inc(&ctx->refs);
 > 
-> WARNING: fs/btrfs/transaction.c:2068 at cleanup_transaction+0x727/0x7c0
-> Call Trace:
->  <TASK>
->  btrfs_commit_transaction+0x262c/0x30b0 fs/btrfs/transaction.c:2664
->  prepare_to_relocate+0x3dd/0x4e0 fs/btrfs/relocation.c:3541
->  relocate_block_group+0x141/0xe90 fs/btrfs/relocation.c:3566
->  do_nonremap_reloc+0xa7/0x560 fs/btrfs/relocation.c:5323
->  btrfs_relocate_block_group+0x6e2/0xaf0 fs/btrfs/relocation.c:5490
->  btrfs_relocate_chunk+0x114/0x830 fs/btrfs/volumes.c:3647
->  __btrfs_balance+0x1b6e/0x29e0 fs/btrfs/volumes.c:4586
->  btrfs_balance+0xaa6/0x1180 fs/btrfs/volumes.c:4973
->  btrfs_ioctl_balance+0x3dd/0x640 fs/btrfs/ioctl.c:3474
->  </TASK>
+>> +
+>> +	/*
+>> +	 * There are no more requests using the map, we can signal the fence.
+>> +	 * It should be done before taking the resv lock as someone could be
+>> +	 * waiting for the fence while holding the lock.
+>> +	 */
+>> +	dma_fence_signal(&fence->base);
 > 
-> Fixes: 3fd0a5585eb9 ("Btrfs: Metadata ENOSPC handling for balance")
-> Assisted-by: Gemini:gemini-3.5-flash Gemini:gemini-3.1-pro-preview syzbot
-> Reported-by: syzbot+021d10c4d4edc87daa03@syzkaller.appspotmail.com
-> Closes: https://syzkaller.appspot.com/bug?extid=021d10c4d4edc87daa03
-> Link: https://syzkaller.appspot.com/ai_job?id=ca6bd6c4-fbcf-4533-af07-79b4a0eba74d
-> Signed-off-by: Bartosz Chronowski <immersa.bartosz.chronowski@gmail.com>
+> Signaling fences has a whole bunch of very strict rules associated with it. E.g. you can't alocate memory for example.
 > 
-> ---
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index fb85bc8b3..05f5110c2 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -5430,6 +5430,10 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start,
->  	if (ret < 0)
->  		goto out_put_rc;
->  
-> +	ret = btrfs_commit_current_transaction(extent_root);
-> +	if (ret)
-> +		goto out;
-> +
->  	ret = btrfs_inc_block_group_ro(rc->block_group, true);
->  	if (ret)
->  		goto out;
+> Are you sure you actually need and want a dma_fence here?
+
+Waiting for potentially a ton of IO synchronously on invalidate
+sounds like a bad idea though. Hmm.
+
+>> +
+>> +	dma_resv_lock(dmabuf->resv, NULL);
+>> +	ctx->dev_ops->unmap(ctx, map);
+>> +	dma_resv_unlock(dmabuf->resv);
+>> +
+>> +	dma_fence_put(&fence->base);
 > 
+> You should probably set map->fence to NULL after that.
+
+The map is freed two lines below, but I can add it as
+a defensive measure.
+
+>> +	percpu_ref_exit(&map->refs);
+>> +	kfree(map);
+
+...>> +struct dma_buf_io_map *dma_buf_io_create_map(struct dma_buf_io_ctx *ctx)
+>> +{
+>> +	struct dma_buf *dmabuf = ctx->dmabuf;
+>> +	struct dma_buf_io_map *map;
+>> +	long ret;
+>> +
+>> +retry:
+>> +	/*
+>> +	 * ->dmabuf_map() will be calling dma_buf_map_attachment(), for which
+>> +	 * we'll need to wait for fences. Do a bit nicer and try to wait
+>> +	 * without the resv lock first.
+>> +	 */
 > 
-> base-commit: 8cdeaa50eae8dad34885515f62559ee83e7e8dda
-> -- 
-> See https://goo.gle/syzbot-ai-patches for information about AI-generated patches.
-> You can comment on the patch as usual, syzbot will try to address
-> the comments and send a new version of the patch if necessary.
-> syzbot engineers can be reached at syzkaller@googlegroups.com.
+> Clear NAK to that. Always wait while holding the resv lock if you can!
 > 
+> It is absolutely not beneficial to do this outside of the lock and usually just hides problems instead and prevent fixing them.
+
+Ok
+
+...
+>> +	ret = dma_resv_reserve_fences(dmabuf->resv, 1);
+>> +	if (WARN_ON_ONCE(ret)) {
+>> +		struct dma_fence *fence = &map->fence->base;
+>> +
+>> +		dma_fence_get(fence);
+>> +		percpu_ref_kill(&map->refs);
+>> +		dma_fence_wait(fence, false);
+>> +		dma_fence_put(fence);
+>> +		return;
+>> +	}
+>> +
+>> +	dma_resv_add_fence(dmabuf->resv, &map->fence->base,
+>> +			   DMA_RESV_USAGE_KERNEL);
+> 
+> That sequence is clearly incorrect!
+> 
+> The fence must be created after dma_resv_reserve_fences(), otherwise you definately have an illegal memory operation here.
+
+I'm not sure what you mean, can you elaborate? I only cared about
+pre-allocating it to avoid allocations here. We add / signal the fence
+only once, no reuse. The map is going to be killed here, and if we
+create a new map, it'll have its own fence.
+
+I can move the dma_fence_init() call here if that makes a difference?
+
+-- 
+Pavel Begunkov
+

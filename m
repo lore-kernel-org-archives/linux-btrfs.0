@@ -1,44 +1,44 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7BB5F4446EF;
-	Wed,  5 Aug 2026 11:54:22 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8E3AD473C93;
+	Wed,  5 Aug 2026 12:09:31 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785930865; cv=none; b=ebNEn4VT0rDkbdOyzYCEH+K/5NgjtZ7hepAOVVdxk00Tn6ukV33m01NCrQbhdp0AnHPkyHWW6xobphBHvTFRXWNDR7STYQdVicmhJCd4/yQmWWuvhdk73PUyRk5kwSH5inTL7TynLTV9yfzusvVO2kqaUuTu/Bf9biJGp2+e2Wc=
+	t=1785931785; cv=none; b=l195svv2qPEU9HdpCXizPRl5zYIFq1REO+q4OGDW4UoRbWPRmhkLilpyIpefMW/KSNGmdyALWvZJZ+zo9B7o7K80DZpGiwZUAEKOaa562CqbqnhZL1vzlRBRAHv7IbnMXP4X9tXsGaPJcTTLDfJZXZ45RikRGGT8dlpUySuXoWs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785930865; c=relaxed/simple;
-	bh=7+SXTtIRKHTDGlQmrN6xyy3k6eaNtniUyrgH292vTzw=;
+	s=arc-20240116; t=1785931785; c=relaxed/simple;
+	bh=Kjm/KGIUuW5Xpoo9pUroFqTiznBA3R9Ua0Qb2N7JQzQ=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=ZgyPZArsb9oLo+cfrGNAZt41Ls/hMhnSSYbGuHkFFFD926bYKNPm7wj6MbwDEuO44VSFfMImsi5AKbdWvLkxPPYNzEoxXNGMGUdXrJ8TULj1YBQIoZkiXP2e7HeBr9SW5rZe/15cDkjl1iPGWUp9Re/CMTxT2wJdM5ZscCXGHT4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UGZ2j3aq; arc=none smtp.client-ip=100.103.45.18
+	 Content-Type:MIME-Version; b=CPDYk7nog6kSp9FRJUlbzInL0VVXgos4/5GZqIN7uVPvGqZIoIj6brQ58Zffj4zX8eDpzNkXFxB2lt8vVpKTqLrVoZ/JqI8o7hT1fu8Cw4xQM7YIjom1vlERe7uX1dygJvRRSiTGUooqZIgxXOJdhXuT6ByAHFYFdh7c7F0BB1I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=K4F/uN3r; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UGZ2j3aq"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 52E9B1F00A3E;
-	Wed,  5 Aug 2026 11:54:22 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="K4F/uN3r"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 349481F00A3A;
+	Wed,  5 Aug 2026 12:09:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1785930862;
-	bh=O132eb46XAA2WnD+C6XZaEnkh3tisO3iLDfeGcTi3yw=;
+	s=k20260515; t=1785931770;
+	bh=/O9jtW1Y7DcrHeXrlLsnZ+3XkbzoopO1HR0NaafSByE=;
 	h=Subject:From:To:Cc:Date:In-Reply-To:References;
-	b=UGZ2j3aq6GJ2SdeCOyxgjA6FaEt/9bna8ahgfV25wk8/52VOmErz/sgKdB78//oN+
-	 wRLgnlehPQi74C01Cz6R4aX6n6bLQiOLitNaXiXVQg6JH34Z5Q/6bPPTgIOlqi6jqX
-	 0g1bu8zWQ4/Fsk3RAF49ohzzCzxhy6klW4TZtDJtqLiLJtm0mIwTBporetpIkFl6xT
-	 BF18R2zYFQe9K6E5TlFoM5ksYO739yBis7j/A4OjLM2/XCmsjEsl+3uET1RwtRvcQv
-	 ENJ04vw/hD3i48LzMED68o6lKd4YddO2HbZWIFm8cCvDflv9KF/e3pacpFS3SQ+6vs
-	 PLe94e7P06T/A==
-Message-ID: <8ebbafc475baff8aedf5e2b2718db867063fab07.camel@kernel.org>
-Subject: Re: [PATCH v2 2/5] btrfs: split btrfs_insert_delayed_dir_index()
- into prealloc and commit phases
+	b=K4F/uN3rlLbMRctZjo/UHdVXYa7IuC6jZRFY1ouRw0TNa3skgiQdPLAh5Rlfa456G
+	 yI/AdjQpgLNP258TPpSGVorc4/qc5Pug2RPK98dpnP8ujf9DP40DvRXWWoLSmxzg7K
+	 X0i18LI1SIwyUSjXk97+CNYWsjjMzOfwsQ4vATcTRgmLBNJaqBf0FpIKe1F+e9wlpK
+	 903uG71LKftYpWkLtWH9N3oiAacHkT8vrKCCn9o4I4XSOdlOoDIHhyGnYWPVeeab8i
+	 t6ADkcJqcY6toF28E+JAlIFTNtLsdRswCQkPodKEc90AIevT1rpfsmA5wEb85s6mk9
+	 RAd7/lMPDT24Q==
+Message-ID: <4deb757dbbd22f1ff5e060b1e2cd6e7c28ef5691.camel@kernel.org>
+Subject: Re: [PATCH v2 3/5] btrfs: pre-allocate delayed dir index before
+ btree modification
 From: Jeff Layton <jlayton@kernel.org>
 To: Qu Wenruo <wqu@suse.com>, Chris Mason <clm@fb.com>, David Sterba
 	 <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
 	kernel-team@fb.com
-Date: Wed, 05 Aug 2026 07:54:20 -0400
-In-Reply-To: <8b16c994-b322-42c9-b134-47dca5f2682e@suse.com>
+Date: Wed, 05 Aug 2026 08:09:28 -0400
+In-Reply-To: <dc3389ba-f29f-4897-9304-c9689eef4f37@suse.com>
 References: <20260804-btrfs-enomem-v2-0-4d923170e8c1@kernel.org>
-	 <20260804-btrfs-enomem-v2-2-4d923170e8c1@kernel.org>
-	 <8b16c994-b322-42c9-b134-47dca5f2682e@suse.com>
+	 <20260804-btrfs-enomem-v2-3-4d923170e8c1@kernel.org>
+	 <dc3389ba-f29f-4897-9304-c9689eef4f37@suse.com>
 Autocrypt: addr=jlayton@kernel.org; prefer-encrypt=mutual;
  keydata=mQINBE6V0TwBEADXhJg7s8wFDwBMEvn0qyhAnzFLTOCHooMZyx7XO7dAiIhDSi7G1NPxw
  n8jdFUQMCR/GlpozMFlSFiZXiObE7sef9rTtM68ukUyZM4pJ9l0KjQNgDJ6Fr342Htkjxu/kFV1Wv
@@ -123,52 +123,45 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 
-On Wed, 2026-08-05 at 08:44 +0930, 'Qu Wenruo' via Kernel Team wrote:
+On Wed, 2026-08-05 at 09:21 +0930, Qu Wenruo wrote:
 >=20
 > =E5=9C=A8 2026/8/5 01:14, Jeff Layton =E5=86=99=E9=81=93:
-> > Split btrfs_insert_delayed_dir_index() into three functions using a new
-> > btrfs_dir_index_prealloc struct to bundle the pre-allocated resources:
-> >=20
-> > - btrfs_prealloc_delayed_dir_index(): performs the two GFP_NOFS
-> >    allocations (delayed node + delayed item) that can fail with -ENOMEM=
-.
-> > - btrfs_insert_delayed_dir_index_prealloc(): populates the item data,
-> >    inserts into the rb-tree, and reserves metadata space. Cannot fail
-> >    with -ENOMEM since all allocations were done in the prealloc step.
-> > - btrfs_free_delayed_dir_index_prealloc(): frees pre-allocated
-> >    resources when the caller's btree insertion fails.
-> >=20
-> > The original btrfs_insert_delayed_dir_index() is refactored into a thin
-> > wrapper that calls the prealloc and commit functions.
-> >=20
-> > This split allows callers to move the fallible memory allocations befor=
+> > Move the delayed dir index allocation in btrfs_insert_dir_item() before
+> > the insert_with_overflow() call that modifies the btree. Previously, th=
 e
-> > the point of no return (the DIR_ITEM btree insertion), so that -ENOMEM
-> > can be returned cleanly without aborting the transaction.
+> > allocations happened after the DIR_ITEM was already inserted, meaning a=
+n
+> > ENOMEM failure left the btree in a partially-modified state that could
+> > only be resolved by aborting the transaction.
+> >=20
+> > Add an optional caller-provided btrfs_dir_index_prealloc parameter to
+> > btrfs_insert_dir_item(). When non-NULL, ownership of the prealloc
+> > transfers to btrfs_insert_dir_item(). When NULL, it allocates internall=
+y.
+> > All existing callers pass NULL to preserve the current behavior.
+> >=20
+> > Remove the btrfs_insert_delayed_dir_index() wrapper, as there are no
+> > more callers.
 > >=20
 > > Assisted-by: LLM
+> > Suggested-by: Qu Wenruo <wqu@suse.com>
 > > Signed-off-by: Jeff Layton <jlayton@kernel.org>
 > > ---
-> >   fs/btrfs/delayed-inode.c | 111 +++++++++++++++++++++++++++++++++++++-=
----------
-> >   fs/btrfs/delayed-inode.h |  17 ++++++++
-> >   2 files changed, 104 insertions(+), 24 deletions(-)
+> >   fs/btrfs/delayed-inode.c | 21 ---------------------
+> >   fs/btrfs/delayed-inode.h |  5 -----
+> >   fs/btrfs/dir-item.c      | 30 ++++++++++++++++++++++++------
+> >   fs/btrfs/dir-item.h      |  5 +++--
+> >   fs/btrfs/inode.c         |  2 +-
+> >   fs/btrfs/transaction.c   |  2 +-
+> >   6 files changed, 29 insertions(+), 36 deletions(-)
 > >=20
 > > diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-> > index db2ffab0941a..95d2dca80444 100644
+> > index 95d2dca80444..d9de7f269874 100644
 > > --- a/fs/btrfs/delayed-inode.c
 > > +++ b/fs/btrfs/delayed-inode.c
-> > @@ -6,6 +6,7 @@
-> >  =20
-> >   #include <linux/slab.h>
-> >   #include <linux/iversion.h>
-> > +#include <linux/error-injection.h>
-> >   #include "ctree.h"
-> >   #include "fs.h"
-> >   #include "messages.h"
-> > @@ -1469,35 +1470,74 @@ static void btrfs_release_dir_index_item_space(=
-struct btrfs_trans_handle *trans)
-> >   	trans->bytes_reserved -=3D bytes;
+> > @@ -1608,27 +1608,6 @@ int btrfs_insert_delayed_dir_index_prealloc(stru=
+ct btrfs_trans_handle *trans,
+> >   	return ret;
 > >   }
 > >  =20
 > > -/* Will return 0, -ENOMEM or -EEXIST (index number collision, unexpect=
@@ -178,31 +171,93 @@ ed). */
 > > -				   struct btrfs_inode *dir,
 > > -				   const struct btrfs_disk_key *disk_key, u8 flags,
 > > -				   u64 index)
-> > +/*
-> > + * Pre-allocate a delayed node and delayed item for a dir index insert=
-ion.
-> > + * Call this before modifying the btree so that ENOMEM can be returned
-> > + * before any on-disk state has changed.
-> > + *
-> > + * Returns 0 on success, -ENOMEM on allocation failure.
-> > + */
-> > +int btrfs_prealloc_delayed_dir_index(struct btrfs_inode *dir,
-> > +				     const char *name, int name_len,
-> > +				     struct btrfs_dir_index_prealloc *prealloc)
+> > -{
+> > -	struct btrfs_dir_index_prealloc prealloc;
+> > -	int ret;
+> > -
+> > -	ret =3D btrfs_prealloc_delayed_dir_index(dir, name, name_len, &preall=
+oc);
+> > -	if (ret)
+> > -		return ret;
+> > -
+> > -	memcpy(prealloc.item->data + sizeof(struct btrfs_dir_item), name,
+> > -	       name_len);
+> > -
+> > -	return btrfs_insert_delayed_dir_index_prealloc(trans, dir, &prealloc,
+> > -						       disk_key, flags, index);
+> > -}
+> > -
+> >   static bool btrfs_delete_delayed_insertion_item(struct btrfs_delayed_=
+node *node,
+> >   						u64 index)
+> >   {
+> > diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
+> > index e310a257c9a6..878d70aee2f9 100644
+> > --- a/fs/btrfs/delayed-inode.h
+> > +++ b/fs/btrfs/delayed-inode.h
+> > @@ -115,11 +115,6 @@ struct btrfs_delayed_item {
+> >   };
+> >  =20
+> >   void btrfs_init_delayed_root(struct btrfs_delayed_root *delayed_root)=
+;
+> > -int btrfs_insert_delayed_dir_index(struct btrfs_trans_handle *trans,
+> > -				   const char *name, int name_len,
+> > -				   struct btrfs_inode *dir,
+> > -				   const struct btrfs_disk_key *disk_key, u8 flags,
+> > -				   u64 index);
+> >  =20
+> >   struct btrfs_dir_index_prealloc {
+> >   	struct btrfs_delayed_node *node;
+> > diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+> > index 84f1c64423d3..1b956df2c571 100644
+> > --- a/fs/btrfs/dir-item.c
+> > +++ b/fs/btrfs/dir-item.c
+> > @@ -106,8 +106,11 @@ int btrfs_insert_xattr_item(struct btrfs_trans_han=
+dle *trans,
+> >    * Will return 0 or -ENOMEM
+> >    */
+> >   int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
+> > -			  const struct fscrypt_str *name, struct btrfs_inode *dir,
+> > -			  const struct btrfs_key *location, u8 type, u64 index)
+> > +			  const struct fscrypt_str *name,
+> > +			  struct btrfs_inode *dir,
+> > +			  const struct btrfs_key *location, u8 type,
+> > +			  u64 index,
+> > +			  struct btrfs_dir_index_prealloc *prealloc)
+> >   {
+> >   	int ret =3D 0;
+> >   	int ret2 =3D 0;
+> > @@ -119,6 +122,8 @@ int btrfs_insert_dir_item(struct btrfs_trans_handle=
+ *trans,
+> >   	struct btrfs_key key;
+> >   	struct btrfs_disk_key disk_key;
+> >   	u32 data_size;
+> > +	const bool need_delayed_index =3D (root !=3D root->fs_info->tree_root=
+);
+> > +	struct btrfs_dir_index_prealloc local_prealloc;
+> >  =20
+> >   	key.objectid =3D btrfs_ino(dir);
+> >   	key.type =3D BTRFS_DIR_ITEM_KEY;
+> > @@ -130,6 +135,18 @@ int btrfs_insert_dir_item(struct btrfs_trans_handl=
+e *trans,
+> >  =20
+> >   	btrfs_cpu_key_to_disk(&disk_key, location);
+> >  =20
+> > +	/* Pre-allocate the delayed dir index before modifying the btree. */
+> > +	if (need_delayed_index && !prealloc) {
 >=20
-> We can directly return a btrfs_dir_index_prealloc pointer, which reduce=
-=20
-> the parameter list.
+> This is exposed by sashiko.
+>=20
+> If we have @prealloc passed in, and before we even hit=20
+> insert_with_overflow(), the previous btrfs_alloc_path() failed, we=20
+> return -ENOMEM directly, leaking the @prealloc.
+>=20
 >=20
 
-...but then we'd have to allocate it separately. It's currently
-allocated on the stack by the caller. I think we ought to keep it this
-way, but I'm willing to be convinced otherwise.
-
-> Otherwise looks good to me.
->=20
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
->=20
+Good catch. It looks like sashiko also flagged some other similar
+issues nearby too that we might as well fix while we're in here. I'll
+plan to spin up a v3 and resend the series. Thanks very much for the
+review so far!
 
 --=20
 Jeff Layton <jlayton@kernel.org>

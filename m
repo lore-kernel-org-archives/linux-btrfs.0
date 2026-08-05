@@ -1,92 +1,78 @@
-Received: from mail-oo1-f71.google.com (mail-oo1-f71.google.com [209.85.161.71])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from m16.mail.163.com (m16.mail.163.com [117.135.210.4])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A65322FFFBE
-	for <linux-btrfs@vger.kernel.org>; Wed,  5 Aug 2026 00:00:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.71
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 447F536308D
+	for <linux-btrfs@vger.kernel.org>; Wed,  5 Aug 2026 02:11:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=117.135.210.4
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785888038; cv=none; b=KDgiDEFSqShySp2DOqiRjSC8f9Mpo/yStK6hgDu6RWbL4mSEaYivhkmehSdrXi9xINcmAEbMRm+b4ysQywfXjzL0fsNjNJAYTfsaLycykpqHxpz/qR3c2g92pKBGQYeJtiFS8miMxFm5EQVHk8GoK9sc+1pacD6qXTroLtlTgyo=
+	t=1785895922; cv=none; b=fagTUmbvH826S0vJmVyGXPQOXKfVn9X0gYVj/BKR+w4XblqkpdMgBL6++LadvqOeSrt3sOxfr+Y0u4Kjo3yiuL1FyU74KoD3n5caLU8YE985pBB2Yh/0YPrINK17BQRXG36fE+XcgnQFLWCIuKh2xYj7U/kVKoKTJO0m9nFnjUo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785888038; c=relaxed/simple;
-	bh=1STPsp4C9HCKwQYla/XMSrszVwwAaMoj5UlOwIAnHq4=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=OA4bEn1ceK+ZF+AheffVghlcwbSAEdDD4y6uJkO1mdAs1UCxvsKqEIEhh9u1HCKwVkpYnq8owIU+FngkesaWdpU5UwWUeZMG87KaN7YJm4WP99s6uqY6+69fYjWefzsVPobd/gnLudR0TEOf0euUlLDEl7TVGjbl8A/pl2Y3I44=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.161.71
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oo1-f71.google.com with SMTP id 006d021491bc7-6acaccb8b0cso349739eaf.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Aug 2026 17:00:36 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1785888035; x=1786492835;
-        h=content-type:to:from:subject:message-id:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=P9pPMj1iJ3xafh3apgLpB1ueVfFMD3biiIhGqGMirfk=;
-        b=XcdMMeK1dt7PBw46upo83tfREOAaBq8GsWCM1X/Kscpvi2wi2GLVR5XvNQtf9pFYbV
-         xDxfhaddWTf8WqDO9l+ZsDaDxvXXxKkyHN1jlKDhHQ0Wb6Mjs21l4z6ObrnQJ8+qQ2+N
-         zkbvmiBWFBqk0kS1GN9GEomBC80bjzEHrvy3Vxt+lNDQMa14DhiSuKhJ8/K18GwF/Eq6
-         c8o4FD6qrrXTUrGO/1atBbizSGNYsSQ05FDtRNPnnRXReRGcNLIGEBFU/cYRw94I9kXy
-         esO7PfhkSRr9csaf5quwZbGKGZ4iEu/3rNzVlYHqWdBiQtFshvf6cKJOESz0+4qFYifi
-         37Hw==
-X-Forwarded-Encrypted: i=1; AHgh+Rpw2wZVZ8ilrEwyG4tWXqpkaAl+wO1jrJx/D2IjUI2cS5OYO8NOaLwwrdmd9SIP7zJsLn2vvAqfBsox6g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxWuaOxjcq4Z/GCKEiw8kBIalQxQtraWwbntTX9hNkzhBqnTR8R
-	fSUNdZZOr+T19GO6bKx/c95JHjO0Ya8kon5Va4KjiMxg8/tfjbq53GdVf8E83fAF7NiKm2Hv1Vk
-	L/daKQYiXRpzJFRdyoCsUtdJTGSXV0ZiD/fiBcAznFitGVg4VFZp33lWZeKM=
+	s=arc-20240116; t=1785895922; c=relaxed/simple;
+	bh=N++zADuD+ZZHfBsuJBy/+yyvah7D+eoaMBMe8HtIwwg=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=AeRcqySVi490EpGTD0QyQ/+PkOyHo7ppAvF48RXhew4aFy8mzKYEWWGPUL4dI7Q66ODtyEtdNY9zsVufPz/XbEQj56RiGKqWH6fJ34clR9GsZOZ+7XU1DKr/BMaEyqlVkIZrQXYqXrYjXhFHVZuZC3LFCwdYCiMUBeeEh5B8P8k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=oni9HFL4; arc=none smtp.client-ip=117.135.210.4
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="oni9HFL4"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
+	s=s110527; h=From:To:Subject:Date:Message-Id:MIME-Version; bh=rB
+	FPlfEOVoaJAaDGc8aUuWIR4iDk1EDPl44C7tjYFZk=; b=oni9HFL4PtdZPDfAZa
+	j8YTvMkkPjyYyeOJKi7i7R99wWvNOHmG1UAVE0gopS+sI0robooGlLD8W20vGo2M
+	N0fyBf7izvgXVXCuE+pQDmcOdKeW4dOTNWmCJL3EjCzFM7VDuNCJt5rsoEZ7AdZN
+	QgBSJx+T2Cwh1HggOrkAmBjto=
+Received: from localhost.localdomain (unknown [])
+	by gzga-smtp-mtada-g1-1 (Coremail) with SMTP id _____wDX3_LZm3JqukrpNA--.22607S2;
+	Wed, 05 Aug 2026 10:11:37 +0800 (CST)
+From: Yang Xiuwei <yangxiuwei@kylinos.cn>
+To: Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org,
+	Mark Harmstone <maharmstone@fb.com>,
+	Yang Xiuwei <yangxiuwei@kylinos.cn>
+Subject: [PATCH 0/3] btrfs: fix io_uring encoded read cleanup paths
+Date: Wed,  5 Aug 2026 10:11:32 +0800
+Message-Id: <20260805021135.1896609-1-yangxiuwei@kylinos.cn>
+X-Mailer: git-send-email 2.25.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6820:f00b:b0:6ac:aa52:5a16 with SMTP id
- 006d021491bc7-6ae96f95281mr1364798eaf.25.1785888035444; Tue, 04 Aug 2026
- 17:00:35 -0700 (PDT)
-Date: Tue, 04 Aug 2026 17:00:35 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a727d23.40259c87.584f4.04cf.GAE@google.com>
-Subject: [syzbot] Monthly btrfs report (Aug 2026)
-From: syzbot <syzbot+list93ff57ed75573217e846@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+X-CM-TRANSID:_____wDX3_LZm3JqukrpNA--.22607S2
+X-Coremail-Antispam: 1Uf129KBjvdXoWrZFWUCF4DXr1UCr4rKFyrCrg_yoWDWwb_WF
+	1IvF98Xw12qan8JaykKr18XFW5Kw4j9F1Ygwn8KFW3ZFy7A3ykXr1kZw1kXw4rWa129rn8
+	Wrn8A34rAw12vjkaLaAFLSUrUUUUjb8apTn2vfkv8UJUUUU8Yxn0WfASr-VFAUDa7-sFnT
+	9fnUUvcSsGvfC2KfnxnUUI43ZEXa7IU8g18PUUUUU==
+Sender: yangxiuwei2025@163.com
+X-CM-SenderInfo: p1dqw55lxzvxisqskqqrwthudrp/xtbCwRtU5Gpym9vvIgAA3-
 
-Hello btrfs maintainers/developers,
+Three related bugs in the io_uring ENCODED_READ path:
 
-This is a 31-day syzbot report for the btrfs subsystem.
-All related reports/information can be found at:
-https://syzkaller.appspot.com/upstream/s/btrfs
+1. pages array allocation failure returned -ENOMEM without unlocking
+   the inode and extent locks taken by btrfs_encoded_read().
 
-During the period, 3 new issues were detected and 0 were fixed.
-In total, 20 issues are still open and 119 have already been fixed.
-There are also 13 low-priority issues.
+2. If bios completed before fill_pages returned, endio already queued
+   btrfs_uring_read_finished(), but a negative I/O status made the
+   caller clean up as well.  This matches the GPF reported by Yue Sun;
+   patch 2 follows Jens Axboe's suggestion.
 
-Some of the still happening issues:
+   Link: https://lore.kernel.org/linux-btrfs/20260630091609.3414-1-samsun1006219@gmail.com/
 
-Ref Crashes Repro Title
-<1> 219     Yes   kernel BUG in btrfs_alloc_ordered_extent
-                  https://syzkaller.appspot.com/bug?extid=ba2afde329fc27e3f22e
-<2> 68      No    possible deadlock in btrfs_dirty_inode (2)
-                  https://syzkaller.appspot.com/bug?extid=415a049af48761105c01
-<3> 18      Yes   WARNING in can_finish_ordered_extent
-                  https://syzkaller.appspot.com/bug?extid=085adc3f91549d11066a
-<4> 6653    Yes   kernel BUG in close_ctree
-                  https://syzkaller.appspot.com/bug?extid=2665d678fffcc4608e18
-<5> 1023    Yes   WARNING in btrfs_chunk_alloc
-                  https://syzkaller.appspot.com/bug?extid=e8e56d5d31d38b5b47e7
-<6> 485     Yes   WARNING in btrfs_remove_chunk
-                  https://syzkaller.appspot.com/bug?extid=e8582cc16881ec70a430
-<7> 38      Yes   WARNING in btrfs_finish_one_ordered
-                  https://syzkaller.appspot.com/bug?extid=6e54e639e7b934d64304
+3. After btrfs_uring_read_extent() failed, the caller skipped
+   kfree(data->iov) by always jumping to out_acct.
 
----
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+Yang Xiuwei (3):
+  btrfs: unlock inode and extent on pages alloc failure in uring read
+  btrfs: always return -EIOCBQUEUED after btrfs_uring_read_extent_endio
+  btrfs: free iov when btrfs_uring_read_extent fails
 
-To disable reminders for individual bugs, reply with the following command:
-#syz set <Ref> no-reminders
+ fs/btrfs/inode.c |  7 +++----
+ fs/btrfs/ioctl.c | 18 +++++++++++-------
+ 2 files changed, 14 insertions(+), 11 deletions(-)
 
-To change bug's subsystems, reply with:
-#syz set <Ref> subsystems: new-subsystem
+-- 
+2.25.1
 
-You may send multiple commands in a single email message.

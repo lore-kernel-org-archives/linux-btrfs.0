@@ -1,30 +1,30 @@
-Received: from m16.mail.163.com (m16.mail.163.com [117.135.210.2])
+Received: from m16.mail.163.com (m16.mail.163.com [117.135.210.3])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0ECEA421233;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 851E8421228;
 	Thu,  6 Aug 2026 08:51:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=117.135.210.2
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=117.135.210.3
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786006290; cv=none; b=b0U9K1Bqe8zbnims1AqmCrasWpUW7kyjDARF/H9GC8LebCRH8gAh5NEGf+sqWwRJzxIcRMhA8og87tDRAqNkK9BFI7ZFT1tWOajK1uuhiewOthAQYubu+FgWX6BvE9JAx5+eJyAzvTRaw6xtoLSNO2n/1lyLcCmyLM3b8pmZ5AU=
+	t=1786006291; cv=none; b=LAcDl+GuMEwXsxkon7GPDCtmvaVoSALIQVULhRZdT4RaTCM7vblVWnIwgM8eNDGDO6dUz7TtPGGvYP/Di19lltuk7TMhL0bn2/mBneAzz7H4+fy3O9kbeY2IKnPQNaw+zSM04oza2QF0h37ZlLhg/kNaWQHMLRXw/6QHBSB0c30=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786006290; c=relaxed/simple;
-	bh=R0lpckM8RKENJYnuAnbrhZvptfzXfB9rVWIi8QZot5E=;
+	s=arc-20240116; t=1786006291; c=relaxed/simple;
+	bh=UR6Q75kaIoRh0QC3MX6poxK17wa2d1T+dd6T+zwZwC8=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=Mlrl4KfS2bVWQZ2hcr9HyMxENe7x2Zfe0Jbixlt7LIeqlhx1i6DdJcQAwv3L8TbhFn3+GcaV1JwUF7BJStBxHJQxubTPgnnRU2tshC25IMaC/qVaSwJ163pZyWobkBCt3BkegohQFkqeTnxLgBAD7FRTVsoHaJrWY/khqIId/ac=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=NpDIqiNx; arc=none smtp.client-ip=117.135.210.2
+	 MIME-Version; b=pu2BB12own0ekzNV49hVeHKQxxw0IkAUsqBOTrrQlzAARocg2kL9bxijJN2woVV8sv+G89yYVx9w7i8MKXVbR4j2kh/JP93WlSUswIyMbEyk/XlTiX6Yw4/kgkYvIjQTlgjF4iM8midiQ/E9QKuiV+tZPgwhw09V5idAWNxW0Kw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=HpoWAvVR; arc=none smtp.client-ip=117.135.210.3
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="NpDIqiNx"
+	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="HpoWAvVR"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
-	s=s110527; h=From:To:Subject:Date:Message-Id:MIME-Version; bh=+S
-	DriBVNb4zmqpUefdRYPla2gQz0zANF5elW+NmMMJE=; b=NpDIqiNxHeZXju71Fm
-	mSTdm9OtYdqrMRgfFCFUrFuyeDYZ9pai/8QFtKJHkzG9+9YQkIl5rumhU1ikBwE0
-	hvoTs6XEe9maFzvPAWBcFghg5PKfX1uz64cg/3TOkdKD14OryaLbbTYrqdIxAUUX
-	9NsXO+HMK7zHhxoKqQlm5ScbM=
+	s=s110527; h=From:To:Subject:Date:Message-Id:MIME-Version; bh=ez
+	9HrIE9e6r7XA5Om/8+sgqbjIrbte6YDzvu6Y22ZFc=; b=HpoWAvVR0XXnuUzMNG
+	Ai0nzVtQ/D29s/CFAdKzoSzEM5WVtKLZE/ukEjpryCHXud8f7fxmS2LyZSgIfaiH
+	5XhQoOeMzoTq2f5v4bXYIVswLnrzXLjyNOLoPmqaaKTmZ3O+B4Lv6s7LWf36H0zK
+	QCDGeGQzKs2ynfSLldF4OzyCo=
 Received: from localhost.localdomain (unknown [])
-	by gzga-smtp-mtada-g1-3 (Coremail) with SMTP id _____wDXGqvjSnRqmYLmMA--.78S7;
-	Thu, 06 Aug 2026 16:50:54 +0800 (CST)
+	by gzga-smtp-mtada-g1-3 (Coremail) with SMTP id _____wDXGqvjSnRqmYLmMA--.78S3;
+	Thu, 06 Aug 2026 16:50:49 +0800 (CST)
 From: Yang Xiuwei <yangxiuwei@kylinos.cn>
 To: Chris Mason <clm@fb.com>,
 	David Sterba <dsterba@suse.com>,
@@ -36,10 +36,12 @@ Cc: Mark Harmstone <maharmstone@fb.com>,
 	io-uring@vger.kernel.org,
 	linux-fsdevel@vger.kernel.org,
 	linux-block@vger.kernel.org,
-	Yang Xiuwei <yangxiuwei@kylinos.cn>
-Subject: [PATCH v2 5/7] btrfs: unlock inode and extent in caller when uring read extent fails
-Date: Thu,  6 Aug 2026 16:50:39 +0800
-Message-Id: <20260806085041.1410576-6-yangxiuwei@kylinos.cn>
+	Yang Xiuwei <yangxiuwei@kylinos.cn>,
+	Yue Sun <samsun1006219@gmail.com>,
+	Jens Axboe <axboe@kernel.dk>
+Subject: [PATCH v2 1/7] btrfs: always return -EIOCBQUEUED after btrfs_uring_read_extent_endio
+Date: Thu,  6 Aug 2026 16:50:35 +0800
+Message-Id: <20260806085041.1410576-2-yangxiuwei@kylinos.cn>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20260806085041.1410576-1-yangxiuwei@kylinos.cn>
 References: <20260806085041.1410576-1-yangxiuwei@kylinos.cn>
@@ -50,91 +52,57 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:_____wDXGqvjSnRqmYLmMA--.78S7
-X-Coremail-Antispam: 1Uf129KBjvJXoWxJFy3tw1UZrW8KFW8Gw1kuFg_yoW5Wrykpr
-	47Cas8tayDJ347WFykKw4Du34fKa1kJayUJrW5Xw4fA3Zrtr93Ka4IkF15KF1vgFW8JFyS
-	qr4Y9w1DXw47AaDanT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x07j5xhLUUUUU=
+X-CM-TRANSID:_____wDXGqvjSnRqmYLmMA--.78S3
+X-Coremail-Antispam: 1Uf129KBjvJXoW7WF4rCw13KF43JryDAw1xGrg_yoW8Ww4Dpr
+	1DCFy5Gw4DA34vvFWkKa1qgFyfJa1kJa9rXFZYk3y3A3W7tFnIvryIkFyYgr1qqr97CrWY
+	vrWY9ryDu3W7ZFJanT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
+	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x07UK1v-UUUUU=
 Sender: yangxiuwei2025@163.com
-X-CM-SenderInfo: p1dqw55lxzvxisqskqqrwthudrp/xtbC6Q+FFmp0Su8ryAAA3t
+X-CM-SenderInfo: p1dqw55lxzvxisqskqqrwthudrp/xtbC6QmEFWp0SukrVgAA3x
 
-btrfs_uring_read_extent() runs only after btrfs_encoded_read() has
-taken the inode shared lock and the extent lock.  On failure it used to
-unlock in out_fail, and a pages-array allocation failure returned
--ENOMEM without unlocking at all.
+If all bios finish before btrfs_encoded_read_regular_fill_pages()
+returns, it calls btrfs_uring_read_extent_endio() and previously
+returned the I/O status.  A negative errno then made
+btrfs_uring_read_extent() unlock and free while
+btrfs_uring_read_finished() did the same again.
 
-Unlock in the caller instead, matching the copy_to_user() error path.
-out_fail only frees the local priv/pages allocations, and the pages
-array failure joins that path.
+Return -EIOCBQUEUED so only the deferred path cleans up.
 
+Reported-by: Yue Sun <samsun1006219@gmail.com>
+Closes: https://lore.kernel.org/linux-btrfs/20260630091609.3414-1-samsun1006219@gmail.com/
+Suggested-by: Jens Axboe <axboe@kernel.dk>
 Fixes: 34310c442e17 ("btrfs: add io_uring command for encoded reads (ENCODED_READ ioctl)")
-Suggested-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Signed-off-by: Yang Xiuwei <yangxiuwei@kylinos.cn>
 ---
- fs/btrfs/ioctl.c | 21 ++++++++++++---------
- 1 file changed, 12 insertions(+), 9 deletions(-)
+ fs/btrfs/inode.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 939c4a9d47b6..b576887469bb 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4552,7 +4552,7 @@ static void btrfs_uring_read_finished(struct io_tw_req tw_req, io_tw_token_t tw)
- 	size_t page_offset;
- 	ssize_t ret;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index b446c3014b24..8e3cee3845e6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9411,7 +9411,6 @@ int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
+ 	struct completion sync_reads;
+ 	unsigned long i = 0;
+ 	struct btrfs_bio *bbio;
+-	int ret;
  
--	/* The inode lock has already been acquired in btrfs_uring_read_extent.  */
-+	/* The inode lock has already been acquired in btrfs_encoded_read(). */
- 	btrfs_lockdep_inode_acquire(inode, i_rwsem);
+ 	/*
+ 	 * Fast path for synchronous reads which completes in this call, io_uring
+@@ -9458,10 +9457,10 @@ int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
  
- 	if (priv->err) {
-@@ -4618,7 +4618,6 @@ static int btrfs_uring_read_extent(struct kiocb *iocb, struct iov_iter *iter,
- 				   struct iovec *iov, struct io_uring_cmd *cmd)
- {
- 	struct btrfs_inode *inode = BTRFS_I(file_inode(iocb->ki_filp));
--	struct extent_io_tree *io_tree = &inode->io_tree;
- 	struct page **pages = NULL;
- 	struct btrfs_uring_priv *priv = NULL;
- 	unsigned long nr_pages;
-@@ -4626,8 +4625,10 @@ static int btrfs_uring_read_extent(struct kiocb *iocb, struct iov_iter *iter,
+ 	if (uring_ctx) {
+ 		if (refcount_dec_and_test(&priv->pending_refs)) {
+-			ret = blk_status_to_errno(READ_ONCE(priv->status));
+-			btrfs_uring_read_extent_endio(uring_ctx, ret);
++			int err = blk_status_to_errno(READ_ONCE(priv->status));
++
++			btrfs_uring_read_extent_endio(uring_ctx, err);
+ 			kfree(priv);
+-			return ret;
+ 		}
  
- 	nr_pages = DIV_ROUND_UP(disk_io_size, PAGE_SIZE);
- 	pages = kzalloc_objs(struct page *, nr_pages, GFP_NOFS);
--	if (!pages)
--		return -ENOMEM;
-+	if (!pages) {
-+		ret = -ENOMEM;
-+		goto out_fail;
-+	}
- 	ret = btrfs_alloc_page_array(nr_pages, pages, GFP_NOFS);
- 	if (ret) {
- 		ret = -ENOMEM;
-@@ -4674,12 +4675,12 @@ static int btrfs_uring_read_extent(struct kiocb *iocb, struct iov_iter *iter,
- 	return -EIOCBQUEUED;
- 
- out_fail:
--	btrfs_unlock_extent(io_tree, start, lockend, &cached_state);
--	btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
- 	kfree(priv);
--	for (int i = 0; i < nr_pages; i++) {
--		if (pages[i])
--			__free_page(pages[i]);
-+	if (pages) {
-+		for (int i = 0; i < nr_pages; i++) {
-+			if (pages[i])
-+				__free_page(pages[i]);
-+		}
- 	}
- 	kfree(pages);
- 	return ret;
-@@ -4819,6 +4820,8 @@ static int btrfs_uring_encoded_read(struct io_uring_cmd *cmd, unsigned int issue
- 					      data->iov, cmd);
- 		if (ret == -EIOCBQUEUED)
- 			goto out_acct;
-+		btrfs_unlock_extent(io_tree, start, lockend, &cached_state);
-+		btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
- 	}
- 
- out_free:
+ 		return -EIOCBQUEUED;
 -- 
 2.25.1
 

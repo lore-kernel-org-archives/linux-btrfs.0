@@ -1,115 +1,149 @@
-Received: from mail-qk1-f171.google.com (mail-qk1-f171.google.com [209.85.222.171])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C94222BE056
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2026 12:52:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F0594371877;
+	Thu,  6 Aug 2026 19:13:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786020743; cv=none; b=XBRA9ZgXbMBB57pTQnEiU40+/DVn2k7KlOaGtoKBCw0GHAS6/rh+tUx5PHNy5OXFp/VzIkldcnFnx/giVIzfnC6gZ8og6J4aIH040q7C23S7BChTgsc7N45Z1k+Q6SgvLA/jjaEchrcgsPBvUwOxHltT4vUc5FXSuhwalJICnKE=
+	t=1786043628; cv=none; b=bd8XFfacw+gIx8qmAPnKyo9gTYjVZI1ReQ7Q4mthNuQWelhm8v0huYqOP4vZ+OezDa9e+Q3FeH+CuZqZKNFgZchbzzhfIIxewSioKk1xw09U/wAgHYuLv6SDQAm8T76I//xaPfMTuZHXjwjqzy25jehUPPAbOXOvSZlgXdULmE4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786020743; c=relaxed/simple;
-	bh=E+t1gFtcHDiraPPrfsroY+Aj4GCqUrp3X08deU2GKIU=;
-	h=From:To:Cc:In-Reply-To:References:Subject:Message-Id:Date:
-	 MIME-Version:Content-Type; b=i1/2B2qvLImDoEj1/IkbhLLXXHpb9ffmg9GJIX5qSulvQhQdY80Ik6EAGI2Wapp4+/4tpnsK9cd6xXRecvWb92K3FcAk0HbQXAIL8okx3sRMTX0R7iOD0xs211c0zAxQTpo/psACqBR11TgnwtweXPOFmOSu3szrnTyO6tN5LQE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk; spf=pass smtp.mailfrom=kernel.dk; dkim=pass (2048-bit key) header.d=kernel-dk.20251104.gappssmtp.com header.i=@kernel-dk.20251104.gappssmtp.com header.b=QJpPa04w; arc=none smtp.client-ip=209.85.222.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kernel.dk
+	s=arc-20240116; t=1786043628; c=relaxed/simple;
+	bh=KwGu+fIcP/jZOwzyKXwIWlOiDA6aAgtWimu9WuqpFoE=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=YJcEAaggAyZlVwBp0BlZUYLYwSEQuFTVPLmr9bAloRRJAtXpShEpmX6HaVQVsdG2G2jg6r6LN7+JfLBJ9zwC/EJrP//dZhb5soqgeZLZ0e+jZ6LjHm/XcyTTphY6ccj+mU+aLeCOphsb0tqgRG55uQ3xVQXpBjMRkJOkWec1Q7M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=lcwpxmD2; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pQv1SQQa; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel-dk.20251104.gappssmtp.com header.i=@kernel-dk.20251104.gappssmtp.com header.b="QJpPa04w"
-Received: by mail-qk1-f171.google.com with SMTP id af79cd13be357-92e53581361so122138685a.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Aug 2026 05:52:21 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=kernel-dk.20251104.gappssmtp.com; s=20251104; t=1786020741; x=1786625541; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:mime-version:date:message-id
-         :subject:references:in-reply-to:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=vo5x/LABgr4z5KWlM8OBLiF0UJfhkaG4qblmSgV8YMA=;
-        b=QJpPa04wKEU93cVUT6IOHEoTbPdj1SLgqIogOrZevNcBUAQ4+egaELr2nW/8bkBY8P
-         QEz/4gTs+dY30vIaqKCtk6FJeoTG7uYJ8Te8GJDPLJs+GsvvAGl+iWBa7WckxDks+nDw
-         YUxNfptFq5UvWrSb2YWhxsPNYE7rIMrRe1ic5P7Fm9hcBNXrg6rnWjd9syuWKjTG3o0q
-         QHkmWriyni3+mWGrQSrf1S5FcsaVVZvUKyzybfTu+gP38m2XkiJcarJBGX5y6FGm+YEw
-         Qn98v+3MuEtBsSLGFM9qAQzZxolAsRE5FcgM9EzVu2zmcicsyDqMD0NYvor8/u8yxEZa
-         R7Ng==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786020741; x=1786625541;
-        h=content-transfer-encoding:content-type:mime-version:date:message-id
-         :subject:references:in-reply-to:cc:to:from:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=vo5x/LABgr4z5KWlM8OBLiF0UJfhkaG4qblmSgV8YMA=;
-        b=HkDa4zPYMadr7XlQdSZi8rHfpjOdXq6Up+N/jR4Hk8S8fYeUb58rmqVcbBTU01vBk4
-         6ReVg9MVWstQupXSw0amzW9Sy7AoIQMnQLeV3648++DTXoufkVYa1WGIhqnODO5Rl/rU
-         zFDVgYJozejwtHWM/v4MPnlcru7y5avlWJLYrK+APuyaJEW0W7dXl7eVwzJJwUDnAL8L
-         r/X6tifgOe4LnQMvsETILfkaisckTKJce2ejFkVqrmX0+xQpJzi0ZAOklw9+N5BuhQ+I
-         mFpDzYX8UfvX1QJdflV3LbOZbCRdPBcT2EKIdqhxtwmUkrqcixmqClzFWYZAdVGLO58e
-         7VaA==
-X-Forwarded-Encrypted: i=1; AHgh+Rohm/p0uFxX9yuRyH3c1h7ChmzDSwA0NDsc6h2beNx9XPKJbYXF0I5gwkTQ8U7YzjB0oQPlkttjdASQvw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxQfFtPNrs4WTJEWMeJ5CnsvDxxkOY99MZIe6KBuA2gzWOmzu7d
-	Cam/dpW0lotorfoqAzXhYmDpihKkOLEhDvsPtRvuFFdGiLHNyvXbF6BBwjT/C6y9Jvo=
-X-Gm-Gg: AR+sD10ItQza8Xq8LelVVK+uF5H4+Oz9zEmrrlrauBqrEYcZ16lpgZ62iqbtgg4H5ou
-	rcC7qhTeU6PQEx8o2ND385lR8DlH/n7Zoub1WdqjQ82me+eEri0bDpij1d6nDR5798lrNKjW1w0
-	Ay9mJHTVWgTpL+cxdGGk9RdYKUiTWQQ2C8LszdGaVxDz7eSO/ApXTW5/XBSa4JtzmY/e2urNUR/
-	aEwBWO16gF6LoWdaDIqBTw9DPgxVEdBN+MNZ8552Ik3uqGC/gDQ+I2e7WCE4QEpXNSasy5idNXO
-	D6xXkR5wJ8Soi2/MAZWz5TZi8SXeMyUiU0G/yCOqE4yO6435F1xmIoGxbQWs8mJPrZcsPgiIDRJ
-	lEq9zaYB9DC2DaRfxMQ74IORi9SbpRm/x3UM79XpbwI9DvvFWKPxSTEMLrcLjq/uM08wZ2k759M
-	Qm9XlOj3QEUxM10I73rDkTjtyon8ZlU8q2y0pFuYMg3n86GTi7NIWa8wQSn4nnIlx2mKBndKS9C
-	7QbEtntLQoHsD+xcS6dXGJ/FoBTxTJu2EzIF3I4xuMqavwJ
-X-Received: by 2002:a05:620a:2311:20b0:930:84d0:fd3b with SMTP id af79cd13be357-93648fafbc7mr1150209885a.7.1786020740525;
-        Thu, 06 Aug 2026 05:52:20 -0700 (PDT)
-Received: from [127.0.0.1] ([2605:59ca:42bb:f910:6d9f:8dfb:ae1:441b])
-        by smtp.gmail.com with ESMTPSA id af79cd13be357-9365ef833edsm123847685a.3.2026.08.06.05.52.17
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 06 Aug 2026 05:52:19 -0700 (PDT)
-From: Jens Axboe <axboe@kernel.dk>
-To: linux-block@vger.kernel.org, Pavel Begunkov <asml.silence@gmail.com>
-Cc: Jonathan Corbet <corbet@lwn.net>, Damien Le Moal <dlemoal@kernel.org>, 
- Alasdair Kergon <agk@redhat.com>, Mike Snitzer <snitzer@kernel.org>, 
- Mikulas Patocka <mpatocka@redhat.com>, 
- Benjamin Marzinski <bmarzins@redhat.com>, 
- Dongsheng Yang <dongsheng.yang@linux.dev>, Zheng Gu <cengku@gmail.com>, 
- Vishal Verma <vishal.l.verma@intel.com>, Dan Williams <djbw@kernel.org>, 
- Dave Jiang <dave.jiang@intel.com>, 
- Alison Schofield <alison.schofield@intel.com>, 
- Keith Busch <kbusch@kernel.org>, Christoph Hellwig <hch@lst.de>, 
- Sagi Grimberg <sagi@grimberg.me>, Chris Mason <clm@fb.com>, 
- David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>, 
- Andrew Morton <akpm@linux-foundation.org>, 
- Ilya Dryomov <idryomov@gmail.com>, Alex Markuze <amarkuze@redhat.com>, 
- Viacheslav Dubeyko <slava@dubeyko.com>, Hannes Reinecke <hare@kernel.org>, 
- linux-doc@vger.kernel.org, dm-devel@lists.linux.dev, nvdimm@lists.linux.dev, 
- linux-nvme@lists.infradead.org, linux-btrfs@vger.kernel.org, 
- io-uring@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
- ceph-devel@vger.kernel.org
-In-Reply-To: <4e4c21858705a200bd8848ffe4080522e3eb5c1c.1786018753.git.asml.silence@gmail.com>
-References: <4e4c21858705a200bd8848ffe4080522e3eb5c1c.1786018753.git.asml.silence@gmail.com>
-Subject: Re: [PATCH 1/1] block: rename bi_bvec_done
-Message-Id: <178602073720.2137920.17721545855702977301.b4-ty@b4>
-Date: Thu, 06 Aug 2026 06:52:17 -0600
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="lcwpxmD2";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pQv1SQQa"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id D7A3E801C5;
+	Thu,  6 Aug 2026 19:13:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1786043621; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=PeJCrYNuE4XqOPhY9I84I0MqunmX5R9RkUm8vct8Qlg=;
+	b=lcwpxmD2i12jlPb3YAB0rdhtPfqCT6QN62MAQhQbwQOmZwk93pQeKP7bEHSoJZIXeE6YB2
+	GNiR06VgPQHXiPqhjRjGid/d0xLxnpVtJXKr8Q4hln6epEhfdJsZRLlsi2nI2eeMQm4sp0
+	h/UT7A/nKQPdwWlYvJfqLrsp50n6lD0=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=pQv1SQQa
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1786043616; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=PeJCrYNuE4XqOPhY9I84I0MqunmX5R9RkUm8vct8Qlg=;
+	b=pQv1SQQaYEGXLFy7zhDkNPVOdW9PeVi2Z7K3Iz1enm2d2UXUxvn63Y//axJCmTkjL4uzBe
+	G994Frm9dlTzCVZd95Ey9Cz+kOTqvOhPjm1/9j/EHEPqdYyMrdCsYIQ9YujMUBIRjuUZvc
+	Wc0utJM5ManADZuMbyMSPicg1OaIOMs=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D1B5B779B6;
+	Thu,  6 Aug 2026 19:13:36 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id RvMtM+DcdGr3ZQAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Thu, 06 Aug 2026 19:13:36 +0000
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 7.2-rc7, part 1
+Date: Thu,  6 Aug 2026 21:13:29 +0200
+Message-ID: <cover.1786042395.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-X-Mailer: b4 0.15.2
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DWL_DNSWL_BLOCKED(0.00)[suse.com:dkim];
+	RCPT_COUNT_THREE(0.00)[4];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:dkim]
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Queue-Id: D7A3E801C5
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
 
+Hi,
 
-On Thu, 06 Aug 2026 13:19:27 +0100, Pavel Begunkov wrote:
-> struct bvec_iter::bi_bvec_done is used an offset in the current bvec,
-> let's rename it accordingly for better clarity. I also plan to use it
-> for non-bvec based iteration in the future like dma-buf, so drop the
-> "bvec" part.
+the following branch contains a few short fixes. This is separate from
+the 'fixup worker' pull request, just in case.
 
-Applied, thanks!
+Please pull, thanks.
 
-[1/1] block: rename bi_bvec_done
-      commit: b539aeacf8cc5e9d8e5d94625d2d9c697a167add
+- fix leak in encoded ioctl write
 
-Best regards,
--- 
-Jens Axboe
+- disable large folios on systems with highmem
 
+- disable block size > page size when there's no transparent hugepage
+  support (under experimental config)
 
+- reject compressed inline extents without valid LZO headers
 
+- properly initialize cached inode mapping (if block size > page size)
+
+----------------------------------------------------------------
+The following changes since commit c4c0673e4cb15b0c127e6d00732a2427bdd12c11:
+
+  btrfs: raid56: fix scrub read assembly submitting no reads (2026-07-21 06:44:08 +0200)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-rc6-tag
+
+for you to fetch changes up to 0ef349734a93227b45f65fc50a3311d1cc5f03e9:
+
+  btrfs: initialize inode mapping flags for cached inodes (2026-07-31 16:56:05 +0200)
+
+----------------------------------------------------------------
+David Lee (1):
+      btrfs: lzo: reject inline extents without valid headers
+
+Dmitry Antipov (1):
+      btrfs: fix memory leak in btrfs_do_encoded_write()
+
+Qu Wenruo (3):
+      btrfs: disable large folios for systems with highmem
+      btrfs: disable bs > ps support if no transparent hugepage support
+      btrfs: initialize inode mapping flags for cached inodes
+
+ fs/btrfs/Kconfig   |  3 ++-
+ fs/btrfs/disk-io.c | 10 +++++++++-
+ fs/btrfs/fs.c      | 12 ++++++++++--
+ fs/btrfs/inode.c   |  4 +++-
+ fs/btrfs/lzo.c     |  5 +++--
+ 5 files changed, 27 insertions(+), 7 deletions(-)

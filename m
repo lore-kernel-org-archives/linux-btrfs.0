@@ -1,59 +1,100 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C48873D9557
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2026 09:57:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AD02D340A52
+	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2026 12:19:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786010237; cv=none; b=mRGPAY/lAper9L3Bn39TvwMCQtKYvlZRZF6Tfvoc79h0Lzwpu7YSXwdOWKRux0SJMf3bXLFnlQW/Nvt+oyQj3wiQPUU57zudXRbfhROH5IO7oAMzWETqmYANaZ/RseFdkficgsJusqaqKWUXSiWccsTP81jcJ0fIyTiqdtBvsDI=
+	t=1786018774; cv=none; b=qWNU+7AgRWQZNOzHrlGxkQVlK61WyRE3+H5QH/uvRL4mg+iSJ5aHTsBueY1tyYqYq9DQJs/HgbRWHzAr71gjlNUQAYa3fDrYz9l1qwXxeIaH4FWxOJi0w+XeEOmEQFeGCrfj9W0jrDvRAlCC2CUwFoSy1LL0GIbn7bQKhDyeteE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786010237; c=relaxed/simple;
-	bh=PhKC/Nr3fltsoP4c/VANfIU6lhY+XeFP08jeXXSkod4=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=GVBvhAMKdmtULW1ghH34xyiVcudlX3ab9UORI8RIE5MMnDLpoletsvUJSJBcptYmFb9qPVYbEzE47ATleNvJrBVkMhG+5Zr30RICCltCYAzGjHkURkfU09kQ42wiU00LevWUcq59JRO8SXp0gCa3YSZtOfTcu5TMejVZRBwBQzY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=kgIR+H0o; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qkNT3tUa; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1786018774; c=relaxed/simple;
+	bh=Bzt9rHxzAvaipHEkJlqGAiX1z5f5ogvjmdms2lFk8zE=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=VOws6mIs8ThqGKsbgh5ljvARv5LKtUupYYi9FzXQWd8P/aYBv/x7j1NesA6QBukhZR5U5f7YR6/RPWuMX67pEDS+9VpCNnSFE437KNr1W+O81nq1a8TwZhgTDSZsVGBWGs7eUz8OmkQ4kw/LlZjvSB+WBr3loZ9GvZwtYSRjs1A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=aoikkBdJ; arc=none smtp.client-ip=209.85.128.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="kgIR+H0o";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qkNT3tUa"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 85F677FFBD
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2026 09:57:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786010228; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Y8eOk7XIZ2z/pPMEivbY3+1il9QUrT7dJK0lMOf9Hoo=;
-	b=kgIR+H0oc9pcvBlbEL2TM6gr+KH+xG7T6ZpOKYG3+Gbx4LV58W7s/R7Neb2vLcQCGsC5HQ
-	cwwdXJ5GaN73v92Vy0pYukRbDxHV7pqiB0PbfBVTqSnsWi3gGchomosbxWM2azs9fOlUuj
-	RkbT7rEuWpII7Gu56wFg/jdN4gEQIWE=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786010224; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Y8eOk7XIZ2z/pPMEivbY3+1il9QUrT7dJK0lMOf9Hoo=;
-	b=qkNT3tUa8JgPKYg2xbuuJlgXN3Ia/F02JbCLXr7++c39Q+MzwzsubIRhze9vyTd/9uePJw
-	M1a4LtcCZtv/mgjPlcM/ecTCEkVwZDfCzzEA7znO+UGDsYuCAuvvVLpgKm128DNQTeByLT
-	4TJUnDtA0bxQXaRr+LsOCt2aXPkaxnQ=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C091B779BF
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2026 09:57:03 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id cEeIIG9adGovRwAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 06 Aug 2026 09:57:03 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: remove unnecessary forced type casting in print-tree.c
-Date: Thu,  6 Aug 2026 19:26:38 +0930
-Message-ID: <61fd5ab4b532ba3a7915dc629339db230cccd52f.1786007917.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="aoikkBdJ"
+Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-49555a0e68bso10775495e9.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Aug 2026 05:19:30 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1786018769; x=1786623569; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=CmiuwiCBxj43pnL6F4PU+TmqwE1tdFiaUXEdM+UwrCk=;
+        b=aoikkBdJTU4uIs26qsg7MxP6tjrS753rFdPWG31h5BlHONXHmE8qzuO1aeg7cnhH2q
+         JGntuq4RHfKqPVWi+EhoxIgY1W8hwWtyd1fRCYwnPStYGBZAmv8UVUoPjQne7Jeyh5uL
+         nkdplowzEFju1EIoBb4ZPISRXpszcF+6jJoX0cLZSgFyOUXHUO5vXnqzVpy+Q3TOPK3Z
+         QxJJ5dB9TwUzj8EA3vKJ6enVoUi6keJUNuSiymXgo0qErsDbvRkXgdrF34xHKB+A0IOE
+         dpn8JamyOsMVzzl6aC0CO0HNXKw4XtGQObZLEFdsM2rEq5s4kC4AniKecIU/HTQlFjjC
+         VD6A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1786018769; x=1786623569;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=CmiuwiCBxj43pnL6F4PU+TmqwE1tdFiaUXEdM+UwrCk=;
+        b=HlaZRsxiPzsM9CQJ9N6qIZII4/r/xhkpq0LaoA7my67HvolNNFts4vJ0BqjauzTN1o
+         MVI37ygL2JZ1aiz2xhkNk8fUPxx0F94+PE6jWqZdtNCw0cxfpr31HTaLaYC/M7o+vcCm
+         fyKFqkC6yaRTiEuwmH1kT+PHU1tykvXgZmtw22fMHKHoflLKwZORK7Jo9YAOQn23YVUI
+         4SD7C8TQmyyZxLI9dBBvy6gent3H9obZegXlPCqiCjoutQ4qPgFXNHBK4YbwTuuM8V1Y
+         ZxFU8t2/nbukpZHB2OZKxLnK+Sslm9ewvoglmNXFD7ung0367SRwnPuUoHnVWkCXR0j2
+         qZZQ==
+X-Forwarded-Encrypted: i=1; AHgh+RoeYiqSpiqGXiwRipczHHHYj1vUHBWepjuvkek3yNAWUVmxTrZjmp/Rfhjndomw+h19Wz2QGXiF4gL3Hg==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yy+OUv0cZAWY4i1c1F2rc9DLzYg0/KpJnS6cmVNQI5nMlW6Lbs7
+	RBN1pDX/zhNFtYVqJvgdAA695P0RsWI+O5LWwnIxmVif6nB7azLjGToJ
+X-Gm-Gg: AR+sD12v59ng5uxt6Nx9eGCAaNWsqsciwUQCCX1Gc/reyh3iHblbNNzdcfEtoWGAgxm
+	sjDpO7vjW7ds7avqovUTJnB3OP/0nJEqaG9U0PXbE0Jht88NTAE3lDzeFnzJEtdWdAAI5iShuwq
+	dSJRijW5AdZQ/TVbyRBwKH62pCIZiusUpmQMC57EIx0yWOdL/3WHwS52Jx7Sbi8nXH+0hpoFyOk
+	/S2yUyA2sa2lsNxfWosaR3DEtlAUydHHgfcQ5hm/73+RvSoU7S5nVbblYEv9bVKW4TENgY9jQ91
+	ERl6waSiz7A/C0s/sj5Z/VTlEGOl/gGECrcwMb9vTiWMvhochak7bpA2/0IsB7pkvRk67YRF4me
+	sE+8ZjelI1W2X2fx/N7c9GJt6SIHHTI+xgfAY/r5pNrIbjTYrGTVQsqS/Rf8bze7rWTHQuS44IU
+	pqYO6/k5mmTs1/ly2wByNLdhPcvDsXhss/Ew/3QZTZOAWsuqXVjzEBeYV5SvBqeaubePwIBZEC+
+	9nRpatv99CwkrkUruGkN9ihjW7ll1+HkD1LF/JAZbMYpSc7nflnnPlnCKtYQOGMBQ==
+X-Received: by 2002:a05:600c:c046:b0:499:491e:4b0d with SMTP id 5b1f17b1804b1-4994e7d1ccdmr159730335e9.19.1786018768810;
+        Thu, 06 Aug 2026 05:19:28 -0700 (PDT)
+Received: from 127.mynet ([2a01:4b00:bd21:4f00:7cc6:d3ca:494:116c])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-49952dda992sm32751305e9.2.2026.08.06.05.19.27
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 06 Aug 2026 05:19:27 -0700 (PDT)
+From: Pavel Begunkov <asml.silence@gmail.com>
+To: linux-block@vger.kernel.org
+Cc: asml.silence@gmail.com,
+	Jens Axboe <axboe@kernel.dk>,
+	Jonathan Corbet <corbet@lwn.net>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Alasdair Kergon <agk@redhat.com>,
+	Mike Snitzer <snitzer@kernel.org>,
+	Mikulas Patocka <mpatocka@redhat.com>,
+	Benjamin Marzinski <bmarzins@redhat.com>,
+	Dongsheng Yang <dongsheng.yang@linux.dev>,
+	Zheng Gu <cengku@gmail.com>,
+	Vishal Verma <vishal.l.verma@intel.com>,
+	Dan Williams <djbw@kernel.org>,
+	Dave Jiang <dave.jiang@intel.com>,
+	Alison Schofield <alison.schofield@intel.com>,
+	Keith Busch <kbusch@kernel.org>,
+	Christoph Hellwig <hch@lst.de>,
+	Sagi Grimberg <sagi@grimberg.me>,
+	Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>,
+	Alexander Viro <viro@zeniv.linux.org.uk>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Ilya Dryomov <idryomov@gmail.com>,
+	Alex Markuze <amarkuze@redhat.com>,
+	Viacheslav Dubeyko <slava@dubeyko.com>,
+	Hannes Reinecke <hare@kernel.org>,
+	linux-doc@vger.kernel.org,
+	dm-devel@lists.linux.dev,
+	nvdimm@lists.linux.dev,
+	linux-nvme@lists.infradead.org,
+	linux-btrfs@vger.kernel.org,
+	io-uring@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	ceph-devel@vger.kernel.org
+Subject: [PATCH 1/1] block: rename bi_bvec_done
+Date: Thu,  6 Aug 2026 13:19:27 +0100
+Message-ID: <4e4c21858705a200bd8848ffe4080522e3eb5c1c.1786018753.git.asml.silence@gmail.com>
 X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -62,597 +103,387 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spam-Level: 
 
-In kernel-shared/print-tree.c, we have a lot of forced type casting to
-"(unsigned long long)" for the format "%llu", no matter if the original
-value is really u64.
+struct bvec_iter::bi_bvec_done is used an offset in the current bvec,
+let's rename it accordingly for better clarity. I also plan to use it
+for non-bvec based iteration in the future like dma-buf, so drop the
+"bvec" part.
 
-Change all those forced type casting used in printing functions, to use
-the correct native type instead.
-
-Assisted-by: LLM (coding)
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Suggested-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>
 ---
- kernel-shared/print-tree.c | 250 ++++++++++++++++++-------------------
- 1 file changed, 125 insertions(+), 125 deletions(-)
+ Documentation/block/biovecs.rst |  8 ++++----
+ block/bio.c                     |  4 ++--
+ block/blk-merge.c               |  8 ++++----
+ block/blk-mq-dma.c              |  2 +-
+ block/blk.h                     |  2 +-
+ drivers/block/loop.c            |  2 +-
+ drivers/block/zloop.c           |  2 +-
+ drivers/md/dm-io-rewind.c       | 10 +++++-----
+ drivers/md/dm-pcache/segment.c  |  4 ++--
+ drivers/nvdimm/btt.c            |  2 +-
+ drivers/nvme/host/tcp.c         |  2 +-
+ fs/btrfs/misc.h                 |  2 +-
+ include/linux/bvec.h            | 14 +++++++-------
+ io_uring/net.c                  |  4 ++--
+ lib/iov_iter.c                  |  2 +-
+ net/ceph/messenger.c            |  4 ++--
+ 16 files changed, 36 insertions(+), 36 deletions(-)
 
-diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
-index cae5c6dfc263..290ab0390579 100644
---- a/kernel-shared/print-tree.c
-+++ b/kernel-shared/print-tree.c
-@@ -181,7 +181,7 @@ static void print_inode_ref_item(struct extent_buffer *eb, u32 size,
- 		len = (name_len <= sizeof(namebuf))? name_len: sizeof(namebuf);
+diff --git a/Documentation/block/biovecs.rst b/Documentation/block/biovecs.rst
+index 11126ed6f40f..49da2147b7d8 100644
+--- a/Documentation/block/biovecs.rst
++++ b/Documentation/block/biovecs.rst
+@@ -16,16 +16,16 @@ bv_len by the number of bytes completed in that biovec.
+ In the new scheme of things, everything that must be mutated in order to
+ partially complete a bio is segregated into struct bvec_iter: bi_sector,
+ bi_size and bi_idx have been moved there; and instead of modifying bv_offset
+-and bv_len, struct bvec_iter has bi_bvec_done, which represents the number of
++and bv_len, struct bvec_iter has bi_offset, which represents the number of
+ bytes completed in the current bvec.
  
- 		printf("\t\tindex %llu namelen %u ",
--		       (unsigned long long)index, name_len);
-+		       index, name_len);
- 		if (eb->fs_info && eb->fs_info->hide_names) {
- 			printf("name: HIDDEN\n");
- 		} else {
-@@ -319,9 +319,9 @@ void print_chunk_item(struct extent_buffer *eb, struct btrfs_chunk *chunk)
+ There are a bunch of new helper macros for hiding the gory details - in
+ particular, presenting the illusion of partially completed biovecs so that
+-normal code doesn't have to deal with bi_bvec_done.
++normal code doesn't have to deal with bi_offset.
  
- 	bg_flags_to_str(btrfs_chunk_type(eb, chunk), chunk_flags_str);
- 	printf("\t\tlength %llu owner %llu stripe_len %llu type %s\n",
--	       (unsigned long long)btrfs_chunk_length(eb, chunk),
--	       (unsigned long long)btrfs_chunk_owner(eb, chunk),
--	       (unsigned long long)btrfs_chunk_stripe_len(eb, chunk),
-+	       btrfs_chunk_length(eb, chunk),
-+	       btrfs_chunk_owner(eb, chunk),
-+	       btrfs_chunk_stripe_len(eb, chunk),
- 		chunk_flags_str);
- 	printf("\t\tio_align %u io_width %u sector_size %u\n",
- 			btrfs_chunk_io_align(eb, chunk),
-@@ -350,8 +350,8 @@ void print_chunk_item(struct extent_buffer *eb, struct btrfs_chunk *chunk)
- 			BTRFS_UUID_SIZE);
- 		uuid_unparse(dev_uuid, str_dev_uuid);
- 		printf("\t\t\tstripe %d devid %llu offset %llu\n", i,
--		      (unsigned long long)btrfs_stripe_devid_nr(eb, chunk, i),
--		      (unsigned long long)btrfs_stripe_offset_nr(eb, chunk, i));
-+		      btrfs_stripe_devid_nr(eb, chunk, i),
-+		      btrfs_stripe_offset_nr(eb, chunk, i));
- 		printf("\t\t\tdev_uuid %s\n", str_dev_uuid);
- 	}
+  * Driver code should no longer refer to biovecs directly; we now have
+    bio_iovec() and bio_iter_iovec() macros that return literal struct biovecs,
+-   constructed from the raw biovecs but taking into account bi_bvec_done and
++   constructed from the raw biovecs but taking into account bi_offset and
+    bi_size.
+ 
+    bio_for_each_segment() has been updated to take a bvec_iter argument
+@@ -101,7 +101,7 @@ Other implications:
+    I.e. instead of using bio_iovec_idx() (or bio->bi_iovec[bio->bi_idx]), you
+    now use bio_iter_iovec(), which takes a bvec_iter and returns a
+    literal struct bio_vec - constructed on the fly from the raw biovec but
+-   taking into account bi_bvec_done (and bi_size).
++   taking into account bi_offset (and bi_size).
+ 
+  * bi_vcnt can't be trusted or relied upon by driver code - i.e. anything that
+    doesn't actually own the bio. The reason is twofold: firstly, it's not
+diff --git a/block/bio.c b/block/bio.c
+index 500389f332d9..4074a0496b93 100644
+--- a/block/bio.c
++++ b/block/bio.c
+@@ -229,7 +229,7 @@ void bio_init(struct bio *bio, struct block_device *bdev, struct bio_vec *table,
+ 	bio->bi_iter.bi_sector = 0;
+ 	bio->bi_iter.bi_size = 0;
+ 	bio->bi_iter.bi_idx = 0;
+-	bio->bi_iter.bi_bvec_done = 0;
++	bio->bi_iter.bi_offset = 0;
+ 	bio->bi_end_io = NULL;
+ 	bio->bi_private = NULL;
+ #ifdef CONFIG_BLK_CGROUP
+@@ -1188,7 +1188,7 @@ void bio_iov_bvec_set(struct bio *bio, const struct iov_iter *iter)
+ 
+ 	bio->bi_io_vec = (struct bio_vec *)iter->bvec;
+ 	bio->bi_iter.bi_idx = 0;
+-	bio->bi_iter.bi_bvec_done = iter->iov_offset;
++	bio->bi_iter.bi_offset = iter->iov_offset;
+ 	bio->bi_iter.bi_size = iov_iter_count(iter);
+ 	bio_set_flag(bio, BIO_CLONED);
  }
-@@ -378,15 +378,15 @@ static void print_dev_item(struct extent_buffer *eb,
- 	       "\t\tseek_speed %hhu bandwidth %hhu\n"
- 	       "\t\tuuid %s\n"
- 	       "\t\tfsid %s\n",
--	       (unsigned long long)btrfs_device_id(eb, dev_item),
--	       (unsigned long long)btrfs_device_total_bytes(eb, dev_item),
--	       (unsigned long long)btrfs_device_bytes_used(eb, dev_item),
-+	       btrfs_device_id(eb, dev_item),
-+	       btrfs_device_total_bytes(eb, dev_item),
-+	       btrfs_device_bytes_used(eb, dev_item),
- 	       btrfs_device_io_align(eb, dev_item),
- 	       btrfs_device_io_width(eb, dev_item),
- 	       btrfs_device_sector_size(eb, dev_item),
--	       (unsigned long long)btrfs_device_type(eb, dev_item),
--	       (unsigned long long)btrfs_device_generation(eb, dev_item),
--	       (unsigned long long)btrfs_device_start_offset(eb, dev_item),
-+	       btrfs_device_type(eb, dev_item),
-+	       btrfs_device_generation(eb, dev_item),
-+	       btrfs_device_start_offset(eb, dev_item),
- 	       btrfs_device_group(eb, dev_item),
- 	       btrfs_device_seek_speed(eb, dev_item),
- 	       btrfs_device_bandwidth(eb, dev_item),
-@@ -469,20 +469,20 @@ static void print_file_extent_item(struct extent_buffer *eb,
- 	}
- 	if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
- 		printf("\t\tprealloc data disk byte %llu nr %llu\n",
--		  (unsigned long long)btrfs_file_extent_disk_bytenr(eb, fi),
--		  (unsigned long long)btrfs_file_extent_disk_num_bytes(eb, fi));
-+		  btrfs_file_extent_disk_bytenr(eb, fi),
-+		  btrfs_file_extent_disk_num_bytes(eb, fi));
- 		printf("\t\tprealloc data offset %llu nr %llu\n",
--		  (unsigned long long)btrfs_file_extent_offset(eb, fi),
--		  (unsigned long long)btrfs_file_extent_num_bytes(eb, fi));
-+		  btrfs_file_extent_offset(eb, fi),
-+		  btrfs_file_extent_num_bytes(eb, fi));
- 		return;
- 	}
- 	printf("\t\textent data disk byte %llu nr %llu\n",
--		(unsigned long long)btrfs_file_extent_disk_bytenr(eb, fi),
--		(unsigned long long)btrfs_file_extent_disk_num_bytes(eb, fi));
-+		btrfs_file_extent_disk_bytenr(eb, fi),
-+		btrfs_file_extent_disk_num_bytes(eb, fi));
- 	printf("\t\textent data offset %llu nr %llu ram %llu\n",
--		(unsigned long long)btrfs_file_extent_offset(eb, fi),
--		(unsigned long long)btrfs_file_extent_num_bytes(eb, fi),
--		(unsigned long long)btrfs_file_extent_ram_bytes(eb, fi));
-+		btrfs_file_extent_offset(eb, fi),
-+		btrfs_file_extent_num_bytes(eb, fi),
-+		btrfs_file_extent_ram_bytes(eb, fi));
- 	printf("\t\textent compression %hhu (%s)\n",
- 			btrfs_file_extent_compression(eb, fi),
- 			compress_str);
-@@ -536,8 +536,8 @@ void print_extent_item(struct extent_buffer *eb, int slot, int metadata)
- 	extent_flags_to_str(flags, flags_str);
+diff --git a/block/blk-merge.c b/block/blk-merge.c
+index ab1161ca69f1..258a726071d1 100644
+--- a/block/blk-merge.c
++++ b/block/blk-merge.c
+@@ -33,7 +33,7 @@ static inline void bio_get_last_bvec(struct bio *bio, struct bio_vec *bv)
  
- 	printf("\t\trefs %llu gen %llu flags %s\n",
--	       (unsigned long long)btrfs_extent_refs(eb, ei),
--	       (unsigned long long)btrfs_extent_generation(eb, ei),
-+	       btrfs_extent_refs(eb, ei),
-+	       btrfs_extent_generation(eb, ei),
- 	       flags_str);
+ 	bio_advance_iter(bio, &iter, iter.bi_size);
  
- 	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK && !metadata) {
-@@ -617,8 +617,8 @@ static void print_root_ref(struct extent_buffer *leaf, int slot, const char *tag
- 	namelen = btrfs_root_ref_name_len(leaf, ref);
- 	read_extent_buffer(leaf, namebuf, (unsigned long)(ref + 1), namelen);
- 	printf("\t\troot %s key dirid %llu sequence %llu name %.*s\n", tag,
--	       (unsigned long long)btrfs_root_ref_dirid(leaf, ref),
--	       (unsigned long long)btrfs_root_ref_sequence(leaf, ref),
-+	       btrfs_root_ref_dirid(leaf, ref),
-+	       btrfs_root_ref_sequence(leaf, ref),
- 	       namelen, namebuf);
- }
- 
-@@ -649,7 +649,7 @@ static void print_timespec(struct extent_buffer *eb,
- 	localtime_r(&tmp_time, &tm);
- 	strftime(timestamp, sizeof(timestamp),
- 			"%Y-%m-%d %H:%M:%S", &tm);
--	printf("%s%llu.%u (%s)%s", prefix, (unsigned long long)tmp_u64, tmp_u32,
-+	printf("%s%llu.%u (%s)%s", prefix, tmp_u64, tmp_u32,
- 			timestamp, suffix);
- }
- 
-@@ -670,14 +670,14 @@ static void print_root_item(struct extent_buffer *leaf, int slot)
- 	root_flags_to_str(btrfs_root_flags(&root_item), flags_str);
- 
- 	printf("\t\tgeneration %llu root_dirid %llu bytenr %llu byte_limit %llu bytes_used %llu\n",
--		(unsigned long long)btrfs_root_generation(&root_item),
--		(unsigned long long)btrfs_root_dirid(&root_item),
--		(unsigned long long)btrfs_root_bytenr(&root_item),
--		(unsigned long long)btrfs_root_limit(&root_item),
--		(unsigned long long)btrfs_root_used(&root_item));
-+		btrfs_root_generation(&root_item),
-+		btrfs_root_dirid(&root_item),
-+		btrfs_root_bytenr(&root_item),
-+		btrfs_root_limit(&root_item),
-+		btrfs_root_used(&root_item));
- 	printf("\t\tlast_snapshot %llu flags 0x%llx(%s) refs %u\n",
--		(unsigned long long)btrfs_root_last_snapshot(&root_item),
--		(unsigned long long)btrfs_root_flags(&root_item),
-+		btrfs_root_last_snapshot(&root_item),
-+		btrfs_root_flags(&root_item),
- 		flags_str,
- 		btrfs_root_refs(&root_item));
- 	btrfs_disk_key_to_cpu(&drop_key, &root_item.drop_progress);
-@@ -722,9 +722,9 @@ static void print_free_space_header(struct extent_buffer *leaf, int slot)
- 	btrfs_print_key(&location);
- 	printf("\n");
- 	printf("\t\tcache generation %llu entries %llu bitmaps %llu\n",
--	       (unsigned long long)btrfs_free_space_generation(leaf, header),
--	       (unsigned long long)btrfs_free_space_entries(leaf, header),
--	       (unsigned long long)btrfs_free_space_bitmaps(leaf, header));
-+	       btrfs_free_space_generation(leaf, header),
-+	       btrfs_free_space_entries(leaf, header),
-+	       btrfs_free_space_bitmaps(leaf, header));
- }
- 
- static void print_raid_stripe_key(struct extent_buffer *eb,
-@@ -734,8 +734,8 @@ static void print_raid_stripe_key(struct extent_buffer *eb,
- 
- 	for (int i = 0; i < num_stripes; i++)
- 		printf("\t\t\tstripe %d devid %llu physical %llu\n", i,
--		       (unsigned long long)btrfs_raid_stride_devid_nr(eb, stripe, i),
--		       (unsigned long long)btrfs_raid_stride_physical_nr(eb, stripe, i));
-+		       btrfs_raid_stride_devid_nr(eb, stripe, i),
-+		       btrfs_raid_stride_physical_nr(eb, stripe, i));
- }
- 
- static void print_remap_key(struct extent_buffer *leaf, u32 item_size,
-@@ -816,11 +816,11 @@ void print_objectid(FILE *stream, u64 objectid, u8 type)
- 		if (objectid == BTRFS_DEV_STATS_OBJECTID)
- 			fprintf(stream, "DEV_STATS");
- 		else
--			fprintf(stream, "%llu", (unsigned long long)objectid);
-+			fprintf(stream, "%llu", objectid);
- 		return;
- 	case BTRFS_DEV_EXTENT_KEY:
- 		/* device id */
--		fprintf(stream, "%llu", (unsigned long long)objectid);
-+		fprintf(stream, "%llu", objectid);
- 		return;
- 	case BTRFS_QGROUP_RELATION_KEY:
- 		fprintf(stream, "%u/%llu", btrfs_qgroup_level(objectid),
-@@ -828,7 +828,7 @@ void print_objectid(FILE *stream, u64 objectid, u8 type)
- 		return;
- 	case BTRFS_UUID_KEY_SUBVOL:
- 	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
--		fprintf(stream, "0x%016llx", (unsigned long long)objectid);
-+		fprintf(stream, "0x%016llx", objectid);
- 		return;
- 	}
- 
-@@ -923,7 +923,7 @@ void print_objectid(FILE *stream, u64 objectid, u8 type)
- 		}
- 		fallthrough;
- 	default:
--		fprintf(stream, "%llu", (unsigned long long)objectid);
-+		fprintf(stream, "%llu", objectid);
- 	}
- }
- 
-@@ -946,7 +946,7 @@ void btrfs_print_key(struct btrfs_disk_key *disk_key)
- 		break;
- 	case BTRFS_UUID_KEY_SUBVOL:
- 	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
--		printf(" 0x%016llx)", (unsigned long long)offset);
-+		printf(" 0x%016llx)", offset);
- 		break;
+-	if (!iter.bi_bvec_done)
++	if (!iter.bi_offset)
+ 		idx = iter.bi_idx - 1;
+ 	else	/* in the middle of bvec */
+ 		idx = iter.bi_idx;
+@@ -41,11 +41,11 @@ static inline void bio_get_last_bvec(struct bio *bio, struct bio_vec *bv)
+ 	*bv = bio->bi_io_vec[idx];
  
  	/*
-@@ -972,7 +972,7 @@ void btrfs_print_key(struct btrfs_disk_key *disk_key)
- 		if (offset == (u64)-1)
- 			printf(" -1)");
- 		else
--			printf(" %llu)", (unsigned long long)offset);
-+			printf(" %llu)", offset);
- 		break;
- 	}
- }
-@@ -990,7 +990,7 @@ static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
- 
- 		read_extent_buffer(l, &subvol_id, offset, sizeof(u64));
- 		printf("\t\tsubvol_id %llu\n",
--			(unsigned long long)le64_to_cpu(subvol_id));
-+			le64_to_cpu(subvol_id));
- 		item_size -= sizeof(u64);
- 		offset += sizeof(u64);
- 	}
-@@ -1039,18 +1039,18 @@ static void print_inode_item(struct extent_buffer *eb,
- 	printf("\t\tgeneration %llu transid %llu size %llu nbytes %llu\n"
- 	       "\t\tblock group %llu mode %o links %u uid %u gid %u rdev %llu\n"
- 	       "\t\tsequence %llu flags 0x%llx(%s)\n",
--	       (unsigned long long)btrfs_inode_generation(eb, ii),
--	       (unsigned long long)btrfs_inode_transid(eb, ii),
--	       (unsigned long long)btrfs_inode_size(eb, ii),
--	       (unsigned long long)btrfs_inode_nbytes(eb, ii),
--	       (unsigned long long)btrfs_inode_block_group(eb,ii),
-+	       btrfs_inode_generation(eb, ii),
-+	       btrfs_inode_transid(eb, ii),
-+	       btrfs_inode_size(eb, ii),
-+	       btrfs_inode_nbytes(eb, ii),
-+	       btrfs_inode_block_group(eb,ii),
- 	       btrfs_inode_mode(eb, ii),
- 	       btrfs_inode_nlink(eb, ii),
- 	       btrfs_inode_uid(eb, ii),
- 	       btrfs_inode_gid(eb, ii),
--	       (unsigned long long)btrfs_inode_rdev(eb,ii),
--	       (unsigned long long)btrfs_inode_sequence(eb, ii),
--	       (unsigned long long)btrfs_inode_flags(eb,ii),
-+	       btrfs_inode_rdev(eb,ii),
-+	       btrfs_inode_sequence(eb, ii),
-+	       btrfs_inode_flags(eb,ii),
- 	       flags_str);
- 	print_timespec(eb, btrfs_inode_atime(ii), "\t\tatime ", "\n");
- 	print_timespec(eb, btrfs_inode_ctime(ii), "\t\tctime ", "\n");
-@@ -1061,18 +1061,18 @@ static void print_inode_item(struct extent_buffer *eb,
- static void print_disk_balance_args(struct btrfs_disk_balance_args *ba)
- {
- 	printf("\t\tprofiles %llu devid %llu target %llu flags %llu\n",
--			(unsigned long long)le64_to_cpu(ba->profiles),
--			(unsigned long long)le64_to_cpu(ba->devid),
--			(unsigned long long)le64_to_cpu(ba->target),
--			(unsigned long long)le64_to_cpu(ba->flags));
-+			le64_to_cpu(ba->profiles),
-+			le64_to_cpu(ba->devid),
-+			le64_to_cpu(ba->target),
-+			le64_to_cpu(ba->flags));
- 	printf("\t\tusage_min %u usage_max %u pstart %llu pend %llu\n",
- 			le32_to_cpu(ba->usage_min),
- 			le32_to_cpu(ba->usage_max),
--			(unsigned long long)le64_to_cpu(ba->pstart),
--			(unsigned long long)le64_to_cpu(ba->pend));
-+			le64_to_cpu(ba->pstart),
-+			le64_to_cpu(ba->pend));
- 	printf("\t\tvstart %llu vend %llu limit_min %u limit_max %u\n",
--			(unsigned long long)le64_to_cpu(ba->vstart),
--			(unsigned long long)le64_to_cpu(ba->vend),
-+			le64_to_cpu(ba->vstart),
-+			le64_to_cpu(ba->vend),
- 			le32_to_cpu(ba->limit_min),
- 			le32_to_cpu(ba->limit_max));
- 	printf("\t\tstripes_min %u stripes_max %u\n",
-@@ -1145,10 +1145,10 @@ static void print_extent_data_ref(struct extent_buffer *eb, int slot)
- 	dref = btrfs_item_ptr(eb, slot, struct btrfs_extent_data_ref);
- 	printf("\t\textent data backref root ");
- 	print_objectid(stdout,
--		(unsigned long long)btrfs_extent_data_ref_root(eb, dref), 0);
-+		btrfs_extent_data_ref_root(eb, dref), 0);
- 	printf(" objectid %llu offset %llu count %u\n",
--		(unsigned long long)btrfs_extent_data_ref_objectid(eb, dref),
--		(unsigned long long)btrfs_extent_data_ref_offset(eb, dref),
-+		btrfs_extent_data_ref_objectid(eb, dref),
-+		btrfs_extent_data_ref_offset(eb, dref),
- 		btrfs_extent_data_ref_count(eb, dref));
- }
- 
-@@ -1197,10 +1197,10 @@ static void print_dev_extent(struct extent_buffer *eb, int slot)
- 		"\t\tchunk_objectid %llu chunk_offset %llu "
- 		"length %llu\n"
- 		"\t\tchunk_tree_uuid %s\n",
--		(unsigned long long)btrfs_dev_extent_chunk_tree(eb, dev_extent),
--		(unsigned long long)btrfs_dev_extent_chunk_objectid(eb, dev_extent),
--		(unsigned long long)btrfs_dev_extent_chunk_offset(eb, dev_extent),
--		(unsigned long long)btrfs_dev_extent_length(eb, dev_extent),
-+		btrfs_dev_extent_chunk_tree(eb, dev_extent),
-+		btrfs_dev_extent_chunk_objectid(eb, dev_extent),
-+		btrfs_dev_extent_chunk_offset(eb, dev_extent),
-+		btrfs_dev_extent_length(eb, dev_extent),
- 		uuid_str);
- }
- 
-@@ -1214,13 +1214,13 @@ static void print_qgroup_status(struct extent_buffer *eb, int slot)
- 	qgroup_flags_to_str(btrfs_qgroup_status_flags(eb, qg_status),
- 					flags_str);
- 	printf("\t\tversion %llu generation %llu flags %s scan %llu",
--		(unsigned long long)btrfs_qgroup_status_version(eb, qg_status),
--		(unsigned long long)btrfs_qgroup_status_generation(eb, qg_status),
-+		btrfs_qgroup_status_version(eb, qg_status),
-+		btrfs_qgroup_status_generation(eb, qg_status),
- 		flags_str,
--		(unsigned long long)btrfs_qgroup_status_rescan(eb, qg_status));
-+		btrfs_qgroup_status_rescan(eb, qg_status));
- 	if (btrfs_fs_incompat(eb->fs_info, SIMPLE_QUOTA))
- 		printf(" enable_gen %llu\n",
--			   (unsigned long long)btrfs_qgroup_status_enable_gen(eb, qg_status));
-+			   btrfs_qgroup_status_enable_gen(eb, qg_status));
- 	else
- 		printf("\n");
- }
-@@ -1233,11 +1233,11 @@ static void print_qgroup_info(struct extent_buffer *eb, int slot)
- 	printf("\t\tgeneration %llu\n"
- 		"\t\treferenced %llu referenced_compressed %llu\n"
- 		"\t\texclusive %llu exclusive_compressed %llu\n",
--		(unsigned long long)btrfs_qgroup_info_generation(eb, qg_info),
--		(unsigned long long)btrfs_qgroup_info_rfer(eb, qg_info),
--		(unsigned long long)btrfs_qgroup_info_rfer_cmpr(eb, qg_info),
--		(unsigned long long)btrfs_qgroup_info_excl(eb, qg_info),
--		(unsigned long long)btrfs_qgroup_info_excl_cmpr(eb, qg_info));
-+		btrfs_qgroup_info_generation(eb, qg_info),
-+		btrfs_qgroup_info_rfer(eb, qg_info),
-+		btrfs_qgroup_info_rfer_cmpr(eb, qg_info),
-+		btrfs_qgroup_info_excl(eb, qg_info),
-+		btrfs_qgroup_info_excl_cmpr(eb, qg_info));
- }
- 
- static void print_qgroup_limit(struct extent_buffer *eb, int slot)
-@@ -1248,7 +1248,7 @@ static void print_qgroup_limit(struct extent_buffer *eb, int slot)
- 	printf("\t\tflags %llx\n"
- 		"\t\tmax_referenced %lld max_exclusive %lld\n"
- 		"\t\trsv_referenced %lld rsv_exclusive %lld\n",
--		(unsigned long long)btrfs_qgroup_limit_flags(eb, qg_limit),
-+		btrfs_qgroup_limit_flags(eb, qg_limit),
- 		(long long)btrfs_qgroup_limit_max_rfer(eb, qg_limit),
- 		(long long)btrfs_qgroup_limit_max_excl(eb, qg_limit),
- 		(long long)btrfs_qgroup_limit_rsv_rfer(eb, qg_limit),
-@@ -1260,7 +1260,7 @@ static void print_persistent_item(struct extent_buffer *eb, void *ptr,
- {
- 	printf("\t\tpersistent item objectid ");
- 	print_objectid(stdout, objectid, BTRFS_PERSISTENT_ITEM_KEY);
--	printf(" offset %llu\n", (unsigned long long)offset);
-+	printf(" offset %llu\n", offset);
- 	switch (objectid) {
- 	case BTRFS_DEV_STATS_OBJECTID:
- 		print_dev_stats(eb, ptr, item_size);
-@@ -1275,7 +1275,7 @@ static void print_temporary_item(struct extent_buffer *eb, void *ptr,
- {
- 	printf("\t\ttemporary item objectid ");
- 	print_objectid(stdout, objectid, BTRFS_TEMPORARY_ITEM_KEY);
--	printf(" offset %llu\n", (unsigned long long)offset);
-+	printf(" offset %llu\n", offset);
- 	switch (objectid) {
- 	case BTRFS_BALANCE_OBJECTID:
- 		print_balance_item(eb, ptr);
-@@ -1304,14 +1304,14 @@ static void print_extent_csum(struct extent_buffer *eb,
- 	 * don't have sectorsize for the calculation
+-	 * iter.bi_bvec_done records actual length of the last bvec
++	 * iter.bi_offset records actual length of the last bvec
+ 	 * if this bio ends in the middle of one io vector
  	 */
- 	if (!fs_info) {
--		printf("\t\trange start %llu\n", (unsigned long long)offset);
-+		printf("\t\trange start %llu\n", offset);
- 		return;
+-	if (iter.bi_bvec_done)
+-		bv->bv_len = iter.bi_bvec_done;
++	if (iter.bi_offset)
++		bv->bv_len = iter.bi_offset;
+ }
+ 
+ static inline bool bio_will_gap(struct request_queue *q,
+diff --git a/block/blk-mq-dma.c b/block/blk-mq-dma.c
+index bfdb9ed70741..88fd9cbc951f 100644
+--- a/block/blk-mq-dma.c
++++ b/block/blk-mq-dma.c
+@@ -44,7 +44,7 @@ static bool blk_map_iter_next(struct request *req, struct blk_map_iter *iter,
+ 	 * one could be merged into it.  This typically happens when moving to
+ 	 * the next bio, but some callers also don't pack bvecs tight.
+ 	 */
+-	while (!iter->iter.bi_size || !iter->iter.bi_bvec_done) {
++	while (!iter->iter.bi_size || !iter->iter.bi_offset) {
+ 		struct bio_vec next;
+ 
+ 		if (!__blk_map_iter_next(iter))
+diff --git a/block/blk.h b/block/blk.h
+index eaac05815cb0..50abfd932886 100644
+--- a/block/blk.h
++++ b/block/blk.h
+@@ -406,7 +406,7 @@ static inline bool bio_may_need_split(struct bio *bio,
+ 		return true;
+ 
+ 	bv = __bvec_iter_bvec(bio->bi_io_vec, bio->bi_iter);
+-	if (bio->bi_iter.bi_size > bv->bv_len - bio->bi_iter.bi_bvec_done)
++	if (bio->bi_iter.bi_size > bv->bv_len - bio->bi_iter.bi_offset)
+ 		return true;
+ 	if ((bv->bv_offset | bv->bv_len) & lim->dma_alignment)
+ 		return true;
+diff --git a/drivers/block/loop.c b/drivers/block/loop.c
+index 26d7130c3f55..8639fa34b847 100644
+--- a/drivers/block/loop.c
++++ b/drivers/block/loop.c
+@@ -379,7 +379,7 @@ static int lo_rw_aio(struct loop_device *lo, struct loop_cmd *cmd,
+ 		iov_iter_bvec(&iter, rw,
+ 			__bvec_iter_bvec(rq->bio->bi_io_vec, rq->bio->bi_iter),
+ 			nr_bvec, blk_rq_bytes(rq));
+-		iter.iov_offset = rq->bio->bi_iter.bi_bvec_done;
++		iter.iov_offset = rq->bio->bi_iter.bi_offset;
  	}
- 	csum_size = fs_info->csum_size;
- 	size = (item_size / csum_size) * fs_info->sectorsize;
- 	printf("\t\trange start %llu end %llu length %u\n",
--			(unsigned long long)offset,
--			(unsigned long long)offset + size, size);
-+			offset,
-+			offset + size, size);
+ 	atomic_set(&cmd->ref, 2);
  
+diff --git a/drivers/block/zloop.c b/drivers/block/zloop.c
+index 58ec8161b7e2..4323ac108cae 100644
+--- a/drivers/block/zloop.c
++++ b/drivers/block/zloop.c
+@@ -555,7 +555,7 @@ static int zloop_do_rw(struct zloop_cmd *cmd)
+ 		iov_iter_bvec(&iter, rw,
+ 			__bvec_iter_bvec(rq->bio->bi_io_vec, rq->bio->bi_iter),
+ 					nr_bvec, blk_rq_bytes(rq));
+-		iter.iov_offset = rq->bio->bi_iter.bi_bvec_done;
++		iter.iov_offset = rq->bio->bi_iter.bi_offset;
+ 	}
  
+ 	cmd->iocb.ki_pos = (cmd->sector - zone->start) << SECTOR_SHIFT;
+diff --git a/drivers/md/dm-io-rewind.c b/drivers/md/dm-io-rewind.c
+index 6155b0117c9d..04f3fc8aeb6f 100644
+--- a/drivers/md/dm-io-rewind.c
++++ b/drivers/md/dm-io-rewind.c
+@@ -16,12 +16,12 @@ static inline bool dm_bvec_iter_rewind(const struct bio_vec *bv,
+ 	int idx;
+ 
+ 	iter->bi_size += bytes;
+-	if (bytes <= iter->bi_bvec_done) {
+-		iter->bi_bvec_done -= bytes;
++	if (bytes <= iter->bi_offset) {
++		iter->bi_offset -= bytes;
+ 		return true;
+ 	}
+ 
+-	bytes -= iter->bi_bvec_done;
++	bytes -= iter->bi_offset;
+ 	idx = iter->bi_idx - 1;
+ 
+ 	while (idx >= 0 && bytes && bytes > bv[idx].bv_len) {
+@@ -32,13 +32,13 @@ static inline bool dm_bvec_iter_rewind(const struct bio_vec *bv,
+ 	if (WARN_ONCE(idx < 0 && bytes,
+ 		      "Attempted to rewind iter beyond bvec's boundaries\n")) {
+ 		iter->bi_size -= bytes;
+-		iter->bi_bvec_done = 0;
++		iter->bi_offset = 0;
+ 		iter->bi_idx = 0;
+ 		return false;
+ 	}
+ 
+ 	iter->bi_idx = idx;
+-	iter->bi_bvec_done = bv[idx].bv_len - bytes;
++	iter->bi_offset = bv[idx].bv_len - bytes;
+ 	return true;
+ }
+ 
+diff --git a/drivers/md/dm-pcache/segment.c b/drivers/md/dm-pcache/segment.c
+index 7e9818701445..8f8816e1c539 100644
+--- a/drivers/md/dm-pcache/segment.c
++++ b/drivers/md/dm-pcache/segment.c
+@@ -14,7 +14,7 @@ int segment_copy_to_bio(struct pcache_segment *segment,
+ 
+ 	iov_iter_bvec(&iter, ITER_DEST, &bio->bi_io_vec[bio->bi_iter.bi_idx],
+ 			bio_segments(bio), bio->bi_iter.bi_size);
+-	iter.iov_offset = bio->bi_iter.bi_bvec_done;
++	iter.iov_offset = bio->bi_iter.bi_offset;
+ 	if (bio_off)
+ 		iov_iter_advance(&iter, bio_off);
+ 
+@@ -35,7 +35,7 @@ int segment_copy_from_bio(struct pcache_segment *segment,
+ 
+ 	iov_iter_bvec(&iter, ITER_SOURCE, &bio->bi_io_vec[bio->bi_iter.bi_idx],
+ 			bio_segments(bio), bio->bi_iter.bi_size);
+-	iter.iov_offset = bio->bi_iter.bi_bvec_done;
++	iter.iov_offset = bio->bi_iter.bi_offset;
+ 	if (bio_off)
+ 		iov_iter_advance(&iter, bio_off);
+ 
+diff --git a/drivers/nvdimm/btt.c b/drivers/nvdimm/btt.c
+index 7e1112960d7f..5d910a64503d 100644
+--- a/drivers/nvdimm/btt.c
++++ b/drivers/nvdimm/btt.c
+@@ -1155,7 +1155,7 @@ static int btt_rw_integrity(struct btt *btt, struct bio_integrity_payload *bip,
+ 		bv = bvec_iter_bvec(bip->bip_vec, bip->bip_iter);
+ 		/*
+ 		 * The 'bv' obtained from bvec_iter_bvec has its .bv_len and
+-		 * .bv_offset already adjusted for iter->bi_bvec_done, and we
++		 * .bv_offset already adjusted for iter->bi_offset, and we
+ 		 * can use those directly
+ 		 */
+ 
+diff --git a/drivers/nvme/host/tcp.c b/drivers/nvme/host/tcp.c
+index ba5c7b3e2a7c..ce03a0ea4ded 100644
+--- a/drivers/nvme/host/tcp.c
++++ b/drivers/nvme/host/tcp.c
+@@ -357,7 +357,7 @@ static void nvme_tcp_init_iter(struct nvme_tcp_request *req,
+ 		iov_iter_bvec(&req->iter, dir,
+ 			__bvec_iter_bvec(bio->bi_io_vec, bio->bi_iter), nr_bvec,
+ 			bio->bi_iter.bi_size);
+-		req->iter.iov_offset = bio->bi_iter.bi_bvec_done;
++		req->iter.iov_offset = bio->bi_iter.bi_offset;
+ 	}
+ }
+ 
+diff --git a/fs/btrfs/misc.h b/fs/btrfs/misc.h
+index 694be6d0562a..802060943180 100644
+--- a/fs/btrfs/misc.h
++++ b/fs/btrfs/misc.h
+@@ -74,7 +74,7 @@ static inline struct bvec_iter init_bvec_iter_for_bio(struct bio *bio)
+ 		.bi_sector = 0,
+ 		.bi_size = bio_size,
+ 		.bi_idx = 0,
+-		.bi_bvec_done = 0,
++		.bi_offset = 0,
+ 	};
+ }
+ 
+diff --git a/include/linux/bvec.h b/include/linux/bvec.h
+index 92837e2743f1..fc566ee1c1ff 100644
+--- a/include/linux/bvec.h
++++ b/include/linux/bvec.h
+@@ -110,7 +110,7 @@ struct bvec_iter {
  	/*
-@@ -1385,15 +1385,15 @@ static void print_header_info(struct extent_buffer *eb, unsigned int mode)
- 	if (btrfs_header_level(eb))
- 		printf(
- 	"node %llu level %d items %u free space %u generation %llu owner ",
--		       (unsigned long long)eb->start, btrfs_header_level(eb),
-+		       eb->start, btrfs_header_level(eb),
- 		       nr, (u32)BTRFS_NODEPTRS_PER_EXTENT_BUFFER(eb) - nr,
--		       (unsigned long long)btrfs_header_generation(eb));
-+		       btrfs_header_generation(eb));
- 	else
- 		printf(
- 	"leaf %llu items %u free space %d generation %llu owner ",
--		       (unsigned long long)btrfs_header_bytenr(eb), nr,
-+		       btrfs_header_bytenr(eb), nr,
- 		       btrfs_leaf_free_space(eb),
--		       (unsigned long long)btrfs_header_generation(eb));
-+		       btrfs_header_generation(eb));
- 	print_objectid(stdout, btrfs_header_owner(eb), 0);
- 	printf("\n");
- 	if (fs_info && (mode & BTRFS_PRINT_TREE_CSUM_HEADERS)) {
-@@ -1584,7 +1584,7 @@ void __btrfs_print_leaf(struct extent_buffer *eb, unsigned int mode)
+ 	 * Current offset in the bvec entry pointed to by `bi_idx`.
+ 	 */
+-	unsigned int		bi_bvec_done;
++	unsigned int		bi_offset;
+ } __packed __aligned(4);
  
- 			dlog = btrfs_item_ptr(eb, i, struct btrfs_dir_log_item);
- 			printf("\t\tdir log end %llu\n",
--			       (unsigned long long)btrfs_dir_log_end(eb, dlog));
-+			       btrfs_dir_log_end(eb, dlog));
- 			break;
- 			}
- 		case BTRFS_ORPHAN_ITEM_KEY:
-@@ -1906,8 +1906,8 @@ void btrfs_print_tree(struct extent_buffer *eb, unsigned int mode)
- 		printf("\t");
- 		btrfs_print_key(&disk_key);
- 		printf(" block %llu gen %llu\n",
--		       (unsigned long long)blocknr,
--		       (unsigned long long)btrfs_node_ptr_generation(eb, i));
-+		       blocknr,
-+		       btrfs_node_ptr_generation(eb, i));
- 		fflush(stdout);
+ struct bvec_iter_all {
+@@ -135,14 +135,14 @@ mp_bvec_iter_page(const struct bio_vec *bvecs, const struct bvec_iter iter)
+ static __always_inline unsigned int
+ mp_bvec_iter_len(const struct bio_vec *bvecs, const struct bvec_iter iter)
+ {
+-	return min(__bvec_iter_bvec(bvecs, iter)->bv_len - iter.bi_bvec_done,
++	return min(__bvec_iter_bvec(bvecs, iter)->bv_len - iter.bi_offset,
+ 			iter.bi_size);
+ }
+ 
+ static __always_inline unsigned int
+ mp_bvec_iter_offset(const struct bio_vec *bvecs, const struct bvec_iter iter)
+ {
+-	return __bvec_iter_bvec(bvecs, iter)->bv_offset + iter.bi_bvec_done;
++	return __bvec_iter_bvec(bvecs, iter)->bv_offset + iter.bi_offset;
+ }
+ 
+ static __always_inline unsigned int
+@@ -204,7 +204,7 @@ static inline bool bvec_iter_advance(const struct bio_vec *bv,
  	}
- 	if (!follow)
-@@ -2239,7 +2239,7 @@ void btrfs_print_superblock(struct btrfs_super_block *sb, int full)
- 		csum_size = btrfs_super_csum_size(sb);
+ 
+ 	iter->bi_size -= bytes;
+-	bytes += iter->bi_bvec_done;
++	bytes += iter->bi_offset;
+ 
+ 	while (bytes && bytes >= bv[idx].bv_len) {
+ 		bytes -= bv[idx].bv_len;
+@@ -212,7 +212,7 @@ static inline bool bvec_iter_advance(const struct bio_vec *bv,
  	}
- 	printf(")\n");
--	printf("csum_size\t\t%llu\n", (unsigned long long)csum_size);
-+	printf("csum_size\t\t%u\n", csum_size);
  
- 	printf("csum\t\t\t0x");
- 	for (i = 0, p = sb->csum; i < csum_size; i++)
-@@ -2253,9 +2253,9 @@ void btrfs_print_superblock(struct btrfs_super_block *sb, int full)
- 	putchar('\n');
+ 	iter->bi_idx = idx;
+-	iter->bi_bvec_done = bytes;
++	iter->bi_offset = bytes;
+ 	return true;
+ }
  
- 	printf("bytenr\t\t\t%llu\n",
--		(unsigned long long)btrfs_super_bytenr(sb));
-+		btrfs_super_bytenr(sb));
- 	printf("flags\t\t\t0x%llx\n",
--		(unsigned long long)btrfs_super_flags(sb));
-+		btrfs_super_flags(sb));
- 	print_readable_super_flag(btrfs_super_flags(sb));
+@@ -223,13 +223,13 @@ static inline bool bvec_iter_advance(const struct bio_vec *bv,
+ static inline void bvec_iter_advance_single(const struct bio_vec *bv,
+ 				struct bvec_iter *iter, unsigned int bytes)
+ {
+-	unsigned int done = iter->bi_bvec_done + bytes;
++	unsigned int done = iter->bi_offset + bytes;
  
- 	printf("magic\t\t\t");
-@@ -2279,52 +2279,52 @@ void btrfs_print_superblock(struct btrfs_super_block *sb, int full)
- 	putchar('\n');
+ 	if (done == bv[iter->bi_idx].bv_len) {
+ 		done = 0;
+ 		iter->bi_idx++;
+ 	}
+-	iter->bi_bvec_done = done;
++	iter->bi_offset = done;
+ 	iter->bi_size -= bytes;
+ }
  
- 	printf("generation\t\t%llu\n",
--	       (unsigned long long)btrfs_super_generation(sb));
--	printf("root\t\t\t%llu\n", (unsigned long long)btrfs_super_root(sb));
--	printf("sys_array_size\t\t%llu\n",
--	       (unsigned long long)btrfs_super_sys_array_size(sb));
-+	       btrfs_super_generation(sb));
-+	printf("root\t\t\t%llu\n", btrfs_super_root(sb));
-+	printf("sys_array_size\t\t%u\n",
-+	       btrfs_super_sys_array_size(sb));
- 	printf("chunk_root_generation\t%llu\n",
--	       (unsigned long long)btrfs_super_chunk_root_generation(sb));
--	printf("root_level\t\t%llu\n",
--	       (unsigned long long)btrfs_super_root_level(sb));
-+	       btrfs_super_chunk_root_generation(sb));
-+	printf("root_level\t\t%u\n",
-+	       btrfs_super_root_level(sb));
- 	printf("chunk_root\t\t%llu\n",
--	       (unsigned long long)btrfs_super_chunk_root(sb));
--	printf("chunk_root_level\t%llu\n",
--	       (unsigned long long)btrfs_super_chunk_root_level(sb));
-+	       btrfs_super_chunk_root(sb));
-+	printf("chunk_root_level\t%u\n",
-+	       btrfs_super_chunk_root_level(sb));
- 	printf("log_root\t\t%llu\n",
--	       (unsigned long long)btrfs_super_log_root(sb));
-+	       btrfs_super_log_root(sb));
- 	printf("log_root_transid (deprecated)\t%llu\n",
- 	       le64_to_cpu(sb->__unused_log_root_transid));
--	printf("log_root_level\t\t%llu\n",
--	       (unsigned long long)btrfs_super_log_root_level(sb));
-+	printf("log_root_level\t\t%u\n",
-+	       btrfs_super_log_root_level(sb));
- 	printf("total_bytes\t\t%llu\n",
--	       (unsigned long long)btrfs_super_total_bytes(sb));
-+	       btrfs_super_total_bytes(sb));
- 	printf("bytes_used\t\t%llu\n",
--	       (unsigned long long)btrfs_super_bytes_used(sb));
--	printf("sectorsize\t\t%llu\n",
--	       (unsigned long long)btrfs_super_sectorsize(sb));
--	printf("nodesize\t\t%llu\n",
--	       (unsigned long long)btrfs_super_nodesize(sb));
-+	       btrfs_super_bytes_used(sb));
-+	printf("sectorsize\t\t%u\n",
-+	       btrfs_super_sectorsize(sb));
-+	printf("nodesize\t\t%u\n",
-+	       btrfs_super_nodesize(sb));
- 	printf("leafsize (deprecated)\t%u\n",
- 	       le32_to_cpu(sb->__unused_leafsize));
--	printf("stripesize\t\t%llu\n",
--	       (unsigned long long)btrfs_super_stripesize(sb));
-+	printf("stripesize\t\t%u\n",
-+	       btrfs_super_stripesize(sb));
- 	printf("root_dir\t\t%llu\n",
--	       (unsigned long long)btrfs_super_root_dir(sb));
-+	       btrfs_super_root_dir(sb));
- 	printf("num_devices\t\t%llu\n",
--	       (unsigned long long)btrfs_super_num_devices(sb));
-+	       btrfs_super_num_devices(sb));
- 	printf("compat_flags\t\t0x%llx\n",
--	       (unsigned long long)btrfs_super_compat_flags(sb));
-+	       btrfs_super_compat_flags(sb));
- 	printf("compat_ro_flags\t\t0x%llx\n",
--	       (unsigned long long)btrfs_super_compat_ro_flags(sb));
-+	       btrfs_super_compat_ro_flags(sb));
- 	print_readable_compat_ro_flag(btrfs_super_compat_ro_flags(sb));
- 	printf("incompat_flags\t\t0x%llx\n",
--	       (unsigned long long)btrfs_super_incompat_flags(sb));
-+	       btrfs_super_incompat_flags(sb));
- 	print_readable_incompat_flag(btrfs_super_incompat_flags(sb));
- 	printf("cache_generation\t%llu\n",
--	       (unsigned long long)btrfs_super_cache_generation(sb));
-+	       btrfs_super_cache_generation(sb));
- 	printf("uuid_tree_generation\t%llu\n",
--	       (unsigned long long)btrfs_super_uuid_tree_generation(sb));
-+	       btrfs_super_uuid_tree_generation(sb));
+diff --git a/io_uring/net.c b/io_uring/net.c
+index a74d15f7b7d2..439c99ad1884 100644
+--- a/io_uring/net.c
++++ b/io_uring/net.c
+@@ -1471,7 +1471,7 @@ static int io_sg_from_iter(struct sk_buff *skb,
+ 		return zerocopy_fill_skb_from_iter(skb, from, length);
  
- 	uuid_unparse(sb->dev_item.uuid, buf);
- 	printf("dev_item.uuid\t\t%s\n", buf);
-@@ -2339,11 +2339,11 @@ void btrfs_print_superblock(struct btrfs_super_block *sb, int full)
- 	printf("dev_item.fsid\t\t%s %s\n", buf,
- 	       cmp_res ? "[match]" : "[DON'T MATCH]");
+ 	bi.bi_size = min(from->count, length);
+-	bi.bi_bvec_done = from->iov_offset;
++	bi.bi_offset = from->iov_offset;
+ 	bi.bi_idx = 0;
  
--	printf("dev_item.type\t\t%llu\n", (unsigned long long)
-+	printf("dev_item.type\t\t%llu\n",
- 	       btrfs_stack_device_type(&sb->dev_item));
--	printf("dev_item.total_bytes\t%llu\n", (unsigned long long)
-+	printf("dev_item.total_bytes\t%llu\n",
- 	       btrfs_stack_device_total_bytes(&sb->dev_item));
--	printf("dev_item.bytes_used\t%llu\n", (unsigned long long)
-+	printf("dev_item.bytes_used\t%llu\n",
- 	       btrfs_stack_device_bytes_used(&sb->dev_item));
- 	printf("dev_item.io_align\t%u\n", (unsigned int)
- 	       btrfs_stack_device_io_align(&sb->dev_item));
-@@ -2359,7 +2359,7 @@ void btrfs_print_superblock(struct btrfs_super_block *sb, int full)
- 	       btrfs_stack_device_seek_speed(&sb->dev_item));
- 	printf("dev_item.bandwidth\t%u\n", (unsigned int)
- 	       btrfs_stack_device_bandwidth(&sb->dev_item));
--	printf("dev_item.generation\t%llu\n", (unsigned long long)
-+	printf("dev_item.generation\t%llu\n",
- 	       btrfs_stack_device_generation(&sb->dev_item));
- 	if (full) {
- 		printf("sys_chunk_array[%d]:\n", BTRFS_SYSTEM_CHUNK_ARRAY_SIZE);
+ 	while (bi.bi_size && frag < MAX_SKB_FRAGS) {
+@@ -1490,7 +1490,7 @@ static int io_sg_from_iter(struct sk_buff *skb,
+ 	from->bvec += bi.bi_idx;
+ 	from->nr_segs -= bi.bi_idx;
+ 	from->count -= copied;
+-	from->iov_offset = bi.bi_bvec_done;
++	from->iov_offset = bi.bi_offset;
+ 
+ 	skb->data_len += copied;
+ 	skb->len += copied;
+diff --git a/lib/iov_iter.c b/lib/iov_iter.c
+index 34a52e9ba9e1..81e5c5e5121f 100644
+--- a/lib/iov_iter.c
++++ b/lib/iov_iter.c
+@@ -1634,7 +1634,7 @@ static ssize_t iov_iter_extract_bvec_pages(struct iov_iter *i,
+ 	}
+ 	bi.bi_idx = 0;
+ 	bi.bi_size = maxsize;
+-	bi.bi_bvec_done = skip;
++	bi.bi_offset = skip;
+ 
+ 	maxpages = want_pages_array(pages, maxsize, skip, maxpages);
+ 	if (!maxpages)
+diff --git a/net/ceph/messenger.c b/net/ceph/messenger.c
+index 34b3097b4c7b..9c1b6cf8c36f 100644
+--- a/net/ceph/messenger.c
++++ b/net/ceph/messenger.c
+@@ -762,7 +762,7 @@ static bool ceph_msg_data_bio_advance(struct ceph_msg_data_cursor *cursor,
+ 	if (!cursor->resid)
+ 		return false;   /* no more data */
+ 
+-	if (!bytes || (it->iter.bi_size && it->iter.bi_bvec_done &&
++	if (!bytes || (it->iter.bi_size && it->iter.bi_offset &&
+ 		       page == bio_iter_page(it->bio, it->iter)))
+ 		return false;	/* more bytes to process in this segment */
+ 
+@@ -817,7 +817,7 @@ static bool ceph_msg_data_bvecs_advance(struct ceph_msg_data_cursor *cursor,
+ 	if (!cursor->resid)
+ 		return false;   /* no more data */
+ 
+-	if (!bytes || (cursor->bvec_iter.bi_bvec_done &&
++	if (!bytes || (cursor->bvec_iter.bi_offset &&
+ 		       page == bvec_iter_page(bvecs, cursor->bvec_iter)))
+ 		return false;	/* more bytes to process in this segment */
+ 
 -- 
 2.54.0
 

@@ -1,142 +1,63 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF5503D9042;
-	Thu,  6 Aug 2026 20:21:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 300CA3D4123;
+	Thu,  6 Aug 2026 20:32:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786047664; cv=none; b=e+gkZtvklCEH31Al9VApSrcMWSUH2df57vpUieWI0xtJroKXR6Q5L31R2PRkxirK1Hs9iVMM6p3SUQbMAGnI8UtSog8WI79bYctVi4GA8AmgTNa/w+YoVlu+jT9YE2hTlwgUPZPgQ8upulb+bIF4xzMB9CPmFi9CRbWOGqbsfwA=
+	t=1786048354; cv=none; b=Vensup6enKaFUezR99DQHoiZlpvyWFyE51MN4F9paQuNHhaGAlaXOFN+3z8Mpu8GHfIQpruRS9REFEdz51qQRXB+1B1f7LDZU58YC+cQZEIr1wJ9IJoitFDoNuMnnCLM69oV/VR6v3A5xCtbH+cllXU0TM5xFElRy0ZZTXWpyro=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786047664; c=relaxed/simple;
-	bh=L4vEesCfMxKJDEvNe2RxFQNGLCRuKZpgZbRjR7fNG7A=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=jZiTAa7OZg+b+dYKdQqO/VbvvjbTSVrrP5CVQ/DFW7VPIsaneyWvQfu8WS+63jfOWH8ekbViKz+T7uX65PZtmx7BSy82qlfS7g31wOt6XZ4lT5+vlIihiGXxT/9I9MHiUOLleqS2pRIHbjblMuBZSHzOiwoRVXWhXxEQOSKV5UQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=NYUP1Oji; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=FgC/dDQQ; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1786048354; c=relaxed/simple;
+	bh=b31mFWE950rGbvXUp1vHDMu3z8bDzRSSIz8e4VvwW80=;
+	h=Subject:From:In-Reply-To:References:Message-Id:Date:To:Cc; b=aa2Ie/5597AsOXUdhBINygFPn6TZdDDI8U4RrQ8/GrCJ2yx415SuBGDwdQKOwIEhBc9CJxtsG0gURfYVDVZPwu9wcUUnNZpfcJTSvhXs9iIOBq6LOHrhZngEAvw03+dmYfRizbkNhreeNZMWt/grO7nn3zJHr7J++tqE9KjSKfM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=VJIVvIS6; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="NYUP1Oji";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="FgC/dDQQ"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 85301801FA;
-	Thu,  6 Aug 2026 20:20:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786047656; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=BEy6ND5aDEAOh4TNTRPJzCOOqoieTIPp1H0a+9pcyuw=;
-	b=NYUP1OjiszXY8PBX/JXnBmEtKHkt3zUFA4qFWqOKE47NpQB/8cV80YfGAJusudjg4SlEA6
-	n29vVQPewOzMjERHRm64TIOYNH/rNGGnwYtq2PyKrvW3bw7AQDlP3RS48lpfARapGJbPzv
-	IseeTBf/D2JaTPAUYW6c1za92i1uQf0=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786047652; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=BEy6ND5aDEAOh4TNTRPJzCOOqoieTIPp1H0a+9pcyuw=;
-	b=FgC/dDQQJI6W6nIYj87Nv1BFUJ39thODWBTom8oaroc1b71Z4odeESKIIsdUVfSmb3mM9X
-	dRo2+nmB5VmTcyoqj1zoAriioYjNcIU8du0MOnAv5sNhXL2ZxlN7HoxyOGG3Jk7OdOW/vT
-	bs/RGAE+ZB8BTPzPZeDWf1nkIPVIRIc=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7E878779B6;
-	Thu,  6 Aug 2026 20:20:52 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id geLfHqTsdGrxJAAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Thu, 06 Aug 2026 20:20:52 +0000
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fixes for 7.2-rc7, part 2
-Date: Thu,  6 Aug 2026 22:20:45 +0200
-Message-ID: <cover.1786044747.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.55.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="VJIVvIS6"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 161C71F00A3A;
+	Thu,  6 Aug 2026 20:32:33 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1786048353;
+	bh=J64xwMll7NHdtkXzLOpp/vkcE/+bM+s1Dus0F3FgHQA=;
+	h=Subject:From:In-Reply-To:References:Date:To:Cc;
+	b=VJIVvIS64OTbyDH+cCuuJkZw+ZJ2ZD0udJcnHSRpS/stDLPQeR715ZLlsPN7miEX7
+	 8QTVhDRuAMZ8J9/9mFiQ6FmTJcq6qTbT02wdZbkfqfLjjDXH0xVQfgNp7ybDutPYpB
+	 ek0vf0R6O458ddeJmf3eizPrk/8HzJrlFedhlztct/rUguRVPSx7eAyeH+5PQF6jbR
+	 hJ4ZRsdfSZ+ku6Gg3O+jpE0Uu425kEMREgfrHaOa7JeU1VYgJQRJkgSvCyI2Sh7Vek
+	 6tJdM9mI+9O8PuoL+1K94tRl5yyq85Mx0WKao7iX8+OygKOwvaDUEe9Fh9iwNlGkzO
+	 87BqVyMCxencQ==
+Received: from [10.30.226.235] (localhost [IPv6:::1])
+	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 7C9123809A85;
+	Thu,  6 Aug 2026 20:31:53 +0000 (UTC)
+Subject: Re: [GIT PULL] Btrfs fixes for 7.2-rc7, part 1
+From: pr-tracker-bot@kernel.org
+In-Reply-To: <cover.1786042395.git.dsterba@suse.com>
+References: <cover.1786042395.git.dsterba@suse.com>
+X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
+X-PR-Tracked-Message-Id: <cover.1786042395.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-rc6-tag
+X-PR-Tracked-Commit-Id: 0ef349734a93227b45f65fc50a3311d1cc5f03e9
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 63354634885c8d41675c5af54f757db2d14326e6
+Message-Id: <178604831234.1469677.78421195660592694.pr-tracker-bot@kernel.org>
+Date: Thu, 06 Aug 2026 20:31:52 +0000
+To: David Sterba <dsterba@suse.com>
+Cc: torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.993];
-	MIME_GOOD(-0.10)[text/plain];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_THREE(0.00)[4];
-	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spam-Level: 
 
-Hi,
+The pull request you sent on Thu,  6 Aug 2026 21:13:29 +0200:
 
-this pull request brings back the fixup worker infrastructure. It's a
-mechanism to detect pages/folios that are marked dirty without filesystem
-knowledge and require COW fixup. The consequence of not doing so is
-silent data loss.
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-rc6-tag
 
-The first patch covers the scenarios in detail, also reflecting folio
-API port and subpage block size support added in recent years. The
-original fixup worker was only for pages.
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/63354634885c8d41675c5af54f757db2d14326e6
 
-The patch is relatively big, half of the code is debugging and support
-code, the rest is the core design around the detection and fix.
+Thank you!
 
-The second patch handles an unlikely case when there's work left during
-unmount.
-
-Commits with additional or historical info:
-
-- b2a9f217ad3fa8 ("btrfs: remove the COW fixup mechanism")
-- 25f3c5021985e8 ("Btrfs: keep pages dirty when using btrfs_writepage_fixup_worker")
-- 87826df0ec36fc ("btrfs: delalloc for page dirtied out-of-band in fixup worker")
-- 247e743cbe6e65 ("Btrfs: Use async helpers to deal with pages that have been improperly dirtied")
-
-Please pull, thanks.
-
-----------------------------------------------------------------
-The following changes since commit c4c0673e4cb15b0c127e6d00732a2427bdd12c11:
-
-  btrfs: raid56: fix scrub read assembly submitting no reads (2026-07-21 06:44:08 +0200)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.2-rc6-fixup-worker-tag
-
-for you to fetch changes up to ae2567b11c3df43861d05f856bdb3434b3961aa1:
-
-  btrfs: flush the fixup workers during close_ctree (2026-08-04 00:59:16 +0200)
-
-----------------------------------------------------------------
-Boris Burkov (2):
-      btrfs: trigger cow fixup via dirty_folio()
-      btrfs: flush the fixup workers during close_ctree
-
- fs/btrfs/btrfs_inode.h       |   1 +
- fs/btrfs/disk-io.c           |  28 +++++-
- fs/btrfs/extent_io.c         | 113 ++++++++++++++++++++++
- fs/btrfs/fs.h                |  12 +++
- fs/btrfs/inode.c             | 217 ++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/subpage.c           | 216 +++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/subpage.h           |  41 +++++++-
- include/trace/events/btrfs.h |  35 +++++++
- 8 files changed, 651 insertions(+), 12 deletions(-)
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html

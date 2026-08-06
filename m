@@ -1,262 +1,217 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from PH7PR06CU001.outbound.protection.outlook.com (mail-westus3azon11010053.outbound.protection.outlook.com [52.101.201.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 15E3D3BB112
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2026 06:13:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1785996811; cv=none; b=cbSZysmKGfoMxgUscDMYVE6l41F8YqOJ3yq/yQjgU/aOmGtzhAfBLwY1zfYPu3Kb+BA+MPu5i6EKkQScmQ9gvEbb6P75efigxvpcR7arJfhWBXm5HnxWj/fqp4hQsZr7/aHm3+WDIqL8fBH7G2+/AQhqR4jKYzeiIR3Jqe7jhOo=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1785996811; c=relaxed/simple;
-	bh=OH68G2jEHV0BKQ2a3MW4yt8AgYCAbIvyze0u/5skXLY=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=tTpU3yz1ONUlQ6u70Dgi3g4pUa4ozjEincDsqgYz1rDuZirrZVMGhHq1d3ZlD6znCU3cU0LovLbBcAO9ycMsI22X+3whrzJ1a67x4GJdY4Eh0UCDNaNrfwfNG7yDUWsE1ACo7ny486KOt/isAhWwScpQqAzIGk0mDwwJIR14hew=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Vcwsl1ty; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Se0UzrWQ; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E398F3D8107;
+	Thu,  6 Aug 2026 07:29:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=52.101.201.53
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1786001401; cv=fail; b=i9pdOU4RKfUYblh/dpxuLzUMXQeF+Um6Pjw+45a96OiRBqjlbDz+kowU/g50FVoOCum29D84iYsHOat24lD+zE2XBIWlFx71ybrqUw6vZTCt8kifgR2sJU6+H6v9CgezkDuu1+Ke4HhvnYE3jVYyUUmRQxeIIeL5nx3jofyyMLc=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1786001401; c=relaxed/simple;
+	bh=tXCg9XS5qaZWsZT+Mfkw1K9bmOhdA//5snvEcFJYCNI=;
+	h=Message-ID:Date:Subject:To:Cc:References:From:In-Reply-To:
+	 Content-Type:MIME-Version; b=VEFzBr+IpfV56wXo64QZASDl3v92X0es2eukoRn+U+Jmme1BnFldjGjLFv9fcQrW+IFObMsoSiDOnu5XGQqv545gyFuEL/sURM5AjScQyZnTRoyfpfNd+ozWdbvKC5QTnR58+IgFX5GJ7cnVtIXDX3FboU2lv3iHQ5xvTalv/gU=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=amd.com; spf=fail smtp.mailfrom=amd.com; dkim=pass (1024-bit key) header.d=amd.com header.i=@amd.com header.b=1RY7idE2; arc=fail smtp.client-ip=52.101.201.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=amd.com
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=amd.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Vcwsl1ty";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Se0UzrWQ"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 9C0E57FEC1
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2026 06:13:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785996795; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=KBWCpbvxMFgufKwSXUVk4D0Uel8ChGk29AFUPQ0g90I=;
-	b=Vcwsl1ty1xBhdBdorWRGRRZnIjHPovPsOhgbd6VObgGrp7jiF+3kS8pADbSZ5cFc/W9EJg
-	cwGgc9i+tLX4kLzS6ZCPXtwccJKKscqJK0cgLwreDwwvnLXoACIW/vuuN0EDW4EPWVqOSz
-	pNczJVIMqWkV2T17OGfkzsTXoCXLgss=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1785996791; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=KBWCpbvxMFgufKwSXUVk4D0Uel8ChGk29AFUPQ0g90I=;
-	b=Se0UzrWQGFaYWQ/pV13Xr3rADOflZ55jUeQnssTEAmbwRWMXZZ8cfz+qgB/5QaIl/yxM4n
-	NtkY1NaJtHmp1oZor9o/bf9WC0m/tA6z/Kb/TOxs04my9kTC9YB8XJ/TFgRBT9j3E1Mgyk
-	aDou2IsSzAqKOuvDSsszE9WyBRslIWM=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D9116779B6
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2026 06:13:10 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id bvBxJvYldGqLZgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 06 Aug 2026 06:13:10 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: use ordered extent to grab the logical address for submission
-Date: Thu,  6 Aug 2026 15:42:45 +0930
-Message-ID: <6576913842ae66ca1aa4f24cb60c544abe3ca43e.1785996696.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (1024-bit key) header.d=amd.com header.i=@amd.com header.b="1RY7idE2"
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=a/T3sXza7qZj4Z3keDUpip1lIb7/VE5CHRt3Ub+fmesZxo0ezAahf81poijajiEq19h+g97paMTKHluZyFZkPKx2tN5w5XRHRlwSJVVwy+ErYCS/R+nBnr6YOFHnDhJod/ML/dwWelnS64BeIZfb3t0g+o76nxhdEG8Gbx8LxmnmzCdum+W3pbDPI+MruCg64K32i2cbkqpnqldxKxQDI0fXL8T2lR4FoFao+0cpVFy+Hynlkh1zaracnZ3HK+5ntOXjufg5tyVybJLGZ+KM+RsoSZiZWEWRQWQ0KIjkL2G5hfHmnrjv6XwOp+5UwJamOS0Dneo1H94gcVPSGUUnfg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=2Qjx11DI63SXND0MN48iCUVVhUe2PqkhXolIVCSP95U=;
+ b=UDGZX8mUyCMl8QrXBIr+WqENpo+Es4GEBVyJFEm42QCFGIMf2U8E88UmNubfulvEMadI84Grsv+Tly1OtEc/cJ12sEF7rbozLNrkgb7QsSRoNUmixWxVVSGtMi8x6jRE1X1XHdM0hQz4RTJrJo8cOIUdG5zzZ/UBUi4jzHPDW0SRu1Dwd+mCCICG9eBX4VR20RhBGCCLegO/xHAY8Dvu7LEqFzE6Nfvb5G7+sGv9rSJtc+eCtKqcnLoKHj4uEJQZC+amUF/QGbA3S5AUW8aJuHwdSvOFOKASmgT4l3SlTFc8FjL+uBWOiqZY3v/6Hsqt10jup5rB5r4ePE8Rzcs4/w==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=amd.com; dmarc=pass action=none header.from=amd.com; dkim=pass
+ header.d=amd.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=amd.com; s=selector1;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=2Qjx11DI63SXND0MN48iCUVVhUe2PqkhXolIVCSP95U=;
+ b=1RY7idE2kt4H5eYA5aES2QQsQgIW2X1cB1usWgjr0aUnlBLzfOeU2n+WsIPGQrJn+QAwtbr2cX53i/Q59AEuZkX7u5DL+K5j5RygLSGO1Et6GYcMs/9UmI8YIGFPNP0UJQXY6yvVBgVHMT8kY4kPOQRLZuHk58TIdSVdQQcIh54=
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=amd.com;
+Received: from SJ0PR12MB5673.namprd12.prod.outlook.com (2603:10b6:a03:42b::13)
+ by SJ1PR12MB6051.namprd12.prod.outlook.com (2603:10b6:a03:48a::18) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.292.19; Thu, 6 Aug
+ 2026 07:29:54 +0000
+Received: from SJ0PR12MB5673.namprd12.prod.outlook.com
+ ([fe80::c3e5:48f8:beb6:ea68]) by SJ0PR12MB5673.namprd12.prod.outlook.com
+ ([fe80::c3e5:48f8:beb6:ea68%6]) with mapi id 15.21.0292.019; Thu, 6 Aug 2026
+ 07:29:54 +0000
+Message-ID: <0113c49a-a364-4df6-9ab4-681c789d9d3b@amd.com>
+Date: Thu, 6 Aug 2026 09:29:44 +0200
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v4 01/14] dma-buf: introduce initial file I/O
+ infrastructure
+To: Pavel Begunkov <asml.silence@gmail.com>, Jens Axboe <axboe@kernel.dk>,
+ Keith Busch <kbusch@kernel.org>, Christoph Hellwig <hch@lst.de>,
+ Sagi Grimberg <sagi@grimberg.me>, linux-block@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-nvme@lists.infradead.org,
+ linux-fsdevel@vger.kernel.org, io-uring@vger.kernel.org,
+ linux-media@vger.kernel.org, dri-devel@lists.freedesktop.org,
+ linaro-mm-sig@lists.linaro.org
+Cc: Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>,
+ Andrew Morton <akpm@linux-foundation.org>,
+ Sumit Semwal <sumit.semwal@linaro.org>, Nitesh Shetty
+ <nj.shetty@samsung.com>, Kanchan Joshi <joshi.k@samsung.com>,
+ Anuj Gupta <anuj20.g@samsung.com>, Tushar Gohad <tushar.gohad@intel.com>,
+ William Power <william.power@intel.com>, Phil Cayton
+ <phil.cayton@intel.com>, Jason Gunthorpe <jgg@nvidia.com>,
+ Damien Le Moal <dlemoal@kernel.org>, Alasdair Kergon <agk@redhat.com>,
+ Mike Snitzer <snitzer@kernel.org>, Mikulas Patocka <mpatocka@redhat.com>,
+ Benjamin Marzinski <bmarzins@redhat.com>,
+ Vishal Verma <vishal.l.verma@intel.com>, David Sterba <dsterba@suse.com>,
+ Ilya Dryomov <idryomov@gmail.com>, dm-devel@lists.linux.dev,
+ nvdimm@lists.linux.dev, linux-btrfs@vger.kernel.org,
+ ceph-devel@vger.kernel.org
+References: <cover.1785274111.git.asml.silence@gmail.com>
+ <bc20381e8daf85ac58811c344325d8192cde9d1e.1785274111.git.asml.silence@gmail.com>
+ <181b08be-04bc-4ae9-bb88-15321a82440f@amd.com>
+ <8285ede8-bebb-403a-8a37-b9987cd37a8f@gmail.com>
+Content-Language: en-US
+From: =?UTF-8?Q?Christian_K=C3=B6nig?= <christian.koenig@amd.com>
+In-Reply-To: <8285ede8-bebb-403a-8a37-b9987cd37a8f@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+X-ClientProxiedBy: FR3P281CA0126.DEUP281.PROD.OUTLOOK.COM
+ (2603:10a6:d10:94::16) To SJ0PR12MB5673.namprd12.prod.outlook.com
+ (2603:10b6:a03:42b::13)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SJ0PR12MB5673:EE_|SJ1PR12MB6051:EE_
+X-MS-Office365-Filtering-Correlation-Id: 19859351-ec84-4a37-34c5-08def38c81f4
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|23010399003|376014|7416014|366016|1800799024|921020|6133799003|10067099003|11063799006|56012099006|4143699003|18002099003|22082099003;
+X-Microsoft-Antispam-Message-Info:
+	Yc3bxCpz0fVdIn4oqVkLPoXqYLnpztat74wkptBOCBJ2KvX811trvuyYRWPeLq2Ls7aMXOwOFhzr6QK7mif+HTXlhuUPorO6Hiuqm53miJJw8vysjDODMIrkTBJfF4GI1/g6ULmnOYjdu1dJcsjgTJJrbfDZRHzQJyLNpyYsdEhC6PIdhskriA1i7MyJt5dr+dnX1g3neMbUsNS0lth2XXFuKmxkLDupKhym9mC8lfCr5cBt+gaKWwUyM9CQH7e5hV8TnM0ykmHk8hbJmfy/xQNzfSv0wetWYfWgBEm7lvtQslmZx5REcfrD5mfJmIsv9jg5YC67bT8BTLM+aQNV1v65T/O31efZErD5S52YLurdMsq+QmzkrMhdwfGiyBypgy32MtteLYI9FUd7wJgeOGijXhL6pAl/q3gFeOPA4G0MJ07y2cIyjcaA1EQZrcDeKNeWxJVD+VcxDSKQPEff24IMq1dcN28vgFXv3ZC5y4dSjkyOO9YNK1H9oSP7UgU33R5ZMCITLQa8YcPupUxy4LQsCyODLRW5ZqFgshG9b11SE+wVpCv/B+5zclxHIbjvBrhUegFJOoGE4VPtskeiKswfLhY628C/jnHMucnUXdavUIKkRO8efuEmQXULgf9wEf+Yl1euYiPwNtnyQa5x2D+tFGOmuxurIfvcujW+0b2FCdi28VgI+irFG5Q8SSEoEZzLeHzHF2TNNK1fw/OvNg==
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SJ0PR12MB5673.namprd12.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(23010399003)(376014)(7416014)(366016)(1800799024)(921020)(6133799003)(10067099003)(11063799006)(56012099006)(4143699003)(18002099003)(22082099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?utf-8?B?U3Z3WjZyM2lxeXUxQnplNVpJMm4xUjFxZmxKS2owSzdRZTZReHZuWStrVlAw?=
+ =?utf-8?B?bzhXM3ZRZGgzUG9mYjBXbmg0YUE5aTNWZDZWVEF4Q3l1eDJYcWlySTdGclV1?=
+ =?utf-8?B?T3NsY3NQMmp3aDl4L0dPak55M1pIYjl4NFJ6S0IzTTBmVHIwcmRFSmR5Yzk1?=
+ =?utf-8?B?elp3QWJkNk9RcXhQcXhpY0xKQXdRZ3BXUDR6eEkrVXlhaGFSOXlJQk9oZ2do?=
+ =?utf-8?B?SmhuZENYWWkwcWFiUzg0M3JSNjhWdEhiRFlyZWZMWk5ZTjkxeVMya2RKcWd6?=
+ =?utf-8?B?ZzA4S05DVVZGN09yN3AvRUZwdEgzUlQyanBsaGlLSHR5cmZTWFc2Nzg5ZXA5?=
+ =?utf-8?B?dnphYy9FS2hTSXhnMTJDL3FnNzk1eU5sOGdNRXROTDBoMCszc3FMcE44ZlFT?=
+ =?utf-8?B?OGo4WllTQThjbC8xQjBGVnBKTlRBM0hIVDlBN1k1Mi9jUmNZckIyVlVuVGpD?=
+ =?utf-8?B?OUhPdDROU2Z0Z0xmb0hKLzF0MlNNajZjQUtpWDlROUtsblBmalF6Q0ZiN2Fs?=
+ =?utf-8?B?V21HS0xxL0Npc2dXa3NoRUd6NGdJQ0VXUS9NaDdJekRvY1ZLaVEvRUxxMGgy?=
+ =?utf-8?B?cWt5dEhlaHRocklhWWY1cHc3c2lYRFlRbGg2aGc5Z2MwaG03ZkUvNldZYm9q?=
+ =?utf-8?B?MXFLY08xa2hlT1lRNGlWZEZMNkMyN1loaUQzWUk0WEExK3Y0K1VCUDduVE9E?=
+ =?utf-8?B?U1B1VTFib0hsSUhVMnhTU2lXTjlMS1hURzFucHZrT2VCaW9rZC9FNEFraS9u?=
+ =?utf-8?B?Q3ZKeHVHSWtHNGFGR3dyU0ErK0RXS20zK1JEYkhDL1dqdENhbytSUm5iRjl1?=
+ =?utf-8?B?MnZOZkJtWlZDVE9YaGpHSFVycDk4dm95MVkxMXY3dFlwaktPbG5oTDhLajJW?=
+ =?utf-8?B?bVIvQWFXMW04S3JsMDdPRXo3b1ZTWVBqSHdFM05rTnZuUGlOcmh0V2pjUXZM?=
+ =?utf-8?B?UnJjZjZsSnA5dmJIOFN1R3hpanVCQXhrSGhPYWcxNC8rYlIrd083SkRSUktV?=
+ =?utf-8?B?N3k1UytKajQ0OHZUQXc5SlRsUzNlNWJEYUV3MTFVT2wrWFUxam1SRnBmNVc3?=
+ =?utf-8?B?NTZnNHI0ZXBwczNsdG0rMFVWRWhvaWlzdlhYa2w3Y1dmaVk1Y212ZXRnMXlK?=
+ =?utf-8?B?YnpSR2NLTE45UDhZTE5RbnRPcnAvSVhCY2pHYkZMTjlETVFDV0JWd3IybXhE?=
+ =?utf-8?B?TlcrclFLVzVGYVdXRFh2a2ZibjMwQlBJL1pYd2kreExpQU9UYXJ0YTNRcU8x?=
+ =?utf-8?B?L0dRYXhrdmxlbUIxM0hyNVVhODNXWHY1aWVBRkd6ODJlVS9WMWozc09HRlh0?=
+ =?utf-8?B?NCtvdS9md1dsT2R2bXp0R0t1OUpVYyt1eGsxNE9Qa2ZYR0JXMkplRVQ2QmtC?=
+ =?utf-8?B?Y3BHVXBCb05FMXZGVUZjcU96S0ZDanpxQmxjVi9BcHg3STNwc3lpY1dVc2J2?=
+ =?utf-8?B?Y25OYmREeE9CSFplSC9aQ2VtY1FReXpXcWhSU1pxaHNEOVJhbXhuMG5oT0dG?=
+ =?utf-8?B?TUttUVZ2Q3ZuV25uYnhOdWtzWHJYcC8wdGRqMG83Ym1RUHplKzZOZnpzL0xT?=
+ =?utf-8?B?dFpqblZqbnRvNG00ZzZtbWh2MkNUQVVVOUxNYjhkeHRBTnQ2T2x1d2g1VnZz?=
+ =?utf-8?B?T3JrMkpYSGtYUXBnaUU4K2x1TmRXOFNrZ0NTcVhTZnRkT1VsblU1REFyWEQ0?=
+ =?utf-8?B?Z0JCUGYraVpGSkppcU5wQnRoYllvSm9ZengrK29kNnhBcXh5RmpORmZNRmtK?=
+ =?utf-8?B?TFMvaWRSUkdHNDFrbzZ0UU9Cb09lV1Zqc2UvejBqS0RUQmVidTlRMEVVY2Nw?=
+ =?utf-8?B?U3JZREZDT0ZvNGRTaHdwS242SEF3RFJMeW5mQjl1Q0pTL2lXRUxPSkRyQmJ2?=
+ =?utf-8?B?YnY3UXYxbkJBd3BtRlBnL25GUitoVTQ1VTBVUEhUbnR2Uk5TL1Vub0NjTklF?=
+ =?utf-8?B?dW15N1U3UWllR2N1OWVWdFVhYU1hMjJxSjFFVUdlcEN1UDd0TnR0SlpTRzEx?=
+ =?utf-8?B?dGt1Wkw1WFJ6NnZ2VW1BVVRHUVR0bC9mbjFXWGNRbS9PUzdqYjJKQ0RQZzBF?=
+ =?utf-8?B?aFBVYUcrOEVQL0U4RHlTRkhpUDVJRnBMQ24yQ0VFQ1BoVnNrVk5TVzVFV0FK?=
+ =?utf-8?B?bWE1SUVvcnU0Q2ZWeTFaVERNRThCUUpIWlFUbWsvV0pML3dLOTFJT1MzZXdi?=
+ =?utf-8?B?MllJTEtaazBOWFREZytrQzFMMFFXb1RHOG5zanBiSHUvTm4rMy9zM044VHN6?=
+ =?utf-8?B?d0c2WnRIak5yUEtxWnEvNmFia0NqbUtibXlTZHNQcUVCTGRZRHUxVU5VblVp?=
+ =?utf-8?Q?tqE63w0M2J9CRVI3oj?=
+X-OriginatorOrg: amd.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 19859351-ec84-4a37-34c5-08def38c81f4
+X-MS-Exchange-CrossTenant-AuthSource: SJ0PR12MB5673.namprd12.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 06 Aug 2026 07:29:54.0100
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 3dd8961f-e488-4e60-8e11-a82d994e183d
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: HBzycDVwOvXe0w2rtRaOADja93Gpj5OkC5vGxsilDJLPhS+BpP/dABx7EuBeg697
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SJ1PR12MB6051
 
-In submit_one_sector() we call btrfs_get_extent() to grab the IO extent
-map so that we know where the logical location to submit the block.
+On 8/5/26 12:59, Pavel Begunkov wrote:
+> On 8/5/26 09:27, Christian König wrote:
 
-However there is no guarantee that there is an IO extent map for the
-block, and if there is no IO extent map nor ordered extent,
-btrfs_get_extent() can grab the file extent from on-disk metadata.
+>>> +
+>>> +    dma_resv_lock(dmabuf->resv, NULL);
+>>> +    ctx->dev_ops->unmap(ctx, map);
+>>> +    dma_resv_unlock(dmabuf->resv);
+>>> +
+>>> +    dma_fence_put(&fence->base);
+>>
+>> You should probably set map->fence to NULL after that.
+> 
+> The map is freed two lines below, but I can add it as
+> a defensive measure.
 
-That's why we have ASSERT()s to reject holes and compressed file
-extents.
+In that case it's ok, I've just haven't seen the kfree(map) below.
 
-On the other hand, for the write range we should have both an IO extent
-map and an ordered extent, so there is no reason not to grab the ordered
-extent instead.
+> ...
+>>> +    ret = dma_resv_reserve_fences(dmabuf->resv, 1);
+>>> +    if (WARN_ON_ONCE(ret)) {
+>>> +        struct dma_fence *fence = &map->fence->base;
+>>> +
+>>> +        dma_fence_get(fence);
+>>> +        percpu_ref_kill(&map->refs);
+>>> +        dma_fence_wait(fence, false);
+>>> +        dma_fence_put(fence);
+>>> +        return;
+>>> +    }
+>>> +
+>>> +    dma_resv_add_fence(dmabuf->resv, &map->fence->base,
+>>> +               DMA_RESV_USAGE_KERNEL);
+>>
+>> That sequence is clearly incorrect!
+>>
+>> The fence must be created after dma_resv_reserve_fences(), otherwise you definately have an illegal memory operation here.
+> 
+> I'm not sure what you mean, can you elaborate? I only cared about
+> pre-allocating it to avoid allocations here. We add / signal the fence
+> only once, no reuse. The map is going to be killed here, and if we
+> create a new map, it'll have its own fence.
+> 
+> I can move the dma_fence_init() call here if that makes a difference?
 
-There is some minor advantages:
+Yeah that is a good start, but you might need a bit more.
 
-- No hole ordered extent
-  So no need to rely on ASSERT()s to reject hole extents.
+Here is a summary of the usual procedure you need to follow when implementing a dma_fence backend:
 
-  And the ASSERT()s are depending on the kernel config, without
-  CONFIG_BTRFS_ASSERT those ASSERT()s won't even trigger.
+1. Allocate your operation object, in this case here it's your mapping I think.
+2. Prepare your operation, including all memory allocations.
+3. Call dma_resv_reserve_fences() to reserve a fence slot.
+4. Allocate and init your dma_fence object.
 
-- No IO errors
-  Unlike btrfs_get_extent() which can return IO error when doing the
-  metadata tree search, btrfs_lookup_ordered_extent() will either return
-  an OE or not found.
+After this step no memory allocation is allowed any more until your dma_fence object signals.
 
-- Cached OE in bio_ctrl->bbio
-  At bbio allocation we have already did an OE lookup, and we have a
-  high chance that the current block also belongs to that OE.
-  Use that cached OE can reduce the frequency to do an rb-tree search.
+The only exception is optional logging or crash dumping using GFP_NOWAIT (can fail trivially!) or minimal allocations using GFP_ATOMIC if you absolutely have to.
 
-- Smaller rb-tree
-  Unlike extent-map-tree, which can contain cached extent maps, the life
-  span of ordered extents are much shorter, they get removed from the
-  ordered tree after the file extent item is inserted into the subvolume
-  tree.
+5. dma_resv_add_fence() to publish the fence.
+6. dma_resv_unlock().
 
-  So doing ordered extent tree search can be a tiny faster.
+Having a dma_fence is certainly nice to have, but the tricky part is that memory allocations using GFP_KERNEL (or GFP_IO, GFP_FS etc...) can cycle back and wait for your dma_fence to signal which essentially can cause a deadlock very deeply inside memory management.
 
-And since we're here, also address some minor points:
+Since those deadlocks happen only on memory contention situations they are usually just hard to reproduce but still totally break your neck if you manage to mess this up. So that needs to be super carefully implemented.
 
-- Add error message for every EUCLEAN error
-
-- Remove a dead comment on btrfs_folio_clear_dirty()
-  We no longer call folio_clear_dirty_for_io() since commit 095be159f3eb
-  ("btrfs: unify folio dirty flag clearing"), so the folio flag is
-  still dirty, and the folio dirty flag will be cleared by the last dirty
-  block.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Extract a helper to determine if the @filepos is in the bbio OE range
-  Which reduces several "bio_ctrl->bbio->ordered" duplication, and use
-  in_range() to make is easier to read.
----
- fs/btrfs/extent_io.c | 63 +++++++++++++++++++++++++++-----------------
- 1 file changed, 39 insertions(+), 24 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d7600e5fa3d9..50cee1b13b6d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1808,6 +1808,18 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 	return 0;
- }
- 
-+static bool block_in_bbio_oe_range(const struct btrfs_bio_ctrl *bio_ctrl,
-+				   u64 filepos)
-+{
-+	struct btrfs_ordered_extent *oe;
-+
-+	if (!bio_ctrl->bbio || !bio_ctrl->bbio->ordered)
-+		return false;
-+
-+	oe = bio_ctrl->bbio->ordered;
-+	return in_range(filepos, oe->file_offset, oe->num_bytes);
-+}
-+
- /*
-  * Return 0 if we have submitted or queued the sector for submission.
-  * Return <0 for critical errors, and the involved sector will be cleaned up.
-@@ -1820,11 +1832,10 @@ static int submit_one_sector(struct btrfs_inode *inode,
- 			     loff_t i_size)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	struct extent_map *em;
-+	struct btrfs_ordered_extent *oe;
- 	u64 block_start;
- 	u64 disk_bytenr;
- 	u64 extent_offset;
--	u64 em_end;
- 	const u32 sectorsize = fs_info->sectorsize;
- 	unsigned int queued;
- 
-@@ -1833,8 +1844,14 @@ static int submit_one_sector(struct btrfs_inode *inode,
- 	/* @filepos >= i_size case should be handled by the caller. */
- 	ASSERT(filepos < i_size);
- 
--	em = btrfs_get_extent(inode, NULL, filepos, sectorsize);
--	if (IS_ERR(em)) {
-+	/* Try to reuse the existing OE from bbio first. */
-+	if (block_in_bbio_oe_range(bio_ctrl, filepos)) {
-+		oe = bio_ctrl->bbio->ordered;
-+		refcount_inc(&oe->refs);
-+	} else {
-+		oe = btrfs_lookup_ordered_extent(inode, filepos);
-+	}
-+	if (unlikely(!oe)) {
- 		/*
- 		 * bio_ctrl may contain a bio crossing several folios.
- 		 * Submit it immediately so that the bio has a chance
-@@ -1857,31 +1874,25 @@ static int submit_one_sector(struct btrfs_inode *inode,
- 		 */
- 		btrfs_mark_ordered_io_finished(inode, filepos, fs_info->sectorsize,
- 					       false);
--		return PTR_ERR(em);
-+		btrfs_err_rl(fs_info,
-+		"no ordered extent for root %lld ino %llu filepos %llu",
-+			     btrfs_root_id(inode->root), btrfs_ino(inode),
-+			     filepos);
-+		return -EUCLEAN;
- 	}
- 
--	extent_offset = filepos - em->start;
--	em_end = btrfs_extent_map_end(em);
--	ASSERT(filepos <= em_end);
--	ASSERT(IS_ALIGNED(em->start, sectorsize));
--	ASSERT(IS_ALIGNED(em->len, sectorsize));
-+	extent_offset = filepos - oe->file_offset;
-+	ASSERT(filepos < oe->file_offset + oe->num_bytes);
-+	ASSERT(IS_ALIGNED(oe->file_offset, sectorsize));
-+	ASSERT(IS_ALIGNED(oe->num_bytes, sectorsize));
-+	ASSERT(oe->compress_type == BTRFS_COMPRESS_NONE);
-+	ASSERT(!test_bit(BTRFS_ORDERED_COMPRESSED, &oe->flags));
- 
--	block_start = btrfs_extent_map_block_start(em);
--	disk_bytenr = btrfs_extent_map_block_start(em) + extent_offset;
-+	block_start = oe->disk_bytenr + oe->offset;
-+	disk_bytenr = block_start + extent_offset;
- 
--	ASSERT(!btrfs_extent_map_is_compressed(em));
--	ASSERT(block_start != EXTENT_MAP_HOLE);
--	ASSERT(block_start != EXTENT_MAP_INLINE);
-+	btrfs_put_ordered_extent(oe);
- 
--	btrfs_free_extent_map(em);
--	em = NULL;
--
--	/*
--	 * Although the PageDirty bit is cleared before entering this
--	 * function, subpage dirty bit is not cleared.
--	 * So clear subpage dirty bit here so next time we won't submit
--	 * a folio for a range already written to disk.
--	 */
- 	btrfs_folio_clear_dirty(fs_info, folio, filepos, sectorsize);
- 	btrfs_folio_set_writeback(fs_info, folio, filepos, sectorsize);
- 	/*
-@@ -1898,6 +1909,10 @@ static int submit_one_sector(struct btrfs_inode *inode,
- 		btrfs_folio_clear_writeback(fs_info, folio, filepos, sectorsize);
- 		btrfs_mark_ordered_io_finished(inode, filepos, fs_info->sectorsize,
- 					       false);
-+		btrfs_err_rl(fs_info,
-+		"failed to queue sector for root %lld ino %llu filepos %llu",
-+			     btrfs_root_id(inode->root),
-+			     btrfs_ino(inode), filepos);
- 		return -EUCLEAN;
- 	}
- 	return 0;
--- 
-2.54.0
-
+Regards,
+Christian.

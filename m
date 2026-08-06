@@ -1,48 +1,60 @@
-Received: from m16.mail.163.com (m16.mail.163.com [220.197.31.5])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D754E3DDDD1;
-	Thu,  6 Aug 2026 08:51:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=220.197.31.5
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4320C42048F
+	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2026 09:04:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786006300; cv=none; b=uTSpsNBiHbIkEBRJZtGSc3zS2QG+Jfb+JHu7ThkpYNSG/QGWpcbHEdnbe1Uufio6Um7hht+MSllqczfL7hxskK+WyDoQmJgz6xl0nfGXrT3GuOW1Ww9kR3y07onc1Z4s7zxjpNgwUFgRGoCLwAh7EVHFAODjX2XcG+Qp4iHn9ng=
+	t=1786007046; cv=none; b=PBkVAi2/gTxp6a3eskCy45GoAxxUCJ3Kmmn3pb9c5P4DCifxl+wEIJxhBNroTSn0a4/VqQQ+LDk4Fj+g/vprHjP97UOsYbYJEym+uQQu9fw9baeJDYymwe3pPCKFGuETEIJsVlkqzaAgYbewG99Torz32ARj+eimCoPLebXvcGg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786006300; c=relaxed/simple;
-	bh=Im/Ms/iMEeJEid+fXr3LhiLKYI3NdybImUMBj7zpzG8=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=o+7g38Ba4ftkO7k4Dl86iATFjbIfhQxJHDlw/QkPnPA7xvVZMR3WiW0L6dh84p2pjwVJukvRDjplpFSm+oTfUFvfLut/rAG5qanJc7sqiDNaQbcYiih928cu791m8AfNSpnrrkn0ds1jMMngCs4VjjwDdyFSqQftngT1HitqqhQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=lRG4e1GF; arc=none smtp.client-ip=220.197.31.5
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
+	s=arc-20240116; t=1786007046; c=relaxed/simple;
+	bh=hdaM0FvjU5ObLwGFDHkhqBtIiom2THKpCsuRBTn37MM=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=chio7IvQi0SX0530Qtt6vJ9luDc2rsw1yf088gVQg4o1w7GXr+TMk95IEgKj0I5ze0dNzx8enq5suyXXogStM+h6B/k5OfQq02Ue+BesqkOWF/whbbtwpVH8D41MRhJBcJhNfLlm51GtOif/SHHiEvIag2UNQDoZ2daauPStzEs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Qrm80osH; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=JsarFXyS; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="lRG4e1GF"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
-	s=s110527; h=From:To:Subject:Date:Message-Id:MIME-Version; bh=WG
-	wqu3iaLyjczKS1gm1uSbNl8hnv5+61oZ8Rzt0KTtI=; b=lRG4e1GFlI2BwBUho8
-	KXOYh37qfSqZ8HnUDfi/AV/INfITz3mAByIA6gjUYJ0gpNaaC8jBOe8SMWl3JG6x
-	XmWA4/rwoyTNKi42cTWx1w/AkfaqLCypn5psQsyG62zPvS727V8Rc2WwC+7eQ+ak
-	PR5UIE6ViofC4PxXXnZfezi4k=
-Received: from localhost.localdomain (unknown [])
-	by gzga-smtp-mtada-g1-3 (Coremail) with SMTP id _____wDXGqvjSnRqmYLmMA--.78S6;
-	Thu, 06 Aug 2026 16:50:53 +0800 (CST)
-From: Yang Xiuwei <yangxiuwei@kylinos.cn>
-To: Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Alexander Viro <viro@zeniv.linux.org.uk>
-Cc: Mark Harmstone <maharmstone@fb.com>,
-	Qu Wenruo <quwenruo.btrfs@gmx.com>,
-	linux-btrfs@vger.kernel.org,
-	io-uring@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-block@vger.kernel.org,
-	Yang Xiuwei <yangxiuwei@kylinos.cn>
-Subject: [PATCH v2 4/7] btrfs: use IO_URING_F_COMPAT for uring encoded iovec import
-Date: Thu,  6 Aug 2026 16:50:38 +0800
-Message-Id: <20260806085041.1410576-5-yangxiuwei@kylinos.cn>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20260806085041.1410576-1-yangxiuwei@kylinos.cn>
-References: <20260806085041.1410576-1-yangxiuwei@kylinos.cn>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Qrm80osH";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="JsarFXyS"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 24CDE3DF3
+	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2026 09:03:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1786007039; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=f5+7H41QD3c4KSJMYQI7Z5J837njTJqp34STmGMIyos=;
+	b=Qrm80osHmvgoKhGTlpDUKM9b6wfxstcr3w7xF06tq0D+HIryEzykkshsWRPP8WKywfZMZg
+	xPGRDrAOV0I/5vo0jJwywi8yjaQlC5gOpGyzayYRySuEc6zvxIx83FWaZpM/H4wAM6mlVX
+	mJ4tL0/CLeLy4egD1grB1+/sgPlDuDw=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=JsarFXyS
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1786007035; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=f5+7H41QD3c4KSJMYQI7Z5J837njTJqp34STmGMIyos=;
+	b=JsarFXySWXO+eNaB+HmN3Y9TzXBn3rz8FB/lEL7pVXJ/3V/o2EAzZKdyz/lqz/8BaK1vvK
+	dSz7OWqnK3QUIvuBEsYLTJ9gdzr7kxYrvvaMhVG8oXCbxarJXnYQ6V3YUwxhKZtcNM/V72
+	OzUhd6V0Mp8ABeQ6L1FQnzw1Tx/7pWk=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 62A01779BF
+	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2026 09:03:54 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id bCGECfpNdGowEwAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Thu, 06 Aug 2026 09:03:54 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: docs: update the stability on btrfs-quota
+Date: Thu,  6 Aug 2026 18:33:32 +0930
+Message-ID: <79c5e699d6433ba7c8444c2ea12eebeb58149886.1786006982.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -50,60 +62,89 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:_____wDXGqvjSnRqmYLmMA--.78S6
-X-Coremail-Antispam: 1Uf129KBjvJXoW7tF4xKr1DCFy3tw1fZF13urg_yoW8Cr4Dpr
-	yYkr43JFWDArsFyrykAay09w18ursIkayDC34xAF1xJryYyryftr4xKas5KFy0yFWkA3WU
-	tryjvr90yw4qvw7anT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x07j53ktUUUUU=
-Sender: yangxiuwei2025@163.com
-X-CM-SenderInfo: p1dqw55lxzvxisqskqqrwthudrp/xtbCwg2FFmp0Su18iQAA3Q
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: 24CDE3DF3
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_TRACE(0.00)[suse.com:+];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:email,suse.com:dkim]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Flag: NO
 
-The uring encoded paths select args32 from IO_URING_F_COMPAT, but then
-call import_iovec() for the iovec array. import_iovec() keys off
-in_compat_syscall(), which is false when first issued from SQPOLL or
-io-wq, so a compat ring can misread the iovec list as native layout.
+The core design of btrfs qgroup mode is to track the ownership of every
+extent accurately, but that is conflicting with snapshots, which can
+change the ownership of tons of extents in a very short time, during
+snapshot creation and deletion.
 
-Pass the same IO_URING_F_COMPAT flag into __import_iovec() instead.
+Although qgroup mode has several workarounds, it is not fully resolved
+and still introduces extra costs, e.g. requires frequent rescan,
+breaking limits etc.
 
-Fixes: 34310c442e17 ("btrfs: add io_uring command for encoded reads (ENCODED_READ ioctl)")
-Fixes: e32dcdb0af9f ("btrfs: add io_uring interface for encoded writes")
-Signed-off-by: Yang Xiuwei <yangxiuwei@kylinos.cn>
+So make it more clear that qgroup mode is not recommended until the end
+user has a rigid subvolume layout, e.g. no more new subvolume/snapshots,
+nor deletion of any existing subvolume.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ioctl.c | 14 ++++++++------
- 1 file changed, 8 insertions(+), 6 deletions(-)
+ Documentation/btrfs-quota.rst | 21 ++++++++++++++++-----
+ 1 file changed, 16 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 39bd9788e895..939c4a9d47b6 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4759,9 +4759,10 @@ static int btrfs_uring_encoded_read(struct io_uring_cmd *cmd, unsigned int issue
- 		}
+diff --git a/Documentation/btrfs-quota.rst b/Documentation/btrfs-quota.rst
+index 131f9506d281..687a678669f2 100644
+--- a/Documentation/btrfs-quota.rst
++++ b/Documentation/btrfs-quota.rst
+@@ -22,12 +22,23 @@ of a btrfs filesystem. The quota groups (qgroups) are managed by the subcommand
+ STABILITY AND PERFORMANCE IMPLICATIONS
+ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  
- 		data->iov = data->iovstack;
--		ret = import_iovec(ITER_DEST, data->args.iov, data->args.iovcnt,
--				   ARRAY_SIZE(data->iovstack), &data->iov,
--				   &data->iter);
-+		ret = __import_iovec(ITER_DEST, data->args.iov, data->args.iovcnt,
-+				     ARRAY_SIZE(data->iovstack), &data->iov,
-+				     &data->iter,
-+				     !!(issue_flags & IO_URING_F_COMPAT));
- 		if (ret < 0)
- 			goto out_acct;
+-The qgroup implementation is considered reasonably stable for daily use and has
+-been enabled in various distributions.
++The qgroup mode is considered not recommended for daily usage, unless there is
++no planned new snapshot/subvolume creation and deletion.
  
-@@ -4914,9 +4915,10 @@ static int btrfs_uring_encoded_write(struct io_uring_cmd *cmd, unsigned int issu
- 			goto out_acct;
+-When quotas are activated, they affect all extent processing, which takes a
+-performance hit. Activation of qgroups is not recommended unless the user
+-intends to actually use them.
++The core design of qgroup mode and snapshot are not compatible from day one, and
++are the cause of all kinds of performance problems.
++
++When qgroup mode is activated, it affects all extent processing, which takes a
++performance hit. Operations that modify a whole subvolume/snapshot in one go,
++which include snapshot creation and subvolume deletion, are heavily affected and
++can cause a system hang due to the heavy load.
++
++Although the kernel is taking several workarounds, the problem is not fully resolved
++and has extra costs, e.g. marking qgroup inconsistent, breaking limits and
++requiring extra rescan.
++
++Activation of qgroups is not recommended unless the user intends to actually use them,
++and the usage does not involve new subvolume/snapshot.
  
- 		data->iov = data->iovstack;
--		ret = import_iovec(ITER_SOURCE, data->args.iov, data->args.iovcnt,
--				   ARRAY_SIZE(data->iovstack), &data->iov,
--				   &data->iter);
-+		ret = __import_iovec(ITER_SOURCE, data->args.iov, data->args.iovcnt,
-+				     ARRAY_SIZE(data->iovstack), &data->iov,
-+				     &data->iter,
-+				     !!(issue_flags & IO_URING_F_COMPAT));
- 		if (ret < 0)
- 			goto out_acct;
+ .. _man-quota-hierarchical-quota-group-concepts:
  
 -- 
-2.25.1
+2.54.0
 

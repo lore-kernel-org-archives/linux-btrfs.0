@@ -1,40 +1,60 @@
-Received: from m16.mail.163.com (m16.mail.163.com [117.135.210.5])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DF09A226CFE;
-	Fri,  7 Aug 2026 03:10:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=117.135.210.5
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 935CA394792
+	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2026 09:38:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786072244; cv=none; b=cwhreTZqONaPaJnDbsw0cEW0qGWlCHhoQmOTcJEkT9j1R+kschkAvmI7KmGl5Z97fV5K1kzI/UkGamWVtFoQtSqLZ0zI88QKtYD2h/kRGKCb5U6/DgZSZ/yfCqjgAkRj4H92xSzS51o3ZuMkn1loy1yx7Q5HTsn1VQ71s5XEJSw=
+	t=1786095529; cv=none; b=eauHZBVzHt7pa+LH64qa6ZOsPiGtiJGqKerq4TZuG3RFiBOsiFSgRhAs+eD6wVQVbqZVGSuuFzQGdbouuUR+/BtgS32Ehnm28R8BhcAxASha0Hcnuf0RIDHNHV4b08pOkjTN0US6psYz0Klg8XoSdQdspAz5IBJZeOQnAYHKxLI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786072244; c=relaxed/simple;
-	bh=uzu7IiblMIugOa69mv/nq7P43Owx5u28hOENfFMtu68=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=EyzqCURcPTBJSDaDXGKtEDVVeFx5tIJf+sdakF+ivsjWUqJz55zNxIlyZ4odDpsOITJst2t0E7Ou0DvVTv7karvK3Xamb01ph29DGW3401LXHH0T2lvl40HYNjKEtWshwwiUuFRHcoBMwEvqCwgW4As6tY+LYX4+PZWkMsYkEBY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=Rs/bscKC; arc=none smtp.client-ip=117.135.210.5
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
+	s=arc-20240116; t=1786095529; c=relaxed/simple;
+	bh=OML0ov7Emox5Ks5AXaUUiJNNzOXoA/tBCdni167uM5g=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=CcId6dmfixekl1zqbAWzD2jOrmMAn/jws2/a63s+gRBOvm40oPkDblctn5V3NmmUI+T+csiibG8jOqfzx2teDULl562niNpT7MXmf4R+81KkjKdrNG7mGuExiBBf3XkoTD7ZA0ZRNvF1QsEjzq1PS3z72zkDAIY384B/nTjo+Zc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=boPcx7I7; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=VOb0NV11; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="Rs/bscKC"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
-	s=s110527; h=From:To:Subject:Date:Message-Id:MIME-Version; bh=ci
-	I7LS+NgxvTd1Aep2x2CxdAP97q6NL8MCarB8jy0yQ=; b=Rs/bscKCQgU+xoNRRJ
-	3spbk/8q+3nLO3wp+d3XnWI4jeH3i6A3q0of35IwnDuOFxXTTrV30HSy8bZMGc5x
-	yhm8YpejAUVtigBO7n1Gj045ni4kH82fiUPtjyFtxZEV8h2QgCNfr/7RMqcchynD
-	o8Aa1jtlKU4gyD0rlXr/30vPM=
-Received: from localhost.localdomain (unknown [])
-	by gzsmtp2 (Coremail) with SMTP id PSgvCgA3jfOaTHVqK5+vKA--.59903S2;
-	Fri, 07 Aug 2026 11:10:19 +0800 (CST)
-From: Yang Xiuwei <yangxiuwei@kylinos.cn>
-To: fstests@vger.kernel.org
-Cc: asj@kernel.org,
-	fdmanana@suse.com,
-	zlang@kernel.org,
-	linux-btrfs@vger.kernel.org,
-	Yang Xiuwei <yangxiuwei@kylinos.cn>
-Subject: [PATCH] btrfs/333: also exercise io_uring encoded write
-Date: Fri,  7 Aug 2026 11:10:16 +0800
-Message-Id: <20260807031016.3605415-1-yangxiuwei@kylinos.cn>
-X-Mailer: git-send-email 2.25.1
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="boPcx7I7";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="VOb0NV11"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 6442B3E0D
+	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2026 09:38:37 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1786095521; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=24hJ6TzBgzhDz5qxn49l4FHeDZ9FAP44bDUr3Px9CKU=;
+	b=boPcx7I7JsPYV4gwcg7P94HPiq/bCvXq0Ii9R6VkNDoryj4Yk5v7sqCKNxaduSidy/oFgY
+	PnrxytHfTC+sd2ko0fUccVui4wtYoI5HzFJ9ix2kuWYtAQJUylEQqRA0u0/pCmLnkw0AgC
+	GoCT/4FhLkx+I/Hroz5q0uQuq5fLQKw=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1786095517; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=24hJ6TzBgzhDz5qxn49l4FHeDZ9FAP44bDUr3Px9CKU=;
+	b=VOb0NV11XTg1ojTN4UDXx5F+qh1Xgb0XWK3vzmhgHUYfEfYQwHgHhE1MFU1LkKgtOFmVoh
+	acDG6Nm4Kfn+QGluasXkgcDV0fQ11FFwm9d7ffJd6AgwihFu2SW8qtKCS+S3Hmu/8vf5xh
+	FL+seaxlHTFCZ47skZGklPMK88E4wcc=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6AD0D779B6
+	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2026 09:38:36 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id CRQVB5yndWp0EwAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Fri, 07 Aug 2026 09:38:36 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: minor cleanup for subpage helpers
+Date: Fri,  7 Aug 2026 19:08:07 +0930
+Message-ID: <cover.1786095309.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -42,154 +62,54 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:PSgvCgA3jfOaTHVqK5+vKA--.59903S2
-X-Coremail-Antispam: 1Uf129KBjvJXoWxurW8ZryrtF1UXFW7uw45KFg_yoWrZr48pr
-	yakFW5Jry5Xr17ZFZ3JF45uryrGwn5Ka12q3sa9ryxZ3sxArnrKay2gw1rKr17JFZIqa4k
-	Z392q34DWr1qy3DanT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x07jbSdgUUUUU=
-Sender: yangxiuwei2025@163.com
-X-CM-SenderInfo: p1dqw55lxzvxisqskqqrwthudrp/xtbC6hsxwWp1TJtGpAAA3r
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
-btrfs_encoded_write already supports io_uring, but the test only wrote
-via ioctl.  Also write via io_uring and verify each write with both
-ioctl and io_uring reads.
+The first patch removes dead "unlikely(!fs_info)" checks, as commit
+b2136cc288fc ("btrfs: tests: allocate dummy fs_info and root in
+test_find_delalloc()") has properly allocated a dummy fs_info for
+extent-io-tests.
 
-Signed-off-by: Yang Xiuwei <yangxiuwei@kylinos.cn>
----
- common/btrfs    | 36 ++++++++++++++++++++++++++++++++++++
- tests/btrfs/333 | 37 +++++++++++++++++++++----------------
- 2 files changed, 57 insertions(+), 16 deletions(-)
+The second patch is inspired by Boris' new cow fixup, where we can
+determine if a folio belongs to data or metadata.
+As the only special case is when the folio has no mapping. Meanwhile for
+data folios they are always from page cache, thus they are always
+mapped.
+So an unmapped folio must belongs to metadata, for dummy ebs.
 
-diff --git a/common/btrfs b/common/btrfs
-index 30288f07..937cc49b 100644
---- a/common/btrfs
-+++ b/common/btrfs
-@@ -1073,3 +1073,39 @@ _require_btrfs_iouring_encoded_read()
- 		_notrun "btrfs io_uring encoded read failed with -EOPNOTSUPP"
- 	fi
- }
-+
-+_require_btrfs_iouring_encoded_write()
-+{
-+	local fn
-+	local tmpfile
-+	local datafile
-+	local ret
-+
-+	_require_command src/btrfs_encoded_write
-+
-+	_scratch_mkfs &> /dev/null
-+	_scratch_mount
-+
-+	fn=`mktemp -p $SCRATCH_MNT`
-+	tmpfile=`mktemp`
-+	datafile=`mktemp`
-+
-+	dd if=/dev/urandom of=$datafile bs=64 count=1 status=none
-+	src/btrfs_encoded_write io_uring $fn 0 64 64 0 1 < $datafile > $tmpfile
-+	ret=$?
-+
-+	_scratch_unmount
-+	rm -f $datafile
-+
-+	if [[ $ret -ne 0 ]]; then
-+		rm -f $tmpfile
-+		_fail "btrfs_encoded_write failed"
-+	fi
-+
-+	read ret < $tmpfile
-+	rm $tmpfile
-+
-+	if [[ $ret == -95 ]]; then
-+		_notrun "btrfs io_uring encoded write failed with -EOPNOTSUPP"
-+	fi
-+}
-diff --git a/tests/btrfs/333 b/tests/btrfs/333
-index 6214d7c5..463af5d2 100755
---- a/tests/btrfs/333
-+++ b/tests/btrfs/333
-@@ -4,7 +4,7 @@
- #
- # FS QA Test No. btrfs/333
- #
--# Test btrfs encoded reads
-+# Test btrfs encoded reads and writes (ioctl and io_uring)
- 
- . ./common/preamble
- _begin_fstest auto quick compress rw io_uring ioctl
-@@ -14,6 +14,7 @@ _begin_fstest auto quick compress rw io_uring ioctl
- _require_command src/btrfs_encoded_read
- _require_command src/btrfs_encoded_write
- _require_btrfs_iouring_encoded_read
-+_require_btrfs_iouring_encoded_write
- # Encoded writes are reject for inodes with the NODATASUM flag, so we must skip
- # the test if running with either the nodatasum or nodatacow (which implies
- # nodatasum) mount options.
-@@ -124,7 +125,7 @@ echo "$fn: btrfs encoded read had encryption of $encryption, expected 0" \
- do_encoded_write()
- {
- 	local fn=$1
--	local exp_ret=$2
-+	local type=$2
- 	local len=$3
- 	local unencoded_len=$4
- 	local unencoded_offset=$5
-@@ -133,9 +134,9 @@ do_encoded_write()
- 
- 	local tmpfile=`mktemp`
- 
--echo "running btrfs_encoded_write ioctl $fn 0 $len $unencoded_len $unencoded_offset $compression < $data_file > $tmpfile" \
-+echo "running btrfs_encoded_write $type $fn 0 $len $unencoded_len $unencoded_offset $compression < $data_file > $tmpfile" \
- 	>>$seqres.full
--	src/btrfs_encoded_write ioctl $fn 0 $len $unencoded_len \
-+	src/btrfs_encoded_write $type $fn 0 $len $unencoded_len \
- 		$unencoded_offset $compression < $data_file > $tmpfile
- 
- 	if [[ $? -ne 0 ]]; then
-@@ -172,27 +173,31 @@ test_file()
- 	local unencoded_len=$3
- 	local unencoded_offset=$4
- 	local compression=$5
-+	local wtype
- 
--	local tmpfile=`mktemp -p $SCRATCH_MNT`
- 	local randfile=`mktemp`
- 
- 	dd if=/dev/urandom of=$randfile bs=$size count=1 status=none
- 	local md5=`md5sum $randfile | cut -d ' ' -f 1`
- 
--	do_encoded_write $tmpfile $size $len $unencoded_len $unencoded_offset \
--		$compression $randfile \
--		|| _fail "encoded write ioctl failed"
-+	for wtype in ioctl io_uring; do
-+		local tmpfile=`mktemp -p $SCRATCH_MNT`
- 
--	rm $randfile
-+		do_encoded_write $tmpfile $wtype $len $unencoded_len \
-+			$unencoded_offset $compression $randfile \
-+			|| _fail "encoded write $wtype failed"
- 
--	do_encoded_read $tmpfile ioctl $size $len $unencoded_len \
--		$unencoded_offset $compression $md5 \
--		|| _fail "encoded read ioctl failed"
--	do_encoded_read $tmpfile io_uring $size $len $unencoded_len \
--		$unencoded_offset $compression $md5 \
--		|| _fail "encoded read io_uring failed"
-+		do_encoded_read $tmpfile ioctl $size $len $unencoded_len \
-+			$unencoded_offset $compression $md5 \
-+			|| _fail "encoded read ioctl failed after $wtype write"
-+		do_encoded_read $tmpfile io_uring $size $len $unencoded_len \
-+			$unencoded_offset $compression $md5 \
-+			|| _fail "encoded read io_uring failed after $wtype write"
- 
--	rm $tmpfile
-+		rm $tmpfile
-+	done
-+
-+	rm $randfile
- }
- 
- _scratch_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
+This allows us to enhance btrfs_is_subpage() to cover both data and
+metadata, now btrfs_meta_folio_*() helpers are just a simple wrapper for
+the correponding btrfs_folio_*() helpers.
+
+Qu Wenruo (2):
+  btrfs: remove NULL fs_info checks in subpage helpers
+  btrfs: unify data and metadata subpage handling
+
+ fs/btrfs/subpage.c | 50 +++++++++-------------------------------------
+ fs/btrfs/subpage.h | 45 +++++++++++++++++++++++++++++------------
+ 2 files changed, 41 insertions(+), 54 deletions(-)
+
 -- 
-2.25.1
+2.54.0
 

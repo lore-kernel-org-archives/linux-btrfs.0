@@ -1,116 +1,152 @@
-Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.11])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ed1-f48.google.com (mail-ed1-f48.google.com [209.85.208.48])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0D113478E20
-	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2026 12:56:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.11
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786107402; cv=none; b=b/NcxoWtIatoXwulcNsP+Fe++dwVgjJufS0C2UH9Ro8imwheYWEBgviPo9G0xEy+AMe66uWnNz002PsMfanFkL3HQnpclemEyfoU81VWa6itBkncjWqlT94sbSPIGEj8Ehv0LHvIWDgkKoC5QF+RutKTqzj0Xr1O84gDiKxf3IU=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786107402; c=relaxed/simple;
-	bh=PEbAMoff827kAviFUHr88q3xvr3rVhcfj8DtBLJdft4=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=X882sYRuR0UY0DKrBaVhoEzwEWGMphh1ZAMOXQ46RtSrM3fVx2I6nT5MHjT9i99RT4DxP2+kMM7kerPC7wb11zkx+NAjv/ehoz1v5edSonXws7VbFrNkV7nmvK1XjeaGbTuLCtUSpngGRsXjVbFw5gFW/yOatGAxTVd+0DGvd0E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=R0Qrrufa; arc=none smtp.client-ip=198.175.65.11
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C383847DFAF
+	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2026 13:00:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.208.48
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1786107614; cv=pass; b=ibJuut62nHH5Bwwx5ybe1CfHADOvVXNwiuHQZgdeBGy4wRNgPGNqyb/gXgUW+nrX7LWCs/iPOr4g88YBEoYaFv5x0/ci4T+PwZUEeNrvsIbh80exzGzejN8hIdFS2A2lxFeNN3IPDepWMe4ZZKF4x2vSvFe/nXJhGNeWNwtOleE=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1786107614; c=relaxed/simple;
+	bh=+MmtmpxboSDDE35HHZ4aD3TzxhpUHa2I6zb40jgLWuY=;
+	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=XQQXmHYbrwRg64DHgA+y11WljB2oPRk5Ztslwl3Uo/k5YbfiJPUq21SdU4nvTS+afiJGXbe5CLRmhkZz5UAfaBGr9TGZe4RUAfwi5uHY12qlbyR8n77FB9jsG5ZS+Evihgp2oCt9TId065ISgQoOkAR0udLEhZcmy0nnw1OtNAw=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=BArRiSAp; arc=pass smtp.client-ip=209.85.208.48
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="R0Qrrufa"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1786107397; x=1817643397;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=PEbAMoff827kAviFUHr88q3xvr3rVhcfj8DtBLJdft4=;
-  b=R0QrrufatW8+zpfsUO2VExbl6jCwAWO+Ncie0Tn8yZrBWbQLSbzGZ8sG
-   wRZF/PUgos6i2W9yHJnA8egXG2mVlhL1FUKFnRl64fXrjuDW2/DMZgY5o
-   MbYbZ5Qe/xssBWlCBLSQ24gzexd9jGy0pWpjcWssAwitowg0B/MK7sydj
-   vNDo1KZEI+TvYUya0etk0391648B7SbsxMqpdN7hQo7QB1I4Cle9NiK88
-   H+FdWJ5tieFrAhWkJgb0WeyRVpFGgbkH5gbSmDOCC+LX/0V5QE7LhZS83
-   3/Pr3Tiwjn2qqgyvcbazpdgYN+SsXxnJEC96QspYAD01ofx5tXJLrR3KQ
-   g==;
-X-CSE-ConnectionGUID: 3LB+EOeESGmd3a379L1IkQ==
-X-CSE-MsgGUID: X8kO2W10QMmWfw/HvhFAqw==
-X-IronPort-AV: E=McAfee;i="6800,10657,11867"; a="97064308"
-X-IronPort-AV: E=Sophos;i="6.25,210,1779174000"; 
-   d="scan'208";a="97064308"
-Received: from fmviesa009.fm.intel.com ([10.60.135.149])
-  by orvoesa103.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Aug 2026 05:56:34 -0700
-X-CSE-ConnectionGUID: Gi5HKVBJSkyQRu3qYs/OzA==
-X-CSE-MsgGUID: 4xyoRoUOQ+mthxCW5psUYw==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="6.25,210,1779174000"; 
-   d="scan'208";a="256170391"
-Received: from lkp-server01.sh.intel.com (HELO 6eda058d650d) ([10.239.97.150])
-  by fmviesa009.fm.intel.com with ESMTP; 07 Aug 2026 05:56:32 -0700
-Received: from kbuild by 6eda058d650d with local (Exim 4.98.2)
-	(envelope-from <lkp@intel.com>)
-	id 1wsK7h-00000000IFl-2SCM;
-	Fri, 07 Aug 2026 12:56:29 +0000
-Date: Fri, 7 Aug 2026 20:56:23 +0800
-From: kernel test robot <lkp@intel.com>
-To: Sun YangKai <sunk67188@gmail.com>, linux-btrfs@vger.kernel.org
-Cc: oe-kbuild-all@lists.linux.dev, Sun YangKai <sunyangkai@fnnas.com>
-Subject: Re: [PATCH] btrfs: check if root is readonly when setting posix acl
-Message-ID: <202608072012.WLkLdXMW-lkp@intel.com>
-References: <20260709071529.4033-1-sunk67188@gmail.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="BArRiSAp"
+Received: by mail-ed1-f48.google.com with SMTP id 4fb4d7f45d1cf-69c600f76ccso4743081a12.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Aug 2026 05:59:59 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1786107596; cv=none;
+        d=google.com; s=arc-20260327;
+        b=p4s2LsM4h38aik814yw8Emc9DJWLLtS21l/2j5g5RkCBY8AkJKvJQ7JVmTgfBtZIS6
+         i6wS+p3oMq99wZeR/35bq1+d/4EzKCrhc/v0XmNuQQDxyrrKQVjuP6YEgF/j1p3TugPV
+         2wjO4soYO9kaQwgUKz0Zc/X1XMVegTGMMTIcMzL0PWzFwKoZBOQH2zggoB7yJhCHItDU
+         sm9qnSOi871gkhQF5Uj0nb4BLjgpC7yUQMC/BImKEso930cAM7iZfizfSiB1G1FHc0yY
+         NvHnoAymZ4A42AqeQNUNUqSMD06t981wJbWB4LJAToLoiffboA7fS1/nArUMgMA4/bjE
+         fDPQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=to:subject:message-id:date:from:mime-version:dkim-signature;
+        bh=JA9lhS8SGqYyHpI6nXihRLfPZPaS4m8uGv9mshFPhsw=;
+        fh=IOI3BSFtc4S+mY5yRaEOyEQVEbaexZFmwOG7FNW1hpE=;
+        b=oBTQh7LDPNba924ugUPYDmDDcZ8xci34q82NsbzI9GSWe70WXpAKt0i+txbWabLYuN
+         F2/bIOdRyEjCr7oo1320jy6XScW8hAGn5OhhR9bDhZg6vtKGlI7bciaRbigmtt6qJ6Q4
+         GFIVV7jyyVruPoUVeVTKEMUwrcLWZ2+iNhsSVulXDGC91imdisPZDbT12/btTgD6KwjV
+         Tf+KWxFWMFkDwNAax/xr7ScPe0oG2pyCRFUZc2vKHOAhQxkEaiG5qblPEly7ZdrEUq99
+         p+G8oZImenKxfNK3hHOcLcu2F4pLp+cXIEgGmM37+bLBahpAvsxXIM5S/dEF7o9Z+Kf2
+         4Mkg==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1786107596; x=1786712396; darn=vger.kernel.org;
+        h=content-type:to:subject:message-id:date:from:mime-version:from:to
+         :cc:subject:date:message-id:reply-to:content-type;
+        bh=JA9lhS8SGqYyHpI6nXihRLfPZPaS4m8uGv9mshFPhsw=;
+        b=BArRiSAptwa4Yg9CmRPApwATmHqeCSvG9VendUSNeazArIV5Vm8aiDQgeXxBm2+eKG
+         XIt2ThSa9ULVQKxAMwIEtZvFmJgZJVHLM68Yom/lwiWs9uMiQA6UIiC3mr+jjdsMTFOa
+         KxZh2f3+pP++mUXCCyWMy0V45GQJkai3qEuJVUhSG4gXl3oqX9klTeV763pQ55s1kno5
+         gfKzco/u1zXwqwkWmC3IMaPpmYuj4XKVGwu/+miHeH/xbHm0B5lRpQl0a2eOheDfY3KX
+         YAz7iCr5ZaPegwvHuCGyvcVCNv88/00GFN7wqaN2hEQ1KKZDNCw/8BbkV1DHLqA3OuTM
+         01fw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1786107596; x=1786712396;
+        h=content-type:to:subject:message-id:date:from:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=JA9lhS8SGqYyHpI6nXihRLfPZPaS4m8uGv9mshFPhsw=;
+        b=TFTBOEuYMAYxehHDVcHsdfEe83IC7pvgdm5sv4qYYBWy56gcs9z5Xd8Y266podcRUB
+         Ugsmhz5ct4SfcSVYRpCS9Fz50pNVUwCoPJ6K1MGjZRac6q6iogoZcQa8O6sovIxCy8Ah
+         DkV5Bt1WOmCqAXpJsVAXrxnsDzlKDwSPF0VPs0TCUUVAMOWixdLvNjH+QcLVpfaHpwTX
+         +d/Lq8ZQ8oI2aHKYup7WTWjB60lso0HWyyhNsapd0SBnZixvc3OgQvsH3MlebhTJVxiA
+         4q1Pg0f+Jxc/FjNdDdyadpINQo/tndjBtuz1nng+maG4lzdspyvAD+jH/e3oBRKskO/k
+         uXOg==
+X-Gm-Message-State: AOJu0YxrgA6ixKSyDr5gXMnUb1A+AJCzXssCUeuGZpL+qpol0g9Pvnr0
+	OKvBROMrI3BM3x8qYla1fukhkjzp8EUgb8xumeixWFbyyE1l9rz16oUQwIhclDHjjLdNlUc9JWu
+	prRPI5o4XgEyijdjen9JkRCCRS9/r8wLWcyCX
+X-Gm-Gg: AR+sD10OrZNbyspMMzn/Nu98u3gyUDYp5N1lTmkUbNWf/qALNTE4o3xhY/wx1BJ2Pcd
+	qWQz54b6xaSCDTAFY8PdkD/nhKkgaHFCjU6ScntDIZuD7U7WMwif7TjtLt6aIBIK9BB3kN/sq3F
+	33WDI0Yb0mFs8F2gfRSUeq/6g7CmRQu97Hr4saJGxDgfKGzsA405gf4AiQZ+hvJ1oQ0tEvjXffY
+	OdSyU+Zf0de+TxywjmxSwuwd9ea6lx8ORer0kQlmF61etpNgGB+rhQKNt0mQybhrrTOeDMx8ONu
+	9sATu+O4tceAwAAbyo8clhxAM9UU1gav3icVINEFfdS9H6bgJK8JP3IBsLMQP8kMOD92mDzN0JQ
+	vYg==
+X-Received: by 2002:a05:6402:3506:b0:6a0:9cb5:4f33 with SMTP id
+ 4fb4d7f45d1cf-6a14f132857mr10166414a12.13.1786107595604; Fri, 07 Aug 2026
+ 05:59:55 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260709071529.4033-1-sunk67188@gmail.com>
+From: Martin Leitner-Ankerl <martin.ankerl@gmail.com>
+Date: Fri, 7 Aug 2026 14:59:44 +0200
+X-Gm-Features: AUfX_mzXF3VhyCrRjekaoUIBLUq2eEIEj3gY-JCVfJakjPZMn3Gc33ptRM1J0Ms
+Message-ID: <CAAFOosY-roFVTBfviuFoL=1ahOKOerWbEidZW5Z66u2+XP5ZJg@mail.gmail.com>
+Subject: [ANNOUNCE] oans: duperemove fork; FIDEDUPERANGE cost under memory pressure
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-Hi Sun,
+Hi,
 
-kernel test robot noticed the following build errors:
+I've been running offline dedup on a large btrfs tree on a schedule, and
+while profiling duperemove there I found something I didn't expect: once
+the working set exceeds RAM, hashing is no longer the bottleneck. The
+dedupe phase is, and by a wide margin.
 
-[auto build test ERROR on linus/master]
-[also build test ERROR on v7.2-rc6]
-[cannot apply to kdave/for-next next-20260806]
-[If your patch is applied to the wrong git tree, kindly drop us a note.
-And when submitting patch, we suggest to use '--base' as documented in
-https://git-scm.com/docs/git-format-patch#_base_tree_information]
+FIDEDUPERANGE byte-compares every candidate range before sharing it, so
+the data is read twice: once by userspace to hash it, once by the kernel
+to verify it. When the tree fits in the page cache the second read is
+free. When it doesn't, the compare falls back to cold reads and ends up
+dominating the run.
 
-url:    https://github.com/intel-lab-lkp/linux/commits/Sun-YangKai/btrfs-check-if-root-is-readonly-when-setting-posix-acl/20260807-183739
-base:   linus/master
-patch link:    https://lore.kernel.org/r/20260709071529.4033-1-sunk67188%40gmail.com
-patch subject: [PATCH] btrfs: check if root is readonly when setting posix acl
-config: alpha-allmodconfig (https://download.01.org/0day-ci/archive/20260807/202608072012.WLkLdXMW-lkp@intel.com/config)
-compiler: alpha-linux-gcc (GCC) 16.1.0
-reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20260807/202608072012.WLkLdXMW-lkp@intel.com/reproduce)
+Measured on two non-reflinked copies of a Linux kernel tree (189546
+files, ~10.5 GiB), deduped inside a hard 4 GiB cgroup limit so eviction
+actually happens, 10 interleaved rounds, median wall time:
 
-If you fix the issue in a separate patch/commit (i.e. not just a new version of
-the same patch/commit), kindly add following tags
-| Reported-by: kernel test robot <lkp@intel.com>
-| Closes: https://lore.kernel.org/oe-kbuild-all/202608072012.WLkLdXMW-lkp@intel.com/
+  hash + dedupe   13.8 s     vs   179.7 s
+  peak RSS         121 MiB   vs    243 MiB
 
-All errors (new ones prefixed by >>):
+The second column is duperemove v0.15.2, the first is my fork. Both read
+the same 16.7 GiB, and "btrfs filesystem du -s" reports an identical
+on-disk layout afterwards, so the work is the same and only the read
+pattern differs.
 
-   fs/btrfs/acl.c: In function 'btrfs_set_acl':
->> fs/btrfs/acl.c:110:33: error: implicit declaration of function 'BTRFS_I' [-Wimplicit-function-declaration]
-     110 |         if (btrfs_root_readonly(BTRFS_I(inode)->root))
-         |                                 ^~~~~~~
->> fs/btrfs/acl.c:110:47: error: invalid type argument of '->' (have 'int')
-     110 |         if (btrfs_root_readonly(BTRFS_I(inode)->root))
-         |                                               ^~
+What the fork does is read each dedupe round's source and destination
+ranges (at most 32 MiB each) sequentially in userspace immediately
+before issuing the ioctl, so the kernel's compare hits warm page cache.
+It also stops calling POSIX_FADV_DONTNEED on data it just hashed when a
+dedupe is going to follow.
 
+My hypothesis for why this helps at all, given the kernel would read the
+same pages anyway, is that one sequential userspace read of a 32 MiB
+range is much friendlier to the device than the compare loop faulting
+pages in as it walks two files in lockstep. I have not verified that
+against the kernel side, and I would welcome a correction if the real
+mechanism is something else.
 
-vim +/BTRFS_I +110 fs/btrfs/acl.c
+Two questions I would genuinely like input on:
 
-   102	
-   103	int btrfs_set_acl(struct mnt_idmap *idmap, struct dentry *dentry,
-   104			  struct posix_acl *acl, int type)
-   105	{
-   106		int ret;
-   107		struct inode *inode = d_inode(dentry);
-   108		umode_t old_mode = inode->i_mode;
-   109	
- > 110		if (btrfs_root_readonly(BTRFS_I(inode)->root))
+1. Is the cold read path in the in-kernel compare something that could
+   reasonably be improved in btrfs, e.g. with readahead over the two
+   ranges before comparing? Doing it in userspace works but feels like
+   the wrong layer.
 
---
-0-DAY CI Kernel Test Service
-https://github.com/intel/lkp-tests/wiki
+2. Are there workloads where prefetching like this would hurt, for
+   instance on a system already under memory pressure from something
+   else, where pulling 64 MiB into the page cache per round evicts
+   something more useful?
+
+The fork is at https://github.com/martinus/oans (GPL, same as
+duperemove). It carries the benchmark methodology, the raw rounds and a
+script to reproduce the numbers above. Full credit to Mark Fasheh and
+the duperemove contributors; it is still their engine underneath, and
+the fixes I found along the way have been sent upstream as PRs.
+
+For completeness: much of the fork was written with AI assistance
+reviewed and benchmarked on real data before landing. Dedup
+still goes through FIDEDUPERANGE, so a userspace bug there can waste
+work or miss a dedup but cannot make the kernel share data that is not
+identical.
+
+Thanks,
+Martin

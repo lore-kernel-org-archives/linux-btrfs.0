@@ -1,228 +1,116 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.11])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A73163EE1E0
-	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2026 09:38:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0D113478E20
+	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2026 12:56:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.11
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786095532; cv=none; b=b3DZIZAgtjKyOGA0Azp0D5ZgaJ5Vlbgh4YPoWPDM6hDE8is5hCDvPVbfpjYgi2cdqJZZCNWkGPk9DoivHyAgz8zotzzB17PWot78JuMTa6X6U7qByQZceIOKw3twiUS55pWl80tL7QhLkAT/tCTRZHBIGmdQCwLaX6Kdwwgf+zA=
+	t=1786107402; cv=none; b=b/NcxoWtIatoXwulcNsP+Fe++dwVgjJufS0C2UH9Ro8imwheYWEBgviPo9G0xEy+AMe66uWnNz002PsMfanFkL3HQnpclemEyfoU81VWa6itBkncjWqlT94sbSPIGEj8Ehv0LHvIWDgkKoC5QF+RutKTqzj0Xr1O84gDiKxf3IU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786095532; c=relaxed/simple;
-	bh=OIRb8/4GilL7NKsK0eXtmHQ3JS738cGA+g2ZOtchSSw=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ulZ5ckazGuaLs4WtiHDBC0R00fHd4dUo/jDVanp9A/qs+RENA1iPC1BCz+/sm51O/zg/H4acNxej/XwXbjE+WiMAdQSUWeD459HYf9tog38cgGMqBlWhAFabh4b7u4tsLLMsrPIAjAel39qpajNlYaB2s68fDLmF+voh8m7lPFM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=usJfmPVv; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ciTvXHu4; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1786107402; c=relaxed/simple;
+	bh=PEbAMoff827kAviFUHr88q3xvr3rVhcfj8DtBLJdft4=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=X882sYRuR0UY0DKrBaVhoEzwEWGMphh1ZAMOXQ46RtSrM3fVx2I6nT5MHjT9i99RT4DxP2+kMM7kerPC7wb11zkx+NAjv/ehoz1v5edSonXws7VbFrNkV7nmvK1XjeaGbTuLCtUSpngGRsXjVbFw5gFW/yOatGAxTVd+0DGvd0E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=R0Qrrufa; arc=none smtp.client-ip=198.175.65.11
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="usJfmPVv";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ciTvXHu4"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 9A86580541
-	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2026 09:38:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786095524; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=d/iGcir491uu3575i0nZCOkJLZIU3yMyBmXvxkJ4Uv4=;
-	b=usJfmPVvD+md91SotNX5RT0TvZrF68vxBj5l1UszL00ZnNdT5yg8SFNxpUyYqixbUSkfeP
-	7Uk4bqRO5zuHhLHlRfBr33dyw47XLHkUeZOKbfzQ3pPLCdA4gFqcMCuXOBSBhlD0w+4Br3
-	EapWvZHk0u6gozmtzUwGfAeKcyhxaxQ=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786095520; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=d/iGcir491uu3575i0nZCOkJLZIU3yMyBmXvxkJ4Uv4=;
-	b=ciTvXHu4Cg2jgb9eT0VIg2zY34Vyr64hq+7Saa4PIWv9oJxRUawcXq92iWOATU2tZRN9ex
-	aWs2BeJzIn7D/XB0FR8Nfr3LXtcsftXKOX46OKF/WxmrRBWwYHIjjDNwZ4t7ZaOF3V0oFR
-	s183204lCBmsmm2UgB/Vyy0/t2rgeL4=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9B439779C3
-	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2026 09:38:39 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id QDrIEp+ndWp0EwAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 07 Aug 2026 09:38:39 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: unify data and metadata subpage handling
-Date: Fri,  7 Aug 2026 19:08:09 +0930
-Message-ID: <9ac2d271797c1baada373e4825728ceb08f08fc7.1786095309.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1786095309.git.wqu@suse.com>
-References: <cover.1786095309.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="R0Qrrufa"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1786107397; x=1817643397;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=PEbAMoff827kAviFUHr88q3xvr3rVhcfj8DtBLJdft4=;
+  b=R0QrrufatW8+zpfsUO2VExbl6jCwAWO+Ncie0Tn8yZrBWbQLSbzGZ8sG
+   wRZF/PUgos6i2W9yHJnA8egXG2mVlhL1FUKFnRl64fXrjuDW2/DMZgY5o
+   MbYbZ5Qe/xssBWlCBLSQ24gzexd9jGy0pWpjcWssAwitowg0B/MK7sydj
+   vNDo1KZEI+TvYUya0etk0391648B7SbsxMqpdN7hQo7QB1I4Cle9NiK88
+   H+FdWJ5tieFrAhWkJgb0WeyRVpFGgbkH5gbSmDOCC+LX/0V5QE7LhZS83
+   3/Pr3Tiwjn2qqgyvcbazpdgYN+SsXxnJEC96QspYAD01ofx5tXJLrR3KQ
+   g==;
+X-CSE-ConnectionGUID: 3LB+EOeESGmd3a379L1IkQ==
+X-CSE-MsgGUID: X8kO2W10QMmWfw/HvhFAqw==
+X-IronPort-AV: E=McAfee;i="6800,10657,11867"; a="97064308"
+X-IronPort-AV: E=Sophos;i="6.25,210,1779174000"; 
+   d="scan'208";a="97064308"
+Received: from fmviesa009.fm.intel.com ([10.60.135.149])
+  by orvoesa103.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Aug 2026 05:56:34 -0700
+X-CSE-ConnectionGUID: Gi5HKVBJSkyQRu3qYs/OzA==
+X-CSE-MsgGUID: 4xyoRoUOQ+mthxCW5psUYw==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.25,210,1779174000"; 
+   d="scan'208";a="256170391"
+Received: from lkp-server01.sh.intel.com (HELO 6eda058d650d) ([10.239.97.150])
+  by fmviesa009.fm.intel.com with ESMTP; 07 Aug 2026 05:56:32 -0700
+Received: from kbuild by 6eda058d650d with local (Exim 4.98.2)
+	(envelope-from <lkp@intel.com>)
+	id 1wsK7h-00000000IFl-2SCM;
+	Fri, 07 Aug 2026 12:56:29 +0000
+Date: Fri, 7 Aug 2026 20:56:23 +0800
+From: kernel test robot <lkp@intel.com>
+To: Sun YangKai <sunk67188@gmail.com>, linux-btrfs@vger.kernel.org
+Cc: oe-kbuild-all@lists.linux.dev, Sun YangKai <sunyangkai@fnnas.com>
+Subject: Re: [PATCH] btrfs: check if root is readonly when setting posix acl
+Message-ID: <202608072012.WLkLdXMW-lkp@intel.com>
+References: <20260709071529.4033-1-sunk67188@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260709071529.4033-1-sunk67188@gmail.com>
 
-Currently we have split data and metadata subpage handling, this is due
-to the fact that data and metadata have very different conditions to
-determine if a folio needs subpage handling.
+Hi Sun,
 
-But the condition different is not that huge, it's just checking
-different values.
-For data it's checking if the sectorsize is smaller than folio size, for
-metadata it doesn't even need to bother folio size yet, as we have not
-yet support large folios for metadata.
+kernel test robot noticed the following build errors:
 
-The idea is to merge btrfs_meta_is_subpage() into btrfs_is_subpage(),
-so that btrfs_is_subpage() is the only entrance to check if a folio
-needs subpage handling.
+[auto build test ERROR on linus/master]
+[also build test ERROR on v7.2-rc6]
+[cannot apply to kdave/for-next next-20260806]
+[If your patch is applied to the wrong git tree, kindly drop us a note.
+And when submitting patch, we suggest to use '--base' as documented in
+https://git-scm.com/docs/git-format-patch#_base_tree_information]
 
-With that said, all the existing btrfs_meta_folio_*() helpers can be
-updated to a very simple wrapper to the corresponding btrfs_folio_*()
-helper.
+url:    https://github.com/intel-lab-lkp/linux/commits/Sun-YangKai/btrfs-check-if-root-is-readonly-when-setting-posix-acl/20260807-183739
+base:   linus/master
+patch link:    https://lore.kernel.org/r/20260709071529.4033-1-sunk67188%40gmail.com
+patch subject: [PATCH] btrfs: check if root is readonly when setting posix acl
+config: alpha-allmodconfig (https://download.01.org/0day-ci/archive/20260807/202608072012.WLkLdXMW-lkp@intel.com/config)
+compiler: alpha-linux-gcc (GCC) 16.1.0
+reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20260807/202608072012.WLkLdXMW-lkp@intel.com/reproduce)
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/subpage.c | 23 +----------------------
- fs/btrfs/subpage.h | 45 ++++++++++++++++++++++++++++++++-------------
- 2 files changed, 33 insertions(+), 35 deletions(-)
+If you fix the issue in a separate patch/commit (i.e. not just a new version of
+the same patch/commit), kindly add following tags
+| Reported-by: kernel test robot <lkp@intel.com>
+| Closes: https://lore.kernel.org/oe-kbuild-all/202608072012.WLkLdXMW-lkp@intel.com/
 
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index 72402ea156d3..7e760934cab8 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -742,29 +742,8 @@ bool btrfs_folio_clamp_test_##name(const struct btrfs_fs_info *fs_info,	\
- 		return folio_test_func(folio);				\
- 	btrfs_subpage_clamp_range(folio, &start, &len);			\
- 	return btrfs_subpage_test_##name(fs_info, folio, start, len);	\
--}									\
--void btrfs_meta_folio_set_##name(struct folio *folio, const struct extent_buffer *eb) \
--{									\
--	if (!btrfs_meta_is_subpage(eb->fs_info)) {			\
--		folio_set_func(folio);					\
--		return;							\
--	}								\
--	btrfs_subpage_set_##name(eb->fs_info, folio, eb->start, eb->len); \
--}									\
--void btrfs_meta_folio_clear_##name(struct folio *folio, const struct extent_buffer *eb) \
--{									\
--	if (!btrfs_meta_is_subpage(eb->fs_info)) {			\
--		folio_clear_func(folio);				\
--		return;							\
--	}								\
--	btrfs_subpage_clear_##name(eb->fs_info, folio, eb->start, eb->len); \
--}									\
--bool btrfs_meta_folio_test_##name(struct folio *folio, const struct extent_buffer *eb) \
--{									\
--	if (!btrfs_meta_is_subpage(eb->fs_info))			\
--		return folio_test_func(folio);				\
--	return btrfs_subpage_test_##name(eb->fs_info, folio, eb->start, eb->len); \
- }
-+
- IMPLEMENT_BTRFS_PAGE_OPS(uptodate, folio_mark_uptodate, folio_clear_uptodate,
- 			 folio_test_uptodate);
- IMPLEMENT_BTRFS_PAGE_OPS(dirty, btrfs_folio_mark_dirty_reserved,
-diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
-index 9b106a73d682..7e25d8d1d3bb 100644
---- a/fs/btrfs/subpage.h
-+++ b/fs/btrfs/subpage.h
-@@ -95,11 +95,23 @@ static inline bool btrfs_meta_is_subpage(const struct btrfs_fs_info *fs_info)
- {
- 	return fs_info->nodesize < PAGE_SIZE;
- }
--static inline bool btrfs_is_subpage(const struct btrfs_fs_info *fs_info,
--				    struct folio *folio)
-+
-+static inline bool btrfs_folio_is_data(const struct folio *folio)
- {
--	if (folio->mapping && folio->mapping->host)
--		ASSERT(is_data_inode(BTRFS_I(folio->mapping->host)));
-+	const struct address_space *mapping = folio_mapping(folio);
-+
-+	/* Only metadata folio can have no mapping for dummy ebs. */
-+	if (!mapping || !mapping->host)
-+		return false;
-+	return is_data_inode(BTRFS_I(mapping->host));
-+}
-+
-+/* This helper can be called on both data and metadata folios. */
-+static inline bool btrfs_is_subpage(const struct btrfs_fs_info *fs_info,
-+				    const struct folio *folio)
-+{
-+	if (!btrfs_folio_is_data(folio))
-+		return btrfs_meta_is_subpage(fs_info);
- 	return fs_info->sectorsize < folio_size(folio);
- }
- 
-@@ -140,12 +152,7 @@ void btrfs_folio_end_lock_bitmap(const struct btrfs_fs_info *fs_info,
-  * need to be inside the page. Those functions will truncate the range
-  * automatically.
-  *
-- * Both btrfs_folio_*() and btrfs_folio_clamp_*() are for data folios.
-- *
-- * For metadata, one should use btrfs_meta_folio_*() helpers instead, and there
-- * is no clamp version for metadata helpers, as we either go subpage
-- * (nodesize < PAGE_SIZE) or go regular folio helpers (nodesize >= PAGE_SIZE,
-- * and our folio is never larger than nodesize).
-+ * All helpers can be called on both data and metadata folios.
-  */
- #define DECLARE_BTRFS_SUBPAGE_OPS(name)					\
- void btrfs_subpage_set_##name(const struct btrfs_fs_info *fs_info,	\
-@@ -166,9 +173,21 @@ void btrfs_folio_clamp_clear_##name(const struct btrfs_fs_info *fs_info,	\
- 		struct folio *folio, u64 start, u32 len);			\
- bool btrfs_folio_clamp_test_##name(const struct btrfs_fs_info *fs_info,	\
- 		struct folio *folio, u64 start, u32 len);		\
--void btrfs_meta_folio_set_##name(struct folio *folio, const struct extent_buffer *eb); \
--void btrfs_meta_folio_clear_##name(struct folio *folio, const struct extent_buffer *eb); \
--bool btrfs_meta_folio_test_##name(struct folio *folio, const struct extent_buffer *eb);
-+static inline void btrfs_meta_folio_set_##name(struct folio *folio,		\
-+					       const struct extent_buffer *eb)	\
-+{										\
-+	btrfs_folio_set_##name(eb->fs_info, folio, eb->start, eb->len);		\
-+}										\
-+static inline void btrfs_meta_folio_clear_##name(struct folio *folio,		\
-+						 const struct extent_buffer *eb) \
-+{										\
-+	btrfs_folio_clear_##name(eb->fs_info, folio, eb->start, eb->len);	\
-+}										\
-+static inline bool btrfs_meta_folio_test_##name(struct folio *folio,		\
-+				  const struct extent_buffer *eb)		\
-+{										\
-+	return btrfs_folio_test_##name(eb->fs_info, folio, eb->start, eb->len);	\
-+}
- 
- DECLARE_BTRFS_SUBPAGE_OPS(uptodate);
- DECLARE_BTRFS_SUBPAGE_OPS(dirty);
--- 
-2.54.0
+All errors (new ones prefixed by >>):
 
+   fs/btrfs/acl.c: In function 'btrfs_set_acl':
+>> fs/btrfs/acl.c:110:33: error: implicit declaration of function 'BTRFS_I' [-Wimplicit-function-declaration]
+     110 |         if (btrfs_root_readonly(BTRFS_I(inode)->root))
+         |                                 ^~~~~~~
+>> fs/btrfs/acl.c:110:47: error: invalid type argument of '->' (have 'int')
+     110 |         if (btrfs_root_readonly(BTRFS_I(inode)->root))
+         |                                               ^~
+
+
+vim +/BTRFS_I +110 fs/btrfs/acl.c
+
+   102	
+   103	int btrfs_set_acl(struct mnt_idmap *idmap, struct dentry *dentry,
+   104			  struct posix_acl *acl, int type)
+   105	{
+   106		int ret;
+   107		struct inode *inode = d_inode(dentry);
+   108		umode_t old_mode = inode->i_mode;
+   109	
+ > 110		if (btrfs_root_readonly(BTRFS_I(inode)->root))
+
+--
+0-DAY CI Kernel Test Service
+https://github.com/intel/lkp-tests/wiki

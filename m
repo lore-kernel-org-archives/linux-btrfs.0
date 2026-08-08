@@ -1,152 +1,109 @@
-Received: from mail-ed1-f48.google.com (mail-ed1-f48.google.com [209.85.208.48])
+Received: from mail-wr1-f51.google.com (mail-wr1-f51.google.com [209.85.221.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C383847DFAF
-	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2026 13:00:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.208.48
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786107614; cv=pass; b=ibJuut62nHH5Bwwx5ybe1CfHADOvVXNwiuHQZgdeBGy4wRNgPGNqyb/gXgUW+nrX7LWCs/iPOr4g88YBEoYaFv5x0/ci4T+PwZUEeNrvsIbh80exzGzejN8hIdFS2A2lxFeNN3IPDepWMe4ZZKF4x2vSvFe/nXJhGNeWNwtOleE=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786107614; c=relaxed/simple;
-	bh=+MmtmpxboSDDE35HHZ4aD3TzxhpUHa2I6zb40jgLWuY=;
-	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=XQQXmHYbrwRg64DHgA+y11WljB2oPRk5Ztslwl3Uo/k5YbfiJPUq21SdU4nvTS+afiJGXbe5CLRmhkZz5UAfaBGr9TGZe4RUAfwi5uHY12qlbyR8n77FB9jsG5ZS+Evihgp2oCt9TId065ISgQoOkAR0udLEhZcmy0nnw1OtNAw=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=BArRiSAp; arc=pass smtp.client-ip=209.85.208.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8DE25329E5D
+	for <linux-btrfs@vger.kernel.org>; Sat,  8 Aug 2026 02:35:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.51
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1786156525; cv=none; b=mRQPFvHV7JU/MFlgTbOyjL79oo9UXYjgjBEgYvngj0xqZ8dH2TWDzmrnBPzVo6KaJke9vb1ocwnuc3ApOL/JH/qLLHwkh85UqdshFc34+HTOM0LInaxGua5b1nAJJvjr26EmS/4jIXMcN0NqavticuoTEdJ6+o8Oux6ofSV9bhc=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1786156525; c=relaxed/simple;
+	bh=QiayysKdbIS1dVj22EVt9QfEasK3UIDYnmvk223hZhA=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=FK0DNFrVLuk+Rn2xAiOD3ZDLFaju0e0e/SqBJ/5BVi71hbfFc1ldip1gzMtkq6RljiynnETqG1nQdIxmMhNeFJ3xToU+ZuUE946Lb81znzgAsgvZ2kQrbL70g022Jfd9KvL7YVqgYbO2TGUIAGSnqODT3TafUN6EzToSefXvLqY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Bh7gAtSm; arc=none smtp.client-ip=209.85.221.51
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="BArRiSAp"
-Received: by mail-ed1-f48.google.com with SMTP id 4fb4d7f45d1cf-69c600f76ccso4743081a12.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Aug 2026 05:59:59 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1786107596; cv=none;
-        d=google.com; s=arc-20260327;
-        b=p4s2LsM4h38aik814yw8Emc9DJWLLtS21l/2j5g5RkCBY8AkJKvJQ7JVmTgfBtZIS6
-         i6wS+p3oMq99wZeR/35bq1+d/4EzKCrhc/v0XmNuQQDxyrrKQVjuP6YEgF/j1p3TugPV
-         2wjO4soYO9kaQwgUKz0Zc/X1XMVegTGMMTIcMzL0PWzFwKoZBOQH2zggoB7yJhCHItDU
-         sm9qnSOi871gkhQF5Uj0nb4BLjgpC7yUQMC/BImKEso930cAM7iZfizfSiB1G1FHc0yY
-         NvHnoAymZ4A42AqeQNUNUqSMD06t981wJbWB4LJAToLoiffboA7fS1/nArUMgMA4/bjE
-         fDPQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=to:subject:message-id:date:from:mime-version:dkim-signature;
-        bh=JA9lhS8SGqYyHpI6nXihRLfPZPaS4m8uGv9mshFPhsw=;
-        fh=IOI3BSFtc4S+mY5yRaEOyEQVEbaexZFmwOG7FNW1hpE=;
-        b=oBTQh7LDPNba924ugUPYDmDDcZ8xci34q82NsbzI9GSWe70WXpAKt0i+txbWabLYuN
-         F2/bIOdRyEjCr7oo1320jy6XScW8hAGn5OhhR9bDhZg6vtKGlI7bciaRbigmtt6qJ6Q4
-         GFIVV7jyyVruPoUVeVTKEMUwrcLWZ2+iNhsSVulXDGC91imdisPZDbT12/btTgD6KwjV
-         Tf+KWxFWMFkDwNAax/xr7ScPe0oG2pyCRFUZc2vKHOAhQxkEaiG5qblPEly7ZdrEUq99
-         p+G8oZImenKxfNK3hHOcLcu2F4pLp+cXIEgGmM37+bLBahpAvsxXIM5S/dEF7o9Z+Kf2
-         4Mkg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Bh7gAtSm"
+Received: by mail-wr1-f51.google.com with SMTP id ffacd0b85a97d-472326ca506so49945f8f.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Aug 2026 19:35:16 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1786107596; x=1786712396; darn=vger.kernel.org;
-        h=content-type:to:subject:message-id:date:from:mime-version:from:to
-         :cc:subject:date:message-id:reply-to:content-type;
-        bh=JA9lhS8SGqYyHpI6nXihRLfPZPaS4m8uGv9mshFPhsw=;
-        b=BArRiSAptwa4Yg9CmRPApwATmHqeCSvG9VendUSNeazArIV5Vm8aiDQgeXxBm2+eKG
-         XIt2ThSa9ULVQKxAMwIEtZvFmJgZJVHLM68Yom/lwiWs9uMiQA6UIiC3mr+jjdsMTFOa
-         KxZh2f3+pP++mUXCCyWMy0V45GQJkai3qEuJVUhSG4gXl3oqX9klTeV763pQ55s1kno5
-         gfKzco/u1zXwqwkWmC3IMaPpmYuj4XKVGwu/+miHeH/xbHm0B5lRpQl0a2eOheDfY3KX
-         YAz7iCr5ZaPegwvHuCGyvcVCNv88/00GFN7wqaN2hEQ1KKZDNCw/8BbkV1DHLqA3OuTM
-         01fw==
+        d=gmail.com; s=20251104; t=1786156514; x=1786761314; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=K+cwp7DUftRSD9otPGjKHQg3+nevH5xipxe862j6GG0=;
+        b=Bh7gAtSm2d/HyiWoM3OUxEk/W9RNPPtGxwIkydRFolPvj4OCfxkKits7nFN+YZ6J6D
+         Znqg787retOUhQsUFZqJdOV/Yq82YsODj/DXymNQq+d3iCfMC11ph+HmKHDLqP7O0PFO
+         8q44OJLD3AfIrRtZ7SVJf8DREuz7UdoNxHYptxZCFla8Wy7M5nXxWTnV7wvIKwS1/ycW
+         76Q6lWnMiRhJcgu/SLTxtur/q3Ln0070klmFYJMU5Xq8qZo0fjKVzg3clC8JYU/qj+e0
+         oUzPQNPQKNcVN061aPiYPwdBi/NYiZW5VAPJkRkkjDdgikhyjsKb/AMq111+TjtxdmkJ
+         kbcQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786107596; x=1786712396;
-        h=content-type:to:subject:message-id:date:from:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=JA9lhS8SGqYyHpI6nXihRLfPZPaS4m8uGv9mshFPhsw=;
-        b=TFTBOEuYMAYxehHDVcHsdfEe83IC7pvgdm5sv4qYYBWy56gcs9z5Xd8Y266podcRUB
-         Ugsmhz5ct4SfcSVYRpCS9Fz50pNVUwCoPJ6K1MGjZRac6q6iogoZcQa8O6sovIxCy8Ah
-         DkV5Bt1WOmCqAXpJsVAXrxnsDzlKDwSPF0VPs0TCUUVAMOWixdLvNjH+QcLVpfaHpwTX
-         +d/Lq8ZQ8oI2aHKYup7WTWjB60lso0HWyyhNsapd0SBnZixvc3OgQvsH3MlebhTJVxiA
-         4q1Pg0f+Jxc/FjNdDdyadpINQo/tndjBtuz1nng+maG4lzdspyvAD+jH/e3oBRKskO/k
-         uXOg==
-X-Gm-Message-State: AOJu0YxrgA6ixKSyDr5gXMnUb1A+AJCzXssCUeuGZpL+qpol0g9Pvnr0
-	OKvBROMrI3BM3x8qYla1fukhkjzp8EUgb8xumeixWFbyyE1l9rz16oUQwIhclDHjjLdNlUc9JWu
-	prRPI5o4XgEyijdjen9JkRCCRS9/r8wLWcyCX
-X-Gm-Gg: AR+sD10OrZNbyspMMzn/Nu98u3gyUDYp5N1lTmkUbNWf/qALNTE4o3xhY/wx1BJ2Pcd
-	qWQz54b6xaSCDTAFY8PdkD/nhKkgaHFCjU6ScntDIZuD7U7WMwif7TjtLt6aIBIK9BB3kN/sq3F
-	33WDI0Yb0mFs8F2gfRSUeq/6g7CmRQu97Hr4saJGxDgfKGzsA405gf4AiQZ+hvJ1oQ0tEvjXffY
-	OdSyU+Zf0de+TxywjmxSwuwd9ea6lx8ORer0kQlmF61etpNgGB+rhQKNt0mQybhrrTOeDMx8ONu
-	9sATu+O4tceAwAAbyo8clhxAM9UU1gav3icVINEFfdS9H6bgJK8JP3IBsLMQP8kMOD92mDzN0JQ
-	vYg==
-X-Received: by 2002:a05:6402:3506:b0:6a0:9cb5:4f33 with SMTP id
- 4fb4d7f45d1cf-6a14f132857mr10166414a12.13.1786107595604; Fri, 07 Aug 2026
- 05:59:55 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1786156514; x=1786761314;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=K+cwp7DUftRSD9otPGjKHQg3+nevH5xipxe862j6GG0=;
+        b=My1xsb1Z9LEh/Njd+Lc9attAtqnpdjtLw1v+KvrwaENaHJWkbZBs6SQIdIH5pEqoxz
+         WWSdp74e3DyeEcLL3iBddQM/9ZjMt5K2TyPUEOteBgPm+evKBy1l9omD2WGxuzpaD/gG
+         bsv4UdH9F0bOPmRE8X9vAQddf0Zi/6WwNyaHB5Cwlx/2LOMrWhkLyV8GhAaOEw86p8zk
+         XU8TZ4kAQaQUDfOG51bdmpFVXqvrNjwmg4c32xaaELWvhAmBjNsHQvmlndNhgUW37Zij
+         tLLyTf9zf3GIjr78+gCjpUq8cSY87yFTUhzzH6EQSBrcz0pQP2LS2Lx6e4R5ePNkpIja
+         60iA==
+X-Gm-Message-State: AOJu0YzK2RT5Ep7dmNP+BLNfzCtrVYzGhr+Tl+bEcYbl99bD3a4drFF8
+	RfSZUJB93WBkKrqnNP77SU5Zmvwa2D2n0B+iF2k7dT5iqkfbEgm0Wng+EXUmgYAJsh8=
+X-Gm-Gg: AR+sD13NhvGzTWZ76kHMEK1MkO239kgbsdRL0hScIpraU7J+1iFQ0Yjn5Hzypbuab8r
+	Msn+TDmmVJyNjaLi503j9XpLUq5g3cwkQ2+A+lIXYpev2jYzSPvpaZmfBzhxp/mV5xnzafSXYlv
+	+f86k5sjTEmb4ng3AmfZ9SeO1z+goo5RjwK4gR9FNLGiETnEo+vcLPFGQ33F62f/xDtkvAyIDxv
+	7fVjgiginME1FHmEmmcEGmAuqCNun843cpG3x/8xKIf7qmOpdSkmKsWI9Bnj6ccftoNifdb7hiH
+	SgTZQwu10Ily2OL5X2U/0SDFaEiwNNVabh97KYWXqtVAPaUwGV0HRNeTPhdJCr22nOmT4WiwMqq
+	fIcR87GC2bnAq7a60rTuVqVNKEo1OCAGrznjA7hrbsLT4Fq5Q6o5BrNOYBcBMpLF/Kng1fB/wgs
+	cAEFthrAXb7VCUwobmn15OxeYT99X2Or0hm6jQm1mv3WppyaA+UKzfyy8=
+X-Received: by 2002:a5d:5541:0:b0:47a:b86f:3ed1 with SMTP id ffacd0b85a97d-47fec62bacamr33943485f8f.21.1786156513609;
+        Fri, 07 Aug 2026 19:35:13 -0700 (PDT)
+Received: from infinity ([2001:b07:5d26:7a6a:a8a:5bfa:f87a:3c1a])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4800214557esm10571244f8f.2.2026.08.07.19.35.12
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 07 Aug 2026 19:35:12 -0700 (PDT)
+From: koraynilay <koray.fra@gmail.com>
+To: clm@fb.com,
+	dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org,
+	koraynilay <koray.fra@gmail.com>
+Subject: [PATCH 0/4] btrfs: add per-inode compression levels in xattrs
+Date: Sat,  8 Aug 2026 04:34:55 +0200
+Message-ID: <20260808023459.1494928-1-koray.fra@gmail.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-From: Martin Leitner-Ankerl <martin.ankerl@gmail.com>
-Date: Fri, 7 Aug 2026 14:59:44 +0200
-X-Gm-Features: AUfX_mzXF3VhyCrRjekaoUIBLUq2eEIEj3gY-JCVfJakjPZMn3Gc33ptRM1J0Ms
-Message-ID: <CAAFOosY-roFVTBfviuFoL=1ahOKOerWbEidZW5Z66u2+XP5ZJg@mail.gmail.com>
-Subject: [ANNOUNCE] oans: duperemove fork; FIDEDUPERANGE cost under memory pressure
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-Hi,
+Add per-inode compression levels using
+btrfs property set /path/to/file compression "algo:level", using the
+same syntax as the compress mount option
+If set on folders, all new children will inherit the setting, while
+already existing children will be unaffected.
 
-I've been running offline dedup on a large btrfs tree on a schedule, and
-while profiling duperemove there I found something I didn't expect: once
-the working set exceeds RAM, hashing is no longer the bottleneck. The
-dedupe phase is, and by a wide margin.
+This patch series keeps a legacy small "bug": when setting
+btrfs.compression, it keeps the mount option level, even if the algo is
+different (!!), so with e.g. compress=zstd:15 and btrfs.compression=zlib
+the data gets compressed at zlib:9 (because it still gets clamped at the
+right range). This way the behaviour of chattr +c is also unchanged.
 
-FIDEDUPERANGE byte-compares every candidate range before sharing it, so
-the data is read twice: once by userspace to hash it, once by the kernel
-to verify it. When the tree fits in the page cache the second read is
-free. When it doesn't, the compare falls back to cold reads and ends up
-dominating the run.
+I also wanna thank Zygo for helping me by explaining stuff and for
+noticing this "bug".
 
-Measured on two non-reflinked copies of a Linux kernel tree (189546
-files, ~10.5 GiB), deduped inside a hard 4 GiB cgroup limit so eviction
-actually happens, 10 interleaved rounds, median wall time:
+koraynilay (4):
+  btrfs: export btrfs_match_compress_type(), move it to compression.h
+  btrfs: also validate compression levels in
+    btrfs_compress_is_valid_type()
+  btrfs: add per-inode compression levels in xattrs
+  btrfs: support inheritance for per-inode compression levels
 
-  hash + dedupe   13.8 s     vs   179.7 s
-  peak RSS         121 MiB   vs    243 MiB
+ fs/btrfs/btrfs_inode.h |  1 +
+ fs/btrfs/compression.c | 28 ++++++++++++++++++---
+ fs/btrfs/compression.h |  3 ++-
+ fs/btrfs/inode.c       | 14 +++++++++++
+ fs/btrfs/props.c       | 57 +++++++++++++++++++++++++++++++++---------
+ fs/btrfs/super.c       |  8 ------
+ 6 files changed, 87 insertions(+), 24 deletions(-)
 
-The second column is duperemove v0.15.2, the first is my fork. Both read
-the same 16.7 GiB, and "btrfs filesystem du -s" reports an identical
-on-disk layout afterwards, so the work is the same and only the read
-pattern differs.
 
-What the fork does is read each dedupe round's source and destination
-ranges (at most 32 MiB each) sequentially in userspace immediately
-before issuing the ioctl, so the kernel's compare hits warm page cache.
-It also stops calling POSIX_FADV_DONTNEED on data it just hashed when a
-dedupe is going to follow.
+base-commit: a59f57e2aa127c5354168d2ec4bac920df1be4f4
+-- 
+2.55.0
 
-My hypothesis for why this helps at all, given the kernel would read the
-same pages anyway, is that one sequential userspace read of a 32 MiB
-range is much friendlier to the device than the compare loop faulting
-pages in as it walks two files in lockstep. I have not verified that
-against the kernel side, and I would welcome a correction if the real
-mechanism is something else.
-
-Two questions I would genuinely like input on:
-
-1. Is the cold read path in the in-kernel compare something that could
-   reasonably be improved in btrfs, e.g. with readahead over the two
-   ranges before comparing? Doing it in userspace works but feels like
-   the wrong layer.
-
-2. Are there workloads where prefetching like this would hurt, for
-   instance on a system already under memory pressure from something
-   else, where pulling 64 MiB into the page cache per round evicts
-   something more useful?
-
-The fork is at https://github.com/martinus/oans (GPL, same as
-duperemove). It carries the benchmark methodology, the raw rounds and a
-script to reproduce the numbers above. Full credit to Mark Fasheh and
-the duperemove contributors; it is still their engine underneath, and
-the fixes I found along the way have been sent upstream as PRs.
-
-For completeness: much of the fork was written with AI assistance
-reviewed and benchmarked on real data before landing. Dedup
-still goes through FIDEDUPERANGE, so a userspace bug there can waste
-work or miss a dedup but cannot make the kernel share data that is not
-identical.
-
-Thanks,
-Martin

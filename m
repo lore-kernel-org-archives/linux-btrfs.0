@@ -1,188 +1,90 @@
-Received: from mail-wm1-f42.google.com (mail-wm1-f42.google.com [209.85.128.42])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from out162-62-57-137.mail.qq.com (out162-62-57-137.mail.qq.com [162.62.57.137])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A4F3754763
-	for <linux-btrfs@vger.kernel.org>; Sat,  8 Aug 2026 05:18:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.42
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B440D2147E5;
+	Sat,  8 Aug 2026 05:52:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=162.62.57.137
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786166309; cv=none; b=sLl7zuv6q1rWBfak05okgj8LES93eP+TJMIcW1kgAvzMiV/1RZRTyMicUICj98ry6tFVu0eMZ+Z28dvZ7nHpZ7uNSDGQ/VkGYsVNIYalhNZMo156BAINCL+CFwKmmVZBcnvsSH2HRLRiDAvhs5xAxugYniCTE2CQGcXcY+QVpGs=
+	t=1786168345; cv=none; b=HWr7u7WUDDEVRSv0NcEA8gY9H4OPTyooBtrkDX/3yVjHJh7PXzR8gczNoKe9nhfAbK2N5+F8X8fNG1bruEDdohl8c5nJBZfpvfe/PFcqesukf+hp/dvDOKSd9hakUzg8TFZbyoOUxQ2rHxho0ZO28owDTYxjVgzri0zWb5f9dTg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786166309; c=relaxed/simple;
-	bh=e1KD8zoraLjog2njrsX2zkpMHC24yAUgHxLM38jjGf4=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=B9qfz/ZUYQoPnaG8biaX1k1ctWtXXm8+jUtdqxcWfpSJrFMuK9q4FJALp1W1YM4UFFEDpgZA2tFusBeZ04Ils8Jti9o2o2ipnlg8cO4GplmRz7NkQ30yt/yW9kEk6t+gW/okcUvX9ioQbCw/DBd0ybZ7z0YsDrwaC9TH+GYq8uU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Hd8XNQBg; arc=none smtp.client-ip=209.85.128.42
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1786168345; c=relaxed/simple;
+	bh=3lUTDZh0yzyvQuRJbirdiA1PfDJ+Hrt1nhs1owj0H3s=;
+	h=Message-ID:From:To:Cc:Subject:Date:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=G5hzP5REDMtlzFnWgFU/i/RwtMJCzQ44BDH0xwnXQ2bUU1GsvOHPDT/lJLAgpE80n6Lv1QO+DllUQtYTGjfvN8H0dL0hqn0hhSdVO03zxRqmP4VFOdJs3GaM1sPGv4mHg7Gtw7oFS8HHKX9bS2qFUeknWPKs5QtkIRzzPnb+Lpc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com; spf=pass smtp.mailfrom=qq.com; dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b=mKOb6Ao2; arc=none smtp.client-ip=162.62.57.137
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=qq.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Hd8XNQBg"
-Received: by mail-wm1-f42.google.com with SMTP id 5b1f17b1804b1-4955aa106b1so2035995e9.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Aug 2026 22:18:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1786166306; x=1786771106; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=JJhvRbAgbyNO89YM7BEIHxWEebN9b6RcPSHpLs6/nDU=;
-        b=Hd8XNQBgA8USILsrl89vmRmywInuKKhJFpnIabcdauiMq9OMYOoCBJAB9FFmySF4Kn
-         Uk0vFkVXG9w95lziIYL+ja2dkFR3nROP88+OhZUWHYW/pXgmMNzaUjVFm6XrvWYlsTBw
-         Whrjpbq/AVX0N5kHibW20gNKvkdt5gcUe5rhyNHcPDeIwGrRaJ2wsH2sp2LG8fb7Vu5M
-         sVPiNEip+iocy6WKSSvjVisYKGHcZt1AuiNcBKe7EbRS9470BtGG/H4p0qrHVSd/bwyB
-         7SSfklPoXje1Sb//Wjttz7QAt0WUegHRbogVxg0xyuf7cZgSdLP2uOQrkgqHpc7TcE3M
-         CfXA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786166306; x=1786771106;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=JJhvRbAgbyNO89YM7BEIHxWEebN9b6RcPSHpLs6/nDU=;
-        b=IehY+PQo0GMFjcfhwDgoev4fIPPEBQ396mXtu3QZ7K4JYNjphOWdjseXP95DJn958J
-         YLbE6705tEyIUssme4tlu26SCeZ55atIqv8oHNJitlJFBXDKWXHTS1IrqklQtSSEdzQG
-         8+1cqC5ldfAS0ALcxPqcGe/FXElGVD5Fl/NP4Xlj0JzcMJhZQlthgEL9FayJkJT8SRyM
-         ND4oQJWJHzvncnXFfW7p5M8bRgWUvhhaX5fz5RAWh/gFc5cUWmNjxLoQMY5CjbANFGvH
-         bQcV3ABRY6A6D0u4l7Vr/Fo6tv9PUQO06WqV+1iJ5aZISp0vge1UuFhkyBKsjRqEZ+y0
-         q2Uw==
-X-Gm-Message-State: AOJu0YzizxVvAfh5JRPlOLZHXtg8fFibUFj5R+79/nWm8BZ0sQOuElR3
-	6QT63hwCFOFNuFBFqijIZQNkFjHKzNgW+S/u8dEKtBTyYxynjxicBU03zW1Z3+S/2BU=
-X-Gm-Gg: AR+sD10uklfcnAxdggHGpfQ+/cePI1NZLjgq9YQqKQgpVO6IV+TcEDD4SMFJkd4CzoJ
-	JuIcpf6pW7osDx8AuPmF6mHxyaqJGtYFBCZWP3O5C0WxJA+Md4CTjnCjEyDazMYQwU/Y3zjO72x
-	6fiuqD0f3YlI294EOVT22lHnEWaA21RB7Wm82BpQNrypotOEXmbVzMcZAuWo83c0ofZcWbfo/ca
-	uwSKbCkz6EK01Vw9sZ12kTTzpUjpxGoEtShvOHRiVf2z/WK3EUB4dQ4dejXkLF65c6SVxN5+2vQ
-	qZzeoCa6QHbybRdW4O3RM7rKMUSyhCMwRUrtdXvW51Z4m6vOvyktYJPXGShQ3H9jow6GNUBEO+l
-	JTYgtTVN2+AyE52tEfSOb7ByUk4IhOprcD/lLlhTIjJVXJseJ04m+mT9/V1SmpdkvlqRWnNIxDC
-	PcLy9+lna8fc3PBzKf7x5vQSAm3D4r9gSLKYLlhrmveNMyq0r4qiYVehpXh8KA80eVPg==
-X-Received: by 2002:a05:600c:4594:b0:499:5f7a:7ea2 with SMTP id 5b1f17b1804b1-4995f7a7ec4mr97873255e9.12.1786166305870;
-        Fri, 07 Aug 2026 22:18:25 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-315bec2ec20sm16808385eec.28.2026.08.07.22.18.21
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 07 Aug 2026 22:18:24 -0700 (PDT)
-Message-ID: <47a4dbfb-906c-440c-999c-d6dba7981232@suse.com>
-Date: Sat, 8 Aug 2026 14:48:19 +0930
+	dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b="mKOb6Ao2"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=qq.com; s=s201512;
+	t=1786168331; bh=3lUTDZh0yzyvQuRJbirdiA1PfDJ+Hrt1nhs1owj0H3s=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References;
+	b=mKOb6Ao2tM1KOxiFKtgrQ18LhLa6UaMd/8hbkeEFfthnaQWXSaWLOeBwQJ1l7nRHG
+	 NmROFnijzzthsYSi2AwsZIcBGiqgfkZGdbGzLlvtY/+8k59NJC8QDBa5wrE/gQPwLa
+	 F9WUedcynZe7xiYlY2E9WzPO4hJ2wOcl+1ngn858=
+Received: from ikun-VMware-Virtual-Platform.localdomain ([223.65.85.186])
+	by newxmesmtplogicsvrsza73-0.qq.com (NewEsmtp) with SMTP
+	id CB2A8E1C; Sat, 08 Aug 2026 13:50:50 +0800
+X-QQ-mid: xmsmtpt1786168250t5wino99k
+Message-ID: <tencent_D0C21073316554703CA18A799E2521ED6E08@qq.com>
+X-QQ-XMAILINFO: MhK4DKsBP06iZSA6gVmIkao7m24b03HDJui8xBM/Nhk/OJnerxKpthejmlYnzb
+	 lfspd2QPR+5CURZBycv5JOVRwfNQ0AYrNy7mPBlUNxZhf0GLcuUL5U87WJCq6rxB7mLJPdrTPdX0
+	 1PPdQBmv9w3kyzYapa+J3BV4Eu+RhVc973j/fSlWEN6yPkAdYXAYQ0BRfad66ey6MsdLA7S02H2i
+	 4MCxoUTVfEWMji9bDCo6e2xLFBnS26dPXQJyeLPiyFWJS5MRoS+g41/dIfynkctGW/SzqEi7Rn8J
+	 0S6MnZxPb4KcBk6+xW3jDRLMuis2TIdYMAp6d2Z3Y2JLb700CP2D4k9+pdPg2KLz+Q/phyfp8dwn
+	 eY0QSg7TtxOh8Ytzps6IJQnGv4fUtCHdlS0MMHOTqfwafAtVEdDH6K5ZMpEFySz6d/jakjx9Rzk8
+	 q4cCxDhohx2GtvDoWxI3o4DYFFDCe+TKGtikMGibDE/tgz2I5lRdvQAsO3OEQJrVylAD6oizljGj
+	 cwe2EP+40/9uYNKnV6V77NWmG4RkhMQq+S+0F09LhJkj4Beq9qg54N5HZSxcqh6DdWGoksn70pYs
+	 BOtV47nllkdgl6A6fuTvn7oj7HtlvU/HlE6XJsNSCmd+MxbJBBo3P8MiUJF4LGB0d0oya5hgRnxj
+	 Jepwarz30Qcx13kkkhLSntOPdm07i+2ZyPKm+gPyYtpl7CZw5CSXHR2qE3VWU/XDx5wu60m1TZKo
+	 ILDAVznoiI88LpJRfoSbuGbyEV9ofwCeA7SpePWRuh61SRMkOMiyPHwV4Mi7XfUqaJIA0CmAJ941
+	 fg2SfQ3yWbb+6i5VMCHsnpDDW9GftqqgkOI7f3MdDQ8k7qQ/7hFfoHmygW7GwKWkh+eFKVLHae9s
+	 QsNTeVa38CPwNJCMlMchQxr/bcMD7uAWSz9efoFzdflEmBekjhtz4rLkHASnN9++lYgZFZ7pKqu0
+	 NKC/Ou6TXvrjycwepLo+dY0RM6n/uoaVPh1ZS2umePJc7cBWCokUEZvJ7J+yTlFCoNOSuO/++CVy
+	 w4W+6jT993L9ra/8HQ8G4mPW/okZzAAiUpbjLDONWkxcxYY16x
+X-QQ-XMRINFO: OWPUhxQsoeAVwkVaQIEGSKwwgKCxK/fD5g==
+From: Guanghui Yang <3497809730@qq.com>
+To: Qu Wenruo <wqu@suse.com>
+Cc: Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Guanghui Yang <3497809730@qq.com>
+Subject: Re: [PATCH] btrfs: free unlinked replace target on initialization failure
+Date: Sat,  8 Aug 2026 13:50:47 +0800
+X-OQ-MSGID: <20260808055047.142307-1-3497809730@qq.com>
+X-Mailer: git-send-email 2.53.0
+In-Reply-To: <47a4dbfb-906c-440c-999c-d6dba7981232@suse.com>
+References: <tencent_CB14173C19427EDC26219662D6A984787209@qq.com> <47a4dbfb-906c-440c-999c-d6dba7981232@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: free unlinked replace target on initialization
- failure
-To: Guanghui Yang <3497809730@qq.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <tencent_CB14173C19427EDC26219662D6A984787209@qq.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <tencent_CB14173C19427EDC26219662D6A984787209@qq.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
+Resending as plain text; my previous reply was rejected by vger because
+it contained an HTML part.
 
+Yes, I used OpenAI Codex (GPT-5) to help inspect the analyzer findings,
+review the failure path, draft the change and changelog, and prepare the
+test procedure. I reviewed the resulting code and ran targeted
+failure-injection testing on v6.14. The patch branch also passed
+make -j2 fs/btrfs/.
 
-在 2026/8/8 14:12, Guanghui Yang 写道:
-> btrfs_init_dev_replace_tgtdev() allocates the replacement target before
-> looking up its dev_t and initializing its zoned device information. If
-> either lookup_bdev() or btrfs_get_dev_zone_info() fails, the device has
-> not been linked into fs_devices->devices yet, but the error path only
-> drops the block device file reference.
-> 
-> Free the allocated device on this error path to release its name,
-> allocation state, zone info, and the device itself.
-> 
-> Signed-off-by: Guanghui Yang <3497809730@qq.com>
+I should have disclosed this in the patch. Sorry for the omission. I will
+add:
 
-I have a very strong feeling that you're using LLM hunting down bugs.
+Assisted-by: Codex:gpt-5
 
-In that case, be responsible and disclose the usage of LLM.
+to v2.
 
-> ---
->   fs/btrfs/dev-replace.c | 4 ++++
->   fs/btrfs/volumes.c     | 2 +-
->   fs/btrfs/volumes.h     | 1 +
->   3 files changed, 6 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index 318ddb790..3c17481c9 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -240,6 +240,7 @@ static int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
->   	struct block_device *bdev;
->   	u64 devid = BTRFS_DEV_REPLACE_DEVID;
->   	int ret = 0;
-> +	bool device_allocated = false;
+Agreed about initializing device to NULL. Checking the pointer on the
+error path is simpler than adding a separate boolean. I will update that
+in v2.
 
-You can just initialize @device to NULL, and use that pointer to 
-determine if the device is properly allocated.
->   
->   	*device_out = NULL;
->   	if (srcdev->fs_devices->seeding) {
-> @@ -287,6 +288,7 @@ static int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
->   		ret = PTR_ERR(device);
->   		goto error;
->   	}
-> +	device_allocated = true;
->   
->   	ret = lookup_bdev(device_path, &device->devt);
->   	if (ret)
-> @@ -327,6 +329,8 @@ static int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
->   	return 0;
->   
->   error:
-> +	if (device_allocated)
-> +		btrfs_free_device(device);
->   	bdev_fput(bdev_file);
->   	return ret;
->   }
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index a8e27db8e..c479f268a 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -402,7 +402,7 @@ static struct btrfs_fs_devices *alloc_fs_devices(const u8 *fsid)
->   	return fs_devs;
->   }
->   
-> -static void btrfs_free_device(struct btrfs_device *device)
-> +void btrfs_free_device(struct btrfs_device *device)
->   {
->   	WARN_ON(!list_empty(&device->post_commit_list));
->   	/*
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index eaf23c0dc..ecab3ce3c 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -795,6 +795,7 @@ int btrfs_run_dev_stats(struct btrfs_trans_handle *trans);
->   void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_device *srcdev);
->   void btrfs_rm_dev_replace_free_srcdev(struct btrfs_device *srcdev);
->   void btrfs_destroy_dev_replace_tgtdev(struct btrfs_device *tgtdev);
-> +void btrfs_free_device(struct btrfs_device *device);
->   unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
->   				    u64 logical);
->   u64 btrfs_calc_stripe_length(const struct btrfs_chunk_map *map);
+Thanks,
+Guanghui
 

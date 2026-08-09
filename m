@@ -1,193 +1,134 @@
-Received: from mail-wr1-f47.google.com (mail-wr1-f47.google.com [209.85.221.47])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A86D2187346
-	for <linux-btrfs@vger.kernel.org>; Sun,  9 Aug 2026 03:03:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.47
+Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id AF1FB7083C
+	for <linux-btrfs@vger.kernel.org>; Sun,  9 Aug 2026 03:17:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=174.142.148.226
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786244612; cv=none; b=mIk/tiVE8PPZ+ecblRFErtWZ1ZAgZcnF5VMeRGxxlIxoxA27z3NsIbqW5EJCacyKLpnbTDnNFZR5I7a15sBwsTLoTPebpjRSJeO+LPlCjcTfVdrsWwJ1ITdvV7C0S8sCXrQCHJWgOBlAGUmWc6GoKj5mvcg3x7rb8fz+DpGl25o=
+	t=1786245443; cv=none; b=YYseAwL7nLwGsUOgojhRXr3gceTRumnsW/oovBieHrndT2atLXOD5y2g1iEfYPjKYzOTee804lLTh2SKJPClzRw5KvVFYx2mAvqDobGqslB1QF/qSwbX6497+w77qvjQ3UBJ0a0zAUYYke3FAWi9HhNyR17f2cqKGLgAaYXvXks=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786244612; c=relaxed/simple;
-	bh=pFKAVHO3UC8rHLHwhktd9ABPtZh3kAtWUPd+VZ+JPjQ=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=R+UIj4D5yK63nPNUzZdA2PGGSjUnDBPvRx2Uje3iKvoDB37AiNMC3O5e1pOIB19VtpWMlC8RmXJ1kJlw5kdYxPpF+GW9JckcGIqZO8ZKZytfevj3mo/CQFPjLaOh/qKQrT916Xbqyx+tj6qvOES7V97O6oEWdRu4URgGFAdTU84=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=P8+mcp86; arc=none smtp.client-ip=209.85.221.47
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="P8+mcp86"
-Received: by mail-wr1-f47.google.com with SMTP id ffacd0b85a97d-47fd66a094eso165924f8f.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Aug 2026 20:03:30 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1786244609; x=1786849409; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=gw66RcIMgJCsboEPeW4HT2ZUrnWgWs8yjL85BOq11U8=;
-        b=P8+mcp86gAwWq1Kczze9TwUWCCZK0sncbvOftuGeNqYuZAAqr0sNTKbwK+kl1ynpJc
-         nGh/o2uawtkFROsA+bUfANcSXCTCDqOOvjBox6Otem/VPi9BPss8DxB2euouHSpIiSAN
-         Q9PDYW7grr/tstnONuXPtyPIE5a2OWhlaLBuYKnEaYDS96Rwt5jOyRu6iZk3o8lAbSWo
-         EI54t+MCHY1UQEUECVwimzDOs13C1z9S4IqIqA82pFVytmDyJ2dvOZ/wmTBPZiAsXOyI
-         hIpA3EOWDgukCpU3GLaqxBD/g8bKnY+UL+zNd+VGmbaGXb1vsmyhhxxDfFFCnGdDNZfB
-         H86Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786244609; x=1786849409;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=gw66RcIMgJCsboEPeW4HT2ZUrnWgWs8yjL85BOq11U8=;
-        b=I9MwfH8OQed8nvdgfJXGfRo7268TFeH3t12UDxQ17sUyjmTvhWPWRxDNFFaoffCUdD
-         LNPkIbBLycIR4eGDuW+AkkjacZ0Y2aD95pHQw44psxTFZ89RFgGXhNaEd2fbEzCcqzmB
-         yG7N/xZssfsh5wD0n8TM4F8xXwzSE1GWU5CpB+ea1bdH3ehvgBSovOMT8l8qXSrGxK8j
-         QzGyzLk5puougRuJacQp/sEA5G23ZST9d9SlTdR3D7sADDZpiDP3myzHwjfRmRr7oEwD
-         cj62uKGNX8tuISK2N+y+Vg3IHivo4y4W/SuCJ6TmXeCawnZm7541+/9ug7ZIRTLvJZbv
-         ULeA==
-X-Forwarded-Encrypted: i=1; AHgh+RoQbJgn6qK+A9gNj/JjYAmU2ZFluoA4CGBPIGoHFqJ+LDVbEyD9nHP58OcFzck8LWa0zfdkR0BZXFbebQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwxC4tForcCpkqTbLk/DMXxlJ+X5lC9Zlc0o9/05Nrk9rk8f+u7
-	FZG9gqDhVmrMas4dEvSa+fR9hbJoq68H0PIJ2ug67uVf2aOoOl57ov3SPfAbRLT4r1Q=
-X-Gm-Gg: AR+sD10MpSSVmm+Cs54qjZg5nOkgp7dwxwja/t+fHpa+vcBSwwtLCdJi40HMN++XeiF
-	Bndci3iRhyMbd4+1DrDvdhGR4YcoNcFKALE9xeTG0qKb0AigBEX9daTVw3UPEvlVHLZflclmesr
-	kJNQI94IitEn8qDLICMN5e/WRHp9wVWR98BhLkcEbllI4qgR9J6qI9AKM4mpulLUT1eGHn3jsgy
-	Euyjtr+9fezpEehvf2PvuTdgxalhRLWHdqh1xivM60ZK0Ja6pp6VbwavKLKW7eGTiq65m9/ryyl
-	2BN4kK4DBuDmLmprixNil+k5W2iroZXZzfWvwwHkElUtYI1nDnd6gr+P7zRmaT0JmRJufDDCH5S
-	ZnFcoGG8kblzKyZIOZnNTJi5WG7HkYupj/VmABtyUVDSEnAVgx3IkG4D+S9QE/ZyOPzNWLqp/0Q
-	Tw73OU7yky8Vl+d73cAe7E8eCIF8RjdAChjMCkaqKVhSKm5PnwQ/h2zw==
-X-Received: by 2002:a05:600c:1f96:b0:493:e365:7630 with SMTP id 5b1f17b1804b1-4994e7cbc2fmr363576825e9.14.1786244608828;
-        Sat, 08 Aug 2026 20:03:28 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-315be8a754dsm23602475eec.11.2026.08.08.20.03.25
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 08 Aug 2026 20:03:27 -0700 (PDT)
-Message-ID: <fbb3bc20-0f05-41ae-9385-c06c492e6004@suse.com>
-Date: Sun, 9 Aug 2026 12:33:23 +0930
+	s=arc-20240116; t=1786245443; c=relaxed/simple;
+	bh=szXPfEKH5BBA8R7a+37AtkNPToITiLpMX1HaSCojRxU=;
+	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type:
+	 Content-Disposition:In-Reply-To; b=VZEEjmKdrvdtjg3NKv7XSHEPrxKRmIyBuqG/2nJa7+ns0fEqSUeY2r0eOwp9+GBJ84lYEafd0wUOJ6ughVqm/A+8RAvqajFvlQdO3mrH8fY6Gf8M3ovYaNTw2nWmUIg11KVpKQ/oGcbSriDvoNnUuo4JcxosexMgXp5nkcDMfkY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=umail.furryterror.org; spf=pass smtp.mailfrom=drax.hungrycats.org; arc=none smtp.client-ip=174.142.148.226
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=umail.furryterror.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=drax.hungrycats.org
+Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
+	id D6E501B1CF1F; Sat, 08 Aug 2026 23:17:20 -0400 (EDT)
+Date: Sat, 8 Aug 2026 23:17:20 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Martin Leitner-Ankerl <martin.ankerl@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [ANNOUNCE] oans: duperemove fork; FIDEDUPERANGE cost under
+ memory pressure
+Message-ID: <anfwWZH1TrBoFzQ4@hungrycats.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 4/4] btrfs: support inheritance for per-inode
- compression levels
-To: koraynilay <koray.fra@gmail.com>, Chris Mason <clm@fb.com>,
- David Sterba <dsterba@suse.com>
-Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, linux-btrfs@vger.kernel.org
-References: <20260809015054.779137-1-koray.fra@gmail.com>
- <20260809015054.779137-5-koray.fra@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260809015054.779137-5-koray.fra@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAAFOosY-roFVTBfviuFoL=1ahOKOerWbEidZW5Z66u2+XP5ZJg@mail.gmail.com>
 
-
-
-在 2026/8/9 11:20, koraynilay 写道:
-> Change prop_handler's extract() signature to take an output buffer and
-> its length. This allows for the algo:level string to be generated
-> dynamically, but now the caller is in charge of managing that buffer
-> memory. Before this patch prop_compression_extract() would return only
-> the address of statically compiled string without being able to add the
-> level, now it concatenates the level to that statically compiled string.
+On Fri, Aug 07, 2026 at 02:59:44PM +0200, Martin Leitner-Ankerl wrote:
+> Hi,
 > 
-> This signature change is fine because the only currently supported prop
-> is compression, so there is only 1 extract() function.
+> I've been running offline dedup on a large btrfs tree on a schedule, and
+> while profiling duperemove there I found something I didn't expect: once
+> the working set exceeds RAM, hashing is no longer the bottleneck. The
+> dedupe phase is, and by a wide margin.
 > 
-> Assisted-by: Gemini:3.1-pro antigravity-cli-1.1.5
-> Signed-off-by: koraynilay <koray.fra@gmail.com>
-> ---
->   fs/btrfs/props.c | 14 +++++++++++---
->   1 file changed, 11 insertions(+), 3 deletions(-)
+> FIDEDUPERANGE byte-compares every candidate range before sharing it, so
+> the data is read twice: once by userspace to hash it, once by the kernel
+> to verify it. When the tree fits in the page cache the second read is
+> free. When it doesn't, the compare falls back to cold reads and ends up
+> dominating the run.
 > 
-> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-> index f79a61a2759f..9c97792800fb 100644
-> --- a/fs/btrfs/props.c
-> +++ b/fs/btrfs/props.c
-> @@ -27,7 +27,7 @@ struct prop_handler {
->   	int (*validate)(const struct btrfs_inode *inode, const char *value,
->   			size_t len);
->   	int (*apply)(struct btrfs_inode *inode, const char *value, size_t len);
-> -	const char *(*extract)(const struct btrfs_inode *inode);
-> +	const char *(*extract)(const struct btrfs_inode *inode, char *buf, size_t len);
->   	bool (*ignore)(const struct btrfs_inode *inode);
->   	int inheritable;
->   };
-> @@ -395,12 +395,19 @@ static bool prop_compression_ignore(const struct btrfs_inode *inode)
->   	return false;
->   }
->   
-> -static const char *prop_compression_extract(const struct btrfs_inode *inode)
-> +static const char *prop_compression_extract(const struct btrfs_inode *inode,
-> +					    char *buf, size_t len)
->   {
->   	switch (inode->prop_compress) {
->   	case BTRFS_COMPRESS_ZLIB:
->   	case BTRFS_COMPRESS_LZO:
->   	case BTRFS_COMPRESS_ZSTD:
-> +		if (inode->prop_compress_level) {
-> +			snprintf(buf, len, "%s:%d",
-> +				 btrfs_compress_type2str(inode->prop_compress),
-> +				 inode->prop_compress_level);
-> +			return buf;
-> +		}
->   		return btrfs_compress_type2str(inode->prop_compress);
->   	default:
->   		break;
-> @@ -437,6 +444,7 @@ int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
->   		const struct prop_handler *h = &prop_handlers[i];
->   		const char *value;
->   		u64 num_bytes = 0;
-> +		char buf[16];
+> Measured on two non-reflinked copies of a Linux kernel tree (189546
+> files, ~10.5 GiB), deduped inside a hard 4 GiB cgroup limit so eviction
+> actually happens, 10 interleaved rounds, median wall time:
+> 
+>   hash + dedupe   13.8 s     vs   179.7 s
+>   peak RSS         121 MiB   vs    243 MiB
+> 
+> The second column is duperemove v0.15.2, the first is my fork. Both read
+> the same 16.7 GiB, and "btrfs filesystem du -s" reports an identical
+> on-disk layout afterwards, so the work is the same and only the read
+> pattern differs.
+> 
+> What the fork does is read each dedupe round's source and destination
+> ranges (at most 32 MiB each) sequentially in userspace immediately
+> before issuing the ioctl, so the kernel's compare hits warm page cache.
+> It also stops calling POSIX_FADV_DONTNEED on data it just hashed when a
+> dedupe is going to follow.
+> 
+> My hypothesis for why this helps at all, given the kernel would read the
+> same pages anyway, is that one sequential userspace read of a 32 MiB
+> range is much friendlier to the device than the compare loop faulting
+> pages in as it walks two files in lockstep. I have not verified that
+> against the kernel side, and I would welcome a correction if the real
+> mechanism is something else.
 
-Please use a macro to define the value.
+Before the 5.x kernels, when btrfs had its own private dedupe ioctl,
+btrfs would read pages 16 MiB at a time before comparing them.  The two
+loops are "for each 16 MiB of pages, fetch all pages," then "now that
+all the pages are in memory, for each page, compare the page contents."
 
-In a perfect world, we want some way to determine the max string size at 
-compile time, comparing the max length of "zlib", "zstd", "lzo", "none" 
-with extra ":" and possible level values, but we do not have an easy way 
-to do that.
+When this was replaced with the generic VFS dedupe implementation in
+v5.0, this 16 MiB batching was lost.  The loop is now "for each page,
+fetch page, compare."
 
-So a comment on the how the size is calculated would be enough, e.g. the 
-maximum length is "zstd:-15" with terminating 0, and round it up to 
-power of 2 for future expansion.
+bees does a userspace read of the dedupe src and dst extents just before
+issuing the dedupe ioctl in order to work around this.  It's a significant
+speedup for modern kernels, but it would be nice if the kernel simply
+did this in the ioctl itself.
 
-Thanks,
-Qu
->   
->   		if (!h->inheritable)
->   			continue;
-> @@ -444,7 +452,7 @@ int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
->   		if (h->ignore(inode))
->   			continue;
->   
-> -		value = h->extract(parent);
-> +		value = h->extract(parent, buf, sizeof(buf));
->   		if (!value)
->   			continue;
->   
+madvise/readahead/fadvise in theory avoids the extra data copy to
+userspace, but it doesn't help in practice because they all go to the same
+kernel function which issues the IOs at idle priority--which means that
+if you have multiple worker threads, the kernel never actually executes
+the readahead before some thread calls the dedupe ioctl (running in a
+thread with non-idle ioprio), then the ioctl preempts the readahead and
+demand-reads the pages.  So the prefetch has to be done by an actual
+pread(), not readahead().
+
+> Two questions I would genuinely like input on:
+> 
+> 1. Is the cold read path in the in-kernel compare something that could
+>    reasonably be improved in btrfs, e.g. with readahead over the two
+>    ranges before comparing? Doing it in userspace works but feels like
+>    the wrong layer.
+> 
+> 2. Are there workloads where prefetching like this would hurt, for
+>    instance on a system already under memory pressure from something
+>    else, where pulling 64 MiB into the page cache per round evicts
+>    something more useful?
+
+That happens either way.  The dedupe ioctl doesn't allocate a buffer
+for reading the pages--it reads all the pages into the page cache,
+compares them while they are there, and leaves them in the cache.
+
+If you're concerned about polluting the page cache, you can use madvise
+DONTNEED to evict them; however, this evicts pages that might be in
+use by other processes, which can be a different kind of problem for
+some workloads.  It only works for dedupers that follow the two-phase
+plan-execute model (as duperemove does); otherwise, they evict pages
+that may then be immediately required to complete future dedupes.
+
+> The fork is at https://github.com/martinus/oans (GPL, same as
+> duperemove). It carries the benchmark methodology, the raw rounds and a
+> script to reproduce the numbers above. Full credit to Mark Fasheh and
+> the duperemove contributors; it is still their engine underneath, and
+> the fixes I found along the way have been sent upstream as PRs.
+> 
+> For completeness: much of the fork was written with AI assistance
+> reviewed and benchmarked on real data before landing. Dedup
+> still goes through FIDEDUPERANGE, so a userspace bug there can waste
+> work or miss a dedup but cannot make the kernel share data that is not
+> identical.
+> 
+> Thanks,
+> Martin
+> 
 

@@ -1,134 +1,138 @@
-Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id AF1FB7083C
-	for <linux-btrfs@vger.kernel.org>; Sun,  9 Aug 2026 03:17:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=174.142.148.226
+Received: from mail-wr1-f45.google.com (mail-wr1-f45.google.com [209.85.221.45])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CE50B199920
+	for <linux-btrfs@vger.kernel.org>; Sun,  9 Aug 2026 03:35:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786245443; cv=none; b=YYseAwL7nLwGsUOgojhRXr3gceTRumnsW/oovBieHrndT2atLXOD5y2g1iEfYPjKYzOTee804lLTh2SKJPClzRw5KvVFYx2mAvqDobGqslB1QF/qSwbX6497+w77qvjQ3UBJ0a0zAUYYke3FAWi9HhNyR17f2cqKGLgAaYXvXks=
+	t=1786246556; cv=none; b=RzDHhlhdJ//ayZx/n30toiIupg/DhR8wkvQjefRstnOwqHvsi3hW1PFud2u5DeFqaQTkgDizMI8tBcrgVbNUf1zR791LoVHVP7cYe7linEZ9B/uaHNyWk6C5Lz87Jo8MSQMeqNi1hMzmBptZ/zHGu743SY9uWbnqK1HO5hyK2CI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786245443; c=relaxed/simple;
-	bh=szXPfEKH5BBA8R7a+37AtkNPToITiLpMX1HaSCojRxU=;
-	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type:
-	 Content-Disposition:In-Reply-To; b=VZEEjmKdrvdtjg3NKv7XSHEPrxKRmIyBuqG/2nJa7+ns0fEqSUeY2r0eOwp9+GBJ84lYEafd0wUOJ6ughVqm/A+8RAvqajFvlQdO3mrH8fY6Gf8M3ovYaNTw2nWmUIg11KVpKQ/oGcbSriDvoNnUuo4JcxosexMgXp5nkcDMfkY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=umail.furryterror.org; spf=pass smtp.mailfrom=drax.hungrycats.org; arc=none smtp.client-ip=174.142.148.226
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=umail.furryterror.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=drax.hungrycats.org
-Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
-	id D6E501B1CF1F; Sat, 08 Aug 2026 23:17:20 -0400 (EDT)
-Date: Sat, 8 Aug 2026 23:17:20 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Martin Leitner-Ankerl <martin.ankerl@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [ANNOUNCE] oans: duperemove fork; FIDEDUPERANGE cost under
- memory pressure
-Message-ID: <anfwWZH1TrBoFzQ4@hungrycats.org>
+	s=arc-20240116; t=1786246556; c=relaxed/simple;
+	bh=ipuIls88XShGLY4ZeRTlXsGLS1jeoPD8ghMV/QwoOwg=;
+	h=Mime-Version:Content-Type:Date:Message-Id:Subject:From:To:Cc:
+	 References:In-Reply-To; b=fOmf9O12njBAGNWlbEyOelLUwc+bi4JmO7A1l6/POnCh2VC5tVNmWb+QxN1HCy+jg0IT08P+uTiscy75Lr76Hd3P9YuSqjmubMLBnpXdsqAK+TB4QeMAA3twRA1a1RmNVUOgS+lILg7lrgwPFW6y2BstYieDAJ51ydiPUR8Xt6E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=sw3Lo3iJ; arc=none smtp.client-ip=209.85.221.45
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="sw3Lo3iJ"
+Received: by mail-wr1-f45.google.com with SMTP id ffacd0b85a97d-47fe377a217so408270f8f.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Aug 2026 20:35:54 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1786246553; x=1786851353; darn=vger.kernel.org;
+        h=in-reply-to:references:cc:to:from:subject:message-id:date
+         :content-type:mime-version:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=ipuIls88XShGLY4ZeRTlXsGLS1jeoPD8ghMV/QwoOwg=;
+        b=sw3Lo3iJ/QkfnBZNKlyL7bwEIaO5N1Bbux1MpC6+eEbyeXOUFlkxQLPBxzHqB7Ntpw
+         zcgTalb8iC06QKdvhhN3Y0lagFw1cxvHXRhKWcPNwXYuBxuLr3rSpxlcA+0XkbuoN6S3
+         ZLIHBzUZFCtDf54vAjvPEsngmu98GJeFWsiie5RScywj0XFNgBisSduNscdeZxLDoxB7
+         d6QByB8Vyn8ZN3hvD5MnJ9ERmj8eDKJI4hFDnrMiVNKqXQDrdSYEETGpXNbqdit/kRSG
+         jWNWMze3GV3qlYmXwhBoLU73b/d9EkaB8mm/A2mABcSXnUzkmCFv6QcIWMVmFD1XRpMG
+         1U8w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1786246553; x=1786851353;
+        h=in-reply-to:references:cc:to:from:subject:message-id:date
+         :content-type:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=ipuIls88XShGLY4ZeRTlXsGLS1jeoPD8ghMV/QwoOwg=;
+        b=CZ0gS98yvGEZhprjTAisJZjEklJdUTLTicToAxvdP14XK4LEV7bBDXtgYvednr+s7R
+         t1Zad3vw30JwCb5VIcpNejtwWUivKeBEtSKktp9siEF0xHv05WnLPTOndJAMBUzJyMyj
+         ur2jzCwlgwEJY2dbA8IcQZdxZNa2lQZ+yPeoUC25eMw9bmesjtxfZjIpa217SvYLgs1n
+         28Hc7Bv9mxwI11KNpf0COAYoGDEmoq2ttHE//owdnQdfTHntGSg1a1l5KQqqhbgJhQ4b
+         Dx5QWEslzuHXrRb//N+7il5d5ijz08tGE02U5wQzQ4HjHwqAADfGqIhc4bUofLVI5FL5
+         1vFQ==
+X-Forwarded-Encrypted: i=1; AHgh+RoidD7k1isrccyYOMdRY1rZ67YdsnDv/QieM2w9wUHZyPq/efqxM+qsHVsXGKuQtXb4DCVwdYCG6tc5GA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yz1j7/hX3AWU7js2Dqa8MnJVvGvtjHDn6RHiGI/4S0SYnmwVZuP
+	DBq/CZ+XyCnHNfneafkZ0QpDrQUs6871v1RC126onz4xMw/kvQjqQHaf
+X-Gm-Gg: AR+sD11pFwTv76DxUAA6WLZixZ4BTXcb8zOMG2lkkK6J9uLMb3peVq+LJyrkdjB5tsH
+	PuvJ8oC4iznD10p2J5PFzf4BfHz1oUntCyrReZ1IiGw7VrKfIddAlqVwU2yd9BdvJzu/mGdreCG
+	amWRenUntxHcddxAOHT1eJB5rynHalClyhBfMCFAw5scFe6V4HaZ8YAoaI2rQRvt8vaNWQTDB78
+	4eclPz9f39fVGc+udXz/W6IGFdsurTRhvWQMcn/dGKuQ29f0ALiZ6DverIZC8YDUkhgLtRo25Tx
+	ab3VYQL9MzZvZuLqCyhrg8bWVy6OkBqiakAR4G/fdxHzwRe9eOj6UQWSVLC3mt6vt3Uw1dBRqaT
+	0Sf/ugB212X199dju5hMTJ3pKoCmgPQ+DElDgv74rQvly7NCj6fwMmhUfDVHBp56oi+kQFZJxv7
+	kUYeYCsNB/J17saiYpWLXMdp6hdSivBDqEiCUV16bl+2ssEb3bUVBWv1iG
+X-Received: by 2002:a05:6000:982:b0:481:98d:b24 with SMTP id ffacd0b85a97d-481098d0e88mr17301832f8f.19.1786246552935;
+        Sat, 08 Aug 2026 20:35:52 -0700 (PDT)
+Received: from localhost ([2001:b07:5d26:7a6a:a8a:5bfa:f87a:3c1a])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-480021509a5sm18343509f8f.16.2026.08.08.20.35.47
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sat, 08 Aug 2026 20:35:51 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAAFOosY-roFVTBfviuFoL=1ahOKOerWbEidZW5Z66u2+XP5ZJg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed;
+ boundary=7fdf43b8a212d5efed5bc6118458e09d373dfd39e36dd55adde5e9552486;
+ micalg=pgp-sha512; protocol="application/pgp-signature"
+Date: Sun, 09 Aug 2026 05:35:46 +0200
+Message-Id: <DKK3JZ4VEBDZ.3TZKOIV87R4ZG@gmail.com>
+Subject: Re: [PATCH v2 2/4] btrfs: also validate compression levels in
+ btrfs_compress_is_valid_type()
+From: "koraynilay" <koray.fra@gmail.com>
+To: "Qu Wenruo" <wqu@suse.com>, "koraynilay" <koray.fra@gmail.com>, "Chris
+ Mason" <clm@fb.com>, "David Sterba" <dsterba@suse.com>
+Cc: "Zygo Blaxell" <ce3g8jdj@umail.furryterror.org>,
+ <linux-btrfs@vger.kernel.org>
+X-Mailer: aerc 0.21.0-0-g5549850facc2
+References: <20260809015054.779137-1-koray.fra@gmail.com>
+ <20260809015054.779137-3-koray.fra@gmail.com>
+ <f190abba-cbe0-4ffa-a815-00286b5f0c88@suse.com>
+In-Reply-To: <f190abba-cbe0-4ffa-a815-00286b5f0c88@suse.com>
 
-On Fri, Aug 07, 2026 at 02:59:44PM +0200, Martin Leitner-Ankerl wrote:
-> Hi,
-> 
-> I've been running offline dedup on a large btrfs tree on a schedule, and
-> while profiling duperemove there I found something I didn't expect: once
-> the working set exceeds RAM, hashing is no longer the bottleneck. The
-> dedupe phase is, and by a wide margin.
-> 
-> FIDEDUPERANGE byte-compares every candidate range before sharing it, so
-> the data is read twice: once by userspace to hash it, once by the kernel
-> to verify it. When the tree fits in the page cache the second read is
-> free. When it doesn't, the compare falls back to cold reads and ends up
-> dominating the run.
-> 
-> Measured on two non-reflinked copies of a Linux kernel tree (189546
-> files, ~10.5 GiB), deduped inside a hard 4 GiB cgroup limit so eviction
-> actually happens, 10 interleaved rounds, median wall time:
-> 
->   hash + dedupe   13.8 s     vs   179.7 s
->   peak RSS         121 MiB   vs    243 MiB
-> 
-> The second column is duperemove v0.15.2, the first is my fork. Both read
-> the same 16.7 GiB, and "btrfs filesystem du -s" reports an identical
-> on-disk layout afterwards, so the work is the same and only the read
-> pattern differs.
-> 
-> What the fork does is read each dedupe round's source and destination
-> ranges (at most 32 MiB each) sequentially in userspace immediately
-> before issuing the ioctl, so the kernel's compare hits warm page cache.
-> It also stops calling POSIX_FADV_DONTNEED on data it just hashed when a
-> dedupe is going to follow.
-> 
-> My hypothesis for why this helps at all, given the kernel would read the
-> same pages anyway, is that one sequential userspace read of a 32 MiB
-> range is much friendlier to the device than the compare loop faulting
-> pages in as it walks two files in lockstep. I have not verified that
-> against the kernel side, and I would welcome a correction if the real
-> mechanism is something else.
+--7fdf43b8a212d5efed5bc6118458e09d373dfd39e36dd55adde5e9552486
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
 
-Before the 5.x kernels, when btrfs had its own private dedupe ioctl,
-btrfs would read pages 16 MiB at a time before comparing them.  The two
-loops are "for each 16 MiB of pages, fetch all pages," then "now that
-all the pages are in memory, for each page, compare the page contents."
+On Sun Aug 9, 2026 at 4:53 AM CEST, Qu Wenruo wrote:
+> Please make sure every commit compiles, this will easily break bisection.
+>
+> You're changing a function prototype and implementation without=20
+> modifying any callers, this fails compiling.
 
-When this was replaced with the generic VFS dedupe implementation in
-v5.0, this 16 MiB batching was lost.  The loop is now "for each page,
-fetch page, compare."
+Right, I'm sorry, I didn't notice I changed the caller in 3/4 as that
+call point also had other changes.
 
-bees does a userspace read of the dedupe src and dst extents just before
-issuing the dedupe ioctl in order to work around this.  It's a significant
-speedup for modern kernels, but it would be nice if the kernel simply
-did this in the ioctl itself.
+> Furthermore, I do not think it's a good idea to just rely on the strlen()=
+.
+>
+> E.g. if a crafted image removing the last terminating NUL, relying=20
+> strlen() can easily go beyond the expected string.
+>
+> I think the change to remove @len is going to reduce the robustness of=20
+> the original code.
 
-madvise/readahead/fadvise in theory avoids the extra data copy to
-userspace, but it doesn't help in practice because they all go to the same
-kernel function which issues the IOs at idle priority--which means that
-if you have multiple worker threads, the kernel never actually executes
-the readahead before some thread calls the dedupe ioctl (running in a
-thread with non-idle ioprio), then the ioctl preempts the readahead and
-demand-reads the pages.  So the prefetch has to be done by an actual
-pread(), not readahead().
+That was what I feared too, the problem is that
+btrfs_compress_str2level() uses kstrtoint(), which requires the string
+to be null-terminated[1], so the len paramenter would only be used by
+if (len < comp_len) and that reduces the robustness even more IMO, since
+a developer could think it's safe because of len, while it actually
+isn't because of kstrtoint().
+The only fix I can think of would be to use
+_parse_integer_limit(..., len) directly or write a wrapper.
+Or just document that it needs a null-terminated string.
 
-> Two questions I would genuinely like input on:
-> 
-> 1. Is the cold read path in the in-kernel compare something that could
->    reasonably be improved in btrfs, e.g. with readahead over the two
->    ranges before comparing? Doing it in userspace works but feels like
->    the wrong layer.
-> 
-> 2. Are there workloads where prefetching like this would hurt, for
->    instance on a system already under memory pressure from something
->    else, where pulling 64 MiB into the page cache per round evicts
->    something more useful?
+Thanks.
 
-That happens either way.  The dedupe ioctl doesn't allocate a buffer
-for reading the pages--it reads all the pages into the page cache,
-compares them while they are there, and leaves them in the cache.
+Best,
+koraynilay
 
-If you're concerned about polluting the page cache, you can use madvise
-DONTNEED to evict them; however, this evicts pages that might be in
-use by other processes, which can be a different kind of problem for
-some workloads.  It only works for dedupers that follow the two-phase
-plan-execute model (as duperemove does); otherwise, they evict pages
-that may then be immediately required to complete future dedupes.
+[1]:=20
+from lib/kstrtox.c:251:
+ * kstrtoint - convert a string to an int
+ * @s: The start of the string. The string must be null-terminated [...]
 
-> The fork is at https://github.com/martinus/oans (GPL, same as
-> duperemove). It carries the benchmark methodology, the raw rounds and a
-> script to reproduce the numbers above. Full credit to Mark Fasheh and
-> the duperemove contributors; it is still their engine underneath, and
-> the fixes I found along the way have been sent upstream as PRs.
-> 
-> For completeness: much of the fork was written with AI assistance
-> reviewed and benchmarked on real data before landing. Dedup
-> still goes through FIDEDUPERANGE, so a userspace bug there can waste
-> work or miss a dedup but cannot make the kernel share data that is not
-> identical.
-> 
-> Thanks,
-> Martin
-> 
+--7fdf43b8a212d5efed5bc6118458e09d373dfd39e36dd55adde5e9552486
+Content-Type: application/pgp-signature; name="signature.asc"
 
+-----BEGIN PGP SIGNATURE-----
+
+iHUEABYKAB0WIQSgVimKafU5DQMcjcDmj22qf5IGXAUCanf1lAAKCRDmj22qf5IG
+XKo7AQDn6jOuQPBzJU33d9krYB4nZp8Mrru+arp/66lCE5o59AEAyxUHSQ3pGTkS
+Tzan7avav5nqvb6luvYd9rXUX/5HdQ0=
+=a4fP
+-----END PGP SIGNATURE-----
+
+--7fdf43b8a212d5efed5bc6118458e09d373dfd39e36dd55adde5e9552486--

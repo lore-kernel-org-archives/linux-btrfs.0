@@ -1,67 +1,67 @@
-Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
+Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF8AE2B9BA
-	for <linux-btrfs@vger.kernel.org>; Sun,  9 Aug 2026 04:05:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2B28C155C97
+	for <linux-btrfs@vger.kernel.org>; Sun,  9 Aug 2026 04:07:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786248337; cv=none; b=AdA9+sQ5iP6ui0QRE7qESVG+d98KTzmL8XmmWPyP5nNWE9XAq/+04V6X4addwUm57uR9vvboqNovmGgtJdFEvi8pET6NN5yz8JlnmbRsP7Cv1UfxPvxIRL6biebtlbhkPUikm6cYOyqLAjh5vCCSkBrS3JIzKTgGpkTWVTPzdcg=
+	t=1786248457; cv=none; b=mbB4vEvbnxhejsC/SHDAVgSbndzKSaULVTht19a/MpSECn9jnRD08qeJ0pDJHygzvX27CUrOCxjeQwdHrLJGoweyQC6wKAJ/Ht4OYNcrd9F4I3dZjgmrfnlxJnFFZ/jdRnZzg8qRW5sLj7tPoyrmyPFVcxDm3veE2Nn0Z9DOwg0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786248337; c=relaxed/simple;
-	bh=Dt1PPDi4Eo8kRwy7/yVFZwUMR0Dts5yvu0VqgHd1j48=;
+	s=arc-20240116; t=1786248457; c=relaxed/simple;
+	bh=oG0KIZSrQA3G1waiW1d7rxNQ4H8HGjlvA31+h94E6j8=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=tKTntkAlKt0wzz5cPIJgZ5D0HcUT4jrO7gfGgaJBDASoxp+Jfdq/GSwQM/lLZ0zl/YmBY8xfyDLmkQZYBevr1thQ7OCf5cUUvAoMN9PbQRie5WA1WsiJmBCcNK1dcDGWu8wr8roL8SRj78PE1ALlW6y19vEVRcLuFHTVVRRVKz0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Pd3FFTuL; arc=none smtp.client-ip=209.85.128.41
+	 In-Reply-To:Content-Type; b=Jfe1jgBBaRhw7YxOrLXp3sEXz4x6Rj780Eb74JDjk0Ojcr+pszWH+Lb0NHD5GGLlVQUzLx1DoB/GK6+govYWfhCHYcXoNAf6RaXfHgVq1d9nIjHS1s66xaHAPw1wLr8Q5iTh6A5EzYKR6TfJlMlMS2LS6eA2lVOKNTTzXnFvUYc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=WYpNHt91; arc=none smtp.client-ip=209.85.128.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Pd3FFTuL"
-Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-49557167508so5994215e9.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Aug 2026 21:05:35 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="WYpNHt91"
+Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-4980fe6b3beso23115125e9.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Aug 2026 21:07:35 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1786248334; x=1786853134; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1786248454; x=1786853254; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=VocB4syPhp1OTUzQPnyffGCYGU4N0nkNbxlQ5tZI09Q=;
-        b=Pd3FFTuLDJq8A241adIDIX1yQZNQPzadNfpHgxtMfQMueUjufGPMvAD+/K91lE1H7N
-         hAjeJzGDfUzXzgztH8LdRR0pQIR9Wrk0PTs+oQ+SIAgmouK0Tf3vOgwE2vRLzZEoZeeD
-         u5Z51ETaTg35wE2ErWtyc+bazOsAcr5163aq0HUCo0e62YR6vSKNszn5Z5IqAh/Wq+29
-         V/OizqBTTMgmXjpQtr81gikeeaCusveiVna1/8iAbe1k6jYw3MebVK0F+eONWoVv8Ruv
-         5TvV0LbuUwjfGPf5bolpwOjtvQxsC3Qj/FkNLVbZSVlhGW+kQ9O+veqdUBwWUH8RwE7O
-         4gTA==
+        bh=DKhNsN224gzwaWy0DDO/vAbUr9T9JLlaDaHjUkpoRis=;
+        b=WYpNHt917f3gnLo+mT/NdwNJ+tDOe9ZYplyd9w+apt+I2qUU1zP6BDVSBkZgAfMsYx
+         JFqFXy5TsgAsCI/OMLv9cBmxKBR9A7bOjorm0MHZ1lRRbfxYwCREpqoOKyycTdKT/wi3
+         6Cs9T7UbEzx15vGXe6aToNa2cWYc6r0JHmYbRgSdd6VwH4e+9BME17mRj5vPJyiOAB8R
+         bsQzeFSih+9RbqpwElvcU+GKuECAvjy2O9XVuq6SHZzTF5F6l+v6EbAxYuJ29GdInwN8
+         eRzX/VVEM4g0ysQaSj485KaFggl+w4nzcvYOjOk5frtNUZJj06jBY/YTfjA6SoB5OvcI
+         azPQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786248334; x=1786853134;
+        d=1e100.net; s=20251104; t=1786248454; x=1786853254;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=VocB4syPhp1OTUzQPnyffGCYGU4N0nkNbxlQ5tZI09Q=;
-        b=Ut46U3/0mp27VEwU+S05KM2V7z2OwcCGPpE8q4kbKNDahfnMN5a2S8d3oKfLeIjOog
-         jyRYY4edLB4MBZ/WCMYT4KfcwSAcC0Ij+nYjsRLYlOyCbx1vdTKVMJGcw4eYTtx+z75n
-         sywHoLAOHw4apswvZBfCyGce7PUqaBgbCSjjLT56NuXETz/zy5GnAOHJDqwvSLcwjCOc
-         9NzZ8/ui0o68odUkTTMoI5J+mydhT+IZUM7eYhVKjLHQsrVnng7k69eN4qdnVeBEDmxN
-         fCMyJdUDj/kAIPH7Gy2lZEX27yVGM7w/0IC4Gfq1JftNrXbeGRv9iOeNh9U7ZxAuv6LW
-         /Ygw==
-X-Forwarded-Encrypted: i=1; AHgh+Rq/Bo3XKGh1O3HyE0bUz6M7tmg2CUgKPCxU9UI5mZP2kwqWyD5MFqWC+N+rHfUrB5m/4htiXnoHmXG3kA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwxX3hDgguydIj1pbJ4uZfsyfRsFjEn2islXlPm6WaZd+1hNNnp
-	ybKdrZFYbDo6lRmjpBUpwLuGpeEfV0DAjAxc8AkQJPckCtU/hZqB8Iyg2TtNHYUGrdc=
-X-Gm-Gg: AR+sD130rj3Eh4eH0RVicQnIlTXua73UCMDiWRDXUrwXqXCrGdkboWuvZS6PWcJPTTe
-	Qm3TWihiXgVEm0DaLcpU0A5NiQgYH+B7OcwZFYJbSwx2E+T0d48gnIXEbmchPTRrvmpNXPZI/q1
-	jH/YoUDMS8GNCaXFg13r+/UtAc/5O3MnM6r0cQ585rgYRFMscOgKZrsbHijmNyWpzj0+Atm/2Eh
-	8iVotZsB4s6vojLtsX/XFFGlRF/RFoZ4jAaaj1Ad4xsu5Vxs8oyOq6SDgeGohpaeB8w00JquzNu
-	ME+iLN+Ws0Ye1V/75L14DOa04mHogOhLHf0/Kvuq+HvUwcz0DSiwycSaj6grg+02tMSRFhcX+Qj
-	K20nNk2FokmtyNl5cm2yTy5R+CfwAjQwl0cfZii2CGsTGn7lCWmK7G1D8FhmcqeyXPGJyRO6xIE
-	hd0BbTnzBPOQM3aUASgyXbSUwC0pIYF2asXQRO+Nt891kP0k7CLV4G5H9CTMups7kuSA==
-X-Received: by 2002:a05:600c:19d2:b0:496:bbce:fc with SMTP id 5b1f17b1804b1-4994e7c10c6mr435677885e9.12.1786248333954;
-        Sat, 08 Aug 2026 21:05:33 -0700 (PDT)
+        bh=DKhNsN224gzwaWy0DDO/vAbUr9T9JLlaDaHjUkpoRis=;
+        b=N1B7ld40JN1IG24CMMMfnOE7rioQ0qkjh3RXm0VUqILsyuMsQ92LjIGIDsSZlait/X
+         bkDLcEpUTAzh6cGU1fnrpNUz6/lD8wF2+LFdVUZZYUkfTeEsndU9bJ59CHEjyJjuTBDo
+         RShjBqczy0gAjL/IIhkJA6n3C33feFYZh507/WO3B4gmpi3G0cn33r8oWu0+FAPl3z9z
+         /zAEm3eY+sXXxm6mu5RF9dOa162dePyOxH1z9+jtVE3ekCFDbjVOsfiVIYsO5wIyJpQ0
+         A0eqYk69i27jXuX/HQZ9bgP74p/YIx0uLpLQt8ePcRgBgqxpPQbNx2NHt/nKolkk6Zmn
+         fmWQ==
+X-Forwarded-Encrypted: i=1; AHgh+RogoDFSicdf96jwPMky4oPeurqAgAF7NFOP+m+5dtsY5kaAUYYepsUSPnAhu4w4lrnrRiTCYm8pp1kAnQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyEuN9k0kAhnQuA9B9X9QFNcHRPxhF170OD3v96jWZngo8Edo99
+	N6uFQ8EwDzrZy9Vc8V3++n4LFhGS+evecRxBybtdnz3rrhR7DKX9sPkN2jYdeO1kpb4=
+X-Gm-Gg: AR+sD11ukOwbc8qHVGa4aKyOuYflQCCC5iglGGryfLH1/cbDaSdu9lWyeZHekXNbGGP
+	cs8xsB/X1Isls7f0AnBNeSO34uYj61O9Zc6F6yiga5XYIJpxdn2vcEGsl5VUlwnT4SsHOwl9Prs
+	aWf0WLK3rBFK8PAjLLAYzlldVZ0ggRiwtIDDpbQAUNF7yex0w3H4ec8LucKQ/rcfj2vjRRIK96l
+	y76q+I8Vp91FA794yqChZlfv9UTnenH1WUttd2Jm6OT3pyGznjL0lJ/iJUtWHkCxF+ViSfSakga
+	nf5NWptd1AYNW7ICbpMm4AA3ZFaEy6j1hIb9ClXbVxbZ9cLO+5MGXetmmohAZicdyhl8tBVn8Zl
+	atpvRowrD5biRrpeOYhmNuxgKuZBDpEowazFC7UvB3bEEO9hfbZnXAdsnkEhSGfqwjgd7GVl/Y/
+	fZdfEEDj4gpRSQyFHLL3u6noJdGdi9dcqc1DYsxCigmjcaqErdcF8UFQBgq+x2LW8M
+X-Received: by 2002:a05:600c:6052:b0:495:4f89:8117 with SMTP id 5b1f17b1804b1-49962455754mr86185875e9.1.1786248454397;
+        Sat, 08 Aug 2026 21:07:34 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-315be8a706fsm25140087eec.8.2026.08.08.21.05.30
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-315bec128a0sm29667786eec.25.2026.08.08.21.07.31
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 08 Aug 2026 21:05:32 -0700 (PDT)
-Message-ID: <7123117a-2483-487c-87de-397a8c14bead@suse.com>
-Date: Sun, 9 Aug 2026 13:35:27 +0930
+        Sat, 08 Aug 2026 21:07:33 -0700 (PDT)
+Message-ID: <dd2168bd-359d-4d3a-9efc-41344e071e26@suse.com>
+Date: Sun, 9 Aug 2026 13:37:28 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,14 +69,15 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 3/4] btrfs: add per-inode compression levels in xattrs
+Subject: Re: [PATCH v2 2/4] btrfs: also validate compression levels in
+ btrfs_compress_is_valid_type()
 To: koraynilay <koray.fra@gmail.com>, Chris Mason <clm@fb.com>,
  David Sterba <dsterba@suse.com>
 Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, linux-btrfs@vger.kernel.org
 References: <20260809015054.779137-1-koray.fra@gmail.com>
- <20260809015054.779137-4-koray.fra@gmail.com>
- <870d7e1f-3e87-4eac-86fe-107af7336101@suse.com>
- <DKK3UWEQ1P6G.JHCWEPD1M09Q@gmail.com>
+ <20260809015054.779137-3-koray.fra@gmail.com>
+ <f190abba-cbe0-4ffa-a815-00286b5f0c88@suse.com>
+ <DKK3JZ4VEBDZ.3TZKOIV87R4ZG@gmail.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -103,64 +104,46 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <DKK3UWEQ1P6G.JHCWEPD1M09Q@gmail.com>
+In-Reply-To: <DKK3JZ4VEBDZ.3TZKOIV87R4ZG@gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/8/9 13:20, koraynilay 写道:
->> I'd prefer to have a dedicated patch to set compress_level to the
->> default value 0, as a proper bug fix as the first patch of the series.
+在 2026/8/9 13:05, koraynilay 写道:
+> On Sun Aug 9, 2026 at 4:53 AM CEST, Qu Wenruo wrote:
+>> Please make sure every commit compiles, this will easily break bisection.
 >>
->> As you mentioned in the cover-letter, this is in fact fixing a bug in
->> the old behavior (mismatched algo and level).
+>> You're changing a function prototype and implementation without
+>> modifying any callers, this fails compiling.
+> 
+> Right, I'm sorry, I didn't notice I changed the caller in 3/4 as that
+> call point also had other changes.
+> 
+>> Furthermore, I do not think it's a good idea to just rely on the strlen().
 >>
->> So it's definitely worth a dedicated fix, so that we can backport the
->> fix without pulling in the full series for older kernels.
+>> E.g. if a crafted image removing the last terminating NUL, relying
+>> strlen() can easily go beyond the expected string.
+>>
+>> I think the change to remove @len is going to reduce the robustness of
+>> the original code.
 > 
-> Ah yes of course, although, would it be better to have a single patch
-> that looks like this[2], which would also need to add
-> prop_compress_level's initialization to 0 as per [1] (that would
-> probably be good anyway) or simply a:
-> 
->   compress_type = inode->prop_compress;
-> +compress_level = 0; //level in xattr isn't supported yet
-> 
-> in the 2 relevant places?
+> That was what I feared too, the problem is that
+> btrfs_compress_str2level() uses kstrtoint(), which requires the string
+> to be null-terminated[1], so the len paramenter would only be used by
+> if (len < comp_len) and that reduces the robustness even more IMO, since
+> a developer could think it's safe because of len, while it actually
+> isn't because of kstrtoint().
+> The only fix I can think of would be to use
+> _parse_integer_limit(..., len) directly or write a wrapper.
+> Or just document that it needs a null-terminated string.
 
-Personally speaking, I'd prefer only introduce prop_compress_level when 
-we really need it, aka, only when we introduce the extra level in the XATTR.
+OK, you're right, in that case we're not losing anything.
 
-So I'd prefer the fix to be as simple as the following one.
+So feel free to go ahead just fixing the compiling error.
 
 Thanks,
 Qu
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 50c6640543b9..bea2d1409fac 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -942,6 +942,7 @@ static void compress_file_range(struct btrfs_work *work)
-                 compress_level = inode->defrag_compress_level;
-         } else if (inode->prop_compress) {
-                 compress_type = inode->prop_compress;
-+               compress_level = 0;
-         }
-
-         /* Compression level is applied here. */
-@@ -2338,6 +2339,7 @@ static int run_delalloc_inline(struct btrfs_inode 
-*inode, struct folio *locked_f
-                         compress_level = inode->defrag_compress_level;
-                 } else if (inode->prop_compress) {
-                         compress_type = inode->prop_compress;
-+                       compress_level = 0;
-                 }
-                 cb = btrfs_compress_bio(inode, 0, blocksize, 
-compress_type, compress_level, 0);
-                 if (IS_ERR(cb)) {
-
-
 
 > 
 > Thanks.
@@ -168,55 +151,8 @@ compress_type, compress_level, 0);
 > Best,
 > koraynilay
 > 
-> P.S. I also noticed that defrag_compress_level too doesn't get
-> initialized to 0, so if we choose that approach a separate patch that
-> adds it would be in order IMO.
-> 
 > [1]:
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index e057aceaa68d..aec977f47cfb 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -7896,7 +7896,8 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
->                                                BTRFS_BLOCK_RSV_DELALLOC);
->          ei->runtime_flags = 0;
->          ei->prop_compress = BTRFS_COMPRESS_NONE;
-> +       ei->prop_compress_level = 0;
->          ei->defrag_compress = BTRFS_COMPRESS_NONE;
->   
->          ei->delayed_node = NULL;
-> 
-> [2]:
-> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-> index 1082fa92c145..0a4e567d0109 100644
-> --- a/fs/btrfs/btrfs_inode.h
-> +++ b/fs/btrfs/btrfs_inode.h
-> @@ -130,6 +130,7 @@ struct btrfs_inode {
->    
->    	/* Cached value of inode property 'compression'. */
->    	u8 prop_compress;
-> +	s8 prop_compress_level;
->    
->    	/*
->    	 * Force compression on the file using the defrag ioctl, could be
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 2534cd9284d5..cff4b3e97559 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -938,6 +938,7 @@ static void compress_file_range(struct btrfs_work *work)
->    		compress_level = inode->defrag_compress_level;
->    	} else if (inode->prop_compress) {
->    		compress_type = inode->prop_compress;
-> +		compress_level = inode->prop_compress_level;
->    	}
->    
->    	/* Compression level is applied here. */
-> @@ -2326,6 +2327,7 @@ static int run_delalloc_inline(struct btrfs_inode *inode, struct folio *locked_f
->    			compress_level = inode->defrag_compress_level;
->    		} else if (inode->prop_compress) {
->    			compress_type = inode->prop_compress;
-> +			compress_level = inode->prop_compress_level;
->    		}
->    		cb = btrfs_compress_bio(inode, 0, blocksize, compress_type, compress_level, 0);
->    		if (IS_ERR(cb)) {
+> from lib/kstrtox.c:251:
+>   * kstrtoint - convert a string to an int
+>   * @s: The start of the string. The string must be null-terminated [...]
 

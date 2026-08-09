@@ -1,63 +1,63 @@
-Received: from mail-wr1-f49.google.com (mail-wr1-f49.google.com [209.85.221.49])
+Received: from mail-wr1-f52.google.com (mail-wr1-f52.google.com [209.85.221.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 75BCF2E7F3E
-	for <linux-btrfs@vger.kernel.org>; Sun,  9 Aug 2026 01:51:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 30F4D2DE702
+	for <linux-btrfs@vger.kernel.org>; Sun,  9 Aug 2026 01:51:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786240300; cv=none; b=q3OLiX4mU9JKP+wa/p4PiTN2paHE8gzui04PqtEdaDZ4XVpKWDcleS8L7a0yG1tNQSIJZhOw+zFRY0GVMFyovAtKi/qVasAuKzZIb+k0AgCka9R5yowkLExSMlUcaQi9y7DCZol//opIyU6l8bq0YaG/60aqUvmvKsv/cc4dCWo=
+	t=1786240301; cv=none; b=DU4U+ZqqPXKoRApTZ4LRK9IvLzj2aoeZ+eTJAopVbxZN0E9KO3mh8ywbMy03UHEcwyfFYjur7PbS7yNGaArs97YrgbJy6WfSMEL6B1HO3kpN/6fTCjIokY5aUky2ySTVGiIjsLE7ja0LpbkGvNhrnObfuC2eFoW0dUmoEQigue0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786240300; c=relaxed/simple;
-	bh=3FsMcDhBYZTPMf4DQOoQJypgZEVWmM4yd/owlw1YWJU=;
+	s=arc-20240116; t=1786240301; c=relaxed/simple;
+	bh=Cg3/OQDfXsmIgi48KMc54M7OzK2RX3z7+29+SRkEL7Y=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ZeMWkNH8yccaK2DFup992yN7I0BwW8rgtTm1IMNsQW0mUOpKfr8VbSvYFjws4Fy5lPiA4lk5BKsbOUSf4J3TDHoIvftT48HQEI0f27tX3AO/EEaJM33lw5nFZDWQScqszjo1ZJjrpEej2BrP2urjQfx9r7h8btAmB/bGKnvjfBc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=T46q1WAI; arc=none smtp.client-ip=209.85.221.49
+	 MIME-Version; b=EIrzMCJeJWMXa/ismAmcIAIVJcm/+QUcWuAf5wKAEio94+5VaWZmbunUVP53jcb8w/VzdNOcyny9bnCkO8ngsYICW4KGnbjq6XW42LDmaxNYJGKO5pdSEtBZ12lgl0FhXSiLGs7ElRnjppYKHksCIY/wLhleKtvZ803GDqkmQ2E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Ic6It/uN; arc=none smtp.client-ip=209.85.221.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="T46q1WAI"
-Received: by mail-wr1-f49.google.com with SMTP id ffacd0b85a97d-48000c5d6d3so244328f8f.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Aug 2026 18:51:38 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Ic6It/uN"
+Received: by mail-wr1-f52.google.com with SMTP id ffacd0b85a97d-47db714766aso1862551f8f.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 08 Aug 2026 18:51:39 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1786240297; x=1786845097; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1786240298; x=1786845098; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=+4v0KgjdssN2e1msJAFqripuz3B0gqw7mLdJHYCoyBo=;
-        b=T46q1WAInchiiv0GraJ4INiza5HQFMOV7YuXGyl1rh0GNJOGISs1LPSdoH+H7ByfgA
-         FWw995jH8AG6rjLnfC2HoMdDtV4F6W60Zp323kdPUhSIoV2trC9jefnJR19hAQ6cr3tB
-         0/QQ6fQSuxizbjXKBq+vHZpoRP7S5lHLpeWCLIA3QIpAgseEqrJJJmpdxRmvm5drJ55U
-         Sxzv0cWOYo635QMi7VHSRuA9ZcmtCy33kMpwxLC4LUzjsL2vSQBkJa/BPyiCjTBmB/cO
-         QyZLcTfkUjnEd+EOOQupMMkPAFOeMQjlvlmS7hSx5Wy1F3hUfJVwKsJtPBNhG3ceOUfn
-         KrwQ==
+        bh=VnXCGLGY2a0lbi/irO4xK3JDq7ziQ8lQYUwadMJHPIE=;
+        b=Ic6It/uNzSo1jPKL9RxQF4n2Rb8EISE2nrBYkAn/XolH2fAkawVbCuiIdtqSyGIKLO
+         spa+/7QYypDhkBXh+Ww55/375IbgUxFGpYKv/KYBcfeP5rp2kv25u1Q7LdyfNLXgfK+a
+         AO58xF0TmltmAdRelToJ+sqsr7daPqU3fJJ18T4ihJ3laA43PFL0elu2db3Sq4SAXDjk
+         +p7z4F5brZiSkQl8m5OLJBOSN8mdkWXohz9XIYLMiGjn2G3Q7fDa0bu5EEdsXyA2Fabo
+         RyoJ4VChImUkC7J/bxxiU77zOkCynhxc40DXUChlWtEFd6fnxBahrYcWZwi9BThYFcJL
+         EmrQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786240297; x=1786845097;
+        d=1e100.net; s=20251104; t=1786240298; x=1786845098;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=+4v0KgjdssN2e1msJAFqripuz3B0gqw7mLdJHYCoyBo=;
-        b=LuJeuLtAyNbNMes3Sf41J6Y7+XmGVCGWDN4NDYST6iuzHadBtzRbJ7pzFPdiUpl45p
-         3rfaZkaVRg7V7N1fmlDacvH+kallWEkok1/pKEEcng6Gr8SRFvWJiRZE6LbvbaU63/MY
-         PoBgJYTa7T86RsyE6fBjfxYSz3/09M8P1hBRjcxIW2vJPvommLKKd2/WHZIVOWHKl8N5
-         4GfPPlwJq/jHYIRzGtc8oM6dN6NvkoD6XetFsOf9wc3mpFZ036P9Cwh8qiPCt+E2dmTD
-         eoUnowchW1mu79xNqtYpJ5dq6b7iGzKfbG7fT9EC2jzhSfmAV/DCCPqmhstVUVw2C0BT
-         4Lew==
-X-Forwarded-Encrypted: i=1; AHgh+Rqrj+R+oTVbQedIbrf7zDDD8hnGCqPBQG8HGA2s4DgCLHQOM+dOPE5NLFc8fpZJAuSe5R2A+UGni/7auA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YwwFZTc3VYu8Uvqy0dfB8B7bQZmm6cEYAE6ZmlDdNfULysOdGMC
-	lTNeTxabB2904OsNhBlwfsVkyGyFdmr7SQ1/OdejEIBPbH18+YtQqmD9
-X-Gm-Gg: AR+sD13EjHODVCBO5aqJxM3i9h+mLlZ3b/5cF3+5FTTFY9fKrVf8FYpQGQ05dxeQ6xH
-	7p8d0+gHh7CVNT7nDwQfSgr7etqeItBj5HXgs9a0CefvPMWaF9yQN51ZIBjDC+HH7oCYeHe7KOh
-	gCBrLI2va1qJTIXQrx7wGuayXT/DJOVG9IDNZDewmWH5fUcDakVKGEO/DKdN1zkQJSvg2I7OLRz
-	yjVxkG91XmvJpHN9zOVEOg26z74ZFiG2dskf9cwOTXonB8iiOHSp2XiIgzvTsLw0SpVyKE/Lc1o
-	JswtJ9LusXJ5CdsBQaMzgBIGlshltAwONE0Balo8OzFCACDNYcg3gYQxn2tl5ulhGGATSmjGPwM
-	P78xXav/K01cGkTAfHH4qrTwutrf5xiu0rgjq3lMowcJBPIaA8bJMxQzOLbUDU+zMxp0j8KnWkq
-	E6zPaeSMaq5Mf2AvTaySCNoXKiMccX82gRgt6Lks4eyO6/gS6yuU9NMvA=
-X-Received: by 2002:a05:6000:4813:b0:45e:73eb:5119 with SMTP id ffacd0b85a97d-480026d7fa6mr19615503f8f.22.1786240296684;
-        Sat, 08 Aug 2026 18:51:36 -0700 (PDT)
+        bh=VnXCGLGY2a0lbi/irO4xK3JDq7ziQ8lQYUwadMJHPIE=;
+        b=Ljup/6G9cOqdQ4J0AYtvavbpAv78IcLSeeYtqaEpiI3ONF50l0/EyRKdHoNFDZT24o
+         D7TbANBJhnCLou2oUJzGOlS4dNPXGQti08CdE8h0lzxfIbRZNRjdFVaaIiwQLoVkdgbs
+         B9IHHAIMU3iTljuB+ijoxX6Uluq74YvXi24lrMvqlUrmWhHGOTiKjhlBh9W/gXunThp4
+         rIgyvSkA1jAFSteAreZ9teP5iw019cGaQkMQ13IS6ecIBhVXHruKQIcEb5nrAvFGUXxn
+         0pqxy5gJPOiKG/7z+XkoGLDg0GRBr1JOGzk0Qq693ToOuGkfTT8KV5ib9KP8QUuBjG/R
+         qkwA==
+X-Forwarded-Encrypted: i=1; AHgh+RrJDrUqMOGKlTitPx3cqi3ewR/dd14CwW7sLQEKFQpvF3Y0VJzJmbM4YTW0BETAHlHg0pTcWnSquPy/lg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzdkLvFEtkx7YVLAt7Y+9GU0832r9bOoPSvB4dQJqiqRp6Clvv/
+	0zElXJifPZJA3oiuN//3qTA2dcfxhHFic9d/A6O3q2oFFhMstfP7WV/6
+X-Gm-Gg: AR+sD12PIGZKeFSCdJrbIghfIeBM8ZHoHnf3TNehJXoCVow6HaihSvDRO5NWpVsF+2D
+	uyeRjGoE4pSzQ1shacnj6yQ12T3zvekrmk4vioaYVHzxe51PLcceVO38HXsf2c8RAP3M5f9G8d+
+	xYb1wBqp+cGm11ieU+3ZhC79hfDFgGPjCsmu6SlnGQsVkKxft97wKlqkjryhYFHO8a48A6B+w8v
+	fsdfN93NYjR+KUhh0HIEBzfTl0VJMeQu1F5RZAQv6MNXJGpjmQ3exBl83bwDNOKpSuEp8HtETN3
+	J2HNbv/I7XNkM8GkD7dEHBgSIzMuDEBcO2DRjdA6rZOnaYBirjcveOHB9gC8MPmzmiI1u3Bqi4X
+	xGZbcMKNSFH2De0Rg1amlry9l/f77YG/f2d7rifzaWykrHOO0884yIDPoZv8qgRpCZpdnCXpGFF
+	kPxmEN7bxzo2g+Z1SUxFwHbShNEklpDHU3qJR1QYIUcJtWdssBgf//rs0=
+X-Received: by 2002:a05:6000:24c7:b0:474:bbbb:bf17 with SMTP id ffacd0b85a97d-481314f647emr9614472f8f.0.1786240298427;
+        Sat, 08 Aug 2026 18:51:38 -0700 (PDT)
 Received: from infinity ([2001:b07:5d26:7a6a:a8a:5bfa:f87a:3c1a])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-480021f90f8sm17155676f8f.26.2026.08.08.18.51.34
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-480021f90f8sm17155676f8f.26.2026.08.08.18.51.36
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 08 Aug 2026 18:51:36 -0700 (PDT)
+        Sat, 08 Aug 2026 18:51:37 -0700 (PDT)
 From: koraynilay <koray.fra@gmail.com>
 To: Chris Mason <clm@fb.com>,
 	David Sterba <dsterba@suse.com>
@@ -65,9 +65,9 @@ Cc: Qu Wenruo <wqu@suse.com>,
 	Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
 	linux-btrfs@vger.kernel.org,
 	koraynilay <koray.fra@gmail.com>
-Subject: [PATCH v2 1/4] btrfs: export btrfs_match_compress_type(), move it to compression.h
-Date: Sun,  9 Aug 2026 03:50:51 +0200
-Message-ID: <20260809015054.779137-2-koray.fra@gmail.com>
+Subject: [PATCH v2 2/4] btrfs: also validate compression levels in btrfs_compress_is_valid_type()
+Date: Sun,  9 Aug 2026 03:50:52 +0200
+Message-ID: <20260809015054.779137-3-koray.fra@gmail.com>
 X-Mailer: git-send-email 2.55.0
 In-Reply-To: <20260809015054.779137-1-koray.fra@gmail.com>
 References: <20260809015054.779137-1-koray.fra@gmail.com>
@@ -79,75 +79,70 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Export btrfs_match_compress_type() from being a static and locally used
-function in super.c and move it to compression.c, exporting it in
-compression.h.  This allows it to be used in the next patches as
-validation for compression algorithm names.
+Change btrfs_compress_is_valid_type() to use btrfs_match_compress_type()
+and btrfs_compress_str2level() instead of a simple strncmp, which would
+validate even incorrect strings (e.g. "zstd:invalid" or "zstdinvalid").
+
+This also makes the function validate levels in the same way the
+compress= option gets parsed, allowing bigger or smaller values, but
+still clamping them to the min or max supported.
+
+Furthermore, remove the len parameter, since now it requires a
+NUL-terminated string because of btrfs_compress_str2level(); this change
+is fine because btrfs_compress_is_valid_type() is used only once in
+props.c
 
 Assisted-by: Gemini:3.1-pro antigravity-cli-1.1.5
 Signed-off-by: koraynilay <koray.fra@gmail.com>
 ---
- fs/btrfs/compression.c | 17 +++++++++++++++++
- fs/btrfs/compression.h |  1 +
- fs/btrfs/super.c       |  8 --------
- 3 files changed, 18 insertions(+), 8 deletions(-)
+ fs/btrfs/compression.c | 11 ++++++++---
+ fs/btrfs/compression.h |  2 +-
+ 2 files changed, 9 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index ffb6b52863a7..58138f300b58 100644
+index 58138f300b58..833c5f45afec 100644
 --- a/fs/btrfs/compression.c
 +++ b/fs/btrfs/compression.c
-@@ -1660,3 +1660,20 @@ int btrfs_compress_str2level(unsigned int type, const char *str, int *level_ret)
- 	*level_ret = btrfs_compress_set_level(type, level);
- 	return 0;
+@@ -70,18 +70,23 @@ static struct compressed_bio *alloc_compressed_bio(struct btrfs_inode *inode,
+ 	return to_compressed_bio(bbio);
  }
-+
-+/**
-+ * btrfs_match_compress_type - Check if the string matches the compression type
-+ * @string:         The string to check
-+ * @type:           The compression type string (name) to match against (e.g. "zstd")
-+ * @may_have_level: If true, the string may have a level suffix (e.g., ":1")
-+ *
-+ * Return: %true if the string matches the type and, if %may_have_level is %true,
-+ * has a level suffix, %false otherwise.
-+ */
-+bool btrfs_match_compress_type(const char *string, const char *type, bool may_have_level)
-+{
-+	const int len = strlen(type);
-+
-+	return (strncmp(string, type, len) == 0) &&
-+		((may_have_level && string[len] == ':') || string[len] == '\0');
-+}
+ 
+-bool btrfs_compress_is_valid_type(const char *str, size_t len)
++bool btrfs_compress_is_valid_type(const char *str)
+ {
++	size_t len = strlen(str);
+ 	int i;
+ 
+ 	for (i = 1; i < ARRAY_SIZE(btrfs_compress_types); i++) {
+ 		size_t comp_len = strlen(btrfs_compress_types[i]);
++		const char *comp_type = btrfs_compress_types[i];
++		int tmp_level;
+ 
+ 		if (len < comp_len)
+ 			continue;
+ 
+-		if (!strncmp(btrfs_compress_types[i], str, comp_len))
+-			return true;
++		if (btrfs_match_compress_type(str, comp_type, true)) {
++			if (btrfs_compress_str2level(i, str + comp_len, &tmp_level) == 0)
++				return true;
++		}
+ 	}
+ 	return false;
+ }
 diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 1022dc53ec51..e67ba47b4cdc 100644
+index e67ba47b4cdc..c63bed9f4152 100644
 --- a/fs/btrfs/compression.h
 +++ b/fs/btrfs/compression.h
-@@ -97,6 +97,7 @@ void btrfs_submit_compressed_write(struct btrfs_ordered_extent *ordered,
- void btrfs_submit_compressed_read(struct btrfs_bio *bbio);
+@@ -132,7 +132,7 @@ extern const struct btrfs_compress_levels btrfs_lzo_compress;
+ extern const struct btrfs_compress_levels btrfs_zstd_compress;
  
- int btrfs_compress_str2level(unsigned int type, const char *str, int *level_ret);
-+bool btrfs_match_compress_type(const char *string, const char *type, bool may_have_level);
+ const char* btrfs_compress_type2str(enum btrfs_compression_type type);
+-bool btrfs_compress_is_valid_type(const char *str, size_t len);
++bool btrfs_compress_is_valid_type(const char *str);
  
- struct folio *btrfs_alloc_compr_folio(struct btrfs_fs_info *fs_info, gfp_t gfp);
- void btrfs_free_compr_folio(struct folio *folio);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index f4e34898d581..7a21085c33c5 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -264,14 +264,6 @@ static const struct fs_parameter_spec btrfs_fs_parameters[] = {
- 	{}
- };
+ int btrfs_compress_heuristic(struct btrfs_inode *inode, u64 start, u64 end);
  
--static bool btrfs_match_compress_type(const char *string, const char *type, bool may_have_level)
--{
--	const int len = strlen(type);
--
--	return (strncmp(string, type, len) == 0) &&
--		((may_have_level && string[len] == ':') || string[len] == '\0');
--}
--
- static int btrfs_parse_compress(struct btrfs_fs_context *ctx,
- 				const struct fs_parameter *param, int opt)
- {
 -- 
 2.55.0
 

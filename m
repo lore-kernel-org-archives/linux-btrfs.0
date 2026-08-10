@@ -1,48 +1,49 @@
 Received: from out162-62-57-49.mail.qq.com (out162-62-57-49.mail.qq.com [162.62.57.49])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 24DE23DC878;
-	Mon, 10 Aug 2026 12:16:30 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 76E3B3DD85A;
+	Mon, 10 Aug 2026 12:16:38 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=162.62.57.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786364195; cv=none; b=XaKcC70/HFO0S0G61eJBXpZXgvW5diHicwq/t14Kpo83fUjQOGnCYvGnjzRGKUI2+M1atZQB4vu8qgC1qZAV/YuVeZLcfEGJVv1etcT5vC0C2FgQo7CH2aMWGgZg9nuaIGHsWulEhWp95YvWS/zHFM07oElik1lQsFDj3/EZIK8=
+	t=1786364202; cv=none; b=h1D9ONCbj6ZOMHZyu2cv42vt3QJICoZtzeUoPW2IvjIjrKyl8f2V6pMaX0VgjKs6coa0/KsvrJf81Z4GPwg6pKcmBRwdEH6F3l1chraKQ79sC1oLZu9hCh/NFhM+pmoLbOw+dQbZVnF6wSp97AB7ckIEJ2R2hDcU6qlJz+wJXA0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786364195; c=relaxed/simple;
-	bh=y2Z2033M9/kwAeifs10feMoiGZUnrYHkpUHgVD6iC+0=;
+	s=arc-20240116; t=1786364202; c=relaxed/simple;
+	bh=oBNNAKOCLTjYf+SvkQWifw0FP20704I1CuWj/dLBvno=;
 	h=Message-ID:From:To:Cc:Subject:Date:In-Reply-To:References:
-	 MIME-Version; b=W5ihRRKFcwqAz8VSbnXHqqdkSL9xSpOBmW95Nd5XH9Yyk3rKInqW2Q3iRDrg2LugCtBTkzCYBGv5YZ6CwsEZCecizQY9L38FCRydhxRrPfvkpEVj9i/YxOUXW7jrDVJAuv/QiTA1ozOe6ztXbA0zc9HHmopKrPmyfhx119TlczY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com; spf=pass smtp.mailfrom=qq.com; dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b=jmt1CtgD; arc=none smtp.client-ip=162.62.57.49
+	 MIME-Version; b=JfZ6telgh9w4EgCRtHOvZsryIR+YU+rXhX0Y9/oZc5bfdBiZaxwEKKrBqLgNok5ZTZKgjXTEF/YKl2POD3h6WZFf7Hy8Vrrc/ec7gv6XmX1qPGqJYWqPwhIRPrAbrjSgmnoSFv33La6qfP1IC2znZc1bx2ZcsX2Nt6zL+RlIpWQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com; spf=pass smtp.mailfrom=qq.com; dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b=if/MO6sD; arc=none smtp.client-ip=162.62.57.49
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=qq.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b="jmt1CtgD"
+	dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b="if/MO6sD"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=qq.com; s=s201512;
-	t=1786364181; bh=BTkAinKRLNFpo4MUO8/D4Ar6+5TaOSHwQHQbaeUJHeo=;
+	t=1786364194; bh=mrirLj7V7LD+Eg8V4NeOpsC3CJJVwZOhcyCFjfYbIkE=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=jmt1CtgDr9MyjnKB0d26imU6yrBrZwOX7oMVvo5qcnZ+MfrvfoSIh+BIJ61xRbWJT
-	 mbuG2A8u1dUakzkqFkhSOE7Br1EdMLEEpjj3nqhYU8oD15AmGBaO3zJP2XvoU1ulff
-	 N2qiKuzzet/kJbcAd9GAWmvHQkw9V/Hu6X36YKDs=
+	b=if/MO6sDkcd1rnEGZPz/q9BmhEMj7e/umyEfjF3rU8imXc414oRpbIGe6xUQtGo16
+	 U8+KeC6jjGXfNj1sxvmgtXCuNGc3YexPJ73XreKOvX/LCa17V8gXOzxFB4ygYjUw0Z
+	 n08j49kShrYTXhAqZ8G428cM0AEirUHbOlqrUCpQ=
 Received: from ikun-VMware-Virtual-Platform.localdomain ([2409:8a20:b30:4fb4:bdd2:8b42:d496:7e16])
 	by newxmesmtplogicsvrsza53-0.qq.com (NewEsmtp) with SMTP
 	id 41134061; Mon, 10 Aug 2026 20:16:17 +0800
-X-QQ-mid: xmsmtpt1786364177t9va28ej0
-Message-ID: <tencent_AD274BC8BB1B11444FCC2955080F81A2BE06@qq.com>
-X-QQ-XMAILINFO: Nte9/BsRzcszaafnlMST0OPa9vbBEy4ZnoXve0D+TorFrOMU+P94bunEZ1ixGL
-	 gQP/RMmYgBK7vQcgCCyV56VxTVFu5nHaw4Lr0Fm/s53eKkkV/jIb70MpjOSOlt+RY8eqM2wDlVAe
-	 MOGd+S8HghlmKP2JPS3ywoW3z2Tw8mkgQAKEeE6jGbxC9x2EyilMfcWrcl7yjLXPtZkAwK+Fuoij
-	 M/BNLudSizOEu1sBmcsmLt+YhTPHBM+6OgJP8vIJge9IX9mYN31YucR5cBPT6q8/mTOeprA6ptxp
-	 cdJF/i3/3X/H+/bIOJys0GsmtQcGupnIBkD3jopgkbBMwC2GP3fG1MeIMdU7nUOzBBnyGO+AOUOr
-	 hTnp7gndF3hExO68jKL/s+nAf0WKJrQN/1v4nQ3WC139guzGm6HsJvpBVlGvjXTj5SBjn/InZcdB
-	 jNIaW8854uMSr8kTOayTNruDPr4L88bAbskUj9zyuNA5TXagLrP60Q8IMjcW7b08b18ttJkOhkla
-	 gNTm+jfYpvkWLHXYrh6TNkmSNp9wbsOOHnDTeztUFLkHCmFV25BsHlGbK+Pf7eEOkc4d1UZiWFiz
-	 9o03cjBO44/FntF6hoP8Y0eGpxY18HRLL3evaqFg+1tW32srpGiMes6iNLSdSudR1J67UazOe0oQ
-	 QVhy84syRsZ4K9FvdR6wyt16jlALOnC06vlrN5l4z7EfvA3DQewnVat0haTPuemcX5LfSJfGVMZs
-	 TndKOt9ghUkT9XD1ir25AZu5Ahz0Z464BEhe/XfraZ2YAgsfro4FvFwIL2U4yc2dpVQLHb5VLYg5
-	 Z4RH3XQAl5vQZnquJBWIAy6L5WnHmrqwtwBCBOA+Bc++8iGkWTfbIGvAmiVPku4ZLITLM8a8kcS7
-	 EDnqDQJi3lG1tAjWrCp0V2u6Xs/hkpdlb6eygUglTq1S75gw5WQOsqGkkzLdgyNRkPHfb8/uGq3B
-	 15w7gOQkuUsIH6ZnqbQAgMwEOojExGPt+0P3XgWnyOr+MQGxVfa+tfXT6KpJH9w34S7B2M7JI8iA
-	 LrcLLcGRPsWz/oisIw5OtAmBEPqG6dYIs6WZvljGHlkBVTC37fATU/TnKUDsdPR2xB2ZXdRg==
-X-QQ-XMRINFO: NS+P29fieYNwqS3WCnRCOn9D1NpZuCnCRA==
+X-QQ-mid: xmsmtpt1786364180t3ws8opp6
+Message-ID: <tencent_36AA741E5645124FF3102D372408BE984907@qq.com>
+X-QQ-XMAILINFO: MPEorwW6cFo9gA7CqBfL+7IjYLsuaA0BDdAIc4MLP6ugmowRF7ZQ2i25Ob4ovC
+	 c0WzqJH/yLaSZg2bV3yph0Qk5pkiG1QqOWDUDxUjUR4TXlH/0lUwW7LZR6WPNyDccFBnXqbp0XfR
+	 EZeWpVDOCayHyAjdZkvWCladF93/5CZ0U7bSLTeli/0+Kk44klTDiQIkeZ/SSFeVPOBjaFl1Ydr3
+	 caOz3B/SaXq3zLF00t7MGKkjLrVGgetpq0K+xfL6/V6hj7q6qFXj63KJr4hdSfhiiAEY3uxBNCxD
+	 arAlpDTPw1/vb38ryu+dF/+4YFnc4zc9BHWjfJrr9TH1oedYbnp1hM401Eh5NJAvcNFMSOA8A+zQ
+	 YA5SeFqrNh9WiDPYDFl8suHt3hlEryoTmg950h5+GXEo4QA6S4+/BkYpuGRAAcdo3XJLhGirpRn0
+	 kcc5E6giAGA8+tQ92KLN+c+2UlyMsLqzrWiyvU86ryYhsnhk2PPTECGOh9ixdrj+jXKDHpDjE+K+
+	 inYt+QwvaivvapQ7IJZqhTH/y78sr4LgdOG46momoPRp1itSRn9XrH4dm6Bs/eA3h0YGh0mIY43f
+	 t9UTiFHQgxj1N5+8IwyakcKs/uni6tP7yKuc4INh5FDCEeCt0t/dQn8kXVYaxPikpzBByVI0ultW
+	 Timl+Cs0fzCcUDMdnRr3xV6zpbstBbbJwxWNq/gh9kWSnpnxNia97OnfKvM9kLpJ6j6Mb+4skuvw
+	 sU588Kqvt6ZKQFWPAcYwnQnWAMdrI9T+yRq3CTkVp+G46MmofklTdCSCRsQksSxRTjUPrdwXbZMe
+	 hSU03tMG2YRb31LmDH6YTsmXGC8J/OQ1Fpmi7901chlRlpTF9/t7Dwrah3lq2uLQBPQ6gFjmxhZZ
+	 pM7V5UGKAhisGeJCh/dlFB/Me4b5oR+Y9tq6Yi3n0MPaZIpkHiTLyO+EMCObgG2mHHrEtRSDVLW0
+	 jXrzQYk2S4u0ng9I7Zb+sh/mDuaBLLbK5F/5O31GbnqjVEWQuB5iysuVfrnc1qTp0kmLnEdOsiVn
+	 m/RqZK+/kxxwJ4CcaPdHhL9a2Uv2lNLV31GuI3IURGGBE81KHPEyesY3XRlak00L5Qme+iG44wSv
+	 U0z4U5QP0y6Z19EJ61Zd0q7XUMMC3aQryFFLOgIN1Ery+xjhf52Vx6UrNCKQ==
+X-QQ-XMRINFO: Mp0Kj//9VHAxzExpfF+O8yhSrljjwrznVg==
 From: Guanghui Yang <3497809730@qq.com>
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com,
@@ -50,12 +51,12 @@ Cc: clm@fb.com,
 	linux-kernel@vger.kernel.org,
 	stable@vger.kernel.org,
 	Guanghui Yang <3497809730@qq.com>
-Subject: [PATCH v3 0/3] btrfs: fix failed sprout device add rollback
-Date: Mon, 10 Aug 2026 20:16:03 +0800
-X-OQ-MSGID: <cover.1786363229.git.3497809730@qq.com>
+Subject: [PATCH v3 1/3] btrfs: detach failed sprout device from transaction update list
+Date: Mon, 10 Aug 2026 20:16:04 +0800
+X-OQ-MSGID: <52afe633e485d69ec377bb161da65427f369ac84.1786363229.git.3497809730@qq.com>
 X-Mailer: git-send-email 2.53.0
-In-Reply-To: <cover.1786358930.git.3497809730@qq.com>
-References: <cover.1786358930.git.3497809730@qq.com>
+In-Reply-To: <cover.1786363229.git.3497809730@qq.com>
+References: <cover.1786363229.git.3497809730@qq.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -64,47 +65,33 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Hi,
+When creating the first metadata chunk for a sprout filesystem, create_chunk() adds the new device to the transaction dev_update_list through device->post_commit_list.
 
-This series fixes the error path for adding the first writable device to a
-seed filesystem.
+If the subsequent system chunk creation fails, btrfs_init_new_device() aborts the transaction and releases the device while post_commit_list is still linked. This triggers a warning in btrfs_free_device() and leaves the transaction list referencing freed memory.
 
-I verified the failure path locally in QEMU with null_blk and a seed btrfs
-filesystem:
+Detach the device while holding chunk_mutex before releasing it.
 
-- create btrfs on /dev/nullb0
-- set the seed flag with btrfstune -S 1
-- mount the filesystem read-only
-- run "btrfs device add -f /dev/nullb1 /mnt"
-- inject -EIO after metadata chunk creation in init_first_rw_device()
+Fixes: bbbf7243d62d ("btrfs: combine device update operations during transaction commit")
 
-Before these fixes, the injected failure triggered:
+Cc: stable@vger.kernel.org
+Signed-off-by: Guanghui Yang <3497809730@qq.com>
+---
+ fs/btrfs/volumes.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-- WARN_ON(!list_empty(&device->post_commit_list)) in btrfs_free_device()
-- a NULL pointer dereference through btrfs_show_devname()
-- the sprout fs_devices state left with no open devices
-
-Without the injected failure, the same device-add path succeeds.
-
-AI disclosure: AI assistance was used during code analysis, patch
-development, and drafting parts of the commit messages and cover letter.
-I reviewed the final code and local validation results and take
-responsibility for this submission.
-
-Changes in v3:
-- Add AI assistance disclosure to the cover letter.
-- No code changes.
-
-Guanghui Yang (3):
-  btrfs: detach failed sprout device from transaction update list
-  btrfs: restore active device pointers after failed sprout
-  btrfs: roll back sprout setup after device add failure
-
- fs/btrfs/volumes.c | 43 +++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 43 insertions(+)
-
-
-base-commit: 38fec10eb60d687e30c8c6b5420d86e8149f7557
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 3f8afbd1e..ffd076e87 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2988,6 +2988,8 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	btrfs_sysfs_remove_device(device);
+ 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+ 	mutex_lock(&fs_info->chunk_mutex);
++	if (!list_empty(&device->post_commit_list))
++		list_del_init(&device->post_commit_list);
+ 	list_del_rcu(&device->dev_list);
+ 	list_del(&device->dev_alloc_list);
+ 	fs_info->fs_devices->num_devices--;
 -- 
 2.53.0
 

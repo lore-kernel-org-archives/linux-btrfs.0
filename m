@@ -1,63 +1,200 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from out-177.mta0.migadu.com (out-177.mta0.migadu.com [91.218.175.177])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 823BF3B7B83;
-	Mon, 10 Aug 2026 10:12:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AC62338E8D0
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 10:20:13 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.177
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786356769; cv=none; b=r2r1GBGWbvzNSFtENvS+Gg0+zLik00585BpG8KRsSDzLXl0KjuA0ITK7Yo2rFun2QCvvIv9q4JCNkf0LmzQxMXXsq5MXAoiPYIxaMxse+pyziFp8sksHcB2UG7h3IjnMYPQy4oD6p/cFYxhVddrY42aKtYaJpVzaUrg5Y59g0eA=
+	t=1786357215; cv=none; b=jaADc7LnxkProfAdxIR5s+fCycaLiIV6V05f27TZnwlvzPsYY6pgLbYVNUtzwfe12a9cHXSJiGq6nwge+DLY4Nuiz9v2O56awxEJ33+Dt8Tnhs+5HQVWJbnxKABZUShzn/yeHa0nuHKI4jr5Mjf52QpOrTPUPAyJrFYCI4qpxoU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786356769; c=relaxed/simple;
-	bh=GrZ8dRaX4CGvnnPEv3Sqhk3CJxc8qPR0U1fcyWIFmSY=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=LPu/sRN/fLHwCz4Y+TFIYsRknEIYaB7KTP8z3MM9PmruNQGIKoEmcYCubQPwNMBw54j+yxmA6Cj9dlAkG6mumFD0soz365KXkvACbFwmlgfTCtiXa0rBFZ20dy4RRruSalIWdMh0IMW0fOjUyBM2NO/segZxO+bAU8pnIhv2jQQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=a3ldmIoK; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1786357215; c=relaxed/simple;
+	bh=S3tC3XwyCQIlqsXvJZnXU3u+9DkFlQbCtiIWEShahuE=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=seosJJv64T5hXZdQEACHVr1dLL5zDQ+/9K1iA9Y8zY8K9fp0Ne7hK5Yy0gMDInwd+KX9uNlOVpzOrGmcDeSzsM0yI2Pe1XGOzKazEGrYX3FEEnLDQHw8Gc2+e25i9YKgPXaMgYUVFGDpmfFzuEL5cEuLH/Kdwq2oZGPEGSz6HeA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=fGXDlnyO; arc=none smtp.client-ip=91.218.175.177
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="a3ldmIoK"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 471EC1F000E9;
-	Mon, 10 Aug 2026 10:12:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1786356768;
-	bh=KIkTN4JuGGt2D84FopRqoncsNtDcRU7XvHnOV8Ppu3w=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=a3ldmIoKJ6aS5oeOn84dX5cdaAdUlxjON2Cz6km02r68v6qDkiC8xv0L0bfso8OUK
-	 RyL6Ly09Kum8k5G294rHf+YoybJYRqyVkrF7hTg+DIKOEmWrnYOkMEU4GsSvI08DeI
-	 vKlAxuLHt+1OZ1Dm4X1zSScvaN3vyy/Zo9+M/lShAWEfe4imjyqHLqVsyfRGFRL5sc
-	 sZQTqxrdUpASVcG9+5fJu1UA8Mly6+XaM3Wq/JCc5RC/DhFJThjEkgmb88zSZsHZa6
-	 g7c7egKZP582k71IyUvIJN+Zmmx7CJuqrY/wB9hQsQYVysrWY7poiYKBtqZ5AC7owl
-	 wxwG0zCPtlSeA==
-Date: Mon, 10 Aug 2026 12:12:42 +0200
-From: Andrey Albershteyn <aalbersh@kernel.org>
-To: linux-xfs@vger.kernel.org, fsverity@lists.linux.dev, 
-	linux-fsdevel@vger.kernel.org, ebiggers@kernel.org
-Cc: hch@lst.de, linux-ext4@vger.kernel.org, 
-	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org, djwong@kernel.org
-Subject: Re: [PATCH v14 05/21] fsverity: improve flushing performance of
- fsverity_fill_zerohash
-Message-ID: <anmhwrqO45H-oEl4@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
-References: <20260803200820.393203-1-aalbersh@kernel.org>
- <20260803200820.393203-6-aalbersh@kernel.org>
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="fGXDlnyO"
+X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
+	t=1786357201;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=2kxNcoz88gUTv2RyDdUD2oJ4g9y+1zQ1kNSN4EE2fzA=;
+	b=fGXDlnyOZW78tBnMnlQ1tn0gaqx7mSxN8jnpxd3X5ZBs5A+AHB+T0i5Ka2ATUkpwOgnsv1
+	KMqRp0Augsx1/HsaVXbYVEtsd6TD99UKyuJ+3mT8utVuks9GQoMS+0WK8+l44Y4crMrbtQ
+	xIGnFQ0O2uyU8LD3THLBVtNK7IeoZsw=
+From: Usama Arif <usama.arif@linux.dev>
+To: Usama Arif <usama.arif@linux.dev>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	david@fromorbit.com,
+	dgc@kernel.org,
+	qi.zheng@linux.dev,
+	baolin.wang@linux.alibaba.com,
+	brauner@kernel.org,
+	cgroups@vger.kernel.org,
+	clm@fb.com,
+	dsterba@suse.com,
+	hannes@cmpxchg.org,
+	hughd@google.com,
+	jack@suse.cz,
+	linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-mm@kvack.org,
+	mhocko@kernel.org,
+	muchun.song@linux.dev,
+	roman.gushchin@linux.dev,
+	shakeel.butt@linux.dev,
+	Al Viro <viro@zeniv.linux.org.uk>,
+	kernel-team@meta.com
+Subject: Re: [PATCH v2] fs: push nr_cached_objects memcg gating into individual filesystems
+Date: Mon, 10 Aug 2026 03:19:52 -0700
+Message-ID: <20260810101954.822260-1-usama.arif@linux.dev>
+In-Reply-To: <20260715103516.2410175-1-usama.arif@linux.dev>
+References: 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260803200820.393203-6-aalbersh@kernel.org>
+Content-Transfer-Encoding: 8bit
+X-Migadu-Flow: FLOW_OUT
 
-On 2026-08-03 22:07:55, Andrey Albershteyn wrote:
-> The current version calls flush_dcache_folio(), in memcpy_to_folio(), to
-> flush whole folio on every digest (which is 128 for 4k) on the HIGHMEM
-> systems. Open code folio mapping and flushing to copy all digests at
-> once.
+On Wed, 15 Jul 2026 03:35:16 -0700 Usama Arif <usama.arif@linux.dev> wrote:
+
+> Commit 0baad6f9b997 ("fs/super: skip non-memcg-aware nr_cached_objects
+> in memcg slab shrink") added a check in fs/super.c that skipped every
+> ->nr_cached_objects() hook whenever the shrinker was invoked for a
+> non-root memcg, on the assumption that none of them honour sc->memcg.
 > 
-> Reported-by: Eric Biggers <ebiggers@kernel.org>
-> Link: https://lore.kernel.org/linux-fsdevel/20260401222717.GH2466@quark/
-> Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+> That assumption is wrong for XFS, whose inode-reclaim hook is
+> intentionally driven from per-memcg contexts to free memcg-charged
+> slab. Encoding a blanket "never memcg-aware" policy in fs/super.c
+> short-circuits that path.
+> 
+> Push the check down into the callbacks whose counters really are
+> irrelevant to per-memcg reclaim - btrfs_nr_cached_objects() and
+> shmem_unused_huge_count() - and drop the fs/super.c gate. Each
+> filesystem can now lift the restriction independently if its counter
+> later grows memcg awareness, without touching fs/super.c.
+> 
+> Introduce mem_cgroup_shrink_is_root() in <linux/memcontrol.h> so the
+> callbacks don't open-code "sc->memcg is NULL or root".
+> 
+> Fixes: 0baad6f9b997 ("fs/super: skip non-memcg-aware nr_cached_objects in memcg slab shrink")
+> Acked-by: Qi Zheng <qi.zheng@linux.dev>
+> Reviewed-by: Jan Kara <jack@suse.cz>
+> Reviewed-by: Shakeel Butt <shakeel.butt@linux.dev>
+> Signed-off-by: Usama Arif <usama.arif@linux.dev>
+> ---
+> v1 -> v2:
+> - Do not gate xfs_fs_nr_cached_objects(); XFS's inode reclaim is
+>   intentionally driven from per-memcg contexts to free memcg-charged
+>   slab (Dave Chinner).
+> - Add mem_cgroup_shrink_is_root() helper in <linux/memcontrol.h> so the
+>   filesystem callbacks don't open-code "sc->memcg is NULL or root".
+>   (Dave Chinner)
+> - Add fixes tag (Dave Chinner)
+> ---
+>  fs/btrfs/super.c           | 10 ++++++++++
+>  fs/super.c                 | 19 ++-----------------
+>  include/linux/memcontrol.h | 21 +++++++++++++++++++++
+>  mm/shmem.c                 | 10 ++++++++++
+>  4 files changed, 43 insertions(+), 17 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index a7d804219bec..cc4537435399 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -22,6 +22,7 @@
+>  #include <linux/namei.h>
+>  #include <linux/miscdevice.h>
+>  #include <linux/magic.h>
+> +#include <linux/memcontrol.h>
+>  #include <linux/slab.h>
+>  #include <linux/ratelimit.h>
+>  #include <linux/crc32c.h>
+> @@ -2434,6 +2435,15 @@ static long btrfs_nr_cached_objects(struct super_block *sb, struct shrink_contro
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+>  	const s64 nr = percpu_counter_read_positive(&fs_info->evictable_extent_maps);
+>  
+> +	/*
+> +	 * The evictable extent map counter is filesystem-global and does not
+> +	 * honour sc->memcg, so it is only meaningful on the global (kswapd or
+> +	 * root direct reclaim) shrink path. Skip the per-memcg iterations of
+> +	 * shrink_slab_memcg() to avoid queueing duplicate global work.
+> +	 */
+> +	if (!mem_cgroup_shrink_is_root(sc))
+> +		return 0;
+> +
+>  	trace_btrfs_extent_map_shrinker_count(fs_info, nr);
+>  
+>  	return nr;
+> diff --git a/fs/super.c b/fs/super.c
+> index d2d04a6f4f84..a8fd61136aaf 100644
+> --- a/fs/super.c
+> +++ b/fs/super.c
+> @@ -24,7 +24,6 @@
+>  #include <linux/export.h>
+>  #include <linux/slab.h>
+>  #include <linux/blkdev.h>
+> -#include <linux/memcontrol.h>
+>  #include <linux/mount.h>
+>  #include <linux/security.h>
+>  #include <linux/writeback.h>		/* for the emergency remount stuff */
+> @@ -170,19 +169,6 @@ static void super_wake(struct super_block *sb, unsigned int flag)
+>  	wake_up_var(&sb->s_flags);
+>  }
+>  
+> -/*
+> - * The s_op->nr_cached_objects hooks (used for example by btrfs and xfs)
+> - * operate on filesystem-global state and ignore sc->memcg. Driving them
+> - * from per-memcg shrink_slab_memcg() invocations only burns CPU walking
+> - * per-cpu counters and queueing duplicate work: the actual reclaim happens on
+> - * the global path (kswapd or root direct reclaim) regardless. Restrict them
+> - * to that path.
+> - */
+> -static inline bool super_fs_objects_eligible(struct shrink_control *sc)
+> -{
+> -	return !sc->memcg || mem_cgroup_is_root(sc->memcg);
+> -}
+> -
+>  /*
+>   * One thing we have to be careful of with a per-sb shrinker is that we don't
+>   * drop the last active reference to the superblock from within the shrinker.
+> @@ -212,7 +198,7 @@ static unsigned long super_cache_scan(struct shrinker *shrink,
+>  	if (!super_trylock_shared(sb))
+>  		return SHRINK_STOP;
+>  
+> -	if (sb->s_op->nr_cached_objects && super_fs_objects_eligible(sc))
+> +	if (sb->s_op->nr_cached_objects)
+>  		fs_objects = sb->s_op->nr_cached_objects(sb, sc);
+>  
+>  	inodes = list_lru_shrink_count(&sb->s_inode_lru, sc);
+> @@ -273,8 +259,7 @@ static unsigned long super_cache_count(struct shrinker *shrink,
+>  		return 0;
+>  	smp_rmb();
+>  
+> -	if (sb->s_op && sb->s_op->nr_cached_objects &&
+> -	    super_fs_objects_eligible(sc))
+> +	if (sb->s_op && sb->s_op->nr_cached_objects)
+>  		total_objects = sb->s_op->nr_cached_objects(sb, sc);
+>  
+>  	total_objects += list_lru_shrink_count(&sb->s_dentry_lru, sc);
 
-I will drop this patch
+Hi Christian,
 
--- 
-- Andrey
+
+It looks like the changes in fs/super.c didnt make it into the patch that was
+merged in vfs.fixes [1]. Just wanted to check how we could correct this?
+Should Qi (or I) send a followup patch?
+
+Thanks,
+Usama
+
+[1] https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git/commit/?h=vfs.fixes&id=0ef8faff490be6aa1a1e5dfcb0c8492689e91c0f 

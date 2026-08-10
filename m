@@ -1,200 +1,324 @@
-Received: from out-177.mta0.migadu.com (out-177.mta0.migadu.com [91.218.175.177])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AC62338E8D0
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 10:20:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=91.218.175.177
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E34D3B841D;
+	Mon, 10 Aug 2026 10:57:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786357215; cv=none; b=jaADc7LnxkProfAdxIR5s+fCycaLiIV6V05f27TZnwlvzPsYY6pgLbYVNUtzwfe12a9cHXSJiGq6nwge+DLY4Nuiz9v2O56awxEJ33+Dt8Tnhs+5HQVWJbnxKABZUShzn/yeHa0nuHKI4jr5Mjf52QpOrTPUPAyJrFYCI4qpxoU=
+	t=1786359460; cv=none; b=GOievN1QWYmRpoeCUkBIWlAh/P13Wi4SMckw+ndFl6I40/6Wmu3FzA2c9MmSjvnx/Vk8pHoTcP8vQh6R5fUcxu1LpRYbrRoRJ5gL2e6ao20TAC5LCd0Vtvi58yH5XOVUVIQGzMgpj94KanSAU8GV9pSbq5igT2U0PvDrqh1dOpw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786357215; c=relaxed/simple;
-	bh=S3tC3XwyCQIlqsXvJZnXU3u+9DkFlQbCtiIWEShahuE=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=seosJJv64T5hXZdQEACHVr1dLL5zDQ+/9K1iA9Y8zY8K9fp0Ne7hK5Yy0gMDInwd+KX9uNlOVpzOrGmcDeSzsM0yI2Pe1XGOzKazEGrYX3FEEnLDQHw8Gc2+e25i9YKgPXaMgYUVFGDpmfFzuEL5cEuLH/Kdwq2oZGPEGSz6HeA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=fGXDlnyO; arc=none smtp.client-ip=91.218.175.177
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	s=arc-20240116; t=1786359460; c=relaxed/simple;
+	bh=X0L9Xyu2S07x1IGUI3tQ7oVu7pfwjQehmyzT4vDHGyc=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=I9QlQe9VkYlUFaYzFtZaifICch2jhDQktxfIPl87Sf2tFGPvW3aed2whnVXNNfNY8xwH7Scfug3gYMo87gv6cJ4Njn3TukQwXxlGXObZC6x/OJT0UwDBwr0NxPihZkQ5eCH/NsMgsfuVdQvTLUf+f2gEwCuhGxHWsLOGEgs2O6o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=hvpoEMh5; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="fGXDlnyO"
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-	t=1786357201;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2kxNcoz88gUTv2RyDdUD2oJ4g9y+1zQ1kNSN4EE2fzA=;
-	b=fGXDlnyOZW78tBnMnlQ1tn0gaqx7mSxN8jnpxd3X5ZBs5A+AHB+T0i5Ka2ATUkpwOgnsv1
-	KMqRp0Augsx1/HsaVXbYVEtsd6TD99UKyuJ+3mT8utVuks9GQoMS+0WK8+l44Y4crMrbtQ
-	xIGnFQ0O2uyU8LD3THLBVtNK7IeoZsw=
-From: Usama Arif <usama.arif@linux.dev>
-To: Usama Arif <usama.arif@linux.dev>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	david@fromorbit.com,
-	dgc@kernel.org,
-	qi.zheng@linux.dev,
-	baolin.wang@linux.alibaba.com,
-	brauner@kernel.org,
-	cgroups@vger.kernel.org,
-	clm@fb.com,
-	dsterba@suse.com,
-	hannes@cmpxchg.org,
-	hughd@google.com,
-	jack@suse.cz,
-	linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-mm@kvack.org,
-	mhocko@kernel.org,
-	muchun.song@linux.dev,
-	roman.gushchin@linux.dev,
-	shakeel.butt@linux.dev,
-	Al Viro <viro@zeniv.linux.org.uk>,
-	kernel-team@meta.com
-Subject: Re: [PATCH v2] fs: push nr_cached_objects memcg gating into individual filesystems
-Date: Mon, 10 Aug 2026 03:19:52 -0700
-Message-ID: <20260810101954.822260-1-usama.arif@linux.dev>
-In-Reply-To: <20260715103516.2410175-1-usama.arif@linux.dev>
-References: 
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hvpoEMh5"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2A6501F00A3D;
+	Mon, 10 Aug 2026 10:57:35 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1786359458;
+	bh=evQZ0QBvfnZQ55OKOqMXlq84jQBALaOZA6w84yFv36I=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=hvpoEMh52cuo/1S06wtVjrLA5YAe/QrjH8i1zDsro/w7gJldb3yzJMtmh6ANl2pMn
+	 lp53jtZgt5kUajBCmSLru28GtY3hipZCeXJBTtUVVZS5y/XQGs7iLiHwKn2Qua2V0J
+	 0CBq+qLV7JsOKb1iS67oLo3DmVKQ29nzzSz9jtiuh542/f6WCvYgnPB6kUnK6QjOL5
+	 q3T2iARjWXs2HQpzt6yhYR8d9tVYCKfMEDMNm/QkTvrFjXZrxlgG00RYh4GvykNVfn
+	 sB78E3i6+aIeKcIvbL4TctgK1/iIU1HsoJp+09KFr9dxEjBSEA4rMoSPelEcSYI022
+	 b8TxK+fJBd9FQ==
+Date: Mon, 10 Aug 2026 12:57:33 +0200
+From: Andrey Albershteyn <aalbersh@kernel.org>
+To: "Darrick J. Wong" <djwong@kernel.org>
+Cc: linux-xfs@vger.kernel.org, fsverity@lists.linux.dev, 
+	linux-fsdevel@vger.kernel.org, ebiggers@kernel.org, hch@lst.de, linux-ext4@vger.kernel.org, 
+	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v14 14/21] xfs: add flags to xfs_free_eofblocks() to pass
+ down to block processing
+Message-ID: <anmrNOVcXRsZenqj@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
+References: <20260803200820.393203-1-aalbersh@kernel.org>
+ <20260803200820.393203-15-aalbersh@kernel.org>
+ <20260804181848.GM3556460@frogsfrogsfrogs>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Migadu-Flow: FLOW_OUT
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260804181848.GM3556460@frogsfrogsfrogs>
 
-On Wed, 15 Jul 2026 03:35:16 -0700 Usama Arif <usama.arif@linux.dev> wrote:
-
-> Commit 0baad6f9b997 ("fs/super: skip non-memcg-aware nr_cached_objects
-> in memcg slab shrink") added a check in fs/super.c that skipped every
-> ->nr_cached_objects() hook whenever the shrinker was invoked for a
-> non-root memcg, on the assumption that none of them honour sc->memcg.
+On 2026-08-04 11:18:48, Darrick J. Wong wrote:
+> On Mon, Aug 03, 2026 at 10:08:04PM +0200, Andrey Albershteyn wrote:
+> > Add a flags parameter to xfs_free_eofblocks() to support selective
+> > extent unmapping. Add two flags for unmapping all extents (unwritten and
+> > normal) and fsverity leftover extents (only unwritten ones, leaving
+> > normal in place).
 > 
-> That assumption is wrong for XFS, whose inode-reclaim hook is
-> intentionally driven from per-memcg contexts to free memcg-charged
-> slab. Encoding a blanket "never memcg-aware" policy in fs/super.c
-> short-circuits that path.
+> Er, why do we need this?  Is this to clear out unwritten merkle tree
+> blocks after a failed fsverity enrollment or something?  The commit
+> message should say a little bit more about why anyone needs this.
+
+Ok sure I will extend the message
+
 > 
-> Push the check down into the callbacks whose counters really are
-> irrelevant to per-memcg reclaim - btrfs_nr_cached_objects() and
-> shmem_unused_huge_count() - and drop the fs/super.c gate. Each
-> filesystem can now lift the restriction independently if its counter
-> later grows memcg awareness, without touching fs/super.c.
+> > Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+> > ---
+> >  fs/xfs/libxfs/xfs_bmap.c | 56 +++++++++++++++++++++++++++++-----------
+> >  fs/xfs/libxfs/xfs_bmap.h |  6 ++++-
+> >  fs/xfs/xfs_bmap_util.c   | 20 ++++++++++----
+> >  fs/xfs/xfs_bmap_util.h   | 13 +++++++++-
+> >  fs/xfs/xfs_file.c        |  2 +-
+> >  fs/xfs/xfs_icache.c      |  2 +-
+> >  fs/xfs/xfs_inode.c       |  2 +-
+> >  7 files changed, 76 insertions(+), 25 deletions(-)
+> > 
+> > diff --git a/fs/xfs/libxfs/xfs_bmap.c b/fs/xfs/libxfs/xfs_bmap.c
+> > index cc48f6e20e80..1d8d157a9dfa 100644
+> > --- a/fs/xfs/libxfs/xfs_bmap.c
+> > +++ b/fs/xfs/libxfs/xfs_bmap.c
+> > @@ -6144,15 +6144,12 @@ xfs_bmap_validate_extent(
+> >  			XFS_IS_REALTIME_INODE(ip), whichfork, irec);
+> >  }
+> >  
+> > -/*
+> > - * Used in xfs_itruncate_extents().  This is the maximum number of extents
+> > - * freed from a file in a single transaction.
+> > - */
+> > -#define	XFS_ITRUNC_MAX_EXTENTS	2
+> > -
+> >  /*
+> >   * Unmap every extent in part of an inode's fork.  We don't do any higher level
+> >   * invalidation work at all.
+> > + *
+> > + * The XFS_BMAPI_UNWRITTEN could be passed to remove only unwritten extents,
+> > + * leaving out normal extents in place.
 > 
-> Introduce mem_cgroup_shrink_is_root() in <linux/memcontrol.h> so the
-> callbacks don't open-code "sc->memcg is NULL or root".
+> What flags do we support here?  ATTRFORK, NODISCARD, and UNWRITTEN?  Can
+> that be documented in the comment or turned into asserts?
+
+The xfs_bmapi_read has read_flags and ASSERT inside, the other flags
+are then passed to xfs_bunmapi which probably be a better place for
+an assert.
+
 > 
-> Fixes: 0baad6f9b997 ("fs/super: skip non-memcg-aware nr_cached_objects in memcg slab shrink")
-> Acked-by: Qi Zheng <qi.zheng@linux.dev>
-> Reviewed-by: Jan Kara <jack@suse.cz>
-> Reviewed-by: Shakeel Butt <shakeel.butt@linux.dev>
-> Signed-off-by: Usama Arif <usama.arif@linux.dev>
-> ---
-> v1 -> v2:
-> - Do not gate xfs_fs_nr_cached_objects(); XFS's inode reclaim is
->   intentionally driven from per-memcg contexts to free memcg-charged
->   slab (Dave Chinner).
-> - Add mem_cgroup_shrink_is_root() helper in <linux/memcontrol.h> so the
->   filesystem callbacks don't open-code "sc->memcg is NULL or root".
->   (Dave Chinner)
-> - Add fixes tag (Dave Chinner)
-> ---
->  fs/btrfs/super.c           | 10 ++++++++++
->  fs/super.c                 | 19 ++-----------------
->  include/linux/memcontrol.h | 21 +++++++++++++++++++++
->  mm/shmem.c                 | 10 ++++++++++
->  4 files changed, 43 insertions(+), 17 deletions(-)
+> >   */
+> >  int
+> >  xfs_bunmapi_range(
+> > @@ -6162,23 +6159,52 @@ xfs_bunmapi_range(
+> >  	xfs_fileoff_t		startoff,
+> >  	xfs_fileoff_t		endoff)
+> >  {
+> > -	xfs_filblks_t		unmap_len = endoff - startoff + 1;
+> >  	int			error = 0;
+> > +	int			nimaps = 1;
+> > +	int			done = 0;
+> > +	struct xfs_bmbt_irec	imap;
+> > +	int			read_flags =
+> > +			flags & (XFS_BMAPI_ATTRFORK | XFS_BMAPI_ENTIRE);
 > 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index a7d804219bec..cc4537435399 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -22,6 +22,7 @@
->  #include <linux/namei.h>
->  #include <linux/miscdevice.h>
->  #include <linux/magic.h>
-> +#include <linux/memcontrol.h>
->  #include <linux/slab.h>
->  #include <linux/ratelimit.h>
->  #include <linux/crc32c.h>
-> @@ -2434,6 +2435,15 @@ static long btrfs_nr_cached_objects(struct super_block *sb, struct shrink_contro
->  	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
->  	const s64 nr = percpu_counter_read_positive(&fs_info->evictable_extent_maps);
->  
-> +	/*
-> +	 * The evictable extent map counter is filesystem-global and does not
-> +	 * honour sc->memcg, so it is only meaningful on the global (kswapd or
-> +	 * root direct reclaim) shrink path. Skip the per-memcg iterations of
-> +	 * shrink_slab_memcg() to avoid queueing duplicate global work.
-> +	 */
-> +	if (!mem_cgroup_shrink_is_root(sc))
-> +		return 0;
-> +
->  	trace_btrfs_extent_map_shrinker_count(fs_info, nr);
->  
->  	return nr;
-> diff --git a/fs/super.c b/fs/super.c
-> index d2d04a6f4f84..a8fd61136aaf 100644
-> --- a/fs/super.c
-> +++ b/fs/super.c
-> @@ -24,7 +24,6 @@
->  #include <linux/export.h>
->  #include <linux/slab.h>
->  #include <linux/blkdev.h>
-> -#include <linux/memcontrol.h>
->  #include <linux/mount.h>
->  #include <linux/security.h>
->  #include <linux/writeback.h>		/* for the emergency remount stuff */
-> @@ -170,19 +169,6 @@ static void super_wake(struct super_block *sb, unsigned int flag)
->  	wake_up_var(&sb->s_flags);
->  }
->  
-> -/*
-> - * The s_op->nr_cached_objects hooks (used for example by btrfs and xfs)
-> - * operate on filesystem-global state and ignore sc->memcg. Driving them
-> - * from per-memcg shrink_slab_memcg() invocations only burns CPU walking
-> - * per-cpu counters and queueing duplicate work: the actual reclaim happens on
-> - * the global path (kswapd or root direct reclaim) regardless. Restrict them
-> - * to that path.
-> - */
-> -static inline bool super_fs_objects_eligible(struct shrink_control *sc)
-> -{
-> -	return !sc->memcg || mem_cgroup_is_root(sc->memcg);
-> -}
-> -
->  /*
->   * One thing we have to be careful of with a per-sb shrinker is that we don't
->   * drop the last active reference to the superblock from within the shrinker.
-> @@ -212,7 +198,7 @@ static unsigned long super_cache_scan(struct shrinker *shrink,
->  	if (!super_trylock_shared(sb))
->  		return SHRINK_STOP;
->  
-> -	if (sb->s_op->nr_cached_objects && super_fs_objects_eligible(sc))
-> +	if (sb->s_op->nr_cached_objects)
->  		fs_objects = sb->s_op->nr_cached_objects(sb, sc);
->  
->  	inodes = list_lru_shrink_count(&sb->s_inode_lru, sc);
-> @@ -273,8 +259,7 @@ static unsigned long super_cache_count(struct shrinker *shrink,
->  		return 0;
->  	smp_rmb();
->  
-> -	if (sb->s_op && sb->s_op->nr_cached_objects &&
-> -	    super_fs_objects_eligible(sc))
-> +	if (sb->s_op && sb->s_op->nr_cached_objects)
->  		total_objects = sb->s_op->nr_cached_objects(sb, sc);
->  
->  	total_objects += list_lru_shrink_count(&sb->s_dentry_lru, sc);
+> Why BMAPI_ENTIRE?
+> 
 
-Hi Christian,
+These two flags is what xfs_bmapi_read() takes (assert inside).
 
+> > +	xfs_exntst_t		exntst = XFS_EXT_NORM;
+> >  
+> >  	xfs_assert_ilocked(ip, XFS_ILOCK_EXCL);
+> >  
+> > -	while (unmap_len > 0) {
+> > -		ASSERT((*tpp)->t_highest_agno == NULLAGNUMBER);
+> > -		error = __xfs_bunmapi(*tpp, ip, startoff, &unmap_len, flags,
+> > -				XFS_ITRUNC_MAX_EXTENTS);
+> > +	if (flags & XFS_BMAPI_UNWRITTEN)
+> > +		exntst = XFS_EXT_UNWRITTEN;
+> > +
+> > +	while (startoff < endoff) {
+> > +		nimaps = 1;
+> > +
+> > +		error = xfs_bmapi_read(ip, startoff, endoff - startoff + 1,
+> > +				&imap, &nimaps, read_flags);
+> >  		if (error)
+> >  			goto out;
+> >  
+> > -		/* free the just unmapped extents */
+> > -		error = xfs_defer_finish(tpp);
+> > -		if (error)
+> > +		if (nimaps == 0)
+> >  			goto out;
+> > -		cond_resched();
+> > +
+> > +		if ((exntst == XFS_EXT_UNWRITTEN) &&
+> > +				(imap.br_state != exntst)) {
+> 
+> No need for parentheses around these condition checks.
+> 
+> Would it be clearer if this was:
+> 
+> 		/* caller only wants to unmap unwritten extents */
+> 		if ((flags & XFS_BMAPI_UNWRITTEN) &&
+> 		    imap.br_state != XFS_EXT_UNWRITTEN) {
+> 			...
+> 		}
 
-It looks like the changes in fs/super.c didnt make it into the patch that was
-merged in vfs.fixes [1]. Just wanted to check how we could correct this?
-Should Qi (or I) send a followup patch?
+Thanks, sure will change it
 
-Thanks,
-Usama
+> 
+> > +			startoff = imap.br_startoff + imap.br_blockcount;
+> > +			continue;
+> > +		}
+> > +
+> > +		done = 0;
+> > +		while (!done) {
+> > +			ASSERT((*tpp)->t_highest_agno == NULLAGNUMBER);
+> > +			error = xfs_bunmapi(*tpp, ip, imap.br_startoff,
+> > +					imap.br_blockcount, flags, 0, &done);
+> > +			if (error)
+> > +				goto out;
+> > +
+> > +			/* free the just unmapped extent */
+> > +			error = xfs_defer_finish(tpp);
+> > +			if (error)
+> > +				goto out;
+> > +			cond_resched();
+> > +		}
+> > +
+> > +		startoff = imap.br_startoff + imap.br_blockcount;
+> >  	}
+> >  out:
+> >  	return error;
+> > diff --git a/fs/xfs/libxfs/xfs_bmap.h b/fs/xfs/libxfs/xfs_bmap.h
+> > index d5f2729305fa..0f36431d9936 100644
+> > --- a/fs/xfs/libxfs/xfs_bmap.h
+> > +++ b/fs/xfs/libxfs/xfs_bmap.h
+> > @@ -90,6 +90,9 @@ struct xfs_bmalloca {
+> >  /* Try to align allocations to the extent size hint */
+> >  #define XFS_BMAPI_EXTSZALIGN	(1u << 11)
+> >  
+> > +/* Process unwritten extents only. Used for unmapping */
+> > +#define XFS_BMAPI_UNWRITTEN	(1u << 12)
+> > +
+> >  #define XFS_BMAPI_FLAGS \
+> >  	{ XFS_BMAPI_ENTIRE,	"ENTIRE" }, \
+> >  	{ XFS_BMAPI_METADATA,	"METADATA" }, \
+> > @@ -102,7 +105,8 @@ struct xfs_bmalloca {
+> >  	{ XFS_BMAPI_COWFORK,	"COWFORK" }, \
+> >  	{ XFS_BMAPI_NODISCARD,	"NODISCARD" }, \
+> >  	{ XFS_BMAPI_NORMAP,	"NORMAP" },\
+> > -	{ XFS_BMAPI_EXTSZALIGN,	"EXTSZALIGN" }
+> > +	{ XFS_BMAPI_EXTSZALIGN,	"EXTSZALIGN" }, \
+> > +	{ XFS_BMAPI_UNWRITTEN,	"UNWRITTEN" }
+> >  
+> >  
+> >  static inline int xfs_bmapi_aflag(int w)
+> > diff --git a/fs/xfs/xfs_bmap_util.c b/fs/xfs/xfs_bmap_util.c
+> > index c88b9ade7389..6323eac48fc8 100644
+> > --- a/fs/xfs/xfs_bmap_util.c
+> > +++ b/fs/xfs/xfs_bmap_util.c
+> > @@ -574,11 +574,13 @@ xfs_can_free_eofblocks(
+> >   */
+> >  int
+> >  xfs_free_eofblocks(
+> > -	struct xfs_inode	*ip)
+> > +	struct xfs_inode	*ip,
+> > +	int			flags)
+> >  {
+> >  	struct xfs_trans	*tp;
+> >  	struct xfs_mount	*mp = ip->i_mount;
+> >  	int			error;
+> > +	int			bmapi_flags = XFS_BMAPI_NODISCARD;
+> >  
+> >  	/* Attach the dquots to the inode up front. */
+> >  	error = xfs_qm_dqattach(ip);
+> > @@ -593,15 +595,20 @@ xfs_free_eofblocks(
+> >  	 *
+> >  	 * Note that this means we also leave speculative preallocations in
+> >  	 * place for preallocated files.
+> > +	 *
+> > +	 * Clean up delalloc reservations for fsverity too as those won't be
+> > +	 * used
+> >  	 */
+> > -	if (ip->i_diflags & (XFS_DIFLAG_PREALLOC | XFS_DIFLAG_APPEND)) {
+> > +	if (ip->i_diflags & (XFS_DIFLAG_PREALLOC | XFS_DIFLAG_APPEND) ||
+> > +			(flags & XFS_FREE_FSVERITY)) {
+> 
+> Oh, this patch keeps going after adding new flags to xfs_bunmapi.
+> 
+> Uh, this part should be a separate patch then.
 
-[1] https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git/commit/?h=vfs.fixes&id=0ef8faff490be6aa1a1e5dfcb0c8492689e91c0f 
+Ok, sure, I will split it
+
+> 
+> >  		if (ip->i_delayed_blks) {
+> >  			xfs_bmap_punch_delalloc_range(ip, XFS_DATA_FORK,
+> >  				round_up(XFS_ISIZE(ip), mp->m_sb.sb_blocksize),
+> >  				LLONG_MAX, NULL);
+> >  		}
+> >  		xfs_inode_clear_eofblocks_tag(ip);
+> > -		return 0;
+> > +		if (!(flags & XFS_FREE_FSVERITY))
+> > +			return 0;
+> >  	}
+> >  
+> >  	error = xfs_trans_alloc(mp, &M_RES(mp)->tr_itruncate, 0, 0, 0, &tp);
+> > @@ -613,6 +620,9 @@ xfs_free_eofblocks(
+> >  	xfs_ilock(ip, XFS_ILOCK_EXCL);
+> >  	xfs_trans_ijoin(tp, ip, 0);
+> >  
+> > +	if (flags & XFS_FREE_FSVERITY)
+> > +		bmapi_flags |= XFS_BMAPI_UNWRITTEN;
+> > +
+> >  	/*
+> >  	 * Do not update the on-disk file size.  If we update the on-disk file
+> >  	 * size and then the system crashes before the contents of the file are
+> > @@ -620,7 +630,7 @@ xfs_free_eofblocks(
+> >  	 * bug).
+> >  	 */
+> >  	error = xfs_itruncate_extents_flags(&tp, ip, XFS_DATA_FORK,
+> > -				XFS_ISIZE(ip), XFS_BMAPI_NODISCARD);
+> > +				XFS_ISIZE(ip), bmapi_flags);
+> >  	if (error)
+> >  		goto err_cancel;
+> >  
+> > @@ -928,7 +938,7 @@ xfs_prepare_shift(
+> >  	 * into the accessible region of the file.
+> >  	 */
+> >  	if (xfs_can_free_eofblocks(ip)) {
+> > -		error = xfs_free_eofblocks(ip);
+> > +		error = xfs_free_eofblocks(ip, XFS_FREE_ALL);
+> >  		if (error)
+> >  			return error;
+> >  	}
+> > diff --git a/fs/xfs/xfs_bmap_util.h b/fs/xfs/xfs_bmap_util.h
+> > index eaaf094154b9..9ea3000466cc 100644
+> > --- a/fs/xfs/xfs_bmap_util.h
+> > +++ b/fs/xfs/xfs_bmap_util.h
+> > @@ -64,9 +64,20 @@ int	xfs_collapse_file_space(struct xfs_inode *, xfs_off_t offset,
+> >  int	xfs_insert_file_space(struct xfs_inode *, xfs_off_t offset,
+> >  		xfs_off_t len);
+> >  
+> > +/*
+> > + * Remove all extents and reservations beyond EOF
+> > + */
+> > +#define XFS_FREE_ALL		0
+> > +
+> > +/*
+> > + * Do the normal post EOF cleaning except don't remove normal extents, in other
+> > + * words, remove unwritten, delayed allocation and cow reservations
+> 
+> IOWs it preserves written blocks storing a merkle tree?
+
+yes
+
+> 
+> > + */
+> > +#define XFS_FREE_FSVERITY	1
+> 
+> /me wonders if this should be XFS_FREE_EOF_{ALL,PRESERVE_MERKLE} ?
+> 
+> Also, can we decide this from the XFS_DIFLAG2_VERITY state?
+
+I suppose we can, then these XFS_FREE_* flags aren't necessary
+
+-- 
+- Andrey

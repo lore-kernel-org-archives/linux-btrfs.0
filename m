@@ -1,51 +1,51 @@
-Received: from mail-oi1-f208.google.com (mail-oi1-f208.google.com [209.85.167.208])
+Received: from mail-ot1-f78.google.com (mail-ot1-f78.google.com [209.85.210.78])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 49C5120297C
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ABB84215075
 	for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 00:34:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.208
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.78
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786322070; cv=none; b=YaV4xGEl3f6N0sEFtvmVCYrus3lJZudBo78YqOLg70lMrnYCLIgn6/m1JqKbavnLuOH6gntryNtKEl9pAzhWWmli0ov2weSznu1PxPnhGsiungoj+WGRA1yh5ibFNLQV9eUzhKuXwdDkjjBq1g+Mqu6pev5uqLDQamVF7+5DxFw=
+	t=1786322071; cv=none; b=Z9+qzLa47be3o3hni6uEVcZ3KYhzOeZV5+MOYOphobZSGQUOnO27eyDSHwTQI/fvtXqx1ZrfNjN2vpmYQqn/qHM9URbrUCeDS21T3Z5s7R1nsGwOt6XthUevNkfmNVnIArRwpbOuXlKDK8N69T+p/jQOkdluvUT3fCK3/n31nds=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786322070; c=relaxed/simple;
-	bh=yf0Yg2BZEyXTPnZFI70/uOYfiqHNOhLhLsSFtHg/hNU=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=HC8ssXt1iDlgnI83bYERZ3wn4UIGXAGgH/udd/aCI47K9x3Bs6ArmV++4wOLhHqgXIG/GfR4tFT+3H39nvoTo9bnJSh2cyqYG4B5/Zv94pBl/sHTKK47Q1S775ljmcuCJRL/bW95EMms8nsa0e0CeW1xFT3Nukxc9+mkhFU/StI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.208
+	s=arc-20240116; t=1786322071; c=relaxed/simple;
+	bh=Tqq+gSWOUfswIoZP77Io+QWdLXiOFhXKNULLuD4Q/QI=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=ZMnnPdLnk9B6aHLVJdipexTxq+Rn5IgwJHzp4dM+TotlHAZ3JBGHA9TEe3gBJ/NRKFYp6G41CyhMArYS8E38vNzfkOPGeoUZ714O6aGvZdoZTal16yiAVkOh5Ry5dQjmBjqxDUp0p/DF8AhyN7GRYAP/0vzx6La26cHbSMyWghY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.210.78
 Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oi1-f208.google.com with SMTP id 5614622812f47-4a416619e8dso2498299b6e.1
+Received: by mail-ot1-f78.google.com with SMTP id 46e09a7af769-7ebfcb4c999so2217079a34.1
         for <linux-btrfs@vger.kernel.org>; Sun, 09 Aug 2026 17:34:29 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20251104; t=1786322068; x=1786926868;
         h=content-type:to:from:subject:message-id:date:mime-version
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=UvCgGx+8Hwf/2ac1wbaF2WX/q14zt4C8bFfNBBcFcmY=;
-        b=EL+bMd1z9IcNdNJlgSMjHkjYtubiuWHOPgHB9MmUwMgyjDy3j8Md/MZHqRYYSxNEDM
-         1N1mMnHA2QYDawrmavHH5XkEYL4WlPtOZjXCmGbfy/oHZchy8sUJikZLFtccGOty4V6h
-         ymoTH/Trsz3KWCZI2UQr6oVFFxY0xo623iN9qSs6NQLoEdvgTozVRduVd/KGwXJ31s/X
-         Pr0NRHBo99nPSVPizNYjcwmaD/9iXzjA075IHcV3jVzYl8P78ZyNCfpQUk+Jjg75/kpd
-         GKGOL+3nBC7BwH9gyujOhntUdIRre9EhRZMFpW/ne1njFNF+x9mObS//SRut/VEOeZph
-         9JVA==
-X-Forwarded-Encrypted: i=1; AHgh+RqafjTnd8Vrmk8aEs7ZQQoxNKeb6lNRJECthTMrvFRYzG017zoM7IqXXnnYAvFL/n3ymQ/Z1LK96piuMw==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yxj3GLQVoNkf+yPcr48B1AN9vVJlp6WSqdk9d7+av/eL3PaQRiz
-	dpeHjDcz1xKfAqSIY0snGmbWYs23ooB5zN2yAyoT3QDMDwsweEHtGdvDRIvBiYO3CcuFkGi0jIP
-	3sbcGsmZjRdryLpm507atx9NzlIr2fvaXDKMBoknPPLMemFs6NBhZKEOpunM=
+        bh=mDzf2PQuyzGK1ykg5zMa58wZtreRHGRIgzpNZ/559A8=;
+        b=E1pR6QL07hgT0J5Jbie5fIuskgqC0lQYuzlACIrjsGnUmeL3dAP1keu4tHFVv2Gq8V
+         sSs+R1vzn6TzEXoUzzzoHIkCg/VthTdW+4OLT4gxkvlwOX8B6dB2dvUjbeti9mhqNpDW
+         J0LRvXtyFX6d3zzYwWgk4Cu81YLKbGQzQvdWP1aLvAEA2DNcJWiYdPOjuv6/J2yBDDob
+         8bCgj7QNvHMFoFTgvAL3du3+OJGagNr3UQDeGcnxuwrqTRjaehDrZgmt7tYL7dLBNsrQ
+         r3ij2jA2oXwhFid/PJ7sQ8ygwe63DRCfM1/lbmbWNnzG68kW2rHHkbkv9n29YSSa+YVw
+         lUog==
+X-Forwarded-Encrypted: i=1; AHgh+RqCAnnfRvPrHDX9L7vL58AeL1cNj3adcODDQfI7rk+D5fWeq78ntv5ZxDq4leS3/oD72lRFJRT3uixNyg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzThRrq+Yl9W3ptPrICMTa5I+voXrAXX4ax+K8QXu6EeIPYu0/i
+	5cbuPhseyxr/EdoTuVB5vJa4GUS5jV0eUeG6vgWIEaBnAPbRIdj+mjgnKD2alKPdqLz1qVdWkVX
+	BSuxQ0doswpQHZ588cWHLSFQdYPCssI+dkiGuPHFjO6X0x7qDo5Do0k4WiKU=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6808:1824:b0:4a4:cedc:6859 with SMTP id
- 5614622812f47-4b1af69b549mr8483198b6e.4.1786322068310; Sun, 09 Aug 2026
+X-Received: by 2002:a05:6820:1905:b0:6aa:e524:fd7f with SMTP id
+ 006d021491bc7-6ae970b941bmr20619107eaf.34.1786322068574; Sun, 09 Aug 2026
  17:34:28 -0700 (PDT)
 Date: Sun, 09 Aug 2026 17:34:28 -0700
 X-Google-Appengine-App-Id: s~syzkaller
 X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a791c94.01d0871a.3a0d52.0099.GAE@google.com>
-Subject: [syzbot] [btrfs?] WARNING in btrfs_init_new_device
-From: syzbot <syzbot+3bf3e110b2d406b8166c@syzkaller.appspotmail.com>
+Message-ID: <6a791c94.01d0871a.3a0d52.009a.GAE@google.com>
+Subject: [syzbot] [btrfs?] WARNING in __add_block_group_free_space
+From: syzbot <syzbot+6931616d57696102d8aa@syzkaller.appspotmail.com>
 To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
 	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
 Content-Type: text/plain; charset="UTF-8"
@@ -54,61 +54,55 @@ Hello,
 
 syzbot found the following issue on:
 
-HEAD commit:    848acc8ffe1b Merge tag 'fsverity-for-linus' of git://git.k..
+HEAD commit:    06cf61899d64 Merge tag 'x86-urgent-2026-08-08' of git://gi..
 git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=17e65bb9580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=b7079b368dcec295
-dashboard link: https://syzkaller.appspot.com/bug?extid=3bf3e110b2d406b8166c
-compiler:       gcc (Debian 14.2.0-19) 14.2.0, GNU ld (GNU Binutils for Debian) 2.44
+console output: https://syzkaller.appspot.com/x/log.txt?x=15b27fb9580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=a59830cba91a1981
+dashboard link: https://syzkaller.appspot.com/bug?extid=6931616d57696102d8aa
+compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
 
 Unfortunately, I don't have any reproducer for this issue yet.
 
 Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/25bde0bfecb5/disk-848acc8f.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/8a5ebf809884/vmlinux-848acc8f.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/1d1810845ac3/bzImage-848acc8f.xz
+disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-06cf6189.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/2c3ef8ca53e1/vmlinux-06cf6189.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/52ac12d71a9c/bzImage-06cf6189.xz
 
 IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+3bf3e110b2d406b8166c@syzkaller.appspotmail.com
+Reported-by: syzbot+6931616d57696102d8aa@syzkaller.appspotmail.com
 
-kobject: kobject_add_internal failed for 2 with -EEXIST, don't try to register things with the same name in the same directory.
-BTRFS warning (device loop7): devinfo init for devid 2 failed: -17
 ------------[ cut here ]------------
 btrfs_abort_should_print_stack(__error)
-WARNING: fs/btrfs/volumes.c:3013 at btrfs_init_new_device+0x1fc6/0x3e70 fs/btrfs/volumes.c:3013, CPU#1: syz.7.121/6685
+WARNING: fs/btrfs/free-space-tree.c:1440 at __add_block_group_free_space+0x5a3/0x5b0 fs/btrfs/free-space-tree.c:1440, CPU#0: kworker/u4:3/41
 Modules linked in:
-CPU: 1 UID: 0 PID: 6685 Comm: syz.7.121 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/16/2026
-RIP: 0010:btrfs_init_new_device+0x1fc6/0x3e70 fs/btrfs/volumes.c:3013
-Code: fd 48 c7 c6 60 79 29 8c e8 97 62 a4 fd 8d 45 1e 83 f8 19 77 0f ba 01 00 04 02 48 0f a3 c2 0f 82 94 8b ca fc e8 ab 67 a4 fd 90 <0f> 0b 90 e9 86 8b ca fc e8 9d 67 a4 fd 48 8b 7c 24 40 e8 e3 81 f3
-RSP: 0018:ffffc90005627960 EFLAGS: 00010283
-RAX: 0000000000030d92 RBX: ffff88807adf0000 RCX: ffffc9002560b000
-RDX: 0000000000080000 RSI: ffffffff8465ec15 RDI: ffff8880207d0000
-RBP: 00000000ffffffef R08: 0000000000000005 R09: fffffffffffffffb
-R10: ffffffffffffffef R11: 0000000000000000 R12: ffff888079bb4a80
-R13: ffff88807adf1c00 R14: ffff88802bc92000 R15: ffff88805186c5e0
-FS:  00007f40c8b946c0(0000) GS:ffff888123ed9000(0000) knlGS:0000000000000000
+CPU: 0 UID: 0 PID: 41 Comm: kworker/u4:3 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+Workqueue: events_unbound btrfs_async_reclaim_metadata_space
+RIP: 0010:__add_block_group_free_space+0x5a3/0x5b0 fs/btrfs/free-space-tree.c:1440
+Code: 07 38 c1 0f 8c ce fc ff ff 4c 89 f7 e8 76 bc 00 fe e9 c1 fc ff ff e8 1c 87 91 fd eb 10 e8 15 87 91 fd eb 09 e8 0e 87 91 fd 90 <0f> 0b 90 44 89 e1 f7 d9 e9 51 fe ff ff 90 90 90 90 90 90 90 90 90
+RSP: 0018:ffffc900004374b8 EFLAGS: 00010293
+RAX: ffffffff84358aa2 RBX: ffff888051eb8001 RCX: ffff88801ae58000
+RDX: 0000000000000000 RSI: ffffffff8f1f5b20 RDI: 00000000ffffffe4
+RBP: ffff888042b61490 R08: ffff88801ae58000 R09: 0000000000000003
+R10: 00000000fffffffb R11: 0000000000000000 R12: 00000000ffffffe4
+R13: ffff8880435d3790 R14: ffff888042b614f0 R15: 0000000000000000
+FS:  0000000000000000(0000) GS:ffff88808c549000(0000) knlGS:0000000000000000
 CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f7e4921b1d4 CR3: 000000002d0c8000 CR4: 0000000000350ef0
+CR2: 000055b6397df5f8 CR3: 00000000407ef000 CR4: 0000000000352ef0
 Call Trace:
  <TASK>
- btrfs_ioctl_add_dev+0x34a/0x5f0 fs/btrfs/ioctl.c:2558
- btrfs_ioctl+0xce8/0x5d10 fs/btrfs/ioctl.c:5529
- vfs_ioctl fs/ioctl.c:51 [inline]
- __do_sys_ioctl fs/ioctl.c:597 [inline]
- __se_sys_ioctl fs/ioctl.c:583 [inline]
- __x64_sys_ioctl+0x18e/0x210 fs/ioctl.c:583
- do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
- do_syscall_64+0x115/0x870 arch/x86/entry/syscall_64.c:94
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7f40c7d9e019
-Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007f40c8b94028 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-RAX: ffffffffffffffda RBX: 00007f40c8026090 RCX: 00007f40c7d9e019
-RDX: 00002000000023c0 RSI: 000000005000940a RDI: 0000000000000009
-RBP: 00007f40c7e3500c R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-R13: 00007f40c8026128 R14: 00007f40c8026090 R15: 00007fff8c42dc38
+ btrfs_add_block_group_free_space+0xd0/0x130 fs/btrfs/free-space-tree.c:1465
+ btrfs_create_pending_block_groups+0xcc6/0x15e0 fs/btrfs/block-group.c:2952
+ __btrfs_end_transaction+0x140/0x640 fs/btrfs/transaction.c:1092
+ flush_space+0x3e9/0xde0 fs/btrfs/space-info.c:912
+ do_async_reclaim_metadata_space+0x3e8/0x940 fs/btrfs/space-info.c:1211
+ btrfs_async_reclaim_metadata_space+0x89/0xe0 fs/btrfs/space-info.c:1278
+ process_one_work kernel/workqueue.c:3322 [inline]
+ process_scheduled_works+0xa8e/0x14e0 kernel/workqueue.c:3405
+ worker_thread+0xa47/0xfb0 kernel/workqueue.c:3486
+ kthread+0x388/0x470 kernel/kthread.c:436
+ ret_from_fork+0x514/0xb70 arch/x86/kernel/process.c:158
+ ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
  </TASK>
 
 

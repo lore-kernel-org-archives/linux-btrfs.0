@@ -1,99 +1,388 @@
-Received: from out162-62-57-64.mail.qq.com (out162-62-57-64.mail.qq.com [162.62.57.64])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1597938D;
-	Mon, 10 Aug 2026 12:17:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=162.62.57.64
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D9B94C6D;
+	Mon, 10 Aug 2026 18:31:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786364282; cv=none; b=h3VvrOfIdKSJivr/zRYGK4v/FMie+e5drwBLbSP40i3KCkkiez91pmgbHcZ9PWcbN906Dvhkrjt6cdV5it3Mp+UlbZmBIzVzyLaqrK1/iaVVtZhRsG0Si+tFyo5cp/UgcG4playB0VUS22dzArcfRxiuJuu/cSMlQcLCvbnyEd0=
+	t=1786386664; cv=none; b=GvN1hQPEmGRKFSpvynTeWHmh0bWCLel9nWJ4UeCdUiUprbgHXCsL1wjuwhubZIwnAIiOwvoxEWoWqc4f6naSZbkw0HMvHSNsK91gVZ3tceeHJK7vNAJKML2abfE31+9r0MlOxXc0M5TJFvfvyyEB85RhWUAFE2E7DOZw6NkPqwY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786364282; c=relaxed/simple;
-	bh=jq8IG/kX/0qiMRmU3pXV6T9osKpeL2QWQ8PhkyyT3ZU=;
-	h=Message-ID:From:To:Cc:Subject:Date:In-Reply-To:References:
-	 MIME-Version; b=XHhzrd6Ar7wxMygAk9UJYB3DBpwlvFszGPim9J335NnDP+v6Fkt8qIyppKm6g5Wddg+rXUozspBhJ8D2+qRBILRCjREAjz0GCxwLRMHNTIVEPBpwYHdhP4hT+pZ3FqO9ovcA93Ds32pLJGh0k0tY/VPVG0zbK8f+P7zxDK2g0nU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com; spf=pass smtp.mailfrom=qq.com; dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b=az3ihARm; arc=none smtp.client-ip=162.62.57.64
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=qq.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=qq.com
+	s=arc-20240116; t=1786386664; c=relaxed/simple;
+	bh=Fc67WWQAQS31s3ip1450lTQP/sRgDBioX84yBC/TnXI=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=l/qFJ3+UlNMBUHA1PSXZSkq2Zp4VBDhDDSWMMYNMAteuZ7VSfiea1S/MytdDOhT2Wk1SApQ7zIY5boIyWgycm5ioSOifUCgroRzz40JYxSWhCjQ2SVnLnViIOWOUBn9TiHKSpRu0OBTADz96PqtUq+D6SW2jzXSTP/9hAeHc8xQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Cx6NWy1m; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=qq.com header.i=@qq.com header.b="az3ihARm"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=qq.com; s=s201512;
-	t=1786364269; bh=H1f8WzOZadw6epSITVVA3XcQ1v3joYwcYQuF11rR/nA=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=az3ihARmMIco/I+skHouV1Imd34JD32hoG/UeDh4DWz5dFiv4xgD+1t6LVaoMGBXT
-	 XzXYlnkqQ/+7FvrascM6k5oy53+W4QZTb51pDxauEJkAvZWuQGP1MEQHGKCjPU+UDI
-	 Bb8cw1vrw+C5xvonAmgMnFNC3hi61bCu1+XPgspQ=
-Received: from ikun-VMware-Virtual-Platform.localdomain ([2409:8a20:b30:4fb4:bdd2:8b42:d496:7e16])
-	by newxmesmtplogicsvrsza53-0.qq.com (NewEsmtp) with SMTP
-	id 41134061; Mon, 10 Aug 2026 20:16:17 +0800
-X-QQ-mid: xmsmtpt1786364193tolvez68p
-Message-ID: <tencent_27152D4F8FE2B1274FC8BADB1B84644C0506@qq.com>
-X-QQ-XMAILINFO: NGZp1yYNf7Y+70bg0OMg3rnSgqRmBFbeJobteN+9Y+s5sPWu4rRlCnOFbExJHk
-	 62ntm03Z2pP6rwXpwY/T1S7wwDYKpOYh2Dinjq4Vmm74EeUEtrWkbhUK8ZvFRDkVnGfj6l+AH6Dj
-	 FRiZ0r4h2w4gkyUHGMiue9ScoB0Ip9pkGnEPR9xgDWH8tysCTRiVdmUgBTNMPoXC1JH98sG9XJOX
-	 SnXQN7du2XxUbfST6r+yWIa6ydo0UcS1OGB3gWn2QJprwoNEHiF3xG3Top991q5l8OuB66csv5lP
-	 Is2Ee+TX+fc9juTvdSkzGCFkBFW3i8mwl1CY8kZ+EaZJdWM5aDl9SI0vTityXlyvXAT4Z+Yp9+eM
-	 4y2VYBeDKL9Bbp+wsx9zbKvmTU8YiDC+ztfGGPsdd8YuIWC+Xmvby7LZxulE8Nsd2ZVrw1Maa6+i
-	 OHHiK3T6clPynpGds4Ybao/MK6yrKDxWlFsyQ+qcKhaMD5hioAc+CzFCtcKEFPNA+WcbS0zWHaXe
-	 yP6VcRXP1iAflDIe4DtDEMbREtkLxnvSAUFu1UYwnnReI17ulyPgEmQiFLF6cWeqmyyEpvpMGvs8
-	 tLakC88gnvazgjhhXsqxbBSXRlzg6y7NQ2SA2ctaa2N50MJnz4KYbFf+7zvTfDFqVhw0UbDoDWp8
-	 Zs6HDjxHsbKGcHRir9K53rQt6aKaoGW+taEsAUkmCsfRpVIR0O32pR9/cDUtTG/tDH0aYmJhzgaV
-	 jZAmq6/TLYAqtzZlBTVRakL8a6rYd0gSyycJSmaXotGo3vlBRlVJD+/jMPOSlu6cGdCFGlPdWrKs
-	 NdCynr4ku+je65rIcIhPGMYlor5tZ6EWC5OxUZLUxw/2+59JfLbKe1t3jkJxOYSdQz5KK8evAakq
-	 p0M/z4IExew0TKrQd/j+jQTubMCHV1oKG4PozLz6ww0Vg8J+atAQQcxIqcVuMqBXAlz7BPiGofZx
-	 0MAq28xUtq9qIdZPUJJq+fBreG6FL7G4zoBONbXMgP0sAGRdiRkbD3rPAHlRvpdqX9WQiYCRbayv
-	 S49Jg4FZ0m3SEbqUcWR/iW6A98g3mNwubjgDwWunhGfg3TAJvvhPFtRe+LRHahAXNiOGVomuEa46
-	 CdZ0l57oekFbCvIossCmECObu/xCCktsQC0H4uHLS4wXGZmo0qFRePXFLb4cDepqj6jTq9idnQ/a
-	 xwgTZOWm4DWMvedA==
-X-QQ-XMRINFO: MSVp+SPm3vtSI1QTLgDHQqIV1w2oNKDqfg==
-From: Guanghui Yang <3497809730@qq.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com,
-	dsterba@suse.com,
-	linux-kernel@vger.kernel.org,
-	stable@vger.kernel.org,
-	Guanghui Yang <3497809730@qq.com>
-Subject: [PATCH v3 2/3] btrfs: restore active device pointers after failed sprout
-Date: Mon, 10 Aug 2026 20:16:05 +0800
-X-OQ-MSGID: <62f930b3a904a7ca4be2c87cea3727f226f5e6cb.1786363229.git.3497809730@qq.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <cover.1786363229.git.3497809730@qq.com>
-References: <cover.1786363229.git.3497809730@qq.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Cx6NWy1m"
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 1B5C41F000E9;
+	Mon, 10 Aug 2026 18:31:03 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1786386663;
+	bh=goYOk9VlISGk7mk9mhJABGfgizOqo+K4EiV71l1r7Uk=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=Cx6NWy1mxYY9jD1Roqw6WZt822bUeW6JBCmVfzL1dHNudwJYN98lulPfzWMzhU5+/
+	 t1MqonL+N2SmaYvJS5EZqKSQOZp7iF57/HGY5tF3P+xg7pFiHgLc0rOcFcJFZXXKm8
+	 CaRqqIrWGmRMzPF1XNxEY+zMyiHzjCqn1N6GdIj4qcaN3vfsgMmDanYMz3wlZ/lt8j
+	 APkdXE5zHfRsBbMeMyOvoslnH9+Bs/TA/vZOsuyzpx8PDPTeChFipUD/6krdlu+hSm
+	 lZSXi9IJLzOZ1E9Z7Vh/Qs1TaLAnO/ZqFQutPuzKrp4voGtE4US54BHuvtHRe9Bwqy
+	 DRhsa9pAEP01g==
+Date: Mon, 10 Aug 2026 11:31:02 -0700
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: Andrey Albershteyn <aalbersh@kernel.org>
+Cc: linux-xfs@vger.kernel.org, fsverity@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org, ebiggers@kernel.org, hch@lst.de,
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+	linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v14 13/21] xfs: use read ioend for fsverity data
+ verification
+Message-ID: <20260810183102.GY3556460@frogsfrogsfrogs>
+References: <20260803200820.393203-1-aalbersh@kernel.org>
+ <20260803200820.393203-14-aalbersh@kernel.org>
+ <20260804183632.GO3556460@frogsfrogsfrogs>
+ <anmNNNNy4YsV_KLB@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <anmNNNNy4YsV_KLB@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
 
-btrfs_init_new_device() switches latest_dev and possibly s_bdev from the seed device to the new sprout device before creating the first writable chunks.
+On Mon, Aug 10, 2026 at 12:01:13PM +0200, Andrey Albershteyn wrote:
+> On 2026-08-04 11:36:32, Darrick J. Wong wrote:
+> > On Mon, Aug 03, 2026 at 10:08:03PM +0200, Andrey Albershteyn wrote:
+> > > Use read ioends for fsverity verification. Do not issue fsverity
+> > > metadata I/O through the same workqueue due to risk of a deadlock by a
+> > > filled workqueue.
+> > > 
+> > > Pass fsverity_info from iomap context down to the ioend as hashtable
+> > > lookups are expensive.
+> > > 
+> > > Add a simple helper to check that this is not fsverity metadata but file
+> > > data that needs verification.
+> > > 
+> > > Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+> > > ---
+> > >  fs/xfs/xfs_aops.c     | 13 ++++++++-----
+> > >  fs/xfs/xfs_file.c     |  3 ++-
+> > >  fs/xfs/xfs_fsverity.c |  9 +++++++++
+> > >  fs/xfs/xfs_fsverity.h |  6 ++++++
+> > >  fs/xfs/xfs_ioend.c    | 42 +++++++++++++++++++++++++++++++++++++++++-
+> > >  fs/xfs/xfs_ioend.h    |  4 +++-
+> > >  include/linux/iomap.h |  1 +
+> > >  7 files changed, 70 insertions(+), 8 deletions(-)
+> > > 
+> > > diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
+> > > index b8813e577285..14bfaed1f1f6 100644
+> > > --- a/fs/xfs/xfs_aops.c
+> > > +++ b/fs/xfs/xfs_aops.c
+> > > @@ -24,6 +24,7 @@
+> > >  #include "xfs_zone_alloc.h"
+> > >  #include "xfs_rtgroup.h"
+> > >  #include "xfs_fsverity.h"
+> > > +#include <linux/fsverity.h>
+> > >  
+> > >  struct xfs_writepage_ctx {
+> > >  	struct iomap_writepage_ctx ctx;
+> > > @@ -607,7 +608,7 @@ xfs_bio_submit_read(
+> > >  {
+> > >  	xfs_ioend_submit_read(iter->inode, ctx->read_ctx,
+> > >  			ctx->read_ctx_file_offset,
+> > > -			iomap_ioend_flags(&iter->iomap));
+> > > +			iomap_ioend_flags(&iter->iomap), ctx->vi);
+> > >  	ctx->read_ctx = NULL;
+> > >  }
+> > >  
+> > > @@ -619,11 +620,13 @@ static const struct iomap_read_ops xfs_iomap_read_ops = {
+> > >  
+> > >  static inline const struct iomap_read_ops *
+> > >  xfs_get_iomap_read_ops(
+> > > -	const struct address_space	*mapping)
+> > > +	const struct address_space	*mapping,
+> > > +	loff_t				position)
+> > >  {
+> > >  	struct xfs_inode		*ip = XFS_I(mapping->host);
+> > >  
+> > > -	if (bdev_has_integrity_csum(xfs_inode_buftarg(ip)->bt_bdev))
+> > > +	if (bdev_has_integrity_csum(xfs_inode_buftarg(ip)->bt_bdev) ||
+> > > +			xfs_fsverity_is_file_data(ip, position))
+> > >  		return &xfs_iomap_read_ops;
+> > >  	return &iomap_bio_read_ops;
+> > >  }
+> > > @@ -635,7 +638,7 @@ xfs_vm_read_folio(
+> > >  {
+> > >  	struct iomap_read_folio_ctx	ctx = { .cur_folio = folio };
+> > >  
+> > > -	ctx.ops = xfs_get_iomap_read_ops(folio->mapping);
+> > > +	ctx.ops = xfs_get_iomap_read_ops(folio->mapping, folio_pos(folio));
+> > >  	iomap_read_folio(&xfs_read_iomap_ops, &ctx, NULL);
+> > >  	return 0;
+> > >  }
+> > > @@ -646,7 +649,7 @@ xfs_vm_readahead(
+> > >  {
+> > >  	struct iomap_read_folio_ctx	ctx = { .rac = rac };
+> > >  
+> > > -	ctx.ops = xfs_get_iomap_read_ops(rac->mapping),
+> > > +	ctx.ops = xfs_get_iomap_read_ops(rac->mapping, readahead_pos(rac));
+> > >  	iomap_readahead(&xfs_read_iomap_ops, &ctx, NULL);
+> > >  }
+> > >  
+> > > diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
+> > > index 67c1357f4701..e9927688086d 100644
+> > > --- a/fs/xfs/xfs_file.c
+> > > +++ b/fs/xfs/xfs_file.c
+> > > @@ -237,7 +237,8 @@ xfs_dio_read_bounce_submit_io(
+> > >  	loff_t			file_offset)
+> > >  {
+> > >  	xfs_ioend_submit_read(iter->inode, bio, file_offset,
+> > > -			iomap_ioend_flags(&iter->iomap) | IOMAP_IOEND_DIRECT);
+> > > +			iomap_ioend_flags(&iter->iomap) | IOMAP_IOEND_DIRECT,
+> > > +			NULL);
+> > >  }
+> > >  
+> > >  static const struct iomap_dio_ops xfs_dio_read_bounce_ops = {
+> > > diff --git a/fs/xfs/xfs_fsverity.c b/fs/xfs/xfs_fsverity.c
+> > > index d86009629b56..d1b3ccc65322 100644
+> > > --- a/fs/xfs/xfs_fsverity.c
+> > > +++ b/fs/xfs/xfs_fsverity.c
+> > > @@ -20,3 +20,12 @@ xfs_fsverity_metadata_offset(
+> > >  {
+> > >  	return round_up(i_size_read(VFS_IC(ip)), XFS_FSVERITY_START_ALIGN);
+> > >  }
+> > > +
+> > > +bool
+> > > +xfs_fsverity_is_file_data(
+> > > +	const struct xfs_inode	*ip,
+> > > +	loff_t			offset)
+> > > +{
+> > > +	return fsverity_active(VFS_IC(ip)) &&
+> > > +			offset < xfs_fsverity_metadata_offset(ip);
+> > > +}
+> > > diff --git a/fs/xfs/xfs_fsverity.h b/fs/xfs/xfs_fsverity.h
+> > > index 5771db2cd797..ec77ba571106 100644
+> > > --- a/fs/xfs/xfs_fsverity.h
+> > > +++ b/fs/xfs/xfs_fsverity.h
+> > > @@ -9,12 +9,18 @@
+> > >  
+> > >  #ifdef CONFIG_FS_VERITY
+> > >  loff_t xfs_fsverity_metadata_offset(const struct xfs_inode *ip);
+> > > +bool xfs_fsverity_is_file_data(const struct xfs_inode *ip, loff_t offset);
+> > >  #else
+> > >  static inline loff_t xfs_fsverity_metadata_offset(const struct xfs_inode *ip)
+> > >  {
+> > >  	WARN_ON_ONCE(1);
+> > >  	return ULLONG_MAX;
+> > >  }
+> > > +static inline bool xfs_fsverity_is_file_data(const struct xfs_inode *ip,
+> > > +					    loff_t offset)
+> > > +{
+> > > +	return false;
+> > > +}
+> > >  #endif	/* CONFIG_FS_VERITY */
+> > >  
+> > >  #endif	/* __XFS_FSVERITY_H__ */
+> > > diff --git a/fs/xfs/xfs_ioend.c b/fs/xfs/xfs_ioend.c
+> > > index 641f0d881b07..b0370af7a0f7 100644
+> > > --- a/fs/xfs/xfs_ioend.c
+> > > +++ b/fs/xfs/xfs_ioend.c
+> > > @@ -18,7 +18,9 @@
+> > >  #include "xfs_ioend.h"
+> > >  #include "xfs_error.h"
+> > >  #include "xfs_errortag.h"
+> > > +#include "xfs_fsverity.h"
+> > >  #include <linux/bio-integrity.h>
+> > > +#include <linux/fsverity.h>
+> > >  
+> > >  static void
+> > >  xfs_end_bio_bounced(
+> > > @@ -87,6 +89,20 @@ xfs_read_bounce_and_resubmit(
+> > >  			xfs_bounce_submit_ioend);
+> > >  }
+> > >  
+> > > +static void
+> > > +xfs_end_fsverity_io_read(
+> > > +	struct work_struct	*work)
+> > > +{
+> > > +	struct iomap_ioend	*ioend =
+> > > +		container_of(work, struct iomap_ioend, work);
+> > > +
+> > > +	if (!ioend->io_bio.bi_status)
+> > > +		fsverity_verify_bio(ioend->io_vi, &ioend->io_bio);
+> > > +
+> > > +	iomap_finish_ioends(
+> > > +		ioend, blk_status_to_errno(ioend->io_bio.bi_status));
+> > > +}
+> > > +
+> > >  static void
+> > >  xfs_end_io_read(
+> > >  	struct bio		*bio)
+> > > @@ -113,6 +129,26 @@ xfs_end_io_read(
+> > >  		}
+> > >  	}
+> > >  
+> > > +	/*
+> > > +	 * If we don't have block device integrity (IOMAP_IOEND_INTEGRITY),
+> > > +	 * there won't be any ioends containing fsverity metadata. This means
+> > > +	 * that those won't get mixed with data ioends causing self-deadlock or
+> > > +	 * rescuer thread deadlock.
+> > 
+> > I think this comment should be inverted since fsverity + PI is
+> > probably(?) more of an edge case?
+> 
+> Yes, this is more of an edge case, I will inverted it
+> 
+> > 
+> > "If we have fsverity and block device integrity attached to this bio,
+> > we need to run both validations from the separate fsverity workqueue
+> > to avoid deadlocking due to fsverity issuing its own reads."
+> > 
+> > (Assuming I understand the fsverity && pi case correctly.)
+> > 
+> > One thing I'm not clear about -- why is it safe to do the fsverity
+> > validation here if PI isn't enabled?  Can't that also issue IO to pull
+> > in merkle tree blocks?
+> 
+> Without PI, fsverity metadata is read without XFS bio completion
+> path, we don't get here for the descriptor/metadata reads
+> (see xfs_get_iomap_read_ops()). So, we won't block the queue, as
+> data ioends won't be mixed with metadata ioends.
+> 
+> With PI, all fsverity reads goes through this path. We could get a
+> case that data ioend is waiting for metadata IO to be completed which
+> in turn is pending for data ioend to be finished (due to batch
+> processing of multiple BIOs in the bio_complete wq).
+> 
+> So, this will issue more IO, but this IO will not get onto this
+> queue (it will go through iomap_bio_submit_read()).
 
-If chunk creation or the subsequent sprout setup fails, the error path releases the new device without switching those pointers back. btrfs_show_devname() can then dereference the freed latest_dev and crash.
+Ah, ok.  Maybe add to that comment:
 
-Restore the active device pointers to the latest seed device before removing and releasing the failed sprout device.
+"If we have fsverity enabled but block device integrity is not enabled,
+completion of the fsverity metadata reads does not require a workqueue
+so there is no deadlock potential."
 
-Fixes: b7cb29e666fe ("btrfs: update latest_dev when we create a sprout device")
+then?
 
-Cc: stable@vger.kernel.org
-Signed-off-by: Guanghui Yang <3497809730@qq.com>
----
- fs/btrfs/volumes.c | 3 +++
- 1 file changed, 3 insertions(+)
+(Just echoing you to make sure I understand completely.)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ffd076e87..f3f77c89c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2987,6 +2987,9 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- error_sysfs:
- 	btrfs_sysfs_remove_device(device);
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
-+	if (seeding_dev)
-+		btrfs_assign_next_active_device(device,
-+						seed_devices->latest_dev);
- 	mutex_lock(&fs_info->chunk_mutex);
- 	if (!list_empty(&device->post_commit_list))
- 		list_del_init(&device->post_commit_list);
--- 
-2.53.0
+> > > +	 *
+> > > +	 * Without offloading the data ioend, verification can be done directly
+> > > +	 * in this task context.
+> > > +	 */
+> > > +	if (IS_ENABLED(CONFIG_FS_VERITY) && !error && ioend->io_vi &&
+> > > +			xfs_fsverity_is_file_data(ip, ioend->io_offset)) {
+> > > +		if (ioend->io_flags & IOMAP_IOEND_INTEGRITY) {
+> > > +			fsverity_enqueue_verify_work(&ioend->work);
+> > > +			return;
+> > > +		}
+> > > +
+> > > +		fsverity_verify_bio(ioend->io_vi, &ioend->io_bio);
+> > > +		error = blk_status_to_errno(ioend->io_bio.bi_status);
+> > > +	}
+> > > +
+> > >  	iomap_finish_ioends(ioend, error);
+> > >  }
+> > >  
+> > > @@ -121,13 +157,17 @@ xfs_ioend_submit_read(
+> > >  	struct inode		*inode,
+> > >  	struct bio		*bio,
+> > >  	loff_t			file_offset,
+> > > -	u16			ioend_flags)
+> > > +	u16			ioend_flags,
+> > > +	struct fsverity_info	*vi)
+> > >  {
+> > >  	struct xfs_inode	*ip = XFS_I(inode);
+> > >  	struct xfs_mount	*mp = ip->i_mount;
+> > >  	struct iomap_ioend	*ioend;
+> > >  
+> > >  	ioend = iomap_init_ioend(inode, bio, file_offset, ioend_flags);
+> > > +	ioend->io_vi = vi;
+> > > +	INIT_WORK(&ioend->work, xfs_end_fsverity_io_read);
+> > > +
+> > >  	if ((ioend_flags & IOMAP_IOEND_DIRECT) &&
+> > >  	    READ_ONCE(mp->m_read_bounce) == XFS_READ_BOUNCE_ALWAYS) {
+> > >  		iomap_bounce_read(ioend, bdev_logical_block_size(bio->bi_bdev),
+> > > diff --git a/fs/xfs/xfs_ioend.h b/fs/xfs/xfs_ioend.h
+> > > index 7c2a1ea3e6ed..992c248a693a 100644
+> > > --- a/fs/xfs/xfs_ioend.h
+> > > +++ b/fs/xfs/xfs_ioend.h
+> > > @@ -2,6 +2,8 @@
+> > >  #ifndef __XFS_IOEND_H
+> > >  #define __XFS_IOEND_H
+> > >  
+> > > +#include <linux/fsverity.h>
+> > > +
+> > >  /*
+> > >   * Fast and loose check if this write could update the on-disk inode size.
+> > >   */
+> > > @@ -13,6 +15,6 @@ static inline bool xfs_ioend_is_append(struct iomap_ioend *ioend)
+> > >  
+> > >  void xfs_end_bio(struct bio *bio);
+> > >  void xfs_ioend_submit_read(struct inode *inode, struct bio *bio,
+> > > -		loff_t file_offset, u16 ioend_flags);
+> > > +		loff_t file_offset, u16 ioend_flags, struct fsverity_info *vi);
+> > >  
+> > >  #endif /* __XFS_IOEND_H */
+> > > diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+> > > index f9e2fce21be0..96a00d61d4e8 100644
+> > > --- a/include/linux/iomap.h
+> > > +++ b/include/linux/iomap.h
+> > > @@ -455,6 +455,7 @@ struct iomap_ioend {
+> > >  	sector_t		io_sector;	/* start sector of ioend */
+> > >  	void			*io_private;	/* file system private data */
+> > >  	struct fsverity_info	*io_vi;		/* fsverity info */
+> > > +	struct work_struct	work;		/* fsverity blocking I/O */
+> > 
+> > io_work?
+> 
+> sure
+> 
+> > 
+> > >  	struct bio		io_bio;		/* MUST BE LAST! */
+> > 
+> > I slightly wonder about iomap_ioend getting bigger but I don't have
+> > access to my usual workstations and can't pahole this to learn how much
+> > that embiggens the structure.
+> > 
+> > Also I wouldn't be shocked if someone else kinda wants the work struct
+> > here too for (say) future fscrypt/compression/whatever.
+> 
+> It add 72 bytes:
+> 
+> $ pahole -C iomap_ioend fs/iomap/ioend.o  
+> struct iomap_ioend {
+>         struct list_head           io_list;              /*     0    16 */
+>         u16                        io_flags;             /*    16     2 */
+> 
+>         /* XXX 2 bytes hole, try to pack */
+> 
+>         u32                        io_bvec_offset;       /*    20     4 */
+>         struct inode *             io_inode;             /*    24     8 */
+>         size_t                     io_size;              /*    32     8 */
+>         atomic_t                   io_remaining;         /*    40     4 */
+>         int                        io_error;             /*    44     4 */
+>         struct iomap_ioend *       io_parent;            /*    48     8 */
+>         loff_t                     io_offset;            /*    56     8 */
+>         /* --- cacheline 1 boundary (64 bytes) --- */
+>         sector_t                   io_sector;            /*    64     8 */
+>         void *                     io_private;           /*    72     8 */
+>         struct fsverity_info *     io_vi;                /*    80     8 */
+>         struct work_struct         work;                 /*    88    72 */
+>         /* --- cacheline 2 boundary (128 bytes) was 32 bytes ago --- */
+>         struct bio                 io_bio;               /*   160   120 */
+> 
+>         /* size: 280, cachelines: 5, members: 14 */
+>         /* sum members: 278, holes: 1, sum holes: 2 */
+>         /* last cacheline: 24 bytes */
+> };
 
+<nod> Thanks for pasting that in.
+
+--D
+
+> 
+> -- 
+> - Andrey
+> 

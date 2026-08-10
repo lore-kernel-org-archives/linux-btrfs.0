@@ -1,327 +1,161 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f49.google.com (mail-wr1-f49.google.com [209.85.221.49])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 27A3E306B3D;
-	Mon, 10 Aug 2026 21:16:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F156E3B3C01
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 22:42:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786396616; cv=none; b=gZfevdJ1YgrfBK76Ve/bl665ZoAMuhmjOjq7Z6CMZrx7W7wnFxP0q4QolBhKPUmi30vMMUWRKckeyJIU6MwNZPCWGwkg2f8mUb+hivSBDUBCJ/yqoGaCgqH9q1GBWWAQL/7ae7L8S08T/tLhNF/nemzpqc3ulCYswdj5IvIk6pg=
+	t=1786401724; cv=none; b=EF/L9boU3P1fXzSgqY5dwVllmhHehRxzrDh8VuDdG2wRzH5PHa98duq4TY9JCwwgxKZ3zKnME4wGjV+NkjFGRb4jGXgqP47wjUiMSnkuXBwCUnPQIcFdIojMsTAc4q+b/E6H315DeWjj2gHucn/UoWx871YY88lOpyzCw+ZKnqk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786396616; c=relaxed/simple;
-	bh=Rmno2zC8CwexWBw2mAAM26anyZeYpZ7eH6U4q+CzWi4=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=dNgZa92LMHI2oM0MJ+qK74XKT8sxutLPCDPBgN5g1ee+a8145OYbZ/m2RoVJw8diavg3fwVf7Y/hCzTI02kGfBleddbnmLRMz6wTVXBrg3WRI5lMOtsvoQnSjFwrYtwOyjzAP5Y/WrJfDdchHPkgQb9svYG5ivvx4dvw+bLRgKA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=mQcJ+3/F; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1786401724; c=relaxed/simple;
+	bh=KqmDB79RqIhjDhQgCW6/y6YkpsEM2RYbu8OiiZX9hJ0=;
+	h=Mime-Version:Content-Type:Date:Message-Id:Cc:Subject:From:To:
+	 References:In-Reply-To; b=ZxTWTZjRNu4vyzjhbWDmDFdH2Zg55GPAsCfwcAobb2PetZYz8mhX5qWhAQUHUZzkRjvC9WF0Ri+qg1kaqPSOPLoZ6vuEIu8E3tWB/aYumNcCur69H9tqJJVtAIwZc8jH+3Ui/NjWA3Iid/PgeeGC9zf9naeRQ4K9boidB3q73cE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=eJDFm+SV; arc=none smtp.client-ip=209.85.221.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="mQcJ+3/F"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8F06E1F00A3A;
-	Mon, 10 Aug 2026 21:16:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1786396614;
-	bh=AggEVfg3/IbmxO0E6DX/zUSz2hix7aMWXBecrb9nR5w=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=mQcJ+3/F9NaUz7EPG0KvWqWS85YTD40MfNjuMVTjkahoa0AYsAvDxNiVD3Bgou4QC
-	 ImaHJw7PVDgXNJqh8lO3OOjgG9k8mMKMxAcGw0RHXOSciZx03v38WBifsK8McPNU7D
-	 CY8twdvpEBDov6z765HlBS9kE9KhpWHLpnGiawZ4tsXeIrE/O/WTpxRTJjJTntFps8
-	 8sUF1mG8bPX63RSMjeIv0xztgOy6jXmr8g8ssHV1wKa13hPS9e9orEear0de+ftC9I
-	 qw8oEhD47GegZYk4ow8FjJEGD7JQkFwIhnCmknPBq7FUzifm7ttQQ32Q34yiUr/dcF
-	 hhT2hxM7oyCyw==
-Date: Tue, 11 Aug 2026 05:16:49 +0800
-From: Zorro Lang <zlang@kernel.org>
-To: Qu Wenruo <wqu@suse.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	Christian Borntraeger <borntraeger@linux.ibm.com>
-Subject: Re: [PATCH v2] fstests: add a dio-read-into-mmap and sync race test
- case
-Message-ID: <ano-7hg-kmiYaqia@zlang-mailbox>
-Mail-Followup-To: Qu Wenruo <wqu@suse.com>, fstests@vger.kernel.org, 
-	linux-btrfs@vger.kernel.org, Christian Borntraeger <borntraeger@linux.ibm.com>
-References: <20260803235514.25815-1-wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="eJDFm+SV"
+Received: by mail-wr1-f49.google.com with SMTP id ffacd0b85a97d-47f7027ca11so1539886f8f.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 15:42:02 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1786401721; x=1787006521; darn=vger.kernel.org;
+        h=in-reply-to:references:to:from:subject:cc:message-id:date
+         :content-type:mime-version:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=rJuWzVzy0REdnSU3LUqFXY2lFYzbe6m5a852wr3h8Rs=;
+        b=eJDFm+SVAa5JQ73FR5mMJfnROa7USeqTuFNyAEVezD8dvNRUF66VRZqsgRuvJ9ECtm
+         H8J1/TBZhi0h/KSKQRSWq5sbZ2DJxW7ySYfEPyYZnNyX3yJG8GgW95i7M3zgg2I1J9T6
+         MaJxD4q6R29avBRAZP3i27C5bq7jAbZJu62IFxjNJlmjtsjy6/gV2UdX59TvCoy9So7C
+         2wYs67s8r8v1jm5r4ByD3Pz0Um6+hdRk64NKg9C5Es5C5F29dexT4fbNt4reLF99E7V6
+         UXoVxy7yah84KZShsUXKp/igGnHkD1CIK34VwCaD62BtzLzUMGbYXOXVu4u3UoLxb6y4
+         jqtw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1786401721; x=1787006521;
+        h=in-reply-to:references:to:from:subject:cc:message-id:date
+         :content-type:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=rJuWzVzy0REdnSU3LUqFXY2lFYzbe6m5a852wr3h8Rs=;
+        b=eXNyQGwNBarwgFS6W5CQvbogMUI8JPFqlXqHI8gsVK0Lc3QP58m1AjV06dth/u3hrD
+         gYNKnaiaerSG2cwYnLeSKShpuxSvTnR5kT88VkTngjTzINP5aT77ze9mLoyl8tSIiR5n
+         ZU3ux5ye8fHj6dhFTMSvtMmh0KgN8KqNw7ErJv9KKVHtFryAL5k8XuouKOGNflh6cQfa
+         D7jUjqWyQ6goI4GGXJBetjbq9NBtQaPIsRNoafOvhfFjduc6J4rOxPwsh2O4A42yQEHB
+         1L+U7kDxeKPXpdaARgEpNQevRRlQVP7DUjPjEt2IvW+B5Xfv9VKjsItutrql5tSagszC
+         7a3A==
+X-Forwarded-Encrypted: i=1; AHgh+RrqjGjEzy2LswTu8FayTkPTN5zlqF2z83oyRjvb501z/dVB1iPXWgPH40JaLtB5CdanecFp0N9fYAG/mg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwWvtAYPxbmwO++VFZBmKxa4EFLjD71Hltomsyat0ku4SLGjVDL
+	y+PWSQ3UajiV37ElNRcgEy8euytUk+jWNWL8fiy9v0UPpmtZPeJl1uC4
+X-Gm-Gg: AR+sD13IP+kuOnwPN+/BcDAdrJKCNax211hauyNdC2ASE1c7cA09iYlJ/mPTJsBQkeP
+	sMS3PCB09aEauHDXRM56ufZEofhFoBQG7IUe6Tgytc0+UWe5L2DdxqXQ3EKzZjJ0K0LNPanJ0Dk
+	2K4kdVxeorVFZ+BSxkuaAWVGSTuu7JiilsYowMntKlH/axblkFp8Yky5xPKbpY4W/oRMDz2NXZk
+	zPPD/4gHVtk0uJAHydeJt6sf+jn9+rqkP+UPGmBVwUq8kz5x4DroYKxYW+H4ZdulhNCXq1ubciY
+	1ATfkv503AE3PDH4Z7H19ggG/IyOjQx1X+vSeBnIFn2+pA9fv+EXecPXqViu1gTw56YEiltEM/Y
+	YLXvLEfOX3pcnQxjyTsULDWoWfBN9dBAQSUm/MqDF5G5AjDoLseIcaDhjyDfahpUZhLh6zmMSJt
+	wbMYwYiiMyN9gtRF/j4B69MhJXtsgYT024UZDFnNhJzE8d+XJYE3Yrdigr
+X-Received: by 2002:a05:600d:644f:20b0:499:7410:545 with SMTP id 5b1f17b1804b1-49974100707mr22818365e9.12.1786401720899;
+        Mon, 10 Aug 2026 15:42:00 -0700 (PDT)
+Received: from localhost ([2001:b07:5d26:7a6a:a8a:5bfa:f87a:3c1a])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-499740e13e3sm19641975e9.10.2026.08.10.15.41.55
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 10 Aug 2026 15:41:59 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260803235514.25815-1-wqu@suse.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed;
+ boundary=719d64e108f06de6ea86f652b8c169fcb1570fe81a25485a55257270b4a7;
+ micalg=pgp-sha512; protocol="application/pgp-signature"
+Date: Tue, 11 Aug 2026 00:41:55 +0200
+Message-Id: <DKLMK2MR5D7W.25SJ3IBJJ5QID@gmail.com>
+Cc: "Qu Wenruo" <quwenruo.btrfs@gmx.com>, <clm@fb.com>, <dsterba@suse.com>,
+ <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 0/4] btrfs: add per-inode compression levels in xattrs
+From: "koraynilay" <koray.fra@gmail.com>
+To: "koraynilay" <koray.fra@gmail.com>, "Qu Wenruo" <wqu@suse.com>, "Zygo
+ Blaxell" <ce3g8jdj@umail.furryterror.org>
+X-Mailer: aerc 0.21.0-0-g5549850facc2
+References: <20260808023459.1494928-1-koray.fra@gmail.com>
+ <52e06b50-b888-48f0-a574-91e1192eda73@gmx.com>
+ <DKJZQAFIRW7H.3KE8DKWO5E3TV@gmail.com>
+ <c5070299-46ba-460d-9ff7-0b2e4878079b@suse.com>
+ <ankKjqr72aD8Ka8w@hungrycats.org>
+ <95bab93b-f0c6-447d-8bfb-c81b3d48f7a7@suse.com>
+ <ankbNtvLr3ZnFjEk@hungrycats.org>
+ <9995da33-3f10-43b6-aec1-0e90eae03c7a@suse.com>
+ <DKKUZT0LUJOI.RE9GG62MU6K3@gmail.com>
+In-Reply-To: <DKKUZT0LUJOI.RE9GG62MU6K3@gmail.com>
 
-On Tue, Aug 04, 2026 at 09:25:14AM +0930, Qu Wenruo wrote:
-> There is a report that on btrfs, if the following workload are running,
-> btrfs can fail:
-> 
-> - A dio read into a mmaped range
->   Only the mmap range needs to be on btrfs.
->   The dio read source makes no difference.
-> 
-> - Sync_range on the mapped range
-> 
-> The btrfs errors include:
-> 
-> - Hang during data writeback
-> - Filesystem flips RO
-> 
-> The mmap range is dirtied but written back by the sync_range process,
-> then dio read finished and found that the folios are no longer dirty,
-> so dio endio will mark those folios dirty again so that the fs can write
-> them back again.
-> 
-> However for non-experimental btrfs with 4K block size and 4K page size,
-> there is a regression in v7.2 that such case is no longer handled
-> properly, due to the enablement of large folios and removal of cow
-> fixup.
-> And btrfs can never handle it for bs < ps from day 1.
-> 
-> Add a regression test for it.
-> 
-> Reported-by: Christian Borntraeger <borntraeger@linux.ibm.com>
-> Link: https://lore.kernel.org/linux-btrfs/20260721191152.101118-1-borntraeger@linux.ibm.com/
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Changelog:
-> v2:
-> - Rebased to the latest patches-in-queue branch
->   The old number is taken by another test case, now this one got the
->   number 800.
-> 
-> - Fix a bug when the direct read failed short, the read buffer is not
->   advanced
-> 
-> - Add _require_odirect
-> 
-> - Add _require_xfs_io_command sync_range
-> 
-> - Add missing tmp files cleanup
-> 
-> - Remove unneessary trap command for the main process
-> 
-> - Fix the unset command
-> ---
->  .gitignore               |  1 +
->  src/Makefile             |  2 +-
->  src/dio-read-into-mmap.c | 81 ++++++++++++++++++++++++++++++++++++++++
->  tests/generic/800        | 79 +++++++++++++++++++++++++++++++++++++++
->  tests/generic/800.out    |  2 +
->  5 files changed, 164 insertions(+), 1 deletion(-)
->  create mode 100644 src/dio-read-into-mmap.c
->  create mode 100755 tests/generic/800
->  create mode 100644 tests/generic/800.out
-> 
-> diff --git a/.gitignore b/.gitignore
-> index 0b6b9452..d52ba4ad 100644
-> --- a/.gitignore
-> +++ b/.gitignore
-> @@ -216,6 +216,7 @@ tags
->  /src/truncate
->  /src/t_btrfs_received_uuid_ioctl
->  /src/btrfs_ioctl
-> +/src/dio-read-into-mmap
->  
->  # Symlinked files
->  /tests/generic/035.out
-> diff --git a/src/Makefile b/src/Makefile
-> --- a/src/Makefile
-> index e8da2636..ea3d77b2 100644
-> +++ b/src/Makefile
-> @@ -21,7 +21,7 @@ TARGETS = dirstress fill fill2 getpagesize holes lstat64 \
->  	t_mmap_writev_overlap checkpoint_journal mmap-rw-fault allocstale \
->  	t_mmap_cow_memory_failure fake-dump-rootino dio-buf-fault rewinddir-test \
->  	readdir-while-renames dio-append-buf-fault dio-write-fsync-same-fd \
-> -	dio-writeback-race unlink-fsync truncate
-> +	dio-writeback-race unlink-fsync truncate dio-read-into-mmap
->  
->  LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
->  	preallo_rw_pattern_writer ftrunc trunc fs_perms testx looptest \
-> diff --git a/src/dio-read-into-mmap.c b/src/dio-read-into-mmap.c
-> new file mode 100644
-> index 00000000..2a5ad085
-> --- /dev/null
-> +++ b/src/dio-read-into-mmap.c
-> @@ -0,0 +1,81 @@
-> +// SPDX-License-Identifier: GPL-2.0
-> +// Copyright (c) SUSE S.A.
-> +
-> +#include <fcntl.h>
-> +#include <stdlib.h>
-> +#include <stdio.h>
-> +#include <unistd.h>
-> +#include <string.h>
-> +#include <errno.h>
-> +#include <sys/mman.h>
-> +#include <sys/stat.h>
-> +#include <err.h>
-> +
-> +static int read_source_fd = -1;
-> +static int mmap_dest_fd = -1;
-> +static void *buf = NULL;
-> +static int iosize = 4 * 1024 * 1024;
-> +
-> +static void usage()
-> +{
-> +	fprintf(stderr,
-> +	"Usage: dio-read-into-mmap <read_source> <mmap_dest>\n");
-> +}
-> +
-> +int main(int argc, char **argv)
-> +{
-> +	int ret = -EINVAL;
-> +	const int pagesize = sysconf(_SC_PAGESIZE);
-> +	unsigned int cur = 0;
-> +
-> +	if (argc != 3) {
-> +		usage();
-> +		goto error;
-> +	}
-> +	if (iosize < pagesize) {
-> +		ret = -EINVAL;
-> +		fprintf(stderr, "blocksize smaller than pagesize\n");
-> +		goto error;
-> +	}
-> +
-> +	read_source_fd = open(argv[1], O_RDONLY | O_DIRECT, 0600);
-> +	if (read_source_fd < 0) {
-> +		ret = -errno;
-> +		fprintf(stderr, "failed to open '%s': %m", argv[1]);
-> +		goto error;
-> +	}
-> +	mmap_dest_fd = open(argv[2], O_RDWR, 0600);
-> +	if (mmap_dest_fd < 0) {
-> +		ret = -errno;
-> +		fprintf(stderr, "failed to open '%s': %m", argv[2]);
-> +		goto error;
-> +	}
-> +	buf = mmap(NULL, iosize, PROT_WRITE, MAP_SHARED, mmap_dest_fd, 0);
-> +	if (buf == MAP_FAILED) {
-> +		buf = NULL;
-> +		fprintf(stderr, "failed to mmap: %m");
-> +		return -errno;
-> +	}
-> +	while (cur < iosize) {
-> +		ret = pread(read_source_fd, buf + cur, iosize - cur, cur);
-> +		if (ret == 0) {
-> +			ret = -EINVAL;
-> +			fprintf(stderr, "reached EOF");
-> +			goto error;
-> +		}
-> +		if (ret < 0) {
-> +			ret = -errno;
-> +			fprintf(stderr, "failed to read: %m");
-> +			goto error;
-> +		}
-> +		cur += ret;
-> +	}
-> +error:
-> +	close(read_source_fd);
-> +	close(mmap_dest_fd);
-> +	if (buf)
-> +		munmap(buf, iosize);
-> +	if (ret < 0)
-> +		return EXIT_FAILURE;
-> +	return EXIT_SUCCESS;
-> +}
-> diff --git a/tests/generic/800 b/tests/generic/800
-> new file mode 100755
-> index 00000000..980d1734
-> --- /dev/null
-> +++ b/tests/generic/800
-> @@ -0,0 +1,79 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> +#
-> +# FS QA Test 800
-> +#
-> +# Test direct read into a mmaped range meanwhile doing data sync for the mmaped
-> +# range.
-> +# Such racy workload should cause direct endio function to mark the folio
-> +# dirty without going through buffered write nor page_mkwrite().
-> +#
-> +# Make sure the fs can handle such ->dirty_folio() callback correctly.
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto rw mmap
-> +
-> +_require_test_program dio-read-into-mmap
-> +_require_scratch
-> +_require_test
-> +_require_odirect
-> +_require_xfs_io_command sync_range
-> +
-> +_cleanup()
-> +{
-> +	cd /
-> +	[ -n "$mount_pid" ] && kill $mount_pid &> /dev/null
-> +	[ -n "$remount_pid" ] && kill $remount_pid &> /dev/null
+--719d64e108f06de6ea86f652b8c169fcb1570fe81a25485a55257270b4a7
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
 
-I think you mean "read_pid" and "sync_pid" here :)
+On Mon Aug 10, 2026 at 3:05 AM CEST, koraynilay wrote:
+> On Mon Aug 10, 2026 at 2:51 AM CEST, Qu Wenruo wrote:
+>>>>>> So either option 2 or 3 would be fine to me. Although I personally p=
+refer
+>>>>>> option 3 a little more, just because it's much cleaner code wise.
+>>>>>
+>>>>> Option 2 preserves legacy behavior that is 12 years old now, and it
+>>>>> costs a single comparison in two 'if' statements.
+>>>>>
+>>>>> Option 3 makes an already confusing situation worse--it makes the
+>>>>> underspecified behavior change depending on kernel version.
+>>>>
+>>>> One should never rely on something not documented in the first place.
+>>>=20
+>>> Option 3 prevents existing mount-option compression level specification=
+s
+>>> from working when the attribute agress with the mount option; otherwise=
+,
+>>> they would be blocked by a btrfs.compression string that doesn't specif=
+y
+>>> a level.  That's a _regression_.
+>>
+>> Let me be this clear, the current one nor option 2 is not working either=
+.
+>>
+>> If the current algo is different from the XATTR algo, it will be=20
+>> whatever random number clamped to the XATTR algo for the current code.
+>>
+>> This applies to the option 2 solution. When mount option changed, the=20
+>> level will suddenly change from whatever previous mount option to the=20
+>> default.
+>
+> TBF, I can see how it could be useful (or rather, how it could be good
+> to have it as an option) to have some files with btrfs.compression=3D"zst=
+d"
+> and then use -o compress=3D to decide on the fly how much compressed the
+> new data added to them should be.
+> Both are (read: will be, after the per-inode patch) 1 command away, but
+> there *might* be use-cases where mount is more suitable.
+>
+>
 
-Others look good to me, I'll help to fix above typo problems when I merge it,
-if there's not more review points from btrfs list.
+Hi,
 
-Reviewed-by: Zorro Lang <zlang@kernel.org>
+after a little bit of discussion on #btrfs on IRC, kepstin and I drafted
+a doc change[1] on a variant of option 2, a bit more clear and expanding
+also on the per-inode level change.
 
-> +	wait
-> +	rm -r -f $tmp.*
-> +}
-> +
-> +_scratch_mkfs >> $seqres.full
-> +_scratch_mount
-> +
-> +# Create the 4MiB target file on TEST_MNT as the read source.
-> +$XFS_IO_PROG -f -c "pwrite -i /dev/urandom 0 4M" "$TEST_MNT/dio-read-source" >> $seqres.full
-> +
-> +# Another 4MiB target file on SCRATCH_MNT as the mmap dest
-> +$XFS_IO_PROG -f -c "pwrite 0 4M" "$SCRATCH_MNT/mmap-dest" >> $seqres.full
-> +
-> +read_workload()
-> +{
-> +	_register_cleanup "wait"
-> +	while true; do
-> +		$here/src/dio-read-into-mmap "$TEST_MNT/dio-read-source" \
-> +			"$SCRATCH_MNT/mmap-dest" &> /dev/null
-> +		if [ $? -ne 0 ]; then
-> +			echo "dio read failed"
-> +			break;
-> +		fi
-> +	done
-> +}
-> +
-> +sync_workload()
-> +{
-> +	_register_cleanup "wait"
-> +	while true; do
-> +		$XFS_IO_PROG -c "sync_range 0 4m" "$SCRATCH_MNT/mmap-dest"
-> +		if [ $? -ne 0 ]; then
-> +			echo "sync_range failed"
-> +			break;
-> +		fi
-> +	done
-> +}
-> +
-> +read_workload &
-> +read_pid=$!
-> +
-> +sync_workload &
-> +sync_pid=$!
-> +
-> +sleep $((15 * $TIME_FACTOR))
-> +
-> +kill "$read_pid" "$sync_pid" &> /dev/null
-> +unset read_pid sync_pid
-> +wait
-> +
-> +echo "Silence is golden"
-> +_exit 0
-> diff --git a/tests/generic/800.out b/tests/generic/800.out
-> new file mode 100644
-> index 00000000..bdfaa2ce
-> --- /dev/null
-> +++ b/tests/generic/800.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 800
-> +Silence is golden
-> -- 
-> 2.51.2
-> 
-> 
+Thanks
+
+
+Best,
+koraynilay
+
+[1]: https://github.com/kdave/btrfs-progs/pull/1152
+
+--719d64e108f06de6ea86f652b8c169fcb1570fe81a25485a55257270b4a7
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iHUEABYKAB0WIQSgVimKafU5DQMcjcDmj22qf5IGXAUCanpTtAAKCRDmj22qf5IG
+XKJOAP9HwlylEvV8U7AvTMvqskWdsSkTtXYZ9GBaaSeThNRXeQEA6XA5ywJIzKTp
+DmrGFdnpMBnwbXn/+z/lb1k94M6xYwk=
+=OIJl
+-----END PGP SIGNATURE-----
+
+--719d64e108f06de6ea86f652b8c169fcb1570fe81a25485a55257270b4a7--

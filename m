@@ -1,26 +1,82 @@
-Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 8FDF654652
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 00:57:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=174.142.148.226
+Received: from mail-wr1-f47.google.com (mail-wr1-f47.google.com [209.85.221.47])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1F7051E1E16
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 01:06:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.47
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786323470; cv=none; b=Op1uEqYRx0TFazCcPNoadd5FvN1pFqB1J7tt4QR8tx7pzBoF+nmFfvQWttA7ESEUfdEmy/cItKL1v51Hxr3KicwV/+EyvUWb1V5h3MyHoK2zrtvj/3KI9+iQPre3xovF5oZraIp5Y5D7Zk1KjVBC/FtUSoum49WP34v/sSuC/mI=
+	t=1786323965; cv=none; b=j+NFQRuC/j5crDfFNrOW7st0bya2nI2XMHH4jMAJAX5XAbwx4gMjj6E6rU5dWtv8EV1rZO+kV6nQILB1VeHa2s0nEf1H87q26Oo0j86FyCAG+MAjl0gnCE2jlSghW+JW83nxZaLSHz7TW/2WJt8OTbo4lqAA7MUgVgNFsTZEtko=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786323470; c=relaxed/simple;
-	bh=rfOkD7nXguJivEzJUE0Zh1aJjAc5CE+hGA95xpJRXz4=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=WE8NPAXiJuyRoeHv+OFNse1w5WXzYCbVRjobVGDXsBuMfWFyiepfgFlOb4jtlxz9WG3h0JrCSnH3ge0GQMpLsfBrNBEORXT6H41Y11o1WiomtrrQl8hHB8YM9RzzuK+57I8O6SujRl6krK6kdBfQQzSoeU8xTkIbT+e/wIVkMdI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=umail.furryterror.org; spf=pass smtp.mailfrom=drax.hungrycats.org; arc=none smtp.client-ip=174.142.148.226
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=umail.furryterror.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=drax.hungrycats.org
-Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
-	id A5F181B1FB67; Sun, 09 Aug 2026 20:57:47 -0400 (EDT)
-Date: Sun, 9 Aug 2026 20:57:47 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Qu Wenruo <wqu@suse.com>
-Cc: koraynilay <koray.fra@gmail.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-	clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org
+	s=arc-20240116; t=1786323965; c=relaxed/simple;
+	bh=1+Jxozt/c+gVC9Q/aBJLm3ndLQiyjijLsdUHSByKpRc=;
+	h=Mime-Version:Content-Type:Date:Message-Id:From:To:Cc:Subject:
+	 References:In-Reply-To; b=Gem8v7G20yQSZKQpWGNwyilSXNmqxnmo2YGTzpwR3Bx1iOyWA54WWnQV5d514E21RnvVcuERR4cXKUuuviAGjFsR1vGTPkQoPTeP6IWOkZVCpC5fMHvTAptgpcOusdbglD44oKFjrWdr0Y91JDWCE4FmNmhbKaOWJPE63gVKLBA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Edpv3Fbb; arc=none smtp.client-ip=209.85.221.47
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Edpv3Fbb"
+Received: by mail-wr1-f47.google.com with SMTP id ffacd0b85a97d-480033bdcf4so632045f8f.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Aug 2026 18:06:03 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1786323962; x=1786928762; darn=vger.kernel.org;
+        h=in-reply-to:references:subject:cc:to:from:message-id:date
+         :content-type:mime-version:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=YwBdWIC8LpxmljpOo8ln4NERWLIBzujjahBFAApuj/s=;
+        b=Edpv3FbbN6hVRsFgfRZgm4gUHeJo0YanXKSIfztoBLbinjJXN0fEI+sruuv9V+W4ko
+         EF+nCSxvLymhXegUUkEEIlMNRT3MytnHGP3UignFU7E1bySLE74hrEsBD3rrG9ecWGHL
+         kRqzfxlx7nUIWKscMhQIAdJtjxuAp1SU1RzFZApKPHWtwXFFJggiagGXWWffCkLiMOqB
+         r5W2j2Jd9vKLRJrpiyF1SMwKPkg2tc5vs4pHQ2H0HjUMB5bveT5pqHjf5Hhep6bZkPBI
+         VsIScptgTK2wtLwWOIKeEJJUK7KL8yUtfQlb4JA2xI5W8hOMEvvMkfKZzPzb4FV6wNmG
+         lk3g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1786323962; x=1786928762;
+        h=in-reply-to:references:subject:cc:to:from:message-id:date
+         :content-type:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=YwBdWIC8LpxmljpOo8ln4NERWLIBzujjahBFAApuj/s=;
+        b=rQ9BnOgVrUfkKPds8uYV8uCykgSXSRZPPVfCY+g1IXKNm3VaTyZLlmQ93fntbcbRsQ
+         n9oV7jdUNqH88Uw0v2ol8qEGwuakqF/xiE6WOU7PtgSDYcE2HlWL2qiYW6qrJ+KNpuAH
+         CncXnEvl/gZQI+F714KEsIlBLf7+adfBOEZPOdaDYgfWgLjENYX0nrwS/HRmJjF5fjlM
+         XxZidHnYO5Mj+xOLbfMEH9mU7u91UDkeO8m9hLmqPqxM86LtdxO/JV4hLVhz4S7JtaRO
+         WxOrzo96eaIvaDAtly+I8wwx5O9TcqWiIJOdt7FDUVwyHgrHqr9j/swtzxWOViC4ak2Y
+         Cztw==
+X-Forwarded-Encrypted: i=1; AHgh+RpzH+8SQ86sbomHJVKzWxSh3UVB1rHhK3oxZLEZ5qtXkamJujWxes2k/yUxUcRAquq4Ct3+zuzTrL/VUw==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yxvejb5PKrLaohrkLUHBs3fTWM/yMG4IWvkYH4uS6qM7LPMcibQ
+	XFVsZS2r5RD1YZATsgLnAFVhJVeAe8hYEhm9sErexH2QXo2imxxGHXEf
+X-Gm-Gg: AR+sD10Lcp6iLsnnteLG3dDlunGNzetwzcChmMsrpoTqVOsrseoL/xV3jlU8cXJS+tG
+	+bLjSE68kp2YVPcZc5jEYS8vVw4EYQT+t7axywMw6msjqCxgED8yEdExHj+rM/t/XYnyX4OFwvn
+	BWURLRktEcLdXKQQCMWi7SRNIHga0tQFDhe6+Bk/u+eQM9XVSCNuxVo4CVgkotdNCu4zU+X3Qgx
+	BdWCuO0px2QWOK+Qfgaz098hLyeaLnZ45WRhM1yb3h0zajMi8e3TQ84I/t2UnDBYF0EuKShpX5y
+	51rylIgectaU7hen9hyNQuevVWZZaxnU9K0Jhx5iDXLdomlF18Z4Q0TZSfW8d9/6YVivgm2fXzF
+	TsEXSETndD36m9gTbRc2DAQc62ZD0FcAN8benYg1UDhFRKjxM1SE0gwg3g886NCcplqd2OZjPGW
+	AbNjp3KjRxVfOdED+C3O+lhiP/V1sc3qAf8UOGMyrhInY2wAMbkhB7cmg3
+X-Received: by 2002:a05:6000:2585:b0:47f:90cb:630c with SMTP id ffacd0b85a97d-47fec512a47mr56657060f8f.8.1786323962136;
+        Sun, 09 Aug 2026 18:06:02 -0700 (PDT)
+Received: from localhost ([2001:b07:5d26:7a6a:a8a:5bfa:f87a:3c1a])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-480021ec565sm27181386f8f.22.2026.08.09.18.05.57
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 09 Aug 2026 18:06:00 -0700 (PDT)
+Precedence: bulk
+X-Mailing-List: linux-btrfs@vger.kernel.org
+List-Id: <linux-btrfs.vger.kernel.org>
+List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
+List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
+Mime-Version: 1.0
+Content-Type: multipart/signed;
+ boundary=00122f5a9225e58786db33b3f6f9143d8242812818e970719b847dbd0acd;
+ micalg=pgp-sha512; protocol="application/pgp-signature"
+Date: Mon, 10 Aug 2026 03:05:57 +0200
+Message-Id: <DKKUZT0LUJOI.RE9GG62MU6K3@gmail.com>
+From: "koraynilay" <koray.fra@gmail.com>
+To: "Qu Wenruo" <wqu@suse.com>, "Zygo Blaxell"
+ <ce3g8jdj@umail.furryterror.org>
+Cc: "koraynilay" <koray.fra@gmail.com>, "Qu Wenruo"
+ <quwenruo.btrfs@gmx.com>, <clm@fb.com>, <dsterba@suse.com>,
+ <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH 0/4] btrfs: add per-inode compression levels in xattrs
-Message-ID: <ankiC-Zauoib3KLf@hungrycats.org>
+X-Mailer: aerc 0.21.0-0-g5549850facc2
 References: <20260808023459.1494928-1-koray.fra@gmail.com>
  <52e06b50-b888-48f0-a574-91e1192eda73@gmx.com>
  <DKJZQAFIRW7H.3KE8DKWO5E3TV@gmail.com>
@@ -29,185 +85,64 @@ References: <20260808023459.1494928-1-koray.fra@gmail.com>
  <95bab93b-f0c6-447d-8bfb-c81b3d48f7a7@suse.com>
  <ankbNtvLr3ZnFjEk@hungrycats.org>
  <9995da33-3f10-43b6-aec1-0e90eae03c7a@suse.com>
-Precedence: bulk
-X-Mailing-List: linux-btrfs@vger.kernel.org
-List-Id: <linux-btrfs.vger.kernel.org>
-List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
-List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 In-Reply-To: <9995da33-3f10-43b6-aec1-0e90eae03c7a@suse.com>
 
-On Mon, Aug 10, 2026 at 10:21:11AM +0930, Qu Wenruo wrote:
->=20
->=20
-> =E5=9C=A8 2026/8/10 09:58, Zygo Blaxell =E5=86=99=E9=81=93:
-> > On Mon, Aug 10, 2026 at 08:50:45AM +0930, Qu Wenruo wrote:
-> > >=20
-> > >=20
-> > > =E5=9C=A8 2026/8/10 08:47, Zygo Blaxell =E5=86=99=E9=81=93:
-> > > > On Sun, Aug 09, 2026 at 10:30:45AM +0930, Qu Wenruo wrote:
-> > > > >=20
-> > > > >=20
-> > > > > =E5=9C=A8 2026/8/9 10:05, koraynilay =E5=86=99=E9=81=93:
-> > > > > > On Sun Aug 9, 2026 at 2:17 AM CEST, Qu Wenruo wrote:
-> > > > > > > I'm not sure if this is the correct behavior in the first pla=
-ce.
-> > > > > > >=20
-> > > > > > > As you already mentioned, zstd and zlib have very different c=
-ompression
-> > > > > > > level range, using the incorrect level makes no sense (and it=
-'s being
-> > > > > > > clamped anyway).
-> > > > > > >=20
-> > > > > > > I think we should go the default level when not specified, wh=
-ich makes
-> > > > > > > more sense, and that would definitely be something worth fixi=
-ng.
-> > > > > >=20
-> > > > > > Yes, I also think that would be best, but my main concern would=
- be it
-> > > > > > changing how chattr +c behaves (I'm less concerned about the bt=
-rfs prop
-> > > > > > set file compression "zstd" case, since IMO that implies the us=
-er wants
-> > > > > > the default level).
-> > > > >=20
-> > > > > Mind to explain more about the "chattr +c" problem?
-> > > > >=20
-> > > > > IIRC "chattr +c" just set the btrfs.compression XATTR to the defa=
-ult zlib if
-> > > > > no mount option is specified.
-> > > >=20
-> > > > chattr with _any_ argument resets the btrfs.compression xattr _ever=
-y_
-> > > > time, even if the caller changes a flag something that doesn't look=
- like
-> > > > it would affect compression, e.g. chattr +A or +d.
-> > >=20
-> > > This is the known problem of chattr.
-> > >=20
-> > > >=20
-> > > > That can lead to surprising results, like changing compress type fr=
-om
-> > > > zstd to zlib, if the original btrfs.compression attribute doesn't m=
-atch
-> > > > the mount option.
-> > >=20
-> > > This doesn't only apply to c, but all other chattr options.
-> > >=20
-> > > That's why proper chattr should always include the full attrs, not on=
-ly the
-> > > one to change.
-> > >=20
-> > > >=20
-> > > > > In that case it should be no difference compared to any existing =
-XATTR based
-> > > > > compression setting.
-> > > > >=20
-> > > > > Thus it's just the same missing level handling, and IMHO since XA=
-TTR
-> > > > > compression level is never specified in XATTR, then the behavior =
-is never
-> > > > > fully determined, and users should not depend on it.
-> > > > >=20
-> > > > > Even if we changed the behavior to option 3, it should not be a s=
-uper huge
-> > > > > user affecting change.
-> > > > > In the end, it's just compression level, affecting compression ra=
-tio and
-> > > > > speed, not really a huge behavior change.
-> > > > >=20
-> > > > > >=20
-> > > > > > The options I considered were:
-> > > > > > 1) keep the "bug", like I did for now;
-> > > > > > 2) keep the "bug", but only if the compress=3D algo is the same
-> > > > > >       as the btrfs.compression one, if they aren't, use the def=
-ault for the
-> > > > > >       btrfs.compression algo (e.g. compress=3Dzstd:15 and btrfs=
-=2Ecompression=3Dzlib
-> > > > > >       would compress the extent at zlib:3 instead of clamp(zlib=
-, 15) =3D 9)
-> > > > > >       (suggested by Zygo);
-> > > > > > 3) fix the "bug" entirely, which is what I actually accidentall=
-y did at
-> > > > > >       first, by just setting compress_level =3D inode->prop_com=
-press_level
-> > > > > >       without any check prior to that (which means that by defa=
-ult it would
-> > > > > >       use algo:0).
-> > > > >=20
-> > > > > IHMO both option 2 and 3 are acceptable.
-> > > > >=20
-> > > > >=20
-> > > > > The only extra concern is, if we have a new level field in XATTR,=
- can older
-> > > > > kernels handle it?
-> > > > >=20
-> > > > > And thankfully the existing prop apply handler is checking only t=
-he first
-> > > > > several bytes for different algos, thus the existing code should =
-handle the
-> > > > > extra appended ":<level>" correctly by just ignoring the level.
-> > > > >=20
-> > > > > So either option 2 or 3 would be fine to me. Although I personall=
-y prefer
-> > > > > option 3 a little more, just because it's much cleaner code wise.
-> > > >=20
-> > > > Option 2 preserves legacy behavior that is 12 years old now, and it
-> > > > costs a single comparison in two 'if' statements.
-> > > >=20
-> > > > Option 3 makes an already confusing situation worse--it makes the
-> > > > underspecified behavior change depending on kernel version.
-> > >=20
-> > > One should never rely on something not documented in the first place.
-> >=20
-> > Option 3 prevents existing mount-option compression level specifications
-> > from working when the attribute agress with the mount option; otherwise,
-> > they would be blocked by a btrfs.compression string that doesn't specify
-> > a level.  That's a _regression_.
->=20
+--00122f5a9225e58786db33b3f6f9143d8242812818e970719b847dbd0acd
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
+
+On Mon Aug 10, 2026 at 2:51 AM CEST, Qu Wenruo wrote:
+>>>>> So either option 2 or 3 would be fine to me. Although I personally pr=
+efer
+>>>>> option 3 a little more, just because it's much cleaner code wise.
+>>>>
+>>>> Option 2 preserves legacy behavior that is 12 years old now, and it
+>>>> costs a single comparison in two 'if' statements.
+>>>>
+>>>> Option 3 makes an already confusing situation worse--it makes the
+>>>> underspecified behavior change depending on kernel version.
+>>>
+>>> One should never rely on something not documented in the first place.
+>>=20
+>> Option 3 prevents existing mount-option compression level specifications
+>> from working when the attribute agress with the mount option; otherwise,
+>> they would be blocked by a btrfs.compression string that doesn't specify
+>> a level.  That's a _regression_.
+>
 > Let me be this clear, the current one nor option 2 is not working either.
->=20
-> If the current algo is different from the XATTR algo, it will be whatever
-> random number clamped to the XATTR algo for the current code.
->=20
-> This applies to the option 2 solution. When mount option changed, the lev=
-el
-> will suddenly change from whatever previous mount option to the default.
->=20
-> It's always broken no matter whatever, I do not want to waste time to use
-> another broken behavior to mask a more broken one.
+>
+> If the current algo is different from the XATTR algo, it will be=20
+> whatever random number clamped to the XATTR algo for the current code.
+>
+> This applies to the option 2 solution. When mount option changed, the=20
+> level will suddenly change from whatever previous mount option to the=20
+> default.
 
-It's not broken during the time when the mount option is the same as
-the xattr, and that case seems to be the most common one.  Users don't
-change the compression type on the fly or per inode--they use zstd all
-the time, and only change the level when it matters.
+TBF, I can see how it could be useful (or rather, how it could be good
+to have it as an option) to have some files with btrfs.compression=3D"zstd"
+and then use -o compress=3D to decide on the fly how much compressed the
+new data added to them should be.
+Both are (read: will be, after the per-inode patch) 1 command away, but
+there *might* be use-cases where mount is more suitable.
 
-This stops working with the option 3 proposal (or more specifically, with
-my comment on the other patch about when to set compress_level to 0):
-it always sets the level to the default, and ignores the mount option,
-even when that would make sense and be the intended result.
 
-> > The current behavior is documented all over the place, used in scripts,
-> > etc.  The top two from Google:
-> >=20
-> >      https://wiki.tnonline.net/w/Btrfs/Compression
-> >      https://fedoraproject.org/wiki/Changes/BtrfsTransparentCompression=
-#Q:_If_I_use_'btrfs_property'_to_set_compression,_what_level_is_used_for_zs=
-td?
->=20
-> None of them is the official btrfs-progs man page.
->=20
+>>      https://wiki.tnonline.net/w/Btrfs/Compression
+>
 > The first URL doesn't even resolve here.
->=20
-> I don't want to repeat myself, all those confusion is from the bug itself.
->=20
-> Instead of building everything upon an uncertain basis, do it correctly.
->=20
-> And I have repeated it several times, even the behavior change is minimal
-> only affecting the level.
->=20
-> I see no point why you treat broken behavior so dogmatically.
+(for some reason it's down right now :(, it was up < 1 hour ago).
+
+Best,
+koraynilay
+
+--00122f5a9225e58786db33b3f6f9143d8242812818e970719b847dbd0acd
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iHUEABYKAB0WIQSgVimKafU5DQMcjcDmj22qf5IGXAUCankj9gAKCRDmj22qf5IG
+XOliAQClXyJBVdGPtdHsTPKFXVbTqpk26UFnG2Ai2xFpzRP3PAEAjsXtj/k4Y6KV
+k7P1SWYiCZPEq97FLFk/GOHz6F+6NQ4=
+=oMiJ
+-----END PGP SIGNATURE-----
+
+--00122f5a9225e58786db33b3f6f9143d8242812818e970719b847dbd0acd--

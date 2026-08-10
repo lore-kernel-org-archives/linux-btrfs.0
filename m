@@ -1,219 +1,136 @@
-Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
+Received: from mail-oi1-f205.google.com (mail-oi1-f205.google.com [209.85.167.205])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DCC3A2E401
-	for <linux-btrfs@vger.kernel.org>; Sun,  9 Aug 2026 23:20:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 97CC949620
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 00:12:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.205
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786317654; cv=none; b=OpYC105yAKf2gHHbKNQL/lG6hOorAsf34fzT7/Bio3DDhRkP1Qc4GO9wVMxlX2wr3lJS/Fzuxek7Zv4IsvKaTBPazXuh5y4LhVc0N6StyTVB4NtlSWzZ8Z0QjuWGwtWvifcncAq6XSr37RQsBFXr2tR2rKwXgKV5iXzqHsGBiME=
+	t=1786320755; cv=none; b=X/nF6Eu2nEDaNF7xqnI3xsiNAbti1LB/JPmdBmpPJNb5Il6kOx8whupQZk1zlGv22A37O1WWVHCOHq1lv27k9TrTbnGmcbCAgChTpb9YCi3d78uVwUTnERodOm2ZIgjhRts5ciiKBCkzyrgY5uv5Hgc46V9smPXWOQOQH4cX6Ig=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786317654; c=relaxed/simple;
-	bh=Lsvf6IKkqu/NL9lp1mJRDtKi6V57GE6+6+5jb++MvEQ=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=COxjuGw/YRNcZicewC/iCIQGvFjt/brC/ohYXhaOuVyox/uN6x4YBi876xW5h6WuqyOljmmUzbeXDJ3JIkE/4HRy0N+StBYYYCChYAUd4O/y7MBQX7fmr3XXz95fFjH2n1cYLn1T3uQk3yYS96qhsli1Ao+KlJZK4ab+yQcHfks=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=cgFAgK+W; arc=none smtp.client-ip=209.85.128.50
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="cgFAgK+W"
-Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-495590dde14so15210415e9.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Aug 2026 16:20:52 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1786317651; x=1786922451; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=LUEo1bGHiOqGIHO1DERhmsKYyQo0Jri/tKdxuQlYmp8=;
-        b=cgFAgK+W+2O1bhSDl9LfJsQlfWH8gAFRnsjIlLFx4Bjfr+XMMATqyPSirZ9DFi1d23
-         3nAVYZ1IE1xS6CKX8TVN11dVQYwwF75WMuHOmZOz0aWgBK73fdreJJVLNxH4pxxKc12M
-         Irg0vUMhc9j6xApr+jYXNqv/rkhfcN+5+j/axGnUvMT6dBYkWiNpsIx6bnugxAc6WSHc
-         jLQEOTJarrm5Pb4TOIY/fPpSIbcA7yDQ2RpJTP1G4c8aWyao07f40LY78hXKVn/kCHX8
-         8fKbibm9vgTonoFrjBNEs+XpzfngpXDXnLyWOOeDFIh/3ZUbNc9ZhCGv+twKFv+9WcZw
-         MNVg==
+	s=arc-20240116; t=1786320755; c=relaxed/simple;
+	bh=4xurSwU0cAmSIfKEi6AOScHUqhMi5MjKmiuvcuQk9JE=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=EYSDSNF48IZLuBNLu+OjwwwsKzrd80fHd6kTHzWePkzgRlIwtSF08eKnIq03vTW85bKe5W0salTCtfT1xUBmZUsTJ7hH2EL3RrWkPkJRI0Qj4tV7Vb9rONgh3zSmYk233HupJBkOr5k2DKUbi9U3ay3UHhXa0FKRovsdxBrrATM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.205
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oi1-f205.google.com with SMTP id 5614622812f47-4b1a69b1188so1760714b6e.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Aug 2026 17:12:33 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786317651; x=1786922451;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=LUEo1bGHiOqGIHO1DERhmsKYyQo0Jri/tKdxuQlYmp8=;
-        b=RFtk5qL5f0l0Ije5TMfHKEMc4AyItK1S3fwh9dLOq87yeH5DkoXXRY9zqe4FxnCP13
-         BO9kmUjBnWm0a+tsZTMRWGnZGsJW+9cjOWhS8DYoK5gEHXs9lIDWGNkk7ER+HgH3bt0J
-         bkdCBmjFzAJafw5R+/LoQL15XpdXN922Dt4JYfWjyuWtlcQpIeKKbxBa/Jno9eclVR4F
-         lkqXOIjYm81Ifk8QPw9th4lmqNIVb/AvSE1pKknrFQtkBjKQ6yPaXKVP1pbccaldhvH7
-         Wsj/nsXM0Np6N+KHqf8JIz/B5h+7/UmnWiHOXZHDXrgFcUpimIe2GZHnKyskxbEhj1oF
-         YfjQ==
-X-Forwarded-Encrypted: i=1; AHgh+Rr93bZ4xVALqQ8/Zxj/QTwii5XwUyFMrQ2e8lHUWiKcqeBmFw0Es3o+GaXoCl2ayfsK1YOgtyW4YaZ6LQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxoWuIH6ccpCYqaVVTb9bSOMU81F8TLGcVtwho8OG1MCpWWuBwK
-	aHgTz3qWBqzrgOttCC1FsmY5aZcWyo43mYYSZXYBXjcnyfowap+soMGjWgdaY3bbbfw=
-X-Gm-Gg: AR+sD12S5akozYeA2G6QhGNShO9st2Z6PJfH1K3/DSUKD7ooTvWXbWXfdR8ZUdaZMEj
-	t/KZd/g5+fHyBET42GZULo6WkvlLecKC3DZMKqajm/qz3VFrfKgo7wVRzn5hyfb+Vnvk5zuLPXs
-	i9zCp/VkHkysPKRioT9LAeG/7JzO4ZMpwmj0tbrRVpzSmoKkNofQdmGJD0ZmHPuG/s8oV7Z9AEc
-	TbIo2pG5UQMus5nPA07hnmBrazoMWHblMN2+CjAUTV9wfkAvbQ15yEAnfwGg56WQ9uTqvlZBdYx
-	kWhn9YoEKO2/AWhylEcMSA0so6fUU9D2B5Ve0tmt5/e7NCxv+LSkOsDTso5TKVLY3bl4/LqErWV
-	UuLhz3ScnFWNOEW1sbglGuIcGMCjeoP1zAIdTGI28bfp3u1loSJARbmOqf5yGx2tzip1H+Pw6T2
-	BTfszx7aUvlrYQ4AoIQLkS9fHA8v8mBvW+nJL9WmPnjNVSoBkNoiWZkA==
-X-Received: by 2002:a05:600c:46ca:b0:499:53c4:1daa with SMTP id 5b1f17b1804b1-49953c41e18mr367753365e9.15.1786317651048;
-        Sun, 09 Aug 2026 16:20:51 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-315bec26a5dsm35079657eec.26.2026.08.09.16.20.47
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 09 Aug 2026 16:20:49 -0700 (PDT)
-Message-ID: <95bab93b-f0c6-447d-8bfb-c81b3d48f7a7@suse.com>
-Date: Mon, 10 Aug 2026 08:50:45 +0930
+        d=1e100.net; s=20251104; t=1786320752; x=1786925552;
+        h=content-type:to:from:subject:message-id:date:mime-version
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=8gwlsc5IwhwT8WhzudQjXDbDhJ08HU0n1lZYdDeLgus=;
+        b=WrCjd3QYpi4vIGycmd98LSYnk2JZp77Ca0cTgzo37VrIyEko19wKKLFFnLMiZCdhTP
+         d01MAzEUYcBsQcJ4OlfkzMSNTt/+TI6oQK+AcUcSYP65ycoWZqAxtbPBeYwqHHCayapr
+         sAHCYjnNQw9T3+GvH/WbSaBwe84oqiAR7hqfOTCZv5y/evgJX71DKaLOCHW1+OrW8sRb
+         wqTIwGr0vIyzIzlxxLBY5mtohQNO1+D/2RVmU5xNmO2kfDA0GH9SW52DcYKOqa/jLZ/L
+         GSOiHBBFQ6cE1byb+ZgY+272fCJb0Jvz5tITtHZIcVl43G+RgbFfY8oGLLtn6gQRR8yw
+         jhnQ==
+X-Forwarded-Encrypted: i=1; AHgh+RqqyA3L3RoXf/n3dVXB86AbnjLg2jdMGhvkdh2gNK9gLQzM0OIQlQ/N2bLJSvADA6pcJ/Id715peQ1dOA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YznOe2Si/5BMlgh6o8dauTMlXieik23xcHqNhoFLSyud6lGzEvr
+	n1E13nnz3swQgnr4s7qGvGOt4hM1mbJewhKdw3U1YZcpRQ3Id/WxKcircBtEwDyBrJv6FnTLjW9
+	PusiGeryRVQlGxVFcTmrjzExt8f/LOnpBYVdsHhb/LZG++U7r6Xxzch85Zr0=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 0/4] btrfs: add per-inode compression levels in xattrs
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: koraynilay <koray.fra@gmail.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
- clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org
-References: <20260808023459.1494928-1-koray.fra@gmail.com>
- <52e06b50-b888-48f0-a574-91e1192eda73@gmx.com>
- <DKJZQAFIRW7H.3KE8DKWO5E3TV@gmail.com>
- <c5070299-46ba-460d-9ff7-0b2e4878079b@suse.com>
- <ankKjqr72aD8Ka8w@hungrycats.org>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <ankKjqr72aD8Ka8w@hungrycats.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+X-Received: by 2002:a05:6808:120e:b0:489:93ff:9ea0 with SMTP id
+ 5614622812f47-4afadf22b65mr20995133b6e.2.1786320752584; Sun, 09 Aug 2026
+ 17:12:32 -0700 (PDT)
+Date: Sun, 09 Aug 2026 17:12:32 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6a791770.01d0871a.3a0d52.0097.GAE@google.com>
+Subject: [syzbot] [btrfs?] WARNING in btrfs_create_new_inode (3)
+From: syzbot <syzbot+c1b8c52e6c0142c5e448@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
+
+Hello,
+
+syzbot found the following issue on:
+
+HEAD commit:    848acc8ffe1b Merge tag 'fsverity-for-linus' of git://git.k..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=1689be32580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=c05be6c9b0d36cb9
+dashboard link: https://syzkaller.appspot.com/bug?extid=c1b8c52e6c0142c5e448
+compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
+
+Unfortunately, I don't have any reproducer for this issue yet.
+
+Downloadable assets:
+disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-848acc8f.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/2425c07b5d46/vmlinux-848acc8f.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/cf278dd14da3/bzImage-848acc8f.xz
+
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+c1b8c52e6c0142c5e448@syzkaller.appspotmail.com
+
+------------[ cut here ]------------
+btrfs_abort_should_print_stack(__error)
+WARNING: fs/btrfs/inode.c:6576 at btrfs_create_new_inode+0x1ddc/0x1ee0 fs/btrfs/inode.c:6576, CPU#0: syz.0.0/5350
+Modules linked in:
+CPU: 0 UID: 0 PID: 5350 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+RIP: 0010:btrfs_create_new_inode+0x1ddc/0x1ee0 fs/btrfs/inode.c:6576
+Code: 00 00 00 83 fb f4 0f 85 e8 00 00 00 e8 6d 8d b3 fd e9 e7 00 00 00 e8 63 8d b3 fd eb 10 e8 5c 8d b3 fd eb 09 e8 55 8d b3 fd 90 <0f> 0b 90 89 d9 f7 d9 e9 b8 f8 ff ff e8 43 8d b3 fd eb 10 e8 3c 8d
+RSP: 0018:ffffc9000e4676c0 EFLAGS: 00010287
+RAX: ffffffff8413956b RBX: 00000000ffffffe4 RCX: 0000000000100000
+RDX: ffffc90020802000 RSI: 000000000000106b RDI: 000000000000106c
+RBP: ffffc9000e4678f0 R08: ffff888032e5ca80 R09: 0000000000000003
+R10: 00000000fffffffb R11: 0000000000000002 R12: ffff888052814640
+R13: ffff888042f14610 R14: 00000000ffffffe4 R15: ffff88805203c001
+FS:  00007f21d3c956c0(0000) GS:ffff88808c540000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000200000380000 CR3: 000000003ecc1000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ btrfs_create_common+0x189/0x310 fs/btrfs/inode.c:6803
+ lookup_open fs/namei.c:4508 [inline]
+ open_last_lookups fs/namei.c:4608 [inline]
+ path_openat+0x133a/0x3830 fs/namei.c:4860
+ do_file_open+0x23e/0x4a0 fs/namei.c:4892
+ do_sys_openat2+0x115/0x200 fs/open.c:1368
+ do_sys_open fs/open.c:1374 [inline]
+ __do_sys_openat fs/open.c:1390 [inline]
+ __se_sys_openat fs/open.c:1385 [inline]
+ __x64_sys_openat+0x138/0x170 fs/open.c:1385
+ do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
+ do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f21d2d9e019
+Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f21d3c94fe8 EFLAGS: 00000246 ORIG_RAX: 0000000000000101
+RAX: ffffffffffffffda RBX: 00007f21d3026180 RCX: 00007f21d2d9e019
+RDX: 000000000000275a RSI: 0000200000000080 RDI: ffffffffffffff9c
+RBP: 00007f21d2e3500c R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007f21d3026218 R14: 00007f21d3026180 R15: 00007ffd6a122ff8
+ </TASK>
 
 
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
 
-在 2026/8/10 08:47, Zygo Blaxell 写道:
-> On Sun, Aug 09, 2026 at 10:30:45AM +0930, Qu Wenruo wrote:
->>
->>
->> 在 2026/8/9 10:05, koraynilay 写道:
->>> On Sun Aug 9, 2026 at 2:17 AM CEST, Qu Wenruo wrote:
->>>> I'm not sure if this is the correct behavior in the first place.
->>>>
->>>> As you already mentioned, zstd and zlib have very different compression
->>>> level range, using the incorrect level makes no sense (and it's being
->>>> clamped anyway).
->>>>
->>>> I think we should go the default level when not specified, which makes
->>>> more sense, and that would definitely be something worth fixing.
->>>
->>> Yes, I also think that would be best, but my main concern would be it
->>> changing how chattr +c behaves (I'm less concerned about the btrfs prop
->>> set file compression "zstd" case, since IMO that implies the user wants
->>> the default level).
->>
->> Mind to explain more about the "chattr +c" problem?
->>
->> IIRC "chattr +c" just set the btrfs.compression XATTR to the default zlib if
->> no mount option is specified.
-> 
-> chattr with _any_ argument resets the btrfs.compression xattr _every_
-> time, even if the caller changes a flag something that doesn't look like
-> it would affect compression, e.g. chattr +A or +d.
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
 
-This is the known problem of chattr.
+If the report is already addressed, let syzbot know by replying with:
+#syz fix: exact-commit-title
 
-> 
-> That can lead to surprising results, like changing compress type from
-> zstd to zlib, if the original btrfs.compression attribute doesn't match
-> the mount option.
+If you want to overwrite report's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
 
-This doesn't only apply to c, but all other chattr options.
+If the report is a duplicate of another one, reply with:
+#syz dup: exact-subject-of-another-report
 
-That's why proper chattr should always include the full attrs, not only 
-the one to change.
-
-> 
->> In that case it should be no difference compared to any existing XATTR based
->> compression setting.
->>
->> Thus it's just the same missing level handling, and IMHO since XATTR
->> compression level is never specified in XATTR, then the behavior is never
->> fully determined, and users should not depend on it.
->>
->> Even if we changed the behavior to option 3, it should not be a super huge
->> user affecting change.
->> In the end, it's just compression level, affecting compression ratio and
->> speed, not really a huge behavior change.
->>
->>>
->>> The options I considered were:
->>> 1) keep the "bug", like I did for now;
->>> 2) keep the "bug", but only if the compress= algo is the same
->>>      as the btrfs.compression one, if they aren't, use the default for the
->>>      btrfs.compression algo (e.g. compress=zstd:15 and btrfs.compression=zlib
->>>      would compress the extent at zlib:3 instead of clamp(zlib, 15) = 9)
->>>      (suggested by Zygo);
->>> 3) fix the "bug" entirely, which is what I actually accidentally did at
->>>      first, by just setting compress_level = inode->prop_compress_level
->>>      without any check prior to that (which means that by default it would
->>>      use algo:0).
->>
->> IHMO both option 2 and 3 are acceptable.
->>
->>
->> The only extra concern is, if we have a new level field in XATTR, can older
->> kernels handle it?
->>
->> And thankfully the existing prop apply handler is checking only the first
->> several bytes for different algos, thus the existing code should handle the
->> extra appended ":<level>" correctly by just ignoring the level.
->>
->> So either option 2 or 3 would be fine to me. Although I personally prefer
->> option 3 a little more, just because it's much cleaner code wise.
-> 
-> Option 2 preserves legacy behavior that is 12 years old now, and it
-> costs a single comparison in two 'if' statements.
-> 
-> Option 3 makes an already confusing situation worse--it makes the
-> underspecified behavior change depending on kernel version.
-
-One should never rely on something not documented in the first place.
-
-We're to make it more clear, not making some undocumented BS to be the 
-common case.
-
-> 
->> Thanks,
->> Qu
->>
->>>
->>> Option 2) is probably the best compromise between breaking existing
->>> scripts and the behaviour making sense, plus it shouldn't change the
->>> chattr +c behaviour, since btrfs takes the algorithm from compress=.
->>>
->>> Thanks.
->>>
->>> Best,
->>> koraynilay
->>
->>
-
+If you want to undo deduplication, reply with:
+#syz undup

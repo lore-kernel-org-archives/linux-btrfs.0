@@ -1,167 +1,81 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EBE5737E5D7
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 07:51:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C073E3939C1;
+	Mon, 10 Aug 2026 08:28:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786348317; cv=none; b=eSq5NJFhsKSLhM+1WZ5SGrGBLhJGq4OYjaIziSqyfqUTnyR/6luU9FIexW9pHjPNJCL/n6xKp4pAIX7XcvDGm/L5RfFLeNXav4JhdDv9GoSnVSi1dwnwWhisYpzrPUU3oX7tEkf95jBscKF89hXKM4thixhydJ9D3IiOyHQM0Vc=
+	t=1786350503; cv=none; b=n4Fkn7E3f9IKxco1J2glM+6Dg3Mna8Qj4gF2J86zJTqibSE463eg9apbq/GPdg2FDLdtf4c8mitS6mpLA0TDP5BRh5075gFxyfIwA8zYMLSXT2NY14snYKiSOWXxoqeAauAp3+kDKAAMfsrGfwHWvePvO0QHmOAHlCF6ntdoIbk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786348317; c=relaxed/simple;
-	bh=rMQwVCmJo51l6jAyxE2zpJhbyfDt8vECVu0VMwAtClE=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=M+xXRN0k8gMLrUwuVb6wj048sy0467ysAHfK0YV8NTtW2QB4J4hKL8dNQ+bVdTyRgnL3d4DIzSa53fBAuFJrHrIXHW5wIGDFOlSurtcc7VbUjs17+zOH6OfBFP5+DSmADNSQFlcQeVPsWjsDlnWO/ogkHdrA3UzhNg6rsVLp+Xw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=oFjDrxta; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=lT8t8lmU; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1786350503; c=relaxed/simple;
+	bh=GVYPoYW2Q/7elNyAaitc/i/CVhPy1XmGszpQs4/phD4=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=d2SZrksFuaHqdilTeig0GD0dAXOLkFYTrTLFBOAQNC0pWPjibxUTQBgXMS6TwylxN6XcyG+3WC2DNqtHeIiwNqXOgSrACKuKDOekq94kLvxTlMliwGelgM97tYygMgcOipV1nwUBjhjvit9JflbONZ05JguFiFoZbl/hi7xUIU4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=OHSjCgb0; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="oFjDrxta";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="lT8t8lmU"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id CA2214209
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 07:51:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786348309; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Kjkk8RYd8Em8KOc0bQlYjKUXTxUYzBrOEeWYaTzgaYM=;
-	b=oFjDrxtaJo5NsRikXnaFiSFXDYwuLjeTdhpaHC9c1PE8xetaYi5CL74q8zGL4XkZEpQTGg
-	Qu9wJB+Xg0TA9V0EHsdvY4fVhd4Yay0n8wdwtn+lgCPV4oKaCWT9G27q4FXKDmFQA2TrTP
-	TVjfBYdrojNV8m0JY/OFTmxZNili3nM=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=lT8t8lmU
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786348305; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Kjkk8RYd8Em8KOc0bQlYjKUXTxUYzBrOEeWYaTzgaYM=;
-	b=lT8t8lmUmNZMHEwzDETE1aeTt0kFeKIHuWwTuzOG5kvLVG8but/62z6HLv7V6eIDDL2rQQ
-	KYbI2/ORzw246a/bETRUzsw4Gy3v8l0jfkavAYYYIq6UmzJCq/3Su+MSx7mOugsLc8jD7C
-	T0jfrs0fuNY9EpdJ1jSaCzNn7TSjS1Y=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B2605779B2
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 07:51:44 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id wg00FhCDeWrzUQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 07:51:44 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: properly cleanup replace_task when the replace failed to start
-Date: Mon, 10 Aug 2026 17:21:25 +0930
-Message-ID: <2bb108e8d3204506a80562fec03d0d365583631f.1786348282.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="OHSjCgb0"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8C1461F000E9;
+	Mon, 10 Aug 2026 08:28:19 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1786350502;
+	bh=8ooJ1K9gJPbRSmciql3NBWA3FYXEMtRNBkMvQDxZ9OM=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=OHSjCgb0zyYYJnpVXHkENn+EQu/H697chYZZJkFhESi6/NP7iVQcFRaPRbj2caJgl
+	 xocFGq5ItG0BNFugzGkJIih4QVQSt7Efs/VOhLmVcuJR+9fbHTMYyG63BqdHzg7wer
+	 eYwX0A7sLiPpI3xJIkx6lk3HPbFW2Y1JpD6FFecaYLISsqFnMQ+Pb2l/c6MapY/Oea
+	 kCnWp6UIWyn4IbDssy5z3mc9UXSKmUjC5Ar+Eyl5doYemGydfLVLqu6eqO0EY4G+vN
+	 al6C0EkcLaKaMi8tV7xa0eWlgFSffXjgc3g0LHInhLZgf5gFVRaiOzhazHcgOfdEqP
+	 ZYFQN2F9gv/UA==
+Date: Mon, 10 Aug 2026 10:28:17 +0200
+From: Andrey Albershteyn <aalbersh@kernel.org>
+To: "Darrick J. Wong" <djwong@kernel.org>
+Cc: Christoph Hellwig <hch@lst.de>, linux-xfs@vger.kernel.org, 
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, ebiggers@kernel.org, 
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
+	linux-btrfs@vger.kernel.org, linux-unionfs@vger.kernel.org, david@fromorbit.com
+Subject: Re: [PATCH v14 00/21] fs-verity support for XFS with post EOF merkle
+ tree
+Message-ID: <anmFWhPNOqe4uyht@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
+References: <20260803200820.393203-1-aalbersh@kernel.org>
+ <20260804173548.GA13900@lst.de>
+ <20260804175203.GI3556460@frogsfrogsfrogs>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[sashiko.dev:url,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid,suse.com:dkim]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: CA2214209
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260804175203.GI3556460@frogsfrogsfrogs>
 
-In the function btrfs_dev_replace_start(), we have several error paths
-that assigns replace_start without reverting it back to NULL.
+On 2026-08-04 10:52:03, Darrick J. Wong wrote:
+> On Tue, Aug 04, 2026 at 07:35:48PM +0200, Christoph Hellwig wrote:
+> > On Mon, Aug 03, 2026 at 10:07:50PM +0200, Andrey Albershteyn wrote:
+> > > This series based on v7.2-rc4 + lazy-bounce@hch-misc
+> > 
+> > Oh, I gave up my hopes to get this into 7.3 and was waiting for
+> > your series to land first.  Right now there is one outstanding issue
+> > I know of with the series, which is that we need to clear REQ_POLL
+> > for bounce buffer I/O, and of course the somewhat complex cross-tree
+> > depenencies.
+> > 
+> > I can try to get it rposted, although this week I'm travelling for
+> > two conferences, which doesn't help.
+> > 
+> > If you only need a few patches from that series and they are kinda
+> > localized to xfs, maybe you should just cherry pick those from
+> > my series and include them?
 
-There are two involved error paths:
+I'm basically interested in the BIO in task context patches + read
+ioend use of this
 
-- There is already a running dev-replace
-  Then replace_task is over-written to the current task.
-  This is the one with long running effect.
+> 
+> I hadn't noticed that this patchset had added even more patches and were
+> waiting for review, but cem told me this morning that he thinks it's too
+> late to put this into for-next for 7.3. :(
 
-- The btrfs_start_transaction() call failed
-  This is much harder to hit though.
+Yeah, it's probably a bit late.
 
-This can result the replace_task check inside btrfs_map_block() to be
-incorrectly triggered, not taking dev_replace->rwsem.
-
-Normally that replace_task check is to protect regular IOs from racing
-with dev-replace, which will modify the device list.
-
-But since dev_replace->rwsem is incorrectly updated, a process
-triggering the update will no longer be protected from dev-replace's
-device list modification, thus later IO can get stale device info,
-triggering things like use-after-free.
-
-Fix the problem by:
-
-- Moving the replace_task assignment after replace_state check
-
-- Reset replace_task to NULL if btrfs_start_transaction() failed
-
-This is reported by Sashiko, which found the existing bug during review
-of another patch, and since the bug is an existing one, it's not shown in
-the summary, but only in the detail page.
-
-Link: https://sashiko.dev/#/patchset/tencent_853134544C3CE88A219EEB21346E2510D308%40qq.com
-Fixes: 8cca35cb29f8 ("btrfs: don't take dev_replace rwsem on task already holding it")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/dev-replace.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 72cba7fed942..5fc1dec88fb2 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -633,7 +633,6 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 		goto leave;
- 
- 	down_write(&dev_replace->rwsem);
--	dev_replace->replace_task = current;
- 	switch (dev_replace->replace_state) {
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED:
-@@ -647,6 +646,7 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 		goto leave;
- 	}
- 
-+	dev_replace->replace_task = current;
- 	dev_replace->cont_reading_from_srcdev_mode = read_src;
- 	dev_replace->srcdev = src_device;
- 	dev_replace->tgtdev = tgt_device;
-@@ -693,6 +693,7 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 			BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED;
- 		dev_replace->srcdev = NULL;
- 		dev_replace->tgtdev = NULL;
-+		dev_replace->replace_task = NULL;
- 		up_write(&dev_replace->rwsem);
- 		goto leave;
- 	}
 -- 
-2.54.0
-
+- Andrey

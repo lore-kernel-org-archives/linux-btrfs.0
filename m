@@ -1,157 +1,208 @@
-Received: from CH4PR04CU002.outbound.protection.outlook.com (mail-northcentralusazon11013037.outbound.protection.outlook.com [40.107.201.37])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 41D91377034
-	for <linux-btrfs@vger.kernel.org>; Tue, 11 Aug 2026 23:06:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.107.201.37
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786489580; cv=fail; b=EYD5w+1f8/pvCbzAUBBC7gQ9BkGiNjmhgEYv3Ur9N19AAY7Tlh/O1qZxbot6ZRAPNfBbREk1J3yO8b930mpgCzt9yxqNPCRDE8b0RmReZob+Priff+JSuyK6M8llc3wvhOmSInkG9JFjSmFJJjRYB5dJg6a3ZBAIxb74hBYR7Cg=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786489580; c=relaxed/simple;
-	bh=dAOQw65TIKGSOe52+QMN7QcWvkAZCpUTzB8id6PXHAQ=;
-	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=P6aHx6RRnwJvXR0HUtj8xMtrpBYkpS7UUZLw6ByyaAZRk2zSq1SI7UZOq7MGnehgFcle1xmyMYUFF5oEkUeZvlOukja3ySi0gwsZLwCTNykYoYFZqaR6XpSHC3+XRYhqPIT2QGsanKMXO8A02ymAFehoc64cyMGgzK+2ju9m8L8=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=selinc.com; spf=pass smtp.mailfrom=selinc.com; dkim=pass (2048-bit key) header.d=selinc.com header.i=@selinc.com header.b=l6MZpKvi; arc=fail smtp.client-ip=40.107.201.37
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=selinc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=selinc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 214D5430CD3
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Aug 2026 23:32:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.41
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1786491155; cv=none; b=Ri542RooXRABYPtAJcxfd/T8Fzk6vZJZOFuZoK6NPeIgx3pi7i2zTTuHgijSggQqsYLyIIgGFAuAN4edG2+3PZOU+fnb8TBwK7FZzwOd0Yj+WL88CZlYHsqtnRnOXPhHR+i5QS4C27012VpIFsom3V1cP36LDUvn2KX58+E2Wis=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1786491155; c=relaxed/simple;
+	bh=CHqx7B2RZy7t6aKbUIiAOePlHAM+i9sdXAe0vI6Mj3k=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=AVolz7OEN6IFg/CUhyGDrSET6MiyW7AI8E7kVytdVpGqIYO1+J+l/6uVN+V68AL0xtjqWfkUuqrLQL6JeCqxB5SJV+yGPaIM7ry0+wBjv9FjJUtlXw31NUyRGeoGHR/3n4zm8oaoXvqBgVIRJygsn1zQrCJic28+2EMYR2RbCDY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=YsHob7dJ; arc=none smtp.client-ip=209.85.128.41
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=selinc.com header.i=@selinc.com header.b="l6MZpKvi"
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=sphJ5gUmmwx4biPSzAIY4cF4Wkyn/clGxXZ5xlMCavc0xQbhhi7BzWrMvlI3ZUZ2s4SWKLzMyuh39rLnfaHJKcBrsEUTNKuMCiB/vRx08ZAwlEj0JxxI1F53BywIoDUMX8y20Xos32lc6hY8uydAGVlx0eOIhgV/HBDjD2d37bqUV7J55dvjcz/SI7XBYwMjaVLB2AXJKuzKAw3leWvvoYPqoeXwb50t7rRF4petwWl8sr1XoqMLv4tsNYjzNU3yJGuv9/LG2CwT/TUswbJs1MqOq35YDBsF3cIlBHioWRtrZ4iZgqMdU4+djRbC1XmIbUt+0dbum2ySQH81gIPY1Q==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=aJdAXjIEmtBIYIQ2PqcaY45cRWS2mTO+LLL3RX8oLpk=;
- b=U9kx4vK1mzyjlLJtbbmayN3oRk9/V4J9NHiPITRKqWGofIarzglOG05uqW+Ccahcd5E9wLuzcjCwYWJpfmMUh8WsPG8lhVUA9Gp7WEcJ8YiLw6hQ/s9mFYBch1/BUbWaaQQh6LoSDAE2XzKEFyXQhq5chPs3clV3QwL47uwiJarMNJSPkQWC+NRjKVf22ccCiSurqaDpIJ0gthrgshPRmGaRybjksVSXVnIVWSPXApUAMt10RsmgVtAgju4GdRhlm7p7IqH5J95xzwCsnRj7Lz99JM80JOzxH+CI2p3viL4/AkgZ7a4wLA8+YTg+frylSM0uNQxRKiOqrVGR80AEmw==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass (sender ip is
- 74.117.212.83) smtp.rcpttodomain=vger.kernel.org smtp.mailfrom=selinc.com;
- dmarc=pass (p=reject sp=reject pct=100) action=none header.from=selinc.com;
- dkim=none (message not signed); arc=none (0)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=selinc.com;
- s=selector1;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=aJdAXjIEmtBIYIQ2PqcaY45cRWS2mTO+LLL3RX8oLpk=;
- b=l6MZpKviVymfr2BAgFI2GQQVaa5AM3wAhwk7B4Fge7K7YbBdn1Cz/GZzZbPtNhDJEWnc6IvUs3mQhnN1nZQ3j8+e2AJAThvEr3GRxkZOsrZv/+NvLvA27Z83KX/HmLik0OiZEuPOc4GtUQ3JzsflSQ7o3sOsMdlBiQQiv1KPk3NWK56NqkC2kg9RVW28bMWDineQ50V3qnnvfl6hukOcacdPGqkr0E1DUSNUyTCpkozXgdJkPaPyvgSUr4mJ7zzCZwklpXTSYPCqXyKHp1oy3dFjzhCUMAs9FeX1XHnuwT3N1MCmpQDcKDJyW8u2/OZlKn9RAnoUvqMRXP0xTwNAmA==
-Received: from BN9PR03CA0402.namprd03.prod.outlook.com (2603:10b6:408:111::17)
- by SA1PR22MB5553.namprd22.prod.outlook.com (2603:10b6:806:3dd::9) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.315.12; Tue, 11 Aug
- 2026 23:06:15 +0000
-Received: from BN3PEPF0000B373.namprd21.prod.outlook.com
- (2603:10b6:408:111:cafe::c) by BN9PR03CA0402.outlook.office365.com
- (2603:10b6:408:111::17) with Microsoft SMTP Server (version=TLS1_3,
- cipher=TLS_AES_256_GCM_SHA384) id 15.21.315.12 via Frontend Transport; Tue,
- 11 Aug 2026 23:06:14 +0000
-X-MS-Exchange-Authentication-Results: spf=pass (sender IP is 74.117.212.83)
- smtp.mailfrom=selinc.com; dkim=none (message not signed)
- header.d=none;dmarc=pass action=none header.from=selinc.com;
-Received-SPF: Pass (protection.outlook.com: domain of selinc.com designates
- 74.117.212.83 as permitted sender) receiver=protection.outlook.com;
- client-ip=74.117.212.83; helo=email.selinc.com; pr=C
-Received: from email.selinc.com (74.117.212.83) by
- BN3PEPF0000B373.mail.protection.outlook.com (10.167.243.170) with Microsoft
- SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.21.339.0 via Frontend Transport; Tue, 11 Aug 2026 23:06:14 +0000
-Received: from LOGAFINLPC.ad.selinc.com (10.100.90.200) by
- wpul-exchange.ad.selinc.com (10.53.14.24) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.2562.45; Tue, 11 Aug 2026 16:06:02 -0700
-From: Logan Finley <logan_finley@selinc.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.com>, <clm@fb.com>, Logan Finley <logan_finley@selinc.com>
-Subject: [RFC PATCH] btrfs: Write as many copies as possible if the current RAID1 profile is unreachable
-Date: Tue, 11 Aug 2026 16:04:28 -0700
-Message-ID: <20260811230427.4059275-1-logan_finley@selinc.com>
-X-Mailer: git-send-email 2.34.1
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="YsHob7dJ"
+Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-49554ebb87dso2927075e9.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Aug 2026 16:32:32 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1786491151; x=1787095951; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=/V5PI9YTkKGoy8ZMx3SBOIHqnrdkD7ZE43OVzHx9AeQ=;
+        b=YsHob7dJexBae6SWtpLm/hk4P9WJmAnCBVsMqfdXnW+8Z/sVb2YhzfrGXNeVjIAJ3f
+         Pn7BXnmmJIP0IHBjcv2h9t3PNR+xGkWKHsHpC2ntrbd5FHX84yZN5KrXZoenk9G7UjNz
+         2tttBgjN4SE80uxoKGNdGsgjJd5Ic/UZkOFcO9nbwmKGNxC4E8vhCfI7mM0yUxtIKk/2
+         phykXnvA71rg/l17XlAQsvqLXz5M5Qrir1Gx4ZRNxIrnCg1WcEoJfJpOD/TXYCjW2Xv1
+         UezL9bDg0aMIhfuRr53B9zldGYY5YbhDp7I43fj7xarCZxBTj+CDe8XZLs2yI1c2PnvH
+         kZwA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1786491151; x=1787095951;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=/V5PI9YTkKGoy8ZMx3SBOIHqnrdkD7ZE43OVzHx9AeQ=;
+        b=C0wsgMAClO4MDQW5Nx6qfpWoIFC6TO3A5vf0XaK4S9RdjedbNgDzs+QTM9vfzEw6qL
+         UX6lRS1zkU/0dwqCsLF8L57MTMA5ssrO06WHoPeDq1Om3t4VdeceBfw9I8Vwbu5hz31V
+         pAh8/8jS/fJ+yvuNwwOKe+K/S94LJ5zSBWsZWDDOHN48JtYA2ne9OurADsiGyjlBEciT
+         fYDqyXhJm4uT1cgNrX5Pi7toFHqMVIp2j/btzp8MIOWl/Ki3Tr5l7JXUkZvl7+XAOK28
+         3/ESKaCwmLJRbVxRVPXbPRnbbzI5K6JHDAVe+it7oSwdDDMSqfvowmXnipOOzUx3A/hc
+         Mtyw==
+X-Forwarded-Encrypted: i=1; AHgh+RrcsSkPO7W1xVyCltMmBDpzYfNZy1Vs6ebnfQpz9A6vO1PA0l0D1SVJeXy11qybtx9oKO9RaQZvyTFYWw==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yxu1eeyCWqDxGiDq9YVdrGHtBMLeFbNH7RigH03zF+u4mD4XJbE
+	EjC1YifnBEApDReMpW35Ny4ptYeNCyNFKRxxpTrQRtSPIiOttTk7tr3WQN1fPKPiBxnLcFNdy8L
+	uwOcTniuSVw==
+X-Gm-Gg: AR+sD10lMtC6CVKBkGZ0hItJmCCSw13bL/H4quNzzI5fwiReMxAmCgGfKEmWnnHNqBz
+	iZO46d5Ha1n3QxaDL/OCmeHCKX17xOhaegtOpaLYwHUkRx6hfnWL5yIyu3fuuF5deEmY49+rjJJ
+	mnOTRPySDrDYgUHAWo5ewPn/LSxW9MS+Yw+6I97yBVMnjFOS00jo0gzn1mneRL3z6UwpOLZrAzb
+	uXMpT8lZgO6phlCDwP9OZA7Hkn9toobTZ6c6lty0L3BczmMW+CmthI1dqf+z5fjfwnnGzQNvbPO
+	/RjDSqIgKwbMcd/rf+KeXLlOcy1EF/Z91MZrDEe9qslizXuRDf1bbPTj3bOoOct+TgTlhCT/iuI
+	CbZT8Kylkq1CkZM/UimxCBNDlH5adJAJwEfaTpguzbnxOzmKOb81HWH9Uw9tLvIPScY6F1okclT
+	u3PmlMhd2XxywZNExAmrh5w9evuchOsphDFGQUaSb1X4V+uEOAOOY3HA==
+X-Received: by 2002:a05:600c:418b:b0:495:641a:bd3f with SMTP id 5b1f17b1804b1-4997c13abd2mr4365955e9.13.1786491151243;
+        Tue, 11 Aug 2026 16:32:31 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-31cf3d0b48fsm3619898eec.10.2026.08.11.16.32.28
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 11 Aug 2026 16:32:30 -0700 (PDT)
+Message-ID: <02b9630e-b575-4c45-ae87-d2faea53b72f@suse.com>
+Date: Wed, 12 Aug 2026 09:02:24 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [RFC PATCH] btrfs: Write as many copies as possible if the
+ current RAID1 profile is unreachable
+To: Logan Finley <logan_finley@selinc.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com, clm@fb.com
+References: <20260811230427.4059275-1-logan_finley@selinc.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260811230427.4059275-1-logan_finley@selinc.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-EOPAttributedMessage: 0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: BN3PEPF0000B373:EE_|SA1PR22MB5553:EE_
-X-MS-Office365-Filtering-Correlation-Id: 71276b83-af74-4ed6-0c5f-08def7fd249a
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|1800799024|36860700016|82310400026|376014|23010399003|18002099003|56012099006|11063799006|6133799003|10067099003;
-X-Microsoft-Antispam-Message-Info:
-	+RRShJBkQd1xnsYMUEXUtfpyV8fV97uI6zZXgITcfOcTWYNofhUJP2L0xSFw57XqNRozeY5aF8MHC6XsChWS1f97tkI1sSBjSVjfaUueLrD2WU32YPNschYV8qfEcWYwcJKaNFh26j8Q4VwqxtaTBkAHYHYpzG6qlDtISvqx2jltmb4tF2FKLlEL/RSjhzEAQtUXTBZr1RZ4pFK5Jp5HNkN8wuYIRPMVqor+nMCj1PvZc2+zRc0ikGAWOPTBUAzlyw4nPOf8XRqkJWnNxBBGhpAfYQGaR9SlmhOFnuG6MsXMgL/XbepTjWdbI6Nc9/ubP9ERp/gzMli+OS6Ye1nO612JBSuRpQN+buMkzZNhTDa22hHI2XhGMReb7BkqliP+y2TUPDIhwYylYFqFHsEWjr9El7/FjhLDWfWaMijRRkuC+bhzsWEhn6rJeKA/fbRdInr7nKnO6CBiL1vI+42kn99yoZjzK9M6BGTkkT4FkKVnDGnLrF/5+7nYlUu7adPcZU4rKKiVqY3zb5tfRw2xS6SiBLp35UGLaz+rbLB+MrYexGnfNQ0Y7w6a+CdaBDVPrsFQ4IQgT8LaqWnd7lbK4N4o5Nu4K6Fp3qMUrp9BEhFEZ4vgwetcUVaXv/pededjEMZZ0q9uDbGZgXm0DVYgumd1aW/Q/uLA3TToTdHFjKfZeI8jdBfW8Uv6dKm489OmbSYRh8vpeGuUIw1joL7wVA==
-X-Forefront-Antispam-Report:
-	CIP:74.117.212.83;CTRY:US;LANG:en;SCL:1;SRV:;IPV:CAL;SFV:NSPM;H:email.selinc.com;PTR:wpul-exchange1.selinc.com;CAT:NONE;SFS:(13230040)(1800799024)(36860700016)(82310400026)(376014)(23010399003)(18002099003)(56012099006)(11063799006)(6133799003)(10067099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0:
-	ChhAszmhP1aKYs3ucnz8NOSELGT6yzemOWtpjrDH0uP2TZf2tt7Cm3uRH95e+V8AIep78kE6dZ8gJ/qBeDllMytIKZEWEy9/xfexikar6jaTFyHXYOlwrINLOINt5TOU0Tky522VAetQfUlZUZ5FvC2XH0r2Gul2K57wPVpyJ7Co7WK2xMLBQdN2bMW8VKa6+opO7cPko4eiqWRSxfs+TzTJAv8ULOG/TJEhEizHzagfBpEWQ71tuQl6RspE/kOCQzgB9Bjm7cZcQ+Q0RzFES1AryyzI3nzAWsSANDTn5VuKKV653MnaIgyRolTiciz36AGmzUTrB2BNYa+1HWZb4gTdQ1sOKiVJ2SLHvTiB2NGEPMXAzhbkTkY2OQw/E39VBnjE20KLCaEKAHUpicgaHQBF5rXs43PQ6kr/qLBcTjEmabpEp9+OkFI8Bhk1dy1l
-X-OriginatorOrg: selinc.com
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 11 Aug 2026 23:06:14.4418
- (UTC)
-X-MS-Exchange-CrossTenant-Network-Message-Id: 71276b83-af74-4ed6-0c5f-08def7fd249a
-X-MS-Exchange-CrossTenant-Id: 12381f30-10fe-4e2c-aa3a-5e03ebeb59ec
-X-MS-Exchange-CrossTenant-OriginalAttributedTenantConnectingIp: TenantId=12381f30-10fe-4e2c-aa3a-5e03ebeb59ec;Ip=[74.117.212.83];Helo=[email.selinc.com]
-X-MS-Exchange-CrossTenant-AuthSource:
-	BN3PEPF0000B373.namprd21.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Anonymous
-X-MS-Exchange-CrossTenant-FromEntityHeader: HybridOnPrem
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SA1PR22MB5553
 
-While testing a three-disk btrfs filesystem consisting of only RAID1C3
-block groups, I noticed that if I unmounted the filesystem, wiped one of
-the disks, and then remounted the filesystem from the remaining two disks
-with `-o degraded`, after a certain point new data begins to be written
-into a "single" block group.
 
-It appears that some data is initially written into the existing RAID1C3
-chunks, but once enough data is written such that a new chunk needs to
-be allocated, the next chunk allocated uses the "single" profile.
 
-I'm not sure of a good way to fill up the System and Metadata block groups
-enough to trigger a new chunk to be allocated, so I wasn't able to see
-whether they also allocate "single"-profile chunks.
+在 2026/8/12 08:34, Logan Finley 写道:
+> While testing a three-disk btrfs filesystem consisting of only RAID1C3
+> block groups, I noticed that if I unmounted the filesystem, wiped one of
+> the disks, and then remounted the filesystem from the remaining two disks
+> with `-o degraded`, after a certain point new data begins to be written
+> into a "single" block group.
+> 
+> It appears that some data is initially written into the existing RAID1C3
+> chunks, but once enough data is written such that a new chunk needs to
+> be allocated, the next chunk allocated uses the "single" profile.
+> 
+> I'm not sure of a good way to fill up the System and Metadata block groups
+> enough to trigger a new chunk to be allocated, so I wasn't able to see
+> whether they also allocate "single"-profile chunks.
 
-This was unexpected, since, to me, one of the benefits of RAID1C3 was more
-time to keep operating safely (albeit in a degraded state) while an
-operator makes their way to a machine to physically replace the failed
-disk. With the current behavior, it seems that this isn't a valid use case
-because any further disk failure could lead to the loss of newly written
-data.
+For meta, go fill a subvolume with inlined data, that will easily bump 
+up the metadata usage.
 
-This (admittedly naive) patch modifies this behavior so that the RAID1
-family of profiles writes as many copies as possible in a degraded state
-when there are not enough disks present to write data in the configured
-RAID profile.
+For system it's harder, but you can still use fallocate to take a lot of 
+space, which will trigger new chunk allocation that will increase system 
+usage.
+But it's very hard if your fs has limited space.
 
-Signed-off-by: Logan Finley <logan_finley@selinc.com>
----
-What I'm looking for is feedback on whether this sort of patch is
-desired upstream, whether the approach is valid, and whether or not
-there are any gotchas I may have missed in the implementation.
 
-Testing was done on an x86_64 qemu vm at commit a13307e97d5c ("Merge tag
-'bpf-fixes' of git://git.kernel.org/pub/scm/linux/kernel/git/bpf/bpf")
-on the kdave/linux tree.
----
- fs/btrfs/block-group.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+> 
+> This was unexpected, since, to me, one of the benefits of RAID1C3 was more
+> time to keep operating safely (albeit in a degraded state) while an
+> operator makes their way to a machine to physically replace the failed
+> disk. With the current behavior, it seems that this isn't a valid use case
+> because any further disk failure could lead to the loss of newly written
+> data.
+> 
+> This (admittedly naive) patch modifies this behavior so that the RAID1
+> family of profiles writes as many copies as possible in a degraded state
+> when there are not enough disks present to write data in the configured
+> RAID profile.
+> 
+> Signed-off-by: Logan Finley <logan_finley@selinc.com>
+> ---
+> What I'm looking for is feedback on whether this sort of patch is
+> desired upstream, whether the approach is valid, and whether or not
+> there are any gotchas I may have missed in the implementation.
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 8def7abb728f..50a21a0d8765 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -176,6 +176,12 @@ u64 btrfs_get_alloc_profile(struct btrfs_fs_info *fs_info, u64 orig_flags)
- 			flags |= fs_info->avail_metadata_alloc_bits;
- 	} while (read_seqretry(&fs_info->profiles_lock, seq));
- 
-+	/* Degrade to a less redundant, but still redundant, RAID1 profile if possible. */
-+	if (flags & BTRFS_BLOCK_GROUP_RAID1C4)
-+		flags |= BTRFS_BLOCK_GROUP_RAID1C3 | BTRFS_BLOCK_GROUP_RAID1;
-+	else if (flags & BTRFS_BLOCK_GROUP_RAID1C3)
-+		flags |= BTRFS_BLOCK_GROUP_RAID1;
-+
- 	return btrfs_reduce_alloc_profile(fs_info, flags);
- }
- 
--- 
-2.34.1
+I think this downgrade from RAID1C4 to C3/C2 and from C3 to C2 is safe, 
+and it's a good middle ground solution.
+
+Although it has the side effect that there will be new RAID1* profiles 
+which will require balance to remove after the missing device is dealt with.
+
+
+
+The root problem is in how we handle chunk allocation in degraded mode.
+When a device is missing, it's very instinctive to assume we should not 
+use that device for new chunks.
+
+But that may not be the case, we may still want to allocate chunk on 
+that missing device, and rely on the chunk's mirrors/duplications to 
+handle it.
+
+There will be extra problems involved for using such missing device, 
+e.g. we should not use the missing device for profiles without 
+duplication on other devices, like SINGLE/DUP on that missing device.
+
+In the long run, that would allow us to still use whatever profile even 
+if there is a missing device, and requires no extra balance after all 
+devices are online again.
+
+
+Now the question is, should we go the long-term solution directly (if 
+some one is going to work on it), or go the middle ground first?
+
+Thanks,
+Qu
+> 
+> Testing was done on an x86_64 qemu vm at commit a13307e97d5c ("Merge tag
+> 'bpf-fixes' of git://git.kernel.org/pub/scm/linux/kernel/git/bpf/bpf")
+> on the kdave/linux tree.
+> ---
+>   fs/btrfs/block-group.c | 6 ++++++
+>   1 file changed, 6 insertions(+)
+> 
+> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+> index 8def7abb728f..50a21a0d8765 100644
+> --- a/fs/btrfs/block-group.c
+> +++ b/fs/btrfs/block-group.c
+> @@ -176,6 +176,12 @@ u64 btrfs_get_alloc_profile(struct btrfs_fs_info *fs_info, u64 orig_flags)
+>   			flags |= fs_info->avail_metadata_alloc_bits;
+>   	} while (read_seqretry(&fs_info->profiles_lock, seq));
+>   
+> +	/* Degrade to a less redundant, but still redundant, RAID1 profile if possible. */
+> +	if (flags & BTRFS_BLOCK_GROUP_RAID1C4)
+> +		flags |= BTRFS_BLOCK_GROUP_RAID1C3 | BTRFS_BLOCK_GROUP_RAID1;
+> +	else if (flags & BTRFS_BLOCK_GROUP_RAID1C3)
+> +		flags |= BTRFS_BLOCK_GROUP_RAID1;
+> +
+>   	return btrfs_reduce_alloc_profile(fs_info, flags);
+>   }
+>   
+

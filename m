@@ -1,35 +1,35 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CDDEE369D61;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CDF2736D9FE;
 	Tue, 11 Aug 2026 18:15:12 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786472116; cv=none; b=KSLfre/fUJ+rrWBhJ7oMPu24isi4rCeI5hJ6ceXTDW5VgVZe4ggh+7DMLZDtOAACxnsEWp6H+lrVKW8wbiEWabS0vHxMCvFjO4r7ELRnNyzb19FNK9fFCVRmlJ2nr+RhVoHyTJ+67DitvOGgjNPSEdeM2GUqR9ttoFzJNkz8mlU=
+	t=1786472117; cv=none; b=AA/+llYLL7Xx7BdTZ3DDx4YVffU1L3pTAA+3sTS1B5uRm8mIS/tz0ZE8bM2jFYz769mx4xy5CRSFNoP6muPQF6DRPdKFfC2nOesba1kSEIPBrslJbodr9AwopGth8Yjpqgvx/CCgHaoT/VpcVKUuSQmvB/Ug63AB0WUyd1iVOso=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786472116; c=relaxed/simple;
-	bh=SuoQyOL5OoixGIQjHqn4nzB0MprTrfikfwtDwZ15904=;
+	s=arc-20240116; t=1786472117; c=relaxed/simple;
+	bh=i8QCxSVOV0LcFs+6/Mjy+uu1WcgS6N7H0r4iR2hOgvk=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=Vt1GrNA6XIqwYfh2Hamwuy+pyb9UWxtwifz6nBf1WUxduxOzfTUekG9lk/6oBrjBwBJ0fjRL3+5WB8xvshmVn+/3rw2tlEkzFy7QQM0F8hwsg+GONOacQuYW5QrGBO+LTHCdmaRHPvavw3idOTRhU3DhrnjYJpsvKGKUlHq9QwY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dSHgrNAA; arc=none smtp.client-ip=100.103.45.18
+	 In-Reply-To:To:Cc; b=h4/htJN4Ah6oq/heXnmnw54bs4XwiurozXHFpTAEw2N7G4I4D9rnEeUlJL+3VamJBq9axj+OuC9+JI7bf3sc71TBD1NGnL83LNHby+yt8xIsLStKOFyxXMWzGUdY3zvmTDxN8s7R1OcHfm2oKjJ+iRlE4UTAui8SSlYXyxWnzts=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FGhjd9yi; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dSHgrNAA"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3477C1F00AC4;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FGhjd9yi"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id EA9F31F00A3D;
 	Tue, 11 Aug 2026 18:15:11 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1786472111;
-	bh=b9PWBl+4Ny6MgSuhtKT5CkWx640e44bnpWLCqG0SP9A=;
+	s=k20260515; t=1786472112;
+	bh=0KxVljklGd97b9rZMT8e3dxgS3KH3MdjoX7XMkwh6Ws=;
 	h=From:Date:Subject:References:In-Reply-To:To:Cc;
-	b=dSHgrNAANwln0fa6wt4gxIU+IcrLIpz7dOZGI762DQPG2QluDdE3ZRU01O8nJ/JZV
-	 B1ICjInBvNzS4iHm20wB2EQnUz0XynTWebnToZg5fC3nxicL8t9sIz1q3DlKZ3b6qO
-	 +bwklAnIFt6t9mAbrfBeKWoQLsltix6S3dBOxCm89cjNoTV2dAxw4dk+GWa1FVaG39
-	 DVleHQHVxdrRaBFJpzSeqdexP3V0FZLYx2lrKOgPaDbF4gM+vOkPhpiscNClegfZsI
-	 dxo8Tbxj32eWiOyKipi0zB9bnQRuGxJcRnkzgkAiNpuoaQDJFfJZQgNsFPq6cCAEtL
-	 DND4O17syWubw==
+	b=FGhjd9yipJAsE8MOIVP3Fr/Y/r3xaRD18wkeAJTOKzMtDVwiyvPpihEyfjitJ9iQc
+	 IjpYNcEpF/9eqxO/lRmsaUgQtDDeeTq3B7p0LkUXX0zLgXhJtF46zyK8oaAZXFxNrX
+	 tPusbteXZk6RL2/G0zkpMtruVwmaCKtUv9Zq5HGxO4lB9XhL11kZMR82Q1Rm16PmJ5
+	 5kB+JCOXE4dGED+X6/Wf1rSg2Oo+oFCUQP35p5IH/AOqoCZZPm4SBhgUhaaaCVncC1
+	 8UpCg7+kttVy4Hrgdm50aQ+fKyPf68MEp6f5kO3vKGVkQwDY7LkwOqfdSGF8icIYw7
+	 etdXG/6N+mInA==
 From: Jeff Layton <jlayton@kernel.org>
-Date: Tue, 11 Aug 2026 14:14:57 -0400
-Subject: [PATCH v3 4/6] btrfs: pre-allocate delayed dir index before btree
- modification
+Date: Tue, 11 Aug 2026 14:14:58 -0400
+Subject: [PATCH v3 5/6] btrfs: handle ENOMEM from btrfs_insert_dir_item()
+ without aborting
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -38,7 +38,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260811-btrfs-enomem-v3-4-46a993fc3fe5@kernel.org>
+Message-Id: <20260811-btrfs-enomem-v3-5-46a993fc3fe5@kernel.org>
 References: <20260811-btrfs-enomem-v3-0-46a993fc3fe5@kernel.org>
 In-Reply-To: <20260811-btrfs-enomem-v3-0-46a993fc3fe5@kernel.org>
 To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
@@ -46,254 +46,88 @@ Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
  linux-kernel@vger.kernel.org, kernel-team@fb.com, 
  Jeff Layton <jlayton@kernel.org>
 X-Mailer: b4 0.14.3
-X-Developer-Signature: v=1; a=openpgp-sha256; l=8619; i=jlayton@kernel.org;
- h=from:subject:message-id; bh=SuoQyOL5OoixGIQjHqn4nzB0MprTrfikfwtDwZ15904=;
- b=owEBbQKS/ZANAwAKAQAOaEEZVoIVAcsmYgBqe2arElK+AtgGFhdzSFxNQTC78GqJrQf5v+quO
- fQ3MywFU5uJAjMEAAEKAB0WIQRLwNeyRHGyoYTq9dMADmhBGVaCFQUCantmqwAKCRAADmhBGVaC
- FcwJD/4kCGof62j78o0aI5ZutvjfZ8gi0BK+8Z60tKstE8K+Ejj4W+z1E+rHZh7/6srlxJvHFpI
- VAxRvfWROPlork/hedshRf9NpszSpOKwYDPWLvrE7b8HybsjO4zZRmM+IsnQ6NbEpu36DYeIo5W
- DdDS4AcaiN44OOONpSRlP6pr4/HLjmguTJ/crT723oObRXkulTZxVU4lDHMLW7OjTh3Z3Yq0XEi
- jAm0ac0Y9mOMnlImV+RgWq9WFXo1NN2qCHnmUF1caJK2Mn2DT2dPKA2EphXOgEMpQhS3V9J07/S
- rIC/l+pqpP/XYXj6shg0soE0zb0kiR1ekOqDkIbi4EhxGrvj4xlfWLpo59bak639660Z1pyjsZY
- YZ4GbuWVZlvZXehOkyklwgINxuUsw/UZfbQThSkIOjMgIqhI97NwOEmSUZ8TgX4PbNZuVxqJuYp
- 1ENsX5wLdEcaf560Aro8TgerP0W2JasDwwXi5MUbMKOsz/USsQKLfMyqVhkVtVdqiPXwfR8vRFp
- G0jFGugedkqworUWdKXDyH9JXrt0pnTggmnw8k4QoodOLjyECRzba3xkegFyswhkcFfqg//23A1
- btmNLprIItLVmUvigLtXlYLBFVUrHy0fogvvKhyTZ6pWv2mMDfAAMzeDfWJy03j+UILUH8kktNr
- 6LuvQjd368lV5bg==
+X-Developer-Signature: v=1; a=openpgp-sha256; l=2667; i=jlayton@kernel.org;
+ h=from:subject:message-id; bh=i8QCxSVOV0LcFs+6/Mjy+uu1WcgS6N7H0r4iR2hOgvk=;
+ b=owEBbQKS/ZANAwAKAQAOaEEZVoIVAcsmYgBqe2arMWMeCVirASuceWVZYx/Ga8+ycl7V71gix
+ cqbv9EQlOyJAjMEAAEKAB0WIQRLwNeyRHGyoYTq9dMADmhBGVaCFQUCantmqwAKCRAADmhBGVaC
+ FSsAD/9EMnv2Pf2XjvvyBgU8P6Kmd6x/0sOKXWolE6REbF6AmlOc8FS3xbpUn0uIOXh8KqBnr4S
+ zzBl6/ZcuFWV0tyJhqCl88F6AfRvOC2fCr0Yl+P+RvbhjXdREXwmNtPYg12EFEOIpnzaG4MFE8x
+ EwgdRRJEEpg0BW3ZN65Y6BrUpqDesqcj3yyk+q72m6lTgDHOKpEONcMufQ6A+nWKpyS7FRWbmCM
+ 4Jqlnk3wVo4s4eG2WhFi2sFBoxHdCnmdHwJvG+v5olVTTtm5c0f5qRaGwe3sQs/Hw016BpD3Kpa
+ WmW94LaUVnQL8Fj+hm/sgAGk1WYCvQe90pgA9ILGpTV2AgRo/evH5b0XI/Weak22jLt9KbHCeiZ
+ axqb1+MMmD+ZwrRI+dDaZ7yUxrkQ9BJNSLDE/k/DKHMCnsP5ILfT7qXL4B9vB3EwhHO5MTICW2E
+ ss+kOo8MHyRNSmC0LK/RAMCMU/YSpZVS7fQzwWhv/2Bj6CJrDmJLnxdgQCPjNvulNUkjDhtmgQi
+ J6slD32+ZSdjDwBNNDYNO1TyiGZ80fe3bIlgkw6bpfZX+Q6Ci7OGSJG+/e4LB3sBvuT5oxKOSVH
+ Lp8HogG2LznHxcieDalC9VqkZ2DVAVGpR4SmXxhKkQWgVDa2bBU5ImEVTRH5+OJVykb6GH3RXN2
+ abtzhAcxNvJn1KA==
 X-Developer-Key: i=jlayton@kernel.org; a=openpgp;
  fpr=4BC0D7B24471B2A184EAF5D3000E684119568215
 
-Move the delayed dir index allocation in btrfs_insert_dir_item() before
-the insert_with_overflow() call that modifies the btree. Previously, the
-allocations happened after the DIR_ITEM was already inserted, meaning an
-ENOMEM failure left the btree in a partially-modified state that could
-only be resolved by aborting the transaction.
+Now that btrfs_insert_dir_item() returns -ENOMEM before modifying the
+btree (thanks to delayed dir index pre-allocation), callers can handle
+ENOMEM gracefully instead of aborting the transaction.
 
-Add an optional caller-provided btrfs_dir_index_prealloc parameter to
-btrfs_insert_dir_item(). When non-NULL, ownership of the prealloc
-transfers to btrfs_insert_dir_item(). When NULL, it allocates internally.
-All existing callers pass NULL to preserve the current behavior.
+- btrfs_add_link(): add -ENOMEM to the recoverable errors alongside
+  -EEXIST and -EOVERFLOW.
+- btrfs_create_new_inode(): on -ENOMEM from btrfs_add_link(), orphan the
+  newly-created inode instead of aborting. The inode item was already
+  written with nlink 1, and discard_new_inode() marks it bad so eviction
+  won't delete it. So clear_nlink() alone is not enough: persist nlink 0
+  via btrfs_update_inode(), otherwise orphan cleanup would see nlink > 0,
+  drop the orphan item, and leak the inode. Fall back to aborting only if
+  that update also fails.
 
-Since ownership transfers, btrfs_insert_dir_item() must free the prealloc
-on every path that does not commit it. Route all such exits (including
-the early path allocation failure) through a common out_free_prealloc
-label, rather than keying cleanup on need_delayed_index.
-
-Remove the btrfs_insert_delayed_dir_index() wrapper, as there are no
-more callers.
+This turns a filesystem-killing abort into a graceful -ENOMEM return for
+create(), mkdir(), mknod(), symlink(), and link() under memory pressure.
 
 Assisted-by: LLM
-Suggested-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Jeff Layton <jlayton@kernel.org>
 ---
- fs/btrfs/delayed-inode.c | 21 ++-------------------
- fs/btrfs/delayed-inode.h |  5 -----
- fs/btrfs/dir-item.c      | 42 ++++++++++++++++++++++++++++--------------
- fs/btrfs/dir-item.h      |  5 +++--
- fs/btrfs/inode.c         |  2 +-
- fs/btrfs/transaction.c   |  2 +-
- 6 files changed, 35 insertions(+), 42 deletions(-)
+ fs/btrfs/inode.c | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index af5e6dbf60d3..bd603525c133 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -687,7 +687,7 @@ static int btrfs_insert_delayed_item(struct btrfs_trans_handle *trans,
- 	/*
- 	 * For delayed items to insert, we track reserved metadata bytes based
- 	 * on the number of leaves that we will use.
--	 * See btrfs_insert_delayed_dir_index() and
-+	 * See btrfs_insert_delayed_dir_index_prealloc() and
- 	 * btrfs_delayed_item_reserve_metadata()).
- 	 */
- 	ASSERT(first_item->bytes_reserved == 0);
-@@ -1629,23 +1629,6 @@ int btrfs_insert_delayed_dir_index_prealloc(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--/* Will return 0, -ENOMEM or -EEXIST (index number collision, unexpected). */
--int btrfs_insert_delayed_dir_index(struct btrfs_trans_handle *trans,
--				   const char *name, int name_len,
--				   struct btrfs_inode *dir,
--				   const struct btrfs_disk_key *disk_key, u8 flags,
--				   u64 index)
--{
--	struct btrfs_dir_index_prealloc *prealloc;
--
--	prealloc = btrfs_prealloc_delayed_dir_index(dir, name, name_len);
--	if (IS_ERR(prealloc))
--		return PTR_ERR(prealloc);
--
--	return btrfs_insert_delayed_dir_index_prealloc(trans, dir, prealloc,
--						       disk_key, flags, index);
--}
--
- static bool btrfs_delete_delayed_insertion_item(struct btrfs_delayed_node *node,
- 						u64 index)
- {
-@@ -1661,7 +1644,7 @@ static bool btrfs_delete_delayed_insertion_item(struct btrfs_delayed_node *node,
- 	/*
- 	 * For delayed items to insert, we track reserved metadata bytes based
- 	 * on the number of leaves that we will use.
--	 * See btrfs_insert_delayed_dir_index() and
-+	 * See btrfs_insert_delayed_dir_index_prealloc() and
- 	 * btrfs_delayed_item_reserve_metadata()).
- 	 */
- 	ASSERT(item->bytes_reserved == 0);
-diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
-index 6d12a145489f..57ba96cfaf9c 100644
---- a/fs/btrfs/delayed-inode.h
-+++ b/fs/btrfs/delayed-inode.h
-@@ -115,11 +115,6 @@ struct btrfs_delayed_item {
- };
- 
- void btrfs_init_delayed_root(struct btrfs_delayed_root *delayed_root);
--int btrfs_insert_delayed_dir_index(struct btrfs_trans_handle *trans,
--				   const char *name, int name_len,
--				   struct btrfs_inode *dir,
--				   const struct btrfs_disk_key *disk_key, u8 flags,
--				   u64 index);
- 
- struct btrfs_dir_index_prealloc {
- 	struct btrfs_delayed_node *node;
-diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index 84f1c64423d3..30ddafaf8d3d 100644
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -106,8 +106,11 @@ int btrfs_insert_xattr_item(struct btrfs_trans_handle *trans,
-  * Will return 0 or -ENOMEM
-  */
- int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
--			  const struct fscrypt_str *name, struct btrfs_inode *dir,
--			  const struct btrfs_key *location, u8 type, u64 index)
-+			  const struct fscrypt_str *name,
-+			  struct btrfs_inode *dir,
-+			  const struct btrfs_key *location, u8 type,
-+			  u64 index,
-+			  struct btrfs_dir_index_prealloc *prealloc)
- {
- 	int ret = 0;
- 	int ret2 = 0;
-@@ -119,17 +122,28 @@ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
- 	struct btrfs_key key;
- 	struct btrfs_disk_key disk_key;
- 	u32 data_size;
-+	const bool need_delayed_index = (root != root->fs_info->tree_root);
- 
- 	key.objectid = btrfs_ino(dir);
- 	key.type = BTRFS_DIR_ITEM_KEY;
- 	key.offset = btrfs_name_hash(name->name, name->len);
- 
- 	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out_free_prealloc;
-+	}
- 
- 	btrfs_cpu_key_to_disk(&disk_key, location);
- 
-+	/* Pre-allocate the delayed dir index before modifying the btree. */
-+	if (need_delayed_index && !prealloc) {
-+		prealloc = btrfs_prealloc_delayed_dir_index(dir, name->name,
-+							    name->len);
-+		if (IS_ERR(prealloc))
-+			return PTR_ERR(prealloc);
-+	}
-+
- 	data_size = sizeof(*dir_item) + name->len;
- 	dir_item = insert_with_overflow(trans, root, path, &key, data_size,
- 					name->name, name->len);
-@@ -137,7 +151,7 @@ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
- 		ret = PTR_ERR(dir_item);
- 		if (ret == -EEXIST)
- 			goto second_insert;
--		goto out_free;
-+		goto out_free_prealloc;
- 	}
- 
- 	if (IS_ENCRYPTED(&dir->vfs_inode))
-@@ -154,21 +168,21 @@ int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
- 	write_extent_buffer(leaf, name->name, name_ptr, name->len);
- 
- second_insert:
--	/* FIXME, use some real flag for selecting the extra index */
--	if (root == root->fs_info->tree_root) {
-+	if (!need_delayed_index) {
- 		ret = 0;
--		goto out_free;
-+		goto out_free_prealloc;
- 	}
- 	btrfs_release_path(path);
- 
--	ret2 = btrfs_insert_delayed_dir_index(trans, name->name, name->len, dir,
--					      &disk_key, type, index);
--out_free:
-+	ret2 = btrfs_insert_delayed_dir_index_prealloc(trans, dir, prealloc,
-+						       &disk_key, type, index);
- 	if (ret)
- 		return ret;
--	if (ret2)
--		return ret2;
--	return 0;
-+	return ret2;
-+
-+out_free_prealloc:
-+	btrfs_free_delayed_dir_index_prealloc(trans, prealloc);
-+	return ret;
- }
- 
- static struct btrfs_dir_item *btrfs_lookup_match_dir(
-diff --git a/fs/btrfs/dir-item.h b/fs/btrfs/dir-item.h
-index e52174a8baf9..d7a7d0b66f37 100644
---- a/fs/btrfs/dir-item.h
-+++ b/fs/btrfs/dir-item.h
-@@ -16,9 +16,11 @@ struct btrfs_trans_handle;
- 
- int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir_ino,
- 			  const struct fscrypt_str *name);
-+struct btrfs_dir_index_prealloc;
- int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
- 			  const struct fscrypt_str *name, struct btrfs_inode *dir,
--			  const struct btrfs_key *location, u8 type, u64 index);
-+			  const struct btrfs_key *location, u8 type, u64 index,
-+			  struct btrfs_dir_index_prealloc *prealloc);
- struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
- 					     struct btrfs_root *root,
- 					     struct btrfs_path *path, u64 dir,
-@@ -53,5 +55,4 @@ static inline u64 btrfs_name_hash(const char *name, int len)
- {
-        return crc32c((u32)~1, name, len);
- }
--
- #endif
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3c10a0ef0002..3a2dca093c7d 100644
+index 3a2dca093c7d..5b79910d72f5 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -6924,7 +6924,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
- 		return ret;
+@@ -6863,7 +6863,27 @@ int btrfs_create_new_inode(struct btrfs_trans_handle *trans,
+ 	} else {
+ 		ret = btrfs_add_link(trans, BTRFS_I(dir), BTRFS_I(inode), name,
+ 				     false, BTRFS_I(inode)->dir_index);
+-		if (unlikely(ret)) {
++		if (ret == -ENOMEM) {
++			/*
++			 * Orphan the new inode instead of aborting. The inode
++			 * item was already written with nlink 1, and discard's
++			 * eviction won't delete a bad inode, so nlink 0 must be
++			 * persisted here or orphan cleanup would see nlink > 0,
++			 * drop the orphan item, and leak the inode.
++			 */
++			clear_nlink(inode);
++			/* btrfs_orphan_add() aborts the transaction on failure. */
++			ret = btrfs_orphan_add(trans, BTRFS_I(inode));
++			if (ret)
++				goto discard;
++			ret = btrfs_update_inode(trans, BTRFS_I(inode));
++			if (ret) {
++				btrfs_abort_transaction(trans, ret);
++				goto discard;
++			}
++			ret = -ENOMEM;
++			goto discard;
++		} else if (unlikely(ret)) {
+ 			btrfs_abort_transaction(trans, ret);
+ 			goto discard;
+ 		}
+@@ -6925,7 +6945,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
  
  	ret = btrfs_insert_dir_item(trans, name, parent_inode, &key,
--				    btrfs_inode_type(inode), index);
-+				    btrfs_inode_type(inode), index, NULL);
- 	if (ret == -EEXIST || ret == -EOVERFLOW)
+ 				    btrfs_inode_type(inode), index, NULL);
+-	if (ret == -EEXIST || ret == -EOVERFLOW)
++	if (ret == -EEXIST || ret == -EOVERFLOW || ret == -ENOMEM)
  		goto fail_dir_item;
  	else if (unlikely(ret)) {
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index c641099d66e2..6fdfea5d35af 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1882,7 +1882,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 
- 	ret = btrfs_insert_dir_item(trans, &fname.disk_name,
- 				    parent_inode, &key, BTRFS_FT_DIR,
--				    index);
-+				    index, NULL);
- 	if (unlikely(ret)) {
  		btrfs_abort_transaction(trans, ret);
- 		goto fail;
 
 -- 
 2.55.0

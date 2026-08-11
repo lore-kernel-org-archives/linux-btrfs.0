@@ -1,125 +1,151 @@
-Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
+Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 86CD3353A86
-	for <linux-btrfs@vger.kernel.org>; Tue, 11 Aug 2026 03:40:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1901A3630AD
+	for <linux-btrfs@vger.kernel.org>; Tue, 11 Aug 2026 05:26:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786419644; cv=none; b=SZrlFw6GvDZZScyQxVGMrAAzLRFHPORMeUkvegIgT45I0sVpZSvFr889FJooWfQdStOkiyBYCCw/UdooOOpxLMImIGLbFZmTkMrAGHcUwD714MfhLohqMtsoE/7wvoD6pf2bgycwTdUsRRC6SUDlrzlsOO4zDL7iQo6OKa0vm68=
+	t=1786426005; cv=none; b=hlq6XMU0GZTiymXFC+RRRewvEYfgVrpPXZCX5Tlqf9DzKbujrDCdoFyLRYwAHrBLxyf1QasXC1slMXAWe+wDsAxGS3ZRfZVcof8tGQKeVQvjvBzX2jpsHKD8/OqMZt0dnOhZu07MsbFf/cJVXMK1MBFwFX6243N2zArYry6tXCI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786419644; c=relaxed/simple;
-	bh=MhbD+EvikewLJgLFmJ3ls8uXPibQQEO/LpfIh8SoLcU=;
-	h=Mime-Version:Content-Type:Date:Message-Id:Cc:Subject:From:To:
-	 References:In-Reply-To; b=GI/gQamRtgmE1RnH6d3YJdVH23qEx1XbRgkxVkpKI7lDghDntVgiRkwFY9b0DPczej4UO8XIP5L6Ufm4GJqLvhjd5QwniNvdNc+H1JxUROa0WyUFmh8ccSV4Zw35hcwSLZ/YvqFATwNDm9O0wqu9wRZiZ/gEwOchAdynLUDboHs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=CXZ3cDTe; arc=none smtp.client-ip=209.85.128.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1786426005; c=relaxed/simple;
+	bh=zwzYeJdNAHKmQoAkUDfDeX8vnWaAlCEqC+grZ4epPRA=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=nvuOM0Eyu1patKxvbQXpAsc/0fhLVGK8vwZ35aMQ4RHegWd7o06t6oDmCmc1ZU7fFAyfdS+1zFK94vIgEjOcn9v5hLsbbDtPRIxWQyvyloS28kbnoedZUrpqnjXp71xx6hoQ3qGWJwMJO12a1djmO51lSDw1Oa8GAL5ZlpB0KN0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Yosalpi7; arc=none smtp.client-ip=209.85.128.45
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CXZ3cDTe"
-Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-4996f1ee4a4so13027485e9.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 20:40:42 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Yosalpi7"
+Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-490cf322ed0so18676665e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2026 22:26:43 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1786419641; x=1787024441; darn=vger.kernel.org;
-        h=in-reply-to:references:to:from:subject:cc:message-id:date
-         :content-type:mime-version:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=MhbD+EvikewLJgLFmJ3ls8uXPibQQEO/LpfIh8SoLcU=;
-        b=CXZ3cDTecskIGIOAxuJvUMVGU2AmU5duwQ46dzzCRgIACmQzE9l77l/JvHYU1cWSo5
-         1Uv6VAvzWMLuZhHkGAMlVBWYKdSq8bgqX93iDfeiAgnYK+T/0FMsxoCYo/vbP5zVNnST
-         dRnVQ6jZwq+XifDbe/qg+oa2SEpR/QYlWx5U2i3QJlDF1BNFRx6scNu6f1XKvPhDuNWQ
-         NDgvOHXh7zmJ2WijOMQO+5ryZlCbGegKEHrUhyojU2CSPv2w+qC7PCzophLFt99OuvrU
-         +7R6y1t5sl78V5EBOC7HF2tGI9mCtpFKdsrNQHBQgzjMxft9lWFByeBWl2jGrNtCda8a
-         Yaiw==
+        d=suse.com; s=google; t=1786426002; x=1787030802; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=lH8cRz+tE3REjPyJovT/lsbG4KfwF3xXHNXQAPHS5QU=;
+        b=Yosalpi7qlam7E6An3MzIp8l+TYc+cimP15sv6DsQlbtS/L0TaZYouIVZ7RayJjSuR
+         rYiMTiDbDiXMSGSxC4iS3xHvFIyjTyUDDXI9ivg3R5vpj8K9LwNdniAT8wW88d6MhYjj
+         zThDCCJu2bHWZsARNG/ttq2KN2cYOO8K4dH8tGkSqSu2b8nIw3QvbZBX/+OHl46kwJug
+         0jWntOLq3ULUmtr8OR1SVqhTwZrtxeBYzAt/YclqkfaPa/FPSROJvb9KDKp39ecbGQXh
+         6TKHj4a0ZPZ+fDsgoJ0O3whHM/EBSkxVgDEIQsTBUgb3oiN4skyAzXnxSZ7rycyqY1yF
+         CCrw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786419641; x=1787024441;
-        h=in-reply-to:references:to:from:subject:cc:message-id:date
-         :content-type:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=MhbD+EvikewLJgLFmJ3ls8uXPibQQEO/LpfIh8SoLcU=;
-        b=r6udGhzAu1Q8c/8SRqXoIrvAbrn+AQxokXw4Fx7hV7vqYnMi4hNuMrjsrSW03BwMZH
-         5vAURLET7P3gWZmic7jf6Nx4694VXxsf0YgVEnu2/IG4n0LjS1CcLVeOyW8STUCcVed3
-         Vcih4xU3udbaXQ/FYCHvtF4w5NKeRzdhd7hZFHBv1xTjQfaqJysW1pAG4gB0yX5WHY47
-         /4S2ni75NDXmV7Ir+RN/71haXLJA5lGVJVeIIhJhUyvIe6Cp5D6LEJBuvHZ1n469r9iS
-         BdfLC/V6gVUElC+p9rZsl7cYFfW+g1bAfseyogId7eDpsCyiDNUzQsbBJsuSwvn15NUU
-         CSuA==
-X-Forwarded-Encrypted: i=1; AHgh+RpjE/NNIOqZq314c5e/xWiOyrz55f0JTr8mik5NhyYSbkqAZbiik+Y5m/Rs9bGgBO9bq8mMvCe387g+ow==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxWnuXxKCjEzUC3D017GQuidOMHY/lHxtMrHYJA6rmqNsNT4M52
-	owEEq9QfR31QrfFPeIIkGO5Fj9ePwblk47OLKST5HywCIa+iLEchDMUP
-X-Gm-Gg: AR+sD10wsuEjbnsF3uJZqYzcPzazZafz2CMsiP/tEDR4/fbI6p0rSeB0AW7i0q6Tv5m
-	BRZV2EjtsJn6iGHdfrlWziBZl4qe9SkDzZdq93hDQMLkB8Y29BlirjM+dKP0RyMoUkrmLS7grYp
-	4SNk4C+wFXuwlWwhfzt1fjfUDTSF9U4NiNQ1jZQgai9l+iZ4imt9t3ui5f2ZUpUtoYeDumeEn02
-	SUAWsMJLMm4LwbYgjdrOzeA6dirAObQL4R6e/UijTpP3/oUOKa962DYL2Cg5A5khk0B4F97PuPA
-	0nvdKVhTi7MlEZzrO2DA3MSRXaL9DKVJsB0CHOfo0O0Xc+c4mv5QYBg6gJxRodUsQf9XebZIQG7
-	glGFxdG58S5/zsamC0RfyGOqH41xDa3BK06GtTfHnoAwWI/pwsssf0VgAuff4di/ZRf7te1bcI8
-	Pa1DVsgf/C3q/5ToQqZXrp/ova+s89Y4RpRDm878bGEgydou2gqqIHxIQD
-X-Received: by 2002:a05:600c:4683:b0:499:491e:4b0d with SMTP id 5b1f17b1804b1-49978467a15mr4328255e9.19.1786419640544;
-        Mon, 10 Aug 2026 20:40:40 -0700 (PDT)
-Received: from localhost ([151.33.67.206])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-499740a6f4esm30299255e9.2.2026.08.10.20.40.35
+        d=1e100.net; s=20251104; t=1786426002; x=1787030802;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=lH8cRz+tE3REjPyJovT/lsbG4KfwF3xXHNXQAPHS5QU=;
+        b=FobHvNJYknUS5gD9+kaHqlz7M4i2CTGs2kFVmfqWbr/T03jMPFMi8OtVSa6XyZdKgs
+         NVaELfwYuG/wSyEc5ede8IkhAGa6lgmgSsPFeqpTg+Ny4NtV/uFbttOjnDBcqGg1Peib
+         V2EViRdUVlgWg9iBUBiv2Hj/cnmpUZO1aI8mElh6YyCbGxndxVfQsplU7bhTIgyzx1mq
+         3iant1e62tJGuK0D+RKoyg87O54/Qc+vGfcCIpDKKh+K+W1zwKfXMEjpuIiHyXo4c/xs
+         NORFiBfglE5maT/s4+N0ywen8Ir2SXh+L0EM3NwbSmBRg4ucfOTOdDRLq5u5bWMZ/haU
+         7VUw==
+X-Forwarded-Encrypted: i=1; AHgh+RqjR6wlBYp9AGIN166yXqiEMc8lNUxnoGvnS5vA1T13J7BS746r0pIwWOJEfAdpn0LkG0RuqUiJT5y8AA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yx+B1sHywF46KoYyNF4dkqTg/dCyI/fe0R9jgD00sgI4MSr2Wee
+	y/iPe1Rl1mJ9UmpW96u7nFPXad/zd0lD2tIndkCNqv0U+XSiJq/sB+6XBr8ykUru7m0=
+X-Gm-Gg: AR+sD13PM+6hKjVG2Z2eeOuSFnTNVQH4tQKSXuYZnby01fThCV5BalQ6b8dUo+v8/QL
+	+aU5JeKfaGOXmJA0L+G3h0IC05HpXqmI56CZCJHYFa9x3d5ofAndEFCJaS2ZFzhZzzcnwA5meOr
+	IsXVbzBZb2gU3yYAYroUMu8kizjU3X0aQ+YWnSTAlYzLvvX4JxKi66dT3kqRgPUh/pw1JTx53jO
+	N3sz1JOcV8Ttj2N4/LxI07eA6fOGamD8GDf7C/XbVXygAepaRAaJEwBa9wj+2YPV94PF5/+y3uC
+	rl34832OtPQ2hW32hbkCEDWxL+rLWHRVLVzQskr0THwu5xZfRjg0HeISKmJlcAyzc3Pc5k3mIiF
+	nk44o/GHbU+ooue60aJQOXKjbMnPNXtO9TzoAG7exWJeRMZrBXBQyIXUXfL6NDb8ddqmtMxkcBC
+	FfIf3i8cHJ9FpMU4zN08NeVOhgKmt/JhhWy8jh6rqWA4ZiHoYs8iWFrA==
+X-Received: by 2002:a05:600c:4f52:b0:498:2b1f:e0c6 with SMTP id 5b1f17b1804b1-4997847121fmr10536665e9.18.1786426002288;
+        Mon, 10 Aug 2026 22:26:42 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-31c64926d53sm758419eec.23.2026.08.10.22.26.36
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 10 Aug 2026 20:40:39 -0700 (PDT)
+        Mon, 10 Aug 2026 22:26:41 -0700 (PDT)
+Message-ID: <2f553156-4db4-462c-a196-edbe13a13799@suse.com>
+Date: Tue, 11 Aug 2026 14:56:31 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Content-Type: multipart/signed;
- boundary=96e8fa2a3cb277ed5ba745feb30c33c87a03cfb7220a0b54298d4213c2a7;
- micalg=pgp-sha512; protocol="application/pgp-signature"
-Date: Tue, 11 Aug 2026 05:40:34 +0200
-Message-Id: <DKLSWQOTR39Z.7K2MBJSG5Q2V@gmail.com>
-Cc: "Zygo Blaxell" <ce3g8jdj@umail.furryterror.org>,
- <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2 3/4] btrfs: add per-inode compression levels in
- xattrs
-From: "koraynilay" <koray.fra@gmail.com>
-To: "Qu Wenruo" <wqu@suse.com>, "koraynilay" <koray.fra@gmail.com>, "Chris
- Mason" <clm@fb.com>, "David Sterba" <dsterba@suse.com>
-X-Mailer: aerc 0.21.0-0-g5549850facc2
-References: <20260809015054.779137-1-koray.fra@gmail.com>
- <20260809015054.779137-4-koray.fra@gmail.com>
- <870d7e1f-3e87-4eac-86fe-107af7336101@suse.com>
- <DKLRY9Q5SEI3.VUDASVYPW9MY@gmail.com>
- <a27ce424-d3a4-4a8f-bddc-40757b1d40a3@suse.com>
-In-Reply-To: <a27ce424-d3a4-4a8f-bddc-40757b1d40a3@suse.com>
+MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: send: propagate errors from is_inode_existent()
+To: Avi Weiss <thnkslprpt@gmail.com>, David Sterba <dsterba@suse.com>
+Cc: Chris Mason <clm@fb.com>, Filipe Manana <fdmanana@suse.com>,
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20260810094701.1349706-1-thnkslprpt@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260810094701.1349706-1-thnkslprpt@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
---96e8fa2a3cb277ed5ba745feb30c33c87a03cfb7220a0b54298d4213c2a7
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=UTF-8
 
-On Tue Aug 11, 2026 at 5:21 AM CEST, Qu Wenruo wrote:
->>=20
->> More importantly IMO, doing this would allow us to explicitly explain
->> the currently undocumented behaviour in the btrfs-property(8) manpage as
->> "just so you know, for kernel versions < 7.x cross-algo level leakage
->> from -o compress was happening".
->
-> Which also applies to option 3.
 
-Option 3 would mean the behaviour can be different depending on the
-kernel < 7.X having the backported patch or not tho, so we can't say
-that with 100% certainty in the manpage, but it would need to also say
-"this is true only if you don't have this specific bugfix patch, if your
-kernel has it, then the behaviour is this other one".
+在 2026/8/10 19:17, Avi Weiss 写道:
+> The direct-return refactor in commit b3047a42f55d ("btrfs: send:
+> directly return from will_overwrite_ref() and simplify it") changed
+> will_overwrite_ref() to return directly instead of going through the
+> common out label.
+> 
+> That resulted in a negative return value from is_inode_existent()
+> to start being converted to 0, making lookup errors unable to be
+> distinguished from the inode not existing.
+> 
+> process_recorded_refs() expects negative errors from
+> will_overwrite_ref() and aborts processing when it receives one.
+> 
+> Return the value from is_inode_existent() to restore the previous error
+> propagation behavior as it was before the refactor.
+> 
+> Fixes: b3047a42f55d ("btrfs: send: directly return from will_overwrite_ref() and simplify it")
+> Signed-off-by: Avi Weiss <thnkslprpt@gmail.com>
+> ---
+>   fs/btrfs/send.c | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 3ae480c7474b..a888202397ed 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -2066,7 +2066,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+>   
+>   	ret = is_inode_existent(sctx, dir, dir_gen, NULL, &parent_root_dir_gen);
+>   	if (ret <= 0)
+> -		return 0;
+> +		return ret;
 
-(Sorry but I'll reply to the other points tomorrow, I'm too tired to
-think about more difficult sentences right now :D)
+This behavior seems consistent with the later lookup_dir_item_inode(), 
+where if we got ENOENT we just return 0.
 
-Thanks.
+Are you sure if we want to return -ENOENT in this case?
+>   
+>   	/*
+>   	 * If we have a parent root we need to verify that the parent dir was
+> 
+> base-commit: af5534fe2fbc006e83d75d6283dfc5ec75d5d780
 
-Best,
-koraynilay
-
---96e8fa2a3cb277ed5ba745feb30c33c87a03cfb7220a0b54298d4213c2a7
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYKAB0WIQRJ2XvJtXGwULYEerQ0bnTtJTDoOAUCanqZswAKCRA0bnTtJTDo
-OKvNAP0fw+rPl9+yqo7AenWOhxnz4z1hqjOnrbTo+ih0amrsoQEA18rrRz0eh2uD
-JnkKkYQtFaBlYLj5atJxKb5ocOgYGwQ=
-=BBmu
------END PGP SIGNATURE-----
-
---96e8fa2a3cb277ed5ba745feb30c33c87a03cfb7220a0b54298d4213c2a7--

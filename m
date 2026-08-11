@@ -1,35 +1,35 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B052437646C;
-	Tue, 11 Aug 2026 18:15:09 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6E692376A07;
+	Tue, 11 Aug 2026 18:15:11 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786472111; cv=none; b=daADdxK4fX/9UAumgAJWBN5SYoVNdlWSEuBYieV1MCz1T/5dJ+0+it+vjQZ4PY6pmGOC6K3eMN7mMYtE8lkf7gS4wn7m7mPfRXUTpsHBrHBBQq9eT9qZw1rxmwSi96L7RAN7gz0U9CwWr5FSSMQzOTPTR1nUSfcZFzHBinbU3ys=
+	t=1786472114; cv=none; b=meU1udXidzo8lTEPNAyX9zqswRlvnHR0fcfSV4fwf31RK2TK6t4HXArC7FTiwwx4Dxs7mTdQfpfVQMhunC4RVJhHZshkQDQZu6N7xXucpRFUE0cxHjC9aMYS0RNZJmtwE2C+T/2eX61K4qpnMqX8mO9p9EueMgZ7ruvBNRcSj2k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786472111; c=relaxed/simple;
-	bh=lJ1jwk8dHFftzNzRk1UUSsYMc9VYKcAC6ZoHBNiINDQ=;
-	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=Ew52uBDy/b3CXyjCoNuitjB2hAHkmykcabhACQmpqYrskYdA/MLcJqGD+xwEezsxYdL51VzM/cb1TWNS5UjrI0cuIpSXrjO6us0HswhQ7Sa1WKGbep+ssobj8cnl4r6eANNIW2RhofLVbbcfKgnybv1OGJyoyjdFLijlZACFCPg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Kc2E58DM; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1786472114; c=relaxed/simple;
+	bh=z8frzW3+GWYNL1Dql899xeHXBn+IosONCZIVli05JSk=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=TqDgk1O1ruZblOM8YbmKqi5+ewSHhFGRWXU0SobVnHv5P1wLSO759PkuK9Xi5Uo/+eS2/jaYFZSzc22Dda9WAF6iNw1xPhNUqUuBVlU7F4EYjf/DYyT0IREC6MCZQzKUUTSnegjS41Amm1LLcTAZnhquuxzJB9x1/yI57Mj5sns=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=XYyPntYS; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Kc2E58DM"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 366551F000E9;
-	Tue, 11 Aug 2026 18:15:08 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="XYyPntYS"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B07B21F00A3E;
+	Tue, 11 Aug 2026 18:15:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1786472108;
-	bh=IYQQ6LTf4E78uH4FiglbB2mRqthR1OKb9Hhx/4sf3rk=;
-	h=From:Subject:Date:To:Cc;
-	b=Kc2E58DMhoqmb2Md05+lU1+hgi0NEWOZpJqE2zg+I7U78SBwO7YYXrAAuNMJYeLOd
-	 kE+cmMl7Mqy2XrU2oxACU4sX58QvOJ+fdC6O+frX1vaRYiUcPkDNva/q8wi/sdxDji
-	 whr8Srv/fDAo52byaFARvfBZuK/B8T96JyT44FswcW/6b+mq7A1UBYuKxu5CDe3jYQ
-	 saOBIblQrWiJv+anZ3PKi6F4cLfMQC3OHXX9VHhs9tOuTIlBrQi9rFnGdbUZGBrGeZ
-	 v8w5QycaXTyKWxAMg7UinF7sI/fwcGKfdVXYM0R0YRPYwXt5hbqZESfw+Q3WrpNE93
-	 3e+t6BPJW5x6w==
+	s=k20260515; t=1786472110;
+	bh=habuHpxE/FIf7mktmFmbUjmAGBxkdmZecj+7Q8PaLgM=;
+	h=From:Date:Subject:References:In-Reply-To:To:Cc;
+	b=XYyPntYSlAdbCDQbNuBzwZNZPfMmgIs4JXvy3VVZ1ivMV4q/wm1nXb3QcKjhe36K4
+	 ZmPtrRPMLQVbUEp40KtTqfxwc2ngIkbZwK8lB/YdHLz/OGyZy9l96ZEnpKP4XSEbNf
+	 1IIkCiLhj5DMQYglAqkJNfAyOCM9K2NuSYQdWh+G8kiAZg3DYRg1+c1Rn3WS4Kzmbh
+	 Oe/PV3rbSybeHlVkCykgy4J0W9Gr4FYDi+P9X6j9j/qk9V+49Vri1UahzCjBaKAchc
+	 xA2aeXUnj/pk/y4vBut3z97tSZWimJY3hEraO7HoGYto1fh2pYPf5/VcfJALhF27lA
+	 /6urMLRA9+xMQ==
 From: Jeff Layton <jlayton@kernel.org>
-Subject: [PATCH v3 0/6] btrfs: handle -ENOMEM errors in some synchronous
- dirops without aborting
-Date: Tue, 11 Aug 2026 14:14:53 -0400
-Message-Id: <20260811-btrfs-enomem-v3-0-46a993fc3fe5@kernel.org>
+Date: Tue, 11 Aug 2026 14:14:55 -0400
+Subject: [PATCH v3 2/6] btrfs: use an on-stack path in
+ btrfs_del_orphan_item()
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -38,115 +38,89 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-X-B4-Tracking: v=1; b=H4sIAAAAAAAC/13MSwrCMBSF4a2UOzaSpK/UkfsQB5rctEFN5KYEp
- XTvpgWROjwH/m+CiOQwwqGYgDC56ILPo9wVoIeL75E5kzdILhveippdR7KRoQ8PfLBOKSu1Lht
- rDeTkSWjda+VO57wHF8dA71VPYnm/ULuFkmCcaaM7zVE2teHHG5LH+z5QD4uU5K9WvPqrZa4r0
- 8lStByVFpt6nucPVZFIeucAAAA=
-X-Change-ID: 20260715-btrfs-enomem-988f2cc36ffd
+Message-Id: <20260811-btrfs-enomem-v3-2-46a993fc3fe5@kernel.org>
+References: <20260811-btrfs-enomem-v3-0-46a993fc3fe5@kernel.org>
+In-Reply-To: <20260811-btrfs-enomem-v3-0-46a993fc3fe5@kernel.org>
 To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
 Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, 
  linux-kernel@vger.kernel.org, kernel-team@fb.com, 
  Jeff Layton <jlayton@kernel.org>
 X-Mailer: b4 0.14.3
-X-Developer-Signature: v=1; a=openpgp-sha256; l=3975; i=jlayton@kernel.org;
- h=from:subject:message-id; bh=lJ1jwk8dHFftzNzRk1UUSsYMc9VYKcAC6ZoHBNiINDQ=;
- b=owEBbQKS/ZANAwAKAQAOaEEZVoIVAcsmYgBqe2althwVMRmSSj5m0DqwysLT97OuO7a5a/wBV
- 47t11JRsjKJAjMEAAEKAB0WIQRLwNeyRHGyoYTq9dMADmhBGVaCFQUCantmpQAKCRAADmhBGVaC
- FU5LD/0WNfJXXFS3phmfL9bIZh6ApdZh1sDZen7DzlV+6NgMamq+dVw36WogUJM4VUkOkBlz9Mm
- RoAm+fvO+hNyw2aTRdIeF5BlWRqjB5lEER4IfhkudZ/sHpj6h5/YXpcEBRQfubI7fPhDQG7+K3g
- gj9LYhB9KDxWRTRyIOaYDIiXSqNLy+G+LjHqggMnPPPZEP0e3rkhm3zluFddB0LkCl6wL/pzQyV
- /cPn204P7RsaA3GOAZx/kkKkCgn7BSGaPkQC0xeaMRnu4SMcYD5Q/MMKOe+Q6/hGxBOs3a31AdO
- nS/QTMXfmJvBbwjvaEEj8Yo+ihXaDyE2PS5AACmnac6FTg3rqnwd8blrFszFOzviaxYHHSq50Vb
- e+K0+/L2Ni0LMDOzRrj3jdol+cIkDTbVWdPCaD301iJLAR34V9/2dIiBoeZN2J9JkQTCuORTiWE
- cpporrTqvXpr2zv9550qlpUR3RlhJtsxbVet2baC9CllA05yFQ2v+jz5Zt3VV64fmbRRIZn9aJK
- ZZ8pMTTUjPFeZQY3gEG2C21xNrUtNZg/IkZDwkTspfSBw8AsbEYFWDTE4S/vgPOVV5+Li+SwD2K
- 77/w+uYh86XcM1jMRo14/JlX2MzvzAQ8chjX7oN1KBWS+s/01CQyj5Nq/whEqg0e0g0I0F9i8j0
- 3F/MzVI2+8QH3sw==
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1772; i=jlayton@kernel.org;
+ h=from:subject:message-id; bh=z8frzW3+GWYNL1Dql899xeHXBn+IosONCZIVli05JSk=;
+ b=owEBbQKS/ZANAwAKAQAOaEEZVoIVAcsmYgBqe2aqT4grwQmMOHzzZ3+LmwXm+Vwjdm89NCwPo
+ Ge6xyDjs46JAjMEAAEKAB0WIQRLwNeyRHGyoYTq9dMADmhBGVaCFQUCantmqgAKCRAADmhBGVaC
+ FU4HD/41ywTjbFqkHkAykTQ5S2MaSb69ZPlXodA6lRjNh5r7pEUK8DzPKARbFK8sSBU1V6Q2Put
+ /Eypcq7tSKfFtFlgsc5T9lmbYv8LKyWEGCESrBRiXIjU/+jj1EGIKmmUuVjqzM9+waKrkAebnmk
+ fWkQzLgNHuzOyHGU4adNi5Aiu2fexAKyexMNGgJ9VP4K/e1VTxC1iv3qupdJcRJPd66xKtqf2xn
+ OTl1bD1IslSpi57nlnOgsAksW3kf+oo6YuPg/UbdPGgc1h3Ajk5w5HnYsv1g47h78aK0WwZsZRG
+ kAntU9MZtt0Vdr3JsyoDUQxUR6tjBG/7Szom+8x26iq792p5Q6Wq1MQUXwb7ooEvO7r4rNFtfPm
+ ojXIiCq2Uw5Pl4XpfnWMRSvCuTeur3WvTnkGAZfsUW14a/o/91obsk9n/p6yTi65Q03sRe73yay
+ Ubx2gPEcvjqTurGrLbQhX7rutXzQOLPiqzEe2a2hBn4osYpfmNShDDgrWkACcI/dFsxksOld2UW
+ eOztJS1aIjEzJIO+pCrtnn9QwCHxVTo+4o1IDrTfkdtqfRhV5A7J8CVfM2o9BCG1H0J0z7vqRTx
+ KWThuHSVewxq+nzemLyTSmI0J/F8DL4F85VhTgtO+VFu8BTD3sdkmn0nvCe7cvumPHw5naVnyjo
+ Puc90S28LVVY04A==
 X-Developer-Key: i=jlayton@kernel.org; a=openpgp;
  fpr=4BC0D7B24471B2A184EAF5D3000E684119568215
 
-This version fixes some issues Qu pointed out in review of v2. I did end
-up adopting his suggestion to allocate the prealloc container as well,
-which makes the API cleaner. Original cover letter follows:
+btrfs_del_orphan_item() allocated a btrfs_path with btrfs_alloc_path()
+which returns -ENOMEM on failure. It is called from btrfs_orphan_del(),
+and btrfs_link() turns any error from it into a transaction abort. So a
+path allocation failure there (reachable via linkat() on an O_TMPFILE
+under memory pressure) turns a recoverable error into an abort.
 
-We've had a (relatively small) number of ENOMEM btrfs aborts occur in
-synchronous directory morphing codepaths. It's not terribly common, but
-there are a few places where an memory allocation failure results in an
-abort.
+btrfs_path is only ~112 bytes, so allocate it on the stack instead.
+Unlike the insert case there are multiple exit points after the search,
+so release the path via a common out: label.
 
-This patchset reworks the code to do the allocations up front, before the
-point where we'd have to abort the fs if it fails.
-
-This does not cover all potential cases where this can currently occur:
-
-In particular, a rename that overwrites the target can still abort the
-fs if a memory allocation fails. Fixing that is substantially more work,
-unfortunately.
-
-This also doesn't cover orphaning a new inode on failure (which can
-trigger new memory allocations), so this series is designed to work in
-conjunction with with Boris' GFP_NOFAIL series [1].
-
-AFAICT, these are ancient problems, dating back at least to ~2011. I
-didn't bother adding Fixes: tags.
-
-AI disclosure: I made heavy use of an LLM in this patchset, from
-drafting the initial series to helping test it.
-
-[1] https://lore.kernel.org/linux-btrfs/cover.1784673567.git.boris@bur.io/
-
+Assisted-by: LLM
 Signed-off-by: Jeff Layton <jlayton@kernel.org>
 ---
-Changes in v3:
-- btrfs_prealloc_delayed_dir_index() now allocates and returns the
-  btrfs_dir_index_prealloc instead of filling in a caller-provided on-stack
-  struct, so a NULL pointer means "no prealloc" and callers no longer need
-  to use prealloc->item as an is-allocated flag (as suggested by Qu).
-- Fix a leak of a caller-supplied prealloc in btrfs_insert_dir_item() when
-  btrfs_alloc_path() fails; all error exits now go through a single
-  out_free_prealloc label (Qu Wenruo).
-- Move the dir index name memcpy into btrfs_prealloc_delayed_dir_index()
-  instead of duplicating it at the call sites (Qu Wenruo).
-- New patch to use an on-stack path in btrfs_del_orphan_item().
-- btrfs_create_new_inode(): persist nlink=0 with btrfs_update_inode() after
-  orphaning the new inode. Otherwise orphan cleanup sees nlink > 0, drops
-  the orphan item and leaks the inode.
-- Pick up Reviewed-by tags from Qu Wenruo.
-- Link to v2: https://lore.kernel.org/r/20260804-btrfs-enomem-v2-0-4d923170e8c1@kernel.org
+ fs/btrfs/orphan.c | 25 +++++++++++++------------
+ 1 file changed, 13 insertions(+), 12 deletions(-)
 
-Changes in v2:
-- Use an on-stack btrfs_path in btrfs_insert_orphan_item() so the ENOMEM
-  recovery does not itself fail on a path allocation.
-- Simplify the recovery in btrfs_create_new_inode() to rely on
-  btrfs_orphan_add()'s internal abort instead of aborting twice.
-- Add ALLOW_ERROR_INJECTION() on btrfs_prealloc_delayed_dir_index() and a
-  new fstest (btrfs/351) to exercise the ENOMEM path.
-- Link to v1: https://lore.kernel.org/r/20260717-btrfs-enomem-v1-0-cdc9c0e265d0@kernel.org
+diff --git a/fs/btrfs/orphan.c b/fs/btrfs/orphan.c
+index 72e1adec39d8..ae1685f26dec 100644
+--- a/fs/btrfs/orphan.c
++++ b/fs/btrfs/orphan.c
+@@ -25,23 +25,24 @@ int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
+ int btrfs_del_orphan_item(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root, u64 offset)
+ {
+-	BTRFS_PATH_AUTO_FREE(path);
++	struct btrfs_path path = { 0 };
+ 	struct btrfs_key key;
+-	int ret = 0;
++	int ret;
+ 
+ 	key.objectid = BTRFS_ORPHAN_OBJECTID;
+ 	key.type = BTRFS_ORPHAN_ITEM_KEY;
+ 	key.offset = offset;
+ 
+-	path = btrfs_alloc_path();
+-	if (!path)
+-		return -ENOMEM;
+-
+-	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
++	ret = btrfs_search_slot(trans, root, &key, &path, -1, 1);
+ 	if (ret < 0)
+-		return ret;
+-	if (ret)
+-		return -ENOENT;
+-
+-	return btrfs_del_item(trans, root, path);
++		goto out;
++	if (ret) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	ret = btrfs_del_item(trans, root, &path);
++out:
++	btrfs_release_path(&path);
++	return ret;
+ }
 
----
-Jeff Layton (6):
-      btrfs: use an on-stack path in btrfs_insert_orphan_item()
-      btrfs: use an on-stack path in btrfs_del_orphan_item()
-      btrfs: split btrfs_insert_delayed_dir_index() into prealloc and commit phases
-      btrfs: pre-allocate delayed dir index before btree modification
-      btrfs: handle ENOMEM from btrfs_insert_dir_item() without aborting
-      btrfs: pre-allocate delayed dir index for non-overwrite rename
-
- fs/btrfs/btrfs_inode.h   |   4 +-
- fs/btrfs/delayed-inode.c | 115 ++++++++++++++++++++++++++++++++++++-----------
- fs/btrfs/delayed-inode.h |  22 ++++++---
- fs/btrfs/dir-item.c      |  42 +++++++++++------
- fs/btrfs/dir-item.h      |   5 ++-
- fs/btrfs/inode.c         |  64 +++++++++++++++++++++-----
- fs/btrfs/orphan.c        |  36 +++++++--------
- fs/btrfs/transaction.c   |   2 +-
- fs/btrfs/tree-log.c      |   4 +-
- 9 files changed, 215 insertions(+), 79 deletions(-)
----
-base-commit: 76d8783d4c196f4ac990b97ee9f56d2e6797e173
-change-id: 20260715-btrfs-enomem-988f2cc36ffd
-
-Best regards,
 -- 
-Jeff Layton <jlayton@kernel.org>
+2.55.0
 

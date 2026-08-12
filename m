@@ -1,220 +1,200 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBF8F42A792
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 23:15:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 75777409604
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 23:22:34 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786576514; cv=none; b=CYE8/0fA+CjVXJ/RyzguVNBSJ+RcUsoM0zUg1mmQEDnCfB4b38M4HK/dZ0JXHjV0UorIjxr3/ItGH3uBGnw98oNUQf15BJqtMVDauEsOWRqH2I/0r6CmjkhtOxguSsZIfOkYUuAD8HFDJIuWna1K326MXFOlBcSRj9CUT2RDGxs=
+	t=1786576957; cv=none; b=J1KwLjriC8zVHUVccVJIL33llvHfzUqo2Bl8JNTW3VSg3xNeexORJ9ifHqSTWH0P6Ae5AfejMS6VJ1mQXcgoqMUTNVl+COPjd09caJhsglLx7tg74iF2owJyGHnsh12yLgQDxU65iMGpUsb7o4aeWVqfl+lbxcbjMELo1tmYeG4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786576514; c=relaxed/simple;
-	bh=LGyTrqYK9cPnn+w/uU/Iz6xGdbwzXUyMfD2Vd745NeI=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=NuD9l/AYp1MBSznlSLcKujKTKOFA1hk+OhLKQIL4UlenrMzEkR2gQu5tssIjHglrjyLNcWaemPqxvEG5YKWyfNUoBJfEqUaoyUS2wo/pqXhnddVXFwaWz6EQAHlY/euzlRVl/bC5J/oCjeV0NJ5QZq8hujVeCDO1g2OMl7KDSnA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=iktshLb2; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=cdfMGdV9; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1786576957; c=relaxed/simple;
+	bh=yZqyT7zrV2AbREOue7/aoanU7iIRl6HJBpqFrXQpe5w=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=VUiasfvhtlOW/ZZF7D8F91I51gBTNcRME/s0O9VDXwMMshaQWC8BuBRdJDch3oKbO4C7V2UBK2PlGurTkJNWtJxD4GnZqs0eoqJu2D9xMUShjroaizuh5ZpGw0yNL6kz+l6zFPA6h1c3WLorUYRiLMmu91tKTSu2we6XAbiEzhA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=gOF2MdpN; arc=none smtp.client-ip=209.85.128.43
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="iktshLb2";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="cdfMGdV9"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 5583782593
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 23:15:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786576506; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=r7QuhPRw062tgzoFFi5dAhV9mlow1BxAiX2EnPhDGds=;
-	b=iktshLb2MLrV6pHxD2Xx6f3XlngZcMvt+oj7PaoZuTF+gowKVGv2VV1jtmRUJ4TSYJK3kI
-	vc1xIsHuZPt+gUsoGqGeD51pDeMhSn7UamYdXzz007lgFE55EyJxf0dk1fxvdGWhyL2XGg
-	PHkdW4AC4RojEiWmZnf8jZBTsHnq99I=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=cdfMGdV9
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786576502; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=r7QuhPRw062tgzoFFi5dAhV9mlow1BxAiX2EnPhDGds=;
-	b=cdfMGdV9maz6fcLv8Zca55kt+yuUp8UzqyW1796UnXJXrPDLMRN5mwGMQUirsipzNrjQ+G
-	Lc4p7K4SSQfACqeZky2kMBjP8gNaYgBfvN899uSjesrkdWLI0uVwdWU2eoEfYYX1k+0cda
-	Q/2HjaiSvs6VrmyFfgmL1NwFsYIPacM=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 71B6777AEB
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 23:15:01 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id J3+NCnX+fGoyAwAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 23:15:01 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: properly cleanup replace_task when the replace failed to start
-Date: Thu, 13 Aug 2026 08:44:39 +0930
-Message-ID: <8e4f535ac093c7085ab0641114e2f082788585f5.1786576348.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="gOF2MdpN"
+Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-4994c49f588so3524905e9.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 16:22:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1786576953; x=1787181753; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=FfTK390tCylmcmt2r6IRThobn+mZilkOSqi6fOgLqUg=;
+        b=gOF2MdpNUDmm3gkW8TwGHG4/z/eYKInaXp7DFzfqTELoM+huoLAI5wuKAeBhj6SB9e
+         ii+8vgEOcgEqTFw0EkOHRXkgpCx57g4OUc+PjGbc1AZSmxHHwqvuiTweOwxSAhcYaN7v
+         J5GyBLesSs0vJImGYrAJTQTJb9a47jo7cKgSntAiEa8j5XBJd+t5bZJf3hoc3Icot8aS
+         0HPZ+WK9BoZxkB6btb9NcBI5Mvybvo3vDcVeALJbGZY7bIeSzMcwuPw2csuWNpCb2EHZ
+         PZG5Bx8TOybwpv8Avlot87zetGIjMsDEGbFDbWnZEEbjrb5aEHXM4p17hv+3Dn9EYZGk
+         +Czw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1786576953; x=1787181753;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=FfTK390tCylmcmt2r6IRThobn+mZilkOSqi6fOgLqUg=;
+        b=LzAYAX4bpv5CG1XremGlbNGfp0lY0juUO0wG9y/F8vjWKMPcNBnZ6eA9iDHO6JiOgA
+         D5rQ3/DiEsO/rITgYdhgHArkS1+FitMNYU/QydL6GPdQmdtWt/tFWBBe2DtpkNluaaEK
+         Lz6Yqmd5aeLU2bw0GJc/OEnCFdKZX+ESeartNO6G6qUQYn79gwQA7bbkjnmTy7akUcQl
+         cuI3BuWuST6GjQMUCN0b4X5RIwelCpL14FgV0B35Bvb+/YxBHsQgAju+K+cUzJZbiraW
+         JXDeQrUYxbPNpUq48X//VGqM/6uPDLpLzyvaU5vIcE7P02/C3vqMR6K5ZSYC8+MYG7wQ
+         sjOg==
+X-Gm-Message-State: AOJu0YxvyZ7PdlOShlpJpckMfdF3Qldxd3VcIO5V7+6i97v7gKp6od/Y
+	9Dr4G8Q/sKfMSM7Jg1Q6JJPhOeCl1vixhTVP2N3vAhqZcbg+wlwUn776+geHms04ab0/3kpXq+D
+	O0nbT1CvQhQ==
+X-Gm-Gg: AR+sD11W9THwywlW3BU8uUepiOtM4YbrLcTRSqmQeexPEL+5gkG18WgsU+y5WD6azJt
+	3t6couu96WY4HwPVMghUHBlxBO/n9Tw3Lam1edRs2lLD2T+9PqnpDmKfYAEs8xayg0sBlt3kYLo
+	1nYF2Lx080Hd5CbL3ZYcQ53tIbOcAcAyV7MNWefSzbLic+A4ELUil9c6P7CAJUCO7KK6YSZ3xUE
+	9YhRxfjuTfP58rdo/p5heAelb+Z6t8sSVInguQtf+nOXvWq4gwHBxaw5yMDwBqsN0TMX/BVwjUZ
+	ilxzP3ErU2QE+s5hVLnAiS/NCj+yOuahQrzk7tjOlmBWVJRkOF3oNWyx1eF2URDLIx9MeqfeNGB
+	5gVhAt4cgGu1G/eQ8ENsPtp2/b3D4BslU54HcXTbGGH2X5SQeRzu69pOqwPwvKD9C80Ujyvy3+C
+	LtK3ZJN6IZnKs44VGisLIydZMI8rDBsoih6iXhQW565QglxucHYRA7yA==
+X-Received: by 2002:a05:600d:8489:10b0:495:7aaf:77b with SMTP id 5b1f17b1804b1-49982107b89mr11064105e9.0.1786576952646;
+        Wed, 12 Aug 2026 16:22:32 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-31ebcb6a9a3sm698785eec.12.2026.08.12.16.22.28
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 12 Aug 2026 16:22:31 -0700 (PDT)
+Message-ID: <1943a03e-5569-4a8b-b008-14211517c805@suse.com>
+Date: Thu, 13 Aug 2026 08:52:26 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v3 0/6] btrfs: handle -ENOMEM errors in some synchronous
+ dirops without aborting
+To: Jeff Layton <jlayton@kernel.org>, Chris Mason <clm@fb.com>,
+ David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ kernel-team@fb.com
+References: <20260811-btrfs-enomem-v3-0-46a993fc3fe5@kernel.org>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260811-btrfs-enomem-v3-0-46a993fc3fe5@kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: 5583782593
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCPT_COUNT_ONE(0.00)[1];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,sashiko.dev:url]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Flag: NO
 
-In the function btrfs_dev_replace_start(), we have several error paths
-that assigns replace_task without reverting it back to NULL.
 
-There are two involved error paths:
 
-- There is already a running dev-replace
-  Then replace_task is over-written to the current task.
-  This is the one with long running effect.
+在 2026/8/12 03:44, Jeff Layton 写道:
+> This version fixes some issues Qu pointed out in review of v2. I did end
+> up adopting his suggestion to allocate the prealloc container as well,
+> which makes the API cleaner. Original cover letter follows:
+> 
+> We've had a (relatively small) number of ENOMEM btrfs aborts occur in
+> synchronous directory morphing codepaths. It's not terribly common, but
+> there are a few places where an memory allocation failure results in an
+> abort.
+> 
+> This patchset reworks the code to do the allocations up front, before the
+> point where we'd have to abort the fs if it fails.
+> 
+> This does not cover all potential cases where this can currently occur:
+> 
+> In particular, a rename that overwrites the target can still abort the
+> fs if a memory allocation fails. Fixing that is substantially more work,
+> unfortunately.
+> 
+> This also doesn't cover orphaning a new inode on failure (which can
+> trigger new memory allocations), so this series is designed to work in
+> conjunction with with Boris' GFP_NOFAIL series [1].
+> 
+> AFAICT, these are ancient problems, dating back at least to ~2011. I
+> didn't bother adding Fixes: tags.
+> 
+> AI disclosure: I made heavy use of an LLM in this patchset, from
+> drafting the initial series to helping test it.
+> 
+> [1] https://lore.kernel.org/linux-btrfs/cover.1784673567.git.boris@bur.io/
+> 
+> Signed-off-by: Jeff Layton <jlayton@kernel.org>
 
-- The btrfs_start_transaction() call failed
-  This is much harder to hit though.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-This can result the replace_task check inside btrfs_map_block() to be
-incorrectly triggered, not taking dev_replace->rwsem, and may get an
-incorrect/stale view on replace related structures.
+Thanks,
+Qu
 
-Thankfully this bug is very hard to hit.
-
-As dev-replace is an exclusive operation, thus if there is already
-a running replace, a new one will be rejected early without reaching
-btrfs_dev_replace_start().
-
-The only remaining case is a suspended replace, which is much harder to
-hit, e.g. requiring async dev-replace conflicting with another exclusive
-operation, then a new replace is started.
-
-Fix the problem by:
-
-- Moving the replace_task assignment after replace_state check in
-  btrfs_dev_replace_start()
-
-- Reset replace_task to NULL if btrfs_start_transaction() failed
-  in btrfs_dev_replace_start()
-
-- Reset replace_task to NULL for all paths of
-  btrfs_dev_replace_finishing()
-
-This is reported by Sashiko, which found the existing bug during review
-of another patch, and since the bug is an existing one, it's not shown in
-the summary, but only in the detail page.
-
-Link: https://sashiko.dev/#/patchset/tencent_853134544C3CE88A219EEB21346E2510D308%40qq.com
-Fixes: 8cca35cb29f8 ("btrfs: don't take dev_replace rwsem on task already holding it")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Fix incorrect member names in the commit message
-
-- Update the commit message to show that the bug is very hard to hit
-  Mostly rejected by the exclusive operation, which rejects new replace
-  early.
-
-- Update btrfs_dev_replace_finishing() to reset replace_task
----
- fs/btrfs/dev-replace.c | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 72cba7fed942..c5e67524b417 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -633,7 +633,6 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 		goto leave;
- 
- 	down_write(&dev_replace->rwsem);
--	dev_replace->replace_task = current;
- 	switch (dev_replace->replace_state) {
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED:
-@@ -647,6 +646,7 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 		goto leave;
- 	}
- 
-+	dev_replace->replace_task = current;
- 	dev_replace->cont_reading_from_srcdev_mode = read_src;
- 	dev_replace->srcdev = src_device;
- 	dev_replace->tgtdev = tgt_device;
-@@ -693,6 +693,7 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
- 			BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED;
- 		dev_replace->srcdev = NULL;
- 		dev_replace->tgtdev = NULL;
-+		dev_replace->replace_task = NULL;
- 		up_write(&dev_replace->rwsem);
- 		goto leave;
- 	}
-@@ -874,18 +875,20 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	/* don't allow cancel or unmount to disturb the finishing procedure */
- 	mutex_lock(&dev_replace->lock_finishing_cancel_unmount);
- 
--	down_read(&dev_replace->rwsem);
-+	down_write(&dev_replace->rwsem);
-+	dev_replace->replace_task = NULL;
-+
- 	/* was the operation canceled, or is it finished? */
- 	if (dev_replace->replace_state !=
- 	    BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED) {
--		up_read(&dev_replace->rwsem);
-+		up_write(&dev_replace->rwsem);
- 		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
- 		return 0;
- 	}
- 
- 	tgt_device = dev_replace->tgtdev;
- 	src_device = dev_replace->srcdev;
--	up_read(&dev_replace->rwsem);
-+	up_write(&dev_replace->rwsem);
- 
- 	/*
- 	 * flush all outstanding I/O and inode extent mappings before the
-@@ -986,8 +989,6 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 
- 	list_add(&tgt_device->dev_alloc_list, &fs_devices->alloc_list);
- 	fs_devices->rw_devices++;
--
--	dev_replace->replace_task = NULL;
- 	up_write(&dev_replace->rwsem);
- 	btrfs_rm_dev_replace_blocked(fs_info);
- 
--- 
-2.54.0
+> ---
+> Changes in v3:
+> - btrfs_prealloc_delayed_dir_index() now allocates and returns the
+>    btrfs_dir_index_prealloc instead of filling in a caller-provided on-stack
+>    struct, so a NULL pointer means "no prealloc" and callers no longer need
+>    to use prealloc->item as an is-allocated flag (as suggested by Qu).
+> - Fix a leak of a caller-supplied prealloc in btrfs_insert_dir_item() when
+>    btrfs_alloc_path() fails; all error exits now go through a single
+>    out_free_prealloc label (Qu Wenruo).
+> - Move the dir index name memcpy into btrfs_prealloc_delayed_dir_index()
+>    instead of duplicating it at the call sites (Qu Wenruo).
+> - New patch to use an on-stack path in btrfs_del_orphan_item().
+> - btrfs_create_new_inode(): persist nlink=0 with btrfs_update_inode() after
+>    orphaning the new inode. Otherwise orphan cleanup sees nlink > 0, drops
+>    the orphan item and leaks the inode.
+> - Pick up Reviewed-by tags from Qu Wenruo.
+> - Link to v2: https://lore.kernel.org/r/20260804-btrfs-enomem-v2-0-4d923170e8c1@kernel.org
+> 
+> Changes in v2:
+> - Use an on-stack btrfs_path in btrfs_insert_orphan_item() so the ENOMEM
+>    recovery does not itself fail on a path allocation.
+> - Simplify the recovery in btrfs_create_new_inode() to rely on
+>    btrfs_orphan_add()'s internal abort instead of aborting twice.
+> - Add ALLOW_ERROR_INJECTION() on btrfs_prealloc_delayed_dir_index() and a
+>    new fstest (btrfs/351) to exercise the ENOMEM path.
+> - Link to v1: https://lore.kernel.org/r/20260717-btrfs-enomem-v1-0-cdc9c0e265d0@kernel.org
+> 
+> ---
+> Jeff Layton (6):
+>        btrfs: use an on-stack path in btrfs_insert_orphan_item()
+>        btrfs: use an on-stack path in btrfs_del_orphan_item()
+>        btrfs: split btrfs_insert_delayed_dir_index() into prealloc and commit phases
+>        btrfs: pre-allocate delayed dir index before btree modification
+>        btrfs: handle ENOMEM from btrfs_insert_dir_item() without aborting
+>        btrfs: pre-allocate delayed dir index for non-overwrite rename
+> 
+>   fs/btrfs/btrfs_inode.h   |   4 +-
+>   fs/btrfs/delayed-inode.c | 115 ++++++++++++++++++++++++++++++++++++-----------
+>   fs/btrfs/delayed-inode.h |  22 ++++++---
+>   fs/btrfs/dir-item.c      |  42 +++++++++++------
+>   fs/btrfs/dir-item.h      |   5 ++-
+>   fs/btrfs/inode.c         |  64 +++++++++++++++++++++-----
+>   fs/btrfs/orphan.c        |  36 +++++++--------
+>   fs/btrfs/transaction.c   |   2 +-
+>   fs/btrfs/tree-log.c      |   4 +-
+>   9 files changed, 215 insertions(+), 79 deletions(-)
+> ---
+> base-commit: 76d8783d4c196f4ac990b97ee9f56d2e6797e173
+> change-id: 20260715-btrfs-enomem-988f2cc36ffd
+> 
+> Best regards,
 

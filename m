@@ -1,96 +1,95 @@
 Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6E9413E5585
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 13:42:27 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 237DD353A7C
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 14:01:27 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.54
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786542149; cv=pass; b=TQ+fsx1QFXb5PIV5A+sAuiw/AuJY8jBs/hO0FkIW+u15o729AC9Cb8hDTUXA0NHP25+Q7eiLOSfKrKv+VzNORs9x84fcDhckCbsCROgCN3GJCg4Pv29jKtRObOqrvx7TI+JZYGKoUl5xLJg3HKu+URSDTIMSbz2KgZ0Y2RTXx1E=
+	t=1786543293; cv=pass; b=YMCyew4nTbUaQPc8p7yNt5wgAVGTgXFnI6gLnh1sYt5s6HoMSx2a5cZdPNeiyhBoB4v/PetISN0CyuAEE8GJRu3Yo/v2Xsy1bR2awHxSagSIj9pN8ddwvP8DgPc2NKU0BfzbcjGXErVzFSBQCN18tSjmzFqZcGcSxzyWDhBmL+Y=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786542149; c=relaxed/simple;
-	bh=OaYKz/8UNJPHTqaurxpclVEI6MeOPbYBwJrUelUHVSU=;
+	s=arc-20240116; t=1786543293; c=relaxed/simple;
+	bh=NwhV7wARecxQh7esHydA5zPzLYoC9TtdLCxqqsKZyKg=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=kLEikLI/4Mig3Av3hX1TgbL/usP72dyiGAwHhBGR/bs0RYkRENH0F/rMzpNGZ1jj8dKK6lv3r/k0ojAGBS39A0uVCV614+aOakVdH4SU1JY9tGbxuAWg3+F8tXyshQ5pU7psPOqlIj18dNLHh8JwAt+QaqI5TlhRZDsZUiyONZA=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=HjdZP9Gb; arc=pass smtp.client-ip=209.85.128.54
+	 To:Cc:Content-Type; b=dJ7+B3OJONL0itnszIwun5KEE55MqWVcinrH12enFypveRL5BfruAs8gawiA3WyfIKFz+/H8t3dDJX9M34EDkv+cVS2jn305M1A0tGXoaWY1ZfB4PuvJR/Hz8XfHeVEaU8q+01G6x/8n3HSptoyBJBDpIIsDgmTSEoy9wwt2/MU=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=bMzpZF95; arc=pass smtp.client-ip=209.85.128.54
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="HjdZP9Gb"
-Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4954dff6536so7620515e9.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 06:42:27 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1786542145; cv=none;
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="bMzpZF95"
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4980fe6b3beso16637495e9.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 07:01:26 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1786543285; cv=none;
         d=google.com; s=arc-20260327;
-        b=mGsXt0YKfQ1UrR5wEtc1+0Oht6VCPGtOjJbwIO9jlp8mn01wv7PS3KRIgOwX8+stQn
-         WWlzVo7FFO/njeAEgrEttd07a6MLz3U7VdGbuivaO7wrHBz3WZXSgHzbjk+ZZFmHJXUU
-         PRvDcPxeyQKd2BCKH13Ug/V4LmZ/GE/no/IYJ1W2trvdsd3tfIs9XhD0NRZH2yx8YJ84
-         sBxvoIk0h7gNqtkWfOwdlHEhM4CvUaVMmQTZDghHhh8NZn2Sl6BQ5aikdNtGx9xzajeJ
-         ujUudEGrfTJAfcsXp2YkhX9Ln3yT79+/Zj1LmWX5rU4TXjdEeYpuIKkdV6S1BO+6fOdt
-         egYA==
+        b=ToB9eppsvTD3B+6ZMx6K8loLmAIcRpFWTYwtD9FTzW/y8RmD0yjbawyEkcPFOUKTK2
+         4X5bKvxFTxZ4EhsMJp8wWo0B+DzKwE/KbcA+ezrVgh1Te6QkhPE4mG052qVhwUYVsxby
+         vjjklBOCmJqEfq5hOgSqiZ6ucwNBAQ5PHyvUw6NWfp7kLhS9Cbrc85y0gFvnIkhWrn4b
+         uE91cxdifs5pJbb7pp0SflTnxz2JDPtUvHQKhal79L/CL+/+mE5pCTRAFa+z/rAQitR/
+         ZeNQJTWIvgMP3DB3guJsDg0YXPCyktGl4KZOWjMSkabVsln7OgVqN+hf7ttrlzw5GmXA
+         DutA==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:dkim-signature;
-        bh=5tGpXLx/o7dEo7Q3/7U1JEPYlPhC8+W5F1DtfAIZ18E=;
-        fh=q7p2R6ME13kojRtkU4nw4hsvWtDGrneP1yD8fqRCAxk=;
-        b=CbcN+RLoN/JQhQWRZizjSWpzCPKtz15wjh9opJcawF1b+aqYvjX6HKnrYpyIUkkICv
-         sdQB/ZlPBQedLGjW50f3UJjIurERNsodHZ0BIm8JbQ6gSlSGvG+LXKzPuOpmUvInY2nh
-         BlVMy1yhH6pSubIuuDG+P+6PvXo0Xbypn+BCWXyiOZIL/oE8aEiJ2BsOCl5XuIAn4J6R
-         g5pqA5zJXtc3EBzqjzC7tSKOCR6ILXVQQujykG1yJxtIHl8fkcI3eura9/5AhfboyprA
-         cL2ncQ3y5ZnLMRwD70ZetGI0ZGYUuO2waUYoadf7OpEaOjUF/X7A5oePqeiqIHT/1knW
-         QE9w==;
+        bh=jDqguviqlm3mcw1WL6mm0X2Ptol7dkWT6XZ2U3iPzp8=;
+        fh=CX8+pI+AYj/DnRBFbkQA+6ishA7Mn5KAYzSQfIkWXmg=;
+        b=R50eR658/+yGt++awJLiXeCrbzNX3IQZNd+seCOGaW8I6H1MTCWtJFjEINYE1t1wFT
+         e6/ZgDc+QWWsDrGj2zpv+/PyzKC0CdtCHnKYWtxtsfNjUNHnX3XSRPWkK0EaqkTkHsrl
+         mkyiJiwcZxqItWuAKe591m2SBUrIGgWuAlqN+JXlGf/IqhcWXXpSkAY+NRIWlQT5lX7Z
+         BFYTp12RkaZdUs5JHwm6ngDTf0HZWICKW3SK80n5TxoAu/sL9a3vPuNR6OyaodhmpiGj
+         dwBl2nRkwAdYo2uFeHBV9wlMZugXeMEGOG50hGzFcuGp+bN7dj140BbRZ8AVkMxQ08fk
+         ZroQ==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1786542145; x=1787146945; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1786543285; x=1787148085; darn=vger.kernel.org;
         h=content-type:cc:to:subject:message-id:date:from:in-reply-to
          :references:mime-version:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=5tGpXLx/o7dEo7Q3/7U1JEPYlPhC8+W5F1DtfAIZ18E=;
-        b=HjdZP9GboP2C1f/GfQkYqllSxbidziD1jt+uCNcmfidvIEiYj7X6oGLk2SdETaeSv/
-         FP3qlWyKUHkcpRXxTN+0jrkP4HJs/9qqh153fQvgKBAiYcrIZKWMpWux4Dsqben2uoo2
-         jq093FKT3uA3aomdd2cHNrjpIRlOie6Xnx8HTUAdI+31sVJ84yBMM/bsT5a+pEYDil3U
-         okCaDms5nJ9C88MF1JR6aB6nrXNpTL7Kp+XEeJgvlpofEJi+xTC/dW5nL7oZv1u5DkOI
-         0h3GV3E3UVDkhGTD5f3Vug+cO26rsABqHAZS9nImESOa77Y+AEshR5wM0WD3ViSgl9aH
-         Lk/Q==
+        bh=jDqguviqlm3mcw1WL6mm0X2Ptol7dkWT6XZ2U3iPzp8=;
+        b=bMzpZF95Zyx59JzfpcJo+ylEYm+3oxDx4U37dg5o3XJSkZyQ21hWHC5FXbiFKJCtwz
+         nfL8s0PNyewVe5v64SBtAquLGvNNGElEyDtfv1m7v/EUT0QcQaNwuW9wyRpIIR/y1/I2
+         qyuHfiXFEhkuVCzOfGa1P/JJm1Ww3OlOIFQUOqURWgtRFK8kysRFJzxjb7OvMNzhfMpb
+         W8+AmyBf7xHon4mrE1Z3nJl7h0UZkwJNtUv59bhlanZJs285lei7wEGlgIgFrIFE7aDd
+         1XE8+MzdFW1P0WnvvjHC5W9GJsp1YOEF6XalZDyutJgLrMAtkyEA347rD9gx0K5SzFQC
+         UBmQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786542145; x=1787146945;
+        d=1e100.net; s=20251104; t=1786543285; x=1787148085;
         h=content-type:cc:to:subject:message-id:date:from:in-reply-to
          :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to:content-type;
-        bh=5tGpXLx/o7dEo7Q3/7U1JEPYlPhC8+W5F1DtfAIZ18E=;
-        b=L/bZrrOp3gwutTS6VZ+Uv0w9diDMWxj9newAtR0KgUMWFBU+I0y5L7BbqS55KgsA5A
-         vOsuH4OkdHOdUL91xKOgI59NCOtmbYCZqvMbUtCPACjMtj/+8O2Z8CknDh2RQPeopkvv
-         j9aBwUZ4flNSFAvciriL+A2Tq36zSElzc0TwhsHsIobXhTuWtGXiG4QCHGY83SOHgi1T
-         xqODO6+ZnUJBknkcOUSP3aSoU0jC41FzHDh6XOwl7swsp3IhktsvsULpXCDVC6qQrsr9
-         JyoX7vsLSsPH738Dx0hIRID6jWnq1JCUdde0VXyAe8lOVD+5vTwbfxi/3x5p/khkvoRg
-         LBSQ==
-X-Forwarded-Encrypted: i=1; AHgh+RotvnNRuy1gs048jM1uPm9erft4xKNN6z6eVq2Ke/O2k4OwXlwdvDYEWRMBe/NXXYb0f7Tpytr5C60aqw==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yz4IbGv38OG3ZsL6ztGn5M8OVcLFry+VE699Pt/bkqJgvIcndoc
-	0tluoGC5D+0BIuhNoh9GTloqZlKLqo4Ar1fnMCCdi03DB+QYY5N3mBZq+t2NR2yFIVo9zTFFTLq
-	u6igVXTDiykp6sxt8LlEz7Rja05hPrNtENB+5IuElXw==
-X-Gm-Gg: AR+sD11eqlx4oMvlzH5B8ypOkivhPa0IBO0V0OdaP52laSWHzsAO+SQhp2iAPhmnovn
-	0rkB07SbM+imeAIhy8rX9HY0Qo7f7v6ks9K4nBajFjcxZIspWwVfjtF0RtxZE1Fad3cjr8ixdri
-	L6O0U5dFAuxa5wKY532SAaL+OWXaLKD1yQuXvHxSYKmeWjk19PyjMk4he5eAS8icOxWIP0H9c+a
-	et23Exh0LXG7E/XuhqQDuAwhQfIkBYcZDS0gMZqPGT6cyJtxtL5d7PtE/Gq6nZZWhpn6k9ws4hH
-	U2uyOHx14IpUkuAFTYnAVHEaNWz/6mFKWf4G6vQ+sGbkhi1r0LgUZQla8/WsNTKbyXTiB4qiByO
-	kASfGSMCxhTj6ZXLZJwO11qOUdIFy0SmMljmDTa8U08M=
-X-Received: by 2002:a05:600c:4690:b0:490:c6c2:52 with SMTP id
- 5b1f17b1804b1-4997c0fe67cmr65880095e9.3.1786542145347; Wed, 12 Aug 2026
- 06:42:25 -0700 (PDT)
+        bh=jDqguviqlm3mcw1WL6mm0X2Ptol7dkWT6XZ2U3iPzp8=;
+        b=eTTKDSgM3E64Id1Jj9oDzd+gv7TmO5kO/52OJU/LD/Rj0KgWL4TywWKk0ealPZ9TqD
+         kDMVLg6eK0Ebs7lQOT8Rd2yT8o19mJPm2l6LDQkDw7RDdaW8kxrCH1wk8H2+BBmXt11G
+         xuaK86rILqIN0ONfb+rDZ6+gHrilF6pI2J08aZnEFPNrfWWtgB/pElc5AbpF98N1O4Rt
+         +6kVlG9PVajp97Vgcv2KrV7bIxWY3FtjCnGOXSHNpwHXo+0zrWy3RW7EXNG2OS/hOZ5W
+         QX7yh5Pw8lfjXzMhOLhqFlCPu+orfLc/IGRreYEFg1ymly/PYwc9JddAkIWm7RiZyckF
+         bnOg==
+X-Forwarded-Encrypted: i=1; AHgh+RooIN1Una9rgkXeg+JnD4i36xgWpkWx9uJTzMB3ljiDX4LrBDqe8xi+mSNGyYDb8RVMPskyYTi+nyKEew==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxiAoc+kLFd6BVFxPgQ+/iKzj2ZNLD0am2qzpYFQf+5Wbfu5sPB
+	mzPb3d54Vn7C8opx7cnbm6SA77GJ8T4Pu5Kr4RgpWsON0fCpvC42DjXCVyXt6eHhzl4m/VgVuea
+	ttnxqEZEft2WyORUAVH02Htk8L3vxyn4mIYJ7s2w36A==
+X-Gm-Gg: AR+sD11sv5UxYfZCF02YXmp3k8d6XNSjgfmNB0h99fRh26gI55WgmM7KcOFumz9g603
+	57nftZwXMuBem1RT7+oG5CNVwnCr3GTGPdOFbKmbV0HCcKyzqLPAXyImRgHKpn63uA+/p3dn3A3
+	YjnOxlWB/8FPpYLhOTurxmipXXht8DReuZoIHfAFnxCtOttsgFdT/4YNOtCaXPffmhelk3fQISZ
+	RByGGjxBEhqlpXqPcq9TGsvIvstCYg5ZHuEjI2xVTrjRercp3KzkqtVkv6s2+V4f2tECEEx28KJ
+	BljszcFa9BMKzR5er2+DF/X33dzMu2cqdRMqiRhIA0JaAF4AZX33UCYpvAa1I2v/UGkiSX8xvRZ
+	wYCycnpM9E1vxJiz28OU2habdYrzRJGE/T8ic0BhvHg==
+X-Received: by 2002:a05:600c:3545:b0:499:71d6:359a with SMTP id
+ 5b1f17b1804b1-4997a656f46mr109313045e9.8.1786543284052; Wed, 12 Aug 2026
+ 07:01:24 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260513085340.3673127-1-neelx@suse.com> <20260513085340.3673127-3-neelx@suse.com>
- <20260601224920.GB25574@quark>
-In-Reply-To: <20260601224920.GB25574@quark>
+References: <20260513085340.3673127-1-neelx@suse.com> <20260513085340.3673127-4-neelx@suse.com>
+ <20260602023330.GB2295@sol>
+In-Reply-To: <20260602023330.GB2295@sol>
 From: Daniel Vacek <neelx@suse.com>
-Date: Wed, 12 Aug 2026 15:42:12 +0200
-X-Gm-Features: AUfX_mxUX5B7ho1XknbfVlc-uLWV2Eu6v2suT3UDLMiVCVx6n4XVBbcNHB1dnXs
-Message-ID: <CAPjX3FfouCuSTTBYASnjRgvu+kR7mJtRsd2WZ7Lc9om+P8hK0g@mail.gmail.com>
-Subject: Re: [PATCH v7 02/43] fscrypt: allow inline encryption for extent
- based encryption
+Date: Wed, 12 Aug 2026 16:01:12 +0200
+X-Gm-Features: AUfX_myvt915vzGFwNYRlfFfUivl5kbirxl8PA9N2EQBXfOqTu-HUsUGoJNjjyY
+Message-ID: <CAPjX3FdO6sn4Yi0x30cJSASqJXJYnit-RVOOAaz56VhBQPKmXA@mail.gmail.com>
+Subject: Re: [PATCH v7 03/43] fscrypt: add a __fscrypt_file_open helper
 To: Eric Biggers <ebiggers@kernel.org>
 Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, "Theodore Y. Ts'o" <tytso@mit.edu>, 
 	Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>, 
@@ -98,30 +97,92 @@ Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, "Theodore Y. T
 	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 
-On Tue, 2 Jun 2026 at 00:49, Eric Biggers <ebiggers@kernel.org> wrote:
-> On Wed, May 13, 2026 at 10:52:36AM +0200, Daniel Vacek wrote:
+On Tue, 2 Jun 2026 at 04:34, Eric Biggers <ebiggers@kernel.org> wrote:
+> On Wed, May 13, 2026 at 10:52:37AM +0200, Daniel Vacek wrote:
 > > From: Josef Bacik <josef@toxicpanda.com>
 > >
-> > Instead of requiring -o inlinecrypt to enable inline encryption, allow
-> > having s_cop->has_per_extent_encryption to indicate that this file
-> > system supports inline encryption.
+> > We have fscrypt_file_open() which is meant to be called on files being
+> > opened so that their key is loaded when we start reading data from them.
+> >
+> > However for btrfs send we are opening the inode directly without a filp,
+> > so we need a different helper to make sure we can load the fscrypt
+> > context for the inode before reading its contents.
 > >
 > > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 > > Signed-off-by: Daniel Vacek <neelx@suse.com>
 > > ---
 > >
-> > v5: https://lore.kernel.org/linux-btrfs/ba0289bf103653d5d98ef576756c9a2a66192865.1706116485.git.josef@toxicpanda.com/
-> >  * No changes since.
+> > No changes in v7.
+> > v6 changes:
+> >  * Adapted to fscrypt changes since the last two years.
+> > v5: https://lore.kernel.org/linux-btrfs/4a372419c3fe6ad425e1b124c342a054e9d6db23.1706116485.git.josef@toxicpanda.com/
+> > ---
+> >  fs/crypto/hooks.c       | 38 ++++++++++++++++++++++++++++++++------
+> >  include/linux/fscrypt.h |  8 ++++++++
+> >  2 files changed, 40 insertions(+), 6 deletions(-)
+> >
+> > diff --git a/fs/crypto/hooks.c b/fs/crypto/hooks.c
+> > index a7a8a3f581a0..3142cf106bde 100644
+> > --- a/fs/crypto/hooks.c
+> > +++ b/fs/crypto/hooks.c
+> > @@ -9,6 +9,37 @@
+> >
+> >  #include "fscrypt_private.h"
+> >
+> > +/**
+> > + * __fscrypt_file_open() - prepare for filesystem-internal access to a
+> > + *                      possibly-encrypted regular file
+> > + * @dir: the inode for the directory via which the file is being accessed
+> > + * @inode: the inode being "opened"
+> > + *
+> > + * This is like fscrypt_file_open(), but instead of taking the 'struct file'
+> > + * being opened it takes the parent directory explicitly.  This is intended for
+> > + * use cases such as "send/receive" which involve the filesystem accessing file
+> > + * contents without setting up a 'struct file'.
+> > + *
+> > + * Return: 0 on success, -ENOKEY if the key is missing, or another -errno code
+> > + */
+> > +int __fscrypt_file_open(struct inode *dir, struct inode *inode)
+> > +{
+> > +     int err;
+> > +
+> > +     err = fscrypt_require_key(inode);
+> > +     if (err)
+> > +             return err;
+> > +
+> > +     if (!fscrypt_has_permitted_context(dir, inode)) {
+> > +             fscrypt_warn(inode,
+> > +                          "Inconsistent encryption context (parent directory: %llu)",
+> > +                          dir->i_ino);
+> > +             return -EPERM;
+> > +     }
+> > +     return 0;
+> > +}
+> > +EXPORT_SYMBOL_GPL(__fscrypt_file_open);
+> > +
+> >  /**
+> >   * fscrypt_file_open() - prepare to open a possibly-encrypted regular file
+> >   * @inode: the inode being opened
+> > @@ -60,12 +91,7 @@ int fscrypt_file_open(struct inode *inode, struct file *filp)
+> >       rcu_read_unlock();
+> >
+> >       dentry_parent = dget_parent(dentry);
+> > -     if (!fscrypt_has_permitted_context(d_inode(dentry_parent), inode)) {
+> > -             fscrypt_warn(inode,
+> > -                          "Inconsistent encryption context (parent directory: %llu)",
+> > -                          d_inode(dentry_parent)->i_ino);
+> > -             err = -EPERM;
+> > -     }
+> > +     err = __fscrypt_file_open(d_inode(dentry_parent), inode);
+> >       dput(dentry_parent);
+> >       return err;
+> >  }
 >
-> There are multiple places that check SB_INLINECRYPT, and just one was
-> updated.  Perhaps we should just require that if a filesystem sets
-> has_per_extent_encryption, then it also sets SB_INLINECRYPT
-> unconditionally?
+> This change makes fscrypt_file_open() execute an unnecessary extra
+> fscrypt_require_key().  Could we just leave fscrypt_file_open() as-is?
 
-has_per_extent_encryption means the kernel fs implementation supports
-extent encryption, not that the mounted filesystem uses encryption.
-That said it would result in all btrfs mounts setting SB_INLINECRYPT.
-Is that what you meant?
+Yes, I'm aware of that. Well, it's static inline and gated only for
+encrypted inodes. But yeah, I'll refactor it a bit further.
 
 --nX
 

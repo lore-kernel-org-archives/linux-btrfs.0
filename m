@@ -1,116 +1,149 @@
-Received: from mail-oa1-f77.google.com (mail-oa1-f77.google.com [209.85.160.77])
+Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 997B43ED3CC
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2026 05:45:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.160.77
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E0BD4137A7
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2026 06:34:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.41
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786599932; cv=none; b=Vni0Rh8mCUdRr3IGBgbzYt5OV4DhemeWLjvR9fqb5g/CG7z3oOY9hhp6ukfpMky5Q4UJP0TQDUqCLubUX2R/HaBBSrXMqhbGTNXN3wb5hXnzAupEfpS2uqlpSESKfU3doQQMVJ8tiuie5T30GnotLiD8N7tAwcXCpiVoG7h3kVg=
+	t=1786602855; cv=none; b=AuGFcEUQbVsjoPLzkamt13WHg9M+t7TBRbLaBC2xBM3+LWdSwHl3BL0rVdT4PjqTh1LQKh0dM+A93ZcgQKQz8AYEfZ7lmbXxfH9QNHhWw7repfGSD+9Q3dI631mJb8vtflkqH+lsCQSj/vOr80wcycR82tLkGtpVE6/mpupSJGw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786599932; c=relaxed/simple;
-	bh=HpTTL3rOf9yvhCSIHWliI+QL5CAt+FoJ/7+c2YK0gwA=;
-	h=MIME-Version:Date:In-Reply-To:Message-ID:Subject:From:To:
-	 Content-Type; b=Gq9g7Bf5iWxTVk1Ttv9uWQoRcJw5CwQzhvYHYPOFq24TFAPkNcrKl/t8ohLtXAmb5q34Boht0gxs5owsru6s8pCvv7Png8kda2LEE9b11xMM8wi31Oi8/hhs9HkptPfW0g7Y+ZejAK/l2H/3bs4opfTLXZrxqA+6X7EAqruPiFM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.160.77
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oa1-f77.google.com with SMTP id 586e51a60fabf-44899f99756so1998185fac.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 22:45:30 -0700 (PDT)
+	s=arc-20240116; t=1786602855; c=relaxed/simple;
+	bh=H+hFoYvKGCSPDDX/N+csVvj1asWuxFl1s+Y8P5H56zs=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=gevR1LW2Tv+uLRZ3L6LkPdoLeQgBebv0UH2tFLRBf4Lqwc5AebXjQENFRgmOqJtqz1ZgwaCKrZbWzLCwvF7CvggnYqucEu2gyz5R6x2wC62ti/kThlN/hnVLCHzi4Q7O49vlIT5d7Il8JktD7MhTF27JhiAJbCvn9fxYPk8Sdho=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=dCSg6bz9; arc=none smtp.client-ip=209.85.128.41
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="dCSg6bz9"
+Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-4921eed3fa2so15678495e9.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2026 23:34:14 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1786602852; x=1787207652; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=IR19d7dz25eJhpnRyH/IxVmhKX79dV80a3exCVUcmjw=;
+        b=dCSg6bz9gc6meAXVfM/nA+eeqiB8LSy8o8MpmJwcvs9F9GufKiaAOpLUg+MQ/UB/1X
+         b6craTYkgR9LPOxREYNP18BtvqadnGriC5tCaLmKgDcTUqzIYIYl70ekP5AUlc5ZRROv
+         oYCUFNVfId1bl+Cx8QXnvwWb54F5jFhh4etuY0culAxSOUEiaMggCCV8QaIrzTub6NaN
+         ypA1YzIk0MrVoRwZhAtDIZcMrdSTdd9+j40utIQlr4zfuSkLUj4gZftPA9m9CmGtXs3p
+         31YjdKtWpEDwXRFaJhvv3DxUAdgtTw/Rp7DuyAVa2nq8hRbV2PDSvOF6cjQG3ET2xFNr
+         hMNg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786599929; x=1787204729;
-        h=content-type:to:from:subject:message-id:in-reply-to:date
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=xmU6wu+YFonCLhKD+jsSBLKeD63BNRA8pC2RenAhjNI=;
-        b=OI3dwT67WedNm7J/x7J2nt4ZmzDzE7pQtW/AXhJPnDS6BP69+0QaB0QfTgIX62rCbF
-         4Nb0aNf4W5sxGDGMiolfEYNk1fuQTAh3AICxltwWr08G1HZej6mwuK8ICP8UCO5PsGGB
-         mxpmexPw+h0K1cBESIbTZLgFVW9aZypqiRopWnCBlB4jbOSS0j2lnrM+/KdBldWEUF5w
-         +w8vm+sPDSJ0aOntCC9wUwkOGGJA4BhhiY1CYA3t2fnMPhH7z71K5erhyOmGD26rT4jU
-         BBviPEvRxNX8soBBFXW3A5XpyvECVSJQrzVikS+GjhxA35UEMvQzb04QhUlolvqb642b
-         yhUw==
-X-Forwarded-Encrypted: i=1; AHgh+Rr7PWBwaoEGKNI3n0dcsX0nR/U3Hp+HWS5OxNu09EuU2a590bhHAbcH64xVGKlhYPBInLoX3QFDpfKyug==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yye3ignuwPELxvYJXXnBKg9r6KuwfEDcofBZmSBdBJnjTQiR5Q+
-	RVGm68ArrJ7rrOHxzn4VLcbiVKyWIJVM2GeinLhQULrp6Yx+4ZdU77d8GOapU5kxqnbzHZsOdAd
-	AM9DO6hR79UpC0kLbRlWRzNC/k+Co5TCPd41T+jIPphjJvgnWl9LbgNKUlKM=
+        d=1e100.net; s=20251104; t=1786602852; x=1787207652;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=IR19d7dz25eJhpnRyH/IxVmhKX79dV80a3exCVUcmjw=;
+        b=cqCzn0VAHvGwmDvk3vtXk3IEXvY0S/8htlfbn6lnYp4JIg7v8ql59LPslSb+FcgUx6
+         +HkzFnkqMAZ4WFHIOtvISaV+CTfCKeFlibRt8MelJAcco3qBa0ZjXraHhzw8LHWCbW5u
+         ZlpahAgW5WJsR7zLsMpnwLSEvLQV6qNndJN0eet30f1uV46e5pV0ZqX9StryQT959c0X
+         B+0YvKuUFiB6u9Sq2+HpjPJWdikdnoHPfEWs5l9G3xFJR+j9z68hTBuEs3655X6FYxEz
+         N0ABoJbq/zSHQQSkBJFVPmxeSjZb93Nb3MvCEkXDyNSpwTod7D1i0lJzOxOtSUYS0don
+         oWcg==
+X-Forwarded-Encrypted: i=1; AHgh+RpGfJw5Drap2uhiR3Mn+mCr9+5F2BCwWgMlf3Bl2dSLg1Eh3AvLAeA7uQ0IlI9UwWlTjXSycycnSGYwkg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzxNNuHhVMe1CG93eKoLCgRbusA0/3x4cGw53MlQ5hDnB29AcLB
+	byHEy4pyBlkW34QuzQO/j41RHenhC+lLTZNVZuUyOnq5BPxnDdI3vdIfvlkuLo+bPGU=
+X-Gm-Gg: AR+sD13IN1OovR2ODhjOVLaS6kaEayFimbSg+rysXdRakBv0Qs/eo+157R7S99lNlgK
+	iF6rX8OQCO7Nu/Crjx7jx1tJpxoCS2QiLQ4+X+/StKq/DkXEC17xQVwnOOi3k1ctNsSq5qjMuKJ
+	kw9N7pbRs1ReEF++ellDuniRGPaH97/inr1pqiNSgXJ/nW6+toVovO4FZb3A2hS0/wsH92Z3816
+	bzeUp+ZPane5oAN/HnJidmbFR91EkVWMg7pAaLX2odHNZ8rRaxR41R73JwecmXUl5mNeeqNMPxb
+	UcBq+H7amS+XXQiNXN7+RJ6f7wC1WYZx8qg0KpyA2K9DCt0uDf8py+2BglHsq0FD8gHIS5929wf
+	ZTa+Pm6120Ai5iIHpMTrvFvN8Xea4Z9tC3u3T2yqs2PJXOiyNAd9yLb1HyEHs5c5WoZ+a2l51Im
+	SUO7Fm0121u3GYFu1QIiznScVMiwXzDI/EZzsGK5YDI9NKtyCVyKd9FA==
+X-Received: by 2002:a05:600c:1f83:b0:497:fecd:5b00 with SMTP id 5b1f17b1804b1-499821c67c3mr30803175e9.9.1786602852419;
+        Wed, 12 Aug 2026 23:34:12 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1412d961bf7sm5379585c88.10.2026.08.12.23.34.07
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 12 Aug 2026 23:34:11 -0700 (PDT)
+Message-ID: <bd66065f-bae5-482a-84d6-a78850c9cebe@suse.com>
+Date: Thu, 13 Aug 2026 16:04:05 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6820:1889:b0:6b0:40f8:4c82 with SMTP id
- 006d021491bc7-6b0c45e05e8mr3436515eaf.29.1786599929443; Wed, 12 Aug 2026
- 22:45:29 -0700 (PDT)
-Date: Wed, 12 Aug 2026 22:45:29 -0700
-In-Reply-To: <6a791c94.01d0871a.3a0d52.0099.GAE@google.com>
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a7d59f9.c5ad36c8.12f49d.002a.GAE@google.com>
-Subject: Re: [syzbot] [btrfs?] WARNING in btrfs_init_new_device
-From: syzbot <syzbot+3bf3e110b2d406b8166c@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
-
-syzbot has found a reproducer for the following issue on:
-
-HEAD commit:    3d6d817622b0 Merge tag 'scsi-fixes' of git://git.kernel.or..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=13705149580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=158601bb8cb292dd
-dashboard link: https://syzkaller.appspot.com/bug?extid=3bf3e110b2d406b8166c
-compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=13d3ec79580000
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=100c8ac6580000
-
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/fc778852603e/disk-3d6d8176.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/05372451f9a9/vmlinux-3d6d8176.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/0620f51f7bde/bzImage-3d6d8176.xz
-mounted in repro: https://storage.googleapis.com/syzbot-assets/99b4705403e2/mount_0.gz
-  fsck result: OK (log: https://syzkaller.appspot.com/x/fsck.log?x=17f48ac6580000)
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+3bf3e110b2d406b8166c@syzkaller.appspotmail.com
-
-------------[ cut here ]------------
-btrfs_abort_should_print_stack(__error)
-WARNING: fs/btrfs/volumes.c:3013 at btrfs_init_new_device+0x1913/0x19e0 fs/btrfs/volumes.c:3013, CPU#1: syz.0.17/5924
-Modules linked in:
-CPU: 1 UID: 0 PID: 5924 Comm: syz.0.17 Not tainted syzkaller #0 PREEMPT_{RT,(full)} 
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 07/24/2026
-RIP: 0010:btrfs_init_new_device+0x1913/0x19e0 fs/btrfs/volumes.c:3013
-Code: 00 00 41 83 fe f4 0f 85 d8 00 00 00 e8 d6 c3 b4 fd e9 d7 00 00 00 e8 cc c3 b4 fd eb 10 e8 c5 c3 b4 fd eb 09 e8 be c3 b4 fd 90 <0f> 0b 90 44 89 f1 f7 d9 e9 7b fc ff ff 89 d9 80 e1 07 38 c1 0f 8c
-RSP: 0018:ffffc90003f07da8 EFLAGS: 00010293
-RAX: ffffffff84110472 RBX: ffff8880357dc001 RCX: ffff8880381a5d00
-RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000000000000000
-RBP: dffffc0000000000 R08: ffff8880381a5d00 R09: 0000000000000003
-R10: 0000000000000100 R11: 00000000fffffffb R12: ffff8880357dce40
-R13: 0000000000000001 R14: 00000000ffffffef R15: ffff8880357dc000
-FS:  00007fc65910e6c0(0000) GS:ffff888125d46000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007fc659afb7c0 CR3: 00000000472b8000 CR4: 00000000003526f0
-Call Trace:
- <TASK>
- btrfs_ioctl_add_dev+0x1ad/0x640 fs/btrfs/ioctl.c:2558
- vfs_ioctl fs/ioctl.c:51 [inline]
- __do_sys_ioctl fs/ioctl.c:597 [inline]
- __se_sys_ioctl+0xff/0x170 fs/ioctl.c:583
- do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
- do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7fc659aae0d9
-Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007fc65910e028 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-RAX: ffffffffffffffda RBX: 00007fc659d35fa0 RCX: 00007fc659aae0d9
-RDX: 0000200000001000 RSI: 000000005000940a RDI: 0000000000000004
-RBP: 00007fc659b45024 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-R13: 00007fc659d36038 R14: 00007fc659d35fa0 R15: 00007fff92859458
- </TASK>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: use mount idmap for defrag permission check
+To: Tao Cui <cui.tao@linux.dev>, clm@fb.com, dsterba@suse.com
+Cc: josef@toxicpanda.com, brauner@kernel.org, sforshee@kernel.org,
+ linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-kernel@vger.kernel.org, Tao Cui <cuitao@kylinos.cn>
+References: <20260813034146.1207640-1-cui.tao@linux.dev>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260813034146.1207640-1-cui.tao@linux.dev>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
 
----
-If you want syzbot to run the reproducer, reply with:
-#syz test: git://repo/address.git branch-or-commit-hash
-If you attach or paste a git patch, syzbot will apply it before testing.
+
+在 2026/8/13 13:11, Tao Cui 写道:
+> From: Tao Cui <cuitao@kylinos.cn>
+> 
+> btrfs_ioctl_defrag() checks MAY_WRITE with nop_mnt_idmap, which skips
+> the mount idmap.  On an idmapped mount the owner comparison then uses
+> the caller's fsuid against the raw on-disk uid, dropping the mapping.
+> Every other permission/owner check in btrfs ioctl uses
+> file_mnt_idmap(file) (e.g. :1152, :1310, :1946); this one missed it.
+> 
+> Switch to file_mnt_idmap(file).  It equals nop_mnt_idmap on a normal
+> mount, and the check stays behind !capable(CAP_SYS_ADMIN), so only
+> unprivileged callers on idmapped btrfs change.  The RO-fd note in the
+> comment above is about the file descriptor, not this inode check, and
+> is unaffected.
+> 
+> Signed-off-by: Tao Cui <cuitao@kylinos.cn>
+
+Fixes: 4609e1f18e19 ("fs: port ->permission() to pass mnt_idmap")
+
+Otherwise looks good to me.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+> ---
+>   fs/btrfs/ioctl.c | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 72bc9d4f7708..607329dedd50 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2458,7 +2458,7 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
+>   		 * running and allows defrag on files open in read-only mode.
+>   		 */
+>   		if (!capable(CAP_SYS_ADMIN) &&
+> -		    inode_permission(&nop_mnt_idmap, inode, MAY_WRITE)) {
+> +		    inode_permission(file_mnt_idmap(file), inode, MAY_WRITE)) {
+>   			ret = -EPERM;
+>   			goto out;
+>   		}
+

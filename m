@@ -1,144 +1,102 @@
-Received: from mail.synology.com (mail.synology.com [211.23.38.101])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2AA3A46DFF0
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Aug 2026 13:01:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C29CE3C9EEF;
+	Fri, 14 Aug 2026 15:13:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786712511; cv=none; b=hMszLHxdjGTQ3IBxo5vakCNOiyL1gfcdwyNPAYxXg713z+4Q/u3CWeUEQEz8Ih6PyE54OQ2Tso8w4ICixHVjQrxHrFOOz7xmt7WhkgX+TtoWCR40iKoUR0R50CP7b6x+JBXnosTXxJhWAN42dYwzBZQStwP1q7hJlA5lqzlOiuE=
+	t=1786720427; cv=none; b=mH6c2OeoI5CaRouGJNqnMuxdseIHQ/iwwLqhSQUq0TTyOL8jS+AjH25zUxgNug+P06JXuVMnwzAAQH8ShhivLhdA2n3orACPVuZzIhaDZTg5Pc+IdGGRIX5gfQDyaa5w2Pm+mtyBYns1inCZnkyR9w0UhH6wdWTTmTrvazPobrI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786712511; c=relaxed/simple;
-	bh=PwcoXm2AnLZ+B99EWtanloYYfW0KNuq6olTNYmjwLgA=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=foiLySsIx5E7+UvvDawkRRqEiEaq37ve9c2Kvp/NmGnEUYNhcKUep3Bn5auwCzcKlP9GOTV72bRbQN9zvCrELlcz6NYQM7m6g3B9N70u09fW08OkSXc+Axx60r0aPEX0nDCCcsI97E5YSeeeFWxNP+78UCJPqYmCtCHIvwcgKB8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=W6liPOiW; arc=none smtp.client-ip=211.23.38.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
+	s=arc-20240116; t=1786720427; c=relaxed/simple;
+	bh=qSYxeWnvIPw1FX9I9xs3aYxdKA3PzrvMo2ghmEhfBDg=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=LyYaVsnLXrm7cA50w9teHc7mvg7t1OVOk+N1td9qOnob8geBWgu4pTPsQ4LFVqi2PWpnrqDxQ5P84ANFTtMKmwHbX40nJTfWOIhZh9xcjfOAk8fdSRO+drSRY/NzgInNtmFpSLyi9nafmnm5ZxdJkMkSjCOThwHjMXGoygWdu2s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=HUMYZfCl; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="W6liPOiW"
-From: Sam Ho <samho@synology.com>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=synology.com;
-	s=123; t=1786712506;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=YMINqNnFJFZ5sBo7axXdVdYBmlm4DHuJJhid9EuLBag=;
-	b=W6liPOiWciAedaRLGMBaiM0xR1H/0IUar5EOv56jR6nMOMJR2/D+bSJMCr02Wqtcn5jzDz
-	RPlA9sDkEfxS3wAOftp7vjLUciD770wFwkyQa93tWWfxZ0z42t3BD6xUTPiOOurTZB6YVP
-	oZ3IyKJpoBkd9DWxaGBvUoiDXkcCReU=
-To: clm@fb.com,
-	dsterba@suse.com
-Cc: quwenruo.btrfs@gmx.com,
-	linux-btrfs@vger.kernel.org,
-	Sam Ho <samho@synology.com>
-Subject: [PATCH v2] btrfs: preserve the compression property when other inode flags change
-Date: Fri, 14 Aug 2026 13:01:11 +0000
-Message-Id: <20260814130111.1258093-1-samho@synology.com>
-In-Reply-To: <20260814051406.1244006-1-samho@synology.com>
-References: <20260814051406.1244006-1-samho@synology.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="HUMYZfCl"
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 5A5701F00A3D;
+	Fri, 14 Aug 2026 15:13:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1786720426;
+	bh=/KgPiqew/xPu1U7F+Angxp7pjTC09MZg7T4BSyNrCSI=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=HUMYZfClAIgTKe5Kt88p0xj6wI82y+f7yTwwOfpIWVsa+jQ8KPZZtwWbnBwjPYfQh
+	 EmoIC5bhNxmpvsSuK7M5ZhbnfnT8xRLXe7Wn32dtpOoNGMi7aKHYmHImNc1/RCvaxU
+	 mw9bNEAHIYjlmCesaLrXSAdY4oWlgfMTk/Kh31/G/Jcj2e8KLW1DYOz8aI0ryId/Ny
+	 1Dk7dT9cw/d1E01tBWqRxTTsKDruu3wXbzu/Al0tpGQ0uRWdC6z4lEg+z45dTTSHj2
+	 0YbNgBDrxF8pzhd5QpFNJrfv+8Nd8x48SGZaMN3OMUNNEG6DIa8jqHa5EWFtHHxZx+
+	 U87rPOuPqinxQ==
+Date: Fri, 14 Aug 2026 08:13:45 -0700
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: Andrey Albershteyn <aalbersh@kernel.org>
+Cc: ebiggers@kernel.org, hch@lst.de, Jens Axboe <axboe@kernel.dk>,
+	Carlos Maiolino <cem@kernel.org>, fsverity@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org,
+	linux-unionfs@vger.kernel.org, linux-block@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+	linux-btrfs@vger.kernel.org, david@fromorbit.com,
+	Tal Zussman <tz2294@columbia.edu>
+Subject: Re: [PATCH v15 15/25] xfs: don't report dio_mem_align and
+ dio_offset_align for fsverity files
+Message-ID: <20260814151345.GF3556460@frogsfrogsfrogs>
+References: <20260814092448.1818082-1-aalbersh@kernel.org>
+ <20260814092448.1818082-16-aalbersh@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Spam-Flag: no
-X-Synology-Virus-Status: no
-X-Synology-MCP-Status: no
-X-Synology-Auth: pass
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260814092448.1818082-16-aalbersh@kernel.org>
 
-Setting the compression property on an inode also sets BTRFS_INODE_COMPRESS
-on it, and btrfs_inode_flags_to_fsflags() reports that back as FS_COMPR_FL
-to FS_IOC_GETFLAGS. chattr(1), like any other FS_IOC_SETFLAGS caller, reads
-the current flags, flips only the bit the user asked for and writes the
-whole set back, so a request as unrelated as "chattr +i" reaches
-btrfs_fileattr_set() with FS_COMPR_FL set.
+On Fri, Aug 14, 2026 at 11:24:32AM +0200, Andrey Albershteyn wrote:
+> Sashiko.dev reported that while fsverity files falls back to the
+> buffered IO for Direct I/O, they should not report non-zero values in
+> dio_mem_align and dio_offset_align, meaning it's not supported.
+> 
+> The STATX_DIOALIGN | STATX_DIO_READ_ALIGN flags are used to explicitly
+> report if DIO is supported or not. They can not indicate that fallback
+> to the buffered IO is used in this case. The zero alignment values also
+> mean that DIO is not supported on this file, see statx(2).
+> 
+> Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+> Acked-by: Eric Biggers <ebiggers@kernel.org>
 
-btrfs_fileattr_set() takes that as a request to enable compression and
-overwrites the compression property with the algorithm from the mount
-options, falling back to zlib when the filesystem was not mounted with
--o compress. The algorithm the user selected is silently replaced:
+This is consistent with what I saw in the manpage, so
+Reviewed-by: "Darrick J. Wong" <djwong@kernel.org>
 
-  # btrfs property set /mnt/foo compression zstd
-  # btrfs property get /mnt/foo compression
-  compression=zstd
-  # chattr +i /mnt/foo
-  # btrfs property get /mnt/foo compression
-  compression=zlib
+--D
 
-Every chattr operation triggers this, not just +i, and directories are
-affected as well, so files created afterwards inherit the wrong algorithm
-too. On a filesystem mounted with -o compress=lzo the property is replaced
-with lzo instead. Recovering needs a chattr -i first, because the immutable
-flag rejects the setxattr that "btrfs property set" issues.
-
-Prefer the algorithm recorded in the compression property and only fall
-back to the mount default when there is no property, so that unrelated
-flag changes no longer overwrite the user's choice. Inodes that have the
-compress flag set but no property still get the default, so they behave
-as before.
-
-Signed-off-by: Sam Ho <samho@synology.com>
----
-v2:
- - Pick the compression type first and convert it to a string only once at
-   the end, instead of going through btrfs_compress_type2str() for every
-   candidate, and check inode->prop_compress directly rather than testing
-   old_fsflags for FS_COMPR_FL. Suggested by Qu Wenruo; the two are
-   equivalent, since prop_compression_apply() only leaves prop_compress
-   set while BTRFS_INODE_COMPRESS is set.
- - Reword the last changelog paragraph and the comment to match.
-
-v1: https://lore.kernel.org/linux-btrfs/20260814051406.1244006-1-samho@synology.com/
-
- fs/btrfs/ioctl.c | 21 ++++++++++++++++++---
- 1 file changed, 18 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index baa645e98812..343d089aa5c3 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -377,6 +377,7 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
- 		inode_flags &= ~BTRFS_INODE_COMPRESS;
- 		inode_flags |= BTRFS_INODE_NOCOMPRESS;
- 	} else if (fsflags & FS_COMPR_FL) {
-+		enum btrfs_compression_type comp_type;
- 
- 		if (IS_SWAPFILE(&inode->vfs_inode))
- 			return -ETXTBSY;
-@@ -384,9 +385,23 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
- 		inode_flags |= BTRFS_INODE_COMPRESS;
- 		inode_flags &= ~BTRFS_INODE_NOCOMPRESS;
- 
--		comp = btrfs_compress_type2str(fs_info->compress_type);
--		if (!comp || comp[0] == 0)
--			comp = btrfs_compress_type2str(BTRFS_COMPRESS_ZLIB);
-+		/*
-+		 * Keep the algorithm recorded in the compression property,
-+		 * otherwise changing an unrelated attribute would reset it to
-+		 * the mount default, since FS_IOC_SETFLAGS callers write back
-+		 * the whole flag set they got from FS_IOC_GETFLAGS and that
-+		 * includes FS_COMPR_FL for any inode carrying the property.
-+		 *
-+		 * Inodes with the compress flag set but no property keep using
-+		 * the mount default, so they behave as before.
-+		 */
-+		if (inode->prop_compress)
-+			comp_type = inode->prop_compress;
-+		else if (fs_info->compress_type)
-+			comp_type = fs_info->compress_type;
-+		else
-+			comp_type = BTRFS_COMPRESS_ZLIB;
-+		comp = btrfs_compress_type2str(comp_type);
- 	} else {
- 		inode_flags &= ~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
- 	}
--- 
-2.34.1
-
-
-Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.
+> ---
+>  fs/xfs/xfs_iops.c | 5 +++++
+>  1 file changed, 5 insertions(+)
+> 
+> diff --git a/fs/xfs/xfs_iops.c b/fs/xfs/xfs_iops.c
+> index 55667cc762f8..70637cdcc299 100644
+> --- a/fs/xfs/xfs_iops.c
+> +++ b/fs/xfs/xfs_iops.c
+> @@ -35,6 +35,7 @@
+>  #include <linux/security.h>
+>  #include <linux/iversion.h>
+>  #include <linux/fiemap.h>
+> +#include <linux/fsverity.h>
+>  
+>  /*
+>   * Directories have different lock order w.r.t. mmap_lock compared to regular
+> @@ -580,6 +581,10 @@ xfs_report_dioalign(
+>  	struct block_device	*bdev = target->bt_bdev;
+>  
+>  	stat->result_mask |= STATX_DIOALIGN | STATX_DIO_READ_ALIGN;
+> +
+> +	if (fsverity_active(VFS_I(ip)))
+> +		return;
+> +
+>  	stat->dio_mem_align = bdev_dma_alignment(bdev) + 1;
+>  
+>  	/*
+> -- 
+> 2.54.0
+> 
+> 

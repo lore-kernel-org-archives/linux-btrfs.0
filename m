@@ -1,67 +1,67 @@
-Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
+Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 833293F12C4
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Aug 2026 22:13:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 361432D8385
+	for <linux-btrfs@vger.kernel.org>; Fri, 14 Aug 2026 22:20:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.41
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786745615; cv=none; b=WNgeXUhFDSuw8cAJd2XVgeWQ6Rz6LnD3Hj0NZk0CaDhb02EtNPFS1RynZ2+YOzlUUMkafVHbtipE10Zskq7aBITpcVMqikYt1a9hthfzhDkd5WKB9543UN12vCuhRq2nj/t44gYN97O2estQ11TVGGfIesLzZEad60r4eqtc9uM=
+	t=1786746060; cv=none; b=YOli5F/OXrkScoCpxF4iDI97nUrDRTNbk/T9OJIkOHC9NnXJFYaOtfbJLNaPV2fm3Mzt4NDT5ZAltysSxb42CWoCE3DJpiUYfmlZgb1ERgq00MiYgBK5mpD2Gho6n4lzb+W3NfcNmayVIvqpyBLJiu6DzSGmPFuoHjafaz7N+Hk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786745615; c=relaxed/simple;
-	bh=nTfIczuJLNjjqfRMaJQEDFUJqA626XDX+AUulWYLwGY=;
+	s=arc-20240116; t=1786746060; c=relaxed/simple;
+	bh=EcY9eMp2l9swC2XXLBhKkg37CfVEKoNH8tPLezu1zRI=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=T5Ai5uOQZ4Rq7FGXykIeSpvdAM0tdHGTGwupgcFHS/RLhidum7Z3TysFh7TM65MTO7EjcMOCTUJtRI/S7StjaYdMRgcHLMGIqPx/XnEiEmkymupTLwOZ761gAnvkMUG5g7PL9ujOXeV1I+dxPVdFz/gyTj0MkA/c/xr4uMum2dY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=NoKT7Frq; arc=none smtp.client-ip=209.85.128.44
+	 In-Reply-To:Content-Type; b=qmbvaj84Ys6Nqb2FGIhMuXIiGN6zwzdZoRNFKP11IiMGkLFmwjFwxi9HIJDZsmWDKgenLs5JSCRIWi/A/RlZ4KCGMCI7jXbleGML7ncp5A+jAMg4MdDDpo6SQ0EOESxuYIY9VM8FN/7J80D2DP1+Ya4Nc8k91mO7mVVg+kBoyOU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=ahaqH3sc; arc=none smtp.client-ip=209.85.128.41
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="NoKT7Frq"
-Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-495590dde14so20225215e9.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Aug 2026 15:13:30 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="ahaqH3sc"
+Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-495590dde14so20283185e9.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Aug 2026 15:20:58 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1786745609; x=1787350409; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1786746057; x=1787350857; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=X28P8hyo42o2Pv4aRrk5pNmiZRch9v/udZTA4xeoCd8=;
-        b=NoKT7FrqR7wLnFW/Ald7fpk5uRm4cyWLWAEujunZL8WyOZPbIZGLR+VO3NqP5Lb2EY
-         IYtrSAeJuxDAd4IYTN3F4rtMdwtfesyLw7kxQ1a3qsnLvqKlDswPCq6/mRDcxGg2aWSd
-         C7hJJoMaEDjSuOqlWKoxLetLGX03LZzm8CWsuIJD103VkZAiFeSovhuJ5sFmJ987gsjI
-         B0fXCPfDLVlRfRDXXOhexzAfjtbynoUGUy8Yp7Lk97+m/zd9Iry3ev2H4kshjrAwnswR
-         gRlPYqHCGgN0KWjSQRQVqg1YE3ilj4Aawtd1IjqdRnOqGPiuUIzDbcIHG6rZYnt+sX1/
-         ZARQ==
+        bh=9rH3bp69slXb8jLJ0NgtIg1Y4c+emW9+Bm+Di8skZaY=;
+        b=ahaqH3sc8gsRL0wbCuyEyGINe7jibQLWyN2b5wl1342cwNq13HH6A9ifAhL81yZDDJ
+         5tPmQyn2QBMV8Z7GxxGhSq4E1uc81O2aPDiXApI1kx5MsvY4IjFXNJlgO6xl3q7/XytQ
+         Hw7+3Vx22I2S/af1S049ArblMDQVdzOSjtD7YoXGNO6GJ+drGMyL0axkun5zdGrDTpr6
+         yG+aOp0HZNJd1fbhjLVUkb0C9QyK4n4Y0CjqNvL7M911JUTtYb8wdVEDCjM1UwbiQ60t
+         MhKFwyaHxpR4PXonprbcHmxiOKuk85DTYCOuWOHSVXtweSln2wFWJ/hhQQ4F8lUEkvpI
+         fYIw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786745609; x=1787350409;
+        d=1e100.net; s=20251104; t=1786746057; x=1787350857;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=X28P8hyo42o2Pv4aRrk5pNmiZRch9v/udZTA4xeoCd8=;
-        b=NtdxZRbik+z+q8yMBJS9zJ2dZaXMZpxialUDdZC4Rtfzm+umjEJouLQnsAPv02MxBS
-         YaRux2PgG778wE58f8CGOi1u4ch68IS7e73szKOHXLrq5HAVnitwXOMEy97axZw+5BnQ
-         yq23Q7VPS5SsL206/X0k1cmLHpIKu/aMdX+2DbXRlcO/9sYxzWp7t+0KkfzoEtVwxoTA
-         9Tv1sDA6av3SMw9+bTjMgeqAEXD08HhtdTwuoFIT+t+wcngG1AVK7owFM2QqbPRaEg1R
-         +fNw9dXb4KFHys2nA5S7ulAYDLbpajMg/ggJ2ahEtAl6v7aiwRi00tleZdlXHDAUzBBL
-         +pOw==
-X-Forwarded-Encrypted: i=1; AHgh+RqyrVIHsSLBTCcX2r+Z5fZWY2zfTPO63hpb3+PJdb1TNTK9Je8I+qLMrh8/Gwg1+cKG6ZDU3tQg8hVr8g==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yx+7H0Vuy7eBL+pHPLqSrYbgoQe0ZGjlQey6kn/lZA52h2pRipW
-	lWELgKjpHri3uBtLsw7+qWJVLf/Dy8pHuTaI3b6mI8Ba4zg2PF3hWIBMu8W+FrQLcrc=
-X-Gm-Gg: AR+sD13sqfq4I/JHOl7oTnz+jdYewHBZMPu9zHl7PV+KM44n4L4vqH6p9nrHDNxPrO8
-	yB2hCZx9PqK/Kue9S80ViM/C9s/lZHeUV2hN2jXgpbh1VLP3ubkqTj415FSl7iuMpZnNPO/Essn
-	dAiCm094u+aPyGgAdwYaBX8DOCtUwK9LlV0SPkylLzT0fq3ySXJRkR4Bb2wgidkXAc7VshY1s/I
-	fPwOhPCmKoHiOnnGuwYc5/fKEqQE9T2Lcz3bz1DC53+Q8RF7CYlhB7MBYOP485B25VZMoRpt9I2
-	WqrbecJWLfkhHaHODQgSrcqfhc8Kt3EA6M5p4hy+rRUpwsKI89xXGcPdO5QSBEzJsct1tVIfPYp
-	IEiWYqPNXp/h+VvcNSbMCBLRaahohrheh3R1Lx35wiUfYFMtrCrMGW2F+fmrNRE2pynjsIFpqNl
-	VeJuQJDTNLAYYejhHDmfUJhVgptJKqUuxgQvZme/mMoINP1vENF55TLw==
-X-Received: by 2002:a05:600c:4e14:b0:499:7e2b:8e5 with SMTP id 5b1f17b1804b1-4998793ffe7mr129283525e9.5.1786745608765;
-        Fri, 14 Aug 2026 15:13:28 -0700 (PDT)
+        bh=9rH3bp69slXb8jLJ0NgtIg1Y4c+emW9+Bm+Di8skZaY=;
+        b=pb3S+4vrjdN/AK/CJ/P4k+5ORithwH8DrGUeazDJhfq911CItFxivBM09mswcr+2YG
+         0oSL545itOT7OelTl8W7xUUh+U7bP9SwpJnLZDyG5fssDRwaQWk2XqiITC4eawmI1CQU
+         lNO0SzTr+0q0qyCMkXVkxeP1BGJIo9cUTdHvAhQRv/4GgLssFYGqOpdlqMH2Rw6p7eB1
+         EVchcpaq888mZT5ssVkEEILZ8ZmsEEe5KV2fFh15Z8zGQNBFUBHGh5060CwwiBpzfZl1
+         8ECpKJjQ63nXH79I7/Qj9z9yTMml0O49jqfjrQ7HrdbVrNzcM67wM3ELWJWXfC61uA4x
+         nXFg==
+X-Forwarded-Encrypted: i=1; AHgh+RqKu4ZJX9Ajq1mT4g9xQwtH0EF9sEo2weH9ymSr0HsRqxLaHwFuyaXfDFLEo1Av144WN97dQCmW4QhZig==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxuPSYYvpI5H4wXvnzyjGgTEDfFi6n8UO95mWY2KIPudS4TEK6D
+	nQ1M5J2XTliveqbI31abcggWE+qE/tPekJuJPi8c+6O2EcjiuSIzlUqU2x7XS0qWjb0=
+X-Gm-Gg: AR+sD12S7NCRu7dECZL/PnrnM0cJDYnGdzRKUe5Vwkh/KxD33wnYxdUHH/NwwsZdJhI
+	bi0iOoP24Z1SKGg6brM1iHXuJnyd4QyrxfnSC0HxIBoiJ8++Dzr0H0oEUZ8j5fiNgNflO5Flvl5
+	fl+7z24oO9/RFzzJS5+Rl35R0bnovwUcWV8qu+r0UySYC7jpm8kxgp0wHzYb0uuWzzzFZMDn5F+
+	/LQIwCBxSaRZ7Ne5R+wwXVqmS+8sEXqYgOUymaCTl72G7MeEptAHu936RwejabpAW4ppeINksB/
+	ffsY0av5Pc5c2+LyYmfPMWc0hWamvV/o+tbBdtBhKVzs8pyy2XYkQVXv4J6Og132mbS40lW6ASI
+	FIY6OS0JPr6VeqYptu1WrdXmxKinvtyEODD8MaTxoFpvooBlnzE6ZFXxabdEaeuPAUdIfJ6qoP+
+	yOYV2g2FjaIsb9xMx7fhlYZmVKUSZteT0d9Ew2kI94e/2WCEUgEnN14w==
+X-Received: by 2002:a05:600c:3788:b0:493:e365:7630 with SMTP id 5b1f17b1804b1-4998798b5afmr86870205e9.14.1786746057369;
+        Fri, 14 Aug 2026 15:20:57 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-320ea8fe3cdsm8274529eec.28.2026.08.14.15.13.24
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-141387ac9b1sm14390655c88.2.2026.08.14.15.20.54
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 14 Aug 2026 15:13:26 -0700 (PDT)
-Message-ID: <7845cec2-adf1-408f-b7eb-019a5cd398f7@suse.com>
-Date: Sat, 15 Aug 2026 07:43:21 +0930
+        Fri, 14 Aug 2026 15:20:56 -0700 (PDT)
+Message-ID: <6e0c2009-04ff-4e64-a56f-6f0394da9686@suse.com>
+Date: Sat, 15 Aug 2026 07:50:51 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,12 +69,11 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: free qgroup configuration when quota enable fails
-To: Guanjie Chen <jk.chen1095@gmail.com>
-Cc: clm@fb.com, dsterba@suse.com, fdmanana@suse.com,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <694e88fd-a165-4518-88d4-cb2f22e8925b@suse.com>
- <20260814123034.19289-1-jk.chen1095@gmail.com>
+Subject: Re: [PATCH] btrfs: scrub: report the failing sector's address, not
+ the stripe base
+To: "James C. Owens" <jamesowens@optonline.net>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com
+References: <20260814162405.1434693-1-jamesowens@optonline.net>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -101,58 +100,140 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260814123034.19289-1-jk.chen1095@gmail.com>
+In-Reply-To: <20260814162405.1434693-1-jamesowens@optonline.net>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/8/14 22:00, Guanjie Chen 写道:
-> Hi Qu,
+在 2026/8/15 01:54, James C. Owens 写道:
+> scrub_stripe_report_errors() iterates over the sectors of a stripe, but
+> every message it emits passes stripe->logical, the address of the first
+> sector of the 64KiB stripe, rather than the address of the sector being
+> reported. The physical address is likewise computed once, before the
+> loop, from stripe->logical.
 > 
->> We can reach this out branch if btrfs_start_transaction() failed, but
->> the fs_info->quota_root is already setup by another process.
+> This matters because scrub_print_common_warning() uses that logical
+> address for the backref walk which produces the "root %llu inode %llu
+> offset %llu ... (path: ...)" part of the message. As the address is
+> always the stripe base, the reported root/inode/offset/path can identify
+> a different file from the one whose sector actually failed.
 > 
-> Do you mean the window where qgroup_ioctl_lock is dropped before
-> btrfs_start_transaction()?
+> A 64KiB stripe routinely spans several extents belonging to unrelated
+> files. On the machine where this was found, the stripe at logical
+> 0x17D9380000 holds four sectors of /usr/share/plasma/emoji/bg.dict, then
+> a file inside a docker volume, then sectors referenced only by
+> snapshots. Every error anywhere in that stripe is attributed to bg.dict.
 > 
-> I don't think another task can set fs_info->quota_root in that window.
-> The quota ioctl holds fs_info->subvol_sem for writing across the whole
-> btrfs_quota_enable() call, including while qgroup_ioctl_lock is dropped.
+> The effect is visible statistically: across ten months and four kernel
+> series that machine logged 81 distinct flagged logical addresses, and
+> every one of them is exactly 64KiB aligned. Since BTRFS_STRIPE_LEN is
+> 64KiB and stripe->logical is stripe aligned by construction, real
+> failures distributed across sectors could not produce that.
 > 
-> As far as I can see, quota_root is only set in two places:
-> btrfs_quota_enable(), which is serialized by subvol_sem, and
-> btrfs_read_roots(), which runs during mount initialization.
+> Report the address of the sector actually being examined. Adding the
+> sector offset to the physical address is valid because BTRFS_STRIPE_LEN
+> is the unit contiguous on a single device for every profile, so a stripe
+> never crosses a device boundary.
+> 
+> Signed-off-by: James C. Owens <jamesowens@optonline.net>
 
-Right, I missed that rwsem.
+Fixes: 0096580713ff ("btrfs: scrub: introduce error reporting 
+functionality for scrub_stripe")
 
-But still, for error handling one should be in the reverse order.
+> ---
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -1045,6 +1045,10 @@
 
-And for out: label, there are cases we're going out label without 
-creating any qgroup. In that case, qgroups removing should be done only 
-for cases where a qgroup is created.
+The patch format doesn't looks correct.
+How did you generate the patch?
 
-> 
-> The disable path also calls btrfs_free_qgroup_config() and relies on the
-> same subvol_sem and qgroup_ioctl_lock serialization for the qgroup
-> configuration. If subvol_sem did not prevent another quota operation
-> here, the disable path would have a similar lifetime problem.
-> 
-> So if quota_root was NULL at the first check, I believe it must still be
-> NULL when btrfs_start_transaction() fails. I agree that the changelog
-> should have mentioned subvol_sem as part of the protection.
-> 
-> Did I miss another runtime path that can set quota_root without holding
-> subvol_sem?
-> 
-> Also, just to clarify, this is not my first btrfs contribution, although
-> my previous change was only a small one.
+Normally the lines should look like:
 
-The same, LLM disclosure if you're using it.
+---
+  fs/btrfs/dir-item.c | 3 ---
+  1 file changed, 3 deletions(-)
 
-Nowadays I won't trust anyone who is not a regular contributor.
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index 30ddafaf8d3d..a6bd69be522b 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -149,8 +149,6 @@ int btrfs_insert_dir_item(struct btrfs_trans_handle 
+*trans,
 
-> 
-> Thanks,
-> Guanjie
+Which should include a summary of modified files, the hash, a simple 
+context.
+
+Otherwise the patch looks good to me, and still applies.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+>   
+>   skip:
+>   	for_each_set_bit(sector_nr, &extent_bitmap, stripe->nr_sectors) {
+> +		const u64 sector_logical = stripe->logical +
+> +			((u64)sector_nr << fs_info->sectorsize_bits);
+> +		const u64 sector_physical = physical +
+> +			((u64)sector_nr << fs_info->sectorsize_bits);
+>   		bool repaired = false;
+>   
+>   		if (scrub_bitmap_test_bit_is_metadata(stripe, sector_nr)) {
+> @@ -1073,12 +1077,12 @@
+>   			if (dev) {
+>   				btrfs_err_rl(fs_info,
+>   		"scrub: fixed up error at logical %llu on dev %s physical %llu",
+> -					    stripe->logical, btrfs_dev_name(dev),
+> -					    physical);
+> +					    sector_logical, btrfs_dev_name(dev),
+> +					    sector_physical);
+>   			} else {
+>   				btrfs_err_rl(fs_info,
+>   			   "scrub: fixed up error at logical %llu on mirror %u",
+> -					    stripe->logical, stripe->mirror_num);
+> +					    sector_logical, stripe->mirror_num);
+>   			}
+>   			continue;
+>   		}
+> @@ -1087,30 +1091,30 @@
+>   		if (dev) {
+>   			btrfs_err_rl(fs_info,
+>   "scrub: unable to fixup (regular) error at logical %llu on dev %s physical %llu",
+> -					    stripe->logical, btrfs_dev_name(dev),
+> -					    physical);
+> +					    sector_logical, btrfs_dev_name(dev),
+> +					    sector_physical);
+>   		} else {
+>   			btrfs_err_rl(fs_info,
+>   	  "scrub: unable to fixup (regular) error at logical %llu on mirror %u",
+> -					    stripe->logical, stripe->mirror_num);
+> +					    sector_logical, stripe->mirror_num);
+>   		}
+>   
+>   		if (scrub_bitmap_test_bit_io_error(stripe, sector_nr))
+>   			if (__ratelimit(&rs) && dev)
+>   				scrub_print_common_warning("i/o error", dev, false,
+> -						     stripe->logical, physical);
+> +						     sector_logical, sector_physical);
+>   		if (scrub_bitmap_test_bit_csum_error(stripe, sector_nr))
+>   			if (__ratelimit(&rs) && dev)
+>   				scrub_print_common_warning("checksum error", dev, false,
+> -						     stripe->logical, physical);
+> +						     sector_logical, sector_physical);
+>   		if (scrub_bitmap_test_bit_meta_error(stripe, sector_nr))
+>   			if (__ratelimit(&rs) && dev)
+>   				scrub_print_common_warning("header error", dev, false,
+> -						     stripe->logical, physical);
+> +						     sector_logical, sector_physical);
+>   		if (scrub_bitmap_test_bit_meta_gen_error(stripe, sector_nr))
+>   			if (__ratelimit(&rs) && dev)
+>   				scrub_print_common_warning("generation error", dev, false,
+> -						     stripe->logical, physical);
+> +						     sector_logical, sector_physical);
+>   	}
+>   
+>   	/* Update the device stats. */
 

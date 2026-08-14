@@ -1,37 +1,48 @@
-Received: from mail.synology.com (mail.synology.com [211.23.38.101])
+Received: from m16.mail.163.com (m16.mail.163.com [117.135.210.2])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 355B82737F9
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Aug 2026 05:21:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=211.23.38.101
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1660D37F741;
+	Fri, 14 Aug 2026 08:31:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=117.135.210.2
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786684892; cv=none; b=S5bsNxFFoFf8/MrhSfrrNrmCFbnK1wnWww1K5iQHGvvWwVKZqVSOxiS/+Io4xdnO9pCKpw6k4iYuxEu5P+LNfpmE96434PAfZ+JcTWMA6u+3HVwDSV3vJztI5PJoHUdpPcti/ifzIN0risyx10MK9r74esiex9H2pL8TZseYEsA=
+	t=1786696316; cv=none; b=cgeewfpLouiNwmhJdPA82Wqu//RQB/Br+HqbFJoKYTk3VkCeEkbsGkw3yaZ9dPEhPq7uc/IvEDRjFRoRUmtaLc24v4qgHVi40096/kKsThp2tSMaBjC7zitfYti2Bv/tI0Qdgk2iE5MKT/2mqk/+J1tcUDPO4WCz6dgJ2KSy52o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786684892; c=relaxed/simple;
-	bh=eK3dD2xj7oq8TzQCIuDJcARFAcjN6JN+C3tHT2eQdes=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type; b=JPEQi2isQOdruILOXx6VnHTYkDxW8UtVYix2iG7t9eyNJXUBKa/GfjHCQecdj3tO7X1AV4Rj4CK++TyC3phhOWmW+4WECY4mx236uwTMirdaKzh05AdkZXdXadZ+zsqOkkdHu8vFZHCSuW+KSsmnABPoBuxa86jcZq//eiQzZZ4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com; spf=pass smtp.mailfrom=synology.com; dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b=Hy5zkaA/; arc=none smtp.client-ip=211.23.38.101
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=synology.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=synology.com
+	s=arc-20240116; t=1786696316; c=relaxed/simple;
+	bh=xKcF41yHCZsQt4KHxjoO4vDOl8mu+S3V+uV6+LKhFRY=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version; b=qagK0vhiphhr0OrDN4zJn1oxqnm4pQSgO/cRBgEaTwSWK6xzw4mOBtq4I6hJZvnmX6Ce5RmsGjEihyi2Gee7kMlBMVvgXFMchtmShEUuZUeznnMewux7Z3rA5y6rWpHZC7A/C62JB4UGMsx4buIxh5EZ0FDQV1g0NFzQDrPvAcc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=ZDjm/QI5; arc=none smtp.client-ip=117.135.210.2
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="Hy5zkaA/"
-From: Sam Ho <samho@synology.com>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=synology.com;
-	s=123; t=1786684458;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding;
-	bh=/fAoz+K+eSXsvNeNzBojpz07xsO1JTAxCjKcFXxl8oc=;
-	b=Hy5zkaA/5c2yZCjjTQmyt27Ru8xM8+YzoxJpIuSD5wm5xhYPpPCDgziQ493x/wmqIi4DKs
-	K+2Mp/LiJLDxr//btLZYNE6tNOBC77GrdgL0ek/HQkbK3dFJXXLa6UNofjJSbaK3VHaajf
-	Vk+YPeGKyynQYDuj4AW9FFi/fz5OEgM=
-To: clm@fb.com,
-	dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org,
-	Sam Ho <samho@synology.com>
-Subject: [PATCH] btrfs: preserve the compression property when other inode flags change
-Date: Fri, 14 Aug 2026 05:14:06 +0000
-Message-Id: <20260814051406.1244006-1-samho@synology.com>
+	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="ZDjm/QI5"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
+	s=s110527; h=From:To:Subject:Date:Message-Id:MIME-Version; bh=uP
+	We5+dfRLqTKKLSZfG39MrfmdbzyW4D0JKzpWEgbh4=; b=ZDjm/QI5P4CLoa/8hZ
+	+tiG4OmfgD/fBBbY66hErCscxxsE3EO85GRkt5JdzYy521Fa43jOgpGD3vn1thPh
+	KLiU98hbXp2y+GlVoFTx/F8xJbVpGnZMfBx1y42Uic3LGDH8CwcCFo6hY05tHKSj
+	sHEKO1o629YgryW2b6mm49zk4=
+Received: from localhost.localdomain (unknown [])
+	by gzga-smtp-mtada-g1-0 (Coremail) with SMTP id _____wDn4e1J0n5qDZryBQ--.22503S2;
+	Fri, 14 Aug 2026 16:31:07 +0800 (CST)
+From: Yang Xiuwei <yangxiuwei@kylinos.cn>
+To: yangxiuwei@kylinos.cn
+Cc: clm@fb.com,
+	dsterba@suse.com,
+	akpm@linux-foundation.org,
+	viro@zeniv.linux.org.uk,
+	maharmstone@fb.com,
+	quwenruo.btrfs@gmx.com,
+	linux-btrfs@vger.kernel.org,
+	io-uring@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-block@vger.kernel.org
+Subject: Re: [PATCH v2 0/7] btrfs: fix io_uring encoded IO cleanup and compat
+Date: Fri, 14 Aug 2026 16:31:05 +0800
+Message-Id: <20260814083105.253101-1-yangxiuwei@kylinos.cn>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20260806085041.1410576-1-yangxiuwei@kylinos.cn>
+References: <20260806085041.1410576-1-yangxiuwei@kylinos.cn>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -39,83 +50,28 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Synology-Spam-Flag: no
-X-Synology-Virus-Status: no
-X-Synology-MCP-Status: no
-X-Synology-Auth: pass
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-Content-Type: text/plain
+X-CM-TRANSID:_____wDn4e1J0n5qDZryBQ--.22503S2
+X-Coremail-Antispam: 1Uf129KBjvdXoW5KF4UXrW3KrWkWFyrtF1xGrg_yoWxWFXE9r
+	Z7Kw4j9w48JF17JayUKrWSvrZ8KasrCr1UJws5uFy7J3s3XFZrXFZYv34xJw1Yya9a9rn0
+	vr1FqFsFqw1fKjkaLaAFLSUrUUUUjb8apTn2vfkv8UJUUUU8Yxn0WfASr-VFAUDa7-sFnT
+	9fnUUvcSsGvfC2KfnxnUUI43ZEXa7xREOJ5DUUUUU==
+Sender: yangxiuwei2025@163.com
+X-CM-SenderInfo: p1dqw55lxzvxisqskqqrwthudrp/xtbCwgsBkWp+0kuVBAAA3F
 
-Setting the compression property on an inode also sets BTRFS_INODE_COMPRESS
-on it, and btrfs_inode_flags_to_fsflags() reports that back as FS_COMPR_FL
-to FS_IOC_GETFLAGS. chattr(1), like any other FS_IOC_SETFLAGS caller, reads
-the current flags, flips only the bit the user asked for and writes the
-whole set back, so a request as unrelated as "chattr +i" reaches
-btrfs_fileattr_set() with FS_COMPR_FL set.
+On Thu, Aug 06, 2026 at 04:50:34PM +0800, Yang Xiuwei wrote:
+> 3. SQPOLL / io-wq leave in_compat_syscall() false; export
+>    __import_iovec() and pass IO_URING_F_COMPAT for the iovec import.
 
-btrfs_fileattr_set() takes that as a request to enable compression and
-overwrites the compression property with the algorithm from the mount
-options, falling back to zlib when the filesystem was not mounted with
--o compress. The algorithm the user selected is silently replaced:
+I retested with a 32-bit process on x86_64. Encoded ioctl and uring
+IO both work, including when import runs on iou-wrk.
 
-  # btrfs property set /mnt/foo compression zstd
-  # btrfs property get /mnt/foo compression
-  compression=zstd
-  # chattr +i /mnt/foo
-  # btrfs property get /mnt/foo compression
-  compression=zlib
+That claim was wrong for the usual same-process case. io-wq / SQPOLL
+threads are created via create_io_thread() while the creator is still
+in the compat syscall, so TS_COMPAT is copied into the new task and
+import_iovec() already sees compat iovecs.
 
-Every chattr operation triggers this, not just +i, and directories are
-affected as well, so files created afterwards inherit the wrong algorithm
-too. On a filesystem mounted with -o compress=lzo the property is replaced
-with lzo instead. Recovering needs a chattr -i first, because the immutable
-flag rejects the setxattr that "btrfs property set" issues.
+I will drop 3/7 and 4/7 in v3. The other cleanup patches stay.
 
-Only pick the default algorithm when compression is actually being enabled
-by this call, that is when FS_COMPR_FL was not set before, and otherwise
-keep the algorithm recorded in the property. Inodes that have the compress
-flag set but no property still get the default, so they behave as before.
+Thanks,
+Yang Xiuwei
 
-Signed-off-by: Sam Ho <samho@synology.com>
----
- fs/btrfs/ioctl.c | 22 +++++++++++++++++++---
- 1 file changed, 19 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index baa645e98812..2e54694f06f7 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -384,9 +384,25 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
- 		inode_flags |= BTRFS_INODE_COMPRESS;
- 		inode_flags &= ~BTRFS_INODE_NOCOMPRESS;
- 
--		comp = btrfs_compress_type2str(fs_info->compress_type);
--		if (!comp || comp[0] == 0)
--			comp = btrfs_compress_type2str(BTRFS_COMPRESS_ZLIB);
-+		/*
-+		 * If compression was already enabled, keep the algorithm that
-+		 * is recorded in the compression property. Otherwise changing
-+		 * an unrelated attribute would reset it to the mount default,
-+		 * since FS_IOC_SETFLAGS callers pass back the whole flag set
-+		 * they got from FS_IOC_GETFLAGS.
-+		 *
-+		 * Fall back to the default when compression is being enabled
-+		 * by this call, or when the inode has the compress flag set
-+		 * but no property, which is possible on filesystems touched by
-+		 * kernels that did not keep the two in sync.
-+		 */
-+		if (old_fsflags & FS_COMPR_FL)
-+			comp = btrfs_compress_type2str(inode->prop_compress);
-+		if (!comp || comp[0] == 0) {
-+			comp = btrfs_compress_type2str(fs_info->compress_type);
-+			if (!comp || comp[0] == 0)
-+				comp = btrfs_compress_type2str(BTRFS_COMPRESS_ZLIB);
-+		}
- 	} else {
- 		inode_flags &= ~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
- 	}
--- 
-2.34.1
-
-
-Disclaimer: The contents of this e-mail message and any attachments are confidential and are intended solely for addressee. The information may also be legally privileged. This transmission is sent in trust, for the sole purpose of delivery to the intended recipient. If you have received this transmission in error, any use, reproduction or dissemination of this transmission is strictly prohibited. If you are not the intended recipient, please immediately notify the sender by reply e-mail or phone and delete this message and its attachments, if any.

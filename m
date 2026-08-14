@@ -1,132 +1,275 @@
-Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 67C0B3C5833;
-	Fri, 14 Aug 2026 15:19:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.158.5
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A0301371049;
+	Fri, 14 Aug 2026 15:19:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786720754; cv=none; b=FI0ioaPKJUUADYx0V/yPm26e0gPzN8DDkSnWoZzUCnRlg9ndy/KkMUTx3H1MFeesBI5ef3uehblsRqy2wpVVrw+mlRH0EbcR11pnXaPJXthZQsIDtnNn7SPDzIgh3N9MVmPDuE2N03Gdb4LnYHGftSPTVQx+0yjWmnNshWO2Mk4=
+	t=1786720771; cv=none; b=YPojs2X/V7KgXDud5qwWBbqdJrnHAUFBtLNRUSneGppZbnqQQNmgsSLj1caSBxEIX4/LKMRW6EIRBF0AyZ2t2s8gx+0Y00gWuHJBEtPVVoLxasGPX0K56gojasuoNhDrgMwI55VFEWh71O2xSv9r2Tn9UJ5umg5Vb3k+laVNlQ0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786720754; c=relaxed/simple;
-	bh=qu3TN8PARvQwbNE7zw5aXxH50NXsnT8muCVR8ElOsWE=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=UEsqpO79D2gLm3fireKLzRnltMTLpDrkZ728LH8wQVR44mDS/oYePzztzmkifnycQ6VBP3nuqOLGfgICSDugfHZMciiSwCHfVg8tV1Xo3ugKiuIAAbQLnuWciZkPi1bZpRCeug4UtxNbe+bWYINf8o8mVu2tsno3lbWe4VdyhS4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=DlyDR/hO; arc=none smtp.client-ip=148.163.158.5
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
+	s=arc-20240116; t=1786720771; c=relaxed/simple;
+	bh=jbJyzGZ3fwQRcrNkA1167Kvzd1fz7sJ+ClanBLAh270=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=q3N5/t4S853fnz4k1xofONejAs2NMA0IRvt3Rdv5QwpE5N6LO5LPKvjXHa94T4ihLstDwRcWIcZCBHHuSOsOmxq0TCJL8TKbA1c6cfWqEXRZnhqTejklrnerctx/LbZPOSWYDXha+UGe1rF+BZRp/1jknqS5bG6TsuueNvLKfZc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Sh6Ix6p8; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="DlyDR/hO"
-Received: from pps.filterd (m0353725.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 67EE5l0M230400;
-	Fri, 14 Aug 2026 15:19:09 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=cc
-	:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pp1; bh=n3J942
-	P/eq0B1uSt3EEMGOQ1xzenCKdLSHay2td+42M=; b=DlyDR/hOdiG3LfJZoBHndQ
-	rZgD8YzoYC32r+l6WnkYISdzkZNzqoemo4bFR458ilcir5Z569Y1oqHDmRPE9KPS
-	2Es1fwozUDAUk5ZpeKTY0TsRzCxqE3lR4LWLFWt65m9GRT6JDd5LQNC0DriFGt+2
-	s1iV4IeNGQBQdS2yJKX2h9Ky1sTPXbsiB9HMi2NQGs3qOSzsOBCLopb22/Dmm9vK
-	RE/tyXnCrmkOd60lGYvw997GptiddZ4Lyfh5rPqnC8bpSLgd02imuj/tcnqlU2BJ
-	BbOU0U3sVJHBRunAi/tSN4JmWLrpqtiwvTr06TKfZGkxLjly9Ho4KGeh2lkURE8A
-	==
-Received: from ppma23.wdc07v.mail.ibm.com (5d.69.3da9.ip4.static.sl-reverse.com [169.61.105.93])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 4fyb245ke1-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 14 Aug 2026 15:19:09 +0000 (GMT)
-Received: from pps.filterd (ppma23.wdc07v.mail.ibm.com [127.0.0.1])
-	by ppma23.wdc07v.mail.ibm.com (8.18.1.7/8.18.1.7) with ESMTP id 67EFBWKZ021450;
-	Fri, 14 Aug 2026 15:19:08 GMT
-Received: from smtprelay05.fra02v.mail.ibm.com ([9.218.2.225])
-	by ppma23.wdc07v.mail.ibm.com (PPS) with ESMTPS id 4fxg9hfqu1-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 14 Aug 2026 15:19:08 +0000 (GMT)
-Received: from smtpav04.fra02v.mail.ibm.com (smtpav04.fra02v.mail.ibm.com [10.20.54.103])
-	by smtprelay05.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 67EFJ6gB47382988
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Fri, 14 Aug 2026 15:19:06 GMT
-Received: from smtpav04.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 91EA920043;
-	Fri, 14 Aug 2026 15:19:06 +0000 (GMT)
-Received: from smtpav04.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 2AA8D20040;
-	Fri, 14 Aug 2026 15:19:06 +0000 (GMT)
-Received: from [9.224.77.173] (unknown [9.224.77.173])
-	by smtpav04.fra02v.mail.ibm.com (Postfix) with ESMTP;
-	Fri, 14 Aug 2026 15:19:06 +0000 (GMT)
-Message-ID: <95bcecaa-a5e3-48b0-a7d5-db6569370389@linux.ibm.com>
-Date: Fri, 14 Aug 2026 17:19:05 +0200
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Sh6Ix6p8"
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 3CBF01F000E9;
+	Fri, 14 Aug 2026 15:19:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1786720770;
+	bh=0klogLjyyrJ7xYZT2XeSv/GSN01RIwWoJwmz22NNlKY=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=Sh6Ix6p8w0rMY21l/SyGhDH/Puiq3KCD2ZfqRtXlwaGKVe6mzlRjCAHUhwv2CbZSF
+	 gzTExqrBONIkQS0VqKcDbn/v5Uq9qR1dZsaaGWz+H1CbqcVlW2/bIFDRhUr6v0febU
+	 oDlzCW2QCbye8SdY7FhtKp6nk+DofT/YnjdAOntIlEW62h07hjCttKo00tEvILyd7q
+	 aayX+e8EXQS9E4WypU/Peskdb/uQTtLVWZ5Ti6nSF9HZ2fWHt+r0NpFkI0SyFR4kxh
+	 BVdlsVK8QglbY3yG2ZuijNh7PjXezokYiIS3BCeT7TQeQ63mVKl51d/g6uKpkiefMd
+	 xVswMRUtWLDSA==
+Date: Fri, 14 Aug 2026 08:19:29 -0700
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: Andrey Albershteyn <aalbersh@kernel.org>
+Cc: ebiggers@kernel.org, hch@lst.de, Jens Axboe <axboe@kernel.dk>,
+	Carlos Maiolino <cem@kernel.org>, fsverity@lists.linux.dev,
+	linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org,
+	linux-unionfs@vger.kernel.org, linux-block@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+	linux-btrfs@vger.kernel.org, david@fromorbit.com,
+	Tal Zussman <tz2294@columbia.edu>
+Subject: Re: [PATCH v15 18/25] xfs: make xfs_free_eofblocks() work with
+ fsverity inodes
+Message-ID: <20260814151929.GH3556460@frogsfrogsfrogs>
+References: <20260814092448.1818082-1-aalbersh@kernel.org>
+ <20260814092448.1818082-19-aalbersh@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 1/1] s390x/css: Fix css stsch detection to go beyond 8192
- devices
-To: linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>, linux-kernel@vger.kernel.org,
-        kvm@vger.kernel.org, linux-s390@vger.kernel.org
-References: <20260814151759.1831153-1-borntraeger@linux.ibm.com>
-Content-Language: en-US
-From: Christian Borntraeger <borntraeger@linux.ibm.com>
-In-Reply-To: <20260814151759.1831153-1-borntraeger@linux.ibm.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-TM-AS-GCONF: 00
-X-Authority-Analysis: v=2.4 cv=XqfK/1F9 c=1 sm=1 tr=0 ts=6a7f31ed cx=c_pps
- a=3Bg1Hr4SwmMryq2xdFQyZA==:117 a=3Bg1Hr4SwmMryq2xdFQyZA==:17
- a=IkcTkHD0fZMA:10 a=Sv0fKeRqtYgA:10 a=VkNPw1HP01LnGYTKEx00:22
- a=RnoormkPH1_aCDwRdu11:22 a=V8glGbnc2Ofi9Qvn3v5h:22 a=VnNF1IyMAAAA:8
- a=icbd4pwFJuYQJSJ-mEUA:9 a=QEXdDO2ut3YA:10
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwODE0MDExNCBTYWx0ZWRfX/sYM2M42pjyn
- /kA5Tq1JMASn8wOG+Mqlk/dEso/0U/GgqSlpzaItzhLdgq56AIknWYUEg7EbXrayJlytrp0W0Cm
- jN/BNF9tKBtEboTldJ2IfXU5/xI65Gtkch38xGRww2rShCI49CkRFMVCv7aUqyemlMTEIdVF5NP
- P98zNxASqwvq0pBd1X5dJ+6rWXGMf7cmgJjKdhFATpAFiGIe5g82+I+BENgLFAhcproutLBgvbn
- 9HFx+X2RmxxUQzong9HrduV1ZfkT0w5Z53f2uV5ls3ut+duwhS0WUSFy96tyGKueLfffov9yzuW
- S2oKQB5CpcW3aCVAJwyWbP5JYY+oNJR7TDQUI6sNPZ5/RC5qMJpSdMZRvgl3wPa1JJWkdMb+ZNi
- tLFk7ehZEIUWUDnW4kDMG6XbUsj5QxmQuW6PCRrmUClkggOOjLT/9neoL1moB8VxqrZbhrGlBPT
- SbMxiwkyIt81d68Z8aQ==
-X-Proofpoint-ORIG-GUID: -dTYWqZdcDC-KqsZkz-jYZ9lvb81qo5G
-X-Proofpoint-GUID: -dTYWqZdcDC-KqsZkz-jYZ9lvb81qo5G
-X-Proofpoint-Spam-Info: AW1haW4tMjYwODE0MDExNCBTYWx0ZWRfX65ZeR1fa8aNp
- ijxcPX+4OxUxclJyz6OuxSXGqVEjSwwqQaKXTecrPPjgx3T3do6gybtabBuLnnw29oYVSCxUs0Z
- G9AmsGXxRaeTr+XYlYrYJriygeWmBe8=
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1176,Hydra:6.1.134,FMLib:17.12.100.49
- definitions=2026-08-14_05,2026-08-12_01,2025-10-01_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- lowpriorityscore=0 spamscore=0 adultscore=0 malwarescore=0 clxscore=1015
- suspectscore=0 priorityscore=1501 impostorscore=0 phishscore=0 bulkscore=0
- classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
- reason=mlx scancount=1 engine=8.22.0-2606150000 definitions=main-2608140114
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260814092448.1818082-19-aalbersh@kernel.org>
 
-Sorry for the noise, please ignore.
+On Fri, Aug 14, 2026 at 11:24:35AM +0200, Andrey Albershteyn wrote:
+> xfs_free_eofblocks() removes any preallocations and unwritten extents
+> beyond EOF. This is undesired for fsverity as it stores metadata beyond
+> EOF. However, while merkle tree is being built delayed preallocation and
 
-Am 14.08.26 um 17:17 schrieb Christian Borntraeger:
-> find_last_bit expects a size in bits and not in words. the calculation
-> limits the number of guest devices to 8192.  This probably does not
-> matter in reality, its wrong anyway.
+grammar nit: "... is being built, delayed preallocations..."
+
+> unwritten extents are used. After metadata construction is done,
+> fsverity inodes becomes read-only and won't be changed anymore, none of
+> these unwritten extents or preallocations in post EOF region will be
+> used.
 > 
-> Fixes: df1fe5bb49241 ("s390: Virtual channel subsystem support")
-> Signed-off-by: Christian Borntraeger <borntraeger@linux.ibm.com>
+> Add XFS_BMAPI_UNWRITTEN and change xfs_bunmapi_range to remove only
+> unwritten extents sitting beyond EOF and set it for fsverity inodes.
+> 
+> The xfs_free_eofblocks() will be called on fsverity inode as usual.
+> However, inodes which are undergoing merkle tree construction need to
+> be skipped in case reclaim takes place.
+> 
+> Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+
+Looks good to me, thanks for revising the commit message :)
+Reviewed-by: "Darrick J. Wong" <djwong@kernel.org>
+
+--D
+
 > ---
->   hw/s390x/css.c | 3 +--
->   1 file changed, 1 insertion(+), 2 deletions(-)
+>  fs/xfs/libxfs/xfs_bmap.c | 55 +++++++++++++++++++++++++++++-----------
+>  fs/xfs/libxfs/xfs_bmap.h |  6 ++++-
+>  fs/xfs/xfs_bmap_util.c   | 25 +++++++++++++++---
+>  3 files changed, 67 insertions(+), 19 deletions(-)
 > 
-> diff --git a/hw/s390x/css.c b/hw/s390x/css.c
-> index 3a67b670531..dedd39006bf 100644
-> --- a/hw/s390x/css.c
-> +++ b/hw/s390x/css.c
-> @@ -2023,8 +2023,7 @@ bool css_schid_final(int m, uint8_t cssid, uint8_t ssid, uint16_t schid)
->           return true;
->       }
->       set = channel_subsys.css[real_cssid]->sch_set[ssid];
-> -    return schid > find_last_bit(set->schids_used,
-> -                                 (MAX_SCHID + 1) / sizeof(unsigned long));
-> +    return schid > find_last_bit(set->schids_used,(MAX_SCHID + 1));
->   }
->   
->   unsigned int css_find_free_chpid(uint8_t cssid)
-
+> diff --git a/fs/xfs/libxfs/xfs_bmap.c b/fs/xfs/libxfs/xfs_bmap.c
+> index cc48f6e20e80..a2d9cef952c4 100644
+> --- a/fs/xfs/libxfs/xfs_bmap.c
+> +++ b/fs/xfs/libxfs/xfs_bmap.c
+> @@ -6144,15 +6144,12 @@ xfs_bmap_validate_extent(
+>  			XFS_IS_REALTIME_INODE(ip), whichfork, irec);
+>  }
+>  
+> -/*
+> - * Used in xfs_itruncate_extents().  This is the maximum number of extents
+> - * freed from a file in a single transaction.
+> - */
+> -#define	XFS_ITRUNC_MAX_EXTENTS	2
+> -
+>  /*
+>   * Unmap every extent in part of an inode's fork.  We don't do any higher level
+>   * invalidation work at all.
+> + *
+> + * The XFS_BMAPI_UNWRITTEN could be passed to remove only unwritten extents,
+> + * leaving out normal extents in place.
+>   */
+>  int
+>  xfs_bunmapi_range(
+> @@ -6162,23 +6159,51 @@ xfs_bunmapi_range(
+>  	xfs_fileoff_t		startoff,
+>  	xfs_fileoff_t		endoff)
+>  {
+> -	xfs_filblks_t		unmap_len = endoff - startoff + 1;
+> +	xfs_filblks_t           unmap_len;
+>  	int			error = 0;
+> +	int			nimaps = 1;
+> +	int			done = 0;
+> +	struct xfs_bmbt_irec	imap;
+> +	int			read_flags =
+> +			flags & (XFS_BMAPI_ATTRFORK | XFS_BMAPI_ENTIRE);
+>  
+>  	xfs_assert_ilocked(ip, XFS_ILOCK_EXCL);
+>  
+> -	while (unmap_len > 0) {
+> -		ASSERT((*tpp)->t_highest_agno == NULLAGNUMBER);
+> -		error = __xfs_bunmapi(*tpp, ip, startoff, &unmap_len, flags,
+> -				XFS_ITRUNC_MAX_EXTENTS);
+> +	while (startoff < endoff) {
+> +		nimaps = 1;
+> +
+> +		error = xfs_bmapi_read(ip, startoff, endoff - startoff + 1,
+> +				&imap, &nimaps, read_flags);
+>  		if (error)
+>  			goto out;
+>  
+> -		/* free the just unmapped extents */
+> -		error = xfs_defer_finish(tpp);
+> -		if (error)
+> +		if (nimaps == 0)
+>  			goto out;
+> -		cond_resched();
+> +
+> +		if ((flags & XFS_BMAPI_UNWRITTEN) &&
+> +				imap.br_state != XFS_EXT_UNWRITTEN) {
+> +			startoff = imap.br_startoff + imap.br_blockcount;
+> +			continue;
+> +		}
+> +
+> +		unmap_len = min(endoff - imap.br_startoff + 1,
+> +				imap.br_blockcount);
+> +		done = 0;
+> +		while (!done) {
+> +			ASSERT((*tpp)->t_highest_agno == NULLAGNUMBER);
+> +			error = xfs_bunmapi(*tpp, ip, imap.br_startoff,
+> +					unmap_len, flags, nimaps, &done);
+> +			if (error)
+> +				goto out;
+> +
+> +			/* free the just unmapped extent */
+> +			error = xfs_defer_finish(tpp);
+> +			if (error)
+> +				goto out;
+> +			cond_resched();
+> +		}
+> +
+> +		startoff = imap.br_startoff + unmap_len;
+>  	}
+>  out:
+>  	return error;
+> diff --git a/fs/xfs/libxfs/xfs_bmap.h b/fs/xfs/libxfs/xfs_bmap.h
+> index d5f2729305fa..0f36431d9936 100644
+> --- a/fs/xfs/libxfs/xfs_bmap.h
+> +++ b/fs/xfs/libxfs/xfs_bmap.h
+> @@ -90,6 +90,9 @@ struct xfs_bmalloca {
+>  /* Try to align allocations to the extent size hint */
+>  #define XFS_BMAPI_EXTSZALIGN	(1u << 11)
+>  
+> +/* Process unwritten extents only. Used for unmapping */
+> +#define XFS_BMAPI_UNWRITTEN	(1u << 12)
+> +
+>  #define XFS_BMAPI_FLAGS \
+>  	{ XFS_BMAPI_ENTIRE,	"ENTIRE" }, \
+>  	{ XFS_BMAPI_METADATA,	"METADATA" }, \
+> @@ -102,7 +105,8 @@ struct xfs_bmalloca {
+>  	{ XFS_BMAPI_COWFORK,	"COWFORK" }, \
+>  	{ XFS_BMAPI_NODISCARD,	"NODISCARD" }, \
+>  	{ XFS_BMAPI_NORMAP,	"NORMAP" },\
+> -	{ XFS_BMAPI_EXTSZALIGN,	"EXTSZALIGN" }
+> +	{ XFS_BMAPI_EXTSZALIGN,	"EXTSZALIGN" }, \
+> +	{ XFS_BMAPI_UNWRITTEN,	"UNWRITTEN" }
+>  
+>  
+>  static inline int xfs_bmapi_aflag(int w)
+> diff --git a/fs/xfs/xfs_bmap_util.c b/fs/xfs/xfs_bmap_util.c
+> index c88b9ade7389..36ac18df5743 100644
+> --- a/fs/xfs/xfs_bmap_util.c
+> +++ b/fs/xfs/xfs_bmap_util.c
+> @@ -31,6 +31,7 @@
+>  #include "xfs_rtbitmap.h"
+>  #include "xfs_rtgroup.h"
+>  #include "xfs_zone_alloc.h"
+> +#include <linux/fsverity.h>
+>  
+>  /* Kernel only BMAP related definitions and functions */
+>  
+> @@ -553,6 +554,13 @@ xfs_can_free_eofblocks(
+>  	if (last_fsb <= end_fsb)
+>  		return false;
+>  
+> +	/*
+> +	 * Don't clean fsverity inodes which have merkle tree being built, the
+> +	 * merkle tree is written beyond EOF
+> +	 */
+> +	if (xfs_iflags_test(ip, XFS_VERITY_CONSTRUCTION))
+> +		return false;
+> +
+>  	/*
+>  	 * Check if there is an post-EOF extent to free.  If there are any
+>  	 * delalloc blocks attached to the inode (data fork delalloc
+> @@ -579,6 +587,9 @@ xfs_free_eofblocks(
+>  	struct xfs_trans	*tp;
+>  	struct xfs_mount	*mp = ip->i_mount;
+>  	int			error;
+> +	int			bmapi_flags = XFS_BMAPI_NODISCARD;
+> +	bool			has_verity =
+> +			ip->i_diflags2 & XFS_DIFLAG2_VERITY;
+>  
+>  	/* Attach the dquots to the inode up front. */
+>  	error = xfs_qm_dqattach(ip);
+> @@ -593,15 +604,20 @@ xfs_free_eofblocks(
+>  	 *
+>  	 * Note that this means we also leave speculative preallocations in
+>  	 * place for preallocated files.
+> +	 *
+> +	 * Clean up delalloc reservations for fsverity too as those won't be
+> +	 * used
+>  	 */
+> -	if (ip->i_diflags & (XFS_DIFLAG_PREALLOC | XFS_DIFLAG_APPEND)) {
+> +	if (ip->i_diflags & (XFS_DIFLAG_PREALLOC | XFS_DIFLAG_APPEND) ||
+> +			has_verity) {
+>  		if (ip->i_delayed_blks) {
+>  			xfs_bmap_punch_delalloc_range(ip, XFS_DATA_FORK,
+>  				round_up(XFS_ISIZE(ip), mp->m_sb.sb_blocksize),
+>  				LLONG_MAX, NULL);
+>  		}
+>  		xfs_inode_clear_eofblocks_tag(ip);
+> -		return 0;
+> +		if (!has_verity)
+> +			return 0;
+>  	}
+>  
+>  	error = xfs_trans_alloc(mp, &M_RES(mp)->tr_itruncate, 0, 0, 0, &tp);
+> @@ -613,6 +629,9 @@ xfs_free_eofblocks(
+>  	xfs_ilock(ip, XFS_ILOCK_EXCL);
+>  	xfs_trans_ijoin(tp, ip, 0);
+>  
+> +	if (has_verity)
+> +		bmapi_flags |= XFS_BMAPI_UNWRITTEN;
+> +
+>  	/*
+>  	 * Do not update the on-disk file size.  If we update the on-disk file
+>  	 * size and then the system crashes before the contents of the file are
+> @@ -620,7 +639,7 @@ xfs_free_eofblocks(
+>  	 * bug).
+>  	 */
+>  	error = xfs_itruncate_extents_flags(&tp, ip, XFS_DATA_FORK,
+> -				XFS_ISIZE(ip), XFS_BMAPI_NODISCARD);
+> +				XFS_ISIZE(ip), bmapi_flags);
+>  	if (error)
+>  		goto err_cancel;
+>  
+> -- 
+> 2.54.0
+> 
+> 

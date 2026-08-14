@@ -1,67 +1,41 @@
-Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CFA76394798
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2026 22:34:22 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DF1CB3DB994;
+	Fri, 14 Aug 2026 03:30:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.19
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786660466; cv=none; b=KdjOVwUAphJcHN63Q/u7XYiK13FnrHRrlAHEMsiVOypwh7+AGz8mA+b9YPHhMRaZrVbwILikPMxJdFARRuDHhYlH0Hj3ptg7ykmFafi3EExSORHr8K03qVc+h1j3wa/vfnCxNvv3uAaku104XPVbEe+HrIMnmc7RRj7ow7aPhp8=
+	t=1786678212; cv=none; b=eAlxeSWI4zyVgoIvzd1qIS7awjHPoR3o5864oYABld7Wz0TqxGyux4VrVskGrPG8bSM7TwGCCX04OKOzHujlIyNPzLIdsAn+rtNxKs3l9/9hW2XWZ3sJmdGJ3UN6uZsYrqREB0lHHNvDav1mAX2uxP8SkkoKmwY6ZrX0A/hGNTs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786660466; c=relaxed/simple;
-	bh=CqwwRQUJ+XKai2avLTHOAp6LUUu2/3hYgCxAQqJ/iVY=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=FRBiVhZVAjTDbb4evvcs3wwxBz1YAzM/j6f4QVZnrTEyGtiSU/HtPmc3KSTBKWOfVo6i6hcxVrvC1/NTV9dm+HFIWvYz9osY92HFLIm6RzN6eqZP+iywKYj7dCRyv6f+J7GOAbfYC8HZPSpEVOTQmyado8GwccmQWdF8w5O4hYQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=ViEPFD3X; arc=none smtp.client-ip=209.85.128.54
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1786678212; c=relaxed/simple;
+	bh=02E9NQTbLSIZDnaov2S8hEdlHVv3ickbnfnx+cyRYGQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=b2AwCnS6vYweTsWrrM3UtAqpfCj44NNBkN9KhcLUy29IlHkS7e2gMmldtXB6GYV/ft/JEJgUP1zRFxkK4QyKowBMiOgmDQ9oy9kMsJf1tRz3xBg7zurHQNo194VQ0e/MHInCxmuPkqqCYm8W2vxsqlnWNMBKeVAUMcuklOGYm5g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=GNKiafPf; arc=none smtp.client-ip=212.227.15.19
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="ViEPFD3X"
-Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-49558ce01afso3029455e9.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2026 15:34:22 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1786660461; x=1787265261; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:cc:to:from:subject:user-agent
-         :mime-version:date:message-id:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=/gkZLiPbmFCfyh2jx5Ad1gJnupvIB/KLCEEUMgE0wxs=;
-        b=ViEPFD3XyO/hiGkwIT9DsfXy3utI6HYmWu+VlLVjUDzUShwpaLAppGuUjwf0W3tdmw
-         Dw85/XmmLhmIbKbobuC6oEkEGJG68TYE0l2D32S391QHc3uHfnDMMpK4gAPDS4HMT7it
-         qS8G7uS4Q0lK5rXQ0YxeZ0rUHgwLdcrzN4fef/pP07hhMsjM9PIRIqxc+xufTEAK5IUM
-         ZjQzGepXld/tR62iNnB1XqjoVKRwAOVg2Kf/umkJlngJdnDaB1BsmDiNIp+kCqiiu/rq
-         E1P+Hwm8XgHx5n0qH+ywPfbat/H0nXI2myIN7YghwgKvTJy2wdqUsH2K+/t/uvoll1Ij
-         Yzeg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786660461; x=1787265261;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:cc:to:from:subject:user-agent
-         :mime-version:date:message-id:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=/gkZLiPbmFCfyh2jx5Ad1gJnupvIB/KLCEEUMgE0wxs=;
-        b=pVb6jDAMlaRnVrIIrXCJx+Jkp69Vvi+KlKfPVqc9PsvavqajAlL+uaeuL/+Il8wDW8
-         r+0wOHL2T0j3vTke4qEgE0duK/ZghhBgFSLxGxvLSn8i0bZQ1nlBfEnjVr4WiCuQmnkp
-         ySRBpWVqbih117J3uaIXOBDYQdi1PLAR2HOJBMEukXetjWWHndl67nE/Otn58f8HInJh
-         ohCiAaQ40OT8JavIUZMOuBxcs7x7i8pWHXXO0gWsvhPgt9+/Pmyo8Nh4IeiMsSMwJS5u
-         vd0dW3SaxUeGrLO4dCd6hU12mbjmBlT9BDlgqPi+sV6Tnm9YkmAKTOsFpifz65adCzWP
-         Q7Dg==
-X-Forwarded-Encrypted: i=1; AHgh+RrJgWWhrMLj5cW6X6R4tpOXeoo9OprvqL44wDNyZ0IIAo+wKd6OKho5v+gUCGQX71Qz9l2CM1gIR1Ijyw==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yw7uimJwWPx7e0fB/aWAnnqCQ4UWuyClxoBv529BlWKzYjtnQMb
-	cfPWvrvmKrma2vafQCxt0YRwTbQclj/ZhMQLIK2Tyd2M+HwrwWn1qWiYBb0vWCMuxb8=
-X-Gm-Gg: AR+sD10V4jpuI5gpfJe8eewraLNCoyp8xtLsnVVY/QvCc8lYyAjsKj+mZ3ZB+/NOiqX
-	uGBZGnaMQC72O2+F2y7LyoEL/7v2yypWUr2Gk37gug1VOtoGrE095hLIrlLd85Z/aFa64GXrenA
-	cjEvCn4hxQl32h6PPL4B1QPCgotVbJUZMIYLtQ7TRGR1tK4d5gOCsp78RjYoQn+oyCCR3wkFXx7
-	nlxRwwkS53xxwu69ua3n6xB1K14vQzUZVG3OgZo6wxhS4Ni6u6mXW4+sWh2FdojhphuzVeJjisc
-	aAKQycNqdEVgqyxe/krYhJJuzXVzirzfXnt4dP9n8/cBOTh53BPOaZbjdnpyia2tLaVKrHedcAk
-	MT++FCo3PRYuFIg6tY43MteFClRKGRBCIb6er1/RsFprvBLzLUoQj7TOkaki94WzyCNjJ6O9O9V
-	d5rexHk4XgYjNS2Iluf31EI5eRSHEw/nXOONLGI/FH72TjRbAVYmZluA==
-X-Received: by 2002:a05:600c:500d:b0:499:86f5:9e33 with SMTP id 5b1f17b1804b1-499879bc10emr18513325e9.18.1786660460892;
-        Thu, 13 Aug 2026 15:34:20 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-141387af4adsm1964213c88.1.2026.08.13.15.34.16
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 13 Aug 2026 15:34:19 -0700 (PDT)
-Message-ID: <7095ff94-609d-4b0c-b425-37e652b3ea17@suse.com>
-Date: Fri, 14 Aug 2026 08:04:13 +0930
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="GNKiafPf"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1786678189; x=1787282989; i=quwenruo.btrfs@gmx.com;
+	bh=qy9L6rm0nWj/jDttflnZqROl7i8owJaub6mNIyl0m50=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=GNKiafPfUYCbSd02MFWVM7ZuMN+BXG8sI/jjmjAPhA8TYuS1mHutqGQr/wkQRVUT
+	 7aL/t4YrD1FxVoGg5xrOAbdtm/ToCLYT6DMdMPbvqxx2Ehk4+4elFlSg+ieG+bXzt
+	 qVzrW5VeJUVkotybHtBUkSI1k4OaZFkrlDCdH2ukSvGMKapuV/mS+ToHhNTuPTmQg
+	 73MJkxjBGa+KxcR8msEllx6fOKaBFKYbhPUCZLTu7KmpGTck8kBh8ZqEI2WbTuZkQ
+	 hY/axVTqkUNTm64++bFPYUSHF0oNIdxArDfSzfKsclnV6svUOIEGVVYF4FQ/m/ZoN
+	 Wdqj5Ont6dBor7vhvQ==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MhD2O-1xOqNC43JC-00czR2; Fri, 14
+ Aug 2026 05:29:49 +0200
+Message-ID: <faf160bc-b4fd-426e-a3f1-367272e50f9b@gmx.com>
+Date: Fri, 14 Aug 2026 12:59:38 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,1033 +43,178 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH RFC v2] btrfs: keep mixed block group writable for
- relocation setup commit
-From: Qu Wenruo <wqu@suse.com>
-To: Bartosz Chronowski <immersa.bartosz.chronowski@gmail.com>,
- linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
- "Yan, Zheng" <zheng.yan@oracle.com>, linux-kernel@vger.kernel.org,
- syzbot+021d10c4d4edc87daa03@syzkaller.appspotmail.com
-References: <vu6cjfyamplqqiy4hbu5eobbp65cy4fzv2jci4n5lfalanvmlp@pf5bfsi33gl7>
- <8120fe88-3b71-4e0c-aeb1-11a2c5726ddb@suse.com>
+Subject: Re: [PATCH] btrfs: use mount idmap for defrag permission check
+To: Seth Forshee <sforshee@kernel.org>, Tao Cui <cui.tao@linux.dev>,
+ Qu Wenruo <wqu@suse.com>
+Cc: clm@fb.com, dsterba@suse.com, josef@toxicpanda.com, brauner@kernel.org,
+ linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-kernel@vger.kernel.org, Tao Cui <cuitao@kylinos.cn>
+References: <20260813034146.1207640-1-cui.tao@linux.dev>
+ <bd66065f-bae5-482a-84d6-a78850c9cebe@suse.com> <an36yH30W965eqZk@ubuntu-x1>
 Content-Language: en-US
-Autocrypt: addr=wqu@suse.com; keydata=
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
  1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
  9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
  gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <8120fe88-3b71-4e0c-aeb1-11a2c5726ddb@suse.com>
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <an36yH30W965eqZk@ubuntu-x1>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:FjGEpjTzlSiA4c/73vPIBc3193p4wEQuw5v4t9VC65B1PswhmAW
+ HAO10Duecx6fazBMWQLO1/h4iKxjC7wUG0j2qFr6I9ueeS9BEWvD/5JXOsoaCrBLRMi59GQ
+ +aYCzaTjx3HgzN71ywcN1XmvD+KszMWigHAow3NhPME82oMQqLwh1tb2wVJsUF8+pJ9JjrL
+ 68ZjlXhQs2lB9Jmpao5nw==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:A0XmXBIFKdA=;xWNqI+FYlrVU6V/S7ZfBgY7hfol
+ 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
+ 22aXJwh7RDPO/q/SEhCocQg0Y7NE=
 
 
 
-在 2026/8/14 08:01, Qu Wenruo 写道:
-> 
-> 
-> 在 2026/8/13 20:47, Bartosz Chronowski 写道:
->> Relocating a nearly full mixed block group can abort the filesystem
->> transaction with -ENOSPC and trigger a warning in cleanup_transaction().
+=E5=9C=A8 2026/8/14 02:41, Seth Forshee =E5=86=99=E9=81=93:
+> On Thu, Aug 13, 2026 at 04:04:05PM +0930, Qu Wenruo wrote:
 >>
->> Making the mixed target read-only can lead to a condition where
->> metadata COW cannot use its free space. In particular,
->> btrfs_relocate_block_group() marks the mixed target read-only before
->> prepare_to_relocate() commits the setup transaction. find_free_extent()
->> then skips all free extents in the target. Commit-time COW still needs
->> new tree blocks, so the transaction can fail with -ENOSPC when no
->> suitable extent remains in another block group.
-> 
-> Then why things like btrfs_inc_block_group_ro() fail with ENOSPC in the 
-> first place?
+>>
+>> =E5=9C=A8 2026/8/13 13:11, Tao Cui =E5=86=99=E9=81=93:
+>>> From: Tao Cui <cuitao@kylinos.cn>
+>>>
+>>> btrfs_ioctl_defrag() checks MAY_WRITE with nop_mnt_idmap, which skips
+>>> the mount idmap.  On an idmapped mount the owner comparison then uses
+>>> the caller's fsuid against the raw on-disk uid, dropping the mapping.
+>>> Every other permission/owner check in btrfs ioctl uses
+>>> file_mnt_idmap(file) (e.g. :1152, :1310, :1946); this one missed it.
+>>>
+>>> Switch to file_mnt_idmap(file).  It equals nop_mnt_idmap on a normal
+>>> mount, and the check stays behind !capable(CAP_SYS_ADMIN), so only
+>>> unprivileged callers on idmapped btrfs change.  The RO-fd note in the
+>>> comment above is about the file descriptor, not this inode check, and
+>>> is unaffected.
+>>>
+>>> Signed-off-by: Tao Cui <cuitao@kylinos.cn>
+>>
+>> Fixes: 4609e1f18e19 ("fs: port ->permission() to pass mnt_idmap")
+>=20
+> This is a misattribution. Using nop_mnt_idmap there keeps the behavior
+> the same as it was before the commit. Switching to the mount idmap opens
+> up BTRFS_IOC_DEFRAG* to idmapped users when they weren't before, which
+> is a separate policy decision that didn't belong in that change.
 
-Sorry, missing the important word "not".
+OK, removed from for-next, and will not add the fixes tag.
+>=20
+> Saying that these ioctls should be allowed for idmapped users just
+> because others are isn't a good justification. Why are these ioctls safe
+> for idmapped users?  Do they actually require this capability?
 
-Why that function did *not* fail with ENOSPC in the first place?
+I'll let the author to do the explanation.
 
-> 
-> I believe that's the root problem that your agent never explained.
-> 
->>
->> Committing before the read-only transition does not fix the bug.
->> Another workload can reserve space or start transaction N+1 between the
->> commit and btrfs_inc_block_group_ro().
->>
->> Keep a non-zoned, non-remap mixed target writable until its relocation
->> setup transaction finishes. Fence data, tree-log and NOCOW admission
->> while ordinary metadata COW remains allowed. Drain operations that
->> crossed the fence before committing the setup transaction with
->> reloc_ctl unpublished.
->>
->> Implement the boundary at the source files that own each state:
->>
->> - block-group.c owns the setup fence and final read-only transition,
->>    treats the fence as read-only for NOCOW and swap-extents admission,
->>    and makes other read-only holders wait for setup completion;
->> - extent-tree.c rejects data and tree-log allocation into the fenced
->>    target, allows ordinary metadata COW, and keeps block group
->>    reservations only for data allocations until ordered extent
->>    registration;
->> - inode.c treats the fenced target as read-only during NOCOW checks;
->> - relocation.c drains each pass, binds setup to the running transaction
->>    and owns the read-only and reloc_ctl lifecycle;
->> - transaction.c completes setup after switching commit roots and before
->>    transaction N+1 can start;
->> - disk-io.c cancels a pending setup when its transaction is cleaned up.
->>
->> At the transaction tail, either mark the target read-only and publish
->> reloc_ctl, or return the read-only transition error to relocation while
->> the transaction completes and the target stays writable. Apply this
->> boundary to every non-remap mixed relocation pass. Keep the existing
->> paths unchanged for zoned, remap-tree and non-mixed block groups.
-> 
-> It's overly complex for a not-so-common feature.
-> 
-> Remember mixed block groups are mostly for small fses, which also 
-> matches the syzbot test environment.
-> 
-> There are mixed-bg users but very few, and even for that case I believe 
-> they have a much larger fs, thus should have more buffer room.
-> 
-> I do not think this is the correct way to go, nor even properly 
-> explained the bug in the first place.
->>
->> Fixes: 3fd0a5585eb9 ("Btrfs: Metadata ENOSPC handling for balance")
->> Reported-by: syzbot+021d10c4d4edc87daa03@syzkaller.appspotmail.com
->> Closes: https://syzkaller.appspot.com/bug?extid=021d10c4d4edc87daa03
->> Link: https://lore.kernel.org/r/9d9d207e- 
->> ad2a-4af6-9d0b-9a2bfc61d442@suse.com
->> Assisted-by: Codex:gpt-5.6-sol syzkaller
->> Signed-off-by: Bartosz Chronowski <immersa.bartosz.chronowski@gmail.com>
->> ---
->> Changes in v2:
->> - Drop the pre-commit-only approach because it leaves an admission window
->>    before the block group becomes read-only.
->> - Keep the mixed target writable for setup metadata COW while fencing 
->> data,
->>    tree-log and NOCOW admission.
->> - Bind setup to the exact transaction and publish the read-only state and
->>    reloc_ctl before transaction N+1 can start.
->> - Apply the same boundary to every non-remap relocation pass and handle
->>    abort cleanup explicitly.
->>
->> Tested:
->> - Focused and full x86_64 builds.
->> - The syzbot C reproducer completed 16 independent runs without a crash.
->>
->> v1: https://lore.kernel.org/r/a06b5077-baa5-473f-9c65- 
->> bf72ac651b14@mail.kernel.org
->>
->>   fs/btrfs/block-group.c | 128 ++++++++++++++++---
->>   fs/btrfs/block-group.h |   8 +-
->>   fs/btrfs/disk-io.c     |   1 +
->>   fs/btrfs/extent-tree.c |  19 ++-
->>   fs/btrfs/extent-tree.h |   1 +
->>   fs/btrfs/inode.c       |   4 +-
->>   fs/btrfs/relocation.c  | 280 ++++++++++++++++++++++++++++++++++++-----
->>   fs/btrfs/relocation.h  |   4 +
->>   fs/btrfs/transaction.c |   4 +
->>   fs/btrfs/transaction.h |   3 +
->>   10 files changed, 395 insertions(+), 57 deletions(-)
->>
->> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
->> index 8def7abb728f..332fc2721e01 100644
->> --- a/fs/btrfs/block-group.c
->> +++ b/fs/btrfs/block-group.c
->> @@ -21,6 +21,7 @@
->>   #include "fs.h"
->>   #include "accessors.h"
->>   #include "extent-tree.h"
->> +#include "relocation.h"
->>   static struct kmem_cache *block_group_cache;
->>   static struct kmem_cache *free_space_ctl_cache;
->> @@ -363,7 +364,8 @@ struct btrfs_block_group 
->> *btrfs_inc_nocow_writers(struct btrfs_fs_info *fs_info,
->>           return NULL;
->>       spin_lock(&bg->lock);
->> -    if (bg->ro)
->> +    if (bg->ro || test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +                   &bg->runtime_flags))
->>           can_nocow = false;
->>       else
->>           atomic_inc(&bg->nocow_writers);
->> @@ -419,7 +421,8 @@ void btrfs_wait_block_group_reservations(struct 
->> btrfs_block_group *bg)
->>   {
->>       struct btrfs_space_info *space_info = bg->space_info;
->> -    ASSERT(bg->ro);
->> +    ASSERT(bg->ro || test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +                  &bg->runtime_flags));
->>       if (!(bg->flags & BTRFS_BLOCK_GROUP_DATA))
->>           return;
->> @@ -1434,7 +1437,8 @@ struct btrfs_trans_handle 
->> *btrfs_start_trans_remove_block_group(
->>    * data in this block group. That check should be done by relocation 
->> routine,
->>    * not this function.
->>    */
->> -static int inc_block_group_ro(struct btrfs_block_group *cache, bool 
->> force)
->> +static int __inc_block_group_ro(struct btrfs_block_group *cache, bool 
->> force,
->> +                bool reloc_setup)
->>   {
->>       struct btrfs_space_info *sinfo = cache->space_info;
->>       u64 num_bytes;
->> @@ -1442,6 +1446,11 @@ static int inc_block_group_ro(struct 
->> btrfs_block_group *cache, bool force)
->>       spin_lock(&sinfo->lock);
->>       spin_lock(&cache->lock);
->> +    if (!reloc_setup && test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +                     &cache->runtime_flags)) {
->> +        ret = -EAGAIN;
->> +        goto out;
->> +    }
->>       if (cache->swap_extents) {
->>           ret = -ETXTBSY;
->> @@ -1504,6 +1513,54 @@ static int inc_block_group_ro(struct 
->> btrfs_block_group *cache, bool force)
->>       return ret;
->>   }
->> +static int inc_block_group_ro(struct btrfs_block_group *cache, bool 
->> force)
->> +{
->> +    return __inc_block_group_ro(cache, force, false);
->> +}
->> +
->> +int btrfs_bg_reloc_setup_start(struct btrfs_block_group *cache, bool 
->> drop_ro)
->> +{
->> +    struct btrfs_fs_info *fs_info = cache->fs_info;
->> +    struct btrfs_space_info *sinfo = cache->space_info;
->> +    int ret = 0;
->> +
->> +    ASSERT(!btrfs_is_zoned(fs_info));
->> +
->> +    mutex_lock(&fs_info->ro_block_group_mutex);
->> +    spin_lock(&sinfo->lock);
->> +    spin_lock(&cache->lock);
->> +    if (test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP, &cache->runtime_flags) ||
->> +        cache->ro != (drop_ro ? 1 : 0)) {
->> +        ret = -EAGAIN;
->> +        goto out;
->> +    }
->> +
->> +    set_bit(BLOCK_GROUP_FLAG_RELOC_SETUP, &cache->runtime_flags);
->> +    if (drop_ro) {
->> +        cache->ro = 0;
->> +        sinfo->bytes_readonly -= 
->> btrfs_block_group_available_space(cache);
->> +        list_del_init(&cache->ro_list);
->> +    }
->> +out:
->> +    spin_unlock(&cache->lock);
->> +    spin_unlock(&sinfo->lock);
->> +    mutex_unlock(&fs_info->ro_block_group_mutex);
->> +    return ret;
->> +}
->> +
->> +int btrfs_bg_reloc_setup_finish(struct btrfs_block_group *cache)
->> +{
->> +    ASSERT(test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP, &cache- 
->> >runtime_flags));
->> +    return __inc_block_group_ro(cache, false, true);
->> +}
->> +
->> +void btrfs_bg_reloc_setup_abort(struct btrfs_block_group *cache)
->> +{
->> +    ASSERT(test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP, &cache- 
->> >runtime_flags));
->> +    clear_and_wake_up_bit(BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +                  &cache->runtime_flags);
->> +}
->> +
->>   static bool clean_pinned_extents(struct btrfs_trans_handle *trans,
->>                    const struct btrfs_block_group *bg)
->>   {
->> @@ -1945,6 +2002,7 @@ static int btrfs_reclaim_block_group(struct 
->> btrfs_block_group *bg, int *reclaime
->>       u64 reserved;
->>       u64 old_total;
->>       int ret = 0;
->> +    bool marked_ro = false;
->>       /* Don't race with allocators so take the groups_sem */
->>       down_write(&space_info->groups_sem);
->> @@ -2018,15 +2076,19 @@ static int btrfs_reclaim_block_group(struct 
->> btrfs_block_group *bg, int *reclaime
->>           return 0;
->>       }
->> -    ret = inc_block_group_ro(bg, false);
->> +    if (!btrfs_relocation_uses_fenced_setup(bg)) {
->> +        ret = inc_block_group_ro(bg, false);
->> +        if (!ret)
->> +            marked_ro = true;
->> +    }
->>       up_write(&space_info->groups_sem);
->>       if (ret < 0)
->>           return ret;
->>       /*
->>        * The amount of bytes reclaimed corresponds to the sum of the
->> -     * "used" and "reserved" counters. We have set the block group
->> -     * to RO above, which prevents reservations from happening but
->> +     * "used" and "reserved" counters. Relocation prevents new data
->> +     * reservations before it drains existing reservations, but
->>        * we may have existing reservations for which allocation has
->>        * not yet been done - btrfs_update_block_group() was not yet
->>        * called, which is where we will transfer a reserved extent's
->> @@ -2048,7 +2110,8 @@ static int btrfs_reclaim_block_group(struct 
->> btrfs_block_group *bg, int *reclaime
->>       trace_btrfs_reclaim_block_group(bg);
->>       ret = btrfs_relocate_chunk(fs_info, bg->start, false);
->>       if (ret) {
->> -        btrfs_dec_block_group_ro(bg);
->> +        if (marked_ro)
->> +            btrfs_dec_block_group_ro(bg);
->>           btrfs_err(fs_info, "error relocating chunk %llu",
->>                 bg->start);
->>           used = 0;
->> @@ -3131,7 +3194,7 @@ int btrfs_inc_block_group_ro(struct 
->> btrfs_block_group *cache,
->>       struct btrfs_root *root = btrfs_block_group_root(fs_info);
->>       u64 alloc_flags;
->>       int ret;
->> -    bool dirty_bg_running;
->> +    bool retry;
->>       if (unlikely(!root)) {
->>           btrfs_err(fs_info, "missing block group root");
->> @@ -3145,9 +3208,18 @@ int btrfs_inc_block_group_ro(struct 
->> btrfs_block_group *cache,
->>        * Thus here we skip all chunk allocations.
->>        */
->>       if (sb_rdonly(fs_info->sb)) {
->> -        mutex_lock(&fs_info->ro_block_group_mutex);
->> -        ret = inc_block_group_ro(cache, false);
->> -        mutex_unlock(&fs_info->ro_block_group_mutex);
->> +        do {
->> +            mutex_lock(&fs_info->ro_block_group_mutex);
->> +            retry = test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +                     &cache->runtime_flags);
->> +            if (!retry)
->> +                ret = inc_block_group_ro(cache, false);
->> +            mutex_unlock(&fs_info->ro_block_group_mutex);
->> +            if (retry)
->> +                ret = wait_on_bit(&cache->runtime_flags,
->> +                          BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +                          TASK_INTERRUPTIBLE);
->> +        } while (retry && !ret);
->>           return ret;
->>       }
->> @@ -3156,7 +3228,7 @@ int btrfs_inc_block_group_ro(struct 
->> btrfs_block_group *cache,
->>           if (IS_ERR(trans))
->>               return PTR_ERR(trans);
->> -        dirty_bg_running = false;
->> +        retry = false;
->>           /*
->>            * We're not allowed to set block groups readonly after the 
->> dirty
->> @@ -3164,7 +3236,19 @@ int btrfs_inc_block_group_ro(struct 
->> btrfs_block_group *cache,
->>            * back off and let this transaction commit.
->>            */
->>           mutex_lock(&fs_info->ro_block_group_mutex);
->> -        if (test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &trans->transaction- 
->> >flags)) {
->> +        if (test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +                 &cache->runtime_flags)) {
->> +            mutex_unlock(&fs_info->ro_block_group_mutex);
->> +            btrfs_end_transaction(trans);
->> +
->> +            ret = wait_on_bit(&cache->runtime_flags,
->> +                      BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +                      TASK_INTERRUPTIBLE);
->> +            if (ret)
->> +                return ret;
->> +            retry = true;
->> +        } else if (test_bit(BTRFS_TRANS_DIRTY_BG_RUN,
->> +                    &trans->transaction->flags)) {
->>               u64 transid = trans->transid;
->>               mutex_unlock(&fs_info->ro_block_group_mutex);
->> @@ -3173,9 +3257,9 @@ int btrfs_inc_block_group_ro(struct 
->> btrfs_block_group *cache,
->>               ret = btrfs_wait_for_commit(fs_info, transid);
->>               if (ret)
->>                   return ret;
->> -            dirty_bg_running = true;
->> +            retry = true;
->>           }
->> -    } while (dirty_bg_running);
->> +    } while (retry);
->>       if (do_chunk_alloc) {
->>           /*
->> @@ -3411,7 +3495,9 @@ static void cache_save_setup(struct 
->> btrfs_block_group *block_group,
->>           }
->>           retries++;
->> -        if (block_group->ro)
->> +        if (block_group->ro ||
->> +            test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +                 &block_group->runtime_flags))
->>               goto out_free;
->>           ret = create_free_space_inode(trans, block_group, path);
->> @@ -3981,6 +4067,7 @@ int btrfs_update_block_group(struct 
->> btrfs_trans_handle *trans,
->>    *              @num_bytes except for the compress path.
->>    * @num_bytes:    The number of bytes in question
->>    * @delalloc:   The blocks are allocated for the delalloc write
->> + * @allow_reloc_setup: Allow ordinary metadata into a relocation 
->> setup target.
->>    *
->>    * This is called by the allocator when it reserves space. If this is a
->>    * reservation and the block group has become read only we cannot 
->> make the
->> @@ -3988,7 +4075,8 @@ int btrfs_update_block_group(struct 
->> btrfs_trans_handle *trans,
->>    */
->>   int btrfs_add_reserved_bytes(struct btrfs_block_group *cache,
->>                    u64 ram_bytes, u64 num_bytes, bool delalloc,
->> -                 bool force_wrong_size_class)
->> +                 bool force_wrong_size_class,
->> +                 bool allow_reloc_setup)
->>   {
->>       struct btrfs_space_info *space_info = cache->space_info;
->>       enum btrfs_block_group_size_class size_class;
->> @@ -3996,7 +4084,9 @@ int btrfs_add_reserved_bytes(struct 
->> btrfs_block_group *cache,
->>       spin_lock(&space_info->lock);
->>       spin_lock(&cache->lock);
->> -    if (cache->ro) {
->> +    if (cache->ro ||
->> +        (!allow_reloc_setup &&
->> +         test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP, &cache- 
->> >runtime_flags))) {
->>           ret = -EAGAIN;
->>           goto out_error;
->>       }
->> @@ -4832,7 +4922,7 @@ bool btrfs_inc_block_group_swap_extents(struct 
->> btrfs_block_group *bg)
->>       bool ret = true;
->>       spin_lock(&bg->lock);
->> -    if (bg->ro)
->> +    if (bg->ro || test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP, &bg- 
->> >runtime_flags))
->>           ret = false;
->>       else
->>           bg->swap_extents++;
->> diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
->> index 790c2d467af5..d2b1dd01b45e 100644
->> --- a/fs/btrfs/block-group.h
->> +++ b/fs/btrfs/block-group.h
->> @@ -95,6 +95,8 @@ enum btrfs_block_group_flags {
->>       BLOCK_GROUP_FLAG_NEW,
->>       BLOCK_GROUP_FLAG_FULLY_REMAPPED,
->>       BLOCK_GROUP_FLAG_STRIPE_REMOVAL_PENDING,
->> +    /* Block data, tree-log and NOCOW admission during relocation 
->> setup. */
->> +    BLOCK_GROUP_FLAG_RELOC_SETUP,
->>   };
->>   enum btrfs_caching_type {
->> @@ -364,6 +366,9 @@ void btrfs_create_pending_block_groups(struct 
->> btrfs_trans_handle *trans);
->>   int btrfs_inc_block_group_ro(struct btrfs_block_group *cache,
->>                    bool do_chunk_alloc);
->>   void btrfs_dec_block_group_ro(struct btrfs_block_group *cache);
->> +int btrfs_bg_reloc_setup_start(struct btrfs_block_group *cache, bool 
->> drop_ro);
->> +int btrfs_bg_reloc_setup_finish(struct btrfs_block_group *cache);
->> +void btrfs_bg_reloc_setup_abort(struct btrfs_block_group *cache);
->>   int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans);
->>   int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans);
->>   int btrfs_setup_space_cache(struct btrfs_trans_handle *trans);
->> @@ -371,7 +376,8 @@ int btrfs_update_block_group(struct 
->> btrfs_trans_handle *trans,
->>                    u64 bytenr, u64 num_bytes, bool alloc);
->>   int btrfs_add_reserved_bytes(struct btrfs_block_group *cache,
->>                    u64 ram_bytes, u64 num_bytes, bool delalloc,
->> -                 bool force_wrong_size_class);
->> +                 bool force_wrong_size_class,
->> +                 bool allow_reloc_setup);
->>   void btrfs_free_reserved_bytes(struct btrfs_block_group *cache, u64 
->> num_bytes,
->>                      bool is_delalloc);
->>   int btrfs_chunk_alloc(struct btrfs_trans_handle *trans,
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index 2f1666d9544e..eab2fc5bf8b9 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -4936,6 +4936,7 @@ void btrfs_cleanup_one_transaction(struct 
->> btrfs_transaction *cur_trans)
->>       }
->>       btrfs_destroy_delayed_refs(cur_trans);
->> +    btrfs_abort_relocation_setup(cur_trans, cur_trans->aborted);
->>       cur_trans->state = TRANS_STATE_COMMIT_START;
->>       wake_up(&fs_info->transaction_blocked_wait);
->> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->> index 624d76e0ca01..962af1840781 100644
->> --- a/fs/btrfs/extent-tree.c
->> +++ b/fs/btrfs/extent-tree.c
->> @@ -4639,6 +4639,9 @@ static noinline int find_free_extent(struct 
->> btrfs_root *root,
->>               down_read(&space_info->groups_sem);
->>               if (list_empty(&block_group->list) ||
->>                   block_group->ro ||
->> +                (test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +                      &block_group->runtime_flags) &&
->> +                 (ffe_ctl->is_data || ffe_ctl->for_treelog)) ||
->>                   (block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED)) {
->>                   /*
->>                    * someone is removing this block group,
->> @@ -4674,7 +4677,10 @@ static noinline int find_free_extent(struct 
->> btrfs_root *root,
->>           ffe_ctl->hinted = false;
->>           /* If the block group is read-only, we can skip it entirely. */
->>           if (unlikely(block_group->ro ||
->> -                 (block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED))) {
->> +             (test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +                   &block_group->runtime_flags) &&
->> +              (ffe_ctl->is_data || ffe_ctl->for_treelog)) ||
->> +             (block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED))) {
->>               if (ffe_ctl->for_treelog)
->>                   btrfs_clear_treelog_bg(block_group);
->>               if (ffe_ctl->for_data_reloc)
->> @@ -4776,14 +4782,16 @@ static noinline int find_free_extent(struct 
->> btrfs_root *root,
->>           ret = btrfs_add_reserved_bytes(block_group, ffe_ctl->ram_bytes,
->>                              ffe_ctl->num_bytes,
->>                              ffe_ctl->delalloc,
->> -                           ffe_ctl->loop >= LOOP_WRONG_SIZE_CLASS);
->> +                           ffe_ctl->loop >= LOOP_WRONG_SIZE_CLASS,
->> +                           !ffe_ctl->is_data && !ffe_ctl->for_treelog);
->>           if (ret == -EAGAIN) {
->>               btrfs_add_free_space_unused(block_group,
->>                       ffe_ctl->found_offset,
->>                       ffe_ctl->num_bytes);
->>               goto loop;
->>           }
->> -        btrfs_inc_block_group_reservations(block_group);
->> +        if (ffe_ctl->is_data)
->> +            btrfs_inc_block_group_reservations(block_group);
->>           /* we are all good, lets return */
->>           ins->objectid = ffe_ctl->search_start;
->> @@ -4897,14 +4905,13 @@ int btrfs_reserve_extent(struct btrfs_root 
->> *root, u64 ram_bytes,
->>       ffe_ctl.empty_size = empty_size;
->>       ffe_ctl.flags = flags;
->>       ffe_ctl.delalloc = delalloc;
->> +    ffe_ctl.is_data = is_data;
->>       ffe_ctl.hint_byte = hint_byte;
->>       ffe_ctl.for_treelog = for_treelog;
->>       ffe_ctl.for_data_reloc = for_data_reloc;
->>       ret = find_free_extent(root, ins, &ffe_ctl);
->> -    if (!ret && !is_data) {
->> -        btrfs_dec_block_group_reservations(fs_info, ins->objectid);
->> -    } else if (ret == -ENOSPC) {
->> +    if (ret == -ENOSPC) {
->>           if (!final_tried && ins->offset) {
->>               num_bytes = min(num_bytes >> 1, ins->offset);
->>               num_bytes = round_down(num_bytes,
->> diff --git a/fs/btrfs/extent-tree.h b/fs/btrfs/extent-tree.h
->> index ff330d4896d6..74ba10a46951 100644
->> --- a/fs/btrfs/extent-tree.h
->> +++ b/fs/btrfs/extent-tree.h
->> @@ -40,6 +40,7 @@ struct find_free_extent_ctl {
->>       bool use_cluster;
->>       bool delalloc;
->> +    bool is_data;
->>       bool have_caching_bg;
->>       bool orig_have_caching_bg;
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index 2534cd9284d5..28c5902636d3 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -7398,7 +7398,9 @@ static bool btrfs_extent_readonly(struct 
->> btrfs_fs_info *fs_info, u64 bytenr)
->>       bool readonly = false;
->>       block_group = btrfs_lookup_block_group(fs_info, bytenr);
->> -    if (!block_group || block_group->ro)
->> +    if (!block_group || block_group->ro ||
->> +        test_bit(BLOCK_GROUP_FLAG_RELOC_SETUP,
->> +             &block_group->runtime_flags))
->>           readonly = true;
->>       if (block_group)
->>           btrfs_put_block_group(block_group);
->> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
->> index fc5c14b5adad..92059ebc8345 100644
->> --- a/fs/btrfs/relocation.c
->> +++ b/fs/btrfs/relocation.c
->> @@ -173,11 +173,16 @@ struct reloc_control {
->>       u64 search_start;
->>       u64 extents_found;
->> +    int setup_result;
->>       enum reloc_stage stage;
->>       bool create_reloc_tree;
->>       bool merge_reloc_tree;
->>       bool found_file_extent;
->> +    bool fenced_setup;
->> +    bool setup_pending;
->> +    bool block_group_ro;
->> +    bool reloc_ctl_set;
->>       refcount_t refs;
->>   };
->> @@ -3507,14 +3512,24 @@ int find_next_extent(struct reloc_control *rc, 
->> struct btrfs_path *path,
->>       return ret;
->>   }
->> -static void set_reloc_control(struct reloc_control *rc)
->> +static void __set_reloc_control(struct reloc_control *rc)
->>   {
->>       struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
->> -    mutex_lock(&fs_info->reloc_mutex);
->> +    lockdep_assert_held(&fs_info->reloc_mutex);
->>       spin_lock(&fs_info->reloc_ctl_lock);
->> +    ASSERT(!fs_info->reloc_ctl || fs_info->reloc_ctl == rc);
->>       fs_info->reloc_ctl = rc;
->> +    rc->reloc_ctl_set = true;
->>       spin_unlock(&fs_info->reloc_ctl_lock);
->> +}
->> +
->> +static void set_reloc_control(struct reloc_control *rc)
->> +{
->> +    struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
->> +
->> +    mutex_lock(&fs_info->reloc_mutex);
->> +    __set_reloc_control(rc);
->>       mutex_unlock(&fs_info->reloc_mutex);
->>   }
->> @@ -3524,18 +3539,137 @@ static void unset_reloc_control(struct 
->> reloc_control *rc)
->>       mutex_lock(&fs_info->reloc_mutex);
->>       spin_lock(&fs_info->reloc_ctl_lock);
->> -    fs_info->reloc_ctl = NULL;
->> +    if (rc->reloc_ctl_set) {
->> +        ASSERT(fs_info->reloc_ctl == rc);
->> +        fs_info->reloc_ctl = NULL;
->> +        rc->reloc_ctl_set = false;
->> +    } else {
->> +        ASSERT(fs_info->reloc_ctl != rc);
->> +    }
->>       spin_unlock(&fs_info->reloc_ctl_lock);
->>       mutex_unlock(&fs_info->reloc_mutex);
->>   }
->> +static void complete_relocation_setup(struct reloc_control *rc, int 
->> result)
->> +{
->> +    ASSERT(rc->setup_pending);
->> +    WRITE_ONCE(rc->setup_result, result);
->> +    WRITE_ONCE(rc->setup_pending, false);
->> +    btrfs_bg_reloc_setup_abort(rc->block_group);
->> +    put_reloc_control(rc);
->> +}
->> +
->> +void btrfs_finish_relocation_setup(struct btrfs_transaction *trans)
->> +{
->> +    struct btrfs_fs_info *fs_info = trans->fs_info;
->> +    struct reloc_control *rc;
->> +    int ret;
->> +
->> +    lockdep_assert_held(&fs_info->reloc_mutex);
->> +
->> +    spin_lock(&fs_info->trans_lock);
->> +    rc = trans->reloc_setup;
->> +    trans->reloc_setup = NULL;
->> +    spin_unlock(&fs_info->trans_lock);
->> +    if (!rc)
->> +        return;
->> +
->> +    ret = btrfs_bg_reloc_setup_finish(rc->block_group);
->> +    if (!ret) {
->> +        WRITE_ONCE(rc->block_group_ro, true);
->> +        __set_reloc_control(rc);
->> +    }
->> +    complete_relocation_setup(rc, ret);
->> +}
->> +
->> +void btrfs_abort_relocation_setup(struct btrfs_transaction *trans, 
->> int error)
->> +{
->> +    struct btrfs_fs_info *fs_info = trans->fs_info;
->> +    struct reloc_control *rc;
->> +
->> +    spin_lock(&fs_info->trans_lock);
->> +    rc = trans->reloc_setup;
->> +    trans->reloc_setup = NULL;
->> +    spin_unlock(&fs_info->trans_lock);
->> +    if (!rc)
->> +        return;
->> +
->> +    complete_relocation_setup(rc, error ?: -EIO);
->> +}
->> +
->> +static int bind_relocation_setup(struct btrfs_trans_handle *trans,
->> +                 struct reloc_control *rc,
->> +                 struct btrfs_transaction **transaction)
->> +{
->> +    struct btrfs_fs_info *fs_info = trans->fs_info;
->> +    struct btrfs_transaction *cur_trans = trans->transaction;
->> +    int ret = 0;
->> +
->> +    mutex_lock(&fs_info->ro_block_group_mutex);
->> +    spin_lock(&fs_info->trans_lock);
->> +    if (TRANS_ABORTED(cur_trans)) {
->> +        ret = cur_trans->aborted;
->> +    } else if (cur_trans != fs_info->running_transaction ||
->> +           cur_trans->state != TRANS_STATE_RUNNING ||
->> +           test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
->> +        ret = -EAGAIN;
->> +    } else if (cur_trans->reloc_setup) {
->> +        ret = -EBUSY;
->> +    } else {
->> +        ASSERT(rc->setup_pending);
->> +        WRITE_ONCE(rc->setup_result, -EINPROGRESS);
->> +        refcount_inc(&rc->refs);
->> +        cur_trans->reloc_setup = rc;
->> +        refcount_inc(&cur_trans->use_count);
->> +        *transaction = cur_trans;
->> +    }
->> +    spin_unlock(&fs_info->trans_lock);
->> +    mutex_unlock(&fs_info->ro_block_group_mutex);
->> +
->> +    return ret;
->> +}
->> +
->> +static int reconcile_relocation_setup(struct btrfs_transaction *trans,
->> +                      struct reloc_control *rc,
->> +                      int commit_ret)
->> +{
->> +    struct btrfs_fs_info *fs_info = trans->fs_info;
->> +    bool cancel = false;
->> +    bool wait = false;
->> +    int setup_ret;
->> +
->> +    spin_lock(&fs_info->trans_lock);
->> +    if (trans->reloc_setup == rc &&
->> +        trans->state < TRANS_STATE_COMMIT_PREP) {
->> +        trans->reloc_setup = NULL;
->> +        cancel = true;
->> +    } else if (READ_ONCE(rc->setup_result) == -EINPROGRESS) {
->> +        wait = true;
->> +    }
->> +    spin_unlock(&fs_info->trans_lock);
->> +
->> +    if (cancel)
->> +        complete_relocation_setup(rc, commit_ret ?: -EIO);
->> +    else if (wait)
->> +        wait_event(trans->commit_wait,
->> +               READ_ONCE(trans->state) >= TRANS_STATE_COMPLETED);
->> +
->> +    setup_ret = READ_ONCE(rc->setup_result);
->> +    ASSERT(setup_ret != -EINPROGRESS);
->> +    btrfs_put_transaction(trans);
->> +
->> +    return commit_ret ?: setup_ret;
->> +}
->> +
->>   static noinline_for_stack
->>   int prepare_to_relocate(struct reloc_control *rc)
->>   {
->> +    struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
->>       struct btrfs_trans_handle *trans;
->> +    struct btrfs_transaction *transaction = NULL;
->>       int ret;
->> -    rc->block_rsv = btrfs_alloc_block_rsv(rc->extent_root->fs_info,
->> +    rc->block_rsv = btrfs_alloc_block_rsv(fs_info,
->>                             BTRFS_BLOCK_RSV_TEMP);
->>       if (!rc->block_rsv)
->>           return -ENOMEM;
->> @@ -3546,32 +3680,93 @@ int prepare_to_relocate(struct reloc_control *rc)
->>       rc->nodes_relocated = 0;
->>       rc->merging_rsv_size = 0;
->>       rc->reserved_bytes = 0;
->> -    rc->block_rsv->size = rc->extent_root->fs_info->nodesize *
->> -                  RELOCATION_RESERVED_NODES;
->> -    ret = btrfs_block_rsv_refill(rc->extent_root->fs_info,
->> +    rc->block_rsv->size = fs_info->nodesize * RELOCATION_RESERVED_NODES;
->> +
->> +    if (!rc->fenced_setup) {
->> +        ret = btrfs_block_rsv_refill(fs_info,
->> +                         rc->block_rsv, rc->block_rsv->size,
->> +                         BTRFS_RESERVE_FLUSH_ALL);
->> +        if (ret)
->> +            return ret;
->> +
->> +        rc->create_reloc_tree = true;
->> +        set_reloc_control(rc);
->> +
->> +        trans = btrfs_join_transaction(rc->extent_root);
->> +        if (IS_ERR(trans)) {
->> +            unset_reloc_control(rc);
->> +            /*
->> +             * The extent tree is not a ref-cow tree and has no reloc
->> +             * root to clean up. Callers free the block reserve.
->> +             */
->> +            return PTR_ERR(trans);
->> +        }
->> +
->> +        ret = btrfs_commit_transaction(trans);
->> +        if (ret)
->> +            unset_reloc_control(rc);
->> +        return ret;
->> +    }
->> +
->> +    if (!rc->setup_pending) {
->> +        ret = btrfs_bg_reloc_setup_start(rc->block_group,
->> +                         rc->block_group_ro);
->> +        if (ret)
->> +            return ret;
->> +        WRITE_ONCE(rc->setup_pending, true);
->> +        WRITE_ONCE(rc->block_group_ro, false);
->> +    } else {
->> +        ASSERT(!rc->block_group_ro);
->> +    }
->> +
->> +    btrfs_wait_block_group_reservations(rc->block_group);
->> +    btrfs_wait_nocow_writers(rc->block_group);
->> +    btrfs_wait_ordered_roots(fs_info, U64_MAX, rc->block_group);
->> +
->> +    ret = btrfs_block_rsv_refill(fs_info,
->>                        rc->block_rsv, rc->block_rsv->size,
->>                        BTRFS_RESERVE_FLUSH_ALL);
->>       if (ret)
->> -        return ret;
->> +        goto abort_setup;
->> +    /* The transaction tail publishes reloc_ctl with the new commit 
->> roots. */
->>       rc->create_reloc_tree = true;
->> -    set_reloc_control(rc);
->> +    for (;;) {
->> +        u64 transid;
->> -    trans = btrfs_join_transaction(rc->extent_root);
->> -    if (IS_ERR(trans)) {
->> -        unset_reloc_control(rc);
->> -        /*
->> -         * extent tree is not a ref_cow tree and has no reloc_root to
->> -         * cleanup.  And callers are responsible to free the above
->> -         * block rsv.
->> -         */
->> -        return PTR_ERR(trans);
->> +        trans = btrfs_join_transaction(rc->extent_root);
->> +        if (IS_ERR(trans)) {
->> +            ret = PTR_ERR(trans);
->> +            goto abort_setup;
->> +        }
->> +        transid = trans->transid;
->> +
->> +        ret = bind_relocation_setup(trans, rc, &transaction);
->> +        if (ret == -EAGAIN) {
->> +            btrfs_end_transaction(trans);
->> +            ret = btrfs_wait_for_commit(fs_info, transid);
->> +            if (ret)
->> +                goto abort_setup;
->> +            continue;
->> +        }
->> +        if (ret) {
->> +            btrfs_end_transaction(trans);
->> +            goto abort_setup;
->> +        }
->> +        break;
->>       }
->>       ret = btrfs_commit_transaction(trans);
->> -    if (ret)
->> +    ret = reconcile_relocation_setup(transaction, rc, ret);
->> +    if (ret && rc->reloc_ctl_set)
->>           unset_reloc_control(rc);
->> +    return ret;
->> +abort_setup:
->> +    ASSERT(rc->setup_pending);
->> +    WRITE_ONCE(rc->setup_result, ret);
->> +    WRITE_ONCE(rc->setup_pending, false);
->> +    btrfs_bg_reloc_setup_abort(rc->block_group);
->>       return ret;
->>   }
->> @@ -3937,6 +4132,14 @@ static const char *stage_to_string(enum 
->> reloc_stage stage)
->>       return "unknown";
->>   }
->> +bool btrfs_relocation_uses_fenced_setup(const struct 
->> btrfs_block_group *bg)
->> +{
->> +    const u64 mixed = BTRFS_BLOCK_GROUP_DATA | 
->> BTRFS_BLOCK_GROUP_METADATA;
->> +
->> +    return (bg->flags & mixed) == mixed && !btrfs_is_zoned(bg- 
->> >fs_info) &&
->> +           !should_relocate_using_remap_tree(bg);
->> +}
->> +
->>   static int add_remap_tree_entries(struct btrfs_trans_handle *trans, 
->> struct btrfs_path *path,
->>                     struct btrfs_key *entries, unsigned int num_entries)
->>   {
->> @@ -5404,7 +5607,6 @@ int btrfs_relocate_block_group(struct 
->> btrfs_fs_info *fs_info, u64 group_start,
->>       struct inode *inode;
->>       struct btrfs_path *path = NULL;
->>       int ret;
->> -    bool bg_is_ro = false;
->>       if (unlikely(!extent_root)) {
->>           btrfs_err(fs_info,
->> @@ -5455,15 +5657,24 @@ int btrfs_relocate_block_group(struct 
->> btrfs_fs_info *fs_info, u64 group_start,
->>       rc->extent_root = extent_root;
->>       /* Block group ref now owned by rc, put_reloc_control() will 
->> drop it. */
->>       rc->block_group = bg;
->> +    rc->fenced_setup = btrfs_relocation_uses_fenced_setup(bg);
->>       ret = reloc_chunk_start(fs_info);
->>       if (ret < 0)
->>           goto out_put_rc;
->> -    ret = btrfs_inc_block_group_ro(rc->block_group, true);
->> -    if (ret)
->> -        goto out;
->> -    bg_is_ro = true;
->> +    if (rc->fenced_setup) {
->> +        /* Keep non-metadata writers out until the setup tail marks 
->> RO. */
->> +        ret = btrfs_bg_reloc_setup_start(rc->block_group, false);
->> +        if (ret)
->> +            goto out;
->> +        WRITE_ONCE(rc->setup_pending, true);
->> +    } else {
->> +        ret = btrfs_inc_block_group_ro(rc->block_group, true);
->> +        if (ret)
->> +            goto out;
->> +        rc->block_group_ro = true;
->> +    }
->>       path = btrfs_alloc_path();
->>       if (!path) {
->> @@ -5494,12 +5705,14 @@ int btrfs_relocate_block_group(struct 
->> btrfs_fs_info *fs_info, u64 group_start,
->>       if (verbose)
->>           describe_relocation(rc->block_group);
->> -    btrfs_wait_block_group_reservations(rc->block_group);
->> -    btrfs_wait_nocow_writers(rc->block_group);
->> -    btrfs_wait_ordered_roots(fs_info, U64_MAX, rc->block_group);
->> +    if (!rc->fenced_setup) {
->> +        btrfs_wait_block_group_reservations(rc->block_group);
->> +        btrfs_wait_nocow_writers(rc->block_group);
->> +        btrfs_wait_ordered_roots(fs_info, U64_MAX, rc->block_group);
->> -    ret = btrfs_zone_finish(rc->block_group);
->> -    WARN_ON(ret && ret != -EAGAIN);
->> +        ret = btrfs_zone_finish(rc->block_group);
->> +        WARN_ON(ret && ret != -EAGAIN);
->> +    }
->>       if (should_relocate_using_remap_tree(bg)) {
->>           if (bg->remap_bytes != 0) {
->> @@ -5521,8 +5734,15 @@ int btrfs_relocate_block_group(struct 
->> btrfs_fs_info *fs_info, u64 group_start,
->>       }
->>   out:
->> -    if (ret && bg_is_ro)
->> +    if (rc->setup_pending) {
->> +        ASSERT(ret);
->> +        WRITE_ONCE(rc->setup_pending, false);
->> +        btrfs_bg_reloc_setup_abort(rc->block_group);
->> +    }
->> +    if (ret && rc->block_group_ro) {
->>           btrfs_dec_block_group_ro(rc->block_group);
->> +        rc->block_group_ro = false;
->> +    }
->>       if (!btrfs_fs_incompat(fs_info, REMAP_TREE))
->>           iput(rc->data_inode);
->>       btrfs_free_path(path);
->> diff --git a/fs/btrfs/relocation.h b/fs/btrfs/relocation.h
->> index bb7a86e7dbe3..210d0bbd7d48 100644
->> --- a/fs/btrfs/relocation.h
->> +++ b/fs/btrfs/relocation.h
->> @@ -11,6 +11,7 @@ struct btrfs_root;
->>   struct btrfs_trans_handle;
->>   struct btrfs_ordered_extent;
->>   struct btrfs_pending_snapshot;
->> +struct btrfs_transaction;
->>   static inline bool should_relocate_using_remap_tree(const struct 
->> btrfs_block_group *bg)
->>   {
->> @@ -25,6 +26,9 @@ static inline bool 
->> should_relocate_using_remap_tree(const struct btrfs_block_gro
->>   int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 
->> group_start,
->>                      bool verbose);
->> +bool btrfs_relocation_uses_fenced_setup(const struct 
->> btrfs_block_group *bg);
->> +void btrfs_finish_relocation_setup(struct btrfs_transaction *trans);
->> +void btrfs_abort_relocation_setup(struct btrfs_transaction *trans, 
->> int error);
->>   int btrfs_init_reloc_root(struct btrfs_trans_handle *trans, struct 
->> btrfs_root *root);
->>   int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
->>                   struct btrfs_root *root);
->> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
->> index 8f9419728100..97556bdfdead 100644
->> --- a/fs/btrfs/transaction.c
->> +++ b/fs/btrfs/transaction.c
->> @@ -173,6 +173,7 @@ void btrfs_put_transaction(struct 
->> btrfs_transaction *transaction)
->>               btrfs_put_block_group(cache);
->>           }
->>           WARN_ON(!list_empty(&transaction->dev_update_list));
->> +        WARN_ON(transaction->reloc_setup);
->>           kfree(transaction);
->>       }
->>   }
->> @@ -379,6 +380,7 @@ static noinline int join_transaction(struct 
->> btrfs_fs_info *fs_info,
->>       INIT_LIST_HEAD(&cur_trans->dev_update_list);
->>       INIT_LIST_HEAD(&cur_trans->switch_commits);
->>       INIT_LIST_HEAD(&cur_trans->dirty_bgs);
->> +    cur_trans->reloc_setup = NULL;
->>       INIT_LIST_HEAD(&cur_trans->io_bgs);
->>       INIT_LIST_HEAD(&cur_trans->dropped_roots);
->>       mutex_init(&cur_trans->cache_write_mutex);
->> @@ -2552,6 +2554,8 @@ int btrfs_commit_transaction(struct 
->> btrfs_trans_handle *trans)
->>       clear_bit(BTRFS_FS_LOG2_ERR, &fs_info->flags);
->>       btrfs_trans_release_chunk_metadata(trans);
->> +    /* Resolve the relocation setup before transaction N+1 can start. */
->> +    btrfs_finish_relocation_setup(cur_trans);
->>       /*
->>        * Before changing the transaction state to 
->> TRANS_STATE_UNBLOCKED and
->> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
->> index 5e4b1106fd90..bbf3c2b78ce1 100644
->> --- a/fs/btrfs/transaction.h
->> +++ b/fs/btrfs/transaction.h
->> @@ -23,6 +23,7 @@ struct btrfs_fs_info;
->>   struct btrfs_root_item;
->>   struct btrfs_root;
->>   struct btrfs_path;
->> +struct reloc_control;
->>   /*
->>    * Signal that a direct IO write is in progress, to avoid deadlock 
->> for sync
->> @@ -77,6 +78,8 @@ struct btrfs_transaction {
->>       struct list_head dev_update_list;
->>       struct list_head switch_commits;
->>       struct list_head dirty_bgs;
->> +    /* Protected by fs_info->trans_lock. */
->> +    struct reloc_control *reloc_setup;
->>       /*
->>        * There is no explicit lock which protects io_bgs, rather its
->>
->> base-commit: f5bbbfec59b4e2fb7520a91de3df8a6174325d6a
-> 
-> 
+Thanks,
+Qu
+
+>=20
+> Thanks,
+> Seth
+>=20
 

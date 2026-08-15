@@ -1,126 +1,104 @@
-Received: from mail-wr1-f49.google.com (mail-wr1-f49.google.com [209.85.221.49])
+Received: from mta1.migadu.com (out-203.mta1.migadu.com [95.215.58.203])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C407036C0AB
-	for <linux-btrfs@vger.kernel.org>; Sat, 15 Aug 2026 09:08:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3463C37BE9E
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Aug 2026 13:23:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.203
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786784909; cv=none; b=Raaqi4kJQ9VEbGYS84JAHxn80WUCLavV+2I3Hy/yOKF7tajLVNLUAbNxSTwJnXk67WxGY9DRFOJ15kLq1kttYj6FxOFrfFKARBicW13vhcqsAAWopO4gtNlPeH6KNyzmFgDm9hg8tFmfX/Ft1E6v7X+y7s7UAfNyV7Jw1Mq32Es=
+	t=1786800201; cv=none; b=bg28R6iMXQMuFe5023TrcwdTv7w4XZShiJEqsbnPgiIDRVtFJfWTUum33TNKy+/URQJeFtSH2CTZjEEwvnI25MQy4MBCEuTNF4hvlI04qKW90gTTZN99nZ2xQxVvJ1CpZuvWSLmwgH8ENOd34RwLPNph3YmP6CiwE/Jcx5Z13Kg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786784909; c=relaxed/simple;
-	bh=Cz6hgGitX/PdogimegOtaNjpheUgIUBiMRdyejkgovM=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=FvZYwKiwKg38ipVLkywZrtYCN5OaeReY/3NOHf0AjKpVMEFJCRKFNeaZTQhvkndpTEnMTUPXEeSTdNKW9p/ZUcaCe6Uas9jgkNjOHcWTaeW289OUvvpBsIEutvIttx+YH/PeQoCLqE8n6nM6J0BgEl5KCLSoQ9D9CxMclOe7vFA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=A66V0s/F; arc=none smtp.client-ip=209.85.221.49
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1786800201; c=relaxed/simple;
+	bh=OglmZqwKgdSt2Rek1YoJNCPOn5vyK4uYTYh2MA6083Q=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=QML/PZHJaiwLUaYraILNZMnHXbcX+C4dTwN2H/pvLUsbZrJ2bgVPYGmbQ2woWRRHo5oPN+7Cw2pSKkAZyYoqhlMjItB76bFm07I3XPsRPFoAT4hpQqb9dkbPuFbUloOoeBDBoK7RyFWrG4XJgP+Y9fLfQwhY3uwfKYhg44Y+CfM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=FCNqgm1s; arc=none smtp.client-ip=95.215.58.203
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="A66V0s/F"
-Received: by mail-wr1-f49.google.com with SMTP id ffacd0b85a97d-47f703a9e5dso858973f8f.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 15 Aug 2026 02:08:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1786784906; x=1787389706; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=4M8wsG70gWsZd4K5o6kpIofltUO/EeYZvHyvEz8p1vg=;
-        b=A66V0s/FKObuyMKgglSWPSaVCjYOOw/FNhimcL3zTqEMJRFiTTujVmAtXN1tssxbQB
-         zXGOwjc5NTatHWs75cq4RJeKc57qKmThn6RbNUpZKwtuBsyZ3EtbcreFMHNpxXqHtdsH
-         quFdfW1XER0nvB8EUvthva1F4lsxER5TVt/2cUaTjSub3lm21/Li9saAv4uhGMi2gYoP
-         hnPvoeatKe3/C5FHBYjOOQxspilU53uOsI1urm+d6yfp+ypt4LP0/kwVuCZfkB37AJLd
-         S7Jf21JUjc7TmFzUwO0gRv41usa7b4Y9R0xw2dAF/e5lhwJszlz+jl4K5FR096BFeNuU
-         AAtw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786784906; x=1787389706;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=4M8wsG70gWsZd4K5o6kpIofltUO/EeYZvHyvEz8p1vg=;
-        b=pqQyFVpR3ppIVz45k2hMXjigYvTuYS9Yl3vgv4vRND1wdtW3bWh6xFbkbPItk/DGI8
-         ljKlhUY0sXIkaoFGEz0m9cDbwXngxlMPdmCCj8B/pspP+OsigKnbZ8rT1PAxRdlrlWCh
-         hVGlR0asBF08qI7jgid5VhJtAbFMemjpTDKrMf02FrohnjgiNOqKqGlD8HGIGlT1b6Eo
-         gG+sQrx+edvr8N+TmqV/Rmaa3jV3LMq0Em/4BWnjbG1+jkV5bNejZ+TRurzA9kEAF8Ln
-         1O8OClNc/qDaE19bzTExqvbUqFqSc+kK3yu9RbGOLLjkFRqltnoT2I/I3MImQpB3NJgh
-         JKDA==
-X-Forwarded-Encrypted: i=1; AHgh+RoWvboeDP0ipE3OzGPCuNCH8XhMZHRaT6UpfeSVaw2MvGaCnDjohPw1LtZI4F9KRv7PoMboLRhwca+THA==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxZ2XhzsSLBKNM8vHJaruuojqMm37KdmXi06Yi0FfE+FddfYEoS
-	b88eD42WnN4jpU2ob1mQ/j56ZoWXnYQ79skhBJu1esk0cxSXvUptMqLHqXGQMp+1/PE=
-X-Gm-Gg: AR+sD130u8dXFgKPTtuKsj166IkGN/UabDKT8cMHbBSk2ZGt4sEbLvVkKDCMqhCPVcp
-	gYZCKxahIsRwnFodobMZ4JFD9S83oxAbMZYuLycXJjum+3FAYSHIgzaCddXKOj8zd9PfC6np46R
-	uGafBxzGHwR0vT6LR65p5exHz9cq7K2EGwu6DwLmkh9Fc1enLXI3Av6Rtzdd1OSOjIqgH8Dyybs
-	EXblEslRf3UTZtTlWCwZDtfYs8DiWDCILqbbQQHxb9rdMtsVwMsF10RKgcBTpyZ67ho3WcnTEMW
-	32TYPHMqUuuOeifldgr+tEA8NfnZ5JWJ+I1aXGY1FUiU1BcsQwx9nkhoqVF76cvr7I1rFh2drYR
-	9ZQ8WYyCvxS/4UFxfoLDUTEkT63xBxs59yRtu5zisk7gUh4TbHm7T3UMKQ2JFQbLTbnSiFaKQ7m
-	XwhgwZKHbU673XDObVZLiprCt91Gv/wiqqfwIefjilMLbo3yLaAiX6fQ==
-X-Received: by 2002:a05:600c:1d89:b0:499:726a:117c with SMTP id 5b1f17b1804b1-499879bf7d0mr186198015e9.19.1786784906072;
-        Sat, 15 Aug 2026 02:08:26 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-320ea804233sm11775115eec.26.2026.08.15.02.08.22
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 15 Aug 2026 02:08:25 -0700 (PDT)
-Message-ID: <e2ce05e5-1d9f-41a1-ad19-98d52403b1ea@suse.com>
-Date: Sat, 15 Aug 2026 18:38:20 +0930
+	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="FCNqgm1s"
+X-Envelope-To: linux-btrfs@vger.kernel.org
+DKIM-Signature: a=rsa-sha256; bh=OglmZqwKgdSt2Rek1YoJNCPOn5vyK4uYTYh2MA6083Q=;
+ c=simple/simple; d=linux.dev;
+ h=from:to:subject:date:message-id:mime-version:content-type; s=key1;
+ t=1786800194; v=1; x=1787404994;
+ b=FCNqgm1sXHieSyLRgPcIMwJUs81+uj6bW9yWFuN5wiVZYz+dX+ZWSJF5uEn7Tpx1plesCi9y
+ sd9zOXOPam0bA77/cMfNDM7hDE+qPt+WYQDajI+9AsLoNkE9pEJ8R9EgxB4+wQvqlUcio4yYLTV
+ OgSjxKO5NztGoWAvZprzR22Q=
+X-Envelope-To: linux-btrfs@vger.kernel.org
+Received: from ctao-book.. (111.162.215.50)
+	by smtp.migadu.com with ESMTPS id 6d4d7ca9e2396d50;
+	Sat, 15 Aug 2026 13:23:14 +0000
+X-Migadu-Flow: FLOW_OUT
+From: Tao Cui <cui.tao@linux.dev>
+To: clm@fb.com,
+	dsterba@suse.com,
+	sforshee@kernel.org,
+	wqu@suse.com
+Cc: josef@toxicpanda.com,
+	brauner@kernel.org,
+	linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	cui.tao@linux.dev,
+	Tao Cui <cuitao@kylinos.cn>
+Subject: [PATCH v2] btrfs: allow idmapped DEFRAG ioctls
+Date: Sat, 15 Aug 2026 21:22:59 +0800
+Message-ID: <20260815132259.3935817-1-cui.tao@linux.dev>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: free qgroup configuration when quota enable fails
-To: Guanjie Chen <jk.chen1095@gmail.com>
-Cc: clm@fb.com, dsterba@suse.com, fdmanana@suse.com,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <d239645a-b291-4fe9-b256-f0be849c875a@suse.com@suse.com>
- <20260815090006.81397-1-jk.chen1095@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260815090006.81397-1-jk.chen1095@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
+From: Tao Cui <cuitao@kylinos.cn>
 
+btrfs_ioctl_defrag() checks MAY_WRITE against nop_mnt_idmap, so on an
+idmapped mount the owner comparison uses the caller's fsuid against the
+raw on-disk uid and the ioctl fails with -EPERM even for the file's
+owner.  Pass the mount idmap down so defrag works on idmapped mounts.
 
-在 2026/8/15 18:30, Guanjie Chen 写道:
-> Hi Qu,
-> 
-> Sir, for this bug, I only used an ChatpGPT to translate and polish my mailing-list message and commit description from Chinese into English.
+The check, added in 616d374efa23 ("btrfs: allow defrag on a file opened
+read-only that has rw permissions"), is not a privilege gate.  It only
+tests whether the file could have been opened for writing, and a user
+who owns the file on the idmapped mount can already open it O_RDWR,
+write() to it or fallocate() it.  Defragmenting a regular file only
+rearranges the caller's own extents; there is nothing it can rewrite
+that the caller could not rewrite anyway.  Whole-subvolume defrag on a
+directory keeps its capable(CAP_SYS_ADMIN) requirement, and the
+!capable() guard around this check is left as is.
 
-In that case, it's fine.
+FIDEDUPERANGE already works this way for unprivileged callers:
+may_dedupe_file() in fs/remap_range.c compares the inode owner through
+file_mnt_idmap(file) and falls back to inode_permission() with the same
+idmap, and dedupe can rewrite one file's extents from another file's
+contents, which is a stronger operation than defrag.
 
-Of course disclosing LLM usage for grammar fixes and reviews won't hurt, 
-but it's not affecting the real patch (unless the LLM hallucinated and 
-you didn't notice the hallucination) and LLM reviewing is so common, we 
-already have sashiko doing it all day.
+On regular mounts file_mnt_idmap() is nop_mnt_idmap and nothing
+changes.
 
-> I understand your concern, and thank you for pointing it out. Going forward, I’ll clearly disclose any use of AI tools.
-> 
-> Best,
-> Guanjie
+Signed-off-by: Tao Cui <cuitao@kylinos.cn>
+---
+v2: rewrite the commit message to explain why defrag is safe for
+idmapped users (Seth Forshee); the code is unchanged.
+---
+ fs/btrfs/ioctl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 72bc9d4f7708..607329dedd50 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2458,7 +2458,7 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
+ 		 * running and allows defrag on files open in read-only mode.
+ 		 */
+ 		if (!capable(CAP_SYS_ADMIN) &&
+-		    inode_permission(&nop_mnt_idmap, inode, MAY_WRITE)) {
++		    inode_permission(file_mnt_idmap(file), inode, MAY_WRITE)) {
+ 			ret = -EPERM;
+ 			goto out;
+ 		}
+-- 
+2.43.0
 

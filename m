@@ -1,49 +1,44 @@
-Received: from mta1.migadu.com (out-203.mta1.migadu.com [95.215.58.203])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from altprdrgo006.altice.prod.cloud.openwave.ai (altprdrgo006.altice.prod.cloud.openwave.ai [66.179.105.140])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3463C37BE9E
-	for <linux-btrfs@vger.kernel.org>; Sat, 15 Aug 2026 13:23:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.215.58.203
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BDD7335E944
+	for <linux-btrfs@vger.kernel.org>; Sat, 15 Aug 2026 15:42:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=66.179.105.140
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786800201; cv=none; b=bg28R6iMXQMuFe5023TrcwdTv7w4XZShiJEqsbnPgiIDRVtFJfWTUum33TNKy+/URQJeFtSH2CTZjEEwvnI25MQy4MBCEuTNF4hvlI04qKW90gTTZN99nZ2xQxVvJ1CpZuvWSLmwgH8ENOd34RwLPNph3YmP6CiwE/Jcx5Z13Kg=
+	t=1786808544; cv=none; b=NeNFaig7eZ8QPUJaZMuqWD0bLJqSdnyPt5n6BX0ZI6Z4lIdjykI4mgKhBCy7J4fqlJtYOZmLPYxzaEK7yJ5o/o9GW3ff0fCFEkmE5hrmpYj37hUPMhl3xGa0pkb9WEV/P3TxbLD3Rb/GZy/iHo0WlcM9GNI2PI6EKhkp5aUjiQY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786800201; c=relaxed/simple;
-	bh=OglmZqwKgdSt2Rek1YoJNCPOn5vyK4uYTYh2MA6083Q=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=QML/PZHJaiwLUaYraILNZMnHXbcX+C4dTwN2H/pvLUsbZrJ2bgVPYGmbQ2woWRRHo5oPN+7Cw2pSKkAZyYoqhlMjItB76bFm07I3XPsRPFoAT4hpQqb9dkbPuFbUloOoeBDBoK7RyFWrG4XJgP+Y9fLfQwhY3uwfKYhg44Y+CfM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev; spf=pass smtp.mailfrom=linux.dev; dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b=FCNqgm1s; arc=none smtp.client-ip=95.215.58.203
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
+	s=arc-20240116; t=1786808544; c=relaxed/simple;
+	bh=p81VFQ0rHss+EvDPZD3i6eEVx78o7z4wk5eBhds38nc=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=Nlfpi8gnI/iALpBWzJAdlEFemDHnwwCW67+9KZydOHdPaBlawlv9dxTBZP2MGbnbjMbibmHyOjTbIBnA+no2WgCPZR0vvFky6fBZUoKNQ8TrEPPkKqkTBFJHiPtUFNqTjRJDM9lfpJ0AA22vAzIaLGv9MLgj0BU0yU1GiaGBouw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=optonline.net; spf=pass smtp.mailfrom=optonline.net; dkim=pass (2048-bit key) header.d=optonline.net header.i=@optonline.net header.b=UKUr2HgS; arc=none smtp.client-ip=66.179.105.140
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=optonline.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=optonline.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.dev header.i=@linux.dev header.b="FCNqgm1s"
-X-Envelope-To: linux-btrfs@vger.kernel.org
-DKIM-Signature: a=rsa-sha256; bh=OglmZqwKgdSt2Rek1YoJNCPOn5vyK4uYTYh2MA6083Q=;
- c=simple/simple; d=linux.dev;
- h=from:to:subject:date:message-id:mime-version:content-type; s=key1;
- t=1786800194; v=1; x=1787404994;
- b=FCNqgm1sXHieSyLRgPcIMwJUs81+uj6bW9yWFuN5wiVZYz+dX+ZWSJF5uEn7Tpx1plesCi9y
- sd9zOXOPam0bA77/cMfNDM7hDE+qPt+WYQDajI+9AsLoNkE9pEJ8R9EgxB4+wQvqlUcio4yYLTV
- OgSjxKO5NztGoWAvZprzR22Q=
-X-Envelope-To: linux-btrfs@vger.kernel.org
-Received: from ctao-book.. (111.162.215.50)
-	by smtp.migadu.com with ESMTPS id 6d4d7ca9e2396d50;
-	Sat, 15 Aug 2026 13:23:14 +0000
-X-Migadu-Flow: FLOW_OUT
-From: Tao Cui <cui.tao@linux.dev>
-To: clm@fb.com,
-	dsterba@suse.com,
-	sforshee@kernel.org,
-	wqu@suse.com
-Cc: josef@toxicpanda.com,
-	brauner@kernel.org,
-	linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	cui.tao@linux.dev,
-	Tao Cui <cuitao@kylinos.cn>
-Subject: [PATCH v2] btrfs: allow idmapped DEFRAG ioctls
-Date: Sat, 15 Aug 2026 21:22:59 +0800
-Message-ID: <20260815132259.3935817-1-cui.tao@linux.dev>
-X-Mailer: git-send-email 2.43.0
+	dkim=pass (2048-bit key) header.d=optonline.net header.i=@optonline.net header.b="UKUr2HgS"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=optonline.net; s=dkim-002; t=1786808541; 
+        bh=K4l8eAVySIIwdMZRpuvfrLlu/8yeTTmTBNsU6YiXJhs=;
+        h=From:To:Subject:Date:Message-ID:In-Reply-To:References:MIME-Version;
+        b=UKUr2HgSVTEh0war+AXBzh0IG+Bxs0YjaKi019c2tjTrZAvfRD71eqnts2UlzbPbBsHWUGvGcUIo9xjjc1LnkfhAYNeuz2+geUCEbJuhw4sJI838gsrxJMbasbWY7z8PAb6Iq27bUUqtCrBLXn2VWXRdrNU5CM7x4vUMBrAX8XOVjdfnkKuCUEIrSNelzEOUMRZzCaONkYZKWxJHZLvC5SUHbgOTVHx1aIPkYW93i/qzWk8TWshyDfXFposrXQ98X6Ne19ExRVDofIER8h8brvtjefzF5+E3R/9chRGHgiAYrvk98500jOsExAYh/ZFmilIidgiP8WCG6VrKtwdXRQ==
+X-RG-VS-CS: clean
+X-RG-VS-SC: 0
+X-RG-VS: Clean
+X-RG-Env-Sender: jamesowens@optimum.net
+X-RG-Rigid: 6A80590D00075526
+X-RazorGate-Vade: dmFkZTFB7AkcyiM9kX01BJsx1zoccQJ4EtkVFKWLUhlyezM2hA4KjleTx+q4MlILD1iK7N0xspnDS+HObNot3aDYvGLF37qdkk86j8EbzgzVuaF7zwNgWZqbDaHi/zCVSqsU4qXqvDvhtcssU10HfUlDd1o8DvIsdDap+4ueJHLEp8f7aYgtXWAyMUiW94s0BX8p+g1HBXJl1RxNIMTYb5tKaavqY2FJwaKe9gZGtfAB+SCfWqA4lpv9JBYoPiK3JgdEn/89MuZN9tz3sZIesbZyaCTv6e5ZrXaOSP3NHSVcGfCABtFk3kY/uiUSszLVyf0puDjSMzY/Sgt+fC2364Ehn0Y6M6iyK6bUVjUI4Uu4M4T7Fa53CDOeb4lOnkUP+wFtLMM7Xypu68v80/I3O3Ax+BExNZF/CydRmWg6tNRd80L3ZuxgkYvLPOgnp/G8zUAtQ9SjoK1LAEsi410KE5BWOWXdOhjMSIXYgzhDjLyvpTlCkQkCXkI4lcq49ONDB7QzcZAKo+sjYPIGEeokiDFLLcs6Vi6shOhA1Qj6+vH8U3HnQ6O7aNX5fgy+16nhdhOI/tQmw96YhRhI2/ZrnVl6u+o1K8AhNAZNjjmBml1srkmYfzw0076ls/23u041cypocBbqY59h6vfMxMA49v/Ge0WPGoUlQS+qbTem/XKCbRBPNw
+X-RazorGate-Vade-Verdict: clean 0
+X-RazorGate-Vade-Classification: clean
+Received: from jco-monster-ng.jcowens.net (68.197.170.124) by altprdrgo006.altice.prod.cloud.openwave.ai (authenticated as jamesowens)
+        id 6A80590D00075526; Sat, 15 Aug 2026 11:36:02 -0400
+From: "James C. Owens" <jamesowens@optonline.net>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com
+Subject: [PATCH v2] btrfs: scrub: report the failing sector's address, not the stripe base
+Date: Sat, 15 Aug 2026 11:34:16 -0400
+Message-ID: <20260815153416.138869-1-jamesowens@optonline.net>
+X-Mailer: git-send-email 2.55.0
+In-Reply-To: <20260814162405.1434693-1-jamesowens@optonline.net>
+References: <20260814162405.1434693-1-jamesowens@optonline.net>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -52,53 +47,121 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-From: Tao Cui <cuitao@kylinos.cn>
+scrub_stripe_report_errors() iterates over the sectors of a stripe, but
+every message it emits passes stripe->logical, the address of the first
+sector of the 64KiB stripe, rather than the address of the sector being
+reported. The physical address is likewise computed once, before the
+loop, from stripe->logical.
 
-btrfs_ioctl_defrag() checks MAY_WRITE against nop_mnt_idmap, so on an
-idmapped mount the owner comparison uses the caller's fsuid against the
-raw on-disk uid and the ioctl fails with -EPERM even for the file's
-owner.  Pass the mount idmap down so defrag works on idmapped mounts.
+This matters because scrub_print_common_warning() uses that logical
+address for the backref walk which produces the "root %llu inode %llu
+offset %llu ... (path: ...)" part of the message. As the address is
+always the stripe base, the reported root/inode/offset/path can identify
+a different file from the one whose sector actually failed.
 
-The check, added in 616d374efa23 ("btrfs: allow defrag on a file opened
-read-only that has rw permissions"), is not a privilege gate.  It only
-tests whether the file could have been opened for writing, and a user
-who owns the file on the idmapped mount can already open it O_RDWR,
-write() to it or fallocate() it.  Defragmenting a regular file only
-rearranges the caller's own extents; there is nothing it can rewrite
-that the caller could not rewrite anyway.  Whole-subvolume defrag on a
-directory keeps its capable(CAP_SYS_ADMIN) requirement, and the
-!capable() guard around this check is left as is.
+A 64KiB stripe routinely spans several extents belonging to unrelated
+files. On the machine where this was found, the stripe at logical
+0x17D9380000 holds four sectors of /usr/share/plasma/emoji/bg.dict, then
+a file inside a docker volume, then sectors referenced only by
+snapshots. Every error anywhere in that stripe is attributed to bg.dict.
 
-FIDEDUPERANGE already works this way for unprivileged callers:
-may_dedupe_file() in fs/remap_range.c compares the inode owner through
-file_mnt_idmap(file) and falls back to inode_permission() with the same
-idmap, and dedupe can rewrite one file's extents from another file's
-contents, which is a stronger operation than defrag.
+The effect is visible statistically: across ten months and four kernel
+series that machine logged 81 distinct flagged logical addresses, and
+every one of them is exactly 64KiB aligned. Since BTRFS_STRIPE_LEN is
+64KiB and stripe->logical is stripe aligned by construction, real
+failures distributed across sectors could not produce that.
 
-On regular mounts file_mnt_idmap() is nop_mnt_idmap and nothing
-changes.
+Report the address of the sector actually being examined. Adding the
+sector offset to the physical address is valid because BTRFS_STRIPE_LEN
+is the unit contiguous on a single device for every profile, so a stripe
+never crosses a device boundary.
 
-Signed-off-by: Tao Cui <cuitao@kylinos.cn>
+Fixes: 0096580713ff ("btrfs: scrub: introduce error reporting functionality for scrub_stripe")
+Signed-off-by: James C. Owens <jamesowens@optonline.net>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 ---
-v2: rewrite the commit message to explain why defrag is safe for
-idmapped users (Seth Forshee); the code is unchanged.
----
- fs/btrfs/ioctl.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v2:
+ - Regenerate the patch with git format-patch. v1 was produced with plain
+   diff(1) and so lacked the diffstat, the "diff --git" header, the index
+   line and the function context in the hunk headers. Thanks Qu for catching
+   it; no code change.
+ - Add the Fixes: tag Qu supplied.
+ - Carry Qu's Reviewed-by.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 72bc9d4f7708..607329dedd50 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2458,7 +2458,7 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
- 		 * running and allows defrag on files open in read-only mode.
- 		 */
- 		if (!capable(CAP_SYS_ADMIN) &&
--		    inode_permission(&nop_mnt_idmap, inode, MAY_WRITE)) {
-+		    inode_permission(file_mnt_idmap(file), inode, MAY_WRITE)) {
- 			ret = -EPERM;
- 			goto out;
+ fs/btrfs/scrub.c | 24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index d2f7ac5b6e96..09b6003d3019 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1041,6 +1041,10 @@ static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
+ 
+ skip:
+ 	for_each_set_bit(sector_nr, &extent_bitmap, stripe->nr_sectors) {
++		const u64 sector_logical = stripe->logical +
++			((u64)sector_nr << fs_info->sectorsize_bits);
++		const u64 sector_physical = physical +
++			((u64)sector_nr << fs_info->sectorsize_bits);
+ 		bool repaired = false;
+ 
+ 		if (scrub_bitmap_test_bit_is_metadata(stripe, sector_nr)) {
+@@ -1069,12 +1073,12 @@ static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
+ 			if (dev) {
+ 				btrfs_err_rl(fs_info,
+ 		"scrub: fixed up error at logical %llu on dev %s physical %llu",
+-					    stripe->logical, btrfs_dev_name(dev),
+-					    physical);
++					    sector_logical, btrfs_dev_name(dev),
++					    sector_physical);
+ 			} else {
+ 				btrfs_err_rl(fs_info,
+ 			   "scrub: fixed up error at logical %llu on mirror %u",
+-					    stripe->logical, stripe->mirror_num);
++					    sector_logical, stripe->mirror_num);
+ 			}
+ 			continue;
  		}
+@@ -1083,30 +1087,30 @@ static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
+ 		if (dev) {
+ 			btrfs_err_rl(fs_info,
+ "scrub: unable to fixup (regular) error at logical %llu on dev %s physical %llu",
+-					    stripe->logical, btrfs_dev_name(dev),
+-					    physical);
++					    sector_logical, btrfs_dev_name(dev),
++					    sector_physical);
+ 		} else {
+ 			btrfs_err_rl(fs_info,
+ 	  "scrub: unable to fixup (regular) error at logical %llu on mirror %u",
+-					    stripe->logical, stripe->mirror_num);
++					    sector_logical, stripe->mirror_num);
+ 		}
+ 
+ 		if (scrub_bitmap_test_bit_io_error(stripe, sector_nr))
+ 			if (__ratelimit(&rs) && dev)
+ 				scrub_print_common_warning("i/o error", dev, false,
+-						     stripe->logical, physical);
++						     sector_logical, sector_physical);
+ 		if (scrub_bitmap_test_bit_csum_error(stripe, sector_nr))
+ 			if (__ratelimit(&rs) && dev)
+ 				scrub_print_common_warning("checksum error", dev, false,
+-						     stripe->logical, physical);
++						     sector_logical, sector_physical);
+ 		if (scrub_bitmap_test_bit_meta_error(stripe, sector_nr))
+ 			if (__ratelimit(&rs) && dev)
+ 				scrub_print_common_warning("header error", dev, false,
+-						     stripe->logical, physical);
++						     sector_logical, sector_physical);
+ 		if (scrub_bitmap_test_bit_meta_gen_error(stripe, sector_nr))
+ 			if (__ratelimit(&rs) && dev)
+ 				scrub_print_common_warning("generation error", dev, false,
+-						     stripe->logical, physical);
++						     sector_logical, sector_physical);
+ 	}
+ 
+ 	/* Update the device stats. */
+
+base-commit: 15ef2f78c49d20d53ec7c0f1c9b40b02e089f2d6
 -- 
-2.43.0
+2.55.0
 

@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 21F3D30F80C
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 987A226296
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786943667; cv=none; b=neA9aMjrHajiRPMhi4WcE0lfYm/hjsgmv/Gy/vMsFK83icj0aCMXcXhEI8FVdCPNXObbKCXRgrwasxr/9Z3TAh/GNskp9cXBJv+Zq9VqtNY5TDNHIuPIchDNXVu6/UuI8sjElyst2Qzfer7Q555Q3iADjqCcjseLU9JDbM8GSvQ=
+	t=1786943669; cv=none; b=d8tTTfQhB8jhrF3kqIV7JXtSRVLS4iUpoQBtOPlu3fxcYZhXkrCACZHeOE5tb+xBp3OKpo4y39svoSDVmaGk19vWmpIuTpiwihaOTJsKDFXYLJWRrUIZA/VwPVG+34+LcJgYSv4rJULJigduCnqE91aiMpd2E2zKrtRbtRjLtkg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786943667; c=relaxed/simple;
-	bh=IYqYWaUoCBSFU+hL64jqVOrv2JHmImELX0TmHcU4hso=;
+	s=arc-20240116; t=1786943669; c=relaxed/simple;
+	bh=uiwFQeYfjmZ4+wdRPZ0T4Jbw7M7zFoJph7EiXgzYjpA=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=GvH1zk0PutQnME5Cdh6WaVlmIF4dJlIUO/BlfASZxC7R7sH9JquQCqyspXMf4CPM5jp8Hy82gDR8ENXNhl2qreD+HhCxyZhzKy4TdVrI9T55+vwQwauYNJcLe55MZRwIhEWKlXA+4wxMrzWNZ4bWR3jBFNkK7/vd9jZxdnOiIP8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=E6KK8k8l; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=joyJO/+i; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=k0m2REmeUO9EEF8zuc/y+zZlf47bjA1AkzGAZHViaTuANldPBXgi6a6G1oG1gXZevs4WWqmjn7pFs/mYjcKT61zCg6zPuHvR9NsZctteiR95Kh2g83y5SK++ZEJbwA54KzzxNwSym/WGKLaGdETdxAs9FNN/NDWDY9X4vOEwDMY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=smF29gWZ; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=CAlgRu/+; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="E6KK8k8l";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="joyJO/+i"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="smF29gWZ";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="CAlgRu/+"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 029293E0F
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:16 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C368783E31
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786943660; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1786943661; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=2EYbUeHBf7tBR6dJmPLrLiX9Iw04ez9lsg7ZJKuze8k=;
-	b=E6KK8k8lcce/hj44q/l52kmhfjqQBl/ZvG2pRCidmnL8zKSTCzK9oj1gWLhY3fKDijkDIK
-	DmRaGTjhpbflndrZr1rJu3dMIpRu8cYugONxdgyUhQIqUWIDqSq3S6SgrJGSr+cScoNi7H
-	3dSco0WsDT0foattDB3wJdSnMXHrDXc=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="joyJO/+i"
+	bh=Fmcr+8X+KRfXJX9Q5W796JpkNWoYIMY6tu3afTbRsv0=;
+	b=smF29gWZnr80qAuD/TkD5Xas8WWtsxulIVyFYSN3+luJqnmk6XIFjwhxo2sj1hZMfH54po
+	DAfO6oACBIS+9qwjnenxdh6Lm3v9UoRrShNFEpz4sWKIYFYSntrFHYmKyIHNp9xEPT1KsC
+	EPMcvp2YYN0W9SM3pYgNYVWg8fF2awk=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b="CAlgRu/+"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786943656; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1786943657; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=2EYbUeHBf7tBR6dJmPLrLiX9Iw04ez9lsg7ZJKuze8k=;
-	b=joyJO/+iU+0dlYsBviDlvbNMfAWiTThd7DCYAJ58ndID48y+pW0f6odvV4sQDo7WumqNFh
-	n8R9XC5hiIZATG/eg2XXz2ntKGhKPuRoRRwVzh1QKDCv2PP8mTYwu63uK5hH4XxrHry2q8
-	DQ0siQ9nRVEkxbGzPKzHQpCOwyFNmjs=
+	bh=Fmcr+8X+KRfXJX9Q5W796JpkNWoYIMY6tu3afTbRsv0=;
+	b=CAlgRu/+KFTSYNBsu8kZ5LloUq/CNQqcPq4Ij97GY/nZ4T4YO56zVU2hYEkO0Re4mINZOW
+	yQqEsoEqmijuoC2TrVRBZoPyy5rTFMHOZlMLBuxfisebS7XzngRw/jTiwUWB7rTuNbGmKW
+	QzEQjdEurWZ6pcUm35PU+zdKBFKBLl4=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DC27E792C3
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:14 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A7A20792C4
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:16 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id CMZ6IKaYgmoDSgAAD6G6ig
+	id kJmpE6iYgmoDSgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:14 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:16 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: fix the possible bioc_list memory leak during error
-Date: Mon, 17 Aug 2026 14:43:53 +0930
-Message-ID: <ed763ed884102ef12aa18bd9e2669a6e8d9f92d9.1786943382.git.wqu@suse.com>
+Subject: [PATCH 2/2] btrfs: return proper negative error code for update_raid_extent_item()
+Date: Mon, 17 Aug 2026 14:43:54 +0930
+Message-ID: <e35279f4776fd6a69d1b75740155511ac7802292.1786943382.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
 In-Reply-To: <cover.1786943382.git.wqu@suse.com>
 References: <cover.1786943382.git.wqu@suse.com>
@@ -86,7 +86,7 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	FROM_HAS_DN(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,suse.com:dkim,sashiko.dev:url,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[sashiko.dev:url,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid,suse.com:dkim];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RCVD_TLS_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
@@ -96,111 +96,51 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 X-Spam-Flag: NO
 X-Spam-Score: -3.01
 X-Spam-Level: 
-X-Rspamd-Queue-Id: 029293E0F
+X-Rspamd-Queue-Id: C368783E31
 X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Rspamd-Action: no action
 
-There are two possible ways to leak bioc memory on
-btrfs_ordered_extent::bioc_list:
+The function btrfs_abort_transaction() only accepts negative error code,
+and have the macro VERIFY_NEGATIVE_ERROR() to verify that error code.
 
-- An error occurred for btrfs_insert_one_raid_extent()
-  Then the function btrfs_insert_raid_extent() immediately return
-  without freeing any bioc in the bioc_list.
+But inside update_raid_extent_item(), if there is such key found, we
+return 1, breaking the negative error code scheme.
 
-- An ordered extent hit an IO error
-  In that case the ordered extent will have BTRFS_ORDERED_IOERR set, and
-  skip the call on btrfs_insert_raid_extent() completely.
+Furthermore if we hit some real error during the tree search, e.g. -EIO,
+then the error code is always over-written to -EINVAL.
 
-Fix the problem by:
+Fix both problems by following other call sites by overwriting @ret to
+-ENOENT if the btrfs_search_slot() failed to locate the key.
 
-- Introduce a new helper, btrfs_cleanup_ordered_bioc_list()
-  Which will remove all bioc from the bioc_list, and release the bioc.
+This is very unlikely to hit, as we only enter update_raid_extent_item()
+if there is a conflicting key already in the raid stripe tree.
 
-- Call the above helper for btrfs_insert_raid_extent()
-  So that the cleanup helper is always called no matter what.
-
-- Call the above helper for btrfs_finish_one_ordered()
-  This is called just before the final release on the ordered extent.
-
-This is reported by Sashiko when reviewing another patch.
+This is again reported by Sashiko when reviewing another patch.
 
 Link: https://sashiko.dev/#/patchset/20260817021512.3010812-1-shuangpeng.kernel%40gmail.com
-Fixes: 02c372e1f016 ("btrfs: add support for inserting raid stripe extents")
+Fixes: 8c4cba2adbb0 ("btrfs: update stripe extents for existing logical addresses")
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/inode.c            |  3 +++
- fs/btrfs/raid-stripe-tree.c | 18 ++++++++++++------
- fs/btrfs/raid-stripe-tree.h |  1 +
- 3 files changed, 16 insertions(+), 6 deletions(-)
+ fs/btrfs/raid-stripe-tree.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8a9b52848fbc..b896358678ab 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3436,6 +3436,9 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
- 	 */
- 	btrfs_remove_ordered_extent(ordered_extent);
- 
-+	/* Cleanup any remaining biocs attached to the OE. */
-+	btrfs_cleanup_ordered_bioc_list(ordered_extent);
-+
- 	/* once for us */
- 	btrfs_put_ordered_extent(ordered_extent);
- 	/* once for the tree */
 diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index 89e259a47d8d..6291775dbe0e 100644
+index 6291775dbe0e..d9e660447205 100644
 --- a/fs/btrfs/raid-stripe-tree.c
 +++ b/fs/btrfs/raid-stripe-tree.c
-@@ -373,7 +373,7 @@ int btrfs_insert_raid_extent(struct btrfs_trans_handle *trans,
- 			     struct btrfs_ordered_extent *ordered_extent)
- {
- 	struct btrfs_io_context *bioc;
--	int ret;
-+	int ret = 0;
+@@ -310,8 +310,10 @@ static int update_raid_extent_item(struct btrfs_trans_handle *trans,
  
- 	if (!btrfs_fs_incompat(trans->fs_info, RAID_STRIPE_TREE))
- 		return 0;
-@@ -381,17 +381,23 @@ int btrfs_insert_raid_extent(struct btrfs_trans_handle *trans,
- 	list_for_each_entry(bioc, &ordered_extent->bioc_list, rst_ordered_entry) {
- 		ret = btrfs_insert_one_raid_extent(trans, bioc);
- 		if (ret)
--			return ret;
-+			break;
- 	}
+ 	ret = btrfs_search_slot(trans, trans->fs_info->stripe_root, key, path,
+ 				0, 1);
+-	if (ret)
+-		return (ret == 1 ? ret : -EINVAL);
++	if (ret > 0)
++		ret = -ENOENT;
++	if (ret < 0)
++		return ret;
  
--	while (!list_empty(&ordered_extent->bioc_list)) {
--		bioc = list_first_entry(&ordered_extent->bioc_list,
-+	btrfs_cleanup_ordered_bioc_list(ordered_extent);
-+	return ret;
-+}
-+
-+void btrfs_cleanup_ordered_bioc_list(struct btrfs_ordered_extent *ordered)
-+{
-+	while (!list_empty(&ordered->bioc_list)) {
-+		struct btrfs_io_context *bioc;
-+
-+		bioc = list_first_entry(&ordered->bioc_list,
- 					typeof(*bioc), rst_ordered_entry);
- 		list_del(&bioc->rst_ordered_entry);
- 		btrfs_put_bioc(bioc);
- 	}
--
--	return 0;
- }
- 
- int btrfs_get_raid_extent_offset(struct btrfs_fs_info *fs_info,
-diff --git a/fs/btrfs/raid-stripe-tree.h b/fs/btrfs/raid-stripe-tree.h
-index 69942ad43140..eb02cf48511b 100644
---- a/fs/btrfs/raid-stripe-tree.h
-+++ b/fs/btrfs/raid-stripe-tree.h
-@@ -28,6 +28,7 @@ int btrfs_get_raid_extent_offset(struct btrfs_fs_info *fs_info,
- 				 u32 stripe_index, struct btrfs_io_stripe *stripe);
- int btrfs_insert_raid_extent(struct btrfs_trans_handle *trans,
- 			     struct btrfs_ordered_extent *ordered_extent);
-+void btrfs_cleanup_ordered_bioc_list(struct btrfs_ordered_extent *ordered);
- 
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- int btrfs_insert_one_raid_extent(struct btrfs_trans_handle *trans,
+ 	leaf = path->nodes[0];
+ 	slot = path->slots[0];
 -- 
 2.54.0
 

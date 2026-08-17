@@ -1,180 +1,148 @@
-Received: from m16.mail.126.com (m16.mail.126.com [220.197.31.7])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f42.google.com (mail-wr1-f42.google.com [209.85.221.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E5C23AFD07;
-	Mon, 17 Aug 2026 06:37:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=220.197.31.7
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E9FB83B3BE5
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 06:43:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786948685; cv=none; b=hJvad2CyFyuiM85t1sAxZfpaDao6CKn5xlJ8g3rjmVYryG5BFAWMVD6ote6b4XXC7Wd0ijfm91StmFOwYpTmY25pQycjoetTlnwsEZ7U5FM56hBjHqAvwo2ilNaJGb/lVKylfSGkdP8lkEJGrkFfXW59+ls1LVWgOSgnlSNR0Go=
+	t=1786949028; cv=none; b=If0RqSW5fL77z2EzINdS1W4QH5+gYzWmm/kivQYEgs0Ksf0YwR0o6eIqdKA30jtL/bANIp/YjOust6oTdqAYFSzouAxgiMXQw2pgT/0Xoahcq8MSJFpvLuIinhnjZqmjMsp1yGv+2UOeZOE8JWV2iJ9k/AWfkcTwSjTukMPMWgc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786948685; c=relaxed/simple;
-	bh=gFjQUsIqOeri08hWkhOW+opTLNCV7YocyT2TQOg7Roo=;
-	h=Message-ID:Date:From:MIME-Version:To:CC:Subject:References:
-	 In-Reply-To:Content-Type; b=XxjWaIApmdLuPOY3lHr8uKczlJaw67xCt+gqN3H94kV/VV15iELbXJZPmQNdpT9LfkzwyCUMo0z+WtPnWp+Pbi7B0nZFqk3o7IzUS6prLT1XM7a1EAHfefisiQXYCB/BzqWy0HYnnkDpEH0i565CjGcgzPLOKZeDjWWv0a7gYCc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=126.com; spf=pass smtp.mailfrom=126.com; dkim=pass (1024-bit key) header.d=126.com header.i=@126.com header.b=BzGpGyH4; arc=none smtp.client-ip=220.197.31.7
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=126.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=126.com
+	s=arc-20240116; t=1786949028; c=relaxed/simple;
+	bh=GvOIkmM2XCV3u4XbBXkSDGh2vumEklzHgMhxwwsmZFQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=m96+1uJu4A1+tSkxz0esg8T9YePfD732TE/tR1SW9ua895/GcL8XOYUgoeBvpWDYfztfuV2MGD31w7WaSwallkObZdqNiktkB2DP47i3FptXDLflhnyf8VNJvRp8+q3l/l+r1n6uQZWcnRvhFWKKZ4tx1pkbhRMrO57cAB8RJzk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Nf/qMmOH; arc=none smtp.client-ip=209.85.221.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=126.com header.i=@126.com header.b="BzGpGyH4"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=126.com;
-	s=s110527; h=Message-ID:Date:From:MIME-Version:To:Subject:
-	Content-Type; bh=Lv1r4r6QbT0vxH4A7ErB5Ug+Yg/i+uo1fbLDc70YPj8=;
-	b=BzGpGyH40TZ+jeBliN4Iq0Hr+LUazc6hdyOs65zvjLhSQTDUi9MJR5TzJhAsHd
-	eCEa9ZvVB3UHXNe/MW6RlbAOWnXknQLpBDhjIfqFg5tFYx/qRJGRSKDhgxh6tOPp
-	77KvrcpFdkipBNqbNRl5grtCaFb9l41Wt1hiuWvHOjX0s=
-Received: from localhost.localdomain (unknown [])
-	by gzga-smtp-mtada-g1-4 (Coremail) with SMTP id _____wBnrYUorIJqDixGFg--.43082S2;
-	Mon, 17 Aug 2026 14:37:29 +0800 (CST)
-Message-ID: <6A82AC11.3030505@126.com>
-Date: Mon, 17 Aug 2026 14:37:05 +0800
-From: Hongling Zeng <zhongling0719@126.com>
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:31.0) Gecko/20100101 Thunderbird/31.2.0
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Nf/qMmOH"
+Received: by mail-wr1-f42.google.com with SMTP id ffacd0b85a97d-47fe2d179e2so1935421f8f.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Aug 2026 23:43:46 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1786949025; x=1787553825; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=5ZY2hQm9399FpzIqQNXf66bt6CBMezxdVtheF0+VjAE=;
+        b=Nf/qMmOHJFIFJHd4lezRUCEMwBnMcRRGc+h/vJxjC2CCU4ODWKRjxMGrcY4I8GmaaR
+         RWhyv13+6HglN11nLqu9HQ6f1R4of34/lNYfeH4QXQH4Bud50nXqncM6SIpHDjGZCoOn
+         yp5WtP6J/UL/e/lae1kWUj/ofIK1fJPidG7wDffTO/AJYqDuu6hTGl6/6HGyvHL4Zxxk
+         sSvGa0uPB0Pp4WWz+kLO9t27UfMMwva8uJEIkr+GKdrjaMrEC9ebqz59IXp4lt7G6SF2
+         gXTFVHkz+Rlsp5y0aZMY/TRmvmN8rhjvu22SM35y3+8l2aQaKEhFpfR3Agdw062URdD6
+         c+Tg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1786949025; x=1787553825;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=5ZY2hQm9399FpzIqQNXf66bt6CBMezxdVtheF0+VjAE=;
+        b=dLt+Khco40kzs/b84jbh5ek5912BUuSwlyXQs8WtG50CjA3A+lVhEcNG2EI0CkwiEW
+         MvR5Mztu8pg48V6VRcKow1RrC8z/TJWgtqlcM5wcd5YF/CjBA7vaHAe/hbDuO6/I8jEG
+         ETdgfVtHET6jK1KOuqPpAA9f6SYz/htwa09rjFy0PDwTM1npN3EZ1Ol+KXwfQR0TErED
+         iCong7zuQlVI0vSGQ9eJTlVKexR0qLbRYVaIOhqXiz+aWSKwCWD98hFA6mOeIb/1Gsir
+         JQ3SfCDTs8FJNn4HktI/P/3rpQO0CW+PQj1bfF+XP0rF/H4Izy6ni/qXOuDRWyj+1WeT
+         8sUA==
+X-Gm-Message-State: AOJu0YyoHnuBWJeUOrWDSSHwaRZoQ61xi98HWOekAmX6BnBB5S9q6hza
+	P/p2xQ8TOwS4qSD6gxpNZq0pR9g+LQBgQTnZ+Olxz7777F8Xe6+abgJCipTfiskSlC4=
+X-Gm-Gg: AR+sD13+nO9ZefVxW3moSpLn61lAmSjYW8C/2ILQpO3ZPxaT0DSnH98CATdiIFW2RdS
+	6AXi41aZD+wCox0Y9Eh4xflh07cVS7nhkn1L/Fyd9ni+uGfxIjODr/BCYkE42uaGsETXzGb79Sh
+	LIxYjvGv2/n9wXnz9xTm69AA8GrrcU8JZS3OUN6wspkw4FiOsRR8/BNEttDraatp5VMxIdK5aC8
+	Vo4gSplYvL0S7EY+210UORjEcVF3wlOM/jJ+SMDcm8mV52bpkXcUx0NwMbb3RvOU3w1BtqgLNDo
+	4wAxMiDI5nzess5fzmd6ZTgr2Mxqf7SJ6Ga8mXQ/OaiKZPUZmei3HjfVfI6vzd0/mqo2ggZJViu
+	+V4ZkHcjYaCdYt0FV1xNDIdW5whEDe9+iGtKPBL6eC0rbAawrL0aBsZDRiYJALEuT8/71Mhr0sk
+	Gmr3nL0XIn7L/yMqZJKtKTRawqlCh7kRXeuwqfdHzA/71GL/G9P0E43w==
+X-Received: by 2002:a05:600c:4e89:b0:499:516b:83d5 with SMTP id 5b1f17b1804b1-49987961bf9mr309581465e9.11.1786949025011;
+        Sun, 16 Aug 2026 23:43:45 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3954d2b85b1sm1047552a91.2.2026.08.16.23.43.40
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 16 Aug 2026 23:43:44 -0700 (PDT)
+Message-ID: <72e6138f-3c9e-4094-a746-bd1e4c6f1558@suse.com>
+Date: Mon, 17 Aug 2026 16:13:37 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, 
- Hongling Zeng <zenghongling@kylinos.cn>,
- clm@fb.com, dsterba@suse.com, lizetao1@huawei.com
-CC: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
- stable@vger.kernel.org
-Subject: Re: [PATCH] btrfs: handle highmem folios in read_key_bytes
-References: <20260817022012.19658-1-zenghongling@kylinos.cn> <8e30fed1-5879-4a26-a1a2-d1a3302bc068@gmx.com> <6A828ABB.10507@126.com> <eb3d2310-fbd0-474a-b44a-1d5da3d0a8f6@gmx.com>
-In-Reply-To: <eb3d2310-fbd0-474a-b44a-1d5da3d0a8f6@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: fix missing folio_unlock in read_merkle_tree_page
+ error path
+To: Hongling Zeng <zenghongling@kylinos.cn>, clm@fb.com, dsterba@suse.com,
+ boris@bur.io, willy@infradead.org
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ zhongling0719@126.com, stable@vger.kernel.org
+References: <20260817053607.46939-1-zenghongling@kylinos.cn>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260817053607.46939-1-zenghongling@kylinos.cn>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:_____wBnrYUorIJqDixGFg--.43082S2
-X-Coremail-Antispam: 1Uf129KBjvJXoWxWrWfZF4DtF4kuFy5AFy5urg_yoWrCw4xpF
-	y8Ga1DKr4DJ34Yyr4Iqa1rtr1Fvay8tr4UWFsxJ342vas0vrn8WF4xKw1UW3W8Gr18GFy0
-	vF1UA343ZF1DAaDanT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x07j-GYdUUUUU=
-X-CM-SenderInfo: x2kr0wpolqwiqxrzqiyswou0bp/xtbBrglwQWqCrCmjcAAA3o
 
 
-在 2026年08月17日 14:02, Qu Wenruo 写道:
->
->
-> 在 2026/8/17 13:44, Hongling Zeng 写道:
->>
->> 在 2026年08月17日 10:55, Qu Wenruo 写道:
->>>
->>>
->>> 在 2026/8/17 11:50, Hongling Zeng 写道:
->>>> On 32-bit systems with highmem, folio_address() can return NULL for
->>>> unmapped highmem folios. When this NULL is passed as the dest 
->>>> parameter
->>>> to read_key_bytes() with a non-NULL dest_folio, it violates the 
->>>> function's
->>>> contract (which requires dest to be non-NULL when dest_folio is 
->>>> provided).
->>>
->>> But metadata folios are not allocated by page cache, but by btrfs 
->>> itself, which always use GFP_NOFS then attach the folio to page 
->>> cache, thus should not get highmem memory in the first place.
->>>
->>> And there is no way to trigger read from userspace on btree inode, 
->>> so there should be no highmem folios from the beginning.
->>    Thanks for the review.
->>
->>    I was not able to reproduce this on a real system. This was 
->> identified through code analysis with assistance from glm 5.5, not 
->> from a
->>    real-world encounter.
->>
->>    Your analysis about btrfs using ~__GFP_FS for folio allocation and 
->> the lack
->>    of userspace trigger paths makes sense.
->
-> Sorry, it doesn't.
->
-> I mis-read the context and considered the folio to be from btree 
-> inode, but it's not.
->
-> So it can still be from page cache, which can be highmem.
->
-> But on the other hand, I do not think your fix is doing any good to 
-> the readability either.
->
-> I'll rework the involved function and caller to remove the folio 
-> parameter, and instead always pass a vaddr and length to 
-> read_key_bytes(), and let the caller to handle the kmap instead.
-   Thanks for the feedback.
 
-   I understand your rework plan. Will it also address the folio_unlock
-   issue in the error path? The current code leaves the folio permanently
-   locked after filemap_add_folio() + read_key_bytes() failure.
+在 2026/8/17 15:06, Hongling Zeng 写道:
+> filemap_add_folio() adds the folio to the page cache and leaves it locked.
+> If read_key_bytes() fails, the error path only calls folio_put() without
+> first unlocking the folio, leaving it permanently locked in the page cache.
+> This causes subsequent attempts to lock this folio to hang.
+> 
+> Fix by adding folio_unlock() before folio_put() in the error handling path.
+> 
+> Fixes: 06ed09351b67 ("btrfs: convert btrfs_read_merkle_tree_page() to use a folio")
+> Cc: stable@vger.kernel.org
+> Assisted-by: Codex:gpt-5.5
+> Signed-off-by: Hongling Zeng <zenghongling@kylinos.cn>
 
-   If your rework doesn't cover this, could you help to review the 
-folio_unlock
-   fix patch?
+A fix is already submitted and merged:
 
->
->> The proposed changes are based on the
->>    generic folio_address() behavior and the theoretical dest/dest_folio
->>    invariant, but I do not currently have evidence that a highmem 
->> folio can
->>    reach read_key_bytes() in this state.
->>
->>    I will withdraw this patch rather than claim a reachable highmem bug
->>    without a reproducer.
->>
->>>
->>>>
->>>> The original bug had two symptoms:
->>>> 1. Unsigned len underflow when len -= copy_bytes executes (infinite 
->>>> loop)
->>>> 2. The folio remains uninitialized because the copy block is skipped
->>>
->>> So did you really hit the problem in the real world?
->>>
->>>>
->>>> Fix requires two changes:
->>>>
->>>> 1. Change "if (!dest)" to "if (!dest && !dest_folio)"
->>>>     - Prevents the "counting-only" mode when dest_folio is provided
->>>>     - Fixes the underflow/infinite loop
->>>>
->>>> 2. Change "if (dest)" to "if (dest || dest_folio)"
->>>>     - Ensures the copy block executes when dest_folio is provided
->>>>     - Allows kmap_local_folio() to properly map the highmem folio
->>>>     - Actually writes data to the folio
->>>>
->>>> Without the second change, the highmem folio is not populated even
->>>> though the read succeeds, causing subsequent fs-verity verification to
->>>> operate on stale or uninitialized data.
->>>>
->>>> Fixes: 884937793db5 ("btrfs: convert read_key_bytes() to take a 
->>>> folio")
->>>> Cc: stable@vger.kernel.org
->>>> Signed-off-by: Hongling Zeng <zenghongling@kylinos.cn>
->>>
->>> Missing LLM disclosure.
->>>> ---
->>>>   fs/btrfs/verity.c | 4 ++--
->>>>   1 file changed, 2 insertions(+), 2 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
->>>> index 983365a73541..80bc945c7dcb 100644
->>>> --- a/fs/btrfs/verity.c
->>>> +++ b/fs/btrfs/verity.c
->>>> @@ -351,7 +351,7 @@ static int read_key_bytes(struct btrfs_inode 
->>>> *inode, u8 key_type, u64 offset,
->>>>           }
->>>>             /* desc = NULL to just sum all the item lengths */
->>>> -        if (!dest)
->>>> +        if (!dest && !dest_folio)
->>>>               copy_end = item_end;
->>>>           else
->>>>               copy_end = min(offset + len, item_end);
->>>> @@ -362,7 +362,7 @@ static int read_key_bytes(struct btrfs_inode 
->>>> *inode, u8 key_type, u64 offset,
->>>>           /* Offset from the start of item for copying */
->>>>           copy_offset = offset - key.offset;
->>>>   -        if (dest) {
->>>> +        if (dest || dest_folio) {
->>>>               if (dest_folio)
->>>>                   kaddr = kmap_local_folio(dest_folio, 0);
->>
+https://lore.kernel.org/linux-btrfs/20260722025435.1493093-1-chenyichong@uniontech.com/
+
+Next time let your agent to read the btrfs developer's note and check if 
+there is already a fix:
+
+https://btrfs.readthedocs.io/en/latest/dev/Developer-s-FAQ.html#development-phase-linux-next-for-next
+
+> ---
+>   fs/btrfs/verity.c | 1 +
+>   1 file changed, 1 insertion(+)
+> 
+> diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
+> index 983365a73541..4431656140f8 100644
+> --- a/fs/btrfs/verity.c
+> +++ b/fs/btrfs/verity.c
+> @@ -753,6 +753,7 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
+>   	ret = read_key_bytes(BTRFS_I(inode), BTRFS_VERITY_MERKLE_ITEM_KEY, off,
+>   			     folio_address(folio), PAGE_SIZE, folio);
+>   	if (ret < 0) {
+> +		folio_unlock(folio);
+>   		folio_put(folio);
+>   		return ERR_PTR(ret);
+>   	}
 

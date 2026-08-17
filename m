@@ -1,113 +1,106 @@
-Received: from mail-qv1-f48.google.com (mail-qv1-f48.google.com [209.85.219.48])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mailgw.kylinos.cn (mailgw.kylinos.cn [124.126.103.232])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 65D0E2F12A1
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 01:27:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C2546175A84;
+	Mon, 17 Aug 2026 01:45:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=124.126.103.232
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786930065; cv=none; b=SaoZTE3hzcuBZXUdRsl48TyjblYH+29nmY4iEYXW/ty4kmodSUIgLBiDZgyC8yJDXvBMygLYLNtpan8SWnjKtjgV4erPssvXdUlEdWlkEEl45MEFBgkpU7Sh9TmMS5+/AU+QXnkrTUtNX0P96Y5NMjuBM54cHL5FtkpA3PQuUgo=
+	t=1786931155; cv=none; b=oAyqoxvZZ5Dhgt/rbKvDzjSHHrSI8SeJ2q12oTLEwQAPV4qXwLuTChOyexBdxKaAUH4+rDriChW87zyHJ6VCmK0y4ZO96AjFYa3inXbW0c2oozGuaBNbz88hEjkpXFo8VgZ/tHkzbpOpzMaGCW7/WaK8KPlTfSFEPloKJ8QAsbM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786930065; c=relaxed/simple;
-	bh=gz1xa6XE42BhM+L6sCevqvioIrMnDwgjFYnQ6nyVy2g=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=XnFymj1N7wzfYqdEK6ODd1wA1qQC2HyopIu0uWOdgzeASu2WZL/+MKyRYe6b58eFpy/RGOcG6UngrWsCs/3l5XG01MViArPYCSC6Y+kITQ8TKbhXenfm4tK/z6jx6Ms9oApYgjQHBGXbdlh/hnxfxDBsblveUUHJ/qMOQyGyFkE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=bvillyJl; arc=none smtp.client-ip=209.85.219.48
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="bvillyJl"
-Received: by mail-qv1-f48.google.com with SMTP id 6a1803df08f44-8eeadbc5e21so16258806d6.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Aug 2026 18:27:44 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1786930063; x=1787534863; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=KPNXN2iZUqAh3E/T0g1Fu1hhmYLYG5QU9GnoWbcO2EE=;
-        b=bvillyJluYcb1uRs4di8AaFHs1x8lZxVnNZ3dcqeBGBEJLEqZ8aLD0Qsq+yI1RSz6z
-         gOZ6YjiPCGXiVUrYTBQHBeP5T2Lar8OIW+fdPol1zcGa3pVi/OirnMHzXq4YupazdFbV
-         GfwmRN9iU4kpo+cr05CwpTlnkCQhv+NQh9bLq7hO4i6tXudhxJCcUgvul8904wO6swuG
-         t6bBv7a+w28aR/TNc7wz9yMfPqMnZkh5c2HgjEBtTxuWcIgNzjFDhJ9seM4VY86fjr9s
-         rc+04gKUQok5e5YZllMa0hr9SXDejmmmy9OLbJxEv55fKg4/whNmmyM/88c/7006OBgV
-         5bcQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1786930063; x=1787534863;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=KPNXN2iZUqAh3E/T0g1Fu1hhmYLYG5QU9GnoWbcO2EE=;
-        b=OHWoLIpDujo8/OdzvqVru3g5R0FVL68zVsMoPKMrLqoW4WBU5hEPtgbChimfl9Z8y/
-         7h4JnbF9z+UwMw9AABlaGT3fWUayxr4jgufTWiP5bJK4c7BtI0UtPzgbp9+pzhcG4uz/
-         cYZnZd62BoJXYtpJj+fr6PQJ4r4ODIGnI1ErMh7ghjAct56S82wZZUkyHQx67PewGW8c
-         AZXl6QtkUu8Kwq2CVxchvI2KnbrPU/xwB2YS3KTMPdCZV4yqx0943eM5aqne0xg4+4Kv
-         HCAdUBXHI2xI/Zd2KugRfjAaqpuXKtLx+v1XLEjWCxIpblAWjR0Yc+NNYO51QGRsky8r
-         uomQ==
-X-Gm-Message-State: AOJu0YxdTgIw2LCLAU3pJ7Wc5pvZQ0EI1V9mqOWtOj3z0smY0ZmpDUZW
-	qAmsVgC0s+nbVcNoRI7sMDhS2G08axuPre/ZmecfYUGYrxvxg2eC9uNzYkTVaEHr
-X-Gm-Gg: AR+sD13dgc7EhrGMktYN4kGr8pAy3rO9sQPvB4giAjpnEc3WeYWnb/YMMeoT+OzfoUG
-	N8I4dLWBvinW5ajuWjse7tDkYx52kJVwyxR9N+L2zJpeIx6gU+hjsSQzuPn3Kn6ExE33feqUe6w
-	f2xm1FGyDMdvJxJRbPB0/TdPPGTG8elOn1SAShrsLPJQYbWui7+s2/c57ern1HdS372Y0bPqTyW
-	FwkUFMHODe6iktloKDz3dCgSYRFsj3+QooIUAnVpGIwWQqbldn0DPMwdaYdmYQQHoQfg8epcAqV
-	sAChf55cykzLtQPx6yq13MhCrwnhP8IvrWFBMqP3hKBQrnB20NfjNZI9JsGCTkiEoQjBH8tsCAl
-	UxI1k0a0ul7He7jTZ4fzZn8CeDexcm2md22mab1tD7zx8YWjNQnqRMMerzv/uw6HdXE+fXu+u9Y
-	UrWgHsvCWzHfGJvdtXwQWjkdKZdU+xn5IQHS9jESmWHx5xrzPAq/7g7AZgbd1VrZy5ptPO5gw8K
-	8pZzty6A1HFJgqqrG/rIwyrjaMl
-X-Received: by 2002:a05:6214:262f:b0:8ce:ade5:e8fd with SMTP id 6a1803df08f44-90a91dbc713mr240996986d6.25.1786930063103;
-        Sun, 16 Aug 2026 18:27:43 -0700 (PDT)
-Received: from i4-l-hqh5357-03.ad.psu.edu ([130.203.139.71])
-        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-90a93508b13sm72718466d6.28.2026.08.16.18.27.42
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 16 Aug 2026 18:27:42 -0700 (PDT)
-From: Shuangpeng Bai <shuangpeng.kernel@gmail.com>
+	s=arc-20240116; t=1786931155; c=relaxed/simple;
+	bh=xCalpKfJwppbsjEw142Sk0IZWbTHlPAac+YOCWP48vA=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type; b=ZFgpfgQ3JuJfPjBYSXRSHNCJtL011pJrB0WFcjLpDAq8muPFZBEDPAjDf+E16p6gZIvmgCLNP9txrczW+sPNORAgzv7EgDLWA0fiM6hp+akkwHhX8I3x3UBV0WP3CG6usn0axpZRNkIuK4aHzBWz8lDpPJVZXvqh3HunFoN//TI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=kylinos.cn; arc=none smtp.client-ip=124.126.103.232
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kylinos.cn
+X-UUID: 5e92b35099dd11f19a56ed5b684f684d-20260817
+X-CID-P-RULE: Release_Ham
+X-CID-O-INFO: VERSION:1.3.19,REQID:6d8657b7-551d-4f27-a1c1-8f1814073dd4,IP:0,U
+	RL:0,TC:0,Content:0,EDM:0,RT:0,SF:0,FILE:0,BULK:0,RULE:Release_Ham,ACTION:
+	release,TS:0
+X-CID-META: VersionHash:7db8b62,CLOUDID:edb4ca3ec98e39d76c197dc47d296679,BulkI
+	D:nil,BulkQuantity:0,SF:102|850|865|898,TC:nil,Content:0|15|50,EDM:-3,IP:n
+	il,URL:0,File:nil,RT:nil,Bulk:nil,QS:nil,BEC:nil,COL:0,OSI:0,OSA:0,AV:0,LE
+	S:1,SPR:NO,DKR:0,DKP:0,BRR:0,BRE:0,ARC:0
+X-CID-BVR: 2,SSN|SDN
+X-CID-BAS: 2,SSN|SDN,0,_
+X-CID-FACTOR: TF_CID_SPAM_SNR
+X-CID-RHF: D41D8CD98F00B204E9800998ECF8427E
+X-UUID: 5e92b35099dd11f19a56ed5b684f684d-20260817
+X-User: zenghongling@kylinos.cn
+Received: from localhost.localdomain [(10.44.16.150)] by mailgw.kylinos.cn
+	(envelope-from <zenghongling@kylinos.cn>)
+	(Generic MTA with TLSv1.3 TLS_AES_256_GCM_SHA384 256/256)
+	with ESMTP id 498122896; Mon, 17 Aug 2026 09:45:47 +0800
+From: Hongling Zeng <zenghongling@kylinos.cn>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com,
-	dsterba@suse.com
-Subject: [PATCH] btrfs: fix transaction use-after-free in raid stripe insertion
-Date: Sun, 16 Aug 2026 21:27:33 -0400
-Message-ID: <20260817012733.2962781-1-shuangpeng.kernel@gmail.com>
-X-Mailer: git-send-email 2.43.0
+Cc: Hongling Zeng <zenghongling@kylinos.cn>,
+	stable@vger.kernel.org
+Subject: [PATCH] btrfs: fix use-after-free in mark_block_group_to_copy
+Date: Mon, 17 Aug 2026 09:45:45 +0800
+Message-Id: <20260817014545.13169-1-zenghongling@kylinos.cn>
+X-Mailer: git-send-email 2.25.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-If allocation of a RAID stripe extent fails,
-btrfs_insert_one_raid_extent() aborts and ends the transaction before
-returning -ENOMEM.
+mark_block_group_to_copy() iterates over the commit root with
+skip_locking=true to avoid lock contention. Without holding
+commit_root_sem,a concurrent transaction commit can swap and free
+the commit root during iteration, leading to use-after-free when
+accessing extent buffers.
 
-btrfs_finish_one_ordered(), the production caller through
-btrfs_insert_raid_extent(), still owns the transaction handle. It handles
-the error by aborting the transaction and then reaches the common exit
-path, which ends the transaction again.
+The fix adds commit_root_sem locking, but CRITICALLY must only cover the
+actual search period (btrfs_for_each_slot), NOT the preceding while loop
+which calls btrfs_commit_transaction(). If held during that loop, we get
+self-deadlock: down_read(commit_root_sem) → btrfs_commit_transaction()
+→ switch_commit_roots() → down_write(commit_root_sem), blocking forever
+on our own read lock.
 
-The premature end can free the handle and drop its transaction reference.
-Transaction cleanup can then free the transaction before the caller's
-second abort accesses the handle and transaction, resulting in
-use-after-free.
+Lock scope:
+- down_read() after path setup, before btrfs_for_each_slot
+- up_read() immediately after btrfs_for_each_slot completes
+- NOT held during while loop (btrfs_commit_transaction) path
+- NOT held on the !path error path (goto unlock before lock
+  acquisition)
 
-Keep the abort at the failure site, but let the caller's common exit path
-end the transaction once, after it has finished using both objects.
+This matches the established btrfs pattern used in send.c, backref.c, etc.:
+hold commit_root_sem read lock ONLY while searching commit root, never
+across transaction commits.
 
-Fixes: 02c372e1f016 ("btrfs: add support for inserting raid stripe extents")
+Fixes: 78ce9fc269af ("btrfs: zoned: mark block groups to copy for device-replace")
 Cc: stable@vger.kernel.org
-Signed-off-by: Shuangpeng Bai <shuangpeng.kernel@gmail.com>
+Signed-off-by: Hongling Zeng <zenghongling@kylinos.cn>
 ---
- fs/btrfs/raid-stripe-tree.c | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/dev-replace.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index b210371ce91e..89e259a47d8d 100644
---- a/fs/btrfs/raid-stripe-tree.c
-+++ b/fs/btrfs/raid-stripe-tree.c
-@@ -337,7 +337,6 @@ int btrfs_insert_one_raid_extent(struct btrfs_trans_handle *trans,
- 	stripe_extent = kzalloc(item_size, GFP_NOFS);
- 	if (unlikely(!stripe_extent)) {
- 		btrfs_abort_transaction(trans, -ENOMEM);
--		btrfs_end_transaction(trans);
- 		return -ENOMEM;
- 	}
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index dc0834f920c3..734807bf48b3 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -499,6 +499,7 @@ static int mark_block_group_to_copy(struct btrfs_fs_info *fs_info,
+ 	key.type = BTRFS_DEV_EXTENT_KEY;
+ 	key.offset = 0;
  
++	down_read(&fs_info->commit_root_sem);
+ 	btrfs_for_each_slot(root, &key, &found_key, path, iter_ret) {
+ 		struct extent_buffer *leaf = path->nodes[0];
+ 
+@@ -525,6 +526,8 @@ static int mark_block_group_to_copy(struct btrfs_fs_info *fs_info,
+ 	if (iter_ret < 0)
+ 		ret = iter_ret;
+ 
++	up_read(&fs_info->commit_root_sem);
++
+ 	btrfs_free_path(path);
+ unlock:
+ 	mutex_unlock(&fs_info->chunk_mutex);
 -- 
-2.43.0
+2.25.1
 

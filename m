@@ -1,50 +1,53 @@
-Received: from mailgw.kylinos.cn (mailgw.kylinos.cn [124.126.103.232])
+Received: from smtpbgau2.qq.com (smtpbgau2.qq.com [54.206.34.216])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1AECB271450;
-	Mon, 17 Aug 2026 02:20:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=124.126.103.232
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7CD9A25B09E;
+	Mon, 17 Aug 2026 02:39:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=54.206.34.216
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786933224; cv=none; b=tuHSWxY+L17IieryEcH5aw8yEeS4MfMNTy+1fuesuozRn0bGmFqeHZOVfZckq8bF7Jj3oIrGIbmIiFDpJDr2Wwxb5cn8KyUE2e3kucEYjm/fGKBVLkgDXpWlFxl3TB92iqQIn88UY2IwxSVTkgl92wk8PNglf/y7Av4lC+Acwf8=
+	t=1786934354; cv=none; b=NuHjdHM54as48CvtKlwondgDr5Ln5PlfX3+Fw7AR+4NwT2VYveEndgg8yhurO/Br/j0dEr4UQiQkgkwlYx9P7mUCrsGTJCJJT53EKDWQ2FMEbRlEenJKYwA1EEZ6V4KJuVZwFTY46xdumT7OnKAmmNIOuFXjSr7nToboFl3ojNc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786933224; c=relaxed/simple;
-	bh=tZsCNsmURDsgnw+Pi/Tf240qHhK7CXHODyN/g3TBD/g=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=EjrxJ81zQXfocaWivIDcuSoQ/omZZ6H3kjlzM6ps8LVpKnDmuOiOOgSbs6e1psMKhD2UyS0vP671sc9V09+bYOSjHiU6+4Wf45jOpn07XLb1MDNXk2IkeyVtijNJDjkUr5kZbCJZFyYReLKaW2lW1seOraWjykqZo188gfOOsAc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=kylinos.cn; arc=none smtp.client-ip=124.126.103.232
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kylinos.cn
-X-UUID: 2f5be17499e211f19a56ed5b684f684d-20260817
-X-CID-P-RULE: Release_Ham
-X-CID-O-INFO: VERSION:1.3.19,REQID:e8dda2f1-4d86-450f-bfbc-df2430ff5722,IP:0,U
-	RL:0,TC:0,Content:0,EDM:0,RT:0,SF:0,FILE:0,BULK:0,RULE:Release_Ham,ACTION:
-	release,TS:0
-X-CID-META: VersionHash:7db8b62,CLOUDID:7c4a2104bc1a4635c55fee67e42fb3fd,BulkI
-	D:nil,BulkQuantity:0,SF:102|850|865|898,TC:nil,Content:0|15|50,EDM:-3,IP:n
-	il,URL:0,File:nil,RT:nil,Bulk:nil,QS:nil,BEC:nil,COL:0,OSI:0,OSA:0,AV:0,LE
-	S:1,SPR:NO,DKR:0,DKP:0,BRR:0,BRE:0,ARC:0
-X-CID-BVR: 2,SSN|SDN
-X-CID-BAS: 2,SSN|SDN,0,_
-X-CID-FACTOR: TF_CID_SPAM_SNR
-X-CID-RHF: D41D8CD98F00B204E9800998ECF8427E
-X-UUID: 2f5be17499e211f19a56ed5b684f684d-20260817
-X-User: zenghongling@kylinos.cn
-Received: from localhost.localdomain [(10.44.16.150)] by mailgw.kylinos.cn
-	(envelope-from <zenghongling@kylinos.cn>)
-	(Generic MTA with TLSv1.3 TLS_AES_256_GCM_SHA384 256/256)
-	with ESMTP id 223089269; Mon, 17 Aug 2026 10:20:16 +0800
-From: Hongling Zeng <zenghongling@kylinos.cn>
-To: clm@fb.com,
+	s=arc-20240116; t=1786934354; c=relaxed/simple;
+	bh=GegpXDcutpDDvj7DpMEeBigmoYhrFQQxpe8x2m85to8=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version; b=u0uFsKlJA3JmZ2wGIc62lhUuKi0JCn949hJgaT9jXtji1o2MgnMM2BPiuDIsimQSqNv/AtLZwgipCV79XVwxqY5Uo/QEADw9gnRsNf0TVB61AlQF7Nh6/WEvUHqxtKrsUg80UoN0cvw08PisLwiCjFcSYsGk7niBVYpth35Hd1I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=uniontech.com; spf=pass smtp.mailfrom=uniontech.com; dkim=pass (1024-bit key) header.d=uniontech.com header.i=@uniontech.com header.b=TH/2KIti; arc=none smtp.client-ip=54.206.34.216
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=uniontech.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=uniontech.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=uniontech.com header.i=@uniontech.com header.b="TH/2KIti"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=uniontech.com;
+	s=onoh2408; t=1786934255;
+	bh=h+6Q0J6JCA+a12KGJ99TS9qmbev11ZbTu4xdbQoRAV8=;
+	h=From:To:Subject:Date:Message-Id:MIME-Version;
+	b=TH/2KItiFIT39x/EKXeDbeFX4eJbVrjrFezYPOn08UoT34tc0s0UD31WH47vj+Cfd
+	 NLUsoL9bcDRF1MXSwCw5bKAJAw5OVs6eiY3P8h0s+d9yDzX0UwhRVYi++Faj2sOfvW
+	 EznXp1wzpUnCFiCBQv9hj6P0AekwRApPjvdYXLJ8=
+X-QQ-mid: esmtpgz13t1786934249tb85d61e4
+X-QQ-Originating-IP: Gc55HQvq+MeE1hB4MN3PpgJNEfVR7gnm2TzdvFrXBgM=
+Received: from uniontech.com ( [113.57.152.160])
+	by bizesmtp.qq.com (ESMTP) with 
+	id ; Mon, 17 Aug 2026 10:37:27 +0800 (CST)
+X-QQ-SSF: 0000000000000000000000000000000
+X-QQ-GoodBg: 1
+X-BIZMAIL-ID: 3959441994811052823
+EX-QQ-RecipientCnt: 9
+From: Yichong Chen <chenyichong@uniontech.com>
+To: lkp@intel.com
+Cc: boris@bur.io,
+	chenyichong@uniontech.com,
+	chris.mason@fusionio.com,
 	dsterba@suse.com,
-	lizetao1@huawei.com
-Cc: linux-btrfs@vger.kernel.org,
+	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
-	zhongling0719@126.com,
-	Hongling Zeng <zenghongling@kylinos.cn>,
-	stable@vger.kernel.org
-Subject: [PATCH] btrfs: handle highmem folios in read_key_bytes
-Date: Mon, 17 Aug 2026 10:20:12 +0800
-Message-Id: <20260817022012.19658-1-zenghongling@kylinos.cn>
-X-Mailer: git-send-email 2.25.1
+	oe-kbuild-all@lists.linux.dev,
+	willy@infradead.org
+Subject: Re: [PATCH] btrfs: remove verity Merkle folio from page cache on error
+Date: Mon, 17 Aug 2026 10:37:26 +0800
+Message-Id: <20260817023726.1731478-1-chenyichong@uniontech.com>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <202608150828.VDr6P7DT-lkp@intel.com>
+References: <202608150828.VDr6P7DT-lkp@intel.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -52,60 +55,39 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-QQ-SENDSIZE: 520
+Feedback-ID: esmtpgz:uniontech.com:qybglogicsvrgz:qybglogicsvrgz3a-0
+X-QQ-XMAILINFO: MnHj12EHtzRtY/hfoabY6lbBnAgbgMSWbcUZCdBFCCs5h820o4tWBE6s
+	wv/iNs68lUKxijcUMn/Y5w2aQN8QrdPaqZFPe/fqbt3iChMwbX6YVIRq5ZG1TrYL7nJ6qZE
+	ST+xR4JR5VUHzRtHSEx3v0nuXE2A2FtHM5hhtaJVJQeJ0orjkhp88GXYQKb/ODYaR0stf2u
+	HL3htlMJc2qEnpu67l/m+NzBTpoChO/sEqupU1JnoKAgFf5tXreGmA+Z2su6giVBOum893c
+	9KCUr/1ysIjEdPTsAn000ilYURbJZGqXaqkRUjIrYX/QM2Hu/d2WN9sew4V1NyE3vhPAtsA
+	tsPMirGCaytLEw8JsKDFZKl7sQ2UszFQRuzHH1MzXvfjFryUdgW3S+iSU3hexTij0DZfsz3
+	MoIdGlj8VxvdBFWTBE6cNnMl9nSlUdPMEdeZOHfENclSChJKaJEA+me5Bo4JkHgVsrf2Nv4
+	iNokk5zl/ktY93tjtbc3yAB7TicvQGTyKjNuzDlaq4h10OmeVaIu2Z0/lmT95aty6umiurE
+	gzUPSp3/GgldmsIFkU8RX2Sgg8Hrk6lzU/QAWeXnZR0B5Z8qsJrc6paNwt6SEcpbpphBK0a
+	9433ORz0OjWBh7AB/z5iJfW6M2procRJXwYoO7M53/5ou5i1V2lkBscqPtc3ZHr9qVM06Gd
+	jFj8qGDUgz5LTO2Vx32MBJ6tKWH7pBe37RFwKjCYR6KYPs43uaV/GM7hrmww2leJohPUADK
+	a+03NNq5p95WR6G9LwddH+ZBsYodiSCshvVkOScmSLwg3HDMwLBlk0tlPr7hr2SNdRK1Jfz
+	ajANf7a+3JgVXHq2K0Fn0ldHfaE6CgE+19pZS8cGBm1QY/esOyCYsR+rynnfe0lSbWzGmXV
+	/DzeQbQXZRNl7K3x66KEPwm4meISuU8gusNhgbIGjvFCNRBQMlNpnz/BI7olZ/X45UtGSS/
+	TAsgoOdX6nOER0osB3rAxmwz0ZG9nnUd+0BSsG1kagUxhNZZzUXM04mtEk5hK9pB9UcoLeO
+	kHgSiWUYnmLZXrNvpsxWGFa/RSkdFiFAkWMCVaF04AyMl81Rou
+X-QQ-XMRINFO: OWPUhxQsoeAVwkVaQIEGSKwwgKCxK/fD5g==
+X-QQ-RECHKSPAM: 0
 
-On 32-bit systems with highmem, folio_address() can return NULL for
-unmapped highmem folios. When this NULL is passed as the dest parameter
-to read_key_bytes() with a non-NULL dest_folio, it violates the function's
-contract (which requires dest to be non-NULL when dest_folio is provided).
+Hi,
 
-The original bug had two symptoms:
-1. Unsigned len underflow when len -= copy_bytes executes (infinite loop)
-2. The folio remains uninitialized because the copy block is skipped
+Thanks for the report.
 
-Fix requires two changes:
+This was a problem in v1.  The patch called filemap_remove_folio(), which is
+not exported and therefore breaks when btrfs is built as a module.
 
-1. Change "if (!dest)" to "if (!dest && !dest_folio)"
-   - Prevents the "counting-only" mode when dest_folio is provided
-   - Fixes the underflow/infinite loop
+I avoided filemap_remove_folio() in v2, and the patch has since been reworked
+further.  The latest version no longer calls filemap_remove_folio():
 
-2. Change "if (dest)" to "if (dest || dest_folio)"
-   - Ensures the copy block executes when dest_folio is provided
-   - Allows kmap_local_folio() to properly map the highmem folio
-   - Actually writes data to the folio
+  [PATCH v4] btrfs: retry verity reads for not-uptodate Merkle folios
+  https://lore.kernel.org/all/20260722025435.1493093-1-chenyichong@uniontech.com/
 
-Without the second change, the highmem folio is not populated even
-though the read succeeds, causing subsequent fs-verity verification to
-operate on stale or uninitialized data.
-
-Fixes: 884937793db5 ("btrfs: convert read_key_bytes() to take a folio")
-Cc: stable@vger.kernel.org
-Signed-off-by: Hongling Zeng <zenghongling@kylinos.cn>
----
- fs/btrfs/verity.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-index 983365a73541..80bc945c7dcb 100644
---- a/fs/btrfs/verity.c
-+++ b/fs/btrfs/verity.c
-@@ -351,7 +351,7 @@ static int read_key_bytes(struct btrfs_inode *inode, u8 key_type, u64 offset,
- 		}
- 
- 		/* desc = NULL to just sum all the item lengths */
--		if (!dest)
-+		if (!dest && !dest_folio)
- 			copy_end = item_end;
- 		else
- 			copy_end = min(offset + len, item_end);
-@@ -362,7 +362,7 @@ static int read_key_bytes(struct btrfs_inode *inode, u8 key_type, u64 offset,
- 		/* Offset from the start of item for copying */
- 		copy_offset = offset - key.offset;
- 
--		if (dest) {
-+		if (dest || dest_folio) {
- 			if (dest_folio)
- 				kaddr = kmap_local_folio(dest_folio, 0);
- 
--- 
-2.25.1
-
+Thanks,
+Yichong

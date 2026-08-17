@@ -1,60 +1,74 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-qv1-f45.google.com (mail-qv1-f45.google.com [209.85.219.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BFA81252917
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 02:13:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 37707282F15
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 02:15:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786932815; cv=none; b=ilQJYmbNPiISdjsiq8Ka9/r5ZqBDVlbvrWXaROjdzDJ5XqYTLpLAtUfgk8/QmCDqyK9ODInsTVuIhVqMraL1oj6HWxz2C7ua0Oo+HQdYSBUApOL/bFxPvkYVWCuNWdoDqMu7OrUzZbZ/c6LjdsiHOV6BGIBDf063hscLMo+58do=
+	t=1786932949; cv=none; b=B9+7NJJxkqkhUksQeBvhzWTSUdm4wGVh15lXRMwEdh98UtRbpPPzdLecAp2igWD+qNxU9Axc7yEKt8B+oyTL3zDBlUWlVpj0fCRHUF9cHXm8HA9j5gVE8wEcm7luZjebXo+wPoXSDfUbW43dCp0bOdeI56DnljZ3gQ2YMfJklZs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786932815; c=relaxed/simple;
-	bh=V611fPKAht4oKWZCZVnoxi0k8aHF4FdM3cPk7rAaXUg=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=raBuko7NPXHSfmyMgFSLKxaVJXqyLF7QS3Mi5hqD1Yc19B7IkihoV7JGRoUsW02PJ4DmU0CJJEqBELNzsPEUSIgg+4JB5qeukBtir9EWoXw+qBcitgB9vcM9BrKY4NA3J/4PAoKl2GB3CaD0vZtqTVvBLKNiUBTVyiUxvC7gjD4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Dob01epH; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WnJsvj28; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1786932949; c=relaxed/simple;
+	bh=Q7VEEYC3Vx/rZ+6Z0y7lNBsNBzKQtd+Fo8kHdjcP2LI=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=QzOZ/j1rxRP/GL22GK/r7rGNkpzG0GMx5QzXHKR68gntqixmjYJVdHzQLWc5iC/nO9U4oyhQ1/hun/2v+yiWx2id0c84n/wUuwF1HYci8WqUmK8h7tioVG4usXC3PBzYTPgya+op2/tSGcnfi/5i4u7o08b8SKiScGE9ff43ozU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=LonEef/B; arc=none smtp.client-ip=209.85.219.45
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Dob01epH";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WnJsvj28"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id E59FF83D7F
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 02:13:17 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786932802; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=k2teW1/t0fWAL4KSdKU59QWKAVHU82CYNadHDEFbZss=;
-	b=Dob01epHhVns3n0q0e4m1l7HSV0XKouxibCxOupYaN7/yJh9zdQQOD3cc1vXUT1wWqHUQU
-	Hx6cMmNHBPEgWJ0HuSafsNc7+D1wFHTIE/mKE41Nmosg3Ddx+ZitUqnVWZ43d3MWe4u6E1
-	7GrNUiCKnVx9dpBDseWq17BUV7RXqPM=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=WnJsvj28
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786932797; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=k2teW1/t0fWAL4KSdKU59QWKAVHU82CYNadHDEFbZss=;
-	b=WnJsvj28Q06GZkoafda9Ro2kBRxyyRa3se6+4RndSrtYX2xPhlAeecvRivm8dSuc5cZq6p
-	FUR9c4ti+r3KlqjcjyMsyDLon4D1wHj9EyuZSxaW4RGXoL6n7uUbUG4cZH/t9m5CZKcfCW
-	G7ScoGDCsJTiE3byW+XEv0Zs90MkwPc=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CE8737920A
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 02:13:16 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id ZgsOHTxugmqFKQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 02:13:16 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="LonEef/B"
+Received: by mail-qv1-f45.google.com with SMTP id 6a1803df08f44-8efbafa1bacso15049776d6.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Aug 2026 19:15:48 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1786932947; x=1787537747; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=BMwtLhfF7eGaRL2jkfy7ArtsmZ+sXPQ/z21g6BOb5X8=;
+        b=LonEef/B3Ir+fIXg0+E0NoDgYo92dPDlDvivk1j6kko/nfezXI8aHD9luP+D2zsYf8
+         u70xtsAM90Wtfa3s8gvsb+UQKqp+bMZ57h6Y2NfTTs76aZ+BAVyPFBmp4siu91GpGPth
+         uZXgN6v610/PX+iaFYx0rQNvXkdw5iEHVf4p+cmkvP0CAtHxQghBkidSZT0PK20wDuSd
+         EMvSu4jPvh/lwctgNxq00wmifyBrV/d9pnKQH7uTBiZDQWKzG6/Pe1f0pX6Mak+4W9QQ
+         U2ybeCc/xOQtzEbDCt+h9lc4pzJXsg340W8id2A/hFHTmIKpy4nvflPIxjhhZzklocxY
+         fr7g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1786932947; x=1787537747;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=BMwtLhfF7eGaRL2jkfy7ArtsmZ+sXPQ/z21g6BOb5X8=;
+        b=gVz0jln+k6D5Fj5x+K1HfBL3hP2/u7ApRT1kaVOH4QhV2SoOXVWWbtyN/eIBrJP/pr
+         aWEWf8sXKHQGutEUgfFsZui/GnQ+oewxNR1IXLOQ8AkGfYg5hgRAVSma69Y1Fdk7Kj9b
+         GvfCwO2o5e5V5Rv763Hyzf1IZh6tzSZZtDwveJEVfEEvVz6V8IXvL5wiYQeqnzdMWseZ
+         mhD7AHw2+6L/3oQ24b+Q7SXR48X8Hmw05vckUw/yekanPxZLehBV+3dZgGCioNxViIdc
+         9Di7EgIcbfOM7AobEEzE9gm31mk/uXS9Yv60AFKow3O75Moqnvyi4FineC+7Py2m2X/5
+         t8lw==
+X-Gm-Message-State: AOJu0Yzo0KjnHdKbkmSOa+DONjME9k1qT8Dy8B4WqitVBfseXvbsYJ9J
+	7vE/qXM2mMQ2kldPtx182GpG4aDYXVe9xnSurd0j7nDIG3GzFY9gHWwpqifl6q39
+X-Gm-Gg: AR+sD13AVVyiUaaguxNRxwnPwvcL/PEF0AL3059Qb1ut0vTw3F92yIzUQ+2iBPoNiza
+	QvpUdmndCl1NS6ftEYv5eDImLWsMBMT9mRn7+Pd9Wf3yvRNSTHl2UX89iwrURAzgSnEZV3hABH/
+	7aVGtI1plwjlUZKFKuJYjMcbGrBAd6sHOg4szLI5t0TM6DwOj+4e/+ZO/HVD8xb617HV5eAldl6
+	0VqmdeJ7saRxnzup2epm7a/bbdKS/cIZ8CeyB+gFW8WPSMMMgeQjJDIXr93HbL8X/2FkOjKHVqD
+	5xSvyertv+Ccy92zioc/+dEKzanGFgKJIylw5nshKFaDZ2WLHsBVdIJi410aiFFfMheVNImaRrl
+	dUbbXBXKf7++5Vt8+gE7iN6FJpIvl3kBSc7K0DEn8joAQ7YzDjFZ5QCKNVH9tq3hZQVRQ3TcbLo
+	kH2Ya+G7e9vI5xowFMKVSKx6MTojd29OX2QbthzNBtncXJV5NP3qEnYPpJ7SqXtXuoRBWq4CPIO
+	NHfjn3WKqwd1qvf7w==
+X-Received: by 2002:a05:6214:4281:b0:90a:3291:7ba3 with SMTP id 6a1803df08f44-90a91c5c3d4mr258485556d6.5.1786932947088;
+        Sun, 16 Aug 2026 19:15:47 -0700 (PDT)
+Received: from i4-l-hqh5357-03.ad.psu.edu ([130.203.139.71])
+        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-90a921e4f43sm72999066d6.9.2026.08.16.19.15.46
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 16 Aug 2026 19:15:46 -0700 (PDT)
+From: Shuangpeng Bai <shuangpeng.kernel@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: docs: add extra LLM disclosure following kernel guidelines
-Date: Mon, 17 Aug 2026 11:42:57 +0930
-Message-ID: <705d903a42cea12a09f0e25e8f7bd817c89a9937.1786932754.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+Cc: clm@fb.com,
+	dsterba@suse.com,
+	wqu@suse.com
+Subject: [PATCH v2] btrfs: fix transaction use-after-free in raid stripe insertion
+Date: Sun, 16 Aug 2026 22:15:12 -0400
+Message-ID: <20260817021512.3010812-1-shuangpeng.kernel@gmail.com>
+X-Mailer: git-send-email 2.43.0
+In-Reply-To: <20260817012733.2962781-1-shuangpeng.kernel@gmail.com>
+References: <20260817012733.2962781-1-shuangpeng.kernel@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,68 +76,48 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: E59FF83D7F
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_COUNT_TWO(0.00)[2];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FROM_EQ_ENVFROM(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,suse.com:dkim,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Flag: NO
 
-There are increased LLM assisted bug fixes in the mailing list, and I
-have a very strong feeling that most of the new bug fixes from unknown
-developers are at least assisted of LLM, and they never properly
-disclose the usage of LLM.
+If allocation of a RAID stripe extent fails,
+btrfs_insert_one_raid_extent() aborts and ends the transaction before
+returning -ENOMEM.
 
-I don't know much difference such updated docs will make, but at least
-let's try to make them disclose the LLM usage.
+btrfs_finish_one_ordered(), the production caller through
+btrfs_insert_raid_extent(), still owns the transaction handle. It handles
+the error by aborting the transaction and then reaches the common exit
+path, which ends the transaction again.
 
-Assisted-by: LLM (grammar fixes)
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+The premature end can free the handle and drop its transaction reference.
+Transaction cleanup can then free the transaction before the caller's
+second abort accesses the handle and transaction, resulting in
+use-after-free.
+
+Keep the abort at the failure site, but let the caller's common exit path
+end the transaction once, after it has finished using both objects.
+
+Fixes: 02c372e1f016 ("btrfs: add support for inserting raid stripe extents")
+Cc: stable@vger.kernel.org
+Assisted-by: Codex:GPT-5
+Signed-off-by: Shuangpeng Bai <shuangpeng.kernel@gmail.com>
 ---
- Documentation/dev/Developer-s-FAQ.rst | 4 ++++
- 1 file changed, 4 insertions(+)
+Changes in v2:
+- Add the Assisted-by tag to disclose LLM usage.
 
-diff --git a/Documentation/dev/Developer-s-FAQ.rst b/Documentation/dev/Developer-s-FAQ.rst
-index f258a6cca879..e8febb7af9da 100644
---- a/Documentation/dev/Developer-s-FAQ.rst
-+++ b/Documentation/dev/Developer-s-FAQ.rst
-@@ -36,6 +36,10 @@ highlight the most frequently used tags and their expected meaning. This only
- briefly mentions the commonly used tags. You're encouraged to read the whole
- document and get familiar with it.
- 
-+With the recent increased flow of LLM-assisted bug fixes, please also follow the
-+kernel documentation at https://docs.kernel.org/process/coding-assistants.html to
-+properly disclose LLM usage for every patch.
-+
- Signed-off-by:
- ^^^^^^^^^^^^^^
+v1: https://lore.kernel.org/r/20260817012733.2962781-1-shuangpeng.kernel@gmail.com
+
+ fs/btrfs/raid-stripe-tree.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
+index b210371ce91e..89e259a47d8d 100644
+--- a/fs/btrfs/raid-stripe-tree.c
++++ b/fs/btrfs/raid-stripe-tree.c
+@@ -337,7 +337,6 @@ int btrfs_insert_one_raid_extent(struct btrfs_trans_handle *trans,
+ 	stripe_extent = kzalloc(item_size, GFP_NOFS);
+ 	if (unlikely(!stripe_extent)) {
+ 		btrfs_abort_transaction(trans, -ENOMEM);
+-		btrfs_end_transaction(trans);
+ 		return -ENOMEM;
+ 	}
  
 -- 
-2.54.0
-
+2.43.0

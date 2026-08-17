@@ -1,60 +1,77 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-pl1-f176.google.com (mail-pl1-f176.google.com [209.85.214.176])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DDC7F227EA7
-	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 07:31:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7607C3D1CC5
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 09:50:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.176
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786951883; cv=none; b=qakc6fj2clTQgqaiGmOUxy+VFt9Y65NhflOorlYWuuCQcnHOERIq5VrhLk0JitR1nNAiGH7mBxs020mHjTMw3IYSp+0P9W+9KC7tshJHTf97F76syDVgZg3i0xpqorPWJXOTahr3vighR4nUZwY5KR+cznwMGTVQDKabzP6wsbo=
+	t=1786960225; cv=none; b=sO4IeOtpPz1w81ULqyOsCf+6ZfVt5If+24V8uPS2+80+hwUYfflgp6A8v48bDh3wzu7lMZs2olXKHXWB8RGvtlkPWfx4CY26mmWhkm+CtGvjSFpVViMZDBteVQ6EjRV4gVZtBNN6W4BWjKTEh+bTqifE8eZpdNWccjKPCZHq6Ic=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786951883; c=relaxed/simple;
-	bh=JG0inu7EYkKvz0Z1PScR+9E2kcEHJFHkLaRWA67LtvI=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=gPiZj8mfs3ZrdM+xnCbKe/4IwCprSVTDH2tpMwDwddd7yfeZsajCCvr3cP2afwktDXNvfr8JbfFTXxckYJM30lTGF7Nx1hWSdLuGATq7vnckxfMdN0dOFO/QqMOMl08B0e7Na6284VzjRCRkb/M/ksbbpNKHKsOl8xCz8I+QozY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ds+4+PpW; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WYo9EKv3; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1786960225; c=relaxed/simple;
+	bh=uWF8orLwxEoijm1Gh06k0YjXWGn2fJsbdt7DGpXsnxI=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=uLmFJGSo1JnhmxmimEtvqv3Sc5SBHNm8TmCACS3TD/62W8xKcO7k+ZKx1tOozwtnnygTuOol17phIQ60aJll5M9qDyvO6hMRghutwHrx+CCeI+p2nvm0uAOrhHKoLcSVgH6ulnByklnqUNV+iRxJG4D2VHtMkesWRwSlUylV4rM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Wy6zAanT; arc=none smtp.client-ip=209.85.214.176
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ds+4+PpW";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WYo9EKv3"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id C85813E06;
-	Mon, 17 Aug 2026 07:31:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786951875; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=zLM8nG88PeEgk7V6oOlbSVipuKwG5olQD0ltaPYks5w=;
-	b=ds+4+PpW6PNfOW79C1Spbb9gDcKNg5OeHFPKXR3MA9eeWUeGpf34WLi1ffVhMnpikz5B2N
-	bQ1jpfLuz2WXcti1MCk+wdZuXS9Ajk9qDJid4V+si/+p+tbxQJ5CCYw9xlnkojbdtnt2X3
-	Ov4da6z83IOZt5tuaWH/oznGxQF3yV4=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=WYo9EKv3
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1786951871; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=zLM8nG88PeEgk7V6oOlbSVipuKwG5olQD0ltaPYks5w=;
-	b=WYo9EKv3fGr9mylBBNZRi5vlEEXHCUM/BXPvJ3fMm1/9Kj8ihsc9ZKIXVJYO8xghpcwz20
-	g8VDlmJgQua3BuTRlC5ka1ibGiBCrd+1LKLitymHRnNt4RLwJjZffZG97hrn+NhbReOgux
-	khVeMnW32D5rU5LW1LuoR/2Pr/r17Js=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5D24E7934A;
-	Mon, 17 Aug 2026 07:31:10 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id dImkAb64gmrmSgAAD6G6ig
-	(envelope-from <wqu@suse.com>); Mon, 17 Aug 2026 07:31:10 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Hongling Zeng <zenghongling@kylinos.cn>
-Subject: [PATCH] btrfs: refactor read_key_bytes() to remove the dest_folio parameter
-Date: Mon, 17 Aug 2026 17:00:43 +0930
-Message-ID: <9dbe80bc5b11556619603748db55424cb75a4407.1786951820.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Wy6zAanT"
+Received: by mail-pl1-f176.google.com with SMTP id d9443c01a7336-2caea3f742bso54662645ad.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 02:50:22 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1786960222; x=1787565022; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=dtGOINVlwfH2yT0hV/LWcrRl/ap1zI6ZO5ir4XusDuY=;
+        b=Wy6zAanTGWHjnLjPBLtv5A+FQ+thbcJTd3cqB9pPv+pp4q3Fuco0iHLKCvbKL8woDH
+         CnW4E519kDPl+00GfOdrdy2QRm1gSSmVfM0rVBazWUx+IZGJS/Wd0ul1VT+HJyP4qyVs
+         cUgaRjTBS6bfB+8QZ4nZRACZRqIFbfl7A3ggTFRV2hN34791raoFoLuFAc8+xjkkvsig
+         eNAnmoLNMdIJHqUuqu9eJWq6EkpjJT5QhYdhtIg0XDAol65iaf14659zuLlvbQsYX+3Y
+         GaoVCtOXuiwka3JVvqEjwUGNspXpCAVx88LG0n1rGpY+EGji/4qsBiqhwlRuc6W/vcjj
+         OIlg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1786960222; x=1787565022;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=dtGOINVlwfH2yT0hV/LWcrRl/ap1zI6ZO5ir4XusDuY=;
+        b=ZDskFZoycWD0j25CYWgX1YWdp74wZ/twQpb1qsOnCLwJHyfuv5tKlvfQVUs1xCYPOZ
+         PKe8kIQ3zCA984KXQImka1kvs7lxIa/fOaN7IeD3ytrh0q0exEU7kFCn/l4KLKrcZq0x
+         3obD2r9rpCZuTesV5Q+HXwqNiQ3tCuLsxvrthyI/9mHeXAxJYfHgDl0nvqEnLqsiDrde
+         Vrb7xzV3al7XtfXvDIpwS2yi9ZFbg02LUrTn4aQZ0OfJpNXUvCEHL5Yp7eU/qbEY1lAM
+         693LyzaDollVIeevaaB8ckp0FqaJ+26iuRAunEf7t53xSAS4ZPXHfFylZiOzBiD97grT
+         kZ6Q==
+X-Forwarded-Encrypted: i=1; AHgh+RpZ0OtEZ912idw8/WvffsuMasxuk/Gg0ZQtGs9DdgP9YltmpIjhEyBlwlbzDoLZNDo6igrm04aP6qvD/g==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwN7hEmsBejC9XxJUo6wbxGx40dlNaPCEOwWpVjQpwyzKE5C4WW
+	qR9qID94OlmHJO58gSjIR9tWjL9VP+4Pi3F6oMKUIXSMiVGyembs+uAwHgV+FuXM
+X-Gm-Gg: AR+sD11rnc7o885KZ+DenJFr0TTK1xeT+WkkDZNIjccAhb6lURjVaZChwFMjCpW0b3s
+	fk+WS9Oy6ZoBd2bWLeq/p352ltR9W9dqirzN6MfomrJNkDceaoUtPrAvHEsVfcapMHU4zBzsl/f
+	q0uZrmXSSi2xPKLxn83c5swAFhfv4WBovzLW/XnzSdwgO5vALmXmoRGjN/Q+d1GNRJcCIeWBxSS
+	ZluJdRxqeLRz4PIJUZWyrEipUZ9bIZbzayxkbolO9lhbMSZr4j4vMW+K8k3605aRaUm15Ooejrw
+	ecWhqrPCE7L5fXjdxao/JRJC1S07cz+t7wyAEVpeO40GcqZRO/YLfY2Liw+KMN5V0Oz6pgQYzWd
+	vqdZtCpqQWqgkhsRghd8sPIstZIRHjtHVydayy9j2HBiFrHhCp1fJaXhzGq08aW4MhZuhKyea39
+	nYWvvqn+LHnWHs9i1APgp8DsEDOxwVVy4VzWje1XSHLPvv5mrcW7N9SygmT57DxKQZIk+JGEr2d
+	1MIviFIwckXYmZ2/r/I/k2WVwkcvVMmjRAfIu+dT96xIA9CIFp/nJemS8synMq9y46+5OgZRAe+
+	ANH7pF+slGyhhh8ud4ZoTLYUS8I3UPfNWoYzbs/PYKcIAzrBPIVlZkiefe9V5cw=
+X-Received: by 2002:a17:903:144b:b0:2d3:2e86:647a with SMTP id d9443c01a7336-2d3b07effbfmr287095635ad.5.1786960221528;
+        Mon, 17 Aug 2026 02:50:21 -0700 (PDT)
+Received: from spider.bream-herring.ts.net ([103.252.203.158])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2d5bb499e12sm3187135ad.8.2026.08.17.02.50.19
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 17 Aug 2026 02:50:21 -0700 (PDT)
+From: Matthias Goergens <matthias.goergens@gmail.com>
+To: fstests@vger.kernel.org
+Cc: zlang@kernel.org,
+	fdmanana@kernel.org,
+	linux-xfs@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] generic: test FIDEDUPERANGE result reporting with REPORT_PROGRESS
+Date: Mon, 17 Aug 2026 17:50:17 +0800
+Message-ID: <20260817095017.948979-1-matthias.goergens@gmail.com>
+X-Mailer: git-send-email 2.55.0
+In-Reply-To: <20260805071839.3423779-1-matthias.goergens@gmail.com>
+References: <20260805071839.3423779-1-matthias.goergens@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,189 +79,378 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,kylinos.cn:email,suse.com:email,suse.com:mid,suse.com:dkim];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_TWO(0.00)[2];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: C85813E06
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
 
-The function read_key_bytes() have 3 call sites:
+Add a raw FIDEDUPERANGE helper that reports each destination's
+bytes_deduped and status, and a test for the proposed
+FILE_DEDUPE_RANGE_REPORT_PROGRESS flag: explicit zero-length success,
+a request the VFS shortens for an interior destination, a sub-block
+request that makes no progress (zero, no error), and differing
+contents (the examined span).  One unflagged case pins the legacy
+reporting so the default ABI cannot change silently.
 
-- For BTRFS_VERITY_DESC_ITEM_KEY offset 0 inside btrfs_get_verity_descriptor()
-- For BTRFS_VERITY_DESC_ITEM_KEY offset 1 inside btrfs_get_verity_descriptor()
-  Those are to read the description items, which are pretty small with
-  fixed item size.
+The kernel side is under review:
+https://lore.kernel.org/linux-fsdevel/20260805071414.3414870-1-matthias.goergens@gmail.com/
+The commit id in _wants_kernel_commit is a placeholder until it lands.
 
-  Those call sites do not utilize the @dest_folio parameter.
-
-- For btrfs_read_merkle_tree_page()
-  This is to read the BTRFS_VERITY_MERKLE_ITEM_KEY, which can be pretty
-  large and split into multiple items.
-
-  This is the only call site utilizing the @dest_folio parameter.
-
-Just for the only btrfs_read_merkle_tree_page() call site, we have a
-complex scheme for @dest and @dest_folio parameters.
-Since @dest can be NULL, it means if we pass @dest as NULL, then no
-matter if @dest_folio is provided, the merkle data will not be loaded
-into that @dest_folio.
-
-This can lead to a bug where a highmem folio is not mapped, then we pass
-folio_address(folio), which is NULL, into read_key_bytes(), causing no
-data to be written into @dest_folio.
-
-To address the complex scheme between @dest and @dest_folio, remove the
-@dest_folio parameter completely, and let the only caller to map the
-folio and pass the mapped kernel address into read_key_bytes() instead.
-
-This not only reduces the parameter list, but also make it much clear on
-the @dest parameter handling.
-The only downside is a longer duration of locally mapped page, but this
-should still be fine, as kmap_local_folio() can survive context switch.
-
-Reported-by: Hongling Zeng <zenghongling@kylinos.cn>
-Link: https://lore.kernel.org/linux-btrfs/20260817022012.19658-1-zenghongling@kylinos.cn/
-Fixes: 146054090b08 ("btrfs: initial fsverity support")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Matthias Goergens <matthias.goergens@gmail.com>
 ---
- fs/btrfs/verity.c | 31 ++++++++++++++-----------------
- 1 file changed, 14 insertions(+), 17 deletions(-)
+v2 (per Zorro's review and the kernel thread):
+- drop the generic/517 golden-output change: the kernel side is now an
+  opt-in flag, so default reporting is unchanged
+- test the flag semantics proposed by Darrick in the kernel thread,
+  including bytes_deduped as an advance hint on DIFFERS and zero on a
+  per-destination error
+- sentinel-fill the helper's output fields so the test proves the
+  kernel wrote them
+- add the helper binary to .gitignore
+- use _wants_kernel_commit (placeholder id until the kernel side lands)
 
-diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-index 4e0ab5842274..0c4b59759350 100644
---- a/fs/btrfs/verity.c
-+++ b/fs/btrfs/verity.c
-@@ -272,21 +272,17 @@ static int write_key_bytes(struct btrfs_inode *inode, u8 key_type, u64 offset,
-  * @dest:       Buffer to read into. This parameter has slightly tricky
-  *              semantics.  If it is NULL, the function will not do any copying
-  *              and will just return the size of all the items up to len bytes.
-- *              If dest_page is passed, then the function will kmap_local the
-- *              page and ignore dest, but it must still be non-NULL to avoid the
-- *              counting-only behavior.
-  * @len:        length in bytes to read
-- * @dest_folio: copy into this folio instead of the dest buffer
-  *
-  * Helper function to read items from the btree.  This returns the number of
-  * bytes read or < 0 for errors.  We can return short reads if the items don't
-  * exist on disk or aren't big enough to fill the desired length.  Supports
-- * reading into a provided buffer (dest) or into the page cache
-+ * reading into a provided buffer (dest).
-  *
-  * Returns number of bytes read or a negative error code on failure.
-  */
- static int read_key_bytes(struct btrfs_inode *inode, u8 key_type, u64 offset,
--			  char *dest, u64 len, struct folio *dest_folio)
-+			  char *dest, u64 len)
- {
- 	BTRFS_PATH_AUTO_FREE(path);
- 	struct btrfs_root *root = inode->root;
-@@ -306,7 +302,11 @@ static int read_key_bytes(struct btrfs_inode *inode, u8 key_type, u64 offset,
- 	if (!path)
- 		return -ENOMEM;
+Every expected line was produced by a kernel with the flag patch
+applied (btrfs scratch under QEMU) rather than written from the spec.
+ .gitignore            |   1 +
+ src/Makefile          |   2 +-
+ src/fideduperange.c   | 166 ++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/806     | 118 ++++++++++++++++++++++++++++++
+ tests/generic/806.out |   7 ++
+ 5 files changed, 293 insertions(+), 1 deletion(-)
+ create mode 100644 src/fideduperange.c
+ create mode 100755 tests/generic/806
+ create mode 100644 tests/generic/806.out
+
+diff --git a/.gitignore b/.gitignore
+index 0b6b9452..3d6ce89d 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -71,6 +71,7 @@ tags
+ /src/cloner
+ /src/dbtest
+ /src/deduperace
++/src/fideduperange
+ /src/detached_mounts_propagation
+ /src/devzero
+ /src/dio-append-buf-fault
+diff --git a/src/Makefile b/src/Makefile
+index 76cf50c3..e686fe27 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -25,7 +25,7 @@ TARGETS = dirstress fill fill2 getpagesize holes lstat64 \
  
--	if (dest_folio)
-+	/*
-+	 * Merkle items can be large and split across multiple items,
-+	 * so enable readahead for such cases.
-+	 */
-+	if (key_type == BTRFS_VERITY_MERKLE_ITEM_KEY)
- 		path->reada = READA_FORWARD;
- 
- 	key.objectid = btrfs_ino(inode);
-@@ -350,7 +350,7 @@ static int read_key_bytes(struct btrfs_inode *inode, u8 key_type, u64 offset,
- 				break;
- 		}
- 
--		/* desc = NULL to just sum all the item lengths */
-+		/* dest == NULL to just sum all the item lengths */
- 		if (!dest)
- 			copy_end = item_end;
- 		else
-@@ -363,16 +363,10 @@ static int read_key_bytes(struct btrfs_inode *inode, u8 key_type, u64 offset,
- 		copy_offset = offset - key.offset;
- 
- 		if (dest) {
--			if (dest_folio)
--				kaddr = kmap_local_folio(dest_folio, 0);
--
- 			data = btrfs_item_ptr(leaf, path->slots[0], void);
- 			read_extent_buffer(leaf, kaddr + dest_offset,
- 					   (unsigned long)data + copy_offset,
- 					   copy_bytes);
--
--			if (dest_folio)
--				kunmap_local(kaddr);
- 		}
- 
- 		offset += copy_bytes;
-@@ -663,7 +657,7 @@ int btrfs_get_verity_descriptor(struct inode *inode, void *buf, size_t buf_size)
- 
- 	memset(&item, 0, sizeof(item));
- 	ret = read_key_bytes(BTRFS_I(inode), BTRFS_VERITY_DESC_ITEM_KEY, 0,
--			     (char *)&item, sizeof(item), NULL);
-+			     (char *)&item, sizeof(item));
- 	if (ret < 0)
- 		return ret;
- 
-@@ -680,7 +674,7 @@ int btrfs_get_verity_descriptor(struct inode *inode, void *buf, size_t buf_size)
- 		return -ERANGE;
- 
- 	ret = read_key_bytes(BTRFS_I(inode), BTRFS_VERITY_DESC_ITEM_KEY, 1,
--			     buf, buf_size, NULL);
-+			     buf, buf_size);
- 	if (ret < 0)
- 		return ret;
- 	if (ret != true_size)
-@@ -706,6 +700,7 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
- 	struct folio *folio;
- 	u64 off = (u64)index << PAGE_SHIFT;
- 	loff_t merkle_pos = merkle_file_pos(inode);
-+	void *kaddr;
- 	int ret;
- 
- 	if (merkle_pos < 0)
-@@ -749,6 +744,7 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
- 	}
- 
- read_folio:
-+	kaddr = kmap_local_folio(folio, 0);
- 	/*
- 	 * Merkle item keys are indexed from byte 0 in the merkle tree.
- 	 * They have the form:
-@@ -756,7 +752,8 @@ static struct page *btrfs_read_merkle_tree_page(struct inode *inode,
- 	 * [ inode objectid, BTRFS_MERKLE_ITEM_KEY, offset in bytes ]
- 	 */
- 	ret = read_key_bytes(BTRFS_I(inode), BTRFS_VERITY_MERKLE_ITEM_KEY, off,
--			     folio_address(folio), PAGE_SIZE, folio);
-+			     kaddr, PAGE_SIZE);
-+	kunmap_local(kaddr);
- 	if (ret < 0) {
- 		folio_unlock(folio);
- 		folio_put(folio);
+ LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
+ 	preallo_rw_pattern_writer ftrunc trunc fs_perms testx looptest \
+-	locktest unwritten_mmap bulkstat_unlink_test deduperace \
++	locktest unwritten_mmap bulkstat_unlink_test deduperace fideduperange \
+ 	bulkstat_unlink_test_modified t_dir_offset t_futimens t_immutable \
+ 	stale_handle pwrite_mmap_blocked t_dir_offset2 seek_sanity_test \
+ 	seek_copy_test t_readdir_1 t_readdir_2 fsync-tester nsexec cloner \
+diff --git a/src/fideduperange.c b/src/fideduperange.c
+new file mode 100644
+index 00000000..b36365f6
+--- /dev/null
++++ b/src/fideduperange.c
+@@ -0,0 +1,166 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Issue a raw FIDEDUPERANGE ioctl and report each destination's result.
++ */
++#include <errno.h>
++#include <fcntl.h>
++#include <getopt.h>
++#include <inttypes.h>
++#include <linux/fs.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <unistd.h>
++
++/* Local copies of the UAPI types: the system linux/fs.h may predate the
++ * FILE_DEDUPE_RANGE_REPORT_PROGRESS flag.  The layout matches the kernel
++ * UAPI. */
++#ifndef FILE_DEDUPE_RANGE_REPORT_PROGRESS
++#define FILE_DEDUPE_RANGE_REPORT_PROGRESS (1U << 0)
++#endif
++#define FILE_DEDUPE_RANGE_SAME		0
++#define FILE_DEDUPE_RANGE_DIFFERS	1
++
++struct file_dedupe_range_info_local {
++	__s64 dest_fd;
++	__u64 dest_offset;
++	__u64 bytes_deduped;
++	__s32 status;
++	__u32 reserved;
++};
++
++struct file_dedupe_range_local {
++	__u64 src_offset;
++	__u64 src_length;
++	__u16 dest_count;
++	__u16 reserved1;
++	__u32 flags;
++	struct file_dedupe_range_info_local info[0];
++};
++
++#ifndef FIDEDUPERANGE
++#define FIDEDUPERANGE _IOWR(0x94, 54, struct file_dedupe_range_local)
++#endif
++
++static __u32 range_flags;
++
++static void
++usage(const char *progname)
++{
++	fprintf(stderr,
++		"Usage: %s [-f] src src_offset length dest dest_offset "
++		"[dest dest_offset ...]\n"
++		"  -f: set FILE_DEDUPE_RANGE_REPORT_PROGRESS\n",
++		progname);
++	exit(EXIT_FAILURE);
++}
++
++static uint64_t
++parse_u64(const char *arg, const char *name)
++{
++	char *end;
++	unsigned long long value;
++
++	errno = 0;
++	value = strtoull(arg, &end, 0);
++	if (errno || end == arg || *end != '\0') {
++		fprintf(stderr, "Invalid %s: %s\n", name, arg);
++		exit(EXIT_FAILURE);
++	}
++
++	return value;
++}
++
++int
++main(int argc, char **argv)
++{
++	struct file_dedupe_range_local *range;
++	size_t range_size;
++	unsigned int dest_count;
++	unsigned int i;
++	int src_fd;
++	int ret;
++	int c;
++
++	const char *progname = argv[0];
++
++	while ((c = getopt(argc, argv, "f")) != -1) {
++		switch (c) {
++		case 'f':
++			range_flags |= FILE_DEDUPE_RANGE_REPORT_PROGRESS;
++			break;
++		default:
++			usage(progname);
++		}
++	}
++	argc -= optind;
++	argv += optind;
++
++	if (argc < 5 || (argc - 3) % 2 != 0)
++		usage(progname);
++
++	dest_count = (argc - 3) / 2;
++	if (dest_count > UINT16_MAX) {
++		fprintf(stderr, "Too many destinations: %u\n", dest_count);
++		return EXIT_FAILURE;
++	}
++
++	range_size = sizeof(*range) +
++		dest_count * sizeof(struct file_dedupe_range_info_local);
++	range = calloc(1, range_size);
++	if (!range) {
++		perror("calloc");
++		return EXIT_FAILURE;
++	}
++
++	src_fd = open(argv[0], O_RDONLY);
++	if (src_fd < 0) {
++		perror(argv[0]);
++		free(range);
++		return EXIT_FAILURE;
++	}
++
++	range->src_offset = parse_u64(argv[1], "source offset");
++	range->src_length = parse_u64(argv[2], "length");
++	range->dest_count = dest_count;
++	range->flags = range_flags;
++
++	for (i = 0; i < dest_count; i++) {
++		const char *dest_path = argv[3 + i * 2];
++
++		range->info[i].dest_fd = open(dest_path, O_RDWR);
++		if (range->info[i].dest_fd < 0) {
++			perror(dest_path);
++			ret = EXIT_FAILURE;
++			goto close_destinations;
++		}
++		range->info[i].dest_offset =
++			parse_u64(argv[4 + i * 2], "destination offset");
++		/* Sentinels: the kernel must overwrite both output fields. */
++		range->info[i].bytes_deduped = ~0ULL;
++		range->info[i].status = INT32_MIN;
++	}
++
++	if (ioctl(src_fd, FIDEDUPERANGE, range) < 0) {
++		perror("FIDEDUPERANGE");
++		ret = EXIT_FAILURE;
++		goto close_destinations;
++	}
++
++	for (i = 0; i < dest_count; i++)
++		printf("destination %u: bytes=%" PRIu64 " status=%d\n", i,
++		       (uint64_t)range->info[i].bytes_deduped,
++		       range->info[i].status);
++	ret = EXIT_SUCCESS;
++
++close_destinations:
++	while (i > 0) {
++		i--;
++		close(range->info[i].dest_fd);
++	}
++	close(src_fd);
++	free(range);
++	return ret;
++}
+diff --git a/tests/generic/806 b/tests/generic/806
+new file mode 100755
+index 00000000..70a5fe36
+--- /dev/null
++++ b/tests/generic/806
+@@ -0,0 +1,118 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 Matthias Goergens. All Rights Reserved.
++#
++# FS QA Test No. 806
++#
++# Check FIDEDUPERANGE result reporting with FILE_DEDUPE_RANGE_REPORT_PROGRESS:
++# bytes_deduped as an advance hint for zero-length, shortened, zero-progress
++# and differing requests, plus one unflagged case pinning the legacy
++# reporting.
++#
++. ./common/preamble
++_begin_fstest auto quick dedupe clone
++
++. ./common/reflink
++
++_require_scratch_dedupe
++_require_test_program "fideduperange"
++
++# Placeholder commit id: the kernel patch is still under review; to be
++# replaced with the real id when it lands (the helper only prints a hint).
++_wants_kernel_commit XXXXXXXXXXXX \
++	"vfs: add FILE_DEDUPE_RANGE_REPORT_PROGRESS flag to FIDEDUPERANGE"
++
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++
++block_size=$(_get_block_size "$SCRATCH_MNT")
++short_length=$((2 * block_size))
++full_length=$((short_length + 100))
++
++src=$SCRATCH_MNT/src
++src_short=$SCRATCH_MNT/src-short
++src_diff=$SCRATCH_MNT/src-diff
++dest_interior=$SCRATCH_MNT/dest-interior
++dest_eof=$SCRATCH_MNT/dest-eof
++dest_short_eof=$SCRATCH_MNT/dest-short-eof
++dest_diff=$SCRATCH_MNT/dest-diff
++
++$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 $full_length" "$src" \
++	>>$seqres.full 2>&1
++$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 100" "$src_short" \
++	>>$seqres.full 2>&1
++$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 $((full_length + block_size))" \
++	"$dest_interior" >>$seqres.full 2>&1
++$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 $full_length" "$dest_eof" \
++	>>$seqres.full 2>&1
++$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 100" "$dest_short_eof" \
++	>>$seqres.full 2>&1
++$XFS_IO_PROG -f -c "pwrite -S 0x61 0 $full_length" "$src_diff" \
++	>>$seqres.full 2>&1
++$XFS_IO_PROG -f -c "pwrite -S 0x62 0 $full_length" "$dest_diff" \
++	>>$seqres.full 2>&1
++
++check_results()
++{
++	local description="$1"
++	local expected="$2"
++	shift 2
++	local result
++	local ret
++
++	result=$($here/src/fideduperange "$@" 2>&1)
++	ret=$?
++	{
++		echo "$description"
++		echo "$result"
++	} >>$seqres.full
++
++	if [ $ret -ne 0 ]; then
++		_fail "$description: ioctl helper failed"
++	fi
++	if [ "$result" != "$expected" ]; then
++		_fail "$description: unexpected ioctl result"
++	fi
++
++	echo "$description"
++}
++
++# With the flag, bytes_deduped is an advance hint: actual bytes on SAME,
++# the examined span on DIFFERS, zero when no further work is possible.
++
++expected="destination 0: bytes=0 status=0"
++check_results "zero length: 0 bytes, SAME" "$expected" \
++	-f "$src" 0 0 "$dest_interior" 0
++
++expected="destination 0: bytes=$short_length status=0
++destination 1: bytes=$full_length status=0"
++check_results "mixed partial request: shortened, full" "$expected" \
++	-f "$src" 0 "$full_length" "$dest_interior" 0 "$dest_eof" 0
++
++expected="destination 0: bytes=0 status=0
++destination 1: bytes=100 status=0"
++check_results "sub-block request: zero progress, full" "$expected" \
++	-f "$src_short" 0 100 "$dest_interior" 0 "$dest_short_eof" 0
++
++expected="destination 0: bytes=$block_size status=1"
++check_results "differing contents: DIFFERS with advance hint" "$expected" \
++	-f "$src_diff" 0 "$full_length" "$dest_diff" 0
++
++# On a per-destination error, status carries the errno and bytes_deduped
++# is zero (the huge offset fails VFS validation with EINVAL).
++
++expected="destination 0: bytes=0 status=-22"
++check_results "error: bytes zero on EINVAL" "$expected" \
++	-f "$src" 0 "$full_length" "$dest_interior" 9223372036854775807
++
++# Without the flag, the legacy reporting is unchanged: the requested
++# length is reported even when the VFS shortens the range.
++
++expected="destination 0: bytes=$full_length status=0
++destination 1: bytes=$full_length status=0"
++check_results "unflagged legacy reporting: full length" "$expected" \
++	"$src" 0 "$full_length" "$dest_interior" 0 "$dest_eof" 0
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/806.out b/tests/generic/806.out
+new file mode 100644
+index 00000000..5c436cb3
+--- /dev/null
++++ b/tests/generic/806.out
+@@ -0,0 +1,7 @@
++QA output created by 806
++zero length: 0 bytes, SAME
++mixed partial request: shortened, full
++sub-block request: zero progress, full
++differing contents: DIFFERS with advance hint
++error: bytes zero on EINVAL
++unflagged legacy reporting: full length
 -- 
-2.54.0
+2.55.0
 

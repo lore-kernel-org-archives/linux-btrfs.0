@@ -1,145 +1,113 @@
-Received: from m16.mail.126.com (m16.mail.126.com [117.135.210.8])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 345115474E;
-	Mon, 17 Aug 2026 04:17:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=117.135.210.8
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 94ACF26296
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1786940286; cv=none; b=fvyO3WzeRVMxAz9JtkqZuENlUUAigt9Th6jwazot3BvkSbk3apvwbeZIhJqVuGjxMP0u4q7RQus3dS7nbb1L5qiahBxxjXvRE8DOMoJTN1dJ2TDXSz6rm/uZGEPhugi9B7GrnHVgSwFQUY5RxgAMsOgjUjXdODlIVpgRWCWbR0Q=
+	t=1786943665; cv=none; b=mfIj6Jv6Hu+tuAiKUeMpBmNUHm5a0r4M5RsYKRZzKu2xGmEQIvXXTZjO67bwe68/e4k9pg+5W0xdFiIPLELJbbWB/8tUMBhBoraY0BP2j6sHHIzsYIAn0sipIBOtLHHuGlMSChK+zx8BhTvgf5biTCVkmv/u1cMPrhHjnXr2GCA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1786940286; c=relaxed/simple;
-	bh=sGtFL/ujPheaT9QlrQqwaXn15CTLavm9eQM73ovd4e0=;
-	h=Message-ID:Date:From:MIME-Version:To:CC:Subject:References:
-	 In-Reply-To:Content-Type; b=mK7mHr5QHEs7/lNWfBpMLr53jkX5N/2/qOlJwjk0i2VR7EzogaJbE5T935eyH6jmLtp0RbbrBLm87CkrlSn0Fq3epOesx5rAg1CitKtCIMcFAaCDxJR90x2MvU5kQ9tuhhn8i0LSYJSLIJv3h3MSKDgA3+ygv8hYTQwx1vNVekI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=126.com; spf=pass smtp.mailfrom=126.com; dkim=pass (1024-bit key) header.d=126.com header.i=@126.com header.b=OPOx49x9; arc=none smtp.client-ip=117.135.210.8
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=126.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=126.com
+	s=arc-20240116; t=1786943665; c=relaxed/simple;
+	bh=rTGtgcC9dZ42bDrCcpMc8WvW9lXbyuAbD2V89xvFBIA=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=SWl9/3GjW/QrL8gRTuuzE9ZxA1iUMsk+sPETRfTO0w6++xiVq3r1gXgjiYhBdkD1K4wynRAOnGYueEH7gq0UIrs7W3e2sNkv3uPguI4dzLkr9I0U+2DwLx5P5G7bAEuwBEzq/M4wCLnwQjW200nmrpUqhl/aUsJWno0pYi9wKj4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=l0WWATRy; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=u2hRX/3L; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=126.com header.i=@126.com header.b="OPOx49x9"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=126.com;
-	s=s110527; h=Message-ID:Date:From:MIME-Version:To:Subject:
-	Content-Type; bh=rZnWCfy1aXR8ocL+33l1covIwlgmt6MTx7GimKPo6xU=;
-	b=OPOx49x9svv3q0RwnHWsgp1hTbCqMczmiXl9t1+YL+hUoLiW+PIscoKJZJW+x9
-	TfinLSTVr1iEess6UTJ6WoJo18dAnsbTpiTGel32qnHzCS1CUko6oifMYuAz68km
-	I4ftWNB/uLQSRAh7JSYJ6HdHyrWgtuG7lhA/CxX1dKJRA=
-Received: from localhost.localdomain (unknown [])
-	by gzga-smtp-mtada-g0-4 (Coremail) with SMTP id _____wD3j03TioJqfCnTFw--.19642S2;
-	Mon, 17 Aug 2026 12:15:16 +0800 (CST)
-Message-ID: <6A828ABB.10507@126.com>
-Date: Mon, 17 Aug 2026 12:14:51 +0800
-From: Hongling Zeng <zhongling0719@126.com>
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:31.0) Gecko/20100101 Thunderbird/31.2.0
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="l0WWATRy";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="u2hRX/3L"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 3145983E30
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1786943658; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=QiiRWtFg1nc+u3Hg2mDkkOzJgbjhTIJknwmSGDzi6GY=;
+	b=l0WWATRysteS+PD34kjmeYBxv+R0xpH9HtNMswOq7qK5kJkLcHeiu+yYjSBfDeZAMIiLNB
+	GO5iCW/RdcNsB+tw5Rzc5C+YrvprTp1kIqklQBeuAjLIfXrN1385EmIQPNgMnq2yy7mKaf
+	88A+iSp9peruJXjkqCEjcu1nwNavNIM=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b="u2hRX/3L"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1786943654; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=QiiRWtFg1nc+u3Hg2mDkkOzJgbjhTIJknwmSGDzi6GY=;
+	b=u2hRX/3Lvr7dQNyliG4w1Fyt4b826fpbJQao7Xldm30RzdZvDJ6fWQ6JcZWft0rfSRrsw+
+	ILUKx6SAH2nnrftiDywMmv3szD905Vzd7LQrVNymmomz2kX+z6Ypww9QYOHUKMUUlTCm9G
+	a+bggJ42/QMQk/zHmB+V9/Kx/hKm6h8=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 118EE792C1
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:12 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id +0ARKqSYgmoDSgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 05:14:12 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: rst: minor error handling fixes
+Date: Mon, 17 Aug 2026 14:43:52 +0930
+Message-ID: <cover.1786943382.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, 
- Hongling Zeng <zenghongling@kylinos.cn>,
- clm@fb.com, dsterba@suse.com, lizetao1@huawei.com
-CC: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
- stable@vger.kernel.org
-Subject: Re: [PATCH] btrfs: handle highmem folios in read_key_bytes
-References: <20260817022012.19658-1-zenghongling@kylinos.cn> <8e30fed1-5879-4a26-a1a2-d1a3302bc068@gmx.com>
-In-Reply-To: <8e30fed1-5879-4a26-a1a2-d1a3302bc068@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:_____wD3j03TioJqfCnTFw--.19642S2
-X-Coremail-Antispam: 1Uf129KBjvJXoWxXr4kCF4xWr4DJr13trW5ZFb_yoW5Zw1fpF
-	WxCas8KrWDJ34YkF4rXa1jqr1rZa9Yyr4DGFsIka12vas8Xrn0gF4Ikw45W3W8trs7AFy0
-	vF4UZ343ZF1DAaDanT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x07j-GYdUUUUU=
-X-CM-SenderInfo: x2kr0wpolqwiqxrzqiyswou0bp/xtbBrhQT42qCitR6ZAAA3i
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: 3145983E30
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_EQ_ENVFROM(0.00)[];
+	ARC_NA(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:dkim];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Flag: NO
 
+Sashiko found two pre-existing bugs in one small patch unrelated to both
+bugs.
 
-在 2026年08月17日 10:55, Qu Wenruo 写道:
->
->
-> 在 2026/8/17 11:50, Hongling Zeng 写道:
->> On 32-bit systems with highmem, folio_address() can return NULL for
->> unmapped highmem folios. When this NULL is passed as the dest parameter
->> to read_key_bytes() with a non-NULL dest_folio, it violates the 
->> function's
->> contract (which requires dest to be non-NULL when dest_folio is 
->> provided).
->
-> But metadata folios are not allocated by page cache, but by btrfs 
-> itself, which always use GFP_NOFS then attach the folio to page cache, 
-> thus should not get highmem memory in the first place.
->
-> And there is no way to trigger read from userspace on btree inode, so 
-> there should be no highmem folios from the beginning.
-   Thanks for the review.
+Both reports are validated by myself manually, and both should be fixed.
 
-   I was not able to reproduce this on a real system. This was 
-identified through code analysis with assistance from glm 5.5, not from a
-   real-world encounter.
+Qu Wenruo (2):
+  btrfs: fix the possible bioc_list memory leak during error
+  btrfs: return proper negative error code for update_raid_extent_item()
 
-   Your analysis about btrfs using ~__GFP_FS for folio allocation and 
-the lack
-   of userspace trigger paths makes sense. The proposed changes are 
-based on the
-   generic folio_address() behavior and the theoretical dest/dest_folio
-   invariant, but I do not currently have evidence that a highmem folio can
-   reach read_key_bytes() in this state.
+ fs/btrfs/inode.c            |  3 +++
+ fs/btrfs/raid-stripe-tree.c | 24 ++++++++++++++++--------
+ fs/btrfs/raid-stripe-tree.h |  1 +
+ 3 files changed, 20 insertions(+), 8 deletions(-)
 
-   I will withdraw this patch rather than claim a reachable highmem bug
-   without a reproducer.
-
->
->>
->> The original bug had two symptoms:
->> 1. Unsigned len underflow when len -= copy_bytes executes (infinite 
->> loop)
->> 2. The folio remains uninitialized because the copy block is skipped
->
-> So did you really hit the problem in the real world?
->
->>
->> Fix requires two changes:
->>
->> 1. Change "if (!dest)" to "if (!dest && !dest_folio)"
->>     - Prevents the "counting-only" mode when dest_folio is provided
->>     - Fixes the underflow/infinite loop
->>
->> 2. Change "if (dest)" to "if (dest || dest_folio)"
->>     - Ensures the copy block executes when dest_folio is provided
->>     - Allows kmap_local_folio() to properly map the highmem folio
->>     - Actually writes data to the folio
->>
->> Without the second change, the highmem folio is not populated even
->> though the read succeeds, causing subsequent fs-verity verification to
->> operate on stale or uninitialized data.
->>
->> Fixes: 884937793db5 ("btrfs: convert read_key_bytes() to take a folio")
->> Cc: stable@vger.kernel.org
->> Signed-off-by: Hongling Zeng <zenghongling@kylinos.cn>
->
-> Missing LLM disclosure.
->> ---
->>   fs/btrfs/verity.c | 4 ++--
->>   1 file changed, 2 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
->> index 983365a73541..80bc945c7dcb 100644
->> --- a/fs/btrfs/verity.c
->> +++ b/fs/btrfs/verity.c
->> @@ -351,7 +351,7 @@ static int read_key_bytes(struct btrfs_inode 
->> *inode, u8 key_type, u64 offset,
->>           }
->>             /* desc = NULL to just sum all the item lengths */
->> -        if (!dest)
->> +        if (!dest && !dest_folio)
->>               copy_end = item_end;
->>           else
->>               copy_end = min(offset + len, item_end);
->> @@ -362,7 +362,7 @@ static int read_key_bytes(struct btrfs_inode 
->> *inode, u8 key_type, u64 offset,
->>           /* Offset from the start of item for copying */
->>           copy_offset = offset - key.offset;
->>   -        if (dest) {
->> +        if (dest || dest_folio) {
->>               if (dest_folio)
->>                   kaddr = kmap_local_folio(dest_folio, 0);
+-- 
+2.54.0
 

@@ -1,238 +1,185 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4068B449EA6
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787045418; cv=none; b=k5TTug9xxOch1ppygqKk9NrRDRORlXOXl/LQa8wHLepCS7yKpAYrWFwoMRsqvl22d2tiDFMInNkSReP0vvYUMVeBeyFED2J8YTJHbF69DcAOMJ4SBAVcJkXN0o9QkeH+Lvdry3+PkdQ8V2JMRGbSDJAWSdEmPJ3OmCRLsK/sZ3U=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787045418; c=relaxed/simple;
-	bh=4flyT+t9aCkFc5VM3EthUFy++ep+ygJY0MFte6Marj4=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=a4viQHzJTornWnKMVGir8HqvOdmbLfzhoYNucReSgR5bQmfqYZPC6FXLxyl+potrY5juW1M+4O7TFpCbTtvnxwoKdlPzDqu10xIDxc5UYJDnJoxHxm5za8Z2IZUDvyFEE+iMcaFP2WkRXg3efb9HgLBYO4NixnJpqy2UuNH4YPw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=TXV9b5vj; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=lMYelspw; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 54ABA3C1D44
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 10:00:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=68.232.143.124
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1787047258; cv=fail; b=gsJAgSCdBv5N3aopP6LLDTyRQkT+Oq5PQrvXpM0TRDTJZsR2QuxTKgPcdxrs96foP8Opdw2Lg3jhwXam8+LQdQY8l4Q/AeSybTEWl7H1SZA8evliKQUt1Wk9YfKFNy+XY7B8D9hieSAUX+wHxNZcZ/aaxpeFQuz443YkgqqcSwA=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1787047258; c=relaxed/simple;
+	bh=/B7IcAnx9riy9eUSb5gX2pOBDff27enooi9y2iZySeM=;
+	h=From:To:Cc:Subject:Date:Message-ID:Content-Type:MIME-Version; b=Noejlzd9sTmy3EhTdaCFZT1YfizxpgQuvzPpF+yq8Hlds/9ASwZ6Yk7FdXTfQ0GMhXOtaCibuo/fr0/K8T2PTWovhaii5kSffM3OHwLwH7MRrUyTJi3mFPGFcn9Uoq6iKufmBOIWA+gYouNhGlRSqnotSBCgH+QlRXdANzaFPDg=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=OMM7klVL; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=AzIl+D9Q; arc=fail smtp.client-ip=68.232.143.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="TXV9b5vj";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="lMYelspw"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id F198C3ED6
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:05 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787045410; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=W+r4o0u0GcbBQWot9xV6IO6x90y4jA/kpJL2JPX1GFg=;
-	b=TXV9b5vj3DgjiBIH5GI+iEUgCUpQch2RECQ8j1RaTeNgA7rKl4otxFefAbw9v8sl77uFy9
-	suwJQon+gVu6AWol8z1EWxSl4TnQ8GObONNI2ukykOkBGrJPxZOhBh4MUwCCEQ63Yw6W+7
-	RLW4booookuElWYkTxYGLT3Q57/NHnk=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=lMYelspw
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787045405; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=W+r4o0u0GcbBQWot9xV6IO6x90y4jA/kpJL2JPX1GFg=;
-	b=lMYelspwJdwjbdJBtQJzGnT5htIRxyTIXnd6l2XCEBVwJbMzOP+rf1+Si5xYmIAtQ3P0cx
-	W5kDvcTdA3LCagJRbABIjJaAb84+Kvq9VhfT0ePdrgsqzvtFYL+ORsX9o0ZENBbLNJEgAQ
-	gd5pzKs9XZgdHo+umb5cvu5JOjRTpwI=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2606D367B
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:03 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 6OMOLxsmhGrKWQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:03 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="OMM7klVL";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="AzIl+D9Q"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1787047257; x=1818583257;
+  h=from:to:cc:subject:date:message-id:
+   content-transfer-encoding:mime-version;
+  bh=/B7IcAnx9riy9eUSb5gX2pOBDff27enooi9y2iZySeM=;
+  b=OMM7klVLzH26M2JEnmiYxQ/Xtb/rLTFKOQjfYMrJbJMi7urQm0I2wNqt
+   WlLH9dxwynOif1tccXIRXq+9LBC9ooFBaKP6vYRMPNz8Y5hLAFXwx92cC
+   0IBj0GKmTUdKr0OkChgY4/UDNjVZM6jR04Pd1OSWOCj/4mYfLkGoXu5Ye
+   RDcQpwBJL+b60tbBhD0qgAm9mPHaDXvQ+dCVf1lIW2bdiulMGXS1I+yOL
+   P+y6Of5ixLjBPonlmqi/ZvBRhR8ejySAreQMUisIJ2MVr/G3je0ZfEhK1
+   LHnHhCclCaWuGV537wElc1dCh570HGUdLEW/KyXfZ4XfSNFwk0hAP+k7A
+   w==;
+X-CSE-ConnectionGUID: gileLyKmQfOTsnXcvbcaLA==
+X-CSE-MsgGUID: IjflAvHhSyG6zYvG6HJrAg==
+X-IronPort-AV: E=Sophos;i="6.25,230,1779120000"; 
+   d="scan'208";a="154420488"
+Received: from mail-southcentralusazon11013054.outbound.protection.outlook.com (HELO SA9PR02CU001.outbound.protection.outlook.com) ([40.93.196.54])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 Aug 2026 18:00:55 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=YtpgBc8grTVoXFdSKdnWaxX9mXQEqweDgELr70lPQwrjHczvM454cNMBJ9jerO91WMbEICjEuulPI6BVOgtOsAk2JO1ZmubvyqCj7Vaq+lN/A2M4NRHBio/uJqk6RnueyPCCr9QxCJ7cXMTRK/prwwTbvE2RA3acDIqCS0n41YXTG6mG0mgHUPTlDmtkIBw22BLqLTI4c8+pPC5dXd1qQjoRE5pyW11rx/ZVTZPJS6dC6QAqx7se9+FgxzGaRUb18U6kRodxOdqsytuhfflQ88sWd6zjbdiviAFjgs6poN61tFWxD5nd8Fym2Y4ZjxbMgVW10gEEjLeuVkQ3Mjx2xw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=14WKvetWb7d7YAp5TfM2mQ1G/GdSeQlQ6e2atVi9eUc=;
+ b=n1oj0HQSyjWZfeRoWfPojJ6kcXCyqZ9EfnEBoKEdOpXH9X0ogtrm4ozoqA7Eezypt2mVukQRT4k4nkrc1FlQzQGMb4N+RC6bBwEXcGRdjdmYbzAoeKBxlMXLLtWe333VjEsnoLb8r1kX20fYfaBhDONtnLkBs284nvLaepYcRhfvIy50BtIR/RcoRE141dmb3Y5UyuI/crb4wDzXCFtws/nds0k2Y34Yrgr+0myGufxYMfSjKMWNeYZvYqNSDA+rAfz9wEy+c3ceSYPpJRQ25IgbvLDEv6dosHShaUd37m/n+7nm+pOP+L2UQ62C4uh1cc3PQCT14QjyiYK+Mr5Dkw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=14WKvetWb7d7YAp5TfM2mQ1G/GdSeQlQ6e2atVi9eUc=;
+ b=AzIl+D9QH/tpDC8AALs9fESPWF7W0jgtJMZRbS4sl1nMttNAovAdkWyG0ekG9h0AXRSK8Hz/IMpXkzHWfLxqY3w8qte3JdzZa1Z0BALll7hcmla8/DLx/5gg4pYpWNyOuTTxTDJ/kAplmcd5reYRHGeVAiJ0IA6hIYy0m1A4bhs=
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
+ by MW4PR04MB7330.namprd04.prod.outlook.com (2603:10b6:303:71::23) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.315.17; Tue, 18 Aug
+ 2026 10:00:53 +0000
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0315.016; Tue, 18 Aug 2026
+ 10:00:52 +0000
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/5] btrfs-progs: fsck-test: add a test case for unexpected file extent items
-Date: Tue, 18 Aug 2026 18:59:35 +0930
-Message-ID: <78b7903159fcdd2c6c506986b4f40fce0f7e517d.1787045341.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <cover.1787045341.git.wqu@suse.com>
-References: <cover.1787045341.git.wqu@suse.com>
+Cc: David Sterba <dsterba@suse.com>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH] btrfs: zoned: propagate do_zone_finish() error in btrfs_zone_finish_endio()
+Date: Tue, 18 Aug 2026 12:00:37 +0200
+Message-ID: <20260818100037.1366563-1-johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.55.0
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: FR4P281CA0344.DEUP281.PROD.OUTLOOK.COM
+ (2603:10a6:d10:ea::7) To SA6PR04MB9447.namprd04.prod.outlook.com
+ (2603:10b6:806:436::21)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
-	TO_DN_NONE(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: F198C3ED6
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|MW4PR04MB7330:EE_
+X-MS-Office365-Filtering-Correlation-Id: c8b0573e-2ab7-49a1-bd77-08defd0f9629
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|1800799024|10070799003|366016|19092799006|23010399003|376014|10067099003|11063799006|56012099006|18002099003;
+X-Microsoft-Antispam-Message-Info:
+	uQBaZsZu+vdpbe6a/g1XRAjRoNQBuLN+b9l+wNt8IUYp1zB+wQkWvvGNJRPu+Ba/OTrc72KE1mYMe+l2SK5ffKX67jpM4ZrUZw+Gmb+IX2K7Dzo7AOxWkWBjXkWUO77YrjjV3OU5kBWx97N1ySiCkszcfoRHXgSDL6HhR8CaE9pBYB8JmW9NoWUAfssVYhga/9Run6OylZFoLhkwGkBTJN6YrmDR3euc/zl13fPBjMjBdodlLVopmhoxvwItlaiiyMYxxb8WanN2yVoZEsWIWEbB0ORq61KXkEq64uG8ANnHB8O1S9O6YwPuUzH2+/URXgwrxNjceDUiTqlfE2GnWM8M6Hnb00fbQN7GG7Gp0JFREkYudMgVlnG/riPl7eRwSV5NWf554w2xyRLBhZZplFeKl2tMceYIm6JF+MePRzrfTsP4yIvBQ5nSKWHHiGib0AxDz9xqztLa+fSswSQUxTUKXgIIBTWuYKkoHEkB6Mx1FpPNypt8i5E7FLE40gD84N38HhkLOfrFtmz0emwipqZaRhS8uf1tuBPl7rw+o2/IQt764NQczyLTG2UtB0teguIonbFdyS5ML/WUhjiSAkzkFu7L7gaZFp/yaq/jPFWLIHazKXkGGgGYYIHR2lhk5yZkeVctIsohfLPf16chTEfXSn40NACOnTJPIai7L2A=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(10070799003)(366016)(19092799006)(23010399003)(376014)(10067099003)(11063799006)(56012099006)(18002099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?us-ascii?Q?cQ60JIW1GirYigteVPxapB2i6SH5C4YcyC1TbwFXXnhQwBfs1TBNem9yNCpz?=
+ =?us-ascii?Q?w2zdL8KylFw2j5r0svfe0b6vkUUeuTdX7G32TlUlBwW2z54+pNYZpSfi5jj+?=
+ =?us-ascii?Q?tU61sjghnJ0VCYtiCjuXwOLL7niIPXfHfIWjXxKmC3VObNa9d4AFJ8U/wM3j?=
+ =?us-ascii?Q?cn4yFRz2DqSlfF6ZbWGus+MDePsMy9i6GIkbrODYezNJM9pmuAs0W8kifLPY?=
+ =?us-ascii?Q?ZjXK0/UBw7fzSD/KnMv79Du4Wd6kFvgNGYaVH4xsdfjC/gKS83cfCF7bmjfC?=
+ =?us-ascii?Q?1Gq95WWpOuNDGXNPgh6nSK3heCq/muM2S77KlZDwD/2HiEOzro3IUBZ8p5so?=
+ =?us-ascii?Q?DPglSTbBC13ollDPALrsAZzT3hW/lAe6n5xmOG1qHDuxO/KoUuob9AEpi5xO?=
+ =?us-ascii?Q?JyA4c3kCo7iZ+sDFWQjVuVqFXpyOCj5JA40/mP5XaiNqbP+774OUzqtST2Za?=
+ =?us-ascii?Q?ADoua7l4a4cFr/bm+CDrBAksoTMBtgnuz5kHwTicSlbMZrB/Bbx4zEHj2pm6?=
+ =?us-ascii?Q?Btrt/r0209xNhRzf2KTu53tHGJiT0uNDwtDJNsVOG5MaFDc5C6Trk4lQVl1v?=
+ =?us-ascii?Q?nYnwgDapEWDmZFTzcF4KtWA2skxbcQzGf8uxbOcqNYHtXiY3eKMRz87K2orz?=
+ =?us-ascii?Q?p7QVFaIFoDlo6LiVo+nkO8CrnOqhi+3DkDVm/02BvrWl9OemC347ZGzhSJSk?=
+ =?us-ascii?Q?lyBHAEBBLVrv2/YoCl4tUdY2/Iu7h/zh45iPpWDaPW/iMPGkPcw5Tqm5tcDs?=
+ =?us-ascii?Q?NsIE/yZtoYxwCSVd75y57vAlpWYn1Ecsbb21twOhrj8HNxk1GHkWp70DUQFO?=
+ =?us-ascii?Q?ebPAc2TCMfA6EdRDo8gRabuB+7lbz7It37XZZrjEsFBmHK2sc/uMfXFsYv51?=
+ =?us-ascii?Q?+2hDK3nID/1HLq8WMJnEdAMIDmWMOyfJkfr7LWVFmxvEQliDpUY4piFrhEEX?=
+ =?us-ascii?Q?827R+tfoKiZFgMiztwRJc4+Zt1BlNA5KSBWprE13KoOn/rorLDtgzHgBYLd3?=
+ =?us-ascii?Q?gtAyMqGpGskYz4azFlY8Eeu//DWmxwD1s+SF7zY/xvpov7itCxi7gOELhqnH?=
+ =?us-ascii?Q?HlCg1kjEuxW8Qlm+XA8IulIwBDKKbnlfwK+Y647JidGPnM4TK0Z+ZFTFINQ3?=
+ =?us-ascii?Q?gC/todeuyGAwnMb9uCrsSeJ0lUO86ukxLdLkYGpXoXroHji6AMHOOD95E5mu?=
+ =?us-ascii?Q?DBkCurAQURprbSZeBqIIKOkQeVFLMOPV7tB+ahVpiZsk8wbbWbgzpvZb8sCW?=
+ =?us-ascii?Q?BKYzqw0G5ZHUuRRj2NYTXe6OdwlLoTMFR3P8DITd9HN5lfef5yI9piHmMPTh?=
+ =?us-ascii?Q?/xKgE3igsUGacbUjWZ3qBSrumg+OBCeMeGHTC9ITOxIQSkYqgwXWxTc+rkyw?=
+ =?us-ascii?Q?H2OCDSRPM3BpTz4fh3A4Bp4U+eacJ2Q5yA4VcJVNsOv2h+szqlifaJpKl9+B?=
+ =?us-ascii?Q?bdseVSAfhp00t9KJiRh+qX63oPSsj7DZ56uR8lBfhJKPc+njorpChXBrD80B?=
+ =?us-ascii?Q?UI+z2rlbUdxafjmjP3yLavbcA3gvYMBQQVvWI0UPfTdBI1Rvt59LKdoOVnBZ?=
+ =?us-ascii?Q?cH+kkj1NTdSzQwjKuAmkYS2y0iqqziCKSx5m7ywhUEjNLIJ+D3s1MHogDC5i?=
+ =?us-ascii?Q?EyfUCAIdWC4csugTI6aKIa6rZgidDyaWeZ6BNWXinre6Rpfmy0DJfnJ1KdTG?=
+ =?us-ascii?Q?a3KJA/h5V0SHbe/nIoSD/xUuRbj5MOY3zko1LvEdA/0TpxG9frfMqgB6hvkH?=
+ =?us-ascii?Q?/ilySj1jlgtIVcVWHbKFG+eg0akDhNDn9i3E96A7JbmDNEhqFnQMcadh3ghA?=
+X-MS-Exchange-AntiSpam-MessageData-1: smjWF52ZR+iJ9ekAIUxy0vv6Mkaf94vKqUo=
+X-Exchange-RoutingPolicyChecked:
+	s6lqeBHkHeQ/9ADaF9NWjIudQ/kLywuZDh+uZ8czBvKmgshPUKMgQ3k0h2It/ugqSpFhfJZvqYuMmxA6pGdWvbG4bBD6F4QdCTePWAQ3ITRZwBjslBvF7jBlPYt2uK9us3fLIa6nelIgIsKBzJnLlQUO4BleYCUP3w49qtLrw+QAFQUlFBDIdiDSoXH/sj0ZZuWKz56YCJIdaGBtZWgp7wHIczrgBC5an3d4PNtPi1AspzO2IrbKaQFwGTIvjX3j3nBXP6NeTP3MFOJVvbAMXtRPoQR8P7e+dmCsL2LbYfdjpTC+H7Unfg8RSoYrvfBy+V4iS0WALbcugIQRJsOj7A==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	14VoIChPLAZZJpto+5m5l2/0yJiX1EUzuYdtljhbPov5hehKrc4WePPc78D9JUdSpKFiJRnkDk1SEHl2mnmRSKLDv7zkpVu3xUSHiObZX8D2ENrOcZP87R/jqpZASlu7m8md5ez7WaqXK1UgMkzuTL0wSSGNdvbf+pEANzmJWfztNu9XMdpD/YefxfljLICBKDScjXqG1lLa5ZBK8wM60BTNkmWTHIDjC+6CRv+MqdEmkti8+IgIeTR2INDhtA59yIBlVrvUdRTssoB0SwYMOpPz/oVzMHT99RpceJnBI3daalshmXVPn/NMgpaVTon9/Qze8kR6uQKUzJhe4/O5OkEb0leSGwZTDfVPXbVySiCaz0fmWsBpt72GGySPW3iNBaQBDIE9qyIyi8TDI3/KDm7ZG1+LPMzxefDIBbOKFw1mdl1hivUYz73F4Wczlbd2f3Dg2vfI1dLJZ+MlM81FsF2dZUAY/gRYfXcQzD5HEFc6ZsCxE5RPu+TVQ5UwgUmqr3NtmxXWWeqDy4giIfyEFnKmdcpX9Dw2n4byzFpgdw6zE11fcYdMbQi0kfVeJoDFKqVbkL+a3eHpZyz3MWtg5XInlYHMVew/aSBVc6wsqWRNyeYutudo3ceQ9mfWJ3BF
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: c8b0573e-2ab7-49a1-bd77-08defd0f9629
+X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 18 Aug 2026 10:00:52.1912
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: TsYFQDfB98Q3DMDJBsUauaJCrkt6r0tLUf7JrYk5ofXYC/xbp8f5j/XT3TIUEC4UOhFHtC7kYFME96Jc3xOKTJEN2P5i0/0X3/AoxeyHOig=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MW4PR04MB7330
 
-The image is created using btrfs-corrupt-block, the fs tree leaf looks
-like this:
+btrfs_zone_finish_endio() ignored the return value of do_zone_finish()
+and always returned 0, silently dropping a failed zone finish.
 
-	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
-		generation 3 transid 9 size 12 nbytes 16384
-		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
-		sequence 1 flags 0x0(none)
-	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
-		index 0 namelen 2 name: ..
-	item 2 key (256 DIR_ITEM 496027801) itemoff 16075 itemsize 36
-		location key (257 INODE_ITEM 0) type BLKDEV <<<
-		transid 9 data_len 0 name_len 6
-		name: foobar
-	item 3 key (256 DIR_INDEX 2) itemoff 16039 itemsize 36
-		location key (257 INODE_ITEM 0) type BLKDEV <<<
-		transid 9 data_len 0 name_len 6
-		name: foobar
-	item 4 key (257 INODE_ITEM 0) itemoff 15879 itemsize 160
-		generation 9 transid 9 size 8192 nbytes 8192
-		block group 0 mode 60660 links 1 uid 0 gid 0 rdev 0 <<<
-		sequence 2 flags 0x0(none)
-	item 5 key (257 INODE_REF 256) itemoff 15863 itemsize 16
-		index 2 namelen 6 name: foobar
-	item 6 key (257 EXTENT_DATA 0) itemoff 15810 itemsize 53
-		generation 9 type 1 (regular)
-		extent data disk byte 13631488 nr 8192
-		extent data offset 0 nr 8192 ram 8192
-		extent compression 0 (none)
+Instead propagate any error from do_zone_finish() as the caller
+btrfs_finish_ordered_io() already handles it.
 
-The image is generated by the following steps:
-
- # mkfs.btrfs -f $dev
- # mount $dev $mnt
- # xfs_io -f -c "pwrite 0 4k" $mnt/foobar
- # umount $mnt
-
- ## Change the inode's mode from REG to BLK
- # btrfs-corrupt-block -i 257 -f mode --value 25008 $dev
-
- ## Change the dir item's flag from REG to BLK
- # btrfs-corrupt-block -D 256,84,496027801 -f flags --value 4 $dev
-
- ## Change the dir index's flag from REG to BLK
- # btrfs-corrupt-block -D 256,96,2 -f flags --value 4 $dev
-
-The inode's mode and dir flags all match, but there is one unexpected
-file extent item there.
-
-Both lowmem and original mode should detect such problem.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- .../075-blk-inode-with-data/default.img.xz      | Bin 0 -> 2104 bytes
- .../fsck-tests/075-blk-inode-with-data/test.sh  |  16 ++++++++++++++++
- 2 files changed, 16 insertions(+)
- create mode 100644 tests/fsck-tests/075-blk-inode-with-data/default.img.xz
- create mode 100755 tests/fsck-tests/075-blk-inode-with-data/test.sh
+ fs/btrfs/zoned.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/tests/fsck-tests/075-blk-inode-with-data/default.img.xz b/tests/fsck-tests/075-blk-inode-with-data/default.img.xz
-new file mode 100644
-index 0000000000000000000000000000000000000000..7fc1c58b8a3d71dce36d0612fd8da52a6d586e87
-GIT binary patch
-literal 2104
-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
-
-literal 0
-HcmV?d00001
-
-diff --git a/tests/fsck-tests/075-blk-inode-with-data/test.sh b/tests/fsck-tests/075-blk-inode-with-data/test.sh
-new file mode 100755
-index 000000000000..a98310e9b29d
---- /dev/null
-+++ b/tests/fsck-tests/075-blk-inode-with-data/test.sh
-@@ -0,0 +1,16 @@
-+#!/bin/bash
-+#
-+# Verify that check can detect unexpected file extent items for special inodes
-+# which should not have any file extent.
-+
-+source "$TEST_TOP/common" || exit
-+
-+check_prereq btrfs
-+
-+check_image() {
-+	# The image contains an BLK inode, with a file extent.
-+	# The check should report an error.
-+	run_mustfail "unexpected file extent not detected" "$TOP/btrfs" check "$1"
-+}
-+
-+check_all_images
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index a016cb471beb..82c2394dd43c 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -2713,6 +2713,7 @@ int btrfs_zone_finish_endio(struct btrfs_fs_info *fs_info, u64 logical, u64 leng
+ {
+ 	struct btrfs_block_group *block_group;
+ 	u64 min_alloc_bytes;
++	int ret = 0;
+ 
+ 	if (!btrfs_is_zoned(fs_info))
+ 		return 0;
+@@ -2732,11 +2733,11 @@ int btrfs_zone_finish_endio(struct btrfs_fs_info *fs_info, u64 logical, u64 leng
+ 	    block_group->start + block_group->zone_capacity)
+ 		goto out;
+ 
+-	do_zone_finish(block_group, true);
++	ret = do_zone_finish(block_group, true);
+ 
+ out:
+ 	btrfs_put_block_group(block_group);
+-	return 0;
++	return ret;
+ }
+ 
+ static void btrfs_zone_finish_endio_workfn(struct work_struct *work)
 -- 
-2.54.0
+2.55.0
 

@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4BD7F4499B1
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4068B449EA6
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787045414; cv=none; b=Ryw2Ji2t3GNhsdG1OOcxijFXD1d5jSUCeF/Yi3jPyyo+Rr0uk7RVJGJwglx1ZTOl96H9QGqG5pXY2I2G25vDvXZDVHnPQb1aStjm44wNDTVvMR1J5/vOaIOpwkEC4f8Q8otGAUmmmbNoPHSPQc5qELStRnsaTcQOSg7nyBlSfpY=
+	t=1787045418; cv=none; b=k5TTug9xxOch1ppygqKk9NrRDRORlXOXl/LQa8wHLepCS7yKpAYrWFwoMRsqvl22d2tiDFMInNkSReP0vvYUMVeBeyFED2J8YTJHbF69DcAOMJ4SBAVcJkXN0o9QkeH+Lvdry3+PkdQ8V2JMRGbSDJAWSdEmPJ3OmCRLsK/sZ3U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787045414; c=relaxed/simple;
-	bh=ufpwKmovFnPlolFDlSj/yLKYCNxwoI/7C31TwR2149Y=;
+	s=arc-20240116; t=1787045418; c=relaxed/simple;
+	bh=4flyT+t9aCkFc5VM3EthUFy++ep+ygJY0MFte6Marj4=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=eJ0tFPcDRGLs8Q8YP8IVCu3N7IzIW50Gn5INWe6KzRP2sPxM3GizJMpUxejbpATipW59VJ9DbEgcqSHP0YC7Snx0fqo4ZD1h4bJz4yurES7tYldjU5nRvf/Of2CYk5QG7oWaHwCXawWDJhED9lUKpLTvVmXi1GhFWaEPi/ALqEc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=PaWHMQYz; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=eYnFy9eT; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=a4viQHzJTornWnKMVGir8HqvOdmbLfzhoYNucReSgR5bQmfqYZPC6FXLxyl+potrY5juW1M+4O7TFpCbTtvnxwoKdlPzDqu10xIDxc5UYJDnJoxHxm5za8Z2IZUDvyFEE+iMcaFP2WkRXg3efb9HgLBYO4NixnJpqy2UuNH4YPw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=TXV9b5vj; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=lMYelspw; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PaWHMQYz";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="eYnFy9eT"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="TXV9b5vj";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="lMYelspw"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 6B83F8449F
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:03 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id F198C3ED6
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:05 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787045407; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1787045410; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=3BoVrpwm+Hb4huH5dd/aHzowQB4/YrNfTp6akkTTg/0=;
-	b=PaWHMQYzIm+WBqQqCei03Qo06Txk7Wa6cgPUXhwl2AJWWfu0XU+5Glks9P+vXNq+eP+2p+
-	SdTHS3bnn75CGzX9t37vTuMAXthTq7HviF/sxQyB2NrZhdxrgE9nd31TmYzAU5xxZS+mUV
-	jwN2S+9hWJtgLxVHtEXFXS7HZHsx0xw=
-Authentication-Results: smtp-out1.suse.de;
-	none
+	bh=W+r4o0u0GcbBQWot9xV6IO6x90y4jA/kpJL2JPX1GFg=;
+	b=TXV9b5vj3DgjiBIH5GI+iEUgCUpQch2RECQ8j1RaTeNgA7rKl4otxFefAbw9v8sl77uFy9
+	suwJQon+gVu6AWol8z1EWxSl4TnQ8GObONNI2ukykOkBGrJPxZOhBh4MUwCCEQ63Yw6W+7
+	RLW4booookuElWYkTxYGLT3Q57/NHnk=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=lMYelspw
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787045403; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1787045405; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=3BoVrpwm+Hb4huH5dd/aHzowQB4/YrNfTp6akkTTg/0=;
-	b=eYnFy9eTpBBfroaSkWgrneegcFYKqBS70Tb+3U0MBz7r45xGjSVdciQ2kfhZMRRP5D4bjX
-	C3VeAZGF2LUm8pbW3XJT+3hrGW1suHeJPrEEj/04AFfFJY9cfHLCa0LzPmzpvoe+F0JJoW
-	vbzmM6RQdIjyp+cNMSnHGDA+q0AJcbU=
+	bh=W+r4o0u0GcbBQWot9xV6IO6x90y4jA/kpJL2JPX1GFg=;
+	b=lMYelspwJdwjbdJBtQJzGnT5htIRxyTIXnd6l2XCEBVwJbMzOP+rf1+Si5xYmIAtQ3P0cx
+	W5kDvcTdA3LCagJRbABIjJaAb84+Kvq9VhfT0ePdrgsqzvtFYL+ORsX9o0ZENBbLNJEgAQ
+	gd5pzKs9XZgdHo+umb5cvu5JOjRTpwI=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4EB0822BA
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:01 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2606D367B
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:03 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id GNMSORkmhGrKWQAAD6G6ig
+	id 6OMOLxsmhGrKWQAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:01 +0000
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 09:30:03 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/5] btrfs-progs: check: detect invalid file extent items
-Date: Tue, 18 Aug 2026 18:59:34 +0930
-Message-ID: <aa7d6552b90ddcb8ff836ad5756474e187e545c8.1787045341.git.wqu@suse.com>
+Subject: [PATCH 5/5] btrfs-progs: fsck-test: add a test case for unexpected file extent items
+Date: Tue, 18 Aug 2026 18:59:35 +0930
+Message-ID: <78b7903159fcdd2c6c506986b4f40fce0f7e517d.1787045341.git.wqu@suse.com>
 X-Mailer: git-send-email 2.54.0
 In-Reply-To: <cover.1787045341.git.wqu@suse.com>
 References: <cover.1787045341.git.wqu@suse.com>
@@ -69,36 +69,40 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	MX_GOOD(-0.01)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	FROM_EQ_ENVFROM(0.00)[];
+	ARC_NA(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	RCVD_COUNT_TWO(0.00)[2];
+	RCPT_COUNT_ONE(0.00)[1];
+	MIME_TRACE(0.00)[0:+];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
 	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Queue-Id: F198C3ED6
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
 
-File extent items should only exist for regular and symlink inodes.
-And for symlink inodes, the file extent must be inlined.
-
-Add such check for lowmem mode to detect those invalid file extents.
-
-Now for a corrupted image with the following fs tree layout:
+The image is created using btrfs-corrupt-block, the fs tree leaf looks
+like this:
 
 	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
 		generation 3 transid 9 size 12 nbytes 16384
@@ -107,16 +111,16 @@ Now for a corrupted image with the following fs tree layout:
 	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
 		index 0 namelen 2 name: ..
 	item 2 key (256 DIR_ITEM 496027801) itemoff 16075 itemsize 36
-		location key (257 INODE_ITEM 0) type BLKDEV
+		location key (257 INODE_ITEM 0) type BLKDEV <<<
 		transid 9 data_len 0 name_len 6
 		name: foobar
 	item 3 key (256 DIR_INDEX 2) itemoff 16039 itemsize 36
-		location key (257 INODE_ITEM 0) type BLKDEV
+		location key (257 INODE_ITEM 0) type BLKDEV <<<
 		transid 9 data_len 0 name_len 6
 		name: foobar
 	item 4 key (257 INODE_ITEM 0) itemoff 15879 itemsize 160
 		generation 9 transid 9 size 8192 nbytes 8192
-		block group 0 mode 60660 links 1 uid 0 gid 0 rdev 0
+		block group 0 mode 60660 links 1 uid 0 gid 0 rdev 0 <<<
 		sequence 2 flags 0x0(none)
 	item 5 key (257 INODE_REF 256) itemoff 15863 itemsize 16
 		index 2 namelen 6 name: foobar
@@ -126,103 +130,109 @@ Now for a corrupted image with the following fs tree layout:
 		extent data offset 0 nr 8192 ram 8192
 		extent compression 0 (none)
 
-Lowmem mode will detect the error like the following:
+The image is generated by the following steps:
 
- [5/8] checking fs roots
- ERROR: root 5 ino 257 should not have file extent
- ERROR: root 5 INODE[257] nbytes 8192 not equal to extent_size 0
- ERROR: errors found in fs roots
- found 172032 bytes used, error(s) found
+ # mkfs.btrfs -f $dev
+ # mount $dev $mnt
+ # xfs_io -f -c "pwrite 0 4k" $mnt/foobar
+ # umount $mnt
 
-For the original mode, it's less strict than the lowmem mode, and it
-only rejects the obvious cases, without the extra verification on
-inlined extent for symlinks:
+ ## Change the inode's mode from REG to BLK
+ # btrfs-corrupt-block -i 257 -f mode --value 25008 $dev
 
- [5/8] checking fs roots
- root 5 inode 257 errors 40, bad file extent
- ERROR: errors found in fs roots
- found 172032 bytes used, error(s) found
+ ## Change the dir item's flag from REG to BLK
+ # btrfs-corrupt-block -D 256,84,496027801 -f flags --value 4 $dev
+
+ ## Change the dir index's flag from REG to BLK
+ # btrfs-corrupt-block -D 256,96,2 -f flags --value 4 $dev
+
+The inode's mode and dir flags all match, but there is one unexpected
+file extent item there.
+
+Both lowmem and original mode should detect such problem.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/main.c        |  5 +++++
- check/mode-lowmem.c | 26 ++++++++++++++++++--------
- 2 files changed, 23 insertions(+), 8 deletions(-)
+ .../075-blk-inode-with-data/default.img.xz      | Bin 0 -> 2104 bytes
+ .../fsck-tests/075-blk-inode-with-data/test.sh  |  16 ++++++++++++++++
+ 2 files changed, 16 insertions(+)
+ create mode 100644 tests/fsck-tests/075-blk-inode-with-data/default.img.xz
+ create mode 100755 tests/fsck-tests/075-blk-inode-with-data/test.sh
 
-diff --git a/check/main.c b/check/main.c
-index 3f162ad408d1..b96498294645 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -844,6 +844,11 @@ static void maybe_free_inode_rec(struct cache_tree *inode_cache,
- 	if (!rec->found_inode_item)
- 		return;
- 
-+	/* If it's not REG or SYMLNK, there should be no file extent. */
-+	if (is_valid_imode(rec->imode) && !S_ISREG(rec->imode) &&
-+	    !S_ISLNK(rec->imode) && rec->found_file_extent)
-+		rec->errors |= I_ERR_BAD_FILE_EXTENT;
+diff --git a/tests/fsck-tests/075-blk-inode-with-data/default.img.xz b/tests/fsck-tests/075-blk-inode-with-data/default.img.xz
+new file mode 100644
+index 0000000000000000000000000000000000000000..7fc1c58b8a3d71dce36d0612fd8da52a6d586e87
+GIT binary patch
+literal 2104
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/fsck-tests/075-blk-inode-with-data/test.sh b/tests/fsck-tests/075-blk-inode-with-data/test.sh
+new file mode 100755
+index 000000000000..a98310e9b29d
+--- /dev/null
++++ b/tests/fsck-tests/075-blk-inode-with-data/test.sh
+@@ -0,0 +1,16 @@
++#!/bin/bash
++#
++# Verify that check can detect unexpected file extent items for special inodes
++# which should not have any file extent.
 +
- 	filetype = imode_to_type(rec->imode);
- 	list_for_each_entry_safe(backref, tmp, &rec->backrefs, list) {
- 		if (backref->found_dir_item && backref->found_dir_index) {
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index a3c590051054..813e29e2a9bb 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -2093,8 +2093,8 @@ static int check_file_extent_inline(struct btrfs_root *root,
-  * Return 0 if no error occurred.
-  */
- static int check_file_extent(struct btrfs_root *root, struct btrfs_path *path,
--			     unsigned int nodatasum, u64 isize, u64 *size,
--			     u64 *end)
-+			     unsigned int nodatasum, u64 isize, u32 mode,
-+			     u64 *size, u64 *end)
- {
- 	struct btrfs_file_extent_item *fi;
- 	struct btrfs_key fkey;
-@@ -2119,6 +2119,14 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_path *path,
- 	fi = btrfs_item_ptr(node, slot, struct btrfs_file_extent_item);
- 	extent_type = btrfs_file_extent_type(node, fi);
- 
-+	/* Only regular and symlink can have file extents. */
-+	if (is_valid_imode(mode) && !S_ISREG(mode) && !S_ISLNK(mode)) {
-+		err |= FILE_EXTENT_ERROR;
-+		error("root %llu ino %llu should not have file extent",
-+			btrfs_root_id(root), fkey.objectid);
-+		return err;
-+	}
++source "$TEST_TOP/common" || exit
 +
- 	/* Check extent type */
- 	if (extent_type != BTRFS_FILE_EXTENT_REG &&
- 	    extent_type != BTRFS_FILE_EXTENT_PREALLOC &&
-@@ -2129,6 +2137,13 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_path *path,
- 		return err;
- 	}
- 
-+	if (S_ISLNK(mode) && extent_type != BTRFS_FILE_EXTENT_INLINE) {
-+		err |= FILE_EXTENT_ERROR;
-+		error("root %llu ino %llu should not have regular/prealloc file extent",
-+		      root->objectid, fkey.objectid);
-+		return err;
-+	}
++check_prereq btrfs
 +
- 	/* Check inline extent */
- 	if (extent_type == BTRFS_FILE_EXTENT_INLINE)
- 		return check_file_extent_inline(root, path, size, end);
-@@ -2807,12 +2822,7 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path)
- 			err |= ret;
- 			break;
- 		case BTRFS_EXTENT_DATA_KEY:
--			if (dir) {
--				warning("root %llu DIR INODE[%llu] shouldn't EXTENT_DATA[%llu %llu]",
--					root->objectid, inode_id, key.objectid,
--					key.offset);
--			}
--			ret = check_file_extent(root, path, nodatasum, isize,
-+			ret = check_file_extent(root, path, nodatasum, isize, mode,
- 						&extent_size, &extent_end);
- 			err |= ret;
- 			break;
++check_image() {
++	# The image contains an BLK inode, with a file extent.
++	# The check should report an error.
++	run_mustfail "unexpected file extent not detected" "$TOP/btrfs" check "$1"
++}
++
++check_all_images
 -- 
 2.54.0
 

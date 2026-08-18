@@ -1,178 +1,315 @@
-Received: from mail-wr1-f52.google.com (mail-wr1-f52.google.com [209.85.221.52])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 84E813A5E6C
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 03:37:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C39C83C8700
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 04:57:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787024258; cv=none; b=fmOm9a1mmy4T+0vNN9GGe22H4M0t8/Fu63+h0VvuECjnRA8dxPBpfTFotvShkCeiU6YIydJNskrK+GQSE3vVFoDzu/49sdfipd1/nb2eetZZTcMX1VrH3JfEgKk9vNlDb1ug+5fss2XE4rI9luKk3UcaWfy0L4rdPpUWjRV8TuU=
+	t=1787029064; cv=none; b=COxLM8z9FMqcg4QqOtjzQOgpJHR6Pb4JbWHeOM1MFbOhI2/TGT2HvdQnaCAIX2r+wacHBHAY+BrhhG5JRakzmOfgBf3ES2JF6vfVqXQ+SH9KIH1E7fE6Hm3WucPHuSpm9+GBiIuLGKx34nWZtk4JRapZqYYDyLD310oaoeAPv4s=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787024258; c=relaxed/simple;
-	bh=LZJi5BwdSD+7wbEIxPlcRQa9evUumd3WkIOPbIlpDjY=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Xv6Wzku6srqUiXju3ZzuRwVwmcTQwGUnN9Mu3qVfH6vz0ezT78pP2jBpPs/I0NBoN7m6QlSaRiZGcM9rWj6uPJqL8d9jWE8x55h+3OMZrZEnor9DTY/OTgRi2O8O0ZxJGE0vfK/Jsh05wqWpaMVdKx7KW5rkoqEKSNuNZ0FV8JM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=FLlJXvwl; arc=none smtp.client-ip=209.85.221.52
+	s=arc-20240116; t=1787029064; c=relaxed/simple;
+	bh=5kd/BPOJ4DTUQG6IoPuyGBNUsc11BhuCIa4YUWF9OH0=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=TyxzTMdCEBT5VKyk7Mk6yZ01bIKmWExHO+o37TmrY8FPgleimYnq2KEiy6FAjzBGqrmdY5h/oD9mpHbwhWSw1JwGfRDbAMA7+yXFsilyilxBzv4DjxmDnubVQiDYE0mPmZqxM70hrHRLV0igijkafwlnsgY2+B4bZOa/1RDSWXQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Bv0k03XQ; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=bXbeoc6V; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="FLlJXvwl"
-Received: by mail-wr1-f52.google.com with SMTP id ffacd0b85a97d-47db714766aso344162f8f.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2026 20:37:35 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1787024254; x=1787629054; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=FP95Yc5h3+k/fHaHjQvxSlOe9fyikbEA4yzjHUSCS8s=;
-        b=FLlJXvwlAVPpsCcvn4GcjDSrvpx55UtbV/uLKHdSj36l4O+nurUrd7u2XV7kRnu8Kz
-         L4HICMSATzJnA1/D9prurwsKOX2l9E4oRBVcvzKjUZnAxJwdLOmAT72WbN4bW/Va0Rxv
-         OV+Ph+G9MlZftmSBjFkaHCyqGnDOH1UK4ev8lsVr4avMP0nNuEEGkTppzyvmDb3hdFXu
-         n1z3oyJJbDrnYir98m3OMbBh3sWYjIGJzqTs+jASf3/m2HDg2UQti0dyl6ua0JCTVntW
-         N+LZjGS9++IUaXXTbvdQUTDibb6AAsEsgZob92QEQBLY2SIKxjt4kqoglGO5cs/0suFZ
-         E2yQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787024254; x=1787629054;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=FP95Yc5h3+k/fHaHjQvxSlOe9fyikbEA4yzjHUSCS8s=;
-        b=h5bOBHakCsPibwaxDN2QdSokeqoQScRONACznKVqW/yVspq7w0emv54qbVmWKArv3r
-         +8YqFl1HmcMJOeqPV5bMi7BJ5rAEPDSrnKv8aIpRE1d4423PGY4a7FpeF5L6s6n6tiCt
-         1B8zIWykDyF9+I30J5DjJ8qEXb1cDlIyC3kannOuhO5U2zWpcWnSPEM0Y17hUTx55R5s
-         96Im7WDGy2PS3GlnBf8b/OOt2rfCUtOXVrr9GHwRu/TyVJ8o+bhYYf+fzJPmmXLD4I5F
-         YUlkaUkPtCB46YsceGHeG9ek/2jJghoY2tMWpq/a2lknq6fpSSfe4mTDFoUBEIRnY3Up
-         UstQ==
-X-Gm-Message-State: AOJu0Yykvmze4XvzxgpkFj4+EnaWQPqpp1eyN3zq7HefHSzICknS0AZR
-	9Ayy+hiaPZrfh2yfSCNSBOL0SqJ/eEpYSbCTOullEH2qTUY9X5pYt3n7aI15Oo0k30M=
-X-Gm-Gg: AR+sD13rC6lt7D32ElhdpxeGRZJJpAemZCE/uj0OWi/s2InboEbhy1j7ieYRz2Cp+13
-	zIUwUTmWBRc4y/9bqibP2hx6BgszxrAW01qtk0OTIBiksiPmVk3WjXnWcJV4LJv/0putCq/P3bT
-	YNTr15wc1BrP7j9DPUvWSrqbGxGTWdsAjNqyOi8sN/k1Ss25oxLiqgaJYFECcLhIYmEWDyEA1xJ
-	YnTvuGQtzhxR8rhidojwe+sUJ2+0YvOyghgmiLEr6ub9/pzT4NYtj9/eDSXLSRy1WwR1tCtE4R3
-	kOPsLGejGT3JnhuXv5tZ6leBpRRbRGd9erZspWipwG2BXJ5mnh6go4uBYiEi0BQQOv9bgaNWdG7
-	fdmRkgXibaUTSTre+hxkrcQVl4IYS5dA9zo1GGiiMWKjVRCHT/5WCT7o/esxAHVy6mmGS7iofek
-	cxrFRwk3J6Z6S8yoCfN2E/PT6Fr7CqLUbtm+bxvlZrxsW2Zbltv7e6uA==
-X-Received: by 2002:a05:600c:91a:b0:499:8117:8830 with SMTP id 5b1f17b1804b1-499a08e9a57mr35754245e9.7.1787024253795;
-        Mon, 17 Aug 2026 20:37:33 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3267c490ee9sm12209924eec.25.2026.08.17.20.37.29
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 17 Aug 2026 20:37:32 -0700 (PDT)
-Message-ID: <4522f7e6-f735-44b7-a98d-b704df8a49ac@suse.com>
-Date: Tue, 18 Aug 2026 13:07:26 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Bv0k03XQ";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="bXbeoc6V"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 499E63E49;
+	Tue, 18 Aug 2026 04:57:32 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1787029056; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=vMAMpzwbbO2PcP763W17bjWyM5n0PJ8ANMuz8yzLNmo=;
+	b=Bv0k03XQvecsAoWRH29/nhLEtnjYXCKN1C4SyWoeafVam6fxH9k204a/x7oObB6J8BjiH+
+	XY8eplX8YNaU18Cc5UztDcOxXnkGj0menqWFO6pHG+kujB9HuypnTeGfJ09vcwsN8UzK3O
+	ipPOmeGdVtRM0vB4c/gKcpoF4mNU5Og=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1787029052; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=vMAMpzwbbO2PcP763W17bjWyM5n0PJ8ANMuz8yzLNmo=;
+	b=bXbeoc6VClK6xufhI3AdW+xALhwHjfM5JOK4c6QgfXHjelJl6Ib5BnRs220i+fyt/WG8o0
+	fEndBu3FD+nxKbcsvtYGifspAfQ4RYDMey2frA6OOKzQUztkUMNcVWn0Yk7zJV1wFQkns2
+	oXx7xu7SVxurBSfqNGmK2jxG9zmpJXQ=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CB33022BA;
+	Tue, 18 Aug 2026 04:57:30 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 2HL5Gzrmg2rORwAAD6G6ig
+	(envelope-from <wqu@suse.com>); Tue, 18 Aug 2026 04:57:30 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: ZhengYuan Huang <gality369@gmail.com>
+Subject: [PATCH] btrfs: tree-checker: reject file extent items for special files
+Date: Tue, 18 Aug 2026 14:27:11 +0930
+Message-ID: <b2dd29edaf1c476df248eb433ec2edf1771bcb96.1787029007.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: send: reject extents for non-regular inodes
-To: ZhengYuan Huang <gality369@gmail.com>, clm@fb.com, dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
- baijiaju1990@gmail.com, r33s3n6@gmail.com, zzzccc427@gmail.com,
- tom442288@tuta.io
-References: <20260817132051.267646-1-gality369@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260817132051.267646-1-gality369@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	FREEMAIL_CC(0.00)[gmail.com];
+	TO_DN_SOME(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	RCVD_COUNT_TWO(0.00)[2];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com]
 
+File extent items are only utilized by regular files or symlinks, other
+files like directory/char/block/fifo/sock files should not have any file
+extent item.
 
+Previously we were unable to reject such cases, as the inode item may not
+be in the same leaf.
+But we already have @prev_key in check_leaf_item(), this means we just
+need a new way to pass the mode of the previously hit inode item, then
+we can detect such problems.
 
-在 2026/8/17 22:50, ZhengYuan Huang 写道:
-> [BUG]
-> A corrupted subvolume tree can leave an EXTENT_DATA item attached to an
-> inode whose mode is not S_IFREG or S_IFLNK. During send, such an item can
-> be treated as file data and crash through a NULL address_space operation:
-> 
->    BUG: kernel NULL pointer dereference, address: 0000000000000000
->    #PF: supervisor instruction fetch in kernel mode
->    #PF: error_code(0x0010) - not-present page
->    Call Trace:
->      <TASK>
->      read_pages+0x80b/0xb30 mm/readahead.c:173
->      page_cache_ra_unbounded+0x40d/0x890 mm/readahead.c:302
->      do_page_cache_ra mm/readahead.c:332 [inline]
->      page_cache_ra_order+0xa16/0xcd0 mm/readahead.c:535
->      page_cache_sync_ra+0x5ce/0x9d0 mm/readahead.c:626
->      page_cache_sync_readahead include/linux/pagemap.h:1379 [inline]
->      put_file_data fs/btrfs/send.c:5224 [inline]
->      send_write fs/btrfs/send.c:5291 [inline]
->      send_extent_data+0x16b2/0x29b0 fs/btrfs/send.c:5715
->      send_write_or_clone fs/btrfs/send.c:6135 [inline]
->      process_extent+0x5d4/0x17b0 fs/btrfs/send.c:6504
->      changed_extent fs/btrfs/send.c:7079 [inline]
->      changed_cb+0x22f9/0x3cd0 fs/btrfs/send.c:7245
->      full_send_tree fs/btrfs/send.c:7318 [inline]
->      send_subvol fs/btrfs/send.c:7910 [inline]
->      btrfs_ioctl_send+0x46a9/0x57f0 fs/btrfs/send.c:8248
->      ...
-> 
-> [CAUSE]
-> process_extent() skips extent items for symlinks but assumes every other
-> inode with an extent item is a regular file. For a corrupted non-regular
-> inode, btrfs_iget() does not install the regular file address_space
-> operations. The readahead fallback can then call a NULL read_folio
-> callback before the existing validation in btrfs_get_extent() can run.
-> 
-> [FIX]
-> Reject extent items for inode types other than regular files and symlinks
-> at the common send extent-processing boundary. Symlink handling is left
-> unchanged because send emits symlink data from read_symlink(). This covers
-> full, incremental and new-generation sends without adding a check to the
-> regular I/O path.
-> 
-> Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
+Introduce a new and tiny helper structure, last_inode_info, to record
+the last hit inode number and its mode, and keep it across the whole
+leaf.
+Then if we hit a file extent item, and the inode item is in the same
+leaf, we can refer to that last_inode_info to determine if we need to
+reject the file extent item.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Now with the following corrupted fs tree, the kernel can safely reject
+the leaf:
 
-> ---
->   fs/btrfs/send.c | 7 +++++++
->   1 file changed, 7 insertions(+)
-> 
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index dca3570168c7..f88623bbc491 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -6417,6 +6417,13 @@ static int process_extent(struct send_ctx *sctx,
->   
->   	if (S_ISLNK(sctx->cur_inode_mode))
->   		return 0;
-> +	if (unlikely(!S_ISREG(sctx->cur_inode_mode))) {
-> +		btrfs_crit(sctx->send_root->fs_info,
-> +			   "send: extent for non-regular inode %llu root %llu mode 0%llo",
-> +			   key->objectid, btrfs_root_id(sctx->send_root),
-> +			   sctx->cur_inode_mode & S_IFMT);
-> +		return -EUCLEAN;
-> +	}
->   
->   	if (sctx->parent_root && !sctx->cur_inode_new) {
->   		ret = is_extent_unchanged(sctx, path, key);
+	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
+		generation 3 transid 9 size 12 nbytes 16384
+		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+		sequence 1 flags 0x0(none)
+	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
+		index 0 namelen 2 name: ..
+	item 2 key (256 DIR_ITEM 496027801) itemoff 16075 itemsize 36
+		location key (257 INODE_ITEM 0) type FILE
+		transid 9 data_len 0 name_len 6
+		name: foobar
+	item 3 key (256 DIR_INDEX 2) itemoff 16039 itemsize 36
+		location key (257 INODE_ITEM 0) type FILE
+		transid 9 data_len 0 name_len 6
+		name: foobar
+	item 4 key (257 INODE_ITEM 0) itemoff 15879 itemsize 160
+		generation 9 transid 9 size 8192 nbytes 8192
+		block group 0 mode 60600 links 1 uid 0 gid 0 rdev 0
+		                   ^^ This is BLK type, not REG.
+		sequence 2 flags 0x0(none)
+	item 5 key (257 INODE_REF 256) itemoff 15863 itemsize 16
+		index 2 namelen 6 name: foobar
+	item 6 key (257 EXTENT_DATA 0) itemoff 15810 itemsize 53
+		generation 9 type 1 (regular)
+		extent data disk byte 13631488 nr 8192
+		extent data offset 0 nr 8192 ram 8192
+		extent compression 0 (none)
+		extent encryption 0
+
+With the patch, kernel will reject it with the following tree-checker
+errors:
+
+ BTRFS critical (device loop0): corrupt leaf: root=5 block=30408704 slot=6 ino=257 file_offset=0, invalid file extent item, should not have any file extent for inode mode 060600
+ BTRFS error (device loop0): read time tree block corruption detected on logical 30408704 mirror 1
+
+Reported-by: ZhengYuan Huang <gality369@gmail.com>
+Link: https://lore.kernel.org/linux-btrfs/20260817132051.267646-1-gality369@gmail.com/
+Assisted-by: LLM (for generating the corrupted image)
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/tree-checker.c | 68 ++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 57 insertions(+), 11 deletions(-)
+
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 0ce91396b517..b0858f6c88e4 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -163,6 +163,12 @@ static void dir_item_err(const struct extent_buffer *eb, int slot,
+ 	va_end(args);
+ }
+ 
++/* Record info for the last hit inode. */
++struct last_inode_info {
++	u64 ino;
++	u32 mode;
++};
++
+ /*
+  * This functions checks prev_key->objectid, to ensure current key and prev_key
+  * share the same objectid as inode number.
+@@ -204,15 +210,47 @@ static bool check_prev_ino(struct extent_buffer *leaf,
+ 		prev_key->objectid, key->objectid);
+ 	return false;
+ }
++
++static bool check_last_inode_info(struct extent_buffer *leaf,
++				  struct btrfs_key *key, int slot,
++				  u8 fi_type,
++				  const struct last_inode_info *last_inode)
++{
++	/* No inode item in this leaf. */
++	if (last_inode->ino != key->objectid)
++		return true;
++	if (S_ISREG(last_inode->mode))
++		return true;
++	if (S_ISLNK(last_inode->mode)) {
++		/* For symlink, the file extent item should always be inlined. */
++		if (unlikely(fi_type != BTRFS_FILE_EXTENT_INLINE)) {
++			file_extent_err(leaf, slot,
++			"invalid file extent type, have %u expect %u for symlink",
++					fi_type, BTRFS_FILE_EXTENT_INLINE);
++			return false;
++		}
++		return true;
++	}
++	/*
++	 * The remaining are special files, e.g. block/fifo files, which should
++	 * not have any file extent.
++	 */
++	file_extent_err(leaf, slot, "file extent item not allowed for inode mode 0%o",
++			last_inode->mode);
++	return false;
++}
++
+ static int check_extent_data_item(struct extent_buffer *leaf,
+ 				  struct btrfs_key *key, int slot,
+-				  struct btrfs_key *prev_key)
++				  struct btrfs_key *prev_key,
++				  const struct last_inode_info *last_inode)
+ {
+ 	struct btrfs_fs_info *fs_info = leaf->fs_info;
+ 	struct btrfs_file_extent_item *fi;
+ 	u32 sectorsize = fs_info->sectorsize;
+ 	u32 item_size = btrfs_item_size(leaf, slot);
+ 	u64 extent_end;
++	u8 fi_type;
+ 
+ 	if (unlikely(!IS_ALIGNED(key->offset, sectorsize))) {
+ 		file_extent_err(leaf, slot,
+@@ -243,15 +281,17 @@ static int check_extent_data_item(struct extent_buffer *leaf,
+ 				SZ_4K);
+ 		return -EUCLEAN;
+ 	}
+-	if (unlikely(btrfs_file_extent_type(leaf, fi) >=
+-		     BTRFS_NR_FILE_EXTENT_TYPES)) {
++	fi_type = btrfs_file_extent_type(leaf, fi);
++	if (unlikely(fi_type >= BTRFS_NR_FILE_EXTENT_TYPES)) {
+ 		file_extent_err(leaf, slot,
+ 		"invalid type for file extent, have %u expect range [0, %u]",
+-			btrfs_file_extent_type(leaf, fi),
+-			BTRFS_NR_FILE_EXTENT_TYPES - 1);
++			fi_type, BTRFS_NR_FILE_EXTENT_TYPES - 1);
+ 		return -EUCLEAN;
+ 	}
+ 
++	if (unlikely(!check_last_inode_info(leaf, key, slot, fi_type, last_inode)))
++		return -EUCLEAN;
++
+ 	/*
+ 	 * Support for new compression/encryption must introduce incompat flag,
+ 	 * and must be caught in open_ctree().
+@@ -270,7 +310,8 @@ static int check_extent_data_item(struct extent_buffer *leaf,
+ 			btrfs_file_extent_encryption(leaf, fi));
+ 		return -EUCLEAN;
+ 	}
+-	if (btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_INLINE) {
++
++	if (fi_type == BTRFS_FILE_EXTENT_INLINE) {
+ 		/* Inline extent must have 0 as key offset */
+ 		if (unlikely(key->offset)) {
+ 			file_extent_err(leaf, slot,
+@@ -1206,7 +1247,8 @@ static int check_dev_item(struct extent_buffer *leaf,
+ }
+ 
+ static int check_inode_item(struct extent_buffer *leaf,
+-			    struct btrfs_key *key, int slot)
++			    struct btrfs_key *key, int slot,
++			    struct last_inode_info *last_inode)
+ {
+ 	struct btrfs_fs_info *fs_info = leaf->fs_info;
+ 	struct btrfs_inode_item *iitem;
+@@ -1291,6 +1333,8 @@ static int check_inode_item(struct extent_buffer *leaf,
+ 			ro_flags);
+ 		return -EUCLEAN;
+ 	}
++	last_inode->ino = key->objectid;
++	last_inode->mode = mode;
+ 	return 0;
+ }
+ 
+@@ -2319,14 +2363,15 @@ static int check_free_space_bitmap(struct extent_buffer *leaf,
+ static enum btrfs_tree_block_status check_leaf_item(struct extent_buffer *leaf,
+ 						    struct btrfs_key *key,
+ 						    int slot,
+-						    struct btrfs_key *prev_key)
++						    struct btrfs_key *prev_key,
++						    struct last_inode_info *last_inode)
+ {
+ 	int ret = 0;
+ 	struct btrfs_chunk *chunk;
+ 
+ 	switch (key->type) {
+ 	case BTRFS_EXTENT_DATA_KEY:
+-		ret = check_extent_data_item(leaf, key, slot, prev_key);
++		ret = check_extent_data_item(leaf, key, slot, prev_key, last_inode);
+ 		break;
+ 	case BTRFS_EXTENT_CSUM_KEY:
+ 		ret = check_csum_item(leaf, key, slot, prev_key);
+@@ -2356,7 +2401,7 @@ static enum btrfs_tree_block_status check_leaf_item(struct extent_buffer *leaf,
+ 		ret = check_dev_extent_item(leaf, key, slot, prev_key);
+ 		break;
+ 	case BTRFS_INODE_ITEM_KEY:
+-		ret = check_inode_item(leaf, key, slot);
++		ret = check_inode_item(leaf, key, slot, last_inode);
+ 		break;
+ 	case BTRFS_ROOT_ITEM_KEY:
+ 		ret = check_root_item(leaf, key, slot);
+@@ -2404,6 +2449,7 @@ static enum btrfs_tree_block_status check_leaf_item(struct extent_buffer *leaf,
+ enum btrfs_tree_block_status __btrfs_check_leaf(struct extent_buffer *leaf)
+ {
+ 	struct btrfs_fs_info *fs_info = leaf->fs_info;
++	struct last_inode_info last_inode = { 0 };
+ 	/* No valid key type is 0, so all key should be larger than this key */
+ 	struct btrfs_key prev_key = {0, 0, 0};
+ 	struct btrfs_key key;
+@@ -2539,7 +2585,7 @@ enum btrfs_tree_block_status __btrfs_check_leaf(struct extent_buffer *leaf)
+ 		}
+ 
+ 		/* Check if the item size and content meet other criteria. */
+-		ret = check_leaf_item(leaf, &key, slot, &prev_key);
++		ret = check_leaf_item(leaf, &key, slot, &prev_key, &last_inode);
+ 		if (unlikely(ret != BTRFS_TREE_BLOCK_CLEAN))
+ 			return ret;
+ 
+-- 
+2.54.0
 

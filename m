@@ -1,75 +1,60 @@
-Received: from mail-oo2-f11.google.com (mail-oo2-f11.google.com [74.125.231.139])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5FF153822B4
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2026 00:40:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.231.139
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 41D131799F
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2026 01:06:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787100031; cv=none; b=eK+jKLAzaVLHF4AqPWskvDqoXMGQd6xP20Or/sWa0G7V1efEYbvsB3tLuO4kioDc9GOBMZE2eCsBXskzqubARvWL1v/nc+msNRIVTnzeoD9wwrRik1kC3Z3ctG8tpG7KArSMYc6ofp9FuEBBvV41Lb1KkHtCt7HYZWZ6ZhNbsRo=
+	t=1787101619; cv=none; b=qs77h1fyKCf1FD789R5WRuS99QWy7v606kje1/P9RYR4zb+rM3GlfUFOLmXPs6is8nCWDSiCYnzBG2dklRxaoxt2oWZ5AH29/fUHYZVxD4PXoFaj1W6SeV7qBKr45YotqXTQjUBEwNY1HpNhmo1tWG+1AScgfj/BwstxfSsvVT4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787100031; c=relaxed/simple;
-	bh=XDrZLBuOInroCq7eBP8MpsrFsdRb91W6vX6r83xVdLA=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=HHGWjOYv79wpnhiz2d2197yyHIinUGgqtwEDmtBVQr4QMXX2pIcPHw4KmjlMLaxJCWe2L2HxouSMl/ri2IEF4728X9m18YUPUbQaPaeoK4xvgf4FUHWUsSnbsNi/Fi1SpIaWMyemA3du+TPiIKdxEnoOOYi2rCUW3xE325XSPwA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=UFKzhMEA; arc=none smtp.client-ip=74.125.231.139
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1787101619; c=relaxed/simple;
+	bh=qjUvnc0Pz4ExQRj0IR9AWSRxs+gNbNySxuHAeP8PZbY=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=rRGCfGcRJF8VezA7K4DIpXXZFqqd+IKlRbdKCxM354De/CU6iz13HMjpfdFg5jMPhel1JIosVq5mK1+82U3y47hkFyuuXqp3lLOvql+9VcxplV2VdzJJD4qL/vAHTmd55BivGox1lphOAyhnCknYuitheyaYz06RyotOUb6HnXI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=d6EGm4UF; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=a8YhVDch; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="UFKzhMEA"
-Received: by mail-oo2-f11.google.com with SMTP id 006d021491bc7-6b12d30261cso115976eaf.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2026 17:40:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1787100026; x=1787704826; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=/7H02fS9J+kIylLg1nNS7BqX5LaXGZpwW+oYL3M+hxY=;
-        b=UFKzhMEAsnCB8GQoRu1FqMJmXl5Ozok1JiVlDNRpiL70dyirUasC6/fbT3DclwBr83
-         7SM0TvZKDzONXAxw5ncixXjxJPTcOyBNEy70n/tA2lvYyI7o9VLCoK0SWUgRRHQu6FDB
-         MhrTRtG5YwJZ9cx3wl3en8SXlBAw+zeGmsspvWJkLcT0LMW9bc8cQjVxyNdG/++qiaeu
-         hJnMHMM3zVV8vW6w8xa6dLwk6+Zx+4/Pzq2n5G9tN9oRiIcQGrmYWd5AHMQU7w3+T9VK
-         WSF2JUdO9qQj93Lcm5d5nFbzGDB1FRz0Jn5zS1Mqn9lZ0I8vOPAEmacWBOP6yfNolXsV
-         L30w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787100026; x=1787704826;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=/7H02fS9J+kIylLg1nNS7BqX5LaXGZpwW+oYL3M+hxY=;
-        b=knkQtFdD3PXeqCwS+gRonZipGr3F2GgWTddD9xDdqw1+RoHMiYI+VW/xEyFKRP328K
-         Q0gqpkQCzt8mhHk11yWGPCXmvGLLn2ssMHZ2NnnaM2pLvvFBTmArg2Xo8AYrTxRdYFam
-         P1tFvYx+4M9qhfVRHjHeQkIz8Z+baHohXaGgDLksdphzYjtnfWTy3ulOHFg6RrFG4/Tv
-         Bl5wX+eHJtD3XY72O/uxGj2O4tiEmkJ2OvOdRskeEClprEEKbGi43JtwO3WCvmc+ZSG6
-         8bDt5A6Cg6FDbS1VU9O5poM5jY0wyPDkCfx+v2KIMxcCHB3TYc9udy13nbX8bx0bojFY
-         482A==
-X-Gm-Message-State: AOJu0YzZ2XnX+ur43umUENmOWxiVZwvSLyNrJ/h9K2gjICV1iYKFo/LJ
-	sizzE4AVBkqANMunfwQlwZpqN0LIoakLbKygyOoR1xz4S/XEI4CJOu01XlG5juuy
-X-Gm-Gg: AR+sD10qt8cDrNOMnHKdiJQaZuAHDb0M6sEcBgD1ijkgTkKB29qp2nuqPgzN6wN6C7f
-	fMuo8o8r6CdrYWFi3uTW60/OKTejySXfsZN2fgI4p330TxD48L8R0F40t6mOXMDNBar/TG6f8BF
-	+Rs0+ZRc27TY94pLMjLxCCrYDeBrWDRrhU5IUgiBjuHjBl5Xu3VSE30kiMW4bRZrLpeVH3wk19n
-	ZBkAba4fEVyx5T9X3eWXAOr6gvMPukwqE3i8M5upika69aGHq8Sv1q2OpHkCBCmTvDoIzjA6co/
-	3Ue3R/qG6NmfqHYOEpuuy0S1nysdDAI78+Jiz1/WrRC/vocXF+BdNzW+CoQ8dSR5swG1nR249jz
-	NCZu4cBmLRX4Y+vdNIQ7TU7U2XctO6KQ0+h1wFWIeT99dO//tjxhB5bMU0XtoZ8QikZYoPNzOhq
-	tRFg4woq+0BqDyRO+iBGtm9uN+/Rq7ipSG+pPwvccNdw1ZVlMq0ROaNt7XfD2H8A21Bg==
-X-Received: by 2002:a05:6820:a290:10b0:6b1:377b:8b7e with SMTP id 006d021491bc7-6b13c5a2694mr876380eaf.23.1787100026298;
-        Tue, 18 Aug 2026 17:40:26 -0700 (PDT)
-Received: from localhost ([2a03:2880:10ff:56::])
-        by smtp.gmail.com with ESMTPSA id 46e09a7af769-7f44009007csm172493a34.26.2026.08.18.17.40.25
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 18 Aug 2026 17:40:25 -0700 (PDT)
-From: Leo Martins <loemra.dev@gmail.com>
-To: linux-btrfs@vger.kernel.org,
-	kernel-team@fb.com
-Cc: Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>,
-	Filipe Manana <fdmanana@suse.com>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	Josef Bacik <josef@toxicpanda.com>,
-	Qu Wenruo <wqu@suse.com>,
-	linux-kernel@vger.kernel.org,
-	stable@vger.kernel.org
-Subject: [PATCH] btrfs: abort transaction before releasing tree_log_mutex on commit failure
-Date: Tue, 18 Aug 2026 17:40:10 -0700
-Message-ID: <698c480ec13cd6e74c2175924f614b7e324e6cc3.1787099421.git.loemra.dev@gmail.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="d6EGm4UF";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="a8YhVDch"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id A052D3DFD
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2026 01:06:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1787101611; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=qqemY/5/yGTJjC73I/Dnoia7hnNtIpqBquTfALYrxWw=;
+	b=d6EGm4UFSijYyF92dfFLsNSGODdkT6G3vU9E5Y6E1ZWRD3YVOyW87zszXko3MKDqto270K
+	uu/YnlI4o7bwkeVx9yOF19M7BJr7sN700XNqZcX+1X2DWUJJI6Pcd3DIXpnnpWrID9/p6c
+	WwNopzjrTNOudeFyllcegf6nypM7lEc=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1787101607; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=qqemY/5/yGTJjC73I/Dnoia7hnNtIpqBquTfALYrxWw=;
+	b=a8YhVDchlOhS11+cqdh8jQYKl0DApdk2qS6IcjwqUEzXp16M2KNCoy/J8cdUgqnmeFq7r2
+	R1lbqkW6/f1wDKK0UQJj7GzuRtuc0X8lmd1sGwsWPCkHT0tsD31NMNqiVF8Y7t+1c3xSxt
+	Sy2NLBTx3ZdAESOHaI7XMehMHVay87s=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 882D42F81
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2026 01:06:46 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 08vIC6YBhWruVgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2026 01:06:46 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 RESEND 0/4] btrfs: removal of on-stack paddrs[], final part
+Date: Wed, 19 Aug 2026 10:36:15 +0930
+Message-ID: <cover.1787101260.git.wqu@suse.com>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -77,68 +62,131 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid];
+	URIBL_BLOCKED(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
 
-When transaction metadata writeout fails in btrfs_commit_transaction(),
-the current code only logs the error, drops tree_log_mutex and then goes
-through cleanup_transaction(), which aborts the transaction and records
-the fs error.
+[CHANGELOG]
+v3 RESEND:
+- Minor commit message change
+  The resend is most for proper sashiko review.
 
-That is too late for the tree log side. A log sync can already be
-waiting on tree_log_mutex, because the committing transaction is moved
-to TRANS_STATE_UNBLOCKED while that mutex is held, which lets fsyncs
-join the next transaction and queue up in btrfs_sync_log(). Once the
-failed commit drops tree_log_mutex, such a log sync acquires it, sees
-BTRFS_FS_ERROR() still clear, and writes super_for_commit. That
-superblock holds the roots prepared for the transaction that has just
-failed to write out its metadata, so it can point at tree blocks that
-never reached the disk, and the next mount fails with a parent transid
-mismatch.
+v3:
+- Rebased to the latest for-next
+  There is a fix in RAID56, which can cause conflicts with the last
+  patch
 
-Commit 165ea85f1483 ("btrfs: do not write supers if we have an fs
-error") fixed this class of problem by making btrfs_sync_log() check for
-an fs error right after taking tree_log_mutex. That check only works if
-the commit path publishes the fs error before it releases the same
-mutex, and commit 68d4ece9c30e ("btrfs: don't call
-btrfs_handle_fs_error() in btrfs_commit_transaction()") removed the only
-thing that did so.
+- Remove all remaining on-stack paddrs[] usage
+  There are two last ones in RAID56, one can be converted to use bio
+  interface, the other is not using on-stack paddrs[] array.
 
-Restore the ordering by aborting the transaction while tree_log_mutex is
-still held. We have a transaction handle here, so this does not need to
-bring back the btrfs_handle_fs_error() call: __btrfs_abort_transaction()
-records the fs error itself, which is all btrfs_sync_log() looks at, and
-the error message put in its place is kept.
+  So we can finally remove all on-stack paddrs[] usage.
 
-This is what commit 3810ab40afa5 ("btrfs: abort transaction on error in
-write_all_supers()") already does for the next call in this function.
+v2:
+- Fix a missing assignment for metadata repair
+  The logical should be assigned before passing it to
+  btrfs_repair_bbio_failure().
 
-This is reproducible on an unmodified kernel by failing the first
-couple of bios of a transaction commit with fail_make_request while a
-concurrent fsync workload keeps log syncs queued on tree_log_mutex.
+- Move the commit message of error message change to the correct patch
+  It's changed in the first patch not the last one.
 
-Fixes: 68d4ece9c30e ("btrfs: don't call btrfs_handle_fs_error() in btrfs_commit_transaction()")
-Cc: stable@vger.kernel.org # 7.0+
-Signed-off-by: Leo Martins <loemra.dev@gmail.com>
----
- fs/btrfs/transaction.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+Since the experimental bs > ps support, several on-stack fixed paddrs[]
+arrays are introduced, for assemble mutli-page sized fs blocks.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 13a7e5f4e08c..ed850bf0546a 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2583,6 +2583,12 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	ret = btrfs_write_and_wait_transaction(trans);
- 	if (unlikely(ret)) {
- 		btrfs_err(fs_info, "error while writing out transaction: %pe", ERR_PTR(ret));
-+		/*
-+		 * Abort before releasing tree_log_mutex, so a log sync waiting
-+		 * on it sees the fs error and skips writing super_for_commit
-+		 * for this failed transaction. See btrfs_sync_log().
-+		 */
-+		btrfs_abort_transaction(trans, ret);
- 		mutex_unlock(&fs_info->tree_log_mutex);
- 		goto scrub_continue;
- 	}
+However that on-stack memory usage is always there for 4K page sized
+systems, no matter if the block size of the filesystem.
+
+The idea is to use bio interface for page iterations, the core idea is
+to use a const bvec_iter as the pointer to where the block is.
+
+Then we save a local bevc_iter, and use the local iter to check the next
+few pages until we fill a full block.
+
+Furthermore, with the help of bvec_iter, we can remove a lot of
+parameters:
+
+- file_offset
+- logical
+- bio_offset
+  All can be generated by using the @iter passed in and the
+  bbio->saved_iter to calculate the old @bio_offset.
+
+  @bio_offset is the (iter.bi_sector - saved_iter.bi_sector) <<
+  SECTOR_SHIFT.
+  As when bvec_iter is advanced, its bi_sector is also increased.
+
+  @logical is simpler, just iter.bi_sector << SECTOR_SHIFT.
+
+  @file_offset is the bbio->file_offset + bio_offset.
+
+This means we no longer need to use on-stack paddrs[] to csum
+generation.
+
+With bio interfaces, the iteration of an fs block is as simple as the
+following: (I tried to change the page/pg_off/cur_len into a macro just
+like btrfs_bio_for_each_block(), but failed)
+
+	u32 cur = 0;
+
+	btrfs_csum_init(&cctx, fs_info->csum_type);
+	while (cur < blocksize) {
+		struct page *page = bio_iter_page(&bbio->bio, iter);
+		const u32 pg_off = bio_iter_offset(&bbio->bio, iter);
+		const u32 cur_len = min(bio_iter_len(&bbio->bio, iter), blocksize - cur);
+		void *kaddr;
+
+		kaddr = kmap_local_page(page) + pg_off;
+		btrfs_csum_update(&cctx, kaddr, cur_len);
+		kunmap_local(kaddr);
+
+		bio_advance_iter_single(&bbio->bio, &iter, cur_len);
+		cur += cur_len;
+	}
+	btrfs_csum_final(&cctx, csum);
+
+However there is still one caller left:
+
+- RAID56
+  That will be only location left without a bio.
+  In that case we can easily craft a local helper to do csum generation
+  without using on-stack paddrs[].
+
+Qu Wenruo (4):
+  btrfs: replace btrfs_repair_io_failure() to use bio for page iteration
+  btrfs: enhance btrfs_data_csum_ok() to use bio for page iteration
+  btrfs: use a shared helper to calculate data checksum for a bio
+  btrfs: remove on-stack paddrs[] array usage
+
+ fs/btrfs/bio.c         | 140 +++++++++++++++++++----------------------
+ fs/btrfs/bio.h         |   5 +-
+ fs/btrfs/btrfs_inode.h |  12 ++--
+ fs/btrfs/disk-io.c     |  25 +++++---
+ fs/btrfs/file-item.c   |  20 ++----
+ fs/btrfs/inode.c       | 114 +++++++++++----------------------
+ fs/btrfs/raid56.c      |  47 ++++++++------
+ 7 files changed, 159 insertions(+), 204 deletions(-)
+
 -- 
-2.53.0-Meta
+2.54.0
 

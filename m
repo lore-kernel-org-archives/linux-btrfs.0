@@ -1,260 +1,183 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3BE2F2FFF89
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 08:59:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A62F141A4F7
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 11:25:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.145.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787216359; cv=none; b=R8R0WKlFcneEJcfJJvWBSkVybO7Gc03/3HdT6/SlkPy7CAAxB/Yzx3rEnV3PCrOWwL1z5iDWZ7DrAFtwq7I7YEVATh9JEDJ1c7kQGHe1kZjLVXbT4F01+gpWqLxKkNYEXGq+rzLy8zJtJDRrxT1BqDVafym38l075H+4ZsCXOz0=
+	t=1787225158; cv=none; b=lxy0xV5ua2C+tkBYlAazdTeUwWHCEeK/xL2KF8TGbkj4MYQzYU3rXoK1auHJo1hpqNMwQ9Y78uq+H3hVL2PMXlD/a/cPrZZNmrqo2W3QVX5PQW45I6F/9UsXzpT6S0vwV2oEVgsyo6Y1bObWI22wUSfphaNXGF9+yPOTW7ykK5Q=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787216359; c=relaxed/simple;
-	bh=yz/yyPzG/qHGyzFN4/CgmWi1g1w9xNvgvsxPysPWFLc=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=ELuyyu+BMDnpWOe/eM0B5fWcf63JpNL314/mVhLrl6KYirstIf+g7qaStahUOdG7pbT5NmaeKKR3RtCabogTzURH6mpkRvu8/FtBWqZ/+XnnR7rS49RDhprToJXm2cZtPgy0IvJfobd6y3qEMTqGzd1nmiatwwtr1iWpe+NpSa0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tgfGxwPC; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ak0JRXs1; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1787225158; c=relaxed/simple;
+	bh=pEeaGQ0Mdt1TA25PSLc7VPAWIjxPHlZzAjXBnPJKvTg=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=Udk/XXXgqlRcw2RpE45yrofzpB2J2sykluYo7hL0pFfc5ubTbBhw92je96sjHJoTEuva+gyTi319h57g3TvP/P3jg7brb9W9ETR48qFWdsqC0INUOn4pPXGi+XFMRCPb4lDEXscxlqgQ10Dg2jr0DXE+vqppBhCMutUC0Ebj2Ss=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b=KagFmqzZ; arc=none smtp.client-ip=67.231.145.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tgfGxwPC";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ak0JRXs1"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 1CB2F84FDB
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 08:59:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787216352; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=ME6i94X0+KuO310HUn04UePdjqvK2g/pW7ePOf9FrVY=;
-	b=tgfGxwPCtUM8NtuhaPsNV4hywHN6MjHEFNdro8kKDZ0wPeOZrZ6SOQmyes7m6vFhH2ttux
-	n4gAXqSep5qj955rRmtV2ggRAiSU01UrywAV9T04IBPooxatbLSrcj2bPEZmRqN+YXUjgi
-	3vqGKuHAI8+FN11WglAGMKP3/WxyD/8=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787216348; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=ME6i94X0+KuO310HUn04UePdjqvK2g/pW7ePOf9FrVY=;
-	b=ak0JRXs1CpKciyxQJaQ8AOWsLMr8qIyDt5OnVOO11Tn+Guk/exQxXUKn8r+qfZ+vw7ggdI
-	3YFnaY7w8x2dzJywZHodZVoMV8NUCBtj2Tot/uBLhHeHezPIx+LJPsFErEhFe/QJf/fKf/
-	oAd3eSJBpmFPUKPldFv0nwUvk9oCuYA=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0AD6927A8
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 08:59:06 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id irFPKdrBhmpTKwAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 08:59:06 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: do not force reloc root creation during qgroup_account_snapshot()
-Date: Thu, 20 Aug 2026 18:28:48 +0930
-Message-ID: <df20ed0596f010eebfd9ad33b8bb979e6304dbfb.1787216325.git.wqu@suse.com>
-X-Mailer: git-send-email 2.54.0
+	dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b="KagFmqzZ"
+Received: from pps.filterd (m0044012.ppops.net [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 67K38dZa3660030
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 04:25:49 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=meta.com; h=cc
+	:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=
+	pps82601-s2048-2026-q3; bh=Kr+K+zjOdEMK9wEKulfes8NAHCfzB3pGDnX9o
+	xPQjJo=; b=KagFmqzZ951XX8MJF6VNCBjnks2ID1/DU+XapiW836v0LX372gJbr
+	b1ixjExCDE6WSnT1a1jK4smxh22Y1/Ne8Pk0B3ZQf584hXCYYqoex27AkVPssae9
+	VqLqRjjxPcU8bJnvBTkfEqvZvoIkEB5OOMuFCHVqWE9rnyuTbTnBb6TAQNk32jcj
+	Z7G6hVl9fIAiJbtODijskdpUlVbE75pux+R7sLK0RaYGxxZ/eRHRR8BQ70XZBW1s
+	dZCFKTkuij31TekhmRHStEm6/lZzp0Nwd6PmDajkqhIyAHmMb5UB+6Z6ux7cPekP
+	hyygvMtl36VFutt1WNxZNcYcuV18SPHDA==
+Received: from mail-qt1-f197.google.com (mail-qt1-f197.google.com [209.85.160.197])
+	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 4g4yfx4vhg-1
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 04:25:49 -0700 (PDT)
+Received: by mail-qt1-f197.google.com with SMTP id d75a77b69052e-51c0e702df8so27900751cf.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 04:25:49 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1787225148; x=1787829948;
+        h=mime-version:user-agent:content-transfer-encoding:content-type
+         :references:in-reply-to:date:cc:to:from:subject:message-id:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=Kr+K+zjOdEMK9wEKulfes8NAHCfzB3pGDnX9oxPQjJo=;
+        b=g20PRplE3eCpcaJQaNh13LR/kqYqr8aEEcm8uKYmhKEf+it0oqmpM0bcuxboK40l+0
+         Yeg3XSBcka2UbcNBtCztjRi626OK3qrvlJlKV5t2KDGRWSaA5sCzyr85wTLthMCir+Cq
+         Ur7/Xy7MURqXA5iPdhlgyoHyw7smREd0bd9KBlKFQckQCqyXkCy+7KvO0V25jm2RsP4u
+         W5EbpQl5PTTZSpsVyvsE98iE45GfSs7Y9ybRY9MG2/AiA3HxZSMsA8At4th/JUpZRUUP
+         aloaDGo4PKROdcyxFPxLAhySZqxb5HxK7+Ld9htRtkNncMey5HNxI234goGJ8G0YhCws
+         BDAg==
+X-Forwarded-Encrypted: i=1; AHgh+Roe+HMpWdkZ137mA5HUTPHwJMtFpGVkLgAd5utx42RGicUCVJ0nC+OOuYGtG8DgC6R+vxaowxQ52YgLuw==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxFet0BBFIWACpjvqk7u4xgt+a/d7eALFee01plynrdI35fLL8I
+	g3fMgrj9lh7P1vIf1Y4FKpSiDVmz2JovmqSGUo6KgTJupkQlYc2RMsXCWy4kMTCWKXxdQpNIHMa
+	MuUcxvFqd2WsbatZYkqkMNvmCabSgT8Idh+vA485b6sHJwZNS8O5s9Fw5IeR+v1U=
+X-Gm-Gg: AR+sD10WOJPuyeXjvDxP+aMizDcqftjG92CWfOYVpPn6gIC65EUaJ+S+dPDbfCVdlG1
+	lbmO8dPv3AwbH4XGvVJAV0MXHCDklWLp+Q0dR/Q/Q582FWjyWaJFZWDHeezYo748x/WCuEnVSz9
+	T76xp5SpUjdFqnYh3j9J/IVDECstOqen380Z1U5dmhTnWk1tAUTQ+nDVHfOr2j7Su13ovzK7Obv
+	aUq48xZRGmP/ubBC1twD7Kk/wywlXCaaidpOX61tWbvj8xNP8ey5KZs7h1mGl/cjLlEqLiXpNtq
+	rPUV8Z5cY4TdMdz9sImIxubp8bOv23WerWsiv6svym9kMn9q1JfXgpwhMvYla8TR07aqeBH7xAr
+	6
+X-Received: by 2002:a05:622a:58cd:b0:51a:8696:cb38 with SMTP id d75a77b69052e-52dd57853damr115785051cf.7.1787225148404;
+        Thu, 20 Aug 2026 04:25:48 -0700 (PDT)
+X-Received: by 2002:a05:622a:58cd:b0:51a:8696:cb38 with SMTP id d75a77b69052e-52dd57853damr115784341cf.7.1787225147838;
+        Thu, 20 Aug 2026 04:25:47 -0700 (PDT)
+Received: from [192.168.77.173] ([68.20.15.154])
+        by smtp.gmail.com with ESMTPSA id d75a77b69052e-52dd872f61esm29031451cf.23.2026.08.20.04.25.47
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 20 Aug 2026 04:25:47 -0700 (PDT)
+Message-ID: <3a7777fb1f0678c88c2365a6a476167b5abc4e9d.camel@meta.com>
+Subject: Re: [PATCH] btrfs: abort transaction before releasing
+ tree_log_mutex on commit failure
+From: "jlayton@meta.com" <jlayton@meta.com>
+To: Leo Martins <loemra.dev@gmail.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+        Filipe Manana
+	 <fdmanana@suse.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
+        linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Date: Thu, 20 Aug 2026 07:25:46 -0400
+In-Reply-To: <698c480ec13cd6e74c2175924f614b7e324e6cc3.1787099421.git.loemra.dev@gmail.com>
+References: 
+	<698c480ec13cd6e74c2175924f614b7e324e6cc3.1787099421.git.loemra.dev@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 (3.60.2-1.fc44) 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.994];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email,suse.com:url];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
+X-Proofpoint-GUID: Vshq9xP70I_27CLy-Syx9FLJwe4CN605
+X-Proofpoint-Spam-Info: AW1haW4tMjYwODIwMDA4NCBTYWx0ZWRfX3MFd3QnmLdhc
+ 9GO+l1YwsA/Z2QxV9T65mdt+LdKivHWGxnd0L6TUGducbKWJJ+kILZkt0YlMk8t1MFIw5soHvBl
+ Su+PuZXN/5a8ClBaRDtpRX5Hss2wzTk=
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwODIwMDA4NCBTYWx0ZWRfX0IZnFW8nAega
+ cuYV6ml5nvF/bmhJqPNDz2Hczf3+IEIekFlclgxJf4Cxjr6XIdXgz/1/qVGLRp+rgi7+Hwuz6ZU
+ /U0hLDmoTfm/PQSF1zXvNVb6wfBpgCTHLQw1duv8kTs5cRqPqT24rRXJ8Kr3rwJIyr+13nt39/7
+ PM8iAjKJF93w2xgPeUDdWE2YA436aYhtTNbuF2F1SWPF8a/d9J10HUoiOr9jetFxYMHqQU9Bt4U
+ fDzWX6z9SmxYUSb8nfZW5ETKSaYHapXgB+qa8O1BoquuR5cmuc/pLfhSvo8ungk6+Yt9heOQddA
+ 4tHygMuwzkcI5UXuGlF0avW+5rzpfvpd27FCby1y9z/FRoxS/jIeK0LwQSBSd0pu9NlksXSB+iC
+ fLoewZA/1RobvmWiV9Iy5fDP1uHh1cUMbg2oL9FNzou7UL+HrosD0Bg5rmdnjVGMxexbC6S+iBB
+ G7wGHuwMBQ1MoWlI62g==
+X-Authority-Analysis: v=2.4 cv=QpBuG1yd c=1 sm=1 tr=0 ts=6a86e43d cx=c_pps
+ a=EVbN6Ke/fEF3bsl7X48z0g==:117 a=I8GJ1mTG6nUeI1lZk6893w==:17
+ a=IkcTkHD0fZMA:10 a=Sv0fKeRqtYgA:10 a=7j0FZ4iXMVMA:10
+ a=VkNPw1HP01LnGYTKEx00:22 a=7x6HtfJdh03M6CCDgxCd:22 a=PAz_-FQ8hEVmOPYdF0yf:22
+ a=VwQbUJbxAAAA:8 a=pGLkceISAAAA:8 a=VabnemYjAAAA:8 a=5xnzj68laMxwpfVuNd8A:9
+ a=QEXdDO2ut3YA:10 a=a_PwQJl-kcHnX1M80qC6:22 a=gKebqoRLp9LExxC7YDUY:22
+X-Proofpoint-ORIG-GUID: Vshq9xP70I_27CLy-Syx9FLJwe4CN605
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1176,Hydra:6.1.134,FMLib:17.12.100.49
+ definitions=2026-08-19_06,2026-08-19_02,2025-10-01_01
 
-[BUG]
-When running btrfs/252 with quota enabled through MKFS_OPTIONS="-O
-quota", it has a high chance to trigger the following kernel warning and
-flips the fs RO:
+On Tue, 2026-08-18 at 17:40 -0700, Leo Martins wrote:
+> When transaction metadata writeout fails in btrfs_commit_transaction(),
+> the current code only logs the error, drops tree_log_mutex and then goes
+> through cleanup_transaction(), which aborts the transaction and records
+> the fs error.
+>=20
+> That is too late for the tree log side. A log sync can already be
+> waiting on tree_log_mutex, because the committing transaction is moved
+> to TRANS_STATE_UNBLOCKED while that mutex is held, which lets fsyncs
+> join the next transaction and queue up in btrfs_sync_log(). Once the
+> failed commit drops tree_log_mutex, such a log sync acquires it, sees
+> BTRFS_FS_ERROR() still clear, and writes super_for_commit. That
+> superblock holds the roots prepared for the transaction that has just
+> failed to write out its metadata, so it can point at tree blocks that
+> never reached the disk, and the next mount fails with a parent transid
+> mismatch.
+>=20
+> Commit 165ea85f1483 ("btrfs: do not write supers if we have an fs
+> error") fixed this class of problem by making btrfs_sync_log() check for
+> an fs error right after taking tree_log_mutex. That check only works if
+> the commit path publishes the fs error before it releases the same
+> mutex, and commit 68d4ece9c30e ("btrfs: don't call
+> btrfs_handle_fs_error() in btrfs_commit_transaction()") removed the only
+> thing that did so.
+>=20
+> Restore the ordering by aborting the transaction while tree_log_mutex is
+> still held. We have a transaction handle here, so this does not need to
+> bring back the btrfs_handle_fs_error() call: __btrfs_abort_transaction()
+> records the fs error itself, which is all btrfs_sync_log() looks at, and
+> the error message put in its place is kept.
+>=20
+> This is what commit 3810ab40afa5 ("btrfs: abort transaction on error in
+> write_all_supers()") already does for the next call in this function.
+>=20
+> This is reproducible on an unmodified kernel by failing the first
+> couple of bios of a transaction commit with fail_make_request while a
+> concurrent fsync workload keeps log syncs queued on tree_log_mutex.
+>=20
+> Fixes: 68d4ece9c30e ("btrfs: don't call btrfs_handle_fs_error() in btrfs_=
+commit_transaction()")
+> Cc: stable@vger.kernel.org # 7.0+
+> Signed-off-by: Leo Martins <loemra.dev@gmail.com>
+> ---
+>  fs/btrfs/transaction.c | 6 ++++++
+>  1 file changed, 6 insertions(+)
+>=20
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 13a7e5f4e08c..ed850bf0546a 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -2583,6 +2583,12 @@ int btrfs_commit_transaction(struct btrfs_trans_ha=
+ndle *trans)
+>  	ret =3D btrfs_write_and_wait_transaction(trans);
+>  	if (unlikely(ret)) {
+>  		btrfs_err(fs_info, "error while writing out transaction: %pe", ERR_PTR=
+(ret));
+> +		/*
+> +		 * Abort before releasing tree_log_mutex, so a log sync waiting
+> +		 * on it sees the fs error and skips writing super_for_commit
+> +		 * for this failed transaction. See btrfs_sync_log().
+> +		 */
+> +		btrfs_abort_transaction(trans, ret);
+>  		mutex_unlock(&fs_info->tree_log_mutex);
+>  		goto scrub_continue;
+>  	}
 
- BTRFS info (device dm-2): relocating block group 30408704 flags metadata|dup
- ------------[ cut here ]------------
- WARNING: fs/btrfs/extent-tree.c:879 at lookup_inline_extent_backref+0x74b/0x960 [btrfs], CPU#4: btrfs/2173
- CPU: 4 UID: 0 PID: 2173 Comm: btrfs Not tainted 7.2.0-rc6-custom+ #457 PREEMPT(full)  3adc6528fb66f7a55fe1095385818e742f200aab
- Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 02/02/2022
- RIP: 0010:lookup_inline_extent_backref+0x74b/0x960 [btrfs]
- Call Trace:
-  <TASK>
-  insert_inline_extent_backref+0x7c/0x160 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  __btrfs_inc_extent_ref+0xa9/0x270 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  __btrfs_run_delayed_refs+0x4af/0x11c0 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  btrfs_run_delayed_refs+0x9d/0xf0 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  create_pending_snapshot+0x39d/0xf00 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  create_pending_snapshots+0x9b/0xc0 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  btrfs_commit_transaction+0x280/0xeb0 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  prepare_to_relocate+0x147/0x200 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  relocate_block_group+0x6b/0x5e0 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  btrfs_relocate_block_group+0x92c/0x2380 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  btrfs_relocate_chunk+0x3f/0x1a0 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  btrfs_balance+0xa2c/0x19c0 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  btrfs_ioctl+0x2839/0x2d30 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b72]
-  __x64_sys_ioctl+0x416/0x9a0
-  do_syscall_64+0xe1/0x790
-  entry_SYSCALL_64_after_hwframe+0x4b/0x53
-  </TASK>
- ---[ end trace 0000000000000000 ]---
- BTRFS info (device dm-2): leaf 4593991680 gen 233 total ptrs 175 free space 5953 owner 2
- BTRFS info (device dm-2): refs 3 lock_owner 2173 current 2173
- 	item 0 key (166772736 METADATA_ITEM 1) itemoff 16250 itemsize 33
- 		extent refs 1 gen 222 flags 2
- 		ref#0: tree block backref root 266
-	[ Skip the tree dump ]
- 	item 174 key (263225344 METADATA_ITEM 0) itemoff 10328 itemsize 33
- 		extent refs 1 gen 162 flags 258
- 		ref#0: tree block backref root 267
- BTRFS error (device dm-2): extent item not found for insert, bytenr 179847168 num_bytes 16384 parent 4594335744 root_objectid 273 owner 0 offset 0
- BTRFS error (device dm-2): failed to run delayed ref for logical 179847168 num_bytes 16384 type 182 action 1 ref_mod 1: -117
-
-[CAUSE]
-The above error is showing that there is a tree reference to an metadata
-extent that is no longer there.
-
-With "ref_verify" mount option (requires CONFIG_BTRFS_DEBUG), there is
-some extra debug output:
-
- BTRFS error (device dm-2): dumping block entry [180961280 16384], num_refs 0, metadata 1, from disk 0
- BTRFS error (device dm-2):   root entry 256, num_refs 18446744073709551615
- BTRFS error (device dm-2):   root entry 273, num_refs 18446744073709551615
- BTRFS error (device dm-2):   Ref action 3, root 273, ref_root 273, parent 0, owner 0, offset 0, num_refs 1
-    btrfs_force_cow_block+0x129/0x7d0 [btrfs]
-    btrfs_cow_block+0x10a/0x250 [btrfs]
-    btrfs_search_slot+0x5eb/0xf40 [btrfs]
-    btrfs_insert_empty_items+0x3a/0x70 [btrfs]
-    insert_with_overflow+0x53/0x130 [btrfs]
-    btrfs_insert_dir_item+0x125/0x290 [btrfs]
-    btrfs_add_link+0xaa/0x410 [btrfs]
-    btrfs_rename+0x5ea/0xcd0 [btrfs]
-    btrfs_rename2+0x28/0x60 [btrfs]
-    vfs_rename+0x5b2/0xe10
-    filename_renameat2+0x244/0x430
-    __x64_sys_rename+0x48/0x70
-    do_syscall_64+0xe1/0x790
-    entry_SYSCALL_64_after_hwframe+0x4b/0x53
- BTRFS error (device dm-2):   Ref action 2, root 273, ref_root 273, parent 0, owner 0, offset 0, num_refs 18446744073709551615
-    btrfs_force_cow_block+0x327/0x7d0 [btrfs]
-    btrfs_cow_block+0x10a/0x250 [btrfs]
-    btrfs_search_slot+0x5eb/0xf40 [btrfs]
-    btrfs_lookup_file_extent+0x4d/0x70 [btrfs]
-    btrfs_drop_extents+0x151/0xf00 [btrfs]
-    insert_reserved_file_extent+0xfe/0x3e0 [btrfs]
-    btrfs_finish_one_ordered+0x549/0xc40 [btrfs]
-    btrfs_work_helper+0xde/0x350 [btrfs]
-    process_one_work+0x198/0x380
-    worker_thread+0x1c8/0x330
-    kthread+0xee/0x120
-    ret_from_fork+0x28f/0x310
-    ret_from_fork_asm+0x11/0x20
- BTRFS error (device dm-2):   Ref action 1, root 273, ref_root 0, parent 4594335744, owner 0, offset 0, num_refs 1
-    __btrfs_mod_ref+0x1c5/0x2d0 [btrfs]
-    btrfs_copy_root+0x262/0x390 [btrfs]
-    create_reloc_root+0xb9/0x370 [btrfs]
-    btrfs_init_reloc_root+0xb0/0x1b0 [btrfs]
-    record_root_in_trans+0xa6/0xd0 [btrfs]
-    create_pending_snapshot+0x383/0xf00 [btrfs]
-    create_pending_snapshots+0x9b/0xc0 [btrfs]
-    btrfs_commit_transaction+0x280/0xeb0 [btrfs]
-    prepare_to_relocate+0x147/0x200 [btrfs]
-    relocate_block_group+0x6b/0x5e0 [btrfs]
-    btrfs_relocate_block_group+0x92c/0x2380 [btrfs]
-    btrfs_relocate_chunk+0x3f/0x1a0 [btrfs]
-    btrfs_balance+0xa2c/0x19c0 [btrfs]
-    btrfs_ioctl+0x2839/0x2d30 [btrfs]
-    __x64_sys_ioctl+0x416/0x9a0
-    do_syscall_64+0xe1/0x790
-
-The above shows the direct cause, Ref action 3 is the oldest operation,
-which shows the tree block is created by COW.
-Then ref action 2 shows it's COWed away, by a metadata update, meaning
-the tree block is already released, should not be referred any more.
-
-Then the final one, is trying to create a reloc tree for subvolume 273,
-and that reloc root creation is referring to the already dropped tree
-block.
-
-The root cause is that, during qgroup_account_snapshot(), we are calling
-record_root_in_trans() with "force = true".
-So if the root has no reloc root, we will create one, but at that
-timing it's already too late.
-
-Normally reloc root should be created before the commit and
-current roots diverge, to avoid the same problem we are hitting.
-
-But during relocation initialization, we are committing the current
-running transaction, with a new reloc_control attached halfway.
-
-And if qgroup is enabled, the record_root_in_trans() with "force = true"
-calls will force reloc root creation even if we do not and should not
-create reloc root at that timing.
-
-[FIX]
-Do not force reloc root creation during record_root_in_trans() with
-"force = true" cases, which is only called by qgroup_account_snapshot().
-
-If we're really under relocation, the reloc root should be created way
-early, before the commit and current root diverge.
-If the root has no reloc tree yet, it means we're still initializing the
-reloc, and do not need a reloc root.
-
-So skipping the reloc tree creation in qgroup_account_snapshot() should
-be safe.
-
-Link: https://bugzilla.suse.com/show_bug.cgi?id=1275740
-Assisted-by: LLM (initial analyze, but incorrect conclusion with too many burnt tokens)
-Fixes: 4d31778aa2fa ("btrfs: qgroup: Fix root item corruption when multiple same source snapshots are created with quota enabled")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/transaction.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 13a7e5f4e08c..59e246467272 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -458,8 +458,19 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
- 		 * through btrfs_record_root_in_trans without having to take the
- 		 * lock.  smp_wmb() makes sure that all the writes above are
- 		 * done before we pop in the zero below
-+		 *
-+		 * If @force is true, it means the call is from
-+		 * qgroup_account_snapshot(), which only requires radix tree
-+		 * tracking.
-+		 * We should not force reloc root creation here, as the root
-+		 * may have already been modified, and in that case
-+		 * root->commit_root has already been dropped.
-+		 *
-+		 * Using that commit root will cause the reloc root to refer
-+		 * to a deleted extent, causing extent tree corruption.
- 		 */
--		ret = btrfs_init_reloc_root(trans, root);
-+		if (!force)
-+			ret = btrfs_init_reloc_root(trans, root);
- 		smp_mb__before_atomic();
- 		clear_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state);
- 	}
--- 
-2.54.0
-
+Reviewed-by: jlayton@meta.com <jlayton@meta.com>

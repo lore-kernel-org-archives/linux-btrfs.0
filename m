@@ -1,149 +1,168 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2760F339398;
-	Thu, 20 Aug 2026 12:04:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+Received: from zg8tmtyylji0my4xnjqumte4.icoremail.net (zg8tmtyylji0my4xnjqumte4.icoremail.net [162.243.164.118])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 7EB9C440A38;
+	Thu, 20 Aug 2026 12:27:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=162.243.164.118
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787227485; cv=none; b=FtUeqFQ7At3UAzxIDjr8dX1/Q8N3VZGBTyyXuNy5ITtAT1wTF8cBhwKqIH8/J+npt1GXSY3DtWCfLI1Gqt6PpcrNitXrYrDB3QMsa8uaecL/zXbgtNYb4L9TF55cOjMI6ou2BjoNRFhHARYrgjCVy6kJICCTkwK9wy/E6bG6PXc=
+	t=1787228857; cv=none; b=RTZCOnhkjsafFV5nx2uWKl2QwLgVFgGZSJro0oy8a6mjhkBpSRQVnlOuoU0VsLqJ5bBqdKce9hVpLR0NaxsPUb4GG+K/udfpUB6X53vVNeOIHrEKsw2vwxCBVabKSyB4yme47kNfykcifi6bqeTqIvcH5VaBncLPEHbzaPezlt8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787227485; c=relaxed/simple;
-	bh=oPY9MwFDH1nBhBE4pJzyglYuq1pyjVZ12hluz1Tqdec=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ExBQ+YcFRreBZDFJY6cBlaauJKVXGorkvqJM34FuWmQZKI2RLipPYPVpMJvaNqLFkTjgBsVAQtqwN/W3E/1oqgLFKFt+FS2NH+U3MJ57VX2+I7v/t5GbP49YtlQ0jHnXf3uEPI98DALWBl/eEVIKGeeV3hBpfsJJhtbbSWlTZfI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=JmVCUADJ; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=+NRv9kqi; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=FCyNFIh1; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=bVoulNe1; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="JmVCUADJ";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="+NRv9kqi";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="FCyNFIh1";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="bVoulNe1"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id EC20C3ED5;
-	Thu, 20 Aug 2026 12:04:33 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1787227478;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=+/wgi+uWNJcDqopiZMGg4cofqXIzIsjKBJfuo8Bec80=;
-	b=JmVCUADJSVXy4GLUOn2TQweifYUHeRqTE6sMA+R+JhxSaZsIi4D5t27HkC24uLq+wLDIvN
-	mQ9RmE/GuN/lAWjySaNqojlFWqICbjdN7yfK5WYxA7J1g18LzBpDRWBRj3pe27R71V77u7
-	p0OBikoAwovsK7cWT/R83aZ5wNwENz0=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1787227478;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=+/wgi+uWNJcDqopiZMGg4cofqXIzIsjKBJfuo8Bec80=;
-	b=+NRv9kqiDXSh43R73UXYVZFbbPr27GqYY624U3Qdk0X9xaefi2f/6GQvIjzm396nY7LhEN
-	lwF3im12wJZJHxBg==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1787227473;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=+/wgi+uWNJcDqopiZMGg4cofqXIzIsjKBJfuo8Bec80=;
-	b=FCyNFIh1vBjfYMlnZ/OY3gzmKU97cZ2hT5CNpK5Lv0+w+lCzrNEO8QUgLq1OedB98JX+zY
-	Wqet+fMzIorE5dPV3VYk19Gy+vZmA+8+Rjbvsn6lDzL5xSh9UmRNRwGCP9ugEgaterqYGU
-	zYbgj1EsStqhaneMoqa3qFcr6VkVG3E=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1787227473;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=+/wgi+uWNJcDqopiZMGg4cofqXIzIsjKBJfuo8Bec80=;
-	b=bVoulNe1r3EHWWluKYyVsQ+aT1NXH6lPMhzksJ4pZ+XQcWNh/qN/f6VlT5JGnjkt0su3+A
-	DN7LnhIuTMSzA0DQ==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D3BAE351D;
-	Thu, 20 Aug 2026 12:04:33 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id DGF1M1HthmqFXQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Thu, 20 Aug 2026 12:04:33 +0000
-Date: Thu, 20 Aug 2026 14:04:28 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Jeff Layton <jlayton@kernel.org>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-	Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v3 1/6] btrfs: use an on-stack path in
- btrfs_insert_orphan_item()
-Message-ID: <20260820120428.GA9053@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20260811-btrfs-enomem-v3-0-46a993fc3fe5@kernel.org>
- <20260811-btrfs-enomem-v3-1-46a993fc3fe5@kernel.org>
+	s=arc-20240116; t=1787228857; c=relaxed/simple;
+	bh=Ooy7rgIfZVZAAua0ycOet7ai6bc4H9+SI56LFkaaqHI=;
+	h=Date:From:To:Cc:Subject:Content-Type:MIME-Version:Message-ID; b=WeHR0tXkPosf0R8tQ4qNxCs5TgrF14L/RPHaWRJhGXKIgped6QHryjoxgxg2xLN+s4J3yGMnkSmRHGOsAxWh5WL3J3NXcHNWYVK8oLgXHXU2fnJIrT/Bmi9vo7Pox7HI2rmDr3Fd+KLRfKzxajLYdUdwLuW22bueknE9NGEhv4c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=zju.edu.cn; spf=pass smtp.mailfrom=zju.edu.cn; arc=none smtp.client-ip=162.243.164.118
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=zju.edu.cn
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zju.edu.cn
+Received: from zju.edu.cn (unknown [10.190.161.59])
+	by mtasvr (Coremail) with SMTP id _____wDHsH6r8oZqn8StAA--.5474S3;
+	Thu, 20 Aug 2026 20:27:24 +0800 (CST)
+Received: from stitch$zju.edu.cn ( [10.190.161.59] ) by
+ ajax-webmail-mail-app4 (Coremail) ; Thu, 20 Aug 2026 20:27:23 +0800
+ (GMT+08:00)
+Date: Thu, 20 Aug 2026 20:27:23 +0800 (GMT+08:00)
+X-CM-HeaderCharset: UTF-8
+From: "Jiacheng Xu" <stitch@zju.edu.cn>
+To: "Chris Mason" <clm@fb.com>
+Cc: "David Sterba" <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: drain sysfs callbacks before stopping transaction
+ kthread
+X-Priority: 3
+X-Mailer: Coremail Webmail Server Version 2025.3-cmXT6 build
+ 20260617(6f868824) Copyright (c) 2002-2026 www.mailtech.cn zju.edu.cn
+Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset=UTF-8
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260811-btrfs-enomem-v3-1-46a993fc3fe5@kernel.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.998];
-	MIME_GOOD(-0.10)[text/plain];
-	RCVD_TLS_ALL(0.00)[];
-	RCPT_COUNT_SEVEN(0.00)[7];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	MID_RHS_MATCH_FROM(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,suse.cz:mid,imap1.dmz-prg2.suse.org:helo];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -4.00
-X-Spam-Level: 
+Message-ID: <20b09e24.16b27.1a01f23ee08.Coremail.stitch@zju.edu.cn>
+X-Coremail-Locale: zh_CN
+X-CM-TRANSID:zi_KCgDnyzSr8oZqtM1UAw--.43845W
+X-CM-SenderInfo: qtrxiiaqttimo62m3hxhgxhubq/1tbiAwcJC2qGXxcHhQACsi
+X-CM-DELIVERINFO: =?B?fVjDPQXKKxbFmtjJiESix3B1w3tMoM3snk/k5SVzZVydjEqe1eefKHnLf95EnB4iem
+	egW6OtOZBcKG2svvn9tKcPsEqSZfH/rhUZ82UzTuhwLO74Dz+v9QxEDui1mfkxx9Nefk9s
+	KyqtwbrnuvvWpKKloq3IMfiAvDwR5BpmDsnllcaupvLmhX4F+HZI5p9ebtxsrw==
+X-Coremail-Antispam: 1Uk129KBj93XoWxtr4kCFy5XFWrtryrAFyUtwc_yoWxJr45pr
+	4rJr1YgrWDJrsrGw4xCa18Kw4Sqr4vkw4DGrZavayftw4qy34aqryvka48Ar1YyrWkCF4j
+	vr18Aw15JFsrCFcCm3ZEXasCq-sJn29KB7ZKAUJUUUUU529EdanIXcx71UUUUU7KY7ZEXa
+	sCq-sGcSsGvfJ3Ic02F40EFcxC0VAKzVAqx4xG6I80ebIjqfuFe4nvWSU5nxnvy29KBjDU
+	0xBIdaVrnRJUUUPCb4IE77IF4wAFF20E14v26r1j6r4UM7CY07I20VC2zVCF04k26cxKx2
+	IYs7xG6rWj6s0DM7CIcVAFz4kK6r1j6r18M28lY4IEw2IIxxk0rwA2F7IY1VAKz4vEj48v
+	e4kI8wA2z4x0Y4vE2Ix0cI8IcVAFwI0_tr0E3s1l84ACjcxK6xIIjxv20xvEc7CjxVAFwI
+	0_Gr1j6F4UJwA2z4x0Y4vEx4A2jsIE14v26rxl6s0DM28EF7xvwVC2z280aVCY1x0267AK
+	xVW0oVCq3wAS0I0E0xvYzxvE52x082IY62kv0487Mc804VCY07AIYIkI8VC2zVCFFI0UMc
+	02F40EFcxC0VAKzVAqx4xG6I80ewAv7VC0I7IYx2IY67AKxVWUJVWUGwAv7VC2z280aVAF
+	wI0_Jr0_Gr1lOx8S6xCaFVCjc4AY6r1j6r4UM4x0Y48IcxkI7VAKI48JM4x0Y48IcxkI7V
+	AKI48G6xCjnVAKz4kxM4xvF2IEb7IF0Fy264kE64k0F24lFcxC0VAYjxAxZF0Ex2IqxwCF
+	04k20xvY0x0EwIxGrwCFx2IqxVCFs4IE7xkEbVWUJVW8JwC20s026c02F40E14v26r1j6r
+	18MI8I3I0E7480Y4vE14v26r106r1rMI8E67AF67kF1VAFwI0_JF0_Jw1lIxkGc2Ij64vI
+	r41lIxAIcVC0I7IYx2IY67AKxVWUJVWUCwCI42IY6xIIjxv20xvEc7CjxVAFwI0_Jr0_Gr
+	1lIxAIcVCF04k26cxKx2IYs7xG6r1j6r1xMIIF0xvEx4A2jsIE14v26r1j6r4UMIIF0xvE
+	x4A2jsIEc7CjxVAFwI0_Gr0_Gr1UMVCEFcxC0VAYjxAxZFUvcSsGvfC2KfnxnUUI43ZEXa
+	7IU86OJ7UUUUU==
 
-On Tue, Aug 11, 2026 at 02:14:54PM -0400, Jeff Layton wrote:
-> btrfs_insert_orphan_item() allocated a btrfs_path with btrfs_alloc_path()
-> which returns -ENOMEM on failure. It is called from btrfs_orphan_add(),
-> so a path allocation failure there turns a recoverable error into a
-> transaction abort.
-> 
-> btrfs_path is only ~112 bytes, so allocate it on the stack instead.
+YnRyZnNfbGFiZWxfc3RvcmUoKSBhbmQgYnRyZnNfZmVhdHVyZV9hdHRyX3N0b3JlKCkgd2FrZSB1
+cCB0aGUKdHJhbnNhY3Rpb24ga3RocmVhZCB0aHJvdWdoIGZzX2luZm8tPnRyYW5zYWN0aW9uX2t0
+aHJlYWQuCgpEdXJpbmcgZmlsZXN5c3RlbSB0ZWFyZG93biwgY2xvc2VfY3RyZWUoKSBzdG9wcyB0
+aGUgdHJhbnNhY3Rpb24ga3RocmVhZApiZWZvcmUgcmVtb3ZpbmcgdGhlIG1vdW50ZWQgZmlsZXN5
+c3RlbSdzIHN5c2ZzIGF0dHJpYnV0ZXMuIEEgY29uY3VycmVudApzeXNmcyB3cml0ZSBjYW4gdGhl
+cmVmb3JlIGVudGVyIG9uZSBvZiB0aGVzZSBjYWxsYmFja3MgYWZ0ZXIgdGhlIGt0aHJlYWQKaGFz
+IGJlZW4gc3RvcHBlZCBhbmQgcGFzcyBhbiBpbnZhbGlkIHRhc2sgcG9pbnRlciB0byB3YWtlX3Vw
+X3Byb2Nlc3MoKS4KClRoaXMgcmVzdWx0cyBpbiBhIGNvbmN1cnJlbnQgbnVsbC1wb2ludGVyIGRl
+cmVmZXJlbmNlIGluCnRyeV90b193YWtlX3VwKCkuIFRoZSBzY2hlZHVsZXIgaXMgbm90IHRoZSBy
+b290IGNhdXNlOyB0aGUgaW52YWxpZAp0cmFuc2FjdGlvbiBrdGhyZWFkIHBvaW50ZXIgaXMgdXNl
+ZCBieSBhIEJ0cmZzIHN5c2ZzIGNhbGxiYWNrIGR1cmluZwp0ZWFyZG93bi4KClNwbGl0IG1vdW50
+ZWQgc3lzZnMgY2xlYW51cCBpbnRvIHR3byBzdGFnZXMuIFJlbW92ZSBhdHRyaWJ1dGVzIHdoaWNo
+IG1heQpoYXZlIHN0b3JlIGNhbGxiYWNrcyBiZWZvcmUgc3RvcHBpbmcgdGhlIHRyYW5zYWN0aW9u
+IGt0aHJlYWQuIFRoZQpyZW1haW5pbmcgc3lzZnMga29iamVjdHMgYXJlIHJlbW92ZWQgYXQgdGhl
+IG9yaWdpbmFsIHRlYXJkb3duIHBvaW50LAphZnRlciB0aGUga3RocmVhZCBoYXMgYmVlbiBzdG9w
+cGVkLgoKQXBwbHkgdGhlIHNhbWUgb3JkZXJpbmcgdG8gdGhlIG9wZW5fY3RyZWUoKSBmYWlsdXJl
+IHBhdGggd2hlbiB0aGUKdHJhbnNhY3Rpb24ga3RocmVhZCBoYXMgYWxyZWFkeSBiZWVuIGNyZWF0
+ZWQuCgpUZXN0ZWQtYnk6IEppYWNoZW5nIFh1IDxzdGl0Y2hAemp1LmVkdS5jbj4KU2lnbmVkLW9m
+Zi1ieTogSmlhY2hlbmcgWHUgPHN0aXRjaEB6anUuZWR1LmNuPgotLS0KZnMvYnRyZnMvZGlzay1p
+by5jIHwgMTYgKysrKysrKysrKysrKystLQpmcy9idHJmcy9zeXNmcy5jICAgfCAyNiArKysrKysr
+KysrKysrKysrKysrKystLS0tLQpmcy9idHJmcy9zeXNmcy5oICAgfCAgMyArKysKMyBmaWxlcyBj
+aGFuZ2VkLCAzOCBpbnNlcnRpb25zKCspLCA3IGRlbGV0aW9ucygtKQoKZGlmZiAtLWdpdCBhL2Zz
+L2J0cmZzL2Rpc2staW8uYyBiL2ZzL2J0cmZzL2Rpc2staW8uYwppbmRleCAyZjE2NjZkOTU0NGUu
+LjRmNWJjYzU3NmRjNiAxMDA2NDQKLS0tIGEvZnMvYnRyZnMvZGlzay1pby5jCisrKyBiL2ZzL2J0
+cmZzL2Rpc2staW8uYwpAQCAtMzM2Myw2ICszMzYzLDcgQEAgaW50IF9fY29sZCBvcGVuX2N0cmVl
+KHN0cnVjdCBzdXBlcl9ibG9jayAqc2IsIHN0cnVjdCBidHJmc19mc19kZXZpY2VzICpmc19kZXZp
+Y2UKICAgICAgc3RydWN0IGJ0cmZzX3Jvb3QgKnRyZWVfcm9vdDsKICAgICAgc3RydWN0IGJ0cmZz
+X3Jvb3QgKmNodW5rX3Jvb3Q7CiAgICAgIHN0cnVjdCBidHJmc19yb290ICpyZW1hcF9yb290Owor
+ICAgICBib29sIHN5c2ZzX2F0dHJzX3JlbW92ZWQgPSBmYWxzZTsKICAgICAgaW50IHJldDsKICAg
+ICAgaW50IGxldmVsOwoKQEAgLTM3ODAsNiArMzc4MSw5IEBAIGludCBfX2NvbGQgb3Blbl9jdHJl
+ZShzdHJ1Y3Qgc3VwZXJfYmxvY2sgKnNiLCBzdHJ1Y3QgYnRyZnNfZnNfZGV2aWNlcyAqZnNfZGV2
+aWNlCmZhaWxfcWdyb3VwOgogICAgICBidHJmc19mcmVlX3Fncm91cF9jb25maWcoZnNfaW5mbyk7
+CmZhaWxfdHJhbnNfa3RocmVhZDoKKyAgICAgYnRyZnNfc3lzZnNfcmVtb3ZlX21vdW50ZWRfYXR0
+cnMoZnNfaW5mbyk7CisgICAgIHN5c2ZzX2F0dHJzX3JlbW92ZWQgPSB0cnVlOworCiAgICAgIGt0
+aHJlYWRfc3RvcChmc19pbmZvLT50cmFuc2FjdGlvbl9rdGhyZWFkKTsKICAgICAgYnRyZnNfY2xl
+YW51cF90cmFuc2FjdGlvbihmc19pbmZvKTsKICAgICAgYnRyZnNfZnJlZV9mc19yb290cyhmc19p
+bmZvKTsKQEAgLTM3OTMsNyArMzc5Nyw5IEBAIGludCBfX2NvbGQgb3Blbl9jdHJlZShzdHJ1Y3Qg
+c3VwZXJfYmxvY2sgKnNiLCBzdHJ1Y3QgYnRyZnNfZnNfZGV2aWNlcyAqZnNfZGV2aWNlCiAgICAg
+IGZpbGVtYXBfd3JpdGVfYW5kX3dhaXQoZnNfaW5mby0+YnRyZWVfaW5vZGUtPmlfbWFwcGluZyk7
+CgpmYWlsX3N5c2ZzOgotICAgICBidHJmc19zeXNmc19yZW1vdmVfbW91bnRlZChmc19pbmZvKTsK
+KyAgICAgaWYgKCFzeXNmc19hdHRyc19yZW1vdmVkKQorICAgICAgICAgICAgIGJ0cmZzX3N5c2Zz
+X3JlbW92ZV9tb3VudGVkX2F0dHJzKGZzX2luZm8pOworICAgICBidHJmc19zeXNmc19yZW1vdmVf
+bW91bnRlZF9rb2JqZWN0cyhmc19pbmZvKTsKCmZhaWxfZnNkZXZfc3lzZnM6CiAgICAgIGJ0cmZz
+X3N5c2ZzX3JlbW92ZV9mc2lkKGZzX2luZm8tPmZzX2RldmljZXMpOwpAQCAtNDMxOCw2ICs0MzI0
+LDkgQEAgdm9pZCBfX2NvbGQgY2xvc2VfY3RyZWUoc3RydWN0IGJ0cmZzX2ZzX2luZm8gKmZzX2lu
+Zm8pCgogICAgICBzZXRfYml0KEJUUkZTX0ZTX0NMT1NJTkdfU1RBUlQsICZmc19pbmZvLT5mbGFn
+cyk7CgorICAgICAvKiBEcmFpbiBzeXNmcyBjYWxsYmFja3MgYmVmb3JlIHN0b3BwaW5nIHRoZSB0
+cmFuc2FjdGlvbiBrdGhyZWFkLiAqLworICAgICBidHJmc19zeXNmc19yZW1vdmVfbW91bnRlZF9h
+dHRycyhmc19pbmZvKTsKKwogICAgICAvKgogICAgICAqIElmIHdlIGhhZCBVTkZJTklTSEVEX0RS
+T1BTIHdlIGNvdWxkIHN0aWxsIGJlIHByb2Nlc3NpbmcgdGhlbSwgc28KICAgICAgKiBjbGVhciB0
+aGF0IGJpdCBhbmQgd2FrZSB1cCByZWxvY2F0aW9uIHNvIGl0IGNhbiBzdG9wLgpAQCAtNDUzOCw3
+ICs0NTQ3LDcgQEAgdm9pZCBfX2NvbGQgY2xvc2VfY3RyZWUoc3RydWN0IGJ0cmZzX2ZzX2luZm8g
+KmZzX2luZm8pCiAgICAgICAgICAgICAgICAgICAgICAgIHBlcmNwdV9jb3VudGVyX3N1bSgmZnNf
+aW5mby0+b3JkZXJlZF9ieXRlcykpOwoKLSAgICAgYnRyZnNfc3lzZnNfcmVtb3ZlX21vdW50ZWQo
+ZnNfaW5mbyk7CisgICAgIGJ0cmZzX3N5c2ZzX3JlbW92ZV9tb3VudGVkX2tvYmplY3RzKGZzX2lu
+Zm8pOwogICAgICBidHJmc19zeXNmc19yZW1vdmVfZnNpZChmc19pbmZvLT5mc19kZXZpY2VzKTsK
+CiAgICAgIGJ0cmZzX3B1dF9ibG9ja19ncm91cF9jYWNoZShmc19pbmZvKTsKCmRpZmYgLS1naXQg
+YS9mcy9idHJmcy9zeXNmcy5jIGIvZnMvYnRyZnMvc3lzZnMuYwppbmRleCAwZDE0NTcwYzhiYzIu
+LmQ5MGQ3NmExNTJlOSAxMDA2NDQKLS0tIGEvZnMvYnRyZnMvc3lzZnMuYworKysgYi9mcy9idHJm
+cy9zeXNmcy5jCkBAIC0xNzA3LDExICsxNzA3LDIzIEBAIHN0YXRpYyB2b2lkIGJ0cmZzX3N5c2Zz
+X3JlbW92ZV9mc19kZXZpY2VzKHN0cnVjdCBidHJmc19mc19kZXZpY2VzICpmc19kZXZpY2VzKQog
+ICAgICB9Cn0KCi12b2lkIGJ0cmZzX3N5c2ZzX3JlbW92ZV9tb3VudGVkKHN0cnVjdCBidHJmc19m
+c19pbmZvICpmc19pbmZvKQorLyoKKyAqIFJlbW92ZSBhdHRyaWJ1dGVzIHdoaWNoIG1heSBoYXZl
+IHN0b3JlIGNhbGxiYWNrcy4ga2VybmZzIHdhaXRzIGZvciBhY3RpdmUKKyAqIGNhbGxiYWNrcyBk
+dXJpbmcgcmVtb3ZhbCwgc28gdGhpcyBtdXN0IGJlIGRvbmUgYmVmb3JlIHN0b3BwaW5nIGFueSBr
+dGhyZWFkCisgKiB3aGljaCBjYW4gYmUgd29rZW4gdXAgYnkgdGhvc2UgY2FsbGJhY2tzLgorICov
+Cit2b2lkIGJ0cmZzX3N5c2ZzX3JlbW92ZV9tb3VudGVkX2F0dHJzKHN0cnVjdCBidHJmc19mc19p
+bmZvICpmc19pbmZvKQp7CiAgICAgIHN0cnVjdCBrb2JqZWN0ICpmc2lkX2tvYmogPSAmZnNfaW5m
+by0+ZnNfZGV2aWNlcy0+ZnNpZF9rb2JqOwoKLSAgICAgc3lzZnNfcmVtb3ZlX2xpbmsoZnNpZF9r
+b2JqLCAiYmRpIik7CisgICAgIGFkZHJtX3Vua25vd25fZmVhdHVyZV9hdHRycyhmc19pbmZvLCBm
+YWxzZSk7CisgICAgIHN5c2ZzX3JlbW92ZV9ncm91cChmc2lkX2tvYmosICZidHJmc19mZWF0dXJl
+X2F0dHJfZ3JvdXApOworICAgICBzeXNmc19yZW1vdmVfZmlsZXMoZnNpZF9rb2JqLCBidHJmc19h
+dHRycyk7Cit9CisKK3N0YXRpYyB2b2lkIGJ0cmZzX3N5c2ZzX3JlbW92ZV9tb3VudGVkX2RpcnMo
+c3RydWN0IGJ0cmZzX2ZzX2luZm8gKmZzX2luZm8pCit7CisgICAgIHN5c2ZzX3JlbW92ZV9saW5r
+KCZmc19pbmZvLT5mc19kZXZpY2VzLT5mc2lkX2tvYmosICJiZGkiKTsKCiAgICAgIGlmIChmc19p
+bmZvLT5zcGFjZV9pbmZvX2tvYmopIHsKICAgICAgICAgICAgc3lzZnNfcmVtb3ZlX2ZpbGVzKGZz
+X2luZm8tPnNwYWNlX2luZm9fa29iaiwgYWxsb2NhdGlvbl9hdHRycyk7CkBAIC0xNzMwLDkgKzE3
+NDIsMTggQEAgdm9pZCBidHJmc19zeXNmc19yZW1vdmVfbW91bnRlZChzdHJ1Y3QgYnRyZnNfZnNf
+aW5mbyAqZnNfaW5mbykKICAgICAgICAgICAga29iamVjdF9wdXQoZnNfaW5mby0+ZGVidWdfa29i
+aik7CiAgICAgIH0KI2VuZGlmCi0gICAgIGFkZHJtX3Vua25vd25fZmVhdHVyZV9hdHRycyhmc19p
+bmZvLCBmYWxzZSk7Ci0gICAgIHN5c2ZzX3JlbW92ZV9ncm91cChmc2lkX2tvYmosICZidHJmc19m
+ZWF0dXJlX2F0dHJfZ3JvdXApOwotICAgICBzeXNmc19yZW1vdmVfZmlsZXMoZnNpZF9rb2JqLCBi
+dHJmc19hdHRycyk7Cit9CisKK3ZvaWQgYnRyZnNfc3lzZnNfcmVtb3ZlX21vdW50ZWRfa29iamVj
+dHMoc3RydWN0IGJ0cmZzX2ZzX2luZm8gKmZzX2luZm8pCit7CisgICAgIGJ0cmZzX3N5c2ZzX3Jl
+bW92ZV9tb3VudGVkX2RpcnMoZnNfaW5mbyk7CisgICAgIGJ0cmZzX3N5c2ZzX3JlbW92ZV9mc19k
+ZXZpY2VzKGZzX2luZm8tPmZzX2RldmljZXMpOworfQorCit2b2lkIGJ0cmZzX3N5c2ZzX3JlbW92
+ZV9tb3VudGVkKHN0cnVjdCBidHJmc19mc19pbmZvICpmc19pbmZvKQoreworICAgICBidHJmc19z
+eXNmc19yZW1vdmVfbW91bnRlZF9kaXJzKGZzX2luZm8pOworICAgICBidHJmc19zeXNmc19yZW1v
+dmVfbW91bnRlZF9hdHRycyhmc19pbmZvKTsKICAgICAgYnRyZnNfc3lzZnNfcmVtb3ZlX2ZzX2Rl
+dmljZXMoZnNfaW5mby0+ZnNfZGV2aWNlcyk7Cn0KCmRpZmYgLS1naXQgYS9mcy9idHJmcy9zeXNm
+cy5oIGIvZnMvYnRyZnMvc3lzZnMuaAppbmRleCAwNTQ5OGU1MzQ2YzMuLjBkMDA4ZmM4ZjFiOCAx
+MDA2NDQKLS0tIGEvZnMvYnRyZnMvc3lzZnMuaAorKysgYi9mcy9idHJmcy9zeXNmcy5oCkBAIC0z
+NSw2ICszNSw5IEBAIHZvaWQgYnRyZnNfa29iamVjdF91ZXZlbnQoc3RydWN0IGJsb2NrX2Rldmlj
+ZSAqYmRldiwgZW51bSBrb2JqZWN0X2FjdGlvbiBhY3Rpb24pCmludCBfX2luaXQgYnRyZnNfaW5p
+dF9zeXNmcyh2b2lkKTsKdm9pZCBfX2NvbGQgYnRyZnNfZXhpdF9zeXNmcyh2b2lkKTsKaW50IGJ0
+cmZzX3N5c2ZzX2FkZF9tb3VudGVkKHN0cnVjdCBidHJmc19mc19pbmZvICpmc19pbmZvKTsKK3Zv
+aWQgYnRyZnNfc3lzZnNfcmVtb3ZlX21vdW50ZWRfYXR0cnMoc3RydWN0IGJ0cmZzX2ZzX2luZm8g
+KmZzX2luZm8pOwordm9pZCBidHJmc19zeXNmc19yZW1vdmVfbW91bnRlZF9rb2JqZWN0cyhzdHJ1
+Y3QgYnRyZnNfZnNfaW5mbyAqZnNfaW5mbyk7CnZvaWQgYnRyZnNfc3lzZnNfcmVtb3ZlX21vdW50
+ZWQoc3RydWN0IGJ0cmZzX2ZzX2luZm8gKmZzX2luZm8pOwp2b2lkIGJ0cmZzX3N5c2ZzX2FkZF9i
+bG9ja19ncm91cF90eXBlKHN0cnVjdCBidHJmc19ibG9ja19ncm91cCAqY2FjaGUpOwppbnQgYnRy
+ZnNfc3lzZnNfYWRkX3NwYWNlX2luZm9fdHlwZShzdHJ1Y3QgYnRyZnNfc3BhY2VfaW5mbyAqc3Bh
+Y2VfaW5mbyk7Cg==
 
-112 is too much for on-stack, we've avoided that for btrfs_path in
-particular, except some justified cases. This means in general the
-beginning of call stack like ioctl, syscall handler and such. Otherwise
-we assume there are other layers in the IO stack, like block device
-drivers (DM), NFS, encoding layers or networking (iscsi), and obviously
-the lowest level device drivers.
-
-The trade off with possible allocation failure vs stack consumption
-needs to be argued in the changelog, "is just 112" is not sufficient.
-
-Getting back the consumed stack space is painful, we've been reducing
-unneeded or redundant parameters of functions for years. The gains are
-like -8 bytes here and -8 bytes there, allocation of +112 wipes that out.
-
-If the place of allocation is critical we can consider that but we have
-too many of them, anywhere during the transaction commit path or
-irreversible metadata changes. Possibly using __GFP_HIGH could work, but
-I haven't explored that.
-
-Qu added the patches to for-next but I had no chance to look closely at
-this patchset yet and am hesitant to leave it like that.

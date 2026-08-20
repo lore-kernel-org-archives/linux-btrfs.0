@@ -1,87 +1,117 @@
-Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A62F141A4F7
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 11:25:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.145.42
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3619E42B736
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 11:28:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787225158; cv=none; b=lxy0xV5ua2C+tkBYlAazdTeUwWHCEeK/xL2KF8TGbkj4MYQzYU3rXoK1auHJo1hpqNMwQ9Y78uq+H3hVL2PMXlD/a/cPrZZNmrqo2W3QVX5PQW45I6F/9UsXzpT6S0vwV2oEVgsyo6Y1bObWI22wUSfphaNXGF9+yPOTW7ykK5Q=
+	t=1787225317; cv=none; b=VN8LsCU70XMU0/6zn7yC7uhcl1/J/vSCpXZd31G+ISDaJ7MIpvSha22hTfWGOsKXgRCaquaKJ0fLG25CqovE5xFX4M5heTxoGqUYWD+gml0ttnnBAh/iOVT4OR9ikn17sPEgIyBEz8yp4NsoS3QVyTM3yO0C5mxFbHxP5b5A648=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787225158; c=relaxed/simple;
-	bh=pEeaGQ0Mdt1TA25PSLc7VPAWIjxPHlZzAjXBnPJKvTg=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=Udk/XXXgqlRcw2RpE45yrofzpB2J2sykluYo7hL0pFfc5ubTbBhw92je96sjHJoTEuva+gyTi319h57g3TvP/P3jg7brb9W9ETR48qFWdsqC0INUOn4pPXGi+XFMRCPb4lDEXscxlqgQ10Dg2jr0DXE+vqppBhCMutUC0Ebj2Ss=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b=KagFmqzZ; arc=none smtp.client-ip=67.231.145.42
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
+	s=arc-20240116; t=1787225317; c=relaxed/simple;
+	bh=5ZBNfKM9E24BLOOvoh78znY9BmQX1/17kJjbHI19bbA=;
+	h=Message-ID:Subject:From:To:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=F+iV80RWaTjYDIOGO8jU+LJrM/aFd1CqVSUBBfaaHa14Gx7W2fpzOBPDN1b6eGQHLy/+brRJ9HJbgRIDSUwkNZ84OgQd6Bm5p2/b2lpbC5nNeDObZYY1n7ROTjeewVauhgz2EbHq4A4a3UwE1icIuxPyMHcgJoGqN/DQlKX9XKA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Z470777U; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b="KagFmqzZ"
-Received: from pps.filterd (m0044012.ppops.net [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 67K38dZa3660030
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 04:25:49 -0700
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=meta.com; h=cc
-	:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=
-	pps82601-s2048-2026-q3; bh=Kr+K+zjOdEMK9wEKulfes8NAHCfzB3pGDnX9o
-	xPQjJo=; b=KagFmqzZ951XX8MJF6VNCBjnks2ID1/DU+XapiW836v0LX372gJbr
-	b1ixjExCDE6WSnT1a1jK4smxh22Y1/Ne8Pk0B3ZQf584hXCYYqoex27AkVPssae9
-	VqLqRjjxPcU8bJnvBTkfEqvZvoIkEB5OOMuFCHVqWE9rnyuTbTnBb6TAQNk32jcj
-	Z7G6hVl9fIAiJbtODijskdpUlVbE75pux+R7sLK0RaYGxxZ/eRHRR8BQ70XZBW1s
-	dZCFKTkuij31TekhmRHStEm6/lZzp0Nwd6PmDajkqhIyAHmMb5UB+6Z6ux7cPekP
-	hyygvMtl36VFutt1WNxZNcYcuV18SPHDA==
-Received: from mail-qt1-f197.google.com (mail-qt1-f197.google.com [209.85.160.197])
-	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 4g4yfx4vhg-1
-	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 04:25:49 -0700 (PDT)
-Received: by mail-qt1-f197.google.com with SMTP id d75a77b69052e-51c0e702df8so27900751cf.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2026 04:25:49 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787225148; x=1787829948;
-        h=mime-version:user-agent:content-transfer-encoding:content-type
-         :references:in-reply-to:date:cc:to:from:subject:message-id:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=Kr+K+zjOdEMK9wEKulfes8NAHCfzB3pGDnX9oxPQjJo=;
-        b=g20PRplE3eCpcaJQaNh13LR/kqYqr8aEEcm8uKYmhKEf+it0oqmpM0bcuxboK40l+0
-         Yeg3XSBcka2UbcNBtCztjRi626OK3qrvlJlKV5t2KDGRWSaA5sCzyr85wTLthMCir+Cq
-         Ur7/Xy7MURqXA5iPdhlgyoHyw7smREd0bd9KBlKFQckQCqyXkCy+7KvO0V25jm2RsP4u
-         W5EbpQl5PTTZSpsVyvsE98iE45GfSs7Y9ybRY9MG2/AiA3HxZSMsA8At4th/JUpZRUUP
-         aloaDGo4PKROdcyxFPxLAhySZqxb5HxK7+Ld9htRtkNncMey5HNxI234goGJ8G0YhCws
-         BDAg==
-X-Forwarded-Encrypted: i=1; AHgh+Roe+HMpWdkZ137mA5HUTPHwJMtFpGVkLgAd5utx42RGicUCVJ0nC+OOuYGtG8DgC6R+vxaowxQ52YgLuw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxFet0BBFIWACpjvqk7u4xgt+a/d7eALFee01plynrdI35fLL8I
-	g3fMgrj9lh7P1vIf1Y4FKpSiDVmz2JovmqSGUo6KgTJupkQlYc2RMsXCWy4kMTCWKXxdQpNIHMa
-	MuUcxvFqd2WsbatZYkqkMNvmCabSgT8Idh+vA485b6sHJwZNS8O5s9Fw5IeR+v1U=
-X-Gm-Gg: AR+sD10WOJPuyeXjvDxP+aMizDcqftjG92CWfOYVpPn6gIC65EUaJ+S+dPDbfCVdlG1
-	lbmO8dPv3AwbH4XGvVJAV0MXHCDklWLp+Q0dR/Q/Q582FWjyWaJFZWDHeezYo748x/WCuEnVSz9
-	T76xp5SpUjdFqnYh3j9J/IVDECstOqen380Z1U5dmhTnWk1tAUTQ+nDVHfOr2j7Su13ovzK7Obv
-	aUq48xZRGmP/ubBC1twD7Kk/wywlXCaaidpOX61tWbvj8xNP8ey5KZs7h1mGl/cjLlEqLiXpNtq
-	rPUV8Z5cY4TdMdz9sImIxubp8bOv23WerWsiv6svym9kMn9q1JfXgpwhMvYla8TR07aqeBH7xAr
-	6
-X-Received: by 2002:a05:622a:58cd:b0:51a:8696:cb38 with SMTP id d75a77b69052e-52dd57853damr115785051cf.7.1787225148404;
-        Thu, 20 Aug 2026 04:25:48 -0700 (PDT)
-X-Received: by 2002:a05:622a:58cd:b0:51a:8696:cb38 with SMTP id d75a77b69052e-52dd57853damr115784341cf.7.1787225147838;
-        Thu, 20 Aug 2026 04:25:47 -0700 (PDT)
-Received: from [192.168.77.173] ([68.20.15.154])
-        by smtp.gmail.com with ESMTPSA id d75a77b69052e-52dd872f61esm29031451cf.23.2026.08.20.04.25.47
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 20 Aug 2026 04:25:47 -0700 (PDT)
-Message-ID: <3a7777fb1f0678c88c2365a6a476167b5abc4e9d.camel@meta.com>
-Subject: Re: [PATCH] btrfs: abort transaction before releasing
- tree_log_mutex on commit failure
-From: "jlayton@meta.com" <jlayton@meta.com>
-To: Leo Martins <loemra.dev@gmail.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        Filipe Manana
-	 <fdmanana@suse.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
-        linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Date: Thu, 20 Aug 2026 07:25:46 -0400
-In-Reply-To: <698c480ec13cd6e74c2175924f614b7e324e6cc3.1787099421.git.loemra.dev@gmail.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Z470777U"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8428F1F000E9;
+	Thu, 20 Aug 2026 11:28:34 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1787225314;
+	bh=zcTN0Vm4uOkZ1i6d/mRxPcGF+1z0Or7LKBNhnYIFsjw=;
+	h=Subject:From:To:Date:In-Reply-To:References;
+	b=Z470777Uw/4wimdFzKVaCN/gP00XP3PXGDc1cXWVw0qYpnY2CSVlTM200/+MQs/gW
+	 ltgpEJfviLa9+0fFn5iWoBJ0OjLHeracjCUn/Ub79fYp/TDLTtKEiLGeElZQOlLDC/
+	 KpCeeptrRTTCu31frm+U8i507HiBlCjK9fqjUZPZYTQBKz+vQ5XnNWEs3dcWA1rlF9
+	 Gm7UDWYO/khZ5w6qyusMM8bJXwzOmZpq4UDCose4eV/DkxtGVW4+KVlomY8D9QGMoP
+	 cg2DXSJYXMZigK51n5g2QvI9V+gN4jzl/XQhS4qa70Mkycp16EIKfBZgEggtbE3wX7
+	 8WCVDpwIIRqjg==
+Message-ID: <db623f9dde2aa2979e39e84c457ee95e51a8a63a.camel@kernel.org>
+Subject: Re: [PATCH v2] btrfs: properly cleanup replace_task when the
+ replace failed to start
+From: Jeff Layton <jlayton@kernel.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>, 
+	linux-btrfs@vger.kernel.org
+Date: Thu, 20 Aug 2026 07:28:32 -0400
+In-Reply-To: <77d934f5-0dd0-4607-84f9-a95ddf052cf1@gmx.com>
 References: 
-	<698c480ec13cd6e74c2175924f614b7e324e6cc3.1787099421.git.loemra.dev@gmail.com>
+	<8e4f535ac093c7085ab0641114e2f082788585f5.1786576348.git.wqu@suse.com>
+	 <fdb9d5bb8a87126399f328717cd358351ed0f4cd.camel@kernel.org>
+	 <77d934f5-0dd0-4607-84f9-a95ddf052cf1@gmx.com>
+Autocrypt: addr=jlayton@kernel.org; prefer-encrypt=mutual;
+ keydata=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
+ QZIQXVeAA+smfTT0tDrisj1U5x6ZB9b3nBg65kc=
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.60.2 (3.60.2-1.fc44) 
@@ -91,93 +121,196 @@ List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Proofpoint-GUID: Vshq9xP70I_27CLy-Syx9FLJwe4CN605
-X-Proofpoint-Spam-Info: AW1haW4tMjYwODIwMDA4NCBTYWx0ZWRfX3MFd3QnmLdhc
- 9GO+l1YwsA/Z2QxV9T65mdt+LdKivHWGxnd0L6TUGducbKWJJ+kILZkt0YlMk8t1MFIw5soHvBl
- Su+PuZXN/5a8ClBaRDtpRX5Hss2wzTk=
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwODIwMDA4NCBTYWx0ZWRfX0IZnFW8nAega
- cuYV6ml5nvF/bmhJqPNDz2Hczf3+IEIekFlclgxJf4Cxjr6XIdXgz/1/qVGLRp+rgi7+Hwuz6ZU
- /U0hLDmoTfm/PQSF1zXvNVb6wfBpgCTHLQw1duv8kTs5cRqPqT24rRXJ8Kr3rwJIyr+13nt39/7
- PM8iAjKJF93w2xgPeUDdWE2YA436aYhtTNbuF2F1SWPF8a/d9J10HUoiOr9jetFxYMHqQU9Bt4U
- fDzWX6z9SmxYUSb8nfZW5ETKSaYHapXgB+qa8O1BoquuR5cmuc/pLfhSvo8ungk6+Yt9heOQddA
- 4tHygMuwzkcI5UXuGlF0avW+5rzpfvpd27FCby1y9z/FRoxS/jIeK0LwQSBSd0pu9NlksXSB+iC
- fLoewZA/1RobvmWiV9Iy5fDP1uHh1cUMbg2oL9FNzou7UL+HrosD0Bg5rmdnjVGMxexbC6S+iBB
- G7wGHuwMBQ1MoWlI62g==
-X-Authority-Analysis: v=2.4 cv=QpBuG1yd c=1 sm=1 tr=0 ts=6a86e43d cx=c_pps
- a=EVbN6Ke/fEF3bsl7X48z0g==:117 a=I8GJ1mTG6nUeI1lZk6893w==:17
- a=IkcTkHD0fZMA:10 a=Sv0fKeRqtYgA:10 a=7j0FZ4iXMVMA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=7x6HtfJdh03M6CCDgxCd:22 a=PAz_-FQ8hEVmOPYdF0yf:22
- a=VwQbUJbxAAAA:8 a=pGLkceISAAAA:8 a=VabnemYjAAAA:8 a=5xnzj68laMxwpfVuNd8A:9
- a=QEXdDO2ut3YA:10 a=a_PwQJl-kcHnX1M80qC6:22 a=gKebqoRLp9LExxC7YDUY:22
-X-Proofpoint-ORIG-GUID: Vshq9xP70I_27CLy-Syx9FLJwe4CN605
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1176,Hydra:6.1.134,FMLib:17.12.100.49
- definitions=2026-08-19_06,2026-08-19_02,2025-10-01_01
 
-On Tue, 2026-08-18 at 17:40 -0700, Leo Martins wrote:
-> When transaction metadata writeout fails in btrfs_commit_transaction(),
-> the current code only logs the error, drops tree_log_mutex and then goes
-> through cleanup_transaction(), which aborts the transaction and records
-> the fs error.
+On Thu, 2026-08-20 at 07:44 +0930, Qu Wenruo wrote:
 >=20
-> That is too late for the tree log side. A log sync can already be
-> waiting on tree_log_mutex, because the committing transaction is moved
-> to TRANS_STATE_UNBLOCKED while that mutex is held, which lets fsyncs
-> join the next transaction and queue up in btrfs_sync_log(). Once the
-> failed commit drops tree_log_mutex, such a log sync acquires it, sees
-> BTRFS_FS_ERROR() still clear, and writes super_for_commit. That
-> superblock holds the roots prepared for the transaction that has just
-> failed to write out its metadata, so it can point at tree blocks that
-> never reached the disk, and the next mount fails with a parent transid
-> mismatch.
+> =E5=9C=A8 2026/8/19 21:58, Jeff Layton =E5=86=99=E9=81=93:
+> > Claude had some more comments on this one:
+> >=20
+> > This moves the dev_replace->replace_task assignment in
+> > btrfs_dev_replace_start() below the replace_state switch, clears it whe=
+n
+> > btrfs_start_transaction() fails there, and clears it at the top of
+> > btrfs_dev_replace_finishing() so every exit from that function drops it=
+.
+> >=20
+> > > In the function btrfs_dev_replace_start(), we have several error path=
+s
+> > > that assigns replace_task without reverting it back to NULL.
+> > >=20
+> > > There are two involved error paths:
+> > >=20
+> > > - There is already a running dev-replace
+> > >    Then replace_task is over-written to the current task.
+> > >    This is the one with long running effect.
+> > >=20
+> > > - The btrfs_start_transaction() call failed
+> > >    This is much harder to hit though.
+> >=20
+> > [ ... ]
+> >=20
+> > > Thankfully this bug is very hard to hit.
+> > >=20
+> > > As dev-replace is an exclusive operation, thus if there is already
+> > > a running replace, a new one will be rejected early without reaching
+> > > btrfs_dev_replace_start().
+> > >=20
+> > > The only remaining case is a suspended replace, which is much harder =
+to
+> > > hit, e.g. requiring async dev-replace conflicting with another exclus=
+ive
+> > > operation, then a new replace is started.
+> >=20
+> > Is "very hard to hit" still accurate now that btrfs_dev_replace_finishi=
+ng()
+> > is fixed too?
 >=20
-> Commit 165ea85f1483 ("btrfs: do not write supers if we have an fs
-> error") fixed this class of problem by making btrfs_sync_log() check for
-> an fs error right after taking tree_log_mutex. That check only works if
-> the commit path publishes the fs error before it releases the same
-> mutex, and commit 68d4ece9c30e ("btrfs: don't call
-> btrfs_handle_fs_error() in btrfs_commit_transaction()") removed the only
-> thing that did so.
+> That "very hard to hit" was for the old code before the fix, but indeed=
+=20
+> Claude found an extra path that cancel can always leave that stale=20
+> replace_task.
 >=20
-> Restore the ordering by aborting the transaction while tree_log_mutex is
-> still held. We have a transaction handle here, so this does not need to
-> bring back the btrfs_handle_fs_error() call: __btrfs_abort_transaction()
-> records the fs error itself, which is all btrfs_sync_log() looks at, and
-> the error message put in its place is kept.
 >=20
-> This is what commit 3810ab40afa5 ("btrfs: abort transaction on error in
-> write_all_supers()") already does for the next call in this function.
+> >=20
+> > A plain "btrfs replace cancel" leaves replace_task set every time.
+> > btrfs_dev_replace_cancel() calls btrfs_scrub_cancel() while replace_sta=
+te is
+> > BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED, so btrfs_scrub_dev() returns
+> > -ECANCELED to btrfs_dev_replace_start(), which passes it straight into
+> > btrfs_dev_replace_finishing():
+> >=20
+> > fs/btrfs/dev-replace.c:btrfs_dev_replace_start() {
+> > 	...
+> > 	ret =3D btrfs_scrub_dev(fs_info, src_device->devid, 0, ...);
+> >=20
+> > 	ret =3D btrfs_dev_replace_finishing(fs_info, ret);
+> > 	...
+> > }
+> >=20
+> > fs/btrfs/dev-replace.c:btrfs_dev_replace_finishing() {
+> > 	...
+> > 	} else {
+> > 		if (scrub_ret !=3D -ECANCELED)
+> > 			btrfs_err(fs_info, ...);
+> > error:
+> > 		up_write(&dev_replace->rwsem);
+> > 		...
+> > 		return scrub_ret;
+> > 	}
+> > 	...
+> > }
+> >=20
+> > That exit never reaches the replace_task =3D NULL at the end of the fun=
+ction,
+> > so the ioctl returns to userspace with replace_task still pointing at t=
+he
+> > task that ran it.  Any scrub failure, not only -ECANCELED, lands there =
+as
+> > well.
+> >=20
+> > The subject line says "when the replace failed to start", which does no=
+t
+> > cover the cancel or scrub-error case either.  Could the subject and the
+> > changelog describe those paths too?
+> >=20
+> > > diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> > > index 72cba7fed942..c5e67524b417 100644
+> > > --- a/fs/btrfs/dev-replace.c
+> > > +++ b/fs/btrfs/dev-replace.c
+> >=20
+> > [ ... ]
+> >=20
+> > > @@ -874,18 +875,20 @@ static int btrfs_dev_replace_finishing(struct b=
+trfs_fs_info *fs_info,
+> > >   	/* don't allow cancel or unmount to disturb the finishing procedur=
+e */
+> > >   	mutex_lock(&dev_replace->lock_finishing_cancel_unmount);
+> > >=20
+> > > -	down_read(&dev_replace->rwsem);
+> > > +	down_write(&dev_replace->rwsem);
+> > > +	dev_replace->replace_task =3D NULL;
+> > > +
+> > >   	/* was the operation canceled, or is it finished? */
+> > >   	if (dev_replace->replace_state !=3D
+> > >   	    BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED) {
+> > > -		up_read(&dev_replace->rwsem);
+> > > +		up_write(&dev_replace->rwsem);
+> > >   		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
+> > >   		return 0;
+> > >   	}
+> > >=20
+> > >   	tgt_device =3D dev_replace->tgtdev;
+> > >   	src_device =3D dev_replace->srcdev;
+> > > -	up_read(&dev_replace->rwsem);
+> > > +	up_write(&dev_replace->rwsem);
+> >=20
+> > Is clearing replace_task this early intentional?
 >=20
-> This is reproducible on an unmodified kernel by failing the first
-> couple of bios of a transaction commit with fail_make_request while a
-> concurrent fsync workload keeps log syncs queued on tree_log_mutex.
+> Yes.
 >=20
-> Fixes: 68d4ece9c30e ("btrfs: don't call btrfs_handle_fs_error() in btrfs_=
-commit_transaction()")
-> Cc: stable@vger.kernel.org # 7.0+
-> Signed-off-by: Leo Martins <loemra.dev@gmail.com>
-> ---
->  fs/btrfs/transaction.c | 6 ++++++
->  1 file changed, 6 insertions(+)
+> The real work of dev-replace has all finished.
+> >=20
+> > At this point replace_state is still BTRFS_IOCTL_DEV_REPLACE_STATE_STAR=
+TED,
+> > and btrfs_start_delalloc_roots() plus the btrfs_start_transaction() /
+> > btrfs_commit_transaction() loop are still ahead.  For all of that windo=
+w the
+> > replace task goes back to taking the rwsem in btrfs_map_block():
+> >=20
+> > fs/btrfs/volumes.c:btrfs_map_block() {
+> > 	...
+> > 	if (dev_replace->replace_task !=3D current)
+> > 		down_read(&dev_replace->rwsem);
+> >=20
+> > 	dev_replace_is_ongoing =3D btrfs_dev_replace_is_ongoing(dev_replace);
+> > 	...
+> > }
+> >=20
+> > which is the exemption 8cca35cb29f8 ("btrfs: don't take dev_replace rws=
+em on
+> > task already holding it") added.
+> >=20
+> > The down_write() further down already covers both the success exit and =
+the
+> > error: exit, so clearing replace_task next to the replace_state update =
+there,
+> > plus the three early returns, would leave the ongoing window unchanged.
 >=20
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 13a7e5f4e08c..ed850bf0546a 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -2583,6 +2583,12 @@ int btrfs_commit_transaction(struct btrfs_trans_ha=
-ndle *trans)
->  	ret =3D btrfs_write_and_wait_transaction(trans);
->  	if (unlikely(ret)) {
->  		btrfs_err(fs_info, "error while writing out transaction: %pe", ERR_PTR=
-(ret));
-> +		/*
-> +		 * Abort before releasing tree_log_mutex, so a log sync waiting
-> +		 * on it sees the fs error and skips writing super_for_commit
-> +		 * for this failed transaction. See btrfs_sync_log().
-> +		 */
-> +		btrfs_abort_transaction(trans, ret);
->  		mutex_unlock(&fs_info->tree_log_mutex);
->  		goto scrub_continue;
->  	}
+> Alright, I guess the model you're using is digging deeper than opus.
+>=20
 
-Reviewed-by: jlayton@meta.com <jlayton@meta.com>
+Actually, this was Opus 5. I find that there is a fair amount of
+randomness with these LLMs. Sometimes it just gets lucky!
+
+> It looks like we should not reset replace_task until the replace_state=
+=20
+> is also updated.
+>=20
+> Or during the transaction commit, it will lead to the same problem.
+>=20
+> We rely on btrfs_dev_replace_is_ongoing() to return false to release=20
+> rwsem early and avoid the deadlock.
+>=20
+> So the early reset leaves a window we can deadlock again.
+>=20
+> Will send an update to this patch.
+>=20
+
+Sounds good.
+
+>=20
+> >=20
+> > The changelog says only:
+> >=20
+> > >    - Reset replace_task to NULL for all paths of
+> > >      btrfs_dev_replace_finishing()
+> >=20
+> > Could it also mention that the read lock at the head of the function be=
+comes
+> > a write lock?
+> >=20
+> >=20
+>=20
+
+--=20
+Jeff Layton <jlayton@kernel.org>

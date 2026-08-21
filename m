@@ -1,239 +1,347 @@
-Received: from zg8tmtyylji0my4xnjeumjiw.icoremail.net (zg8tmtyylji0my4xnjeumjiw.icoremail.net [162.243.161.220])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id AFC542F616B;
-	Fri, 21 Aug 2026 06:49:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=162.243.161.220
+Received: from mail-ej1-f42.google.com (mail-ej1-f42.google.com [209.85.218.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1AD2E374E60
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2026 07:08:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787294988; cv=none; b=BsdvgtG/5btRgG8LmOQ3AEu9r5wgVX29UuDLa3E0cY4B+Wnx9lrrI2VTknnP+2Q+SISPEgUAJtX26N+KyVL7vSt27DRVBmbhnn+WIgEngY+6OPUJ17tO9OrPwLdlIiGJWc0j9Z75I98CC71k3LcaMMRHyCgoQZSSQqsD2mzYvHI=
+	t=1787296123; cv=none; b=j74ltXS1mxXs2Szkh6+Dve17EUUF1eHVBvdm5kspIBLUNgAB+hDBZHjzuwSrP0XKqkNT9l+89lAJvxVJg1lSYJ0SdaBG2ZQZ4w51UHoXVa6+SYWcqlgpnDTnwrDf/0YRYryDwXfSWPZc0JciifQQfb7on/QH4jr43F5RMr/h2xU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787294988; c=relaxed/simple;
-	bh=HZiWaTZDcharuu1CICNCLCQgMDOUQdOWDuTjbq8eTr0=;
-	h=Date:From:To:Cc:Subject:In-Reply-To:References:Content-Type:
-	 MIME-Version:Message-ID; b=Ly7siXIT2KrokvvtUh8FIwaPG5XaJxLTUURa7Jn6wCq0aL1BuinNDdRML0NmTKmRfv8CZNQ8O7uGMFVqS5GMQugDPAmxRp0hxAEe2TbWLL8Jvhi7W1augIhoVCmpWFKhP4wPej1VN4Itj50sdVWlZVS8nUhHTHBcDK7Pb2SG/l4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=zju.edu.cn; spf=pass smtp.mailfrom=zju.edu.cn; arc=none smtp.client-ip=162.243.161.220
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=zju.edu.cn
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zju.edu.cn
-Received: from zju.edu.cn (unknown [10.190.129.65])
-	by mtasvr (Coremail) with SMTP id _____wDHsH769IdqihqxAA--.12049S3;
-	Fri, 21 Aug 2026 14:49:31 +0800 (CST)
-Received: from stitch$zju.edu.cn ( [10.190.129.65] ) by
- ajax-webmail-mail-app3 (Coremail) ; Fri, 21 Aug 2026 14:49:30 +0800
- (GMT+08:00)
-Date: Fri, 21 Aug 2026 14:49:30 +0800 (GMT+08:00)
-X-CM-HeaderCharset: UTF-8
-From: "Jiacheng Xu" <stitch@zju.edu.cn>
-To: "Qu Wenruo" <wqu@suse.com>
-Cc: "Chris Mason" <clm@fb.com>, "David Sterba" <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: Re: [PATCH] btrfs: drain sysfs callbacks before stopping
- transaction kthread
-X-Priority: 3
-X-Mailer: Coremail Webmail Server Version 2025.3-cmXT6 build
- 20260617(6f868824) Copyright (c) 2002-2026 www.mailtech.cn zju.edu.cn
-In-Reply-To: <3dd5d093-0088-40d5-9daf-dd76f1839305@suse.com>
-References: <20b09e24.16b27.1a01f23ee08.Coremail.stitch@zju.edu.cn>
- <2252e770-a254-4971-9acc-c3768f3bb119@suse.com>
- <43775c17.162de.1a02295e080.Coremail.stitch@zju.edu.cn>
- <3dd5d093-0088-40d5-9daf-dd76f1839305@suse.com>
-Content-Transfer-Encoding: base64
-Content-Type: text/plain; charset=UTF-8
+	s=arc-20240116; t=1787296123; c=relaxed/simple;
+	bh=Rge5eqWSYEYWNSc3oqpwKT6ww5HLGkKTctDH8qCy+Ho=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=ViCr/DMLeg+CFSIyPPAGIK8dVX/F3gzuxAUdYUr3/fRInat9CzreBelG7Tst9PKTojWmDbIhYM+E7O1hnKfSXXxbbUlHqzTLO9O3kLtqyABUjCElAQU/W2KTJfSjs4/46AmoRAWkbXNPC1ZI+bB5Oc4TvKlnI19cy8OSLiogtfM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=DvX6hVQH; arc=none smtp.client-ip=209.85.218.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="DvX6hVQH"
+Received: by mail-ej1-f42.google.com with SMTP id a640c23a62f3a-c160420289bso100015966b.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2026 00:08:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1787296119; x=1787900919; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=d+8cTdoRMdDlquE/ywku2nlEVbRB6k7nnOU2LvwM7MM=;
+        b=DvX6hVQHvtDbAqefUjgKxk6ZGvm4QKUg6ufgn8drxHuxIgQUB10NCgFETja24qWX9o
+         ExsuD1kCbf5QLVItl62M3Aisvq0ytTxkhsmtII7JE6yov0is6OAikm6YhwZGYSW03zmu
+         XYWS1/Qmn3jsfWxlPTXY0Vtv3Fdkp/rd0rXQiO+IC+ab+uLWal9W8+TayKzc71Yo+HYM
+         GG692eJojE+xxGqXfwLNS7+fQLj+1pY0w1yIfghPZNEgF0MHvmsboEsCFnqW9NJmiXUj
+         AK9UPLW8DdFatWAMIUaPp7XCFqacPmB6gj1kOVp7kusCYKmyZXW/5h1da1MOXCNAbABP
+         Z4lg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1787296119; x=1787900919;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=d+8cTdoRMdDlquE/ywku2nlEVbRB6k7nnOU2LvwM7MM=;
+        b=JKhies/E6yUpAaNG1q0OmwXdmqyUIRS2WDs2kqvxYvc6YWE7Z4YRPlR10l9sIJeWO3
+         DqUOviTm8JTFscS6h/+HMwkrVGMqCRcQL45t8P7YkhvQawqz69XO/QUieImXqLZJcP35
+         IReGozJwl4Nmma2gvB3M/yUYMCcptiDU/NYEcYeNsPDm0rkY0EKjFjHToHusuStIJ3z7
+         KZ+HaJnyUMjq3/WDpNNVqieueYvApPZNpBr1bqxgJMVC/hJbHZ072Mymiku5cIehX0Rw
+         G2Fa2+dxfJN2LrdM2vdna3RBaPivuQhRkjZUVtTuMDnLBpX86sCm6owvCV2geqJ3NNrM
+         4djw==
+X-Forwarded-Encrypted: i=1; AHgh+RqV3lUjtnfoqo4FMDG9BNvaT8hOhoYK/m9UGsKNRZUjh30e5PgI+Hk+5gKIIEA5dxX1tHCSomL3p8E/4A==@vger.kernel.org
+X-Gm-Message-State: AFuF++l10VrwcbiYwJhlB3COc8GVe9Mvq5oornDe+XISHt5Bm+V33HJS
+	YiV2OzqHetPwn0+aE8ZREO69xWPFLg9e3un08RPEuHTzS/pYg+70PS6qbrwcNH6xOCk=
+X-Gm-Gg: AR+sD13Dg4veVBqXdYfQxKd7oMYwSQca7o1FBmgLiOfng5JmrF8WFGRCMkXKZC/Mr1E
+	DfP0q+CnmB26H7wQTkTpH5b8ZnJL7Yf+JO49Rc0HTjyrI0H0+PewcYN9jTcEyVXJ47lZHdXs35i
+	7ADW0SDhBL1YCIheSgQ2Ev9Ggv1VeeoESTrRNLtpHb0wH41Ct51TO3ET9YVkHM7ROzs/LAZ5KN7
+	et++qqQ/x2hnBxlT0YhxDkChSQnMl+SattrbTV3LCHPBKPN6e3SHHFePLSt4y6wKWonK52//DD8
+	HrbPgrCZcq3bJiB2sjr5dFa/6Qo2gE2JiclpDbwBOuvpqGFdNhiKCVQ01T87xdJm40hq+/DcT9m
+	cOERdchq5JIzBCTAcWM1DtCLsJ/VyAAWUPXCZ3HCO+6Rm9ORZWkKvzJE+5xvuyI/QfeK2fThtnR
+	CQIFXmosEnoVs9pshzhD+AJmln3O6pxwI1GTA8uaf27DDkjOtsUgTQXQ==
+X-Received: by 2002:a17:907:e00c:20b0:c20:23f8:99a5 with SMTP id a640c23a62f3a-c246a6a402cmr308636966b.15.1787296119094;
+        Fri, 21 Aug 2026 00:08:39 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-395c467d907sm1972014a91.7.2026.08.21.00.08.35
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 21 Aug 2026 00:08:38 -0700 (PDT)
+Message-ID: <f7fa4810-a494-487d-9c2b-b2e47cc08559@suse.com>
+Date: Fri, 21 Aug 2026 16:38:33 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Message-ID: <3cdedd9f.16449.1a02314f1b4.Coremail.stitch@zju.edu.cn>
-X-Coremail-Locale: zh_CN
-X-CM-TRANSID:zS_KCgAnQHL69Idq1JWOBA--.8713W
-X-CM-SenderInfo: qtrxiiaqttimo62m3hxhgxhubq/1tbiAwMKC2qHsJcDeQABsw
-X-CM-DELIVERINFO: =?B?W2BMYwXKKxbFmtjJiESix3B1w3tMoM3snk/k5SVzZVydjEqe1eefKHnLf95EnB4iem
-	egWwPWW0XmXVmWsTmudtWHNprnJoehVqoyr+CI2rU2hoJrzIq6x0Kr8NL9lVRVCfYGH7Nq
-	VpjmCC6X092upEp3tMKPb4QJ2t7i9A9P8DhehHK3/88dnysFspLdgSOdVOlP0w==
-X-Coremail-Antispam: 1Uk129KBj93XoW3Gw47JrWxXFWxAr1kCF4fCrX_yoWftF15pr
-	WrJF1Ygr4DJr1DCw4Iga10kw1Sqr4vkw4DWrZ3tayftw1qyry3Xryvya1j9r1Fyr4vkF40
-	vr18J3sxGFZxCrXCm3ZEXasCq-sJn29KB7ZKAUJUUUUU529EdanIXcx71UUUUU7KY7ZEXa
-	sCq-sGcSsGvfJ3Ic02F40EFcxC0VAKzVAqx4xG6I80ebIjqfuFe4nvWSU5nxnvy29KBjDU
-	0xBIdaVrnRJUUUPCb4IE77IF4wAFF20E14v26r1j6r4UM7CY07I20VC2zVCF04k26cxKx2
-	IYs7xG6rWj6s0DM7CIcVAFz4kK6r1j6r18M28lY4IEw2IIxxk0rwA2F7IY1VAKz4vEj48v
-	e4kI8wA2z4x0Y4vE2Ix0cI8IcVAFwI0_tr0E3s1l84ACjcxK6xIIjxv20xvEc7CjxVAFwI
-	0_Gr1j6F4UJwA2z4x0Y4vEx4A2jsIE14v26rxl6s0DM28EF7xvwVC2z280aVCY1x0267AK
-	xVW0oVCq3wAS0I0E0xvYzxvE52x082IY62kv0487Mc804VCY07AIYIkI8VC2zVCFFI0UMc
-	02F40EFcxC0VAKzVAqx4xG6I80ewAv7VC0I7IYx2IY67AKxVWUJVWUGwAv7VC2z280aVAF
-	wI0_Jr0_Gr1lOx8S6xCaFVCjc4AY6r1j6r4UM4x0Y48IcxkI7VAKI48JM4x0Y48IcxkI7V
-	AKI48G6xCjnVAKz4kxM4xvF2IEb7IF0Fy264kE64k0F24lFcxC0VAYjxAxZF0Ex2IqxwCF
-	04k20xvY0x0EwIxGrwCFx2IqxVCFs4IE7xkEbVWUJVW8JwC20s026c02F40E14v26r1j6r
-	18MI8I3I0E7480Y4vE14v26r106r1rMI8E67AF67kF1VAFwI0_JF0_Jw1lIxkGc2Ij64vI
-	r41lIxAIcVC0I7IYx2IY67AKxVWUJVWUCwCI42IY6xIIjxv20xvEc7CjxVAFwI0_Jr0_Gr
-	1lIxAIcVCF04k26cxKx2IYs7xG6r1j6r1xMIIF0xvEx4A2jsIE14v26r1j6r4UMIIF0xvE
-	x4A2jsIEc7CjxVAFwI0_Gr0_Gr1UMVCEFcxC0VAYjxAxZFUvcSsGvfC2KfnxnUUI43ZEXa
-	7IU86OJ7UUUUU==
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: drain sysfs callbacks before stopping transaction
+ kthread
+To: Jiacheng Xu <stitch@zju.edu.cn>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20b09e24.16b27.1a01f23ee08.Coremail.stitch@zju.edu.cn>
+ <2252e770-a254-4971-9acc-c3768f3bb119@suse.com>
+ <43775c17.162de.1a02295e080.Coremail.stitch@zju.edu.cn>
+ <3dd5d093-0088-40d5-9daf-dd76f1839305@suse.com>
+ <3cdedd9f.16449.1a02314f1b4.Coremail.stitch@zju.edu.cn>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <3cdedd9f.16449.1a02314f1b4.Coremail.stitch@zju.edu.cn>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-SSB0aGluayB5b3UgYXJlIHJpZ2h0LiBUaGUgcHJldmlvdXMgcGF0Y2ggb25seSBhZGRyZXNzZWQg
-dGhlIHRlYXJkb3duCmNhc2UgYW5kIGRpZCBub3QgZml4IHRoZSBtb3VudC10aW1lIHdpbmRvdy4K
-Ckhvd2V2ZXIsIG1vdmluZyB0aGUgd2hvbGUgYnRyZnNfc3lzZnNfYWRkX21vdW50ZWQoKSBjYWxs
-IGlzIG5vdCBhCnNpbXBsZSByZW9yZGVyIGJlY2F1c2UgYnRyZnNfaW5pdF9zcGFjZV9pbmZvKCkg
-Y3JlYXRlcyBjaGlsZCBrb2JqZWN0cwp1bmRlciBzcGFjZV9pbmZvX2tvYmosIHdoaWNoIGlzIGNy
-ZWF0ZWQgYnkgYnRyZnNfc3lzZnNfYWRkX21vdW50ZWQoKS4KCkFsc28sIGNyZWF0aW5nIHN5c2Zz
-IGFmdGVyIHRyYW5zYWN0aW9uX2t0aHJlYWQgYnV0IGJlZm9yZSBCVFJGU19GU19PUEVOCndvdWxk
-IHN0aWxsIGV4cG9zZSBzeXNmcyB3cml0ZXMgd2hpbGUgdGhlIG1vdW50IGlzIG5vdCBmdWxseSBp
-bml0aWFsaXplZC4KCkRvIHlvdSBoYXZlIGFueSBpZGVhcz8KClRoYW5rcywKSmlhY2hlbmcKCj4g
-LS0tLS3ljp/lp4vpgq7ku7YtLS0tLQo+IOWPkeS7tuS6ujogIlF1IFdlbnJ1byIgPHdxdUBzdXNl
-LmNvbT4KPiDlj5HpgIHml7bpl7Q6MjAyNi0wOC0yMSAxMzoyMTo0MiAo5pif5pyf5LqUKQo+IOaU
-tuS7tuS6ujogIkppYWNoZW5nIFh1IiA8c3RpdGNoQHpqdS5lZHUuY24+Cj4g5oqE6YCBOiAiQ2hy
-aXMgTWFzb24iIDxjbG1AZmIuY29tPiwgIkRhdmlkIFN0ZXJiYSIgPGRzdGVyYmFAc3VzZS5jb20+
-LCBsaW51eC1idHJmc0B2Z2VyLmtlcm5lbC5vcmcsIGxpbnV4LWtlcm5lbEB2Z2VyLmtlcm5lbC5v
-cmcKPiDkuLvpopg6IFJlOiBbUEFUQ0hdIGJ0cmZzOiBkcmFpbiBzeXNmcyBjYWxsYmFja3MgYmVm
-b3JlIHN0b3BwaW5nIHRyYW5zYWN0aW9uIGt0aHJlYWQKPiAKPiAKPiAKPiDlnKggMjAyNi84LzIx
-IDE0OjAwLCBKaWFjaGVuZyBYdSDlhpnpgZM6Cj4gPiBIaSBXZW5ydW8sCj4gPiAKPiA+IEkgYWdy
-ZWUgdGhhdCByZWplY3Rpbmcgc3lzZnMgd3JpdGVzIHdoZW4gRlNfT1BFTiBpcyB1bnNldCBvcgo+
-ID4gQ0xPU0lOR19TVEFSVCBpcyBzZXQgZml4ZXMgdGhlIG1vdW50LXRpbWUgTlVMTCBwb2ludGVy
-IGRlcmVmZXJlbmNlLgo+ID4gCj4gPiBIb3dldmVyLCBjaGVja2luZyB0aGVzZSBmbGFncyBhbG9u
-ZSBkb2VzIG5vdCBmdWxseSBwcm90ZWN0IHRoZSB0ZWFyZG93bgo+ID4gcGF0aC4gVGhlcmUgaXMg
-c3RpbGwgYSBjaGVjay10aGVuLXVzZSByYWNlOgo+ID4gCj4gPiAgICAgICAgc3lzZnMgc3RvcmUg
-Y2FsbGJhY2sgICAgICAgICAgICAgICAgY2xvc2VfY3RyZWUoKQo+ID4gCj4gPiAgICAgICAgdGVz
-dCBGU19PUEVOID09IDEKPiA+ICAgICAgICB0ZXN0IENMT1NJTkdfU1RBUlQgPT0gMAo+ID4gCj4g
-PiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHNldCBDTE9TSU5H
-X1NUQVJUCj4gPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGt0
-aHJlYWRfc3RvcCh0cmFuc2FjdGlvbl9rdGhyZWFkKQo+ID4gCj4gPiAgICAgICAgd2FrZV91cF9w
-cm9jZXNzKHRyYW5zYWN0aW9uX2t0aHJlYWQpCj4gPiAgICAgICAgdXNlIGEgc3RvcHBlZCBvciBm
-cmVlZCB0YXNrX3N0cnVjdAo+ID4gCj4gPiBUaHVzLCB0aGUgZmxhZyBjaGVjayBmaXhlcyB0aGUg
-cmVwb3J0ZWQgaW5pdGlhbGl6YXRpb24gcmFjZSwgYnV0IGEKPiA+IHNlcGFyYXRlIHRlYXJkb3du
-IHJhY2UgcmVtYWlucyB1bmxlc3MgYWN0aXZlIHN5c2ZzIGNhbGxiYWNrcyBhcmUgZHJhaW5lZAo+
-ID4gb3Igb3RoZXJ3aXNlIHN5bmNocm9uaXplZCBiZWZvcmUgc3RvcHBpbmcgdHJhbnNhY3Rpb25f
-a3RocmVhZC4KPiAKPiBPSywgdGhlbiB0aGUgbmV4dCBxdWVzc3Rpb24gaXMsIHdoeSB3ZSBkb24n
-dCBtb3ZlIHRoZSBzeXNmcyBjcmVhdGlvbiAKPiBhZnRlciB0aGUgY29tbWl0IHRyYW5zYWN0aW9u
-IGNyZWF0aW9uLgo+IAo+IEV2ZW4gd2l0aCB5b3VyIHBhdGNoLCBpdCBkaWRuJ3Qgc29sdmUgdGhl
-IHByb2JsZW0gdGhhdCBkdXJpbmcgbW91bnQgdGhlIAo+IHN5c2ZzIGlzIGNyZWF0ZWQgYmVmb3Jl
-IHRyYW5zYWN0aW9uIGt0aHJlYWQuCj4gCj4gU28gaW4gdGhlb3J5IGl0J3MgcG9zc2libGUgdG8g
-ZG8gc3lzZnMgd3JpdGUgYmVmb3JlIGt0aHJlYWQgaW5pdGlhbGl6ZWQsIAo+IHN0aWxsIGNhdXNp
-bmcgTlVMTCBwb2ludGVyIGRlcmVmZXJlbmNlLgo+IAo+ID4gCj4gPiBUaGFua3MsCj4gPiBKaWFj
-aGVuZwo+ID4gCj4gPj4gLS0tLS3ljp/lp4vpgq7ku7YtLS0tLQo+ID4+IOWPkeS7tuS6ujogIlF1
-IFdlbnJ1byIgPHdxdUBzdXNlLmNvbT4KPiA+PiDlj5HpgIHml7bpl7Q6MjAyNi0wOC0yMSAwNjoz
-MjoxNCAo5pif5pyf5LqUKQo+ID4+IOaUtuS7tuS6ujogIkppYWNoZW5nIFh1IiA8c3RpdGNoQHpq
-dS5lZHUuY24+LCAiQ2hyaXMgTWFzb24iIDxjbG1AZmIuY29tPgo+ID4+IOaKhOmAgTogIkRhdmlk
-IFN0ZXJiYSIgPGRzdGVyYmFAc3VzZS5jb20+LCBsaW51eC1idHJmc0B2Z2VyLmtlcm5lbC5vcmcs
-IGxpbnV4LWtlcm5lbEB2Z2VyLmtlcm5lbC5vcmcKPiA+PiDkuLvpopg6IFJlOiBbUEFUQ0hdIGJ0
-cmZzOiBkcmFpbiBzeXNmcyBjYWxsYmFja3MgYmVmb3JlIHN0b3BwaW5nIHRyYW5zYWN0aW9uIGt0
-aHJlYWQKPiA+Pgo+ID4+Cj4gPj4KPiA+PiDlnKggMjAyNi84LzIwIDIxOjU3LCBKaWFjaGVuZyBY
-dSDlhpnpgZM6Cj4gPj4+IGJ0cmZzX2xhYmVsX3N0b3JlKCkgYW5kIGJ0cmZzX2ZlYXR1cmVfYXR0
-cl9zdG9yZSgpIHdha2UgdXAgdGhlCj4gPj4+IHRyYW5zYWN0aW9uIGt0aHJlYWQgdGhyb3VnaCBm
-c19pbmZvLT50cmFuc2FjdGlvbl9rdGhyZWFkLgo+ID4+Pgo+ID4+PiBEdXJpbmcgZmlsZXN5c3Rl
-bSB0ZWFyZG93biwgY2xvc2VfY3RyZWUoKSBzdG9wcyB0aGUgdHJhbnNhY3Rpb24ga3RocmVhZAo+
-ID4+PiBiZWZvcmUgcmVtb3ZpbmcgdGhlIG1vdW50ZWQgZmlsZXN5c3RlbSdzIHN5c2ZzIGF0dHJp
-YnV0ZXMuIEEgY29uY3VycmVudAo+ID4+PiBzeXNmcyB3cml0ZSBjYW4gdGhlcmVmb3JlIGVudGVy
-IG9uZSBvZiB0aGVzZSBjYWxsYmFja3MgYWZ0ZXIgdGhlIGt0aHJlYWQKPiA+Pj4gaGFzIGJlZW4g
-c3RvcHBlZCBhbmQgcGFzcyBhbiBpbnZhbGlkIHRhc2sgcG9pbnRlciB0byB3YWtlX3VwX3Byb2Nl
-c3MoKS4KPiA+Pj4KPiA+Pj4gVGhpcyByZXN1bHRzIGluIGEgY29uY3VycmVudCBudWxsLXBvaW50
-ZXIgZGVyZWZlcmVuY2UgaW4KPiA+Pj4gdHJ5X3RvX3dha2VfdXAoKS4gVGhlIHNjaGVkdWxlciBp
-cyBub3QgdGhlIHJvb3QgY2F1c2U7IHRoZSBpbnZhbGlkCj4gPj4+IHRyYW5zYWN0aW9uIGt0aHJl
-YWQgcG9pbnRlciBpcyB1c2VkIGJ5IGEgQnRyZnMgc3lzZnMgY2FsbGJhY2sgZHVyaW5nCj4gPj4+
-IHRlYXJkb3duLgo+ID4+Pgo+ID4+PiBTcGxpdCBtb3VudGVkIHN5c2ZzIGNsZWFudXAgaW50byB0
-d28gc3RhZ2VzLiBSZW1vdmUgYXR0cmlidXRlcyB3aGljaCBtYXkKPiA+Pj4gaGF2ZSBzdG9yZSBj
-YWxsYmFja3MgYmVmb3JlIHN0b3BwaW5nIHRoZSB0cmFuc2FjdGlvbiBrdGhyZWFkLiBUaGUKPiA+
-Pj4gcmVtYWluaW5nIHN5c2ZzIGtvYmplY3RzIGFyZSByZW1vdmVkIGF0IHRoZSBvcmlnaW5hbCB0
-ZWFyZG93biBwb2ludCwKPiA+Pj4gYWZ0ZXIgdGhlIGt0aHJlYWQgaGFzIGJlZW4gc3RvcHBlZC4K
-PiA+Pgo+ID4+IFdoeSBub3QganVzdCBzaW1wbGl5IHJlamVjdCBzeXNmcyB3cml0ZSBvcGVyYXRp
-b25zIHdoZW4gdGhlIGZzIGhhcwo+ID4+IENMT1NJTkdfU1RBUlQgb3Igd2l0aG91dCBGU19PUEVO
-IGZsYWdzPwo+ID4+Cj4gPj4+Cj4gPj4+IEFwcGx5IHRoZSBzYW1lIG9yZGVyaW5nIHRvIHRoZSBv
-cGVuX2N0cmVlKCkgZmFpbHVyZSBwYXRoIHdoZW4gdGhlCj4gPj4+IHRyYW5zYWN0aW9uIGt0aHJl
-YWQgaGFzIGFscmVhZHkgYmVlbiBjcmVhdGVkLgo+ID4+Pgo+ID4+PiBUZXN0ZWQtYnk6IEppYWNo
-ZW5nIFh1IDxzdGl0Y2hAemp1LmVkdS5jbj4KPiA+Pj4gU2lnbmVkLW9mZi1ieTogSmlhY2hlbmcg
-WHUgPHN0aXRjaEB6anUuZWR1LmNuPgo+ID4+PiAtLS0KPiA+Pj4gZnMvYnRyZnMvZGlzay1pby5j
-IHwgMTYgKysrKysrKysrKysrKystLQo+ID4+PiBmcy9idHJmcy9zeXNmcy5jICAgfCAyNiArKysr
-KysrKysrKysrKysrKysrKystLS0tLQo+ID4+PiBmcy9idHJmcy9zeXNmcy5oICAgfCAgMyArKysK
-PiA+Pj4gMyBmaWxlcyBjaGFuZ2VkLCAzOCBpbnNlcnRpb25zKCspLCA3IGRlbGV0aW9ucygtKQo+
-ID4+Pgo+ID4+PiBkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvZGlzay1pby5jIGIvZnMvYnRyZnMvZGlz
-ay1pby5jCj4gPj4+IGluZGV4IDJmMTY2NmQ5NTQ0ZS4uNGY1YmNjNTc2ZGM2IDEwMDY0NAo+ID4+
-PiAtLS0gYS9mcy9idHJmcy9kaXNrLWlvLmMKPiA+Pj4gKysrIGIvZnMvYnRyZnMvZGlzay1pby5j
-Cj4gPj4+IEBAIC0zMzYzLDYgKzMzNjMsNyBAQCBpbnQgX19jb2xkIG9wZW5fY3RyZWUoc3RydWN0
-IHN1cGVyX2Jsb2NrICpzYiwgc3RydWN0IGJ0cmZzX2ZzX2RldmljZXMgKmZzX2RldmljZQo+ID4+
-PiAgICAgICAgIHN0cnVjdCBidHJmc19yb290ICp0cmVlX3Jvb3Q7Cj4gPj4+ICAgICAgICAgc3Ry
-dWN0IGJ0cmZzX3Jvb3QgKmNodW5rX3Jvb3Q7Cj4gPj4+ICAgICAgICAgc3RydWN0IGJ0cmZzX3Jv
-b3QgKnJlbWFwX3Jvb3Q7Cj4gPj4+ICsgICAgIGJvb2wgc3lzZnNfYXR0cnNfcmVtb3ZlZCA9IGZh
-bHNlOwo+ID4+PiAgICAgICAgIGludCByZXQ7Cj4gPj4+ICAgICAgICAgaW50IGxldmVsOwo+ID4+
-Pgo+ID4+PiBAQCAtMzc4MCw2ICszNzgxLDkgQEAgaW50IF9fY29sZCBvcGVuX2N0cmVlKHN0cnVj
-dCBzdXBlcl9ibG9jayAqc2IsIHN0cnVjdCBidHJmc19mc19kZXZpY2VzICpmc19kZXZpY2UKPiA+
-Pj4gZmFpbF9xZ3JvdXA6Cj4gPj4+ICAgICAgICAgYnRyZnNfZnJlZV9xZ3JvdXBfY29uZmlnKGZz
-X2luZm8pOwo+ID4+PiBmYWlsX3RyYW5zX2t0aHJlYWQ6Cj4gPj4+ICsgICAgIGJ0cmZzX3N5c2Zz
-X3JlbW92ZV9tb3VudGVkX2F0dHJzKGZzX2luZm8pOwo+ID4+PiArICAgICBzeXNmc19hdHRyc19y
-ZW1vdmVkID0gdHJ1ZTsKPiA+Pj4gKwo+ID4+PiAgICAgICAgIGt0aHJlYWRfc3RvcChmc19pbmZv
-LT50cmFuc2FjdGlvbl9rdGhyZWFkKTsKPiA+Pj4gICAgICAgICBidHJmc19jbGVhbnVwX3RyYW5z
-YWN0aW9uKGZzX2luZm8pOwo+ID4+PiAgICAgICAgIGJ0cmZzX2ZyZWVfZnNfcm9vdHMoZnNfaW5m
-byk7Cj4gPj4+IEBAIC0zNzkzLDcgKzM3OTcsOSBAQCBpbnQgX19jb2xkIG9wZW5fY3RyZWUoc3Ry
-dWN0IHN1cGVyX2Jsb2NrICpzYiwgc3RydWN0IGJ0cmZzX2ZzX2RldmljZXMgKmZzX2RldmljZQo+
-ID4+PiAgICAgICAgIGZpbGVtYXBfd3JpdGVfYW5kX3dhaXQoZnNfaW5mby0+YnRyZWVfaW5vZGUt
-PmlfbWFwcGluZyk7Cj4gPj4+Cj4gPj4+IGZhaWxfc3lzZnM6Cj4gPj4+IC0gICAgIGJ0cmZzX3N5
-c2ZzX3JlbW92ZV9tb3VudGVkKGZzX2luZm8pOwo+ID4+PiArICAgICBpZiAoIXN5c2ZzX2F0dHJz
-X3JlbW92ZWQpCj4gPj4+ICsgICAgICAgICAgICAgYnRyZnNfc3lzZnNfcmVtb3ZlX21vdW50ZWRf
-YXR0cnMoZnNfaW5mbyk7Cj4gPj4+ICsgICAgIGJ0cmZzX3N5c2ZzX3JlbW92ZV9tb3VudGVkX2tv
-YmplY3RzKGZzX2luZm8pOwo+ID4+Pgo+ID4+PiBmYWlsX2ZzZGV2X3N5c2ZzOgo+ID4+PiAgICAg
-ICAgIGJ0cmZzX3N5c2ZzX3JlbW92ZV9mc2lkKGZzX2luZm8tPmZzX2RldmljZXMpOwo+ID4+PiBA
-QCAtNDMxOCw2ICs0MzI0LDkgQEAgdm9pZCBfX2NvbGQgY2xvc2VfY3RyZWUoc3RydWN0IGJ0cmZz
-X2ZzX2luZm8gKmZzX2luZm8pCj4gPj4+Cj4gPj4+ICAgICAgICAgc2V0X2JpdChCVFJGU19GU19D
-TE9TSU5HX1NUQVJULCAmZnNfaW5mby0+ZmxhZ3MpOwo+ID4+Pgo+ID4+PiArICAgICAvKiBEcmFp
-biBzeXNmcyBjYWxsYmFja3MgYmVmb3JlIHN0b3BwaW5nIHRoZSB0cmFuc2FjdGlvbiBrdGhyZWFk
-LiAqLwo+ID4+PiArICAgICBidHJmc19zeXNmc19yZW1vdmVfbW91bnRlZF9hdHRycyhmc19pbmZv
-KTsKPiA+Pj4gKwo+ID4+PiAgICAgICAgIC8qCj4gPj4+ICAgICAgICAgKiBJZiB3ZSBoYWQgVU5G
-SU5JU0hFRF9EUk9QUyB3ZSBjb3VsZCBzdGlsbCBiZSBwcm9jZXNzaW5nIHRoZW0sIHNvCj4gPj4+
-ICAgICAgICAgKiBjbGVhciB0aGF0IGJpdCBhbmQgd2FrZSB1cCByZWxvY2F0aW9uIHNvIGl0IGNh
-biBzdG9wLgo+ID4+PiBAQCAtNDUzOCw3ICs0NTQ3LDcgQEAgdm9pZCBfX2NvbGQgY2xvc2VfY3Ry
-ZWUoc3RydWN0IGJ0cmZzX2ZzX2luZm8gKmZzX2luZm8pCj4gPj4+ICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgcGVyY3B1X2NvdW50ZXJfc3VtKCZmc19pbmZvLT5vcmRlcmVkX2J5dGVzKSk7Cj4g
-Pj4+Cj4gPj4+IC0gICAgIGJ0cmZzX3N5c2ZzX3JlbW92ZV9tb3VudGVkKGZzX2luZm8pOwo+ID4+
-PiArICAgICBidHJmc19zeXNmc19yZW1vdmVfbW91bnRlZF9rb2JqZWN0cyhmc19pbmZvKTsKPiA+
-Pj4gICAgICAgICBidHJmc19zeXNmc19yZW1vdmVfZnNpZChmc19pbmZvLT5mc19kZXZpY2VzKTsK
-PiA+Pj4KPiA+Pj4gICAgICAgICBidHJmc19wdXRfYmxvY2tfZ3JvdXBfY2FjaGUoZnNfaW5mbyk7
-Cj4gPj4+Cj4gPj4+IGRpZmYgLS1naXQgYS9mcy9idHJmcy9zeXNmcy5jIGIvZnMvYnRyZnMvc3lz
-ZnMuYwo+ID4+PiBpbmRleCAwZDE0NTcwYzhiYzIuLmQ5MGQ3NmExNTJlOSAxMDA2NDQKPiA+Pj4g
-LS0tIGEvZnMvYnRyZnMvc3lzZnMuYwo+ID4+PiArKysgYi9mcy9idHJmcy9zeXNmcy5jCj4gPj4+
-IEBAIC0xNzA3LDExICsxNzA3LDIzIEBAIHN0YXRpYyB2b2lkIGJ0cmZzX3N5c2ZzX3JlbW92ZV9m
-c19kZXZpY2VzKHN0cnVjdCBidHJmc19mc19kZXZpY2VzICpmc19kZXZpY2VzKQo+ID4+PiAgICAg
-ICAgIH0KPiA+Pj4gfQo+ID4+Pgo+ID4+PiAtdm9pZCBidHJmc19zeXNmc19yZW1vdmVfbW91bnRl
-ZChzdHJ1Y3QgYnRyZnNfZnNfaW5mbyAqZnNfaW5mbykKPiA+Pj4gKy8qCj4gPj4+ICsgKiBSZW1v
-dmUgYXR0cmlidXRlcyB3aGljaCBtYXkgaGF2ZSBzdG9yZSBjYWxsYmFja3MuIGtlcm5mcyB3YWl0
-cyBmb3IgYWN0aXZlCj4gPj4+ICsgKiBjYWxsYmFja3MgZHVyaW5nIHJlbW92YWwsIHNvIHRoaXMg
-bXVzdCBiZSBkb25lIGJlZm9yZSBzdG9wcGluZyBhbnkga3RocmVhZAo+ID4+PiArICogd2hpY2gg
-Y2FuIGJlIHdva2VuIHVwIGJ5IHRob3NlIGNhbGxiYWNrcy4KPiA+Pj4gKyAqLwo+ID4+PiArdm9p
-ZCBidHJmc19zeXNmc19yZW1vdmVfbW91bnRlZF9hdHRycyhzdHJ1Y3QgYnRyZnNfZnNfaW5mbyAq
-ZnNfaW5mbykKPiA+Pj4gewo+ID4+PiAgICAgICAgIHN0cnVjdCBrb2JqZWN0ICpmc2lkX2tvYmog
-PSAmZnNfaW5mby0+ZnNfZGV2aWNlcy0+ZnNpZF9rb2JqOwo+ID4+Pgo+ID4+PiAtICAgICBzeXNm
-c19yZW1vdmVfbGluayhmc2lkX2tvYmosICJiZGkiKTsKPiA+Pj4gKyAgICAgYWRkcm1fdW5rbm93
-bl9mZWF0dXJlX2F0dHJzKGZzX2luZm8sIGZhbHNlKTsKPiA+Pj4gKyAgICAgc3lzZnNfcmVtb3Zl
-X2dyb3VwKGZzaWRfa29iaiwgJmJ0cmZzX2ZlYXR1cmVfYXR0cl9ncm91cCk7Cj4gPj4+ICsgICAg
-IHN5c2ZzX3JlbW92ZV9maWxlcyhmc2lkX2tvYmosIGJ0cmZzX2F0dHJzKTsKPiA+Pj4gK30KPiA+
-Pj4gKwo+ID4+PiArc3RhdGljIHZvaWQgYnRyZnNfc3lzZnNfcmVtb3ZlX21vdW50ZWRfZGlycyhz
-dHJ1Y3QgYnRyZnNfZnNfaW5mbyAqZnNfaW5mbykKPiA+Pj4gK3sKPiA+Pj4gKyAgICAgc3lzZnNf
-cmVtb3ZlX2xpbmsoJmZzX2luZm8tPmZzX2RldmljZXMtPmZzaWRfa29iaiwgImJkaSIpOwo+ID4+
-Pgo+ID4+PiAgICAgICAgIGlmIChmc19pbmZvLT5zcGFjZV9pbmZvX2tvYmopIHsKPiA+Pj4gICAg
-ICAgICAgICAgICBzeXNmc19yZW1vdmVfZmlsZXMoZnNfaW5mby0+c3BhY2VfaW5mb19rb2JqLCBh
-bGxvY2F0aW9uX2F0dHJzKTsKPiA+Pj4gQEAgLTE3MzAsOSArMTc0MiwxOCBAQCB2b2lkIGJ0cmZz
-X3N5c2ZzX3JlbW92ZV9tb3VudGVkKHN0cnVjdCBidHJmc19mc19pbmZvICpmc19pbmZvKQo+ID4+
-PiAgICAgICAgICAgICAgIGtvYmplY3RfcHV0KGZzX2luZm8tPmRlYnVnX2tvYmopOwo+ID4+PiAg
-ICAgICAgIH0KPiA+Pj4gI2VuZGlmCj4gPj4+IC0gICAgIGFkZHJtX3Vua25vd25fZmVhdHVyZV9h
-dHRycyhmc19pbmZvLCBmYWxzZSk7Cj4gPj4+IC0gICAgIHN5c2ZzX3JlbW92ZV9ncm91cChmc2lk
-X2tvYmosICZidHJmc19mZWF0dXJlX2F0dHJfZ3JvdXApOwo+ID4+PiAtICAgICBzeXNmc19yZW1v
-dmVfZmlsZXMoZnNpZF9rb2JqLCBidHJmc19hdHRycyk7Cj4gPj4+ICt9Cj4gPj4+ICsKPiA+Pj4g
-K3ZvaWQgYnRyZnNfc3lzZnNfcmVtb3ZlX21vdW50ZWRfa29iamVjdHMoc3RydWN0IGJ0cmZzX2Zz
-X2luZm8gKmZzX2luZm8pCj4gPj4+ICt7Cj4gPj4+ICsgICAgIGJ0cmZzX3N5c2ZzX3JlbW92ZV9t
-b3VudGVkX2RpcnMoZnNfaW5mbyk7Cj4gPj4+ICsgICAgIGJ0cmZzX3N5c2ZzX3JlbW92ZV9mc19k
-ZXZpY2VzKGZzX2luZm8tPmZzX2RldmljZXMpOwo+ID4+PiArfQo+ID4+PiArCj4gPj4+ICt2b2lk
-IGJ0cmZzX3N5c2ZzX3JlbW92ZV9tb3VudGVkKHN0cnVjdCBidHJmc19mc19pbmZvICpmc19pbmZv
-KQo+ID4+PiArewo+ID4+PiArICAgICBidHJmc19zeXNmc19yZW1vdmVfbW91bnRlZF9kaXJzKGZz
-X2luZm8pOwo+ID4+PiArICAgICBidHJmc19zeXNmc19yZW1vdmVfbW91bnRlZF9hdHRycyhmc19p
-bmZvKTsKPiA+Pj4gICAgICAgICBidHJmc19zeXNmc19yZW1vdmVfZnNfZGV2aWNlcyhmc19pbmZv
-LT5mc19kZXZpY2VzKTsKPiA+Pj4gfQo+ID4+Pgo+ID4+PiBkaWZmIC0tZ2l0IGEvZnMvYnRyZnMv
-c3lzZnMuaCBiL2ZzL2J0cmZzL3N5c2ZzLmgKPiA+Pj4gaW5kZXggMDU0OThlNTM0NmMzLi4wZDAw
-OGZjOGYxYjggMTAwNjQ0Cj4gPj4+IC0tLSBhL2ZzL2J0cmZzL3N5c2ZzLmgKPiA+Pj4gKysrIGIv
-ZnMvYnRyZnMvc3lzZnMuaAo+ID4+PiBAQCAtMzUsNiArMzUsOSBAQCB2b2lkIGJ0cmZzX2tvYmpl
-Y3RfdWV2ZW50KHN0cnVjdCBibG9ja19kZXZpY2UgKmJkZXYsIGVudW0ga29iamVjdF9hY3Rpb24g
-YWN0aW9uKQo+ID4+PiBpbnQgX19pbml0IGJ0cmZzX2luaXRfc3lzZnModm9pZCk7Cj4gPj4+IHZv
-aWQgX19jb2xkIGJ0cmZzX2V4aXRfc3lzZnModm9pZCk7Cj4gPj4+IGludCBidHJmc19zeXNmc19h
-ZGRfbW91bnRlZChzdHJ1Y3QgYnRyZnNfZnNfaW5mbyAqZnNfaW5mbyk7Cj4gPj4+ICt2b2lkIGJ0
-cmZzX3N5c2ZzX3JlbW92ZV9tb3VudGVkX2F0dHJzKHN0cnVjdCBidHJmc19mc19pbmZvICpmc19p
-bmZvKTsKPiA+Pj4gK3ZvaWQgYnRyZnNfc3lzZnNfcmVtb3ZlX21vdW50ZWRfa29iamVjdHMoc3Ry
-dWN0IGJ0cmZzX2ZzX2luZm8gKmZzX2luZm8pOwo+ID4+PiB2b2lkIGJ0cmZzX3N5c2ZzX3JlbW92
-ZV9tb3VudGVkKHN0cnVjdCBidHJmc19mc19pbmZvICpmc19pbmZvKTsKPiA+Pj4gdm9pZCBidHJm
-c19zeXNmc19hZGRfYmxvY2tfZ3JvdXBfdHlwZShzdHJ1Y3QgYnRyZnNfYmxvY2tfZ3JvdXAgKmNh
-Y2hlKTsKPiA+Pj4gaW50IGJ0cmZzX3N5c2ZzX2FkZF9zcGFjZV9pbmZvX3R5cGUoc3RydWN0IGJ0
-cmZzX3NwYWNlX2luZm8gKnNwYWNlX2luZm8pOwo=
+
+
+在 2026/8/21 16:19, Jiacheng Xu 写道:
+> I think you are right. The previous patch only addressed the teardown
+> case and did not fix the mount-time window.
+> 
+> However, moving the whole btrfs_sysfs_add_mounted() call is not a
+> simple reorder because btrfs_init_space_info() creates child kobjects
+> under space_info_kobj, which is created by btrfs_sysfs_add_mounted().
+> 
+> Also, creating sysfs after transaction_kthread but before BTRFS_FS_OPEN
+> would still expose sysfs writes while the mount is not fully initialized.
+> 
+> Do you have any ideas?
+
+For the space_info kobj, I think we can de-couple space info and its 
+kobj file creation.
+Aka, allow btrfs_init_space_info() to do everything except the kobj 
+creation.
+
+Then at the very end, create every kobj needed, and at that time, the 
+full fs should be fully initialized.
+
+This should solve the problem from the root, but will definitely need 
+quite some changes to the mount/unmount path.
+> 
+> Thanks,
+> Jiacheng
+> 
+>> -----原始邮件-----
+>> 发件人: "Qu Wenruo" <wqu@suse.com>
+>> 发送时间:2026-08-21 13:21:42 (星期五)
+>> 收件人: "Jiacheng Xu" <stitch@zju.edu.cn>
+>> 抄送: "Chris Mason" <clm@fb.com>, "David Sterba" <dsterba@suse.com>, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+>> 主题: Re: [PATCH] btrfs: drain sysfs callbacks before stopping transaction kthread
+>>
+>>
+>>
+>> 在 2026/8/21 14:00, Jiacheng Xu 写道:
+>>> Hi Wenruo,
+>>>
+>>> I agree that rejecting sysfs writes when FS_OPEN is unset or
+>>> CLOSING_START is set fixes the mount-time NULL pointer dereference.
+>>>
+>>> However, checking these flags alone does not fully protect the teardown
+>>> path. There is still a check-then-use race:
+>>>
+>>>         sysfs store callback                close_ctree()
+>>>
+>>>         test FS_OPEN == 1
+>>>         test CLOSING_START == 0
+>>>
+>>>                                              set CLOSING_START
+>>>                                              kthread_stop(transaction_kthread)
+>>>
+>>>         wake_up_process(transaction_kthread)
+>>>         use a stopped or freed task_struct
+>>>
+>>> Thus, the flag check fixes the reported initialization race, but a
+>>> separate teardown race remains unless active sysfs callbacks are drained
+>>> or otherwise synchronized before stopping transaction_kthread.
+>>
+>> OK, then the next quesstion is, why we don't move the sysfs creation
+>> after the commit transaction creation.
+>>
+>> Even with your patch, it didn't solve the problem that during mount the
+>> sysfs is created before transaction kthread.
+>>
+>> So in theory it's possible to do sysfs write before kthread initialized,
+>> still causing NULL pointer dereference.
+>>
+>>>
+>>> Thanks,
+>>> Jiacheng
+>>>
+>>>> -----原始邮件-----
+>>>> 发件人: "Qu Wenruo" <wqu@suse.com>
+>>>> 发送时间:2026-08-21 06:32:14 (星期五)
+>>>> 收件人: "Jiacheng Xu" <stitch@zju.edu.cn>, "Chris Mason" <clm@fb.com>
+>>>> 抄送: "David Sterba" <dsterba@suse.com>, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+>>>> 主题: Re: [PATCH] btrfs: drain sysfs callbacks before stopping transaction kthread
+>>>>
+>>>>
+>>>>
+>>>> 在 2026/8/20 21:57, Jiacheng Xu 写道:
+>>>>> btrfs_label_store() and btrfs_feature_attr_store() wake up the
+>>>>> transaction kthread through fs_info->transaction_kthread.
+>>>>>
+>>>>> During filesystem teardown, close_ctree() stops the transaction kthread
+>>>>> before removing the mounted filesystem's sysfs attributes. A concurrent
+>>>>> sysfs write can therefore enter one of these callbacks after the kthread
+>>>>> has been stopped and pass an invalid task pointer to wake_up_process().
+>>>>>
+>>>>> This results in a concurrent null-pointer dereference in
+>>>>> try_to_wake_up(). The scheduler is not the root cause; the invalid
+>>>>> transaction kthread pointer is used by a Btrfs sysfs callback during
+>>>>> teardown.
+>>>>>
+>>>>> Split mounted sysfs cleanup into two stages. Remove attributes which may
+>>>>> have store callbacks before stopping the transaction kthread. The
+>>>>> remaining sysfs kobjects are removed at the original teardown point,
+>>>>> after the kthread has been stopped.
+>>>>
+>>>> Why not just simpliy reject sysfs write operations when the fs has
+>>>> CLOSING_START or without FS_OPEN flags?
+>>>>
+>>>>>
+>>>>> Apply the same ordering to the open_ctree() failure path when the
+>>>>> transaction kthread has already been created.
+>>>>>
+>>>>> Tested-by: Jiacheng Xu <stitch@zju.edu.cn>
+>>>>> Signed-off-by: Jiacheng Xu <stitch@zju.edu.cn>
+>>>>> ---
+>>>>> fs/btrfs/disk-io.c | 16 ++++++++++++++--
+>>>>> fs/btrfs/sysfs.c   | 26 +++++++++++++++++++++-----
+>>>>> fs/btrfs/sysfs.h   |  3 +++
+>>>>> 3 files changed, 38 insertions(+), 7 deletions(-)
+>>>>>
+>>>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>>>>> index 2f1666d9544e..4f5bcc576dc6 100644
+>>>>> --- a/fs/btrfs/disk-io.c
+>>>>> +++ b/fs/btrfs/disk-io.c
+>>>>> @@ -3363,6 +3363,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+>>>>>          struct btrfs_root *tree_root;
+>>>>>          struct btrfs_root *chunk_root;
+>>>>>          struct btrfs_root *remap_root;
+>>>>> +     bool sysfs_attrs_removed = false;
+>>>>>          int ret;
+>>>>>          int level;
+>>>>>
+>>>>> @@ -3780,6 +3781,9 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+>>>>> fail_qgroup:
+>>>>>          btrfs_free_qgroup_config(fs_info);
+>>>>> fail_trans_kthread:
+>>>>> +     btrfs_sysfs_remove_mounted_attrs(fs_info);
+>>>>> +     sysfs_attrs_removed = true;
+>>>>> +
+>>>>>          kthread_stop(fs_info->transaction_kthread);
+>>>>>          btrfs_cleanup_transaction(fs_info);
+>>>>>          btrfs_free_fs_roots(fs_info);
+>>>>> @@ -3793,7 +3797,9 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+>>>>>          filemap_write_and_wait(fs_info->btree_inode->i_mapping);
+>>>>>
+>>>>> fail_sysfs:
+>>>>> -     btrfs_sysfs_remove_mounted(fs_info);
+>>>>> +     if (!sysfs_attrs_removed)
+>>>>> +             btrfs_sysfs_remove_mounted_attrs(fs_info);
+>>>>> +     btrfs_sysfs_remove_mounted_kobjects(fs_info);
+>>>>>
+>>>>> fail_fsdev_sysfs:
+>>>>>          btrfs_sysfs_remove_fsid(fs_info->fs_devices);
+>>>>> @@ -4318,6 +4324,9 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+>>>>>
+>>>>>          set_bit(BTRFS_FS_CLOSING_START, &fs_info->flags);
+>>>>>
+>>>>> +     /* Drain sysfs callbacks before stopping the transaction kthread. */
+>>>>> +     btrfs_sysfs_remove_mounted_attrs(fs_info);
+>>>>> +
+>>>>>          /*
+>>>>>          * If we had UNFINISHED_DROPS we could still be processing them, so
+>>>>>          * clear that bit and wake up relocation so it can stop.
+>>>>> @@ -4538,7 +4547,7 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+>>>>>                            percpu_counter_sum(&fs_info->ordered_bytes));
+>>>>>
+>>>>> -     btrfs_sysfs_remove_mounted(fs_info);
+>>>>> +     btrfs_sysfs_remove_mounted_kobjects(fs_info);
+>>>>>          btrfs_sysfs_remove_fsid(fs_info->fs_devices);
+>>>>>
+>>>>>          btrfs_put_block_group_cache(fs_info);
+>>>>>
+>>>>> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+>>>>> index 0d14570c8bc2..d90d76a152e9 100644
+>>>>> --- a/fs/btrfs/sysfs.c
+>>>>> +++ b/fs/btrfs/sysfs.c
+>>>>> @@ -1707,11 +1707,23 @@ static void btrfs_sysfs_remove_fs_devices(struct btrfs_fs_devices *fs_devices)
+>>>>>          }
+>>>>> }
+>>>>>
+>>>>> -void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
+>>>>> +/*
+>>>>> + * Remove attributes which may have store callbacks. kernfs waits for active
+>>>>> + * callbacks during removal, so this must be done before stopping any kthread
+>>>>> + * which can be woken up by those callbacks.
+>>>>> + */
+>>>>> +void btrfs_sysfs_remove_mounted_attrs(struct btrfs_fs_info *fs_info)
+>>>>> {
+>>>>>          struct kobject *fsid_kobj = &fs_info->fs_devices->fsid_kobj;
+>>>>>
+>>>>> -     sysfs_remove_link(fsid_kobj, "bdi");
+>>>>> +     addrm_unknown_feature_attrs(fs_info, false);
+>>>>> +     sysfs_remove_group(fsid_kobj, &btrfs_feature_attr_group);
+>>>>> +     sysfs_remove_files(fsid_kobj, btrfs_attrs);
+>>>>> +}
+>>>>> +
+>>>>> +static void btrfs_sysfs_remove_mounted_dirs(struct btrfs_fs_info *fs_info)
+>>>>> +{
+>>>>> +     sysfs_remove_link(&fs_info->fs_devices->fsid_kobj, "bdi");
+>>>>>
+>>>>>          if (fs_info->space_info_kobj) {
+>>>>>                sysfs_remove_files(fs_info->space_info_kobj, allocation_attrs);
+>>>>> @@ -1730,9 +1742,18 @@ void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
+>>>>>                kobject_put(fs_info->debug_kobj);
+>>>>>          }
+>>>>> #endif
+>>>>> -     addrm_unknown_feature_attrs(fs_info, false);
+>>>>> -     sysfs_remove_group(fsid_kobj, &btrfs_feature_attr_group);
+>>>>> -     sysfs_remove_files(fsid_kobj, btrfs_attrs);
+>>>>> +}
+>>>>> +
+>>>>> +void btrfs_sysfs_remove_mounted_kobjects(struct btrfs_fs_info *fs_info)
+>>>>> +{
+>>>>> +     btrfs_sysfs_remove_mounted_dirs(fs_info);
+>>>>> +     btrfs_sysfs_remove_fs_devices(fs_info->fs_devices);
+>>>>> +}
+>>>>> +
+>>>>> +void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
+>>>>> +{
+>>>>> +     btrfs_sysfs_remove_mounted_dirs(fs_info);
+>>>>> +     btrfs_sysfs_remove_mounted_attrs(fs_info);
+>>>>>          btrfs_sysfs_remove_fs_devices(fs_info->fs_devices);
+>>>>> }
+>>>>>
+>>>>> diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
+>>>>> index 05498e5346c3..0d008fc8f1b8 100644
+>>>>> --- a/fs/btrfs/sysfs.h
+>>>>> +++ b/fs/btrfs/sysfs.h
+>>>>> @@ -35,6 +35,9 @@ void btrfs_kobject_uevent(struct block_device *bdev, enum kobject_action action)
+>>>>> int __init btrfs_init_sysfs(void);
+>>>>> void __cold btrfs_exit_sysfs(void);
+>>>>> int btrfs_sysfs_add_mounted(struct btrfs_fs_info *fs_info);
+>>>>> +void btrfs_sysfs_remove_mounted_attrs(struct btrfs_fs_info *fs_info);
+>>>>> +void btrfs_sysfs_remove_mounted_kobjects(struct btrfs_fs_info *fs_info);
+>>>>> void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info);
+>>>>> void btrfs_sysfs_add_block_group_type(struct btrfs_block_group *cache);
+>>>>> int btrfs_sysfs_add_space_info_type(struct btrfs_space_info *space_info);
 

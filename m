@@ -1,126 +1,135 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12AA42F25F3;
-	Fri, 21 Aug 2026 17:50:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1592D2C3251
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2026 18:18:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787334610; cv=none; b=IDxUhkV4pHWIKKEBMkoGDT0Ps7LvZUTHiRnBDErbFYxwBNyTUM3YzWQwtTfeKeb3LBJtsPRz03VfymN0PeWEc0h653Z0VbOiQVuY5+gYD0jifQ0ihzmXQ3+z08dcdfMa7XRm73BCQ9NRfZomtQZmr+cawxUwQpYOkb19jZMKV38=
+	t=1787336325; cv=none; b=W1Vt+g5HdYRIVsJxIcLTsI2llo5uncWZg9V0rAp0VD2T7LyYTt9s+LdrnHjPOfiPfeW6g6no6l760VKBawawC8rlAW5N7r8cBUxu3uA5HZS2Wsf52aIhvAoCiIYQiWCRiBah9O4csCIxGVMqX5BkEj7n/S+JqjARcAeiLf2Itz0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787334610; c=relaxed/simple;
-	bh=qBRAP/zPKkWC5geneX3MxsfJLoCV68O96ybSe6WpbPc=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=lsc5WkCJP2KWVYe6F4UL4Wio+rh4g79yU//ksCuW+dXpBSOZjro7EDr99y+C5gadbcxMXhJRB78sLnpPeIF+l8w9bKuRHjhGkGqgQceqgJFVMewqh/s19uc67AD+qSkrU/DAnqg96jrC6M35VW9N73bwnF2Xcf2qRTPxJCfFpAc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=U4N5c+7e; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1787336325; c=relaxed/simple;
+	bh=wdL5Pa5ogdkQDkpWOwr27FcsAWbzaPofpZokr2JuCfA=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=cR/JkcjM1xLV8aEOFFa4046o4pt5KsQ4++u2td354xcGcZNW84IT/KcjVCdXpCdpoWfbCfwPAwObo7RHHKjPj42UnJktt7syak7kVKaDPgO4TrljC73mDhoHZixmdmYUQbdJxU93l2nDuPUEt11wFl5t+3SjGceVYNhyTENCO7o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MKxTQfH5; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="U4N5c+7e"
-Received: by smtp.kernel.org (Postfix) with ESMTPS id 88D0FC2BCF4;
-	Fri, 21 Aug 2026 17:50:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1787334609;
-	bh=qBRAP/zPKkWC5geneX3MxsfJLoCV68O96ybSe6WpbPc=;
-	h=From:Date:Subject:To:Cc:Reply-To:From;
-	b=U4N5c+7efnyReKSb8y1O0ykmCDLIcqf0jw+5e7TdCb6O6Y77g6+WhyrsdBJlB/GFq
-	 AOiFACr8AUa9JfrN9EnIUs0f8LkOBUxXUsM1VAM+pLyVOZ68kkSLhJYZXiWPZQ3OVO
-	 BNpq3L569UQNMmfazeVzdgJRnFRG4B/hL413neL2QwO2cM7MtT8h8pTLx2Zay/dotV
-	 l0PQ6sf1MsI2tQK5VDVw7rw1a4fv7XXBpd0T45PtNAXSNW2PMLkwjw/c08gEWM0G6W
-	 gJsGsHl3Nu/e9G0kJySvK74o1Hdjq2QIWCwF61mZhAGik0s39MXuACSEs7Wj2DIkNB
-	 JC4LGRmwWYm7g==
-Received: from aws-us-west-2-korg-lkml-1.web.codeaurora.org (localhost.localdomain [127.0.0.1])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 60275C5DF7D;
-	Fri, 21 Aug 2026 17:50:09 +0000 (UTC)
-From: FAN YE via B4 Relay <devnull+fy15309206903.gmail.com@kernel.org>
-Date: Fri, 21 Aug 2026 17:50:09 +0000
-Subject: [PATCH] btrfs: zstd: fix lost wakeup when waiting for a workspace
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MKxTQfH5"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BEF721F00A3A
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2026 18:18:43 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1787336323;
+	bh=ZL0s2DLV1CIOMc1XLoOqTvlIbkQDNzFoLp7ohizLdoA=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=MKxTQfH5km1TQOybfqcB6Ca1ZoYy5RfR+AJEXKNV3vo+X/iDoA9kg6FmCSoiPLZX5
+	 e63vRDTFUobJ/3wKtHyLJRW3R1OEnR6VEJE5edYluiE10zqWAZ0yQh57elSZQjYKJS
+	 c0pweMvsPLXdXCvtYUPdU9eHZBwS4CX/6iyzxAMyvqtLmL9VIVfywWul1y6gVasumP
+	 gEQKDkZKPaim73i2BtqOS0C9caWS4VlYmYpKVX0LKpU+yNmGouTtySHKizPlYthITP
+	 VdZJji3UPG8hi5PNkpnzhUHoo67kz4iyzqSdjad3IVvUWzn7YwA+l3vjfctIVU6+Nb
+	 YYe7T5/Me2ugA==
+Received: by mail-ua1-f45.google.com with SMTP id a1e0cc1a2514c-97bf910aa70so344475241.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2026 11:18:43 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AHgh+RpMleyfzdE2d1lRkcp55X6CcXm9JlcFvLCdSgZgSQfoKWuZDq92/Xy1wnEkrC4QwpHSE1tZQ/Z80YN2Cg==@vger.kernel.org
+X-Gm-Message-State: AFuF++kGmR7YZgvKS39IMffR47d3omEnKnnLoVmoZSv37xF+CiF72SD/
+	vf0b/CMY/1fliabUcskaRvpKhCA7pXISYwCHpbyK+Qa+LpyZZLCzEbgNeqAkkqBic6xwW2hRUlU
+	GC+tKwOCUak0C2YgjFNo+mCI2dM5N1E0=
+X-Received: by 2002:a05:6102:d89:b0:77b:b14e:b6c8 with SMTP id
+ ada2fe7eead31-77bd3c8ae42mr92653137.14.1787336323009; Fri, 21 Aug 2026
+ 11:18:43 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260821-btrfs-zstd-lost-wakeup-v1-1-84f358d4ea67@gmail.com>
-X-B4-Tracking: v=1; b=H4sIANCPiGoC/yXMQQ6CMBBG4auQWTNJaaJpvIphQelfGTRAOgWNh
- Ltbdfkt3ttJkQRKl2qnhE1U5qmgqSvqh266gSUUkzX2bJxt2OcUld+aAz9mzfzs7lgXNt4AziG
- cbKQSLwlRXr/xtf1bVz+iz98bHccHfodvq3oAAAA=
-X-Change-ID: 20260821-btrfs-zstd-lost-wakeup-0b0ee88ed52f
-To: Nick Terrell <terrelln@fb.com>, David Sterba <dsterba@suse.com>, 
- Chris Mason <clm@fb.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-X-Mailer: b4 0.15.2
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1787334608; l=2450;
- i=fy15309206903@gmail.com; s=tbnet3; h=from:subject:message-id;
- bh=xjp6D6qYqD4sH3kdwjEXE5HNqQTOU/ZER6nYWo6V4fQ=;
- b=oTTEQiFrnwMvoXn6fNy305piYFD2kAgBKEWI3a4LR68vmuRFhjQ3gPNrWLMMFB9ruLR1wrtcj
- ocnfgNU0kM1DLvZJQR3U4RfhCOpo5fw/Qa3rc1mt5LtUDt8uwhljYhs
-X-Developer-Key: i=fy15309206903@gmail.com; a=ed25519;
- pk=6QsQIrI/kruYWIJyCH9ntPMXsHCqF5JtK/DCMtOCzdc=
-X-Endpoint-Received: by B4 Relay for fy15309206903@gmail.com/tbnet3 with
- auth_id=929
-X-Original-From: FAN YE <fy15309206903@gmail.com>
-Reply-To: fy15309206903@gmail.com
+References: <20260821-b4-btrfs-em-shrinker-v1-1-286f3fb15873@debian.org>
+ <CAL3q7H4MW6AXhz=EnEawJNU_OEFVqdeXUaivY30cb1Lqxeqdfg@mail.gmail.com> <aohiK3N9IVncuRbI@gmail.com>
+In-Reply-To: <aohiK3N9IVncuRbI@gmail.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Fri, 21 Aug 2026 19:18:07 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H5=9aXtq8P6MF=QRqYMgaKZMsLHcO-VP1x9geATvOdkAg@mail.gmail.com>
+X-Gm-Features: AcwNN1Vu7GocER1Itsun6bNXGmARuYS1N75Gy0dVTOZsdowCNyORUIYLC4SvxNM
+Message-ID: <CAL3q7H5=9aXtq8P6MF=QRqYMgaKZMsLHcO-VP1x9geATvOdkAg@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: skip the extent map tree lock for inodes without
+ extent maps
+To: Breno Leitao <leitao@debian.org>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, fdmanana@suse.com, boris@bur.io, 
+	wqu@suse.com, layton@kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, kernel-team@meta.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-From: FAN YE <fy15309206903@gmail.com>
+On Fri, Aug 21, 2026 at 5:07=E2=80=AFPM Breno Leitao <leitao@debian.org> wr=
+ote:
+>
+> Hello Filipe,
+>
+> On Fri, Aug 21, 2026 at 12:17:26PM +0100, Filipe Manana wrote:
+> > On Fri, Aug 21, 2026 at 11:39=E2=80=AFAM Breno Leitao <leitao@debian.or=
+g> wrote:
+> > > +               if (!READ_ONCE(tree->root.rb_node))
+> >
+> > Please use the proper rbtree api to check if a tree is empty:
+> >
+> > RB_EMPTY_ROOT(&tree->root)
+> >
+> > That's a lot more elegant and hides the use of READ_ONCE().
+> >
+> > But really when there are harmless races, I like to see an explicit
+> > data_race() annotation and a comment about why the race is harmless.
+> >
+> > Nevertheless, first, I would like to know how much the performance
+> > improvement was...
+>
+> Sorry for not posting it earlier.
+>
+> How I got into this: I've found while profiling arm64 production hosts
+> that had high system utilization and : _raw_write_trylock and xa_find
+> dominated, and the callchain pointed at find_first_inode_to_shrink()
+> locking every inode it walks.
+>
+> Looking at the whole the Meta production fleet, the extent map shrinker
+> is ~0.35% of non-idle kernel CPU.  Within it, and attributing callees to
+> their caller, find_first_inode_to_shrink() is ~65% and the
+> write_trylock() it does is ~30% of the whole shrinker. Two thirds of
+> what the shrinker costs is looking for inodes that have anything to
+> shrink, and half of that is a lock we do not need to take.
+>
+>
+> micro benchmarks
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+>
+> I've hacked up a 6 GiB btrfs on a loop device, 100000 empty files
+> kept open, plus 200 1 MiB files created last, so they have the highest
+> inode numbers and every scan has to walk all the empty ones first.
+>
+> Each round drops the page cache, re-reads the data files to recreate the
+> extent maps, then triggers the shrinker with "echo
+> 2 > /proc/sys/vm/drop_caches". 15 rounds per run, arm64 (Neoverse V2),
+> 8 CPUs, no lock debugging, cost of find_first_inode_to_shrink() from the
+>  ftrace function profiler:
+>
+>   ns per inode walked, median of runs
+>
+>                           base   patched    delta
+>     idle                  46.4      40.1   -13.6%
+>     4 concurrent readers  47.8      38.4   -19.7%
+>
+> A separate build with CONFIG_LOCK_STAT, same test, for the extent map
+> tree rwlock.  Note the shrinker is not the only user of that lock, every
+> extent map insert and lookup takes it too, which is why the acquisition
+> count drops by two thirds rather than to nothing:
+>
+>                               base   patched    delta
+>     write acquisitions      628016    228000   -63.7%
+>     hold time total (us)     47512     22717   -52.2%
+>     acq cacheline bounces     1574      1288   -18.2%
+>
+> Does it help?
 
-A writer can sleep forever in zstd_get_workspace() even though a workspace
-is free.  When zstd_alloc_workspace() fails, the task is queued on
-zwsm->wait and schedules unconditionally, never re-testing the pool.
-zstd_put_workspace() publishes the workspace and then calls cond_wake_up(),
-which only wakes when a sleeper is already visible, so a workspace returned
-between the failed allocation and prepare_to_wait() wakes nobody.  The
-window is wide: zstd_alloc_workspace() goes through kvmalloc() and may
-enter reclaim.
+Yes, and all that should be in the changelog.
 
-Only a max level workspace triggers the wakeup and one is deliberately kept
-allocated as the fallback every waiter waits for, so once its wakeup is
-lost the writer stays in TASK_UNINTERRUPTIBLE until some other task happens
-to return one.  Re-check the pool after prepare_to_wait() has published the
-waiter, and use the workspace if one turned up.
-
-Fixes: 3f93aef535c8 ("btrfs: add zstd compression level support")
-Assisted-by: Claude:claude-opus-5
-Signed-off-by: FAN YE <fy15309206903@gmail.com>
----
-Reproduced under QEMU/TCG: CONFIG_FAULT_INJECTION_STACKTRACE_FILTER forces
-zstd_alloc_workspace() to fail exactly once and widens the pre-wait window
-to 400ms while six concurrent zstd:15 writers race it. Unpatched, a
-btrfs-delalloc kworker hangs in zstd_get_workspace()'s schedule() (hung_task
-warning, >120s); the identical race against the patched code does not hang.
-Compile-tested (W=1, x86_64 defconfig + CONFIG_BTRFS_FS=y).
----
- fs/btrfs/zstd.c | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-index 86919293fd54..cb15cbd737c4 100644
---- a/fs/btrfs/zstd.c
-+++ b/fs/btrfs/zstd.c
-@@ -307,8 +307,17 @@ struct list_head *zstd_get_workspace(struct btrfs_fs_info *fs_info, int level)
- 		DEFINE_WAIT(wait);
- 
- 		prepare_to_wait(&zwsm->wait, &wait, TASK_UNINTERRUPTIBLE);
--		schedule();
-+		/*
-+		 * Re-check after being queued: zstd_put_workspace() only
-+		 * wakes a queue that already has a sleeper, so a workspace
-+		 * returned since the failed allocation woke nobody.
-+		 */
-+		ws = zstd_find_workspace(fs_info, level);
-+		if (!ws)
-+			schedule();
- 		finish_wait(&zwsm->wait, &wait);
-+		if (ws)
-+			return ws;
- 
- 		goto again;
- 	}
-
----
-base-commit: 531ed942bb0df04f6747983fecdedce76a22d07f
-change-id: 20260821-btrfs-zstd-lost-wakeup-0b0ee88ed52f
-
-Best regards,
---  
-FAN YE <fy15309206903@gmail.com>
-
-
+Thanks.
+>
+> Thanks for the quick reply,
+> --breno
+>

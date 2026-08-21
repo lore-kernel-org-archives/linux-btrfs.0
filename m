@@ -1,140 +1,124 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C6F5F372B5E;
-	Fri, 21 Aug 2026 16:02:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 692A736A37E;
+	Fri, 21 Aug 2026 16:07:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787328140; cv=none; b=WbYu9lWnvlJADZtDZUs9aVwxnwIHE5Tw2Wx4JTnJmzGdBj19C4LqWhX1HEvdXR1Jyit6m8gWtL/lRecgGWa+Ewnpuh6OkDMOThQhY3bUwTDFNcm/UFqgAo/1iZadwxXV3vBg1W1TQAbs/J1XMjnl2KKhn+36BUbguch5kZE5vfU=
+	t=1787328458; cv=none; b=b/lXv0bg3INfHZaGM9/o7y7EIwMkBf57TE97nQQ1oAAT5SXyIoa+nvPokAQN/O6Ly8BowK5EyGRaHIcml7FeFEF34pSgpXXwsznnGf9AWtOZpVcM+N6OsTkcUfnH87eQWQ6MGTgkV+BebRB104dLn7nFidk2HuvDwsXPzp+7fMo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787328140; c=relaxed/simple;
-	bh=ESkC3Rde5D8pov44/P5BrSIGRORhcM94NLbqclr1hYY=;
+	s=arc-20240116; t=1787328458; c=relaxed/simple;
+	bh=hu2EuQi3O1U0NVE3JAsp3PlZXH5sAd5GXRgTLfAmxys=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=hxsj+Zl1jtJ4wCtbZjngYlHr1+rnVbyLdPUsyIoRwtE1THQ5otCLQL1h86MqGlEyQpiq7bqtP7yRIpZXa3u34YWs+HXX7N4pqvyPC6dQKzQc3robFO1sUIQ7ABsaaNja9w/kltKM42cClIANFyBm3Me6KZoDo+N10ZKUGFoBZL8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=nfq2oyeB; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=qsziZ4Nc; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Nxvamtne; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=XYvBlyCw; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	 Content-Type:Content-Disposition:In-Reply-To; b=cqEis5HoihFK1UW0DfncL80cgpo7y3UE6Z5oLatHUPFYSe6pghhAhQitBXGoUDuwtMQAgndhN2ys2rhXO0W8UFelMArM6FO1IrNDFJFCrDql3OzL6EVPQoZjAcQhHxp+UA5vpku6AQfEfb6tRI+kviT5wgP25xYruNFSkYwMSy8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org; spf=pass smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=tVoubcx2; arc=none smtp.client-ip=82.195.75.108
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=debian.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="nfq2oyeB";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="qsziZ4Nc";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Nxvamtne";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="XYvBlyCw"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 7DAAF3F63;
-	Fri, 21 Aug 2026 16:02:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1787328126;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=7ijhBKBq6y9Jmu20hK56ZxvM19gWHEFBKJAIe3E584U=;
-	b=nfq2oyeB1HCwb2FFncMrUDFB55u0Bo2aRPwVeK+R0FmdR4AZRB/svjC0wHRy/KFPrhFIPP
-	1bqebu42+Keo0kAfdpyUur9oUiKYp7Dea8tDficL4cU2EVMFn0FsIus9hWNWVSRfsASyaB
-	GyWXO1VUhB4ANmyA4QdJRUwlzUOVutI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1787328126;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=7ijhBKBq6y9Jmu20hK56ZxvM19gWHEFBKJAIe3E584U=;
-	b=qsziZ4Nc6lUraMwsK49oIP+C6hLMoK1Ewpcf4fwk4Nqf7GyU//uOufSVgZDHyX/Y5UjpoF
-	2S+lDoDYKsfCwZDw==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1787328122;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=7ijhBKBq6y9Jmu20hK56ZxvM19gWHEFBKJAIe3E584U=;
-	b=NxvamtneCvh2QUd7D1ZfZ7uPUphMQRCfBC/kJwS0xfA+yK5nWYzLJTYkOQbJV1qBiR8j/W
-	iD0ja4Vv04ul+uCjSHvYnCtcfg3qKDkpFX7uxYzhCtbSFpbKUQND+9Ho0a/67XefTJQbtN
-	u893+tNcu7QNzhEuzniK1dKhMzrZx80=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1787328122;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=7ijhBKBq6y9Jmu20hK56ZxvM19gWHEFBKJAIe3E584U=;
-	b=XYvBlyCwxmP3DUbCnUjEw2pc+fVKxR0S3ryN3HZCkEhjNtKJqr1MpJIW5Q2FqOe5DNnsom
-	RRKguKCKzxawUoAA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 666DF26F8;
-	Fri, 21 Aug 2026 16:02:02 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id AZTVGHp2iGouKwAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Fri, 21 Aug 2026 16:02:02 +0000
-Date: Fri, 21 Aug 2026 18:02:01 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Yichong Chen <chenyichong@uniontech.com>
-Cc: clm@fb.com, dsterba@suse.com, boris@bur.io, willy@infradead.org,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v5] btrfs: retry verity reads for not-uptodate Merkle
- folios
-Message-ID: <20260821160201.GC9053@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20260817054837.1740374-1-chenyichong@uniontech.com>
+	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="tVoubcx2"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:In-Reply-To:Content-Transfer-Encoding:
+	Content-Type:MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:
+	Reply-To:Content-ID:Content-Description;
+	bh=5UiZnvCnxPJ4A5JsUpA0UPmyeavl+DHNrDKIttVzZBE=; b=tVoubcx2sa8vfW7la9ik/a2IVt
+	FAACyelQ/Wuy7fKk6oPRLBY4m8eMMz2tuYhj0Z3jt5meRh1Qxv+YLcJiUje/sBB1dISP7F8+DChHg
+	9OAiPbeqst0jCJG6AjxEc/tjB03f1Gue9vqUEgu08K3eB0qmyUbgH+ToaHRwHJ7GmCiNhXMw4f5dL
+	XSPDGzrcHAsVgav+dLoeSbTHDxvITjezcXYGoLii3UvEhZp6jQN4o/00xk2kk3DtWbjpi/2mEpUBT
+	jh8rTRvgtbCqYYHvf18B3IgzV50cw+xA1L9pcGooqMDIYxXETkkk67T0y0L1ovC8POlCWwQYEoDRu
+	YTiCKNkA==;
+Received: from authenticated-user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.96)
+	(envelope-from <leitao@debian.org>)
+	id 1wxRmC-00BSM8-0e;
+	Fri, 21 Aug 2026 16:07:28 +0000
+Date: Fri, 21 Aug 2026 09:07:23 -0700
+From: Breno Leitao <leitao@debian.org>
+To: Filipe Manana <fdmanana@kernel.org>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
+	fdmanana@suse.com, boris@bur.io, wqu@suse.com, layton@kernel.org, 
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, kernel-team@meta.com
+Subject: Re: [PATCH] btrfs: skip the extent map tree lock for inodes without
+ extent maps
+Message-ID: <aohiK3N9IVncuRbI@gmail.com>
+References: <20260821-b4-btrfs-em-shrinker-v1-1-286f3fb15873@debian.org>
+ <CAL3q7H4MW6AXhz=EnEawJNU_OEFVqdeXUaivY30cb1Lqxeqdfg@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20260817054837.1740374-1-chenyichong@uniontech.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spamd-Result: default: False [-3.98 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.18)[-0.906];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_SEVEN(0.00)[7];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.cz:replyto];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -3.98
-X-Spam-Level: 
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAL3q7H4MW6AXhz=EnEawJNU_OEFVqdeXUaivY30cb1Lqxeqdfg@mail.gmail.com>
+X-Debian-User: leitao
 
-On Mon, Aug 17, 2026 at 01:48:37PM +0800, Yichong Chen wrote:
-> btrfs_read_merkle_tree_page() can find a folio in the mapping that is not
-> uptodate.  After taking the folio lock, the current code treats that state
-> as a read error and returns -EIO.
-> 
-> That can make a previous transient read failure sticky.  If the failed read
-> left a not-uptodate folio in the mapping, later callers find that folio and
-> fail instead of retrying the read.
-> 
-> Keep the existing page-cache insertion and locking order, but retry the
-> Merkle item read when a not-uptodate folio is found in the mapping.  Also
-> unlock the folio when read_key_bytes() fails so that a later caller can
-> lock it and retry the read.
-> 
-> Reviewed-by: Boris Burkov <boris@bur.io>
-> Signed-off-by: Yichong Chen <chenyichong@uniontech.com>
-> ---
-> v5:
-> - Drop the Fixes tag, as Matthew pointed out that 06ed09351b67 did not
->   introduce the original !uptodate-page handling.
+Hello Filipe,
 
-This was merged as commit 8cc569696dac51 ("btrfs: retry verity reads for
-not-uptodate Merkle folios")
+On Fri, Aug 21, 2026 at 12:17:26PM +0100, Filipe Manana wrote:
+> On Fri, Aug 21, 2026 at 11:39 AM Breno Leitao <leitao@debian.org> wrote:
+> > +               if (!READ_ONCE(tree->root.rb_node))
+> 
+> Please use the proper rbtree api to check if a tree is empty:
+> 
+> RB_EMPTY_ROOT(&tree->root)
+> 
+> That's a lot more elegant and hides the use of READ_ONCE().
+> 
+> But really when there are harmless races, I like to see an explicit
+> data_race() annotation and a comment about why the race is harmless.
+> 
+> Nevertheless, first, I would like to know how much the performance
+> improvement was...
+
+Sorry for not posting it earlier.
+
+How I got into this: I've found while profiling arm64 production hosts
+that had high system utilization and : _raw_write_trylock and xa_find
+dominated, and the callchain pointed at find_first_inode_to_shrink()
+locking every inode it walks.
+
+Looking at the whole the Meta production fleet, the extent map shrinker
+is ~0.35% of non-idle kernel CPU.  Within it, and attributing callees to
+their caller, find_first_inode_to_shrink() is ~65% and the
+write_trylock() it does is ~30% of the whole shrinker. Two thirds of
+what the shrinker costs is looking for inodes that have anything to
+shrink, and half of that is a lock we do not need to take.
+
+
+micro benchmarks
+================
+
+I've hacked up a 6 GiB btrfs on a loop device, 100000 empty files
+kept open, plus 200 1 MiB files created last, so they have the highest
+inode numbers and every scan has to walk all the empty ones first.
+
+Each round drops the page cache, re-reads the data files to recreate the
+extent maps, then triggers the shrinker with "echo
+2 > /proc/sys/vm/drop_caches". 15 rounds per run, arm64 (Neoverse V2),
+8 CPUs, no lock debugging, cost of find_first_inode_to_shrink() from the
+ ftrace function profiler:
+
+  ns per inode walked, median of runs
+
+                          base   patched    delta
+    idle                  46.4      40.1   -13.6%
+    4 concurrent readers  47.8      38.4   -19.7%
+
+A separate build with CONFIG_LOCK_STAT, same test, for the extent map
+tree rwlock.  Note the shrinker is not the only user of that lock, every
+extent map insert and lookup takes it too, which is why the acquisition
+count drops by two thirds rather than to nothing:
+
+                              base   patched    delta
+    write acquisitions      628016    228000   -63.7%
+    hold time total (us)     47512     22717   -52.2%
+    acq cacheline bounces     1574      1288   -18.2%
+
+Does it help?
+
+Thanks for the quick reply,
+--breno
+

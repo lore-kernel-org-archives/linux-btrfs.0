@@ -1,135 +1,104 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from poodle.tulip.relay.mailchannels.net (poodle.tulip.relay.mailchannels.net [23.83.218.249])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1592D2C3251
-	for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2026 18:18:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B0D073F9A0B
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2026 19:42:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=23.83.218.249
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787336325; cv=none; b=W1Vt+g5HdYRIVsJxIcLTsI2llo5uncWZg9V0rAp0VD2T7LyYTt9s+LdrnHjPOfiPfeW6g6no6l760VKBawawC8rlAW5N7r8cBUxu3uA5HZS2Wsf52aIhvAoCiIYQiWCRiBah9O4csCIxGVMqX5BkEj7n/S+JqjARcAeiLf2Itz0=
+	t=1787341381; cv=none; b=FbmhRZb30VMxIDy8F4CRkkbmVIIYLrWSxyOi1vrJ9TrzDhOwT9cYyYOUsG+SGEoiB/H1Q0Z/bEhHBy0wPRz3fJu70udboQCZ+iv2m/hTMrhFIYe426SoeKf7duuaqkzag0P5sWIUZetSxGbt+FyR1Z8UvQy8IoJ2V6zW8eT9dWM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787336325; c=relaxed/simple;
-	bh=wdL5Pa5ogdkQDkpWOwr27FcsAWbzaPofpZokr2JuCfA=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=cR/JkcjM1xLV8aEOFFa4046o4pt5KsQ4++u2td354xcGcZNW84IT/KcjVCdXpCdpoWfbCfwPAwObo7RHHKjPj42UnJktt7syak7kVKaDPgO4TrljC73mDhoHZixmdmYUQbdJxU93l2nDuPUEt11wFl5t+3SjGceVYNhyTENCO7o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MKxTQfH5; arc=none smtp.client-ip=100.103.45.18
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MKxTQfH5"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id BEF721F00A3A
-	for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2026 18:18:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1787336323;
-	bh=ZL0s2DLV1CIOMc1XLoOqTvlIbkQDNzFoLp7ohizLdoA=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=MKxTQfH5km1TQOybfqcB6Ca1ZoYy5RfR+AJEXKNV3vo+X/iDoA9kg6FmCSoiPLZX5
-	 e63vRDTFUobJ/3wKtHyLJRW3R1OEnR6VEJE5edYluiE10zqWAZ0yQh57elSZQjYKJS
-	 c0pweMvsPLXdXCvtYUPdU9eHZBwS4CX/6iyzxAMyvqtLmL9VIVfywWul1y6gVasumP
-	 gEQKDkZKPaim73i2BtqOS0C9caWS4VlYmYpKVX0LKpU+yNmGouTtySHKizPlYthITP
-	 VdZJji3UPG8hi5PNkpnzhUHoo67kz4iyzqSdjad3IVvUWzn7YwA+l3vjfctIVU6+Nb
-	 YYe7T5/Me2ugA==
-Received: by mail-ua1-f45.google.com with SMTP id a1e0cc1a2514c-97bf910aa70so344475241.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2026 11:18:43 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+RpMleyfzdE2d1lRkcp55X6CcXm9JlcFvLCdSgZgSQfoKWuZDq92/Xy1wnEkrC4QwpHSE1tZQ/Z80YN2Cg==@vger.kernel.org
-X-Gm-Message-State: AFuF++kGmR7YZgvKS39IMffR47d3omEnKnnLoVmoZSv37xF+CiF72SD/
-	vf0b/CMY/1fliabUcskaRvpKhCA7pXISYwCHpbyK+Qa+LpyZZLCzEbgNeqAkkqBic6xwW2hRUlU
-	GC+tKwOCUak0C2YgjFNo+mCI2dM5N1E0=
-X-Received: by 2002:a05:6102:d89:b0:77b:b14e:b6c8 with SMTP id
- ada2fe7eead31-77bd3c8ae42mr92653137.14.1787336323009; Fri, 21 Aug 2026
- 11:18:43 -0700 (PDT)
+	s=arc-20240116; t=1787341381; c=relaxed/simple;
+	bh=ajla4zCmyAOFb7noiIUNbn3vmAV3qV2vEoOLFbARnFc=;
+	h=Message-ID:Subject:From:To:Date:Content-Type:MIME-Version; b=q53StHMm8VaHlrcMDyrFsgnHAmzH2QVOQnU2d9xYipVP5hpxP9D/T1jzYls/zVEE+QastrkG9eTbWU9/fCHIVZOwsEgP9p4sn3G9Va8PXZ9k10sactCbdLZfA3wjg91uyuiTj4kEBIVcnrN0lGVAQR4H3FEszXjjuS/uEt8EzjY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org; spf=pass smtp.mailfrom=scientia.org; arc=none smtp.client-ip=23.83.218.249
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=scientia.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=scientia.org
+X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
+Received: from relay.mailchannels.net (localhost [127.0.0.1])
+	by relay.mailchannels.net (Postfix) with ESMTP id 515054C25A7
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2026 19:34:08 +0000 (UTC)
+Received: from cpanel-007-fra.hostingww.com (100-96-5-82.trex-nlb.outbound.svc.cluster.local [100.96.5.82])
+	(Authenticated sender: instrampxe0y3a)
+	by relay.mailchannels.net (Postfix) with ESMTPA id 6A4114C2093
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2026 19:34:07 +0000 (UTC)
+X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MC-Relay: Neutral
+X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MailChannels-Auth-Id: instrampxe0y3a
+X-Imminent-Industry: 24d3a249240cc63c_1787340848166_2939617791
+X-MC-Loop-Signature: 1787340848166:2756503569
+X-MC-Ingress-Time: 1787340848165
+Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
+ [3.69.87.180])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384)
+	by 100.96.5.82 (trex/8.0.2);
+	Fri, 21 Aug 2026 19:34:08 +0000
+Received: from ipbcc0feaa.dynamic.kabel-deutschland.de ([188.192.254.170]:64876 helo=heisenberg.fritz.box)
+	by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.99.5)
+	(envelope-from <calestyo@scientia.org>)
+	id 1wxV09-0000000BlMB-2lsY
+	for linux-btrfs@vger.kernel.org;
+	Fri, 21 Aug 2026 19:34:05 +0000
+Message-ID: <5b5830426d82194331a07b44e9b212958120edbc.camel@scientia.org>
+Subject: after creating a snapshot, subvol can't be remounted ro, but
+ unmounted
+From: Christoph Anton Mitterer <calestyo@scientia.org>
+To: linux-btrfs@vger.kernel.org
+Date: Fri, 21 Aug 2026 21:34:05 +0200
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.56.2-10+b1 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260821-b4-btrfs-em-shrinker-v1-1-286f3fb15873@debian.org>
- <CAL3q7H4MW6AXhz=EnEawJNU_OEFVqdeXUaivY30cb1Lqxeqdfg@mail.gmail.com> <aohiK3N9IVncuRbI@gmail.com>
-In-Reply-To: <aohiK3N9IVncuRbI@gmail.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Fri, 21 Aug 2026 19:18:07 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H5=9aXtq8P6MF=QRqYMgaKZMsLHcO-VP1x9geATvOdkAg@mail.gmail.com>
-X-Gm-Features: AcwNN1Vu7GocER1Itsun6bNXGmARuYS1N75Gy0dVTOZsdowCNyORUIYLC4SvxNM
-Message-ID: <CAL3q7H5=9aXtq8P6MF=QRqYMgaKZMsLHcO-VP1x9geATvOdkAg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: skip the extent map tree lock for inodes without
- extent maps
-To: Breno Leitao <leitao@debian.org>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, fdmanana@suse.com, boris@bur.io, 
-	wqu@suse.com, layton@kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, kernel-team@meta.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+X-AuthUser: calestyo@scientia.org
 
-On Fri, Aug 21, 2026 at 5:07=E2=80=AFPM Breno Leitao <leitao@debian.org> wr=
-ote:
->
-> Hello Filipe,
->
-> On Fri, Aug 21, 2026 at 12:17:26PM +0100, Filipe Manana wrote:
-> > On Fri, Aug 21, 2026 at 11:39=E2=80=AFAM Breno Leitao <leitao@debian.or=
-g> wrote:
-> > > +               if (!READ_ONCE(tree->root.rb_node))
-> >
-> > Please use the proper rbtree api to check if a tree is empty:
-> >
-> > RB_EMPTY_ROOT(&tree->root)
-> >
-> > That's a lot more elegant and hides the use of READ_ONCE().
-> >
-> > But really when there are harmless races, I like to see an explicit
-> > data_race() annotation and a comment about why the race is harmless.
-> >
-> > Nevertheless, first, I would like to know how much the performance
-> > improvement was...
->
-> Sorry for not posting it earlier.
->
-> How I got into this: I've found while profiling arm64 production hosts
-> that had high system utilization and : _raw_write_trylock and xa_find
-> dominated, and the callchain pointed at find_first_inode_to_shrink()
-> locking every inode it walks.
->
-> Looking at the whole the Meta production fleet, the extent map shrinker
-> is ~0.35% of non-idle kernel CPU.  Within it, and attributing callees to
-> their caller, find_first_inode_to_shrink() is ~65% and the
-> write_trylock() it does is ~30% of the whole shrinker. Two thirds of
-> what the shrinker costs is looking for inodes that have anything to
-> shrink, and half of that is a lock we do not need to take.
->
->
-> micro benchmarks
-> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
->
-> I've hacked up a 6 GiB btrfs on a loop device, 100000 empty files
-> kept open, plus 200 1 MiB files created last, so they have the highest
-> inode numbers and every scan has to walk all the empty ones first.
->
-> Each round drops the page cache, re-reads the data files to recreate the
-> extent maps, then triggers the shrinker with "echo
-> 2 > /proc/sys/vm/drop_caches". 15 rounds per run, arm64 (Neoverse V2),
-> 8 CPUs, no lock debugging, cost of find_first_inode_to_shrink() from the
->  ftrace function profiler:
->
->   ns per inode walked, median of runs
->
->                           base   patched    delta
->     idle                  46.4      40.1   -13.6%
->     4 concurrent readers  47.8      38.4   -19.7%
->
-> A separate build with CONFIG_LOCK_STAT, same test, for the extent map
-> tree rwlock.  Note the shrinker is not the only user of that lock, every
-> extent map insert and lookup takes it too, which is why the acquisition
-> count drops by two thirds rather than to nothing:
->
->                               base   patched    delta
->     write acquisitions      628016    228000   -63.7%
->     hold time total (us)     47512     22717   -52.2%
->     acq cacheline bounces     1574      1288   -18.2%
->
-> Does it help?
+Hey.
 
-Yes, and all that should be in the changelog.
+I've experience this for ages and was always too lazy to report it (and
+it's not really big problem anyway):
 
-Thanks.
->
-> Thanks for the quick reply,
-> --breno
->
+That's all one btrfs, with a subvol at <fsroot>/data/ which is mounted
+a / and the <fsroot>/ being a noauto,ro mountpoint at /data/system/.
+
+
+root@heisenberg:~# mount /data/system/
+root@heisenberg:~# cd /data/system/
+root@heisenberg:/data/system# btrfs subvolume snapshot -r data/ snapshots/d=
+ata/2026-08-21_1_live/
+ERROR: Could not create subvolume: Read-only file system
+root@heisenberg:/data/system# mount -o remount,rw /data/system/
+root@heisenberg:/data/system# btrfs subvolume snapshot -r data/ snapshots/d=
+ata/2026-08-21_1_live/
+Create readonly snapshot of 'data/' in 'snapshots/data/2026-08-21_1_live/'
+
+After I created a snapshot, I cannot remount,ro it anymore (even if I
+wait longer and try multiple times:
+
+root@heisenberg:/data/system# mount -o remount,ro /data/system/
+mount: /data/system: mount point is busy.
+       dmesg(1) may have more information after failed mount system call.
+
+even if I cd somewhere else:
+
+root@heisenberg:/data/system# cd
+root@heisenberg:~# mount -o remount,ro /data/system/
+mount: /data/system: mount point is busy.
+       dmesg(1) may have more information after failed mount system call.
+
+But what immediately works (even wit cwd /data/system/) is unmounting:
+
+root@heisenberg:~# umount /data/system=20
+root@heisenberg:~#=20
+
+
+No idea whether this might be caused by any higher-level stuff (udisks
+or so?) but my intuitive guess was that it might actually be something
+in the fs itself.
+
+Thanks,
+Chris.

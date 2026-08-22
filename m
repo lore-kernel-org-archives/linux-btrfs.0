@@ -1,161 +1,200 @@
-Received: from mail-oi2-f0.google.com (mail-oi2-f0.google.com [74.125.231.192])
+Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 62F443911BC
-	for <linux-btrfs@vger.kernel.org>; Sat, 22 Aug 2026 07:10:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.231.192
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C808B3AA1A8
+	for <linux-btrfs@vger.kernel.org>; Sat, 22 Aug 2026 08:01:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787382635; cv=none; b=awX9PcL3fCjH2VIeBMARZPJbly4Yu9OH7rH89Fc9/nJGmYxYz9CYck0V/UfpTk4KcKkv3fyCIj0tYWGHaCQJtPvPYY+KU1bXiwe2e35eCZLb/+UVhOOMNwxFnBvDKoNS+Xxw/bet2OB/RtZUiaB6pvBGmSx87hrmDjncDuA1FGk=
+	t=1787385699; cv=none; b=sT7U/WCMd1s8BvbKty8i+urFjy3JuLLnHP8p1tX94GoMtGlpDC68653J6+NM/JKvSVJkj1XAFztB2q1k8cujZKPR2kInJPQuHWdW+M1qQGvUOxz007f6txfuRlvGb6q0h1vCp/8hSfIPWdqDlz4dJUA9vO0cKWkryHbonhFQPCQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787382635; c=relaxed/simple;
-	bh=g8qD+/nbafJHmB8BnjqLYYSuUZxAMb9kyq4e1RhozAI=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=C+TqwhqfUic4OZv1mcyQoBtPPwR39nIL/jBiOUyqxmKz7fkAPG67YsIRKv+6lkUq+bnxUhAC23rMKZxVy5fqHqNHbi+ujLHSucxRT+m6biaALG88YVLM7lsHFVgmc6i8683fL0Tq/t8RhgMY95DuYZLMZY2dseIk4FcyDPMDdNg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=74.125.231.192
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oi2-f0.google.com with SMTP id 5614622812f47-4a41b6fb855so666850b6e.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 22 Aug 2026 00:10:33 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787382632; x=1787987432;
-        h=content-type:to:from:subject:message-id:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+	s=arc-20240116; t=1787385699; c=relaxed/simple;
+	bh=LEythSh93ur+JuZh7bNhyBxjlDajGTMWB4vMIXkoXQs=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=rzYy6/Oa2HwdJg2MQO62WMvcT+kiV+vDzlNbPCKhusCoFULSI3dl+8j5t94D9rfwdmitle0ggerZ0tX/N+9fIeqdygwmjQunmecWoQHWpR0scZBZueNAGH3skj91tW/RRvTrv9ohUc2wDZklBXpufjXCQ1Ca0PtZMpn+M27CLt4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=RwxhK/MJ; arc=none smtp.client-ip=209.85.128.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="RwxhK/MJ"
+Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4998590d392so2001445e9.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 22 Aug 2026 01:01:36 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1787385695; x=1787990495; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=mZK3Wwe/U3EyWXFyrC6hRry4OWkpYni0+DKxaeISK7o=;
-        b=PdgUYmzb6oVAw6ZpPS0Vv/eBjEO8y3qjovKMhqbw7t6LOTtlO6dyjtU0TfOrOGnSik
-         wk/OlTjVBwa2/8q7tXrhqHv6WyzF62m5tan25Y1riCNmRkveLKwTFu68nOmzi4CTYr3v
-         LBHkV52JO5bMULUdgzXK69clcEHy7/PIcQijv97oXGSHxYstpnMFtFNN6XiEOVE+uw3k
-         ffF0rtvtSOPjpn46WXMIG1HdK1HQFvd62fk8dx23VARvcplO37HfE5nwJhwaXciQTGok
-         WBpiL9vtVSe7WMGjuTD4fXURDBiUbVwqKxKPvTYygUsu+PKbc4THzOgAap3KvX5YJtwh
-         n+QA==
-X-Forwarded-Encrypted: i=1; AHgh+RraApPizfiT4DXpLPLUXs3KzjA5MedlRxV/mbfeYkz9Arr6d2wTUM63K4dQzMEn8Tl7d8xKxRdFqwi/cg==@vger.kernel.org
-X-Gm-Message-State: AFuF++me2EPlb6pROhU/8sj+5qYGKQAKncaN8fpOLi06HJ5utZykFfTT
-	MTtW6qgHUnO07nOzAwYqcUxk5ajQhQQ9ESSwuipx8MtyxIwNGQT+QHKlH4l/kachMzXBnSIa0I8
-	USh/WxXZVd44nBQWL3L5Q1Iqvl79ow2QdXaX2iLZ0fkpLVD2CZVMd5eE9QMo=
+        bh=f6teVtwP/dz97VkrP76nFaD4a1ws+mzZUejjgeL5HNk=;
+        b=RwxhK/MJqISfZb7VGJuUe2VkAcN2MeHgKvtR2xaG+kis2L4kCelSpUT0pShyOaqaOM
+         aVUT/yQ25ZRvV8BPQVzhaaNr9P8JWhqZuDK7kIkGjOV1lg8ADC2b+6qomrVF1Rrg8SFu
+         3+MYexyPrcr+TfVcjqHlxWjLE+Xwfq+EyX4o7IaY04eRzQaPHfsetUEras2uGOQZp8+/
+         Pk+Te4PXUg3gacVyJeK/dbt62YrWxfIaqfi5QZB/+ZDM6v3Rp1IUoEUzoNJ+5JL7jpPr
+         3bJ26sxia+SNA79ip83y7IlGoeCHmRpVnuarhaSyPM5vqr9Oc5LRab9sb71IuypzLi/6
+         ihfg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1787385695; x=1787990495;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=f6teVtwP/dz97VkrP76nFaD4a1ws+mzZUejjgeL5HNk=;
+        b=sFfkh4YEINt6fLjt8u4fivsCM9UGUfexQE/ricYB13QqeR8Qac/a3yf/jCtW1i33sM
+         Mxmd+przB04JwZXAbEjS+z37TBcHG3GHcwkGuxBcEeVDCUQuh5rqdwPTT8vtDsuluNYd
+         rq2LqqkNdjpFARbV5LcFBHfAJBwu0U8FwqovaqYdY6RVB3689bzB+zG4yBaTvP70Xhf5
+         aOhu+4Y9aehizm30YysfiwM0dIAbhFlyJu6ajiW6YMeeDSdh9u4dwDUDXu/jxNLl9513
+         z6Xyi0hX7Jsv9lDybdwQYymNr17AM205i7d4rqkFsnunoq9BmYuJBg8JVDzgokBc2wnV
+         FCtg==
+X-Gm-Message-State: AFuF++l/pGhvPrixpOkmmFXE/KzzlugqJAaSh8anF0TIlN9cNNyHy3LV
+	UanquSDCKagcLikCIl0EoOY78kGJB5qTabPbDH5Rj26bNVZ0XkQu5B3e38IayuI1nivpq1zhyaB
+	06O/ppGw=
+X-Gm-Gg: AR+sD10VhE+zYpH6G08bf9ouLFYO8sUHL42ivz9B2ejMcKiawCfBqio3nPx6Z5bmU/a
+	SOedp1jCnqRJ/A5dnRGsPCtEr09WGGdpdTiBNXxjxwLKCEQlucbeI8T7Fr/SkY5Hh4+LqPQHxX8
+	MBvnAbw9ULj52/ZlNgDY8B0cQoKDjLcLRAakFb/akucyKn8DGsgdZkSlsinq/eM/1PA+Z32540s
+	rpwaH8Y1R+PRI3edcjXpeuQkKXMsqFM8qkRKE7yPz7ut4FP5aTwSOZ9zJRC/DkZ+WB6IibajA1P
+	vhywyY9M9pN3McG4BWOcAyCjsYQOIvfIS2FSvy79ZkzrFLargYwIHI8RK2ySuGk/5wF/DsXmth0
+	hoK/taWzSxZ4a5SenJxK7IOD5snSO/oqkg5spYHb9aqm3kYspJHhcpAYGLFpnxO4Qi8L1JNZ4xP
+	G0kw2tP4kyUS0uTH8iWCNHAkZTWQKPK6uaAIX5s/lsYk1KUO8B8UWFDA==
+X-Received: by 2002:a05:600c:8b16:b0:495:52a5:8829 with SMTP id 5b1f17b1804b1-499b8343dd3mr132988015e9.11.1787385694829;
+        Sat, 22 Aug 2026 01:01:34 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-395e4b46518sm1961697a91.17.2026.08.22.01.01.29
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sat, 22 Aug 2026 01:01:32 -0700 (PDT)
+Message-ID: <217f5236-e34d-46bb-97d7-2429f7a74ff6@suse.com>
+Date: Sat, 22 Aug 2026 17:31:26 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6808:1b0c:b0:48a:ddd4:d36f with SMTP id
- 5614622812f47-4b2ef33a8d5mr12675998b6e.8.1787382632160; Sat, 22 Aug 2026
- 00:10:32 -0700 (PDT)
-Date: Sat, 22 Aug 2026 00:10:32 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a894b68.ae6ddae5.3da009.0051.GAE@google.com>
-Subject: [syzbot] [btrfs?] WARNING in do_nonremap_reloc
-From: syzbot <syzbot+ee138e182230b96006c6@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
-
-Hello,
-
-syzbot found the following issue on:
-
-HEAD commit:    0f23d56f17fd Merge tag 'linux_kselftest-next-7.3-rc1' of g..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=163fb679580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=71fc77aa899cc4af
-dashboard link: https://syzkaller.appspot.com/bug?extid=ee138e182230b96006c6
-compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
-
-Unfortunately, I don't have any reproducer for this issue yet.
-
-Downloadable assets:
-disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-0f23d56f.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/f14e4b85231d/vmlinux-0f23d56f.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/824989a16f1e/bzImage-0f23d56f.xz
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+ee138e182230b96006c6@syzkaller.appspotmail.com
-
-loop0: detected capacity change from 0 to 32768
-btrfs: Deprecated parameter 'usebackuproot'
-BTRFS warning: 'usebackuproot' is deprecated, use 'rescue=usebackuproot' instead
-BTRFS: device fsid c9fe44da-de57-406a-8241-57ec7d4412cf devid 1 transid 8 /dev/loop0 (7:0) scanned by syz.0.0 (5310)
-BTRFS info (device loop0): first mount of filesystem c9fe44da-de57-406a-8241-57ec7d4412cf
-BTRFS info (device loop0): using crc32c checksum algorithm
-BTRFS error (device loop0): failed to load root extent
-BTRFS warning (device loop0): try to load backup roots slot 1
-BTRFS warning (device loop0): couldn't read tree root
-BTRFS warning (device loop0): try to load backup roots slot 2
-BTRFS warning (device loop0): couldn't read tree root
-BTRFS warning (device loop0): try to load backup roots slot 3
-BTRFS info (device loop0): rebuilding free space tree
-BTRFS info (device loop0): checking UUID tree
-BTRFS info (device loop0): enabling ssd optimizations
-BTRFS info (device loop0): turning off barriers
-BTRFS info (device loop0): turning on sync discard
-BTRFS info (device loop0): enabling free space tree
-BTRFS info (device loop0): force clearing of disk cache
-BTRFS info (device loop0): enabling auto defrag
-BTRFS info (device loop0): trying to use backup root at mount time
-BTRFS info (device loop0): use zlib compression, level 3
-BTRFS info (device loop0): max_inline set to 0
-BTRFS info (device loop0): balance: start -d -m
-BTRFS info (device loop0): relocating block group 6881280 flags data|metadata
-BTRFS info (device loop0): relocating block group 5242880 flags data|metadata
-BTRFS info (device loop0): found 7 extents, stage: move data extents
-------------[ cut here ]------------
-rc->block_group->reserved > 0
-WARNING: fs/btrfs/relocation.c:5389 at do_nonremap_reloc+0x53b/0x560 fs/btrfs/relocation.c:5389, CPU#0: syz.0.0/5310
-Modules linked in:
-CPU: 0 UID: 0 PID: 5310 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-RIP: 0010:do_nonremap_reloc+0x53b/0x560 fs/btrfs/relocation.c:5389
-Code: 5d 41 5e 41 5f 5d e9 04 1f b0 07 cc e8 8e e8 9d fd 90 0f 0b 90 80 3c 2b 00 0f 85 57 ff ff ff e9 5a ff ff ff e8 76 e8 9d fd 90 <0f> 0b 90 80 3c 2b 00 75 84 eb 8a e8 65 e8 9d fd 90 0f 0b 90 eb b5
-RSP: 0018:ffffc9000f5b79c8 EFLAGS: 00010283
-RAX: ffffffff84292aba RBX: 1ffff11002447400 RCX: 0000000000100000
-RDX: ffffc9000ec59000 RSI: 00000000000507c1 RDI: 00000000000507c2
-RBP: dffffc0000000000 R08: ffffc9000f5b7947 R09: 1ffff92001eb6f28
-R10: dffffc0000000000 R11: fffff52001eb6f29 R12: 0000000000000000
-R13: ffff88801223a628 R14: 0000000000006000 R15: ffff88801223a000
-FS:  00007f7d4eb846c0(0000) GS:ffff88808c534000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f7d4a1d3fe8 CR3: 000000004508e000 CR4: 0000000000352ef0
-Call Trace:
- <TASK>
- btrfs_relocate_block_group+0x6e2/0xaf0 fs/btrfs/relocation.c:5520
- btrfs_relocate_chunk+0x114/0x810 fs/btrfs/volumes.c:3729
- __btrfs_balance+0x1b5f/0x29d0 fs/btrfs/volumes.c:4668
- btrfs_balance+0xaa6/0x1180 fs/btrfs/volumes.c:5055
- btrfs_ioctl_balance+0x3da/0x640 fs/btrfs/ioctl.c:3481
- vfs_ioctl fs/ioctl.c:51 [inline]
- __do_sys_ioctl fs/ioctl.c:597 [inline]
- __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
- do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]
- do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7f7d4dd9e0d9
-Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007f7d4eb83fe8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-RAX: ffffffffffffffda RBX: 00007f7d4e025fa0 RCX: 00007f7d4dd9e0d9
-RDX: 0000200000000180 RSI: 00000000c4009420 RDI: 0000000000000007
-RBP: 00007f7d4de35024 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-R13: 00007f7d4e026038 R14: 00007f7d4e025fa0 R15: 00007fffd2839a78
- </TASK>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: zstd: fix lost wakeup when waiting for a workspace
+To: fy15309206903@gmail.com, Nick Terrell <terrelln@fb.com>,
+ David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20260821-btrfs-zstd-lost-wakeup-v1-1-84f358d4ea67@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260821-btrfs-zstd-lost-wakeup-v1-1-84f358d4ea67@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
 
----
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+在 2026/8/22 03:20, FAN YE via B4 Relay 写道:
+> From: FAN YE <fy15309206903@gmail.com>
+> 
+> A writer can sleep forever in zstd_get_workspace() even though a workspace
+> is free.  When zstd_alloc_workspace() fails, the task is queued on
+> zwsm->wait and schedules unconditionally, never re-testing the pool.
+> zstd_put_workspace() publishes the workspace and then calls cond_wake_up(),
+> which only wakes when a sleeper is already visible, so a workspace returned
+> between the failed allocation and prepare_to_wait() wakes nobody.  The
+> window is wide: zstd_alloc_workspace() goes through kvmalloc() and may
+> enter reclaim.
+> 
+> Only a max level workspace triggers the wakeup and one is deliberately kept
+> allocated as the fallback every waiter waits for, so once its wakeup is
+> lost the writer stays in TASK_UNINTERRUPTIBLE until some other task happens
+> to return one.  Re-check the pool after prepare_to_wait() has published the
+> waiter, and use the workspace if one turned up.
+> 
+> Fixes: 3f93aef535c8 ("btrfs: add zstd compression level support")
+> Assisted-by: Claude:claude-opus-5
+> Signed-off-by: FAN YE <fy15309206903@gmail.com>
+> ---
+> Reproduced under QEMU/TCG: CONFIG_FAULT_INJECTION_STACKTRACE_FILTER forces
+> zstd_alloc_workspace() to fail exactly once and widens the pre-wait window
+> to 400ms while six concurrent zstd:15 writers race it. Unpatched, a
+> btrfs-delalloc kworker hangs in zstd_get_workspace()'s schedule() (hung_task
+> warning, >120s); the identical race against the patched code does not hang.
+> Compile-tested (W=1, x86_64 defconfig + CONFIG_BTRFS_FS=y).
+> ---
+>   fs/btrfs/zstd.c | 11 ++++++++++-
+>   1 file changed, 10 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+> index 86919293fd54..cb15cbd737c4 100644
+> --- a/fs/btrfs/zstd.c
+> +++ b/fs/btrfs/zstd.c
+> @@ -307,8 +307,17 @@ struct list_head *zstd_get_workspace(struct btrfs_fs_info *fs_info, int level)
+>   		DEFINE_WAIT(wait);
+>   
+>   		prepare_to_wait(&zwsm->wait, &wait, TASK_UNINTERRUPTIBLE);
+> -		schedule();
+> +		/*
+> +		 * Re-check after being queued: zstd_put_workspace() only
+> +		 * wakes a queue that already has a sleeper, so a workspace
+> +		 * returned since the failed allocation woke nobody.
+> +		 */
+> +		ws = zstd_find_workspace(fs_info, level);
+> +		if (!ws)
+> +			schedule();
+>   		finish_wait(&zwsm->wait, &wait);
+> +		if (ws)
+> +			return ws;
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
+This doesn't work.
 
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
+         Thread A (last ws holder)  |       Thread B (new ws user)
+-----------------------------------+--------------------------------
+zstd_put_workspace()               |
+|                                  | zstd_get_workspace()
+|                                  | |- zstd_find_workspace()
+|                                  | |  No WS found
+|                                  | |
+|                                  | |- zstd_alloc_workspace()
+|                                  | |  Allocation failure
+|                                  | |
+|                                  | |- zstd_find_workspace()
+|                                  | |  Still no WS found
+|- spin_lock_bh()                  | |
+|- spin_unlock_bh()                | |
+|- cond_wake_up()                  | |
+    No one is waiting               | |- prepare_to_wait()
+                                    | |- schedule()
+                                    | |- finish_wait()
 
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
+This is the typical LLM behavior, if your human brain can not examine 
+every possibly wrong conclusion/fix from LLM, LLM will only waste time 
+of everyone.
+>   
+>   		goto again;
+>   	}
+> 
+> ---
+> base-commit: 531ed942bb0df04f6747983fecdedce76a22d07f
+> change-id: 20260821-btrfs-zstd-lost-wakeup-0b0ee88ed52f
+> 
+> Best regards,
+> --
+> FAN YE <fy15309206903@gmail.com>
+> 
+> 
+> 
 
-If you want to undo deduplication, reply with:
-#syz undup

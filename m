@@ -1,37 +1,37 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E0A312F5A2D;
-	Sat, 22 Aug 2026 12:45:13 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 43B953A9871;
+	Sat, 22 Aug 2026 14:44:25 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787402714; cv=none; b=Dv/1Z6w+rL88l5YqGoRj4DeMGOBP3IFb+rBY8dfgB7agLe2ioc5vygBtYERx7xlqELsJvcJLXYEZSmmGjnzvMzHEwHeB0scPeGd1W8AeEgwW5zLlh/1YRSruhpjFSAO3adrnEB98M7PN/Pp6QZ56XzrbD0FeWMcXY6IZDmAWEFE=
+	t=1787409865; cv=none; b=OBHQDoCWqdzuMEXZv1m7AkuaegVE1k30hK/Ob5BhQUSDF+EOWxM9JSI3QMJgampZa+IPI0LghZULXQw/RkNbMT/Un4QVrvBWaWp+F8ISaSSGUCTKoaS/omz5iEiXTte6i4fBAMpwqAJaeNW6nBkoG7vn4zwCRV5txRO6hgNTM9A=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787402714; c=relaxed/simple;
-	bh=yzvRjsKxR90qxnWCa8PHtFhp1fCvLrSglV2J1yJyrZ4=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=Tb+eFrbd80y6iBkEn/ovAyXXcNZml7tcC3408nwDi174+XOcVvc2V+NPxMstn1Qjb0eEPqEQBopTdMEb8Y17HQKCjcQfzmEHeae6xF5au7H2Xjhq4qS9KEZAh4ay84vktZyxKQR7WnXZlqc5Huo4UwJ9/dco87LvuV6g54bKXBc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=WSxM5X/h; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1787409865; c=relaxed/simple;
+	bh=BxLYWRy3/Q2ABjND7TcdSXTnzv3SdSgv/uu22EyunEE=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=mU3qbBRYu5ghz83Bl/KGtF3Q5U4ozJsK8evablNTrPqJ/wlEJYCF5NJ057cRpY9VRs3WwrSnahPloBUFCvvOwxS/n2WchJmPwzK8shwT8DSFgmp4UHsAiyBzO5g9bf5WAwhUNYvUG4+CfyEkrNC4EYuYCaubsW7qbaB3G2snPh8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=kWvaO3E7; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="WSxM5X/h"
-Received: by smtp.kernel.org (Postfix) with ESMTPS id 925D9C2BCF6;
-	Sat, 22 Aug 2026 12:45:13 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="kWvaO3E7"
+Received: by smtp.kernel.org (Postfix) with ESMTPS id CCBE3C2BCF6;
+	Sat, 22 Aug 2026 14:44:24 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1787402713;
-	bh=yzvRjsKxR90qxnWCa8PHtFhp1fCvLrSglV2J1yJyrZ4=;
+	s=k20201202; t=1787409864;
+	bh=BxLYWRy3/Q2ABjND7TcdSXTnzv3SdSgv/uu22EyunEE=;
 	h=From:Date:Subject:To:Cc:Reply-To:From;
-	b=WSxM5X/hkVhHewgapI2+g3Fjd4sPR1n7FE6UTLs1ePnYUwAoFZO8+9iowtbCk3NPz
-	 de1VXovXhejX0d3GUrM7qRxAFxycUJwt2VYsFqLDH3mUHAX1kjMyunDtomvBAf7XLK
-	 RNLnjTIUglYaV1y12vH8eovPc8iW3DlreoQ4DX9gSt4wPDdS3e4gQpmeRQMEWrBsJB
-	 a8iC6aB6nyeKNUyrYI6+dBNCcwpnkmxQR7RZiW4PZNRcKLTuwwegKQIO8gJTpmd6GA
-	 9ugKyB8Nn8zlFAgFd9aRTjoTyRP9GDbk9pvnkM4esEDOKOYAbXxddSg9m5rZWmffSO
-	 Dd2ADGH3Q2b5Q==
+	b=kWvaO3E7VGi7rXKRvN9KifCLFbEMkHZipx8sX4lmmmFOpajAuB8BdUBQkRoBmatDs
+	 lJSTWoBpag7Db+hRW/TTxuV2GUjHamvH3qgCgDH9YnIBW85OorjoqTGk83lbW6wItu
+	 JzGLRLoVpMHErICRwOqhTq3cqrdAeFhNOIcfYiAsjrAwGqQxmKWBlMQDthSCCxwHyw
+	 JMouyuQ9VvIkVZLl/AOT+AVdQfAeXTzfxtFly1OFXrexOalch8NdGoxpBcR1/mffnF
+	 TPLyvfGgr8ZGrsDADSBdOLwTc8FOlao/j94gIMtT0ZhIvdgAv730i42hHPFQLBizpj
+	 jBPZWXL8cfLPQ==
 Received: from aws-us-west-2-korg-lkml-1.web.codeaurora.org (localhost.localdomain [127.0.0.1])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7756DC5DF8C;
-	Sat, 22 Aug 2026 12:45:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A6336C5B572;
+	Sat, 22 Aug 2026 14:44:24 +0000 (UTC)
 From: FAN YE via B4 Relay <devnull+fy15309206903.gmail.com@kernel.org>
-Date: Sat, 22 Aug 2026 12:45:13 +0000
-Subject: [PATCH] btrfs: zstd: keep the last max level workspace out of
- reclaim
+Date: Sat, 22 Aug 2026 14:44:24 +0000
+Subject: [PATCH] btrfs: dev-replace: fix missing barrier before waking bio
+ counter waiters
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -40,20 +40,19 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260822-btrfs-zstd-max-level-reclaim-v1-1-0eb13c127480@gmail.com>
-X-B4-Tracking: v=1; b=H4sIANiZiWoC/yXMwQ6CMAwA0F8hPdsEZlD0VwyHbnRaM9C0kxAJ/
- +7U47u8FYxV2OBcraA8i8ljKmh2FYQbTVdGGYrB1e5Qd86hzxoN35YHHGnBxDMnVA6JZMSWfHu
- iYxO7PUMpnspRll9/6f+2l79zyN8Ttu0DoSZbzYAAAAA=
-X-Change-ID: 20260822-btrfs-zstd-max-level-reclaim-5ab59a71f83e
-To: David Sterba <dsterba@suse.com>, Nick Terrell <terrelln@fb.com>, 
- Chris Mason <clm@fb.com>
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Message-Id: <20260822-btrfs-dev-replace-bio-counter-barrier-v1-1-e718ae7d25e5@gmail.com>
+X-B4-Tracking: v=1; b=H4sIAMe1iWoC/yXNQQrCMBBG4auUWTuQxqrFq4iLJP2rI5KUSVqE0
+ rub6vJtvrdShgoyXZuVFItkSbFGe2goPF18gGWoTdbYs+mtZV90zDxgYcX0dgHsJXFIcyxQ9k4
+ rp9w5a+CPp7a/OKrWpBjl8/vc7v/Os38hlB2nbfsCHhFJZokAAAA=
+X-Change-ID: 20260822-btrfs-dev-replace-bio-counter-barrier-4a20eb35187a
+To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 X-Mailer: b4 0.15.2
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1787402712; l=4571;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1787409863; l=2519;
  i=fy15309206903@gmail.com; s=tbnet3; h=from:subject:message-id;
- bh=OtLQ/8I9vVwdtLcOdjYllHgpwfHXTt1umssx95LsQ5I=;
- b=hvDFP+R94dxoHaf3IoWxwvL9AeZaYtUCWHx4GpEe2Xy6GP97zgTjY5NRkQzQV10amzSG4A8ka
- CRDy6eIl4MxAPti7K9F08ZdZYk0rz+UqvtmEh7lc2YVgiiKkP5z/z+w
+ bh=MZdHDlm2NoubleaR5CcL9kU8Zazoy0BZ4w/oT8hYfK4=;
+ b=TYHwrSYqdvBqnyDqX8JTn+QTV8E8AUhK13T1o30O7XM/D5iMY5bgWiWkRW/gme8KV8Tgs/oBj
+ XNps9AtG5l+AK42Jou2+EsVFzhuI0vYWcdj/u575/CbyDfgCrN5JgbT
 X-Developer-Key: i=fy15309206903@gmail.com; a=ed25519;
  pk=6QsQIrI/kruYWIJyCH9ntPMXsHCqF5JtK/DCMtOCzdc=
 X-Endpoint-Received: by B4 Relay for fy15309206903@gmail.com/tbnet3 with
@@ -63,98 +62,53 @@ Reply-To: fy15309206903@gmail.com
 
 From: FAN YE <fy15309206903@gmail.com>
 
-zstd_put_workspace() makes the "hide this workspace from the reclaim timer"
-decision only when the workspace is returned at its own level.
-Decompression always asks for level 0, so a max level workspace borrowed by
-a read skips the whole block and the test for being the last max level
-workspace is never made: it goes back to idle_ws[] still linked on the lru.
-A read borrowing one while a write holds the other is enough to leave every
-max level workspace on the lru, where the reclaim timer can then free them
-all and clear the level bit.
+btrfs_bio_counter_sub() gates the wakeup on cond_wake_up_nomb(), whose
+bare waitqueue_active() requires a full barrier from the preceding code.
+percpu_counter_sub() does not provide one, its fast path is a plain
+per-cpu update, so the waitqueue_active() load can be hoisted over the
+counter update.  btrfs_rm_dev_replace_blocked() waits for
+percpu_counter_sum() to reach zero and can then be left sleeping by the
+very decrement that reaches it.  It stays asleep until some unrelated
+later decrement wakes it, with BTRFS_FS_STATE_DEV_REPLACING set the whole
+time, so every bio submitter on the filesystem blocks as well.
+Use cond_wake_up(), which has the barrier.
 
-Once no max level workspace is left, zstd_put_workspace() never reaches
-cond_wake_up() and a task sleeping in zstd_get_workspace() after a failed
-allocation has no possible waker.  Make the decision on every put of a max
-level workspace and unlink it from the lru when it is the last one;
-list_del_init() in zstd_find_workspace() keeps the entry usable for that.
-The test also no longer hides workspaces of other levels, which it did
-whenever no max level workspace happened to be idle.
-
-Fixes: 3f93aef535c8 ("btrfs: add zstd compression level support")
+Fixes: 4245215d6a8d ("Btrfs, raid56: fix use-after-free problem in the final device replace procedure on raid56")
 Assisted-by: Claude:claude-opus-5
 Signed-off-by: FAN YE <fy15309206903@gmail.com>
 ---
-Reproduced under QEMU/TCG.  Both arms are the same kernel with the reclaim
-interval shortened to 100ms and a module param picking the old or the new
-zstd_put_workspace(); the workload is compress-force=zstd:15, three rounds
-of four concurrent writers followed by drop_caches, four readers and two
-writers.  "unprotected" counts puts of a max level workspace after which
-nothing left in idle_ws[] is off the lru; "borrowed" counts a max level
-workspace taken and returned by a lower level request, the path this patch
-changes.
-
-                    borrowed   unprotected   timer cleared the level bit
-  current code       245/339       118/216                          1/0
-  this patch         300/379           0/0                          0/0
-
-borrowed is of the same order in both arms, so the zeroes are not "the code
-was never reached".  The last column needs the reclaim timer to tick inside
-the window, so it is a coincidence rather than the criterion.
-
-Compile-tested (W=1, x86_64 defconfig + CONFIG_BTRFS_FS=y).  Independent of
-and applies without my lost wakeup fix for zstd_get_workspace(),
-20260821-btrfs-zstd-lost-wakeup-v1-1-84f358d4ea67@gmail.com.
+Two independent checks.  A litmus test of the same shape: herd7 with the LKMM
+allows the interleaving and forbids it with smp_mb(); built with klitmus7 it
+hits 349326 times in 64000000 iterations on x86_64, 0 times with the barrier.
+With that interleaving staged in the dev-replace path in a VM (the last
+in-flight bio released while the finishing waiter is queueing), the wakeup is
+lost in 3/3 runs and the filesystem stalls for 24.5s until an unrelated
+decrement arrives, 0/3 with this patch.  Gating the barrier on
+BTRFS_FS_STATE_DEV_REPLACING to keep it off the common path does not work:
+that test_bit() is unordered as well, and hoisting it over the decrement drops
+the wakeup in 3/3 runs.  Compile-tested (W=1, x86_64 defconfig +
+CONFIG_BTRFS_FS=y).
 ---
- fs/btrfs/zstd.c | 25 ++++++++++++-------------
- 1 file changed, 12 insertions(+), 13 deletions(-)
+ fs/btrfs/dev-replace.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-index 86919293fd54..8abc4e456f32 100644
---- a/fs/btrfs/zstd.c
-+++ b/fs/btrfs/zstd.c
-@@ -260,7 +260,7 @@ static struct list_head *zstd_find_workspace(struct btrfs_fs_info *fs_info, int
- 			/* keep its place if it's a lower level using this */
- 			workspace->req_level = level;
- 			if (clip_level(level) == workspace->level)
--				list_del(&workspace->lru_list);
-+				list_del_init(&workspace->lru_list);
- 			if (list_empty(&zwsm->idle_ws[i]))
- 				clear_bit(i, &zwsm->active_map);
- 			spin_unlock_bh(&zwsm->lock);
-@@ -335,18 +335,17 @@ void zstd_put_workspace(struct btrfs_fs_info *fs_info, struct list_head *ws)
- 	ASSERT(zwsm);
- 	spin_lock_bh(&zwsm->lock);
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index dc0834f920c3..b2791480e263 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -1353,7 +1353,7 @@ bool __pure btrfs_dev_replace_is_ongoing(struct btrfs_dev_replace *dev_replace)
+ void btrfs_bio_counter_sub(struct btrfs_fs_info *fs_info, s64 amount)
+ {
+ 	percpu_counter_sub(&fs_info->dev_replace.bio_counter, amount);
+-	cond_wake_up_nomb(&fs_info->dev_replace.replace_wait);
++	cond_wake_up(&fs_info->dev_replace.replace_wait);
+ }
  
--	/* A node is only taken off the lru if we are the corresponding level */
--	if (clip_level(workspace->req_level) == workspace->level) {
--		/* Hide a max level workspace from reclaim */
--		if (list_empty(&zwsm->idle_ws[ZSTD_BTRFS_MAX_LEVEL - 1])) {
--			INIT_LIST_HEAD(&workspace->lru_list);
--		} else {
--			workspace->last_used = jiffies;
--			list_add(&workspace->lru_list, &zwsm->lru_list);
--			if (!timer_pending(&zwsm->timer))
--				mod_timer(&zwsm->timer,
--					  jiffies + ZSTD_BTRFS_RECLAIM_JIFFIES);
--		}
-+	/* Forward progress depends on always keeping one max level workspace */
-+	if (workspace->level == clip_level(ZSTD_BTRFS_MAX_LEVEL) &&
-+	    list_empty(&zwsm->idle_ws[ZSTD_BTRFS_MAX_LEVEL - 1])) {
-+		list_del_init(&workspace->lru_list);
-+	} else if (clip_level(workspace->req_level) == workspace->level) {
-+		/* A node is only taken off the lru if we are the corresponding level */
-+		workspace->last_used = jiffies;
-+		list_add(&workspace->lru_list, &zwsm->lru_list);
-+		if (!timer_pending(&zwsm->timer))
-+			mod_timer(&zwsm->timer,
-+				  jiffies + ZSTD_BTRFS_RECLAIM_JIFFIES);
- 	}
- 
- 	set_bit(workspace->level, &zwsm->active_map);
+ void btrfs_bio_counter_inc_blocked(struct btrfs_fs_info *fs_info)
 
 ---
 base-commit: 26260251022fbc2f248a3d747a9b2b961b18d2d8
-change-id: 20260822-btrfs-zstd-max-level-reclaim-5ab59a71f83e
+change-id: 20260822-btrfs-dev-replace-bio-counter-barrier-4a20eb35187a
 
 Best regards,
 --  

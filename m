@@ -1,155 +1,163 @@
-Received: from www262.sakura.ne.jp (www262.sakura.ne.jp [202.181.97.72])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC2D441A8F;
-	Sun, 23 Aug 2026 11:19:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.181.97.72
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E702313543;
+	Sun, 23 Aug 2026 11:50:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787483976; cv=none; b=i49L5YacgLEODBsbBeUJU7uHfyEGo4pjAZf8t/YKJaYGTAMKY1ehVfbjl3zeggNzDuOICjxrSC0vOuEAJStjkbXviBGUGZYJWl7lCqO1j2Rd3IMd5HU0GGsNiKri8w5z29kNFClzzlzvfgqdAcH/pQEPICLZmmGZ7pO3/F6Eirg=
+	t=1787485810; cv=none; b=Mi5oiwlhj5kZ4RbJ48Ovy8X3fTqQcEHNY33s+RlKzpWtefe13QgDbXTDX5CA65PdGayon6I50RwVqY4wRKxYFZu829XWUgxfYtbIff/j0mieRPHln03DI2B0GxuWXRcl/bzbFtUXljivpX+R4f8jz8ltLWiIJ4gzmOyK3iTO6nQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787483976; c=relaxed/simple;
-	bh=gcMW9xyOp4Ce6JzhCzJs131ZlCyLwnFgbMFJuQa7uB0=;
-	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=bXhcN541EQawBA7tEI8iXxztVAVnHk+MIra/B31k8zqks76qUMA8bru8IxlpMKOdZ5JN9UY4DQvPe6T6C9PYZt2KTQUB7SF9rzy1i7rys8H4DIKyfznzpYLr9hKvD9HwT3rRNi1fFbPds0ZPdDoP823LWE1RrNeqdJyX0aJKej4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp; arc=none smtp.client-ip=202.181.97.72
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp
-Received: from www262.sakura.ne.jp (localhost [127.0.0.1])
-	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTP id 67NBHvbd037693;
-	Sun, 23 Aug 2026 20:17:57 +0900 (JST)
-	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
-Received: from [192.168.1.6] (M106072072000.v4.enabler.ne.jp [106.72.72.0])
-	(authenticated bits=0)
-	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTPSA id 67NBHv9a037688
-	(version=TLSv1.2 cipher=AES256-GCM-SHA384 bits=256 verify=NO);
-	Sun, 23 Aug 2026 20:17:57 +0900 (JST)
-	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
-Message-ID: <8dedfc40-9cae-44ff-9960-e0eb1825e963@I-love.SAKURA.ne.jp>
-Date: Sun, 23 Aug 2026 20:17:57 +0900
+	s=arc-20240116; t=1787485810; c=relaxed/simple;
+	bh=i01Djcev+xO4+wwqigYbLQwDiWJu3P1K0V0AV02+1+8=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=RIkAGy9UfN1sE+SS4fmYCchBRisSNdS7etY6k4FIlzP7sndGDNP43KhHmBEBqBtflSz9TNBSTnXPWi1rGmLXr5rZaskXg6rvdFGiDnj+dhiS3qgahrPfm6fKuvGAhCl44gh6Pk0hOOhyW67GXdCIqGvXI9+MFptQ9H97OKNDuiY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=tWM0W8CD; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="tWM0W8CD"
+Received: by smtp.kernel.org (Postfix) with ESMTPS id 54A5FC2BCF4;
+	Sun, 23 Aug 2026 11:50:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1787485809;
+	bh=i01Djcev+xO4+wwqigYbLQwDiWJu3P1K0V0AV02+1+8=;
+	h=From:Date:Subject:To:Cc:Reply-To:From;
+	b=tWM0W8CDqGe7szBcixncHghW1uMGkY5h0pukeFWaalJJRdPwT+cLeo7QVVzSfjfkQ
+	 688dI4R3KuTXkSTWjv8/l6vKcF81zWFXfu5+4tASw3G8pvtSIGII91gAOpU0d59syQ
+	 c7XbvtMRbXKmZ91CanXGMKaxVvk455dUrJkpbMbnG0iKQuN+wdErIcPKYM+oloBUMT
+	 6LZRTV42a5YWgj9stzEz3oZLtLdBXyNyNscI2Yr01DKTdkBl4Fh/BtLUaRrOG6Nt/z
+	 kYRRmdzCWll/4fL3qT1sJx2kGjq1SvU67m20SfpqWmDdYjjvlxxc5UIyjXbByNJfG8
+	 sAEI5mBm8udDA==
+Received: from aws-us-west-2-korg-lkml-1.web.codeaurora.org (localhost.localdomain [127.0.0.1])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31D05C5DF81;
+	Sun, 23 Aug 2026 11:50:09 +0000 (UTC)
+From: FAN YE via B4 Relay <devnull+fy15309206903.gmail.com@kernel.org>
+Date: Sun, 23 Aug 2026 11:50:09 +0000
+Subject: [PATCH RFC] btrfs: drop the ineffective barrier in
+ should_cow_block()
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: [PATCH v6] loop: Fix NULL pointer dereference in lo_rw_aio()
-From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
-To: Jens Axboe <axboe@kernel.dk>, Bart Van Assche <bvanassche@acm.org>,
-        Damien Le Moal <dlemoal@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>
-Cc: Christoph Hellwig <hch@lst.de>, linux-block
- <linux-block@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Christian Brauner <brauner@kernel.org>,
-        Christoph Hellwig <hch@infradead.org>, Mark Brown <broonie@kernel.org>,
-        Linux-Next Mailing List <linux-next@vger.kernel.org>,
-        oe-lkp@lists.linux.dev, kernel test robot <oliver.sang@intel.com>,
-        kbuild test robot <lkp@intel.com>, Hillf Danton <hdanton@sina.com>
-References: <20260714043834.554-1-hdanton@sina.com>
- <30ccdd3c-6353-4a0f-bdc7-230ec3bf4765@I-love.SAKURA.ne.jp>
-Content-Language: en-US
-In-Reply-To: <30ccdd3c-6353-4a0f-bdc7-230ec3bf4765@I-love.SAKURA.ne.jp>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-X-Anti-Virus-Server: fsav405.rs.sakura.ne.jp
-X-Virus-Status: clean
+Message-Id: <20260823-btrfs-drop-ineffective-barrier-v1-1-48854e8b847a@gmail.com>
+X-B4-Tracking: v=1; b=H4sIAHDeimoC/yWNQQrCQAxFr1KyNjAzpSJuBQ/gVlw004zGxbQkt
+ Qildzfq8j34769grMIGx2YF5UVMxuoQdw3kR1/vjDI4QwppHw6pRZq1GA46TiiVS+E8y8JIvXp
+ HMbcxJu46CoHAI5Nykffv4AqX8wluf2kvevr0m4Zt+wA5UDYDhwAAAA==
+X-Change-ID: 20260823-btrfs-drop-ineffective-barrier-c3112e55b00b
+To: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+X-Mailer: b4 0.15.2
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1787485808; l=4539;
+ i=fy15309206903@gmail.com; s=tbnet3; h=from:subject:message-id;
+ bh=fu4XTpUKPy6Y/hy6UUuhAX/s9vCELgq4P3Cr6yC+8dQ=;
+ b=0y9QRIafVvsV08ko7PuOE9LnR8SJbGYhY0IsYnH93PCWRMqTLiGbys5e0swK+ulqT/vMyIvpE
+ yzvOAj79grhBaFi5+VL1ztqNy8hQQhnN8eS6ReP6jQa07kZXbOqNRkH
+X-Developer-Key: i=fy15309206903@gmail.com; a=ed25519;
+ pk=6QsQIrI/kruYWIJyCH9ntPMXsHCqF5JtK/DCMtOCzdc=
+X-Endpoint-Received: by B4 Relay for fy15309206903@gmail.com/tbnet3 with
+ auth_id=929
+X-Original-From: FAN YE <fy15309206903@gmail.com>
+Reply-To: fy15309206903@gmail.com
 
-syzbot is reporting NULL pointer dereference in lo_rw_aio() [1][2].
-An analysis by the Gemini AI collaborator [3] considers that this problem
-is caused by a timing shift primarily exposed by commit 65565ca5f99b
-("block: unify the synchronous bi_end_io callbacks"), along with helper
-refactorings like commit 92c3737a2473 ("block: add a bio_submit_or_kill
-helper").
+From: FAN YE <fy15309206903@gmail.com>
 
-But due to difficulty of reproducing this race, discussion about what is
-happening and how to fix this problem is stalling. Also, we haven't
-identified how many filesystems are subjected to this problem.
+smp_mb__before_atomic() only orders against a non-value-returning atomic
+RMW that follows it.  test_bit() is a plain load, so under the LKMM this
+fence orders nothing here and nothing may rely on it.  It is not free
+either: only six architectures override __smp_mb__before_atomic, so on
+arm64 and most others it emits a real barrier -- dropping it removes one
+dmb ish from each of the two inlined call sites.  The ordering the
+comment asks for does not come from the fence in the first place; see
+below.
 
-Therefore, this patch introduces a grace period for flushing pending I/O
-requests (which should be a good thing from the perspective of defensive
-programming) so that we won't hit NULL pointer dereference problem.
+It did not start out this way.  commit f1ebcc74d5b2 ("Btrfs: fix tree
+corruption after multi-thread snapshots and inode_cache flush") added it
+as a real smp_rmb(), paired with smp_wmb() around a plain int force_cow.
+commit d1980131ca7f ("btrfs: update barrier in should_cow_block") swapped
+it for smp_mb__before_atomic() when the field became a bit, noting in
+its own log that "we should be fine in case the atomic barrier becomes a
+no-op" -- and against a plain test_bit() that is what it became.
+commit f07575bab632 ("btrfs: make the rule checking more readable for
+should_cow_block()") only relocated it.  Drop it along with the comment
+rather than promote it to a real barrier: whatever ordering is wanted
+here would have to name what it pairs with today.  The two writer-side
+comments in transaction.c only pointed here for that rationale, so they
+go with it; the smp_mb__after_atomic() they annotated is left alone.
 
-Link: https://syzkaller.appspot.com/bug?extid=cd8a9a308e879a4e2c28 [1]
-Link: https://syzkaller.appspot.com/bug?extid=bc273027d5643e48e5b3 [2]
-Link: https://lkml.kernel.org/r/fbb3edda-f108-4e5b-acf2-266f043f8125@I-love.SAKURA.ne.jp [3]
-Fixes: 65565ca5f99b ("block: unify the synchronous bi_end_io callbacks")
-Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+Assisted-by: Claude:claude-opus-5 sashiko(Sonnet-5) qwen
+Signed-off-by: FAN YE <fy15309206903@gmail.com>
 ---
-Changes in v6:
-  Drop debug code for emitting BUG: message, which is intended for helping
-  filesystem developers identify the caller of an I/O request that failed to
-  wait for completion.
+Why the ordering does not depend on the fence: any writer that can reach
+should_cow_block() for this root crosses fs_info->trans_lock in
+join_transaction(), and can only do so after the committer's matching
+unlock when it leaves TRANS_STATE_COMMIT_DOING in
+btrfs_commit_transaction(), by which point create_pending_snapshots() --
+where set_bit(FORCE_COW) lives -- has already run.  That release/acquire
+pair orders the bit, fence or not.  BTRFS_ROOT_FORCE_COW has only these
+three references tree-wide.
 
- drivers/block/loop.c | 53 +++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 52 insertions(+), 1 deletion(-)
+herd7 with the LKMM, one SB shape with only the fence varying: allowed with
+this fence in front of a plain load, still allowed with the fence deleted,
+forbidden with smp_mb() and forbidden with an RMW after the fence.  Built
+with klitmus7 on x86_64 it hits 329608 times in 64000000 iterations, 329706
+with the fence deleted, 0 with smp_mb().
 
-diff --git a/drivers/block/loop.c b/drivers/block/loop.c
-index 6f12976035b0..feebc9999926 100644
---- a/drivers/block/loop.c
-+++ b/drivers/block/loop.c
-@@ -1769,8 +1769,59 @@ static void lo_release(struct gendisk *disk)
- 	need_clear = (lo->lo_state == Lo_rundown);
- 	mutex_unlock(&lo->lo_mutex);
+arm64 defconfig+BTRFS_FS, gcc 13.3: ctree.o goes from 39 to 37 dmb ish, one
+each from btrfs_cow_block() and btrfs_search_slot().  On x86_64 .text is
+unchanged -- the only object differences are __LINE__ constants in the BUG
+table shifting by the two deleted lines.  Compile-tested W=1 on both.
+
+Sent as RFC for the one thing this does not settle: with the reader side
+gone, the smp_mb__after_atomic() on each writer has nothing left to pair
+with, and by the argument above trans_lock was doing the work anyway.  I
+left both alone rather than guess -- if they are stale too that is a
+separate patch, and I would rather have your reading first.
+---
+ fs/btrfs/ctree.c       | 2 --
+ fs/btrfs/transaction.c | 2 --
+ 2 files changed, 4 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 8fe330d81b8f..fe74967d725a 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -625,8 +625,6 @@ static inline bool should_cow_block(struct btrfs_trans_handle *trans,
+ 	if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN))
+ 		return true;
  
--	if (need_clear)
-+	if (need_clear) {
-+		/*
-+		 * Temporarily release disk->open_mutex in order to flush pending I/O
-+		 * requests before clearing the backing device.
-+		 *
-+		 * This is a layering violation. But since bdev->bd_disk->fops->release()
-+		 * (which is mapped to lo_release()) is the final function which
-+		 * blkdev_put_whole() from bdev_release() calls immediately before
-+		 * releasing disk->open_mutex, this changes nothing except opens a new
-+		 * race window for allowing disk->fops->open() (which is mapped to
-+		 * lo_open()) to be called.
-+		 *
-+		 * Even if lo_open() is called from blkdev_get_whole() due to this race,
-+		 * the Lo_rundown state guarantees that lo_open() will fail with -ENXIO.
-+		 * Thus, there will be effectively no change caused by this violation.
-+		 */
-+		mutex_unlock(&lo->lo_disk->open_mutex);
-+		/*
-+		 * Now that loop_queue_rq() sees lo->lo_state != Lo_bound,
-+		 * wait for already started loop_queue_rq() to complete.
-+		 */
-+		synchronize_rcu();
-+		/*
-+		 * Now that no more works are scheduled by loop_queue_rq(),
-+		 * wait for already scheduled works to complete.
-+		 */
-+		drain_workqueue(lo->workqueue);
-+		/*
-+		 * Now that no more AIO requests are scheduled by lo_rw_aio(),
-+		 * wait for already started AIO to complete.
-+		 *
-+		 * Due to synchronize_rcu() + drain_workqueue() sequence above,
-+		 * calling blk_mq_unfreeze_queue() immediately after blk_mq_freeze_queue()
-+		 * returns has to be safe, for loop_queue_rq() no longer schedules new
-+		 * lo_rw_aio() works and lo_rw_aio() no longer submits new AIO requests.
-+		 *
-+		 * Deferring blk_mq_unfreeze_queue() does not help because we are about
-+		 * to clear the backing device and drop the refcount for the backing device.
-+		 * There is nothing we can do if blk_mq_freeze_queue() fails to flush.
-+		 */
-+		blk_mq_unfreeze_queue(lo->lo_queue, blk_mq_freeze_queue(lo->lo_queue));
-+		/*
-+		 * Perform remaining cleanup, with disk->open_mutex held.
-+		 *
-+		 * The lo->lo_state should remain Lo_rundown despite we temporarily
-+		 * released disk->open_mutex, for I am the only and the last user of
-+		 * this loop device because lo_open() cannot succeed.
-+		 */
-+		mutex_lock(&lo->lo_disk->open_mutex);
-+		if (WARN_ON(data_race(READ_ONCE(lo->lo_state)) != Lo_rundown))
-+			return;
- 		__loop_clr_fd(lo);
-+	}
- }
+-	/* Ensure we can see the FORCE_COW bit. */
+-	smp_mb__before_atomic();
+ 	if (test_bit(BTRFS_ROOT_FORCE_COW, &root->state))
+ 		return true;
  
- static void lo_free_disk(struct gendisk *disk)
--- 
-2.52.0
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index bafc62cf5ebc..3fced11d7889 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1531,7 +1531,6 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans)
+ 			if (unlikely(ret2))
+ 				return ret2;
+ 
+-			/* see comments in should_cow_block() */
+ 			clear_bit(BTRFS_ROOT_FORCE_COW, &root->state);
+ 			smp_mb__after_atomic();
+ 
+@@ -1819,7 +1818,6 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+ 	}
+-	/* see comments in should_cow_block() */
+ 	set_bit(BTRFS_ROOT_FORCE_COW, &root->state);
+ 	smp_mb__after_atomic();
+ 
+
+---
+base-commit: 2709dd5ae32f0828f386327c76bba9f39f63a1c6
+change-id: 20260823-btrfs-drop-ineffective-barrier-c3112e55b00b
+
+Best regards,
+--  
+FAN YE <fy15309206903@gmail.com>
+
 

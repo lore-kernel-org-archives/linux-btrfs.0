@@ -1,121 +1,155 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from www262.sakura.ne.jp (www262.sakura.ne.jp [202.181.97.72])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AD2313385A1;
-	Sun, 23 Aug 2026 09:28:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC2D441A8F;
+	Sun, 23 Aug 2026 11:19:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.181.97.72
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787477306; cv=none; b=DiwfdSr5ri0h8Y+EA8aETBHBkNTHPMNi4WdPZsumybRySN9OaFkhuD3Wh53HtsXQKj4RJhMf4014Xb1GCI87qGbV+LR5TWzhsGLLGzNA1my/o73MWFHuJKiWqsVQkZauPF/9zJyORzzvk7igCEWcwwwADyCmTsDAjd3oJJBGwSY=
+	t=1787483976; cv=none; b=i49L5YacgLEODBsbBeUJU7uHfyEGo4pjAZf8t/YKJaYGTAMKY1ehVfbjl3zeggNzDuOICjxrSC0vOuEAJStjkbXviBGUGZYJWl7lCqO1j2Rd3IMd5HU0GGsNiKri8w5z29kNFClzzlzvfgqdAcH/pQEPICLZmmGZ7pO3/F6Eirg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787477306; c=relaxed/simple;
-	bh=eBB0XbIGxS7zDrXsIOKH9+GaAZ0HKPKwnyAGBsLz8cE=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=mCXcEQnHEm5X8GjLJgoFRP+wRZBMlMjHAfV6kfaKXQ6FGJ4qDrzzyLb58UYjVWOIkTX2n14XXDP+ng0A4Kro4yUjDgpjcSWvNd5XqAcX6DHVc5YC+IxsoZr3FY+1mofoMfmtvCjcOyOBXdhPMRbp34ImgBcIuHT68ABcMQ7eauM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=uny8j8Z3; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="uny8j8Z3"
-Received: by smtp.kernel.org (Postfix) with ESMTPS id 2FEADC2BCB8;
-	Sun, 23 Aug 2026 09:28:26 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1787477306;
-	bh=eBB0XbIGxS7zDrXsIOKH9+GaAZ0HKPKwnyAGBsLz8cE=;
-	h=From:Date:Subject:To:Cc:Reply-To:From;
-	b=uny8j8Z37shodHbBMCqkPOoVcuymcrzFXiF5S4i9w1wv0cny42SWXkrau+mXwAsJZ
-	 FLMXFInBNty+nYWEjLtD1t5C4b15jhZkZNOdJrzD6n/ny1sp8qNueeJ0VpNm5KoytU
-	 FeCg6PV2WGsPeOUSIIn++0+5JnPkEwMM7CKiVDmQh52uxCF0AcB7FhqbylwPKg66NP
-	 gud6Vfrf814AywVVweAX8pGFYnkgeG5/HqM9SUbTxmebyRWT6lnJo5TGrE47MzPKOV
-	 0var0vVMS9BNHfgUHfQGs/s2BvXgBPSPqkFPKKrqNJzEMAYEiHx7+SwVGpun5rgdRM
-	 Tz9zCmRk8Zt5w==
-Received: from aws-us-west-2-korg-lkml-1.web.codeaurora.org (localhost.localdomain [127.0.0.1])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 077A3C5DF8C;
-	Sun, 23 Aug 2026 09:28:26 +0000 (UTC)
-From: FAN YE via B4 Relay <devnull+fy15309206903.gmail.com@kernel.org>
-Date: Sun, 23 Aug 2026 09:28:25 +0000
-Subject: [PATCH] btrfs: scrub: wake up cancel_dev waiters after clearing
- dev->scrub_ctx
+	s=arc-20240116; t=1787483976; c=relaxed/simple;
+	bh=gcMW9xyOp4Ce6JzhCzJs131ZlCyLwnFgbMFJuQa7uB0=;
+	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
+	 In-Reply-To:Content-Type; b=bXhcN541EQawBA7tEI8iXxztVAVnHk+MIra/B31k8zqks76qUMA8bru8IxlpMKOdZ5JN9UY4DQvPe6T6C9PYZt2KTQUB7SF9rzy1i7rys8H4DIKyfznzpYLr9hKvD9HwT3rRNi1fFbPds0ZPdDoP823LWE1RrNeqdJyX0aJKej4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp; arc=none smtp.client-ip=202.181.97.72
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp
+Received: from www262.sakura.ne.jp (localhost [127.0.0.1])
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTP id 67NBHvbd037693;
+	Sun, 23 Aug 2026 20:17:57 +0900 (JST)
+	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Received: from [192.168.1.6] (M106072072000.v4.enabler.ne.jp [106.72.72.0])
+	(authenticated bits=0)
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTPSA id 67NBHv9a037688
+	(version=TLSv1.2 cipher=AES256-GCM-SHA384 bits=256 verify=NO);
+	Sun, 23 Aug 2026 20:17:57 +0900 (JST)
+	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Message-ID: <8dedfc40-9cae-44ff-9960-e0eb1825e963@I-love.SAKURA.ne.jp>
+Date: Sun, 23 Aug 2026 20:17:57 +0900
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+User-Agent: Mozilla Thunderbird
+Subject: [PATCH v6] loop: Fix NULL pointer dereference in lo_rw_aio()
+From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+To: Jens Axboe <axboe@kernel.dk>, Bart Van Assche <bvanassche@acm.org>,
+        Damien Le Moal <dlemoal@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>
+Cc: Christoph Hellwig <hch@lst.de>, linux-block
+ <linux-block@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        Christian Brauner <brauner@kernel.org>,
+        Christoph Hellwig <hch@infradead.org>, Mark Brown <broonie@kernel.org>,
+        Linux-Next Mailing List <linux-next@vger.kernel.org>,
+        oe-lkp@lists.linux.dev, kernel test robot <oliver.sang@intel.com>,
+        kbuild test robot <lkp@intel.com>, Hillf Danton <hdanton@sina.com>
+References: <20260714043834.554-1-hdanton@sina.com>
+ <30ccdd3c-6353-4a0f-bdc7-230ec3bf4765@I-love.SAKURA.ne.jp>
+Content-Language: en-US
+In-Reply-To: <30ccdd3c-6353-4a0f-bdc7-230ec3bf4765@I-love.SAKURA.ne.jp>
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260823-btrfs-scrub-cancel-dev-wakeup-v1-1-374d618ab25f@gmail.com>
-X-B4-Tracking: v=1; b=H4sIADi9imoC/yXMOw7CMAwA0KtUnrEUXFE+V0EdEteBAAqV3RSkq
- ncnwPiWt4CJJjE4NQuozMnSM1dsNw3w1eeLYBqqgRx17kAthkmjobGWgOwzywMHmfHl71JGjIH
- k2FK3jzsH9RhVYnr//nP/t5VwE56+KazrBzXfgIyBAAAA
-X-Change-ID: 20260823-btrfs-scrub-cancel-dev-wakeup-fb2e93267f50
-To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-X-Mailer: b4 0.15.2
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1787477305; l=2575;
- i=fy15309206903@gmail.com; s=tbnet3; h=from:subject:message-id;
- bh=xdBeUrOdCn8ylb7MLha5PMKpDHCyFGYa0B8rXagVhfI=;
- b=jLklhCiaNoRe3Z8PESXyLhw//+kfc6CWifs9QTWqXLIQs/D1boASK1id5bwbss+8S7pACduFW
- jfGTkVxSSs/CTZPF3HU7tgu0vAsQtG2kTqpVg4DhMv8heiEGZlFEprl
-X-Developer-Key: i=fy15309206903@gmail.com; a=ed25519;
- pk=6QsQIrI/kruYWIJyCH9ntPMXsHCqF5JtK/DCMtOCzdc=
-X-Endpoint-Received: by B4 Relay for fy15309206903@gmail.com/tbnet3 with
- auth_id=929
-X-Original-From: FAN YE <fy15309206903@gmail.com>
-Reply-To: fy15309206903@gmail.com
+X-Anti-Virus-Server: fsav405.rs.sakura.ne.jp
+X-Virus-Status: clean
 
-From: FAN YE <fy15309206903@gmail.com>
+syzbot is reporting NULL pointer dereference in lo_rw_aio() [1][2].
+An analysis by the Gemini AI collaborator [3] considers that this problem
+is caused by a timing shift primarily exposed by commit 65565ca5f99b
+("block: unify the synchronous bi_end_io callbacks"), along with helper
+refactorings like commit 92c3737a2473 ("block: add a bio_submit_or_kill
+helper").
 
-btrfs_scrub_cancel_dev() waits on fs_info->scrub_pause_wait for
-dev->scrub_ctx to become NULL.  btrfs_scrub_dev() wakes that queue right
-after dropping scrubs_running, several statements before it clears the
-pointer, and never wakes it again.  The canceller is already queued by
-then: it sets sctx->cancel_req before waiting, and the scrub only starts
-finishing once should_cancel_scrub() observes that flag.  So the wakeup it
-gets is the early one, its recheck still finds dev->scrub_ctx set, and it
-goes back to sleep before the store it is waiting for.
+But due to difficulty of reproducing this race, discussion about what is
+happening and how to fix this problem is stalling. Also, we haven't
+identified how many filesystems are subjected to this problem.
 
-Nothing wakes the queue after the store.  scrubs_running is already zero,
-and btrfs_rm_device() reaches btrfs_scrub_cancel_dev() holding a
-transaction handle, so the commit that would call btrfs_scrub_continue()
-blocks behind the sleeping canceller.  Device removal, the transaction
-kthread and any fsync() on the filesystem hang indefinitely.  Wake the
-queue after the store as well.
+Therefore, this patch introduces a grace period for flushing pending I/O
+requests (which should be a good thing from the perspective of defensive
+programming) so that we won't hit NULL pointer dereference problem.
 
-Fixes: a2de733c78fa ("btrfs: scrub")
-Assisted-by: Claude:claude-opus-5 sashiko
-Signed-off-by: FAN YE <fy15309206903@gmail.com>
+Link: https://syzkaller.appspot.com/bug?extid=cd8a9a308e879a4e2c28 [1]
+Link: https://syzkaller.appspot.com/bug?extid=bc273027d5643e48e5b3 [2]
+Link: https://lkml.kernel.org/r/fbb3edda-f108-4e5b-acf2-266f043f8125@I-love.SAKURA.ne.jp [3]
+Fixes: 65565ca5f99b ("block: unify the synchronous bi_end_io callbacks")
+Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
 ---
-Reproduced on unmodified kernels in a VM: a scrub running on the device
-btrfs_rm_device() removes.  Upstream hangs in all 7 attempts where the
-canceller actually slept - 4 with transaction commits forced back to back,
-3 at the default commit interval - and 0 of 16 with this patch.  ftrace
-records no sched_wakeup at all for the blocked task after dev->scrub_ctx is
-seen NULL, while btrfs-transacti and a plain BTRFS_IOC_SYNC block behind
-it.  Attempts where the cancel returned -ENOTCONN, or returned 0 without
-ever sleeping, are not counted either way.  Moving the existing wakeup
-after the store instead of adding one also works (0 of 9) and is not
-measurably cheaper; this keeps each wakeup next to the store it publishes.
-Compile-tested (W=1, x86_64 defconfig + CONFIG_BTRFS_FS=y).
----
- fs/btrfs/scrub.c | 1 +
- 1 file changed, 1 insertion(+)
+Changes in v6:
+  Drop debug code for emitting BUG: message, which is intended for helping
+  filesystem developers identify the caller of an I/O request that failed to
+  wait for completion.
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index f209e75f0ff5..43fee426fdab 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3177,6 +3177,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 	mutex_lock(&fs_info->scrub_lock);
- 	dev->scrub_ctx = NULL;
- 	mutex_unlock(&fs_info->scrub_lock);
-+	wake_up(&fs_info->scrub_pause_wait);
+ drivers/block/loop.c | 53 +++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 52 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/block/loop.c b/drivers/block/loop.c
+index 6f12976035b0..feebc9999926 100644
+--- a/drivers/block/loop.c
++++ b/drivers/block/loop.c
+@@ -1769,8 +1769,59 @@ static void lo_release(struct gendisk *disk)
+ 	need_clear = (lo->lo_state == Lo_rundown);
+ 	mutex_unlock(&lo->lo_mutex);
  
- 	scrub_workers_put(fs_info);
- 	scrub_put_ctx(sctx);
-
----
-base-commit: 2709dd5ae32f0828f386327c76bba9f39f63a1c6
-change-id: 20260823-btrfs-scrub-cancel-dev-wakeup-fb2e93267f50
-
-Best regards,
---  
-FAN YE <fy15309206903@gmail.com>
-
+-	if (need_clear)
++	if (need_clear) {
++		/*
++		 * Temporarily release disk->open_mutex in order to flush pending I/O
++		 * requests before clearing the backing device.
++		 *
++		 * This is a layering violation. But since bdev->bd_disk->fops->release()
++		 * (which is mapped to lo_release()) is the final function which
++		 * blkdev_put_whole() from bdev_release() calls immediately before
++		 * releasing disk->open_mutex, this changes nothing except opens a new
++		 * race window for allowing disk->fops->open() (which is mapped to
++		 * lo_open()) to be called.
++		 *
++		 * Even if lo_open() is called from blkdev_get_whole() due to this race,
++		 * the Lo_rundown state guarantees that lo_open() will fail with -ENXIO.
++		 * Thus, there will be effectively no change caused by this violation.
++		 */
++		mutex_unlock(&lo->lo_disk->open_mutex);
++		/*
++		 * Now that loop_queue_rq() sees lo->lo_state != Lo_bound,
++		 * wait for already started loop_queue_rq() to complete.
++		 */
++		synchronize_rcu();
++		/*
++		 * Now that no more works are scheduled by loop_queue_rq(),
++		 * wait for already scheduled works to complete.
++		 */
++		drain_workqueue(lo->workqueue);
++		/*
++		 * Now that no more AIO requests are scheduled by lo_rw_aio(),
++		 * wait for already started AIO to complete.
++		 *
++		 * Due to synchronize_rcu() + drain_workqueue() sequence above,
++		 * calling blk_mq_unfreeze_queue() immediately after blk_mq_freeze_queue()
++		 * returns has to be safe, for loop_queue_rq() no longer schedules new
++		 * lo_rw_aio() works and lo_rw_aio() no longer submits new AIO requests.
++		 *
++		 * Deferring blk_mq_unfreeze_queue() does not help because we are about
++		 * to clear the backing device and drop the refcount for the backing device.
++		 * There is nothing we can do if blk_mq_freeze_queue() fails to flush.
++		 */
++		blk_mq_unfreeze_queue(lo->lo_queue, blk_mq_freeze_queue(lo->lo_queue));
++		/*
++		 * Perform remaining cleanup, with disk->open_mutex held.
++		 *
++		 * The lo->lo_state should remain Lo_rundown despite we temporarily
++		 * released disk->open_mutex, for I am the only and the last user of
++		 * this loop device because lo_open() cannot succeed.
++		 */
++		mutex_lock(&lo->lo_disk->open_mutex);
++		if (WARN_ON(data_race(READ_ONCE(lo->lo_state)) != Lo_rundown))
++			return;
+ 		__loop_clr_fd(lo);
++	}
+ }
+ 
+ static void lo_free_disk(struct gendisk *disk)
+-- 
+2.52.0
 

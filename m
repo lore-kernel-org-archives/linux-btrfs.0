@@ -1,37 +1,37 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E702313543;
-	Sun, 23 Aug 2026 11:50:09 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 17C90357D18;
+	Sun, 23 Aug 2026 14:23:04 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787485810; cv=none; b=Mi5oiwlhj5kZ4RbJ48Ovy8X3fTqQcEHNY33s+RlKzpWtefe13QgDbXTDX5CA65PdGayon6I50RwVqY4wRKxYFZu829XWUgxfYtbIff/j0mieRPHln03DI2B0GxuWXRcl/bzbFtUXljivpX+R4f8jz8ltLWiIJ4gzmOyK3iTO6nQ=
+	t=1787494985; cv=none; b=PBUOQfBWxVgGCN+5QlgWYws0s9z2Hp/d+qHuJpuZQM97Y30CpRiDX0O/QYRFCVByISCXOY/uA6/d4w4oK2tTtn33BEA1c/GBuG6e98GTwRXm7pcJM+YfS0QWmAgHz/RkveDtWlHqQySRP7gTgyVcjSZxXzum17FvjDK27lc9cB4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787485810; c=relaxed/simple;
-	bh=i01Djcev+xO4+wwqigYbLQwDiWJu3P1K0V0AV02+1+8=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=RIkAGy9UfN1sE+SS4fmYCchBRisSNdS7etY6k4FIlzP7sndGDNP43KhHmBEBqBtflSz9TNBSTnXPWi1rGmLXr5rZaskXg6rvdFGiDnj+dhiS3qgahrPfm6fKuvGAhCl44gh6Pk0hOOhyW67GXdCIqGvXI9+MFptQ9H97OKNDuiY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=tWM0W8CD; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1787494985; c=relaxed/simple;
+	bh=fZARiJBtnd8V149ZzbZMF3idR8Ym9zqq+0dFV7mSuxY=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=M+Wahh9us3SZXD6+A+RfVfSqwChbPODx4vZM/qk3dADWh6vGBbN5gHi3IdbRTGCtYPTYoGRPsdRbFZCnAUvo0KjuzVk1cKV5raPN2Znm7+pdDgfs0lGsFtuJpFvNJNIbl+tRPrIqU1ArbnwuLTy/JCaW7H18hVyCqu2ZhkTh+bk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=GLp3jDRe; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="tWM0W8CD"
-Received: by smtp.kernel.org (Postfix) with ESMTPS id 54A5FC2BCF4;
-	Sun, 23 Aug 2026 11:50:09 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="GLp3jDRe"
+Received: by smtp.kernel.org (Postfix) with ESMTPS id 0DA46C2BCF4;
+	Sun, 23 Aug 2026 14:23:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1787485809;
-	bh=i01Djcev+xO4+wwqigYbLQwDiWJu3P1K0V0AV02+1+8=;
+	s=k20201202; t=1787494984;
+	bh=fZARiJBtnd8V149ZzbZMF3idR8Ym9zqq+0dFV7mSuxY=;
 	h=From:Date:Subject:To:Cc:Reply-To:From;
-	b=tWM0W8CDqGe7szBcixncHghW1uMGkY5h0pukeFWaalJJRdPwT+cLeo7QVVzSfjfkQ
-	 688dI4R3KuTXkSTWjv8/l6vKcF81zWFXfu5+4tASw3G8pvtSIGII91gAOpU0d59syQ
-	 c7XbvtMRbXKmZ91CanXGMKaxVvk455dUrJkpbMbnG0iKQuN+wdErIcPKYM+oloBUMT
-	 6LZRTV42a5YWgj9stzEz3oZLtLdBXyNyNscI2Yr01DKTdkBl4Fh/BtLUaRrOG6Nt/z
-	 kYRRmdzCWll/4fL3qT1sJx2kGjq1SvU67m20SfpqWmDdYjjvlxxc5UIyjXbByNJfG8
-	 sAEI5mBm8udDA==
+	b=GLp3jDReFrinHEfgAPu1Gml2b8rKCzWX12OZbA9qa4IyDUGLs5cAVDx22gCumNrKN
+	 GCh8BLTWSM4gXdA7dLo+BqhIIFvhuDYBRgyZBwQmpWAAkWAm5rOfLxL6eIL5yo2AU1
+	 dmLpdf4nATw0pW7XVdDpypL6PC1Llz9gYMsWjEQ197TwGnPWL0ZN0By5uHr530EDp3
+	 rStSwUS3qGxEXowDveoTTtwDwVgWoLerxGb2sb+w23ocWDXHTZCjsca8swyA9BE9Gj
+	 gmQTc/i9HxpQWFBaGCJZ240JkaNG/H5Vaig81fX+sy/qwi8RvMjiqYxco1Mc5kyhst
+	 qKuHsrLErJyBQ==
 Received: from aws-us-west-2-korg-lkml-1.web.codeaurora.org (localhost.localdomain [127.0.0.1])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 31D05C5DF81;
-	Sun, 23 Aug 2026 11:50:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DE87CC5DF81;
+	Sun, 23 Aug 2026 14:23:03 +0000 (UTC)
 From: FAN YE via B4 Relay <devnull+fy15309206903.gmail.com@kernel.org>
-Date: Sun, 23 Aug 2026 11:50:09 +0000
-Subject: [PATCH RFC] btrfs: drop the ineffective barrier in
- should_cow_block()
+Date: Sun, 23 Aug 2026 14:23:03 +0000
+Subject: [PATCH] btrfs: zstd: fix hang when the workspace preallocation
+ fails
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -40,19 +40,20 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260823-btrfs-drop-ineffective-barrier-v1-1-48854e8b847a@gmail.com>
-X-B4-Tracking: v=1; b=H4sIAHDeimoC/yWNQQrCQAxFr1KyNjAzpSJuBQ/gVlw004zGxbQkt
- Qildzfq8j34769grMIGx2YF5UVMxuoQdw3kR1/vjDI4QwppHw6pRZq1GA46TiiVS+E8y8JIvXp
- HMbcxJu46CoHAI5Nykffv4AqX8wluf2kvevr0m4Zt+wA5UDYDhwAAAA==
-X-Change-ID: 20260823-btrfs-drop-ineffective-barrier-c3112e55b00b
-To: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>
+Message-Id: <20260823-btrfs-zstd-prealloc-hang-v1-1-d11d25cfb467@gmail.com>
+X-B4-Tracking: v=1; b=H4sIAEYCi2oC/yWMQQqDMBBFryKzdiAmtUSvIi5MHNspopKJpVS8u
+ 1GXj//f20AoMAnU2QaBviw8TwmKPAP/7qYXIfeJQSv9VFYbdDEMgn+JPS6BunGcPZ5HNM6qwpU
+ PW1EFSU/rwL8r3bQ3y+o+5OPZg30/AC4pwI18AAAA
+X-Change-ID: 20260823-btrfs-zstd-prealloc-hang-3b801b5489e9
+To: Nick Terrell <terrelln@fb.com>, Chris Mason <clm@fb.com>, 
+ David Sterba <dsterba@suse.com>
 Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
 X-Mailer: b4 0.15.2
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1787485808; l=4539;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1787494982; l=4802;
  i=fy15309206903@gmail.com; s=tbnet3; h=from:subject:message-id;
- bh=fu4XTpUKPy6Y/hy6UUuhAX/s9vCELgq4P3Cr6yC+8dQ=;
- b=0y9QRIafVvsV08ko7PuOE9LnR8SJbGYhY0IsYnH93PCWRMqTLiGbys5e0swK+ulqT/vMyIvpE
- yzvOAj79grhBaFi5+VL1ztqNy8hQQhnN8eS6ReP6jQa07kZXbOqNRkH
+ bh=UCmNia2x7JWgu3N0r50Qjrgy2VR0ohDOUqm2J+6lnXQ=;
+ b=5DBetzW/YfLuhfiOmNxmCoNffdfumE9zGRbaC7sGHhYl8u5dSqqHzNyKC/MOEB2bVKrkQB14V
+ ZssMG/UOwb1BvwTSmC1hzvUczPJ4AydGIyBbStX4RbsfqvvtYToYPUT
 X-Developer-Key: i=fy15309206903@gmail.com; a=ed25519;
  pk=6QsQIrI/kruYWIJyCH9ntPMXsHCqF5JtK/DCMtOCzdc=
 X-Endpoint-Received: by B4 Relay for fy15309206903@gmail.com/tbnet3 with
@@ -62,99 +63,116 @@ Reply-To: fy15309206903@gmail.com
 
 From: FAN YE <fy15309206903@gmail.com>
 
-smp_mb__before_atomic() only orders against a non-value-returning atomic
-RMW that follows it.  test_bit() is a plain load, so under the LKMM this
-fence orders nothing here and nothing may rely on it.  It is not free
-either: only six architectures override __smp_mb__before_atomic, so on
-arm64 and most others it emits a real barrier -- dropping it removes one
-dmb ish from each of the two inlined call sites.  The ordering the
-comment asks for does not come from the fence in the first place; see
-below.
+zstd_alloc_workspace_manager() only warns when the max level workspace it
+preallocates cannot be allocated, and the mount comes up with none.
+zstd_get_workspace() still sleeps on zwsm->wait when its own allocation
+fails, but zstd_put_workspace() wakes that queue only for a max level
+workspace, and nothing creates one unless the max level is requested.
+Until something on the filesystem asks for it the sleeper has no possible
+waker, and stays in TASK_UNINTERRUPTIBLE in the write path long after the
+memory pressure is over.
 
-It did not start out this way.  commit f1ebcc74d5b2 ("Btrfs: fix tree
-corruption after multi-thread snapshots and inode_cache flush") added it
-as a real smp_rmb(), paired with smp_wmb() around a plain int force_cow.
-commit d1980131ca7f ("btrfs: update barrier in should_cow_block") swapped
-it for smp_mb__before_atomic() when the field became a bit, noting in
-its own log that "we should be fine in case the atomic barrier becomes a
-no-op" -- and against a plain test_bit() that is what it became.
-commit f07575bab632 ("btrfs: make the rule checking more readable for
-should_cow_block()") only relocated it.  Drop it along with the comment
-rather than promote it to a real barrier: whatever ordering is wanted
-here would have to name what it pairs with today.  The two writer-side
-comments in transaction.c only pointed here for that rationale, so they
-go with it; the smp_mb__after_atomic() they annotated is left alone.
+Count the max level workspaces in existence and retry the allocation
+instead of sleeping when there are none, backing off with
+memalloc_retry_wait() so the retry does not spin against reclaim.
+btrfs_get_workspace() guards the same preallocation failure the same way,
+using total_ws.
 
-Assisted-by: Claude:claude-opus-5 sashiko(Sonnet-5) qwen
+Fixes: 3f93aef535c8 ("btrfs: add zstd compression level support")
+Assisted-by: Claude:claude-opus-5
 Signed-off-by: FAN YE <fy15309206903@gmail.com>
 ---
-Why the ordering does not depend on the fence: any writer that can reach
-should_cow_block() for this root crosses fs_info->trans_lock in
-join_transaction(), and can only do so after the committer's matching
-unlock when it leaves TRANS_STATE_COMMIT_DOING in
-btrfs_commit_transaction(), by which point create_pending_snapshots() --
-where set_bit(FORCE_COW) lives -- has already run.  That release/acquire
-pair orders the bit, fence or not.  BTRFS_ROOT_FORCE_COW has only these
-three references tree-wide.
+Reproduced under QEMU/TCG, 4 writers, one forced zstd_alloc_workspace()
+failure, mount time preallocation forced to fail.  Columns are "slept with no
+max level workspace in existence" / "max level puts" / result:
 
-herd7 with the LKMM, one SB shape with only the fence varying: allowed with
-this fence in front of a plain load, still allowed with the fence deleted,
-forbidden with smp_mb() and forbidden with an RMW after the fence.  Built
-with klitmus7 on x86_64 it hits 329608 times in 64000000 iterations, 329706
-with the fence deleted, 0 with smp_mb().
+  prealloc failed, zstd:3,  unpatched    1 / 0    / hang
+  prealloc failed, zstd:3,  patched      0 / 0    / ok
+  prealloc failed, zstd:15, unpatched    1 / 4848 / ok
+  prealloc ok,     zstd:3,  unpatched    0 / 7240 / ok
 
-arm64 defconfig+BTRFS_FS, gcc 13.3: ctree.o goes from 39 to 37 dmb ish, one
-each from btrfs_cow_block() and btrfs_search_slot().  On x86_64 .text is
-unchanged -- the only object differences are __LINE__ constants in the BUG
-table shifting by the two deleted lines.  Compile-tested W=1 on both.
+Row 1 hangs in zstd_get_workspace()'s schedule() (btrfs-delalloc kworker,
+hung_task >122s, all four writers stuck behind it).  Row 3 is the same code
+and the same sleep, and recovers only because level 15 traffic creates the
+workspace whose put wakes it.
 
-Sent as RFC for the one thing this does not settle: with the reader side
-gone, the smp_mb__after_atomic() on each writer has nothing left to pair
-with, and by the argument above trans_lock was doing the work anyway.  I
-left both alone rather than guess -- if they are stale too that is a
-separate patch, and I would rather have your reading first.
+With every allocation failed for 20s the retry runs 46230/s and the delalloc
+workers burn 11.1 CPU seconds without the backoff, 2733/s and 0.56s with it;
+upstream hangs outright under the same load.  55883 backoff calls under
+KASAN + PROVE_LOCKING + DEBUG_ATOMIC_SLEEP are clean.
+Compile-tested (W=1 and W=2, x86_64 defconfig + CONFIG_BTRFS_FS=y).
 ---
- fs/btrfs/ctree.c       | 2 --
- fs/btrfs/transaction.c | 2 --
- 2 files changed, 4 deletions(-)
+ fs/btrfs/zstd.c | 25 ++++++++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 8fe330d81b8f..fe74967d725a 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -625,8 +625,6 @@ static inline bool should_cow_block(struct btrfs_trans_handle *trans,
- 	if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN))
- 		return true;
+diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+index 86919293fd54..ef850dd43d3f 100644
+--- a/fs/btrfs/zstd.c
++++ b/fs/btrfs/zstd.c
+@@ -83,6 +83,8 @@ struct zstd_workspace_manager {
+ 	unsigned long active_map;
+ 	wait_queue_head_t wait;
+ 	struct timer_list timer;
++	/* Number of max level workspaces alive, only their put wakes @wait. */
++	atomic_t nr_max_level_ws;
+ };
  
--	/* Ensure we can see the FORCE_COW bit. */
--	smp_mb__before_atomic();
- 	if (test_bit(BTRFS_ROOT_FORCE_COW, &root->state))
- 		return true;
+ static size_t zstd_ws_mem_sizes[ZSTD_BTRFS_MAX_LEVEL];
+@@ -138,6 +140,9 @@ static void zstd_reclaim_timer_fn(struct timer_list *timer)
+ 		list_del(&victim->list);
+ 		zstd_free_workspace(&victim->list);
  
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index bafc62cf5ebc..3fced11d7889 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1531,7 +1531,6 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans)
- 			if (unlikely(ret2))
- 				return ret2;
++		if (level == ZSTD_BTRFS_MAX_LEVEL - 1)
++			atomic_dec(&zwsm->nr_max_level_ws);
++
+ 		if (list_empty(&zwsm->idle_ws[level]))
+ 			clear_bit(level, &zwsm->active_map);
  
--			/* see comments in should_cow_block() */
- 			clear_bit(BTRFS_ROOT_FORCE_COW, &root->state);
- 			smp_mb__after_atomic();
- 
-@@ -1819,7 +1818,6 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 		btrfs_abort_transaction(trans, ret);
- 		goto fail;
+@@ -204,6 +209,7 @@ int zstd_alloc_workspace_manager(struct btrfs_fs_info *fs_info)
+ 	} else {
+ 		set_bit(ZSTD_BTRFS_MAX_LEVEL - 1, &zwsm->active_map);
+ 		list_add(ws, &zwsm->idle_ws[ZSTD_BTRFS_MAX_LEVEL - 1]);
++		atomic_set(&zwsm->nr_max_level_ws, 1);
  	}
--	/* see comments in should_cow_block() */
- 	set_bit(BTRFS_ROOT_FORCE_COW, &root->state);
- 	smp_mb__after_atomic();
+ 	return 0;
+ }
+@@ -280,7 +286,8 @@ static struct list_head *zstd_find_workspace(struct btrfs_fs_info *fs_info, int
+  * If @level is 0, then any compression level can be used.  Therefore, we begin
+  * scanning from 1.  We first scan through possible workspaces and then after
+  * attempt to allocate a new workspace.  If we fail to allocate one due to
+- * memory pressure, go to sleep waiting for the max level workspace to free up.
++ * memory pressure, go to sleep waiting for the max level workspace to free up,
++ * or retry the allocation if no max level workspace exists to wake us.
+  */
+ struct list_head *zstd_get_workspace(struct btrfs_fs_info *fs_info, int level)
+ {
+@@ -303,6 +310,22 @@ struct list_head *zstd_get_workspace(struct btrfs_fs_info *fs_info, int level)
+ 	ws = zstd_alloc_workspace(fs_info, level);
+ 	memalloc_nofs_restore(nofs_flag);
+ 
++	if (!IS_ERR(ws) && clip_level(level) == ZSTD_BTRFS_MAX_LEVEL - 1)
++		atomic_inc(&zwsm->nr_max_level_ws);
++
++	/* Waiting without a workspace that can wake us would never end */
++	if (IS_ERR(ws) && !atomic_read(&zwsm->nr_max_level_ws)) {
++		static DEFINE_RATELIMIT_STATE(_rs,
++				/* once per minute */ 60 * HZ,
++				/* no burst */ 1);
++
++		if (__ratelimit(&_rs))
++			btrfs_warn(fs_info,
++				   "no zstd compression workspace, low memory, retrying");
++		memalloc_retry_wait(GFP_KERNEL);
++		goto again;
++	}
++
+ 	if (IS_ERR(ws)) {
+ 		DEFINE_WAIT(wait);
  
 
 ---
 base-commit: 2709dd5ae32f0828f386327c76bba9f39f63a1c6
-change-id: 20260823-btrfs-drop-ineffective-barrier-c3112e55b00b
+change-id: 20260823-btrfs-zstd-prealloc-hang-3b801b5489e9
 
 Best regards,
 --  

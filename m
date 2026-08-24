@@ -1,67 +1,60 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1FB242AD35
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 04:34:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7EB082AD35
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 04:34:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787546081; cv=none; b=kDorqGmck+BrwHfmfwbBltj2XChyqJfv0J8AzbdcVlYsSnK5cQw36Xkr8CMw2jw+ySemKxCG4LMYu7wL3SVZuzEx2Gd+8tluvrMc54pPAu5IKwoRJdlpt+PyfH4hdzbQDwG+qQJWmvB5jD0DeP6/sreq+0EgHHhJDwceq64itlg=
+	t=1787546084; cv=none; b=JXU+nLVBjKcSHsiwPSSXGhkAhLadTbxI0w8dlrR4eaS4w50DM4cCIs2Z91C5q6Rx1qMLEqQ1f3HRfrErrGjv+mZ+Thd7V4dme5GmecxO9/7DgKtnJ8OOgHNjg9e48AW7isvcAQchx/7I0YTTjvO1AcyqMaNp+vu7Rrhomr6pQ9c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787546081; c=relaxed/simple;
-	bh=kDA8PNLg1i7fKsR+y9xYrt+/bN28hPvpGpOg43WgHN0=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Z1KgiMyWOMBT2uc72nY2XaLq/W5+1/zSbjI7I919CmBmgvFac+SYDYBOxcQs1NsOc+75SEi5PEiOs3omXjVU8TIIEYbFqYUHkF6nlYeOgaySSf7DdRPZu6CcWNv0ECYIjJvGJ7UCu4olLK98wSGM2dr8uCqxrtyjakbqgYWsVyY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=GUVFPxR4; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=S3UCR74L; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1787546084; c=relaxed/simple;
+	bh=kjsi7mUaX45vIxK544L+EE58BVj9mYtFMyklilrmlyc=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=gb/niwlyhn7qxad9FEaELdnke/VzqN/rerpcDNmtQdMuIUU4Yh0sMpWZSpSVr4C5A6dkNydNLcFzGXuBgn2c0KO391WIK6PrO1LQpNyLcP/AczMDAFnWmu4BJtyHBUa6YTGbCRi1ciudWCIpdBzRmffxMsasMPOeLMYOPN4L8FE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nrcKc1NB; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=LkVFzv2u; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GUVFPxR4";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="S3UCR74L"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nrcKc1NB";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="LkVFzv2u"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id F1E4F866F2
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 04:34:29 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 429913E42
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 04:34:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787546074; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kAcqSY94R1kCsa+58nHoGqTPSrHDNayB8fckloED5g8=;
-	b=GUVFPxR4EBb7ZB5QH8XdZd7OfLKCINM1KHZb1+3ZtzTCG3gtYtlBW5ujJcyzOcvzvR7oWL
-	kgcw64pi3k7X6SNVjsIWo7kQOEaLGwH4ryNmpHyn1XX3wkX7HznWshdfRyl/F+WtE3ujfp
-	8PU3dH9aSBoB0T/SygFwtPR9QNqUoQw=
-Authentication-Results: smtp-out1.suse.de;
+	t=1787546072; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=VGEN0ReEc6QxVw7Z4d0bkmd2YCDf6ckGSThbyTgIpjs=;
+	b=nrcKc1NBIj9u5vYpftSV36ZAhrqEJsUadMsZWyxwT67wz310k938mQ9ddJKBzzrUDqiLyR
+	nFWJwBGIIny1OrsJ2d41KhM8J3PsQHWCTPDPpzAJWhQtQq9U6XXFaIReLYiGyWLwq+/f9Y
+	rSyF9Zj92OashTT8GS0H505ccSU6Pvw=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787546069; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kAcqSY94R1kCsa+58nHoGqTPSrHDNayB8fckloED5g8=;
-	b=S3UCR74LKgd08yUimh/o6It7XVJUU8myeD5UcBZ3JLA9RmsUtUvs3gpGnzXZFmHWVPh94b
-	cNRkjWVIVH2ExiAQXqGESm4FeOV0jhJu1sdNf4ywTxQL+XrXw2Dx+L+7pcXebDOThH9IGQ
-	dxw0roFYU+0R/x9WAy3JNmIl9cnCkTI=
+	t=1787546068; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=VGEN0ReEc6QxVw7Z4d0bkmd2YCDf6ckGSThbyTgIpjs=;
+	b=LkVFzv2uitu3Em86qxKmFiT7QbwLXTa+89M6BzG25BjMhSpGGiaJsBJfZ91xMNK2cIXGLL
+	bQ9OfkbkomupPPXFFsUkqq6OE+mzMT25eaN3ozkhz8v5zlqnBEY0GKi6RiQ9XUkf68ATM0
+	ozC4njmMu+ltlx2wmph1ClStnM6moE8=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E431413335
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 04:34:28 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3A19C13331
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 04:34:26 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id oFKFI9TJi2p1SAAAD6G6ig
+	id 0wqMNdLJi2p1SAAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 04:34:28 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 04:34:26 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 1/4] btrfs: dev-replace: fix the incorrect error message
-Date: Mon, 24 Aug 2026 14:04:05 +0930
-Message-ID: <35da84f6e8866b95ac64f6d514894255b4e5d29d.1787545216.git.wqu@suse.com>
+Subject: [PATCH v3 0/4] btrfs: dev-replace: replace_task related cleanup
+Date: Mon, 24 Aug 2026 14:04:04 +0930
+Message-ID: <cover.1787545216.git.wqu@suse.com>
 X-Mailer: git-send-email 2.55.0
-In-Reply-To: <cover.1787545216.git.wqu@suse.com>
-References: <cover.1787545216.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,9 +62,6 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spam-Flag: NO
 X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[99.99%];
 	MID_CONTAINS_FROM(1.00)[];
@@ -87,43 +77,45 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
 	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
-The error message for a failed dev-replace is:
+[CHANGELOG]
+v3:
+- More cleanup patches for dev-replace
+  Most newer ones are minor, e.g. changing the message and its timing.
+  But the error handling inside btrfs_dev_replace_finishing() is
+  important for later replace_task cleanup.
 
- "btrfs_scrub_dev(%s, %llu, %s) failed %d"
+- Directly modify replace_task when the replace is suspended
+  We do not need any extra lock, since the only reader is accessing
+  replace_task without lock anyway.
 
-Which is not showing if this is dev-replace or a regular scrub, and not
-consistent with the finished or canceled dev-replace messages:
+We have 4 errors paths that do not properly reset replace_task to NULL
+after the replace is cancelled/finished/suspended.
 
- "dev_replace from %s (devid %llu) to %s finished"
- "dev_replace from %s (devid %llu) to %s canceled"
+This is reported by Sashiko.
 
-To reduce confusion, change the error message to be more consistent with
-the remaining two.
+And since we're here, also do extra cleanup related to dev-replace error
+message and its timing.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/dev-replace.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Qu Wenruo (4):
+  btrfs: dev-replace: fix the incorrect error message
+  btrfs: dev-replace: concentrate all messages into
+    btrfs_dev_replace_finishing()
+  btrfs: dev-replace: fix the error handling in
+    btrfs_dev_replace_finishing()
+  btrfs: dev-replace: properly cleanup replace_task
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 72cba7fed942..a0bfc4e597a2 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -948,7 +948,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	} else {
- 		if (scrub_ret != -ECANCELED)
- 			btrfs_err(fs_info,
--				 "btrfs_scrub_dev(%s, %llu, %s) failed %d",
-+				 "dev_replace from %s (devid %llu) to %s failed %d",
- 				 btrfs_dev_name(src_device),
- 				 src_device->devid,
- 				 btrfs_dev_name(tgt_device), scrub_ret);
+ fs/btrfs/dev-replace.c | 79 +++++++++++++++++++++++-------------------
+ 1 file changed, 44 insertions(+), 35 deletions(-)
+
 -- 
 2.55.0
 

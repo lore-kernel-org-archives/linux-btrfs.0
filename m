@@ -1,31 +1,40 @@
-Received: from va-2-56.ptr.blmpb.com (va-2-56.ptr.blmpb.com [209.127.231.56])
+Received: from lf-2-16.ptr.blmpb.com (lf-2-16.ptr.blmpb.com [101.36.218.16])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12DC03DE455
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 06:50:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.56
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 29A3C317145
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 06:51:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=101.36.218.16
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787554257; cv=none; b=GwuykvQ1LG6usvzXqIYsWNlXRd66x3Lr05dSonIjX36UEaR8IDTh/cTDNB1/r8kML0hHTy9yaYVHKqWbJ/uGgA+FgbP2Uh/2gPukiUnxUj3a7pgExM5m+O8ABM3jXoMwYmML06tHuQjsu7wUXElWHhridjifQerOj6XOseLu2WI=
+	t=1787554284; cv=none; b=aSK9VRNtrs9El5Oj7baWdvFlJEWOs8RcX2dNRbpA8qzJF8rMRbsF/7Iml5PF8aogHPUSnoFBez9oWTXxERV6XX2j8EsG8IWgm2BV0iwa8X9hCx5m7nhHquYXNx8vGfNmZrFQ2FVjhex9SAMQSGpu7hl65SP7ivPxHYT5YYpUi5E=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787554257; c=relaxed/simple;
-	bh=yH5LkoFZ3XLjZ3Mjwouas787YzmwCZ5FOAiJBB4+inQ=;
-	h=Mime-Version:References:To:From:Date:In-Reply-To:Content-Type:Cc:
-	 Subject:Message-Id; b=YsUwA9yuk86YvsU6kuWKvioZ8BlBhcQOeM5IUkBZFqWWO3v8ASPO+8lVgCaY8BYvywSEDMqf2xyMJxEj9353PRHMyNvFLmzT6FUbd9h+fD+lRwhgPbcNk3zvQ0unURT7vpQccjRPE/Rl7N7yqenfV/EVADEipLlr+x27NHgPGQ0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=Fx8fxD8K; arc=none smtp.client-ip=209.127.231.56
+	s=arc-20240116; t=1787554284; c=relaxed/simple;
+	bh=o0aQiIHHVIyEknGxxA00g7dkW6/XrcDk0jiXi69Dk48=;
+	h=To:Subject:Date:In-Reply-To:Content-Type:From:Message-Id:
+	 Mime-Version:Cc:References; b=mm3fXPwNBUtHglAumzefXD70o7Pr0+Ugjhv+oCxppeb0MBfj9guMcu21nMu/f8hiv4WFnHUcmwoz4auFCuvHsDrnupvu6cigfxuEc4wk8YwKAjOMJrdBbrSa3kmt+r9DdyHE8vM2I9qcJajdJGl/mnJbqG6mpG8nFnXXo5adJyI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=MZKwUMzt; arc=none smtp.client-ip=101.36.218.16
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="Fx8fxD8K"
+	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="MZKwUMzt"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1787554247;
+ s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1787554230;
   h=from:subject:mime-version:from:date:message-id:subject:to:cc:
  reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=1sQ0uALAiW5Im06Z+YAR0yqBtcksM5H7Pk/nusbowgs=;
- b=Fx8fxD8K/9sGhB7ph1vr1NgYSirNxBNHEFb5WlYuAxoGq0OzM9sxtlC12wJdkQ3/z5EyFp
- 9tazygefqt88MLM1VvhEx8jYK5NpKmgyM1c3RQZCAmtW05h8j6IedgRn+NsKgmB9UWUz02
- eGzt2HDJkXf0ZpcQcOeBgJlK930uDN95urjnKA6ds2QxlPUziOvoF+njz75tLGrdC2cm5w
- bX+hm7WIdJoIkaknlkzW3dtKGrLdDzWnTkhMvk/iM0TIYUd13xgOoUL8mDKy3+7CSz8Zvc
- 0iYYkgNefxk+G7HXYKTcLwtpXDaISqRu34ouvWCbwpm+Vkc4QGhdli1GszP1RQ==
+ bh=MWGCLSHNkhUZSBMUSRtdFtTq7m9CK7tlhhvUGW3yFOQ=;
+ b=MZKwUMztaL0fpnHNe4YjeJeXUJJ8aD0QJdSBp/t8003TNK8POTA3lejb3MfFp6oIOmIRsf
+ 3Ysdn6oxafZma+fkIuLk77qUV341GC683jQv5w2mEuefeb2sbjtpLF6RgeRzL/iMlVjhBN
+ 9Ytm7lvbsxejpMzrRNC0m4ndTzc5kjowpBtSmz35OR+q9W2ZqKrYAEJHPLR6FGACtm3c0Y
+ PktFs1Gx9xhSCEQnvveDf6OgBehtVmmunUzCgKLa4nR3YHKXnYDJ/ptUVNKyDm35DrUbLC
+ veLlw/dXQPraZkOd5BSwHMGgq4WQP0Q/yKrcxVeSnmoThXG+8IA81EzvJ9FlMA==
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/4] btrfs: zoned: track only sequential zones as active
+Date: Mon, 24 Aug 2026 14:49:53 +0800
+Received: from pdzhu.teiron-inc.cn ([183.34.169.70]) by smtp.larksuite.com with ESMTPS; Mon, 24 Aug 2026 06:50:29 +0000
+X-Lms-Return-Path: <lba+26a8be9b6+1fe132+vger.kernel.org+zhudongjiang@fygo.io>
+In-Reply-To: <cover.1787551793.git.zhudongjiang@fygo.io>
+Content-Type: text/plain; charset=UTF-8
+From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
+Message-Id: <9b86d2db35ad9afc13069d6ee8fcf421c85ef030.1787551793.git.zhudongjiang@fygo.io>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -33,169 +42,192 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
 X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
-X-Lms-Return-Path: <lba+26a8be9c7+4055d8+vger.kernel.org+zhudongjiang@fygo.io>
-Received: from pdzhu.teiron-inc.cn ([183.34.169.70]) by smtp.larksuite.com with ESMTPS; Mon, 24 Aug 2026 06:50:46 +0000
-References: <cover.1787551793.git.zhudongjiang@fygo.io>
-To: <linux-btrfs@vger.kernel.org>
-From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
-Date: Mon, 24 Aug 2026 14:49:56 +0800
-In-Reply-To: <cover.1787551793.git.zhudongjiang@fygo.io>
-X-Mailer: git-send-email 2.39.5
 Content-Transfer-Encoding: 7bit
-Content-Type: text/plain; charset=UTF-8
+X-Mailer: git-send-email 2.39.5
 Cc: <johannes.thumshirn@wdc.com>, <naohiro.aota@wdc.com>
-Subject: [PATCH 4/4] btrfs: zoned: serialize zone finishing per block group
-Message-Id: <388e4a6778d65d6d08c7f921c629d4645bac9959.1787551793.git.zhudongjiang@fygo.io>
-
-[BUG]
-On an HC620 with max_active_zones=128, buffered writes occupied all 128
-active-zone slots.  A metadata-heavy create/delete workload followed by
-sync then forced a metadata block group switch.
-
-A kernel with additional zone finish tracing reported:
-
-  zoned-debug: finish clear-runtime bg=140928614400 caller=btrfs_zone_finish_endio_workfn comm=kworker/u8:7
-  zoned-debug: finish early-inactive bg=140928614400 caller=btrfs_check_meta_write_pointer comm=sync
-  zoned-debug: pivot finish ret=0 old_bg=140928614400 new_bg=339839287296
-  zoned-debug: activate fail slot bg=339839287296 type=metadata left=0 max_active=128 comm=sync
-  zoned-debug: finish zone-mgmt bg=140928614400 ret=0 left=0 caller=btrfs_zone_finish_endio_workfn comm=kworker/u8:7
-  BTRFS error (device sdb): error while writing out transaction: -EAGAIN
-  BTRFS error (device sdb state A): Transaction 67 aborted (-EAGAIN)
-  BTRFS info (device sdb state EA): forced readonly
-  zoned-debug: clear-active dev=/dev/sdb pos=140928614400 left=1 max_active=128
-
-The transaction was aborted before the old block group returned its
-active-zone slot, forcing the filesystem read-only.
+References: <cover.1787551793.git.zhudongjiang@fygo.io>
 
 [CAUSE]
-do_zone_finish() clears BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE before issuing
-the zone finish operation.  This allows the following interleaving:
+The runtime activation and finish paths apply active-zone accounting to
+both conventional and sequential stripes.
 
-  Thread A, endio worker              Thread B, transaction writeback
+At mount, however, active_zones_left is rebuilt from device zone
+conditions.  Conventional zones report NOT_WP and are therefore not
+included.  Meanwhile, all-conventional block groups are marked active
+and added to zone_active_bgs, so mount recovery still decreases
+reserved_active_zones for their metadata and system stripes.
 
-  clear ZONE_IS_ACTIVE
-  call_zone_finish(old)
-                                        observe old as inactive
-                                        return from do_zone_finish(old)
-                                        activate(new)
-                                        fail with left == 0
-  clear the device active bit
-  increment active_zones_left
+The two counters can therefore diverge across a remount.
 
-Thread B treats the cleared active bit as a completed finish while thread
-A is still performing the device operation.
+[BUG]
+Each unmatched reservation decrement lets data consume one more
+sequential active-zone slot.  Once the reservation becomes negative,
+data can exhaust all such slots.
+
+A later transition from a conventional metadata or system target to a
+sequential one can then fail, because finishing the conventional target
+does not release a sequential active-zone slot.
+
+If this happens during synchronous transaction writeback,
+btrfs_check_meta_write_pointer() returns -EAGAIN.  The transaction is
+then aborted and the filesystem is forced read-only.
+
+The reservation mismatch was reproduced by creating small files with
+large xattrs in batches, syncing them and remounting an HC620 filesystem
+using SINGLE profiles:
+
+  active_zones_left:     126
+  reserved_active_zones: 3 -> -8
+
+The active list contained one partially used conventional system block
+group, nine full conventional metadata block groups and one partially
+used conventional metadata block group.
 
 [FIX]
-Add BLOCK_GROUP_FLAG_ZONE_FINISHING and keep ZONE_IS_ACTIVE set until the
-zone finish operation and active-list cleanup are complete.
+Use sequential stripes as the unit of active-zone tracking.
 
-Concurrent finishers wait for ZONE_FINISHING to be cleared instead of
-returning early.  Wake them after clearing ZONE_IS_ACTIVE and removing
-the block group from the active list.  If a waiter acquired a temporary
-read-only reference, release it after the wait.
+Do not mark all-conventional block groups active.  Only sequential
+stripes update the active-zone bitmap and non-data reservation during
+activation, finish and mount recovery.
 
 Assisted-by: LLM
 Signed-off-by: Dongjiang Zhu <zhudongjiang@fygo.io>
 ---
- fs/btrfs/block-group.h |  1 +
- fs/btrfs/zoned.c       | 29 ++++++++++++++++++++++++++++-
- 2 files changed, 29 insertions(+), 1 deletion(-)
+ fs/btrfs/block-group.h |  6 +++++-
+ fs/btrfs/zoned.c       | 48 +++++++++++++++++++++++++++++-------------
+ 2 files changed, 38 insertions(+), 16 deletions(-)
 
 diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
-index 37ab8b7eee9c..d8ae56f3956d 100644
+index 69d56864d4ba..37ab8b7eee9c 100644
 --- a/fs/btrfs/block-group.h
 +++ b/fs/btrfs/block-group.h
-@@ -99,6 +99,7 @@ enum btrfs_block_group_flags {
- 	BLOCK_GROUP_FLAG_NEW,
- 	BLOCK_GROUP_FLAG_FULLY_REMAPPED,
- 	BLOCK_GROUP_FLAG_STRIPE_REMOVAL_PENDING,
-+	BLOCK_GROUP_FLAG_ZONE_FINISHING,
- };
- 
- enum btrfs_caching_type {
+@@ -80,13 +80,17 @@ enum btrfs_block_group_flags {
+ 	BLOCK_GROUP_FLAG_TO_COPY,
+ 	BLOCK_GROUP_FLAG_RELOCATING_REPAIR,
+ 	BLOCK_GROUP_FLAG_CHUNK_ITEM_INSERTED,
++	/*
++	 * Only block groups containing sequential zones can have this bit set;
++	 * conventional-only block groups never do.
++	 */
+ 	BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE,
+ 	BLOCK_GROUP_FLAG_ZONED_DATA_RELOC,
+ 	/* Does the block group need to be added to the free space tree? */
+ 	BLOCK_GROUP_FLAG_NEEDS_FREE_SPACE,
+ 	/* Set after we add a new block group to the free space tree. */
+ 	BLOCK_GROUP_FLAG_FREE_SPACE_ADDED,
+-	/* Indicate that the block group is placed on a sequential zone */
++	/* Indicate that the block group contains at least one sequential zone. */
+ 	BLOCK_GROUP_FLAG_SEQUENTIAL_ZONE,
+ 	/*
+ 	 * Indicate that block group is in the list of new block groups of a
 diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 9896a6b64d07..3bda40c0d4de 100644
+index 9d448cdd60c4..bd079d3b31ba 100644
 --- a/fs/btrfs/zoned.c
 +++ b/fs/btrfs/zoned.c
-@@ -2558,6 +2558,7 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
- 	const bool is_metadata = (block_group->flags &
- 			(BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM));
- 	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
-+	bool bg_ro = false;
- 	int ret = 0;
- 	int i;
- 
-@@ -2567,6 +2568,11 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
- 		return 0;
- 	}
- 
-+	if (test_bit(BLOCK_GROUP_FLAG_ZONE_FINISHING, &block_group->runtime_flags)) {
-+		spin_unlock(&block_group->lock);
-+		goto wait_finish;
-+	}
-+
- 	/* Check if we have unwritten allocated space */
- 	if (is_metadata &&
- 	    block_group->start + block_group->alloc_offset > block_group->meta_write_pointer) {
-@@ -2591,6 +2597,7 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
- 		ret = btrfs_inc_block_group_ro(block_group, false);
- 		if (ret)
- 			return ret;
-+		bg_ro = true;
- 
- 		/* Ensure all writes in this block group finish */
- 		btrfs_wait_block_group_reservations(block_group);
-@@ -2613,6 +2620,12 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
- 			return 0;
- 		}
- 
-+		if (test_bit(BLOCK_GROUP_FLAG_ZONE_FINISHING,
-+			     &block_group->runtime_flags)) {
-+			spin_unlock(&block_group->lock);
-+			goto wait_finish;
-+		}
-+
- 		if (block_group->reserved ||
- 		    test_bit(BLOCK_GROUP_FLAG_ZONED_DATA_RELOC,
- 			     &block_group->runtime_flags)) {
-@@ -2622,7 +2635,7 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
+@@ -1969,7 +1969,6 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+ 		} else if (map->num_stripes == num_conventional) {
+ 			cache->alloc_offset = last_alloc;
+ 			cache->zone_capacity = cache->length;
+-			set_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &cache->runtime_flags);
+ 			goto out;
  		}
  	}
+@@ -2005,6 +2004,8 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+ 	if (!ret) {
+ 		cache->meta_write_pointer = cache->alloc_offset + cache->start;
+ 		if (test_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &cache->runtime_flags)) {
++			ASSERT(test_bit(BLOCK_GROUP_FLAG_SEQUENTIAL_ZONE,
++					&cache->runtime_flags));
+ 			btrfs_get_block_group(cache);
+ 			spin_lock(&fs_info->zone_active_bgs_lock);
+ 			list_add_tail(&cache->active_bg_list,
+@@ -2198,6 +2199,9 @@ static bool check_bg_is_active(struct btrfs_eb_write_context *ctx,
+ 	if (test_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &block_group->runtime_flags))
+ 		return true;
  
--	clear_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &block_group->runtime_flags);
-+	set_bit(BLOCK_GROUP_FLAG_ZONE_FINISHING, &block_group->runtime_flags);
- 	block_group->alloc_offset = block_group->zone_capacity;
- 	if (block_group->flags & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM))
- 		block_group->meta_write_pointer = block_group->start +
-@@ -2646,8 +2659,13 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
- 		btrfs_dec_block_group_ro(block_group);
++	if (!test_bit(BLOCK_GROUP_FLAG_SEQUENTIAL_ZONE, &block_group->runtime_flags))
++		return true;
++
+ 	if (fs_info->treelog_bg == block_group->start) {
+ 		if (!btrfs_zone_activate(block_group)) {
+ 			int ret_fin;
+@@ -2417,6 +2421,9 @@ bool btrfs_zone_activate(struct btrfs_block_group *block_group)
+ 	if (unlikely(btrfs_is_testing(fs_info)))
+ 		return true;
+ 
++	if (!test_bit(BLOCK_GROUP_FLAG_SEQUENTIAL_ZONE, &block_group->runtime_flags))
++		return true;
++
+ 	map = block_group->physical_map;
  
  	spin_lock(&fs_info->zone_active_bgs_lock);
-+	spin_lock(&block_group->lock);
-+	clear_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &block_group->runtime_flags);
- 	ASSERT(!list_empty(&block_group->active_bg_list));
- 	list_del_init(&block_group->active_bg_list);
-+	clear_and_wake_up_bit(BLOCK_GROUP_FLAG_ZONE_FINISHING,
-+			      &block_group->runtime_flags);
-+	spin_unlock(&block_group->lock);
+@@ -2448,6 +2455,9 @@ bool btrfs_zone_activate(struct btrfs_block_group *block_group)
+ 		if (!device->bdev)
+ 			continue;
+ 
++		if (!btrfs_dev_is_sequential(device, physical))
++			continue;
++
+ 		if (zinfo->max_active_zones == 0)
+ 			continue;
+ 
+@@ -2514,26 +2524,25 @@ static int call_zone_finish(struct btrfs_block_group *block_group,
+ 	struct btrfs_device *device = stripe->dev;
+ 	const u64 physical = stripe->physical;
+ 	struct btrfs_zoned_device_info *zinfo = device->zone_info;
++	unsigned int nofs_flags;
+ 	int ret;
+ 
+ 	if (!device->bdev)
+ 		return 0;
+ 
+-	if (zinfo->max_active_zones == 0)
++	if (!btrfs_dev_is_sequential(device, physical))
+ 		return 0;
+ 
+-	if (btrfs_dev_is_sequential(device, physical)) {
+-		unsigned int nofs_flags;
+-
+-		nofs_flags = memalloc_nofs_save();
+-		ret = blkdev_zone_mgmt(device->bdev, REQ_OP_ZONE_FINISH,
+-				       physical >> SECTOR_SHIFT,
+-				       zinfo->zone_size >> SECTOR_SHIFT);
+-		memalloc_nofs_restore(nofs_flags);
++	if (zinfo->max_active_zones == 0)
++		return 0;
+ 
+-		if (ret)
+-			return ret;
+-	}
++	nofs_flags = memalloc_nofs_save();
++	ret = blkdev_zone_mgmt(device->bdev, REQ_OP_ZONE_FINISH,
++			       physical >> SECTOR_SHIFT,
++			       zinfo->zone_size >> SECTOR_SHIFT);
++	memalloc_nofs_restore(nofs_flags);
++	if (ret)
++		return ret;
+ 
+ 	if (!(block_group->flags & BTRFS_BLOCK_GROUP_DATA))
+ 		zinfo->reserved_active_zones++;
+@@ -3087,8 +3096,17 @@ void btrfs_check_active_zone_reservation(struct btrfs_fs_info *fs_info)
+ 		      (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM)))
+ 			continue;
+ 
+-		for (int i = 0; i < map->num_stripes; i++)
+-			map->stripes[i].dev->zone_info->reserved_active_zones--;
++		for (int i = 0; i < map->num_stripes; i++) {
++			struct btrfs_device *device = map->stripes[i].dev;
++			u64 physical = map->stripes[i].physical;
++
++			if (!device->bdev ||
++			    !btrfs_dev_is_sequential(device, physical) ||
++			    !device->zone_info->max_active_zones)
++				continue;
++
++			device->zone_info->reserved_active_zones--;
++		}
+ 	}
  	spin_unlock(&fs_info->zone_active_bgs_lock);
- 
- 	/* For active_bg_list */
-@@ -2656,6 +2674,15 @@ static int do_zone_finish(struct btrfs_block_group *block_group, bool fully_writ
- 	clear_and_wake_up_bit(BTRFS_FS_NEED_ZONE_FINISH, &fs_info->flags);
- 
- 	return ret;
-+
-+wait_finish:
-+	wait_on_bit_io(&block_group->runtime_flags,
-+		       BLOCK_GROUP_FLAG_ZONE_FINISHING,
-+		       TASK_UNINTERRUPTIBLE);
-+	if (bg_ro)
-+		btrfs_dec_block_group_ro(block_group);
-+
-+	return 0;
  }
- 
- int btrfs_zone_finish(struct btrfs_block_group *block_group)
 -- 
 2.39.5

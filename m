@@ -1,142 +1,97 @@
-Received: from mail-qt1-f173.google.com (mail-qt1-f173.google.com [209.85.160.173])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from shelob.surriel.com (shelob.surriel.com [96.67.55.147])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2FB4938423B
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 19:33:17 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.160.173
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787599998; cv=pass; b=T6Hry5HpJ6J29w43JYYj5deK0xHf/OCl2GLRJbHlORH3HwvBhdLbFQauXvq9a6YQaPLFBgMdUUwy0C24e4FPald46KnD05Ukn994zuN+JX4R2NgnBDLvY3rXbr7IVsJ8Kqzdr7bXsj5Q5DT50KDw1YEpXG/Jn1vqQ1KsqvJxRfI=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787599998; c=relaxed/simple;
-	bh=6nzgFXxKsg+JnpSIQP0/wxVzDkLsa2CzNa+jLf/mGAU=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=EgkWmaYUnLs2EOjdDogpXXgXYXehYBI1w7wX2BOX9J7qe1MmQbawJKb2ZVxusD1O+7oyVC6p4Ls0/pdbLHYzqmfY/WbYQWRJFmFrk3c7+u5TyTl5HvW3P+ScNuTrbwp65Y/NnIjx4s0oMQWI0V60m1ZE0z/YI9LKUq1yC62z+8s=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=szeredi.hu; spf=pass smtp.mailfrom=szeredi.hu; dkim=pass (1024-bit key) header.d=szeredi.hu header.i=@szeredi.hu header.b=rWbvmCWm; arc=pass smtp.client-ip=209.85.160.173
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=szeredi.hu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=szeredi.hu
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AAD6F35C193;
+	Mon, 24 Aug 2026 19:34:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=96.67.55.147
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1787600047; cv=none; b=WopWwPl5/NB3YfoBqVTiOyGNiLiEHG3QukadeSYFMUZEBN4/n81NeRqt+qCmm38I97Pg32tE2yVDV8tncVcGdKK05zQpEesLLem+oiiYSnW+n5sbYTHZkqMuCCVWS1IjeN+jGdKkTnbJpXA17LQ0eEvmOKspX+zMdPPKkcpi4Ms=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1787600047; c=relaxed/simple;
+	bh=e856r2XdSovK3s46tfjF7qqNQSSG6k7Xd9AJzciOatU=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=uiAv1+c3PPD5HZNEs/wQpchJNXut66ik5n9pIe243jgIP/4Ch4qijmzebdHI7VYhOHKstXITpOc7SaZvJ3HTlf6HJlZosr2jNGL1nMeFNuqVHARI9uUib/MDFu5bo7NGzrjL7CXzp+t+qdi4gfUDMakGho65yL7VvhFJUy8IrLI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=surriel.com; spf=pass smtp.mailfrom=surriel.com; dkim=pass (2048-bit key) header.d=surriel.com header.i=@surriel.com header.b=kUlwIRrM; arc=none smtp.client-ip=96.67.55.147
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=surriel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=surriel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=szeredi.hu header.i=@szeredi.hu header.b="rWbvmCWm"
-Received: by mail-qt1-f173.google.com with SMTP id d75a77b69052e-52cd38ddcdfso22513741cf.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 12:33:16 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1787599996; cv=none;
-        d=google.com; s=arc-20260327;
-        b=Efoe3AVtWRIaPyK5GrRAlGFuf7hIRs/Vyhdh/5s8QAoPg7wBU4DBm3GaRYNFUkxn1G
-         2G/uXuNpeSpaCni8gQavH/r15zn1QvDzfZ6oHItOPKb0TExTAiXJcGelVKG1CosyShd4
-         QQ4SNvR1pKZYJUy4TmUgFNnWA5UhCKGjcWLqS485Ea743vuadTPkRdP5b8urBr5781Yx
-         OJSy0B/aaQUAHyylCmHYCL3SDDCKhKuxe0tO65bD3UIzyAGVpQBrQ5lEc7ScLYzxfrE+
-         1nrV29Jj2KESxseZqBvvSRLv4VC2Bi7EYMC9kgVEFrs3zU2D8Qe+INSZssD8jGtt8x1q
-         8Ebg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=DK1kq+UORspwzlcL44O0F5OA7o6ZQNGRnMf+1R0tFOc=;
-        fh=L3JNJ2cPrKbYXp0dKpaUHMOuxF3GmtP/VrtEZQH0zzw=;
-        b=IU9JEb0RqNToKOZMUzXM7QCkPpMHwYnMXeSpZOpwyNLBoNfbIKtLkL0xd/3O06fn5Y
-         v2TLm8QGJ7YKdiPSxsyexPgY6jprtf/lV8/xCJgI1NXQ/lPzJq/4+PnL/0TIjZ9ybUIb
-         iJhRnHxBUtsO9WYozfyUJa5AMMOCA6ZufiVAdZQmpyemkHfw/A2dYX/Y46546dTySDjx
-         x9oZa516I3Ql6zr74c3VB75sBt14jCKEydGhVaA6oXDwjyOZWl/E1nrwrJW00D0WfcxH
-         Czz2P8N5ciFkJKVoV0wz8D386SuBSsqgfQiJJJH0MHJYSl7PQ3lwLpvRNi3f1VWOFsIq
-         uNpA==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=szeredi.hu; s=google; t=1787599996; x=1788204796; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=DK1kq+UORspwzlcL44O0F5OA7o6ZQNGRnMf+1R0tFOc=;
-        b=rWbvmCWmjcCMV6cmRGcdr3+XqqhuMWDGjRX1T5jRxsvlEvHcuEqtIU8Ara72ZK/KBC
-         Fo3btCJeMyC+8K71XbO+ycgkyzflH+/WAU7RjJ+jWdNq4ZIUVDtoY46nzEbAYFajZokv
-         WbFxgJPYPnzHMK5AKBCgIKfsa0iEZf2co5VII=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787599996; x=1788204796;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=DK1kq+UORspwzlcL44O0F5OA7o6ZQNGRnMf+1R0tFOc=;
-        b=B7I7Dx3kM98aI7gIogJefBsd36Ni5Lim/Ylfv8tE3eUiqy4PTpmzlaCIxrV8JLYnty
-         PWQ0J77xmyJVyeRv16F2AUfR4bb4popdBgswfi/rxtb/hg/FNzaSzKTGI1D7E6mK9NLA
-         FjXsKam+MHZEQ7geR/InTR0NUKobxgzIjNchPVAxtb32qSzUDyxdniFKrr/Gr1LbFCGw
-         a0+ysxrA89UpBJAVK4cvQ+KGMxuCZ9uLvYOo5o5pZVbp3N67w6UJb4vt6AY72kDf6ZHO
-         fCbQeroccM9CTiG5Qq4DgzPc4P0LBG5YHZPCOMi9TkTETUx/QiMjycrD1mHELoY7eQMn
-         vFnA==
-X-Forwarded-Encrypted: i=1; AHgh+RpYB6h0BqrwhcDpZln3QNqDZumGtPSrORhDMz8FcG8pE5l8mCnFWB/osbnaPYm+Ca4tOV9m9S4gsEjyNg==@vger.kernel.org
-X-Gm-Message-State: AFuF++mn4qabQWnfgGnwOQDIvSj3tiQObVv+sZyUvwJzKR5LoBhoXCmU
-	aFqoyn8JkwYdGPrgGc00A0wkijpBp05y0Y89+oF7cZXc3SApiew2KeGUR7PGWWLaSkfSrHVh0Ab
-	Tja1mAVw2NyIer0jrp+hQMPegjvV2bShtcZW0SNybxm4D9womDS3WOSY=
-X-Gm-Gg: AR+sD12Tcs6KTiQfEJVPySz60oH4YFhSNMhoxAZRjLATuvle/i67N0tYnhymXlBXWeV
-	RabXr8b7STo6KQ7xnPutU8nnLXmEmUlVniTiymt+dCfsly2Ovf9tHhWe+2RXOPKrK7u1m5zvpZJ
-	4pchQUHf5qQcq6O4bTssROhb8OrubAqmpCOnnxpvL6h3T5hFSY31cl31iHbjlei+gc5fs8Utm+i
-	zHJ1H2OI3WKziSnxqAJ0ed+bsSWd3CUHJzha7BZ6jDd2YIIMqZx9Kd0MgEMGkA7atyvjxCxDQuO
-	XPC8MOoJrzan6VlPxS1lsHlWv3S0s1vctCifRUhUKybdMpFCMqy4x23fNXolAtfPDJMK0GSORTy
-	CXqI=
-X-Received: by 2002:a05:622a:411b:b0:517:78c7:d93a with SMTP id
- d75a77b69052e-52df57324bamr286714031cf.16.1787599995881; Mon, 24 Aug 2026
- 12:33:15 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=surriel.com header.i=@surriel.com header.b="kUlwIRrM"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=surriel.com
+	; s=mail; h=MIME-Version:Content-Transfer-Encoding:Content-Type:References:
+	In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender:Reply-To:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID; bh=e856r2XdSovK3s46tfjF7qqNQSSG6k7Xd9AJzciOatU=; b=kUlwIR
+	rM9b3PMYhiTB2ZzcglWmkYwdqJmum7Yr9yLS+0pnHE0rt/ENWEENaxynSpa0bl4C/LI4/Xwqa1QZt
+	LzDUVSkI8BVfOuQ+ad+upzsEcZiluRho8D2+C8AbG0Mb7FPgxDtYnHrANWSPsKpJXN+DEO4h2vx7B
+	IJL57OpS684UxqO0KtAwB7dj33I/ZOf+cnSEoZCWVAsmjnzkzqQ4yEWaCSuFicOHlhipbOJtWiYlv
+	Oss220Q4JuquNEbuhQ53VR+jVhnGhX2IH8de4HUyrojx/eNO0a7v2gTlRsjJN/DG609haBjOUgEU7
+	IAYyq0bPGD5ajDBC1bAmNCIF68uA==;
+Received: from [2601:18c:8100:a0e0:5a47:caff:fe78:8708]
+	by shelob.surriel.com with esmtpsa  (TLS1.3) tls TLS_AES_256_GCM_SHA384
+	(Exim 4.99.5)
+	(envelope-from <riel@surriel.com>)
+	id 1wyaQ0-000000038ub-1E9K;
+	Mon, 24 Aug 2026 19:33:16 +0000
+Message-ID: <b067b26d9d0bc224b5916c7e064277863e7bbc55.camel@surriel.com>
+Subject: Re: Removing ->dirty_folio
+From: Rik van Riel <riel@surriel.com>
+To: Matthew Wilcox <willy@infradead.org>, Pedro Falcato <pfalcato@suse.de>, 
+ Christoph Hellwig	 <hch@lst.de>, Jann Horn <jannh@google.com>, David
+ Howells <dhowells@redhat.com>,  John Hubbard <jhubbard@nvidia.com>, Jan
+ Kara <jack@suse.cz>, Qu Wenruo <wqu@suse.com>, "Darrick J. Wong"	
+ <djwong@kernel.org>, linux-btrfs@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org, 	linux-mm@kvack.org,
+ linux-xfs@vger.kernel.org
+Cc: David Hildenbrand <davidhildenbrand@gmail.com>
+Date: Mon, 24 Aug 2026 15:33:15 -0400
+In-Reply-To: <aoyWln-Gt-yvZQkE@casper.infradead.org>
+References: <aoyWln-Gt-yvZQkE@casper.infradead.org>
+Autocrypt: addr=riel@surriel.com; prefer-encrypt=mutual;
+ keydata=mQENBFIt3aUBCADCK0LicyCYyMa0E1lodCDUBf6G+6C5UXKG1jEYwQu49cc/gUBTTk33A
+ eo2hjn4JinVaPF3zfZprnKMEGGv4dHvEOCPWiNhlz5RtqH3SKJllq2dpeMS9RqbMvDA36rlJIIo47
+ Z/nl6IA8MDhSqyqdnTY8z7LnQHqq16jAqwo7Ll9qALXz4yG1ZdSCmo80VPetBZZPw7WMjo+1hByv/
+ lvdFnLfiQ52tayuuC1r9x2qZ/SYWd2M4p/f5CLmvG9UcnkbYFsKWz8bwOBWKg1PQcaYHLx06sHGdY
+ dIDaeVvkIfMFwAprSo5EFU+aes2VB2ZjugOTbkkW2aPSWTRsBhPHhV6dABEBAAG0HlJpayB2YW4gU
+ mllbCA8cmllbEByZWRoYXQuY29tPokBHwQwAQIACQUCW5LcVgIdIAAKCRDOed6ShMTeg05SB/986o
+ gEgdq4byrtaBQKFg5LWfd8e+h+QzLOg/T8mSS3dJzFXe5JBOfvYg7Bj47xXi9I5sM+I9Lu9+1XVb/
+ r2rGJrU1DwA09TnmyFtK76bgMF0sBEh1ECILYNQTEIemzNFwOWLZZlEhZFRJsZyX+mtEp/WQIygHV
+ WjwuP69VJw+fPQvLOGn4j8W9QXuvhha7u1QJ7mYx4dLGHrZlHdwDsqpvWsW+3rsIqs1BBe5/Itz9o
+ 6y9gLNtQzwmSDioV8KhF85VmYInslhv5tUtMEppfdTLyX4SUKh8ftNIVmH9mXyRCZclSoa6IMd635
+ Jq1Pj2/Lp64tOzSvN5Y9zaiCc5FucXtB9SaWsgdmFuIFJpZWwgPHJpZWxAc3VycmllbC5jb20+iQE
+ +BBMBAgAoBQJSLd2lAhsjBQkSzAMABgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRDOed6ShMTe
+ g4PpB/0ZivKYFt0LaB22ssWUrBoeNWCP1NY/lkq2QbPhR3agLB7ZXI97PF2z/5QD9Fuy/FD/jddPx
+ KRTvFCtHcEzTOcFjBmf52uqgt3U40H9GM++0IM0yHusd9EzlaWsbp09vsAV2DwdqS69x9RPbvE/Ne
+ fO5subhocH76okcF/aQiQ+oj2j6LJZGBJBVigOHg+4zyzdDgKM+jp0bvDI51KQ4XfxV593OhvkS3z
+ 3FPx0CE7l62WhWrieHyBblqvkTYgJ6dq4bsYpqxxGJOkQ47WpEUx6onH+rImWmPJbSYGhwBzTo0Mm
+ G1Nb1qGPG+mTrSmJjDRxrwf1zjmYqQreWVSFEt26tBpSaWsgdmFuIFJpZWwgPHJpZWxAZmIuY29tP
+ okBPgQTAQIAKAUCW5LbiAIbIwUJEswDAAYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQznneko
+ TE3oOUEQgAsrGxjTC1bGtZyuvyQPcXclap11Ogib6rQywGYu6/Mnkbd6hbyY3wpdyQii/cas2S44N
+ cQj8HkGv91JLVE24/Wt0gITPCH3rLVJJDGQxprHTVDs1t1RAbsbp0XTksZPCNWDGYIBo2aHDwErhI
+ omYQ0Xluo1WBtH/UmHgirHvclsou1Ks9jyTxiPyUKRfae7GNOFiX99+ZlB27P3t8CjtSO831Ij0Ip
+ QrfooZ21YVlUKw0Wy6Ll8EyefyrEYSh8KTm8dQj4O7xxvdg865TLeLpho5PwDRF+/mR3qi8CdGbkE
+ c4pYZQO8UDXUN4S+pe0aTeTqlYw8rRHWF9TnvtpcNzZw==
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.60.2 (3.60.2-1.fc44) 
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260820193343.3852967-1-willy@infradead.org> <20260820193343.3852967-3-willy@infradead.org>
- <CAJfpegvP3i8ZJc2T=+f4rAhZ4E1QcT5+jC6mQPLxtB-yoK9Brw@mail.gmail.com>
- <aoxHOSC9kTPbKeNq@casper.infradead.org> <CAJfpegv3Ak+qNLb=fTSCSz7-taQ3Ui-Hkmqgn4PaGPe=CR4cbQ@mail.gmail.com>
- <aoyKxvdQdeJQfPHj@casper.infradead.org>
-In-Reply-To: <aoyKxvdQdeJQfPHj@casper.infradead.org>
-From: Miklos Szeredi <miklos@szeredi.hu>
-Date: Mon, 24 Aug 2026 21:33:03 +0200
-X-Gm-Features: AcwNN1WHKWPg-gulrL_ybc1YuKIIGquGv3tDzpc2zs94XwMFk4U-dS3q1iLbtfs
-Message-ID: <CAJfpegtgenUaudDcvecJuV2_WkkVw=gdcB0Eqg=UFKPMZP1uKQ@mail.gmail.com>
-Subject: Re: [PATCH 2/7] fuse: Use filemap_invalidate_pages()
-To: Matthew Wilcox <willy@infradead.org>
-Cc: Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, Chris Mason <clm@fb.com>, 
-	David Sterba <dsterba@suse.com>, Trond Myklebust <trondmy@kernel.org>, Anna Schumaker <anna@kernel.org>, 
-	Mike Marshall <hubcap@omnibond.com>, Martin Brandenburg <martin@omnibond.com>, 
-	Alexander Viro <viro@zeniv.linux.org.uk>, linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, 
-	linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	fuse-devel@lists.linux.dev, linux-nfs@vger.kernel.org, 
-	devel@lists.orangefs.org, Pavel Begunkov <asml.silence@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
 
-On Mon, 24 Aug 2026 at 20:17, Matthew Wilcox <willy@infradead.org> wrote:
+On Mon, 2026-08-24 at 20:08 +0100, Matthew Wilcox wrote:
+> I think it's time to remove folio_mark_dirty(), ->dirty_folio() and
+> so on.
+>=20
+> This is not how filesystems want to be informed of folio dirtying.
+>=20
+This sounds like I should leave the folio_mark_dirty()
+stuff in the get_user_pages() code alone for now, and
+leave the shaving of that yak to another day?
 
-> Before:
->
-> fuse_open()
->         invalidate_inode_pages2()
->                 folio_lock()
->                 folio_unmap_invalidate()
->                         folio_launder()
->                 folio_unlock()
->
-> After:
->
-> fuse_open()
->         filemap_invalidate_pages()
->                 filemap_write_and_wait_range()
->                 invalidate_inode_pages2_range()
->                         folio_lock()
->                         folio_unmap_invalidate()
->                                 folio_test_dirty()
->                         folio_unlock()
->
-> so what's the serialisation that the filesystem can perform in the first
-> case that it can't perform in the second case?
+In that case, I'll prepare my next version of the
+get_user_pages() series.
 
-In the second case filemap_write_and_wait_range() won't write protect
-or unmap the page, so it may become dirty after the writeback.
-
-That can't happen in the first case, since the page is written and
-unmapped while under page lock.
-
-> or alternatively, what's the serialisation that would be useful by
-> adding a lock/unlock of the invalidate_lock inside
-> filemap_invalidate_pages()?
-
-Nothing.
-
-What would prevent this if we'd have writeback + unmap + writeback.
-
-Thanks,
-Miklos
+--=20
+All Rights Reversed.

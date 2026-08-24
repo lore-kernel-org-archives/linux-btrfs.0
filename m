@@ -1,151 +1,153 @@
-Received: from mail-oi2-f4.google.com (mail-oi2-f4.google.com [74.125.231.196])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E481D405C3F
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 11:08:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.231.196
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E6685411FAD;
+	Mon, 24 Aug 2026 11:55:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=82.195.75.108
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787569714; cv=none; b=LZOWpRPx17hLj65Tcinj9tZ5TFrjL/JN9n0bAMwcjVHM/LApwYmoLjWhVQiXEvyxPkISCqm2eG95PU5nwClxDRVt6uzOZXMSdeHFXng+2EbREQ1ntgTDs71dwSTuTdgiuHzrCC0ADo1z0HI7DpooR5w72TQeYYDH+RPcOAPEjtk=
+	t=1787572512; cv=none; b=K7ouBR3vj3o7JU277QWLLFdjxi5AJM7LmP/2XqhX47VPzB6UrJFbMor45BtISwSTWFe3lE9N6yLJniQgqre9NrCHIlT5w2CwnA4xzE0vPIL7XAgrLrxkafqSdXVOaWxVW7fNbfgilL5p/tORyy4bc8gdphKyZLyG8qEsoxkYyxU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787569714; c=relaxed/simple;
-	bh=XD/PG/WVYbhu4Ksh7OG4LjO6tuzWxJRPPSpTQCEHPBY=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=SXwp3DT9pVmiBg+3gyNG20GU5oEXy175CSnPV3UQfgITgiTLZFFTpDwtRzZpXUvGuHC3DYq5ETs87fwJ8YemG/ov4T5OEOAuEKTMLpLIhECNXTipCMjuWlVTb5T0Det6qvwN8cPcA0uSKz7yb4iMyDgcE9AFND3M/tmBdbKqN04=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=74.125.231.196
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oi2-f4.google.com with SMTP id 5614622812f47-4ab2d8e7e4cso897280b6e.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 04:08:32 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787569712; x=1788174512;
-        h=content-type:to:from:subject:message-id:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=ZXjOa2kIi5woPpcq9gPtLpRqv4S2Lm9sh/EE410lHps=;
-        b=dQScOS0xYd5hNEHSjpB3rG0aDmYLY3g/GJFxW1/mLO9Wfe7wPLry+CDjp9u9ZgRO8B
-         ZJ9kDKwK9GP5AUwMGrFr3b05Wa8lOA+8gRVNEByRNmSrlTUeSFZn5KMts7J6lJdtBwY1
-         8DUy7gcN8rUz/Ji2NB9d83TACVI3ls1BmMYL0iJ1fr3jkl9H1WQTlAVZIu1Dv8uPG4ux
-         vB6BiFe1TldynBKxMi2SdStYevZoqu6PAUFu94n3ri6gwV0GNXfo24mlXYJ/0frKOtWk
-         Szl357oq2CQkrSFQ3h4+o1Ps4fUhqUiEl93hdX9X7HLzr2qTniRS1HD2qUP1rweoXw33
-         9HPg==
-X-Forwarded-Encrypted: i=1; AHgh+RpeyaCb8PRufHmj0gM+8Dr76xBBp3d1FkTp+6+Z5AquRAv7fU2l9H+DsAGJvfkgD9T8yBOT3RGZ18zO+g==@vger.kernel.org
-X-Gm-Message-State: AFuF++ks/y7vKC9WzAoiN6IwigeQEk3p5RCPFu7JKnRmQYB2GKycEbe0
-	+7R/evm0ghtFev8OcsP0RYzTqXYikL8Kyk2fHUnRAPjqvKqLUgXbjyWft3Kke5yvzHlKxpDerg9
-	ddjVcc0U3nmLIFeyBQ71YPQ7tD4prN5aNNUkhMcV55Ns5pqWi3/pj0S0ESaE=
+	s=arc-20240116; t=1787572512; c=relaxed/simple;
+	bh=h6Rs3GAdmEO+2K8AlUCoCja+QDytr+hATsV6MLe8NfU=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=qL0pGPQKe193c/7EpsdqR9sj6hn3GpF8Cf9D+VpKAmRS5XW5boTl1s8odHdh4DC+Vf0p15vEWuoSxyzMdMfGheMhqY0SpopC/LCF3Q8S+D6unZy6EHicI1gv8OZJLTT0jpMLfxZQ9FTCmc/1BZKAKGvnu9+rUabXJ0Ccg7xqi94=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org; spf=pass smtp.mailfrom=debian.org; dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b=OZxoAakY; arc=none smtp.client-ip=82.195.75.108
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=debian.org
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=debian.org header.i=@debian.org header.b="OZxoAakY"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:Cc:To:Message-Id:
+	Content-Transfer-Encoding:Content-Type:MIME-Version:Subject:Date:From:
+	Reply-To:Content-ID:Content-Description:In-Reply-To:References;
+	bh=mLD3c8hZnQhdE+utd512nbtRwqzHUud/pp5VcxhSBV4=; b=OZxoAakYGdGPcBrsBKPogyjA/t
+	/dScFPPI/CurKDX3a4FH7TbKQgfJIfsrCnDa+HZwHQ4p63lsn1o+LUrs2r/GcBE1qd/eqF5MU/nN7
+	tiYGG7ceyy+5DEbvE3KO3XHyqoooeWuVvuSadBgcP3vO3wjabsV9BqMJVR9yTv9QLd1rRYTbdxipc
+	SB5TSwQDPIPHyXpn0BNcD5eIlt3em4DBt5KH8G7/atY1JoLza174z1IF+LVniEa1jU2yc2hxxc3cw
+	T8KHWOEVryBsHqNSXtjdMnkeDKDeoPZn2GvK5L9P0drhVIali65eQAORQZ7Zu0gNGwemuv7L0vjgp
+	CbJ84vbA==;
+Received: from authenticated-user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.96)
+	(envelope-from <leitao@debian.org>)
+	id 1wyTGU-00De3f-0c;
+	Mon, 24 Aug 2026 11:54:58 +0000
+From: Breno Leitao <leitao@debian.org>
+Date: Mon, 24 Aug 2026 04:54:45 -0700
+Subject: [PATCH v2] btrfs: skip the extent map tree lock for inodes without
+ extent maps
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6808:124d:b0:489:a387:1e29 with SMTP id
- 5614622812f47-4b2ef4eeeb6mr22129435b6e.20.1787569711870; Mon, 24 Aug 2026
- 04:08:31 -0700 (PDT)
-Date: Mon, 24 Aug 2026 04:08:31 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6a8c262f.dbb3a75c.7844.0002.GAE@google.com>
-Subject: [syzbot] [btrfs?] kernel BUG in btrfs_subpage_assert
-From: syzbot <syzbot+d490d04560554e6259b9@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260824-b4-btrfs-em-shrinker-v2-1-a6fc80447e70@debian.org>
+X-B4-Tracking: v=1; b=H4sIAAQxjGoC/22NQQ6CMBBFr2Jm7Zi2CDSuvIdhQekURmMxUyQaw
+ t0FjDuXL/n/vQkSCVOC024CoZET93EBs99B09WxJWS/MBhlCmWNQndEN0hISHdMnXC8kWCZWeP
+ LoLxXOSzXh1Dg16a9VF9OT3elZlhd66LjNPTy3rqjXne/hP6fGDVqNLYIWXA6t2V29uS4jodeW
+ qjmef4A2BMQT8sAAAA=
+X-Change-ID: 20260820-b4-btrfs-em-shrinker-7382d7f0dd05
+To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
+ fdmanana@suse.com
+Cc: boris@bur.io, wqu@suse.com, layton@kernel.org, 
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ kernel-team@meta.com, Breno Leitao <leitao@debian.org>
+X-Mailer: b4 0.15-dev-47773
+X-Developer-Signature: v=1; a=openpgp-sha256; l=3310; i=leitao@debian.org;
+ h=from:subject:message-id; bh=h6Rs3GAdmEO+2K8AlUCoCja+QDytr+hATsV6MLe8NfU=;
+ b=owEBbQKS/ZANAwAIATWjk5/8eHdtAcsmYgBqjDEPKOlB/Xkch099rg/KrScB+85kkcSszMlNu
+ 705tmFnf3WJAjMEAAEIAB0WIQSshTmm6PRnAspKQ5s1o5Of/Hh3bQUCaowxDwAKCRA1o5Of/Hh3
+ bWA+D/9Fpj+rO7+oCGgsYTK1J8RVqIg9008UY7sstljAftPmLUAvnxHoaFUb5nR20Tga08OnvBE
+ tKAjtIFkfwbkg5JMLsyNGLdywPCqwDm1BVIHsgy5z7tcz3KWDYzuRBinNv2LrnL5yR7JaS8NanS
+ iOhdbQBgJ887y6S/b7ZSuV9+OwrkiKEI8c3PZoTE18T9w+SC/DWcCgsQIghD5k1fWeBOqZeZMi1
+ kHJyMExyMW+uzszDPUlK4YQ+/RpXt9EOdBd8AOxKwofYPNBH+Y9RooCHtTSRI3+XtdsqIpYvQwF
+ 0lq+OBAUN2Zvqntlz2Ll/7XuJNuw1dW/ZW5FXYs5nW7QiKUdNOvphXjU3LI5L+3rnlqhRmSg/gd
+ 6MNxphM33vkuQ82f6XIjgGwyuSkCc8p9THRlOQjU3oz+Vv/I8xAe3voxYyH1tIFX1wLPG8lMraJ
+ nDFKmPIZBIPVVg1LU2fX0JePK7dXM76v+12CZc8yGEIlvmUdxXRcMhBfroa/Vt/HAliYJOp44ei
+ T4uQNoqqfe4MwDdaaZkdDNYXqK9kwIuGyvNW60npCeeWgi77lqeNCIr26iV1/5l8sHe6gLgSfPS
+ wlOkz6xFJhyLuEtImY7G8sVjfdEnX7ZORn9PeGeiVlQRMsVrX4ZizlvQaU6dHNAyug4LDw/aS0H
+ Y8WTbvRcc+EoQ9w==
+X-Developer-Key: i=leitao@debian.org; a=openpgp;
+ fpr=AC8539A6E8F46702CA4A439B35A3939FFC78776D
+X-Debian-User: leitao
 
-Hello,
+find_first_inode_to_shrink() takes inode->extent_tree.lock in write mode
+on every inode it walks, only to find out whether that inode has any
+extent maps. Most inodes have none, so the lock is taken and dropped
+again without any work being done.
 
-syzbot found the following issue on:
+Check whether the tree is empty before taking the lock. tree->root is
+only modified with the tree lock held for write, so the unlocked read is
+a harmless race: a false empty just defers the inode to a later scan,
+which already happens whenever the write_trylock() below fails, and a
+false non-empty falls through to the existing check under the lock.
 
-HEAD commit:    a4ff2be345d0 Merge tag 'v7.3-p1' of git://git.kernel.org/p..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=12e1f815580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=cfcda1d4ca446c80
-dashboard link: https://syzkaller.appspot.com/bug?extid=d490d04560554e6259b9
-compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
+Across the Meta production fleet the extent map shrinker is ~0.35% of
+non-idle kernel CPU. Attributing callees to their caller,
+find_first_inode_to_shrink() is ~65% of that, and the write_trylock() it
+does is ~30% of the whole shrinker.
 
-Unfortunately, I don't have any reproducer for this issue yet.
+Micro benchmark: a 6 GiB btrfs on a loop device, 100000 empty files kept
+open, plus 200 1 MiB files created last so they get the highest inode
+numbers and every scan has to walk all the empty ones first. Each round
+drops the page cache, re-reads the data files to recreate the extent
+maps, then triggers the shrinker with "echo 2 > /proc/sys/vm/drop_caches".
+15 rounds per run on arm64 (Neoverse V2), 8 CPUs, no lock debugging.
+Cost of find_first_inode_to_shrink() from the ftrace function profiler,
+in ns per inode walked, median of runs:
 
-Downloadable assets:
-disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-a4ff2be3.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/0a03ffb73f4e/vmlinux-a4ff2be3.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/27503648559b/bzImage-a4ff2be3.xz
+                          base   patched    delta
+    idle                  46.4      40.1   -13.6%
+    4 concurrent readers  47.8      38.4   -19.7%
 
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+d490d04560554e6259b9@syzkaller.appspotmail.com
+A separate build with CONFIG_LOCK_STAT, same test, for the extent map
+tree rwlock. The shrinker is not the only user of that lock, every
+extent map insert and lookup takes it too, which is why the acquisition
+count drops by two thirds rather than to nothing:
 
-assertion failed: folio_test_private(folio) && folio_get_private(folio), in fs/btrfs/subpage.c:153
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/subpage.c:153!
-Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
-CPU: 0 UID: 0 PID: 5316 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-RIP: 0010:btrfs_subpage_assert+0x43f/0x4e0 fs/btrfs/subpage.c:153
-Code: ae 8b fd eb 05 e8 e1 ae 8b fd 48 c7 c7 80 4d 3b 8c 48 c7 c6 20 53 3b 8c 48 c7 c2 20 4e 3b 8c b9 99 00 00 00 e8 f2 53 ec fc 90 <0f> 0b e8 ba ae 8b fd 4c 89 ff 48 c7 c6 80 54 3b 8c e8 eb b2 ec fc
-RSP: 0018:ffffc9000e34f438 EFLAGS: 00010246
-RAX: 0000000000000062 RBX: 0000000000000000 RCX: 8237ef3e22428900
-RDX: ffffc90020001000 RSI: 00000000000fffff RDI: 0000000000100000
-RBP: ffffea000039f800 R08: ffffc9000e34f1c7 R09: 1ffff92001c69e38
-R10: dffffc0000000000 R11: fffff52001c69e39 R12: 1ffffd4000073f01
-R13: ffff88804340c000 R14: 1ffffd4000073f00 R15: ffffea000039f800
-FS:  00007fc1fc8ed6c0(0000) GS:ffff88808c526000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f8aebf44cf0 CR3: 0000000012f73000 CR4: 0000000000352ef0
-Call Trace:
- <TASK>
- btrfs_subpage_set_fixup_dirty fs/btrfs/subpage.c:528 [inline]
- btrfs_folio_set_fixup_dirty+0x475/0xc70 fs/btrfs/subpage.c:567
- btrfs_data_dirty_folio+0x1c7/0x240 fs/btrfs/inode.c:10763
- bio_set_pages_dirty+0x372/0xa70 block/bio.c:1681
- __blkdev_direct_IO+0x81f/0xf30 block/fops.c:247
- blkdev_direct_IO+0x122e/0x17a0 block/fops.c:435
- blkdev_read_iter+0x223/0x420 block/fops.c:816
- aio_read+0x33a/0x4d0 fs/aio.c:1656
- __io_submit_one fs/aio.c:-1 [inline]
- io_submit_one+0x774/0x13d0 fs/aio.c:2106
- __do_sys_io_submit fs/aio.c:2165 [inline]
- __se_sys_io_submit+0x195/0x340 fs/aio.c:2135
- do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
- do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7fc1fb99e0d9
-Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007fc1fc8ecfe8 EFLAGS: 00000246 ORIG_RAX: 00000000000000d1
-RAX: ffffffffffffffda RBX: 00007fc1fbc26090 RCX: 00007fc1fb99e0d9
-RDX: 00002000000000c0 RSI: 00000000000000ca RDI: 00007fc1fc8cc000
-RBP: 00007fc1fba35024 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-R13: 00007fc1fbc26128 R14: 00007fc1fbc26090 R15: 00007ffeb5334bc8
- </TASK>
-Modules linked in:
----[ end trace 0000000000000000 ]---
-RIP: 0010:btrfs_subpage_assert+0x43f/0x4e0 fs/btrfs/subpage.c:153
-Code: ae 8b fd eb 05 e8 e1 ae 8b fd 48 c7 c7 80 4d 3b 8c 48 c7 c6 20 53 3b 8c 48 c7 c2 20 4e 3b 8c b9 99 00 00 00 e8 f2 53 ec fc 90 <0f> 0b e8 ba ae 8b fd 4c 89 ff 48 c7 c6 80 54 3b 8c e8 eb b2 ec fc
-RSP: 0018:ffffc9000e34f438 EFLAGS: 00010246
-RAX: 0000000000000062 RBX: 0000000000000000 RCX: 8237ef3e22428900
-RDX: ffffc90020001000 RSI: 00000000000fffff RDI: 0000000000100000
-RBP: ffffea000039f800 R08: ffffc9000e34f1c7 R09: 1ffff92001c69e38
-R10: dffffc0000000000 R11: fffff52001c69e39 R12: 1ffffd4000073f01
-R13: ffff88804340c000 R14: 1ffffd4000073f00 R15: ffffea000039f800
-FS:  00007fc1fc8ed6c0(0000) GS:ffff88808c526000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007fc9601fb6b0 CR3: 0000000012f73000 CR4: 0000000000352ef0
+                              base   patched    delta
+    write acquisitions      628016    228000   -63.7%
+    hold time total (us)     47512     22717   -52.2%
+    acq cacheline bounces     1574      1288   -18.2%
 
+Signed-off-by: Breno Leitao <leitao@debian.org>
+---
+Changes in v2:
+- Better justification for the patch.
+- Mark this unlocked read as racy
+- use the proper RB_EMPTY_ROOT() primitive
+- Link to v1: https://patch.msgid.link/20260821-b4-btrfs-em-shrinker-v1-1-286f3fb15873@debian.org
+---
+ fs/btrfs/extent_map.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 6ad7b39ae358b..86d9c6f5ff4bd 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -1219,6 +1219,14 @@ static struct btrfs_inode *find_first_inode_to_shrink(struct btrfs_root *root,
+ 
+ 		tree = &inode->extent_tree;
+ 
++		/*
++		 * Most inodes have no extent maps, so check without the lock.
++		 * The race is harmless: a false empty just defers the inode to
++		 * a later scan, and a false non-empty is caught under the lock.
++		 */
++		if (data_race(RB_EMPTY_ROOT(&tree->root)))
++			goto next;
++
+ 		/*
+ 		 * We want to be fast so if the lock is busy we don't want to
+ 		 * spend time waiting for it (some task is about to do IO for
 
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+base-commit: 6a746cd265aed59107ebdaa9ce039bb832922969
+change-id: 20260820-b4-btrfs-em-shrinker-7382d7f0dd05
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+Best regards,
+--  
+Breno Leitao <leitao@debian.org>
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
-
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
-
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup

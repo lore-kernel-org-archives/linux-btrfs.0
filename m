@@ -1,164 +1,116 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6286738B135
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 20:14:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6087729B77E;
+	Mon, 24 Aug 2026 20:47:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787602489; cv=none; b=axYgUw/A1053cdE3ckn5OvRt9oIZ0HmTefAeKZ+hdwWC8w/tDk+N7pc9vQJZVd5iaZPUoBT6LjPp8lHuuaXmE4qa8SqEqn8qZcZ+D9mCKy59bCgR3OcNzuilDjbiQ55Q1xuGx4iJS6mLw29Z8jZnMcoTKYmN5RkJw+UeHXruA9E=
+	t=1787604464; cv=none; b=nvHliXv+jZxVYJuzK1gE9YUU4ORgbEBBX0m68gQpei4Oa+RRuJJeuidYVfqt/YVMlC5Sd5On6EQznGfEcOXNS5je+tCSgBlGs/95IJSqpqyYTejMHB5kTQcYBO0bKm8hA7ahP2/2jg/XuS4vuB3aOgpb5j4bqRUa83RSgV+KjRg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787602489; c=relaxed/simple;
-	bh=Je1SsfqOrHg+6/5GNQ7ooeks+40covW1zMWcLF81EHU=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=UKCclcmyL95MIhANLmG2KcwDukfRvYPFITmMbhwnd7/7luEktXMcwb/cJcmx73FRkvqzPNCJTTPahEZGbltgnbdoUE+H8EzAotWAVLtrSbCYwo1jNqzcSinRHi02RLMHvMec12kKl744Rdeu1MyJmL4BdqOJf/f67UZ1P9ACVvQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=mv/uGDnN; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1787604464; c=relaxed/simple;
+	bh=yOXThapvNvCgLifu01NItCV+B87skvWglNWX1ExEEZs=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=cjnOVhVy3B0IawA7DeZs+AJQitzQWM5cqTSro6A1kxCGe0xyN+mpDpLmGMgyRd7h89sOGVm7gUxIq+ltqP2Pk8y0eUcYXaMmheawgf+WMq7GMr3/JKjMTXmi3lZgSYWpmMWg3dDKDv72hInFc2cmy2gi62xFLgZ41xze5s1IIMo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=pass smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=r9LfvOkj; arc=none smtp.client-ip=90.155.50.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="mv/uGDnN"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1935C1F00AC4
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 20:14:48 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1787602488;
-	bh=L204L1ClcHSyVEfXLI6ykFv6RPcybXCIuBUEQvwiQso=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=mv/uGDnNG6kiRSZCjsiABGzxQjFHLPoQekuLzFVgRv7We/H5I9ouO/n/sNzDF1r7k
-	 srhEkt84yRXPdyRLTQ0WOzai6NhhuK1fOVTxWXgbo6xeyuJglZ5/77oP0JMiUS+661
-	 vd7Oet4+QYCzWGYQR7a8cAaHxPd0EXE/70u1eojJ6w3JBtQCsXZg8R4yufc5p90Q9P
-	 7Njrp4Y1GpWOHQFreDAtx9b5qcfByodXmrf9r5TIgANkpmpbcmmFSqYvnVIAcL9VzP
-	 rbIgXk5gf6VkJJzuq8EMDRkMZqzdG9zc2B9+ZNbHoqcBYb/dKIxLjPUWIRGaczeNlm
-	 UoZQkqGlSnFzg==
-Received: by mail-vs1-f42.google.com with SMTP id ada2fe7eead31-74ad03fa605so2179761137.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2026 13:14:48 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+RoR2h6vPv5UCugV0ff6yvRQCVm/HB6YFUBRTj1F+pE6vmrfIjNbJwLoHkpshJyGhqWHkwxLdWeOIXQZqw==@vger.kernel.org
-X-Gm-Message-State: AFuF++nHYXGEjJvMYTJC0WsGya61MkoGk72JI52aqW62MzOy9BkCWMii
-	TtgX0lr4Sd9xmzJqwzZcFa4/doK3dtatK9lOvDh/23kJodPYZIGgQzSYe7ZWV82aLW0jDhT4d7e
-	1qgRQFh7fINACOj6bUdckd1FKT9duhjY=
-X-Received: by 2002:a05:6102:8098:b0:77f:a253:862c with SMTP id
- ada2fe7eead31-77fa253afdbmr1599092137.12.1787602487252; Mon, 24 Aug 2026
- 13:14:47 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="r9LfvOkj"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=niEZYxfNIOD72gAedVquSAPl0GL96aOUAIsjWVWnyrs=; b=r9LfvOkjge2amjsBvyE5gj6qMI
+	uYvVlQ3b0KYGngAv8XESPmmtwmX5YL31/ZZL/aCv3YA8HiM47NGP857BeCRMrrjzps/Ne9d2cn52v
+	zqL2zGvjLLk1nv9syOdx3pvPSZ8lB4ZZOVBgqTtBiLjoK7MD80xjfIWR87mDrmvJgbQIzO6B2iuYH
+	wqfSCFzLZJjECzSnGHLMWVk/RyHGkAgVmz+igPSrxnkQPu9UxG3bW9HhbNxyefBXIscvW+/Ut9PSd
+	iZrPpiftS7pWBxDvgsL/MprJcvS05WbioAv/k/Wf8gVfSs67WWjwBEeQoBx+YaSMwlZC9Q0pIrjfj
+	dHmqFNDQ==;
+Received: from willy by casper.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wybZv-00000007nCw-0Kvv;
+	Mon, 24 Aug 2026 20:47:35 +0000
+Date: Mon, 24 Aug 2026 21:47:34 +0100
+From: Matthew Wilcox <willy@infradead.org>
+To: Miklos Szeredi <miklos@szeredi.hu>
+Cc: Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>,
+	Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+	Trond Myklebust <trondmy@kernel.org>,
+	Anna Schumaker <anna@kernel.org>,
+	Mike Marshall <hubcap@omnibond.com>,
+	Martin Brandenburg <martin@omnibond.com>,
+	Alexander Viro <viro@zeniv.linux.org.uk>,
+	linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+	linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	fuse-devel@lists.linux.dev, linux-nfs@vger.kernel.org,
+	devel@lists.orangefs.org, Pavel Begunkov <asml.silence@gmail.com>
+Subject: Re: [PATCH 2/7] fuse: Use filemap_invalidate_pages()
+Message-ID: <aoyt5pL7mXYwSqsG@casper.infradead.org>
+References: <20260820193343.3852967-1-willy@infradead.org>
+ <20260820193343.3852967-3-willy@infradead.org>
+ <CAJfpegvP3i8ZJc2T=+f4rAhZ4E1QcT5+jC6mQPLxtB-yoK9Brw@mail.gmail.com>
+ <aoxHOSC9kTPbKeNq@casper.infradead.org>
+ <CAJfpegv3Ak+qNLb=fTSCSz7-taQ3Ui-Hkmqgn4PaGPe=CR4cbQ@mail.gmail.com>
+ <aoyKxvdQdeJQfPHj@casper.infradead.org>
+ <CAJfpegtgenUaudDcvecJuV2_WkkVw=gdcB0Eqg=UFKPMZP1uKQ@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260824-b4-btrfs-em-shrinker-v2-1-a6fc80447e70@debian.org>
-In-Reply-To: <20260824-b4-btrfs-em-shrinker-v2-1-a6fc80447e70@debian.org>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 24 Aug 2026 21:14:10 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H4OC_UqJCEo-o=uNSwZsCPJPuw8062_Mv+5NPaVqPJfsQ@mail.gmail.com>
-X-Gm-Features: AcwNN1VVp8r7M_YRqNUzXUA1g1LRCbESt6cQtUtGnl6OHZYgPLIDFVuBJFMfNdY
-Message-ID: <CAL3q7H4OC_UqJCEo-o=uNSwZsCPJPuw8062_Mv+5NPaVqPJfsQ@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: skip the extent map tree lock for inodes
- without extent maps
-To: Breno Leitao <leitao@debian.org>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, fdmanana@suse.com, boris@bur.io, 
-	wqu@suse.com, layton@kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, kernel-team@meta.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAJfpegtgenUaudDcvecJuV2_WkkVw=gdcB0Eqg=UFKPMZP1uKQ@mail.gmail.com>
 
-On Mon, Aug 24, 2026 at 12:59=E2=80=AFPM Breno Leitao <leitao@debian.org> w=
-rote:
->
-> find_first_inode_to_shrink() takes inode->extent_tree.lock in write mode
-> on every inode it walks, only to find out whether that inode has any
-> extent maps. Most inodes have none, so the lock is taken and dropped
-> again without any work being done.
->
-> Check whether the tree is empty before taking the lock. tree->root is
-> only modified with the tree lock held for write, so the unlocked read is
-> a harmless race: a false empty just defers the inode to a later scan,
-> which already happens whenever the write_trylock() below fails, and a
-> false non-empty falls through to the existing check under the lock.
->
-> Across the Meta production fleet the extent map shrinker is ~0.35% of
-> non-idle kernel CPU. Attributing callees to their caller,
-> find_first_inode_to_shrink() is ~65% of that, and the write_trylock() it
-> does is ~30% of the whole shrinker.
->
-> Micro benchmark: a 6 GiB btrfs on a loop device, 100000 empty files kept
-> open, plus 200 1 MiB files created last so they get the highest inode
-> numbers and every scan has to walk all the empty ones first. Each round
-> drops the page cache, re-reads the data files to recreate the extent
-> maps, then triggers the shrinker with "echo 2 > /proc/sys/vm/drop_caches"=
-.
-> 15 rounds per run on arm64 (Neoverse V2), 8 CPUs, no lock debugging.
-> Cost of find_first_inode_to_shrink() from the ftrace function profiler,
-> in ns per inode walked, median of runs:
->
->                           base   patched    delta
->     idle                  46.4      40.1   -13.6%
->     4 concurrent readers  47.8      38.4   -19.7%
->
-> A separate build with CONFIG_LOCK_STAT, same test, for the extent map
-> tree rwlock. The shrinker is not the only user of that lock, every
-> extent map insert and lookup takes it too, which is why the acquisition
-> count drops by two thirds rather than to nothing:
->
->                               base   patched    delta
->     write acquisitions      628016    228000   -63.7%
->     hold time total (us)     47512     22717   -52.2%
->     acq cacheline bounces     1574      1288   -18.2%
->
-> Signed-off-by: Breno Leitao <leitao@debian.org>
+On Mon, Aug 24, 2026 at 09:33:03PM +0200, Miklos Szeredi wrote:
+> On Mon, 24 Aug 2026 at 20:17, Matthew Wilcox <willy@infradead.org> wrote:
+> 
+> > Before:
+> >
+> > fuse_open()
+> >         invalidate_inode_pages2()
+> >                 folio_lock()
+> >                 folio_unmap_invalidate()
+> >                         folio_launder()
+> >                 folio_unlock()
+> >
+> > After:
+> >
+> > fuse_open()
+> >         filemap_invalidate_pages()
+> >                 filemap_write_and_wait_range()
+> >                 invalidate_inode_pages2_range()
+> >                         folio_lock()
+> >                         folio_unmap_invalidate()
+> >                                 folio_test_dirty()
+> >                         folio_unlock()
+> >
+> > so what's the serialisation that the filesystem can perform in the first
+> > case that it can't perform in the second case?
+> 
+> In the second case filemap_write_and_wait_range() won't write protect
+> or unmap the page, so it may become dirty after the writeback.
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+But that can also happen in the first case.  page_mkwrite() can be called
+immediately after the folio is unlocked, for example.  Or the folio can
+be evicted and replaced with a different folio which is then dirtied.
 
-The current subject:
+I've widened the race window, no doubt.  But it was always there.
+If you want to prevent something like that from happening, you need
+to be holding the invalidate_lock across the call to
+filemap_invalidate_folio() and whatever other thing you're doing that
+needs those pages clean.
 
-"btrfs: skip the extent map tree lock for inodes without extent maps"
+> That can't happen in the first case, since the page is written and
+> unmapped while under page lock.
+> 
+> > or alternatively, what's the serialisation that would be useful by
+> > adding a lock/unlock of the invalidate_lock inside
+> > filemap_invalidate_pages()?
+> 
+> Nothing.
+> 
+> What would prevent this if we'd have writeback + unmap + writeback.
 
-It is a bit too generic, giving no clue that it concerns the shrinker.
-If you agree, I'll change it to:
-
-"btrfs: skip extent tree lock in the shrinker for inodes without extent map=
-s"
-
-Thanks.
-
-> ---
-> Changes in v2:
-> - Better justification for the patch.
-> - Mark this unlocked read as racy
-> - use the proper RB_EMPTY_ROOT() primitive
-> - Link to v1: https://patch.msgid.link/20260821-b4-btrfs-em-shrinker-v1-1=
--286f3fb15873@debian.org
-> ---
->  fs/btrfs/extent_map.c | 8 ++++++++
->  1 file changed, 8 insertions(+)
->
-> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-> index 6ad7b39ae358b..86d9c6f5ff4bd 100644
-> --- a/fs/btrfs/extent_map.c
-> +++ b/fs/btrfs/extent_map.c
-> @@ -1219,6 +1219,14 @@ static struct btrfs_inode *find_first_inode_to_shr=
-ink(struct btrfs_root *root,
->
->                 tree =3D &inode->extent_tree;
->
-> +               /*
-> +                * Most inodes have no extent maps, so check without the =
-lock.
-> +                * The race is harmless: a false empty just defers the in=
-ode to
-> +                * a later scan, and a false non-empty is caught under th=
-e lock.
-> +                */
-> +               if (data_race(RB_EMPTY_ROOT(&tree->root)))
-> +                       goto next;
-> +
->                 /*
->                  * We want to be fast so if the lock is busy we don't wan=
-t to
->                  * spend time waiting for it (some task is about to do IO=
- for
->
-> ---
-> base-commit: 6a746cd265aed59107ebdaa9ce039bb832922969
-> change-id: 20260820-b4-btrfs-em-shrinker-7382d7f0dd05
->
-> Best regards,
-> --
-> Breno Leitao <leitao@debian.org>
->
->
+We could do that -- but it won't solve the problem because the pages
+could still be redirtied after the second writeback.

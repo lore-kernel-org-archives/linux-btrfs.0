@@ -1,152 +1,123 @@
-Received: from mail-pl1-f177.google.com (mail-pl1-f177.google.com [209.85.214.177])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0BA873B42F2
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 19:36:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.214.177
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787686597; cv=pass; b=ERwgECvNbevGTCDPCe6jSphMj8p+7BgX501iOgT1PJNNwQBTYPjVDHSRnXQoTNQ9JzYB7PBMhRKxohTLRY9AAHazIVh2kRobgywyoBouLF+4SVQEhtEuGpFhpzQ24CcI3X3sPCtGpJ734CB1vOXTj0Lvh1QA38DmDnjGWkIjbbw=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787686597; c=relaxed/simple;
-	bh=KOhMryspN38Cmz5uo2I6+8ZxutLOxcy4lygTGmMd/o0=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=FBz+yYSlMlLqkMSBi89kqTsl/U6o0NWaRfYuhux9MzsrTcXEeges1DyXMGDaV17EILZTyDENcn5W1hXxb+nOBNgzYdsF7IBHMPVInEkbNALe5sYAmNm/WBFAbLXK8Mggrri7hT3P++h1G0OZEmoAfxacUTCCSCgTKHH6KWUeWRU=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=tA3h615O; arc=pass smtp.client-ip=209.85.214.177
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=google.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D5D532ABCA;
+	Tue, 25 Aug 2026 19:47:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1787687238; cv=none; b=RQkcBgPiTzMk9uF9XTxElRFPc23FWZEa36be36QOUgmxfW6p5Y1fwJKbJDwksWzhiLLCDNDNl8L1cP8LZLUF3u3k3wwcdSuYa9nd0PLdSn4/UqherwHXve/l7sf/pDMsMtv/Ek5+FdJdfRx8l36CngAuMXjix0/Gb+oxUloE9PQ=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1787687238; c=relaxed/simple;
+	bh=cbEs53Bf90VigGwnZn3ZV7ZXeBm6IENjqs6hds28hoM=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=kheWVzZt6ZQJGCsWJJ3zZSWOUQ5mjOMblgP8kIW21+QqnPHBHlG9gGtQiNY124YbyG6Fe2e51i8mbX+kaAqdSA8/SqtxQaAkAoLL0F85cK6Bf7j1h4kFjP7JmkhPAHsg5BSQNPEb/mhGnZFMyZkGpzcF43i0bxh0B7u33jXhdTc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=pass smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=p4q5ZW0l; arc=none smtp.client-ip=90.155.50.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="tA3h615O"
-Received: by mail-pl1-f177.google.com with SMTP id d9443c01a7336-2ccdf36f63dso29715ad.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 12:36:35 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1787686595; cv=none;
-        d=google.com; s=arc-20260327;
-        b=fnMUj5rKr5ujIAEqLd+T0qTNC51MHX23gRDQleY/jSji6YJlyxRMm8czmsUl0ERu3a
-         U1XKNPC2qLzKF55IesRvKkg4eIdBofz+ko5xnOfIi0jCMbNhwmkeJrr3ZVh7ljtO5PXN
-         Yoc1YHk1Ibyg6eZJtuEr9QIg6R3E1n9lqEsgVtSDOcn7GelJnY/Aug4YYEhsQ4NwPiHD
-         jgKfolLC7gPyypV0luhbz6dGbRac4XKD+MeHUaPDSIeMPFvqQsQL5Tw2RjzG5otLlD8O
-         j4rkX5iPMBCGt0NQZWR7ply9fYfP55DiefdTMVJthyUwaGbZliKsg6t3iPsO7lPcS91h
-         qmAw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=avJtC2H9j16Vv7kg9X4QNLDoCqhlTskpwP2KPqQ1efI=;
-        fh=H/wVwyimagAD9ASde3sRfvutQeDV5H7sSAmBg/0tPOM=;
-        b=c2YI6Rvhtj/AUK2HRj2SjqX9314NHb2fooHMEAQVUbTC/LSP8ZVeCYEIWjTAKKnxmi
-         lQJEXY1nILrfUGh7Nq4meuzXt4cF58Y+wSaBHZ2Ni9FNt1pojiVIbQv5qojmdVFWIq5G
-         hm5IKZe02/ihgo3ybgj2CgtGL06NWFJt5oYghWCzx35xKUt7Qkbqi8Jw1BlSbdROt+fh
-         OxyiIx8fxWX/vZJ3RIVIY08H+/mdmhK/03QMG2k0fkYsHxC/lmmiRYEnAm0hOvHT4mY9
-         6nw2lKwgfIOjWFpUratDPy5lDXBzab7H4OHa+IliL/hhfeqbhGupn5AMx+6wqegN3pCJ
-         in1w==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20251104; t=1787686595; x=1788291395; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=avJtC2H9j16Vv7kg9X4QNLDoCqhlTskpwP2KPqQ1efI=;
-        b=tA3h615OGwycKAHvIXUuZI8JTMBn9AbhoC1rf8jssVE+XWXX6WMQYRhRmzlu2myoe8
-         ODTosQrKf4/xSFMnNhhxA/svxIsKdeomjhpZwnwbv6vqvffxDzw5SF1iJ2ttUcr7f6dg
-         8I9fGi3KJHO9QHoKqvRpXXAuBRlplZSIr/55EwiTwfRD3A0TbHYsj1egu3Uuw9AQ4Xmt
-         aBLge9wmpABnmpo58DVbsm8004x4YnEvn1W+loNHfzqTpjGqzPGnibAjyYwmCPoMPV6r
-         6FzgPaOh7s9rX+ipKLtDs1WfQzIOcwMn9i7fqGiNi0JCAkJzLA+TfXmDFV7+3R1ENeh/
-         fDng==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787686595; x=1788291395;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=avJtC2H9j16Vv7kg9X4QNLDoCqhlTskpwP2KPqQ1efI=;
-        b=DBR9/ADYyvMCYumPe+KVuM5wR6JNLO7XPPTGDrjZTU/PYW/zsljWaQiy/fIxyaVotC
-         yTbF/T1i37woVyut+KQ0JrGkQ1EBqA79Mq6da3OEJhXvKrIPioeYwrqZT6j2W/E/2DeH
-         qYc30k7sVxxrNMdQyim/7TtMngYoAm9rurAW0+tqNjKYQki5XGrmQ3KR+/DsYy2BFEgG
-         GuKIs6dJeD/fSOVFKvxJW18bY6dOuu3u8mqHULQBoAwCeTnu2zlYgq0cqLH/545q7/5W
-         PJ6d8Zupw3mkrJk6sDVIuRxa4SWT/WEgmhC4nTXaMi1hpjDCzYhr4S817lQncrH/1LYy
-         Qnnw==
-X-Forwarded-Encrypted: i=1; AHgh+RouBJM96ZbX/Bu9M9bk7whv8l2tLpjBq+XJysnPAC6HaGRCJhIKnbrxFFurscJwYoURy9yl0Em1j0+/AQ==@vger.kernel.org
-X-Gm-Message-State: AFuF++kf14AIHAEFedPVIAYuGHBl7oYnRn4IjN6elR1khsVb5/fnG9rj
-	csUdBpfhynJoZtm3ya+6r3efoEHZCBTCRRGPxHJZlagcNReJUQPd8IuipFEtU2UooUIcdABPhN0
-	Ka6vi7SN2xI9r5GaOQVAktHfLK24hOMcXePOYsDJc
-X-Gm-Gg: AR+sD13LqDUGk03KmpJuZEUEq79tKrTOfLsG1dB341GT2djLogOtlQnhItEGwIvNxQ0
-	L3Din7yx/rWhLvpuiwo9eOBSTMkrHZY1kgnB3//ho6hJ9kVG5ow3v2Y3QQTefqYMi112iI2AzER
-	rRKAyy2nxTF6p+HdhD4Thkhl33EhU37z2OPZpT3VzfBwt2vOqQ3yLi4tsM5sK7FT60RCe4pTh9t
-	rM5xGgnzHFf6O4ne+sJwGX1Nx7G8hh7rFk1XEojrs5zFzTazv41SQg6ZzgepvM4Zns3xG2vUuOa
-	s6Pi/PcNs3z3QutRn5pd4vtZ/jMTNmf5mmPvTleibX846hpfuq5sjtxu0zZlTmAGvdPwWhRzEoL
-	16JKVkeHI0ZXfY6Ww14uY8k8b0xmvNg==
-X-Received: by 2002:a17:903:1212:b0:2ca:4bb4:4bd with SMTP id
- d9443c01a7336-2d707b56b7emr797585ad.5.1787686594656; Tue, 25 Aug 2026
- 12:36:34 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="p4q5ZW0l"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=ZQQ/ppgg7VzEnzjhM9PBplFwJ2D9OdML5WexPKMbFq8=; b=p4q5ZW0lzpuJU0ltYF8/6QuqUh
+	W7G5TQfNDjRDGvVJKFLAppYgk5yIO5Ud2LZN2Zhk2SDbBzVt2yTr35jc3Zn4B6KZbpYRoVOpw2Nld
+	B3/bEvM+dko7aif4w5kWkiSri0z+WY+3V2zoWXuGrfeu7ofiFResDR31RetXK1VzNYZEbsiPvF6zc
+	HlzhXrNYZi16UBo7FxxT5JCd2OLgFb3DfOXhuLfWoyo391yrvBZzLrQDVwR4FciwuZn7XWD6nFuIW
+	yk6QNkW4+mv+A6rgrTo8xWC43gvUxiTtn8s83BJ/lkdSu9TPBfDsrVb7DfWbV343Hg9aIrr/xx7yD
+	kxbXFLPA==;
+Received: from willy by casper.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wyx6u-00000009cpV-0CbN;
+	Tue, 25 Aug 2026 19:47:04 +0000
+Date: Tue, 25 Aug 2026 20:47:03 +0100
+From: Matthew Wilcox <willy@infradead.org>
+To: Boris Burkov <boris@bur.io>
+Cc: Pedro Falcato <pfalcato@suse.de>, Christoph Hellwig <hch@lst.de>,
+	Jann Horn <jannh@google.com>, David Howells <dhowells@redhat.com>,
+	John Hubbard <jhubbard@nvidia.com>, Jan Kara <jack@suse.cz>,
+	Rik van Riel <riel@surriel.com>, Qu Wenruo <wqu@suse.com>,
+	"Darrick J. Wong" <djwong@kernel.org>, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+	linux-xfs@vger.kernel.org
+Subject: Re: Removing ->dirty_folio
+Message-ID: <ao3xN89JJoAqwt52@casper.infradead.org>
+References: <aoyWln-Gt-yvZQkE@casper.infradead.org>
+ <20260824212727.GA3664690@zen.localdomain>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <aoyWln-Gt-yvZQkE@casper.infradead.org>
-In-Reply-To: <aoyWln-Gt-yvZQkE@casper.infradead.org>
-From: Jann Horn <jannh@google.com>
-Date: Tue, 25 Aug 2026 21:35:57 +0200
-X-Gm-Features: AcwNN1XEivO2VIW62cWvikMmNl_P5W9RRd7WplSlKAdk_NVsBbnZnmYpBAZkAzg
-Message-ID: <CAG48ez0vXVUu9j4rYUeCqgwyHKAiN_6fL--D90WvX9q7B41V-A@mail.gmail.com>
-Subject: Re: Removing ->dirty_folio
-To: Matthew Wilcox <willy@infradead.org>
-Cc: Pedro Falcato <pfalcato@suse.de>, Christoph Hellwig <hch@lst.de>, David Howells <dhowells@redhat.com>, 
-	John Hubbard <jhubbard@nvidia.com>, Jan Kara <jack@suse.cz>, Rik van Riel <riel@surriel.com>, 
-	Qu Wenruo <wqu@suse.com>, "Darrick J. Wong" <djwong@kernel.org>, linux-btrfs@vger.kernel.org, 
-	linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, linux-xfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260824212727.GA3664690@zen.localdomain>
 
-On Mon, Aug 24, 2026 at 9:08=E2=80=AFPM Matthew Wilcox <willy@infradead.org=
-> wrote:
-> I think it's time to remove folio_mark_dirty(), ->dirty_folio() and so on=
-.
->
-> This is not how filesystems want to be informed of folio dirtying.
-> It was fine for ext2, but anything that's journalled or COW has work
-> to do before the folio is made dirty, and it's hard to do that work
-> under the page table spinlock (not all callers hold that lock, but the
-> filesystem has to be able to handle the cases where it is.
->
-> Filesystems want the page_mkwrite() entry point to be how they find out
-> about a folio being dirtied -- and that works great!  Except that we
-> can writeback the folio for a number of reasons.  If it's been dirtied
-> due to a shared writable mmap, that's fine; we map the folio read-only
-> and any subsequent writes will re-enter the page_mkwrite path.
->
-> The problem is GUP.  We have no way to force the GUP caller to go
-> through page_mkwrite again.  So instead we make the GUP caller call
-> folio_mark_dirty_lock() which many just don't, and generally we get away
-> with it.  But it's a bug, and a bad interface.
+On Mon, Aug 24, 2026 at 02:27:27PM -0700, Boris Burkov wrote:
+> On Mon, Aug 24, 2026 at 08:08:06PM +0100, Matthew Wilcox wrote:
+> > I think it's time to remove folio_mark_dirty(), ->dirty_folio() and so on.
+> > 
+> > This is not how filesystems want to be informed of folio dirtying.
+> > It was fine for ext2, but anything that's journalled or COW has work
+> > to do before the folio is made dirty, and it's hard to do that work
+> > under the page table spinlock (not all callers hold that lock, but the
+> > filesystem has to be able to handle the cases where it is.
+> > 
+> > Filesystems want the page_mkwrite() entry point to be how they find out
+> > about a folio being dirtied -- and that works great!  Except that we
+> > can writeback the folio for a number of reasons.  If it's been dirtied
+> > due to a shared writable mmap, that's fine; we map the folio read-only
+> > and any subsequent writes will re-enter the page_mkwrite path.
+> 
+> Can you elaborate on this part a bit more? I can't tell if you are
+> proposing a change or saying the existing behavior is fine if we drop
+> ->dirty_folio(). I am also confused about exactly what sort of folio
+> dirtying you are referring to. Sorry if I am being obtuse.
 
-We currently have get_user_pages*() and pin_user_pages*(), where only
-the pin_*() version is properly usable for write access, right? And
-dropping such pins should always go through unpin_*() helpers?
+Sorry for not being clearer.  This is what happens today.  We first
+tell the FS that we're going to write to the page through
+page_mkwrite(), then we transfer the dirty bit from the PTE to
+the folio through ->dirty_folio() ... but it's already there, thanks
+to the call to page_mkwrite()!
 
-Could we strictly ban using get_user_pages*() for write access, and
-use the unpin_*() helpers to somehow enforce that folios are always
-dirtied on unpin? I guess the problem with that is that we have no
-state that tracks whether the pin was read-only, and finding free bits
-in struct page to keep track of this is hard?
+> When I was recently adding ->dirty_folio() to btrfs, one of the main
+> cases was the call to folio_mark_dirty() that came via
+> __iomap_dio_bio_end_io() calling bio_check_pages_dirty() which schedules
+> bio_dirty_fn(). (i.e., completion of a dio read into a shared mmap)
+> 
+> Is that the case you are referring to here, or are you referring to
+> someone just modifying a byte they faulted in from a shared mmap? The
+> latter I would expect to have called page_mkwrite in the fault and done
+> fs-specific work, so I assume it's the former that you are referring to?
 
-> There's also the problem that GUP users bypass the folio_wait_stable()
-> mechanism.  If a page is written to while somebody is creating a
-> checksum over that page, the checksum will be corrupted.  If we want
-> to fix this, we have to bounce-buffer the page.  There's no way to
-> prevent or delay a GUP user from writing to the page.  Enjoy your RAID.
->
-> My proposal is this:
->
->  - Fileystems take note of folio_maybe_dma_pinned() during writeback.
->    If it's true, do the writeback, but retain/recreate whatever data
->    structures you need in order to write the folio again; behave as if
->    ->page_mkdirty() had been called again for each page in the folio is
->    marked as dirty.
+Right.  The former, I _believe_ already calls page_mkwrite() today, and so
+the call to dirty_folio() is redundant.  Except if writeback came in
+while the I/O was in progress.  So if we preserve the dirty bit for
+pinned pages in the writeback code, the caall to dirty_folio() will
+always be redundant and can be removed.
 
-I don't understand this part of the MM/VFS machinery well - would this
-mean that a long-term pin of a dirty pagecache folio could cause an
-unbounded number of disk writes in regular intervals, even if nothing
-actually writes into the folio? I'm guessing that could be bad for
-cheap flash storage, but maybe this is in the category of "yes that
-would be bad but it would be userspace's fault".
+> Either way, I do believe that for the dio read endio case pinning is not
+> involved and btrfs relies on the ->dirty_folio() call, so I think
+> something would need to be done about that case too.
+
+I traced that code path down into iov_iter_extract_user_pages() which
+calls pin_user_pages_fast(), so I do think the pages you're talking
+about are pinned and would be handled through page_mkwrite() already.
+
+iomap_dio_rw
+__iomap_dio_rw
+iomap_dio_iter
+iomap_dio_bio_iter
+iomap_dio_bio_iter_one
+bio_iov_iter_get_pages
+iov_iter_extract_bvecs
+iov_iter_extract_pages
+iov_iter_extract_user_pages
+
+> I believe you saw this patch since it was your idea for us to use
+> ->dirty_folio(), but just for reference for anyone else who didn't see
+> it, the btrfs patch adding ->dirty_folio():
+> https://lore.kernel.org/linux-btrfs/69d0043e0f6a3d17048dfde857127ab0bf331154.1785190866.git.boris@bur.io/
+
+Yes, I want you to be able to revert that patch ;-)
+> 

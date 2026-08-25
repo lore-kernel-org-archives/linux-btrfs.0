@@ -1,48 +1,67 @@
-Received: from 011.lax.mailroute.net (011.lax.mailroute.net [199.89.1.14])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A6A1C48EBE0;
-	Tue, 25 Aug 2026 22:18:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=199.89.1.14
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1814D4908AB
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 22:33:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787696329; cv=none; b=E2BmE2NUMJltwZg6K9+Hbivyh4lphYJHkCaOYEgwAHeViilPWT+6wgrvBPH6BViSdY8exSvw2pGVQM+a+Ys4+MZD7dMeHqRsyIAg61rWT+HqbNDoGjoWbue58nbzuTTwjGU5C72G0E4UfDBX+JQlPLfENvhdrM5YIvjZj/brmIU=
+	t=1787697233; cv=none; b=cYBPnqrzKkfYBMsgx+zCAUScIaqsvUKMaGCblznkiddPUOwl2Qo0j0cqKHA2lc83LljGUsn6g6XyJC6/RicyVgbPm0wGWiOhMY52HJkcM81bUgFBrqrRtXuuh3OnC2BCpXb4sN9vGhkWkveBICotU/A1fv7hnG0Lcdj8A3WVfrI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787696329; c=relaxed/simple;
-	bh=Wn8t1NSB9z51I0m/t0qwQvRj2tghN354WUGCY5oiGvo=;
+	s=arc-20240116; t=1787697233; c=relaxed/simple;
+	bh=T8pK87gpR/FudGYTMZpQqgz9Vsiy+adAwiTk3948Yjo=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=EhhoUOBKmpuSSwl3LCqZ5xgGSLUqEG2AjWivVDYJN+TTI5+GivFFCLlCOCTSBNU2oyNkThRYArkCCn2owA6PGAjO2oFZaz4HIYmc+IEWwlhREmtimrBXy7vYmaO2A9bxqjs0emzg0C9F65FQomUjOHKKjv4x4UsV3YbRbXREEzU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=acm.org; spf=pass smtp.mailfrom=acm.org; dkim=pass (2048-bit key) header.d=acm.org header.i=@acm.org header.b=h2t1aLCz; arc=none smtp.client-ip=199.89.1.14
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=acm.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=acm.org
+	 In-Reply-To:Content-Type; b=ESXVZsZusbAtB8n3eXO7frwL4E5EYIxodVB/Hy9UQSDO3thtDmjwktpLFb1K0KdnaDlvUbXvbY9TI87sSG2AsGAv9qNXKZ2Vl+5zoVrtRAfAWLexy+CyGSeKfKlY1T8duwpceqed+xE0qZWqOGXaZo9DB6vv9UlKxo/X5XE8pnU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=TIK2I3j3; arc=none smtp.client-ip=209.85.128.43
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=acm.org header.i=@acm.org header.b="h2t1aLCz"
-Received: from localhost (localhost [127.0.0.1])
-	by 011.lax.mailroute.net (Postfix) with ESMTP id 4hV2HT71Zhz1XM0vy;
-	Tue, 25 Aug 2026 22:18:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=acm.org; h=
-	content-transfer-encoding:content-type:content-type:in-reply-to
-	:from:from:content-language:references:subject:subject
-	:user-agent:mime-version:date:date:message-id:received:received;
-	 s=mr01; t=1787696312; x=1790288313; bh=APev5dkDvNxMzoK/H1N0BGHv
-	e+cWp9xVJDN07fDHlNs=; b=h2t1aLCzuR/cd3KzlIaCdpxpXP/1Grx8HhnlliYY
-	k7s1TeTHcnW4b/guFk2wOHoa41YqUwdLJawNJxPoWY0mOISs5IBDEcRnfyuhfhWq
-	2U7V1HN+i8V6Z3JUpC0hoiriVrtbWSyhNR+X2CXgft2lLAqtQPRGnUMKZAwonwUg
-	GTKbbHthuSZw+ZSWnIG2mc6CpTuXlEhMDRxwUTHVG9ZGFju2hCnVji1co9zCuays
-	F+aNMn1ZtmWIkpfFT1uWK52nM/aHm8cn3+qZa0jkX/5U5T54KYFjJr2OV1ILBMdV
-	DuRypGlhL5WXU5uCkgAv8ihIStYU45IAzxvJlR8EhKnzQQ==
-X-Virus-Scanned: by MailRoute
-Received: from 011.lax.mailroute.net ([127.0.0.1])
- by localhost (011.lax [127.0.0.1]) (mroute_mailscanner, port 10029) with LMTP
- id VNNE9JcnAtl9; Tue, 25 Aug 2026 22:18:32 +0000 (UTC)
-Received: from [100.80.227.50] (unknown [104.135.182.42])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	(Authenticated sender: bvanassche@acm.org)
-	by 011.lax.mailroute.net (Postfix) with ESMTPSA id 4hV2H66mzsz1XM4TB;
-	Tue, 25 Aug 2026 22:18:26 +0000 (UTC)
-Message-ID: <845464ce-43c0-45b3-94ea-ccc830fbc76f@acm.org>
-Date: Tue, 25 Aug 2026 15:18:24 -0700
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="TIK2I3j3"
+Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-490cf322ed0so2037815e9.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 15:33:50 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1787697229; x=1788302029; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=AQ9BECpJKrpP12MABcUEh0lAKrEb0D+i2kVCVQ2/O4k=;
+        b=TIK2I3j3Idx421sRhZA0hqKmXZGzFRZ5p4eklGHWHpfNjstX7UQZ7bgDuJxtwBKrXG
+         aRjJP7Wh38K9wiOU5GuWDbGmwzWZ8t6kshydID7NSje/aI7snNk9JWNQj8vLGtlHF/qV
+         75NHcoSOSGesC9bAkem3RDWYoGCR+/XRFbAGhQTIEWk+FHJepXwoInK+KhEE5R0RU7o5
+         5WCHylXfint97Cyi4mkQm1eYeQ5pfnToQHULnphtvw771e5NJQj5fXzEycXx3cGMyLHn
+         a1iNbt/uk6cpmj9hUFKIGWTVrtmI1Xqee8OCPokGMQvS/RUn3WAjdbEnHlQKcmlj59Oe
+         4qlg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1787697229; x=1788302029;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=AQ9BECpJKrpP12MABcUEh0lAKrEb0D+i2kVCVQ2/O4k=;
+        b=MbTWdgawZ7ISFHX52LdF8dLUfcdV+jXynAxl3bmh+Mwsd2AYAxg7ovRWHu+HFlvleA
+         RaALKMdLZdjo3bInMMwBAZzIa5O6tgVIndBUG47SsFx7hO+FU/mf/u/CwDXSV6Qd0zPc
+         wns7VP4nVmuMB7nbiXaiKMXsf7pM9x1XM1Ksvuu5/KGBZJw6TqWB3bsM3Ejn9fnlgMHV
+         48PiyVR39s4dICRiijwEgaLz1Qs46hW/M+hJUyo5vDToPKdaL6/EIQ8NTk0mQslTdecn
+         fIMM9YQPfEo1iBomJtAYBqqRu2EtN7dyxpwCfpjqEBcqrbfbiYV2TUhPZL87NFh6S9Cx
+         4sLg==
+X-Forwarded-Encrypted: i=1; AHgh+RrAD8mVRa49aPlhOGw3ahsHLFzOyqhnvCgn1gbKUYz2wpPfyWXvXM/+RC6lDUORgOmNB7+L6+Wg6N9Ezg==@vger.kernel.org
+X-Gm-Message-State: AFuF++nYecbsdFUTcR7jZLhCRWWiBidpL/8qDoYeQ0le0vVZkz+gXpXD
+	OxO5bWh1TFWMvO/OkuEVSFQf9ifJEWJ3/LFHgo9lI1l6e1wVZxjOUssQ99daTmi63Cw=
+X-Gm-Gg: AR+sD11FDMs6fJSye8GzVyImefWNv7tK0dJlsjBKBIvk6jtQTSDT5woDwQNg/Wg2O1a
+	7IWZxKidVqjds1IDMPIuZZyzIbvUoYkQiy5ezWCw3jaOCL3VvHLeBQbLdHg3BMVXh04PK2wSS9B
+	eB8YIKEd4tyt6nGb2x1rncKEvxDzLBE2cPvNnOs9GLAAEGCILvod5Hh6BwABeRJVUeNnPexZxGB
+	MzlTUtE+6lBOeO8DYUL4T5R63rcB9lhEO/gWDdoYkQu+fEhPL191SMAK7dMKfSJ/x9HsK8pMKcW
+	HCvgJdYMHD2bAYKEh4GeOVWdLUyXxEsAC1pA32nb/rRAeAiavtSDUY0rN+7FiXsxkcoD6t8LRWs
+	jiv+ncZspGixa61nVSFg87sPltfPSiOYfV/UAb+g8KejX2zOzYnV4WLD6AVs7P9j59KvbhvzF36
+	GTJtgXEI3vMFuIHR+WzN2gCLkjCKAnOVTOdkP/va/L1jxWuQ7Rh/Wr
+X-Received: by 2002:a05:600c:3155:b0:499:4892:d022 with SMTP id 5b1f17b1804b1-499dc6feffcmr15555245e9.8.1787697228911;
+        Tue, 25 Aug 2026 15:33:48 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3965d119724sm3170845a91.2.2026.08.25.15.33.41
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 25 Aug 2026 15:33:47 -0700 (PDT)
+Message-ID: <cf3486b8-a506-4732-8274-b3179fb06a82@suse.com>
+Date: Wed, 26 Aug 2026 08:03:38 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -50,123 +69,121 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v6] loop: Fix NULL pointer dereference in lo_rw_aio()
-To: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>,
- Markus Elfring <Markus.Elfring@web.de>, linux-block@vger.kernel.org,
- linux-fsdevel@vger.kernel.org, Alexander Viro <viro@zeniv.linux.org.uk>,
- Damien Le Moal <dlemoal@kernel.org>, Jens Axboe <axboe@kernel.dk>
-Cc: linux-kernel@vger.kernel.org, linux-next@vger.kernel.org, lkp@intel.com,
- oe-lkp@lists.linux.dev, Christian Brauner <brauner@kernel.org>,
- Christoph Hellwig <hch@infradead.org>, Christoph Hellwig <hch@lst.de>,
- Hillf Danton <hdanton@sina.com>,
- Linus Torvalds <torvalds@linux-foundation.org>,
- Mark Brown <broonie@kernel.org>, Oliver Sang <oliver.sang@intel.com>,
- linux-btrfs@vger.kernel.org
-References: <8dedfc40-9cae-44ff-9960-e0eb1825e963@I-love.SAKURA.ne.jp>
- <550ff0b4-df39-46d2-9781-c8688df10c93@web.de>
- <38ad64c1-edc7-431d-8f52-fba572ebf3eb@I-love.SAKURA.ne.jp>
- <372ca5f6-81a0-4f6c-8f55-ebeeada9f955@acm.org>
- <27bcb147-bead-4432-8cd0-981489f36228@acm.org>
- <c41e9198-86a8-4bcd-a608-6f457b24f345@I-love.SAKURA.ne.jp>
+Subject: Re: Removing ->dirty_folio
+To: Matthew Wilcox <willy@infradead.org>, Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Pedro Falcato <pfalcato@suse.de>, Christoph Hellwig <hch@lst.de>,
+ Jann Horn <jannh@google.com>, David Howells <dhowells@redhat.com>,
+ John Hubbard <jhubbard@nvidia.com>, Jan Kara <jack@suse.cz>,
+ Rik van Riel <riel@surriel.com>, "Darrick J. Wong" <djwong@kernel.org>,
+ linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ linux-mm@kvack.org, linux-xfs@vger.kernel.org
+References: <aoyWln-Gt-yvZQkE@casper.infradead.org>
+ <a1f8902b-72a5-40fd-a36b-89b6ea271cdd@gmx.com>
+ <ao3sgEET8GuY7Rw2@casper.infradead.org>
 Content-Language: en-US
-From: Bart Van Assche <bvanassche@acm.org>
-In-Reply-To: <c41e9198-86a8-4bcd-a608-6f457b24f345@I-love.SAKURA.ne.jp>
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <ao3sgEET8GuY7Rw2@casper.infradead.org>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 
-On 8/25/26 8:13 AM, Tetsuo Handa wrote:
-> As of commit fe4c990e6a30 ("loop: Add __guarded_by() annotations") in block-loop branch,
+
+
+在 2026/8/26 04:56, Matthew Wilcox 写道:
+> On Tue, Aug 25, 2026 at 08:08:48AM +0930, Qu Wenruo wrote:
+>>> The problem is GUP.  We have no way to force the GUP caller to go
+>>> through page_mkwrite again.  So instead we make the GUP caller call
+>>> folio_mark_dirty_lock() which many just don't, and generally we get away
+>>> with it.  But it's a bug, and a bad interface.
+>>>
+>>> There's also the problem that GUP users bypass the folio_wait_stable()
+>>> mechanism.  If a page is written to while somebody is creating a
+>>> checksum over that page, the checksum will be corrupted.  If we want
+>>> to fix this, we have to bounce-buffer the page.  There's no way to
+>>> prevent or delay a GUP user from writing to the page.  Enjoy your RAID.
+>>>
+>>> My proposal is this:
+>>>
+>>>    - Fileystems take note of folio_maybe_dma_pinned() during writeback.
+>>>      If it's true, do the writeback, but retain/recreate whatever data
+>>>      structures you need in order to write the folio again; behave as if
+>>>      ->page_mkdirty() had been called again for each page in the folio is
+>>>      marked as dirty.
+>>
+>> This may make COW more complex.
 > 
->    modprobe loop
->    losetup /dev/loop0 testfile.img; losetup /dev/loop1 /dev/loop0; losetup -D
->    sleep 1
->    losetup /dev/loop1 testfile.img; losetup /dev/loop0 /dev/loop1; losetup -D
+> It's probably wise to be explicit when talking about COW.  Anyone from
+> the MM side of the house is probably thinking "but this is only relevant
+> for shared writable mmap and we don't do a COW".  You're talking about
+> filesystems doing a COW of the on-disc data, not about the MM COWing the
+> pagecache page into an anonymous page.
 > 
-> causes lockdep warning. This is a false positive, but we need to avoid it anyway.
-
-Thanks for having shared the above reproducer. I have dropped the 
-patches that protect all lo_backing_file dereferences with lo_mutex. It
-is too tricky to get this right and at the same time to keep lockdep
-happy.
-
-> you also recognized that we can't call drain_workqueue() or flush_workqueue().
+>> For folio_maybe_dma_pinned() case, we will need to do extra space
+>> reservation similar to page_mkdirty() again, so that the folio can be
+>> written back again.
 > 
-> Therefore, I chose to temporarily drop lo->lo_disk->open_mutex in order to
-> make it possible to safely perform drain_workqueue().
+> Yes, you will.
+> 
+>> I'm not sure if we will have a good timing for re-reserving space inside
+>> btrfs.
+> 
+> Why is it hard to do it immediately at writeback time?  I think you're
+> in an even less restrictive locking environment than page_mkwrite is
+> called in because you're not under any MM locks.  According to
+> Documentation/filesystems/locking.rst, ->writepages is called with
+> absolutely no locks held.
 
-There is another possibility: set QUEUE_FLAG_DYING in __loop_clr_fd() 
-before modifying queue limits and clear it again after modifying queue
-limits has finished. Feedback on the patch below is welcome.
+This space reservation problem is a btrfs specific problem.
 
-Thanks,
+The root problem here is, btrfs space reservation can trigger 
+writeback/transaction commit.
 
-Bart.
+This is due to the data/metadata COW nature, and that's why we rely 
+completely on buffered write to do space reservation, and avoid any 
+extra space reservation at writeback time.
 
-diff --git a/drivers/block/loop.c b/drivers/block/loop.c
-index df72350cad15..2fb9dc8ea47e 100644
---- a/drivers/block/loop.c
-+++ b/drivers/block/loop.c
-@@ -1153,11 +1153,30 @@ static int loop_configure(struct loop_device 
-*lo, blk_mode_t mode,
+This is also why we have the complex fixup mechanism, to avoid writing 
+the folio that needs fixup, but queue it for space reservation.
 
-  static void __loop_clr_fd(struct loop_device *lo)
-  {
-+	struct request_queue *q = lo->lo_queue;
-  	struct queue_limits lim;
-+	unsigned int memflags;
-  	struct file *filp;
-  	gfp_t gfp = lo->old_gfp_mask;
-  	int err;
+Other than other fses to do the space reservation at writeback time.
 
-+	/*
-+	 * Prevent that new asynchronous I/O is submitted while queue limits
-+	 * are being modified.
-+	 */
-+	blk_queue_flag_set(QUEUE_FLAG_DYING, q);
-+
-+	/* Wait until asynchronous I/O has finished. */
-+	memflags = blk_mq_freeze_queue(q);
-+	blk_mq_unfreeze_queue(q, memflags);
-+
-+	/* Wait until I/O dispatching has finished. */
-+	blk_mq_quiesce_queue(q);
-+	blk_mq_unquiesce_queue(q);
-+
-+	/* Wait until all I/O-related work has finished. */
-+	flush_workqueue(lo->workqueue);
-+
-  	mutex_lock(&lo->lo_mutex);
-  	filp = lo->lo_backing_file;
-  	lo->lo_backing_file = NULL;
-@@ -1168,17 +1187,12 @@ static void __loop_clr_fd(struct loop_device *lo)
-  	lo->lo_sizelimit = 0;
-  	memset(lo->lo_file_name, 0, LO_NAME_SIZE);
+I believe since we have some space reservation for no-wait writes, it 
+can be slightly simplified using no-wait reservation (aka, reserve 
+during writeback), but it has a much higher chance to hit ENOSPC.
 
--	/*
--	 * Reset the block size to the default.
--	 *
--	 * No queue freezing needed because this is called from the final
--	 * ->release call only, so there can't be any outstanding I/O.
--	 */
--	lim = queue_limits_start_update(lo->lo_queue);
-+	/* Reset the block size to the default. */
-+	lim = queue_limits_start_update(q);
-  	lim.logical_block_size = SECTOR_SIZE;
-  	lim.physical_block_size = SECTOR_SIZE;
-  	lim.io_min = SECTOR_SIZE;
--	queue_limits_commit_update(lo->lo_queue, &lim);
-+	queue_limits_commit_update(q, &lim);
 
-  	invalidate_disk(lo->lo_disk);
-  	loop_sysfs_exit(lo);
-@@ -1216,6 +1230,9 @@ static void __loop_clr_fd(struct loop_device *lo)
-  	WRITE_ONCE(lo->lo_state, Lo_unbound);
-  	mutex_unlock(&lo->lo_mutex);
+Although I think on the long run, as long as we want to migrate to 
+iomap, we should find out a proper way to address this problem.
 
-+	/* Reallow I/O. */
-+	blk_queue_flag_clear(QUEUE_FLAG_DYING, q);
-+
-  	fput(filp);
-  }
-
+> 
+>> Would it be possible for MM/VFS layer to trigger page_mkdirty() instead?
+> 
+> Actually ... no, because the VFS no longer knows which pages in the
+> folio are dirty.  That's information the MM had, and communicated to
+> the FS which (if it cares) has stored in its folio->private.  But the
+> VFS no longer has access to that information.
+> 
 

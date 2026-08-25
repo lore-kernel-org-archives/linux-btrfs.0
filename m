@@ -1,120 +1,90 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5F69D3D6473
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 12:44:33 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3F346440625
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 12:44:54 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787661874; cv=none; b=u1NGcJOEC/oOHljxQdOFKY8vJfGJrLgdTDa70m+EY5LeaO/xWn9ChOp35rXyUEIyizl5TlaILpf9V+CCnh8d++T75DdnXZLfc5qzZFzm9JtccYnaLeAxVW2f7ipwjKvTSgQKF7I1D/LcM4UOvPtgKsJWLBUdq9fKmJ3p3GHej6c=
+	t=1787661898; cv=none; b=LiqSVGbTK0KhdKEmltfEWxhBbpHgcJc4NApiuIcNVFBfRvxJQ8eBR5DTUaypSAYldEXVVSagZby/EUvzeZBEn4eRumrxGkrvG7aiIPY9mZc3Y890J9aFYvRHML1ga+iZO8xl8jbjWIl0cguPRaQF/uNCgtVsAKnh399U1fwXspU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787661874; c=relaxed/simple;
-	bh=ll6y75ooCRchgyxZeUHotaBUZUK9DPrvl9IIxYpiJvo=;
+	s=arc-20240116; t=1787661898; c=relaxed/simple;
+	bh=c78AQx2D0kBj9i4SB4XDP70TIa3W1tftR15NvoWfc+w=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=ItYWWI9OjqRcTlfaq6r76NLD+H76TCm6SALAqHs5VO0fhhiBAXo0o9Ax1d4g9vrvaGjjSym7VsJDvlR8Mada1NsyD7c+YJq1QU2BEAoJhhBexWdHnANts0pAPNg6qAyEE7jEtWv5yaK3wxnCT7pnQvnVlUT1JXLM6g3YZoga2P4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=AQEVmlsP; arc=none smtp.client-ip=100.103.45.18
+	 To:Cc:Content-Type; b=NTAZlIZJYh827mC38tm8DiRfYfs3ipcMIy4FlIoc+0h3sdo9Ko7X0FrbJ39b8WUuoZuVaCPD2kSk6OGAyawh/MlTBILpN1PCSCLIPivYjklCwV4rThBFcRtye1SYXYJ8k3hO49HTpWO0fXkLe4yZg50YxDExvOQIQInZE0D4x3M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=XsUz/P0u; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="AQEVmlsP"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 40EE71F00A3D
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 12:44:33 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="XsUz/P0u"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 546461F00AC4
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 12:44:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1787661873;
-	bh=Up1r2Wfz6GePYl0MoxARHjDx1lLB/XUFX/+T+I5ItIA=;
+	s=k20260515; t=1787661894;
+	bh=c78AQx2D0kBj9i4SB4XDP70TIa3W1tftR15NvoWfc+w=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=AQEVmlsPkRW4dkV3+2yMnbo0I+lfp/GxXsib4Ya7j4uUvk3AU+p57yS5WU9yeeioj
-	 wFajWuDEDsEWpd6TxbIMMqWXhYgoIP/vJoFu2heMY9u+MyH3kVoYnZ++H4qKZS9veQ
-	 dP+o9VIUjuSBhuJfpLRzhjnPKGbRn9pKbs1dcKP2znst5gfDO4d9iWqQL/vul2rMwl
-	 y9npSx9J8Tbi6s09I2buiWGC3RV5WFixwc58M8pj2GN3y9EmIhEGPVKKIcY4d9GSG5
-	 tY9S5OLpkeUjF64GjrYNvveWTU63hWCcbaK/Pt4juGMW5C01N2bO6Jyxd4OqbOJx0O
-	 hD870jkKCnFCQ==
-Received: by mail-vk1-f181.google.com with SMTP id 71dfb90a1353d-5c2c46a428eso3628033e0c.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 05:44:33 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+Ro2Yo9RU2+yoGywZZ4F5MSoatZTUY8ugNJ2+UFi5rlt7tgB2tDWPEYDcEyZlUGLflGOMZjYqy2GnJ+96g==@vger.kernel.org
-X-Gm-Message-State: AFuF++mXHqKqylubI2ITsjV7ue5A2PSxvso2c2cA4TvzlCZ05dYkDdYD
-	KENYNaHL9sExTAVftMRqC+QZHw3clZNjSoKL/OTM+mVIjrPDCdcQJvQwGD2mQTw/dQ7kkhWafqi
-	n112quEfYmcwK1wpXQ/p1G95+PNqrqys=
-X-Received: by 2002:a05:6122:3306:b0:5c2:acd2:5b44 with SMTP id
- 71dfb90a1353d-5c642ec21eemr3107682e0c.3.1787661872487; Tue, 25 Aug 2026
- 05:44:32 -0700 (PDT)
+	b=XsUz/P0uL+z7OhD77Zk4wqzNd5INsa1dGZzSLz3TLJWBUmZfAUTYi+xYP4tQEuxHD
+	 Lc+iJWIFmKms9vsZ4AbxYqtmZFtmxR2Cm6owoNCgKwce08ogfXC/Hkkab5czR43OQh
+	 QYhygxC70w1i6wSK5d8Mvb3YomzG+trhbKI4MTwpXYdrQaJ/nE2Xc1aIcjgxfT9tCS
+	 S23gZ+HhdBYgc/pvaXqA4/4IM2pW5f4Fkp+g3pamZ8qRvh91cx0ui4IN0tF9LJx9EJ
+	 9YC7pjHd5g5Xs6qRIfOfu8oeI2gdPvYZ8g3QxHFLtXdjoUHSVsG9/sIyhXp1rv7Kie
+	 iB7rtQBDTnoHg==
+Received: by mail-ua1-f42.google.com with SMTP id a1e0cc1a2514c-966eabad303so912039241.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 05:44:54 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AHgh+RotdY5ciVEmsjXQRFKn4EEK611fqlJ428BUoYtttKz3jcAf0XBNOUFGM0Hsvjt3zSGiiiIXi4snRNgbmg==@vger.kernel.org
+X-Gm-Message-State: AFuF++kpypl023V3KrIVPWpxp9X+XJDjLIAzP6scRvqK2pr8r+ZaaZjQ
+	4JXwm9lu22ySkG+WwIiJiLzbkByogzxOsgX/GtXnS0LBkiD5qfJ1WcpmQNCBoFTaFBO7AtYYmqM
+	pyvbHc6q4h08YGKzVttWptbe2ElPB34A=
+X-Received: by 2002:a05:6102:b03:b0:778:5369:763d with SMTP id
+ ada2fe7eead31-77a62325a68mr10591736137.1.1787661893478; Tue, 25 Aug 2026
+ 05:44:53 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260810094701.1349706-1-thnkslprpt@gmail.com> <CAL3q7H6UoS_=XJj=pa97o4P8upbbqY3axJAnmSg6H_XZfZZdsA@mail.gmail.com>
-In-Reply-To: <CAL3q7H6UoS_=XJj=pa97o4P8upbbqY3axJAnmSg6H_XZfZZdsA@mail.gmail.com>
+References: <20260824-b4-btrfs-em-shrinker-v2-1-a6fc80447e70@debian.org>
+ <CAL3q7H4OC_UqJCEo-o=uNSwZsCPJPuw8062_Mv+5NPaVqPJfsQ@mail.gmail.com> <ao1NIwsVWLkceGoJ@gmail.com>
+In-Reply-To: <ao1NIwsVWLkceGoJ@gmail.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Tue, 25 Aug 2026 13:43:56 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H6G9vEDVMU5e=p80o3+3zOUaL+pdk9_-cCqw3FCEXew6Q@mail.gmail.com>
-X-Gm-Features: AcwNN1Wq4iAJigkviRTcY8Ftbjr-5FTodFOSV_-Kh1q6XtLk7o07nDfts36h7fw
-Message-ID: <CAL3q7H6G9vEDVMU5e=p80o3+3zOUaL+pdk9_-cCqw3FCEXew6Q@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: send: propagate errors from is_inode_existent()
-To: Avi Weiss <thnkslprpt@gmail.com>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>, Filipe Manana <fdmanana@suse.com>, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Date: Tue, 25 Aug 2026 13:44:16 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H7fYFUHwWcebAmOv=jG9AeC_n4zkfppCn1U9f9JuOYC-Q@mail.gmail.com>
+X-Gm-Features: AcwNN1V5HMNaEN5EzQAyvR74XAWix9t263SwQneIMHBbkdgPMk2zajvzHPaSrLw
+Message-ID: <CAL3q7H7fYFUHwWcebAmOv=jG9AeC_n4zkfppCn1U9f9JuOYC-Q@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: skip the extent map tree lock for inodes
+ without extent maps
+To: Breno Leitao <leitao@debian.org>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, fdmanana@suse.com, boris@bur.io, 
+	wqu@suse.com, layton@kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, kernel-team@meta.com
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, Aug 25, 2026 at 1:38=E2=80=AFPM Filipe Manana <fdmanana@kernel.org>=
- wrote:
+On Tue, Aug 25, 2026 at 9:10=E2=80=AFAM Breno Leitao <leitao@debian.org> wr=
+ote:
 >
-> On Mon, Aug 10, 2026 at 10:52=E2=80=AFAM Avi Weiss <thnkslprpt@gmail.com>=
- wrote:
-> >
-> > The direct-return refactor in commit b3047a42f55d ("btrfs: send:
-> > directly return from will_overwrite_ref() and simplify it") changed
-> > will_overwrite_ref() to return directly instead of going through the
-> > common out label.
-> >
-> > That resulted in a negative return value from is_inode_existent()
-> > to start being converted to 0, making lookup errors unable to be
-> > distinguished from the inode not existing.
-> >
-> > process_recorded_refs() expects negative errors from
-> > will_overwrite_ref() and aborts processing when it receives one.
-> >
-> > Return the value from is_inode_existent() to restore the previous error
-> > propagation behavior as it was before the refactor.
-> >
-> > Fixes: b3047a42f55d ("btrfs: send: directly return from will_overwrite_=
-ref() and simplify it")
-> > Signed-off-by: Avi Weiss <thnkslprpt@gmail.com>
+> Hello Filipe,
 >
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> On Mon, Aug 24, 2026 at 09:14:10PM +0100, Filipe Manana wrote:
+> > Reviewed-by: Filipe Manana <fdmanana@suse.com>
 >
-> Looks good, thanks.
+> Thanks for the review and feedback.
+>
+> > The current subject:
+> >
+> > "btrfs: skip the extent map tree lock for inodes without extent maps"
+> >
+> > It is a bit too generic, giving no clue that it concerns the shrinker.
+> > If you agree, I'll change it to:
+> >
+> > "btrfs: skip extent tree lock in the shrinker for inodes without extent=
+ maps"
+>
+> Please do, your suggestion makes more sense than the current one.
+>
+> Just to be clear, I won't be respinning this patch: you'll update the
+> subject while merging it.
 
-I changed the subject to be less confusing, as the change is about a
-specific caller of is_inode_existent():
-
-btrfs: send: fix lost error return value in will_overwrite_ref()
-
-And I pushed it to the for-next github branch.
+Correct.
 
 >
-> > ---
-> >  fs/btrfs/send.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> >
-> > diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> > index 3ae480c7474b..a888202397ed 100644
-> > --- a/fs/btrfs/send.c
-> > +++ b/fs/btrfs/send.c
-> > @@ -2066,7 +2066,7 @@ static int will_overwrite_ref(struct send_ctx *sc=
-tx, u64 dir, u64 dir_gen,
-> >
-> >         ret =3D is_inode_existent(sctx, dir, dir_gen, NULL, &parent_roo=
-t_dir_gen);
-> >         if (ret <=3D 0)
-> > -               return 0;
-> > +               return ret;
-> >
-> >         /*
-> >          * If we have a parent root we need to verify that the parent d=
-ir was
-> >
-> > base-commit: af5534fe2fbc006e83d75d6283dfc5ec75d5d780
-> > --
-> > 2.43.0
-> >
-> >
+> Thanks,
+> --breno

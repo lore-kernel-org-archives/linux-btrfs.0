@@ -1,111 +1,130 @@
-Received: from www262.sakura.ne.jp (www262.sakura.ne.jp [202.181.97.72])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oi2-f1.google.com (mail-oi2-f1.google.com [74.125.231.193])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BD2BE44E055;
-	Tue, 25 Aug 2026 15:14:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.181.97.72
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4EC7D481A92
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 15:41:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.231.193
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787670873; cv=none; b=dPqbeCy3LQKKbedg4JDd77uRx6gPHIYslcZpQWzx2ZcLzNfsESXd1weksq54B0xlc6KGXEYQ617UC/RitPuntxyS7dH5B0+0NXEiDBS81QOOSFdWVA/A3tKACJ/d0Jng8b7sWXaP/aHnZQjSkhEO2bO+GxWYC8JpL3c4Mf/YHoc=
+	t=1787672501; cv=none; b=H1JD1kStieE2K0mYy2RQ5mJ8bGpxIV0bhb4Ol0fRq1diNljzFFWAB9BeKiR56CvdhZYT2d4jlYF00698T9N0yZkx5cKhNhGplu7STrco/Z8KXi6GR3aHCyKOGsNeqdAp59CnrCcP7w5ZCjHuI435VygPKux2LBt9DTTCdSSl+jI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787670873; c=relaxed/simple;
-	bh=3RZDchxNIKlMF+YZZY5dokjhg564AFEZHqUtAa9+kZA=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=CDDVNhKl6nx4dckeW0I8Z55sBgVsnKM+TCSFZnIapOYvhOShSwlEil9ENL034RIfUb4XP5V2dQGnByspbMCffje6ojV5vd3FvVFq4vJvqq/YPol1nY/nFNGLEVQYth0FEQ31zfVjGYCLSpY4E2ff43hJesFVvEHV4REjWk/WA/s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp; arc=none smtp.client-ip=202.181.97.72
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp
-Received: from www262.sakura.ne.jp (localhost [127.0.0.1])
-	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTP id 67PFDXrN052354;
-	Wed, 26 Aug 2026 00:13:33 +0900 (JST)
-	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
-Received: from [192.168.1.6] (M106072072000.v4.enabler.ne.jp [106.72.72.0])
-	(authenticated bits=0)
-	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTPSA id 67PFDX2t052350
-	(version=TLSv1.2 cipher=AES256-GCM-SHA384 bits=256 verify=NO);
-	Wed, 26 Aug 2026 00:13:33 +0900 (JST)
-	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
-Message-ID: <c41e9198-86a8-4bcd-a608-6f457b24f345@I-love.SAKURA.ne.jp>
-Date: Wed, 26 Aug 2026 00:13:31 +0900
+	s=arc-20240116; t=1787672501; c=relaxed/simple;
+	bh=vN3QAIFtSIu/2my/ILcppHph3GsMyCRxw7A/aJvAKuI=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=p9w4wBtTbZZsLzW8YW4hoZg5Q8LH2N7c9Im6GbNmqkriq7yeRoqTutR+B2EO672FyUHme264ass55Bo3HT2sDZ+/lRP/t4mn3CheXt+YUuLPxoCMru1uMcSinL76kDPMyy8rKHoBzBqu/G5irlMbl48llNFik3Urphql6ne8Y6M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=74.125.231.193
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oi2-f1.google.com with SMTP id 5614622812f47-4960a23d5e1so1840309b6e.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 08:41:39 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1787672498; x=1788277298;
+        h=content-type:to:from:subject:message-id:date:mime-version
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=GC0sT688CMPZIAFu0nGVPNVXVksF+ly+uwSWiBgBdgw=;
+        b=XDG03FYGkod9PdkMPG/GMASQBSapaJVXQmN9prXUzfDqcl7apzmqszKZTmaDKnPd6a
+         edunIrR4h5F3rtzgjGADh3oBuHWn/LmWPtzVhzu5v52EQdIHSxhOCRVqGPKJKH9BPBNY
+         X62T7H+JOAOCdWnVe35oaUcavApPnHVvoMhL0/cc+4hqdTeaJRZzgIAq+M86BQD0+HoT
+         mBrOZxsvnxAM4BG717z0XgeHsuyejdDc+sZsqfTrip7LHMGziizGsHRFOt/jFvvdk2P8
+         3bSsmp4Edzpf5Uz9ZQsDj8gWbUhfCoJMq/omRwztEyvPEuu4R8Y8mxzajuGhNUrvnSAp
+         BbTg==
+X-Forwarded-Encrypted: i=1; AHgh+RoYnTwTxs+uSqz606k9Qq8yzV3XQdNO6EFqqt8bnRR4lZ4KywaUf/wH5+MtN3lcRwKvIOTDrC9C9UfyPA==@vger.kernel.org
+X-Gm-Message-State: AFuF++nNkpcQHfpr+b9ydjFlmI2+ngMI18iGkha3+WGI4zn8O0WRbbt2
+	QAcnLr5vvV2lqeNJP1JxAYl+y66MD+ajElPdtjpin60veb12HfFMWWKLPyuxGw1g/3COZ/Lb99u
+	q6+fFXUyMoUndAFfpFRcku+1QSBxBv/62fTEc7n5Huiv5aDVzGviHU4Rdbew=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v6] loop: Fix NULL pointer dereference in lo_rw_aio()
-To: Bart Van Assche <bvanassche@acm.org>,
-        Markus Elfring <Markus.Elfring@web.de>, linux-block@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Damien Le Moal <dlemoal@kernel.org>, Jens Axboe <axboe@kernel.dk>
-Cc: linux-kernel@vger.kernel.org, linux-next@vger.kernel.org, lkp@intel.com,
-        oe-lkp@lists.linux.dev, Christian Brauner <brauner@kernel.org>,
-        Christoph Hellwig <hch@infradead.org>, Christoph Hellwig <hch@lst.de>,
-        Hillf Danton <hdanton@sina.com>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Mark Brown <broonie@kernel.org>, Oliver Sang <oliver.sang@intel.com>,
-        linux-btrfs@vger.kernel.org
-References: <8dedfc40-9cae-44ff-9960-e0eb1825e963@I-love.SAKURA.ne.jp>
- <550ff0b4-df39-46d2-9781-c8688df10c93@web.de>
- <38ad64c1-edc7-431d-8f52-fba572ebf3eb@I-love.SAKURA.ne.jp>
- <372ca5f6-81a0-4f6c-8f55-ebeeada9f955@acm.org>
- <27bcb147-bead-4432-8cd0-981489f36228@acm.org>
-Content-Language: en-US
-From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
-In-Reply-To: <27bcb147-bead-4432-8cd0-981489f36228@acm.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-X-Anti-Virus-Server: fsav412.rs.sakura.ne.jp
-X-Virus-Status: clean
+X-Received: by 2002:a05:6808:c40b:b0:4b2:8d7b:390b with SMTP id
+ 5614622812f47-4b309bb4709mr26186547b6e.19.1787672498170; Tue, 25 Aug 2026
+ 08:41:38 -0700 (PDT)
+Date: Tue, 25 Aug 2026 08:41:38 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6a8db7b2.a5a502ce.31d34.006c.GAE@google.com>
+Subject: [syzbot] [btrfs?] WARNING in btrfs_quota_enable (2)
+From: syzbot <syzbot+11ac036337245d7faf6d@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 
-On 2026/08/25 7:53, Bart Van Assche wrote:
-> On 8/24/26 3:06 PM, Tetsuo Handa wrote:
->> but sashiko found problems with Bart's series ( https://sashiko.dev/
->> #/patchset/8330ca0e-b4d9-451a-bc0d-a50178194ea8@I-love.SAKURA.ne.jp
->> and https://sashiko.dev/#/patchset/2efb1032-34b9-4c31-
->> b6fc-4aa9b1d60895@I-love.SAKURA.ne.jp ).
-> 
-> Thanks, I had not yet seen this feedback from Sashiko. My conclusion is
-> that two of the three Sashiko findings are wrong. I will fix the third
-> one - the finding about the potential wait-die deadlock.
-> 
+Hello,
 
-As of commit fe4c990e6a30 ("loop: Add __guarded_by() annotations") in block-loop branch,
+syzbot found the following issue on:
 
-  modprobe loop
-  losetup /dev/loop0 testfile.img; losetup /dev/loop1 /dev/loop0; losetup -D
-  sleep 1
-  losetup /dev/loop1 testfile.img; losetup /dev/loop0 /dev/loop1; losetup -D
+HEAD commit:    818bebeb63dd drm/xe: Don't hand out the flat CCS storage a..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=13da3e79580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=3c35c7e43de75adb
+dashboard link: https://syzkaller.appspot.com/bug?extid=11ac036337245d7faf6d
+compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
 
-causes lockdep warning. This is a false positive, but we need to avoid it anyway.
+Unfortunately, I don't have any reproducer for this issue yet.
 
->> I still cannot catch why Bart's approach can become safe without
->> synchronize_rcu() and drain_workqueue().
-> 
-> Agreed that drain_workqueue() or flush_workqueue() is necessary. I do
-> not agree that an explicit synchronize_rcu() call is required. Waiting
-> until the request queue is frozen includes this call implicitly.
-> See also __percpu_ref_switch_to_atomic().
+Downloadable assets:
+disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-818bebeb.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/9adea981957f/vmlinux-818bebeb.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/6676075cd03e/bzImage-818bebeb.xz
 
-OK. You recognized that we need drain_workqueue() or flush_workqueue(), and
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+11ac036337245d7faf6d@syzkaller.appspotmail.com
 
-On 2026/08/25 8:24, Bart Van Assche wrote:
-> On 8/24/26 3:53 PM, Bart Van Assche wrote:
->> On 8/24/26 3:06 PM, Tetsuo Handa wrote:
->>> I still cannot catch why Bart's approach can become safe without
->>> synchronize_rcu() and drain_workqueue().
->>
->> Agreed that drain_workqueue() or flush_workqueue() is necessary. I do
->> not agree that an explicit synchronize_rcu() call is required. Waiting
->> until the request queue is frozen includes this call implicitly.
->> See also __percpu_ref_switch_to_atomic().
-> 
-> A correction: it is not safe to call drain_workqueue() nor to freeze the
-> request queue in __loop_clr_fd(). I'm considering to modify the comment
-> in that function as follows:
+------------[ cut here ]------------
+btrfs_abort_should_print_stack(__error)
+WARNING: fs/btrfs/qgroup.c:1077 at btrfs_quota_enable+0x1acf/0x1e20 fs/btrfs/qgroup.c:1077, CPU#0: syz.0.0/5316
+Modules linked in:
+CPU: 0 UID: 0 PID: 5316 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+RIP: 0010:btrfs_quota_enable+0x1acf/0x1e20 fs/btrfs/qgroup.c:1077
+Code: 08 00 00 00 4c 89 e7 e8 4f fe 04 fe e9 3c e7 ff ff e8 65 53 aa 07 e8 90 b4 93 fd eb 10 e8 89 b4 93 fd eb 09 e8 82 b4 93 fd 90 <0f> 0b 90 4c 8b 64 24 20 44 89 e1 f7 d9 e9 eb f9 ff ff 44 89 f7 48
+RSP: 0018:ffffc9000de77c80 EFLAGS: 00010283
+RAX: ffffffff8433803e RBX: ffffffffffffffe4 RCX: 0000000000100000
+RDX: ffffc9000f4b9000 RSI: 00000000000020b8 RDI: 00000000000020b9
+RBP: ffffc9000de77e70 R08: ffff88800029cb00 R09: 0000000000000003
+R10: 00000000fffffffb R11: 0000000000000002 R12: 0000000000000000
+R13: dffffc0000000000 R14: ffff888052295a00 R15: ffffc9000de77d90
+FS:  00007f86714146c0(0000) GS:ffff88808c30a000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f86713f2fe8 CR3: 0000000039d60000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3566
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:597 [inline]
+ __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
+ do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
+ do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f867059e0d9
+Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f8671413fe8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007f8670826090 RCX: 00007f867059e0d9
+RDX: 00002000000000c0 RSI: 00000000c0109428 RDI: 0000000000000003
+RBP: 00007f8670635024 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007f8670826128 R14: 00007f8670826090 R15: 00007ffd6c070158
+ </TASK>
 
-you also recognized that we can't call drain_workqueue() or flush_workqueue().
 
-Therefore, I chose to temporarily drop lo->lo_disk->open_mutex in order to
-make it possible to safely perform drain_workqueue().
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
+
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+
+If the report is already addressed, let syzbot know by replying with:
+#syz fix: exact-commit-title
+
+If you want to overwrite report's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
+
+If the report is a duplicate of another one, reply with:
+#syz dup: exact-subject-of-another-report
+
+If you want to undo deduplication, reply with:
+#syz undup

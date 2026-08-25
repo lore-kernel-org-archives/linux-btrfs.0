@@ -1,152 +1,151 @@
-Received: from sg-3-44.ptr.tlmpb.com (sg-3-44.ptr.tlmpb.com [101.45.255.44])
+Received: from va-2-60.ptr.blmpb.com (va-2-60.ptr.blmpb.com [209.127.231.60])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E40B33372A
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 03:10:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=101.45.255.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EDE8E1A6822
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 03:16:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.60
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787627413; cv=none; b=AB0nw7OWMr5NDNzPBiBF2q03OQdgnm7IFUkiyPHcGYHxAhpHgeXWfAfHzTwcxE95C8D0j3KeK84QTnfC3cltBQ+ttN/E4imsZ4u2Jjk/ZsmQiuQML0Fetbb3tA0ZQCKGcfLZxjs5COubEn2gQqFjRaKoTwsJ3ID7tmHPgSLWkQw=
+	t=1787627821; cv=none; b=r9g/rimvdbyr6Sn2IxJV5sfUSs0SE98llc3RDvvJP9fHbo3wWDsRs5C1c8tpGyfstROryEjAavjES6OxHwy30/PgC9LxiFTHgocDLoLEC5QrH2evBe4OA9LAF1BjvyqrtmwlnbyZHWWFBpPAOkDr0rkHzwGFPEN5y79jRErrhcA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787627413; c=relaxed/simple;
-	bh=5NnoxSbUVl894KvJzFCLxm2L6YXLH40Tmp99HOrKuHY=;
-	h=From:Mime-Version:Subject:References:In-Reply-To:To:Date:
-	 Message-Id:Cc:Content-Type; b=Fr56KCGCoJSkv7IjbwzZizEMbNODdELfo4JEWbWa34DOlxRNn4e0ouqTFcb9Uq6eKd9wrYV0wyu4GYniOZ54wqiggisnC5ZsECQ7EKrda1VP+MaelhhQ/dOcx4OUopgI+vK3cgHE9y3FK5QR2K3hNYaFmPU08NstKOoDVRTZ2No=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=TjaCNcwE; arc=none smtp.client-ip=101.45.255.44
+	s=arc-20240116; t=1787627821; c=relaxed/simple;
+	bh=Zrkxo2Qwa23wdkNE3kljCsLNBAnDc0lnRPBr8Rw2Eog=;
+	h=In-Reply-To:References:To:Message-Id:Mime-Version:Cc:From:Subject:
+	 Content-Type:Date; b=IEaCXp5qPQOCrCxktyxA5eaBf5dLWPMNZQfHJ0tOMzLdbt3TRjM9Tub3h4JJoM8+OOfwKPNJHjQkzWnMU3oz82LV6KX2exr0tXztgBzIKzf4Xq09tLY9bY+BRv3FuwVEC7wi9HmUPgOH00nW8FhZgFqYNc+EA1Kky2VkJ/wVqgw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=RAKNI3Lg; arc=none smtp.client-ip=209.127.231.60
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="TjaCNcwE"
+	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="RAKNI3Lg"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1787627319;
+ s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1787627807;
   h=from:subject:mime-version:from:date:message-id:subject:to:cc:
  reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=e6QJXzb1bScEP7/96hw9C50Y4fAy4XZ9jSGxL1qzdrI=;
- b=TjaCNcwEnrLaMbHpTz6RDJWUlwIEcG0jVdzAtSwZpsqbuzBSi0EaTMvhOvpSBQrpOa5uOQ
- uIeFZpk0cu3h5XyBLGnZD/r+UhdwuR2WQL3S6fqjtYg1F2IodkB4qqR3jFJ5CbYyJFWWi7
- VXEwmAGPqEhBxL3zqqaLNFRduCUk4wlXEhwysMDj7L4ZgIP99S1dqIQ6XBZLF++++U1v6I
- fkdYICUxdfsKEpAoC8LtCjeCmbGX+4C3A7BA01NmPN4RDXlm4X/WmZZgz+vy1vDESi0gaH
- m4GG0j7JMN8KHA41c27yUD7O4IgPuyYXXP2/30IV8WJQYIGLIOuF8RZ0QA/sDg==
-From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
+ bh=Aph8zmei7FIJ6kouIrO7ryV8GSGsTw7Up6+dWr41KO8=;
+ b=RAKNI3LgShDTrL5mxnSpzYUNxcLxdUI3RUJjpZc0U+Ddx7cidjCSSwXYJ0CQVbnrEv8Yhy
+ G3kCi8rSs/OzjroNv6cIcQtBX2pNPEjR89j0MOz+Q8Yz5fkMDZKqo+4Z09hRAHid85xm1G
+ agAhiktn4Z8tEZU55bpsNEt2r1emQlytJ1CgUF56gHVUiMqegFQoWZ1442l/T3W1bNfHze
+ OU6zIOgrPlzeCGskkwBEsHhONWXRVVUtvQmSqnqlcsN87DIpWt7IjOSSkWHGFDaeC3Hx/Q
+ Mn7IuC7q70G4aIohwDjmuFo4bjuoniBbfr267tBo5DoGP+4LSH/+en9Sw+zQPQ==
+In-Reply-To: <aoxpGiMYRNdRX0wA@mayhem.fritz.box>
+References: <cover.1787551793.git.zhudongjiang@fygo.io> <388e4a6778d65d6d08c7f921c629d4645bac9959.1787551793.git.zhudongjiang@fygo.io> <aoxpGiMYRNdRX0wA@mayhem.fritz.box>
+Content-Transfer-Encoding: quoted-printable
+To: "Johannes Thumshirn" <johannes.thumshirn@wdc.com>
+Message-Id: <93d07ed9-6425-4d78-ab9a-198cfdfae5ea@fygo.io>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Received: from [192.168.8.64] ([183.34.169.70]) by smtp.larksuite.com with ESMTPS; Tue, 25 Aug 2026 03:08:38 +0000
-Subject: Re: [PATCH 2/4] btrfs: zoned: recover active non-data block group roles on mount
-References: <cover.1787551793.git.zhudongjiang@fygo.io> <8956aae5225383d3c9ec3b08a3a9d42da1396eb2.1787551793.git.zhudongjiang@fygo.io> <aoxPwPbpoad66hrG@mayhem.fritz.box>
-X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
-In-Reply-To: <aoxPwPbpoad66hrG@mayhem.fritz.box>
-To: "Johannes Thumshirn" <johannes.thumshirn@wdc.com>
-Date: Tue, 25 Aug 2026 11:08:34 +0800
-Message-Id: <810f5525-58c7-4cfb-ae3c-c7e4e0ed0f2b@fygo.io>
-X-Lms-Return-Path: <lba+26a8d0736+223d52+vger.kernel.org+zhudongjiang@fygo.io>
 Cc: <linux-btrfs@vger.kernel.org>, <naohiro.aota@wdc.com>
+From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 4/4] btrfs: zoned: serialize zone finishing per block group
+Received: from [192.168.8.64] ([183.34.169.70]) by smtp.larksuite.com with ESMTPS; Tue, 25 Aug 2026 03:16:46 +0000
 Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Date: Tue, 25 Aug 2026 11:16:42 +0800
+X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
+X-Lms-Return-Path: <lba+26a8d091e+aea034+vger.kernel.org+zhudongjiang@fygo.io>
 
-=E5=9C=A8 2026/8/24 22:42, Johannes Thumshirn =E5=86=99=E9=81=93:
-> On Mon, Aug 24, 2026 at 02:49:54PM +0800, Dongjiang Zhu wrote:
+=E5=9C=A8 2026/8/25 0:00, Johannes Thumshirn =E5=86=99=E9=81=93:
+> On Mon, Aug 24, 2026 at 02:49:56PM +0800, Dongjiang Zhu wrote:
 >> [BUG]
->> After a remount, a later write can activate a new metadata or system
->> block group without finishing the recovered one.  Repeating this across
->> remounts consumes additional active-zone slots and reservations, and can
->> eventually exhaust all active-zone slots.
->>
->> Once no slot is available, activation of a metadata or system block grou=
-p
->> fails.  During synchronous transaction writeback this propagates as
->> -EAGAIN, aborting the transaction and forcing the filesystem read-only.
->>
->> A remount/fsync/remount reproducer on an HC620 left two partially used
->> sequential metadata block groups active while active_meta_bg remained
->> NULL:
->>
->>    bg=3D343865819136 alloc=3D176095232 cap=3D268435456
->>    bg=3D344402690048 alloc=3D3260416   cap=3D268435456
->>
+>> On an HC620 with max_active_zones=3D128, buffered writes occupied all 12=
+8
+>> active-zone slots.  A metadata-heavy create/delete workload followed by
+>> sync then forced a metadata block group switch.
 >=20
-> Can you submit a fstest for that please? Maybe even in generic/ so XFS an=
+> Can you explain that to me. In my mental model, if all 128 active-zones a=
+re
+> used and you call sync, we need to add a treelog-bg. But there is no more
+> active zone resource available so we cannot create the treelog bg. This i=
+s why
+> we fail, so we need to finish a zone first to then create a treelog bg.
+>=20
+>>
+>> A kernel with additional zone finish tracing reported:
+>>
+>>    zoned-debug: finish clear-runtime bg=3D140928614400 caller=3Dbtrfs_zo=
+ne_finish_endio_workfn comm=3Dkworker/u8:7
+>>    zoned-debug: finish early-inactive bg=3D140928614400 caller=3Dbtrfs_c=
+heck_meta_write_pointer comm=3Dsync
+>>    zoned-debug: pivot finish ret=3D0 old_bg=3D140928614400 new_bg=3D3398=
+39287296
+>>    zoned-debug: activate fail slot bg=3D339839287296 type=3Dmetadata lef=
+t=3D0 max_active=3D128 comm=3Dsync
+>>    zoned-debug: finish zone-mgmt bg=3D140928614400 ret=3D0 left=3D0 call=
+er=3Dbtrfs_zone_finish_endio_workfn comm=3Dkworker/u8:7
+>>    BTRFS error (device sdb): error while writing out transaction: -EAGAI=
+N
+>>    BTRFS error (device sdb state A): Transaction 67 aborted (-EAGAIN)
+>>    BTRFS info (device sdb state EA): forced readonly
+>>    zoned-debug: clear-active dev=3D/dev/sdb pos=3D140928614400 left=3D1 =
+max_active=3D128
+>>
+>> The transaction was aborted before the old block group returned its
+>> active-zone slot, forcing the filesystem read-only.
+>=20
+> Ah now I see we're on the same page.
+>>
+>> [CAUSE]
+>> do_zone_finish() clears BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE before issuing
+>> the zone finish operation.  This allows the following interleaving:
+>>
+>>    Thread A, endio worker              Thread B, transaction writeback
+>>
+>>    clear ZONE_IS_ACTIVE
+>>    call_zone_finish(old)
+>>                                          observe old as inactive
+>>                                          return from do_zone_finish(old)
+>>                                          activate(new)
+>>                                          fail with left =3D=3D 0
+>>    clear the device active bit
+>>    increment active_zones_left
+>>
+>> Thread B treats the cleared active bit as a completed finish while threa=
 d
-> F2FS also get coverage?
+>> A is still performing the device operation.
+>>
+>> [FIX]
+>> Add BLOCK_GROUP_FLAG_ZONE_FINISHING and keep ZONE_IS_ACTIVE set until th=
+e
+>> zone finish operation and active-list cleanup are complete.
+>>
+>> Concurrent finishers wait for ZONE_FINISHING to be cleared instead of
+>> returning early.  Wake them after clearing ZONE_IS_ACTIVE and removing
+>> the block group from the active list.  If a waiter acquired a temporary
+>> read-only reference, release it after the wait.
+>>
 >=20
+> Stupid question, wouldn't it be enough to re-order the call to
+> do_zone_finish() vs the clearing of  BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE?
 
-Yes, I can work on a separate fstest. To make sure I understand the
-suggestion correctly, do you have in mind a zoned-device test that
-creates a metadata-heavy workload, syncs, fully unmounts and mounts the
-filesystem repeatedly, and then verifies that further writes and syncs
-still succeed?
+Do you mean keeping BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE set while
+call_zone_finish() is running, and clearing it together with
+list_del_init() after the device operation completes?
 
->> diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
->> index 10e15a319b93..aa3d6b66495e 100644
->> --- a/fs/btrfs/fs.h
->> +++ b/fs/btrfs/fs.h
->> @@ -931,6 +931,10 @@ struct btrfs_fs_info {
->>   	u64 data_reloc_bg;
->>   	struct mutex zoned_data_reloc_io_lock;
->>  =20
->> +	/*
->> +	 * Active block groups for normal metadata and system writes. Mount
->> +	 * recovery restores one block group for each role and finishes any ex=
-tras.
->> +	 */
->=20
-> I don't think this comments adds any value.
->=20
+If so, I think that closes the early-inactive window, but it still allows
+two callers to finish the same block group concurrently:
 
-Agreed, I will remove it.
+   Thread A                         Thread B
 
->>   	struct btrfs_block_group *active_meta_bg;
->>   	struct btrfs_block_group *active_system_bg;
->>  =20
->> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
->> index bd079d3b31ba..7d91c074a24a 100644
->> --- a/fs/btrfs/zoned.c
->> +++ b/fs/btrfs/zoned.c
->> @@ -3050,22 +3050,73 @@ int btrfs_zoned_activate_one_bg(struct btrfs_spa=
-ce_info *space_info, bool do_fin
->>   	return 0;
->>   }
->>  =20
->> +static int finish_extra_active_nondata_bgs(struct btrfs_fs_info *fs_inf=
-o)
->> +{
->> +	struct btrfs_block_group *block_group;
->> +	struct btrfs_block_group *next;
->> +	u64 tail_unusable;
->> +	int ret;
->> +
->> +	list_for_each_entry_safe(block_group, next, &fs_info->zone_active_bgs,
->> +				 active_bg_list) {
->> +		if (!(block_group->flags &
->> +		      (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM)))
->> +			continue;
->> +
->> +		if (block_group =3D=3D fs_info->active_meta_bg ||
->> +		    block_group =3D=3D fs_info->active_system_bg)
->> +			continue;
->> +
->> +		btrfs_get_block_group(block_group);
->> +		tail_unusable =3D block_group->zone_capacity - block_group->alloc_off=
-set;
->=20
-> Shouldn't these be accessed under the block_group->lock?
->=20
-> [...]
->=20
-> Same here, don't you need the block_group->lock?
+   call_zone_finish()
+                                    observe ZONE_IS_ACTIVE
+                                    call_zone_finish()
 
-Both accesses only happen during open_ctree(), after all block groups
-have been loaded and before the background threads are started. Following
-other mount-time initialization code, I assumed that block_group->lock
-was not necessary because the allocation state cannot change concurrently.
+While thread A is blocked in blkdev_zone_mgmt(), thread B still sees the
+block group as active and can enter call_zone_finish() as well.
 
-On the other hand, taking the lock would make the usual protection of
-alloc_offset explicit and avoid relying on the mount-time context for
-future maintenance. Would you prefer that I add the locking around both
-reads in v2?
+Even if issuing ZONE_FINISH twice is harmless at the device level, the
+software cleanup is not idempotent. If both calls succeed for a non-data
+block group, both increment reserved_active_zones, while
+active_zones_left is restored only once because the device active bitmap
+uses test_and_clear_bit(). Both callers would also remove the same
+active-list entry and drop its reference.
+
+Am I missing some existing serialization that prevents two
+do_zone_finish() callers for the same block group from reaching
+call_zone_finish() concurrently?
 
 Thanks,
 Dongjiang Zhu

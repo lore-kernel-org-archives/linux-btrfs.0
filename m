@@ -1,277 +1,189 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ed1-f42.google.com (mail-ed1-f42.google.com [209.85.208.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5FAE93D47B3
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 12:59:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D871F16DEB1
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 13:08:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787662793; cv=none; b=GTef2/kXrGRjlSHuVIyjDeoCfK2n5suA985gc/2gy5KA8fMd57KK29JB4LkoGWRdO5JAPw1EHgIxjSAqeTPB16rN1ESFUjnZNxrwAkUau4frQnoRTSeF9GM7ZoAvTfA6pjXiptMtBm9tmDsn7AwKuTlspvFgTP5tbEi2FrmYS5g=
+	t=1787663294; cv=none; b=m+BoBHywX/Ad8hROt17CLUMAWgDDeybhdvgD05XKrGqU+mOm4MPRcC0TAqZy8tYeAnZzp+HrN0WkjSVGfXiS+NFGm8asiMIBbLi+tvKeqjvYjp+QPRTFm158aHiqBdGDEHO9DyP/mdleS41WCbyMac0kBWD8zRJHB3Oyw3sJhYA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787662793; c=relaxed/simple;
-	bh=t6EnYKBCKwHjiW9fVECYRGrNu7Y+oXabsQefPZMuuz4=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=JUJnIvjd2Uhn/dhGO/JVLzUwgq3DZH/rdgXQydGz8DkL5nRQ4MflUCuj+0XqUy/qpYAEuF3R38CyVvApWpVb8SA1nVWQzs4nCYlM2v4dYI1I0EQkQXW7U81ppq3XJqoX7TJT0KZ3x4ExuOXUp0wYfPsw5CFhCgVmNqnXRCLK1rw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PzXoRjr8; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1787663294; c=relaxed/simple;
+	bh=i0ZdYmCdZbUlwDnPfgBk9FOwu3PxFpceMJwH6g+46TM=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=sOYKs2sS/Ra+dMOuUUJaVe0DHAbNa9VYZHnNi3kYkSfjF16yCFDpn39wcS2oUanyVUOJ7ScPG2uuvy/XfENsHGl/M4zSgkUY3LNfIc7AHmzCOxEvXZ45inzGKi/motROOYqN6DlXJR58sVvGL5GhFhDRO7Gv6rp6bqo0qCnLjSw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=G2zBt5x2; arc=none smtp.client-ip=209.85.208.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PzXoRjr8"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 07E091F00A3A
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 12:59:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1787662792;
-	bh=LJUS9NXXiLxjyRApR+2GJFuvC+7/xLexqp2vbdMBa44=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=PzXoRjr8sN+oRxZ+2E2U+JW1zRiABFrNIRSUHazohpWWkJf1qMeos1cOmyhuEtCm4
-	 UwHlOVzhyftkha0/BeL9J5gYr76Edhza2HsdKVlsjItCWDCc6CjbkeSM4Ijaf4RVKW
-	 isi+3ZpVdC6WXb5hLDQujEx8l2+3VYCwjE8jLynfcKFvTyZN6cBf7bOM/IjHjI4IIp
-	 lMSSz2rxBcZ9yQC6IsPv77LEJ/LLS6MZsUJnhkQCpLIXcMY71fErYt9Z4x1xZurbYy
-	 G2D62qe9pCR4sYTb4seD98RbslsmrdXMFIAjqg2cjyoQtD7hm2ecpnR13hoBKKqxN9
-	 OhJsMIp3qt9dA==
-Received: by mail-vs1-f49.google.com with SMTP id ada2fe7eead31-74ad03fa605so2573304137.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 05:59:51 -0700 (PDT)
-X-Gm-Message-State: AFuF++kzzfoPsiTPUd71egu/7Jl2ExshJzOBq7H+X4L3PKen0DeiBWDJ
-	pDz94rke+0/AxtkGYNNk5TawflmPMtBEmIKjjdJcXopsVlZmihh7iRFtUD+UGJeMKNixbuBMbwO
-	WtX8Hv+u2Ut8Z4rnntCRixLE1BT/xKv4=
-X-Received: by 2002:a05:6102:8491:10b0:77b:fd92:57e0 with SMTP id
- ada2fe7eead31-77bfd9262c2mr5915283137.0.1787662791147; Tue, 25 Aug 2026
- 05:59:51 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="G2zBt5x2"
+Received: by mail-ed1-f42.google.com with SMTP id 4fb4d7f45d1cf-6a422090b2fso6807496a12.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 06:08:12 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1787663291; x=1788268091; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=8Sr4tozUsBGdiPqfTFjv9kV2GfHMHU8SpDNwsFMVNdI=;
+        b=G2zBt5x2wAuRWepTqT3D05wHOJB4MYXxGVdpRciGVh/rhzRa/I+Em1JBONkNNPuCIk
+         9DkLX911oHS2TscVgGuQi6NtBbXck8/wpBHKAH295wHiWaAEA+JcQ/YW3nGpgjKGRw+9
+         gTGgI5SL+8o5urD+BoJrRnBBD+DbCI13/Hv2cZvxobC79oony7usrpcGhuzmKSqCVCwB
+         eStM3nlnmZ3rO/LoPn0LkB2Afqi9njkZuXqzHRWmtuQS2S0c6zXM7+1Mr1B1ICoA4qJI
+         GFQE+RqtP7+Yh9KwIQlRj3yv8Ibn6h5yN4dIBrNicZzvEY7MZKYz6xiwcgcK06Oo+qp2
+         mp6A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1787663291; x=1788268091;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=8Sr4tozUsBGdiPqfTFjv9kV2GfHMHU8SpDNwsFMVNdI=;
+        b=YRXUYNBy0Ga0PGz0RFqp4MUtC3xd9vd9zMB17Dh4zSy7gGlr+2XHtYgTHrGEQlmQ1e
+         auT6i8FCRaQaLVmL/aapGFa1sliXy0RveJUHx2FJIIDjMUUQ0xCDpb6SpLdAPsuAuDie
+         vBO/J+3aTFOX9jKlCuww7g1VXxxhl/he0YrL5FLTlBtuylggcU3wNf0tZNVN0x7cDIbZ
+         Ynp99JqFvcbF8rvZdIcR3lOjEiLeomkzi5hwB+dcN47gj5V8KJaq+tonHKs0QGpP07Mr
+         c5fthUxaQYoXDfXJ+p2Qf9zJDMMUWTSLETYsCiHyIwCDO6G/LFM99Y44bpdvDVe/csZt
+         qkpA==
+X-Forwarded-Encrypted: i=1; AHgh+RpCmy4hpv2j81qaldxalzgdK44x925MlX18qPCZIgFoXKDY9EzSt8lhtoSSYFgRCeSC1QlvkGsJtngcDA==@vger.kernel.org
+X-Gm-Message-State: AFuF++mRmaZgYPvPA38IGjzokqV0/k/HtfR1zGhjGSKskMB9AOSd0+Ud
+	ZcM+J/Y3RXcVHLwXvwthipBQbBNxGJ5YpP1A26IZ0VTe+0S5QeYZXDZ3
+X-Gm-Gg: AR+sD10Zt5/QmKsECGaYsn2nxXHdFN8SYR71kGQIsCZsWjlQnzJEZhOZUiOcrz3RJ7b
+	7Y/DaZKXNe0tgr8xzNc1UxM4gZTEPrZ2x54r/jh0RXHx1gK+3vdm1Tk+Lg7qr6B34kIXczZ5zUg
+	uYAcwvzcfDGgGbXSA9FGIe+9p/aMWeEBBcj5nB2Zmhv9edILXZeW7CpIEtKc3bU+OQPGk0eqMOY
+	gSUnRMOqVQbH+DDULMzblcS+dbc8hVVtJzQLtTqqa7CLe3Uk1sv99UPYBo2kCPlQA38sE0fO5oc
+	1euYXuaj6XbhKMJzoLnzolxKJJvdrnMo9U5qtyERngPK1k2BXbKHI3kn8poEwI+W71ZLPSq5lGG
+	SV4XxHmu9OSD4dCWdb5C4NalLfdiBVng8VQk3qOzzwol5ypTAhrabAACQMmYzPwdD6a1jDXXPJM
+	BYZUm7EQlfQX1FZMkV3flZJLoM1B5qbJAONA/uChGmYDWCz3CvK6i6ncPql4Tp/4+h0Wg=
+X-Received: by 2002:a17:906:c147:b0:c20:88a6:8210 with SMTP id a640c23a62f3a-c24e5d07914mr799790266b.9.1787663290653;
+        Tue, 25 Aug 2026 06:08:10 -0700 (PDT)
+Received: from infinity ([2001:b07:5d26:7a6a:365a:60ff:fe0d:cfc6])
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-c24d6f203acsm796317866b.24.2026.08.25.06.08.08
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 25 Aug 2026 06:08:09 -0700 (PDT)
+From: koraynilay <koray.fra@gmail.com>
+To: Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>
+Cc: Qu Wenruo <wqu@suse.com>,
+	Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+	linux-btrfs@vger.kernel.org,
+	koraynilay <koray.fra@gmail.com>
+Subject: [PATCH v4 0/6] btrfs: add per-inode compression levels in xattrs
+Date: Tue, 25 Aug 2026 15:07:39 +0200
+Message-ID: <20260825130745.229008-1-koray.fra@gmail.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <df20ed0596f010eebfd9ad33b8bb979e6304dbfb.1787216325.git.wqu@suse.com>
-In-Reply-To: <df20ed0596f010eebfd9ad33b8bb979e6304dbfb.1787216325.git.wqu@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Tue, 25 Aug 2026 13:59:15 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H5PoTSv=pR8wtPTLNej0_77fFuuFczDBiCAuYke5cWSeA@mail.gmail.com>
-X-Gm-Features: AcwNN1XMu2OhjpVv1QEmBfq26CD1wPCDSf2mY8rQDJRxqyCvq55eC6-3-k4JBnQ
-Message-ID: <CAL3q7H5PoTSv=pR8wtPTLNej0_77fFuuFczDBiCAuYke5cWSeA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: do not force reloc root creation during qgroup_account_snapshot()
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Thu, Aug 20, 2026 at 9:59=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
->
-> [BUG]
-> When running btrfs/252 with quota enabled through MKFS_OPTIONS=3D"-O
-> quota", it has a high chance to trigger the following kernel warning and
-> flips the fs RO:
->
->  BTRFS info (device dm-2): relocating block group 30408704 flags metadata=
-|dup
->  ------------[ cut here ]------------
->  WARNING: fs/btrfs/extent-tree.c:879 at lookup_inline_extent_backref+0x74=
-b/0x960 [btrfs], CPU#4: btrfs/2173
->  CPU: 4 UID: 0 PID: 2173 Comm: btrfs Not tainted 7.2.0-rc6-custom+ #457 P=
-REEMPT(full)  3adc6528fb66f7a55fe1095385818e742f200aab
->  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 02/02/2=
-022
->  RIP: 0010:lookup_inline_extent_backref+0x74b/0x960 [btrfs]
->  Call Trace:
->   <TASK>
->   insert_inline_extent_backref+0x7c/0x160 [btrfs 32f09462c54d9c922fca74a3=
-e4866f4aa7737b72]
->   __btrfs_inc_extent_ref+0xa9/0x270 [btrfs 32f09462c54d9c922fca74a3e4866f=
-4aa7737b72]
->   __btrfs_run_delayed_refs+0x4af/0x11c0 [btrfs 32f09462c54d9c922fca74a3e4=
-866f4aa7737b72]
->   btrfs_run_delayed_refs+0x9d/0xf0 [btrfs 32f09462c54d9c922fca74a3e4866f4=
-aa7737b72]
->   create_pending_snapshot+0x39d/0xf00 [btrfs 32f09462c54d9c922fca74a3e486=
-6f4aa7737b72]
->   create_pending_snapshots+0x9b/0xc0 [btrfs 32f09462c54d9c922fca74a3e4866=
-f4aa7737b72]
->   btrfs_commit_transaction+0x280/0xeb0 [btrfs 32f09462c54d9c922fca74a3e48=
-66f4aa7737b72]
->   prepare_to_relocate+0x147/0x200 [btrfs 32f09462c54d9c922fca74a3e4866f4a=
-a7737b72]
->   relocate_block_group+0x6b/0x5e0 [btrfs 32f09462c54d9c922fca74a3e4866f4a=
-a7737b72]
->   btrfs_relocate_block_group+0x92c/0x2380 [btrfs 32f09462c54d9c922fca74a3=
-e4866f4aa7737b72]
->   btrfs_relocate_chunk+0x3f/0x1a0 [btrfs 32f09462c54d9c922fca74a3e4866f4a=
-a7737b72]
->   btrfs_balance+0xa2c/0x19c0 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737=
-b72]
->   btrfs_ioctl+0x2839/0x2d30 [btrfs 32f09462c54d9c922fca74a3e4866f4aa7737b=
-72]
->   __x64_sys_ioctl+0x416/0x9a0
->   do_syscall_64+0xe1/0x790
->   entry_SYSCALL_64_after_hwframe+0x4b/0x53
->   </TASK>
->  ---[ end trace 0000000000000000 ]---
->  BTRFS info (device dm-2): leaf 4593991680 gen 233 total ptrs 175 free sp=
-ace 5953 owner 2
->  BTRFS info (device dm-2): refs 3 lock_owner 2173 current 2173
->         item 0 key (166772736 METADATA_ITEM 1) itemoff 16250 itemsize 33
->                 extent refs 1 gen 222 flags 2
->                 ref#0: tree block backref root 266
->         [ Skip the tree dump ]
->         item 174 key (263225344 METADATA_ITEM 0) itemoff 10328 itemsize 3=
-3
->                 extent refs 1 gen 162 flags 258
->                 ref#0: tree block backref root 267
->  BTRFS error (device dm-2): extent item not found for insert, bytenr 1798=
-47168 num_bytes 16384 parent 4594335744 root_objectid 273 owner 0 offset 0
->  BTRFS error (device dm-2): failed to run delayed ref for logical 1798471=
-68 num_bytes 16384 type 182 action 1 ref_mod 1: -117
->
-> [CAUSE]
-> The above error is showing that there is a tree reference to an metadata
+Add per-inode compression levels using
+btrfs property set /path/to/file compression "algo:level", using the
+same syntax as the compress mount option.
+If set on folders, all new children will inherit the setting, while
+already existing children will be unaffected.
 
-an metadata -> a metadata
+This patch series also fixes a small bug: before, when setting
+btrfs.compression, it would keep the mount option level, even if the
+algo was different (!!), so with e.g. compress=zstd:15 and
+btrfs.compression=zlib the data gets compressed at zlib:9 (because it
+would still get clamped at the right range).
+After this patch series, if the user doesn't specify a level (e.g.
+"zstd") btrfs inherits the level from the mount option, while if instead
+the user specifies a level it will use that (e.g. "zstd:0" would use the
+default for the algorithm, and "zstd:10" would of course use level 10).
 
-> extent that is no longer there.
->
-> With "ref_verify" mount option (requires CONFIG_BTRFS_DEBUG), there is
-> some extra debug output:
->
->  BTRFS error (device dm-2): dumping block entry [180961280 16384], num_re=
-fs 0, metadata 1, from disk 0
->  BTRFS error (device dm-2):   root entry 256, num_refs 184467440737095516=
-15
->  BTRFS error (device dm-2):   root entry 273, num_refs 184467440737095516=
-15
->  BTRFS error (device dm-2):   Ref action 3, root 273, ref_root 273, paren=
-t 0, owner 0, offset 0, num_refs 1
->     btrfs_force_cow_block+0x129/0x7d0 [btrfs]
->     btrfs_cow_block+0x10a/0x250 [btrfs]
->     btrfs_search_slot+0x5eb/0xf40 [btrfs]
->     btrfs_insert_empty_items+0x3a/0x70 [btrfs]
->     insert_with_overflow+0x53/0x130 [btrfs]
->     btrfs_insert_dir_item+0x125/0x290 [btrfs]
->     btrfs_add_link+0xaa/0x410 [btrfs]
->     btrfs_rename+0x5ea/0xcd0 [btrfs]
->     btrfs_rename2+0x28/0x60 [btrfs]
->     vfs_rename+0x5b2/0xe10
->     filename_renameat2+0x244/0x430
->     __x64_sys_rename+0x48/0x70
->     do_syscall_64+0xe1/0x790
->     entry_SYSCALL_64_after_hwframe+0x4b/0x53
->  BTRFS error (device dm-2):   Ref action 2, root 273, ref_root 273, paren=
-t 0, owner 0, offset 0, num_refs 18446744073709551615
->     btrfs_force_cow_block+0x327/0x7d0 [btrfs]
->     btrfs_cow_block+0x10a/0x250 [btrfs]
->     btrfs_search_slot+0x5eb/0xf40 [btrfs]
->     btrfs_lookup_file_extent+0x4d/0x70 [btrfs]
->     btrfs_drop_extents+0x151/0xf00 [btrfs]
->     insert_reserved_file_extent+0xfe/0x3e0 [btrfs]
->     btrfs_finish_one_ordered+0x549/0xc40 [btrfs]
->     btrfs_work_helper+0xde/0x350 [btrfs]
->     process_one_work+0x198/0x380
->     worker_thread+0x1c8/0x330
->     kthread+0xee/0x120
->     ret_from_fork+0x28f/0x310
->     ret_from_fork_asm+0x11/0x20
->  BTRFS error (device dm-2):   Ref action 1, root 273, ref_root 0, parent =
-4594335744, owner 0, offset 0, num_refs 1
->     __btrfs_mod_ref+0x1c5/0x2d0 [btrfs]
->     btrfs_copy_root+0x262/0x390 [btrfs]
->     create_reloc_root+0xb9/0x370 [btrfs]
->     btrfs_init_reloc_root+0xb0/0x1b0 [btrfs]
->     record_root_in_trans+0xa6/0xd0 [btrfs]
->     create_pending_snapshot+0x383/0xf00 [btrfs]
->     create_pending_snapshots+0x9b/0xc0 [btrfs]
->     btrfs_commit_transaction+0x280/0xeb0 [btrfs]
->     prepare_to_relocate+0x147/0x200 [btrfs]
->     relocate_block_group+0x6b/0x5e0 [btrfs]
->     btrfs_relocate_block_group+0x92c/0x2380 [btrfs]
->     btrfs_relocate_chunk+0x3f/0x1a0 [btrfs]
->     btrfs_balance+0xa2c/0x19c0 [btrfs]
->     btrfs_ioctl+0x2839/0x2d30 [btrfs]
->     __x64_sys_ioctl+0x416/0x9a0
->     do_syscall_64+0xe1/0x790
->
-> The above shows the direct cause, Ref action 3 is the oldest operation,
-> which shows the tree block is created by COW.
-> Then ref action 2 shows it's COWed away, by a metadata update, meaning
-> the tree block is already released, should not be referred any more.
->
-> Then the final one, is trying to create a reloc tree for subvolume 273,
-> and that reloc root creation is referring to the already dropped tree
-> block.
->
-> The root cause is that, during qgroup_account_snapshot(), we are calling
-> record_root_in_trans() with "force =3D true".
-> So if the root has no reloc root, we will create one, but at that
-> timing it's already too late.
->
-> Normally reloc root should be created before the commit and
-> current roots diverge, to avoid the same problem we are hitting.
->
-> But during relocation initialization, we are committing the current
-> running transaction, with a new reloc_control attached halfway.
->
-> And if qgroup is enabled, the record_root_in_trans() with "force =3D true=
-"
-> calls will force reloc root creation even if we do not and should not
-> create reloc root at that timing.
->
-> [FIX]
-> Do not force reloc root creation during record_root_in_trans() with
-> "force =3D true" cases, which is only called by qgroup_account_snapshot()=
-.
->
-> If we're really under relocation, the reloc root should be created way
-> early, before the commit and current root diverge.
-> If the root has no reloc tree yet, it means we're still initializing the
-> reloc, and do not need a reloc root.
->
-> So skipping the reloc tree creation in qgroup_account_snapshot() should
-> be safe.
->
-> Link: https://bugzilla.suse.com/show_bug.cgi?id=3D1275740
-> Assisted-by: LLM (initial analyze, but incorrect conclusion with too many=
- burnt tokens)
+I also want to thank Zygo for helping me by explaining stuff and for
+noticing this bug.
 
-analyze -> analysis
+Now, there is the question of having a fix for the bug as a separate
+patch to be backported or not, and there are 3 possibilities for that
+(original email listing them[1]):
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+- Option 1:
+  don't have a specific patch to be backported, keep the current
+  behaviour on older kernels.
 
-Thanks.
+  This is the option I personally prefer[2].
+  
+  Pros:
+  * documentation[3] can be made clear about this behaviour, telling users
+    that kernels < 7.X will "support" cross-algo level specification,
+    while >= 7.X won't and will only inherit the level if the algorithm is
+    the same
+  * won't break any existing use-case
+  
+  Cons:
+  * new users on older kernels will encounter this bug
 
-> Fixes: 4d31778aa2fa ("btrfs: qgroup: Fix root item corruption when multip=
-le same source snapshots are created with quota enabled")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/transaction.c | 13 ++++++++++++-
->  1 file changed, 12 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 13a7e5f4e08c..59e246467272 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -458,8 +458,19 @@ static int record_root_in_trans(struct btrfs_trans_h=
-andle *trans,
->                  * through btrfs_record_root_in_trans without having to t=
-ake the
->                  * lock.  smp_wmb() makes sure that all the writes above =
-are
->                  * done before we pop in the zero below
-> +                *
-> +                * If @force is true, it means the call is from
-> +                * qgroup_account_snapshot(), which only requires radix t=
-ree
-> +                * tracking.
-> +                * We should not force reloc root creation here, as the r=
-oot
-> +                * may have already been modified, and in that case
-> +                * root->commit_root has already been dropped.
-> +                *
-> +                * Using that commit root will cause the reloc root to re=
-fer
-> +                * to a deleted extent, causing extent tree corruption.
->                  */
-> -               ret =3D btrfs_init_reloc_root(trans, root);
-> +               if (!force)
-> +                       ret =3D btrfs_init_reloc_root(trans, root);
->                 smp_mb__before_atomic();
->                 clear_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state);
->         }
-> --
-> 2.54.0
->
->
+- Option 2:
+  have a specific patch to be backported that keeps the current behaviour,
+  but only if the compress= algo is the same as the btrfs.compression one,
+  if they aren't, use the default for the btrfs.compression algo (e.g.
+  compress=zstd:15 and btrfs.compression=zlib would compress at zlib:3
+  instead of clamp(zlib, 15) = 9).
+  
+  Pros:
+  * fixes the cross-algo bug without breaking setups that rely on level
+    inheritance in a way that makes sense
+  
+  Cons:
+  * documentation has to mention that the behaviour might be the bugged
+    one or this one, depending on if the kernel has this bugfix patch
+  * may break some weird use-cases, but no one should really expect the
+    level to be inherited if the algorithm is different
+  
+- Option 3:
+  have a specific patch to be backported that fixes the behaviour
+  entirely, using the default level in all btrfs.compression cases, since
+  levels wouldn't be supported.
+  Equivalent of setting algo:0 after this patch series gets applied.
+  
+  Pros:
+  * very simple code fix, 2 lines of compress_level = 0, while option 2
+    would need an additional if to check the compress type against the
+    fs_info one
+  
+  Cons:
+  * documentation has to mention that the behaviour might be the bugged
+    one or this one, depending on if the kernel has this bugfix patch
+  * breaks all use-cases relying on level inheritance from the mount
+    option to the xattr
+
+Changes in this v4:
+* remove the single patch for the bug, as per [2]
+* reduce code duplication by putting the level parsing logic after the
+  algorithm type logic, using a level_pos variable to indicate the
+  position of the ':' instead of having the same exact code for each
+  algo.
+* add btrfs_compress_typelevel2str() helper
+* fix btrfs.compression not being preserved when *any* chattr operation
+  gets executed changed
+
+[1]: https://lore.kernel.org/linux-btrfs/DKJZQAFIRW7H.3KE8DKWO5E3TV@gmail.com
+[2]: https://lore.kernel.org/linux-btrfs/DKLRY9Q5SEI3.VUDASVYPW9MY@gmail.com
+[3]: https://github.com/kdave/btrfs-progs/pull/1152
+
+
+koraynilay (6):
+  btrfs: export btrfs_match_compress_type(), move it to compression.h
+  btrfs: also validate compression levels in
+    btrfs_compress_is_valid_type()
+  btrfs: add per-inode compression levels in xattrs
+  btrfs: support inheritance for per-inode compression levels
+  btrfs: add btrfs_compress_typelevel2str() helper
+  btrfs: preserve btrfs.compression when setting inode flags
+
+ fs/btrfs/btrfs_inode.h |  1 +
+ fs/btrfs/compression.c | 55 +++++++++++++++++++++++++++++--
+ fs/btrfs/compression.h |  5 ++-
+ fs/btrfs/inode.c       | 10 ++++++
+ fs/btrfs/ioctl.c       | 13 +++++++-
+ fs/btrfs/props.c       | 73 +++++++++++++++++++++++++++++-------------
+ fs/btrfs/props.h       |  9 ++++++
+ fs/btrfs/super.c       |  8 -----
+ 8 files changed, 139 insertions(+), 35 deletions(-)
+
+
+base-commit: 818bebeb63dd6bf5f4e07e145f6cdbace520a34c
+-- 
+2.55.0
+

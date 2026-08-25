@@ -1,90 +1,78 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3F346440625
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 12:44:54 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 18B05442B3F;
+	Tue, 25 Aug 2026 12:48:00 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787661898; cv=none; b=LiqSVGbTK0KhdKEmltfEWxhBbpHgcJc4NApiuIcNVFBfRvxJQ8eBR5DTUaypSAYldEXVVSagZby/EUvzeZBEn4eRumrxGkrvG7aiIPY9mZc3Y890J9aFYvRHML1ga+iZO8xl8jbjWIl0cguPRaQF/uNCgtVsAKnh399U1fwXspU=
+	t=1787662085; cv=none; b=dOCIHn2i4FcKVOPpPzECEK3LsR9RpH7le1BOQFQDC479ZxcCVVL4DcH9pdvddoqXZExQlo/AIAsWt6j+0eShwtdNs5CsCPSDCAB3eU7cC+ZrUpOwcfuM2qdoYVftdqsvPDzYD1pNgca+17SC3+MzeguUetXRKsTfclIYgDwEDag=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787661898; c=relaxed/simple;
-	bh=c78AQx2D0kBj9i4SB4XDP70TIa3W1tftR15NvoWfc+w=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=NTAZlIZJYh827mC38tm8DiRfYfs3ipcMIy4FlIoc+0h3sdo9Ko7X0FrbJ39b8WUuoZuVaCPD2kSk6OGAyawh/MlTBILpN1PCSCLIPivYjklCwV4rThBFcRtye1SYXYJ8k3hO49HTpWO0fXkLe4yZg50YxDExvOQIQInZE0D4x3M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=XsUz/P0u; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1787662085; c=relaxed/simple;
+	bh=OqrqU/2Ed5rwzqui8afuZaDGPHtphtPRvnBIsOY8Ylc=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=TvMl8JWMMJjesPEWcvKsDXmzUTFUR1++ftTjMSRrt8xj2ldIAHbWyEpLd0k9ZDQwZo3/KdIqODPTQTy6IGewp4FvYASV28ZAETFoCvDN5foSLs2v4V7QjchWzzC4iXURud/Kbsx0Gstt7jHB64iq6Pl51/j62//9IHkBQZIZofk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=OyO7arxs; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="XsUz/P0u"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 546461F00AC4
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 12:44:54 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="OyO7arxs"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8EE771F00A3A;
+	Tue, 25 Aug 2026 12:47:56 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1787661894;
-	bh=c78AQx2D0kBj9i4SB4XDP70TIa3W1tftR15NvoWfc+w=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=XsUz/P0uL+z7OhD77Zk4wqzNd5INsa1dGZzSLz3TLJWBUmZfAUTYi+xYP4tQEuxHD
-	 Lc+iJWIFmKms9vsZ4AbxYqtmZFtmxR2Cm6owoNCgKwce08ogfXC/Hkkab5czR43OQh
-	 QYhygxC70w1i6wSK5d8Mvb3YomzG+trhbKI4MTwpXYdrQaJ/nE2Xc1aIcjgxfT9tCS
-	 S23gZ+HhdBYgc/pvaXqA4/4IM2pW5f4Fkp+g3pamZ8qRvh91cx0ui4IN0tF9LJx9EJ
-	 9YC7pjHd5g5Xs6qRIfOfu8oeI2gdPvYZ8g3QxHFLtXdjoUHSVsG9/sIyhXp1rv7Kie
-	 iB7rtQBDTnoHg==
-Received: by mail-ua1-f42.google.com with SMTP id a1e0cc1a2514c-966eabad303so912039241.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 05:44:54 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AHgh+RotdY5ciVEmsjXQRFKn4EEK611fqlJ428BUoYtttKz3jcAf0XBNOUFGM0Hsvjt3zSGiiiIXi4snRNgbmg==@vger.kernel.org
-X-Gm-Message-State: AFuF++kpypl023V3KrIVPWpxp9X+XJDjLIAzP6scRvqK2pr8r+ZaaZjQ
-	4JXwm9lu22ySkG+WwIiJiLzbkByogzxOsgX/GtXnS0LBkiD5qfJ1WcpmQNCBoFTaFBO7AtYYmqM
-	pyvbHc6q4h08YGKzVttWptbe2ElPB34A=
-X-Received: by 2002:a05:6102:b03:b0:778:5369:763d with SMTP id
- ada2fe7eead31-77a62325a68mr10591736137.1.1787661893478; Tue, 25 Aug 2026
- 05:44:53 -0700 (PDT)
+	s=k20260515; t=1787662078;
+	bh=uvLSFBna8Q9cJU69LRFVCxwCgb+cCDLOAutOk7Jzz4I=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=OyO7arxswsgVpSVcquHYay6KVDV8aNakQlfAjZ02eBRdhWPAJ99DhWb37ggz9m/az
+	 T6lAs3O4ISqzr87P7VvSTeQUL21fNpwp3lQeW1qCcp27yswnsh/P8Yziyo3g/1iRV+
+	 PT4AiQFGEx933y1+73j7+oCgmBSDZ9KQvqRCADsJ5pDWnmavO87KYRixP7is0Y1rcK
+	 ynpcn69csMe5ds7L25FiK0AkhloAWbuDHebpz8liA3ROYZV1SVifDnRJqA11KvzbPL
+	 NIEYN3FN1KN9s5j6mlRlsYqOy3gSpw2oKNxUROGZ95ItEYd+F3dYcNJuRg3M4JhgY/
+	 LLHjfJeFVVVcg==
+Date: Tue, 25 Aug 2026 14:47:54 +0200
+From: Christian Brauner <brauner@kernel.org>
+To: Tao Cui <cui.tao@linux.dev>
+Cc: clm@fb.com, dsterba@suse.com, sforshee@kernel.org, wqu@suse.com, 
+	josef@toxicpanda.com, linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, Tao Cui <cuitao@kylinos.cn>
+Subject: Re: [PATCH v2] btrfs: allow idmapped DEFRAG ioctls
+Message-ID: <20260825-vorbringen-bussard-angeln-5b353215ba73@brauner>
+References: <20260815132259.3935817-1-cui.tao@linux.dev>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260824-b4-btrfs-em-shrinker-v2-1-a6fc80447e70@debian.org>
- <CAL3q7H4OC_UqJCEo-o=uNSwZsCPJPuw8062_Mv+5NPaVqPJfsQ@mail.gmail.com> <ao1NIwsVWLkceGoJ@gmail.com>
-In-Reply-To: <ao1NIwsVWLkceGoJ@gmail.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Tue, 25 Aug 2026 13:44:16 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H7fYFUHwWcebAmOv=jG9AeC_n4zkfppCn1U9f9JuOYC-Q@mail.gmail.com>
-X-Gm-Features: AcwNN1V5HMNaEN5EzQAyvR74XAWix9t263SwQneIMHBbkdgPMk2zajvzHPaSrLw
-Message-ID: <CAL3q7H7fYFUHwWcebAmOv=jG9AeC_n4zkfppCn1U9f9JuOYC-Q@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: skip the extent map tree lock for inodes
- without extent maps
-To: Breno Leitao <leitao@debian.org>
-Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, fdmanana@suse.com, boris@bur.io, 
-	wqu@suse.com, layton@kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, kernel-team@meta.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <20260815132259.3935817-1-cui.tao@linux.dev>
 
-On Tue, Aug 25, 2026 at 9:10=E2=80=AFAM Breno Leitao <leitao@debian.org> wr=
-ote:
->
-> Hello Filipe,
->
-> On Mon, Aug 24, 2026 at 09:14:10PM +0100, Filipe Manana wrote:
-> > Reviewed-by: Filipe Manana <fdmanana@suse.com>
->
-> Thanks for the review and feedback.
->
-> > The current subject:
-> >
-> > "btrfs: skip the extent map tree lock for inodes without extent maps"
-> >
-> > It is a bit too generic, giving no clue that it concerns the shrinker.
-> > If you agree, I'll change it to:
-> >
-> > "btrfs: skip extent tree lock in the shrinker for inodes without extent=
- maps"
->
-> Please do, your suggestion makes more sense than the current one.
->
-> Just to be clear, I won't be respinning this patch: you'll update the
-> subject while merging it.
+On Sat, Aug 15, 2026 at 09:22:59PM +0800, Tao Cui wrote:
+> From: Tao Cui <cuitao@kylinos.cn>
+> 
+> btrfs_ioctl_defrag() checks MAY_WRITE against nop_mnt_idmap, so on an
+> idmapped mount the owner comparison uses the caller's fsuid against the
+> raw on-disk uid and the ioctl fails with -EPERM even for the file's
+> owner.  Pass the mount idmap down so defrag works on idmapped mounts.
+> 
+> The check, added in 616d374efa23 ("btrfs: allow defrag on a file opened
+> read-only that has rw permissions"), is not a privilege gate.  It only
+> tests whether the file could have been opened for writing, and a user
+> who owns the file on the idmapped mount can already open it O_RDWR,
+> write() to it or fallocate() it.  Defragmenting a regular file only
+> rearranges the caller's own extents; there is nothing it can rewrite
+> that the caller could not rewrite anyway.  Whole-subvolume defrag on a
+> directory keeps its capable(CAP_SYS_ADMIN) requirement, and the
+> !capable() guard around this check is left as is.
+> 
+> FIDEDUPERANGE already works this way for unprivileged callers:
+> may_dedupe_file() in fs/remap_range.c compares the inode owner through
+> file_mnt_idmap(file) and falls back to inode_permission() with the same
+> idmap, and dedupe can rewrite one file's extents from another file's
+> contents, which is a stronger operation than defrag.
+> 
+> On regular mounts file_mnt_idmap() is nop_mnt_idmap and nothing
+> changes.
+> 
+> Signed-off-by: Tao Cui <cuitao@kylinos.cn>
+> ---
 
-Correct.
-
->
-> Thanks,
-> --breno
+Reviewed-by: Christian Brauner (Amutable) <brauner@kernel.org>

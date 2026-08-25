@@ -1,254 +1,134 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 660D834041B;
-	Tue, 25 Aug 2026 16:05:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F193B37B010;
+	Tue, 25 Aug 2026 18:35:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787673901; cv=none; b=nmmp85tDyVaS9LMs8ONcftVnWW6gcKua4tNIUb6M8ApvcSp2PBBDTZxedQYgQnIo9x6WUsPZowfS+Cm2HvvGfbBYS0YOfJWzHwu2FHIP5cqlwiRlAJoh1gTErCRx6pn07xekoHBZ+58QztHRwpAs0tVc3lybazsCP991HlJF2RE=
+	t=1787682932; cv=none; b=DNHFKGiIC9yoVpkzWfPxDHr8ozehUToEReA6GzpV2rKk9Pdwi7653mMavu+VDp2nV+a5o2ZXEqtzeTs7EDHQH/1FMdhGID7vjIXEv3o+AXd0emGwZFc3/NZyhgwzvA5TjczTFK5DU7va7icMXkKZC5Lq+TsAIyMoHSrIFL5NLa0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787673901; c=relaxed/simple;
-	bh=v8a82oH3QarP6I8CBddMNieJTg8G5gwPz33bnEBPH1I=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=uwZpTa4O3ocfM+dgSZV8n/kpHMcCwxzuFj448dm6tuU75D6RLPKfLbLvnHXZVZgp3YalRMbZ0A2JPmjRso82x2X5oCvv1bMoII1Do8YQtNGLGJP99b1HF45H06mctplvtoYdS6i6VmbszIS+iWu7UAj3tuAvyq5TiJjXF9y/za4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ITxrXo1t; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1787682932; c=relaxed/simple;
+	bh=pZ4mfsgKRGFTaaqzSNMXArPfYaaJEFy2hCV2prTkb3s=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=sZ1seROyURGXuIWeySt4JbRo8ZkBWR+iWjyW5/zZTcoEBELW57p+Pvpx66PmbyrZaznmIZeSMrsDM5PpIqO1jraQx0Ra2jd1c1QpepUSCzWFBw2cObd8J2fQJt8OCUQ1Cwxm82snlW8lcxLZLKrQYr+D8bRt+nRW/Rs85fLaMtc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=pass smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=LXRyEqv3; arc=none smtp.client-ip=90.155.50.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ITxrXo1t"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8B0351F00A3E;
-	Tue, 25 Aug 2026 16:04:59 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1787673900;
-	bh=OXnftdUGJlC4cntuhv3BMGFqzvt2LM1k7YzvH1mHMHQ=;
-	h=From:Date:Subject:References:In-Reply-To:To:Cc;
-	b=ITxrXo1t1HKwHocCHi7ijCdczL8VA2gmkECLjwr09rLctwOty5bvU8TBorAYNvJQ4
-	 d0LiDWAXkZYkewjZNfEUCUEOrYq7VqCdimyxq0urxAorUguMrKaVKA8TpkTHHTU/0W
-	 FQ7NnR/sq5zFnzjM5atq0wUTrXlit2EnkAEVv6D45HRiz3TfFF8Tw/J8nwL41J+Yzr
-	 U7L1/OqjyAuC90QKzBB/JlpakEo1oC+lRzsywS+jfOgwId0PnyrqRMhtExm1GIfiBJ
-	 rn5t91N2sljUZk+Ncsc5ZfNG/eTDcMWma2PsrocfKkhH6Xv1/etEzGxEKCvtXY+uA8
-	 5Du7czOZwnyqQ==
-From: Jeff Layton <jlayton@kernel.org>
-Date: Tue, 25 Aug 2026 12:04:20 -0400
-Subject: [PATCH v4 4/4] btrfs: pre-allocate delayed dir index for
- non-overwrite rename
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="LXRyEqv3"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=NzdQdDzy9an+ad2ujHM4K87j7IVbsCNSw+/FSI8vDqQ=; b=LXRyEqv3luyRGaNhx9QcZkACii
+	0DKvqLDdWONegOg3YmykHdEwYxNA9R2kquCB42nIt6EHrA52otHoe1WjbQaoNFK2aqqtusT/gQeXJ
+	JFYkgLHg/zad0zJTzOD3lPUyJ/0d610qpC4N7p+Cca9zrtE0GoEpBhjIy8mxRyWc7WCMe3atU/7aL
+	J+ijmZJBfx98iQhq+I1AnO1TilXv/52BDJqbhElR8iF9vCIUpYc4rH2jhdxbgIeCHeuP7o17REHnW
+	soR2dy9Jws0Ymq/BznZz1WeI/jfpgBbeA8Qhyx/qceFGgSJybEJf75RNf9waPdG7MwxL/Zokf2XRc
+	QvpQTY/A==;
+Received: from willy by casper.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1wyvzR-00000009XHS-2xcn;
+	Tue, 25 Aug 2026 18:35:17 +0000
+Date: Tue, 25 Aug 2026 19:35:17 +0100
+From: Matthew Wilcox <willy@infradead.org>
+To: Pedro Falcato <pfalcato@suse.de>
+Cc: Christoph Hellwig <hch@lst.de>, Jann Horn <jannh@google.com>,
+	David Howells <dhowells@redhat.com>,
+	John Hubbard <jhubbard@nvidia.com>, Jan Kara <jack@suse.cz>,
+	Rik van Riel <riel@surriel.com>, Qu Wenruo <wqu@suse.com>,
+	"Darrick J. Wong" <djwong@kernel.org>, linux-btrfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+	linux-xfs@vger.kernel.org
+Subject: Re: Removing ->dirty_folio
+Message-ID: <ao3gZRa7HOEg209P@casper.infradead.org>
+References: <aoyWln-Gt-yvZQkE@casper.infradead.org>
+ <ao1Lo6TKhPcqV42B@pedro-suse>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260825-btrfs-enomem-v4-4-b9363fa8714a@kernel.org>
-References: <20260825-btrfs-enomem-v4-0-b9363fa8714a@kernel.org>
-In-Reply-To: <20260825-btrfs-enomem-v4-0-b9363fa8714a@kernel.org>
-To: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, 
- linux-kernel@vger.kernel.org, kernel-team@fb.com, 
- Jeff Layton <jlayton@kernel.org>
-X-Mailer: b4 0.14.3
-X-Developer-Signature: v=1; a=openpgp-sha256; l=7243; i=jlayton@kernel.org;
- h=from:subject:message-id; bh=v8a82oH3QarP6I8CBddMNieJTg8G5gwPz33bnEBPH1I=;
- b=owEBbQKS/ZANAwAKAQAOaEEZVoIVAcsmYgBqjb0oYSovQncDjqAV8XNLwiWoJGeckgBmMVTtu
- h5/ODmhow2JAjMEAAEKAB0WIQRLwNeyRHGyoYTq9dMADmhBGVaCFQUCao29KAAKCRAADmhBGVaC
- FX30EAC8uLlpOauS5Ai7ab4snGxGew8rG2wKx2hqSIwxNEfk7Afei7/WzhiA3M+BimUlquO+60r
- xkuUjuva7cxFB1CvMPmFUckEOThvgKz0jsapGrpwM7ssngrhUMalIpuU8nHm02rTwsryloel743
- D754HLOGgMG70W5WxRPsK0EkGmUXNHbdQtgE1U5hyhns8FHcrhPq/pRjTgq+++oQMfzM7/FQHOj
- lMVhdaS7P/FfjFOuU6jYUvOF99vG0wtoVegipb6XDwZ1rx6Nyv5RO9/v5By/LtDU3++YKjTc3mL
- 4pacmRHCoUbezVmFLMc/6SryKK5eQY7AeFHmC3b6OhR1y1J/PhobGd5DHGzFu6N55VCAkH4CJkK
- +05FvG7JkC6iQyTGJoBn5uYTawl/tax22Z7L1oYoxvO7N8+UX92ccls0E8RQLMJRx007N7+fpFi
- dga+uzkDrKrnrI22fu/CdXoUWliB0ULpAnmEFmDfiwURUyo6gqVj4vdfkMj8otag7K3irLfjaig
- odVOBLLtgjFumrJAav9pQE87dfs3hwYuouLqt9xLvx61OqOgkf6CIgtonXowWJzGZPAtVVSBdoo
- lasLSZ9RZyttfo7J/a39RRHX04zWF3oWYnogaBMspnIKwylH0q7/CnXQJ29/MzubdxWZqa/BZpZ
- rOBUjse5Qcpvoow==
-X-Developer-Key: i=jlayton@kernel.org; a=openpgp;
- fpr=4BC0D7B24471B2A184EAF5D3000E684119568215
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ao1Lo6TKhPcqV42B@pedro-suse>
 
-For rename() without an overwrite target, pre-allocate the delayed
-dir index before any btree modifications so that ENOMEM can be returned
-before the source is unlinked from the old directory.
+On Tue, Aug 25, 2026 at 09:25:53AM +0100, Pedro Falcato wrote:
+> On Mon, Aug 24, 2026 at 08:08:06PM +0100, Matthew Wilcox wrote:
+> > I think it's time to remove folio_mark_dirty(), ->dirty_folio() and so on.
+> > 
+> > This is not how filesystems want to be informed of folio dirtying.
+> > It was fine for ext2, but anything that's journalled or COW has work
+> > to do before the folio is made dirty, and it's hard to do that work
+> > under the page table spinlock (not all callers hold that lock, but the
+> > filesystem has to be able to handle the cases where it is.
+> > 
+> > Filesystems want the page_mkwrite() entry point to be how they find out
+> > about a folio being dirtied -- and that works great!  Except that we
+> > can writeback the folio for a number of reasons.  If it's been dirtied
+> > due to a shared writable mmap, that's fine; we map the folio read-only
+> > and any subsequent writes will re-enter the page_mkwrite path.
+> > 
+> > The problem is GUP.  We have no way to force the GUP caller to go
+> > through page_mkwrite again.  So instead we make the GUP caller call
+> > folio_mark_dirty_lock() which many just don't, and generally we get away
+> > with it.  But it's a bug, and a bad interface.
+> > 
+> > There's also the problem that GUP users bypass the folio_wait_stable()
+> > mechanism.  If a page is written to while somebody is creating a
+> > checksum over that page, the checksum will be corrupted.  If we want
+> > to fix this, we have to bounce-buffer the page.  There's no way to
+> > prevent or delay a GUP user from writing to the page.  Enjoy your RAID.
+> > 
+> > My proposal is this:
+> > 
+> >  - Fileystems take note of folio_maybe_dma_pinned() during writeback.
+> >    If it's true, do the writeback, but retain/recreate whatever data
+> >    structures you need in order to write the folio again; behave as if
+> >    ->page_mkdirty() had been called again for each page in the folio is
+> 
+> I don't think you can do this for stable writes. It's probably ok for
+> !stable writes filesystem stacks, as long as the filesystem & writeback
+> can handle making no progress at all. But since stable writes' writeback
+> can't race with "writes", I don't think you can Just Do It as long as the
+> folio is DMA pinned.
 
-Add a prealloc parameter to btrfs_add_link() that allows callers to
-pass pre-allocated delayed dir index resources. When provided,
-btrfs_add_link() takes ownership: it either passes the prealloc to
-btrfs_insert_dir_item() (which commits or frees it), or frees it
-on early error. All existing callers pass NULL to preserve the current
-behavior.
+Ah, yes, I forgot to specify that.  For mappings which need stable pages,
+we have to bounce buffer them.  I wonder if that's something we should
+do inside the VFS or if each filesystem should try to do it itself?
 
-In btrfs_rename(), when new_inode is NULL (no overwrite), call
-btrfs_prealloc_delayed_dir_index() before the first btree modification
-and pass the result through to btrfs_add_link(). If the prealloc fails,
--ENOMEM is returned before any btree state has changed. The local
-prealloc pointer is cleared once ownership passes to btrfs_add_link(),
-so the out_fail path only frees one we still own.
+> Perhaps we should give up trying to writeback these folios, and start
+> writeback right after they're unpinned? at least on the stable case.
 
-For overwrite rename (new_inode != NULL), the transaction still aborts
-on ENOMEM since earlier unlink operations have already made irreversible
-btree modifications.
+The thing is, what do we do for somebody calling fsync()?  I don't
+think that "Oh, sorry, someone gave its address to an RDMA device
+so we just didn't bother" is acceptable as an answer.
 
-Assisted-by: LLM
-Signed-off-by: Jeff Layton <jlayton@kernel.org>
----
- fs/btrfs/btrfs_inode.h |  4 +++-
- fs/btrfs/inode.c       | 40 ++++++++++++++++++++++++++++++++--------
- fs/btrfs/tree-log.c    |  4 ++--
- 3 files changed, 37 insertions(+), 11 deletions(-)
+> >    marked as dirty.
+> >  - The MM behaves similarly; we do not clear the writeback flag for
+> >    folio_maybe_dma_pinned().
+> 
+> This sounds like a problem. You don't want users expecting writeback to make
+> progress to suddenly stall on e.g folio_wait_writeback() indefinitely.
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 1082fa92c145..d4280f152027 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -525,9 +525,11 @@ int btrfs_set_inode_index(struct btrfs_inode *dir, u64 *index);
- int btrfs_unlink_inode(struct btrfs_trans_handle *trans,
- 		       struct btrfs_inode *dir, struct btrfs_inode *inode,
- 		       const struct fscrypt_str *name);
-+struct btrfs_dir_index_prealloc;
- int btrfs_add_link(struct btrfs_trans_handle *trans,
- 		   struct btrfs_inode *parent_inode, struct btrfs_inode *inode,
--		   const struct fscrypt_str *name, bool add_backref, u64 index);
-+		   const struct fscrypt_str *name, bool add_backref, u64 index,
-+		   struct btrfs_dir_index_prealloc *prealloc);
- int btrfs_delete_subvolume(struct btrfs_inode *dir, struct dentry *dentry);
- int btrfs_truncate_block(struct btrfs_inode *inode, u64 offset, u64 start, u64 end);
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5b79910d72f5..fd6d481f4d12 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6862,7 +6862,7 @@ int btrfs_create_new_inode(struct btrfs_trans_handle *trans,
- 		}
- 	} else {
- 		ret = btrfs_add_link(trans, BTRFS_I(dir), BTRFS_I(inode), name,
--				     false, BTRFS_I(inode)->dir_index);
-+				     false, BTRFS_I(inode)->dir_index, NULL);
- 		if (ret == -ENOMEM) {
- 			/*
- 			 * Orphan the new inode instead of aborting. The inode
-@@ -6914,7 +6914,8 @@ int btrfs_create_new_inode(struct btrfs_trans_handle *trans,
-  */
- int btrfs_add_link(struct btrfs_trans_handle *trans,
- 		   struct btrfs_inode *parent_inode, struct btrfs_inode *inode,
--		   const struct fscrypt_str *name, bool add_backref, u64 index)
-+		   const struct fscrypt_str *name, bool add_backref, u64 index,
-+		   struct btrfs_dir_index_prealloc *prealloc)
- {
- 	int ret = 0;
- 	struct btrfs_key key;
-@@ -6940,11 +6941,13 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
- 	}
- 
- 	/* Nothing to clean up yet */
--	if (ret)
-+	if (ret) {
-+		btrfs_free_delayed_dir_index_prealloc(trans, prealloc);
- 		return ret;
-+	}
- 
- 	ret = btrfs_insert_dir_item(trans, name, parent_inode, &key,
--				    btrfs_inode_type(inode), index, NULL);
-+				    btrfs_inode_type(inode), index, prealloc);
- 	if (ret == -EEXIST || ret == -EOVERFLOW || ret == -ENOMEM)
- 		goto fail_dir_item;
- 	else if (unlikely(ret)) {
-@@ -7098,7 +7101,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 	inode_set_ctime_current(inode);
- 
- 	ret = btrfs_add_link(trans, BTRFS_I(dir), BTRFS_I(inode),
--			     &fname.disk_name, true, index);
-+			     &fname.disk_name, true, index, NULL);
- 	if (ret)
- 		goto fail;
- 
-@@ -8512,14 +8515,14 @@ static int btrfs_rename_exchange(struct inode *old_dir,
- 	}
- 
- 	ret = btrfs_add_link(trans, BTRFS_I(new_dir), BTRFS_I(old_inode),
--			     new_name, false, old_idx);
-+			     new_name, false, old_idx, NULL);
- 	if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 		goto out_fail;
- 	}
- 
- 	ret = btrfs_add_link(trans, BTRFS_I(old_dir), BTRFS_I(new_inode),
--			     old_name, false, new_idx);
-+			     old_name, false, new_idx, NULL);
- 	if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 		goto out_fail;
-@@ -8592,6 +8595,7 @@ static int btrfs_rename(struct mnt_idmap *idmap,
- 	struct inode *new_inode = d_inode(new_dentry);
- 	struct inode *old_inode = d_inode(old_dentry);
- 	struct btrfs_rename_ctx rename_ctx;
-+	struct btrfs_dir_index_prealloc *prealloc = NULL;
- 	u64 index = 0;
- 	int ret;
- 	int ret2;
-@@ -8715,6 +8719,24 @@ static int btrfs_rename(struct mnt_idmap *idmap,
- 	if (ret)
- 		goto out_fail;
- 
-+	/*
-+	 * When not overwriting an existing entry, pre-allocate the delayed
-+	 * dir index now so that ENOMEM is returned before any btree
-+	 * modifications. For the overwrite case, too many btree changes
-+	 * have already happened by the time btrfs_add_link() is called.
-+	 */
-+	if (!new_inode) {
-+		prealloc = btrfs_prealloc_delayed_dir_index(
-+				BTRFS_I(new_dir),
-+				new_fname.disk_name.name,
-+				new_fname.disk_name.len);
-+		if (IS_ERR(prealloc)) {
-+			ret = PTR_ERR(prealloc);
-+			prealloc = NULL;
-+			goto out_fail;
-+		}
-+	}
-+
- 	BTRFS_I(old_inode)->dir_index = 0ULL;
- 	if (unlikely(old_ino == BTRFS_FIRST_FREE_OBJECTID)) {
- 		/* force full log commit if subvolume involved. */
-@@ -8810,7 +8832,8 @@ static int btrfs_rename(struct mnt_idmap *idmap,
- 	}
- 
- 	ret = btrfs_add_link(trans, BTRFS_I(new_dir), BTRFS_I(old_inode),
--			     &new_fname.disk_name, false, index);
-+			     &new_fname.disk_name, false, index, prealloc);
-+	prealloc = NULL;
- 	if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 		goto out_fail;
-@@ -8835,6 +8858,7 @@ static int btrfs_rename(struct mnt_idmap *idmap,
- 		}
- 	}
- out_fail:
-+	btrfs_free_delayed_dir_index_prealloc(trans, prealloc);
- 	if (logs_pinned) {
- 		btrfs_end_log_trans(root);
- 		btrfs_end_log_trans(dest);
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 7ba7b6098aa5..a043611f82e1 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1683,7 +1683,7 @@ static noinline int add_inode_ref(struct walk_control *wc)
- 			}
- 
- 			/* insert our name */
--			ret = btrfs_add_link(trans, dir, inode, &name, false, ref_index);
-+			ret = btrfs_add_link(trans, dir, inode, &name, false, ref_index, NULL);
- 			if (ret) {
- 				btrfs_abort_log_replay(wc, ret,
- "failed to add link for inode %llu in dir %llu ref_index %llu name %.*s root %llu",
-@@ -2031,7 +2031,7 @@ static noinline int insert_one_name(struct btrfs_trans_handle *trans,
- 		return PTR_ERR(dir);
- 	}
- 
--	ret = btrfs_add_link(trans, dir, inode, name, true, index);
-+	ret = btrfs_add_link(trans, dir, inode, name, true, index, NULL);
- 
- 	/* FIXME, put inode into FIXUP list */
- 
+I should have written "the dirty flag" there.  I do not propose to keep
+the writeback flag set indefinitely; it should be cleared after I/O has
+completed, as it is now.
 
--- 
-2.55.0
+> I don't quite understand what your plan for getting rid of dirty_folio,
+> et al is. page_mkwrite has the fatal flaw of being directly tied to VM
+> page faults; I don't think it's the ideal interface for notifying filesystems.
+> It's also the case that page_mkwrite can trivially sleep, and GUP calls it under
+> the PTE lock. So how can we replace that? Would callers need to manually dirty
+> folios after GUP, in process context?
 
+GUP doesn't call page_mkwrite() under the PTL.  See my reply to John,
+or just look at do_page_mkwrite():
+
+ * We do this without the lock held, so that it can sleep if it needs to.
+ */
+static vm_fault_t do_page_mkwrite(struct vm_fault *vmf, struct folio *folio)
+
+folio_mark_dirty() is called under the PTE lock.  My point is that (with
+the proposed changes) we won't need to call it in zap_present_folio_ptes()
+because the filesystem will already know that this page is dirty.

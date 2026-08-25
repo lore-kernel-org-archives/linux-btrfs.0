@@ -1,188 +1,173 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa1.hgst.iphmx.com (esa1.hgst.iphmx.com [68.232.141.245])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A5F9C3DDAF4;
-	Tue, 25 Aug 2026 08:26:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787646368; cv=none; b=KfDHwH8apNe9yzKRxAO1AjNEQOgsPGCGHCKOPABGgc2ITw/MTfi54QUIa4OwgnaRSi/O0QSiu87lsW0kXteedE8Zdi6r+ApxpnrY022IwpbxGj6CX4CTx8a4DrP3eM/dHV9wa4JT6nKsWyXxo+x0djc7IRCcAG6bglhqYIACcFQ=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787646368; c=relaxed/simple;
-	bh=jq0/BN5fBNh7s2ImmzclgEWLpFxzqbJ30gpyp4NPnSQ=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=mq7DMPYOoAF7JoFIcCUosMwW8u73RghbNbix107MWtHs8kqHW/fqfKfRy9vKcB2QsI/ik6qbaPpoQMTyb/4D+7BbkAHfcthWTsPFLBaTs/1efAVPSHp/gRH7MlrLc+9hmvXOulXmB8Qd3iTu0InXHvY7DLbM+0wqEGbTo+0ndCI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=us4Z6weh; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=6YnH89Py; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=xWsSSuj5; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=nG04rm6S; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B63513D810D
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 09:10:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=68.232.141.245
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1787649049; cv=fail; b=FkYYIIZkwaY48sLYtqefKNOAgzI+0r6OWawXAcpFOn9a25QiyYGDDTXksJ0UxJixVOoYGHdZJe0MMCzBYSDW49XVCF9kV3wFbLUW5muoGVpSpcG6zJcq1W6gQprvmqUPh1mFPYliV9QoXqaKVqzWHX1YPZlvCGKQ/XdzMBeUOQE=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1787649049; c=relaxed/simple;
+	bh=0iSFjB8Azuo/Bb7pp5uBoKhMw9AzCJBNtWfA2F5LY9g=;
+	h=Message-ID:Date:Subject:To:Cc:References:From:In-Reply-To:
+	 Content-Type:MIME-Version; b=bnxp2iJYOCf87JQuZwWdl7OcrKcQTx5n8uQ3ewS/TUoeIBudeswf5bhEM5EYSwVEv7tT5+olmmESoYTWZwK7d7ex427dNBeCZEieWDeLhHtEB4IgYn9b2XfpENlY3q7NY3PhhSvEdLZp5P5lxZ4uGDNCNLKSKQJccYhODarHwlA=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=JvvenxPn; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=iPIO4lmC; arc=fail smtp.client-ip=68.232.141.245
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="us4Z6weh";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="6YnH89Py";
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="xWsSSuj5";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="nG04rm6S"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 8BE3D1F769;
-	Tue, 25 Aug 2026 08:25:56 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1787646360; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=O1kJ796bUabjdL5phaBza1F1D/Go+uEZ00Mj5JL+fNM=;
-	b=us4Z6wehV1zJOnbgd+wLk9dBc+b+Lhebd9tctl1a2i+5C6CyWPxBUWszlO2YAgz2nDFbZE
-	G8CeCsqerh5u5vDwtMKc1LS3COE0W1yPONHrVmq6CY5MFSbG4Z/j/Bv+i7Si0LU3pPh0PI
-	4jQqwV8n11YnnzMC6lmOWXBnA3yW4Cc=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1787646360;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=O1kJ796bUabjdL5phaBza1F1D/Go+uEZ00Mj5JL+fNM=;
-	b=6YnH89PyKzHmLHbEeuuzJ7xzmi/U+DZXYKVdLuHwXpY6O+Z2kXZfZkhKeB1+QH4lKD6pVv
-	FlYvKSNgMy1h5yDA==
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.de header.s=susede2_rsa header.b=xWsSSuj5;
-	dkim=pass header.d=suse.de header.s=susede2_ed25519 header.b=nG04rm6S
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1787646356; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=O1kJ796bUabjdL5phaBza1F1D/Go+uEZ00Mj5JL+fNM=;
-	b=xWsSSuj52XuRC9BXOjAbr92F5naYxlTePRPxt5kOvq4/soZrDGT2WWdmMVenPCjY3rdLJx
-	DZXPYQCqbsCU8K5h/57YnVVNLKCbBo5LbuP2Lr3XBwMC7el0J/PtUEsCx+rVCvEKsMF5MP
-	T/W95s2v1+eJGjsH6RRSoSsVD+gBcIA=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1787646356;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=O1kJ796bUabjdL5phaBza1F1D/Go+uEZ00Mj5JL+fNM=;
-	b=nG04rm6SXjrdYR3jrQs8AQX1hxMpXe0h2YmFm8+pQxihuqd+rNZIXM4h0kS3OXUssyBBTZ
-	RKh24vuJnrhUWUBA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id AA8CC13331;
-	Tue, 25 Aug 2026 08:25:55 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id hBxAJpNRjWoYDAAAD6G6ig
-	(envelope-from <pfalcato@suse.de>); Tue, 25 Aug 2026 08:25:55 +0000
-Date: Tue, 25 Aug 2026 09:25:53 +0100
-From: Pedro Falcato <pfalcato@suse.de>
-To: Matthew Wilcox <willy@infradead.org>
-Cc: Christoph Hellwig <hch@lst.de>, Jann Horn <jannh@google.com>, 
-	David Howells <dhowells@redhat.com>, John Hubbard <jhubbard@nvidia.com>, Jan Kara <jack@suse.cz>, 
-	Rik van Riel <riel@surriel.com>, Qu Wenruo <wqu@suse.com>, "Darrick J. Wong" <djwong@kernel.org>, 
-	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, 
-	linux-xfs@vger.kernel.org
-Subject: Re: Removing ->dirty_folio
-Message-ID: <ao1Lo6TKhPcqV42B@pedro-suse>
-References: <aoyWln-Gt-yvZQkE@casper.infradead.org>
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="JvvenxPn";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="iPIO4lmC"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1787649047; x=1819185047;
+  h=message-id:date:subject:to:cc:references:from:
+   in-reply-to:content-transfer-encoding:mime-version;
+  bh=0iSFjB8Azuo/Bb7pp5uBoKhMw9AzCJBNtWfA2F5LY9g=;
+  b=JvvenxPngI3WVJxj7zffOgmNHkhSzs1jYkgaWoek01il0yyjBculjaER
+   eFgpD6dNYduwFo3oi9vNMtcHFMOkq11NYRN3zP/gaOuHV6GV7krLaYclH
+   QSsp1pcrhSaZL1sydoCzsPGgthz89P7P4UHDC9ietSij+mdzYGqd6Oaaw
+   1I5Ezp+ZnBzJt67tPHi/COiYizi1tFL2unQ2wKnDzj6r1jib0r0NngmYK
+   QgqKUXa1JlLzjldIILtOzRkeSEHXuU5qV+ZbFfYFtmF0sDiyo0Mfwh12Z
+   MFhyEeMh8H9Je4eIaHt7M823yk7MRLZXmuVCe3f6WI5LLF2OzICQn1hr/
+   A==;
+X-CSE-ConnectionGUID: qymhKnN5R+6T7l/S4+E/JA==
+X-CSE-MsgGUID: dWyCYGggScqsffFxZ8kDUQ==
+X-IronPort-AV: E=Sophos;i="6.25,242,1779120000"; 
+   d="scan'208";a="153988928"
+Received: from mail-westusazon11010052.outbound.protection.outlook.com (HELO BYAPR05CU005.outbound.protection.outlook.com) ([52.101.85.52])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 25 Aug 2026 17:10:41 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=o8RIVTgO0+h2R1DsizLSBgCUfEHW+gUOg9ls2NfyMow5RrCWemsA9v0UxbJpVsktayFxk4iUk/EBvDju16jD1Zjrh5rBaRmN1vLYoquQJzjVPpKajkHM5Z7ZE6xK96oTGyM82AEVsOIE6WRaZxSyECEylCmXsO1CYFZpz5fH/InBP//cz3mBZuVw3PC0/Ydr2DEcPc5xgq/5n1sosvRMmMdVL9wZlCEsF52ftJ4Hl6xmn16zRF40dZd8kfOCAVKwUW9oM+4eOG/ZzVkV0tz+3iHpaTHXZlCFIIfSExEjq9NyhC2YI3i0ke6Bfa5MlCyu4NPK1YwbsLbo7PW5IyxrWw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=+8Kwke/zWzsrsNqM+MC6YseGW1NbJo7W3wjoSuGRSJo=;
+ b=trgCIHNcIxbVq8Y2w2nN0DA917D8FicIRQj5Bjtsu6dgWPQxF0FUmQ/NMBTPXniBdd81LEgbh3ZAprCl/3wqFo8AkwG5uXRL0t9F7owL/26iAXFy5gCOoc06ZAHegPwopFk7RFP1wx1X69MvxklQo5xnlc4L887HND61MdDIj1vLvhfqnh+pKKT4bSQYpL0n6b/Vd8s0kUU/pqEoTQj7eBESPsTQUgkbQDwlhIB/fMvMtbYYkX3VtZPpPRZYFEqq4GR4I9Ek1gt7BWU3qxsLHbR3Dad7/H+y5PxWHxTXeNcheZAH5EcnOCUn3NgxMJdqGzP2FsesvpJqPJAfgyAIVg==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=+8Kwke/zWzsrsNqM+MC6YseGW1NbJo7W3wjoSuGRSJo=;
+ b=iPIO4lmCmFhOcJh3T8J0n2/0nLgdKdAVBob3KG/VFPQKdXxELnmLAPBlpD07qNpKWlBccX8YqFQb3sJzJMg73pfu1T4HGc353ytUA/4qMWwGS1SCKPeJWA1+KRcOWAC3c8zna1slJBJiEtY6iL5q1HqtrYnSGWt28Q0YEXQWmjU=
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
+ by BY5PR04MB6740.namprd04.prod.outlook.com (2603:10b6:a03:21a::20) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.360.6; Tue, 25 Aug
+ 2026 09:10:39 +0000
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0360.005; Tue, 25 Aug 2026
+ 09:10:39 +0000
+Message-ID: <8a708d2f-a835-45ce-bbde-b5b99852c179@wdc.com>
+Date: Tue, 25 Aug 2026 11:10:30 +0200
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 1/4] btrfs: zoned: track only sequential zones as active
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org, naohiro.aota@wdc.com,
+ Dongjiang Zhu <zhudongjiang@fygo.io>
+References: <cover.1787551793.git.zhudongjiang@fygo.io>
+ <9b86d2db35ad9afc13069d6ee8fcf421c85ef030.1787551793.git.zhudongjiang@fygo.io>
+ <aoxL1ZK42wn7VIwQ@mayhem.fritz.box>
+ <32245f5e-59f1-4e9f-bd24-d55f2a17f158@gmx.com>
+Content-Language: en-US
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+In-Reply-To: <32245f5e-59f1-4e9f-bd24-d55f2a17f158@gmx.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: FR4P281CA0380.DEUP281.PROD.OUTLOOK.COM
+ (2603:10a6:d10:f7::8) To SA6PR04MB9447.namprd04.prod.outlook.com
+ (2603:10b6:806:436::21)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <aoyWln-Gt-yvZQkE@casper.infradead.org>
-X-Spamd-Result: default: False [-4.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_RHS_NOT_FQDN(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	MISSING_XM_UA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_TWELVE(0.00)[13];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.de:dkim];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.de:+]
-X-Spam-Flag: NO
-X-Spam-Score: -4.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: 8BE3D1F769
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|BY5PR04MB6740:EE_
+X-MS-Office365-Filtering-Correlation-Id: 849e82e4-0c9a-410f-9655-08df0288bb20
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|1800799024|19092799006|376014|366016|23010399003|10067099003|56012099006|4143699003|11063799006|22082099003|18002099003;
+X-Microsoft-Antispam-Message-Info:
+	zYyEZVnxV8ZmpO+Icjv+rtTDYzwqkfeahdfpnNeMbxv2oR+x3E6BV2eV1k/hs3LktVP9aOLfP12BVCJ/OjjcGdtSzfuFQO/9VA+G4z2tZ4iaNr52oy9KkPsv04LByB7Lk1zHz4EVjjdG1X5A0DTJSd+n9w5CmdlR7zJNH+6x01PhXd5sOR5EsrK6faNf6d8nj7pgY7J8l/QzEeg7gNnkN0HgIsQDJtuEmNE1ROTloSVOvgs2VQ1ly0lwP8SZUBiIP9qRivF9f6smXSAkoHR4dJU8WBNwEOgfu6ccjY6uVtUMc2jf2Mesurxm8Y4jxHx0O4cdlW99IZZJ5bzyZhijmhYd4RlQTNuLZVR83513aUPJVpX7D93Qlaezof7GFrUs36FJCaqNtahaELVTC2Qs32UCFVul4IoNBUDUS08k5OVcz298RBRHa4vXpIJI4eNXfJba/jHcj663WhiMrajt6R9LvEL+X6UuV3PUJ1XDy0x+Dm9azh7Plq6LRNBYb/D7ezWHORbD3hgMsQ9CaaQgRq7CrOM23KrbURRlHx2gNbPYww/5y41LFdCRkZjwVzDHHVgb1DU3h2PO3feTchl2bWJ+4x0K5OvheThaUVw7nboolFoeXvTDbqf/IUvHQMTiDG+mRAL9qitP53j2XYmuNhIOYacDx+dPIpvSdCWAeaE=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(19092799006)(376014)(366016)(23010399003)(10067099003)(56012099006)(4143699003)(11063799006)(22082099003)(18002099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?utf-8?B?MTdXdE1Yd2hUUGROeGlQbmdqcGJRRmszYmQxb3gyN0FTaUNVNVEyRTF3NFhI?=
+ =?utf-8?B?bS82QThHL05sVFBSUlNnRUJ0K3ExQ1kzbkd0ZGtqcGRZc2pPa1l3TkdqRVo5?=
+ =?utf-8?B?RE5SMDFHSndqdnVodWV1cXNpUEdxazhRSTQ2eTl5d2lkR09uVStacDdHc2pi?=
+ =?utf-8?B?dVRSNGFQaXFOUU5JNFdpWkdad01IcnE4cDAyUmJTVDZwT3B1Y0xadVZTUzdj?=
+ =?utf-8?B?aFNLdlFZYlpZUHdTSkR1Q1pqQ1BISlgrL0JodFNJWTBWSHc5ZDFvZHB3MFl6?=
+ =?utf-8?B?NWROdlRNMW52K0ZBL1FtK2c0NzBkU2FrQzdvVE0rQ213LzkzZkREWnVXaU5M?=
+ =?utf-8?B?SW9wdGNOSmN2NjBUZUtBNjRwSnROM21SWWlGK25kN3RTOXBOREV6YjJaN2Fz?=
+ =?utf-8?B?KzB6M2JYdC9GSzQvdGhmMjBHT0J2VjB2U3RjMEtTcXFtTGtrQXQvV1ZJemVo?=
+ =?utf-8?B?MkQzY0lzMUtURU9ZTGYwelNHQjNBaDVhc2NpMUhsWjZvNWszTnlBckc1d0RD?=
+ =?utf-8?B?OUJYZFJzNXRlTXVEdU9NVDBVY011bUlMSEtkUzlOVlJyYXJadnRvR1NWQy9M?=
+ =?utf-8?B?My9HNVY1VmQ1V0N1a2tVOVJIcDlPRDhBYWd2dkg5ejN0S1JZeFFrQno0aXky?=
+ =?utf-8?B?YjVqOENTdGZQdUxzQ2Zzb3RDTVpZUGpwbGNUOXpDVmdBYUR4Z1hzamd5U1N0?=
+ =?utf-8?B?TDZOdy95d1hrazh3Uy9RZzhlWlRHVG9BeHRuNmRBZmZwU1RFL3VWUTZ5RzR3?=
+ =?utf-8?B?V1hDU0lyU2UybUlrVHlYUGYvVUlYcVRTWjU1Y3VmSnZDaDFMNjIvSEV6aXVN?=
+ =?utf-8?B?S2FnSiswUGhUVmYvYVlwTVdsNEpZTDc1SGxIT3R6R0EyWXAwTWszQ2c2ZU1Z?=
+ =?utf-8?B?QXNzeUtSZXIxbXpGU2pSTXR4ZDBtbDRuR0w5YmdRZjVhN1ZhcVQ2bkZuVytx?=
+ =?utf-8?B?V0lxUUNCaDU2cEs1Mi83QjF3U3psczV6ekEzZ3ZFSGp6UlBSa0xVZTNVNFNR?=
+ =?utf-8?B?NWhJd0c3RllTZlMzTUhmVGNCbHNLamRyWXJBa1FkMzdPa0NreU9TSVhYNmYy?=
+ =?utf-8?B?OTZWRlNia3d1blkzc2g0WDRMTDNMOWgzMEdLOE01TEwxTUQ3aHgvZTY4alVD?=
+ =?utf-8?B?TWpqUnQ0YmhCOFF3bGVUQkFqMVlkc0hGaS9GaHg4UmordmN1VWNiWlF4T0FP?=
+ =?utf-8?B?M3pMUFQvQ2xhb2xCSmVISFhPMmluUmd1M2xEM2VWYUdRa1NlWTMwUW04Q00z?=
+ =?utf-8?B?NGhtVHpzamh6WGJvSEVJb1M4RlRLeEhKTjM2Zy8yaEZzTXVuamZQMDUyOUEv?=
+ =?utf-8?B?aFppUXJmVndnRU1rdGlyZWErOUNKK1pnenZISzQ5SmFBMDFEUFF1Y1VxNXI0?=
+ =?utf-8?B?ZE9SQ0hvVUNnTFlOV0kvbEZFUFF3cCt3bUJMRTlMek5pOW16WVp0NUlhY0lL?=
+ =?utf-8?B?Y1BIV3ZQZm03UkZrWER4ekxoVnd6S2I0OGw1U0NHT2preE1WdlNQSU13TlR3?=
+ =?utf-8?B?TndYVHpsS0dsOGpwaENFWG5RSDVCSUlmRjdGcVZXcGtobDljVGtvSUQySTBp?=
+ =?utf-8?B?cGNNdmZ5OTZRNTZjUGl3MXVzb1V1K3RTcGRwUFl1ZTlBN2d3bTlPWGdxTVJk?=
+ =?utf-8?B?dnM1ZVBJT2t1MTFCN0NiL09BMGJLazh2T08zcG1rbWNqV0pqcGVnU2dSQmVL?=
+ =?utf-8?B?WmtsQWZ5S1BrQU1mVGNFeVBPeUozejNPbTVUaWxSTzBJUjZPYUw4cFV2RzNh?=
+ =?utf-8?B?cExBaEMwc3BjZE5FdWtXcm1qdmhtcERvclpubDBGVWlGcC92U0J4MWVVaGpy?=
+ =?utf-8?B?bWtVSmhZN3pWRWsvQUpiSGp4ZE5tWVcrU2RzdWs2UkJqaHE4UHJLNHFxcGt4?=
+ =?utf-8?B?WEpmNW02MzY1QVk5M2tlWHF4d2tIWVM5MDRyR3JrZ0x0VkRkWUs3UHZBaU00?=
+ =?utf-8?B?bnp6NFZXQVNWODQ2QVZoYUhCWTdzL1V3bnB4Q2R2UVM4bTRvUFF6T2ozMGdz?=
+ =?utf-8?B?cDdMeDFDRG5oNFJ4QXpKeDBma29Rc0twajczVFdoWGNxWlBEdXZuVjBMaTE0?=
+ =?utf-8?B?aHBCMW8wRjgwdStZK2pBMGJ4RXlwR2lnc3pMVG9jWU0wVnVmWEM3ampVeEJC?=
+ =?utf-8?B?M1lzZitqVDgzU3h1VEpSNnhDa2g4QW1hejNmMXBsdFJTaWx3dUhoQVpTdWho?=
+ =?utf-8?B?QzVjeUhNQ0dCV0E1MWd1VmdBbTNRcjB4b1F6emUrWVVVWFhiMHd0NWVXU1ZP?=
+ =?utf-8?B?MWNnS09DazBTZWl3cDNFbkJ1cVBjSnVnYzg5K2h2b0hhMFFZdGQwUTdDWmZV?=
+ =?utf-8?B?UkUycmpaUjhxNm1uODdCbkNKK3c3QWd6RnhianVINzFpN04wYitMY2JCaTEx?=
+ =?utf-8?Q?/p8d/grgBT9dLpDM=3D?=
+X-Exchange-RoutingPolicyChecked:
+	tQkJEYf/os/CyG5bxUY/uaPqTyx210IUiaKDAqbBNZ06cwAq5dSmfrJVCwXoAfTMSlBosJxpbINj9o7ZGKGemQzc/Ay8/nx7ORbnPKcK70or3hdXvXYYgJnoL5rcE+wiQj6tUESZbXt9q2q0h85NlE05RuyzT8Bq7aeKWRJyOkE402hA+xFNMYeCC7OpknFVtVEv77CHmRhe9RRy89Vy4wXlM1xy9lfmTL4ZjvET/kVDBrwJ8WwqGe49oNFUZ3+W372X2OxMotzqb1vwID2HPfmdQ8ysg2RdZq36KCfm4Sw+N2/bV1loFHh/S3V1hRjBcvZSYFtiRVU4XtNgf6+HFQ==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	ws0nYmdkjbNnZeWvGTVr836eVdLR/UBrEYYADt8fSZoAovYH0Fj5C7mm4qy4w56VRjjo7zC4V8068mm6p1Nj8+nhCEax/Epxl2U5S58slp8P4LppsOBHdmWjXuvvAfsHUKK1/qTqrzI8bhq+s/jOns/HgRembJA40Cn/QoauLmMOjQNkOugqBvXZAbdIe49Z5tDvZX9gpdcvL+E8GfBF6uf414BmSPHXpdLwALCQF9eMPJJkLKWWbQU6Hupdy+NyMFcixCXwvV4ATSM44Ki9TV2stsszVdp4stu4CdoldodDSyzawevp7RlcEAUc6Ed3slsWqiC/vn9HsS+hJPh0GLk3rbKPgXLgqEegeVItgsrkb+JOILOl3BoqokNi4mzckgCSVgqwdnhk05BdECd8yNzUEpbR9hBgGdRqZiYyCLM3dUmPUUJ7rckFhETWyJOeDHMlO11uT8dIIhPutMDzFIVFRxh0bZaKrSwj8+YKxiI+sVgshSFiqToZoIyTloDyGP7gNbnWk4n53dgkRQGocanwo7fYEl9uz20uEpP+RC76otYn8Jqgn1G9jOnxw7D7jRF2orwKA1IIo/YqZyZG+nr4Qiy2IeQ1AgmeBrMyePgag2FKCYbtfkv4UmHWcLNk
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 849e82e4-0c9a-410f-9655-08df0288bb20
+X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 25 Aug 2026 09:10:38.9278
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: 9YKcItW9SpH8UtvY7qtIgoQdOo2dHpSzcrx5+0Lkgh5ZSXTjDeryPwOPkMSWtaDES9K9k9Guoi1g6Orxn1ToMszV8sVErdFShd2cLLicENM=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: BY5PR04MB6740
 
-On Mon, Aug 24, 2026 at 08:08:06PM +0100, Matthew Wilcox wrote:
-> I think it's time to remove folio_mark_dirty(), ->dirty_folio() and so on.
-> 
-> This is not how filesystems want to be informed of folio dirtying.
-> It was fine for ext2, but anything that's journalled or COW has work
-> to do before the folio is made dirty, and it's hard to do that work
-> under the page table spinlock (not all callers hold that lock, but the
-> filesystem has to be able to handle the cases where it is.
-> 
-> Filesystems want the page_mkwrite() entry point to be how they find out
-> about a folio being dirtied -- and that works great!  Except that we
-> can writeback the folio for a number of reasons.  If it's been dirtied
-> due to a shared writable mmap, that's fine; we map the folio read-only
-> and any subsequent writes will re-enter the page_mkwrite path.
-> 
-> The problem is GUP.  We have no way to force the GUP caller to go
-> through page_mkwrite again.  So instead we make the GUP caller call
-> folio_mark_dirty_lock() which many just don't, and generally we get away
-> with it.  But it's a bug, and a bad interface.
-> 
-> There's also the problem that GUP users bypass the folio_wait_stable()
-> mechanism.  If a page is written to while somebody is creating a
-> checksum over that page, the checksum will be corrupted.  If we want
-> to fix this, we have to bounce-buffer the page.  There's no way to
-> prevent or delay a GUP user from writing to the page.  Enjoy your RAID.
-> 
-> My proposal is this:
-> 
->  - Fileystems take note of folio_maybe_dma_pinned() during writeback.
->    If it's true, do the writeback, but retain/recreate whatever data
->    structures you need in order to write the folio again; behave as if
->    ->page_mkdirty() had been called again for each page in the folio is
+On 8/25/26 12:40 AM, Qu Wenruo wrote:
+>> Looks good, two small nits though in case you need to resend the series:
+>> 1) Please don't do the [CAUSE], [BUG], [FIX] thingy, I know Qu does 
+>> it but
+>> noone else does that.
+>
+> Sorry, I thought that was a good way to explain a bug, but this 
+> doesn't look like so for everyone else.
+>
+> I'll also change the future style. 
 
-I don't think you can do this for stable writes. It's probably ok for
-!stable writes filesystem stacks, as long as the filesystem & writeback
-can handle making no progress at all. But since stable writes' writeback
-can't race with "writes", I don't think you can Just Do It as long as the
-folio is DMA pinned.
+Nah it's kind of your signature, like me writing Byte instead of Bye.
 
-Perhaps we should give up trying to writeback these folios, and start
-writeback right after they're unpinned? at least on the stable case.
-
->    marked as dirty.
->  - The MM behaves similarly; we do not clear the writeback flag for
->    folio_maybe_dma_pinned().
-
-This sounds like a problem. You don't want users expecting writeback to make
-progress to suddenly stall on e.g folio_wait_writeback() indefinitely.
-
-> 
-> This will have the effect of writing pinned folios back every time the
-> inode is scheduled for writeback.  But since we have no idea whether
-> the folio is actually dirty (because the GUP user won't tell us),
-> this is the correct behaviour.
-> 
-> I'm probably missing some stuff here.  Let me know.
-
-I don't quite understand what your plan for getting rid of dirty_folio,
-et al is. page_mkwrite has the fatal flaw of being directly tied to VM
-page faults; I don't think it's the ideal interface for notifying filesystems.
-It's also the case that page_mkwrite can trivially sleep, and GUP calls it under
-the PTE lock. So how can we replace that? Would callers need to manually dirty
-folios after GUP, in process context?
-
--- 
-Pedro

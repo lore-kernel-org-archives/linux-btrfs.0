@@ -1,117 +1,172 @@
-Received: from mail-pl1-f174.google.com (mail-pl1-f174.google.com [209.85.214.174])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from 011.lax.mailroute.net (011.lax.mailroute.net [199.89.1.14])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 893D037F33C
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 20:07:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.214.174
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787688430; cv=pass; b=Zm7wGETHOSzYqFSA8Pp/B4FPH+pQ8OtxWhtArdvDZhiPfLAPAaJR5a0Vi7tTQDW8QYZP6opzclk3tyhA+4AqxI7QbhRPWCasHGv0kk7nN6dz+c3z5wJI684bFuzgbSkdcZaODtBJzYGff41W5WsB3pxn9LocqUHcIA5vEv4P0gU=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787688430; c=relaxed/simple;
-	bh=YuDwdWxWI5Vzf2u31gjFFz05KsfDHJyOtaNcUhXTBZI=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=PcH7YU2tm92QW7Psa5P61fyecfK71MoDLTps9eiLxE7T6lVG7zRfOks+6KF4TCfqF9XN4JBbbBQmkhUnqNcv+nEBDRkbWPmqVRc4XnE2KmTudAiQIw1/byBEELeB80Zhjyv+DlguXIqG5uxJHIGevddsr9kq8i920GCS2AJxh4k=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=NKpEO3uP; arc=pass smtp.client-ip=209.85.214.174
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=google.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A6A1C48EBE0;
+	Tue, 25 Aug 2026 22:18:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=199.89.1.14
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1787696329; cv=none; b=E2BmE2NUMJltwZg6K9+Hbivyh4lphYJHkCaOYEgwAHeViilPWT+6wgrvBPH6BViSdY8exSvw2pGVQM+a+Ys4+MZD7dMeHqRsyIAg61rWT+HqbNDoGjoWbue58nbzuTTwjGU5C72G0E4UfDBX+JQlPLfENvhdrM5YIvjZj/brmIU=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1787696329; c=relaxed/simple;
+	bh=Wn8t1NSB9z51I0m/t0qwQvRj2tghN354WUGCY5oiGvo=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=EhhoUOBKmpuSSwl3LCqZ5xgGSLUqEG2AjWivVDYJN+TTI5+GivFFCLlCOCTSBNU2oyNkThRYArkCCn2owA6PGAjO2oFZaz4HIYmc+IEWwlhREmtimrBXy7vYmaO2A9bxqjs0emzg0C9F65FQomUjOHKKjv4x4UsV3YbRbXREEzU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=acm.org; spf=pass smtp.mailfrom=acm.org; dkim=pass (2048-bit key) header.d=acm.org header.i=@acm.org header.b=h2t1aLCz; arc=none smtp.client-ip=199.89.1.14
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=acm.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=acm.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="NKpEO3uP"
-Received: by mail-pl1-f174.google.com with SMTP id d9443c01a7336-2ccdf36f63dso33795ad.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2026 13:07:09 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1787688429; cv=none;
-        d=google.com; s=arc-20260327;
-        b=NI1WdpvTwIgkBxpgtvoDf7dsfADa5SsAS32sQiTY+9YOYlv3kMC3Drct2cxCA5ReH/
-         vS26DXgm2gKdhY7SWBugEmbTv+RukZCuYbhhIu9/FyfQ3PX1PGcdg2H/xwaKqgkq7JZU
-         Rd9nAZvWf9aQI6MYtKhoyVpwOThazMVLSzDcEfCgyjmFfwPJKpzUWg9QQkLw201bQwSl
-         gficDDsBtWTL4TolpKP/FladllIdNYvRZK4MJDZs56LTk0bn9C8XLrCjKfx+c+ugjnWC
-         aetwTZvCdFTgsbebm6lIphNTomLhh5GLvXWrRaiFSMOsZCsy4lkg1LE6YwMt57q692HY
-         thCQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=QmpPvlugr4sJVMK76hZIVWaN8XuXLrWZ5bMIrs2ohCE=;
-        fh=81cS1GBPCfc0CcExvy3JEWoSo6yekNzbNs243q6GwoU=;
-        b=gWxGc3HRv384HwvOXl/uq82YC0ISq6sK5Akm6oLDccbQlIN9LolagXb/esTLeAKoAJ
-         t4HryD3h3GMs7f7UeexlM8dh+AnLC3iBeEz4KuBfLsa5iqhKykpv/XR+d1P8xkV6gVYI
-         rqrJAmmyWpih7eziIuKARkPsDF/9GcdHNK1sdgXSvuEY1oVQTWeFmQu/HQbqpl4p3EaS
-         AhA/M2g00az5S8SIcgkNZzTzFF+AVG3+4roudLdgvYeiARW+vXdc8y132hpkdSiD6Den
-         S6HQJaE4+u1lyFrurkGNQUnE8l13il8Z0UGzpsZro2GV4rbbMyaIP1QXydeaBbU2SIZF
-         OKIA==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20251104; t=1787688429; x=1788293229; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=QmpPvlugr4sJVMK76hZIVWaN8XuXLrWZ5bMIrs2ohCE=;
-        b=NKpEO3uP3XiMvqGfLcqjvFeuJ8D5jsq8I30qKsRalF3gtJ3h4tH5Lafr1necQfKysZ
-         XQRl7e2mqv37A2Y/hJoax2/URWgHbgF2/9EV7ks01fPYeDmugp3BOYx/jOQ5mfF4wh1q
-         dwEZ1M8UNmRseI9gwbmaY8S1g6twVjXOhhGNJFTN0V6xYaVLSe5URyBq2sAcCeaW02zk
-         lOtxG5ieucnN1r2q0ZuCkOW/k4vvZNLBGn5ByYKUilxok7L0S27kYw7+IVB08EPcvwU9
-         g/orUJwfXzxLC72dfLYIKNoFLdSJ9opP8lsBuAR3J2zIgqq3dnNK+qz55nJ84H9kgK6p
-         z7cg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787688429; x=1788293229;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=QmpPvlugr4sJVMK76hZIVWaN8XuXLrWZ5bMIrs2ohCE=;
-        b=bN8HCx/Wo4o4b/BH4LZP3UEQgtIgVr2mXX261HShKFIBkk8IHp1d0+KX1mtSKIeuWD
-         sHim+4KjtZK3IE7u+q4tyrwlGf1oiTsH/TIgOA1g5QUJ5q0OcMaStpLILQItBIN/nS1m
-         MqAK/1or8iBTzzIIh8yLK4CWzfnDJiBOIjMwWpg/i/IiqRLJSiTAvBKZaz78GlvTyWwa
-         DJjTBeoH1qPWMwwHLPRFUUeweiYBEARlsoGCYIyh1ept4oOEhBDL6VgiKbhCSZ7vlw7a
-         R+8n9FDQ83Gj/GHdYNYoZrfq6fQ7mxmAEwG0EJX+/Kb7wlF9oS2/KdVgorMgvk7Zmi36
-         kXvQ==
-X-Forwarded-Encrypted: i=1; AHgh+RoXpMWPxo41KrvOzd/rFvxD62HJAzbuUL2cZ1uSeMfFr7mC2qUBD/ZcnSGtSvk0DCMFEwNO/ZZXvUsbOA==@vger.kernel.org
-X-Gm-Message-State: AFuF++me4D3EZiVNkxUMXfFPximI+p7H1FLEm+OiDoPB8Wydy8TKOynk
-	jzRLq8baLYWyqNVlXtjDLbY377oT2H0YJbj47nfphlveQ8cvGk+ySzP1XJc1mNd64ekzjOG5c/w
-	8Kn9hVdfEkh1UueaKsLxIuJYrYd4hpWKvNv1VXTjM
-X-Gm-Gg: AR+sD1100GVUaKi2t9FZS8brGMfPoIT4/0anSv0Z5DKmdLiv26kjzuUOzg+uyu1BbAk
-	cxL2lvv1c4+lKJrjvtKa1VBvfeHA1u4hSp/zIyfJ80HEd8dpP/OV1cQ4wNbPed3OL35YkPgk6kX
-	pWuelNo05CKxc1R32leat0bs18nApFvmn+w1XftrNXhXumY8o3dOTdcHDGvZ+ov+SwwTQpRpY0w
-	x1a0hFMJM7/mqnqZNi7+MSvjRgzVjkTc5D61mgoFhmfYuMjkmsFMX9/pZ5u8O9CsYvKP6dNvF15
-	QmfbR1EpRrTFIVQNAAfXMFeIfajioC4Iy47EnEBQxyW2HYpfALG9td/8Bb9eywPChpFbtXSkx95
-	EbJyeqIsad8WR8dquIzUbUEl1RpXf0Q==
-X-Received: by 2002:a17:903:4b4f:b0:2d5:c090:3810 with SMTP id
- d9443c01a7336-2d70baa1fdemr376215ad.2.1787688428259; Tue, 25 Aug 2026
- 13:07:08 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=acm.org header.i=@acm.org header.b="h2t1aLCz"
+Received: from localhost (localhost [127.0.0.1])
+	by 011.lax.mailroute.net (Postfix) with ESMTP id 4hV2HT71Zhz1XM0vy;
+	Tue, 25 Aug 2026 22:18:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=acm.org; h=
+	content-transfer-encoding:content-type:content-type:in-reply-to
+	:from:from:content-language:references:subject:subject
+	:user-agent:mime-version:date:date:message-id:received:received;
+	 s=mr01; t=1787696312; x=1790288313; bh=APev5dkDvNxMzoK/H1N0BGHv
+	e+cWp9xVJDN07fDHlNs=; b=h2t1aLCzuR/cd3KzlIaCdpxpXP/1Grx8HhnlliYY
+	k7s1TeTHcnW4b/guFk2wOHoa41YqUwdLJawNJxPoWY0mOISs5IBDEcRnfyuhfhWq
+	2U7V1HN+i8V6Z3JUpC0hoiriVrtbWSyhNR+X2CXgft2lLAqtQPRGnUMKZAwonwUg
+	GTKbbHthuSZw+ZSWnIG2mc6CpTuXlEhMDRxwUTHVG9ZGFju2hCnVji1co9zCuays
+	F+aNMn1ZtmWIkpfFT1uWK52nM/aHm8cn3+qZa0jkX/5U5T54KYFjJr2OV1ILBMdV
+	DuRypGlhL5WXU5uCkgAv8ihIStYU45IAzxvJlR8EhKnzQQ==
+X-Virus-Scanned: by MailRoute
+Received: from 011.lax.mailroute.net ([127.0.0.1])
+ by localhost (011.lax [127.0.0.1]) (mroute_mailscanner, port 10029) with LMTP
+ id VNNE9JcnAtl9; Tue, 25 Aug 2026 22:18:32 +0000 (UTC)
+Received: from [100.80.227.50] (unknown [104.135.182.42])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	(Authenticated sender: bvanassche@acm.org)
+	by 011.lax.mailroute.net (Postfix) with ESMTPSA id 4hV2H66mzsz1XM4TB;
+	Tue, 25 Aug 2026 22:18:26 +0000 (UTC)
+Message-ID: <845464ce-43c0-45b3-94ea-ccc830fbc76f@acm.org>
+Date: Tue, 25 Aug 2026 15:18:24 -0700
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <aoyWln-Gt-yvZQkE@casper.infradead.org> <CAG48ez0vXVUu9j4rYUeCqgwyHKAiN_6fL--D90WvX9q7B41V-A@mail.gmail.com>
- <ao3y8TtEGjniZ_4f@casper.infradead.org>
-In-Reply-To: <ao3y8TtEGjniZ_4f@casper.infradead.org>
-From: Jann Horn <jannh@google.com>
-Date: Tue, 25 Aug 2026 22:06:30 +0200
-X-Gm-Features: AcwNN1U7imKfFFWcqWcxt2X9g3kXc7_YW65q6sOXIrpi9lP4BGYdXKwulbCkr7w
-Message-ID: <CAG48ez1yGUcS6AgtPXnmPQDmVCnJyptu64YGsTw=9vxAN9BO6Q@mail.gmail.com>
-Subject: Re: Removing ->dirty_folio
-To: Matthew Wilcox <willy@infradead.org>
-Cc: Pedro Falcato <pfalcato@suse.de>, Christoph Hellwig <hch@lst.de>, David Howells <dhowells@redhat.com>, 
-	John Hubbard <jhubbard@nvidia.com>, Jan Kara <jack@suse.cz>, Rik van Riel <riel@surriel.com>, 
-	Qu Wenruo <wqu@suse.com>, "Darrick J. Wong" <djwong@kernel.org>, linux-btrfs@vger.kernel.org, 
-	linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, linux-xfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v6] loop: Fix NULL pointer dereference in lo_rw_aio()
+To: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>,
+ Markus Elfring <Markus.Elfring@web.de>, linux-block@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org, Alexander Viro <viro@zeniv.linux.org.uk>,
+ Damien Le Moal <dlemoal@kernel.org>, Jens Axboe <axboe@kernel.dk>
+Cc: linux-kernel@vger.kernel.org, linux-next@vger.kernel.org, lkp@intel.com,
+ oe-lkp@lists.linux.dev, Christian Brauner <brauner@kernel.org>,
+ Christoph Hellwig <hch@infradead.org>, Christoph Hellwig <hch@lst.de>,
+ Hillf Danton <hdanton@sina.com>,
+ Linus Torvalds <torvalds@linux-foundation.org>,
+ Mark Brown <broonie@kernel.org>, Oliver Sang <oliver.sang@intel.com>,
+ linux-btrfs@vger.kernel.org
+References: <8dedfc40-9cae-44ff-9960-e0eb1825e963@I-love.SAKURA.ne.jp>
+ <550ff0b4-df39-46d2-9781-c8688df10c93@web.de>
+ <38ad64c1-edc7-431d-8f52-fba572ebf3eb@I-love.SAKURA.ne.jp>
+ <372ca5f6-81a0-4f6c-8f55-ebeeada9f955@acm.org>
+ <27bcb147-bead-4432-8cd0-981489f36228@acm.org>
+ <c41e9198-86a8-4bcd-a608-6f457b24f345@I-love.SAKURA.ne.jp>
+Content-Language: en-US
+From: Bart Van Assche <bvanassche@acm.org>
+In-Reply-To: <c41e9198-86a8-4bcd-a608-6f457b24f345@I-love.SAKURA.ne.jp>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-On Tue, Aug 25, 2026 at 9:54=E2=80=AFPM Matthew Wilcox <willy@infradead.org=
-> wrote:
-> On Tue, Aug 25, 2026 at 09:35:57PM +0200, Jann Horn wrote:
-> > Could we strictly ban using get_user_pages*() for write access, and
-> > use the unpin_*() helpers to somehow enforce that folios are always
-> > dirtied on unpin? I guess the problem with that is that we have no
-> > state that tracks whether the pin was read-only, and finding free bits
-> > in struct page to keep track of this is hard?
->
-> We'd need a count, not just a bit or two.  A pincount for all folios
-> is on its way (eventually) but I wans't planning on tracking writable vs
-> read-only pins.
+On 8/25/26 8:13 AM, Tetsuo Handa wrote:
+> As of commit fe4c990e6a30 ("loop: Add __guarded_by() annotations") in block-loop branch,
+> 
+>    modprobe loop
+>    losetup /dev/loop0 testfile.img; losetup /dev/loop1 /dev/loop0; losetup -D
+>    sleep 1
+>    losetup /dev/loop1 testfile.img; losetup /dev/loop0 /dev/loop1; losetup -D
+> 
+> causes lockdep warning. This is a false positive, but we need to avoid it anyway.
 
-My thinking was that once a folio has been pinned writably one time,
-it should be fine to mark it as dirty every time it is unpinned, even
-if some of those pins were read-only?
+Thanks for having shared the above reproducer. I have dropped the 
+patches that protect all lo_backing_file dereferences with lo_mutex. It
+is too tricky to get this right and at the same time to keep lockdep
+happy.
+
+> you also recognized that we can't call drain_workqueue() or flush_workqueue().
+> 
+> Therefore, I chose to temporarily drop lo->lo_disk->open_mutex in order to
+> make it possible to safely perform drain_workqueue().
+
+There is another possibility: set QUEUE_FLAG_DYING in __loop_clr_fd() 
+before modifying queue limits and clear it again after modifying queue
+limits has finished. Feedback on the patch below is welcome.
+
+Thanks,
+
+Bart.
+
+diff --git a/drivers/block/loop.c b/drivers/block/loop.c
+index df72350cad15..2fb9dc8ea47e 100644
+--- a/drivers/block/loop.c
++++ b/drivers/block/loop.c
+@@ -1153,11 +1153,30 @@ static int loop_configure(struct loop_device 
+*lo, blk_mode_t mode,
+
+  static void __loop_clr_fd(struct loop_device *lo)
+  {
++	struct request_queue *q = lo->lo_queue;
+  	struct queue_limits lim;
++	unsigned int memflags;
+  	struct file *filp;
+  	gfp_t gfp = lo->old_gfp_mask;
+  	int err;
+
++	/*
++	 * Prevent that new asynchronous I/O is submitted while queue limits
++	 * are being modified.
++	 */
++	blk_queue_flag_set(QUEUE_FLAG_DYING, q);
++
++	/* Wait until asynchronous I/O has finished. */
++	memflags = blk_mq_freeze_queue(q);
++	blk_mq_unfreeze_queue(q, memflags);
++
++	/* Wait until I/O dispatching has finished. */
++	blk_mq_quiesce_queue(q);
++	blk_mq_unquiesce_queue(q);
++
++	/* Wait until all I/O-related work has finished. */
++	flush_workqueue(lo->workqueue);
++
+  	mutex_lock(&lo->lo_mutex);
+  	filp = lo->lo_backing_file;
+  	lo->lo_backing_file = NULL;
+@@ -1168,17 +1187,12 @@ static void __loop_clr_fd(struct loop_device *lo)
+  	lo->lo_sizelimit = 0;
+  	memset(lo->lo_file_name, 0, LO_NAME_SIZE);
+
+-	/*
+-	 * Reset the block size to the default.
+-	 *
+-	 * No queue freezing needed because this is called from the final
+-	 * ->release call only, so there can't be any outstanding I/O.
+-	 */
+-	lim = queue_limits_start_update(lo->lo_queue);
++	/* Reset the block size to the default. */
++	lim = queue_limits_start_update(q);
+  	lim.logical_block_size = SECTOR_SIZE;
+  	lim.physical_block_size = SECTOR_SIZE;
+  	lim.io_min = SECTOR_SIZE;
+-	queue_limits_commit_update(lo->lo_queue, &lim);
++	queue_limits_commit_update(q, &lim);
+
+  	invalidate_disk(lo->lo_disk);
+  	loop_sysfs_exit(lo);
+@@ -1216,6 +1230,9 @@ static void __loop_clr_fd(struct loop_device *lo)
+  	WRITE_ONCE(lo->lo_state, Lo_unbound);
+  	mutex_unlock(&lo->lo_mutex);
+
++	/* Reallow I/O. */
++	blk_queue_flag_clear(QUEUE_FLAG_DYING, q);
++
+  	fput(filp);
+  }
+
+

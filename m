@@ -1,205 +1,124 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from www262.sakura.ne.jp (www262.sakura.ne.jp [202.181.97.72])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DA529418361
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2026 09:53:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DC2693CAA49;
+	Wed, 26 Aug 2026 10:38:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.181.97.72
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787738027; cv=none; b=q8m6gsozsAaNK4r5yML1O7E1LKLykC/c3eALa1cdsI8R3MYNcJKYo/GtKq/3ES/z+j4kRpc2li21ZMhI8Jh3SRauFonizr+UH9lXxF3/ITah4PHAljYLqIeZKOt040NPvCz4vgP51dSvexE5FgBv1cbxWIfNZJWaeJdb6dU7VIY=
+	t=1787740741; cv=none; b=Iw3x3e76XGQzAIC56sZZfqcltIILdJFMcX4A3kN4KOnm7DPszUDJwWLA+yX2q1mLRc2WRtjzlAdWaRL7DznuRWXxgWbNaIPspZf3AOTF5apyVQVXkh9Ex0Pk3wrheZqHLm27lYoqjGGuJCagol++LmLnkF0SaYDHh1gyuAZkdsg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787738027; c=relaxed/simple;
-	bh=Wt6Kg5PZ7D6r8iR4xs8d+cWl1F6IId7upBEa6ymKpMc=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=uEuIG4eIU+f7SVJeYhcXaufjkmMs7fV6Ttx03DK927XD1l9zO1E/lD9Ud9gd6cRjxNeNPMGxqoHdaitUQ0JgfLG+Viq7aox5/DLtq0y2+KIL21hApzDxlRz0lABbxXHVHVXgHBeKnn10P/B3Glp2a4cwjqQBXhf5klMxfXf3Nyc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=XtRid8kT; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=h8tMcFwt; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XtRid8kT";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="h8tMcFwt"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 9167A8734C
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2026 09:53:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787738019; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=gsD54Lv1AjS9qhaZXLAJoQY6xReL6XkToe9WCoyMHIE=;
-	b=XtRid8kTQn6/21oi07FsqfiMECumcIeKPUdV5Do3M19WF6uVtDpa4Lc+4eaGY0Hz33WsY1
-	Nmg2V4iQxB6itLhP7umRWP1SJuqs4q6GXIH657R/ARPtYp6UAwY9b1Tpm2GF1GbWdD9Swv
-	arsgiDXzSEHQaVM8LxQpXewGMp7a1Xc=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1787738015; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=gsD54Lv1AjS9qhaZXLAJoQY6xReL6XkToe9WCoyMHIE=;
-	b=h8tMcFwtBPLkvqCpbSI9tQMKjLgWtDk6Nr5l9As+7xwnL3j0rHUDTZUJJ2uJLtgjNIU5tq
-	Zvk70XW3t/j2o/DP7fjicbZk9CqD0G1YL5at6+4YJCsZr3VxyM3Col9urRZP4vlkSQ6Kkd
-	VKOPM+YSUXuowoXGVgsPP6YIxVDEUQs=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8CCAE1361C
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2026 09:53:34 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id TOaTDp63jmrxCQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2026 09:53:34 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: tree-checker: add qgroup status item check
-Date: Wed, 26 Aug 2026 19:23:15 +0930
-Message-ID: <f8f6232eb92cc8789461c2219915845aae1850ac.1787737993.git.wqu@suse.com>
-X-Mailer: git-send-email 2.55.0
+	s=arc-20240116; t=1787740741; c=relaxed/simple;
+	bh=aNqnHUAaUhTGvvVwE9ECDTRoDx01i/L5nzyGJk3/rHs=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=tPuY4aQjGQtNffDrRzGCwd3nGA0YgC0B/w1PGOEC4ngY/VuTHV7vS/iyLZ6EKTwF1CmrWmaQVszIr5CdJOB8wNK08qtr9aiNzMoimItYocDJ0a+QmUqV0sdPe3yXoTDzj08dpIsUbUspa1lCJjq3bdr7VKFukjwkh2CwaduKhxI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp; arc=none smtp.client-ip=202.181.97.72
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp
+Received: from www262.sakura.ne.jp (localhost [127.0.0.1])
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTP id 67QAbvDZ079437;
+	Wed, 26 Aug 2026 19:37:57 +0900 (JST)
+	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Received: from [192.168.1.6] (M106072072000.v4.enabler.ne.jp [106.72.72.0])
+	(authenticated bits=0)
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTPSA id 67QAbusX079434
+	(version=TLSv1.2 cipher=AES256-GCM-SHA384 bits=256 verify=NO);
+	Wed, 26 Aug 2026 19:37:57 +0900 (JST)
+	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Message-ID: <3bb080d0-4421-4012-8a62-6a2bf165cbd9@I-love.SAKURA.ne.jp>
+Date: Wed, 26 Aug 2026 19:37:54 +0900
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v6] loop: Fix NULL pointer dereference in lo_rw_aio()
+To: Bart Van Assche <bvanassche@acm.org>,
+        Markus Elfring <Markus.Elfring@web.de>, linux-block@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Damien Le Moal <dlemoal@kernel.org>, Jens Axboe <axboe@kernel.dk>
+Cc: linux-kernel@vger.kernel.org, linux-next@vger.kernel.org, lkp@intel.com,
+        oe-lkp@lists.linux.dev, Christian Brauner <brauner@kernel.org>,
+        Christoph Hellwig <hch@infradead.org>, Christoph Hellwig <hch@lst.de>,
+        Hillf Danton <hdanton@sina.com>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        Mark Brown <broonie@kernel.org>, Oliver Sang <oliver.sang@intel.com>,
+        linux-btrfs@vger.kernel.org
+References: <8dedfc40-9cae-44ff-9960-e0eb1825e963@I-love.SAKURA.ne.jp>
+ <550ff0b4-df39-46d2-9781-c8688df10c93@web.de>
+ <38ad64c1-edc7-431d-8f52-fba572ebf3eb@I-love.SAKURA.ne.jp>
+ <372ca5f6-81a0-4f6c-8f55-ebeeada9f955@acm.org>
+ <27bcb147-bead-4432-8cd0-981489f36228@acm.org>
+ <c41e9198-86a8-4bcd-a608-6f457b24f345@I-love.SAKURA.ne.jp>
+ <7e51bca8-218a-40b8-8ff8-fc59671f5add@acm.org>
+Content-Language: en-US
+From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+In-Reply-To: <7e51bca8-218a-40b8-8ff8-fc59671f5add@acm.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-Virus-Status: clean
+X-Anti-Virus-Server: fsav211.rs.sakura.ne.jp
 
-This adds the following checks:
+On 2026/08/26 8:16, Bart Van Assche wrote:
+> On 8/25/26 8:13 AM, Tetsuo Handa wrote:
+>> On 2026/08/25 7:53, Bart Van Assche wrote:
+>>> A correction: it is not safe to call drain_workqueue() nor to freeze the
+>>> request queue in __loop_clr_fd(). I'm considering to modify the comment
+>>> in that function as follows:
+>>
+>> you also recognized that we can't call drain_workqueue() or flush_workqueue().
+>>
+>> Therefore, I chose to temporarily drop lo->lo_disk->open_mutex in order to
+>> make it possible to safely perform drain_workqueue().
+> 
+> My sentence was incomplete: I should have written that it is not safe to
+> call drain_workqueue() nor flush_workqueue() from __loop_clr_fd() while
+> the request queue is frozen. It is not clear to me how draining or
+> flushing the workqueue from inside __loop_clr_fd() could cause trouble
+> if this happens with the queue unfrozen since disk->open_mutex is not
+> acquired by the memory reclaim code?
 
-- Key check
+I don't know how "since disk->open_mutex is not acquired by the memory reclaim
+code" is relevant...
 
-- Item size check
-  Here we do not require completely matching the older or newer qgroup
-  status item size, this is to allow future structure expansion.
+Current situation is a result of what we had considered 4 years ago; we don't need
+to destroy workqueue (note that destroy_workqueue() implies drain_workqueue()) from
+__loop_clr_fd() ( https://lkml.kernel.org/r/20220330052917.2566582-16-hch@lst.de ).
 
-- Version check
-  Again it's not a strict requirement for the version to match the
-  support one, but to catch obvious bitflip.
+Since there is a
 
-  And the kernel will already reject unknown version by disabling qgroup.
+  Chain exists of:
+    (wq_completion)loop0 --> system_transition_mutex/1 --> &disk->open_mutex
+  
+   Possible unsafe locking scenario:
+  
+         CPU0                    CPU1
+         ----                    ----
+    lock(&disk->open_mutex);
+                                 lock(system_transition_mutex/1);
+                                 lock(&disk->open_mutex);
+    lock((wq_completion)loop0);
 
-  So we allow any version that is no larger than U8_MAX, which I believe
-  we won't reach in the next few decades.
+dependency, but my proposal to forbid binding loop device to pseudo files
+( https://lkml.kernel.org/r/148efba2-a0b6-47d7-ac76-b19d2f4b696c@I-love.SAKURA.ne.jp )
+was rejected by Christoph, we are stuck in a
 
-- Flags check
-  Mostly to catch any unexpected RUNTIME flags.
+  Draining workqueue with open_mutex held causes creating a complex lock dependency
+  chain involving the global system_transition_mutex. (Maybe there are other paths
+  that create similar dependency chain if we drain workqueue with open_mutex held.)
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Loosen the version check
-- Loosen the item size check
-  To allow older kernels to mount future newer qgroup expansions,
-  other than completely rejecting the qgroup tree and failing the mount.
----
- fs/btrfs/tree-checker.c | 64 +++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
+versus
 
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 0ce91396b517..ff268ebb22d7 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -2313,6 +2313,67 @@ static int check_free_space_bitmap(struct extent_buffer *leaf,
- 	return 0;
- }
- 
-+static int check_qgroup_status_item(const struct extent_buffer *leaf,
-+				    const struct btrfs_key *key, int slot)
-+{
-+	struct btrfs_qgroup_status_item *qsi;
-+	const u32 item_size = btrfs_item_size(leaf, slot);
-+	/*
-+	 * Since the introduction of simple mode, the size of qsi has been
-+	 * enlarged. We need to handle both the old and new sizes.
-+	 */
-+	const unsigned int old_qsi_size =
-+		offsetof(struct btrfs_qgroup_status_item, enable_gen);
-+	u64 flags;
-+
-+	if (unlikely(key->objectid != 0 || key->offset != 0)) {
-+		const struct btrfs_key expected = { .type = BTRFS_QGROUP_STATUS_KEY };
-+
-+		generic_err(leaf, slot,
-+	"invalid qgroup status item key, has " BTRFS_KEY_FMT " expect " BTRFS_KEY_FMT,
-+			    BTRFS_KEY_FMT_VALUE(key),
-+			    BTRFS_KEY_FMT_VALUE(&expected));
-+		return -EUCLEAN;
-+	}
-+
-+	if (unlikely(item_size < old_qsi_size)) {
-+		generic_err(leaf, slot,
-+			    "invalid qgroup status item size, has %u expect at least %u",
-+			    item_size, old_qsi_size);
-+		return -EUCLEAN;
-+	}
-+
-+	qsi = btrfs_item_ptr(leaf, slot, struct btrfs_qgroup_status_item);
-+
-+	/*
-+	 * The version (1) hasn't changed for a long time, but even if we
-+	 * are going to support a newer version, it won't suddenly jump
-+	 * over 255 in the foreseeable future.
-+	 */
-+	if (unlikely(btrfs_qgroup_status_version(leaf, qsi) > U8_MAX)) {
-+		generic_err(leaf, slot,
-+			    "suspicious qgroup status version, has %llu expect %u",
-+			    btrfs_qgroup_status_version(leaf, qsi),
-+			    BTRFS_QGROUP_STATUS_VERSION);
-+		return -EUCLEAN;
-+	}
-+	flags = btrfs_qgroup_status_flags(leaf, qsi);
-+	if (unlikely(flags & ~BTRFS_QGROUP_STATUS_FLAGS_MASK)) {
-+		generic_err(leaf, slot,
-+			    "unknown qgroup status flags, has 0x%llx unknown flags 0x%llx",
-+			    flags, flags & ~BTRFS_QGROUP_STATUS_FLAGS_MASK);
-+		return -EUCLEAN;
-+	}
-+	if (unlikely(flags & BTRFS_QGROUP_STATUS_FLAG_SIMPLE_MODE &&
-+		     item_size < sizeof(*qsi))) {
-+		generic_err(leaf, slot,
-+			    "invalid qgroup status item size, has %u expect at least %zu",
-+			    item_size, sizeof(*qsi));
-+		return -EUCLEAN;
-+	}
-+	return 0;
-+}
-+
- /*
-  * Common point to switch the item-specific validation.
-  */
-@@ -2394,6 +2455,9 @@ static enum btrfs_tree_block_status check_leaf_item(struct extent_buffer *leaf,
- 	case BTRFS_REMAP_BACKREF_KEY:
- 		ret = check_remap_key(leaf, key, slot);
- 		break;
-+	case BTRFS_QGROUP_STATUS_KEY:
-+		ret = check_qgroup_status_item(leaf, key, slot);
-+		break;
- 	}
- 
- 	if (unlikely(ret))
--- 
-2.55.0
+  Not draining workqueue causes NULL pointer dereference in lo_rw_aio().
 
+collision. Therefore,
+
+  Draining workqueue *without open_mutex held* can avoid creating a complex lock
+  dependency chain involving the global system_transition_mutex and can also avoid
+  NULL pointer dereference in lo_rw_aio().
+
+is my solution.
+
+Can you agree with my solution?

@@ -1,78 +1,130 @@
-Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
+Received: from r9110.ps.combzmail.jp (r9110.ps.combzmail.jp [49.212.36.116])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A42221862;
-	Wed, 26 Aug 2026 00:02:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 22813260565
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2026 01:21:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=49.212.36.116
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787702572; cv=none; b=Lg6EDfqH3EmWa8/xtxoKa+ae8SDs3HYRI3lwzNqDXoD3Q2SO4nrdz49c7jizKUc+MVAYrEuh2YAbzW+Z11JUAgLh30Vk0rvGOtVXaM4Bx1LCLdI51wiqGKmsxpnukXzuLphNVLkZHZm6EkYdiV+DVYEAKh6wInaFvWeQboAiV/0=
+	t=1787707267; cv=none; b=ARSRDefzyDNg5Q1d9vEAD/Vg+HUtv5z6ZpWic2FwhgfIzHAcE4wkfTePicBK0RaP5CFh3ctr9HGhiqfxR7OqD3QGlc1Fem9fvI/eSBzXd/uOaUu/ew3obrdYDQKuc1mfOwA1r2N5w6YZBA40Ka3RD8ltzPE5de3hfD+XQwsPmy4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787702572; c=relaxed/simple;
-	bh=7wdlMJetXtztzawFTGBNjsp0NLyzHpGNH3uaTytMYwE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=KPswxlQxDzMrCincHI75Yn+fBQEiXAmZFpeO11a4ueCX38uXH9MnYPS2q2fpuiyv3FvtrldxROg04zU15qOcqYA0ZB1/9R9WWf/jI0D13N+KWRbOyQwzINkLeqpZHMHc9u8MLrfO+SEd73fAfZXDLPFR81v4S9eLr9Hd4KYgw5s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=pass smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=RyHg/Tab; arc=none smtp.client-ip=90.155.50.34
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=infradead.org
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="RyHg/Tab"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Transfer-Encoding:
-	Content-Type:MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:
-	Sender:Reply-To:Content-ID:Content-Description;
-	bh=NBdgN2DyXgys503Hsd3B8DyE4gvlVeQWSt6yuz5SVBE=; b=RyHg/TabT5xtxP4rCiWs83zs0l
-	uFXEjv2TRABsE5z6Q41aS5XpFB+yOekqiSG3YLozinWwVU00yOdxwb32Lta44pBWrdbF9pObup8cR
-	RwhUzLZ7ZyL68VGQIhcBZd3L9c28j/g2kip2rCD6EP3AtrRica4AJfwKuHfBkYq+qT5EfhpvYUMZl
-	Wc1I9HqTnXkMBdIQTMCVptCTN6nu79viSUu1cbtHySUnJXWXaT/mz74cASY4sK6VNOCtxViWEQ8zS
-	EcwNpxjtAd4PcE8fenqUh+6I8sc8kpxuj/873GqwjNw8pr0yYPOKX+x/jGpujRFD5zGOYJni8hhWi
-	9awlrIaw==;
-Received: from willy by casper.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
-	id 1wz16D-00000009ytH-141Y;
-	Wed, 26 Aug 2026 00:02:37 +0000
-Date: Wed, 26 Aug 2026 01:02:37 +0100
-From: Matthew Wilcox <willy@infradead.org>
-To: Jann Horn <jannh@google.com>
-Cc: Pedro Falcato <pfalcato@suse.de>, Christoph Hellwig <hch@lst.de>,
-	David Howells <dhowells@redhat.com>,
-	John Hubbard <jhubbard@nvidia.com>, Jan Kara <jack@suse.cz>,
-	Rik van Riel <riel@surriel.com>, Qu Wenruo <wqu@suse.com>,
-	"Darrick J. Wong" <djwong@kernel.org>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
-	linux-xfs@vger.kernel.org
-Subject: Re: Removing ->dirty_folio
-Message-ID: <ao4tHXnIySccVRIz@casper.infradead.org>
-References: <aoyWln-Gt-yvZQkE@casper.infradead.org>
- <CAG48ez0vXVUu9j4rYUeCqgwyHKAiN_6fL--D90WvX9q7B41V-A@mail.gmail.com>
- <ao3y8TtEGjniZ_4f@casper.infradead.org>
- <CAG48ez1yGUcS6AgtPXnmPQDmVCnJyptu64YGsTw=9vxAN9BO6Q@mail.gmail.com>
+	s=arc-20240116; t=1787707267; c=relaxed/simple;
+	bh=UiAHW1hVAqKhX2AUy0Z74ywoJCBjp3CE/NFZaDYCwW0=;
+	h=To:From:Subject:Mime-Version:Content-Type:Message-Id:Date; b=GFVrAqimEu/DmCTP5IwiJveND2QZy9JJZxNnZvvHSXTBx40Z1tZLhJvcFezuqEbEhwXMAI6H7FhJ+tguA04r7HMkY3B0H6ZZc6OMca9Ht5Fo1/2ooNc1zL7Ou4ppddP7W1GahaiRxgtN2kYDlihwKXGmDfAzWO1pnW+hIBzuAvU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=j-pet-hotel.jp; spf=pass smtp.mailfrom=magerr.combzmail.jp; arc=none smtp.client-ip=49.212.36.116
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=j-pet-hotel.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=magerr.combzmail.jp
+Received: by r9110.ps.combzmail.jp (Postfix, from userid 99)
+	id 09F92188D79; Wed, 26 Aug 2026 10:08:38 +0900 (JST)
+DKIM-Filter: OpenDKIM Filter v2.11.0 r9110.ps.combzmail.jp 09F92188D79
+To: linux-btrfs@vger.kernel.org
+From: =?ISO-2022-JP?B?GyRCRnxLXCVaJUMlSCVbJUYlazYoMnEbKEI=?= <info@j-pet-hotel.jp>
+X-Ip: 4465111304786010
+X-Ip-source: k85gj72w48dnsa51u0p6gd
+Precedence: bulk
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+Subject: =?ISO-2022-JP?B?GyRCOCQhIiVNJTM5JSQtJE4/NzUsJVMlOCVNGyhC?=
+ =?ISO-2022-JP?B?GyRCJTkbKEI=?=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAG48ez1yGUcS6AgtPXnmPQDmVCnJyptu64YGsTw=9vxAN9BO6Q@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-2022-jp
+Content-Transfer-Encoding: 7bit
+X-MagazineId: 2w51
+X-uId: 6764296438486064785037201024
+X-Sender: CombzMailSender
+X-Url: http://www.combzmail.jp/
+Message-Id: <20260826010911.09F92188D79@r9110.ps.combzmail.jp>
+Date: Wed, 26 Aug 2026 10:08:38 +0900 (JST)
 
-On Tue, Aug 25, 2026 at 10:06:30PM +0200, Jann Horn wrote:
-> On Tue, Aug 25, 2026 at 9:54 PM Matthew Wilcox <willy@infradead.org> wrote:
-> > On Tue, Aug 25, 2026 at 09:35:57PM +0200, Jann Horn wrote:
-> > > Could we strictly ban using get_user_pages*() for write access, and
-> > > use the unpin_*() helpers to somehow enforce that folios are always
-> > > dirtied on unpin? I guess the problem with that is that we have no
-> > > state that tracks whether the pin was read-only, and finding free bits
-> > > in struct page to keep track of this is hard?
-> >
-> > We'd need a count, not just a bit or two.  A pincount for all folios
-> > is on its way (eventually) but I wans't planning on tracking writable vs
-> > read-only pins.
-> 
-> My thinking was that once a folio has been pinned writably one time,
-> it should be fine to mark it as dirty every time it is unpinned, even
-> if some of those pins were read-only?
+$B!!(B
+$B!!!V%Z%C%H0&!W0n$l$k!"7P1D<TMM$X(B
+$B!!(B
+$B!!CO0h$G0&8$$r0B?4$7$FMB$1$i$l$k(B
+$B!!%Z%C%H%[%F%k!&%H%j%_%s%0;v6H$r;O$a$^$;$s$+!#(B
+$B!!(B
+$B!!(B
+$B!!"#!!%U%i%s%A%c%$%:%7%9%F%`@bL@2q!!"#(B
+$B!!(B
+$B!!!!!!0&8$2H$N%*!<%J!<B??t!*(B
+$B!!!!!!%Z%C%H%[%F%k!&%H%j%_%s%0%5%m%s(B $B!H(BONE LUKE$B!I(B
+$B!!!!!!"(7P83$d;q3J$,L5$/$F$b;O$a$i$l$^$9(B
+$B!!(B
+$B!!"#!!3+:EJ}<0(B
+$B!!!!!!%*%s%i%$%s!J?=9~8e$K;22CJ}K!$r$40FFb!K(B
+$B!!(B
+$B!!"#!!F|Dx(B
+$B!!!!!!(B9$B7n(B7$BF|!J7n!K(B11:00-12:00
+$B!!!!!!(B9$B7n(B8$BF|!J2P!K(B13:00-14:00
+$B!!!!!!(B9$B7n(B11$BF|!J6b!K(B13:00-14:00
 
-Ah, so the point of this proposal is to mark the folio dirty when it's
-pinned.  Nobody clears the dirty flag at any point until it's written
-back after being unpinned.
+$B!!"#!!Dj0w(B
+$B!!!!!!(B5$BL>(B
+$B!!(B
+$B!!"#!!$4;kD0!&>\:Y$O$3$A$i(B
+$B!!!!!!(Bhttps://oneluke-fc-webinar.jp/lp/
+$B!!(B
+$B!!(B
+$B!!$*@$OC$K$J$j$^$9!#(B
+$B!!(B
+$B!!%Z%C%H%[%F%k!&%H%j%_%s%0%5%m%s$N(B
+$B!!%U%i%A%c%$%:@bL@2q$N$40FFb$G$4$6$$$^$9!#(B
+
+$B!!%Z%C%H%[%F%k$H%H%j%_%s%0%5!<%S%9$rDs6!$9$k(B
+$B!!(BONE LUKE$B!J%o%s%k!<%/!K(B
+$B!!(B
+$B!!%o%s$A$c$s$,9%$-$9$.$kAO6H<T$,(B
+$B!!%Z%C%H%[%F%k$KMB$1$?$H$-$K46$8$?(B
+$B!!IT0B$d;W$C$?$3$H$r;\@_$E$/$j$K3h$+$7$F$$$^$9!#(B
+$B!!(B
+$B!!(B
+$B!!Nc$($P%o%s$A$c$s$,Gq$^$k$H$-$K!">/$7$G$b(B
+$B!!9-$/!"?4CO$h$/2a$4$7$FM_$7$$$H$$$&;W$$$+$i(B
+$B!!E4$N%2!<%8$G$O$J$/%*!<%@!<$G?&?M$5$s$K(B
+$B!!!V$*It20!W$r:n$C$F$$$?$@$$$F$$$^$9!#(B
+$B!!(B
+$B!!$=$&$7$?0&8$2HL\@~$N$-$a:Y$+$$%5!<%S%9$,;Y;}$5$l(B
+$B!!MxMQ$7$?J}$O9b$$3NN($G%j%T!<%H$7$F$/$l$^$9!#(B
+$B!!(B
+$B!!(B
+$B!!F|K\$G$O$$$^$d!V(B8$B@$BS$K(B1$B@$BS!W$,%Z%C%H$r;t$&$^$G$K(B
+$B!!A}$($F$-$^$7$?$,!"%Z%C%H%[%F%k$O$^$@$^$@E9J^?t$,(B
+$B!!B-$j$F$$$J$$$?$a!":#8e$b@.D9$,4|BT$G$-$^$9!#(B
+$B!!(B
+$B!!(B
+$B!!$3$3$^$G$3$NJ8>O$rFI$^$l$?$H$$$&$3$H$O!"(B
+$B!!$"$J$?$b%o%s$A$c$s$,Bg9%$-$J$N$G$O$J$$$G$7$g$&$+!#(B
+$B!!(B
+$B!!%o%s%k!<%/$N(BFC$B%*!<%J!<MM$b0&8$2H$,B?$/!"Cf$K$O(B
+$B!!$4<+?H$,MxMQ<T$@$C$?!"$H$$$&J}$b$$$i$C$7$c$$$^$9!#(B
+$B!!(B
+$B!!@bL@2q$K$F>\$7$$%S%8%M%9%b%G%k$r$*EA$($7$^$9$N$G!"(B
+$B!!?75,;v6H$rC5$7$F$$$k0&8$2H$N7P1D<TMM$O(B
+$B!!$3$N5!2q$K$<$R$4;22C$/$@$5$$!#(B
+$B!!(B
+$B!!CO0h$N%Z%C%H%i%$%U$rK-$+$K$7!"0&8$$,0B?4$7$F(B
+$B!!2a$4$;$k6u4V$r0l=o$K$D$/$C$F$$$-$^$7$g$&!#(B
+$B!!(B
+$B!!(B
+$B!!"#!!%U%i%s%A%c%$%:%7%9%F%`@bL@2q!!"#(B
+$B!!(B
+$B!!!!!!0&8$2H$N%*!<%J!<B??t!*(B
+$B!!!!!!%Z%C%H%[%F%k!&%H%j%_%s%0%5%m%s(B
+$B!!!!!!!H(BONE LUKE$B!J%o%s%k!<%/!K!I(B
+$B!!(B
+$B!!"#!!$4;kD0$O$3$A$i(B
+$B!!!!!!(Bhttps://oneluke-fc-webinar.jp/lp/
+$B!!(B
+***********************************************************************
+$BK\%a!<%k$N$4ITMW$JJ}$K$OBgJQ$4LBOG$r$*$+$1$$$?$7$^$7$?!#(B
+$B$*<j?t$*3]$1$7$^$9$,!"%a!<%kITMW$N$*<jB3$-$O(B
+$B2<5-(BURL$B$h$j$*4j$$$$$?$7$^$9!#(B
+<$B%a!<%kDd;_%U%)!<%`(B>
+$B!!(Bhttps://oneluke-fc-webinar.jp/mail/
+***********************************************************************
+$BF|K\%Z%C%H%[%F%k6(2q3t<02q<R(B
+$B0&CN8)L>8E20;T@i<o6hFb;3(B3$BCzL\(B9-23 3F
+TEL:052-784-8416
+***********************************************************************

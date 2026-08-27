@@ -1,43 +1,41 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3F24546E00B;
-	Thu, 27 Aug 2026 15:58:51 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 092A1489896;
+	Thu, 27 Aug 2026 16:09:24 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787846332; cv=none; b=FCS5u2q4Nv02h9ZSA4j1TQbPp+RoUtugW3FoCjcKJpKs3ls//dnyWAezh3iNqR3+/V8MqJl1+MjlhaFsFRfbI5QuFRcyNQMnb7ZpWqUVve4LChfW0jWlU1kh+lgBiJTFoO21tc6rqmjQBZHZ6nnvDLfzNEk3hHfTSw9jmI9a76o=
+	t=1787846965; cv=none; b=WvNLXbqhBfXzzGL441YXKNCAifiUHMLsBkYmudoj9RbRbCG/2COopTVlw2w+/SpQFb3SM74oP47P25xexj7QAhjOwMJsnahaNGR32GWkybowbSs6U9l/BDIQFWqpmXP95NGCD4zQtWJcCEbIApTbTSKko4cvh69h4xpSTKp4NnA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787846332; c=relaxed/simple;
-	bh=r6fdGHH6aJ3IojxQ+Wsb63oZm0srBmfPmQkfERd14dY=;
+	s=arc-20240116; t=1787846965; c=relaxed/simple;
+	bh=8bgJ74oIlGyB65X04m7Kj/pM+du+sZhf5F5o2t7/ois=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=CoSjgPjXiR/CfhCCxv+ZLWOMk6k1sTL2GLdX/JQ/k197ZhHP1TagYZeK/GpYy70IqEmWx93E/6EY+SRUZoyx4sq1Ajkj+dhHE/U1crTzwfgLFyd168Nq6DWONF355ZYShb7mxHPPDF3JOK2hbyMCyrlBrLpZwWW7BU/WkNFB4/U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Wif9Jf2p; arc=none smtp.client-ip=100.103.45.18
+	 Content-Type:Content-Disposition:In-Reply-To; b=KmSwxyqd4+3B13VnqDpNR806dqQEn3jTEOYJmIkr9ZrQOrJftvjqAAraKpxm2m0WBvEOCItSj3ZaDhcSqMWrJUA3sMHHMXg1upZZXUola/RL9MpyB4W/XBJ47YfIkC/Pj+PNMlKMNERsEi+2sMc6lVin6rhY8+oU1Rgry0M7BHM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dAQMoujw; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Wif9Jf2p"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EF63A1F000E9;
-	Thu, 27 Aug 2026 15:58:47 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dAQMoujw"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id DBF8C1F00A3A;
+	Thu, 27 Aug 2026 16:09:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1787846331;
-	bh=pxmt1ucf5uyfo9Y2k28gW/pjL6vxLIYCKLcU2EPJ5y8=;
+	s=k20260515; t=1787846963;
+	bh=mL2wUylsj/p3np1Pa0w2NUFvNycVzbZmuBWRd1F8Elw=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=Wif9Jf2pIX+r447tKHv4tFQESoyzyPYeqXilcXGSnljj5ZCls4QexZSkxyeXdGd5d
-	 JMRphWx0jwMAH1djLJAbXWqZ5x5EE4srn8Lc3XtrJp2Jy2/HCSPB8mElZd9ZokPo/I
-	 sanCjp577lBkD1sIi7DbrPEwp7jtKpVTWrcn/7fvWGQuQ+T6rJBnrqYFuTQFRQW9a+
-	 BvxB+TrmiXkI23It6Pv7saPVzuN6WWKFupIM5NU7VXh2T+va1G3J46fHRs+dwf/fPY
-	 wKGB28vGUem05Nk3xehmaekq/Xl2xxtxB+dSCs//s1zY2Zl0g9rhE8fbltGuFvS4Gu
-	 l3vw7RmwFCxHQ==
-Date: Thu, 27 Aug 2026 23:58:44 +0800
+	b=dAQMoujwqqmowTn7BnpGsUErs1iEfVFFYvl1F8DsIdA8SEWSnQuplHERVim/AqMN5
+	 J6tMsa2aNneJ4CTtdIvwQIvGXjUp89Ip7Sh4XteYGMByX9IE4pcjkk3MWRkPmn+9iF
+	 YBvpegzqk6MDdnsZbVud9cRj22sqA8Ti3lWpab3JfXezGbUJw4krq2Lxr5KtT77EAX
+	 Mgl36Ua2ycTmmFgqfiYABn/fT++Xt3WbIZFVeuDkQ3pWXYRN3BtdXCmOzp3te4C5Pq
+	 m+1e/W7SP00G3b/LoWAQX4rIYRgofFxzi0SFyIO90xsb+u0fhrBK+ZFraSYGJyp+WQ
+	 FLbQqZJK1TKLQ==
+Date: Fri, 28 Aug 2026 00:09:16 +0800
 From: Zorro Lang <zlang@kernel.org>
 To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Cc: Zorro Lang <zlang@redhat.com>, fstests@vger.kernel.org, 
-	linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH v2 5/5] generic/781: fix copyright
-Message-ID: <apBd_LNAobthcrs1@zlang-mailbox>
+	linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/5] fstests: misc fixes for zoned btrfs
+Message-ID: <apBg3n-J7PP2nD0M@zlang-mailbox>
 Mail-Followup-To: Johannes Thumshirn <johannes.thumshirn@wdc.com>, 
-	Zorro Lang <zlang@redhat.com>, fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	Christoph Hellwig <hch@lst.de>
+	Zorro Lang <zlang@redhat.com>, fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
 References: <20260819131606.1478488-1-johannes.thumshirn@wdc.com>
- <20260819131606.1478488-6-johannes.thumshirn@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -46,32 +44,40 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260819131606.1478488-6-johannes.thumshirn@wdc.com>
+In-Reply-To: <20260819131606.1478488-1-johannes.thumshirn@wdc.com>
 
-On Wed, Aug 19, 2026 at 03:16:05PM +0200, Johannes Thumshirn wrote:
-> My employer is called Western Digital not Wesgtern Digital. I'm sorry.
+On Wed, Aug 19, 2026 at 03:16:00PM +0200, Johannes Thumshirn wrote:
+> Misc fixes for test failures (and a typo) when running fstests with
+> zoned btrfs.
 > 
-> Spotted-by: Christoph Hellwig <hch@lst.de>
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> ---
+> Changes to v1:
+> - use _require_xfs_io_command "fpunc" 
+> 
+> Johannes Thumshirn (5):
+>   common/btrfs: fix awk field separator in _check_temp_fsid
+>   btrfs/199: skip on zoned devices
+>   generic/746: skip on zoned btrfs
+>   btrfs/284: skip on zoned devices
+>   generic/781: fix copyright
 
-Reviewed-by: Zorro Lang <zlang@kernel.org>
+Hi Johannes,
 
+Except for [PATCH 3/5], which still has some open points to discuss, the other
+4 patches have all been acked. Given that this is a misc fixes series, would
+you prefer that I merge the 4 accepted patches first, or wait to take the whole
+series together? Either way works for me.
+
+Thanks,
+Zorro
+
+> 
+>  common/btrfs      | 2 +-
+>  tests/btrfs/199   | 1 +
+>  tests/btrfs/284   | 1 +
+>  tests/generic/746 | 1 +
 >  tests/generic/781 | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+>  5 files changed, 5 insertions(+), 2 deletions(-)
 > 
-> diff --git a/tests/generic/781 b/tests/generic/781
-> index 575cc4ab..38536d64 100755
-> --- a/tests/generic/781
-> +++ b/tests/generic/781
-> @@ -1,6 +1,6 @@
->  #! /bin/bash
->  # SPDX-License-Identifier: GPL-2.0
-> -# Copyright (c) 2025 Wesgtern Digital Corporation.  All Rights Reserved.
-> +# Copyright (c) 2025 Western Digital Corporation.  All Rights Reserved.
->  #
->  # FS QA Test No. 781
->  #
 > -- 
 > 2.55.0
 > 

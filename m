@@ -1,92 +1,48 @@
-Received: from mail-vk1-f228.google.com (mail-vk1-f228.google.com [209.85.221.228])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0CB9D49551D
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2026 18:57:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.228
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 552DD347533;
+	Thu, 27 Aug 2026 19:31:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.145.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787857075; cv=none; b=WfI/DsL4pgOP/4GWCHO3HfMKeeGlFz1WGxMByYEdXLvGJgWyhVyyz95YDHzxBuAJtQZMT+ghpSr6qU/s3WXIsd4cMtX99Gk4o5GKwDB6Ly/QnBl8uoPg+l7N8M/a43802oFzrqPbUymKGL2m2Ac6+NTkIVs5ykhi2pJA5Sor9tE=
+	t=1787859071; cv=none; b=Ubvp6KWHeg61VfS/jRivud8AbzVAPkrJJUfofC4Ei1jzu41OHqbbhyCbGu5IYWsSRP1GSceSCvJ4NW5B5uxZSYB0u5MglFX6dar7c/RLmovQzRKGRho05Rb5xfGayM2Fe4bINbqhMvIdU5Qu+uw6xqA9qZ+dkGPfNbKwiszuv04=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787857075; c=relaxed/simple;
-	bh=LC382L91Fjmkvg3DzrJyfTe6xYWA++BUDclrQpsPZnA=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=eMydJF8MWuHAMTtESn200xfaamPBYq5VlWBYYCUYbRi7/nIZcLl5zqqDdKwwtf86sSfsH1FHr6lDWs/h0hbiufp7llUY/ePEl02DxOY0WV2WxIFiCcvks2Uq2vyxp5Dz+phF46TJ35CqN+/prU17VgTNhKsuK3IuqZjlwE0sZAA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=purestorage.com; spf=pass smtp.mailfrom=purestorage.com; dkim=pass (2048-bit key) header.d=purestorage.com header.i=@purestorage.com header.b=aosQXsxG; arc=none smtp.client-ip=209.85.221.228
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=purestorage.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=purestorage.com
+	s=arc-20240116; t=1787859071; c=relaxed/simple;
+	bh=dkM/eV2i8ziNqb0JFSIc3qrWW3dds31N8UuB4ZqUZ+0=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version:Content-Type; b=PsRvQuRAAxcQqMc4HLT1XTAu88s3TrKP2z8dWZdQrpVH7F2iHjlJVGfAyBaI2l59K8PUeaPMQ9O47GG86I0RkcjKOvMsjPEPN4awA0v45YF2cpV6sCiSBOsvqVeddwU6GqHR1t0IhW0wO9/HVf5G4I1ASi0WB66zPgvIUQW7nT8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b=Su7CpnaH; arc=none smtp.client-ip=67.231.145.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=purestorage.com header.i=@purestorage.com header.b="aosQXsxG"
-Received: by mail-vk1-f228.google.com with SMTP id 71dfb90a1353d-5c63c4af822so12341e0c.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2026 11:57:36 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=purestorage.com; s=google2022; t=1787857051; x=1788461851; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=i10FjmX67zefyeXKozkB0Kmfyho0gXqWl4rPPjjJZ9s=;
-        b=aosQXsxGzXAlVch2OV7h96Ps25/3SQ5OcOfmOjiAnoQPNuimPx4xO+VqRcS7UjhTCv
-         yp6oKwGtfw+Kp8COsFuceOxA1VNLj0YqS+zVDRX/J5SlNGkUezoPgoqV0imVXUwS6lmp
-         Zk3AiSipFgKtCkTCzF8NszkcjOwJlY5SMcbmjQ/sWxCLdBzjXb+ZqMxHj9PCoa/sA0v9
-         syQLejkZj2JoUKRtYkczz9dnbSdeb8UqCrSI9xm4TXWs0uBPOO/80ctDd1h/EtUm372q
-         A5KD7XSHQRmQLSPp1d+O6jSmgLU6dNmAFO9V6gEARJ4/YVUkqMusr4yW/sIQiulkX1YI
-         ih8A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787857051; x=1788461851;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=i10FjmX67zefyeXKozkB0Kmfyho0gXqWl4rPPjjJZ9s=;
-        b=Z80X2rY93OwzAnT6zSjxCBLwcLidEOybzxBipvIFoicEXQ5zETxiS+TcRhlPr5wRE5
-         5D8vxRTdY2z6FAyoX3EKH0oU30MWv8Lh0iGaeXWtj1dQQFOujPZJNSovB0/foY9oRLyc
-         BL5m/4QBuV0vHhvsMZvC+2e0zlT6CmiBVsNHdEx6A5ocwKqWWxaxO3oMw4aAENI875iY
-         bysXG5TsHgg9eJOIdbyKXFsn6T/NC5ETcT5wphbrhoiHxHw2R1Ll0oCdygMBz7k7UBN6
-         lb1fHkkZd7RD99nHWgOo+LMtFS5ivARtERk4SRjfXdHuxav+rRP5HaEfpLN00j7NFoVE
-         yHIQ==
-X-Forwarded-Encrypted: i=1; AHgh+RpGKOi/02QfV7orP9bsIiPaPDwMZZoB756Gx4hRCI5665efsNG+weocmp2Gb3c+4JRqc2QM5J/VVsBZlw==@vger.kernel.org
-X-Gm-Message-State: AFuF++n6vd9IigHeYlJhBKYCuKyMeu9Ko5u/BfsVqemX8jCj5c0Kcy5v
-	0aG+GiK4u7pldzDXaG2oN7yMynZiVy+68rNf1HLwfXA6Af3/lqKkf5TeO+JDBuZRGFzWLw5/PUW
-	YDT7JJlCoW58HbTRQbAPpwhPoxlK6ELhMdCr1vqBnWlsT2lNJMFBR
-X-Gm-Gg: AR+sD12bBgXD5d2I4KJ3QFUcVxi3rot+ILa3UXna+oZ01rU4esO4wnnbWDbQ2r2ijs9
-	CVPwQz2Qm/RAwyTJLKI8oKvgzbTqbLs/nNdUL0WcDiUZSfnK5l7+Ni0OnTNxZcSiElty475h3Yb
-	sZ31WnZoAU6O08bHNc3sAwsbJmyBxGD43/eCG0STADcUyEmYFg7zIv6bIEVmMT6ACqhDOD8Hu7h
-	m6QRdhvJmRR4B6CTcN55sq0QzjOtGviHUjdrwqEWSolyRlokmwafOgyaw+0kOfs1TpUPWbR8Um7
-	CtL8TlylSlt1SmwdPjK2yUii1Q7lltjyBRriRG/hH5gx1iiqTdc0bi4/I4iBaTA899/W0NYvDHA
-	HIzvCmXr8zvPNP8v9
-X-Received: by 2002:a05:6123:593:20b0:5c3:a1f5:7569 with SMTP id 71dfb90a1353d-5c680feb0f7mr218849e0c.1.1787857051036;
-        Thu, 27 Aug 2026 11:57:31 -0700 (PDT)
-Received: from c7-smtp-2026.dev.purestorage.com ([2620:125:9017:12:36:3:6:0])
-        by smtp-relay.gmail.com with ESMTPS id 71dfb90a1353d-5c6600147edsm1730496e0c.8.2026.08.27.11.57.30
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 27 Aug 2026 11:57:31 -0700 (PDT)
-X-Relaying-Domain: purestorage.com
-Received: from dev-csander.dev.purestorage.com (dev-csander.dev.purestorage.com [10.112.12.104])
-	by c7-smtp-2026.dev.purestorage.com (Postfix) with ESMTP id 64D774013B;
-	Thu, 27 Aug 2026 12:57:30 -0600 (MDT)
-Received: by dev-csander.dev.purestorage.com (Postfix, from userid 1557716354)
-	id 5A653E404C2; Thu, 27 Aug 2026 12:57:30 -0600 (MDT)
-From: Caleb Sander Mateos <csander@purestorage.com>
-To: Jens Axboe <axboe@kernel.dk>,
-	Ming Lei <tom.leiming@gmail.com>,
-	Keith Busch <kbusch@kernel.org>,
-	Christoph Hellwig <hch@lst.de>,
-	Sagi Grimberg <sagi@grimberg.me>,
-	"James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-	"Martin K. Petersen" <martin.petersen@oracle.com>,
-	Chris Mason <clm@fb.com>,
-	David Sterba <dsterba@suse.com>,
-	Bernd Schubert <bernd@bsbernd.com>,
-	Joanne Koong <joannelkoong@gmail.com>,
-	Miklos Szeredi <miklos@szeredi.hu>
-Cc: linux-block@vger.kernel.org,
-	linux-nvme@lists.infradead.org,
-	linux-scsi@vger.kernel.org,
-	linux-btrfs@vger.kernel.org,
-	fuse-devel@lists.linux.dev,
-	io-uring@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Caleb Sander Mateos <csander@purestorage.com>
-Subject: [PATCH 0/2] io_uring passthru: set result on blk-mq request completion
-Date: Thu, 27 Aug 2026 12:57:19 -0600
-Message-ID: <20260827185722.3234622-1-csander@purestorage.com>
-X-Mailer: git-send-email 2.55.0
+	dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b="Su7CpnaH"
+Received: from pps.filterd (m0528007.ppops.net [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 67RJM83G1856212;
+	Thu, 27 Aug 2026 12:31:05 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=meta.com; h=
+	content-transfer-encoding:content-type:date:from:message-id
+	:mime-version:subject:to; s=pps82601-s2048-2026-q3; bh=shF7wMAjN
+	GRHtx3LeWbd0oPw0D1xUZvDE6iVECoHxf0=; b=Su7CpnaHwZkzK+bUj7bqW4DuG
+	emV5msdzWh1nAeETEgWhYDMN//rxdFJ9IvNNuh25SYlgf7KWO0aeLcw+g0vc0DtQ
+	QF8gQR3jhnAGEry6+PG2TmERTvN8hBTjWDNBWk5RoU7h4a6Xb1Jo0k6v2kbtp0Hq
+	BChYNWkIZkywXkyCi9EU2jkQlRjrIJtypxLdFazgS39BYygj3jxg+gPNaxx6oMtm
+	a25hrVCiHfjW6KH5zFc1YIIqvSY8457vkKXp1EGlciyWYGBzpaO3ucOrY2wwfgX6
+	hBO2o2XroIpewyLOrFy777+AMb1JWTvxRfOtr04p0YzLOuO4FrFoGZmpm5BSw==
+Received: from mail.thefacebook.com ([163.114.134.16])
+	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 4gak20ksv5-2
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT);
+	Thu, 27 Aug 2026 12:31:05 -0700 (PDT)
+Received: from devbig011.atn7.facebook.com (2620:10d:c085:108::150d) by
+ mail.thefacebook.com (2620:10d:c08b:78::2ac9) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.2.2562.45; Thu, 27 Aug 2026 19:31:04 +0000
+From: Chris Mason <clm@meta.com>
+To: <clm@meta.com>, <mason@kernel.org>, <dsterba@suse.com>,
+        <torvalds@linux-foundation.org>, <linux-btrfs@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>
+Subject: [PATCH 0/1] Update my MAINTAINERS entry
+Date: Thu, 27 Aug 2026 12:29:15 -0700
+Message-ID: <20260827193032.786461-1-clm@meta.com>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -94,31 +50,38 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-Proofpoint-Spam-Info: AW1haW4tMjYwODI3MDE2NCBTYWx0ZWRfX/AumBnfjYn1K
+ JuFtNZPOzdWqS2U/edZ3NfusakdLDi8YBXtuA1+5bz7DBaUYwhNlGCIObMHqzVs/IdL3VTME/OM
+ 8htzN5VLzMcO6u9D671pWtlGxk1bsYs=
+X-Authority-Analysis: v=2.4 cv=D6x37PRj c=1 sm=1 tr=0 ts=6a909079 cx=c_pps
+ a=CB4LiSf2rd0gKozIdrpkBw==:117 a=CB4LiSf2rd0gKozIdrpkBw==:17
+ a=Sv0fKeRqtYgA:10 a=VkNPw1HP01LnGYTKEx00:22 a=7x6HtfJdh03M6CCDgxCd:22
+ a=4h92JMTCafKA-fb_NiOh:22 a=VabnemYjAAAA:8 a=FOH2dFAWAAAA:8
+ a=stUR-zCGr9S5OmqkrUgA:9 a=gKebqoRLp9LExxC7YDUY:22
+X-Proofpoint-GUID: dBj6E2UZq9g8A3rgBEbw9KFLJ2onpxgc
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwODI3MDE2NCBTYWx0ZWRfX2f8XRKmIWhM/
+ L0oj687U4MgVr4RGj1PCqmWTwh9hE9srnCBUgVD4qvTukRrE5YSPCMCmhqb1/bAKVsOLy+lYrIW
+ 469AeEELp/2cMzx+VHPtblU53Ok4pg3y/9FnOH7JZKXMm2t9WcasCFsRuYRFsboRGKhq+seFH96
+ DlPaG/53y8E3xjJjqaQ/KZS9omKoL39jAuHTQa9eLnXQjPQbS7eECseM2iiOIQbki6pgjf4T1zp
+ gFtqggVzmAmfRpu9bVK3b0AVIzAMUehIZkyjgTL1dsx4zYoe/ZYEPhWNAIzn2mibzsqXstkwDos
+ Ag4pXPT1uBuPenciDrWFKk/SWfg10UleLFVtmJeFtzyjmr+neUG2k++Oo15dyg8+KOZCP1VyIKL
+ pmbPSC5AQZcce6mMbD71mXJ5bRa3vcNmrok5xUn2nv0F2BoyyPkaMYvCB5QHehuIKFhcxJKCHKz
+ NOQnfilcVWaRejC3SnQ==
+X-Proofpoint-ORIG-GUID: dBj6E2UZq9g8A3rgBEbw9KFLJ2onpxgc
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1176,Hydra:6.1.134,FMLib:17.12.100.49
+ definitions=2026-08-27_08,2026-08-27_02,2025-10-01_01
 
-io_uring NVMe passthru currently receives the NVMe status and result in
-the blk-mq request completion callback nvme_uring_cmd_end_io() but
-doesn't post the io_uring CQE until the io_uring task work callback
-nvme_uring_task_cb(). The status and result must be plumbed through
-struct nvme_uring_cmd_pdu, taking up 16 bytes of the 32 available.
+Hi everyone,
 
-Store the status and result on the io_uring request in
-nvme_uring_cmd_end_io() instead of nvme_uring_task_cb() so it doesn't
-need to be passed through struct nvme_uring_cmd_pdu.
+My last day at Meta is Aug 28, so my meta.com/fb.com emails will stop
+working soon.  Meta's commitment to the kernel and btrfs isn't changing, and
+my own kernel contributions will continue as well.
 
-Caleb Sander Mateos (2):
-  io_uring/cmd: split io_uring_cmd_set_res() from io_uring_cmd_done()
-  nvme/ioctl: call io_uring_cmd_set_res32() in ->end_io()
+This update better reflects that I handed off most of the btrfs
+maintainership duties years ago.  Many thanks to David Sterba, and all
+of the btrfs developers for their work moving the filesystem forward.
 
- block/ioctl.c                | 10 ++++++----
- drivers/block/ublk_drv.c     | 26 ++++++++++++++++++--------
- drivers/nvme/host/ioctl.c    | 19 +++++++++----------
- drivers/scsi/scsi_bsg.c      |  4 ++--
- fs/btrfs/ioctl.c             |  3 ++-
- fs/fuse/dev_uring.c          | 15 ++++++++++-----
- include/linux/io_uring/cmd.h | 29 +++++++++++++----------------
- io_uring/uring_cmd.c         | 34 ++++++++++++++++++++++------------
- 8 files changed, 82 insertions(+), 58 deletions(-)
-
--- 
-2.55.0
+-chris
 

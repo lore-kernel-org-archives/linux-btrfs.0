@@ -1,73 +1,117 @@
-Received: from va-2-20.ptr.blmpb.com (va-2-20.ptr.blmpb.com [209.127.231.20])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2D682377EA1
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2026 02:06:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.20
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 67583175A6D
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2026 06:56:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787796398; cv=none; b=K2AD8K7zpj1mnmDWY8Kr6FAkC9Y/3dYMtathURZ/Zt1d0CqfrJbuFLXWTooZu7tFkfxpFtEhgXZsBwLaqoTbMzwv7GjaIFr9Xvvm8f5lvI3J3G+AdMVEuyHUyJT062ZkG842UfAr0fE0V38Y8GxwpqrMctxdTvb+r3PDhr64bsk=
+	t=1787813761; cv=none; b=ui0C1GgP1NatRXBiyizyBAQS3jOwUrkjva357R0q/apfHFBE61IDWhz8q8pNjLKftOJd3YbArhLyN7PNw8n8ZYTHtKZBRHNtnyBHJtWCSYDGqS9eDfJxTF47mjclLgFRHGvwtMQGVdUoChgfVgpW4nmd1dhztAM6+WCmouUEwds=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787796398; c=relaxed/simple;
-	bh=8a8HjnacJnrhRKOFfd3y0Sh/JcF+6fv7xCzY14SZPVc=;
-	h=Subject:Mime-Version:Cc:In-Reply-To:References:Content-Type:To:
-	 From:Date:Message-Id; b=kBcCX3xNSzJTX8pKeopi/mB9P26YgyX4eyw1idJPnKpM7RuwGu/AvaPOFX4piav767SZN4vjd/Os4BcNpFqxHsKQnMXFbi9V29y8QKgs/fa3cmoSA39e6dWMyCHJGNwxVxR2EFTbvuFQOSQmltpsBipJqWj7wpuZvMrgQVZAF+8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=gVwWc7M0; arc=none smtp.client-ip=209.127.231.20
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
+	s=arc-20240116; t=1787813761; c=relaxed/simple;
+	bh=eLWYcrH8h9a+an1KvimoGhX6nQOHZIc5EVJ/sSlRAHk=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=F84U5k6TvpXnlfGR2xTrLYtm4GY4xqJ12djD8KAIH7iNWXcBLGbPrITDt/VTYHuKFd3vGDMy/ue72W/awzYGTD1kDJBjWD1dhbUZdYF7waABaJtnLzUoMAHl997rqERpUjl5dwtLs1rRSnI5wHb7hEcCo5aupLRwVQj6kYZD5Zc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=b35I264U; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=aetZwxn5; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="gVwWc7M0"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1787796388;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=8a8HjnacJnrhRKOFfd3y0Sh/JcF+6fv7xCzY14SZPVc=;
- b=gVwWc7M03L5EtbL3BHFOnIYGgxL2JUoTIxIQY88I8cVks5njdQMbCaCjWb1NJZyzBreJGr
- 5Nzg3aRyaZ4Dx+WOfK9cRXIqwB2C34imA4J//KEdXdncigS7DACLhJJ9xr81Vofy1zhOBB
- 7G9+AUwdceiZvh1uu/BDTGfGZg4XdFMx7wkMP5qB8ZZGiR1BJsTRD8agHxgGRTpzCSq31P
- N8PTqHFRXavujrCH/ljJrDhCzFtMg3V6DA6ogGZOjSqCdy93ZQvbvsiqLgNpj50VdLFZzZ
- /UeDb2cFMSqI9hWo5Fhjl4FeR6UIm9WgCyBv4G8RzkfCwPSRfbgCeMywxJhfsg==
-Subject: Re: [PATCH v2 1/4] btrfs: zoned: track only sequential zones as active
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="b35I264U";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="aetZwxn5"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 3535E21223
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2026 06:55:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1787813754; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=VSny1jfJb5FEDR6RnXOAFBbm2E4OjJtv7qSA0FDisBQ=;
+	b=b35I264Uvxh+L1rQvxd3fPuW/SdE9x8Qb8NLuge6S9qL5JNqtgugVWwbNi6FU/wwccOj0C
+	MnNbOZzjRl+U2Xxt1qc3D6nH7c4XAETR8kMBIggSWzaDxyb7QsoCt87W/qEmrKHcr7Yn5V
+	FI59n7OqgAIiyxMaJjpL4x93gFTQbfY=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1787813750; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=VSny1jfJb5FEDR6RnXOAFBbm2E4OjJtv7qSA0FDisBQ=;
+	b=aetZwxn584rQi7iCWq6r9IduUzoH5/+mJ9kJJc86MZ0XCgG9wBqmMtE/jKFfWSLlUExgV2
+	UUZO3ootpiiNOJEAN7/6kCSGTc7Nt/sfvR5+LLNmm0bm7s0P/jVQzdIO0bA7AdWZL/fGYX
+	aZI4TWL0LnhUib4z3LA4bz1Ij4W94hI=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 32E1113354
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2026 06:55:48 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id GWxDNHTfj2oiXgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2026 06:55:48 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: qgroup: mark qgroup inconsistent for more
+Date: Thu, 27 Aug 2026 16:25:28 +0930
+Message-ID: <cover.1787812966.git.wqu@suse.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Cc: <naohiro.aota@wdc.com>
-Received: from [192.168.8.64] ([14.21.226.247]) by smtp.larksuite.com with ESMTPS; Thu, 27 Aug 2026 02:06:27 +0000
-Content-Transfer-Encoding: quoted-printable
-In-Reply-To: <e852d4c2-6765-4d8e-aaa4-f7dd1dc21163@wdc.com>
-References: <cover.1787717573.git.zhudongjiang@fygo.io> <c51aaf7f4621dedc36c275bfa9ba1ec884de09c4.1787717573.git.zhudongjiang@fygo.io> <e852d4c2-6765-4d8e-aaa4-f7dd1dc21163@wdc.com>
-X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
-Content-Type: text/plain; charset=UTF-8
-To: "Johannes Thumshirn" <johannes.thumshirn@wdc.com>, 
-	<linux-btrfs@vger.kernel.org>
-From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
-Date: Thu, 27 Aug 2026 10:06:23 +0800
-Message-Id: <c0207d19-0c87-4d36-bf63-8d8174d19271@fygo.io>
-X-Lms-Return-Path: <lba+26a8f9ba3+5e42a4+vger.kernel.org+zhudongjiang@fygo.io>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
 
-=E5=9C=A8 2026/8/26 17:00, Johannes Thumshirn =E5=86=99=E9=81=93:
-> On 8/26/26 6:27 AM, Dongjiang Zhu wrote:
->> diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
->> index 69d56864d4ba..37ab8b7eee9c 100644
->> --- a/fs/btrfs/block-group.h
->> +++ b/fs/btrfs/block-group.h
->> @@ -80,13 +80,17 @@ enum btrfs_block_group_flags {
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 BLOCK_GROUP_FLAG_TO_COPY,
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 BLOCK_GROUP_FLAG_RELOCATING_REPAIR,
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 BLOCK_GROUP_FLAG_CHUNK_ITEM_INSERTED,
->> +=C2=A0=C2=A0=C2=A0 /*
->> +=C2=A0=C2=A0=C2=A0=C2=A0 * Only block groups containing sequential zone=
-s can have this=20
->> bit set;
->> +=C2=A0=C2=A0=C2=A0=C2=A0 * conventional-only block groups never do.
->> +=C2=A0=C2=A0=C2=A0=C2=A0 */
->=20
-> Again this comment does not really serve any purpose.
+Commit 011b46c30476 ("btrfs: skip subtree scan if it's too high to avoid
+low stall in btrfs_commit_transaction()") covers the most common case
+that can cause a long qgroup stall, where a large subtree is rescanned
+when dropping a snapshot.
 
-OK, I will remove it in v3.
+But there are more corner cases for the same long qgroup stall:
 
-Thanks,
-Dongjiang
+- A qgroup rescan is queued immediately after marking inconsistent
+  The new rescan will immediately revert the NO_ACCOUNTING flag, thus
+  still results long qgroup stalls.
+
+- A subvolume with no shared subtree
+  This can still queue a lot of workload into the current transaction.
+
+This series covers both less-common cases.
+
+Qu Wenruo (2):
+  btrfs: reject new qgroup rescan during subvolume dropping
+  btrfs: avoid long stall when dropping a non-shared large subvolume
+
+ fs/btrfs/disk-io.c     |  4 ++++
+ fs/btrfs/extent-tree.c | 11 +++++++++++
+ fs/btrfs/qgroup.c      | 29 ++++++++++++++++++++++++++++-
+ fs/btrfs/qgroup.h      | 15 +++++++++++++++
+ 4 files changed, 58 insertions(+), 1 deletion(-)
+
+-- 
+2.55.0
+

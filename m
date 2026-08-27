@@ -1,34 +1,36 @@
 Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 552DD347533;
-	Thu, 27 Aug 2026 19:31:10 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D3CE44C955F;
+	Thu, 27 Aug 2026 19:31:11 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=67.231.145.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787859071; cv=none; b=Ubvp6KWHeg61VfS/jRivud8AbzVAPkrJJUfofC4Ei1jzu41OHqbbhyCbGu5IYWsSRP1GSceSCvJ4NW5B5uxZSYB0u5MglFX6dar7c/RLmovQzRKGRho05Rb5xfGayM2Fe4bINbqhMvIdU5Qu+uw6xqA9qZ+dkGPfNbKwiszuv04=
+	t=1787859073; cv=none; b=GbCAukWpcnPlJy9jIp9ZsbccwIF5DwIC2rHZTGHl94c16VyyZ/D+JQkxgH/2GBvZJ6s2EjU5UHkDMtUOFXibWP7nBsLG/bW97w2CPRU1ChPzjdlmf99MJW9+UmunDYiaqKOwRoff1gG/o8WztPEe6zksCmmui6bIcLDPZk2ueLM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787859071; c=relaxed/simple;
-	bh=dkM/eV2i8ziNqb0JFSIc3qrWW3dds31N8UuB4ZqUZ+0=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version:Content-Type; b=PsRvQuRAAxcQqMc4HLT1XTAu88s3TrKP2z8dWZdQrpVH7F2iHjlJVGfAyBaI2l59K8PUeaPMQ9O47GG86I0RkcjKOvMsjPEPN4awA0v45YF2cpV6sCiSBOsvqVeddwU6GqHR1t0IhW0wO9/HVf5G4I1ASi0WB66zPgvIUQW7nT8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b=Su7CpnaH; arc=none smtp.client-ip=67.231.145.42
+	s=arc-20240116; t=1787859073; c=relaxed/simple;
+	bh=SL8Yc6Fzpw1DxmY2ixRVk2v++EqFT7jc8I0Rc85jAdw=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=LZUsR1mmban4pVTaoi4LYX1+ioaJbwTzL/mQ4w9fOHUnkkLmCQ9+IV87zrxYtFqUN9zhTup9ZVB/XMZrZ1SwEh9AW5CP0iUP6pqK+xHGkhoD2mT/yhw+8dzdYW2IdMfG9RZAAQixItKjq+WSCabtZq+xxWpWWfPCDqw+zShBcKM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com; spf=pass smtp.mailfrom=meta.com; dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b=MqoiM2HO; arc=none smtp.client-ip=67.231.145.42
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=meta.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=meta.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b="Su7CpnaH"
+	dkim=pass (2048-bit key) header.d=meta.com header.i=@meta.com header.b="MqoiM2HO"
 Received: from pps.filterd (m0528007.ppops.net [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 67RJM83G1856212;
-	Thu, 27 Aug 2026 12:31:05 -0700
+	by mx0a-00082601.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 67RJM83I1856212;
+	Thu, 27 Aug 2026 12:31:06 -0700
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=meta.com; h=
-	content-transfer-encoding:content-type:date:from:message-id
-	:mime-version:subject:to; s=pps82601-s2048-2026-q3; bh=shF7wMAjN
-	GRHtx3LeWbd0oPw0D1xUZvDE6iVECoHxf0=; b=Su7CpnaHwZkzK+bUj7bqW4DuG
-	emV5msdzWh1nAeETEgWhYDMN//rxdFJ9IvNNuh25SYlgf7KWO0aeLcw+g0vc0DtQ
-	QF8gQR3jhnAGEry6+PG2TmERTvN8hBTjWDNBWk5RoU7h4a6Xb1Jo0k6v2kbtp0Hq
-	BChYNWkIZkywXkyCi9EU2jkQlRjrIJtypxLdFazgS39BYygj3jxg+gPNaxx6oMtm
-	a25hrVCiHfjW6KH5zFc1YIIqvSY8457vkKXp1EGlciyWYGBzpaO3ucOrY2wwfgX6
-	hBO2o2XroIpewyLOrFy777+AMb1JWTvxRfOtr04p0YzLOuO4FrFoGZmpm5BSw==
+	content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=
+	pps82601-s2048-2026-q3; bh=Zle69xpXWisL+DXG8l9G+/BegWqpbHiyU6gIe
+	8bazyk=; b=MqoiM2HOepEvu0qH6bRwx4DCX00XUJy2iA02hlQb4nuINdRcQNk4O
+	zioQGR62eYwh3vmZQgEmPU0zYSJtDdbrmupSDC37OZy2jXO00VCRDDF+jT25B+1v
+	vzVr5LWQi4fsrkWqLgWlucbzQLpeokpt5nJdxsXAMKmDtDiP32W2DlBAB7szAsdS
+	69eYSrZBlFGPToBixkyG0ZltvmiYJeFSqRMF9Zkz1lADgJnD1vLBGNaFsQ0/bym2
+	/hCtWMb8R3vgE/Q1hxanJSgOjYGu7Joa5m586E6CDOAbxBngzM3f6sL5ahWY4crE
+	j7hF1J4GdKwCbinP0If/0fNK7frhA8vww==
 Received: from mail.thefacebook.com ([163.114.134.16])
-	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 4gak20ksv5-2
+	by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 4gak20ksv5-4
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT);
 	Thu, 27 Aug 2026 12:31:05 -0700 (PDT)
 Received: from devbig011.atn7.facebook.com (2620:10d:c085:108::150d) by
@@ -39,10 +41,12 @@ From: Chris Mason <clm@meta.com>
 To: <clm@meta.com>, <mason@kernel.org>, <dsterba@suse.com>,
         <torvalds@linux-foundation.org>, <linux-btrfs@vger.kernel.org>,
         <linux-kernel@vger.kernel.org>
-Subject: [PATCH 0/1] Update my MAINTAINERS entry
-Date: Thu, 27 Aug 2026 12:29:15 -0700
-Message-ID: <20260827193032.786461-1-clm@meta.com>
+Subject: [PATCH] MAINTAINERS: update Chris Mason's email address
+Date: Thu, 27 Aug 2026 12:29:16 -0700
+Message-ID: <20260827193032.786461-2-clm@meta.com>
 X-Mailer: git-send-email 2.53.0
+In-Reply-To: <20260827193032.786461-1-clm@meta.com>
+References: <20260827193032.786461-1-clm@meta.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -51,37 +55,53 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Content-Type: text/plain
-X-Proofpoint-Spam-Info: AW1haW4tMjYwODI3MDE2NCBTYWx0ZWRfX/AumBnfjYn1K
- JuFtNZPOzdWqS2U/edZ3NfusakdLDi8YBXtuA1+5bz7DBaUYwhNlGCIObMHqzVs/IdL3VTME/OM
- 8htzN5VLzMcO6u9D671pWtlGxk1bsYs=
+X-Proofpoint-Spam-Info: AW1haW4tMjYwODI3MDE2NCBTYWx0ZWRfXw63T/+eldv4Z
+ 22NddqO1lxenrslZ3KO21dAf0F+3GcGakW/Cm51br1Xg9auWRr94wRZvhfbqsVtGS6H4Qiako7G
+ NWbkixe/FWETLz1ypeFGbymtSgAMeRo=
 X-Authority-Analysis: v=2.4 cv=D6x37PRj c=1 sm=1 tr=0 ts=6a909079 cx=c_pps
  a=CB4LiSf2rd0gKozIdrpkBw==:117 a=CB4LiSf2rd0gKozIdrpkBw==:17
  a=Sv0fKeRqtYgA:10 a=VkNPw1HP01LnGYTKEx00:22 a=7x6HtfJdh03M6CCDgxCd:22
- a=4h92JMTCafKA-fb_NiOh:22 a=VabnemYjAAAA:8 a=FOH2dFAWAAAA:8
- a=stUR-zCGr9S5OmqkrUgA:9 a=gKebqoRLp9LExxC7YDUY:22
-X-Proofpoint-GUID: dBj6E2UZq9g8A3rgBEbw9KFLJ2onpxgc
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwODI3MDE2NCBTYWx0ZWRfX2f8XRKmIWhM/
- L0oj687U4MgVr4RGj1PCqmWTwh9hE9srnCBUgVD4qvTukRrE5YSPCMCmhqb1/bAKVsOLy+lYrIW
- 469AeEELp/2cMzx+VHPtblU53Ok4pg3y/9FnOH7JZKXMm2t9WcasCFsRuYRFsboRGKhq+seFH96
- DlPaG/53y8E3xjJjqaQ/KZS9omKoL39jAuHTQa9eLnXQjPQbS7eECseM2iiOIQbki6pgjf4T1zp
- gFtqggVzmAmfRpu9bVK3b0AVIzAMUehIZkyjgTL1dsx4zYoe/ZYEPhWNAIzn2mibzsqXstkwDos
- Ag4pXPT1uBuPenciDrWFKk/SWfg10UleLFVtmJeFtzyjmr+neUG2k++Oo15dyg8+KOZCP1VyIKL
- pmbPSC5AQZcce6mMbD71mXJ5bRa3vcNmrok5xUn2nv0F2BoyyPkaMYvCB5QHehuIKFhcxJKCHKz
- NOQnfilcVWaRejC3SnQ==
-X-Proofpoint-ORIG-GUID: dBj6E2UZq9g8A3rgBEbw9KFLJ2onpxgc
+ a=4h92JMTCafKA-fb_NiOh:22 a=XLsa2Zz1AAAA:8 a=UXIAUNObAAAA:8 a=VwQbUJbxAAAA:8
+ a=VabnemYjAAAA:8 a=FOH2dFAWAAAA:8 a=iox4zFpeAAAA:8 a=hrHxsFlYva6rS5mxrB4A:9
+ a=DMmOWUYxRQoLAZVlW063:22 a=a1s67YnXd6TbAZZNj1wK:22 a=gKebqoRLp9LExxC7YDUY:22
+ a=WzC6qhA0u3u7Ye7llzcV:22
+X-Proofpoint-GUID: aMqne0WUEz9wH2FwzKNoKKyh_YWCbQXj
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwODI3MDE2NCBTYWx0ZWRfX4z4YRLiS2Vka
+ HBuQEw1S+oCBrGLj8aS4uSXo66d1cczwmGRM1BWXGy/5+HjcJn8VLop8MASrea59cUp+dYOgl1R
+ 9Fz7g7ysWjL7iycMP6bsmA/nYlJI6ZhSmqope1t1JO2Oi3YdFONK4RtnH/aQ31zP/2vrdf+9Ida
+ nqTqCkiaKdCh+dXAqXVM6xxY7magd+p8OktUMyf8ECtgoAhpyYiHnDZDczC565Md6DLVzYj9tQ4
+ SFri2bU62d69Ba/SE5wynT1+Rz5dO/aJ1tdqbAPAgj6uQAzNuNLFI3jn5jfggQvMePq6pwU7q38
+ Z8wxORaJDQnhsgTqKk0q9m0/4ByZAKWOIsYTw96Podow6uI50yyHxhM6z5HG6vjf9X5/mNvnCjZ
+ GszCDcgO/I6ZSLOxg8qrSdeFwJQ0zEKt4RF9YcN1TzmMvNb87fxIg/q8cVkjJZuzS5a9R1Xqu37
+ gAxMSvrGTS/2ZLIhMVg==
+X-Proofpoint-ORIG-GUID: aMqne0WUEz9wH2FwzKNoKKyh_YWCbQXj
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.293,Aquarius:18.0.1176,Hydra:6.1.134,FMLib:17.12.100.49
  definitions=2026-08-27_08,2026-08-27_02,2025-10-01_01
 
-Hi everyone,
+David Sterba has been doing the Btrfs maintainership work for years, and
+my email update to mason@kernel.org seems like a good time to make the
+MAINTAINERS file a little more accurate.
 
-My last day at Meta is Aug 28, so my meta.com/fb.com emails will stop
-working soon.  Meta's commitment to the kernel and btrfs isn't changing, and
-my own kernel contributions will continue as well.
+Signed-off-by: Chris Mason <clm@meta.com>
+---
+ MAINTAINERS | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-This update better reflects that I handed off most of the btrfs
-maintainership duties years ago.  Many thanks to David Sterba, and all
-of the btrfs developers for their work moving the filesystem forward.
-
--chris
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 55b3c2d7a78a..c79988447b68 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -5671,8 +5671,8 @@ W:	http://bu3sch.de/btgpio.php
+ F:	drivers/gpio/gpio-bt8xx.c
+ 
+ BTRFS FILE SYSTEM
+-M:	Chris Mason <clm@fb.com>
+ M:	David Sterba <dsterba@suse.com>
++R:	Chris Mason <mason@kernel.org>
+ L:	linux-btrfs@vger.kernel.org
+ S:	Maintained
+ W:	https://btrfs.readthedocs.io
+-- 
+2.53.0-Meta
 

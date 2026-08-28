@@ -1,81 +1,82 @@
-Received: from mail-oa1-f49.google.com (mail-oa1-f49.google.com [209.85.160.49])
+Received: from mail-ot1-f51.google.com (mail-ot1-f51.google.com [209.85.210.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 80FC136E48D
-	for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2026 21:44:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.160.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 16EA0372EFF
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2026 03:34:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.210.51
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787867072; cv=pass; b=VukEpa8MLmkjUtKmuFu0xcYBSHalQaXQ+ocrYGZ2ATy0WaNUps/JCOUgZa4n44BY1QZaMv9p32FoYVLmo8bjVJ0wuoP3pJlmc/6HzLisUa4OLscVJZj/J7Qk5C1OC9ipZcGWoZkWpN+evKr1bRCJzWqGwA8Qh9E7ED1aDebt4bc=
+	t=1787888041; cv=pass; b=typ1HyekY8nR3kl7vLPCioM64HTxRye04f2hjL+scR7UvFpMyGKFf52ZLbie44svwMajuIcISudjav1C+mOH4jkgqgYfsVBLYIU5smoWdncQ3BoV6mRysPkMLEys25/Fq6Q8sM69rMD+Z0pnFYE8gM6cj2k6xOaNrKQmPwPjtgk=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787867072; c=relaxed/simple;
-	bh=0sBuqucNWMJ3PQ7mkm0GStLfwt7hAbIgMaO5tBFyaUk=;
+	s=arc-20240116; t=1787888041; c=relaxed/simple;
+	bh=eVCUgnuZPY9rp4G0hxfWBoh/8wdCFKKRU8Eq9Q7yXbg=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=E23NQOYbajELZfTsc0EzNWutOHGqDiRfOPoO8W/6XuJw0lRL8/Jm/k1ID2eQA+ksKgixrWCYBj8TSlO72yN9wvhgBKGlWLfaKddtaxS5M1+v5dLEKdI+giIsv+klgGaHkqS1eKu25/NUH/wLo6n5yGCLxBc8LzMcp6HG9WsGcT4=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=purestorage.com; spf=pass smtp.mailfrom=purestorage.com; dkim=pass (2048-bit key) header.d=purestorage.com header.i=@purestorage.com header.b=ZTrSBDI+; arc=pass smtp.client-ip=209.85.160.49
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=purestorage.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=purestorage.com
+	 To:Cc:Content-Type; b=PBGf3o9+i0YMtxIBw9Axi073+IgZpGtKBYGgIChwL+TYETV9J59S3F4eVs5L3L4HfkYnM0MnMM2nRg1hEJuh++lBPbd7AwsuYuKqueAVqVciK0ihPjEKxmwRM9AzjMysO9j42Xul7q8izUOpVAk7lcaPO7Up9VUNB59//uJF5Qw=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=qoJ0brIm; arc=pass smtp.client-ip=209.85.210.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=purestorage.com header.i=@purestorage.com header.b="ZTrSBDI+"
-Received: by mail-oa1-f49.google.com with SMTP id 586e51a60fabf-45ef92f7cdeso121490fac.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2026 14:44:30 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1787867069; cv=none;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="qoJ0brIm"
+Received: by mail-ot1-f51.google.com with SMTP id 46e09a7af769-7f0167e59a3so241421a34.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2026 20:33:59 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1787888039; cv=none;
         d=google.com; s=arc-20260327;
-        b=ElKGahA0ccYSczowumYObGEjo32YNeFfvOp3fvN4HkyU7F/WKztwaDDcHFprNPtS17
-         VGA8zPwR87t7sanZJOBsJfj3fUFiHxQjVfCvmKPgui4h013SSPhLMpNpYHYz9SIDfZ3n
-         +YuMiFop4/W6G7aCG84HoKdCQIxbAYKhX1QZ+t5LZ4vysaIdg8VgoZXnbZZM6GQNTFW1
-         Br5bYzlUJj7ra9YBETGag86zomF+qRE2GkP2sz7+CEiALTgEGgM+gX6zKkY08wp5bQ4u
-         mazhR1JZkSR/hHwSCSt2dcsaLOX19//S3nLQwEVuB0EX74BNAodVRu70OTkyu7yx529p
-         pYOA==
+        b=nGycYUooU4DxtN34F4sHefuQMXf04exF4TWNF+VLjrIzRPE7oXN1Xv7t6yK1sY30TN
+         E6wneXv686Lfi6c1aSY3LZH4HclpmuRM/1/UKzH0Ci0f5uuvO++FBcxld9TPohzMCp1W
+         etZBHtClCiSntpXcyojKaGvUlDXJ9H704Ki0OSmOWCdCcp2EiaVAEUJf/IQBBsLjgqQQ
+         G4Gl3Ef4YNNScQJLkSyjSt+UFFWa1jdzoSc3KbvgLmwVWlHL0g0Xmhgi2G5adJhHZFnA
+         SS4jy9uYMu/4hcQYBxGGpc+UhbiMROdJq6xdFtS+sL+kF8aapc9pUPgcnayqsFzW1XeN
+         sIBg==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:dkim-signature;
-        bh=kqBamkmhnxpQu01OYVCgjjVqjgGXsL5/W693jooZv34=;
-        fh=VS2yZw4zD08lNSqNgLOupBxqP16AESEIWd0x09iHDIY=;
-        b=fXFZgTulqDX9mhfXGAMGJbNJVcmsAB6BMqMTEnE57bbIACk+/a/4gPYl2AVquEYpNY
-         u566j4ET2QfHWSqZ4mc2Uxb9zMJofEYqMFHkfKc/U1r0oa6j/F37lDHR5HvduHoBd4F7
-         02MGHfOHY0VVAWpZVaK+4TG0zrwyjvFI+Fjg2ThuF/iTqF+jHbQGuwcJNiwkq6odxS0u
-         zfUGtA2PaFYb5tTxlOP+SKXjKa5YUTdAlv2XuVpLBtXm+NBpC8ZhcojyrYAFFrTR1i36
-         nMv3D/y3nHQXp6lryb++3TNSFUrftJZ1Zu6D/O1GliMuV6NWuuDmd3EZbiy1ZwCZ7Irg
-         6KCA==;
+        bh=tJ6GRA/2LwQW6/jDEIjrj/TZS2ZKHOJ3XYsZbyYACDw=;
+        fh=J4MyuEjtknxj2sz/GVIB80vwj7o1iDjPy+UZczbtPpA=;
+        b=gpLf/tmzvT1zzmbXfR3Lv9rZykyMYhRthhUCuFES1ZVb0b0uYdJWrUvi3F5X+1iIyI
+         9y6de4fCJFllc2+N7vgTlCFGNXOczzQ9AdEpN7OH0KWuzk3yR7mIId/WGJax60kaHEa+
+         u3kZEd5AsYyWMC4npPPgjBn8kb/pO7+2Z99G5nR2Z7D1BsVJmNPQqeW0CEkKqM5KfEpE
+         ybtEDbOIJoB0jKDRjgojB5NMtmlFVhJdCfBOtlE5IHNeFinEMb7ZRU9Z/mkcn+4R85m+
+         HgbcKY1iA5LHR12a9rECscn/EnnmgjjV46+M153W4A5Nzk5YvsXZ9x8LRh5tgvwA+SdN
+         sGYA==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=purestorage.com; s=google2022; t=1787867069; x=1788471869; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1787888039; x=1788492839; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:cc:to:subject:message-id
          :date:from:in-reply-to:references:mime-version:from:to:cc:subject
          :date:message-id:reply-to:content-type;
-        bh=kqBamkmhnxpQu01OYVCgjjVqjgGXsL5/W693jooZv34=;
-        b=ZTrSBDI+mPv6N+9HPOoOcSbhmUkUBhPzXdGsbf4IcAnGI0Glqh1gi6UK5sJn1/UOuI
-         5WmYrDNdNGftOFB6sL0MsoG/GkrMAQOqk/tokMVid4ixJn1zODd/o8mkwRCF+4s5Mx7n
-         hzC5Rcnw9GFjAl5mx4JAznYgPZlfoPtUtQefmpUgYVySl+64X0J9WDaZpDg1K40kLxFw
-         dRzkW1d/qKFjpgUkbllKjyQtj5tGs943l6r+mg6H+DoHnElbM1F3AcDi9+ZLC8pX+3hg
-         PbdqhPbq9qlvZ9qS4MO7t8+5PpUTFYv7xwC7k48XRi0qLhUD2tMajDDlzIUqlsjJ9Bdx
-         NVJg==
+        bh=tJ6GRA/2LwQW6/jDEIjrj/TZS2ZKHOJ3XYsZbyYACDw=;
+        b=qoJ0brImXYW2jxuJ/+X9STf16jjXZ92rLmZ4786e6MVSpMWvhHnkJ14DzuZd++/cjq
+         iXnv5vvRllyON65+nnXaCJ/b6+YH56o0zedDj/zHvJNlAGDchuDSruVJyLQBrV8WAXWs
+         SravIim8345TcwwvXjYeU75tQ4kL7jLhRajFS1OSDokJJV/2VK2hrLyNHeytc09YbPBE
+         jM2IhEqSV04jlyvKp+lPOuB2WYY9aatRDk+LOTBeBnMlDt3YlDDVrTb0oSdatP/JD6YQ
+         IL0Ud2rj4HI2GkkPVHkPeM+vv4EnsEOhUTSW45cOfdJ43h4sIYmtFzLdciJnJMx53rpl
+         0bRw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1787867069; x=1788471869;
+        d=1e100.net; s=20251104; t=1787888039; x=1788492839;
         h=content-transfer-encoding:content-type:cc:to:subject:message-id
          :date:from:in-reply-to:references:mime-version:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=kqBamkmhnxpQu01OYVCgjjVqjgGXsL5/W693jooZv34=;
-        b=slW2hFP39/x6o/amoLGEMxCzp1M5h99c+NwcKa9JZixe5HTNLZgS5ehn+7vpmXVO5W
-         1YQKOGeSJ0Brc4Y55cVuDGL0zX1qXSh5tULkCxNFyOKmIUh8AQpPV7cuxCL+ymufBB4E
-         2Lth4U+j1mQphnpMBdnx1CxhQFNRo7uL28mQ52XhGzH08Xm60rg1gWGskoU9eDH3Qsht
-         opk97i7B/AVRK7XDmzyYn75tD5iAzhVtdA/nQW1Quf4T3z+Wi2fY/cj+333IjdjyP3DR
-         B8XYZtrSvdw+sn+puF166/86g3VWG0ccfQj8GHp3FMjvu+gKwlCgtHaE9XbpCgcxVSMU
-         fpnQ==
-X-Forwarded-Encrypted: i=1; AHgh+Ro14SFIjq5BNEQ7gnfhlJEYDEu7n9rOlmP+GJkFwvPSVRCAE5FEiKvyssVIfouDonbYsSOv0zLzNNdssQ==@vger.kernel.org
-X-Gm-Message-State: AFuF++l5V7lde7BqZ/Qz6HbhPHNMmEKesrg2eonw8vCyl8llYx/FGq8U
-	n1MH2nR5ItNq0Oob1BOq/2NNQKBJRNHiXg1zb3msYHiDJxLa5xfYapzQNdl6zurpEUlysAIKlXX
-	PqKyXWaEnZkd/Y33vGDcgQCiKBoCV0CmL4rbaev8tkA==
-X-Gm-Gg: AR+sD13fDhS/rZtBzHoIbNigFuBudlLhvNhBsNeWfDbqJ0WfK4UDBzRoZQtWcN4xkuV
-	fXhbkJVhS7T9oaKCyUTGV5vZO+lo0XcLzn8lfyMi4JxTDudf8ObhLUh9WjNFC28pUcp5ZAEFQqX
-	KO7/t+AO+FJsM7Tbx9pU2P/Wg6c3/vtsIgJ/fQCDXmbmD3KFaKqKtC2DGfYQ/IUufaOJJ7Y92XT
-	ohv6GmLiOoyvc0F96jD42GuZNI79J+8D6VUoGY2ThyrESNSOWHH7Dnc11taz7KZt6Zv9zM4gpBR
-	JUmXFz9ZLvfhLUcz1SUkafOk8sFB/6vHpfJrQcL5qAtRJw==
-X-Received: by 2002:a05:6870:45a0:b0:42e:7e04:e9ce with SMTP id
- 586e51a60fabf-468328882d8mr1702119fac.0.1787867069273; Thu, 27 Aug 2026
- 14:44:29 -0700 (PDT)
+        bh=tJ6GRA/2LwQW6/jDEIjrj/TZS2ZKHOJ3XYsZbyYACDw=;
+        b=sS9Z7ymaJ4fwohFtNuvR7jWgFR35QbuU1abz+kZ2X+iyKxAQQ4+q9CiHrPfiWHYBQ+
+         qfGJ+97GQBXZlCRjI22gWJQtXuknYurxJOcGB6wqZ7MgT6xnsUdKindAv1v1M37UWxeZ
+         83xHWNKyj1juIERi+4xqVr64hDiuOx4ORCfj7cb77r8x1fgBBzXvtjKZkZxJyhP0L09m
+         ESEtvtTayZYAiDApAS4gKJRL5X7RGp02rRn4THn+0X9R6aps89PB3QZZcniK+F9X5Py2
+         AomQwLgVWe79F7lfRE/9LkoOqHh2VdnGyuEaTg1mT2XfBvxRVP+xcGz6m4OvTIcg4qhg
+         QI0A==
+X-Forwarded-Encrypted: i=1; AHgh+RqShhSmxyWZBoE9NLYxaIi2hSgxG0xvh+NEV5NyxaHg1yJXgCpGiZPAuo8SIPf+f+AvBzoDoz1z8ZJCtg==@vger.kernel.org
+X-Gm-Message-State: AFuF++n8PTbcQlLTugbMkim/BDybeRS9oQvwEsQ8MyUKuB5/2cQbJmjl
+	FvqPT6ZMRViNBOvoLqry+uBx3/Kl+uhb39k2pzxqDe5ANAanhPEKBgtRbGvifbng2RXG7DGyKW4
+	299RUjrE/ftfaLjto898+7Tfvc0oHJBM=
+X-Gm-Gg: AR+sD12yt7QN3+eYxUD0mGSLmp3MOk8Amc4pvhYWWY+nXRcqYvLfsRGZK++4euLhjyP
+	x6Be11Nf/CTkBe8R/COOH1WeR3ewZb2z5pXp2XjSE74dU/v+G/5CQHZix6Nbl53mT+SQ2BfLUHU
+	P99A6PvFml0q44Ui8xBj/HmlWa8v9g49OdOurNlXzQaULwaWlbSyPfuVtZ1mORl021hE+KSRFPR
+	1yPGhHm+AkugcAPewYEFTTqg/NL2W4zrfIHwluYdZjxcvaREv5NTNBdSkZaon0RN3AV0e57K3jM
+	X20APt+tGRwJ+DF1M3E7IkDuJaYRoBT1Xadg3I4VoBmLPy15sBkDcrwaed4JbzayBbsuTj/Qm/Q
+	wvT3BgNVI4poQvCGSTEKBSabApQAAHavrTY/bAGuqNFel
+X-Received: by 2002:a05:6820:340e:10b0:6b1:67e1:fc8e with SMTP id
+ 006d021491bc7-6b1c66e6ce5mr2559540eaf.25.1787888038951; Thu, 27 Aug 2026
+ 20:33:58 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -84,14 +85,15 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 References: <20260827185722.3234622-1-csander@purestorage.com>
  <20260827185722.3234622-2-csander@purestorage.com> <CAJnrk1YfTg-Lz+TmM+c=Asc8N4QGuY9_g8zUXtaNr4O7hG1Djw@mail.gmail.com>
-In-Reply-To: <CAJnrk1YfTg-Lz+TmM+c=Asc8N4QGuY9_g8zUXtaNr4O7hG1Djw@mail.gmail.com>
-From: Caleb Sander Mateos <csander@purestorage.com>
-Date: Thu, 27 Aug 2026 14:44:18 -0700
-X-Gm-Features: AcwNN1UylVUquZ8opNqZqu3tNIHriO6d1S55vB3s5Iygu5DbEGaADAEUlDBXhJo
-Message-ID: <CADUfDZoEosgMMQ47BDWBskTOZrYZpg6VUT5c4kwczDLRLXYk=Q@mail.gmail.com>
+ <CADUfDZoEosgMMQ47BDWBskTOZrYZpg6VUT5c4kwczDLRLXYk=Q@mail.gmail.com>
+In-Reply-To: <CADUfDZoEosgMMQ47BDWBskTOZrYZpg6VUT5c4kwczDLRLXYk=Q@mail.gmail.com>
+From: Ming Lei <tom.leiming@gmail.com>
+Date: Thu, 27 Aug 2026 22:33:46 -0500
+X-Gm-Features: AcwNN1V96G10EnqkMmlBEbQoJ8ihVOlJhML3SIuW3TsrH3jrmu0CBU7aGovmtII
+Message-ID: <CACVXFVOLBVVGwfo+mbn+4jnGKZS66dL_2ghsKiaT6buscWJg6w@mail.gmail.com>
 Subject: Re: [PATCH 1/2] io_uring/cmd: split io_uring_cmd_set_res() from io_uring_cmd_done()
-To: Joanne Koong <joannelkoong@gmail.com>
-Cc: Jens Axboe <axboe@kernel.dk>, Ming Lei <tom.leiming@gmail.com>, 
+To: Caleb Sander Mateos <csander@purestorage.com>
+Cc: Joanne Koong <joannelkoong@gmail.com>, Jens Axboe <axboe@kernel.dk>, 
 	Keith Busch <kbusch@kernel.org>, Christoph Hellwig <hch@lst.de>, Sagi Grimberg <sagi@grimberg.me>, 
 	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>, 
 	"Martin K. Petersen" <martin.petersen@oracle.com>, Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
@@ -102,42 +104,49 @@ Cc: Jens Axboe <axboe@kernel.dk>, Ming Lei <tom.leiming@gmail.com>,
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Thu, Aug 27, 2026 at 1:05=E2=80=AFPM Joanne Koong <joannelkoong@gmail.co=
-m> wrote:
+On Thu, Aug 27, 2026 at 4:44=E2=80=AFPM Caleb Sander Mateos
+<csander@purestorage.com> wrote:
 >
-> Hi Caleb,
->
-> On Thu, Aug 27, 2026 at 11:57=E2=80=AFAM Caleb Sander Mateos
-> <csander@purestorage.com> wrote:
+> On Thu, Aug 27, 2026 at 1:05=E2=80=AFPM Joanne Koong <joannelkoong@gmail.=
+com> wrote:
 > >
-> > In preparation for setting the io_uring NVMe passthru CQE results from
-> > the blk-mq request completion rather than the task work callback, split
-> > out functions io_uring_cmd_set_res{,32}() from io_uring_cmd_done{,32}()=
-.
-> > This allows io_uring_cmd_done{,32}() and __io_uring_cmd_done() to be
-> > consolidated into a single CQE-size-agnostic function with 3 fewer
-> > arguments than __io_uring_cmd_done().
+> > Hi Caleb,
 > >
->
-> The conversion looks logically correct to me but the interface feels a
-> bit annoying / fragile on the caller side.
->
-> Is there a way nvme can get what it needs without changing the other
-> callers? Would it work to just keep the existing
-> io_uring_cmd_done{,32}() as is and add a separate API for special
-> callers like nvme, eg:
->
->   void io_uring_cmd_set_res32(struct io_uring_cmd *cmd, s32 ret, u64 res2=
-);
->   void __io_uring_cmd_done(struct io_uring_cmd *cmd, unsigned issue_flags=
-);
->
-> where io_uring_cmd_done{,32} would then just be inline wrappers over
-> those? afaict, then only the nvme callsite would have to change and
-> fuse, btrfs, block, ublk, and scsi_bsg could just stay as is. Do you
-> think something like that makes sense to do?
+> > On Thu, Aug 27, 2026 at 11:57=E2=80=AFAM Caleb Sander Mateos
+> > <csander@purestorage.com> wrote:
+> > >
+> > > In preparation for setting the io_uring NVMe passthru CQE results fro=
+m
+> > > the blk-mq request completion rather than the task work callback, spl=
+it
+> > > out functions io_uring_cmd_set_res{,32}() from io_uring_cmd_done{,32}=
+().
+> > > This allows io_uring_cmd_done{,32}() and __io_uring_cmd_done() to be
+> > > consolidated into a single CQE-size-agnostic function with 3 fewer
+> > > arguments than __io_uring_cmd_done().
+> > >
+> >
+> > The conversion looks logically correct to me but the interface feels a
+> > bit annoying / fragile on the caller side.
+> >
+> > Is there a way nvme can get what it needs without changing the other
+> > callers? Would it work to just keep the existing
+> > io_uring_cmd_done{,32}() as is and add a separate API for special
+> > callers like nvme, eg:
+> >
+> >   void io_uring_cmd_set_res32(struct io_uring_cmd *cmd, s32 ret, u64 re=
+s2);
+> >   void __io_uring_cmd_done(struct io_uring_cmd *cmd, unsigned issue_fla=
+gs);
+> >
+> > where io_uring_cmd_done{,32} would then just be inline wrappers over
+> > those? afaict, then only the nvme callsite would have to change and
+> > fuse, btrfs, block, ublk, and scsi_bsg could just stay as is. Do you
+> > think something like that makes sense to do?
 
-Sure, sounds fine to me. Thanks for taking a look.
+Yeah, this way is definitely much better from a driver viewpoint.
 
-Best,
-Caleb
+
+
+Thanks,
+Ming Lei

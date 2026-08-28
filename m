@@ -1,261 +1,119 @@
-Received: from va-2-58.ptr.blmpb.com (va-2-58.ptr.blmpb.com [209.127.231.58])
+Received: from va-2-44.ptr.blmpb.com (va-2-44.ptr.blmpb.com [209.127.231.44])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1DF852517A5
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2026 03:52:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.58
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 49C7039A071
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2026 03:52:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1787889131; cv=none; b=VFxWi7THEXWtrgIrCy0ytSTjX7J/9669JZx+YQIMuXsuYe474yDZw3Kyf67hjUjLJO0/yJA2yUrkMLiYU1OQOKgu6LtLCOQ+3wTTT6GvkXifg+p1X6Z+mYTMxSeFGqW1Gt0mNZOBvnkgd586NPL8zQY4wGKl+mo/VURxOc/0Q/k=
+	t=1787889133; cv=none; b=YiUKJuwr/6dWkwoWPaBfPvPZ/Vbm20kQxIBJpMA6elhjo6UOyrnV3bm9HlKHZTfnyi7EVfp5Q6yEj4v89e6FFqtYCohb2/eORNeUNdftiZSQ9Dess0BKOjBmaNRtp1CizaudeZO38TJWAhRkKe4ehoHF8VTMKHBMUKE2OJfD5Hs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1787889131; c=relaxed/simple;
-	bh=8kJWEODLy2Q+DKKZ7hj5h4QFa/D2Xddfg8YbSI91b68=;
-	h=Mime-Version:In-Reply-To:To:Subject:Date:Message-Id:References:Cc:
-	 Content-Type:From; b=e5cXofNsN/LOXRfz/fLG+cOjgmuiY+ssUajXJ5+MIyDm+V0kunNvDJE9t5Y6CILpJDBx6CIP5n/RRQW/ibec1NG7LlOIIpJo/JT5yeZJOgr/VhH5JmFG/s3cWdzyHyIb4hNIvEElN0KgFgX+h4zVi8D1uS1McxTsekipF88txRQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=MKeWcC60; arc=none smtp.client-ip=209.127.231.58
+	s=arc-20240116; t=1787889133; c=relaxed/simple;
+	bh=kXXDItl870PiEf4vY90NROEUJ8oruhD8crYeWeLYnLA=;
+	h=From:Subject:Mime-Version:To:Cc:Date:Message-Id:Content-Type; b=OLp8lKnfvn+hx+9GQtC3VNXWzKhK4z5KWXDBuSG0vGBbiVTDQ9aRDYiaeBeyYW9l9LUPgyZ9we0pbWU8IdS+06QsSVe0Za/cvMrv4FQl6PvgfiBlgWbqtkguAgiRMHw5BAKqQt108MpycG8BEXDxCYrW+/4tOHiY4Q7ZOaHttxA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=IxzmBq+Q; arc=none smtp.client-ip=209.127.231.44
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="MKeWcC60"
+	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="IxzmBq+Q"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1787889124;
+ s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1787889119;
   h=from:subject:mime-version:from:date:message-id:subject:to:cc:
  reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=JvCYF//PQ4ankWxvi3YLAWSTCB1X2KeRZlDd6ojCWv4=;
- b=MKeWcC60Mv23ncyVbuSnaRg9uw/ph6qMRazSnELR3jP8YltgYtHaRYo9hEnc6Z3eUhpC+1
- aukKhudqj/KO0Ilc2cLRTgwBEGuxPeBfkCL3wegt4Y6U/BfUXVNAxdlk0VMJApy341XeYS
- 4C7cbC4aHc8hWfDybF7Df3cSk/shtfrbz5eTTqmKrPA6fZ/Feqd/hwfFzGEMdAlO72qm2a
- GYHe5b7aLRzN0KvimqppPHpEUZdAWjj2F/0tx5pgEdPndmdXjwODKA2/lMIiiJ9iovAUNn
- PGHUleusYofno7LXHxzzU69HreV1+Eo82oysDGKsdPZXx4AeQo+3RllcYQuBTw==
+ bh=/t3NoiW/Aj57EmTf1jmBQlixXkepWdLuzNUBlLJhSU8=;
+ b=IxzmBq+QU87XxeCLPGoVsW0SMRM4qLuXPKfnv6nRWWoin+aEavIOlmQhIghQxyJQyzrwL3
+ 5QbNABg8xYau+aGpQm5npaWq7UDIE5AJ2vOVo2GWNd/qYiKbnq6cok65MuKTHrAcOEcVDE
+ i3uCI+2zFPYLv9/bYd0Xog077XzJb8cY1FcWySMCbGCBhbzi9xzr/iaVkalKnwIOjvFa10
+ T+GpZG4H3FYgt5DqTotryWmp7+b9D5R5bKRLK5rTS9SVtT6XNmFDBCLUAWFGxaBSudMP4B
+ rAcD28hbDWfRNSuta/i7CADUQfVkky2Cyja1oPMICSmSWGw3VIzeaqGeZB6TMg==
+Received: from pdzhu.teiron-inc.cn ([14.21.226.247]) by smtp.larksuite.com with ESMTPS; Fri, 28 Aug 2026 03:51:58 +0000
+X-Lms-Return-Path: <lba+26a9105de+e0dd63+vger.kernel.org+zhudongjiang@fygo.io>
+From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
+Subject: [PATCH v3 0/4] btrfs: zoned: fix active-zone accounting and transitions
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
-In-Reply-To: <cover.1787887776.git.zhudongjiang@fygo.io>
-Content-Transfer-Encoding: 7bit
+X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
 X-Mailer: git-send-email 2.39.5
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3 3/4] btrfs: zoned: remove obsolete non-data block group activation helper
-Date: Fri, 28 Aug 2026 11:51:39 +0800
-Message-Id: <efdd304c43aad420eec8923981791bea82f3d255.1787887776.git.zhudongjiang@fygo.io>
-References: <cover.1787887776.git.zhudongjiang@fygo.io>
-Received: from pdzhu.teiron-inc.cn ([14.21.226.247]) by smtp.larksuite.com with ESMTPS; Fri, 28 Aug 2026 03:52:03 +0000
 Cc: <johannes.thumshirn@wdc.com>, <naohiro.aota@wdc.com>
-X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
-X-Lms-Return-Path: <lba+26a9105e4+cec251+vger.kernel.org+zhudongjiang@fygo.io>
+Date: Fri, 28 Aug 2026 11:51:36 +0800
+Message-Id: <cover.1787887776.git.zhudongjiang@fygo.io>
+Content-Transfer-Encoding: 7bit
 Content-Type: text/plain; charset=UTF-8
-From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
 
-On an HC620 with max_active_zones=128, file writes occupied all 128
-active-zone slots.  With four direct-I/O writers still running, starting
-a balance with
+After systems using HC620 host-managed zoned devices were upgraded to
+Linux 6.18, multiple users reported transaction writeback failures with
+-EAGAIN that forced filesystems read-only, as well as hung tasks.
 
-  btrfs balance start -f -dusage=0 -musage=0 -susage=100 <mountpoint>
+Enforcing the device's max_active_zones=128 limit exposed existing
+active-zone handling problems.  We reproduced representative cases
+locally, including an -EAGAIN transaction abort that forced the filesystem
+read-only and a balance self-deadlock that stalled transaction commit and
+data writers.
 
-left the balance task blocked in D state.  SysRq-w reported:
+Further investigation traced these failures to several related gaps in
+Btrfs active-zone handling around mount recovery, non-data block group
+activation and zone finishing:
 
-  task:btrfs           state:D stack:0     pid:8145
-  Call Trace:
-   <TASK>
-   __schedule+0x50e/0xfe0
-   schedule+0x22/0xa0
-   schedule_preempt_disabled+0x10/0x20
-   __mutex_lock.constprop.0+0x380/0x920
-   btrfs_inc_block_group_ro+0x6a/0x270 [btrfs]
-   do_zone_finish+0x2b6/0x4c0 [btrfs]
-   btrfs_zone_finish_one_bg+0x184/0x1f0 [btrfs]
-   btrfs_zoned_activate_one_bg+0x189/0x1d0 [btrfs]
-   reserve_chunk_space+0xdb/0x180 [btrfs]
-   btrfs_inc_block_group_ro+0x252/0x270 [btrfs]
-   btrfs_relocate_block_group+0xc2/0x2260 [btrfs]
-   btrfs_relocate_chunk+0x39/0x1c0 [btrfs]
-   btrfs_balance+0x911/0x1810 [btrfs]
-   </TASK>
+- Conventional zones participate in runtime active-zone accounting, but
+  that state cannot be reconstructed from device zone conditions at mount.
+- Active metadata and system block groups are reconstructed at mount, but
+  their runtime write roles are not.
+- An obsolete allocation-time activation helper bypasses the write-time
+  role pivot and can recursively enter zone finishing.
+- do_zone_finish() clears the active state before the device operation has
+  released the active-zone slot.
 
-The blocked balance task also stalls transaction commit and data writers,
-so the filesystem can no longer make write progress or unmount cleanly.
+Together, these bugs can leave no active-zone slot available to metadata
+or system writeback, or recursively enter zone finishing while holding
+ro_block_group_mutex, resulting in the two failure modes described above.
 
-This happens because the outer btrfs_inc_block_group_ro() holds
-ro_block_group_mutex while reserve_chunk_space() tries to activate a
-system block group.  When no active-zone slot is available,
-btrfs_zoned_activate_one_bg() starts finishing a partially written data
-block group.
+Fix the active-zone model and its state transitions as follows:
 
-do_zone_finish() then enters btrfs_inc_block_group_ro() again.  The same
-task waits for ro_block_group_mutex that it already holds and
-self-deadlocks.
+1. Track only sequential zones as active.
+2. Recover the normal metadata and system write roles on mount, and finish
+   extra active block groups left by the old behavior.
+3. Remove the obsolete allocation-time non-data activation helper so
+   metadata and system activation goes through the write-time role pivot.
+4. Serialize concurrent finish operations on the same block group and keep
+   it active until the device operation and software cleanup complete.
 
-Remove the two allocation-time activation calls and their helper for two
-reasons:
+The individual commits contain the corresponding reproduction conditions,
+kernel stacks and state-transition traces.
 
-1. They were added for active_total_bytes accounting, which no longer
-   exists.  Metadata and system block groups are now activated at write
-   time, and both callers already handle no block group being activated.
+Changes in v3:
+- Dropped the block-group flag comment changes from patch 1; no functional
+  changes.
 
-2. Allocation-time activation bypasses the role pivot.  If A is the
-   current system block group, activating B consumes another active-zone
-   slot instead of finishing A.  If no slot is available, the helper
-   tries to finish an unrelated data block group, creating the recursive
-   path above.
+Changes in v2:
+- Removed the [BUG], [CAUSE] and [FIX] headings from the commit messages.
+- Added a helper for identifying zones that need active-zone tracking.
+- Added block group locking around alloc_offset and zone_unusable accesses
+  during mount recovery.
+- Explained why moving the active-bit clear alone does not serialize
+  concurrent zone finish operations.
 
-With these activation paths removed, the first write to a sequential
-metadata or system block group enters check_bg_is_active(), which finishes
-the previous block group for that role before activating the new one.
+Previous versions:
+v2:
+https://lore.kernel.org/linux-btrfs/cover.1787717573.git.zhudongjiang@fygo.io/
+v1:
+https://lore.kernel.org/linux-btrfs/cover.1787551793.git.zhudongjiang@fygo.io/
 
-Assisted-by: LLM
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Signed-off-by: Dongjiang Zhu <zhudongjiang@fygo.io>
----
- fs/btrfs/block-group.c | 38 +++++++++-----------------------
- fs/btrfs/zoned.c       | 50 ------------------------------------------
- fs/btrfs/zoned.h       |  8 -------
- 3 files changed, 10 insertions(+), 86 deletions(-)
+Dongjiang Zhu (4):
+  btrfs: zoned: track only sequential zones as active
+  btrfs: zoned: recover active non-data block group roles on mount
+  btrfs: zoned: remove obsolete non-data block group activation helper
+  btrfs: zoned: serialize zone finishing per block group
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 830460a40e86..c58bac5cb134 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -3219,13 +3219,6 @@ int btrfs_inc_block_group_ro(struct btrfs_block_group *cache,
- 
- 	alloc_flags = btrfs_get_alloc_profile(fs_info, space_info->flags);
- 	ret = btrfs_chunk_alloc(trans, space_info, alloc_flags, CHUNK_ALLOC_FORCE);
--	if (ret < 0)
--		goto out;
--	/*
--	 * We have allocated a new chunk. We also need to activate that chunk to
--	 * grant metadata tickets for zoned filesystem.
--	 */
--	ret = btrfs_zoned_activate_one_bg(space_info, true);
- 	if (ret < 0)
- 		goto out;
- 
-@@ -4537,29 +4530,18 @@ static void reserve_chunk_space(struct btrfs_trans_handle *trans,
- 		if (IS_ERR(bg)) {
- 			ret = PTR_ERR(bg);
- 		} else {
--			int activate_ret;
--
- 			/*
--			 * We have a new chunk. We also need to activate it for
--			 * zoned filesystem.
-+			 * If we fail to add the chunk item here, we end
-+			 * up trying again at phase 2 of chunk allocation,
-+			 * at btrfs_create_pending_block_groups(). So
-+			 * ignore any error here. An ENOSPC here could
-+			 * happen, due to the cases described at
-+			 * do_chunk_alloc() - the system block group we
-+			 * just created was just turned into RO mode by a
-+			 * scrub for example, or a running discard
-+			 * temporarily removed its free space entries, etc.
- 			 */
--			activate_ret = btrfs_zoned_activate_one_bg(info, true);
--			if (activate_ret < 0) {
--				ret = activate_ret;
--			} else {
--				/*
--				 * If we fail to add the chunk item here, we end
--				 * up trying again at phase 2 of chunk allocation,
--				 * at btrfs_create_pending_block_groups(). So
--				 * ignore any error here. An ENOSPC here could
--				 * happen, due to the cases described at
--				 * do_chunk_alloc() - the system block group we
--				 * just created was just turned into RO mode by a
--				 * scrub for example, or a running discard
--				 * temporarily removed its free space entries, etc.
--				 */
--				btrfs_chunk_alloc_add_chunk_item(trans, bg);
--			}
-+			btrfs_chunk_alloc_add_chunk_item(trans, bg);
- 		}
- 	}
- 
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index ee7d518bec15..63d59b015829 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -3006,56 +3006,6 @@ int btrfs_zone_finish_one_bg(struct btrfs_fs_info *fs_info)
- 	return ret < 0 ? ret : 1;
- }
- 
--int btrfs_zoned_activate_one_bg(struct btrfs_space_info *space_info, bool do_finish)
--{
--	struct btrfs_fs_info *fs_info = space_info->fs_info;
--	struct btrfs_block_group *bg;
--	int index;
--
--	if (!btrfs_is_zoned(fs_info) || (space_info->flags & BTRFS_BLOCK_GROUP_DATA))
--		return 0;
--
--	for (;;) {
--		int ret;
--		bool need_finish = false;
--
--		down_read(&space_info->groups_sem);
--		for (index = 0; index < BTRFS_NR_RAID_TYPES; index++) {
--			list_for_each_entry(bg, &space_info->block_groups[index],
--					    list) {
--				if (!spin_trylock(&bg->lock))
--					continue;
--				if (btrfs_zoned_bg_is_full(bg) ||
--				    test_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE,
--					     &bg->runtime_flags)) {
--					spin_unlock(&bg->lock);
--					continue;
--				}
--				spin_unlock(&bg->lock);
--
--				if (btrfs_zone_activate(bg)) {
--					up_read(&space_info->groups_sem);
--					return 1;
--				}
--
--				need_finish = true;
--			}
--		}
--		up_read(&space_info->groups_sem);
--
--		if (!do_finish || !need_finish)
--			break;
--
--		ret = btrfs_zone_finish_one_bg(fs_info);
--		if (ret == 0)
--			break;
--		if (ret < 0)
--			return ret;
--	}
--
--	return 0;
--}
--
- static int finish_extra_active_nondata_bgs(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_block_group *block_group;
-diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
-index 934a9368ed15..dc7c453fc979 100644
---- a/fs/btrfs/zoned.h
-+++ b/fs/btrfs/zoned.h
-@@ -94,7 +94,6 @@ bool btrfs_zoned_should_reclaim(const struct btrfs_fs_info *fs_info);
- void btrfs_zoned_release_data_reloc_bg(struct btrfs_fs_info *fs_info, u64 logical,
- 				       u64 length);
- int btrfs_zone_finish_one_bg(struct btrfs_fs_info *fs_info);
--int btrfs_zoned_activate_one_bg(struct btrfs_space_info *space_info, bool do_finish);
- int btrfs_restore_active_nondata_bgs(struct btrfs_fs_info *fs_info);
- int btrfs_reset_unused_block_groups(struct btrfs_space_info *space_info, u64 num_bytes);
- void btrfs_show_zoned_stats(struct btrfs_fs_info *fs_info, struct seq_file *seq);
-@@ -272,13 +271,6 @@ static inline int btrfs_zone_finish_one_bg(struct btrfs_fs_info *fs_info)
- 	return 1;
- }
- 
--static inline int btrfs_zoned_activate_one_bg(struct btrfs_space_info *space_info,
--					      bool do_finish)
--{
--	/* Consider all the block groups are active */
--	return 0;
--}
--
- static inline int btrfs_restore_active_nondata_bgs(struct btrfs_fs_info *fs_info)
- {
- 	return 0;
+ fs/btrfs/block-group.c |  38 ++------
+ fs/btrfs/block-group.h |   1 +
+ fs/btrfs/disk-io.c     |   7 +-
+ fs/btrfs/zoned.c       | 211 +++++++++++++++++++++++++++++------------
+ fs/btrfs/zoned.h       |   9 +-
+ 5 files changed, 167 insertions(+), 99 deletions(-)
+
 -- 
 2.39.5

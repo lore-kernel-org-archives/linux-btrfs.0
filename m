@@ -1,74 +1,154 @@
-Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 14A383A4538
-	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2026 07:15:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 891D620E030;
+	Mon, 31 Aug 2026 07:17:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788160503; cv=none; b=Axd0Z0Vo0qC9tCETwCc+WkUqjdBWhchSYS7GX6J9K8C2kcgh6l1L0eKDMyrhwbfie4Ll6qRiieIczw488EYm90VmnKJzR8cLYnNbj5SiTZiyCGK5OHxaxKaduEccLO8yPUP1gsjcA1v3csmxuooBM5CiU9OeTBj4v1ddKnzbjNs=
+	t=1788160675; cv=none; b=rlAXbz04pFTAcmW/Ayu7lGiKE/8eLbWqJZ06+M3H3DOEDlH1NR7pDHdi8EAO5Q3XMThP1/5UNM7bwSpIfc1GuIEaECjhxl/7j4bJcdenNIsmO3f7uY0VWRG/EBCi3aNGHxzq31E04DzILueQ0DC6voTpib93moOhNt8yoOQoF1Q=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788160503; c=relaxed/simple;
-	bh=RbTlK4ywTUNYjTgAxKfZ3HZxrZae1YmkT5zcudQhUXw=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=q/fUfvxNeMM22BMLgOi61m7BGuFpIBLwqmlB5fGpT+S0PiNy8JF5xdDgAZFyg/+1fv7naE0oPrIv5ZGb/xaqUMs+XnZZRqHHXxCdmxv3DQDcqN02X1N1KpbntyUkj+/NtW97Gu+snZvmgQCxDDe0seM6KKpzS+kAcRSTL4y0aW8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=pyv7nv7O; arc=none smtp.client-ip=198.137.202.133
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
+	s=arc-20240116; t=1788160675; c=relaxed/simple;
+	bh=b6BW45xFampavcwPUiir1lKA11mpU4NXoOGWzFpbaRw=;
+	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
+	 In-Reply-To:Content-Type; b=FuneHaOk/owsPKI3g+hyU/r7DAGXLzDHwH04sJzVb+kenUcR8vsBHfb9GT0Pk+Ln5IxAzgDh4sttGNSiiu9SryOdtdgzA55/FNT90ITWqYvaGf6gGCdwJZEZGekZqPY6IJ7fxjcBcUILwxhH7DJFcfY6ONJHku4JTqm7Iv9Ados=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MO1MtEvX; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="pyv7nv7O"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=31D1ew3DY7aDJ9/weeKgxdDhieM7js/RiHkJSonCwxA=; b=pyv7nv7O2zxLIoDz2hbcltbGV4
-	eK/Dlbkg7Fe92Qv+1VpBdr6HakNRGC2JBqyHznTwEoq/dzFD8XCA2EVtjquPbykXT5yC8W4lCo/Ja
-	7WLcWVomK1Y0qe61wrzafPFzE6ZwfPKdSRWgN5D9I8zQyyl0ksx3pkS22hMPIKkiwzRa/a0kSa5vN
-	NIlIP2qDSbLSIntA3t7NU+O+4D4OWpqKMvV/tUoyvpTE9z9lqmMRAsMYwxiBv3mrr+I7XIEjHzxn9
-	NJvq2N1YP2y4W1OcF/jnivh4aQug8SZEMWDi8ItsVGKbu7ezRU3CyxaVhodpZA5bID9TLAmbCIxei
-	wUWTNohw==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
-	id 1x0wEP-00000008hRZ-0a6v;
-	Mon, 31 Aug 2026 07:15:01 +0000
-Date: Mon, 31 Aug 2026 00:15:01 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: use IOMAP_DIO_BOUNCE flag for direct reads
-Message-ID: <apUp9SjdTSAmmzXV@infradead.org>
-References: <1219d8d9ed105a922d9af6130e08532e2907ea17.1787909265.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MO1MtEvX"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A4CC81F000E9;
+	Mon, 31 Aug 2026 07:17:52 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1788160674;
+	bh=5aHzT2rXprXtY91yiugmupVd9/BEmB45SOlkEfbWgHs=;
+	h=Date:Subject:From:To:Cc:References:In-Reply-To;
+	b=MO1MtEvXjZE/BmWHjzqEZcED9yOPugCwJQI5PZlK0OEtgYgFlIjEEkECtnnHDItHo
+	 CnhWUuge88clwdLhqd34troKyA7pt83JpOjCLk1Si5anlv8mArAnXXhnsqm8s/L6jW
+	 OVTpQFgq8tS9MTkdEA8TGxOW0aZxT8n9DqzEViGC1DHwQ8Ep2p3Er2jsg3icEPCwzF
+	 nnhxmZE/5dQjJ2fLjfX63cU5VC2JTTJOFvRW3thnkg+N89VG/Ipk5C7hosV9Y+TFRD
+	 QYBTS4ChJBv6HpDDPuXYMR2mwSetYBIcMa5xJYGeiDCbKfF4BTSbE+N3omPIdDXBhO
+	 mQZI0OZ4H3dqw==
+Message-ID: <ba6c3800-d89a-49dc-b6c3-bf51277b2107@kernel.org>
+Date: Mon, 31 Aug 2026 15:17:50 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1219d8d9ed105a922d9af6130e08532e2907ea17.1787909265.git.wqu@suse.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v8 0/13] fstests: add test coverage for cloned filesystem
+ ids
+Content-Language: en-US
+From: Anand Suveer Jain <asj@kernel.org>
+To: zlang@kernel.org
+Cc: linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+ linux-xfs@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+ fstests@vger.kernel.org
+References: <cover.1784949154.git.asj@kernel.org>
+In-Reply-To: <cover.1784949154.git.asj@kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Fri, Aug 28, 2026 at 06:58:16PM +0930, Qu Wenruo wrote:
-> Similar to direct writes, if the inode requires data checksum, we should
-> use a stable buffer for IO, or even for direct reads an unstable buffer
-> (e.g. the buffer is being modified during the direct read) can lead to
-> checksum mismatch and even cause read failure.
+
+Zorro, Ping?
+
+Cheers, Anand
+
+On 25/7/26 15:38, Anand Jain wrote:
+> v8:
+> - _require_fs_space: double the required space (x2) to account for both source and clone
+> - Use proper quoting/unquoting for _mkfs_dev (Thanks Darrick)
+> - Call _fail() if cp fails
+> - _require_fanotify_function: check for kernel fsnotify support
+> - _require_unique_f_fsid: reorganize comments and replace 'if' with 'case' statement (Thanks Darrick)
+> - Add SEMANAGE_PROG variable (Thanks Darrick)
+> - fanotify verification: add checks for SEMANAGE_PROG and _require_fanotify_function
+> - Verify that the monitoring process is actually created
 > 
-> To address the potential problems of unstable dio read buffers, use
-> IOMAP_DIO_BOUNCE for dio reads if the inode requires data checksum.
+> v7:
+>   https://lore.kernel.org/fstests/cover.1781694879.git.asj@kernel.org
 > 
-> This will bring a small performance drop, around 7% for my benchmark,
-> which is definitely observable on modern NVME SSDs, but the overhead is
-> still much smaller compared to data checksum:
-
-Please take a look at the "lazy bounce buffering for checksummed reads"
-series I just sent v2 of.
-
-For one this removes the read-side IOMAP_DIO_BOUNCE support you are
-using here, because it had problems.  The alternative is iomap-based
-and better at building large, aligned read bios which matter for HDD.
-It also introduces the concept of lazy bouncing where it only bounce
-buffers after a checksum failure happens by default, which means you
-only pay an overhead for misbehaving applications.  And unlike for
-writes where they do exist in real life, I don't know any that modify
-the buffer they read into.
+> v6:
+>   https://lore.kernel.org/fstests/cover.1779939330.git.asj@kernel.org
+> 
+> v5:
+>   https://lore.kernel.org/fstests/cover.1779367627.git.asj@kernel.org
+> 
+> v4:
+>   https://lore.kernel.org/fstests/cover.1777357320.git.asj@kernel.org
+> 
+> v3:
+>   https://lore.kernel.org/fstests/cover.1777281778.git.asj@kernel.org
+> 
+> v2:
+>   https://lore.kernel.org/fstests/cover.1774090817.git.asj@kernel.org
+> 
+> v1:
+>   https://lore.kernel.org/fstests/cover.1772095513.git.asj@kernel.org
+> 
+> This series adds fstests infrastructure and test cases to verify correct
+> filesystem identity when a filesystem is cloned (block-level copy).
+> Test covers inotify, fanotify, f_fsid, libblkid, IMA, exportfs file handles
+> and libblkid tools verify with metadata_uuid.
+>   New helpers:
+>    _loop_image_create_clone() and _loop_image_destroy() to help create fs and clone
+>    _clone_mount_option() helper to apply per-filesystem clone mount options
+>    _require_fanotify_function check if kernel supports fs notification
+>    _require_unique_f_fsid() helper to handle fs difference in fsid implementation
+> 
+>   New tests:
+>   - fanotify events are isolated between cloned filesystems
+>   - f_fsid is unique across cloned filesystem instances
+>   - libblkid correctly resolves duplicate UUIDs to distinct devices
+>     with and without metadata_uuid
+>   - IMA distinct identity for each cloned filesystem
+>   - exportfs file handles resolve correctly on cloned filesystems
+> 
+> Kernel Patches:
+>   Requires Btrfs kernel patches for all tests to pass.
+>    [1] https://lore.kernel.org/linux-btrfs/cover.1777281686.git.asj@kernel.org
+> 
+> 
+> Anand Jain (13):
+>   fstests: add _loop_image_create_clone() helper
+>   fstests: add _clone_mount_option() helper
+>   fstests: add FSNOTIFYWAIT_PROG
+>   fstests: add _require_fanotify_function
+>   fstests: add _require_unique_f_fsid() helper
+>   fstests: add SEMANAGE_PROG
+>   fstests: verify fanotify isolation on cloned filesystems
+>   fstests: verify f_fsid for cloned filesystems
+>   fstests: verify libblkid resolution of duplicate UUIDs
+>   fstests: verify IMA isolation on cloned filesystems
+>   fstests: verify exportfs file handles on cloned filesystems
+>   fstests: add _change_metadata_uuid helper
+>   fstests: test UUID consistency for clones with metadata_uuid
+> 
+>  common/config         |   2 +
+>  common/rc             | 135 +++++++++++++++++++++++++++++++++++++++
+>  tests/generic/801     | 143 ++++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/801.out |   7 +++
+>  tests/generic/802     |  64 +++++++++++++++++++
+>  tests/generic/802.out |   4 ++
+>  tests/generic/803     |  72 +++++++++++++++++++++
+>  tests/generic/803.out |   6 ++
+>  tests/generic/804     | 108 +++++++++++++++++++++++++++++++
+>  tests/generic/804.out |  10 +++
+>  tests/generic/805     |  80 +++++++++++++++++++++++
+>  tests/generic/805.out |   2 +
+>  tests/generic/806     |  74 ++++++++++++++++++++++
+>  tests/generic/806.out |   6 ++
+>  14 files changed, 713 insertions(+)
+>  create mode 100644 tests/generic/801
+>  create mode 100644 tests/generic/801.out
+>  create mode 100644 tests/generic/802
+>  create mode 100644 tests/generic/802.out
+>  create mode 100644 tests/generic/803
+>  create mode 100644 tests/generic/803.out
+>  create mode 100644 tests/generic/804
+>  create mode 100644 tests/generic/804.out
+>  create mode 100644 tests/generic/805
+>  create mode 100644 tests/generic/805.out
+>  create mode 100644 tests/generic/806
+>  create mode 100644 tests/generic/806.out
+> 
 

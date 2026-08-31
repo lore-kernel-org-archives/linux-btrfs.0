@@ -1,43 +1,46 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 55AF5449B2D;
-	Mon, 31 Aug 2026 13:40:43 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 456B44F20E2;
+	Mon, 31 Aug 2026 13:40:54 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788183645; cv=none; b=f7AzY/W1ZiLcQcL4uqkhOit3vfplu7UgGOeIJL/K1G5faIz5uUIMC+8NuIl9LABl/DEky2LXks088JWvYnCWse+MUwSax0hgibrhPYV2RQkdRNqjOJJOmoVDclzP98c6ijcgwjERg3WmB+uZ+P7Z8AVMJ9yk9hjFPhp/QhWQnf0=
+	t=1788183657; cv=none; b=QUEYnl203ZWphwmQDLsD7IGQRvbgkASFwfUlZT52+tNub3m3Oz6IQUqpSQG66rqIDkqMKqbqTyiL/OyZLF1OB+JaotNpSVSgTxPZ5xk02ilTNyhEt8Zqpdzhqwlw2m0j0ZoqlW1Hqsy4ETr9LsKX5aVuOD0Iye5jnv75fV3NkLI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788183645; c=relaxed/simple;
-	bh=k7aiax2xeTYrk7YdAP2H1wi1KLgmG2GDiCNvyVMe7iM=;
+	s=arc-20240116; t=1788183657; c=relaxed/simple;
+	bh=zEqDHXYanW2nHpJvndVZMnpeEEV2ilg51qXHaFl1dl4=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=GbnvGcbOU9TjPWBCIbzgA9CXGiFMgvZ2cTSkt24FanNwC3wMCac6cGtY4eCvBcJWbU6xfAXLm0POn8hRgAaxJ2ieyM7Pw8E+g7oPWFdEclKmnofxzLLBIvT5lZhyq1zLiTyTgLbIvb4qGfhKlT2dpYJxMJ+DRx0gaGe0+nOlnao=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ZfxdgnAL; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version:Content-Type; b=giL6YH8NU0dR+thOBPO164NfV+e+suz+84BoeaQ0fByJLxheMndEQqT17mNVOvVq0PQdVIrEJzguUKigu3Ox3hnVuisFxLH8wIl5m1Mh8iM6+eM2teFDeMU1VpzJdXJnd327rXcBy8N+x3ptIRpcmUPsjLvPfKTgplXTsYHmGTU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=P4QrMNFE; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ZfxdgnAL"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4EFC91F00A3F;
-	Mon, 31 Aug 2026 13:40:42 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="P4QrMNFE"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 873E61F00A3E;
+	Mon, 31 Aug 2026 13:40:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1788183643;
-	bh=gUeiXI3XyC926PlbUI79LZb1H3ffCrHpQ8ozWKv0f2Y=;
+	s=k20260515; t=1788183654;
+	bh=PtQvqlNXGtq66sgWNvsXQTCS7ZRTUVtCQ5YBqjGfQhA=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=ZfxdgnALaQRqmWDpSl2NRdx/Ibo7HwlRpmjQ7FwlWlX3RztiIIZC6zHHOqJVf69FS
-	 o6FBKaYUgGu6ep3bZzJJKPQS4MygSDI2bHAajkGbzPHBeI6TJY+lcB2oIC3z6DpUaO
-	 2gAOekwU6lPpoG09KPnY8oBkvKONAjXw6MhjuA4bL+fzppFBNkdZJTi0z8LEUiesN0
-	 9h9hK57XtPTYprwtCPqlLNPPrYbczvNFEJhmpFy1YYBl9/5U+6l2Vz70mczuH4nACv
-	 t0R1ykdXH+czbJfqon/6jKusgXl5Oy8RwudqZyqXMkQ90SyySBfhetM7PxvGJxZeAQ
-	 kCHTOM9lwwY9w==
+	b=P4QrMNFEOCyJyiKY/UFLzi2EYTAnUtOzGhtlvgEtvSdknviBtykaD17mo8W+9hAvG
+	 NhKJOkgY5GRh2D5D/39YJhHAnMWoz2nngBwEfx0d+LIVsdPgGTFXH+Rv92YO5m7TJK
+	 OlrdyD3nHUcgCouaHBCmCpJEHDJoEW+GTGKilae5samTWTk8Q+peGl9yBvWnOM7by/
+	 lCRapEPr3ynvHV645vjoIssfrzpKb9+EVxMe4d04Hd10JlRmGo+gH4s+IGWlJ6xOHL
+	 jbnhFEv+h56hHajh/oMO1ZPGZsCtM2rRypOSGixDdSc24Ykl5GlrihPXOsuKb1uXUR
+	 JfGrctvgkE8Rw==
 From: Sasha Levin <sashal@kernel.org>
 To: patches@lists.linux.dev,
 	stable@vger.kernel.org
-Cc: ZhengYuan Huang <gality369@gmail.com>,
+Cc: Ben Maurer <bmaurer@meta.com>,
+	Boris Burkov <boris@bur.io>,
+	Qu Wenruo <wqu@suse.com>,
+	Shakeel Butt <shakeel.butt@linux.dev>,
 	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.18-5.10] btrfs: balance: fix potential bg lookup failure in btrfs_may_alloc_data_chunk()
-Date: Mon, 31 Aug 2026 09:24:04 -0400
-Message-ID: <20260831133314.4125787-216-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.18-6.12] btrfs: use lockless read in nr_cached_objects shrinker callback
+Date: Mon, 31 Aug 2026 09:24:11 -0400
+Message-ID: <20260831133314.4125787-223-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260831133314.4125787-1-sashal@kernel.org>
 References: <20260831133314.4125787-1-sashal@kernel.org>
@@ -53,415 +56,414 @@ X-stable-base: Linux 6.18.48
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-From: ZhengYuan Huang <gality369@gmail.com>
+From: Ben Maurer <bmaurer@meta.com>
 
-[ Upstream commit 18d32b0013efba19f7ad3e5b08d7aee813d604a6 ]
+[ Upstream commit 1ba72d847c7aa3c0887f749115af5232fd61b598 ]
 
-[BUG]
-Running btrfs balance can trigger a null-ptr-deref before relocating a
-data chunk when metadata corruption leaves a chunk in the chunk tree
-without a corresponding block group in the in-memory cache:
+Under heavy memcg-driven slab reclaim with many memcgs and CPUs,
+shrink_slab_memcg() invokes the per-superblock count callback once per
+(memcg, NUMA node) tuple. For btrfs that callback reaches
+percpu_counter_sum_positive() on fs_info->evictable_extent_maps, which
+takes the percpu_counter's raw spinlock with IRQs disabled and walks
+every online CPU. With hundreds of memcgs driving reclaim on a host with
+dozens of CPUs, this counter lock becomes a global serialization point:
+profiles show CPU pinned in the spin_lock_irqsave acquire under
+__percpu_counter_sum, with cross-CPU IPIs hitting csd_lock_wait_toolong
+while waiting for spinning vCPUs.
 
-  KASAN: null-ptr-deref in range [0x0000000000000088-0x000000000000008f]
-  RIP: 0010:btrfs_may_alloc_data_chunk+0x40/0x1c0 fs/btrfs/volumes.c:3601
-  Call Trace:
-    __btrfs_balance fs/btrfs/volumes.c:4217 [inline]
-    btrfs_balance+0x2516/0x42b0 fs/btrfs/volumes.c:4604
-    btrfs_ioctl_balance fs/btrfs/ioctl.c:3577 [inline]
-    btrfs_ioctl+0x25cf/0x5b90 fs/btrfs/ioctl.c:5313
-    ...
+The shrinker count is advisory -- super_cache_count() already notes
+"counts can change between super_cache_count and super_cache_scan, so we
+really don't need locks here." Use percpu_counter_read_positive(), which
+is lockless. Worst-case skew is bounded by batch * num_online_cpus (a
+few thousand), negligible compared to the millions of extent maps a busy
+filesystem accumulates and well within the noise that the shrinker
+already tolerates.
 
-[CAUSE]
-__btrfs_balance() iterates the on-disk chunk tree and passes the chunk
-logical bytenr to btrfs_may_alloc_data_chunk() before relocating a data
-chunk. That helper then queries the in-memory block group cache:
-
-  cache = btrfs_lookup_block_group(fs_info, chunk_offset);
-  chunk_type = cache->flags;   /* cache may be NULL */
-
-A corrupt image can contain a chunk item whose matching block group
-item is missing, so no block group is ever inserted into the cache. In
-that case btrfs_lookup_block_group() returns NULL.
-
-The code only guards this with ASSERT(cache), which becomes a no-op when
-CONFIG_BTRFS_ASSERT is disabled. The subsequent dereference of
-cache->flags therefore crashes the kernel.
-
-[FIX]
-Add a NULL check after btrfs_lookup_block_group() in
-btrfs_may_alloc_data_chunk() and print and error message for clarity.
-
-Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+Tested-by: Boris Burkov <boris@bur.io>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Shakeel Butt <shakeel.butt@linux.dev>
+Signed-off-by: Ben Maurer <bmaurer@meta.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
 
 LLM Generated explanations, may be completely bogus:
 
-## Phase 1: Commit Message Forensics
+## PHASE 1: COMMIT MESSAGE FORENSICS
 
-### Step 1.1: Parse the Subject Line
-**Record:** `[btrfs: balance]` `[fix]` — Fix potential block-group
-lookup failure in `btrfs_may_alloc_data_chunk()` during balance
-operations.
+### Step 1.1: PARSE THE SUBJECT LINE
+**Record:** `[btrfs]` `[use]` — Replace the locked
+`percpu_counter_sum_positive()` call in the extent-map shrinker count
+callback with the lockless `percpu_counter_read_positive()`.
 
-### Step 1.2: Parse All Commit Message Tags
+### Step 1.2: PARSE ALL COMMIT MESSAGE TAGS
 **Record:**
-- **Fixes:** none in the provided message (v1/v3 on lore have `Fixes:
-  a6f93c71d412`)
-- **Reported-by:** none
-- **Tested-by:** none
-- **Reviewed-by:** David Sterba `<dsterba@suse.com>` (btrfs maintainer)
-- **Acked-by:** none
-- **Link:** none in provided message
-- **Cc: stable@vger.kernel.org:** absent in provided message; present in
-  v1 lore submission
-- **Signed-off-by:** ZhengYuan Huang; David Sterba (ignore any pipeline-
-  added SOBs)
+- **Tested-by:** Boris Burkov `<boris@bur.io>` — fix verified on real
+  workload
+- **Reviewed-by:** Qu Wenruo `<wqu@suse.com>` — btrfs maintainer
+- **Reviewed-by:** Shakeel Butt `<shakeel.butt@linux.dev>` — memcg/mm
+  maintainer
+- **Signed-off-by:** Ben Maurer `<bmaurer@meta.com>` — author
+- **Signed-off-by:** David Sterba `<dsterba@suse.com>` — btrfs
+  maintainer
+- No `Fixes:`, `Reported-by:`, `Link:`, or `Cc: stable@vger.kernel.org`
+  tags (expected for manual review)
+- Notable: dual maintainer review (btrfs + memcg), production-scale
+  author (Meta)
 
-Notable: maintainer review; v1 explicitly nominated for stable on lore.
-
-### Step 1.3: Analyze Commit Body
+### Step 1.3: ANALYZE THE COMMIT BODY TEXT
 **Record:**
-- **Bug:** NULL pointer dereference in `btrfs_may_alloc_data_chunk()`
-  when running `btrfs balance` on a filesystem where metadata corruption
-  leaves a chunk in the chunk tree without a matching in-memory block
-  group.
-- **Symptom:** KASAN null-ptr-deref at `cache->flags` (offset 0x88),
-  stack through `__btrfs_balance` → `btrfs_balance` →
-  `btrfs_ioctl_balance`.
-- **Root cause:** `btrfs_lookup_block_group()` can return NULL; only
-  `ASSERT(cache)` guards it, and `ASSERT` is a no-op when
-  `CONFIG_BTRFS_ASSERT` is disabled (the default).
-- **Fix:** NULL check, `btrfs_err()` message, return `-EUCLEAN`.
-- **Version info:** Bug tied to function introduced in `a6f93c71d412ba`
-  (2017/2018).
+- **Bug:** Under heavy memcg-driven slab reclaim with many memcgs and
+  CPUs, `shrink_slab_memcg()` invokes the per-superblock count callback
+  once per (memcg, NUMA node) tuple. For btrfs this reaches
+  `percpu_counter_sum_positive()` on `fs_info->evictable_extent_maps`,
+  which takes a raw spinlock with IRQs disabled and walks every online
+  CPU.
+- **Symptom:** Global serialization — CPUs pinned in `spin_lock_irqsave`
+  under `__percpu_counter_sum`, cross-CPU IPIs hitting
+  `csd_lock_wait_toolong` while waiting for spinning vCPUs.
+- **Root cause:** Using the expensive accurate-sum API in an advisory
+  shrinker count path that explicitly does not require locks or
+  precision.
+- **Fix rationale:** `super_cache_count()` already documents that counts
+  are advisory and locks are unnecessary; use lockless
+  `percpu_counter_read_positive()` instead.
+- **Accuracy bound:** Worst-case skew ≤ `batch * num_online_cpus` (a few
+  thousand), negligible vs. millions of extent maps.
 
-### Step 1.4: Detect Hidden Bug Fixes
-**Record:** Not disguised — explicitly a NULL-deref crash fix. The
-`unlikely()` wrapper in the provided diff matches existing EUCLEAN-path
-style in this tree (e.g. commit `9264d004a6c97`).
+### Step 1.4: DETECT HIDDEN BUG FIXES
+**Record:** Yes — described as a performance optimization, but it fixes
+a scalability defect in the memory-reclaim hot path. The VFS shrinker
+framework deliberately avoids locking in `super_cache_count()`; btrfs's
+locked sum undermines that design and can stall reclaim under memory
+pressure. This is a correctness-of-API-usage fix with stability impact,
+not mere throughput tuning.
 
 ---
 
-## Phase 2: Diff Analysis
+## PHASE 2: DIFF ANALYSIS
 
-### Step 2.1: Inventory the Changes
+### Step 2.1: INVENTORY THE CHANGES
 **Record:**
-- **Files:** `fs/btrfs/volumes.c` (+5/-1 net in v1; +6/-1 with
-  `unlikely` in provided diff)
-- **Function:** `btrfs_may_alloc_data_chunk()`
-- **Scope:** Single-file, surgical fix
+- **Files:** `fs/btrfs/super.c` only (+0/-0 net, 1 line changed)
+- **Functions:** `btrfs_nr_cached_objects()`
+- **Scope:** Single-file, single-line surgical fix
 
-### Step 2.2: Code Flow Change
+### Step 2.2: UNDERSTAND THE CODE FLOW CHANGE
 **Record:**
-- **Before:** `cache = btrfs_lookup_block_group(...); ASSERT(cache);
-  chunk_type = cache->flags;` — ASSERT no-op in production → NULL deref.
-- **After:** If `!cache`, log error and return `-EUCLEAN`; otherwise
-  proceed as before.
-- **Path affected:** Balance relocation path in `__btrfs_balance()`
-  before `btrfs_relocate_chunk()`.
+- **Hunk (line 2413):** Before:
+  `percpu_counter_sum_positive(&fs_info->evictable_extent_maps)` —
+  acquires `fbc->lock`, iterates all online/dying CPUs, sums per-CPU
+  values. After:
+  `percpu_counter_read_positive(&fs_info->evictable_extent_maps)` —
+  single `READ_ONCE(fbc->count)`, no lock, no cross-CPU walk.
+- **Execution path:** Called from `super_cache_count()` →
+  `sb->s_op->nr_cached_objects()` during `shrink_slab_memcg()` reclaim,
+  potentially once per (memcg, node) per shrinker invocation.
 
-### Step 2.3: Bug Mechanism
-**Record:** **Category:** NULL pointer dereference (memory safety).
-**Mechanism:** Missing NULL check after lookup; assertion disabled in
-production kernels. Fix converts kernel oops into controlled `-EUCLEAN`
-error propagation.
-
-### Step 2.4: Fix Quality
-**Record:** Obviously correct and minimal. Matches existing patterns in
-the same file (e.g. lines 3587–3589, 8326–8328). `-EUCLEAN` is the
-established btrfs corruption error code (used at lines 4272, 2041,
-etc.). **Regression risk:** Very low — only affects the already-broken
-corruption case.
-
----
-
-## Phase 3: Git History Investigation
-
-### Step 3.1: Blame Changed Lines
-**Record:** `btrfs_may_alloc_data_chunk()` introduced in
-`a6f93c71d412ba` (Liu Bo, 2017-11-15 / committed 2018-01-22).
-`ASSERT(cache)` present since introduction. Bug has existed ~8 years in
-this code path.
-
-### Step 3.2: Follow Fixes Tag
-**Record:** N/A in provided message. Lore v3 has `Fixes: a6f93c71d412` —
-that commit is in this tree and introduced the vulnerable function.
-
-### Step 3.3: Related File History
-**Record:** Related recent fix `c19830db30a09` replaced `BUG()` with
-`-EUCLEAN` in `__btrfs_balance()` — same corruption-handling philosophy.
-Fix commit not found in this tree (`git log --grep='null-ptr-deref in
-btrfs_may_alloc_data_chunk'` returned empty). Buggy code confirmed
-present at lines 3723–3725.
-
-### Step 3.4: Author's Other Commits
-**Record:** ZhengYuan Huang has other btrfs fixes in this tree (e.g.
-root drop_level validation). Part of a 4-patch series on lore fixing
-similar balance NULL derefs.
-
-### Step 3.5: Dependencies
-**Record:** **Standalone.** Patch 3/4 in the series; fixes only
-`btrfs_may_alloc_data_chunk()`. Other series patches fix
-`chunk_usage_filter()` and `chunk_usage_range_filter()` separately. No
-structural prerequisites — applies cleanly to v6.18.44.
-
----
-
-## Phase 4: Mailing List and External Research
-
-### Step 4.1: Original Patch Discussion
+### Step 2.3: IDENTIFY THE BUG MECHANISM
 **Record:**
-- `b4 dig` / `b4 am` did not find the commit (not yet merged here; no
-  commit hash provided).
-- Lore v1: https://lkml.iu.edu/2603.2/00971.html (Mar 16, 2026)
-- Lore v3 patch 3/4: https://lkml.iu.edu/2603.3/02434.html (Mar 24,
-  2026)
-- Series cover v3: https://lkml.iu.edu/2603.3/02432.html
-- v1 included `Cc: stable@vger.kernel.org`
-- v3 adds `btrfs_may_alloc_data_chunk` fix per maintainer feedback;
-  reviewed by David Sterba
+- **Category:** Scalability / lock-contention bug in hot reclaim path
+  (synchronization misuse)
+- **Mechanism:** `__percpu_counter_sum()` in `lib/percpu_counter.c`
+  takes a global raw spinlock and walks every CPU. Invoked repeatedly
+  from memcg-aware superblock shrinker counting. Creates a global
+  serialization point exactly when the system is under memory pressure
+  and needs fast reclaim.
 
-### Step 4.2: Reviewers
-**Record:** David Sterba (btrfs maintainer) reviewed and signed off.
-Series CC'd `linux-btrfs@`.
-
-### Step 4.3: Bug Report
-**Record:** KASAN null-ptr-deref with full stack trace in commit
-message. Reproducible on corrupted images. No syzbot report. Trigger:
-`btrfs balance` on corrupted metadata.
-
-### Step 4.4: Related Patches
-**Record:** 4-patch series; patches 1–2 fix analogous NULL derefs in
-balance filters; patch 4 fixes mount-time verification. This commit
-(patch 3) is independently valuable even without the others.
-
-### Step 4.5: Stable Mailing List
-**Record:** v1 explicitly requested stable backport via `Cc:
-stable@vger.kernel.org`. No stable-list rejection found.
-
----
-
-## Phase 5: Code Semantic Analysis
-
-### Step 5.1: Key Functions
-**Record:** `btrfs_may_alloc_data_chunk()` (modified); callers:
-`__btrfs_balance()`, device-shrink path (~line 5119), zoned repair path
-(~line 8333).
-
-### Step 5.2: Callers
+### Step 2.4: ASSESS THE FIX QUALITY
 **Record:**
-- `__btrfs_balance()` at line 4347 — primary path, checks `ret < 0` →
-  `goto error`
-- Device shrink loop at line 5119 — same error handling
-- Zoned repair at line 8333 — `ret < 0` → `goto out`
-All three callers properly propagate negative returns.
+- **Quality:** Obviously correct — direct API substitution; matches VFS
+  shrinker contract and btrfs precedent in `space-info.c` (commit
+  `2cdb3909c9e95`).
+- **Regression risk:** Very low. Under-counting bounded by
+  `percpu_counter_batch` (32) × num_cpus; shrinker counts are advisory
+  per `fs/super.c:247-249`. xfs uses the same estimate-vs-sum pattern
+  (`xfs_estimate_freecounter()`).
+- **No new APIs, no behavior change beyond count approximation in an
+  already-tolerant path.**
 
-### Step 5.3: Callees
-**Record:** `btrfs_lookup_block_group()` →
-`block_group_cache_tree_search()` — can return NULL when no matching
-block group exists in cache.
+---
 
-### Step 5.4: Call Chain / Reachability
+## PHASE 3: GIT HISTORY INVESTIGATION
+
+### Step 3.1: BLAME THE CHANGED LINES
 **Record:**
-```
-userspace btrfs balance (CAP_SYS_ADMIN)
-  → btrfs_ioctl_balance() [ioctl.c:3555]
-    → btrfs_balance() [volumes.c:4733]
-      → __btrfs_balance() [volumes.c:4347]
-        → btrfs_may_alloc_data_chunk() [volumes.c:3723]
-```
-Reachable from userspace via `BTRFS_IOC_BALANCE_V2` ioctl by root/admin.
+- `btrfs_nr_cached_objects()` introduced in `956a17d9d0507` ("btrfs: add
+  a shrinker for extent maps", 2024-05-07) by Filipe Manana
+- `percpu_counter_sum_positive()` line from `0d89a15e1a0dcc`
+  (tracepoints commit, 2024-04-09)
+- Bug present since extent-map shrinker landed (~kernel 6.9); confirmed
+  ancestor of current HEAD (6.18.44)
 
-### Step 5.5: Similar Patterns
-**Record:** Same file already NULL-checks `btrfs_lookup_block_group()`
-at lines 3587–3589 and 8326–8328. `chunk_usage_filter()` and
-`chunk_usage_range_filter()` at lines 3968 and 3997 still dereference
-without NULL checks (fixed by sibling patches, not this one).
+### Step 3.2: FOLLOW THE FIXES: TAG
+**Record:** N/A — no `Fixes:` tag present.
 
----
-
-## Phase 6: Cross-Referencing Against Local Tree
-
-### Step 6.1: Does Buggy Code Exist?
-**Record:** **YES.** Local tree is **v6.18.44** (`git describe HEAD`).
-At `fs/btrfs/volumes.c:3723–3725`:
-
-```3723:3726:fs/btrfs/volumes.c
-        cache = btrfs_lookup_block_group(fs_info, chunk_offset);
-        ASSERT(cache);
-        chunk_type = cache->flags;
-        btrfs_put_block_group(cache);
-```
-
-Fix error string not present (`grep` found no matches). Bug introduced
-with function in 2018.
-
-### Step 6.2: Backport Complications
-**Record:** **Clean apply expected.** Function and call sites unchanged
-in structure. Only line numbers differ from lore (3601 vs 3723) due to
-tree evolution.
-
-### Step 6.3: Related Fixes Already Present?
-**Record:** **No.** `c19830db30a09` fixed a different
-`__btrfs_balance()` BUG() path. Sibling NULL-deref fixes for balance
-filters not present.
-
----
-
-## Phase 7: Subsystem and Maintainer Context
-
-### Step 7.1: Subsystem Criticality
-**Record:** **btrfs filesystem** — IMPORTANT (widely deployed, data
-integrity critical).
-
-### Step 7.2: Subsystem Activity
-**Record:** Actively maintained; recent balance-related hardening
-(`c19830db30a09`, EUCLEAN annotations `9264d004a6c97`).
-
----
-
-## Phase 8: Impact and Risk Assessment
-
-### Step 8.1: Who Is Affected
-**Record:** btrfs users running balance on filesystems with chunk/block-
-group metadata inconsistency. All btrfs-enabled configs.
-
-### Step 8.2: Trigger Conditions
-**Record:** Metadata corruption (chunk without block group) + balance
-operation. Uncommon but realistic — corruption can survive mount due to
-incomplete `check_chunk_block_group_mappings()` (per series cover).
-Requires `CAP_SYS_ADMIN` for balance ioctl.
-
-### Step 8.3: Failure Mode Severity
-**Record:** **CRITICAL** — kernel NULL pointer dereference / oops. Fix
-downgrades to `-EUCLEAN` returned to userspace with error log.
-
-### Step 8.4: Risk-Benefit
+### Step 3.3: CHECK FILE HISTORY FOR RELATED CHANGES
 **Record:**
-- **Benefit:** HIGH — prevents kernel crash during balance on corrupted
-  FS; balance is a common recovery/maintenance tool
-- **Risk:** VERY LOW — 5-line defensive check on error-only path
-- **Ratio:** Strongly favors backport
+- `956a17d9d0507` — added extent map shrinker and
+  `btrfs_nr_cached_objects`
+- `f1d97e7691528` — added `evictable_extent_maps` percpu counter
+- `2cdb3909c9e95` — btrfs already switched `need_preemptive_reclaim()`
+  from `sum_positive` to `read_positive` for same reason (perf/lock
+  avoidance)
+- `15b3b3254d145` — extent map shrinker iput fix
+- Standalone 1-line fix, not part of a series
+
+### Step 3.4: CHECK THE AUTHOR'S OTHER COMMITS
+**Record:** No prior commits from Ben Maurer in this tree's btrfs
+history. David Sterba (committer) is btrfs maintainer.
+
+### Step 3.5: CHECK FOR DEPENDENT/PREREQUISITE COMMITS
+**Record:** No dependencies. Requires only `evictable_extent_maps`
+counter and `btrfs_nr_cached_objects()` — both present in 6.18.44.
+Applies cleanly as a single-line change.
 
 ---
 
-## Phase 9: Final Synthesis
+## PHASE 4: MAILING LIST AND EXTERNAL RESEARCH
 
-### Step 9.1: Evidence Summary
+### Step 4.1: FIND THE ORIGINAL PATCH DISCUSSION
+**Record:** UNVERIFIED — commit not yet in this tree (no SHA for `b4 dig
+-c`). `b4 dig` subject search not supported. lore.kernel.org returned
+403 (bot protection). Review tags in commit message are the available
+review evidence.
 
-**FOR backport:**
-- Real NULL deref with KASAN stack trace
-- Kernel crash → controlled error
-- Small, surgical, maintainer-reviewed fix
-- Bug present since 2018 in this tree
-- Consistent with existing EUCLEAN handling
-- v1 nominated for stable
-- Applies cleanly to v6.18.44
+### Step 4.2: CHECK WHO REVIEWED THE PATCH
+**Record:** From commit message: Qu Wenruo (btrfs), Shakeel Butt
+(memcg/mm), David Sterba (btrfs maintainer/committer). Appropriate
+reviewers for this change.
 
-**AGAINST backport:**
-- Requires metadata corruption (rare)
-- Requires admin privileges to trigger via balance
-- Sibling patches fix related NULL derefs in other balance filters (this
-  commit doesn't fix those)
+### Step 4.3: SEARCH FOR THE BUG REPORT
+**Record:** N/A — no `Reported-by:` or `Link:` tags. Issue identified
+via production profiling at Meta (per commit body).
 
-**Unresolved:** Exact upstream commit hash not in local tree (candidate
-evaluation). Does not affect decision.
+### Step 4.4: CHECK FOR RELATED PATCHES AND SERIES
+**Record:** Standalone fix. Direct precedent: `2cdb3909c9e95` (same
+sum→read change in btrfs `space-info.c`).
 
-### Step 9.2: Stable Rules Checklist
-1. Obviously correct and tested? **PASS** — maintainer reviewed; logic
-   matches existing NULL-check patterns
-2. Fixes real bug? **PASS** — KASAN-confirmed NULL deref
-3. Important issue? **PASS** — kernel oops (CRITICAL severity)
-4. Small and contained? **PASS** — ~5 lines, one function
-5. No new features/APIs? **PASS** — defensive error handling only
+### Step 4.5: CHECK STABLE MAILING LIST HISTORY
+**Record:** UNVERIFIED — lore.kernel.org inaccessible.
+
+---
+
+## PHASE 5: CODE SEMANTIC ANALYSIS
+
+### Step 5.1: IDENTIFY KEY FUNCTIONS IN THE DIFF
+**Record:** `btrfs_nr_cached_objects()` (modified); callers:
+`super_cache_count()` in `fs/super.c`
+
+### Step 5.2: TRACE CALLERS
+**Record:**
+- `super_cache_count()` → `shrinker->count_objects` for superblock
+  shrinker (`s->s_shrink`, `SHRINKER_MEMCG_AWARE | SHRINKER_NUMA_AWARE`)
+- Invoked from `do_shrink_slab()` → `shrink_slab_memcg()` →
+  `shrink_slab()` during memory reclaim
+- Hot path under memory pressure; frequency scales with num_memcgs ×
+  num_nodes × num_shrinkers
+
+### Step 5.3: TRACE CALLEES
+**Record:**
+- Before: `percpu_counter_sum_positive()` → `__percpu_counter_sum()` →
+  `raw_spin_lock_irqsave` + per-CPU iteration
+- After: `percpu_counter_read_positive()` → `READ_ONCE(fbc->count)`
+  (from `include/linux/percpu_counter.h:118-126`)
+
+### Step 5.4: FOLLOW THE CALL CHAIN
+**Record:** Memory reclaim (kernel-initiated under pressure, triggered
+by allocation failures or memcg limits) → `shrink_slab` → superblock
+shrinker count → btrfs extent map count. Reachable whenever btrfs is
+mounted and memory reclaim runs. Container hosts with many memcgs are
+the high-impact scenario.
+
+### Step 5.5: SEARCH FOR SIMILAR PATTERNS
+**Record:**
+- btrfs `space-info.c:1031-1032` — already uses `read_positive` for
+  heuristic decisions
+- xfs `xfs_mount.h:733-736` — `xfs_estimate_freecounter()` uses
+  `read_positive` with comment "just provides an estimate"
+- `backing-dev.h`, `mm.h` — same read-vs-sum pattern for hot paths vs.
+  accurate counts
+
+---
+
+## PHASE 6: CROSS-REFERENCING AGAINST THE LOCAL TREE
+
+### Step 6.1: DOES THE BUGGY CODE EXIST IN THIS TREE?
+**Record:** YES. Local tree is **6.18.44** (`git describe HEAD` =
+v6.18.44). `fs/btrfs/super.c:2413` still uses
+`percpu_counter_sum_positive()`. Extent map shrinker present since
+`956a17d9d0507` (May 2024, in 6.18.y ancestry).
+
+### Step 6.2: CHECK FOR BACKPORT COMPLICATIONS
+**Record:** Clean apply expected — single-line substitution, no
+structural changes needed. No recent churn around
+`btrfs_nr_cached_objects()`.
+
+### Step 6.3: CHECK IF RELATED FIXES ARE ALREADY HERE
+**Record:** The `space-info.c` precedent fix (`2cdb3909c9e95`) is
+already in tree. This specific shrinker callback fix is NOT yet applied.
+
+---
+
+## PHASE 7: SUBSYSTEM AND MAINTAINER CONTEXT
+
+### Step 7.1: IDENTIFY THE SUBSYSTEM AND ITS CRITICALITY
+**Record:** **btrfs filesystem** / memory reclaim interaction.
+**Criticality: IMPORTANT** — affects memory reclaim behavior for all
+btrfs mounts under memory pressure; severity scales with memcg count.
+
+### Step 7.2: ASSESS SUBSYSTEM ACTIVITY
+**Record:** btrfs actively maintained in 6.18.y with regular merges from
+for-6.17/6.18 tags. Extent map shrinker is relatively new (2024) but
+stable in tree.
+
+---
+
+## PHASE 8: IMPACT AND RISK ASSESSMENT
+
+### Step 8.1: DETERMINE WHO IS AFFECTED
+**Record:** btrfs users under memory pressure, especially:
+- Systems with `CONFIG_MEMCG` and many cgroups (containers/K8s)
+- Multi-socket / many-CPU hosts
+- btrfs root or btrfs data volumes on memory-constrained systems
+
+### Step 8.2: DETERMINE THE TRIGGER CONDITIONS
+**Record:** Heavy memcg-driven slab reclaim + btrfs mounted + many
+(memcg, node) tuples. Common on container hosts; not every boot, but
+realistic in production. Unprivileged users can trigger via memory
+allocation within their cgroup.
+
+### Step 8.3: DETERMINE THE FAILURE MODE SEVERITY
+**Record:** Global spinlock contention during reclaim → CPU spinning,
+cross-CPU IPI stalls (`csd_lock_wait_toolong`), severely degraded
+reclaim throughput, potential soft-lockup warnings and system
+unresponsiveness under memory pressure. **Severity: HIGH** (stability
+under memory pressure, not data corruption or security).
+
+### Step 8.4: CALCULATE RISK-BENEFIT RATIO
+**Record:**
+- **Benefit:** HIGH for affected deployments — removes global lock from
+  hot reclaim path; aligns btrfs with VFS shrinker design
+- **Risk:** VERY LOW — 1-line change, bounded count imprecision already
+  tolerated by shrinker framework
+- **Ratio:** Strong benefit, minimal risk
+
+---
+
+## PHASE 9: FINAL SYNTHESIS
+
+### Step 9.1: COMPILE THE EVIDENCE
+
+**FOR backporting:**
+- Real production issue (Meta, profiled lock contention)
+- Reviewed by btrfs and memcg maintainers; Tested-by present
+- 1-line, obviously correct fix
+- VFS explicitly documents shrinker counts need no locks
+  (`fs/super.c:247-249`)
+- Direct btrfs precedent (`2cdb3909c9e95`) and xfs pattern
+  (`xfs_estimate_freecounter`)
+- Bug present in 6.18.44 since extent map shrinker (6.9+)
+- Can cause severe reclaim stalls under memory pressure — stability-
+  relevant per stable rules for perf fixes that prevent lockups
+
+**AGAINST backporting:**
+- Primarily a scalability/performance issue, not
+  crash/corruption/security
+- Only affects btrfs + memcg + high-scale configurations
+- Approximate count could theoretically under-report objects (bounded,
+  maintainer-accepted)
+
+**UNRESOLVED:**
+- Mailing list thread and stable-list discussion (lore inaccessible,
+  commit not in tree for b4 dig)
+
+### Step 9.2: STABLE RULES CHECKLIST
+1. Obviously correct and tested? **PASS** — maintainer-reviewed, Tested-
+   by, matches established API-usage pattern
+2. Fixes a real bug affecting users? **PASS** — lock contention in
+   reclaim path on production workloads
+3. Important issue? **PASS** — HIGH severity stability under memory
+   pressure (reclaim stalls, potential lockup warnings)
+4. Small and contained? **PASS** — 1 line, 1 file
+5. No new features or APIs? **PASS**
 6. Can apply to local tree? **PASS** — buggy code confirmed present,
-   clean apply expected
+   clean apply
 
-### Step 9.3: Exception Categories
-**Record:** None (standard bug fix, not device ID/quirk/build fix).
+### Step 9.3: EXCEPTION CATEGORIES
+**Record:** N/A — not a device ID, quirk, DT, build, or docs fix.
+Standard bug fix.
 
-### Step 9.4: Decision Rationale
+### Step 9.4: DECISION RATIONALE
 
-For **v6.18.44**, this commit fixes a long-standing NULL dereference in
-the btrfs balance path that crashes the kernel when metadata corruption
-leaves a chunk without a corresponding block group. The fix is minimal,
-follows established btrfs error-handling conventions (`-EUCLEAN`), is
-reviewed by the btrfs maintainer, and converts a kernel oops into a
-clean error return. The bug exists in this tree and the fix is not yet
-applied.
+This commit fixes btrfs using the wrong percpu_counter API in a shrinker
+count callback. The VFS shrinker framework deliberately avoids locking
+because counts are advisory; btrfs's use of
+`percpu_counter_sum_positive()` introduces a global spinlock into a path
+invoked repeatedly per (memcg, node) during reclaim. On large container
+hosts this creates a serialization bottleneck during exactly the
+operation (memory reclaim) that must remain fast.
+
+The fix is minimal, maintainer-reviewed, has direct precedent in the
+same btrfs codebase, and carries negligible regression risk. While not a
+traditional crash or corruption bug, it causes serious stability
+degradation under memory pressure — a scenario stable trees must handle
+well.
 
 ---
 
 ## Verification
 
-- **[Phase 1]** Parsed subject, tags (Reviewed-by: David Sterba), body
-  (KASAN trace, root cause, fix)
-- **[Phase 2]** Diff: replaces `ASSERT(cache)` with NULL check +
-  `-EUCLEAN` in `btrfs_may_alloc_data_chunk()`
-- **[Phase 3]** `git blame`: function from `a6f93c71d412ba` (2018);
-  `ASSERT(cache)` since introduction
-- **[Phase 3]** `git log --grep='null-ptr-deref in
-  btrfs_may_alloc_data_chunk'`: empty — fix not in tree
-- **[Phase 3]** Related commit `c19830db30a09`: BUG→EUCLEAN in
-  `__btrfs_balance()`
-- **[Phase 4]** `b4 am`: no match (commit not merged)
-- **[Phase 4]** WebFetch lkml v1 (00971): `Cc: stable@vger.kernel.org`
-  confirmed
-- **[Phase 4]** WebFetch lkml v3 (02434): patch 3/4, Reviewed-by David
-  Sterba
-- **[Phase 4]** WebFetch series cover (02432): standalone per-function
-  fixes, mount-time gap described
-- **[Phase 5]** Grep callers: lines 4347, 5119, 8333 — all check `ret <
-  0`
-- **[Phase 5]** `btrfs_lookup_block_group()` in `block-group.c:279-283`
-  — returns search result, can be NULL
-- **[Phase 6]** `git describe HEAD`: v6.18.44
-- **[Phase 6]** Read `volumes.c:3723-3725`: buggy code present
-- **[Phase 6]** Grep for fix message string: not found — fix absent
-- **[Phase 6]** Existing NULL checks at lines 3587-3589, 8326-8328
-  confirmed
-- **[Phase 6]** `messages.h:170-171`: `ASSERT` → `(void)(cond)` when
-  `CONFIG_BTRFS_ASSERT` disabled
-- **[Phase 6]** `Kconfig:76-85`: BTRFS_ASSERT defaults to N ("If unsure,
-  say N")
-- **[Phase 8]** Call chain traced: ioctl → balance → `__btrfs_balance` →
-  `btrfs_may_alloc_data_chunk`
-- **[Phase 8]** Error propagation: `ret < 0` → `goto error` → returned
-  through `btrfs_balance` → `btrfs_ioctl_balance`
+- [Phase 1] Parsed commit message tags: Tested-by, 2× Reviewed-by, 2×
+  Signed-off-by; no Fixes/Reported-by/Link
+- [Phase 2] Diff analysis: 1-line change in `btrfs_nr_cached_objects()`,
+  `sum_positive` → `read_positive`
+- [Phase 2] Read `include/linux/percpu_counter.h:97-126`: confirmed
+  `sum_positive` locks and iterates CPUs; `read_positive` is lockless
+  `READ_ONCE`
+- [Phase 2] Read `lib/percpu_counter.c:159-185`: `__percpu_counter_sum`
+  documented as "more accurate but much slower"
+- [Phase 3] `git describe HEAD`: v6.18.44 / 6.18.44
+- [Phase 3] `git blame fs/btrfs/super.c:2410-2418`: function from
+  `956a17d9d0507` (2024-05-07)
+- [Phase 3] `git merge-base --is-ancestor 956a17d9d0507 HEAD`: shrinker
+  commit in 6.18.y
+- [Phase 3] `git show 2cdb3909c9e95`: btrfs precedent for same API
+  change
+- [Phase 4] UNVERIFIED: `b4 dig` failed (no commit SHA in tree);
+  lore.kernel.org returned 403
+- [Phase 5] Read `fs/super.c:235-262`: `super_cache_count()` explicitly
+  avoids locks, notes counts are advisory
+- [Phase 5] Read `fs/super.c:377-385`: superblock shrinker is
+  `SHRINKER_MEMCG_AWARE | SHRINKER_NUMA_AWARE`
+- [Phase 5] Read `mm/shrinker.c:478-594`: `shrink_slab_memcg()` iterates
+  shrinkers per memcg/node
+- [Phase 5] Read `fs/xfs/xfs_mount.h:729-736`: xfs uses `read_positive`
+  for estimates
+- [Phase 6] `grep fs/btrfs/super.c`: buggy `percpu_counter_sum_positive`
+  confirmed at line 2413
+- [Phase 6] `git log -S evictable_extent_maps`: counter and shrinker
+  both in tree since 2024
+- [Phase 8] `percpu_counter_batch` default = 32
+  (`lib/percpu_counter.c:255`)
 
-**YES**The background searches finished and match the earlier analysis:
+**YES**
 
-- The fix commit is **not in v6.18.44** — `git log --grep` for the null-
-  ptr-deref / bg lookup fix returned nothing.
-- The only related hit was an older indentation cleanup
-  (`5ae2169290695`), not this fix.
-- The buggy `ASSERT(cache)` path is still present in
-  `fs/btrfs/volumes.c`.
+ fs/btrfs/super.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Verdict stands: **YES** for backport to this tree.
-
- fs/btrfs/volumes.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ff67f5ecacb2e..a17fcf8bd8a99 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3721,7 +3721,11 @@ static int btrfs_may_alloc_data_chunk(struct btrfs_fs_info *fs_info,
- 	u64 chunk_type;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 9dc399e5dc091..d3661be700810 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2435,7 +2435,7 @@ static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
+ static long btrfs_nr_cached_objects(struct super_block *sb, struct shrink_control *sc)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+-	const s64 nr = percpu_counter_sum_positive(&fs_info->evictable_extent_maps);
++	const s64 nr = percpu_counter_read_positive(&fs_info->evictable_extent_maps);
  
- 	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
--	ASSERT(cache);
-+	if (unlikely(!cache)) {
-+		btrfs_err(fs_info, "balance: chunk at bytenr %llu has no corresponding block group",
-+			  chunk_offset);
-+		return -EUCLEAN;
-+	}
- 	chunk_type = cache->flags;
- 	btrfs_put_block_group(cache);
+ 	trace_btrfs_extent_map_shrinker_count(fs_info, nr);
  
 -- 
 2.53.0

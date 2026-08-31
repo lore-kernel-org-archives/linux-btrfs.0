@@ -1,43 +1,44 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 662694D8D81;
-	Mon, 31 Aug 2026 13:39:11 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5E2604EC649;
+	Mon, 31 Aug 2026 13:40:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788183554; cv=none; b=iMFOt05i3tm9hLRxQlos+K5ukTKy+VDC2fc3BQn5oE69EpIIIocunbROjjjoo30OH8/DeqTelElXEXfhh8ZqHF9+HxTm6XRs1k22B1viITFFntZgOkEnUrE/Zt88quyf8rxgaHfyP/KZsLbrjyRgo3URKg7TI6IlMKC9ZAxFGEQ=
+	t=1788183631; cv=none; b=ueXs2SOgMnl2G58SQo5iS7N52OL6b+kq0LKkKI6UoR3DGh1Lm/CAI7a4JL2LIPF29sSW8Vge0h8F+//Ggoy9ECjF+EEjtvvoX8jMB6qvugMfZLuabC+BkTyMYUGBSIObs2W00y1bA2XqWJQ8DdQFwuHdsdzvETAKylwk6QcmBDU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788183554; c=relaxed/simple;
-	bh=pH85IFwcUM8Vgxhp5SzV4lIuGOOnB3TkJK9q0OniOJA=;
+	s=arc-20240116; t=1788183631; c=relaxed/simple;
+	bh=1QTdkGRsu4TQo6/22XFFDcWYbo90ssYkpYX7MmqmHAo=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=SNUtAsq/RbwATFXfUD71lby7Fw6du+31oKSnNxxILwgy3CW7JlOOtOjUua+MgbgengzEAhN2fkA3Z7q79hRxE/nyuRe2iYd03LDCz4FxPnTgp38F6ZDvvyyVkXDZScdUJLribHIsy7+GC8nGTxSTO1lV6Q6XMTgI8u7GmwrO+M0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SN8GCFax; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version:Content-Type; b=mdF+TFskTtffytgBaUY8rVNFPYpngMa6Xqb7AlEy24CHkwz8fxh6G2p11dummNPsAiLrtw1fCaD51ELS/earw9Lwx2LDSwRqKlBTlhuWsePl4EgNdUDm6E7VopGoKwekyTE1d1WtABVrZaqqY9EG5BagOTT0j8kQXaPExDGQAf8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=n7ebLtqt; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SN8GCFax"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 19ACE1F00A3D;
-	Mon, 31 Aug 2026 13:39:10 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="n7ebLtqt"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B07541F00A3E;
+	Mon, 31 Aug 2026 13:40:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1788183551;
-	bh=WOWBYPK6q7JjIJso29ptfLcsRUeOB72elJec9hfJWA4=;
+	s=k20260515; t=1788183629;
+	bh=NDPNcSd/zbqvcrVkjrg4815wY35+/5n8NPS4WoxgLSA=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=SN8GCFaxcUrKJ/UI+RQigxj1IMs3yoDckZWXSPWnAU99OUbvEAB3YAku6JGzbkACC
-	 lW/BQbLFVVlsBkgw3zNCEmit+o+/BDeMVBUCaLD77ULX52Im40NHkU9v9eCTZhOCeK
-	 A3iFTAta+RL1KdNj0XOUAkei7p8K4Th29hO+RlYRS8NX/HQDRdyRwCx6bgQaUertGs
-	 BYB6wja80PjpzKAJj/fCMEhfZH562PYlNgeSz8y+e9BxHQ6qfk48WRaAMCXKU2TE4a
-	 zRKCOu4kzcW9LKT4MN7qdVv7MQfnftVMYlu2wKAhBi5DAyyraIYahaGb6STw/2Tssq
-	 zslbezFvMqQPA==
+	b=n7ebLtqt99ilU9utRK4prwAimb/1rjzXHn0z8wlcZjJ7+Dyf3EBE4afGBGmXSj8sp
+	 1mxc9eBLHguwJIXyKN4XfRnYzr155ETeLGKW84OrLepRGxOzl6qiKFmluCmDZDeKOh
+	 mR8r7OZzRDJx8B4d1l+Gk2t65Pzc5CWvuXse+UrGRxHREOD1Cf45rWDgmeXzXT9BAy
+	 LqOKGi/qV5tIaicuxmqvOyx7wjdvR6zzV8BiKt+l/vBgOo3WtOZhW8qu3ZvYft7Dl2
+	 Bz9ahb6ww0rirPoks2C1pyUf7ZniJhmjQE3el5JvYwrTbj+qo8Os89miDNuYKUMtVw
+	 vpyL9OLeY6h4w==
 From: Sasha Levin <sashal@kernel.org>
 To: patches@lists.linux.dev,
 	stable@vger.kernel.org
-Cc: Anand Jain <asj@kernel.org>,
+Cc: Filipe Manana <fdmanana@suse.com>,
+	Qu Wenruo <wqu@suse.com>,
 	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.18-6.12] btrfs: derive f_fsid from on-disk fsid and dev_t
-Date: Mon, 31 Aug 2026 09:23:12 -0400
-Message-ID: <20260831133314.4125787-164-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.18] btrfs: validate properties before setting them
+Date: Mon, 31 Aug 2026 09:23:56 -0400
+Message-ID: <20260831133314.4125787-208-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260831133314.4125787-1-sashal@kernel.org>
 References: <20260831133314.4125787-1-sashal@kernel.org>
@@ -53,457 +54,437 @@ X-stable-base: Linux 6.18.48
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-From: Anand Jain <asj@kernel.org>
+From: Filipe Manana <fdmanana@suse.com>
 
-[ Upstream commit c2a74ed0494c2736486b49c52767b2f50b83425f ]
+[ Upstream commit cf1afec09e9f004a62c54c471863209ed249fca7 ]
 
-The f_fsid was originally derived from fs_devices->fsid and the
-subvolume root ID. However, when temp_fsid is active, fs_devices->fsid
-is randomized, making the standard derivation inconsistent.
+We set the xattr and then attempt to apply the property. If the apply
+fails we then attempt to delete the xattr to avoid an inconsistency.
+However we don't verify if the deletion succeed, so if it fails we
+leave an inconsistency between the state in the btree and the in-memory
+inode.
 
-Since metadata_uuid is optional, it is not a reliable alternative.  This
-patch instead retrieves the on-disk UUID from fs_info->super_copy->fsid.
+Address this by validating first if we can apply the property, then set
+the xattr, then apply the property, and this last step should not fail
+since the validation succeeded before - assert that it does not fail but
+leave code to attempt to delete the xattr if it happens, and then abort
+the transaction only if the xattr delete failed.
 
-To prevent f_fsid collisions between original and cloned filesystems,
-this implementation hashes the dev_t for single-device btrfs filesystems
-to ensure uniqueness. This is limited to single-device filesystems as
-cloned mounts are currently only supported for that configuration. Note
-that f_fsid will change if the device is replaced.
-
-Additionally, since the kernel cannot distinguish between the original
-and the cloned filesystem, this new f_fsid derivation is applied to
-both.
-
-Link: https://lore.kernel.org/linux-btrfs/cover.1772095546.git.asj@kernel.org/
-Link: https://lore.kernel.org/linux-btrfs/cover.1774092915.git.asj@kernel.org/
-Signed-off-by: Anand Jain <asj@kernel.org>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
 
 LLM Generated explanations, may be completely bogus:
 
-# Stable Backport Analysis: `btrfs: derive f_fsid from on-disk fsid and
-dev_t`
+# Stable Backport Analysis: `btrfs: validate properties before setting
+them`
 
-**Local tree:** `v6.18.44` (6.18.44)
-**Upstream commit:** `c2a74ed0494c2736486b49c52767b2f50b83425f`
-(2026-06-09)
-**Status in this tree:** Fix **not** present; buggy code **is** present
-in `fs/btrfs/super.c`
+**Local tree:** `v6.18.44` (`6.18.44`) — checked-out stable tree, not
+mainline.
 
 ---
 
 ## PHASE 1: COMMIT MESSAGE FORENSICS
 
-### Step 1.1: Subject line
-**Record:** `[btrfs] [derive] — Change `f_fsid` derivation to use on-
-disk FSID and `dev_t` for stability/uniqueness with `temp_fsid` cloned
-mounts.`
+### Step 1.1: PARSE THE SUBJECT LINE
+**Record:** `[btrfs] [validate] validate properties before setting them`
+— btrfs filesystem property handling; action is validation/reordering of
+set path to prevent inconsistency.
 
-### Step 1.2: Tags
+### Step 1.2: PARSE ALL COMMIT MESSAGE TAGS
 **Record:**
-- **Link:** `https://lore.kernel.org/linux-
-  btrfs/cover.1772095546.git.asj@kernel.org/`
-- **Link:** `https://lore.kernel.org/linux-
-  btrfs/cover.1774092915.git.asj@kernel.org/`
-- **Signed-off-by:** Anand Jain `<asj@kernel.org>`
-- **Signed-off-by:** David Sterba `<dsterba@suse.com>` (btrfs
-  maintainer)
-- No `Fixes:`, `Reported-by:`, `Cc: stable`, `Tested-by:`, or `Reviewed-
-  by:` tags
-- No syzbot/sanitizer indicators
+- **Reviewed-by:** Qu Wenruo `<wqu@suse.com>`
+- **Reviewed-by:** David Sterba `<dsterba@suse.com>` (btrfs maintainer)
+- **Signed-off-by:** Filipe Manana `<fdmanana@suse.com>` (author)
+- **Signed-off-by:** David Sterba `<dsterba@suse.com>`
+- **No** `Fixes:` tag
+- **No** `Reported-by:` tag
+- **No** `Cc: stable@vger.kernel.org`
+- **No** syzbot / sanitizer links
 
-### Step 1.3: Body analysis
+Notable: dual maintainer review (Qu Wenruo + David Sterba); no
+user/fuzzer report.
+
+### Step 1.3: ANALYZE THE COMMIT BODY TEXT
 **Record:**
-- **Bug:** `f_fsid` was derived from `fs_devices->fsid`, which is
-  randomized when `temp_fsid` is active (cloned-device mount support).
-- **Symptom:** `f_fsid` is inconsistent across mount cycles for cloned
-  btrfs filesystems; original and cloned mounts can also collide on
-  `f_fsid`.
-- **Root cause:** `temp_fsid` assigns a random in-memory UUID to
-  `fs_devices->fsid`; `metadata_uuid` is optional and unreliable.
-- **Fix approach:** Use on-disk `super_copy->fsid` when `temp_fsid` is
-  active; XOR in `dev_t` (via `huge_encode_dev`) for all single-device
-  btrfs to ensure uniqueness between original and clone.
-- **Version info:** None explicit; `temp_fsid` landed in this tree since
-  v6.10.
+- **Bug:** `btrfs_set_prop()` writes the xattr to the btree first, then
+  calls `handler->apply()`. On apply failure it attempts to delete the
+  xattr, but ignores whether deletion succeeded.
+- **Symptom:** If rollback deletion fails, the on-disk btree has the
+  xattr while the in-memory inode state was not updated by `apply()` —
+  metadata inconsistency.
+- **Fix approach:** Validate first (`handler->validate()`), then set
+  xattr, then apply (should not fail after validation). On unexpected
+  apply failure, try xattr delete; if delete also fails, call
+  `btrfs_abort_transaction()`.
+- **Version info:** None stated in message.
 
-### Step 1.4: Hidden bug fix?
-**Record:** Yes — described as derivation change, but it fixes (1) non-
-persistent `f_fsid` across remounts with `temp_fsid`, and (2) `f_fsid`
-collisions between original and cloned single-device btrfs.
+### Step 1.4: DETECT HIDDEN BUG FIXES
+**Record:** Not disguised — this is an explicit correctness/consistency
+bug fix in error handling, though it also restores validate-before-
+setxattr ordering that existed in the original 2014 property code.
 
 ---
 
 ## PHASE 2: DIFF ANALYSIS
 
-### Step 2.1: Inventory
+### Step 2.1: INVENTORY THE CHANGES
 **Record:**
-- **File:** `fs/btrfs/super.c` (+33 / -8 lines)
-- **Function:** `btrfs_statfs()`
-- **Scope:** Single-file surgical fix
+- **Files:** `fs/btrfs/props.c` only (+13 / −3 lines)
+- **Function modified:** `btrfs_set_prop()`
+- **Scope:** Single-file, surgical fix in one function's non-zero-value
+  path.
 
-### Step 2.2: Code flow changes
-**Record:**
-- **Hunk 1:** Defer `fsid` pointer assignment; add local `f_fsid`
-  accumulator.
-- **Hunk 2 (before → after):**
-  - Before: Always use `fs_devices->fsid`; write directly to
-    `buf->f_fsid`.
-  - After: If `temp_fsid`, use `super_copy->fsid`; else
-    `fs_devices->fsid`. Compute into local `f_fsid`, XOR root ID,
-    optionally XOR `dev_t` hash for single-device FS, then `memcpy` to
-    `buf->f_fsid`.
+### Step 2.2: UNDERSTAND THE CODE FLOW CHANGE
 
-### Step 2.3: Bug mechanism
-**Record:**
-- **Category:** Logic/correctness fix (filesystem identification)
-- **Mechanism:** Randomized `fs_devices->fsid` under `temp_fsid` made
-  `statfs()` `f_fsid` non-deterministic; identical on-disk FSID + root
-  ID between original and clone caused collisions. Fix uses stable on-
-  disk UUID and mixes in `dev_t` for disambiguation.
+**Hunk 1 (validate before xattr):**
+- **Before:** Set xattr → apply → on failure, attempt xattr delete
+  (ignore result).
+- **After:** Validate → set xattr → apply → on failure, attempt delete
+  and abort transaction if delete fails.
 
-### Step 2.4: Fix quality
+**Record:** Normal property-set path for `value_len > 0`; error path
+improved. The `value_len == 0` (property removal) path is unchanged.
+
+### Step 2.3: IDENTIFY THE BUG MECHANISM
 **Record:**
-- Fix is minimal, readable, and matches existing patterns
-  (`u64_to_fsid`, `huge_encode_dev` used elsewhere e.g. xfs).
-- **Regression risk:** Low for crashes; **medium** for userspace-visible
-  semantics — `f_fsid` changes for all single-device btrfs (not only
-  `temp_fsid` mounts), by design.
-- `latest_dev->bdev` is valid when `total_devices == 1` and mount
-  succeeded (verified: `latest_dev` set during device open in
-  `volumes.c`).
+- **Category:** Logic/correctness fix + error-path resource/state
+  consistency fix.
+- **Mechanism:** Incomplete rollback on apply failure leaves btree xattr
+  present while in-memory inode property state is stale. Fix validates
+  early (reducing apply failures), and escalates to
+  `btrfs_abort_transaction()` when rollback cannot complete.
+
+### Step 2.4: ASSESS THE FIX QUALITY
+**Record:**
+- Fix is minimal and obviously correct.
+- Restores validate-before-setxattr ordering that existed in the
+  original 2014 `__btrfs_set_prop()` before validation was moved
+  external in 2019 (`f22125e5d8ae1`).
+- `ASSERT(ret == 0)` matches existing pattern in the `value_len == 0`
+  branch.
+- `btrfs_abort_transaction()` on failed cleanup is consistent with
+  `xattr.c` and `ioctl.c` error handling.
+- **Regression risk:** Very low. Duplicate validation on the xattr path
+  is harmless. Abort-on-failed-rollback is conservative but appropriate
+  for metadata inconsistency.
 
 ---
 
 ## PHASE 3: GIT HISTORY INVESTIGATION
 
-### Step 3.1: Blame
+### Step 3.1: BLAME THE CHANGED LINES
 **Record:**
-- `f_fsid` base computation dates to 2008 (`9d03632e26e1a`).
-- Root ID masking added 2024 (`e094f48040cda6`).
-- Buggy `fs_devices->fsid` usage at line 1738 is pre-`temp_fsid`; bug
-  activated when `temp_fsid` was introduced in `a5b8a5f9f8355`
-  (2023-10-12, first in v6.10).
+- Core `btrfs_set_prop()` logic dates to **2014** (`63541927c8d11d` —
+  Filipe Manana, "Btrfs: add support for inode properties").
+- Original 2014 code **did** call `handler->validate()` before
+  `setxattr`.
+- The rollback-without-checking-delete pattern has existed since 2014.
+- Validation was **removed** from inside `btrfs_set_prop()` in **2019**
+  (`f22125e5d8ae1` — "refactor btrfs_set_props to validate externally").
+- Recent `props.c` changes (2022–2025) are struct/type refactors, not
+  related to this bug.
 
-### Step 3.2: Fixes: tag
-**Record:** N/A — no `Fixes:` tag. Introducing commit for the underlying
-feature: `a5b8a5f9f8355` ("btrfs: support cloned-device mount
-capability"), confirmed present in this tree.
+### Step 3.2: FOLLOW THE FIXES: TAG
+**Record:** No `Fixes:` tag present — N/A.
 
-### Step 3.3: Related file history
+### Step 3.3: CHECK FILE HISTORY FOR RELATED CHANGES
 **Record:**
-- Companion patch in same series: `df84f6c773771` ("btrfs: use on-disk
-  uuid for s_uuid in temp_fsid mounts") — **not** in this tree.
-- This `f_fsid` fix is standalone (only touches `super.c`); does not
-  depend on the `s_uuid` patch.
-- No "patch X/Y" marker; two-commit series addressing related
-  `temp_fsid` identification issues.
+- Related historical fix: `3763771cf6023` (2019) — different issue
+  (fsync/log persistence of compression xattr deletion).
+- Patch is **1/3** of series "[PATCH 0/3] btrfs: fixes and cleanups
+  setting/clearing properties".
+- Patches 2/3 and 3/3 touch `ioctl.c` (`btrfs_fileattr_set()`), not
+  `props.c` — **this patch is standalone**.
+- Commit is **not yet present** in this tree (`git log --grep` found
+  nothing).
 
-### Step 3.4: Author context
-**Record:** Anand Jain is an active btrfs contributor; David Sterba
-(maintainer) signed off. Author has multiple `temp_fsid`-related commits
-in this tree.
+### Step 3.4: CHECK THE AUTHOR'S OTHER COMMITS
+**Record:** Filipe Manana is an active btrfs developer with multiple
+btrfs fixes in history. David Sterba is btrfs maintainer and signed off.
 
-### Step 3.5: Dependencies
-**Record:** No prerequisites. `u64_to_fsid` exists in
-`include/linux/statfs.h`; `temp_fsid`, `total_devices`, `latest_dev`,
-`super_copy` all exist in this tree. Applies cleanly against current
-`super.c`.
+### Step 3.5: CHECK FOR DEPENDENT/PREREQUISITE COMMITS
+**Record:**
+- `handler->validate` callback exists in `prop_handler` struct in this
+  tree.
+- `prop_compression_validate()` exists and is wired up.
+- `btrfs_abort_transaction()` is available via existing includes.
+- **No prerequisites** — patch applies cleanly (`git apply --check`
+  succeeded).
+- Patches 2/3 and 3/3 are independent ioctl cleanups.
 
 ---
 
 ## PHASE 4: MAILING LIST AND EXTERNAL RESEARCH
 
-### Step 4.1: Original discussion
-**Record:** `b4 dig -c c2a74ed0494c2` returned no match (commit likely
-too recent for b4 cache). Lore URLs blocked by Anubis bot protection —
-could not read thread. No matching `.mbx` files in workspace.
+### Step 4.1: FIND THE ORIGINAL PATCH DISCUSSION
+**Record:**
+- **URL:** https://www.spinics.net/lists/linux-btrfs/msg166052.html
+- **Series cover:** https://www.spinics.net/lists/linux-
+  btrfs/msg166051.html
+- **Date:** Mon, 8 Jun 2026
+- **Series:** v1, 3 patches; patch 1 is this commit.
+- `b4 dig` could not be used (commit not in local tree).
+- No explicit stable nomination found in fetched thread snippets.
 
-### Step 4.2: Reviewers
-**Record:** `b4 dig -w` also failed. Maintainer sign-off from David
-Sterba verified via commit metadata.
+### Step 4.2: CHECK WHO REVIEWED THE PATCH
+**Record:** Author Filipe Manana; Reviewed-by Qu Wenruo and David Sterba
+(maintainer). Appropriate reviewers for btrfs properties code.
 
-### Step 4.3: Bug reports
-**Record:** No external bug report links beyond series cover letters
-(unreadable). No syzbot/fuzzer reports.
+### Step 4.3: SEARCH FOR THE BUG REPORT
+**Record:** No `Reported-by:` or `Link:` tags. Bug identified by code
+analysis, not a user crash report or syzbot hit.
 
-### Step 4.4: Related patches
-**Record:** Two-patch series: (1) `s_uuid` fix in `disk-io.c`, (2) this
-`f_fsid` fix. Only this patch is needed for the `statfs`/`f_fsid` bug;
-`s_uuid` fix addresses a separate overlayfs identification issue.
+### Step 4.4: CHECK FOR RELATED PATCHES AND SERIES
+**Record:**
+- Patch 2/3: `btrfs: don't over reserve metadata space for property in
+  btrfs_fileattr_set()` — ioctl.c only.
+- Patch 3/3: `btrfs: fix transaction abort logic in
+  btrfs_fileattr_set()` — ioctl.c only.
+- This patch is self-contained for the `btrfs_set_prop()` inconsistency.
 
-### Step 4.5: Stable list
-**Record:** Could not search lore stable list (blocked). No evidence
-found of prior stable nomination or rejection.
+### Step 4.5: CHECK STABLE MAILING LIST HISTORY
+**Record:** lore.kernel.org blocked by bot protection; no stable-list
+discussion verified. Not a negative signal per instructions.
 
 ---
 
 ## PHASE 5: CODE SEMANTIC ANALYSIS
 
-### Step 5.1: Key functions
-**Record:** `btrfs_statfs()` (modified)
+### Step 5.1: IDENTIFY KEY FUNCTIONS IN THE DIFF
+**Record:** `btrfs_set_prop()` — only function modified.
 
-### Step 5.2: Callers
-**Record:** `btrfs_statfs` registered as `sb->s_op->statfs` at line
-2441. Reachable via:
-- `vfs_statfs()` / `statfs()` syscall
-- `vfs_get_fsid()` in `fs/statfs.c` (used by fanotify)
+### Step 5.2: TRACE CALLERS
+**Record:**
+1. **`btrfs_xattr_handler_set_prop()`** (`xattr.c:451`) — userspace
+   `setfattr` / `setxattr` on `btrfs.compression`. Already calls
+   `btrfs_validate_prop()` first (line 440). Reachable from userspace.
+2. **`btrfs_fileattr_set()`** (`ioctl.c:377,384`) — `FS_IOC_SETFLAGS` /
+   file attributes ioctl path. Calls `btrfs_set_prop()` **without**
+   prior `btrfs_validate_prop()`, but passes known-good strings from
+   `btrfs_compress_type2str()`. Reachable from userspace.
 
-### Step 5.3: Callees
-**Record:** `be32_to_cpu`, `btrfs_root_id`, `u64_to_fsid`,
-`huge_encode_dev`, `memcpy` — all standard, available in-tree.
+### Step 5.3: TRACE CALLEES
+**Record:** `handler->validate()`, `btrfs_setxattr()`,
+`handler->apply()`, `btrfs_abort_transaction()`,
+`set_bit(BTRFS_INODE_HAS_PROPS)`.
 
-### Step 5.4: Reachability
-**Record:** Any userspace `statfs()` on btrfs, and fanotify mark setup
-(`fanotify_test_fsid()` in `fs/notify/fanotify/fanotify_user.c` calls
-`vfs_get_fsid()`). Reachable from unprivileged userspace via syscalls.
-`temp_fsid` triggers only when mounting a cloned single-device btrfs
-while the original is already mounted.
+### Step 5.4: FOLLOW THE CALL CHAIN
+**Record:** Userspace sets btrfs inode properties via xattr or ioctl →
+transaction started → `btrfs_set_prop()` → btree xattr + in-memory inode
+flags. Buggy path is reachable from unprivileged userspace (with write
+access to the file/inode).
 
-### Step 5.5: Similar patterns
-**Record:** Same `u64_to_fsid(huge_encode_dev(...))` pattern used in
-`fs/xfs/xfs_super.c`. VFS fanotify work (v6.7) added `f_fsid`
-requirements across filesystems (`freevxfs`, `gfs2`, simple
-filesystems).
+### Step 5.5: SEARCH FOR SIMILAR PATTERNS
+**Record:** `btrfs_inode_inherit_props()` (`props.c:440–446`) has the
+same unchecked-rollback pattern (`apply` fails → `btrfs_setxattr` delete
+without checking result). **Not fixed by this commit.** Separate issue;
+does not block this fix.
 
 ---
 
-## PHASE 6: CROSS-REFERENCING AGAINST LOCAL TREE
+## PHASE 6: CROSS-REFERENCING AGAINST THE LOCAL TREE
 
-### Step 6.1: Buggy code present?
-**Record:** **Yes.** Current code at lines 1738 and 1828–1832 uses
-`fs_devices->fsid` unconditionally. `temp_fsid` support confirmed
-present (`a5b8a5f9f8355` is ancestor of HEAD). Bug has existed since
-v6.10 in this series.
+### Step 6.1: DOES THE BUGGY CODE EXIST IN THIS TREE?
+**Record:** **Yes.** Current `fs/btrfs/props.c` lines 130–138 show
+setxattr → apply → unchecked rollback delete. Bug present since property
+support was added; validate-before-setxattr was removed in 2019 refactor
+still present in 6.18.44.
 
-### Step 6.2: Backport complications
-**Record:** Clean apply expected — target code matches upstream diff
-base. No conflicting recent changes to `f_fsid` block in `super.c`.
+### Step 6.2: CHECK FOR BACKPORT COMPLICATIONS
+**Record:** **Clean apply** — `git apply --check` passed with no
+conflicts. No structural divergence from patch context.
 
-### Step 6.3: Related fixes already present?
-**Record:** No — `git merge-base --is-ancestor c2a74ed0494c2 HEAD`
-returns false. Companion `s_uuid` fix (`df84f6c773771`) also absent.
+### Step 6.3: CHECK IF RELATED FIXES ARE ALREADY HERE
+**Record:** No equivalent fix found (`git log --grep` for subject
+returned empty). Bug remains unfixed in v6.18.44.
 
 ---
 
 ## PHASE 7: SUBSYSTEM AND MAINTAINER CONTEXT
 
-### Step 7.1: Subsystem criticality
-**Record:** btrfs filesystem (`fs/btrfs/`) — **IMPORTANT** (widely
-deployed filesystem; core VFS statfs path).
+### Step 7.1: IDENTIFY THE SUBSYSTEM AND ITS CRITICALITY
+**Record:** **Filesystem — btrfs** (`fs/btrfs/`). **Criticality:
+IMPORTANT** — btrfs metadata consistency affects data integrity for all
+btrfs users.
 
-### Step 7.2: Subsystem activity
-**Record:** Actively maintained; recent commits in `super.c` include
-leak fixes and statfs improvements.
+### Step 7.2: ASSESS SUBSYSTEM ACTIVITY
+**Record:** `props.c` actively maintained (refactors in 2022–2025).
+Property code is mature but still receiving correctness fixes.
 
 ---
 
 ## PHASE 8: IMPACT AND RISK ASSESSMENT
 
-### Step 8.1: Who is affected
-**Record:** btrfs users, specifically those using cloned-device
-(`temp_fsid`) mounts. Also fanotify users on btrfs. All single-device
-btrfs get changed `f_fsid` values (broader but intentional).
+### Step 8.1: DETERMINE WHO IS AFFECTED
+**Record:** Users setting btrfs inode properties (compression xattr via
+`setfattr`/`setxattr`, or compression flags via ioctl). **CONFIG_BTRFS**
+users.
 
-### Step 8.2: Trigger conditions
+### Step 8.2: DETERMINE THE TRIGGER CONDITIONS
 **Record:**
-- Primary bug: mount cloned btrfs image while original is mounted
-  (`temp_fsid` active) → randomized `f_fsid` each mount.
-- Collision bug: original + clone mounted simultaneously without `dev_t`
-  disambiguation.
-- Trigger is config/use-case specific (not every boot), but reproducible
-  when cloning workflow is used.
+1. `handler->apply()` fails after xattr was written (more likely on
+   ioctl path without internal validate; rare on xattr path where
+   external validate already ran).
+2. Rollback `btrfs_setxattr(..., NULL, 0)` also fails (e.g., metadata
+   ENOSPC, transaction error).
+- **Likelihood:** Low but realistic on error paths (space pressure, I/O
+  errors).
+- **Userspace triggerable:** Yes, with write permission on the inode.
 
-### Step 8.3: Failure mode severity
-**Record:**
-- **Failure mode:** Incorrect/non-persistent `f_fsid`; possible ID
-  collision between distinct mounts.
-- **Impact:** Breaks filesystem identification for `statfs()` consumers
-  and fanotify (`vfs_get_fsid`). No crash, corruption, deadlock, or
-  security vulnerability.
-- **Severity: MEDIUM** (functional correctness, fanotify compatibility)
+### Step 8.3: DETERMINE THE FAILURE MODE SEVERITY
+**Record:** **Metadata inconsistency** — on-disk compression xattr
+present but in-memory inode compression state not updated (or vice versa
+after partial failure). Can cause incorrect compression behavior and
+inconsistent state across remounts/replays. **Severity: HIGH** (metadata
+integrity; corruption-class issue, not a simple WARN).
 
-### Step 8.4: Risk-benefit
+### Step 8.4: CALCULATE RISK-BENEFIT RATIO
 **Record:**
-- **Benefit:** Restores stable, unique `f_fsid` for btrfs clones; aligns
-  with VFS fanotify `f_fsid` requirements.
-- **Risk:** Low implementation risk (small, maintainer-reviewed);
-  moderate semantic risk (`f_fsid` value changes for all single-device
-  btrfs).
-- **Ratio:** Favorable for users of `temp_fsid`/fanotify; acceptable
-  risk given small diff and maintainer authorship.
+- **Benefit:** Prevents silent btree/in-memory desync; escalates to
+  transaction abort when cleanup impossible. Restores internal
+  validation defense-in-depth.
+- **Risk:** Very low — 16-line change, one function, reviewed by btrfs
+  maintainers, applies cleanly.
+- **Ratio:** Strong benefit, minimal risk.
 
 ---
 
 ## PHASE 9: FINAL SYNTHESIS
 
-### Step 9.1: Evidence summary
+### Step 9.1: COMPILE THE EVIDENCE
 
 **FOR backport:**
-- Real bug in shipped `temp_fsid` feature (present since v6.10 in this
-  tree)
-- Non-persistent `f_fsid` across remounts breaks `statfs()` and fanotify
-  identification
-- `f_fsid` collision between original and clone without `dev_t` mixing
-- Small (41 lines), single-file, maintainer-signed fix
-- Applies cleanly; no dependencies
-- Consistent with broader VFS `f_fsid`/fanotify work already in tree
+- Fixes real metadata inconsistency bug in `btrfs_set_prop()`.
+- Affects userspace-reachable property-set paths.
+- Small, surgical, maintainer-reviewed fix.
+- Applies cleanly to v6.18.44.
+- Buggy code confirmed present in this tree.
+- `btrfs_abort_transaction()` on failed rollback prevents silent
+  corruption.
+- Restores validate-before-setxattr ordering (original 2014 design).
 
 **AGAINST backport:**
-- Not a crash, corruption, deadlock, or security issue
-- `temp_fsid`/cloned mounts are a niche workflow
-- Changes `f_fsid` semantics for all single-device btrfs (userspace-
-  visible)
-- Companion `s_uuid` patch not included (separate concern for overlayfs)
-- No fuzzer report or explicit stable nomination found
-- Lore discussion unverified
+- No user crash report or syzbot reproduction.
+- Trigger requires apply failure **and** rollback delete failure (narrow
+  window).
+- xattr path already validates externally (main value is rollback abort
+  + ioctl-path internal validate).
+- Related pattern in `btrfs_inode_inherit_props()` remains unfixed
+  (separate issue).
 
-**Unresolved:** Full mailing list review thread; whether reviewers
-nominated for stable.
+**Unresolved:**
+- Whether commit has landed in mainline yet (not in this v6.18.44
+  checkout; expected for candidate evaluation).
+- No stable-list nomination verified (lore blocked).
 
-### Step 9.2: Stable rules checklist
-1. Obviously correct and tested? **PASS** — logic is clear; maintainer
-   SOB; no Tested-by but straightforward.
-2. Fixes a real bug affecting users? **PASS** — inconsistent `f_fsid`
-   with `temp_fsid`; clone/original collision.
-3. Important issue? **PASS (borderline)** — MEDIUM severity
-   functional/fanotify correctness, not crash-class.
-4. Small and contained? **PASS** — 1 file, ~33 lines added.
-5. No new features or APIs? **PASS** — fixes existing `statfs` behavior.
-6. Can apply to local tree? **PASS** — buggy code present, helpers
-   available, clean apply.
+### Step 9.2: STABLE RULES CHECKLIST
+1. Obviously correct and tested? **PASS** — logic is clear; reviewed by
+   Qu Wenruo and David Sterba.
+2. Fixes a real bug affecting users? **PASS** — metadata inconsistency
+   on property set error path.
+3. Important issue? **PASS** — metadata integrity / corruption-class
+   inconsistency.
+4. Small and contained? **PASS** — 16 lines, one file.
+5. No new features or APIs? **PASS** — error-handling reorder only.
+6. Can apply to local tree? **PASS** — clean apply verified.
 
-### Step 9.3: Exception categories
-**Record:** None (not device ID, quirk, DT, build, or docs fix).
+### Step 9.3: EXCEPTION CATEGORIES
+**Record:** None (not a device ID, quirk, DT, build, or docs fix).
+Qualifies on metadata integrity grounds.
 
-### Step 9.4: Decision rationale
+### Step 9.4: DECISION RATIONALE
 
-This fix addresses a real correctness bug in the `temp_fsid` cloned-
-mount feature that has been in this 6.18.y tree since v6.10. Without it,
-`statfs()` returns a different `f_fsid` on every remount of a cloned
-btrfs, and original/clone mounts can collide — both break
-`vfs_get_fsid()` users including fanotify. The patch is small, self-
-contained, and authored/signed by the btrfs maintainer. The severity is
-functional rather than crash-class, but stable trees routinely take such
-fixes for filesystem identification correctness, especially where
-fanotify integration depends on stable `f_fsid`. The intentional
-`f_fsid` value change for all single-device btrfs is a minor stable risk
-but necessary to prevent clone/original collisions.
+For **v6.18.44**, the buggy code is present, the fix is small and self-
+contained, btrfs maintainers reviewed it, and it addresses a real
+metadata consistency failure mode on a userspace-reachable path. The
+failure mode — silent desync between btree xattrs and in-memory inode
+state — is exactly the class of issue stable btrfs trees should fix.
+Patches 2/3 and 3/3 are not prerequisites.
 
 ---
 
 ## Verification
 
-- **[Phase 1]** Parsed commit message from `git show c2a74ed0494c2`:
-  subject, body, tags, links, SOBs
-- **[Phase 2]** Full diff reviewed via `git show c2a74ed0494c2 -p`; 1
-  file, `btrfs_statfs()` modified
-- **[Phase 3]** `git describe HEAD` → v6.18.44; `make kernelversion` →
-  6.18.44
-- **[Phase 3]** `git blame -L 1825,1832 fs/btrfs/super.c` → f_fsid code
-  from 2008/2024
-- **[Phase 3]** `git merge-base --is-ancestor a5b8a5f9f8355 HEAD` →
-  temp_fsid present
-- **[Phase 3]** `git merge-base --is-ancestor c2a74ed0494c2 HEAD` → fix
-  NOT present
-- **[Phase 3]** `git show a5b8a5f9f8355` → temp_fsid introduced
-  2023-10-12; first tag v6.10
-- **[Phase 3]** `git log --oneline df84f6c773771^..c2a74ed0494c2` →
-  2-patch series identified
-- **[Phase 3]** `git merge-base --is-ancestor df84f6c773771 HEAD` →
-  s_uuid companion NOT in tree
-- **[Phase 4]** `b4 dig -c c2a74ed0494c2` → no match (exit 1)
-- **[Phase 4]** WebFetch lore cover URL → blocked by Anubis
-- **[Phase 4]** Grep `*.mbx` for patch subject → no matches
-- **[Phase 5]** Read `fs/statfs.c` `vfs_get_fsid()` → calls
-  `statfs_by_dentry` → `btrfs_statfs`
-- **[Phase 5]** Read `fanotify_user.c` `fanotify_test_fsid()` → uses
-  `vfs_get_fsid`
-- **[Phase 5]** Grep `u64_to_fsid` in `include/linux/statfs.h` → helper
-  exists
-- **[Phase 5]** Grep `latest_dev` in `fs/btrfs/volumes.c` → set during
-  device open
-- **[Phase 6]** Read current `fs/btrfs/super.c:1738,1828-1832` → buggy
-  code confirmed
-- **[Phase 6]** Grep `temp_fsid` in `fs/btrfs/` → feature fully present
-- **[Phase 6]** Read `fs/btrfs/disk-io.c:3428` → `s_uuid` still uses
-  `fs_devices->fsid` (companion fix absent)
-- **[Phase 7]** David Sterba SOB on commit verified
-- **UNVERIFIED:** Mailing list review feedback and stable nominations
-  (lore inaccessible, b4 failed)
+- **[Phase 1]** Parsed subject, tags, body from provided commit message.
+- **[Phase 1]** No Fixes:/Reported-by:/Cc: stable tags found.
+- **[Phase 2]** Read current `fs/btrfs/props.c` lines 107–144; confirmed
+  pre-fix code matches described bug.
+- **[Phase 2]** Diff is +13/−3 in `btrfs_set_prop()` only.
+- **[Phase 3]** `git describe HEAD` → `v6.18.44`; `make kernelversion` →
+  `6.18.44`.
+- **[Phase 3]** `git blame -L 107,145 fs/btrfs/props.c` → core logic
+  from 2014 (`63541927c8d11d`).
+- **[Phase 3]** `git show 63541927c8d11d` → original code had validate-
+  before-setxattr.
+- **[Phase 3]** `git show f22125e5d8ae1` → 2019 refactor moved
+  validation external.
+- **[Phase 3]** `git log --grep="validate properties"` → empty (commit
+  not in tree).
+- **[Phase 3]** `git apply --check` on provided diff → clean apply.
+- **[Phase 4]** curl spinics msg166051 (cover), msg166052 (patch 1/3) →
+  series context, standalone patch 1.
+- **[Phase 4]** curl spinics msg166053, msg166054 → patches 2/3 and 3/3
+  are ioctl.c only.
+- **[Phase 4]** `b4 dig` not usable — commit hash not in local tree.
+- **[Phase 4]** lore.kernel.org fetch blocked by Anubis — stable-list
+  search unverified.
+- **[Phase 5]** `grep btrfs_set_prop` → callers in `xattr.c:451`,
+  `ioctl.c:377,384`.
+- **[Phase 5]** Read `xattr.c:429–462` → external
+  `btrfs_validate_prop()` before `btrfs_set_prop()`.
+- **[Phase 5]** Read `ioctl.c:256–401` → `btrfs_fileattr_set()` calls
+  `btrfs_set_prop()` without validate.
+- **[Phase 5]** Read `prop_compression_validate()` /
+  `prop_compression_apply()` → validate is stricter (checks
+  `btrfs_inode_can_compress`).
+- **[Phase 5]** Found similar unchecked rollback in
+  `btrfs_inode_inherit_props()` lines 440–446 (not fixed here).
+- **[Phase 6]** Buggy code confirmed at `props.c:130–138` in v6.18.44.
+- **[Phase 6]** `git apply --check` → applies cleanly.
+- **[Phase 8]** Failure mode: btree/in-memory metadata inconsistency;
+  severity HIGH.
 
 **YES**
 
- fs/btrfs/super.c | 41 +++++++++++++++++++++++++++++++++--------
- 1 file changed, 33 insertions(+), 8 deletions(-)
+ fs/btrfs/props.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 157d551344707..9dc399e5dc091 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1735,12 +1735,13 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	u64 total_free_data = 0;
- 	u64 total_free_meta = 0;
- 	u32 bits = fs_info->sectorsize_bits;
--	__be32 *fsid = (__be32 *)fs_info->fs_devices->fsid;
-+	__be32 *fsid;
- 	unsigned factor = 1;
- 	struct btrfs_block_rsv *block_rsv = &fs_info->global_block_rsv;
- 	int ret;
- 	u64 thresh = 0;
- 	int mixed = 0;
-+	__kernel_fsid_t f_fsid;
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index adc956432d2f1..bb77d46376d4b 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -127,14 +127,24 @@ int btrfs_set_prop(struct btrfs_trans_handle *trans, struct btrfs_inode *inode,
+ 		return ret;
+ 	}
  
- 	list_for_each_entry(found, &fs_info->space_info, list) {
- 		if (found->flags & BTRFS_BLOCK_GROUP_DATA &&
-@@ -1822,14 +1823,38 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	buf->f_bsize = fs_info->sectorsize;
- 	buf->f_namelen = BTRFS_NAME_LEN;
++	ret = handler->validate(inode, value, value_len);
++	if (ret)
++		return ret;
+ 	ret = btrfs_setxattr(trans, &inode->vfs_inode, handler->xattr_name, value,
+ 			     value_len, flags);
+ 	if (ret)
+ 		return ret;
+ 	ret = handler->apply(inode, value, value_len);
+-	if (ret) {
+-		btrfs_setxattr(trans, &inode->vfs_inode, handler->xattr_name, NULL,
+-			       0, flags);
++	/* We validated before, so it should not fail here. */
++	ASSERT(ret == 0);
++	if (unlikely(ret)) {
++		int ret2;
++
++		/* Try to delete xattr, if not possible abort transaction. */
++		ret2 = btrfs_setxattr(trans, &inode->vfs_inode, handler->xattr_name,
++				      NULL, 0, flags);
++		if (unlikely(ret2))
++			btrfs_abort_transaction(trans, ret2);
+ 		return ret;
+ 	}
  
--	/* We treat it as constant endianness (it doesn't matter _which_)
--	   because we want the fsid to come out the same whether mounted
--	   on a big-endian or little-endian host */
--	buf->f_fsid.val[0] = be32_to_cpu(fsid[0]) ^ be32_to_cpu(fsid[2]);
--	buf->f_fsid.val[1] = be32_to_cpu(fsid[1]) ^ be32_to_cpu(fsid[3]);
-+	/*
-+	 * fs_devices->fsid is dynamically generated when temp_fsid is active
-+	 * to support cloned filesystems. Use the original on-disk fsid instead,
-+	 * as it remains consistent across mount cycles.
-+	 */
-+	if (fs_info->fs_devices->temp_fsid)
-+		fsid = (__be32 *)fs_info->super_copy->fsid;
-+	else
-+		fsid = (__be32 *)fs_info->fs_devices->fsid;
-+
-+	/*
-+	 * We treat it as constant endianness (it doesn't matter _which_)
-+	 * because we want the fsid to come out the same whether mounted
-+	 * on a big-endian or little-endian host.
-+	 */
-+	f_fsid.val[0] = be32_to_cpu(fsid[0]) ^ be32_to_cpu(fsid[2]);
-+	f_fsid.val[1] = be32_to_cpu(fsid[1]) ^ be32_to_cpu(fsid[3]);
-+
- 	/* Mask in the root object ID too, to disambiguate subvols */
--	buf->f_fsid.val[0] ^= btrfs_root_id(BTRFS_I(d_inode(dentry))->root) >> 32;
--	buf->f_fsid.val[1] ^= btrfs_root_id(BTRFS_I(d_inode(dentry))->root);
-+	f_fsid.val[0] ^= btrfs_root_id(BTRFS_I(d_inode(dentry))->root) >> 32;
-+	f_fsid.val[1] ^= btrfs_root_id(BTRFS_I(d_inode(dentry))->root);
-+
-+	/* Hash dev_t to avoid f_fsid collision with cloned filesystems. */
-+	if (fs_info->fs_devices->total_devices == 1) {
-+		__kernel_fsid_t dev_fsid =
-+			u64_to_fsid(huge_encode_dev(fs_info->fs_devices->latest_dev->bdev->bd_dev));
-+
-+		f_fsid.val[0] ^= dev_fsid.val[1];
-+		f_fsid.val[1] ^= dev_fsid.val[0];
-+	}
-+
-+	memcpy(&buf->f_fsid, &f_fsid, sizeof(f_fsid));
- 
- 	return 0;
- }
 -- 
 2.53.0
 

@@ -1,44 +1,45 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 238F4478E36;
-	Mon, 31 Aug 2026 13:35:44 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D93EA48097D;
+	Mon, 31 Aug 2026 13:37:51 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788183346; cv=none; b=ZJ04Nofvb73XvWBX621BT3V8WOiTCG49soPTkuRQwMx1VuSfWcjz5WlVmkcyZLcZ8/CdiFC4rAAB/U1mPiUEcfRQ8VpXqpmEp38KJiT4XaGsrRxtm6WYaIpB8i67LZOIswX6ez11ORtMyGu16lgYVpFZfHc4B9nQGJ+ETr0dpxI=
+	t=1788183473; cv=none; b=N+lLTD4Zr6wd6dgEkaYQQmkAFmmKl/b//10Lvvb/ebd9wDG6/LKXM8Vyc2zxmwoiVq8lY6TdLtVuCIfW6GiQxdoxOOofiVA94MgY0Qbq3QgxwosJOJZCOMYQcvR7NLqjN5nXQ4YvkQslzlabCtPvh0sIshm2CGETRWx4vY8Rbns=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788183346; c=relaxed/simple;
-	bh=X4171WGsHTSp1/+if5YR5339+GWSQvBoemWG6Lv1PJs=;
+	s=arc-20240116; t=1788183473; c=relaxed/simple;
+	bh=CvxJHnhTWoAUtAg0rQR2WVJiXfeJU2g35eJV30BlNfA=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=WhAGxMKvH3NUa0hKA86Ly4+132kRLS89L5DBd/0hqP5YDDgd6QLr/B9f+vN23MrREeC76NKZY55VCw7vJW0w0UaZvWvQo5N29DgX1SWRMM7HRfxKBHZ96CjsPLzhqpH7Yq1VKfVeWi7beDrhImBrOQ6sA5KLqXDbTurkrKEHDbo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=RQYrw9Mf; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version:Content-Type; b=RsKOZJfllZQtjLp10b6fNXnLr+UoPUn1PBJfq9QTdon+/ZBE6KG9A7gpnsXrB6pmRntU6XL8BYZaPAExvkmdZDca5kValtGiGYtOB2XzxqV2Iv/HfAVsUQorFAyx10BW8dCqGc3NjCEs9RTcWlXjzy7n5W92yCF/bq2AL7U5aIU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=CBp2TPw3; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="RQYrw9Mf"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 91F9C1F000E9;
-	Mon, 31 Aug 2026 13:35:42 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="CBp2TPw3"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6C5B61F000E9;
+	Mon, 31 Aug 2026 13:37:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1788183344;
-	bh=8q7qGEwv1jrnrOHSrDnXGmZ2OVQyuSC08lz5mLCUKw0=;
+	s=k20260515; t=1788183471;
+	bh=NbkJLc5yKsQTfh8mXKJSXEgZlmQll3of1/16UaM16rw=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=RQYrw9MfD0V92csz1WiIzL4W1nDH4LZjapvkHyZlaMSxrzWIKHgETQBY/kHoltLZp
-	 OW5V4gAfz8wLFEHzRLy22VQgRxI/7K3D48kYCsfiy6aGwAWSFhpOomJ9wo3S5Z5H6A
-	 gr+8zRRjG3bIl9W+rD9Az5V5r+35PHLDs5XMUQfZWpALlMz1Y7gbZQk16GfARIVZi9
-	 AFuG7JuXs4Ph04n78VUt1Ap6jBxX7k5/6X5c/bZhFlF3tUfEv2XTwB2xcPCMBDOhuh
-	 rfzD05prA5dc6e3Y2HPgmS/yhr574bC4FZwdhUUFjjtXhh+vNlWbHJibUFJf+1vjB7
-	 JhotTIiMf7yOA==
+	b=CBp2TPw3ZQxBA+k1xFKkoa0IPkUBYQFczSyxjwYpFUmBH97r+57U1+Xpcjr43GJpw
+	 naRuKlpTmgU0iud5U47Gn8WQ8U+hMp4h0oYZv1zhOsMlMg+N2FSC6x5vxGWRi0BD/B
+	 laPSg+ERuJSlBN3HPh+T5wjJfYpULb9hUHR5yEbHT7k2dt/ZHpL1INKYxgiCHoP/pH
+	 qv42QegFY2feF2eBq8TY0EyvaEAvwRzLHlLARNTqHV6krnIADi0nZs8eO7NwOJclES
+	 /ILq1OSUomFZ75KFTlrul4bo7wQAC8eGk+u4/4C6bs6uL0fEvLOTUnSm1Dczz/7jsA
+	 A/AMaRqfcBX9w==
 From: Sasha Levin <sashal@kernel.org>
 To: patches@lists.linux.dev,
 	stable@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>,
+Cc: Weiming Shi <bestswngs@gmail.com>,
+	Xiang Mei <xmei5@asu.edu>,
 	Qu Wenruo <wqu@suse.com>,
 	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.18] btrfs: fix transaction abort logic in btrfs_fileattr_set()
-Date: Mon, 31 Aug 2026 09:22:00 -0400
-Message-ID: <20260831133314.4125787-92-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.18-5.15] btrfs: tree-checker: validate INODE_REF's namelen
+Date: Mon, 31 Aug 2026 09:22:24 -0400
+Message-ID: <20260831133314.4125787-116-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260831133314.4125787-1-sashal@kernel.org>
 References: <20260831133314.4125787-1-sashal@kernel.org>
@@ -52,20 +53,80 @@ X-stable: review
 X-Patchwork-Hint: Ignore
 X-stable-base: Linux 6.18.48
 Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
 
-From: Filipe Manana <fdmanana@suse.com>
+From: Weiming Shi <bestswngs@gmail.com>
 
-[ Upstream commit 9d78a98796f215d9973e1e53871b2d63420f3608 ]
+[ Upstream commit 3dc22abc21f5892406c09202fa2627196cc96967 ]
 
-There's no need to abort the transaction if we failed to set or delete a
-property, as we haven't done any change. However we need to abort if we
-set a property or delete a property and then fail to update the inode
-item, as that would leave the inode's state in subvolume tree
-inconsistent.
+[BUG]
+A crafted btrfs image can trigger the following crash:
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+  BUG: unable to handle page fault for address: ffffd1dc42884000
+  #PF: supervisor write access in kernel mode
+  #PF: error_code(0x0002) - not-present page
+  CPU: 9 UID: 0 PID: 1034 Comm: poc Not tainted 7.1.0-rc4-custom+ #383 PREE=
+MPT(full)  46af0a92938a63be7132e0dfd71e62327c51d5c2
+  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 02/02/20=
+22
+  RIP: 0010:memcpy+0xc/0x10
+  Call Trace:
+   <TASK>
+   read_extent_buffer+0xe4/0x100 [btrfs 3cf0785dd58fec8c5ff84633b772f17ce1f=
+92a8f]
+   btrfs_get_name+0x15e/0x1e0 [btrfs 3cf0785dd58fec8c5ff84633b772f17ce1f92a=
+8f]
+   reconnect_path+0x165/0x390
+   exportfs_decode_fh_raw+0x337/0x400
+   ? drop_caches_sysctl_handler+0xb0/0xb0
+   </TASK>
+  ---[ end trace 0000000000000000 ]---
+  RIP: 0010:memcpy+0xc/0x10
+  Kernel panic - not syncing: Fatal exception
+
+[CAUSE]
+TThe crafted image has the following corrupted INODE_REF item:
+
+         item 9 key (258 INODE_REF 257) itemoff 11544 itemsize 4106
+         	index 2 namelen 4096 name: d\000\000\000\000\000\000\000\000\000\=
+000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000=
+\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\00=
+0\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\0=
+00\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\=
+000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000=
+\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\00=
+0\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\0=
+00\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\=
+000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000=
+\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\00=
+0\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\0=
+00\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\=
+000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000=
+\000
+
+The itemsize matches the namelen, but the namelen is 4096, way larger
+than normal name length limit (BTRFS_NAME_LEN, 255).
+
+Meanwhile the memory of the @name is only 255 byte sized, this will cause
+out-of-boundary access, and cause the above crash.
+
+[FIX]
+Add extra namelen verification for INODE_REF, just like what we have
+done in ROOT_REF checks.
+
+Now the crafted image can be rejected gracefully:
+
+ BTRFS critical (device dm-2): corrupt leaf: root=3D5 block=3D30572544 slot=
+=3D14 ino=3D259, invalid inode ref name length, has 4096 expect [1, 255]
+ BTRFS error (device dm-2): read time tree block corruption detected on log=
+ical 30572544 mirror 2
+
+Reported-by: Xiang Mei <xmei5@asu.edu>
+Link: https://lore.kernel.org/linux-btrfs/aik0hEV6ehKx6Ldv@Air.local/
+Acked-by: Weiming Shi <bestswngs@gmail.com>
+Signed-off-by: Weiming Shi <bestswngs@gmail.com>
+[ Rebase, add a Link: tag, add an simple cause analyze ]
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
@@ -73,236 +134,245 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
 
 LLM Generated explanations, may be completely bogus:
 
-# Stable Backport Analysis: `btrfs: fix transaction abort logic in
-btrfs_fileattr_set()`
-
 ## Phase 1: Commit Message Forensics
 
 ### Step 1.1: Subject Line
-**Record:** `[btrfs]` `[fix]` — Correct transaction abort handling in
-`btrfs_fileattr_set()` when setting/deleting compression properties and
-updating the inode item.
+**Record:** `[btrfs: tree-checker] [validate] validate INODE_REF's
+namelen =E2=80=94 add missing name-length bounds check in btrfs tree-checke=
+r for
+INODE_REF items`
 
-### Step 1.2: Tags
+### Step 1.2: Commit Message Tags
 **Record:**
-- **Reviewed-by:** Qu Wenruo `<wqu@suse.com>` — btrfs developer
-- **Signed-off-by:** Filipe Manana `<fdmanana@suse.com>` — author
-- **Reviewed-by:** David Sterba `<dsterba@suse.com>` — btrfs maintainer
-- **Signed-off-by:** David Sterba `<dsterba@suse.com>`
-- No Fixes:, Reported-by:, Link:, Cc: stable, or Tested-by: tags
-- Notable: dual maintainer review (Sterba, Qu Wenruo); no syzbot or user
-  bug report
+- **Reported-by:** Xiang Mei `<xmei5@asu.edu>` =E2=80=94 real reporter with=
+ PoC
+- **Link:** https://lore.kernel.org/linux-
+  btrfs/aik0hEV6ehKx6Ldv@Air.local/
+- **Acked-by:** Weiming Shi `<bestswngs@gmail.com>`
+- **Signed-off-by:** Weiming Shi, Qu Wenruo, David Sterba
+- **Reviewed-by:** David Sterba `<dsterba@suse.com>` (btrfs maintainer)
+- No Fixes:, Cc: stable, or syzbot tags
+- Notable: maintainer review; concrete crash reproducer in message body
 
-### Step 1.3: Body Analysis
+### Step 1.3: Commit Body Analysis
 **Record:**
-- **Bug:** Transaction abort is triggered at the wrong points in
-  `btrfs_fileattr_set()`.
-- **Symptom (false positive):** Aborting when `btrfs_set_prop()` fails
-  even though no metadata was changed — unnecessarily puts the
-  filesystem into error/RO state.
-- **Symptom (false negative):** Not aborting when `btrfs_set_prop()`
-  succeeds but `btrfs_update_inode()` fails — leaves on-disk inode state
-  inconsistent between the property item and the inode item.
-- **Root cause:** Abort logic tied to property-set failure instead of
-  tracking whether a property was actually modified, and missing abort
-  after a successful property change followed by inode-update failure.
+- **Bug:** Crafted btrfs image with `INODE_REF` item where
+  `namelen=3D4096` but item fits in leaf (`itemsize=3D4106`). Tree-checker
+  passes the within-item bounds check, but downstream code copies the
+  name into a ~255-byte buffer.
+- **Symptom:** Kernel page fault in `memcpy` via `read_extent_buffer` =E2=
+=86=92
+  `btrfs_get_name` =E2=86=92 `reconnect_path` =E2=86=92 `exportfs_decode_fh=
+_raw`; fatal
+  exception / panic.
+- **Root cause:** `check_inode_ref()` validates `ptr + sizeof(*iref) +
+  namelen <=3D end` but does not enforce `namelen <=3D BTRFS_NAME_LEN`
+  (255). `btrfs_get_name()` uses a `NAME_MAX+1` (~256 byte) stack
+  buffer.
+- **Fix result:** Corrupt image rejected at read time with `-EUCLEAN`
+  and clear error message.
 
-### Step 1.4: Hidden Bug Fix?
-**Record:** No — this is an explicit bug fix, not disguised cleanup. It
-corrects two concrete metadata-consistency / over-abort bugs.
+### Step 1.4: Hidden Bug Fix Detection
+**Record:** Not disguised =E2=80=94 this is an explicit bug fix. It closes a
+validation gap analogous to existing `check_dir_item()` name-length
+checks (lines 602=E2=80=93606 in `tree-checker.c`).
 
 ---
 
 ## Phase 2: Diff Analysis
 
-### Step 2.1: Inventory
+### Step 2.1: Change Inventory
 **Record:**
-- **Files:** `fs/btrfs/ioctl.c` only (~+10/−5 net, ~20 lines touched)
-- **Function:** `btrfs_fileattr_set()`
-- **Scope:** Single-file surgical fix
+- **Files:** `fs/btrfs/tree-checker.c` only (+6 lines)
+- **Function:** `check_inode_ref()`
+- **Scope:** Single-file, surgical fix
 
 ### Step 2.2: Code Flow Change
 **Record:**
-
-| Hunk | Before | After |
-|------|--------|-------|
-| Property set (`comp` non-NULL) | `btrfs_set_prop()` failure →
-`btrfs_abort_transaction()` | Failure → `goto out_end_trans` (no abort);
-success → `prop_set = true` |
-| Property delete (`comp` NULL) | Non-`-ENODATA` failure → abort | Same,
-but track `prop_set = (ret == 0)`; `-ENODATA` proceeds without abort |
-| `btrfs_update_inode()` | No abort on failure | If `ret && prop_set` →
-`btrfs_abort_transaction()` |
+- **Before:** After reading `namelen`, only checked that `sizeof(*iref)
+  + namelen` fits within the item boundary.
+- **After:** Rejects `namelen =3D=3D 0` or `namelen > BTRFS_NAME_LEN` before
+  the boundary check.
+- **Path affected:** Read-time leaf validation for every
+  `BTRFS_INODE_REF_KEY` item (`disk-io.c` =E2=86=92 `btrfs_check_leaf()`).
 
 ### Step 2.3: Bug Mechanism
 **Record:**
-- **Category:** Logic/correctness fix — incorrect transaction abort
-  policy
-- **False positive:** `btrfs_abort_transaction()` on `btrfs_set_prop()`
-  failure when `btrfs_set_prop()` made no durable change (see `props.c`:
-  returns early on `btrfs_setxattr()` failure; rolls back on `apply()`
-  failure)
-- **False negative:** Missing abort after partial transaction success —
-  property written via `btrfs_setxattr()` in `btrfs_set_prop()`, but
-  inode item update via `btrfs_update_inode()` fails; without abort the
-  transaction can commit with inconsistent metadata
+- **Category:** Buffer overflow / out-of-bounds write (memory safety)
+- **Mechanism:** `struct btrfs_inode_ref` is 10 bytes packed (`index` +
+  `name_len`). With `namelen=3D4096` and `itemsize=3D4106`, `10 + 4096 =3D
+  4106` passes the item-boundary check. Later, `btrfs_get_name()` in
+  `export.c` calls `read_extent_buffer(leaf, name, name_ptr, name_len)`
+  into a `NAME_MAX+1` buffer (`expfs.c:445`), causing OOB access and
+  kernel panic.
 
 ### Step 2.4: Fix Quality
-**Record:** Obviously correct. `prop_set` accurately tracks whether a
-property mutation occurred. Minimal scope. Low regression risk — aligns
-with btrfs patterns elsewhere (e.g. `d11aefe654a04` for received-subvol
-ioctl abort logic). Removing abort on clean `set_prop` failure is
-strictly less aggressive; adding abort after successful `set_prop` +
-failed `update_inode` is the standard btrfs consistency response.
+**Record:** Obviously correct; mirrors the existing `check_dir_item()`
+pattern. Minimal, no API changes. Very low regression risk =E2=80=94 only
+rejects already-invalid metadata.
 
 ---
 
 ## Phase 3: Git History Investigation
 
 ### Step 3.1: Blame
-**Record:** Buggy abort-on-`set_prop`-failure pattern present since
-`97fc297754878` ("btrfs: convert to fileattr", 2021-04-07), inherited
-from pre-fileattr `btrfs_ioctl_setflags()` (`ff9fef559babe`,
-2019-04-20). `unlikely()` wrappers added in `a929904cf73b6` (2025-09).
-Bug has been in this code path for years.
+**Record:** `check_inode_ref()` introduced in `71bf92a9b8777` (Aug 2019,
+Qu Wenruo). The namelen boundary check has been missing since
+introduction. Overflow check refined in `c7c01a4a2524b3` (David Sterba,
+Nov 2020). Bug present in this tree since at least v4.x-era checker
+addition.
 
 ### Step 3.2: Fixes: Tag
-**Record:** N/A — no Fixes: tag.
+**Record:** N/A =E2=80=94 no Fixes: tag. Underlying gap dates to original
+`check_inode_ref()` commit.
 
-### Step 3.3: Related Changes
-**Record:**
-- `d11aefe654a04` — same author (Filipe Manana), same file, fixes
-  incorrect transaction abort in another ioctl path; was nominated `Cc:
-  stable@vger.kernel.org`
-- `014a021075c58` — adds missing abort on inode/root update failure in
-  received-subvol ioctl
-- `a929904cf73b6` — only added `unlikely()` around existing abort
-  branches
-- Standalone fix; not part of a series
+### Step 3.3: Related File History
+**Record:** Recent `tree-checker.c` commits include similar validation
+fixes (`e92c2941204de` bounds check in `check_inode_extref`,
+`96fa515e70f3e` inode ref size typo). Standalone fix; not part of a
+multi-patch series in the message.
 
 ### Step 3.4: Author Context
-**Record:** Filipe Manana is an active btrfs developer with multiple
-stable-worthy fixes in this tree. David Sterba is btrfs maintainer and
-co-signer.
+**Record:** Qu Wenruo is a regular btrfs contributor; David Sterba is
+btrfs maintainer. Weiming Shi authored the fix with maintainer
+ack/review.
 
 ### Step 3.5: Dependencies
-**Record:** None. `btrfs_fileattr_set()`, `btrfs_set_prop()`, and
-`btrfs_update_inode()` all exist in this tree. Applies standalone.
+**Record:** No prerequisites. `BTRFS_NAME_LEN`, `check_inode_ref()`, and
+`inode_ref_err()` all exist in this tree. Fix applies cleanly after line
+1784 in local `tree-checker.c`.
 
 ---
 
 ## Phase 4: Mailing List and External Research
 
-### Step 4.1–4.5
-**Record:** Commit hash not present in this checkout (candidate under
-evaluation). `b4 dig -c` could not be run without hash. `b4 dig -q`
-failed (wrong syntax). lore.kernel.org blocked by bot protection.
-**UNVERIFIED:** mailing list thread, stable nominations in review,
-series revisions. Reviewed-by tags from btrfs maintainers are present in
-the commit message itself.
+### Step 4.1: Original Discussion
+**Record:** Lore URL from commit message blocked (403/Anubis). `b4
+shazam 'validate INODE_REF namelen'` found no match. Full technical
+details available from commit message (stack trace, corrupt item dump,
+before/after behavior).
+
+### Step 4.2: Reviewers
+**Record:** David Sterba Reviewed-by + Signed-off-by confirms maintainer
+review. UNVERIFIED: full CC list from `b4 dig -w` (could not run
+successfully for this commit hash).
+
+### Step 4.3: Bug Report
+**Record:** Reported-by Xiang Mei with reproducible PoC. Crash:
+supervisor write page fault in `memcpy` during NFS exportfs reconnect
+path. Severity: kernel panic.
+
+### Step 4.4: Related Patches
+**Record:** Commit references ROOT_REF checks as precedent; no
+`check_root_ref` or ROOT_BACKREF name-length validation found in this
+tree's `tree-checker.c`. The analogous existing pattern is
+`check_dir_item()` at lines 602=E2=80=93606. `check_inode_extref()` has the=
+ same
+gap (no `BTRFS_NAME_LEN` check) but is out of scope for this commit.
+
+### Step 4.5: Stable List History
+**Record:** UNVERIFIED =E2=80=94 could not search lore stable list due to a=
+ccess
+restrictions.
 
 ---
 
 ## Phase 5: Code Semantic Analysis
 
 ### Step 5.1: Key Functions
-**Record:** `btrfs_fileattr_set()` (modified)
+**Record:** `check_inode_ref()` (modified); downstream vulnerable
+consumer `btrfs_get_name()` in `export.c`.
 
 ### Step 5.2: Callers
 **Record:**
-- `fs/btrfs/inode.c` — `.fileattr_set = btrfs_fileattr_set` on btrfs
-  inode ops
-- `ioctl_setflags()` → `vfs_fileattr_set()` → `btrfs_fileattr_set()`
-  (`fs/file_attr.c`)
-- `ioctl_fssetxattr()`, `file_setattr` syscall also reach
-  `vfs_fileattr_set()`
+- `check_inode_ref()` called from `check_leaf_item()` for
+  `BTRFS_INODE_REF_KEY` =E2=86=92 `__btrfs_check_leaf()` =E2=86=92 `btrfs_c=
+heck_leaf()`
+- `btrfs_check_leaf()` called on **read** in `disk-io.c:457` (=E2=80=9Cread=
+ time
+  tree block corruption detected=E2=80=9D)
+- `btrfs_get_name()` registered as `export_operations.get_name` in
+  `btrfs_export_ops`; invoked from `exportfs_decode_fh_raw()` =E2=86=92
+  `reconnect_path()` with `char nbuf[NAME_MAX+1]`
 
 ### Step 5.3: Callees
-**Record:** `btrfs_start_transaction()`, `btrfs_set_prop()` →
-`btrfs_setxattr()`, `btrfs_update_inode()` →
-`btrfs_delayed_update_inode()`, `btrfs_abort_transaction()` →
-`__btrfs_handle_fs_error()`, `btrfs_end_transaction()`
+**Record:** `btrfs_inode_ref_name_len()`, `inode_ref_err()`, standard
+extent_buffer helpers.
 
 ### Step 5.4: Reachability
-**Record:** Userspace-reachable via `FS_IOC_SETFLAGS` /
-`FS_IOC_FSSETXATTR` / `file_setattr` on files the caller owns
-(`inode_owner_or_capable` in `vfs_fileattr_set`). Compression flag
-changes (`FS_COMPR_FL` / `FS_NOCOMP_FL`) trigger the
-`btrfs_set_prop("btrfs.compression", ...)` path. Unprivileged file
-owners can trigger this for their own files.
+**Record:** Trigger requires mounting/accessing a btrfs image with
+corrupt `INODE_REF` metadata and hitting the NFS exportfs reconnect
+path. Mounting crafted images typically needs `CAP_SYS_ADMIN`, but the
+panic is still a real robustness/security issue for NFS servers
+exporting btrfs and for any admin mounting untrusted images. Tree-
+checker fix protects all consumers at block-read time.
 
 ### Step 5.5: Similar Patterns
-**Record:** Same file has related abort-logic fixes (`d11aefe654a04`,
-`014a021075c58`). Pattern throughout btrfs: abort only after metadata
-has been modified, not on pre-change failures.
+**Record:** `check_dir_item()` validates `name_len > BTRFS_NAME_LEN`
+(lines 602=E2=80=93606). `check_inode_ref()` and `check_inode_extref()` lack
+equivalent checks =E2=80=94 this commit closes the INODE_REF gap.
 
 ---
 
-## Phase 6: Cross-Reference Against Local Tree
+## Phase 6: Cross-Reference Against Local Tree (6.18.44)
 
 ### Step 6.1: Buggy Code Present?
-**Record:** **Yes.** Local tree is **v6.18.44** (`git describe HEAD` →
-`v6.18.44-1-g2736c32da98b9`, Makefile VERSION=6 PATCHLEVEL=18
-SUBLEVEL=44). Current `fs/btrfs/ioctl.c` lines 376–401 show the buggy
-pattern: abort on `btrfs_set_prop()` failure, no abort on
-`btrfs_update_inode()` failure. No `prop_set` variable present (fix not
-yet applied).
+**Record:** **YES.** Local tree is `v6.18.44` (`VERSION=3D6,
+PATCHLEVEL=3D18, SUBLEVEL=3D44`). `check_inode_ref()` at lines 1783=E2=80=
+=931790
+reads `namelen` and only checks item-boundary fit =E2=80=94 no `BTRFS_NAME_=
+LEN`
+validation. Fix string `"invalid inode ref name length"` not present
+(grep confirms fix not yet applied).
 
 ### Step 6.2: Backport Complications
-**Record:** Clean apply expected — minimal diff against current
-`btrfs_fileattr_set()`. No conflicting recent churn in this function.
+**Record:** Clean apply expected =E2=80=94 6 lines inserted in one function=
+. No
+structural conflicts observed.
 
 ### Step 6.3: Related Fixes Already Present?
-**Record:** Related ioctl abort fixes (`d11aefe654a04`, `014a021075c58`)
-are in tree, but this specific `btrfs_fileattr_set()` bug is **not**
-fixed. `git log -S 'prop_set' -- fs/btrfs/ioctl.c` returns empty.
+**Record:** No equivalent fix found. Related precedent: `e92c2941204de`
+(inode extref bounds check fix, different bug).
 
 ---
 
 ## Phase 7: Subsystem Context
 
-### Step 7.1: Subsystem
-**Record:** `fs/btrfs` — btrfs filesystem. **Criticality: IMPORTANT**
-(metadata integrity for all btrfs users).
+### Step 7.1: Subsystem Criticality
+**Record:** **btrfs filesystem** =E2=80=94 IMPORTANT. Affects metadata inte=
+grity
+validation and NFS export path.
 
-### Step 7.2: Activity
-**Record:** Actively maintained; recent commits in `ioctl.c` include
-transaction-abort fixes, indicating ongoing attention to this class of
-bug.
+### Step 7.2: Subsystem Activity
+**Record:** `tree-checker.c` actively maintained; multiple checker fixes
+in recent history on this branch.
 
 ---
 
 ## Phase 8: Impact and Risk Assessment
 
 ### Step 8.1: Who Is Affected
-**Record:** All btrfs users who change file flags (especially
-compression flags) via `chattr`, `FS_IOC_SETFLAGS`, or related
-interfaces.
+**Record:** btrfs users, especially those with NFS exports
+(`CONFIG_NFS_SERVER`). Also any path reading corrupt `INODE_REF` items
+that assumed checker enforced name-length limits.
 
 ### Step 8.2: Trigger Conditions
-**Record:**
-- **False positive (current bug):** Any `btrfs_set_prop()` failure
-  during flag change (e.g. `-ENOSPC`, `-ENOMEM`) → full transaction
-  abort → filesystem error/RO via `__btrfs_handle_fs_error()`.
-  Relatively uncommon but serious when hit.
-- **False negative (current bug):** `btrfs_set_prop()` succeeds, then
-  `btrfs_update_inode()` fails → transaction ends without abort → risk
-  of committed inconsistent metadata (property vs. inode flags). Rare
-  but severe.
+**Record:** Corrupt/malicious btrfs image with `namelen > 255` but
+within item bounds; block read succeeds checker; exportfs reconnect
+calls `btrfs_get_name()`. Uncommon in practice but trivially craftable
+(PoC provided).
 
 ### Step 8.3: Failure Mode Severity
-**Record:**
-- False positive: **CRITICAL** — entire filesystem forced into error
-  state for a recoverable per-file operation failure
-- False negative: **CRITICAL** — on-disk metadata inconsistency (data
-  integrity)
+**Record:** Kernel page fault =E2=86=92 panic. **Severity: CRITICAL** (syst=
+em
+crash). Potential denial-of-service via crafted filesystem image.
 
 ### Step 8.4: Risk-Benefit
 **Record:**
-- **Benefit:** HIGH — prevents filesystem-wide abort on benign errors;
-  prevents metadata inconsistency on partial failure
-- **Risk:** LOW — ~15 lines, single function, reviewed by maintainers,
-  follows established btrfs abort patterns
+- **Benefit:** HIGH =E2=80=94 prevents kernel panic; rejects corruption
+  gracefully at read time
+- **Risk:** VERY LOW =E2=80=94 6-line validation matching existing dir_item
+  pattern
 - **Ratio:** Strongly favors backport
 
 ---
@@ -312,142 +382,125 @@ interfaces.
 ### Step 9.1: Evidence Summary
 
 **FOR backport:**
-- Fixes two real bugs with severe consequences (filesystem abort,
-  metadata inconsistency)
-- Small, surgical, obviously correct
-- Reviewed by btrfs maintainers (Sterba, Qu Wenruo)
-- Buggy code present in v6.18.44 since 2021
-- Userspace-reachable on file flag changes
-- Same author/file has prior stable-nominated abort-logic fixes
-- No dependencies
+- Real, reproducible kernel panic on crafted btrfs image
+- Missing validation gap since 2019
+- Small, surgical, maintainer-reviewed fix
+- Matches established tree-checker validation patterns
+- Buggy code confirmed present in local 6.18.44 tree
+- Fixes corruption handling at read time (defense in depth)
 
 **AGAINST backport:**
-- No user/syzbot report in commit message (weak signal only)
-- Mailing list discussion unverified
+- Crash path specifically involves NFS exportfs reconnect (narrower than
+  generic mount)
+- Requires ability to mount/access corrupt btrfs (usually root)
+- `check_inode_extref()` has similar gap (not addressed here =E2=80=94 sepa=
+rate
+  issue)
 
 **UNRESOLVED:**
-- Lore review thread and explicit stable nomination in discussion
-  (UNVERIFIED)
+- Full lore thread / stable nomination discussion (access blocked)
+- Whether ROOT_REF checker mentioned in commit exists elsewhere in
+  mainline (not found in this tree)
 
 ### Step 9.2: Stable Rules Checklist
-1. Obviously correct and tested? **PASS** — logic is clear; maintainer-
-   reviewed (no runtime Tested-by)
-2. Fixes a real bug affecting users? **PASS**
-3. Important issue? **PASS** — filesystem abort + metadata inconsistency
-   (CRITICAL)
-4. Small and contained? **PASS** — single function, ~20 lines
-5. No new features or APIs? **PASS**
-6. Can apply to local tree? **PASS** — buggy code confirmed present;
-   clean apply expected
+1. Obviously correct and tested? **PASS** =E2=80=94 PoC before/after; maint=
+ainer
+   reviewed
+2. Fixes a real bug? **PASS** =E2=80=94 OOB write =E2=86=92 kernel panic
+3. Important issue? **PASS** =E2=80=94 CRITICAL (kernel panic)
+4. Small and contained? **PASS** =E2=80=94 6 lines, one function
+5. No new features/APIs? **PASS**
+6. Can apply to local tree? **PASS** =E2=80=94 code exists, clean apply exp=
+ected
 
 ### Step 9.3: Exception Categories
-**Record:** N/A — standard bug fix, not a quirk/ID/DT/build fix.
+**Record:** N/A =E2=80=94 standard bug fix, not a quirk/ID/DT exception.
 
 ### Step 9.4: Decision Rationale
-This commit corrects inverted transaction-abort logic in a userspace-
-reachable metadata path. The current code unnecessarily aborts the
-entire filesystem when property setting fails without making changes,
-and fails to abort when a property change succeeds but the inode update
-fails — leaving persistent metadata inconsistency. The fix is minimal,
-maintainer-reviewed, self-contained, and the buggy code is confirmed
-present in this v6.18.44 tree.
+
+This commit closes a real validation hole in btrfs's tree-checker. A
+crafted `INODE_REF` with `namelen=3D4096` passes the existing within-item
+bounds check (`sizeof(*iref)` is 10 bytes, so `10 + 4096 =3D 4106` fits a
+4106-byte item) but violates `BTRFS_NAME_LEN` (255). Downstream,
+`btrfs_get_name()` copies into a `NAME_MAX+1` buffer, causing a kernel
+panic. The fix is minimal, follows the existing `check_dir_item()`
+pattern, is reviewed by the btrfs maintainer, and the vulnerable code is
+present in this 6.18.44 tree without the fix.
 
 ---
 
 ## Verification
 
-- [Phase 1] Parsed subject, tags, body from provided commit message
-- [Phase 2] Diff analysis: `prop_set` tracking, abort moved from
-  `set_prop` failure to `update_inode` failure after successful prop
-  change
-- [Phase 3] `git describe HEAD`: v6.18.44-1-g2736c32da98b9
-- [Phase 3] `git show 97fc297754878`: abort-on-set_prop-failure present
-  since fileattr conversion (2021-04-07)
-- [Phase 3] `git show ff9fef559babe`: pattern inherited from
-  `btrfs_ioctl_setflags()` (2019)
-- [Phase 3] `git show d11aefe654a04`: related stable-nominated abort fix
-  by same author in same file
-- [Phase 3] `git log -S 'prop_set' -- fs/btrfs/ioctl.c`: empty — fix not
-  in tree
-- [Phase 4] `b4 dig`: failed (no commit hash / syntax error)
-- [Phase 4] lore.kernel.org fetch: blocked by bot protection —
-  **UNVERIFIED**
-- [Phase 5] `grep btrfs_fileattr_set`: registered in `inode.c`, called
-  via `vfs_fileattr_set` from `ioctl_setflags`
-- [Phase 5] Read `fs/btrfs/props.c` `btrfs_set_prop()`: failure paths
-  make no durable change
-- [Phase 5] Read `fs/btrfs/transaction.h` `btrfs_abort_transaction`:
-  calls `__btrfs_handle_fs_error()`
-- [Phase 5] Read `fs/btrfs/transaction.c` `__btrfs_end_transaction()`:
-  `TRANS_ABORTED` path returns `trans->aborted`
-- [Phase 6] Read `fs/btrfs/ioctl.c` lines 376–401: buggy code confirmed
-  in v6.18.44
-- [Phase 6] Makefile VERSION/PATCHLEVEL/SUBLEVEL: 6.18.44
-- [Phase 8] `vfs_fileattr_set()` requires `inode_owner_or_capable` —
-  file owners can trigger
+- **[Phase 1]** Parsed subject, tags, body; found Reported-by, Link,
+  Reviewed-by David Sterba
+- **[Phase 2]** Diff: +6 lines in `check_inode_ref()` adding `namelen =3D=3D
+  0 || namelen > BTRFS_NAME_LEN` check
+- **[Phase 3]** `git describe HEAD`: `v6.18.44`; blame shows
+  `check_inode_ref` from `71bf92a9b8777` (2019)
+- **[Phase 3]** `git log --oneline -20 -- fs/btrfs/tree-checker.c`:
+  related checker fixes confirmed
+- **[Phase 4]** Lore fetch blocked (403/Anubis); `b4 shazam` no match =E2=
+=80=94
+  UNVERIFIED for thread discussion
+- **[Phase 5]** `grep btrfs_inode_ref_name_len`: multiple consumers;
+  `export.c:287-290` vulnerable path confirmed
+- **[Phase 5]** `expfs.c:445`: `char nbuf[NAME_MAX+1]` confirms small
+  destination buffer
+- **[Phase 5]** `include/uapi/linux/btrfs_tree.h:22`: `BTRFS_NAME_LEN
+  255`
+- **[Phase 5]** `include/uapi/linux/btrfs_tree.h:852-856`: `struct
+  btrfs_inode_ref` is 10 bytes packed
+- **[Phase 5]** `disk-io.c:457-465`: tree-checker runs at read time
+- **[Phase 5]** `tree-checker.c:602-606`: `check_dir_item()` already
+  validates name length =E2=80=94 precedent confirmed
+- **[Phase 6]** `grep 'invalid inode ref name length'`: no matches =E2=80=
+=94 fix
+  not in tree
+- **[Phase 6]** Read `check_inode_ref()` at lines 1752=E2=80=931799: buggy =
+code
+  confirmed present
+- **[Phase 8]** Failure mode: OOB write =E2=86=92 page fault =E2=86=92 pani=
+c, severity
+  CRITICAL
 
-**YES**The background git search finished. It didn’t find the fix commit
-in this tree (expected — it’s still a candidate), but it did turn up one
-related earlier change: `9b8a233bc294d` (“btrfs: handle transaction
-start error in btrfs_fileattr_set”), which only covers transaction
-*start* failures, not the abort-on-`set_prop` / missing-abort-
-on-`update_inode` logic this patch addresses.
+**YES****Backport analysis: `btrfs: tree-checker: validate INODE_REF's
+namelen`**
 
-That doesn’t change the earlier conclusion: the buggy code is present in
-v6.18.44, and this fix should be backported.
+For the local **6.18.44** tree, this should be backported.
+
+`check_inode_ref()` only verified that the name fits inside the item,
+not that `namelen <=3D BTRFS_NAME_LEN` (255). A crafted image with
+`namelen=3D4096` in a 4106-byte item passes the checker but later triggers
+an out-of-bounds write in `btrfs_get_name()` during NFS exportfs
+reconnect, causing a kernel panic.
+
+The fix is small (6 lines), matches the existing `check_dir_item()`
+pattern, is reviewed by btrfs maintainer David Sterba, and the
+vulnerable code is present in this tree without the fix.
 
 **YES**
 
- fs/btrfs/ioctl.c | 18 ++++++++++++------
- 1 file changed, 12 insertions(+), 6 deletions(-)
+ fs/btrfs/tree-checker.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3197f61d612b4..8716241bcbd52 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -264,6 +264,7 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
- 	int ret;
- 	const char *comp = NULL;
- 	u32 inode_flags;
-+	bool prop_set = false;
- 
- 	if (btrfs_root_readonly(root))
- 		return -EROFS;
-@@ -376,16 +377,15 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
- 	if (comp) {
- 		ret = btrfs_set_prop(trans, inode, "btrfs.compression",
- 				     comp, strlen(comp), 0);
--		if (unlikely(ret)) {
--			btrfs_abort_transaction(trans, ret);
-+		if (ret)
- 			goto out_end_trans;
--		}
-+		prop_set = true;
- 	} else {
- 		ret = btrfs_set_prop(trans, inode, "btrfs.compression", NULL, 0, 0);
--		if (unlikely(ret && ret != -ENODATA)) {
--			btrfs_abort_transaction(trans, ret);
-+		prop_set = (ret == 0);
-+		/* If ret == -ENODATA ignore and proceed to update inode item. */
-+		if (ret && ret != -ENODATA)
- 			goto out_end_trans;
--		}
- 	}
- 
- update_flags:
-@@ -395,6 +395,12 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
- 	inode_inc_iversion(&inode->vfs_inode);
- 	inode_set_ctime_current(&inode->vfs_inode);
- 	ret = btrfs_update_inode(trans, inode);
-+	/*
-+	 * If we set a property or deleted one, we must abort if we fail to
-+	 * update the inode, to avoid persisting an inconsistent state.
-+	 */
-+	if (unlikely(ret && prop_set))
-+		btrfs_abort_transaction(trans, ret);
- 
-  out_end_trans:
- 	btrfs_end_transaction(trans);
--- 
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index c7e0e5fb6402d..13b711992a1c8 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -1840,6 +1840,12 @@ static int check_inode_ref(struct extent_buffer *lea=
+f,
+=20
+ 		iref =3D (struct btrfs_inode_ref *)ptr;
+ 		namelen =3D btrfs_inode_ref_name_len(leaf, iref);
++		if (unlikely(namelen =3D=3D 0 || namelen > BTRFS_NAME_LEN)) {
++			inode_ref_err(leaf, slot,
++				"invalid inode ref name length, has %u expect [1, %u]",
++				namelen, BTRFS_NAME_LEN);
++			return -EUCLEAN;
++		}
+ 		if (unlikely(ptr + sizeof(*iref) + namelen > end)) {
+ 			inode_ref_err(leaf, slot,
+ 				"inode ref overflow, ptr %lu end %lu namelen %u",
+--=20
 2.53.0
 

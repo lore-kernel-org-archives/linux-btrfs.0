@@ -1,227 +1,318 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3C7A91DDC35
-	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2026 07:31:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.20
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788161491; cv=none; b=RmU8JKBn+u7KF29rOPANH8JXRRwtw/S3GLzCF2D1GCT8+kOc3JSeQFy6yYZMVf62G0byXaM+jPPG0Y4VJiPMRAFiivsj39woUNvtSfduO1kf6TZ8M3R7FYkMmpbY+gj5mZv8+F3pOpl4VionUV4+R0oKztWgiiglcjarT6fTrJ8=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788161491; c=relaxed/simple;
-	bh=O62Bow7PIns4f468OcYLyUPeNpMggfTyY03iq23qjYY=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=EZ/bQlBQ2YyPKLw83RUjEQXnDm07+uZ+y9sNFDAestix0If/CS/lcoNTeUYll3wSh8aiZP01WGY55zKOVbsiN7p4GNynjr/OGqhmIO8WZlKbkkfSZzIfExQHODUcAaMEAiNWwj8QE2+V+wW1jofbfjTfKyQ8eSOvz+pHzifbJLE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=pCX1lSG3; arc=none smtp.client-ip=212.227.17.20
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A324539D6F6
+	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2026 07:46:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.45
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1788162393; cv=pass; b=MPeU/I1KyyBtnpAncVafk97v9pNYHKZNJMQMh+wvAcDazLzZLyG0MW2MQ72f0QtM/0hGt52MHNt5BzLK1ykKZcQ3/qDcyVBHQI/PemitTdQM6XwMeOrHmsUU37FUeC5A+LyT86caWXFv779B9qKe753jws9dd5VETZuGQO03AlE=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1788162393; c=relaxed/simple;
+	bh=ZqpelwAK2bwkyptyMkCrJRg0IS5AJkjU8pOZFLTBK9Q=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=FVWDxrzjycOxcaE6ChksTOwj+0ef/rl/ScRcCryZ8fVJCGK/he+pTykrntzKazgjqOOBK8sQQQC1jM21bxOFr2lwdfTIjUGC0io2DZPUyrUD0M2v8+R7UxuCIm+8/CzGBADUFIEghmPRRHVcOQyuXbz+4oIqzByZCd6vF9j4REA=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Y85AdJYO; arc=pass smtp.client-ip=209.85.128.45
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="pCX1lSG3"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1788161486; x=1788766286; i=quwenruo.btrfs@gmx.com;
-	bh=GwhzKolt88qrHKzRpDxts8S+ip1b3vmxxI42Zw4xGLY=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=pCX1lSG3kj6xMjD+S6UfxkYjfYBvya598GkQBR1rKhUoBo0gRe5Cb4bMKlup+dIO
-	 o/JuIk1XhMfDvvuuwTiTZ3SqpSXDZJY0Akv+tLuQoCnCjSrnB0KPyk//jKDixdTlo
-	 BWsalneEt/bR+je6j1AePaj+j7EtJJIhCUCPHjyLneRi6TcrlYmcnd4FKsrTcQYSq
-	 Bzwk4lTWWNSWQKI4WDqazfG626KNHa7L1u93VDeyX4Km4dcfI3uSzTWYrnk96TCcc
-	 /Fvva1eZ5fqXzLmSB5QvaGk0H/OplHKmoLlwVCDBLfy+qMswOZwHEF2WciOP5aDSd
-	 vQff+2+6bT4Du7nlIg==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MSKy8-1xTZA53F16-00Nv9Y; Mon, 31
- Aug 2026 09:31:26 +0200
-Message-ID: <74188ab7-96d7-4536-997f-926a5a845f79@gmx.com>
-Date: Mon, 31 Aug 2026 17:01:21 +0930
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Y85AdJYO"
+Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-4998b5a63e2so29390255e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2026 00:46:31 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1788162390; cv=none;
+        d=google.com; s=arc-20260327;
+        b=JZjv/JU0V4X7z3gaKdpW4N/7HrQmaiVZIfyKzdERK64qpnsai2lJTnuhLC8DEmYA1C
+         Z/3UY9UDi5K8vAUPJMMAKYS6nEvH4H91oh3YpKY3ZD1IaWq8NX+f2yKPT+Cphl1cDfPs
+         a9VRrmgyIhnYVxWj1WoJY+3dyN6bZPnL3F1VKW8J6Tdn6fqJvp6bs0SkHOnir+dTa8+w
+         pWw3ewYShKA51DsVZezlWZxl/QVYibj0UTIhL81m/cbp+yDxUzIlBSAA6jTY/xZ/gCQr
+         naS0Awmg2zg14Tof2Je68nUpOGKFM7zCAMjxN1WW9S96io7bapi4RGpRDSKdYNpPbPOf
+         796A==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=hZQy/Yk684q3YWpKvie/KSb3LUNk/eNp21MfBXSicbs=;
+        fh=gccavu6KskZuhdxKZGGZqKbRpE8AZv+Jw1v9OVMw784=;
+        b=CU8JZe/qKnQs/9KXkd1r9Uv3/xBf+qdI8wDEkgivdIFgnWY2jIhsUJC8OK4epUT+YC
+         /g5UcDIDUoZMsPqsI59OIjLm6KZysPABmiqBVNUCOhlhy2TPujj/X3NNLtag0L+PDtT2
+         cgMDuPoPCkG1yHBYaoFqDdqWfMnCibhAT/m1kt52ZveRasFgwSZBBpbC8M3bugpD4L0q
+         pmQBx2ki2cFi4BML7rqiDp2fC0fsqJrzU1EkH1aREQBuGaVLsHCyskAp5EQNHD4Chq9S
+         2DMAwWSL15BTaVvZMHzCYrQyEMH8Kp13phLNSv60JcICyR03qgzfU5+ZURh5eqth/Yyv
+         qepw==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1788162390; x=1788767190; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=hZQy/Yk684q3YWpKvie/KSb3LUNk/eNp21MfBXSicbs=;
+        b=Y85AdJYOMKHgicD4nFTpHGr49Cm5acPsvfONPy2IgZRbwVl5mw1EG0LdsICBOQKKsy
+         ysR54o7QPPw46mV9oJ2jeR/P3RNNB6h2iEbu2VV0Tm5+19BHuMVIeC4VksP03YpwBDdA
+         omWi7hymKrw8HtPV0FIkc2zly7ZBOdvykFCNaYd/FIja30boLvlI3zNJxWyZX6R7zzHb
+         kiBtPwl19hJMyzqv+RqDee5QSek+ZHojGxKr9Ai2fbEiC5FAsId4VmbWwiNyRXol8qb4
+         IwHqnQc7UCMAR9s9chp19KWrSggbdOD1GWsNbYDsctWIePJiYDKsI4hJIs102HoyKbmO
+         WAXg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1788162390; x=1788767190;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=hZQy/Yk684q3YWpKvie/KSb3LUNk/eNp21MfBXSicbs=;
+        b=F93768Sq59+5zBgWkc7u2tv+eKIribZIs6iwq4BUTBPj/o07t8gcuxDrGumI++dftt
+         YwcZOjl8JUHwImwlLiQQt1ZgK4u4YfThBq2eT0NsPr9VAoGlxeji+lGI9pwHQHQHoRbz
+         fxILsv6CMGI51gDd15FBkV2SDOBobWvGmKk90Iiszk3S8FLNNpeGUGRi3JMkewmzOkC8
+         qfe6eO1KgoHRV9J7tL+jfWgnQrZko9aSh0itKX4VGPjD03q0hYPfBuUhTNGkn7MnpEWJ
+         Uli5cxTApqJDc8Es9jFSjykZGeOww5TlZtx0cudkNwqtGradt7DiNSeCCstx4hR8bI2L
+         1g6Q==
+X-Gm-Message-State: AFuF++n5nSxv+1cNqBKxaGKLcZrUIRcfLeycqOKNXNo+OaW8WNCsQdMs
+	yS5gpC6M3MQufgds0cbo4bkoJ2CODb99V4arf0fdtEHeFCszpJjcO7ZaGXwc8FdGbz9kCnW1sEC
+	2I3VVrieGrbj2miHKxJzTHuZCxqT1GZNMLl0SEQW+AQ==
+X-Gm-Gg: AR+sD13EOgQ8bvVJ0Y33LcQIluHD5uzz3Ms1w/p8lBTPZea07kj/saefFhUeAux7J+S
+	sJVrcmHn8xydYlOpeDwcpkUR9l11UY8qyOXfx9BtzX/QFjBNzoB/Yir+7LBspyFsWXygS/xRZ+9
+	ZAiUz9t2zN5+Z0CJ/NFIuLoJ1mFf9ZnVTjx355uL9XjIZLGQab/39iExe/bs2szypUjhDjyKonu
+	9SsOXkQ9iicn6G9nT+BfU06J3KdZzDSmhAk7apg6BejNSTB4qCGbwkWrLZo9RbrfpYX+lMb0CZ5
+	ZTyIAqzPsXSteR0e96E6ebvYQ+WgORSfq6nbAPqt3dAkvpiPHGoxlHna9xEtG19yQcFp6JNqbrQ
+	MJLnzYsDgECDQLs4QPJbKvC4fkHS+cHCFRx4uNusUeA==
+X-Received: by 2002:a05:600c:34d2:b0:49c:cbad:1c44 with SMTP id
+ 5b1f17b1804b1-49ccbad1cf1mr256027415e9.6.1788162389774; Mon, 31 Aug 2026
+ 00:46:29 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: use IOMAP_DIO_BOUNCE flag for direct reads
-To: Christoph Hellwig <hch@infradead.org>, Qu Wenruo <wqu@suse.com>
+References: <6576913842ae66ca1aa4f24cb60c544abe3ca43e.1785996696.git.wqu@suse.com>
+In-Reply-To: <6576913842ae66ca1aa4f24cb60c544abe3ca43e.1785996696.git.wqu@suse.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Mon, 31 Aug 2026 09:46:18 +0200
+X-Gm-Features: AcwNN1VVIok9UFGzLo8MhKmZMhkUordccbCMNhDgX5TGiT1dNsSRk97j293S9uY
+Message-ID: <CAPjX3FeYx6tKrbPy-b9W8eN3QKwLzG9Tt8=d85XSs-LfPpxMpg@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: use ordered extent to grab the logical address
+ for submission
+To: Qu Wenruo <wqu@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-References: <1219d8d9ed105a922d9af6130e08532e2907ea17.1787909265.git.wqu@suse.com>
- <apUp9SjdTSAmmzXV@infradead.org>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <apUp9SjdTSAmmzXV@infradead.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:XEaLd866uTDXdCV9d2P3NiCb7u8iQeWnbKVihVdwODvT7Dnemtm
- aOG+wcASpqhr6oFsOHAIL3ImprhjZ2SWzQjlWXDxiCGmS1NwPe1FGSdKTMD/Mhk+iIfLkM+
- 3u8CREBYqaAvZpxEDWfUv1YSGUNEal2uajdsRE4ZGersCcpj1OalN8cOvN7/3ioEZ2r3J9h
- Om6NSfHuB867aM+njUYmQ==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:l+vOhmLiFXU=;ctiW3WPtVczAXF4hOW4atuDWkKQ
- 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
- FaMYOM9g==
+Content-Type: text/plain; charset="UTF-8"
 
+On Thu, 6 Aug 2026 at 08:16, Qu Wenruo <wqu@suse.com> wrote:
+> In submit_one_sector() we call btrfs_get_extent() to grab the IO extent
+> map so that we know where the logical location to submit the block.
+>
+> However there is no guarantee that there is an IO extent map for the
+> block, and if there is no IO extent map nor ordered extent,
+> btrfs_get_extent() can grab the file extent from on-disk metadata.
+>
+> That's why we have ASSERT()s to reject holes and compressed file
+> extents.
+>
+> On the other hand, for the write range we should have both an IO extent
+> map and an ordered extent, so there is no reason not to grab the ordered
+> extent instead.
+>
+> There is some minor advantages:
+>
+> - No hole ordered extent
+>   So no need to rely on ASSERT()s to reject hole extents.
+>
+>   And the ASSERT()s are depending on the kernel config, without
+>   CONFIG_BTRFS_ASSERT those ASSERT()s won't even trigger.
+>
+> - No IO errors
+>   Unlike btrfs_get_extent() which can return IO error when doing the
+>   metadata tree search, btrfs_lookup_ordered_extent() will either return
+>   an OE or not found.
+>
+> - Cached OE in bio_ctrl->bbio
+>   At bbio allocation we have already did an OE lookup, and we have a
+>   high chance that the current block also belongs to that OE.
+>   Use that cached OE can reduce the frequency to do an rb-tree search.
+>
+> - Smaller rb-tree
+>   Unlike extent-map-tree, which can contain cached extent maps, the life
+>   span of ordered extents are much shorter, they get removed from the
+>   ordered tree after the file extent item is inserted into the subvolume
+>   tree.
+>
+>   So doing ordered extent tree search can be a tiny faster.
+>
+> And since we're here, also address some minor points:
+>
+> - Add error message for every EUCLEAN error
+>
+> - Remove a dead comment on btrfs_folio_clear_dirty()
+>   We no longer call folio_clear_dirty_for_io() since commit 095be159f3eb
+>   ("btrfs: unify folio dirty flag clearing"), so the folio flag is
+>   still dirty, and the folio dirty flag will be cleared by the last dirty
+>   block.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> Changelog:
+> v2:
+> - Extract a helper to determine if the @filepos is in the bbio OE range
+>   Which reduces several "bio_ctrl->bbio->ordered" duplication, and use
+>   in_range() to make is easier to read.
+> ---
+>  fs/btrfs/extent_io.c | 63 +++++++++++++++++++++++++++-----------------
+>  1 file changed, 39 insertions(+), 24 deletions(-)
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index d7600e5fa3d9..50cee1b13b6d 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -1808,6 +1808,18 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
+>         return 0;
+>  }
+>
+> +static bool block_in_bbio_oe_range(const struct btrfs_bio_ctrl *bio_ctrl,
+> +                                  u64 filepos)
+> +{
+> +       struct btrfs_ordered_extent *oe;
+> +
+> +       if (!bio_ctrl->bbio || !bio_ctrl->bbio->ordered)
+> +               return false;
+> +
+> +       oe = bio_ctrl->bbio->ordered;
+> +       return in_range(filepos, oe->file_offset, oe->num_bytes);
+> +}
+> +
+>  /*
+>   * Return 0 if we have submitted or queued the sector for submission.
+>   * Return <0 for critical errors, and the involved sector will be cleaned up.
+> @@ -1820,11 +1832,10 @@ static int submit_one_sector(struct btrfs_inode *inode,
+>                              loff_t i_size)
+>  {
+>         struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> -       struct extent_map *em;
+> +       struct btrfs_ordered_extent *oe;
+>         u64 block_start;
+>         u64 disk_bytenr;
+>         u64 extent_offset;
+> -       u64 em_end;
+>         const u32 sectorsize = fs_info->sectorsize;
+>         unsigned int queued;
+>
+> @@ -1833,8 +1844,14 @@ static int submit_one_sector(struct btrfs_inode *inode,
+>         /* @filepos >= i_size case should be handled by the caller. */
+>         ASSERT(filepos < i_size);
+>
+> -       em = btrfs_get_extent(inode, NULL, filepos, sectorsize);
+> -       if (IS_ERR(em)) {
+> +       /* Try to reuse the existing OE from bbio first. */
+> +       if (block_in_bbio_oe_range(bio_ctrl, filepos)) {
+> +               oe = bio_ctrl->bbio->ordered;
+> +               refcount_inc(&oe->refs);
+> +       } else {
+> +               oe = btrfs_lookup_ordered_extent(inode, filepos);
+> +       }
+> +       if (unlikely(!oe)) {
+>                 /*
+>                  * bio_ctrl may contain a bio crossing several folios.
+>                  * Submit it immediately so that the bio has a chance
 
+How about this small cleanup?:
 
-=E5=9C=A8 2026/8/31 16:45, Christoph Hellwig =E5=86=99=E9=81=93:
-> On Fri, Aug 28, 2026 at 06:58:16PM +0930, Qu Wenruo wrote:
->> Similar to direct writes, if the inode requires data checksum, we shoul=
-d
->> use a stable buffer for IO, or even for direct reads an unstable buffer
->> (e.g. the buffer is being modified during the direct read) can lead to
->> checksum mismatch and even cause read failure.
->>
->> To address the potential problems of unstable dio read buffers, use
->> IOMAP_DIO_BOUNCE for dio reads if the inode requires data checksum.
->>
->> This will bring a small performance drop, around 7% for my benchmark,
->> which is definitely observable on modern NVME SSDs, but the overhead is
->> still much smaller compared to data checksum:
->=20
-> Please take a look at the "lazy bounce buffering for checksummed reads"
-> series I just sent v2 of.
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1691,6 +1691,22 @@ static noinline_for_stack int
+writepage_delalloc(struct btrfs_inode *inode,
+     return 0;
+ }
 
-Thanks for pointing to that series.
++static struct btrfs_ordered_extent *get_oe_from_bbio(const struct
+btrfs_bio *bbio,
++                             u64 filepos)
++{
++    struct btrfs_ordered_extent *oe;
++
++    if (!bbio || !bbio->ordered)
++        return NULL;
++
++    oe = bbio->ordered;
++    if (!in_range(filepos, oe->file_offset, oe->num_bytes))
++        return NULL;
++
++    refcount_inc(&oe->refs);
++    return oe;
++}
++
+ /*
+  * Return 0 if we have submitted or queued the sector for submission.
+  * Return <0 for critical errors, and the involved sector will be cleaned up.
+@@ -1715,8 +1731,11 @@ static int submit_one_sector(struct btrfs_inode *inode,
+     /* @filepos >= i_size case should be handled by the caller. */
+     ASSERT(filepos < i_size);
 
-However it only shows up in lore, but not in my inbox at all, and I have=
-=20
-no idea why.
+-    em = btrfs_get_extent(inode, NULL, filepos, sectorsize);
+-    if (IS_ERR(em)) {
++    /* Try to reuse the existing OE from bbio first. */
++    oe = get_oe_from_bbio(bio_ctrl->bbio, filepos);
++    if (!oe)
++        oe = btrfs_lookup_ordered_extent(inode, filepos);
++    if (unlikely(!oe)) {
+         /*
+          * bio_ctrl may contain a bio crossing several folios.
+          * Submit it immediately so that the bio has a chance
 
-And lore is never a good way to review patches, nor easy to reply.
+--nX
 
->=20
-> For one this removes the read-side IOMAP_DIO_BOUNCE support you are
-> using here, because it had problems.  The alternative is iomap-based
-> and better at building large, aligned read bios which matter for HDD.
-> It also introduces the concept of lazy bouncing where it only bounce
-> buffers after a checksum failure happens by default, which means you
-> only pay an overhead for misbehaving applications.
-
-In that case I'm afraid btrfs may need some way to integrate the=20
-checksum handling into iomap.
-As the btrfs has a very internal handling for repairing each block.
-
->  And unlike for
-> writes where they do exist in real life, I don't know any that modify
-> the buffer they read into.
-
-Yep, and that's why we didn't put too much attention to dio reads until
-the dio writes bounce is implemented.
-
-Thanks,
-Qu
+> @@ -1857,31 +1874,25 @@ static int submit_one_sector(struct btrfs_inode *inode,
+>                  */
+>                 btrfs_mark_ordered_io_finished(inode, filepos, fs_info->sectorsize,
+>                                                false);
+> -               return PTR_ERR(em);
+> +               btrfs_err_rl(fs_info,
+> +               "no ordered extent for root %lld ino %llu filepos %llu",
+> +                            btrfs_root_id(inode->root), btrfs_ino(inode),
+> +                            filepos);
+> +               return -EUCLEAN;
+>         }
+>
+> -       extent_offset = filepos - em->start;
+> -       em_end = btrfs_extent_map_end(em);
+> -       ASSERT(filepos <= em_end);
+> -       ASSERT(IS_ALIGNED(em->start, sectorsize));
+> -       ASSERT(IS_ALIGNED(em->len, sectorsize));
+> +       extent_offset = filepos - oe->file_offset;
+> +       ASSERT(filepos < oe->file_offset + oe->num_bytes);
+> +       ASSERT(IS_ALIGNED(oe->file_offset, sectorsize));
+> +       ASSERT(IS_ALIGNED(oe->num_bytes, sectorsize));
+> +       ASSERT(oe->compress_type == BTRFS_COMPRESS_NONE);
+> +       ASSERT(!test_bit(BTRFS_ORDERED_COMPRESSED, &oe->flags));
+>
+> -       block_start = btrfs_extent_map_block_start(em);
+> -       disk_bytenr = btrfs_extent_map_block_start(em) + extent_offset;
+> +       block_start = oe->disk_bytenr + oe->offset;
+> +       disk_bytenr = block_start + extent_offset;
+>
+> -       ASSERT(!btrfs_extent_map_is_compressed(em));
+> -       ASSERT(block_start != EXTENT_MAP_HOLE);
+> -       ASSERT(block_start != EXTENT_MAP_INLINE);
+> +       btrfs_put_ordered_extent(oe);
+>
+> -       btrfs_free_extent_map(em);
+> -       em = NULL;
+> -
+> -       /*
+> -        * Although the PageDirty bit is cleared before entering this
+> -        * function, subpage dirty bit is not cleared.
+> -        * So clear subpage dirty bit here so next time we won't submit
+> -        * a folio for a range already written to disk.
+> -        */
+>         btrfs_folio_clear_dirty(fs_info, folio, filepos, sectorsize);
+>         btrfs_folio_set_writeback(fs_info, folio, filepos, sectorsize);
+>         /*
+> @@ -1898,6 +1909,10 @@ static int submit_one_sector(struct btrfs_inode *inode,
+>                 btrfs_folio_clear_writeback(fs_info, folio, filepos, sectorsize);
+>                 btrfs_mark_ordered_io_finished(inode, filepos, fs_info->sectorsize,
+>                                                false);
+> +               btrfs_err_rl(fs_info,
+> +               "failed to queue sector for root %lld ino %llu filepos %llu",
+> +                            btrfs_root_id(inode->root),
+> +                            btrfs_ino(inode), filepos);
+>                 return -EUCLEAN;
+>         }
+>         return 0;
+> --
+> 2.54.0
+>
+>

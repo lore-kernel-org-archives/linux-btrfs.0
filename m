@@ -1,44 +1,44 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 151C84302E6;
-	Mon, 31 Aug 2026 13:33:44 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 238F4478E36;
+	Mon, 31 Aug 2026 13:35:44 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788183226; cv=none; b=D+VmDt1bSqIQTt/W8wS31WVGxcsrIO0cTSMgLfcEQ5sTTayyXSsgt/sUKiE9iwuw7s6AvEnJwPAJFul3SlPJCyDycCKgbgQqjNcXkn9v/RBaOjswdL9o4yXyBRvmixvj3675v6V6iHqwtDqjuCxNzWCJPrqgwOwSZqAJPVNX20s=
+	t=1788183346; cv=none; b=ZJ04Nofvb73XvWBX621BT3V8WOiTCG49soPTkuRQwMx1VuSfWcjz5WlVmkcyZLcZ8/CdiFC4rAAB/U1mPiUEcfRQ8VpXqpmEp38KJiT4XaGsrRxtm6WYaIpB8i67LZOIswX6ez11ORtMyGu16lgYVpFZfHc4B9nQGJ+ETr0dpxI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788183226; c=relaxed/simple;
-	bh=5lVvHXIAUsKrO0pyLf/HW3pkVaqBJ8tAE+mm6jRn8H4=;
+	s=arc-20240116; t=1788183346; c=relaxed/simple;
+	bh=X4171WGsHTSp1/+if5YR5339+GWSQvBoemWG6Lv1PJs=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=RM0w4tZztsd/+vSbX/P7MWFmpCrGdFULw3v1OIxOZ2fJAE/KfymWvplm5fp1vcGXvmLC912WUzC+JD2MLxRuq52wPt1h80If1cShHoOaYoE4KmPTr2j4JQu8LL5W7DgMuBNjEGNTwul7AdeeSV42lSYLo3JVmBua1Rj8JuY0f9s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Xr7lewpm; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version:Content-Type; b=WhAGxMKvH3NUa0hKA86Ly4+132kRLS89L5DBd/0hqP5YDDgd6QLr/B9f+vN23MrREeC76NKZY55VCw7vJW0w0UaZvWvQo5N29DgX1SWRMM7HRfxKBHZ96CjsPLzhqpH7Yq1VKfVeWi7beDrhImBrOQ6sA5KLqXDbTurkrKEHDbo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=RQYrw9Mf; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Xr7lewpm"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 05F401F00A3D;
-	Mon, 31 Aug 2026 13:33:42 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="RQYrw9Mf"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 91F9C1F000E9;
+	Mon, 31 Aug 2026 13:35:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1788183224;
-	bh=fCErg2Hrtok/522CbFYTLLln1nhr7kRsQGC5jRupeks=;
+	s=k20260515; t=1788183344;
+	bh=8q7qGEwv1jrnrOHSrDnXGmZ2OVQyuSC08lz5mLCUKw0=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=Xr7lewpmztG8pX+8qXqZhOdaBvc2GCj87P4z4uJ5bJwNV3zCF01DC8/kmuon+wOAR
-	 LaU/5DxR20mN6N2gzhcgQKC52156B37ndvunCUfpDDmaGhUH628dy0QVZuo3SbcwLX
-	 ckyOGRTd/Y4rqU7sqmM/SSjJDqBk8iVQJoP6ksNVm8kBguPor0yrXF+bGdlgFEumKP
-	 KUW3btnt1q6IZTdY6W8DTKwbPUTTSbn+zzEmn8oDLR5u8gLz/KLTEGlOJLTlzJNtth
-	 HO4IlqW1IjIXL71YJyYRg90zFFFyWXkgrSIFrFhe9U1qe7BLrWy4gMD5SwKe7lwO1B
-	 zDKdSCjSnLBXA==
+	b=RQYrw9MfD0V92csz1WiIzL4W1nDH4LZjapvkHyZlaMSxrzWIKHgETQBY/kHoltLZp
+	 OW5V4gAfz8wLFEHzRLy22VQgRxI/7K3D48kYCsfiy6aGwAWSFhpOomJ9wo3S5Z5H6A
+	 gr+8zRRjG3bIl9W+rD9Az5V5r+35PHLDs5XMUQfZWpALlMz1Y7gbZQk16GfARIVZi9
+	 AFuG7JuXs4Ph04n78VUt1Ap6jBxX7k5/6X5c/bZhFlF3tUfEv2XTwB2xcPCMBDOhuh
+	 rfzD05prA5dc6e3Y2HPgmS/yhr574bC4FZwdhUUFjjtXhh+vNlWbHJibUFJf+1vjB7
+	 JhotTIiMf7yOA==
 From: Sasha Levin <sashal@kernel.org>
 To: patches@lists.linux.dev,
 	stable@vger.kernel.org
-Cc: KangNing Liao <lkangn.kernel@gmail.com>,
+Cc: Filipe Manana <fdmanana@suse.com>,
 	Qu Wenruo <wqu@suse.com>,
 	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.18-5.15] btrfs: protect sb_write_pointer() with invalidate lock
-Date: Mon, 31 Aug 2026 09:20:47 -0400
-Message-ID: <20260831133314.4125787-19-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.18] btrfs: fix transaction abort logic in btrfs_fileattr_set()
+Date: Mon, 31 Aug 2026 09:22:00 -0400
+Message-ID: <20260831133314.4125787-92-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260831133314.4125787-1-sashal@kernel.org>
 References: <20260831133314.4125787-1-sashal@kernel.org>
@@ -54,387 +54,400 @@ X-stable-base: Linux 6.18.48
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-From: KangNing Liao <lkangn.kernel@gmail.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-[ Upstream commit 123b9a545f4d0348e81f558a032bf2a93ee5722f ]
+[ Upstream commit 9d78a98796f215d9973e1e53871b2d63420f3608 ]
 
-sb_write_pointer() reads the super block from the block device page cache
-using read_cache_page_gfp(). This has the same race with BLKBSZSET as the
-one fixed by commit 3f29d661e568 ("btrfs: sync read disk super and set
-block size").
+There's no need to abort the transaction if we failed to set or delete a
+property, as we haven't done any change. However we need to abort if we
+set a property or delete a property and then fail to update the inode
+item, as that would leave the inode's state in subvolume tree
+inconsistent.
 
-Take the mapping invalidate lock around read_cache_page_gfp() to
-serialize the read against block size changes.
-
-Signed-off-by: KangNing Liao <lkangn.kernel@gmail.com>
 Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
 
 LLM Generated explanations, may be completely bogus:
 
-# Stable Backport Analysis: `btrfs: protect sb_write_pointer() with
-invalidate lock`
+# Stable Backport Analysis: `btrfs: fix transaction abort logic in
+btrfs_fileattr_set()`
 
-**Tree under review:** `v6.18.44` (`stable/linux-6.18.y`, detached HEAD)
+## Phase 1: Commit Message Forensics
 
-**Commit analyzed:** `123b9a545f4d0` (not yet in this tree; applies
-cleanly)
-
----
-
-## PHASE 1: COMMIT MESSAGE FORENSICS
-
-### Step 1.1: Subject line
-**Record:** `[btrfs]` `[protect]` — Add invalidate-lock protection
-around superblock page-cache reads in `sb_write_pointer()` for zoned
-btrfs.
+### Step 1.1: Subject Line
+**Record:** `[btrfs]` `[fix]` — Correct transaction abort handling in
+`btrfs_fileattr_set()` when setting/deleting compression properties and
+updating the inode item.
 
 ### Step 1.2: Tags
 **Record:**
-- **Signed-off-by:** KangNing Liao `<lkangn.kernel@gmail.com>` (author)
-- **Reviewed-by:** Qu Wenruo `<wqu@suse.com>` (btrfs maintainer)
-- **Signed-off-by:** David Sterba `<dsterba@suse.com>` (btrfs
-  maintainer)
-- No `Fixes:`, `Reported-by:`, `Link:`, `Cc: stable`, or `Tested-by:`
-  tags
-- Notable: References upstream commit `3f29d661e568` as the prior fix
-  for the same race class
+- **Reviewed-by:** Qu Wenruo `<wqu@suse.com>` — btrfs developer
+- **Signed-off-by:** Filipe Manana `<fdmanana@suse.com>` — author
+- **Reviewed-by:** David Sterba `<dsterba@suse.com>` — btrfs maintainer
+- **Signed-off-by:** David Sterba `<dsterba@suse.com>`
+- No Fixes:, Reported-by:, Link:, Cc: stable, or Tested-by: tags
+- Notable: dual maintainer review (Sterba, Qu Wenruo); no syzbot or user
+  bug report
 
-### Step 1.3: Body analysis
+### Step 1.3: Body Analysis
 **Record:**
-- **Bug:** `sb_write_pointer()` calls `read_cache_page_gfp()` without
-  synchronizing against `BLKBSZSET` block-size changes on the block
-  device mapping.
-- **Symptom:** Same race as the syzbot-reported crash fixed in
-  `3f29d661e568` / stable `ccb3c75d57039`: folio order vs.
-  `mapping_min_folio_order()` mismatch → `VM_BUG_ON_FOLIO` or NULL
-  pointer dereference in `create_empty_buffers()`.
-- **Root cause:** Block-size change via `BLKBSZSET` alters
-  `mapping->flags` while a folio is being allocated/read.
-- **Fix:** Wrap `read_cache_page_gfp()` with `filemap_invalidate_lock()`
-  / `filemap_invalidate_unlock()`.
+- **Bug:** Transaction abort is triggered at the wrong points in
+  `btrfs_fileattr_set()`.
+- **Symptom (false positive):** Aborting when `btrfs_set_prop()` fails
+  even though no metadata was changed — unnecessarily puts the
+  filesystem into error/RO state.
+- **Symptom (false negative):** Not aborting when `btrfs_set_prop()`
+  succeeds but `btrfs_update_inode()` fails — leaves on-disk inode state
+  inconsistent between the property item and the inode item.
+- **Root cause:** Abort logic tied to property-set failure instead of
+  tracking whether a property was actually modified, and missing abort
+  after a successful property change followed by inode-update failure.
 
-### Step 1.4: Hidden bug fix?
-**Record:** Yes — despite “protect” wording rather than “fix”, this is a
-real concurrency/crash bug fix, not cleanup. It completes the same
-protection pattern already applied to `btrfs_read_disk_super()` in this
-tree.
+### Step 1.4: Hidden Bug Fix?
+**Record:** No — this is an explicit bug fix, not disguised cleanup. It
+corrects two concrete metadata-consistency / over-abort bugs.
 
 ---
 
-## PHASE 2: DIFF ANALYSIS
+## Phase 2: Diff Analysis
 
 ### Step 2.1: Inventory
 **Record:**
-- **Files:** `fs/btrfs/zoned.c` only (+2 lines)
-- **Functions:** `sb_write_pointer()` only
-- **Scope:** Single-file, surgical fix (2 insertions)
+- **Files:** `fs/btrfs/ioctl.c` only (~+10/−5 net, ~20 lines touched)
+- **Function:** `btrfs_fileattr_set()`
+- **Scope:** Single-file surgical fix
 
-### Step 2.2: Code flow per hunk
+### Step 2.2: Code Flow Change
 **Record:**
-- **Before:** In the `full[0] && full[1]` branch (both superblock log
-  zones full), loop calls `read_cache_page_gfp()` unlocked to compare
-  superblock generations.
-- **After:** Same path, but `read_cache_page_gfp()` is serialized
-  against block-size invalidation via `filemap_invalidate_lock/unlock`.
-- **Affected path:** Error and success paths unchanged; only the page-
-  cache read is synchronized.
 
-### Step 2.3: Bug mechanism
-**Record:**
-- **Category:** Race condition / memory safety (folio order mismatch)
-- **Mechanism:** Concurrent `BLKBSZSET` changes
-  `mapping_min_folio_order()` after folio allocation begins but before
-  `filemap_add_folio()` completes, producing kernel BUG or NULL deref —
-  identical to the already-backported `btrfs_read_disk_super()` bug.
+| Hunk | Before | After |
+|------|--------|-------|
+| Property set (`comp` non-NULL) | `btrfs_set_prop()` failure →
+`btrfs_abort_transaction()` | Failure → `goto out_end_trans` (no abort);
+success → `prop_set = true` |
+| Property delete (`comp` NULL) | Non-`-ENODATA` failure → abort | Same,
+but track `prop_set = (ret == 0)`; `-ENODATA` proceeds without abort |
+| `btrfs_update_inode()` | No abort on failure | If `ret && prop_set` →
+`btrfs_abort_transaction()` |
 
-### Step 2.4: Fix quality
+### Step 2.3: Bug Mechanism
 **Record:**
-- **Quality:** Obviously correct — mirrors the exact pattern already in
-  `btrfs_read_disk_super()` at `fs/btrfs/volumes.c:1368-1370`.
-- **Regression risk:** Very low; `filemap_invalidate_lock` is the
-  established synchronization primitive for this race.
-- **No new APIs, no behavior change beyond preventing the race.**
+- **Category:** Logic/correctness fix — incorrect transaction abort
+  policy
+- **False positive:** `btrfs_abort_transaction()` on `btrfs_set_prop()`
+  failure when `btrfs_set_prop()` made no durable change (see `props.c`:
+  returns early on `btrfs_setxattr()` failure; rolls back on `apply()`
+  failure)
+- **False negative:** Missing abort after partial transaction success —
+  property written via `btrfs_setxattr()` in `btrfs_set_prop()`, but
+  inode item update via `btrfs_update_inode()` fails; without abort the
+  transaction can commit with inconsistent metadata
+
+### Step 2.4: Fix Quality
+**Record:** Obviously correct. `prop_set` accurately tracks whether a
+property mutation occurred. Minimal scope. Low regression risk — aligns
+with btrfs patterns elsewhere (e.g. `d11aefe654a04` for received-subvol
+ioctl abort logic). Removing abort on clean `set_prop` failure is
+strictly less aggressive; adding abort after successful `set_prop` +
+failed `update_inode` is the standard btrfs consistency response.
 
 ---
 
-## PHASE 3: GIT HISTORY INVESTIGATION
+## Phase 3: Git History Investigation
 
 ### Step 3.1: Blame
+**Record:** Buggy abort-on-`set_prop`-failure pattern present since
+`97fc297754878` ("btrfs: convert to fileattr", 2021-04-07), inherited
+from pre-fileattr `btrfs_ioctl_setflags()` (`ff9fef559babe`,
+2019-04-20). `unlikely()` wrappers added in `a929904cf73b6` (2025-09).
+Bug has been in this code path for years.
+
+### Step 3.2: Fixes: Tag
+**Record:** N/A — no Fixes: tag.
+
+### Step 3.3: Related Changes
 **Record:**
-- `read_cache_page_gfp()` in `sb_write_pointer()` introduced in
-  `12659251ca5df` (Nov 2020, “implement log-structured superblock for
-  ZONED mode”).
-- Loop structure updated in `02ca9e6fb5f66a` / `d2715d1db455e`
-  (2023–2024).
-- Buggy unlocked read has been present since zoned superblock logging
-  was added.
+- `d11aefe654a04` — same author (Filipe Manana), same file, fixes
+  incorrect transaction abort in another ioctl path; was nominated `Cc:
+  stable@vger.kernel.org`
+- `014a021075c58` — adds missing abort on inode/root update failure in
+  received-subvol ioctl
+- `a929904cf73b6` — only added `unlikely()` around existing abort
+  branches
+- Standalone fix; not part of a series
 
-### Step 3.2: Fixes: tag
-**Record:** N/A — no `Fixes:` tag. Referenced commit `3f29d661e568`
-exists in repo; equivalent backport `ccb3c75d57039` **is** in this tree
-(committed by Greg K-H, Feb 2026).
-
-### Step 3.3: Related file history
-**Record:**
-- `ccb3c75d57039` backported the `btrfs_read_disk_super()` fix to
-  6.18.y.
-- `123b9a545f4d0` is on `master` but not yet on `stable/linux-6.18.y`.
-- Standalone single-patch series (v1 only per `b4 dig -a`).
-
-### Step 3.4: Author context
-**Record:** KangNing Liao has prior btrfs zoned contributions. Patch
-reviewed by Qu Wenruo (active btrfs maintainer).
+### Step 3.4: Author Context
+**Record:** Filipe Manana is an active btrfs developer with multiple
+stable-worthy fixes in this tree. David Sterba is btrfs maintainer and
+co-signer.
 
 ### Step 3.5: Dependencies
-**Record:**
-- References `3f29d661e568` conceptually; stable tree has
-  `ccb3c75d57039` (same fix, different hash).
-- No structural dependencies — patch applies cleanly (`git apply
-  --check` succeeded).
-- Standalone; does not require other commits from the series.
+**Record:** None. `btrfs_fileattr_set()`, `btrfs_set_prop()`, and
+`btrfs_update_inode()` all exist in this tree. Applies standalone.
 
 ---
 
-## PHASE 4: MAILING LIST AND EXTERNAL RESEARCH
+## Phase 4: Mailing List and External Research
 
-### Step 4.1: Original discussion
-**Record:**
-- **URL:** https://patch.msgid.link/20260521122945.524890-1-
-  lkangn.kernel@gmail.com
-- **Series:** v1 only (2026-05-21)
-- **Reviewer feedback:** Qu Wenruo replied with `Reviewed-by:` and
-  “Thanks” — no NAKs or concerns
-- **Stable nomination:** None found in thread
-
-### Step 4.2: Reviewers
-**Record:** `b4 dig -w` shows CC to `linux-btrfs@vger.kernel.org`, David
-Sterba, Edward Davis (author of the original BLKBSZSET fix), Filipe
-Manana’s address not listed but David Sterba committed.
-
-### Step 4.3: Bug report
-**Record:** No direct syzbot report for this path. Indirect evidence
-from `ccb3c75d57039` syzbot report (`b4a2af3000eaa84d95d5`) documenting
-identical failure mode in `btrfs_read_disk_super()`.
-
-### Step 4.4: Related patches
-**Record:** Companion to `ccb3c75d57039` — same race, different code
-path in zoned superblock handling.
-
-### Step 4.5: Stable list
-**Record:** Lore fetch blocked by bot protection for full thread; mbox
-download via `b4 dig -m` succeeded. No stable-list discussion found in
-mbox content.
+### Step 4.1–4.5
+**Record:** Commit hash not present in this checkout (candidate under
+evaluation). `b4 dig -c` could not be run without hash. `b4 dig -q`
+failed (wrong syntax). lore.kernel.org blocked by bot protection.
+**UNVERIFIED:** mailing list thread, stable nominations in review,
+series revisions. Reviewed-by tags from btrfs maintainers are present in
+the commit message itself.
 
 ---
 
-## PHASE 5: CODE SEMANTIC ANALYSIS
+## Phase 5: Code Semantic Analysis
 
-### Step 5.1: Key functions
-**Record:** `sb_write_pointer()` (modified)
+### Step 5.1: Key Functions
+**Record:** `btrfs_fileattr_set()` (modified)
 
 ### Step 5.2: Callers
 **Record:**
-- `sb_log_location()` → `sb_write_pointer()`
-- `btrfs_sb_log_location_bdev()` → `sb_log_location()` — called from
-  `btrfs_read_disk_super()` (`fs/btrfs/volumes.c:1346`)
-- `btrfs_sb_log_location()` → `sb_log_location()` — called from `disk-
-  io.c` (super write/read), `scrub.c`, and zoned device validation
-  (`zoned.c:585`)
+- `fs/btrfs/inode.c` — `.fileattr_set = btrfs_fileattr_set` on btrfs
+  inode ops
+- `ioctl_setflags()` → `vfs_fileattr_set()` → `btrfs_fileattr_set()`
+  (`fs/file_attr.c`)
+- `ioctl_fssetxattr()`, `file_setattr` syscall also reach
+  `vfs_fileattr_set()`
 
 ### Step 5.3: Callees
-**Record:** `filemap_invalidate_lock()`, `read_cache_page_gfp()`,
-`filemap_invalidate_unlock()`, `btrfs_release_disk_super()`
+**Record:** `btrfs_start_transaction()`, `btrfs_set_prop()` →
+`btrfs_setxattr()`, `btrfs_update_inode()` →
+`btrfs_delayed_update_inode()`, `btrfs_abort_transaction()` →
+`__btrfs_handle_fs_error()`, `btrfs_end_transaction()`
 
 ### Step 5.4: Reachability
-**Record:**
-- Triggered on zoned block devices (`bdev_is_zoned()`) when both
-  superblock log zones are full.
-- Reachable during **mount** (`btrfs_read_disk_super` →
-  `btrfs_sb_log_location_bdev`), **superblock writes**, **scrub**, and
-  **device validation**.
-- `BLKBSZSET` requires privileged access to the block device; syzbot
-  demonstrated the race is reachable from userspace with appropriate
-  privileges.
+**Record:** Userspace-reachable via `FS_IOC_SETFLAGS` /
+`FS_IOC_FSSETXATTR` / `file_setattr` on files the caller owns
+(`inode_owner_or_capable` in `vfs_fileattr_set`). Compression flag
+changes (`FS_COMPR_FL` / `FS_NOCOMP_FL`) trigger the
+`btrfs_set_prop("btrfs.compression", ...)` path. Unprivileged file
+owners can trigger this for their own files.
 
-### Step 5.5: Similar patterns
-**Record:** Identical lock pattern already present in
-`btrfs_read_disk_super()` in this tree (`volumes.c:1368-1370`). This
-path was simply missed when that fix was backported.
+### Step 5.5: Similar Patterns
+**Record:** Same file has related abort-logic fixes (`d11aefe654a04`,
+`014a021075c58`). Pattern throughout btrfs: abort only after metadata
+has been modified, not on pre-change failures.
 
 ---
 
-## PHASE 6: CROSS-REFERENCE AGAINST LOCAL TREE (6.18.y)
+## Phase 6: Cross-Reference Against Local Tree
 
-### Step 6.1: Buggy code present?
-**Record:** **Yes.** `fs/btrfs/zoned.c:133-134` calls
-`read_cache_page_gfp()` without invalidate lock. Bug present since zoned
-superblock logging (2020).
+### Step 6.1: Buggy Code Present?
+**Record:** **Yes.** Local tree is **v6.18.44** (`git describe HEAD` →
+`v6.18.44-1-g2736c32da98b9`, Makefile VERSION=6 PATCHLEVEL=18
+SUBLEVEL=44). Current `fs/btrfs/ioctl.c` lines 376–401 show the buggy
+pattern: abort on `btrfs_set_prop()` failure, no abort on
+`btrfs_update_inode()` failure. No `prop_set` variable present (fix not
+yet applied).
 
-### Step 6.2: Backport complications
-**Record:** **Clean apply** — `git apply --check` passed with zero
-conflicts.
+### Step 6.2: Backport Complications
+**Record:** Clean apply expected — minimal diff against current
+`btrfs_fileattr_set()`. No conflicting recent churn in this function.
 
-### Step 6.3: Related fixes already present?
-**Record:** **Partial.** `ccb3c75d57039` fixed `btrfs_read_disk_super()`
-in this tree but left `sb_write_pointer()` unprotected. This commit
-closes that gap.
+### Step 6.3: Related Fixes Already Present?
+**Record:** Related ioctl abort fixes (`d11aefe654a04`, `014a021075c58`)
+are in tree, but this specific `btrfs_fileattr_set()` bug is **not**
+fixed. `git log -S 'prop_set' -- fs/btrfs/ioctl.c` returns empty.
 
 ---
 
-## PHASE 7: SUBSYSTEM CONTEXT
+## Phase 7: Subsystem Context
 
 ### Step 7.1: Subsystem
-**Record:** `fs/btrfs` — filesystem, zoned-mode superblock handling.
-**Criticality: IMPORTANT** (filesystem mount/write path; not universal
-like VFS core, but crash on mount/write for zoned btrfs users).
+**Record:** `fs/btrfs` — btrfs filesystem. **Criticality: IMPORTANT**
+(metadata integrity for all btrfs users).
 
 ### Step 7.2: Activity
-**Record:** Actively maintained; recent zoned fixes in 6.18.y
-(`deddd28fd83c2`, `4d4ef6627304a`, etc.).
+**Record:** Actively maintained; recent commits in `ioctl.c` include
+transaction-abort fixes, indicating ongoing attention to this class of
+bug.
 
 ---
 
-## PHASE 8: IMPACT AND RISK
+## Phase 8: Impact and Risk Assessment
 
-### Step 8.1: Who is affected
-**Record:** Users of **zoned btrfs** on host-managed zoned block devices
-(SMR/ZNS SSDs). Config: btrfs with zoned devices enabled at format/mount
-time.
+### Step 8.1: Who Is Affected
+**Record:** All btrfs users who change file flags (especially
+compression flags) via `chattr`, `FS_IOC_SETFLAGS`, or related
+interfaces.
 
-### Step 8.2: Trigger conditions
+### Step 8.2: Trigger Conditions
 **Record:**
-- Zoned btrfs with both superblock log zones full (normal steady-state
-  after superblock updates)
-- Concurrent `BLKBSZSET` on the same block device
-- Uncommon in production but proven reachable (syzbot for sibling path);
-  mount-time scenario explicitly described in `ccb3c75d57039`
+- **False positive (current bug):** Any `btrfs_set_prop()` failure
+  during flag change (e.g. `-ENOSPC`, `-ENOMEM`) → full transaction
+  abort → filesystem error/RO via `__btrfs_handle_fs_error()`.
+  Relatively uncommon but serious when hit.
+- **False negative (current bug):** `btrfs_set_prop()` succeeds, then
+  `btrfs_update_inode()` fails → transaction ends without abort → risk
+  of committed inconsistent metadata (property vs. inode flags). Rare
+  but severe.
 
-### Step 8.3: Failure mode
-**Record:** Kernel `VM_BUG_ON_FOLIO` or KASAN NULL pointer dereference
-in buffer-head setup → **CRITICAL** (oops/panic during mount or
-superblock I/O).
-
-### Step 8.4: Risk-benefit
+### Step 8.3: Failure Mode Severity
 **Record:**
-- **Benefit:** HIGH for zoned btrfs users — prevents kernel crash;
-  completes already-backported fix family
-- **Risk:** VERY LOW — 2 lines, identical to proven pattern already in
-  tree
+- False positive: **CRITICAL** — entire filesystem forced into error
+  state for a recoverable per-file operation failure
+- False negative: **CRITICAL** — on-disk metadata inconsistency (data
+  integrity)
+
+### Step 8.4: Risk-Benefit
+**Record:**
+- **Benefit:** HIGH — prevents filesystem-wide abort on benign errors;
+  prevents metadata inconsistency on partial failure
+- **Risk:** LOW — ~15 lines, single function, reviewed by maintainers,
+  follows established btrfs abort patterns
 - **Ratio:** Strongly favors backport
 
 ---
 
-## PHASE 9: FINAL SYNTHESIS
+## Phase 9: Final Synthesis
 
-### Step 9.1: Evidence summary
+### Step 9.1: Evidence Summary
 
 **FOR backport:**
-- Real race bug with documented crash mechanism (syzbot for same pattern
-  in `btrfs_read_disk_super`)
-- Partial fix already in 6.18.y (`ccb3c75d57039`); this closes the
-  remaining hole
-- Kernel crash severity (CRITICAL)
-- Tiny, surgical, obviously correct
-- Reviewed by btrfs maintainer (Qu Wenruo)
-- Applies cleanly to 6.18.y
+- Fixes two real bugs with severe consequences (filesystem abort,
+  metadata inconsistency)
+- Small, surgical, obviously correct
+- Reviewed by btrfs maintainers (Sterba, Qu Wenruo)
+- Buggy code present in v6.18.44 since 2021
+- Userspace-reachable on file flag changes
+- Same author/file has prior stable-nominated abort-logic fixes
+- No dependencies
 
 **AGAINST backport:**
-- Affects only zoned btrfs (niche subset of btrfs users)
-- No direct syzbot report for this exact function (indirect evidence
-  only)
-- Requires privileged `BLKBSZSET` concurrent with superblock read
+- No user/syzbot report in commit message (weak signal only)
+- Mailing list discussion unverified
 
-**Unresolved:** None material to the decision.
+**UNRESOLVED:**
+- Lore review thread and explicit stable nomination in discussion
+  (UNVERIFIED)
 
-### Step 9.2: Stable rules checklist
-1. Obviously correct and tested? **PASS** — mirrors in-tree fix;
-   maintainer reviewed
-2. Fixes a real bug? **PASS** — race with `BLKBSZSET` on page-cache read
-3. Important issue? **PASS** — kernel crash (BUG/null deref)
-4. Small and contained? **PASS** — 2 lines, 1 file, 1 function
-5. No new features/APIs? **PASS**
-6. Can apply to local tree? **PASS** — clean apply verified;
-   prerequisite fix already present
+### Step 9.2: Stable Rules Checklist
+1. Obviously correct and tested? **PASS** — logic is clear; maintainer-
+   reviewed (no runtime Tested-by)
+2. Fixes a real bug affecting users? **PASS**
+3. Important issue? **PASS** — filesystem abort + metadata inconsistency
+   (CRITICAL)
+4. Small and contained? **PASS** — single function, ~20 lines
+5. No new features or APIs? **PASS**
+6. Can apply to local tree? **PASS** — buggy code confirmed present;
+   clean apply expected
 
-### Step 9.3: Exception category
-**Record:** N/A (standard bug fix, not device-ID/quirk/DT/docs
-exception)
+### Step 9.3: Exception Categories
+**Record:** N/A — standard bug fix, not a quirk/ID/DT/build fix.
 
-### Step 9.4: Decision rationale
-
-This tree (`6.18.44`) already backported the `BLKBSZSET` vs.
-`read_cache_page_gfp()` race fix for `btrfs_read_disk_super()`, but
-`sb_write_pointer()` — called from the same mount and superblock I/O
-paths on zoned devices — still performs the identical unlocked read when
-both superblock log zones are full. Leaving this unprotected means the
-backport is incomplete: zoned btrfs users can still hit the same crash
-class the stable tree already decided was worth fixing. The patch is
-minimal, follows the established pattern already in `volumes.c`, and
-applies without modification.
+### Step 9.4: Decision Rationale
+This commit corrects inverted transaction-abort logic in a userspace-
+reachable metadata path. The current code unnecessarily aborts the
+entire filesystem when property setting fails without making changes,
+and fails to abort when a property change succeeds but the inode update
+fails — leaving persistent metadata inconsistency. The fix is minimal,
+maintainer-reviewed, self-contained, and the buggy code is confirmed
+present in this v6.18.44 tree.
 
 ---
 
 ## Verification
 
-- **[Phase 1]** `git show 123b9a545f4d0 --format=fuller`: parsed
-  subject, body, tags
-- **[Phase 1]** No syzbot/Fixes tags on this commit; references
-  `3f29d661e568`
-- **[Phase 2]** Diff: +2 lines in `sb_write_pointer()`,
-  `filemap_invalidate_lock/unlock` around `read_cache_page_gfp()`
-- **[Phase 2]** Read `fs/btrfs/zoned.c:88-159`: confirmed buggy unlocked
-  read in `full[0] && full[1]` branch
-- **[Phase 2]** Read `fs/btrfs/volumes.c:1368-1370`: confirmed identical
-  fix pattern already in tree
-- **[Phase 3]** `git describe HEAD`: `v6.18.44`
-- **[Phase 3]** `git blame -L 128,140 fs/btrfs/zoned.c`:
-  `read_cache_page_gfp` since `12659251ca5df` (2020)
-- **[Phase 3]** `git merge-base --is-ancestor ccb3c75d57039 HEAD`:
-  prerequisite fix **in tree**
-- **[Phase 3]** `git merge-base --is-ancestor 123b9a545f4d0 HEAD`: fix
-  commit **not in tree**
-- **[Phase 3]** `git show ccb3c75d57039`: stable backport of BLKBSZSET
-  race fix with syzbot stack trace
-- **[Phase 3]** `git apply --check` on patch: **applies cleanly**
-- **[Phase 4]** `b4 dig -c 123b9a545f4d0`: lore URL found
-- **[Phase 4]** `b4 dig -a`: v1 only, no revisions
-- **[Phase 4]** `b4 dig -w`: CC to linux-btrfs, dsterba, eadavis
-- **[Phase 4]** `b4 dig -m /tmp/sb_write_pointer.mbox`: Qu Wenruo
-  `Reviewed-by`, no NAKs, no stable CC
-- **[Phase 5]** `grep btrfs_sb_log_location`: callers in `volumes.c`,
-  `disk-io.c`, `scrub.c`, `zoned.c`
-- **[Phase 5]** Traced mount path: `btrfs_read_disk_super` →
-  `btrfs_sb_log_location_bdev` → `sb_write_pointer`
-- **[Phase 6]** Confirmed `v6.18.44` tree has unlocked
-  `read_cache_page_gfp` at `zoned.c:133-134`
-- **[Phase 6]** Confirmed `ccb3c75d57039` already protects
-  `btrfs_read_disk_super()` read
-- **[Phase 8]** Failure mode from `ccb3c75d57039` message: KASAN null-
-  ptr-deref / VM_BUG_ON — CRITICAL
+- [Phase 1] Parsed subject, tags, body from provided commit message
+- [Phase 2] Diff analysis: `prop_set` tracking, abort moved from
+  `set_prop` failure to `update_inode` failure after successful prop
+  change
+- [Phase 3] `git describe HEAD`: v6.18.44-1-g2736c32da98b9
+- [Phase 3] `git show 97fc297754878`: abort-on-set_prop-failure present
+  since fileattr conversion (2021-04-07)
+- [Phase 3] `git show ff9fef559babe`: pattern inherited from
+  `btrfs_ioctl_setflags()` (2019)
+- [Phase 3] `git show d11aefe654a04`: related stable-nominated abort fix
+  by same author in same file
+- [Phase 3] `git log -S 'prop_set' -- fs/btrfs/ioctl.c`: empty — fix not
+  in tree
+- [Phase 4] `b4 dig`: failed (no commit hash / syntax error)
+- [Phase 4] lore.kernel.org fetch: blocked by bot protection —
+  **UNVERIFIED**
+- [Phase 5] `grep btrfs_fileattr_set`: registered in `inode.c`, called
+  via `vfs_fileattr_set` from `ioctl_setflags`
+- [Phase 5] Read `fs/btrfs/props.c` `btrfs_set_prop()`: failure paths
+  make no durable change
+- [Phase 5] Read `fs/btrfs/transaction.h` `btrfs_abort_transaction`:
+  calls `__btrfs_handle_fs_error()`
+- [Phase 5] Read `fs/btrfs/transaction.c` `__btrfs_end_transaction()`:
+  `TRANS_ABORTED` path returns `trans->aborted`
+- [Phase 6] Read `fs/btrfs/ioctl.c` lines 376–401: buggy code confirmed
+  in v6.18.44
+- [Phase 6] Makefile VERSION/PATCHLEVEL/SUBLEVEL: 6.18.44
+- [Phase 8] `vfs_fileattr_set()` requires `inode_owner_or_capable` —
+  file owners can trigger
+
+**YES**The background git search finished. It didn’t find the fix commit
+in this tree (expected — it’s still a candidate), but it did turn up one
+related earlier change: `9b8a233bc294d` (“btrfs: handle transaction
+start error in btrfs_fileattr_set”), which only covers transaction
+*start* failures, not the abort-on-`set_prop` / missing-abort-
+on-`update_inode` logic this patch addresses.
+
+That doesn’t change the earlier conclusion: the buggy code is present in
+v6.18.44, and this fix should be backported.
 
 **YES**
 
- fs/btrfs/zoned.c | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/ioctl.c | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 0dfbb28b7445c..6ca5816a67381 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -130,8 +130,10 @@ static int sb_write_pointer(struct block_device *bdev, struct blk_zone *zones,
- 			u64 bytenr = ALIGN_DOWN(zone_end, BTRFS_SUPER_INFO_SIZE) -
- 						BTRFS_SUPER_INFO_SIZE;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 3197f61d612b4..8716241bcbd52 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -264,6 +264,7 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
+ 	int ret;
+ 	const char *comp = NULL;
+ 	u32 inode_flags;
++	bool prop_set = false;
  
-+			filemap_invalidate_lock(mapping);
- 			page[i] = read_cache_page_gfp(mapping,
- 					bytenr >> PAGE_SHIFT, GFP_NOFS);
-+			filemap_invalidate_unlock(mapping);
- 			if (IS_ERR(page[i])) {
- 				if (i == 1)
- 					btrfs_release_disk_super(super[0]);
+ 	if (btrfs_root_readonly(root))
+ 		return -EROFS;
+@@ -376,16 +377,15 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
+ 	if (comp) {
+ 		ret = btrfs_set_prop(trans, inode, "btrfs.compression",
+ 				     comp, strlen(comp), 0);
+-		if (unlikely(ret)) {
+-			btrfs_abort_transaction(trans, ret);
++		if (ret)
+ 			goto out_end_trans;
+-		}
++		prop_set = true;
+ 	} else {
+ 		ret = btrfs_set_prop(trans, inode, "btrfs.compression", NULL, 0, 0);
+-		if (unlikely(ret && ret != -ENODATA)) {
+-			btrfs_abort_transaction(trans, ret);
++		prop_set = (ret == 0);
++		/* If ret == -ENODATA ignore and proceed to update inode item. */
++		if (ret && ret != -ENODATA)
+ 			goto out_end_trans;
+-		}
+ 	}
+ 
+ update_flags:
+@@ -395,6 +395,12 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
+ 	inode_inc_iversion(&inode->vfs_inode);
+ 	inode_set_ctime_current(&inode->vfs_inode);
+ 	ret = btrfs_update_inode(trans, inode);
++	/*
++	 * If we set a property or deleted one, we must abort if we fail to
++	 * update the inode, to avoid persisting an inconsistent state.
++	 */
++	if (unlikely(ret && prop_set))
++		btrfs_abort_transaction(trans, ret);
+ 
+  out_end_trans:
+ 	btrfs_end_transaction(trans);
 -- 
 2.53.0
 

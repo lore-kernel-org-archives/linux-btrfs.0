@@ -1,44 +1,43 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E4E7D4A2A7E;
-	Mon, 31 Aug 2026 13:42:19 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5B5404582F7;
+	Mon, 31 Aug 2026 13:44:08 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788183742; cv=none; b=nQSR3dtcVUUOwtR8mK5CBj9Y3IxTHbl5yOLwTgfzEALfhpVaaH+IIYqrDDrHpRC3ySPGNKabC5XNd9JSBkkj4rKDdhNF5w0NPhSjDmvwrroL/d6kyCNSsLyZ2CYwEqoywe2vKbOfliNjEM8PM/jkjum+2xMjQbSwkRiqxrqNFyk=
+	t=1788183851; cv=none; b=rtGKxBmpAd7dQsvQPF2Hmb/iCMCXA3yG9QIASB7Z+np/DHgBXsbOIkwVharaVApbNmzvK/qecoezHrrdAUJcELoCzR6zPx5bGhFwczS0qT4QYJ1v8pNZNxI4VDsiEQyBh0w0lPul7C9GOt6qBAlz1/dyhjSEEz5jqKi8qoF4Cl8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788183742; c=relaxed/simple;
-	bh=QSlgWUHKFieonTqmTqX+8UloC5qEueWyfKw3H/cpFgE=;
+	s=arc-20240116; t=1788183851; c=relaxed/simple;
+	bh=HJsFqcZe9TOHqmaEGiFYco8d84mj/FeUcvNWg284YqI=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=ZN3mBv+UN8l0YZrQmLweusprX9aebyJolR/8Rv0ApMCZzqVGjWukaocz3M3CMPSWLlyoJl8ZfDZUBNlRsWZmG+/1Nloo9Kr1czzHekq9y5WGhk570b1Ocm4mXQBW2dOntQ7fvJX6l8BcOg3K2VsZWQ4uIr6j/gVN6ndrR/Z0+EQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=AmYA8hfq; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version:Content-Type; b=bnGqrQwpkBiHshIEimanZ+lYTRENHIpWpQEkni3/uTtoPsYnv36YdYroagmbvQEIoLrnReWlqC2n71AQlecuGPWoit1D6j9WDUkT/sGilbnwlsezSK/PGmirwgn26nqnvTKgdgEufT1TrLiwlV5/AgH/30rd+fMiWKXNwI6UOj4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QZ+IHlvZ; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="AmYA8hfq"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 905C51F000E9;
-	Mon, 31 Aug 2026 13:42:18 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QZ+IHlvZ"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 443271F00A3F;
+	Mon, 31 Aug 2026 13:44:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1788183739;
-	bh=zGjJjwPm4jSrA8LTBjKCFqr80P0Fkin04Tc6rM8MmrM=;
+	s=k20260515; t=1788183848;
+	bh=ghenvDoXBgLOI+XHMoui/XCdvU2v2PNvyDMg6wsGwCU=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=AmYA8hfqGrDPsw4NOPRupIo+C/HCrslYZB+oy2hEVKqod0Hp5mP9eRGkI5eIqU6tj
-	 IoxzH3DIinxLWjC5AZ5SFZuUjUgz8X5U1lvX8Uk0bEqvUrob3SSFP8Kh8FSOEn5GOI
-	 P6aRAB6zFgujJAUG0ciScNlS08PQ5NpxdZ194I3lVjt3dw5DCBFxt/daaaP3M69QeV
-	 gHOKaR8bSTnkOxBR2U/S5w+hLCb6BzieoB1F4FGcisOtBkCT7wFl7DmmhdcmIOz4Ld
-	 AUp25VJNthKDy1xKG1U6vrTEA3l0urG+GLgogNk1Ly+Jz95yfZ8xtjq8DbO0+N6ioC
-	 9ZF18MXde7OLg==
+	b=QZ+IHlvZI3ld4GdzlcapbO1/d2lWpAMC/RxZqhxHd0fiG/CV7kiiDrpMOnSe8giWy
+	 cMXU3RMXB+JvSWUnoKHfYKLvoXwcdkShjR3JdZ/VRmKMRGqck6y0Tx4qcBEK3cUIYB
+	 vq9nbAPke7W1Xt53Z1ou+mDPVsDtYUMHbHYs3BBcGFWsBMJxHpVIWnG37V626ZnEQM
+	 /gewIxuqQbkxAcgFw1OgIfrgZ2ccxEOrpHKyxUFAkAfHOW/1aa1QLFE6aCKtlpQhJX
+	 yIHszIdRookXR1lLabN0vqCWjA+MtbPNnQYfquZ3wDDCjBMuJhZKzWKxpVWdJiyzgU
+	 47j7KNR42P/5g==
 From: Sasha Levin <sashal@kernel.org>
 To: patches@lists.linux.dev,
 	stable@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>,
-	Boris Burkov <boris@bur.io>,
+Cc: ZhengYuan Huang <gality369@gmail.com>,
 	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.18-5.10] btrfs: fix reloc root cleanup in merge_reloc_roots()
-Date: Mon, 31 Aug 2026 09:25:03 -0400
-Message-ID: <20260831133314.4125787-275-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.18] btrfs: balance: fix potential bg lookup failure in chunk_usage_filter()
+Date: Mon, 31 Aug 2026 09:26:08 -0400
+Message-ID: <20260831133314.4125787-340-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260831133314.4125787-1-sashal@kernel.org>
 References: <20260831133314.4125787-1-sashal@kernel.org>
@@ -54,417 +53,546 @@ X-stable-base: Linux 6.18.48
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-From: Filipe Manana <fdmanana@suse.com>
+From: ZhengYuan Huang <gality369@gmail.com>
 
-[ Upstream commit b78fe9563e2d5ae47805f1e5dc722c91fd30e1f8 ]
+[ Upstream commit 6dde5221f608e0b548fcf43c68034496f1e58542 ]
 
-If the root we got has zero root refs in its root item, we are resetting
-the root's ->reloc_root without using barriers like we do everywhere else.
-Sashiko complained about this while reviewing another patch, and it's
-correct (see the Link tag below).
+[BUG]
+Running btrfs balance with a usage filter (-dusage=N) can trigger a
+null-ptr-deref when metadata corruption causes a chunk to have no
+corresponding block group in the in-memory cache:
 
-Also, we should not clear BTRFS_ROOT_DEAD_RELOC_TREE from the root unless
-the root points to the reloc root we have.
+  KASAN: null-ptr-deref in range [0x0000000000000070-0x0000000000000077]
+  RIP: 0010:chunk_usage_filter fs/btrfs/volumes.c:3874 [inline]
+  RIP: 0010:should_balance_chunk fs/btrfs/volumes.c:4018 [inline]
+  RIP: 0010:__btrfs_balance fs/btrfs/volumes.c:4172 [inline]
+  RIP: 0010:btrfs_balance+0x2024/0x42b0 fs/btrfs/volumes.c:4604
+  ...
+  Call Trace:
+    btrfs_ioctl_balance fs/btrfs/ioctl.c:3577 [inline]
+    btrfs_ioctl+0x25cf/0x5b90 fs/btrfs/ioctl.c:5313
+    vfs_ioctl fs/ioctl.c:51 [inline]
+    ...
 
-Fix this by using clear_reloc_root(), which issues the memory barrier
-after setting the root's ->reloc_root to NULL and before clearing the bit
-BTRFS_ROOT_DEAD_RELOC_TREE from the root.
+The bug is reproducible on current development branch.
 
-Link: https://sashiko.dev/#/patchset/cf84f1a217c719e25b6b69e4298dd7afd36c9427.1781194426.git.fdmanana%40suse.com
-Reviewed-by: Boris Burkov <boris@bur.io>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+[CAUSE]
+Two separate data structures are involved:
+
+1. The on-disk chunk tree, which records every chunk (logical address
+   space region) and is iterated by __btrfs_balance().
+
+2. The in-memory block group cache (fs_info->block_group_cache_tree),
+   which is built at mount time by btrfs_read_block_groups() and holds
+   a struct btrfs_block_group for each chunk. This cache is what the
+   usage filter queries.
+
+On a well-formed filesystem, these two are kept in 1:1 correspondence.
+However, btrfs_read_block_groups() builds the cache from block group
+items in the extent tree, not directly from the chunk tree. A corrupted
+image can therefore contain a chunk item in the chunk tree whose
+corresponding block group item is absent from the extent tree; that
+chunk's block group is then never inserted into the in-memory cache.
+
+When balance iterates the chunk tree and reaches such an orphaned chunk,
+should_balance_chunk() calls chunk_usage_filter(), which queries the block
+group cache:
+
+  cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+  chunk_used = cache->used;   /* cache may be NULL */
+
+btrfs_lookup_block_group() returns NULL silently when no cached entry
+covers chunk_offset. chunk_usage_filter() does not check the return value,
+so the immediately following dereference of cache->used triggers the crash.
+
+[FIX]
+Add a NULL check after btrfs_lookup_block_group() in chunk_usage_filter().
+When the lookup fails, emit a btrfs_err() message identifying the
+affected bytenr and return -EUCLEAN to indicate filesystem corruption.
+
+Since chunk_usage_filter() now has an error path, change its return type
+from bool to error pointer and 0 if the chunk passes the usage filter,
+and 1 if it should be skipped.
+
+Update should_balance_chunk() accordingly to propagate negative errors
+from the usage filter.
+
+Signed-off-by: ZhengYuan Huang <gality369@gmail.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
 
 LLM Generated explanations, may be completely bogus:
 
-# Stable Backport Analysis: `btrfs: fix reloc root cleanup in
-merge_reloc_roots()`
+# Stable Backport Analysis: btrfs balance NULL deref in
+`chunk_usage_filter()`
 
-**Local tree:** Linux **6.18.44** (`v6.18.44-1-g2736c32da98b9`)
-
-**Commit analyzed:** `b78fe9563e2d5ae47805f1e5dc722c91fd30e1f8` (not yet
-merged into this checkout)
+**Local tree:** `v6.18.44` (6.18.y stable)
 
 ---
 
 ## PHASE 1: COMMIT MESSAGE FORENSICS
 
-### Step 1.1: Subject Line
-**Record:** `[btrfs]` `[fix]` — correct reloc-root cleanup in
-`merge_reloc_roots()` when a reloc root has zero root refs.
+### Step 1.1: PARSE THE SUBJECT LINE
+**Record:** `[btrfs: balance]` `[fix]` — Fix potential block-group
+lookup failure in `chunk_usage_filter()` during btrfs balance with a
+usage filter.
 
-### Step 1.2: Tags
+### Step 1.2: PARSE ALL COMMIT MESSAGE TAGS
 **Record:**
-- **Link:** Sashiko automated review (https://sashiko.dev/...)
-- **Reviewed-by:** Boris Burkov `<boris@bur.io>`
-- **Signed-off-by:** Filipe Manana, David Sterba
-- No Fixes:, Reported-by:, Tested-by:, Cc: stable@vger.kernel.org
-- Notable: found during code review (Sashiko), not a syzbot/user crash
-  report for this specific path
+- **Fixes:** — not present (expected for manual review)
+- **Reported-by:** — none
+- **Tested-by:** — none
+- **Reviewed-by:** David Sterba `<dsterba@suse.com>` (btrfs maintainer)
+- **Acked-by:** — none
+- **Link:** — none in committed message
+- **Cc: stable@vger.kernel.org:** — absent from final commit message;
+  present in v2 mailing-list submission (per web search)
+- **Signed-off-by:** ZhengYuan Huang (author); David Sterba (maintainer)
 
-### Step 1.3: Body Analysis
+Notable: maintainer reviewed and committed; author nominated stable in
+patch series v2.
+
+### Step 1.3: ANALYZE THE COMMIT BODY TEXT
 **Record:**
-- **Bug:** In the zero-ref reloc-root branch of `merge_reloc_roots()`,
-  `root->reloc_root` is cleared without the memory barrier used
-  elsewhere; `BTRFS_ROOT_DEAD_RELOC_TREE` is cleared unconditionally
-  even when `root->reloc_root != reloc_root`.
-- **Symptom:** Incorrect synchronization with `have_reloc_root()` /
-  `reloc_root_is_dead()`; can observe stale `reloc_root` pointers or
-  wrong dead-tree state during relocation/balance.
-- **Root cause:** Inconsistent barrier usage and misplaced `clear_bit()`
-  outside the matching-reloc-root guard.
-- **Fix approach:** Use `clear_reloc_root()` helper (sets NULL →
-  `smp_wmb()` → `clear_bit()`), only when `root->reloc_root ==
-  reloc_root`.
+- **Bug:** NULL pointer dereference in `chunk_usage_filter()` when
+  running `btrfs balance` with `-dusage=N` on a filesystem where
+  metadata corruption left a chunk in the chunk tree without a matching
+  in-memory block group.
+- **Symptom:** KASAN null-ptr-deref at `cache->used` (offset ~0x70),
+  call chain through `should_balance_chunk()` → `__btrfs_balance()` →
+  `btrfs_ioctl_balance()`.
+- **Root cause:** `btrfs_lookup_block_group()` returns NULL when no
+  cached block group covers the chunk offset; `chunk_usage_filter()`
+  dereferences without checking.
+- **Fix:** NULL check, `btrfs_err()` log, return `-EUCLEAN`; change
+  `chunk_usage_filter()` and `should_balance_chunk()` to propagate
+  errors; handle negative return in `__btrfs_balance()`.
+- **Version info:** Bug reproducible on current development branch;
+  underlying usage-filter code dates to 2012.
 
-### Step 1.4: Hidden Bug Fix?
-**Record:** No — explicitly described as a bug fix (barrier + logic
-error).
+### Step 1.4: DETECT HIDDEN BUG FIXES
+**Record:** Not disguised — explicitly a NULL pointer dereference fix.
+The return-type refactor (`bool` → `int`) is required to propagate
+`-EUCLEAN`, not cosmetic cleanup.
 
 ---
 
 ## PHASE 2: DIFF ANALYSIS
 
-### Step 2.1: Inventory
+### Step 2.1: INVENTORY THE CHANGES
 **Record:**
-- **Files:** `fs/btrfs/relocation.c` (+2 / -3)
-- **Function:** `merge_reloc_roots()`
-- **Scope:** Single-file, surgical fix in one error/cleanup branch
+- **File:** `fs/btrfs/volumes.c` only (~40 lines changed)
+- **Functions modified:** `chunk_usage_filter()`,
+  `should_balance_chunk()`, `__btrfs_balance()`
+- **Scope:** Single-file surgical fix in btrfs balance filtering path
 
-### Step 2.2: Code Flow Change
+### Step 2.2: UNDERSTAND THE CODE FLOW CHANGE
+
+**Hunk 1 — `chunk_usage_filter()`:**
+- **Before:** `btrfs_lookup_block_group()` → immediate `cache->used`
+  dereference; returns `bool`.
+- **After:** NULL check with `unlikely(!cache)` → log + `-EUCLEAN`;
+  returns `int` (negative=error, 0=pass filter, 1=skip chunk).
+
+**Hunk 2 — `should_balance_chunk()`:**
+- **Before:** `if (usage flag && chunk_usage_filter()) return false;`
+- **After:** Calls filter, propagates `ret2 < 0`, treats `ret2` truthy
+  as skip; return type `bool` → `int`.
+
+**Hunk 3 — `__btrfs_balance()`:**
+- **Before:** `ret = should_balance_chunk(...)` then `if (!ret) goto
+  loop` with no error handling.
+- **After:** `if (ret < 0) { unlock; goto error; }` before the skip
+  check.
+
+### Step 2.3: IDENTIFY THE BUG MECHANISM
+**Record:** **Category:** NULL pointer dereference (memory safety).
+**Mechanism:** On corrupted metadata, chunk tree iteration reaches an
+orphaned chunk; block group cache lookup returns NULL; unchecked
+dereference of `cache->used` crashes the kernel during balance ioctl.
+
+### Step 2.4: ASSESS THE FIX QUALITY
 **Record:**
-
-| Hunk | Before | After |
-|------|--------|-------|
-| Zero-ref cleanup branch | `root->reloc_root = NULL;
-btrfs_put_root(reloc_root);` then unconditional
-`clear_bit(DEAD_RELOC_TREE)` | `clear_reloc_root(root);
-btrfs_put_root(reloc_root);` only inside `if (root->reloc_root ==
-reloc_root)` |
-
-**Affected path:** Relocation merge when
-`btrfs_root_refs(&reloc_root->root_item) == 0` (dead/orphan reloc tree
-cleanup during balance).
-
-### Step 2.3: Bug Mechanism
-**Record:**
-- **Category:** Synchronization / logic correctness
-- **Mechanism 1 (missing `smp_wmb()`):** Writers in
-  `clean_dirty_subvols()` (lines 1474–1480) and
-  `btrfs_update_reloc_root()` (lines 796–801) use `smp_wmb()` between
-  NULL-ing `reloc_root` and clearing `BTRFS_ROOT_DEAD_RELOC_TREE`.
-  `merge_reloc_roots()` did not, breaking pairing with
-  `reloc_root_is_dead()`'s `smp_rmb()`.
-- **Mechanism 2 (wrong `clear_bit` scope):** `clear_bit()` ran even when
-  `root->reloc_root != reloc_root`, corrupting state for a root still
-  associated with a different reloc root.
-
-### Step 2.4: Fix Quality
-**Record:** Fix is minimal and matches the established pattern in the
-same file. Low regression risk. **Caveat:** depends on
-`clear_reloc_root()` helper, which is **not present** in this tree (see
-Phase 6).
+- Fix is obviously correct — mirrors existing btrfs patterns (e.g.
+  `scrub.c` checks `if (!cache) goto skip`).
+- Minimal, focused change; no unrelated edits.
+- Low regression risk: only affects the usage-filter error path on
+  corrupted FS; normal filesystems unchanged.
+- Minor note: `chunk_usage_range_filter()` has the same unchecked
+  dereference but is a separate code path (usage-range filter, not
+  `-dusage`); not addressed by this commit.
 
 ---
 
 ## PHASE 3: GIT HISTORY INVESTIGATION
 
-### Step 3.1: Blame
-**Record:** Buggy lines (1873–1879) blamed to `5d324e5159d9e` (6.18-rc8
-era merge, Nov 2025). Barrier infrastructure (`reloc_root_is_dead`,
-`BTRFS_ROOT_DEAD_RELOC_TREE`) introduced in same timeframe — relatively
-new in 6.18.
+### Step 3.1: BLAME THE CHANGED LINES
+**Record:** `chunk_usage_filter()` introduced in `5ce5b3c0916ba`
+("Btrfs: usage filter", Ilya Dryomov, 2012-01-16). The unchecked
+`cache->used` dereference (`bf38be65f3703d`, David Sterba, 2019) has
+been present for years. Bug is long-standing, not recently introduced.
 
-### Step 3.2: Fixes: Tag
-**Record:** N/A — no Fixes: tag.
+### Step 3.2: FOLLOW THE FIXES: TAG
+**Record:** No `Fixes:` tag in commit message. N/A.
 
-### Step 3.3: Related Changes
-**Record:**
-- `60a23d4ea169e` — related fix in same function (root leak on
-  unexpected reloc_root); already in this tree.
-- Part of 2-patch series `[PATCH 0/2] btrfs: fix incorrect barrier usage
-  in relocation`:
-  - **1/2:** this commit
-  - **2/2:** `btrfs: fix memory barrier order in reloc_root_is_dead()`
-- `clear_reloc_root()` introduced in separate UAF-fix series (`[PATCH
-  v2] btrfs: fix use-after-free on reloc root after error in
-  insert_dirty_subvol()`); **not in this tree**.
+### Step 3.3: CHECK FILE HISTORY FOR RELATED CHANGES
+**Record:** Recent `volumes.c` changes include `c19830db30a09` ("replace
+BUG() with error handling in __btrfs_balance()") — complementary error-
+path hardening, not a prerequisite. No duplicate fix for this NULL deref
+found in this tree. Patch is part of a larger series (v2/v3: also fixes
+`chunk_usage_range_filter` and mount-time
+`check_chunk_block_group_mappings()`), but this commit is self-contained
+for the `-dusage` path.
 
-### Step 3.4: Author Context
-**Record:** Filipe Manana — active btrfs maintainer; multiple recent
-`merge_reloc_roots()` fixes in this tree.
+### Step 3.4: CHECK THE AUTHOR'S OTHER COMMITS
+**Record:** ZhengYuan Huang has btrfs contributions in this tree (e.g.
+`850de3d87f472` tree-checker fix). David Sterba is btrfs maintainer and
+committed this patch.
 
-### Step 3.5: Dependencies
-**Record:** Commit calls `clear_reloc_root()`, which does not exist in
-6.18.44. **Not standalone as-is**, but trivially adaptable using the
-inline pattern already in `clean_dirty_subvols()`:
-
-```c
-root->reloc_root = NULL;
-smp_wmb();
-clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
-```
+### Step 3.5: CHECK FOR DEPENDENT/PREREQUISITE COMMITS
+**Record:** No prerequisites. All modified functions and
+`btrfs_lookup_block_group()` exist in 6.18.44. The `error:` path in
+`__btrfs_balance()` already exists and returns errors to userspace.
+Applies standalone.
 
 ---
 
 ## PHASE 4: MAILING LIST AND EXTERNAL RESEARCH
 
-### Step 4.1: Original Discussion
-**Record:**
-- **b4 dig:** https://patch.msgid.link/50682caa6bbf69740c629a26ff6f19a72
-  ce55e03.1781263239.git.fdmanana@suse.com
-- **Series:** v1 only (2026-06-12)
-- **Reviewer feedback:** Boris Burkov Reviewed-by on cover letter; David
-  Sterba replied on patch 2/2; kernel test robot build-tested patch 2/2
-- **Stable nomination:** None found in thread
+### Step 4.1: FIND THE ORIGINAL PATCH DISCUSSION
+**Record:** `b4 dig -c HEAD` failed (commit not in local tree). Web
+search found:
+- [PATCH v2 1/3] on spinics/lore — subject matches, includes `Cc:
+  stable@vger.kernel.org`
+- [PATCH v3 1/4] on linux-btrfs list — evolved version with `unlikely()`
+  annotation
+- Series cover (v2 0/3): describes two balance NULL derefs plus mount-
+  time verification fix
 
-### Step 4.2: Reviewers
-**Record:** `linux-btrfs@vger.kernel.org`; Boris Burkov reviewed; David
-Sterba (btrfs maintainer) engaged on patch 2/2.
+Reviewer feedback (v2): David Sterba noted `bool ret = true`
+inconsistent with changed return type — addressed in committed version
+(`int ret = 1`).
 
-### Step 4.3: Bug Report
-**Record:** No syzbot/user crash report for this specific bug.
-Identified by Sashiko during review of a related patch. Related UAF in
-relocation (syzbot-reported) motivated the `clear_reloc_root()` helper
-in a separate series.
+### Step 4.2: CHECK WHO REVIEWED THE PATCH
+**Record:** CC'd to `linux-btrfs@`, `linux-kernel@`, David Sterba.
+**Reviewed-by** and **Signed-off-by** David Sterba (maintainer).
 
-### Step 4.4: Related Patches
-**Record:** Patch 2/2 fixes read-side barrier ordering in
-`reloc_root_is_dead()`. Ideally backported together for complete barrier
-correctness, but patch 1/2 independently fixes a real write-side bug.
+### Step 4.3: SEARCH FOR THE BUG REPORT
+**Record:** No external bug report or syzbot link. Reproducibility
+claimed by author with KASAN stack trace in commit message. Self-
+contained reproduction: corrupted btrfs image + `btrfs balance` with
+usage filter.
 
-### Step 4.5: Stable List History
-**Record:** No stable-list discussion found.
+### Step 4.4: CHECK FOR RELATED PATCHES AND SERIES
+**Record:** Part of 3–4 patch series fixing:
+1. `chunk_usage_filter()` NULL deref (this commit)
+2. `chunk_usage_range_filter()` NULL deref (separate patch)
+3. `check_chunk_block_group_mappings()` iteration bug (separate patch)
+
+This commit stands alone for the `-dusage` crash.
+
+### Step 4.5: CHECK STABLE MAILING LIST HISTORY
+**Record:** Author explicitly nominated `Cc: stable@vger.kernel.org` in
+v2 submission. No evidence of rejection from stable maintainers found.
 
 ---
 
 ## PHASE 5: CODE SEMANTIC ANALYSIS
 
-### Step 5.1: Key Functions
-**Record:** `merge_reloc_roots()`, `reloc_root_is_dead()`,
-`have_reloc_root()`, `clear_reloc_root()` (upstream only)
+### Step 5.1: IDENTIFY KEY FUNCTIONS IN THE DIFF
+**Record:** `chunk_usage_filter()`, `should_balance_chunk()`,
+`__btrfs_balance()`
 
-### Step 5.2: Callers
-**Record:** `merge_reloc_roots()` called from:
-- `relocate_block_group()` (line 3653) — balance/relocation path
-- Another relocation path (line 4198)
+### Step 5.2: TRACE CALLERS
+**Record:**
+- `chunk_usage_filter()` ← `should_balance_chunk()` (when
+  `BTRFS_BALANCE_ARGS_USAGE` set)
+- `should_balance_chunk()` ← `__btrfs_balance()` (chunk tree iteration
+  loop)
+- `__btrfs_balance()` ← `btrfs_balance()` ← `btrfs_ioctl_balance()` ←
+  `btrfs_ioctl()` ← `vfs_ioctl()`
 
-Both are btrfs balance/relocation operations, reachable via
-`BTRFS_IOC_BALANCE` ioctl (privileged).
+Balance is triggered via `BTRFS_IOC_BALANCE` ioctl, requiring
+`CAP_SYS_ADMIN`.
 
-### Step 5.3: Callees
-**Record:** `btrfs_get_fs_root()`, `btrfs_put_root()`, `clear_bit()`,
-barrier primitives; interacts with refcounted `btrfs_root` objects.
+### Step 5.3: TRACE CALLEES
+**Record:** `btrfs_lookup_block_group()` →
+`block_group_cache_tree_search()` (returns NULL when no matching entry);
+`btrfs_put_block_group()`, `btrfs_err()`, `mult_perc()`.
 
-### Step 5.4: Reachability
-**Record:** Triggered during btrfs balance/relocation (admin/root
-operation). Not every boot, but real production use (rebalancing, device
-replacement). Unprivileged users cannot directly trigger, but corruption
-from a privileged balance affects the whole filesystem.
+### Step 5.4: FOLLOW THE CALL CHAIN
+**Record:** Userspace admin runs `btrfs balance start -dusage=N` → ioctl
+→ balance iterates chunk tree → hits orphaned chunk → NULL deref.
+**Reachable from userspace** (with admin capability) on corrupted
+filesystems.
 
-### Step 5.5: Similar Patterns
-**Record:** Correct barrier pattern exists in `clean_dirty_subvols()` at
-lines 1474–1480; `merge_reloc_roots()` is the inconsistent outlier.
+### Step 5.5: SEARCH FOR SIMILAR PATTERNS
+**Record:** `scrub.c:2690-2695` already handles NULL from
+`btrfs_lookup_block_group()` with `if (!cache) goto skip`.
+`check_chunk_block_group_mappings()` in `block-group.c:2339-2346`
+returns `-EUCLEAN` on missing block group. This fix aligns balance with
+established btrfs corruption-handling patterns.
 
 ---
 
-## PHASE 6: CROSS-REFERENCING AGAINST LOCAL TREE (6.18.44)
+## PHASE 6: CROSS-REFERENCING AGAINST THE LOCAL TREE
 
-### Step 6.1: Buggy Code Present?
-**Record:** **YES** — confirmed at lines 1873–1879:
+### Step 6.1: DOES THE BUGGY CODE EXIST IN THIS TREE?
+**Record:** **YES.** In 6.18.44 at `fs/btrfs/volumes.c:3997-3998`:
 
-```1873:1880:fs/btrfs/relocation.c
-                        if (!IS_ERR(root)) {
-                                if (root->reloc_root == reloc_root) {
-                                        root->reloc_root = NULL;
-                                        btrfs_put_root(reloc_root);
-                                }
-                                clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE,
-                                          &root->state);
-                                btrfs_put_root(root);
+```3997:3998:fs/btrfs/volumes.c
+        cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+        chunk_used = cache->used;
 ```
 
-Barrier infrastructure (`BTRFS_ROOT_DEAD_RELOC_TREE`,
-`reloc_root_is_dead`) also present since 6.18.
+No NULL check. Bug present since 2012 in this code path.
 
-### Step 6.2: Backport Complications
-**Record:** **Minor adaptation needed.** `clear_reloc_root()` does not
-exist in this tree. Equivalent inline fix (matching
-`clean_dirty_subvols()`) is straightforward. No conflicting refactors in
-this area.
+### Step 6.2: CHECK FOR BACKPORT COMPLICATIONS
+**Record:** Expected **clean apply**. Code structure matches the diff
+base. `__btrfs_balance()` already has `error:` label at line 4384.
+Recent `volumes.c` churn is unrelated to these functions.
 
-### Step 6.3: Related Fixes Already Present?
-**Record:** `60a23d4ea169e` (root leak fix) is present. This
-barrier/logic fix is **not** present. No duplicate fix found.
+### Step 6.3: CHECK IF RELATED FIXES ARE ALREADY HERE
+**Record:** Fix not present (no "has no corresponding block group" error
+string in tree). `check_chunk_block_group_mappings()` exists but has a
+known iteration limitation (separate series patch); does not prevent
+this balance crash.
 
 ---
 
-## PHASE 7: SUBSYSTEM CONTEXT
+## PHASE 7: SUBSYSTEM AND MAINTAINER CONTEXT
 
-### Step 7.1: Subsystem
-**Record:** **fs/btrfs** — IMPORTANT (filesystem, data integrity)
+### Step 7.1: IDENTIFY THE SUBSYSTEM AND ITS CRITICALITY
+**Record:** **Subsystem:** btrfs filesystem (`fs/btrfs/`).
+**Criticality:** IMPORTANT — filesystem code; balance is an
+administrative maintenance operation; crash affects system stability.
 
-### Step 7.2: Activity
-**Record:** Active — multiple recent `merge_reloc_roots()` fixes in
-6.18.y.
+### Step 7.2: ASSESS SUBSYSTEM ACTIVITY
+**Record:** btrfs is actively maintained in 6.18.y with regular fixes
+(error handling, corruption detection). Long-standing balance filter
+code with a latent NULL deref.
 
 ---
 
 ## PHASE 8: IMPACT AND RISK ASSESSMENT
 
-### Step 8.1: Who Is Affected
-**Record:** Users running btrfs balance/relocation on 6.18.y kernels
-with the `BTRFS_ROOT_DEAD_RELOC_TREE` barrier mechanism.
+### Step 8.1: DETERMINE WHO IS AFFECTED
+**Record:** btrfs users running balance with usage filter (`-dusage`,
+`-musage`, `-susage`) on filesystems with chunk/block-group metadata
+inconsistency. Config-specific (btrfs + balance + usage filter) but
+affects real admin workflows on damaged images.
 
-### Step 8.2: Trigger Conditions
-**Record:** Balance/relocation reaching `merge_reloc_roots()` with a
-reloc root whose root item has zero refs. Uncommon relative to normal
-I/O, but standard admin workflow. Privileged trigger only.
-
-### Step 8.3: Failure Mode Severity
+### Step 8.2: DETERMINE THE TRIGGER CONDITIONS
 **Record:**
-- Stale `reloc_root` pointer observed after bit cleared → potential
-  **UAF** or double-free (same class as syzbot-reported relocation UAF)
-- Wrong `clear_bit` when `reloc_root` doesn't match → incorrect
-  `have_reloc_root()` behavior
-- **Severity: HIGH** (filesystem corruption / crash potential)
+- **Trigger:** Metadata corruption (chunk in chunk tree, no block group
+  in cache) + balance with usage filter
+- **Likelihood:** Low in healthy systems; realistic on
+  corrupted/recovered images
+- **Privilege:** Requires `CAP_SYS_ADMIN` — not unprivileged attack, but
+  admin shouldn't kernel-panic the system
 
-### Step 8.4: Risk-Benefit
+### Step 8.3: DETERMINE THE FAILURE MODE SEVERITY
+**Record:** **NULL pointer dereference → kernel oops/panic.**
+**Severity: CRITICAL** (system crash during filesystem maintenance).
+
+### Step 8.4: CALCULATE RISK-BENEFIT RATIO
 **Record:**
-- **Benefit:** HIGH — prevents barrier/logic bug in relocation cleanup
-- **Risk:** LOW — 3-line effective change, matches existing in-file
-  pattern
-- **Ratio:** Favorable
+- **Benefit:** HIGH — prevents kernel crash; returns `-EUCLEAN` so admin
+  gets actionable corruption error
+- **Risk:** LOW — ~40 lines, error-path only, maintainer-reviewed,
+  matches existing patterns
+- **Ratio:** Strongly favors backport
 
 ---
 
 ## PHASE 9: FINAL SYNTHESIS
 
-### Step 9.1: Evidence Summary
+### Step 9.1: COMPILE THE EVIDENCE
 
 **FOR backport:**
-- Real, verifiable bug in this tree (missing barrier + unconditional
-  `clear_bit`)
-- Same file already documents correct pattern (`clean_dirty_subvols`)
-- Small, surgical fix reviewed by btrfs reviewers
-- Same bug class as syzbot-reported relocation UAF (barrier
-  inconsistency in reloc-root lifecycle)
-- Barrier infrastructure is present in 6.18.44 — bug is live
+- Real, reproducible NULL pointer dereference
+- Kernel crash (CRITICAL severity)
+- Buggy code confirmed present in 6.18.44
+- Long-standing bug (since 2012)
+- Small, single-file fix
+- Reviewed and committed by btrfs maintainer (David Sterba)
+- Author nominated for stable
+- Aligns with btrfs corruption-handling conventions (`-EUCLEAN`)
+- No prerequisites; applies standalone
+- Prevents crash that mount-time checks may not catch
 
 **AGAINST backport:**
-- No direct crash report for this exact path (review-found)
-- Depends on `clear_reloc_root()` not in tree (needs minor backport
-  adaptation)
-- Patch 2/2 ideally accompanies for complete read-side fix
-- Only affects balance/relocation (not hot path)
+- Requires filesystem corruption to trigger (mitigated: btrfs routinely
+  hardens corruption paths)
+- Only affects usage-filter balance path, not all balance operations
+- `chunk_usage_range_filter()` has same latent bug (separate fix;
+  doesn't invalidate this one)
+- Requires admin capability (not a general security CVE, but still a
+  stability bug)
 
-**Unresolved:** No runtime reproduction confirmed for this exact path;
-impact inferred from code analysis and related UAF class.
+**Unresolved:** No syzbot or user bugzilla report; reproduction relies
+on author's KASAN trace.
 
-### Step 9.2: Stable Rules Checklist
-| Criterion | Result |
-|-----------|--------|
-| 1. Obviously correct and tested? | **PASS** — matches established in-
-file pattern; reviewed by Boris Burkov; build-tested in series |
-| 2. Fixes real bug affecting users? | **PASS** — barrier + logic error
-in relocation cleanup |
-| 3. Important issue? | **PASS** — potential UAF/corruption during
-balance |
-| 4. Small and contained? | **PASS** — 5 lines net in one function |
-| 5. No new features/APIs? | **PASS** — correctness fix only |
-| 6. Can apply to local tree? | **PASS** (with adaptation) — inline
-`smp_wmb()` pattern substitutes for missing `clear_reloc_root()` |
+### Step 9.2: STABLE RULES CHECKLIST
+1. Obviously correct and tested? **PASS** — NULL check + error
+   propagation; maintainer reviewed
+2. Fixes a real bug affecting users? **PASS** — NULL deref on balance
+   with corrupted FS
+3. Important issue? **PASS** — kernel oops/panic (CRITICAL)
+4. Small and contained? **PASS** — one file, ~40 lines
+5. No new features or APIs? **PASS** — defensive error handling only
+6. Can apply to local tree? **PASS** — code exists, clean apply expected
 
-### Step 9.3: Exception Category
-**Record:** N/A — standard bug fix.
+### Step 9.3: EXCEPTION CATEGORIES
+**Record:** None (not device ID, quirk, DT, build, or docs). Standard
+bug fix.
 
-### Step 9.4: Decision Rationale
-The buggy code exists in Linux 6.18.44. The fix corrects a memory-
-ordering inconsistency and a logic error (`clear_bit` outside the
-matching-reloc-root guard) in btrfs relocation cleanup — the same
-synchronization design used elsewhere in `relocation.c`. While the patch
-calls `clear_reloc_root()` which is not yet in this tree, the equivalent
-inline fix is trivial and already demonstrated in
-`clean_dirty_subvols()`. The fix is small, low-risk, and addresses a
-HIGH-severity failure mode in filesystem code.
+### Step 9.4: DECISION RATIONALE
+
+For **6.18.44**, this commit fixes a confirmed NULL pointer dereference
+in a reachable admin code path on corrupted btrfs filesystems. The fix
+is minimal, maintainer-reviewed, and converts a kernel crash into a
+proper `-EUCLEAN` error — consistent with how btrfs handles metadata
+inconsistency elsewhere. The bug has existed since 2012 and is present
+in this tree today.
 
 ---
 
 ## Verification
 
-- **[Phase 1]** Parsed subject, tags, body from provided commit message
-- **[Phase 1]** Confirmed no syzbot Reported-by; Sashiko Link tag
-  present
-- **[Phase 2]** Read diff: +2/-3 in `merge_reloc_roots()` zero-ref
-  branch
-- **[Phase 2]** Read current buggy code at lines 1873–1879 in
-  `fs/btrfs/relocation.c`
-- **[Phase 2]** Read correct barrier pattern at lines 1474–1480 and
-  796–801
-- **[Phase 3]** `git describe HEAD`: v6.18.44
-- **[Phase 3]** `git blame -L 1873,1880`: lines from 5d324e5159d9e (Nov
-  2025)
-- **[Phase 3]** `git log --grep="clear_reloc_root"`: no results in tree
-- **[Phase 3]** `grep clear_reloc_root fs/btrfs/`: no matches — helper
-  absent
-- **[Phase 3]** `60a23d4ea169e` confirmed related prior fix already in
-  tree
-- **[Phase 3]** `git merge-base --is-ancestor b78fe95 HEAD`: exit 1 —
-  commit not merged
-- **[Phase 4]** `b4 dig -c b78fe95`: found lore URL, patch 1/2 of
-  2-patch series
-- **[Phase 4]** `b4 dig -a`: v1 only
-- **[Phase 4]** `b4 dig -w`: linux-btrfs@vger.kernel.org CC'd
-- **[Phase 4]** Read `/tmp/b78fe95.mbox`: cover letter, patch 2/2
-  content, Boris Reviewed-by
-- **[Phase 4]** spinics.net msg166109: confirmed `clear_reloc_root()`
-  introduced in separate UAF series
-- **[Phase 5]** `grep merge_reloc_roots(`: 2 call sites (lines 3653,
-  4198)
-- **[Phase 5]** Read `reloc_root_is_dead()` / `have_reloc_root()` at
-  lines 246–274
-- **[Phase 6]** Confirmed buggy code present in 6.18.44 checkout
-- **[Phase 6]** Confirmed `clear_reloc_root()` absent; inline adaptation
-  viable
-- **[Phase 8]** Assessed severity from barrier pairing analysis and
-  related UAF class (not directly reproduced)
+- **[Phase 1]** Parsed subject, tags, body; found Reviewed-by/Signed-
+  off-by David Sterba
+- **[Phase 1]** No Fixes:/Reported-by:/Link: tags in commit message
+- **[Phase 2]** Diff analysis: NULL check in `chunk_usage_filter()`,
+  error propagation through `should_balance_chunk()` and
+  `__btrfs_balance()`
+- **[Phase 2]** Confirmed `chunk_usage_range_filter()` at lines
+  3968-3969 has same unchecked pattern (not fixed by this commit)
+- **[Phase 3]** `git describe HEAD` → `v6.18.44`; `make kernelversion` →
+  `6.18.44`
+- **[Phase 3]** `git blame` lines 3990-4012: function from 2012
+  (`5ce5b3c0916ba`), unchecked deref from 2019
+- **[Phase 3]** `git show 5ce5b3c0916ba` — introduced usage filter
+- **[Phase 3]** `git log --oneline -20 -- fs/btrfs/volumes.c` — no
+  duplicate fix found
+- **[Phase 3]** No prerequisite commits identified
+- **[Phase 4]** `b4 dig -c HEAD` — failed (commit not in tree)
+- **[Phase 4]** Web search found v2/v3 lore submissions with `Cc:
+  stable@vger.kernel.org`
+- **[Phase 4]** Reviewer feedback on bool/int mismatch documented in v2
+  thread
+- **[Phase 5]** Call chain verified: ioctl → balance →
+  `should_balance_chunk()` → `chunk_usage_filter()`
+- **[Phase 5]** `btrfs_ioctl_balance()` requires `CAP_SYS_ADMIN`
+  (ioctl.c:3490)
+- **[Phase 5]** `btrfs_lookup_block_group()` returns NULL when no match
+  (block-group.c:230-264)
+- **[Phase 5]** `scrub.c:2694` — precedent for NULL check after lookup
+- **[Phase 6]** Buggy code confirmed at volumes.c:3997-3998 in 6.18.44
+- **[Phase 6]** `grep "has no corresponding block group"` — fix not yet
+  applied
+- **[Phase 6]** `check_chunk_block_group_mappings()` exists at block-
+  group.c:2321 but has separate iteration limitation
+- **[Phase 8]** Failure mode: NULL deref → kernel oops; severity
+  CRITICAL
 
-**YES**The background search finished: **`clear_reloc_root` does not
-appear anywhere in this 6.18.44 tree** — no commits introduce it under
-`fs/btrfs/` or elsewhere.
+**YES**The background searches finished and matched what the main
+analysis already used:
 
-That matches the earlier analysis: commit `b78fe95` calls a helper that
-isn’t here yet (it lands in a separate UAF-fix series). A backport would
-need a small adaptation — use the same inline pattern already in
-`clean_dirty_subvols()` (`reloc_root = NULL` → `smp_wmb()` →
-`clear_bit`) instead of calling `clear_reloc_root()`.
+- **Related commits search** — `git log --grep` turned up older btrfs
+  balance work (e.g. balance vs. unused block group deletion), but
+  nothing that already fixes this NULL deref in 6.18.44.
+- **b4 dig** — Failed because the commit isn’t in this checkout; the
+  lore context came from web search instead.
+- **Author search** — ZhengYuan Huang has other btrfs fixes in-tree
+  (e.g. tree-checker), which fits a focused corruption-handling fix
+  reviewed by David Sterba.
 
-The verdict for this tree remains **YES**, with that minor backport
-tweak.
+**Verdict for 6.18.44: YES** — small, maintainer-reviewed fix for a real
+NULL deref on corrupted btrfs during `balance` with a usage filter
+(`-dusage=N`).
 
- fs/btrfs/relocation.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/volumes.c | 32 +++++++++++++++++++++++---------
+ 1 file changed, 23 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 851cef16d4017..6b0bf7eff9d3e 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1910,11 +1910,10 @@ void merge_reloc_roots(struct reloc_control *rc)
- 		} else {
- 			if (!IS_ERR(root)) {
- 				if (root->reloc_root == reloc_root) {
--					root->reloc_root = NULL;
-+					clear_reloc_root(root);
-+					/* Drop the ref for root->reloc_root. */
- 					btrfs_put_root(reloc_root);
- 				}
--				clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE,
--					  &root->state);
- 				btrfs_put_root(root);
- 			}
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 863f69b9cf14b..ff67f5ecacb2e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3987,14 +3987,19 @@ static bool chunk_usage_range_filter(struct btrfs_fs_info *fs_info, u64 chunk_of
+ 	return ret;
+ }
  
+-static bool chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
+-			       struct btrfs_balance_args *bargs)
++static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
++			      struct btrfs_balance_args *bargs)
+ {
+ 	struct btrfs_block_group *cache;
+ 	u64 chunk_used, user_thresh;
+-	bool ret = true;
++	int ret = 1;
+ 
+ 	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
++	if (unlikely(!cache)) {
++		btrfs_err(fs_info, "balance: chunk at bytenr %llu has no corresponding block group",
++			  chunk_offset);
++		return -EUCLEAN;
++	}
+ 	chunk_used = cache->used;
+ 
+ 	if (bargs->usage_min == 0)
+@@ -4005,7 +4010,7 @@ static bool chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
+ 		user_thresh = mult_perc(cache->length, bargs->usage);
+ 
+ 	if (chunk_used < user_thresh)
+-		ret = false;
++		ret = 0;
+ 
+ 	btrfs_put_block_group(cache);
+ 	return ret;
+@@ -4110,8 +4115,8 @@ static bool chunk_soft_convert_filter(u64 chunk_type, struct btrfs_balance_args
+ 	return false;
+ }
+ 
+-static bool should_balance_chunk(struct extent_buffer *leaf, struct btrfs_chunk *chunk,
+-				 u64 chunk_offset)
++static int should_balance_chunk(struct extent_buffer *leaf, struct btrfs_chunk *chunk,
++				u64 chunk_offset)
+ {
+ 	struct btrfs_fs_info *fs_info = leaf->fs_info;
+ 	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
+@@ -4138,9 +4143,14 @@ static bool should_balance_chunk(struct extent_buffer *leaf, struct btrfs_chunk
+ 	}
+ 
+ 	/* usage filter */
+-	if ((bargs->flags & BTRFS_BALANCE_ARGS_USAGE) &&
+-	    chunk_usage_filter(fs_info, chunk_offset, bargs)) {
+-		return false;
++	if (bargs->flags & BTRFS_BALANCE_ARGS_USAGE) {
++		int ret2;
++
++		ret2 = chunk_usage_filter(fs_info, chunk_offset, bargs);
++		if (ret2 < 0)
++			return ret2;
++		if (ret2)
++			return false;
+ 	} else if ((bargs->flags & BTRFS_BALANCE_ARGS_USAGE_RANGE) &&
+ 	    chunk_usage_range_filter(fs_info, chunk_offset, bargs)) {
+ 		return false;
+@@ -4302,6 +4312,10 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
+ 		ret = should_balance_chunk(leaf, chunk, found_key.offset);
+ 
+ 		btrfs_release_path(path);
++		if (ret < 0) {
++			mutex_unlock(&fs_info->reclaim_bgs_lock);
++			goto error;
++		}
+ 		if (!ret) {
+ 			mutex_unlock(&fs_info->reclaim_bgs_lock);
+ 			goto loop;
 -- 
 2.53.0
 

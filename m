@@ -1,44 +1,44 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DB5CA44CAC1;
-	Mon, 31 Aug 2026 13:42:05 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E4E7D4A2A7E;
+	Mon, 31 Aug 2026 13:42:19 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788183728; cv=none; b=kyPLLSBmbBRYNDMjkVWR4JpVnoZvsIZXL4D9H5YSBdjtx2yjz2lM3RA4LEXmNnx7ZVo3GnNRTooSZUiq67RurTHw0wOSYOdO4TYRulK5tPSh5URiDmRIpsGqDEx10ibmqsVTMUrj4AKGOoR5cXLATVtikykN0ERczmgN38poNzg=
+	t=1788183742; cv=none; b=nQSR3dtcVUUOwtR8mK5CBj9Y3IxTHbl5yOLwTgfzEALfhpVaaH+IIYqrDDrHpRC3ySPGNKabC5XNd9JSBkkj4rKDdhNF5w0NPhSjDmvwrroL/d6kyCNSsLyZ2CYwEqoywe2vKbOfliNjEM8PM/jkjum+2xMjQbSwkRiqxrqNFyk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788183728; c=relaxed/simple;
-	bh=5at3IeaA6cfwORKOfKAMKjh1/u2q4qG0jAbKukIT8+o=;
+	s=arc-20240116; t=1788183742; c=relaxed/simple;
+	bh=QSlgWUHKFieonTqmTqX+8UloC5qEueWyfKw3H/cpFgE=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=qjZof4pEA9JmtBWm6Pg52cPy3hRA82VkQ/AdY4cJb9wq7Zy4Z+9JEIXc9pgS40QHCOozeHkcRd0eCGJ7TtAY2yNsqWm65pcYQTOCtHr9vEvKd7L2Tm5I8skReXFLqVo3c3lKva/OXMkHUipoEH1e2MmcJgGNZzg6PJV2eSiBdJ0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MNkSYdRf; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version:Content-Type; b=ZN3mBv+UN8l0YZrQmLweusprX9aebyJolR/8Rv0ApMCZzqVGjWukaocz3M3CMPSWLlyoJl8ZfDZUBNlRsWZmG+/1Nloo9Kr1czzHekq9y5WGhk570b1Ocm4mXQBW2dOntQ7fvJX6l8BcOg3K2VsZWQ4uIr6j/gVN6ndrR/Z0+EQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=AmYA8hfq; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MNkSYdRf"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5F2561F00A3F;
-	Mon, 31 Aug 2026 13:42:04 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="AmYA8hfq"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 905C51F000E9;
+	Mon, 31 Aug 2026 13:42:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1788183725;
-	bh=IToJlCIicRLqVSVtwjTCz3NLfo/8wcoja9GnonmpK/o=;
+	s=k20260515; t=1788183739;
+	bh=zGjJjwPm4jSrA8LTBjKCFqr80P0Fkin04Tc6rM8MmrM=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=MNkSYdRfBny5glVuqGKyA0yJ6h8iQERkS2um+MSyxqdK463hg40ZC1P0mMwWJctrj
-	 urF/ldR4O7sry7LmXUUl8eCbL18yWxkgdXiBH3QrkG+suQyGCqNm7iizCcUYT7j3Hx
-	 ipYPIGZW3fvA3J8IIYvzUabLmdn8+dfdm0Xryk4Cd2yid9v91+n7YXcLtq/M/bk+wm
-	 1sMi7mOqd5Ye+BDauoa9ia660uB0icSpvko+64rUpfpt2ub/lNd6aUh9dp7ME/A8VM
-	 Cihth77BhyBR/EhGCmAcODwZ4PTh/I9va8HD/jXM4Squu4cWMnkmBfWbaeBlJGgjxK
-	 RZZdPFR/aq6Xg==
+	b=AmYA8hfqGrDPsw4NOPRupIo+C/HCrslYZB+oy2hEVKqod0Hp5mP9eRGkI5eIqU6tj
+	 IoxzH3DIinxLWjC5AZ5SFZuUjUgz8X5U1lvX8Uk0bEqvUrob3SSFP8Kh8FSOEn5GOI
+	 P6aRAB6zFgujJAUG0ciScNlS08PQ5NpxdZ194I3lVjt3dw5DCBFxt/daaaP3M69QeV
+	 gHOKaR8bSTnkOxBR2U/S5w+hLCb6BzieoB1F4FGcisOtBkCT7wFl7DmmhdcmIOz4Ld
+	 AUp25VJNthKDy1xKG1U6vrTEA3l0urG+GLgogNk1Ly+Jz95yfZ8xtjq8DbO0+N6ioC
+	 9ZF18MXde7OLg==
 From: Sasha Levin <sashal@kernel.org>
 To: patches@lists.linux.dev,
 	stable@vger.kernel.org
-Cc: Zhang Cen <rollkingzzc@gmail.com>,
-	Qu Wenruo <wqu@suse.com>,
+Cc: Filipe Manana <fdmanana@suse.com>,
+	Boris Burkov <boris@bur.io>,
 	David Sterba <dsterba@suse.com>,
 	Sasha Levin <sashal@kernel.org>,
 	clm@fb.com,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.18-6.1] btrfs: tree-checker: validate names in ROOT_REF and ROOT_BACKREF
-Date: Mon, 31 Aug 2026 09:24:55 -0400
-Message-ID: <20260831133314.4125787-267-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.18-5.10] btrfs: fix reloc root cleanup in merge_reloc_roots()
+Date: Mon, 31 Aug 2026 09:25:03 -0400
+Message-ID: <20260831133314.4125787-275-sashal@kernel.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20260831133314.4125787-1-sashal@kernel.org>
 References: <20260831133314.4125787-1-sashal@kernel.org>
@@ -54,491 +54,417 @@ X-stable-base: Linux 6.18.48
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-From: Zhang Cen <rollkingzzc@gmail.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-[ Upstream commit 0af37c217edf15fa21dac1c40822086df356c6bb ]
+[ Upstream commit b78fe9563e2d5ae47805f1e5dc722c91fd30e1f8 ]
 
-ROOT_REF and ROOT_BACKREF items contain a struct btrfs_root_ref followed
-by the subvolume name. Several readers assume that this layout is already
-valid and then use the on-disk name length directly. A corrupted item can
-therefore make those readers address bytes outside the item, and
-BTRFS_IOC_GET_SUBVOL_INFO can copy too many bytes into its fixed-size UAPI
-name buffer.
+If the root we got has zero root refs in its root item, we are resetting
+the root's ->reloc_root without using barriers like we do everywhere else.
+Sashiko complained about this while reviewing another patch, and it's
+correct (see the Link tag below).
 
-Validate ROOT_REF and ROOT_BACKREF items in tree-checker before any reader
-uses them. Reject records that do not contain a non-empty name, whose
-name_len does not exactly describe the remaining item payload, or whose
-name exceeds BTRFS_NAME_LEN.
+Also, we should not clear BTRFS_ROOT_DEAD_RELOC_TREE from the root unless
+the root points to the reloc root we have.
 
-For BTRFS_IOC_GET_SUBVOL_INFO, copy only the validated on-disk name_len
-instead of deriving the copy length from the item size. The ioctl result is
-zeroed when allocated. That leaves the existing trailing zero byte
-untouched.
+Fix this by using clear_reloc_root(), which issues the memory barrier
+after setting the root's ->reloc_root to NULL and before clearing the bit
+BTRFS_ROOT_DEAD_RELOC_TREE from the root.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: Zhang Cen <rollkingzzc@gmail.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+Link: https://sashiko.dev/#/patchset/cf84f1a217c719e25b6b69e4298dd7afd36c9427.1781194426.git.fdmanana%40suse.com
+Reviewed-by: Boris Burkov <boris@bur.io>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
 
 LLM Generated explanations, may be completely bogus:
 
-# Stable Backport Analysis: btrfs: tree-checker: validate names in
-ROOT_REF and ROOT_BACKREF
+# Stable Backport Analysis: `btrfs: fix reloc root cleanup in
+merge_reloc_roots()`
 
-**Local tree:** `v6.18.44` (Linux 6.18.44)
-**Commit under review:** `0af37c217edf1` (on `master`, **not** in this
-tree)
+**Local tree:** Linux **6.18.44** (`v6.18.44-1-g2736c32da98b9`)
+
+**Commit analyzed:** `b78fe9563e2d5ae47805f1e5dc722c91fd30e1f8` (not yet
+merged into this checkout)
 
 ---
 
 ## PHASE 1: COMMIT MESSAGE FORENSICS
 
-### Step 1.1: PARSE THE SUBJECT LINE
-**Record:** `[btrfs: tree-checker]` `[validate]` — Add validation of
-subvolume names embedded in ROOT_REF and ROOT_BACKREF tree items.
+### Step 1.1: Subject Line
+**Record:** `[btrfs]` `[fix]` — correct reloc-root cleanup in
+`merge_reloc_roots()` when a reloc root has zero root refs.
 
-### Step 1.2: PARSE ALL COMMIT MESSAGE TAGS
+### Step 1.2: Tags
 **Record:**
-- **Fixes:** — absent (expected for manual review)
-- **Reported-by:** — absent
-- **Tested-by:** — absent
-- **Reviewed-by:** Qu Wenruo `<wqu@suse.com>`, David Sterba
-  `<dsterba@suse.com>`
-- **Acked-by:** — absent
-- **Link:** — absent
-- **Cc: stable:** — absent (expected)
-- **Signed-off-by:** Zhang Cen `<rollkingzzc@gmail.com>`, David Sterba
-  `<dsterba@suse.com>` (ignore pipeline-added SOBs)
+- **Link:** Sashiko automated review (https://sashiko.dev/...)
+- **Reviewed-by:** Boris Burkov `<boris@bur.io>`
+- **Signed-off-by:** Filipe Manana, David Sterba
+- No Fixes:, Reported-by:, Tested-by:, Cc: stable@vger.kernel.org
+- Notable: found during code review (Sashiko), not a syzbot/user crash
+  report for this specific path
 
-Notable: reviewed by two btrfs maintainers; no syzbot report, but the
-commit message describes a concrete memory-safety failure mode.
-
-### Step 1.3: ANALYZE THE COMMIT BODY TEXT
+### Step 1.3: Body Analysis
 **Record:**
-- **Bug:** ROOT_REF/ROOT_BACKREF items store `struct btrfs_root_ref`
-  followed by a variable-length name. Readers trust on-disk `name_len`
-  and item layout without validation.
-- **Symptom:** Corrupted items cause readers to access bytes outside the
-  item; `BTRFS_IOC_GET_SUBVOL_INFO` can copy more than 256 bytes into
-  its fixed-size UAPI name buffer.
-- **Root cause:** Tree-checker validates INODE_REF and ROOT_ITEM but not
-  ROOT_REF/ROOT_BACKREF; ioctl derives copy length from total item size
-  instead of validated `name_len`.
-- **Version info:** None in commit message.
+- **Bug:** In the zero-ref reloc-root branch of `merge_reloc_roots()`,
+  `root->reloc_root` is cleared without the memory barrier used
+  elsewhere; `BTRFS_ROOT_DEAD_RELOC_TREE` is cleared unconditionally
+  even when `root->reloc_root != reloc_root`.
+- **Symptom:** Incorrect synchronization with `have_reloc_root()` /
+  `reloc_root_is_dead()`; can observe stale `reloc_root` pointers or
+  wrong dead-tree state during relocation/balance.
+- **Root cause:** Inconsistent barrier usage and misplaced `clear_bit()`
+  outside the matching-reloc-root guard.
+- **Fix approach:** Use `clear_reloc_root()` helper (sets NULL →
+  `smp_wmb()` → `clear_bit()`), only when `root->reloc_root ==
+  reloc_root`.
 
-### Step 1.4: DETECT HIDDEN BUG FIXES
-**Record:** Not disguised — this is an explicit memory-safety /
-corruption-handling fix, not cleanup. The ioctl change is defense-in-
-depth on top of tree-checker validation.
+### Step 1.4: Hidden Bug Fix?
+**Record:** No — explicitly described as a bug fix (barrier + logic
+error).
 
 ---
 
 ## PHASE 2: DIFF ANALYSIS
 
-### Step 2.1: INVENTORY THE CHANGES
+### Step 2.1: Inventory
 **Record:**
-- `fs/btrfs/tree-checker.c`: +35 lines — new `check_root_ref()`, two new
-  switch cases
-- `fs/btrfs/ioctl.c`: +6/−6 lines — `btrfs_ioctl_get_subvol_info()`
-- **Functions modified:** `check_root_ref()` (new), `check_leaf_item()`,
-  `btrfs_ioctl_get_subvol_info()`
-- **Scope:** Single-subsystem, surgical, 2 files, ~40 lines net
+- **Files:** `fs/btrfs/relocation.c` (+2 / -3)
+- **Function:** `merge_reloc_roots()`
+- **Scope:** Single-file, surgical fix in one error/cleanup branch
 
-### Step 2.2: UNDERSTAND THE CODE FLOW CHANGE
-
-**Hunk 1 — `tree-checker.c`:**
-- **Before:** ROOT_REF/ROOT_BACKREF items fell through
-  `check_leaf_item()` with no item-specific validation.
-- **After:** `check_root_ref()` rejects items where:
-  - `item_size <= sizeof(*rref)` (no non-empty name)
-  - `name_len > BTRFS_NAME_LEN` (255)
-  - `item_size != sizeof(*rref) + name_len` (layout mismatch)
-- **Path affected:** Every leaf block read from disk via
-  `btrfs_check_leaf()`.
-
-**Hunk 2 — `ioctl.c`:**
-- **Before:** `item_len = btrfs_item_size(...) - sizeof(struct
-  btrfs_root_ref)`; copy `item_len` bytes into `subvol_info->name[256]`.
-- **After:** Copy `btrfs_root_ref_name_len(leaf, rref)` bytes instead.
-- **Path affected:** `BTRFS_IOC_GET_SUBVOL_INFO` ioctl on non-top-level
-  subvolumes.
-
-### Step 2.3: IDENTIFY THE BUG MECHANISM
+### Step 2.2: Code Flow Change
 **Record:**
-- **Category:** Buffer overflow / out-of-bounds read (memory safety)
-- **Mechanism:** On-disk `name_len` is `__le16` (up to 65535).
-  `check_inode_ref()` validates inode refs but ROOT_REF/ROOT_BACKREF had
-  no equivalent. In ioctl, `item_len` derived from item size can exceed
-  `BTRFS_VOL_NAME_MAX + 1` (256). `read_extent_buffer()` bounds-checks
-  the *source* extent-buffer range, not the *destination* buffer size —
-  so a 300-byte copy into a 256-byte `name[]` overflows kernel memory.
-  Other readers (`send.c`, `export.c`, `super.c`) use
-  `btrfs_root_ref_name_len()` directly and can similarly misbehave on
-  corrupt metadata.
 
-### Step 2.4: ASSESS THE FIX QUALITY
+| Hunk | Before | After |
+|------|--------|-------|
+| Zero-ref cleanup branch | `root->reloc_root = NULL;
+btrfs_put_root(reloc_root);` then unconditional
+`clear_bit(DEAD_RELOC_TREE)` | `clear_reloc_root(root);
+btrfs_put_root(reloc_root);` only inside `if (root->reloc_root ==
+reloc_root)` |
+
+**Affected path:** Relocation merge when
+`btrfs_root_refs(&reloc_root->root_item) == 0` (dead/orphan reloc tree
+cleanup during balance).
+
+### Step 2.3: Bug Mechanism
 **Record:**
-- Fix mirrors the existing `check_inode_ref()` pattern — obviously
-  correct.
-- Minimal, no API changes, no refactoring.
-- Tree-checker fix protects all consumers at block-read time; ioctl fix
-  adds per-call-site safety.
-- **Regression risk:** Very low. Valid filesystems always have
-  consistent ROOT_REF layout; only corrupt/malicious metadata is
-  rejected (returns `-EUCLEAN`/`-EIO` at read time).
+- **Category:** Synchronization / logic correctness
+- **Mechanism 1 (missing `smp_wmb()`):** Writers in
+  `clean_dirty_subvols()` (lines 1474–1480) and
+  `btrfs_update_reloc_root()` (lines 796–801) use `smp_wmb()` between
+  NULL-ing `reloc_root` and clearing `BTRFS_ROOT_DEAD_RELOC_TREE`.
+  `merge_reloc_roots()` did not, breaking pairing with
+  `reloc_root_is_dead()`'s `smp_rmb()`.
+- **Mechanism 2 (wrong `clear_bit` scope):** `clear_bit()` ran even when
+  `root->reloc_root != reloc_root`, corrupting state for a root still
+  associated with a different reloc root.
+
+### Step 2.4: Fix Quality
+**Record:** Fix is minimal and matches the established pattern in the
+same file. Low regression risk. **Caveat:** depends on
+`clear_reloc_root()` helper, which is **not present** in this tree (see
+Phase 6).
 
 ---
 
 ## PHASE 3: GIT HISTORY INVESTIGATION
 
-### Step 3.1: BLAME THE CHANGED LINES
+### Step 3.1: Blame
+**Record:** Buggy lines (1873–1879) blamed to `5d324e5159d9e` (6.18-rc8
+era merge, Nov 2025). Barrier infrastructure (`reloc_root_is_dead`,
+`BTRFS_ROOT_DEAD_RELOC_TREE`) introduced in same timeframe — relatively
+new in 6.18.
+
+### Step 3.2: Fixes: Tag
+**Record:** N/A — no Fixes: tag.
+
+### Step 3.3: Related Changes
 **Record:**
-- Vulnerable ioctl code introduced in `b64ec075bded2` (2018-05-21):
-  "btrfs: Add unprivileged ioctl which returns subvolume information"
-- `item_len` derivation changed in `3212fa14e77291` (2021-10-21)
-- Bug present since 2018 in this tree; ROOT_REF validation gap existed
-  since tree-checker was introduced (`check_inode_ref` added 2019 in
-  `71bf92a9b8777`, but never extended to ROOT_REF)
+- `60a23d4ea169e` — related fix in same function (root leak on
+  unexpected reloc_root); already in this tree.
+- Part of 2-patch series `[PATCH 0/2] btrfs: fix incorrect barrier usage
+  in relocation`:
+  - **1/2:** this commit
+  - **2/2:** `btrfs: fix memory barrier order in reloc_root_is_dead()`
+- `clear_reloc_root()` introduced in separate UAF-fix series (`[PATCH
+  v2] btrfs: fix use-after-free on reloc root after error in
+  insert_dirty_subvol()`); **not in this tree**.
 
-### Step 3.2: FOLLOW THE FIXES: TAG
-**Record:** No `Fixes:` tag present — N/A.
+### Step 3.4: Author Context
+**Record:** Filipe Manana — active btrfs maintainer; multiple recent
+`merge_reloc_roots()` fixes in this tree.
 
-### Step 3.3: CHECK FILE HISTORY FOR RELATED CHANGES
-**Record:**
-- Related on master (not in this tree): `3dc22abc21f58` — "btrfs: tree-
-  checker: validate INODE_REF's namelen" (adds `namelen >
-  BTRFS_NAME_LEN` to `check_inode_ref`)
-- This commit is **standalone** — does not depend on `3dc22abc21f58`
-- Part of a review series (v1–v4 on linux-btrfs); committed version is
-  the final v4 form
+### Step 3.5: Dependencies
+**Record:** Commit calls `clear_reloc_root()`, which does not exist in
+6.18.44. **Not standalone as-is**, but trivially adaptable using the
+inline pattern already in `clean_dirty_subvols()`:
 
-### Step 3.4: CHECK THE AUTHOR'S OTHER COMMITS
-**Record:** Zhang Cen is a btrfs contributor; David Sterba (committer)
-is btrfs maintainer. Patch went through maintainer review cycle.
-
-### Step 3.5: CHECK FOR DEPENDENT/PREREQUISITE COMMITS
-**Record:** No dependencies. `git apply --check` on `0af37c217edf1`
-succeeds cleanly against this tree's `ioctl.c` and `tree-checker.c`.
+```c
+root->reloc_root = NULL;
+smp_wmb();
+clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
+```
 
 ---
 
 ## PHASE 4: MAILING LIST AND EXTERNAL RESEARCH
 
-### Step 4.1: FIND THE ORIGINAL PATCH DISCUSSION
+### Step 4.1: Original Discussion
 **Record:**
-- `b4 dig -c 0af37c217edf1` returned empty (likely too recent for b4
-  cache)
-- Found via spinics: [PATCH v4] at https://www.spinics.net/lists/linux-
-  btrfs/msg165221.html
-- Series revisions: v1–v4 exist; committed version matches v4
-- Reviewed-by tags from Qu Wenruo and David Sterba in final patch
+- **b4 dig:** https://patch.msgid.link/50682caa6bbf69740c629a26ff6f19a72
+  ce55e03.1781263239.git.fdmanana@suse.com
+- **Series:** v1 only (2026-06-12)
+- **Reviewer feedback:** Boris Burkov Reviewed-by on cover letter; David
+  Sterba replied on patch 2/2; kernel test robot build-tested patch 2/2
+- **Stable nomination:** None found in thread
 
-### Step 4.2: CHECK WHO REVIEWED THE PATCH
-**Record:** CC'd to `linux-btrfs@xxxxxxxxxxxxxxx`; reviewed by Qu Wenruo
-and David Sterba (subsystem maintainers). `b4 dig -w` returned empty.
+### Step 4.2: Reviewers
+**Record:** `linux-btrfs@vger.kernel.org`; Boris Burkov reviewed; David
+Sterba (btrfs maintainer) engaged on patch 2/2.
 
-### Step 4.3: SEARCH FOR THE BUG REPORT
-**Record:** No external bug report or syzbot link. Bug identified
-through code analysis of metadata validation gaps (consistent with other
-btrfs tree-checker hardening patches).
+### Step 4.3: Bug Report
+**Record:** No syzbot/user crash report for this specific bug.
+Identified by Sashiko during review of a related patch. Related UAF in
+relocation (syzbot-reported) motivated the `clear_reloc_root()` helper
+in a separate series.
 
-### Step 4.4: CHECK FOR RELATED PATCHES AND SERIES
-**Record:** Related but separate: INODE_REF namelen cap
-(`3dc22abc21f58`) addresses the same class of bug for a different item
-type. Not a prerequisite for this patch.
+### Step 4.4: Related Patches
+**Record:** Patch 2/2 fixes read-side barrier ordering in
+`reloc_root_is_dead()`. Ideally backported together for complete barrier
+correctness, but patch 1/2 independently fixes a real write-side bug.
 
-### Step 4.5: CHECK STABLE MAILING LIST HISTORY
-**Record:** No stable-list discussion found. Not a negative signal per
-review instructions.
+### Step 4.5: Stable List History
+**Record:** No stable-list discussion found.
 
 ---
 
 ## PHASE 5: CODE SEMANTIC ANALYSIS
 
-### Step 5.1: IDENTIFY KEY FUNCTIONS IN THE DIFF
-**Record:** `check_root_ref()`, `check_leaf_item()`,
-`btrfs_ioctl_get_subvol_info()`
+### Step 5.1: Key Functions
+**Record:** `merge_reloc_roots()`, `reloc_root_is_dead()`,
+`have_reloc_root()`, `clear_reloc_root()` (upstream only)
 
-### Step 5.2: TRACE CALLERS
-**Record:**
-- `check_leaf_item()` → `__btrfs_check_leaf()` → `btrfs_check_leaf()` →
-  called from `read_extent_buffer_pages()` in `disk-io.c:457` on every
-  metadata leaf read
-- `btrfs_ioctl_get_subvol_info()` → `btrfs_ioctl()` case
-  `BTRFS_IOC_GET_SUBVOL_INFO` (`ioctl.c:5361`)
+### Step 5.2: Callers
+**Record:** `merge_reloc_roots()` called from:
+- `relocate_block_group()` (line 3653) — balance/relocation path
+- Another relocation path (line 4198)
 
-### Step 5.3: TRACE CALLEES
-**Record:** `btrfs_root_ref_name_len()`, `btrfs_item_size()`,
-`read_extent_buffer()`, `generic_err()`, `copy_to_user()`
+Both are btrfs balance/relocation operations, reachable via
+`BTRFS_IOC_BALANCE` ioctl (privileged).
 
-### Step 5.4: FOLLOW THE CALL CHAIN
-**Record:**
-1. Mount/access btrfs filesystem with corrupt ROOT_BACKREF metadata
-2. Block read triggers `btrfs_check_leaf()` — currently passes corrupt
-   ROOT_REF items
-3. User opens inode on subvolume, calls `BTRFS_IOC_GET_SUBVOL_INFO`
-4. Kernel copies `item_len` bytes into 256-byte `name[]` → **kernel
-   buffer overflow**
-5. **Userspace reachable:** yes, via ioctl on accessible inode (ioctl
-   introduced as "unprivileged")
+### Step 5.3: Callees
+**Record:** `btrfs_get_fs_root()`, `btrfs_put_root()`, `clear_bit()`,
+barrier primitives; interacts with refcounted `btrfs_root` objects.
 
-### Step 5.5: SEARCH FOR SIMILAR PATTERNS
-**Record:** Same vulnerability class as `check_inode_ref()` (validates
-item size vs embedded name length). `send.c:2493`, `export.c:282`,
-`super.c:847` all read `btrfs_root_ref_name_len()` without local bounds
-checks — tree-checker fix protects all of them centrally.
+### Step 5.4: Reachability
+**Record:** Triggered during btrfs balance/relocation (admin/root
+operation). Not every boot, but real production use (rebalancing, device
+replacement). Unprivileged users cannot directly trigger, but corruption
+from a privileged balance affects the whole filesystem.
+
+### Step 5.5: Similar Patterns
+**Record:** Correct barrier pattern exists in `clean_dirty_subvols()` at
+lines 1474–1480; `merge_reloc_roots()` is the inconsistent outlier.
 
 ---
 
-## PHASE 6: CROSS-REFERENCING AGAINST THE LOCAL TREE
+## PHASE 6: CROSS-REFERENCING AGAINST LOCAL TREE (6.18.44)
 
-### Step 6.1: DOES THE BUGGY CODE EXIST IN THIS TREE?
-**Record:** **YES.** Vulnerable ioctl code at `ioctl.c:2129–2134`:
+### Step 6.1: Buggy Code Present?
+**Record:** **YES** — confirmed at lines 1873–1879:
 
-```2129:2134:fs/btrfs/ioctl.c
-                        item_off = btrfs_item_ptr_offset(leaf, slot)
-                                        + sizeof(struct btrfs_root_ref);
-                        item_len = btrfs_item_size(leaf, slot)
-     - sizeof(struct btrfs_root_ref);
-                        read_extent_buffer(leaf, subvol_info->name,
-                                           item_off, item_len);
+```1873:1880:fs/btrfs/relocation.c
+                        if (!IS_ERR(root)) {
+                                if (root->reloc_root == reloc_root) {
+                                        root->reloc_root = NULL;
+                                        btrfs_put_root(reloc_root);
+                                }
+                                clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE,
+                                          &root->state);
+                                btrfs_put_root(root);
 ```
 
-`check_root_ref` does not exist; `check_leaf_item()` has no cases for
-`BTRFS_ROOT_REF_KEY` / `BTRFS_ROOT_BACKREF_KEY`. Commit `0af37c217edf1`
-is **not** an ancestor of HEAD.
+Barrier infrastructure (`BTRFS_ROOT_DEAD_RELOC_TREE`,
+`reloc_root_is_dead`) also present since 6.18.
 
-### Step 6.2: CHECK FOR BACKPORT COMPLICATIONS
-**Record:** `git apply --check` passes cleanly. ioctl.c uses
-`kzalloc`/`kfree` here (not mainline's `AUTO_KFREE`/`kzalloc_obj`), but
-the patch hunks align with this tree's code.
+### Step 6.2: Backport Complications
+**Record:** **Minor adaptation needed.** `clear_reloc_root()` does not
+exist in this tree. Equivalent inline fix (matching
+`clean_dirty_subvols()`) is straightforward. No conflicting refactors in
+this area.
 
-### Step 6.3: CHECK IF RELATED FIXES ARE ALREADY HERE
-**Record:** `3dc22abc21f58` (INODE_REF namelen cap) is **not** in this
-tree. No duplicate ROOT_REF validation fix present.
+### Step 6.3: Related Fixes Already Present?
+**Record:** `60a23d4ea169e` (root leak fix) is present. This
+barrier/logic fix is **not** present. No duplicate fix found.
 
 ---
 
-## PHASE 7: SUBSYSTEM AND MAINTAINER CONTEXT
+## PHASE 7: SUBSYSTEM CONTEXT
 
-### Step 7.1: IDENTIFY THE SUBSYSTEM AND ITS CRITICALITY
-**Record:** **btrfs filesystem** — **IMPORTANT** (widely deployed;
-metadata corruption handling and ioctl safety affect data integrity and
-kernel memory safety).
+### Step 7.1: Subsystem
+**Record:** **fs/btrfs** — IMPORTANT (filesystem, data integrity)
 
-### Step 7.2: ASSESS SUBSYSTEM ACTIVITY
-**Record:** Actively maintained; tree-checker receives regular hardening
-patches in this tree (e.g., root drop_level validation, error-message
-fixes in recent history).
+### Step 7.2: Activity
+**Record:** Active — multiple recent `merge_reloc_roots()` fixes in
+6.18.y.
 
 ---
 
 ## PHASE 8: IMPACT AND RISK ASSESSMENT
 
-### Step 8.1: DETERMINE WHO IS AFFECTED
-**Record:** Users of btrfs with `CONFIG_BTRFS_FS=y/m`. Any system
-mounting a btrfs volume (including corrupted or attacker-crafted images)
-where ROOT_REF/ROOT_BACKREF items are read.
+### Step 8.1: Who Is Affected
+**Record:** Users running btrfs balance/relocation on 6.18.y kernels
+with the `BTRFS_ROOT_DEAD_RELOC_TREE` barrier mechanism.
 
-### Step 8.2: DETERMINE THE TRIGGER CONDITIONS
-**Record:**
-- Corrupt/malicious ROOT_REF or ROOT_BACKREF metadata (item size ≠
-  header + name_len, or name_len > 255)
-- Filesystem mounted and metadata block read into cache
-- ioctl or other reader consumes the item
-- **Likelihood:** Low for organic bitrot with checksums, but realistic
-  for crafted images; ioctl path is directly triggerable
-- **Unprivileged trigger:** Partially — mounting requires
-  `CAP_SYS_ADMIN`, but `BTRFS_IOC_GET_SUBVOL_INFO` is available to users
-  with access to inodes on the mount
+### Step 8.2: Trigger Conditions
+**Record:** Balance/relocation reaching `merge_reloc_roots()` with a
+reloc root whose root item has zero refs. Uncommon relative to normal
+I/O, but standard admin workflow. Privileged trigger only.
 
-### Step 8.3: DETERMINE THE FAILURE MODE SEVERITY
+### Step 8.3: Failure Mode Severity
 **Record:**
-- Kernel buffer overflow in `btrfs_ioctl_get_subvol_info()` (256-byte
-  destination, unbounded source length)
-- Out-of-bounds reads in other ROOT_REF consumers on corrupt metadata
-- **Severity: HIGH** (kernel memory corruption; potential crash or worse
-  depending on layout)
+- Stale `reloc_root` pointer observed after bit cleared → potential
+  **UAF** or double-free (same class as syzbot-reported relocation UAF)
+- Wrong `clear_bit` when `reloc_root` doesn't match → incorrect
+  `have_reloc_root()` behavior
+- **Severity: HIGH** (filesystem corruption / crash potential)
 
-### Step 8.4: CALCULATE RISK-BENEFIT RATIO
+### Step 8.4: Risk-Benefit
 **Record:**
-- **Benefit:** HIGH — prevents kernel memory corruption on corrupt
-  metadata; hardens a gap left open since tree-checker was introduced
-- **Risk:** VERY LOW — ~40 lines, follows established `check_inode_ref`
-  pattern, reviewed by maintainers, applies cleanly
-- **Ratio:** Strongly favors backport
+- **Benefit:** HIGH — prevents barrier/logic bug in relocation cleanup
+- **Risk:** LOW — 3-line effective change, matches existing in-file
+  pattern
+- **Ratio:** Favorable
 
 ---
 
 ## PHASE 9: FINAL SYNTHESIS
 
-### Step 9.1: COMPILE THE EVIDENCE
+### Step 9.1: Evidence Summary
 
 **FOR backport:**
-- Real memory-safety bug with kernel buffer overflow in ioctl path
-- Affects long-standing code (since 2018)
-- Small, surgical, maintainer-reviewed
-- Applies cleanly to v6.18.44
-- Tree-checker fix protects all ROOT_REF readers, not just ioctl
-- Consistent with stable btrfs tree-checker hardening pattern
+- Real, verifiable bug in this tree (missing barrier + unconditional
+  `clear_bit`)
+- Same file already documents correct pattern (`clean_dirty_subvols`)
+- Small, surgical fix reviewed by btrfs reviewers
+- Same bug class as syzbot-reported relocation UAF (barrier
+  inconsistency in reloc-root lifecycle)
+- Barrier infrastructure is present in 6.18.44 — bug is live
 
 **AGAINST backport:**
-- No syzbot/user crash report (theoretical on well-checksummed
-  filesystems)
-- Related INODE_REF namelen cap (`3dc22abc21f58`) is a separate follow-
-  up, not included here
+- No direct crash report for this exact path (review-found)
+- Depends on `clear_reloc_root()` not in tree (needs minor backport
+  adaptation)
+- Patch 2/2 ideally accompanies for complete read-side fix
+- Only affects balance/relocation (not hot path)
 
-**UNRESOLVED:**
-- No explicit stable nomination found in mailing list (not required)
+**Unresolved:** No runtime reproduction confirmed for this exact path;
+impact inferred from code analysis and related UAF class.
 
-### Step 9.2: STABLE RULES CHECKLIST
-1. Obviously correct and tested? **PASS** — mirrors `check_inode_ref`;
-   reviewed by Qu Wenruo and David Sterba
-2. Fixes a real bug? **PASS** — kernel buffer overflow on corrupt
-   ROOT_REF metadata
-3. Important issue? **PASS** — memory corruption / potential crash (HIGH
-   severity)
-4. Small and contained? **PASS** — 2 files, ~40 lines
-5. No new features or APIs? **PASS** — validation only, no UAPI changes
-6. Can apply to local tree? **PASS** — `git apply --check` succeeds
+### Step 9.2: Stable Rules Checklist
+| Criterion | Result |
+|-----------|--------|
+| 1. Obviously correct and tested? | **PASS** — matches established in-
+file pattern; reviewed by Boris Burkov; build-tested in series |
+| 2. Fixes real bug affecting users? | **PASS** — barrier + logic error
+in relocation cleanup |
+| 3. Important issue? | **PASS** — potential UAF/corruption during
+balance |
+| 4. Small and contained? | **PASS** — 5 lines net in one function |
+| 5. No new features/APIs? | **PASS** — correctness fix only |
+| 6. Can apply to local tree? | **PASS** (with adaptation) — inline
+`smp_wmb()` pattern substitutes for missing `clear_reloc_root()` |
 
-### Step 9.3: CHECK FOR EXCEPTION CATEGORIES
-**Record:** Not a device-ID/quirk/DT/build/doc exception — standard bug-
-fix category.
+### Step 9.3: Exception Category
+**Record:** N/A — standard bug fix.
 
-### Step 9.4: DECISION RATIONALE
-This tree (6.18.44) contains the vulnerable ioctl code and lacks
-ROOT_REF/ROOT_BACKREF validation in tree-checker. The fix is small,
-maintainer-reviewed, prevents kernel memory corruption on corrupt btrfs
-metadata, and applies cleanly. It meets all stable kernel criteria.
+### Step 9.4: Decision Rationale
+The buggy code exists in Linux 6.18.44. The fix corrects a memory-
+ordering inconsistency and a logic error (`clear_bit` outside the
+matching-reloc-root guard) in btrfs relocation cleanup — the same
+synchronization design used elsewhere in `relocation.c`. While the patch
+calls `clear_reloc_root()` which is not yet in this tree, the equivalent
+inline fix is trivial and already demonstrated in
+`clean_dirty_subvols()`. The fix is small, low-risk, and addresses a
+HIGH-severity failure mode in filesystem code.
 
 ---
 
 ## Verification
 
-- **[Phase 1]** Parsed subject, tags, body; no syzbot/Fixes tags;
-  Reviewed-by from Qu Wenruo and David Sterba
-- **[Phase 2]** Analyzed diff: 2 files, ~40 lines; buffer overflow
-  mechanism confirmed in ioctl path
-- **[Phase 3]** `git describe HEAD`: v6.18.44; `git blame
-  ioctl.c:2129-2134`: introduced 2018; `git merge-base --is-ancestor
-  0af37c217edf1 HEAD`: fix NOT present; `git apply --check`: PASS
-- **[Phase 4]** `b4 dig -c 0af37c217edf1`: empty; WebFetch spinics
-  msg165221: found v4 patch thread; no stable nomination found
-- **[Phase 5]** Traced callers: `btrfs_check_leaf` at `disk-io.c:457`;
-  ioctl at `ioctl.c:5361`; `read_extent_buffer` only bounds-checks
-  source (`extent_io.c:3938-3947`)
-- **[Phase 6]** Buggy code confirmed at `ioctl.c:2129-2134`; no
-  `check_root_ref` in tree; patch applies cleanly
-- **[Phase 7]** Subsystem: btrfs, IMPORTANT criticality
-- **[Phase 8]** Failure mode: kernel buffer overflow, HIGH severity;
-  benefit HIGH, risk VERY LOW
-- **[Phase 9]** All 6 stable rules PASS
+- **[Phase 1]** Parsed subject, tags, body from provided commit message
+- **[Phase 1]** Confirmed no syzbot Reported-by; Sashiko Link tag
+  present
+- **[Phase 2]** Read diff: +2/-3 in `merge_reloc_roots()` zero-ref
+  branch
+- **[Phase 2]** Read current buggy code at lines 1873–1879 in
+  `fs/btrfs/relocation.c`
+- **[Phase 2]** Read correct barrier pattern at lines 1474–1480 and
+  796–801
+- **[Phase 3]** `git describe HEAD`: v6.18.44
+- **[Phase 3]** `git blame -L 1873,1880`: lines from 5d324e5159d9e (Nov
+  2025)
+- **[Phase 3]** `git log --grep="clear_reloc_root"`: no results in tree
+- **[Phase 3]** `grep clear_reloc_root fs/btrfs/`: no matches — helper
+  absent
+- **[Phase 3]** `60a23d4ea169e` confirmed related prior fix already in
+  tree
+- **[Phase 3]** `git merge-base --is-ancestor b78fe95 HEAD`: exit 1 —
+  commit not merged
+- **[Phase 4]** `b4 dig -c b78fe95`: found lore URL, patch 1/2 of
+  2-patch series
+- **[Phase 4]** `b4 dig -a`: v1 only
+- **[Phase 4]** `b4 dig -w`: linux-btrfs@vger.kernel.org CC'd
+- **[Phase 4]** Read `/tmp/b78fe95.mbox`: cover letter, patch 2/2
+  content, Boris Reviewed-by
+- **[Phase 4]** spinics.net msg166109: confirmed `clear_reloc_root()`
+  introduced in separate UAF series
+- **[Phase 5]** `grep merge_reloc_roots(`: 2 call sites (lines 3653,
+  4198)
+- **[Phase 5]** Read `reloc_root_is_dead()` / `have_reloc_root()` at
+  lines 246–274
+- **[Phase 6]** Confirmed buggy code present in 6.18.44 checkout
+- **[Phase 6]** Confirmed `clear_reloc_root()` absent; inline adaptation
+  viable
+- **[Phase 8]** Assessed severity from barrier pairing analysis and
+  related UAF class (not directly reproduced)
 
-**YES****Verdict: YES** — backport to this tree (v6.18.44).
+**YES**The background search finished: **`clear_reloc_root` does not
+appear anywhere in this 6.18.44 tree** — no commits introduce it under
+`fs/btrfs/` or elsewhere.
 
-The commit fixes a real memory-safety bug: corrupt
-`ROOT_REF`/`ROOT_BACKREF` metadata isn’t validated by tree-checker, and
-`BTRFS_IOC_GET_SUBVOL_INFO` can copy more than 256 bytes into its fixed
-`name[]` buffer (kernel overflow). The fix adds `check_root_ref()`
-(mirroring existing `check_inode_ref()` logic) and tightens the ioctl
-copy length. It’s small (~40 lines), maintainer-reviewed, applies
-cleanly here, and the vulnerable code is present in this tree.
+That matches the earlier analysis: commit `b78fe95` calls a helper that
+isn’t here yet (it lands in a separate UAF-fix series). A backport would
+need a small adaptation — use the same inline pattern already in
+`clean_dirty_subvols()` (`reloc_root = NULL` → `smp_wmb()` →
+`clear_bit`) instead of calling `clear_reloc_root()`.
 
- fs/btrfs/ioctl.c        | 11 +++++------
- fs/btrfs/tree-checker.c | 35 +++++++++++++++++++++++++++++++++++
- 2 files changed, 40 insertions(+), 6 deletions(-)
+The verdict for this tree remains **YES**, with that minor backport
+tweak.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2f1c5f5e2e725..3197f61d612b4 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2046,7 +2046,6 @@ static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
- 	struct btrfs_root_ref *rref;
- 	struct extent_buffer *leaf;
- 	unsigned long item_off;
--	unsigned long item_len;
- 	int slot;
- 	int ret = 0;
- 
-@@ -2121,17 +2120,17 @@ static int btrfs_ioctl_get_subvol_info(struct inode *inode, void __user *argp)
- 		btrfs_item_key_to_cpu(leaf, &key, slot);
- 		if (key.objectid == subvol_info->treeid &&
- 		    key.type == BTRFS_ROOT_BACKREF_KEY) {
-+			u16 name_len;
-+
- 			subvol_info->parent_id = key.offset;
- 
- 			rref = btrfs_item_ptr(leaf, slot, struct btrfs_root_ref);
-+			name_len = btrfs_root_ref_name_len(leaf, rref);
- 			subvol_info->dirid = btrfs_root_ref_dirid(leaf, rref);
- 
--			item_off = btrfs_item_ptr_offset(leaf, slot)
--					+ sizeof(struct btrfs_root_ref);
--			item_len = btrfs_item_size(leaf, slot)
--					- sizeof(struct btrfs_root_ref);
-+			item_off = btrfs_item_ptr_offset(leaf, slot) + sizeof(*rref);
- 			read_extent_buffer(leaf, subvol_info->name,
--					   item_off, item_len);
-+					   item_off, name_len);
+ fs/btrfs/relocation.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 851cef16d4017..6b0bf7eff9d3e 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1910,11 +1910,10 @@ void merge_reloc_roots(struct reloc_control *rc)
  		} else {
- 			ret = -ENOENT;
- 			goto out;
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index db7402836340a..97be0c1ed22f7 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -1288,6 +1288,37 @@ static int check_root_item(struct extent_buffer *leaf, struct btrfs_key *key,
- 	return 0;
- }
+ 			if (!IS_ERR(root)) {
+ 				if (root->reloc_root == reloc_root) {
+-					root->reloc_root = NULL;
++					clear_reloc_root(root);
++					/* Drop the ref for root->reloc_root. */
+ 					btrfs_put_root(reloc_root);
+ 				}
+-				clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE,
+-					  &root->state);
+ 				btrfs_put_root(root);
+ 			}
  
-+static int check_root_ref(struct extent_buffer *leaf, struct btrfs_key *key, int slot)
-+{
-+	struct btrfs_root_ref *rref;
-+	u32 item_size = btrfs_item_size(leaf, slot);
-+	u32 name_len;
-+
-+	if (unlikely(item_size <= sizeof(*rref))) {
-+		generic_err(leaf, slot,
-+			    "invalid root ref item size for key type %u, have %u expect > %zu",
-+			    key->type, item_size, sizeof(*rref));
-+		return -EUCLEAN;
-+	}
-+
-+	rref = btrfs_item_ptr(leaf, slot, struct btrfs_root_ref);
-+	name_len = btrfs_root_ref_name_len(leaf, rref);
-+	if (unlikely(name_len > BTRFS_NAME_LEN)) {
-+		generic_err(leaf, slot,
-+			    "root ref name too long for key type %u, have %u max %u",
-+			    key->type, name_len, BTRFS_NAME_LEN);
-+		return -EUCLEAN;
-+	}
-+	if (unlikely(item_size != sizeof(*rref) + name_len)) {
-+		generic_err(leaf, slot,
-+			    "invalid root ref item size for key type %u, have %u expect %zu",
-+			    key->type, item_size, sizeof(*rref) + name_len);
-+		return -EUCLEAN;
-+	}
-+
-+	return 0;
-+}
-+
- __printf(3,4)
- __cold
- static void extent_err(const struct extent_buffer *eb, int slot,
-@@ -1965,6 +1996,10 @@ static enum btrfs_tree_block_status check_leaf_item(struct extent_buffer *leaf,
- 	case BTRFS_ROOT_ITEM_KEY:
- 		ret = check_root_item(leaf, key, slot);
- 		break;
-+	case BTRFS_ROOT_REF_KEY:
-+	case BTRFS_ROOT_BACKREF_KEY:
-+		ret = check_root_ref(leaf, key, slot);
-+		break;
- 	case BTRFS_EXTENT_ITEM_KEY:
- 	case BTRFS_METADATA_ITEM_KEY:
- 		ret = check_extent_item(leaf, key, slot, prev_key);
 -- 
 2.53.0
 

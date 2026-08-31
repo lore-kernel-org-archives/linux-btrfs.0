@@ -1,78 +1,79 @@
-Received: from fhigh-a2-smtp.messagingengine.com (fhigh-a2-smtp.messagingengine.com [103.168.172.153])
+Received: from fout-a1-smtp.messagingengine.com (fout-a1-smtp.messagingengine.com [103.168.172.144])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CB0621CD1E4
-	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2026 21:55:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.153
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 22DF538E8D0
+	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2026 21:57:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.144
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788213320; cv=none; b=Xa57rs+/ljJITcF30RAeeGxy3N+PIAhWAcpOBK+fZmLqcnZqaJEYK0IER1ZA/iBUx1NBsOZ5WeY/Du5OrnV0jCu05ZkAjKbcJYB710YwO2vav49jXF3ay0chSUQZw/xwQfcNX8MBCVWYlttYUz5kZRZLxiMhDW1TwEUGn/Wl2tI=
+	t=1788213476; cv=none; b=OEGjmWV/TKsVS3f/kTGZ8SlmFzdN8j/im/1LtKzDD4omMBAjZtICSzbTMGbd7noBUowvLzJ56GShqklRvBTxahm/ud1HLqxTZ/NUiBCLTFPKP1jdGQUZ2Lrp7pg51eaddd30dtkaDffVh6AHNwvEpuB3gKOOEubdimNI2IiTNLI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788213320; c=relaxed/simple;
-	bh=9DFnpwcHVbYTSvVOMBgcIie2m074yYCjUNNoxrNkZqg=;
+	s=arc-20240116; t=1788213476; c=relaxed/simple;
+	bh=Wg2MQ4H/ZtH0Km9ICdl3uFcwvsp6VBy4yN128x1bv2c=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ppdPqhhINQmZfxhyk96u+2U8K5ptQEy1NxER0bLeJ4QLzBjA4jtaQGv6ta8MHWr0pkyiyqN93t2qiexyDK/jyOTMOkBSDKmm2P7dhiZY6frWY/fNLLtxLazqe+47RPy0WemsVp5E5IbQzyfATF4PHojTdPiCMutdHLdtSOEOTPk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=OkRoei1S; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=Nje5hjoc; arc=none smtp.client-ip=103.168.172.153
+	 Content-Type:Content-Disposition:In-Reply-To; b=gHzChUV6BKti0nsG8u1z7l7rQqZCfG66JTp8dTLymLUr90eEMEyHd/V2L9KOZ4Ej4nK97SL6Snxs3H9SUciw+RtYBT0II0TW2Sd8IWOALOQ6+hcHYBx8ZDVYLNXXghFgqj0n7iVfcYH0wnYwb98k/oqKDLny0vOBjC4JbvxoLVU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=pD0DQFSu; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=flHQ/7sA; arc=none smtp.client-ip=103.168.172.144
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="OkRoei1S";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Nje5hjoc"
-Received: from phl-compute-11.internal (phl-compute-11.internal [10.202.2.51])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id 894451400122;
-	Mon, 31 Aug 2026 17:55:17 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-11.internal (MEProxy); Mon, 31 Aug 2026 17:55:17 -0400
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="pD0DQFSu";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="flHQ/7sA"
+Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
+	by mailfout.phl.internal (Postfix) with ESMTP id 4A2B1EC0222;
+	Mon, 31 Aug 2026 17:57:54 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-05.internal (MEProxy); Mon, 31 Aug 2026 17:57:54 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
 	:content-type:content-type:date:date:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm1; t=1788213317; x=1788299717; bh=Z2pq8M+kcN
-	E5ZdNN+RMVRU3H39GsAzcmRxHfCUMZv8I=; b=OkRoei1SJyb54gMf/ju1phAa8u
-	3o3mCbNa+OScALgJ/oUMCaJ4Nx3W7W3TMUFd7qyiD4NEC8ib9vKQE923tCip3dtt
-	PS9IULLHArHJLy/QBHNsmKpB7hasL43sIlEbkpZOz1hEJmCSLfWbO94W7rdoeTQG
-	w9PGeGk9KCq22uI4z3Q+wXk8h8/oKKb8ucNkQdeaQiF/WlSA4jVMPDDmw27Rct4C
-	evx5fSFTsp3+W13O4iBWE9QDv1MCok8Nl6+NxkkGygR4vYaTWmb5WawzXSocJdqT
-	D2l9yuiJCxW/wEyv4aVgBVq+YK9KNjbSKbaoY23lZIZYSYygnzOegqpD1ELQ==
+	:subject:to:to; s=fm1; t=1788213474; x=1788299874; bh=a4RZVwvQts
+	BUCOA3GLD7O49pMqq+5/alp83vNpQ8l+E=; b=pD0DQFSu6uifBNxzOCEXN2RGQh
+	4hx7yx5NGkjiliPn6B5h/fYAL2vqQURmC0OPwzvBONJ7Gpx+xzNymQuhE1+B5Q7/
+	rEoB/wk/rMe1wqCVyt2Tr8q5PuVGxOAyezemqwbXbbOdqBU38dYVFwGW3DFJ1DkD
+	ikn14MSzFcebr0LKITgJ3q3s0kY7ZykMQNAfFAIOV3eOOmGjD5ByY/yCtTebzwS3
+	8umMrvGPr6fbxULv1yIHBYGehLHJWkapDFlriJQ1OmA2YAEjrtKwbeOf4z0e6IYT
+	a4rEn35ogQTqRJBjot+Prt+9TG4XXTuem4xEDb1pVQX8KqAMtpIIhdvCOdZw==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-type:content-type:date:date
 	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
 	:message-id:mime-version:references:reply-to:subject:subject:to
 	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
-	1788213317; x=1788299717; bh=Z2pq8M+kcNE5ZdNN+RMVRU3H39GsAzcmRxH
-	fCUMZv8I=; b=Nje5hjocUNHYwSmBmEHwl63n5jCU/yhScdeVF7E7qZK7ZX+pmRk
-	SitRsNPdSoOFaDVF9u6CQnB1URgeBF4Ixn3T5NUOldOg7VE1/ERXz/tRpSV8Nq7/
-	+njsy0M8rDm0eS5EFofeB9haU7+LGNKFTFkRY7ys+5whlvGfhWhTtGx6CY2Wuiyb
-	AcvhP5fiEgZ5/QhErSNXnGUYHkVjS/k4CwfxwVy2s6QlJW0jtLdyEiz4t4yhcojt
-	BqIac0DsQtsXPt0PlvMUrBAVW/I0bbi5+UMOhxKwlWEnVgHJBb807oR+0rwfoZaK
-	5iwQroo7UniHrChQgXPFtqKU3k9ErlB4FGQ==
-X-ME-Sender: <xms:RfiVaqy_SHfhXgtVj1-ejbKGDQAiaCnP3JHlZymz_hMG0_8lzmW3Yw>
-    <xme:RfiVasTDUdnl0HwwetNglrYpmlJK9KdsYL2kNYdz9SQYTVf6UgumW4AHRNnJ6mG8H
-    0HI5Fq7ik5g2VmqS2PXPXMd_0iX1Hi3sx1KgO0JYpCThmRujAEKxEE>
-X-ME-Received: <xmr:RfiVap9oq6I91sLQAtz0s3xZM5R6bUwd-vvvyBUsuixNfY7it6sTnx2aV9yS4DfUgam1zWc1_RYIyUVE2XKRKWjo8GM>
-X-ME-Proxy-Cause: dmFkZTGY2aRhju9KILhs76dSDw98LP9Wb5EnhzJiISrD/HV09CJqIrWC/7QutApiLmFF2B
-    oZNAWYztgXTULVGxSv+cF02zqZUJrs0KFpbgQAv8Rp995tTfwNQ52bg3HW9Y5Hc2NRzJVR
-    z0gY7D+HHRe5BAY1ygNnM3W2Wm/dQs8fgx0Q8alKlsYsIgbgomqE7pSBuUMTbrDhF+v7as
-    Z8lU+e4GRCNW48hjSkvqQ85eW7EhWDlwyI3ZodVLopoPV5F1QSo+e6U3LTpN3bUIQTlVCu
-    l2Mesu0p3m99eNO3GDgwo5xdmpqk3Ho/GhAoBv/n7ClBXSiVnN//Sj2tOMOn5vK1bXD1ng
-    FzBgE5tjuSJC4YDGM82wq81Hw1vLYFPRdtAqvN5bWd3PXOmXv9DY2zAkPLW0dj8GJWY1Ma
-    TADjUbX4UZtFjUd/X6GzzM0wB9sWHK0p5bED44ORDJ2invisYvvk+ry8MeLx+VQ48bEq3B
-    wrmpkjF+jN/fxwp6lJ/MzXYbXb15fjVzlleINf65Il3IhDJUy19lRjS/QjOHA+Qjn4y3bw
-    K3+wGA0uglrNjlV8XRkYh+3s5Zq6Tzj36CgN3Je/OuJqMrfuAAyfrWE09dwexuB2c8pXIf
-    5O4pRZky1bUdykbLsWutfGQSV8LwkL+gPljZIlejUY1lNCxyFTprSUA7o5zw
-X-ME-Proxy: <xmx:RfiVarquaL-lNZ3l4noL2pAbst1T5IoiAUD0imi0f6tZ2IxbdBcZGA>
-    <xmx:RfiVaun-y9UvsNG8NNXn0kZdHmdn5lt2EBVeW1pZ1Muck2TrO0jObQ>
-    <xmx:RfiVaqLKRPmNqO2SC7c3mFz0rxjP74pbXQ2EEl9jS-LCmu88ACRN9g>
-    <xmx:RfiVaryFRBXeFK8bOTO1078FhLQiBoiOqu4HTQM0M12FtoDAvWFxWw>
-    <xmx:RfiVaq_FXpOcup5awjZtSHQdcrWBdRFxYpFqFGKVijxUedvy25GFmlto>
+	1788213474; x=1788299874; bh=a4RZVwvQtsBUCOA3GLD7O49pMqq+5/alp83
+	vNpQ8l+E=; b=flHQ/7sA/kIEkLCHBCZl3BCJY8Ncw5ZlNhoMgsaA+YOzVDke2t9
+	JzAF3S2USnFbb0RFZ55HqcZfP4jYcgw1Ip2Uku/GgDgNla6I94dfW9qIyv1Nuch2
+	eFdASwPfIOerE9E8bQwciRvPVFiyRs/vNrHISUhOJ9RmjiZHte4MDRo+jwz5POkK
+	8Z/3DVf6WBbAxUBjK8huE9IoN9lUQKcSulVgvoqiRzMN+UfWVWM+vSaft94rnNQQ
+	tv4FuUFp2tnl5TAVPjecM2XOv6Xx5LilTgpYH5QL46sgyV9X5MQOM7Twaw8S+I93
+	lmDgSG3AcldnEVWRd/TzzXj7N67Xby9ZMnw==
+X-ME-Sender: <xms:4viVagBq9zyxp6kBUCoYWBlVHcsmXICWx2LDPdXxICXs1KF1OqAA8g>
+    <xme:4viVap8ZZqg-eC514JzvFiEyGQCvPivjz75RlwLh6FtNnIJ5Mbj6TZl3P4MRqOio5
+    bOFixtwT-Z6Z7Axob3JGZQdbHRT4ADpJKsg0X9Hs4k2pp4j-bbDU6I>
+X-ME-Received: <xmr:4viVag_LjyOlx-jiZzcQx1A7yuUrSYcV0ofFQZmpMNFMzS765U73A_fztXxS_ijViy05l7eN3C2lqkR-6Fo0fRwWX1Q>
+X-ME-Proxy-Cause: dmFkZTEXVG33A4gXwpikdRAsYaq9QTbL4MXjxgongF7orcLQ/7sdus+f5xFUCNIZxs7wAb
+    HfKNAV07l6vvtUK8jtjIrFwBpjGosTsYG+4mvgsIEGZIzvE8Wj1fd01UimBNa4T5c3kfnD
+    2V3UvJ9fm4q64EKs8uunDRgm9UhUNuh213Pacx0eTLixRYsqV8jgXTBR754Zcgk/RgFd+L
+    vJUjFjVqR4qghl8d/ZjhvKtdS1GrldzsHJL+L0tMwe1TfNc4gWElI0nzdq3/cr+X+a8avP
+    QUurG4/zr+aTvxbXZGusgUQDNCKh1Da/8YiPs9y7WPDspEWTlIPLq1Aa6Y7ySSyo2GBBck
+    4199MBTsdNqEeeVQT2avVVN9BeP3ZmpY4wgEZ45RaA9t6mNkJMnOH01MTUS6CnQEVfe0UA
+    UCXScjApQchT4YEGf3dlm5zhNeV/UJCWZ27nwC3szpQjTgrqd3Ra948pqcaXRA4ASjXtB9
+    jByThbzmfG6WHOy5adsXy0i213IUKWl8QNjSi8gfTCVo5PRhNyOhUOUejECdiYthfi79l8
+    xJlsF/stgS8bbnmEOS/cj85x9TAyp2qgvJkepLdDfme/kx8bQEkmN5t3i9Ab0wjU6EeD+T
+    gUpn0iDopII12DMfVx5gwudtfK216T7SoQIb8Xjx0YkVQpFjBDVaBjwW+jZQ
+X-ME-Proxy: <xmx:4viVagdzR3EQW58iWMlMkjOYMwwycdQgO6lC-57FpT5SqLNz_xp5Rw>
+    <xmx:4viVapG_mfOuaHIMrbJ1QNB-Q2uF-CZGUV71WYaNE--kWF3QNng1Iw>
+    <xmx:4viVaudX0DzedYTfaJ9JUwmeIZK2dX4uywku_8pj62DerMkaG1s4bg>
+    <xmx:4viVajEBdtxVynjVodmxQwYs2knwKQc9DPkgychIo1bKgJvdjZplaw>
+    <xmx:4viVaqV4RjS5TSuKZ2ZSK9qYsNqws2b6ZQ9tJgol11LuYmV16Jqd0Ffj>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 31 Aug 2026 17:55:17 -0400 (EDT)
-Date: Mon, 31 Aug 2026 14:54:37 -0700
+ 31 Aug 2026 17:57:53 -0400 (EDT)
+Date: Mon, 31 Aug 2026 14:57:14 -0700
 From: Boris Burkov <boris@bur.io>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/2] btrfs: qgroup: mark qgroup inconsistent for more
-Message-ID: <20260831215437.GC325502@zen.localdomain>
-References: <cover.1787812966.git.wqu@suse.com>
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
+Subject: Re: [PATCH] btrfs: set space_info before adding new free space in
+ btrfs_make_block_group()
+Message-ID: <20260831215714.GD325502@zen.localdomain>
+References: <20260824164758.2012077-1-johannes.thumshirn@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -81,41 +82,60 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1787812966.git.wqu@suse.com>
+In-Reply-To: <20260824164758.2012077-1-johannes.thumshirn@wdc.com>
 
-On Thu, Aug 27, 2026 at 04:25:28PM +0930, Qu Wenruo wrote:
-> Commit 011b46c30476 ("btrfs: skip subtree scan if it's too high to avoid
-> low stall in btrfs_commit_transaction()") covers the most common case
-> that can cause a long qgroup stall, where a large subtree is rescanned
-> when dropping a snapshot.
+On Mon, Aug 24, 2026 at 06:47:58PM +0200, Johannes Thumshirn wrote:
+> btrfs_make_block_group() calls btrfs_add_new_free_space() before
+> assigning cache->space_info. On a zoned filesystem that ends up in
+> __btrfs_add_free_space_zoned(), which dereferences
+> block_group->space_info and thus hits a NULL pointer dereference when a
+> non-initial free space range is added (e.g. during relocation).
 > 
-> But there are more corner cases for the same long qgroup stall:
+> Assign cache->space_info before the btrfs_add_new_free_space() call.
 > 
-> - A qgroup rescan is queued immediately after marking inconsistent
->   The new rescan will immediately revert the NO_ACCOUNTING flag, thus
->   still results long qgroup stalls.
-> 
-> - A subvolume with no shared subtree
->   This can still queue a lot of workload into the current transaction.
-> 
-> This series covers both less-common cases.
-
 Reviewed-by: Boris Burkov <boris@bur.io>
-
-Thanks,
-Boris
-
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  fs/btrfs/block-group.c | 18 +++++++++++-------
+>  1 file changed, 11 insertions(+), 7 deletions(-)
 > 
-> Qu Wenruo (2):
->   btrfs: reject new qgroup rescan during subvolume dropping
->   btrfs: avoid long stall when dropping a non-shared large subvolume
-> 
->  fs/btrfs/disk-io.c     |  4 ++++
->  fs/btrfs/extent-tree.c | 11 +++++++++++
->  fs/btrfs/qgroup.c      | 29 ++++++++++++++++++++++++++++-
->  fs/btrfs/qgroup.h      | 15 +++++++++++++++
->  4 files changed, 58 insertions(+), 1 deletion(-)
-> 
+> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+> index 830460a40e86..ee182369254c 100644
+> --- a/fs/btrfs/block-group.c
+> +++ b/fs/btrfs/block-group.c
+> @@ -3074,21 +3074,25 @@ struct btrfs_block_group *btrfs_make_block_group(struct btrfs_trans_handle *tran
+>  		return ERR_PTR(ret);
+>  	}
+>  
+> -	ret = btrfs_add_new_free_space(cache, chunk_offset, chunk_offset + size, NULL);
+> -	btrfs_free_excluded_extents(cache);
+> -	if (ret) {
+> -		btrfs_put_block_group(cache);
+> -		return ERR_PTR(ret);
+> -	}
+> -
+>  	/*
+>  	 * Ensure the corresponding space_info object is created and
+>  	 * assigned to our block group. We want our bg to be added to the rbtree
+>  	 * with its ->space_info set.
+> +	 *
+> +	 * On a zoned filesystem btrfs_add_new_free_space() ends up in
+> +	 * __btrfs_add_free_space_zoned(), which dereferences
+> +	 * block_group->space_info, so it has to be set beforehand.
+>  	 */
+>  	cache->space_info = space_info;
+>  	ASSERT(cache->space_info);
+>  
+> +	ret = btrfs_add_new_free_space(cache, chunk_offset, chunk_offset + size, NULL);
+> +	btrfs_free_excluded_extents(cache);
+> +	if (ret) {
+> +		btrfs_put_block_group(cache);
+> +		return ERR_PTR(ret);
+> +	}
+> +
+>  	ret = btrfs_add_block_group_cache(cache);
+>  	if (ret) {
+>  		btrfs_remove_free_space_cache(cache);
 > -- 
 > 2.55.0
 > 

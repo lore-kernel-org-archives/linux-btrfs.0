@@ -1,274 +1,356 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8E1A11A3160
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Sep 2026 00:01:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 27E9825B092
+	for <linux-btrfs@vger.kernel.org>; Tue,  1 Sep 2026 00:12:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788220898; cv=none; b=CL6bUmBFgHJQdCLt2mleSUE1XsERfKLS7Xe72f71Azm2gKhYXfUIATzcsdSbeviBlNkKY2K14pPvjb0fj9rRX2jTPn5EdfoZduq9IG2/VJm9zOM06wRDnAtz1B4zubeue1MUy6mqS2RJVNW8OdKpJP6P6IWzUz+iNL3JUwpOB7E=
+	t=1788221534; cv=none; b=qH5V1xAuObKrRMrJAn7Em6TyVliKR5zD5Gd6aTvx/SOS71Wg+lGDeYuCMlxpRAb41Z+Qfu1JDVKloltApAYRKsAhXxxRMKXJUixKyxEJSxcM5VMdacf6ba5NvkEKIIVLNi8I0fsZUZoKhqDUGGewZf+rhuDdMpbe0Z1q3X0m4ys=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788220898; c=relaxed/simple;
-	bh=3VUs/m7lhuovoBnrvQsrT9NTtZYQpPfZHejQ39tBQ7Q=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=efGWd6Y/KCcElrQFr6j5RaJHDZe/glmLkqxGnvfCrHtppNjqCoVX/+vMTGz8CJVxw1cx/EpSvRjGthdmpWtbavPKCul4RdjQHncJnxjn30iU5GZ3wuiwm8jzZd9Xj4PQ1UEnH1mJ3eqcWPwOfGiDbWAVFLBVenAH5OUDGz4vrzg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=GqFpnd0p; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=FvDnwp4+; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1788221534; c=relaxed/simple;
+	bh=OgngblZt/Y2iZOSn09CDd3EGdVHEBN6Ia4QrfnZ/xv0=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=tR7hNIXQG2FDjzGi0SbxOr6jcQWVohzCstk/APrdAAyNmsxFxaJi3nfFgrajUBaU2mZrPlUo7we3JsBj9xvNQO+YdT88zA+ouFSo09y2/7+ky+538Sdv5JbEa/Keiy79XQ0+0J1eP38KMpM2GCCXuou/auq6z/nlup64PFqPwqc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=YnJMpH82; arc=none smtp.client-ip=209.85.128.49
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GqFpnd0p";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="FvDnwp4+"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id EA95021CE2;
-	Tue,  1 Sep 2026 00:01:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1788220890; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Aq3iXMI1dxUTxl6xzbxnCZXWBdwf2ZQeq8eOW/fqW+c=;
-	b=GqFpnd0p+ngcoh+YBrDz+xK/F3WQZ2jshyBd72f52aEBpHGqohS10Mb1OIJDgKGbUh8Kju
-	56p17U9yTPLkzAeBxEdUg5FHEH7ARLQieuGWnsxCztIpvbdjyPdeoodL4i7hwgVUWl+I6j
-	HMkrBHjMcmyD8zM1WXFSIUt1d6CfdFY=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=FvDnwp4+
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1788220885; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Aq3iXMI1dxUTxl6xzbxnCZXWBdwf2ZQeq8eOW/fqW+c=;
-	b=FvDnwp4+v2/1IE03fU/nYJRLlv0i2tU2W8S2UFqnohEAmpNO9iadWZQvLLvcrJKa17cDfb
-	24AsHDZVzDYnhqDEXFbzAagWxeHU0LUxVCKc2VYTkxMOIRfRDcLy2fDaDT0BAKZdUjiibh
-	ycx49PpTX836iei2a6oKVDZSFi1OG9w=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7D8E81342D;
-	Tue,  1 Sep 2026 00:01:24 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id yKr0CtQVlmqJIQAAD6G6ig
-	(envelope-from <wqu@suse.com>); Tue, 01 Sep 2026 00:01:24 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Boris Burkov <boris@bur.io>
-Subject: [PATCH v3] btrfs: use ordered extent to grab the logical address for submission
-Date: Tue,  1 Sep 2026 09:31:01 +0930
-Message-ID: <ba5fc3c9b2de187169552786c1fde4e2ebcef0f6.1788220853.git.wqu@suse.com>
-X-Mailer: git-send-email 2.55.0
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="YnJMpH82"
+Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-49557167508so43982355e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2026 17:12:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1788221530; x=1788826330; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=LbzDU/8XO4wi3mvYoOMdnCoyPn5cmJBMUF6S0wXSwtQ=;
+        b=YnJMpH82rzq9GC6D682oZ9lyMXWn/ABM5pmWffL+xeOAtxuIF0bnLmgxwwdrWZ6RxJ
+         xsD5YcderKIdT1QYZ3GpuDECf0XjWYxSR9QYKqE+C2g5BNP1h0uZgkCiZ8ExIz7GedjM
+         SKtW1XT9WfvOQdvVZeI+3MzUZO2zfuwO2prVMVvVlKrKlu0K0ZObWxmtUfAtN+XZ3SMN
+         bc+krz0L7m10MrnYWxloHc/Ab2OaEkfLg/6DfDIM+C8Pzbu08iQBtAwM1ptiJ2g2FRJs
+         EwqhMrwKcZrPEWKbuUC+mdAxB4FZJRlXJcMCGKZE2OCBV8vrg0ybiO2udIJSHEqYYdyP
+         xmlg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1788221530; x=1788826330;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=LbzDU/8XO4wi3mvYoOMdnCoyPn5cmJBMUF6S0wXSwtQ=;
+        b=jSTd8+qols/DckX0hIK/my6jgxZi0K7z3dtvvaS5X+6x1SzTrF9JGqkQ5Vbza2Gexy
+         JDHcoQ8bkbrOABAgzingWsgI+qdhWJzIjD2ANkoGESUSaCP0DUss/PhgzSRWGhWY4Umt
+         exovb8U9DTxxorIh0p1RyKLaAjmtb2WmcEH+dfpxNK2dK09ai1tGlbENFkAVZ01uL7Hv
+         zaA0U1q2Jooc/amHOYKn83l3bOn3npOe6/TeOvjGkxv2roDZENtELoA4e/4Mia+jUw0d
+         a6u3IvYoKGGj56Kn6knFLyOvL801vb8NfERJMSt2ZdL1meoKhqIAqwPZbDuVdNsCgjw9
+         wefw==
+X-Gm-Message-State: AFuF++l8DFuECdcO/e5LyE+rqAlPbgzkYyTIAAPfd+nr95FrVn9tO7Nm
+	eTsRZFRQGPj/xCFUB4Hmp995p/pXO4vshBUzkyWWpFlfvG4YTK8qMtzIgjcCpY6eH0nzvaLu6Y4
+	2d1Dge8Pvpg==
+X-Gm-Gg: AR+sD12HM5RtcG2b9aUhgNhoPcT0cko4M5WoLPuMCYb9KX2pE8lZGh7//nCPzBLa9HZ
+	l1/up3U3trTRK43wcthXb6IwHA8Vr4krWXRiHFkWhecWaoejBq/3C+7nDFhwfyLEaiPl6EZpN+C
+	iUa4TkbG0BW9lgy7hnceG3K2Hb/36D3frMsZ7C1vOgOuDHBAme+OmosCpLdMgpz45iHKx5zeSGc
+	8I2N9NlhJhQNNw7+pIwt18mEBOWWML2H+rRslFlwYCgnNd4Nxf+lol8dAJtpcwB1aYrDsPH4TNb
+	LUBQevJRSLXyrGO9IJQtRFDaFWof+3UyBxEpdpIjdi65LP4HBN8nRwQNSR2M0XVY9nQcm4D7gLY
+	yWyzK51sICAdQkQB4KmfHkVDyiVKXVSQNuI4EIxOBPydt5sbPcdD+mwT9LZPsOGE/LMrm/Vv0vP
+	xVxVRd5rEuKoE971+S/6zp46ocv2HhLP8+WvVbMt//I++YsganTNRY
+X-Received: by 2002:a05:600c:4fd4:b0:499:83f1:398 with SMTP id 5b1f17b1804b1-49cdc59f62emr75854525e9.9.1788221530139;
+        Mon, 31 Aug 2026 17:12:10 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-85be99255a5sm176454b3a.61.2026.08.31.17.12.07
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 31 Aug 2026 17:12:09 -0700 (PDT)
+Message-ID: <7c9a9ab5-4bf6-4c77-888b-0b077c06014f@suse.com>
+Date: Tue, 1 Sep 2026 09:42:04 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: remove runtime tweakable feature sysfs interface
+To: Boris Burkov <boris@bur.io>
+Cc: linux-btrfs@vger.kernel.org
+References: <8a598d76555b5944d34bb08fa8dbeea28fc05db9.1787307129.git.wqu@suse.com>
+ <20260831222009.GH325502@zen.localdomain>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260831222009.GH325502@zen.localdomain>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -3.01
-X-Rspamd-Queue-Id: EA95021CE2
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[bur.io:email,suse.com:dkim,suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_TWO(0.00)[2];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
 
-In submit_one_sector() we call btrfs_get_extent() to grab the IO extent
-map so that we know where the logical location to submit the block.
 
-However there is no guarantee that there is an IO extent map for the
-block, and if there is no IO extent map nor ordered extent,
-btrfs_get_extent() can grab the file extent from on-disk metadata.
 
-That's why we have ASSERT()s to reject holes and compressed file
-extents.
+在 2026/9/1 07:50, Boris Burkov 写道:
+> On Fri, Aug 21, 2026 at 07:42:10PM +0930, Qu Wenruo wrote:
+>> There are 2 features that are marked runtime tweakable inside
+>> /sys/fs/btrfs/features/
+>>
+>> - acl
+>>    Which is a mount option, and it will not show up in
+>>    /sys/fs/btrfs/<fsid>/features/ directory anyway.
+>>
+>> - extended_iref
+>>    This feature can only be enabled, but not disabled at runtime.
+>>    Furthermore it's already the default behavior since 3.12.
+>>
+>>    So it means this feature is always enabled and cannot be disabled for
+>>    modern btrfs.
+>>
+>> So there is no need to maintain the ability to modify btrfs' runtime
+>> features through sysfs.
+>>
+>> And furthermore, the existing btrfs_feature_attr_store() is race-prone,
+>> it relies on fs_info->transaction_kthread, but our sysfs interfaces are
+>> enabled before transaction_kthread.
+>>
+>> Meaning at mount time a sysfs write can trigger NULL pointer dereference
+>> if the transaction_kthread is not yet initialized.
+>> The opposite is also possible during unmount.
+>>
+>> Thankfully that race is not possible in the real world, as the only
+>> supported feature is already enabled.
+>>
+>> But it also means we do not really need to keep the race-prone
+>> infrastructure, so just remove it completely, and make the per-module
+>> and per-mount features files to be completely read-only.
+>>
+>> Even with the sysfs tweakable features removed, we can still enable
+>> extended_iref feature through ioctl.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> 
+> FYI, I have been gating some behaviors like dynamic/periodic reclaim on
+> sysfs files not in features/ and I imagine there are some more out there
+> (like bg_reclaim_threshold). That has two relevant implications:
+> 
+> - We do still do "runtime feature setting" not through ioctl/mount opt.
+>    If we want to converge on only ioctl for that, I am open to it. Mount
+>    options only end in tears in my experience (have to be very careful to
+>    handle all remount scenarios as has played out with free space tree
+>    and async discard at least).
 
-On the other hand, for the write range we should have both an IO extent
-map and an ordered extent, so there is no reason not to grab the ordered
-extent instead.
+Personally speaking I have no problem with the current sysfs interfaces 
+at all.
 
-There is some minor advantages:
+It's more straightforward, less compatibility problems compared to mount 
+options.
 
-- No hole ordered extent
-  So no need to rely on ASSERT()s to reject hole extents.
+The only down side is the race with mount/unmount, but it's not a big 
+deal as long as we're only modifying a single in-memory flag/value.
 
-  And the ASSERT()s are depending on the kernel config, without
-  CONFIG_BTRFS_ASSERT those ASSERT()s won't even trigger.
+> 
+> - Some features are not at whole fs granularity (like above
+>    per-space-info features) so it doesn't make sense to have this generic
+>    features/ mechanism anyway.
+> 
+> So with all that said, I support getting rid of this, but I apologize if
+> my stuff makes life more complicated for our "what is enabled" model
+> even with this patch.
 
-- No IO errors
-  Unlike btrfs_get_extent() which can return IO error when doing the
-  metadata tree search, btrfs_lookup_ordered_extent() will either return
-  an OE or not found.
+I think the features interface itself is totally fine, just we were a 
+little too optimistic on the features that can be enabled halfway.
 
-- Cached OE in bio_ctrl->bbio
-  At bbio allocation we have already did an OE lookup, and we have a
-  high chance that the current block also belongs to that OE.
-  Use that cached OE can reduce the frequency to do an rb-tree search.
+Nowadays if we want to introduce some new features, we will be more 
+cautious and push most of the enabling work into progs other than the 
+kernel itself, and may not choose to allowing mixed old and new structures.
 
-- Smaller rb-tree
-  Unlike extent-map-tree, which can contain cached extent maps, the life
-  span of ordered extents are much shorter, they get removed from the
-  ordered tree after the file extent item is inserted into the subvolume
-  tree.
+Thanks for the review,
+Qu
 
-  So doing ordered extent tree search can be a tiny faster.
-
-And since we're here, also address some minor points:
-
-- Add error message for every EUCLEAN error
-
-- Remove a dead comment on btrfs_folio_clear_dirty()
-  We no longer call folio_clear_dirty_for_io() since commit 095be159f3eb
-  ("btrfs: unify folio dirty flag clearing"), so the folio flag is
-  still dirty, and the folio dirty flag will be cleared by the last dirty
-  block.
-
-Reviewed-by: Boris Burkov <boris@bur.io>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-
----
-Changelog:
-v3:
-- Refactor the helper to grab the OE and increase its refs in one go
-
-v2:
-- Extract a helper to determine if the @filepos is in the bbio OE range
-  Which reduces several "bio_ctrl->bbio->ordered" duplication, and use
-  in_range() to make is easier to read.
----
- fs/btrfs/extent_io.c | 64 +++++++++++++++++++++++++++-----------------
- 1 file changed, 40 insertions(+), 24 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d7600e5fa3d9..a221b63bdb20 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1808,6 +1808,22 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 	return 0;
- }
- 
-+static struct btrfs_ordered_extent *get_oe_from_bbio(const struct btrfs_bio *bbio,
-+						     u64 filepos)
-+{
-+	struct btrfs_ordered_extent *oe;
-+
-+	if (!bbio || !bbio->ordered)
-+		return NULL;
-+
-+	oe = bbio->ordered;
-+	if (!in_range(filepos, oe->file_offset, oe->num_bytes))
-+		return NULL;
-+
-+	refcount_inc(&oe->refs);
-+	return oe;
-+}
-+
- /*
-  * Return 0 if we have submitted or queued the sector for submission.
-  * Return <0 for critical errors, and the involved sector will be cleaned up.
-@@ -1820,11 +1836,10 @@ static int submit_one_sector(struct btrfs_inode *inode,
- 			     loff_t i_size)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	struct extent_map *em;
-+	struct btrfs_ordered_extent *oe;
- 	u64 block_start;
- 	u64 disk_bytenr;
- 	u64 extent_offset;
--	u64 em_end;
- 	const u32 sectorsize = fs_info->sectorsize;
- 	unsigned int queued;
- 
-@@ -1833,8 +1848,11 @@ static int submit_one_sector(struct btrfs_inode *inode,
- 	/* @filepos >= i_size case should be handled by the caller. */
- 	ASSERT(filepos < i_size);
- 
--	em = btrfs_get_extent(inode, NULL, filepos, sectorsize);
--	if (IS_ERR(em)) {
-+	/* Try to reuse the existing OE from bbio first. */
-+	oe = get_oe_from_bbio(bio_ctrl->bbio, filepos);
-+	if (!oe)
-+		oe = btrfs_lookup_ordered_extent(inode, filepos);
-+	if (unlikely(!oe)) {
- 		/*
- 		 * bio_ctrl may contain a bio crossing several folios.
- 		 * Submit it immediately so that the bio has a chance
-@@ -1857,31 +1875,25 @@ static int submit_one_sector(struct btrfs_inode *inode,
- 		 */
- 		btrfs_mark_ordered_io_finished(inode, filepos, fs_info->sectorsize,
- 					       false);
--		return PTR_ERR(em);
-+		btrfs_err_rl(fs_info,
-+		"no ordered extent for root %lld ino %llu filepos %llu",
-+			     btrfs_root_id(inode->root), btrfs_ino(inode),
-+			     filepos);
-+		return -EUCLEAN;
- 	}
- 
--	extent_offset = filepos - em->start;
--	em_end = btrfs_extent_map_end(em);
--	ASSERT(filepos <= em_end);
--	ASSERT(IS_ALIGNED(em->start, sectorsize));
--	ASSERT(IS_ALIGNED(em->len, sectorsize));
-+	extent_offset = filepos - oe->file_offset;
-+	ASSERT(filepos < oe->file_offset + oe->num_bytes);
-+	ASSERT(IS_ALIGNED(oe->file_offset, sectorsize));
-+	ASSERT(IS_ALIGNED(oe->num_bytes, sectorsize));
-+	ASSERT(oe->compress_type == BTRFS_COMPRESS_NONE);
-+	ASSERT(!test_bit(BTRFS_ORDERED_COMPRESSED, &oe->flags));
- 
--	block_start = btrfs_extent_map_block_start(em);
--	disk_bytenr = btrfs_extent_map_block_start(em) + extent_offset;
-+	block_start = oe->disk_bytenr + oe->offset;
-+	disk_bytenr = block_start + extent_offset;
- 
--	ASSERT(!btrfs_extent_map_is_compressed(em));
--	ASSERT(block_start != EXTENT_MAP_HOLE);
--	ASSERT(block_start != EXTENT_MAP_INLINE);
-+	btrfs_put_ordered_extent(oe);
- 
--	btrfs_free_extent_map(em);
--	em = NULL;
--
--	/*
--	 * Although the PageDirty bit is cleared before entering this
--	 * function, subpage dirty bit is not cleared.
--	 * So clear subpage dirty bit here so next time we won't submit
--	 * a folio for a range already written to disk.
--	 */
- 	btrfs_folio_clear_dirty(fs_info, folio, filepos, sectorsize);
- 	btrfs_folio_set_writeback(fs_info, folio, filepos, sectorsize);
- 	/*
-@@ -1898,6 +1910,10 @@ static int submit_one_sector(struct btrfs_inode *inode,
- 		btrfs_folio_clear_writeback(fs_info, folio, filepos, sectorsize);
- 		btrfs_mark_ordered_io_finished(inode, filepos, fs_info->sectorsize,
- 					       false);
-+		btrfs_err_rl(fs_info,
-+		"failed to queue sector for root %lld ino %llu filepos %llu",
-+			     btrfs_root_id(inode->root),
-+			     btrfs_ino(inode), filepos);
- 		return -EUCLEAN;
- 	}
- 	return 0;
--- 
-2.55.0
+> 
+> Reviewed-by: Boris Burkov <boris@bur.io>
+> 
+>> ---
+>>   fs/btrfs/sysfs.c | 121 ++---------------------------------------------
+>>   1 file changed, 4 insertions(+), 117 deletions(-)
+>>
+>> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+>> index 39cb01ee441a..1f78bb1cf813 100644
+>> --- a/fs/btrfs/sysfs.c
+>> +++ b/fs/btrfs/sysfs.c
+>> @@ -83,8 +83,7 @@ struct raid_kobject {
+>>   #define BTRFS_FEAT_ATTR(_name, _feature_set, _feature_prefix, _feature_bit)  \
+>>   static struct btrfs_feature_attr btrfs_attr_features_##_name = {	     \
+>>   	.kobj_attr = __INIT_KOBJ_ATTR(_name, S_IRUGO,			     \
+>> -				      btrfs_feature_attr_show,		     \
+>> -				      btrfs_feature_attr_store),	     \
+>> +				      btrfs_feature_attr_show, NULL),	     \
+>>   	.feature_set	= _feature_set,					     \
+>>   	.feature_bit	= _feature_prefix ##_## _feature_bit,		     \
+>>   }
+>> @@ -130,132 +129,22 @@ static u64 get_features(struct btrfs_fs_info *fs_info,
+>>   		return btrfs_super_incompat_flags(disk_super);
+>>   }
+>>   
+>> -static void set_features(struct btrfs_fs_info *fs_info,
+>> -			 enum btrfs_feature_set set, u64 features)
+>> -{
+>> -	struct btrfs_super_block *disk_super = fs_info->super_copy;
+>> -	if (set == FEAT_COMPAT)
+>> -		btrfs_set_super_compat_flags(disk_super, features);
+>> -	else if (set == FEAT_COMPAT_RO)
+>> -		btrfs_set_super_compat_ro_flags(disk_super, features);
+>> -	else
+>> -		btrfs_set_super_incompat_flags(disk_super, features);
+>> -}
+>> -
+>> -static int can_modify_feature(struct btrfs_feature_attr *fa)
+>> -{
+>> -	int val = 0;
+>> -	u64 set, clear;
+>> -	switch (fa->feature_set) {
+>> -	case FEAT_COMPAT:
+>> -		set = BTRFS_FEATURE_COMPAT_SAFE_SET;
+>> -		clear = BTRFS_FEATURE_COMPAT_SAFE_CLEAR;
+>> -		break;
+>> -	case FEAT_COMPAT_RO:
+>> -		set = BTRFS_FEATURE_COMPAT_RO_SAFE_SET;
+>> -		clear = BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR;
+>> -		break;
+>> -	case FEAT_INCOMPAT:
+>> -		set = BTRFS_FEATURE_INCOMPAT_SAFE_SET;
+>> -		clear = BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR;
+>> -		break;
+>> -	default:
+>> -		btrfs_warn(NULL, "sysfs: unknown feature set %d", fa->feature_set);
+>> -		return 0;
+>> -	}
+>> -
+>> -	if (set & fa->feature_bit)
+>> -		val |= 1;
+>> -	if (clear & fa->feature_bit)
+>> -		val |= 2;
+>> -
+>> -	return val;
+>> -}
+>> -
+>>   static ssize_t btrfs_feature_attr_show(struct kobject *kobj,
+>>   				       struct kobj_attribute *a, char *buf)
+>>   {
+>>   	int val = 0;
+>>   	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
+>>   	struct btrfs_feature_attr *fa = to_btrfs_feature_attr(a);
+>> +
+>>   	if (fs_info) {
+>>   		u64 features = get_features(fs_info, fa->feature_set);
+>>   		if (features & fa->feature_bit)
+>>   			val = 1;
+>> -	} else
+>> -		val = can_modify_feature(fa);
+>> +	}
+>>   
+>>   	return sysfs_emit(buf, "%d\n", val);
+>>   }
+>>   
+>> -static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+>> -					struct kobj_attribute *a,
+>> -					const char *buf, size_t count)
+>> -{
+>> -	struct btrfs_fs_info *fs_info;
+>> -	struct btrfs_feature_attr *fa = to_btrfs_feature_attr(a);
+>> -	u64 features, set, clear;
+>> -	unsigned long val;
+>> -	int ret;
+>> -
+>> -	fs_info = to_fs_info(kobj);
+>> -	if (!fs_info)
+>> -		return -EPERM;
+>> -
+>> -	if (sb_rdonly(fs_info->sb))
+>> -		return -EROFS;
+>> -
+>> -	ret = kstrtoul(skip_spaces(buf), 0, &val);
+>> -	if (ret)
+>> -		return ret;
+>> -
+>> -	if (fa->feature_set == FEAT_COMPAT) {
+>> -		set = BTRFS_FEATURE_COMPAT_SAFE_SET;
+>> -		clear = BTRFS_FEATURE_COMPAT_SAFE_CLEAR;
+>> -	} else if (fa->feature_set == FEAT_COMPAT_RO) {
+>> -		set = BTRFS_FEATURE_COMPAT_RO_SAFE_SET;
+>> -		clear = BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR;
+>> -	} else {
+>> -		set = BTRFS_FEATURE_INCOMPAT_SAFE_SET;
+>> -		clear = BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR;
+>> -	}
+>> -
+>> -	features = get_features(fs_info, fa->feature_set);
+>> -
+>> -	/* Nothing to do */
+>> -	if ((val && (features & fa->feature_bit)) ||
+>> -	    (!val && !(features & fa->feature_bit)))
+>> -		return count;
+>> -
+>> -	if ((val && !(set & fa->feature_bit)) ||
+>> -	    (!val && !(clear & fa->feature_bit))) {
+>> -		btrfs_info(fs_info,
+>> -			"%sabling feature %s on mounted fs is not supported.",
+>> -			val ? "En" : "Dis", fa->kobj_attr.attr.name);
+>> -		return -EPERM;
+>> -	}
+>> -
+>> -	btrfs_info(fs_info, "%s %s feature flag",
+>> -		   val ? "Setting" : "Clearing", fa->kobj_attr.attr.name);
+>> -
+>> -	spin_lock(&fs_info->super_lock);
+>> -	features = get_features(fs_info, fa->feature_set);
+>> -	if (val)
+>> -		features |= fa->feature_bit;
+>> -	else
+>> -		features &= ~fa->feature_bit;
+>> -	set_features(fs_info, fa->feature_set, features);
+>> -	spin_unlock(&fs_info->super_lock);
+>> -
+>> -	/*
+>> -	 * We don't want to do full transaction commit from inside sysfs
+>> -	 */
+>> -	set_bit(BTRFS_FS_NEED_TRANS_COMMIT, &fs_info->flags);
+>> -	wake_up_process(fs_info->transaction_kthread);
+>> -
+>> -	return count;
+>> -}
+>> -
+>>   static umode_t btrfs_feature_visible(struct kobject *kobj,
+>>   				     struct attribute *attr, int unused)
+>>   {
+>> @@ -269,9 +158,7 @@ static umode_t btrfs_feature_visible(struct kobject *kobj,
+>>   		fa = attr_to_btrfs_feature_attr(attr);
+>>   		features = get_features(fs_info, fa->feature_set);
+>>   
+>> -		if (can_modify_feature(fa))
+>> -			mode |= S_IWUSR;
+>> -		else if (!(features & fa->feature_bit))
+>> +		if (!(features & fa->feature_bit))
+>>   			mode = 0;
+>>   	}
+>>   
+>> -- 
+>> 2.54.0
+>>
 

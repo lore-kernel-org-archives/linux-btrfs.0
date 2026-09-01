@@ -1,328 +1,259 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fhigh-b3-smtp.messagingengine.com (fhigh-b3-smtp.messagingengine.com [202.12.124.154])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B79E2F12DA
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Sep 2026 00:32:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DD67A39C63E;
+	Tue,  1 Sep 2026 01:05:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.154
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788222726; cv=none; b=gXChB1OJfJPILg1KWVmpgL8AtsErOZatwyW6IqiBSJwufQ0R0tFjPWVbneyRNyEKjSivc1B9l19temm088/xqqP9emCUyGbnCitvQsGjnOIcHAYqxLni90DHp0P2KMt7FO2xELChvpKGoJkkYKw+JH4v9yQMnNLNE4D+rjWZXVE=
+	t=1788224744; cv=none; b=jnLhdjehEPF1QzEEY+x66Bqaa7BV21iMVBTm05F834Dr+G26HX0e0N8+owc1IYLMME/4Hv5GuemhFYBXPHKOT3MEbAUFKJpuxnWNYh22UlNcH5fskq5RZq+tOZG1I2IXUn2DEIPElRWciWFZG+MB39uUmgkoB6FKG0Jp+uMP6B0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788222726; c=relaxed/simple;
-	bh=MqU2EcDQ79Avd716nXv8EMjytQI5xqC8i5uTdrFl+pE=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=IXRYtKIlp0ZEC/bfKTqw9MPO4voqDBUaYZsGRnp6SdDG5gp8REjuADc/c2JtdxmJznivEgURXPr/uxb5Xz9ngSilqhd9ljpTma0sO+pKSoo/HsNFy9GKivM8VaoGTL3G6UIApTPfUCakj02fToFbu2GeeJEq9JINnqLhbT+75GU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qNP1olkY; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=UDReMGTY; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1788224744; c=relaxed/simple;
+	bh=mNXkOSz98/+UGGBc12TmJn5JJf91GdVv10hWED2G2II=;
+	h=Content-Type:MIME-Version:From:To:Cc:Subject:In-reply-to:
+	 References:Date:Message-id; b=EHiNgLBbImsH1u8uz/URJZwPDF1gHQyTuA5stTVb+Y5i1w9mL5AX64GmyqIgFE28CiRcvHK5P5NgeMg7iHmVLjseCDPzOzuIQjz2HwcYaQJJfYLQFEOf8kVbN/5pnSqDSngyUvewTRM4shM40jPtWyRCUd45rSiQYLzUoc72SZM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=ownmail.net; spf=pass smtp.mailfrom=ownmail.net; dkim=pass (2048-bit key) header.d=ownmail.net header.i=@ownmail.net header.b=FwdPMQNa; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=UiY0GemD; arc=none smtp.client-ip=202.12.124.154
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=ownmail.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=ownmail.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qNP1olkY";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UDReMGTY"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 9942421C25;
-	Tue,  1 Sep 2026 00:31:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1788222717; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=LprFqhJo8xU6lXsv9AGjNYnUWqqm5n5o/20FRM3N6E4=;
-	b=qNP1olkY2hCx2Ts/dGvtdZv0hA9q7i1bhgdTUi+TerLlLB+JSaBS6J2iWfMl1d+7T8kICB
-	7PPHOdzqd0UdWjDpAyPKg3yS6ES1ENKVZKLrk5nGDEMWqZjFiHXwYxiGzkhQVpbUQ8rWlN
-	kwhkuuvCAArmKrlpUSFUuxgGwvfI4Sw=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=UDReMGTY
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1788222713; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=LprFqhJo8xU6lXsv9AGjNYnUWqqm5n5o/20FRM3N6E4=;
-	b=UDReMGTYi4mTbuXFjgUxKIT3xui7zCw6YIR2+o3Aokk7FKV58SGTYdZkcGw7tqqF+Ke2ew
-	tVv5qiBLat2w18ILY8ftNdLyCq8Hwa4V2MMnrfRGvJBVvEiagh/85YZyvA8WvWLzGtgYFo
-	u1z00KIh2Ly9KwXP30yBGn3BK2K0pe0=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0B3BB13515;
-	Tue,  1 Sep 2026 00:31:51 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 6SlZKvcclmo8PwAAD6G6ig
-	(envelope-from <wqu@suse.com>); Tue, 01 Sep 2026 00:31:51 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: ZhengYuan Huang <gality369@gmail.com>
-Subject: [PATCH v2] btrfs: tree-checker: reject file extent items for special files
-Date: Tue,  1 Sep 2026 10:01:33 +0930
-Message-ID: <e77c711bbd260df0a79c8fbf78d324fb58ad46ed.1788222663.git.wqu@suse.com>
-X-Mailer: git-send-email 2.55.0
+	dkim=pass (2048-bit key) header.d=ownmail.net header.i=@ownmail.net header.b="FwdPMQNa";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="UiY0GemD"
+Received: from phl-compute-08.internal (phl-compute-08.internal [10.202.2.48])
+	by mailfhigh.stl.internal (Postfix) with ESMTP id DEB757A01E6;
+	Mon, 31 Aug 2026 21:05:40 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-08.internal (MEProxy); Mon, 31 Aug 2026 21:05:41 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ownmail.net; h=
+	cc:cc:content-transfer-encoding:content-type:content-type:date
+	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:reply-to:subject:subject:to:to; s=fm3; t=
+	1788224740; x=1788311140; bh=AYUO9MYad2Pb0mKD7jsXonSb8PKwnAjvohW
+	y316UVXo=; b=FwdPMQNaeIOXcQJxcIrFdOG9zStFQy+mM9YSdVK0Yp1UR+CEfEn
+	K7gov0xQcuhrVr8PYdnjx3XdWZSrQur/Mgx9OQ5Otg80tAf/grUGVBV63cbmi5FP
+	EgcqlGjzpDRa2SUmz1npxiUO24OC2Ui7B837YSxsI+XkqFbUaLrzue+BK5SbHxpJ
+	zvZ4BelReftHnTkP7yD2h2Rdf5pw5L/rhJNUaQ4ZwokeD84hNxhNwkRBP5MXW03j
+	vujSuCcGjfrG2BVueZMKwzagIDrcSzBV0XXhAjdGSSuK1ygoviHfzFaJBxiTInh/
+	70aW10Q5cnw/sYqzpg6xGVv9yUv8adwaemQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:content-type:date:date:feedback-id:feedback-id
+	:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:reply-to:subject:subject:to:to:x-me-proxy
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=1788224740; x=
+	1788311140; bh=AYUO9MYad2Pb0mKD7jsXonSb8PKwnAjvohWy316UVXo=; b=U
+	iY0GemDs9SOfz9JSAe6vxwtu/VMRzCqaK7rgacNniQoCariZ1iUJnGPBDuBozDWm
+	NNr1eXVySYluHTMhLoyQPQIzOcNsB1Dof9tK3BIWNkdVZ0S6BZ2+U66OfWCraGco
+	DiqH38fUnSAwFp4c8AJ/1z3T12l8cv6IN2aYy/KtIYDUF5ictaqknRHZgWWOXWpo
+	+4uit8Hm3QGC5sQ01Zc/PX/OvY37384fCcTd6M6soi0+p5L2WvLx20pNlBy9BU9D
+	y9S/LP4Gp7vG/ceWurwwKnF3JrGxi9g+C8lzExYkdFfvTjdOFqj+kAZZFIMzqtX2
+	jTdrYxs5vw/VPs6w8gJWQ==
+X-ME-Sender: <xms:5CSWalo09blrkLKQsCJiUED97KBuBYIivu70INfCqK5w7UceG-0BTw>
+    <xme:5CSWailFmFjAZkCzZydxsOMV7naZCjW6SmAG2EuA3YyNaFED4sYNnVRTPwNHLSagz
+    jGftOiPTNAfZevVp7sLD8J_M1WjrYaHb8SWrab6W8wk6u6TQ3g>
+X-ME-Received: <xmr:5CSWahO_zOSftKT3q0vnV84g1TJQ6muoAeKuyxAQtRvcYzk6N4PuZjg9bOMS4ikekV55haclK1GcLIjkBdHKFkvsf2RmStE>
+X-ME-Proxy-Cause: dmFkZTF/Gq538FWQLudr0dvEy1gpH0cdfcKMtZj3eSalrSBh07NpjJhnxNQ4cu1PERrL+v
+    8QA4In15YQ/l/xehsnlWGgPr837V9Rxllsbge8kJj9dlJpjt/xhPzNd+qj0xOVHIWEQOda
+    ojJnycv+2MprJ33FGn6JB/CscivK3tytLRv+hc4VPVFlyZqoVwyKnGbWqAwJN5mX4biecJ
+    srgr28iLyg6Tw8GGS3HbQywNJFodTYzionhxeKQsYaD3x+2GkoIEd8ng2fIhrn/AfSKipK
+    ruedo98oFlleozM/Xgc1xpmefDWgFQQrm5t3p8OpH+fxglKqdRJos+hvd0FH6UElWn6hrS
+    4RVGju/q1b0iCka3prRb7NbTyiUx1CZVP9Fj1laEa4kO203rw3/2/Uk0l5ZyD28jYN5dgt
+    q99iZST0wsn7sWxDojrXv7KYvgi8RKQnudOUz5qUiKOXwF2bMf0L9CXZ/s56K8KJC3y+EO
+    VFJXzKQQ7NX5iDkY+UkEHDH00gF4qtxdsHY63Mvoy7Czs0xykVoXqaDpjfPpaRlF7kfy1b
+    Gx2e4jD2iE0woLvUgUPwiH1QcwFXO2uJaM083ndHe1cSD8HuSnv9J2BQxKrzAqi7AAeUmh
+    6C5hut0O4z/hx5f7wkRhEWuKcfTKc5TuC2G58pghtEOhKoKc4dWMrP9UKkCQ
+X-ME-Proxy: <xmx:5CSWamNxKv1QE3oCfpWcKLKnm37nSA-Ya8xVVhWlXE_BKxEDrZedkQ>
+    <xmx:5CSWaigVeTkFdNL-wR-pN-IDw5f4p9ZLjT-xbUJz0i_NwgsV2Ahmzg>
+    <xmx:5CSWajtgHwGQ2ns-oN8qSmWy45Y_U5UwwzWxBgFwnU4GtO0q99a1pQ>
+    <xmx:5CSWaoTP6dKRIN24ECMJqwCxdp87kxkhEdP6UazuegG1gA2sDIsJ1g>
+    <xmx:5CSWavtnnx9pOtkK6-kJySGc-e0cFGcs2agWPgU9uT8t7TI73iu43rJu>
+Feedback-ID: i9d664b8f:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
+ 31 Aug 2026 21:05:38 -0400 (EDT)
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 9942421C25
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FROM_HAS_DN(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	TO_DN_SOME(0.00)[];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	RCVD_TLS_ALL(0.00)[];
-	FREEMAIL_CC(0.00)[gmail.com];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:email,suse.com:mid];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCPT_COUNT_TWO(0.00)[2];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
+From: NeilBrown <neilb@ownmail.net>
+To: "Christoph Hellwig" <hch@infradead.org>
+Cc: "Matthew Wilcox" <willy@infradead.org>, fstests@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org, "Chuck Lever" <cel@kernel.org>,
+ linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fstests: generic: Add test of seek in directories
+In-reply-to: <apV-omM4s58KtkRz@infradead.org>
+References: <20260827234743.2389778-1-neilb@ownmail.net>
+  <20260827234743.2389778-2-neilb@ownmail.net>
+  <apEK5uirjyLZUfmA@casper.infradead.org>
+  <178791556100.3510150.18132687067056760170@noble.neil.brown.name>
+  <apV-omM4s58KtkRz@infradead.org>
+Date: Tue, 01 Sep 2026 11:05:35 +1000
+Message-id: <178822473504.3510150.6373190942920919075@noble.neil.brown.name>
+Reply-To: NeilBrown <neil@brown.name>
 
-File extent items are only utilized by regular files or symlinks, other
-files like directory/char/block/fifo/sock files should not have any file
-extent item.
+On Mon, 31 Aug 2026, Christoph Hellwig wrote:
+> On Fri, Aug 28, 2026 at 09:12:41PM +1000, NeilBrown wrote:
+> > If you happened to know the sizes of the all the names in the directory,
+> > you could make a sequence of getdents calls which each return precisely
+> > 1 entry,  You could then use lseek to determine the seek offset at every
+> > point.
+>=20
+> No, you can't.  Despite the historic naming d_off is not an offset, but
+> a cookie.  You can not arithmetics on it.
+>=20
+> > Linux getdents64 makes this a bit simpler by returning exactly that same
+> > number (the seek offset to the next name) in the d_off field.
+> >=20
+> > So posix certainly allows, indirectly, seeking to each d_off.
+>=20
+> Posix and Linux allow to seekdir to each cookie returned from telldir,
+> it does not allow to do arithmetics on it.
 
-Previously we were unable to reject such cases, as the inode item may not
-be in the same leaf.
-But we already have @prev_key in check_leaf_item(), this means we just
-need a new way to pass the mode of the previously hit inode item, then
-we can detect such problems.
+I agree. No arithmetic, but seek is allowed.
+The cookies should all be unique across a single readdir pass, and none
+of them may be zero as d_off is a seek address *after* the current name,
+and the seek address zero is *before* all names.
 
-Introduce a new and tiny helper structure, saved_inode_info, to record
-the inode number and its mode hit in the same leaf, and keep it across
-the whole leaf.
-Then if we hit a file extent item, and the inode item is in the same
-leaf, we can refer to that saved_inode_info to determine if we need to
-reject the file extent item.
+>=20
+> >=20
+> > Posix refers to one directory entry "immediately following" another
+> > which clearly implies a well defined sequence (if you exclude names
+> > added and removed during the read).
+>=20
+> I think you're talking about posix_getdents here, which isn't really
+> Posix as we know it, but was added in the 2024 edition without actually
+> having relevant implementation so far.  It does however implement
+> the syscall-level API in most modern Unixes.  It does not mention
+> d_off at all, just the lseek-able file offset, though.
 
-Now with the following corrupted fs tree, the kernel can safely reject
-the leaf:
+The d_off provided by Linux is precisely a seek-address with a
+granularity of one name, rather than a granularity of one getdents call.
+This is implicit in the VFS implementation.
 
-	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
-		generation 3 transid 9 size 12 nbytes 16384
-		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
-		sequence 1 flags 0x0(none)
-	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
-		index 0 namelen 2 name: ..
-	item 2 key (256 DIR_ITEM 496027801) itemoff 16075 itemsize 36
-		location key (257 INODE_ITEM 0) type FILE
-		transid 9 data_len 0 name_len 6
-		name: foobar
-	item 3 key (256 DIR_INDEX 2) itemoff 16039 itemsize 36
-		location key (257 INODE_ITEM 0) type FILE
-		transid 9 data_len 0 name_len 6
-		name: foobar
-	item 4 key (257 INODE_ITEM 0) itemoff 15879 itemsize 160
-		generation 9 transid 9 size 8192 nbytes 8192
-		block group 0 mode 60600 links 1 uid 0 gid 0 rdev 0
-		                   ^^ This is BLK type, not REG.
-		sequence 2 flags 0x0(none)
-	item 5 key (257 INODE_REF 256) itemoff 15863 itemsize 16
-		index 2 namelen 6 name: foobar
-	item 6 key (257 EXTENT_DATA 0) itemoff 15810 itemsize 53
-		generation 9 type 1 (regular)
-		extent data disk byte 13631488 nr 8192
-		extent data offset 0 nr 8192 ram 8192
-		extent compression 0 (none)
-		extent encryption 0
+>=20
+> > I think a strong argument for Linux needing something is that NFS needs
+> > working directory offsets to be able to support READDIR, because there
+> > is no "OPEN" request for directories.
+>=20
+> I don't think anyone disputes the need for stable directory offsets,
+> and we should (*knock on wood*) have implementation of native
+> file systems that fail this.
 
-With the patch, kernel will reject it with the following tree-checker
-errors:
+"should not" ??
 
- BTRFS critical (device loop0): corrupt leaf: root=5 block=30408704 slot=6 ino=257 file_offset=0, unexpected file extent item type 1 for inode mode 060600
- BTRFS error (device loop0): read time tree block corruption detected on logical 30408704 mirror 1
+>=20
+> What the test tries to force is a specific behavior for rename onto
+> existing file names, replacing the original file name entry with
+> a new one of the same name.  The test expects that to reuse the
+> previous d_off, which is not required by any real or de facto standard.
 
-Reported-by: ZhengYuan Huang <gality369@gmail.com>
-Link: https://lore.kernel.org/linux-btrfs/20260817132051.267646-1-gality369@gmail.com/
-Assisted-by: LLM (for generating the corrupted image)
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Rename the helper from check_last_inode_info() to
-  can_have_extent_data()
+That's debatable.  The documents that I have found don't mention rename.
+Does that mean anything goes, or do that mean it doesn't get an
+exemption from the general rule that all names must be listed?
 
-- Rename last_inode_info structure to saved_inode_info
+>=20
+> > I know less about btrfs.  It appears to always add new names to the end
+> > of the directory listing.  When you rename over an existing name, that
+> > existing name is relocated to the end.  I can only guess why it might do
+> > that.  I have no idea if it "needs" to do that.
+>=20
+> btrfs doesn't manage freespace for the d_off space (doing so is quite
+> complicated and requires a lot of code in XFS for example), so it
+> simply uses a monotonically increasing counter for the value reported
+> in d_off.  This simplifies things a lot, and should work well on 64-bit
+> systems were you are basically impossible to round out of d_off values.
+> It might be a lot more problematic on 32-bit systems because the
+> seekdir/telldir cookie is a long and not a guaranteed 64-bit value.
 
-- Rename last_inode pointer to inode_info
+I think that always allocating the next unused number when adding a name
+to a directory is perfectly reasonable when 64bit seek addressing is
+available.  The only question is on whether a replacing rename involves
+"adding a name".
 
-- Move the error message to the caller of can_have_extent_data()
----
- fs/btrfs/tree-checker.c | 65 ++++++++++++++++++++++++++++++++++-------
- 1 file changed, 54 insertions(+), 11 deletions(-)
+>=20
+> > Fun fact: This behaviour of btrfs (which I think is perfectly defensible
+> > for new names) resulted in generic/736 (which I think is an unreasonable
+> > test to impose) which btrfs "fixed" with a mechanism that doesn't work
+> > over NFS.  i.e.  it doesn't work if you close and re-open the file for
+> > each getdents call.
+> > If I mount a btrfs filesystem over nfs with rsize=3D4096, then generic/736
+> > fails.
+>=20
+> That code and the tests looks a bit questionable, as readdir by
+> definition can't every complete in other file systems either if you add
+> new entries faster than the pace of readdir calls.  I.e. if you replace
+> the rename there with link calls adding new entries you run into the
+> same issue with every file system.
 
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 0ce91396b517..7ca904f96621 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -163,6 +163,12 @@ static void dir_item_err(const struct extent_buffer *eb, int slot,
- 	va_end(args);
- }
- 
-+/* Record info for the last hit inode. */
-+struct saved_inode_info {
-+	u64 ino;
-+	u32 mode;
-+};
-+
- /*
-  * This functions checks prev_key->objectid, to ensure current key and prev_key
-  * share the same objectid as inode number.
-@@ -204,15 +210,40 @@ static bool check_prev_ino(struct extent_buffer *leaf,
- 		prev_key->objectid, key->objectid);
- 	return false;
- }
-+
-+static bool can_have_extent_data(struct extent_buffer *leaf,
-+				 struct btrfs_key *key, int slot, u8 fi_type,
-+				 const struct saved_inode_info *inode_info)
-+{
-+	/* No inode item in this leaf. */
-+	if (inode_info->ino != key->objectid)
-+		return true;
-+	if (S_ISREG(inode_info->mode))
-+		return true;
-+	if (S_ISLNK(inode_info->mode)) {
-+		/* For symlink, the file extent item should always be inlined. */
-+		if (unlikely(fi_type != BTRFS_FILE_EXTENT_INLINE))
-+			return false;
-+		return true;
-+	}
-+	/*
-+	 * The remaining are special files, e.g. block/fifo files, which should
-+	 * not have any file extent.
-+	 */
-+	return false;
-+}
-+
- static int check_extent_data_item(struct extent_buffer *leaf,
- 				  struct btrfs_key *key, int slot,
--				  struct btrfs_key *prev_key)
-+				  struct btrfs_key *prev_key,
-+				  const struct saved_inode_info *inode_info)
- {
- 	struct btrfs_fs_info *fs_info = leaf->fs_info;
- 	struct btrfs_file_extent_item *fi;
- 	u32 sectorsize = fs_info->sectorsize;
- 	u32 item_size = btrfs_item_size(leaf, slot);
- 	u64 extent_end;
-+	u8 fi_type;
- 
- 	if (unlikely(!IS_ALIGNED(key->offset, sectorsize))) {
- 		file_extent_err(leaf, slot,
-@@ -243,12 +274,18 @@ static int check_extent_data_item(struct extent_buffer *leaf,
- 				SZ_4K);
- 		return -EUCLEAN;
- 	}
--	if (unlikely(btrfs_file_extent_type(leaf, fi) >=
--		     BTRFS_NR_FILE_EXTENT_TYPES)) {
-+	fi_type = btrfs_file_extent_type(leaf, fi);
-+	if (unlikely(fi_type >= BTRFS_NR_FILE_EXTENT_TYPES)) {
- 		file_extent_err(leaf, slot,
- 		"invalid type for file extent, have %u expect range [0, %u]",
--			btrfs_file_extent_type(leaf, fi),
--			BTRFS_NR_FILE_EXTENT_TYPES - 1);
-+			fi_type, BTRFS_NR_FILE_EXTENT_TYPES - 1);
-+		return -EUCLEAN;
-+	}
-+
-+	if (unlikely(!can_have_extent_data(leaf, key, slot, fi_type, inode_info))) {
-+		file_extent_err(leaf, slot,
-+				"unexpected file extent item type %u for inode mode 0%o",
-+				fi_type, inode_info->mode);
- 		return -EUCLEAN;
- 	}
- 
-@@ -270,7 +307,8 @@ static int check_extent_data_item(struct extent_buffer *leaf,
- 			btrfs_file_extent_encryption(leaf, fi));
- 		return -EUCLEAN;
- 	}
--	if (btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_INLINE) {
-+
-+	if (fi_type == BTRFS_FILE_EXTENT_INLINE) {
- 		/* Inline extent must have 0 as key offset */
- 		if (unlikely(key->offset)) {
- 			file_extent_err(leaf, slot,
-@@ -1206,7 +1244,8 @@ static int check_dev_item(struct extent_buffer *leaf,
- }
- 
- static int check_inode_item(struct extent_buffer *leaf,
--			    struct btrfs_key *key, int slot)
-+			    struct btrfs_key *key, int slot,
-+			    struct saved_inode_info *inode_info)
- {
- 	struct btrfs_fs_info *fs_info = leaf->fs_info;
- 	struct btrfs_inode_item *iitem;
-@@ -1291,6 +1330,8 @@ static int check_inode_item(struct extent_buffer *leaf,
- 			ro_flags);
- 		return -EUCLEAN;
- 	}
-+	inode_info->ino = key->objectid;
-+	inode_info->mode = mode;
- 	return 0;
- }
- 
-@@ -2319,14 +2360,15 @@ static int check_free_space_bitmap(struct extent_buffer *leaf,
- static enum btrfs_tree_block_status check_leaf_item(struct extent_buffer *leaf,
- 						    struct btrfs_key *key,
- 						    int slot,
--						    struct btrfs_key *prev_key)
-+						    struct btrfs_key *prev_key,
-+						    struct saved_inode_info *inode_info)
- {
- 	int ret = 0;
- 	struct btrfs_chunk *chunk;
- 
- 	switch (key->type) {
- 	case BTRFS_EXTENT_DATA_KEY:
--		ret = check_extent_data_item(leaf, key, slot, prev_key);
-+		ret = check_extent_data_item(leaf, key, slot, prev_key, inode_info);
- 		break;
- 	case BTRFS_EXTENT_CSUM_KEY:
- 		ret = check_csum_item(leaf, key, slot, prev_key);
-@@ -2356,7 +2398,7 @@ static enum btrfs_tree_block_status check_leaf_item(struct extent_buffer *leaf,
- 		ret = check_dev_extent_item(leaf, key, slot, prev_key);
- 		break;
- 	case BTRFS_INODE_ITEM_KEY:
--		ret = check_inode_item(leaf, key, slot);
-+		ret = check_inode_item(leaf, key, slot, inode_info);
- 		break;
- 	case BTRFS_ROOT_ITEM_KEY:
- 		ret = check_root_item(leaf, key, slot);
-@@ -2404,6 +2446,7 @@ static enum btrfs_tree_block_status check_leaf_item(struct extent_buffer *leaf,
- enum btrfs_tree_block_status __btrfs_check_leaf(struct extent_buffer *leaf)
- {
- 	struct btrfs_fs_info *fs_info = leaf->fs_info;
-+	struct saved_inode_info inode_info = { 0 };
- 	/* No valid key type is 0, so all key should be larger than this key */
- 	struct btrfs_key prev_key = {0, 0, 0};
- 	struct btrfs_key key;
-@@ -2539,7 +2582,7 @@ enum btrfs_tree_block_status __btrfs_check_leaf(struct extent_buffer *leaf)
- 		}
- 
- 		/* Check if the item size and content meet other criteria. */
--		ret = check_leaf_item(leaf, &key, slot, &prev_key);
-+		ret = check_leaf_item(leaf, &key, slot, &prev_key, &inode_info);
- 		if (unlikely(ret != BTRFS_TREE_BLOCK_CLEAN))
- 			return ret;
- 
--- 
-2.55.0
+According to
+  https://www.spinics.net/lists/linux-btrfs/msg138653.html
+this seem to come from
+  https://github.com/landley/toybox/issues/306
+which suggests that
 
+  toybox find testdir -type f -print0 | xargs -0 -n1 sed -i s/a/b/=20
+
+runs forever on btrfs.  Certainly this is unexpected behaviour.  Should
+it be fixed in the filesystem or in toybox/find?
+
+I can understand toybox wanting to be as simple as possible.  But
+readdir() doesn't make any promises about terminating.
+
+I wouldn't object to btrfs "fixing" this by never reporting new names
+except that:
+ 1/ the interaction with rename/replace is problematic
+ 2/ the current fix doesn't work over NFS.
+
+I think the rename issue can be fixed by simply reusing the existing
+offset when reusing a name.  I might try a patch if a find some time.
+
+I think a fix to make it work over NFS would be to report the entries in
+reverse order - most recently added to least recently added.  This would
+effectively encode the timestamp (last_index) in the seek cookie instead
+of in btrfs_file_private.
+Changing how the seek-cookie is interpreted could cause a hiccup
+for an NFS client which was in the middle of a READDIR when a server
+we reboot to a new verion of btrfs, but that is likely not significant.
+
+Note that
+  https://pubs.opengroup.org/onlinepubs/9799919799/functions/posix_getdents.h=
+tml
+
+uses the word "incremented" in=20
+
+  the directory entry immediately following the last entry whose
+  information was returned
+
+but I don't think anyone seems interested in that detail.
+
+>=20
+> > The link you provided says:
+> >   If a sequence of calls to posix_getdents() is made that reads from
+> >   offset zero to end-of-file and a file is removed from or added to the
+> >   directory between the first and last of those calls, whether the
+> >   sequence of calls returns an entry for that file is unspecified.=20
+> >=20
+> > which unfortunately doesn't cover what happens when a file is renamed.
+> > When renamed to a non-existing name, it might be reasonable to describe
+> > this as "removed from" and "added to" so its appearance could be
+> > unspecified.
+> > When renamed to an existing name, I don't think it reasonable to
+> > describe the target name a being either "removed from" or "added to" the
+> > directory.
+>=20
+> If we are talking about files, it is very clear that the target over
+> which is renamed is removed from the directory.  And if the source
+> was outside the directory it also is very clearly added.  The only
+> gray area is a source file that already was in the same directory.
+>=20
+>=20
+
+As I explained in another email, I don't think it is reasonable to
+interpret "files" as mentioned in the documentation as "inodes" but only
+as "names".  I think the text is sloppy and should be more explicit but
+if you uniformly assume "file" to mean "filesystem object" is doesn't
+make sense.
+
+Thanks,
+NeilBrown

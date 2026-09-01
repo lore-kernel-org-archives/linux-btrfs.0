@@ -1,81 +1,81 @@
-Received: from mail-wm1-f53.google.com (mail-wm1-f53.google.com [209.85.128.53])
+Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 356CF47FAFE
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Sep 2026 12:18:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A08E827703
+	for <linux-btrfs@vger.kernel.org>; Tue,  1 Sep 2026 12:33:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.41
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788265134; cv=pass; b=sMZj0qa7QPAWcnc6qh8jacJEMxe63Vkht+cqGECNZfI8jycZSrMYywd2V6YrV6cAwPw87+ygqSE34UchBph7p25pzsjbSUW4LNteHCGteuE7NdJHQGk85p4sdGNkJSCFnAK6zZyFrf+Jqg2t4bW/+LZUYeCO8d4cmkGYRFABzzg=
+	t=1788266014; cv=pass; b=V7qJ7wdnl6luMXmkBIR3SdvW4vp9xZzEXpv9nwdmaPpKQHq0w/L1+fEBsGcMYLUpt+GIv40V+mOSyg5yi9XX/+rUCQb0EtY0TLQGt7bx62QfZ+5Mq1S1u6rTxfjo1sQIH/e6EkoAqX5APZGs7y824lQzbOhGpA23kCugC93Cj9E=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788265134; c=relaxed/simple;
-	bh=Es/cIjPUD1zzwXufbvKj4+Elkno+b+6GyubYx/khWOg=;
+	s=arc-20240116; t=1788266014; c=relaxed/simple;
+	bh=tTilPEePkpjTFCruJKJ/IvVnzIPmWB7ZxbAkmTpfbLA=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=JVNQBq1apxNBg4PjPwaTBB8Qc90v40FuiZV+55w157oNOWLdcs8nQ5d2R5u5MZwGVZ9H27PEj3wU5sWu3rv0KS2Us88TnhHmEmu2um/FQX+yzho6fVchLSoNJA1MJjEiwLdm4jFxZ1fozsn5b2pj8SsHC8HmKYqpIEiBljexDxQ=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=cu+sxr8M; arc=pass smtp.client-ip=209.85.128.53
+	 To:Cc:Content-Type; b=PwM+yfWb215etYJOdftaqXjO9X4GuXF5sws+nR8/oFPJQX93XhGm9dAPLGp+XWuXCwXcG41crPmAYBWgeboEW0fueGwFDDb+Sev/EbtemnYWxn8uZNCy4xdSXhOqA450og8D147z/J7mJ49f8/9E8lWyqBigRkHaftwVceJ+60g=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=LwULko2B; arc=pass smtp.client-ip=209.85.128.41
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="cu+sxr8M"
-Received: by mail-wm1-f53.google.com with SMTP id 5b1f17b1804b1-49b0dbfbf7bso33726875e9.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Sep 2026 05:18:51 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1788265130; cv=none;
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="LwULko2B"
+Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-49a97714f5dso37016185e9.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Sep 2026 05:33:32 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1788266011; cv=none;
         d=google.com; s=arc-20260327;
-        b=nXJKJb+BjByXVNA6x7Ttnu4zJmoYgYmxkjsvfv4A2qR2AXKHBebWmquU3MgV+b29lO
-         HcV+6WgedrdEEc/p77I1E7tip0Pt8zWaJafAgppkbVzBKc/9rt3XsF1LzFyhW4g+AK53
-         gdf8eck/iOJ66z4PKxe5Z+y8ta7oKPqit+EWj723fO83L1ZLrC4c9zDr5bXHNOe5gZFO
-         v/4McwOKMXB3w7Isr1b+Mc4KpqYj03HR1jkf5zdyadIoCKZbUQtSZLkhpDIaWcJndgSR
-         iD7p/HUxVG2TxXPJsoqF4kP6axewDxBT7kTGzUTAgbSLi4569WoLW01CpPNTm9KXb8f8
-         jlfw==
+        b=PeZSEXGUcrCt+symB+iya74slTS5il2VinNBwEhpFaggGU4ptr4nWuSewrru6izwjW
+         4uKrMfTt2p/+eB85/c5p8N4bnJuYb6thBZSnUAlBtCO0YUnWstKsLOIMwo9KeJNHzfnD
+         OZ7pMRN+gUM9wi1nOLay4PsTSxM4QGYlKpI2EfJdK4SD5vpHKmgBj1//Ap8/L2OkI7VK
+         RttEpU7uk8C42bKSuf4bCSy6R4T+Q8GFdNJVpJ1NspqrzALJ9ct8EJBI9lVDFLagDdIx
+         dhTOCrQBMs+OpQCw/FEXl4Rd+dxOSxN02yTixCqJiTgFmm1kj3So1KEfd2rJsBviy+89
+         KEvQ==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:dkim-signature;
-        bh=UvAi+mvqn+hfoITwGygPm/YRj+YQGu0S7A55rivu94M=;
-        fh=U9f2nfHM7zw2TIOOAC0BdYOELJ4ryU8MV8q4RJomI4w=;
-        b=Ajh5YuQZMGJt80OjzrrDqMQrJpZqoSnuM+G2xeo2iQS6fgWbk+RT5Sw1fTrQ7aCaWq
-         7lvIP4bWqbdOMeEIbYbEW99rSMGGjiItB9GKGLV0+l+KYJS8SGu16+4TedeDk9R4W2+Z
-         OX6DB567+oAo4A0GCfN3+WgZ8ftGb3mWA41WtiM1UwMugo4Q9jeVGqF5kOUEtRZiHnJv
-         bRjuaBObejNlqSpC/6S2jt4bqJtDz5brtzShXMQShNSGS+dmFvqBmOY9LsNKJh6fliN6
-         d+MAzk1L/myAYnho8gIBlsFaxX2wC3VKCuCw44/PpaRMEDLenY7Z1cqLUumeayVcStc7
-         2jBw==;
+        bh=cfOC0PiJENFhgp3GUEin/fTduYk5GNhKZ1VkMcNkAxk=;
+        fh=NOk1bsEuCLNwsTLvoNVSqLGxKpx2I/cUDB7QedQ2DLs=;
+        b=TNaw5mZv/V47GdSF4HZeOULH818A6GEYIYpxwZIi8Uxz4fb2mTKZeTh7dlY+oTiEwZ
+         SdBYFZYZLS8ME2ooDcw3iQvk35sq+CvuBTTrGcPSNgEsKMu0oLGiqqKCTK+GgLpQjydL
+         6BEPt5tPrZffjyq1X7PMz/5XZnXgtTujXmUteOjh9lCn/SD1gxCRyF/CrSxzPNxCqB1r
+         ksnvO9iJsjtO6F5ao8N8KqcxGOYJjGFkznwwYPpsYZv88Fb3F0Rf1+Y1GYwehb1ZRyz+
+         gtkEMmWj2SLe8W3CBAQ2sIn5Emg3UDIgUz2THCDHfHTNZUCMhWYcNYynifjycDAHBmIZ
+         c83w==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1788265130; x=1788869930; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1788266011; x=1788870811; darn=vger.kernel.org;
         h=content-type:cc:to:subject:message-id:date:from:in-reply-to
          :references:mime-version:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=UvAi+mvqn+hfoITwGygPm/YRj+YQGu0S7A55rivu94M=;
-        b=cu+sxr8MK5sNC/uVsEzuQ15QB5fgL926vBMF3dm9MLyD0FjEmRuoRHqdEw9BqHWhye
-         TBa1ExtRh8OOER2i74w5OILPqw3+MU4Kneja2YTshuGPesAeBzKlKZEA+4NbY/5uo52s
-         RDr+jyzZQQCG6tHuikKqwWYYiwbpYYhMR6EbPHdhaZQl39yJH+6Ucx/k92aI0waI5QSl
-         O6fMckPyqyodn5Dc8lzaFZj2I8G38EoFHu45F90amE/RCLIGCffXnCpC2dryp2Qwhlb4
-         V10VFurB6/JJp3Fd+6q9Mu32cH5NG19cGUnMpuMfignb3pTXtybWNn1dMXKfukPyXipz
-         0y6A==
+        bh=cfOC0PiJENFhgp3GUEin/fTduYk5GNhKZ1VkMcNkAxk=;
+        b=LwULko2Bs2/mrcLVVTaUXuF8PSdjkYkM7/aT0kj3uLwex+mk+2tR4S+4gfN0f9f81f
+         y0tITeUFsvdVAIOSundN4TaLgBLXIklaAiLC9FCYq/6oVyvNBCOATTVCaKQgmmkq5g91
+         sVSJbFUHpl1v++n4aVhRL0t+np6VpsuFHXngdlrNwy1liHtUPiTZvsjdVx5oxjrzmVAc
+         iIgvUafOTrGYjXM+hG8UghqxdwaEi4zYMeWAjKmGSl6/AcwLQ8ywIkVNCj0F8yv5XiOJ
+         z6heTKm6E1Ho28SNQcNkp1eU/9ja4Q9ZgktC9cZXnzagpNWsy44ijRIIC9dlo5G9EXWJ
+         qViA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788265130; x=1788869930;
+        d=1e100.net; s=20251104; t=1788266011; x=1788870811;
         h=content-type:cc:to:subject:message-id:date:from:in-reply-to
          :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to:content-type;
-        bh=UvAi+mvqn+hfoITwGygPm/YRj+YQGu0S7A55rivu94M=;
-        b=eFP09Fe/ocpb3fPwxlEow/zklodjWUSvqEDKWLb0RYuUMcVoCkatdVhAZrBo5MH3NI
-         14hxWp7yClQYtqIbd3UJW7QeGGspuBALNH6NrvgMZSJgfNDIPHSdkbIwLFFvChZdaEVl
-         jb4SoMHEVWI/TaOI74CXy8Ja+tm1+yTjHHDu+esH/HTTkq9czsWKTj+ScLNwo8/1M7De
-         TUnI3BdsssZYcFuKCAJQLsYIIjL4+jfsny9KXbSfEXl0zp5Fg2VtwHZjYIP3mTLv4aWT
-         1DQYGcA7amoKVViOHLh9qupmfMMflhxKYdOwfpEkCqIPqXUJnndBXdyPZKfnHs+CqQXh
-         8PqQ==
-X-Forwarded-Encrypted: i=1; AHgh+RpoX6wn4gEVAvmFstBIzgWiHWlkQekPrSiqiToRYp23xn/cI3e+jaqWjhQWK+ADiBZKfxibN8mEz5dtlA==@vger.kernel.org
-X-Gm-Message-State: AFuF++n4ooibmo5wKMDnG9bwLLWcI5wdBAUxp5OE3EHguyeOqZvszzCE
-	UaF16N7RIvBZVYTQsy4EB9qyKT0YHNerApdoS0SwY6afsXhT1AzxxgSJZAcTL0F/2s7zTGYcKuw
-	9kb6DNBXqOl0j8fOeSXOzqbmZyjTCqJZZOG1RPsoqUQ==
-X-Gm-Gg: AR+sD11bDyzDHzBlS74LeoG5GRozEls+s4JvCdLXSZPWZ1trNfQo+HXUbxe7IaFyCpA
-	jvD8wvfQr3T4Vhl/m/DHjVFCMrbk0izpmu/XnxxB0hMbJKThmWIN7TcZywzkVH98OrLst3vw/ko
-	IicsoD+cLL2vQtmqZEpZEkdb1QOx1grwy8Itb9th/Cw04ZwvBrE7DF0wkuOI7zJPuaa2f/km0xk
-	Bpczkv2kkOfgzhy1jy5TgdF5iKg1DqSm3szj9asPSOEd4z4EbMxqwIxbvafdlX3UIMtZLCEExyy
-	H7cpHRdVLsCMFUJMzsKc8U8p/zNV77OH92yErzCZvTPKxBUGZ9xATuRYO22/P6pVXJdhMNdIP06
-	8JbIM5XSTD2/0T2cUD0AmkAl5PF5ijnuVpalA70P1CQ==
-X-Received: by 2002:a05:600c:3b13:b0:495:4d5c:903e with SMTP id
- 5b1f17b1804b1-49cdc4332d4mr140012115e9.7.1788265130443; Tue, 01 Sep 2026
- 05:18:50 -0700 (PDT)
+        bh=cfOC0PiJENFhgp3GUEin/fTduYk5GNhKZ1VkMcNkAxk=;
+        b=nRFOdo8lnhXJj/DqmsDYJwLaQaX9PlqYjfkr+Oz4g124tx3bPCQIrHlMkrDL3yfIjH
+         7OF9AaQ7RrjhNTo3hVJf6CViqShK7QPwolSi6ftRA13NXbwuOlrTxRJekZtTeALDpwB3
+         2O4zdhzqnCPfFCiAc8kQt6WiS5OuXqk3g5iTcIKKM9InO0joLi2XukEmcG6qESWsM6uh
+         gko7osTEJGidjhPGYTQAG8BwUDiUVHri6TlsbYM1B+dbkRpwaUWEpprLVZtCI0RkvWTZ
+         HPaJmRd+T4HLAgBn4QVJDB/+dZQdeV6IDUGF3ffoNqtPgIsiLoLBXHvE9e0qObZ7ry5w
+         b4CQ==
+X-Forwarded-Encrypted: i=1; AHgh+RoBoo6v0cBr5KTCnppixrX021m3TOjE7TzIjyVdQeVzXt35t7SDA+CbH6yRvklLL6/wgwEVPJGMxzq/zg==@vger.kernel.org
+X-Gm-Message-State: AFuF++nMjd9ITgWJgmkK3ypWZpX1Efvuau2jEvvKeVoUshlafjN8mKcE
+	v5m9F2vQQvhRFZ6jVME2c9kzlAE7Pd5+Ke/Gvn/jSJURio+0ETe1lY22FtHkCER3YDxIfkg/pSj
+	qScJXLSIpKAaXtgdzzBbaK5A8mEAHfHBD0CSs8WlG5g==
+X-Gm-Gg: AR+sD100KPLUOI5X2tNj5SRkQtysGqia1/S2Xr+Bir1sDGfyrjEnpeKjH2gqVsq2i2l
+	FK4kX9j7GJxp8yWCrzFV/dHiXuZ6hud9Ftu+k/HsVOeHjNqDl7xKJ1q1qcAPuqVOTkodtgVVVET
+	FQdvqXeqi1Y/+T3nRbRfwxlWGdVMuGJbffKVP5v8BBwW7bPuWXHuEKjt1w3RRVyi+N6iyd4SqHT
+	M2Lf7oxiPFeLgOr4AKyp+QXKVUe8bo7SNdSMoGARmkw975xot0+tH9Bv5ppX/Xp8sC38wn61Gim
+	e747Le/xyfdiAjq8z86ebfojUCvaTSmbs8dcZ0LAW40yvVgoObP11nOoqQ0cNc2TBcG5x3noqiv
+	vJB/fjzeDOcEAtvpHRerZVhhoInpqfQAqE1OxEoY2rQ==
+X-Received: by 2002:a05:600c:4f92:b0:49b:90cc:3c87 with SMTP id
+ 5b1f17b1804b1-49b91c487b2mr523873155e9.13.1788266010932; Tue, 01 Sep 2026
+ 05:33:30 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -83,82 +83,48 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 References: <20260513085340.3673127-1-neelx@suse.com> <20260513085340.3673127-6-neelx@suse.com>
- <20260601230913.GD25574@quark>
-In-Reply-To: <20260601230913.GD25574@quark>
+ <20260602024849.GE2295@sol>
+In-Reply-To: <20260602024849.GE2295@sol>
 From: Daniel Vacek <neelx@suse.com>
-Date: Tue, 1 Sep 2026 14:18:39 +0200
-X-Gm-Features: AcwNN1WZzfR7nMvK7wzsu0uw9g-Q6K8Z-mgC6-phqgqu2rO8TCpwPmWb_Vlt_uY
-Message-ID: <CAPjX3FebVAj-U3s7nJiwu3D74p_nAGacYPJAX04TVXJBaievGg@mail.gmail.com>
+Date: Tue, 1 Sep 2026 14:33:18 +0200
+X-Gm-Features: AcwNN1X9FeJn91s56e1qLRSgSxckd0pjW883fuhQnYtX531oivm_yi3cZJJZjtc
+Message-ID: <CAPjX3FeiYo3XZUuO5qpNaOavwxsVuM_qgs=zRNuNe=bh_cGerQ@mail.gmail.com>
 Subject: Re: [PATCH v7 05/43] blk-crypto: add a process bio callback
 To: Eric Biggers <ebiggers@kernel.org>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, "Theodore Y. Ts'o" <tytso@mit.edu>, 
+Cc: Josef Bacik <josef@toxicpanda.com>, "Theodore Y. Ts'o" <tytso@mit.edu>, 
 	Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>, 
 	linux-block@vger.kernel.org, linux-fscrypt@vger.kernel.org, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	Chris Mason <mason@kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 
-On Tue, 2 Jun 2026 at 01:09, Eric Biggers <ebiggers@kernel.org> wrote:
+On Tue, 2 Jun 2026 at 04:50, Eric Biggers <ebiggers@kernel.org> wrote:
 > On Wed, May 13, 2026 at 10:52:39AM +0200, Daniel Vacek wrote:
-> > @@ -330,6 +330,17 @@ static void __blk_crypto_fallback_encrypt_bio(struct bio *src_bio,
-> >               }
-> >       }
-> >
-> > +     /* Process the encrypted bio before we submit it. */
-> > +     if (bc->bc_key->crypto_cfg.process_bio) {
-> > +             blk_status_t status;
-> > +
-> > +             status = bc->bc_key->crypto_cfg.process_bio(src_bio, enc_bio);
-> > +             if (status != BLK_STS_OK) {
-> > +                     enc_bio->bi_status = status;
-> > +                     goto out_free_enc_bio;
-> > +             }
-> > +     }
->
-> This looks very out of place in this function, because this function
-> potentially submits multiple encrypted bios whereas this code assumes
-> there's just one.  I think we could at least use a comment here, as well
-> as a WARN_ON_ONCE(!bc->bc_key->crypto_cfg.process_bio) in the case where
-> an additional bio is being submitted.
-
-While this funcion may submit multiple encrypted bios in general case,
-the check below makes sure that in case of crypto_cfg.process_bio
-callback splitting is not allowed and only single encrypted bio will
-be submitted. The WARN_ON would be impossible to hit. That's why no
-handling is implemented with the in-loop submit.
-
-> > +     /*
-> > +      * We cannot split bio's that have process_bio, as they require the original bio.
-> > +      * The upper layer must make sure to limit the submitted bio's appropriately.
-> > +      */
-> > +     if (bio_segments(src_bio) > BIO_MAX_VECS && bc->bc_key->crypto_cfg.process_bio) {
->
-> Checks should be reversed so that the expensive bio_segments() check
-> only gets done if process_bio is non-NULL.
->
-> (Sashiko spotted this too, by the way)
-
-Yup, true.
-
-> > + * @process_bio: the call back if the upper layer needs to process the encrypted
-> > + *            bio
->
-> or NULL if no such callback is needed.
-
-I'll add this.
-
+> >  /*
+> >   * Supported types of keys.  Must be bitflags due to their use in
+> >   * blk_crypto_profile::key_types_supported.
+> > @@ -77,12 +85,14 @@ enum blk_crypto_key_type {
+> >   *   filesystem block size or the disk sector size.
+> >   * @dun_bytes: the maximum number of bytes of DUN used when using this key
+> >   * @key_type: the type of this key -- either raw or hardware-wrapped
 > > + * @proces_bio: optional callback to process encrypted bios.
+> >   */
+> >  struct blk_crypto_config {
+> >       enum blk_crypto_mode_num crypto_mode;
+> >       unsigned int data_unit_size;
+> >       unsigned int dun_bytes;
+> >       enum blk_crypto_key_type key_type;
+> > +     blk_crypto_process_bio_t process_bio;
+> >  };
 >
-> Typo.
+> This new field needs to be initialized in
+> fscrypt_select_encryption_impl().  Otherwise it breaks native inline
+> encryption for ext4 and f2fs.
 
-Already fixed. Sashiko also noticed.
+Ouch, sorry. I should do regression testing on at least one of these.
 
-> By the way, after writing kerneldoc you should run the kerneldoc
-> checker, as it will find things like this:
->
-> $ scripts/kernel-doc -v -none include/linux/blk-crypto.h
-> Info: include/linux/blk-crypto.h:79 Scanning doc for struct blk_crypto_config
-> Warning: include/linux/blk-crypto.h:95 struct member 'process_bio' not described in 'blk_crypto_config'
-
-Hey, this is a good hint. Thanks, I'll keep that in mind.
+Thanks.
 
 --nX
+
+> - Eric

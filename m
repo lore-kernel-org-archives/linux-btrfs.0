@@ -1,101 +1,104 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail.burntcomma.com (mail2.burntcomma.com [217.169.27.34])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7BFA8459AEE;
-	Tue,  1 Sep 2026 20:53:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 242E92E2663
+	for <linux-btrfs@vger.kernel.org>; Tue,  1 Sep 2026 21:32:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.169.27.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788296004; cv=none; b=l4VrbkxD1lXPAETcT1kWYwnFWs7YcoQvEm1icyvhs0fTSJxKHrIft9w3Q0PGleHnQOReyUt2EDkEH5deTtSKXaoX5AT89VAGD+xysE1tY//7PSlWyky+rW7cHzXtUCi2ULrvlsmaLzH3pzz57o/1CO8cZJWiJI3Mx8ZWpOmqIeI=
+	t=1788298380; cv=none; b=NPXfEsNh85bqqZoOplI2jG/t72QoqQL/KsQapNtLQwCKAY6WdaxdV/Uhhj1LFbf/F9kV+T9EFmN+7+8nGwFH2Jf8N4Gq4uhlggJaNb+0Xzy2qI3S7t1//SNjxb7eZ5WVg5nGgasy3zZcjIHt511ff/yTyQyHzF0Qs/C10DyOOrk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788296004; c=relaxed/simple;
-	bh=fsYlNc3aJtYU7njgkrPguDCirbhJxKrFstSWZUR8/eg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=YIQobj6w3utp0rNnmPe2u7S1xJjktksfsDrdaRMfuYDR0atDyhjVjHENl128E1mFmLS6XdfdpNPOEKz2LFfMZGm568xCQ2oP+28Hvcjxv7iHukEcIqzAtQvXOOx2jmeHinLxDSXW2Ur66t1EisGG0KpQ6t9D8rVDXKmLaowBNd4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=LUKDwbUi; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1788298380; c=relaxed/simple;
+	bh=SJy7+K87oFgolsn8xdNQJXmHcm3eOnYIERMLPzlxPeg=;
+	h=Message-ID:Date:Mime-Version:To:From:Subject:Content-Type; b=bVfB1yaKdy+tx7U54UqYAysdcfoCjl1eB3xNSMAMI2h7KngSurg8+ZuzPKt2zUkMfFNxGIxmXVP+dmz2WiueADNmTeKKp4wXL0VI1H+pAUprOAP2DpJM3YE8SGwcqrIGfpEg+UZj5gkO6j2RpLungH5ztmsPnVNj34qOOI+AhrM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com; spf=pass smtp.mailfrom=harmstone.com; dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b=zKdcc1T5; arc=none smtp.client-ip=217.169.27.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=harmstone.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=harmstone.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="LUKDwbUi"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EFEE41F000E9;
-	Tue,  1 Sep 2026 20:53:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1788296003;
-	bh=d+QoObKvn/jjIcgnDWLOeeDC/v3Jvf6TBEqFVZ09LX0=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=LUKDwbUi/br3OChyeR1SZJcm+9N0lq/0iaPuCV++ToeoebBS2gk1SZYTHU94UXAuo
-	 ua9bSe3rXCyTRY/Jd5QmMJlfWlKtpo56meYjYh2i+/gpWdGexubauiw2CXjAJucEQZ
-	 TzAYAj5YdP/iDSuxr3Mu4GeUF36pUcduUvXR8gChO5dMy8SN3p/M4FEG7m8olHV6rU
-	 HuiXdDPG1jp97uw+ra7/Fb/swfdlaKnb0iS77S+cv7ROIOofFnX5v3i3RZZhl9sUq6
-	 8diMDBY6/9GK76kX9pnmg4ad+ht42KGK8H2cVvQDt3tXQkwVnNRDA9oZzNDBq1iTvt
-	 t9i+byvFmso2Q==
-Date: Wed, 2 Sep 2026 04:53:17 +0800
-From: Zorro Lang <zlang@kernel.org>
-To: Anand Jain <asj@kernel.org>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, 
-	linux-f2fs-devel@lists.sourceforge.net, djwong@kernel.org
-Subject: Re: [PATCH v8 12/13] fstests: add _change_metadata_uuid helper
-Message-ID: <apc6wRjPnQZNYfxV@zlang-mailbox>
-Mail-Followup-To: Anand Jain <asj@kernel.org>, fstests@vger.kernel.org, 
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, 
-	linux-f2fs-devel@lists.sourceforge.net, djwong@kernel.org
-References: <cover.1784949154.git.asj@kernel.org>
- <8d69567fb5700c5a4075509bd7272d02ce9ba4f5.1784949155.git.asj@kernel.org>
+	dkim=pass (1024-bit key) header.d=harmstone.com header.i=@harmstone.com header.b="zKdcc1T5"
+Received: from [127.0.0.1] (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256
+	 client-signature RSA-PSS (2048 bits) client-digest SHA256)
+	(Client CN "hellas", Issuer "burntcomma.com" (verified OK))
+	by mail.burntcomma.com (Postfix) with ESMTPS id D472935820C
+	for <linux-btrfs@vger.kernel.org>; Tue,  1 Sep 2026 22:24:59 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=harmstone.com;
+	s=mail; t=1788297899;
+	bh=SJy7+K87oFgolsn8xdNQJXmHcm3eOnYIERMLPzlxPeg=;
+	h=Date:To:From:Subject;
+	b=zKdcc1T5YJe0EA1O6cD5xYTjCM8P3kkyVDw0rX6cmrmtYpHacBH6xihC0w5df4yCP
+	 zAB6ooAcVWkS/v6l5Sx0B7v4hJSPrKfju7gWoWf4Sdg+r1NtFwehEazK3VfI97gMf4
+	 5EYPzPqPAB6yQaUWJSoO2ZGMQkzjyOtjmzgTMEj8=
+Message-ID: <4cdce5a0-e717-41d6-ab68-ab6a85646028@harmstone.com>
+Date: Tue, 1 Sep 2026 22:24:59 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <8d69567fb5700c5a4075509bd7272d02ce9ba4f5.1784949155.git.asj@kernel.org>
+Mime-Version: 1.0
+Content-Language: en-US
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Mark Harmstone <mark@harmstone.com>
+Subject: WinBtrfs v1.10
+Autocrypt: addr=mark@harmstone.com; keydata=
+ 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
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Sat, Jul 25, 2026 at 03:39:09PM +0800, Anand Jain wrote:
-> _change_metadata_uuid changes the UUID of the golden filesystem before it
-> is cloned.
-> 
-> Signed-off-by: Anand Jain <asj@kernel.org>
-> ---
->  common/rc | 23 +++++++++++++++++++++++
->  1 file changed, 23 insertions(+)
-> 
-> diff --git a/common/rc b/common/rc
-> index f73251365a60..45cf9360ba73 100644
-> --- a/common/rc
-> +++ b/common/rc
-> @@ -1533,6 +1533,29 @@ _scratch_resvblks()
->  	esac
->  }
->  
-> +# Change the metadata UUID of the given device to a newly generated one.
-> +# Args:
-> +#   $1: Block device path to modify.
-> +_change_metadata_uuid()
-> +{
-> +	local temp_mnt=$TEST_DIR/${seq}_mnt
-> +	local dev=$1
-> +
-> +	case $FSTYP in
-> +	xfs)
-> +		_require_command "$XFS_ADMIN_PROG" "xfs_admin"
-> +		$XFS_ADMIN_PROG -U generate $dev >> $seqres.full
-> +		;;
-> +	btrfs)
-> +		_require_command "$BTRFS_TUNE_PROG" "btrfstune"
+Hello everybody,
 
-How about split this function to _require_metadata_uuid_tool and
-_chanage_metadata_uuid ?
+I've released version 1.10 of WinBtrfs, the btrfs kernel driver for
+Windows - this is the first release in more than two years.
+https://github.com/maharmstone/btrfs
 
-> +		$BTRFS_TUNE_PROG -m $dev
-> +		;;
-> +	*)
-> +		_notrun "Require filesystem with metadata_uuid feature"
-> +		;;
-> +	esac
-> +}
-> +
->  # Create a small loop image, run an optional tuning function ($2) on it,
->  # clone it, and attach both to loop devices, returned in ($1).
->  # Args:
-> -- 
-> 2.43.0
-> 
+In this version:
+
+* Added support for writing free-space bitmaps (reading was already
+supported)
+* Added support for writing compressed inline files (reading was already
+supported)
+* Improved handling of removable devices
+* Tightened up error recovery on OOMs and ENOSPCs
+* Fixed crash when moving files across subvolumes, such as to the
+Recycle Bin
+* Fixed crash when many files created simultaneously, e.g. by Steam
+* Fixed extent tree corruption when writing to snapshots
+* Fixed preallocation issues (fixes rclone)
+* Fixed deadlock when querying hard links
+* Fixed memory corruption relating to watching the Registry
+* Fixed disk usage statistics for multi-device volumes
+* Fixed FSCTL_DUPLICATE_EXTENTS_TO_FILE sent from 32-bit userspace
+* Refactored to use same struct and constant definitions as on Linux
+
+Thanks
+
+Mark

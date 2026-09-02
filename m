@@ -1,41 +1,41 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D0562411F93;
-	Wed,  2 Sep 2026 21:51:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7194B4137AB;
+	Wed,  2 Sep 2026 22:02:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.19
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788385883; cv=none; b=hdoNh87KidxD/0NARW1SOUUvvs9u4PWhElybe0bWCIx8QdAPF2tXYNEDCpjqleOivrzbVTCkKRXuiAzlTLBqfw0ZlFlVXbngv/FKcAg3Lv515nnUs7LBOgHbz7P6DhSe37CtMi7C2kzF8c3k+9Cgn4zoorih2CT0hP3QyhkiiJQ=
+	t=1788386543; cv=none; b=ASVbl/suqE/S8AwFiFJiHCrgOhjaYRSCNaSaW9cOzD9HrlOLqRFyn3uhj1XuBeKorn9SDwgmcxR2qYfs1yJrSg3uImK4bQppnxptGIV8QXRJpY7B4SgC2afpyAGEqEXg9Gb9WTbulLgikPUpgKnqBYOxhlxIf0iC9nrI3K40hZo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788385883; c=relaxed/simple;
-	bh=m9dOTHbWmlS0KCBsbW/tuHkdmZSSvIgBYXg4YZKtYbg=;
+	s=arc-20240116; t=1788386543; c=relaxed/simple;
+	bh=7jrpiqVVpwUKj57+20+fIwb8VHGj8d+snHqmEAQBHlQ=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=stS8bgpgpb2YSYEcOvCTtqQMfUyw7J6E1MOvvZ6fTlzOmCGYP6ukTeUYKj/E4Rwtyn1rr84bIlZuF1FwlOKRonfEFJpdaXk1N67BQ9IYhBKL9j/MzqBK5PYQacmDszotIyIM4HThk9Ga9lxncgm6L3jhKH7nZhMVd0zUCHXrkKs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=GZlRJdce; arc=none smtp.client-ip=212.227.15.18
+	 In-Reply-To:Content-Type; b=ufT8rpBQ2KS4t7FlJInA+QhANAcPN5xDcGFnitnvMoK0ttBqhw6fWetPwiW3mHbKzVnxYeyL4qeUXs3NP9P5+3Ea/dZvJDTPWXlbFxtelnmuTGFJU6CbliH3recrA4jA+O8jbP431BVQVbZX8LVnx/gz3qmZKRSFig3SWpFcYe8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=WppR/x+O; arc=none smtp.client-ip=212.227.15.19
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="GZlRJdce"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="WppR/x+O"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1788385872; x=1788990672; i=quwenruo.btrfs@gmx.com;
-	bh=h1c9SIUY77t9O2DncCMQVWaVtz1rRyUAK41y38ImKw8=;
+	s=s31663417; t=1788386531; x=1788991331; i=quwenruo.btrfs@gmx.com;
+	bh=pWMJMno3OMAi+0kK12ONdJ4j5VCEw1ca3tPf+NmmLdc=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=GZlRJdcetiSxJLbOY/BFiz5R1sgScsYNDHXpd4CTth8SNYEMDqxglTq9J6lNPm6r
-	 aQtbtSib5zK/pGdNSI0+BqOqL4Ghiof4ui3OMo5yHCFKWqwytKFCZ3H1zLWfxM/H8
-	 ZINSVCyPWX8TUr4OEZ9kPy8mENrzgULpksItVzlPTKhilkGxW9+KkvhuhUXr6qItZ
-	 XE9PtNNRtB2ZP2WiC/Dw5Z64Wyk4NbsJjGy1myGxD9nsdXez14eIUxFxOEydfOzoY
-	 P6OBz2+WDepanKql6T1hP7yusJWkllXFFUVZKrj23rKZW9DKm2F+zVbZvpYzcam8b
-	 VFDHLCa4yvDaQL2+hg==
+	b=WppR/x+OkZuD/jJNUq369yJGJy035C1W0rIwXNJBNoBpoOAPysjL5K1PorhcpG0y
+	 4e8s2MLP/A/NPMib5GxHWj7w3x60bu7nJdpB5brVgIrFR7mocgxA5+JdQiHcgUsKJ
+	 l34dcyOB6QWEysqwBfVKEh0JT4Llut9L/I+tpbsODs4XTcp8fNGLTv/ZMw7Ne7tww
+	 Cq95SVOsD6zxF8p0D9yvRYsGug8jY0DpkdFkiuJYLpHmwbtQmiG1MqqMW+htyRkgG
+	 9xnyWsIeuIoiUk9pEz4sTVJ1OJ6HoLJbv8p3rbdstZMFV2+lkYa9n7IYLILWm8Db1
+	 YzCsUVnVu5vf+OFcsQ==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mof5H-1wV29u2UDh-00muxo; Wed, 02
- Sep 2026 23:51:12 +0200
-Message-ID: <afeb40a2-5996-4e36-bcc6-db8c7973db7f@gmx.com>
-Date: Thu, 3 Sep 2026 07:21:08 +0930
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1N6KYl-1wmhcx3vTd-017Yml; Thu, 03
+ Sep 2026 00:02:11 +0200
+Message-ID: <b54b679d-18c7-492e-a4fa-ce797c0748fa@gmx.com>
+Date: Thu, 3 Sep 2026 07:32:07 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,14 +43,14 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 1/2] btrfs: consume the given iter directly instead of
- copying in csum_one_bio()
+Subject: Re: [PATCH 2/2] btrfs: use bio::remaining for async checksumming
+ synchronization
 To: Daniel Vacek <neelx@suse.com>, David Sterba <dsterba@suse.com>,
  Chris Mason <mason@kernel.org>
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
  Qu Wenruo <wqu@suse.com>
 References: <20260902165137.3781696-1-neelx@suse.com>
- <20260902165137.3781696-2-neelx@suse.com>
+ <20260902165137.3781696-3-neelx@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -77,190 +77,209 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
  +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
  HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260902165137.3781696-2-neelx@suse.com>
+In-Reply-To: <20260902165137.3781696-3-neelx@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:mVcE2Qj98EJIR7ip8uyyLRM5/nGMaqFC1h/r48mkm895v7nEBH9
- XDtF0ocJf0PbdsizzmC9Xi38wBh2Kzm9/q2bOwAw5iF58GU10kG4iMIluqhGcw81XVOIpD5
- OQ4JjlSYGlq94IhVajltLtUqYpCFfSa95Bsl+ks9gRKYKPwZEZ1Jz53fEG9HC3bJrbYCW3T
- VKkFUHuP/liB8oDdzN1VQ==
+X-Provags-ID: V03:K1:Uspexf1SN75sbWgpPh5Y3u7FO/mMT1cWb0kvFWWs9sOgC3dSpN5
+ T83TYuDvUUHz48s+FPn9aKR+l93EHXrok7y2zJNGqM2cxbntZZgvw+8kSo4PL9LxYKZt/Xs
+ kOwyNf8rNl/8Ba2OSQh4pUbX/I26TcOIgiOiCcRI1zVfN8yKead8jxN3r7d597P3c4Qmr0R
+ UiIV8KxiuoLUIxkvb2s3g==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:C3N704LebzE=;zepi/OWGAUhZLJVu3zNhOYyUBk3
- 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
- A9TPOGkRD2Y=
+UI-OutboundReport: notjunk:1;M01:P0:3Ynyi3U3iWg=;z4nzIMMqhYsUgd25FPKRmFz9ZPy
+ 0VkgQDK++WA6AFxaS1Z93rDMDQVfY9UX6Ax7pRdf6tUM9/D879VHZAppI2E9MxWgG8mfaAzRw
+ PMHqASiMi8YuVUF3CUwWfqojPvcKYB0+NEVv6ZBZI/d2fMo8LCvnAptDxmrMyQ6CbO8/os6NY
+ HJkh0nAyHXAeKhJ/YCPOTjoP6Mwrtx8KcJJjm/8PBztqHuUCEhwTsHuzbWoic6Hg+CuRQyQR9
+ 8yRJVhTtT5cjRXIGXOD3aIsP1dbDIXvL2KtTkz+eBaYsykMqYYpZAFdgFzgoxhmEZzZlUKxRd
+ HMUv+UPPOE8IDRq63k7vuz6VbY+bfcGNISIOmFr6LfTl3Ig+nkS56lrQOskzXQJmuUFl8qfF0
+ JBbL8et5/5YaI9SCB1TzPnbuQr7GpcA0Wz/Rg45u6509QfgmK4JrXQ/n5sYC+E+/vCYckJ94L
+ IRv0rmpmN94xTU1flu3qLz00YPDvAd0GUmgzU7PNCGBw/m5jo8CvWkpehENPgqMhf31oAyY/g
+ +Huzt7+X6kClwbI5OL0Oap3Pd3THnPQ3MPdeCfdsvY8GC6JpOLZC4U52RO42rKk+7H0Zlzlsy
+ QZ1Vhl4gpUXgKDAALkNsKpARlyjkV6qvLKwKHkwL20FjVZu9zE0b6jZeSpm1IpXT0zHGCy4V3
+ caUu/mLTdDUM781/B8TRwci2hewwhRbQhcSd5BzRCD0+VWLpWrhV4b1PmW0Ip64A5K5arWIGL
+ YL3Z9dVlKNZtrVx8ecnW0fSn5FMu3FEK8/j4DvyYfjy6WV7ExaVI21Oh0OJnFx1KeuzBfLMy2
+ XZ+QRy070odvQOb1Gcb0ZT95kBSBazqn6o334cCsuqOFq/Ehad6vmL0AUFdd3mrw71U91+mBR
+ GUd/+gPbIdVoq8JRQu8dT3ClvzAiZUOX7uJIyHZXUA5S+4SEFCpiiFc465e6NgRWtRn6z+eVt
+ WsCUGlebusna1gUJIuwxeBas9sVNV5XneW0G8Yshyr8jWweLPMlxBeSAER3HM0MgJ71ETBKoG
+ v1Ox1BChONXkPSYFMUCqfMFDmUUaXae+rxDNeUs0Boetsp18sF9klS2egHVzts1HdhhpcBrdC
+ EetjdWmGYuvHsj1YbM4l5aRrMGHmvUOkTrW+GmIN6+257bOpcdbOjUQHlUH+nvJr8YMEUnzI9
+ 2IZe9/0bXg+D04iosh7Jt1RWP8g37x8mixgMd058YbQiMttFLTIZMs9a0wq2ZoHaVKeqkFY12
+ NDG8QhtE583zOEBJxO+OKq9SAx5/ZD0BzAMi7NB8Ph/RDMVRDhRdd2ESo+YK7NaL5Ow6SSPL4
+ hM7DpN9mVRaI6lIMO+TYy1uY/R5CA2p8U8pG16ujNW/lzzMhxOj+PRTjX5qc8SZQRz14l9fnF
+ Y7NiFfvVgu5bwivZL75ic2/+NnSXD27Ddd6Tei1nPA6jufNAFyrhK1zdTTmluK5vP0VSc7bkM
+ 1ynEH1NeA3XARpFEf9udqDWoYrNK6sP5t3fZy6E+gC8utFMETyexwzDuyhnyHu+z2MxdR5K1o
+ bnJZ9sJQEhQctzCKZo5KCo8N5wAwhI6UU1JIlFJIr0QXNPyOlQhzp9CTKsIrZxWAuUWw0mRYz
+ sZobvrqjCwpc1kmGS4AUZlLPLE7u9GALOX3RjU0HYMsuSW7DNzFLOW6yHrqiDnrc/hh3M8PiB
+ E6toJ8EKAhCjZLjUEC/xS0rsU6hw+/XaxHYXJk1a4XdHB0GFrG6sMzV3OGd3HEgN92I8tUJw0
+ 4t6VxXy51tSS0VxroufVrk2OSDZd4V5pGMK0D1Vg+o3ZOw14K0IoPfyG2DF12JzPdRyQOUtes
+ /yqIISKcmG6rqQ5eiU2ljoVXiIZHVZkbA8lzB3Na5mmHDtKd1s9RGAaWHwmWFNNQkTOunTOIM
+ oE7WMQXWLLjDxTYScnwvSFTic0xiQL9QeVZ1oNRRq5FAT9BgR+srezjZsUYCZigNyWv6fXXsk
+ W5C+VrwjNjw/OtSt+XMG/+2t/38m8jft/BeOJxfCsTj2lXwvECxlwwakqrDxbHOtCkI8IwUQ2
+ VzPZHz3kjS0Oz3mttkZ/DPJJTctVnBpMoQ140VKfzojqKWPUOoFtHV56ne1SnToc9Z+Ugm9Nk
+ h/a2WJWsLfdSZpTAOQQ9OC1hsFEh4G2DzS148T/JM4Ai6zJfEb+df6Lo+/15ILAXOSRtfk+1n
+ lYjMT+Zrmu61IdMyFvfOMR7Kqh97tRRupkyB3rCs9ffvhgip6AQH3uZa9L+N4xow9RiBJC0T4
+ GJNFbikJpo0xYQ1CDN+45t2bSaWflk3n1mI2tvqq3ihtekwE5MQ3fq8Nbv4WOS/rWkQpM4hHt
+ EwWTTDBmWPYGn6XYv23642hXAURIulOSiw0zK6mR1Ik0Muxk9z5METypFqew6biyjgAYvCbP5
+ a8BnfQe6/6GDTRkB65bNUTSHaUhLKSJxD9+Fssrb2fXncH1bMZ14JH21FCyizledB5mKRLwWi
+ PY8ndzMF48YWSlaD9m0ipMUED9xxaqXEU193wvRkEPPQvtfz0AocS1u1pcvlcNu82dFKhb9OE
+ 7UUGHjEEf/CEfoMy2401Eqq8kAI1v62gY5lP9AI+NeJNTM0oeSiaEE9bNHcn1n5z/mIfbfAAA
+ rvkGaPe4aAchI6CY8wPt/DYFTpj5PFMVD0eJkmdUjHn1eXnmsGMzwJVOnaHeaGXMWqSKJFgJB
+ 4+lp/7/hTdbJKhAk8Nzm0BnHNdxOt7Q/R2SM+elVrIOWT0aHDNfEdEKfI/FJyXDk3WOF23SLc
+ PPGCsF0+a9vVj7URqErNuiTGC2hXQFyLz6ajyBYHSP6kOTNGWUdY+rhbDlqWOA8uIfO54v7AX
+ UqFgEwq0/Mr99lcWbbRayzHH5W1KnTgJ+tE38GgkulwIsClSqgL0UQya9BnMsiFYa6YTgslMm
+ x6fxCGkeE46VDRKqvVdi0CGlSI+dWR9gPBkHI2Qgb7S2AThDWTeadLL5m/qW3nhJQyvA1EPZo
+ rowcIr//euooRBxOAHl7qp+RVdpgV5VsZNfjj/hK92CyghCGAs+8a7WsEbJTETNgSYdqpkAnB
+ 69pA/rdblmAuSnJQs/vyK48qavw4OvgF559ecaSUfHxq1QyQT51uRkVqd+hFhBVmETrLxFErE
+ GKTo3FwkY8t8Gfdnu3JG78gumT7j52ipFqxLx/lSyWXSdf9SFQQGtjEFvzeoLEoN6KDRFDAet
+ 7b5/hux8x2M4LT/mVOop+3Dc3iBpHwpjDPy62CaQZfhqT1FANuLKKxCYO2W33BghNLqcMsV4q
+ eqg0+AYRCvnOzjOIYAOF3CvoK1F6CsObFFb6QMss97PIqT7kQ/gRTf3pUfnsVquZmgjrcephx
+ nICpJrJCbkvt68i44sJE6kXu9tBNRXqJSdOvqe4+KWDskCGlC4rdhgsU+7neyc0HPGdcvkEEZ
+ 2/t+qcGH8WuJ04hzBdrle7YR6NBSels0BYEv9nIDvwzMp/15rSjJCtnQDZshBdNIMI7Icbbry
+ VzP2ug3jTPcvhbCahjSaP1nSwJ5OtcdbTmluiUdTpF60H3uYkYSea2ZKxMpUyhMJ1VG82RMBm
+ IxRBuPi9n+MWrMH4Xb61P6DdVbNdSPvNQjGvTGXg34ffaNBuiqtzGjb4JptZor4LJ4ie3GTMC
+ 4ti0akNuiVUHHXgZKb5wWl+nhaThxgbisO8c+SYjJctxsWij8ltDaUkQ2JJPBdCSUyVBsMzJl
+ 4k/STTKcpTapiy2B7YESAbXwDiKrEeLaXBRmjYTvDs55NR5CUl1Sst6+6VUs6Wk/AnS05O6j5
+ 0pSALOUuFNf9ace6SyZWw/cqInVRIbgM4wjs1O36Fl9pR+dT8H0YpenSFBMmDn6iT1yJi/e2Q
+ 9zms5iDFEi2R9dmJwZjc8XvOjkRY1zPtpfLF8S3XHhMPZSwNyy98WEy79CKXlPiAr2SHmro5D
+ LBVTIRxJFp5wrvllf6PuJplal6TtccAjIGl4rNJ9ed1wSOWwRgeDmZ4DZ6ALcoKTn7sdHKTSX
+ 7ToLTSdi4yXDERLgjaeFwsL0SucNSvo3YRviHSw1/ynEJROKZ7FqD0q5PrfJtEAzrKjPxbKM9
+ KbaWiBFutVg5nbwV8SdPnN3oJRi9An1p0wmdpDK5rQwCNzMKH2/erbqFsrfnhNO3efiWOnXI7
+ eXH2L9JDTVlo86UXBbsx8TMKml1YvhM/poT0blxF0X8RJ6kCQfkY08FKUupIqrSxe39/qCLOh
+ O1TK8N6b/CphQ562gJmsMUygTxq78FJc7STd67O3W+SeOMUA3xfBgvEdzfCdaTtuQQ0LzAVQn
+ eUd5cZjjrO/C+mhcqAgCR78shlCbSinqCGUj6o68/ubRkiK0TVKMf5EDTiwNc/zAWgXBjgUmA
+ gt+Ab7TZPSYdq6zdsiVSCtLclkpz/v6vb0A3e8azMkfaiIrpw7GbV+67/cTc0jbPvjQK/P0aB
+ uD3vycG+JR3cvpPYjlRgSwfhJtUb51VbZx2RN9UCgYfECIWY69MJBcLakCUsgyLKKaPeyWMcd
+ bE+lKhwPP117NHcDxALUJo3O1VlmdiVOCUQtkVTcjnJY4tBJTyd6m/1KsZH9eB4NkQ6Q6bopc
+ k3N2HpnlHLzbde38sXSaaXjZIpsHLzUfn3H+eX3BWWRkrPsKccR2mHAxwBvsfKQd5PZUSeoqe
+ cBowp3J/ivk6s4Al9mHthO/4qbpJRx4751OM/ajmI3+SwwkKiEUJ87yrPzpuYOpLcuEBj2n/7
+ F4WBNYRXiyaC3ed1ORrV2MTGwOvNm5Zcm8svs7Zgi0WiQLYOeVhvyaCtOlmP5eH0/S/eCCaCX
+ wa3qSaWt2MJFqxHjli26SOpdAGRhOH/MWjxScZu/55XIF3ri67a1Q246gK+3hQbZO1xMPkrsp
+ U36KYoGhqVRUJ/EnMB11KcMPDoWi5j7AXftK4TBbGPa0P3OljCHhJsXHXr2u1qQUpGNP/6eHh
+ elOArm1d/NOF0358XXnfUoOJrh7M+/0S58dh5dSs56kWH2HjpqX33gZHMVEboFxgbU6Gfl5jS
+ guOEC0wBQVl484VtrBcN5uRJ6M4NMyvbigGoyAkbNRdvfP5WFX131lkJM62q/EYjvGbFom/yO
+ 5b+S+ggtgvKyU/qBvY8OJylFSAjLunY1d9oLb4jHcyAYZxv2saRjHvfWx7TOG1/ZhKxZlmnG6
+ 8qXUAxstiwCdPm9JX824RgFa0CiA/LlhEKnA11omgCztDNv0iqGeDqtCbo+HdhU99B9ae6Mzn
+ +BLeAIKgh2lrelNT1Kf1WvF26I0bCwhGI3h2CAGycXHVEoJl0xwg1OoBxc1u7W9ROEkaZCK0D
+ 6HcZzUDjHRg/qvslrHVMTwoK0QHtTNt5G5ISTVpct9xe/FzTIrzdOMqimvkPvnoaeuaIJ3y5i
+ Wzc2wmN6Rd8WOCbXcuGKW8BNt7EXIlWBBM/XjUxb70+YnIYlQ0okWsObbnS0gOqFPEpRuXa34
+ Zk6Bh3dMb5IoH7v53veB1nEktmwJaHxhpslw6CSDg2TYTnoRSTfN9ShTIpJibgq5zcv89CFhW
+ GRHl2/JkMB/CysuW7UgJK2OQSHIP/yVnmVIWDUfya4fjKqJHWhdOdDJVeX6NKrsexBCqwfSvl
+ K5jwbJuJaSK9YjoGNdDCpZ3b9y/BMG3W+SdOFFET37WzpakyTiVqtLmSURzWjqPa0qqce00NV
+ XUdBOCAaCXOp+BbNCc1c09MuKvB3U3iYq2A6tA15ViCwv73l+yCJSe7AwkvaxoGCEOEVqqHal
+ tGytzmIaeZonqUDFOLInXgJOaN5/lrX354OZyhfwPObcEyZQpIfDxdd3wDqA7x/Ow7miqlRO8
+ KX0n4MIaTQ0LAuxvWwjpiobHtZs14a7SgGwYo+1j8TAW+FuXhx2SE99TTyPXWZG+XJkYQEixw
+ GMvbTMKNubvVPIw0t1BKXYz2UI6jiesu4fvGMvy0/Ejt0kar1t+iwJgdzjUZDDWVcutCedXMj
+ 35DMRdR0SoTnQ59zfRvwPGOHgWz7VJbmUp2X+/A9eHwvdYhx+iKjpOeidLptLFACjD/OTflN0
+ jE1f1mEo0bGBeEZJQHTK7DVuRL74+qT0ZxnvxlRKq0+ViaAudJqTEPQxRcX8SKuNMDBNV0y0Y
+ mQOKNikVbFIBPxByO5yDd2QAHHWEG+9dynj7/ARG4AITrnxYE9geR691mtGxxcBurfW6hPucw
+ hBrk/PwNGAzIidrQYQsrySbHZBl0lgNs79X0qOEcB2RJXl6mLomN8tmDOwTKs3cadu4qKRXTa
+ Czh/80PHgWzctAxG9l7VnOqde7Ydl8u6KDAD2angJCSymENrqytl7glfWv2ZC9C+lUViGhf0b
+ AqukG9LhsbebSganU2S7T9l1GXNJV/xhWfqzD8+3Iutm/93EJo1ZXS4QwKJti0Ayt9WBZ77+K
+ 7yZLsTJ2eQclXCg0R/yEq8oDCFWFRIfQPfuqVhU6p8TUfkGLKzYd90HzJT5cbEQT7LXw4yMMT
+ 1eg7Jc4dylF6N/lp8sc+Z0LP9cELv1fWI2HUViIArWc1mrPzqF8fCeEV7eV4mfoVPlR/ZajH+
+ iExg069F4CpmkdO3VbDsPl6q3RrNIPCa1M38k40ibbYBUD19BpU5to1blij6OPawFDpUkPwZQ
+ aBzuTN4hwPKFRTV4/hLseJtpz7e6x1Rx7TNDwIF8NcCrh61v8LBKn5P359tftJtfxNIei23Q=
+ =
 
 
 
 =E5=9C=A8 2026/9/3 02:21, Daniel Vacek =E5=86=99=E9=81=93:
-> This is just a small cleanup to avoid copying the iter twice in async ca=
-se.
-> We already have a copy csum_one_bio() can consume directly. No need to c=
-opy
-> again the second time.
-> In the sync case we can copy in the caller (as we did before dd57c78aec3=
-9
-> ("btrfs: introduce btrfs_bio::async_csum")).
+> We can use bio::remaining counter to sync the offloaded checksuming.
+> As a result we can slim down the btrfs_bio structure by 24 bytes
+> and simplify the code a bit.
+>=20
+> $ pahole | diff
+> -	/* size: 328, cachelines: 6, members: 15 */
+> +	/* size: 304, cachelines: 5, members: 14 */
+>=20
+> Moreover this will allow us enabling async checksumming with encryption
+> where we need to checksum the bounce bio instead of our regular one
+> embedded in btrfs_bio. And so we need to extend it's lifetime. This is
+> the preffered way to do so.
 >=20
 > Signed-off-by: Daniel Vacek <neelx@suse.com>
 > ---
->   fs/btrfs/file-item.c | 14 +++++++-------
->   1 file changed, 7 insertions(+), 7 deletions(-)
+>   fs/btrfs/bio.c       | 4 ----
+>   fs/btrfs/bio.h       | 4 ----
+>   fs/btrfs/file-item.c | 6 ++----
+>   3 files changed, 2 insertions(+), 12 deletions(-)
 >=20
+> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+> index 19b4855969f5..771b7d598aee 100644
+> --- a/fs/btrfs/bio.c
+> +++ b/fs/btrfs/bio.c
+> @@ -103,7 +103,6 @@ static struct btrfs_bio *btrfs_split_bio(struct btrf=
+s_fs_info *fs_info,
+>   	bbio->can_use_append =3D orig_bbio->can_use_append;
+>   	bbio->is_scrub =3D orig_bbio->is_scrub;
+>   	bbio->is_remap =3D orig_bbio->is_remap;
+> -	bbio->async_csum =3D orig_bbio->async_csum;
+>  =20
+>   	atomic_inc(&orig_bbio->pending_ios);
+>   	return bbio;
+> @@ -114,9 +113,6 @@ void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_st=
+atus_t status)
+>   	/* Make sure we're already in task context. */
+>   	ASSERT(in_task());
+>  =20
+> -	if (bbio->async_csum)
+> -		wait_for_completion(&bbio->csum_done);
+> -
+
+But what if there is still a running csum calculation at this stage?
+
+Without waiting for the completion, we are going to get incorrect csums.
+
+>   	bbio->bio.bi_status =3D status;
+>   	if (bbio->bio.bi_pool =3D=3D &btrfs_clone_bioset) {
+>   		struct btrfs_bio *orig_bbio =3D bbio->private;
+> diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
+> index b7bd377a0162..bbf362b8668b 100644
+> --- a/fs/btrfs/bio.h
+> +++ b/fs/btrfs/bio.h
+> @@ -58,7 +58,6 @@ struct btrfs_bio {
+>   			struct btrfs_ordered_extent *ordered;
+>   			struct btrfs_ordered_sum *sums;
+>   			struct work_struct csum_work;
+> -			struct completion csum_done;
+>   			struct bvec_iter csum_saved_iter;
+>   			u64 orig_physical;
+>   			u64 orig_logical;
+> @@ -93,9 +92,6 @@ struct btrfs_bio {
+>   	/* Whether the bio is coming from copy_remapped_data_io(). */
+>   	bool is_remap:1;
+>  =20
+> -	/* Whether the csum generation for data write is async. */
+> -	bool async_csum:1;
+> -
+>   	/* Whether the bio is written using zone append. */
+>   	bool can_use_append:1;
+>  =20
 > diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-> index 581ca5653be9..5a5cffb18922 100644
+> index 5a5cffb18922..50dcd448d936 100644
 > --- a/fs/btrfs/file-item.c
 > +++ b/fs/btrfs/file-item.c
-> @@ -797,18 +797,16 @@ int btrfs_lookup_csums_bitmap(struct btrfs_root *r=
-oot, struct btrfs_path *path,
->   	return ret;
+> @@ -817,9 +817,8 @@ static void csum_one_bio_work(struct work_struct *wo=
+rk)
+>   	struct btrfs_bio *bbio =3D container_of(work, struct btrfs_bio, csum_=
+work);
+>  =20
+>   	ASSERT(btrfs_op(&bbio->bio) =3D=3D BTRFS_MAP_WRITE);
+> -	ASSERT(bbio->async_csum =3D=3D true);
+>   	csum_one_bio(bbio, &bbio->csum_saved_iter);
+> -	complete(&bbio->csum_done);
+> +	bio_endio(&bbio->bio);
 >   }
 >  =20
-> -static void csum_one_bio(struct btrfs_bio *bbio, struct bvec_iter *src)
-> +static void csum_one_bio(struct btrfs_bio *bbio, struct bvec_iter *iter=
-)
-
-Since we're here, what about adding const prefix to iter?
-
->   {
->   	struct btrfs_inode *inode =3D bbio->inode;
->   	struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
->   	struct btrfs_ordered_sum *sums =3D bbio->sums;
-> -	struct bvec_iter iter;
->   	const u32 blocksize =3D fs_info->sectorsize;
->   	int index =3D 0;
->  =20
-> -	for (iter =3D *src; iter.bi_size; bio_advance_iter(&bbio->bio, &iter, =
-blocksize)) {
-
-I'm thinking the opposite way.
-
-What about still keeping a local bvec_iter copy, but remove=20
-csum_saved_iter completely?
-
-Since at bio calculation time, the bio is not yet submitted, so the=20
-csum_saved_iter always match bio.bi_iter.
-
-I think removing csum_saved_iter would also reduce the size of btrfs_bio.
-
-Thanks,
-Qu
-
-> -		btrfs_csum_one_bio_block(fs_info, &bbio->bio, &iter,
-> -					 sums->sums + index);
-> +	for (; iter->bi_size; bio_advance_iter(&bbio->bio, iter, blocksize)) {
-> +		btrfs_csum_one_bio_block(fs_info, &bbio->bio, iter, sums->sums + inde=
-x);
->  =20
->   		index +=3D fs_info->csum_size;
->   	}
-> @@ -851,12 +849,14 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, boo=
-l async)
->   	btrfs_add_ordered_sum(ordered, sums);
->  =20
->   	if (!async) {
-> -		csum_one_bio(bbio, &bbio->bio.bi_iter);
-> +		struct bvec_iter iter =3D bio->bi_iter;
-> +
-> +		csum_one_bio(bbio, &iter);
+>   /*
+> @@ -854,8 +853,7 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool =
+async)
+>   		csum_one_bio(bbio, &iter);
 >   		return 0;
 >   	}
->   	init_completion(&bbio->csum_done);
->   	bbio->async_csum =3D true;
-> -	bbio->csum_saved_iter =3D bbio->bio.bi_iter;
-> +	bbio->csum_saved_iter =3D bio->bi_iter;
+> -	init_completion(&bbio->csum_done);
+> -	bbio->async_csum =3D true;
+> +	bio_inc_remaining(bio);
+>   	bbio->csum_saved_iter =3D bio->bi_iter;
 >   	INIT_WORK(&bbio->csum_work, csum_one_bio_work);
 >   	schedule_work(&bbio->csum_work);
->   	return 0;
 

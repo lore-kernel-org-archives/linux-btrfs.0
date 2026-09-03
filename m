@@ -1,31 +1,31 @@
 Received: from www262.sakura.ne.jp (www262.sakura.ne.jp [202.181.97.72])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B48E31E855;
-	Thu,  3 Sep 2026 23:17:12 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6CBD733C192;
+	Thu,  3 Sep 2026 23:51:27 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.181.97.72
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788477435; cv=none; b=YvXvIga/6b4zdJ3amXyEBuDjQ+KyfElF6NizkmnnvolJcCEyGACbApUb/kfeodALMpET4ujFJSS7W+uITPgD/zDIe8OffscIxm4Z4y6mxZbMG+me/TZSz4d/5sbWKsFqvlSrI75RzXahVxB4ydJFN89OyIf8dNL6R0oiyoDnMAA=
+	t=1788479489; cv=none; b=nV3NdUdUFxsCdhgifcfRNwBc3RDe9JLZgh0P2Tnjxd7JeHasbgqR/G578pX4o+PhT2p6kRhxZ4AtCTt6AMzJYr5/5xIJX2Hq3SFnDkKfOHPbZtBAlV1x+ekIKqG0HRXdfz7L3vE+amLOUE2TMst+EtJseLSUFA2TigfVS9EwASQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788477435; c=relaxed/simple;
-	bh=OcraPRWToqpWgIaAhNICXIMXXlLZJ8IO7GQah7aYTWk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=rx2VTHtb5xYRHOEgXSWR/KPy9wFwdzZHY8qtzkHGadbsOhCxoR/W0yra1n+Pp40NWu/3MmhQ+NwsYJ2oU6Vs5kWajkOnnV7dfQ7XgdUvzranKApUBFY3KJtrRbor1pSUZtHx9A2HUIR5H3Eo88JBMAyevrYbf0U+XdQTUnUcwfc=
+	s=arc-20240116; t=1788479489; c=relaxed/simple;
+	bh=whx3MwuuqeUZLwexkSsMN1tzlP1OB0NfURrM/yY9dtw=;
+	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
+	 In-Reply-To:Content-Type; b=khKe6/FfuP83S/VbOM22fMBFu/VodUwh+0mKIxvMP++jwoWWZqd4fETvqs3eob7nCD/LbiLCsYBa6Ta1/uUO8VM8+0144YQnxkMPyp+X2OesM0c7fLwR1+ZGBKRXLWMRBO/H21ya4KMSsO0lO3X+6DVMisQ/pi4Fq1m84DqE19w=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp; arc=none smtp.client-ip=202.181.97.72
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=I-love.SAKURA.ne.jp
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=I-love.SAKURA.ne.jp
 Received: from www262.sakura.ne.jp (localhost [127.0.0.1])
-	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTP id 683NFuGC006373;
-	Fri, 4 Sep 2026 08:15:56 +0900 (JST)
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTP id 683Nol7J013836;
+	Fri, 4 Sep 2026 08:50:47 +0900 (JST)
 	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
 Received: from [192.168.1.6] (M106072072000.v4.enabler.ne.jp [106.72.72.0])
 	(authenticated bits=0)
-	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTPSA id 683NFugi006370
+	by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTPSA id 683NokUa013833
 	(version=TLSv1.2 cipher=AES256-GCM-SHA384 bits=256 verify=NO);
-	Fri, 4 Sep 2026 08:15:56 +0900 (JST)
+	Fri, 4 Sep 2026 08:50:47 +0900 (JST)
 	(envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
-Message-ID: <9ac07477-b2be-482b-9e97-87acf9635307@I-love.SAKURA.ne.jp>
-Date: Fri, 4 Sep 2026 08:15:55 +0900
+Message-ID: <dc2f1e00-5e10-4e02-9415-c6ecb2cbc6b3@I-love.SAKURA.ne.jp>
+Date: Fri, 4 Sep 2026 08:50:46 +0900
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -33,7 +33,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: [PATCH v7.1] loop: Fix NULL pointer dereference in lo_rw_aio()
+Subject: [PATCH v8] loop: Fix NULL pointer dereference in lo_rw_aio()
+From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
 To: Bart Van Assche <bvanassche@acm.org>,
         Markus Elfring <Markus.Elfring@web.de>, linux-block@vger.kernel.org,
         linux-fsdevel@vger.kernel.org,
@@ -61,12 +62,12 @@ References: <8dedfc40-9cae-44ff-9960-e0eb1825e963@I-love.SAKURA.ne.jp>
  <d0471919-9b71-4d24-9fb8-5f1d7f3792ca@acm.org>
  <903a22a2-432c-4e72-bc09-7898becf2f3e@I-love.SAKURA.ne.jp>
  <d7e26d4b-d9b9-47c0-9658-c241499209b5@acm.org>
+ <9ac07477-b2be-482b-9e97-87acf9635307@I-love.SAKURA.ne.jp>
 Content-Language: en-US
-From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
-In-Reply-To: <d7e26d4b-d9b9-47c0-9658-c241499209b5@acm.org>
+In-Reply-To: <9ac07477-b2be-482b-9e97-87acf9635307@I-love.SAKURA.ne.jp>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
-X-Anti-Virus-Server: fsav311.rs.sakura.ne.jp
+X-Anti-Virus-Server: fsav212.rs.sakura.ne.jp
 X-Virus-Status: clean
 
 syzbot is reporting NULL pointer dereference in lo_rw_aio() [1][2].
@@ -86,25 +87,19 @@ programming) so that we won't hit NULL pointer dereference problem.
 
 However, calling drain_workqueue() from __loop_clr_fd() with
 disk->open_mutex held causes lockdep warnings. We need to flush
-outstanding I/O without disk->open_mutex held. Therefore, defer
-__loop_clr_fd() to WQ context, like commit 322c4293ecc5 ("loop: make
-autoclear operation asynchronous") did.
+outstanding I/O without disk->open_mutex held. But we can't use task work
+context, for there is no way to reliably wait for completion of a task work
+function inside a loadable module when module unloading code for that
+loadable module has started. We need to use a callback function which is
+embedded into a built-in module so that it can reliably wait for completion
+of synchronous teardown for the loop driver module.
 
-The past attempt was reverted by commit bf23747ee053 ("loop: revert "make
-autoclear operation asynchronous"") for two reasons:
-
-  (1) Userspace might be expecting that fput() on the backing file is
-      processed before lo_release() from close() returns to user mode.
-      But a debug patch [4] suggested me that this teardown operation is
-      racy regardless of whether disk->open_mutex is temporarily released
-      or not, and therefore the xfs/259 breakage should be addressed on
-      the xfstests side.
-
-  (2) Lockdep reported circular locking dependency caused by flushing
-      system-wide WQs. But we no longer need to worry that dependency
-      because all in-tree users no longer flush system-wide WQs.
-
-Therefore, let's retry deferring __loop_clr_fd() to WQ context.
+Therefore, add a dedicated callback for the loop module to the block core
+layer, and invoke that callback immediately after disk->open_mutex is
+released. It is possible that multiple threads invoke that callback
+when a teardown work was scheduled because disk->open_mutex was already
+released, but concurrently calling flush_work() in order to wait for
+completion of an outstanding teardown work will be safe.
 
 Link: https://syzkaller.appspot.com/bug?extid=cd8a9a308e879a4e2c28 [1]
 Link: https://syzkaller.appspot.com/bug?extid=bc273027d5643e48e5b3 [2]
@@ -114,42 +109,35 @@ Fixes: 65565ca5f99b ("block: unify the synchronous bi_end_io callbacks")
 Assisted-by: Gemini-Pro
 Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
 ---
-What an AI coding assistant based on Gemini told Bart about the v7.1 patch:
-
-  1. Userspace ABI / Teardown Regression (Asynchronous Autoclear)
-
-  The Regression: When a loop device configured with LO_FLAGS_AUTOCLEAR is
-  closed (such as during unmounting with umount -d or mount -o loop),
-  userspace expects that close() synchronously tears down the device and
-  releases the backing file (fput()) before returning to user mode.
-
-  Prior History: This exact asynchronous deferral was merged in commit
-  322c4293ecc5 ("loop: make autoclear operation asynchronous") and had to
-  be reverted in commit bf23747ee053 ("loop: revert 'make autoclear
-  operation asynchronous'") because standard filesystem unmount sequences
-  (such as umount ext4_on_xfs; umount /xfs) broke with -EBUSY in xfstests
-  (e.g., xfs/259).
-
-  Kernel Policy: Handwaving this in the commit log ("the xfs/259 breakage
-  should be addressed on the xfstests side") is not acceptable. Breaking
-  synchronous teardown semantics violates the core Linux kernel rule: never
-  break userspace. Real-world container engines, test suites, and system
-  utilities rely on fput() having completed when lo_release() / close()
-  returns.
-
-What Bart says about the v6 patch which does synchronous teardown:
+What this patch does is basically the same with the v6 patch. Can this be
+a possible alternative for Bart's
 
   Releasing and reacquiring disk->open_mutex from __loop_clr_fd() seems
   risky to me. There is plenty of code in block/bdev.c that assumes that
   disk->open_mutex is not released by lo_release().
 
-Then, what direction can we go?
+comment?
 
- drivers/block/loop.c | 74 +++++++++++++++++++++++++++++++++++---------
- 1 file changed, 60 insertions(+), 14 deletions(-)
+ block/bdev.c           |  2 ++
+ drivers/block/loop.c   | 65 +++++++++++++++++++++++++++++++++---------
+ include/linux/blkdev.h |  5 ++++
+ 3 files changed, 59 insertions(+), 13 deletions(-)
 
+diff --git a/block/bdev.c b/block/bdev.c
+index cd8323083740..7ce5acaacf43 100644
+--- a/block/bdev.c
++++ b/block/bdev.c
+@@ -1188,6 +1188,8 @@ void bdev_release(struct file *bdev_file)
+ 	else
+ 		blkdev_put_whole(bdev);
+ 	mutex_unlock(&disk->open_mutex);
++	if (bdev->bd_disk->fops->post_release)
++		bdev->bd_disk->fops->post_release(bdev->bd_disk);
+ 
+ 	module_put(disk->fops->owner);
+ put_no_open:
 diff --git a/drivers/block/loop.c b/drivers/block/loop.c
-index 6f12976035b0..516118b3a16c 100644
+index 6f12976035b0..620298978706 100644
 --- a/drivers/block/loop.c
 +++ b/drivers/block/loop.c
 @@ -75,6 +75,7 @@ struct loop_device {
@@ -218,61 +206,54 @@ index 6f12976035b0..516118b3a16c 100644
  	lim = queue_limits_start_update(lo->lo_queue);
  	lim.logical_block_size = SECTOR_SIZE;
  	lim.physical_block_size = SECTOR_SIZE;
-@@ -1168,8 +1193,6 @@ static void __loop_clr_fd(struct loop_device *lo)
- 	/* let user-space know about this change */
- 	kobject_uevent(&disk_to_dev(lo->lo_disk)->kobj, KOBJ_CHANGE);
- 	mapping_set_gfp_mask(filp->f_mapping, gfp);
--	/* This is safe: open() is still holding a reference. */
--	module_put(THIS_MODULE);
- 
- 	disk_force_media_change(lo->lo_disk);
- 
-@@ -1199,11 +1222,18 @@ static void __loop_clr_fd(struct loop_device *lo)
+@@ -1199,11 +1224,9 @@ static void __loop_clr_fd(struct loop_device *lo)
  	WRITE_ONCE(lo->lo_state, Lo_unbound);
  	mutex_unlock(&lo->lo_mutex);
  
-+	/* Step 3: Drop refcounts, without open_mutex held. */
-+	mutex_unlock(&disk->open_mutex);
-+
-+	put_device(disk_to_dev(disk));
-+
- 	/*
+-	/*
 -	 * Need not hold lo_mutex to fput backing file. Calling fput holding
 -	 * lo_mutex triggers a circular lock dependency possibility warning as
 -	 * fput can take open_mutex which is usually taken before lo_mutex.
-+	 * This is safe: flush_work() from loop_remove() from loop_exit() waits
-+	 * until this function returns; effectively dropping the final module
-+	 * references synchronously.
- 	 */
-+	module_put(THIS_MODULE);
+-	 */
++	/* Step 3: Drop refcounts, without open_mutex held. */
++	mutex_unlock(&disk->open_mutex);
 +
  	fput(filp);
  }
  
-@@ -1769,8 +1799,20 @@ static void lo_release(struct gendisk *disk)
+@@ -1769,8 +1792,22 @@ static void lo_release(struct gendisk *disk)
  	need_clear = (lo->lo_state == Lo_rundown);
  	mutex_unlock(&lo->lo_mutex);
  
--	if (need_clear)
--		__loop_clr_fd(lo);
-+	if (!need_clear)
-+		return;
 +	/*
-+	 * In order to flush outstanding I/O before clearing the backing
-+	 * device, defer __loop_clr_fd() to WQ context. The Lo_rundown state
-+	 * guarantees that lo_open() will fail with -ENXIO.
-+	 *
-+	 * Grab disk reference which will be dropped as soon as
-+	 * returning from lo_release() and releasing disk->open_mutex.
-+	 * We don't need to grab disk->fops->owner reference because
-+	 * we are holding one obtained by loop_configure().
++	 * In order to flush outstanding I/O (without open_mutex for deadlock
++	 * avoidance) before clearing the backing device, defer __loop_clr_fd()
++	 * to WQ context and let lo_post_release() wait for completion.
++	 * The Lo_rundown state guarantees that lo_open() will fail with -ENXIO.
 +	 */
-+	get_device(disk_to_dev(disk));
-+	queue_work(system_long_wq, &lo->lo_clr_work);
+ 	if (need_clear)
+-		__loop_clr_fd(lo);
++		queue_work(system_long_wq, &lo->lo_clr_work);
++}
++
++static void lo_post_release(struct gendisk *disk)
++{
++	struct loop_device *lo = disk->private_data;
++
++	/* Wait for __loop_clr_fd() to complete. */
++	flush_work(&lo->lo_clr_work);
  }
  
  static void lo_free_disk(struct gendisk *disk)
-@@ -2034,6 +2076,7 @@ static int loop_add(int i)
+@@ -1789,6 +1826,7 @@ static const struct block_device_operations lo_fops = {
+ 	.owner =	THIS_MODULE,
+ 	.open =         lo_open,
+ 	.release =	lo_release,
++	.post_release = lo_post_release,
+ 	.ioctl =	lo_ioctl,
+ #ifdef CONFIG_COMPAT
+ 	.compat_ioctl =	lo_compat_ioctl,
+@@ -2034,6 +2072,7 @@ static int loop_add(int i)
  	lo = kzalloc_obj(*lo);
  	if (!lo)
  		goto out;
@@ -280,15 +261,21 @@ index 6f12976035b0..516118b3a16c 100644
  	lo->worker_tree = RB_ROOT;
  	INIT_LIST_HEAD(&lo->idle_worker_list);
  	timer_setup(&lo->timer, loop_free_idle_workers_timer, TIMER_DEFERRABLE);
-@@ -2138,6 +2181,9 @@ static int loop_add(int i)
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index 4f7905c3412b..5172d6bdd9e7 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -1605,6 +1605,11 @@ struct block_device_operations {
+ 	 * driver.
+ 	 */
+ 	int (*alternative_gpt_sector)(struct gendisk *disk, sector_t *sector);
++	/*
++	 * Special callback for synchronous cleanup without open_mutex.
++	 * Needed by loop devices.
++	 */
++	void (*post_release)(struct gendisk *disk);
+ };
  
- static void loop_remove(struct loop_device *lo)
- {
-+	/* Wait for __loop_clr_fd() to complete. */
-+	flush_work(&lo->lo_clr_work);
-+
- 	/* Make this loop device unreachable from pathname. */
- 	del_gendisk(lo->lo_disk);
- 	blk_mq_free_tag_set(&lo->tag_set);
+ #ifdef CONFIG_COMPAT
 -- 
 2.55.0

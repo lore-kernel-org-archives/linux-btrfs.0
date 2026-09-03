@@ -1,182 +1,193 @@
-Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0F0693EDAD5
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 06:46:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 236BD3F660F
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 06:49:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788417964; cv=none; b=F65amyp2TC84R/jAVJO7PueqRvGMy8pA9IQ7jlzIHQYN5XegeIzYmYjtE4rGLatrkT8egTTcaM2T4t3iKnNC5R8WEMMT1REnp6oNFrgzVyNxOwzkvdaQFI//K3nLXn4WSFUeizFD2OsDtMSiNXJhifo57yDiCsRImPOOf2Ky++U=
+	t=1788418185; cv=none; b=tOm2ltJ6hMH0nTRNMKrnSTGrkpE7dkBiEAKQXEPSdyUvgwMM8hGpJS+HfkqRUVBNMEktxj2KTHpmswnAgFRBPaEOl1nRipIhpGn3wub9GuC+DiaQA+1ESL7szx/yARFWGr9G7IJKnmaKJiNmTPCsUr0fpPlPdzFBVD0ZWziEJXY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788417964; c=relaxed/simple;
-	bh=grvph8If3lzlAPYT4Gy+DR3UaTxrnwsGsahzCiaJkgw=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=GOcMEkn+1ngGJhFZBWdqOC0O05oTmJZ4NzmdQVCs/EH7YicHbZMp/vh+5Ov3thCZAV0blPpC7ixeqUYm2vlxx8qO3oPGXaQXGVgzI7UOIOu9b7vfWFAaOQOSTVBCjBsez0eFVMSLeRB2rhbcRQs0eYyJgRY+BKrOXK7fMTqBOMM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=UUPOPmka; arc=none smtp.client-ip=209.85.128.43
+	s=arc-20240116; t=1788418185; c=relaxed/simple;
+	bh=9C7kKd/yGajsFKnwr+iRblnd8dr4oSJesqYO5JD9eeo=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=UDrGouBZvfs11wo1fZa1ZhofXBU37teoQmssI/J54b9lbVl6dLygB5FUou7koP3NhKms+Il5TpMbeGDoDU8D0gCGXr8gd+IcM2448cKjm5lpLM4TMK5bCR5ehDkW1ofsXl6ZDWZzE1Vrkj9R37rUurPA5rKcBY7fG1oY6O59lvI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=g7VezjFr; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ByEBxTWC; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="UUPOPmka"
-Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-4921eed3fa2so15765265e9.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Sep 2026 23:46:01 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1788417960; x=1789022760; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=2fbpGmqELrmjcqUZI6/pjcd+E3CRw7Dc23xtKRKM6wo=;
-        b=UUPOPmkaQFiHC+fEGaFagmBii8kfSVyvPN7S1vtnHxUAOza4vDjeaa7sgt0bnlh7YF
-         lY9p7hu5DAYnGAAsjxUOIfdO6ma+cgeLn87b0xKBAvqSvCM0ppKEnL+hUTvhQNTvTgso
-         5d+8wRoCTQaD3EQguKHCD7dK9ZjyhrteB5Xt2Gp14lBubhq8jwLVKHST9ZbtwQtflazb
-         vXpxFkhkaRJ9KLivqTgCuyXGLlsnmTR5/+puNDnf16Mg+7Af30veWnrLZAEGewFWA9xz
-         Ks+37XgBsi5h2TFzGqJ0T/fRa9Bpq3tXjc621GUd6DTn4JGnWn5Am/rWA2dHl81EcBqV
-         4I/g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788417960; x=1789022760;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=2fbpGmqELrmjcqUZI6/pjcd+E3CRw7Dc23xtKRKM6wo=;
-        b=PNuRWZH8efrsCEJVUaRYqPdRkQB1n0BkjL7vGfMThxWncZqUETiQ42AwXTfJ9C+kXN
-         Xpo6u1np260H/kVCJB/fzBQVL+O7BYxBzof9Hd30TIkQi3ZtMIa70Je3J0y4PnVYNGS9
-         jtM+SM+zAXtDXvyJIAOSLKDZVJTr5zcQjHw9BQA7RXzqXV6pAw40S7KtnytD5drNxeIm
-         pln1VeMZwELWEh/X0vAONYV/DAFlCitdp00d6QuxXS26qZrzIVhnVBZk16GbNqjUabmr
-         KUf/3+Ku+baDGxOdLHUE6ZX+RBclmWXbtLS7QWM1t6dYfBKMQw50m/emJ82E0dPjbqDa
-         h9FA==
-X-Gm-Message-State: AFuF++nwU9TtS1vqpYPnYByHFqKxcZPqSICHIzDA2sNm6hNuKaISZ4Jj
-	FEQ7+WMnvCiCcrXRfwtG63vZNHQeGoPCvoRGirHditw96kUyoLeH9tIkcPSd03NHkh8=
-X-Gm-Gg: AYBFou0Tr4rYtY/PrTQf5SYQXEwkSECGCYqM238JYQKnsg5CpWgiJkjJ8Rr3q+Y2Icu
-	q1Fes1KblNFoYYjPz7haMMdI2aaFUeEQQoanuoXlRnpCKVz1+WyBYeRP+j++nFskbzUKHugeTqC
-	hkwlnoPgQEB6GaQmgi3qz5B92+rj3cyX4tZyNF52O55eMuMIoFbASoJT2P4lAaOQla0ytj0RriT
-	e/xUJeSdSmpScy+FfQVEjYtCv2p/tkBYqPP5ZcEyjJ1FuP66zBM0ccqvqSMdp/jpyn59wo9yA/M
-	mz/j25iwkQ7VRGEbu7DFkZBaGRK/T3oXZx6N0+BNqmhjtYKAY/3LJ9s7EeBJunMZvzf0MJ+kXyJ
-	hTNBFPe7FCx8sLwKa7381l8a8uK7pxrcdS1B0fxp29TmsOrBcrfzQP16Gd8jyTS17kZuDDkJnzu
-	oDkDPUb6j+rS9tXm/4aO1Gn9wEiaQiKDbvGNosJALPMfJNbwmeXsyA
-X-Received: by 2002:a05:600c:4e16:b0:49c:ee06:9c58 with SMTP id 5b1f17b1804b1-49cee069c79mr92774505e9.4.1788417959140;
-        Wed, 02 Sep 2026 23:45:59 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1431990a39bsm3119881c88.3.2026.09.02.23.45.55
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 02 Sep 2026 23:45:58 -0700 (PDT)
-Message-ID: <0aafc618-0cc4-4b4f-b5a4-99581b6fff5a@suse.com>
-Date: Thu, 3 Sep 2026 16:15:52 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="g7VezjFr";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ByEBxTWC"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id B78261FDA2
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 06:49:32 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1788418176; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=HNeHPbMcIrxYgr896a1r3VbyMxC6ww/Jaad1eKLJ2KQ=;
+	b=g7VezjFrNuwbMoca0iLJf9pZE6vwPQTTkdvTDeQxjZG9Y5w46x1XqGRJfxfsbszhV5lA+d
+	bwiL8D/XmFdMk6Kb5JniPwT75PO+WqBThOoaYKdg2NR8EZCa+b96jiomngP2lTKwMQZNwz
+	LghsBDvES3vLpc1dt1iVjo2qmQSb4Ys=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1788418172; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=HNeHPbMcIrxYgr896a1r3VbyMxC6ww/Jaad1eKLJ2KQ=;
+	b=ByEBxTWCm6UqXs+K/BRhTGxRyVFF1/Nh+NQ5Jfu3TkKpzzWy3GSBrd33VMvEl54Rl6Ai2G
+	NSH8Jon7LiOK46lJ+eCaKMSWBu3EpzRHRS2/5ZAi/Vhe8fBKynqWEmYNno1qF01v00Qx1p
+	6JlxHp2zQaKJrpZrevTVJz76cVQvHhc=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9A924136E6
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 06:49:31 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id XSW5EXsYmWosRAAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2026 06:49:31 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: introduce a new experimental feature, RAID56_VSL
+Date: Thu,  3 Sep 2026 16:19:02 +0930
+Message-ID: <cover.1788417288.git.wqu@suse.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 1/3] btrfs: consume the given iter directly instead of
- copying in csum_one_bio()
-To: Daniel Vacek <neelx@suse.com>, David Sterba <dsterba@suse.com>,
- Chris Mason <mason@kernel.org>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20260903062317.3928665-1-neelx@suse.com>
- <20260903062317.3928665-2-neelx@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260903062317.3928665-2-neelx@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spam-Level: 
+X-Spam-Score: -2.80
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid];
+	URIBL_BLOCKED(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
 
+The new feature stands for RAID56 Variable Stripe Length, however the
+VSL part is not implemented yet, thus the whole feature is still hidden
+behind experimental, and there are definitely works left to properly
+split the 1st patch.
 
+But for now, this series can pass most fstests cases.
+The failing ones are all related to mixed block groups, which can not be
+created nor mounted with this new feature.
 
-在 2026/9/3 15:53, Daniel Vacek 写道:
-> This is just a small cleanup to avoid copying the iter twice in async case.
-> We already have a copy csum_one_bio() can consume directly. No need to copy
-> again the second time.
-> We can use this copy also in the sync case and get rid of the parameter.
-> 
-> Signed-off-by: Daniel Vacek <neelx@suse.com>
+The roadmap for the full RAID56 VSL implementation is split into two
+parts:
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+- Introduce a new datasize member
+  This series.
 
-Thanks,
-Qu
+  An fs with data_size 8K and sectorsize 4K will act like a fs with
+  sectorsize 8K.
+  Meaning the minimal write size is 8K for data.
 
-> ---
-> 
-> v2: Use the bbio::csum_saved_iter in both cases and simplify even further.
-> ---
->   fs/btrfs/file-item.c | 15 +++++++--------
->   1 file changed, 7 insertions(+), 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-> index 581ca5653be9..4a7681557ec1 100644
-> --- a/fs/btrfs/file-item.c
-> +++ b/fs/btrfs/file-item.c
-> @@ -797,18 +797,17 @@ int btrfs_lookup_csums_bitmap(struct btrfs_root *root, struct btrfs_path *path,
->   	return ret;
->   }
->   
-> -static void csum_one_bio(struct btrfs_bio *bbio, struct bvec_iter *src)
-> +static void csum_one_bio(struct btrfs_bio *bbio)
->   {
->   	struct btrfs_inode *inode = bbio->inode;
->   	struct btrfs_fs_info *fs_info = inode->root->fs_info;
->   	struct btrfs_ordered_sum *sums = bbio->sums;
-> -	struct bvec_iter iter;
-> +	struct bvec_iter *iter = &bbio->csum_saved_iter;
->   	const u32 blocksize = fs_info->sectorsize;
->   	int index = 0;
->   
-> -	for (iter = *src; iter.bi_size; bio_advance_iter(&bbio->bio, &iter, blocksize)) {
-> -		btrfs_csum_one_bio_block(fs_info, &bbio->bio, &iter,
-> -					 sums->sums + index);
-> +	for (; iter->bi_size; bio_advance_iter(&bbio->bio, iter, blocksize)) {
-> +		btrfs_csum_one_bio_block(fs_info, &bbio->bio, iter, sums->sums + index);
->   
->   		index += fs_info->csum_size;
->   	}
-> @@ -820,7 +819,7 @@ static void csum_one_bio_work(struct work_struct *work)
->   
->   	ASSERT(btrfs_op(&bbio->bio) == BTRFS_MAP_WRITE);
->   	ASSERT(bbio->async_csum == true);
-> -	csum_one_bio(bbio, &bbio->csum_saved_iter);
-> +	csum_one_bio(bbio);
->   	complete(&bbio->csum_done);
->   }
->   
-> @@ -850,13 +849,13 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async)
->   	bbio->sums = sums;
->   	btrfs_add_ordered_sum(ordered, sums);
->   
-> +	bbio->csum_saved_iter = bio->bi_iter;
->   	if (!async) {
-> -		csum_one_bio(bbio, &bbio->bio.bi_iter);
-> +		csum_one_bio(bbio);
->   		return 0;
->   	}
->   	init_completion(&bbio->csum_done);
->   	bbio->async_csum = true;
-> -	bbio->csum_saved_iter = bbio->bio.bi_iter;
->   	INIT_WORK(&bbio->csum_work, csum_one_bio_work);
->   	schedule_work(&bbio->csum_work);
->   	return 0;
+  However the checksum is still calculated based sectorsize, meanwhile
+  we can still recover each corrupted 4K sector inside a 8K data block.
+
+  The idea and implementation is not that complex, we're just reusing
+  the existing bs > ps support to handle it (on 4K page sized systems).
+
+  But the challenge is the details where some part of the code still
+  requires sectorsize (checksum related), meanwhile every other location
+  goes datasize for data.
+
+- Introduce a new RAID56_VSL chunk type
+  It will have the following requirements:
+
+  * Can have up to (datasize / sectorsize) data stripes
+
+  * The number of data stripes are always power of 2
+    This is only for every RAID56_VSL chunk, users can still have
+    whatever number of devices in the fs.
+
+  * The full stripe length is always datasize
+
+  This allows every data write to be full stripe aligned.
+  And for read repair/scrub, we can still locate and recover a single
+  sector inside a RAID56 stripe.
+
+  This is less flex than the traditional RAID56, which has no limit on
+  the number of data stripes, but has the write-hole problem.
+  And will require users to determine the maximum device numbers at mkfs
+  time, without any way to change to another datasize.
+
+  But the second part is pretty easy to implement.
+
+As the digest shows, the biggest problem is the first patch, which is
+touching over 200 sectorsize users, and is definitely the source of all
+bugs I hit and fixed so far.
+
+If anyone has a better way to address the rename, I'm all ears.
+
+Qu Wenruo (2):
+  btrfs: split sectorsize into datasize and sectorsize
+  btrfs: implement a new incompat feature, raid56_vsl
+
+ fs/btrfs/accessors.h                   |   2 +
+ fs/btrfs/bio.c                         |  16 +++-
+ fs/btrfs/block-group.c                 |   2 +-
+ fs/btrfs/btrfs_inode.h                 |  10 +++
+ fs/btrfs/compression.c                 |  12 +--
+ fs/btrfs/defrag.c                      |  14 +--
+ fs/btrfs/delalloc-space.c              |  22 ++---
+ fs/btrfs/direct-io.c                   |   6 +-
+ fs/btrfs/disk-io.c                     |  43 +++++++---
+ fs/btrfs/extent-io-tree.c              |   2 +-
+ fs/btrfs/extent-tree.c                 |   4 +-
+ fs/btrfs/extent_io.c                   |  62 +++++++-------
+ fs/btrfs/extent_map.c                  |   2 +-
+ fs/btrfs/fiemap.c                      |   2 +-
+ fs/btrfs/file-item.c                   |  22 +++--
+ fs/btrfs/file.c                        |  72 ++++++++--------
+ fs/btrfs/fs.h                          |  27 ++++--
+ fs/btrfs/inode-item.c                  |   6 +-
+ fs/btrfs/inode.c                       | 113 +++++++++++++------------
+ fs/btrfs/ioctl.c                       |  12 +--
+ fs/btrfs/lzo.c                         |  14 +--
+ fs/btrfs/reflink.c                     |  16 ++--
+ fs/btrfs/relocation.c                  |  16 ++--
+ fs/btrfs/send.c                        |   4 +-
+ fs/btrfs/subpage.c                     |  96 +++++++++++++++------
+ fs/btrfs/subpage.h                     |   2 +-
+ fs/btrfs/super.c                       |   8 +-
+ fs/btrfs/sysfs.c                       |   8 +-
+ fs/btrfs/tests/btrfs-tests.c           |   6 +-
+ fs/btrfs/tests/free-space-tree-tests.c |   2 +-
+ fs/btrfs/tree-checker.c                |   2 +-
+ fs/btrfs/tree-log.c                    |   6 +-
+ fs/btrfs/volumes.c                     |   2 +-
+ fs/btrfs/zlib.c                        |   6 +-
+ fs/btrfs/zoned.c                       |   4 +-
+ fs/btrfs/zstd.c                        |   8 +-
+ include/uapi/linux/btrfs.h             |  22 +++++
+ include/uapi/linux/btrfs_tree.h        |   3 +-
+ 38 files changed, 403 insertions(+), 273 deletions(-)
+
+-- 
+2.55.0
 

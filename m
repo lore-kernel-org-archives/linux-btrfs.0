@@ -1,79 +1,79 @@
 Received: from fhigh-b8-smtp.messagingengine.com (fhigh-b8-smtp.messagingengine.com [202.12.124.159])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B70CA501F21
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 20:39:24 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 065263749EE
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 20:49:14 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.159
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788467972; cv=none; b=ecIn1J8j2GU1DGRbbf0cVkOrgqXGRm+cmGF42p3us+e6ByzgfAxp5Wi3/0I5pMwMFyDJvUd7Gw3teoHFpKlTxoJ8JQwilIYuEWJzqdCsrV8H7aDuIImv1KsT1S1wTeMx8Er541KKPYnu4MSqBPPYle4GqLLcI32uuOBihj9Q5+o=
+	t=1788468561; cv=none; b=JbNGW1/78wrEApBlL4VA2HBk8reDL4Ksh8SV8VtFmFBzxhdFhKwANIDoNDkhJ8dRw9SYSqGQ7DuFWN27FwV3PysYLnqRq+Q3HxM4bJ9RXWeAXpeLichSE3mICSuio1aya1FL3k1niHz9JB1X/8CWUdpJgIm60oLkPuU9ISCvjEY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788467972; c=relaxed/simple;
-	bh=LdFgowg5hDydWEhNu1H2kh/D/wCjw9qQDRz0iX/Ii2Y=;
+	s=arc-20240116; t=1788468561; c=relaxed/simple;
+	bh=/u9wH+DeKpe372OKvrl1bGX9GYJRG3banX1OQvYe4Ms=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Ta7pnqYwgwTQUl/UhICKXLY2qJGqQgRg+AfMz4ed0MQ7rTa6z2hppeADv/MoveDir46UTrQyX09qKXro+YemwhZQRl3UTX2IAYxNW+wnKsp6IHdFTbYnM0CcAAzfFpcL2Jioj4vVxComgq9SAqREk4wDvGhxDFYDszitIMxT2pQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=uiOFHlMl; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=ewa74+vn; arc=none smtp.client-ip=202.12.124.159
+	 Content-Type:Content-Disposition:In-Reply-To; b=bj3iGhLAKncmno4SFjJUUc8K8que5EYXp5K9x+XiYYEmalKFJQqsBE560PH5hY4AsEZI6CiOmKfVTlgkbzM4m2mDMRiDwJUsP8mi1SWY3yEZpbmh1JuXqQA+g1/2Mptz4jvvO32RyQR3OceRD2rxrcc0R8kzwzx3tXpvCMyXuDk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=OL6QcLgs; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=PxYN71xp; arc=none smtp.client-ip=202.12.124.159
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="uiOFHlMl";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="ewa74+vn"
-Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 473E97A0168;
-	Thu,  3 Sep 2026 16:39:22 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-03.internal (MEProxy); Thu, 03 Sep 2026 16:39:22 -0400
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="OL6QcLgs";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="PxYN71xp"
+Received: from phl-compute-07.internal (phl-compute-07.internal [10.202.2.47])
+	by mailfhigh.stl.internal (Postfix) with ESMTP id D4C6F7A0141;
+	Thu,  3 Sep 2026 16:49:10 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-07.internal (MEProxy); Thu, 03 Sep 2026 16:49:10 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
 	:content-type:content-type:date:date:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm2; t=1788467962; x=1788554362; bh=fTC1rvDR3J
-	gE7tL7MebBegXTzIaQcjOP4h1sx7cdLgg=; b=uiOFHlMljnelaalyS0/t1S1hHS
-	FMdrgbZGKA5Do7Qu8b5350r3wLOgqMIXwS2bprid0MUhouq5LRE4/13LX9poGskB
-	3JmLH6MRyQPP45+ZUcBlj48WyOQmnTYtiMBiZb6w57qzgwx3O3hggRjGFFcwQWCH
-	2e+tpB6jGyrGIPoMzxvaECHCCd0AAHqAC/PpufeTgqOD6lY87+uT+mX8rJgMU4G/
-	G2UtzgdsgyDs8o7+2KmLxOLCihWaGy3HH9q6C5cAt0T7enLjwoKhPhrUw2sm3lJU
-	YC+YYY3elwak6k0upjPpWDrsBU1H0lQY8ypfdRkiDHffcjKlEJc5U815Jrvg==
+	:subject:to:to; s=fm2; t=1788468550; x=1788554950; bh=7OIQNidu/h
+	wSm6OFmfnKiAP8JASyrO5MTzHiH5rI+b8=; b=OL6QcLgsqzA5DL+1/UVVriHrTa
+	snwjJuUkMGXUx2unbBIxfpDdN3Rva0su7buQZiZnPllTDx0d4eZx8glk/owDdlFF
+	EGskVGkLQffMf9lr0pYBRJn01+c/5thoEpNuOZ6mi45+BTj3KT9BzqaulQhl+i7+
+	WeWa8CR2+Rmasvn3HDAM6a5jGcPPUTF2cxQl8afcgARZOCjiFi9pqXLBkAtAg7Ed
+	2B5AHhBwgef+Ty3xkevxViie0Nzl+XOrVVB0Wrjd1oiEKGPFr8DBqza/QHnAwMyD
+	NOAWIqJZSmP8EMfnXe0zn6xNguaLBtVHvaSC+L/LLQX5oS1CebE0owp8KuqQ==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-type:content-type:date:date
 	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
 	:message-id:mime-version:references:reply-to:subject:subject:to
 	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
-	1788467962; x=1788554362; bh=fTC1rvDR3JgE7tL7MebBegXTzIaQcjOP4h1
-	sx7cdLgg=; b=ewa74+vnUhmg1MzivyyvVX5HJiiudH3vnrQHWgjaYlo0+VROt/b
-	+CFbjWTUj4oASdYy5WqfF2BdNkGOP34S0LLVxhkUtWygMqH4mACkhKV7EvJJHfwH
-	GQBMBlpwyKS1It6CJ/nG9B2NqeX/e7NRWb0QfEKXOUvcRx0uPVZvr/RoCrJ3hSH6
-	dJEMagfBo5uUezZ7OYSGSDqNXi4cYld32lxHnGVZZ7bx1GA4/j5Xis+sxbkwca2G
-	01/F49sdB2guTldNDsvfNp5y8NCxXflux9NMMirtn+8BD9jX6JH2snuE5z11dQLF
-	I9vbXUTicL1pqowWyY2734RX9aHhJKMid3A==
-X-ME-Sender: <xms:-dqZakJa7Ch8AmSoXyHBYcG-NGYlq_mdZjEpE4F5sogLqlsRRZ-8JQ>
-    <xme:-dqZaqJZJQ-82t5qyeSEfZq1LyXXjhCJdXeTQm-mkrwG6pIRiWwwFbu1icYKR53gl
-    rL8p4Z6oe3_AGJk87Lwj4JZTlTVle0sfLtKeYG9nZmk8jiTQvHrmejo>
-X-ME-Received: <xmr:-dqZaiWsD1MG6IPY4spiNi9txgy0pxrhEXLj3dHt3pQWPkbA4PaQN1I>
-X-ME-Proxy-Cause: dmFkZTGccuVGXQjAzhY0pcH52StchfO3/ptOv+6INBKDcSgWEaUpLKdSYGhBJhzSoYlHKk
-    96r+pSNsOLa4nxTYPXuQwK5yxiNFRv+ojSQDwDAu45X28vYAjjSQLt03E9uAu0Aq8x27W3
-    0yne7Jdb4dzUL9KVqtDbCPXqqx88FacY3vKvSd9l9YFGMB4opY/ZgdQop9zmwI5F2Kk6Pt
-    82LpnwmJaO4Eu/I9+8WVyktG394nnMHGbZXS9uHCeQ+3lH0i2TGl/j2hVDhWDOQcppMkV6
-    vwJmXlwt8/k6/6/mo70KYSl7TCSjOfeOWg+mSOhdDOv9I7A/yrI07J6ViCue9gC8iHY7QG
-    xcgL0VUdm7Uk6aZBrnuRaQDBj6CyL+mJdSjimfDEKwiuJagE9tMDEUsgY6ovLP5aZUf/5e
-    hfslZHhiLL76FTQCNW0AaaD+jKk8VEl6qi9sg2+UTNXrmrqg6CCVSKRwBQAEmyP4ZzrV5v
-    Kg/gV0tq8V5jBoxXMZHUF/KrQ1HqcdAij8m08sFosO5E3kqtcwGFqGucQqL0xcxNxoy/nf
-    AKgRg17YzWt76sZ7k7/JqD4ub9xbWF4rvCwOX1m6QoYhVI6RHGdoicvrvJIXNiICKRMl9y
-    fvagZ0VemKEo3w1e72DvzjySzQyLl0798U454ce2b3RzyGkfLerJvyeMpQfg
-X-ME-Proxy: <xmx:-dqZasjSS2Kfe-nPgQCqKIrJcZayZjgPdL2x1S5UUVrRdYkO85i0LQ>
-    <xmx:-dqZat_szqO8rz70aPdjOU1Bh6xgB0iXVMLexsq1BxbeiQwgHmlIkg>
-    <xmx:-dqZamAgFwXGT3RPtrMUZPmt8D9k7mKQE7en05BgvWsL5SO4tf2y8A>
-    <xmx:-dqZaqK7A-Ywt1vp1nZpVWh3Lmz8mnohM5luVwLry8f4ZK40J-MueQ>
-    <xmx:-tqZanXR6Q59bAC-GqgNJZvHdq42FcgspXOsoeok-JyEZqEPHtOIYyDn>
+	1788468550; x=1788554950; bh=7OIQNidu/hwSm6OFmfnKiAP8JASyrO5MTzH
+	iH5rI+b8=; b=PxYN71xpRJtYoS4xjShWi2JzPdH3YwkxjQHjb4pskbot+K9ABcR
+	t0Fis5/OSfFSKc1C/r1Jv+f9K0H1DRk/FXl7fv7zad6wMsxV6sEsIws+eJPCaqh7
+	EPLi3gtx6q55cP4+QsucFRHwKgqUeauI0OZZXqWFXZTTJbw0W6ReZzaTbucgHTAK
+	TcAGg5GwdlfqLIdjuvBtMLCxCWWcVYMlXes4AKDJGnOKn6pqxlAZcp+M2PJtI3Gw
+	hFfP0jmW1aL7dwOInS5P3uoioCw9dyAJqrWSACiUDFxoXBUsd7a4SbsdDWEvvLT/
+	YAP1YCBCq0O/1If5pJi9Bs2oKulQ+PxNBxg==
+X-ME-Sender: <xms:Rt2ZaoRhBHlMyvl9mxK3XBVw5iHILgIRTonWTgy3v_xCPijYMWLRoQ>
+    <xme:Rt2Zary8vaypbja4BPi1T2HHUkEWl51GS6prSjZDhozLRm_VL94ln7GGFRl0F-tOu
+    eVgJxLELHHoe5f1rpmQnXeYh7E4c7_9HUn4C91V-oSybfVmnhLy7JcM>
+X-ME-Received: <xmr:Rt2Zajc68z2ryZ0K-cc0iiLsg9OFHqh1beCBT0Xb5SqYYRVA00Nedxw>
+X-ME-Proxy-Cause: dmFkZTFkw1h4Gg7HYggeWftEGyox2C8EBWwbZIaREyUMtbwe6G/zco7kEblsNMO1sxPwTF
+    qmx2N2eINnuJEQTSSNAhFI2UClP2fYZN7/iRQdY31O3tD/qo/dR2QudaiRr+Mvd7lQI2r0
+    +6gOf/+f7oPc5dqwXv7fLd86eEH0m+qw3ay82ZNe+f/w5zuITr5ihjex0/loEq1ytZfEOR
+    c6l7q3Ezc5u/0IHN8itSL6xq3k3af/fFPenDJQWL2jXq370hd0/kY5aixfDl8ykvPGsvpN
+    q9HnompM8VgK620NTUItjLAXL9FAgBbygV0I11G9jXrRojo0yfQ6DeUmk4R2L/QVW4EsQv
+    pGSyIcg9i/wjSQPEduxPyNa5cnTLuCIe2PKyFYbpAkwH8qfjKhefz3EocTxtwTmR4QFTmw
+    nKpdEpkHqhWJMNQaOPiUdemvZCAsv5D2Cum94G3FsOl0e3gsAZcW7CsljqSXReljAF0x0Z
+    wEuWo1oSyym/rtgEGpfbK7x+Yh11NoMOLWgBQobPRHnIO/ALrGyeWzVB8qO7Qk4N3jCeaY
+    V+/DbAfkzkVUehgKBw87KlpguU7z/LYrfCSfGPLK1yKZPR/ywsh1odSPnPkGqcivZcB3YN
+    ruYOASAevkUK6lmOWPoUsFM/KASnZoIZjFXHnZQL8biVNV9InD+ZvDq5IZpw
+X-ME-Proxy: <xmx:Rt2ZanJ8a2tB_rvf91AakM_WjBoueRsTZ_WyRNr6g92Jplpot-tZhQ>
+    <xmx:Rt2ZakHmcM2vqZqkuFJs5rF0XZr_3Iu7QMsq-gl2Vi5KUeROtX5v5w>
+    <xmx:Rt2ZahpbdCdrD1L79nohOTzqT7ciyNhWG1VAW86hVfuxSqoelSNndw>
+    <xmx:Rt2ZatTY8LndYfSEArK4n5FeeFSQ__--k6aAcXElaNhU0kx0fR39dQ>
+    <xmx:Rt2ZavE_j6m0k44aKcZs4ClTUe6QHdVvbEAc-iZJmvNQSom_0T8vNyem>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 3 Sep 2026 16:39:21 -0400 (EDT)
-Date: Thu, 3 Sep 2026 13:38:27 -0700
+ 3 Sep 2026 16:49:10 -0400 (EDT)
+Date: Thu, 3 Sep 2026 13:48:23 -0700
 From: Boris Burkov <boris@bur.io>
-To: Qu Wenruo <wqu@suse.com>
+To: fdmanana@kernel.org
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 RESEND 0/4] btrfs: removal of on-stack paddrs[], final
- part
-Message-ID: <20260903203827.GI325502@zen.localdomain>
-References: <cover.1787101260.git.wqu@suse.com>
+Subject: Re: [PATCH] btrfs: fix unnecessary transaction commit fallback from
+ btrfs_log_all_parents()
+Message-ID: <20260903204823.GA3237930@zen.localdomain>
+References: <8efdd4a651d579b37ad7929f613fc3bf8598bae1.1788438374.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -82,115 +82,53 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1787101260.git.wqu@suse.com>
+In-Reply-To: <8efdd4a651d579b37ad7929f613fc3bf8598bae1.1788438374.git.fdmanana@suse.com>
 
-On Wed, Aug 19, 2026 at 10:36:15AM +0930, Qu Wenruo wrote:
-> [CHANGELOG]
-> v3 RESEND:
-> - Minor commit message change
->   The resend is most for proper sashiko review.
+On Thu, Sep 03, 2026 at 01:27:10PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> v3:
-> - Rebased to the latest for-next
->   There is a fix in RAID56, which can cause conflicts with the last
->   patch
+> When btrfs_log_all_parents() returns without doing any work (because all
+> parent directories were already logged), it returns 1, which is propagated
+> up the fsync call chain up to btrfs_log_dentry_safe(), and that causes
+> btrfs_sync_file() to trigger am unnecessary transaction commit.
 > 
-> - Remove all remaining on-stack paddrs[] usage
->   There are two last ones in RAID56, one can be converted to use bio
->   interface, the other is not using on-stack paddrs[] array.
+> This all happens because the call to btrfs_search_slot() in
+> btrfs_log_all_parents() always returns 1, as there can not be any inode
+> ref keys with an offset 0 (an invalid inode number), so if the while loop
+> below it does not do any work because all parent directories were already
+> logged, the 'ret' variable remains with a value of 1, which is then
+> returned up the call chain to btrfs_sync_file().
 > 
->   So we can finally remove all on-stack paddrs[] usage.
+> Fix this by setting 'ret' to 0 after the call to btrfs_search_slot().
 > 
-> v2:
-> - Fix a missing assignment for metadata repair
->   The logical should be assigned before passing it to
->   btrfs_repair_bbio_failure().
-> 
-> - Move the commit message of error message change to the correct patch
->   It's changed in the first patch not the last one.
-> 
-> Since the experimental bs > ps support, several on-stack fixed paddrs[]
-> arrays are introduced, for assemble mutli-page sized fs blocks.
-> 
-> However that on-stack memory usage is always there for 4K page sized
-> systems, no matter if the block size of the filesystem.
-> 
-> The idea is to use bio interface for page iterations, the core idea is
-> to use a const bvec_iter as the pointer to where the block is.
-> 
-> Then we save a local bevc_iter, and use the local iter to check the next
-> few pages until we fill a full block.
-> 
-> Furthermore, with the help of bvec_iter, we can remove a lot of
-> parameters:
-> 
-> - file_offset
-> - logical
-> - bio_offset
->   All can be generated by using the @iter passed in and the
->   bbio->saved_iter to calculate the old @bio_offset.
-> 
->   @bio_offset is the (iter.bi_sector - saved_iter.bi_sector) <<
->   SECTOR_SHIFT.
->   As when bvec_iter is advanced, its bi_sector is also increased.
-> 
->   @logical is simpler, just iter.bi_sector << SECTOR_SHIFT.
-> 
->   @file_offset is the bbio->file_offset + bio_offset.
-> 
-> This means we no longer need to use on-stack paddrs[] to csum
-> generation.
-
-This series looks really good to me overall, thanks for making this huge
-API improvement.
-
+> Fixes: 0f24ea456ae1 ("btrfs: tracepoints: add trace event for btrfs_log_all_parents()")
 Reviewed-by: Boris Burkov <boris@bur.io>
-
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/tree-log.c | 10 ++++++++++
+>  1 file changed, 10 insertions(+)
 > 
-> With bio interfaces, the iteration of an fs block is as simple as the
-> following: (I tried to change the page/pg_off/cur_len into a macro just
-> like btrfs_bio_for_each_block(), but failed)
-> 
-> 	u32 cur = 0;
-> 
-> 	btrfs_csum_init(&cctx, fs_info->csum_type);
-> 	while (cur < blocksize) {
-> 		struct page *page = bio_iter_page(&bbio->bio, iter);
-> 		const u32 pg_off = bio_iter_offset(&bbio->bio, iter);
-> 		const u32 cur_len = min(bio_iter_len(&bbio->bio, iter), blocksize - cur);
-> 		void *kaddr;
-> 
-> 		kaddr = kmap_local_page(page) + pg_off;
-> 		btrfs_csum_update(&cctx, kaddr, cur_len);
-> 		kunmap_local(kaddr);
-> 
-> 		bio_advance_iter_single(&bbio->bio, &iter, cur_len);
-> 		cur += cur_len;
-> 	}
-> 	btrfs_csum_final(&cctx, csum);
-> 
-> However there is still one caller left:
-> 
-> - RAID56
->   That will be only location left without a bio.
->   In that case we can easily craft a local helper to do csum generation
->   without using on-stack paddrs[].
-> 
-> Qu Wenruo (4):
->   btrfs: replace btrfs_repair_io_failure() to use bio for page iteration
->   btrfs: enhance btrfs_data_csum_ok() to use bio for page iteration
->   btrfs: use a shared helper to calculate data checksum for a bio
->   btrfs: remove on-stack paddrs[] array usage
-> 
->  fs/btrfs/bio.c         | 140 +++++++++++++++++++----------------------
->  fs/btrfs/bio.h         |   5 +-
->  fs/btrfs/btrfs_inode.h |  12 ++--
->  fs/btrfs/disk-io.c     |  25 +++++---
->  fs/btrfs/file-item.c   |  20 ++----
->  fs/btrfs/inode.c       | 114 +++++++++++----------------------
->  fs/btrfs/raid56.c      |  47 ++++++++------
->  7 files changed, 159 insertions(+), 204 deletions(-)
-> 
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index 7ba7b6098aa5..0b9518a04272 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -7286,6 +7286,16 @@ static int btrfs_log_all_parents(struct btrfs_trans_handle *trans,
+>  	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+>  	if (ret < 0)
+>  		goto out;
+> +	/*
+> +	 * There can't be an inode ref key with offset 0 because inode numbers
+> +	 * start at BTRFS_FIRST_FREE_OBJECTID.
+> +	 */
+> +	ASSERT(ret > 0);
+> +	/*
+> +	 * Set to 0 so that in case we don't do any work below, we won't return
+> +	 * 1 and trigger an unnecessary transaction commit.
+> +	 */
+> +	ret = 0;
+>  
+>  	while (true) {
+>  		struct extent_buffer *leaf = path->nodes[0];
 > -- 
-> 2.54.0
+> 2.47.2
 > 

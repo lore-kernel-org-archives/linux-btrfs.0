@@ -1,220 +1,559 @@
-Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f46.google.com (mail-wr1-f46.google.com [209.85.221.46])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6FADA4A0EEA
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 12:33:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.153.141
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 469F84A842B
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 12:44:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.46
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788438840; cv=fail; b=UqrFS7Lkgw0w5odAF4lRvqjLhoEFyVZdkT+Z/O9Wpja7mcXlXBbm9iVEcP1b1dpkOOewbdfSk++lZua06gyueEETp5oj9VOU+WBMHl2R8uzAuzPbwANS0e3xgNQ/Gss3vXWaq5x8lRrWRpzKHlH51VTU6C8Ut1MzN05CEAE6B9I=
+	t=1788439464; cv=pass; b=mNwIkYJwOdRpULT40rFW8zpSROHAWs+FrtToT2XiUSH/bTJDCSAJKsgGOySnHJedqvdVZRmaXZmNl3J0d6R+tGzAMGyJ8habIHy7F0/qUP9Z1NCnTExs2uzF51/PnrsRhyXYX8oY6Aeb6+QTXpgxUQoHyQAdswXKEuJui1jWSoQ=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788438840; c=relaxed/simple;
-	bh=yP8CeGDzAn+ntQXhYJHNKfFJK3EOJccwVldnzZ0qKH8=;
-	h=Message-ID:Date:Subject:To:References:From:In-Reply-To:
-	 Content-Type:MIME-Version; b=njB6Feo1ouys3o5n49suAoDMTIeGEngqVwUNdG+3W8MOo9A5WukJC+EazQDUSgmkXNNWVcQN/GIOwUKi6nRpyabaeeEN/cvOGAGNTEfmiAsGVCLxjxiAML+jYsPOpgxHOyZVHayzdkWUGdkWQRFQwdBkPvLdubZCnLk1yYD4GO0=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=cnm8EuYF; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=T5s3uuQT; arc=fail smtp.client-ip=216.71.153.141
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	s=arc-20240116; t=1788439464; c=relaxed/simple;
+	bh=TjFRYDo7e87Ab12GDa9AEr/YhOvVmgU/jdOlZ0ecQBU=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=tpoSnXg7kCnoVQR4XQA8VqxEftatTtaPTFNrNuBwBhoASIOn7eveahp4Q8OTs4SsdbeoN3U55JqYlkL+7yKchrHQhCua1EiDy23pogdl+BKzesVFkX0pjnDDdJl2QZ1JQv/TongEANwGFvGyLjCDr6iRXv7thXZLgFSpO+QO+aY=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=b5M+uRyb; arc=pass smtp.client-ip=209.85.221.46
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="cnm8EuYF";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="T5s3uuQT"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1788438838; x=1819974838;
-  h=message-id:date:subject:to:references:from:in-reply-to:
-   content-transfer-encoding:mime-version;
-  bh=yP8CeGDzAn+ntQXhYJHNKfFJK3EOJccwVldnzZ0qKH8=;
-  b=cnm8EuYFbHNxMcJ5q80EyoGOTtUNdUEub/smw/DfNhQbJxdLHv/HHsOk
-   smgmQ0ymGzucQjfYqgZc/qcWag37uCuLOQQ5l7uWhn/EmlaMDOZLK7kaJ
-   5qkDuyh0DDJqRO68afeHEeXEorWb8wCQYwjesiaXCRP4VzKhP0y6cRG+N
-   GDoixWrqkgJhsSJWDl/1R5snbsCZYj2A3tvSJ/uW+SwrtioALAdGbKSl2
-   Bn35T3Xv87xJcwnf/G8MGsAveLNsgsGDlcbYPVsh7fCscIeR102UVyjlY
-   C+UlvHEZK1uKIPa3VXcr6Grio+a3354q5m4bqK4vpAO7eUIGgaGCoyJFi
-   A==;
-X-CSE-ConnectionGUID: /UzctYpHTeaaupCXqEkewg==
-X-CSE-MsgGUID: 5qpPmlPNSR258Frutxs6tg==
-X-IronPort-AV: E=Sophos;i="6.25,260,1779120000"; 
-   d="scan'208";a="154872975"
-Received: from mail-westus3azon11012048.outbound.protection.outlook.com (HELO PH8PR06CU001.outbound.protection.outlook.com) ([40.107.209.48])
-  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 03 Sep 2026 20:33:57 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=RWjvZzCVavcCLy/D1ux58wwuVr/oeA/wdhNPwS38deLc+awMVh5vibMHHp74C73W4FvjJ2FQrZWcZOIxbgkjTvCkDxl91frcKNGFtpbw9JJphlLaeagdMr5Tsh+VI0z4beu8BJrb/2lqdQGhcsLKeJHUJLK7pK+uDfpf8Ovmhc1yT75gSH1i5UoCPe8ow1XWL6UZLmer3Qt3kT39qdQob2wh9zj9hsXthuhQnQTHH3mqlumVEoU8uI0VuxEdzNe7q5Q7jdfYLbuHXd9LQxWNNnEnTy6AFR5Fa64/TQEm4jLLSVERWwX+zakd/D6HZreDQWBLrjRvbRWJQVnxJBCecw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=L/IEVL5DMOhva7JnXIHA/OOiy2E0BzlInLPmObeNAKI=;
- b=IGw6Zr1k/labNhfBFO0yHe7OmZiFMhWehrNaoTiBoAbo0kxFJKt5rKKnAKA/PsCaK+QBZievLnCMx/4R17Js+Vw161P6SMwcmLCCO4Ned2eJTyeYi/1mADt+TzykfmKjy37YVoEMVXEHx8cKO1ItW5iH76I6Qs5fkri60clZUaSjqdklaoVwuS4MpQCHvHVRAKtPZlUB1y6Za/Voj5fspHuY0PG0fmmFhe6K6q7WAxFWJTnhWyKveM2kZKuhjYcgSvPtrVpHxssDZo368IAxSE9uvHj+TieU4gVjrKoJUXkR0JZq4AnpDrXWh8WojhEre/HSl4qY4xiMw6CPNz+pUQ==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="b5M+uRyb"
+Received: by mail-wr1-f46.google.com with SMTP id ffacd0b85a97d-485852d03a4so255515f8f.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2026 05:44:22 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1788439460; cv=none;
+        d=google.com; s=arc-20260327;
+        b=ZkKN0aMf9r0tfBk8J+heWFRWkQ1xazpY4L7KabKCdhtMsDazJf2hpkgoaXHKeK8CUr
+         hBt8GY5of9l9Gilbu+dKk3iGcqjlhYVWY/pTnL+pKqlpE//oxnnel78kEpvKp8+WW2db
+         /9pEtUa1bU7sETP2fmI64ZpzUGRC9qE6WWcIe9wtE54PvEGeAaLx4UEZyq4vOaGn/YCu
+         Ga55C9dVFjDafYB6Be7pwbTvLg/09ulXyQIwobt4KcxC5fry/28RubPX68x4405vRRSG
+         3k3jNR5hnPhhTlFU7vKrMmpVby4Byivy2PSDsElwC3uBWPajejPxQmL+WDEF/VR4y/tY
+         Pm+A==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=mep0qoKfSwYZq9edmm8MV4gY37EMhfxhPvk4ApMV27c=;
+        fh=5kD17xrcyHCX/qTiADs1gIVlaAQlPp3S4ptkcZr4L2M=;
+        b=m9D6gTCJ5bSEEc12c6CmwULfQ/tLLCJDqJ+237bAmMoeQunbE1EiKZtInXElhmqEIv
+         jinWuhBdnDs/ri+AAvbwwDgVHDPSTdb+WczhcPwCDG7DKDjtwkASOseUcya1zD5PCjLX
+         0c21580UU7RtRmu7SuL4aLmm6t+tDGnSo1fjpX4c7xYzWSbFytp8imjJQhoJhxzq5oEm
+         qG5dFKWJ4KCeQciQUyLeldS6y2Im3ECSVO+zseiPz8q0T5PAYgfpcJTvYjdhybibWA0R
+         yAkt531kOV0t279loHXIneT/fFxd/aX88LffSAa3giLjnu+deHtJV9UvPi2S2ltzzI26
+         v4tQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=L/IEVL5DMOhva7JnXIHA/OOiy2E0BzlInLPmObeNAKI=;
- b=T5s3uuQTIFOsAFYU+icYNXc5xwkTHoT8wbruSO1ljcSNcQeVZwQSahFjRztTCQVEBI26fWb57nA8zecnxNQTaxy4EGgGrVN3yKkbu6+SudPJDA4XLs1Gme/r2zLa+fbHBo/PAsackAxeJnfeV2UqSg+NuMCk6Ywoc96bIKa1t9g=
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
- by PH0PR04MB7656.namprd04.prod.outlook.com (2603:10b6:510:54::13) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.382.10; Thu, 3 Sep
- 2026 12:33:56 +0000
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0360.008; Thu, 3 Sep 2026
- 12:33:55 +0000
-Message-ID: <459e721d-cbb1-4646-8f64-d9a28e50613f@wdc.com>
-Date: Thu, 3 Sep 2026 14:33:52 +0200
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 0/2] btrfs: introduce a new experimental feature,
- RAID56_VSL
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1788417288.git.wqu@suse.com>
-Content-Language: en-US
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-In-Reply-To: <cover.1788417288.git.wqu@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: FR0P281CA0227.DEUP281.PROD.OUTLOOK.COM
- (2603:10a6:d10:b2::7) To SA6PR04MB9447.namprd04.prod.outlook.com
- (2603:10b6:806:436::21)
+        d=suse.com; s=google; t=1788439460; x=1789044260; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=mep0qoKfSwYZq9edmm8MV4gY37EMhfxhPvk4ApMV27c=;
+        b=b5M+uRyb35NrKkFRqnTFP1maMZEqTbEbVavw1SzkJO339n2U3lDcWhs2NS9tKhUlHj
+         zW7SxO2cPucebBtM8Wza2Zhtwsfag0lRRdKGHBkhUxkI21XsDBdSOGJd2WQb1Xf8LFwC
+         hKN0FbB/OPVVIGVr+FR8NM+8y4Rl/kWWn6yJ2TZBsfsFuYnGYHAsL3KAlM4KPgQsOXSV
+         fJAwlh6DlmiHG6MNLyDCxkkki594sX7NDAAwSeVs9C4RJMTpG41Bbs/o6VpKgNDsYcGK
+         yfxfFhXr54G8aFKDDxqqlqmSxWIOdouJ0I9+uLm46QO5EeV3G+bIussyZP5Wz70CTeKA
+         1z6w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1788439460; x=1789044260;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=mep0qoKfSwYZq9edmm8MV4gY37EMhfxhPvk4ApMV27c=;
+        b=gBEvafQvOOtcpkUq6xMO6AgSKrNg5p/1HCwjRkQNQ8dfOgQs9AIl6bEMQC/Lm+mGmf
+         BYCmMI50o+/DxncWzLr0CMjOX0kHqEamPEKNAqm/oqc2u3ZXA6Au6z+wJ//e81dgD8Xp
+         KCpC0z1gp4CRppq6JB/CcfbADtlxmbRqWChR/P/2mOc1SzA9ZaWtvLm2Xh2dWk64m6YG
+         9JCrYpW8GMU7qklljVDq0O4652FNCAHUSj9CE5OBJ/ultJi8WKiUG83WnBKaoFUKwgVP
+         fP0JS7VCaA1fKfcNWG4IzbrG1AVHUhqBoUjFU7a0t+TfglbEvwuG96dknx9YfBc8oaxh
+         iytg==
+X-Forwarded-Encrypted: i=1; AKwUvByZ4XmJxfYoGZN+1LMyf59MZXPTvZoCaSuxHTU+uPQc+hHf/in3jowOcbyztkgwVc/vDSSgNdh3FFayGw==@vger.kernel.org
+X-Gm-Message-State: AFuF++m4c0zDAkO2GR0RRXJIwiMwjbAQup53TmZEHLTSKA4bWeE0RFqV
+	J3G2sFqIWy3jMlhS55Fz7vCE8htAFwq0mvCRafT2qVdvIBVNlYIQDAbG17HICZCXpEQx5J6Hs1o
+	F0imleXVnD5QsQ8n4LFwyAXcARW+W11asSKxYZH3XEORScX7/TZSBsf4=
+X-Gm-Gg: AYBFou16mFAqQl01kavMHsJBozGUlROmInOTQEu045Q3eCoLsFilksmzgT190kadvPL
+	Klotf+JN+lwkUMZJZNF7DNIjSD8tBmSb/graTAgjW0RJ66f3l6tSDdKzijwZudVlwdeanAfcOg6
+	rKtjB52YLgabRQ8CfYmRQ5CJCYhy7R3znlWfMCkGGbyhjXat6+SX0u99XJ9zayb2SVICTXjh0/k
+	DbxommzCKGcs/Cm61hCUX8RnSTe2ZN/t9cqD4Zy3PLq3xdQxaJBlle6rhFsViuTbUCgTavO6f5h
+	BQTjLXFFXjGUMDym5D52u/VgdueXob02/mXIE83ETHmsn7KrBeF0IgDQltZK+YTv/ebKMPP5QUi
+	ljQtdYxAjNHquxqz4HGE/lmK2W8AG3/I+Qm/PLDJAdHQ7lb+EhFSn
+X-Received: by 2002:a5d:59c7:0:b0:484:40b0:ef30 with SMTP id
+ ffacd0b85a97d-48586028ca9mr29344f8f.6.1788439460130; Thu, 03 Sep 2026
+ 05:44:20 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|PH0PR04MB7656:EE_
-X-MS-Office365-Filtering-Correlation-Id: f0d20c67-a139-49f4-68eb-08df09b79eb5
-X-LD-Processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
-WDCIPOUTBOUND: EOP-TRUE
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
- BCL:0;ARA:13230040|376014|10070799003|1800799024|19092799006|23010399003|366016|10067099003|56012099006|11063799006|5023799004|22082099003|18002099003;
-X-Microsoft-Antispam-Message-Info:
- hCsHyRSYMC9xqHEzIMfoy74DTnjG4t91GZ0SK0/DV7hNbGZZTxSfBSJmUTquU0sp5DyRqfUXASDwHZtbU112xAjRRLnCNH3jT7mDFUsU7kYd9cQaYgQFbiMUM06PSKrUoMQt2q6M7LqPmydK7mhUkszW5v5YerQ504zML0h4d07whXCI8MAgS2V7v3r464dPzWli8315ARkFrmeZ7mjlRxGnKQJagV9NMqFHggoNYyugqFTHn9uDVZUrduKjm2oGhmW+9B9Zxm55EvIVjNErswNQA8E0ZDcU9yKqR1JpLP/HBkdJ7irwHoc049YG/CzUBl3Sw6o7gLC3INM5u90d95+nnJ73zoHN9HjDZT/j7e/mq330AS3h5vbV0yLt8DFAetOGlP7YALTRp6tWVY3YNPd9TigiiNATPhKkfBvWLpTWvN4eQoGyDB16f9FdXJhBL2bN3rWlF7K9FN46cUdmdtbXqVikD3nODO/x4oXd8P4nmdJ7Qo6t9CfjGhkB+ilijaFJEd8h8jy23dUYqipEapqRczYpX6h/QrqiDl0JpBJZoCg8MMxM+8+SjgrGJaWiI/JJMIJCXkWtH8hgv809wmP/8Fnc/y/WRcHE6ws/ebpX/2p94eyGS5l1AG6tOHNbGISGnmsy0gH/qybStXHhtq1tWzbavHZg3EkKd6LPKhk=
-X-Forefront-Antispam-Report:
- CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(376014)(10070799003)(1800799024)(19092799006)(23010399003)(366016)(10067099003)(56012099006)(11063799006)(5023799004)(22082099003)(18002099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
-X-MS-Exchange-AntiSpam-MessageData-0:
- =?utf-8?B?MUF2V3V6VTV5LytrTHZFaERQREVaY1o0QXhSaDhLaGpiUkViWWMwTnVlbVZJ?=
- =?utf-8?B?VnBXU2treTBSazFwVFFHdHVsQnU1ME5kT1ExbUlvWDlSaHBTNDc0blpXMVNk?=
- =?utf-8?B?aHNUZ3hwOTdxOEoyNEowb0JSWlZjU1V2eXNQUldKN1ZwUENoMlJIbUNVeDAx?=
- =?utf-8?B?RFh6Tjh1b2NuODdwVnZwZ05rOTFKRzJScjNoVnFYNHlmL01SMHBYQ3R6NUR2?=
- =?utf-8?B?NE9TMWsvL3A3R2NKaG80d3lteEhpeUNBczI2dlh5UWlJRWZzWWFwaWpEV0J4?=
- =?utf-8?B?cFlVaERPL2d3cXJNNUJhaXBDUGJMczVVWHVjVHJ6V1lvWnREQTRocnN2N3VO?=
- =?utf-8?B?ZmIxditQMGhlK0w5dGhRckJ2djR4aHdQMFNuMXkyNVc2cjUrRDEvNlVxV1k1?=
- =?utf-8?B?T1pqeldpVjlLSkQ5NFY4cUxlSnhFQkl2RlQ4U0NkQ1cxcmNhMkJwNWtKZ2ZI?=
- =?utf-8?B?ZUk5bVdEVTdoY1J4QkdLMFF6b0p5R3gyWllIV2dDbm5GY3pKdTRFSHFxMEhs?=
- =?utf-8?B?akFFMkxkNmxIZWx1YVJnVkYvbmFIRzlMa2ZGM2JmUW9WL0ZhdVZmMThBYU1x?=
- =?utf-8?B?Q0pyQm5CYnhqN01GeXV2NE1mLzYxUGdvRkNmVlp3Nzg3S3RBa2F1WVZzKzFL?=
- =?utf-8?B?NnZ6L3pIRlcvM2E0WE02V3FHYzE2MW9Fem5yUGE4YVNZbVAydVNaNlZ5bG12?=
- =?utf-8?B?aWxBWVhpa3RFb3FEWGdVM3BXR3lkaVR4cW1Yc1lSeS9GVHlXVmgwS0RTZDJ5?=
- =?utf-8?B?Yk1Sck5veTAyblNibndITUNtWVMyTTJJeCtCanU0WExFbllBa0xjbDZ0S1FX?=
- =?utf-8?B?TENOVzJwR1lVYzBYVU55YTRWN3NkZHVkYnd3S1RrTVhENGhHMUF2MmRHMWFE?=
- =?utf-8?B?QlM1TDl6N0tydEV5ajdTakFGL0pPZW1sL1MwTDRSZkw4dG1ud1ZOVkV5SVJs?=
- =?utf-8?B?cWpNdjBzVzRhYTgrMmFKT2lrRHAzSmFVZ1NBOUNwZCs0YXpVOUVYS0MvdzZS?=
- =?utf-8?B?TmNBcWsvWXkzdTM3UFRlbWVRT3l0OWI0UkFDRzQwZnZwcyttSXRpeXU1aUpy?=
- =?utf-8?B?QmxiUHdRVFdhRVBENE5hcVdtY21RQkMvL2RJaGlicnJJdkdRbzNEZFU4R012?=
- =?utf-8?B?cmg4ZFN5eVJ4OVB2MlVCdzZJYTY2R3Z1Z3F1TTYreVhMS1V3cXJVdTJOeVQ5?=
- =?utf-8?B?NEtKWWhmMkZxVUFlT0VVY0Q3Mm9QV1FhbThTWCs4RDR3NWs4NzdxKzl3ZlRP?=
- =?utf-8?B?a28xSVlwak90aFZQOWJpSEd1Z0NrWmUrYmZVSCt5U3VuZDVGdUE3OEMwcTU1?=
- =?utf-8?B?TGJQN3pLRkhLVmFHZTg5VmhiaUJycExYRjJKUGRTa1A2OHJ0MEQ3TlFhZndy?=
- =?utf-8?B?aFFpbU5LWCt6MjFKb2pqTE1vekFXSmozMFJITGprRmJ3aG52alU3RkJSL0ZC?=
- =?utf-8?B?c0RnZi9MUy9sZys2dlV5RVFMZUxHempUSUZGUnR2TkN6WGk1cjk3b3R6YUZP?=
- =?utf-8?B?aTZhdkNrbm8rSG1VYTZ1NG12dGNyYXIyT0JxZGtPTVplejNiSER3ZDNkTHpW?=
- =?utf-8?B?azJ4Vmc3cmJNclprMkNoVkdJRTlaUXJQaWdtNVRMY1hVVzJPT201V1ZhVVBs?=
- =?utf-8?B?MXBWOEZXRHQ1WmExQ1huMVV2azU5UUZEb2d6TWtLTlFZMzNuK0NiaWJTamhB?=
- =?utf-8?B?UTBJZXY1d3ZjekppSThxRTAxUlZQeWpONDlyUi8vT3QwbzVWQi85cXBpc3Q0?=
- =?utf-8?B?QUlMb3A3NW8vZncxb3BaUXlERDl1U3FiZGMvN1N4ek5sRUR3b054Wno0Vjg1?=
- =?utf-8?B?T05ZRnJDVEc5MXhEQkJJK3hoRUJyQlRoM29Vak5kLzNic2krLzlyaE1lS2Vl?=
- =?utf-8?B?b0huWlZzclcrcEFjYU04M0hoR1ptSmtlUm1oRkFSRFpVcmxuVzlYRlZabG8z?=
- =?utf-8?B?SEZvSHVERkJmaE9vRjhJbDNHcE1DelhKUGJZbkp3WkR3VDNSdGczY1ZpVVAy?=
- =?utf-8?B?aHJxbzR5cnIzUHhnbDhva3R6R3VpbWpoclNxbCt1aHVML2V3S2ZYVzRRZHFk?=
- =?utf-8?B?aGFmU2hCd1VSMFVNYzdSMStIKzVWcnQwWU1NcHA3My9iWCtXSlIvQk1RelE0?=
- =?utf-8?B?VnhWNXpldldnejVyV2FLWG1RbmhKS2svR2FwSDRTV3N4eHJuU3VEOGF6Zllv?=
- =?utf-8?B?eFArYlZTWmMzM2NFOVo2ejJGbk5EaXArQWtpbzdsUnhNTEUwZkFXUUI3SEI3?=
- =?utf-8?B?NERDR21SVlpRYjlTVDVmSFJJdHhxQ2poUFdGZWVMRHBJZ2w3QU1ITzhObWxU?=
- =?utf-8?B?Szc4Qks0YXlwc0V1dUJZU2VMdjhvK0c3Skxpcm1PaG9JZFErN2dIOE9QaVJV?=
- =?utf-8?Q?H1Yy8AWpTrNqLsH8Q9LpClE4TijwYB55MSPzoUvKbZRHf?=
-X-MS-Exchange-AntiSpam-MessageData-1: msCLIf0ohTZScsjkXlncyRMXoLaXb+oTjnI=
-X-Exchange-RoutingPolicyChecked:
-	B/TZh2KpbhytusvR0EOj8NLK9ot2YOMGVUYaLZw2Yjw0rPaH2fo6cwS3+meCFx5FvKZF4bSsZmbRJeZmraC10oog9SJrzBoKSPL9LfhQ+NyvJvUZgVOmXbhvV9nsvGAB3+O+UYt2nuAwzoRYHRf01vfQVyhKxsdu9nwx5Q88kn7FdaiR8qOCKD4qo38guYc1ZdDntJf6Dn7OpARrll+DJ/TAXPSmIHQx/f13Dzycn0Un7epXsOuUoSgyjn7DesPX4R9MJnfaaONMFWuhrhokjuHVLS+P01bP3+GitrU9wRGpT4dzuMk2tzesvReG0aHbcBLVog9FxT4dQ2i0lIXOxQ==
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	V86/hHEP/GsKl5zN/EQLSgZ1Yn90zW1ZgIDVlJfuF6Z/Rmtcw2a/z3Y9IXGeipZlPKNCg2D0EK1I7+hvkohq+/BL8Ff5ulxWInkwL77SFpC/0NJydUO/NKdOkhB3hGP2P50y0Nhubt+i60WcFMI+QQkR2b5QtUdC+ILEsB7FpXPtur6Ou2odhqwKfrX+lXNTzgY99MwffJKaSEBpowtx9YmOykQ47XTarafvBqfZfGgbEIjMEAPFOgSqsZIctqyBjdmPA4M1CnRXC/K57v8A4XRsw/PsOXmK8yTShBBcmTMHvjfk5uaXxW/uG39JOZ2whgYnfmlS87QCGEgRBw/oFOKutI63V9/7mZgCB9SakTJ1NccUnb465lRLAmlkeLfEnYBe79F88W/lNaNQTA/DcgLkBqiJVatqCBwc9vQz1M/8UEHk6N/Fujrqo43RhCdgL9EXPncumDuEaWE4ym60g3HeCtEjb8Ys4XvxBmMgECopd6xvMLNf0MwlypWk51fzRtDR7ZdF+jfcfL7uAARpCi7WL1JlNQXMqiG+QGqre3VkSPqKLA6z22JYYU0Uar0SDztchebqvnX6H6j2REAZ7WN28TAOBHj6oTbstTOGioXyD8H3s22akVW0mjDUexjY
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: f0d20c67-a139-49f4-68eb-08df09b79eb5
-X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 03 Sep 2026 12:33:55.8376
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: 6cUaJYfg3i4W2SNLXe3wYzgbFBGhQPHItj2V1IK1gbPVZxRaX4od5XofFZFPl5FYieJCwUMQfnxTD8TUoPnXtVphd5C/wEPNFJ5xKURnKUg=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR04MB7656
+References: <700ba6c46da86ace18a502b43c5e61d16a556060.1788424754.git.wqu@suse.com>
+ <CAPjX3FeQ40fcFjfiH=5EK57YvmVDtGxyz152T9FHUOmJuuaOFQ@mail.gmail.com> <00fc1bdb-cb69-4339-8184-afc04fceab19@gmx.com>
+In-Reply-To: <00fc1bdb-cb69-4339-8184-afc04fceab19@gmx.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Thu, 3 Sep 2026 14:44:09 +0200
+X-Gm-Features: AcwNN1WbemQb93f8T7uG0kLH2zPRqqh8cml7fP6eIpBDZLi__R9YJa0K_C99LAw
+Message-ID: <CAPjX3FdkWegsttPk9FiTiVUp9dcdycWWmecnpSxcgrpwnw=TEg@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: move async csum generation out of experimental features
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 9/3/26 8:49 AM, Qu Wenruo wrote:
-> The new feature stands for RAID56 Variable Stripe Length, however the
-> VSL part is not implemented yet, thus the whole feature is still hidden
-> behind experimental, and there are definitely works left to properly
-> split the 1st patch.
+On Thu, 3 Sept 2026 at 13:27, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+> =E5=9C=A8 2026/9/3 18:50, Daniel Vacek =E5=86=99=E9=81=93:
+> > On Thu, 3 Sept 2026 at 10:40, Qu Wenruo <wqu@suse.com> wrote:
+> >> Commit dd57c78aec39 ("btrfs: introduce btrfs_bio::async_csum")
+> >> introduced asynchronous data checksum generation for data writes.
+> >>
+> >> That feature can improve write performance, and was introduced in v6.1=
+9.
+> >> We have not experienced bugs related to that, so it's time to move it =
+out
+> >> of experimental features for end users.
+> >>
+> >> Furthermore since the async checksum generation means
+> >> should_async_write() will always return false, we no longer need to
+> >> maintain the fs_info->workers workqueue, as the async checksum
+> >> generation is using the system_percpu_wq.
+> >
+> > I understand these are two related changes in one patch here. If
+> > removing async writes depends on async checksums, it would be nice to
+> > split this into a patch series.
+> >
+> > Though I guess can live with that. Looks good enough to me.
+> >
+> > Reviewed-by: Daniel Vacek <neelx@suse.com>
 >
-> But for now, this series can pass most fstests cases.
-> The failing ones are all related to mixed block groups, which can not be
-> created nor mounted with this new feature.
+> Thanks a lot for the review.
+>
+>
+> I just want to mention that, Sashiko mentioned a problem that I believe
+> is valid, but not sure how realistic it will be in the real world.
+>
+>
+> Sashiko mentioned that, the old worker workqueue has WQ_MEM_RECLAIM
+> flag, thus there will always be a rescuer to ensure forward progress.
+> (Although for x86_64 and other common archs or EXPERIMENTAL builds, we
+> never utilize that worker anyway)
+>
+> But the new schedule_work() is using system_percpu_wq, which doesn't has
+> that flag.
 
-Why not make mixed incompatible with it then?
+Well, I think squashing this fixup to my patch is the right thing to do any=
+ways:
 
->
-> The roadmap for the full RAID56 VSL implementation is split into two
-> parts:
->
-> - Introduce a new datasize member
->    This series.
->
->    An fs with data_size 8K and sectorsize 4K will act like a fs with
->    sectorsize 8K.
->    Meaning the minimal write size is 8K for data.
->
->    However the checksum is still calculated based sectorsize, meanwhile
->    we can still recover each corrupted 4K sector inside a 8K data block.
->
->    The idea and implementation is not that complex, we're just reusing
->    the existing bs > ps support to handle it (on 4K page sized systems).
->
->    But the challenge is the details where some part of the code still
->    requires sectorsize (checksum related), meanwhile every other location
->    goes datasize for data.
->
-> - Introduce a new RAID56_VSL chunk type
->    It will have the following requirements:
->
->    * Can have up to (datasize / sectorsize) data stripes
->
->    * The number of data stripes are always power of 2
->      This is only for every RAID56_VSL chunk, users can still have
->      whatever number of devices in the fs.
->
->    * The full stripe length is always datasize
->
->    This allows every data write to be full stripe aligned.
->    And for read repair/scrub, we can still locate and recover a single
->    sector inside a RAID56 stripe.
->
->    This is less flex than the traditional RAID56, which has no limit on
->    the number of data stripes, but has the write-hole problem.
->    And will require users to determine the maximum device numbers at mkfs
->    time, without any way to change to another datasize.
->
->    But the second part is pretty easy to implement.
->
-> As the digest shows, the biggest problem is the first patch, which is
-> touching over 200 sectorsize users, and is definitely the source of all
-> bugs I hit and fixed so far.
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 0fed4e0d32d5..984d87ad79b0 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -855,7 +855,7 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool asy=
+nc)
+     }
+     bio_inc_remaining(bio);
+     INIT_WORK(&bbio->csum_work, csum_one_bio_work);
+-    schedule_work(&bbio->csum_work);
++    queue_work(fs_info->endio_workers, &bbio->csum_work);
+     return 0;
+ }
 
 
-But this is still all !zoned RAID56, isn't it? Or did I miss something?
+That should make sashiko happy as well as btrfs end_io work running on
+btrfs end_io work queues.
 
+And we should stay on the safe side wrt memory reclaim.
+
+--nX
+
+
+> And since the csum generation is needed for data writeback, if under
+> very heavy memory pressure, there may be no worker to ensure the csum
+> work can be queued, in that case, it will hang the writeback (which is
+> triggered to reclaim memory).
+>
+> If we really want to address that problem, your idea about splitting the
+> patch will make a lot of sense.
+> We will need to keep the old infrastructure first, convert the worker to
+> a regular workqueue, and call queue_work(), then fully remove unused code=
+.
+>
+>
+> But on the other hand, I doubt how pratically it is for anyone to stall
+> system_percpu_wq.
+> It's very common utilized across the whole kernel, and if it really
+> stalls I think there are a lot of more things to bother before btrfs.
+>
+> Another thing is, if we use fs_info::workers, we will follow the
+> existing wq flags, which means no PERCPU flag.
+> And according to the existing docs for those flags, PERCPU wq has a
+> better performance due to CPU locality.
+>
+>
+> So overall I think the current version is good enough, but not perfect.
+> On the other hand, using a WQ_MEM_RECLAIM seems more "correct", but will
+> definitely introduce some extra pentalty.
+>
+> If someone else has some idea on this Sashiko review, or very familiar
+> with the WQ_MEM_RECLAIM situation, any comment will be appreciated.
+>
+> Thanks,
+> Qu
+>
+> >
+> >> Suggested-by: Daniel Vacek <neelx@suse.com>
+> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> >> ---
+> >>   fs/btrfs/bio.c       | 136 +----------------------------------------=
+--
+> >>   fs/btrfs/disk-io.c   |  20 +------
+> >>   fs/btrfs/file-item.c |   6 +-
+> >>   fs/btrfs/file-item.h |   2 +-
+> >>   fs/btrfs/fs.h        |  10 ----
+> >>   fs/btrfs/super.c     |   1 -
+> >>   6 files changed, 4 insertions(+), 171 deletions(-)
+> >>
+> >> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+> >> index 771b7d598aee..e08006543c3d 100644
+> >> --- a/fs/btrfs/bio.c
+> >> +++ b/fs/btrfs/bio.c
+> >> @@ -569,136 +569,7 @@ static int btrfs_bio_csum(struct btrfs_bio *bbio=
+)
+> >>   {
+> >>          if (bbio->bio.bi_opf & REQ_META)
+> >>                  return btree_csum_one_bio(bbio);
+> >> -#ifdef CONFIG_BTRFS_EXPERIMENTAL
+> >> -       return btrfs_csum_one_bio(bbio, true);
+> >> -#else
+> >> -       return btrfs_csum_one_bio(bbio, false);
+> >> -#endif
+> >> -}
+> >> -
+> >> -/*
+> >> - * Async submit bios are used to offload expensive checksumming onto =
+the worker
+> >> - * threads.
+> >> - */
+> >> -struct async_submit_bio {
+> >> -       struct btrfs_bio *bbio;
+> >> -       struct btrfs_io_context *bioc;
+> >> -       struct btrfs_io_stripe smap;
+> >> -       int mirror_num;
+> >> -       struct btrfs_work work;
+> >> -};
+> >> -
+> >> -/*
+> >> - * In order to insert checksums into the metadata in large chunks, we=
+ wait
+> >> - * until bio submission time.   All the pages in the bio are checksum=
+med and
+> >> - * sums are attached onto the ordered extent record.
+> >> - *
+> >> - * At IO completion time the csums attached on the ordered extent rec=
+ord are
+> >> - * inserted into the btree.
+> >> - */
+> >> -static void run_one_async_start(struct btrfs_work *work)
+> >> -{
+> >> -       struct async_submit_bio *async =3D
+> >> -               container_of(work, struct async_submit_bio, work);
+> >> -       int ret;
+> >> -
+> >> -       ret =3D btrfs_bio_csum(async->bbio);
+> >> -       if (ret)
+> >> -               async->bbio->bio.bi_status =3D errno_to_blk_status(ret=
+);
+> >> -}
+> >> -
+> >> -/*
+> >> - * In order to insert checksums into the metadata in large chunks, we=
+ wait
+> >> - * until bio submission time.   All the pages in the bio are checksum=
+med and
+> >> - * sums are attached onto the ordered extent record.
+> >> - *
+> >> - * At IO completion time the csums attached on the ordered extent rec=
+ord are
+> >> - * inserted into the tree.
+> >> - *
+> >> - * If called with @do_free =3D=3D true, then it will free the work st=
+ruct.
+> >> - */
+> >> -static void run_one_async_done(struct btrfs_work *work, bool do_free)
+> >> -{
+> >> -       struct async_submit_bio *async =3D
+> >> -               container_of(work, struct async_submit_bio, work);
+> >> -       struct bio *bio =3D &async->bbio->bio;
+> >> -
+> >> -       if (do_free) {
+> >> -               kfree(container_of(work, struct async_submit_bio, work=
+));
+> >> -               return;
+> >> -       }
+> >> -
+> >> -       /* If an error occurred we just want to clean up the bio and m=
+ove on. */
+> >> -       if (bio->bi_status) {
+> >> -               btrfs_bio_end_io(async->bbio, bio->bi_status);
+> >> -               return;
+> >> -       }
+> >> -
+> >> -       /*
+> >> -        * All of the bios that pass through here are from async helpe=
+rs.
+> >> -        * Use REQ_BTRFS_CGROUP_PUNT to issue them from the owning cgr=
+oup's
+> >> -        * context.  This changes nothing when cgroups aren't in use.
+> >> -        */
+> >> -       bio->bi_opf |=3D REQ_BTRFS_CGROUP_PUNT;
+> >> -       btrfs_submit_bio(bio, async->bioc, &async->smap, async->mirror=
+_num);
+> >> -}
+> >> -
+> >> -static bool should_async_write(struct btrfs_bio *bbio)
+> >> -{
+> >> -       struct btrfs_fs_info *fs_info =3D bbio->inode->root->fs_info;
+> >> -       bool auto_csum_mode =3D true;
+> >> -
+> >> -#ifdef CONFIG_BTRFS_EXPERIMENTAL
+> >> -       /*
+> >> -        * Write bios will calculate checksum and submit bio at the sa=
+me time.
+> >> -        * Unless explicitly required don't offload serial csum calcul=
+ate and bio
+> >> -        * submit into a workqueue.
+> >> -        */
+> >> -       return false;
+> >> -#endif
+> >> -
+> >> -       /* Submit synchronously if the checksum implementation is fast=
+. */
+> >> -       if (auto_csum_mode && test_bit(BTRFS_FS_CSUM_IMPL_FAST, &fs_in=
+fo->flags))
+> >> -               return false;
+> >> -
+> >> -       /*
+> >> -        * Try to defer the submission to a workqueue to parallelize t=
+he
+> >> -        * checksum calculation unless the I/O is issued synchronously=
+.
+> >> -        */
+> >> -       if (op_is_sync(bbio->bio.bi_opf))
+> >> -               return false;
+> >> -
+> >> -       /* Zoned devices require I/O to be submitted in order. */
+> >> -       if ((bbio->bio.bi_opf & REQ_META) && btrfs_is_zoned(fs_info))
+> >> -               return false;
+> >> -
+> >> -       return true;
+> >> -}
+> >> -
+> >> -/*
+> >> - * Submit bio to an async queue.
+> >> - *
+> >> - * Return true if the work has been successfully submitted, else fals=
+e.
+> >> - */
+> >> -static bool btrfs_wq_submit_bio(struct btrfs_bio *bbio,
+> >> -                               struct btrfs_io_context *bioc,
+> >> -                               struct btrfs_io_stripe *smap, int mirr=
+or_num)
+> >> -{
+> >> -       struct btrfs_fs_info *fs_info =3D bbio->inode->root->fs_info;
+> >> -       struct async_submit_bio *async;
+> >> -
+> >> -       async =3D kmalloc_obj(*async, GFP_NOFS);
+> >> -       if (!async)
+> >> -               return false;
+> >> -
+> >> -       async->bbio =3D bbio;
+> >> -       async->bioc =3D bioc;
+> >> -       async->smap =3D *smap;
+> >> -       async->mirror_num =3D mirror_num;
+> >> -
+> >> -       btrfs_init_work(&async->work, run_one_async_start, run_one_asy=
+nc_done);
+> >> -       btrfs_queue_work(fs_info->workers, &async->work);
+> >> -       return true;
+> >> +       return btrfs_csum_one_bio(bbio);
+> >>   }
+> >>
+> >>   static u64 btrfs_append_map_length(struct btrfs_bio *bbio, u64 map_l=
+ength)
+> >> @@ -806,10 +677,6 @@ static bool btrfs_submit_chunk(struct btrfs_bio *=
+bbio, int mirror_num)
+> >>                  if (!(inode->flags & BTRFS_INODE_NODATASUM) &&
+> >>                      !test_bit(BTRFS_FS_STATE_NO_DATA_CSUMS, &fs_info-=
+>fs_state) &&
+> >>                      !btrfs_is_data_reloc_root(inode->root) && !bbio->=
+is_remap) {
+> >> -                       if (should_async_write(bbio) &&
+> >> -                           btrfs_wq_submit_bio(bbio, bioc, &smap, mir=
+ror_num))
+> >> -                               goto done;
+> >> -
+> >>                          ret =3D btrfs_bio_csum(bbio);
+> >>                          status =3D errno_to_blk_status(ret);
+> >>                          if (status)
+> >> @@ -824,7 +691,6 @@ static bool btrfs_submit_chunk(struct btrfs_bio *b=
+bio, int mirror_num)
+> >>          }
+> >>
+> >>          btrfs_submit_bio(bio, bioc, &smap, mirror_num);
+> >> -done:
+> >>          return map_length =3D=3D length;
+> >>
+> >>   fail:
+> >> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> >> index a1d83ad9a4c0..0046f3cb75a1 100644
+> >> --- a/fs/btrfs/disk-io.c
+> >> +++ b/fs/btrfs/disk-io.c
+> >> @@ -1776,7 +1776,6 @@ static void btrfs_stop_all_workers(struct btrfs_=
+fs_info *fs_info)
+> >>          if (fs_info->fixup_workers)
+> >>                  destroy_workqueue(fs_info->fixup_workers);
+> >>          btrfs_destroy_workqueue(fs_info->delalloc_workers);
+> >> -       btrfs_destroy_workqueue(fs_info->workers);
+> >>          if (fs_info->endio_workers)
+> >>                  destroy_workqueue(fs_info->endio_workers);
+> >>          if (fs_info->rmw_workers)
+> >> @@ -1968,9 +1967,6 @@ static int btrfs_init_workqueues(struct btrfs_fs=
+_info *fs_info)
+> >>          unsigned int flags =3D WQ_MEM_RECLAIM | WQ_FREEZABLE | WQ_UNB=
+OUND;
+> >>          unsigned int ordered_flags =3D WQ_MEM_RECLAIM | WQ_FREEZABLE;
+> >>
+> >> -       fs_info->workers =3D
+> >> -               btrfs_alloc_workqueue(fs_info, "worker", flags, max_ac=
+tive, 16);
+> >> -
+> >>          fs_info->delalloc_workers =3D
+> >>                  btrfs_alloc_workqueue(fs_info, "delalloc",
+> >>                                        flags, max_active, 2);
+> >> @@ -2005,8 +2001,7 @@ static int btrfs_init_workqueues(struct btrfs_fs=
+_info *fs_info)
+> >>          fs_info->discard_ctl.discard_workers =3D
+> >>                  alloc_ordered_workqueue("btrfs-discard", WQ_FREEZABLE=
+);
+> >>
+> >> -       if (!(fs_info->workers &&
+> >> -             fs_info->delalloc_workers && fs_info->flush_workers &&
+> >> +       if (!(fs_info->delalloc_workers && fs_info->flush_workers &&
+> >>                fs_info->endio_workers && fs_info->endio_meta_workers &=
+&
+> >>                fs_info->endio_write_workers &&
+> >>                fs_info->endio_freespace_worker && fs_info->rmw_workers=
+ &&
+> >> @@ -4437,19 +4432,6 @@ void __cold close_ctree(struct btrfs_fs_info *f=
+s_info)
+> >>           */
+> >>          btrfs_flush_workqueue(fs_info->delalloc_workers);
+> >>
+> >> -       /*
+> >> -        * We can have ordered extents getting their last reference dr=
+opped from
+> >> -        * the fs_info->workers queue because for async writes for dat=
+a bios we
+> >> -        * queue a work for that queue, at btrfs_wq_submit_bio(), that=
+ runs
+> >> -        * run_one_async_done() which calls btrfs_bio_end_io() in case=
+ the bio
+> >> -        * has an error, and that later function can do the final
+> >> -        * btrfs_put_ordered_extent() on the ordered extent attached t=
+o the bio,
+> >> -        * which adds a delayed iput for the inode. So we must flush t=
+he queue
+> >> -        * so that we don't have delayed iputs after committing the cu=
+rrent
+> >> -        * transaction below and stopping the cleaner and transaction =
+kthreads.
+> >> -        */
+> >> -       btrfs_flush_workqueue(fs_info->workers);
+> >> -
+> >>          /*
+> >>           * When finishing a compressed write bio we schedule a work q=
+ueue item
+> >>           * to finish an ordered extent - end_bbio_compressed_write()
+> >> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> >> index 0fed4e0d32d5..7dbd9b8eec11 100644
+> >> --- a/fs/btrfs/file-item.c
+> >> +++ b/fs/btrfs/file-item.c
+> >> @@ -825,7 +825,7 @@ static void csum_one_bio_work(struct work_struct *=
+work)
+> >>   /*
+> >>    * Calculate checksums of the data contained inside a bio.
+> >>    */
+> >> -int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async)
+> >> +int btrfs_csum_one_bio(struct btrfs_bio *bbio)
+> >>   {
+> >>          struct btrfs_ordered_extent *ordered =3D bbio->ordered;
+> >>          struct btrfs_inode *inode =3D bbio->inode;
+> >> @@ -849,10 +849,6 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, bo=
+ol async)
+> >>          btrfs_add_ordered_sum(ordered, sums);
+> >>
+> >>          bbio->csum_saved_iter =3D bio->bi_iter;
+> >> -       if (!async) {
+> >> -               csum_one_bio(bbio);
+> >> -               return 0;
+> >> -       }
+> >>          bio_inc_remaining(bio);
+> >>          INIT_WORK(&bbio->csum_work, csum_one_bio_work);
+> >>          schedule_work(&bbio->csum_work);
+> >> diff --git a/fs/btrfs/file-item.h b/fs/btrfs/file-item.h
+> >> index 6c678787c770..60a0eb17b3f6 100644
+> >> --- a/fs/btrfs/file-item.h
+> >> +++ b/fs/btrfs/file-item.h
+> >> @@ -64,7 +64,7 @@ int btrfs_lookup_file_extent(struct btrfs_trans_hand=
+le *trans,
+> >>   int btrfs_insert_data_csums(struct btrfs_trans_handle *trans,
+> >>                              struct btrfs_root *root,
+> >>                              struct btrfs_ordered_sum *sums);
+> >> -int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async);
+> >> +int btrfs_csum_one_bio(struct btrfs_bio *bbio);
+> >>   int btrfs_alloc_dummy_sum(struct btrfs_bio *bbio);
+> >>   int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64=
+ end,
+> >>                               struct list_head *list, int search_commi=
+t,
+> >> diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+> >> index 3eba8438593c..203f7131f737 100644
+> >> --- a/fs/btrfs/fs.h
+> >> +++ b/fs/btrfs/fs.h
+> >> @@ -696,16 +696,6 @@ struct btrfs_fs_info {
+> >>          /* All fs/file tree roots that have delalloc inodes. */
+> >>          struct list_head delalloc_roots;
+> >>
+> >> -       /*
+> >> -        * There is a pool of worker threads for checksumming during w=
+rites and
+> >> -        * a pool for checksumming after reads.  This is because reade=
+rs can
+> >> -        * run with FS locks held, and the writers may be waiting for =
+those
+> >> -        * locks.  We don't want ordering in the pending list to cause
+> >> -        * deadlocks, and so the two are serviced separately.
+> >> -        *
+> >> -        * A third pool does submit_bio to avoid deadlocking with the =
+other two.
+> >> -        */
+> >> -       struct btrfs_workqueue *workers;
+> >>          struct btrfs_workqueue *delalloc_workers;
+> >>          struct btrfs_workqueue *flush_workers;
+> >>          struct workqueue_struct *endio_workers;
+> >> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> >> index 464129b1b0d4..54f2da47c567 100644
+> >> --- a/fs/btrfs/super.c
+> >> +++ b/fs/btrfs/super.c
+> >> @@ -1237,7 +1237,6 @@ static void btrfs_resize_thread_pool(struct btrf=
+s_fs_info *fs_info,
+> >>          btrfs_info(fs_info, "resize thread pool %d -> %d",
+> >>                 old_pool_size, new_pool_size);
+> >>
+> >> -       btrfs_workqueue_set_max(fs_info->workers, new_pool_size);
+> >>          btrfs_workqueue_set_max(fs_info->delalloc_workers, new_pool_s=
+ize);
+> >>          btrfs_workqueue_set_max(fs_info->caching_workers, new_pool_si=
+ze);
+> >>          workqueue_set_max_active(fs_info->endio_workers, new_pool_siz=
+e);
+> >> --
+> >> 2.55.0
+> >>
+> >
+>

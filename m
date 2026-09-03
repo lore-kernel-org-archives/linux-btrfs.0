@@ -1,156 +1,162 @@
-Received: from mail-wr1-f42.google.com (mail-wr1-f42.google.com [209.85.221.42])
+Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 72D2D3E63AC
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 06:30:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.42
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788417028; cv=pass; b=X61FuSjmxAiorAqDHyhJIWfaoPF8GUwmzDYJwgn/hEWKieyJS+AqwdhHbv+2HAS2K/ZFM7KQLANL0h4RQ95REMTD7oUzHA3W2kdDfMYaO4IpwYJ6VjeaxgPDWnIrocR47KXSksxzUFqlibMEvcAxTqywh733zLfUbfKsNyx4HeU=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788417028; c=relaxed/simple;
-	bh=L9YgzqImgQ2fykCLgCALgMOmQZUccvtdJFWoTXEoZ1Y=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=o9X5OeQTA//sEVmGz3iMs7xC84CRSvqeXRCn8AYCijzI/2yFgjYZ0Mee9hlUUCMou30FT/J17SXAmG9tRyTVWlyskATww/jmiLNH3Ibya/9HrkW4RxCvPOjy6p1VY2YZgrLD1sdf7SSbI5KxKrrvAFnZp5QcmGlED/6raY9joIo=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=FGFCisSN; arc=pass smtp.client-ip=209.85.221.42
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1B8B3F0767
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 06:34:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1788417251; cv=none; b=j5xpqTyF09Q82AFKeJ4DlAWC64gHLjqFRoU1pxDoFVhGm31BuU/HKChZTlDdGf5OXBI0epOdGZr8FmWW9ioDI6AbJdZ5dx1OISgA+Qwj55kLQRqT/hB0y6oTTR3Kz96AqdOLOLmqjg4aN8MrLnnhHYCmKPD2dFZSvO9MUP+gxyM=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1788417251; c=relaxed/simple;
+	bh=xMIrA9cToFFZxVo5TPqlvEijOMIEoJijBlnQJr7SzHw=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=BfsJDC4/6xh0scP0s8740gax7qLcReVPbi0gmkRAAw+ywLbkFeLMxdfaPDF1YZcM7ZM/sIzY+tbfyXiP5A5lT3tUvx9JRtI+X1NBJz89zVNmNmi48AHhKfGHHtrtUyn7gIIBAdEW4G/DSQI1cY2v26IeEK8G1hEkow8vPZtqMCA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=IU5pRoGR; arc=none smtp.client-ip=209.85.128.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="FGFCisSN"
-Received: by mail-wr1-f42.google.com with SMTP id ffacd0b85a97d-482f2ee53e7so1193280f8f.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Sep 2026 23:30:23 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1788417022; cv=none;
-        d=google.com; s=arc-20260327;
-        b=Mqh7G+CFNuJz2Q8S0UkoGS+IqwoQQPUpV1QgHc41tniQRb3X1r7Rdxx0QYFWRvL6ui
-         q6KmiShW5ZH4qqq0+ozftFiWhzcrr63iCByRKlQbt4OursPGtt+e/FP6aTUo69v5bw5h
-         FUKtZ5j/5EahEmyQ+KwMHso/qaBt61yTmlrJ1a+LYaBrX937vAkAwEBAIEQx9t2wmGnK
-         zuoVZ2u54UTnjmxNmrVUVxt+kVJUk1SsXaOqS5bPPiG9OfF4XzXatB+DBJ4onf8k0kYT
-         0UneDOt9XbmJnEEJ1nr7MDD/IGgdbJ88u/mKeLDdAYFKt0VADRLiHH6V713KqzjJsCZa
-         0Rcw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=WKRkbKkaEYv3dMPNaQzFCGDU7wkRpO5gV3nKp7QfhWY=;
-        fh=L7Tfyh8dKFrUYAZeRm/mRrqo68tPzulHlQ0WBhjkoGA=;
-        b=AyAgywodyDonSLsljcUK95hANv4IlsAkJJyo6F8OIJmTbxTtaxFV8s8AZ8PsAEwGHA
-         eUeFuwoZu5L8ewkjkUs2S45tjKRCeYt2ClcFvDknl/l/iFbzhdKRXZ04REIhFfBQvEOO
-         2enAmtzjxfQoZhg9+oJ8NEt/ITMrgntzo31D5PcWY6zJNfqKBYkfqJ+6XwNhH18rlU+E
-         0izokgOmTQ2vd+kTGSQHCvRP43YzeLYgMuaByBSXcek779ED2KcDUpVwftolKAgrygvE
-         5//CdOPvf5skHhK0pJ3yTG3khBMlIT9H3hz2kVe1hwNwQw5fT0a/j+f0d7RzhtmDxfmL
-         Q2Ng==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="IU5pRoGR"
+Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-4921eed3fa2so15689575e9.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Sep 2026 23:34:06 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1788417022; x=1789021822; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=WKRkbKkaEYv3dMPNaQzFCGDU7wkRpO5gV3nKp7QfhWY=;
-        b=FGFCisSN0l0c9VUIKb3TMDHwXpJx8mogtHAeA+oEG+pV8WRe+l5eaPwRN6wQilDsTm
-         2LCKn8lrVf4Q5V/4YgNv9eeJoxZVc0m+DJs4rigJ47nTRArzPjPYiqeIB+dfN3FmbLi8
-         8bfWuyks3mfgJFCJ/mBlWY2w/W4PXKbMkDT8it6vtvkLW8k8PMAsc4qbtKymWnS6AINg
-         jh66KPusCX7HHKcVBBHQHfUxDfZmbha856c+Bs0yk9pTPuOiglzYN9EMjMA7Cv+pIaON
-         55yJhGJathZbAGeqLR4ygGMlYd+6gjPYyLNljYyukwi9QizV64BNzVH7HDVrIj3VFq6o
-         tRGQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788417022; x=1789021822;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+        d=suse.com; s=google; t=1788417244; x=1789022044; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=WKRkbKkaEYv3dMPNaQzFCGDU7wkRpO5gV3nKp7QfhWY=;
-        b=G+j1McZVE2qv+saQXkJcBQNEoWhy88UdA8NL6G3qCL3yRAlcPz5DdCLkTioL1UtUIw
-         AbUzLvRGV1XxErTRrSGaP2/k4xHp45XE56QJeUyOdRthVhiXznNG3ZWiNWg0cvFQYzyS
-         8OEoGp6TPigwrOKyomLyIYBFg2CZx2D0zgMCrMxK798lGmLGyK9YuLm/dva9vn6Ufkei
-         fwmpg7MvK29l3sVaBLfa/Q1Ch+nhUrWFsN+y5YDrOgqvdGVoY51BDno1zbbPkEqzaO7b
-         zjX8Avr0NJ2JhgP3CX8byRJtqvj85BJc0XuJ7gliRDgNHLvNu792EJmH04OIqoZe8hRd
-         H8zg==
-X-Forwarded-Encrypted: i=1; AKwUvBxMJhpHPc7toENkEOWXT8TRI/qZWvpNiYChiWlBfFYvQOtqCAzoDo6HwgjOwAnnfxrvAK6GzIQu+lD8qg==@vger.kernel.org
-X-Gm-Message-State: AFuF++kfuB30tuAXY6OMTR5PHk05xgMEZU3H0pFbto1kG0V+ilD+gZYo
-	Rm9vJaeqrQvwbuPYWjGadWAqDWilv+faWgxUx2wI1G4I6TMqMof+VWCq8qAn+MoFs4WarUz3+fn
-	/7Z6kAB0JEr3aq9dunPUtRi3jH22lZkU9QiavyebV/Q==
-X-Gm-Gg: AYBFou2vUPYza61JHjgXelrdC40gD3Ip140yZfQTqheis4wzZbcfkOYv/197a+gwcBw
-	pVgs0NyYrLN2s2ZH0dNsm1AKbX8kcQ4pkysQAS5WkxCVDVNeX//WwWLvRa9MhSXdSW7sKw487ib
-	eM8rXCCrrPWCQhmJtZ7hMExTvEP4lZ0zDaqtX2+eqkA09YO6hOeDGXVLgrDVY/4IQ/8wWZBCzxL
-	TvjvekCYhmyNl1T6Q9vBW2I7FQnkbwkHBSuezsUg99Z9ZZCO466R+sC/6ar2HIO7QlmzVSFGxRq
-	EM3doKGAePmrV77RTqJZwKHUhMq3B1+Pb0cFQTjcLeHfQh+FrCP0evVeNO9Wr5UGoUmd7c9mtIj
-	zQdGIZXtVWdzbUQX6FSG0f2FpiBCX7Ky20g4SaEVr9g==
-X-Received: by 2002:a05:6000:491d:b0:47f:80d1:be0a with SMTP id
- ffacd0b85a97d-484913b985fmr18395121f8f.14.1788417021740; Wed, 02 Sep 2026
- 23:30:21 -0700 (PDT)
+        bh=7hYjgbToYjV9xCbE8koKqXdWPOsEFnvvuydih6e5oBw=;
+        b=IU5pRoGRLxduZQ+TDcxFAaUrKNvDr+K7rBc7cy9XV4eKWWqFndMrebK3Ouos0D7HMo
+         fGh93vNDDfLtIhmr6x3O+JOwRuPzbvz1MNRNuFWvNk9qB3pjy/Pfrys2dR+T+Ttafy5g
+         gldf47hDFA7NolK2onW7NNTQagMiJIEBUtuBYzr0AxQWiMLr8GjdlCqYhJWFA1z60kzd
+         3dvm8cR+grIyDPBZBKIIZMaUfHRybOKc1G78zi90XwuG7FU5Sm4saMtAoDpXmpUpuZGX
+         wJIRF73IgSIpiFuZTznh1ED4jmEWT0ZzUs75bEy5Zp7InzgOSnxqILsROy46zEcbcRCg
+         TKcQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1788417244; x=1789022044;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=7hYjgbToYjV9xCbE8koKqXdWPOsEFnvvuydih6e5oBw=;
+        b=G2UyqCAygEUrluWg4z8eaJPDuBZg9q4YSxvfURSNua2MBHr9zm1R+JHEnRx5gjqra5
+         tPTdiCs0JgOpR7v8nMCxSScS3IQNZKv0Vblqy+z+sGfp813VdRDn2hrukGP52GUGzccO
+         zPV1xjbv2RrmpZfXOSfP2SYWp/QiVVARoOnT9qn183Y8oCFi06DmW32L8wWrkb/Udg/C
+         jqyiVTRy00DI8GdXYh1bdfRz3A4aWhfanWzW0RbA06+Nw5S0RmBUBgxI5ikatU+o8UJF
+         1LWKrqwpPh3CFxEEyi/nW+TYAtiRDTK6+pMZ54Q5vJqJvv1npje9eMNhaToXEWOTGuho
+         fyEw==
+X-Gm-Message-State: AFuF++n8RCGVV/5+rvweAZyZamnKisyUrGdDByb67SKfZEJSoE4SdYgB
+	z12eyjbcDwv24f0XhV0qIDchix372LC1rilnBbYB0hBcv2g9Khrv0T05qdrMUab75J4=
+X-Gm-Gg: AYBFou1f7sVvXo2kyAeabzXG8Fya0ugYUlKfew3L+C09bbdTNrQNDWaX0LEv768NARW
+	q/WVxAs5Ti2Vx9caXHpvAaLRcVC3hEK6Qd/wJOmw2zx7sjmYEB/W5fiXgB7W6foICroWVz2BYTt
+	G8WMxLVEtLPZe+qobLeNE1F1PjWiqUL3cN5zPHeQ0uQ4tEQIpsbzxiY+aSMtiKK6qWJbsSA6rMr
+	hOln5zGwL+gkYAfPiy37JftXUW1UCz94ZeqLJuNHBqV+EhmnsgyFUuPK7D8iP4XgOY72PRQlbgi
+	53HuBq4Bb9xPdVsbbgMtEdR+VRiBYs8hP78fdyXPTn9NHeHUcS161eH9VO0YbKAr0P2KuJP3lft
+	wd3jauFXVnVySF+Aq2Ai9aCYs6wDvpbVtga1ZvVrXc3GmFa2YcNQ/mpCR4Dg9OsBqXLNmcp6BsE
+	i+3+eqnTZ0DY8K4GrYCxMOcM6+nnqOF98zDEHHcAmBR3oBGinFCFen
+X-Received: by 2002:a7b:c3da:0:b0:49c:d293:70c8 with SMTP id 5b1f17b1804b1-49ced887bfcmr84872295e9.3.1788417243857;
+        Wed, 02 Sep 2026 23:34:03 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-85dc003a801sm2331943b3a.31.2026.09.02.23.34.00
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 02 Sep 2026 23:34:02 -0700 (PDT)
+Message-ID: <a9179480-4f99-407d-b381-5c97a1e85a2d@suse.com>
+Date: Thu, 3 Sep 2026 16:03:57 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <ba5fc3c9b2de187169552786c1fde4e2ebcef0f6.1788220853.git.wqu@suse.com>
- <CAPjX3Ffo1jF0=u3atBr+mdco=aYFGU5GWQ6FNtuzgFUQEMvHdQ@mail.gmail.com> <ea64c701-f488-4cca-ab2d-59c45a2b3604@gmx.com>
-In-Reply-To: <ea64c701-f488-4cca-ab2d-59c45a2b3604@gmx.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Thu, 3 Sep 2026 08:30:10 +0200
-X-Gm-Features: AcwNN1XG2g5YWKxNHSgy7g_B7-PqR0QDzUk5-JT8ZWhOgCNBOsEc6NBtPaSoaeA
-Message-ID: <CAPjX3FdcCyuBPAzv5pAWSmrwQZn7rwRky5ze0w5qpLJN9eKLjg@mail.gmail.com>
-Subject: Re: [PATCH v3] btrfs: use ordered extent to grab the logical address
- for submission
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, Boris Burkov <boris@bur.io>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2 3/3] btrfs: promote async checksumming out of
+ EXPERIMENTAL
+To: Daniel Vacek <neelx@suse.com>, David Sterba <dsterba@suse.com>,
+ Chris Mason <mason@kernel.org>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20260903062317.3928665-1-neelx@suse.com>
+ <20260903062317.3928665-4-neelx@suse.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260903062317.3928665-4-neelx@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On Wed, 2 Sept 2026 at 23:44, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
-> =E5=9C=A8 2026/9/3 03:53, Daniel Vacek =E5=86=99=E9=81=93:
-> > On Tue, 1 Sept 2026 at 02:02, Qu Wenruo <wqu@suse.com> wrote:
-> >> +       if (!in_range(filepos, oe->file_offset, oe->num_bytes))
-> >> +               return NULL;
-> >> +
-> >> +       refcount_inc(&oe->refs);
-> >
-> > Thinking about it again, do we even need to raise the refcount?
->
-> That is to co-operate with that btrfs_put_ordered_extent().
->
-> > One reference is already held by the bbio itself, so the lifetime is gu=
-aranteed.
-> >
-> >> +       return oe;
-> >> +}
-> >> +
-> >>   /*
-> >>    * Return 0 if we have submitted or queued the sector for submission=
-.
-> >>    * Return <0 for critical errors, and the involved sector will be cl=
-eaned up.
-> >> @@ -1833,8 +1848,11 @@ static int submit_one_sector(struct btrfs_inode=
- *inode,
-> >>          /* @filepos >=3D i_size case should be handled by the caller.=
- */
-> >>          ASSERT(filepos < i_size);
-> >>
-> >> -       em =3D btrfs_get_extent(inode, NULL, filepos, sectorsize);
-> >> -       if (IS_ERR(em)) {
-> >> +       /* Try to reuse the existing OE from bbio first. */
-> >> +       oe =3D get_oe_from_bbio(bio_ctrl->bbio, filepos);
-> >> +       if (!oe)
-> >          {
-> >> +               oe =3D btrfs_lookup_ordered_extent(inode, filepos);
-> >                  put =3D true; // or !!oe
->
-> I prefer not to introduce an extra if check just for a single case.
->
-> So the existing unconditional put and refcount inc for the OE from bbio
-> looks fine to me.
 
-Fair enough.
 
---nX
+在 2026/9/3 15:53, Daniel Vacek 写道:
+> There was no issue with this feature since it's introduction in
+> dd57c78aec398 ("btrfs: introduce btrfs_bio::async_csum").
+> No need for hiding it.
+> 
+> Signed-off-by: Daniel Vacek <neelx@suse.com>
 
-> Thanks,
-> Qu
->
-> >> -       ASSERT(!btrfs_extent_map_is_compressed(em));
-> >> -       ASSERT(block_start !=3D EXTENT_MAP_HOLE);
-> >> -       ASSERT(block_start !=3D EXTENT_MAP_INLINE);
-> >
-> >          if (put)
-> >
-> >> +       btrfs_put_ordered_extent(oe);
+Oh, I was doing this already, and it turns out that we have a lot of 
+things to cleanup:
+
+---
+  fs/btrfs/bio.c       | 136 +------------------------------------------
+  fs/btrfs/disk-io.c   |  20 +------
+  fs/btrfs/file-item.c |   6 +-
+  fs/btrfs/file-item.h |   2 +-
+  fs/btrfs/fs.h        |  10 ----
+  fs/btrfs/super.c     |   1 -
+  6 files changed, 4 insertions(+), 171 deletions(-)
+
+The main missing part is the should_async_write() now always return 
+false (you missed that EXPERIMENTAL flag there).
+
+Then it means the whole async submission part is no longer required, 
+resulting the above code removal.
+
+Thanks,
+Qu
+
+
+> ---
+> 
+> v2: Introduced this change.
+> ---
+>   fs/btrfs/bio.c | 4 ----
+>   1 file changed, 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+> index 771b7d598aee..db426ee6e587 100644
+> --- a/fs/btrfs/bio.c
+> +++ b/fs/btrfs/bio.c
+> @@ -569,11 +569,7 @@ static int btrfs_bio_csum(struct btrfs_bio *bbio)
+>   {
+>   	if (bbio->bio.bi_opf & REQ_META)
+>   		return btree_csum_one_bio(bbio);
+> -#ifdef CONFIG_BTRFS_EXPERIMENTAL
+>   	return btrfs_csum_one_bio(bbio, true);
+> -#else
+> -	return btrfs_csum_one_bio(bbio, false);
+> -#endif
+>   }
+>   
+>   /*
+

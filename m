@@ -1,111 +1,90 @@
-Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fout-b2-smtp.messagingengine.com (fout-b2-smtp.messagingengine.com [202.12.124.145])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 40BAA372B45
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 21:39:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 28FFC4CA287
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 21:42:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.145
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788471550; cv=none; b=d6hoqHNNS4vXN7iTRiV+BxRqpn0zUvAjU2Mh93NUSwxa2Vo+/h/ubnXf7UZ8YxUy/vljJAU1jnvj5CizCidXlZXSHY/ACCU7lJzI8CMuIt8DFxE+Qm3G+JhpcODx1pI8j6Cqi8DcqS2zFAA4kN8M8UE7CA0kpH0sevDKv1DirMo=
+	t=1788471766; cv=none; b=Ukc66Sv6AVKoru6TC0KzOq48NYZCW8S7whmTNzGu7k49uft+bQdp6fBcJxQ4tDqcEOPRUNH8FJ7WguSXe3RyCZos54x96TU06+Xrn5BrpOudRkyYoIv/e3LEEOd9W/087KY3ZiRj1uE9eyWiLgvOI6GjjYv8kBMmcoJ4rLuLV24=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788471550; c=relaxed/simple;
-	bh=sth9O7vGnhr8iR5Zb3piUuXGkN8Yuleu7T6S31hMuOs=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=BwCUafqAWFqaOG0QaWFUYfBL7fnTTtrmsQ1KEhEvlv5nJi5SbxK61yg4TwszwH4kWGMkdMUyZzXGWVoIxOdc/8Fowgbo5KimHsWENPXXoBwxqQCXfcPDI/ur1r+BZfBHDfT2EDTmsYstg0mlNPjKvL0IPY6rUI7eEJNeXkJz3oQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=N2sFohnC; arc=none smtp.client-ip=209.85.128.51
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1788471766; c=relaxed/simple;
+	bh=3Py5V4xmBkLAKbqeVqmWDtpAvc17ll9SOlsxxjUIV3c=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=dJKWkI8w6SJ+swqDy4C0x5z7sOXeuz9CPhsHnq5aguLIKgFryUGRYu24veDZ0T/Kgn6QymWwqf7oVTDVErbe57mHYR71beDl21wUmUjvVYRo3cViAu/4BbXgEC4ovHgSS9mX/0qDf4oEiA6P0KABQ0UZpq6vk6XstRFIY28Nd8w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=effMUOyh; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=LkSF01u5; arc=none smtp.client-ip=202.12.124.145
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="N2sFohnC"
-Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-49cd77e0f95so3344075e9.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2026 14:39:09 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1788471547; x=1789076347; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=olHVLRl6xvoR4kf99wJbOE5Q68KbuZTES9T95dErUis=;
-        b=N2sFohnCmtSZgHFas10uGoC/HzO2ovI2zOfj/X4aUMItUHZmSvIxZZhI+rNimQ8L9W
-         VOwpGZZjYa1hhSehqjsOwTXh9wn1c2dmbiTuo0Nvx8BdxKsK1VtNMUB4mfs80oHK7b98
-         KffB8QiU+HrrhrEg3cHcuVGhT7jAGfARzfQ9o053wlCdU9QslAFtTS2mlDUywbgcQhQr
-         Tgv24bj/MpXjZNqWOpvVBhrZChvYjjFpdlsVqoCLcOVkTnrW2VQ/EDAUqKOib3es7Vz7
-         i4Lby4nxmt0cEKbMgevrvsRmPU9A3MC2lZdLELHx6l95ORh9w5Yg5ICryyMS5xFmfTUG
-         Vzjg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788471547; x=1789076347;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=olHVLRl6xvoR4kf99wJbOE5Q68KbuZTES9T95dErUis=;
-        b=sAEXT4/ejfYqsEG2eCmqb9U+dnMkvoesccJpRLWdEBH1BRe3rDH3NqC3c85zByHqbv
-         pdCFvHhlll+8gNBTkcH5+4RiyhXAzcM3k9Frva0QqYkGx5q2KlQ+Vi0sCKQk0cWbpsK8
-         dYGGP7nJrHKRtXvxUH2TGlVPdifShXI4qOv6aFHfsc4aerlfw1M/q/rDe4/FRDkn6z0u
-         4/Va8ZEx6B5cNhjTO4uWp9aU5+7LJdq/ZmgktzRXzvR2EaQCaotp96ZtUGkBZ+85ii3v
-         5lchf7CH3dFmTq/EE/Zq/y1HsmhqiKk52282KXzfU/jnF+QNfI/6LygagKyNvkfajY+a
-         9FwA==
-X-Forwarded-Encrypted: i=1; AKwUvBzb/YTojY/Dm4Ulu/CKNHjW1seXRkyX6eCLddKFUhBAk0Z4Zlxc2k7LyxdzvtDKVhx/xGuDzGHowgca3w==@vger.kernel.org
-X-Gm-Message-State: AFuF++l3QVKRVfaMmMhjBP7ywZguFpiPxOPkQ0RIV5cO75wKtMb1i6JU
-	ohn1DVUEHMEF+4BfPoX8IxHZ1jFfnVn8AHst3/fo6GhiJdeC94w8lp/8HiRz1yQ/hd8UJxio8Ns
-	jTFZLjvuHng==
-X-Gm-Gg: AYBFou3Xs7qwlu1xlhXwJSIcXkpvXbgjq5y0ExH+EHFCCmZvkh/ee3XrVzcUpf6GAmJ
-	WyyIciuwPjj30CVzYut46eY4hhNMXJHkYrkbbfyqCfDiqgvPTRB5jfIA5USrmYXucEV0EDOBLyg
-	biHgOzwvtiZ0cTsVL1Lbi6w02RcJ2/+jYiqcQTmzu4lGxS3c3b1PKgbm/Ag2Vf0XoYTrf6K/JGj
-	cYBmT2q5BFEIUqH5MMySHuIwj0HZ0UIbaOm1xYysRmeAUTrTLqCwLcqQQ4fl4RStuzDbYwSVoUs
-	CSSSpIH0YiiTqLNzQRxTrzz5iE/Hisqc6lKLj1LNIAcv9PjsHp0z66f7VaLQW6SsryyAospGuYv
-	XzBePgFk6wz6jpES3OK5FpHduH5YSgl6SHWW+YTlzxLyIAtVf2Ocmk/UnkDvwESt0Yh59V15jva
-	N6jV0j+sAQzh218xc8mMxUPbNbNhOLF9NRlhel/TgOgH8aVFlw0qqp
-X-Received: by 2002:a05:600c:34c7:b0:499:adb4:a922 with SMTP id 5b1f17b1804b1-49cf825121fmr16215615e9.12.1788471547512;
-        Thu, 03 Sep 2026 14:39:07 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-39b2615039asm851892a91.15.2026.09.03.14.39.05
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 03 Sep 2026 14:39:06 -0700 (PDT)
-Message-ID: <53ffa99c-fe53-4f00-a714-0fd4a8481f69@suse.com>
-Date: Fri, 4 Sep 2026 07:08:57 +0930
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="effMUOyh";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="LkSF01u5"
+Received: from phl-compute-07.internal (phl-compute-07.internal [10.202.2.47])
+	by mailfout.stl.internal (Postfix) with ESMTP id 388C81D0010C;
+	Thu,  3 Sep 2026 17:42:43 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-07.internal (MEProxy); Thu, 03 Sep 2026 17:42:43 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm2; t=1788471763; x=1788558163; bh=KQFj5UAiaf
+	rlTjaFQJ6bQ+z4zf1/kX6YzGqJskUSRhs=; b=effMUOyhscBoYAX8Z1Uhu9JaDR
+	rbsFZtizze0mddzkcLkhCSJDAWpF60w4BcyecD2fHU2gUS6VJ7JVyds2YAKNrMnE
+	L3yxXl2J7+W69l9iAyZKAazfDJXRN3QbIpG+pCtkboXoXg7vNb4LHPrV0fvJyFF0
+	VkRWRP9CrSxDczdIczTl/3BTQDpqSIildiLnThB5e8RLvIa+m/g/dyDMUXcRzwip
+	E8x0Wk4SodY8GEyi9XK6sflJN1bdyB4jpFAjbJlhQA0GoHiZZPPNqFZ5aAtTUlJY
+	tV/CWJJIZhzsMliDGu23VGmHF/ZkJi5TJRRq3whvtnHF3kxg6ekY1H8isEGQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
+	1788471763; x=1788558163; bh=KQFj5UAiafrlTjaFQJ6bQ+z4zf1/kX6YzGq
+	JskUSRhs=; b=LkSF01u5n5z9wSqcLFlu7QYXDGKW597QmzOHUJl1ktyfRqa1tf2
+	03J+vMOEmD+7I2Le9x3cFpzBYLjhGc5VbPHLUQOAhHY5GvLtG/E/9RdwNu8sdeSu
+	rQN8jtH/CjU8WppnRtBKyhWyXt9Nb96FqDBV1RQ5XTFdKUbA30tykukYZQTCFq3y
+	Y8KF9CPp0of0v2ujXrf6A5JHtDBWsoF+t0i4UD5D10LjR0UeUl9EQclDFiAQhNBK
+	FdvND+UjwmMjuAQO+jHYgJ0DGiyXVk/B8AE2nUp7sl7np/WQEBZRLPyP83v1wUi6
+	PmSVVHemUO+AGj9fXG2it1pGvMKmVhFJyNQ==
+X-ME-Sender: <xms:0-mZagTU5n0cFw8b6RWEihaY_1eG3SM1FZrPgKsL5j2XcLVd42mjjw>
+    <xme:0-mZajx9B8Kaxk-9pZRRxK6iXQKOZx3KLAB_x-PEDh36NUVIoJpyR-rnIoEeQ_G90
+    gNyFWNshEWK55Rbj4O__-1VaD25pXeC46INuOl1dFj4clNxqnD1aXxW>
+X-ME-Received: <xmr:0-mZarcwTQdLVgw6tHz60SNl3I7qEsHsydlMjSI1lBAvYVXiFwShX9c>
+X-ME-Proxy-Cause: dmFkZTE6bcPXSkdgGz114XCTSUmXunObu+brELl7WZOhf7pKOMpVvvLxGmTRMnOj983c++
+    oDprx93Tok9gFQxvbL+s+ZgevZV4EVvFyy9mVSnjDGMk59a3ov7Z9hpUpFNdyDMjiSYeXZ
+    cZ/6Y4SeC6zvVUheHzN6rLSDuJB9a8f3/zPtW+ai7tAiz17uJbCSF6TBhQsaoX4ae5PUNs
+    P/ky5ldIuLIK97t+92rGCec8D/7DyOhFX0tr3fXox9V5zurthYa4GkcDmOZoHoDOthlQtT
+    HBxP2M7qX+EGQ7qFS3yEhpiAXx9+/KOvaL8lf5OQIANlCOB+HFD/0UeXxraqDjZyxTftR+
+    MMVFOG20sql35gitPZRgrRA2K56I1ttVDqedMN34Sk0FtAn8JeJg/E6+ol6qUZ6nLV7Co9
+    bPJsnHnkOCFAaTgArdTOR1LMPbHd6mAsFthL+dwszYY2DdELZ7nFZBjA1bb/l2pj8VYXQo
+    m9TZSsVbFBr1JEBcHtPXAouJ0x0VR9HkX4HRBjWczoz2ggOtlH/DAFLNYfPIMZ9PbrRJOM
+    TLmK4+DepqecZ5S2VAdGY82ZMjh+VJ4iTKUmU61rZof8Sk8jGHQua2NldtPonRgE6qGaxh
+    0V2ZFKsD2L1fjr123ad+KhZSAuAxfsikXLgVCxvtMEYVJ7an5s6kLzAOExnQ
+X-ME-Proxy: <xmx:0-mZavJwMDiUD_gJGmQd5I5Ev0r0qMKbcYrrG8NEK47GQfw4pQ-yhg>
+    <xmx:0-mZasEA-FZRUkM-U2pqM8vHXQfvOpny_iW85CB7XaOOF2pGqU3gPA>
+    <xmx:0-mZapqjyYWM16pvGKckxTsV5YJgXPCegUey2epPL9bwzFh-v4T6TQ>
+    <xmx:0-mZalS3Y1mhQTD45PzpzEWZcaczIkuW-otCt4w81oDky3-Ds5USCA>
+    <xmx:0-mZanFeU_jNII8JeNoXqbKfEYCTqz9cra-WR9HqgzLkgjDmrIzK6NXv>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
+ 3 Sep 2026 17:42:42 -0400 (EDT)
+Date: Thu, 3 Sep 2026 14:41:55 -0700
+From: Boris Burkov <boris@bur.io>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: tree-checker: validate name length for extref
+ items
+Message-ID: <20260903214155.GC3237930@zen.localdomain>
+References: <0fbde4f56df4c84aa62864a2641217fe2a8132c1.1788452841.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: tree-checker: validate name length for extref
- items
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <0fbde4f56df4c84aa62864a2641217fe2a8132c1.1788452841.git.fdmanana@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 In-Reply-To: <0fbde4f56df4c84aa62864a2641217fe2a8132c1.1788452841.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
 
-
-
-在 2026/9/4 01:57, fdmanana@kernel.org 写道:
+On Thu, Sep 03, 2026 at 05:27:48PM +0100, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
 > We are validating the name length of inode ref items, but we miss the same
@@ -113,23 +92,20 @@ Content-Transfer-Encoding: 8bit
 > other patch. Add the missing validation, similar to what was done in commit
 > 3dc22abc21f5 ("btrfs: tree-checker: validate INODE_REF's namelen").
 > 
+Reviewed-by: Boris Burkov <boris@bur.io>
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu> ---
->   fs/btrfs/tree-checker.c | 7 +++++++
->   1 file changed, 7 insertions(+)
+> ---
+>  fs/btrfs/tree-checker.c | 7 +++++++
+>  1 file changed, 7 insertions(+)
 > 
 > diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
 > index 3a0715798282..401fd40ec7b2 100644
 > --- a/fs/btrfs/tree-checker.c
 > +++ b/fs/btrfs/tree-checker.c
 > @@ -2032,6 +2032,13 @@ static int check_inode_extref(struct extent_buffer *leaf,
->   		}
->   
->   		namelen = btrfs_inode_extref_name_len(leaf, extref);
+>  		}
+>  
+>  		namelen = btrfs_inode_extref_name_len(leaf, extref);
 > +		if (unlikely(namelen == 0 || namelen > BTRFS_NAME_LEN)) {
 > +			inode_ref_err(leaf, slot,
 > +				"invalid inode extref name length, has %u expect [1, %u]",
@@ -137,7 +113,9 @@ Qu> ---
 > +			return -EUCLEAN;
 > +		}
 > +
->   		if (unlikely(ptr + sizeof(*extref) + namelen > end)) {
->   			inode_ref_err(leaf, slot,
->   				"inode extref overflow, ptr %lu end %lu namelen %u",
-
+>  		if (unlikely(ptr + sizeof(*extref) + namelen > end)) {
+>  			inode_ref_err(leaf, slot,
+>  				"inode extref overflow, ptr %lu end %lu namelen %u",
+> -- 
+> 2.47.2
+> 

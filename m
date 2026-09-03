@@ -1,105 +1,87 @@
-Received: from mail-lf1-f50.google.com (mail-lf1-f50.google.com [209.85.167.50])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 33E764A1DEB
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 12:25:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A0C874A384F
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 12:27:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788438347; cv=none; b=dvFdI1KUAi4p5ZGu25EEsK5yIzuwM8hqozTjZOlAGwH76+Qb2gpXyXP43xKwcX7lItV6YmdWL5e6xSbs0G3kAiNXtrge4AZLUtykqjitXESsTQ0O3cLpxGSu2Z4xO80kgcQCwBAw4Sb6TpAE9bGIJ9uaecCbRPVoVcE1Yjg9lOc=
+	t=1788438437; cv=none; b=OT2bOg/h3JYqH3ZVCPicOEcu0t42x5hAkOGGybDFEAoMk3WiBFx0WqimlgkoJRpZLvzr2drRAMehbnKeBjEZncitHwhtD87FHJOkBRQviKMS0jm28qgFSPHmNzd06djEtr9ynJyuU/gbWf7RmvG1QKom5uZpFLGLe1zaZskPK38=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788438347; c=relaxed/simple;
-	bh=gd41sQqJcTrgpwAAVhj+jO74Ye+0frNhGfIV3VKF0Rc=;
-	h=Message-ID:Date:MIME-Version:To:From:Subject:Content-Type; b=LjR819A/tDvaf4eq/jt2nR2Noxq6RuMXJuf7qbPb0luxgHRZZ8U93vntLijitbN+xi633+TSdRUHCGenDJhv/wDH+1kglUD9aa88ZIbFquxHUirRewzktd6NbNaXvelrNhS41HoO8B7S0lIO0r4doSwogq25I3kfil6z+aXg2tc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Wc0p+tUN; arc=none smtp.client-ip=209.85.167.50
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1788438437; c=relaxed/simple;
+	bh=AYp75dxR79bQg5bV76931ipAckjfgggfB5IoCJe+kzQ=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=tfSARTpnNO3HXipm8OsQWQYgUfA7jirDt6Fup8tY9HxNZRbgacGehsbZLyZgHUODoXiVR0mkADD4Fpkcz3ZgqI2cSHMza3ri68dwParwh33KVhfqEIwdfyTz7wqpNHP6vvwrd90zC59f/ifBaGL6W61lBv3KlJq+xHZs9Ib9Jtw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=DushnQmt; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Wc0p+tUN"
-Received: by mail-lf1-f50.google.com with SMTP id 2adb3069b0e04-5b4ab40d839so2068638e87.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2026 05:25:45 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1788438344; x=1789043144; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:subject:from
-         :content-language:to:mime-version:date:message-id:sender:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=d2HR0o8c/ywsuqBG66RS8eeDgIixsQrX9fGRzaSM8rY=;
-        b=Wc0p+tUNVn47IPKpUfLS646s+wU1NJyKyRaTW5b6vyGx6JSYiaLSJ4hI0DkPx1zU+P
-         bkayrByZGNg400ehzDymg/xB4q1nijIlbyR5LfEWviVc5R5HoK/bzBz6rAHO140E+QZn
-         okzs6qmucAjJ2ypCwc+3fxV0ky2kZsTslVQ31RAtqb0yjDuLAMtyYQn7yjmfktGm41j4
-         MzuXbOBfFwN+gOP/vvsth9a/XrPdUBeuyd2gNV5MDsyoUAj515nC1cISCcObu4YLelTV
-         KtZ+n0pVferi5OZl4v5kvVzn+BKiTur5QpZL+64BRS9NKKD4jVDdDWU7ScVMOD8Dj5GU
-         GW6w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788438344; x=1789043144;
-        h=content-transfer-encoding:content-type:subject:from
-         :content-language:to:mime-version:date:message-id:sender:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=d2HR0o8c/ywsuqBG66RS8eeDgIixsQrX9fGRzaSM8rY=;
-        b=rrsTFhDcqDZoBunvbCSs6I36v0viDPptXn4lInlvZ46qrErE/VsDMi6AC2hZaXtsED
-         AWt9aevfnYj72JL3EZyReLQDR9ykJKRmJ8B/wjerjMsH33kgztJwxD25Jz/P4T9ow1YI
-         W8bVNLKcOUyIMsQ34J3ACNn35VPaE3b49rNjZyzIuv5CJt6Kxa28j+8RLI7qpZ89QYqf
-         IieO8oHkJ5Cos4vvhzBpDCnEXyWyVt9l4KYNbzBaiNSe4ZpyVBpp/KYIx6SUxaCyix2i
-         uVtBqkcC0sAwUDV0FttXRMsLDVQ4F+ahPNxPqrPTrX+hztcN35xIevHoWlwk0rPHKSwB
-         U7kQ==
-X-Gm-Message-State: AFuF++kR7oj0s86tsMep+jZRF2gGuq0pU8n3+DGKmbqJ9Q/4wJSlqj5u
-	7MsRkVk2XOx+50S4gW0AYo82jAxo6Hq7lKSim2+H93XlLgwPFUf8DHu/kkRDHR14tZE=
-X-Gm-Gg: AYBFou2ysrhL1vjBT3Hb36HG7eX/OrNK774VUQUOBiFwGu3qYYDL0AMRq9qNgGxc5u1
-	1YBaNyeoL1xqkveZq1UK7taTnG0cqxOhTNGDb9gmsQIdtwiwyvJt0phl/SITEE3eAyS+1nw1Euy
-	U2zoON/Li5XqJ5AZ+BH8RF4NWmyObpyCkaU6QA+d+fNjNs/1wj26C3FDQdy+K3Z6cId+Bh+Tpn7
-	dlFejNdIWAFB+aI+vp+GbUdTE4q8hhNhPYT/i5GDqqCOivHa4v61XYIuedxFgl7YKtPpxR4EwKE
-	JhyjU4nQHe5tbH9LF5YvslSVnTv/pxvSAcNf7rYF/sePDzALkgx5p0xcPHrIY4X5jleCX6a8YH4
-	9Bri7NWkxb/8voCE1mSiU3isPscxdk0QObMi5yLTXlnzWc2ihVUWqGvor6pgzaWrVIub1mgTzSZ
-	wNtPC1ob60woue40An1NMySEXrJBy2X6cVyHsakGfrUw0/rxHnwUMKVhwnc2HNHcPh81P13UsMG
-	Q3wK/FW1Ly6fIZDDBA=
-X-Received: by 2002:a05:6512:159c:b0:5b0:1aa5:b869 with SMTP id 2adb3069b0e04-5b6086aa389mr3156756e87.25.1788438343889;
-        Thu, 03 Sep 2026 05:25:43 -0700 (PDT)
-Received: from 127.0.0.1 ([94.41.86.134])
-        by smtp.gmail.com with ESMTPSA id 2adb3069b0e04-5b606ba146fsm1262576e87.62.2026.09.03.05.25.43
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 03 Sep 2026 05:25:43 -0700 (PDT)
-Sender: <irecca.kun@gmail.com>
-Message-ID: <dfbe1e27-dab8-4d55-8cf3-0b28eeac5df4@gmail.com>
-Date: Thu, 3 Sep 2026 12:25:42 +0000
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="DushnQmt"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6B4E01F000E9
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2026 12:27:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1788438434;
+	bh=/Ba4ySno5uwPJOY4iABSv+B7sXo96H5Jlyep/O2UZAI=;
+	h=From:To:Subject:Date;
+	b=DushnQmtmng24C7Fg1p8utZdQw2jmIZMpj38i6BC+U2uVw1450GSICPOYKTbpcTri
+	 85j6IeT58oZ7IBWXgi0fk3whXEVX2te3Um++hupdtSZ+aEpb4R7W1MjGh58UQ6Tfd1
+	 5X9HtzlpYK6P9TfGCfzIPGO96GE4Q9CcQt5Yf6n5LdcIk6izYVJ2WbRLUZyjHmxwxi
+	 E9nm2Y9ETOjejQ8VCbnj9hbiN8ZXHBUn7i9Axpg+aKxIwU7uXKBvPPD8IS19Y3AE8i
+	 hpP7fCZDLb5+fN6jFJGocJzQYhP8hek6FU2M6wIJfCplWej8HdbUc27b/XcPoJzf37
+	 3qbZnAVMxYapw==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: fix unnecessary transaction commit fallback from btrfs_log_all_parents()
+Date: Thu,  3 Sep 2026 13:27:10 +0100
+Message-ID: <8efdd4a651d579b37ad7929f613fc3bf8598bae1.1788438374.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Content-Language: en-US
-From: Hanabishi <i.r.e.c.c.a.k.u.n+kernel.org@gmail.com>
-Subject: Device for root volume appears as '/dev/root', 7.3-rc1 regression
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 
-Hello.
+From: Filipe Manana <fdmanana@suse.com>
 
-I initially reported this in https://lore.kernel.org/linux-btrfs/018a9738-1d4a-43a0-9352-a56d1e541364@gmail.com/, but haven't got any ack, so assume my message was overlooked.
-That patch introduced a regression for me in 7.3-rc1. I'll duplicate full report here.
+When btrfs_log_all_parents() returns without doing any work (because all
+parent directories were already logged), it returns 1, which is propagated
+up the fsync call chain up to btrfs_log_dentry_safe(), and that causes
+btrfs_sync_file() to trigger am unnecessary transaction commit.
 
-Device for root volume appears as '/dev/root' now instead of the actual '/dev/sdX' device, but the '/dev/root' path itself doesn't exist.
-That causes confusion for userspace applications and leads to variety of problems, like
+This all happens because the call to btrfs_search_slot() in
+btrfs_log_all_parents() always returns 1, as there can not be any inode
+ref keys with an offset 0 (an invalid inode number), so if the while loop
+below it does not do any work because all parent directories were already
+logged, the 'ret' variable remains with a value of 1, which is then
+returned up the call chain to btrfs_sync_file().
 
-udisksd[1728]: Error statting /dev/root: No such file or directory
+Fix this by setting 'ret' to 0 after the call to btrfs_search_slot().
 
-Interesting that the 'mount' command doesn't reflect that, but you can see it in other ways.
+Fixes: 0f24ea456ae1 ("btrfs: tracepoints: add trace event for btrfs_log_all_parents()")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-$ df
-Filesystem     1K-blocks    Used Available Use% Mounted on
-/dev/root      243931136 3044560 240085792   2% /
-
-$ cat /proc/self/mountinfo
-21 1 0:19 /@arch / rw,noatime shared:1 - btrfs /dev/root rw,compress-force=zstd:3,ssd,flushoncommit,discard=async,space_cache=v2,subvolid=256,subvol=/@arch
-
-Reverting this change (mainline commit 108cc873398932af589c295f78c348513b8d70d9) fixes the issue.
-
-$ df
-Filesystem     1K-blocks    Used Available Use% Mounted on
-/dev/sda2      243931136 3044336 240085984   2% /
-
-$ cat /proc/self/mountinfo
-21 1 0:19 /@arch / rw,noatime shared:1 - btrfs /dev/sda2 rw,compress-force=zstd:3,ssd,flushoncommit,discard=async,space_cache=v2,subvolid=256,subvol=/@arch
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 7ba7b6098aa5..0b9518a04272 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -7286,6 +7286,16 @@ static int btrfs_log_all_parents(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 	if (ret < 0)
+ 		goto out;
++	/*
++	 * There can't be an inode ref key with offset 0 because inode numbers
++	 * start at BTRFS_FIRST_FREE_OBJECTID.
++	 */
++	ASSERT(ret > 0);
++	/*
++	 * Set to 0 so that in case we don't do any work below, we won't return
++	 * 1 and trigger an unnecessary transaction commit.
++	 */
++	ret = 0;
+ 
+ 	while (true) {
+ 		struct extent_buffer *leaf = path->nodes[0];
+-- 
+2.47.2
 

@@ -1,139 +1,134 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ot1-f53.google.com (mail-ot1-f53.google.com [209.85.210.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B6FE14078D8;
-	Fri,  4 Sep 2026 11:24:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C0C47479877
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Sep 2026 11:52:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788521094; cv=none; b=raZeeW/U7stDMG67PT0Do9vvQiI5A9i3IxoCAHa0xo+Tc+6MMkn9vK1K+bTFFXSNXfhm9iFTuWk7SPFUMbZxI/2CbmapTvzqpJ5q01Yhb6MS95H/mQsmmWcyQzQK9AZ10Paaizh0M4A6q+9CGJbu1/1bHVVKd9eVIfPvgrfVnOc=
+	t=1788522733; cv=none; b=OB7spmZT0uPdlnmXjjYDPm/rS+NsMquPLJ4aq0gXEoJ91zmzBbr5HIv6BijC3h26sVzkB8AEI3fDYJziOxlbIFOxBQ8up2IGZT8K/Dma/Gqjo/tZGWuMhWrbAzTn8XOXETTEhTgux3Ys00Bdsd+eEuSDsIfwnhwVyQ6MtSh5kEU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788521094; c=relaxed/simple;
-	bh=bRXwSai8hRoCsrlZrFf+ZjoB+oUtTWU6nlBFtGLNdzA=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=H5MisXbbCJHYG4SpkqCwGuv7BUZEjo2BWEUy6g3IX28tfBXGMaMVysrBTWC4J7PCtikh/UL8vHa/s4HgPuNH2TuUgFagOR/O6RmSGXdBNn7XWCnT+kxeQG3GKhYGD+1sSml7b0BloDPAKtGbOqWks3JfEz3jaIf5wAvBIn6aIIA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YPnynVv/; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1788522733; c=relaxed/simple;
+	bh=CVTyLq7Jb/vOThcuoPEHxQED1fBMqRWMlb24y0vRUdE=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=uH8qRjAeHOVAIwiNtO97sK0UkTAE4h2Cr1awaeYLxLrY9f7CM2PQBB4FmPPAOA9YPHL5d+W4IcqqpueqQfzScCLDMnlkwN5hJPoQTMuyOUduJWO/cchFnw54n/AUK9eXEE5UHtsKIPttCsPSHPbIgYlJdfQR8cK+28JvEF0ePOQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=okN/uf3q; arc=none smtp.client-ip=209.85.210.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YPnynVv/"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 895551F00A3D;
-	Fri,  4 Sep 2026 11:24:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1788521091;
-	bh=wXAIsUMk6gu3wwu/1M3hOnT8S9NxPfHi8QsU5OdBIbU=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=YPnynVv/AHbmOvM8ZdOZ0XH2A7JtrvOSB9ti3omM/ULbFnHcu+wyiJy1s/WFTp6zR
-	 dr1OkV2xD3jHqNo32aP54joa14OhXLnHzCjTFpUIw9ZxjOnMxpWySXV9KvT7MsvyzL
-	 C7CqTuP3GGES/FK0TA7fOnBKNyGqMa82XPhjGM42Pzgs5dYbumRBh/SrYA0rHnlZnU
-	 BZxN3xcAUQv7w05JfWo8WhXHChRTGtFEuVcAqWX9XODfRk528Lyn4/dYwUJKRrLztD
-	 k7rj9tSl6CjjkF5UhPJmHUquuZh9crQb/yaS28v8OM9RbJrMB7DeO9L3rANgTwrPQG
-	 eTi9qwygZKzPw==
-Date: Fri, 4 Sep 2026 13:24:45 +0200
-From: Christian Brauner <brauner@kernel.org>
-To: "Darrick J. Wong" <djwong@kernel.org>
-Cc: Jan Kara <jack@suse.cz>, Christoph Hellwig <hch@lst.de>, 
-	Jens Axboe <axboe@kernel.dk>, Alexander Viro <viro@zeniv.linux.org.uk>, 
-	linux-block@vger.kernel.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	Carlos Maiolino <cem@kernel.org>, linux-xfs@vger.kernel.org, Chris Mason <clm@fb.com>, 
-	David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, Theodore Ts'o <tytso@mit.edu>, 
-	linux-ext4@vger.kernel.org, Gao Xiang <xiang@kernel.org>, linux-erofs@lists.ozlabs.org
-Subject: Re: [PATCH RFC v2 08/18] fs: add dedicated block device open helpers
- for filesystems
-Message-ID: <20260904-angedacht-hausrat-gebilde-69b0b13b5d3e@brauner>
-References: <20260616-work-super-bdev_holder_global-v2-0-7df6b864028e@kernel.org>
- <20260616-work-super-bdev_holder_global-v2-8-7df6b864028e@kernel.org>
- <20260901221314.GC6038@frogsfrogsfrogs>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="okN/uf3q"
+Received: by mail-ot1-f53.google.com with SMTP id 46e09a7af769-7e9fc3de7ceso519542a34.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Sep 2026 04:52:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1788522730; x=1789127530; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=VFEC9e7xkVwyJIpegSmzIwTQpMzbBRL6sf+8efQTujU=;
+        b=okN/uf3qOjsSGhOYBFXv2BHXg1Ty5YCQSAMndzp/EY0sYzIoWNdBVTE61HX/v3L0pj
+         NJQINbYC9AAsBS0XMcgIzCtksgaGY8Hgll8wL541gankF7Lt+fP0Q8S+UPlUR+S1B7vQ
+         35uxwcXaxcKVEiCRUqbuHquFPv85bMor6LrCM/JhVvojGBEhdOSz8foK5JBaQTGYMhZ6
+         Z2C6t66xufLHjw8TnwxQ0+ERzSwLptwK9ztaoh9sa8K9R0b5ns8uyuRi74ggt98AJCdd
+         mAgEDASm3XJDC1zJXy2feE15PstndYX1X/ulbg0Va/ndpN00/WYteLrcYF05p1pkGzmx
+         vaGQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1788522730; x=1789127530;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=VFEC9e7xkVwyJIpegSmzIwTQpMzbBRL6sf+8efQTujU=;
+        b=RqqI/MdLtFjzSgmbrrwbQdWWZSLREc+CwNglIQIGoWHgrecmoys0A5TTRvoVb8RN1K
+         vnk98UoO8rpMf4KrVyCt5lzem2Or+voG2NuvraMXUFRn0CCRKxdM1XZai/jikOadjvlQ
+         +BhrIcQbbODQ7hrzb6MzwR4wKGV08P3coHAGRSs9UJMno/QTKZXYyCWJmAWCJPcNmqwZ
+         K4jGzTA0Ok9wIHZfFNoA4hnUpm62R2ztS3/wGHBLZZ2qNPQ1JL0KdSacu8wNOXpH9MsI
+         76gcv7VVYpFxvIjGkMaGw0hWqm9ETC2oqef1uYG5nouAtUnjFZNpwfYh3vySrF7Rw8+T
+         xv6A==
+X-Forwarded-Encrypted: i=1; AKwUvByYhSBlaDSl6+pierDLYI1HOqX/wn5GXRocFgkwJkkDhEAkpsPFFUj/J7twOevRfkGJm5vf9VZ2ykJkrw==@vger.kernel.org
+X-Gm-Message-State: AFuF++memIu1t2cJ7tLQeBtuzKnA0k4jbv0EAiRO9XSWRxNv1myAJFCN
+	uBUtMS76+4bX2TSVUw/XwH1nkaKmejcOGmMCqsMn19+Jj7m24Rs/KLUV
+X-Gm-Gg: AYBFou1EM2W8ih/0xYC3mk0jhk8CoU1AASEuw82f8Y+JtoSUZx+M3hrbDG/eb1CVeaV
+	N2Tq5PI3RdAGisEtUsZ7WACT5q9H+tPy2mJDbHyWd90L2ySIVbb6GuTrWluLmZsFyOjum1CcV/N
+	KgZTJjAz9tRJj4KGucpvyY3pzFNv4mEbvcEMudOfJUBDrz2SEv04InGZhRr4zhNEwQGZko6JAXz
+	aKTRkf9piWndE7cLHLLEIh0jdMZvp7Ofr3mTT3nm+bBH5PfNvvno4W3stjMuX6k704ITSn9czJn
+	kPFzu83wT1Uv/b2bMaapHndq6wmet3PzsxG/BCuz515xnV35qLuTixDgl0YARk/cXOdmCf9fqI7
+	cn90C61eZnO2mkQQhU051H2EavAp5iqTgDcrd8JPyode/bwauZRYB5VNGVZ96nF/sYm8jPCMTjw
+	YLTas9syoEpJV8cjzJ4Bd4PkU8vBlz0fLE/FuXjIKJzHifbF05PjReFcEDTOMU+CqVeeRbMCirl
+	AbkHbDvAaSJ7uY=
+X-Received: by 2002:a05:6820:16a7:b0:6aa:ea7e:1dac with SMTP id 006d021491bc7-6b6fe79521fmr3946413eaf.33.1788522730227;
+        Fri, 04 Sep 2026 04:52:10 -0700 (PDT)
+Received: from volcano9f6e-hostos.amd.com ([165.204.217.251])
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-143243f780csm6162943c88.13.2026.09.04.04.52.07
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 04 Sep 2026 04:52:09 -0700 (PDT)
+From: Hemanth Selam <hemanth.selam@gmail.com>
+To: Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>
+Cc: linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs: fix typos in comments
+Date: Fri,  4 Sep 2026 17:21:59 +0530
+Message-ID: <20260904115202.7113-2-hemanth.selam@gmail.com>
+X-Mailer: git-send-email 2.48.1
+In-Reply-To: <20260904115202.7113-1-hemanth.selam@gmail.com>
+References: <20260904115202.7113-1-hemanth.selam@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <20260901221314.GC6038@frogsfrogsfrogs>
+Content-Transfer-Encoding: 8bit
 
-On Tue, Sep 01, 2026 at 03:13:14PM -0700, Darrick J. Wong wrote:
-> On Tue, Jun 16, 2026 at 04:08:24PM +0200, Christian Brauner wrote:
-> > Add fs_bdev_file_open_by_{dev,path}() and fs_bdev_file_release(). They
-> > open the device with fs_holder_ops and register a claim in the
-> > device-to-superblock table. Claims on the same (device, superblock)
-> > pair share one entry, so when a filesystem claims a device it already
-> > uses (xfs with its log on the data device), no second entry is added
-> > and each superblock will be acted on once.
-> > 
-> > The holder argument remains purely the block layer's exclusivity token:
-> > a superblock, or a file_system_type for a device shared by several
-> > superblocks of that type. The shared case only becomes usable once the
-> > fs_holder_ops callbacks resolve superblocks through the table instead
-> > of bdev->bd_holder.
-> > 
-> > Convert the main device, setup_bdev_super() and kill_block_super(),
-> > over: the open finds the entry registered by sget_fc() and claims it
-> > again. cramfs and romfs bypass kill_block_super() so they can handle
-> > MTD mounts and release the main device with a plain bdev_fput(), which
-> > would leave the claim behind: the (dev, sb) entry would never be
-> > unregistered and the passive reference it holds would keep the
-> > superblock alive forever. Convert their release paths in the same
-> > step.
-> > 
-> > The frozen-device check stays in setup_bdev_super() for the primary
-> > device and is added to fs_bdev_register() for new claims, i.e. every
-> > additional device a filesystem opens through the helpers. Only a
-> > (device, superblock) pair the superblock claimed earlier may be
-> > reopened while frozen (xfs with its log on the data device): the freeze
-> > already covers that superblock through the existing claim, so nothing
-> > escapes it. Without the setup_bdev_super() check a device frozen before
-> > the mount even started (dm lock_fs, loop) could be mounted and written
-> > to (journal replay) under an active freeze, because the primary open
-> > reuses the entry registered by sget_fc() and never takes the new-claim
-> > path.
-> > 
-> > Both checks read bd_fsfreeze_count only after the entry is published
-> > (by sget_fc() for the primary, by fs_bdev_register() for new claims)
-> > and pair with bdev_freeze() incrementing the count before walking the
-> > table: either the mount sees the elevated freeze count and fails with
-> > EBUSY, or the freeze finds the published entry and converges once
-> > SB_BORN is set.
-> 
-> Hmm.  I /think/ this might be causing regressions in xfs/006,
-> generic/311, and xfs/264 on XFS realtime filesystems.  Each test fails
-> with a mount failure due to a busy device:
-> 
->  --- /run/fstests/bin/tests/xfs/006.out	2025-07-15 14:41:40.170403463 -0700
->  +++ /run/fstests/logs/xfs/006.out.bad	2026-08-31 12:25:01.790239078 -0700
->  @@ -6,3 +6,7 @@ error/metadata/EIO/max_retries=-1
->   error/metadata/EIO/retry_timeout_seconds=-1
->   error/metadata/ENOSPC/max_retries=-1
->   error/metadata/ENOSPC/retry_timeout_seconds=-1
->  +mount: /mnt/s: /dev/mapper/error-test.006 already mounted or mount point busy.
->  +       dmesg(1) may have more information after failed mount system call.
->  +umount.nfs: remote share not in 'host:dir' format
->  +umount.nfs: /mnt/s: not mounted
-> 
-> I'm not sure what's going on here, but dmesg has this to say:
-> 
-> XFS (dm-0): Invalid device [/dev/mapper/error-rttest.006], error=-16
-> 
-> So my guess is that the SCRATCH_RT volume isn't getting unfrozen
-> properly?
+Fix typos in comments, reported by scripts/checkpatch.pl using the
+misspelling list in scripts/spelling.txt.  Only touches comments, no code
+changes.
 
-That's a pre-existing that this series just made obvious and is fixed by:
+Assisted-by: Cursor:claude-opus-5
+Signed-off-by: Hemanth Selam <hemanth.selam@gmail.com>
+---
+ fs/btrfs/block-group.h          | 2 +-
+ fs/btrfs/send.c                 | 2 +-
+ include/uapi/linux/btrfs_tree.h | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
-fe967191e585 ("fs: don't return -EINVAL for successful nested thaw")
+diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+index 69d56864d4ba..b349f94cf929 100644
+--- a/fs/btrfs/block-group.h
++++ b/fs/btrfs/block-group.h
+@@ -135,7 +135,7 @@ struct btrfs_block_group {
+ 	u64 global_root_id;
+ 	u64 remap_bytes;
+ 	u32 identity_remap_count;
+-	/* The last commited identity_remap_count value of this block group. */
++	/* The last committed identity_remap_count value of this block group. */
+ 	u32 last_identity_remap_count;
+ 	/*
+ 	 * The last committed used bytes of this block group, if the above @used
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index dca3570168c7..dd90da2859b8 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -7016,7 +7016,7 @@ static int changed_extent(struct send_ctx *sctx,
+ 	 * get modified or replaced with a new one). Note that deduplication
+ 	 * updates the inode item, but it only changes the iversion (sequence
+ 	 * field in the inode item) of the inode, so if a file is deduplicated
+-	 * the same amount of times in both the parent and send snapshots, its
++	 * the same number of times in both the parent and send snapshots, its
+ 	 * iversion becomes the same in both snapshots, whence the inode item is
+ 	 * the same on both snapshots.
+ 	 */
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index cc3b9f7dccaf..127aabd88639 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -243,7 +243,7 @@
+ #define BTRFS_EXTENT_DATA_REF_KEY	178
+ 
+ /*
+- * Obsolete key. Defintion removed in 6.6, value may be reused in the future.
++ * Obsolete key. Definition removed in 6.6, value may be reused in the future.
+  *
+  * #define BTRFS_EXTENT_REF_V0_KEY	180
+  */
+-- 
+2.48.1
 
-The realtime dm device doesn't get unfrozen after a lockfs
-suspend/resume cycle.
-
-So xfs/006, xfs/264, and generic/311 wrap the rt device in its own
-flakey device. That suspends data then rt with lockfs and resume rt then
-data. So the rt thaw is a nested thaw.
-
-A nested thaw drops the reference but thaw_super_locked() still returns
-its -EINVAL because it's still frozen. So bdev_thaw() keeps the count on
-error and dm unlock_fs() ignores the result.
-
-That's been broken since 7366f8b6fc6a8. Before this series it was merely
-silent on the rt device. We properly refuse mounting devices that are
-frozen not just the main device.
-
-And it also meant a second lockfs suspend of a leaked rt device never
-froze the filesystem at all...

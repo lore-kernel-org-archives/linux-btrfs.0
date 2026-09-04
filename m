@@ -1,194 +1,250 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from libero.it (smtp-18.italiaonline.it [213.209.10.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E5C7D50EC14
-	for <linux-btrfs@vger.kernel.org>; Fri,  4 Sep 2026 17:14:17 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4983F5221E8
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Sep 2026 20:18:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.209.10.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788542059; cv=none; b=ssK2IrGXTvaYjhCNskqi512gi+CafCoTqnvcMz2pdu9TFWbRrCE51qCDZ08vLNc5FzfFYwquf+510eMwoc0Kmn8TriAcgR46AIHR9eY9bPW9BVqJ77UUETMSNfEupXnhOpgH/4bTw0UekdVXZknsNcEIile8xqLqFzaOQMIT2vc=
+	t=1788553094; cv=none; b=eYJfSFG2G1zS79HVieUsVJV/wE9Kai+2PP8ZG1VseN94Rm51cC0zsyikv+4yaP/zw9vArs0RloHzvovexQaVURwcHTkfG9baU3FBqJMRQ8P/6AQJhe7lPAzpv2EfQ4adGAtqIvGvJi5YwT6WuuDCyVVYk2dUWEYohQZWxqssVJo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788542059; c=relaxed/simple;
-	bh=glyoUekMev8ff49HA7LSC7dlRb2zM+4PJMisn7AH5b8=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Szt5nhV3Taqg/1oCs4hO7c8yTS5kG4yzqAeH/0VchcdjebwG0+Rnjj4ZWQn5qQcxLbCt1GB+XicjocU/dZX432hlqXP00KgBLhe1HWA9+c1BVMP2FE28wuM/gFCuxlBmRCL649M3fQqqXHreZBFgiC4mu1cvG/eAvkZneeNKrFw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=JVMIehE4; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=MPrSVROr; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=tTgqWIZE; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=0zn+c8ZI; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1788553094; c=relaxed/simple;
+	bh=EPWwd84TK1GfiY3HzSCjxqrO7CBidJ6zERKQ8f+Luqo=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=d7H6mX2BRXjgyVk25qtJbdeT7VVu68HSGsboiEWy5ixE9nlFRBXswfk48RZl7Kkc02MwHH3rL8ezwm/qyDw8UXCsYSuBybvZRZR2uZdJuYAk+1PyRT4Annn9B5PLE8JylFWDbJrPQNTtVSU27HkDXAMiqi4JqvXOJe82JrobH+w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=libero.it; spf=pass smtp.mailfrom=libero.it; dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b=ZWaKoMqx; arc=none smtp.client-ip=213.209.10.18
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=libero.it
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=libero.it
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="JVMIehE4";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="MPrSVROr";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="tTgqWIZE";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="0zn+c8ZI"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 94630220F0;
-	Fri,  4 Sep 2026 17:14:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1788542051;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=aJc1qA/d6vKoL81Qq67g7wkzditKZ3KBVVGpiMnrOQ4=;
-	b=JVMIehE4GHvyfQL6hpP5xAT4rH2VKkkH0HL6Qe4b3I4DhXPVc7EnFFpH8X2INzjpAlPt+V
-	frmuKApQWj2LGfynCDv7Kpa07Gunu4PYUxO2ct1EeUqraJQNKCswnoGpmwPLgxPbdtL1Q7
-	RS1f1ljGWDjlU9PiYPZ6GOUXuPJGyqc=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1788542051;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=aJc1qA/d6vKoL81Qq67g7wkzditKZ3KBVVGpiMnrOQ4=;
-	b=MPrSVROrLZgGwQGw25h87nbt/Yk9PoqKcXADuOrZo3FAEUNgnXk3/tzgApQruNqfZmi/73
-	Y0JKpDCiviap6VCQ==
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1788542047;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=aJc1qA/d6vKoL81Qq67g7wkzditKZ3KBVVGpiMnrOQ4=;
-	b=tTgqWIZE/oC6/HUtgGMGEHW3srKiEJCBc6qlPLkRGVQRM5npp84oOb+fTPdSO+9wIr23Kx
-	hcUPj076Hm4RHlRndfBbDBVJbf89c8HtoUuDl/yXX1UEQVa35E4G4PI81eW5ehPgkADh19
-	wGt3C1Dclbjd/X+KXSndJJcXu059Cb4=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1788542047;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=aJc1qA/d6vKoL81Qq67g7wkzditKZ3KBVVGpiMnrOQ4=;
-	b=0zn+c8ZIVHdzt2lwUJI/rGB2MrL8W6o1D0QDwk9sNBvE22l6rs2bsvIxn3YdHGlMggj+yu
-	ABpUWQAESyML9VBQ==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 682BB13726;
-	Fri,  4 Sep 2026 17:14:07 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id cHA8GV/8mmpJcAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Fri, 04 Sep 2026 17:14:07 +0000
-Date: Fri, 4 Sep 2026 19:14:06 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: tree-checker: add qgroup status item check
-Message-ID: <20260904171406.GO9053@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <f8f6232eb92cc8789461c2219915845aae1850ac.1787737993.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="ZWaKoMqx"
+Received: from [192.168.1.27] ([84.220.171.3])
+	by smtp-18.iol.local with ESMTPA
+	id 2aJrxozqzWjuy2aJsxBGSj; Fri, 04 Sep 2026 22:15:28 +0200
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2021;
+	t=1788552928; bh=7rPgeTVpXXfVssLaTOdZRtp9bKOH1FDG0FzxCZ00LCQ=;
+	h=From;
+	b=ZWaKoMqxChULijsvFzDFfWxaQexizaHS1x6lRxzdxwYj7ZP9XYnPO8KVh0CErQBDs
+	 IKD2wAg9DXxvRE2OFx2DNm/QBu1qbdfXmRsnVFRCl+Ms/fITDIuuqkX5HnYozyFfx6
+	 D7wE/xBa0gczyxKz/Q/atyZkNrXgwNAu8LwdWXuzDmIB4dCUygPKH+CWsbcbbMKoYd
+	 Qm5mDNsTxxMkRxB8dyjSo0pAkU2b8oCvJTZpPj7Mov5P9ghcyUb+K9IeyJ9u+vbtDf
+	 jnQnc+qhWBdht2rlrN3B12AD1Pk19MpWLa7Fta2j2qdM7rfu7ds+cKIilQaXevCcB/
+	 fCQl0sFR5n2/g==
+X-CNFS-Analysis: v=2.4 cv=f/N4wuyM c=1 sm=1 tr=0 ts=6a9b26e0 cx=a_exe
+ a=hciw9o01/L1eIHAASTHaSw==:117 a=hciw9o01/L1eIHAASTHaSw==:17
+ a=IkcTkHD0fZMA:10 a=HVoCkwIy1l8J0fyVKasA:9 a=QEXdDO2ut3YA:10
+Message-ID: <0a2ece5b-0382-4b14-b9e1-1281068b43f3@libero.it>
+Date: Fri, 4 Sep 2026 22:15:27 +0200
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <f8f6232eb92cc8789461c2219915845aae1850ac.1787737993.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Score: -4.00
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.996];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,twin.jikos.cz:mid,imap1.dmz-prg2.suse.org:helo,suse.com:email];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Spam-Flag: NO
+User-Agent: Mozilla Thunderbird
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH 0/2] btrfs: introduce a new experimental feature,
+ RAID56_VSL
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1788417288.git.wqu@suse.com>
+Content-Language: en-US
+From: Goffredo Baroncelli <kreijack@libero.it>
+In-Reply-To: <cover.1788417288.git.wqu@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-CMAE-Envelope: MS4xfGwbdqPeLUzf88ojJ7tDxxafTJmvFhchkbb/RseP9zwIHpmLWfE453QKX5zqIDPsfEG2MBgo6zLWynB4bvF4Hy3gzWlAdAmMx43qI7g+1lOHNKvdo0u8
+ duT8bL5GS6Ff2OYNKN764YYma70mv1SQymznbuIpTFPdenbKE61inEPfxONm2ky4EDuGo8erK+/hsM/yuvQ4blaQBTPOyDXHlkLkZJkWwag2MCBWLSyU34K4
 
-On Wed, Aug 26, 2026 at 07:23:15PM +0930, Qu Wenruo wrote:
-> This adds the following checks:
+On 03/09/2026 08.49, Qu Wenruo wrote:
+> The new feature stands for RAID56 Variable Stripe Length, however the
+> VSL part is not implemented yet, thus the whole feature is still hidden
+> behind experimental, and there are definitely works left to properly
+> split the 1st patch.
 > 
-> - Key check
+> But for now, this series can pass most fstests cases.
+> The failing ones are all related to mixed block groups, which can not be
+> created nor mounted with this new feature.
 > 
-> - Item size check
->   Here we do not require completely matching the older or newer qgroup
->   status item size, this is to allow future structure expansion.
+> The roadmap for the full RAID56 VSL implementation is split into two
+> parts:
 > 
-> - Version check
->   Again it's not a strict requirement for the version to match the
->   support one, but to catch obvious bitflip.
+> - Introduce a new datasize member
+>    This series.
 > 
->   And the kernel will already reject unknown version by disabling qgroup.
+>    An fs with data_size 8K and sectorsize 4K will act like a fs with
+>    sectorsize 8K.
+>    Meaning the minimal write size is 8K for data.
 > 
->   So we allow any version that is no larger than U8_MAX, which I believe
->   we won't reach in the next few decades.
+>    However the checksum is still calculated based sectorsize, meanwhile
+>    we can still recover each corrupted 4K sector inside a 8K data block.
 > 
-> - Flags check
->   Mostly to catch any unexpected RUNTIME flags.
+>    The idea and implementation is not that complex, we're just reusing
+>    the existing bs > ps support to handle it (on 4K page sized systems).
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Changelog:
-> v2:
-> - Loosen the version check
-> - Loosen the item size check
->   To allow older kernels to mount future newer qgroup expansions,
->   other than completely rejecting the qgroup tree and failing the mount.
+>    But the challenge is the details where some part of the code still
+>    requires sectorsize (checksum related), meanwhile every other location
+>    goes datasize for data.
+> 
+> - Introduce a new RAID56_VSL chunk type
+>    It will have the following requirements:
+> 
+>    * Can have up to (datasize / sectorsize) data stripes
+> 
+>    * The number of data stripes are always power of 2
+>      This is only for every RAID56_VSL chunk, users can still have
+>      whatever number of devices in the fs.
+> 
+>    * The full stripe length is always datasize
+> 
+>    This allows every data write to be full stripe aligned.
+>    And for read repair/scrub, we can still locate and recover a single
+>    sector inside a RAID56 stripe.
+> 
+>    This is less flex than the traditional RAID56, which has no limit on
+>    the number of data stripes, but has the write-hole problem.
 
-I don't see this patch in for-next but it seems OK for merge.
 
-> +	/*
-> +	 * The version (1) hasn't changed for a long time, but even if we
-> +	 * are going to support a newer version, it won't suddenly jump
-> +	 * over 255 in the foreseeable future.
-> +	 */
-> +	if (unlikely(btrfs_qgroup_status_version(leaf, qsi) > U8_MAX)) {
 
-Why is it U8_MAX instead of 255 as said in the comment? I understand
-that it is for one byte, although the structure has __le64 for it.
+>    And will require users to determine the maximum device numbers at mkfs
+>    time, without any way to change to another datasize.
 
-I also don't expect the version to reach any high number, the version
-for such item is an outlier in the data structure format, we usually
-guess the version from the raw item size. Keeping the version inside
-without any reserved/unused filelds also make it pointless. The only
-meaningful way I see is to split the u64 to 1+3 bytes with 1st byte to
-be the version.
+If I understood correctly, the above sentences should be read as:
 
-Actually, looking to the history, commit bd7c1ea3a302ab ("btrfs: qgroup:
-check generation when recording simple quota delta") already increased
-the structure size, so we don't even make use of the version.
+     And will require users to determine the datasize at mkfs
+     time, without any way to change to another datasize. And implicitly the
+     *minimum* number of disks which will be >= than datasize / sectorsize + nr_parity
+     where nr_parity is 1 for raid5 and 2 for raid6...
 
-As it is now it's basically wasting the 4 bytes and we won't increase it
-anyway so can think about how to scrap it completely and make the test
-stricter.
+So it is more a minim number of disks requirements than a maximum device count.
 
-> +		generic_err(leaf, slot,
-> +			    "suspicious qgroup status version, has %llu expect %u",
-> +			    btrfs_qgroup_status_version(leaf, qsi),
-> +			    BTRFS_QGROUP_STATUS_VERSION);
-> +		return -EUCLEAN;
-> +	}
-> +	flags = btrfs_qgroup_status_flags(leaf, qsi);
-> +	if (unlikely(flags & ~BTRFS_QGROUP_STATUS_FLAGS_MASK)) {
-> +		generic_err(leaf, slot,
-> +			    "unknown qgroup status flags, has 0x%llx unknown flags 0x%llx",
-> +			    flags, flags & ~BTRFS_QGROUP_STATUS_FLAGS_MASK);
-> +		return -EUCLEAN;
-> +	}
-> +	if (unlikely(flags & BTRFS_QGROUP_STATUS_FLAG_SIMPLE_MODE &&
-> +		     item_size < sizeof(*qsi))) {
-> +		generic_err(leaf, slot,
-> +			    "invalid qgroup status item size, has %u expect at least %zu",
-> +			    item_size, sizeof(*qsi));
-> +		return -EUCLEAN;
-> +	}
-> +	return 0;
-> +}
+
+Some consideration about the possible wasting of space where the extent is less than
+the datasize.
+
+I did some simulation on my filesystem about the disk usage. The most interesting
+part is that (at least on my filesystem), about 70% the files has a size < 4k, and thus
+it is inlined.
+The other ones with size >64k consume 90% of space, but those quite often are way bigger than 64k
+so the wasting of space are less than I initially thought.
+
+However most of the files are the files of my root filesystem (without my home), which are "near immutable".
+In fact these are not update in place but mostly rewritten from scratch by my package manager.
+
+We need to understand what happens to the files to my home (i.e. files which are likely to be rewrote in place).
+
+As mitigation we could add a RAID1C2/RAID1C1 for extent smaller than a specific threshold (i.e. where the space consumed
+by RAID1cX arrangement is smaller than a RAID56_VSL).
+
+About the arrangement of the sector in the chunk, I would suggest the following one:
+
+
+Current RAID5 layout (for simplicity I left the parity on D3):
+
+
+D  D  D
+1  2  3
+
+1  5  P
+2  6  P
+3  7  P
+4  8  P
+9  13 P
+10 14 P
+[...]
+
+RAID56_VSL layout (2 extents with length of 6 sectors and 8 sectors,
+parity still in D3)
+
+D  D  D
+1  2  3
+
+1  2  P    |
+3  4  P    |  1st extent
+5  6  P    |
+
+7  8  P    |
+9  10 P    |  2nd extent
+11 12 P    |
+13 14 P    |
+
+
+My proposal layout (2 extents with length of 6 sectors and 8 sectors,
+parity still in D3)
+
+D  D  D
+1  2  3
+
+1  4  P   |
+2  5  P   |  First extent
+3  6  P   |
+
+7  11 P   |
+8  12 P   |  2nd extent
+9  13 P   |
+10 14 P   |
+
+
+Because an extent consumes the entire rows, we can spread the sector
+vertically and when we fill a column, we will move to the next one.
+
+
+
+
+
+  
+>    But the second part is pretty easy to implement.
+> 
+> As the digest shows, the biggest problem is the first patch, which is
+> touching over 200 sectorsize users, and is definitely the source of all
+> bugs I hit and fixed so far.
+> 
+> If anyone has a better way to address the rename, I'm all ears.
+> 
+> Qu Wenruo (2):
+>    btrfs: split sectorsize into datasize and sectorsize
+>    btrfs: implement a new incompat feature, raid56_vsl
+> 
+>   fs/btrfs/accessors.h                   |   2 +
+>   fs/btrfs/bio.c                         |  16 +++-
+>   fs/btrfs/block-group.c                 |   2 +-
+>   fs/btrfs/btrfs_inode.h                 |  10 +++
+>   fs/btrfs/compression.c                 |  12 +--
+>   fs/btrfs/defrag.c                      |  14 +--
+>   fs/btrfs/delalloc-space.c              |  22 ++---
+>   fs/btrfs/direct-io.c                   |   6 +-
+>   fs/btrfs/disk-io.c                     |  43 +++++++---
+>   fs/btrfs/extent-io-tree.c              |   2 +-
+>   fs/btrfs/extent-tree.c                 |   4 +-
+>   fs/btrfs/extent_io.c                   |  62 +++++++-------
+>   fs/btrfs/extent_map.c                  |   2 +-
+>   fs/btrfs/fiemap.c                      |   2 +-
+>   fs/btrfs/file-item.c                   |  22 +++--
+>   fs/btrfs/file.c                        |  72 ++++++++--------
+>   fs/btrfs/fs.h                          |  27 ++++--
+>   fs/btrfs/inode-item.c                  |   6 +-
+>   fs/btrfs/inode.c                       | 113 +++++++++++++------------
+>   fs/btrfs/ioctl.c                       |  12 +--
+>   fs/btrfs/lzo.c                         |  14 +--
+>   fs/btrfs/reflink.c                     |  16 ++--
+>   fs/btrfs/relocation.c                  |  16 ++--
+>   fs/btrfs/send.c                        |   4 +-
+>   fs/btrfs/subpage.c                     |  96 +++++++++++++++------
+>   fs/btrfs/subpage.h                     |   2 +-
+>   fs/btrfs/super.c                       |   8 +-
+>   fs/btrfs/sysfs.c                       |   8 +-
+>   fs/btrfs/tests/btrfs-tests.c           |   6 +-
+>   fs/btrfs/tests/free-space-tree-tests.c |   2 +-
+>   fs/btrfs/tree-checker.c                |   2 +-
+>   fs/btrfs/tree-log.c                    |   6 +-
+>   fs/btrfs/volumes.c                     |   2 +-
+>   fs/btrfs/zlib.c                        |   6 +-
+>   fs/btrfs/zoned.c                       |   4 +-
+>   fs/btrfs/zstd.c                        |   8 +-
+>   include/uapi/linux/btrfs.h             |  22 +++++
+>   include/uapi/linux/btrfs_tree.h        |   3 +-
+>   38 files changed, 403 insertions(+), 273 deletions(-)
+> 
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

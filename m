@@ -1,41 +1,41 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 502C34963A2
-	for <linux-btrfs@vger.kernel.org>; Fri,  4 Sep 2026 21:57:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7CDE0514775
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Sep 2026 22:22:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.15
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788559072; cv=none; b=kzQeb8HFF5m07QxIMKExIJT0+ugYmJfuHdzZX4ZCeeskaPEh+Za6vBfr6vdPDQ9BDP8L+TzEI3UOhlehkJ2S5AyZtJL+j/GKJ2R19DzD8cRPB1vcTU3idegdXF8d5gSDbr4bRHzRWhS4AquGe+li8K0rfaJQag3PzreufJxF3dc=
+	t=1788560525; cv=none; b=m1Dt3CSiFG15BDFC8xhtMK9Y0YfJsF5Usb9jMobNCJiLh7yhnuhSrybRFgXQ6kss1yphqHuy2pmYFOlM7HRpXbnCAgnDYigGcyNNzkyOFqTxnWk+6XHJNebLgIyPKkv8D63bBdVvNFfmeldyt5KLmIBjeKQypCJJVQxBbh/btlI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788559072; c=relaxed/simple;
-	bh=43RtKNLqk6ql7mbniIuNaicoFZYpVAri5Ig7/alYPVU=;
+	s=arc-20240116; t=1788560525; c=relaxed/simple;
+	bh=PEbGvS4FUR4dcNe1JcfJvVnSdGjAswZaD/H6LcQ/tNA=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=fESbGi9eLIvvUOUtlD7IOoouxAoEkBg5WXYw/kfCzeqOEh6DSMJG2nYAu2Exh34pnb9nAcYdiJL3jIEobGWGh0uKLfEgsbZ6iyZyCbWqPtrJYDvgG6sYwvzdy2vEDJzvtZL9vwKtZv28w8tbsvtfw28PXedrAQ1fMtSS+D4u+Uw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=brxjIgNi; arc=none smtp.client-ip=212.227.15.18
+	 In-Reply-To:Content-Type; b=GY4LCwKNi6Qcb6yN37JeAY1w8HtyZr3KEi39UsFr7188McG0gEVxjLBbZ5G8gdEHLiOam0bbDRqZFLVJ+mm/txcwVKO1r9Dx7nVmKpR2HykTq9ID/S9FtiNgur/39J46cPSsTsZeFkTQYhiyVwItzr1y1AnNPVms3iZDq66RHPY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=lEIxN363; arc=none smtp.client-ip=212.227.15.15
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="brxjIgNi"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="lEIxN363"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1788559062; x=1789163862; i=quwenruo.btrfs@gmx.com;
-	bh=21lJk8INhb3ZVV6Oh6l/4xX7+4pGquWeOhI4SF6k4oQ=;
+	s=s31663417; t=1788560506; x=1789165306; i=quwenruo.btrfs@gmx.com;
+	bh=Apv5aafVLOLAcBvPMcnzjY7Ehs9BCZOF5mNJtFUzuwM=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=brxjIgNi36Fs5zJd7mtDK0lqmrYPXccYSlLAoY/wnNtqw+wLjCM9PfeR7gUcrvuC
-	 ju9NeqH25YgJbsKnGFmXo5051pgGfFDRBMLWehdQBBGCzdXge9MbVtG1L6HzpTPJR
-	 rO4ZqULTxfx34p1ALMrtKSI09Fshgz4vQAPPhgZ86Eg1qvtbISHKCAAUvL919c/Oi
-	 M8rHy88q5+DUpzsDB+reeT+Z9WZN16F6Q48P0hasxmYBx/3itbUJg3X9RuYWr2v3P
-	 G28QPc3PBgvklp8/lOGLX+5BfICL36m7kSo9aKXyoauDmPFdPNAoEwSuPw7mCVob7
-	 pghXkE4G/BnmCgaaWw==
+	b=lEIxN363QTexcSNzrOp2pkvCFWMZXKGu34xAfkCDLukWok4Am7B8wVDvZWkHQSl0
+	 MbPlKNFxLhlwIkf3r5CYvDyEB4XTBXI8Xnwfn6ouVSDcCoG7kMNz5NyeeCeHppAkM
+	 0OgJc2lM4/L8Cr43PQG6MJ3L9XWiGlrMWXpwRiWx/KnHaBMk+zs/ZyTOxLwkLZL8D
+	 uUBXtX3soEj3DLx0xPdJR4TPY+KKX+tV00u8/NcoO8+QSWEPltNU2nedmsq6LuCTs
+	 6b8bdvwS5ju1D7R4D17QuPNBvSNxZtGfPOYoPByb551RG844W+3lsqWwcW3vG4HUs
+	 5T4cAiMBu2uJi93Zfw==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
 Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MAfYw-1x9AR23uky-008vvg; Fri, 04
- Sep 2026 23:57:42 +0200
-Message-ID: <560dd988-c76e-471a-b4a5-c9a343d7e021@gmx.com>
-Date: Sat, 5 Sep 2026 07:27:35 +0930
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MZCb5-1xOK7s48IL-00XJWY; Sat, 05
+ Sep 2026 00:21:46 +0200
+Message-ID: <d79d06ab-721d-4fec-a2a3-823e9380c792@gmx.com>
+Date: Sat, 5 Sep 2026 07:51:42 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,11 +43,12 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: tree-checker: add qgroup status item check
+Subject: Re: [PATCH] btrfs: move async csum generation out of experimental
+ features
 To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <f8f6232eb92cc8789461c2219915845aae1850ac.1787737993.git.wqu@suse.com>
- <20260904171406.GO9053@twin.jikos.cz>
+Cc: linux-btrfs@vger.kernel.org, Daniel Vacek <neelx@suse.com>
+References: <700ba6c46da86ace18a502b43c5e61d16a556060.1788424754.git.wqu@suse.com>
+ <20260904170035.GN9053@twin.jikos.cz>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -74,205 +75,149 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
  +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
  HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260904171406.GO9053@twin.jikos.cz>
+In-Reply-To: <20260904170035.GN9053@twin.jikos.cz>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:tiuthcA+4W1x1ciu7uryHF8FbmK8RwNacR1W1c6YsCEccWnQzqn
- N0GS7UKSCqVco31QYCBmtQ0Nv6j6EqlHVCDWIwDxl5AI1mI0Dy6Zy627BefDVI0I9cqcfaW
- pY+Zcy992HDBAB73QAnK7ISNtvNQa2PhGIo/xJNzb9HYsM36wsXb+PkRJpO4ANDt/nzdFwc
- kT6znzgSi4bgYsYfAnezA==
+X-Provags-ID: V03:K1:PRJxEiplkqvorfVkBkeFnCHZ2FJ5jXJNu5xKIuIG4tX633POJUf
+ PqvXX2VB5PfKald78tnkr7+Ve44TpOTGC488OOQA5VJ+2IIjUCl85Gbin3km058euozq7Pt
+ 9SRjlbLnFrQD+Nv3yGWfM1c3Jbb8TFtZj1rsU2tn9jz2nRyLxAVPCcIn1F2slHsijMJlyaN
+ bcIY1fEGj3nH3fG0+pjIA==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:C0zKTz+y8nk=;mzbfiw+2FEA6K3CieLIQob+SyN4
- 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
+UI-OutboundReport: notjunk:1;M01:P0:l8EqagoX0FE=;dx6egD3pVU4OV6HFQt4M8HgiPYj
+ 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
 
 
 
-=E5=9C=A8 2026/9/5 02:44, David Sterba =E5=86=99=E9=81=93:
-> On Wed, Aug 26, 2026 at 07:23:15PM +0930, Qu Wenruo wrote:
->> This adds the following checks:
->>
->> - Key check
->>
->> - Item size check
->>    Here we do not require completely matching the older or newer qgroup
->>    status item size, this is to allow future structure expansion.
->>
->> - Version check
->>    Again it's not a strict requirement for the version to match the
->>    support one, but to catch obvious bitflip.
->>
->>    And the kernel will already reject unknown version by disabling qgro=
-up.
->>
->>    So we allow any version that is no larger than U8_MAX, which I belie=
-ve
->>    we won't reach in the next few decades.
->>
->> - Flags check
->>    Mostly to catch any unexpected RUNTIME flags.
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->> Changelog:
->> v2:
->> - Loosen the version check
->> - Loosen the item size check
->>    To allow older kernels to mount future newer qgroup expansions,
->>    other than completely rejecting the qgroup tree and failing the moun=
-t.
+=E5=9C=A8 2026/9/5 02:30, David Sterba =E5=86=99=E9=81=93:
+> On Thu, Sep 03, 2026 at 06:09:41PM +0930, Qu Wenruo wrote:
+>> @@ -4437,19 +4432,6 @@ void __cold close_ctree(struct btrfs_fs_info *fs=
+_info)
+>>   	 */
+>>   	btrfs_flush_workqueue(fs_info->delalloc_workers);
+>>  =20
+>> -	/*
+>> -	 * We can have ordered extents getting their last reference dropped f=
+rom
+>> -	 * the fs_info->workers queue because for async writes for data bios =
+we
+>> -	 * queue a work for that queue, at btrfs_wq_submit_bio(), that runs
+>> -	 * run_one_async_done() which calls btrfs_bio_end_io() in case the bi=
+o
+>> -	 * has an error, and that later function can do the final
+>> -	 * btrfs_put_ordered_extent() on the ordered extent attached to the b=
+io,
+>> -	 * which adds a delayed iput for the inode. So we must flush the queu=
+e
+>> -	 * so that we don't have delayed iputs after committing the current
+>> -	 * transaction below and stopping the cleaner and transaction kthread=
+s.
+>> -	 */
+>> -	btrfs_flush_workqueue(fs_info->workers);
 >=20
-> I don't see this patch in for-next but it seems OK for merge.
+> In the final fs closing sequence there's always some possible
+> interaction between the workers, but I don't think we need an explicit
+> flush anymore. The work offloaded to the system workers will be done
+> before we get here.
 
-Mostly because Sashiko still has some complain about the over-strict=20
-checks on the flags.
-AKA, any newly introduced flag will be rejected by this check, causing=20
-mount failure.
+In fact, Daniel's commit ("btrfs: use bio::remaining for async=20
+checksumming synchronization") changed the behavior back, and we may=20
+need to be more cautious now.
 
->=20
->> +	/*
->> +	 * The version (1) hasn't changed for a long time, but even if we
->> +	 * are going to support a newer version, it won't suddenly jump
->> +	 * over 255 in the foreseeable future.
->> +	 */
->> +	if (unlikely(btrfs_qgroup_status_version(leaf, qsi) > U8_MAX)) {
->=20
-> Why is it U8_MAX instead of 255 as said in the comment?
+Previously, the csum generation workload will never call endio in its=20
+context, the only work it really bothers is just to wake the completion.
 
-U8_MAX is exactly 255. Although for the consistency I'll change the=20
-comment to use the same U8_MAX.
+But now his commit changed to use bio_endio(), which means we can again=20
+run the workload from csum generation workqueue.
 
-> I understand
-> that it is for one byte, although the structure has __le64 for it.
->=20
-> I also don't expect the version to reach any high number, the version
-> for such item is an outlier in the data structure format, we usually
-> guess the version from the raw item size. Keeping the version inside
-> without any reserved/unused filelds also make it pointless. The only
-> meaningful way I see is to split the u64 to 1+3 bytes with 1st byte to
-> be the version.
->=20
-> Actually, looking to the history, commit bd7c1ea3a302ab ("btrfs: qgroup:
-> check generation when recording simple quota delta") already increased
-> the structure size, so we don't even make use of the version.
->=20
-> As it is now it's basically wasting the 4 bytes and we won't increase it
-> anyway so can think about how to scrap it completely and make the test
-> stricter.
+In fact, I do not believe it's the proper timing to move async csum out=20
+of experimental anymore, after his commit.
 
-I think the version split (1 bytes for version, 3 bytes for future=20
-expansion) is the best solution.
+I'd prefer more the next merge window at least.
 
-Then I'm totally fine to drop this check.
-
->=20
->> +		generic_err(leaf, slot,
->> +			    "suspicious qgroup status version, has %llu expect %u",
->> +			    btrfs_qgroup_status_version(leaf, qsi),
->> +			    BTRFS_QGROUP_STATUS_VERSION);
->> +		return -EUCLEAN;
->> +	}
->> +	flags =3D btrfs_qgroup_status_flags(leaf, qsi);
->> +	if (unlikely(flags & ~BTRFS_QGROUP_STATUS_FLAGS_MASK)) {
->> +		generic_err(leaf, slot,
->> +			    "unknown qgroup status flags, has 0x%llx unknown flags 0x%llx",
->> +			    flags, flags & ~BTRFS_QGROUP_STATUS_FLAGS_MASK);
->> +		return -EUCLEAN;
->> +	}
->> +	if (unlikely(flags & BTRFS_QGROUP_STATUS_FLAG_SIMPLE_MODE &&
->> +		     item_size < sizeof(*qsi))) {
->> +		generic_err(leaf, slot,
->> +			    "invalid qgroup status item size, has %u expect at least %zu",
->> +			    item_size, sizeof(*qsi));
->> +		return -EUCLEAN;
->> +	}
->> +	return 0;
->> +}
->=20
-
+Thanks,
+Qu

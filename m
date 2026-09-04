@@ -1,67 +1,41 @@
-Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 311F73955FE
-	for <linux-btrfs@vger.kernel.org>; Fri,  4 Sep 2026 21:44:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 502C34963A2
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Sep 2026 21:57:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788558247; cv=none; b=Oi+FlzvLyl4XvIGX4+Zf128qn1QUZsFNd+jLxgW+0u0dk9U/377RU0sFW82nfFubWrJzy4H8lbmG0YOKdpLH6fKkYfd6pMH6pcY0H4pvSABDxVK8bF76UxdZ5i12fFSwhdr2Mg+HiHt0NeS19X1gF8LtmmBo9DaagsN0CXbPNYM=
+	t=1788559072; cv=none; b=kzQeb8HFF5m07QxIMKExIJT0+ugYmJfuHdzZX4ZCeeskaPEh+Za6vBfr6vdPDQ9BDP8L+TzEI3UOhlehkJ2S5AyZtJL+j/GKJ2R19DzD8cRPB1vcTU3idegdXF8d5gSDbr4bRHzRWhS4AquGe+li8K0rfaJQag3PzreufJxF3dc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788558247; c=relaxed/simple;
-	bh=BoM4bXhEZD4VG9x8j1arDMYCS6QodvhkEH18V/Aika4=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=iaQ95WcLJfT93A0T5ZeK5vtRFTRZdTtikM4FSsn6oBKSdboc1X8mG8u/zjMpwga2180cJnD5YykDJV9pcMBD22fAMiIgDlFzCtZc4WUaYKJ2cAqpjZB1CLBon6fvp8IAX3x7nh2ODCVM+1PfbDgzjL5sKgzd/nCEestVnsxCCZ8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=ZKT8fsuI; arc=none smtp.client-ip=209.85.128.49
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1788559072; c=relaxed/simple;
+	bh=43RtKNLqk6ql7mbniIuNaicoFZYpVAri5Ig7/alYPVU=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=fESbGi9eLIvvUOUtlD7IOoouxAoEkBg5WXYw/kfCzeqOEh6DSMJG2nYAu2Exh34pnb9nAcYdiJL3jIEobGWGh0uKLfEgsbZ6iyZyCbWqPtrJYDvgG6sYwvzdy2vEDJzvtZL9vwKtZv28w8tbsvtfw28PXedrAQ1fMtSS+D4u+Uw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=brxjIgNi; arc=none smtp.client-ip=212.227.15.18
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="ZKT8fsuI"
-Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-49b0d8bc2aaso18136045e9.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Sep 2026 14:44:04 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1788558243; x=1789163043; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=mqi2e4IXCQY73YXcqWcY7TLHn2FuSXiHj43c82vW7Bw=;
-        b=ZKT8fsuIIoS+5P1/wpqWIuv9KYUdZHR93iyoeODckUQfc60vUC64Zk6bQkDUggaXzc
-         a4amZdXQSTcUvuzAI+uldaSBtrj41VWEYWESgDkA/v65Fq+dLL+BfV9pfA+ti23bUs/1
-         bIRLUyAa9Uj+Bk3Svqzci+JC8isGnp8zBfIQ+6zkN74dADRDmNpiTKCfMfjOq9dG68JD
-         CMRaB7m4ElkgEvj9nOrfkarCqg+8/5smwNU66HjIfsIXrXTIS6OuNIju35JLmeUNeEXY
-         FcNNHR6Xu4bIqg3NmADoyP8iOVcDKQXs4pjMwHOymscGSYJ3zZtdGQw5hoJDbX/Io4we
-         Q2dA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788558243; x=1789163043;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=mqi2e4IXCQY73YXcqWcY7TLHn2FuSXiHj43c82vW7Bw=;
-        b=qR90TDLXqwVBr20XzmKv7JzquPgzIC0N3zBO7v7sUFxKZdefyG03YPnmvq/o6oo3em
-         Oj0OR18rczQpV/EVo1F5Whyea0SIf3cdxEy3mgx8QTVtN9n0GJPHVyRgdPSyOLB16P0D
-         VOguDSyCShZXlf1qDhCgZtdLNAXboV9NVOBtqANMP1I8iIzA3WIabeIpUNK80CGQwKTY
-         msunG89Js+dUiyyV/K5H+wI2Yzk39elBDdrxSbu9ZTwhwmVEZjj2G+Kt42EoRoZ1EDJw
-         uWA+TypVIgW99b6ZRhDxGkl5NAnETtgENcl2anwIA3qnyXalW+7p953HfbvAvGP3MWsO
-         HcVw==
-X-Forwarded-Encrypted: i=1; AKwUvBxToCF177Tum+Sxy03gB+kOFE0dpDU5x8Q4i5NYCM/fGg/q0mVC0UMW1hbBjRKRZcVFOY2rD084JzUZVw==@vger.kernel.org
-X-Gm-Message-State: AFuF++mFKPixXGaxkfyk5Ah0MCjkknydI/uWQhB9HNWZ/Hb5h4ve38bZ
-	j4Kfzqlxc09QvFFq5NJqDWtZpiMEIcO5M2boeCWvzs5g483yJW1bZCg72d10jswA7vW1+MomOcJ
-	AsrL3/kkmJA==
-X-Gm-Gg: AYBFou0O66SNZYHKwliehfKzrA/qiKhdku/EH7OWoRN4DQwF4Am2+eCHg1jJ4tS39+g
-	GHZeISwLLELBwvT8tQLM61EKag3oybaYNFUunEbFYo+cWTjrsv13bhbsyOA2HoWkwO/0UeZDsEN
-	AKWO41hr+9dI5I03lbLZCBLWlwAJyIK0UWmsrgLXOXDErbZqfueHEbtoisYkCAzM5lpYhZ1T/E+
-	mTmG/+wGU9c9fqJ87f41Vt74FprASRWInwpzGb0MgQD0o3CcODSGYfvZ/sphm6y30qD8CyRfOvl
-	gouwUu6ZtY3WbJDbPk+BTKLQIyArlQb2Iz/TDLkzXminUaTr6/6IwuVx9Cyx2j+O2AQ4ijw85Vd
-	NxYanuz5BW2/Tc2UCLyeu0ZNAwCTf3KrQvU5FYDdm4Jmc70kreOPoCxkE78KRm2P5GeUDg+9lRO
-	kPcxPiMnd+SVJe9CQS+FAaxX6vX0q/0RjtVHtnaZ1VxUOh2AW6aKMq
-X-Received: by 2002:a05:600c:620e:b0:49c:fc6c:be19 with SMTP id 5b1f17b1804b1-49cff2078b8mr46230755e9.31.1788558243183;
-        Fri, 04 Sep 2026 14:44:03 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-86278118b7dsm615503b3a.28.2026.09.04.14.43.59
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 04 Sep 2026 14:44:02 -0700 (PDT)
-Message-ID: <d1f06c6a-ae4e-4881-a199-f17b588def71@suse.com>
-Date: Sat, 5 Sep 2026 07:13:55 +0930
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="brxjIgNi"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1788559062; x=1789163862; i=quwenruo.btrfs@gmx.com;
+	bh=21lJk8INhb3ZVV6Oh6l/4xX7+4pGquWeOhI4SF6k4oQ=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=brxjIgNi36Fs5zJd7mtDK0lqmrYPXccYSlLAoY/wnNtqw+wLjCM9PfeR7gUcrvuC
+	 ju9NeqH25YgJbsKnGFmXo5051pgGfFDRBMLWehdQBBGCzdXge9MbVtG1L6HzpTPJR
+	 rO4ZqULTxfx34p1ALMrtKSI09Fshgz4vQAPPhgZ86Eg1qvtbISHKCAAUvL919c/Oi
+	 M8rHy88q5+DUpzsDB+reeT+Z9WZN16F6Q48P0hasxmYBx/3itbUJg3X9RuYWr2v3P
+	 G28QPc3PBgvklp8/lOGLX+5BfICL36m7kSo9aKXyoauDmPFdPNAoEwSuPw7mCVob7
+	 pghXkE4G/BnmCgaaWw==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MAfYw-1x9AR23uky-008vvg; Fri, 04
+ Sep 2026 23:57:42 +0200
+Message-ID: <560dd988-c76e-471a-b4a5-c9a343d7e021@gmx.com>
+Date: Sat, 5 Sep 2026 07:27:35 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,260 +43,236 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 0/2] btrfs: introduce a new experimental feature,
- RAID56_VSL
-To: kreijack@inwind.it, linux-btrfs@vger.kernel.org
-References: <cover.1788417288.git.wqu@suse.com>
- <0a2ece5b-0382-4b14-b9e1-1281068b43f3@libero.it>
+Subject: Re: [PATCH v2] btrfs: tree-checker: add qgroup status item check
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <f8f6232eb92cc8789461c2219915845aae1850ac.1787737993.git.wqu@suse.com>
+ <20260904171406.GO9053@twin.jikos.cz>
 Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
  1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
  9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
  gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <0a2ece5b-0382-4b14-b9e1-1281068b43f3@libero.it>
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <20260904171406.GO9053@twin.jikos.cz>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:tiuthcA+4W1x1ciu7uryHF8FbmK8RwNacR1W1c6YsCEccWnQzqn
+ N0GS7UKSCqVco31QYCBmtQ0Nv6j6EqlHVCDWIwDxl5AI1mI0Dy6Zy627BefDVI0I9cqcfaW
+ pY+Zcy992HDBAB73QAnK7ISNtvNQa2PhGIo/xJNzb9HYsM36wsXb+PkRJpO4ANDt/nzdFwc
+ kT6znzgSi4bgYsYfAnezA==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:C0zKTz+y8nk=;mzbfiw+2FEA6K3CieLIQob+SyN4
+ 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
 
 
 
-在 2026/9/5 05:45, Goffredo Baroncelli 写道:
-> On 03/09/2026 08.49, Qu Wenruo wrote:
->> The new feature stands for RAID56 Variable Stripe Length, however the
->> VSL part is not implemented yet, thus the whole feature is still hidden
->> behind experimental, and there are definitely works left to properly
->> split the 1st patch.
+=E5=9C=A8 2026/9/5 02:44, David Sterba =E5=86=99=E9=81=93:
+> On Wed, Aug 26, 2026 at 07:23:15PM +0930, Qu Wenruo wrote:
+>> This adds the following checks:
 >>
->> But for now, this series can pass most fstests cases.
->> The failing ones are all related to mixed block groups, which can not be
->> created nor mounted with this new feature.
+>> - Key check
 >>
->> The roadmap for the full RAID56 VSL implementation is split into two
->> parts:
+>> - Item size check
+>>    Here we do not require completely matching the older or newer qgroup
+>>    status item size, this is to allow future structure expansion.
 >>
->> - Introduce a new datasize member
->>    This series.
+>> - Version check
+>>    Again it's not a strict requirement for the version to match the
+>>    support one, but to catch obvious bitflip.
 >>
->>    An fs with data_size 8K and sectorsize 4K will act like a fs with
->>    sectorsize 8K.
->>    Meaning the minimal write size is 8K for data.
+>>    And the kernel will already reject unknown version by disabling qgro=
+up.
 >>
->>    However the checksum is still calculated based sectorsize, meanwhile
->>    we can still recover each corrupted 4K sector inside a 8K data block.
+>>    So we allow any version that is no larger than U8_MAX, which I belie=
+ve
+>>    we won't reach in the next few decades.
 >>
->>    The idea and implementation is not that complex, we're just reusing
->>    the existing bs > ps support to handle it (on 4K page sized systems).
+>> - Flags check
+>>    Mostly to catch any unexpected RUNTIME flags.
 >>
->>    But the challenge is the details where some part of the code still
->>    requires sectorsize (checksum related), meanwhile every other location
->>    goes datasize for data.
->>
->> - Introduce a new RAID56_VSL chunk type
->>    It will have the following requirements:
->>
->>    * Can have up to (datasize / sectorsize) data stripes
->>
->>    * The number of data stripes are always power of 2
->>      This is only for every RAID56_VSL chunk, users can still have
->>      whatever number of devices in the fs.
->>
->>    * The full stripe length is always datasize
->>
->>    This allows every data write to be full stripe aligned.
->>    And for read repair/scrub, we can still locate and recover a single
->>    sector inside a RAID56 stripe.
->>
->>    This is less flex than the traditional RAID56, which has no limit on
->>    the number of data stripes, but has the write-hole problem.
-> 
-> 
-> 
->>    And will require users to determine the maximum device numbers at mkfs
->>    time, without any way to change to another datasize.
-> 
-> If I understood correctly, the above sentences should be read as:
-> 
->      And will require users to determine the datasize at mkfs
->      time, without any way to change to another datasize. And implicitly 
-> the
->      *minimum* number of disks which will be >= than datasize / 
-> sectorsize + nr_parity
->      where nr_parity is 1 for raid5 and 2 for raid6...
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>> Changelog:
+>> v2:
+>> - Loosen the version check
+>> - Loosen the item size check
+>>    To allow older kernels to mount future newer qgroup expansions,
+>>    other than completely rejecting the qgroup tree and failing the moun=
+t.
+>=20
+> I don't see this patch in for-next but it seems OK for merge.
 
-Nope, one can always go as low as 1 data stripe no matter the datasize.
+Mostly because Sashiko still has some complain about the over-strict=20
+checks on the flags.
+AKA, any newly introduced flag will be rejected by this check, causing=20
+mount failure.
 
-So it's maximum, and you're wrong.
+>=20
+>> +	/*
+>> +	 * The version (1) hasn't changed for a long time, but even if we
+>> +	 * are going to support a newer version, it won't suddenly jump
+>> +	 * over 255 in the foreseeable future.
+>> +	 */
+>> +	if (unlikely(btrfs_qgroup_status_version(leaf, qsi) > U8_MAX)) {
+>=20
+> Why is it U8_MAX instead of 255 as said in the comment?
 
-> 
-> So it is more a minim number of disks requirements than a maximum device 
-> count.
-> 
-> 
-> Some consideration about the possible wasting of space where the extent 
-> is less than
-> the datasize.
+U8_MAX is exactly 255. Although for the consistency I'll change the=20
+comment to use the same U8_MAX.
 
-Impossible, the minimal extent size will be data size.
+> I understand
+> that it is for one byte, although the structure has __le64 for it.
+>=20
+> I also don't expect the version to reach any high number, the version
+> for such item is an outlier in the data structure format, we usually
+> guess the version from the raw item size. Keeping the version inside
+> without any reserved/unused filelds also make it pointless. The only
+> meaningful way I see is to split the u64 to 1+3 bytes with 1st byte to
+> be the version.
+>=20
+> Actually, looking to the history, commit bd7c1ea3a302ab ("btrfs: qgroup:
+> check generation when recording simple quota delta") already increased
+> the structure size, so we don't even make use of the version.
+>=20
+> As it is now it's basically wasting the 4 bytes and we won't increase it
+> anyway so can think about how to scrap it completely and make the test
+> stricter.
 
-It looks like you didn't even understand that such fs works exactly like 
-it has a larger block size.
+I think the version split (1 bytes for version, 3 bytes for future=20
+expansion) is the best solution.
 
-> 
-> I did some simulation on my filesystem about the disk usage. The most 
-> interesting
-> part is that (at least on my filesystem), about 70% the files has a size 
-> < 4k, and thus
-> it is inlined.
-> The other ones with size >64k consume 90% of space, but those quite 
-> often are way bigger than 64k
-> so the wasting of space are less than I initially thought.
-> 
-> However most of the files are the files of my root filesystem (without 
-> my home), which are "near immutable".
-> In fact these are not update in place but mostly rewritten from scratch 
-> by my package manager.
-> 
-> We need to understand what happens to the files to my home (i.e. files 
-> which are likely to be rewrote in place).
-> 
-> As mitigation we could add a RAID1C2/RAID1C1 for extent smaller than a 
-> specific threshold (i.e. where the space consumed
-> by RAID1cX arrangement is smaller than a RAID56_VSL).
-> 
-> About the arrangement of the sector in the chunk, I would suggest the 
-> following one:
+Then I'm totally fine to drop this check.
 
-There is no change in the data layout in the RAID56_VSL, and I do not 
-think there should be any change.
-
-> 
-> 
-> Current RAID5 layout (for simplicity I left the parity on D3):
-> 
-> 
-> D  D  D
-> 1  2  3
-> 
-> 1  5  P
-> 2  6  P
-> 3  7  P
-> 4  8  P
-> 9  13 P
-> 10 14 P
-> [...]
-> 
-> RAID56_VSL layout (2 extents with length of 6 sectors and 8 sectors,
-> parity still in D3)
-> 
-> D  D  D
-> 1  2  3
-> 
-> 1  2  P    |
-> 3  4  P    |  1st extent
-> 5  6  P    |
-> 
-> 7  8  P    |
-> 9  10 P    |  2nd extent
-> 11 12 P    |
-> 13 14 P    |
-> 
-> 
-> My proposal layout (2 extents with length of 6 sectors and 8 sectors,
-> parity still in D3)
-> 
-> D  D  D
-> 1  2  3
-> 
-> 1  4  P   |
-> 2  5  P   |  First extent
-> 3  6  P   |
-> 
-> 7  11 P   |
-> 8  12 P   |  2nd extent
-> 9  13 P   |
-> 10 14 P   |
-> 
-> 
-> Because an extent consumes the entire rows, we can spread the sector
-> vertically and when we fill a column, we will move to the next one.
-> 
-> 
-> 
-> 
-> 
-> 
->>    But the second part is pretty easy to implement.
->>
->> As the digest shows, the biggest problem is the first patch, which is
->> touching over 200 sectorsize users, and is definitely the source of all
->> bugs I hit and fixed so far.
->>
->> If anyone has a better way to address the rename, I'm all ears.
->>
->> Qu Wenruo (2):
->>    btrfs: split sectorsize into datasize and sectorsize
->>    btrfs: implement a new incompat feature, raid56_vsl
->>
->>   fs/btrfs/accessors.h                   |   2 +
->>   fs/btrfs/bio.c                         |  16 +++-
->>   fs/btrfs/block-group.c                 |   2 +-
->>   fs/btrfs/btrfs_inode.h                 |  10 +++
->>   fs/btrfs/compression.c                 |  12 +--
->>   fs/btrfs/defrag.c                      |  14 +--
->>   fs/btrfs/delalloc-space.c              |  22 ++---
->>   fs/btrfs/direct-io.c                   |   6 +-
->>   fs/btrfs/disk-io.c                     |  43 +++++++---
->>   fs/btrfs/extent-io-tree.c              |   2 +-
->>   fs/btrfs/extent-tree.c                 |   4 +-
->>   fs/btrfs/extent_io.c                   |  62 +++++++-------
->>   fs/btrfs/extent_map.c                  |   2 +-
->>   fs/btrfs/fiemap.c                      |   2 +-
->>   fs/btrfs/file-item.c                   |  22 +++--
->>   fs/btrfs/file.c                        |  72 ++++++++--------
->>   fs/btrfs/fs.h                          |  27 ++++--
->>   fs/btrfs/inode-item.c                  |   6 +-
->>   fs/btrfs/inode.c                       | 113 +++++++++++++------------
->>   fs/btrfs/ioctl.c                       |  12 +--
->>   fs/btrfs/lzo.c                         |  14 +--
->>   fs/btrfs/reflink.c                     |  16 ++--
->>   fs/btrfs/relocation.c                  |  16 ++--
->>   fs/btrfs/send.c                        |   4 +-
->>   fs/btrfs/subpage.c                     |  96 +++++++++++++++------
->>   fs/btrfs/subpage.h                     |   2 +-
->>   fs/btrfs/super.c                       |   8 +-
->>   fs/btrfs/sysfs.c                       |   8 +-
->>   fs/btrfs/tests/btrfs-tests.c           |   6 +-
->>   fs/btrfs/tests/free-space-tree-tests.c |   2 +-
->>   fs/btrfs/tree-checker.c                |   2 +-
->>   fs/btrfs/tree-log.c                    |   6 +-
->>   fs/btrfs/volumes.c                     |   2 +-
->>   fs/btrfs/zlib.c                        |   6 +-
->>   fs/btrfs/zoned.c                       |   4 +-
->>   fs/btrfs/zstd.c                        |   8 +-
->>   include/uapi/linux/btrfs.h             |  22 +++++
->>   include/uapi/linux/btrfs_tree.h        |   3 +-
->>   38 files changed, 403 insertions(+), 273 deletions(-)
->>
-> 
-> 
+>=20
+>> +		generic_err(leaf, slot,
+>> +			    "suspicious qgroup status version, has %llu expect %u",
+>> +			    btrfs_qgroup_status_version(leaf, qsi),
+>> +			    BTRFS_QGROUP_STATUS_VERSION);
+>> +		return -EUCLEAN;
+>> +	}
+>> +	flags =3D btrfs_qgroup_status_flags(leaf, qsi);
+>> +	if (unlikely(flags & ~BTRFS_QGROUP_STATUS_FLAGS_MASK)) {
+>> +		generic_err(leaf, slot,
+>> +			    "unknown qgroup status flags, has 0x%llx unknown flags 0x%llx",
+>> +			    flags, flags & ~BTRFS_QGROUP_STATUS_FLAGS_MASK);
+>> +		return -EUCLEAN;
+>> +	}
+>> +	if (unlikely(flags & BTRFS_QGROUP_STATUS_FLAG_SIMPLE_MODE &&
+>> +		     item_size < sizeof(*qsi))) {
+>> +		generic_err(leaf, slot,
+>> +			    "invalid qgroup status item size, has %u expect at least %zu",
+>> +			    item_size, sizeof(*qsi));
+>> +		return -EUCLEAN;
+>> +	}
+>> +	return 0;
+>> +}
+>=20
 

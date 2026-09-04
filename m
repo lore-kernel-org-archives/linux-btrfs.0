@@ -1,66 +1,67 @@
-Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
+Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B6AD13DB63D
-	for <linux-btrfs@vger.kernel.org>; Fri,  4 Sep 2026 22:42:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 11FBB3803E9
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Sep 2026 22:50:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788561729; cv=none; b=HEjj8qzVNtkTfUKFRUdJsQU05rkMJxD3UT6Lqyq87Nd2BqTb11M2Jiu96p1mAysvmumv4lTnMgCTcE4s+USqOwMhAvkLqInsqaDw0klqkVbuDguE8DYYmOeEnW3W1QfSVQFjChFQOwBQOB6vjbNRIIeXIXCqehzfIsm+vdp9+NQ=
+	t=1788562217; cv=none; b=J/BWSYHDz3Pf9ZW6jYcRxz/YiqNKfQ/VDk0bY/LkJ9YeEIH6dmt7OeSVVooQOUQTc4WeX6NPiBQwiXAYKDI9eEKwbBCwM4gzya38aQ2W4kSUF7X9w0KJgyjevmsTMK/4ohMB3xHpU40ynzPIZAPNXAUUeq+myQqY+qf2HsaUVCY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788561729; c=relaxed/simple;
-	bh=Vr88gQMOgurFACl+y90EeGVYAikEgZq17p2wwBwPjzw=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=M3zgTEZGVYRmfr4C40wvx2BqhN2h7RKQFpA+VNre9bwnvwc0skjphVMiwC+qSUjRvt0b1SNmNZHf8lf2eg5xKSqvvN39rqTkCCYmbxtVY0aKEFBQcFYOi6r8NYLMitVZAwad09rGmjhPkfHqh/sXw/zouiz7Iexa/kmJZq+ucxE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Mwd6685g; arc=none smtp.client-ip=209.85.128.54
+	s=arc-20240116; t=1788562217; c=relaxed/simple;
+	bh=vRbjUMymsexqITmrj1kcTpPwEFPpKKz2s2RG6RQ8pis=;
+	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
+	 In-Reply-To:Content-Type; b=R2Xr1UIR1yPVA7MehIcOsUD5c4BPAWuDfCrQ1EJi+XdlCAHSZyYRoYHyneQZ/z9QdW/YMwMSgJEyUZLR1TZZyFrBfaNLxbRGd/YYRQK2fL2EaL/iQadM3w31Qu59eENmpKwUTne/Q86CD1AMGG+xWpvaFDfuoIIyCG3D+zzZA8Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Y5CyuBzn; arc=none smtp.client-ip=209.85.128.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Mwd6685g"
-Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4956869750eso12190675e9.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Sep 2026 15:42:07 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Y5CyuBzn"
+Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-49a97714f5dso13354385e9.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Sep 2026 15:50:15 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1788561726; x=1789166526; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=gJWs0CeLy96mK9SVwe75AuLKOzAXDtZ+o+6jI+CMOa4=;
-        b=Mwd6685gcU5bvd+basanYpVyXAoJzqY9Mes4onaZ0GmDUzdKEVO4VT8BC95tTBRJZn
-         9kbmZ2LGHEUWICyRxrgarFkSv6QKIswQiWhLAZLUwym+V/SLU052dCOGRUBDAvXJcYzb
-         aNEHDFGxYZDobIralyXhEXasUKn0FBpclaKssJAsddBYbXx0hHoe7yJL3v7HeQzaAxwk
-         R07cK8nc20aPuo77skEtLhykvxmWlE94h1nWlSO9s8RzyIL1mSswNxhc2EJWv6QKLcge
-         CYyUrhaEtCn8LANRPSMlL814l9NiUw3CwkYkSZwErRDDMXHNyI2Pc3jJEU3zophZ9V81
-         99ng==
+        d=suse.com; s=google; t=1788562214; x=1789167014; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
+         :content-language:references:cc:to:from:subject:user-agent
+         :mime-version:date:message-id:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=zGGp9MjsZFduK5gFatXrpyP3IeJYYzktpdDKJrnnINk=;
+        b=Y5CyuBzng9Uc24VAK8A86+iBqiY+IR4Lrvq/rg4khcVrOcCjSbnMtb8TtN4Bv1TCcT
+         +463Vt2H2bsV4W41oWEsgbkqmy3+9GE64M8CxYL8oCNDWaXhx8Y5eEElZWIZ5kjNWks8
+         f+9ca57W+KS2cfHfztvEUnN0vRpzmXBrcHM0PUmSM46mRQIDV3Z7bIC6qNhjMUCru4y8
+         A0WLgtSwZJ+vo/6Lzks9NMnVi8Y/TYx4vCxuwhVR26AgENTnbyaeumUNKnVJT0gt5eld
+         JuhLt2c5pNMMUSqcejyoHclLXtpgHr36i4TKYVkgqVSCN+Me3wx+YHj2y1NumE2uDuCN
+         Q5eA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788561726; x=1789166526;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=gJWs0CeLy96mK9SVwe75AuLKOzAXDtZ+o+6jI+CMOa4=;
-        b=A1OzPO1+OHQ/JKXB6H9BsBciLjlgQpaeBtvq66U6lnoc4Vo45msIIc2WXIPgb4IRoa
-         ECOdRjpWBg49zN1DyH9UYDbrUkWNcGALCNvGZeFc2rk275f8SqkEQTh2crwDqRTZ+iSO
-         /OyyHflx3H2iXeeD7YRSLLPIhpi35w3zfwIjV1YV80qK+4AJV0guhOvq7cgwar5lyze+
-         pPJ/vIxS3Ow5pjE9mQmP9MOD6Q8m/phSX6iHR9cuH6TgNY61HKGVe0Gk4p152tC2+a6e
-         eiZOVmQnywJGQmi84vKln7bBlXN3I6UIXJHKo3ddR9xOZ5GeugaGyGhq+OTGlIBvGMKW
-         6HRQ==
-X-Gm-Message-State: AFuF++l659FIoKe6XqcMbFTlq7pW3SJL7SQZjaJ22yjzf+dZZ15bREEf
-	ksfp2IgcJ2JSmxIfk//3QDsar/BMi1YRnQnYbxnose2/EDHLT6Gen38V8kwZRalunJY=
-X-Gm-Gg: AYBFou0D1S5mr80utV7a3MRktH4Su8Sk3NVxbbW/kQ/yCBJeJx/VT50JZjQQqeLXa21
-	x4EvgnrxE9BRMJq76Z9Krh9dkkO7RsiAMDyL3K96AmYz/BjcrSUXdxjz514qLNTJZ/iTK8HPj4Y
-	IPxxa7VRTy39FpYeT6yMAjbfYMI1JxIDgcoP6LxgrLfaZHqSYJ4f01YnfoqxKPY/cBReLGNp5Z6
-	ScOMPJGt8L2KEF6bpHhCvKj0KloRS2HZBS2W7cRzw9aRlUBqeuFeLATAFbJfDA1jGUKwQrI48mt
-	7OwSE1fMe0FR1kmulqtOvN7RscPVO6vZ3o57V1Yb672k9QXdFnWrjjHdoXwJou6rVDJFaVzolts
-	eHrbRXmazQO796mrLLm9rUqvfL3V58fGRmvqZdE8kcZNX8AZLlRfU8P2s4jiXFQnFJ+MzFTPBJB
-	nGJobsH+J6VlCb2Gqnl8Fy/eOu43E0UJe3Fgs/8XmUN8ST1GAwC3qz
-X-Received: by 2002:a05:600c:3115:b0:49c:e1b5:b2bf with SMTP id 5b1f17b1804b1-49cf7f48645mr88711835e9.0.1788561725820;
-        Fri, 04 Sep 2026 15:42:05 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1788562214; x=1789167014;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
+         :content-language:references:cc:to:from:subject:user-agent
+         :mime-version:date:message-id:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=zGGp9MjsZFduK5gFatXrpyP3IeJYYzktpdDKJrnnINk=;
+        b=ixerZ+TTvQ0NS1S/7IbasH1IFecg37Q6jHWsPv1qCn7suGamIZkSG61Mzqbhd4FYa2
+         FVrCt7y6zGSvTw5pugLoClLg4Rhpuy8v7vU81IO4Q2nWQ4MuPGBx8YDQsGTlTk+YbXwW
+         WMzrP29aZyk4CGgecDBDccYziNeUn3B8CIMXNdb4+AMDOl+l0g7ShRCr60HJl2QGQ78/
+         OerVd//mYPvnL6YNVSBs/810VQIGImoKGfK/bZBWu6ZDPKmSaIrMLKIp55F+FMizSkxf
+         9nRcCYDr61vKGClTlIMfP8Dpgq99USb1r63fzsb6/RhzDwzWO3dWSgPnvSJlNVvW0laY
+         3y1Q==
+X-Gm-Message-State: AFuF++kXdYTjx1bF7TEI1MVBAU2jGlXiFIGN3rROtgYldF0qxzOC0PTa
+	y47hpbcgtp50zaIYosNCf+XQUX5wvk0LEdhRo7+q5SL6OjyG7S+n4uSfyHm/6Q/ItqxQncpiC7c
+	gtnCe7HzN/w==
+X-Gm-Gg: AYBFou2OqzYO0wJJYBnCIcAXVaPOrtjrkaQ4qOx+bIv019OpIKkHbeXQb+JiW8S495V
+	W0s8B5IFuG4pNBbuVVYyj/2BFdZAwCFzzvKDyseQXZdmuxjPx42R7ooSCFVRe5B+8BSyLNwfs9M
+	Ehdhs4IF+1G4/jUWme824xaKjH/fQsaSSO4r0zKpNxUvTrLw1uxDhSxwFDpT42L8BUb8YnoH0Co
+	uCjSa51tSgdquaeHUWWQKi8mzLpFFxQwdVG4qHHChR1enQukefLs20KbI7V/kd+OF5RAiwjyuoX
+	rFV1SjQftwZA2q9nqlJZN7i6jcoC20cyKoiCsqzObiWHGcVjfcNrkvHn6XsTtHaOPa7ptJC+KIY
+	kOopeT35Kr/0ALHma0f8of/UrBfay8QK4NoP+/SCr4eI8Bp7frOAePC4D2mTrNeYR4mMgQD1wRF
+	RQ4AijkbVr5rAv7BrIB3yv0J8VNUmQdDd1wFKEKJ74sf9aYRiP9jis
+X-Received: by 2002:a05:600c:8715:b0:49c:fa20:cc06 with SMTP id 5b1f17b1804b1-49cfe7a30demr42668645e9.29.1788562214229;
+        Fri, 04 Sep 2026 15:50:14 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-86152045f67sm1655523b3a.18.2026.09.04.15.41.57
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-39b06cea473sm3904884a91.2.2026.09.04.15.50.10
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 04 Sep 2026 15:42:04 -0700 (PDT)
-Message-ID: <5c08f2f3-cf49-41ef-84b5-dced3ce6da90@suse.com>
-Date: Sat, 5 Sep 2026 08:11:53 +0930
+        Fri, 04 Sep 2026 15:50:13 -0700 (PDT)
+Message-ID: <91465187-a892-4b59-857b-e5f5addc0c88@suse.com>
+Date: Sat, 5 Sep 2026 08:20:06 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -70,13 +71,14 @@ MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
 Subject: Re: [PATCH v2 2/3] btrfs: use bio::remaining for async checksumming
  synchronization
+From: Qu Wenruo <wqu@suse.com>
 To: Daniel Vacek <neelx@suse.com>, David Sterba <dsterba@suse.com>,
  Chris Mason <mason@kernel.org>
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 References: <20260903062317.3928665-1-neelx@suse.com>
  <20260903062317.3928665-3-neelx@suse.com>
+ <5c08f2f3-cf49-41ef-84b5-dced3ce6da90@suse.com>
 Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
@@ -101,138 +103,153 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260903062317.3928665-3-neelx@suse.com>
+In-Reply-To: <5c08f2f3-cf49-41ef-84b5-dced3ce6da90@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/9/3 15:53, Daniel Vacek 写道:
-> We can use bio::remaining counter to sync the offloaded checksuming.
-> As a result we can slim down the btrfs_bio structure by 24 bytes
-> and simplify the code a bit.
+在 2026/9/5 08:11, Qu Wenruo 写道:
 > 
-> $ pahole | diff
-> -	/* size: 328, cachelines: 6, members: 15 */
-> +	/* size: 304, cachelines: 5, members: 14 */
 > 
-> Moreover this will allow us enabling async checksumming with encryption
-> where we need to checksum the bounce bio instead of our regular one
-> embedded in btrfs_bio. And so we need to extend it's lifetime. This is
-> the preffered way to do so.
+> 在 2026/9/3 15:53, Daniel Vacek 写道:
+>> We can use bio::remaining counter to sync the offloaded checksuming.
+>> As a result we can slim down the btrfs_bio structure by 24 bytes
+>> and simplify the code a bit.
+>>
+>> $ pahole | diff
+>> -    /* size: 328, cachelines: 6, members: 15 */
+>> +    /* size: 304, cachelines: 5, members: 14 */
+>>
+>> Moreover this will allow us enabling async checksumming with encryption
+>> where we need to checksum the bounce bio instead of our regular one
+>> embedded in btrfs_bio. And so we need to extend it's lifetime. This is
+>> the preffered way to do so.
+>>
+>> Signed-off-by: Daniel Vacek <neelx@suse.com>
+>> Reviewed-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>
+>> No change since v1
+>> ---
+>>   fs/btrfs/bio.c       | 4 ----
+>>   fs/btrfs/bio.h       | 4 ----
+>>   fs/btrfs/file-item.c | 6 ++----
+>>   3 files changed, 2 insertions(+), 12 deletions(-)
+>>
+>> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+>> index 19b4855969f5..771b7d598aee 100644
+>> --- a/fs/btrfs/bio.c
+>> +++ b/fs/btrfs/bio.c
+>> @@ -103,7 +103,6 @@ static struct btrfs_bio *btrfs_split_bio(struct 
+>> btrfs_fs_info *fs_info,
+>>       bbio->can_use_append = orig_bbio->can_use_append;
+>>       bbio->is_scrub = orig_bbio->is_scrub;
+>>       bbio->is_remap = orig_bbio->is_remap;
+>> -    bbio->async_csum = orig_bbio->async_csum;
+>>       atomic_inc(&orig_bbio->pending_ios);
+>>       return bbio;
+>> @@ -114,9 +113,6 @@ void btrfs_bio_end_io(struct btrfs_bio *bbio, 
+>> blk_status_t status)
+>>       /* Make sure we're already in task context. */
+>>       ASSERT(in_task());
+>> -    if (bbio->async_csum)
+>> -        wait_for_completion(&bbio->csum_done);
+>> -
+>>       bbio->bio.bi_status = status;
+>>       if (bbio->bio.bi_pool == &btrfs_clone_bioset) {
+>>           struct btrfs_bio *orig_bbio = bbio->private;
+>> diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
+>> index b7bd377a0162..bbf362b8668b 100644
+>> --- a/fs/btrfs/bio.h
+>> +++ b/fs/btrfs/bio.h
+>> @@ -58,7 +58,6 @@ struct btrfs_bio {
+>>               struct btrfs_ordered_extent *ordered;
+>>               struct btrfs_ordered_sum *sums;
+>>               struct work_struct csum_work;
+>> -            struct completion csum_done;
+>>               struct bvec_iter csum_saved_iter;
+>>               u64 orig_physical;
+>>               u64 orig_logical;
+>> @@ -93,9 +92,6 @@ struct btrfs_bio {
+>>       /* Whether the bio is coming from copy_remapped_data_io(). */
+>>       bool is_remap:1;
+>> -    /* Whether the csum generation for data write is async. */
+>> -    bool async_csum:1;
+>> -
+>>       /* Whether the bio is written using zone append. */
+>>       bool can_use_append:1;
+>> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+>> index 4a7681557ec1..0fed4e0d32d5 100644
+>> --- a/fs/btrfs/file-item.c
+>> +++ b/fs/btrfs/file-item.c
+>> @@ -818,9 +818,8 @@ static void csum_one_bio_work(struct work_struct 
+>> *work)
+>>       struct btrfs_bio *bbio = container_of(work, struct btrfs_bio, 
+>> csum_work);
+>>       ASSERT(btrfs_op(&bbio->bio) == BTRFS_MAP_WRITE);
+>> -    ASSERT(bbio->async_csum == true);
+>>       csum_one_bio(bbio);
+>> -    complete(&bbio->csum_done);
+>> +    bio_endio(&bbio->bio);
+>>   }
+>>   /*
+>> @@ -854,8 +853,7 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, 
+>> bool async)
+>>           csum_one_bio(bbio);
+>>           return 0;
+>>       }
+>> -    init_completion(&bbio->csum_done);
+>> -    bbio->async_csum = true;
+>> +    bio_inc_remaining(bio);
 > 
-> Signed-off-by: Daniel Vacek <neelx@suse.com>
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> ---
+> There seems to be a window where the bio can be finished before submission.
 > 
-> No change since v1
-> ---
->   fs/btrfs/bio.c       | 4 ----
->   fs/btrfs/bio.h       | 4 ----
->   fs/btrfs/file-item.c | 6 ++----
->   3 files changed, 2 insertions(+), 12 deletions(-)
+> Firstly at btrfs_csum_one_bio() time, bio->bi_endio is not yet 
+> initialized, it's only properly assigned at btrfs_submit_bio().
 > 
-> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-> index 19b4855969f5..771b7d598aee 100644
-> --- a/fs/btrfs/bio.c
-> +++ b/fs/btrfs/bio.c
-> @@ -103,7 +103,6 @@ static struct btrfs_bio *btrfs_split_bio(struct btrfs_fs_info *fs_info,
->   	bbio->can_use_append = orig_bbio->can_use_append;
->   	bbio->is_scrub = orig_bbio->is_scrub;
->   	bbio->is_remap = orig_bbio->is_remap;
-> -	bbio->async_csum = orig_bbio->async_csum;
->   
->   	atomic_inc(&orig_bbio->pending_ios);
->   	return bbio;
-> @@ -114,9 +113,6 @@ void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_status_t status)
->   	/* Make sure we're already in task context. */
->   	ASSERT(in_task());
->   
-> -	if (bbio->async_csum)
-> -		wait_for_completion(&bbio->csum_done);
-> -
->   	bbio->bio.bi_status = status;
->   	if (bbio->bio.bi_pool == &btrfs_clone_bioset) {
->   		struct btrfs_bio *orig_bbio = bbio->private;
-> diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
-> index b7bd377a0162..bbf362b8668b 100644
-> --- a/fs/btrfs/bio.h
-> +++ b/fs/btrfs/bio.h
-> @@ -58,7 +58,6 @@ struct btrfs_bio {
->   			struct btrfs_ordered_extent *ordered;
->   			struct btrfs_ordered_sum *sums;
->   			struct work_struct csum_work;
-> -			struct completion csum_done;
->   			struct bvec_iter csum_saved_iter;
->   			u64 orig_physical;
->   			u64 orig_logical;
-> @@ -93,9 +92,6 @@ struct btrfs_bio {
->   	/* Whether the bio is coming from copy_remapped_data_io(). */
->   	bool is_remap:1;
->   
-> -	/* Whether the csum generation for data write is async. */
-> -	bool async_csum:1;
-> -
->   	/* Whether the bio is written using zone append. */
->   	bool can_use_append:1;
->   
-> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-> index 4a7681557ec1..0fed4e0d32d5 100644
-> --- a/fs/btrfs/file-item.c
-> +++ b/fs/btrfs/file-item.c
-> @@ -818,9 +818,8 @@ static void csum_one_bio_work(struct work_struct *work)
->   	struct btrfs_bio *bbio = container_of(work, struct btrfs_bio, csum_work);
->   
->   	ASSERT(btrfs_op(&bbio->bio) == BTRFS_MAP_WRITE);
-> -	ASSERT(bbio->async_csum == true);
->   	csum_one_bio(bbio);
-> -	complete(&bbio->csum_done);
-> +	bio_endio(&bbio->bio);
->   }
->   
->   /*
-> @@ -854,8 +853,7 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async)
->   		csum_one_bio(bbio);
->   		return 0;
->   	}
-> -	init_completion(&bbio->csum_done);
-> -	bbio->async_csum = true;
-> +	bio_inc_remaining(bio);
+> Then we queue the csum generation work.
+> 
+> But by some bad timing, the bio submission is delayed, we can have the 
+> following sequence:
+> 
+>          Submission               |       Csum generation
+> ---------------------------------+------------------------------------
+> btrfs_submit_chunk()             |
+> |- btrfs_csum_one_bio()          |
+> |  |- bio_inc_remaining()        |
+> |  |- schedule_work()            | csum_one_bio_work()
+> |                                | |- bio_endio()
+> |                                | Now the bio is finished, although
+> |                                | bi_end_io is NULL, nothing real
+> |                                | happened.
 
-There seems to be a window where the bio can be finished before submission.
+Damn it, I really need some tea before reviewing patches in the morning.
 
-Firstly at btrfs_csum_one_bio() time, bio->bi_endio is not yet 
-initialized, it's only properly assigned at btrfs_submit_bio().
+A bio has bi_remaining initialized to 1, so bio_inc_remaining() will 
+change it to 2.
 
-Then we queue the csum generation work.
+After bio_inc_remaining(), the next bio_endio() will not call 
+bi_end_io(), but only decrease the bi_remaining back to 1.
 
-But by some bad timing, the bio submission is delayed, we can have the 
-following sequence:
+So it won't call bi_end_io() in this case.
 
-         Submission               |       Csum generation
----------------------------------+------------------------------------
-btrfs_submit_chunk()             |
-|- btrfs_csum_one_bio()          |
-|  |- bio_inc_remaining()        |
-|  |- schedule_work()            | csum_one_bio_work()
-|                                | |- bio_endio()
-|                                | Now the bio is finished, although
-|                                | bi_end_io is NULL, nothing real
-|                                | happened.
-|- btrfs_submit_bio()
-
-
-This can be even worse, if the bio_endio() is called when 
-btrfs_submit_bio() has only partially setup the bio (e.g. bi_end_io() is 
-set, but bi_bdev is not set)
-
-Not mention now it changed the context where the endio function is called.
-
-Previously csum_one_bio_work() will never call bi_end_io() function, but 
-now it can.
-
-The change has a much larger impact than I initially thought.
->   	INIT_WORK(&bbio->csum_work, csum_one_bio_work);
->   	schedule_work(&bbio->csum_work);
->   	return 0;
+Please discard the above analysis.
+> |- btrfs_submit_bio()
+> 
+> 
+> This can be even worse, if the bio_endio() is called when 
+> btrfs_submit_bio() has only partially setup the bio (e.g. bi_end_io() is 
+> set, but bi_bdev is not set)
+> 
+> Not mention now it changed the context where the endio function is called.
+> 
+> Previously csum_one_bio_work() will never call bi_end_io() function, but 
+> now it can.
+> 
+> The change has a much larger impact than I initially thought.
+>>       INIT_WORK(&bbio->csum_work, csum_one_bio_work);
+>>       schedule_work(&bbio->csum_work);
+>>       return 0;
+> 
 

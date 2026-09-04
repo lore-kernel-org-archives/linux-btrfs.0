@@ -1,310 +1,171 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A227841D21E;
-	Fri,  4 Sep 2026 06:14:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788502494; cv=none; b=ZnnqMnMCDPxWsK32lZddR1sCVWdE1wox+TvJVl7wKMhEsheI3HO6skSYxPdDLuch+EzRGgu2wtKup/QnArjgPetTf8dHDNfu4QuQGKcmPla7jT0N3Vpl9yWIwmdWNP1pqmn8hMzKRv9YgAwPb8c62UUW02IU+5tJ9wIAzU5Y6rA=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788502494; c=relaxed/simple;
-	bh=+Vuva2x07kkQ3twdLMiAjuSVbM9K9HtOCZRS9vP9vak=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:Cc:From:
-	 In-Reply-To:Content-Type; b=Tby9VycMoLJP4/Tg/7XzqReTETGLVC534lsa1Kv7qzdhZCb6P3rDrm7dUJCQIOlsLKiA91ptm+Dh6pxphmZEINf3LhpcHjhzoN4lIg/FRLuy2azj8j65ph+gZk6jmGJ+MqPboqLcCTVK4v9piR7Q/n2GjtIwJ6Pfzh06dD0sxYY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=iHRJ79Ty; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A7CAF35B632
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Sep 2026 06:25:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.153.141
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1788503104; cv=fail; b=a3SgDmxVKi51TvCKK/yzUxI+BGCDALcpwncWT/1OchZ/iFghuDbRrSSpPY5nxxSPgk62nzl+L9dyfbbYq9E4ibZvschzaD+5tnGRJXgYfiPqfFutBn2PlpCUHud2kLC2HVfuL1OzJQToX6x+kWNJF6mbw+PM3+LjJd/l9GIBOXE=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1788503104; c=relaxed/simple;
+	bh=NammyUIWVu/TDAKZMfDmU0seZcKPC6Q1lVPldRyfvJ8=;
+	h=From:To:Cc:Subject:Date:Message-ID:Content-Type:MIME-Version; b=OG1lB/WoObDrvv5GjX2Y9bjENb5+09nYuQIBERXcD0+H3gs9uxuM+YhDsy8EWx9ALH2sf75U8gtgdNm/wfTCBqAVtTqAK1RQ6PMKjZdWr9ADF95pc52TukTaqhQLVFwZBMBG798a8UIFAC0gJUj3VzbAwp4PTnfP5+YrvRfESmY=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=CQ5SMox4; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=EEUw8Wxn; arc=fail smtp.client-ip=216.71.153.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="iHRJ79Ty"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A3A001F00A3E;
-	Fri,  4 Sep 2026 06:14:50 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1788502492;
-	bh=bTsu2G89SJRy90MXm2vb5283BxfcwUlExbIyEQ3jmSY=;
-	h=Date:Subject:To:References:Cc:From:In-Reply-To;
-	b=iHRJ79TyoZxlkp7nwSUOLxwhbS90hnxS0b5CeEe1PqEX/vuIH/bXcZi5qBX5B6Uw1
-	 yMoKiIMSuLBtRcvkY9F8W4vwGGqgsKa9Y53EmGTQ7io4tiB4ZiRCBdhjwtq63a55OE
-	 h14hJbXsZ8SstPXhv5IkSy4aTpIBzdDptLREJJYg6spnarjqHd1u0KpLy+U9EocpQp
-	 APbFMPo4vVbvZPj01MhRlN6Yp0KMzRWf7mKdWuaMI1ID+QPsRq77fEjmUXgejS8U+6
-	 dBuRjMPUVe0kYilq1jQchst3KFjn5qz/IKeWtJtpXokHFDTfghmH4LEeMgWZd9TQKX
-	 qx8coXyOyz1HQ==
-Message-ID: <d6efde18-0e87-4db0-8560-cbb2acc7b5a5@kernel.org>
-Date: Fri, 4 Sep 2026 14:14:48 +0800
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="CQ5SMox4";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="EEUw8Wxn"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1788503102; x=1820039102;
+  h=from:to:cc:subject:date:message-id:
+   content-transfer-encoding:mime-version;
+  bh=NammyUIWVu/TDAKZMfDmU0seZcKPC6Q1lVPldRyfvJ8=;
+  b=CQ5SMox4+/gRZ4nOXW+KGoWEJc4jgQXpW0ZO3lCTa+CibcAnOSP95oKf
+   7VyBHl9odMSYEmwEbLi24g6yVdLykY2sJGnJsEmdn0NRUudkxcNfFGOsf
+   eoyAw6xgVBhcpHPxLXYOVaqUgp+juMegotsoMKhW4DTodr6kiW344/Ikx
+   YamxRggEEGqjmgzkVCvCBr0Q/t/jwJH12yFM+hmCxPjSJAITNc8+f9eE/
+   e0GMWwdt98NaXBWOMt8iaK1Fs5U2IIRfkhjcY9couK5x9rvJi+ZTIWXju
+   bV/SZ5tu7Ye5oltYUpS92uUPlsKRjCP6rxkCp7cxkTmShkPgT+RYx10ui
+   A==;
+X-CSE-ConnectionGUID: rcIwTbAgT06GdzpnwnOJ+w==
+X-CSE-MsgGUID: MRmYYkj6TdSGs50fzDHI9Q==
+X-IronPort-AV: E=Sophos;i="6.25,260,1779120000"; 
+   d="scan'208";a="154938763"
+Received: from mail-centralusazon11011058.outbound.protection.outlook.com (HELO DM5PR21CU001.outbound.protection.outlook.com) ([52.101.62.58])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 04 Sep 2026 14:25:02 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=nfv/UGTJx6CIDAUblDjFMY0NyzBZj4H5hj9alUbZcrnTAHMYWHUwX0MuhcwiGtw5YYjQ4GiFTwg5EFEP0i7xfX9VMJlDP/MrimBjs/j0NMT4QE+Pf0uCKaoxE6MfVxeAf5eAP+ST5SgfiBXBtGET1ZrD1wW+23Zg1XozSy3M7KQfUlU0QfgIfJfgZExbfS278U1WFKFdsIUfaKSIfDV4CjJzZMmghfUl3xKmF8CZHNwsOCUebv8t2/O7ss44xoPwVXktf45oWj92ZlN0o3TBHtwy0dCDnN5UKYyvzSKHLHlh9Ot4nM6M8pRAUsq5grwqS3G/VBFeg713IH717wjVow==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=9vfUy67aI5uIziI2+LwdVLxtvaUkfWWNeFSg3DiAN1g=;
+ b=oNqpV6YTmWFHEklt0bG/1uDXlkcJHzL+NPrxBYZGeEwymTbjO1TXwl9ZUdNzskvphRV9qtOSEwFSEbRS08EQw6iwu899d6/XeVZQOw8Dw+GZ9xYTLO5JOipoa0nFJO2efjSHSRvebFje7eqtRZNPlM0pSIyXeoIPbbwQ3dLv67hZ23pO7Kefnyjsp6wKKrmsiXppF29FoAGHzt3pGpCugw8iyULL55KLTFF6pzTPian+bCL16qY03p1bM7SsE/FD/PMXM2SWTDrz+59NDQo8hzrj82sdqhIUauA19dMOb2fl5yxYdUINvrgqW2b+Tc3wtbQwNdMlA+6JpCruhDRoKw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=9vfUy67aI5uIziI2+LwdVLxtvaUkfWWNeFSg3DiAN1g=;
+ b=EEUw8WxnU/sUfQJQKbAqSV8/ofyXRwP/XH7zvZ3lyQBfEYTez5DOYpBE3uwBpLRmIzoSZ9I1qSNuIBjqPhAlmcnYhLKGrk6+Kd+nLJcrAoRwUgMysq2geUFCFfuYdp9FE8LMFMVys1G5qYvgQL4UEZB9ase2HyU7zHUcCFscDUc=
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
+ by PH8PR04MB993561.namprd04.prod.outlook.com (2603:10b6:510:40a::10) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.360.13; Fri, 4 Sep
+ 2026 06:24:59 +0000
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0360.008; Fri, 4 Sep 2026
+ 06:24:59 +0000
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>,
+	Qu Wenruo <wqu@suse.com>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH v2 0/2] btrfs-progs: fix stale active zone after mkfs
+Date: Fri,  4 Sep 2026 08:24:42 +0200
+Message-ID: <20260904062444.3467618-1-johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.55.0
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: FR2P281CA0108.DEUP281.PROD.OUTLOOK.COM
+ (2603:10a6:d10:9c::19) To SA6PR04MB9447.namprd04.prod.outlook.com
+ (2603:10b6:806:436::21)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v8 07/13] fstests: verify fanotify isolation on cloned
- filesystems
-To: Zorro Lang <zlang@kernel.org>
-References: <cover.1784949154.git.asj@kernel.org>
- <96599abcd6e3264a088ea2f34947de6496f33359.1784949155.git.asj@kernel.org>
- <apb8S8g3Zqf1XpZ9@zlang-mailbox>
-Content-Language: en-US
-Cc: linux-xfs@vger.kernel.org, fstests@vger.kernel.org,
- linux-btrfs@vger.kernel.org, djwong@kernel.org,
- linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org
-From: Anand Suveer Jain <asj@kernel.org>
-In-Reply-To: <apb8S8g3Zqf1XpZ9@zlang-mailbox>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|PH8PR04MB993561:EE_
+X-MS-Office365-Filtering-Correlation-Id: c616679a-f744-4901-6f0d-08df0a4d3eaa
+X-LD-Processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+ BCL:0;ARA:13230040|366016|10070799003|1800799024|19092799006|23010399003|376014|56012099006|18002099003|11063799006|10067099003;
+X-Microsoft-Antispam-Message-Info:
+ gttVlaofYNrovI7/nPc7/mRht3Xo36ibbZdYwTvhD77yKOUWp4LDliTiwmQkdcaVVIlPmJiPul/EKlBTqWMWQtkgIQGM27kKO2iU8I0SF/ww0XUJAmy5L5muiGnsu5XtHEcwmnG6JX25qwrlLxTFtxbVmj4JiTkJEUMI6CnbmoK1My71vQwpinbJ6rvpNxui6YnAgFgflN2oFNKUE1srqmbkxeABKmZrZQiMV1nwKRFw20Mq/OMziQoI95uaqYjxjh4KN7Pwz79osm7WRkI4VUjdR/UbmT0nPnRWy9YAnGD9qEB/wTLAHMKiKhZ5llq5k/PyzVIaqytEvQqpgFzzLZHASfN3rHNTB2JXLExAy5HY8CmEfPLdJaUZhrw2J8nkBWtaE6oAiok+uYdZuky6zQlPsYW1YJLFUMUAoDLp7Banes6ImoH7g05TdV1WtP8Og6mzjyxGb+zassIHRZ88VybXkPLS4IkRfslqQWVsP7IPY1ZLRTdMylw+u6JoBGbIBIoK3aB2DQs7iN9mpWFGTins0sKxUKtWaZ4+but5l/NRI26WQRUNAMWgyYfo92BoVRfP/5a/rqItxvfsX0pP+BTz65g/Mo9AJBpQFclGP5JuQcR9SOibt4bz+Zuzr/GMn7OD7DPTZXQm9CTBG1FcBD2bsv2p4O9EQUOdnEFZgyU=
+X-Forefront-Antispam-Report:
+ CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(366016)(10070799003)(1800799024)(19092799006)(23010399003)(376014)(56012099006)(18002099003)(11063799006)(10067099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
+X-MS-Exchange-AntiSpam-MessageData-0:
+ =?us-ascii?Q?KiH34acrqkNUOxhNd/RfLLmEh4Lv3XWBzDPpNG6HksOWCSR0CYYzp+qzfCtJ?=
+ =?us-ascii?Q?Mki3MW5ge0UQmmjqC4moQ5+9gfGenYMhK2V119smhlWvxK0FCjZ20WvXOGKE?=
+ =?us-ascii?Q?Mj54g+L6vQaQYAUA8rfuvDdM9QxaTuB66++IaRkhiJBuxIY/Vh3AQoePBz49?=
+ =?us-ascii?Q?0ilpe4J1OC5H2fligIwEl0O/fHfxhi5R5P1r631/81RaEpWfudNGg6RdN4AO?=
+ =?us-ascii?Q?AJUk8FQlzE9EL6qo6vDzelZQCw0k+2ohr5lwX+JL+wjHq7m94H5VGOb7nlsb?=
+ =?us-ascii?Q?Usg1AA2n/k5geCV8xwMlMKv2kD5daelRtZDp2DT5W2OG6JC+MfhdMh3RNsL2?=
+ =?us-ascii?Q?DysYeaItPAViuog3FOVldqMLOQ80vUHYSdQcg5rCrmddlSW9sksD07fsYsrk?=
+ =?us-ascii?Q?R7M0iI6Rg6vA3r4RNePieplomV8OzxXnthkxYeVRC9npxgeyp6CXYY7CRg0P?=
+ =?us-ascii?Q?twLsvOi5jMSLUGFLeElj0U9VRta1vNIAo+yglCj6D0dwysIyDjdIVuC+XHWr?=
+ =?us-ascii?Q?Ozk4P6IWdAq0KOpLVVM00fvJSybC/ujKP7/x62bC5MBJu/vQggzaDvsuAn6P?=
+ =?us-ascii?Q?l//qb0MJl3lcvEOrXTo2wViytz/WLNDLrXsLqM2zHzhXLLAnzP3yNoHR2/Z4?=
+ =?us-ascii?Q?5MU54e/vzMMdyz4MTG1Jwz654nHEOB71xpO1bpapRr1gU+dIbZhcRtH76/y+?=
+ =?us-ascii?Q?t4pPqfieOYVU3qNlt49Uy/Ldey6EUYFSdF+xschXMmI9+0FLGArcyBknxc3J?=
+ =?us-ascii?Q?qUVeXvhmf+NRkI8v0vXkQpnDXoezbwJ3irPCuO0zBFeiPdkW+DlzczpLn8ES?=
+ =?us-ascii?Q?TZpCWzmYTQenUa6ncvATovehAIm8RtfkhPI74ObhIZGdKlVSwpK+dTM6KuFX?=
+ =?us-ascii?Q?XTpxIDQCfegBuH4Ij4FcQA4MXfY4osRfjQF+ujEw0XU7d1YDK5wND+35QjYO?=
+ =?us-ascii?Q?UiNeFCNP+u5kBJjZzhw0kFQ8Kpz3vNiQ0DZF7NHkUexsztgMFewyReUA34gv?=
+ =?us-ascii?Q?uDELVP/R9cXtnHaGjjbM2xxOGm90XmRtI+JjZTqNLIIaArqO38i8Afj7k13U?=
+ =?us-ascii?Q?r5DJesoeR4cyGtMjiTzUQQlfIoZS6+kfk5kGyA46wLvisxKS/G+Sa7DaX/6L?=
+ =?us-ascii?Q?x83HCzbavwFN60OEagjaiGYhC5XtpQW1LdrUCPaymsFVkRD5a7qX64U7Ge2O?=
+ =?us-ascii?Q?l1Bxoixp3r28pTrtRA1VZzn3jXEwMHiy6fdakWhECsiMueqjHdIrGNOtBSkr?=
+ =?us-ascii?Q?dYFEI3a5U8jkjJBwxibBqapTJNz+slTS9vH0pGWjfPBxuL7UQExp/4DlMc8j?=
+ =?us-ascii?Q?W3I8vfxTJQjeDIJPvQSRNZPaMUT6c9jc9Jn8rMXEmtXSxP95gEGz3+TlkYGl?=
+ =?us-ascii?Q?033ZvtbBzmXe229NpHapveYwkTw1NyG8WDe/9/hOjy4ajDmxF214dB/WEroS?=
+ =?us-ascii?Q?nWC122w6fHj59jyZQSQHej/uYXzizSz7dhP8Ty8Om+9heGcf2rtf/0HYEctG?=
+ =?us-ascii?Q?3dKVCiDul2/tvicKODB58+h9hSyWGg53fisC9FEIRv86yrkR70bEsJOXK1Zm?=
+ =?us-ascii?Q?/h7SijuNbws4ZwG6Un1MMH+xdpjogh9sgjIqOm24Ro/l4WrJXtIVkbZh2DQ0?=
+ =?us-ascii?Q?UtspPAn6XHYdh0MRsMlsnmWopWkX3UMmbSZ6igDhmvM0wzBfMeiHOZ3XAjCc?=
+ =?us-ascii?Q?9b1UoMeOysJq4X+NBqlc6Bsi+8iRVTRXQGv8d09id/I5uxKqOvvueOn+busJ?=
+ =?us-ascii?Q?oYMDCGcnsDtvXeYulicSl1pAOE3ISk13mnNeeQXeNvmQ9z4BG0VPq17bQmDB?=
+X-MS-Exchange-AntiSpam-MessageData-1: cNWYxY0zQahlLg==
+X-Exchange-RoutingPolicyChecked:
+	E2h0V94zh4VCA2xYrHkZMhRj3GpesWpmKndr+XDQJpA5M1frMDc1VT3KUTu3f/jPaXoMXHhm/Pxm6X2TPQof+tX1VLMD41CZU1ltHxloxDvgr9TvvQ+HCiqjhHwwHFoPqbXbk3tuMZGiPH2pIdP5901vSREMUo6Qw5+tqx7uzoN5rp+JaGLFaSVilD1hGjz8GS9ujtFzwDpPZMzmSRUKS5oXjDY7cvUz/qxsRm6U5nc/sXVlDT9Bs6OYaVplBXtLFKz6soHIW6CVgpkL7dDrX4XtqgI/bI4j3tcuGL7BEOB2ib2W7B83MGTns1zvE+gVlgqms9qSh79NZdkgEMFqrw==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	txqgEcnbImNv1xLW/kyfPtnxG6qjliL7paAFnaV8qC5un4L68SUpOiZAglr33fE+1mFg5H1WNMnZi6huejp1WS2O9CZJLsbNo/+K8xghBC11iFPlMb3JSPHPc2qcfkQwudbh/rTaREFqr+QXGfn5wCGjk+S5TpO0wR2kXJV0N65zVEQDOa5nnp+3ixr61dhiY8nDIrAnEilz4d3UFrAGAoF+1/NoQqMdbW4XKbUoc2uJOXuTnGVNVETQl8X0CMOi3KjGUyqpc8wyrzykR1/mdSUZPP6HrBKXbC0k/a0Rrp+YXyLONNr0fJtkCP6DMs23/TLfhZmz3Ra6esfq29OsmqoauMoKAqz9gGSIiyHJFiDtAr7+6BB9zDdeB3m/oqzOBpB8vbGQVYu82Sasob0DGDRKuXQdHxutt3z7deUg3MGnd2nb86iNkSr5CUHUePZ+hfaMMakIl8w6pBD/TJuQTVsDRLXhEHq9Tpm+39ox3c5iH/OiUM7wYBXnCaCQB0Sekz/AaEKlz0bcO9CuQfR7+9iT+fIwY3vxSjViv4iS4hQYKzoINR9YoY6Vro8ubtsSwfTLeMzznQny5z++jpK5yozdqdeea2Ajyop3aumYs30ndTRE5PuVjvjVHhtmcRD5
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: c616679a-f744-4901-6f0d-08df0a4d3eaa
+X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 04 Sep 2026 06:24:59.2280
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: vlrWU2uyNBHj9wENzvV/XaGLPpijJW0LVbfqN117hDGBtihOYP5lkfzNRYC/lLAXJXAOH6p3cFFcWr2Svj3b1Ft8Ny90HCi9vjGi4rJ9y/k=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH8PR04MB993561
 
+On zoned devices, mkfs can leave a stale zone behind that is used as a
+staging area but never reset. This zone is not backed by a chunk or
+device extent, so the FS itself does not account it as used. On devices
+that have a limitied active zone budget this can lead to premature
+ENOSPC and/or an exhaustion of active zones.
 
+Fix it in mkfs for new file-systems and also add a check to fsck to find
+such zones and repair them with '--repair'.
 
-On 2/9/26 02:23, Zorro Lang wrote:
-> On Sat, Jul 25, 2026 at 03:39:04PM +0800, Anand Jain wrote:
->> Verify that fanotify events are correctly routed to the appropriate
->> watcher when cloned filesystems are mounted.
->> Helps verify kernel's event notification distinguishes between devices
->> sharing the same FSID/UUID.
->>
->> Signed-off-by: Anand Jain <asj@kernel.org>
->> ---
->>  tests/generic/801     | 143 ++++++++++++++++++++++++++++++++++++++++++
-> 
-> `g/801` is already taken. To avoid merge conflicts, you can use a higher
-> temporary number, and I'll assign the proper number when merging.
-> 
+Changes to v1:
+- fix a bug in fsck where it had a stale return value propagated.
 
-Let me bump-it up to 90x.
+Johannes Thumshirn (2):
+  btrfs-progs: zoned: refresh stale cached zone state in
+    btrfs_reset_dev_zone()
+  btrfs-progs: check: detect leaked active zones on zoned devices
 
->>  tests/generic/801.out |   7 +++
->>  2 files changed, 150 insertions(+)
->>  create mode 100644 tests/generic/801
->>  create mode 100644 tests/generic/801.out
->>
->> diff --git a/tests/generic/801 b/tests/generic/801
->> new file mode 100644
->> index 000000000000..904ba9440b3d
->> --- /dev/null
->> +++ b/tests/generic/801
->> @@ -0,0 +1,143 @@
->> +#! /bin/bash
->> +# SPDX-License-Identifier: GPL-2.0
->> +# Copyright (c) 2026 Anand Jain <asj@kernel.org>.  All Rights Reserved.
->> +#
->> +# FS QA Test 801
->> +# Verify fanotify FID functionality on cloned filesystems by setting up
->> +# watchers and making sure notifications are in the correct logs files.
->> +
->> +. ./common/preamble
->> +
->> +_begin_fstest auto quick mount clone
->> +
->> +_require_test
->> +_require_block_device $TEST_DEV
-> 
-> Which test condition requires `TEST_DEV` to be a block device?
+ check/main.c          | 156 +++++++++++++++++++++++++++++++++++++++++-
+ kernel-shared/zoned.c |  18 ++++-
+ 2 files changed, 170 insertions(+), 4 deletions(-)
 
-You're right, I think this is a leftover from earlier prototyping
-with scsi_device. The test only needs loop devices backed by
-$TEST_DIR. I'll remove it in the following ver.
-
-> 
->> +_require_loop
->> +_require_command "$SEMANAGE_PROG" semanage
->> +_require_command "$FSNOTIFYWAIT_PROG" fsnotifywait
->> +_require_fanotify_function
->> +_require_unique_f_fsid
->> +
->> +_cleanup()
->> +{
->> +	cd /
->> +	[[ -n $pid1 ]] && { kill -TERM "$pid1" 2> /dev/null; wait $pid1; }
->> +	[[ -n $pid2 ]] && { kill -TERM "$pid2" 2> /dev/null; wait $pid2; }
->> +
->> +	if [ "$semanage_added" = "yes" ]; then
->> +		semanage permissive -d unconfined_t >/dev/null 2>&1 || true
->> +	fi
->> +
->> +	umount $mnt1 $mnt2 >/dev/null 2>&1
->> +	_loop_image_destroy "${devs[@]}" 2> /dev/null
->> +	rm -r -f $tmp.*
->> +}
->> +
->> +# Run fsnotifywait in unbuffered mode to watch filesystem-wide create events
->> +monitor_fanotify()
->> +{
->> +	local mmnt=$1
->> +	exec stdbuf -oL $FSNOTIFYWAIT_PROG -m -F -S -e create "$mmnt" 2>&1
->> +}
->> +
->> +# Transform f_fsid into the hi.lo format used in fanotify FID logs
->> +fsid_to_fid_parts()
->> +{
->> +	local fsid=$1
->> +	# Pad to 16 hex chars (64-bit), then split into two 32-bit halves
->> +	local padded=$(printf '%016x' "0x${fsid}")
->> +	local hi=$(printf '%x' "0x${padded:0:8}")   # strips leading zeros
->> +	local lo=$(printf '%x' "0x${padded:8:8}")   # strips leading zeros
->> +	echo "${hi}.${lo}"
->> +}
->> +
->> +# Create base loop device and its clone
->> +devs=()
->> +_loop_image_create_clone devs
->> +mkdir -p $TEST_DIR/$seq
->> +mnt1=$TEST_DIR/$seq/mnt1
->> +mnt2=$TEST_DIR/$seq/mnt2
->> +mkdir -p $mnt1
->> +mkdir -p $mnt2
->> +
->> +# Mount both base and clone filesystems using required clone mount options
->> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[0]} $mnt1 || \
->> +						_fail "Failed to mount dev1"
->> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[1]} $mnt2 || \
->> +						_fail "Failed to mount dev2"
->> +
->> +# Fetch filesystem IDs to verify the kernel can differentiate between them
->> +fsid1=$(stat -f -c "%i" $mnt1)
->> +fsid2=$(stat -f -c "%i" $mnt2)
->> +
->> +log1=$tmp.fanotify1
->> +log2=$tmp.fanotify2
->> +
->> +pid1=""
->> +pid2=""
->> +echo "Setup FID fanotify watchers on both mnt1 and mnt2"
->> +
->> +# Permit unconfined_t domains when SELinux is enforcing to prevent fanotify
->> +# blockages
->> +semanage_added="no"
->> +if [ "$(getenforce 2>/dev/null)" = "Enforcing" ]; then
->> +    if ! semanage permissive -l | grep -q "unconfined_t"; then
->> +        semanage permissive -a unconfined_t >/dev/null 2>&1 && semanage_added="yes"
->> +    fi
->> +fi
-> 
-> Looks like semanage/SELinux isn't a necessary requirement of this test case,
-> if so that `_require_command "$SEMANAGE_PROG" semanage` also can be:
-> 
->   if [ "$(getenforce 2>/dev/null)" = "Enforcing" ]; then
->       _require_command "$SEMANAGE_PROG" semanage
->   fi
-> 
-> right? And please replace semanage with $SEMANAGE_PROG.
-> 
-
-Absolutely, that is the right way. I'll update it. Thanks!. More below.
-
->> +
->> +# Start asynchronous fanotify monitors
->> +( monitor_fanotify "$mnt1" > "$log1" ) &
->> +pid1=$!
->> +( monitor_fanotify "$mnt2" > "$log2" ) &
->> +pid2=$!
->> +sleep 2
-> 
-> Are you using `sleep 2` to ensure `fsnotifywait` is fully set up?
-> I'm not sure if `sleep 2` is 100% reliable here. Since the subsequent tests
-> strictly depend on `fsnotifywait` starting up properly, is there a more
-> robust approach than `sleep 2`? For example, could we check the output
-> in `$log1` and `$log2` to make sure that? Or any other better idea?
-> 
->> +
->> +if ! kill -0 "$pid1" 2>/dev/null || ! kill -0 "$pid2" 2>/dev/null; then
-> 
-> `kill 0` only can make sure the process is running, can't make sure it's
-> fully set up, right?
-> 
-
-I rely on checking whether the userspace process is still
-running after a 2 second delay.
-
-Matching specific stdout strings a common pattern in fstests
-tends to be fragile across different versions of userspace
-utilities. For instance, the "Watches established" string
-in fsnotifywait isn't guaranteed across versions:
-
-$ fsnotifywait -m -F -S -e create /btrfs
-Setting up filesystem watches.
-Watches established.
-^C
-
-
->> +	cat "$log1"
->> +	cat "$log2"
->> +	_fail "$FSNOTIFYWAIT_PROG setup failed"
->> +fi
->> +
->> +echo "Trigger file creation on mnt1"
->> +touch $mnt1/file_on_mnt1
->> +sync
->> +sleep 1
->> +
->> +echo "Trigger file creation on mnt2"
->> +touch $mnt2/file_on_mnt2
->> +sync
->> +sleep 1
->> +
->> +echo "Verify fsid in the fanotify"
->> +kill $pid1 $pid2
->> +wait $pid1 $pid2 2>/dev/null
->> +pid1=""
-> 
-> unset pid1
-> 
->> +pid2=""
-> 
-> unset pid2
-> 
-
-Added.
-
->> +
->> +e_fsid1=$(fsid_to_fid_parts "$fsid1")
->> +e_fsid2=$(fsid_to_fid_parts "$fsid2")
->> +
->> +# Dump debug details to the full log
->> +echo $fsid1 $e_fsid1 $fsid2 $e_fsid2 >> $seqres.full
->> +cat $log1 >> $seqres.full
->> +cat $log2 >> $seqres.full
->> +
->> +# Ensure monitor 1 only captured events belonging to mnt 1 and fsid 1
->> +if grep -qF "$e_fsid1" "$log1" && ! grep -qF "$e_fsid2" "$log1"; then
->> +	echo "SUCCESS: mnt1 events found"
->> +else
->> +	[ ! -s "$log1" ] && echo "  - mnt1 received no events."
->> +	grep -qF "$e_fsid2" "$log1" && echo "  - mnt1 received event from mnt2."
->> +fi
->> +
->> +# Ensure monitor 2 only captured events belonging to mnt 2 and fsid 2
->> +if grep -qF "$e_fsid2" "$log2" && ! grep -qF "$e_fsid1" "$log2"; then
->> +	echo "SUCCESS: mnt2 events found"
->> +else
->> +	[ ! -s "$log2" ] && echo "  - mnt2 received no events."
->> +	grep -qF "$e_fsid1" "$log2" && echo "  - mnt2 received event from mnt1."
->> +fi
->> +
->> +status=0
->> +exit
-> 
-> _exit 0
-> 
-
-Added.
-
-Thanks.
-Anand
-
-> Thanks,
-> Zorro
-> 
->> diff --git a/tests/generic/801.out b/tests/generic/801.out
->> new file mode 100644
->> index 000000000000..d7b318d9f27c
->> --- /dev/null
->> +++ b/tests/generic/801.out
->> @@ -0,0 +1,7 @@
->> +QA output created by 801
->> +Setup FID fanotify watchers on both mnt1 and mnt2
->> +Trigger file creation on mnt1
->> +Trigger file creation on mnt2
->> +Verify fsid in the fanotify
->> +SUCCESS: mnt1 events found
->> +SUCCESS: mnt2 events found
->> -- 
->> 2.43.0
->>
+--
+2.55.0
 

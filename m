@@ -1,112 +1,186 @@
-Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.9])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2687B324B24;
-	Sat,  5 Sep 2026 14:25:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.9
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B116327AC45;
+	Sat,  5 Sep 2026 16:25:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788618351; cv=none; b=IkNtCben9y7XSAi/WDjsdoBRh/769I0Bj+4PNI6i5wwA2rQ4kanfAOp7UfkyUfSWNMtmrtDFupRewlP3PnIchP0z9O0po8JypfGwYTuyhVf9YmJ7k4Lyn1V84zGCqicGVKqlPwhlUImzFVdNri4gYL6NB2Z/Fgnph/5heu6wHCw=
+	t=1788625517; cv=none; b=dq2ii/xsXAnA1+5cua7x9ABbb7AkCgygdUX0yK/Ucjz/zyqexNdF9vLVt+ffEbhshvN8qDKv7fB7mi/uOdr6wPWtg4kAmAD/X1KpvwTngcARLblsMklg8ITgkCsxsll/RrQTNOeMeSPyKRjnyMidX6DJVNYsMm0RtA8K7kXo5as=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788618351; c=relaxed/simple;
-	bh=jndXAAKHidpqftMQBa26cKlXG5nvYlOXafytPCALO5Q=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=hDklFlvx/tg1A+J+Sa9ePF4UHoO4XaApLQtcDSUSB/+Ra3fJlqR0cJz4g+QVnZN+jsi77SH41qncOZNFWP0+WLU1sl3COW0ZZMKUk5deeTxgIKjk8PiBndmanP8SUBXCi2ObXfdexXpP6cRvWNW3TEI6POkV1cmTgQMMH0KOdvQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=dUGZCBem; arc=none smtp.client-ip=192.198.163.9
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+	s=arc-20240116; t=1788625517; c=relaxed/simple;
+	bh=bibvW/OI2KKpB1OFUFwCpu1LHqDAkTxOtirPg+HkdN8=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=r+ydUdKcpB/cmsw2jH6p+pJTEWTid9qNnNjORE5+spRsghtkCarFD8IM0SiflZs/k8d5lVrDOw7rwZnCAFtbgxO9eDDpoBsVJj+WCWy+lU63DFJAUyO2Hde1XG5Ke1HIE5r0gQBVVfxdsgPNPJRAmNipoV9Wjf+YxM7U/oYCiW0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tYYZIjFf; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=U6DSmOoO; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="dUGZCBem"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1788618348; x=1820154348;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=jndXAAKHidpqftMQBa26cKlXG5nvYlOXafytPCALO5Q=;
-  b=dUGZCBemVzGI3Yv0mWk75ahfd3A1Z1XFKypefigZ9uzvtfTw7lm14ADA
-   tKxNXruVYTPPHNQj93pV4Knloab5ThDFwJTtUbLjKWb9LbQMjcsKbtp0D
-   YbmC1JXiYpeg2SyzZ89+Cbh5lQFmNLBoJ5m9He3IHuO6l/A6TrePx6dzR
-   cdtIRem0BHzDwWceKcK8sEIL2h4LHb5HT559bOFCsTdE2+vmA6p8NMxIX
-   bIAJZrianiAE03HPERatIyp137ui+njaHNK8fwhvmPzaoR7HMahBP8XAZ
-   3wqghnF2uh/yq8Bc1ID/waBkxnClk8cbsrP5WDxTFQ4d19C7wQZ5rnBR7
-   A==;
-X-CSE-ConnectionGUID: XH7xWYRCQ02VGJu+2MvdLQ==
-X-CSE-MsgGUID: RAvUzEy+Tiyo2asooDXV/w==
-X-IronPort-AV: E=McAfee;i="6800,10657,11896"; a="99755054"
-X-IronPort-AV: E=Sophos;i="6.25,263,1779174000"; 
-   d="scan'208";a="99755054"
-Received: from fmviesa004.fm.intel.com ([10.60.135.144])
-  by fmvoesa103.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 05 Sep 2026 07:25:46 -0700
-X-CSE-ConnectionGUID: 8U27AxlCS3SUnHoCDZJdLA==
-X-CSE-MsgGUID: iracYlDuRPuLQIaGChvIkQ==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="6.25,263,1779174000"; 
-   d="scan'208";a="272247298"
-Received: from lkp-server01.sh.intel.com (HELO 73f3364bc37e) ([10.239.97.150])
-  by fmviesa004.fm.intel.com with ESMTP; 05 Sep 2026 07:25:42 -0700
-Received: from kbuild by 73f3364bc37e with local (Exim 4.98.2)
-	(envelope-from <lkp@intel.com>)
-	id 1x2rKs-000000000Z9-3kZH;
-	Sat, 05 Sep 2026 14:25:38 +0000
-Date: Sat, 5 Sep 2026 22:25:12 +0800
-From: kernel test robot <lkp@intel.com>
-To: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>,
-	Bart Van Assche <bvanassche@acm.org>,
-	Markus Elfring <Markus.Elfring@web.de>, linux-block@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Damien Le Moal <dlemoal@kernel.org>, Jens Axboe <axboe@kernel.dk>
-Cc: llvm@lists.linux.dev, oe-kbuild-all@lists.linux.dev,
-	linux-kernel@vger.kernel.org, linux-next@vger.kernel.org,
-	lkp@intel.com, oe-lkp@lists.linux.dev,
-	Christian Brauner <brauner@kernel.org>,
-	Christoph Hellwig <hch@infradead.org>,
-	Hillf Danton <hdanton@sina.com>, Mark Brown <broonie@kernel.org>,
-	Oliver Sang <oliver.sang@intel.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v8] loop: Fix NULL pointer dereference in lo_rw_aio()
-Message-ID: <202609052240.ovdWUOyj-lkp@intel.com>
-References: <dc2f1e00-5e10-4e02-9415-c6ecb2cbc6b3@I-love.SAKURA.ne.jp>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tYYZIjFf";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="U6DSmOoO"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 639A721C90;
+	Sat,  5 Sep 2026 16:25:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1788625509; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=uRc3XZyYCapTXZ7/lREVkVyHENJuGfY4NrdU71AjO0E=;
+	b=tYYZIjFftWZFaLkmzgPlU7LPLdPdfWxOTSy6SfebfskESX6dNfEZAyX4dc4T/mDv7/oZYN
+	LwKbJu2qXI5TWeJMXExkYWa8yM4iUa8PRlqJnzpgcxIS0XRNiv9v9nXE4b89AJP/vajAI7
+	bsw8CaBc+CpGrNK3V3v5ScYfkqC1CM8=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=U6DSmOoO
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1788625505; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=uRc3XZyYCapTXZ7/lREVkVyHENJuGfY4NrdU71AjO0E=;
+	b=U6DSmOoOwo3cYGdcNYejBfCsoaur+vX9+JSY5gtNL9F5xVR95d3mYUvcGi5MnpqbdF35t2
+	Z7IJZrdgBz6LqdboA8XuViyOmZmKSKMiAOA+2QH8PoTTpsxvhh35v65mYMnpuH/88kIaIa
+	Tg6m/e6jao3R3g4NMiNEdYdW8cujBAI=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1E39B13341;
+	Sat,  5 Sep 2026 16:25:05 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 2mn6BmFCnGrpTgAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Sat, 05 Sep 2026 16:25:05 +0000
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 7.3-rc2
+Date: Sat,  5 Sep 2026 18:25:01 +0200
+Message-ID: <cover.1788623834.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <dc2f1e00-5e10-4e02-9415-c6ecb2cbc6b3@I-love.SAKURA.ne.jp>
+Content-Transfer-Encoding: 8bit
+X-Spam-Score: -3.01
+X-Rspamd-Queue-Id: 639A721C90
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Level: 
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	RCPT_COUNT_THREE(0.00)[4];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Spam-Flag: NO
 
-Hi Tetsuo,
+Hi,
 
-kernel test robot noticed the following build errors:
+please pull the following fixes and updates. Thanks.
 
-[auto build test ERROR on axboe/for-next]
-[also build test ERROR on linus/master v7.3-rc1 next-20260904]
-[If your patch is applied to the wrong git tree, kindly drop us a note.
-And when submitting patch, we suggest to use '--base' as documented in
-https://git-scm.com/docs/git-format-patch#_base_tree_information]
+- preserve inode compression level when changing attributes
 
-url:    https://github.com/intel-lab-lkp/linux/commits/Tetsuo-Handa/loop-Fix-NULL-pointer-dereference-in-lo_rw_aio/20260904-085046
-base:   https://git.kernel.org/pub/scm/linux/kernel/git/axboe/linux.git for-next
-patch link:    https://lore.kernel.org/r/dc2f1e00-5e10-4e02-9415-c6ecb2cbc6b3%40I-love.SAKURA.ne.jp
-patch subject: [PATCH v8] loop: Fix NULL pointer dereference in lo_rw_aio()
-config: arm64-allmodconfig (https://download.01.org/0day-ci/archive/20260905/202609052240.ovdWUOyj-lkp@intel.com/config)
-compiler: clang version 24.0.0git (https://github.com/llvm/llvm-project 0edd1b088cc36b4faee80358c925a91e16006258)
-rustc: rustc 1.96.0 (ac68faa20 2026-05-25)
-reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20260905/202609052240.ovdWUOyj-lkp@intel.com/reproduce)
+- fix lost wakeup when waiting for a zstd workspace
 
-If you fix the issue in a separate patch/commit (i.e. not just a new version of
-the same patch/commit), kindly add following tags
-| Reported-by: kernel test robot <lkp@intel.com>
-| Closes: https://lore.kernel.org/oe-kbuild-all/202609052240.ovdWUOyj-lkp@intel.com/
+- fix bio context leaks after ordered extent processing errors
 
-All errors (new ones prefixed by >>):
+- in send, handle unexpected extents for non-regular inodes
 
->> error[E0063]: missing field `post_release` in initializer of `block_device_operations`
-   --> rust/kernel/block/mq/gen_disk.rs:128:58
-   |
-   128 |         const TABLE: bindings::block_device_operations = bindings::block_device_operations {
-   |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `post_release`
+- handle edge case in creation of reloc tree with enabled quotas
 
---
-0-DAY CI Kernel Test Service
-https://github.com/intel/lkp-tests/wiki
+- in scrub report the exact failing offset, not the stripe base
+
+- error handling fixes
+  - error code propagation in send, zoned mode and raid-stripe-tree
+  - restore active device pointer after seeding device addition error
+  - transaction abort fixups
+
+- update Chris' email address
+
+----------------------------------------------------------------
+The following changes since commit 4096e2a06f43fae209d6472d395f3219e02ab2e6:
+
+  btrfs: skip hole detection during full fsync for files without holes (2026-08-07 19:17:19 +0200)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.3-rc1-tag
+
+for you to fetch changes up to 6a7a45b1d94799a5eb8e6d26e65cf31a3fcda9e5:
+
+  MAINTAINERS: update Chris Mason's email address (2026-09-02 22:19:30 +0200)
+
+----------------------------------------------------------------
+Avi Weiss (1):
+      btrfs: send: fix lost error return value in will_overwrite_ref()
+
+Chris Mason (1):
+      MAINTAINERS: update Chris Mason's email address
+
+FAN YE (1):
+      btrfs: zstd: fix lost wakeup when waiting for a workspace
+
+Guanghui Yang (3):
+      btrfs: clean up target device if block group marking fails
+      btrfs: detach failed sprout device from transaction update list
+      btrfs: restore active device pointers after failed sprout
+
+James C. Owens (1):
+      btrfs: scrub: report the failing sector's address, not the stripe base
+
+Johannes Thumshirn (2):
+      btrfs: zoned: finish active block group cleanup if call_zone_finish() fails
+      btrfs: zoned: propagate do_zone_finish() error in btrfs_zone_finish_endio()
+
+Leo Martins (1):
+      btrfs: abort transaction before releasing tree_log_mutex on commit failure
+
+Qu Wenruo (4):
+      btrfs: fix the possible bioc_list memory leak during error
+      btrfs: return proper negative error code for update_raid_extent_item()
+      btrfs: do not force reloc root creation during qgroup_account_snapshot()
+      btrfs: tests: do not touch page cache if root/inode allocation failed
+
+Sam Ho (1):
+      btrfs: preserve the compression property when other inode flags change
+
+Shuangpeng Bai (1):
+      btrfs: fix transaction use-after-free in raid stripe insertion
+
+ZhengYuan Huang (1):
+      btrfs: send: reject extents for non-regular inodes
+
+ MAINTAINERS                      |  2 +-
+ fs/btrfs/dev-replace.c           |  2 +-
+ fs/btrfs/inode.c                 |  3 +++
+ fs/btrfs/ioctl.c                 | 21 ++++++++++++++++++---
+ fs/btrfs/raid-stripe-tree.c      | 25 ++++++++++++++++---------
+ fs/btrfs/raid-stripe-tree.h      |  1 +
+ fs/btrfs/scrub.c                 | 24 ++++++++++++++----------
+ fs/btrfs/send.c                  |  9 ++++++++-
+ fs/btrfs/tests/extent-io-tests.c |  5 +++--
+ fs/btrfs/transaction.c           | 19 ++++++++++++++++++-
+ fs/btrfs/volumes.c               |  4 ++++
+ fs/btrfs/zoned.c                 | 16 +++++++---------
+ fs/btrfs/zstd.c                  | 11 ++++++++++-
+ 13 files changed, 104 insertions(+), 38 deletions(-)

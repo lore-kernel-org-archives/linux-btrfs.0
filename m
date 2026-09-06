@@ -1,278 +1,187 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 326A4327BFC
-	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 07:04:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 87CE9378833
+	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 22:29:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788678261; cv=none; b=rinOo85gO1TnNS1/U/gSYLZdZQFuYjb0KijnAQFahNw+5fmTU4NrW2/mI2mO07Yrvb4vQgz4+eNQiiBdD5XHNf/ZgEQ5nlo4uLBOzB+ojl2JG0PFoGpA+PcEKcDNyHZsKz31DRmY52ySfuM9hd3wuPwZudhW0WBtghY+Ub4PxZU=
+	t=1788733796; cv=none; b=jS3L5CpwwaU1LAmWHjXcL8X22SSvhWA0HiOSK+I+Zpkss12VegRbzQHAluojwal5MNOksVBVk3yUiFltGJ9vOSzuAALTjSf7oa/GO1oo0shZOI88FX2HwLWlP9n8IzyKnczuR3NPAETzCNkNhhvToRlybsYq4+StN8PTmwz/S5I=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788678261; c=relaxed/simple;
-	bh=8E1rYiG/7pKIiqHTJSj5zdaRGhPsQnDYbC6mlHFEIVo=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=r3HvK6NRfHhiJKFG/9t5Ucgrs3vtXnb5X36Yslc5NG+0hUStcxRuu+ynpSUrFHJJGWsDunVwrlSYGd6jKozsQGqMZ8sxGjHuV247Q9gVXRE3wE1IRsPagoRPJJucXSwnwSIlLf5GsKFbxZT+rJuWi0e0RaSJdvuMIOmHnSNwBtM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=k2EkGSVN; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=st5QrKsn; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1788733796; c=relaxed/simple;
+	bh=pAju7TI5+xdoiqfY+xnpahZErsKUQ9RZaydgKBB+99o=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=WG4p8gQWQsNxP2VUDHMNPYnIVeT42pX7aTu90ipHYrzf4LPLgP0p3cuR2y3opYJSXWfBZoA/bhC7zk9M+Ljs6lGsJZ8Tsh8I9m1/SkBN+Jq43LhH7pMHyFjVGZftkF0op2/hPPkku1kKShnEz0hIlwtlpzVo+wqkWtNYGzS97EM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=iovmnKIm; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=KACPj6sU; arc=none smtp.client-ip=148.163.139.74
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="k2EkGSVN";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="st5QrKsn"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id E3C2B1F766
-	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 07:04:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1788678254; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=KrtV8nRYog8CoTqhGN4kxuqx4NjzGgHVcxKkHAiD+Bg=;
-	b=k2EkGSVN5G7w3MstYSHv4KM8AVE/BQMfazjsO4Z5SYksoiqnsVXn79K9UxfoDu+LEQv2/D
-	4VJHjtwOChxgHE5oRzsZ2gf5u9DZVDZVusLzQ1zHlA0x9HNONCNMHY7AVLHOpPwhdOPoIH
-	8uIrBfqkgUzT9gD8xc3Dh4j639cW+xg=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1788678249; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=KrtV8nRYog8CoTqhGN4kxuqx4NjzGgHVcxKkHAiD+Bg=;
-	b=st5QrKsnZ7ew6t2kZugarfQVzRhqteK+SfAFDYuwWg7NrvXRplDtuX5qv3f2sHbRgpx/lC
-	129KOy7A32qR20ILNQxAK1pkiylPQ8aScz5c+DauP4H+ZK1QiaGo7Z9c5Otfwdfo8DnKPi
-	SLpRsG4OJN9mAJubQISHU45Pha/aUjU=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id ABF3A13712
-	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 07:04:08 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id MKbWFmgQnWpUMAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 07:04:08 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/2] btrfs: introduce more accurate usebackuproot options
-Date: Sun,  6 Sep 2026 16:33:38 +0930
-Message-ID: <9c907c139ede11a4b3026bd15b310de034690bc6.1788678078.git.wqu@suse.com>
-X-Mailer: git-send-email 2.55.0
-In-Reply-To: <cover.1788678078.git.wqu@suse.com>
-References: <cover.1788678078.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="iovmnKIm";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="KACPj6sU"
+Received: from pps.filterd (m0167077.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 686JpAHK227858
+	for <linux-btrfs@vger.kernel.org>; Sun, 6 Sep 2026 18:29:53 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
+	cc:content-transfer-encoding:content-type:date:from:message-id
+	:mime-version:subject:to; s=pps01; bh=li2bXN5TDm4JSY+08ek5hlL7Ae
+	vTby2HYb2VklMTt7Y=; b=iovmnKImSt3w4ZsIgF6ktdxFhk26IHMO4MqwK9+qLZ
+	FgwtwOONbmD9vII/zIcZMQlSEXbDlu6q/LjxXxhoI/gVwnegkHuVAulQlxbCeNWi
+	ASv1b26Rfh62tURlHai5YQykRHN7gYA32389QbMde66p85wpWtgTLsojJPKpYTgf
+	Zhoy3B/BQuaqfuO3zAOg3gzHdBTztr7GYJNkbmxef84KkZ4UbDAw/W/4ynpU0ZfZ
+	Uq91NSIZJsHIiZ5/3+JlEG75RU9FNwR9rNJK+hJ3T0tksCWK3AbqVInaQEEsbhyT
+	KCr4vfI37HDLmeKfmbLYwrBh068N4ggPt8ZNKwlHGWzA==
+Received: from mail-qt1-f199.google.com (mail-qt1-f199.google.com [209.85.160.199])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4ghepk0gf0-1
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 18:29:53 -0400 (EDT)
+Received: by mail-qt1-f199.google.com with SMTP id d75a77b69052e-52fa5c5a4a6so72218071cf.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 15:29:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=columbia.edu; s=lionmail; t=1788733793; x=1789338593; darn=vger.kernel.org;
+        h=cc:to:content-transfer-encoding:content-type:mime-version
+         :message-id:date:subject:from:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=li2bXN5TDm4JSY+08ek5hlL7AevTby2HYb2VklMTt7Y=;
+        b=KACPj6sUOWvl3re6TiuewGN0gsfABKxwcyxTibHSd519nlK7FRuYQDbgm4dqzhtxpb
+         cTdLb7hUoIfe7ZEiTbzzzr/D0GIzzTRRG+rXz10FpOqzi4SxYAwp+JVaZ4fOUUDvjxTl
+         IaygxGAMK89ikUzGe78+dvekjlhN4OOHZN3fW3XEThEBNUSrdJazI2n+w3js7RGiPOnh
+         7t4KwKRB1CB7hmKVS1F6OfxTQJPlHg/4lmKjpa10VvvrDe8XdySlp/k3XAySzT3RJg0o
+         b8qD1b1NwVAK8iYC3J21MC4mMs3xJLhf/T6OlnET2ulZDI7QiwDLzCPakqyqBIM5vNRY
+         ZoJA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1788733793; x=1789338593;
+        h=cc:to:content-transfer-encoding:content-type:mime-version
+         :message-id:date:subject:from:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=li2bXN5TDm4JSY+08ek5hlL7AevTby2HYb2VklMTt7Y=;
+        b=PvmrnHi9tTCPDf2eBvqMEJT2HOitsb7soNq8a6Z1vjGU2p2xxJot922eV+QqWv18fx
+         gqUNUtg+88hnk77RJSg9Wj27CKg6bZzA9rMwKYLe/q/a+Ikdi1UBMaP4s8HPz/dMyL6G
+         e/pLJFDSWA6qV6jOrffdpsIp1s4LKpwfm5oV1ylaD2UFhPBiSgta2xMNJbdKNRnL5grG
+         uGGaCNSzhh8SmucmQhLD16kLp1jAbeJg4CratyrolAj+qCo8Igmq+ZRH+ke1ys25FrRv
+         xp5Kzl1peyl/NV8HrS0bwcbShUosktBVey68uXQFzRF+ybQN0db+hI22yGAYzIIimmJ1
+         cQxA==
+X-Forwarded-Encrypted: i=1; AKwUvBwblm2YQcZknF9exA8//zGLcuPiS8CJpR52cFuszvEwvbHvK9W4bfi/Vi3oEwOoLY05+2IUkZwmovfAvg==@vger.kernel.org
+X-Gm-Message-State: AFuF++kNOMVanSNAZNRCKi/KXWMlmxVyyY2uPGUTSJdrzfdfQkpMfCyL
+	xnFCTT3eB2TIiKnNQc4gxH1RrLgt1IyW32bPPPoPuX4HXrQKkdHAe9BfSVXZZgXCSIetRYzz1qi
+	QOYNG+STVE/ozbUTieLRatLsgTa4Y45U/Fu2pxYBSNl2RuZStDDssTkxxGRKL
+X-Gm-Gg: AYBFou2lZ2WgzD/GnkyMtLh77usQrnSneeaGOqhH2M8PvNdrXZPFYV49EqYwClo4oZF
+	H4tsbRW6zYanpLDITqfp+Z97L3dk8QjyaJqN16qYCNLQbp5kIsirJZVz+NLgfCWiVG6WkXnUktr
+	zy8lTlE0RaEU0g6vdglVSeudDqdMjviWyGc3F2rjktC2eIcJzLslZeFNquc/GF+NKEYcrD9zC4C
+	UnjEoAXEp01vKkPASUuOVKDJP/9elB/HlrkETvSGyUWvjlZ6N0UiI0ghsPkT1xsD3adIHwUeeWW
+	rJ+ce2pCJyM57/8022s2O2O6X7pnB+YurNV5LHm5D1H6nyT8RYz2bxOkYKoBxQFp0D28cXR2q+F
+	yOpRslXVBh+zC96BRZPSE9gmnBdPJfnGo6aRG8n6x4XlSxhss
+X-Received: by 2002:a05:622a:38b:b0:50d:e471:2d1e with SMTP id d75a77b69052e-530549edc57mr217549811cf.35.1788733792758;
+        Sun, 06 Sep 2026 15:29:52 -0700 (PDT)
+X-Received: by 2002:a05:622a:38b:b0:50d:e471:2d1e with SMTP id d75a77b69052e-530549edc57mr217549571cf.35.1788733792319;
+        Sun, 06 Sep 2026 15:29:52 -0700 (PDT)
+Received: from [127.0.1.1] (nat-128-59-176-104.net.columbia.edu. [128.59.176.104])
+        by smtp.gmail.com with ESMTPSA id d75a77b69052e-5305402a7b7sm73048541cf.3.2026.09.06.15.29.51
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 06 Sep 2026 15:29:51 -0700 (PDT)
+From: Tal Zussman <tz2294@columbia.edu>
+Subject: [PATCH 00/10] btrfs: convert some struct page users to folios
+Date: Sun, 06 Sep 2026 18:29:27 -0400
+Message-Id: <20260906-btrfs-folio-conversions-v1-0-834b9d7b06f5@columbia.edu>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.997];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAEfpnWoC/yXMQQqDQAxA0atI1g2MUiv2KtLFGDMaKTOSWCmId
+ +9ol2/x/w7GKmzwLHZQ3sQkxYzyVgBNPo6MMmRD5aqHa12N/arBMKS3JKQUN9YzMbw3be2IyuD
+ JQ64X5SDf69y9/rZPPzOt5w6O4wcnh4O2ewAAAA==
+X-Change-ID: 20260905-btrfs-folio-conversions-47950cc1faca
+To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>
+Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Tal Zussman <tz2294@columbia.edu>
+X-Mailer: b4 0.17-dev-db0b7
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1788733791; l=2537;
+ i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
+ bh=pAju7TI5+xdoiqfY+xnpahZErsKUQ9RZaydgKBB+99o=;
+ b=m9O6YZTKaMkoLhwgnca592SFDIz+V6ExsQ+u2srnglyFEP3uH208UIvPp5DOX8VAysrTJfo65
+ RHEtAxA+bE9AkzUbxrHKLK42LbKsqjoOs+v77nh9MQwa15sZXkoJW3q
+X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
+ pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
+X-Authority-Analysis: v=2.4 cv=Wc48rUhX c=1 sm=1 tr=0 ts=6a9de961 cx=c_pps
+ a=WeENfcodrlLV9YRTxbY/uA==:117 a=aNLBvxxoObQFLnBXsbaGlA==:17
+ a=IkcTkHD0fZMA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=QOCMdifcju39GKoXhKua:22
+ a=HURFG2p2B0PVTFy6EJsA:9 a=QEXdDO2ut3YA:10 a=kacYvNCVWA4VmyqE58fU:22
+X-Proofpoint-ORIG-GUID: fQo-j4pzRArPCkkL_eNT1O0rIbfnDCeP
+X-Proofpoint-Spam-Info: AW1haW4tMjYwOTA2MDI1MiBTYWx0ZWRfX42BWhqx/F9Yy
+ 0Uso7P9ZwpK4bjkDT5Mt1R+V0VREGpAK1hqBmyDlJWXnohjUd4zXdrD15SJrH+PR2UazprNOasG
+ +fSQMQxkCEBRatSd4Xw5JRhOjiW/ASsYzXvrALxAGfWFs8/2k7Tb
+X-Proofpoint-GUID: fQo-j4pzRArPCkkL_eNT1O0rIbfnDCeP
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTA2MDI1MiBTYWx0ZWRfX/alGBF9++/mt
+ kEGTemGNJvj/WN6q+3gQY8SNVwmcIeMGPcs+eMBhkO7JNWurXQSQ1OgaOVUSSSMyBV2/nwowmAH
+ zQVNf7zAg2rmW7dCMRZzZs0iQgkqwZ4ggV2VhP6FIXQGTexOUylsWrapVlGUsjpTwBLPvs+iCx+
+ WzD1XjiQQbPLPuArHka7TQLOpGk3jLeNUbEHTpHvEAAbFyu4e04tLetkQ8xpFQ3BmbwvCdBzZjR
+ 4NjlSwAsbw5uuqr0MX42xCbCCEBpm4zOofuU0a6pDfRyaTzKcXDG+tNkvrsPplJztbKQhsWmQPw
+ PpsfIDN/nnlE2k3A8YI0zXLa1UxoV9gAWyuP/YKbOQGtXM6N3r5xyoA3Aaj1ym5tVFt0zYCVgtn
+ CsyGt0p9N5J2ikvJ1RJ/CQQPECC1CnkG69iLz6ftNKnJ7Evn/dtQmiNKD9aiS7U038G5Y0WZDag
+ Mh6cU2wtnf8g8MSjaTg==
+X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11898
+ signatures=596817
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ phishscore=0 priorityscore=1501 malwarescore=0 spamscore=0
+ lowpriorityscore=10 bulkscore=10 suspectscore=0 clxscore=1011 adultscore=0
+ impostorscore=10 classifier=typeunknown authscore=0 authtc= authcc=
+ route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2606150000
+ definitions=main-2609060252
 
-Previously we had no way to tell btrfs to use which backup slot, but
-always use the newest backup, and retry until all backup roots are
-exhausted.
+This series converts four areas of btrfs that still use struct page:
 
-This doesn't give any control to the end user, even if the end user
-wants to use a specific backup slot.
+1. The extent-io tests. test_find_delalloc() uses the page APIs, and the
+   extent buffer memory checks assume one page per folio.
 
-To address this problem, allow more fine-control on usebackuproot rescue
-option by introducing the following 4 rescue mount options:
+2. Compression. btrfs_compr_pool_scan() walks the folio pool as struct
+   page, the last use of page->lru in btrfs, and the heuristic sampler
+   is the last caller of find_get_page().
 
-- rescue=usebackuproot_0
-- rescue=usebackuproot_1
-- rescue=usebackuproot_2
-- rescue=usebackuproot_3
+3. Super block reads. btrfs_read_disk_super() and the zoned super block
+   log comparison are the last page cache lookups by page in btrfs.
 
-The number 0 means the newest slot, which should be the same as the one
-recorded in the super block and no need to load any backup root.
+4. The v1 free space cache. struct btrfs_io_ctl stores pages that
+   io_ctl_prepare_pages() has just converted from folios. Its mapping
+   allows large folios, which the io_ctl code can't handle, so the first
+   patch keeps it at order 0 to match the v1 format. While this is
+   deprecated, it uses page APIs that we would like to remove, so it is
+   still worth converting in the meantime.
 
-1/2/3 means the second/third/fourth(oldest) backup slot to use.
+Tested with KASAN, lockdep, DEBUG_VM and the btrfs selftests enabled.
+The v1 space cache paths were tested by mounting a filesystem whose
+cache was written by an older kernel. xfstests' compress group under
+compress=zstd and the btrfs group both pass.
 
-The existing "rescue=usebackuproot" is just an alias of
-"rescue=usebackuproot_1".
-
-This will allow users to choose which backup root to use, thus can have
-a better control than blindly choose any slot that can pass the very
-basic root node checks.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 12 +++++++++---
- fs/btrfs/fs.h      |  1 +
- fs/btrfs/super.c   | 28 ++++++++++++++++++++++++++--
- 3 files changed, 36 insertions(+), 5 deletions(-)
+Tal Zussman (10):
+      btrfs: tests: rename process_page_range() to process_folio_range()
+      btrfs: tests: convert test_find_delalloc() to use folios
+      btrfs: tests: use eb folio helpers in extent buffer memory checks
+      btrfs: convert btrfs_compr_pool_scan() to use folios
+      btrfs: convert heuristic_collect_sample() to use folios
+      btrfs: fix stale function references in compression comments
+      btrfs: use folios for reading super blocks from the block device
+      btrfs: keep the free space cache inode mapping at order 0
+      btrfs: convert struct btrfs_io_ctl to use folios
+      btrfs: rename io_ctl page helpers to folio helpers
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 422fda467440..406c46d1fba1 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2713,10 +2713,14 @@ static int __cold init_tree_roots(struct btrfs_fs_info *fs_info)
- 	int ret = 0;
- 
- 	if (use_backup) {
--		ret = read_backup_root(fs_info, 1);
-+		ASSERT(fs_info->use_backup_slot >= 0 &&
-+		       fs_info->use_backup_slot < BTRFS_NUM_BACKUP_ROOTS);
-+
-+		ret = read_backup_root(fs_info, fs_info->use_backup_slot);
- 		if (ret < 0) {
- 			btrfs_err(fs_info,
--				  "failed to load backup roots at slot %d", 1);
-+				  "failed to load backup roots at slot %d",
-+				  fs_info->use_backup_slot);
- 			return ret;
- 		}
- 		/*
-@@ -2725,7 +2729,8 @@ static int __cold init_tree_roots(struct btrfs_fs_info *fs_info)
- 		 */
- 		btrfs_set_super_log_root(sb, 0);
- 		backup_index = ret;
--		btrfs_warn(fs_info, "loaded backup roots at slot %d", 1);
-+		btrfs_warn(fs_info, "loaded backup roots at slot %d",
-+			   fs_info->use_backup_slot);
- 	}
- 
- 	ret = load_important_roots(fs_info);
-@@ -2896,6 +2901,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
- 	init_waitqueue_head(&fs_info->async_submit_wait);
- 	init_waitqueue_head(&fs_info->delayed_iputs_wait);
- 
-+	fs_info->use_backup_slot = -1;
- 	/* Usable values until the real ones are cached from the superblock */
- 	fs_info->nodesize = 4096;
- 	fs_info->sectorsize = 4096;
-diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index 3eba8438593c..649623c603e8 100644
---- a/fs/btrfs/fs.h
-+++ b/fs/btrfs/fs.h
-@@ -857,6 +857,7 @@ struct btrfs_fs_info {
- 
- 	/* Next backup root to be overwritten */
- 	int backup_root_index;
-+	int use_backup_slot;
- 
- 	/* Device replace state */
- 	struct btrfs_dev_replace dev_replace;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 464129b1b0d4..b5c1ff357aaf 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -87,6 +87,7 @@ struct btrfs_fs_context {
- 	unsigned long long mount_opt;
- 	unsigned long compress_type:4;
- 	int compress_level;
-+	int use_backup_slot;
- 	refcount_t refs;
- };
- 
-@@ -175,6 +176,10 @@ static const struct constant_table btrfs_parameter_space_cache[] = {
- 
- enum {
- 	Opt_rescue_usebackuproot,
-+	Opt_rescue_usebackup_slot_0,
-+	Opt_rescue_usebackup_slot_1,
-+	Opt_rescue_usebackup_slot_2,
-+	Opt_rescue_usebackup_slot_3,
- 	Opt_rescue_nologreplay,
- 	Opt_rescue_ignorebadroots,
- 	Opt_rescue_ignoredatacsums,
-@@ -185,6 +190,10 @@ enum {
- 
- static const struct constant_table btrfs_parameter_rescue[] = {
- 	{ "usebackuproot", Opt_rescue_usebackuproot },
-+	{ "usebackuproot_0", Opt_rescue_usebackup_slot_0},
-+	{ "usebackuproot_1", Opt_rescue_usebackup_slot_1},
-+	{ "usebackuproot_2", Opt_rescue_usebackup_slot_2},
-+	{ "usebackuproot_3", Opt_rescue_usebackup_slot_3},
- 	{ "nologreplay", Opt_rescue_nologreplay },
- 	{ "ignorebadroots", Opt_rescue_ignorebadroots },
- 	{ "ibadroots", Opt_rescue_ignorebadroots },
-@@ -588,6 +597,14 @@ static int btrfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
- 		switch (result.uint_32) {
- 		case Opt_rescue_usebackuproot:
- 			btrfs_set_opt(ctx->mount_opt, USEBACKUPROOT);
-+			ctx->use_backup_slot = 1;
-+			break;
-+		case Opt_rescue_usebackup_slot_0:
-+		case Opt_rescue_usebackup_slot_1:
-+		case Opt_rescue_usebackup_slot_2:
-+		case Opt_rescue_usebackup_slot_3:
-+			btrfs_set_opt(ctx->mount_opt, USEBACKUPROOT);
-+			ctx->use_backup_slot = result.uint_32 - Opt_rescue_usebackup_slot_0;
- 			break;
- 		case Opt_rescue_nologreplay:
- 			btrfs_set_opt(ctx->mount_opt, NOLOGREPLAY);
-@@ -611,6 +628,7 @@ static int btrfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
- 			btrfs_set_opt(ctx->mount_opt, IGNOREBADROOTS);
- 			btrfs_set_opt(ctx->mount_opt, NOLOGREPLAY);
- 			btrfs_set_opt(ctx->mount_opt, USEBACKUPROOT);
-+			ctx->use_backup_slot = 1;
- 			break;
- 		default:
- 			btrfs_info(NULL, "unrecognized rescue option '%s'",
-@@ -1089,8 +1107,11 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",notreelog");
- 	if (btrfs_test_opt(info, NOLOGREPLAY))
- 		print_rescue_option(seq, "nologreplay", &printed);
--	if (btrfs_test_opt(info, USEBACKUPROOT))
--		print_rescue_option(seq, "usebackuproot", &printed);
-+	if (btrfs_test_opt(info, USEBACKUPROOT)) {
-+		seq_printf(seq, "%susebackuproot_%d", printed ? ":" : ",rescue=",
-+			   info->use_backup_slot);
-+		printed = true;
-+	}
- 	if (btrfs_test_opt(info, IGNOREBADROOTS))
- 		print_rescue_option(seq, "ignorebadroots", &printed);
- 	if (btrfs_test_opt(info, IGNOREDATACSUMS))
-@@ -1406,6 +1427,7 @@ static void btrfs_ctx_to_info(struct btrfs_fs_info *fs_info, struct btrfs_fs_con
- 	fs_info->mount_opt = ctx->mount_opt;
- 	fs_info->compress_type = ctx->compress_type;
- 	fs_info->compress_level = ctx->compress_level;
-+	fs_info->use_backup_slot = ctx->use_backup_slot;
- }
- 
- static void btrfs_info_to_ctx(struct btrfs_fs_info *fs_info, struct btrfs_fs_context *ctx)
-@@ -1417,6 +1439,7 @@ static void btrfs_info_to_ctx(struct btrfs_fs_info *fs_info, struct btrfs_fs_con
- 	ctx->mount_opt = fs_info->mount_opt;
- 	ctx->compress_type = fs_info->compress_type;
- 	ctx->compress_level = fs_info->compress_level;
-+	ctx->use_backup_slot = fs_info->use_backup_slot;
- }
- 
- #define btrfs_info_if_set(fs_info, old_ctx, opt, fmt, args...)			\
-@@ -2205,6 +2228,7 @@ static int btrfs_init_fs_context(struct fs_context *fc)
- 	if (fc->purpose == FS_CONTEXT_FOR_RECONFIGURE) {
- 		btrfs_info_to_ctx(btrfs_sb(fc->root->d_sb), ctx);
- 	} else {
-+		ctx->use_backup_slot = -1;
- 		ctx->thread_pool_size =
- 			min_t(unsigned long, num_online_cpus() + 2, 8);
- 		ctx->max_inline = BTRFS_DEFAULT_MAX_INLINE;
--- 
-2.55.0
+ fs/btrfs/btrfs_inode.h           |   7 ++
+ fs/btrfs/compression.c           |  20 +++---
+ fs/btrfs/disk-io.c               |   2 +-
+ fs/btrfs/free-space-cache.c      | 146 +++++++++++++++++++--------------------
+ fs/btrfs/free-space-cache.h      |   8 +--
+ fs/btrfs/tests/extent-io-tests.c | 126 ++++++++++++++++-----------------
+ fs/btrfs/volumes.c               |  16 ++---
+ fs/btrfs/zoned.c                 |  12 ++--
+ 8 files changed, 173 insertions(+), 164 deletions(-)
+---
+base-commit: 966bb86e7420c64f20edaac5ea096da9b16dc458
+change-id: 20260905-btrfs-folio-conversions-47950cc1faca
+
+Best regards,
+--  
+Tal Zussman <tz2294@columbia.edu>
 

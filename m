@@ -1,60 +1,67 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C325335E926
-	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 05:26:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 419A5361940
+	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 05:26:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788672403; cv=none; b=WEYMhnlfYSbLs4df/ZloBSeZHSIsb4Ao8UK9Rq5717wH3jMK07JqdNGF/6E6+9BetkU4Th35/2nSemNRzAJHu1iONe5gNTZABUSWgETl3G1eJRki1FWw2kEuYT0SmWSReZBjnb90YSumjoXWrJThFzcmTAi0SBVhRa28cPkVQvw=
+	t=1788672404; cv=none; b=uke0pt953p4qRoChx3gisVj/5bD1HSaeecGfsfQanJIIfpYNL2K/Khy1WRfQ8hfc5muzZhBSKFEUH9kg+HbnQOaOMEePvz61lFxcLp+u//2IUJR5hx4o7TOSrihKCSmjbQz7s0hbEOtVX09U9gvYVSJJeb0fMfTewIUB7kR+YRA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788672403; c=relaxed/simple;
-	bh=XKnYFQiG7KZSFvkRyp+nnAbv+MygKX4m2C38VVipkC4=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=ZV5Rn7OynKOf9F87IBPfLy6HT7zZO1pkYWgTuE4/zDJcjHY8288x4WRI5Mbf3fVKsT0KbHMZvHAyPOcpNXOAs9MKrW+OBsuqo+ix66vmVFYxpnVjiOYR55K2w8rx2Q1k64Kzx6A1Qr3uyOTV8rkWh9q4Y8YIa6pRx0Koh57ee6E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=fFGaWvmx; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Q5BGduze; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1788672404; c=relaxed/simple;
+	bh=lRmCyZSJZV+/3rosGKE7QgTYKchKOktScI33cmQR/Hk=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=NEvN+DoNEmUjEIG+nwAbVxLy1lOq/sNNCdTAf/1vlCaF88IO2lmgqiksJph0FFXVgUJWk0Stv8qklPYk05+xHuGuzWazD3kf/wFNVX8R1Pmlfrzk/B8+NX9mt13XS+K1PL/mcz6Ot7pvIdhHzYShvU3wIEZYJMJsiJdHKuZ282I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=jPUNpD9f; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=c02HlnOf; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="fFGaWvmx";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Q5BGduze"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="jPUNpD9f";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="c02HlnOf"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 779F933A03
-	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 05:26:31 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 17F2D2090D
+	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 05:26:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1788672395; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=SIe/UKcalgl22FaBOMgpSegftOk17Oc6kamlQAGOPAo=;
-	b=fFGaWvmxi1ZDIW6Tlm84mLGm8JSpVvFsVM354dDLlbZ3gmJw8IrCtMZ47LBqGm75M8S1qb
-	GhtpmC0fY1sWdGKn1K6u5+pW1CJ9fipKQIYUmn4HpE8XFmALu+xZEmlLEGRAb/yfib0GAv
-	Gvn7nxjPrdXAplgivMXRhFgnIDSJbA0=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=Q5BGduze
+	t=1788672397; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=bpzqbRj6isxyocaP748h+CeZR6upOtTGl1gcxMm8UT4=;
+	b=jPUNpD9fI0ODUUhG7BZovOf4tydnVqNTjv9mbKXTGi5D9gvPWI04rCQDQDQMiGoJdoYEgw
+	3Vf9GEobC8JR7VbdPTwhzxz+A9OokY/76fBt56qDtO7vUR0SSaCsFxBoU0dcb+spPiUdDZ
+	yNmR8xm4WeHp6GHyQYJY8ynJ8YMzoew=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=c02HlnOf
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1788672391; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=SIe/UKcalgl22FaBOMgpSegftOk17Oc6kamlQAGOPAo=;
-	b=Q5BGduze4hzCQlJDILnDsHmTUbTUV66kO0BESyCwp3lF3PjkW7hzJQQ5GcU6WZbAVoUYQr
-	r4sMD2XPb8ur353gPkDSoHYQcLesf36F2P7WZMmq23fcKyhPPXPxVLU915sev5n0Rf9wHd
-	MToBn+xVndsYSIYBiT42gYL+Eewcqiw=
+	t=1788672393; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=bpzqbRj6isxyocaP748h+CeZR6upOtTGl1gcxMm8UT4=;
+	b=c02HlnOfU6ad4HGgrd5EGJI05nq4NrTNXa2luImZkT6+dLrEYstNC6AR5t9gnk/dR/8gEB
+	DeKkz0N89jfCCeNUZkw4HFTQMY5szmAJvSeHc3Tk7JDfRFSR30JbRT+y2ifkhxdlKQVPI9
+	RLqo8eDdkrzkMUF2J2HfxN5KLcGRaWo=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 41BBB13432
-	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 05:26:29 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D70B71368D
+	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 05:26:31 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id DPHvN4X5nGqVUAAAD6G6ig
+	id aKxMIYf5nGqVUAAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 05:26:29 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 05:26:31 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] btrfs: allow more fine control to rescue=usebackuproot
-Date: Sun,  6 Sep 2026 14:56:05 +0930
-Message-ID: <cover.1788671975.git.wqu@suse.com>
+Subject: [PATCH 1/2] btrfs: always use the second newest slot for rescue=usebackuproot
+Date: Sun,  6 Sep 2026 14:56:06 +0930
+Message-ID: <377dbda4759e0c7bd95551a2f2b34098e4e0cb14.1788671975.git.wqu@suse.com>
 X-Mailer: git-send-email 2.55.0
+In-Reply-To: <cover.1788671975.git.wqu@suse.com>
+References: <cover.1788671975.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,26 +69,26 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Score: -3.01
+X-Rspamd-Queue-Id: 17F2D2090D
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spam-Level: 
 X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 779F933A03
 X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
 	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	ARC_NA(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,suse.com:mid];
 	MIME_TRACE(0.00)[0:+];
-	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	RCPT_COUNT_ONE(0.00)[1];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
@@ -92,51 +99,166 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	DKIM_TRACE(0.00)[suse.com:+]
 X-Spam-Flag: NO
-X-Spam-Score: -3.01
 
-There is a bug report that for a specific corrupted btrfs, the
-"rescue=usebackuproot" still chose the newest slot (aka, the same tree
-root as the one in the super block) to mount the fs, and resulted
-transid mismatch.
+[RESCUE FAILURE]
+There is a bug report that "rescue=usebackuproot" failed to properly
+mount the fs, but if using btrfs-mod-sb to use the second newest slot,
+then the fs can even pass the full "btrfs check" and be mounted RW.
 
-Meanwhile the reporter used btrfs-mod-sb to modify the fs to use a
-specific backup slot, then the fs can pass btrfs-check.
+[CAUSE]
+During init_tree_roots(), "rescue=usebackuproot" only makes a difference
+if the tree and chunk roots failed to be load.
 
-This shows the limit of the current automatic backup root detection,
-that as long as all tree root nodes can be loaded, btrfs will consider
-it as a valid backup slot, without trying any other slot.
+The loading only requires the root node/leaf to be properly loaded:
 
-And end user has no way to tell btrfs to use a specific slot.
+- tree root
+- extent tree
+- block group tree
+- device tree
+- data reloc tree
+- quota tree (optional)
+- uuid tree
+- raid stripe tree (for RST feature)
 
-This patchest address the problem by:
+And it doesn't really check any child tree blocks, thus for a lot of
+cases, "rescue=usebackuproot" won't make a difference.
 
-- Make "rescue=usebackuproot" to always use the second newest slot
-  Which has the highest chance to still get every tree block right
-  without transid error.
+[ENHANCEMENT]
+Instead of trying every slot and settling down on the first passing
+backup slot, always use the second newest slot.
 
-- Introduce new "rescue=usebackuproot_*" mount option
-  Where "*" can be 0/1/2/3.
-  0 means the newest slot (aka, the one matching the super block
-  generation), 1/2/3 means the second/third/fourth(oldest) newest slot.
+The newest slot should always match the root info in the super block,
+and if it worked the end user should not even need to bother to use
+backup root.
 
-  Now "rescue=usebackuproot" is just the same as
-  "rescue=usebackuproot_1".
+Older backup slots normally have a very low chance to work.
 
-Although those "rescue=usebackuproot*" mount options still requires full
-RO.
-For proper recovery, we still need to use "btrfs check", and a new
-option for btrfs-check will be introduced soon to make the backuproot
-usage simpler for progs.
+Link: https://github.com/kdave/btrfs-progs/issues/1162#issuecomment-5475477108
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/disk-io.c | 102 +++++++++++++++++++--------------------------
+ 1 file changed, 42 insertions(+), 60 deletions(-)
 
-Qu Wenruo (2):
-  btrfs: always use the second newest slot for rescue=usebackuproot
-  btrfs: introduce more accurate usebackuproot options
-
- fs/btrfs/disk-io.c | 106 ++++++++++++++++++++-------------------------
- fs/btrfs/fs.h      |   1 +
- fs/btrfs/super.c   |  20 +++++++++
- 3 files changed, 68 insertions(+), 59 deletions(-)
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a1d83ad9a4c0..422fda467440 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2709,73 +2709,55 @@ static int __cold init_tree_roots(struct btrfs_fs_info *fs_info)
+ 	int backup_index = find_newest_super_backup(fs_info);
+ 	struct btrfs_super_block *sb = fs_info->super_copy;
+ 	struct btrfs_root *tree_root = fs_info->tree_root;
+-	bool handle_error = false;
++	bool use_backup = btrfs_test_opt(fs_info, USEBACKUPROOT);
+ 	int ret = 0;
+-	int i;
+ 
+-	for (i = 0; i < BTRFS_NUM_BACKUP_ROOTS; i++) {
+-		if (handle_error) {
+-			if (!IS_ERR(tree_root->node))
+-				free_extent_buffer(tree_root->node);
+-			tree_root->node = NULL;
+-
+-			if (!btrfs_test_opt(fs_info, USEBACKUPROOT))
+-				break;
+-
+-			free_root_pointers(fs_info, 0);
+-
+-			/*
+-			 * Don't use the log in recovery mode, it won't be
+-			 * valid
+-			 */
+-			btrfs_set_super_log_root(sb, 0);
+-
+-			btrfs_warn(fs_info, "try to load backup roots slot %d", i);
+-			ret = read_backup_root(fs_info, i);
+-			backup_index = ret;
+-			if (ret < 0)
+-				return ret;
++	if (use_backup) {
++		ret = read_backup_root(fs_info, 1);
++		if (ret < 0) {
++			btrfs_err(fs_info,
++				  "failed to load backup roots at slot %d", 1);
++			return ret;
+ 		}
+-
+-		ret = load_important_roots(fs_info);
+-		if (ret) {
+-			handle_error = true;
+-			continue;
+-		}
+-
+ 		/*
+-		 * No need to hold btrfs_root::objectid_mutex since the fs
+-		 * hasn't been fully initialised and we are the only user
++		 * Don't use the log in recovery mode, it won't be
++		 * valid
+ 		 */
+-		ret = btrfs_init_root_free_objectid(tree_root);
+-		if (ret < 0) {
+-			handle_error = true;
+-			continue;
+-		}
+-
+-		ASSERT(tree_root->free_objectid <= BTRFS_LAST_FREE_OBJECTID);
+-
+-		ret = btrfs_read_roots(fs_info);
+-		if (ret < 0) {
+-			handle_error = true;
+-			continue;
+-		}
+-
+-		/* All successful */
+-		fs_info->generation = btrfs_header_generation(tree_root->node);
+-		btrfs_set_last_trans_committed(fs_info, fs_info->generation);
+-		fs_info->last_reloc_trans = 0;
+-
+-		/* Always begin writing backup roots after the one being used */
+-		if (backup_index < 0) {
+-			fs_info->backup_root_index = 0;
+-		} else {
+-			fs_info->backup_root_index = backup_index + 1;
+-			fs_info->backup_root_index %= BTRFS_NUM_BACKUP_ROOTS;
+-		}
+-		break;
++		btrfs_set_super_log_root(sb, 0);
++		backup_index = ret;
++		btrfs_warn(fs_info, "loaded backup roots at slot %d", 1);
+ 	}
+ 
++	ret = load_important_roots(fs_info);
++	if (ret)
++		return ret;
++
++	/*
++	 * No need to hold btrfs_root::objectid_mutex since the fs
++	 * hasn't been fully initialised and we are the only user
++	 */
++	ret = btrfs_init_root_free_objectid(tree_root);
++	if (ret < 0)
++		return ret;
++
++	ASSERT(tree_root->free_objectid <= BTRFS_LAST_FREE_OBJECTID);
++
++	ret = btrfs_read_roots(fs_info);
++	if (ret < 0)
++		return ret;
++
++	/* All successful */
++	fs_info->generation = btrfs_header_generation(tree_root->node);
++	btrfs_set_last_trans_committed(fs_info, fs_info->generation);
++	fs_info->last_reloc_trans = 0;
++
++	/* Always begin writing backup roots after the one being used */
++	if (backup_index < 0) {
++		fs_info->backup_root_index = 0;
++	} else {
++		fs_info->backup_root_index = backup_index + 1;
++		fs_info->backup_root_index %= BTRFS_NUM_BACKUP_ROOTS;
++	}
+ 	return ret;
+ }
+ 
 -- 
 2.55.0
 

@@ -1,442 +1,221 @@
-Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3168F3CAE95
-	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 22:30:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 978E22BEC2B;
+	Sun,  6 Sep 2026 23:10:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.19
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788733816; cv=none; b=lbsIo9MkKu6bwHsXoSm6cqpCIkRceJAWcykCWpL6hTkpnctjjpyOvTA49D8ion3PLkH9LyvA2L8tGwxDaJ2Ai4WiddH/5PE0WMITHIa3bfgImf+/ldsGi4m5VBicJDJHj3uWiiowyZQP3mgf1rulyz5rmSNkBGnk2Fq28ZSUMtU=
+	t=1788736218; cv=none; b=b6jlzgKlAnOYf74tGDGIAB5ksAolpJ4D6G2MtqzqwAUsOnqSlXcY2WYIoHRm4P1DDxd2F485sbKyWk9b5t7tAcYPAGcJD2Vt4OLsfD8ZlMcC0ucvadNdAE2OPdpZfwiZ3LFTdBL9P7XXL1W2OVvCBQUD5xx/Rt4s30npfow2sYs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788733816; c=relaxed/simple;
-	bh=IjfzXRwU/hLOaaljSbSrt1lPEak09RokNBTtFG5ySWA=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=Ng9sKiOhs5TIEMNT5/j6gSE3W0hNn5p+vV64hgk7mq5U2Fwh4VTHUdNcj2C/JHt5wEc/tLX1epccD0SL3CubtIY9QC8uYjM/V1gGWKuPTetum62t0x+RSis9G57eX91lsboHpJxyuT4w18hjjWIw8WT1IDfsWXHKtq7aO0ZGwJc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=MJ214Xj3; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=PZWcKyAx; arc=none smtp.client-ip=148.163.139.74
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
+	s=arc-20240116; t=1788736218; c=relaxed/simple;
+	bh=8CSDPfM2ZRhMsIBRLVMAIsZXejFN6XeS3Gp3AF09GDg=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=NoiTcd/9sd0tIIg9crlfZC4IONrXvDyOOejpVuRp/MRquZLeL+ajJBVuIP9axe8qKZ4yqtqf5XsBV/L1Nbgpn+jnI2wFsROGYdIY/k9Gdpjv8W/9IWDpXwFdno9Gm5OGM8naGWEFNsNlSudwVVs+geiGV1YP1jvEFci4Ik9NwVA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=GHgCjftC; arc=none smtp.client-ip=212.227.15.19
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="MJ214Xj3";
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="PZWcKyAx"
-Received: from pps.filterd (m0167076.ppops.net [127.0.0.1])
-	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 686KR0SB454499
-	for <linux-btrfs@vger.kernel.org>; Sun, 6 Sep 2026 18:30:02 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
-	cc:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pps01; bh=Wd6I
-	wRl9MhkPDhNn3khF2B38jxGMBzWznnvHyyJMLss=; b=MJ214Xj3cft9kaHjwcTX
-	9IBNdqJn/dxDCeNiv+hn6jqN2vMASScsXisaN+t1g+fnZ+0r2KyHTusJnubxunie
-	KiSSu+aDZZqnWII+Z7cSOWm1HTBz4Rkh8NIbFQs4nVI0xddIYbdrYm1pJxFJ1gNb
-	KM7jvWfdu1wfFnVrxVo8tvE8VJUY8mUtVWCU/+bg8mOQmj7+oTcQhyM8zXrby9Qc
-	qqoQPOOMFAqzHXC10BLaVhpC/XEBaFE+IjUC9qaUZrwPPkDTw4QjxXJT4m/uOELz
-	EL+9BrExI1oOWgef8MfJYCGmJPLeG3PXDeKqANurgUfKSuHKymL2isNRb6txFBdX
-	Vg==
-Received: from mail-qt1-f197.google.com (mail-qt1-f197.google.com [209.85.160.197])
-	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4ghf7k0cnc-1
-	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 18:30:01 -0400 (EDT)
-Received: by mail-qt1-f197.google.com with SMTP id d75a77b69052e-53088a3939aso2385781cf.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 15:30:01 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1788733801; x=1789338601; darn=vger.kernel.org;
-        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :content-type:mime-version:subject:date:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=Wd6IwRl9MhkPDhNn3khF2B38jxGMBzWznnvHyyJMLss=;
-        b=PZWcKyAxYmKS8IuvA2fH9oV/+/3JYw11I7SAdnqWwfht+GP+mJndK5pwrfs40QPupe
-         KO+2EL4r7zEYqCdScJ9bgmYunEJxJ1z0cVYSU676oROGxz0QJgdol65ZrU0uWoiA+S4l
-         FVR2EtBKJP0ZauB3c71eM70+B0YpyVQIWkjJHZfitufxCgF57X04uhEo3tQ7WBZ8w6SN
-         C/G4NfPL2x486zr7YS35cP2wUjbcW0ov5n8bf9kYjZr6knRc4ACwtS3NW2SIohUrXaky
-         fYB/gOlyY9oH875ZJixj7ACCBDNKIEcXG99StlMyswBtgBsuQ4RCRHdWuN7+nKXEkb75
-         xsaQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788733801; x=1789338601;
-        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :content-type:mime-version:subject:date:from:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=Wd6IwRl9MhkPDhNn3khF2B38jxGMBzWznnvHyyJMLss=;
-        b=oK9M/fIdIc6yZ9K0fwdrGj7HQXWnfTXS3tXgnHbvbQdmW1OpfRmGlGn0UyfZutGAWS
-         ZNg2TPb2Py68FxKd5tHv5INv/1a4L9bijvMUao8NqW9IWmrfzb4zuxt8Gu7NZrtV7ebo
-         r1ejMabUgrbJrGSW8DYYklBIzkK2yxPelV4BeqkzeScGRvtCat/vM8qUc5AN4T9TfTof
-         deV8BHYKSsyJ/CPEh4UXz12EYVFeg/AR8YGYyVVXx1H7pSDszfREqfaKYcIjXFZAy54r
-         CRGHDfLlQMxafk7duC+/8imta0hPbBnRT3VI+0I4hXeSafUiOkRNCcoN0jwYHWliU0tP
-         9FLA==
-X-Forwarded-Encrypted: i=1; AKwUvBx101Ek1aRT05dAVgjtTCNadyaw6ABz97eXxWwxlv+8NprlTVQRntdrM9m5OuanOAzvii4uKuAIkfJjiA==@vger.kernel.org
-X-Gm-Message-State: AFuF++my2fnZa953N14hABYMGqb2APVg88Gu4pl1sjPUeH54ilvABDxV
-	k9RBtwMULntx33/LZnwJ1NTew0yi8MI83kRusD/IBm9cKmB1JgbmYk4TEFds8a4UpCZqCYsuRMM
-	kcUrT6jRGN78TP/EBjvU5Cs8DapdZa75DHBs5wRBHlnP6mhk7GBc5m3tOEpU7
-X-Gm-Gg: AYBFou2CA9m0fN2v8aYiH8HT27xYuAfb5wD7Bo5Qbk+nsLIeIJgO79vXf386jJ0vupE
-	2Figzmdfie3shoenykRWosnATIdmyvTmQp3nnxKDyfR8k6qs9d989xxFBeT2jwlQPgBezywmD/X
-	LFP43CDLQbm2YesSWwDw2QLOrQa27IfKWJuUblkhxjaaogxzz3kEcgrykEvePKitqVNqiFJlNqj
-	BVO0WPI+WAiEAl0dVX6ym0nsjJV5ilUoOZMSrNyCPK9i4FPswlULOSdp6Yz62jMEtWNUhpqqwUn
-	uBmwSsFXl3gi+LTb14CNuw5XiuNbyP5Ze0gxNEz7aoUGU8OJdzKFbfEeDjqWtZU/TZtDzGmF0ie
-	yC2q0v+unQVpxJmiFjX4Z13sdeQz9EKk3MoWjp852S9NBKyrE
-X-Received: by 2002:a05:622a:598a:b0:52d:f484:eefe with SMTP id d75a77b69052e-530549cdc4bmr225375431cf.35.1788733801417;
-        Sun, 06 Sep 2026 15:30:01 -0700 (PDT)
-X-Received: by 2002:a05:622a:598a:b0:52d:f484:eefe with SMTP id d75a77b69052e-530549cdc4bmr225375011cf.35.1788733801008;
-        Sun, 06 Sep 2026 15:30:01 -0700 (PDT)
-Received: from [127.0.1.1] (nat-128-59-176-104.net.columbia.edu. [128.59.176.104])
-        by smtp.gmail.com with ESMTPSA id d75a77b69052e-5305402a7b7sm73048541cf.3.2026.09.06.15.30.00
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 06 Sep 2026 15:30:00 -0700 (PDT)
-From: Tal Zussman <tz2294@columbia.edu>
-Date: Sun, 06 Sep 2026 18:29:37 -0400
-Subject: [PATCH 10/10] btrfs: rename io_ctl page helpers to folio helpers
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="GHgCjftC"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1788736207; x=1789341007; i=quwenruo.btrfs@gmx.com;
+	bh=eALVDwFAEmKsCXEjlsBX1X+LKTHtR7CRPXomGkElQjQ=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=GHgCjftCWvKoL3G/6gyNko4wHewwbKpIIfZ5vh7h3D7HQP7d7AAv2b9k6xSelhFz
+	 pmWQ/V5NdCFcYIV0Ek6tUjjG+37HlhfkXhqsm8eSuKmBMvmLlcMOpKDo//epU6X88
+	 OJ1+6QjJpiMBNsiAyNROv+/wbedq+sh8WrHgL+On9yeBeGW+VvB512S/eNAvK5UV+
+	 gN6jv2QPWMEytvt5uM3sa4shAAxfYcEVQ9wlbI7Skl9RxNVuu4iiJ4ixii+M3H8sC
+	 +JFG+aS1YxNxjXCye3UiprUlh5iAdVtrAtgfnuuDoSDlzpQ7zpadlTyutEFSGCSVZ
+	 ugq7YcFD8eeIDoGRGg==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MS3ir-1xRjPg07Q3-00RHEa; Mon, 07
+ Sep 2026 01:10:07 +0200
+Message-ID: <e626273b-b3a4-4ba2-a95d-8c56cc16529b@gmx.com>
+Date: Mon, 7 Sep 2026 08:40:02 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260906-btrfs-folio-conversions-v1-10-834b9d7b06f5@columbia.edu>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 08/10] btrfs: keep the free space cache inode mapping at
+ order 0
+To: Tal Zussman <tz2294@columbia.edu>, David Sterba <dsterba@suse.com>,
+ Chris Mason <mason@kernel.org>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 References: <20260906-btrfs-folio-conversions-v1-0-834b9d7b06f5@columbia.edu>
-In-Reply-To: <20260906-btrfs-folio-conversions-v1-0-834b9d7b06f5@columbia.edu>
-To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>
-Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Tal Zussman <tz2294@columbia.edu>
-X-Mailer: b4 0.17-dev-db0b7
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1788733791; l=9947;
- i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
- bh=IjfzXRwU/hLOaaljSbSrt1lPEak09RokNBTtFG5ySWA=;
- b=rfix7KIOOcwIcJadr9Zc6TTjpfljPWo2ktLWQWhfJJbfyThkqonOxtvV+wHX+E4Q8MvYcEQAT
- ZY9ZpTnuMHZCVHPSbsnwD8zikY7lPKC4iy04QrG5RewgWvEyCdWDO9D
-X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
- pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
-X-Proofpoint-GUID: bKvCWjLOidjN2ttlRKbCGs2PO9LfUqXd
-X-Proofpoint-Spam-Info: AW1haW4tMjYwOTA2MDI1MyBTYWx0ZWRfX+4CM54KffXXx
- LK7fgn7qb9ie/rLy3WJF3YBsuDte5NMF+4BAcvBSgDpaJzZc6C9BphXHr3Wg8hLuN4/jmPFFiXq
- +MY1cyOH34ZHas1pwVlW24n4KPrfFVNHMWWBZ+FVfE0OhX8hiV4X
-X-Authority-Analysis: v=2.4 cv=QeBWeMbv c=1 sm=1 tr=0 ts=6a9de96a cx=c_pps
- a=EVbN6Ke/fEF3bsl7X48z0g==:117 a=aNLBvxxoObQFLnBXsbaGlA==:17
- a=IkcTkHD0fZMA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=Qm0qsxP7aFY2tkT6R2MF:22
- a=BohlxdOq2c65gZUs6TYA:9 a=QEXdDO2ut3YA:10 a=a_PwQJl-kcHnX1M80qC6:22
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTA2MDI1MyBTYWx0ZWRfX0poV0azTZnvS
- L3QUE3vLsnDubDz8jNrx2OzlTr6lxC0FNANBlEu1BHL6UZ9oRzLuofdeEyt0kU+a6e/f6MaRRI4
- Hyldib/XdGyBkbzATI1fJr9vsv+7P5cNJfTobyHAbbOzjFoBYZvjCEx/Fw35TUoV07PDOafOIMr
- FWqJ6N3JjQaA2fLQRUlOpxEPL5NCtX2rq2IUvOUwCQMYJo0O8DnHSWug96g5TcwWQrrDTh1F4pR
- 7zEO4SvHuhdffZpx2g7oTgCLa0fsR/Q/9loantaRxMir/D9VSNVGdU4F5Nci9d9ZZ9ZM0tILEiI
- pfBktpICWYYKoOzTwLKB71Kq3rL419Eob4RPcmOqDBRKMRqmLZy7RnHIPHhtP1P4cFpNH9fRRwL
- E4mHDwRBDMFrMdcSfM15lRydXEYB8HhZ9BzADbi+J3DcwmgeUaPteEB8Kc/MefN96fhfbdEz53/
- PZtS3HmEALnpiyh2Ohg==
-X-Proofpoint-ORIG-GUID: bKvCWjLOidjN2ttlRKbCGs2PO9LfUqXd
-X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11898
- signatures=596817
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- malwarescore=0 spamscore=0 lowpriorityscore=10 priorityscore=1501
- phishscore=0 adultscore=0 bulkscore=10 clxscore=1015 impostorscore=10
- suspectscore=0 classifier=typeunknown authscore=0 authtc= authcc=
- route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2606150000
- definitions=main-2609060253
+ <20260906-btrfs-folio-conversions-v1-8-834b9d7b06f5@columbia.edu>
+Content-Language: en-US
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <20260906-btrfs-folio-conversions-v1-8-834b9d7b06f5@columbia.edu>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:hGU30jl/yzY++5GOhpeFoEodlhWFvT4CaqcOYYg5f/xEIGsuBlU
+ 3xH840Jnmb0d5E9KZ9c/xfuptg36kI0s+cu4LNmc8RyEA3qfQQYCR2FcH/nqEc4zbN2TUNt
+ VxpWzOBvyncozEfx7/yaEKKugVibIk5HBKqufBcJZQv1WDHbWRB7Fto8ovjReuLydY7rNWl
+ /QRE4Kv5mAX/cXbvfjPqA==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:bBAOfJPICPU=;mmAQcFmcEXclBTpjWBgPbHUK+89
+ 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
+ uYneBb07ahHsETxRPfnL6q
 
-These functions now operate on folios. Rename them and update comments
-accordingly.
 
-Signed-off-by: Tal Zussman <tz2294@columbia.edu>
----
- fs/btrfs/free-space-cache.c | 78 ++++++++++++++++++++++-----------------------
- 1 file changed, 39 insertions(+), 39 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index ab933ee6f19c..73cfc1d1a5c1 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -406,7 +406,7 @@ static void io_ctl_free(struct btrfs_io_ctl *io_ctl)
- 	io_ctl->folios = NULL;
- }
- 
--static void io_ctl_unmap_page(struct btrfs_io_ctl *io_ctl)
-+static void io_ctl_unmap_folio(struct btrfs_io_ctl *io_ctl)
- {
- 	if (io_ctl->cur) {
- 		io_ctl->cur = NULL;
-@@ -414,7 +414,7 @@ static void io_ctl_unmap_page(struct btrfs_io_ctl *io_ctl)
- 	}
- }
- 
--static void io_ctl_map_page(struct btrfs_io_ctl *io_ctl, int clear)
-+static void io_ctl_map_folio(struct btrfs_io_ctl *io_ctl, int clear)
- {
- 	ASSERT(io_ctl->index < io_ctl->num_folios);
- 	io_ctl->folio = io_ctl->folios[io_ctl->index++];
-@@ -425,11 +425,11 @@ static void io_ctl_map_page(struct btrfs_io_ctl *io_ctl, int clear)
- 		clear_page(io_ctl->cur);
- }
- 
--static void io_ctl_drop_pages(struct btrfs_io_ctl *io_ctl)
-+static void io_ctl_drop_folios(struct btrfs_io_ctl *io_ctl)
- {
- 	int i;
- 
--	io_ctl_unmap_page(io_ctl);
-+	io_ctl_unmap_folio(io_ctl);
- 
- 	for (i = 0; i < io_ctl->num_folios; i++) {
- 		if (io_ctl->folios[i]) {
-@@ -439,7 +439,7 @@ static void io_ctl_drop_pages(struct btrfs_io_ctl *io_ctl)
- 	}
- }
- 
--static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
-+static int io_ctl_prepare_folios(struct btrfs_io_ctl *io_ctl, bool uptodate)
- {
- 	struct folio *folio;
- 	struct inode *inode = io_ctl->inode;
-@@ -453,7 +453,7 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
- 					    FGP_LOCK | FGP_ACCESSED | FGP_CREAT,
- 					    mask);
- 		if (IS_ERR(folio)) {
--			io_ctl_drop_pages(io_ctl);
-+			io_ctl_drop_folios(io_ctl);
- 			return PTR_ERR(folio);
- 		}
- 
-@@ -461,7 +461,7 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
- 		if (ret < 0) {
- 			folio_unlock(folio);
- 			folio_put(folio);
--			io_ctl_drop_pages(io_ctl);
-+			io_ctl_drop_folios(io_ctl);
- 			return ret;
- 		}
- 
-@@ -472,13 +472,13 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
- 			if (folio->mapping != inode->i_mapping) {
- 				btrfs_err(BTRFS_I(inode)->root->fs_info,
- 					  "free space cache page truncated");
--				io_ctl_drop_pages(io_ctl);
-+				io_ctl_drop_folios(io_ctl);
- 				return -EIO;
- 			}
- 			if (!folio_test_uptodate(folio)) {
- 				btrfs_err(BTRFS_I(inode)->root->fs_info,
- 					   "error reading free space cache");
--				io_ctl_drop_pages(io_ctl);
-+				io_ctl_drop_folios(io_ctl);
- 				return -EIO;
- 			}
- 		}
-@@ -492,7 +492,7 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
- 
- static void io_ctl_set_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
- {
--	io_ctl_map_page(io_ctl, 1);
-+	io_ctl_map_folio(io_ctl, 1);
- 
- 	/*
- 	 * Skip the csum areas.  If we don't check crcs then we just have a
-@@ -521,7 +521,7 @@ static int io_ctl_check_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
- 		btrfs_err_rl(io_ctl->fs_info,
- 			"space cache generation (%llu) does not match inode (%llu)",
- 				cache_gen, generation);
--		io_ctl_unmap_page(io_ctl);
-+		io_ctl_unmap_folio(io_ctl);
- 		return -EIO;
- 	}
- 	io_ctl->cur += sizeof(u64);
-@@ -539,7 +539,7 @@ static void io_ctl_set_crc(struct btrfs_io_ctl *io_ctl, int index)
- 
- 	crc = crc32c(crc, io_ctl->orig + offset, PAGE_SIZE - offset);
- 	btrfs_crc32c_final(crc, (u8 *)&crc);
--	io_ctl_unmap_page(io_ctl);
-+	io_ctl_unmap_folio(io_ctl);
- 	tmp = folio_address(io_ctl->folios[0]);
- 	tmp += index;
- 	*tmp = crc;
-@@ -561,13 +561,13 @@ static int io_ctl_check_crc(struct btrfs_io_ctl *io_ctl, int index)
- 	tmp += index;
- 	val = *tmp;
- 
--	io_ctl_map_page(io_ctl, 0);
-+	io_ctl_map_folio(io_ctl, 0);
- 	crc = crc32c(crc, io_ctl->orig + offset, PAGE_SIZE - offset);
- 	btrfs_crc32c_final(crc, (u8 *)&crc);
- 	if (val != crc) {
- 		btrfs_err_rl(io_ctl->fs_info,
- 			"csum mismatch on free space cache");
--		io_ctl_unmap_page(io_ctl);
-+		io_ctl_unmap_folio(io_ctl);
- 		return -EIO;
- 	}
- 
-@@ -595,12 +595,12 @@ static int io_ctl_add_entry(struct btrfs_io_ctl *io_ctl, u64 offset, u64 bytes,
- 
- 	io_ctl_set_crc(io_ctl, io_ctl->index - 1);
- 
--	/* No more pages to map */
-+	/* No more folios to map */
- 	if (io_ctl->index >= io_ctl->num_folios)
- 		return 0;
- 
--	/* map the next page */
--	io_ctl_map_page(io_ctl, 1);
-+	/* map the next folio */
-+	io_ctl_map_folio(io_ctl, 1);
- 	return 0;
- }
- 
-@@ -610,24 +610,24 @@ static int io_ctl_add_bitmap(struct btrfs_io_ctl *io_ctl, void *bitmap)
- 		return -ENOSPC;
- 
- 	/*
--	 * If we aren't at the start of the current page, unmap this one and
-+	 * If we aren't at the start of the current folio, unmap this one and
- 	 * map the next one if there is any left.
- 	 */
- 	if (io_ctl->cur != io_ctl->orig) {
- 		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
- 		if (io_ctl->index >= io_ctl->num_folios)
- 			return -ENOSPC;
--		io_ctl_map_page(io_ctl, 0);
-+		io_ctl_map_folio(io_ctl, 0);
- 	}
- 
- 	copy_page(io_ctl->cur, bitmap);
- 	io_ctl_set_crc(io_ctl, io_ctl->index - 1);
- 	if (io_ctl->index < io_ctl->num_folios)
--		io_ctl_map_page(io_ctl, 0);
-+		io_ctl_map_folio(io_ctl, 0);
- 	return 0;
- }
- 
--static void io_ctl_zero_remaining_pages(struct btrfs_io_ctl *io_ctl)
-+static void io_ctl_zero_remaining_folios(struct btrfs_io_ctl *io_ctl)
- {
- 	/*
- 	 * If we're not on the boundary we know we've modified the page and we
-@@ -636,10 +636,10 @@ static void io_ctl_zero_remaining_pages(struct btrfs_io_ctl *io_ctl)
- 	if (io_ctl->cur != io_ctl->orig)
- 		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
- 	else
--		io_ctl_unmap_page(io_ctl);
-+		io_ctl_unmap_folio(io_ctl);
- 
- 	while (io_ctl->index < io_ctl->num_folios) {
--		io_ctl_map_page(io_ctl, 1);
-+		io_ctl_map_folio(io_ctl, 1);
- 		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
- 	}
- }
-@@ -666,7 +666,7 @@ static int io_ctl_read_entry(struct btrfs_io_ctl *io_ctl,
- 	if (io_ctl->size >= sizeof(struct btrfs_free_space_entry))
- 		return 0;
- 
--	io_ctl_unmap_page(io_ctl);
-+	io_ctl_unmap_folio(io_ctl);
- 
- 	return 0;
- }
-@@ -681,7 +681,7 @@ static int io_ctl_read_bitmap(struct btrfs_io_ctl *io_ctl,
- 		return ret;
- 
- 	copy_page(entry->bitmap, io_ctl->cur);
--	io_ctl_unmap_page(io_ctl);
-+	io_ctl_unmap_folio(io_ctl);
- 
- 	return 0;
- }
-@@ -797,7 +797,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 
- 	readahead_cache(inode);
- 
--	ret = io_ctl_prepare_pages(&io_ctl, true);
-+	ret = io_ctl_prepare_folios(&io_ctl, true);
- 	if (ret)
- 		goto out;
- 
-@@ -869,7 +869,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 		num_entries--;
- 	}
- 
--	io_ctl_unmap_page(&io_ctl);
-+	io_ctl_unmap_folio(&io_ctl);
- 
- 	/*
- 	 * We add the bitmaps at the end of the entries in order that
-@@ -882,13 +882,13 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 			goto free_cache;
- 	}
- 
--	io_ctl_drop_pages(&io_ctl);
-+	io_ctl_drop_folios(&io_ctl);
- 	ret = 1;
- out:
- 	io_ctl_free(&io_ctl);
- 	return ret;
- free_cache:
--	io_ctl_drop_pages(&io_ctl);
-+	io_ctl_drop_folios(&io_ctl);
- 
- 	spin_lock(&ctl->tree_lock);
- 	__btrfs_remove_free_space_cache(ctl);
-@@ -1280,7 +1280,7 @@ cleanup_write_cache_enospc(struct inode *inode,
- 			   struct btrfs_io_ctl *io_ctl,
- 			   struct extent_state **cached_state)
- {
--	io_ctl_drop_pages(io_ctl);
-+	io_ctl_drop_folios(io_ctl);
- 	btrfs_unlock_extent(&BTRFS_I(inode)->io_tree, 0, i_size_read(inode) - 1,
- 			    cached_state);
- }
-@@ -1297,7 +1297,7 @@ static int __btrfs_wait_cache_io(struct btrfs_root *root,
- 	if (!inode)
- 		return 0;
- 
--	/* Flush the dirty pages in the cache file. */
-+	/* Flush the dirty folios in the cache file. */
- 	ret = flush_dirty_cache(inode);
- 	if (ret)
- 		goto out;
-@@ -1402,8 +1402,8 @@ static int __btrfs_write_out_cache(struct inode *inode,
- 		spin_unlock(&block_group->lock);
- 	}
- 
--	/* Lock all pages first so we can lock the extent safely. */
--	ret = io_ctl_prepare_pages(io_ctl, false);
-+	/* Lock all folios first so we can lock the extent safely. */
-+	ret = io_ctl_prepare_folios(io_ctl, false);
- 	if (ret)
- 		goto out_unlock;
- 
-@@ -1443,10 +1443,10 @@ static int __btrfs_write_out_cache(struct inode *inode,
- 	if (ret)
- 		goto out_nospc;
- 
--	/* Zero out the rest of the pages just to make sure */
--	io_ctl_zero_remaining_pages(io_ctl);
-+	/* Zero out the rest of the folios just to make sure */
-+	io_ctl_zero_remaining_folios(io_ctl);
- 
--	/* Everything is written out, now we dirty the pages in the file. */
-+	/* Everything is written out, now we dirty the folios in the file. */
- 	i_size = i_size_read(inode);
- 	for (int i = 0; i < round_up(i_size, PAGE_SIZE) / PAGE_SIZE; i++) {
- 		u64 dirty_start = i * PAGE_SIZE;
-@@ -1461,17 +1461,17 @@ static int __btrfs_write_out_cache(struct inode *inode,
- 	if (block_group->flags & BTRFS_BLOCK_GROUP_DATA)
- 		up_write(&block_group->data_rwsem);
- 	/*
--	 * Release the pages and unlock the extent, we will flush
-+	 * Release the folios and unlock the extent, we will flush
- 	 * them out later
- 	 */
--	io_ctl_drop_pages(io_ctl);
-+	io_ctl_drop_folios(io_ctl);
- 	io_ctl_free(io_ctl);
- 
- 	btrfs_unlock_extent(&BTRFS_I(inode)->io_tree, 0, i_size_read(inode) - 1,
- 			    &cached_state);
- 
- 	/*
--	 * at this point the pages are under IO and we're happy,
-+	 * at this point the folios are under IO and we're happy,
- 	 * The caller is responsible for waiting on them and updating
- 	 * the cache and the inode
- 	 */
+=E5=9C=A8 2026/9/7 07:59, Tal Zussman =E5=86=99=E9=81=93:
+> The free space cache inode is a data inode, so the read path enables
+> large folios on its mapping. The v1 cache code assumes one page per
+> folio. With a large folio, consecutive __filemap_get_folio() calls in
+> io_ctl_prepare_pages() would return the same folio and deadlock on the
+> second FGP_LOCK.
+>=20
+> The v1 on-disk format is PAGE_SIZE granular, so keep the mapping at
+> order 0 rather than teaching the io_ctl code about large folios.
+>=20
+> Signed-off-by: Tal Zussman <tz2294@columbia.edu>
 
--- 
-2.39.5
+V1 space cache is already disabled by commit 545e560a5b0f ("btrfs:=20
+disable v1 space cache").
+
+I do not think you should add such check for things that we're already=20
+planning to fully remove.
+
+> ---
+>   fs/btrfs/btrfs_inode.h | 7 +++++++
+>   1 file changed, 7 insertions(+)
+>=20
+> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> index 89e5e9c0c904..5d85aa69db13 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -502,6 +502,13 @@ static inline void btrfs_set_inode_mapping_order(st=
+ruct btrfs_inode *inode)
+>   	/* Metadata inode should not reach here. */
+>   	ASSERT(is_data_inode(inode));
+>  =20
+> +	/*
+> +	 * The v1 free space cache operates on PAGE_SIZE chunks and assumes
+> +	 * one page per folio. Leave it at order 0.
+> +	 */
+> +	if (btrfs_is_free_space_inode(inode))
+> +		return;
+> +
+>   	mapping_set_folio_order_range(inode->vfs_inode.i_mapping,
+>   				      inode->root->fs_info->block_min_order,
+>   				      inode->root->fs_info->block_max_order);
+>=20
 

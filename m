@@ -1,88 +1,88 @@
-Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
+Received: from mx0a-00364e01.pphosted.com (mx0a-00364e01.pphosted.com [148.163.135.74])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC92F3CF217
-	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 22:29:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8CFA33CB8F4
+	for <linux-btrfs@vger.kernel.org>; Sun,  6 Sep 2026 22:30:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.135.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788733813; cv=none; b=bw9z1KcNN5cBryStF6QmQ9cf5zTirBt1ZH+FUz+48s+HYqd8NWaXECdJUTUnk2h7NgNIyFYnTK3Aot0i/X1lW2Su0ntrtSjXsKxfOZJxQxBFfgvRM4chPyYEx+mk3zdaflE9Nc61cRM43Wkz+lnzaoxkaGil23+1BIfIx9/ijXE=
+	t=1788733815; cv=none; b=WlmvoQIggJ5h++ao4gOViDCP2bScokYVKCqyvEhtJndH3rgZ/WL1OvpvvDBi8U+VexVXpCf1Rk66WUztnZq9dfq8nkGmju82kMo+m44Afstc2LUWKHpJIKELic4vYq0mPHQMQRD9UczwaDnN11xMTakiiisoo8wZQZv8621Siec=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788733813; c=relaxed/simple;
-	bh=CJnstd+kkeK8rQHvGFsaX4UzZNSv2sQ+ooNQiOqyXWc=;
+	s=arc-20240116; t=1788733815; c=relaxed/simple;
+	bh=9HbGVBX5TrUvmHuy2p6Fy4BIU2dMPYb8NT1I6QaaWgo=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=Vkf2eRO8YL4i1QbTluLvgH25BCem0ahnrnxGVPzdH9zbqwrOwYSxFCtAzQQGVqgafXTe+CdJXekeXnctKQbmes2icDpoXsBTXG1qHIdWk7g7oc8V2grtoIANYgQvBnksbtyd439iXMB8o1YFPZQ32+yl8N89rdEhwLUyq4b23nI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=VeVhcdbM; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=lA5XFPAB; arc=none smtp.client-ip=148.163.139.74
+	 In-Reply-To:To:Cc; b=aWxpF4U4s3PD3buAitxa8y/qcw9ygl8IH5BaJoeFkcEz6gJKpviwRWUvkPmcSAO0iHntZLCxG/xEvu+06NFXu34iK9IHzqOttBdJGMVWRobY8MOAgxXuZ0TxGapO4Hsz7YkW0QL4JXRcfPLFsXRVCD6PjoXh/2glfOMIOJdtjdE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=O8JDc0Bv; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=TLSQ7Wrw; arc=none smtp.client-ip=148.163.135.74
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="VeVhcdbM";
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="lA5XFPAB"
-Received: from pps.filterd (m0167075.ppops.net [127.0.0.1])
-	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 686KRsA9306765
-	for <linux-btrfs@vger.kernel.org>; Sun, 6 Sep 2026 18:29:58 -0400
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="O8JDc0Bv";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="TLSQ7Wrw"
+Received: from pps.filterd (m0499199.ppops.net [127.0.0.1])
+	by mx0a-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 686IXVib4098232
+	for <linux-btrfs@vger.kernel.org>; Sun, 6 Sep 2026 18:30:00 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
 	cc:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pps01; bh=CfC9
-	I79u0yHSazTNK3oQEllakS5tB7xZvD5W+HI/8UA=; b=VeVhcdbMErUB3nR9qYBN
-	DcGug7nWorR80yaGbRyXmoOn6kV+HUUYuMEmUU0jiobSCQH+AoqWLEie3C5AM9Hg
-	upqH6I55pH3UFfQV0uUfE92ipi3hvu9wWCD2F3tXy46haTGLrOvErODMv+PqnQ+3
-	1hoQTmuGDxfN7/Kr6IObxwy9VORIoSxrF4kA1msJK67IvIiZYqHUK4A/v6z6iC/5
-	s/8B4hHNF2rXXOmTAg+WqACxOpJF+Wmj2+ubIrytpyr/2aWro/vf0QWXket243X0
-	oaNZYsurdDHn4pRD/1M0abSccelnTTLjebDpOmt5rAzDnVsuFUc0iU3l74S8BwaB
-	bA==
-Received: from mail-qt1-f197.google.com (mail-qt1-f197.google.com [209.85.160.197])
-	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4ghf7krcpb-1
+	:message-id:mime-version:references:subject:to; s=pps01; bh=xck2
+	l++QwEZd4WONax1e8sjGplgHuiAYa/+vfb+E6TU=; b=O8JDc0BvfzTwN6A71kvc
+	78sjNRJxVpN/LtRo4j/7YhBigUx8UJsv2dCE7CVn1vHEcyBkhZHVAinddv+0Hy8w
+	UXgT8SnKhvVR42Ct5faorkOesM159X0DUh47k5bwnc58lBh3MNllVI+n/bchXm07
+	teAc7dyjVtheki+hkVZ8I5x53fFO266nb9vvdPxtoE2mBnqSM5HDjZcFnInEDiLJ
+	7jFcRmFMCu0XPELpt90OcNX0Ob0NaUIS87LkDB/sXJYrXI5VVFe+ZXg7Mg6SpcNQ
+	Au3VMRtm9Smjc6fEVfjLYghEaKycf5TlNXBaKzlKD4l+j/0IsGr7Tu2Zjud89Ric
+	qw==
+Received: from mail-qt1-f198.google.com (mail-qt1-f198.google.com [209.85.160.198])
+	by mx0a-00364e01.pphosted.com (PPS) with ESMTPS id 4gh1gs3939-1
 	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 18:29:58 -0400 (EDT)
-Received: by mail-qt1-f197.google.com with SMTP id d75a77b69052e-52ce3c7cb2eso60338591cf.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 15:29:58 -0700 (PDT)
+	for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 18:30:00 -0400 (EDT)
+Received: by mail-qt1-f198.google.com with SMTP id d75a77b69052e-52fc0097865so78862981cf.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 15:30:00 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1788733797; x=1789338597; darn=vger.kernel.org;
+        d=columbia.edu; s=lionmail; t=1788733799; x=1789338599; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=CfC9I79u0yHSazTNK3oQEllakS5tB7xZvD5W+HI/8UA=;
-        b=lA5XFPABt2dx37tDBneR3VTl0iykwdlt819f1wSNdae5M9skytNzNlujDynTfn3Ed9
-         0DNpBAne51b1tXtO+7lXL239mKkddjkwklxzo4zQiRszgFRb/fVvhAw/SV0PqXyvYxYJ
-         uXig5GmVqm8JYxGIeW4ZREloMjVW6n8LU93y00xDC7J4aDDS5j2pwBYP6HAhRAheTvqv
-         0fM6d+QvpTz38dRxT3bkuvTho5G/mBz/aWVJtY12YtQy0rziCq2rEPEVYTagU+ICyaxq
-         Z42/8bqnvu6mbqqNme/jkRwFBt37hgfpBfaZqBhMn1UoosOm9+lysXBMH+yjgjMXyxOy
-         MNag==
+        bh=xck2l++QwEZd4WONax1e8sjGplgHuiAYa/+vfb+E6TU=;
+        b=TLSQ7WrwLeBrpHwVBbVM59ei17LsWIio9X4VZIVeahnkQQeR0W8A5hZnZA6RsnT+LE
+         lY+VKmk9f1cxS+2dnqHzbBv9kNamMId4ghvEYgDuZr7zvxj8UyBeB8MX7sB0u5O1EO8P
+         LCqQxJeWJN08kntOlRA1SlLnX3GtIuaCeJkq6PuHI8xFOI/0bXHIqIk+A8SzBB2uKF94
+         z2Uip46j/LTvf5eVGlgle1X89ZBiSe27CfNzI4yGajpAYHCMLxiIL4gvrR0/wZRALG+H
+         mqD1XFIdpZ4JVnnBaoTyNDPzwc8EgtoUdiyvecrSO2JRBCSOYGgxqRj1CeW9Yk9fgwsc
+         Rqag==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788733797; x=1789338597;
+        d=1e100.net; s=20251104; t=1788733799; x=1789338599;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=CfC9I79u0yHSazTNK3oQEllakS5tB7xZvD5W+HI/8UA=;
-        b=j5S6Ro1GJA8N27eoWQ1FcMzFgXdPR2mG/r2WqNxUjBvbOivFrQQiFkCgcAlpmeEQkj
-         +GwJc51DBKV5YdotdlTeZp4Ni/XWXRp4sWKkjwBpZaFBTUmjoFdMXxTHIxti20br8g8j
-         q8VeqYgosg3lPfwdJQ8cy6IL/m4jzlqFrqkVOS/iSAEdPzmij9Hkmg2Q/VWfvP0OcJMx
-         gL/M9JBl/634tuWHslQ5GQUtti9tycppG4A2A0DVhvBgUilJ7fHQnzGNud6Wf/Kg1FIL
-         GpukzaP+O5PkOcO2trcoKBmfj9o9sxkS0lU80FZUQjaDeq8ATPyPJ8i6DFefcUvij1DP
-         YDrQ==
-X-Forwarded-Encrypted: i=1; AKwUvBywuh+Dr1TmGpv+3Nj5/+M00rzNZrPzg48zgZXccxUIEjldLOWxHtlJZLi8nrTKhr+RENJc1SU7CInMJw==@vger.kernel.org
-X-Gm-Message-State: AFuF++kmFL4hTsu2LdQgIU77eFGWizrhdjjbmvgPZOzA8uyEa2EoGHOj
-	9jECbNbpumzguG/m18gDKpfHo3uBRaxdoFFZUl2UOPwSA5Awu+34+ZyxxNeWO3I0WA4306fBaFR
-	SDuq9xLysReeQiI75qJV3hofyajHOD8DLbJZCEWR36hoObqkxk6ZbOVuoyGs4
-X-Gm-Gg: AYBFou3MqfodHvyvTeO6m0Q8D6eiU0S+VuwPD3b60/niOzbBb1akSPugUV3STpd3wyr
-	1lUdAYlH6IiVAiSSiJA7lu8rhp8E7c562lxt6Gs+BozGDWCe5ivn8hTrvckMSV1XLxG691wTEbg
-	R79tqQbaUp3W0ED+aYvTBVVG/xm+/NkVra8DJVubPZkF3vqRladQygPMQ60X3A28cYorIvHjq83
-	lDDvpsfnILEgkAkE+PMxKgXgPtVM2UuUTFH0A30CxT0ka94WZiHJZlDYjN8eZPe41J0cyAwJ2bB
-	YR6UY+QWO2Gg2PVytfgQYdGvelhFupev5uqRpkTkuO87Oy6SjW9Y4gUtHt2rdCAfGcQhIR3Z/CU
-	F+ePjRZ/2LKdhZsZSx5iS+uEtt1+DpYuIxfXxXZGgX/dkil4s
-X-Received: by 2002:a05:622a:a05:b0:51c:fc4:a144 with SMTP id d75a77b69052e-53054800802mr226686451cf.4.1788733797682;
-        Sun, 06 Sep 2026 15:29:57 -0700 (PDT)
-X-Received: by 2002:a05:622a:a05:b0:51c:fc4:a144 with SMTP id d75a77b69052e-53054800802mr226686061cf.4.1788733797246;
-        Sun, 06 Sep 2026 15:29:57 -0700 (PDT)
+        bh=xck2l++QwEZd4WONax1e8sjGplgHuiAYa/+vfb+E6TU=;
+        b=sNBNU64SVnGGvhkGHbEEMYKB8AlsMiuSV6JsImzoy2758PGu6ZUTUdELwhUIpPtkZP
+         izDG+luQSL3y8X1mF3qgzzNVRZlQd84RU2aI/661l8cYLH+EGizb3V7IeNyO0QvFwKZE
+         ks/0epq8ZxeEMIrPurI8J/TMR3v/0kmDln7w4R/d/VCw8HAMUxDtCOWSJtq3ji7VgpJi
+         LLMhqyagyUMWOoO3/lWxusCofVZ+IzQGEGl489dEdGCRJks00pM4tipyPljOMEUQ3wDp
+         LjN+eq+OQxnM5VCwG7IxP5LYbRlv9tcSCbeXikrab4P2NURype19pzIbfdcD53lz1EUm
+         v0NA==
+X-Forwarded-Encrypted: i=1; AKwUvBy/qcWUmcUXZaIJ+a1xOIh7oWmOxjoFbmeap+LEFmxk3BimPYH13ezylifFL/uxveynUNlQvdgkHBJh+w==@vger.kernel.org
+X-Gm-Message-State: AFuF++lL6A17OwZqNoWqdmktjkyOfPAYtYg7exIQjx+wVBRiRNu44JIS
+	x5zTHmYn+ssvCnvCYgrkrJASCNhqeyhH9Myki7VCA6UTjfBsZ+xjvCG4D7DgJCrFWgxTE2k67QP
+	qrhFyICxgCusNz/6PSpcY7hZSkBpXg6ZGeji4//SbsbJlTjfoiMTLrHdTcH9+
+X-Gm-Gg: AYBFou0sjS8StqK8eNnWJ9b87Vct52Z62oFj77MvnIdFqkBvUj87BS2bQnpFIY2Nu2I
+	HTHPgRaGwrkA4Ny4X0J0c0vRMdrCVxqx5zj3nkJIwIkV8skzO4bchU4Z5NwcHmsHhTlpPZTx3Aq
+	Tkl8AF2V/SZRK0TXYjqGsZH5PY6wnMzHB4DRs2bjWrnMmCWLx03+HwbzvF0ZWXC8plmb4+JILtw
+	4SdeHd7QZuSH1YwErv0b1LkuWKcfRZnxTSSSrPvCNFvS5HmuhYYck4X2Q++wIjYWUe7kPbSZ8qw
+	S6vl5AJfmgtjMrmyaKs+xlSbq+nBh2SSL6hcU1JF1naj11TCY1TTmuJqsi0ixsq6Nm9X0f2qkGV
+	wXq0IHAs5bL+mwjC1FHIPvPScv0Nv4DGAWmxihcedfbEzGm1x
+X-Received: by 2002:a05:622a:4cc5:b0:52f:b6a8:9e56 with SMTP id d75a77b69052e-53054853b18mr211370781cf.19.1788733799453;
+        Sun, 06 Sep 2026 15:29:59 -0700 (PDT)
+X-Received: by 2002:a05:622a:4cc5:b0:52f:b6a8:9e56 with SMTP id d75a77b69052e-53054853b18mr211370411cf.19.1788733799021;
+        Sun, 06 Sep 2026 15:29:59 -0700 (PDT)
 Received: from [127.0.1.1] (nat-128-59-176-104.net.columbia.edu. [128.59.176.104])
-        by smtp.gmail.com with ESMTPSA id d75a77b69052e-5305402a7b7sm73048541cf.3.2026.09.06.15.29.56
+        by smtp.gmail.com with ESMTPSA id d75a77b69052e-5305402a7b7sm73048541cf.3.2026.09.06.15.29.58
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 06 Sep 2026 15:29:56 -0700 (PDT)
+        Sun, 06 Sep 2026 15:29:58 -0700 (PDT)
 From: Tal Zussman <tz2294@columbia.edu>
-Date: Sun, 06 Sep 2026 18:29:33 -0400
-Subject: [PATCH 06/10] btrfs: fix stale function references in compression
- comments
+Date: Sun, 06 Sep 2026 18:29:35 -0400
+Subject: [PATCH 08/10] btrfs: keep the free space cache inode mapping at
+ order 0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -91,7 +91,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260906-btrfs-folio-conversions-v1-6-834b9d7b06f5@columbia.edu>
+Message-Id: <20260906-btrfs-folio-conversions-v1-8-834b9d7b06f5@columbia.edu>
 References: <20260906-btrfs-folio-conversions-v1-0-834b9d7b06f5@columbia.edu>
 In-Reply-To: <20260906-btrfs-folio-conversions-v1-0-834b9d7b06f5@columbia.edu>
 To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>
@@ -99,70 +99,71 @@ Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         Tal Zussman <tz2294@columbia.edu>
 X-Mailer: b4 0.17-dev-db0b7
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1788733791; l=1276;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1788733791; l=1277;
  i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
- bh=CJnstd+kkeK8rQHvGFsaX4UzZNSv2sQ+ooNQiOqyXWc=;
- b=wNakc2lD1D1Qxekt9Elvfw9A3rdleSrn6O45KjMVHUTXImAdH+dOdQInotuFk1LY51uR7P3r5
- WjB9lAd+kaJCEFk5h6e2zb0n5nJvu/JKtFtKQ9a3f0LOXwgQSpSSsn2
+ bh=9HbGVBX5TrUvmHuy2p6Fy4BIU2dMPYb8NT1I6QaaWgo=;
+ b=Of/A+lVYam6wN5OKQ+C7xZ6FkPUqmt9A/7NEW9RznOiCgNOVH1zKFmYmibvLBYCpSsm/08TJn
+ uFA1jQtT3sPAi2a2MJxHQLmaV43zZCufcZWTFu2cKM4wCG7E66jEVjX
 X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
  pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
-X-Proofpoint-ORIG-GUID: 45fkaneNYcE6sMTQQ25OZDrmCXZssQoS
-X-Authority-Analysis: v=2.4 cv=RrD16imK c=1 sm=1 tr=0 ts=6a9de966 cx=c_pps
- a=EVbN6Ke/fEF3bsl7X48z0g==:117 a=aNLBvxxoObQFLnBXsbaGlA==:17
+X-Proofpoint-GUID: hb2nn6wzHx-ob8dAUIb_rAygRQaxEi0v
+X-Authority-Analysis: v=2.4 cv=HbQkiCE8 c=1 sm=1 tr=0 ts=6a9de968 cx=c_pps
+ a=mPf7EqFMSY9/WdsSgAYMbA==:117 a=aNLBvxxoObQFLnBXsbaGlA==:17
  a=IkcTkHD0fZMA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=HpS3TJQ9O3Ob1ozEcmik:22
- a=wS94dJsgKqXJMQyBkfsA:9 a=QEXdDO2ut3YA:10 a=a_PwQJl-kcHnX1M80qC6:22
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTA2MDI1MiBTYWx0ZWRfX5fzFT90uvAjX
- NRKNaBVItSOiPQFwI1CxOimuNdKGiqRoA7UZsgfK822SNoz9T9hgCAI6pYU5arFfZqKxkmK7Pva
- JaWIsdCeydK8h9QLhRCn1y/a8kmNcl91u6YxZiL5NLZXbAqWpMX6P+lqUd+GHqF5GuZaJIAyY+i
- 2+8gS/HrSjtmQx6lBvQajDIOTF16MLg9Q4la+fDD+Tb6x90MBZZNPwxP7qVMQXWeLbbBSb09PdX
- 0H3VXl+6c3sui17tXUZdGa/OkXMD/NH1qYTFoJ4Pj6zEeMKYGG4NC/qfdWsT9ejFYPEVVdCTwob
- 9QklIMQP8C4Zu7kQCRKGPySMUwQkF5u+XT3GNgG+hQ56aFnkXvHY0MbF/2HPf5w4T+eO9Y1IpRj
- c0gJ0QGsbEqh2Io2QHiCItSDIkEBvBg+dA7Km3CMD8qzWevseS2Bx3WAAzIKKFAb1jnTwugp9kn
- pXqZVXH20J1DIJ60o0A==
-X-Proofpoint-GUID: 45fkaneNYcE6sMTQQ25OZDrmCXZssQoS
-X-Proofpoint-Spam-Info: AW1haW4tMjYwOTA2MDI1MiBTYWx0ZWRfX0IRyO1IdzOy/
- Q72A29QVdrczTAV0mNlF3Kj4W2ZVn9NwsoaAQHD2dyWzjjp6FMhJGX9vrAXISxvKVBS3uDfx12M
- lXXLhD9semORtMhmKGc6Sdjpt9C84jHUCf0RDyuDKbsnnAc0DlqK
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=G--0XuH5328wxK7v7Suf:22
+ a=CzLnJ1dVjGlFsHvV59sA:9 a=QEXdDO2ut3YA:10 a=dawVfQjAaf238kedN5IG:22
+X-Proofpoint-Spam-Info: AW1haW4tMjYwOTA2MDI1MiBTYWx0ZWRfX+b0qEdD8YvKL
+ hxFWzbmO8kLRHW6T0oJV35bHLurCFQjBKLcfpJPIuFGUo+BvWBaa5n/Hbz3yyEJEJUK0hXuo8xs
+ XTkdyjvyYwQOHj72NybsVnckKLdiUMp7JkmyCqIXUxWAtdXq5VkZ
+X-Proofpoint-ORIG-GUID: hb2nn6wzHx-ob8dAUIb_rAygRQaxEi0v
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTA2MDI1MiBTYWx0ZWRfX53fTJ+3g1qI6
+ NgVH09i8x6BH9fcdx9PcH0jE/hZRJ76ZEJIz/h6xgDpffoIvYWIjbCNiixw7G0Z41WN5HaQeZPg
+ 8ibnWukVNY71BSZ0jsfMbs4td2DC+CjYOnqXmyqdoTwO2SrlloTQBZT5AE+aVQP01/QghFi4PgS
+ rwmR7yYa40btXN5WRp7BUNAjfrwx87LILPB689ZHvYIFvHJGZhojwZVLSn6pW3jUSBRmIOvpzfO
+ 5LXWl9XbIHSQG6gZccHq3LpRR0lAmY06idfgMq2hlOi51DC1sn6OVUnbXATYDX4iTrsYAGYV7eE
+ N/eIi9YkXRliGU78yZ8mJjopCzD0SfR2H4QNM0CYzXZy13HhENDTPdAhRUX4gheOCgQrp3r57n8
+ TUa7YBOa8RjYlsrhGPoURauTYgSNoTQUNzTTQWSipJnhFtQLfW0/02fP7mT8s+Pi1qrSuvzVRwI
+ foyGy0JaNYqy46s4IbA==
 X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11898
  signatures=596817
 X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- impostorscore=10 suspectscore=0 phishscore=0 bulkscore=10 priorityscore=1501
- adultscore=0 clxscore=1011 malwarescore=0 lowpriorityscore=10 spamscore=0
+ malwarescore=0 spamscore=0 phishscore=0 adultscore=0 lowpriorityscore=10
+ priorityscore=1501 impostorscore=10 clxscore=1011 suspectscore=0 bulkscore=10
  classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
  reason=mlx scancount=1 engine=8.22.0-2606150000 definitions=main-2609060252
 
-add_ra_bio_pages() was renamed to add_ra_bio_folios(), and
-btrfs_compress_filemap_get_folio() wraps filemap_get_folio(), not
-find_get_page(). Update the comments accordingly.
+The free space cache inode is a data inode, so the read path enables
+large folios on its mapping. The v1 cache code assumes one page per
+folio. With a large folio, consecutive __filemap_get_folio() calls in
+io_ctl_prepare_pages() would return the same folio and deadlock on the
+second FGP_LOCK.
+
+The v1 on-disk format is PAGE_SIZE granular, so keep the mapping at
+order 0 rather than teaching the io_ctl code about large folios.
 
 Signed-off-by: Tal Zussman <tz2294@columbia.edu>
 ---
- fs/btrfs/compression.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/btrfs_inode.h | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index fa8b92592321..20169d028961 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -431,7 +431,7 @@ static noinline int add_ra_bio_folios(struct inode *inode, u64 compressed_end,
- 		}
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 89e5e9c0c904..5d85aa69db13 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -502,6 +502,13 @@ static inline void btrfs_set_inode_mapping_order(struct btrfs_inode *inode)
+ 	/* Metadata inode should not reach here. */
+ 	ASSERT(is_data_inode(inode));
  
- 		/*
--		 * Since add_ra_bio_pages() is always speculative, suppress
-+		 * Since add_ra_bio_folios() is always speculative, suppress
- 		 * allocation warnings.
- 		 */
- 		masked_constraint_gfp = mapping_gfp_constraint(mapping, constraint_gfp);
-@@ -960,7 +960,7 @@ bool btrfs_compress_level_valid(unsigned int type, int level)
- 	return levels->min_level <= level && level <= levels->max_level;
- }
- 
--/* Wrapper around find_get_page(), with extra error message. */
-+/* Wrapper around filemap_get_folio(), with extra error message. */
- int btrfs_compress_filemap_get_folio(struct address_space *mapping, u64 start,
- 				     struct folio **in_folio_ret)
- {
++	/*
++	 * The v1 free space cache operates on PAGE_SIZE chunks and assumes
++	 * one page per folio. Leave it at order 0.
++	 */
++	if (btrfs_is_free_space_inode(inode))
++		return;
++
+ 	mapping_set_folio_order_range(inode->vfs_inode.i_mapping,
+ 				      inode->root->fs_info->block_min_order,
+ 				      inode->root->fs_info->block_max_order);
 
 -- 
 2.39.5

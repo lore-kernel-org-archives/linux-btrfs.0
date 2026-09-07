@@ -1,72 +1,76 @@
-Received: from mail-ot1-f49.google.com (mail-ot1-f49.google.com [209.85.210.49])
+Received: from mail-pl1-f174.google.com (mail-pl1-f174.google.com [209.85.214.174])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BFFC54854F0
-	for <linux-btrfs@vger.kernel.org>; Mon,  7 Sep 2026 11:41:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.49
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4DE5147CA83
+	for <linux-btrfs@vger.kernel.org>; Mon,  7 Sep 2026 11:48:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.174
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788781321; cv=none; b=X7P6cZtuCRNOJaIUZrJZlGX/rh/tZbWLGz+xamq93AqWFrW8fKEws4euKHG5taC2tA8mRAGSSdaj7R+KwlT5t8mkkR5xEfiXDJ0VvtmcfcHOmr/iNTkSzMTyN6VYq51z4PsttcvGxyKpzbQ1SieGjFJWSQAkChjdw1jyMOGkhUo=
+	t=1788781690; cv=none; b=VCVkrFJWHCSPR6vLYy99HLVlzjcailEpw5koOe3AWVm75QnlVVHbZ9F6aeLPrmPFOBViTvIJmSSfpOueH/CIzz+1J9k10t3s+7oZecX/uWKJW1Ly5JvdvF3quApNlhsQGRlm0+OWhrgQxD+AXK/LoqeHiPbmLjISMM7HZyFaP5o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788781321; c=relaxed/simple;
-	bh=GRnzLxhwx+KMA8dQXbJF1nYICvespjRZ9B/xjnv89cA=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=SnL4oCCD1jye4bySt5/XWoSSQg/aTgmJuShgI1syrNwrgq6HlN4bihUMLopZAYfVDYEmZJYGDHVEOQsu6bdBick42M/fR9EMIsS+4dFbtE8GI9Kk8zFrvYJINjE9//Q9x6JlhS7ImYkQ/XE5lUrctwaPTlbwKxBb0OiQs32sc/o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=CvJtqzZe; arc=none smtp.client-ip=209.85.210.49
+	s=arc-20240116; t=1788781690; c=relaxed/simple;
+	bh=TGbMSRctaX5jhPDgo8TGCoW6GnjLtJVIm7W+RZnDfS8=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=UqiAhAgDDROLTAbMWDZY2DcpYcQu6R5tzQqrazGAEBbRxkTappaKLkamY/HvrRCNEsRNawpY1HNkc9oeIkwGgk5Mx0q5yFWQtYMhlBaSrp5EhHBl1tQHNcYDpFB7cPB7pFRJ3OynKeGykLhLrRjH4OORjjFQ3VkEBNEsbzdRjE8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=qn2hFIXa; arc=none smtp.client-ip=209.85.214.174
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CvJtqzZe"
-Received: by mail-ot1-f49.google.com with SMTP id 46e09a7af769-7eb6573bd52so3297070a34.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 04:41:59 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="qn2hFIXa"
+Received: by mail-pl1-f174.google.com with SMTP id d9443c01a7336-2db18e5cb56so31195895ad.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 04:48:08 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1788781319; x=1789386119; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=bFUDeuM7NKoY997rtTdkncg5XyTEw+2EJnhFunl+bHE=;
-        b=CvJtqzZegIZcJAHGOsM4s44VSuu7n2PyC26YueBtmNLo5LPJ8aP02IHCWWszcR5rBf
-         ZAtIekPmhrybrTyCAMZYDRCu2WGnGIWjpsKOjBKTDhatAvNWatzuHUJcBWy48ifkQODL
-         Owjl9VHqOApQZF0Q+MvLNmj0hWyveQY0CMwcwXKb8D3u7SYQgQPrqBXIX6BMjffpFy9N
-         ZzX7t3zFCZBJRUA60SZmUy4NTlZNbJJ7T+hIMgKsv3bIec1Qt9SxjbVm75GQyr//+LII
-         JoVM+G47PuhZiukNWNddhf8Y4cWxQcnZgktPe8v/0aa7orsQRPnG/xsM8YE75JOZX3WK
-         lzcg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788781319; x=1789386119;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=gmail.com; s=20251104; t=1788781688; x=1789386488; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=bFUDeuM7NKoY997rtTdkncg5XyTEw+2EJnhFunl+bHE=;
-        b=pXK/DusYzhUKnM0ZGFc3aHc+ImjD0Eddz8WRJwW3hn48MKM9tiu9He10VDQd3VlWP5
-         NviWihjyt0lWcStg8uZzSAfr8DX64gM9+heL1cT0FesqPR8aCM3m2pzEg+3782LSyWzy
-         1wJqkTwIpotl3r7E2ACPy8GjcrH1p1tb8pRNPRVoa7phmAat6pgR0TMgRqUzvCAHsTkB
-         gg0x4XUGFnQi0zLTwwFAnHJEitRmKB8BJ4vMk8K7DMaXGrdrcMOnNrBdLbv7k7suiqbK
-         3msRArT7LHTnACQGEXiGvqtp6s07JCuOTFaiHBhLQFjgP5AD0dGSH0fZc/ywSMYwU3br
-         /gJg==
-X-Forwarded-Encrypted: i=1; AKwUvBxtP6wg9xVW88MygntwyrfwHOZW+JMq9byoBPqe3hcGjjC/8p0tyU7jONZRPQGOIYY4vsjPBPlPABikzg==@vger.kernel.org
-X-Gm-Message-State: AFuF++kmv+tCGB3/DvHIQqhNqNUQpLezIa2FUid4kv7brB6RmIygk/NG
-	iSdi0iwKnCqRUt8TP/r+D5LYnQsrKhbLrGE6WVuGb+cHcrPWxJaMtQAZ
-X-Gm-Gg: AYBFou0oyPPsUKsdg1huFvmop3csfoxheFBm3vCbiTivVV1gA66se/pYBsElUuu8rHJ
-	jzlFhrxetbCDgW8XAu/8gPnDo6fXjcXZvdEYm/4r4rmnPhYg+ywdjXcWSEAa4iYhrGtPTsaysA3
-	bswYzrzo5NEaaXfYxNjYL5kCFuQGbs+KCmzZrdBR5SHEd9NIxMJydbFu4iZJIFab7UY05f8650g
-	qYjLsNloMW4p3oowssoV99YgWWDAlrV8hSWab2ACXuBNvSz/eY2lai+xvekjxXr9onOSw46Shex
-	2Bk+9/08Iuo5ddOPiAHSBJlDTb7OtSIL9E7wTpl5mlMJGC5bvqHIuwRt4tB3CxN+Nez2UO2iIzQ
-	JZejFkDbRMWu+8n/6Zk7wrY4+Fthd/ajk587PPvlSR7PgnrxWUHNHjfly9KV6xbECSFNvARWU/e
-	vR16JOQsGqk1KRfBtwKpDXFtmMrxd+MyHaiR7rem+sQf3sfvCrwtFsni0O2BH8geNW1DCwfU0t/
-	GCizHO+qf26gu4jt2k/j7rG
-X-Received: by 2002:a05:6820:f034:b0:6b7:46fa:16a0 with SMTP id 006d021491bc7-6b746fa1a27mr12159798eaf.53.1788781318569;
-        Mon, 07 Sep 2026 04:41:58 -0700 (PDT)
+        bh=p29WlTfWVrQn534ptbrDbkRoo4ro4TG7QUYzDzPDAF0=;
+        b=qn2hFIXa8bvISMYq3rd6wsDe0EojK2Lx2mgFCLxv74iT+jNHd25JwSOe+aZMk0bab4
+         qWygx3wHjagV8KSJdYeS9VD+ncO0ZE6LbXacHXnmpZJV0bJMIpOeLbXzUuGyyCqmEK9M
+         lTWpd911ttElKEezzQ/cNa0ao8i2U6TeVJ5Mt81vBolA05SMZf+SwxIqWlDq2s8+zq9t
+         JCMnMesR+Xxmo5L1hNWBPWKT8pUpMMGNHd/YY8gWHnjn62Drf0Wwr7Tz8T9vOsdnCtkP
+         0E4ItbQRH5/XnRflpVd1PecmfZg33a00H4xCULc8R2eZG6PfAAwqYEdNc9D9OqXNmExU
+         VJHQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1788781688; x=1789386488;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=p29WlTfWVrQn534ptbrDbkRoo4ro4TG7QUYzDzPDAF0=;
+        b=pir+pMjITNj2Mo/abo2oUfqgdSGzqGSOlmdjhUIXlzNKt4EEfLmJDkPPt2pNYgPynU
+         zfx10xN2+z+2W5SfNxSiNM0Y4WE9v21HT20OOw0bdTZ6XUJp8p+uaICg+b/jEq41fSSd
+         GL+Kh3V2lf3SD0x1/PAbZdEth9YJ8h7dYNlL6oZ2U21CNFc3t/exK7GmxRvwaA3gAdS7
+         DnpGcJM/epXjJ46RZW/LlFL8OszyaG5JczIH2V+1MlI0ZvEMT3/+Nc491M2vZCngYW1P
+         LSUua5qWgUY3WRZXxHV4ADOJxu9NvUSVM7hyuPDGRVf56HjnhL3hGp1eetqdsyfcMS1c
+         VVBw==
+X-Forwarded-Encrypted: i=1; AKwUvBy3XeDAWlkHLF6r4bHF5QYyPellmARjRI9BM7RRo0WWMW4hy0WZsUns0yB//nz8NPGT/Pq3tdx4zwYSxQ==@vger.kernel.org
+X-Gm-Message-State: AFuF++lQ1Hefr+YQqaDHv5jdVq6rwFQfyJ5BL+PLFhaERXws2xdLLJLN
+	nnvMNgtiNdh8/a7v4TD+/sh/de5OhKjCik6AldWz0h7I1qge9aYdIVqa
+X-Gm-Gg: AYBFou3haZyldgSbHLvEqEd168USzJE/73rqY4/hXghEs15AGgRjVOT5D1AA2RrvLv8
+	S86bn1Yadzg7vqWRynvi9xn23nvMOqPx6FJx5Y/hwRXODlVTTcRhnaYqZe7HEKzVlhQvSzkG/cX
+	hLVWKLCEkyaAxdgpW7a1sXuRx/E7xihEJ3zEH/9W1njOuAi0SFnIuo/G3VO6n4pX7v8xzMZDN7k
+	xv4dpeETRPyEUr6xcLj4SRFi/0w9a6/6omhJAVHDNnRINvtDWDrRbAbCbAjpkpYqH0zSufiLsAH
+	T+uwHJY9ZS/lzCY5aoogx/9eU1ATz/GdpFXxEVQDQpgoeHkVI7ETzMKI987C+DS3sdfHJuOcojH
+	9dO8LVjWkYSVBtqFIuHpMJ+lw8lf2YwH3ZalgntGBeS+u/NyEQqgM0u0Iy2G7aKi61DyDcF0Eyb
+	7ZHxpK92q6F9/hSq6vmOVpJu3A7go0EvII84T/vjo83f9PrLpkLhelzVpag+YoHgG/zj1hZJaik
+	0TsK58xs1GTDCc=
+X-Received: by 2002:a17:903:2ca:b0:2d9:3850:2741 with SMTP id d9443c01a7336-2db12255f7bmr331441695ad.0.1788781688060;
+        Mon, 07 Sep 2026 04:48:08 -0700 (PDT)
 Received: from volcano9f6e-hostos.amd.com ([165.204.217.251])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1432435ec2bsm23897074c88.3.2026.09.07.04.41.56
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3339befe870sm30526079eec.30.2026.09.07.04.48.05
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 07 Sep 2026 04:41:58 -0700 (PDT)
+        Mon, 07 Sep 2026 04:48:07 -0700 (PDT)
 From: Hemanth Selam <hemanth.selam@gmail.com>
 To: David Sterba <dsterba@suse.com>
 Cc: Daniel Vacek <neelx@suse.com>,
 	Chris Mason <mason@kernel.org>,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: reflow comments left awkward by the typo fixes
-Date: Mon,  7 Sep 2026 17:11:53 +0530
-Message-ID: <20260907114153.39900-1-hemanth.selam@gmail.com>
+Subject: Re: [PATCH] btrfs: reflow comments left awkward by the typo fixes
+Date: Mon,  7 Sep 2026 17:18:02 +0530
+Message-ID: <20260907114802.16143-1-hemanth.selam@gmail.com>
 X-Mailer: git-send-email 2.48.1
+In-Reply-To: <20260907114153.39900-1-hemanth.selam@gmail.com>
+References: <20260907114153.39900-1-hemanth.selam@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -75,46 +79,16 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Removing the repeated words in rbio_orig_end_io() and
-rmw_assemble_write_bios() left two comments reading oddly: one now starts
-its second sentence in lower case and wraps early, and the other fits on a
-single line.  Reflow both, as Daniel Vacek pointed out.
+Please drop this patch.
 
-Comments only, no functional changes.
+You had already answered the question it tries to address:
 
-Assisted-by: Cursor:claude-opus-5
-Signed-off-by: Hemanth Selam <hemanth.selam@gmail.com>
----
- fs/btrfs/raid56.c | 9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
+  "Reformatting whole lines makes the typos harder to spot, so it's fine
+   to leave it like that and reformat at commit time eventually."
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 4f702dbf581b..47d6a313cbdf 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -953,8 +953,8 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t status)
- 
- 	/*
- 	 * Clear the data bitmap, as the rbio may be cached for later usage.
--	 * do this before unlock_stripe() so there will be no new bio
--	 * for this bio.
-+	 * Do this before unlock_stripe() so there will be no new bio for this
-+	 * bio.
- 	 */
- 	bitmap_clear(&rbio->dbitmap, 0, rbio->stripe_nsectors);
- 
-@@ -1450,10 +1450,7 @@ static int rmw_assemble_write_bios(struct btrfs_raid_bio *rbio,
- 	/* We should have at least one data sector. */
- 	ASSERT(bitmap_weight(&rbio->dbitmap, rbio->stripe_nsectors));
- 
--	/*
--	 * Reset errors, as we may have errors inherited from degraded
--	 * write.
--	 */
-+	/* Reset errors, as we may have errors inherited from degraded write. */
- 	bitmap_clear(rbio->error_bitmap, 0, rbio->nr_sectors);
- 
- 	/*
--- 
-2.48.1
+I sent it after reading Daniel's comments but before reading your reply
+to them, so I reflowed the two comments you had just said not to reflow.
+Entirely my fault, and easily avoided if I had read the whole thread
+first.  Sorry for the noise.
 
+The typo fixes already in for-next are unaffected.

@@ -1,41 +1,41 @@
 Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C59E73876A9;
-	Mon,  7 Sep 2026 06:29:36 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 682253B19B6;
+	Mon,  7 Sep 2026 06:30:33 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788762582; cv=none; b=fRh0m5PMtjVbftwpHaacnGhyidn/P3nTZdaaVpyj79/KegVF2FtFSwRC9DFohQhlUjGd3JtpH0ntjKBt2Xz5BSFz40BjMXY8643rBb77lSfVh3hza6ClAtDTvogKndjj634IKp6o7J2HXmhpNWCCYEsIOnIyZB0yDqqh5P7Ez2Q=
+	t=1788762637; cv=none; b=OZYQoCK0RmBr+ezstbX9V3H/3G7Yeevu7WrDucR5roDsNG1ShfLD4Yc1UPqXCl3/B8OpkNlKpSz3l/dP/p1dZsqNZ8YbdLFcC75HhIJ30OAoHQP4aJxdcA7WRwRFGweaL21gAYHea40pMpAWFHySS21HuoJEE3F4LXkUYemFhgs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788762582; c=relaxed/simple;
-	bh=S6D0FE4Se/ruzpUXLSU6J/AaHfk2ITGOCyVV5lskCMM=;
+	s=arc-20240116; t=1788762637; c=relaxed/simple;
+	bh=FWTjpzUXzxFAil0FZFP2Ug04K526azlavwV5haeWFug=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=uDwanJAB64HqS2eVuaQfKquDnDs2sUhNWKeWgXaIhrpKW80ULwpnEQwVhUd0Fm1m90ZEG9gVqwtlWfc0i2c18D8qSyngCw+2IbUjku4JY8Rs0xoTKN08KY1p8L0XszCCpho5W79lmXuoIdjdPMIxDTrCOK+nPyq4IbGB8Bdunbg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=OULw+Da2; arc=none smtp.client-ip=212.227.15.18
+	 In-Reply-To:Content-Type; b=ufgTV8kpl5tIxcU32e6vBRm7nyeP7Ltc9gwmc/L9JIMLIZzs6kn01z6XSA7ZUM6n30LVRTdjn7BCLt2bGgjWXQL7mW4TakhuOet6BRfjrlc0zM1EVNd5ONqWA9e0F8eOlZFLYK1HJqf64Icg8K/anYub7wTqU4Adqw5Yj9lisK4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=TFwkLuUo; arc=none smtp.client-ip=212.227.15.18
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="OULw+Da2"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="TFwkLuUo"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1788762574; x=1789367374; i=quwenruo.btrfs@gmx.com;
-	bh=t6DtV5JOlgzM1Je24mA4EjdIv+XGNsRWxN7U0Z+sWD0=;
+	s=s31663417; t=1788762630; x=1789367430; i=quwenruo.btrfs@gmx.com;
+	bh=+DfA4GaD3zsnCcYB1CG+rO5TRwIYbuU53+8O1ymJvgI=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=OULw+Da2P3grhRk+1JOwagbw3qEvfSm0KWii46clDpoMUfbBg4i6gcxfUmzKAD2V
-	 vJli4qvK8nXUNngcqqNQwrHpfsci8jzN88e9IKq0PnPKi7YiIJKfkoThCZ31CStD7
-	 CUfD8yR/C6SD1JCxx/rL9LJ/ID4BqNHgQ6J2klNylRYa0oioymb/FYKa1MC0tEv9e
-	 2LQE5NH9iGo7QyAyXLS/6DpT4NKkY/76HSLI/grP7uvuot+IeBAoeFgCThXFD13Xj
-	 khjJg/qHlcoAik6DQ1dLo44RQt31abdJjwGrOCGkiLT9VLebaYCGlPD9XFkBwFMtj
-	 Kl1BLvBQAx0iud+LXA==
+	b=TFwkLuUoBx5w5MeHUCjv+xOiXMdlbxHiimnWgnbg8BwsBd9LHpCvU0J2StIrlbZh
+	 mqV/9//C8ocmrLR3KOll+NPjnW7wBGrqJMKGXKfLAcZrcKApSZwlXwCibgcrIzlfa
+	 33abdir2k9F+Qv3sKdPw9lPq1/t+6dqMSBIht0hAnbYPpi4Wq8kI9FZzLMzUmkcY2
+	 OXK2huWHhvi7+9Knt38k/XRlu3Mzv7UzGzhtyIk7s6PHXk+4eCJ5Xo8HL1FHBMzXC
+	 WmX7eEyjWUTOYUR6iocG0pQ+W+7s+Pv/d1Miysthy4AOxa3huvGJcyB4NkCCdWkAf
+	 LkE6NQDlIkcsy6reEQ==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
 Received: from client.hidden.invalid by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1M5fIW-1wwI7j1ORu-008Xrb; Mon, 07
- Sep 2026 08:29:34 +0200
-Message-ID: <631c8d65-417a-40ed-af3b-c3a93b4b681c@gmx.com>
-Date: Mon, 7 Sep 2026 15:59:27 +0930
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MAwbz-1xAMlo2O7d-00CAA2; Mon, 07
+ Sep 2026 08:30:30 +0200
+Message-ID: <1a1d2b1d-d533-4f79-abaf-0aea60f895e2@gmx.com>
+Date: Mon, 7 Sep 2026 16:00:24 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,14 +43,14 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 02/10] btrfs: tests: convert test_find_delalloc() to use
- folios
+Subject: Re: [PATCH 01/10] btrfs: tests: rename process_page_range() to
+ process_folio_range()
 To: Tal Zussman <tz2294@columbia.edu>, David Sterba <dsterba@suse.com>,
  Chris Mason <mason@kernel.org>
 Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 References: <20260906-btrfs-folio-conversions-v1-0-834b9d7b06f5@columbia.edu>
- <20260906-btrfs-folio-conversions-v1-2-834b9d7b06f5@columbia.edu>
+ <20260906-btrfs-folio-conversions-v1-1-834b9d7b06f5@columbia.edu>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -77,387 +77,186 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
  +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
  HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260906-btrfs-folio-conversions-v1-2-834b9d7b06f5@columbia.edu>
+In-Reply-To: <20260906-btrfs-folio-conversions-v1-1-834b9d7b06f5@columbia.edu>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:cEm6rZyTF5O+Xv3mob+VI233YD79Lw1q+EhvwcQdrmBrZgzMilb
- CybmxFCpwJzH+WBv4TEEY9f1AQdlvZIUocxAexH+1Y/nywHLfvUBlt/vBkq3V8JiUVlBR5w
- xNuaovSOZmxvCzG/MvlrL/Bk+C0dQC7NREFygHGv20xmyzriitbAz45g6kdFLT5bsyZ806w
- emSvnH3qMDTTQBhVgyw6Q==
+X-Provags-ID: V03:K1:qNqKZQW4j170AzAbFOofdqGwj7Haauxwx+DWSszVPrA+b8L5zJ2
+ E6O+QXzFEEmWXC+LMXVTwpD3rK6PMW9n6Vq3anNJyudZyOgCwTrnQ3XvSNzPJZxTYm+1D0n
+ bnEPrPdTzIjNo2ioVEY+RgLWqV0IGqo9d8m3PF/B2GtvDBKZRjWD9C0Q7QI6klETsFBIvtq
+ KRZRlN6mHIS9Mfke4dtJw==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:CjUSBINhAF0=;nT0GvguScprDCILRF15m9qXYxhv
- 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
- Il01aNpxD9wWy6+8uCCF5eKxTVxJrf0YUvg==
+UI-OutboundReport: notjunk:1;M01:P0:jmQCqKbwBtU=;jxyjq3IIZ0Py4GlHFO+AH75lmBf
+ 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
+ DHXvNuW5pGZIQ
 
 
 
 =E5=9C=A8 2026/9/7 07:59, Tal Zussman =E5=86=99=E9=81=93:
-> This removes the last btrfs callers of find_or_create_page(),
-> find_lock_page(), SetPageDirty(), ClearPageDirty(), and get_page(), and
-> 15 calls to compound_head(). The folio lookups return an ERR_PTR instead
-> of NULL, so adjust the error handling.
->=20
-> Update the comments and test messages accordingly.
-
-I think the interface change itself is fine, although still some minor=20
-concerns inlined below.
+> It already operates on folios. No functional change.
 >=20
 > Signed-off-by: Tal Zussman <tz2294@columbia.edu>
-> ---
->   fs/btrfs/tests/extent-io-tests.c | 94 ++++++++++++++++++++------------=
-=2D-------
->   1 file changed, 46 insertions(+), 48 deletions(-)
->=20
-> diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io=
--tests.c
-> index 6eb55bfb2bd4..3056dd934b54 100644
-> --- a/fs/btrfs/tests/extent-io-tests.c
-> +++ b/fs/btrfs/tests/extent-io-tests.c
-> @@ -112,8 +112,8 @@ static int test_find_delalloc(u32 sectorsize, u32 no=
-desize)
->   	struct btrfs_root *root =3D NULL;
->   	struct inode *inode =3D NULL;
->   	struct extent_io_tree *tmp;
-> -	struct page *page;
-> -	struct page *locked_page =3D NULL;
-> +	struct folio *folio;
-> +	struct folio *locked_folio =3D NULL;
->   	/* In this test we need at least 2 file extents at its maximum size *=
-/
->   	u64 max_bytes =3D BTRFS_MAX_EXTENT_SIZE;
->   	u64 total_dirty =3D 2 * max_bytes;
-> @@ -152,23 +152,24 @@ static int test_find_delalloc(u32 sectorsize, u32 =
-nodesize)
->   	btrfs_extent_io_tree_init(NULL, tmp, IO_TREE_SELFTEST);
->  =20
->   	/*
-> -	 * First go through and create and mark all of our pages dirty, we pin
-> -	 * everything to make sure our pages don't get evicted and screw up ou=
-r
-> +	 * First go through and create and mark all of our folios dirty, we pi=
-n
-> +	 * everything to make sure our folios don't get evicted and screw up o=
-ur
->   	 * test.
->   	 */
->   	for (pgoff_t index =3D 0; index < (total_dirty >> PAGE_SHIFT); index+=
-+) {
-> -		page =3D find_or_create_page(inode->i_mapping, index, GFP_KERNEL);
-> -		if (!page) {
-> -			test_err("failed to allocate test page");
-> -			ret =3D -ENOMEM;
-> +		folio =3D __filemap_get_folio(inode->i_mapping, index,
-> +				FGP_LOCK | FGP_ACCESSED | FGP_CREAT, GFP_KERNEL);
 
-No matter if it's the older or newer code, it's not exactly following=20
-the real kernel behavior.
-
-We're relying on the fact that the test inode doesn't have a folio order=
-=20
-range set, thus we always get page size folios.
-> +		if (IS_ERR(folio)) {
-> +			test_err("failed to allocate test folio");
-> +			ret =3D PTR_ERR(folio);
->   			goto out;
->   		}
-> -		SetPageDirty(page);
-> +		folio_set_dirty(folio);
-
-We only need to update the folio flags, no need to bother the possible=20
-bitmaps for bs < ps cases, or large folio cases exactly because we=20
-always get page sized folio, and for now the test case only handles bs=20
-=3D=3D ps cases.
-
-I'm not pushing for using btrfs_folio_set_dirty() helpers immediately,=20
-but an "ASSERT(folio_order(folio) =3D=3D 0);" would be a little safer.
-
->   		if (index) {
-> -			unlock_page(page);
-> +			folio_unlock(folio);
->   		} else {
-> -			get_page(page);
-> -			locked_page =3D page;
-> +			folio_get(folio);
-> +			locked_folio =3D folio;
->   		}
->   	}
->  =20
-> @@ -179,8 +180,7 @@ static int test_find_delalloc(u32 sectorsize, u32 no=
-desize)
->   	btrfs_set_extent_bit(tmp, 0, sectorsize - 1, EXTENT_DELALLOC, NULL);
->   	start =3D 0;
->   	end =3D start + PAGE_SIZE - 1;
-> -	found =3D find_lock_delalloc_range(inode, page_folio(locked_page), &st=
-art,
-> -					 &end);
-> +	found =3D find_lock_delalloc_range(inode, locked_folio, &start, &end);
->   	if (!found) {
->   		test_err("should have found at least one delalloc");
->   		goto out_bits;
-> @@ -191,8 +191,8 @@ static int test_find_delalloc(u32 sectorsize, u32 no=
-desize)
->   		goto out_bits;
->   	}
->   	btrfs_unlock_extent(tmp, start, end, NULL);
-> -	unlock_page(locked_page);
-> -	put_page(locked_page);
-> +	folio_unlock(locked_folio);
-> +	folio_put(locked_folio);
->  =20
->   	/*
->   	 * Test this scenario
-> @@ -201,17 +201,17 @@ static int test_find_delalloc(u32 sectorsize, u32 =
-nodesize)
->   	 *           |--- search ---|
->   	 */
->   	test_start =3D SZ_64M;
-> -	locked_page =3D find_lock_page(inode->i_mapping,
-> -				     test_start >> PAGE_SHIFT);
-> -	if (!locked_page) {
-> -		test_err("couldn't find the locked page");
-> +	locked_folio =3D filemap_lock_folio(inode->i_mapping,
-> +					  test_start >> PAGE_SHIFT);
-> +	if (IS_ERR(locked_folio)) {
-> +		test_err("couldn't find the locked folio");
-> +		locked_folio =3D NULL;
->   		goto out_bits;
->   	}
->   	btrfs_set_extent_bit(tmp, sectorsize, max_bytes - 1, EXTENT_DELALLOC,=
- NULL);
->   	start =3D test_start;
->   	end =3D start + PAGE_SIZE - 1;
-
-The same here, the range only works if the folio is page sized.
-
-Thus an ASSERT() would be preferred for every range that is still based=20
-on PAGE_SIZE.
-
-Otherwise looks good to me.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
 
-> -	found =3D find_lock_delalloc_range(inode, page_folio(locked_page), &st=
-art,
-> -					 &end);
-> +	found =3D find_lock_delalloc_range(inode, locked_folio, &start, &end);
->   	if (!found) {
->   		test_err("couldn't find delalloc in our range");
->   		goto out_bits;
-> @@ -223,12 +223,12 @@ static int test_find_delalloc(u32 sectorsize, u32 =
-nodesize)
->   	}
->   	if (process_folio_range(inode, start, end,
->   				PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
-> -		test_err("there were unlocked pages in the range");
-> +		test_err("there were unlocked folios in the range");
->   		goto out_bits;
->   	}
->   	btrfs_unlock_extent(tmp, start, end, NULL);
-> -	/* locked_page was unlocked above */
-> -	put_page(locked_page);
-> +	/* locked_folio was unlocked above */
-> +	folio_put(locked_folio);
+> ---
+>   fs/btrfs/tests/extent-io-tests.c | 20 ++++++++++----------
+>   1 file changed, 10 insertions(+), 10 deletions(-)
+>=20
+> diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io=
+-tests.c
+> index 23459cd4e503..6eb55bfb2bd4 100644
+> --- a/fs/btrfs/tests/extent-io-tests.c
+> +++ b/fs/btrfs/tests/extent-io-tests.c
+> @@ -18,8 +18,8 @@
+>   #define PROCESS_RELEASE		(1U << 1)
+>   #define PROCESS_TEST_LOCKED	(1U << 2)
 >  =20
->   	/*
->   	 * Test this scenario
-> @@ -236,16 +236,16 @@ static int test_find_delalloc(u32 sectorsize, u32 =
-nodesize)
->   	 *                    |--- search ---|
->   	 */
->   	test_start =3D max_bytes + sectorsize;
-> -	locked_page =3D find_lock_page(inode->i_mapping, test_start >>
-> -				     PAGE_SHIFT);
-> -	if (!locked_page) {
-> -		test_err("couldn't find the locked page");
-> +	locked_folio =3D filemap_lock_folio(inode->i_mapping,
-> +					  test_start >> PAGE_SHIFT);
-> +	if (IS_ERR(locked_folio)) {
-> +		test_err("couldn't find the locked folio");
-> +		locked_folio =3D NULL;
->   		goto out_bits;
->   	}
->   	start =3D test_start;
->   	end =3D start + PAGE_SIZE - 1;
-> -	found =3D find_lock_delalloc_range(inode, page_folio(locked_page), &st=
-art,
-> -					 &end);
-> +	found =3D find_lock_delalloc_range(inode, locked_folio, &start, &end);
->   	if (found) {
->   		test_err("found range when we shouldn't have");
->   		goto out_bits;
-> @@ -265,8 +265,7 @@ static int test_find_delalloc(u32 sectorsize, u32 no=
+> -static noinline int process_page_range(struct inode *inode, u64 start, =
+u64 end,
+> -				       unsigned long flags)
+> +static noinline int process_folio_range(struct inode *inode, u64 start,=
+ u64 end,
+> +					unsigned long flags)
+>   {
+>   	int ret;
+>   	struct folio_batch fbatch;
+> @@ -221,8 +221,8 @@ static int test_find_delalloc(u32 sectorsize, u32 no=
 desize)
->   	btrfs_set_extent_bit(tmp, max_bytes, total_dirty - 1, EXTENT_DELALLOC=
-, NULL);
->   	start =3D test_start;
->   	end =3D start + PAGE_SIZE - 1;
-> -	found =3D find_lock_delalloc_range(inode, page_folio(locked_page), &st=
-art,
-> -					 &end);
-> +	found =3D find_lock_delalloc_range(inode, locked_folio, &start, &end);
->   	if (!found) {
->   		test_err("didn't find our range");
->   		goto out_bits;
-> @@ -278,36 +277,35 @@ static int test_find_delalloc(u32 sectorsize, u32 =
-nodesize)
->   	}
->   	if (process_folio_range(inode, start, end,
->   				PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
-> -		test_err("pages in range were not all locked");
-> +		test_err("folios in range were not all locked");
+>   				test_start, max_bytes - 1, start, end);
 >   		goto out_bits;
 >   	}
->   	btrfs_unlock_extent(tmp, start, end, NULL);
->  =20
->   	/*
-> -	 * Now to test where we run into a page that is no longer dirty in the
-> +	 * Now to test where we run into a folio that is no longer dirty in th=
-e
->   	 * range we want to find.
->   	 */
-> -	page =3D find_get_page(inode->i_mapping,
-> -			     (max_bytes + SZ_1M) >> PAGE_SHIFT);
-> -	if (!page) {
-> -		test_err("couldn't find our page");
-> +	folio =3D filemap_get_folio(inode->i_mapping,
-> +				  (max_bytes + SZ_1M) >> PAGE_SHIFT);
-> +	if (IS_ERR(folio)) {
-> +		test_err("couldn't find our folio");
+> -	if (process_page_range(inode, start, end,
+> -			       PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
+> +	if (process_folio_range(inode, start, end,
+> +				PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
+>   		test_err("there were unlocked pages in the range");
 >   		goto out_bits;
 >   	}
-> -	ClearPageDirty(page);
-> -	put_page(page);
-> +	folio_clear_dirty(folio);
-> +	folio_put(folio);
->  =20
->   	/* We unlocked it in the previous test */
-> -	lock_page(locked_page);
-> +	folio_lock(locked_folio);
->   	start =3D test_start;
->   	end =3D start + PAGE_SIZE - 1;
->   	/*
-> -	 * Currently if we fail to find dirty pages in the delalloc range we
-> +	 * Currently if we fail to find dirty folios in the delalloc range we
->   	 * will adjust max_bytes down to PAGE_SIZE and then re-search.  If
->   	 * this changes at any point in the future we will need to fix this
->   	 * tests expected behavior.
->   	 */
-> -	found =3D find_lock_delalloc_range(inode, page_folio(locked_page), &st=
-art,
-> -					 &end);
-> +	found =3D find_lock_delalloc_range(inode, locked_folio, &start, &end);
->   	if (!found) {
->   		test_err("didn't find our range");
->   		goto out_bits;
-> @@ -319,7 +317,7 @@ static int test_find_delalloc(u32 sectorsize, u32 no=
+> @@ -276,8 +276,8 @@ static int test_find_delalloc(u32 sectorsize, u32 no=
 desize)
->   	}
->   	if (process_folio_range(inode, start, end, PROCESS_TEST_LOCKED |
->   				PROCESS_UNLOCK)) {
-> -		test_err("pages in range were not all locked");
-> +		test_err("folios in range were not all locked");
+>   			 test_start, total_dirty - 1, start, end);
 >   		goto out_bits;
 >   	}
->   	ret =3D 0;
-> @@ -328,8 +326,8 @@ static int test_find_delalloc(u32 sectorsize, u32 no=
+> -	if (process_page_range(inode, start, end,
+> -			       PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
+> +	if (process_folio_range(inode, start, end,
+> +				PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
+>   		test_err("pages in range were not all locked");
+>   		goto out_bits;
+>   	}
+> @@ -317,8 +317,8 @@ static int test_find_delalloc(u32 sectorsize, u32 no=
 desize)
->   		dump_extent_io_tree(tmp);
->   	btrfs_clear_extent_bit(tmp, 0, total_dirty - 1, (unsigned)-1, NULL);
+>   			 test_start, test_start + PAGE_SIZE - 1, start, end);
+>   		goto out_bits;
+>   	}
+> -	if (process_page_range(inode, start, end, PROCESS_TEST_LOCKED |
+> -			       PROCESS_UNLOCK)) {
+> +	if (process_folio_range(inode, start, end, PROCESS_TEST_LOCKED |
+> +				PROCESS_UNLOCK)) {
+>   		test_err("pages in range were not all locked");
+>   		goto out_bits;
+>   	}
+> @@ -330,8 +330,8 @@ static int test_find_delalloc(u32 sectorsize, u32 no=
+desize)
 >   out:
-> -	if (locked_page)
-> -		put_page(locked_page);
-> +	if (locked_folio)
-> +		folio_put(locked_folio);
->   	process_folio_range(inode, 0, total_dirty - 1,
->   			    PROCESS_UNLOCK | PROCESS_RELEASE);
+>   	if (locked_page)
+>   		put_page(locked_page);
+> -	process_page_range(inode, 0, total_dirty - 1,
+> -			   PROCESS_UNLOCK | PROCESS_RELEASE);
+> +	process_folio_range(inode, 0, total_dirty - 1,
+> +			    PROCESS_UNLOCK | PROCESS_RELEASE);
 >   	iput(inode);
+>   out_root_info:
+>   	btrfs_free_dummy_root(root);
 >=20
 

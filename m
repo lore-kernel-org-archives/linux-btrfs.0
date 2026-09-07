@@ -1,464 +1,240 @@
-Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oo1-f46.google.com (mail-oo1-f46.google.com [209.85.161.46])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3102B4CCDEC
-	for <linux-btrfs@vger.kernel.org>; Mon,  7 Sep 2026 00:58:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2890D3783C6
+	for <linux-btrfs@vger.kernel.org>; Mon,  7 Sep 2026 04:48:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.46
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788742712; cv=none; b=kPyc9sXTWxmMkA5CjVv4Irbr9lSrHTjPrsCGOYorrkM8eIb2Bj3OrAR7eqBOihIP10h3Y1HusUK0AGETKqqBuKprDBbOqPdtKuzRCsEm+I29J8j1t9cW43u+2hhNLQctgg0R3IIWMU+436g7QjicCovYo0IziW8qzLwoOABZJlg=
+	t=1788756488; cv=none; b=Wisg6QRawxUf3N+p2UZrMdEkAlOUlG4D3H/eSvFpMQHbOObea4Dw0TAVN73Va6TkhSxA8n4a/0/+dnP6seLX4zV3ph0fIqvErQo5/nw+eQmDIEHk4hg3jtsGaG1369Ou1wh6xH5ms7Br673GKcLVrYmFXdLhhHD0QWv79UteZbI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788742712; c=relaxed/simple;
-	bh=+kF1yGBNRDZ5yZTJZiQkov4/yAZ0AolojLlu5FiqQ1E=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=lGsdy23v25ac+gvxZAiLwrRslm5D5YSuykQzEYf5avPcfM8JFEIS5n8umqA+o1PfmRx7mNqjP43Otmwyjg3h0NPynrrZSbOZ3DNhGsjyoNmSiZkdeAmIYkYCL3jNwp1hgAJbiDkxZxhRyJ3B7DYa9mzBXyon9rZf553Uc49E24Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=prXyj9ns; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=KD6dpEOA; arc=none smtp.client-ip=148.163.139.74
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
+	s=arc-20240116; t=1788756488; c=relaxed/simple;
+	bh=yE73HYjIWFsMgXM5M9g2jmcIxbPu6z7OKfJu9nuOozk=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=dKR43jQC4C95cnrwB7DptS+Tk3UFGUtR6LFsvF1tnUxmcPgshgjrmssatzR4D7qNz76FCcmwpnpK6KilE2NirnTTf2IBv7Jj/SM87poWi/Oabe9Q7YR4A+6HEtfqoaNpsir/rz05rnExURbrFyAUTVwY6WzwShqBcne/fIngIfg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=Juvz6RhL; arc=none smtp.client-ip=209.85.161.46
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="prXyj9ns";
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="KD6dpEOA"
-Received: from pps.filterd (m0167074.ppops.net [127.0.0.1])
-	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 6870alnF849959
-	for <linux-btrfs@vger.kernel.org>; Sun, 6 Sep 2026 20:58:29 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
-	cc:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pps01; bh=KcXG
-	YtUIwF5Or/l7KChNhyD2RuvfOjRJMWTdTN5AEIM=; b=prXyj9nsU1fFjQrHlArO
-	MvkFGxjHNzpXIokGq+nbN7wW5gY6gM9VFj849owjTEySBNpNdL4z/dsqATOt/Pbo
-	Egr46IXmNLjSHcH4iBkEiJcqXXgSNjYzqEKWa7usyrZ2l0PRKJ9/b10OZ3GndrBD
-	Ov92RyhP7OA2IUvRy/+uERdVTxUQ3ZL6u4ptS4YEF9j7/FjoH66uBm28MAMQuM8O
-	bVIJsGdjxRm0RTvDyu4qTUVpAhjRBTDGW0S+K/Z+QmAjc4rai6lcbJSkwsD2kKin
-	8QktMJeqzaozfQg28K3ci3ArSACAC4kVG/Eag2bz502pVngOkD/rM3TBkLtFwexC
-	yA==
-Received: from mail-qt1-f199.google.com (mail-qt1-f199.google.com [209.85.160.199])
-	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4ghf7qgtb2-1
-	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 20:58:28 -0400 (EDT)
-Received: by mail-qt1-f199.google.com with SMTP id d75a77b69052e-53018848232so32844161cf.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 17:58:28 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Juvz6RhL"
+Received: by mail-oo1-f46.google.com with SMTP id 006d021491bc7-6b1afdf98dfso1949999eaf.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Sep 2026 21:48:06 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1788742708; x=1789347508; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=KcXGYtUIwF5Or/l7KChNhyD2RuvfOjRJMWTdTN5AEIM=;
-        b=KD6dpEOAS/gBM3cSIVY6i/neOcbFcH8XtMOTlppbVejgRGFtv/UEA/2Ko2P+RaexMW
-         6l05RUbHlqj39TmGqEZaocZ36U2WbNAUFt+2uP/uqSVdqvvPoJAAT209eufptMO4He/o
-         7HHYrOJmAw9iRYSsGwENVPWYkjhe1GLWBn4eS8nRK1B+/iMy+I+uvR4I2LkhScveDwUH
-         Uiterh8rtwgfZEOQz1my4Gf6S0V8vSUcKcErEAhzXXu4POd/OUuHRAKFlMSACUtCDF5P
-         cSqSMeINZ2xJYM4EzfVnrm+/1/i7dxKK0ZyP/XEyfHUy/eB1ua0xn7Z8nZ5pXgHTbTZz
-         L+jQ==
+        d=gmail.com; s=20251104; t=1788756486; x=1789361286; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=Dp9p5ajTef11aSUbLM0CCYywOKyybhsy5AMpH775xoI=;
+        b=Juvz6RhLg8meuLQOqT9qKBrXrGWz9q77uTEzj/OjoULMGD0bNBcZngZHnbVCJ1nX0C
+         2dabxu4eO0sombDaZMfyJqs/kbwZdAVQBZ2nZXAV9TM6bHK5yhAF7j2GP2g9L8FqmuMz
+         lJprsyeGpBKgT712ifgTZ48GaOcRgmOIbB0ln1CgVUDrIPY/vmHIFcECu+zrcVgFO2Mr
+         5dfGCbpLQ7nEclrC2k5iv/+c2K0+iXNQr21xOs5dTA8RRP2ewl6ZLezfDRAZg8uF2kkp
+         kDMV159HWB7ORCypPDLpwPu1XfIFSeCHs/JfztoVrmOqvaPt41j+1ehXnY1SyPMMf/vZ
+         cpmw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788742708; x=1789347508;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20251104; t=1788756486; x=1789361286;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=KcXGYtUIwF5Or/l7KChNhyD2RuvfOjRJMWTdTN5AEIM=;
-        b=T/uRAna8e++P2d7JO4mxfO9Qyxho5dffBieDMq5GV+M2I7CRQiBcGhu0Ca7s2j6ssy
-         iB72C4mrZRk010o0cM3iV8o81DebrWekiirVHOulOzJZTdIjzmboqJxhoA0wE9rMTOsO
-         7ffk3U8+JST4aX3q5BmW70yE/IDpguTK8ujV3p75i4EcVOLD+GMp+5ZglDns0++JexAM
-         htx0tbivn4jqIKp6Merceaf78o+peu/+2A712C8hiY06xIgwBvsuopmhXd54JiOm0Lhf
-         F78mRzf0HPAO1lmKpbFYNwc+N/E35tTfXP96CESqp5259Ke6w074J/5M16LY0p2f0pbZ
-         2XSg==
-X-Forwarded-Encrypted: i=1; AKwUvBwXqcPJWUx4S7aahDan/1pLhaa1R5S29zTJWTOxOWC7R+6vquWljzKVIA21K3lh4KnFFzoAQVmPO3aooA==@vger.kernel.org
-X-Gm-Message-State: AFuF++nlLfWP5HB7dzehsIl4gYAuPHb9lnpDVAYTXZGXvqXXci+LpiWo
-	DtqCee+nYwRzrZrmj4RE1MbR7ZJ1g15hnTlugHs7V9FLs2JCf+TGkwK6FY9kYn5sdbwBA3OCMHr
-	BNQdHnKDhrUhXqn3FFS3fVOfVu1rUa5Qb+t7lR7i2L8q9ISZor2Pa1Boql4XOa54+iaoDJvY=
-X-Gm-Gg: AYBFou3Q3ZnqWGNpg2eBHE4wuxBa65E+lkwb4WB/K4WmjiapmMAcMFYel5gXHPIPHBY
-	ruMossZM2/6JHymhESbqhXavnH+X9uwoOBgpmEQoBT1RmHTHn5Sz2uIP5FNf9OtQAtmwyfHe2pc
-	1qfdZ+zgE10CDuUmnyzc1g2f0WyvaKwL4+vnfHrN7D7CNFu2DLS07T9hqnw1IntT6RjzWKQk0WW
-	HIoce1o+alcZ3kYJD2uM9RXhptA50SQ44Eax1CSKerrK7mdrAR7hQE/K7JCXojjm/IB6VS+1dWK
-	XzrTMFZkrjjVC76byqpbonxxD544XamWpRoXrW5YZq1jlgH/Db+M/Mu/kFNXUEu/xryR+bU00P9
-	2daKOTSO5V0gI6uVS+RmrM7jsocWSUYH+5r4v0WQih0sC4Z1YrA==
-X-Received: by 2002:a05:622a:558e:b0:52e:22f3:80cf with SMTP id d75a77b69052e-53054956db4mr213445991cf.32.1788742708188;
-        Sun, 06 Sep 2026 17:58:28 -0700 (PDT)
-X-Received: by 2002:a05:622a:558e:b0:52e:22f3:80cf with SMTP id d75a77b69052e-53054956db4mr213445621cf.32.1788742707603;
-        Sun, 06 Sep 2026 17:58:27 -0700 (PDT)
-Received: from [192.168.1.62] (dyn-160-39-33-242.dyn.columbia.edu. [160.39.33.242])
-        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91040693abbsm79644906d6.37.2026.09.06.17.58.26
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 06 Sep 2026 17:58:27 -0700 (PDT)
-Message-ID: <4450baf6-a8a4-4081-a409-c3206722d2e4@columbia.edu>
-Date: Sun, 6 Sep 2026 20:58:26 -0400
+        bh=Dp9p5ajTef11aSUbLM0CCYywOKyybhsy5AMpH775xoI=;
+        b=EOJg3kRbcqSlNZP1c5YthGAWJw/v64yHI2ZDG71ZeugjerS58SzxxXrJK/C0VOzbn1
+         kYZdB5gmMHASZ7s014sB9ZoezInQPhDJVCiGpsvvsbKv7jFYmMkvXnFoeOD639gB9q+Y
+         zkWTU2/0RpMVFC2X098I9AH4fptGpfThGO1stX2SxoZURm91BG78Ee1U8RZFSRtcswLI
+         NMF/JbSggRJVnITr0Y/pDvTwwONfUf3FlMV0Idn8JfFVgwFuaqkGh/8VgFLU9HpOUKQ/
+         KbX+qpKgRE/dqK/7vsvuwDFj+Uvf1dIGtqU52XRJUy2HlNiJHNDR3YPx4Mu4ReLGg761
+         NEvg==
+X-Gm-Message-State: AFuF++mbbBZpfEOYdw4I11zkmFist+HAzHavrlTHpcWCGwa6BIjaPagG
+	qyCQtrq7HS5wFyrO94Y7WTBVBYPH8lD7j79Fo68yBVS4y8hg+pVA2G3K
+X-Gm-Gg: AYBFou3YVDwwPHycFL3WeHfeoDksB6t/Ku2BwzIn8Ga55lKFwdFP+cL4GZnInBHjHAs
+	AdeEC0ojHXBQrG3ficgVRfmAZGQS/PBNMMd74NQ1Dxn8fBQMQCXrffrntflcbJAFAFlz1e6KbY8
+	XrZTrFZTRXbDfI4jfz3YNLN+rRNdiefvnUGRh2I2eR9oMUsMBPN7iHmZqJr2bVlJjimoqQULHp7
+	lvijKx68/bDw4l4mBow40MuArH+ST6r42bIK5pDQZ+a+4rxfZpPrLsb0sfS9J46Q8y+lB8xM8MS
+	XV5mt2A9RYIVzH3zvY+aEnW2r7JvNgYQMBQgZJuZgSOxeYlomUo0Ziyirp/cMx09fqYZFWDyTXn
+	JpZYt64OovWD2J5H44URrfRAmK1L+/cwuFzML3P5nd1BYvWDyLilPCKDPF9ubpjGmOsbGbA+YFU
+	s2B/b7wfBznX0EY4BNq8qIGxU9dE66yUf7diuCsrhK94hKsSqAAXUzwJan+nIZlQqMKgG1rpH58
+	DP9km4KQhGJjKs=
+X-Received: by 2002:a4a:ec49:0:b0:6b8:d957:2803 with SMTP id 006d021491bc7-6b8d9572e0bmr6372376eaf.20.1788756485966;
+        Sun, 06 Sep 2026 21:48:05 -0700 (PDT)
+Received: from volcano9f6e-hostos.amd.com ([165.204.217.251])
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-143240d86c3sm21615763c88.0.2026.09.06.21.48.04
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 06 Sep 2026 21:48:05 -0700 (PDT)
+From: Hemanth Selam <hemanth.selam@gmail.com>
+To: Chris Mason <clm@fb.com>,
+	David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH v2] btrfs: fix typos and repeated words in comments
+Date: Mon,  7 Sep 2026 10:18:01 +0530
+Message-ID: <20260907044801.9088-1-hemanth.selam@gmail.com>
+X-Mailer: git-send-email 2.48.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 10/10] btrfs: rename io_ctl page helpers to folio helpers
-To: Qu Wenruo <wqu@suse.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>
-Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20260906-btrfs-folio-conversions-v1-0-834b9d7b06f5@columbia.edu>
- <20260906-btrfs-folio-conversions-v1-10-834b9d7b06f5@columbia.edu>
- <3f82fc56-b621-4d94-9079-b4984dc3823b@gmx.com>
- <ee1e1ce6-123b-4f98-bf1c-ef8e5d892baa@columbia.edu>
- <e1dd5a75-9a67-4bc6-b8d8-bfff79b5b907@suse.com>
-Content-Language: en-US
-From: Tal Zussman <tz2294@columbia.edu>
-In-Reply-To: <e1dd5a75-9a67-4bc6-b8d8-bfff79b5b907@suse.com>
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Proofpoint-ORIG-GUID: tbyUQJEyh_328z4LOkJ3ILNWoxUtBcHI
-X-Proofpoint-Spam-Info: AW1haW4tMjYwOTA3MDAwNyBTYWx0ZWRfX2yA/zjzvcBYN
- XkALSkTC7kWwlwu3RhZ5I177gO1+NZooTTmlJnWbcn55/2nfsDBJ9QBLA/J4WS532Cre0CiHbIr
- eZS/ZrjsSMgFQkUN2erc02PqpncSTw9lOxvmW27HIRaAMTOjJPTL
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTA3MDAwNyBTYWx0ZWRfXwapgUh8T9rav
- TiVUC2Q7VC+791QUrZmD75X6nSDknBNMKaTGsc1YAodUfMMRcxb0070yGtZxh1jdhonhYbZv9Dq
- /a1LqI0UWl7U/SDm2NAXMeR9Xuecq/fIIxQZexSFPGGBP4AbZmzZtEYrY9EzAK4gt2mNYNUDc8p
- RdkUCMbCItcPFTi/9Zu/Q4idib1XUHAi+67c81Mph3LWx6VFFN8ltj7gT+rT3xTMVoBzvUCpqqA
- rU1pe4WarWuRErednNmNtY0XIcrPEPTOjblTEtTCjwuZIr2Tz7oyJj0a6OdU+5GBJAyD59th34N
- alj0TfSbJdoZLu9WqoBTV09krTVxqjwsTfhR0xpwj3VOPRLeSXQdsyY2mWZAqoX6hJu4sGJR7sN
- 0flVV16Dtp/VJ7tFAWIrr1AV11DaLOFiL3TzFfuB1+hGzlYnohGig0ZNIaJcnZU687tY4mg1Hrw
- SAlir4YiNESzPsaByKA==
-X-Authority-Analysis: v=2.4 cv=N94Z0W9B c=1 sm=1 tr=0 ts=6a9e0c34 cx=c_pps
- a=WeENfcodrlLV9YRTxbY/uA==:117 a=GaPK54s0Se3oFqK5NkZy0g==:17
- a=IkcTkHD0fZMA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=azVShVRs0zEubeQ0wG0L:22
- a=ScJvdbBUUHuM5FusFdgA:9 a=3ZKOabzyN94A:10 a=QEXdDO2ut3YA:10
- a=kacYvNCVWA4VmyqE58fU:22
-X-Proofpoint-GUID: tbyUQJEyh_328z4LOkJ3ILNWoxUtBcHI
-X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11898
- signatures=596817
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- priorityscore=1501 bulkscore=10 suspectscore=0 clxscore=1015 impostorscore=10
- malwarescore=0 lowpriorityscore=10 phishscore=0 adultscore=0 spamscore=0
- classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
- reason=mlx scancount=1 engine=8.22.0-2606150000 definitions=main-2609070007
 
-On 9/7/26 3:23 AM, Qu Wenruo wrote:
-> 在 2026/9/7 08:50, Tal Zussman 写道:
->> On 9/7/26 2:12 AM, Qu Wenruo wrote:
->>> 在 2026/9/7 07:59, Tal Zussman 写道:
->>>> These functions now operate on folios. Rename them and update comments
->>>> accordingly.
->>>
->>> Again, v1 space cache is fully disabled since commit 545e560a5b0f
->>> ("btrfs: disable v1 space cache"), it would make more sense to remove
->>> those functions other than doing a rename for codes that we're going to
->>> remove anyway.
->>>
->> 
->> No problem, I can drop this and patch 8. I wasn't sure what the removal
->> timeline looked like and wanted to keep things consistent.
-> 
-> Would appreciate a lot if you are also interested in removing those v1
-> space cache code.
-> 
+Fix misspellings and repeated words in comments, found with
+scripts/checkpatch.pl and codespell.  Only touches comments, no code
+changes.
 
-Sure, I can do that. So patches 8-10 can be dropped from this series and
-I'll send another one removing the v1 space cache support.
+Changes since v1:
+ - the typo and repeated-word patches are folded into one, as they only
+   touch comments
+ - rebased onto btrfs for-next
+ - picked up the further typos codespell found, which David Sterba
+   listed: Temporarilly, Checksume, coresponding, caclulated, wheather
+   and cannnot ("commited" in block-group.h was already fixed by v1)
 
->> 
->>>>
->>>> Signed-off-by: Tal Zussman <tz2294@columbia.edu>
->>>> ---
->>>>    fs/btrfs/free-space-cache.c | 78 ++++++++++++++++++++++-----------------------
->>>>    1 file changed, 39 insertions(+), 39 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
->>>> index ab933ee6f19c..73cfc1d1a5c1 100644
->>>> --- a/fs/btrfs/free-space-cache.c
->>>> +++ b/fs/btrfs/free-space-cache.c
->>>> @@ -406,7 +406,7 @@ static void io_ctl_free(struct btrfs_io_ctl *io_ctl)
->>>>    	io_ctl->folios = NULL;
->>>>    }
->>>>    
->>>> -static void io_ctl_unmap_page(struct btrfs_io_ctl *io_ctl)
->>>> +static void io_ctl_unmap_folio(struct btrfs_io_ctl *io_ctl)
->>>>    {
->>>>    	if (io_ctl->cur) {
->>>>    		io_ctl->cur = NULL;
->>>> @@ -414,7 +414,7 @@ static void io_ctl_unmap_page(struct btrfs_io_ctl *io_ctl)
->>>>    	}
->>>>    }
->>>>    
->>>> -static void io_ctl_map_page(struct btrfs_io_ctl *io_ctl, int clear)
->>>> +static void io_ctl_map_folio(struct btrfs_io_ctl *io_ctl, int clear)
->>>>    {
->>>>    	ASSERT(io_ctl->index < io_ctl->num_folios);
->>>>    	io_ctl->folio = io_ctl->folios[io_ctl->index++];
->>>> @@ -425,11 +425,11 @@ static void io_ctl_map_page(struct btrfs_io_ctl *io_ctl, int clear)
->>>>    		clear_page(io_ctl->cur);
->>>>    }
->>>>    
->>>> -static void io_ctl_drop_pages(struct btrfs_io_ctl *io_ctl)
->>>> +static void io_ctl_drop_folios(struct btrfs_io_ctl *io_ctl)
->>>>    {
->>>>    	int i;
->>>>    
->>>> -	io_ctl_unmap_page(io_ctl);
->>>> +	io_ctl_unmap_folio(io_ctl);
->>>>    
->>>>    	for (i = 0; i < io_ctl->num_folios; i++) {
->>>>    		if (io_ctl->folios[i]) {
->>>> @@ -439,7 +439,7 @@ static void io_ctl_drop_pages(struct btrfs_io_ctl *io_ctl)
->>>>    	}
->>>>    }
->>>>    
->>>> -static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
->>>> +static int io_ctl_prepare_folios(struct btrfs_io_ctl *io_ctl, bool uptodate)
->>>>    {
->>>>    	struct folio *folio;
->>>>    	struct inode *inode = io_ctl->inode;
->>>> @@ -453,7 +453,7 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
->>>>    					    FGP_LOCK | FGP_ACCESSED | FGP_CREAT,
->>>>    					    mask);
->>>>    		if (IS_ERR(folio)) {
->>>> -			io_ctl_drop_pages(io_ctl);
->>>> +			io_ctl_drop_folios(io_ctl);
->>>>    			return PTR_ERR(folio);
->>>>    		}
->>>>    
->>>> @@ -461,7 +461,7 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
->>>>    		if (ret < 0) {
->>>>    			folio_unlock(folio);
->>>>    			folio_put(folio);
->>>> -			io_ctl_drop_pages(io_ctl);
->>>> +			io_ctl_drop_folios(io_ctl);
->>>>    			return ret;
->>>>    		}
->>>>    
->>>> @@ -472,13 +472,13 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
->>>>    			if (folio->mapping != inode->i_mapping) {
->>>>    				btrfs_err(BTRFS_I(inode)->root->fs_info,
->>>>    					  "free space cache page truncated");
->>>> -				io_ctl_drop_pages(io_ctl);
->>>> +				io_ctl_drop_folios(io_ctl);
->>>>    				return -EIO;
->>>>    			}
->>>>    			if (!folio_test_uptodate(folio)) {
->>>>    				btrfs_err(BTRFS_I(inode)->root->fs_info,
->>>>    					   "error reading free space cache");
->>>> -				io_ctl_drop_pages(io_ctl);
->>>> +				io_ctl_drop_folios(io_ctl);
->>>>    				return -EIO;
->>>>    			}
->>>>    		}
->>>> @@ -492,7 +492,7 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
->>>>    
->>>>    static void io_ctl_set_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
->>>>    {
->>>> -	io_ctl_map_page(io_ctl, 1);
->>>> +	io_ctl_map_folio(io_ctl, 1);
->>>>    
->>>>    	/*
->>>>    	 * Skip the csum areas.  If we don't check crcs then we just have a
->>>> @@ -521,7 +521,7 @@ static int io_ctl_check_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
->>>>    		btrfs_err_rl(io_ctl->fs_info,
->>>>    			"space cache generation (%llu) does not match inode (%llu)",
->>>>    				cache_gen, generation);
->>>> -		io_ctl_unmap_page(io_ctl);
->>>> +		io_ctl_unmap_folio(io_ctl);
->>>>    		return -EIO;
->>>>    	}
->>>>    	io_ctl->cur += sizeof(u64);
->>>> @@ -539,7 +539,7 @@ static void io_ctl_set_crc(struct btrfs_io_ctl *io_ctl, int index)
->>>>    
->>>>    	crc = crc32c(crc, io_ctl->orig + offset, PAGE_SIZE - offset);
->>>>    	btrfs_crc32c_final(crc, (u8 *)&crc);
->>>> -	io_ctl_unmap_page(io_ctl);
->>>> +	io_ctl_unmap_folio(io_ctl);
->>>>    	tmp = folio_address(io_ctl->folios[0]);
->>>>    	tmp += index;
->>>>    	*tmp = crc;
->>>> @@ -561,13 +561,13 @@ static int io_ctl_check_crc(struct btrfs_io_ctl *io_ctl, int index)
->>>>    	tmp += index;
->>>>    	val = *tmp;
->>>>    
->>>> -	io_ctl_map_page(io_ctl, 0);
->>>> +	io_ctl_map_folio(io_ctl, 0);
->>>>    	crc = crc32c(crc, io_ctl->orig + offset, PAGE_SIZE - offset);
->>>>    	btrfs_crc32c_final(crc, (u8 *)&crc);
->>>>    	if (val != crc) {
->>>>    		btrfs_err_rl(io_ctl->fs_info,
->>>>    			"csum mismatch on free space cache");
->>>> -		io_ctl_unmap_page(io_ctl);
->>>> +		io_ctl_unmap_folio(io_ctl);
->>>>    		return -EIO;
->>>>    	}
->>>>    
->>>> @@ -595,12 +595,12 @@ static int io_ctl_add_entry(struct btrfs_io_ctl *io_ctl, u64 offset, u64 bytes,
->>>>    
->>>>    	io_ctl_set_crc(io_ctl, io_ctl->index - 1);
->>>>    
->>>> -	/* No more pages to map */
->>>> +	/* No more folios to map */
->>>>    	if (io_ctl->index >= io_ctl->num_folios)
->>>>    		return 0;
->>>>    
->>>> -	/* map the next page */
->>>> -	io_ctl_map_page(io_ctl, 1);
->>>> +	/* map the next folio */
->>>> +	io_ctl_map_folio(io_ctl, 1);
->>>>    	return 0;
->>>>    }
->>>>    
->>>> @@ -610,24 +610,24 @@ static int io_ctl_add_bitmap(struct btrfs_io_ctl *io_ctl, void *bitmap)
->>>>    		return -ENOSPC;
->>>>    
->>>>    	/*
->>>> -	 * If we aren't at the start of the current page, unmap this one and
->>>> +	 * If we aren't at the start of the current folio, unmap this one and
->>>>    	 * map the next one if there is any left.
->>>>    	 */
->>>>    	if (io_ctl->cur != io_ctl->orig) {
->>>>    		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
->>>>    		if (io_ctl->index >= io_ctl->num_folios)
->>>>    			return -ENOSPC;
->>>> -		io_ctl_map_page(io_ctl, 0);
->>>> +		io_ctl_map_folio(io_ctl, 0);
->>>>    	}
->>>>    
->>>>    	copy_page(io_ctl->cur, bitmap);
->>>>    	io_ctl_set_crc(io_ctl, io_ctl->index - 1);
->>>>    	if (io_ctl->index < io_ctl->num_folios)
->>>> -		io_ctl_map_page(io_ctl, 0);
->>>> +		io_ctl_map_folio(io_ctl, 0);
->>>>    	return 0;
->>>>    }
->>>>    
->>>> -static void io_ctl_zero_remaining_pages(struct btrfs_io_ctl *io_ctl)
->>>> +static void io_ctl_zero_remaining_folios(struct btrfs_io_ctl *io_ctl)
->>>>    {
->>>>    	/*
->>>>    	 * If we're not on the boundary we know we've modified the page and we
->>>> @@ -636,10 +636,10 @@ static void io_ctl_zero_remaining_pages(struct btrfs_io_ctl *io_ctl)
->>>>    	if (io_ctl->cur != io_ctl->orig)
->>>>    		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
->>>>    	else
->>>> -		io_ctl_unmap_page(io_ctl);
->>>> +		io_ctl_unmap_folio(io_ctl);
->>>>    
->>>>    	while (io_ctl->index < io_ctl->num_folios) {
->>>> -		io_ctl_map_page(io_ctl, 1);
->>>> +		io_ctl_map_folio(io_ctl, 1);
->>>>    		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
->>>>    	}
->>>>    }
->>>> @@ -666,7 +666,7 @@ static int io_ctl_read_entry(struct btrfs_io_ctl *io_ctl,
->>>>    	if (io_ctl->size >= sizeof(struct btrfs_free_space_entry))
->>>>    		return 0;
->>>>    
->>>> -	io_ctl_unmap_page(io_ctl);
->>>> +	io_ctl_unmap_folio(io_ctl);
->>>>    
->>>>    	return 0;
->>>>    }
->>>> @@ -681,7 +681,7 @@ static int io_ctl_read_bitmap(struct btrfs_io_ctl *io_ctl,
->>>>    		return ret;
->>>>    
->>>>    	copy_page(entry->bitmap, io_ctl->cur);
->>>> -	io_ctl_unmap_page(io_ctl);
->>>> +	io_ctl_unmap_folio(io_ctl);
->>>>    
->>>>    	return 0;
->>>>    }
->>>> @@ -797,7 +797,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
->>>>    
->>>>    	readahead_cache(inode);
->>>>    
->>>> -	ret = io_ctl_prepare_pages(&io_ctl, true);
->>>> +	ret = io_ctl_prepare_folios(&io_ctl, true);
->>>>    	if (ret)
->>>>    		goto out;
->>>>    
->>>> @@ -869,7 +869,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
->>>>    		num_entries--;
->>>>    	}
->>>>    
->>>> -	io_ctl_unmap_page(&io_ctl);
->>>> +	io_ctl_unmap_folio(&io_ctl);
->>>>    
->>>>    	/*
->>>>    	 * We add the bitmaps at the end of the entries in order that
->>>> @@ -882,13 +882,13 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
->>>>    			goto free_cache;
->>>>    	}
->>>>    
->>>> -	io_ctl_drop_pages(&io_ctl);
->>>> +	io_ctl_drop_folios(&io_ctl);
->>>>    	ret = 1;
->>>>    out:
->>>>    	io_ctl_free(&io_ctl);
->>>>    	return ret;
->>>>    free_cache:
->>>> -	io_ctl_drop_pages(&io_ctl);
->>>> +	io_ctl_drop_folios(&io_ctl);
->>>>    
->>>>    	spin_lock(&ctl->tree_lock);
->>>>    	__btrfs_remove_free_space_cache(ctl);
->>>> @@ -1280,7 +1280,7 @@ cleanup_write_cache_enospc(struct inode *inode,
->>>>    			   struct btrfs_io_ctl *io_ctl,
->>>>    			   struct extent_state **cached_state)
->>>>    {
->>>> -	io_ctl_drop_pages(io_ctl);
->>>> +	io_ctl_drop_folios(io_ctl);
->>>>    	btrfs_unlock_extent(&BTRFS_I(inode)->io_tree, 0, i_size_read(inode) - 1,
->>>>    			    cached_state);
->>>>    }
->>>> @@ -1297,7 +1297,7 @@ static int __btrfs_wait_cache_io(struct btrfs_root *root,
->>>>    	if (!inode)
->>>>    		return 0;
->>>>    
->>>> -	/* Flush the dirty pages in the cache file. */
->>>> +	/* Flush the dirty folios in the cache file. */
->>>>    	ret = flush_dirty_cache(inode);
->>>>    	if (ret)
->>>>    		goto out;
->>>> @@ -1402,8 +1402,8 @@ static int __btrfs_write_out_cache(struct inode *inode,
->>>>    		spin_unlock(&block_group->lock);
->>>>    	}
->>>>    
->>>> -	/* Lock all pages first so we can lock the extent safely. */
->>>> -	ret = io_ctl_prepare_pages(io_ctl, false);
->>>> +	/* Lock all folios first so we can lock the extent safely. */
->>>> +	ret = io_ctl_prepare_folios(io_ctl, false);
->>>>    	if (ret)
->>>>    		goto out_unlock;
->>>>    
->>>> @@ -1443,10 +1443,10 @@ static int __btrfs_write_out_cache(struct inode *inode,
->>>>    	if (ret)
->>>>    		goto out_nospc;
->>>>    
->>>> -	/* Zero out the rest of the pages just to make sure */
->>>> -	io_ctl_zero_remaining_pages(io_ctl);
->>>> +	/* Zero out the rest of the folios just to make sure */
->>>> +	io_ctl_zero_remaining_folios(io_ctl);
->>>>    
->>>> -	/* Everything is written out, now we dirty the pages in the file. */
->>>> +	/* Everything is written out, now we dirty the folios in the file. */
->>>>    	i_size = i_size_read(inode);
->>>>    	for (int i = 0; i < round_up(i_size, PAGE_SIZE) / PAGE_SIZE; i++) {
->>>>    		u64 dirty_start = i * PAGE_SIZE;
->>>> @@ -1461,17 +1461,17 @@ static int __btrfs_write_out_cache(struct inode *inode,
->>>>    	if (block_group->flags & BTRFS_BLOCK_GROUP_DATA)
->>>>    		up_write(&block_group->data_rwsem);
->>>>    	/*
->>>> -	 * Release the pages and unlock the extent, we will flush
->>>> +	 * Release the folios and unlock the extent, we will flush
->>>>    	 * them out later
->>>>    	 */
->>>> -	io_ctl_drop_pages(io_ctl);
->>>> +	io_ctl_drop_folios(io_ctl);
->>>>    	io_ctl_free(io_ctl);
->>>>    
->>>>    	btrfs_unlock_extent(&BTRFS_I(inode)->io_tree, 0, i_size_read(inode) - 1,
->>>>    			    &cached_state);
->>>>    
->>>>    	/*
->>>> -	 * at this point the pages are under IO and we're happy,
->>>> +	 * at this point the folios are under IO and we're happy,
->>>>    	 * The caller is responsible for waiting on them and updating
->>>>    	 * the cache and the inode
->>>>    	 */
->>>>
->>>
->> 
-> 
+Assisted-by: Cursor:claude-opus-5
+Signed-off-by: Hemanth Selam <hemanth.selam@gmail.com>
+---
+ fs/btrfs/block-group.h          | 2 +-
+ fs/btrfs/extent-io-tree.c       | 2 +-
+ fs/btrfs/fs.c                   | 2 +-
+ fs/btrfs/raid56.c               | 8 ++++----
+ fs/btrfs/send.c                 | 2 +-
+ fs/btrfs/transaction.h          | 2 +-
+ fs/btrfs/tree-checker.c         | 2 +-
+ include/uapi/linux/btrfs_tree.h | 4 ++--
+ 8 files changed, 12 insertions(+), 12 deletions(-)
 
+diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+index 69d56864d4ba..b349f94cf929 100644
+--- a/fs/btrfs/block-group.h
++++ b/fs/btrfs/block-group.h
+@@ -135,7 +135,7 @@ struct btrfs_block_group {
+ 	u64 global_root_id;
+ 	u64 remap_bytes;
+ 	u32 identity_remap_count;
+-	/* The last commited identity_remap_count value of this block group. */
++	/* The last committed identity_remap_count value of this block group. */
+ 	u32 last_identity_remap_count;
+ 	/*
+ 	 * The last committed used bytes of this block group, if the above @used
+diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
+index d6df11f6088c..992b8b42bdb4 100644
+--- a/fs/btrfs/extent-io-tree.c
++++ b/fs/btrfs/extent-io-tree.c
+@@ -751,7 +751,7 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
+ 				btrfs_split_delalloc_extent(tree->inode, state, start);
+ 
+ 			/*
+-			 * Temporarilly ajdust this state's range to match the
++			 * Temporarily ajdust this state's range to match the
+ 			 * range for which we are clearing bits.
+ 			 */
+ 			state->start = start;
+diff --git a/fs/btrfs/fs.c b/fs/btrfs/fs.c
+index de160d29dde8..75a1217727a7 100644
+--- a/fs/btrfs/fs.c
++++ b/fs/btrfs/fs.c
+@@ -79,7 +79,7 @@ void btrfs_csum_init(struct btrfs_csum_ctx *ctx, u16 csum_type)
+ 		blake2b_init(&ctx->blake2b, 32);
+ 		break;
+ 	default:
+-		/* Checksume type is validated at mount time. */
++		/* Checksum type is validated at mount time. */
+ 		BUG();
+ 	}
+ }
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index a5d0ef09d92a..4f702dbf581b 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -953,7 +953,7 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t status)
+ 
+ 	/*
+ 	 * Clear the data bitmap, as the rbio may be cached for later usage.
+-	 * do this before before unlock_stripe() so there will be no new bio
++	 * do this before unlock_stripe() so there will be no new bio
+ 	 * for this bio.
+ 	 */
+ 	bitmap_clear(&rbio->dbitmap, 0, rbio->stripe_nsectors);
+@@ -988,7 +988,7 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t status)
+  * as possible, and only use stripe_sectors as fallback.
+  *
+  * Return NULL if bio_list_only is set but the specified sector has no
+- * coresponding bio.
++ * corresponding bio.
+  */
+ static phys_addr_t *sector_paddrs_in_rbio(struct btrfs_raid_bio *rbio,
+ 					  int stripe_nr, int sector_nr,
+@@ -1451,7 +1451,7 @@ static int rmw_assemble_write_bios(struct btrfs_raid_bio *rbio,
+ 	ASSERT(bitmap_weight(&rbio->dbitmap, rbio->stripe_nsectors));
+ 
+ 	/*
+-	 * Reset errors, as we may have errors inherited from from degraded
++	 * Reset errors, as we may have errors inherited from degraded
+ 	 * write.
+ 	 */
+ 	bitmap_clear(rbio->error_bitmap, 0, rbio->nr_sectors);
+@@ -2632,7 +2632,7 @@ static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
+ 	return 0;
+ }
+ 
+-/* Return true if the content of the step matches the caclulated one. */
++/* Return true if the content of the step matches the calculated one. */
+ static bool verify_one_parity_step(struct btrfs_raid_bio *rbio,
+ 				   void *pointers[], unsigned int sector_nr,
+ 				   unsigned int step_nr)
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 5c59b9abedcd..c523bf950c89 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -7023,7 +7023,7 @@ static int changed_extent(struct send_ctx *sctx,
+ 	 * get modified or replaced with a new one). Note that deduplication
+ 	 * updates the inode item, but it only changes the iversion (sequence
+ 	 * field in the inode item) of the inode, so if a file is deduplicated
+-	 * the same amount of times in both the parent and send snapshots, its
++	 * the same number of times in both the parent and send snapshots, its
+ 	 * iversion becomes the same in both snapshots, whence the inode item is
+ 	 * the same on both snapshots.
+ 	 */
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 3a57f227b5ed..89153cd22596 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -288,7 +288,7 @@ do {										\
+  * Call btrfs_abort_transaction() as early as possible when an error condition
+  * is detected, that way the exact stack trace is reported for some errors.
+  *
+- * Error number must be negative as it encodes wheather it's the first abort.
++ * Error number must be negative as it encodes whether it's the first abort.
+  */
+ #define btrfs_abort_transaction(trans, error)		\
+ do {								\
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 401fd40ec7b2..b8ca9980e1dd 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -228,7 +228,7 @@ static bool can_have_extent_data(struct extent_buffer *leaf,
+ 	}
+ 
+ 	/*
+-	 * The rest are special files, e.g. block/FIFO files, which cannnot
++	 * The rest are special files, e.g. block/FIFO files, which cannot
+ 	 * have any file extent.
+ 	 */
+ 	return false;
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index b6ccaf848e4b..47ee52859b45 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -230,7 +230,7 @@
+  *
+  * Stored as an inline ref rather to avoid wasting space on a separate item on
+  * top of the existing extent item. However, unlike the other inline refs,
+- * there is one one owner ref per extent rather than one per extent.
++ * there is one owner ref per extent rather than one per extent.
+  *
+  * Because of this, it goes at the front of the list of inline refs, and thus
+  * must have a lower type value than any other inline ref type (to satisfy the
+@@ -243,7 +243,7 @@
+ #define BTRFS_EXTENT_DATA_REF_KEY	178
+ 
+ /*
+- * Obsolete key. Defintion removed in 6.6, value may be reused in the future.
++ * Obsolete key. Definition removed in 6.6, value may be reused in the future.
+  *
+  * #define BTRFS_EXTENT_REF_V0_KEY	180
+  */

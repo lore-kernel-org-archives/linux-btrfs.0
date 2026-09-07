@@ -1,51 +1,87 @@
-Received: from mxex1.tik.uni-stuttgart.de (mxex1.tik.uni-stuttgart.de [129.69.192.20])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B04AB466B6E
-	for <linux-btrfs@vger.kernel.org>; Mon,  7 Sep 2026 10:42:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=129.69.192.20
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7D865355819;
+	Mon,  7 Sep 2026 10:47:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788777761; cv=none; b=Ax31Grdvgi1SDYTIm3K85OvAQ2ko6bJYeU///hTCsjGQka53H6OSIwTwll1a/y5aE75J7FT08dH1uiSo59vtiyEntOXlIdS6U7BDknCdPB20Qonwm9zcHLJy0dj/O4xi7Z5ATEMH6E+jLI/0IODg37P+LXLdjqhr4lRasm/2IBM=
+	t=1788778065; cv=none; b=FzIVGPJv/2DPGYGYm5x/tu/AyMsjblEXiNMaEkOotPucLKMhxfKtNQhhMFMz88MVBDsrydGqnzR+bNbgV+SWdgf4X0s7RAfQoQDAidz/Vef1p5DQEDzWdhluXhVMBTIBGwQvyzARiajl321Oez/gUIjzlmYGfAbhZ31Bz5kiO/Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788777761; c=relaxed/simple;
-	bh=xMzjVAOnawh00qIQF8MTw0VurZlYsC/y55LYjHctNMI=;
-	h=Date:From:To:Subject:Message-ID:MIME-Version:Content-Type:
-	 Content-Disposition; b=IW6LsU5TcGgh6vj0gdoYwqAPbQ2MkNZn6joCjWGLeFXVh/HXLasfyfyBCV+OW2lwzyQPiGqvMEOOWzIq42aJi3pllJKEFSYAWslZ4MfdNWKW2MPMcdIlZgsTyiJvHRfctWdyKGjAhZ6Wzs0IipwyLzuKleNJ1aguBDee/SNX354=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de; spf=pass smtp.mailfrom=rus.uni-stuttgart.de; dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b=h+zf82wj; arc=none smtp.client-ip=129.69.192.20
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rus.uni-stuttgart.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=rus.uni-stuttgart.de
+	s=arc-20240116; t=1788778065; c=relaxed/simple;
+	bh=PVd4aOdn1eWZRW7b4udqu8g0xlHZoOEtI2q0HQbzi2I=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=jRUmY1P6ZycmEl0tiIfkfMOIu/b9iNCVE/XxxjJRU3L5nkKOzfuc3LB08ionDmZMZHJ50d4fZbU3zp7YgqbC7PNI6j+gYodTzvK+rGPYBDZcSb8Y02erJ+HEsv+EN3846E4SzOoVG7q0JviVP2W8zda4D353MNC12OXZXNRjwQc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=nED2/zbj; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=f1z5Ufk5; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=LyUhgkZ/; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=H/s59jte; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=uni-stuttgart.de header.i=@rus.uni-stuttgart.de header.b="h+zf82wj"
-Received: from localhost (localhost [127.0.0.1])
-	by mxex1.tik.uni-stuttgart.de (Postfix) with ESMTP id BADDF608D1
-	for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 12:33:41 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=uni-stuttgart.de;
-	 h=user-agent:content-disposition:content-type:content-type
-	:mime-version:message-id:subject:subject:from:from:date:date; s=
-	dkim; i=@rus.uni-stuttgart.de; t=1788777219; x=1790516020; bh=xM
-	zjVAOnawh00qIQF8MTw0VurZlYsC/y55LYjHctNMI=; b=h+zf82wj3oxTxxlHtI
-	Q4y6lWLgXcnyiVFMRZ78n5uacVIPLpPzg0rcWZFWxQsadewU/yomusNy/Y/yUotF
-	ybK3xdA6VSJJ3twjR8WVACiGGVuWbSziWXvswn+M5wm1ttpJ+yKQYhY6+WM3z9Cd
-	Itcl4qRi2ZcvreR/a7jYFcREM/lc3iL+0bnk0AzTyREFdJm7WhjQOEnYTAiVYfz8
-	MkziLJQQesklCl5ODR47O629a5IRdH4Zc45xyM6IkakMrqyfSg28jFIpuAuMP1Qb
-	qcVVdBFVDDNnKcFzgr6/YjAscmGfOmtQ8TpUZtSd8Hoj7Dh4vTQEAe7Dk0GLQW+b
-	We7Q==
-X-Virus-Scanned: USTUTT mailrelay AV services at mxex1.tik.uni-stuttgart.de
-Received: from mxex1.tik.uni-stuttgart.de ([127.0.0.1])
- by localhost (mxex1.tik.uni-stuttgart.de [127.0.0.1]) (amavis, port 10031)
- with ESMTP id 2dDrDIwM_BJ8 for <linux-btrfs@vger.kernel.org>;
- Mon,  7 Sep 2026 12:33:39 +0200 (CEST)
-Received: from authenticated client
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="nED2/zbj";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="f1z5Ufk5";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="LyUhgkZ/";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="H/s59jte"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange secp256r1 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by mxex1.tik.uni-stuttgart.de (Postfix) with ESMTPSA
-Date: Mon, 7 Sep 2026 12:33:39 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: linux-btrfs@vger.kernel.org
-Subject: How to exclude other filesystems but include subvolumes?
-Message-ID: <20260907103339.GA786966@tik.uni-stuttgart.de>
-Mail-Followup-To: linux-btrfs@vger.kernel.org
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 36356219DC;
+	Mon,  7 Sep 2026 10:47:34 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1788778058;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=h1d4rRqOvJBwSsnwp7+NEu7HPqgPge2Sx4rGHqc4AHA=;
+	b=nED2/zbjv3j2I9nLXbaJCpsnxiRMVv/OYmrEC+ETeAojO64ti+Aou09/Z5mOyJHsGLZtK8
+	GiGY0C0U61o3PF+Z2k0Fp1igfYzpeG57xjnh+KD4+oQjOHeIAfDIikWzUwj7nYRN9bRY2S
+	SUGyV94FssnF9Viit60vh5O19DEsyTU=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1788778058;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=h1d4rRqOvJBwSsnwp7+NEu7HPqgPge2Sx4rGHqc4AHA=;
+	b=f1z5Ufk5xh0+3NBVR06OPAPa+o7XcS8Tu39OFX4ypvQ8pfhCqp/zspkL0y3tNmT0qK4a1J
+	baoWGMStnGewO9Dw==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1788778054;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=h1d4rRqOvJBwSsnwp7+NEu7HPqgPge2Sx4rGHqc4AHA=;
+	b=LyUhgkZ/GqI2RwI7CFeeSLytV7CpmnSzrEWEGfJzlYQB3fT+dZ2HxNyqCuVAYqPBlHsXcx
+	I+gCQb+v8Wie38is8X/M7lACEu8F38GX5ci2VkQ2Ywo2aN4KbZbc8KGdzTLBJcl3nk6faQ
+	q0n0uz/Lj+KI0PLiYO1l16D+p1BeHyY=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1788778054;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=h1d4rRqOvJBwSsnwp7+NEu7HPqgPge2Sx4rGHqc4AHA=;
+	b=H/s59jtexGa9u+76I7kKL9b1cnVMQNRe/fOt5cUYfBPCE/R+/1qBZ96dwEk1CR/fSmHH2L
+	owSsp4nX3UXzzaDw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0E8481339B;
+	Mon,  7 Sep 2026 10:47:34 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id +CbpAkaWnmqvSQAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 07 Sep 2026 10:47:34 +0000
+Date: Mon, 7 Sep 2026 12:47:32 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Jeff Layton <jlayton@kernel.org>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+	Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v4 0/4] btrfs: handle -ENOMEM errors in some synchronous
+ dirops without aborting
+Message-ID: <20260907104732.GS9053@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20260825-btrfs-enomem-v4-0-b9363fa8714a@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -54,26 +90,45 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-User-Agent: Mutt/1.5.23 (2014-03-12)
+In-Reply-To: <20260825-btrfs-enomem-v4-0-b9363fa8714a@kernel.org>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Score: -4.00
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	MIME_GOOD(-0.10)[text/plain];
+	RCPT_COUNT_SEVEN(0.00)[7];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,imap1.dmz-prg2.suse.org:helo];
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Flag: NO
 
+On Tue, Aug 25, 2026 at 12:04:16PM -0400, Jeff Layton wrote:
+> This version is almost exactly the same as v3, but I've dropped the two
+> patches that change btrfs_insert_orphan_item() and
+> btrfs_del_orphan_item() to use stack allocations. We have no known
+> occurrences of those allocations failing, and I'm comfortable not
+> solving that problem until we know that it is one.
 
-Many programs like find, tar, rsync, cp, du, etc have options to exclude
-other filesystems, eg rsync: 
-  --one-file-system, -x    don't cross filesystem boundaries
+Thanks.
 
-But this also excludes subvolumes, which are in the same filesystem.
+> Jeff Layton (4):
+>       btrfs: split btrfs_insert_delayed_dir_index() into prealloc and commit phases
+>       btrfs: pre-allocate delayed dir index before btree modification
+>       btrfs: handle ENOMEM from btrfs_insert_dir_item() without aborting
+>       btrfs: pre-allocate delayed dir index for non-overwrite rename
 
-How can I address a btrfs filesystem with all subvolumes, but exclude
-other filesystems?
-
-Example: I want to copy the / filesystem (with all subvolumes), what is the
-best solution (for scripting!)?
-
-
--- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    https://www.tik.uni-stuttgart.de/
-REF:<20260907103339.GA786966@tik.uni-stuttgart.de>
+Added to for-next.

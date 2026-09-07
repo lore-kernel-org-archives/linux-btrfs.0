@@ -1,205 +1,208 @@
-Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3975D400995
-	for <linux-btrfs@vger.kernel.org>; Mon,  7 Sep 2026 20:06:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DD93540B102
+	for <linux-btrfs@vger.kernel.org>; Mon,  7 Sep 2026 20:20:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788811592; cv=none; b=j6ghuPcOzRDiei/dsWQGlTnjrG7712wD1PXsmAtGsd8GGlOORk2ZiIPKpJHe8I38okhggS5Os78fD/Wm5mJzngsHm/8JGCiDgrqUDTbd8MlSWHZhCdGgTEECHA6oF8YAyeusBwZXr2ToNZk1BXeaU5vYQ0nU+F1dAfx7redAM9g=
+	t=1788812428; cv=none; b=LIb+hnfmfxpL8NZHuZ06dtDplHrnW/PhLkuwig0lceeGaLGqqfUZO0PxMKZxFiMSxdOZ9Y+Kfvg5UQGuU/O+nkbmzpxmWFTapvrm5Ziad3NsmgZlQa7tYJf+7zTyka8PXP4HuEwYJ/lIaOoi0mRQ91LemEu2MmAB02OqovfvQhk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788811592; c=relaxed/simple;
-	bh=WZfPEHAWnWow8HxPK09kP1T41spLK56kd//3fRNFGFM=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=Y+NrfdXyLZAGqyhDtLakpWn6eO2Z2nmHbQPEBZMONHEzS0L1E+LLsfV4IuOiPsdvInbqpl2aoCjMSdxArKRQGkQHgJ8N7KjXFBT+Xmr4ChjOCP5MhqPzla65Pt1UotJBQW0zc+wV3/NmuhflbeYmuJiGYHc+uSGCH/GytDHLAk4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=DP5Zm7yq; arc=none smtp.client-ip=209.85.128.48
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1788812428; c=relaxed/simple;
+	bh=7CrZNHHkxIkuOJo45Q3XSFmINtwFQy/yCbxiey+tcdU=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=MFvs7I8hvd7nwobh+F3vLMw9ThSUZyzaDUw/DCj4z06yInftOk20OCQIRQA4/SWsfQ96HM+wbKxLxGPkNPp54z2/SWK7pnXQk7fgNqG9QCIxP8i36FuHZajCbar2U5tjwi29kiod2971GTXfFOXaiTWzA6cjSpCzsVvtKxeVR6s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=mTIroMZ9; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=5YpBJbDq; arc=none smtp.client-ip=148.163.139.74
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="DP5Zm7yq"
-Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-49ccfbe062eso37042295e9.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 13:06:29 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="mTIroMZ9";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="5YpBJbDq"
+Received: from pps.filterd (m0167073.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 687IYr943074871
+	for <linux-btrfs@vger.kernel.org>; Mon, 7 Sep 2026 16:20:23 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
+	cc:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=pps01; bh=e/8X
+	t8rVJr6lIvOnjb1t9hnUD7gb2SHMXo5XIPyUSv4=; b=mTIroMZ9VSQDHSfFIKun
+	wnxVGlayuUoRMfa7SKWG+pYEFE21IfX/KHvFXmC68aG0rOzp3w3cn44nE/ZY96i1
+	8PsrLwDQYHPFzVXbkVxA811BR51/iUq05Vw9w0sohqNWOzcDUt/u+B19GSUplmUN
+	4LK7BhXcOReIj5ElzSsJumDc9eUI5cXWQ9PIZxjLLEJ+RfMWVB4drLz/byeLneGS
+	gANXnJlFsCU87BtXnYyO6BcxQ3iP/YEK5rfqVzvMDXZDntPBP80xwR4SSelIsS8j
+	mup+R4E+lvT8u91utx+f3a7/kJy7DTuRj6cNB39WeIgC6fMRRUjlY6LdyoETKCkF
+	7g==
+Received: from mail-qt1-f198.google.com (mail-qt1-f198.google.com [209.85.160.198])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4ghfawwcqp-1
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 16:20:23 -0400 (EDT)
+Received: by mail-qt1-f198.google.com with SMTP id d75a77b69052e-53062ec5b9bso49968781cf.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 13:20:23 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1788811587; x=1789416387; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+        d=columbia.edu; s=lionmail; t=1788812423; x=1789417223; darn=vger.kernel.org;
+        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
+         :content-type:mime-version:subject:date:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=lfclzGIg0Yvz6HX+NUyrc+WBK5OnBJsKAKxkT9F3Opw=;
-        b=DP5Zm7yqOU2UvUJum/TDFxlhTH45JrucFsnoeaVV6HFkFz/7+x9SjKdYVbqzRLMtpv
-         vUWz/t0c8bS9ROSdgMyQqeDDhQsLhxwGircB+bkIkyHGlba0AnuXz4UqrxudvQjLJ/R8
-         EFfCjqI4JCB4nPn64RkY1kW1bvslXNESggSG9psiFJPW3xLA+YRklUjLIX1AUbnpOWcP
-         Srrxd7l4xs2A2e6rbgOWb13Y0OxT6e024+HjDHTgPMHdsIuARGZu+lqLmV4ZX8eYykcw
-         2ioNrrK6rRU7Og6WqcSZJUiNaRkbE5dZ5SYbwEihWWraAZ2A4UkiGmdlI8tJqSpDCkC3
-         5Y5A==
+        bh=e/8Xt8rVJr6lIvOnjb1t9hnUD7gb2SHMXo5XIPyUSv4=;
+        b=5YpBJbDqi2sF0Q7c27P9G1LZuER82OjJg8+2hh1DXlcQ4EwnmQw4ujtElBzni9tU6F
+         I9IwuvwymW3xjySKqJvij5jhS/FiXhg2qVwOsnOGifUxKjKfm6sUzdrLamRmhLZp7vk5
+         zo8iQXPN94t2vkJPyPt2S/4KnrpFOcfkHZkXMCapypRWRhEpyFDkKpvwgZ6HLb6JgiXv
+         ecP3FwMvDgxw/T2blK/QhTaG1yBcJqZ/ISyk3uF98J8EREg5fszLNw7JYzkZvejMIfUr
+         Lv9vvcb6GsITzdRe2tQrZkbyc9YTPOeqe6NXLxPbDrGsX5OhY3ZzsCesubHnH1MmbOqo
+         85+Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788811587; x=1789416387;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=lfclzGIg0Yvz6HX+NUyrc+WBK5OnBJsKAKxkT9F3Opw=;
-        b=X0E4DDy2vFhx46ahz9f/RfGlipPGCAfrfwYG1tKV/vM1JqoQ75p7lxbj84/4O6QGlf
-         WdpjRZ5suRURUaJ+hRFDqxNfyRL9g5EkdZZgGumQQBmWiHvpArYiKO6TMSxD42LEKvNk
-         nOn3Pp2KjwWDgE5jj6mtIiywmrN/iwYPFsFCU/P7oTqDJIBkXXyLwPCjGHZQfVok9/Ug
-         7bwxUwEwJ0OU0qJmKCgUxXuR2Nxhpt9MhNj3ytfDzkKmhFU5e5oJHoehEwT7F0uKJ/Ao
-         3kMN9rkdJyx9TuqLWN9ODUV3lgzDqJZGqvacmASk829Fasp6Luw+nIu1i3Q5z+eJJFCC
-         3axQ==
-X-Forwarded-Encrypted: i=1; AKwUvBziO3WYJpzGBwC6Ms5002xvOBAyy28dBC7ST6faALkmnEVtWU8wbwvNg9Ki/xDdfZzvx2XjYJ37RXviUA==@vger.kernel.org
-X-Gm-Message-State: AFuF++mauJbR/arpHFcevpJwuvRx5k74jQIqMSIhMCM3/RIAP8n5EXU/
-	OQXgCNmiHbuoXkGDjX88ezh04+7LgBAw4C+v4W4fXW+UEMknfVbiwCw4wEKOQmOBqAk=
-X-Gm-Gg: AYBFou1YbveuxRThI9yPIRVG4hJnHD/j3BF5oIbLeNkuuDdTKsOiwWfWoq7bJuGfVwX
-	XvCeG5GPi25tIW4CeYnxTlxXbn2FCNqs1pRL3xt4IEbPEz0RuUdzQl2g5COUpyb6XJ1jFs9a0qg
-	SAxeC8UW9HNzQfuuQQF/SlX+02XrN7MXYczyv/cfdOgDnC15ickGV9MJ2pCRhzY7fYOZLEmQCQB
-	xQJ9r3j6Etd+C/JzLEgrI18jpWYS0/ao94tYTgWj1ue0cyWXubRTCsp+XHywrA9p3rkqn1nmv31
-	gHZKqs+5jjf07QOLrmZ/Oxt9yjl9aGw4V1RE4C1MXHISifKEB5QHIRWj2ZlgL4J5cwRe0EPEElX
-	AKgacFpHBSSGhg57bmoPEXOnUzp042t8K7ILMWtzLqGzjwMnrqy2fs/Mj7fKgj5P+iZW0IWjtpY
-	epz8s/QTzpY75UzJyfHQc1KsvNL726ppyou5EP6v8Cj/baKDpjAC/OyMUd
-X-Received: by 2002:a05:600c:3495:b0:49c:dadb:18a7 with SMTP id 5b1f17b1804b1-49cf8244260mr247554055e9.10.1788811587020;
-        Mon, 07 Sep 2026 13:06:27 -0700 (PDT)
-Received: from infinity ([2001:b07:5d26:7a6a:365a:60ff:fe0d:cfc6])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-49cee5f912esm431050225e9.4.2026.09.07.13.06.25
+        d=1e100.net; s=20251104; t=1788812423; x=1789417223;
+        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
+         :content-type:mime-version:subject:date:from:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=e/8Xt8rVJr6lIvOnjb1t9hnUD7gb2SHMXo5XIPyUSv4=;
+        b=IKT6gZOV6Y46KXQtCTZM3eA9HvPCgttD+gqkmo/znqxYFdLiRuwegSDIuBhs78/2pT
+         wIGvZ2WVqLYlniF4vVU9GWqtcoTbFRH1FsxWkbXstfdVmbsEj9FKhiCWcSh9EuwJwyEg
+         RuHnLqYO3I0/tiZguwRP9Y3hj0EWH+nlAMz5Uk+G4NFPwJ1kBgK/p1sSMQxImTdODRMw
+         Ohet/YaK18Yk8rW/7xWXhpDrnmhlEyr9AjkV22ITCLTljMIluZd37GaN+P+AKOPjrv7c
+         E8cs2GUGZwX9u/4K0/EEnILrLEjzjj4xachy0uCFoDI8xp4vhtJppDc7OqgSDcNdYOyX
+         5wFg==
+X-Forwarded-Encrypted: i=1; AKwUvBy2sPZGonTmSrDrd61T0thGbWP76+U6gSvabXVF8P1UT5Rq26Y38+XOS3JdcP7zds6OaCV3b8m4xaCr0g==@vger.kernel.org
+X-Gm-Message-State: AFuF++na609E30TfJhBpaedoOfGHh5g6RH2oUorSd+3dSt3xj/4DAOFJ
+	SAnwU4i/rl/OgiDNQV+ag9GrhGj11rxgAZYwH3Zb+GXuvAvpc8wmDHeYiRJZxM2D2x0/I2sRLlK
+	yTNHqOK7ooBsuXzgbrT8uweTy5p9JX0MMEUkQSAYGwXI4nT1RI5YUnyNxparc
+X-Gm-Gg: AYBFou3zEemtyoKki0dG91t4dYS7O0guD5tOBYNsaEkqw5VCffNyQ8PjsI4QnRl2V2G
+	BHCMBNbZNSLdYQuM4rQnMx6GrNXbtN8ujQIBAXLVqOrxr3djUhratEsTu0WSbI1XYdV/+Eljd1s
+	eCgUwjpLMq7fTKZeDuLWzTqrL+fPdUdq3hSuptWWsz4ynhdK6tSSOrOHA9fdNHHQXwhLNEisExr
+	x3YobviMnC9MII48OolnuqJ/IKuImH24PVpyTX87us43Rl0d8p+H/1eqo91V59/nQ9253dhnO+N
+	Vl/C2C8nw3ceyHxCHcj8qHfbIScKC9DwKxyzJeGcS6dNs83Eysmm874/aUGGRsfEi2KEe+u43Tc
+	GAaklKHBvxhGJB+BDaNnTgGYw7epyhokSwQCc/BtpybA=
+X-Received: by 2002:a05:622a:2483:b0:517:580c:bcd3 with SMTP id d75a77b69052e-5305484e5bbmr272939031cf.19.1788812422949;
+        Mon, 07 Sep 2026 13:20:22 -0700 (PDT)
+X-Received: by 2002:a05:622a:2483:b0:517:580c:bcd3 with SMTP id d75a77b69052e-5305484e5bbmr272938451cf.19.1788812422567;
+        Mon, 07 Sep 2026 13:20:22 -0700 (PDT)
+Received: from [127.0.1.1] (nat-128-59-176-3.net.columbia.edu. [128.59.176.3])
+        by smtp.gmail.com with ESMTPSA id d75a77b69052e-5305413ce9dsm95062351cf.11.2026.09.07.13.20.22
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 07 Sep 2026 13:06:26 -0700 (PDT)
-From: koraynilay <koray.fra@gmail.com>
-To: David Sterba <dsterba@suse.com>
-Cc: Chris Mason <mason@kernel.org>,
-	Qu Wenruo <wqu@suse.com>,
-	Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-	linux-btrfs@vger.kernel.org,
-	koraynilay <koray.fra@gmail.com>
-Subject: [PATCH v5 6/6] btrfs: preserve btrfs.compression when setting inode flags
-Date: Mon,  7 Sep 2026 22:05:18 +0200
-Message-ID: <20260907200518.428277-7-koray.fra@gmail.com>
-X-Mailer: git-send-email 2.55.0
-In-Reply-To: <20260907200518.428277-1-koray.fra@gmail.com>
-References: <20260907200518.428277-1-koray.fra@gmail.com>
+        Mon, 07 Sep 2026 13:20:22 -0700 (PDT)
+From: Tal Zussman <tz2294@columbia.edu>
+Date: Mon, 07 Sep 2026 16:19:55 -0400
+Subject: [PATCH v2 1/7] btrfs: tests: rename process_page_range() to
+ process_folio_range()
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260907-btrfs-folio-conversions-v2-1-b5fe79f7607b@columbia.edu>
+References: <20260907-btrfs-folio-conversions-v2-0-b5fe79f7607b@columbia.edu>
+In-Reply-To: <20260907-btrfs-folio-conversions-v2-0-b5fe79f7607b@columbia.edu>
+To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+        Qu Wenruo <wqu@suse.com>
+Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Tal Zussman <tz2294@columbia.edu>
+X-Mailer: b4 0.17-dev-db0b7
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1788812420; l=2514;
+ i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
+ bh=7CrZNHHkxIkuOJo45Q3XSFmINtwFQy/yCbxiey+tcdU=;
+ b=lUibCyWOXiDPqjCmfOUjNQsuqs5O9ACYkEL544lHBSuJaExgYa0Sz++VVb27Q5qzJgNoTUVlh
+ IXovoCjp9O7CV2jA/QkcycZcHLCSu/8ZjlPyeK/mSt289NbyizFJkbB
+X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
+ pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
+X-Proofpoint-GUID: jncPJRP954hq6G-TT9npjoD8jopAzvU9
+X-Proofpoint-Spam-Info: AW1haW4tMjYwOTA3MDIyNCBTYWx0ZWRfX/rlMquZH60FW
+ XxaIHrmVjn3OfPr3Zi/B3d7Es44UkuwiZENur/SwU0nYfTi/T3D/XXAQWv2v394kHBud8zLVBxQ
+ 20kbFfFrlCX/ojjaNM0FJaHP8ZvH6qJ/KXOYWvzNmp7d+u1xhTAA
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTA3MDIyNCBTYWx0ZWRfXwfgCxkFLpDw6
+ aAjdmfemdEVyq8b1OHd9+QIm3ZEo1cJarkgCvoIW4ifzRPVVxWqpwBg5rlIaViz7D0AEnwsrf5+
+ f2kQe9sE2pVCJ0YnIfYT3pFq4F0ZFb5NWu/0bFTKw91cz+J7XuNrFe+fy/FLe3b+E2/6qzPq52D
+ COuWsUQVhwUNJvpV9RSdrOVrqLdK0/b7QP1RyLSkbX05M5+31/lhJbNQXCBz+lCtghX+qRJ1cTn
+ xx9PdgWnskCPJqcNrqT9Bx3//HdCmCTOs7uGloKUe6wKu8oz6AzF3Eys76tM/iMayRosG32dSOP
+ HBY1SCfwiB42e0S8zfqbqMOQB+jDklDJEuqb9nsAQKPLDT+O5yDfhvKlgu5BNBJICXsKDqMk1tt
+ 566ScrIxjSPMT3NVqGsYQttmx384CiaR+ibB9GJYGi6PeO7QBI+xNng6rJY2uA2uN/VZGfeicUB
+ Yyh32flxJ5o42dS+eYQ==
+X-Proofpoint-ORIG-GUID: jncPJRP954hq6G-TT9npjoD8jopAzvU9
+X-Authority-Analysis: v=2.4 cv=bvd8wkai c=1 sm=1 tr=0 ts=6a9f1c87 cx=c_pps
+ a=mPf7EqFMSY9/WdsSgAYMbA==:117 a=92j1mJcILCjWExuphHMrQw==:17
+ a=IkcTkHD0fZMA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=jHxIr1HyPKZ_Q5_91PL3:22
+ a=iox4zFpeAAAA:8 a=VvYWPSha7RrLN2mrkrMA:9 a=QEXdDO2ut3YA:10
+ a=dawVfQjAaf238kedN5IG:22 a=WzC6qhA0u3u7Ye7llzcV:22
+X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11899
+ signatures=596817
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ lowpriorityscore=10 malwarescore=0 clxscore=1015 priorityscore=1501
+ suspectscore=0 impostorscore=10 phishscore=0 spamscore=0 adultscore=0
+ bulkscore=10 classifier=typeunknown authscore=0 authtc= authcc=
+ route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2606150000
+ definitions=main-2609070224
 
-Commit e8a0095c7df170 ("btrfs: preserve the compression property when
-other inode flags change") fixed an issue where any call to
-FS_IOC_SETFLAGS (e.g. via chattr) would overwrite the btrfs.compression
-property with the mount default compression type, even when no flag bits
-change and even for flags unrelated to compression.
+It already operates on folios. No functional change.
 
-Update the fixed code to also preserve the newly introduced level
-specification by using the new btrfs_compress_typelevel2str() helper.
-
-Also move BTRFS_COMPRESS_PROP_MAX_LEN from props.c to props.h so it can
-be used by ioctl.c, since it now requires a temporary buffer to write the
-property string to.
-
-[ Commit message and code adapted from Zygo's patch for this same issue ]
-
-Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Suggested-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Assisted-by: Gemini:3.1-pro antigravity-cli-1.1.7
-Signed-off-by: koraynilay <koray.fra@gmail.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Tal Zussman <tz2294@columbia.edu>
 ---
- fs/btrfs/ioctl.c | 27 ++++++++++++++-------------
- fs/btrfs/props.c |  9 ---------
- fs/btrfs/props.h |  9 +++++++++
- 3 files changed, 23 insertions(+), 22 deletions(-)
+ fs/btrfs/tests/extent-io-tests.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 54960351fbd1..af685205b7e9 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -288,6 +288,7 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
- 	unsigned int fsflags, old_fsflags;
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index 23459cd4e503..6eb55bfb2bd4 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -18,8 +18,8 @@
+ #define PROCESS_RELEASE		(1U << 1)
+ #define PROCESS_TEST_LOCKED	(1U << 2)
+ 
+-static noinline int process_page_range(struct inode *inode, u64 start, u64 end,
+-				       unsigned long flags)
++static noinline int process_folio_range(struct inode *inode, u64 start, u64 end,
++					unsigned long flags)
+ {
  	int ret;
- 	const char *comp = NULL;
-+	char comp_buf[BTRFS_COMPRESS_PROP_MAX_LEN];
- 	u32 inode_flags;
- 	bool prop_set = false;
- 
-@@ -384,7 +385,6 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
- 		inode_flags &= ~BTRFS_INODE_COMPRESS;
- 		inode_flags |= BTRFS_INODE_NOCOMPRESS;
- 	} else if (fsflags & FS_COMPR_FL) {
--		enum btrfs_compression_type comp_type;
- 
- 		if (IS_SWAPFILE(&inode->vfs_inode))
- 			return -ETXTBSY;
-@@ -393,22 +393,23 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
- 		inode_flags &= ~BTRFS_INODE_NOCOMPRESS;
- 
- 		/*
--		 * Keep the algorithm recorded in the compression property,
--		 * otherwise changing an unrelated attribute would reset it to
--		 * the mount default, since FS_IOC_SETFLAGS callers write back
--		 * the whole flag set they got from FS_IOC_GETFLAGS and that
--		 * includes FS_COMPR_FL for any inode carrying the property.
-+		 * If compression is already enabled, we must reconstruct the
-+		 * full "algo:level" property string and write it back.
-+		 * Otherwise changing an unrelated attribute would reset it to
-+		 * the mount default and drop the level, since FS_IOC_SETFLAGS
-+		 * callers write back the whole flag set they got from
-+		 * FS_IOC_GETFLAGS, and that includes FS_COMPR_FL.
- 		 *
- 		 * Inodes with the compress flag set but no property keep using
- 		 * the mount default, so they behave as before.
- 		 */
--		if (inode->prop_compress)
--			comp_type = inode->prop_compress;
--		else if (fs_info->compress_type)
--			comp_type = fs_info->compress_type;
--		else
--			comp_type = BTRFS_COMPRESS_ZLIB;
--		comp = btrfs_compress_type2str(comp_type);
-+		comp = btrfs_compress_typelevel2str(inode->prop_compress,
-+						    inode->prop_compress_level,
-+						    comp_buf, sizeof(comp_buf));
-+		if (!comp || comp[0] == 0)
-+			comp = btrfs_compress_type2str(fs_info->compress_type);
-+		if (!comp || comp[0] == 0)
-+			comp = btrfs_compress_type2str(BTRFS_COMPRESS_ZLIB);
- 	} else {
- 		inode_flags &= ~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
+ 	struct folio_batch fbatch;
+@@ -221,8 +221,8 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
+ 				test_start, max_bytes - 1, start, end);
+ 		goto out_bits;
  	}
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index d8830f63984a..b95a1e7a96d2 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -18,15 +18,6 @@
- #include "super.h"
- #include "dir-item.h"
- 
--/*
-- * Max length of compression algorithm:level string.
-- *
-- * For now the longest possible string is "zstd:-15", which is
-- * 8 characters + 1 terminating null byte.
-- * Rounding it up to the closest power of 2 gives 16.
-- */
--#define BTRFS_COMPRESS_PROP_MAX_LEN 16
--
- #define BTRFS_PROP_HANDLERS_HT_BITS 8
- static DEFINE_HASHTABLE(prop_handlers_ht, BTRFS_PROP_HANDLERS_HT_BITS);
- 
-diff --git a/fs/btrfs/props.h b/fs/btrfs/props.h
-index 15d9a025c923..93b55a85a728 100644
---- a/fs/btrfs/props.h
-+++ b/fs/btrfs/props.h
-@@ -9,6 +9,15 @@
- #include <linux/types.h>
- #include <linux/compiler_types.h>
- 
-+/*
-+ * Max length of compression algorithm:level string.
-+ *
-+ * For now the longest possible string is "zstd:-15", which is
-+ * 8 characters + 1 terminating null byte.
-+ * Rounding it up to the closest power of 2 gives 16.
-+ */
-+#define BTRFS_COMPRESS_PROP_MAX_LEN 16
-+
- struct btrfs_inode;
- struct btrfs_path;
- struct btrfs_trans_handle;
+-	if (process_page_range(inode, start, end,
+-			       PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
++	if (process_folio_range(inode, start, end,
++				PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
+ 		test_err("there were unlocked pages in the range");
+ 		goto out_bits;
+ 	}
+@@ -276,8 +276,8 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
+ 			 test_start, total_dirty - 1, start, end);
+ 		goto out_bits;
+ 	}
+-	if (process_page_range(inode, start, end,
+-			       PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
++	if (process_folio_range(inode, start, end,
++				PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
+ 		test_err("pages in range were not all locked");
+ 		goto out_bits;
+ 	}
+@@ -317,8 +317,8 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
+ 			 test_start, test_start + PAGE_SIZE - 1, start, end);
+ 		goto out_bits;
+ 	}
+-	if (process_page_range(inode, start, end, PROCESS_TEST_LOCKED |
+-			       PROCESS_UNLOCK)) {
++	if (process_folio_range(inode, start, end, PROCESS_TEST_LOCKED |
++				PROCESS_UNLOCK)) {
+ 		test_err("pages in range were not all locked");
+ 		goto out_bits;
+ 	}
+@@ -330,8 +330,8 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
+ out:
+ 	if (locked_page)
+ 		put_page(locked_page);
+-	process_page_range(inode, 0, total_dirty - 1,
+-			   PROCESS_UNLOCK | PROCESS_RELEASE);
++	process_folio_range(inode, 0, total_dirty - 1,
++			    PROCESS_UNLOCK | PROCESS_RELEASE);
+ 	iput(inode);
+ out_root_info:
+ 	btrfs_free_dummy_root(root);
+
 -- 
-2.55.0
+2.39.5
 

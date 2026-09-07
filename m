@@ -1,298 +1,272 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9FCC63890F1;
-	Mon,  7 Sep 2026 06:51:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788763890; cv=none; b=SZE50m7kLts4wYrJXysxfED55Q2uwk/UJsH4J/SwsDRgOM6i6hoNnu95MtbcWf90ePxwylT201qL20jwoAcCDfrnqEB2w5h5AyQ/OKg81Lq0EJWTQCXLwHgL4UEakOcRhpFkJUNPvqjypg3eli1aZ/mtmD7hkTIMGIEXYOD3eNM=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788763890; c=relaxed/simple;
-	bh=Q7+O6jefsc9lE+7aFQMA6nuEEPZMfu6m38l7K9N6CD0=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=YqXwHjL0StALTNA5KRwEw9kf227JtbQU8tb60WqGGbVn0Z5YkaNDg0bdhdE6avR3xjhvRNPZo9QnBCKracc6RwT2EQ9JR+h6/REsXIkKW8tqbjJCdPdUzqejGMW76s3LTwYBKYevom4o8t5GOFRsCk9XV6UorHyNGGVinktQbKE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=EpZERO1E; arc=none smtp.client-ip=212.227.15.18
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BE8833B71C1
+	for <linux-btrfs@vger.kernel.org>; Mon,  7 Sep 2026 09:15:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.44
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1788772548; cv=pass; b=ExFVZzEll4I2LNuhkYlY7XqTQ+X6M0D460Z4Ui7527z5KCxjZb7Fo+VV+KiwnxEY5xXU20/0hmbn/yZ1Hun/ifZ1QgrlVJhl6z+KTQD93qTqnwCx0qtrk4X/JdJLsdxfoRiWVsuIuWVYipvM43voJhaackI10jqZCaX4uSr520s=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1788772548; c=relaxed/simple;
+	bh=/MFAR0BJv6ArlHZpPXeSNyeaqeMeT7jTuH2BnlBnyXk=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=sruXyEeQtmuD62SzusdJrztpOvT5C8+iUfdU+siLe8AJx2SDwQCFatqgueNKu+a1WAn986Nf60LTlYRx703ADGC5cDJybxVqtVHal4sKe/xFYjZ/ISRXwHAYxWf82UHjhWCfDDgRjUxwFSPrTt1S3ii/M12WUG6YvJrf2kCdm/I=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=TH7jGVMB; arc=pass smtp.client-ip=209.85.128.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="EpZERO1E"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1788763873; x=1789368673; i=quwenruo.btrfs@gmx.com;
-	bh=mCcv9iftHX5N1CGRR4w5qCXxgN3mvewjWwb5K4oyhfw=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=EpZERO1EQtsXcMKWE/QKHwTHNB82PZoBEamh8sd4ry8tJ6VgLXa2avGOjI+nox6t
-	 wUfbowBNucD+7enx/p8pDneLFdr5KfrykWZJB1/IsY4JCAb9oSYmo2Ple31+3YzY6
-	 JUl9YTW/sGbkMDLh0UEu5kVzXxahfsZjgo3w8zPlcO8dFU8gWbsQuwSqbab1PGinG
-	 aypPmnmfAGJZsqMHdPhbtZEPsDmH4lqj474RlWtPrA54+Si6Nr6hjpunTXdtKATwm
-	 DNvvUvs6IFIVtahOf01N/WV0YqPdrQBJq195uQ68En1SGQlOYNmJOTJ9tGCQXr3gi
-	 wMbKalZ3rwd23L3Nuw==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MHG8g-1x7t2W3P3g-00EbjL; Mon, 07
- Sep 2026 08:51:13 +0200
-Message-ID: <4e2f0f90-0dd1-490d-bbb4-2bcde430b2e0@gmx.com>
-Date: Mon, 7 Sep 2026 16:21:08 +0930
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="TH7jGVMB"
+Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-49b0eab380eso30057945e9.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 02:15:46 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1788772545; cv=none;
+        d=google.com; s=arc-20260327;
+        b=csX0JP7qWr3NVnJtcZuZ8HUZnkvtAiI8v7pxHg143RGr/9WMVtnAsUIu85wOqwjIhn
+         bkZHJgSFanJH1CLOKDLQSZ8CEH1YHK1+MQc+q7Mdbti6yXuifvc35Ki7inmtoFAksh6p
+         UC/rMwi2HRELWp1vhSbxiSlaHaCZUTndQ7mHCeSIBBEvL3CeP+od7HgeEdY5NbB04l3i
+         RfXHStIjNTv5qqKwcK+aDYN4JXpIKuanADsNytJuNaDtgKw/1gFWGD31WkAZsrZm+j95
+         Q/43vpyNlKIiywLL3Tf8Jr8NEY2iPlNp3+j+l5tkj1KR/wKzd+3PhtGWLI9/beAixzVS
+         VGsg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=SA0y0CQLIYLkfiY5R3TFU63deex74/QQ9+749Dn8ny0=;
+        fh=A9GqkW4IeQf778vC2aVcWQ2BCNvVajAlVYf4UFnReSg=;
+        b=n/7b0mDxwyi7Sy9GAs8onf3E2J+4psP7DhEthyB0N7KBaTmnNKq0FFohjRDbsiOj2U
+         aUSIe8vj9RqKyWxA2VToWOJFgh15+San6o6RyjmqR4Aiq05bTTjLcBmGcb4hiBj+mZc2
+         YeLXrzE8CuaWqG7gwQzMZvgEnwIm739/28FEs59MmIOBwN9v1ktMdhOnVkZvNBc4gTtr
+         Ov6IfocS80IJB4+eJZ+vRmpVGr5Knl07ssK/sp3M6TFz9DBR0zyikz7EApczjTFmYocG
+         nNu5ZXN44s8rwiEktnSUCjPTXIznwsB4PZohONsD6xQA60xqTydLiRd6z/JM+frKHNR1
+         RfRg==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1788772545; x=1789377345; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=SA0y0CQLIYLkfiY5R3TFU63deex74/QQ9+749Dn8ny0=;
+        b=TH7jGVMBfVEBqqmD96sLxgcZtmUJAaBWW8o2vCGuCPQ/NNpbOo2vn6VOFbvWwY5zGc
+         TkSILWRxmONb2eJu9QWoAEko03PB9hlAmV3acyoulUjwZRW1w+/Q7PCDmZrsIxA6JbY3
+         xsZYZobypMX4OM+eTNNoAwdhqjCQDye8OCr+2ZLIM47yJTXnleAQAiHWO11VvKqr5LxW
+         Sf1Hv0tU68lHfAJOOyy8p9+Uno9cDIXL+VFb4LQxWIPc8SUBOIe552L4rQ6c2h9QOdaH
+         ON+c2CEUZf6Szsf+15K+PkUZVa1+9kfPpwHVMg1Dx5jO0it9gWtQ8BQM0DF1TLelEWAO
+         4SZA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1788772545; x=1789377345;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=SA0y0CQLIYLkfiY5R3TFU63deex74/QQ9+749Dn8ny0=;
+        b=mgi975R7jtzWpQw8LA1yOnwz54jZaIvmQWnwBsnCJHTEARBWtPbYESxvZHI7kQJOnX
+         cdG4xU+g6o+1RzhC5hpDVU5g1qYFZKSasyVZbmajxhpUT/xt9hk2uwLpHiGuHHEwj85r
+         AhhdRWWwwvKUxAvbL6nbY3fEctQUNvvipIYHNw4yG+CFZ9KFXGfqEIyraUaPpbSGmySp
+         SbdoLXkCT0nUEqRuP9pCNJMkIq6/oNlySvGDflCWbPWR348WRJC1TwyYpOAxmFJVPVW8
+         h3O6qd+kE/UQU6Z9PTUh/iXVjtRA5IO/X2ihGY6b0kz3IzcH8zs3aTQmQU1gAPbrGZ48
+         fnxQ==
+X-Forwarded-Encrypted: i=1; AKwUvBz8ukkOfbx4ReSaVolCTjXYIe4SlRJQOrGTL1g8z4buKLC7K+74YoJ0/SOGqLH6p88AkIJDQQWV/Oh5BA==@vger.kernel.org
+X-Gm-Message-State: AFuF++l1pOnx71ehjdkICIPVkppCyWapl5Q8kOjX6F8Xj/QraDLd/Uk8
+	3elGxxUOm4Gxc8tXhnb2N1K2cpofLedANsGgsIJADl/9abwzdjGiufZiuSjU9cfeHP8SuP0aVrq
+	uTV6TQRO474DSge4q6AxBO0mKnzVzZi0zMBnRcAJGqA==
+X-Gm-Gg: AYBFou0UyGEoIBHVVC7jUC+TO6f4/XfztByRWwm255Ny77ePx2HSEE5HiCkmbiaULsS
+	ok9N1JfnUef0Lp0A2vMVDMe4I+8f0Enbrewc4s6SPqk97kIpkFP0G9YzI8sa27ZngZJEhiwMhN9
+	9376hYEXfBMpDR4w8F2BjP6+ttuxf8eSRMCngxkg8b7sxVXtQx1uc8mh+fVgtSpv15Dy+6hLPPs
+	YTJkzivriArdINbuR9vySrIXsyK9qCgrQByS9CmRHFRF3mLV0LUEMzGS3JT3RVflYty8VV0D9kw
+	fMc0AIUL2XBLkZ07LUZ7VzaINgaG8u0q1aOQ9YgSBNWBligswktCqqtdnZVSaE+NgEcxeUB/lA8
+	5I0KjrUJNL/OgDzgwvwQorrzhpAdj9H7sGaVxUZ9RHg==
+X-Received: by 2002:a05:600c:4684:b0:49c:f13e:e4e with SMTP id
+ 5b1f17b1804b1-49cf8906323mr208303745e9.11.1788772544807; Mon, 07 Sep 2026
+ 02:15:44 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 07/10] btrfs: use folios for reading super blocks from the
- block device
-To: Tal Zussman <tz2294@columbia.edu>, David Sterba <dsterba@suse.com>,
- Chris Mason <mason@kernel.org>
-Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20260906-btrfs-folio-conversions-v1-0-834b9d7b06f5@columbia.edu>
- <20260906-btrfs-folio-conversions-v1-7-834b9d7b06f5@columbia.edu>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260906-btrfs-folio-conversions-v1-7-834b9d7b06f5@columbia.edu>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:vqpLTqup102a2ZqTQulNxlBCyaUx9w7Lz5673z1Wr9JaAUwskW0
- FLJEmcJRTdXjb9CwFqA9gfd8ug9yR7u0TkBwqLvZmcS7sdZ/QCE+vAFMmv9LqtAlaCAngAC
- Z9tnGfVOdmxiH7/Bk8Pzl4AemWDBaLpmCJUsgOwKbKRthkaPxOCxyzyhTAqAba834dXIctz
- Mp44+uW8vj1oC6Xv9R19w==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:LQvIH0Su/0w=;/1Azjx2lazdjKKzAmiF8wQggrnq
- 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
- UaxAQTq0JGaGR
+References: <20260907044801.9088-1-hemanth.selam@gmail.com>
+In-Reply-To: <20260907044801.9088-1-hemanth.selam@gmail.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Mon, 7 Sep 2026 11:15:33 +0200
+X-Gm-Features: AcwNN1VCQupOgh9v5Ck-I1vwV5juTsOZYec2g8PyYUOdbCxqp4AhMc_-LjRurbw
+Message-ID: <CAPjX3FfQ4X4Bd-1-_Q3h4azLM98vnJLfZ8TvduPK6zf=y==Z2g@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: fix typos and repeated words in comments
+To: Hemanth Selam <hemanth.selam@gmail.com>
+Cc: Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-
-
-=E5=9C=A8 2026/9/7 07:59, Tal Zussman =E5=86=99=E9=81=93:
-> btrfs_read_disk_super() and the zoned super block log comparison go
-> through read_cache_page_gfp() and page_address(), and
-> btrfs_release_disk_super() recovers the page with virt_to_page(). Use
-> mapping_read_folio_gfp(), folio_address(), and virt_to_folio() instead.
-> This removes the last callers of read_cache_page_gfp() and put_page()
-> in btrfs.
->=20
-> Compute the super block address with offset_in_folio() as
-> write_dev_supers() does, rather than assuming it is at the start of
-> the page.
->=20
-> Assisted-by: Claude:claude-fable-5-1
-> Signed-off-by: Tal Zussman <tz2294@columbia.edu>
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
-
+On Mon, 7 Sept 2026 at 06:54, Hemanth Selam <hemanth.selam@gmail.com> wrote:
+> Fix misspellings and repeated words in comments, found with
+> scripts/checkpatch.pl and codespell.  Only touches comments, no code
+> changes.
+>
+> Changes since v1:
+>  - the typo and repeated-word patches are folded into one, as they only
+>    touch comments
+>  - rebased onto btrfs for-next
+>  - picked up the further typos codespell found, which David Sterba
+>    listed: Temporarilly, Checksume, coresponding, caclulated, wheather
+>    and cannnot ("commited" in block-group.h was already fixed by v1)
+>
+> Assisted-by: Cursor:claude-opus-5
+> Signed-off-by: Hemanth Selam <hemanth.selam@gmail.com>
 > ---
->   fs/btrfs/volumes.c | 16 +++++++---------
->   fs/btrfs/zoned.c   | 12 ++++++------
->   2 files changed, 13 insertions(+), 15 deletions(-)
->=20
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 949e40baff33..4ddabadc9188 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1327,16 +1327,14 @@ int btrfs_open_devices(struct btrfs_fs_devices *=
-fs_devices,
->  =20
->   void btrfs_release_disk_super(struct btrfs_super_block *super)
->   {
-> -	struct page *page =3D virt_to_page(super);
-> -
-> -	put_page(page);
-> +	folio_put(virt_to_folio(super));
->   }
->  =20
->   struct btrfs_super_block *btrfs_read_disk_super(struct block_device *b=
-dev,
->   						int copy_num, bool drop_cache)
->   {
->   	struct btrfs_super_block *super;
-> -	struct page *page;
-> +	struct folio *folio;
->   	u64 bytenr, bytenr_orig;
->   	struct address_space *mapping =3D bdev->bd_mapping;
->   	int ret;
-> @@ -1357,7 +1355,7 @@ struct btrfs_super_block *btrfs_read_disk_super(st=
-ruct block_device *bdev,
->   		ASSERT(copy_num =3D=3D 0);
->  =20
->   		/*
-> -		 * Drop the page of the primary superblock, so later read will
-> +		 * Drop the folio of the primary superblock, so later read will
->   		 * always read from the device.
->   		 */
->   		invalidate_inode_pages2_range(mapping, bytenr >> PAGE_SHIFT,
-> @@ -1365,12 +1363,12 @@ struct btrfs_super_block *btrfs_read_disk_super(=
-struct block_device *bdev,
->   	}
->  =20
->   	filemap_invalidate_lock_shared(mapping);
-> -	page =3D read_cache_page_gfp(mapping, bytenr >> PAGE_SHIFT, GFP_NOFS);
-> +	folio =3D mapping_read_folio_gfp(mapping, bytenr >> PAGE_SHIFT, GFP_NO=
-FS);
->   	filemap_invalidate_unlock_shared(mapping);
-> -	if (IS_ERR(page))
-> -		return ERR_CAST(page);
-> +	if (IS_ERR(folio))
-> +		return ERR_CAST(folio);
->  =20
-> -	super =3D page_address(page);
-> +	super =3D folio_address(folio) + offset_in_folio(folio, bytenr);
->   	if (btrfs_super_magic(super) !=3D BTRFS_MAGIC ||
->   	    btrfs_super_bytenr(super) !=3D bytenr_orig) {
->   		btrfs_release_disk_super(super);
-> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-> index 08a15465a087..a1ef8caaacda 100644
-> --- a/fs/btrfs/zoned.c
-> +++ b/fs/btrfs/zoned.c
-> @@ -123,24 +123,24 @@ static int sb_write_pointer(struct block_device *b=
-dev, struct blk_zone *zones,
->   	} else if (full[0] && full[1]) {
->   		/* Compare two super blocks */
->   		struct address_space *mapping =3D bdev->bd_mapping;
-> -		struct page *page[BTRFS_NR_SB_LOG_ZONES];
->   		struct btrfs_super_block *super[BTRFS_NR_SB_LOG_ZONES];
->  =20
->   		for (int i =3D 0; i < BTRFS_NR_SB_LOG_ZONES; i++) {
->   			u64 zone_end =3D (zones[i].start + zones[i].capacity) << SECTOR_SHI=
-FT;
->   			u64 bytenr =3D ALIGN_DOWN(zone_end, BTRFS_SUPER_INFO_SIZE) -
->   						BTRFS_SUPER_INFO_SIZE;
-> +			struct folio *folio;
->  =20
->   			filemap_invalidate_lock_shared(mapping);
-> -			page[i] =3D read_cache_page_gfp(mapping,
-> -					bytenr >> PAGE_SHIFT, GFP_NOFS);
-> +			folio =3D mapping_read_folio_gfp(mapping, bytenr >> PAGE_SHIFT,
-> +						       GFP_NOFS);
->   			filemap_invalidate_unlock_shared(mapping);
-> -			if (IS_ERR(page[i])) {
-> +			if (IS_ERR(folio)) {
->   				if (i =3D=3D 1)
->   					btrfs_release_disk_super(super[0]);
-> -				return PTR_ERR(page[i]);
-> +				return PTR_ERR(folio);
->   			}
-> -			super[i] =3D page_address(page[i]);
-> +			super[i] =3D folio_address(folio) + offset_in_folio(folio, bytenr);
->   		}
->  =20
->   		if (btrfs_super_generation(super[0]) >
->=20
+>  fs/btrfs/block-group.h          | 2 +-
+>  fs/btrfs/extent-io-tree.c       | 2 +-
+>  fs/btrfs/fs.c                   | 2 +-
+>  fs/btrfs/raid56.c               | 8 ++++----
+>  fs/btrfs/send.c                 | 2 +-
+>  fs/btrfs/transaction.h          | 2 +-
+>  fs/btrfs/tree-checker.c         | 2 +-
+>  include/uapi/linux/btrfs_tree.h | 4 ++--
+>  8 files changed, 12 insertions(+), 12 deletions(-)
+>
+> diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+> index 69d56864d4ba..b349f94cf929 100644
+> --- a/fs/btrfs/block-group.h
+> +++ b/fs/btrfs/block-group.h
+> @@ -135,7 +135,7 @@ struct btrfs_block_group {
+>         u64 global_root_id;
+>         u64 remap_bytes;
+>         u32 identity_remap_count;
+> -       /* The last commited identity_remap_count value of this block group. */
+> +       /* The last committed identity_remap_count value of this block group. */
+>         u32 last_identity_remap_count;
+>         /*
+>          * The last committed used bytes of this block group, if the above @used
+> diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
+> index d6df11f6088c..992b8b42bdb4 100644
+> --- a/fs/btrfs/extent-io-tree.c
+> +++ b/fs/btrfs/extent-io-tree.c
+> @@ -751,7 +751,7 @@ int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64
+>                                 btrfs_split_delalloc_extent(tree->inode, state, start);
+>
+>                         /*
+> -                        * Temporarilly ajdust this state's range to match the
+> +                        * Temporarily ajdust this state's range to match the
+>                          * range for which we are clearing bits.
+>                          */
+>                         state->start = start;
+> diff --git a/fs/btrfs/fs.c b/fs/btrfs/fs.c
+> index de160d29dde8..75a1217727a7 100644
+> --- a/fs/btrfs/fs.c
+> +++ b/fs/btrfs/fs.c
+> @@ -79,7 +79,7 @@ void btrfs_csum_init(struct btrfs_csum_ctx *ctx, u16 csum_type)
+>                 blake2b_init(&ctx->blake2b, 32);
+>                 break;
+>         default:
+> -               /* Checksume type is validated at mount time. */
+> +               /* Checksum type is validated at mount time. */
+>                 BUG();
+>         }
+>  }
+> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+> index a5d0ef09d92a..4f702dbf581b 100644
+> --- a/fs/btrfs/raid56.c
+> +++ b/fs/btrfs/raid56.c
+> @@ -953,7 +953,7 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t status)
+>
+>         /*
+>          * Clear the data bitmap, as the rbio may be cached for later usage.
+> -        * do this before before unlock_stripe() so there will be no new bio
+> +        * do this before unlock_stripe() so there will be no new bio
+>          * for this bio.
 
+The sentence should start with a capital. Perhaps it would also fit
+into two lines?
+
+>          */
+>         bitmap_clear(&rbio->dbitmap, 0, rbio->stripe_nsectors);
+> @@ -988,7 +988,7 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t status)
+>   * as possible, and only use stripe_sectors as fallback.
+>   *
+>   * Return NULL if bio_list_only is set but the specified sector has no
+> - * coresponding bio.
+> + * corresponding bio.
+>   */
+>  static phys_addr_t *sector_paddrs_in_rbio(struct btrfs_raid_bio *rbio,
+>                                           int stripe_nr, int sector_nr,
+> @@ -1451,7 +1451,7 @@ static int rmw_assemble_write_bios(struct btrfs_raid_bio *rbio,
+>         ASSERT(bitmap_weight(&rbio->dbitmap, rbio->stripe_nsectors));
+>
+>         /*
+> -        * Reset errors, as we may have errors inherited from from degraded
+> +        * Reset errors, as we may have errors inherited from degraded
+>          * write.
+
+This can fit on one line.
+
+--nX
+
+>          */
+>         bitmap_clear(rbio->error_bitmap, 0, rbio->nr_sectors);
+> @@ -2632,7 +2632,7 @@ static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
+>         return 0;
+>  }
+>
+> -/* Return true if the content of the step matches the caclulated one. */
+> +/* Return true if the content of the step matches the calculated one. */
+>  static bool verify_one_parity_step(struct btrfs_raid_bio *rbio,
+>                                    void *pointers[], unsigned int sector_nr,
+>                                    unsigned int step_nr)
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 5c59b9abedcd..c523bf950c89 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -7023,7 +7023,7 @@ static int changed_extent(struct send_ctx *sctx,
+>          * get modified or replaced with a new one). Note that deduplication
+>          * updates the inode item, but it only changes the iversion (sequence
+>          * field in the inode item) of the inode, so if a file is deduplicated
+> -        * the same amount of times in both the parent and send snapshots, its
+> +        * the same number of times in both the parent and send snapshots, its
+>          * iversion becomes the same in both snapshots, whence the inode item is
+>          * the same on both snapshots.
+>          */
+> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> index 3a57f227b5ed..89153cd22596 100644
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -288,7 +288,7 @@ do {                                                                                \
+>   * Call btrfs_abort_transaction() as early as possible when an error condition
+>   * is detected, that way the exact stack trace is reported for some errors.
+>   *
+> - * Error number must be negative as it encodes wheather it's the first abort.
+> + * Error number must be negative as it encodes whether it's the first abort.
+>   */
+>  #define btrfs_abort_transaction(trans, error)          \
+>  do {                                                           \
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index 401fd40ec7b2..b8ca9980e1dd 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -228,7 +228,7 @@ static bool can_have_extent_data(struct extent_buffer *leaf,
+>         }
+>
+>         /*
+> -        * The rest are special files, e.g. block/FIFO files, which cannnot
+> +        * The rest are special files, e.g. block/FIFO files, which cannot
+>          * have any file extent.
+>          */
+>         return false;
+> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+> index b6ccaf848e4b..47ee52859b45 100644
+> --- a/include/uapi/linux/btrfs_tree.h
+> +++ b/include/uapi/linux/btrfs_tree.h
+> @@ -230,7 +230,7 @@
+>   *
+>   * Stored as an inline ref rather to avoid wasting space on a separate item on
+>   * top of the existing extent item. However, unlike the other inline refs,
+> - * there is one one owner ref per extent rather than one per extent.
+> + * there is one owner ref per extent rather than one per extent.
+>   *
+>   * Because of this, it goes at the front of the list of inline refs, and thus
+>   * must have a lower type value than any other inline ref type (to satisfy the
+> @@ -243,7 +243,7 @@
+>  #define BTRFS_EXTENT_DATA_REF_KEY      178
+>
+>  /*
+> - * Obsolete key. Defintion removed in 6.6, value may be reused in the future.
+> + * Obsolete key. Definition removed in 6.6, value may be reused in the future.
+>   *
+>   * #define BTRFS_EXTENT_REF_V0_KEY     180
+>   */
+>

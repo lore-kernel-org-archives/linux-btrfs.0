@@ -1,116 +1,174 @@
-Received: from mail-wr1-f46.google.com (mail-wr1-f46.google.com [209.85.221.46])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1ACE1456E0F
-	for <linux-btrfs@vger.kernel.org>; Mon,  7 Sep 2026 09:58:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.46
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788775121; cv=pass; b=jCAVxiydml6tk8JU/X93ur1Dns9gKNMbBEORpVmWfGaXCrYH2utXEC0w2eiH0CFOjOReS2zJIQkFjU/rhXAZqKT7V0Fp5LEFECrv5hYOO0bWQUNzCVU3lAcs0XrJg5IUq/gDk4lVAQ0F1Q1EZxRr3r2XQ2DfcDv2e3kdjbXKozo=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788775121; c=relaxed/simple;
-	bh=vFc5gFFLnSdg3AHEZ9ahwwZhUTlpVkHewZfnMYHb78Q=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=RkXFs4pXpajoBekVkh1rHGx3WmsHf1sFJXVFs+pcvYxaoiBmeQ6t6PXnnuFQtIAGbDmk58KQaH29Ab9o68rJkFTE+kVsRw2sJ233uNDkjrw3qjHTV2OrrKjVak2XuMEeod7ukk+u3YYO8vKAQ/9c3tSvkPS7hi4O4j2CHL+2aTo=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=eIe2kkLG; arc=pass smtp.client-ip=209.85.221.46
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 58F85440A0A
+	for <linux-btrfs@vger.kernel.org>; Mon,  7 Sep 2026 09:59:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1788775198; cv=none; b=XiJp+rWb1by2G5hj5RgQYCAdHe1sV0Xla8fs5vd4wii22YfJ1gCOL+4d21TeTjBWcyh3jMqK9TSfjI5PZvGhQBVh7WPosh0B3fKPWgNeiy3TFRcABhzZT3LXm7obi6yw2SaPiIDBmba70QMR2fL0vg/M8217v5JxnU6fJUOLoN8=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1788775198; c=relaxed/simple;
+	bh=Eg6cVCOGoyzyxjCgsqppamWAwCZw9IgKwyGycfmrFVs=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=mRe9YBnxMigTe20ZnNeia2bq9nrYKjXDXhUjWDA1aQTtm0b1FMhmy9ooM0HM+wIJASxLnMMNobnPPg+qTejrsi2b7YcQen8iXBkucAzjhnChUwNn0Ae2nx1eS50vURpczGA9FwBoOEWkYPZQL/AP+MVG9ctCix6UjipJlq0Suqg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=em+ZKlAn; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=tQTLIzO/; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=w89T24Cm; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=va7yfkNV; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="eIe2kkLG"
-Received: by mail-wr1-f46.google.com with SMTP id ffacd0b85a97d-48436251906so3818679f8f.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 02:58:39 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1788775118; cv=none;
-        d=google.com; s=arc-20260327;
-        b=gRB/Ue+M8ntbZ0WpcvVyVxan0mSZFqbYITLvu9PyTgvT8Zr0aHSPxYf9CLKurEnnEr
-         ZxrePAP+u7F+i1UvhUJaeMcNQyQZAFUVVP9tzTF74ebOdW0E4tT5SF6p5qvNqWlbkH8w
-         U1T8SWD+ku2s7iUqUQOqioBLPonjfHPBRVpdSU+HKt9t50Ke8HenWScc2DxacWzReIgG
-         wsdJRM4681Jbr6vVXwrhwgQVlYdi6PaPeYLf0PbTj0JPiT6RYaRk5vc/D3hHMEQwK3Pk
-         VVeiHqgC4XSeAcfRrt1zzkM3XxWyhAf/vqh4e43CHUtFJLTlog/aFGeHmrxDU6HG/8oH
-         m9BA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=IOR22vO2buc95ubW6uNPity+sc86JUX58sOwMSCA/sM=;
-        fh=Ia1vuqSz5oOBMw2aj2MAvgv4GZkr6QcC5BviMIMYc1w=;
-        b=bVZkhXJ/ARCGoNUNvezinh8Bav3aQpm/s1KdCDC1tG9C30qnAsHVeemK39FAxredH6
-         Pj8TjYNIKaVAtj8ggr252duL3LWXOWjy3UQIHgvmbZ1JHjBcmXO8yhusBfq3h3I/QsLm
-         mFCEr0jfpXvKZrD8z1r1RzYKiBXkl45HS5rwotXthdoNLfHZW9e+W5PP8KjGhjOQvW+8
-         SFGBCtBoE/LuteWfC0zWlJmcKs2m9G8qMKbZWMonBWqG6S0QpDrvCgP99+iQKniRVabB
-         7OlMeAKOYzxmZPZX60fclN2SPW1wVydN1g6XZjWhRXze4r24XLpLdp8jkwhzenSd+qVx
-         6lHg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1788775118; x=1789379918; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=IOR22vO2buc95ubW6uNPity+sc86JUX58sOwMSCA/sM=;
-        b=eIe2kkLGwC5S6RZiJ34kzVZEPTvciowqzfElkw7LPg3yeCwAWM5Szl5ppK2rh6PCkZ
-         4VCdcHSc9blH5eorHCHmguejQyEYz7gRECoV8/4ySgz+hnKVGQMm/wkrbwQ73JfG0B1R
-         gl0fCeZztgSMyPNIXiBRrUZi6uPb8tNKiZ79qvBiatUoBuPjMAKQ5N1pdoW6OXaIpKt0
-         AUpaDc3A2Dy2KGHxS0u3b8sh3/Pw0opc/GkW+lRdeMqtC/J3jwXWbmHX80bPWoyGhIzD
-         5Q0TH6Zwuov613iTytJetsCcDDcodmmTTj5DnNV12J+I5rdIc42d+YfT+DvqYy0RYMeK
-         WFmQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788775118; x=1789379918;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=IOR22vO2buc95ubW6uNPity+sc86JUX58sOwMSCA/sM=;
-        b=G/LSSIRspC3P8DaS+XzmyIbC2D0CJ6is2gFWwkFOQdfBLsttJm4QCQzjmKrZrWgFLX
-         7xk1c9XLK6/g/PBqKfn1jXpd1GP+vHAUVjMVSKU8ZgwbFbYC/qt8gUhYT56GMq9ocnqO
-         EVw3lOuM3QdUZHFxlNw7bSgmXznDuLnwPAFM6/Md+BnsUjPVKDyJqbQEIUHphLFoMNJX
-         xfuMdRwx3pwFotmyPMmnmM/LYkn9vRSTDB0vq8f7QdJr7E3v31L+tRgyexM3vGGOA4JT
-         my8VL0XvYGFOF5cEkWABUIw+ll5Rky5wl6mX8dbuUPyv5x55WFIJ98yjj5rQqrtiI0yH
-         S5Uw==
-X-Forwarded-Encrypted: i=1; AKwUvBwt2boZ8bGdhtfUSBf/rziffcLYuHqV6gL3Y99XgGGWRjerjD+RVE75WluVn81kn5QUlx7NwRk3Atk+nw==@vger.kernel.org
-X-Gm-Message-State: AFuF++min9AmgDquNacCXxydcuV7Pn3uuYDIga2ADOmfLj7RPQWpIfhN
-	u6rSfNr1kZzoqScejqPuxT2JLeR4qXErXMHQlLIDXbuK0s9PoOzgLRCcEdRQPYhZvK42TaZLCNh
-	Za6opiiZqVVFkHi2bzeHn/4ZQNa8rdg0ZbjyWvcgrfA==
-X-Gm-Gg: AYBFou2L/7PCvbtvtmLB3oVOacl3QaxT/jSt4GTax9T90TcFSUbazmcf/D3YyMSh2Om
-	Q6G18ZVo0kpW5zVXrYyiZw3Ct9urskk12e2F3Ea61LVWzGiw2V0jhDQYKiTkzoGu6/6c3wP1KLA
-	rqlXC32BcmIt+F9BGyAvjs0F1DEQjv++349HQQ8RkBaOyID7LP9QzAAZKiRFKvFM0L8bzAAODZA
-	+pYXMExxnOBrBA5lRhiRCvyi+tGnnns2c1JovmG5hD34eYQhMY3ycTwuuwQ8cTE+osEfsBmEQHL
-	1hgrsCfPRcOu83tI+7k/ZgF4aG8zPeCaFPqe3SEFaXv2iewJsUitdXHWOyMKoQxYZ2CjAxgWPY7
-	tgjjbkKrfCrd3xuc3ry1259diNugqkLoGPBNK0WMrnw==
-X-Received: by 2002:a05:6000:41d4:b0:484:3310:c4fc with SMTP id
- ffacd0b85a97d-48587090793mr45075973f8f.23.1788775118342; Mon, 07 Sep 2026
- 02:58:38 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="em+ZKlAn";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="tQTLIzO/";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="w89T24Cm";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="va7yfkNV"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 3386A219C9;
+	Mon,  7 Sep 2026 09:59:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1788775191;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=HoBCRCCUi/Pcr9oaUDmBrv0EOzkqni+kpCaw3AbaUNQ=;
+	b=em+ZKlAnyYvW65P5O2EwSgTCBhldKO14s5St/APxNVTQkBjUGGpuPFJ4eQEGaIuZUs9V7o
+	kT9YA56ZN+mkQT7rAstdS9LadtE7GdMdpur99bhDUaM3DN9iwuk8XAioeWpUElfMtTfPDy
+	yaSJ/0bYiw4XExdzRmegar9+evk92r4=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1788775191;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=HoBCRCCUi/Pcr9oaUDmBrv0EOzkqni+kpCaw3AbaUNQ=;
+	b=tQTLIzO/ssslfR1y96VoqwRgyK7FFbyhN/MVYiKtXnTMWyEYM60vKgQtrelOKZV3Rv5A1l
+	+VjOyQSp4xXRZ2DA==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1788775187;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=HoBCRCCUi/Pcr9oaUDmBrv0EOzkqni+kpCaw3AbaUNQ=;
+	b=w89T24CmaWLvfOGgLu9WdnQ66tv+pWn3Z/x+1rCzlfB4q8IR1p4WmygBOlqv2CPStu/p2p
+	KC8DyfJFPc/BkKbEEU3TYqTDyYXMuLU8hpMgzsEUt9FKQA/N2n8TkLCbiDKHr2X2mpVX7E
+	lkVpZrPmvgZ5M39fHME/dUxs6ZbmZdo=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1788775187;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=HoBCRCCUi/Pcr9oaUDmBrv0EOzkqni+kpCaw3AbaUNQ=;
+	b=va7yfkNVCk39scTiY+flIg4TU51rp0wxawt/gE8pUtDi0gzx6AyUYI63KjtSD8uZb8u5DQ
+	hMcs1pJcdPrFM9BA==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0548B1339B;
+	Mon,  7 Sep 2026 09:59:47 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id YGcUAROLnmq0GwAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 07 Sep 2026 09:59:47 +0000
+Date: Mon, 7 Sep 2026 11:59:45 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+	Daniel Vacek <neelx@suse.com>
+Subject: Re: [PATCH] btrfs: move async csum generation out of experimental
+ features
+Message-ID: <20260907095945.GQ9053@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <700ba6c46da86ace18a502b43c5e61d16a556060.1788424754.git.wqu@suse.com>
+ <20260904170035.GN9053@twin.jikos.cz>
+ <d79d06ab-721d-4fec-a2a3-823e9380c792@gmx.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260907044801.9088-1-hemanth.selam@gmail.com>
- <CAPjX3FfQ4X4Bd-1-_Q3h4azLM98vnJLfZ8TvduPK6zf=y==Z2g@mail.gmail.com> <20260907092247.GP9053@suse.cz>
-In-Reply-To: <20260907092247.GP9053@suse.cz>
-From: Daniel Vacek <neelx@suse.com>
-Date: Mon, 7 Sep 2026 11:58:27 +0200
-X-Gm-Features: AcwNN1WxUpd2kv3I_DLYS1Vwd5ZUE28k_Gsdkb8CO7N5z5kgblu69R3OgC2-Lkc
-Message-ID: <CAPjX3FcQ4qELwCKdfvrP5F=tiDu9zLztfgF2JGoAuc=HoK_k_Q@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: fix typos and repeated words in comments
-To: dsterba@suse.cz
-Cc: Hemanth Selam <hemanth.selam@gmail.com>, Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <d79d06ab-721d-4fec-a2a3-823e9380c792@gmx.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Score: -4.00
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	FREEMAIL_TO(0.00)[gmx.com];
+	FREEMAIL_ENVRCPT(0.00)[gmx.com];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	MID_RHS_MATCH_FROM(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.cz:replyto,suse.cz:mid];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Flag: NO
 
-On Mon, 7 Sept 2026 at 11:22, David Sterba <dsterba@suse.cz> wrote:
-> On Mon, Sep 07, 2026 at 11:15:33AM +0200, Daniel Vacek wrote:
-> > > --- a/fs/btrfs/raid56.c
-> > > +++ b/fs/btrfs/raid56.c
-> > > @@ -953,7 +953,7 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t status)
-> > >
-> > >         /*
-> > >          * Clear the data bitmap, as the rbio may be cached for later usage.
-> > > -        * do this before before unlock_stripe() so there will be no new bio
-> > > +        * do this before unlock_stripe() so there will be no new bio
-> > >          * for this bio.
-> >
-> > The sentence should start with a capital. Perhaps it would also fit
-> > into two lines?
->
-> Reformatting whole lines makes the typos harder to spot, so it's fine to
-> leave it like that and reformat at commit time eventually.
+On Sat, Sep 05, 2026 at 07:51:42AM +0930, Qu Wenruo wrote:
+> 
+> 
+> 在 2026/9/5 02:30, David Sterba 写道:
+> > On Thu, Sep 03, 2026 at 06:09:41PM +0930, Qu Wenruo wrote:
+> >> @@ -4437,19 +4432,6 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+> >>   	 */
+> >>   	btrfs_flush_workqueue(fs_info->delalloc_workers);
+> >>   
+> >> -	/*
+> >> -	 * We can have ordered extents getting their last reference dropped from
+> >> -	 * the fs_info->workers queue because for async writes for data bios we
+> >> -	 * queue a work for that queue, at btrfs_wq_submit_bio(), that runs
+> >> -	 * run_one_async_done() which calls btrfs_bio_end_io() in case the bio
+> >> -	 * has an error, and that later function can do the final
+> >> -	 * btrfs_put_ordered_extent() on the ordered extent attached to the bio,
+> >> -	 * which adds a delayed iput for the inode. So we must flush the queue
+> >> -	 * so that we don't have delayed iputs after committing the current
+> >> -	 * transaction below and stopping the cleaner and transaction kthreads.
+> >> -	 */
+> >> -	btrfs_flush_workqueue(fs_info->workers);
+> > 
+> > In the final fs closing sequence there's always some possible
+> > interaction between the workers, but I don't think we need an explicit
+> > flush anymore. The work offloaded to the system workers will be done
+> > before we get here.
+> 
+> In fact, Daniel's commit ("btrfs: use bio::remaining for async 
+> checksumming synchronization") changed the behavior back, and we may 
+> need to be more cautious now.
+> 
+> Previously, the csum generation workload will never call endio in its 
+> context, the only work it really bothers is just to wake the completion.
+> 
+> But now his commit changed to use bio_endio(), which means we can again 
+> run the workload from csum generation workqueue.
 
-Right, I see. Sorry about the noise then.
+Yeah, this kind of problems I'm expecting but haven't done a deeper
+analysis to have concrete examples like that.
+
+> In fact, I do not believe it's the proper timing to move async csum out 
+> of experimental anymore, after his commit.
+> 
+> I'd prefer more the next merge window at least.
+
+We can do that, the main part, otherwise any preparatory or cleanup work
+can be done now, as usual.

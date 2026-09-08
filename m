@@ -1,86 +1,87 @@
-Received: from mx0a-00364e01.pphosted.com (mx0a-00364e01.pphosted.com [148.163.135.74])
+Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A5A102D2488
-	for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2026 01:19:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.135.74
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 62CF02DCBE3
+	for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2026 01:19:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788830408; cv=none; b=t2K0JXtSNBGxh6bR1Yk2SBB5VbjwDiwX0KtojG3FTqXKBHB2IY3rp1ti4/Oj81Ka3JOkSzETS2IsoxwIF4hRKW3IEJkxEOqGSA4Li2l84wzVDJdQFbWDU85TBiwh7Iq2otW9cCGHfa2K/IWFmeK7subJnUjegBVd/6L05OM4C5c=
+	t=1788830408; cv=none; b=tXWbhWrD83GUmGSo/hX31oc2M7f2ocRzNP/o+20oTK4LlqbGISaNoKAcPbXNfytEc3+s9RtDesNDdY5EnpsxDMAxbVeKIwXFzfcA/aJprlzpwTthWoDfHA7kwXmtDBMK9fk3f3vMzPGRs3qhMiKGhgW85idfiWw4LF5MB2tunH8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1788830408; c=relaxed/simple;
-	bh=WHBgYoAZXTwZCTC+uPtMCS1zTe/PB6K8lKFf7fwynMI=;
+	bh=lp6N7P6uRAwF4k80VrSyckftlj/cB8cKUNVuGaugFXs=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=QOEQIQWGNuPsw+h3a8EARgUrChYa+W7efrDBB9/IJKlAiJBUuOyurUu1pBpOSj5gThcOvwbs+4UFc0wcY0YImcYkHKx2iQIa/wLC/ZmZ9spQUCrCvoH8ZmYG/Hdcuxj1YZCpehmThklTYMf7unyCJOOgDqL8n5VfqXH3pUYjcqQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=HAzrSIqs; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=4dnR6moc; arc=none smtp.client-ip=148.163.135.74
+	 In-Reply-To:To:Cc; b=X+yJeZi9VY/Nsqs7OjWhjjASIoc4BZ/ObHmzktro3ubGlABKYWDibKyqe3Ek/pmHTcbSdzuYHwfPZQ9bxVNgmO0z+yF+23JW+083lMzuynToEYCfLJSp0SJhXlACaR/3kmOeVtWL04ewWYLhmrvIeBolN/Z3GQIjORXSM8wwvzc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=GGFNQ8el; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=zr3hgV89; arc=none smtp.client-ip=148.163.139.74
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="HAzrSIqs";
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="4dnR6moc"
-Received: from pps.filterd (m0167069.ppops.net [127.0.0.1])
-	by mx0a-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 6880uuYO3140353
-	for <linux-btrfs@vger.kernel.org>; Mon, 7 Sep 2026 21:19:54 -0400
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="GGFNQ8el";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="zr3hgV89"
+Received: from pps.filterd (m0167073.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 6880uaNx3867258
+	for <linux-btrfs@vger.kernel.org>; Mon, 7 Sep 2026 21:19:51 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
 	cc:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pps01; bh=b/ru
-	/TkXYN6eZiCH1AP2YAl6cjgL8CV/iP5cVwKSpSI=; b=HAzrSIqshd3kUlIxVKjZ
-	0Xj9Qe01V4EgliYPF97DIjUUV6HilIMMD5wSkq2xV/wXluHQGi89tJQwqgEfDc4N
-	UGo6nhE5c8BJr8tV7iXML6vwO6aoAMOc0WWPnyXpj7U2y5NmNsWK/X8M6/HkbnOt
-	uoWw/sGV/HfgzmvNv8SP3BeoqErPJkUcTovKR8kYJrrv8VbHhSlANLddDJotWUZu
-	ITLjEfYdezECiUxK5K95n32a5sy63ALyA1shp5knJnqhlnsspXHUVzyJpYrSMbPK
-	mP/J61DQRv+lWy0+1GnTpkjYVc3ZONMC59cnkHfBLVe3+vOWb3N9t+2lyzvRfdyN
-	+Q==
-Received: from mail-qv1-f70.google.com (mail-qv1-f70.google.com [209.85.219.70])
-	by mx0a-00364e01.pphosted.com (PPS) with ESMTPS id 4gj4aas6ts-1
+	:message-id:mime-version:references:subject:to; s=pps01; bh=vZNh
+	osrukSiX1wNaSmTI+ZUk61C0R//VPNgshZncD6Q=; b=GGFNQ8elMGqtaso+GdcV
+	MSlVH9DB7bUvhPZQM1gfOKOEsz1GyCGtQlkBpMmLcLXTitWeTCaXjOwn4vwknp5f
+	lWOF94QgsdzigPrYDDOu8jOK6AqgYyj0Hw0Mk6CYK/NpdrAiO/xXnyT63Pm3lnhH
+	hbj1368ToS7sIjv7ycqdRHZGbmNYTTVRTfnRsuJenl2/gs3Ot2wDH3sE18lZNw9r
+	n9UO/L9ePPaT2WLG5fJ3YyWWt3+Fzh3QKfYlNX1g4h8SxjBfjD6qO3RRwAErMEyI
+	qnvHrafHslKMJAOe365xcRsUHLRBvu05OfJbeGJHsm2MC5Nwpart8+hZjLYBjDBz
+	wQ==
+Received: from mail-qt1-f199.google.com (mail-qt1-f199.google.com [209.85.160.199])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4gj4y3gys9-1
 	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 21:19:53 -0400 (EDT)
-Received: by mail-qv1-f70.google.com with SMTP id 6a1803df08f44-9105be46009so12086296d6.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 18:19:53 -0700 (PDT)
+	for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 21:19:51 -0400 (EDT)
+Received: by mail-qt1-f199.google.com with SMTP id d75a77b69052e-53000c06184so103472601cf.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2026 18:19:51 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1788830393; x=1789435193; darn=vger.kernel.org;
+        d=columbia.edu; s=lionmail; t=1788830391; x=1789435191; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=b/ru/TkXYN6eZiCH1AP2YAl6cjgL8CV/iP5cVwKSpSI=;
-        b=4dnR6mocSCx+9maVfQRZrMuzcPvUG57c1OXzn+CmV8HkFLvYuhtV7cc1IsfnDvdklR
-         kt+7UYrlApYdkPCOSQxwDJmK2EJtugmQ6gujTrm/cGoFQWXM4vvG03yp8dmTdUNc57IC
-         wSGzaMD0E/xhTKszW3T41g1HVve8eFGyUOaWwm3civu9hDMrizdo889r7jIYigSCxdS/
-         bvKZGVYb2o8YPPBN6LwRlzjYpxJ7QCpC3ByVpa1saPP6sm3aXg52WRmkmtQwD+HRYd6u
-         QoXuw+iduUiM/F1tO6mLAXaY/+ltzSGTkQhHEgNxFkodJpYfth+Hij8xCTGfFs/anLCI
-         411Q==
+        bh=vZNhosrukSiX1wNaSmTI+ZUk61C0R//VPNgshZncD6Q=;
+        b=zr3hgV89CkdmLVlqco3AR7TavtMprbUU6g6P1v6RTj/AB5MrIGBJSzr8nEfeEnSaew
+         sRw/ME6QZmd1ImOSznXi0jJZ8B8tjGVy97kIBhkiufPrY8qgx1QUEXsfXNpOWBJHYcj/
+         j3kZwTaIi7l41vRxeMg0pLGbngBTkh4fRYFU7PTsMtzrFYj4Nrv0uY6xp13EI+YA9qT9
+         quUtpgFes2bXEi1S6Ou9LCwwe5E1NzaQg8x0qDPlPHvO3RhfyIUtXTLP5BnDUz+fLYK6
+         qxYAMTfScBBIBlNbuHz7hWonioxq+dJbzVptud22jER3bkg6f4knXUbxKlIgpRVG8hxJ
+         2WHA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788830393; x=1789435193;
+        d=1e100.net; s=20251104; t=1788830391; x=1789435191;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=b/ru/TkXYN6eZiCH1AP2YAl6cjgL8CV/iP5cVwKSpSI=;
-        b=CzWrCKQ/wPsmzNcfRq1C47f3466AxgGM7JRlyeQr9Yv6DslQrDRS0lUialMJQ0saPw
-         N2Qq+pfWs1tLieFhfeAzR2YdLsTGEGXoITlHLHvcNWfFu3y8EgsjCWGHDD35tPb4EMZl
-         t3prqU0urGR6G/bqNdanN1v5fe4QI/26SLcfc/gnH5uslZiOrEY8dZbe6UyUxSvi7+Lf
-         /ahFDmQ5cOdz/NpBbIreBA9iPoMU/iu1eDbbh/j1+hXoGc/ML+unSiyu59Bq77Jj84M5
-         fEifALJ+c6qkI4Gxm9iJyLkgWcIM/1aK6uEm4csRuWIZudbTdd0DuKG/mv/Qzw3uUsGI
-         cAng==
-X-Gm-Message-State: AFuF++n6CQdl5IJCZCuVzoEEAmkK98XTnBKt/AiUNw2uuuLJQz2Wn8Ht
-	5CTjkOqrKxVEywOdqJEktk1hJJ3rVN/fKBAb4oTgtQsNK5m5Tsm9NFpSjLZnJ8OhzpyC7C7Nsvh
-	KcD10x8JzsLVylENVo5MsXHJ/uRc9sYqROk203m/44QW9LfLPn1BEIl4N7Ttc
-X-Gm-Gg: AYBFou0vGiYMFquZ5lUwwK4/KGIbLX7eKI+Uuh/Ph/T7T14z23uMsY42n36SToXG8hy
-	Ur6Hjc003LiBGIb57ziMV1WzpwN3i1J7KYaCkU5acXVrKqD8svQoB/GYn8MvRsnp5XtMMUJz6RX
-	io75edXQfft4CnBM4WAvoA8fw2VEKyHN1UO0KDQ3Ft8QvKs5VZE/XJDs2K/Zw0rFa6e+oaKWFN/
-	9kI1PwNtwua1P/r8KOPCJ4RepC1iWNa7pQBjHE6emxBta75WtVGDgDwuzJypDKdNZV8BQyw1VaH
-	ZLep4tkF/sRnrXqdyemL7FHjWwseuBcmI2JVoFjsuNma72BIGl1R3Cw49pJB3spVSLxjNs4PjcX
-	KahHQPYLNOzOLUsI+9aBXXG8gObSZItjLraGvR6L9ym7/djwjnAc=
-X-Received: by 2002:a05:6214:519d:b0:908:4249:337f with SMTP id 6a1803df08f44-91061f8ebebmr51385506d6.5.1788830392826;
-        Mon, 07 Sep 2026 18:19:52 -0700 (PDT)
-X-Received: by 2002:a05:6214:519d:b0:908:4249:337f with SMTP id 6a1803df08f44-91061f8ebebmr51385076d6.5.1788830392285;
-        Mon, 07 Sep 2026 18:19:52 -0700 (PDT)
+        bh=vZNhosrukSiX1wNaSmTI+ZUk61C0R//VPNgshZncD6Q=;
+        b=mmEkw1lVMMLsRljE+A7fiuNADXYueKqYulDW4J/g9uvSzaIVey27u2fzo7U0+eSLPm
+         syUSdoqUWVNfbTqZBZk/AePn2aQ8nDRsY/OZQ8EZBhn4FJRXdnXVlYAgz552auzXWRL1
+         sTNLl0mkPNd0KgPk8jKc3Kdor0Nm49D+TW4xI0vzJqyKv+DYuPDzy4x7crrfk6+awksD
+         yy8oNcfB0MxNLmNrUU0V3Y1jK+XPyNWgJ/BA/GWNxiJhx8KFGElJo4syhleclDTBBZK4
+         bsrQVmLHY0J526N81CnmJLxo9YhiO08dKxZif2zykva/go1/BTgHOBcydb5BiQtbqbDU
+         c4Zw==
+X-Gm-Message-State: AFuF++kIfoEzrRGUuc//t0DE8LWrnMX7NVTD6LeKUua1JsaIoE3Nx4Ay
+	sLEp1CH7e9XFXPUgfX7v1UN4wxKlW3InYHZicXiUonbFP2JOYLX2rSZ6slm3PcOxVSVFnTtRBDZ
+	yxQWxya+aW/uFJlMxzc6OVUkG/7J9xIsncsnvNLq1QtQeASek2J0ArT/xtdis
+X-Gm-Gg: AYBFou3yxH2o2W60rt4NIYR1jqAaOhMrnVDFgKSG6yxHQte4tWyJ7HH7WNQj8ei5wtz
+	/9yNZNdM+KEOA3TuzKqO6Q+Cqp4nATuseFDag3Xj55oqCv9n8WTCqmoWgrk/3yQ7yQyb2WMjDi3
+	4u3VYNnMQxmN0oLEEgBEgwYr6KmSbrzgXiXF8izwf5NU0BSCNEeRXSlt9NzhAtr5k4/aw+7UbVH
+	RpANDhSbZZ/6p2febIyUkuHiA3APvLMNct8tAs5Q/mmOfBTRQE+5URunazR5g3xv4IIEOn2i4bI
+	0lX/bch2QDAsx0+Ly8Cx+TofnM0q2Nwt6gp4QMldP90vEGtOdN4f+LytvFBB3k/vLd12ar5dEvi
+	XEHoWlh/0y0yhQ07Dcm+jPEInlPKd2qxAz4hrXIqMiC/d461/XE4=
+X-Received: by 2002:a05:622a:5c05:b0:52d:8257:666d with SMTP id d75a77b69052e-5305483acf5mr345357091cf.11.1788830390581;
+        Mon, 07 Sep 2026 18:19:50 -0700 (PDT)
+X-Received: by 2002:a05:622a:5c05:b0:52d:8257:666d with SMTP id d75a77b69052e-5305483acf5mr345356401cf.11.1788830390069;
+        Mon, 07 Sep 2026 18:19:50 -0700 (PDT)
 Received: from [127.0.1.1] (dyn-160-39-33-242.dyn.columbia.edu. [160.39.33.242])
-        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91040694543sm104322656d6.33.2026.09.07.18.19.51
+        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91040694543sm104322656d6.33.2026.09.07.18.19.49
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 07 Sep 2026 18:19:51 -0700 (PDT)
+        Mon, 07 Sep 2026 18:19:49 -0700 (PDT)
 From: Tal Zussman <tz2294@columbia.edu>
-Date: Mon, 07 Sep 2026 21:19:18 -0400
-Subject: [PATCH 03/15] btrfs: remove the free space cache endio workqueue
+Date: Mon, 07 Sep 2026 21:19:16 -0400
+Subject: [PATCH 01/15] btrfs: stop enabling the v1 space cache from the
+ on-disk state
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -89,7 +90,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260907-btrfs-remove-v1-space-cache-v1-3-5f9a5ba352a7@columbia.edu>
+Message-Id: <20260907-btrfs-remove-v1-space-cache-v1-1-5f9a5ba352a7@columbia.edu>
 References: <20260907-btrfs-remove-v1-space-cache-v1-0-5f9a5ba352a7@columbia.edu>
 In-Reply-To: <20260907-btrfs-remove-v1-space-cache-v1-0-5f9a5ba352a7@columbia.edu>
 To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
@@ -97,150 +98,114 @@ To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         Tal Zussman <tz2294@columbia.edu>
 X-Mailer: b4 0.17-dev-db0b7
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1788830387; l=5247;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1788830387; l=3265;
  i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
- bh=WHBgYoAZXTwZCTC+uPtMCS1zTe/PB6K8lKFf7fwynMI=;
- b=KfvF3H0DYALECmAJ7Lr2+u9y8nClqhPe3e9RldNbYCRcSDdoukRBdB+7H5Q1RETwfxaK/+zcT
- cGVGMzx25lCD86yoZMV02JeZIFe14CNXEucc1CcPG6poR/P2kZGj7nk
+ bh=lp6N7P6uRAwF4k80VrSyckftlj/cB8cKUNVuGaugFXs=;
+ b=IMvkXE5GdPNas7sHyPPQwTAp/61WcaYW99DKn1n6QvUNWjB9tm3SWAY2+9Qii4LHZ5x/oBG96
+ ilUy6ok7bUnC6YvNAOF9aNND90b/CoBmBaLGvxMlkFvDQFRzOPmzxDg
 X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
  pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTA4MDAxMSBTYWx0ZWRfX9IWEJEAKgche
- JvJAhtim0Y0UIikmzJQD3dgiW0M/TI6jGYjFoPYbFW/KoHEWj1XfjJLMhLq24vqSPLD7344owoH
- aZL+blVGZpJu4iVJusulyT+Go8UjZKA+JFIbRaqEh5CvH2v3qrABod9Kk/W3WlvUTfKMLr/2jaz
- qyYxnoVd31uQ6CSC1DDqgbl4kQHv4FP/H9ZOsnbsPptZcM1XOgkxnvZVMWTkum2nqtZGgrIb2Oi
- 7h5qfVkggQf3hyvJ+UYLCcG/0lvRfBQrZ0oym46TjwCtow+6NpRdLUOi2cORGPjPA9FJ9u46K5i
- 4eVJAKf6UnN85AVMZQgdXPmFHFG3IPvWoz4aMzQ82nGOvAA/PseCLyEu4lV4uc7JbpPK52ulNXS
- XyfoB2VTcyvveZBJTocvouDNx1V9lpkDtcLAbgYQVn36GdAHPULydikTNTSgDEwxPXiYOYs06rG
- Mrvjeje43oVP1PsrRlg==
-X-Proofpoint-GUID: TSz6oq6Lq2KpAQ4iIDXGbCQ13wZB0aoF
-X-Authority-Analysis: v=2.4 cv=atuCzyZV c=1 sm=1 tr=0 ts=6a9f62b9 cx=c_pps
- a=oc9J++0uMp73DTRD5QyR2A==:117 a=GaPK54s0Se3oFqK5NkZy0g==:17
+X-Proofpoint-ORIG-GUID: 32yLNI5Rbj7NyRBhL7i8QJclcYq_G0bA
+X-Authority-Analysis: v=2.4 cv=T/68ifKQ c=1 sm=1 tr=0 ts=6a9f62b7 cx=c_pps
+ a=WeENfcodrlLV9YRTxbY/uA==:117 a=GaPK54s0Se3oFqK5NkZy0g==:17
  a=IkcTkHD0fZMA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=JR4YdQiviy7OQf72WyZ1:22
- a=MjXS7SgsmouH5g4WD6EA:9 a=QEXdDO2ut3YA:10 a=iYH6xdkBrDN1Jqds4HTS:22
-X-Proofpoint-Spam-Info: AW1haW4tMjYwOTA4MDAxMSBTYWx0ZWRfX7tswlBIQGhhJ
- nj0uA2LWrI7t/fsN24Ii3FvipRu5e4AlS2kVMFqvBJ23Sr15KTIUlOIVVH1pO/IoK/gdDn9Jfpz
- 8KjjoqfKJ22WKdvrum5nOpUDx1IewJVPvZR14k8T5fv079kco6NL
-X-Proofpoint-ORIG-GUID: TSz6oq6Lq2KpAQ4iIDXGbCQ13wZB0aoF
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=jHxIr1HyPKZ_Q5_91PL3:22
+ a=6xji9QrKO1GPOBtlZsEA:9 a=QEXdDO2ut3YA:10 a=kacYvNCVWA4VmyqE58fU:22
+X-Proofpoint-Spam-Info: AW1haW4tMjYwOTA4MDAxMSBTYWx0ZWRfX3THDZf4J3T/N
+ jvSsWAszmag6hY0uzgpLOlWOOe4XUFyGle4KRQLZbfJbQxaNWSICM6R3PvojWXJ+eTK5UbqJ2xT
+ 5j6KopINiI2Cb/LA2BXjB2ctc1MwUyR4ZVd9sT9odd6pADi2IhBE
+X-Proofpoint-GUID: 32yLNI5Rbj7NyRBhL7i8QJclcYq_G0bA
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTA4MDAxMSBTYWx0ZWRfX6yt0HySMQe6Z
+ OjV75FLtqDpfOkVPGUubIRHiuoPemWyLudGmjb6IaLRK4ZhiZ34vlGI0oxOl9bUFX3q9VcUom/f
+ khr4OKHgITzALkVvLhY1hCyAVpATAGVNgC6LAb0H8adGsca8E6fjdlHh08XYa/+Cav9Ba+trBNQ
+ 1T4polbJA7o8UE0EJ+iH9sGbPCcvZLQlxMhtRBCq3LNLOEgTYGDAxx2n7l2ex5VxJZshicMqtbq
+ ZL8hJfvraAFiTIpzFU3ING/y8W4V5EPpjJEmcZVK2RIVTlIbBCMb8o8LMQwD/xJRlvMYc/yYsaN
+ qK94NxYD0LGwdSp9pTUhiaO2Yyj74C54ZKKuDgsG1UvJc3lMI76WAY/kIuL2+6Nv1Fg8aV9FGQh
+ 3WstMw5ALE/agiirK+XOwMDoHZx82ULZipldTfIsMBwpKdvKztCkpXOX3FVApQFLufK1yl3MRvm
+ Pxsolr/zEIbXHvjHTIA==
 X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11899
  signatures=596817
 X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- suspectscore=0 impostorscore=10 malwarescore=0 lowpriorityscore=10
- spamscore=0 bulkscore=10 clxscore=1015 adultscore=0 priorityscore=1501
- phishscore=0 classifier=typeunknown authscore=0 authtc= authcc=
- route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2606150000
- definitions=main-2609080011
+ clxscore=1015 bulkscore=10 priorityscore=1501 adultscore=0 impostorscore=10
+ spamscore=0 suspectscore=0 malwarescore=0 lowpriorityscore=10 phishscore=0
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2606150000 definitions=main-2609080011
 
-Free space inodes are no longer written to, so nothing queues ordered
-extent completion on endio_freespace_worker. Remove it and always use
-endio_write_workers in btrfs_queue_ordered_fn().
+Since commit 545e560a5b0f ("btrfs: disable v1 space cache") the mount
+options can no longer request the v1 space cache, but a filesystem with
+an active v1 cache and no free space tree still enables it from
+cache_generation, and remount does the same. Drop both, so SPACE_CACHE
+can never be set.
+
+btrfs_start_pre_rw_mount() then sees the on-disk cache as active but
+unwanted and cleans it up, as -o nospace_cache does today. That covers
+the read-only to read-write remount as well, so drop the toggle in
+btrfs_remount_cleanup(), which would otherwise start a transaction on
+remounts of a read-only filesystem with an old cache.
+
+The cleanup is now unconditional, and the first read-write mount fails
+if it fails, as it did with -o nospace_cache. This also lets an old
+filesystem mount without options when the page size is larger than the
+sector size, which btrfs_check_features() rejected once SPACE_CACHE was
+set from the superblock.
 
 Assisted-by: Claude:claude-fable-5-1
 Signed-off-by: Tal Zussman <tz2294@columbia.edu>
 ---
- fs/btrfs/disk-io.c      | 14 +++-----------
- fs/btrfs/fs.h           |  1 -
- fs/btrfs/ordered-data.c |  7 ++-----
- fs/btrfs/super.c        |  1 -
- 4 files changed, 5 insertions(+), 18 deletions(-)
+ fs/btrfs/super.c | 16 +++-------------
+ 1 file changed, 3 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 28c0a4a8d008..1cd44a5c193f 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1782,7 +1782,6 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
- 	if (fs_info->rmw_workers)
- 		destroy_workqueue(fs_info->rmw_workers);
- 	btrfs_destroy_workqueue(fs_info->endio_write_workers);
--	btrfs_destroy_workqueue(fs_info->endio_freespace_worker);
- 	btrfs_destroy_workqueue(fs_info->delayed_workers);
- 	btrfs_destroy_workqueue(fs_info->caching_workers);
- 	btrfs_destroy_workqueue(fs_info->flush_workers);
-@@ -1993,9 +1992,6 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info)
- 	fs_info->endio_write_workers =
- 		btrfs_alloc_workqueue(fs_info, "endio-write", flags,
- 				      max_active, 2);
--	fs_info->endio_freespace_worker =
--		btrfs_alloc_workqueue(fs_info, "freespace-write", flags,
--				      max_active, 0);
- 	fs_info->delayed_workers =
- 		btrfs_alloc_workqueue(fs_info, "delayed-meta", flags,
- 				      max_active, 0);
-@@ -2008,8 +2004,7 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info)
- 	if (!(fs_info->workers &&
- 	      fs_info->delalloc_workers && fs_info->flush_workers &&
- 	      fs_info->endio_workers && fs_info->endio_meta_workers &&
--	      fs_info->endio_write_workers &&
--	      fs_info->endio_freespace_worker && fs_info->rmw_workers &&
-+	      fs_info->endio_write_workers && fs_info->rmw_workers &&
- 	      fs_info->caching_workers && fs_info->fixup_workers &&
- 	      fs_info->delayed_workers && fs_info->qgroup_rescan_workers &&
- 	      fs_info->discard_ctl.discard_workers)) {
-@@ -4455,9 +4450,8 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
- 	 * to finish an ordered extent - end_bbio_compressed_write()
- 	 * calls btrfs_finish_ordered_extent() which in turns does a call to
- 	 * btrfs_queue_ordered_fn(), and that queues the ordered extent
--	 * completion either in the endio_write_workers work queue or in the
--	 * fs_info->endio_freespace_worker work queue. We flush those queues
--	 * below, so before we flush them we must flush this queue for the
-+	 * completion in the endio_write_workers work queue. We flush that
-+	 * queue below, so before we flush it we must flush this queue for the
- 	 * workers of compressed writes.
- 	 */
- 	flush_workqueue(fs_info->endio_workers);
-@@ -4483,8 +4477,6 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
- 	 * btrfs_finish_ordered_io() when we are unmounting).
- 	 */
- 	btrfs_flush_workqueue(fs_info->endio_write_workers);
--	/* Ordered extents for free space inodes. */
--	btrfs_flush_workqueue(fs_info->endio_freespace_worker);
- 	/*
- 	 * Run delayed iputs in case an async reclaim worker is waiting for them
- 	 * to be run as mentioned above.
-diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index 3eba8438593c..441b315e8a98 100644
---- a/fs/btrfs/fs.h
-+++ b/fs/btrfs/fs.h
-@@ -712,7 +712,6 @@ struct btrfs_fs_info {
- 	struct workqueue_struct *endio_meta_workers;
- 	struct workqueue_struct *rmw_workers;
- 	struct btrfs_workqueue *endio_write_workers;
--	struct btrfs_workqueue *endio_freespace_worker;
- 	struct btrfs_workqueue *caching_workers;
- 
- 	struct workqueue_struct *fixup_workers;
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index b32d4eabe0ab..e9f1cbeb555a 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -417,13 +417,10 @@ static bool can_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
- 
- static void btrfs_queue_ordered_fn(struct btrfs_ordered_extent *ordered)
- {
--	struct btrfs_inode *inode = ordered->inode;
--	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	struct btrfs_workqueue *wq = btrfs_is_free_space_inode(inode) ?
--		fs_info->endio_freespace_worker : fs_info->endio_write_workers;
-+	struct btrfs_fs_info *fs_info = ordered->inode->root->fs_info;
- 
- 	btrfs_init_work(&ordered->work, finish_ordered_fn, NULL);
--	btrfs_queue_work(wq, &ordered->work);
-+	btrfs_queue_work(fs_info->endio_write_workers, &ordered->work);
- }
- 
- void btrfs_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 77443ded6db3..b44b16970a62 100644
+index 464129b1b0d4..77443ded6db3 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -1243,7 +1243,6 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
- 	workqueue_set_max_active(fs_info->endio_workers, new_pool_size);
- 	workqueue_set_max_active(fs_info->endio_meta_workers, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->endio_write_workers, new_pool_size);
--	btrfs_workqueue_set_max(fs_info->endio_freespace_worker, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->delayed_workers, new_pool_size);
+@@ -759,12 +759,12 @@ void btrfs_set_free_space_cache_settings(struct btrfs_fs_info *fs_info)
+ 
+ 	/*
+ 	 * At this point we don't have explicit options set by the user, set
+-	 * them ourselves based on the state of the file system.
++	 * them ourselves based on the state of the file system. An existing
++	 * v1 space cache is no longer used and gets cleaned up once the
++	 * filesystem is mounted read-write.
+ 	 */
+ 	if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE))
+ 		btrfs_set_opt(fs_info->mount_opt, FREE_SPACE_TREE);
+-	else if (btrfs_free_space_cache_v1_active(fs_info))
+-		btrfs_set_opt(fs_info->mount_opt, SPACE_CACHE);
  }
  
+ static void set_device_specific_options(struct btrfs_fs_info *fs_info)
+@@ -1264,8 +1264,6 @@ static inline void btrfs_remount_begin(struct btrfs_fs_info *fs_info,
+ static inline void btrfs_remount_cleanup(struct btrfs_fs_info *fs_info,
+ 					 unsigned long long old_opts)
+ {
+-	const bool cache_opt = btrfs_test_opt(fs_info, SPACE_CACHE);
+-
+ 	/*
+ 	 * We need to cleanup all defraggable inodes if the autodefragment is
+ 	 * close or the filesystem is read only.
+@@ -1282,10 +1280,6 @@ static inline void btrfs_remount_cleanup(struct btrfs_fs_info *fs_info,
+ 	else if (btrfs_raw_test_opt(old_opts, DISCARD_ASYNC) &&
+ 		 !btrfs_test_opt(fs_info, DISCARD_ASYNC))
+ 		btrfs_discard_cleanup(fs_info);
+-
+-	/* If we toggled space cache */
+-	if (cache_opt != btrfs_free_space_cache_v1_active(fs_info))
+-		btrfs_set_free_space_cache_v1_active(fs_info, cache_opt);
+ }
+ 
+ static int btrfs_remount_rw(struct btrfs_fs_info *fs_info)
+@@ -1535,10 +1529,6 @@ static int btrfs_reconfigure(struct fs_context *fc)
+ 			btrfs_set_opt(fs_info->mount_opt, FREE_SPACE_TREE);
+ 			btrfs_clear_opt(fs_info->mount_opt, SPACE_CACHE);
+ 		}
+-		if (btrfs_free_space_cache_v1_active(fs_info)) {
+-			btrfs_clear_opt(fs_info->mount_opt, FREE_SPACE_TREE);
+-			btrfs_set_opt(fs_info->mount_opt, SPACE_CACHE);
+-		}
+ 	}
+ 
+ 	ret = 0;
 
 -- 
 2.39.5

@@ -1,146 +1,139 @@
-Received: from mail-wr1-f53.google.com (mail-wr1-f53.google.com [209.85.221.53])
+Received: from mail-yx1-f43.google.com (mail-yx1-f43.google.com [74.125.224.43])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EB0F63A7F68
-	for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2026 16:47:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.53
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788886063; cv=pass; b=bg/lcUJsWHmHnqeYF/hKemPSBJPbu6ZUcptrAZscOPs8OPiaapjZf/eTNE8WiNJmu5S+XZMJP6+pmXxob3gHHMuZe0ZRz7xZJPaPyEA8zLeruzJJzk5HSJicxa2PAcN3D33UuRov3zHN2uo6w3ujHiaEx7CnQskQowt0W7IbtOE=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788886063; c=relaxed/simple;
-	bh=mwAxvZMzHRoyoS5SlFNnDSEx6Xh8O3uTGsYLqZ4P580=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=rfCWTz7G0gvYGOpalboBsPbBLhlMIUUFsyZLPQV8mIqMUMmrP08h6+a35V5Cpx3ObsiQ00v+1DM/0m9H9YaIWMBbqv3nBp9Ec7sbqh8gnJEvOno6iKEbtUhIXsTSykYSQQJAvl9RhS21yxl7kUCF1afl7PeJDrKVbLGgF8BChbo=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=ZeWDij5q; arc=pass smtp.client-ip=209.85.221.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B5DF25921E4
+	for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2026 17:32:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.43
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1788888722; cv=none; b=ttHdEKHFLtjNF1QEs0UcG4D46tQS8ak+Bto7x/AQct5O/+UmtUd9wNAidIc009BKbtloUsrBDuczZh5Qt8+IaX4CEqVpCiVm41FSxdv2X0K1VQRGU+58fxh2SzO2SWtFJivu0GkHNjyph0CmrEENGyMEzgEYJ+hCspbLx5Ds1do=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1788888722; c=relaxed/simple;
+	bh=m6JwC8CwNv622R1ifVTgXDAtbkT015TpXaYRWGTFoj8=;
+	h=From:To:Subject:In-Reply-To:References:Date:Message-ID:
+	 MIME-Version:Content-Type; b=t/3UxyVuAW56oeGoskFBgxilzXPcXBF83UoNbr8vD4Pj6yN87sVr12OQtkqH3qJ3817Q/6vjJU8OSGYb8Fk8RCKFLkM1i8/lM2dd1myCJW15HJQzP57JpWG8QbcZsBkkzd5M5RDXiZB2CTKxe+UdEjVGRbDRmixxj3ZQztu0L14=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=dbh9mL0y; arc=none smtp.client-ip=74.125.224.43
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="ZeWDij5q"
-Received: by mail-wr1-f53.google.com with SMTP id ffacd0b85a97d-482e4998d28so3900627f8f.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Sep 2026 09:47:39 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1788886058; cv=none;
-        d=google.com; s=arc-20260327;
-        b=KxLG8BINBSL5TpthjNE0rmiD34XpliTFx0Z2QvUYnNI2b4WF7kk/JbqmsXoxRzsgWz
-         PA0enKf/YaS7Wtca7/suMk27OqhWOK8t4f8H/lUPXKuB9kZDbjzmpczBJ4GP3cHe4DVN
-         X5Y6QMDVuXekqmFMyfbAAPaCtmvC+615+/tq0dtSaNRs22MQRsSpp7gj43e7/KwgzCL8
-         mzJJ6dQS5XX5PZzfI8UXP22IhQKg7NKsQZMK0BGMg1/lEHFEFAet2W9oqV9BDEm7YaNf
-         v5Q8rgQieO6aP3BYgGHnKindtwvms5YIezRVKY1enUks9i/eJDR3CEGVkC0Tvu6Viqrc
-         c2pA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=lQTr2U76uYl3nor0tns8i6gi/m+LsiVvyKvG51LqGmw=;
-        fh=TwoDPJ03w60MFtopI0TLuXp9sVo3pjoH/3FXVvG0pzc=;
-        b=e4WLoIoUgxnSoNA7guwGIV6LT+JivmsLMOmkO8MXmFWH7Xh1YFB+8cKLOancmFgIet
-         rPwzlGV5Y1L4khtxk88ZqSG8JdWhmJbCBv5/P2QApvGyHA+fyUai5It4V+xA/I+6uvJO
-         rGcAU1yYackBV+t+esdRKD+nsTKCBVAinJmYc0VO+3zj4ya1pVC8hq65lPAroLZcjqdA
-         V3wGArEPTx0aYpXbVYgFBzK8RK1V0K2SnQ1bSD4e3yEC2Z77B6l2ptxV/hp9O+KRa2ux
-         LNqqGSo8vpr0CF5Bq4pQDFDL98b4KsPjewqg+Ltt6nXWMOzPeGxAr0r9KbkTNT7G619A
-         w+lA==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dbh9mL0y"
+Received: by mail-yx1-f43.google.com with SMTP id 956f58d0204a3-66f883abfdcso4441216d50.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Sep 2026 10:32:00 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1788886058; x=1789490858; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+        d=gmail.com; s=20251104; t=1788888719; x=1789493519; darn=vger.kernel.org;
+        h=content-type:mime-version:message-id:date:references:in-reply-to
+         :subject:to:from:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=lQTr2U76uYl3nor0tns8i6gi/m+LsiVvyKvG51LqGmw=;
-        b=ZeWDij5qCX58pjNIOWqP5T0WwTbCTYmg9/C3jusLKLwjD09DWYEnX0tdae7ZguME6H
-         lhfsqRR1a1twNwVjmiRA+E0Z25HLxcD1pvX4jHJ31YZQGRC/53qQgUw+lJo4NKHkLrRl
-         425BHkFkIpOduF245QPbwxdQXdoQCVsk2ydZWdL7imUQtEWxlBpTYbCjPYw5HoDIPFwR
-         ZN8SdF1WQAaYoiNp1EhGISVBI/RZ/M1e08APN4/r16Oo98wmnJsQKDSWMv72NL/0O7s2
-         HmqaXM808bFk/ir0x0a7IPVbtg5GVCAvwUnHyidWwkWCBDD35wxITvIYgKUSz0wVWUgw
-         DuJA==
+        bh=vieaupvYicdOwc6vZ9Uq8eozU0pYXl0O/LI23IN1ePg=;
+        b=dbh9mL0ynCh8dYG3OgSz2bcpfXbxu4MNLWRG84PQ9lLJUEEKPiv+8vGubtWexB5f5X
+         39qYACb8t0pZXJtdzjlapXdN/KeG7/ypNu4+Cug/Yqtqj68JvVqT81g4FHvkipWwBVr4
+         SBC/Nsc9GT40MAs5ciw3dzHDvxlBgNQoKsI1n9/L9ufYfdchlKk1nKoEa3S/AE0B4diB
+         ySVEayeXp6HJqtwl8pbLdSLSHDaBd9ovKFSUTMVnFxqBeI1cPuLznMVNd+2XZ475u5OJ
+         +ZfGIxG7r27s94vhdEnSe7hJfEqKzsbgMvzvbQyYEdeFVHNCw7/gpxpbrMr/OT/56Fp5
+         QX1Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788886058; x=1789490858;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=lQTr2U76uYl3nor0tns8i6gi/m+LsiVvyKvG51LqGmw=;
-        b=iP2cNnVImMt6QcQyhR0LX2WINTj9Q8hQIim/u9b9TRZuMsevWmMuP7LPR/ar/70du2
-         Ie5zb3++dtlUpnN0hgBb2YhyRShVna76Kn1D/gVnWrbk9Pz2Nx27CM9C7XP7xoHwhMKR
-         awf8f4FL3wjF6Ig/WgCLkHtrjTvM/P9iFq6T1b7wab9jKFwR6f8/TnbqOdPaRppNCNhG
-         T+MAwVnfwUPJKzdKtbuXNrd33TSKl8vU5MKYsTuSBfOuUhb2O3ShUyFqTrmnDmVD9PA+
-         T5FHU9/L3NytrOv0u1sj2p4pq5ilms+RlTE7PgkNphnoYXnY96hCMFaXw9fUNIb2O6AN
-         D/bw==
-X-Forwarded-Encrypted: i=1; AKwUvBzTi6CHY5BulBSBFoQLp613eeFfqJ6AfBtej+aUeb6uotwDPriZPoHvHM9hbloWNciPH5p+lEvmdulEOQ==@vger.kernel.org
-X-Gm-Message-State: AFuF++mCbuVic4cvaCICmYBkmHVNVSeCm5IaLSVVAB8O1HgV+j6+qP5s
-	DFcY/dbVOOHnjuwx3/DMQ59oIkVW+kkxvEJ87aQHmuTnDMPnQa4og+gjLMZzhSOisPMAEcALIJt
-	jVRMU0alrZAp4ftJWZDVbPYIDnij+1onnIFQ5dLjWEQ==
-X-Gm-Gg: AYBFou1Byd/Sizk4s42pRYKT6lERd0fEJuY9luyqzHWTJDvLUu25LaEJSwMYHqK155L
-	8iYx2q/3WD65sG6sn8iec2F/UWgj6tUEwehG6m5guWz9NRFY8CPM/t8NryFUgIuU4jwtPmjpfn6
-	NwympR2i29uFWXhH80cZx0XDjFbHM2H0oXMwO3IBVgoqRmbCN229AE8R1KcWn8sEfVh/hH9mfwT
-	OhP3ys7Z6VB59E5podOsKIe52uzKZzzaMWet/OkTJFOZb4OSYuUwgyYyZXETfwfxSeGycx/Ib2C
-	/1RhoNyKiB42Uein4iVlRpftjC8yOACBYQuh5pRNxEkFZeJLYGHKk7vGNNy+lhl0Kcc4BMpUGJG
-	KbqF2gJdUHJN/pCyQR0PtzsvM0jnlhSUvZOJ/I/szTg==
-X-Received: by 2002:a05:600c:138e:b0:49d:daa:af6e with SMTP id
- 5b1f17b1804b1-49d1c7b732amr46339715e9.16.1788886058021; Tue, 08 Sep 2026
- 09:47:38 -0700 (PDT)
+        d=1e100.net; s=20251104; t=1788888719; x=1789493519;
+        h=content-type:mime-version:message-id:date:references:in-reply-to
+         :subject:to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=vieaupvYicdOwc6vZ9Uq8eozU0pYXl0O/LI23IN1ePg=;
+        b=aurG4YxCCc/IcC1afwljjAgIXmG4iuYvqOlMIc1EtpxBOc+43x15UxhJgBgoMyw9Al
+         xri+RchlDyLionTU/RsFi0PaiazK8LBynyZUaD7kfuqclecdKay/qQ0s2OhI7yfqDaQL
+         go5Lhrgw3zelP5VC+Lo5nWdkbzgVtgD9yItGUyb1LTjxSr2fiWLoWfmNqaS3lvAY9A43
+         9f05AdfyuMbRTUNEf8Sqs7XXT2+4k5d+4V189odKOcgasWSij5Qg1z/kV0y0Kf8Ywrs4
+         kLWKLRrQ8eT0+x7NE4hc3p438k2uLSXAQuj5umUuQEiSQ4bALZVB5RUf2JYI29dJq//b
+         JgIg==
+X-Forwarded-Encrypted: i=1; AKwUvBz5+MW9SbaXnz+9rfi1N2u8KjgPacfB/DxdEWbOoDDQOz3IDoLLHUsTC1VCaWiw4okOwVc4as4ECrBuAw==@vger.kernel.org
+X-Gm-Message-State: AFuF++mpTY9tEccnGs0GX0yx3EHpr0S2Gw9M14nLA2P4UZzmg3NGcPBa
+	lYUzdkCHxkoF47cklQZLquKUzilEkplZxlnHtWn7b+TB4GqGbQEnzqZSj7n3aw==
+X-Gm-Gg: AYBFou3akFEDxVnq+1lLNB9/f0Ib+y1i04El7jrzthCTldQYGeUv+kzJl0PEEbroRBN
+	RkXb09yeFK0ukeC8iTMcjxYYOodHAy9kP64lOBG0pwz2Khr+rLxAJj4JQBUSr6roiKhxeVjJr3q
+	6qgG3gUce+jBRvg5QsA+rtG/D4mBcaF0eStxAk0nqz8DKyxs9mTYfLGbLoproau4W6WCxikzl8m
+	HW33txSAPD+obiyRTaEZf5aGpzmvJRrKp5LVt9dCrJFg+tWj3GoW9YQopli25BDWIhHhACoYCH/
+	1c+s/XthDLww2kdHsNpyIcIfu5ZEvzn+dPJsw25HbWHZGIcGpOsNkdVFuw0duNV1CDX+53dHb7v
+	jbSu4lvl2UmKboqH3Kf5SZujia15nWOu2S1GbUl2CsXChJO6s+wYNMFP0ctJRwq3L9f8vOhbO2Q
+	fXuDfwMPz7wxY2d/StOIfQW91tY7LDehdWw0wyU9X0+qXWLCxoWqOcmLyYKgzTdF5WIylO4pdAN
+	l5Lq854CyjtIN4blEIONwi8qxHAXkwh4UjrphHwR2oyvaet
+X-Received: by 2002:a53:e043:0:b0:66f:8d89:90c with SMTP id 956f58d0204a3-66fb5a9a1a4mr6897735d50.43.1788888719462;
+        Tue, 08 Sep 2026 10:31:59 -0700 (PDT)
+Received: from localhost (23-91-225-113.cpe.distributel.net. [23.91.225.113])
+        by smtp.gmail.com with UTF8SMTPSA id 6a1803df08f44-9104067b125sm122750816d6.29.2026.09.08.10.31.58
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 08 Sep 2026 10:31:58 -0700 (PDT)
+From: Nicholas D Steeves <nsteeves@gmail.com>
+To: Ulli Horlacher <framstag@rus.uni-stuttgart.de>, linux-btrfs@vger.kernel.org
+Subject: Re: How to exclude other filesystems but include subvolumes?
+In-Reply-To: <20260907103339.GA786966@tik.uni-stuttgart.de>
+References: <20260907103339.GA786966@tik.uni-stuttgart.de>
+Date: Tue, 08 Sep 2026 13:31:52 -0400
+Message-ID: <87v78f6453.fsf@navis.mail-host-address-is-not-set>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260513085340.3673127-1-neelx@suse.com> <20260513085340.3673127-10-neelx@suse.com>
- <20260602025436.GF2295@sol>
-In-Reply-To: <20260602025436.GF2295@sol>
-From: Daniel Vacek <neelx@suse.com>
-Date: Tue, 8 Sep 2026 18:47:27 +0200
-X-Gm-Features: AcwNN1WHoSNszmavv4wORasY461K9gsH-mc9zR1O6zdN1S5pOlfHSeHNoKmuOnY
-Message-ID: <CAPjX3Fd-YEgnzhMryAJi44tZNs_YsHRAAwsxaKbO_jpgvp=qQg@mail.gmail.com>
-Subject: Re: [PATCH v7 09/43] btrfs: add infrastructure for safe em freeing
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>, "Theodore Y. Ts'o" <tytso@mit.edu>, 
-	Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>, 
-	linux-block@vger.kernel.org, linux-fscrypt@vger.kernel.org, 
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	Boris Burkov <boris@bur.io>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/signed; boundary="=-=-=";
+	micalg=pgp-sha512; protocol="application/pgp-signature"
 
-On Tue, 2 Jun 2026 at 04:56, Eric Biggers <ebiggers@kernel.org> wrote:
-> On Wed, May 13, 2026 at 10:52:43AM +0200, Daniel Vacek wrote:
-> > +/*
-> > + * Drop a ref for the extent map in the given tree.
-> > + *
-> > + * @tree:    tree that the em is a part of.
-> > + * @em:              the em to drop the reference to.
-> > + *
-> > + * Drop the reference count on @em by one, if the reference count hits 0 and
-> > + * there is an object on the em that can't be safely freed in the current
-> > + * context (if we are holding the extent_map_tree->lock for example), then add
-> > + * it to the freed_extents list on the extent_map_tree for later processing.
-> > + *
-> > + * This must be followed by a btrfs_free_pending_extent_maps() to clear
-> > + * the pending frees.
-> > + */
-> > +void btrfs_free_extent_map_safe(struct extent_map_tree *tree,
-> > +                             struct extent_map *em)
+--=-=-=
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
+
+Hi,
+
+Ulli Horlacher <framstag@rus.uni-stuttgart.de> writes:
+
+> Many programs like find, tar, rsync, cp, du, etc have options to exclude
+> other filesystems, eg rsync:=20
+>   --one-file-system, -x    don't cross filesystem boundaries
 >
-> The "unsafe" btrfs_free_extent_map() still exists.  Assuming both
-> variants will continue to be needed, shouldn't the comment above the
-> "unsafe" variant be updated to document the preconditions for using it?
+> But this also excludes subvolumes, which are in the same filesystem.
 
-Actually this could be cleaned up and unified into a single function
-with optional argument.
+Yes, because subvolumes are boundaries.
 
-> > diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-> > index 6f685f3c9327..a962012be1c3 100644
-> > --- a/fs/btrfs/extent_map.h
-> > +++ b/fs/btrfs/extent_map.h
-> > @@ -97,11 +97,18 @@ struct extent_map {
-> >       u32 flags;
-> >       refcount_t refs;
-> >       struct list_head list;
-> > +     struct list_head free_list;
-> > +};
+> How can I address a btrfs filesystem with all subvolumes, but exclude
+> other filesystems?
 >
-> The comment above this struct says "Keep this structure as compact as
-> possible, as we can have really large amounts of allocated extent maps
-> at any time."  Is there any way to avoid adding a whole list_head?
+> Example: I want to copy the / filesystem (with all subvolumes), what is t=
+he
+> best solution (for scripting!)?
 
-Good catch. In fact we can reuse the old list member. No need for a new one.
+The best solution that I've found is to 'mount -o subvolid=3D5
+$your_root_device /somewhere' (I think /btrfs-admin or /.btrfs-admin is
+logical), where only the root user and the sudo group can read the
+mountpoint, and only root can write to it.  I suspect you'll agree that
+it's important to include the output of 'btrfs sub list -pta
+$subvolid_5_mountpoint' in that backup (for use by humans) as well in
+JSON format if you want to someday automate restoration of the subvolume
+structure.  Ie:
 
---nX
+  1. Mount a top-level view.
+  2. List the subvolume structure and insure it ends up in you
+  replicant.
+  2.5: Optionally recreate the subvolume structure at the target.
+  3. Replicate everything in one shot, without '--one-file-system, -x'.
 
-> - Eric
+Best,
+Nicholas
+
+--=-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQJHBAEBCgAxFiEE4qYmHjkArtfNxmcIWogwR199EGEFAmqgRogTHG5zdGVldmVz
+QGdtYWlsLmNvbQAKCRBaiDBHX30QYRckEACZJvijyTQbVZE8YDnxfVQh0a8+x692
+3aSUSrmsIH6ySxDsw9VY4aAIuqdm8D/0xH0+59b0NTxPsXHki6ogtjDZctM4t3EX
+15lQ7vNN4G06w66q9qjMZs9q0QAnfrKHJgcdg7//8Li75tx9ISPolNrqodJpXz6m
+q9W9eEyBkct1hK081RobUjbMSAI8NWS1Zx0uosQlXPudRNbXjnZ4FcT6Fx08Ki3C
+RFSVWg//9IATcsOdHmMKMfAMAez+lyZKXIWXSxrqCykbMFzuEIkZaowl7yIZ4a2R
+1WIYCB6gd5Y/4/nZh+1yV0FwjC+2R1yVRKIOaf5mYyIzzHiHClz6DFT8x09WdrPZ
+mEYivsM2QFHdM7D2HZ2QhVENl9b12RwFpSPdNZjB8Fi59sOZnfVy5CKNe5HuIFy/
+ZX0wW2eGibkFmTLLbGQ9KJwhzcU7a2l8IsVE9OasjDGh4Tspx6kk9XJPQWIiPUib
+7mtqOtr2Jrj4vHbXEuTxcQLrMpUGg8PExsIyD6sn60u/+LbIj+OPPwbNX5rdQUDY
+AwYOxXIh91T7LhUQLW6W6pWTTCI6CNHyfZ0Rj81hID3NLfLOO4TIVQjP0lsftlS0
+dJlmDtRB0xCKbcWzGEnnRZqqLb2zkv7ElonLkaouEMK/daYKTRB2Awqn96xdZl3T
+rhIqgH7c6tdLwg==
+=Ai9s
+-----END PGP SIGNATURE-----
+--=-=-=--

@@ -1,139 +1,148 @@
-Received: from mail-yx1-f43.google.com (mail-yx1-f43.google.com [74.125.224.43])
+Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B5DF25921E4
-	for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2026 17:32:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.224.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51A3D48164A
+	for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2026 21:28:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788888722; cv=none; b=ttHdEKHFLtjNF1QEs0UcG4D46tQS8ak+Bto7x/AQct5O/+UmtUd9wNAidIc009BKbtloUsrBDuczZh5Qt8+IaX4CEqVpCiVm41FSxdv2X0K1VQRGU+58fxh2SzO2SWtFJivu0GkHNjyph0CmrEENGyMEzgEYJ+hCspbLx5Ds1do=
+	t=1788902890; cv=none; b=EFwZ30HL3f7+EfEAjj/fk7W4+KSKGlEZhE3bZYvVhwtOHdyZ4uMMFW0gyss062O80m5djKCmxY/95dnnaGIW6IT+1lt8YhwU6VCjkQ+b4PaWqvpyA1BtRF6NxWbLfi4GzswXWck8BNMb79e5SMcWMWB73nWzUoYgOGeYZM/oGhk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788888722; c=relaxed/simple;
-	bh=m6JwC8CwNv622R1ifVTgXDAtbkT015TpXaYRWGTFoj8=;
-	h=From:To:Subject:In-Reply-To:References:Date:Message-ID:
-	 MIME-Version:Content-Type; b=t/3UxyVuAW56oeGoskFBgxilzXPcXBF83UoNbr8vD4Pj6yN87sVr12OQtkqH3qJ3817Q/6vjJU8OSGYb8Fk8RCKFLkM1i8/lM2dd1myCJW15HJQzP57JpWG8QbcZsBkkzd5M5RDXiZB2CTKxe+UdEjVGRbDRmixxj3ZQztu0L14=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=dbh9mL0y; arc=none smtp.client-ip=74.125.224.43
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1788902890; c=relaxed/simple;
+	bh=v08jFI8b5cSETLw9KdJQgXBFXjyhE8jAYjPPRnwR6TE=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=ezFtLiGgGvwHQhnrmcLKRFo97LhCJrvnGemp7XNiEqjpbvYCMZou1MNcJYUaD3iZUhIp33m2BE85ERZPs9a0hIH+mdmixSHWcFNEqRFezoonYdf0lhyGoZKaoh128lhUUCD1BM+L6UTLRaXf8PxpO4W3xkrC57zfbeP79AlO0DQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=RcHITTkE; arc=none smtp.client-ip=209.85.128.54
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dbh9mL0y"
-Received: by mail-yx1-f43.google.com with SMTP id 956f58d0204a3-66f883abfdcso4441216d50.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Sep 2026 10:32:00 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="RcHITTkE"
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-49cf4f81d86so40365485e9.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Sep 2026 14:28:08 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1788888719; x=1789493519; darn=vger.kernel.org;
-        h=content-type:mime-version:message-id:date:references:in-reply-to
-         :subject:to:from:from:to:cc:subject:date:message-id:reply-to
+        d=suse.com; s=google; t=1788902886; x=1789507686; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=vieaupvYicdOwc6vZ9Uq8eozU0pYXl0O/LI23IN1ePg=;
-        b=dbh9mL0ynCh8dYG3OgSz2bcpfXbxu4MNLWRG84PQ9lLJUEEKPiv+8vGubtWexB5f5X
-         39qYACb8t0pZXJtdzjlapXdN/KeG7/ypNu4+Cug/Yqtqj68JvVqT81g4FHvkipWwBVr4
-         SBC/Nsc9GT40MAs5ciw3dzHDvxlBgNQoKsI1n9/L9ufYfdchlKk1nKoEa3S/AE0B4diB
-         ySVEayeXp6HJqtwl8pbLdSLSHDaBd9ovKFSUTMVnFxqBeI1cPuLznMVNd+2XZ475u5OJ
-         +ZfGIxG7r27s94vhdEnSe7hJfEqKzsbgMvzvbQyYEdeFVHNCw7/gpxpbrMr/OT/56Fp5
-         QX1Q==
+        bh=Jn1KZqYu4zED90VbwL4OFFCzFD1KT6LWPxOcx/FIQSI=;
+        b=RcHITTkEMP9RMCE7vAht/MyDPTj0qaQ8GO8uFz1tlnQq7YBjQ7NOyfwSqmFNLa+APf
+         EK3d4Zv2rqJYp44HfIv87o00jCqVc5ssID5q6fN/4o403yjqXF5Z287k7yz7eTJppI/u
+         R31SU0A7uSbaEE2I4re4n3hc9b9lXhyXDY2OV8gM8Gpyxpt/En0UG+i3Skx7uc21F1Hc
+         7ly1Ql5RNi0yZVqygm8QnIlXhya+R157D6OH3Lyvhr2sFTYBtSOUws8g1SiDq29FcL1x
+         H43N8D883yHYysHf3woYURVJ/5P79aqZE8TWobJ8kkfutjIorsleprodpzhRMxE5x2zl
+         sz6g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788888719; x=1789493519;
-        h=content-type:mime-version:message-id:date:references:in-reply-to
-         :subject:to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20251104; t=1788902886; x=1789507686;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=vieaupvYicdOwc6vZ9Uq8eozU0pYXl0O/LI23IN1ePg=;
-        b=aurG4YxCCc/IcC1afwljjAgIXmG4iuYvqOlMIc1EtpxBOc+43x15UxhJgBgoMyw9Al
-         xri+RchlDyLionTU/RsFi0PaiazK8LBynyZUaD7kfuqclecdKay/qQ0s2OhI7yfqDaQL
-         go5Lhrgw3zelP5VC+Lo5nWdkbzgVtgD9yItGUyb1LTjxSr2fiWLoWfmNqaS3lvAY9A43
-         9f05AdfyuMbRTUNEf8Sqs7XXT2+4k5d+4V189odKOcgasWSij5Qg1z/kV0y0Kf8Ywrs4
-         kLWKLRrQ8eT0+x7NE4hc3p438k2uLSXAQuj5umUuQEiSQ4bALZVB5RUf2JYI29dJq//b
-         JgIg==
-X-Forwarded-Encrypted: i=1; AKwUvBz5+MW9SbaXnz+9rfi1N2u8KjgPacfB/DxdEWbOoDDQOz3IDoLLHUsTC1VCaWiw4okOwVc4as4ECrBuAw==@vger.kernel.org
-X-Gm-Message-State: AFuF++mpTY9tEccnGs0GX0yx3EHpr0S2Gw9M14nLA2P4UZzmg3NGcPBa
-	lYUzdkCHxkoF47cklQZLquKUzilEkplZxlnHtWn7b+TB4GqGbQEnzqZSj7n3aw==
-X-Gm-Gg: AYBFou3akFEDxVnq+1lLNB9/f0Ib+y1i04El7jrzthCTldQYGeUv+kzJl0PEEbroRBN
-	RkXb09yeFK0ukeC8iTMcjxYYOodHAy9kP64lOBG0pwz2Khr+rLxAJj4JQBUSr6roiKhxeVjJr3q
-	6qgG3gUce+jBRvg5QsA+rtG/D4mBcaF0eStxAk0nqz8DKyxs9mTYfLGbLoproau4W6WCxikzl8m
-	HW33txSAPD+obiyRTaEZf5aGpzmvJRrKp5LVt9dCrJFg+tWj3GoW9YQopli25BDWIhHhACoYCH/
-	1c+s/XthDLww2kdHsNpyIcIfu5ZEvzn+dPJsw25HbWHZGIcGpOsNkdVFuw0duNV1CDX+53dHb7v
-	jbSu4lvl2UmKboqH3Kf5SZujia15nWOu2S1GbUl2CsXChJO6s+wYNMFP0ctJRwq3L9f8vOhbO2Q
-	fXuDfwMPz7wxY2d/StOIfQW91tY7LDehdWw0wyU9X0+qXWLCxoWqOcmLyYKgzTdF5WIylO4pdAN
-	l5Lq854CyjtIN4blEIONwi8qxHAXkwh4UjrphHwR2oyvaet
-X-Received: by 2002:a53:e043:0:b0:66f:8d89:90c with SMTP id 956f58d0204a3-66fb5a9a1a4mr6897735d50.43.1788888719462;
-        Tue, 08 Sep 2026 10:31:59 -0700 (PDT)
-Received: from localhost (23-91-225-113.cpe.distributel.net. [23.91.225.113])
-        by smtp.gmail.com with UTF8SMTPSA id 6a1803df08f44-9104067b125sm122750816d6.29.2026.09.08.10.31.58
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 08 Sep 2026 10:31:58 -0700 (PDT)
-From: Nicholas D Steeves <nsteeves@gmail.com>
-To: Ulli Horlacher <framstag@rus.uni-stuttgart.de>, linux-btrfs@vger.kernel.org
-Subject: Re: How to exclude other filesystems but include subvolumes?
-In-Reply-To: <20260907103339.GA786966@tik.uni-stuttgart.de>
-References: <20260907103339.GA786966@tik.uni-stuttgart.de>
-Date: Tue, 08 Sep 2026 13:31:52 -0400
-Message-ID: <87v78f6453.fsf@navis.mail-host-address-is-not-set>
+        bh=Jn1KZqYu4zED90VbwL4OFFCzFD1KT6LWPxOcx/FIQSI=;
+        b=gKG/xHecykPcD+nxfgE2R22CpuED9IbI45BUtaZonjnQANo+DCYvzk5rpMqX/ysfHQ
+         6xbcJe9+ElbmD0a4UVS7ov4E5PmXMq8TOB4yQzx/HAnlucxTP65E6aOQxZgLAfvtBaOl
+         D3ub3nZGORs2FIl4XhzdD2TaQ8H7BvDyu4ahnAPa9EAKrAGUabutqPrNo0kS07+Q8rGh
+         SxrC9nPHe0ISO6aq26bS7Qz0Ii3W4b2D2VuvIVthGzFR/Pqiat8BQkf79W6bSJrvjAab
+         0dRrMKMfI+IyBXaK763HcxO5TcbBasEvO543focvUgT4BztsxbTre+LTeJz//YzzgKnT
+         jtfg==
+X-Gm-Message-State: AFuF++mk53hV46hi7nPTRKxZAvx7wJ/BjgjqyxkJh+517SylevqBAh/9
+	X5Un3cMJSV2U60pGe9/w/zwLhRb/sXZM0SHbUlXh7YreU1Z1T9Q1IwJ9qJphC/gwqQ4=
+X-Gm-Gg: AYBFou1elKSVug8XWgEe6gxnd3/Tj76CpwqLfx9LnDYCCkDW8Z4cWeQAX7b+DFxG4CY
+	JnlpkM1+t7cUV15DVGP7wY/hevJfc5HAB6fl1ykVSpt7MCmueeaCA/u8H/9KlJomrcayX4sXP9L
+	StQfNgIoxcCSzfpBLk99xGgKZ/Q4nwRkl/dZCzI9XNwoHqBQaukFJ29hMWj4ZpUXDoaOyR4jRxF
+	B1ftIrrcp1go7TuhFWEZhNyVbzhdt9Dlj2xd9OqThL8AhDxMG+LNfqBDon3WZKIbUazNu3NEy8l
+	c1zz/6uA/iucFM4Fz+83Flg0tP5msuNmpFhS0FRyG+8plTZIJpjCKDicBllFt37V7OwuB3JPHQM
+	xMdPOb51+W//EEvnxQFWsKXW+BMaNTGyNWsiBL876gaGvqn8hyFikRIfTWCztUun1+X5YzaTMB7
+	Y4ke2fQW4Vw7GYoMCpcsHarGYiGiS+TpdFoMNugX0szlVBbpOAcRcH
+X-Received: by 2002:a05:600c:c173:b0:49c:fc6c:be18 with SMTP id 5b1f17b1804b1-49cfc6cc0b8mr287757495e9.30.1788902886351;
+        Tue, 08 Sep 2026 14:28:06 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3339b9f68e4sm41806114eec.24.2026.09.08.14.28.03
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 08 Sep 2026 14:28:05 -0700 (PDT)
+Message-ID: <962e0f59-ca17-4467-b762-0b225df0d25f@suse.com>
+Date: Wed, 9 Sep 2026 06:57:59 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-	micalg=pgp-sha512; protocol="application/pgp-signature"
+User-Agent: Mozilla Thunderbird
+Subject: Re: Fwd: btrfs: OOM in split_item().
+To: dsterba@suse.cz
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <nka8fLGwxf2NcMXCcuLi4CkGSIKrKG4Sc9IbvTTBG5L6T63w6tImgOKYEmu-pWaoZZFO4Eqg8zDyMggihfvlFRTd1Vubz6E52PVEhU83gn8=@protonmail.com>
+ <250decb0-d940-4fe6-9b54-d06e1b293a1b@suse.com>
+ <20260908131439.GC9053@twin.jikos.cz>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20260908131439.GC9053@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
---=-=-=
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
 
-Hi,
 
-Ulli Horlacher <framstag@rus.uni-stuttgart.de> writes:
+在 2026/9/8 22:44, David Sterba 写道:
+> On Tue, Sep 08, 2026 at 07:45:58AM +0930, Qu Wenruo wrote:
+>> Forwarded for archive purposes, as patchcheck requires a link: tag
+>> following reported-by: tag.
+>>
+>> Meanwhile the original report is only a private mail to me.
+>>
+>> -------- 转发的消息 --------
+>> 主题: 	btrfs: OOM in split_item().
+>> 日期: 	Mon, 07 Sep 2026 20:10:56 +0000
+>> 发件人: 	xavierbachmeyer182 <xavierbachmeyer182@protonmail.com>
+>> 收件人: 	wqu@suse.com <wqu@suse.com>
+>>
+>>
+>>
+>> Hello.
+>>
+>> Attached is a kernel log entry showing a strange out of memory issue
+>> that rarely seems to happen.
+>> It's kind of annoying and makes me wish GFP_NOFS would go the way of the
+>> dinosaur.
+> 
+> What is the story behind that? One way or another we will get GPF_NOFS
+> semantics, either the flag or the scoped NOFS and this limits the
+> allocator.
 
-> Many programs like find, tar, rsync, cp, du, etc have options to exclude
-> other filesystems, eg rsync:=20
->   --one-file-system, -x    don't cross filesystem boundaries
->
-> But this also excludes subvolumes, which are in the same filesystem.
+No extra follow up unfortunately.
 
-Yes, because subvolumes are boundaries.
+> 
+> Using 64k nodes is problematic and so I'd rather people not use it on 4k
+> systems.
 
-> How can I address a btrfs filesystem with all subvolumes, but exclude
-> other filesystems?
->
-> Example: I want to copy the / filesystem (with all subvolumes), what is t=
-he
-> best solution (for scripting!)?
+In fact the only problematic part in b-tree operation is exactly the 
+vmalloc() I'm fixing.
 
-The best solution that I've found is to 'mount -o subvolid=3D5
-$your_root_device /somewhere' (I think /btrfs-admin or /.btrfs-admin is
-logical), where only the root user and the sudo group can read the
-mountpoint, and only root can write to it.  I suspect you'll agree that
-it's important to include the output of 'btrfs sub list -pta
-$subvolid_5_mountpoint' in that backup (for use by humans) as well in
-JSON format if you want to someday automate restoration of the subvolume
-structure.  Ie:
+Other than that I see no obvious problem related to 64K nodesize on 4K 
+page systems.
 
-  1. Mount a top-level view.
-  2. List the subvolume structure and insure it ends up in you
-  replicant.
-  2.5: Optionally recreate the subvolume structure at the target.
-  3. Replicate everything in one shot, without '--one-file-system, -x'.
-
-Best,
-Nicholas
-
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQJHBAEBCgAxFiEE4qYmHjkArtfNxmcIWogwR199EGEFAmqgRogTHG5zdGVldmVz
-QGdtYWlsLmNvbQAKCRBaiDBHX30QYRckEACZJvijyTQbVZE8YDnxfVQh0a8+x692
-3aSUSrmsIH6ySxDsw9VY4aAIuqdm8D/0xH0+59b0NTxPsXHki6ogtjDZctM4t3EX
-15lQ7vNN4G06w66q9qjMZs9q0QAnfrKHJgcdg7//8Li75tx9ISPolNrqodJpXz6m
-q9W9eEyBkct1hK081RobUjbMSAI8NWS1Zx0uosQlXPudRNbXjnZ4FcT6Fx08Ki3C
-RFSVWg//9IATcsOdHmMKMfAMAez+lyZKXIWXSxrqCykbMFzuEIkZaowl7yIZ4a2R
-1WIYCB6gd5Y/4/nZh+1yV0FwjC+2R1yVRKIOaf5mYyIzzHiHClz6DFT8x09WdrPZ
-mEYivsM2QFHdM7D2HZ2QhVENl9b12RwFpSPdNZjB8Fi59sOZnfVy5CKNe5HuIFy/
-ZX0wW2eGibkFmTLLbGQ9KJwhzcU7a2l8IsVE9OasjDGh4Tspx6kk9XJPQWIiPUib
-7mtqOtr2Jrj4vHbXEuTxcQLrMpUGg8PExsIyD6sn60u/+LbIj+OPPwbNX5rdQUDY
-AwYOxXIh91T7LhUQLW6W6pWTTCI6CNHyfZ0Rj81hID3NLfLOO4TIVQjP0lsftlS0
-dJlmDtRB0xCKbcWzGEnnRZqqLb2zkv7ElonLkaouEMK/daYKTRB2Awqn96xdZl3T
-rhIqgH7c6tdLwg==
-=Ai9s
------END PGP SIGNATURE-----
---=-=-=--
+The way we handle metadata is already vmalloc() like, we allocate page 
+sized folios for 64K nodes anyway.

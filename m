@@ -1,174 +1,185 @@
-Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
+Received: from fout-a2-smtp.messagingengine.com (fout-a2-smtp.messagingengine.com [103.168.172.145])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 287C833B6D1
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2026 17:11:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 760EB37B021
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2026 17:28:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.145
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788973863; cv=none; b=JRESIye+PNq28p9Y1VQiMlU0jw0cEuR8tCFwMx8XlVANrSYGjyH6deUfWUjOJDok8L3Sc6iiTprGe7itfIDQzI70J0wH3NbSedCx5YBi28Nj1ArOiRq/AcsRFaovyWcB04xuuca6smLHAix3EF6iq9h2+c0KyjjN6Xsli3leFJs=
+	t=1788974895; cv=none; b=cR8pMliEVnKP17pnpKCHI+E2X2HFDowIvMDrSTkvxanx+4F1y3aPxHrxzlP+fJVNbsHSj8A9lVMewlpAJ0EPcu3MWlOhPMgGnFS9erMCTvCoOv904Qn7QK9Vl7/B/nIwI9KgjaAGtFxrZDIjskjfyrmn4IqdY4R+jenUNA+0eUo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788973863; c=relaxed/simple;
-	bh=rc6pysinAtxTWfmbt7G11fkKqor3YnttVUGOKHDnERk=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=dJI9x/FMZ6kNFQSt7yrTVdfELMSlY/pyR4N3Ed7sC5NbP3RhueSWKf4gV0FxO8eG71vrJxpNZ+wOtSp8i8QfnnMh8693qISoMj3DfmCtjSOkInhL/8W/+KY57TMv7m5DSeNImVBEwgTAV5ab/nHNIGRbgHa8QW2WVYvlEUJzero=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=lLstiXsk; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=xkStEwrc; arc=none smtp.client-ip=148.163.139.74
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
+	s=arc-20240116; t=1788974895; c=relaxed/simple;
+	bh=QrbEbgPSG0z47v2bXa6SPYsNvX3MgFOZpNHRMM9iCN8=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=h4hm18SbQSkTtFElUeIXn+p2vtRJQLldh39Uj79EyjZ/HoxiO8n6WKQJBEnNkues7j/9Fx70c1+0JP2Q7E6ckmmLIWufXLb6SGSiypW9w2TnuqngsHHiEwy5dc1vbTG97HalajougYdoqEFhba5WJchrccZkpdq89i9qphFMIPA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=fhZt67Ap; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=DfrCGvjD; arc=none smtp.client-ip=103.168.172.145
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="lLstiXsk";
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="xkStEwrc"
-Received: from pps.filterd (m0167075.ppops.net [127.0.0.1])
-	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 689GZ5Mi497194
-	for <linux-btrfs@vger.kernel.org>; Wed, 9 Sep 2026 13:11:00 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
-	cc:content-transfer-encoding:content-type:date:from:message-id
-	:mime-version:subject:to; s=pps01; bh=lpt2d26XTQe1uORrhGycOSTTTO
-	JsJUi2+IgNx3gMRHY=; b=lLstiXskjuHaqDqOOrjd9ZcnX3iz6WlMj1mX+8Uxfz
-	eQmxdudmLF9VqBgOBqY35n3VSmWb4AzgwVO2ULOoaUdFwWa/q+Amv/pC2ivMCss5
-	bZrEGfDJYInPsq+1vMAU/WZNylbsi0GZZKnIi7nVl5o2I+cFzhS57VgNGAd7n50e
-	uiF8dFvCBr/2cS7NsVFudvVAHDjVkaaw5NyEvakrfbbNcFzYCbOIMhpSTultiZeV
-	OVaClza1+CgwQ9tmvSk2kWmVzxLAHNn4ik/rzpnLz82/T+1AtPUegzij53zTDtlS
-	2A6MRXCq8iUIbE/uU7sRsdLdW5XCrcPr8aSpXU4rkEpg==
-Received: from mail-qt1-f197.google.com (mail-qt1-f197.google.com [209.85.160.197])
-	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4gk0an4ghs-1
-	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Wed, 09 Sep 2026 13:11:00 -0400 (EDT)
-Received: by mail-qt1-f197.google.com with SMTP id d75a77b69052e-5304f2b5946so113488711cf.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Sep 2026 10:11:00 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1788973860; x=1789578660; darn=vger.kernel.org;
-        h=cc:to:message-id:content-transfer-encoding:content-type
-         :mime-version:subject:date:from:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=lpt2d26XTQe1uORrhGycOSTTTOJsJUi2+IgNx3gMRHY=;
-        b=xkStEwrcLztU4C4HqGzZlTRx9MW1j7T/v2IaBrt19p9JNnn5/3pxCeqTj8WqHiYfH8
-         YeshfhY2UbqQ+PDr1wxhcM9/tBXLtpjKDUAUqCrFOmqvRulRu+VISEieTjBTh/HkMEtL
-         p497Wlj4zFG4xlMCIpgVYQSu4u3Ld7gQD6se+/O3eYKuoUq/QbE/PvX6Q8SodZqmh0JP
-         q4EwTUqxmsr4v6Jh33QfhCaWrHjQawPP8YhOTSojJJi+BK9JGIzpX0VyXT6EPIAREtCI
-         5llZuKDkYOWhxyx3X/KlcnIxZlRjHpS+JUBaJEQksyWSbMXsdPdggr02Rvw8Cn7fQOLz
-         aRWw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788973860; x=1789578660;
-        h=cc:to:message-id:content-transfer-encoding:content-type
-         :mime-version:subject:date:from:x-gm-gg:x-gm-message-state:from:to
-         :cc:subject:date:message-id:reply-to:content-type;
-        bh=lpt2d26XTQe1uORrhGycOSTTTOJsJUi2+IgNx3gMRHY=;
-        b=IzxMogV7d+kdkuFRdkcf8iDLQ5/wsCSk4R3KemANh+9Q9/Gk/MkRhQC5gW3dsVohss
-         eQyaUXs412KnVDsbEjeDDcAOw0d2AbzOtFA40Y4rcd8I0VZht7oFSc35pBF1q14qWVig
-         ET/VUL4A+iH39sIg3VP1zXuvci93dgwdaaKQ02ULQUa8vLnrrargJ6P5gEXqrzFI4OQA
-         6ci1SdZ1VwHNn8vVds2gxfLmEGEp0vYEzJKFk4oPClwkINHGIjjPFu8DMnanwFahEZed
-         ZkTr1savGrVSL6GATPveeJLOA/g0F+X1CUyCRZLVNYWBVwrlwXNnQojKD7OvqYp+cGJw
-         33mQ==
-X-Forwarded-Encrypted: i=1; AKwUvBwYpayZD4wBKZutc62539KK0imzhQ1gL8iFC+vNpFQyPNbm8e41kv/QEXLPV5MvyMqlUAXvS1taN1OqdA==@vger.kernel.org
-X-Gm-Message-State: AFuF++n9Z/yLqRigJAeuJAwvaVhpxd0MsSso4Di+lhul17FA488naMwV
-	ub4QWPASLViLTF68OSa1CYyIF+Rf5Bh0Si3rBrT4r4P2zDOrXmlzvQ/Q6GiKFEA8N36OVjDz3Od
-	jqCU6Hm7/mGGxjgjT5MXPS4pzPfMjulmnFbogIHDX4V54WBBzLVaNqiTvw1iGiSopY9zrMEM=
-X-Gm-Gg: AYBFou2Q5RseptzNrE8xIFXlocBAZPes8b7Nnt6Mn0aLdedcwxh/eg/TcqW7ui43Uwh
-	uEg16PzbSKLs4dQRO7IK4UazBOBPeeF0fGCssAfOQkcKCrSeAYQhDHxUZKcWFIJFCmhJZ0sSd+R
-	vWAtEfH+j2P/Urvffi1hu0MTWgOQl0jvow7big77TkMQ4Au7fwqePfKPLml1GG3NribQ8Szpor9
-	9vx8sWcZk6B9qvAJaO2EvB5lRUQzp4N4J0eV1eVGxZJQ6Le5bvatXzpsSGBgVXJJc6pRWSJkEBc
-	jA7N8vQuIKVEUx8adEJGimJx96v1UTkgnhHSxbRMX9cDhRqzxyCA278fynu134eIKfD+eZrD29V
-	QH29y6Vnmt1P3Ro82sn897c1lDi/1WSXx6NxrU68tNH4ytKqm
-X-Received: by 2002:a05:622a:2516:b0:517:8011:3a4b with SMTP id d75a77b69052e-530a2c4243dmr110781721cf.21.1788973859979;
-        Wed, 09 Sep 2026 10:10:59 -0700 (PDT)
-X-Received: by 2002:a05:622a:2516:b0:517:8011:3a4b with SMTP id d75a77b69052e-530a2c4243dmr110780551cf.21.1788973859333;
-        Wed, 09 Sep 2026 10:10:59 -0700 (PDT)
-Received: from [127.0.1.1] (nat-128-59-176-193.net.columbia.edu. [128.59.176.193])
-        by smtp.gmail.com with ESMTPSA id d75a77b69052e-5308fc10b78sm64927471cf.30.2026.09.09.10.10.53
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 09 Sep 2026 10:10:57 -0700 (PDT)
-From: Tal Zussman <tz2294@columbia.edu>
-Date: Wed, 09 Sep 2026 13:10:48 -0400
-Subject: [PATCH] btrfs: use u64 for the page indices in
- heuristic_collect_sample()
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="fhZt67Ap";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="DfrCGvjD"
+Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
+	by mailfout.phl.internal (Postfix) with ESMTP id 4A058EC021F;
+	Wed,  9 Sep 2026 13:28:12 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-02.internal (MEProxy); Wed, 09 Sep 2026 13:28:12 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
+	:content-transfer-encoding:content-type:date:date:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to; s=fm2; t=1788974892; x=1789061292; bh=6NzV+WYxuux3UD7jdcZge
+	AsWkzyRfb2X1ticK6UU2vs=; b=fhZt67Apw9E+oH1PVYQbxRRpCq2Yzxy4G7nBn
+	kDbv34efOGw3delPpkQsQkHIggZhu349M2f0iILo0UvljXuK2rSVpbOPl5DLTx5E
+	y83UQPXywEMUfmsysce/8VfywrOj4KJ+vfBdtIbRlmqG64lMM3Q+Lv6uzMKyDcHm
+	tK9Pn21uyFK57TqbKXNNbfp6FvPalmp/6qmFo3XJ90h1eOlCC6us9CYmKDRURBkh
+	a9ru4BtiLGT8G0rsn9ex336GrohiSgcofi3UAiv89UksIxTRfdGMObD7LDr13/Oy
+	/kdLoePsJDdX7Sy4uRkFbw7XLtZNHXP3QfhpN5PDrrjAENfiA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:content-transfer-encoding:content-type
+	:date:date:feedback-id:feedback-id:from:from:in-reply-to
+	:message-id:mime-version:reply-to:subject:subject:to:to
+	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
+	1788974892; x=1789061292; bh=6NzV+WYxuux3UD7jdcZgeAsWkzyRfb2X1ti
+	cK6UU2vs=; b=DfrCGvjDMAwc+v8fH6ovKGMYAXh8/hYmky0yCIoTxEAZHs+q0KW
+	E8U6EtCGoYyUITV9jEW40056f0voAXcECMZZK2BFzuiaUJ7sMGibUsrYdqyu+XIP
+	HMNwVpLsJExy1ZH7WbtALVOWnsuljcOtqRfLWFezwbxpELfv1dU/wz1kVRTmze3I
+	iSxEBXIfogNEO9prP0dY7KiBsM0o2IL80UvwKr8T7y2iOggU838Bc9RaEt5gzt0p
+	P7k6trxJ8/Ky0Kk7Lwe2HM9A+YN09ePFuXMcpKH6oy98J3rnKe8nFxLuDjaJ94Yd
+	Sx+Xw0LPeugoy5WE+em+JMPpFtDMM7db20A==
+X-ME-Sender: <xms:K5ehaoD11Kqe0x2N7EP7qC9xTmzsuGMFKY0y8JZ_uWrwL4PUEHiJUg>
+    <xme:K5ehaggn0Tv8YkrPYnD7dSVlOAVPtLNzdc48EXEw5nX97mWoUxBbiIbSgk0nWcrTw
+    CAjNX9bzTkH4nYNAEmu6oUWLKgQhFkwYuEyMC5JvZV3krU51OlJX3zJ>
+X-ME-Received: <xmr:K5ehapPEx4BuqX6wcpOThIX_RTGdP9tSRvv18C03LlvZpMAaxSN2s3g>
+X-ME-Proxy-Cause: dmFkZTFodWKmvLuxRxx8uhczVkuEuCJc/0SuVtKVgTR51BsHz0wN2Zj6Rh57asgN4Mi/bJ
+    xiBbF9mB6k/56HZOi1Fz4WE1cIYEPYb25u1/i1Zh6jhN92LXvGBY2dYA+rt2+nXxm05PjZ
+    rL+zwgoiCBgatqWOKq4ECYofmylq142aIbioEstb4A+PFPV4+rLxcCtruMNiBlgtatuIxb
+    1y81yELVRZLweM0TwfUVHMPdJBbQ+zc70qZmYApSYTOMOPXuLF28hrvwuSnVfc+E/HKG9W
+    pD+RuinFYfjIZT62ekXQJ+ogcWT7edG0ocI8HCvqy2N9DHwbRgEWq8etyVJSxDk/tyvFXb
+    OJ5Nzlh+mbBKnGb5XendbwpAgOXNEGyOd1jvcfUM2ZN7bWqX6IdMHBiDWO/viqxgv27EN4
+    Rnh8r6IIMticqB50MYSLV7XOOj2jUSbARRNs2OZgfg7D9PW+zTJ8dhV5rY7AR0h5CzT1We
+    Vh0MYIscqf0bdfsL9JtGo5EkwsXwIOIrr5rBPq/dQwvOyEoBgk2Q5E/TvTbilhPNGIuF+T
+    e89GGDTOBDuiI/+MU8gLF8EYo5PsmUpTzJz9xIuvUg/BvKzZO/VX0s2yTqZRYLW+6HZQXv
+    5nGgkTRyw10gqxtD12UJtxLtpTOZ2t+B87Woslau7O83ja29pH5dsPTyxR4Q
+X-ME-Proxy: <xmx:K5ehap4NCSkohKFGh1B1_RbdInnJzQsoafcJJ6ETbOMsIs4ojgJJtw>
+    <xmx:K5ehav09hRaR3k95HMckKtLgUyjiaxUuUVHvY5ps92aVir0G3cx_NQ>
+    <xmx:K5ehaiaeQHW6k2617JcsOB4hchcrAphgwPjysKI6Ljy3qRkbKAajqw>
+    <xmx:K5ehavAsNpWb6H4zj3xSjgsNms6dfCZ3XLa8iyNfl77ou8qujpA17A>
+    <xmx:LJehahE9nJ_enFwVjvI6kexNHjcCCiRR7wplc-Ml-1cv6m4fIeJsqxRB>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 9 Sep 2026 13:28:11 -0400 (EDT)
+From: Boris Burkov <boris@bur.io>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Subject: [PATCH] btrfs: downgrade the reflink source inode lock
+Date: Wed,  9 Sep 2026 10:28:39 -0700
+Message-ID: <65fa79581e1d29d6d6fabae71d23e741bff0ddf9.1788974902.git.boris@bur.io>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260909-btrfs-heuristic-u64-index-v1-1-8606b3c89807@columbia.edu>
-X-B4-Tracking: v=1; b=H4sIABeToWoC/yXMwQrCMAyA4VcZORvoRhnUVxEPtk227FAlaWUw9
- u5WPX6H/z/ASIUMrsMBSm8xeZaO8TJAWh9lIZTcDZObZhdcwFiVDVdqKlYlYZs9Ssm0Y8oxBM+
- ZR8/Q+5cSy/573+5/W4sbpfodwnl+ADUmDJF9AAAA
-X-Change-ID: 20260909-btrfs-heuristic-u64-index-cdb994fdf14f
-To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Tal Zussman <tz2294@columbia.edu>
-X-Mailer: b4 0.17-dev-db0b7
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1788973852; l=1567;
- i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
- bh=rc6pysinAtxTWfmbt7G11fkKqor3YnttVUGOKHDnERk=;
- b=Z/SSveEx0RWg3+66nrs20K2QIMA0SAKh/FZs6GwHWXnO8lsjr0U83fIjJIglJdv9r9fi4V9fl
- ydmRlI3v6FMD+47h73KbfAjZR1WyaxTPGX44h2g/SaI4o129x7vcFnb
-X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
- pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
-X-Proofpoint-GUID: 1DD2HY8m5r4uH3kll9ajgA3il-ZXQXia
-X-Proofpoint-ORIG-GUID: 1DD2HY8m5r4uH3kll9ajgA3il-ZXQXia
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTA5MDE5MSBTYWx0ZWRfX5FvWsGiIkgNU
- zWSyoKAk61w0MTo/W20ybD/WunsL3aRvr2/uH4gf12JWDZMB82wFPAm4j1UvCYM1F3JbylbZE/A
- njDQasQ+kyx3U8vWf2U/n1njDr3hwYOth+D0u4mUIVzHaGrYW2lJAwlITU7RRvnrQMnr7UQJWiO
- bmOWLDXjYEaQqffzPNTfdXyTOErjYiEpdd6ozULMVdUhS44AdV2JGWE3zaXclk7LagDow1VOU41
- VMqUbFzi1cszAQFmw9uhrh9soDo4hfoZPJ8VYAvnV8mIgL2/rKMtvqDv9jRXyLY7SvlC6BLl4vy
- +BoAimq9qWulIi2D12SYkIufEJ4FBlEoF2fhw+aXsLiHFceiPKwzbmxrAUzVVQZplcTtSSOAP5c
- 9FtRT4acwpF+6WFdsG3A7sYYnPXe/lmCDKFhjaBaH+DZJsyESRtPQz6M/fmFeMHBiBWKTA1yT8x
- 9gDurEgjJbF/TZtOJtA==
-X-Authority-Analysis: v=2.4 cv=dbiwG3Xe c=1 sm=1 tr=0 ts=6aa19324 cx=c_pps
- a=EVbN6Ke/fEF3bsl7X48z0g==:117 a=fJxgZNdXt3opHMdyAp+FXA==:17
- a=IkcTkHD0fZMA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=HpS3TJQ9O3Ob1ozEcmik:22
- a=6w9P9XadSiK96p_W-bMA:9 a=QEXdDO2ut3YA:10 a=a_PwQJl-kcHnX1M80qC6:22
-X-Proofpoint-Spam-Info: AW1haW4tMjYwOTA5MDE5MSBTYWx0ZWRfXz5kX/OzPsm0V
- eYfZI/6dfwmHccZ+WiqsW1TPZEbhLiXQPKZAoLAObgjqnYapn7O1lplcNLSbASfhKXlkjA3Acby
- SRYJl5PdQhNaV53rDyqyiRyOuU9i1pp2z99EG1YK6wotv3aMymMp
-X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11900
- signatures=596817
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- phishscore=0 adultscore=0 impostorscore=10 clxscore=1015 priorityscore=1501
- spamscore=0 bulkscore=10 lowpriorityscore=10 malwarescore=0 suspectscore=0
- classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
- reason=mlx scancount=1 engine=8.22.0-2606150000 definitions=main-2609090191
+Content-Transfer-Encoding: 8bit
 
-index and index_end are derived from the u64 start and end offsets, and
-index is shifted back into a byte offset for offset_in_folio(), which
-needs a cast to u64 to be safe on 32-bit. Make them u64 instead so the
-cast goes away. They still fit pgoff_t where they are passed to
-filemap_get_folio(), as they came from a valid file offset.
+When doing a reflink, we are not writing to the src inode or modifying
+it in any way, so it is counter-intuitive to have to lock it
+exclusively. This has the cost of blocking other shared lock users of
+the src file for the duration of all the writeback and reflinking.
 
-Signed-off-by: Tal Zussman <tz2294@columbia.edu>
+One sort of counter-intuitive exception is that dio writes that come in
+under EOF try to take inode->i_rwsem shared, which would result in
+messed up views of the extents in the reflinked file. Therefore, add
+"being used as a reflink src" as another inode flag exception for the
+dio write shared tests that already exist to check for other dangerous
+conditions. In order to ensure that this flag is visible to the dio
+writer, reflink must first take i_rwsem exclusive, then set the flag,
+then downgrade to shared.
+
+I tested this with a concurrent reader on a 4G dirty source file
+concurrent with a reflink and saw the read operation go from a ~1s
+latency to milliseconds.
+
+Note: if a writer arrives mid-clone it queues on the rwsem and later
+readers will block behind it due to the rwsem fairness implementation.
+Therefore this change does not rule out all possible reader blocking.
+
+Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/compression.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/btrfs_inode.h |  9 +++++++++
+ fs/btrfs/direct-io.c   |  7 +++++++
+ fs/btrfs/reflink.c     | 15 +++++++++++++--
+ 3 files changed, 29 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 20169d028961..228d1cdd7c29 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -1489,7 +1489,7 @@ static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
- 				     struct heuristic_ws *ws)
- {
- 	struct folio *folio;
--	pgoff_t index, index_end;
-+	u64 index, index_end;
- 	u32 i, curr_sample_pos;
- 	u8 *in_data;
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 46c62f980c24..fd137a466c9d 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -99,6 +99,15 @@ enum {
+ 	 * range).
+ 	 */
+ 	BTRFS_INODE_COW_WRITE_ERROR,
++	/*
++	 * DIO writes take the VFS inode lock in shared mode rather than
++	 * exclusive like other writing operations. We want to hold the lock on
++	 * the src inode shared for reflink, but that does still need to be
++	 * exclusive with DIO writes. Therefore, note such reflink src holders
++	 * on the inode. If a DIO write sees this bit set, it should take the
++	 * VFS inode lock exclusive.
++	 */
++	BTRFS_INODE_REFLINK_SRC,
+ 	/*
+ 	 * Indicate this is a directory that points to a subvolume for which
+ 	 * there is no root reference item. That's a case like the following:
+diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
+index 3075d7992713..ed3914257d39 100644
+--- a/fs/btrfs/direct-io.c
++++ b/fs/btrfs/direct-io.c
+@@ -913,6 +913,13 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+ 		goto relock;
+ 	}
  
-@@ -1517,7 +1517,7 @@ static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
- 		folio = filemap_get_folio(inode->i_mapping, index);
- 		ASSERT(!IS_ERR(folio));
- 		in_data = kmap_local_folio(folio,
--				offset_in_folio(folio, (u64)index << PAGE_SHIFT));
-+				offset_in_folio(folio, index << PAGE_SHIFT));
- 		/* Handle case where the start is not aligned to PAGE_SIZE */
- 		i = start % PAGE_SIZE;
- 		while (i < PAGE_SIZE - SAMPLING_READ_SIZE) {
-
----
-base-commit: 0fa0a3b3b2b007ab40e87245152e1328703a317e
-change-id: 20260909-btrfs-heuristic-u64-index-cdb994fdf14f
-
-Best regards,
---  
-Tal Zussman <tz2294@columbia.edu>
++	if ((ilock_flags & BTRFS_ILOCK_SHARED) &&
++	    test_bit(BTRFS_INODE_REFLINK_SRC, &BTRFS_I(inode)->runtime_flags)) {
++		btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
++		ilock_flags &= ~BTRFS_ILOCK_SHARED;
++		goto relock;
++	}
++
+ 	ret = generic_write_checks(iocb, from);
+ 	if (ret <= 0) {
+ 		btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
+diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+index d2a4101912bd..e33926243030 100644
+--- a/fs/btrfs/reflink.c
++++ b/fs/btrfs/reflink.c
+@@ -943,6 +943,16 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
+ 	} else {
+ 		lock_two_nondirectories(&src_inode->vfs_inode, &dst_inode->vfs_inode);
+ 		btrfs_double_mmap_lock(src_inode, dst_inode);
++
++		/*
++		 * Reflink is a read operation on the src inode and a write on
++		 * the dst, so lock them accordingly. One wrinkle is that direct
++		 * writes try to take inode->i_rwsem shared so we must do an
++		 * acquire exclusive; set bit; downgrade to shared dance to
++		 * synchronize with that one weird writer.
++		 */
++		set_bit(BTRFS_INODE_REFLINK_SRC, &src_inode->runtime_flags);
++		downgrade_write(&src_inode->vfs_inode.i_rwsem);
+ 	}
+ 
+ 	ret = btrfs_remap_file_range_prep(src_file, off, dst_file, destoff,
+@@ -960,8 +970,9 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
+ 		btrfs_inode_unlock(src_inode, BTRFS_ILOCK_MMAP);
+ 	} else {
+ 		btrfs_double_mmap_unlock(src_inode, dst_inode);
+-		unlock_two_nondirectories(&src_inode->vfs_inode,
+-					  &dst_inode->vfs_inode);
++		clear_bit(BTRFS_INODE_REFLINK_SRC, &src_inode->runtime_flags);
++		inode_unlock_shared(&src_inode->vfs_inode);
++		inode_unlock(&dst_inode->vfs_inode);
+ 	}
+ 
+ 	/*
+-- 
+2.55.0
 

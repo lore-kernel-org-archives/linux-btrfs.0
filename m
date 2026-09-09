@@ -1,130 +1,88 @@
-Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
+Received: from mail-ed2-f12.google.com (mail-ed2-f12.google.com [74.125.228.76])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBA3A3B7B64
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2026 21:58:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 945D845D916
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2026 23:35:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.76
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788991132; cv=none; b=MgSq7lMRw/ewE1TI03FufeQdDEu3yXpE0B/88LfCcYNXRWaSJFyDl0aymVFCXkyhR1RPpL4QNnPCtQIsr7z2PfPFvcykVeKZ7qnf2QJyL+mSNOI6k3mrwgcmVXCW1lPAoHxuCGwaLaMhxVFmAiI+wF4Pn9Z4JLMlr+7h2UJSz5A=
+	t=1788996957; cv=none; b=o904bks52+czf7q865jNGyiGSj3qNQq7objjpP5/5mNr9elBIHDwuL70qnnF63WR15soaDpDMEHqz9rDuJvlK88qgfFC9710f4xAp8CUbbBa4KOLJQqWbgie682FE1PN7xLpHFvvbajonAnkDiwmhJcWYc51NsU5ntw02EoM2bs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788991132; c=relaxed/simple;
-	bh=bN5H/bnfN/hXfaCvIn8laJn2SNDu6bOFgegh1/4kNpQ=;
+	s=arc-20240116; t=1788996957; c=relaxed/simple;
+	bh=2/FWvLxK2swVY7Lkt27lEOw4+Yh+lP1rcCDSm2BzOBw=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Zfinxg9o0U2WdBXWN/CdV6rnRl4NgWjEKKFMpEMny5OmiTW/MrwlWiNdWuJMRarW1YOOJVouRMmq+YDWZUKMoR4G9grngEHjJElSq76wlQELNfI+ovLNAQnXfovrb2PEb/4gTWd7rGMsFZfjDkSywm9jv4xh75+jtc5y1ww6+Ag=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=gtozWCOE; arc=none smtp.client-ip=209.85.128.43
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	 In-Reply-To:Content-Type; b=uJOP2u7PLWUAo3efixlzNP65BEwsVIzSvC9Zi/fXlBCKejqxOPTLwTJ8RPLaC0UC9h4CJ/U2AhBueSZVN3PGnhOcN0ZC2mXHCbxSqfjBAsE38B8+tbQJprHXZtdcuLRgJOW/TOHwoCQHl/RCAdq9dR1dprGo6pMstwbEOnkoR/A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=PViaICfh; arc=none smtp.client-ip=74.125.228.76
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="gtozWCOE"
-Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-49954b88fffso46766955e9.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Sep 2026 14:58:48 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="PViaICfh"
+Received: by mail-ed2-f12.google.com with SMTP id 4fb4d7f45d1cf-6a9984f9adcso1376700a12.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Sep 2026 16:35:55 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1788991126; x=1789595926; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+        d=gmail.com; s=20251104; t=1788996954; x=1789601754; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:mime-version:date
+         :message-id:sender:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=xUcn5RpTdBwh932Fa2jQNlkfcd+2UozJ4+WuHdj3JMk=;
-        b=gtozWCOE+y0ZEuU8qMf/QT6aonIFg+hxH0f2eXEHRhszgiJUZbFyhzHEghvg0panDZ
-         sDLXOttdrXIpG66uAaL62meahzxJ7OdpzT6is5Ge3Fk4ZbaZaYs+VN9EdDR4cJ2rgHIA
-         1WFillWUz9aYaFkDSQVoV6vUjOp96urIDTYEfzpBDsM+OhG3a5aYjLST3cc9XrMSze8T
-         /477i4OHb8gqji3semwdrcSB0602HcSJrKnDvd1eDt6P5MqNSe4cFtyFNTaQxzka0DbY
-         iOxfswiKHR4ZzzGC/E4T/j+VzR7NxPtCc/ILXe7xK2/Y1RCKhFcun3bpmq+lMLhgIOhN
-         oenQ==
+        bh=2/FWvLxK2swVY7Lkt27lEOw4+Yh+lP1rcCDSm2BzOBw=;
+        b=PViaICfhutJ+YQf5pwd/qoi3l1rlxYUJGyJPz0sii9qCtdcbMORZOyhg/yqL0iAvli
+         a+XEZNv5INYGWlqR2rHT+XqSxtwVaIt74lS4jBT2TGZoetS193DfuZNl0ln3FeC8k0We
+         Gbg1O0KKdUD0HSCRLQwKpUKZMEFgJoIKSTqvqstDGeJ9rUxhqKu83lL2Z/E/z4exYFm9
+         l30JwYxtcz6cIwr7ftErD/6b9oQEYQH1jzZyr+DuZDpi7mBys0Gap16GETgiEbvx6151
+         v1Dq5cweYYcYJ1GSwjxVCZq5gOwjzQoZMfBd2+KCXeX1Q00N2Ph/uXwoc+uMbc79qYXZ
+         89KA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788991126; x=1789595926;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=xUcn5RpTdBwh932Fa2jQNlkfcd+2UozJ4+WuHdj3JMk=;
-        b=aXE0HffVPF4Lwsj+O/XRDuEUzg4MsUqWyN+PlYL2ikg4zMqqherHPOvbyPkuqIuhJP
-         X9GJHvRJCAjjIWxywhSdNpUA/AHOiMs+WyV3h+R+d5lGMMB/lCuNI/38yeyNjMEB3VZR
-         AIc+ecO5el+d9wM8T8F7hL4zamsvAAFMNzPl/HY1JSrg0A9GnHfCNL7+DR29OOHNVZrq
-         c6wwJgHPvJmLBRtN5q4vGjQsTv/64+1Q3H0CpdC16iciD3mWdYbk3L5d91pgn5Pyb3jW
-         qkmpa+67K16RLLxi93N4jrhZ0rhptA/a8O6oD3HliZKmN6wub3VHkUAW5vC1NEhmj5HV
-         Wx5g==
-X-Forwarded-Encrypted: i=1; AKwUvBzDHwz2gP6Cg4jXRh60j5gih1Ie5vzrta0Pqay2Fq754cy4IOUythIAYM/9kKPcFyITbpboc9r6o33Psg==@vger.kernel.org
-X-Gm-Message-State: AFuF++m2YdQC4x0iPoRp8aZpnwshUihi1+4aJ3+l3jkI4j8soTg34edT
-	ku65P64LgLuOC6JTTh/cvbDGsWgE45bnqm1a0KVo/bNAj+4s1H5TD+lDGNzQa/TB+k4=
-X-Gm-Gg: AYBFou2Csvcw7y0tFGfgGYMbKmsdFvkCWQRhnYwfhcD7S+asODzNCrgG2BYyEwEnwhX
-	/AIffZFRxdYYiPGGfop6Y/5L6ZSSA7BHh4+rXxeZ9vOKQDlCI7x8P5Rj+SxWCmZRxI4lI6PgsPw
-	/b5bUMPh8Cs8Qh6h6qPSSA2a+ptzaO4ghqGClH5buBhIUJwwjVGH3rXsErPyLOchlIpi5i+NfUT
-	3SHGJzni1VeR25/XVAY6tmeW+o9oGY1Dj/HK5th9BV3OPG5gXxaL367E4APzUBDHdgacTYQYttz
-	g99U1ZTEftGzR2K4lOS7Dv32VAqsVlLytJRejMncoxS5O/O4YPCoqWE0+rAn9bDmQI+Sam3xjoB
-	lxWdEOD4GJ0tS3NhclG5GJDT28FQ0m2xvVFwhBuS906Fv5X2DVCRsA+Nf7SzV0RQilu7lRfk7DD
-	BLgflw6DKNYJGuhRsOxWgSneV2TUrD3xEF41qdlTyI1KMJ9fkgt9s6cXpeu35eqmc=
-X-Received: by 2002:a05:600c:a087:b0:49c:d26a:cf70 with SMTP id 5b1f17b1804b1-49cf825a75dmr389840825e9.15.1788991126279;
-        Wed, 09 Sep 2026 14:58:46 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3339aa37dbdsm40402118eec.11.2026.09.09.14.58.42
+        d=1e100.net; s=20251104; t=1788996954; x=1789601754;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:mime-version:date
+         :message-id:sender:x-gm-gg:x-gm-message-state:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=2/FWvLxK2swVY7Lkt27lEOw4+Yh+lP1rcCDSm2BzOBw=;
+        b=GHwd3NVIEdKRq4K4C86LsV2Scl+IB9n5C3au16/yERGsr0wj2kTQXKVeUOcbne2K2Y
+         zciu9tmCooyDYDBECEwXp/DF9NZoZ9nA6KvztvI1Gf9iycsmk5WYOwSn7q+s5EpcyhJs
+         ZQvsVl1kFlxJD0qzopdrEtuuh+m6M3NWbDKSIGPJoQUI5AC79nRkdPufRQC0ZUnzFlVg
+         GfiL8SmnH6rZ/JgyXbXL0tKNMD+aeLQiEKasazny1FT69843J4+D3YzVHGZdNTtUYtXP
+         o+IEqI28ooX1YpaTrVIgGrwTLBO57DyOhMA7xeHq/Yszlg2CUgTUew7wIKzoC3t+bh2B
+         JV+g==
+X-Forwarded-Encrypted: i=1; AKwUvByXM0K5N24vCzVXSvxUoa02QEYaKlAtW+Td2Wgy44+ff2mFeiw4CMoIhoL+Vyt+toT/Rw1j/5lenG6A+A==@vger.kernel.org
+X-Gm-Message-State: AFuF++ntecOzk10hS9m3dD1Zb60N5ULRbPjfJS9uCIE48HqD1MVxqvbC
+	uPWc/xma6QjjDw4xO13PTdPQSmp00392Wj6ybfaiC/764z6abBU57c7h
+X-Gm-Gg: AYBFou2H2gPEFuzTpNmARvNFXheeO2UX47aD1Fn3pFlF88Hs8MWRLBpleAU//MTrrOv
+	z8QcH9lxLyh7AljQ2P0OJCqXk+t1STRZzIC6ZIadEz19amFVZMvBPcPcQ19Th51W0VRw4OrIqVy
+	0QoyHGydex/v8hYWyNh1jC/rj9gGYayjl/Y/32EIAi/nvnW4QVQWUt+zstEjqtFJXjPLCjvVzWm
+	TOE2H84a+5dDYm0icTqm/T0EBHfPy6B9SfeA2M+dj1lMn/EqKhi3YZcfPCfzUCQptazb4IgvQXf
+	88rXZI71pHNij70pRyR0Yslc0TN4gCkmwn8znSe5Bp3K0vdRbSAAfedwiJz4BiIZXlnvrkMkvYI
+	jdE995ACdObrhjWlMAMTIVSqjTklYWPO/GlWaRWDyO+bGKRI0Q+3F2YiaYt8lqcb+kdG/+7/pJW
+	1zwBlHUM0Z0tBN1T7YlKGoNTVdXOFxYmK4bF5VhiNaTuObjzKfhUi2+hVPF+AH6YWLabqkO2BrD
+	e4EZNOwZKPLAGs38q4=
+X-Received: by 2002:a05:6402:5389:b0:6a9:98dd:afd0 with SMTP id 4fb4d7f45d1cf-6a99cd22660mr1588083a12.40.1788996953572;
+        Wed, 09 Sep 2026 16:35:53 -0700 (PDT)
+Received: from 127.0.0.1 ([94.41.86.134])
+        by smtp.gmail.com with ESMTPSA id 4fb4d7f45d1cf-6a7e6c20c0fsm7819222a12.30.2026.09.09.16.35.52
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 09 Sep 2026 14:58:45 -0700 (PDT)
-Message-ID: <9ca6e653-f89e-4ed2-8f97-783a5663f97c@suse.com>
-Date: Thu, 10 Sep 2026 07:28:39 +0930
+        Wed, 09 Sep 2026 16:35:52 -0700 (PDT)
+Sender: <irecca.kun@gmail.com>
+Message-ID: <d27ef15e-2b34-4113-8913-93f4387fb48a@gmail.com>
+Date: Wed, 9 Sep 2026 23:35:51 +0000
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
 Subject: Re: commit 108cc873398932af589c295f78c348513b8d70d9 breaks
  update-grub on btrfs root filesystem
-To: Hanabishi <i.r.e.c.c.a.k.u.n+kernel.org@gmail.com>, dsterba@suse.cz,
- quwenruo.btrfs@gmx.com
+To: Qu Wenruo <wqu@suse.com>
 Cc: linux-kernel@vger.kernel.org, linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <CAKLYgeL7nrA4nXcewdv9Fqg_s=3GS=vmoypnEiZBKQ7rySZFuQ@mail.gmail.com>
  <20260909002506.GF9053@twin.jikos.cz>
  <7c331e23-d0ea-4611-9bed-d7099dcb41ab@gmail.com>
+ <9ca6e653-f89e-4ed2-8f97-783a5663f97c@suse.com>
 Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <7c331e23-d0ea-4611-9bed-d7099dcb41ab@gmail.com>
+From: Hanabishi <i.r.e.c.c.a.k.u.n+kernel.org@gmail.com>
+In-Reply-To: <9ca6e653-f89e-4ed2-8f97-783a5663f97c@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 
+I think human reporters deserve more attention than bots. But anyway, thanks for responding.
 
-
-在 2026/9/9 23:48, Hanabishi 写道:
-> Hello.
-> 
-> May I ask why you guys keep ignoring me completely?
-
-If you think we have time to reply every report, then just check how 
-many syzbot reports are not addressed.
-
-> This is clearly a regression for userspace (see my previous reports).
-
-Unfortunately it's not.
-
-The problem is there no matter if you have that patch.
-
-There are a lot of ways to make btrfs to report a weird device path even 
-before that commit.
-> If your answer is "won't fix", state it explicitly please.
-
-Won't fix.

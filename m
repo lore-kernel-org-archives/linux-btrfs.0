@@ -1,159 +1,182 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A37D81F16B;
-	Wed,  9 Sep 2026 00:25:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A592E492E5D
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2026 00:44:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788913528; cv=none; b=YR2y1aOYz1LdD7CZoaV/T8KKLUS7qYdo7+svLKUWUsLbqmXY4c9ZN13OEutamu+szQO70+TQaZs1lg+xv5KN+FKhdaaRsc6Z9+26gqmS44RHyk2/1cYI5B5FnLc+VivkCTcZF8SZGEbMqpcAOU6B9jfLfPq4wfNbVjGK4tK/NgE=
+	t=1788914693; cv=none; b=s/G9oLs600JSonISMiAR9FxdTxb7u1/Cy+SZsfWXIiMrcWe4mDDobHISEwexUnc0ipcLRCVo9eg3NmX19xW4TEVfXSYoBH6ndWWiCSMQauRZd1f4MAjhwB1jcUbscCk7xApBixawi7r8zmEg3CKA6DIbfYkSwq7Z2+EYnIYVyS4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788913528; c=relaxed/simple;
-	bh=7w+aLP9GxKpSZ5Hud12Wkv8BfWqYjAe+WIUt/+HMdnc=;
+	s=arc-20240116; t=1788914693; c=relaxed/simple;
+	bh=xmjkoVWXvS9+/Jmn/iBbvj8KgNL4eqgxOrrH6Rl2l2M=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=VgFjsVduEoqhHYP9tSMkdgJu3NsEpBLSGch1MwyrpiuubiG2n2hqSYkcYt9DH/F8MVSnFZ3Xb5AzPS4fEa6YQHPpRdOf6seRBPEvU4sPxbna4ZOUhXlpe1y8uX0jw5BoslbYZT63HaRv35siEplydrdh2foA7v3mo2K7X77RKgY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=1P1Z7n/8; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=MXPvRxOa; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=fpGTkZS3; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=ffbI9gxR; arc=none smtp.client-ip=195.135.223.130
+	 Content-Type:Content-Disposition:In-Reply-To; b=DVyS1NW131jEx/QDQF5xRHisshaOFI+LeEELjY1q+zsF4Frn7d0NjyKRqZTAmjV7CCzVDscY/nP7i6FSh3m5h1QB0GKgUsTyAnmQIsf0LZBWcJB4j/vzhOFupwM9ONpwLrezj8+YpxXCXEZ1BUBBom+eexAmBK/6w9gYHeQl1hg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=I38UlZCL; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=tBP0QP+G; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=MXq1Rfa4; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=1AeWQHNX; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="1P1Z7n/8";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="MXPvRxOa";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="fpGTkZS3";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="ffbI9gxR"
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="I38UlZCL";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="tBP0QP+G";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="MXq1Rfa4";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="1AeWQHNX"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 1777621A0A;
-	Wed,  9 Sep 2026 00:25:16 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 1B97D1FAA8;
+	Wed,  9 Sep 2026 00:44:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1788913520;
+	t=1788914685;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=4onBu054LSY/uF7WM8nXm9GLARR1Lx+akTHTwT/AQhI=;
-	b=1P1Z7n/811kTFms4O4+Ykcqf5oceHryqrZS8HKs+zGz3M6OviTMs/jzUtcPBsAjunaQDEs
-	prNNPXO94axrFu0WEUBoqESe1cnNrVk19iF6t2LqSXG40RLKG0Orwmafk+6mMeG4cAQN/Y
-	m3WgNqRsvUxCsckzWXXbnS2RR82jPBo=
+	bh=IkMeyp7w0zUlYQBH9OM2pqn0OTuI8vkurDO5Cjmii60=;
+	b=I38UlZCLHw+xkKvdbpqQOpC4ibaczxzzJdh8DgvYOfL0rhW2CoUa4/YOS8JJ0KgOhCfWeD
+	xqL+oh2yNWhhywNNhHCK7SiZU46rlJo1GtK0Pll+4sb+sCT7T0z0xlUVT7w2hDS8d1VWuk
+	kkgjtt6F9i1Hd1nQjmR96IdKmUWsgMs=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1788913520;
+	s=susede2_ed25519; t=1788914685;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=4onBu054LSY/uF7WM8nXm9GLARR1Lx+akTHTwT/AQhI=;
-	b=MXPvRxOaLgeIwgrQzwUmlV5vtZgXiwByTzMkvi1O1GkJPWjjOYIBpCpe29uzbqLKscypsm
-	WOZDjuIz8Q6iNEAQ==
-Authentication-Results: smtp-out1.suse.de;
+	bh=IkMeyp7w0zUlYQBH9OM2pqn0OTuI8vkurDO5Cjmii60=;
+	b=tBP0QP+GE6UpVDM0AMAxMSE6d5IzaUoRvVujYI8ZUQsmdOqL2WqEon0mzJow4loh4xAKrY
+	LkH89z12cUx0iKDg==
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1788913516;
+	t=1788914681;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=4onBu054LSY/uF7WM8nXm9GLARR1Lx+akTHTwT/AQhI=;
-	b=fpGTkZS3PjC443zgnw+SovyduUVJcDACqbwzTXDD846pcyWsmVC88mOMvWnDQISvPTy/qC
-	m+dtRtcGfGwBr0O27blYcDVu/3II/WZSQx1ascJjr6c/wOQwWaIuUOdXEW40TVKSxaXFE2
-	wE+QJ/UQQpOas4bh91tizAljLmCZ2xA=
+	bh=IkMeyp7w0zUlYQBH9OM2pqn0OTuI8vkurDO5Cjmii60=;
+	b=MXq1Rfa4249TvcEIlEI/ViX1SbJSflToMct0HLl2Za9ZNLiU1U/Kz/aVO1aZ/4k/5IDeIe
+	vVyc7eQWTAiWAA6+PbobtllrvzQ6JWtFC2CiLoJXFwvIja7zxLMCretuIioJS2Hwsn9tnc
+	3ZkoTY6lRmxSceL7CihhHz3FV+nt6rU=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1788913516;
+	s=susede2_ed25519; t=1788914681;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=4onBu054LSY/uF7WM8nXm9GLARR1Lx+akTHTwT/AQhI=;
-	b=ffbI9gxRVcXRhP8nKQj5jF4QWEzKDGdecaPEj9/8KaHUfcmJYb05yaWkYAIXqzBCIzEc0j
-	T/xS31bsMPyzlvAA==
+	bh=IkMeyp7w0zUlYQBH9OM2pqn0OTuI8vkurDO5Cjmii60=;
+	b=1AeWQHNXfO/ZDYCDA4p8HIq6wToMYvDHKHYlu0snEtlBlXwxCPhD9HAn1zZt15UmJHc1ZY
+	Budaj4qtu6CAyvDw==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DF3F813354;
-	Wed,  9 Sep 2026 00:25:15 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E14CB1347F;
+	Wed,  9 Sep 2026 00:44:40 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id SjBKNmunoGpGQgAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Wed, 09 Sep 2026 00:25:15 +0000
-Date: Wed, 9 Sep 2026 02:25:06 +0200
+	id v4e1NviroGqzUwAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Wed, 09 Sep 2026 00:44:40 +0000
+Date: Wed, 9 Sep 2026 02:44:39 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Alex Romosan <aromosan@gmail.com>
-Cc: linux-kernel@vger.kernel.org, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: commit 108cc873398932af589c295f78c348513b8d70d9 breaks
- update-grub on btrfs root filesystem
-Message-ID: <20260909002506.GF9053@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Fwd: btrfs: OOM in split_item().
+Message-ID: <20260909004439.GG9053@suse.cz>
 Reply-To: dsterba@suse.cz
-References: <CAKLYgeL7nrA4nXcewdv9Fqg_s=3GS=vmoypnEiZBKQ7rySZFuQ@mail.gmail.com>
+References: <nka8fLGwxf2NcMXCcuLi4CkGSIKrKG4Sc9IbvTTBG5L6T63w6tImgOKYEmu-pWaoZZFO4Eqg8zDyMggihfvlFRTd1Vubz6E52PVEhU83gn8=@protonmail.com>
+ <250decb0-d940-4fe6-9b54-d06e1b293a1b@suse.com>
+ <20260908131439.GC9053@twin.jikos.cz>
+ <962e0f59-ca17-4467-b762-0b225df0d25f@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <CAKLYgeL7nrA4nXcewdv9Fqg_s=3GS=vmoypnEiZBKQ7rySZFuQ@mail.gmail.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <962e0f59-ca17-4467-b762-0b225df0d25f@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Level: 
 X-Spam-Score: -4.00
-X-Spam-Flag: NO
+X-Spam-Level: 
 X-Spamd-Result: default: False [-4.00 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
 	MIME_GOOD(-0.10)[text/plain];
-	FREEMAIL_TO(0.00)[gmail.com];
-	RCVD_TLS_ALL(0.00)[];
 	ARC_NA(0.00)[];
 	MIME_TRACE(0.00)[0:+];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	TO_DN_SOME(0.00)[];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	RCPT_COUNT_TWO(0.00)[2];
+	MID_RHS_MATCH_FROM(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
 	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_THREE(0.00)[3];
+	TO_DN_ALL(0.00)[];
 	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:url];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.cz:replyto,suse.cz:mid,imap1.dmz-prg2.suse.org:helo];
 	RCVD_COUNT_TWO(0.00)[2];
 	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+X-Spam-Flag: NO
 
-On Tue, Sep 08, 2026 at 11:59:43PM +0200, Alex Romosan wrote:
-> Please Cc me as I am not subscribed to the list.
+On Wed, Sep 09, 2026 at 06:57:59AM +0930, Qu Wenruo wrote:
+> 在 2026/9/8 22:44, David Sterba 写道:
+> > On Tue, Sep 08, 2026 at 07:45:58AM +0930, Qu Wenruo wrote:
+> >> Forwarded for archive purposes, as patchcheck requires a link: tag
+> >> following reported-by: tag.
+> >>
+> >> Meanwhile the original report is only a private mail to me.
+> >>
+> >> -------- 转发的消息 --------
+> >> 主题: 	btrfs: OOM in split_item().
+> >> 日期: 	Mon, 07 Sep 2026 20:10:56 +0000
+> >> 发件人: 	xavierbachmeyer182 <xavierbachmeyer182@protonmail.com>
+> >> 收件人: 	wqu@suse.com <wqu@suse.com>
+> >>
+> >>
+> >>
+> >> Hello.
+> >>
+> >> Attached is a kernel log entry showing a strange out of memory issue
+> >> that rarely seems to happen.
+> >> It's kind of annoying and makes me wish GFP_NOFS would go the way of the
+> >> dinosaur.
+> > 
+> > What is the story behind that? One way or another we will get GPF_NOFS
+> > semantics, either the flag or the scoped NOFS and this limits the
+> > allocator.
 > 
-> Running my own compiled kernel without initramfs on a lenovo thinkpad
-> x1 carbon gen 7.  The linux disk is the only disk on the system. Since
-> version 7.3-rc1 i haven't been able to to a grub-update, instead i get
-> this error:
+> No extra follow up unfortunately.
+
+For the record, as it was in a separate mail, that GFP_NOFS can
+sometimes fail because of page fragmentation and limited options for the
+allocator.
+
+> > Using 64k nodes is problematic and so I'd rather people not use it on 4k
+> > systems.
 > 
-> /usr/sbin/grub-probe: error: cannot find a device for / (is /dev mounted?).
+> In fact the only problematic part in b-tree operation is exactly the 
+> vmalloc() I'm fixing.
 > 
-> 7.2 is fine. a git-bisect identified commit
-> 108cc873398932af589c295f78c348513b8d70d9 as being the culprit.
-> reverting this commit from 7.3-rc2 allowed me to run grub-update
-> again.
-> 
-> this is not the first time i reported grub-update being broken on
-> btrfs. i reported exactly the same problem on jan 8, 2024
-> (https://lkml.iu.edu/hypermail/linux/kernel/2401.1/00596.html). maybe
-> the discussion that followed would help come up with a fix that will
-> make everybody happy.
+> Other than that I see no obvious problem related to 64K nodesize on 4K 
+> page systems.
 
-I remember debugging that one, https://bugzilla.kernel.org/show_bug.cgi?id=218353
-Reverting 108cc8733989 ("btrfs: fix a lockdep caused by path resolution
-during device scan") would bring back the lockdep warning and there is a
-locking problem.
+Technically if the allocation has a fallback then there's no problem. In
+practice the 64K contiguous memory needs to get shifted for almost every
+metadata insertion. COW requires the whole 64K set of pages to be
+allocated. So there's a lot of dead weight carried around.
 
-The commit says it's fixing 2e8b6bc0ab41 ("btrfs: avoid unnecessary
-device path update for the same device"), the difference is in lines
+It's a tradeoff, 4K nodesize would need taller b-tree for the same
+amount of raw items. This is worse due to lock contention and concurrent
+changes. I think the 16K is a reasonable middle ground.
 
-(https://bugzilla.suse.com/show_bug.cgi?id=1230641)
+> The way we handle metadata is already vmalloc() like, we allocate page 
+> sized folios for 64K nodes anyway.
 
--       } else if (!device->name || strcmp(device->name->str, path)) {
-+	} else if (!device->name || !is_same_device(device, path)) {
-
-Which gets changed to (by 108cc8733989):
-
--       } else if (!device->name || !is_same_device(device, path)) {
-+       } else if (!device->name || device->devt != path_devt) {
-
-Each change is reaction to a bug, I don't see a clear fix which will
-make it work in all cases.
+Yeah, that we've been heading towards large folios also means contiguous
+ranges for nodes. Memory management is aware of that and allocator
+should provides that by the means of compaction. I don't know how much
+it could be improved.

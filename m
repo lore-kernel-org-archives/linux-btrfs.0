@@ -1,173 +1,174 @@
-Received: from mail-oa2-f11.google.com (mail-oa2-f11.google.com [74.125.231.75])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7D00B57F72E
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2026 16:23:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.231.75
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 287C833B6D1
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2026 17:11:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788971011; cv=none; b=ljCwK8kecKf0WIt+p38TbBgz0Ihm9ScXGJxSvPZpt97pVNMVnPdIckoVBBxQIyQL7nS41YCO7fqGyQrtLcZlu2iOOGE+bUcVVugKaRpC28GHOdlPzEAJoaQUgi0eQAQbMc8dHpNwTsv1yxB0+oOpmsjIwdDuTKFsBtbp7K4vkI4=
+	t=1788973863; cv=none; b=JRESIye+PNq28p9Y1VQiMlU0jw0cEuR8tCFwMx8XlVANrSYGjyH6deUfWUjOJDok8L3Sc6iiTprGe7itfIDQzI70J0wH3NbSedCx5YBi28Nj1ArOiRq/AcsRFaovyWcB04xuuca6smLHAix3EF6iq9h2+c0KyjjN6Xsli3leFJs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788971011; c=relaxed/simple;
-	bh=oaGo8KM3tzT1v4KW6W0TwDjAO2KG2eStbpOP1rhD5d4=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=dyvfBmGem6Iu+HlDXQyBNnUZHpWNPoXwRJcA4Gokij9bbjvKkocTpneabYey580o/DlhdkSm57Q/nrVkX/zvELPZadN4sFBHQwSHV2IPg6BArDVQpJPujX8yoWIRRHaIKWtYRmzHwZuHP4BZX0csNwrxAXI//QqFlL5SsEw5jcs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=74.125.231.75
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oa2-f11.google.com with SMTP id 586e51a60fabf-46a6530ebd4so2440871fac.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Sep 2026 09:23:29 -0700 (PDT)
+	s=arc-20240116; t=1788973863; c=relaxed/simple;
+	bh=rc6pysinAtxTWfmbt7G11fkKqor3YnttVUGOKHDnERk=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=dJI9x/FMZ6kNFQSt7yrTVdfELMSlY/pyR4N3Ed7sC5NbP3RhueSWKf4gV0FxO8eG71vrJxpNZ+wOtSp8i8QfnnMh8693qISoMj3DfmCtjSOkInhL/8W/+KY57TMv7m5DSeNImVBEwgTAV5ab/nHNIGRbgHa8QW2WVYvlEUJzero=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=lLstiXsk; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=xkStEwrc; arc=none smtp.client-ip=148.163.139.74
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="lLstiXsk";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="xkStEwrc"
+Received: from pps.filterd (m0167075.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 689GZ5Mi497194
+	for <linux-btrfs@vger.kernel.org>; Wed, 9 Sep 2026 13:11:00 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
+	cc:content-transfer-encoding:content-type:date:from:message-id
+	:mime-version:subject:to; s=pps01; bh=lpt2d26XTQe1uORrhGycOSTTTO
+	JsJUi2+IgNx3gMRHY=; b=lLstiXskjuHaqDqOOrjd9ZcnX3iz6WlMj1mX+8Uxfz
+	eQmxdudmLF9VqBgOBqY35n3VSmWb4AzgwVO2ULOoaUdFwWa/q+Amv/pC2ivMCss5
+	bZrEGfDJYInPsq+1vMAU/WZNylbsi0GZZKnIi7nVl5o2I+cFzhS57VgNGAd7n50e
+	uiF8dFvCBr/2cS7NsVFudvVAHDjVkaaw5NyEvakrfbbNcFzYCbOIMhpSTultiZeV
+	OVaClza1+CgwQ9tmvSk2kWmVzxLAHNn4ik/rzpnLz82/T+1AtPUegzij53zTDtlS
+	2A6MRXCq8iUIbE/uU7sRsdLdW5XCrcPr8aSpXU4rkEpg==
+Received: from mail-qt1-f197.google.com (mail-qt1-f197.google.com [209.85.160.197])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4gk0an4ghs-1
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Wed, 09 Sep 2026 13:11:00 -0400 (EDT)
+Received: by mail-qt1-f197.google.com with SMTP id d75a77b69052e-5304f2b5946so113488711cf.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Sep 2026 10:11:00 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=columbia.edu; s=lionmail; t=1788973860; x=1789578660; darn=vger.kernel.org;
+        h=cc:to:message-id:content-transfer-encoding:content-type
+         :mime-version:subject:date:from:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=lpt2d26XTQe1uORrhGycOSTTTOJsJUi2+IgNx3gMRHY=;
+        b=xkStEwrcLztU4C4HqGzZlTRx9MW1j7T/v2IaBrt19p9JNnn5/3pxCeqTj8WqHiYfH8
+         YeshfhY2UbqQ+PDr1wxhcM9/tBXLtpjKDUAUqCrFOmqvRulRu+VISEieTjBTh/HkMEtL
+         p497Wlj4zFG4xlMCIpgVYQSu4u3Ld7gQD6se+/O3eYKuoUq/QbE/PvX6Q8SodZqmh0JP
+         q4EwTUqxmsr4v6Jh33QfhCaWrHjQawPP8YhOTSojJJi+BK9JGIzpX0VyXT6EPIAREtCI
+         5llZuKDkYOWhxyx3X/KlcnIxZlRjHpS+JUBaJEQksyWSbMXsdPdggr02Rvw8Cn7fQOLz
+         aRWw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788971008; x=1789575808;
-        h=content-type:to:from:subject:message-id:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=lREkKVmhvhqI0pDdd9RfpS/MYmM7XqN/j1JTFiPMYP4=;
-        b=e+zjaWzJoqf3qBOK1Xtx8PmuSEcfCPEMZl7V/KgqN3iVydPF+fGo2NqvYxJcmDo7Pb
-         b3X0su0gZTZ4tZ1OtPG5xJoKrh3SB+/kFe/9dR6xVIWE4ds3uetKiZU+ApqWmZCgWaxw
-         NU8qv9Om3guNlv9UWepM/XENdC7SYv6RCBOZiN0nn9eQ3IpAF/IwGVT08F9D3edHSP1l
-         BPxE8KIMQV2Tx+DHzI4UEM0jj9vGKQWoYS2YdxhezxVVaiZou/9QRcbnoyDHjwONdHuy
-         /sqCK22KPk+j8T+IOTEs8wEIuyJBimsALAZYa3sej+jksCS+AS2Y3TCWe4us/fZSnn3z
-         BQGg==
-X-Forwarded-Encrypted: i=1; AKwUvBx0BGRWoYpoR6sRM3/vsMFqR7kGmlYZeS7GSEcXDeLTPcZFKADSI3/GvkJtUz/1TNv3bMw4TLnPQebF9A==@vger.kernel.org
-X-Gm-Message-State: AFuF++mhANkLOXuD/2EGJX4ZyejOQgCR7J6lRVQEGWhPnJ1mrouqyXkc
-	/Da/Y2cB9MmWEwH43QGy3LsnKxl0YXMq0r6w8Nfnd/Bss/YqVLbfvtK3jx16U3wMEhMV0POTQWo
-	4B3+vNYwGuolGi4GV1nDK1s/ifR56EYmjlyPV8/7vxhyBKnkZJcfnhdgURV4=
+        d=1e100.net; s=20251104; t=1788973860; x=1789578660;
+        h=cc:to:message-id:content-transfer-encoding:content-type
+         :mime-version:subject:date:from:x-gm-gg:x-gm-message-state:from:to
+         :cc:subject:date:message-id:reply-to:content-type;
+        bh=lpt2d26XTQe1uORrhGycOSTTTOJsJUi2+IgNx3gMRHY=;
+        b=IzxMogV7d+kdkuFRdkcf8iDLQ5/wsCSk4R3KemANh+9Q9/Gk/MkRhQC5gW3dsVohss
+         eQyaUXs412KnVDsbEjeDDcAOw0d2AbzOtFA40Y4rcd8I0VZht7oFSc35pBF1q14qWVig
+         ET/VUL4A+iH39sIg3VP1zXuvci93dgwdaaKQ02ULQUa8vLnrrargJ6P5gEXqrzFI4OQA
+         6ci1SdZ1VwHNn8vVds2gxfLmEGEp0vYEzJKFk4oPClwkINHGIjjPFu8DMnanwFahEZed
+         ZkTr1savGrVSL6GATPveeJLOA/g0F+X1CUyCRZLVNYWBVwrlwXNnQojKD7OvqYp+cGJw
+         33mQ==
+X-Forwarded-Encrypted: i=1; AKwUvBwYpayZD4wBKZutc62539KK0imzhQ1gL8iFC+vNpFQyPNbm8e41kv/QEXLPV5MvyMqlUAXvS1taN1OqdA==@vger.kernel.org
+X-Gm-Message-State: AFuF++n9Z/yLqRigJAeuJAwvaVhpxd0MsSso4Di+lhul17FA488naMwV
+	ub4QWPASLViLTF68OSa1CYyIF+Rf5Bh0Si3rBrT4r4P2zDOrXmlzvQ/Q6GiKFEA8N36OVjDz3Od
+	jqCU6Hm7/mGGxjgjT5MXPS4pzPfMjulmnFbogIHDX4V54WBBzLVaNqiTvw1iGiSopY9zrMEM=
+X-Gm-Gg: AYBFou2Q5RseptzNrE8xIFXlocBAZPes8b7Nnt6Mn0aLdedcwxh/eg/TcqW7ui43Uwh
+	uEg16PzbSKLs4dQRO7IK4UazBOBPeeF0fGCssAfOQkcKCrSeAYQhDHxUZKcWFIJFCmhJZ0sSd+R
+	vWAtEfH+j2P/Urvffi1hu0MTWgOQl0jvow7big77TkMQ4Au7fwqePfKPLml1GG3NribQ8Szpor9
+	9vx8sWcZk6B9qvAJaO2EvB5lRUQzp4N4J0eV1eVGxZJQ6Le5bvatXzpsSGBgVXJJc6pRWSJkEBc
+	jA7N8vQuIKVEUx8adEJGimJx96v1UTkgnhHSxbRMX9cDhRqzxyCA278fynu134eIKfD+eZrD29V
+	QH29y6Vnmt1P3Ro82sn897c1lDi/1WSXx6NxrU68tNH4ytKqm
+X-Received: by 2002:a05:622a:2516:b0:517:8011:3a4b with SMTP id d75a77b69052e-530a2c4243dmr110781721cf.21.1788973859979;
+        Wed, 09 Sep 2026 10:10:59 -0700 (PDT)
+X-Received: by 2002:a05:622a:2516:b0:517:8011:3a4b with SMTP id d75a77b69052e-530a2c4243dmr110780551cf.21.1788973859333;
+        Wed, 09 Sep 2026 10:10:59 -0700 (PDT)
+Received: from [127.0.1.1] (nat-128-59-176-193.net.columbia.edu. [128.59.176.193])
+        by smtp.gmail.com with ESMTPSA id d75a77b69052e-5308fc10b78sm64927471cf.30.2026.09.09.10.10.53
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 09 Sep 2026 10:10:57 -0700 (PDT)
+From: Tal Zussman <tz2294@columbia.edu>
+Date: Wed, 09 Sep 2026 13:10:48 -0400
+Subject: [PATCH] btrfs: use u64 for the page indices in
+ heuristic_collect_sample()
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6820:c8f:b0:6b3:4494:cf2a with SMTP id
- 006d021491bc7-6b6f99d5985mr23417979eaf.4.1788971008119; Wed, 09 Sep 2026
- 09:23:28 -0700 (PDT)
-Date: Wed, 09 Sep 2026 09:23:28 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6aa18800.f2639fcc.29487d.000c.GAE@google.com>
-Subject: [syzbot] [btrfs?] WARNING in btree_csum_one_bio (2)
-From: syzbot <syzbot+5fd974495fd56ec60faf@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260909-btrfs-heuristic-u64-index-v1-1-8606b3c89807@columbia.edu>
+X-B4-Tracking: v=1; b=H4sIABeToWoC/yXMwQrCMAyA4VcZORvoRhnUVxEPtk227FAlaWUw9
+ u5WPX6H/z/ASIUMrsMBSm8xeZaO8TJAWh9lIZTcDZObZhdcwFiVDVdqKlYlYZs9Ssm0Y8oxBM+
+ ZR8/Q+5cSy/573+5/W4sbpfodwnl+ADUmDJF9AAAA
+X-Change-ID: 20260909-btrfs-heuristic-u64-index-cdb994fdf14f
+To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, Tal Zussman <tz2294@columbia.edu>
+X-Mailer: b4 0.17-dev-db0b7
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1788973852; l=1567;
+ i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
+ bh=rc6pysinAtxTWfmbt7G11fkKqor3YnttVUGOKHDnERk=;
+ b=Z/SSveEx0RWg3+66nrs20K2QIMA0SAKh/FZs6GwHWXnO8lsjr0U83fIjJIglJdv9r9fi4V9fl
+ ydmRlI3v6FMD+47h73KbfAjZR1WyaxTPGX44h2g/SaI4o129x7vcFnb
+X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
+ pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
+X-Proofpoint-GUID: 1DD2HY8m5r4uH3kll9ajgA3il-ZXQXia
+X-Proofpoint-ORIG-GUID: 1DD2HY8m5r4uH3kll9ajgA3il-ZXQXia
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTA5MDE5MSBTYWx0ZWRfX5FvWsGiIkgNU
+ zWSyoKAk61w0MTo/W20ybD/WunsL3aRvr2/uH4gf12JWDZMB82wFPAm4j1UvCYM1F3JbylbZE/A
+ njDQasQ+kyx3U8vWf2U/n1njDr3hwYOth+D0u4mUIVzHaGrYW2lJAwlITU7RRvnrQMnr7UQJWiO
+ bmOWLDXjYEaQqffzPNTfdXyTOErjYiEpdd6ozULMVdUhS44AdV2JGWE3zaXclk7LagDow1VOU41
+ VMqUbFzi1cszAQFmw9uhrh9soDo4hfoZPJ8VYAvnV8mIgL2/rKMtvqDv9jRXyLY7SvlC6BLl4vy
+ +BoAimq9qWulIi2D12SYkIufEJ4FBlEoF2fhw+aXsLiHFceiPKwzbmxrAUzVVQZplcTtSSOAP5c
+ 9FtRT4acwpF+6WFdsG3A7sYYnPXe/lmCDKFhjaBaH+DZJsyESRtPQz6M/fmFeMHBiBWKTA1yT8x
+ 9gDurEgjJbF/TZtOJtA==
+X-Authority-Analysis: v=2.4 cv=dbiwG3Xe c=1 sm=1 tr=0 ts=6aa19324 cx=c_pps
+ a=EVbN6Ke/fEF3bsl7X48z0g==:117 a=fJxgZNdXt3opHMdyAp+FXA==:17
+ a=IkcTkHD0fZMA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=HpS3TJQ9O3Ob1ozEcmik:22
+ a=6w9P9XadSiK96p_W-bMA:9 a=QEXdDO2ut3YA:10 a=a_PwQJl-kcHnX1M80qC6:22
+X-Proofpoint-Spam-Info: AW1haW4tMjYwOTA5MDE5MSBTYWx0ZWRfXz5kX/OzPsm0V
+ eYfZI/6dfwmHccZ+WiqsW1TPZEbhLiXQPKZAoLAObgjqnYapn7O1lplcNLSbASfhKXlkjA3Acby
+ SRYJl5PdQhNaV53rDyqyiRyOuU9i1pp2z99EG1YK6wotv3aMymMp
+X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11900
+ signatures=596817
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ phishscore=0 adultscore=0 impostorscore=10 clxscore=1015 priorityscore=1501
+ spamscore=0 bulkscore=10 lowpriorityscore=10 malwarescore=0 suspectscore=0
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2606150000 definitions=main-2609090191
 
-Hello,
+index and index_end are derived from the u64 start and end offsets, and
+index is shifted back into a byte offset for offset_in_folio(), which
+needs a cast to u64 to be safe on 32-bit. Make them u64 instead so the
+cast goes away. They still fit pgoff_t where they are passed to
+filemap_get_folio(), as they came from a valid file offset.
 
-syzbot found the following issue on:
+Signed-off-by: Tal Zussman <tz2294@columbia.edu>
+---
+ fs/btrfs/compression.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-HEAD commit:    4d7d9486c04d Merge tag 'integrity-v7.3-rc2' of git://git.k..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=11151125580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=e909ffe6b35dddb7
-dashboard link: https://syzkaller.appspot.com/bug?extid=5fd974495fd56ec60faf
-compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
-
-Unfortunately, I don't have any reproducer for this issue yet.
-
-Downloadable assets:
-disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-4d7d9486.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/917d10b186d9/vmlinux-4d7d9486.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/1b81d8989e9e/bzImage-4d7d9486.xz
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+5fd974495fd56ec60faf@syzkaller.appspotmail.com
-
-	item 7 key (263 EXTENT_DATA 17633280) itemoff 3504 itemsize 53
-		generation 9 type 1
-		extent data disk bytenr 6729728 nr 65536
-		extent data offset 0 nr 65536 ram 65536
-		extent compression 0
-	item 8 key (263 EXTENT_DATA 17698816) itemoff 3451 itemsize 53
-		generation 9 type 1
-		extent data disk bytenr 6795264 nr 4096
-		extent data offset 0 nr 4096 ram 4096
-		extent compression 0
-	item 9 key (263 EXTENT_DATA 17702912) itemoff 3398 itemsize 53
-		generation 9 type 1
-		extent data disk bytenr 6799360 nr 36864
-		extent data offset 0 nr 36864 ram 36864
-		extent compression 0
-	item 10 key (263 EXTENT_DATA 17739776) itemoff 3345 itemsize 53
-		generation 9 type 1
-		extent data disk bytenr 6840320 nr 12288
-		extent data offset 0 nr 12288 ram 12288
-		extent compression 0
-	item 11 key (263 EXTENT_DATA 17752064) itemoff 3292 itemsize 53
-		generation 9 type 1
-		extent data disk bytenr 6852608 nr 16384
-		extent data offset 0 nr 16384 ram 16384
-		extent compression 0
-	item 12 key (263 EXTENT_DATA 17768448) itemoff 3239 itemsize 53
-		generation 9 type 1
-		extent data disk bytenr 6868992 nr 8192
-		extent data offset 0 nr 8192 ram 8192
-		extent compression 0
-	item 13 key (263 EXTENT_DATA 17776640) itemoff 3186 itemsize 53
-		generation 9 type 1
-		extent data disk bytenr 6885376 nr 49152
-		extent data offset 0 nr 49152 ram 49152
-		extent compression 0
-	item 14 key (263 EXTENT_DATA 17780736) itemoff 3133 itemsize 53
-		generation 9 type 1
-		extent data disk bytenr 6885376 nr 49152
-		extent data offset 4096 nr 45056 ram 49152
-		extent compression 0
-	item 15 key (263 EXTENT_DATA 17825792) itemoff 3080 itemsize 53
-		generation 9 type 1
-		extent data disk bytenr 0 nr 0
-		extent data offset 0 nr 15765504 ram 15765504
-		extent compression 0
-	item 16 key (18446744073709551606 EXTENT_CSUM 5279744) itemoff 3016 itemsize 64
-		range start 5279744 end 5287936 length 8192
-BTRFS error (device loop0): block=5324800 write time tree block corruption detected
-------------[ cut here ]------------
-IS_ENABLED(CONFIG_BTRFS_DEBUG) || btrfs_header_owner(eb) == BTRFS_TREE_LOG_OBJECTID
-WARNING: fs/btrfs/disk-io.c:328 at btree_csum_one_bio+0x9d6/0xd10 fs/btrfs/disk-io.c:327, CPU#0: kworker/u4:13/1059
-Modules linked in:
-CPU: 0 UID: 0 PID: 1059 Comm: kworker/u4:13 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-Workqueue: btrfs-worker btrfs_work_helper
-RIP: 0010:btree_csum_one_bio+0x9d6/0xd10 fs/btrfs/disk-io.c:327
-Code: ff 89 c6 e8 bc ef b0 fd 45 85 f6 75 07 e8 b2 ea b0 fd eb 42 80 3d bc c1 4c 0c 01 75 15 e8 a2 ea b0 fd eb 32 e8 9b ea b0 fd 90 <0f> 0b 90 e9 35 fc ff ff e8 8d ea b0 fd c6 05 99 c1 4c 0c 01 48 c7
-RSP: 0018:ffffc90005337920 EFLAGS: 00010293
-RAX: ffffffff8416e195 RBX: fffffffffffffffa RCX: ffff88803668a580
-RDX: 0000000000000000 RSI: fffffffffffffffa RDI: fffffffffffffffa
-RBP: ffffc900053379f8 R08: 5400000000000000 R09: 0000000000000000
-R10: 0000000000008000 R11: ffffffff8ec362b8 R12: ffffffff8416de4b
-R13: 00000000ffffff8b R14: ffff888011f5505f R15: ffff88801fcc3560
-FS:  0000000000000000(0000) GS:ffff88808c2cd000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007fc45c458d20 CR3: 0000000050cdc000 CR4: 0000000000352ef0
-Call Trace:
- <TASK>
- btrfs_bio_csum fs/btrfs/bio.c:601 [inline]
- run_one_async_start+0x91/0x130 fs/btrfs/bio.c:635
- btrfs_work_helper+0x3a2/0xc50 fs/btrfs/async-thread.c:312
- process_one_work kernel/workqueue.c:3396 [inline]
- process_scheduled_works+0xc3d/0x1630 kernel/workqueue.c:3479
- worker_thread+0xa47/0xfb0 kernel/workqueue.c:3560
- kthread+0x38b/0x480 kernel/kthread.c:436
- ret_from_fork+0x514/0xb70 arch/x86/kernel/process.c:158
- ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
- </TASK>
-
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 20169d028961..228d1cdd7c29 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -1489,7 +1489,7 @@ static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
+ 				     struct heuristic_ws *ws)
+ {
+ 	struct folio *folio;
+-	pgoff_t index, index_end;
++	u64 index, index_end;
+ 	u32 i, curr_sample_pos;
+ 	u8 *in_data;
+ 
+@@ -1517,7 +1517,7 @@ static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
+ 		folio = filemap_get_folio(inode->i_mapping, index);
+ 		ASSERT(!IS_ERR(folio));
+ 		in_data = kmap_local_folio(folio,
+-				offset_in_folio(folio, (u64)index << PAGE_SHIFT));
++				offset_in_folio(folio, index << PAGE_SHIFT));
+ 		/* Handle case where the start is not aligned to PAGE_SIZE */
+ 		i = start % PAGE_SIZE;
+ 		while (i < PAGE_SIZE - SAMPLING_READ_SIZE) {
 
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+base-commit: 0fa0a3b3b2b007ab40e87245152e1328703a317e
+change-id: 20260909-btrfs-heuristic-u64-index-cdb994fdf14f
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+Best regards,
+--  
+Tal Zussman <tz2294@columbia.edu>
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
-
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
-
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup

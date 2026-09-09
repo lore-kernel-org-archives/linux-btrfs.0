@@ -1,67 +1,67 @@
-Received: from mail-wr1-f44.google.com (mail-wr1-f44.google.com [209.85.221.44])
+Received: from mail-wr1-f46.google.com (mail-wr1-f46.google.com [209.85.221.46])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48F6F3515FB
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2026 04:56:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E02623A5448
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2026 06:10:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.46
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1788929799; cv=none; b=fkJiPp8Eff7B33ByWMqTxiPnSULMQARTDaW6JY+maCswAfRtm3qiXvGr/m5qqXXIlBwVDjxDS4xheb5vRa/eciK146UL3PETkRpInQwvvUJ07S9p1PwASUCWUkVbtIZ28SCWf+l8qxzW2JqAzxhOOyB1VRmOzM/9yUdVGhBBxsQ=
+	t=1788934260; cv=none; b=evHRH6JF3U/WUyUn273fNmXS/nU7DbNCuw7PUc/fJjclorWIY0tCKPi6WHhPQHiBALMzhfElupu+UoGWiuON1RK54fXfqyaVyKWm/KrYJYLO0jYQsPcXnc6TaoUk+Vx7hP+IFmgqxNutTXwABtpMZZnYmhB49+P4shXJ4NGXQG4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1788929799; c=relaxed/simple;
-	bh=I8x9Xab1quqd7JSPC5TH+cvtiOWpzpmg6wkMXgH4ue0=;
+	s=arc-20240116; t=1788934260; c=relaxed/simple;
+	bh=2iI7+hsSt6Pmjb6ifN1OdgNX0gZcw9BkmoyEoH4S+XM=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=onGnUQAbz73xel/BtaaRGkeZ4lLzGuYzXFkD8iaH3g0n1rcFWCv6rnUdcMKnp8ggkchb3YjF+NoWwpl9YNqto4/IC0vSNKXoIB2d6chQ+To0qncDvx8TI0G4ofWCxhyNF5W8pLHxr6qaRsXfp3C7/DpVHPFT3sZI1GhD5vFnIcs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=bnj35BDr; arc=none smtp.client-ip=209.85.221.44
+	 In-Reply-To:Content-Type; b=s89jb5CxkQll+h3OAz6Lq030YN1XGfJtIWqq/9BqXDR5p/NAE8cjAjvRu/bDqfbOCO/7+SY1RWkqrXaKAeNT29SA/UJmDJy8gk3Q3CqE1/RlYi598sYvfiFVPJ6aPS5B3fJlrOne7/0KpBrAYRBKv9+snmf51WD5MsYlXiWu/zM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=et7hQjrU; arc=none smtp.client-ip=209.85.221.46
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="bnj35BDr"
-Received: by mail-wr1-f44.google.com with SMTP id ffacd0b85a97d-48442ea8f59so4603840f8f.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Sep 2026 21:56:37 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="et7hQjrU"
+Received: by mail-wr1-f46.google.com with SMTP id ffacd0b85a97d-48431648f33so4067218f8f.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Sep 2026 23:10:58 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1788929795; x=1789534595; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1788934257; x=1789539057; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=sFc8bmCGj5QGO7oxyVLjDmklA5Lt1XayPFSYLp1KLIg=;
-        b=bnj35BDr+8keklk6aXlW/Jo81SxjWgudtaRCaq94HL9+eiOflWwBnibCnHhb/0RoR7
-         gzK1EWyXlk7Wia9mTCJ3cOCcyHwUduq5Ym/ZsxC8CWNo5jLRO6nfAudgyQ+WArdOmABo
-         P9psVag4V746Y1OXBBrPdDh3to8r50ARDSVCmiSKgeGicJ7D5LBKT1QCPFKG2V4i08Eb
-         WmY8mgKkHLAF8uA2dkhI68bAd5fppxF4W3szjhKtXO4sK9XjUZXR2L/L/EEzpmsqhF4g
-         b1VENCWlfxyqMbAbCDuVbtapHPmNIVsZ0FE9hg0Q19JPQlMmseqaIp1GUN41xdUJk9ge
-         welw==
+        bh=os4SWo7VFONZBHRCMPqcSTHrGMNYmyYABYQjLTTOy4c=;
+        b=et7hQjrUd8K8N4vaIWJBOqDiKO2Ubn9xSBRYCWfDvJv86qrZIVhgr2YiwCUGTZoAyl
+         0jGaA9HCD9zWYshuZa0r0G7+3zA9NKGByGz7PdhakmwsppbEvhebiv9Dlfz/uZbbS4ib
+         NaZdVHHqKn5yznmZCrIDh6Rju5PvyAUd8HrvvqdenE2Mb2B5Xc4ftLFc1eY12TjIB+w1
+         usRocPOMt9jqn5kG5ITzv8zLMei1XyZcwNyUSADE14W96TbARHW9SPvjoh++XlMx4HWl
+         5H496o/9eF3z0OiiwVjIoWnj/vJ5PnfY+P/eoDTNb0938Xo5PBWDFc04nTh7lsYvbDzC
+         0nzg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1788929795; x=1789534595;
+        d=1e100.net; s=20251104; t=1788934257; x=1789539057;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=sFc8bmCGj5QGO7oxyVLjDmklA5Lt1XayPFSYLp1KLIg=;
-        b=lC8UjNUufk4se0DdaqvlJpHot9HeV7XaXDykzW2+d9s9TU5XRbo3p+e1eIA702PpOP
-         2PZpBlvfPSB40XvBLAkWgwrMoUz/pkf/fmVAGnsr1cHnz+UNrB9pVEetoQnmnC1GlnhN
-         7TfX0QiGMtrmOwlhE2kUv7TY7yEsqcAJw8SqZ/qydpPcNlGiHfG8NccXLvhgsj8skkWC
-         Z46vDK/UAeY1NvQkC5N2U5H2tYty+W7Yl25CGF21oycha3VzH7QSURR5tLo8dHFjG+9W
-         g/2GeE1sbG46bYCpGK7tb10DGSLJOqqCW+xnXZCuNWCc7MPu353zQm2cJdCVLDUqLwfi
-         TkxQ==
-X-Forwarded-Encrypted: i=1; AKwUvBwcVNJN83Ut8dtDvyiH+SL6bJRffvNPvEMqD9AAWlV86ka9hPnZtbZKdLyjj2ndfvdzlMc4ZzXduyf91A==@vger.kernel.org
-X-Gm-Message-State: AFuF++lwQ6KF5uu0K2uY75R24PICV8CofOb0eDnVboCIdwhQsMOpHIy8
-	JzgWZd1roIxKk0EZDLkBuPWkh8Dc73GawPerUxxQQpmDcdAMw/8YlJMGLJCLV5WWbCM=
-X-Gm-Gg: AYBFou3YEVz8n3ZgHFH0iUU+nPuOIavy094Ztkq+Ag23AoRfNNX9gF+m6mGwlLgQP9S
-	uwY4sHDNqEKvIAGKVc3RqAEyKZS1K7VRIrCe9wflUEUII8v/4HfTi4ZV7Ld1SryqNWpA+HTMnyF
-	pForEA3Jg1sKMwXg+PjhbdmJjjomw1lfxnqygP1cArp4xv8v4DexkzjE9xSYWczLrUp2f+nSI5G
-	fIgBb4T//XAmgFUXbjvazuxaJ/5haMSx2wo3arMcYnrBefuoGFUwlGkJvTK2yQvbPa8K0BYhIGR
-	3IJZWz6/R1tOhiHpSmrpQEtKYUEsTlNzDjdoyyOM9xZtJM65x8D1iiSx15myB+9lQOgERYNUV/g
-	yuUCdbLBE0TfFG24+Y7Xc2Lg3SZzf5OxqHfAwRo1HQiPLoZ88Ijww+faMgf9mBap02Pa1Ya4s5A
-	esxoSbLuYNZy/usl8DpIR+oQu1q3Ebx2sk9AQYfvH8kSNsc/vLZ2nDoY/tpK568p0=
-X-Received: by 2002:a05:600d:849b:10b0:49c:f13d:ffe6 with SMTP id 5b1f17b1804b1-49cf13e05d9mr300132095e9.10.1788929795405;
-        Tue, 08 Sep 2026 21:56:35 -0700 (PDT)
+        bh=os4SWo7VFONZBHRCMPqcSTHrGMNYmyYABYQjLTTOy4c=;
+        b=nFFnjK5HTfgqHyK4iGlXqNbjRe1/8LriyMVp0fGfrkq1WxbWgwBlnOXB7nrreBQAbD
+         h+Up1td3McaTHLJiPLk1VAfeX7G+syey7TtaTMINJPI8SHgaAw64oitQ5wSLDfCDb2dr
+         Kj8tcz62YRJZ/Ys6PwWsr/NScKyKpX9pIcV9HTBOFe08HS4flc6TTNxvQ30k1YjuXMlX
+         yJvLaoKkf984wGXRaG0GXc0z8AZAybUW5Wj6R0A3984baircJNM9JLONf55ZYpJFda8X
+         GpBj9roD0QskopUk3xVOMCdnR41rnJag0QOHM4duKvK5v+W3N8iu1B9mrzfppG9grOBX
+         r8sA==
+X-Forwarded-Encrypted: i=1; AKwUvBzim3RcSMT1gMGutSGya+84qWxfP3N9u4li17f0lp1LwWPklZQdr5kl+cFrNgZTmyBNOKSxuiIr2w53dA==@vger.kernel.org
+X-Gm-Message-State: AFuF++l21DUlsGXb6eKplu0i7l3kvV0Y92ET9UF1pF08dy6eOA2dzoN4
+	LNWzVnn2ajDh5mNvH64o0AWILOqIPRWVNUCjVbrI0hHgVO7ERL25HAFb/vSNKB9IIoQ=
+X-Gm-Gg: AYBFou2UWXK0v5qxdmQ/bRcLJBx4PqLe/59IbOUrh6EkwhO5mbpytQBWYSFKHgDuQp2
+	I/p+wsLP9gVQGvx7CkO9qWw73c2xHO/JYvmeddzYsbGP3zVCveVGS3hg40DOV/lGcet682O5Ass
+	7IfA7YKCxpfMMwXbWDH+Saj1Vu5MhVUUI49J/uO3XsJKCA9n0L2T6SQWjJFlPRRVtMJJFeasorW
+	UPzDFbXnpKqH6yrk1B7hox8EG5AwftuN4v7J2JH+NeXIAxCBiAiCWDlxlR7EX3qeekCwa4a+Cyr
+	jetUnnnMry5ZHYD4PGQuBlTGmIWgb8IkEfijnBzefUjrB6xriW1HM88XKFP8C4i6pyVZkcUFE/P
+	C1njQMtH27cvETIOT/dmAT1QazHeiAtJa1h8RIPPXMbBSdzd+1GKcOO9QFa9B4DPo4KFNoWLjyB
+	3UTUzLtrdcLJcH8ioXEKwedlvk0NSCF0w6CE7YzqoNfZUnHzOBeo3AUFO3MsLV0Ng=
+X-Received: by 2002:a05:600c:138a:b0:49c:f13d:ffeb with SMTP id 5b1f17b1804b1-49cf13e0642mr424219605e9.15.1788934257023;
+        Tue, 08 Sep 2026 23:10:57 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-39b08d0d7e8sm37417273a91.16.2026.09.08.21.56.30
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-143243767e1sm34889401c88.6.2026.09.08.23.10.51
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 08 Sep 2026 21:56:34 -0700 (PDT)
-Message-ID: <5b72f456-4b62-490a-956b-9ca40ca1054c@suse.com>
-Date: Wed, 9 Sep 2026 14:26:27 +0930
+        Tue, 08 Sep 2026 23:10:55 -0700 (PDT)
+Message-ID: <f4a415f9-1e3a-4b26-a2a4-61bcc98eb39f@suse.com>
+Date: Wed, 9 Sep 2026 15:40:47 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,14 +69,12 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 2/7] btrfs: tests: convert test_find_delalloc() to use
- folios
+Subject: Re: [PATCH v2 0/7] btrfs: convert some struct page users to folios
 To: Tal Zussman <tz2294@columbia.edu>, David Sterba <dsterba@suse.com>,
  Chris Mason <mason@kernel.org>
 Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>,
  linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 References: <20260907-btrfs-folio-conversions-v2-0-b5fe79f7607b@columbia.edu>
- <20260907-btrfs-folio-conversions-v2-2-b5fe79f7607b@columbia.edu>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -103,249 +101,63 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260907-btrfs-folio-conversions-v2-2-b5fe79f7607b@columbia.edu>
+In-Reply-To: <20260907-btrfs-folio-conversions-v2-0-b5fe79f7607b@columbia.edu>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
 在 2026/9/8 05:49, Tal Zussman 写道:
-> This removes the last btrfs callers of find_or_create_page(),
-> find_lock_page(), SetPageDirty(), ClearPageDirty(), and get_page(), and
-> 15 calls to compound_head(). The folio lookups return an ERR_PTR instead
-> of NULL, so adjust the error handling.
+> This series converts three areas of btrfs that still use struct page:
 > 
-> Update the comments and test messages accordingly.
+> 1. The extent-io tests. test_find_delalloc() uses the page APIs, and the
+>     extent buffer memory checks assume one page per folio.
 > 
-> The test still works in PAGE_SIZE units, which relies on the test inode
-> never getting large folios, so assert that the folios are order-0 where
-> that matters.
+> 2. Compression. btrfs_compr_pool_scan() walks the folio pool as struct
+>     page, the last use of page->lru in btrfs, and the heuristic sampler
+>     is the last caller of find_get_page().
 > 
-> Signed-off-by: Tal Zussman <tz2294@columbia.edu>
+> 3. Super block reads. btrfs_read_disk_super() and the zoned super block
+>     log comparison are the last page cache lookups by page in btrfs.
+> 
+> Tested with KASAN, lockdep, DEBUG_VM and the btrfs selftests enabled.
+> xfstests' compress group under compress=zstd and the btrfs group both
+> pass.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Now pushed to for-next branch.
 
 Thanks,
-Qu> ---
->   fs/btrfs/tests/extent-io-tests.c | 99 +++++++++++++++++++++-------------------
->   1 file changed, 51 insertions(+), 48 deletions(-)
+Qu
+
 > 
-> diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
-> index 6eb55bfb2bd4..e7aa8bc04706 100644
-> --- a/fs/btrfs/tests/extent-io-tests.c
-> +++ b/fs/btrfs/tests/extent-io-tests.c
-> @@ -112,8 +112,8 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
->   	struct btrfs_root *root = NULL;
->   	struct inode *inode = NULL;
->   	struct extent_io_tree *tmp;
-> -	struct page *page;
-> -	struct page *locked_page = NULL;
-> +	struct folio *folio;
-> +	struct folio *locked_folio = NULL;
->   	/* In this test we need at least 2 file extents at its maximum size */
->   	u64 max_bytes = BTRFS_MAX_EXTENT_SIZE;
->   	u64 total_dirty = 2 * max_bytes;
-> @@ -152,23 +152,26 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
->   	btrfs_extent_io_tree_init(NULL, tmp, IO_TREE_SELFTEST);
->   
->   	/*
-> -	 * First go through and create and mark all of our pages dirty, we pin
-> -	 * everything to make sure our pages don't get evicted and screw up our
-> +	 * First go through and create and mark all of our folios dirty, we pin
-> +	 * everything to make sure our folios don't get evicted and screw up our
->   	 * test.
->   	 */
->   	for (pgoff_t index = 0; index < (total_dirty >> PAGE_SHIFT); index++) {
-> -		page = find_or_create_page(inode->i_mapping, index, GFP_KERNEL);
-> -		if (!page) {
-> -			test_err("failed to allocate test page");
-> -			ret = -ENOMEM;
-> +		folio = __filemap_get_folio(inode->i_mapping, index,
-> +				FGP_LOCK | FGP_ACCESSED | FGP_CREAT, GFP_KERNEL);
-> +		if (IS_ERR(folio)) {
-> +			test_err("failed to allocate test folio");
-> +			ret = PTR_ERR(folio);
->   			goto out;
->   		}
-> -		SetPageDirty(page);
-> +		/* The ranges below assume page sized folios. */
-> +		ASSERT(folio_order(folio) == 0);
-> +		folio_set_dirty(folio);
->   		if (index) {
-> -			unlock_page(page);
-> +			folio_unlock(folio);
->   		} else {
-> -			get_page(page);
-> -			locked_page = page;
-> +			folio_get(folio);
-> +			locked_folio = folio;
->   		}
->   	}
->   
-> @@ -179,8 +182,7 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
->   	btrfs_set_extent_bit(tmp, 0, sectorsize - 1, EXTENT_DELALLOC, NULL);
->   	start = 0;
->   	end = start + PAGE_SIZE - 1;
-> -	found = find_lock_delalloc_range(inode, page_folio(locked_page), &start,
-> -					 &end);
-> +	found = find_lock_delalloc_range(inode, locked_folio, &start, &end);
->   	if (!found) {
->   		test_err("should have found at least one delalloc");
->   		goto out_bits;
-> @@ -191,8 +193,8 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
->   		goto out_bits;
->   	}
->   	btrfs_unlock_extent(tmp, start, end, NULL);
-> -	unlock_page(locked_page);
-> -	put_page(locked_page);
-> +	folio_unlock(locked_folio);
-> +	folio_put(locked_folio);
->   
->   	/*
->   	 * Test this scenario
-> @@ -201,17 +203,18 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
->   	 *           |--- search ---|
->   	 */
->   	test_start = SZ_64M;
-> -	locked_page = find_lock_page(inode->i_mapping,
-> -				     test_start >> PAGE_SHIFT);
-> -	if (!locked_page) {
-> -		test_err("couldn't find the locked page");
-> +	locked_folio = filemap_lock_folio(inode->i_mapping,
-> +					  test_start >> PAGE_SHIFT);
-> +	if (IS_ERR(locked_folio)) {
-> +		test_err("couldn't find the locked folio");
-> +		locked_folio = NULL;
->   		goto out_bits;
->   	}
-> +	ASSERT(folio_order(locked_folio) == 0);
->   	btrfs_set_extent_bit(tmp, sectorsize, max_bytes - 1, EXTENT_DELALLOC, NULL);
->   	start = test_start;
->   	end = start + PAGE_SIZE - 1;
-> -	found = find_lock_delalloc_range(inode, page_folio(locked_page), &start,
-> -					 &end);
-> +	found = find_lock_delalloc_range(inode, locked_folio, &start, &end);
->   	if (!found) {
->   		test_err("couldn't find delalloc in our range");
->   		goto out_bits;
-> @@ -223,12 +226,12 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
->   	}
->   	if (process_folio_range(inode, start, end,
->   				PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
-> -		test_err("there were unlocked pages in the range");
-> +		test_err("there were unlocked folios in the range");
->   		goto out_bits;
->   	}
->   	btrfs_unlock_extent(tmp, start, end, NULL);
-> -	/* locked_page was unlocked above */
-> -	put_page(locked_page);
-> +	/* locked_folio was unlocked above */
-> +	folio_put(locked_folio);
->   
->   	/*
->   	 * Test this scenario
-> @@ -236,16 +239,17 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
->   	 *                    |--- search ---|
->   	 */
->   	test_start = max_bytes + sectorsize;
-> -	locked_page = find_lock_page(inode->i_mapping, test_start >>
-> -				     PAGE_SHIFT);
-> -	if (!locked_page) {
-> -		test_err("couldn't find the locked page");
-> +	locked_folio = filemap_lock_folio(inode->i_mapping,
-> +					  test_start >> PAGE_SHIFT);
-> +	if (IS_ERR(locked_folio)) {
-> +		test_err("couldn't find the locked folio");
-> +		locked_folio = NULL;
->   		goto out_bits;
->   	}
-> +	ASSERT(folio_order(locked_folio) == 0);
->   	start = test_start;
->   	end = start + PAGE_SIZE - 1;
-> -	found = find_lock_delalloc_range(inode, page_folio(locked_page), &start,
-> -					 &end);
-> +	found = find_lock_delalloc_range(inode, locked_folio, &start, &end);
->   	if (found) {
->   		test_err("found range when we shouldn't have");
->   		goto out_bits;
-> @@ -265,8 +269,7 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
->   	btrfs_set_extent_bit(tmp, max_bytes, total_dirty - 1, EXTENT_DELALLOC, NULL);
->   	start = test_start;
->   	end = start + PAGE_SIZE - 1;
-> -	found = find_lock_delalloc_range(inode, page_folio(locked_page), &start,
-> -					 &end);
-> +	found = find_lock_delalloc_range(inode, locked_folio, &start, &end);
->   	if (!found) {
->   		test_err("didn't find our range");
->   		goto out_bits;
-> @@ -278,36 +281,36 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
->   	}
->   	if (process_folio_range(inode, start, end,
->   				PROCESS_TEST_LOCKED | PROCESS_UNLOCK)) {
-> -		test_err("pages in range were not all locked");
-> +		test_err("folios in range were not all locked");
->   		goto out_bits;
->   	}
->   	btrfs_unlock_extent(tmp, start, end, NULL);
->   
->   	/*
-> -	 * Now to test where we run into a page that is no longer dirty in the
-> +	 * Now to test where we run into a folio that is no longer dirty in the
->   	 * range we want to find.
->   	 */
-> -	page = find_get_page(inode->i_mapping,
-> -			     (max_bytes + SZ_1M) >> PAGE_SHIFT);
-> -	if (!page) {
-> -		test_err("couldn't find our page");
-> +	folio = filemap_get_folio(inode->i_mapping,
-> +				  (max_bytes + SZ_1M) >> PAGE_SHIFT);
-> +	if (IS_ERR(folio)) {
-> +		test_err("couldn't find our folio");
->   		goto out_bits;
->   	}
-> -	ClearPageDirty(page);
-> -	put_page(page);
-> +	ASSERT(folio_order(folio) == 0);
-> +	folio_clear_dirty(folio);
-> +	folio_put(folio);
->   
->   	/* We unlocked it in the previous test */
-> -	lock_page(locked_page);
-> +	folio_lock(locked_folio);
->   	start = test_start;
->   	end = start + PAGE_SIZE - 1;
->   	/*
-> -	 * Currently if we fail to find dirty pages in the delalloc range we
-> +	 * Currently if we fail to find dirty folios in the delalloc range we
->   	 * will adjust max_bytes down to PAGE_SIZE and then re-search.  If
->   	 * this changes at any point in the future we will need to fix this
->   	 * tests expected behavior.
->   	 */
-> -	found = find_lock_delalloc_range(inode, page_folio(locked_page), &start,
-> -					 &end);
-> +	found = find_lock_delalloc_range(inode, locked_folio, &start, &end);
->   	if (!found) {
->   		test_err("didn't find our range");
->   		goto out_bits;
-> @@ -319,7 +322,7 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
->   	}
->   	if (process_folio_range(inode, start, end, PROCESS_TEST_LOCKED |
->   				PROCESS_UNLOCK)) {
-> -		test_err("pages in range were not all locked");
-> +		test_err("folios in range were not all locked");
->   		goto out_bits;
->   	}
->   	ret = 0;
-> @@ -328,8 +331,8 @@ static int test_find_delalloc(u32 sectorsize, u32 nodesize)
->   		dump_extent_io_tree(tmp);
->   	btrfs_clear_extent_bit(tmp, 0, total_dirty - 1, (unsigned)-1, NULL);
->   out:
-> -	if (locked_page)
-> -		put_page(locked_page);
-> +	if (locked_folio)
-> +		folio_put(locked_folio);
->   	process_folio_range(inode, 0, total_dirty - 1,
->   			    PROCESS_UNLOCK | PROCESS_RELEASE);
->   	iput(inode);
+> ---
+> Changes in v2:
+> - Add tags (Thanks Qu!)
+> - Patch 2: Assert that test_find_delalloc()'s folios are order-0, per Qu
+> - Drop the v1 free space cache patches (8-10), per Qu. The v1 space
+>    cache will be removed instead
+> - Link to v1: https://patch.msgid.link/20260906-btrfs-folio-conversions-v1-0-834b9d7b06f5@columbia.edu
 > 
+> ---
+> Tal Zussman (7):
+>        btrfs: tests: rename process_page_range() to process_folio_range()
+>        btrfs: tests: convert test_find_delalloc() to use folios
+>        btrfs: tests: use eb folio helpers in extent buffer memory checks
+>        btrfs: convert btrfs_compr_pool_scan() to use folios
+>        btrfs: convert heuristic_collect_sample() to use folios
+>        btrfs: fix stale function references in compression comments
+>        btrfs: use folios for reading super blocks from the block device
+> 
+>   fs/btrfs/compression.c           |  20 +++---
+>   fs/btrfs/tests/extent-io-tests.c | 131 +++++++++++++++++++++------------------
+>   fs/btrfs/volumes.c               |  16 +++--
+>   fs/btrfs/zoned.c                 |  12 ++--
+>   4 files changed, 93 insertions(+), 86 deletions(-)
+> ---
+> base-commit: 69b26c13e520480d1869171e2c2b8a59f0c857ec
+> change-id: 20260905-btrfs-folio-conversions-47950cc1faca
+> 
+> Best regards,
+> --
+> Tal Zussman <tz2294@columbia.edu>
 

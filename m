@@ -1,64 +1,64 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6749F2F3632
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 02:06:24 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E7F244BFE8A
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 02:06:25 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789005985; cv=none; b=krCLonPgfpLIDOPnjO00sOH4l0B23KwI8iDJcnm1AvjFNBoiQBxz/WgBM3V6jsRBoIPOh2FT6h5YD4wLgyh8gng+NHfOn86Z88Z/CqhFQGWCqAhxDr5PQhy2z6w9zpkd/ULadTNyT10XZMJhw0Znrwbvv3weRfE2INnKBvdGUFU=
+	t=1789005987; cv=none; b=Cw21xuUB6rBJhzNv+JDGQMhnMd3PfzGFiUARMFoFnEoPPslSR2tYLGz9hTJNFHzpL91KKphCw6P9BDg/+i0blWJ2gZBgAnFe1AIaAKSx6x7pJ9XDdYLATj6b0OMJZCjAmqmiV+8Ay4DH82D/eEoNqXPhBKQV6s9QvNYZ1z75TMo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789005985; c=relaxed/simple;
-	bh=k8x+ezR1B4RFWchUGc6lmbpIJvYtDvuB9Y634kZkhd0=;
+	s=arc-20240116; t=1789005987; c=relaxed/simple;
+	bh=bk+3fg9W8c2IsHkPQTVi7YfkwX0ksieBGI/ZLqMTSac=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=kA+7yO4Cu1PgH/U4l/L0upo8tKgJOH+TjpJD0q5/nC9Z7zRriWyh6CK939U6swNMfPz7jZ1JYaa//fMYsrOKvO6O03aS4z1oTx1hfZTK5mZXI1th2EB/Q1ATFWEoSyqb6gN+iRZ3gNtZmtvN64KZbdV2QTxB5Eq8JvplDHbNdLU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=DdZhQBBH; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YXVGJTwO; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=cKpXaw9KShbesCejEWJPcTPd7+TpRQqeZgnjnNXh+b6bTKCIsv9QHpGBiTAEZYQiH9x6nAQT5N0YaM3A8qGvUNBTDdDbhQ3ADYkX334+17l6fRt68BSflKqnQjeFn6m0wTHD3yr9/wZ0JpraobWO2T9uqXtsA3u/FCtDA8wxfAE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ejOSXT2h; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=SidbiIs6; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="DdZhQBBH";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YXVGJTwO"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ejOSXT2h";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="SidbiIs6"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 53EE41FD5F
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 02:06:14 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id EC0161FD63
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 02:06:15 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789005978; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1789005980; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=V0zfaIQrjLdceSAqlQQheIp1p6bRjQo4fYGCGYo48fI=;
-	b=DdZhQBBHeCZmDTra+2YQIlpPynTLQLoJrWaiIHrKfkaqB2vjBy3rbH0gmft6odvLir+Umc
-	JDvIdKPVIUlwfyZRpUE1v/W2rsY4H3LGOIx1R/Bt77z0IIZ9OQf/69qGYPQqNZ5VZYZxRj
-	QeWZIZE9nkSKvOGf4p39v+hjbcy1jmk=
+	bh=87OK8xBNRAEwx+CDmfOnn5fdcqInPUQXDvlUWtPBb7I=;
+	b=ejOSXT2h9pFiK/IB9YrxVDK731m2Jx1ugYDjG8E60nNXvFv1F0J+po/DZjUHzumCLSPv7R
+	M1/uPb7/rfa9ZmUUOdgi2vWwjVMnwXkJ9JMgwMk+V1rOTutjRJOXBZnWtADXrCxLFP20MY
+	Lf4MaPJRpKyxIteNbJJks5Q8P/jbE+s=
 Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=YXVGJTwO
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789005974; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1789005975; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=V0zfaIQrjLdceSAqlQQheIp1p6bRjQo4fYGCGYo48fI=;
-	b=YXVGJTwO0FeXC/zyaXk5Zz7mw/3nQtI1Bypx2AaM8ASWvrOujVXc8z7ax8sP79rAK8G4BW
-	ox4TflxUbpGXtZET2WcGR6DTeIUkHDD9YhmdFe2CE8la4ah5PGGagHcxmXvXAjKBlpVElo
-	8yj2qBaoAXk28tQfDJoULWYQBxdNSis=
+	bh=87OK8xBNRAEwx+CDmfOnn5fdcqInPUQXDvlUWtPBb7I=;
+	b=SidbiIs6daG8ua4JDtQ7RwaDmQYxrJmfdFZ6qeI9x0LMoKAMaicFoR4APDy91b8H0Nui8q
+	o/AtRzUel4yZXyQOayAua18jNnGeJPv0WRVCpoTt9CTCjBlIivvglfxdF3EoM2Wi8lLcWx
+	PH3tRJJ6TsircUbrQcfKNL5boEWpUoY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3D27B13883
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 02:06:12 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D3D6D13889
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 02:06:14 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id mDuVN5QQomqaHgAAD6G6ig
+	id SJweIJYQomqaHgAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 02:06:12 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 02:06:14 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: fix off-by-one end related to inode_need_compress()
-Date: Thu, 10 Sep 2026 11:35:52 +0930
-Message-ID: <a617618bc5199f045759e47022e25ee053fd15ec.1789003160.git.wqu@suse.com>
+Subject: [PATCH 2/2] btrfs: simplify heuristic_collect_sample() to handle large folios better
+Date: Thu, 10 Sep 2026 11:35:53 +0930
+Message-ID: <ebe8073819826f9be3be73cd1140f564e0215b7d.1789003160.git.wqu@suse.com>
 X-Mailer: git-send-email 2.55.0
 In-Reply-To: <cover.1789003160.git.wqu@suse.com>
 References: <cover.1789003160.git.wqu@suse.com>
@@ -69,139 +69,122 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -3.01
-X-Rspamd-Queue-Id: 53EE41FD5F
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Score: -2.80
 X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
 	RCVD_COUNT_TWO(0.00)[2];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_TRACE(0.00)[suse.com:+]
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
 
-In most cases btrfs uses @end as the inclusive end bytenr for a range,
-and this applies to inode_need_compress().
+Currently heuristic_collect_sample() is purely page size based, and it
+has a lot of extra handling just inside the page.
 
-However we have several sites not following the inclusive bytenr:
+However we already have large folio support, there is no need to look up
+the same folio again and again.
 
-- run_delalloc_inline()
-  Which assigned @blocksize as @end for inode_need_compress()
+Simplify the handling by:
 
-  This makes inode_need_compress() always skip the disk_i_size check.
+- Use @cur as the iterator instead of page index
 
-- heuristic_collect_sample()
-  Which assigned "start + BTRFS_MAX_UNCOMPRESSED" to @end, which is
-  the exclusive bytenr.
+- Handle the sample copying on a per-folio basis
+  Although kmap_local_folio() requires an offset to handle HIGHMEM
+  page mapping, we have rejected large folios for HIGHMEM systems
+  completely.
 
-Neither is really causing any real problem, as
-heuristic_collect_sample() has proper checks to avoid reading anything
-beyond @end, and the sampling read size is 16 bytes, so it has enough
-headroom to handle that off-by-one problem.
+  So we can safely handle all sample copying inside the folio in one
+  go.
 
-But still I do not like anything out of the common scheme, so fix the
-off-by-one @end for both call sites, and add extra ASSERT()s to catch
-such unaligned parameters.
+- Remove unnecessary unaligned range handling
+  All the range passed in should be block aligned, thus there is no need
+  to handle cases where sample crosses the block boundary.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/compression.c | 15 +++++++--------
- fs/btrfs/inode.c       |  5 ++++-
- 2 files changed, 11 insertions(+), 9 deletions(-)
+ fs/btrfs/compression.c | 40 ++++++++++++++++------------------------
+ 1 file changed, 16 insertions(+), 24 deletions(-)
 
 diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 20169d028961..0134b9253702 100644
+index 0134b9253702..ad90e14032db 100644
 --- a/fs/btrfs/compression.c
 +++ b/fs/btrfs/compression.c
-@@ -1488,11 +1488,14 @@ static bool sample_repeated_patterns(struct heuristic_ws *ws)
- static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
+@@ -1489,10 +1489,8 @@ static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
  				     struct heuristic_ws *ws)
  {
-+	const u32 blocksize = BTRFS_I(inode)->root->fs_info->sectorsize;
- 	struct folio *folio;
- 	pgoff_t index, index_end;
- 	u32 i, curr_sample_pos;
- 	u8 *in_data;
+ 	const u32 blocksize = BTRFS_I(inode)->root->fs_info->sectorsize;
+-	struct folio *folio;
+-	pgoff_t index, index_end;
+-	u32 i, curr_sample_pos;
+-	u8 *in_data;
++	u64 cur = start;
++	u32 curr_sample_pos = 0;
  
-+	ASSERT(IS_ALIGNED(start, blocksize) && IS_ALIGNED(end + 1, blocksize));
-+
- 	/*
- 	 * Compression handles the input data by chunks of 128KiB
- 	 * (defined by BTRFS_MAX_UNCOMPRESSED)
-@@ -1502,18 +1505,14 @@ static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
- 	 * MAX_SAMPLE_SIZE - calculated under assumption that heuristic will
- 	 * process no more than BTRFS_MAX_UNCOMPRESSED at a time.
- 	 */
--	if (end - start > BTRFS_MAX_UNCOMPRESSED)
--		end = start + BTRFS_MAX_UNCOMPRESSED;
-+	if (end + 1 - start > BTRFS_MAX_UNCOMPRESSED)
-+		end = start + BTRFS_MAX_UNCOMPRESSED - 1;
+ 	ASSERT(IS_ALIGNED(start, blocksize) && IS_ALIGNED(end + 1, blocksize));
  
- 	index = start >> PAGE_SHIFT;
- 	index_end = end >> PAGE_SHIFT;
+@@ -1508,33 +1506,27 @@ static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
+ 	if (end + 1 - start > BTRFS_MAX_UNCOMPRESSED)
+ 		end = start + BTRFS_MAX_UNCOMPRESSED - 1;
  
--	/* Don't miss unaligned end */
--	if (!PAGE_ALIGNED(end))
--		index_end++;
--
- 	curr_sample_pos = 0;
--	while (index < index_end) {
-+	while (index <= index_end) {
- 		folio = filemap_get_folio(inode->i_mapping, index);
+-	index = start >> PAGE_SHIFT;
+-	index_end = end >> PAGE_SHIFT;
++	while (cur < end) {
++		struct folio *folio;
++		void *in_data;
++		u64 next_pos;
+ 
+-	curr_sample_pos = 0;
+-	while (index <= index_end) {
+-		folio = filemap_get_folio(inode->i_mapping, index);
++		folio = filemap_get_folio(inode->i_mapping, cur >> PAGE_SHIFT);
++		/* All folios inside the range should exist and be locked. */
  		ASSERT(!IS_ERR(folio));
- 		in_data = kmap_local_folio(folio,
-@@ -1522,7 +1521,7 @@ static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
- 		i = start % PAGE_SIZE;
- 		while (i < PAGE_SIZE - SAMPLING_READ_SIZE) {
- 			/* Don't sample any garbage from the last page */
--			if (start > end - SAMPLING_READ_SIZE)
-+			if (start > end + 1 - SAMPLING_READ_SIZE)
- 				break;
- 			memcpy(&ws->sample[curr_sample_pos], &in_data[i],
- 					SAMPLING_READ_SIZE);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a85a7c561cf8..79f2181dc631 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -730,6 +730,9 @@ static inline int inode_need_compress(struct btrfs_inode *inode, u64 start,
- 				      u64 end, bool check_inline)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	const u32 blocksize = fs_info->sectorsize;
+-		in_data = kmap_local_folio(folio,
+-				offset_in_folio(folio, (u64)index << PAGE_SHIFT));
+-		/* Handle case where the start is not aligned to PAGE_SIZE */
+-		i = start % PAGE_SIZE;
+-		while (i < PAGE_SIZE - SAMPLING_READ_SIZE) {
+-			/* Don't sample any garbage from the last page */
+-			if (start > end + 1 - SAMPLING_READ_SIZE)
+-				break;
+-			memcpy(&ws->sample[curr_sample_pos], &in_data[i],
+-					SAMPLING_READ_SIZE);
+-			i += SAMPLING_INTERVAL;
+-			start += SAMPLING_INTERVAL;
++		next_pos = min_t(u64, end + 1, folio_next_pos(folio));
++		in_data = kmap_local_folio(folio, 0);
 +
-+	ASSERT(IS_ALIGNED(start, blocksize) && IS_ALIGNED(end + 1, blocksize));
++		for (; cur < next_pos; cur += SAMPLING_INTERVAL) {
++			memcpy(&ws->sample[curr_sample_pos],
++			       in_data + offset_in_folio(folio, cur),
++			       SAMPLING_READ_SIZE);
+ 			curr_sample_pos += SAMPLING_READ_SIZE;
+ 		}
+ 		kunmap_local(in_data);
+ 		folio_put(folio);
+-
+-		index++;
++		cur = next_pos;
+ 	}
+-
+ 	ws->sample_size = curr_sample_pos;
+ }
  
- 	if (unlikely(!btrfs_inode_can_compress(inode))) {
- 		DEBUG_WARN("BTRFS: unexpected compression for ino %llu", btrfs_ino(inode));
-@@ -2331,7 +2334,7 @@ static int run_delalloc_inline(struct btrfs_inode *inode, struct folio *locked_f
- 	btrfs_check_folio_write_protected(locked_folio);
- 
- 	if (btrfs_inode_can_compress(inode) &&
--	    inode_need_compress(inode, 0, blocksize, true)) {
-+	    inode_need_compress(inode, 0, blocksize - 1, true)) {
- 		if (inode->defrag_compress > 0 &&
- 		    inode->defrag_compress < BTRFS_NR_COMPRESS_TYPES) {
- 			compress_type = inode->defrag_compress;
 -- 
 2.55.0
 

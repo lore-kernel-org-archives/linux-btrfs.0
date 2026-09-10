@@ -1,146 +1,207 @@
-Received: from relay.yourmailgateway.de (relay.yourmailgateway.de [46.38.247.119])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 846DE353A65;
-	Thu, 10 Sep 2026 10:48:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=46.38.247.119
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0AF74341068
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 14:32:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789037306; cv=none; b=t9f8KzAy1aCfuZoLjdSt8DuTwa4plqqmxVcLoC4A/NOP7WSyioc5x1SFzUbd+V3vPINPJVDZG3qdqOyYesBiBVQLk5Ouk7AuTRQCDUyjOxT9YkJtkdr61x7cU44SkoKQutFnYRu4IiAtptiYF3V+jl4CZjQkVuemRGQl7I3sfi4=
+	t=1789050758; cv=none; b=F5pH/Jxn8kpKoNFMUcoWquMe0h8LVqSfCouvhHGQJsIZL0iuGNc0xziBAMDCltWkKng2+xBHRfg99sD0Y+1G0xKxM9zR5vO9qGSgiit1TJJEaiIv6teBdWcqmGXl3W7iznLYHnwp0qsYOFlw3U3KCanenxwi9wpMs37M1K3qd/g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789037306; c=relaxed/simple;
-	bh=enPl0P4IRL71cTLXLsRDVjv9kocJZzZNibDFU0sramE=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=djKNZFlz9HwK5K/zKIN/dgY20YbumhwJ7RcPl/thmIh9/3VdFiWX50uCN8EIcp20/tA6y85S6BAKOsi91XhfhU2p70uNDlkk8NU7/ydM4QsyXzaCsAymy6Jo8rqHkZBL7mqG+CCe2VKczI61m7o4Bf0bStASwnyo9OhvgAlcJw0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=leemhuis.info; spf=pass smtp.mailfrom=leemhuis.info; dkim=pass (2048-bit key) header.d=leemhuis.info header.i=@leemhuis.info header.b=DhVqPvs6; arc=none smtp.client-ip=46.38.247.119
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=leemhuis.info
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=leemhuis.info
+	s=arc-20240116; t=1789050758; c=relaxed/simple;
+	bh=uKZLkzDrYPq6ZLspcN9h8TR+ZlInMmnliZCjSnDQA6E=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=HXQsDpPGlUqoVxWTppB3FRpM8HXa4/WVqCF3vhZdZF0LMUi6NeZtmuLmHyf5zB82cYKRBqORVoR2jiGz/5h2psuSVFuHYKkR4hUonfa9B2KkwK8NHX0N/Y4MSd/0ayVNgL2X5eOuxTKqBcM6hQziq3w3TVK+FLGeYBDyOw3sZ1o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=FuiTY0NE; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=leemhuis.info header.i=@leemhuis.info header.b="DhVqPvs6"
-Received: from mors-relay-8404.netcup.net (localhost [127.0.0.1])
-	by mors-relay-8404.netcup.net (Postfix) with ESMTPS id 4hgZ1C1N4Yz8H1p;
-	Thu, 10 Sep 2026 12:39:27 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=leemhuis.info;
-	s=key2; t=1789036767;
-	bh=enPl0P4IRL71cTLXLsRDVjv9kocJZzZNibDFU0sramE=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=DhVqPvs6cyjS4lyj3w9Buz0NK5yjy5D+fBvXvg7neRpxvRan9A1HLiOqITg/Hxray
-	 /SFTxptgZLXfdLo/Txg1g90OtwhpM/GPkmfk+nuaHrJo8RV8X9sCwKhm/0IB9+V/6w
-	 KsRlcUYKtwTwAb/l0rRd7sdNUtoM6d+MTnQpX6WSJNa5+3UH0ZYRQH8BRGHq9LVz6+
-	 q/C8xrrgWHqZmZOBXxdw1U6mWU5q85kx7fYD7MJpEnf0a0FjtG0n7cjwxKiVI9PEbd
-	 n0t0fEFNnxOcXKOrHLaX4COuj45bkNygOd/fLRgt4irSBjP49JHeSA9vJSlcGizUk1
-	 EnYvfj3ECWUIA==
-Received: from policy02-mors.netcup.net (unknown [46.38.225.35])
-	by mors-relay-8404.netcup.net (Postfix) with ESMTPS id 4hgZ1C0gHSz4xPV;
-	Thu, 10 Sep 2026 12:39:27 +0200 (CEST)
-Received: from mxe9fb.netcup.net (unknown [10.243.12.53])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange ECDHE (P-256) server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by policy02-mors.netcup.net (Postfix) with ESMTPS id 4hgZ1B41q5z8sZh;
-	Thu, 10 Sep 2026 12:39:26 +0200 (CEST)
-Received: from [IPV6:2a02:8108:8984:1d00:a0cf:1912:4be:477f] (unknown [IPv6:2a02:8108:8984:1d00:a0cf:1912:4be:477f])
-	by mxe9fb.netcup.net (Postfix) with ESMTPSA id D08EE5FB28;
-	Thu, 10 Sep 2026 12:39:25 +0200 (CEST)
-Authentication-Results: mxe9fb;
-        spf=pass (sender IP is 2a02:8108:8984:1d00:a0cf:1912:4be:477f) smtp.mailfrom=regressions@leemhuis.info smtp.helo=[IPV6:2a02:8108:8984:1d00:a0cf:1912:4be:477f]
-Received-SPF: pass (mxe9fb: connection is authenticated)
-Message-ID: <4c5117f7-1ddd-4596-8917-da47379506fd@leemhuis.info>
-Date: Thu, 10 Sep 2026 12:39:25 +0200
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="FuiTY0NE"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BF6F71F00893
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 14:32:35 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1789050755;
+	bh=zcXqClrBCWpXzcqkk13GtdyOgJEyGrgDA3ufGkLUMNQ=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=FuiTY0NEYATYyJ/r5NejdmgTPc7FWnF1wSb50jeyJ8svzOJ3uSyP7+j9RYGJQ6rdA
+	 xSWRFmcY30Jjc5oiNO6bTYYSupxg1RaVIlLl2StYMhyPr2KcvNGjcW/aAQallutLHf
+	 CB0NnV0Sl12gn9jrq6kAyeOkP/G6Mb5TxQc2hPCd6DMy8walapVJFKoVKE3yPq2OU0
+	 +p8+Cz9kFIb9Fu+tyF0RPPT8c7UCNuTeH9P1JFWZ+PCO5ads5a9zHOqTocR0l3U51o
+	 l5SIJ6mot9Jw0G7BfUPYIuOAizI57EJqGLxLP+TYrW3NNI0F+ZWacgKD9oHE8X9MdY
+	 hD5gMk3lLOLIQ==
+Received: by mail-vs2-f12.google.com with SMTP id 71dfb90a1353d-5c83be8db39so441021e0c.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 07:32:35 -0700 (PDT)
+X-Gm-Message-State: AFuF++lYZoPktsFSxVcfYBbKL6AcRci1a5LHTlC6cXvHG747ztJw39cC
+	/8DoCJC8vatmyJRh2rTLy55rVMkb+lRTOuSkhfd1MMVJN/5a2bkzj/Fo1nxY/ntOlNJoOca5vuW
+	lq2KHW3w8rpH2Oy+cRIwKijyBARYPI9g=
+X-Received: by 2002:a05:6122:d1c:b0:5c6:6189:c756 with SMTP id
+ 71dfb90a1353d-5c83343fb7fmr5088182e0c.2.1789050754907; Thu, 10 Sep 2026
+ 07:32:34 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: commit 108cc873398932af589c295f78c348513b8d70d9 breaks
- update-grub on btrfs root filesystem
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, dsterba@suse.cz
-Cc: linux-kernel@vger.kernel.org, linux-btrfs <linux-btrfs@vger.kernel.org>,
- Alex Romosan <aromosan@gmail.com>,
- Linux kernel regressions list <regressions@lists.linux.dev>
-References: 
- <CAKLYgeL7nrA4nXcewdv9Fqg_s=3GS=vmoypnEiZBKQ7rySZFuQ@mail.gmail.com>
- <20260909002506.GF9053@twin.jikos.cz>
- <6a5c2d41-b10b-44cb-969e-b4a56d002ceb@gmx.com>
-From: Thorsten Leemhuis <regressions@leemhuis.info>
-Content-Language: de-DE, en-US
-In-Reply-To: <6a5c2d41-b10b-44cb-969e-b4a56d002ceb@gmx.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-X-PPP-Message-ID: <178903676617.1442824.794382640336511039@mxe9fb.netcup.net>
-X-NC-CID: rK69uwty1yMF2rMjLSwTqshdAbVjesipN/pDURYAfQxY8znkUgM=
+References: <65fa79581e1d29d6d6fabae71d23e741bff0ddf9.1788974902.git.boris@bur.io>
+In-Reply-To: <65fa79581e1d29d6d6fabae71d23e741bff0ddf9.1788974902.git.boris@bur.io>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Thu, 10 Sep 2026 15:31:57 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H5hG8MKbf4O5LhUJxg38BToPuOY69gjfc2tQdeUM5PYjA@mail.gmail.com>
+X-Gm-Features: AcwNN1VoeMKXKEiqWMnliu6riSLGugeKOEMCmhtfFNphyDAg7qRONSmg75ZRz-0
+Message-ID: <CAL3q7H5hG8MKbf4O5LhUJxg38BToPuOY69gjfc2tQdeUM5PYjA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: downgrade the reflink source inode lock
+To: Boris Burkov <boris@bur.io>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 9/9/26 03:13, Qu Wenruo wrote:
-> 在 2026/9/9 09:55, David Sterba 写道:
->> On Tue, Sep 08, 2026 at 11:59:43PM +0200, Alex Romosan wrote:
->>>
->>> [...] Since version 7.3-rc1 i haven't been able to to a grub-update, 
->>> instead i get this error:
->>>
->>> /usr/sbin/grub-probe: error: cannot find a device for / (is /dev
->>> mounted?).
->>>
->>> 7.2 is fine. a git-bisect identified commit
->>> 108cc873398932af589c295f78c348513b8d70d9 as being the culprit.
->>> reverting this commit from 7.3-rc2 allowed me to run grub-update
->>> again.
->>>
->>> this is not the first time i reported grub-update being broken on
->>> btrfs. i reported exactly the same problem on jan 8, 2024
->>> (https://lkml.iu.edu/hypermail/linux/kernel/2401.1/00596.html). maybe
->>> the discussion that followed would help come up with a fix that will
->>> make everybody happy.
->>
->> I remember debugging that one, https://bugzilla.kernel.org/
->> show_bug.cgi?id=218353
->> Reverting 108cc8733989 ("btrfs: fix a lockdep caused by path resolution
->> during device scan") would bring back the lockdep warning and there is a
->> locking problem.
->>
->> The commit says it's fixing 2e8b6bc0ab41 ("btrfs: avoid unnecessary
->> device path update for the same device"), the difference is in lines
->>
->> (https://bugzilla.suse.com/show_bug.cgi?id=1230641)
->>
->> -       } else if (!device->name || strcmp(device->name->str, path)) {
->> +    } else if (!device->name || !is_same_device(device, path)) {
->>
->> Which gets changed to (by 108cc8733989):
->>
->> -       } else if (!device->name || !is_same_device(device, path)) {
->> +       } else if (!device->name || device->devt != path_devt) {
->>
->> Each change is reaction to a bug, I don't see a clear fix which will
->> make it work in all cases.
-> 
-> And I want to add that, the previous path based comparison is also
-> problematic for namespaces/weird block device names.
-> 
-> Although not common, it's definitely possible to map weird block file
-> name into a namespace.
-> 
-> Thus the path based comparison is not reliable in the first place, no to
-> mention the later lockdep problems.
+On Wed, Sep 9, 2026 at 8:54=E2=80=AFPM Boris Burkov <boris@bur.io> wrote:
+>
+> When doing a reflink, we are not writing to the src inode or modifying
+> it in any way, so it is counter-intuitive to have to lock it
+> exclusively. This has the cost of blocking other shared lock users of
+> the src file for the duration of all the writeback and reflinking.
+>
+> One sort of counter-intuitive exception is that dio writes that come in
+> under EOF try to take inode->i_rwsem shared, which would result in
+> messed up views of the extents in the reflinked file. Therefore, add
+> "being used as a reflink src" as another inode flag exception for the
+> dio write shared tests that already exist to check for other dangerous
+> conditions. In order to ensure that this flag is visible to the dio
+> writer, reflink must first take i_rwsem exclusive, then set the flag,
+> then downgrade to shared.
+>
+> I tested this with a concurrent reader on a 4G dirty source file
+> concurrent with a reflink and saw the read operation go from a ~1s
+> latency to milliseconds.
 
-Well, but our #1 is "no regressions". And the recent change while fixing
-bugs clearly causes one, as Alex's report is afaics at least the third
-about it; the two earlier ones can be found here:
+You mean a direct IO read operation happening in parallel with a
+reflink using the same file as a source right?
+And reflinking the entire file?
 
-https://lore.kernel.org/linux-btrfs/dfbe1e27-dab8-4d55-8cf3-0b28eeac5df4@gmail.com/
-https://lore.kernel.org/linux-btrfs/018a9738-1d4a-43a0-9352-a56d1e541364@gmail.com/
-Plus a repost of the latter here:
-https://lore.kernel.org/linux-btrfs/dfbe1e27-dab8-4d55-8cf3-0b28eeac5df4@gmail.com/
+Because we only take the VFS lock (rwsem in struct inode) for direct IO rea=
+ds.
 
-Exceptions to our #1 rule are rare. They, for example, are made when we
-had to fix a vulnerability and tried hard to do so without breaking
-something but in the end had to bite the bullet. Is this such a case?
+However during reads (both direct IO and buffered) we always lock the
+extent range in the inode's extent io tree, and the reflink also locks
+the range.
+So taking the rwsem in shared mode won't help much unless we are not
+reflinking the whole file and direct IO reads happen on a different
+range.
+I think that should be explicit in the change log.
 
-Because if not, it looks more like a situation where Linus would prefer
-to live with known problems, as earlier statements from him show:
-https://www.kernel.org/doc/html/latest/process/handling-regressions.html#on-back-and-forth
 
-But it's easy to misunderstand things from my outside position, which is
-why I'm asking.
+>
+> Note: if a writer arrives mid-clone it queues on the rwsem and later
+> readers will block behind it due to the rwsem fairness implementation.
+> Therefore this change does not rule out all possible reader blocking.
 
-Ciao, Thorsten
+There is also an issue pointed out by sashiko that seems valid to me:
+
+https://sashiko.dev/#/patchset/65fa79581e1d29d6d6fabae71d23e741bff0ddf9.178=
+8974902.git.boris%40bur.io
+
+As every direct IO read and write increment i_dio_count with a call to
+inode_dio_begin() in iomap.
+
+Thanks.
+
+>
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+>  fs/btrfs/btrfs_inode.h |  9 +++++++++
+>  fs/btrfs/direct-io.c   |  7 +++++++
+>  fs/btrfs/reflink.c     | 15 +++++++++++++--
+>  3 files changed, 29 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> index 46c62f980c24..fd137a466c9d 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -99,6 +99,15 @@ enum {
+>          * range).
+>          */
+>         BTRFS_INODE_COW_WRITE_ERROR,
+> +       /*
+> +        * DIO writes take the VFS inode lock in shared mode rather than
+> +        * exclusive like other writing operations. We want to hold the l=
+ock on
+> +        * the src inode shared for reflink, but that does still need to =
+be
+> +        * exclusive with DIO writes. Therefore, note such reflink src ho=
+lders
+> +        * on the inode. If a DIO write sees this bit set, it should take=
+ the
+> +        * VFS inode lock exclusive.
+> +        */
+> +       BTRFS_INODE_REFLINK_SRC,
+>         /*
+>          * Indicate this is a directory that points to a subvolume for wh=
+ich
+>          * there is no root reference item. That's a case like the follow=
+ing:
+> diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
+> index 3075d7992713..ed3914257d39 100644
+> --- a/fs/btrfs/direct-io.c
+> +++ b/fs/btrfs/direct-io.c
+> @@ -913,6 +913,13 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struc=
+t iov_iter *from)
+>                 goto relock;
+>         }
+>
+> +       if ((ilock_flags & BTRFS_ILOCK_SHARED) &&
+> +           test_bit(BTRFS_INODE_REFLINK_SRC, &BTRFS_I(inode)->runtime_fl=
+ags)) {
+> +               btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
+> +               ilock_flags &=3D ~BTRFS_ILOCK_SHARED;
+> +               goto relock;
+> +       }
+> +
+>         ret =3D generic_write_checks(iocb, from);
+>         if (ret <=3D 0) {
+>                 btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
+> diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+> index d2a4101912bd..e33926243030 100644
+> --- a/fs/btrfs/reflink.c
+> +++ b/fs/btrfs/reflink.c
+> @@ -943,6 +943,16 @@ loff_t btrfs_remap_file_range(struct file *src_file,=
+ loff_t off,
+>         } else {
+>                 lock_two_nondirectories(&src_inode->vfs_inode, &dst_inode=
+->vfs_inode);
+>                 btrfs_double_mmap_lock(src_inode, dst_inode);
+> +
+> +               /*
+> +                * Reflink is a read operation on the src inode and a wri=
+te on
+> +                * the dst, so lock them accordingly. One wrinkle is that=
+ direct
+> +                * writes try to take inode->i_rwsem shared so we must do=
+ an
+> +                * acquire exclusive; set bit; downgrade to shared dance =
+to
+> +                * synchronize with that one weird writer.
+> +                */
+> +               set_bit(BTRFS_INODE_REFLINK_SRC, &src_inode->runtime_flag=
+s);
+> +               downgrade_write(&src_inode->vfs_inode.i_rwsem);
+>         }
+>
+>         ret =3D btrfs_remap_file_range_prep(src_file, off, dst_file, dest=
+off,
+> @@ -960,8 +970,9 @@ loff_t btrfs_remap_file_range(struct file *src_file, =
+loff_t off,
+>                 btrfs_inode_unlock(src_inode, BTRFS_ILOCK_MMAP);
+>         } else {
+>                 btrfs_double_mmap_unlock(src_inode, dst_inode);
+> -               unlock_two_nondirectories(&src_inode->vfs_inode,
+> -                                         &dst_inode->vfs_inode);
+> +               clear_bit(BTRFS_INODE_REFLINK_SRC, &src_inode->runtime_fl=
+ags);
+> +               inode_unlock_shared(&src_inode->vfs_inode);
+> +               inode_unlock(&dst_inode->vfs_inode);
+>         }
+>
+>         /*
+> --
+> 2.55.0
+>
+>

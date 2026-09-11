@@ -1,68 +1,41 @@
-Received: from mail-ej1-f44.google.com (mail-ej1-f44.google.com [209.85.218.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C677A38A702
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 23:42:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D45540E8CD
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 23:44:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.15
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789170154; cv=none; b=XHbs6NeR4EMRH0BLez6GBlst5J2npMelVXgy9876LBF3m89HJU6NUtVleBDjI/XEj+2fr4iWlcNAK29x0QAIiFfBffrzFbth0ik3cpvrUwqbHgAbtzqgZMO3hn+XZ5eT2+NaORyq98BXp3oCprZ7msdbhCyOWceQLb6YMaz6vYY=
+	t=1789170287; cv=none; b=QyLchiZ9lg4c814TXnhYFXdlDGyw7oqKB43Q5cGNYgoBoPbjzOLzz6VnFD9Th7z0f1MNME4q83rZDQga8VkMSlO8r/upaUEF/iQNV3N9uB2eT8ilAN+q3/4O0YvG58aQKI/73wdElYcjMM6NhlWwBUckYbl4DqyvhezsNxh3BpA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789170154; c=relaxed/simple;
-	bh=6NQ0oyWzgQ+Y8mp8hdn/95wATMDMQT81Vzu7o8ij3Ao=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=RFVXtlQBGb2/W/943+F4XSVzSv4mHuNINUUO8q6SlezY4n4/11J5l57BD5s0rxbFigjHE5FeewDAFkqlC/2kv31oJzW0V/04ptTtQnXBH8lcY2TDV9VySwR4i5m7rhGobCPb6RRKc82nZgMfdaIqtTqA90Salw5NtEGkPLsvhmU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=PjNP1F4l; arc=none smtp.client-ip=209.85.218.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1789170287; c=relaxed/simple;
+	bh=3xJjQP7CqekPMDNqLNNM9Zh9TRpBwk+xKRJP3QfsjVc=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=lINYhJGdnRa2/xsA6eUODjghkIhPFWImeq1rP+LZUjkKO0rmhDMADWafgSlfC7h8kGwYoc9t9y0YrYhY4N9lr3T8G0byDQA/SdbR7o/SRc0NXfO1MhJKky/HSU7HoWhzQ5nijjL19VXUA4WK6l0z/vyxp099pcOpIU4ofTEmM+g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=g74Z4Fhj; arc=none smtp.client-ip=212.227.15.15
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="PjNP1F4l"
-Received: by mail-ej1-f44.google.com with SMTP id a640c23a62f3a-c20ce3c118aso183856566b.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 16:42:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1789170150; x=1789774950; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=2Ofwz1tSwH1NQdwiq8BEkuuNnYnRc7CDqbFW6Xu+SUs=;
-        b=PjNP1F4ls+iqKH45ZsDYXP7tdtqufkyE3fjX05J8IYoySO0jAndSO7InfLjJ2h8DlF
-         D88Gbr58KJ3f2IDJwM0xKyVfGfIh+ffGcrMI/eEQLiKSZPTmwfoPDz2VW/nF/JAOjrpB
-         B7QQxQZuYuDCqG8HDrXZdq3G39BGYBGJYLa+gGTsNU6xjQOvMKg0qnkizt7vEF19Kk4+
-         36TwM2nR4MPdMltnyu0yEDkRmwd6uQtwRIDsuxO6dvEIpdrTbFjltJ95LU5UXYckh4z3
-         FHCWkiVVUIG1QdANrlnvTuQWapzw4orz1CCxMNcAAK0rbQkQ4CRu4cLr89mcjCG2Bx3w
-         vOyQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1789170150; x=1789774950;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=2Ofwz1tSwH1NQdwiq8BEkuuNnYnRc7CDqbFW6Xu+SUs=;
-        b=OmhPySxnoA/XUgUfmSJVe52EzIvKbs7GtZjW/ctyaO6/btLHrJOozXo9YgzXw+z/b+
-         WbtmWLTY0wK19iC62e2txOrjtEqtjzJfsaV3hwgOnJyDLNvRK0vmucO5a5zjEeHbAk6g
-         f0oQXCUEr93XuLQgFB+EfrGXI3kFgnTu9XJ9ZwaAniRYwYjjYpfmxc1kX681zqmgBIAK
-         M6b8H2N0fhDeJZmvjr/ZdqB4oDb6S7VsVPEmI76+cd9yv26UIWtwa36UXO8cIS8hKiEV
-         e1awobYFF0VCWNHcL2/T8Z/yIIvXfNtT7xE7M/l2ZFIPdsMKOeMtrkdVI29f/jR3xdC7
-         y68Q==
-X-Forwarded-Encrypted: i=1; AKwUvByDiwdTW0UsNkWBUVXLuNhG7YYmIj742yJ0Ra0HmCqaEA0b0rd9hb8wQn0tPFRDWV2Ms3zNr7LFB8Ry/A==@vger.kernel.org
-X-Gm-Message-State: AFuF++llj9etk/CpKohCW2rC01TJTSbkYECdvtg3QyBTEo3SFgZ80EBe
-	2wv3CNuCEtfXEldaUfTrklgpBNFnK99NGuITc66VsNU7PpnvgojiJCgkNKTTl36YzXiCsx0HHe8
-	IKUXdpujy8w==
-X-Gm-Gg: AYBFou177fkb8+M/xZiDonovSpx2EOnQOSMsQQCppYGTMLtENLHVXNJnmw0dQmmNspv
-	bAozxsfbKmR/Ir1IGRcq+XvdtvdgZCPVM+nHqmvbwopYrSbH0h4t8xY6g1PcqWJEdRxmk6YLF+t
-	eLL08Gv6sszvnILYG1WD+/c49eJyKsFMgPjcRkT9mroSmczH/xtmx7k9pnTrn2zgCq6e4h35Jag
-	L5yQkz5FLjplKU1rIFe58tquMSvcTRcpOrMxflvwXfsNnfhR+TRWtszV5VoRySWRdG23DS3Jv74
-	ixAUoacnKP7upiRHI5rOLpacBuMFZDlGcw/AAmfgxf2cDyVCiukiTEFDDwoXbVGgcFwb6Md3boP
-	ZubAx67Vwuw7WyUGkQfC2QDJ+yyXB0YsJQWHtJkt0IOnfOvVV2eRNDpfau1Uitew//nCxZhMV2a
-	1e4+Asd9lMwAMqM79vkvzaU+Am/ZAVA6kuDelzt9wPYRvXtQj78Cqi4sioGLdaB8o=
-X-Received: by 2002:a17:907:7ba9:b0:c29:42ad:acd0 with SMTP id a640c23a62f3a-c2945f702cfmr609056866b.30.1789170149804;
-        Fri, 11 Sep 2026 16:42:29 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2dd2cffb5c5sm17053395ad.80.2026.09.11.16.42.23
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 11 Sep 2026 16:42:28 -0700 (PDT)
-Message-ID: <8cf9fc40-3316-44c0-bf8e-bd8698a50a33@suse.com>
-Date: Sat, 12 Sep 2026 09:12:20 +0930
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="g74Z4Fhj"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1789170277; x=1789775077; i=quwenruo.btrfs@gmx.com;
+	bh=GmrlSkJQKkceRIVczKMPa4JAM03x7hZ0flKkJiW2qSg=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=g74Z4FhjKmtxHovU7BNNzfb+GoABjiXIqauVyf9ckx4hP0zKSkC1kFeDCySdUVJj
+	 rYTZIxMKtr7ADR1c1VIv+L1Iub4l4p191AzGKUMyEE0o/72rsNn73/GmVNj68gUGt
+	 gRabK9YlDCTMYG6WuK7WaXKE6bpV1swttQnrEKXw7SU7pM6Cznz9HY7OAY3s2zzjZ
+	 qNnAGvz9nybgKpTAefzN2kYzVgsVnVHM47ZSx5O+H7tTN4PjgfxaXsZPjnaXGkx+E
+	 w+BCeP3hyVq4k7UrUl0gVakZmKaHfspW4ruh+Lm+HNCgab5tD6p2n7OYB6WFO1A3d
+	 UAsVxqZErloI0nAl9A==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MRTN9-1xQPCa0Irt-00PZbm; Sat, 12
+ Sep 2026 01:44:37 +0200
+Message-ID: <dcdc63bc-13ce-47cf-9928-3a02862663ff@gmx.com>
+Date: Sat, 12 Sep 2026 09:14:34 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -70,252 +43,247 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: commit 108cc873398932af589c295f78c348513b8d70d9 breaks
- update-grub on btrfs root filesystem
-To: Alex Romosan <aromosan@gmail.com>, dsterba@suse.cz
-Cc: Thorsten Leemhuis <regressions@leemhuis.info>,
- Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-kernel@vger.kernel.org,
- linux-btrfs <linux-btrfs@vger.kernel.org>,
- Linux kernel regressions list <regressions@lists.linux.dev>
-References: <CAKLYgeL7nrA4nXcewdv9Fqg_s=3GS=vmoypnEiZBKQ7rySZFuQ@mail.gmail.com>
- <20260909002506.GF9053@twin.jikos.cz>
- <6a5c2d41-b10b-44cb-969e-b4a56d002ceb@gmx.com>
- <4c5117f7-1ddd-4596-8917-da47379506fd@leemhuis.info>
- <20260911182125.GE54722@twin.jikos.cz>
- <CAKLYgeLAXC5qbNAWnS3KNCijuRT9mF_hz4e1fUexx+D-J5Bs4g@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: tree-checker: cache accessor return value in
+ CHECK_FE_ALIGNED()
+To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <bfbeb06553e40d94aadfe5490f2749b3e43bc83f.1789143253.git.fdmanana@suse.com>
 Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
  1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
  9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
  gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
- Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
- fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
- 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
- V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
- rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <CAKLYgeLAXC5qbNAWnS3KNCijuRT9mF_hz4e1fUexx+D-J5Bs4g@mail.gmail.com>
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <bfbeb06553e40d94aadfe5490f2749b3e43bc83f.1789143253.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:kzs2YyLiIPTFpRbkaEpjW6KN3zZotHgBAs0ci7Rb3SgYPplaRqn
+ Jv0TkjsgoCDKdVNGHerLncwPToAySvAPqqFxF0vzIuijlRJVSDKzwcQmU3qVmQwVUXgslni
+ mUFrPGiMGwwGXkpYUfwT/YpD8JD0/DjhrHZuT3q2uNXGSy2rIXx8110bqskF+rx6JH+FLNK
+ d4/OIar9+NltHzTdiJRzA==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:55S6ZH4EnQQ=;TcZLDNTySNJT8KUj82cupCDi7wc
+ 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
 
 
 
-在 2026/9/12 04:20, Alex Romosan 写道:
-> i agree it's a regression. one question (and i am not very familiar
-> with the underlying principles), how do the other filesystems deal
-> with this? shouldn't the registering of devices be abstracted out
-> since i would assume every fs does it or is this something btrfs
-> specific?
+=E5=9C=A8 2026/9/12 01:45, fdmanana@kernel.org =E5=86=99=E9=81=93:
+> From: Filipe Manana <fdmanana@suse.com>
+>=20
+> We are calling an accessor for a file extent item multiple times in the
+> CHECK_FE_ALIGNED() macro, even when we don't find a corruption (once in
+> the if statement's expression and then once again in the expression for
+> the return value). This adds extra runtime overhead (which is critical
+> since the tree checker runs against every extent buffer when it's read
+> or before persisting it) and increases the module's size.
+>=20
+> So cache the accessor's return value in a variable and use it, reducing
+> runtime, object size and making the source code shorter too. Also avoid
+> repeating twice the IS_ALIGNED() computation.
+>=20
+> Before:
+>=20
+>    $ size fs/btrfs/btrfs.ko
+>       text	   data	    bss	    dec	    hex	filename
+>    2073340	 217928	  15624	2306892	 23334c	fs/btrfs/btrfs.ko
+>=20
+> After:
+>=20
+>    $ size fs/btrfs/btrfs.ko
+>       text	   data	    bss	    dec	    hex	filename
+>    2073076	 217928	  15624	2306628	 233244	fs/btrfs/btrfs.ko
+>=20
+> Also running the following fsstress test and capturing the runtime of
+> check_extent_data_item() (the only caller of CHECK_FE_ALIGNED()) in
+> nanoseconds (using bpftrace), showed the following runtime improvements:
+>=20
+> Test:
+>=20
+>    mkfs.btrfs -f /dev/nullb0
+>    mount /dev/nullb0 /mnt
+>    fsstress -w -p 8 -n 5000 -s 12345 -d /mnt
+>    umount /mnt
+>=20
+> Before:
+>=20
+>    Count: 2033671
+>    Range:  0.000 - 1336060.000; Mean: 679.642; Median: 656.000; Stddev: =
+2031.323
+>    Percentiles:  90th: 850.000; 95th: 909.000; 99th: 1272.000
+>       0.000 -    6.647:      11 |
+>       6.647 -   28.241:      36 |
+>      28.241 -  110.807:     176 |
+>     110.807 -  426.512:   38012 #
+>     426.512 - 1633.663: 1983372 ########################################=
+#############
+>    1633.663 - 6249.399:    8315 |
+>    6249.399 - 23898.422:   3243 |
+>    23898.422 - 91382.340:   153 |
+>    91382.340 - 349418.114:   36 |
+>    349418.114 - 1336060.000: 11 |
+>=20
+> After:
+>=20
+>    Count: 2092797
+>    Range:  0.000 - 1677284.000; Mean: 627.650; Median: 617.000; Stddev: =
+1848.010
+>    Percentiles:  90th: 809.000; 95th: 859.000; 99th: 1209.000
+>       0.000 -    6.823:       18 |
+>       6.823 -   29.602:       82 |
+>      29.602 -  118.702:      416 |
+>     118.702 -  467.232:   515774 #################
+>     467.232 - 1830.549:  1565599 #######################################=
+##############
+>    1830.549 - 7163.339:     5297 |
+>    7163.339 - 28023.237:    4186 |
+>    28023.237 - 109619.427:   166 |
+>    109619.427 - 428793.471:   25 |
+>    428793.471 - 1677284.000:   4 |
+>=20
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Other fses has the same problem on the reported device path.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-The difference is other fses saves the device path at mount time and 
-doesn't change.
+Thanks,
+Qu
 
-E.g, the same weird device path can be utilized and reported for other 
-fses too:
+> ---
+>   fs/btrfs/tree-checker.c | 11 ++++++-----
+>   1 file changed, 6 insertions(+), 5 deletions(-)
+>=20
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index 857ded43c3b9..081365770c51 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -108,13 +108,14 @@ static void file_extent_err(const struct extent_bu=
+ffer *eb, int slot,
+>    */
+>   #define CHECK_FE_ALIGNED(leaf, slot, fi, name, alignment)		      \
+>   ({									      \
+> -	if (unlikely(!IS_ALIGNED(btrfs_file_extent_##name((leaf), (fi)),      =
+\
+> -				 (alignment))))				      \
+> +	const u64 val =3D btrfs_file_extent_##name((leaf), (fi));             =
+  \
+> +	const bool not_aligned =3D !IS_ALIGNED(val, (alignment));		      \
+> +									      \
+> +	if (unlikely(not_aligned))			      		      \
+>   		file_extent_err((leaf), (slot),				      \
+>   	"invalid %s for file extent, have %llu, should be aligned to %u",    =
+ \
+> -			(#name), btrfs_file_extent_##name((leaf), (fi)),      \
+> -			(alignment));					      \
+> -	(!IS_ALIGNED(btrfs_file_extent_##name((leaf), (fi)), (alignment)));   =
+\
+> +			(#name), val, (alignment));			      \
+> +	not_aligned;			                                      \
+>   })
+>  =20
+>   static u64 file_extent_end(struct extent_buffer *leaf,
 
-  # cd /dev/
-  # mknod weird b 253 2
-                  ^^^^^ The same major/minor number for
-                        /dev/test/scratch1
-  # mkfs.ext4 /dev/weird -F
-  # mount /dev/weird /mnt/test
-  # mount | tail - n1
-  /dev/weird on /mnt/test type ext4 (rw,relatime)
-
-The btrfs specific part is, btrfs can rename the device path on device 
-rescan.
-
-That introduced a new problem, should we trust the device path passed in 
-for scan?
-
-Normally a device scan is triggered by udev rules, so normally it's sane 
-names like "/dev/sda1".
-But end users can easily pass random/weird pass in that ioctl to force 
-an update on device path, and we're back to the start point.
-
-Furthermore when LVM gets involved, the same dm device can have multiple 
-different softlinks.
-And a wrong softlink scanned can easily screw a lot of mount detection, 
-aka, screw up the most common tool we use, fstests.
-
-Then we can easily have a weird situation where the same device is 
-scanned again and again with different names (e.g. "/dev/dm-2" and 
-"/dev/test/scratch1"), causing btrfs to report different device name 
-depending on the timing.
-
-
-Another situation is, someone is passing a completely weird name, which 
-may not even be accessible by other processes.
-The worst situation here is "/proc/self/fd/3", which can be a softlink 
-to a block device, but only accessible by that exact process.
-
-
-One solution to this complex corner case is, to do a proper path 
-resolution, and check if the existing recorded path can be accessible, 
-if not replace it with the newer one.
-
-However that is not perfect either, firstly related to namespace, the 
-device scan can be triggered inside a namespace, and again the path can 
-only be accessible inside a certain namespace.
-
-Secondly such path resolution may involve btrfs itself, e.g. the block 
-file is not in devfs, but a directory inside btrfs.
-Then scan and path resolution may lock the same inode, causing deadlock.
-
-All the history can be found in this patch:
-
-https://lore.kernel.org/linux-btrfs/5e65d9ba5927b4b6985ce819e9e49d082c6e9b45.1789112424.git.wqu@suse.com/T/#u
-
-
-Now back to the grub problem, firstly it's not causing anyone unable to 
-boot, it is only causing the grub2-probe unable to determine where the 
-device is.
-
-The reason is for users who are not using initramfs, but direct kernel 
-boot. In that case, the rootfs is always using the name "/dev/root".
-
-The lack of initramfs means we do not have proper devfs at boot time, so 
-kernel is using that "/dev/root" for rootfs.
-
-But after the system is fully up, a proper devfs is mounted at "/dev/", 
-so the older temporary "/dev/root" is no longer accessible.
-
-I can argue that the user space should not really trust the device path 
-reported by mount, but utilize the device number reported for the mount 
-point. E.g "mountpoint -d", then go through the "/dev/" or libblkid to 
-grab the real device.
-
-In fact, even using that weird name, other tools like lsblk can properly 
-detect the real device without being confused by the name:
-
-|-test-scratch1 253:2    0   10G  0 lvm  /mnt/test
-
-> 
-> On Fri, Sep 11, 2026 at 8:21 PM David Sterba <dsterba@suse.cz> wrote:
->>
->> On Thu, Sep 10, 2026 at 12:39:25PM +0200, Thorsten Leemhuis wrote:
->>> On 9/9/26 03:13, Qu Wenruo wrote:
->>>> 在 2026/9/9 09:55, David Sterba 写道:
->>>>> On Tue, Sep 08, 2026 at 11:59:43PM +0200, Alex Romosan wrote:
->>>>>>
->>>>>> [...] Since version 7.3-rc1 i haven't been able to to a grub-update,
->>>>>> instead i get this error:
->>>>>>
->>>>>> /usr/sbin/grub-probe: error: cannot find a device for / (is /dev
->>>>>> mounted?).
->>>>>>
->>>>>> 7.2 is fine. a git-bisect identified commit
->>>>>> 108cc873398932af589c295f78c348513b8d70d9 as being the culprit.
->>>>>> reverting this commit from 7.3-rc2 allowed me to run grub-update
->>>>>> again.
->>>>>>
->>>>>> this is not the first time i reported grub-update being broken on
->>>>>> btrfs. i reported exactly the same problem on jan 8, 2024
->>>>>> (https://lkml.iu.edu/hypermail/linux/kernel/2401.1/00596.html). maybe
->>>>>> the discussion that followed would help come up with a fix that will
->>>>>> make everybody happy.
->>>>>
->>>>> I remember debugging that one, https://bugzilla.kernel.org/
->>>>> show_bug.cgi?id=218353
->>>>> Reverting 108cc8733989 ("btrfs: fix a lockdep caused by path resolution
->>>>> during device scan") would bring back the lockdep warning and there is a
->>>>> locking problem.
->>>>>
->>>>> The commit says it's fixing 2e8b6bc0ab41 ("btrfs: avoid unnecessary
->>>>> device path update for the same device"), the difference is in lines
->>>>>
->>>>> (https://bugzilla.suse.com/show_bug.cgi?id=1230641)
->>>>>
->>>>> -       } else if (!device->name || strcmp(device->name->str, path)) {
->>>>> +    } else if (!device->name || !is_same_device(device, path)) {
->>>>>
->>>>> Which gets changed to (by 108cc8733989):
->>>>>
->>>>> -       } else if (!device->name || !is_same_device(device, path)) {
->>>>> +       } else if (!device->name || device->devt != path_devt) {
->>>>>
->>>>> Each change is reaction to a bug, I don't see a clear fix which will
->>>>> make it work in all cases.
->>>>
->>>> And I want to add that, the previous path based comparison is also
->>>> problematic for namespaces/weird block device names.
->>>>
->>>> Although not common, it's definitely possible to map weird block file
->>>> name into a namespace.
->>>>
->>>> Thus the path based comparison is not reliable in the first place, no to
->>>> mention the later lockdep problems.
->>>
->>> Well, but our #1 is "no regressions". And the recent change while fixing
->>> bugs clearly causes one, as Alex's report is afaics at least the third
->>> about it; the two earlier ones can be found here:
->>>
->>> https://lore.kernel.org/linux-btrfs/dfbe1e27-dab8-4d55-8cf3-0b28eeac5df4@gmail.com/
->>> https://lore.kernel.org/linux-btrfs/018a9738-1d4a-43a0-9352-a56d1e541364@gmail.com/
->>> Plus a repost of the latter here:
->>> https://lore.kernel.org/linux-btrfs/dfbe1e27-dab8-4d55-8cf3-0b28eeac5df4@gmail.com/
->>
->> I'm going to treat this as a regression. And for the record Qu and me
->> are in disagreement on that. My target is to make the systems boot again
->> first, the fix may leave some problematic case (like mentioned, devices
->> in namespaces), but that is probably a lesser problem.
-
-It's not not-booting, but just grub2-probe unable to determine which 
-device it really has, and so far only affects users without a initramfs.
-
-But if you really want to revert back to fix this particular case, then 
-allow the old bad random device rename, back to the starting point of 
-the cat-mice game:
-
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4ddabadc9188..f4b36ad1282d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -749,6 +749,18 @@ const u8 *btrfs_sb_fsid_ptr(const struct 
-btrfs_super_block *sb)
-         return has_metadata_uuid ? sb->metadata_uuid : sb->fsid;
-  }
-
-+static int device_name_cmp(struct btrfs_device *device, const char *path)
-+{
-+       const char *old_name;
-+       int ret;
-+
-+       rcu_read_lock();
-+       old_name = rcu_dereference(device->name);
-+       ret = strcmp(old_name, path);
-+       rcu_read_unlock();
-+       return ret;
-+}
-+
-  /*
-   * Add new device to list of registered devices
-   *
-@@ -869,7 +881,7 @@ static noinline struct btrfs_device 
-*device_list_add(const char *path,
-                                 MAJOR(path_devt), MINOR(path_devt),
-                                 current->comm, task_pid_nr(current));
-
--       } else if (!device->name || device->devt != path_devt) {
-+       } else if (!device->name || device_name_cmp(device, path)) {
-                 const char *old_name;
-
-                 /*

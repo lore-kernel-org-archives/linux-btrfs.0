@@ -1,50 +1,50 @@
-Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.6])
+Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.11])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4464944F579
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 12:32:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.6
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7E12E448D1D;
+	Fri, 11 Sep 2026 13:39:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.11
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789129954; cv=none; b=fkwsR/vM8s6upCO3OidDRwHhvF0OiZeYeRY+0pMQ9G8XbSs3jUkLmo9UjxRU7L5mDI1juTiNkONR35+g7zjFuzNnA2c66KPKNqvmwEkimZIqs7j1lvGs+fLsek9MJn1nTDLC7ZFGyZGWdlFktwhfArPkCJoYrpXgujlHC5DkZAg=
+	t=1789133962; cv=none; b=sasUmfV3nttt2ab8HX3YTObKyksymvmjGGRcAJwP06CzcRCq8iRdx5WVb3MJejPmD4T+lcNbwrxzCZDU4SPAweXqraeEHbHyL0Cd8fAac32VljNjrlgSJ0fxtJKeE4QBnE/+VVjQw7Bmq/w3RUX45X6vyoqRnCPk7NHlgLRxLgc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789129954; c=relaxed/simple;
-	bh=XbITuS+1EncG9QFNAx3AOuwcHB+R+nqQ+WVQb2SDCVM=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=iA7drs9yjfvD8Xkc7/ekGVOtqVgC9DukpNe/DxFsoxIwcW/MoYCvpmXGYSDOV09ESMFZSSLYg+W1aKMrC6ysECZ5DwJq30h4qWnbGT13D7kHf00K5uTd9nXzBweoYln+B8LCT3BgxVIbUPnNacM+7lpWsVJ4wRocvxYT+pWskS0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=GNDgo/K7; arc=none smtp.client-ip=192.198.163.6
+	s=arc-20240116; t=1789133962; c=relaxed/simple;
+	bh=HEa7y2dg0Q5/324DIBpIKPkDzSkkBUrm51tW/kKBdS8=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=LUJzB1RDcV6CRYr92OSgCOE+qVa4TEaTHWanWRMz+5r5DUXl+GitYl9q8heIL4uTvOwV8qZx/LvfWOnuO8cU0JTGGqeimwBywVJjRM7RTlGmEM6JnwBm7RuyxuTvNhkTn2+bE7a/wQLa2P4TBp0lSZgxyEKAddeDx6VrItxTcH0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=AHT766EZ; arc=none smtp.client-ip=192.198.163.11
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="GNDgo/K7"
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="AHT766EZ"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
   d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1789129949; x=1820665949;
-  h=message-id:date:mime-version:subject:to:references:from:
-   in-reply-to:content-transfer-encoding;
-  bh=XbITuS+1EncG9QFNAx3AOuwcHB+R+nqQ+WVQb2SDCVM=;
-  b=GNDgo/K7HutwUSFH53Ui3DGKvrfbcXeXjOjG1nmeCFBlMku1E1YzVL23
-   S5yOTVFsRqZJNhBFayVkNASsh/xqK5+A5w98lcA0/RxSYwBOJoArLSD/U
-   rEpx/W+pQT+f+vVAMGLAF7dlfhxSfIw+GsFpG6gNkz53QWktcAToSkihv
-   5977uFeqGF78A1UMUhige3A6U9DmNcIwN5Q6ivnkiKYrNP9y1kDNUZIjp
-   lwhhlKahecEVrRB6IDvnbQmAQuX+YkiTffIFFHLjXQtbalBEaHmk1S0Ip
-   WfgYIWi8nJGis1us0waPFyxP3UpL3xqNDVisnoj5uyYJ5qgj/VQuNPnJ6
-   g==;
-X-CSE-ConnectionGUID: SYzTBj2yS9+kIjeugSaSXg==
-X-CSE-MsgGUID: bF251KzDSPykIDp7ZXdklg==
-X-IronPort-AV: E=McAfee;i="6800,10657,11901"; a="100773"
+  t=1789133961; x=1820669961;
+  h=message-id:date:mime-version:subject:to:cc:references:
+   from:in-reply-to:content-transfer-encoding;
+  bh=HEa7y2dg0Q5/324DIBpIKPkDzSkkBUrm51tW/kKBdS8=;
+  b=AHT766EZg4HYtGkVe6CNqZXy45wy0uabCXVFwDa6fVQjPRm7WwarYr+x
+   sb/vwaGiaT6KhztVyD2tmtAB762PMSA1gujpGoDXIEjXVxBilN5z08N9L
+   JhenAOLDMO7mj2FRtxvnkzOxPloupOQL7u0lG1iDprChZmNwZ0iony2bQ
+   EmEeec9D/wVyZgeRZfMx7naUu9zVvG1jVYGM8d0YJfgH4Kb7LZlq6iXue
+   wrifaJXCli+L/MT2Wx1lRlMZh+kS2fuCaUyY3jwALR1Nsqm1PDWuSar0B
+   BtJEo+3SRgdm0N9aqa87Y25RB/AFNN26RMHd/L398ObcSiZWtp8mbQ/ja
+   Q==;
+X-CSE-ConnectionGUID: 19DYd/40ROqNerCEEHlbZQ==
+X-CSE-MsgGUID: ZdLL+FjfRI6B7HtvN6eEDQ==
+X-IronPort-AV: E=McAfee;i="6800,10657,11901"; a="100192179"
 X-IronPort-AV: E=Sophos;i="6.27,97,1787036400"; 
-   d="scan'208";a="100773"
-Received: from fmviesa005.fm.intel.com ([10.60.135.145])
-  by fmvoesa116.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2026 05:32:26 -0700
-X-CSE-ConnectionGUID: gzih77S/RT+YXTMRiWZMxw==
-X-CSE-MsgGUID: v+7is4PaTHuYqviUqzSQZw==
+   d="scan'208";a="100192179"
+Received: from orviesa003.jf.intel.com ([10.64.159.143])
+  by fmvoesa105.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2026 06:39:21 -0700
+X-CSE-ConnectionGUID: KFXQRo5PSOCleIcv8it7OA==
+X-CSE-MsgGUID: OwqQLQInR7e2wChAb07d7w==
 X-ExtLoop1: 1
 X-IronPort-AV: E=Sophos;i="6.27,97,1787036400"; 
-   d="scan'208";a="277160092"
+   d="scan'208";a="275446796"
 Received: from smithj1-mobl2.amr.corp.intel.com (HELO [10.125.108.26]) ([10.125.108.26])
-  by fmviesa005-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2026 05:32:26 -0700
-Message-ID: <be0c08f5-2f31-40f5-8a3b-f2f58b3e00ff@intel.com>
-Date: Fri, 11 Sep 2026 05:32:24 -0700
+  by ORVIESA003-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2026 06:39:20 -0700
+Message-ID: <d6b8e4f3-93e3-454d-acb4-7ba1f49044d8@intel.com>
+Date: Fri, 11 Sep 2026 06:39:19 -0700
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -52,12 +52,15 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 1/3] btrfs: derive f_fsid from on-disk fsuuid and dev_t
-To: Anand Jain <asj@kernel.org>, linux-btrfs@vger.kernel.org,
- David Sterba <dsterba@suse.com>, David Woodhouse <dwmw2@infradead.org>,
- "Macieira, Thiago" <thiago.macieira@intel.com>
-References: <cover.1772095546.git.asj@kernel.org>
- <fdea3f42827f512fcaa82f4dabe475e191d7ff2f.1772095546.git.asj@kernel.org>
+Subject: Re: [PATCH AUTOSEL 6.18-6.12] btrfs: derive f_fsid from on-disk fsid
+ and dev_t
+To: Sasha Levin <sashal@kernel.org>, patches@lists.linux.dev,
+ stable@vger.kernel.org
+Cc: Anand Jain <asj@kernel.org>, David Sterba <dsterba@suse.com>, clm@fb.com,
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ David Woodhouse <dwmw2@infradead.org>
+References: <20260831133314.4125787-1-sashal@kernel.org>
+ <20260831133314.4125787-164-sashal@kernel.org>
 Content-Language: en-US
 From: Dave Hansen <dave.hansen@intel.com>
 Autocrypt: addr=dave.hansen@intel.com; keydata=
@@ -103,30 +106,21 @@ Autocrypt: addr=dave.hansen@intel.com; keydata=
  MTsCeQDdjpgHsj+P2ZDeEKCbma4m6Ez/YWs4+zDm1X8uZDkZcfQlD9NldbKDJEXLIjYWo1PH
  hYepSffIWPyvBMBTW2W5FRjJ4vLRrJSUoEfJuPQ3vW9Y73foyo/qFoURHO48AinGPZ7PC7TF
  vUaNOTjKedrqHkaOcqB185ahG2had0xnFsDPlx5y
-In-Reply-To: <fdea3f42827f512fcaa82f4dabe475e191d7ff2f.1772095546.git.asj@kernel.org>
+In-Reply-To: <20260831133314.4125787-164-sashal@kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 2/26/26 06:27, Anand Jain wrote:
-> Currently, f_fsid depends on fs_devices->fsid. For cloned devices, this
-> value is dynamic and fluctuates across mount cycles. This inconsistency
-> breaks persistence for subsystems like IMA.
+On 8/31/26 06:23, Sasha Levin wrote:
+> To prevent f_fsid collisions between original and cloned filesystems,
+> this implementation hashes the dev_t for single-device btrfs filesystems
+> to ensure uniqueness. This is limited to single-device filesystems as
+> cloned mounts are currently only supported for that configuration. Note
+> that f_fsid will change if the device is replaced.
 > 
-> Switch to a stable derivation using the persistent on-disk fsuuid +
-> root id + devt of the block device for the single device filesystem.
-> This is consistent as long as the device remains unchanged/replace
-> (excludes btrfs device replace secnario for now).
+> Additionally, since the kernel cannot distinguish between the original
+> and the cloned filesystem, this new f_fsid derivation is applied to
+> both.
 
-This commit evidently hit 7.2 and is causing end users some real pain.
-Real software uses the FSID to encrypt/decrypt their VPN key files:
-
-   https://github.com/NetworkManager/NetworkManager-openconnect/
-
-When this gets applied, those users suddenly can't connect to their VPN
-any more. Having a stable derivation does seem like a good idea, of
-course. Is there any way to make this transition without breaking
-existing userspace and existing users?
-
-It looks like this is also getting -stable backports.
-
-
+This commit is causing some real pain to end users that use the FSID to
+encrypt VPN keys. Could we keep it out of the stable kernels for the
+moment, please?

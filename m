@@ -1,258 +1,210 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3594B42377F
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 07:43:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B9B3F3F5BC5
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 09:18:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789112635; cv=none; b=Yc4Xnjnq3lPRfjP+RC+GhE0YnUc4yPJpCYvq+jdW/pfVhbsfh0J/qVmbWVo0vW/hfJV3wnVkXhP6NvfCtBmPmiT9Nz7b/X+bwv4O/wz94yptUtX330+RtqxnfMUzLxeYVFfDWCoqDUTt/xoROF6v8Y47aTHX3A/XL//F9GnSXeQ=
+	t=1789118287; cv=none; b=bn5h3mLdsGb8vkLmi+pSmgcf0ZVfxyvB3Jsr2xpkLm6D1tBexQQ4CqQw1a1tOVQElB+xf3LI/x4N6pWUIiQUmfVfVlszUQaKa7/0d4JgQOnzWuzPNDBJyMyLp9NzNx6H/XcrxcieTY5n9GdcCNTvlpJVp7V8c56Ly2TDPLJ4gfI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789112635; c=relaxed/simple;
-	bh=IakCVt8GqB0preAZ1Slod2BYzdzgfMXAh52rpas233E=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=OpFZ6Y7n3ihV590XUU+qBCRA6H5l7Xu+1vNlUDvF7L+jgb8oEyyRemXS9hfQJNhvR784yyYt3AEaJufr0nubBIKBITkbqBkVVfnHJ76ig6xDzsjR2eyPxaFVucREm1y1TGvXCd75pey1gzFl6fXyzOMardiUD6yxsgfBlRLZGF4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=BGRKzM+2; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=hCx2BqzZ; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1789118287; c=relaxed/simple;
+	bh=rOb84Hlt41ijKUyv/q0Acyk0bqwalsZuNe+CxqJpgxQ=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=CYoS+yEWGRAIFONlGAmn68ZMjOKQm3EqInM5gysHKydmKJk7shJ+FMv8SFQnWjayCSrunwaRNU8pvcvhONImbm2hAHgd4T6VAJpRyKrtaXq+9QDClgt8jFotMd2bgQ9sLiQ5rzNVdllvxlnp2IFNMBr/Bv9euu3jMWHFYnr2cLk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=gQajJPrN; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="BGRKzM+2";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="hCx2BqzZ"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 0BF4A2196E
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 07:43:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789112628; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=2aD4t5NwQ1aqi0/V31VFV/lpF2aLByGfQn0GpYbXrBg=;
-	b=BGRKzM+2ptnEd9GnC6HzrOQusJbygaYBTP1i4F+zwt+7T2PCbSNO4mpg9hJyZk40KC4YFM
-	koUd+VH2aP56K4obf1tWrL/7X7Xrhs1/QMgqSnjknpkM1Au9zIzESvBJxCuSfUMKuyIxLo
-	O+Fao+qOrRo3ddGAQOHsB+iU+d+F+TU=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=hCx2BqzZ
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789112624; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=2aD4t5NwQ1aqi0/V31VFV/lpF2aLByGfQn0GpYbXrBg=;
-	b=hCx2BqzZ+0u3GHtJdceBnhmgsvRAFxhR60DKFJsMIAoT5LVDhQroda4GGYaUBddDX/w/zQ
-	BDnIuAQS/n3Bo6H29izCOpH4Ok1jR1CTwvB3UN+UjtD/SACi0e0OTjOFCL+6QxoordvogZ
-	xBakxFBDkFiWew5/zzT9LUtC8hO7BXI=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E4D62137DE
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 07:43:42 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id zIWzJC6xo2rkVgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 07:43:42 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs-progs: add "-r|--rename" option to "btrfs device scan"
-Date: Fri, 11 Sep 2026 17:13:20 +0930
-Message-ID: <b782dc6af50ea76a60cef13d4e7197bc928c689b.1789112501.git.wqu@suse.com>
-X-Mailer: git-send-email 2.55.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="gQajJPrN"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 462381F00898
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 09:18:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1789118285;
+	bh=CpPKtsJcD9wAKa0gctwWHXgOQxYlTCG/iVNoXsdmi90=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=gQajJPrNNlQBtneNWXyAkMrSzmUlZXhBbZ3EGHmFAv8sdjHp4JIUqrD47xHDZvD9e
+	 5ZuXF9Y8EdqGKUs0V6t0mxLqocjNUC6OxzgYCWL2XX+17Zp1u6RfomXzYSaN6pBnWr
+	 pUiAFscTenMBplfxYvrez4E9DKU+d+O+ET7F6YecsfopwUtDAsued4lt4xYJwqlGiW
+	 YqFww/jx8VgzHd6HsfWQaC9/ckw5cZK9ZU3BX9O81vWeEBn8FpZDJ8mddAohJRpXgZ
+	 5cekg1sx+vhnblQifgISK1tQc1Dg02NRDhYVm1DuB4BK7Sa8HNyT6EI+UgjmTQXJ9j
+	 Hs43zEvQHf2Zw==
+Received: by mail-vs1-f43.google.com with SMTP id ada2fe7eead31-7466771f1caso189158137.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 02:18:05 -0700 (PDT)
+X-Gm-Message-State: AFuF++nZeQHRNgTWFyc2XzYCorMkXG/+9cvelJoW1cIzFNxVt1f1LAZo
+	SaF3pfU50AaHbBUbddOyEUD7pj1f7VWTJAm8/FfyUgiBC/TRFBp5+OjolyVr/ciBK+AVkTXNha0
+	NJNd0w6/moB0CkYBv6o/oJ6GXTiRnQt4=
+X-Received: by 2002:a05:6102:80a9:b0:793:b8b8:e0db with SMTP id
+ ada2fe7eead31-793b8b94faamr428917137.5.1789118284354; Fri, 11 Sep 2026
+ 02:18:04 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 0BF4A2196E
-X-Rspamd-Action: no action
-X-Spamd-Bar: /
-X-Spamd-Result: default: False [0.29 / 50.00];
-	SEM_URIBL_FRESH15(3.00)[args.name:url];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.995];
-	MIME_GOOD(-0.10)[text/plain];
-	BAD_REP_POLICIES(0.10)[];
-	MX_GOOD(-0.01)[];
-	R_DKIM_ALLOW(0.00)[suse.com:s=susede1];
-	TO_DN_NONE(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	ARC_NA(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCPT_COUNT_ONE(0.00)[1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	DKIM_TRACE(0.00)[suse.com:+];
-	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:email,suse.com:mid]
-X-Spam-Flag: NO
-X-Spam-Score: 0.29
+References: <cover.1789085863.git.boris@bur.io> <4ef5a4ea85bf903e058b0a8c88549e15745729c0.1789085863.git.boris@bur.io>
+In-Reply-To: <4ef5a4ea85bf903e058b0a8c88549e15745729c0.1789085863.git.boris@bur.io>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Fri, 11 Sep 2026 10:17:27 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H7_JXnHXZrBGpdK55CQtxiTA6H7KN0yemUirNU6RdNwPA@mail.gmail.com>
+X-Gm-Features: AcwNN1XynAVYtD7-99duzo9jqiBw8NvzBH1joTAAAdJkXar52Thue4b6Lej5Sec
+Message-ID: <CAL3q7H7_JXnHXZrBGpdK55CQtxiTA6H7KN0yemUirNU6RdNwPA@mail.gmail.com>
+Subject: Re: [PATCH v2 1/3] btrfs: pre-flush reflink source before taking
+ inode locks
+To: Boris Burkov <boris@bur.io>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-This option allows end users to force update a device path, so that all
-responsibility to maintain a sane device path is pushed to end users.
+On Fri, Sep 11, 2026 at 1:39=E2=80=AFAM Boris Burkov <boris@bur.io> wrote:
+>
+> Consider the following sketch of a shell script:
+>   dd if=3D/dev/urandom of=3D/mnt/src bs=3D1M count=3D4096
+>   cp --reflink=3Dalways /mnt/src /mnt/dst &
+>   sleep 0.1   # let the clone reach its flush
+>   time dd if=3D/mnt/src of=3D/dev/null bs=3D4K count=3D1 iflag=3Ddirect
+>
+> The current logic in reflink ensures the existence and stability of both
+> the src and destination inode by locking them both and then flushing all
+> dirty pages / ordered_extents under the inode lock. This blocks
+> concurrent usage by even readers of the inode locks, like direct reads
+> or seeks for the duration of writeback on the entirety of the two files.
+>
+> We observe this particular contention frequently in the Meta fleet.
+>
+> It is also a relatively common pattern to write the src file, then reflin=
+k
+> it while it is still dirty, so that typical path naturally hits this
+> contention. This workload motivates a relatively simple optimization:
+> trigger the unavoidable src flushing outside the locked region.
+>
+> It is tempting to try to move the writeback out of the locks entirely
+> but this is fraught with all kinds of consistency errors under various
+> patterns of concurrent writes. fsync is able to manage such a pattern,
+> but with significant infrastructure investment I don't think is
+> justified for reflink.
+>
+> Therefore, do an optimistic single backwards pass which completes latent
+> OEs while relying on the calls to btrfs_wait_ordered_range() under the
+> locks in btrfs_remap_file_range_prep() ensure correctness. In the worst
+> case with concurrent writes while unlocked, we can end up doing the
+> writeback twice, which I think is a reasonable price to pay to avoid
+> victimizing innocent readers in a common case.
+>
+> With and without this patch, the above reproducer runs the reflink in
+> the same ~0.5s on my system. Without the patch, the direct read blocks
+> for basically the full duration of the reflink while with the patch it
+> returns in a few milliseconds.
+>
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+>  fs/btrfs/reflink.c | 48 ++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 48 insertions(+)
+>
+> diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+> index d2a4101912bd..7bab391f1be4 100644
+> --- a/fs/btrfs/reflink.c
+> +++ b/fs/btrfs/reflink.c
+> @@ -923,6 +923,46 @@ static bool file_sync_write(const struct file *file)
+>         return false;
+>  }
+>
+> +/*
+> + * Do a single backwards pass waiting for ordered extents on the inode.
+> + *
+> + * Backwards is helpful because it avoids picking up concurrent appended=
+ OEs
+> + * and the intent of the function is to wait on pre-existing OEs without=
+ going
+> + * to the extreme of locking the ordered_tree and snapshotting its conte=
+nts.
+> + *
+> + * This is only useful as an optimization for waiting for ordered extent=
+s outside
+> + * locks. It DOES NOT ensure that the range is free of ordered extents.
+> + *
+> + * Returns -EIO if any waited on OE had the ORDERED_IOERR bit set and 0 =
+otherwise.
+> + */
+> +static int wait_existing_ordered_extents(struct btrfs_inode *inode)
+> +{
+> +       u64 orig_end =3D i_size_read(&inode->vfs_inode);
+> +       u64 end =3D orig_end;
 
-This is to co-operate with the kernel patch "btrfs: introduce a new ioctl
-to force updating the device name".
+What's the point of orig_end if it's not used elsehwere?
+Just this:
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Update the ioctl number to reflect the kernel change
----
- Documentation/btrfs-device.rst | 12 ++++++++++
- cmds/device.c                  | 42 ++++++++++++++++++++++++++++++++--
- kernel-shared/uapi/btrfs.h     |  2 ++
- 3 files changed, 54 insertions(+), 2 deletions(-)
+u64 end =3D i_size_read(&inode->vfs_inode);
 
-diff --git a/Documentation/btrfs-device.rst b/Documentation/btrfs-device.rst
-index 8ade55c6dc51..e04ca8539b23 100644
---- a/Documentation/btrfs-device.rst
-+++ b/Documentation/btrfs-device.rst
-@@ -123,6 +123,18 @@ scan [options] [<device> [<device>...]]
-         -u|--forget
-                 Unregister a given device or all stale devices if no path is given, the device
-                 must be unmounted otherwise it's an error.
-+	-r|--rename
-+		Force a device name update for a device. Btrfs internally saves the device
-+		name at mount/scan time, and won't update them unless the underlying device
-+		numer changes.
-+
-+		This can lead to some weird device path and not all user space tools are
-+		using device numbers to locate a device.
-+
-+		This option can be utilized to force a device name update to replace
-+		those weird paths.
-+
-+		This options must has dedicated device path(s) passed in.
- 
- stats [options] <path>|<device>|<file>
-         Read and print the device IO error statistics for all devices of the given
-diff --git a/cmds/device.c b/cmds/device.c
-index 8d33569816f4..db90b91229bb 100644
---- a/cmds/device.c
-+++ b/cmds/device.c
-@@ -403,6 +403,26 @@ static int btrfs_forget_devices(const char *path)
- 	return ret;
- }
- 
-+static int btrfs_rename_device(const char *path)
-+{
-+	struct btrfs_ioctl_vol_args args;
-+	int ret;
-+	int fd;
-+
-+	fd = open("/dev/btrfs-control", O_RDWR);
-+	if (fd < 0)
-+		return -errno;
-+
-+	memset(&args, 0, sizeof(args));
-+	if (path)
-+		strncpy_null(args.name, path, sizeof(args.name));
-+	ret = ioctl(fd, BTRFS_IOC_RENAME_DEV, &args);
-+	if (ret)
-+		ret = -errno;
-+	close(fd);
-+	return ret;
-+}
-+
- static const char * const cmd_device_scan_usage[] = {
- 	"btrfs device scan [-d|--all-devices] <device> [<device>...]\n"
- 	"btrfs device scan -u|--forget [<device>...]",
-@@ -417,6 +437,7 @@ static const char * const cmd_device_scan_usage[] = {
- 	"",
- 	OPTLINE("-d, --all-devices", "enumerate and register all devices, use as a fallback if blkid is not available"),
- 	OPTLINE("-u, --forget [<device>...]", "unregister a given device or all stale devices if no path"),
-+	OPTLINE("-r, --rename <device>...", "update the device path for a mounted btrfs device"),
- 	HELPINFO_INSERT_GLOBALS,
- 	HELPINFO_INSERT_VERBOSE,
- 	HELPINFO_INSERT_QUIET,
-@@ -428,7 +449,8 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 	int i;
- 	int devstart;
- 	bool all = false;
--	bool forget = 0;
-+	bool forget = false;
-+	bool rename = false;
- 	int ret = 0;
- 
- 	optind = 0;
-@@ -437,10 +459,11 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 		static const struct option long_options[] = {
- 			{ "all-devices", no_argument, NULL, 'd'},
- 			{ "forget", no_argument, NULL, 'u'},
-+			{ "rename", no_argument, NULL, 'r'},
- 			{ NULL, 0, NULL, 0}
- 		};
- 
--		c = getopt_long(argc, argv, "du", long_options, NULL);
-+		c = getopt_long(argc, argv, "dur", long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
-@@ -450,6 +473,9 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 		case 'u':
- 			forget = true;
- 			break;
-+		case 'r':
-+			rename = true;
-+			break;
- 		default:
- 			usage_unknown_option(cmd, argv);
- 		}
-@@ -458,11 +484,16 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 
- 	if (all && forget)
- 		usage(cmd, 1);
-+	if (all && rename)
-+		usage(cmd, 1);
- 
- 	if (all && check_argc_max(argc - optind, 1))
- 		usage(cmd, 1);
- 
- 	if (all || argc - optind == 0) {
-+		if (rename)
-+			usage(cmd, 1);
-+
- 		if (forget) {
- 			ret = btrfs_forget_devices(NULL);
- 			if (ret < 0) {
-@@ -501,6 +532,13 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 				errno = -ret;
- 				error("cannot unregister device '%s': %m", path);
- 			}
-+		} else if (rename) {
-+			ret = btrfs_rename_device(path);
-+			if (ret < 0) {
-+				errno = -ret;
-+				error("failed to update the device path for '%s': %m",
-+				      path);
-+			}
- 		} else {
- 			pr_default("Scanning for btrfs filesystems on '%s'\n", path);
- 			if (btrfs_register_one_device(path) != 0) {
-diff --git a/kernel-shared/uapi/btrfs.h b/kernel-shared/uapi/btrfs.h
-index 7144f3ba07b9..201145c21528 100644
---- a/kernel-shared/uapi/btrfs.h
-+++ b/kernel-shared/uapi/btrfs.h
-@@ -1306,6 +1306,8 @@ enum btrfs_err_code {
- #define BTRFS_IOC_QUOTA_RESCAN_STATUS _IOR(BTRFS_IOCTL_MAGIC, 45, \
- 			       struct btrfs_ioctl_quota_rescan_args)
- #define BTRFS_IOC_QUOTA_RESCAN_WAIT _IO(BTRFS_IOCTL_MAGIC, 46)
-+#define BTRFS_IOC_RENAME_DEV _IOW(BTRFS_IOCTL_MAGIC, 47, \
-+                                  struct btrfs_ioctl_vol_args)
- #ifndef FS_IOC_GETFSLABEL
- #define BTRFS_IOC_GET_FSLABEL _IOR(BTRFS_IOCTL_MAGIC, 49, \
- 				   char[BTRFS_LABEL_SIZE])
--- 
-2.55.0
 
+> +       int ret =3D 0;
+> +
+> +       while (true) {
+> +               struct btrfs_ordered_extent *ordered;
+> +
+> +               ordered =3D btrfs_lookup_first_ordered_extent(inode, end)=
+;
+> +               if (!ordered)
+> +                       break;
+> +               if (ordered->file_offset > end) {
+> +                       btrfs_put_ordered_extent(ordered);
+> +                       break;
+> +               }
+> +               btrfs_start_ordered_extent(ordered);
+> +               end =3D ordered->file_offset;
+> +               if (test_bit(BTRFS_ORDERED_IOERR, &ordered->flags))
+> +                       ret =3D -EIO;
+> +               btrfs_put_ordered_extent(ordered);
+> +               if (!end)
+> +                       break;
+> +               end--;
+> +       }
+> +       return ret;
+
+Why do we need another function to wait for ordered extents just for reflin=
+ks?
+
+We have btrfs_wait_ordered_range() that does exactly the same...
+
+Besides that, this waits for all ordered extents. If a reflink
+operates on a small range, we end up waiting for any ordered extents,
+which slows down such ranged reflinks.
+btrfs_wait_ordered_range() allows to pass a range.
+
+> +}
+> +
+>  loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
+>                 struct file *dst_file, loff_t destoff, loff_t len,
+>                 unsigned int remap_flags)
+> @@ -938,6 +978,14 @@ loff_t btrfs_remap_file_range(struct file *src_file,=
+ loff_t off,
+>         if (remap_flags & ~(REMAP_FILE_DEDUP | REMAP_FILE_ADVISORY))
+>                 return -EINVAL;
+>
+> +       ret =3D filemap_flush(src_inode->vfs_inode.i_mapping);
+
+So again, this flushes the entire file, which adds overhead for
+reflinks operating on a small range and causes unnecessary IO.
+
+Further, using filemap_flush() is not enough in case we have compression.
+The flush call only starts the compression work in an async worker, we
+need a second flush call to wait for the compression to finish and for
+writeback to start (creating ordered extents).
+That's why we have btrfs_fdatawrite_range(), which does the double
+flush in case we have compression, and also supports specifying a
+range.
+
+Thanks.
+
+> +       if (ret < 0)
+> +               return ret;
+> +
+> +       ret =3D wait_existing_ordered_extents(src_inode);
+> +       if (ret < 0)
+> +               return ret;
+> +
+>         if (same_inode) {
+>                 btrfs_inode_lock(src_inode, BTRFS_ILOCK_MMAP);
+>         } else {
+> --
+> 2.55.0
+>
+>

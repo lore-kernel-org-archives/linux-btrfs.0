@@ -1,59 +1,71 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 40D1822D7A9
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 01:33:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9E53A188596
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 03:33:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789090385; cv=none; b=Hdwc0ohwnrOgbH0CV1YaDPF5hIIuslcjUmMDpk/CyGHQCRns/gInFLSxI1rLNOhbZbwfmGW5G5VX4XYOE+bju8lC4bcefEPpbzfjS53y8Mq98/mRFr/S8xPjUPiOAG9PYmP3v3AraE7qlmqTcin2UkEeVuZ/Mu7mpbw8CTzRFdw=
+	t=1789097635; cv=none; b=WCuEuFMeefZEwfBIha8DK0YkbFVeSopHL6IpPiymnsQTWK3DBfSo1h2Ss5xs1SGAeN8MQoyr5Hd12VDuEBF8o2NgyK2buhzgAq88/ZdlH/V0z2Ke53BU92PYc8DcrGMB9KuMNqLJkXVJrEOYZDTzjA/NGCq8f+Bs0hbg2lWFPRI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789090385; c=relaxed/simple;
-	bh=Rw3m1sLoxL9c2klFUmm6ukEJGTJ4qXh15R3Ucf21hJo=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=T9CbCneOPtRMK2PTw5pg9kS+CqN16F/e3Od5shPOJbkbVhTX6qUahZyY9gow1bUOS/pD6hnx5b9hs94LnEAVdVFOo9+3CbJMepTgjPkAEIPGiCEEHzn6zlxgDhBwggZqprPjofswFgRYtrFB13NpKH09XKuRpuqilDeJE2kWQp4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=RIqBfWoz; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=vIK1/CbM; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1789097635; c=relaxed/simple;
+	bh=xO+7BNscxtGg13ia0PhVshHjYQV3JHM12ELsJ8oZxrQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=LTOKt179/QRO5ffprSVvOxEX4SNDiGHxZspfPr/cvRUpxfB6wL81w5OjbCeombzoszAHiJkwn8+cbyLBg7x1ZY+lrrloELnOC1FxZ7l+tmsJm30CmCRaNXCsVNhB8x68nawBcmGVR0AvpC+B7bLRPicQNLgwWKrgXFArOiXe4Mw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=KW0L6k2p; arc=none smtp.client-ip=209.85.128.50
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="RIqBfWoz";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="vIK1/CbM"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 259722127F
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 01:32:54 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789090378; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=DliiMQVfmKhqCMneKgJ0rG+LAqjWynWGhuQXSc1DJco=;
-	b=RIqBfWozr7DTuLbpMr9tVdmshsJsWyrugDCJzLBoya4iYA83eqOcAe/Jo6ZTSQZIppbaVb
-	NrjXuPr54JHnwPb9ObSs7GMDsStgB4P4KYhvy+Y0e5WI2/s7kWWD37P8XlJeqvS43VzMBI
-	zTEEsAb0NaAVSH7xcdBgtnUkbmo1nIE=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789090374; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=DliiMQVfmKhqCMneKgJ0rG+LAqjWynWGhuQXSc1DJco=;
-	b=vIK1/CbMe3sJ6UMV00PcE6WR52PCXfQHR4bwnkTSJw/LtJli6f6TGGAqpSPeZac+Hj1OjT
-	Jk81AxpXDE11gw2ce+xX29JEIFxy6riCOt1eZRdGxPUWnmaPhfLbI3VP0sJo5eOP0dvd4j
-	yGpTnqRoH/rVCJj93JgsAjGrDdZxuhI=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0A039136ED
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 01:32:52 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id Ipq9KkRao2rXbAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 01:32:52 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: add "-r|--rename" option to "btrfs device scan"
-Date: Fri, 11 Sep 2026 11:02:34 +0930
-Message-ID: <9ce9c4b244e0224439a0fe675e1e39eb7509ad3c.1789090350.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="KW0L6k2p"
+Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-4998b5a63e2so5103405e9.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2026 20:33:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1789097632; x=1789702432; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=YrzC3KsGSyUCmEJo7hl7MckIk2oHkQ0xqb55Qf+LydA=;
+        b=KW0L6k2pUQ4orxBZQ1HWB2GrLNhN5U2uXU5vVBcGCE8SC5dETATczbzxHMHC47TJuY
+         zE8wxT79YwE5J8zMbXasIL7IYxTYUqjF1zwukPoiurTOkFZCCaa3CdiQRqWWyvlVIANx
+         Ree/XgAZ64Ccq1AVCSQP3kiOfxbMdJ8nICZv1J59pwT1hbPn25DsIQwMMcP4jWQFy78M
+         fXnbegvyYVu1D8q7S9mMWnWHwcu/JE+rEAWqw0l/8fqqp7o0/leJH1rdhbfzc+rLQL6z
+         l5uPnPrFB5aq7mRPUW0qiFJ4UG4YyoXPQIcYqBo0hjFRgYpe88WLHtZWfZZ//+wPilz/
+         Dy1w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1789097632; x=1789702432;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=YrzC3KsGSyUCmEJo7hl7MckIk2oHkQ0xqb55Qf+LydA=;
+        b=c4E5Dstn+EyTFy1KGEscDlV05s8l62NSzSs4OiB8w6r8rJHRsqHw93QvTaBdmMpP8+
+         SQLlwTB4qBmzUivS/Oyuyf0xTkHe089JKF1YjCV0/TbpqxC1SjbFCu54DfIsjW9G9inV
+         59eou/DEjAL1VzTtHWlUTxlYjEROkkgArkAQrKes+GTu6mQd9emCj6kAyz4XXLHipZBY
+         oNxUVmi2jRUuDFNZUc7Aa8TgS7Wnt+qDchzzgSHzZyy0yudp9La1tKbGUJR03xt0cMAs
+         GfK5ahISkDiFr7Ky652i3hBRs71aAJS3UlUsYgvwBVrqsA6dwTzr5b5ye7yaLG1pFRH4
+         nHTg==
+X-Forwarded-Encrypted: i=1; AKwUvBzJZvQ1YTuvpPqYKr4FdHt41DizuQL6vGb213Qe5rGZkLlqCA2R8TAv4VHpxmypyD7Jq/kTXOE+L2c7Rg==@vger.kernel.org
+X-Gm-Message-State: AFuF++kLyQlx9RC9Zjfodnjoj3rJaCmrjBUt705dzU9Y3YzCMceYOD4Q
+	EI8cfe+bTB120/Bf9816pTYNTMJUNm6VhZlmWFjbsDmfUubVoWDx+0zS
+X-Gm-Gg: AYBFou2AWAQLJWOR/qvugqtllaP7W11xbLsUZAdk700J+EqjTAeMr2K9fi9/gILv/6S
+	E8arrC4sUy9CyBdlnm7x0oOkkV7GINB5kEvee6rW6Gokex0cEC4yb+nrM+R1WOOov4WSCkLLG8E
+	iwRnCqlXIbly56F5311esYT2USUXufAlCPMpN9zI1ogZgvOELHUPGqN0IK3rJxqgFNwuWx4K3HL
+	4y2U5I/i55BM/SSLQWs5pBZqtL5SJo7OZsDkN6BjeWrM8tBNQMzS8p9IUgji6SDMyAY1OHvOkSj
+	LW9ncOQ6qF2gmz12TZdAmxKzOiWGioAQTl+G7MxdSgbWC06p1mw1JMKR41AqVLDD9ypFmJPPSsY
+	mX5OvhNNOE+w2NeO9UHqToJBJXNKepDuGlTspIuHZFsWfvJ6c2yZpWRIJ7xd+OfWlETR3h9MkwU
+	vbJ+5sqwQykU9M3Bz3ffBADYiyUwjqIUPjtY5ZlxJl7kGuTJETwb3hQUzCGQ+CjTtACA==
+X-Received: by 2002:a05:600c:8b5b:b0:49c:fc6c:be1b with SMTP id 5b1f17b1804b1-49e619d5301mr23891785e9.33.1789097631608;
+        Thu, 10 Sep 2026 20:33:51 -0700 (PDT)
+Received: from infinity ([2001:b07:5d26:7a6a:365a:60ff:fe0d:cfc6])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-49e60ac42b9sm38935095e9.6.2026.09.10.20.33.50
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 10 Sep 2026 20:33:50 -0700 (PDT)
+From: koraynilay <koray.fra@gmail.com>
+To: David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>,
+	Qu Wenruo <wqu@suse.com>,
+	Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+	linux-btrfs@vger.kernel.org,
+	koraynilay <koray.fra@gmail.com>
+Subject: [PATCH v6 0/6] btrfs: add per-inode compression levels in xattrs
+Date: Fri, 11 Sep 2026 05:33:30 +0200
+Message-ID: <20260911033336.957102-1-koray.fra@gmail.com>
 X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -62,183 +74,127 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: 0.20
-X-Spam-Level: 
-X-Spamd-Result: default: False [0.20 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	SEM_URIBL_FRESH15(3.00)[args.name:url];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.993];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,args.name:url,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
 
-This option allows end users to force update a device path, so that all
-responsibility to maintain a sane device path is pushed to end users.
+Add per-inode compression levels using
+btrfs property set /path/to/file compression "algo:level", using the
+same syntax as the compress mount option.
+If set on folders, all new children will inherit the setting, while
+already existing children will be unaffected.
 
-This is to co-operate with the kernel patch "btrfs: introduce a new ioctl
-to force updating the device name".
+This patch series also fixes a small bug: before, when setting
+btrfs.compression, it would keep the mount option level, even if the
+algo was different (!!), so with e.g. compress=zstd:15 and
+btrfs.compression=zlib the data gets compressed at zlib:9 (because it
+would still get clamped at the right range).
+After this patch series, if the user doesn't specify a level (e.g.
+"zstd") btrfs inherits the level from the mount option, while if instead
+the user specifies a level it will use that (e.g. "zstd:0" would use the
+default for the algorithm, and "zstd:10" would of course use level 10).
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- Documentation/btrfs-device.rst | 12 ++++++++++
- cmds/device.c                  | 42 ++++++++++++++++++++++++++++++++--
- kernel-shared/uapi/btrfs.h     |  2 ++
- 3 files changed, 54 insertions(+), 2 deletions(-)
+I also want to thank Zygo for helping me by explaining stuff and for
+noticing this bug.
 
-diff --git a/Documentation/btrfs-device.rst b/Documentation/btrfs-device.rst
-index 8ade55c6dc51..e04ca8539b23 100644
---- a/Documentation/btrfs-device.rst
-+++ b/Documentation/btrfs-device.rst
-@@ -123,6 +123,18 @@ scan [options] [<device> [<device>...]]
-         -u|--forget
-                 Unregister a given device or all stale devices if no path is given, the device
-                 must be unmounted otherwise it's an error.
-+	-r|--rename
-+		Force a device name update for a device. Btrfs internally saves the device
-+		name at mount/scan time, and won't update them unless the underlying device
-+		numer changes.
-+
-+		This can lead to some weird device path and not all user space tools are
-+		using device numbers to locate a device.
-+
-+		This option can be utilized to force a device name update to replace
-+		those weird paths.
-+
-+		This options must has dedicated device path(s) passed in.
- 
- stats [options] <path>|<device>|<file>
-         Read and print the device IO error statistics for all devices of the given
-diff --git a/cmds/device.c b/cmds/device.c
-index 8d33569816f4..db90b91229bb 100644
---- a/cmds/device.c
-+++ b/cmds/device.c
-@@ -403,6 +403,26 @@ static int btrfs_forget_devices(const char *path)
- 	return ret;
- }
- 
-+static int btrfs_rename_device(const char *path)
-+{
-+	struct btrfs_ioctl_vol_args args;
-+	int ret;
-+	int fd;
-+
-+	fd = open("/dev/btrfs-control", O_RDWR);
-+	if (fd < 0)
-+		return -errno;
-+
-+	memset(&args, 0, sizeof(args));
-+	if (path)
-+		strncpy_null(args.name, path, sizeof(args.name));
-+	ret = ioctl(fd, BTRFS_IOC_RENAME_DEV, &args);
-+	if (ret)
-+		ret = -errno;
-+	close(fd);
-+	return ret;
-+}
-+
- static const char * const cmd_device_scan_usage[] = {
- 	"btrfs device scan [-d|--all-devices] <device> [<device>...]\n"
- 	"btrfs device scan -u|--forget [<device>...]",
-@@ -417,6 +437,7 @@ static const char * const cmd_device_scan_usage[] = {
- 	"",
- 	OPTLINE("-d, --all-devices", "enumerate and register all devices, use as a fallback if blkid is not available"),
- 	OPTLINE("-u, --forget [<device>...]", "unregister a given device or all stale devices if no path"),
-+	OPTLINE("-r, --rename <device>...", "update the device path for a mounted btrfs device"),
- 	HELPINFO_INSERT_GLOBALS,
- 	HELPINFO_INSERT_VERBOSE,
- 	HELPINFO_INSERT_QUIET,
-@@ -428,7 +449,8 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 	int i;
- 	int devstart;
- 	bool all = false;
--	bool forget = 0;
-+	bool forget = false;
-+	bool rename = false;
- 	int ret = 0;
- 
- 	optind = 0;
-@@ -437,10 +459,11 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 		static const struct option long_options[] = {
- 			{ "all-devices", no_argument, NULL, 'd'},
- 			{ "forget", no_argument, NULL, 'u'},
-+			{ "rename", no_argument, NULL, 'r'},
- 			{ NULL, 0, NULL, 0}
- 		};
- 
--		c = getopt_long(argc, argv, "du", long_options, NULL);
-+		c = getopt_long(argc, argv, "dur", long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
-@@ -450,6 +473,9 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 		case 'u':
- 			forget = true;
- 			break;
-+		case 'r':
-+			rename = true;
-+			break;
- 		default:
- 			usage_unknown_option(cmd, argv);
- 		}
-@@ -458,11 +484,16 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 
- 	if (all && forget)
- 		usage(cmd, 1);
-+	if (all && rename)
-+		usage(cmd, 1);
- 
- 	if (all && check_argc_max(argc - optind, 1))
- 		usage(cmd, 1);
- 
- 	if (all || argc - optind == 0) {
-+		if (rename)
-+			usage(cmd, 1);
-+
- 		if (forget) {
- 			ret = btrfs_forget_devices(NULL);
- 			if (ret < 0) {
-@@ -501,6 +532,13 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 				errno = -ret;
- 				error("cannot unregister device '%s': %m", path);
- 			}
-+		} else if (rename) {
-+			ret = btrfs_rename_device(path);
-+			if (ret < 0) {
-+				errno = -ret;
-+				error("failed to update the device path for '%s': %m",
-+				      path);
-+			}
- 		} else {
- 			pr_default("Scanning for btrfs filesystems on '%s'\n", path);
- 			if (btrfs_register_one_device(path) != 0) {
-diff --git a/kernel-shared/uapi/btrfs.h b/kernel-shared/uapi/btrfs.h
-index 7144f3ba07b9..036e44ceeb4c 100644
---- a/kernel-shared/uapi/btrfs.h
-+++ b/kernel-shared/uapi/btrfs.h
-@@ -1306,6 +1306,8 @@ enum btrfs_err_code {
- #define BTRFS_IOC_QUOTA_RESCAN_STATUS _IOR(BTRFS_IOCTL_MAGIC, 45, \
- 			       struct btrfs_ioctl_quota_rescan_args)
- #define BTRFS_IOC_QUOTA_RESCAN_WAIT _IO(BTRFS_IOCTL_MAGIC, 46)
-+#define BTRFS_IOC_RENAME_DEV _IOR(BTRFS_IOCTL_MAGIC, 47, \
-+                                  struct btrfs_ioctl_vol_args)
- #ifndef FS_IOC_GETFSLABEL
- #define BTRFS_IOC_GET_FSLABEL _IOR(BTRFS_IOCTL_MAGIC, 49, \
- 				   char[BTRFS_LABEL_SIZE])
+Now, there is the question of having a fix for the bug as a separate
+patch to be backported or not, and there are 3 possibilities for that
+(original email listing them[1]):
+
+- Option 1:
+  don't have a specific patch to be backported, keep the current
+  behaviour on older kernels.
+
+  This is the option I personally prefer[2].
+  
+  Pros:
+  * documentation[3] can be made clear about this behaviour, telling users
+    that kernels < 7.X will "support" cross-algo level specification,
+    while >= 7.X won't and will only inherit the level if the algorithm is
+    the same
+  * won't break any existing use-case
+  
+  Cons:
+  * new users on older kernels will encounter this bug
+
+- Option 2:
+  have a specific patch to be backported that keeps the current behaviour,
+  but only if the compress= algo is the same as the btrfs.compression one,
+  if they aren't, use the default for the btrfs.compression algo (e.g.
+  compress=zstd:15 and btrfs.compression=zlib would compress at zlib:3
+  instead of clamp(zlib, 15) = 9).
+  
+  Pros:
+  * fixes the cross-algo bug without breaking setups that rely on level
+    inheritance in a way that makes sense
+  
+  Cons:
+  * documentation has to mention that the behaviour might be the bugged
+    one or this one, depending on if the kernel has this bugfix patch
+  * may break some weird use-cases, but no one should really expect the
+    level to be inherited if the algorithm is different
+  
+- Option 3:
+  have a specific patch to be backported that fixes the behaviour
+  entirely, using the default level in all btrfs.compression cases, since
+  levels wouldn't be supported.
+  Equivalent of setting algo:0 after this patch series gets applied.
+  
+  Pros:
+  * very simple code fix, 2 lines of compress_level = 0, while option 2
+    would need an additional if to check the compress type against the
+    fs_info one
+  
+  Cons:
+  * documentation has to mention that the behaviour might be the bugged
+    one or this one, depending on if the kernel has this bugfix patch
+  * breaks all use-cases relying on level inheritance from the mount
+    option to the xattr
+
+Changes in v4:
+* remove the single patch for the bug, as per [2]
+* reduce code duplication by putting the level parsing logic after the
+  algorithm type logic, using a level_pos variable to indicate the
+  position of the ':' instead of having the same exact code for each
+  algo.
+* add btrfs_compress_typelevel2str() helper
+* fix btrfs.compression not being preserved when *any* chattr operation
+  gets executed
+
+Changes in v5:
+* this is exactly the same patch series as v4, but with merge conflicts
+  caused by Commit e8a0095c7df170 ("btrfs: preserve the compression
+  property when other inode flags change") fixed
+
+Changes in v6:
+* switch from kmemdup_nul() to a stack-based buffer to avoid a possible
+  deadlock spotted by sashiko[4], and because it's cleaner, so also move
+  the BTRFS_COMPRESS_PROP_MAX_LEN definition to patch 2/6 instead of
+  later in the series
+
+[1]: https://lore.kernel.org/linux-btrfs/DKJZQAFIRW7H.3KE8DKWO5E3TV@gmail.com
+[2]: https://lore.kernel.org/linux-btrfs/DKLRY9Q5SEI3.VUDASVYPW9MY@gmail.com
+[3]: https://github.com/kdave/btrfs-progs/pull/1152
+[4]: https://sashiko.dev/#/patchset/20260907200518.428277-1-koray.fra%40gmail.com?part=3
+
+koraynilay (6):
+  btrfs: export btrfs_match_compress_type(), move it to compression.h
+  btrfs: also validate compression levels in
+    btrfs_compress_is_valid_type()
+  btrfs: add per-inode compression levels in xattrs
+  btrfs: support inheritance for per-inode compression levels
+  btrfs: add btrfs_compress_typelevel2str() helper
+  btrfs: preserve btrfs.compression when setting inode flags
+
+ fs/btrfs/btrfs_inode.h |  1 +
+ fs/btrfs/compression.c | 55 ++++++++++++++++++++++++++++++++++---
+ fs/btrfs/compression.h |  5 +++-
+ fs/btrfs/inode.c       | 10 +++++++
+ fs/btrfs/ioctl.c       | 27 ++++++++++---------
+ fs/btrfs/props.c       | 61 ++++++++++++++++++++++++++++++------------
+ fs/btrfs/props.h       |  9 +++++++
+ fs/btrfs/super.c       |  8 ------
+ 8 files changed, 134 insertions(+), 42 deletions(-)
+
+
+base-commit: 101ce2445ccd1561a7c3589ff022982a1e4821b8
 -- 
 2.55.0
 

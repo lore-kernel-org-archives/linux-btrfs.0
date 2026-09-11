@@ -1,147 +1,104 @@
 Received: from fhigh-b4-smtp.messagingengine.com (fhigh-b4-smtp.messagingengine.com [202.12.124.155])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DDEB41A76BB
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 00:25:29 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12EF649E130
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 00:25:54 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.155
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789086331; cv=none; b=IbCGCnVkIg22NCEaTw4vqYV5dsk1x0jPBscuax9zEUIFscyXqvTQwOqJOlPor8h0vaYPlWQm9TuDoYpJpNI92vk7b4J6a0LbwSUu2bCntHOnyj87oJsCTou6tvposTSOohESuFQzWRu1pd3aGu6mO0oUyTQRAKm1+LRb8mP3KnY=
+	t=1789086356; cv=none; b=V4DT5btn41HKJbqJdud3/sZW4MHTKC3WrqPcJdSMULAzSn2pFcL7FSK/uMCzkRsvzBbl8IRGKvPRmMd5wVy8kg9a2sDs0ryi8SJXE1JpUh56O98mL5kDEk9YWUzktH/P9vVXxYeDsxbzTA/n4Uf2cSeo0+arTkEPvhx6+o8hr4Q=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789086331; c=relaxed/simple;
-	bh=CzDpYsm9HEoBvzQqb50oTw4XjINkwZaIKvmkCJnjOkI=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=mfrH0iwK73P1oitASwZt4s8wxopYpiQxbetro/7su9gfIQ7yHkMj02bUrWDVoh/M9qAgQXq1IcD72yowC3+6UthKjhTGkWmQYDhfby5EO6JNza1syffSP5rjhDkC2AsRtHDQAvmDlIesJZqSOCwINQe13k3LNkjqIETArVHRf/E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=NX2B8uXU; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=arSVOFdD; arc=none smtp.client-ip=202.12.124.155
+	s=arc-20240116; t=1789086356; c=relaxed/simple;
+	bh=pxa+1dCMOhVFKM/pzrXqFsV1GsytY7F+tj4JASg4HCY=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=bdBY/2ByNapPhcNeWZ66vjGWzYc0OPvs9nER2mw3lWdMIxCDzFC5PyIWFIdZkGM+D/HpPYOsW40dMMXLaImS1JPTGXCtW885aL5T/Qa3ZBWRO/uvCTC+e4cCFD32CirUAQkuTIX1tUmK4Gag6mwCx11BgCHDd7xSjEqJYPH0UVk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=oG5U26ki; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=SsH+1eoJ; arc=none smtp.client-ip=202.12.124.155
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="NX2B8uXU";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="arSVOFdD"
-Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 1BA507A0067;
-	Thu, 10 Sep 2026 20:25:29 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-03.internal (MEProxy); Thu, 10 Sep 2026 20:25:29 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-transfer-encoding:content-type:content-type:date:date
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm2; t=1789086328;
-	 x=1789172728; bh=MStD7nD+oVQyPy1wilBDSuSELRqeEopPaycUdqqWZgU=; b=
-	NX2B8uXUtBZtNDjwHY1wYtvabp2bu3jQBqCZnJkrc3CcG8zzm6X900LA6km8vtkz
-	kNI3XDEmLzCbTcNGgqS5RvzCdd0IXJbSRjO1yZQmqj4i4Msh1+6HR/0yYb4ayVKR
-	9HZvPgyh6/NQjPZlyboGD1JmszTKlG9/CpPM8JsIWaC/TYKPHOY1tbmxdqmyH5dw
-	AZ4pN7S1jaJpgH+D239BSR0Vg+LIUhxmE8jyai+QncM6leUVRFfuaW1Un2/7XaIr
-	G4wTysF7hOAXWFvyRQAdAIAne5MYPgkAIgWhqZFeVaGsOvCTxhTeWTwVKzBJX9wp
-	v/ZGKfh1bfjkwFpmSVvZEA==
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="oG5U26ki";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="SsH+1eoJ"
+Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
+	by mailfhigh.stl.internal (Postfix) with ESMTP id 4B6167A0100;
+	Thu, 10 Sep 2026 20:25:54 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-02.internal (MEProxy); Thu, 10 Sep 2026 20:25:54 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
+	:content-transfer-encoding:content-type:date:date:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to; s=fm2; t=1789086354; x=1789172754; bh=8ZW4l2UYV1i3CEj41Gpj9
+	1Td1abd3HVRiNIRl9ol9J0=; b=oG5U26kiEHAfIoO5jfMCXJWyevXQli/wYshzb
+	ADyF048yxU5aHD1+CP5ah05md+BCEyVyuju3Ei4Se27S4yyhip+d6WksypVRZykH
+	WhUCa2/R2fvr6ucuHzQLeomS/SPh6czuFzz5Wnm2SsjRAQRYfFv7ZIxuHuJmjBSr
+	jIiV68BN7SOq5LlW3XOmBaxCvZZIuEL6I7LuxV95dBA4sUFXEFfq3E4gww3g8V3Y
+	YUQWSlvy0PbC8VF6bn3ZNd2zHEK+0Z6O2h1ftfRbzLSp59DcJ1vXORqjy3rziZ/3
+	4jXXm64eQm+twsEKqaePu1vmkBq/KQv0kZMI9VP52yL5WHeNQ==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1789086328; x=
-	1789172728; bh=MStD7nD+oVQyPy1wilBDSuSELRqeEopPaycUdqqWZgU=; b=a
-	rSVOFdD4Y5nlPBwceZ+ZTM9OjjwtBMOoBfEZ6qJKdjvN02DFKxFwmKjdnMqz6bUc
-	aC7yuPrg8jQiG94BZxVZuoch9px2JryP+nTbh2YnfirtYMuJjiRobaZg28hYdcio
-	pKbYdGPJ6e3BrXzV0Pp7obcYCBah4Y3haNYlyPKy3zwVIWqckkBCPn5jeZt81xtr
-	NjcRP0ovB17PQzAWC/jLTVqt8dYTTQbrPtrLRVnl2W43GyygcVmFMWCekWMMp2HQ
-	KBfoMRA2M2rADc7wdrB2UhxuXpgJV7TTra2SH7DgHgXouYCGOS8ivb/JmynefkGq
-	QLS2qmlCmZotL1aVWyUKQ==
-X-ME-Sender: <xms:eEqjav50sVn3LHEPn3fjI8czI01IYbnWjnchguvcKn3WvhJ75E5ucw>
-    <xme:eEqjasX7pG_f96n0rFUGRj7GP_NjhDMgFuWMoeNqOBOUn91kdXHh09wSd28pF51GQ
-    70eEV7VgfB7LbQ-A9x7Pi51UVKUpR4kIi6JFjZ3qYtXnIWixWWjSL1q>
-X-ME-Received: <xmr:eEqjaj05jOdhiW-TkPKYXL4Zo9c04lO8g1xrfK3myHh9CgdrXiZzC8s>
-X-ME-Proxy-Cause: dmFkZTED9KAyJgFZegozdrwZtWFCAAXrhxh5DrX87CweISz0meMR58SrthUFeR0KcfqgS+
-    Rr5ZPxVgE9Fcx33dAn5gcTg+Fj1clJyWcqiVmA0iUZ1Wnm8j2hOVDA/YldgtWiEU4RWU5R
-    nDj1xS50Oaeujcdn+HLAnnqpHqoCF+j+HjMxHDgoyKKbPiVQ9ffBrB6Cbh6ypK5oQl/6XS
-    /xOJqJrlZATjxV+DyYsWTyszOCny5w53cOKrHu0+tgKlUxKlHsmrlU+ygejOU+DpRNiesR
-    pKA4O1TQ0lUNa4Ym93CxgDTgC8ZkqPMGA82iRVRiGw+jLsbOmftt+BUs8bryd2fjwIAyt/
-    22XyzI2sydKwLUMMCVrgJVBjpcfYRKSAZOrW13l2+GjnsYlJXc7NpIAoHV0//RtnujJYre
-    UxD35iuGBmThgh1llU5y3MMvlUA3I5JOjAVFU2SYVVOhPQ0xMpOigA3IiAht5ItsD+mUV7
-    ZL/BP/NuqjCdPqBkE7xVldWV5BkldTW+9tKiJR4mFQUdZ7yG55uZzJ//dFEpMyVQ6qLSRH
-    fmmGLzLIX78onP2zXwmw523MV8gwn+C2izBZPXfJyZ5+eUXS/vXA8VxEI8SD0GZbr6N0W+
-    TqBcBDXmOxz+klWgyIXDLVBgQ7YgvCPFVVaP8vFRFH2neQQRdOtRkdmRrZTQ
-X-ME-Proxy: <xmx:eEqjap2wJyVPp81_GnVqifw-heA9DaHCLLndH6dZnpeafWwcGnWWFw>
-    <xmx:eEqjam-8sNuMTGRopl-isY77IfRFjcQpm6r8VQrOc3bfuQZXstgAjQ>
-    <xmx:eEqjam12cVbPT6kIepYBg_QxaWgbSVP6IyhhPvL12LHuSjzNdLRs-A>
-    <xmx:eEqjaj9kBN8CAkrqUcAjJxFy6XMOWqXMozp2UeUqasYmZvak16w2YQ>
-    <xmx:eEqjai0Rd-p9s0T858YzteZPjksFMyDDAjsZ9dUWHgeL1uQGq-y5i0Ju>
+	messagingengine.com; h=cc:content-transfer-encoding:content-type
+	:date:date:feedback-id:feedback-id:from:from:in-reply-to
+	:message-id:mime-version:reply-to:subject:subject:to:to
+	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
+	1789086354; x=1789172754; bh=8ZW4l2UYV1i3CEj41Gpj91Td1abd3HVRiNI
+	Rl9ol9J0=; b=SsH+1eoJTVTdGYdmG0FhpiowgP+7aqMVPZIdq2BxQrO6pXkirM9
+	SPHc0dmLik2CKVow/3F9HIOuYp39H5AtdVUSsG6AFuEsvNU6npa2cTS4eRlMtezr
+	nY62XTt5L37o5l/DybhsFMVQ3gsuhfmAUZBo3lJ0GIbvtrL+utXCABm4k4P3i9A6
+	hCLfIpKKEKCHVjhIEXfmYxoNXsb2ihnKgJYXBYeH1MK7tOtqo56jn8pDiRvLfFY/
+	7Zdf6qBTEXKNdxhSPybvPxwlItuHUjw3FIsaB+pr2/vSqh+pJt9n6QuaVRbSOMEO
+	0c0gbT6UqXNebWLFpwMlHLIpVhviTBC8TjQ==
+X-ME-Sender: <xms:kkqjaqsnUE9FX68XCUIPu74csoJ-ajrlarfrw8w5T72iYKK6H8xS7Q>
+    <xme:kkqjalcl_HykSyfsy0dFKuu9suGzOSvawmm-kN2sPhcb-ydFOQ4ByUV6Bqo9n0c9m
+    3QT-Z6Yk2CSwHSzjhC9pq9fjEEw0IajKgIIyKR3FqoHXPxEMCmRtIzL>
+X-ME-Received: <xmr:kkqjajYGZdPw48en7eixHD_Gra1djK0ljB_f4QNJRpCOsuaOD-973lI>
+X-ME-Proxy-Cause: dmFkZTFeG/puS1oLuoawzfAf4OaIslt73zvfq3nHktGCbklGk/OU6pCSfcHd8HIWzhX0h9
+    K9syaMHWV2jWkzdmpvjkYC+XkQEamd8OS9wS1Dcwt5EIUgPEUgzB4g/KFAnx80p8T0VSP/
+    LhSWH9PMTGUklXua5yu3rEkVajDPVA/PuNdgQpWpG5+Tr0J0QZk3QHsNzxxMmsJTkT3zFa
+    wtb211oP/845cZ3Ur9/G1n5HqyKmpJpf5Hm0l7ebvkN8qMFu0dDjdht9yRvN3/eStXwd87
+    1acIyJ4v/c76eSyo8gq/s2lEEMXOukotDon7AW6VLMTqNMFQYKbY8eJTQY11JuGTYSD9SV
+    SMYBkq+hyYfu26wbITolcYq9taKEG7QL2HWl1TlNoHEDv5F+TnfGnrnzjBrSYratDk7CTP
+    7N+avKi/ZKB+bR2px3rvfZBiP0gUE+Xl4mUSCMijkAbp6xVh/huyJrFqvqhrZnm3e1VwKk
+    yuj/wAx/mUSYyIzeehgmT6tatHM3MuR/0cJMOGP4+ZlbE5dya0yjxXX4n2Dom3Z3lpST1S
+    /70zR1qHKdboG4HgYhwzlQYslGfdyeG058JvAcJmiiaAHUS7V3vRObd76eXbw2iGjXInbZ
+    InHaAS8CbsueJbfrWnTautP3Am12KnopOHsW/F9flG+hjGbwLpXYE6sJVu7w
+X-ME-Proxy: <xmx:kkqjagVyOnt1AzklqYXGSbNqjUVQ-R1xYcN3P4lzIa8wVyAT8IAf-Q>
+    <xmx:kkqjatiHtVZkxR2Ea0GJTfW_GTzZuprpvE8HtYLNDm-xenVkAtgDEA>
+    <xmx:kkqjamXSDiwymXhWWtSwhS750pUCte-Q27HJnwggm2LnN4giHg5T1A>
+    <xmx:kkqjasMFB3pMRq-Ts9J1ptW9NEj3qzXKXidPH8l4LKWHNHrGMGOd2w>
+    <xmx:kkqjags_MRNbCri1zILwJFaW2ps7J24XRe9Agji3HvVBLax1pNac8HfY>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 10 Sep 2026 20:25:28 -0400 (EDT)
-Date: Thu, 10 Sep 2026 17:25:53 -0700
+ 10 Sep 2026 20:25:53 -0400 (EDT)
 From: Boris Burkov <boris@bur.io>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH] btrfs: downgrade the reflink source inode lock
-Message-ID: <20260911002553.GA1910533@zen.localdomain>
-References: <65fa79581e1d29d6d6fabae71d23e741bff0ddf9.1788974902.git.boris@bur.io>
- <CAL3q7H5hG8MKbf4O5LhUJxg38BToPuOY69gjfc2tQdeUM5PYjA@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Subject: [PATCH v2 0/3] reduce reflink src inode lock contention
+Date: Thu, 10 Sep 2026 17:26:16 -0700
+Message-ID: <cover.1789085863.git.boris@bur.io>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAL3q7H5hG8MKbf4O5LhUJxg38BToPuOY69gjfc2tQdeUM5PYjA@mail.gmail.com>
 
-On Thu, Sep 10, 2026 at 03:31:57PM +0100, Filipe Manana wrote:
-> On Wed, Sep 9, 2026 at 8:54 PM Boris Burkov <boris@bur.io> wrote:
-> >
-> > When doing a reflink, we are not writing to the src inode or modifying
-> > it in any way, so it is counter-intuitive to have to lock it
-> > exclusively. This has the cost of blocking other shared lock users of
-> > the src file for the duration of all the writeback and reflinking.
-> >
-> > One sort of counter-intuitive exception is that dio writes that come in
-> > under EOF try to take inode->i_rwsem shared, which would result in
-> > messed up views of the extents in the reflinked file. Therefore, add
-> > "being used as a reflink src" as another inode flag exception for the
-> > dio write shared tests that already exist to check for other dangerous
-> > conditions. In order to ensure that this flag is visible to the dio
-> > writer, reflink must first take i_rwsem exclusive, then set the flag,
-> > then downgrade to shared.
-> >
-> > I tested this with a concurrent reader on a 4G dirty source file
-> > concurrent with a reflink and saw the read operation go from a ~1s
-> > latency to milliseconds.
-> 
-> You mean a direct IO read operation happening in parallel with a
-> reflink using the same file as a source right?
-> And reflinking the entire file?
-> 
-> Because we only take the VFS lock (rwsem in struct inode) for direct IO reads.
-> 
-> However during reads (both direct IO and buffered) we always lock the
-> extent range in the inode's extent io tree, and the reflink also locks
-> the range.
+We currently take the src and dst inode i_rwsem exclusive for the
+entirety of a reflink which includes writing back all of both files and
+walking all the src extents and duplicating them to dst. This results in
+contention on those locks which I think can be reduced.
 
-I believe that as of your patch
-5d6f0e9890ed ("btrfs: stop locking the source extent range during reflink")
-we don't lock the src extent range, so dio reads of the src should not
-contend with reflink on that. I only see btrfs_clone_files() locking
-the dst inode range by inspection as well. Am I missing something else?
+The basic strategy is:
+1. try to do obvious easy src writeback outside the lock.
+2. downgrade the src lock to shared where it is safe.
 
-> So taking the rwsem in shared mode won't help much unless we are not
-> reflinking the whole file and direct IO reads happen on a different
-> range.
-> I think that should be explicit in the change log.
-> 
-> 
-> >
-> > Note: if a writer arrives mid-clone it queues on the rwsem and later
-> > readers will block behind it due to the rwsem fairness implementation.
-> > Therefore this change does not rule out all possible reader blocking.
-> 
-> There is also an issue pointed out by sashiko that seems valid to me:
-> 
-> https://sashiko.dev/#/patchset/65fa79581e1d29d6d6fabae71d23e741bff0ddf9.1788974902.git.boris%40bur.io
-> 
-> As every direct IO read and write increment i_dio_count with a call to
-> inode_dio_begin() in iomap.
-> 
-> Thanks.
-> 
+Boris Burkov (3):
+  btrfs: pre-flush reflink source before taking inode locks
+  btrfs: skip unlocked reflink source flush if the inode has writers
+  btrfs: downgrade the reflink source inode lock for tree walking
+
+ fs/btrfs/btrfs_inode.h |  6 ++++
+ fs/btrfs/direct-io.c   |  7 ++++
+ fs/btrfs/reflink.c     | 72 ++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 83 insertions(+), 2 deletions(-)
+
+-- 
+2.55.0
 

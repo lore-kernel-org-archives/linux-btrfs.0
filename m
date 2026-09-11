@@ -1,265 +1,321 @@
-Received: from fout-b1-smtp.messagingengine.com (fout-b1-smtp.messagingengine.com [202.12.124.144])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej1-f44.google.com (mail-ej1-f44.google.com [209.85.218.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AEC094BEE26
-	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 21:51:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.144
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C677A38A702
+	for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 23:42:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789163496; cv=none; b=crTYCiVFUgIiJbv9TZTqlbAhdGjFw5/L0rKdwANDwlQXLhS4drXCY9uAU1T3e+bZhQgW6jy8UR6n3SJkGGwIniNqxZuj1HhszIkndxohRRgNehBSRLv98ft67g7gJHxLBxCTztxqp2Ua3po+PxX/0BiZKxoLSuM2PJkVHaZR5Zg=
+	t=1789170154; cv=none; b=XHbs6NeR4EMRH0BLez6GBlst5J2npMelVXgy9876LBF3m89HJU6NUtVleBDjI/XEj+2fr4iWlcNAK29x0QAIiFfBffrzFbth0ik3cpvrUwqbHgAbtzqgZMO3hn+XZ5eT2+NaORyq98BXp3oCprZ7msdbhCyOWceQLb6YMaz6vYY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789163496; c=relaxed/simple;
-	bh=3zvm05W88IJ+vbu85OW+C71C2kh1HvmoVHflQ+cfSF0=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ZBn5XNLMhZPufSc3w2HADKL1fMN9az+ctDJAh3gAitB0Eqyk3J5DWu9ioQIdqsEaQbDFR4RIq1W3Ipu3v3DFf+1oqSn6Cjz6ObAvgnDaPaP3qaep4qNTzxFeQT/FUbibaSqZi2Wokl+rFHeEA1E651iHh1ECjsnVGQTBftgZuuw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=L+lHjL0u; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=wy89Tj/U; arc=none smtp.client-ip=202.12.124.144
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1789170154; c=relaxed/simple;
+	bh=6NQ0oyWzgQ+Y8mp8hdn/95wATMDMQT81Vzu7o8ij3Ao=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=RFVXtlQBGb2/W/943+F4XSVzSv4mHuNINUUO8q6SlezY4n4/11J5l57BD5s0rxbFigjHE5FeewDAFkqlC/2kv31oJzW0V/04ptTtQnXBH8lcY2TDV9VySwR4i5m7rhGobCPb6RRKc82nZgMfdaIqtTqA90Salw5NtEGkPLsvhmU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=PjNP1F4l; arc=none smtp.client-ip=209.85.218.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="L+lHjL0u";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="wy89Tj/U"
-Received: from phl-compute-06.internal (phl-compute-06.internal [10.202.2.46])
-	by mailfout.stl.internal (Postfix) with ESMTP id DF3721D00085;
-	Fri, 11 Sep 2026 17:51:33 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-06.internal (MEProxy); Fri, 11 Sep 2026 17:51:34 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-transfer-encoding:content-type:content-type:date:date
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm2; t=1789163493;
-	 x=1789249893; bh=YQ8ZKGGG1yPGDtBYMLqqinpj48h0lYjXTB5I5Dxz7i4=; b=
-	L+lHjL0uqgYJwjenAq5Wa8Ufe65kY0YqwgfON95F8XoPcAskvsbfBB+zxm6ybWeB
-	L2R5p5SR5sqQQpUeVnkvb1uW+zL5TDI4/PkXh3qMngp0rvqWLlKxVI9xLHRsrp3/
-	rhV22HMYvkfP3k0N70HBYxahtzU7Q2/j4JSRQmAPyNU5atVRMtr6GjVc2pZOxGfd
-	P2SzsowGsJgfTS+bM24lse8nTos1VTtLPc8zPYQ7Q3CofYtQwU7OkksCUqOs36Mu
-	IXxIs8PTo5pGzz8E2zz6wj9ToyJyoXK1wdy2z9rn7D0ixVa1bqA4oyQDx0+e/pjR
-	2sguVY1sFd769M76kz2Eng==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1789163493; x=
-	1789249893; bh=YQ8ZKGGG1yPGDtBYMLqqinpj48h0lYjXTB5I5Dxz7i4=; b=w
-	y89Tj/UUpWBJli1F4CyVz8HV+riAs92UMnyIKas5si28qGMULXXDMrxTSa4vJs+2
-	EOnvI89xupBWTUxqqD8G7Fb99h9fqlQIt+Xz+y3tMBqDnDelgVvTaRzD7Ij+BTky
-	NlbrLL1VxRwjYc647qBHT/XSifgsBO2ldRreQvaOtqMDGdVH/gYS6P32pTt7gp9f
-	jhkhgnUNWFP12MXS6l5uwiIS3DzDvd07I1v1dctct82VaDY0QOeaPh6qQKqm7eWc
-	dXG/OnI/z/uH862cIob5UhZSbblSYag5pHL+V5PXXhYKJytMbycZ8hq5edMfxh7x
-	5TROjo6EuXEs962l7Cqsg==
-X-ME-Sender: <xms:5XekarSQOPEugRqenb9XOphHcefBrfN_qh99YqncloJ8Fr8RnKl8ZA>
-    <xme:5XekakNM2bb5zt2J3kTB-whxUrAdUKDkh5oDRjb8MJa6MEc1ajdpVGlsVSAcxXL-V
-    9s1k0ddAmg0E86l8cBdIGYWlvVSxjpGxM46XKskOgYdQkPKZ0JqoA>
-X-ME-Received: <xmr:5XekauOyS7HMTs_mYhcjIFbTLBv5_bMmpqCwMG4n8BL9vBGaLWsrtwg>
-X-ME-Proxy-Cause: dmFkZTFsDjOgD3isLubTEDYQ7ep8PxASTaIqV9wfJHeHlh/I+SG4mfWFNZMKPa6FSKNKLf
-    kzlx/iNXFvU8TSWvqMR3a4ovufJ11gA9Q8Wkd8BIdVZDKMV0BaCnqW6iF4aJx8M00tti4f
-    +Z5U9YDrfIgJJ0887OX/zl7LS9atRU03KPpxa0+UV7O0C4czkgNjxL6oJw18QxUXnmPjxJ
-    AO+OjerXXoZauJqKON09jA/8XzLvnLYwwKyE9ak7knhVpiOmHyvNGBojTT8ny7Shx0USpL
-    C49AA4HJx37DjlyEe73XrogqLEitfDTKVNAlIy17YPwUJV7bAr28ntCJSxOw5lNs9zaHkG
-    j1Onh+033ecYayC1TpS4+XDWOYOTA+JjMJsxzzZWN0Oa0B6oQ3x7pn5PS/wIXb0NOejAks
-    dYk0OtPiIiebakcd38Vumfa5/0kWZm3EOftLfbZKEFdb7sNcV5NYsXoXamyRBNb5dtQX5M
-    7uqXGWVdvx50/pwVtv2uDHZk+qfjEiXifU4zyEryxPi2eRDvOk0vSxx8MrWrq1cTJ/jlyO
-    JyLfku89iRQigWx1GOXKo6v9fxO4RSuTqGxKwbvWstw+R+N+pBHQdUBK/TgS9oScQKkmnh
-    gXi3b6x+6uyCzFB3QW3GAZTmFV9OeaL5xpTrKdjvBUdnWto7Vamzsh2037ig
-X-ME-Proxy: <xmx:5XekakugASwpQvHaZeTUQxhltRdd5J2XOMcv-7ztODY_c3zAw9-Dkg>
-    <xmx:5XekaoUdOmwt88LsoNWHoygfQNAjSu2f3ChdTMdhGvqrNetpoXBoXA>
-    <xmx:5XekasuQceLAqNTMdD8mvYL6aqIPqb8CKSbd_Pfrn61ox7IQ5MrXIw>
-    <xmx:5XekakUSaGWxjinnDIQpo0cZnwVuHcGyHSUe5t0fb5px2KEbsRwlpg>
-    <xmx:5XekatteQ3S147ZXBHoYfnKfidMDL4uCKQO95oiJTeEoKgB9MLaDCtxS>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
- 11 Sep 2026 17:51:33 -0400 (EDT)
-Date: Fri, 11 Sep 2026 14:51:53 -0700
-From: Boris Burkov <boris@bur.io>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v2 1/3] btrfs: pre-flush reflink source before taking
- inode locks
-Message-ID: <20260911215153.GA2375744@zen.localdomain>
-References: <cover.1789085863.git.boris@bur.io>
- <4ef5a4ea85bf903e058b0a8c88549e15745729c0.1789085863.git.boris@bur.io>
- <CAL3q7H7_JXnHXZrBGpdK55CQtxiTA6H7KN0yemUirNU6RdNwPA@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="PjNP1F4l"
+Received: by mail-ej1-f44.google.com with SMTP id a640c23a62f3a-c20ce3c118aso183856566b.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2026 16:42:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1789170150; x=1789774950; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=2Ofwz1tSwH1NQdwiq8BEkuuNnYnRc7CDqbFW6Xu+SUs=;
+        b=PjNP1F4ls+iqKH45ZsDYXP7tdtqufkyE3fjX05J8IYoySO0jAndSO7InfLjJ2h8DlF
+         D88Gbr58KJ3f2IDJwM0xKyVfGfIh+ffGcrMI/eEQLiKSZPTmwfoPDz2VW/nF/JAOjrpB
+         B7QQxQZuYuDCqG8HDrXZdq3G39BGYBGJYLa+gGTsNU6xjQOvMKg0qnkizt7vEF19Kk4+
+         36TwM2nR4MPdMltnyu0yEDkRmwd6uQtwRIDsuxO6dvEIpdrTbFjltJ95LU5UXYckh4z3
+         FHCWkiVVUIG1QdANrlnvTuQWapzw4orz1CCxMNcAAK0rbQkQ4CRu4cLr89mcjCG2Bx3w
+         vOyQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1789170150; x=1789774950;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=2Ofwz1tSwH1NQdwiq8BEkuuNnYnRc7CDqbFW6Xu+SUs=;
+        b=OmhPySxnoA/XUgUfmSJVe52EzIvKbs7GtZjW/ctyaO6/btLHrJOozXo9YgzXw+z/b+
+         WbtmWLTY0wK19iC62e2txOrjtEqtjzJfsaV3hwgOnJyDLNvRK0vmucO5a5zjEeHbAk6g
+         f0oQXCUEr93XuLQgFB+EfrGXI3kFgnTu9XJ9ZwaAniRYwYjjYpfmxc1kX681zqmgBIAK
+         M6b8H2N0fhDeJZmvjr/ZdqB4oDb6S7VsVPEmI76+cd9yv26UIWtwa36UXO8cIS8hKiEV
+         e1awobYFF0VCWNHcL2/T8Z/yIIvXfNtT7xE7M/l2ZFIPdsMKOeMtrkdVI29f/jR3xdC7
+         y68Q==
+X-Forwarded-Encrypted: i=1; AKwUvByDiwdTW0UsNkWBUVXLuNhG7YYmIj742yJ0Ra0HmCqaEA0b0rd9hb8wQn0tPFRDWV2Ms3zNr7LFB8Ry/A==@vger.kernel.org
+X-Gm-Message-State: AFuF++llj9etk/CpKohCW2rC01TJTSbkYECdvtg3QyBTEo3SFgZ80EBe
+	2wv3CNuCEtfXEldaUfTrklgpBNFnK99NGuITc66VsNU7PpnvgojiJCgkNKTTl36YzXiCsx0HHe8
+	IKUXdpujy8w==
+X-Gm-Gg: AYBFou177fkb8+M/xZiDonovSpx2EOnQOSMsQQCppYGTMLtENLHVXNJnmw0dQmmNspv
+	bAozxsfbKmR/Ir1IGRcq+XvdtvdgZCPVM+nHqmvbwopYrSbH0h4t8xY6g1PcqWJEdRxmk6YLF+t
+	eLL08Gv6sszvnILYG1WD+/c49eJyKsFMgPjcRkT9mroSmczH/xtmx7k9pnTrn2zgCq6e4h35Jag
+	L5yQkz5FLjplKU1rIFe58tquMSvcTRcpOrMxflvwXfsNnfhR+TRWtszV5VoRySWRdG23DS3Jv74
+	ixAUoacnKP7upiRHI5rOLpacBuMFZDlGcw/AAmfgxf2cDyVCiukiTEFDDwoXbVGgcFwb6Md3boP
+	ZubAx67Vwuw7WyUGkQfC2QDJ+yyXB0YsJQWHtJkt0IOnfOvVV2eRNDpfau1Uitew//nCxZhMV2a
+	1e4+Asd9lMwAMqM79vkvzaU+Am/ZAVA6kuDelzt9wPYRvXtQj78Cqi4sioGLdaB8o=
+X-Received: by 2002:a17:907:7ba9:b0:c29:42ad:acd0 with SMTP id a640c23a62f3a-c2945f702cfmr609056866b.30.1789170149804;
+        Fri, 11 Sep 2026 16:42:29 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2dd2cffb5c5sm17053395ad.80.2026.09.11.16.42.23
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 11 Sep 2026 16:42:28 -0700 (PDT)
+Message-ID: <8cf9fc40-3316-44c0-bf8e-bd8698a50a33@suse.com>
+Date: Sat, 12 Sep 2026 09:12:20 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+User-Agent: Mozilla Thunderbird
+Subject: Re: commit 108cc873398932af589c295f78c348513b8d70d9 breaks
+ update-grub on btrfs root filesystem
+To: Alex Romosan <aromosan@gmail.com>, dsterba@suse.cz
+Cc: Thorsten Leemhuis <regressions@leemhuis.info>,
+ Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-kernel@vger.kernel.org,
+ linux-btrfs <linux-btrfs@vger.kernel.org>,
+ Linux kernel regressions list <regressions@lists.linux.dev>
+References: <CAKLYgeL7nrA4nXcewdv9Fqg_s=3GS=vmoypnEiZBKQ7rySZFuQ@mail.gmail.com>
+ <20260909002506.GF9053@twin.jikos.cz>
+ <6a5c2d41-b10b-44cb-969e-b4a56d002ceb@gmx.com>
+ <4c5117f7-1ddd-4596-8917-da47379506fd@leemhuis.info>
+ <20260911182125.GE54722@twin.jikos.cz>
+ <CAKLYgeLAXC5qbNAWnS3KNCijuRT9mF_hz4e1fUexx+D-J5Bs4g@mail.gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXVgBQkQ/lqxAAoJEMI9kfOh
+ Jf6o+jIH/2KhFmyOw4XWAYbnnijuYqb/obGae8HhcJO2KIGcxbsinK+KQFTSZnkFxnbsQ+VY
+ fvtWBHGt8WfHcNmfjdejmy9si2jyy8smQV2jiB60a8iqQXGmsrkuR+AM2V360oEbMF3gVvim
+ 2VSX2IiW9KERuhifjseNV1HLk0SHw5NnXiWh1THTqtvFFY+CwnLN2GqiMaSLF6gATW05/sEd
+ V17MdI1z4+WSk7D57FlLjp50F3ow2WJtXwG8yG8d6S40dytZpH9iFuk12Sbg7lrtQxPPOIEU
+ rpmZLfCNJJoZj603613w/M8EiZw6MohzikTWcFc55RLYJPBWQ+9puZtx1DopW2jOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <CAKLYgeLAXC5qbNAWnS3KNCijuRT9mF_hz4e1fUexx+D-J5Bs4g@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAL3q7H7_JXnHXZrBGpdK55CQtxiTA6H7KN0yemUirNU6RdNwPA@mail.gmail.com>
 
-On Fri, Sep 11, 2026 at 10:17:27AM +0100, Filipe Manana wrote:
-> On Fri, Sep 11, 2026 at 1:39 AM Boris Burkov <boris@bur.io> wrote:
-> >
-> > Consider the following sketch of a shell script:
-> >   dd if=/dev/urandom of=/mnt/src bs=1M count=4096
-> >   cp --reflink=always /mnt/src /mnt/dst &
-> >   sleep 0.1   # let the clone reach its flush
-> >   time dd if=/mnt/src of=/dev/null bs=4K count=1 iflag=direct
-> >
-> > The current logic in reflink ensures the existence and stability of both
-> > the src and destination inode by locking them both and then flushing all
-> > dirty pages / ordered_extents under the inode lock. This blocks
-> > concurrent usage by even readers of the inode locks, like direct reads
-> > or seeks for the duration of writeback on the entirety of the two files.
-> >
-> > We observe this particular contention frequently in the Meta fleet.
-> >
-> > It is also a relatively common pattern to write the src file, then reflink
-> > it while it is still dirty, so that typical path naturally hits this
-> > contention. This workload motivates a relatively simple optimization:
-> > trigger the unavoidable src flushing outside the locked region.
-> >
-> > It is tempting to try to move the writeback out of the locks entirely
-> > but this is fraught with all kinds of consistency errors under various
-> > patterns of concurrent writes. fsync is able to manage such a pattern,
-> > but with significant infrastructure investment I don't think is
-> > justified for reflink.
-> >
-> > Therefore, do an optimistic single backwards pass which completes latent
-> > OEs while relying on the calls to btrfs_wait_ordered_range() under the
-> > locks in btrfs_remap_file_range_prep() ensure correctness. In the worst
-> > case with concurrent writes while unlocked, we can end up doing the
-> > writeback twice, which I think is a reasonable price to pay to avoid
-> > victimizing innocent readers in a common case.
-> >
-> > With and without this patch, the above reproducer runs the reflink in
-> > the same ~0.5s on my system. Without the patch, the direct read blocks
-> > for basically the full duration of the reflink while with the patch it
-> > returns in a few milliseconds.
-> >
-> > Signed-off-by: Boris Burkov <boris@bur.io>
-> > ---
-> >  fs/btrfs/reflink.c | 48 ++++++++++++++++++++++++++++++++++++++++++++++
-> >  1 file changed, 48 insertions(+)
-> >
-> > diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-> > index d2a4101912bd..7bab391f1be4 100644
-> > --- a/fs/btrfs/reflink.c
-> > +++ b/fs/btrfs/reflink.c
-> > @@ -923,6 +923,46 @@ static bool file_sync_write(const struct file *file)
-> >         return false;
-> >  }
-> >
-> > +/*
-> > + * Do a single backwards pass waiting for ordered extents on the inode.
-> > + *
-> > + * Backwards is helpful because it avoids picking up concurrent appended OEs
-> > + * and the intent of the function is to wait on pre-existing OEs without going
-> > + * to the extreme of locking the ordered_tree and snapshotting its contents.
-> > + *
-> > + * This is only useful as an optimization for waiting for ordered extents outside
-> > + * locks. It DOES NOT ensure that the range is free of ordered extents.
-> > + *
-> > + * Returns -EIO if any waited on OE had the ORDERED_IOERR bit set and 0 otherwise.
-> > + */
-> > +static int wait_existing_ordered_extents(struct btrfs_inode *inode)
-> > +{
-> > +       u64 orig_end = i_size_read(&inode->vfs_inode);
-> > +       u64 end = orig_end;
-> 
-> What's the point of orig_end if it's not used elsehwere?
-> Just this:
-> 
-> u64 end = i_size_read(&inode->vfs_inode);
-> 
-> 
-> > +       int ret = 0;
-> > +
-> > +       while (true) {
-> > +               struct btrfs_ordered_extent *ordered;
-> > +
-> > +               ordered = btrfs_lookup_first_ordered_extent(inode, end);
-> > +               if (!ordered)
-> > +                       break;
-> > +               if (ordered->file_offset > end) {
-> > +                       btrfs_put_ordered_extent(ordered);
-> > +                       break;
-> > +               }
-> > +               btrfs_start_ordered_extent(ordered);
-> > +               end = ordered->file_offset;
-> > +               if (test_bit(BTRFS_ORDERED_IOERR, &ordered->flags))
-> > +                       ret = -EIO;
-> > +               btrfs_put_ordered_extent(ordered);
-> > +               if (!end)
-> > +                       break;
-> > +               end--;
-> > +       }
-> > +       return ret;
-> 
-> Why do we need another function to wait for ordered extents just for reflinks?
-> 
-> We have btrfs_wait_ordered_range() that does exactly the same...
-> 
-> Besides that, this waits for all ordered extents. If a reflink
-> operates on a small range, we end up waiting for any ordered extents,
-> which slows down such ranged reflinks.
-> btrfs_wait_ordered_range() allows to pass a range.
-> 
 
-TL;DR you are right
 
-I started with btrfs_wait_ordered_range() then got turned around while
-exploring the space and ended here which turns out to not be any better.
-Thanks for pushing back.
+在 2026/9/12 04:20, Alex Romosan 写道:
+> i agree it's a regression. one question (and i am not very familiar
+> with the underlying principles), how do the other filesystems deal
+> with this? shouldn't the registering of devices be abstracted out
+> since i would assume every fs does it or is this something btrfs
+> specific?
 
-Basically I was battling against cases related to the one helped by the
-second patch (concurrent writers producing dirtying which causes write
-amplification with the duplicate flush outside the locks) and tried to
-create a "lightest weight good enough" flush for this application.
+Other fses has the same problem on the reported device path.
 
-However, I don't think I succeeded and can't think of anything actually
-better than btrfs_wait_ordered_range(). (and it's worse for using
-SYNC_NONE and doing the whole file...)
+The difference is other fses saves the device path at mount time and 
+doesn't change.
 
-> > +}
-> > +
-> >  loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
-> >                 struct file *dst_file, loff_t destoff, loff_t len,
-> >                 unsigned int remap_flags)
-> > @@ -938,6 +978,14 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
-> >         if (remap_flags & ~(REMAP_FILE_DEDUP | REMAP_FILE_ADVISORY))
-> >                 return -EINVAL;
-> >
-> > +       ret = filemap_flush(src_inode->vfs_inode.i_mapping);
-> 
-> So again, this flushes the entire file, which adds overhead for
-> reflinks operating on a small range and causes unnecessary IO.
-> 
-> Further, using filemap_flush() is not enough in case we have compression.
-> The flush call only starts the compression work in an async worker, we
-> need a second flush call to wait for the compression to finish and for
-> writeback to start (creating ordered extents).
-> That's why we have btrfs_fdatawrite_range(), which does the double
-> flush in case we have compression, and also supports specifying a
-> range.
+E.g, the same weird device path can be utilized and reported for other 
+fses too:
 
-Interestingly, this turns out to not really matter due to how the folio
-locking works today (and that we don't care about 100% perfect
-submission anyway). Basically the second folio gets blocked right away
-in filemap_flush and waits until the first folio's async compression
-finishes and unlocks it. This is the same pattern that Qu is contending
-with in his parent-child OE redesign to try to make compressed writeback
-look "normal".
+  # cd /dev/
+  # mknod weird b 253 2
+                  ^^^^^ The same major/minor number for
+                        /dev/test/scratch1
+  # mkfs.ext4 /dev/weird -F
+  # mount /dev/weird /mnt/test
+  # mount | tail - n1
+  /dev/weird on /mnt/test type ext4 (rw,relatime)
 
-There is 0 benefit I can demonstrate objectively from relying on this so
-I am going to switch back to plain btrfs_wait_ordered_range() for v3.
+The btrfs specific part is, btrfs can rename the device path on device 
+rescan.
+
+That introduced a new problem, should we trust the device path passed in 
+for scan?
+
+Normally a device scan is triggered by udev rules, so normally it's sane 
+names like "/dev/sda1".
+But end users can easily pass random/weird pass in that ioctl to force 
+an update on device path, and we're back to the start point.
+
+Furthermore when LVM gets involved, the same dm device can have multiple 
+different softlinks.
+And a wrong softlink scanned can easily screw a lot of mount detection, 
+aka, screw up the most common tool we use, fstests.
+
+Then we can easily have a weird situation where the same device is 
+scanned again and again with different names (e.g. "/dev/dm-2" and 
+"/dev/test/scratch1"), causing btrfs to report different device name 
+depending on the timing.
+
+
+Another situation is, someone is passing a completely weird name, which 
+may not even be accessible by other processes.
+The worst situation here is "/proc/self/fd/3", which can be a softlink 
+to a block device, but only accessible by that exact process.
+
+
+One solution to this complex corner case is, to do a proper path 
+resolution, and check if the existing recorded path can be accessible, 
+if not replace it with the newer one.
+
+However that is not perfect either, firstly related to namespace, the 
+device scan can be triggered inside a namespace, and again the path can 
+only be accessible inside a certain namespace.
+
+Secondly such path resolution may involve btrfs itself, e.g. the block 
+file is not in devfs, but a directory inside btrfs.
+Then scan and path resolution may lock the same inode, causing deadlock.
+
+All the history can be found in this patch:
+
+https://lore.kernel.org/linux-btrfs/5e65d9ba5927b4b6985ce819e9e49d082c6e9b45.1789112424.git.wqu@suse.com/T/#u
+
+
+Now back to the grub problem, firstly it's not causing anyone unable to 
+boot, it is only causing the grub2-probe unable to determine where the 
+device is.
+
+The reason is for users who are not using initramfs, but direct kernel 
+boot. In that case, the rootfs is always using the name "/dev/root".
+
+The lack of initramfs means we do not have proper devfs at boot time, so 
+kernel is using that "/dev/root" for rootfs.
+
+But after the system is fully up, a proper devfs is mounted at "/dev/", 
+so the older temporary "/dev/root" is no longer accessible.
+
+I can argue that the user space should not really trust the device path 
+reported by mount, but utilize the device number reported for the mount 
+point. E.g "mountpoint -d", then go through the "/dev/" or libblkid to 
+grab the real device.
+
+In fact, even using that weird name, other tools like lsblk can properly 
+detect the real device without being confused by the name:
+
+|-test-scratch1 253:2    0   10G  0 lvm  /mnt/test
 
 > 
-> Thanks.
-> 
-> > +       if (ret < 0)
-> > +               return ret;
-> > +
-> > +       ret = wait_existing_ordered_extents(src_inode);
-> > +       if (ret < 0)
-> > +               return ret;
-> > +
-> >         if (same_inode) {
-> >                 btrfs_inode_lock(src_inode, BTRFS_ILOCK_MMAP);
-> >         } else {
-> > --
-> > 2.55.0
-> >
-> >
+> On Fri, Sep 11, 2026 at 8:21 PM David Sterba <dsterba@suse.cz> wrote:
+>>
+>> On Thu, Sep 10, 2026 at 12:39:25PM +0200, Thorsten Leemhuis wrote:
+>>> On 9/9/26 03:13, Qu Wenruo wrote:
+>>>> 在 2026/9/9 09:55, David Sterba 写道:
+>>>>> On Tue, Sep 08, 2026 at 11:59:43PM +0200, Alex Romosan wrote:
+>>>>>>
+>>>>>> [...] Since version 7.3-rc1 i haven't been able to to a grub-update,
+>>>>>> instead i get this error:
+>>>>>>
+>>>>>> /usr/sbin/grub-probe: error: cannot find a device for / (is /dev
+>>>>>> mounted?).
+>>>>>>
+>>>>>> 7.2 is fine. a git-bisect identified commit
+>>>>>> 108cc873398932af589c295f78c348513b8d70d9 as being the culprit.
+>>>>>> reverting this commit from 7.3-rc2 allowed me to run grub-update
+>>>>>> again.
+>>>>>>
+>>>>>> this is not the first time i reported grub-update being broken on
+>>>>>> btrfs. i reported exactly the same problem on jan 8, 2024
+>>>>>> (https://lkml.iu.edu/hypermail/linux/kernel/2401.1/00596.html). maybe
+>>>>>> the discussion that followed would help come up with a fix that will
+>>>>>> make everybody happy.
+>>>>>
+>>>>> I remember debugging that one, https://bugzilla.kernel.org/
+>>>>> show_bug.cgi?id=218353
+>>>>> Reverting 108cc8733989 ("btrfs: fix a lockdep caused by path resolution
+>>>>> during device scan") would bring back the lockdep warning and there is a
+>>>>> locking problem.
+>>>>>
+>>>>> The commit says it's fixing 2e8b6bc0ab41 ("btrfs: avoid unnecessary
+>>>>> device path update for the same device"), the difference is in lines
+>>>>>
+>>>>> (https://bugzilla.suse.com/show_bug.cgi?id=1230641)
+>>>>>
+>>>>> -       } else if (!device->name || strcmp(device->name->str, path)) {
+>>>>> +    } else if (!device->name || !is_same_device(device, path)) {
+>>>>>
+>>>>> Which gets changed to (by 108cc8733989):
+>>>>>
+>>>>> -       } else if (!device->name || !is_same_device(device, path)) {
+>>>>> +       } else if (!device->name || device->devt != path_devt) {
+>>>>>
+>>>>> Each change is reaction to a bug, I don't see a clear fix which will
+>>>>> make it work in all cases.
+>>>>
+>>>> And I want to add that, the previous path based comparison is also
+>>>> problematic for namespaces/weird block device names.
+>>>>
+>>>> Although not common, it's definitely possible to map weird block file
+>>>> name into a namespace.
+>>>>
+>>>> Thus the path based comparison is not reliable in the first place, no to
+>>>> mention the later lockdep problems.
+>>>
+>>> Well, but our #1 is "no regressions". And the recent change while fixing
+>>> bugs clearly causes one, as Alex's report is afaics at least the third
+>>> about it; the two earlier ones can be found here:
+>>>
+>>> https://lore.kernel.org/linux-btrfs/dfbe1e27-dab8-4d55-8cf3-0b28eeac5df4@gmail.com/
+>>> https://lore.kernel.org/linux-btrfs/018a9738-1d4a-43a0-9352-a56d1e541364@gmail.com/
+>>> Plus a repost of the latter here:
+>>> https://lore.kernel.org/linux-btrfs/dfbe1e27-dab8-4d55-8cf3-0b28eeac5df4@gmail.com/
+>>
+>> I'm going to treat this as a regression. And for the record Qu and me
+>> are in disagreement on that. My target is to make the systems boot again
+>> first, the fix may leave some problematic case (like mentioned, devices
+>> in namespaces), but that is probably a lesser problem.
+
+It's not not-booting, but just grub2-probe unable to determine which 
+device it really has, and so far only affects users without a initramfs.
+
+But if you really want to revert back to fix this particular case, then 
+allow the old bad random device rename, back to the starting point of 
+the cat-mice game:
+
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 4ddabadc9188..f4b36ad1282d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -749,6 +749,18 @@ const u8 *btrfs_sb_fsid_ptr(const struct 
+btrfs_super_block *sb)
+         return has_metadata_uuid ? sb->metadata_uuid : sb->fsid;
+  }
+
++static int device_name_cmp(struct btrfs_device *device, const char *path)
++{
++       const char *old_name;
++       int ret;
++
++       rcu_read_lock();
++       old_name = rcu_dereference(device->name);
++       ret = strcmp(old_name, path);
++       rcu_read_unlock();
++       return ret;
++}
++
+  /*
+   * Add new device to list of registered devices
+   *
+@@ -869,7 +881,7 @@ static noinline struct btrfs_device 
+*device_list_add(const char *path,
+                                 MAJOR(path_devt), MINOR(path_devt),
+                                 current->comm, task_pid_nr(current));
+
+-       } else if (!device->name || device->devt != path_devt) {
++       } else if (!device->name || device_name_cmp(device, path)) {
+                 const char *old_name;
+
+                 /*

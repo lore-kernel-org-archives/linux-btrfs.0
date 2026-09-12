@@ -1,95 +1,118 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.10])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3709488D82
-	for <linux-btrfs@vger.kernel.org>; Sat, 12 Sep 2026 18:13:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C2FAA314A73
+	for <linux-btrfs@vger.kernel.org>; Sat, 12 Sep 2026 21:58:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.10
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789236818; cv=none; b=V21dCyTAAYLBPK31cvVGLqfHiusq/gn+1Sg9rAWt9la+RjdJjPbklvfTopYr9xhpUyGs5EaZegopwe/s3F8ucwq7/B2RpioW81D64TH3chbDSOiGUz0BGa62KucYNW7V3KsYPOtcbQzV3RMFxUBZtrrjxcPsTI/JijVPuM8xzQw=
+	t=1789250288; cv=none; b=lHNnP+5toMsXOfFft86Zpge8vXgmTh5Rl6k/MrpWafscNmPKZROaM3bFaspaR/7jdCAXEwltIYUc0ycB3EoVPQughnp9Hi5tB+uRH4eHmtqxeHO3l3vHdFzaD8EhkaZUKbH8/Xxdnfq5iG1WWHHhnGyYDypILAp6StJAiyfBTDg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789236818; c=relaxed/simple;
-	bh=fQn3Z0hKGJ3o2B1dtJdFFUljkikjBruExK/3lLO8bMc=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=mWRANWXWuiKc2e6smMgmyuFEZqreJ4CQQ1oQR1eNNDRpedMvT9cZ4ikIG+Wi5yAYL8l5tJ5OcjpJiB7ElwCYv6eG9qdJVfEgaHd90i4RqJ1sBDviqhUiRmY8+ZojWUtzQDwNhjlfIFBrmQeObG0g4jCUb/NNeWCyt7YzIy8VI4s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YcR3vHnU; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1789250288; c=relaxed/simple;
+	bh=ihNEdAZuOek+E0UQGn7wO9AJYk7LSiFigkcTBSeEmEk=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=WnN5/f7OM5r+Q1fW7x6s5VuTTyOHrVlPdyZElZQiHhOvCMB8/SpXQwdrAWcaA1MbmrpehACVZQlHZp+GbPYOU2iBkxhjSeDQIloWgT5ZWlnOb6xJlXd63+A45O7ug1/FHYVFLhJ5aSfrW7FybXCS6X8qFPnuKXMpFtsad+w6qsI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=VX4+eIPy; arc=none smtp.client-ip=192.198.163.10
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YcR3vHnU"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D061D1F00893;
-	Sat, 12 Sep 2026 18:13:33 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1789236815;
-	bh=5zPpMGkIXUaxPUfEze6dQG+Im5tgwqKHkVHy3AwL5L0=;
-	h=From:To:Cc:Subject:Date;
-	b=YcR3vHnURwFayMTD+WgHsVEOstiC3756a4brb0tlNn5DbfQSBqHyAV/VzBviXGyd2
-	 150fqEXa6p0jeHWYtJRtcq3Yxj1wZlu0H7XQAQV780qzeXhdxTT/uhUxggBlazQv4B
-	 d9OPkb1sKQRWQKKBz68lyIoXCLR0Gm/WpdxeXgUrCKnEXE89wuV2JC98UAX4EyhJzO
-	 VxZTHeZ6opvCFMpkdXTpy7gtD+EZKrNqnZ9Pud9wmb5NmoSTsLFNH7Y4JtSK94ZYCu
-	 Kbzg6QhfUf6tsxQqg6P7oFpsoC+ZKXq25E/3JZy97i5r2SQNZFPsnX+fZ/MUeiT2I3
-	 2ukOCQLJHTJgA==
-From: Anand Jain <asj@kernel.org>
-To: linux-btrfs@vger.kernel.org,
-	dave.hansen@intel.com
-Cc: dwmw2@infradead.org,
-	thiago.macieira@intel.com,
-	dsterba@suse.cz
-Subject: [PATCH] btrfs: derive f_fsid with dev_t only when temp_fsid is active
-Date: Sun, 13 Sep 2026 02:06:28 +0800
-Message-ID: <16069a6fc651168bfcd2394d6e57ce63a50231ed.1789235482.git.asj@kernel.org>
-X-Mailer: git-send-email 2.43.0
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="VX4+eIPy"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1789250285; x=1820786285;
+  h=message-id:date:mime-version:subject:to:cc:references:
+   from:in-reply-to:content-transfer-encoding;
+  bh=ihNEdAZuOek+E0UQGn7wO9AJYk7LSiFigkcTBSeEmEk=;
+  b=VX4+eIPykyzCvVa+tRh9T5W47YtFsGR8rWJUiRE4hnLZE92E/8hQc5ZP
+   cZzgZRAH0pxsbx6C+3bz3gMSS2vGQ3E7WpfFavvmOoya2oh10ExS/Vz+a
+   JLyzB0s9EmH0h9H/sXhagyJnBHwWF0xp6empBPB21qgy6khQPVHszvHxi
+   eO+nWAeTVG91Wdka1AbJkh2GE6iHZtcW8YDG2ydeBgs+1NupFcaiReXva
+   ujKaVYadyQtTxzqnajYsrYG/EL9WDwMuYI0XFlLCgQIyTf1y6WH2Njxwg
+   NvKDQ4FUuNTZGnQqEvGY7vvT5+DoMrsipyH6PcKTdBjguEWGzwm0KxJSX
+   w==;
+X-CSE-ConnectionGUID: pgCSfdWuSU2TI8UbvaJsKw==
+X-CSE-MsgGUID: uYuZdVf6TF6WQ83ufNcO+Q==
+X-IronPort-AV: E=McAfee;i="6800,10657,11903"; a="101026012"
+X-IronPort-AV: E=Sophos;i="6.27,99,1787036400"; 
+   d="scan'208";a="101026012"
+Received: from fmviesa001.fm.intel.com ([10.60.135.141])
+  by fmvoesa104.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 12 Sep 2026 14:58:05 -0700
+X-CSE-ConnectionGUID: 7FByiNzhSzG+O8Jdok9BiA==
+X-CSE-MsgGUID: q6E+qiH+RY+RXtaP3c9ziQ==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.27,99,1787036400"; 
+   d="scan'208";a="297260013"
+Received: from cooperst-gp88.amr.corp.intel.com (HELO [10.125.108.99]) ([10.125.108.99])
+  by smtpauth.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 12 Sep 2026 14:58:05 -0700
+Message-ID: <c9483865-811e-4071-8c11-a7c988f91fab@intel.com>
+Date: Sat, 12 Sep 2026 14:58:03 -0700
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: derive f_fsid with dev_t only when temp_fsid is
+ active
+To: Anand Jain <asj@kernel.org>, linux-btrfs@vger.kernel.org
+Cc: dwmw2@infradead.org, thiago.macieira@intel.com, dsterba@suse.cz
+References: <16069a6fc651168bfcd2394d6e57ce63a50231ed.1789235482.git.asj@kernel.org>
+From: Dave Hansen <dave.hansen@intel.com>
+Content-Language: en-US
+Autocrypt: addr=dave.hansen@intel.com; keydata=
+ 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
+In-Reply-To: <16069a6fc651168bfcd2394d6e57ce63a50231ed.1789235482.git.asj@kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-Commit c2a74ed0494c ("btrfs: derive f_fsid from on-disk fsid and dev_t")
-mixed dev_t into f_fsid for all single-device setups to avoid f_fsid
-collisions with cloned filesystems.
+On 9/12/26 11:06, Anand Jain wrote:
+>  Dave (Hansen), I wonder if you could verify whether this fixes the issue
+>  on your end. I have run some limited test cases from fstests as of now,
+>  and they passed.
 
-However, doing this unconditionally breaks backward compatibility.
-statfs(2) f_fsid changes after a kernel upgrade, and also can shift
-across reboots or dev re-attaches as dev_t values change.
+I actually didn't hit it personally, but I'll pass it along to folks
+that are hitting it.
 
-Fix this by only mixing dev_t when temp_fsid is active.
-This means for non-temp_fsid setups or the original mount, we use the
-old method of deriving fsid based on the UUID.
-
-So in the case of a cloned Btrfs filesystem, we won't be able to
-maintain the same fsid across mount recycle if the mount order
-changes.
-
-Fixes: c2a74ed0494c ("btrfs: derive f_fsid from on-disk fsid and dev_t")
-Reported-by: Dave Hansen <dave.hansen@intel.com>
-Closes: https://lore.kernel.org/linux-btrfs/be0c08f5-2f31-40f5-8a3b-f2f58b3e00ff@intel.com
-Signed-off-by: Anand Jain <asj@kernel.org>
----
- Dave (Hansen), I wonder if you could verify whether this fixes the issue
- on your end. I have run some limited test cases from fstests as of now,
- and they passed.
-
- fs/btrfs/super.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 464129b1b0d4..ddb620ac241b 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1836,8 +1836,12 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	f_fsid.val[0] ^= btrfs_root_id(BTRFS_I(d_inode(dentry))->root) >> 32;
- 	f_fsid.val[1] ^= btrfs_root_id(BTRFS_I(d_inode(dentry))->root);
- 
--	/* Hash dev_t to avoid f_fsid collision with cloned filesystems. */
--	if (fs_info->fs_devices->total_devices == 1) {
-+	/*
-+	 * Hash dev_t to avoid f_fsid collisions with cloned filesystems.
-+	 * Only do this when a clone is present so the original filesystem
-+	 * (mounted first) maintains backward-compatible f_fsid behavior.
-+	 */
-+	if (fs_info->fs_devices->temp_fsid) {
- 		__kernel_fsid_t dev_fsid =
- 			u64_to_fsid(huge_encode_dev(fs_info->fs_devices->latest_dev->bdev->bd_dev));
- 
--- 
-2.43.0
-
+BTW, this is hitting folks running 7.2, iirc. Could whoever commits it
+and sends it up to Linus tag it for stable, please?

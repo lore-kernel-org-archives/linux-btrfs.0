@@ -1,63 +1,95 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3E8E342885F;
-	Sat, 12 Sep 2026 16:17:38 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3709488D82
+	for <linux-btrfs@vger.kernel.org>; Sat, 12 Sep 2026 18:13:36 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789229860; cv=none; b=EYgGSbz4SSos1jOzqhmLZQvIv3oGPtTf/0oMCWa6YLSkQMpLttM1SXLdfJtDk/xskxH28c/sB668XM9uSSi8aOfaDp5wn3wnPho/9iTyWy+WJdA1TJyNXo6H5hjVo0P+ot9bmYEegcDZWk4gldm25mXcQHP/CZHN3kkphggraKA=
+	t=1789236818; cv=none; b=V21dCyTAAYLBPK31cvVGLqfHiusq/gn+1Sg9rAWt9la+RjdJjPbklvfTopYr9xhpUyGs5EaZegopwe/s3F8ucwq7/B2RpioW81D64TH3chbDSOiGUz0BGa62KucYNW7V3KsYPOtcbQzV3RMFxUBZtrrjxcPsTI/JijVPuM8xzQw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789229860; c=relaxed/simple;
-	bh=bxDWy4RC6LbNzk2UXAMDLDtzzg0lI1ZvKUHUhE1Zyvs=;
-	h=Subject:From:In-Reply-To:References:Message-Id:Date:To:Cc; b=TQf+BvU64NYqDqzc4gbVLYf5jgpq94DU5i1sgw9slgna+aRZk7v0sD4o7OicXFieIUy/gGo1FdtEjh3Rq6WifwNvKDv/nJR3SEXMeE9AsHJFiNZSLn/0gn1UZB2SKJYeJfueqvs+Ew9cAcBNWW4k/y3xFXNYYbMKma5h615wAYA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SwnWSnuC; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1789236818; c=relaxed/simple;
+	bh=fQn3Z0hKGJ3o2B1dtJdFFUljkikjBruExK/3lLO8bMc=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=mWRANWXWuiKc2e6smMgmyuFEZqreJ4CQQ1oQR1eNNDRpedMvT9cZ4ikIG+Wi5yAYL8l5tJ5OcjpJiB7ElwCYv6eG9qdJVfEgaHd90i4RqJ1sBDviqhUiRmY8+ZojWUtzQDwNhjlfIFBrmQeObG0g4jCUb/NNeWCyt7YzIy8VI4s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=YcR3vHnU; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SwnWSnuC"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C03F01F00893;
-	Sat, 12 Sep 2026 16:17:37 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="YcR3vHnU"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D061D1F00893;
+	Sat, 12 Sep 2026 18:13:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1789229857;
-	bh=D94CwZ5aHJh85yg9N4Iro2wabENMIS5iaTtO7fKv5Io=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc;
-	b=SwnWSnuCeg7i4PILLMr65ZWF7xpvup1lTlE22rQ+L5ZOAJeXzKZyhV93tXhSjcnC/
-	 rnifh5PyS0Ea7XcxP++Ey6RtfezDhqL7tpVRhKoyD8JoZXA6RUPMlmBnuhHH+QGP5Y
-	 pKiNhUsiwAd8PA7XGxHcFJvdL84crJFHolTgmC9BZDx7MTk6EDZUeXwjwrq6sNUFgF
-	 8WA+QcJOqKsDRFTsqmm62iU90aZYXGeb8IAvSf53yNyJX/2EMcbUdzN2yfX0LN7Y2F
-	 8KJGhHIw1APcBNNGV0YyVKjMqQ7y8KPYdwnuBo0DKlK/iyISOR4EGIhzjLs3DcT1xt
-	 J1QxnjQRSiuJQ==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 4C52E380820D;
-	Sat, 12 Sep 2026 16:16:35 +0000 (UTC)
-Subject: Re: [GIT PULL] Btrfs fixes for 7.3-rc3
-From: pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1789169569.git.dsterba@suse.com>
-References: <cover.1789169569.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1789169569.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.3-rc2-tag
-X-PR-Tracked-Commit-Id: 09f1294ee2abee7fe1c2d600671498b7642e0fe0
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 95deca8dd9a91063babb2ef3a69f5248b1fa824e
-Message-Id: <178922979397.3530607.10616460555041501348.pr-tracker-bot@kernel.org>
-Date: Sat, 12 Sep 2026 16:16:33 +0000
-To: David Sterba <dsterba@suse.com>
-Cc: torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+	s=k20260515; t=1789236815;
+	bh=5zPpMGkIXUaxPUfEze6dQG+Im5tgwqKHkVHy3AwL5L0=;
+	h=From:To:Cc:Subject:Date;
+	b=YcR3vHnURwFayMTD+WgHsVEOstiC3756a4brb0tlNn5DbfQSBqHyAV/VzBviXGyd2
+	 150fqEXa6p0jeHWYtJRtcq3Yxj1wZlu0H7XQAQV780qzeXhdxTT/uhUxggBlazQv4B
+	 d9OPkb1sKQRWQKKBz68lyIoXCLR0Gm/WpdxeXgUrCKnEXE89wuV2JC98UAX4EyhJzO
+	 VxZTHeZ6opvCFMpkdXTpy7gtD+EZKrNqnZ9Pud9wmb5NmoSTsLFNH7Y4JtSK94ZYCu
+	 Kbzg6QhfUf6tsxQqg6P7oFpsoC+ZKXq25E/3JZy97i5r2SQNZFPsnX+fZ/MUeiT2I3
+	 2ukOCQLJHTJgA==
+From: Anand Jain <asj@kernel.org>
+To: linux-btrfs@vger.kernel.org,
+	dave.hansen@intel.com
+Cc: dwmw2@infradead.org,
+	thiago.macieira@intel.com,
+	dsterba@suse.cz
+Subject: [PATCH] btrfs: derive f_fsid with dev_t only when temp_fsid is active
+Date: Sun, 13 Sep 2026 02:06:28 +0800
+Message-ID: <16069a6fc651168bfcd2394d6e57ce63a50231ed.1789235482.git.asj@kernel.org>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-The pull request you sent on Sat, 12 Sep 2026 15:37:14 +0200:
+Commit c2a74ed0494c ("btrfs: derive f_fsid from on-disk fsid and dev_t")
+mixed dev_t into f_fsid for all single-device setups to avoid f_fsid
+collisions with cloned filesystems.
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.3-rc2-tag
+However, doing this unconditionally breaks backward compatibility.
+statfs(2) f_fsid changes after a kernel upgrade, and also can shift
+across reboots or dev re-attaches as dev_t values change.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/95deca8dd9a91063babb2ef3a69f5248b1fa824e
+Fix this by only mixing dev_t when temp_fsid is active.
+This means for non-temp_fsid setups or the original mount, we use the
+old method of deriving fsid based on the UUID.
 
-Thank you!
+So in the case of a cloned Btrfs filesystem, we won't be able to
+maintain the same fsid across mount recycle if the mount order
+changes.
 
+Fixes: c2a74ed0494c ("btrfs: derive f_fsid from on-disk fsid and dev_t")
+Reported-by: Dave Hansen <dave.hansen@intel.com>
+Closes: https://lore.kernel.org/linux-btrfs/be0c08f5-2f31-40f5-8a3b-f2f58b3e00ff@intel.com
+Signed-off-by: Anand Jain <asj@kernel.org>
+---
+ Dave (Hansen), I wonder if you could verify whether this fixes the issue
+ on your end. I have run some limited test cases from fstests as of now,
+ and they passed.
+
+ fs/btrfs/super.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 464129b1b0d4..ddb620ac241b 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1836,8 +1836,12 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	f_fsid.val[0] ^= btrfs_root_id(BTRFS_I(d_inode(dentry))->root) >> 32;
+ 	f_fsid.val[1] ^= btrfs_root_id(BTRFS_I(d_inode(dentry))->root);
+ 
+-	/* Hash dev_t to avoid f_fsid collision with cloned filesystems. */
+-	if (fs_info->fs_devices->total_devices == 1) {
++	/*
++	 * Hash dev_t to avoid f_fsid collisions with cloned filesystems.
++	 * Only do this when a clone is present so the original filesystem
++	 * (mounted first) maintains backward-compatible f_fsid behavior.
++	 */
++	if (fs_info->fs_devices->temp_fsid) {
+ 		__kernel_fsid_t dev_fsid =
+ 			u64_to_fsid(huge_encode_dev(fs_info->fs_devices->latest_dev->bdev->bd_dev));
+ 
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+2.43.0
+

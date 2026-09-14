@@ -1,77 +1,159 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 76DCB457E6D
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 17:36:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AA64449551A
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 17:40:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789407387; cv=none; b=aKCrL689wWpr8TuFcHhnsx4OzkXkILeme4ERre8KTZiH7ishXNmDqyT3USTgxKPJDdsIbZh2nL/twx39kiTH9KSGf5LJonGSJ95XZAEW+1Vp3wpurPRDvE5kvZKDe8hjB2oxXekpi3IyhEbd7bUA+t9KiyoNhk2E7pvomNd2H/w=
+	t=1789407626; cv=none; b=qG0N/3zc9ONI+1NBS2kfVvrEhCx7Ah4rUx6/FY6B2t27/2ZK21Quj22YSnupof8EkpWKqp4PaPQIGlaaZMN4DStRZsqkXQUsFEVRNQyCjEpDte8gXvtOH+bFyGJuE2fy8qIUjOodEWAIDOMSl6C5I+Pkbb9YlYGpYRr7TOkhmSs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789407387; c=relaxed/simple;
-	bh=2Eqn772vQsdhNQSxmPsTyPPstxuEhQqjBQj5HW7AXJc=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=cjfdFbvFqnZyUDdfNg8Z2+6ms4ZVAlj3v+3yuJpsHqoDUVIpt5Kp6lBLavlpRMu/FaXgkbblWLfsqAtPalQrD+KcwAM5jWS1nkd2l+O9p71hZQjOWB55+1iPhBTO6w77TMFLCKavahatPeJlZNiEZwxZyQIunPe2bco02QsiGrw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=b1SBTTHF; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1789407626; c=relaxed/simple;
+	bh=GnssOQHpSJG+jdPM4vkll7FKGOM2qNLronIwDCzc8F0=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=n1vGG+tM+644toAKKQHNjn+f5ltSFtfINgDCRWGEKWSmI5qQlL3+3i8HwH1fmLScUv2wliLVxTtkInNYa0GhY80I59LIeEySUbu4TP1wb3ZMZUWyxg2zl/1t81pcp8s2VjTZuL5D+ZtVaKZmeO2Sb6braQb+NPk5Ponb0jE2QOo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=L61Gdj4j; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=OWLKKngD; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Gd3A4MTC; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Mb6+rTPM; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="b1SBTTHF"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 75AC01F000FF
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 17:36:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1789407386;
-	bh=3mNlz7j1rQyEnqPTfZwbuGBpPRYLGhKknGq1Cv+T7lo=;
-	h=From:To:Subject:Date;
-	b=b1SBTTHFSCysuLP0G+f3NzUqH4882MJKt9hA6CatLM2gdYr0BbC1dJ5Nv2PnS8aXS
-	 u0kgtDiZ4LDj+PZchfzzn9OtGeIncDYe3YpOiiqKAIbzDnBUW0Ct6CHJZFcVMsnQal
-	 0JLSG+78EFAEgCuFwSVOEyttNpvqplb21z1HuzjxMuENvmVFhqGPNu57U5Bxkc3Rqp
-	 nF2TUH1tCl+qIx5G/jw5jmLk1stLMLpdKExRv5styLMcU/1qH6hEu86zdh9HNOxkqD
-	 OmEh3/4qZReogFu38pASE5ao0Ju+8BYE7z2+i7o66m9ER9/D2X61jfk2aJvocSnnZS
-	 0cxTr5O51LEQg==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix creation of compressed inline extents that don't save space
-Date: Mon, 14 Sep 2026 18:36:10 +0100
-Message-ID: <721d8fd2c73095d06cbdbfa714a6dfac9c488953.1789407346.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="L61Gdj4j";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="OWLKKngD";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Gd3A4MTC";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Mb6+rTPM"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5368121D8F;
+	Mon, 14 Sep 2026 17:40:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1789407618;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=/E3ZxvRJzapinVukHfzhswMdq1kVvzDnFHs701vkROo=;
+	b=L61Gdj4jhJ90MXCr22JFFAk2UaK6UekG3LWotHYK7p01g/FyCyWmDaOUww0Z4dLNtWgu8n
+	iNtIU2iVR4m3ax73v3dkh5uUOmQ2JMZ0K2tZD4G45DPWkEopoHpMct9YvxZvBsAcs5vHRO
+	zw9lbUe5hlkP+Pbtc/gGTZhK5bybPbk=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1789407618;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=/E3ZxvRJzapinVukHfzhswMdq1kVvzDnFHs701vkROo=;
+	b=OWLKKngDOTokieuIAeD2TdqFLo4ndufMfFy0gsBL/pYUP7ejhVnOPcSTH+uLmUYvQ7utlu
+	mO76zXQp8enOs7BQ==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1789407614;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=/E3ZxvRJzapinVukHfzhswMdq1kVvzDnFHs701vkROo=;
+	b=Gd3A4MTCafJItvJg07BiTD7vmLrrS+oV2oZeUNcy6r+wLk6x6mfU5qwkwP4NFn4B+It1XN
+	hWB2oOryZug58+letowauGMLVPEsn1jZ9DwKJzoQaTSPXz/sG3p/pCsvfnAoi9cPby0jMI
+	cbzpQ3xE/2noWdM2SYk1zAOi/Pgs8XA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1789407614;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=/E3ZxvRJzapinVukHfzhswMdq1kVvzDnFHs701vkROo=;
+	b=Mb6+rTPMlvRhJjCNJN1erLpK8FPF9uxii1fE9ewo5U6bt9Sg3nRUxsnQdBCmJOekDcv0go
+	MLInnaqQu4Ul27Ag==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2659D1368C;
+	Mon, 14 Sep 2026 17:40:14 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id F4YoCX4xqGoOeAAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 14 Sep 2026 17:40:14 +0000
+Date: Mon, 14 Sep 2026 19:40:12 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+	Qu Wenruo <wqu@suse.com>, Naohiro Aota <naohiro.aota@wdc.com>
+Subject: Re: [PATCH v2 0/2] btrfs-progs: fix stale active zone after mkfs
+Message-ID: <20260914174012.GR54722@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20260904062444.3467618-1-johannes.thumshirn@wdc.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260904062444.3467618-1-johannes.thumshirn@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Level: 
+X-Spam-Score: -4.00
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[99.99%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	MIME_GOOD(-0.10)[text/plain];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,suse.cz:replyto,twin.jikos.cz:mid];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_FIVE(0.00)[5];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[twin.jikos.cz:mid,imap1.dmz-prg2.suse.org:helo,suse.cz:replyto];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
 
-From: Filipe Manana <fdmanana@suse.com>
+On Fri, Sep 04, 2026 at 08:24:42AM +0200, Johannes Thumshirn wrote:
+> On zoned devices, mkfs can leave a stale zone behind that is used as a
+> staging area but never reset. This zone is not backed by a chunk or
+> device extent, so the FS itself does not account it as used. On devices
+> that have a limitied active zone budget this can lead to premature
+> ENOSPC and/or an exhaustion of active zones.
+> 
+> Fix it in mkfs for new file-systems and also add a check to fsck to find
+> such zones and repair them with '--repair'.
+> 
+> Changes to v1:
+> - fix a bug in fsck where it had a stale return value propagated.
+> 
+> Johannes Thumshirn (2):
+>   btrfs-progs: zoned: refresh stale cached zone state in
+>     btrfs_reset_dev_zone()
+>   btrfs-progs: check: detect leaked active zones on zoned devices
 
-If the compressed data of an inline extent is larger than or equals to the
-size of the uncompressed data, we are still allowing the creation of the
-compressed inline extent, which does not result in any benefits, quite the
-contrary as we waste metadata space and have to decompress when reading.
+The build fails on older distros (Centos 8, Leap 15.3/16.0):
 
-This is a recent regression and happens because we are passing the block
-size to btrfs_compress_bio() instead of the inode's i_size. So unless the
-compressed size is greater than or equals to the block size, we allow the
-creation of compressed inline extents that waste metadata space.
+  CC       check/main.o
+check/main.c: In function 'check_zoned_active_zones':
+check/main.c:9220:12: error: 'struct blk_zone' has no member named 'type'
+    if (zone->type == BLK_ZONE_TYPE_CONVENTIONAL)
+            ^~
+check/main.c:9220:22: error: 'BLK_ZONE_TYPE_CONVENTIONAL' undeclared (first use in this function)
+    if (zone->type == BLK_ZONE_TYPE_CONVENTIONAL)
+                      ^~~~~~~~~~~~~~~~~~~~~~~~~~
+check/main.c:9220:22: note: each undeclared identifier is reported only once for each function it appears in
+check/main.c:9222:12: error: 'struct blk_zone' has no member named 'cond'
+    if (zone->cond == BLK_ZONE_COND_EMPTY)
+            ^~
+check/main.c:9222:22: error: 'BLK_ZONE_COND_EMPTY' undeclared (first use in this function)
+    if (zone->cond == BLK_ZONE_COND_EMPTY)
+                      ^~~~~~~~~~~~~~~~~~~
 
-Fixes: 3eaf5f082c4c ("btrfs: extract inlined creation into a dedicated delalloc helper")
-Reported-by: Hanabishi <i.r.e.c.c.a.k.u.n+kernel.org@gmail.com>
-Link: https://lore.kernel.org/linux-btrfs/c97652a5-ac6b-4de6-aa23-3cdebc01d00b@gmail.com/
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+The types were added in f5f2bad67a45 ("block: make the new blkzoned UAPI
+constants discoverable") in 2016 and with the rest of the zoned userspace code
+so it's not something recent.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a85a7c561cf8..420d78b55bba 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2339,7 +2339,7 @@ static int run_delalloc_inline(struct btrfs_inode *inode, struct folio *locked_f
- 		} else if (inode->prop_compress) {
- 			compress_type = inode->prop_compress;
- 		}
--		cb = btrfs_compress_bio(inode, 0, blocksize, compress_type, compress_level, 0);
-+		cb = btrfs_compress_bio(inode, 0, i_size, compress_type, compress_level, 0);
- 		if (IS_ERR(cb)) {
- 			cb = NULL;
- 			/* Just fall back to non-compressed case. */
--- 
-2.47.2
-
+I haven't looked what's the problem, this should be reproducible locally using
+the "ci/ci-centos8" scripts (needs docker).

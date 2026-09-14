@@ -1,97 +1,122 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DF5B148094C
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 17:47:13 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51729492E22;
+	Mon, 14 Sep 2026 17:54:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789408034; cv=none; b=s5G+HboArf1hPN+haPbggswTalkzIYLzpN5DV1CdmJaP9p5mgibVF53O/FrXLfZnu3KtVF9b3AMZzraPSjeupDzcLYUAQF1Iru254HunVEgjtyZGcbtwy9k2H4U1yoMpwe81Nkaf0gvqg6s1ClFOBdvDEpob4W7A40E28RC2D8I=
+	t=1789408470; cv=none; b=jRzBzA3NBs22nT8Z56tQcocFdjAWn8XFvy4k8uTeDhEKfwK4VFQs/Eo2T0RkYEbGnGmjlnse7ysXECL4ytPV+8ADOkD8YKUMYsiHxU7zWqng5h8JJQIf3ydd5v7gvG4MSQKUyiqtfiY8eA4qCOVIRkEeZyBWo+ahhPvAbCu4a2w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789408034; c=relaxed/simple;
-	bh=6VptuWPIH0SbbCFVZjoznBYoVQMKivIBeccyTAlqiVo=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=XcsYPSMOhlr7p8Wf2wbERSHepyF/ysc3l37OJD2Dv4CWK78xhnAVBY9pVqv04SaI66OwvlpYYdi6T47H6XFJmCbFwOG1Mno98S58r/z+L+/6zDoau1bhdPPjHnjP4ycaGaxsH2U0gdm0C2yQQYmMwQK44joueheYwUVYM1+72LE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=lM//XXZN; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1789408470; c=relaxed/simple;
+	bh=Nm2jJoFGlCKQ8KKlGlsLkQcvnsGCuR8va8ZeDxuGYDg=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=re0rbsGIcRTob6TcXLE71d75NzTIfsgJPUzWQAiZQLnv04wS+6ZSTgJhnpIIXi0k32apJgUI1qKOPWlrprHAnWDjfGt+YcP89OccTB5eM4h2peoMxd3+BK5tqYH1ZCWxU5Pp2mAl8Rt9RaEjrr7My0VhOE+oXl7OnEXKWEsvIHE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=bPzbJson; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="lM//XXZN"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 13C471F000FF
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 17:47:13 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="bPzbJson"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6542F1F000FF;
+	Mon, 14 Sep 2026 17:54:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1789408033;
-	bh=do+nDCE9pA8JWyYAddqXSko/FI17BOT1dB81Qi5dgXs=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=lM//XXZNyeNqkNF9VV8qlWJRuVLBKdzPCMfbHwbzXJqtox/oL+SVV2n+O9JHLbk6K
-	 k3qbkBts3JgjiB10Tlg8b4/XD2XtG13yem0DH+O91+P+jHhITM1on+cpBkoMPTjTYJ
-	 4bagQzvVIpvalgScb4FYYPYSxMSI9lIrSia6u/vmEwqj1MkivkbEMGTV2PqZ2yXa/c
-	 C8wyIxNsGI8Rj4rjakbv/k9SnnZ0fXxPly0YJzcaf4KUVTJEoP6Bt2CCw7rI02TkDh
-	 wgFHfzc+o0eHExW8f83e71l5Aehy4M2oydBe9Oa2SgDvNfYI3pp1jug+wogg4bXrQl
-	 DNJydnDpIbz7A==
-Received: by mail-vk1-f180.google.com with SMTP id 71dfb90a1353d-5c675e64ffcso71343e0c.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 10:47:13 -0700 (PDT)
-X-Gm-Message-State: AFuF++nwUTPSRcHzF3e8JuimAV+xT3eRk2kNw9epOd7r7me6uGk6ASJ/
-	gqgTpEZW6zwi1nQJwyESP9tJbY9YWKESh6bw8xCpZDpWs0J7/+ffeAKNVzTupQGV16eJJYRr8s5
-	r8bfMwA7Op1/NBWF+UrePRuMhl0DmYYA=
-X-Received: by 2002:a05:6102:8506:10b0:78c:d14d:8389 with SMTP id
- ada2fe7eead31-79d28cf2f87mr194151137.18.1789408032267; Mon, 14 Sep 2026
- 10:47:12 -0700 (PDT)
+	s=k20260515; t=1789408469;
+	bh=Eaqodn33pVokqSBMDiUGVZFjtTTNBwDfP3Qi0gtwQGs=;
+	h=From:To:Cc:Subject:Date;
+	b=bPzbJsonG4piL3Y4Tit5bKJfEt8N9gevKYN5BezAdcm7BHIVDGufhSrZJvHPCQyt8
+	 jt8uz+K+QoSQDOAvSgJP8iCyHbQrZJQKTKhVb6ECDc1XXjua5LpOgfRh1Arjwgfb9Y
+	 LGZUs3Qus80XXxWDQwSE0CPQShZZZJJnyrtABGALSQq71dC7dKdiooA4tuIy2lTPzt
+	 +tj/oeMI7L3ZkERSYOKBpKSozW7onA0wy8aZbhddMrN1lSQ1YiskwtEBUxPwyaBORC
+	 nqXUnlIAFUyaN+00i84xkNd59slHmPXZIN4+miSMWJTHfXV3iVGKTWU9n6Wrh95td0
+	 e9rRrxfofjXTw==
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org,
+	Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] btrfs: test that we don't create pointless compressed inline extents
+Date: Mon, 14 Sep 2026 18:54:23 +0100
+Message-ID: <83e3a8678c5eafb1cfcf10741a53b6e586cd72d8.1789408399.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <c97652a5-ac6b-4de6-aa23-3cdebc01d00b@gmail.com>
-In-Reply-To: <c97652a5-ac6b-4de6-aa23-3cdebc01d00b@gmail.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 14 Sep 2026 18:46:36 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H5dn+NFK+At8+C76r=u==AC_ZivnrvyezwOoWLfjjq9PQ@mail.gmail.com>
-X-Gm-Features: AcwNN1W7zb9g21HBgp3VIMXbL6ThxFPtzFvCWB4OSJaNK_Tn89T2Hsmt0ynqtyA
-Message-ID: <CAL3q7H5dn+NFK+At8+C76r=u==AC_ZivnrvyezwOoWLfjjq9PQ@mail.gmail.com>
-Subject: Re: Inline data is compressed unconditinally even when results in
- increased size
-To: Hanabishi <i.r.e.c.c.a.k.u.n+kernel.org@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Mon, Sep 14, 2026 at 5:53=E2=80=AFPM Hanabishi
-<i.r.e.c.c.a.k.u.n+kernel.org@gmail.com> wrote:
->
-> Hello.
->
-> I noticed that a btrfs volume with compression enabled (e.g. 'compress=3D=
-zstd') seems to compress inline data unconditionally, even in situations wh=
-en compression is ineffective and only leads to increase in size.
->
-> It is easily reproducible on small files:
->
-> # echo 'a file with test content' > test.txt
-> # sync
-> # compsize test.txt
-> Processed 1 file, 0 regular extents (0 refs), 1 inline.
-> Type       Perc     Disk Usage   Uncompressed Referenced
-> TOTAL      172%       43B          25B          25B
-> zstd       172%       43B          25B          25B
->
-> Same file when no compression enabled:
->
-> Processed 1 file, 0 regular extents (0 refs), 1 inline.
-> Type       Perc     Disk Usage   Uncompressed Referenced
-> TOTAL      100%       25B          25B          25B
-> none       100%       25B          25B          25B
->
-> It's not a big deal on practice, but shouldn't it detect that the file is=
- uncompressible and fall back to no compression?
-> Also, if I remember correctly, it wasn't the case a couple of kernel rele=
-ases back.
+From: Filipe Manana <fdmanana@suse.com>
 
-It's a recent regression, independent of the compression algorithm used.
-Fix here:
+Verify that we don't create compressed inline extents when the compressed
+data size is not smaller than the uncompressed data size.
 
-https://lore.kernel.org/linux-btrfs/721d8fd2c73095d06cbdbfa714a6dfac9c48895=
-3.1789407346.git.fdmanana@suse.com/
+This exercises a regression introduced in kernel 7.1 and that is fixed by
+the following patch:
 
-Thanks.
+  "btrfs: fix creation of compressed inline extents that don't save space"
 
->
->
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/btrfs/354     | 44 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/354.out |  2 ++
+ 2 files changed, 46 insertions(+)
+ create mode 100755 tests/btrfs/354
+ create mode 100644 tests/btrfs/354.out
+
+diff --git a/tests/btrfs/354 b/tests/btrfs/354
+new file mode 100755
+index 00000000..801dc587
+--- /dev/null
++++ b/tests/btrfs/354
+@@ -0,0 +1,44 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
++#
++# FS QA Test 354
++#
++# Verify that we don't create compressed inline extents when the compressed
++# data size is not smaller than the uncompressed data size.
++#
++. ./common/preamble
++_begin_fstest auto quick compress
++
++. ./common/filter
++
++_fixed_by_kernel_commit xxxxxxxxxxxx \
++	"btrfs: fix creation of compressed inline extents that don't save space"
++
++_require_scratch
++_require_btrfs_command inspect-internal dump-tree
++
++algo_list=($(_btrfs_compression_algos))
++for algo in ${algo_list[@]}; do
++	_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
++	_scratch_mount "-o compress=$algo"
++
++	echo 'a file with test content' > $SCRATCH_MNT/foobar
++	_scratch_unmount
++	_check_scratch_fs
++
++	extent_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
++	      grep 'inline extent' | \
++	      $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^size$/) print $(i + 1) }')
++	ram_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
++		   grep 'inline extent' | \
++		   $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^ram_bytes$/) print $(i + 1) }')
++
++	if [ "$extent_size" -gt "$ram_size" ]; then
++		echo "inline extent size ($extent_size) greater than ram_size ($ram_size) for algo $algo"
++	fi
++done
++
++# success, all done
++echo "Silence is golden"
++_exit 0
+diff --git a/tests/btrfs/354.out b/tests/btrfs/354.out
+new file mode 100644
+index 00000000..8bc7ecf6
+--- /dev/null
++++ b/tests/btrfs/354.out
+@@ -0,0 +1,2 @@
++QA output created by 354
++Silence is golden
+-- 
+2.47.2
+

@@ -1,80 +1,125 @@
-Received: from desiato.infradead.org (desiato.infradead.org [90.155.92.199])
+Received: from outbound.ci.icloud.com (ci-2006l-snip4-10.eps.apple.com [57.103.90.250])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D7D3374A19
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 05:29:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.92.199
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 630AF35FF5B
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 06:25:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=57.103.90.250
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789363753; cv=none; b=l9/KHb7Xp3E861y1l5bZG22FD7541A6BYds0PlEjd6xtAFXr0HxR7yNA3s9rkeQykYELMLjQyfaiib0WcJ4ooAmjnI0ew8bgTzEZGHynC4OsieFWJbNJsiyDMvrfCAt0qNIEm+o5QfPSsJOKJKN1Wg0pnP7hpFfDEzcGs0E/v8Y=
+	t=1789367124; cv=none; b=U7I1UcB8vhk49UdD1GuxGwz7aAx+UEmvwZ+7Psfn/gXHOH1REhpIobPso3CODDXVTyc5bsXqK2JhqNeVvQVKevIIfGOO16l0UYRpjshx+oJO2ctNTK7DpRdSc+bUKKvaaB+N9HCMLOCpUsWpEUvDWDOydwPjfhjF7CB20yCRRMA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789363753; c=relaxed/simple;
-	bh=AHJ/2TPMez0GKOpjhRk9cFO5vyZQjAlROJacpdChtb4=;
-	h=Date:From:To:CC:Subject:In-Reply-To:References:Message-ID:
-	 MIME-Version:Content-Type; b=Eo6bhdH3OjEY3H395jHi0MjUQJAzSS76g1sjA9NRWozNJHgCQpeDdQtV0XGYiadglu2yT3bq6+bxWnC7bbMHNmW5pWBhTOcdW0JIjQv4YcrDOHuU6/oxdOFsCRRtLbyMosX1bKuDSWVp1GIiO4aS9UlSp41Jm2S5mbF0DRIqxNQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=desiato.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=A1bvQ7Rw; arc=none smtp.client-ip=90.155.92.199
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=desiato.srs.infradead.org
+	s=arc-20240116; t=1789367124; c=relaxed/simple;
+	bh=T9/4c+tD653Ok1xgN4AyVryL35VgzCgoc8jquiNjOYk=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=E2qUGYwUafkez1Gx4hevPth2iJK0UzYGXKoMi9jDRjh5NCbW5CRB2eiQxDdux6M9UmqU15niWcPJXGqubjKaMYbAsS4p2ymcm+75iN8SvY1ZFaymv0M9azCMiBJzsrUbzl0Dh5NCqBpiGW9ObgqlPGXc/0VtBCyZhczBCNZmBK0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=dev.linjama.com; spf=pass smtp.mailfrom=dev.linjama.com; dkim=pass (2048-bit key) header.d=dev.linjama.com header.i=@dev.linjama.com header.b=dj7ilZQX; arc=none smtp.client-ip=57.103.90.250
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=dev.linjama.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=dev.linjama.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="A1bvQ7Rw"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=desiato.20200630; h=Content-Transfer-Encoding:Content-Type
-	:MIME-Version:Message-ID:References:In-Reply-To:Subject:CC:To:From:Date:
-	Sender:Reply-To:Content-ID:Content-Description;
-	bh=AHJ/2TPMez0GKOpjhRk9cFO5vyZQjAlROJacpdChtb4=; b=A1bvQ7RwQsSVIm7Vr7xES8bSDI
-	NNrvl8FUeRHElh6TLxMJGt9TVkoBRoVrBqwaJ9CwSyvMIySvm/+WdK+TGvSFnO72GglfbA2a/ns4B
-	/2/ivQFAVXcH+11ExKx9v2TGcDFW1HXJmfkzV50A45p6nOEDdvqy0NYyl0MgHgyNh8bHIIXnNc2/1
-	jQdy0RO7m27nUUvw1uHhTFseMQnt5AEzuZZncMGcZj+TiPgEEIG+asPVYFG3lOK3kbroUsqhecNYt
-	xcNfoU6ROtkP+YNgtlcBx6ta/fVZ0ScKsetCAEtdz+gGA+L4O6tYMSOm7EeMyD/kI4MmoA3fLqU5s
-	rtyfZFSg==;
-Received: from [2a00:23ee:1508:2c6:b3cf:d335:d64:51cc] (helo=ehlo.thunderbird.net)
-	by desiato.infradead.org with esmtpsa (Exim 4.99.2 #2 (Red Hat Linux))
-	id 1x5zFT-00000005Gwn-2SK0;
-	Mon, 14 Sep 2026 05:29:00 +0000
-Date: Mon, 14 Sep 2026 06:28:58 +0100
-From: David Woodhouse <dwmw2@infradead.org>
-To: Anand Suveer Jain <asj@kernel.org>, dsterba@suse.cz,
- linux-btrfs@vger.kernel.org
-CC: thiago.macieira@intel.com, dave.hansen@intel.com
-Subject: =?US-ASCII?Q?Re=3A_=5BPATCH=5D_btrfs=3A_derive_f=5Ffsid_wit?=
- =?US-ASCII?Q?h_dev=5Ft_only_when_temp=5Ffsid_is_active?=
-User-Agent: K-9 Mail for Android
-In-Reply-To: <0691a903-cc82-4ad7-8264-cddbf146d00e@kernel.org>
-References: <16069a6fc651168bfcd2394d6e57ce63a50231ed.1789235482.git.asj@kernel.org> <0691a903-cc82-4ad7-8264-cddbf146d00e@kernel.org>
-Message-ID: <91E0EA5B-BFD2-4B8A-8408-4F561D5E0777@infradead.org>
+	dkim=pass (2048-bit key) header.d=dev.linjama.com header.i=@dev.linjama.com header.b="dj7ilZQX"
+Received: from outbound.ci.icloud.com (unknown [127.0.0.2])
+	by p00-icloudmta-asmtp-us-central-1k-60-percent-11 (Postfix) with ESMTPS id 4BEE81800171;
+	Mon, 14 Sep 2026 06:25:21 +0000 (UTC)
+X-ICL-RepId: 01a09e97-7568-70fd-bf6a-c3d9c3a7724b
+X-ICL-Out-Info: HUtFAUMHWwJACUgBTUQeDx5WFlZNRAJCTQ9KHVwHXRxCD1YCXQNLVxQEHFIDXg5eMF0dRUNbAlwaWBVSQ1QEX1BfHA4JUh0cHFAWWQxaChwTVhUTH1RWB1BRHV8CCgRHBFsXRgNTRVEZFxFQAVgeVl5aF15NRx9ATWJJAVoZWxxAF0puTVMPDxRcDh0BXgVYEVQZHQ5YBhIdUBwOUQVbAEYJQQJZB10ARAxBHV4PUwtDCEseXBoPUx5QHV8tUw5EXlURXQdWBlNeWhdeUxcfSwBcRVAYRB9dHWYcXABWAlw=
+Dkim-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=dev.linjama.com; s=sig1; t=1789367122; x=1791959122; bh=SX54y9GEABSTk7aBFGSEbtjXEgav7/wo2ALJjWjX/t4=; h=From:To:Subject:Date:Message-ID:MIME-Version:x-icloud-hme; b=dj7ilZQXUjIqwWarVAceVc/Dgvsg0Nw8CeYcadGaDHkx/H4LJajr6lyX0jNED6+txtsOYLVI4n3CfaMVAfL3WAUqQDSXcYcz9vS3YW5iytVxSokiRdVJx26MKfRBdZbBkdXShVQZjKJpOKO4JNiObAaIGaxsliII2nZv3ikzA1uvE1QGsdO8+ABvc/7MMGh9eMjPwe+pQq7ts2PudQDGv04LH2HIriqPMCSQObUcwaWCB/W4I3vVnrVaBf75xHn1Ig0RWpM58doXTaCVnsoLzBJtplQOpzh+JNpgwRusfEFor9riO1QwKdg37EL0W44+URMVpabfOlDlX3FbDJafqQ==
+mail-alias-created-date: 1690913137769
+Received: from toolbx.lan.linjama.com (unknown [17.57.156.36])
+	by p00-icloudmta-asmtp-us-central-1k-60-percent-11 (Postfix) with ESMTPSA id E89BA180011D;
+	Mon, 14 Sep 2026 06:25:19 +0000 (UTC)
+From: Daniel Linjama <daniel@dev.linjama.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>,
+	Chris Mason <mason@kernel.org>,
+	linux-kernel@vger.kernel.org,
+	Daniel Linjama <daniel@dev.linjama.com>
+Subject: [PATCH] btrfs: don't force the filesystem read-only on EDQUOT/ENOSPC verity rollback
+Date: Mon, 14 Sep 2026 09:24:59 +0300
+Message-ID: <20260914062459.3889313-1-daniel@dev.linjama.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-X-SRS-Rewrite: SMTP reverse-path rewritten from <dwmw2@infradead.org> by desiato.infradead.org. See http://www.infradead.org/rpr.html
+Content-Transfer-Encoding: 8bit
+X-Authority-Info-Out: v=2.4 cv=Ds5bOW/+ c=1 sm=1 tr=0 ts=6aa79351
+ cx=c_apl:c_pps:t_out a=2G65uMN5HjSv0sBfM2Yj2w==:117
+ a=2G65uMN5HjSv0sBfM2Yj2w==:17 a=VdqzKS8jKosA:10 a=VkNPw1HP01LnGYTKEx00:22
+ a=olXNNK5aAAAA:8 a=AoYkXxg7OnMuDaBrwzQA:9 a=U4UmX7kblY_o6ZOM_jyP:22
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTE0MDA4OSBTYWx0ZWRfXxA2relkI/SMD
+ esjRyay45CRhaBfMvmJBX8nXb43Xa2mRWmyvK5RjMtrgQJFRiW2+lajZAZeJwtJ7KPCZCKaDMEO
+ 0l4jWOMDGMDRu5CwbBBN1J22Pfxa6xm9OtfoCW5+LwMNVGlNZ9lzF6z4vyBv7p5/Rtu3LripZJY
+ lAvsuVFJMoxu1x29xrN8qwj5KSh1dcLUevHPNQEgkjjtLgEEm1O+NxozjatvwkpalFk42N70QKS
+ K/mHFzKffhHWVZvX8D2CSf3m1TE/gaUzT9IJNrSDuo4K0zYL55bj0kpNHG20aaaZL+bLyEUQ4z2
+ htLrABttIiMpW76DbbgrDATndKE938Xp+Y0rZZcVBPvkh63vZdcKWdj08m2xrE=
+X-Proofpoint-GUID: uiK8xOhAHJagb6kVVhEZQbhxARBZ2Wc-
+X-Proofpoint-ORIG-GUID: uiK8xOhAHJagb6kVVhEZQbhxARBZ2Wc-
+X-JNJ: AAAAAAAByY3P++mmj0hOe14oDYXxl5jLEO/vvlHBZLgsmdfRfKIRvQ3t0AMV+04lcnwMPLHYWAnrujRzM/VinFOuB2CxirmSZQmA949da9M/acpPvkusewDzrmQ64FDbYi3iGzqeX0MvE89tnMN6OH2/t7E8SlZg6hSklvMjopEttxx0Z2FLy8pL1EU9ff5gSjAS4bGfKK0T4LtE5F/ZuPtvXZiopHoIiypdJTMXgK4dHYPDjHWR4u1Q5TtW+/ccYJHVsgF1DAm5WqDhIVRlNXBmxNL44PdenGdOGYIALkdVNzzAPIbhqMyIsqImM4RW3TTEgOFEOSIkNmk5EXVnu+eFF52e4k7hQR7kt3qZEW460YQZooGc5PYySToRddNvJM4N6gpq5Jv2KKCcMbnBMMuT51FsRHwLXYMoT6H24hhRu3qUJDORqih2wLhAPqhsIaY952/7d3PBe8gCls36NOeqfFDOn+bNKgNepWXS806fCoHXfNlOu5dgUHLkj6TM+1UTVKb3H3A+1aqLgEiaFFAiGPLXDMq/fH59P9wQuKYu6us6xCZJfq3CirRaSFW7t/EbQmSp1WfTa966o25+uoJxGNxjaYTSd/lW65PSxKTMnfWK4xgaowKyyOpp2nWaUwJ/PFFrYxSjSHP92uHNetzPHovGmdzKlW8bpMWS34ApawVRi2OKbg2g1QMITgJnBu8GKkZBQaTbQH6MGzVWmrvVA7oOqWR5wmW0kFqYjVrA2fOuF6VP4v7aGMSKGM92ZWO7T5b2zuTE8bwTq7dzkiw2TvNhB448Me986H+KZe0QHJyGznYLs7N3Fo7QZyestVxOA7GCWeGRdhdu12s7fQQVtJkjmD4O4e0ReXh6+a66NYBTZ8H7HVlMJDfD1ZM6VMoIb+M5TA6nKxo12pGvSmE7ZXvkxuZKg+hmDuCLdVs0GS4TFr1ofnFZsQVOU7BWpKbOruVhu2VqNnyiWpwrwwI3ifYlack
+ p5YltzVEJQ0zVpBdzKTFfHMTNBl+I1uDVCjJ2iY+ZkxRZ00kTRVD7bBdhqdS/Uq4ZseHm3yyR5A73HsWLZVObCoWrfQYWvuE+8Qs1vRNjKOf1hUKlAHMHK7rcbzlqw/Sy8G/+etbs9niUa45pLxRM1ieApS3wirJP0/3Bmw+3685e9tWP7CboJV1JP7C+TnZM9TSRYEFEBCy+ufuRvP0BoVBDR2nffqh0noK8wBi6KLAdpQ8b3dNM1UUlNqXeQg==
 
-On 14 September 2026 04:42:51 BST, Anand Suveer Jain <asj@kernel=2Eorg> wro=
-te:
->
->
->This issue and its current fix (below) have been on my mind, as I wasn't
->fully satisfied with the approach even though it works=2E
->
->Now, I think I have a better idea=2E
->
->The core issue isn't that the new f_fsid derivation is wrong (recap:
->f_fsid derivation changed from f(UUID) to f(UUID + dev_t))=2E Rather, the
->problem is that f_fsid changes unexpectedly after an upgrade=2E
->
->So we need to address the upgrade behavior, not how f_fsid itself is
->derived=2E
->
->My new proposed solution:
->
-> =2E Put the new f_fsid derivation behind a compile-time config flag (an
->incompat/opt-in flag)=2E
-> =2E For stable kernels, this flag will keep the new f_fsid derivation
->disabled by default=2E
+When enable_verity() hits the qgroup limit, rollback_verity() needs its
+own metadata reservation. When the qgroup limit refuses the rollback,
+the whole filesystem is forced read-only even though the qgroup limit
+was for one subvolume only.
 
-No=2E That still gives you a broken fsid on upgrading to the next major ke=
-rnel, doesn't it? Maybe a new flag on the file system itself to indicate th=
-at its stable FSID is computed using the new scheme=2E
+Skip btrfs_handle_fs_error() for -EDQUOT/-ENOSPC and just return the
+error. The verity orphan item is left in place but the orphan cleanup
+from commit 705242538ff3 ("btrfs: verity metadata orphan items") will
+remove it at the next mount. fsverity enable still correctly fails but
+the filesystem is not forced read-only.
+
+Fixes: 146054090b08 ("btrfs: initial fsverity support")
+Signed-off-by: Daniel Linjama <daniel@dev.linjama.com>
+---
+Verified on a virtual machine with a mainline kernel (08df884136f1) and
+a loop-mounted btrfs, with either a qgroup limit on a subvolume or a
+full filesystem. On the unpatched kernel the whole filesystem was forced
+read-only. On the patched kernel fsverity enable returns -EDQUOT/-ENOSPC
+and the filesystem stays read-write.
+
+ fs/btrfs/verity.c | 22 ++++++++++++++++++----
+ 1 file changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
+index 4e0ab5842274..8d0f9eea4c39 100644
+--- a/fs/btrfs/verity.c
++++ b/fs/btrfs/verity.c
+@@ -441,7 +441,9 @@ static int del_orphan(struct btrfs_trans_handle *trans, struct btrfs_inode *inod
+  *
+  * We try to handle recoverable errors while enabling verity by rolling it back
+  * and just failing the operation, rather than having an fs level error no
+- * matter what. However, any error in rollback is unrecoverable.
++ * matter what. Failing to delete the verity items for lack of space is
++ * tolerated, the orphan item ensures they are removed on the next mount.
++ * Any other error in rollback is unrecoverable.
+  *
+  * Returns 0 on success, negative error code on failure.
+  */
+@@ -456,9 +458,21 @@ static int rollback_verity(struct btrfs_inode *inode)
+ 	clear_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags);
+ 	ret = btrfs_drop_verity_items(inode);
+ 	if (ret) {
+-		btrfs_handle_fs_error(root->fs_info, ret,
+-				"failed to drop verity items in rollback %llu",
+-				inode->vfs_inode.i_ino);
++		/*
++		 * -EDQUOT and -ENOSPC mean we could not reserve metadata to
++		 * delete the verity items. That is not a consistency problem,
++		 * so don't turn the filesystem read-only. Leave the items and
++		 * the orphan in place, orphan cleanup on the next mount will
++		 * remove them.
++		 */
++		if (ret != -EDQUOT && ret != -ENOSPC)
++			btrfs_handle_fs_error(root->fs_info, ret,
++					      "failed to drop verity items in rollback %llu",
++					      inode->vfs_inode.i_ino);
++		else
++			btrfs_warn(root->fs_info,
++				   "failed to drop verity items in rollback %llu: %pe",
++				   inode->vfs_inode.i_ino, ERR_PTR(ret));
+ 		goto out;
+ 	}
+ 
+-- 
+2.55.0
+

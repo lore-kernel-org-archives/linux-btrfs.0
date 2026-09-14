@@ -1,108 +1,166 @@
-Received: from fout-a6-smtp.messagingengine.com (fout-a6-smtp.messagingengine.com [103.168.172.149])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 31EE549CF4C
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 22:28:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.149
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 110892C11E6
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 22:39:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789424918; cv=none; b=TSjL/Ef9BaJjpW9wuhQYkpa22ykr2Km20YwVow7hW6LJY4bkkE4sBWAzvQwv+hSoIN8fSCLSrw3u4ERCji0lYV4zk5Ujw40z7GqGD2hEFAIXFrTBPDcZyaFISR6OivwsjEFNTWtgmZe0ea7ocjiTW37BEGCNVv1kM6S0U0Ah9I0=
+	t=1789425578; cv=none; b=BUyA0EgCL7796A4HQ3Gh41UzNhVU293hLXvQh51cvjJN1TrVzWlnOib5fwnddUqU+s9GoBSUdhdc5LqoAmOJez2HVkcDLQnxiyyefmR1ExO+19cJ5wCZHu5Whyz5hDD17HhPXjiogZPnSHdREdZEsXUqbuySsMe88/p7Q3iIUN0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789424918; c=relaxed/simple;
-	bh=4OxqsoxM6AuH37gEJjvWG2axu8iZE1AFNPkJY2qJgkE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=D5LAP99qC0EkcNgd1g2VZaqFpgzLZJ8sKXkv9CNTGp+mACtxoq4wftQNj0nCDx9LBc/bxvcZ0MF5woDsI++TG0Xd25grI7v2sitKsfigyWC0MQGdB+weLkjBooj1K6yKXTvpGcrlloZlurSP9XS+UhBcJ+O15v6TKgOJBIWi1Q0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=XlcH/fgH; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=V9gFKc6x; arc=none smtp.client-ip=103.168.172.149
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1789425578; c=relaxed/simple;
+	bh=Vt1fuX/BbScQfvr2UtDs6tyr5aexENx6W2t7EG2vwxk=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=bncmNomhd2krTz2J++ZKqo1sUK/UfhWdQEJ2Culjd7DhAX3Uauj9VoN/m624d3QLtbwDidvPLI3qB3/G2bl+FYgjNX9uZwvXVFSLDNNKtVrJraaNDI8vhYHt6icj2C41Y/d7VzbivHop1/+nlcZorsPZiqDyiSvPIZ8aOJlDKvc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=C8FiTpEP; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nFOqWxzC; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="XlcH/fgH";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="V9gFKc6x"
-Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
-	by mailfout.phl.internal (Postfix) with ESMTP id 4D0CCEC06A5;
-	Mon, 14 Sep 2026 18:28:36 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-05.internal (MEProxy); Mon, 14 Sep 2026 18:28:36 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm2; t=1789424916; x=1789511316; bh=YTxVzMsxfZ
-	9DNibHLETTNxzpL/+iaqNn+whPgV30eh0=; b=XlcH/fgH7uWQyibuBrwOLiQd8S
-	Gkph0i78DFzMP9zfmXRjoPrEq/K1dsL+BOB8FFiFURwOfy+9xy1KdCK35lylvqCS
-	5O8EzGtbeU31snRaVFFBGK8nonoOC5eL3r+cZKKIHkQ9wbCJpPWkHBVPtV6mH9zp
-	YSgufE/30GHme2yJzQ//bufZb3Ok7KQmNYHiycp0ieddATANnorE2cdCeCpCOHcV
-	lhgGa1L/iz2K1HjpUZOtXfizs10BoV9XCO5gYUQKWC2F3BKvnoK7sRA+WKtrljsg
-	n3obqMixpcrmMJtpCJLA8leXnWimsaHiVlvgqTF+9JlqB++R+O3ZUj9ZniCg==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
-	1789424916; x=1789511316; bh=YTxVzMsxfZ9DNibHLETTNxzpL/+iaqNn+wh
-	PgV30eh0=; b=V9gFKc6xwJSTTccyle4o9a53JUXiGUT5DLTS+tBvo6o0z/FeUSr
-	THzD3v8b6UxUBvkKqrOQcG5dqCr6wFcFovMedhGrm39/LfApkQll/rHD6ut3JpCh
-	5qR+f2sDiLSV1qF9qOGlyg5Lwe2MoI9tKQNriEPdXS2uEB+PBeD2DoolSLkcUXX0
-	rF1lijWD9FJ3KSy6tLBhKFTtatwL06+07rVk04XzEh5MAcMGBYuL84S/bNAvwUnn
-	V4bX/zn6BtAyqxZUV+AmAkv2MRMtQYexhDUhSsRiNqo5U6mBrKjht6TuHugsUwgv
-	NMIJNlg1fA3BKAOkJAC2rkD9DXkZmweoZTQ==
-X-ME-Sender: <xms:FHWoarVAPd8SC4EyjETYJz5C_oIWwtnnZ3wZxajL5LTxRKJTZNRq3g>
-    <xme:FHWoapnKporCQHkgMovfxT8xVJXN6Fac3IMqKVjTbDWn1McAGvfDhDF4SSXnFqG9k
-    jr4X70DLNauoGm_jJ9RGc7qciAuQdlYnF5Q0O6wlVBiChrhua6WwBd->
-X-ME-Received: <xmr:FHWoalCvXorRYhyBrwjuSiH2QlFlBCaqrf_cinJzONiJfEY6BCNmI5k>
-X-ME-Proxy-Cause: dmFkZTFuiWjdnDiBJKZwB/2zrRRyg3Y8nIH+qoNF3WzGnMhqU9SM/Zfu1ZobKnyNt4QTZ+
-    Zbzfq8BQgA64nZ/MBcgiQgeTZNjie8Z18nhTKKcXCnlwFTFPAEgN+LhPNIgKto1aX2DomO
-    VkFxLIJII8ngJKRz4D/RCk97svjBiVLW4yUZJwpKDUmoPOQFl9TP6dMk24At4CrqxYt9Rf
-    ZUtIgI+MMO/5vO6MzGFim1NqrjogfLO+naeaJ2vkKM6ypVskdnO0PyRZ4wM2NeW1iqYRj2
-    ARCxDxyMh8mZymep3amuuX4+h5gWsSykgGTGCtuY/+o2kmKgBE2Mu78HhLHPPlvgbCs6Ho
-    A6G9sIdcq8T8qzRQ8/WnMLKTG0k4IA75KN0t2F0A1DtN3BBKa2gmao1eoMvM8m4KiGjmIW
-    XtnM31a/5YJ3bnbnSG/ZEpb5Br06G0RiYuERoUOVmxAujK2UFKplrO2d4dQnuDe/a9N3Q/
-    KXsOoeQTVkDDNFGoSnuUFTIak1NnbeS1pgnhCtGiNz4R5ijm25aZgdkFNBi8H9Yjq4Ma/D
-    /U6bJcDi8jT6Uv8Eusd3BTXtB94it9Mzoc6tK9Bc8Cuo7gaT83ytO24WsNo86lR7TqdqcD
-    ab2Qgai8s9ypGdmox6Iu9JFWvACMJy/ZRIr/JxPOiS2zkcVXv00H3Zh4Waew
-X-ME-Proxy: <xmx:FHWoahfObCEOZ5jQ_M3ZfzCUHgKqXM4D3o2t6Vp1IXhCIj5Snt-6Sg>
-    <xmx:FHWoaoLndtVLvXBE5sIcM_L6PUQHReRLXTLMde3j1NoZwSsLIxK5ZA>
-    <xmx:FHWoasdJD31RN5ns8pp4XCwo5Tve8lDgpnlhnsh8FUuR3MqJ3X5Wwg>
-    <xmx:FHWoan3m02zWiN6nMXSp9z83esg1Vr10VRhlVJVavSs_r2b-Kh5CwQ>
-    <xmx:FHWoasBnBkRal6TW6LgEL6p0AFJABpAKcWzco5yGwMa1XvTctTMoGrOu>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 14 Sep 2026 18:28:35 -0400 (EDT)
-Date: Mon, 14 Sep 2026 15:28:54 -0700
-From: Boris Burkov <boris@bur.io>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/2] btrfs: fix and simplify heuristic_collect_sample()
-Message-ID: <20260914222854.GB151269@zen.localdomain>
-References: <cover.1789003160.git.wqu@suse.com>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="C8FiTpEP";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nFOqWxzC"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id DE3AE1FF6B
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 22:39:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1789425571; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=gazOV7giYyMUrQsMZB/vhverpEGwKCtnRAHI/x2e7OI=;
+	b=C8FiTpEPbMVB+H2Kpv5pJbKWzg/LpaThmWHy+rAYSSbzbK0BedxVSZwUhVwxkcMuYkD0lA
+	kTCV2GuF1nJV3g3ke3dZmkj9B/RBLaCCD003mzGnTe6AqfHT9mVmWQEw7F/+If7a47cvI7
+	dfeQW1AbWD7aK31ppA6Uz6bU5EqKIRA=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1789425566; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=gazOV7giYyMUrQsMZB/vhverpEGwKCtnRAHI/x2e7OI=;
+	b=nFOqWxzCKKATejWHhldyut47v6Z16aq7nJqBnnUU/2a59CXMKxkClZFsAutj3CfnEBmu7D
+	K55qd32wQvExJXSx8pGOWfs6DAWmAHhZUkGzsjo9YWXXD7h79rkeRwpCcuPGRe6DrAbxJX
+	VuldwmuD07hp4EDIWbnbnKqngiUbeCw=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C248613515
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 22:39:25 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id GtklHJ13qGqsKQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 22:39:25 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: docs: add a dedicated multi-device support chapter
+Date: Tue, 15 Sep 2026 08:09:07 +0930
+Message-ID: <cb437e93978784246fab57cbbf04892b1d985a3d.1789425495.git.wqu@suse.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1789003160.git.wqu@suse.com>
+Content-Transfer-Encoding: 8bit
+X-Spam-Level: 
+X-Spam-Score: -2.80
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
 
-On Thu, Sep 10, 2026 at 11:35:51AM +0930, Qu Wenruo wrote:
-> The first one fixes an off-by-one problem related to
-> inode_need_compress() and heuristic_collect_sample().
-> Thankfully that off-by-one is not causing any real problems.
-> 
-> The second one enhances heuristic_collect_sample() to handle large
-> folios in a more efficient way, inspired by the recent cleanup from Tal.
+Btrfs, like all other multi-device storage solutions, requires proper
+device scan and registration to handle multi-device arrays.
 
-Reviewed-by: Boris Burkov <boris@bur.io>
+However btrfs has some extra requirements and quirks related to
+multi-device support.
 
-> 
-> Qu Wenruo (2):
->   btrfs: fix off-by-one end related to inode_need_compress()
->   btrfs: simplify heuristic_collect_sample() to handle large folios
->     better
-> 
->  fs/btrfs/compression.c | 51 +++++++++++++++++-------------------------
->  fs/btrfs/inode.c       |  5 ++++-
->  2 files changed, 25 insertions(+), 31 deletions(-)
-> 
-> -- 
-> 2.55.0
-> 
+Record those extra into into a new "MULTI-DEVICE SUPPORT" chapter in man
+5 btrfs. For now it includes:
+
+- Requirement for device scan registration
+
+- Requirement for initramfs if the rootfs has multiple devices
+
+- Quirk related to device path shown in mount point
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ Documentation/btrfs-man5.rst | 44 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+diff --git a/Documentation/btrfs-man5.rst b/Documentation/btrfs-man5.rst
+index ce4021ab84b5..11f6c9327b45 100644
+--- a/Documentation/btrfs-man5.rst
++++ b/Documentation/btrfs-man5.rst
+@@ -34,6 +34,50 @@ MOUNT OPTIONS
+ 
+ .. _man-btrfs5-filesystem-features:
+ 
++MULTI-DEVICE SUPPORT
++--------------------
++
++Btrfs has built-in multi-device support, and supports several profiles that require
++multiple devices, including RAID0, RAID1, RAID1C3, RAID1C4, RAID10, RAID5 and RAID6.
++
++However the multi-device support has some extra requirements/quirks:
++
++- Requires proper device scanning and registration
++  Like all multi-device storage solutions, btrfs has to scan and register all involved
++  devices to mount the filesystem.
++
++  Normally it's done by udev, but for systems without udev, the end users are responsible
++  for proper block file creation and scanning.
++
++- Initramfs required if the rootfs has multiple devices
++  Without an initramfs, the kernel boot sequence doesn't create "/dev/" with every
++  block file, thus it's impossible to register all devices to fulfill the mount, even
++  with the *device=* mount option.
++
++  It's strongly recommended to use an initramfs if btrfs is the rootfs. It's very
++  easy and fast to add a new device to an existing btrfs, without an initramfs the next
++  mount will fail to mount the rootfs.
++
++- Device path shown in the mount output
++  Btrfs maintains an internal device path for each device. The device path is recorded
++  during the initial device scan, and normally doesn't change during the lifespan of that
++  device.
++
++  This can lead to inconvenience if the user space tool doesn't do proper parsing.
++
++  For example, creat a block file at "/tmp/block_file", forget all devices, scan and
++  mount that newly created block file, and then delete "/tmp/block_file".
++
++  This will make btrfs register the device path using "/tmp/block_file", even if that
++  file is later deleted.
++
++  Tools like *lsblk* can still handle such cases by using device numbers, but a lot of
++  other tools won't parse the mount point properly, as the device path no longer exists.
++
++  Normally this should not be a big deal, as udev is the first program to create those
++  block files and scan them.
++
++
+ FILESYSTEM FEATURES
+ -------------------
+ 
+-- 
+2.55.0
+

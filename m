@@ -1,199 +1,71 @@
-Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 91ED23A784E
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 10:48:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 739BB45FFDC
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 12:28:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789382916; cv=none; b=Q9hmkohbGmkY5aDd7si23SmvMX1TnIzvjMbgzAk1ODP9x6B8yHrngxfI2jOAB3q6ZP1/maTnRthaZnPNw7hxqYnN25OaC7V1fVq7oAA/K/QNAF4v+h8eE4PV+pz2aW5AEiK3RCDcjLKDbtOipTbXy7XdUoXYXWlBeqoCTtIzVGI=
+	t=1789388896; cv=none; b=QDKZLA/W4kpiJpFcKY/FJA+CUe9tHbZtVH0M1DtU5zbFaGdezaD9n8tRRspzu8i66ke041wpg6dafcL6u3ake5dp1UdgaVkA9TQFVRGYLByzSLu6dw92pdcqWKjZVptJ9WLc3SRR9REgY569tCy2/POU0jziKd1Xq5JexZFUfYY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789382916; c=relaxed/simple;
-	bh=6dpjtberZrdMxRJgbXl6S/qjIXlUre6gNRXBe+MuHLI=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=M/NQzCI4CmDgtnO9lwQCfzv28AwGvLwWlG0Se+ozrgRo873OYNFbj/hEXrxVAUGLpapH5L5qDvRBsECU858g/9p1LxWcFRsJ2mFTTjDOydzl9MND8IrLDLX+3+lkro/dKmSDiGNOCoAanPvsKceZgHwNY2UsfR28yJC73oPe1uY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=casper.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=V/aNfGig; arc=none smtp.client-ip=90.155.50.34
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=casper.srs.infradead.org
+	s=arc-20240116; t=1789388896; c=relaxed/simple;
+	bh=KIcJWp2l8aBpcwfXDmcPkwoC91TRFDdqgyWuaPmjioU=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=jApK3AaUiBgOphgvnst7UHbBFRnMfxNzHzXs5nJvRzfdYZMlTjpiV4GGeRC1tWwA+QJX+lOAx9KYv94GcQ83Cean+upz/LTyVkwokCQDLGNBFZW3kGfBSK2Xyg+7AAzQ1g2MRW8LJGnpMWivk/C3ntB7YI1t+dtusSs1MudrTPE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=hLx7tVPR; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="V/aNfGig"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=casper.20170209; h=MIME-Version:Content-Type:References:
-	In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=6dpjtberZrdMxRJgbXl6S/qjIXlUre6gNRXBe+MuHLI=; b=V/aNfGig5QF7WhmAhQvm6Br7H3
-	CgkH4gIs+QYxMRvf0ABLiVUm0AoXSWMAVqr+XQj8BdoI6YwxAS9gDP/zVPpMwyze8i93oxYQ2kwQ+
-	8UhO0G6DXNypTb8WePfT5ltJNu2tLrou/PVovb8bSlRyfZHSGK9dFPcGRGkxiqt9HdTCO0n/DIfPE
-	r00XzTZhwdvXO5bbgA2uxifh8LMsF59N0+Urnhm44FzvnFeisbKuHLNfY5w7PJ9Nxswap3MepzP7s
-	CVx7tv1t1ZtmPBeVsye9TBuhNqSVuaMxPCJgKLTnmJVUowFYOA1SdwGukAkC9YBF5RzxbZZq/0rEV
-	M6GSxdlw==;
-Received: from [2a07:aa00:8c:1:419b:5dcc:db7:85d7] (helo=u09cd745991455d.ant.amazon.com)
-	by casper.infradead.org with esmtpsa (Exim 4.99.1 #2 (Red Hat Linux))
-	id 1x64Ec-0000000ASkW-3KCz;
-	Mon, 14 Sep 2026 10:48:26 +0000
-Message-ID: <f130860f8e12c46688a7fcc158f3f34fa042e47e.camel@infradead.org>
-Subject: Re: [PATCH] btrfs: derive f_fsid with dev_t only when temp_fsid is
- active
-From: David Woodhouse <dwmw2@infradead.org>
-To: Anand Suveer Jain <asj@kernel.org>, dsterba@suse.cz, 
-	linux-btrfs@vger.kernel.org
-Cc: thiago.macieira@intel.com, dave.hansen@intel.com
-Date: Mon, 14 Sep 2026 12:47:53 +0200
-In-Reply-To: <c04f73b1-cf55-40ef-bb47-d518603bcd8c@kernel.org>
-References: 
-	<16069a6fc651168bfcd2394d6e57ce63a50231ed.1789235482.git.asj@kernel.org>
-	 <0691a903-cc82-4ad7-8264-cddbf146d00e@kernel.org>
-	 <91E0EA5B-BFD2-4B8A-8408-4F561D5E0777@infradead.org>
-	 <c04f73b1-cf55-40ef-bb47-d518603bcd8c@kernel.org>
-Content-Type: multipart/signed; micalg="sha-256"; protocol="application/pkcs7-signature";
-	boundary="=-/jtg4J+f9PLdBSrgYlLP"
-User-Agent: Evolution 3.62.0-0ubuntu1~ppa1~24.04 
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hLx7tVPR"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 399261F000FF;
+	Mon, 14 Sep 2026 12:28:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1789388895;
+	bh=KIcJWp2l8aBpcwfXDmcPkwoC91TRFDdqgyWuaPmjioU=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To;
+	b=hLx7tVPRCZ3qyOX7P1luZNza8zPx8XW6MTWVFS2oXPQ+lThEOwpFxmCm64KnhYtNu
+	 gyRJQXWHU/wL7kSu1y3c2SMJo1yTRrYVw7tEzw/FmBBMYZEt+yWL+KHx3qmVJjK5D/
+	 C4dCLtXFGbS2rYjYhdjDiLWtn0VpZVVMTT258wCd6fggo1Dz4GxW7X0CL2XqylOInx
+	 68BF6bsoSUcKrvuUQB70EcNV1L5P+TlHZA0Tbvd7TdUlVKrIlUMN44Nxdw/Ad4aCcR
+	 d4l/VeEvj+SFJYqLHoaWLiDJ07kla7Sfm7KZnIbZ2vbU/M22Ongfw26QgTwAPNiTVX
+	 zdYKW7z0gSasQ==
+Message-ID: <6e78fa81-3bc1-4821-b41c-5c18d9fe8a53@kernel.org>
+Date: Mon, 14 Sep 2026 20:28:12 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-SRS-Rewrite: SMTP reverse-path rewritten from <dwmw2@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: derive f_fsid with dev_t only when temp_fsid is
+ active
+To: David Woodhouse <dwmw2@infradead.org>, dsterba@suse.cz,
+ linux-btrfs@vger.kernel.org
+Cc: thiago.macieira@intel.com, dave.hansen@intel.com
+References: <16069a6fc651168bfcd2394d6e57ce63a50231ed.1789235482.git.asj@kernel.org>
+ <0691a903-cc82-4ad7-8264-cddbf146d00e@kernel.org>
+ <91E0EA5B-BFD2-4B8A-8408-4F561D5E0777@infradead.org>
+ <c04f73b1-cf55-40ef-bb47-d518603bcd8c@kernel.org>
+ <f130860f8e12c46688a7fcc158f3f34fa042e47e.camel@infradead.org>
+Content-Language: en-US
+From: Anand Suveer Jain <asj@kernel.org>
+In-Reply-To: <f130860f8e12c46688a7fcc158f3f34fa042e47e.camel@infradead.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
 
---=-/jtg4J+f9PLdBSrgYlLP
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2026-09-14 at 16:28 +0800, Anand Suveer Jain wrote:
->=20
->=20
-> > > . For stable kernels, this flag will keep the new f_fsid derivation
-> > > disabled by default.
->=20
->=20
-> > No. That still gives you a broken fsid on upgrading to the next major k=
-ernel, doesn't it?
->=20
-> Upgrading to a _major_ kernel would require an extra step to re-encrypt
-> with the new FSID _for some configs_.
-> A one-time operational overhead.
+> The documentation is fairly poor, but historical
+> behaviour and expectation is that the FSID is supposed to be *stable*.
 
-I'm not keen on that. The documentation is fairly poor, but historical
-behaviour and expectation is that the FSID is supposed to be *stable*.
-You're not supposed to randomly change it from one kernel to the next.
-Won't this also trigger some incremental backup schemes to re-archive
-every file as it seems the {fsid, ino} has changed?
+It's definitely messy.
 
---=-/jtg4J+f9PLdBSrgYlLP
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+Statfs f_fsid was never strictly guaranteed to be persistent across
+reboots when derived from dev_t, filesystems like XFS and F2FS share the
+same design.
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCCE8Ew
-ggWvMIIEl6ADAgECAhANkOKMSmGXhF5eMl0rsRhvMA0GCSqGSIb3DQEBDAUAMGUxCzAJBgNVBAYT
-AlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xJDAi
-BgNVBAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQgUm9vdCBHMjAeFw0yNDAzMTMwMDAwMDBaFw0zNDAz
-MTIyMzU5NTlaMGIxCzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE6MDgGA1UE
-AxMxRGlnaUNlcnQgQXNzdXJlZCBHMiBTTUlNRSBSU0E0MDk2IFNIQTM4NCAyMDI0IENBMTCCAiIw
-DQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAOfSIeC0vv1xPQ+dgSxbIIrkaru6skAWJYaGFzmv
-q4Kq+2wU2jxhcWlJg/JeP5jEkq/LM3pn5aaLao79j+XRmS7J1ZpJKUODJVoM4s9MQJhTMvo4qS5Z
-S64g6QR7Obkz3I1Lr3aWeSBmDDEyzue+NKtuWZ1Cxy3RdXo/w5HgRc3l2AercOM3Gt1XonTzEtTb
-Z/Hwc0Sn9Gz8RmGRK6Ka4hVDl8q/2l110KaV233Kh5etP0csXS8MIMdVRfRu3sc5hp13DG7lCKzK
-72a2GEpI8Wpl26G6I1/LMzz/98T+FqjTqxsdquk7Cj7m2vKGLW1BorpQH7WFGPdJQXJe1hfbfiZA
-CcVdCtl4nAacFacmsiArZBfX7AQGL7isvHUwwYFEtcApyGW4p2Lt+t8nvU0CANA6BHOpOz1xOP8W
-mAESbUriIjyuTUf3fJ9oDNCurVqhASMJCDaWI3lYX/QAoiAzt6akqbbZxo2ujW7mGGqc0KxqE2cs
-h2T79v7pC8aUtHBfwNrTR19GnZVxE0eQ7ViIQhR6mpSaUQFA9sG+cmD2G8TnCgYsLa0q8De6F61a
-CBevQGHNzrbZ3JAMneveYg/Jy1XxQHDRcvrMfWKe0jjcWbdKYlaGVPm5V1ILwYz7Yv5ewo3NUrxI
-GJiywe9qPhuJSDZs7VehTuI0FxGIsgKzVjgbAgMBAAGjggFcMIIBWDASBgNVHRMBAf8ECDAGAQH/
-AgEAMB0GA1UdDgQWBBT3m6JO05fF9DQPQw6Bhc6RkzKv+TAfBgNVHSMEGDAWgBTOw0q5mVXyuNtg
-v6l+vVa1lzan1jAOBgNVHQ8BAf8EBAMCAYYwHQYDVR0lBBYwFAYIKwYBBQUHAwQGCCsGAQUFBwMC
-MHkGCCsGAQUFBwEBBG0wazAkBggrBgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEMG
-CCsGAQUFBzAChjdodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURS
-b290RzIuY3J0MEUGA1UdHwQ+MDwwOqA4oDaGNGh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9EaWdp
-Q2VydEFzc3VyZWRJRFJvb3RHMi5jcmwwEQYDVR0gBAowCDAGBgRVHSAAMA0GCSqGSIb3DQEBDAUA
-A4IBAQA+b8Uw53sDspdZgukU+qzLyyHkcjlxGGhHlP+zrmDLKm1wEFvCRS2pili3Hy67i8N4N5NU
-vw5Rg6kv3lxb9S9Rktxk43k+tvm68pl7OxQE55ZjVY87P0lUPGwEqOOwLLyH02ZQcsfq5p5LrOH9
-0JvmvZ1yy73HS+VpDAqOlytE0NSvTIRqFFkKQGQwfjvtql9YflujuNNvJztjBaHKYZsnNSg+J38o
-jYq4TP3pSg3UdVH0PncVjPQyqxC9xef5Xae92Kbkzol3x7Nel3A1bwAkalrDMspvTHvey6LfiBks
-FIqviTnoy7fgjaRAJgHS+RXx/cmuRd3rUAclSVVrYu8RMIIHAzCCBOugAwIBAgIQAzUotrsybJHx
-HTjKOIVdIDANBgkqhkiG9w0BAQsFADBiMQswCQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQs
-IEluYy4xOjA4BgNVBAMTMURpZ2lDZXJ0IEFzc3VyZWQgRzIgU01JTUUgUlNBNDA5NiBTSEEzODQg
-MjAyNCBDQTEwHhcNMjYwNzE4MDAwMDAwWhcNMjgwMTA0MjM1OTU5WjAeMRwwGgYDVQQDDBNkd213
-MkBpbmZyYWRlYWQub3JnMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA2pYux73kdbYX
-sWF8f1u6DJP91qcqaZetsyfPkZk0B+MmXmAEv0kVes5n15V2mbDThOnpoPFly0UugQO9JYqLfrtD
-tKD5yL58fgrDB9Dw+LQikgrHafl6YSCds5AvUu/8hw2J6noKrcOLJpKlKn9Fl/4IB9Q3JIdLx5aa
-EtTqMalIPqHFOlgrJ7s+aua8xbB8YQ9ahqYBXWRJNv3P/2b1DYtdrz1oqZPE3CcB8Pc6Gf2a1Tcm
-6TAgtEx7Cf1BFcrsrMz7TWHmGQITieNb2r9UYWSc2Gp+GtYFNJCgT0JJXKUBIauPMKBLteYrL8Fo
-ff/uY44dC/mDWjdCP/5x0qelPQjlBvWdHL5zvBTOj06rJ0m3HNI/hnIcDh0Qu2j9reb9rLVcdym6
-bWmBM4uDEB8Zv9Ph0KTBFSy1IosyakuD1j1Os30EzjGfbi0EUXIvnOcYbTBAbM5UAzrxEHMhBvoX
-Pvnx+OyvjJmc9tWxTX6AcSz+m40esbT17URBeZS18afgieiikm5TynlUYP1LciR3hSgGVzvGXnKO
-02VDFR5itGWdRKZ2W5wIShNfWfhSa0D0K5UdIDt5Qc7sjzwK1Yb1sY5Tu0uA5mhIS82q1ov83uxB
-sFkriNnhGv/M1NCDVLBiOMsHu73qUM+yKmgKLwF9Hfn9WI25glbAMI4S5r3hYzcCAwEAAaOCAfcw
-ggHzMB8GA1UdIwQYMBaAFPebok7Tl8X0NA9DDoGFzpGTMq/5MB0GA1UdDgQWBBRcYhqbcGzn1jrT
-JOZaB8O7qllDpzAwBgNVHREEKTAngRNkd213MkBpbmZyYWRlYWQub3JngRBkYXZpZEB3b29kaG91
-LnNlMBQGA1UdIAQNMAswCQYHZ4EMAQUBAjAOBgNVHQ8BAf8EBAMCBeAwHQYDVR0lBBYwFAYIKwYB
-BQUHAwIGCCsGAQUFBwMEMIGpBgNVHR8EgaEwgZ4wTaBLoEmGR2h0dHA6Ly9jcmwzLmRpZ2ljZXJ0
-LmNvbS9EaWdpQ2VydEFzc3VyZWRHMlNNSU1FUlNBNDA5NlNIQTM4NDIwMjRDQTEuY3JsME2gS6BJ
-hkdodHRwOi8vY3JsNC5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkRzJTTUlNRVJTQTQwOTZT
-SEEzODQyMDI0Q0ExLmNybDCBjQYIKwYBBQUHAQEEgYAwfjAkBggrBgEFBQcwAYYYaHR0cDovL29j
-c3AuZGlnaWNlcnQuY29tMFYGCCsGAQUFBzAChkpodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20v
-RGlnaUNlcnRBc3N1cmVkRzJTTUlNRVJTQTQwOTZTSEEzODQyMDI0Q0ExLmNydDANBgkqhkiG9w0B
-AQsFAAOCAgEAocabrh1cPd5s3vY5rnlBVQSTc7zs2ZWs67dAIltR+05WELrYClVzzUhMs/LOJPlr
-EUo45UDDomXq38DxFepaPd9+iNLjXfn33EX/IG44j04lU/oF/Rg9VeQILkYLbCZ/x9wOjNHZc4SN
-ydY7Dhvf/sT5aBz88u7D5+azZJ7Qf1U57wYseCH1Mt0nDrtr5y19IJ8D9xJJ33RFL6vfpHZBBAQ8
-+3RqkKNxLoV2aFvQhxdhjNLDqTv3LjUIdicwPraN7JkxEu7CV2Lka7eRqJgkWL7SK0YmBjGpRafs
-+icP/ON5RCCKTTb6VlX8eTG2sJJfsFhvJNCCt6xexbWzWtIrfP7NvPBvwBB737AyEGBZkS5aNizT
-McURJGTv9UKvBh1LF/+tNhYtLvPCN7oecGzhCHht9jcwSkygTo3Y6YlK3QgOu+ncmiBbfeuwlLZ1
-LxbYvG6hgNqXv7u6YyADbYajAQJXJ2OQen39pm3Q/AQSyLYG+B8lDglWsM8tYXPlEdrYJcksGK6F
-nqIX6Bumn43rBooLJdiZp4WmfWdL2pxe+LxRDjprmqu1WprixDxULSTOKJZoqTlugs6y3Bc+if+s
-gHnBBtz9WQ6MtPHkh7zONDAFIKcBmv8OqPQCx0F3Wv3OEybwMpXx0OsKgK8wLldaX1pXcMuyDgTL
-Sqs0AV0OHUgwggcDMIIE66ADAgECAhADNSi2uzJskfEdOMo4hV0gMA0GCSqGSIb3DQEBCwUAMGIx
-CzAJBgNVBAYTAlVTMRcwFQYDVQQKEw5EaWdpQ2VydCwgSW5jLjE6MDgGA1UEAxMxRGlnaUNlcnQg
-QXNzdXJlZCBHMiBTTUlNRSBSU0E0MDk2IFNIQTM4NCAyMDI0IENBMTAeFw0yNjA3MTgwMDAwMDBa
-Fw0yODAxMDQyMzU5NTlaMB4xHDAaBgNVBAMME2R3bXcyQGluZnJhZGVhZC5vcmcwggIiMA0GCSqG
-SIb3DQEBAQUAA4ICDwAwggIKAoICAQDali7HveR1thexYXx/W7oMk/3Wpyppl62zJ8+RmTQH4yZe
-YAS/SRV6zmfXlXaZsNOE6emg8WXLRS6BA70liot+u0O0oPnIvnx+CsMH0PD4tCKSCsdp+XphIJ2z
-kC9S7/yHDYnqegqtw4smkqUqf0WX/ggH1Dckh0vHlpoS1OoxqUg+ocU6WCsnuz5q5rzFsHxhD1qG
-pgFdZEk2/c//ZvUNi12vPWipk8TcJwHw9zoZ/ZrVNybpMCC0THsJ/UEVyuyszPtNYeYZAhOJ41va
-v1RhZJzYan4a1gU0kKBPQklcpQEhq48woEu15isvwWh9/+5jjh0L+YNaN0I//nHSp6U9COUG9Z0c
-vnO8FM6PTqsnSbcc0j+GchwOHRC7aP2t5v2stVx3KbptaYEzi4MQHxm/0+HQpMEVLLUiizJqS4PW
-PU6zfQTOMZ9uLQRRci+c5xhtMEBszlQDOvEQcyEG+hc++fH47K+MmZz21bFNfoBxLP6bjR6xtPXt
-REF5lLXxp+CJ6KKSblPKeVRg/UtyJHeFKAZXO8Zeco7TZUMVHmK0ZZ1EpnZbnAhKE19Z+FJrQPQr
-lR0gO3lBzuyPPArVhvWxjlO7S4DmaEhLzarWi/ze7EGwWSuI2eEa/8zU0INUsGI4ywe7vepQz7Iq
-aAovAX0d+f1YjbmCVsAwjhLmveFjNwIDAQABo4IB9zCCAfMwHwYDVR0jBBgwFoAU95uiTtOXxfQ0
-D0MOgYXOkZMyr/kwHQYDVR0OBBYEFFxiGptwbOfWOtMk5loHw7uqWUOnMDAGA1UdEQQpMCeBE2R3
-bXcyQGluZnJhZGVhZC5vcmeBEGRhdmlkQHdvb2Rob3Uuc2UwFAYDVR0gBA0wCzAJBgdngQwBBQEC
-MA4GA1UdDwEB/wQEAwIF4DAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwgakGA1UdHwSB
-oTCBnjBNoEugSYZHaHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0QXNzdXJlZEcyU01J
-TUVSU0E0MDk2U0hBMzg0MjAyNENBMS5jcmwwTaBLoEmGR2h0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNv
-bS9EaWdpQ2VydEFzc3VyZWRHMlNNSU1FUlNBNDA5NlNIQTM4NDIwMjRDQTEuY3JsMIGNBggrBgEF
-BQcBAQSBgDB+MCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5jb20wVgYIKwYBBQUH
-MAKGSmh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRHMlNNSU1FUlNB
-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
-yW8OF+jfsw74aI2nRdgjXlQAAAAAAAA=
+Historically, the documentation around f_fsid has been ambiguous,
+leading to different expectations across filesystems.
 
+Breaking tools that rely on a stable {fsid, ino} is a real problem.
 
---=-/jtg4J+f9PLdBSrgYlLP--
+The idea with this patch is to restore the original behavior as the
+default, and an option to mix in dev_t when needed to avoid collisions.

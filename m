@@ -1,122 +1,97 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-ej2-f12.google.com (mail-ej2-f12.google.com [74.125.228.140])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51729492E22;
-	Mon, 14 Sep 2026 17:54:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F358531ED93
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 18:15:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.140
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789408470; cv=none; b=jRzBzA3NBs22nT8Z56tQcocFdjAWn8XFvy4k8uTeDhEKfwK4VFQs/Eo2T0RkYEbGnGmjlnse7ysXECL4ytPV+8ADOkD8YKUMYsiHxU7zWqng5h8JJQIf3ydd5v7gvG4MSQKUyiqtfiY8eA4qCOVIRkEeZyBWo+ahhPvAbCu4a2w=
+	t=1789409710; cv=none; b=pa+UbypZemT+lscIayovWSEsY0s+od/mRaDbWAylMVquEhwU3WJRyxHel9FBe2ByIewjDg/osMsNLIJLknTEMnBpHTigAzUagdy9w68sbCowNithrS4N3GtywTnTjKd+CehNmGXptxaNWAdmj4J1ToKC1nzoUdtOHd9FMcFH0us=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789408470; c=relaxed/simple;
-	bh=Nm2jJoFGlCKQ8KKlGlsLkQcvnsGCuR8va8ZeDxuGYDg=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=re0rbsGIcRTob6TcXLE71d75NzTIfsgJPUzWQAiZQLnv04wS+6ZSTgJhnpIIXi0k32apJgUI1qKOPWlrprHAnWDjfGt+YcP89OccTB5eM4h2peoMxd3+BK5tqYH1ZCWxU5Pp2mAl8Rt9RaEjrr7My0VhOE+oXl7OnEXKWEsvIHE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=bPzbJson; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1789409710; c=relaxed/simple;
+	bh=TRi0+IFgIQUxMa8UIobu0mkLI4kY7OwfFP6fV5o8ldI=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=Y2Bc5MW0s3B9fpbTd5AWmaB+4MLHUqAGLX3YiB2xbQLtzDEkI9MVugu+UXXXnH4X+atUAlENJ8oMUjfM9kjeGz5MBVzQis4MPD6RTSwYBauf6aZZeFAMx6Vqc166/VCAwjo+FdyrUkgq9aS4OdmK/Eb1K/+IhHQk6s1b98h8sd4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=N0uH3f60; arc=none smtp.client-ip=74.125.228.140
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="bPzbJson"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6542F1F000FF;
-	Mon, 14 Sep 2026 17:54:28 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1789408469;
-	bh=Eaqodn33pVokqSBMDiUGVZFjtTTNBwDfP3Qi0gtwQGs=;
-	h=From:To:Cc:Subject:Date;
-	b=bPzbJsonG4piL3Y4Tit5bKJfEt8N9gevKYN5BezAdcm7BHIVDGufhSrZJvHPCQyt8
-	 jt8uz+K+QoSQDOAvSgJP8iCyHbQrZJQKTKhVb6ECDc1XXjua5LpOgfRh1Arjwgfb9Y
-	 LGZUs3Qus80XXxWDQwSE0CPQShZZZJJnyrtABGALSQq71dC7dKdiooA4tuIy2lTPzt
-	 +tj/oeMI7L3ZkERSYOKBpKSozW7onA0wy8aZbhddMrN1lSQ1YiskwtEBUxPwyaBORC
-	 nqXUnlIAFUyaN+00i84xkNd59slHmPXZIN4+miSMWJTHfXV3iVGKTWU9n6Wrh95td0
-	 e9rRrxfofjXTw==
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org,
-	Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: test that we don't create pointless compressed inline extents
-Date: Mon, 14 Sep 2026 18:54:23 +0100
-Message-ID: <83e3a8678c5eafb1cfcf10741a53b6e586cd72d8.1789408399.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="N0uH3f60"
+Received: by mail-ej2-f12.google.com with SMTP id a640c23a62f3a-c254fa663c1so322173666b.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 11:15:08 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1789409707; x=1790014507; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:to:subject:mime-version:date:message-id
+         :sender:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=1mpl9tczfnnSCRdLER584DnY3+33VsXgpV28T3HcjGY=;
+        b=N0uH3f60QV8y07pyrMA3JG1D0De2zysEe9vHFyrU7/vtJpiUkt1qIQofZpcltYytCe
+         etT/1dwJPoJH7o0aDUhAV20/U/jPIG5mND6kX/VpRfTOxFlFx4yHTwjkHrpoAd8SacCP
+         d6XPRPlDyIMtJRMffQq32hzg1O6mb7hVYmdgXrHqIYvRBHh62i15ku1gB8076t5q22v4
+         q4qf9ikBtdEomxB+uNUw7qDsPTJ8wDqjXQhYvFgHkVtMr0pUbqj+kaTf9ACMZdQ4Csp3
+         Bq+4SA70D70LY4b2Ae/Xrs9Df6mRjWdvC0tOFDmVQd8hJ3w+4UCVBvgt/8fO36F5WVVX
+         iKLg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1789409707; x=1790014507;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:to:subject:mime-version:date:message-id
+         :sender:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=1mpl9tczfnnSCRdLER584DnY3+33VsXgpV28T3HcjGY=;
+        b=EWJX5o0WbRQVzi9Hi0A9J+/Lcbm7/b0DuZ+BxeesT4Xz7q0sxR1HC/0nW3Skqr9gKx
+         l8JH3efCNeQFleKqHjdgdwgfdZ7BoHmhZacjNYY0lO6qhKvcNolln+OjkkmsgeH8IbhM
+         6Y8QH8zHlqM2xCfxjM1E8SFX+pq0/i066oRGLX/TnNv9cYrWg3bfDXGSuQ1MOYW5eYsi
+         w2NNoWcao32YOJpxtHQb+oJBxL9J140huc0/hV84GMKKB3RZpyYL3ejffpTommKDiyoi
+         HxcgWVTtJKcjsNHDttTH0muEwE7W5GpgKy38p06FrCN2VVkTQ+wlQw1wxv6IaDu9TxMf
+         nRnw==
+X-Forwarded-Encrypted: i=1; AKwUvBwsQto1m3ukwL5ORT0i1aHqx6DGWMmTyf2mk5H2DrEUQfjWcjNj2Gq1Jd+P2x2S2V7enW3jnoYZxj79WQ==@vger.kernel.org
+X-Gm-Message-State: AFuF++kSVpMB5Ufme9WKVR094XFLcotSKQyeGKE8jWCC8RcMPzhMVZp9
+	+YTWj9+E/kt6gGtHKRDq5ncF9UXKKNmDmWzEhGeA8nP2Zx9K6V2CgfhAZFg69CaB6iA=
+X-Gm-Gg: AYBFou0SYj5a/hwm7FrYr+U5RHT/0MdrvI9iFh37SfHf2y36uSAfoWComOQaEZ1dBO+
+	v5nU2MZzv7+CjAtHcUiqvPxjipbMrAKd2uFxdr/oyCivYIsOjj3x15NHfTrTZ9eMSftB93RXb0V
+	Wjqty0OKCmtpBERGR8+EDaTqrF2AuN/rOkefbzQB8FeEhEo3eP86JAKCR8L/+vBBTS82rOIdhX8
+	uhFxuI5lkUhDs7ppkaZez7oJpTLP2yTQQ4n5NvuM6nyuRyDGVxlIUdFt+gQUay8CKbnQfppn2PO
+	Gb1A8itT5Odb9X2QAXptziGL7/ZM4YEb+Qgc3quEkE4g0iqjDSsNbQM1LIMpELKEU7w/TdcHVlE
+	fgDqAkjF4oQvBWnlVPmWiGdiAN7IE62qby0tfNPQz2XMBUpORb+PKFuPnPwrUpj9GX/3CUlcG12
+	8hQNxEOd6wAH2ppx6MpdibWg8V8/3qCb/9bHEwq3nLNElZEnbEeT95Yg+diOclvzjHJGNjWlfvE
+	urpjr/pBTh+sPMyk8M=
+X-Received: by 2002:a17:906:6a1c:b0:c26:2fae:afdd with SMTP id a640c23a62f3a-c29b870ebd4mr516114866b.22.1789409706910;
+        Mon, 14 Sep 2026 11:15:06 -0700 (PDT)
+Received: from 127.0.0.1 ([94.41.86.134])
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-c296613c3ebsm461230366b.57.2026.09.14.11.15.06
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 14 Sep 2026 11:15:06 -0700 (PDT)
+Sender: <irecca.kun@gmail.com>
+Message-ID: <2efcc9e0-e056-4f23-ac82-4b7c776582ea@gmail.com>
+Date: Mon, 14 Sep 2026 18:15:05 +0000
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Subject: Re: [PATCH] btrfs: fix creation of compressed inline extents that
+ don't save space
+To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <721d8fd2c73095d06cbdbfa714a6dfac9c488953.1789407346.git.fdmanana@suse.com>
+Content-Language: en-US
+From: Hanabishi <i.r.e.c.c.a.k.u.n+kernel.org@gmail.com>
+In-Reply-To: <721d8fd2c73095d06cbdbfa714a6dfac9c488953.1789407346.git.fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-From: Filipe Manana <fdmanana@suse.com>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index a85a7c561cf8..420d78b55bba 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -2339,7 +2339,7 @@ static int run_delalloc_inline(struct btrfs_inode *inode, struct folio *locked_f
+>   		} else if (inode->prop_compress) {
+>   			compress_type = inode->prop_compress;
+>   		}
+> -		cb = btrfs_compress_bio(inode, 0, blocksize, compress_type, compress_level, 0);
+> +		cb = btrfs_compress_bio(inode, 0, i_size, compress_type, compress_level, 0);
+>   		if (IS_ERR(cb)) {
+>   			cb = NULL;
+>   			/* Just fall back to non-compressed case. */
 
-Verify that we don't create compressed inline extents when the compressed
-data size is not smaller than the uncompressed data size.
-
-This exercises a regression introduced in kernel 7.1 and that is fixed by
-the following patch:
-
-  "btrfs: fix creation of compressed inline extents that don't save space"
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/354     | 44 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/354.out |  2 ++
- 2 files changed, 46 insertions(+)
- create mode 100755 tests/btrfs/354
- create mode 100644 tests/btrfs/354.out
-
-diff --git a/tests/btrfs/354 b/tests/btrfs/354
-new file mode 100755
-index 00000000..801dc587
---- /dev/null
-+++ b/tests/btrfs/354
-@@ -0,0 +1,44 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-+#
-+# FS QA Test 354
-+#
-+# Verify that we don't create compressed inline extents when the compressed
-+# data size is not smaller than the uncompressed data size.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick compress
-+
-+. ./common/filter
-+
-+_fixed_by_kernel_commit xxxxxxxxxxxx \
-+	"btrfs: fix creation of compressed inline extents that don't save space"
-+
-+_require_scratch
-+_require_btrfs_command inspect-internal dump-tree
-+
-+algo_list=($(_btrfs_compression_algos))
-+for algo in ${algo_list[@]}; do
-+	_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
-+	_scratch_mount "-o compress=$algo"
-+
-+	echo 'a file with test content' > $SCRATCH_MNT/foobar
-+	_scratch_unmount
-+	_check_scratch_fs
-+
-+	extent_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
-+	      grep 'inline extent' | \
-+	      $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^size$/) print $(i + 1) }')
-+	ram_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
-+		   grep 'inline extent' | \
-+		   $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^ram_bytes$/) print $(i + 1) }')
-+
-+	if [ "$extent_size" -gt "$ram_size" ]; then
-+		echo "inline extent size ($extent_size) greater than ram_size ($ram_size) for algo $algo"
-+	fi
-+done
-+
-+# success, all done
-+echo "Silence is golden"
-+_exit 0
-diff --git a/tests/btrfs/354.out b/tests/btrfs/354.out
-new file mode 100644
-index 00000000..8bc7ecf6
---- /dev/null
-+++ b/tests/btrfs/354.out
-@@ -0,0 +1,2 @@
-+QA output created by 354
-+Silence is golden
--- 
-2.47.2
+Yep, this works. 👍️
 

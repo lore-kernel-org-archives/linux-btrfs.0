@@ -1,151 +1,111 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D5BE8352030
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 17:18:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F076B489FA4;
+	Mon, 14 Sep 2026 17:25:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789406330; cv=none; b=TVdIrM7g1e8QHZqi4ekj2nqidTrOkgqGEaytQ2vlbA3FsucRQIjDWExigeY1XfRh128Muqzo/qOKaaqwYyBF04ILvynp5ijilucvqnsFeFfToO7Wz0tbl2Sfhx3yfwvmDM1jcdRHV1iAe0HIgj46daCcm1xFCjYx69SEyZmTowU=
+	t=1789406726; cv=none; b=X99NNgpP3LvkUfUsouZI/sn9vKU1mczjtmYGMtteM09GM8dcBkltrTOwz33mNsrv8t8SfKFvPPfWTyao0fNeDF52Z/2XEc/LW/OnjbkH06dj8ejrvjQrG0kdinEIyukh7Y7ZnkQhQ1iNSojvPdyHwn8C3c5MeMxH4VJQ9qQjuh8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789406330; c=relaxed/simple;
-	bh=oBG/4STPLIJe/F50/Im4oQJft9CWfu6LLrKNDoCS8Fo=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=sLlOO2WmA5mjGSMMIaJ6boKuNYSQPwDziAeUKVAbGLrb+Z1WhwdwHEUg0fF81GXaen67rGdCQDphp+otKxf3+MlzqZW+fRhPEzTtoV+pc10KqqNeF2tP1KEzzLRCjBYVxEIBrIBtTvzsaVU938XUTnf9LrkbVODQAZJJUmrHttA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=zaE0OiM+; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=bQNJACse; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=PWfjQ7Rb; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=PhIjTwAG; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1789406726; c=relaxed/simple;
+	bh=yEWavbDR54J7O38WRPJJjQYsphw9f1Z5wC76+14JCic=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=qUpNzDQehm/E49TTZi9RHZ3aCcJZm8gCO6zw3m7WsNBsalYOWBCv7Ipr5EGeazktdymf59tuDb95UJ1xgej/3YkFUK6Yh0UG0dZQHf3Tb38wkT0sdhBPPdROXODO+czT2zPWGxTkqI2coy80MabgBJU6NaH4Yh6ZiNdwU+noxYM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=mqL5ttEr; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="zaE0OiM+";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="bQNJACse";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="PWfjQ7Rb";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="PhIjTwAG"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 13DA121D64;
-	Mon, 14 Sep 2026 17:18:33 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1789406317;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9LyCldth/IQVBcfQweoZoiJIyWarhhCdI1wPSJHE1Fs=;
-	b=zaE0OiM+s5Y0FdPKD5s5gwPIH5usl9EGIJp/mEpMRwsaOtABRZ40dBAn2ugJliadfw2uw3
-	fnWBQ6Xm8wmNkzbOmqZMGby8Wqfm+jHO55cQmW4ryvfqKxBJdF1/xr75nK5C/xYaxzpD52
-	ySbdY0onqITNGLG9pyRKlCVGWvH/UXY=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1789406317;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9LyCldth/IQVBcfQweoZoiJIyWarhhCdI1wPSJHE1Fs=;
-	b=bQNJACsev7kvXoPf82LuH9dkV84DG/UwgSCgKluJfjpAotwJhSqVdY8RAsshIgyb7/Upka
-	eBVjZxw+OloMhXDg==
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1789406313;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9LyCldth/IQVBcfQweoZoiJIyWarhhCdI1wPSJHE1Fs=;
-	b=PWfjQ7RbFnpdCDmj5TaQs+RSHPn9IBOhGKFxxKBlOf3UeVsyrh8PmGW0P12wIPPotR+9ht
-	NHv1/t2XxQRQRrYmoOBCSsDxvg7gtJwRnlkYGNogElYASHV5fp4YXQgi2EDhDNpQzHQcHE
-	LkQi7WhFC4f8w+yEh2dCkbxbU39Jy38=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1789406313;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9LyCldth/IQVBcfQweoZoiJIyWarhhCdI1wPSJHE1Fs=;
-	b=PhIjTwAGi/Dah8JEGzi6P0jQtW67UaIcFhnEDPh+QX3GQYpUcPj++7s+Spkb+c8GIBKxtj
-	EYRwgqM7VMmqJCBA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D2F151368C;
-	Mon, 14 Sep 2026 17:18:32 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id bupJM2gsqGr4XwAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 14 Sep 2026 17:18:32 +0000
-Date: Mon, 14 Sep 2026 19:18:31 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: docs: discourage root btrfs usage without
- an initramfs
-Message-ID: <20260914171831.GP54722@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <c0fbd931a33a130a51f215fc0712954edb18b654.1789205131.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="mqL5ttEr"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BC50E1F000FF;
+	Mon, 14 Sep 2026 17:25:21 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1789406724;
+	bh=ivTCssQ80Q5rXGcqqme9BCrgHmJUgofDp4I5tlkj8iw=;
+	h=From:To:Cc:Subject:Date;
+	b=mqL5ttErVCBhu3/itcbjExCEntGnVsT+dDmyAebTMDZGbp4otbJwJCnqq+xadI6ia
+	 9ZZKGbCGMxPOOIl+RB/K6BMTd3pz26l4IYG3lc3fOy0Rsk3ajmZIghcKOUnRTv2ioO
+	 AcxaUI5Z6Fl4F+px3iYteMGgSlTtKakK5qO3rD6QIqAc4RFvULtKknIyhoksCyqIOs
+	 8OXiyOg7IvOMcR/2B/qS9fH/kbjfa2CPoZwVPNU5b4mJc/jX0JYn9oMLlBgUnI6maJ
+	 5pt8rS8L+eR2mS3h0NML6jWzZKPV7zqHMvuTwbiA3rZCbrzGOuwhuSKzd9QbvS5Irb
+	 C6TsTH5BFhNMg==
+From: Zorro Lang <zlang@kernel.org>
+To: fstests@vger.kernel.org
+Cc: linux-xfs@vger.kernel.org,
+	linux-btrfs@vger.kernel.org,
+	Anand Suveer Jain <asj@kernel.org>,
+	Chao Yu <chao@kernel.org>
+Subject: [PATCH 0/5] Refactor *_fs_sysfs_* helpers
+Date: Tue, 15 Sep 2026 01:25:04 +0800
+Message-ID: <20260914172509.3799016-1-zlang@kernel.org>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <c0fbd931a33a130a51f215fc0712954edb18b654.1789205131.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Score: -4.00
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.996];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,suse.com:email,twin.jikos.cz:mid];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Spam-Flag: NO
+Content-Transfer-Encoding: 8bit
 
-On Sat, Sep 12, 2026 at 06:55:32PM +0930, Qu Wenruo wrote:
-> For multi-device btrfs, device scanning is required before mounting, and
-> without an initramfs it's impossible to mount a multi-device btrfs.
-> 
-> Even if the rootfs is a single-device btrfs, there is nothing preventing
-> the end user to add a device to that btrfs, and fail the next boot.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  Documentation/mkfs.btrfs.rst | 4 ++++
->  1 file changed, 4 insertions(+)
-> 
-> diff --git a/Documentation/mkfs.btrfs.rst b/Documentation/mkfs.btrfs.rst
-> index 0d3d6051b0e7..0bc7b7ac3808 100644
-> --- a/Documentation/mkfs.btrfs.rst
-> +++ b/Documentation/mkfs.btrfs.rst
-> @@ -346,6 +346,10 @@ devices to scan at the time of mount.
->          before all block devices are discovered. The waiting is usually done on the
->          initramfs/initrd systems.
->  
-> +        Thus using btrfs as a rootfs without an initramfs is not recommended.
-> +        Adding a new device to the rootfs can easily cause the next boot to fail, as
-> +        there is no way to register all devices prior to mounting.
+As we talked in:
+  https://lore.kernel.org/fstests/amhKovVDjwawoWdQ@zlang-mailbox/
 
-That's not a good placement, we should write a full section how to use
-btrfs without initrd and what are the caveats. A paragraph burried in
-mkfs will probably never got noticed.
+This patchset refactors two redundant and messy sets of *_fs_sysfs_* helpers
+(PATCH 1/5 2/5), introduces helpers for /sys/fs/$FSTYP/features (PATCH 3/5 4/5),
+and replaces the original btrfs-specific helpers with these common ones
+(PATCH 5/5).
 
-> +
->  .. warning::
->          RAID5/6 has known problems and should not be used in production.
->  
-> -- 
-> 2.55.0
-> 
+Thanks,
+Zorro
+
+Zorro Lang (5):
+  fstests: consolidate _require_fs_sysfs and _require_fs_sysfs_attr
+  common/sysfs: adjust function naming
+  common/rc: add helpers for /sys/fs/$FSTYP/features/
+  common/rc: use common helper in _require_fanotify_ioerrors for f2fs
+  fstests: replace btrfs specific helpers with common sysfs helpers
+
+ common/btrfs      |  41 ++----------------
+ common/rc         | 103 ++++++++++++++++++++++++++++++++--------------
+ common/sysfs      |  72 ++++++++++++++++----------------
+ common/xfs        |  22 +++++-----
+ tests/btrfs/010   |   3 +-
+ tests/btrfs/055   |   2 +-
+ tests/btrfs/056   |   2 +-
+ tests/btrfs/112   |   2 +-
+ tests/btrfs/131   |   2 +-
+ tests/btrfs/165   |   2 +-
+ tests/btrfs/188   |   2 +-
+ tests/btrfs/192   |   2 +-
+ tests/btrfs/201   |   2 +-
+ tests/btrfs/205   |   2 +-
+ tests/btrfs/209   |   2 +-
+ tests/btrfs/211   |   2 +-
+ tests/btrfs/219   |   3 +-
+ tests/btrfs/231   |   2 +-
+ tests/btrfs/253   |  28 ++++++-------
+ tests/btrfs/285   |   3 +-
+ tests/btrfs/296   |   8 +---
+ tests/btrfs/304   |   4 +-
+ tests/btrfs/305   |   4 +-
+ tests/btrfs/306   |   4 +-
+ tests/btrfs/307   |   4 +-
+ tests/btrfs/308   |   4 +-
+ tests/btrfs/311   |   2 +-
+ tests/btrfs/313   |   2 +-
+ tests/btrfs/314   |   2 +-
+ tests/btrfs/315   |   2 +-
+ tests/btrfs/329   |   4 +-
+ tests/btrfs/334   |   4 +-
+ tests/btrfs/342   |   2 +-
+ tests/btrfs/352   |   2 +-
+ tests/f2fs/025    |   2 +-
+ tests/generic/098 |   2 +-
+ tests/generic/101 |   2 +-
+ tests/xfs/006     |   4 +-
+ tests/xfs/177     |   4 +-
+ tests/xfs/264     |  14 +++----
+ tests/xfs/668     |   6 +--
+ tests/xfs/669     |   6 +--
+ tests/xfs/670     |   2 +-
+ 43 files changed, 194 insertions(+), 195 deletions(-)
+
+-- 
+2.55.0
+

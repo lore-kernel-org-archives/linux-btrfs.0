@@ -1,172 +1,226 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 025B339EF3F
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 20:26:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 50E9B370AFD
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 21:28:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.22
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789417607; cv=none; b=rrsIxS8q/q+jqwz4GpGgmvYZ+05pr2JBbcEc3ubhZMfLVqRLXP7uY3tEzDd9DzQFLlQrqBoWLExqz8djqukbanjPixTyt8zgxcqy4gXUZISEDyPTsjL3jqAGJLA5C6Jlt0jqlA3Py23EYFnqhvQEnHaVmjfVi8LXaZ27O4IT6DI=
+	t=1789421323; cv=none; b=VvqBBFAl++7KZEKXkZm4cPtYQyR916FijrNDVgoc6WUO95xQAheVqCA3gqamextHBoHEs1GJYCzMsKHE8mvylYU2jhVrwh/3FQkVVi3T3KixzUojl62jmhvWogawrTXCJwxyqltkUS1hPZNIZD1VvOaLeIWBge0lF4Snvy3t7To=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789417607; c=relaxed/simple;
-	bh=Ct0MvktwNUPSHO2RlB82DbD3YcYkrcwwVTWETsr1q9c=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=RBtSFAcsxZKvi69+ehAheaZvblgghwKXBxA3GFwjHgPIOJRW3YLWciCzxi33w2NCdnZn8QruVM2D79sSJkWNPZIiK2ON4ULjmR2RSAoxpK/A1rmkO2A0OL+fckGqY4Xmb5TOIo74N0krr4abdv1moADLHvbRkepQ8VkVEIAy7Hc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=VkcnKGsT; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=PoaLjZFH; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=Sh4c6Wr/; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=Ar2pVXxC; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1789421323; c=relaxed/simple;
+	bh=x5deNjefMw47twWcMxvB1ySuJ2fMNG1SqrLXQVEON30=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=Mxkw5ofgr8vX3FqYKSRR0MdZyOc6CPK67xhG1T8eNm5XX4pJGu+mik/7F7tvXRmgpxG6EYOWtwrCgKE/XNqgBk3fPNQ8AyaHJgC7fBDqkTosHY/7V+rRyWiKv5nWzL4U5t0RHqzC5MPkeo5GsDif1TFDA6N89swaVf25T8XXgsA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=On4yGSl+; arc=none smtp.client-ip=212.227.17.22
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="VkcnKGsT";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="PoaLjZFH";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="Sh4c6Wr/";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="Ar2pVXxC"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id BBAF41FF51;
-	Mon, 14 Sep 2026 20:26:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1789417599;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=up+sOIOcneBe9aTLHh+JzbIU7RqahvtniqXqiOvazBA=;
-	b=VkcnKGsT3j/8VR0XcNW29i/HZTwzZkbH46cUyAlRnJ4XENTP24D4ZPZ9luUz/coK+jaOaS
-	URiSdn1wOa0+VSZgY+WhaAY+HIgDhckPT21pEEhG4Ccj1qcJyeXsk3LZsbdndw+QvOFIUE
-	vo4EHybTFiGjNEFL1lKFgKjqwhMpoUk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1789417599;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=up+sOIOcneBe9aTLHh+JzbIU7RqahvtniqXqiOvazBA=;
-	b=PoaLjZFHdGUw36UlZdrLuZUOnZm5jHnnYYOoTtyULo/zb5vmzNb2xVU9RUWgrUzMwEorl7
-	7py8I+gb6sW9jACA==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1789417595;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=up+sOIOcneBe9aTLHh+JzbIU7RqahvtniqXqiOvazBA=;
-	b=Sh4c6Wr/v+F8ojtRgRSje1L4Tbn4iKbxQmY2pA7HBpoAFt3MUdXhEdjOQr7olLFaxFXEcS
-	Bc/+3HirKMSFAekc6YfuR048aFnHM2geccpAMagPQ/HOly1IgFoeQtO5KFRbaIPAjvXqaF
-	l8nDINHlKlp3YjJ1qSrNdfGlUYZ26lA=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1789417595;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=up+sOIOcneBe9aTLHh+JzbIU7RqahvtniqXqiOvazBA=;
-	b=Ar2pVXxCBDl3AxeN89FBY2qTIVuXqTjrw2wJfJf/pKSnC/P7rHcBx/1apHcM3iL+sVWIP3
-	n1ZXamUwWI5hMUAA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 85ABB13515;
-	Mon, 14 Sep 2026 20:26:35 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id XZ1pIHtYqGprIgAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 14 Sep 2026 20:26:35 +0000
-Date: Mon, 14 Sep 2026 22:26:34 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
-	Qu Wenruo <wqu@suse.com>, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: Re: [PATCH v2 0/2] btrfs-progs: fix stale active zone after mkfs
-Message-ID: <20260914202634.GT54722@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20260904062444.3467618-1-johannes.thumshirn@wdc.com>
- <20260914174012.GR54722@twin.jikos.cz>
- <20260914195530.GS54722@suse.cz>
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="On4yGSl+"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1789421316; x=1790026116; i=quwenruo.btrfs@gmx.com;
+	bh=64IjApWkpTeWd5rNCZTeJrSfLyusO910tfLkTTnJk8A=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=On4yGSl+LfIDplDOG1L+DbkuqTqb8GvT5Mm6m+wUUTPeola5Feemoz9svt0zzihU
+	 oHoLkR84JA4+OFPyQsI854Dnbq6DF6udLnBnyDgTUrxWLRo1iRTZ46Y+5JbxZUWzz
+	 B7nR0UOow7tl5a3DDfvQ3Q5pWec746EE23Em7X45gRKZM5ErancT/EO5zyDiXRQz2
+	 OdE7CvmqtfoC3JpA0vZE8ibjrY6qnO7j+92jWdDxEoy6EeePCJcwSSZzmaYsX7zvk
+	 LxDqiPyR6BoMrl9Jth1c2ndiV/ltvx7gO6yFypEgfh6l/o3+43NDGyV+tep9KNGSF
+	 J0uu6Si3gaboV7jISw==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MBUqF-1wx7Yi1Evn-00DMuN; Mon, 14
+ Sep 2026 23:28:36 +0200
+Message-ID: <f60fd3c6-e9ad-4b0b-b0c6-e91e6801d0eb@gmx.com>
+Date: Tue, 15 Sep 2026 06:58:31 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20260914195530.GS54722@suse.cz>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Score: -4.00
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.996];
-	MIME_GOOD(-0.10)[text/plain];
-	MID_RHS_MATCH_FROM(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCVD_TLS_ALL(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_FIVE(0.00)[5];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,suse.cz:mid,imap1.dmz-prg2.suse.org:helo];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs-progs: docs: discourage root btrfs usage without an
+ initramfs
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <c0fbd931a33a130a51f215fc0712954edb18b654.1789205131.git.wqu@suse.com>
+ <20260914171831.GP54722@twin.jikos.cz>
+Content-Language: en-US
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
+ sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
+ xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
+ naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
+ tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
+ 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
+ VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <20260914171831.GP54722@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:/o9PP0h6NMGCmdkNxyJKUYfZ1041eo6ISk0xF7ABEZLeK4w1Psb
+ PiYXnQwmcPbOqunlHvLaRdQuq8pjTiBPaRUojJixn1gFzs/cHu+DSbCcy1PvVG3uU4SFfbI
+ dK96oc9jsUOwlMniIGiNwuw6mbPU1WKiATlEalrfvUCQTjSfK4XyekAsZGrq1O15t/6MCY/
+ B1uCQjO6vTj3tIj2jLbxw==
 X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:wHCrYJh4X1U=;tHix/UxCeItdWEIiR2brVqu0Vhk
+ 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
 
-On Mon, Sep 14, 2026 at 09:55:30PM +0200, David Sterba wrote:
-> On Mon, Sep 14, 2026 at 07:40:12PM +0200, David Sterba wrote:
-> > On Fri, Sep 04, 2026 at 08:24:42AM +0200, Johannes Thumshirn wrote:
-> > > On zoned devices, mkfs can leave a stale zone behind that is used as a
-> > > staging area but never reset. This zone is not backed by a chunk or
-> > > device extent, so the FS itself does not account it as used. On devices
-> > > that have a limitied active zone budget this can lead to premature
-> > > ENOSPC and/or an exhaustion of active zones.
-> > > 
-> > > Fix it in mkfs for new file-systems and also add a check to fsck to find
-> > > such zones and repair them with '--repair'.
-> > > 
-> > > Changes to v1:
-> > > - fix a bug in fsck where it had a stale return value propagated.
-> > > 
-> > > Johannes Thumshirn (2):
-> > >   btrfs-progs: zoned: refresh stale cached zone state in
-> > >     btrfs_reset_dev_zone()
-> > >   btrfs-progs: check: detect leaked active zones on zoned devices
-> > 
-> > The build fails on older distros (Centos 8, Leap 15.3/16.0):
-> > 
-> >   CC       check/main.o
-> > check/main.c: In function 'check_zoned_active_zones':
-> > check/main.c:9220:12: error: 'struct blk_zone' has no member named 'type'
-> >     if (zone->type == BLK_ZONE_TYPE_CONVENTIONAL)
-> >             ^~
-> > check/main.c:9220:22: error: 'BLK_ZONE_TYPE_CONVENTIONAL' undeclared (first use in this function)
-> >     if (zone->type == BLK_ZONE_TYPE_CONVENTIONAL)
-> >                       ^~~~~~~~~~~~~~~~~~~~~~~~~~
-> > check/main.c:9220:22: note: each undeclared identifier is reported only once for each function it appears in
-> > check/main.c:9222:12: error: 'struct blk_zone' has no member named 'cond'
-> >     if (zone->cond == BLK_ZONE_COND_EMPTY)
-> >             ^~
-> > check/main.c:9222:22: error: 'BLK_ZONE_COND_EMPTY' undeclared (first use in this function)
-> >     if (zone->cond == BLK_ZONE_COND_EMPTY)
-> >                       ^~~~~~~~~~~~~~~~~~~
-> > 
-> > The types were added in f5f2bad67a45 ("block: make the new blkzoned UAPI
-> > constants discoverable") in 2016 and with the rest of the zoned userspace code
-> > so it's not something recent.
-> > 
-> > I haven't looked what's the problem, this should be reproducible locally using
-> > the "ci/ci-centos8" scripts (needs docker).
-> 
-> It fails with --disable-zoned, regardless if the zoned headers are
-> present or complete. Centos 8 build fine with --enable-zoned, I don't
-> know when it started to work. On Leap 15.3 the header is only partial,
-> lacks zone capacity, so it must be disabled.
-> 
-> As a fix an #ifdef around check_zoned_active_zones() should work.
 
-Fixed in devel.
+
+=E5=9C=A8 2026/9/15 02:48, David Sterba =E5=86=99=E9=81=93:
+> On Sat, Sep 12, 2026 at 06:55:32PM +0930, Qu Wenruo wrote:
+>> For multi-device btrfs, device scanning is required before mounting, an=
+d
+>> without an initramfs it's impossible to mount a multi-device btrfs.
+>>
+>> Even if the rootfs is a single-device btrfs, there is nothing preventin=
+g
+>> the end user to add a device to that btrfs, and fail the next boot.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>   Documentation/mkfs.btrfs.rst | 4 ++++
+>>   1 file changed, 4 insertions(+)
+>>
+>> diff --git a/Documentation/mkfs.btrfs.rst b/Documentation/mkfs.btrfs.rs=
+t
+>> index 0d3d6051b0e7..0bc7b7ac3808 100644
+>> --- a/Documentation/mkfs.btrfs.rst
+>> +++ b/Documentation/mkfs.btrfs.rst
+>> @@ -346,6 +346,10 @@ devices to scan at the time of mount.
+>>           before all block devices are discovered. The waiting is usual=
+ly done on the
+>>           initramfs/initrd systems.
+>>  =20
+>> +        Thus using btrfs as a rootfs without an initramfs is not recom=
+mended.
+>> +        Adding a new device to the rootfs can easily cause the next bo=
+ot to fail, as
+>> +        there is no way to register all devices prior to mounting.
+>=20
+> That's not a good placement, we should write a full section how to use
+> btrfs without initrd and what are the caveats. A paragraph burried in
+> mkfs will probably never got noticed.
+
+I'll add a dedicated chapter for device scan related behavior in man 5=20
+btrfs.
+
+>=20
+>> +
+>>   .. warning::
+>>           RAID5/6 has known problems and should not be used in producti=
+on.
+>>  =20
+>> --=20
+>> 2.55.0
+>>
+>=20
+

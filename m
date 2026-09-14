@@ -1,97 +1,145 @@
-Received: from mail-ej2-f12.google.com (mail-ej2-f12.google.com [74.125.228.140])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F358531ED93
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 18:15:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.140
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 98B6F38398E
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 18:22:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789409710; cv=none; b=pa+UbypZemT+lscIayovWSEsY0s+od/mRaDbWAylMVquEhwU3WJRyxHel9FBe2ByIewjDg/osMsNLIJLknTEMnBpHTigAzUagdy9w68sbCowNithrS4N3GtywTnTjKd+CehNmGXptxaNWAdmj4J1ToKC1nzoUdtOHd9FMcFH0us=
+	t=1789410179; cv=none; b=ShwtREAsiiO57fypaw6j6ZouP/uuN9x93hZcNvDJtK7184lbBepTh4f0MwCZsHZS6uFDPqqrAI+NsbhYJ0X8Zl2e9El/UEVgYyXe36rIM3q5lI+DZgWzeeOjtj0MQlP9HK1CpPply86sMU9Ejf2ufC51n2qLPWX5y7l3f4NnFIg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789409710; c=relaxed/simple;
-	bh=TRi0+IFgIQUxMa8UIobu0mkLI4kY7OwfFP6fV5o8ldI=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=Y2Bc5MW0s3B9fpbTd5AWmaB+4MLHUqAGLX3YiB2xbQLtzDEkI9MVugu+UXXXnH4X+atUAlENJ8oMUjfM9kjeGz5MBVzQis4MPD6RTSwYBauf6aZZeFAMx6Vqc166/VCAwjo+FdyrUkgq9aS4OdmK/Eb1K/+IhHQk6s1b98h8sd4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=N0uH3f60; arc=none smtp.client-ip=74.125.228.140
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1789410179; c=relaxed/simple;
+	bh=KEmevH8nMU7yLOfWUb2ep0Z6374Cf5wjtSyh0P9vM8U=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=klK3rQRm9extiFsr4I/420m4Fj9tIpsSTft+z5I60k7T0JjZBqndpxOITOdbJzJT7Do+gRI5DOe2jfcc1U+b92wzvra2XneoXy1ce6TJ2pZO8/ZJeXcc0zrQWp0cJ+YiigJi09hytXdPFscWZa5srm1zkRF6Znp26hDxXct997U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=srPprFCC; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=mpVh51o5; arc=none smtp.client-ip=148.163.139.74
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="N0uH3f60"
-Received: by mail-ej2-f12.google.com with SMTP id a640c23a62f3a-c254fa663c1so322173666b.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 11:15:08 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="srPprFCC";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="mpVh51o5"
+Received: from pps.filterd (m0167074.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 68EHnDoE3363401
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 14:22:56 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
+	cc:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=pps01; bh=zuYy
+	Jr1GFO10T7CY8FBOS83XNRwsdPPeGaoU13XZrf0=; b=srPprFCCmevHS5cteJS4
+	fKr5JuU5CgUDFdzpSa0Klw6JBxa+YCK2aUGscda1ACRC4r53bBS3OrWG0A9Z6uEa
+	i89+SeTmab0HDm49h6ZPwopxE7SklTWAIZmNxz8WbeJhuEFyhdYPC6SBMz0eXwaQ
+	dL0F72dkbfGtUhy3WH5zrzDZpKCy38QoBwwFk3in9iBymi6vRGWwtZSVvbUvwYHh
+	k3WtN7t5feGPj2eiUBV0mMFYYtf/ijGwf/oC0o2OvC41CWKKfVpHualQZNLpsNn9
+	7kAHFpN7hLcDzL3wKqUQ3dOKE8r0x0z+fonDId4WrKGM4v9USMrgN+UyQL54Q9Vm
+	fg==
+Received: from mail-qk1-f197.google.com (mail-qk1-f197.google.com [209.85.222.197])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4gpk8w2984-1
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 14:22:55 -0400 (EDT)
+Received: by mail-qk1-f197.google.com with SMTP id af79cd13be357-939665a1ae6so914782985a.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2026 11:22:55 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1789409707; x=1790014507; darn=vger.kernel.org;
+        d=columbia.edu; s=lionmail; t=1789410174; x=1790014974; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:to:subject:mime-version:date:message-id
-         :sender:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=1mpl9tczfnnSCRdLER584DnY3+33VsXgpV28T3HcjGY=;
-        b=N0uH3f60QV8y07pyrMA3JG1D0De2zysEe9vHFyrU7/vtJpiUkt1qIQofZpcltYytCe
-         etT/1dwJPoJH7o0aDUhAV20/U/jPIG5mND6kX/VpRfTOxFlFx4yHTwjkHrpoAd8SacCP
-         d6XPRPlDyIMtJRMffQq32hzg1O6mb7hVYmdgXrHqIYvRBHh62i15ku1gB8076t5q22v4
-         q4qf9ikBtdEomxB+uNUw7qDsPTJ8wDqjXQhYvFgHkVtMr0pUbqj+kaTf9ACMZdQ4Csp3
-         Bq+4SA70D70LY4b2Ae/Xrs9Df6mRjWdvC0tOFDmVQd8hJ3w+4UCVBvgt/8fO36F5WVVX
-         iKLg==
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=zuYyJr1GFO10T7CY8FBOS83XNRwsdPPeGaoU13XZrf0=;
+        b=mpVh51o5CI/RfmXSYuGX+EBvDS8YStMqG7K4/sWIUkqWZnA2SU5j6pMED3bkoPU1CC
+         TGnmyElxQykqMDWlkQLW7crAnEmDVfGqLkfc2qZqEpKgvBPveKKUjcr7iphdFXzTp4Ze
+         rvHTBIk6J1JRI5uOv4BLt3Xz1qtkUTbsNJrve95Ww1a4txydxZNvgVRu7A+G5PsGgup7
+         CRYtiEPNpMIB8osQjXf14xu1BhKk4qyRtFRz5LQwUVg7dmIaD9ZVbUN/K3qP688gslLG
+         oVzfeQa3ApvZIxc/+3tFWukjnLDl0oinNpZIKYY4Z1AwhF91/kwxLw1FoT1xTuQHe98j
+         dBJw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20251104; t=1789409707; x=1790014507;
+        d=1e100.net; s=20251104; t=1789410174; x=1790014974;
         h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:to:subject:mime-version:date:message-id
-         :sender:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=1mpl9tczfnnSCRdLER584DnY3+33VsXgpV28T3HcjGY=;
-        b=EWJX5o0WbRQVzi9Hi0A9J+/Lcbm7/b0DuZ+BxeesT4Xz7q0sxR1HC/0nW3Skqr9gKx
-         l8JH3efCNeQFleKqHjdgdwgfdZ7BoHmhZacjNYY0lO6qhKvcNolln+OjkkmsgeH8IbhM
-         6Y8QH8zHlqM2xCfxjM1E8SFX+pq0/i066oRGLX/TnNv9cYrWg3bfDXGSuQ1MOYW5eYsi
-         w2NNoWcao32YOJpxtHQb+oJBxL9J140huc0/hV84GMKKB3RZpyYL3ejffpTommKDiyoi
-         HxcgWVTtJKcjsNHDttTH0muEwE7W5GpgKy38p06FrCN2VVkTQ+wlQw1wxv6IaDu9TxMf
-         nRnw==
-X-Forwarded-Encrypted: i=1; AKwUvBwsQto1m3ukwL5ORT0i1aHqx6DGWMmTyf2mk5H2DrEUQfjWcjNj2Gq1Jd+P2x2S2V7enW3jnoYZxj79WQ==@vger.kernel.org
-X-Gm-Message-State: AFuF++kSVpMB5Ufme9WKVR094XFLcotSKQyeGKE8jWCC8RcMPzhMVZp9
-	+YTWj9+E/kt6gGtHKRDq5ncF9UXKKNmDmWzEhGeA8nP2Zx9K6V2CgfhAZFg69CaB6iA=
-X-Gm-Gg: AYBFou0SYj5a/hwm7FrYr+U5RHT/0MdrvI9iFh37SfHf2y36uSAfoWComOQaEZ1dBO+
-	v5nU2MZzv7+CjAtHcUiqvPxjipbMrAKd2uFxdr/oyCivYIsOjj3x15NHfTrTZ9eMSftB93RXb0V
-	Wjqty0OKCmtpBERGR8+EDaTqrF2AuN/rOkefbzQB8FeEhEo3eP86JAKCR8L/+vBBTS82rOIdhX8
-	uhFxuI5lkUhDs7ppkaZez7oJpTLP2yTQQ4n5NvuM6nyuRyDGVxlIUdFt+gQUay8CKbnQfppn2PO
-	Gb1A8itT5Odb9X2QAXptziGL7/ZM4YEb+Qgc3quEkE4g0iqjDSsNbQM1LIMpELKEU7w/TdcHVlE
-	fgDqAkjF4oQvBWnlVPmWiGdiAN7IE62qby0tfNPQz2XMBUpORb+PKFuPnPwrUpj9GX/3CUlcG12
-	8hQNxEOd6wAH2ppx6MpdibWg8V8/3qCb/9bHEwq3nLNElZEnbEeT95Yg+diOclvzjHJGNjWlfvE
-	urpjr/pBTh+sPMyk8M=
-X-Received: by 2002:a17:906:6a1c:b0:c26:2fae:afdd with SMTP id a640c23a62f3a-c29b870ebd4mr516114866b.22.1789409706910;
-        Mon, 14 Sep 2026 11:15:06 -0700 (PDT)
-Received: from 127.0.0.1 ([94.41.86.134])
-        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-c296613c3ebsm461230366b.57.2026.09.14.11.15.06
+        bh=zuYyJr1GFO10T7CY8FBOS83XNRwsdPPeGaoU13XZrf0=;
+        b=VeWlWPyiSw/cw+bWli3ePNY/f7QA+o8lTRp0lHRHcyl1AWgrir9HRc+rnQtt/iRfR7
+         SW9zEZM+ZblMz2XEx2ERG2qRaG08/2ot77tgXtKpeiuC2poKX7tgTbbaSQK9yQae8PbG
+         3uJIyiU+wE+nifHXZQRwutfa6eZCfzJZy9PfkkKXtudrP9I2kfC9kzBHlrLW8xakTeEj
+         CHq+S06UAcsF/kuCjx71QONZVa0ulDxOWYVBTPiy3wqtZbOF0KHIUL6IPz1hRTJAXcpO
+         fi+/1NtnuhaO+5eDraA/AJ1T3alFgfBVzyDLUquL6Qub7uYOtKnTqPKBZBPJkHrqn3Gx
+         ChXA==
+X-Gm-Message-State: AFuF++l+mWwn3OfvSpdNKFaLm8sbMhgU60pJDFhtlqJ/Wemf5+r/kByG
+	VWtiTwqDVXljccMAoSCzo3lu6m1m5oXgkcQSVUxRwSB0oMPBPsrtnk0EHPxofu4sQO14Q8Jv8Ks
+	SJG66S9UI4mLqsbLMeF9TTSGmbjQ6C0Mh/qa0LUnEumM2YgZtdih6eBXwgwEj1i9RJ+o0ThM=
+X-Gm-Gg: AYBFou3Vs2idlB8hlPeQntYdZ/GUcmk1Rm6+UdXiRv8H2lX6TNFcOduvcFFezZpaQgi
+	AiXmyYY/XM3VQ6mAaI/NqL5RhkdUPxXtHPrF7yZjAJGqrLUJLu2TrasF0uNWvfvbNq7pPM6VKuL
+	+MrikhNSQ6H7GRnzkN+jYwkEgm8ixx6f+RTK9Pt08KgDsFkoGXsW5VluKrXz6mF9I1JmgU0/ro3
+	i7OnhcBfdxnkjefW4sGMkWlElI8gEoA970ulJ6TpiCL4NSrmHlB3v9hn9XUh/SwY/nOTkyT+YEP
+	sBLZBLI1Uv6Nt/ENekYU8YBLt//KrWhpXJq+yQuNmTBpDLkQEybCwf1L1UZgUDYznDA+OHxRVQJ
+	vGv9VmVJU1DiCtoMDQV7GdpNklqsjhks2eQLvW1XJzrjM40cROAnj
+X-Received: by 2002:a05:620a:6413:b0:939:6de8:43db with SMTP id af79cd13be357-93a29bf06e5mr531432085a.47.1789410174534;
+        Mon, 14 Sep 2026 11:22:54 -0700 (PDT)
+X-Received: by 2002:a05:620a:6413:b0:939:6de8:43db with SMTP id af79cd13be357-93a29bf06e5mr531427485a.47.1789410173922;
+        Mon, 14 Sep 2026 11:22:53 -0700 (PDT)
+Received: from [10.207.49.22] (nat-128-59-176-209.net.columbia.edu. [128.59.176.209])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-939e80d453esm1063239585a.38.2026.09.14.11.22.53
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 14 Sep 2026 11:15:06 -0700 (PDT)
-Sender: <irecca.kun@gmail.com>
-Message-ID: <2efcc9e0-e056-4f23-ac82-4b7c776582ea@gmail.com>
-Date: Mon, 14 Sep 2026 18:15:05 +0000
+        Mon, 14 Sep 2026 11:22:53 -0700 (PDT)
+Message-ID: <a2bb8663-69b1-4701-943a-4311c1cdb062@columbia.edu>
+Date: Mon, 14 Sep 2026 14:22:53 -0400
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Subject: Re: [PATCH] btrfs: fix creation of compressed inline extents that
- don't save space
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <721d8fd2c73095d06cbdbfa714a6dfac9c488953.1789407346.git.fdmanana@suse.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [sashiko-bot@kernel.org: Re: [PATCH v2 02/16] btrfs: remove the
+ v1 space cache writeout from the transaction commit]
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+References: <20260914130436.GG54722@suse.cz>
 Content-Language: en-US
-From: Hanabishi <i.r.e.c.c.a.k.u.n+kernel.org@gmail.com>
-In-Reply-To: <721d8fd2c73095d06cbdbfa714a6dfac9c488953.1789407346.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+From: Tal Zussman <tz2294@columbia.edu>
+In-Reply-To: <20260914130436.GG54722@suse.cz>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTE0MDI2MSBTYWx0ZWRfX//EZOdPK//ON
+ iSeG4O2PC03zZEEWLPTT4c++7jnqvIss2wyJROPYTOJ1bzHnh692xO8KDaO6UrN5yEEz5yRLXY4
+ Rwr/CrTACPdfxGbNwNOP9ZVxpvhBizfFilekEahHd0rKZU7LzBUzOnNCr+ZXDcOclGOFG/5rV6H
+ DjZx69j+7oaObz8q9WVLgJmjklTeyqJfm+fUfNYngrSZmXDWYdhrZVfFXgCOyGiF6tLeuJ/l4qQ
+ C60Oet6hFWEJUBx4tnR0qNyKBlS9W6vCqHAlHYqSIvMUbCLf2Vq4FRpDHf5Xd8jNW/NRmERVUUu
+ 45iIw6dM1/vvXn8wVKAJtO5xlFz5goYmxZ43e5QfsTijzFIKw1hSctaVEDEgs4eQQgK3AvK7u0/
+ AhhXlxgvIdghkDza0J6/a5BRnZOUVL5PyKrxtLSHhtMwcsb7V6dLfAA/7/djq8TEJg4en6PeBSL
+ ol//Uej7YkSl2t5R9bA==
+X-Authority-Analysis: v=2.4 cv=Jo5kP84C c=1 sm=1 tr=0 ts=6aa83b7f cx=c_pps
+ a=50t2pK5VMbmlHzFWWp8p/g==:117 a=oIAeTKaVgyuUqLyFcT06hQ==:17 a=VwQbUJbxAAAA:8
+ a=IkcTkHD0fZMA:10 a=ifjkSCkOXjwA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10
+ a=A0y_DWxS2BwA:10 a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22
+ a=azVShVRs0zEubeQ0wG0L:22 a=c92rfblmAAAA:8 a=5revhUvYAbv5BDVg9KUA:9
+ a=QEXdDO2ut3YA:10 a=IoWCM6iH3mJn3m4BftBB:22 a=GvGzcOZaWPEFPQC_NcjD:22
+X-Proofpoint-Spam-Info: AW1haW4tMjYwOTE0MDI2MSBTYWx0ZWRfX1gUreBbRz8A9
+ aJOfjecw/SJMjjP5kCDE2ROwMRLp9vd59cO6bEEzRxvlRjQz4zVn6MnUffIdXjj3VhvylWphpY+
+ CAmXxAaII/7vvWVS9K6T7fjRra2hYVfNxCjVIeH6F+x0bE5wluTi
+X-Proofpoint-ORIG-GUID: EmzGuWWvrABKzzeQ8DrCq_j4Ru41w3Lv
+X-Proofpoint-GUID: EmzGuWWvrABKzzeQ8DrCq_j4Ru41w3Lv
+X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11905
+ signatures=596817
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ impostorscore=10 adultscore=0 bulkscore=10 suspectscore=0 spamscore=0
+ priorityscore=1501 malwarescore=0 clxscore=1015 phishscore=0
+ lowpriorityscore=10 classifier=typeunknown authscore=0 authtc= authcc=
+ route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2609040000
+ definitions=main-2609140261
 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index a85a7c561cf8..420d78b55bba 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -2339,7 +2339,7 @@ static int run_delalloc_inline(struct btrfs_inode *inode, struct folio *locked_f
->   		} else if (inode->prop_compress) {
->   			compress_type = inode->prop_compress;
->   		}
-> -		cb = btrfs_compress_bio(inode, 0, blocksize, compress_type, compress_level, 0);
-> +		cb = btrfs_compress_bio(inode, 0, i_size, compress_type, compress_level, 0);
->   		if (IS_ERR(cb)) {
->   			cb = NULL;
->   			/* Just fall back to non-compressed case. */
+On 9/14/26 9:04 AM, David Sterba wrote:
+> Previous verions o the space cache removal had no sashiko comments but
+> I've seen some reorganization of the patch review flow in their git so
+> it's possible that the problem reported here could have been there.
+> 
+> The review comment sounds serious by my quick look, regarding a mutex
+> and block group management, all after the v1 removal.
+> 
 
-Yep, this works. 👍️
+Yeah, these look legit. So it seems that cache_write_mutex was also
+doing various block group synchronization. I think what I'll do is
+leave the locking as-is in patches 2 and 4, and then add a patch after
+the write path removal to rename it to dirty_bgs_mutex, along with
+updating the comments.
 
+> Link: https://sashiko.dev/#/patchset/20260913-btrfs-remove-v1-space-cache-v2-0-186767a7e106@columbia.edu?part=2
+> 

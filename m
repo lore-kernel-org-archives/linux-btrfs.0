@@ -1,67 +1,66 @@
-Received: from mail-ed2-f12.google.com (mail-ed2-f12.google.com [74.125.228.76])
+Received: from mail-ej2-f12.google.com (mail-ej2-f12.google.com [74.125.228.140])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 511DD47CA6D
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2026 22:16:56 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.76
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 921EE37416F
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2026 22:18:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.140
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789510620; cv=none; b=EGqBfNGF39zETW+p0nZq/xdRN9LTy1xZJazYN3Itfti9YsOcT2xmmoGesJCB6bMGSUGHgbLUWAd8J4HDA4D0sicbFNzsDCyG+C454zgiQQnRHuYs7hBq4WwmqPaO2dsxZw+IMuBwEmjgBJGX6VlOdXtZ2iPdvU6ch4gHx9opwp4=
+	t=1789510702; cv=none; b=oSvc0jlPR4dNJxEm8MCgpT1FeJF0o33KQCTG0+GHsMfFwY9lPmjPRd3eRL6NYWZhFuC1LCfsnwjGJ70kRCVa+ITuH2nymaT/t9UpIWpF6WhRlAN2QeBoLx22XywnWcmW9xyYuNCVvVr+kPeMjdO050xehuvADFA9FwbqtudVNIA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789510620; c=relaxed/simple;
-	bh=m0VworCC0hvtkyN35xI3DVvQHc1L03vSJl90gKlNcvI=;
+	s=arc-20240116; t=1789510702; c=relaxed/simple;
+	bh=bKLrzd7mzke4xNMgjy1dDJw5E7c0Bo+7KuWuUyP0dB8=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=YNcSL6NXnXAOiJ26iMFN73PoSQNetH35Jk5qh2Dhqf0kW1oNrX+PTzRoKsEI2/TcLCoH/BbhyAz41fgaLvzQ4B3t15u01OA6fFmKqVnhmzifk4nyrIwjRU4zRrnH1fjencUXsq2aCosNPzpQKOmQIOmWe4uUvVKS4I2AA43ODSg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=YJgrkkir; arc=none smtp.client-ip=74.125.228.76
+	 In-Reply-To:Content-Type; b=kBEtAEHX1IfGXIrvm/71RXjB46oiZcOaNXazaPrJFD+luHgfsd+dZoj2dsuDDaZy5t5aulh1X/wZtomyGRQlHujUHOGi8YZ/aKE6fjGwgkyOSYZgl7Rvo7NFlIuCw7so+TBihuoWMBceOw2KvdKiC0PJ1DV9wGt9DuiHVVzN+GQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=OLHVOSh3; arc=none smtp.client-ip=74.125.228.140
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="YJgrkkir"
-Received: by mail-ed2-f12.google.com with SMTP id 4fb4d7f45d1cf-6a605844571so427817a12.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2026 15:16:56 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="OLHVOSh3"
+Received: by mail-ej2-f12.google.com with SMTP id a640c23a62f3a-c294af0caa8so45397466b.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2026 15:18:20 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1789510615; x=1790115415; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1789510699; x=1790115499; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=g/3ioZ/oq7xLigqBssrulMujM0mR1kVlUfT5AQAbB8Q=;
-        b=YJgrkkirYmPil/STC+AN7+HbNRYeoau1J3XQqp+eXHmdguhVAJM0pJzlBC8DRMiUgs
-         fS3pXRSaa04f/nElujpok88/c/XgGtgQY0ir8JWIfpsQymb3w+GISqemQsOvhnmemDVI
-         4++kpzZOeboS08SWRbW7V1x+QeJnXW/huNu7c4Ikd9NVDL8bLhasKBkJ5R7YvtBYnFLS
-         uHFsFzGPHxWFMyF+30LYmCXN6BjWER7MIPwYkALFQUd+p/A5+OncUNXrL11n53SsdO6l
-         zk0iP+CtuNhS9+raWe3GomeQIDsGTJO4D3NIYX9xf07VygtxNB6CIFPCSoz53riLPeR7
-         NMaw==
+        bh=pdk/vYsItmsk6uXrnubu3MUn5VZJ/8iyyzxZQ2N88ho=;
+        b=OLHVOSh398beVvfQ2OQhx+njOiN8VuM27vCeNYzMWN12NCDe4ceQhYCIBkEyu13ACe
+         ZBeivKTsF3hh/4S8ZlfTj07EmxYZfKQ1q2A4uEfMRSHVx/dTPHzMRgNEzPrmem0kHkvH
+         im7RIFsykLGGcPPmMyaHjWVXSHc1MDZBc5rmuJC3kgZamxsltB6leY01xboCDw583DPJ
+         dmddjoE9R4mXtBdv95BAvrYnfZkwikEuB3rIbHIWFNkVmF4OeBwCvM7UWl/uA0KPrkKv
+         ujUMX7rO2UVA5+YeCy3dubYOfUE3hRghmMieRk+Ba3elOIMa5vJ2V+6ocnmjJXzjpGxx
+         LqEA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1789510615; x=1790115415;
+        d=1e100.net; s=20260707; t=1789510699; x=1790115499;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=g/3ioZ/oq7xLigqBssrulMujM0mR1kVlUfT5AQAbB8Q=;
-        b=KVz27RfKPf1LFsTOHgf7tOvymEh0fuSCyx7d6Be7vh5/3pNkm6zchV+HnFzxA383Rg
-         G1kn4zSwbv1nT17mVU5lrTMiILdOgnycboOtLtyWanRNE0lcPSuS44kqOGq7iimQ6fZo
-         I3QS7W7uAvWlrnU0HO5LWwt9VSnvmSjCdnyKoHiYzZgc/VrZ/51pIo9ZJJaGfxuCrsXg
-         pB2dn2T71o9m11LiW8UkauEucU9zFNLHNDTv0ZSArJVecbZKjOYCrbIFkwYFZ5eYAecQ
-         vEocZybjcvrv89BGTdZWA7MyvrCIuuGLIdSOYk0DVhWJLACbjfXZCwqAiQHKLEXf+q8r
-         Gjkg==
-X-Gm-Message-State: AFuF++nnXCu4CfuyHiwbI0QS93eqZPIEGLly0nWrpCdzQmAti3AWqpo6
-	O+AMk4fERFflvzOwf350tkME5bbBRZmkffXo0DQvH0IFPAZmnA6bvm1kfE79Dx3DISE=
-X-Gm-Gg: AYBFou3h8jZvX07xRzg3d9a29buR+DS2V0IEKEoU7Uh/3VaKyDnhMGRMrPoZyh0U8K0
-	xefxtjqIqd+yL+7xRB9dellHsXxeaEbFqrTIlzHrvCxrTi7P7d8IF+InQH7jBXlV+fSZkPL1UUy
-	VzqRKQqvaTULmmQNwThUPNaF8a5TnID2eYx28V7/VY/4ecNcf93avpHvcl/ZMkKcpxcPkN5pUx2
-	0sBrP8cMwFFroYAlq5QWoo80F8dqSS/HzKCjcN8/JxQzjhNTrwFRASEG7mo3fkKGNmVTsuPP6aB
-	36w3asJ3Ac5QSvLMVL/b6uLGVf5TGu2El0u+KY+6b7bzJ71ome7FCKzH/NuckgXdJvTQDYsYdda
-	St9BhM67ndGl7Zud4lAgkjcZrHNbYiVQT0eBm7vVu+OP/yFxgz8wsutjad4QRAU//lyumCk7A1R
-	NgG+eNnnlqCGvYspuZ9nj9hFWN8ENklWLdaQIWvLB7bNbXqGZewVnQUMrIPwtNXdSsBkr1+OJl/
-	g==
-X-Received: by 2002:a17:906:6a28:b0:c21:601:6501 with SMTP id a640c23a62f3a-c29e52293ebmr3900166b.20.1789510615118;
-        Tue, 15 Sep 2026 15:16:55 -0700 (PDT)
+        bh=pdk/vYsItmsk6uXrnubu3MUn5VZJ/8iyyzxZQ2N88ho=;
+        b=TSlvVp/vUefe7ofR3ivuVAnRPfKBZdw1/ojEHQSxcoNgUYBcfZ8Jd/hhFNTsNyKDg/
+         izBe5yBIO1Bisq5szLk+8BJv4sdjls0hEDS468u3WDgkia2BVNqTfl00amQOcGreQXPu
+         Y1iTrVbrr7J3GHxx/3ZCcuyEM/Fp5+cwzcF4sFCvmSkeblCq4s4xh7RLLVBDDhxo+EXu
+         qZF0x+L6/lvqB5B5oX2YUa0msqlHCLkVcZEvYTPDbkH5jNACRY4DMp+SI/Rk2iAsQx0W
+         lktn/FMfBZLwMk9Xof/Ie32adDYLRoLUxM0jnXTdDmPYEhOZ3A8W8cYwAAbnckz4QbO4
+         QkNw==
+X-Gm-Message-State: AFuF++lFPS55zXYI0Ul6DO+I5/6CLxncv6SUzvqpU8KSigi3RDYcvsMF
+	Mrnc1rKCbatzIS8bW/Z9Z1TtRIdldE8yi8Ahv0+sMDyF42CQk4m4ui1wmQ3WvAig8nk=
+X-Gm-Gg: AYBFou0nfHp9I3OKeHPNboIBYwbYQIGrS0LZh4pUy2cD4TqBj2upkhWEV4FvqR/Gko0
+	8flHBXj75e1qhS/LVRD3vclw2PSUUSDqVE/oSCmOg4BNu3bzWP0Ac5p8VQ83iQVJqrBSxy29cmE
+	PlnTOGAQ22RpIlWTd3SiQtBwqDC3vZXhCiR3wOj0mpAcohRL9UOD9Dcu+/moGMVEmK64D7swbZR
+	ZkoQqsAOIDcuyONZfB7ve3cBXR3z1eiOuh/BqSfWcpF0as9Zo9gbF2cljy7wowKTX1xOMD9n1VD
+	ahxnJmlIlyx99xHLg20qTGZ0YHvVy3lumVHOh1I/auqXiYLE8tXrDWW03mxlUSJ9vIKGoMFpNMK
+	aa+hN9Bmy7BsynH/frN6NpTAYPHlDJ5DJlKSVCANubL1oYlMD74xRbnGYSjpkaA6DA0XXWdQ/GV
+	Tv010LUY6NQva5MCnsK/rFPjJJ+fUd0xtgi2MXBoJYOpPlbLIFimMGDu/EN5hqTvc=
+X-Received: by 2002:a17:906:7949:b0:c26:2205:3df8 with SMTP id a640c23a62f3a-c29e52903famr4435566b.9.1789510698935;
+        Tue, 15 Sep 2026 15:18:18 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-39e1d1626adsm160217a91.4.2026.09.15.15.16.51
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-87200c581fcsm208935b3a.12.2026.09.15.15.18.16
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 15 Sep 2026 15:16:53 -0700 (PDT)
-Message-ID: <f27a50d2-da40-4811-b459-f9c2ffc9c082@suse.com>
-Date: Wed, 16 Sep 2026 07:46:48 +0930
+        Tue, 15 Sep 2026 15:18:17 -0700 (PDT)
+Message-ID: <b735211e-5987-4829-922d-4b80633f699d@suse.com>
+Date: Wed, 16 Sep 2026 07:48:13 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,13 +68,11 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: test that we don't create pointless compressed
- inline extents
+Subject: Re: [PATCH] common/btrfs: exercise all algorithms in
+ _btrfs_stress_remount_compress()
 To: fdmanana@kernel.org, fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
- David Disseldorp <ddiss@suse.de>
-References: <83e3a8678c5eafb1cfcf10741a53b6e586cd72d8.1789408399.git.fdmanana@suse.com>
- <5acebd19e4e5b9b825497947ef32527cc2103147.1789484528.git.fdmanana@suse.com>
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+References: <cc052d6b35788720c6cdc93be7eb6af637a9fc96.1789486070.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -102,24 +99,21 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <5acebd19e4e5b9b825497947ef32527cc2103147.1789484528.git.fdmanana@suse.com>
+In-Reply-To: <cc052d6b35788720c6cdc93be7eb6af637a9fc96.1789486070.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/9/16 00:35, fdmanana@kernel.org 写道:
+在 2026/9/16 00:58, fdmanana@kernel.org 写道:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> Verify that we don't create compressed inline extents when the compressed
-> data size is not smaller than the uncompressed data size.
+> _btrfs_stress_remount_compress() is using a hard coded list of algorithms
+> which is incomplete as zstd is missing as is supported for some years now.
 > 
-> This exercises a regression introduced in kernel 7.1 and that is fixed by
-> the following patch:
+> So remove the hard coded list and use _btrfs_compression_algos() to get
+> the list of supported compression algorithms.
 > 
->    "btrfs: fix creation of compressed inline extents that don't save space"
-> 
-> Reviewed-by: David Disseldorp <ddiss@suse.de>
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
@@ -128,74 +122,23 @@ Thanks,
 Qu
 
 > ---
+>   common/btrfs | 4 +++-
+>   1 file changed, 3 insertions(+), 1 deletion(-)
 > 
-> V2: Use a single call to btrfs inspect-internal and a single awk
->      call (David Disseldorp).
-> 
->   tests/btrfs/354     | 46 +++++++++++++++++++++++++++++++++++++++++++++
->   tests/btrfs/354.out |  2 ++
->   2 files changed, 48 insertions(+)
->   create mode 100755 tests/btrfs/354
->   create mode 100644 tests/btrfs/354.out
-> 
-> diff --git a/tests/btrfs/354 b/tests/btrfs/354
-> new file mode 100755
-> index 00000000..1b25ab5d
-> --- /dev/null
-> +++ b/tests/btrfs/354
-> @@ -0,0 +1,46 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> +#
-> +# FS QA Test 354
-> +#
-> +# Verify that we don't create compressed inline extents when the compressed
-> +# data size is not smaller than the uncompressed data size.
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick compress
+> diff --git a/common/btrfs b/common/btrfs
+> index 0bfb02dd..3eb68beb 100644
+> --- a/common/btrfs
+> +++ b/common/btrfs
+> @@ -449,8 +449,10 @@ _btrfs_kill_stress_defrag_pid()
+>   _btrfs_stress_remount_compress()
+>   {
+>   	local btrfs_mnt=$1
+> +	local algo_list=("no" $(_btrfs_compression_algos))
 > +
-> +. ./common/filter
-> +
-> +_fixed_by_kernel_commit xxxxxxxxxxxx \
-> +	"btrfs: fix creation of compressed inline extents that don't save space"
-> +
-> +_require_scratch
-> +_require_btrfs_command inspect-internal dump-tree
-> +
-> +algo_list=($(_btrfs_compression_algos))
-> +for algo in ${algo_list[@]}; do
-> +	_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
-> +	_scratch_mount "-o compress=$algo"
-> +
-> +	echo 'a file with test content' > $SCRATCH_MNT/foobar
-> +	_scratch_unmount
-> +	_check_scratch_fs
-> +
-> +	$BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
-> +		tee -a $seqres.full | \
-> +		$AWK_PROG -v algo="$algo" '
-> +		  /inline extent/ {
-> +			for (i = 1; i < NF; i++) {
-> +			      if ($i ~ /^size$/)
-> +				 extent_size = $(i + 1)
-> +			      if ($i ~ /^ram_bytes$/)
-> +			         ram_size = $(i + 1)
-> +			}
-> +			if (extent_size > ram_size)
-> +			   printf "inline extent size (%d) greater than ram_size (%d) for algo %s\n", extent_size, ram_size, algo
-> +		  }'
-> +done
-> +
-> +echo "Silence is golden"
-> +_exit 0
-> diff --git a/tests/btrfs/354.out b/tests/btrfs/354.out
-> new file mode 100644
-> index 00000000..8bc7ecf6
-> --- /dev/null
-> +++ b/tests/btrfs/354.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 354
-> +Silence is golden
+>   	while true; do
+> -		for algo in no zlib lzo; do
+> +		for algo in ${algo_list[@]}; do
+>   			_mount -o remount,compress=$algo $btrfs_mnt
+>   		done
+>   	done
 

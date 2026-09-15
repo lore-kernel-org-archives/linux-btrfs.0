@@ -1,202 +1,117 @@
 Received: from fout-b7-smtp.messagingengine.com (fout-b7-smtp.messagingengine.com [202.12.124.150])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EAC3342E404
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2026 17:58:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D86274BD78A;
+	Tue, 15 Sep 2026 18:35:55 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.150
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789495105; cv=none; b=BBNSVPlwt0xS23igwsSYK9c1hwZSyQPJBCrUNQRYMPPs21LVN3jViicXeP/Hp5jP7AyQ3GXzU3IONXiVUwWGaqqIU5okZ7UGAyXcCnbclXSEKcXMrve07owhOqOJhZK1g2fMpET9VqgukOyvw3pP7gecpLh0q4SsK5o1dp7nHSo=
+	t=1789497360; cv=none; b=NgeagkfmVv962+DVwKM0TFYF8alQWFs+0YAhXs1eEEV3vryvNaatOfgGcYsfTyq/TfH2vkDK8t9JPw/LG2OP2UML4gH36Vx8GmqmVoX1zZPIezYUuToZ40o6OiueSl2roSijdfMLr6VGR0N18cr9iLImvXiogq/FhejIi4zmhbw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789495105; c=relaxed/simple;
-	bh=PbVZhkufGPjkaXt/8a8sq1u2RrJsVjbUm4zaNMIJc8g=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=K/ig3tcpCHVmqVuTwwfJXStGUEjKOSxhzx8T2U+X6mIejO0LVU2i/z6liW1pkBoZLBpT9u865b9ZYgVqFYrtXlQmMb8MDvFV7au8+s51lI3sUybndUhFUmBVd7D+fM0qtnDdUNpIHoQizQrB1ud1e1XhN+Uv6WoxkayLqe+Q1BQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=V7VxKffB; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=bH2tXZuW; arc=none smtp.client-ip=202.12.124.150
+	s=arc-20240116; t=1789497360; c=relaxed/simple;
+	bh=c733wWpdqVIMRxnjGhWMjcyD+R56PTFs8Mhe2Se+6nA=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=Izdyyg7aSzluOstj+7BoEl3asBo5owV6JLqazJuRZfTjgJbeJRTtH6LkgRTn6Rl9nt9WaxSMV3DRoZFiYbLuLjnodiovaXT4pfiVSyKTh/dXrUBGHyJHnv7IFwId6E23V7lDPgN/fhdGVcDOOnsRyfhshhrb4GYrLanu679p8+g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=kMw+/HxB; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=x6fDP16m; arc=none smtp.client-ip=202.12.124.150
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="V7VxKffB";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="bH2tXZuW"
-Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
-	by mailfout.stl.internal (Postfix) with ESMTP id 2EFE71D0013A;
-	Tue, 15 Sep 2026 13:58:23 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-03.internal (MEProxy); Tue, 15 Sep 2026 13:58:23 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
-	:content-transfer-encoding:content-type:date:date:from:from
-	:in-reply-to:in-reply-to:message-id:mime-version:references
-	:reply-to:subject:subject:to:to; s=fm2; t=1789495103; x=
-	1789581503; bh=XubQtVF+tUEBwxJU0/7TfZYhEFA6bxYUhRDPezfmn8E=; b=V
-	7VxKffB3DlpYH4Juovw8kSfVsWx56+T+XTp2+sFCb0pHLuVur/L1peyxeshWZsLG
-	IwqqnRpFZuBKzG0SopfE+2YwKQSJcaKKhdCAXQCu3kX2pdt37UTBpswEDh9NTcz2
-	T1zYig7344NmptZpAjH/pBXieGuXc5kQg9q2iHnPJF4KnNVIXBWmBkVxkTWo/XZm
-	5Y+YiuWLp1kTbxTA8mP9BnEN0iyhZYpOpC710FvSnXWMUJ9A5I/qX+E/JKfuD9bm
-	kG3UQxr01hy19yoyoDJk+OX+w1klP98IksJt81jyAC23TKmbswAwmJWYf/zO4rHW
-	Q3VtnCfXH3dl1HG0h2BfA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:content-transfer-encoding:content-type
-	:date:date:feedback-id:feedback-id:from:from:in-reply-to
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="kMw+/HxB";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="x6fDP16m"
+Received: from phl-compute-07.internal (phl-compute-07.internal [10.202.2.47])
+	by mailfout.stl.internal (Postfix) with ESMTP id F26801D00246;
+	Tue, 15 Sep 2026 14:35:53 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-07.internal (MEProxy); Tue, 15 Sep 2026 14:35:54 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-	fm1; t=1789495103; x=1789581503; bh=XubQtVF+tUEBwxJU0/7TfZYhEFA6
-	bxYUhRDPezfmn8E=; b=bH2tXZuWJCq9LOfmDkd/F9kdvBnA5dlCIvR8p4oNjoyB
-	XVr90ajLuRk7G8ndEA/10SNTSsr8fHeQDE7ppToq3aJ8VO1mNBNbDys81nLhE92x
-	5Xn+lIv6gUFMmy/t6m9jA6YLvhNS/Ledf2em0sfSwGSomozrHCfVsbhU0wlcFdki
-	qV2GhAcaTh9ZSW7V7o+ZJaydUPo3/mG7SVHkCEc3mkUb3ZKS4C4jxOH0Ng1kL8xZ
-	oh2e9Iq8cOqgnQ2ACNbSSXTicBkKqK26vz/pZfaH6sqybPOly9VJr+r6bPFxpKMJ
-	Bibs6SAf/+e/3PepSkEuigqIHazAOIQveWu5ZqL4og==
-X-ME-Sender: <xms:PoepakLLoyqAK8QDEgp2Hp65kxdfMXIYMsqfi3oZRie4n7G-lT2xuA>
-    <xme:PoepaqJ2xsWsKY7huCOzCBqhJ_1jm99oCO8KGUhos_rW0ifYxWh9bOzVMz1HF8G1m
-    PefgBW26kMw_qN9D-8UAbXvWli504L0fo9co96Af08SXrTRc9tFeFr4sg>
-X-ME-Received: <xmr:PoepaiUFt5GfxeA9Cq7rZHGGSNl-31H3nb95ksK7oBSQUdt3vcrga54>
-X-ME-Proxy-Cause: dmFkZTFQMm4JHICtzTDS3CcC10keKNmdTwpbleNNC+5TGYJanvsOjSZ062Wy5OyIu1ikia
-    B08N4mNMHaBUHCtK+Xcb1qwmAxWj0xgc23fQHw2lCsm+A/GzWYryUXpQcHjVLQmxA1Ds31
-    +ImfWoap2usUY2+DSsTgMn6ZoIlJka8cFdCdOxYbK5VHOM3rt+vM8LVYa9z3bxZ7iATdmr
-    EoQtN5ScuEcaPNK4O2xkYO6tRMfuVHsTjEmbqdBwSVLCeleix81Ga+VParVPlKtyE7IC9R
-    eJLhcOz2vC4MARlo77XB5QRDglPiaokwAIv+XfuqVdCWNrlqSkgIq4L4wtp++CckPSE0Ke
-    vH1tgr7mA8iN3wHPiGppfuIxs9KUl0ct/C6UYlIiw1dL105CT4pMkaUZOs7e4o6AHxNvJK
-    fgzKJOBq5Fdso0uzIvuG/sAqx8ysBgRSbYQ6VDGUYigC9O3I+6ehE44dlGe1VB3FmPlLvc
-    OUcqpVsjLCLjOzF07Y7n1OM69JhqwC9192ZxVhV3L6EnQfNwDpQ6rieG+V/WYZWThJVKCO
-    qUs1stMWEfGKC2ziiBKpuFp+MoNu7yZqVAiryqp+oeiSnzrelEr4A6XaGXz26fo74eCcP1
-    qeUi9Yx16ErghQ6XP+4K9ZI+dMW98O7FhszpkQ5C+PefDKBp1Kftldg7qOTg
-X-ME-Proxy: <xmx:Poepasi3gnXRDZFSmUu6Ux12WOYb8mRsBthXkMJBU0zyHpLRJ9Gk5g>
-    <xmx:Poepat9t7D9eCwHeID7LbRdKzQxsN_phcGmUnTXT5zx0YK7Ea7oQyQ>
-    <xmx:PoepamANjesWOqqy6HVkHQGLzBamOaUueR-nQ0cC0fon8biG4Q9SCw>
-    <xmx:PoepaqKkJ3VGebDCn_YoqnZfcx66oNK6a4nwRlYNs9wjB4yQuQmWkA>
-    <xmx:P4epauJt2j4laPSOOR1IEdbGthRTpmFJufGJMtk4PoyT8_qVPodhmR3i>
+	:subject:to:to; s=fm2; t=1789497353; x=1789583753; bh=Zc05Iayuo4
+	SX7CCCsPqsDRbeAskqeBW4oEA8Lab4eRc=; b=kMw+/HxB7oN6Rm1ilv/ZXAtcS0
+	zD+5LQQvJkGrWGSzjUuja1un4hyEqH8kM6ALBGrpzIARY3HbubjUY4BM8rLT222A
+	7reik+scyoQHDyTYvje81lnhM5dVW3QbUO7982/u1egnXalLnKpKRhLubzNqjj9n
+	lugoaDra7NO9S9whguKOBAQLQlNdgrI6VrDRakdPuqoPegV9UO+YnDh7dYbt2dWV
+	iG3aeikN6m5FQraflZLYvUstgo76tJC1fkk38wqJ0YIwrkElPyNBAn4wq2YYpXbf
+	bJ0Ptc9XRtLha00BKa50G4tmbyAiWscNnZNFVgN+jZ4zfO5U4b7BDFZhzOFA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
+	1789497353; x=1789583753; bh=Zc05Iayuo4SX7CCCsPqsDRbeAskqeBW4oEA
+	8Lab4eRc=; b=x6fDP16m+ZeBL2JPdI/XtmwZ92AvlMjewshGQS3gDJbiVaoGk1v
+	bR3LF6TEMwJKKlfbudWlk43heSSq9KCjOqZP9H4F3/gnoCF50cOljxCThB0tdtfD
+	creXBnRORDujpTHeAqKjDiHBH/sGpN1/OhcKES1HVuotni1L2YXwNg4hEcMgGKa4
+	AkTBvS301gENuBc19m0hw2do/upF59B1yPdsTu4yKZU+TSCciKyBzCnVNZXcy67j
+	pmycEXyz8yZfqTF4t1vJMtFBAvzctBM6yMF2ke+jOFTNIlIiXvIZ1+vtrB1JsM99
+	FCRNONKMpnPtza6v9y3G+XBGtBcLa/efK9Q==
+X-ME-Sender: <xms:CZCpanQc8qGjr8XGAQoiwPC5xxT2RVNKzz_xPwvZOyoyn_kcZgDB9w>
+    <xme:CZCpajt0xtvmRuQzy_-P_C8EJOkmgqqYExnRyDaGfO9_HONBlslTGZEjgOU2geZbA
+    9xhQKiy3jhOMf3tDD47tPpaATg7Fal-XmleDrqU3pzqCjRGjPaq8A>
+X-ME-Received: <xmr:CZCpar31WD6i9ah6983HHjovdpEEUVm3f6tZXi6AkEo6SttRQrYlySU>
+X-ME-Proxy-Cause: dmFkZTEbRu7TkIlj+u9bpDDUeAK++m5/0yOsqV7nrzAs43MgjmGUbxE/DvFWXxMgQZohnc
+    0mCsPT5+e1VuN3skpzzuBj3JLXFu7XAolq/U4dST4uToLl7Rqr6DrwKSEAmWg07T8+lwOe
+    /HRlcSuvBE5wkLZTU1nzKtOxittX0fDRnuxATY0Bhe6aCSaqu7qsAodiGNYC35uUmX4Mrw
+    3Y8s47cCBSJkZn2jmmYJKDsY5zDGsHamv6oKK7kY1HuDcRZaQvzi3rM+hNMmZCOlJficSF
+    /ez8VGEi+KpQAkSeI6yy4P1ZKDzqlP76ECTAK7Qyxi1sYHh+Am/NA9DcQWTZ+7y+3Xy4oq
+    21HNP3txm7gCKai5QZ6KqL62YDp0elxNp7qSJbu3e24VKzIPx4uvsVJSfvAxXs1vJl3vbU
+    k3FPJn+vedC90vOSxw4RzGnv/acMumrKBn1gBUKAHhTJnHQfaUKtDrBEcXUNY71bje3Qol
+    SgaPWedBC+YLFN8oLicvsfnjhwfFc2MZdZcTp0KqZRSuve5oZWYy+1NcdvW8nXbhCMwyoP
+    pKr4U4vG6NyPzZJ3xOHw6dO62B05a1/g+SdrqDiDfF6QlUDfxctTnsAQ3ezBh7TpAzPGHd
+    lKavbLZ+ZTMV6eL27Stmg0+2YioRtanDz+EDanXrAcz9Qx87bpAqTGsAkqWw
+X-ME-Proxy: <xmx:CZCpasVzsucHNEyLsfdgqh4wMe_VXPkxK2pPNSi4H5od347iCDSCkQ>
+    <xmx:CZCpauIk3nUGE9ZYcVlB7wnaEPfLYVvSzhacL8fuwkYfHk0qcTfWpQ>
+    <xmx:CZCpam0uwE8tfSxEKpFwsYrLNx2dobFhyBjhcxt6kELERFXMrETeOw>
+    <xmx:CZCpas6GujjCM_7i7W0uSu5DpF02-kzKf8nM1jjye96z9h0bQSmtwg>
+    <xmx:CZCpapZtsVxT6lnsJlIg4d0lljxBxGGGFDVUotxZ-FSd_bZN9DnrwU23>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 15 Sep 2026 13:58:22 -0400 (EDT)
+ 15 Sep 2026 14:35:53 -0400 (EDT)
+Date: Tue, 15 Sep 2026 11:36:10 -0700
 From: Boris Burkov <boris@bur.io>
-To: linux-btrfs@vger.kernel.org,
-	kernel-team@fb.com
-Subject: [PATCH v3 3/3] btrfs: downgrade the reflink source inode lock for tree walking
-Date: Tue, 15 Sep 2026 10:58:33 -0700
-Message-ID: <069b34c29713b4574ad37cfe55e728d555e019b2.1789494885.git.boris@bur.io>
-X-Mailer: git-send-email 2.55.0
-In-Reply-To: <cover.1789494885.git.boris@bur.io>
-References: <cover.1789494885.git.boris@bur.io>
+To: Guanghui Yang <3497809730@qq.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, mason@kernel.org,
+	linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Subject: Re: [PATCH] btrfs: clear free space tree state on rebuild failure
+Message-ID: <20260915183610.GA910335@zen.localdomain>
+References: <tencent_F71ECF81628C274CC89FDB3304420C2D1506@qq.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <tencent_F71ECF81628C274CC89FDB3304420C2D1506@qq.com>
 
-When doing a reflink, we are not writing to the src inode or modifying
-it in any way, so it is counter-intuitive to have to lock it
-exclusively. This has the cost of blocking other shared lock users of
-the src file for the duration of all the writeback and reflinking.
+On Tue, Sep 15, 2026 at 02:48:45PM +0000, Guanghui Yang wrote:
+> btrfs_rebuild_free_space_tree() sets
+> BTRFS_FS_CREATING_FREE_SPACE_TREE and
+> BTRFS_FS_FREE_SPACE_TREE_UNTRUSTED before rebuilding the free space
+> tree. Several error paths return without clearing these flags.
+> 
+> This leaves the flags set on the live filesystem and affects delayed
+> reference processing and free-space caching. Clear both flags on all
+> free space tree rebuild failure paths.
+> 
+> Fixes: 1d6a4fc85717 ("btrfs: make clear_cache mount option to rebuild FST without disabling it")
 
-There are two important gotchas to do with direct io that must be
-addressed to make this idea work.
+I don't think this fixes tag is correct. In that version of the code,
+all error paths aborted the transaction at which point the bit being set
+or not doesn't really matter, in my opinion.
 
-The first gotcha is that dio writes that come in under EOF try to take
-inode->i_rwsem shared, which would result in messed up views of the
-extents in the reflinked file. Therefore, add "being used as a reflink
-src" as another inode flag exception for the dio write shared tests that
-already exist to check for other dangerous conditions. In order to
-ensure that this flag is visible to the dio writer, reflink must first
-take i_rwsem exclusive, then set the flag, then downgrade to shared.
+Unless I am missing something about the importance of clearing the bit
+on an aborted transaction, I think the better fixes tag is:
+882af9f13e83 ("btrfs: handle free space tree rebuild in multiple transactions")
 
-The second is that dio reads increment inode->i_dio_count which blocks
-inode_dio_wait() in __generic_remap_file_range_prep(). Therefore, we
-must remain exclusive to dio reads through finishing the prep or risk
-starving the clone on a stream of dio readers. There is still O(extents)
-work in btrfs_clone() which can be done without holding the lock
-exclusive, so we should downgrade to shared and admit dio readers (and
-other shared lock users like lseek) after we are finished with
-inode_dio_wait().
+> Cc: stable@vger.kernel.org # 6.4+
+> Assisted-by: Codex:gpt-5
+> Tested: make -j$(nproc) fs/btrfs/free-space-tree.o
 
-By running concurrent clones and lseeks or dio reads on a src file with
-32k extents on a vm, I can demonstrate 100ms+ stalls on the readers
-without this patch and they go away entirely with the patch.
+Is this all the testing you did or did you also run fstests on this
+change?
 
-Signed-off-by: Boris Burkov <boris@bur.io>
----
- fs/btrfs/btrfs_inode.h |  6 ++++++
- fs/btrfs/direct-io.c   |  7 +++++++
- fs/btrfs/reflink.c     | 17 +++++++++++++++--
- 3 files changed, 28 insertions(+), 2 deletions(-)
+Generally looks like a good fix for start_transaction() errors, though.
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 46c62f980c24..03c00c99099d 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -99,6 +99,12 @@ enum {
- 	 * range).
- 	 */
- 	BTRFS_INODE_COW_WRITE_ERROR,
-+	/*
-+	 * Set by reflink while it holds the source's VFS inode lock shared.
-+	 * Direct IO writes also take that lock shared; one that finds this bit
-+	 * set after acquiring it must retry with the exclusive lock.
-+	 */
-+	BTRFS_INODE_REFLINK_SRC,
- 	/*
- 	 * Indicate this is a directory that points to a subvolume for which
- 	 * there is no root reference item. That's a case like the following:
-diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
-index 3075d7992713..ed3914257d39 100644
---- a/fs/btrfs/direct-io.c
-+++ b/fs/btrfs/direct-io.c
-@@ -913,6 +913,13 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
- 		goto relock;
- 	}
- 
-+	if ((ilock_flags & BTRFS_ILOCK_SHARED) &&
-+	    test_bit(BTRFS_INODE_REFLINK_SRC, &BTRFS_I(inode)->runtime_flags)) {
-+		btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
-+		ilock_flags &= ~BTRFS_ILOCK_SHARED;
-+		goto relock;
-+	}
-+
- 	ret = generic_write_checks(iocb, from);
- 	if (ret <= 0) {
- 		btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index fe765ab27c82..72c1e0db57b7 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -939,6 +939,7 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
- 	struct btrfs_inode *dst_inode = BTRFS_I(file_inode(dst_file));
- 	bool same_inode = dst_inode == src_inode;
- 	u64 wb_start, wb_len;
-+	bool src_downgraded = false;
- 	int ret;
- 
- 	if (btrfs_is_shutdown(src_inode->root->fs_info))
-@@ -976,6 +977,12 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
- 	if (ret < 0 || len == 0)
- 		goto out_unlock;
- 
-+	if (!same_inode) {
-+		set_bit(BTRFS_INODE_REFLINK_SRC, &src_inode->runtime_flags);
-+		downgrade_write(&src_inode->vfs_inode.i_rwsem);
-+		src_downgraded = true;
-+	}
-+
- 	if (remap_flags & REMAP_FILE_DEDUP)
- 		ret = btrfs_extent_same(src_inode, off, len, dst_inode, destoff);
- 	else
-@@ -986,8 +993,14 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
- 		btrfs_inode_unlock(src_inode, BTRFS_ILOCK_MMAP);
- 	} else {
- 		btrfs_double_mmap_unlock(src_inode, dst_inode);
--		unlock_two_nondirectories(&src_inode->vfs_inode,
--					  &dst_inode->vfs_inode);
-+		if (src_downgraded) {
-+			clear_bit(BTRFS_INODE_REFLINK_SRC, &src_inode->runtime_flags);
-+			inode_unlock_shared(&src_inode->vfs_inode);
-+			inode_unlock(&dst_inode->vfs_inode);
-+		} else {
-+			unlock_two_nondirectories(&src_inode->vfs_inode,
-+						  &dst_inode->vfs_inode);
-+		}
- 	}
- 
- 	/*
--- 
-2.55.0
-
+Thanks,
+Boris

@@ -1,240 +1,142 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0a-00154904.pphosted.com (mx0a-00154904.pphosted.com [148.163.133.20])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B68894A5C4B;
-	Tue, 15 Sep 2026 11:45:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 98D0C3793AA;
+	Tue, 15 Sep 2026 14:18:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.133.20
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789472704; cv=none; b=a/cgMs49zi/1mnMarq39l0E0ADQfoOliyn7SvVzt3UbWB0h+2F0NdJS9WIf0u2V9/Cg6/r8kKhk0snb5PH9kh1BeQILN54OaLnWb8zsWiDFI+uKg5QRUON1x/EO+nWbCpJTzVNzpx7cUAcE+IObQxUtNno3dEIsBDMBgN/tXHSw=
+	t=1789481887; cv=none; b=mtheLC1ohIDaPCwP5+nWqtc3oMmArApiALi1nQBWx+5ohUt6Hn9mIJT0im4E1omKEtwKVM7vvKkOgcK8k+6DFDyLU7iW+aWeTDQYgVV6A26x9I5Omslub4gfG6JfzEisqFuJBmkIG6amQCeEM+gnqktZvwkP2Vl8j3jSP6WYrwI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789472704; c=relaxed/simple;
-	bh=I9OSMkJAqyTiXYMalQaOUAdmmm0VDGEgLom6apcHYec=;
-	h=Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=gP90OL/oS3up3iHPNbsyRZfqne+RVwHALZDFYD/jZcjQX7soIYApCfstL2bfrd1p3D+Thb2PoVLr73eyp7ILVUsOA/zB1+zqDLe3WUDLgiH9ziZpyyLhlK72oe1E6Jq1CA+427R7hJUwIf/7uErj0vuCtKUflRNn1WJ4O9cYWBE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=qpraZtza; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=QGwPJ/Wk; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=1z2YAcmQ; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=STZq1zq7; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
+	s=arc-20240116; t=1789481887; c=relaxed/simple;
+	bh=nuH298LRdUWAWfbo3i7dhR3LXoM9+IsAamTXytrVkG8=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=bXGiI4V9TSx9H6rHDTYIcA9+cVVg66M/+WDqizRbOUBpMFFbe+0lnXHkf5jlY2VALokFZAuIXgeQGqOwv3PrN+zIr/oSXWzYKNnTjs9oRgDYp8MSG1YgeLoRNOtRboH51HqBWOtZv/9f7ZseR4XQf8y39e7qcBf4fKqJnoYkwos=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=dell.com; spf=pass smtp.mailfrom=dell.com; dkim=pass (2048-bit key) header.d=dell.com header.i=@dell.com header.b=kN4p1cpj; dkim=pass (2048-bit key) header.d=dell.com header.i=@dell.com header.b=gaHcCpfR; arc=none smtp.client-ip=148.163.133.20
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=dell.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=dell.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="qpraZtza";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="QGwPJ/Wk";
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="1z2YAcmQ";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="STZq1zq7"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 394F521A9E;
-	Tue, 15 Sep 2026 11:44:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1789472696; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=wnDg373jH78dN5pIlzcrzFxx8vbb4Emva5UqmqlA8Bg=;
-	b=qpraZtzanmpj7R1Jkwg1ZHKKEQDMYSY8xvkq6XVPF7eJd2YnzwERexK7bLYvykrvJcxCai
-	o8+hcoWFuzN8xPxfy+Uc0jEKLkAl5BzbJ6AYwZLBHpgj7C/ZErVvUnoKmLGbms6ACpTRAY
-	lWDo+DYnveuidBmY1AsoVwi8y80Je0g=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1789472696;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=wnDg373jH78dN5pIlzcrzFxx8vbb4Emva5UqmqlA8Bg=;
-	b=QGwPJ/WkF/4m6xkn2AxXzqeuw67GWIpTz/c7VMvDiMldQmCUgcja/drPEA3LNTK+h6U4kR
-	rX3zzYtuWYaOhbAg==
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1789472692; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=wnDg373jH78dN5pIlzcrzFxx8vbb4Emva5UqmqlA8Bg=;
-	b=1z2YAcmQdxEMkYP6ILpxAzr+WftWRG4KKRDp2/yLGn1n5wKNPcqkmKCf4d22vhbyjTSS1c
-	ejYXsMG0T6jFW5EklIfsdRwOwhFjbRYXwhri5vND34ZVCNyzrNtCv27wSys22L5fyn1bMw
-	5LFaPMeawG7IxR2/Ky5a2eAGuu47PVI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1789472692;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=wnDg373jH78dN5pIlzcrzFxx8vbb4Emva5UqmqlA8Bg=;
-	b=STZq1zq72y1frufu7ivMLSsB+dpmS6zuXU7eMPYnWhm7ALxYfUAAQ85lgrujxIvuAwRbUp
-	6zpyVijJkjHxpRCg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7661E13693;
-	Tue, 15 Sep 2026 11:44:49 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id LtfcJrAvqWrufwAAD6G6ig
-	(envelope-from <ddiss@suse.de>); Tue, 15 Sep 2026 11:44:49 +0000
-Date: Tue, 15 Sep 2026 21:44:31 +1000
-From: David Disseldorp <ddiss@suse.de>
-To: fdmanana@kernel.org
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, Filipe Manana
- <fdmanana@suse.com>
-Subject: Re: [PATCH] btrfs: test that we don't create pointless compressed
- inline extents
-Message-ID: <20260915214431.72728a7a.ddiss@suse.de>
-In-Reply-To: <83e3a8678c5eafb1cfcf10741a53b6e586cd72d8.1789408399.git.fdmanana@suse.com>
-References: <83e3a8678c5eafb1cfcf10741a53b6e586cd72d8.1789408399.git.fdmanana@suse.com>
+	dkim=pass (2048-bit key) header.d=dell.com header.i=@dell.com header.b="kN4p1cpj";
+	dkim=pass (2048-bit key) header.d=dell.com header.i=@dell.com header.b="gaHcCpfR"
+Received: from pps.filterd (m0170392.ppops.net [127.0.0.1])
+	by mx0a-00154904.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 68FD1XE2512348;
+	Tue, 15 Sep 2026 10:18:04 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=dell.com; h=cc
+	:content-transfer-encoding:date:from:in-reply-to:message-id
+	:mime-version:references:subject:to; s=smtpout1; bh=j8iQVTD2FyoZ
+	TrUVXLIwVpNJAp18kB5y/Acq4NWVeck=; b=kN4p1cpjnu6/xWSYhSCW0tXugkKB
+	q9E5hDMKIxNBge2icV8M4IrIhVGcVISAKgfa9Y3cfP7dkzMnnPxjNgefyahzxkkW
+	+22GGDO0WD46OWT94LvZFGRpzgBok7zHRsMhskHBg9lhbjfSXXxcpkBeLsge91fD
+	8mZefreTvX6Y+otOx2mw1Jm7Vk6FED915/lk0F3mjHFjQGXcqPnumTRXGSDCEDOc
+	2K6jKwuScYFH3TCgJn0qVwL1jG5/PJ1bACxaRwYI+aCX+K2WGti/WKD+NOVvakAd
+	r0/UAOTzYGpEFtZVN0T1XAfkTadx+ZcLnhZsSB4RLktqvW3nioNvSVr8LA==
+Received: from mx0a-00154901.pphosted.com (mx0b-00154901.pphosted.com [67.231.157.37])
+	by mx0a-00154904.pphosted.com (PPS) with ESMTPS id 4gn1w7usjt-1
+	(version=TLSv1.3 cipher=TLS_AES_256_GCM_SHA384 bits=256 verify=NOT);
+	Tue, 15 Sep 2026 10:18:04 -0400 (EDT)
+Received: from pps.filterd (m0089484.ppops.net [127.0.0.1])
+	by mx0b-00154901.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 68FDxS9H3661268;
+	Tue, 15 Sep 2026 10:18:03 -0400
+Received: from esapsmtpat02.us.dell.com (esapsmtpat02.us.dell.com [143.166.211.150])
+	by mx0b-00154901.pphosted.com (PPS) with ESMTPS id 4gq4m0k5v9-5
+	(version=TLSv1.3 cipher=TLS_AES_256_GCM_SHA384 bits=256 verify=FAIL);
+	Tue, 15 Sep 2026 10:18:03 -0400 (EDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+  d=dell.com; i=@dell.com; q=dns/txt; s=smtpdev1;
+  t=1789481884; x=1821017884;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=j8iQVTD2FyoZTrUVXLIwVpNJAp18kB5y/Acq4NWVeck=;
+  b=gaHcCpfR5ySymU7ZiR902o3eDWEENJsOUu0cGxZGqc1Kk3rm4SUJZW8u
+   Xkpn8T0Hs3/+IYKJnA7JedrYSX0+wOojV5TUa7Q28FxUNs+N+sRXbV9sI
+   NnzSThANqR0Q9Oj+4ssGrHbQYmwQCdM4Hpe6w9NoQm/ufBhrO26zJb5R6
+   Y9smkNVdjym5E5mHRQANlHYedsl0yx/dgOajSQTyVliYiAl/FU1gBl6GB
+   rWqluYVlQtnt2RzRoupP4kk3IDJczgA/realBYOKXpy5PARZjzqchZIcl
+   85pHFv+xOffpqTeUoctqyoe3Z3OYmcHULo2O6JCS8IXQS0FQED+j8jQNE
+   A==;
+X-CSE-ConnectionGUID: 3wFfzbqrR9KFvjmhMpasAw==
+X-CSE-MsgGUID: gBxxW5L7Tu+b5iivGemuaQ==
+X-LoopCount0: from 10.94.9.174
+X-MS-Exchange-CrossPremises-AuthAs: Internal
+Received: from w-96j1th4.apac.dell.com (HELO W-96J1TH4.blr.amer.dell.com) ([10.94.9.174])
+  by esapsmtpat02.us.dell.com with ESMTP/TLS/TLS_AES_256_GCM_SHA384; 15 Sep 2026 14:18:01 +0000
+From: Prabhakar Pujeri <prabhakar.pujeri@dell.com>
+To: fstests@vger.kernel.org
+Cc: Prabhakar Pujeri <prabhakar.pujeri@dell.com>,
+        Zorro Lang <zlang@kernel.org>, Qu Wenruo <wqu@suse.com>,
+        quwenruo.btrfs@gmx.com, Anand Jain <asj@kernel.org>,
+        Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 4/6] btrfs/333: require scratch before checking encoded reads
+Date: Tue, 15 Sep 2026 14:17:43 +0000
+Message-ID: <20260915141745.4299-5-prabhakar.pujeri@dell.com>
+X-Mailer: git-send-email 2.53.0
+In-Reply-To: <20260915141745.4299-1-prabhakar.pujeri@dell.com>
+References: <20260915141745.4299-1-prabhakar.pujeri@dell.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-X-Spam-Level: 
-X-Spam-Score: -3.30
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-3.30 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	MISSING_XM_UA(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_SOME(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_THREE(0.00)[4];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo,suse.de:email,suse.de:mid]
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1176,Hydra:6.1.134,FMLib:17.12.100.49
+ definitions=2026-09-15_04,2026-09-14_02,2025-10-01_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ priorityscore=1501 clxscore=1015 malwarescore=0 impostorscore=0 phishscore=0
+ spamscore=0 bulkscore=0 suspectscore=0 lowpriorityscore=0 adultscore=0
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2609040000 definitions=main-2609150207
+X-Proofpoint-GUID: GGifHUcriWgsY7i4Clq_WxYjEUl3J3FL
+X-Proofpoint-ORIG-GUID: GGifHUcriWgsY7i4Clq_WxYjEUl3J3FL
+X-Authority-Analysis: v=2.4 cv=e46T2qp/ c=1 sm=1 tr=0 ts=6aa9539c cx=c_pps
+ a=Z2e5DKjA+8LiMDv5v6mwwA==:117 a=i8a7nF7jFa3EbZrjgrQYpA==:17
+ a=VdqzKS8jKosA:10 a=ke5jqHz-1hQA:10 a=VkNPw1HP01LnGYTKEx00:22
+ a=6gNNCFAoQcIphELLPWWu:22 a=m3zZTHMLHbwB7Lmtoed2:22 a=iox4zFpeAAAA:8
+ a=iLNU1ar6AAAA:8 a=oNaMta7XYEjnxCRIwMoA:9 a=zgiPjhLxNE0A:10
+ a=hlJyneSgMmFPbskH-t2w:22 a=WzC6qhA0u3u7Ye7llzcV:22
+X-Proofpoint-Spam-Info: AW1haW4tMjYwOTE1MDIwOCBTYWx0ZWRfX3U/qManGSvXw
+ iFvkKbBLARFdQPeI2V+WJCsTh2x7u218CBpvhVMBULImiCTDB+9yPHCqgOtnol9kjgNzG4Il0F/
+ paeNlx5B/lMTMEVKl+khKpgmIxLBetg=
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTE1MDIwOCBTYWx0ZWRfX4pROi7Wizs3B
+ 4NLt8IrThy0f9YBJnGAvPpvFX2pB5vg9fJu306zXmH+TwS8JDCz/nRVud3Bj+nY5gGqtXE5WKEP
+ TtkfAXMcsiM6G9IbMq29zVMY1TmUaLr8V5uqNyJRL1Hx71zP9Qvy6TY9LsXZiBurmCUvVDvFR+O
+ DdzDNSzV2eia3YSC7zy27s/8JIKtoDEi2g5a/18nNlY8qzYkzNnTtAzsDNanVMfNUWuFJ63Jkq4
+ J2e9AsA01mg+1iQHtOX7FSEb+lODy7qZCZ/8NDdKPnejRbV2joWtSsOv6MdSGd4JHRbMCrS0oRN
+ ouLqpHzX+b5yC01dIvYd0EKdTtR2TnSa88q/WeIu3qR9LgY+xXBniRPSK9P3NJOyc6QCY238wiR
+ 5hM5NJgroicnb8jK6Fz/PdMYuIS7clZVQkc9QgsPlTiSQXHcbn7ziyi/z3cVLkAVHzpdn/TutEC
+ 1vyuaxDpMAQYD1lDuIA==
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0
+ priorityscore=1501 suspectscore=0 bulkscore=0 impostorscore=0 malwarescore=0
+ adultscore=0 clxscore=1015 lowpriorityscore=0 spamscore=0 phishscore=0
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2609040000 definitions=main-2609150208
 
-On Mon, 14 Sep 2026 18:54:23 +0100, fdmanana@kernel.org wrote:
+_require_btrfs_iouring_encoded_read() formats and mounts the scratch
+device while checking for encoded-read support.  Without a configured
+scratch device, callers therefore fail inside the helper before any
+scratch requirement is checked.
 
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Verify that we don't create compressed inline extents when the compressed
-> data size is not smaller than the uncompressed data size.
-> 
-> This exercises a regression introduced in kernel 7.1 and that is fixed by
-> the following patch:
-> 
->   "btrfs: fix creation of compressed inline extents that don't save space"
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Add _require_scratch at the top of the helper so that all of its
+callers skip cleanly when no scratch device is present.
 
-Looks good and works for me:
-Reviewed-by: David Disseldorp <ddiss@suse.de>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Prabhakar Pujeri <prabhakar.pujeri@dell.com>
+---
+ common/btrfs | 1 +
+ 1 file changed, 1 insertion(+)
 
-A couple of minor nits below...
-
-> ---
->  tests/btrfs/354     | 44 ++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/354.out |  2 ++
->  2 files changed, 46 insertions(+)
->  create mode 100755 tests/btrfs/354
->  create mode 100644 tests/btrfs/354.out
-> 
-> diff --git a/tests/btrfs/354 b/tests/btrfs/354
-> new file mode 100755
-> index 00000000..801dc587
-> --- /dev/null
-> +++ b/tests/btrfs/354
-> @@ -0,0 +1,44 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> +#
-> +# FS QA Test 354
-> +#
-> +# Verify that we don't create compressed inline extents when the compressed
-> +# data size is not smaller than the uncompressed data size.
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick compress
-> +
-> +. ./common/filter
-> +
-> +_fixed_by_kernel_commit xxxxxxxxxxxx \
-> +	"btrfs: fix creation of compressed inline extents that don't save space"
-> +
-> +_require_scratch
-> +_require_btrfs_command inspect-internal dump-tree
-> +
-> +algo_list=($(_btrfs_compression_algos))
-> +for algo in ${algo_list[@]}; do
-> +	_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
-> +	_scratch_mount "-o compress=$algo"
-> +
-> +	echo 'a file with test content' > $SCRATCH_MNT/foobar
-> +	_scratch_unmount
-> +	_check_scratch_fs
-> +
-> +	extent_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
-> +	      grep 'inline extent' | \
-> +	      $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^size$/) print $(i + 1) }')
-> +	ram_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
-> +		   grep 'inline extent' | \
-> +		   $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^ram_bytes$/) print $(i + 1) }')
-> +
-> +	if [ "$extent_size" -gt "$ram_size" ]; then
-> +		echo "inline extent size ($extent_size) greater than ram_size ($ram_size) for algo $algo"
-> +	fi
-
-It might be a little nicer to avoid multiple dumps and do the check in
-awk. The following works for me, feel free to squash in...
-
-diff --git a/tests/btrfs/354 b/tests/btrfs/354
-index 801dc587..e744b945 100755
---- a/tests/btrfs/354
-+++ b/tests/btrfs/354
-@@ -27,18 +27,20 @@ for algo in ${algo_list[@]}; do
-        _scratch_unmount
-        _check_scratch_fs
+diff --git a/common/btrfs b/common/btrfs
+index a75fbf1c..ccac8626 100644
+--- a/common/btrfs
++++ b/common/btrfs
+@@ -1055,6 +1055,7 @@ _require_btrfs_iouring_encoded_read()
+ 	local tmpfile
+ 	local ret
  
--       extent_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
--             grep 'inline extent' | \
--             $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^size$/) print $(i + 1) }')
--       ram_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
--                  grep 'inline extent' | \
--                  $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^ram_bytes$/) print $(i + 1) }')
--
--       if [ "$extent_size" -gt "$ram_size" ]; then
--               echo "inline extent size ($extent_size) greater than ram_size ($ram_size) for algo $algo"
--       fi
-+       $BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
-+               tee -a $seqres.full | \
-+               $AWK_PROG -v algo="$algo" '
-+                       /inline extent/ {
-+                               for (i = 1; i < NF; i++) {
-+                                       if ($i ~ /^size$/)
-+                                               extent_size = $(i + 1)
-+                                       if ($i ~ /^ram_bytes$/)
-+                                               ram_size = $(i + 1)
-+                               }
-+                               if (extent_size > ram_size)
-+                                       printf "inline extent size (%d) greater than ram_size (%d) for algo %s\n", extent_size, ram_size, algo
-+                       }'
-
-> +done
-> +
-> +# success, all done
-
-Delete the line above, as we get here on failure too.
-
-> +echo "Silence is golden"
-> +_exit 0
-> diff --git a/tests/btrfs/354.out b/tests/btrfs/354.out
-> new file mode 100644
-> index 00000000..8bc7ecf6
-> --- /dev/null
-> +++ b/tests/btrfs/354.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 354
-> +Silence is golden
++	_require_scratch
+ 	_require_command src/btrfs_encoded_read
+ 
+ 	_scratch_mkfs &> /dev/null
+-- 
+2.55.0
 

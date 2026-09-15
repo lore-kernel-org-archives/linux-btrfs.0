@@ -1,82 +1,240 @@
-Received: from m16.mail.163.com (m16.mail.163.com [220.197.31.4])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 454B345C6EA;
-	Tue, 15 Sep 2026 07:55:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=220.197.31.4
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B68894A5C4B;
+	Tue, 15 Sep 2026 11:45:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789458909; cv=none; b=EuW3pZyUEL8m6YD+t7/HNpQMPGsdhdE/K7zX0WVY2hyRREt36aS2HCU7hQ4ZaJjMT1WCqJyBC/zNYoS9a1P4KhbLgHSFQfZIzgIZahckBReYB6uAEFkwoibYHb4CPocyiw88qevvfC13rkg26m5/++MyIW55RXEYX6AJeo83URc=
+	t=1789472704; cv=none; b=a/cgMs49zi/1mnMarq39l0E0ADQfoOliyn7SvVzt3UbWB0h+2F0NdJS9WIf0u2V9/Cg6/r8kKhk0snb5PH9kh1BeQILN54OaLnWb8zsWiDFI+uKg5QRUON1x/EO+nWbCpJTzVNzpx7cUAcE+IObQxUtNno3dEIsBDMBgN/tXHSw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789458909; c=relaxed/simple;
-	bh=G48mGUEJR7leGAKi03i2dA2zjKMW6IanxumXW2D9mO4=;
-	h=Date:From:To:Cc:Subject:Content-Type:MIME-Version:Message-ID; b=BeSryDUvBcUHgG7CrAA8xMhrFwFS8S3jXJjHPelfxDCO4H9dR1pWfdHIpP/p+yL4TiZ2M1lyTRehCzSEAMwZhs7qVQ2bBpG2IWRYSaZ4SaEaY2IVSsCH5qYH9/WcOoVBgsDjpFOCeqA8NN9WBRBHp0A2hkAc/Hp55ZDHTRpOifA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=bR8yp8du; arc=none smtp.client-ip=220.197.31.4
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
+	s=arc-20240116; t=1789472704; c=relaxed/simple;
+	bh=I9OSMkJAqyTiXYMalQaOUAdmmm0VDGEgLom6apcHYec=;
+	h=Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=gP90OL/oS3up3iHPNbsyRZfqne+RVwHALZDFYD/jZcjQX7soIYApCfstL2bfrd1p3D+Thb2PoVLr73eyp7ILVUsOA/zB1+zqDLe3WUDLgiH9ziZpyyLhlK72oe1E6Jq1CA+427R7hJUwIf/7uErj0vuCtKUflRNn1WJ4O9cYWBE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=qpraZtza; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=QGwPJ/Wk; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=1z2YAcmQ; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=STZq1zq7; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="bR8yp8du"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
-	s=s110527; h=Date:From:To:Subject:Content-Type:MIME-Version:
-	Message-ID; bh=G48mGUEJR7leGAKi03i2dA2zjKMW6IanxumXW2D9mO4=; b=b
-	R8yp8dusN/ryiSh7tanWo6eqBX/hyt/Le/gkBF1v0bvJaX/10LmlReEhJ/MZDpG2
-	+U4xdZRKO01F3ZZAnmzp/2gV8R7enWa4X4YIzDsYM08fIOuQ9uExV8YMJwecobvO
-	daA1rQ4w3qx7xzE6Nf16pXkwCanyjZAtwqbL0H2NCk=
-Date: Tue, 15 Sep 2026 15:54:50 +0800 (CST)
-From: CJ <firefly0158@163.com>
-To: clm@fb.com, dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [BUG] btrfs: WARNING in btrfs_create_pending_block_groups
-X-Priority: 3
-X-Mailer: Coremail Webmail Server Version 2023.4-cmXT build
- 20260511(2e539873) Copyright (c) 2002-2026 www.mailtech.cn 163com
-X-NTES-SC: AL_Qu2TC/iet0Ai5iiebekdmEsTju82UcS4ufQl245Xc98Figbk+QAgeFpPNFDG1NiRKyuJkh+TdQFs6cJxc45/HfA3iZpcE6O8rjHThBpnGA==
-Content-Transfer-Encoding: base64
-Content-Type: text/plain; charset=UTF-8
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="qpraZtza";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="QGwPJ/Wk";
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="1z2YAcmQ";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="STZq1zq7"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 394F521A9E;
+	Tue, 15 Sep 2026 11:44:52 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1789472696; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=wnDg373jH78dN5pIlzcrzFxx8vbb4Emva5UqmqlA8Bg=;
+	b=qpraZtzanmpj7R1Jkwg1ZHKKEQDMYSY8xvkq6XVPF7eJd2YnzwERexK7bLYvykrvJcxCai
+	o8+hcoWFuzN8xPxfy+Uc0jEKLkAl5BzbJ6AYwZLBHpgj7C/ZErVvUnoKmLGbms6ACpTRAY
+	lWDo+DYnveuidBmY1AsoVwi8y80Je0g=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1789472696;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=wnDg373jH78dN5pIlzcrzFxx8vbb4Emva5UqmqlA8Bg=;
+	b=QGwPJ/WkF/4m6xkn2AxXzqeuw67GWIpTz/c7VMvDiMldQmCUgcja/drPEA3LNTK+h6U4kR
+	rX3zzYtuWYaOhbAg==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1789472692; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=wnDg373jH78dN5pIlzcrzFxx8vbb4Emva5UqmqlA8Bg=;
+	b=1z2YAcmQdxEMkYP6ILpxAzr+WftWRG4KKRDp2/yLGn1n5wKNPcqkmKCf4d22vhbyjTSS1c
+	ejYXsMG0T6jFW5EklIfsdRwOwhFjbRYXwhri5vND34ZVCNyzrNtCv27wSys22L5fyn1bMw
+	5LFaPMeawG7IxR2/Ky5a2eAGuu47PVI=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1789472692;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=wnDg373jH78dN5pIlzcrzFxx8vbb4Emva5UqmqlA8Bg=;
+	b=STZq1zq72y1frufu7ivMLSsB+dpmS6zuXU7eMPYnWhm7ALxYfUAAQ85lgrujxIvuAwRbUp
+	6zpyVijJkjHxpRCg==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7661E13693;
+	Tue, 15 Sep 2026 11:44:49 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id LtfcJrAvqWrufwAAD6G6ig
+	(envelope-from <ddiss@suse.de>); Tue, 15 Sep 2026 11:44:49 +0000
+Date: Tue, 15 Sep 2026 21:44:31 +1000
+From: David Disseldorp <ddiss@suse.de>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, Filipe Manana
+ <fdmanana@suse.com>
+Subject: Re: [PATCH] btrfs: test that we don't create pointless compressed
+ inline extents
+Message-ID: <20260915214431.72728a7a.ddiss@suse.de>
+In-Reply-To: <83e3a8678c5eafb1cfcf10741a53b6e586cd72d8.1789408399.git.fdmanana@suse.com>
+References: <83e3a8678c5eafb1cfcf10741a53b6e586cd72d8.1789408399.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Message-ID: <4ac537fb.6f6b.1a0a40fc080.Coremail.firefly0158@163.com>
-X-Coremail-Locale: zh_CN
-X-CM-TRANSID:hygvCgD3H7PK+ahq7w4QAA--.21722W
-X-CM-SenderInfo: piluvw1o1qikqy6rljoofrz/xtbC3gp1J2qo+crtywAA3R
-X-Coremail-Antispam: 1U5529EdanIXcx71UUUUU7vcSsGvfC2KfnxnUU==
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+X-Spam-Level: 
+X-Spam-Score: -3.30
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-3.30 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	MISSING_XM_UA(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo,suse.de:email,suse.de:mid]
 
-CkhpLAoKCkkgYW0gcmVwb3J0aW5nIGEgV0FSTklORyB3aGlsZSBidHJmcyBjcmVhdGVzIHBlbmRp
-bmcgYmxvY2sgZ3JvdXBzLCB0cmlnZ2VyZWQgYnkKYSBzeXprYWxsZXIgcmVwcm9kdWNlciB0aGF0
-IG1vdW50cyBhIGNyYWZ0ZWQgYnRyZnMgaW1hZ2UuICBUaGUgaXNzdWUgaXMKcmVwcm9kdWNpYmxl
-IHdpdGggSEVBRCBjb21taXQgY2VlOTM5NWFjZDgwNDNiZTA2NDRiMjVjMzRiZmE4NjYyM2YyYjkz
-NQoodjcuMy1yYzEsIExpbnV4IDcuMy4wLXJjMSkuCgoKVGhlIHJlcHJvZHVjZXIgbW91bnRzIGEg
-Y3JhZnRlZCBidHJmcyBmaWxlc3lzdGVtIGltYWdlIG9uIGEgbG9vcCBkZXZpY2Ugd2l0aCB0aGUK
-ZnJlZSBzcGFjZSB0cmVlIGVuYWJsZWQsIGFuZCB0aGVuIHN0YXJ0cyBhIGJhbGFuY2Ugd2l0aCB1
-c2FnZSBsaW1pdHMuICBUaGUKY29uc29sZSBzaG93cyB0aGUgbW91bnQgYW5kIHRoZSBiYWxhbmNl
-IHN0YXJ0IHN1Y2NlZWRpbmcgYmVmb3JlIHRoZSB3YXJuaW5nLgoKClRoZSBjb25zb2xlIHNob3dz
-IGEgV0FSTklORyBhdCBmcy9idHJmcy9ibG9jay1ncm91cC5jOjI5NDQgd2l0aCBSSVAgaW4KYnRy
-ZnNfY3JlYXRlX3BlbmRpbmdfYmxvY2tfZ3JvdXBzLCByZWFjaGVkIGZyb20gdGhlIHRyYW5zYWN0
-aW9uIGNvbW1pdCBwYXRoIHdoaWxlCnRoZSBiYWxhbmNlIGlzIHR1cm5pbmcgdGhlIGJsb2NrIGdy
-b3VwIHJlYWQtb25seS4gIEluIHRoZSBvcmlnaW5hbCByZXBvcnQgdGhlCnNhbWUgd2FybmluZyB3
-YXMgcmVjb3JkZWQgYXQgZnMvYnRyZnMvYmxvY2stZ3JvdXAuYzoyNDQxIGluIHRoZSBzYW1lIGZ1
-bmN0aW9uLCBzbwpvbmx5IHRoZSBzb3VyY2UgbGluZSBoYXMgbW92ZWQuCgoKT25lIHBvc3NpYmxl
-IGNhdXNlIGlzIHRoYXQgdGhlIGJsb2NrIGdyb3VwIGNyZWF0ZWQgZnJvbSB0aGUgY3JhZnRlZCBp
-bWFnZSBkb2VzCm5vdCBzYXRpc2Z5IHRoZSBhc3N1bXB0aW9uIGJ0cmZzX2NyZWF0ZV9wZW5kaW5n
-X2Jsb2NrX2dyb3VwcyBtYWtlcyBhYm91dCB0aGUKYmxvY2sgZ3JvdXAncyB0eXBlIG9yIHJlc2Vy
-dmF0aW9uIHN0YXRlIHdoZW4gaXQgaXMgY29tbWl0dGVkLCBzbyB0aGUgaW52YXJpYW50CmNoZWNr
-IGZpcmVzLiAgVGhpcyBsb29rcyBsaWtlIGEgdmFsaWRhdGlvbiBnYXAgZm9yIGRpc2stZGVyaXZl
-ZCBibG9jayBncm91cApzdGF0ZSByYXRoZXIgdGhhbiBhIHRyYW5zYWN0aW9uIHByb2JsZW0uICBJ
-IG5vdGUgdGhhdCA4YmM0ZDcyMDk2MTEgYW5kCmU1NDkwOTNjMTFhMiB0b3VjaGVkIHRoZSBibG9j
-ayBncm91cCByZXNlcnZhdGlvbiBwYXRoIGJ1dCBub3QgdGhpcyBjaGVjay4gIEkgYW0KcmVwb3J0
-aW5nIHRoZSB3YXJuaW5nIGFuZCB0aGUgcGF0aCBhcyBvYnNlcnZlZC4KCgpUaGlzIGFwcGVhcnMg
-dG8gYmUgYSByZWN1cnJlbmNlIG9mIHRoZSBzeXpib3QgaXNzdWUgd2hvc2UgZXh0ZXJuYWwgaWQg
-aXMKZWNlZjEwOWExNTdlNzBjMDZlMjUuICBJdCByZW1haW5zIHJlcHJvZHVjaWJsZSBvbiB2Ny4z
-LXJjMS4KCgpSZXByb2R1Y2VyOgoKCnN5eiByZXByb2R1Y2VyOiBodHRwczovL3Bhc3RlYmluLmNv
-bS9yYXcvdTJRNGZuakIKCmNvbnNvbGUgb3V0cHV0OiAgaHR0cHM6Ly9wYXN0ZWJpbi5jb20vcmF3
-L3h0eWZ3MmJtCgprZXJuZWwgY29uZmlnOiBodHRwczovL3Bhc3RlYmluLmNvbS9yYXcvTkhhdnB5
-NlIKCgpLZXJuZWw6CgoKSEVBRCBjb21taXQ6IGNlZTkzOTVhY2Q4MDQzYmUwNjQ0YjI1YzM0YmZh
-ODY2MjNmMmI5MzUKZ2l0IHRyZWU6IHVwc3RyZWFtIChsaW51eC5naXQpLCB0ZXN0ZWQgdGhyb3Vn
-aCB0aGUgdjcuMy1yYzEgYW5ub3RhdGVkIHRhZyBvYmplY3QKwqAgwqAgwqAgwqAgwqAgwqBlNWUw
-NDcyNmNkZDA0M2UzMDk2NzcwNzFhYjFiNjVhNGIxOGY0MjJiCmtlcm5lbCB2ZXJzaW9uOiA3LjMu
-MC1yYzEgIzEgUFJFRU1QVChmdWxsKQp0ZXN0ZWQgdGFnOiB2Ny4zLXJjMSAoTGludXggNy4zLXJj
-MSwgMjAyNi0wOC0zMCkKCgpMZXQgbWUga25vdyBpZiB5b3UgbmVlZCBtb3JlIGRldGFpbHMgb3Ig
-dGVzdGluZy4KCgpCZXN0IHJlZ2FyZHMsCkNoYW5namlhbgoKCgo=
+On Mon, 14 Sep 2026 18:54:23 +0100, fdmanana@kernel.org wrote:
+
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Verify that we don't create compressed inline extents when the compressed
+> data size is not smaller than the uncompressed data size.
+> 
+> This exercises a regression introduced in kernel 7.1 and that is fixed by
+> the following patch:
+> 
+>   "btrfs: fix creation of compressed inline extents that don't save space"
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+Looks good and works for me:
+Reviewed-by: David Disseldorp <ddiss@suse.de>
+
+A couple of minor nits below...
+
+> ---
+>  tests/btrfs/354     | 44 ++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/354.out |  2 ++
+>  2 files changed, 46 insertions(+)
+>  create mode 100755 tests/btrfs/354
+>  create mode 100644 tests/btrfs/354.out
+> 
+> diff --git a/tests/btrfs/354 b/tests/btrfs/354
+> new file mode 100755
+> index 00000000..801dc587
+> --- /dev/null
+> +++ b/tests/btrfs/354
+> @@ -0,0 +1,44 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+> +#
+> +# FS QA Test 354
+> +#
+> +# Verify that we don't create compressed inline extents when the compressed
+> +# data size is not smaller than the uncompressed data size.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick compress
+> +
+> +. ./common/filter
+> +
+> +_fixed_by_kernel_commit xxxxxxxxxxxx \
+> +	"btrfs: fix creation of compressed inline extents that don't save space"
+> +
+> +_require_scratch
+> +_require_btrfs_command inspect-internal dump-tree
+> +
+> +algo_list=($(_btrfs_compression_algos))
+> +for algo in ${algo_list[@]}; do
+> +	_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
+> +	_scratch_mount "-o compress=$algo"
+> +
+> +	echo 'a file with test content' > $SCRATCH_MNT/foobar
+> +	_scratch_unmount
+> +	_check_scratch_fs
+> +
+> +	extent_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
+> +	      grep 'inline extent' | \
+> +	      $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^size$/) print $(i + 1) }')
+> +	ram_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
+> +		   grep 'inline extent' | \
+> +		   $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^ram_bytes$/) print $(i + 1) }')
+> +
+> +	if [ "$extent_size" -gt "$ram_size" ]; then
+> +		echo "inline extent size ($extent_size) greater than ram_size ($ram_size) for algo $algo"
+> +	fi
+
+It might be a little nicer to avoid multiple dumps and do the check in
+awk. The following works for me, feel free to squash in...
+
+diff --git a/tests/btrfs/354 b/tests/btrfs/354
+index 801dc587..e744b945 100755
+--- a/tests/btrfs/354
++++ b/tests/btrfs/354
+@@ -27,18 +27,20 @@ for algo in ${algo_list[@]}; do
+        _scratch_unmount
+        _check_scratch_fs
+ 
+-       extent_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
+-             grep 'inline extent' | \
+-             $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^size$/) print $(i + 1) }')
+-       ram_size=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
+-                  grep 'inline extent' | \
+-                  $AWK_PROG '{ for (i = 1; i < NF; i++) if ($i ~ /^ram_bytes$/) print $(i + 1) }')
+-
+-       if [ "$extent_size" -gt "$ram_size" ]; then
+-               echo "inline extent size ($extent_size) greater than ram_size ($ram_size) for algo $algo"
+-       fi
++       $BTRFS_UTIL_PROG inspect-internal dump-tree -t 5 $SCRATCH_DEV | \
++               tee -a $seqres.full | \
++               $AWK_PROG -v algo="$algo" '
++                       /inline extent/ {
++                               for (i = 1; i < NF; i++) {
++                                       if ($i ~ /^size$/)
++                                               extent_size = $(i + 1)
++                                       if ($i ~ /^ram_bytes$/)
++                                               ram_size = $(i + 1)
++                               }
++                               if (extent_size > ram_size)
++                                       printf "inline extent size (%d) greater than ram_size (%d) for algo %s\n", extent_size, ram_size, algo
++                       }'
+
+> +done
+> +
+> +# success, all done
+
+Delete the line above, as we get here on failure too.
+
+> +echo "Silence is golden"
+> +_exit 0
+> diff --git a/tests/btrfs/354.out b/tests/btrfs/354.out
+> new file mode 100644
+> index 00000000..8bc7ecf6
+> --- /dev/null
+> +++ b/tests/btrfs/354.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 354
+> +Silence is golden
+

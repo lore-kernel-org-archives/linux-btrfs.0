@@ -1,37 +1,37 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F3C37481661;
-	Tue, 15 Sep 2026 15:28:16 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BC30B3D649F;
+	Tue, 15 Sep 2026 15:29:08 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789486098; cv=none; b=NK8yZ3IqGA25pjVQZ6Pgf3XZ97yIqzbOZLiInNHzEMYTIQhMUL+DuPP7mq4A3JADa5VYY2TSjE6BAuT5uZf0Ozv/7yHmXKE83Jo02peXenmoW9OAIuh4hIRNZY0tONmX1exGBXm29lv5z3n/XeqkVgs8wOzmEy/lOIFuAi+2kn8=
+	t=1789486149; cv=none; b=WNhB6T3x2FWOowcwbXgN6zdqVOVNW35bvngNxmV0AibaGRyE4ElmM0LVdWTnJ+EzZH5zRkpTrRhi64FjX9W+4sb69c5iEPbi9RIa3iUxf1Za2gvxV+ux+0JGc8ISe+BXMTJ4uVhLkX/ZeHVjptahBP36lo0SISUQWOEVoC/i5q0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789486098; c=relaxed/simple;
-	bh=JOdEfRTtMZN6n6VGu0E6F3Hk9pPD6V56mSdxTH9IcU8=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=bvj0BEPNU4xZjI0MBkFk9NWL0isM/ceASpJ9USLeFKay3zdabz976r5J/c98qhrHNo1T4+u/c0NZkXsfkcQNEPWc57zQkrpYk2JRNkha1hq2MCxSNE5zhU4JTJOjr0HFvaMg8qMXDBqyPJPKdS7nMUBPsvGsQvgxXtgB9Q/bdvw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=jpvF0HSI; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1789486149; c=relaxed/simple;
+	bh=MSIV4lx/c6VJzCw5B0oUPfJiH3Jr91nc2+9ssQivBqQ=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=WszW1y/hnzkY1N3DvF9RkLPwO6ijjQUWYdMes363GCToMpDHXo8nnndoC1dKoLUIcHi6u0aQsTcMmXs5ebS2RWAbrC/1D7cfy3FBv31HCkwNkKRcBsNbO90yqEFK0ApoM4u7zZYaVdg+iSJar4ZD2pUw36agOhRAHpSYI0cJU0g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=CqR2vLnN; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="jpvF0HSI"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AC2C61F000FF;
-	Tue, 15 Sep 2026 15:28:15 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="CqR2vLnN"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 805B21F000FF;
+	Tue, 15 Sep 2026 15:29:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1789486096;
-	bh=5DGCZcHHdkA+UN8dpXqZ/x6neiJo+BN7XDoFIp2bcj4=;
+	s=k20260515; t=1789486148;
+	bh=puXMjAiXwpDB3tTK9aEvzK9/qSv1kWJTWfpayQO7Rkg=;
 	h=From:To:Cc:Subject:Date;
-	b=jpvF0HSIJgOOBcqOWJpov3Fjjc5L650ruvhQS7oFNXg2PIf5akkn5xx3qAHfAZYSJ
-	 8Ewnwh/EFdsrVA+nlIUU4DlGo75rnrIOYJXx8abQoxhoevI9zVugNKWmuppa0uGOcC
-	 xyGr71ZfpeoB9kUUj6bafKMnPsIpR+I+SlGrZ2qEldI2xKEaXQQklvZXYZB4R5j59O
-	 LdWFnZwXixtcL0GR/oOVWYgb0pNy0Oj6zlAiPBGZ3xuUo77zjyIWDMFQjmp1nbre7s
-	 ADn1dSqWrHVfBrVP3AbTLePSbz9JRTtQQ9WIOM1Wsk/bimwZ+AYwNw0ReaDD7/5ohc
-	 heoZ7/OBr2EOg==
+	b=CqR2vLnN6aWIf+rGSYgdPeyAZrjJIUwVQd1P7eSnwSm6eTlT7d7rWBpLFUHunqfbq
+	 PbXYN4wUbnNtmmZl3dyszYBozmoLmuWNoBIFgrwO6flDNsCLkKt6KmSiRgmcaQREZB
+	 DvRoc2AnMt7G+Ed+kz1YzOFNUGK4cLAp+9jJj1HTZ6OW9Ep/QeN5bLMq0ABFTqMM/X
+	 APINHS3uzBe7J0qNZZ7ViT4iymgBT+Y1TOI2Jfyl1+0NJ1bTMWB3u0lItv7hXTNDQw
+	 m9wLBO0VDOqRcWw1mBD1flk0otcuIu1zaXQm33fqgoYbvxdMr6dE9SAAiqSJcklyRO
+	 WcRw+LQx61VCA==
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org,
 	Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] common/btrfs: exercise all algorithms in _btrfs_stress_remount_compress()
-Date: Tue, 15 Sep 2026 16:28:12 +0100
-Message-ID: <cc052d6b35788720c6cdc93be7eb6af637a9fc96.1789486070.git.fdmanana@suse.com>
+Subject: [PATCH] common/btrfs: exercise all algorithms in _btrfs_stress_defrag()
+Date: Tue, 15 Sep 2026 16:29:04 +0100
+Message-ID: <97cbd58be421a2b35567031d58002f73493b3316.1789486109.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -43,33 +43,43 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-_btrfs_stress_remount_compress() is using a hard coded list of algorithms
-which is incomplete as zstd is missing as is supported for some years now.
+_btrfs_stress_defrag() is testing only zlib and lzo compression with the
+defrag tool, but we also have zstd support for some years now.
 
-So remove the hard coded list and use _btrfs_compression_algos() to get
-the list of supported compression algorithms.
+Change _btrfs_stress_defrag() to iterate over the list of all supported
+compression algorithms given by _btrfs_compression_algos().
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- common/btrfs | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ common/btrfs | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/common/btrfs b/common/btrfs
-index 0bfb02dd..3eb68beb 100644
+index 3eb68beb..1854cf07 100644
 --- a/common/btrfs
 +++ b/common/btrfs
-@@ -449,8 +449,10 @@ _btrfs_kill_stress_defrag_pid()
- _btrfs_stress_remount_compress()
+@@ -414,16 +414,17 @@ _btrfs_stress_defrag()
  {
  	local btrfs_mnt=$1
-+	local algo_list=("no" $(_btrfs_compression_algos))
-+
+ 	local compress=$2
++	local algo_list=($(_btrfs_compression_algos))
+ 
  	while true; do
--		for algo in no zlib lzo; do
-+		for algo in ${algo_list[@]}; do
- 			_mount -o remount,compress=$algo $btrfs_mnt
- 		done
+ 		if [ "$compress" == "nocompress" ]; then
+ 			find $btrfs_mnt \( -type f -o -type d \) -exec \
+ 			$BTRFS_UTIL_PROG filesystem defrag {} \;
+ 		else
+-			find $btrfs_mnt \( -type f -o -type d \) -exec \
+-			$BTRFS_UTIL_PROG filesystem defrag -clzo {} \;
+-			find $btrfs_mnt \( -type f -o -type d \) -exec \
+-			$BTRFS_UTIL_PROG filesystem defrag -czlib {} \;
++			for algo in ${algo_list[@]}; do
++				find $btrfs_mnt \( -type f -o -type d \) -exec \
++				     $BTRFS_UTIL_PROG filesystem defrag -c$algo {} \;
++			done
+ 		fi
  	done
+ }
 -- 
 2.47.2
 

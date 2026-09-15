@@ -1,66 +1,67 @@
-Received: from mail-ej2-f12.google.com (mail-ej2-f12.google.com [74.125.228.140])
+Received: from mail-ed2-f12.google.com (mail-ed2-f12.google.com [74.125.228.76])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 921EE37416F
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2026 22:18:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.140
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7CE141632DD
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2026 22:19:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.76
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789510702; cv=none; b=oSvc0jlPR4dNJxEm8MCgpT1FeJF0o33KQCTG0+GHsMfFwY9lPmjPRd3eRL6NYWZhFuC1LCfsnwjGJ70kRCVa+ITuH2nymaT/t9UpIWpF6WhRlAN2QeBoLx22XywnWcmW9xyYuNCVvVr+kPeMjdO050xehuvADFA9FwbqtudVNIA=
+	t=1789510765; cv=none; b=J1OQ+VevBSsUvZiUiATfLsG167yBlayDOOfJx3D1ig8d7q3g90qaI4f6V/tzf163YnQr7gdMzPN8XMi4f/mEcxSNu2Qorxvd6Q8rah260SkVzpwxMo+FH74dQKoiF1DVZKkZUF43aH34ABY7s3xSreAsMEMlgyqKKSd987zCOyA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789510702; c=relaxed/simple;
-	bh=bKLrzd7mzke4xNMgjy1dDJw5E7c0Bo+7KuWuUyP0dB8=;
+	s=arc-20240116; t=1789510765; c=relaxed/simple;
+	bh=L4xo4wPOKAvUPtximANIcmyw+tN5k4wV80yANO/epwc=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=kBEtAEHX1IfGXIrvm/71RXjB46oiZcOaNXazaPrJFD+luHgfsd+dZoj2dsuDDaZy5t5aulh1X/wZtomyGRQlHujUHOGi8YZ/aKE6fjGwgkyOSYZgl7Rvo7NFlIuCw7so+TBihuoWMBceOw2KvdKiC0PJ1DV9wGt9DuiHVVzN+GQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=OLHVOSh3; arc=none smtp.client-ip=74.125.228.140
+	 In-Reply-To:Content-Type; b=DQHh5p4rVBj/8rtS1fe3FcCrZ56X4jKo63YeujJCtf7xXTWjQ0jka/l7XUHyYfSpGge7M7zhuLSdAfLzEuILuXCgaeLLpRjiov0D+INnxl2ZbYTmtDDxCL3C2cKsMuOncawzE5tY9EsqlgEExoKOYC7F4ROknFTWAl/hcg6jESo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=MStdKDi2; arc=none smtp.client-ip=74.125.228.76
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="OLHVOSh3"
-Received: by mail-ej2-f12.google.com with SMTP id a640c23a62f3a-c294af0caa8so45397466b.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2026 15:18:20 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="MStdKDi2"
+Received: by mail-ed2-f12.google.com with SMTP id 4fb4d7f45d1cf-6a9a2b95b72so504015a12.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2026 15:19:23 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1789510699; x=1790115499; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1789510762; x=1790115562; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=pdk/vYsItmsk6uXrnubu3MUn5VZJ/8iyyzxZQ2N88ho=;
-        b=OLHVOSh398beVvfQ2OQhx+njOiN8VuM27vCeNYzMWN12NCDe4ceQhYCIBkEyu13ACe
-         ZBeivKTsF3hh/4S8ZlfTj07EmxYZfKQ1q2A4uEfMRSHVx/dTPHzMRgNEzPrmem0kHkvH
-         im7RIFsykLGGcPPmMyaHjWVXSHc1MDZBc5rmuJC3kgZamxsltB6leY01xboCDw583DPJ
-         dmddjoE9R4mXtBdv95BAvrYnfZkwikEuB3rIbHIWFNkVmF4OeBwCvM7UWl/uA0KPrkKv
-         ujUMX7rO2UVA5+YeCy3dubYOfUE3hRghmMieRk+Ba3elOIMa5vJ2V+6ocnmjJXzjpGxx
-         LqEA==
+        bh=ZVQidhjw84lz9C/NKuqC+wIZjbIbZWuve/5ZzSwfmQI=;
+        b=MStdKDi2ufCyWBCK/RveXJHjds135uWaVlo1sqZfW4DZChF9f2VYmzdGIE0iODWOZ3
+         58pjO1d0T5zQ9kTHwNzy0wsYEjao2idz0/FpOAMYR78cc+WNW3Wm/zzJ2mzS1aM2DHS4
+         SZ4hLJ0ulCZjRTST5WFbzNOlUDK3MJrvTXtey+2+ZdOwASQfm07KLywrgjQOPvWygSWp
+         WH5FgKBr9wIDFSQn3k5w9sRRsfiLI6j5oGgVd1i4rPqhGlMapk6WB0TQ80tgFG6Ivvoh
+         /6odzMjqy34d8MUpB1Hb2EQ3yMWWtSMsQ8BgqzTSy1aXCOGnbtN8KCjczGsYcfui14wX
+         xMVQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1789510699; x=1790115499;
+        d=1e100.net; s=20260707; t=1789510762; x=1790115562;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=pdk/vYsItmsk6uXrnubu3MUn5VZJ/8iyyzxZQ2N88ho=;
-        b=TSlvVp/vUefe7ofR3ivuVAnRPfKBZdw1/ojEHQSxcoNgUYBcfZ8Jd/hhFNTsNyKDg/
-         izBe5yBIO1Bisq5szLk+8BJv4sdjls0hEDS468u3WDgkia2BVNqTfl00amQOcGreQXPu
-         Y1iTrVbrr7J3GHxx/3ZCcuyEM/Fp5+cwzcF4sFCvmSkeblCq4s4xh7RLLVBDDhxo+EXu
-         qZF0x+L6/lvqB5B5oX2YUa0msqlHCLkVcZEvYTPDbkH5jNACRY4DMp+SI/Rk2iAsQx0W
-         lktn/FMfBZLwMk9Xof/Ie32adDYLRoLUxM0jnXTdDmPYEhOZ3A8W8cYwAAbnckz4QbO4
-         QkNw==
-X-Gm-Message-State: AFuF++lFPS55zXYI0Ul6DO+I5/6CLxncv6SUzvqpU8KSigi3RDYcvsMF
-	Mrnc1rKCbatzIS8bW/Z9Z1TtRIdldE8yi8Ahv0+sMDyF42CQk4m4ui1wmQ3WvAig8nk=
-X-Gm-Gg: AYBFou0nfHp9I3OKeHPNboIBYwbYQIGrS0LZh4pUy2cD4TqBj2upkhWEV4FvqR/Gko0
-	8flHBXj75e1qhS/LVRD3vclw2PSUUSDqVE/oSCmOg4BNu3bzWP0Ac5p8VQ83iQVJqrBSxy29cmE
-	PlnTOGAQ22RpIlWTd3SiQtBwqDC3vZXhCiR3wOj0mpAcohRL9UOD9Dcu+/moGMVEmK64D7swbZR
-	ZkoQqsAOIDcuyONZfB7ve3cBXR3z1eiOuh/BqSfWcpF0as9Zo9gbF2cljy7wowKTX1xOMD9n1VD
-	ahxnJmlIlyx99xHLg20qTGZ0YHvVy3lumVHOh1I/auqXiYLE8tXrDWW03mxlUSJ9vIKGoMFpNMK
-	aa+hN9Bmy7BsynH/frN6NpTAYPHlDJ5DJlKSVCANubL1oYlMD74xRbnGYSjpkaA6DA0XXWdQ/GV
-	Tv010LUY6NQva5MCnsK/rFPjJJ+fUd0xtgi2MXBoJYOpPlbLIFimMGDu/EN5hqTvc=
-X-Received: by 2002:a17:906:7949:b0:c26:2205:3df8 with SMTP id a640c23a62f3a-c29e52903famr4435566b.9.1789510698935;
-        Tue, 15 Sep 2026 15:18:18 -0700 (PDT)
+        bh=ZVQidhjw84lz9C/NKuqC+wIZjbIbZWuve/5ZzSwfmQI=;
+        b=tXz2DvyIOdQFvPD6RS6TYrDInkelUNbNSrDtzKO58d8B/6AhM/UiKMhLfjPw0VmXti
+         XrRzy769TkYGZIEh5djgiVjond00WqkcHXMEsqIXhLj3K/KNfJU1VkKkA6MnpN6bQGgh
+         OObZ+XBbsG28lN86nLFEvAj36m0b0muX0oAJmatJU5Bjl/0e3vfh7E2cYgfBjH1CuPs9
+         3OMVZ6G31juoAlkARR6Z/9j1bS544uut4jdyp9Vr8qZQRPEtKB/19ZPIYR73xC3jtpgz
+         d7wEwc9+exCdHxaLZvERP0rgOroFIRXYyGNi0mNowWDjI/c9tZ/04bfVxn3HbKbI5NMu
+         gSXw==
+X-Gm-Message-State: AFuF++lWahrQIUASfcvG+kZYkanRtM+Xr+6pqfGweih2Er564oNjTFD/
+	n/1tU+xNGVl738voxdiY1rVEtFWjXEZKeJ5httNFgPjLLAjqYreUwxX/fWV4wC43LeKVS1luvyN
+	R7Lv6Xp2BmQ==
+X-Gm-Gg: AYBFou3AfgCbcOowvzeXcH1+eodfxwaMOcljvPp9vRi3NSyMu5+FeHtVytyB5zWFjoJ
+	MiSR/uwSMRvLUWFKB2ZOUuTsXevUb5O7asWvyQM7XTPT8Mmwr1pz2Rx1Rs7mjFra4xtRQB7e8I2
+	/Tu+CTvXImN9i98WPCYVWFmyiDQhcuCxAeqY7oOKnAXITAo9bFMeOMjUGwXTbWSlnziOpzo2GSo
+	C1dfR9ShM6euqtUYT2vV4XjF1ldjIwM5uAVSHcgKv1yy2zGR8P3fpuLjumUm64sJTm56MzHcbxZ
+	G4tP/xhgY0sOfX6DYx6AXEMhTiGFvYN6fo3hQ0tKFI6Dosm6Dkqa9ljqMOw870JjEW5SOapZRBx
+	J/Wma5r7TmdpktVOMM3TZvzeI23U9fSszN0kskmGG52ENLHmNXEJ9afDmQFkN1IHSdIC4ljUztu
+	lP4fatULHQcthncCxI2FVkDoM6VkqcB9ufbdhu832DN5Qdjqyw3XNepu4Z2FvYQRs=
+X-Received: by 2002:a17:907:e895:b0:c29:63f2:99bb with SMTP id a640c23a62f3a-c29e536364amr3312366b.47.1789510761727;
+        Tue, 15 Sep 2026 15:19:21 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-87200c581fcsm208935b3a.12.2026.09.15.15.18.16
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-39e1c2c5d86sm235579a91.4.2026.09.15.15.19.17
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 15 Sep 2026 15:18:17 -0700 (PDT)
-Message-ID: <b735211e-5987-4829-922d-4b80633f699d@suse.com>
-Date: Wed, 16 Sep 2026 07:48:13 +0930
+        Tue, 15 Sep 2026 15:19:20 -0700 (PDT)
+Message-ID: <45c16e73-22da-4f18-b96a-11572bb7333d@suse.com>
+Date: Wed, 16 Sep 2026 07:49:14 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,10 +70,10 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
 Subject: Re: [PATCH] common/btrfs: exercise all algorithms in
- _btrfs_stress_remount_compress()
+ _btrfs_stress_defrag()
 To: fdmanana@kernel.org, fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-References: <cc052d6b35788720c6cdc93be7eb6af637a9fc96.1789486070.git.fdmanana@suse.com>
+References: <97cbd58be421a2b35567031d58002f73493b3316.1789486109.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -99,20 +100,20 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <cc052d6b35788720c6cdc93be7eb6af637a9fc96.1789486070.git.fdmanana@suse.com>
+In-Reply-To: <97cbd58be421a2b35567031d58002f73493b3316.1789486109.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/9/16 00:58, fdmanana@kernel.org 写道:
+在 2026/9/16 00:59, fdmanana@kernel.org 写道:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> _btrfs_stress_remount_compress() is using a hard coded list of algorithms
-> which is incomplete as zstd is missing as is supported for some years now.
+> _btrfs_stress_defrag() is testing only zlib and lzo compression with the
+> defrag tool, but we also have zstd support for some years now.
 > 
-> So remove the hard coded list and use _btrfs_compression_algos() to get
-> the list of supported compression algorithms.
+> Change _btrfs_stress_defrag() to iterate over the list of all supported
+> compression algorithms given by _btrfs_compression_algos().
 > 
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
@@ -122,23 +123,33 @@ Thanks,
 Qu
 
 > ---
->   common/btrfs | 4 +++-
->   1 file changed, 3 insertions(+), 1 deletion(-)
+>   common/btrfs | 9 +++++----
+>   1 file changed, 5 insertions(+), 4 deletions(-)
 > 
 > diff --git a/common/btrfs b/common/btrfs
-> index 0bfb02dd..3eb68beb 100644
+> index 3eb68beb..1854cf07 100644
 > --- a/common/btrfs
 > +++ b/common/btrfs
-> @@ -449,8 +449,10 @@ _btrfs_kill_stress_defrag_pid()
->   _btrfs_stress_remount_compress()
+> @@ -414,16 +414,17 @@ _btrfs_stress_defrag()
 >   {
 >   	local btrfs_mnt=$1
-> +	local algo_list=("no" $(_btrfs_compression_algos))
-> +
+>   	local compress=$2
+> +	local algo_list=($(_btrfs_compression_algos))
+>   
 >   	while true; do
-> -		for algo in no zlib lzo; do
-> +		for algo in ${algo_list[@]}; do
->   			_mount -o remount,compress=$algo $btrfs_mnt
->   		done
+>   		if [ "$compress" == "nocompress" ]; then
+>   			find $btrfs_mnt \( -type f -o -type d \) -exec \
+>   			$BTRFS_UTIL_PROG filesystem defrag {} \;
+>   		else
+> -			find $btrfs_mnt \( -type f -o -type d \) -exec \
+> -			$BTRFS_UTIL_PROG filesystem defrag -clzo {} \;
+> -			find $btrfs_mnt \( -type f -o -type d \) -exec \
+> -			$BTRFS_UTIL_PROG filesystem defrag -czlib {} \;
+> +			for algo in ${algo_list[@]}; do
+> +				find $btrfs_mnt \( -type f -o -type d \) -exec \
+> +				     $BTRFS_UTIL_PROG filesystem defrag -c$algo {} \;
+> +			done
+>   		fi
 >   	done
+>   }
 

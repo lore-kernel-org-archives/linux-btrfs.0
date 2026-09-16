@@ -1,142 +1,76 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D05E4FECF9
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 13:52:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73D94309EF9
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 15:02:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789566774; cv=none; b=Os4oifP3eEK3vgbsX3XvrWhHjlzgJzeao2Wiedl1tci7pW/81MozEPDQ/sDxwBTEAMvnyXO3TU9H1GqrWCeicaB8/6/qs89prB4TCK6Tb+Mlz6YXGNsKWQ2mXEMZdeqtZ339KvuuKiiHuC8NeejpcXnMM7t+vGyuHEtxA+NIhfg=
+	t=1789570965; cv=none; b=o4idL9NRaiQnvru6khPJFsZr+VminMJjR0965byKxBNZAxVAhxnVTllhJeEu6Dl9q/YqFFVeo9u8ztCvKwJQcLDxiw01ibkHNFI1LQUf4we5nuj7qK+nnNwBkrSXz+qjzC88uI/0Z/GbhqyB/3TLrHmt2WdbA+mS8nO/TYkP7Pc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789566774; c=relaxed/simple;
-	bh=bU1AXnE7C+3sl00tGzuZIXLJOBd9m0HjPzALaj2PYKk=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=YvY4PHsowVL1QQ7zG+23Kv/RtO/VWiv69AU2rDS5Xcyljh1XSd4ClDD75K+x+AKGoRgOD8m3HL6BnoOaOHI/2JMEJhg9oJitbzCTNWKSf9e4nDEYCx6EZegokfgUuVFnhJ2CgCN0oYnt23xhnTUnjmvzf2HlycOkXslsQiAAmBQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=RTqFHGUe; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=YfhLeMTe; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=t4ZoQ+tu; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=koyJxGbD; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1789570965; c=relaxed/simple;
+	bh=zmB+SpsoD4dwGDsMmmvOEu9R4f2pBPVZ4w1v69pZq4w=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=PLI0LpbV32fE8kKe3hzbSORjR8DjGRxXosYFL9lyV7A0+GVapxmKXYxYEcMdxnhYtjf89shqwsExFopWtIvrGerrKQTlyYiGo/j6d3lSiOYxW4IlWvbBVAf3lL4KxP2YefNtWN7XxYV48sJreucdV9Dm0EpIVfK2NxpUorHXkzo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PiYizV53; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="RTqFHGUe";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="YfhLeMTe";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="t4ZoQ+tu";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="koyJxGbD"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id EC23D21D80;
-	Wed, 16 Sep 2026 13:52:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1789566762;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kV/XRO0a8S5ZTud6UkyyjGjjkh9LbfqQ63gVtApcUh4=;
-	b=RTqFHGUeBMZNf5Kt11USEwDlSFJB3HztUcjAs8QgIr2D2/EQJUTdwyabzqNtRgbeMs0TOq
-	CtgSxfU46vAdYIYhWxbiAhE3Zd4F8B+uBqbbetypmPJfgn8lHmgzK8/nKkJv0u4Ca0tuCT
-	zj7rDKMwtRddCv3YJ/hUGPEOhOyT1i8=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1789566762;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kV/XRO0a8S5ZTud6UkyyjGjjkh9LbfqQ63gVtApcUh4=;
-	b=YfhLeMTefJulXjtakW948KT7GizQGvrsfFwG5EcM2pfX2Z8vJF6poWhYgMjmFpjYi1PDE3
-	VOI3FHjWlygFMICQ==
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1789566757;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kV/XRO0a8S5ZTud6UkyyjGjjkh9LbfqQ63gVtApcUh4=;
-	b=t4ZoQ+tuFTSXbcyrUqpWL1Yc13WCYSPGiQxR70OGGNG8Ce2GEAmMhJtf+PI+Dfd3XOTlXw
-	59MQ0pkkTXeHETzhVKsypCgX3OS9o+eneOIkSNXwJu6E3DQTsp68eAXzJ2KDuWW0liL0QT
-	2Nj5iHiF8njv63HHN6TKUBeLX/t9JjE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1789566757;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kV/XRO0a8S5ZTud6UkyyjGjjkh9LbfqQ63gVtApcUh4=;
-	b=koyJxGbDl8muDCami+G4aVJ3Zv8s+f0PDBxY8aOFyfBCng7yNvOtyNyHf/fZLGqFUjHZtH
-	sYNlg2SeXuemMRBg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B13031348F;
-	Wed, 16 Sep 2026 13:52:37 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id R3jzJCWfqmrYOAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Wed, 16 Sep 2026 13:52:37 +0000
-Date: Wed, 16 Sep 2026 15:52:32 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: add "/dev/root" exception for device path update
-Message-ID: <20260916135232.GV54722@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <3e3164206d23ef991b9bd76dab6706238592cfb0.1789202516.git.wqu@suse.com>
- <20260914171602.GO54722@twin.jikos.cz>
- <f6f95c21-da42-45b0-9fd4-4c855e677b1c@gmx.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PiYizV53"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 863FC1F000FF
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 15:02:43 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1789570964;
+	bh=AW3SR0x3dyTQ/zk1ydL3ScOwbiExPglC22KxSdvDY/c=;
+	h=From:To:Subject:Date;
+	b=PiYizV53iU3w17NrfVMR7Ozu7IVNtahr2V6LmGF28Ztfrlpjzsw5dVfVWHWdDvik3
+	 y4d97RhutsUdhqAhesVD1gacuEk3zCE1GWtcTbElaAer3WBYUfk9TmCmQCAj5Vg7xy
+	 Ovmwb9BhTrqVuuHjmTJxvRAoSruZqpgN4xhao0K4ezvg1cqZ42Ypi7Krl66NA0H4Pn
+	 ZmOhipkxaIxFlS+3lUXy8LKB+p8vC42u024h2OO4bhA2YbKTgzlwwotj4xHmZ7D9Gr
+	 vYr7CO+1+8hpjYzromrSTIpVz6Z4Jm8uN55oBu7dPPul1WhZDjYhE3GWzP0eliyI/O
+	 Bo0pJi1e5bgTw==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: abort transaction on failure to update inode for hole punching and reflinking
+Date: Wed, 16 Sep 2026 16:02:40 +0100
+Message-ID: <5eaff5e851684919160420f975c26574d05d4c44.1789570705.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <f6f95c21-da42-45b0-9fd4-4c855e677b1c@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Score: -4.00
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[99.99%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	FREEMAIL_TO(0.00)[gmx.com];
-	RCVD_TLS_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	TO_DN_SOME(0.00)[];
-	FREEMAIL_ENVRCPT(0.00)[gmx.com];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_THREE(0.00)[4];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.cz:replyto];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[]
-X-Spam-Flag: NO
+Content-Transfer-Encoding: 8bit
 
-On Tue, Sep 15, 2026 at 06:58:48AM +0930, Qu Wenruo wrote:
-> >> [CAUSE]
-> >> Although using btrfs without an initramfs is not recommended (if a new
-> >> device is added to the rootfs, the system can no longer boot, as there
-> >> is no way to register all devices), there is still a minority of users
-> >> doing this.
-> > 
-> > To avoid scanning there's the -o device=/path mount option, passed as
-> > "rootflags=" kernel parameter.
-> 
-> That won't work. At that time there is no full "/dev/", those 
-> bdev_open_file() call will just fail.
+From: Filipe Manana <fdmanana@suse.com>
 
-I've researched if it's possible to have multi-device root in this case
-and with some effort it is. The early block device lookup used for the
-root= parameter can be used too, but has some limitations due to the
-__init section and usage from a module. But DM and MD do that lookup or
-auto detection. I'm not going to implement this unless there's user
-demand though.
+If we fail to update the inode we error out without aborting the
+transaction, which can result in a persistent inconsistency if after
+the failure the transaction is committed, as we have dropped file
+extent items from a range and either punched a hole or insert a new file
+extent item for that range (for reflinks).
 
-One prominent user of initramfs-less systems is virtme-ng, it's not
-affected by this bug because it does various tricks with the host system
-to share and virtualize what is possible.
+So add the missing transaction abort.
+
+Fixes: 2aaa66558172 ("Btrfs: add hole punching")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/file.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 20e15dc30bfb..f978c6524aa0 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2509,8 +2509,10 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
+ 					      inode_set_ctime_current(&inode->vfs_inode));
+ 
+ 		ret = btrfs_update_inode(trans, inode);
+-		if (ret)
++		if (unlikely(ret)) {
++			btrfs_abort_transaction(trans, ret);
+ 			break;
++		}
+ 
+ 		btrfs_end_transaction(trans);
+ 		btrfs_btree_balance_dirty(fs_info);
+-- 
+2.47.2
+

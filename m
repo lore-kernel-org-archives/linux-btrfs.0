@@ -1,284 +1,352 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7BEE9409624;
-	Wed, 16 Sep 2026 07:12:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.15
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0A80E459AEE
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789542731; cv=none; b=E4iytMTHSqjW0ILNKGS55PpTcyFh0yRnPQGsGbw0FC0luxGqKwDbvQ+i70lW+PIOkgtFjDhTOsdhX755DDfuHwWhcnto9Wq9rUIYprbH1YrNvifmBiRoDbIS5FN+WFrk+giZ8dVVzqi99kfeuF01HSX95SjWjTcuqTqXl7IBHxI=
+	t=1789545265; cv=none; b=Rx7CLMNB2Sr/OW1HA03s6CcqH8MwSJ+b3Ddhi4oTNIcElJlkAK/1lHTAOWEqDKezm5c/Uf96p3pODSEYTGPhL+gqX1hz4qHRrBd7q0im44J9TXxY02ixqvkX7oNSs+xZ8zGB7Y4dK6lUmAdmguYNkm6yVaIgjQfeC+jafOy0jms=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789542731; c=relaxed/simple;
-	bh=Nz2DUgKvPw+kDFrG7zBiuVkX8LYnyJdQeryLRizeQPk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=pYJBTotexT/47ZB7NqSJm9aAGjNqWwQS8aYUEKJIFyybm/WQYu0lSX0O+/A/rvyd5nAYBTUT4BfIaFWKl5Mm48xQ1G8hKWiP0FqH3ROOestFz1CEkNgzS9QbytfrtYIATNgVtTOzqd3BSq3gn79DMf/nk0SNdRSo2Up4UCswzSQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=brrwPOi+; arc=none smtp.client-ip=212.227.15.15
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	s=arc-20240116; t=1789545265; c=relaxed/simple;
+	bh=juDTjRaWUhjVu0KAkLb9fYS1kbFnjDuXJgW+/B+sAVo=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=j15Y15XOZc6xoenoSiTqdXTE/Fgm5J1RTpqU33+tIcczpA23t6MJuyUMpaU/WfW2EEX4I+fuVaa9w4MsKhzyxQyHDyuVMpKxPXVryiV8WB6HhzURQhEws+1vTI5D6Z3BJCtT25MhC0Z3XcveeJPmpO0HxrwDUEI/jyQPRsZb9pY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=u6LGNCGN; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=HoEwTPs9; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="brrwPOi+"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1789542709; x=1790147509; i=quwenruo.btrfs@gmx.com;
-	bh=zumu+c8TvMefuq2PIBfzilCSbdr+TplkhGeufvgYQiQ=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=brrwPOi+AJgl2zs8PEbzlh0U3VPHD4pWC5DX0AZaCu19FXSYx1SUPspN13LeTGcG
-	 wObm2V21e9QW7v2gF6KcTBZJqITixUhIdA1qXU9DqWukRx33By0G7+mBVm7Rdrzoh
-	 SIu/j49sqPVyxk8xRqW5IWneTQyD3qcimcmB02X8uryZ7pDJuT4RNHUoyxz4RELeQ
-	 HbeGS6v+OU9yGjnqQuhw9zuJAen6WACgY3bb+zFHRbmlO1CDUDvhNbb0UTuqVkOZH
-	 w/mqRiWK8T+yRK4YcwtNM/usLU+JfMczU7EUchldtg63TFG1+wZJr/978avGHhhcH
-	 bbwwhyloB7yISsaNOg==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1N9dsV-1wmEpq1285-017kyb; Wed, 16
- Sep 2026 09:11:49 +0200
-Message-ID: <1e6c8092-604e-4242-9bb7-11788c4540ca@gmx.com>
-Date: Wed, 16 Sep 2026 16:41:41 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="u6LGNCGN";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HoEwTPs9"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id F219021BDF
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1789545252; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=XGrQnxbbthLEcw1huPsbHRcyh7eq3t7hEs+Ck/XAsRs=;
+	b=u6LGNCGN/jYDMd2WyjxL5ozxZ/L3V83r/wHOXes8CWVTNQL4p5p+kNck/g9CKNsvLgtyS1
+	sPhTndyXSyE0JQQTXIGM7omz1o5AX0fsb8FBGKACHIklPoJzrc6NtYVnQEp46OrqECiJBY
+	fdoeGH2J2dDVZnwER2OOTSHyvgkTMbY=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=HoEwTPs9
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1789545247; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=XGrQnxbbthLEcw1huPsbHRcyh7eq3t7hEs+Ck/XAsRs=;
+	b=HoEwTPs9pFZ2osdmr4a8xYXsaJCrLgHgEQLWAhd5A0qo4T3pfz0qEXRwr8xMRt9HWKEODO
+	nX8QdcpN0ZLh/EYEnPncd1YVRwC9ZTTIgFTkYWA4HDVLmiPnFZJgOeOhn64C+enTRAUq/C
+	GahA7e7+5ZeHqut6SWDo41nkIgg5O20=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D8D90136A5
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:06 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 31W+Dh5LqmqMKgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:06 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/6] btrfs: delay compression to bbio submission time
+Date: Wed, 16 Sep 2026 17:23:42 +0930
+Message-ID: <cover.1789545179.git.wqu@suse.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v3] btrfs: handle lack of space when cleaning up verity
- items
-To: Daniel Linjama <daniel@dev.linjama.com>, linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
- linux-kernel@vger.kernel.org
-References: <20260916061556.683136-1-daniel@dev.linjama.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1YAUJEP5a
- sQAKCRDCPZHzoSX+qF+mB/9gXu9C3BV0omDZBDWevJHxpWpOwQ8DxZEbk9b9LcrQlWdhFhyn
- xi+l5lRziV9ZGyYXp7N35a9t7GQJndMCFUWYoEa+1NCuxDs6bslfrCaGEGG/+wd6oIPb85xo
- naxnQ+SQtYLUFbU77WkUPaaIU8hH2BAfn9ZSDX9lIxheQE8ZYGGmo4wYpnN7/hSXALD7+oun
- tZljjGNT1o+/B8WVZtw/YZuCuHgZeaFdhcV2jsz7+iGb+LsqzHuznrXqbyUQgQT9kn8ZYFNW
- 7tf+LNxXuwedzRag4fxtR+5GVvJ41Oh/eygp8VqiMAtnFYaSlb9sjia1Mh+m+OBFeuXjgGlG
- VvQFzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260916061556.683136-1-daniel@dev.linjama.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:7GgfUGpRX+q/6hpO153WMsHrjM+/UZQ9NVkHTOKn6zsQI4eFjmD
- 99Ha7Q1sfOZnDXovGdY5kYXzfhbQS5UWPZU8SEr8uvJW3zFBx5s3YI3XWeOKpSEethwyFPY
- Q10FEuVtg/0Tp+U/2EldVB17lnY8YmSuFlefaTieVJmskblJFT9IU9DmubmVKMzxYxOYXF+
- vSSVz8DtC82T3+aP2dIEQ==
+Content-Transfer-Encoding: 8bit
+X-Spam-Score: -3.01
+X-Rspamd-Queue-Id: F219021BDF
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Level: 
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	MIME_TRACE(0.00)[0:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:fKLzTQLGTnc=;BMIOeQRnaNdwf13gZ1RN07c8TWR
- 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
+
+[CHANGELOG]
+v3:
+- Various fixes to error handling
+  Mostly reported by LLM.
+
+- Use delayed bbios' pending_io to tracking child bbios
+  Which reduces the structure size of delayed_bio_private.
+
+- Extra full sync requirement for delayed writes
+  To avoid fast sync path to grab a delayed OE, which has no reliable
+  on-disk bytenr.
+
+v2:
+- Rebased to the latest for-next branch
+  Several minor conflicts:
+  * The removal of folio ordered flag
+  * The refactor of btrfs_mod_oustanding_extents()
+
+- Fix a random failure in btrfs/260
+  It turns out that the original filemap_flush() only triggers writeback
+  of dirty pages, but since our new compression happens after the bios
+  are submitted, there can be a race between inode->defrag_compression
+  clearing and compression path reading inode->defrag_compression.
+
+  This can cause btrfs to use the mount option other than the specified
+  defrag compression algo to do the compression.
+
+  Fix it by using filemap_write_and_wait_range(), which also avoids the
+  quirky double flush behavior.
+  
+- Fix a use-after-free bug where bio->bi_status is accessed after
+  bio_put()
+
+- Remove a mapping_set_error() call when try_submit_compressed() failed
+  As we still have uncompressed fallback, we should not set the mapping
+  as error.
+
+- Drop all allocated OEs along with the extent maps when
+  run_delalloc_delayed() failed
+  
+- Slightly reword the cover letter
+
+PoC->v1:
+- Fix the ordered extent leak caused by incorrect ref count of child OEs
+- Fix the reserved space leakage in ranges without a real OE
+- Fix the hang caused by incorrect extent lock/unlock pair
+  All exposed by fsstress runs
+
+- Fix the OE range check in btrfs_wait_ordered_extents() that affects
+  snapshot creation
+  All exposed by fstests runs
+
+[BACKGROUND]
+Btrfs currently goes with async submission for compressed write, I'll go
+the following example to explain the async submission:
+
+The page and fs block sizes are all 4K, no large folio involved.
+The dirty range is [0, 4K), [8K, 128K).
+
+    0  4K  8K                                        128K
+    |//|   |/////////////////////////////////////////|
+
+- Write back folio 0
+  No compression.
+  * New OE for [0, 4K)
+  * Submit bbio for [0, 4K)
+
+- Write back folio 8K
+  * Delayed compression/OE creation into a workqueue
+    All folios in range [8K, 128K) is still locked.
+  * Skip submission
+
+- Write back folios at range [12K, 128K)
+  * Wait for the folio to be unlocked.
+    As the folio is only unlocked after the compression is done.
+  * Skip submission
+    As the folio is no longer dirty.
+
+[PROBLEMS]
+The async submission has the following problems:
+
+- Non-sequential writeback
+  Especially when large folios are involved, we can have some blocks
+  submitted immediately (uncompressed), and some submitted later
+  (compressed).
+
+  That breaks the assumption of iomap and DONTCACHE writes, which
+  requires all blocks inside a folio to be submitted in one go.
+
+- Not really async
+  As the example given above, we keep the whole range locked during
+  compression.
+  This means if we want to read a cached folio in that range, we still
+  need to wait for the compression.
+
+[DELAYED COMPRESSION]
+The new idea is to delay the compression at bbio submission time.
+Now the workflow will be:
+
+- Write back folio 0
+  No compression, the same as the old code.
+  * New OE for [0, 4K)
+  * Submit bbio for [0, 4K)
+
+- Write back folio 8K
+  * New OE for [8K, 128K)
+    This new OE has a delayed flag, without a real data extent backing
+    it.
+    Then the folio range [12K, 128K) is unlocked, just like the the
+    uncompressed writes.
+    
+  * Queue the folio into a bbio
+
+- Writeback folio 12K ~ 124K
+  * No new OE
+    The existing delayed OE [8K, 128K) is already there.
+ 
+  * Queue the folio into a bbio.
+
+  * Submit the bbio
+    As we have reached the OE end.
+
+- Delayed bbio submission
+  As the bbio has a special @is_delayed flag set, it will not be
+  submitted directly, but queued into a workqueue for compression.
+
+  * Compression in the workqueue
+    As we do not want to delay the writeback of the remaining folios.
+    Thus the compression should be done inside a workqueue.
+
+  * Real delalloc
+    Now an on-disk extent is reserved. The real EM will replace the
+    delayed one.
+    And the real OE will be added as a child of the original delayed
+    one.
+
+  * Compressed data submission
+
+  * Delayed bbio finish
+    When all child compressed/uncompressed writes finished, the delayed
+    bbio will finish.
+
+    The full delayed OE is also finished, which will insert all of its
+    child OEs into the subvolume tree.
+
+This solves both the problems mentioned above, but is definitely more
+complex than the current async submission:
+
+- The compressed on-disk extents may be less sequential
+  Previously btrfs workqueue is utilized, so compression is distributed
+  but the final allocation and submission are all sequential.
+
+  Now both compression and allocation/submission are all distributed.
+
+  The biggest reason I can not use btrfs workqueue is the lifespan
+  management of btrfs_work.
+
+  Ordered function of btrfs workqueue is called twice, the second time
+  is to do the cleanup.
+  But the lifespan of delayed_bio_private structure is bounded to the
+  delayed bbio.
+
+  Either we need to delay the endio of the delayed bbio, or have extra
+  ref count on the dbp structure itself.
+
+  Considering how complex the lifespan of dbp can be, I'd prefer a much
+  simpler lifespan to make it less complex.
+
+- An OE no longer represents an allocated extent
+  As we will have delayed OEs, which have no allocated space backing it.
+
+  Thankfully this is not a huge deal. At ordered extent finish time, we
+  just need to skip any reserved space handling for an delayed OE range
+  that doesn't have a real OE covering it.
+
+- Layered OEs
+  And we need to manage the child/parent OEs properly
+  But still it brings the minimal amount of changes to the existing OE
+  users, and keep the scheme that every block going through
+  extent_writepage_io() has a corresponding OE.
+
+  The other solution to layered OEs is, to split OE at the real OE
+  allocation time.
+
+  But that has more corner cases than I thought:
+
+  * The new real OE is exactly the same size as the delayed OE
+    We need to either completely replace the delayed OE with the new
+    real one, or copy the members from the real OE into the existing
+    one.
+
+    Either way, there will be a OE that needs to be put, and skip all
+    the per-root OE tracking.
+    Also need to properly handling the OE waiting behavior for the
+    remaining one in the ordered tree.
+
+  * The new real OE is at the middle of a delayed OE
+    This is a corner case but can happen.
+
+    In that case we need to allocate a new OE to fill the tailing part,
+    and that new OE will also need to be added to the per-root OE list,
+    with proper flags inherited from the old OE.
+
+  All my local attempts to go that path, not only leads to more code
+  but more error handling and very tricky OE splits.
+
+  So I'm afraid the layered OE solution is complex, but less complex
+  than the alternavive OE splitting method.
+
+  At least for now, when only compressed writes are delayed, the layer
+  solution still seems to be simpler.
+  It may change in the future if we also want to go delayed writes for
+  non-compressed writes.
+  But I hope we can simplify the code before that future.
+
+- Possible extra split
+  Since the delayed OE is allocated first, we can still submit two
+  different delayed bbio for the same OE.
+
+  This means we can have two smaller compressed extents compared to one,
+  which may reduce the compression ratio.
+
+- More complex error handling
+  We need to handle cases where some part of the delayed OE has no child
+  one. In that case we need to manually release the reserved data/meta
+  space.
+
+- Slower fsync() on inodes with delayed OEs
+  We can not directly use any info from the delayed extent map, as it's
+  only a place holder.
+  We have to wait for the delayed OE to proper finish, so we have to do
+  a full sync for fsync().
 
 
+Qu Wenruo (6):
+  btrfs: add delayed ordered extent support
+  btrfs: add skeleton for delayed btrfs bio
+  btrfs: introduce the skeleton of delayed bbio endio function
+  btrfs: introduce compression for delayed bbio
+  btrfs: implement uncompressed fallback for delayed bbio
+  btrfs: enable experimental delayed compression support
 
-=E5=9C=A8 2026/9/16 15:45, Daniel Linjama =E5=86=99=E9=81=93:
-> When enable_verity() hits the qgroup limit, rollback_verity() needs its
-> own metadata reservation. When the qgroup limit or lack of space refuses
-> the rollback, the whole filesystem is forced read-only even though the
-> qgroup limit was for one subvolume only. Also orphan cleanup at the next
-> mount fails the same way, so the leftover items are never removed: with
-> -EDQUOT the subvolume stays unreachable, and with -ENOSPC on a full
-> filesystem the next read-write mount fails.
->=20
-> Start transactions with btrfs_start_transaction_fallback_global_rsv() in
-> btrfs_orphan_cleanup(), drop_verity_items() and rollback_verity(). Those
-> calls only delete items and free the space in the end, so they may use
-> the global reserve and skip the qgroup limit, which avoids -ENOSPC and
-> -EDQUOT.
->=20
-> Fixes: 146054090b08 ("btrfs: initial fsverity support")
-> Signed-off-by: Daniel Linjama <daniel@dev.linjama.com>
+ fs/btrfs/bio.c          |   1 +
+ fs/btrfs/bio.h          |   7 +
+ fs/btrfs/btrfs_inode.h  |   3 +
+ fs/btrfs/defrag.c       |  27 +-
+ fs/btrfs/extent_io.c    |  36 ++-
+ fs/btrfs/extent_map.h   |   9 +-
+ fs/btrfs/inode.c        | 527 +++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/ordered-data.c | 178 ++++++++++----
+ fs/btrfs/ordered-data.h |  14 ++
+ 9 files changed, 742 insertions(+), 60 deletions(-)
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
-
-> ---
-> Changes since v2:
-> - Explain in the commit message why the global reserve fallback and
->    skipping the qgroup limit are right here, as Qu Wenruo asked.
-> - A helper in verity.c for the two verity call sites carries the one
->    comment, as Qu Wenruo suggested; the orphan cleanup call site only
->    notes what it does.
->=20
-> v2: https://lore.kernel.org/linux-btrfs/20260915055109.311839-1-daniel@d=
-ev.linjama.com/
-> v1: https://lore.kernel.org/linux-btrfs/20260914062459.3889313-1-daniel@=
-dev.linjama.com/
->=20
->   fs/btrfs/inode.c  |  3 ++-
->   fs/btrfs/verity.c | 18 ++++++++++++++++--
->   2 files changed, 18 insertions(+), 3 deletions(-)
->=20
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 93ef3cec191e..84dc44af17d7 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -3877,7 +3877,8 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
->   				if (ret)
->   					goto out;
->   			}
-> -			trans =3D btrfs_start_transaction(root, 1);
-> +			/* Only deletes the orphan */
-> +			trans =3D btrfs_start_transaction_fallback_global_rsv(root, 1);
->   			if (IS_ERR(trans)) {
->   				ret =3D PTR_ERR(trans);
->   				goto out;
-> diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-> index 4e0ab5842274..18b9d14f2e8c 100644
-> --- a/fs/btrfs/verity.c
-> +++ b/fs/btrfs/verity.c
-> @@ -93,6 +93,20 @@ static loff_t merkle_file_pos(const struct inode *ino=
-de)
->   	return rounded;
->   }
->  =20
-> +/*
-> + * Start a transaction for removing verity items or the verity orphan.
-> + *
-> + * Like unlink, this only deletes items and frees space in the end, so =
-the
-> + * reservation may come from the global reserve when the filesystem is =
-full
-> + * (-ENOSPC) and is not subject to the qgroup limit (-EDQUOT). Otherwis=
-e a
-> + * failed enable could never be cleaned up in either situation.
-> + */
-> +static struct btrfs_trans_handle *start_verity_cleanup_trans(struct btr=
-fs_root *root,
-> +							      unsigned int num_items)
-> +{
-> +	return btrfs_start_transaction_fallback_global_rsv(root, num_items);
-> +}
-> +
->   /*
->    * Drop all the items for this inode with this key_type.
->    *
-> @@ -120,7 +134,7 @@ static int drop_verity_items(struct btrfs_inode *ino=
-de, u8 key_type)
->  =20
->   	while (1) {
->   		/* 1 for the item being dropped */
-> -		trans =3D btrfs_start_transaction(root, 1);
-> +		trans =3D start_verity_cleanup_trans(root, 1);
->   		if (IS_ERR(trans))
->   			return PTR_ERR(trans);
->  =20
-> @@ -466,7 +480,7 @@ static int rollback_verity(struct btrfs_inode *inode=
-)
->   	 * 1 for updating the inode flag
->   	 * 1 for deleting the orphan
->   	 */
-> -	trans =3D btrfs_start_transaction(root, 2);
-> +	trans =3D start_verity_cleanup_trans(root, 2);
->   	if (IS_ERR(trans)) {
->   		ret =3D PTR_ERR(trans);
->   		trans =3D NULL;
->=20
-> base-commit: 08df884136f1c1197bab2a27814404fd329d9aac
+-- 
+2.55.0
 

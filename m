@@ -1,67 +1,69 @@
-Received: from mail-ed2-f35.google.com (mail-ed2-f35.google.com [74.125.228.99])
+Received: from mail-ej2-f12.google.com (mail-ej2-f12.google.com [74.125.228.140])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 70BFD4B1269
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 22:51:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.99
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E89B54CDA22
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 23:03:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.140
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789599109; cv=none; b=S/y/4Ae+5CvAomH1tjYdAcR69+HFhi4zTbOgzs+ED2Py5mandYH9/rLVmb5Vd/EE9QxdOxstHWW9aKuzAk8OH5EqSLJ7HZWvHFyCGN6OirNaOCA6em1CJgbCbhXrIbxkXj+vwWwwts+i0evgFiTs6NtnhDWAMklNG8yMl85Fw4E=
+	t=1789599837; cv=none; b=g9IiIbx9PL/np+Si/+yZinvos51rcQ1Ud1U3PTBYXKYHkd5IAOZMEMdKgWEE3GCuu4TyU9tYygcvKFNqmEctH/pzoBVah5sDTRqYIv+WmIWLz16lJiI7RurNhwvjM94qAWl+qi0GuHv9346iewSwYSdk4zA0HoZbKXJv1QT5hW0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789599109; c=relaxed/simple;
-	bh=CNg96jRfOtV+UhpdH7GYfJnDLPQM1GKzQ0y/uAWg1mk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=D02IdrELBgIGZatop3uG9lLwOuol8FNLQCeQJe990JHg7ID4eHkRvE3PmFnh/iDgmGVsOBnz2kGTZagsv8uFiJ6VZ3Hm/PQ80yAFLAYa/9fp/Me7x1RxofMONo27gffZwxkYf0gSpfsH8fBQVEtUHyth9qjmqrS6jlCb2ZHyPBc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=WFatcoiz; arc=none smtp.client-ip=74.125.228.99
+	s=arc-20240116; t=1789599837; c=relaxed/simple;
+	bh=MBIoYq4ao4Z3ZsYeu4Bk5VYdfoLZ6smrGSyk6DajgDs=;
+	h=Message-ID:Date:MIME-Version:Subject:From:To:References:
+	 In-Reply-To:Content-Type; b=BpDB6740pqZ7iXy39FhGo3IclE2k9+rsKJz3rYMPVy4FBIQei6xNBqTbeFSxH1uTqG/9sfRsUBGWmsGfjCPSrPKG5sYPZYFf08qPuc9PPkj/VO9IPwj9gjzRfpHX/OnagSNx658gN57uLEC89ZwbJC81gNE0TaQcIxxs6UMFtKA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=QxzGyD6G; arc=none smtp.client-ip=74.125.228.140
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="WFatcoiz"
-Received: by mail-ed2-f35.google.com with SMTP id 4fb4d7f45d1cf-6a6056ac81fso439791a12.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 15:51:45 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="QxzGyD6G"
+Received: by mail-ej2-f12.google.com with SMTP id a640c23a62f3a-c25ef7a3ce9so39372366b.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 16:03:48 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1789599102; x=1790203902; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=egIbrW/qn+tc0sPWPAfAcjufJlz+TuiefiTHZGDwn0Q=;
-        b=WFatcoizv2cz7lyN1/pjx8QzP8nLcV944SZ4E78FwKA9oDe0uBP4rTbeVK0jScZTEd
-         xa/bIsmHQcmYzb6zXltnHxq56crQBH0Z131cpRfZMDcN87DKHNZwykhPICn8PmV/GI97
-         G6uEt+c+QHWAUSEe8W+SJ0/dI0AgfDD4rSr9fqoci0mXgL3gZ8uNxTR3jbbfv6HLjdAh
-         KsFv33D0woaGoVX0ouJjgpddcwWWcom1KbFCfGOBS84uyDG/C8SaLWBehKEdNS1KsnWS
-         f8Og7ljrVf6bQNwHWuFYiQkkMuKceph6ycI5D+3WAXiNSeNCfPV3ceG6Qy2aBGvyo/2D
-         zA4g==
+        d=suse.com; s=google; t=1789599825; x=1790204625; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
+         :content-language:references:to:from:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=kXGe/MjX2A6b/2mArcnPZ8WoO/4aZyz9Z1obT7e5Fns=;
+        b=QxzGyD6GKPtbEHQys71YLTVmsTBLiGKMKIGstI71G3VbLHKLnSVkbe6LZnKeEwXKSA
+         LWBmCHQ7fNbCMXnOgRyup0wfhLj1uinCyrXIXJQI54hEW7nT9iRJtevgZ/AJPeJ++AGh
+         hnrvDoHyaReymHuxbBdEWRi2rUpneEuIrpKYYffLX9LyWgNyhwRmoXn5hxcw5YN61ZpY
+         xOgcUmahb0WpbaXWUXQYBXfGbMOXhWzscjHTqaryaSqoHHN+QR4R6WAlhnsJEMB6hS10
+         9qdbxCl2/EShqJH+26nKfpCWcvEzV0oDfrQunSmCmoMMe579J9ajMaWpna8rjF3yAaSM
+         /Hmg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1789599102; x=1790203902;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20260707; t=1789599825; x=1790204625;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
+         :content-language:references:to:from:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=egIbrW/qn+tc0sPWPAfAcjufJlz+TuiefiTHZGDwn0Q=;
-        b=tj3TwpR5DvV8SoRHeQ9FzY6kI6qHbjqrmLZUg5yFcDBwmR5BXFxz0Fyn3+cYPWDsCS
-         reGNs+yDIkB0ySK7Fpl9wWXf4d1gXj0cyD5kjkuaB+wDTLTK1RChkGqm++BPnvjP3VqC
-         hiNf2SP1hHvIfETwY3aQlanNVX2XROWc+lfuoeWtpSTVzsCrTguPao793IPrqRjhev+h
-         OxN3C45oqusRt4Z8f6e4Do7zUZCjCFa0lwFqZ+k/2UYYu0SiGMa2MKgOjgQ1P8pZvgBq
-         m4W0sM7iwk0Bx5L1Micnc6xUugu5Q3l5q+ou4PDOKsZvtMVY+XrrQXfVJk/wyIRwxe9x
-         cKUg==
-X-Forwarded-Encrypted: i=1; AKwUvByRHNeUbPVAvr6ra/aHDgOI+hDq/kucvOWgJO17Y2rYdMLpwNRnCJotI4jrlQcPJzUPNTFC0MGK9C7YLQ==@vger.kernel.org
-X-Gm-Message-State: AFuF++lWvHdR6Fa9+WVSR8kAUO/73uRSs2l0XSDzBqctaCpXfucBYgrG
-	LwAorzPXUDpH7mfJBmlypNUGTX2xwOVvqenZ9mbjPOxQZWUZ4+xszLT6RPQUs95f1v8=
-X-Gm-Gg: AYBFou0l4xW8aGkX9faHCGs58i7XLM6/05uvxvaFwQbFVzw8lVAHQsnoylM/yFBNlfO
-	UVg0SURjMdoxZ9KxQkwpfi2QrkI1njy2OQXpyY1KuXYVB/Gr+8wFd68r3X7u7WAmCUlJH23wdKI
-	kLycZ7UWm502ra5ibTA9pcvJG3cPjW8O2sAe5+n2PzzF3fqboW+ebJHeKJvpOVko+9PHyqy7p3/
-	pMz8XYCwg81B4q7X62JqWXSt5ZkOmSemYMoewId62XRxnHgtxbId8Ce6uh7U5V26a/WxeCCnXUU
-	rkXKAfPjuMB8vQoL+yUInXN3411tY9XjZfFjJkZU4BAEsxdxm4FQgyVnysEih5c+zNCqgh1yWjx
-	nC10MgCSNWxP3/7LL7YOkFhapLZTw/seULgcZqe8dR6BLi5XqmWgtg8YQcJLIfWcc9LLpXKQrCa
-	mY5lUfDCbKkKLABT7jiv6JTnh5FjEztBqtsAi+GelDmF0OpbWNruRWXhWY7l3B+R0lYT/H+1tMR
-	B8=
-X-Received: by 2002:a17:907:da9:b0:c29:cfce:1946 with SMTP id a640c23a62f3a-c29e52b691amr291675466b.15.1789599102220;
-        Wed, 16 Sep 2026 15:51:42 -0700 (PDT)
+        bh=kXGe/MjX2A6b/2mArcnPZ8WoO/4aZyz9Z1obT7e5Fns=;
+        b=mFu1yH4+dt/8wVIESPqqJbwGjvSsqR1RbTkpDs6MPHjfNp4CdMnPkytQvrJkjfU8gH
+         /aaaPX6oXsA6vTQs+QU314A8L7yqznhCdT6AxMrphbTyhBpyM+tCZzG9+ga1YiZoqQV7
+         wE82iRY2Y7TsGiLzDPXXdADF+w2/HHibyWTfnHVvpOqYjwDJRatZhXRfm1kqRh0Ygx2r
+         8Deok01veDwOnj4ZTXXYptlCnXRmBIqsfEovvtTHvIEZe3o6oazqSa9tQwnUNmTXR1zr
+         zirhc8PFpYwixsp3tLw4U6JLgcbER6m3tgeXq4qVQDyQEJGXaF6UUrF7c4+XHyykY68S
+         8HWw==
+X-Gm-Message-State: AFuF++nTew8Cb1jI0tnVu/1DanhMj1CxiFQklRLijdll1Wksmt5c3vwt
+	gwe+NWZdtBPfU5Pu1QeYoPJoq8/Dd81fmhxHRVtE7pFId08bznRslwyD8kKCHMAMo2m3W40Si06
+	WkCCBel/LTg==
+X-Gm-Gg: AYBFou1Z3T56G7iLPLnd4F2Tvh14pmzlXLZZcL7dDQZOdhDBRC8j5/3FXXfkvtZH1aw
+	tIsGvQpGNIJ0zDeEz0QlJM6oVCroOAaxRq8weIltw4yWSrQ36SBuFilQGt/3vQblxyWqYF818MW
+	yn/Lh5a929B0Wh+vmEKOrgmAGZww1vgwqL7bu/RDPkP1rdq0lpYLl1HxIGEnCy4ws8cW5NGtbsX
+	KRyrxUb29e8LyrQkYMVCFTr6BBnSHuKU3z0sWaDz1+KYKkODM08N+h0/4VcpA6UaWwtPVAB4azS
+	wg1dQvHpvCG/W11PD0jPXpPwL2JH10yGwr78C/vvEuyjMHr19cvGlYPxaiErF1W7+OGXLvTscB8
+	3o9ETkgoJYrgV23nIu7LrD8Sc9pWWBj4ZHu30i8vsAinAUffrXpGiT07Y8FjEaDOZQ+hpZkRBoq
+	R7OYYeF8HLe9x0fYYes6i2CbEcoCHAKniZ+BOfi5y2HZjwB8e9bBtCUq8EDqGX0gi3B8/AAwUO1
+	A==
+X-Received: by 2002:a17:906:7315:b0:c29:3d59:706b with SMTP id a640c23a62f3a-c29e532932dmr303085366b.44.1789599825063;
+        Wed, 16 Sep 2026 16:03:45 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-87201b2c5cbsm1918410b3a.48.2026.09.16.15.51.39
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2dd89f244bdsm17504515ad.77.2026.09.16.16.03.43
+        for <linux-btrfs@vger.kernel.org>
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 16 Sep 2026 15:51:41 -0700 (PDT)
-Message-ID: <04e6331d-6b7a-4a2f-9eca-8aa7f0e4042a@suse.com>
-Date: Thu, 17 Sep 2026 08:21:37 +0930
+        Wed, 16 Sep 2026 16:03:43 -0700 (PDT)
+Message-ID: <1c7840b1-16d1-4fb4-ae12-1a3073011ac1@suse.com>
+Date: Thu, 17 Sep 2026 08:33:40 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,12 +71,13 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: keep unused block groups queued when a pass fails
-To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
- kernel-team@fb.com
-References: <455009bf67d45ccb8df8c2a0aec270a16db80510.1789597031.git.boris@bur.io>
-Content-Language: en-US
+Subject: Re: [PATCH v3 3/6] btrfs: introduce the skeleton of delayed bbio
+ endio function
 From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+References: <cover.1789545179.git.wqu@suse.com>
+ <bd4c6b7b2f65957a5d8473c4c9b5710a1093cd90.1789545179.git.wqu@suse.com>
+Content-Language: en-US
 Autocrypt: addr=wqu@suse.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
@@ -99,119 +102,152 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <455009bf67d45ccb8df8c2a0aec270a16db80510.1789597031.git.boris@bur.io>
+In-Reply-To: <bd4c6b7b2f65957a5d8473c4c9b5710a1093cd90.1789545179.git.wqu@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/9/17 07:47, Boris Burkov 写道:
-> Once any block_group sets ret!=0 in the main loop of
-> btrfs_delete_unused_bgs(), the check
->    if (ret || btrfs_mixed_space_info(space_info)) {
->            btrfs_put_block_group(block_group);
->            continue;
->    }
-> skips the rest of the unused bgs while unlinking them from
-> fs_info->unused_bgs. There is no "level triggered" re-queueing of empty
-> block groups onto fs_info->unused_bgs so it is possible to leak quite a
-> bit of space this way and unless we happen to get a balance or
-> re-use/re-empty one of these bgs, they are leaked for good, which can
-> lead to a spurious enospc later.
+在 2026/9/16 17:23, Qu Wenruo 写道:
+> A delayed bbio will not be directly submitted, but queued into a
+> workqueue, to perform compression there.
 > 
-> While I have observed such leaked blocked groups that are empty but not
-> on the unused_bgs list on production systems, I have not observed that
-> it is definitely due to this issue. I also reproduced this behavior by
-> injecting an ENOSPC error from btrfs_start_trans_remove_block_group
-> which can also fail with ENOMEM, so this feels like a legitimate
-> injection point.
-
-Do have happen to know which error caused this non-zero @ret?
-
-I did a quick glance into the loop, it looks like it's not that easy to 
-get a non-zero @ret:
-
-- inc_block_group_ro() failure
-   @ret is reset to 0, so not this path.
-
-- btrfs_zone_finish()
-   I guess meta is not deploying zoned btrfs in production.
-
-- btrfs_star_trans_remove_block_group()
-   This can return -ENOSPC, especially considering we have just marked
-   one bg read-only, thus even stealing from global rsv, we may still
-   fail with ENOSPC here.
-
-   Although I'd say, that means the inc_block_group_ro() checks are not
-   doing the correct reserved space checking, and that may be the real
-   problem.
-
-- btrfs_remove_chunk()
-   If it failed, the trans is already aborted.
-
+> The compression and uncompressed fallback are not implemented in this
+> patch.
 > 
-> To fix it, instead of checking ret in the loop, just break out of the
-> loop when ret != 0. Also, link the bg to the retry list at the
-> individual failure sites so that the failing bg is not leaked.
+> Only the main endio function and a helper to queue workload into a
+> workqueue are implemented.
 > 
-> Assisted-by: LLM (reproducer/error injection)
-> Signed-off-by: Boris Burkov <boris@bur.io>
+> The endio function is mostly the same as end_bbio_data_write(), except
+> for the extra memory allocation/freeing for the bbio->private.
+> 
+> Another point to note is that, we reuse btrfs_bio::pending_ios to track
+> the lifespan of the parent delayed bbio.
+> We can reuse it because the delayed bbio is never submitted for IO, thus
+> it will never be split by btrfs, so we can reuse that atomic to avoid
+> extra space inside delayed_bio_private.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>   fs/btrfs/inode.c | 77 ++++++++++++++++++++++++++++++++++++++++++++----
+>   1 file changed, 72 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 69e12cb2d7b5..10b9a7fcfadf 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -97,6 +97,11 @@ struct data_reloc_warn {
+>   	int mirror_num;
+>   };
+>   
+> +struct delayed_bio_private {
+> +	struct work_struct work;
+> +	struct btrfs_bio *delayed_bbio;
+> +};
+> +
+>   /*
+>    * For the file_extent_tree, we want to hold the inode lock when we lookup and
+>    * update the disk_i_size, but lockdep will complain because our io_tree we hold
+> @@ -7691,18 +7696,80 @@ struct extent_map *btrfs_create_delayed_em(struct btrfs_inode *inode,
+>   	return em;
+>   }
+>   
+> -void btrfs_submit_delayed_write(struct btrfs_bio *bbio)
+> +static void run_delayed_bbio(struct work_struct *work)
+>   {
+> -	ASSERT(bbio->is_delayed);
+> +	struct delayed_bio_private *dbp = container_of(work, struct delayed_bio_private, work);
+> +	struct btrfs_bio *parent = dbp->delayed_bbio;
+> +
+> +	/* Compressed and uncompressed fallback is not yet implemented. */
+> +	ASSERT(0);
+>   
+>   	/*
+> -	 * Not yet implemented, and should not hit this path as we have no
+> -	 * caller to create delayed extent map.
+> +	 * Any real compressed/uncompressed bios have increased
+> +	 * parent->pending_ios, the last caller of btrfs_bio_end_io()
+> +	 * will execute the real endio function.
+>   	 */
+> -	ASSERT(0);
+> +	btrfs_bio_end_io(parent, BLK_STS_OK);
+> +}
+> +
+> +static void end_bbio_delayed(struct btrfs_bio *bbio)
+> +{
+> +	struct delayed_bio_private *dbp = bbio->private;
+> +	struct btrfs_inode *inode = bbio->inode;
+> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> +	struct folio_iter fi;
+> +	const u32 bio_size = bio_get_size(&bbio->bio);
+> +	const bool uptodate = bbio->status == BLK_STS_OK;
+> +
+> +	ASSERT(bbio->is_delayed);
+> +
+> +	bio_for_each_folio_all(fi, &bbio->bio) {
+> +		u64 start = folio_pos(fi.folio) + fi.offset;
+> +		u32 len = fi.length;
+> +
+> +		btrfs_folio_clear_writeback(fs_info, fi.folio, start, len);
+> +	}
+> +	btrfs_mark_ordered_io_finished(inode, bbio->file_offset, bio_size, uptodate);
+> +	kfree(dbp);
+>   	bio_put(&bbio->bio);
+>   }
+>   
+> +void btrfs_submit_delayed_write(struct btrfs_bio *bbio)
+> +{
+> +	struct delayed_bio_private *dbp;
+> +
+> +	ASSERT(bbio->is_delayed);
+> +
+> +	bbio->end_io = end_bbio_delayed;
+> +	dbp = kzalloc_obj(*dbp);
 
-Otherwise the handling looks correct to me, doing the proper handling on 
-error, other than delaying it to the next iteration.
+Sashiko exposed the missing GFP_NOFS flag for kzalloc_obj(), which can 
+lead to deadlock on the writeback path.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Already fixed in my local branch.
+
+> +	if (!dbp) {
+> +		btrfs_bio_end_io(bbio, errno_to_blk_status(-ENOMEM));
+> +		return;
+> +	}
+> +	dbp->delayed_bbio = bbio;
+> +	bbio->private = dbp;
+> +	/*
+> +	 * TODO: find a way to properly allow sequential extent allocation.
+> +	 *
+> +	 * Currently compression and submission happen in the same workload.
+> +	 * We want to run compression in parallel but run allocation sequentially.
+> +	 *
+> +	 * The existing btrfs workqueue will execute the sequential workload
+> +	 * twice, the second one to free the structure, thus the btrfs_work
+> +	 * structure can have a lifespan longer than the delayed bbio.
+> +	 *
+> +	 * But the current structure's lifespan is bounded to the original
+> +	 * bbio, if using btrfs workqueue, we need extra lifespan management
+> +	 * to ensure the work structure doesn't disappear when the original
+> +	 * bbio is finished.
+> +	 *
+> +	 * This means we have to either delay the original bbio's finish,
+> +	 * or have a very complex synchronization.
+> +	 */
+> +	INIT_WORK(&dbp->work, run_delayed_bbio);
+> +	schedule_work(&dbp->work);
+
+Also sashiko is pointing out that using the system wide wq lacks the 
+regular WQ_MEM_RECLAIM flags.
+
+I'll add a dedicated workqueue for it, and since it will eventually 
+replace the eixsting delalloc_workers, it should not be a huge burden.
 
 Thanks,
 Qu
-> ---
->   fs/btrfs/block-group.c | 7 ++++++-
->   1 file changed, 6 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> index ee182369254c..2eb09c9901c9 100644
-> --- a/fs/btrfs/block-group.c
-> +++ b/fs/btrfs/block-group.c
-> @@ -1612,7 +1612,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
->   
->   		space_info = block_group->space_info;
->   
-> -		if (ret || btrfs_mixed_space_info(space_info)) {
-> +		if (btrfs_mixed_space_info(space_info)) {
->   			btrfs_put_block_group(block_group);
->   			continue;
->   		}
-> @@ -1727,6 +1727,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
->   		ret = inc_block_group_ro(block_group, false);
->   		up_write(&space_info->groups_sem);
->   		if (ret < 0) {
-> +			btrfs_link_bg_list(block_group, &retry_list);
->   			ret = 0;
->   			goto next;
->   		}
-> @@ -1749,6 +1750,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
->   						     block_group->start);
->   		if (IS_ERR(trans)) {
->   			btrfs_dec_block_group_ro(block_group);
-> +			btrfs_link_bg_list(block_group, &retry_list);
->   			ret = PTR_ERR(trans);
->   			goto next;
->   		}
-> @@ -1759,6 +1761,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
->   		 */
->   		if (!clean_pinned_extents(trans, block_group)) {
->   			btrfs_dec_block_group_ro(block_group);
-> +			btrfs_link_bg_list(block_group, &retry_list);
->   			goto end_trans;
->   		}
->   
-> @@ -1845,6 +1848,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
->   next:
->   		btrfs_put_block_group(block_group);
->   		spin_lock(&fs_info->unused_bgs_lock);
-> +		if (ret)
-> +			break;
->   	}
->   	list_splice_tail(&retry_list, &fs_info->unused_bgs);
->   	spin_unlock(&fs_info->unused_bgs_lock);
+
+> +}
+> +
+>   /*
+>    * For release_folio() and invalidate_folio() we have a race window where
+>    * folio_end_writeback() is called but the subpage spinlock is not yet released.
 

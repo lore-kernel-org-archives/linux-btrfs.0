@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3804545FFCD
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1B19E3F1060
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789545278; cv=none; b=hxU6fH5VNtlbGAgfG6RBFwZupQ3prkMS9PgSOO+vJcVVVykM5YkN2bpcpBSgBRbqAGWkBzNiW+l74Vb721RdDekTtIJq6XE60tauFs6Bjlrv0VK2F/e6fZGjhq4Cg2pOSmBDk0m8qOw7bQdpdcVEdq6M8VOM2C0NfWE+WKhL1vA=
+	t=1789545281; cv=none; b=JIrEXuYttGCcJ3fl5120dhoGDfXxZ7LON1gOFU5t+OeGYPEhvQkl0w77n1hIDTsAOwr+ORHFPQ1Ova7VuoqVDJ+4LswY+W3lfglU76R93D9zzOBJgrWszbR+T5xldroR3xGqfjlayVHnzbbM5C2EtjNtghQq8ZHSDwFN64KEON4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789545278; c=relaxed/simple;
-	bh=pRVQlJdE1Lzy1f9FOX8Ewi7VUHj/mDNZBt42ejFONcQ=;
+	s=arc-20240116; t=1789545281; c=relaxed/simple;
+	bh=vYy6QCkCWNHnv5BDQjuWles4INPNS/2y0mGWGmKMqBM=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=tSMI7dr0QscJkc0FuVfaLlHVurAYbRrUmtA5mrwr6zM0iv6JNvMupqGaiVFd9pBNis2Ksc5/GtcKFptiGzVdRnVuap1JHlvauvdLVkWN+rn+zYeyWZSLjId4kFZVu5DQz/3acie47wSableLrvhcvGFsailwirYRifRDvPDmf2I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tOadcfQC; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=duHYOZ45; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=s6pfCtPFYb8cHPWkocPWvmsS6LPlar3525/7TCdTD3ddUObwLyncZx2UWwNoB7NrLnrXKtJtNorKfuoy41rOs+2TPGTF8AMs9+oQ89964NpaMZFXzXQWooJKBeS+253bkvuzY+npnm8R/+QXLoFId2Zntmpbm9EXryYKCnjH4WY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WwUux1J3; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Fu5iDijH; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tOadcfQC";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="duHYOZ45"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WwUux1J3";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Fu5iDijH"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id E037121BF6
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:12 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id A87791FDB3
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1789545261; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=yzcyzG+T6kWq4H4iJaXm88jVV5bEmbdpFXqyiqPLpkQ=;
+	b=WwUux1J3V8pKud5zi8YjllWCfjyTCN2pnnLE5Z2fayIrBlP44BEIQigW3YrQc85vKrSPjX
+	vMsB2RgsERvitCzx006IXli0m4hZi4Q/EMMw8AX2NMfpr+wauImjHhZ4LkXvPx94ZTf/5O
+	t1nfSAHHv6oGutfMrVuAs/yLmULXzHk=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=Fu5iDijH
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
 	t=1789545257; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=3fqqVc6BB1hG/p1xc90SlmNDNK3n3+Ci5RhxzacYUtk=;
-	b=tOadcfQCDlkvQr076pf4p+P1N1R1frRWVJDVAk+OVcc8QgU2aH/GV7BSI/oho104Jn9fM5
-	8He1RdMJJpqgU0apb1CXR7Z1QP457ANaNnkBVfTRAz2d1XupKMAprtcBqrS3tcKWVj35xH
-	dnscT6eVYsLwCY0eiTmAezaD6zM+QXg=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789545252; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=3fqqVc6BB1hG/p1xc90SlmNDNK3n3+Ci5RhxzacYUtk=;
-	b=duHYOZ45e/8Yuhy8FTMACHBbJxEGPrGTEd549hhQGeBwwbQelBPe5Z2jX+ym3CZhvwqoO9
-	DJiVMfljmL4y0mxh0QitsSQ08+CfAuYEhWIu7GqGnT5S1ISS3mBTpLGaYiBNwy4umSurgD
-	NPzaS6BG1IuiMEbEfhej5devxfJEqxs=
+	bh=yzcyzG+T6kWq4H4iJaXm88jVV5bEmbdpFXqyiqPLpkQ=;
+	b=Fu5iDijHMTsWOfXnCwJRayI58yxe52wZBJbbJzRtQj4U4eZNw1oB4B+0rBOZrvw3X3fAgK
+	cVJYEU3zNPIbhleXOjO09gt5NF3sIILwg8fmhhEU4eCa7Wroaomx6SBGbtX5s0EaIErJC4
+	pbZ6XfHhOlIF6hzyowlaJOElQ9vonQY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A2A6A1373A
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:11 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6C85D137FE
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:16 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 31W+Dh5LqmqMKgAAD6G6ig:T4
+	id 31W+Dh5LqmqMKgAAD6G6ig:T7
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:11 +0000
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 07:54:16 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 3/6] btrfs: introduce the skeleton of delayed bbio endio function
-Date: Wed, 16 Sep 2026 17:23:45 +0930
-Message-ID: <bd4c6b7b2f65957a5d8473c4c9b5710a1093cd90.1789545179.git.wqu@suse.com>
+Subject: [PATCH v3 6/6] btrfs: enable experimental delayed compression support
+Date: Wed, 16 Sep 2026 17:23:48 +0930
+Message-ID: <9d096eaae3b938298bdfee4a2c2225aea96017e3.1789545179.git.wqu@suse.com>
 X-Mailer: git-send-email 2.55.0
 In-Reply-To: <cover.1789545179.git.wqu@suse.com>
 References: <cover.1789545179.git.wqu@suse.com>
@@ -70,154 +70,263 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Spam-Level: 
-X-Spam-Score: -2.80
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: A87791FDB3
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
 	ARC_NA(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	RCVD_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
+	FROM_EQ_ENVFROM(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
+	RCVD_TLS_ALL(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
 
-A delayed bbio will not be directly submitted, but queued into a
-workqueue, to perform compression there.
+Instead of the existing async submission path, the new delayed bbio will
+handle compressed writes by:
 
-The compression and uncompressed fallback are not implemented in this
-patch.
+- Allocating delayed em/oe at run_delalloc_*() time
+  Thus no data extent is reserved at that time.
 
-Only the main endio function and a helper to queue workload into a
-workqueue are implemented.
+- Delayed bbio will be assembled at extent_writepage_io() time
 
-The endio function is mostly the same as end_bbio_data_write(), except
-for the extra memory allocation/freeing for the bbio->private.
+- Delayed bbio will be intercepted just before submission
+  Which will run compression (or fallback to uncompressed writes) in
+  workqueue.
+  Data extents will only be reserved at that time, and the delayed em
+  will be replaced by real ones.
 
-Another point to note is that, we reuse btrfs_bio::pending_ios to track
-the lifespan of the parent delayed bbio.
-We can reuse it because the delayed bbio is never submitted for IO, thus
-it will never be split by btrfs, so we can reuse that atomic to avoid
-extra space inside delayed_bio_private.
+  Meanwhile the real OE will be added as a child of the parent delayed
+  OE, and when the parent OE finishes, the child OE will be finished
+  with their file extents inserted.
+
+This has some benefits:
+
+- Higher concurrency
+  Previously async submission will hold the folio and io tree range
+  locked, this means we cannot even read the uptodate folio.
+
+  Furthermore although the compressed write is queued into a workqueue
+  for submission and extent_writepage_io() will skip the compressed
+  range, when we need to write the next folio of the compressed range,
+  we will need to wait for the folio to be unlocked.
+
+  This makes async submission less async.
+
+- Future DONTCACHE writes support
+  We do not support DONTCACHE because that feature requires writeback path
+  to clear the folio dirty and submit them sequentially.
+
+  Meanwhile async submission makes the writeback async, breaking the
+  sequential submission requirement.
+
+  This is also why we need complex per-block tracking for writeback
+  flags, while iomap only requires a counter tracking.
+
+  With the new delayed compression, the lifespan of a folio aligns with
+  DONTCACHE and iomap.
+
+However there is also a change to the fsync() behavior:
+
+- Now an inode with compressed write will require full sync
+  We can not do any fast sync, as that will grab the info from OE
+  directly, but since delayed OE is just a place holder, all the OE info
+  can not be trusted until the parent OE is finished.
+
+There is an extra handling for defrag, where we have to write and wait
+for the defrag range.
+This is to avoid clearing inode->defrag_compress before the compression
+starts.
+
+Finally this new experimental feature is not yet compatible with zoned,
+so for zoned btrfs it will go through the old compression path.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/inode.c | 77 ++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 72 insertions(+), 5 deletions(-)
+ fs/btrfs/defrag.c    | 27 ++++++++++++++---
+ fs/btrfs/extent_io.c |  5 +++-
+ fs/btrfs/inode.c     | 71 ++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 95 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 69e12cb2d7b5..10b9a7fcfadf 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -97,6 +97,11 @@ struct data_reloc_warn {
- 	int mirror_num;
- };
+diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
+index 6ec5dd760d42..32801ae4da7a 100644
+--- a/fs/btrfs/defrag.c
++++ b/fs/btrfs/defrag.c
+@@ -1349,6 +1349,7 @@ int btrfs_defrag_file(struct btrfs_inode *inode, struct file_ra_state *ra,
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	unsigned long sectors_defragged = 0;
+ 	u64 isize = i_size_read(&inode->vfs_inode);
++	const u64 start = round_down(range->start, fs_info->sectorsize);
+ 	u64 cur;
+ 	u64 last_byte;
+ 	bool do_compress = (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS);
+@@ -1400,7 +1401,7 @@ int btrfs_defrag_file(struct btrfs_inode *inode, struct file_ra_state *ra,
+ 	}
  
-+struct delayed_bio_private {
-+	struct work_struct work;
-+	struct btrfs_bio *delayed_bbio;
-+};
-+
- /*
-  * For the file_extent_tree, we want to hold the inode lock when we lookup and
-  * update the disk_i_size, but lockdep will complain because our io_tree we hold
-@@ -7691,18 +7696,80 @@ struct extent_map *btrfs_create_delayed_em(struct btrfs_inode *inode,
- 	return em;
- }
- 
--void btrfs_submit_delayed_write(struct btrfs_bio *bbio)
-+static void run_delayed_bbio(struct work_struct *work)
- {
--	ASSERT(bbio->is_delayed);
-+	struct delayed_bio_private *dbp = container_of(work, struct delayed_bio_private, work);
-+	struct btrfs_bio *parent = dbp->delayed_bbio;
-+
-+	/* Compressed and uncompressed fallback is not yet implemented. */
-+	ASSERT(0);
+ 	/* Align the range */
+-	cur = round_down(range->start, fs_info->sectorsize);
++	cur = start;
+ 	last_byte = round_up(last_byte, fs_info->sectorsize) - 1;
  
  	/*
--	 * Not yet implemented, and should not hit this path as we have no
--	 * caller to create delayed extent map.
-+	 * Any real compressed/uncompressed bios have increased
-+	 * parent->pending_ios, the last caller of btrfs_bio_end_io()
-+	 * will execute the real endio function.
+@@ -1471,10 +1472,28 @@ int btrfs_defrag_file(struct btrfs_inode *inode, struct file_ra_state *ra,
+ 		 * need to be written back immediately.
+ 		 */
+ 		if (range->flags & BTRFS_DEFRAG_RANGE_START_IO) {
+-			filemap_flush(inode->vfs_inode.i_mapping);
+-			if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
+-				     &inode->runtime_flags))
++			/*
++			 * For experimental delayed writeback, we must wait
++			 * for the range to be fully written back before
++			 * clearing inode->defrag_compress.
++			 *
++			 * Regular filemap_flush() will only start writeback,
++			 * which will only create delayed OEs. But the real
++			 * compression is happening later.
++			 * This means if we just flush but not wait for writeback,
++			 * the inode->defrag_compress clearing can race with
++			 * compression, so the requested compression algorithm
++			 * is not applied.
++			 */
++			if (IS_ENABLED(CONFIG_BTRFS_EXPERIMENTAL)) {
++				filemap_write_and_wait_range(inode->vfs_inode.i_mapping,
++							     start, last_byte);
++			} else {
+ 				filemap_flush(inode->vfs_inode.i_mapping);
++				if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
++					     &inode->runtime_flags))
++					filemap_flush(inode->vfs_inode.i_mapping);
++			}
+ 		}
+ 		if (range->compress_type == BTRFS_COMPRESS_LZO)
+ 			btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 0c9df1d67978..5c38e9aa64bb 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -900,8 +900,11 @@ static int submit_one_block(struct btrfs_bio_ctrl *bio_ctrl,
+ 	 * If we have accumulated decent amount of IO, send it to the
+ 	 * block layer so that IO can run while we are accumulating
+ 	 * more folios to write.
++	 *
++	 * This doesn't apply to delayed bbio which is going to be
++	 * compressed.
  	 */
--	ASSERT(0);
-+	btrfs_bio_end_io(parent, BLK_STS_OK);
-+}
-+
-+static void end_bbio_delayed(struct btrfs_bio *bbio)
-+{
-+	struct delayed_bio_private *dbp = bbio->private;
-+	struct btrfs_inode *inode = bbio->inode;
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	struct folio_iter fi;
-+	const u32 bio_size = bio_get_size(&bbio->bio);
-+	const bool uptodate = bbio->status == BLK_STS_OK;
-+
-+	ASSERT(bbio->is_delayed);
-+
-+	bio_for_each_folio_all(fi, &bbio->bio) {
-+		u64 start = folio_pos(fi.folio) + fi.offset;
-+		u32 len = fi.length;
-+
-+		btrfs_folio_clear_writeback(fs_info, fi.folio, start, len);
-+	}
-+	btrfs_mark_ordered_io_finished(inode, bbio->file_offset, bio_size, uptodate);
-+	kfree(dbp);
- 	bio_put(&bbio->bio);
+-	else if (bio_ctrl->wbc &&
++	else if (bio_ctrl->wbc && !bio_ctrl->bbio->is_delayed &&
+ 		 bio_ctrl->bbio->bio.bi_iter.bi_size >=
+ 		 fs_info->writeback_bio_size)
+ 		submit_one_bio(bio_ctrl);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 590982424073..5eb54867a9c4 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1659,6 +1659,68 @@ static bool run_delalloc_compressed(struct btrfs_inode *inode,
+ 	return true;
  }
  
-+void btrfs_submit_delayed_write(struct btrfs_bio *bbio)
++static int run_delalloc_delayed(struct btrfs_inode *inode, struct folio *locked_folio,
++				u64 start, u64 end)
 +{
-+	struct delayed_bio_private *dbp;
++	struct btrfs_root *root = inode->root;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct extent_state *cached = NULL;
++	u64 cur = start;
++	int ret;
 +
-+	ASSERT(bbio->is_delayed);
-+
-+	bbio->end_io = end_bbio_delayed;
-+	dbp = kzalloc_obj(*dbp);
-+	if (!dbp) {
-+		btrfs_bio_end_io(bbio, errno_to_blk_status(-ENOMEM));
-+		return;
++	if (btrfs_is_shutdown(fs_info)) {
++		ret = -EIO;
++		goto error;
 +	}
-+	dbp->delayed_bbio = bbio;
-+	bbio->private = dbp;
++	while (cur < end) {
++		struct extent_map *em;
++		struct btrfs_ordered_extent *oe;
++		u32 cur_len = min_t(u64, end + 1 - cur, BTRFS_MAX_COMPRESSED);
++
++		btrfs_lock_extent(&inode->io_tree, cur, cur + cur_len - 1, &cached);
++		em = btrfs_create_delayed_em(inode, cur, cur_len);
++		if (IS_ERR(em)) {
++			ret = PTR_ERR(em);
++			goto error;
++		}
++		btrfs_free_extent_map(em);
++		oe = btrfs_alloc_delayed_ordered_extent(inode, cur, cur_len);
++		if (IS_ERR(oe)) {
++			btrfs_drop_extent_map_range(inode, cur, cur + cur_len - 1, false);
++			ret = PTR_ERR(oe);
++			goto error;
++		}
++		btrfs_put_ordered_extent(oe);
++
++		cur += cur_len;
++	}
 +	/*
-+	 * TODO: find a way to properly allow sequential extent allocation.
-+	 *
-+	 * Currently compression and submission happen in the same workload.
-+	 * We want to run compression in parallel but run allocation sequentially.
-+	 *
-+	 * The existing btrfs workqueue will execute the sequential workload
-+	 * twice, the second one to free the structure, thus the btrfs_work
-+	 * structure can have a lifespan longer than the delayed bbio.
-+	 *
-+	 * But the current structure's lifespan is bounded to the original
-+	 * bbio, if using btrfs workqueue, we need extra lifespan management
-+	 * to ensure the work structure doesn't disappear when the original
-+	 * bbio is finished.
-+	 *
-+	 * This means we have to either delay the original bbio's finish,
-+	 * or have a very complex synchronization.
++	 * Force the next fsync to wait for any delayed OE to finish,
++	 * as the fast path cannot handle delayed OE correctly.
 +	 */
-+	INIT_WORK(&dbp->work, run_delayed_bbio);
-+	schedule_work(&dbp->work);
++	btrfs_set_inode_full_sync(inode);
++	extent_clear_unlock_delalloc(inode, start, end, locked_folio, &cached,
++				     EXTENT_LOCKED | EXTENT_DELALLOC,
++				     PAGE_UNLOCK);
++	return 0;
++error:
++	if (start < cur) {
++		btrfs_drop_extent_map_range(inode, start, cur - 1, false);
++		btrfs_cleanup_ordered_extents(inode, start, cur - start);
++		extent_clear_unlock_delalloc(inode, start, cur - 1, locked_folio, &cached,
++			EXTENT_LOCKED | EXTENT_DELALLOC,
++			PAGE_UNLOCK | PAGE_START_WRITEBACK | PAGE_END_WRITEBACK);
++	}
++	if (cur < end) {
++		extent_clear_unlock_delalloc(inode, cur, end, locked_folio, &cached,
++			EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DELALLOC_NEW |
++			EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
++			PAGE_UNLOCK | PAGE_START_WRITEBACK | PAGE_END_WRITEBACK);
++		btrfs_qgroup_free_data(inode, NULL, cur, end + 1 - cur, NULL);
++	}
++	return ret;
 +}
 +
  /*
-  * For release_folio() and invalidate_folio() we have a race window where
-  * folio_end_writeback() is called but the subpage spinlock is not yet released.
+  * Run the delalloc range from start to end, and write back any dirty pages
+  * covered by the range.
+@@ -2439,9 +2501,12 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct folio *locked_fol
+ 		return run_delalloc_nocow(inode, locked_folio, start, end);
+ 
+ 	if (btrfs_inode_can_compress(inode) &&
+-	    inode_need_compress(inode, start, end, false) &&
+-	    run_delalloc_compressed(inode, locked_folio, start, end, wbc))
+-		return 1;
++	    inode_need_compress(inode, start, end, false)) {
++		if (IS_ENABLED(CONFIG_BTRFS_EXPERIMENTAL) && !zoned)
++			return run_delalloc_delayed(inode, locked_folio, start, end);
++		else if (run_delalloc_compressed(inode, locked_folio, start, end, wbc))
++			return 1;
++	}
+ 
+ 	if (zoned)
+ 		return run_delalloc_cow(inode, locked_folio, start, end, wbc, true);
 -- 
 2.55.0
 

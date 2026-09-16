@@ -1,64 +1,64 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E7512E6CA6
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 06:52:45 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3F3703EC817
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 06:52:47 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789541566; cv=none; b=auCqmeNi0ewfYRHIEMW0XmNKQEpapc3/W6xtehfNCyllDY0HV4O9SFJ1jPoLKsmZkQKOD4WXZ3anJwKzhebZ5fB/Mkk/ZWnQ57MjISEMV16L8I0ATr6l4eFbqQS5w66tjN62qrXryBWfTFqGsM9G6Lj8BBEr3ypLfRQYdSgkXDw=
+	t=1789541568; cv=none; b=SBU1jRoSCZs/rnUTd6hF619Vy1CbGqiNyx+2BkyrWFjlBeePugov8hXVewtTTrmL4UC441aOo15D7KPmz9FVlS/6gi1wk5nR41NHjp15EC0mjhTlmjs3SLnKVRxDcaMuFErhXgF7yS49l+K7Z/1IMNZr6X/GS4ZQy40QuXKwBjs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789541566; c=relaxed/simple;
-	bh=BAuJqwJ4yurxRPx0YQ67wHVrA1BSA0CIBLSIYvqTBuA=;
+	s=arc-20240116; t=1789541568; c=relaxed/simple;
+	bh=Noonsb13+DbN4Pek6TVstnDYtF2HUEX/Ct7YnZEiY9o=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=cJNQ9iIw+CcKQrnFpqgjv4He/Npq4kwmNleMgqs29x3pebKfEjz4OVq38TZUYzNKb2YHeSvaWedlgyxuTyrj/91UYTfAmzzkOr3VLBNAV3HBSg6Y5rkCKXcKnHvkmWHSVOSAmKGlVtjLg8tZjgnH7dUSj2AFgbOlePILKFMfVeU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=JR/lrBlc; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=godrMoDL; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=gj5eQTka14DBED0QG25jyqTnYZRX+Rb8TNO1u4OqIG3smghO8iEvcmhTI5R+RrKJZPilkIa7teOQPPhcCkBI2Pflqo6XA3FhHJmb8zYXtQkwAh2aSP4DtaOWKD5KGghhdnqG2Rzy67+ygrx8VJKZSGiRZX9nM5yrp2RLRY/UrZc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=aAR/iSwi; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=FNvVXCaJ; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="JR/lrBlc";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="godrMoDL"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="aAR/iSwi";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="FNvVXCaJ"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 224D521C1D
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 06:52:35 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id E7D0321C45
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 06:52:36 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789541559; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1789541561; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=PL7AA7YQqkSYVIAx/G4djhPLmjJ5gH9ilyjcZ481U68=;
-	b=JR/lrBlcPJDwcUDbgk+7B9UXBXKCEVMP6bWKNCxGw/jjUs9S/AlbmMd79bdr+QP0j05mE4
-	yrJ6EplT5IB4awvI1yLsk+4ALR8z2o0yy18QmY0Yb366f9S+4cqZwzYgr4iN7I3GawwZja
-	wQW9SznZNSVaLiebm60EgmKTNsxPIh8=
+	bh=mSTl8WbOr34XGs61yi75jHZcgawIp5mZWVgKf7VEhAI=;
+	b=aAR/iSwiHN7RMWcF2VYTBuG/8EaL7y/kYEftLo6W2IA1Clg4q6Y1duz+0xLezs8Uy7LnrX
+	75R/FPlVLgmk2a6/ZKBDuYznaI7aaGF9M9eZVhxPAY0cQme7j+f3n/YvS+afqu9Hq30WtW
+	gE9uJrWJdXkldztDIRE6dWrzGUhk/A4=
 Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789541555; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1789541556; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=PL7AA7YQqkSYVIAx/G4djhPLmjJ5gH9ilyjcZ481U68=;
-	b=godrMoDL/aD1P66CjS0RFy7QCGNaxQwFu7yQkwbyoQG201hklVEe5WtTBooh/XpOKN3P3S
-	YTLY8UfTbhVVOCaScDBO88tdq8Lv7liSzNdJkqsVpqv9yEZ/bHKc0ZXxY7+CON+su77t4y
-	oVhzrC42PGHhJHRxmB4vw6p7ILO2fMU=
+	bh=mSTl8WbOr34XGs61yi75jHZcgawIp5mZWVgKf7VEhAI=;
+	b=FNvVXCaJh3TFDEpleCdvrgr1bXCRSPFiq+yhxcxWMP3U+z0EClt+2aJEQevjvJ751btPRw
+	yTMAu8QU1Zhi6mwyO0u8B4YJ8c5AA4dxTf5cTMRp5yIrmPICrRRYpcb2kkxO8zRFJmfH/x
+	XEclv/88aqlW/pB4pS7zSB08zluKtTw=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id F2830136D1
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 06:52:33 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A12F9136DB
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 06:52:35 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id ts9hJK88qmr0ZAAAD6G6ig:T2
+	id ts9hJK88qmr0ZAAAD6G6ig:T3
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 06:52:33 +0000
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 06:52:35 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs-progs: restore: handle full block compressed inline extent
-Date: Wed, 16 Sep 2026 16:22:03 +0930
-Message-ID: <c2f4188216e7a1d6b5be4dcf85afa543455d9b74.1789541428.git.wqu@suse.com>
+Subject: [PATCH 2/3] btrfs-progs: restore: handle inlined extent larger than 4K
+Date: Wed, 16 Sep 2026 16:22:04 +0930
+Message-ID: <ced5849aa3013d88b96d658dccfa2d1630a84e2d.1789541428.git.wqu@suse.com>
 X-Mailer: git-send-email 2.55.0
 In-Reply-To: <cover.1789541428.git.wqu@suse.com>
 References: <cover.1789541428.git.wqu@suse.com>
@@ -86,64 +86,94 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Flag: NO
 
-Since kernel commit 3eaf5f082c4c ("btrfs: extract inlined creation into a
-dedicated delalloc helper"), the creation of compressed inlined extent
-has changed to compress the whole block, then truncate the ram_bytes to
-isize.
+Most btrfs are already using 4K sectorsize, but for systems with 64K
+page size, it's possible to create large inlined extent that is larger
+than 4K:
 
-This means the compressed data needs to have a full block as the output
-buffer.
-This is fine for kernel, as the inlined extent is alwasy decompressed to
-a folio which is at least one block sized.
+	item 6 key (257 EXTENT_DATA 0) itemoff 56802 itemsize 8213
+		generation 9 type 0 (inline)
+		inline extent data size 8192 ram_bytes 8192 compression 0 (none)
 
-But for progs, if the output buffer is smaller than a block, the
-decompression will fail early (not enough output buffer), causing
-btrfs-restore to completely skip the content of the inlined extent.
+In that case, btrfs-restore will crash as its input buffer is only 4K
+sized.
 
-Fix it by always allocating a full block for copy_one_inline().
+Enhance btrfs-restore to handle larger block size correctly, by allocate
+a block-sized buffer at input buffer.
 
-Issue: #1171
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- cmds/restore.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ cmds/restore.c | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
 
 diff --git a/cmds/restore.c b/cmds/restore.c
-index 7d16cc99fa6a..00471b486ac6 100644
+index 00471b486ac6..b982f2de4699 100644
 --- a/cmds/restore.c
 +++ b/cmds/restore.c
-@@ -298,6 +298,7 @@ static int copy_one_inline(struct btrfs_root *root, int fd,
- 	char buf[4096];
+@@ -295,7 +295,8 @@ static int copy_one_inline(struct btrfs_root *root, int fd,
+ {
+ 	struct extent_buffer *leaf = path->nodes[0];
+ 	struct btrfs_file_extent_item *fi;
+-	char buf[4096];
++	const u32 blocksize = root->fs_info->sectorsize;
++	char *inbuf;
  	char *outbuf;
  	u64 ram_size;
-+	u64 out_buf_len;
- 	ssize_t done;
- 	unsigned long ptr;
- 	int ret;
-@@ -324,13 +325,14 @@ static int copy_one_inline(struct btrfs_root *root, int fd,
- 	}
+ 	u64 out_buf_len;
+@@ -306,16 +307,23 @@ static int copy_one_inline(struct btrfs_root *root, int fd,
+ 	int inline_item_len;
+ 	int compress;
  
- 	ram_size = btrfs_file_extent_ram_bytes(leaf, fi);
--	outbuf = calloc(1, ram_size);
-+	out_buf_len = root->fs_info->sectorsize;
-+	outbuf = malloc(out_buf_len);
++	inbuf = malloc(blocksize);
++	if (!inbuf) {
++		error_mem(NULL);
++		return -ENOMEM;
++	}
++
+ 	fi = btrfs_item_ptr(leaf, path->slots[0],
+ 			    struct btrfs_file_extent_item);
+ 	ptr = btrfs_file_extent_inline_start(fi);
+ 	len = btrfs_file_extent_ram_bytes(leaf, fi);
+ 	inline_item_len = btrfs_file_extent_inline_item_len(leaf, path->slots[0]);
+-	read_extent_buffer(leaf, buf, ptr, inline_item_len);
++	read_extent_buffer(leaf, inbuf, ptr, inline_item_len);
+ 
+ 	compress = btrfs_file_extent_compression(leaf, fi);
+ 	if (compress == BTRFS_COMPRESS_NONE) {
+-		done = pwrite(fd, buf, len, pos);
++		done = pwrite(fd, inbuf, len, pos);
++		free(inbuf);
+ 		if (done < len) {
+ 			error("short inline write, wanted %d, did %zd: %m",
+ 					len, done);
+@@ -329,17 +337,20 @@ static int copy_one_inline(struct btrfs_root *root, int fd,
+ 	outbuf = malloc(out_buf_len);
  	if (!outbuf) {
  		error_mem(NULL);
++		free(inbuf);
  		return -ENOMEM;
  	}
  
--	ret = decompress(root, buf, outbuf, inline_item_len, &ram_size,
-+	ret = decompress(root, buf, outbuf, inline_item_len, &out_buf_len,
+-	ret = decompress(root, buf, outbuf, inline_item_len, &out_buf_len,
++	ret = decompress(root, inbuf, outbuf, inline_item_len, &out_buf_len,
  			 compress);
  	if (ret) {
++		free(inbuf);
  		free(outbuf);
+ 		return ret;
+ 	}
+ 
+ 	done = pwrite(fd, outbuf, ram_size, pos);
++	free(inbuf);
+ 	free(outbuf);
+ 	if (done < ram_size) {
+ 		error("short compressed inline write, wanted %llu, did %zd: %m",
 -- 
 2.55.0
 

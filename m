@@ -1,66 +1,66 @@
 Received: from mail-ej2-f12.google.com (mail-ej2-f12.google.com [74.125.228.140])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7CF1A48CD5B
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 21:27:00 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BEB6948F83B
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 21:28:36 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.140
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789594029; cv=none; b=sfH+/MjYPvdsLcUWpg77qYyE6e0WISY+zzIbd+GHtzOV8X01XTF891kezFCASVr5WQLMB25I1Eqzicr/X7qEi+8Dsmuw5bDnkD1qbYV1O/j5lVpNKFlaKGfuAzRE16P9SPST4gKcXPbn5QX9jHVPNey44YSDwA4ZrfCCQ0r8t94=
+	t=1789594134; cv=none; b=r3t7GYIQQn3gqx7pUji8QUKg12KtpzJ76t6azOVTx6X8wRIrBhb0XtZKC1176lDhdtiBqcR6kb2YxtfGYx6G1kYyXJPuePxDwH9UsxfA8YYU/25nFLYX0ofBJsPp8ECXYzzW57zKJvbZIVM1BNH2AZKsalNKoS0fBAQkx8zEZWs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789594029; c=relaxed/simple;
-	bh=HOL3d4hB2K5tlD4mnWZ1fDxH39k4Ir5VssG57nbzJy4=;
+	s=arc-20240116; t=1789594134; c=relaxed/simple;
+	bh=DopW7fU47du2OteIJnaemQyUibFpuZm0CA9ygMITefM=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=ZKcm8b3lmC6DXJBHDpXUu4XcOm3qZyGDj/4nJtH9kHxDAezoeOMaYSEVyFeOn7VD3pETgJQhYd+ika//fz3+LwyITpIfb9LmzZpo4uwwsBoLbQki97h0+o3wfOYkeG/9BoXxlXH1glJtTBsXASBqMXaGWVJZwH8zmFVlS+ZjFBA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=gi4kRNRt; arc=none smtp.client-ip=74.125.228.140
+	 In-Reply-To:Content-Type; b=JONDe6194nbrabpxwj4wQMzojl3JH0AQMK6g+Ys0Ti9Vg90N6MfC7kwxFvjmkT1+R6dbsXF11QgpFhgY5wUmo3irtdmSU95aVR9+fGBmlfstj3yZILbgtIcGbKmx8MRaZfm0qjqDROWnYfChU191hfTyhu9uI8F8J71qT188k7o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=TF8N1gwb; arc=none smtp.client-ip=74.125.228.140
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="gi4kRNRt"
-Received: by mail-ej2-f12.google.com with SMTP id a640c23a62f3a-c254fa650c8so35954866b.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 14:26:58 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="TF8N1gwb"
+Received: by mail-ej2-f12.google.com with SMTP id a640c23a62f3a-c254f6c7a4aso28333966b.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 14:28:36 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1789594016; x=1790198816; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1789594114; x=1790198914; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=MfLNR2szLVElL2kVS/OY02263O0ABtaCK4IJADJJp0M=;
-        b=gi4kRNRtrinjvgy4kkA1j4f1MVTIgpWjfHYuH613Fi/SvfFjRB5Dps/1QCos27TVGn
-         RCVR7CZZYjcowoPRtkfsuCwf+RR8s55Gn/jtNsA5TjgSDIQrmqtGyU0s6jhxSzW44APO
-         yaDy7zNyYJIO3pTLqRK0UAeKGU/bD27U2ECbUBlQ9OvIdEOj0nXIoPsLRwt6UaOTL7hV
-         nw2qXVgVmc5QcDSUuI4xO2z/ZNnZfgEA9K0naRzTUPYqoVWj+wql6W9r1NHIoK4B1FPe
-         Jua4Lm9KgtcqlcD7LDZX18/10O9ExV1kloif1xW+RD4hCbPaCQmWyjFJsJJGYLKgcKZg
-         flYg==
+        bh=EwklGG5Jn7jc/QjPxziZGh77lggbD1OCUTfNuflEo68=;
+        b=TF8N1gwbVGDVSycP2CbPXzKMg+jmqkR+iJ/KgO95FquDkFDKU9VaOadp/h1e6Ks9Fm
+         /NQzcWm76xPHJiEcWcQ3h8+JRpJ8w0fIbE7Cwez0eABmyGO55eP+cyzsCHCGGh3I/VAd
+         9MGAF+oJhpQk9B9TOlBJAjv94ZmGgwLWQBcbJAA3E7g+4pvm5uP9i7d7o9e7/PjjNVJg
+         AfP7Q4HVFnYqgzuIstChFjeJePZVSCGWInLEXPM9dqD7cxiVdoCJ3aRqdJmZR1a5QCoV
+         DeUt+PIkFQuPP+Oq8p1Kgzi5/CdfEW60J+27c6RWC5cqho6pR/e0u06C2wbk4KyDRuvj
+         rfpA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1789594016; x=1790198816;
+        d=1e100.net; s=20260707; t=1789594114; x=1790198914;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=MfLNR2szLVElL2kVS/OY02263O0ABtaCK4IJADJJp0M=;
-        b=GnnVl0aWUmaNGZBEDMNAeRGxUoornuymWIgwwZG33NRAPBtbdbiUGa1/FBccsbW7zH
-         C8MwaZ2Jq+KtUgX83FJXtG1XLW6RzjWs+dRUWksVFzjBTAUv/tUGmshB8WXPdMrrBplj
-         wDaWFsdJR3T9UjoCc4bkjJfJi5Jxhwln/mIqmdFINUeAphXoYj81uIjjE+1tVi54EcvB
-         N5WjNFYzc7HgoL72vACmbwQYSV6t8DMDsHYMDuljhX8o5pkWmhmdYLzD4kjPrHQ5Mypr
-         QYI7m4tURnxCwOoJO8IZHB6SGNgxxpogsqbuIeM4tpdXJL5vWrEM2AM/jAQbXu1TiRu5
-         Z5Nw==
-X-Forwarded-Encrypted: i=1; AKwUvByrJKk34Rv/hNMojW3pmoIyUe0Bd5vyUC+GxStHadANFdyqJOsVCya/P4bbQZqa+qfjiWZwOtLX3Qg22Q==@vger.kernel.org
-X-Gm-Message-State: AFuF++l7Ri/aY92bIK+gBdpW8j95II5P9KRc9lNo4pTQMRBtA3wbgfKA
-	E/emoUMwetABzwds6+bSkEHeOiaEnCUEa7hZDMfjfcPnFTYugOFOnw9pw53yJvLoz9s=
-X-Gm-Gg: AYBFou0qejWniqcYXqoxxwIvgaqKttP5AyeOqoHmPHEQJifP3InNhsH1fPP52W0RDjy
-	1nZNpN/01zqVIwXr+qKVqb7t+prvzO4tCvOLSlla+mkQiUuYyWzOQzPGX4zQ9XudzFaixoDaE/c
-	4pRCO4HMgGd2/Hh/dzseGkiij3OHTD3bBllvmAYA3XIaVlRPabtJzg1w5YMgY0Dhuw88rLrzGS8
-	3wNOV7adEdVCChE22/itV/3fW7Tvll3VGybgErtb1aycxFv9A9UB8d1xUjixLxBpBRRVzFFpaE6
-	8Sxl9+YFsy+/J2WK4qhwT7IAm3E70xUUUn3XNFcZDKpLflClqWxqMLK84yedGTN5zVu/l0k1jN2
-	5QRXb8lOFpHQqhHJ2UFhXYGV9zkK0kPCI5+qbzWm7LRXXB0mLLNN07Td71L+CxFWZ6vYELNXqNs
-	Ut1hczbzE79UWlRJw/B1Td0+hIjGoymAz1+I+TmkN44GQt7Y8hO4Pz9FhJZ/04Irw=
-X-Received: by 2002:a17:906:6a12:b0:c28:f9e4:836c with SMTP id a640c23a62f3a-c29e52ff409mr327776666b.28.1789594016188;
-        Wed, 16 Sep 2026 14:26:56 -0700 (PDT)
+        bh=EwklGG5Jn7jc/QjPxziZGh77lggbD1OCUTfNuflEo68=;
+        b=mxTWJugjJAQHQ1eYTkHFKNwdWHomC2tiGsaygEQ3Svi4MqUOQwsmAes8HDLco9hNVJ
+         5pBetp5eLQf5cpfuhGiRqeM8rhOg27CzzDHLOzDXAjGkLPLbt5+ds85NSDalILAsaGvP
+         zpYwgNGiQX7qwYIvDuw7qObwlmj5mZx49BvbPaKGn7cVzxrj9dc7dZJyZWMp7obwghQZ
+         De8wIBL2Im0/z6IuMDiAS3h9OaHzWoLXkesueyg+m9CGBEMbi84Vk/BuEXRtUkNXZDzl
+         xLXM+t9XWd12RjL8oQo6meWGLkAeaHvQOsFFbnX3mRfN/8fD0+6OwHHTFVrsDrr3f++F
+         zjxQ==
+X-Forwarded-Encrypted: i=1; AKwUvBzvqjMx12rtau4mdWkUCAfiCjhOhwaltx/mn1aJ8G/jU5iDlXWOMc3gHjfQMEfBoWq6Q/xhWIHGdykZJQ==@vger.kernel.org
+X-Gm-Message-State: AFuF++kqVcwgXCPkTewurG7KdyWTPmngq+HOL60JE4JHYQLwN4BDhZDC
+	7XwrTjKRHcyEUoJ8+bkw1Uvu79p+k2i6I5kG7pxwukPS8LusSR0QzLFCXXoI+UXCrl8=
+X-Gm-Gg: AYBFou1tCxK24y7G8nrKcJikqSD2LCzUr/ubFqMGowYXIcvGxe+8gepBeA1IxNw/54y
+	3F4tSQVyG8vrqXwBdrpy3VoCvDz0iOwgY2L6nbpNfv5Vv/3tWUPip9eLDhWUsHV+iESAtJP0e7d
+	NIEtA4MuEwuxuDqOwc3m7guMFOzkYqOY+yAqbid5/sX6tSuijMtdBVKPotlnfxbN03ULvgGNxbe
+	APy1zNzgusGU/Tm6qSO7qUaWwv7PWukHTG9+go7mtlZWmIhB1Q3+lNySoPb1df14nO4LKljwxkF
+	bW62NPJkYhZoG183v7b49wYpYgesZkIYMqznUGrEramuwqYI4a+XQy73a1drM3drFZrN+zzCmH2
+	t087Wa144QldjTou2WKrBqCc0L0e70uHXRNpEG/Rz/11L5I4GKTfkWG9xBp3u/1no3J+GPVo/QO
+	ynxxqDk6s5Ma3bg2ZNZvvuLyUcl0eCqn/0BbWZrYKL/akfugPB66P1leFcUJi3S9Y=
+X-Received: by 2002:a17:907:9621:b0:c29:4415:2ec6 with SMTP id a640c23a62f3a-c29e520778fmr332807566b.12.1789594114298;
+        Wed, 16 Sep 2026 14:28:34 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-cc50acb8b5asm2212905a12.31.2026.09.16.14.26.53
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-39e35e4e0c6sm1339105a91.8.2026.09.16.14.28.31
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 16 Sep 2026 14:26:55 -0700 (PDT)
-Message-ID: <4530c488-d7cc-44da-aab2-dfb7564d4fbd@suse.com>
-Date: Thu, 17 Sep 2026 06:56:51 +0930
+        Wed, 16 Sep 2026 14:28:33 -0700 (PDT)
+Message-ID: <99e44bec-be94-465c-ae93-bff828111702@suse.com>
+Date: Thu, 17 Sep 2026 06:58:29 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -68,10 +68,10 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: abort transaction on failure to update inode for
- hole punching and reflinking
+Subject: Re: [PATCH] btrfs: check if there is space for chunk item when
+ validating sys chunk array
 To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <5eaff5e851684919160420f975c26574d05d4c44.1789570705.git.fdmanana@suse.com>
+References: <1b84f9c06df52773d921c1b2e58e4d27414b5ac8.1789574998.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -98,47 +98,46 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <5eaff5e851684919160420f975c26574d05d4c44.1789570705.git.fdmanana@suse.com>
+In-Reply-To: <1b84f9c06df52773d921c1b2e58e4d27414b5ac8.1789574998.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/9/17 00:32, fdmanana@kernel.org 写道:
+在 2026/9/17 01:41, fdmanana@kernel.org 写道:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> If we fail to update the inode we error out without aborting the
-> transaction, which can result in a persistent inconsistency if after
-> the failure the transaction is committed, as we have dropped file
-> extent items from a range and either punched a hole or insert a new file
-> extent item for that range (for reflinks).
+> We checked if have enough remaining space for a key before dereferencing a
+> key, but we then dereference a chunk item, to get the number of stripes,
+> without checking if there is space for the item. So add a check to see if
+> there is enough space for a chunk item before dereferencing the item to
+> extract the stripe count.
 > 
-> So add the missing transaction abort.
-> 
-> Fixes: 2aaa66558172 ("Btrfs: add hole punching")
+> Fixes: 2a9bb78cfd36 ("btrfs: validate system chunk array at btrfs_validate_super()")
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
-Qu> ---
->   fs/btrfs/file.c | 4 +++-
->   1 file changed, 3 insertions(+), 1 deletion(-)
+Qu
+
+> ---
+>   fs/btrfs/disk-io.c | 4 ++++
+>   1 file changed, 4 insertions(+)
 > 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 20e15dc30bfb..f978c6524aa0 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -2509,8 +2509,10 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
->   					      inode_set_ctime_current(&inode->vfs_inode));
->   
->   		ret = btrfs_update_inode(trans, inode);
-> -		if (ret)
-> +		if (unlikely(ret)) {
-> +			btrfs_abort_transaction(trans, ret);
->   			break;
-> +		}
->   
->   		btrfs_end_transaction(trans);
->   		btrfs_btree_balance_dirty(fs_info);
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index a1d83ad9a4c0..94a7e9059a7b 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2370,6 +2370,10 @@ static int validate_sys_chunk_array(const struct btrfs_fs_info *fs_info,
+>   				  key.type, cur);
+>   			return -EUCLEAN;
+>   		}
+> +
+> +		if (unlikely(cur + sizeof(*chunk) > sys_array_size))
+> +			goto short_read;
+> +
+>   		chunk = (struct btrfs_chunk *)(sb->sys_chunk_array + cur);
+>   		num_stripes = btrfs_stack_chunk_num_stripes(chunk);
+>   		if (unlikely(cur + btrfs_chunk_item_size(num_stripes) > sys_array_size))
 

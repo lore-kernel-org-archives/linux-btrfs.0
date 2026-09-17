@@ -1,143 +1,128 @@
-Received: from mail-ed2-f12.google.com (mail-ed2-f12.google.com [74.125.228.76])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from r9220.ps.combzmail.jp (r9220.ps.combzmail.jp [160.16.65.223])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2FF064A9D42
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 23:46:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.76
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C9EB6233945
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 02:21:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=160.16.65.223
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789602394; cv=none; b=GoHzu5yaatJKdIE6y4+WpblUiRo4iwLKpNXRymgy56sLkRzoTf5h4UbERMc/AjzWyss8A6DtKYRWEdnrdqGNC1N4wkGhd0ls6k8+R0BlAHEp6beFvopAumHm6InW2qSmUA0Tedy7TJ7q3zaLnUjJO0eTLMZCtsg5ejcfT6RS7Mg=
+	t=1789611671; cv=none; b=EDPyiUDsuvlbSVg5u3PlDSuN8ffxjiBLiPYZWqk6WUJ2xeD9jUBhyFA38w/XPkFlZ9PQbEu6lG9qNWA4n3/EIefZ3yzRoJghp+ByQK6vw07e3uu/jabSfjwzIfWzBuddbVOeXNGoxxYlZOqj4NYW4qxdwuSKME6q0jbY89xDe1M=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789602394; c=relaxed/simple;
-	bh=pJI/ZEo/5yrAqhB9of16xZy2l8tWeSnFoKFzf4X/gN0=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=pyo6fmVqHYKrPpjsC2zK3zKIAdpBRNOgT4qAXh+bTjlU0PavWZm4yUGvNmbtDdtqDHjXpr1YPeMxQDn1tFlilkmpRPqURXlAP/idoZHvXfHKJiVzBNSz+8I3L+12ut9K3TDtB7dYbojofOamvGJjURzXgrWz4HYrjN1rsVhSTUA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=WqCYeo2K; arc=none smtp.client-ip=74.125.228.76
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="WqCYeo2K"
-Received: by mail-ed2-f12.google.com with SMTP id 4fb4d7f45d1cf-6a6063d7dc4so394452a12.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 16:46:32 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1789602391; x=1790207191; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=QNW9318VOQ/wFxjWMtki1+FfnIEEUWMGlbgLd/WFIPw=;
-        b=WqCYeo2KKBlbjENeFX+dlR1vXzDKul696Wxg7m7cdzg58Y/K2qLGQ+/pyTt0HJ81Da
-         OoaFwNcPlUb1p/nkbMZ+0izKFZ+7/el/eN/JkJTqkKhaVxRY7o3eK5Rp8wnU2eKKgtCW
-         4NP+eTqK6yWqys3L+A02W6M8eMI0N/XZG6TY4a8OvOZmupN+S5NuyD9ocZgO15NH1/Cd
-         LrbscaGYJDEq4suE9zlzGsx23QSKIoJjANxK183E3h8JCLcqJ6r4IQ2mTf7lT6IEUuSs
-         CtyNb93kPOZpDSCbTzbmKHeQozgF6jv7cTQqr+SNNBF0pRIZpxa1jwM23UIKuaMxkt/c
-         Aplg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1789602391; x=1790207191;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=QNW9318VOQ/wFxjWMtki1+FfnIEEUWMGlbgLd/WFIPw=;
-        b=XvZjSCShVj5/k7ioVYwfW79n5/38CedM+muXAcicAe1Y7fwWYx4qXahUamWPT3l2c1
-         o5tl7/IbjSmIDhsbVywM14KZ6EmpsNhIAPfmUJMEato46Qnn8IN59GZBZCxgT3JKeW+1
-         Zu989ztVYarGMvyD30sKzaDQtHzBKnuE4k4Gkrx9F+mXf6DKRvMYm9qtTMxtGAOIj3C2
-         TyKEDiQqBSeU/AvusUMgJn7oogsv4vGlZO3KwLV3AUupO7ZvZCWr3LxQVd9jeGeB4pxs
-         tMw/Sv+mhtCxYNSdVnq8Y0tw6SBQW37bI+RQFlDy1t70qV9ktakY6LdENAq0V6dKiu6t
-         gvdg==
-X-Gm-Message-State: AFuF++leHdb539JcUnZsAtxiBppVrL+mI1G2GbE48PkL5D2tfhL5GfgB
-	AC71hoc65qSwyJqxZSlAgngyXmmqCQ+JPTMeziReZJkaFo/GkOP/tmOwN+mh5pnS9uk=
-X-Gm-Gg: AYBFou2dhfpKBqz6fVoPcQ3zX81tUocoOXwGM4oXJwBwqu60xAIQyvACloiz8NP9qZU
-	Op+ek8QKwzn9Z7dCdcpLZztM3q9rn0B5fDHJz3hBwE9fN1sMzwoBwdn7Xdpjc3TYYFgMLlUSvbE
-	r+LwwknaGPVlnWvsoDQ8I91/IWuKpbcFKEY9+gOhLX72jQUk+0dXk+qHDBw70KTb215AlNyjMWW
-	GpXDfNi33HEWnjWzaJvaKB+cOHh4mR1i4Ys62ig4f08qK3Vwc0Lf/BoBOXtB4obWdsjfqfbEVSy
-	qgiyb5kcQQnlKz8yz4cK54T40dfBZS3iWyoyZE2V/ucg98NAp1mHG4zC5zkCM0GoGv4M1+DFBrO
-	8Luj+GW3teIl9Qqx1LoVFvEsUcflDaV2XoIDBstbVc5XjFShS/uu7Bi9FxC0HSmK/xqQ9HgzFsG
-	0yRqrL7TPF/E1FTulcyLz7g6vezaiWi00VIQz4BueiM7x/jw+I9ET6L5fUELv8DC4=
-X-Received: by 2002:a05:6402:1e92:b0:6aa:1112:62ce with SMTP id 4fb4d7f45d1cf-6aa2241b34cmr5523581a12.17.1789602391201;
-        Wed, 16 Sep 2026 16:46:31 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-39e35b6a350sm1859564a91.0.2026.09.16.16.46.27
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 16 Sep 2026 16:46:30 -0700 (PDT)
-Message-ID: <742c9d7a-ec2c-496c-9a95-0c70863fb59b@suse.com>
-Date: Thu, 17 Sep 2026 09:16:25 +0930
+	s=arc-20240116; t=1789611671; c=relaxed/simple;
+	bh=HlizVZr1fDBuiVc3LJZPmbtEuIF/O6EeaRBwsMufKPM=;
+	h=To:From:Subject:Mime-Version:Content-Type:Message-Id:Date; b=a9ySzJaFHVs7KkDmsgfg/SVX6f4wKyt09O4CeujhUOwH4wWLiIvhtGaVp38plSTrPmxqrI2ixB1HFWeFAgwC51TetCKDJ9J6v0YDYLNy2JYpVxtiuqmaqHVtwn4C2e4fUr3qN0vxQB4azjGyTT5RBjvP90FQNy7inZrzCCq1u1o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=knowledgelink-corp.jp; spf=pass smtp.mailfrom=magerr.combzmail.jp; arc=none smtp.client-ip=160.16.65.223
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=knowledgelink-corp.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=magerr.combzmail.jp
+Received: by r9220.ps.combzmail.jp (Postfix, from userid 99)
+	id 09300C0CAF; Thu, 17 Sep 2026 11:07:27 +0900 (JST)
+DKIM-Filter: OpenDKIM Filter v2.11.0 r9220.ps.combzmail.jp 09300C0CAF
+To: linux-btrfs@vger.kernel.org
+From: =?ISO-2022-JP?B?GyRCJUolbCVDJTglaiVzJS8bKEI=?= <info@knowledgelink-corp.jp>
+X-Ip: 3180941903955110
+X-Ip-source: k85gj73p48dnsa9wu0p6gd
+Precedence: bulk
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+Subject: =?ISO-2022-JP?B?GyRCTSUkNyQkPFJEOSROGyhCTkc=?=
+ =?ISO-2022-JP?B?GyRCOVRGMBsoQg==?=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: add "/dev/root" exception for device path update
-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <3e3164206d23ef991b9bd76dab6706238592cfb0.1789202516.git.wqu@suse.com>
- <20260914171602.GO54722@twin.jikos.cz>
- <f6f95c21-da42-45b0-9fd4-4c855e677b1c@gmx.com>
- <20260916135232.GV54722@twin.jikos.cz>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
- Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
- SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
- YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
- 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
- vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260916135232.GV54722@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-2022-jp
+Content-Transfer-Encoding: 7bit
+X-MagazineId: 3p9w
+X-uId: 6764305539486065704185541023
+X-Sender: CombzMailSender
+X-Url: http://www.combzmail.jp/
+Message-Id: <20260917020822.09300C0CAF@r9220.ps.combzmail.jp>
+Date: Thu, 17 Sep 2026 11:07:27 +0900 (JST)
 
+$B!!(B
+$B!!Cf>.4k6H$N7P1D<TMM$X(B
+$B!!(B
+$B!!!&<R0w$N%b%A%Y!<%7%g%s$r>e$2$h$&$H@<$r$+$1$k(B
+$B!!!&8=>l$N%H%i%V%k$K!"<+$i@hF,$KN)$C$FBP1~$9$k(B
+$B!!(B
+$B!!$b$7!"<RD9$,$3$l$i$rN(@h$7$F$$$k$h$&$G$"$l$P(B
+$B!!;DG0$J$,$i!"$=$NAH?%$N@.D9$O$=$3$G;_$^$j$^$9!#(B
+$B!!(B
+$B!!<RD9$N!HM%$7$5!I$,!"<R0w$N4E$($r@8$_!"@UG$46$rC%$$(B
+$B!!!V;X<(BT$A?M4V!W$rNL;:$9$kAuCV$K$J$C$F$$$k$+$i$G$9!#(B
+$B!!(B
+$B!!(B
+$B!!(B4,800$B<R$N7P1D<T$,>W7b$r<u$1$?!"(B
+$B!!NI$+$l$H;W$C$F$d$C$F$7$^$&!V<RD9$N(BNG$B9TF0!W$N@5BN!#(B
+$B!!(B
+$B!!AH?%$r7`E*$KJQ$($k$?$a$N%&%'%S%J!<$G$9!#!!(B
+$B!!$b$7?4Ev$?$j$,$"$l$P!"0lEY$4;kD0$/$@$5$$!#!!(B
+$B!!(B
+$B!!(B>>$B;kD0M=Ls$O$3$A$i(B
+$B!!(Bhttps://knowledge-co.jp/shikigaku5/
+$B!!(B
+----------------------------------------------
+$B!!(B
+$B!!%F!<%^(B $B!'!!$=$l!"4m81$G$9(B $B!X<RD9$N(BNG$B9TF0!Y(B
+$B!!!!!!!!!!(B $B!A(B $B$=$N9TF0$,!"AH?%Jx2u$r>7$/(B $B!A(B
+$B!!(B
 
+$B!!F|(B $BDx!!!'(B 9$B7n(B29$BF|!J2P!K(B13:00$B%9%?!<%H(B
+$B!!!!!!!!!!(B  10$B7n(B14$BF|!J?e!K(B13:00$B%9%?!<%H(B
+$B!!!!!!!!!!(B  $B"(FbMF$OF1$8$G$9!#(B
+$B!!!!!!!!!!(B
+$B!!2q(B $B>l!!!'(BZoom$B3+:E(B
+$B!!Dj(B $B0w!!!'@hCe(B100$BL>!JHqMQ$OITMW!K(B
+----------------------------------------------
+$B!!"(7P1DAX$NJ}8BDj$G$9(B
+$B!!(B
+$B!!(B
+$B!!$J$<!"<R0w$O!V8@$o$l$?$3$H!W$7$+$d$i$J$$$N$+!#(B
+$B!!$J$<!"<!@$Be$N%j!<%@!<8uJd$,0i$?$J$$$N$+!#(B
+$B!!(B
+$B!!$=$l$O!"G=NO$NLdBj$G$O$J$/!"(B
+$B!!(B
+$B!!NI$+$l$H;W$C$FB3$1$F$$$k!V<RD9$NG[N8!W$3$=$,!"(B
+$B!!AH?%@.D9$r;_$a$k!":GBg$N%\%H%k%M%C%/$+$b$7$l$^$;$s!#(B
+$B!!(B
+$B!!K\%;%_%J!<$G$O!"(B4,800$B<R0J>e$,F3F~$7$?(B
+$B!!FH<+$NAH?%O@!V<13X!W$K4p$E$-!"<RD9$N!V(BNG$B9TF0!W$H(B
+$B!!??$N7P1D<T$XC&Hi$9$k$?$a$N%^%$%s%I%;%C%H$rEA<x$7$^$9!#(B
+$B!!(B
+$B!!(B
+$B!!!Z%;%_%J!<FbMF(B($B0lItH4?h(B)$B![(B
+$B!!(B $B!{(B NG$B9TF0(B3$BA*(B
+$B!!(B $B!{(B $B$J$<M%=($J(BNo.2$B$dItD9$,0i$?$J$$$N$+(B
+$B!!(B $B!{(B $B%^%M%8%a%s%H%9%?%$%k$NJQ3W$K$D$$$F(B
+$B!!(B $B!{(B $BF3F~4k6H$N;vNc(B
+$B!!(B
+$B!!!V4IM}?&$,0i$C$?$iG$$;$k!W$G$O$J$/!VG$$;$k$+$i0i$D!W(B
+$B!!$H$$$&;W9M$N5UE>$rDs8@!#(B
+$B!!(B
+$B!!8=>l$+$i!VNd$?$/$J$C$?!W$H;W$o$l$k$3$H$r62$l$:(B
+$B!!5!G=E*$J3,AX9=B$$r:n$k$3$H$G(B
 
-在 2026/9/16 23:22, David Sterba 写道:
-> On Tue, Sep 15, 2026 at 06:58:48AM +0930, Qu Wenruo wrote:
->>>> [CAUSE]
->>>> Although using btrfs without an initramfs is not recommended (if a new
->>>> device is added to the rootfs, the system can no longer boot, as there
->>>> is no way to register all devices), there is still a minority of users
->>>> doing this.
->>>
->>> To avoid scanning there's the -o device=/path mount option, passed as
->>> "rootflags=" kernel parameter.
->>
->> That won't work. At that time there is no full "/dev/", those
->> bdev_open_file() call will just fail.
-> 
-> I've researched if it's possible to have multi-device root in this case
-> and with some effort it is. The early block device lookup used for the
-> root= parameter can be used too, but has some limitations due to the
-> __init section and usage from a module. But DM and MD do that lookup or
-> auto detection. I'm not going to implement this unless there's user
-> demand though.
-> 
-> One prominent user of initramfs-less systems is virtme-ng, it's not
-> affected by this bug because it does various tricks with the host system
-> to share and virtualize what is possible.
+$B!!7k2L$H$7$F<R0wA40w$r<i$j(B
+$B!!Mx1W$r:GBg2=$5$;$kF;6Z$rL@<($7$^$9!#(B
 
-BTW, just back to the original patch, although you didn't give a 
-reviewed-by tag, I think it's time for us to push it to for-next for 
-more testing.
+$B!!!VM%$7$5!W$G?M$rF0$+$9$N$G$O$J$/(B
+$B!!!V@5$7$5!W$GAH?%$rF0$+$9!#(B
 
-If anyone has some objection, we can still remove it from the queue if 
-needed.
+$B!!2;@<$d$*4i$,I=$K=P$k$3$H$O$4$6$$$^$;$s$N$G(B
+$B!!$*5$7Z$K$4;kD0$/$@$5$$!#(B
+$B!!(B
+$B!!(B>>$B;kD0M=Ls$O$3$A$i(B
+$B!!(Bhttps://knowledge-co.jp/shikigaku5/
+$B!!(B
+$B!!(B
+-----------------------
+$B!!0lHL<RCDK!?M(B $B%J%l%C%8%j%s%/(B
+$B!!El5~ET@iBeED6h?@ED>.@nD.(B1-8-3
+$B!!EEOC!'(B03-5256-7638
 
-Thanks,
-Qu
+$B!!%;%_%J!<$N$40FFb$,ITMW$JJ}$OBgJQ;DG0$G$O$4$6$$$^$9$,!"(B
+$B!!2<5-(BURL$B$h$j<jB3$-2<$5$$$^$;!#(B
+$B!!(B
+$B!!%a!<%kG[?.$N%o%s%/%j%C%/2r=|$O$3$A$i(B
+$B!!(Bhttps://fc-knowledgelink-corp.jp/mail/
+$B!!(B

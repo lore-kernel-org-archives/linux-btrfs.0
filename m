@@ -1,87 +1,86 @@
 Received: from mx0a-00364e01.pphosted.com (mx0a-00364e01.pphosted.com [148.163.135.74])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 709C23C7E19
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 04:00:40 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E87E3BE165
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 04:00:38 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.135.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789617643; cv=none; b=jNXhl6D0epNcnhyUR+jKqUKUCZJ7X2UF/EyhM77BT8PyysHfaMLGeTXqggWIAoWKDVk3enU97Z0SpeN3hDPXQGtCAgA7hZOPAZ2yaWrkSNi68g95gVYelSYzApNnSqAvMxeB9+ZktZgPCgjV6bf+JQh25NIBqO9NhIg0wx1oXQg=
+	t=1789617644; cv=none; b=W/33+mQ/135vD1xcCOZmgt9aJbSJWkantGRrzODOomIGKzGaVqjfAZxZTLu/PMprVrMSKzi8ONA/05g4rCWRZe+m7q4MLPOa4ASoN2NgsMHVopZ+Ita3aI9BEFsbyLI7Kdon5l6v24JbgEm/U3/e795OhyDTmYonJnm3L2U3XRw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789617643; c=relaxed/simple;
-	bh=NmMgkHqeel8gBCXCalVFD7JPoOZ00iX3XH9QHMsWeKk=;
+	s=arc-20240116; t=1789617644; c=relaxed/simple;
+	bh=3uFWE4KsDxoLY6uWS8UOPo4gerxSLYDHcrnB7XQk2E0=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=KZoI/edbcqouZBECLnnXIIWW5o2V/P6lhVPFL6cyVYED3ts9ZffMKSluO0pfvchQyzrkvE8FisoIoke8gVL1cZJtgZiSRzLBBBauVq7ErmMV7w47VlziEkLQYTbQ69v3vLQpqLCunyYYIoaCKwAcUoiJagzq6HQQeYWvm+0dYdo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=G9doapVd; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=Vx+fmQ23; arc=none smtp.client-ip=148.163.135.74
+	 In-Reply-To:To:Cc; b=FIzMef4GLHkNEgnoII+29NCLaC1ZqlUcgFjLnD6tifY/SyNSdzTM6M0CvrLGuJM8vCSaHz6jhkWRMQlFaOVaZ1isS7g6wPql91mf40UQYOOIMvl7vkXk79pA8t0nPTxm+Ph11jXN8Ro21f5OCQgj9cHG+Kw2xsRMuZiyDNn9/84=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=fZo3vAsa; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=jAuPutI/; arc=none smtp.client-ip=148.163.135.74
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="G9doapVd";
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="Vx+fmQ23"
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="fZo3vAsa";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="jAuPutI/"
 Received: from pps.filterd (m0167072.ppops.net [127.0.0.1])
-	by mx0a-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 68H2YA8U1938436
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 00:00:39 -0400
+	by mx0a-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 68H2a1aA1942100
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 00:00:32 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
 	cc:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pps01; bh=YAEw
-	vlW4G7rbS9GXrhM21VB8FEsa56Dol+SgMsWIET8=; b=G9doapVd3p46zVap/rBT
-	YynUSUJd8hmLHN7o5lK7brKQ2qih5py1Fu3dSvjsNMCU/T71xVvYSLeIDaXpC6ee
-	lfPVMzY0D1x/t+NpwDF7IROREZgnOwqdTv12z3s/XZ5nVNQI80MPZ5r/LvPls5v8
-	crodKfv7Nzx5dlDNhBLEXRKvW+7h3A91kNun+hNbn2beHSHvm6H9qKriXcZPth+5
-	A8W5iq+WLjdWifT37zyvMCP0DwGOOkgBrmzatgvoA2kKztuvp8mzF0Hn/z7DgANk
-	zxJjOJx//6F1Pp+01a9yM3tRx8iBSNVq3Gl8zaEPdXligxJjrz2gUGi/fZ0GEnsN
-	aA==
-Received: from mail-qk1-f197.google.com (mail-qk1-f197.google.com [209.85.222.197])
-	by mx0a-00364e01.pphosted.com (PPS) with ESMTPS id 4gr33qsscv-1
+	:message-id:mime-version:references:subject:to; s=pps01; bh=fjNt
+	osJuo8h74+90X2/DVScI1uqlFKNEUij0jXLAjQg=; b=fZo3vAsaEePN/OgQHlfR
+	Hcke4SYf/nKHTLB7amwjaNGU7rO0+z5IZRhkjHN9q0dd15RWkUzn3KvW6pOat0v8
+	2eOaY1M0foWVSd5mENYpsb/djE0IjGpJJnizcxAKP+Cj3ySn5WZ1FBMoG6eCxMQe
+	sua174J9kADcjRlbi1PWvKMaGpi+Z9XytOin00UPssTMGmPELLdkBe1RNAFJ9fiO
+	VJvwyj8DvMIJ+UxZDhQGHea2Vnk6hkmEACEWCM092Lv2U1WM2d4NGDxDDCRd+GU6
+	K2laKnwndOqrVMN2BCWfLy6vIFQi1ZZNTEj42CiiGgBnvgoIf2gK380DV6hPPvFe
+	Fw==
+Received: from mail-qv1-f71.google.com (mail-qv1-f71.google.com [209.85.219.71])
+	by mx0a-00364e01.pphosted.com (PPS) with ESMTPS id 4gr33qssc6-1
 	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 00:00:38 -0400 (EDT)
-Received: by mail-qk1-f197.google.com with SMTP id af79cd13be357-92e82060977so77745785a.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 21:00:38 -0700 (PDT)
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 00:00:31 -0400 (EDT)
+Received: by mail-qv1-f71.google.com with SMTP id 6a1803df08f44-9105cf082f7so7241736d6.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2026 21:00:31 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1789617638; x=1790222438; darn=vger.kernel.org;
+        d=columbia.edu; s=lionmail; t=1789617631; x=1790222431; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=YAEwvlW4G7rbS9GXrhM21VB8FEsa56Dol+SgMsWIET8=;
-        b=Vx+fmQ23dzZKG0iSPzgaThHiT9b2T0s5gqTwps/Q75gQRBBzCGNSwpbEVlhav9wUW8
-         qKfynbjQnbngrzRdK5VwRs8U/NvxWypyxj9/0f2Aaz1dGXi9RzYVtKNpfePxTjgM8py2
-         AXQ+HjJ31UXj5khk1RlDn3dTvxoK13p7z/Nb+Xl5vmWSsi0WqliFv73SVKvZc37U1uZo
-         93q3y/PupGmsCNJSfLbHtOGJIsOd7lvo2lvuExc+xrlBJTJoQyJ5w1v60vFqWmFawh0Z
-         Al8tU6lXxfi3d3FKMZCgqn1KpXRSCLRVHtfJq14Kkj5/QCOscIoddI/qK44MFtoPXG1L
-         m/Rg==
+        bh=fjNtosJuo8h74+90X2/DVScI1uqlFKNEUij0jXLAjQg=;
+        b=jAuPutI/X/ygCD23GR2s1gvm0cwymR+BmlbjMEmMDHZjqJVKWd2dYFeW6YmgM97Egq
+         YGTirM2PnbM3tHS3I1KA1TANTDBrfffBJ32HbF8RMW/4I5hePcdh3QaJ79N+mJcnoVYc
+         oeHLqri/QazvxPomMzuUTxcC/PEkiW4E50FVYRLFzTtcrZjmG+xnyssUHfCJgzUaYucf
+         NedwAIkFnDdeye0oUp9ghcyL8rY6FjAzoZsEDEnW832XJP7K9oUHn1Oc7N3FKnZGLW5s
+         VD/w2Q41IWdi+J3iZUkj2Q3aGDmq9xwaZ+sbhN+qmZoC6/l2xgtLEMQOVDCdcweKO+Zv
+         aqyw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1789617638; x=1790222438;
+        d=1e100.net; s=20260707; t=1789617631; x=1790222431;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=YAEwvlW4G7rbS9GXrhM21VB8FEsa56Dol+SgMsWIET8=;
-        b=A/+gQimh84NfWRKD0oEzalruNBq5Xpof3w+1KRfr+vBQ2g711/rJsVG2agoYYdlcxT
-         OpWCJGCM4j6BdFLYj6iGBLKbmCldxwxFH5pYopY/+HpEjlrT+cEf1EZtEgZ9tENNNvz8
-         k+SKR6P7NvOufhfEtl3ZyW+vvdtybDAhi2z6s6npZuR6WyC/EDnRd+h/nK2nBIvGn1w8
-         pgdULkrkFvHWO0ZsqLgFIgXLmnR3EbJqLp0GIpJDDwHymUrIQuYFu4GHLr/IPLpRLVEZ
-         8vvSXKF59yyzWJ5YIvbV+OWL8ZXxlmPmUzGbjoIvdxQyJLbO7H+BLdejf8ley816usZx
-         4TLg==
-X-Gm-Message-State: AFuF++kWa4TD0KuRtOvyndaiWwdUmVCdeKlZuzjeaLOpvFmdBbybm1KZ
-	7QhxqNuCISrtfLMwxC8EHyEii9ivqTDwMrsxKLW6PjrIj7M58s3VP4g6fTSkj67gLQbT2G7hx5t
-	vn4AGkZoYYXBcn3IjHF4DR+/5ZTp34KWH3f9Pt+CRyze6qxGHJPtEBMQLo0yA
-X-Gm-Gg: AYBFou1H5T4WkUHRkm8Yv6DzROgi0gYapGE8ClI4PDcuNgWVF9zE2bVeOp8Of/6QlI5
-	h1Xhy2ve6U3EObuMe46CNWDJ8mmPKGVP4fzLv2k4+/R4RMd2NFp/9e7v4mdCvcZV6GPkd5TvrGm
-	SFT58f7hLGA/w7Gx7eBKNwWR2o0EHJ6QXlp75Nks9pohpYFUyTaHU7IP9CHhzLminoFrpBRqPhB
-	XNqhNqz+d5Grhth8LUZJHms+k68NjZWPJGLQcH1JY1WQCht3gbcpC8xKDAfNK9th4BZXjykjXZ3
-	JtgFslT3poFeuJSL/F6rJ0tCVBdjheOKAYrAubkFlaK5JMg7Dezm1qOeksbArJiQU6R/UGc0MSg
-	3jEaGHjZy0zpGfSapwG0oLRx6NO34ch11ixQMfq+Q0BWkiA==
-X-Received: by 2002:a05:620a:3949:b0:939:fbe0:9abc with SMTP id af79cd13be357-93bc6240b9bmr368870685a.9.1789617637471;
-        Wed, 16 Sep 2026 21:00:37 -0700 (PDT)
-X-Received: by 2002:a05:620a:3949:b0:939:fbe0:9abc with SMTP id af79cd13be357-93bc6240b9bmr368866285a.9.1789617637047;
-        Wed, 16 Sep 2026 21:00:37 -0700 (PDT)
+        bh=fjNtosJuo8h74+90X2/DVScI1uqlFKNEUij0jXLAjQg=;
+        b=ynr+asSUZb3qwVlfw2FI5KfgUuHCHZTlA0NEcGeYHgMiN/x1hsHSL68Mj23fRmJk7z
+         ICwx+FnhFIpmyQdwDdHT2WO2UyUAGSTVCCUoFsHm7BEexXBeRilhCRnS6OR6rn1CW5bs
+         e5mn2RWe9ykZAVlOLlHbysb1jfnFsmM27f1NMfAT/2ECZFGqaFEqUbDl91M0Uk2eH3eY
+         JROAwU4yGL7o4MhjjOYtBbVmKHKryESPOCPlp0Q8n9MuBetFzNAOC4PI+xIdnTBa3hsC
+         T1khfIAKZG0YF7AWLBym+FXvNN0g/DPjmTd/2eLM8tSOYGCG2hJjfRWBMrPkjuaFBLRU
+         65xA==
+X-Gm-Message-State: AFuF++nFK/98kFM3h8lXHxk2M8r1ap78EbwaP+2CtdjkRMgQUGVOBIXF
+	w5FRuQ75DWZzzeW48Ygz22Qy+pz0LWTJBYz1UkgcCS7LkPKwU+I9Y8Gu6GwR6sPGU3XjJeQKpDN
+	OiC36QHgfSW2sq04v9s2vud1SGSEQTmSVRJaCB4DOYG0RBxpZuPKgFSD/Dqz3
+X-Gm-Gg: AYBFou0rgziudL8VVPt5UM8F7cKU8HA1TlVGgv1qlDWnZNWauPVJU9Ytdn++NdRw1jA
+	wVKy3VMzB8Ylql+KJ2DtrI5IpiUdMtmFm016/8hlmXhkwztEKoPX6cPqrJRH/bfxOxcTASA9zwh
+	fnQ4YvENFDyACg/J+qIptP+E20sym4hQQ0F++MpBXiNDK3QRIHpQ1OyszP03WD0Wv8ydbtNjwa2
+	ZRoMVGJLEJz1ek1Spkn2JOCkeqkOB3anqTRH1KUjUiNiqPL3gcnhmG2fSDsfykgkLZJH7UvUOJ5
+	ksnBxkgrlWH95lPJgEz4zFAUd3vGqVrKEXzlupt9UAIqh/VWb5dpo4SQ6qlkcvqo29CSLFtVLwD
+	Q1KLcERlL5qMpx+Tq17kF+rny4aYmdHVvAb1TPyuXgap1rg==
+X-Received: by 2002:a05:6214:529b:b0:910:39e7:dbb9 with SMTP id 6a1803df08f44-9123d7c3c5amr90066156d6.33.1789617630187;
+        Wed, 16 Sep 2026 21:00:30 -0700 (PDT)
+X-Received: by 2002:a05:6214:529b:b0:910:39e7:dbb9 with SMTP id 6a1803df08f44-9123d7c3c5amr90065126d6.33.1789617629172;
+        Wed, 16 Sep 2026 21:00:29 -0700 (PDT)
 Received: from [127.0.1.1] (dyn-160-39-33-242.dyn.columbia.edu. [160.39.33.242])
-        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-9123beadde6sm41748766d6.35.2026.09.16.21.00.35
+        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-9123beadde6sm41748766d6.35.2026.09.16.21.00.28
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 16 Sep 2026 21:00:36 -0700 (PDT)
+        Wed, 16 Sep 2026 21:00:28 -0700 (PDT)
 From: Tal Zussman <tz2294@columbia.edu>
-Date: Thu, 17 Sep 2026 00:00:06 -0400
-Subject: [PATCH v3 10/17] btrfs: replace
- btrfs_set_free_space_cache_v1_active() with a cleanup helper
+Date: Thu, 17 Sep 2026 00:00:00 -0400
+Subject: [PATCH v3 04/17] btrfs: remove the v1 space cache write path
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -90,7 +89,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20260916-btrfs-remove-v1-space-cache-v3-10-10ebde03b96f@columbia.edu>
+Message-Id: <20260916-btrfs-remove-v1-space-cache-v3-4-10ebde03b96f@columbia.edu>
 References: <20260916-btrfs-remove-v1-space-cache-v3-0-10ebde03b96f@columbia.edu>
 In-Reply-To: <20260916-btrfs-remove-v1-space-cache-v3-0-10ebde03b96f@columbia.edu>
 To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
@@ -98,31 +97,31 @@ To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         Tal Zussman <tz2294@columbia.edu>
 X-Mailer: b4 0.17-dev-db0b7
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1789617622; l=4011;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1789617622; l=28350;
  i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
- bh=NmMgkHqeel8gBCXCalVFD7JPoOZ00iX3XH9QHMsWeKk=;
- b=UhE5YRTp8LlOgNlViS0FRdlQeEHTyl6iIWYpwSfIv0k1RL3bBoho0Yb5wlHlTf5UWEw7XrhFc
- Sn+BrMewnegDwV63jRkFCWb2ANsxH52hqbCAii7onbOgD1Z0q7CXIn/
+ bh=3uFWE4KsDxoLY6uWS8UOPo4gerxSLYDHcrnB7XQk2E0=;
+ b=STUTfLztoyLMDTRKz9VbukDmvvHEQpZ5Dmdl1bC4cO5IKyZ7Pl1delTQqGPvAVmV1UviePM2Y
+ Oc0XXDFJtlpDe2gpIiHHLySkHD7zkrYOh4vfyPSZv44m46B8vnazBcP
 X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
  pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
-X-Proofpoint-GUID: zwiDI0TvwWaU8CEUHZV_OSUF88wWYotp
-X-Proofpoint-ORIG-GUID: zwiDI0TvwWaU8CEUHZV_OSUF88wWYotp
-X-Authority-Analysis: v=2.4 cv=O72sLx9W c=1 sm=1 tr=0 ts=6aab65e6 cx=c_pps
- a=50t2pK5VMbmlHzFWWp8p/g==:117 a=GaPK54s0Se3oFqK5NkZy0g==:17
+X-Proofpoint-GUID: FuEIH1F-VbLlEbUZldVsX2tr2zkv9roC
+X-Proofpoint-ORIG-GUID: FuEIH1F-VbLlEbUZldVsX2tr2zkv9roC
+X-Authority-Analysis: v=2.4 cv=O72sLx9W c=1 sm=1 tr=0 ts=6aab65e0 cx=c_pps
+ a=UgVkIMxJMSkC9lv97toC5g==:117 a=GaPK54s0Se3oFqK5NkZy0g==:17
  a=IkcTkHD0fZMA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
  a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=SsB-OO3BMngHh3ZO9fOt:22
- a=UPWLJQKup_2xIvwY5mAA:9 a=QEXdDO2ut3YA:10 a=IoWCM6iH3mJn3m4BftBB:22
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTE3MDA0NyBTYWx0ZWRfX8GEUWItFnpkd
- VdbKP5tpWKIL+Fd+bUzJucUTqiClXH0m6Il3cvNFh83xTumBupjlZmqh8y1ckyQz1KTbL6VpJWB
- lHx98afUu7rXmhv7EGfyAqdnKt9XXqKiDP+MlGAnMkhLOpJGyVGocyya3ZdB6OYiMt/lkFnWrRa
- +d0GuVV2e6cgQrh+UyjVn7rwUkqY7w4puNvvruMXlxe1J1eR3gi83Www7pdAIKLlm3TeoUxaBqT
- zDarfr5XGiflt9D8Jrl81kuHppfI+jBse4qLMTZQD8RiIjT9RCHBQF5UAte3tIvl0onWIm/Y1sZ
- klQyhxsDLNi9NOj4uAITjV4naKnSBJq/xXl07wcSmmbaf6YdJBzUzIOETk5od690w3rB8hS3vKi
- pDj/1Wlysq8hPD8SDtZic0hKAm1KRbausbhEShV92OiNEmDZn0yjub0ixyhl26y/t6DxjvrIC21
- hFvb+Z5mxMOKzP/cFEA==
-X-Proofpoint-Spam-Info: AW1haW4tMjYwOTE3MDA0NyBTYWx0ZWRfXz/w5jOM+Y/jB
- Xn8keYZkNGMfXG3nCGaP0wbPmVFRM8g2B/SVGkOD94kVps0msy9fVwagraTO2fIKv4w2XyoAaNo
- ClSeIqg4RBu3EoM0+Cpsf3jF36aupPz6JUIF7cYZXSqaETPsY9n7
+ a=bWaUF2WQGDAqRP89i5YA:9 a=QEXdDO2ut3YA:10 a=1HOtulTD9v-eNWfpl4qZ:22
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTE3MDA0NyBTYWx0ZWRfX+aC0m1Lr5D2J
+ wH/tTNBvgLLui4eCe7HmswQTiOv5oXuTO0d8+WvAMs3njDQdRK5Uzg7QjCRz+7dC2GdR62zUbr5
+ /2JkCeoCcLqe7hxIazjAGz4sjc5/InZMq9IKdqzM3kP+JJDeDBqITtL/Pzzr0rmS4MX4em8BiBx
+ ah0XVKW4sNqgaIh/OyxDuFfu4l5b77+oLLDZETtW1mHXpqM6WE1jrWVTRCSWerpJglIm8aC4DlR
+ XTfCA1g2s/yPsKtyggkqVTdK3TKMLoZ2aXT20U20cg6IqSBxw2j/80/RU3lL5iqBTtiS/J+DwDL
+ lWkWNWygFX9FoZw1VHThDxdkiePwvv/tWXyBiFgbLtz7wZUm+7QWYHDhkKzMgYSNxszdYkERYZh
+ a4vwbG2RoqoSqRcme0HWK8zgqSSHR6LtF9b4hEorI8R5JtugiaEWaHiMEr4b3W0r4nO+OJAj3E2
+ UFX4n/qZqVRPFr/0YEg==
+X-Proofpoint-Spam-Info: AW1haW4tMjYwOTE3MDA0NyBTYWx0ZWRfX41JmqZQkdjTA
+ XgINJWl5ROYQMGhUJUAbOnqD1fAjGt9bOi3BzGTymfsJs2XNvmravywWoFVM9MSDtzSl6o3yPDo
+ HMLzcfQqaEA3RbZBw+POczYs7Z9uiwcRqAMISQBdCtRjeRiQ5vQf
 X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11907
  signatures=596817
 X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
@@ -132,108 +131,901 @@ X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
  route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2609040000
  definitions=main-2609170047
 
-The only caller passes active = false. Turn it into
-btrfs_cleanup_free_space_cache_v1() and fold the block group loop into
-it.
+Nothing writes out a v1 space cache any more. Remove the writers and
+their io_ctl helpers, along with create_free_space_inode() and
+btrfs_prealloc_file_range_trans(), whose only user was the cache inode
+creation. The io_list and io_ctl block group fields were only used by
+the writers, so remove them too.
+
+btrfs_truncate_free_space_cache() only needed the block group to wait
+for and clear in-flight cache IO, so drop that parameter.
 
 Assisted-by: Claude:claude-fable-5-1
 Signed-off-by: Tal Zussman <tz2294@columbia.edu>
 ---
- fs/btrfs/disk-io.c          |  2 +-
- fs/btrfs/free-space-cache.c | 42 ++++++++++++------------------------------
- fs/btrfs/free-space-cache.h |  2 +-
- 3 files changed, 14 insertions(+), 32 deletions(-)
+ fs/btrfs/block-group.c      |   4 -
+ fs/btrfs/block-group.h      |   3 -
+ fs/btrfs/btrfs_inode.h      |   4 -
+ fs/btrfs/free-space-cache.c | 688 --------------------------------------------
+ fs/btrfs/free-space-cache.h |  10 -
+ fs/btrfs/inode.c            |   9 -
+ fs/btrfs/relocation.c       |   2 +-
+ 7 files changed, 1 insertion(+), 719 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 2ac0e7c2f1e4..323fbbea48e5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3149,7 +3149,7 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
- 	}
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 857da5564cf8..5c2a57243de5 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -1268,7 +1268,6 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
  
- 	if (btrfs_free_space_cache_v1_active(fs_info)) {
--		ret = btrfs_set_free_space_cache_v1_active(fs_info, false);
-+		ret = btrfs_cleanup_free_space_cache_v1(fs_info);
- 		if (ret)
- 			return ret;
- 	}
+ 	spin_lock(&trans->transaction->dirty_bgs_lock);
+ 	WARN_ON(!list_empty(&block_group->dirty_list));
+-	WARN_ON(!list_empty(&block_group->io_list));
+ 	spin_unlock(&trans->transaction->dirty_bgs_lock);
+ 
+ 	btrfs_remove_free_space_cache(block_group);
+@@ -2412,7 +2411,6 @@ static struct btrfs_block_group *btrfs_create_block_group(
+ 	INIT_LIST_HEAD(&cache->ro_list);
+ 	INIT_LIST_HEAD(&cache->discard_list);
+ 	INIT_LIST_HEAD(&cache->dirty_list);
+-	INIT_LIST_HEAD(&cache->io_list);
+ 	INIT_LIST_HEAD(&cache->active_bg_list);
+ 	btrfs_init_free_space_ctl(cache, cache->free_space_ctl);
+ 	atomic_set(&cache->frozen, 0);
+@@ -4293,7 +4291,6 @@ void btrfs_put_block_group_cache(struct btrfs_fs_info *info)
+ 			block_group->inode = NULL;
+ 			spin_unlock(&block_group->lock);
+ 
+-			ASSERT(block_group->io_ctl.inode == NULL);
+ 			iput(&inode->vfs_inode);
+ 		} else {
+ 			spin_unlock(&block_group->lock);
+@@ -4430,7 +4427,6 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 		btrfs_remove_free_space_cache(block_group);
+ 		ASSERT(block_group->cached != BTRFS_CACHE_STARTED);
+ 		ASSERT(list_empty(&block_group->dirty_list));
+-		ASSERT(list_empty(&block_group->io_list));
+ 		ASSERT(list_empty(&block_group->bg_list));
+ 		ASSERT(refcount_read(&block_group->refs) == 1);
+ 		ASSERT(block_group->swap_extents == 0);
+diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+index 97c8565ae4fc..939d4bfbd4b4 100644
+--- a/fs/btrfs/block-group.h
++++ b/fs/btrfs/block-group.h
+@@ -228,9 +228,6 @@ struct btrfs_block_group {
+ 
+ 	/* For dirty block groups */
+ 	struct list_head dirty_list;
+-	struct list_head io_list;
+-
+-	struct btrfs_io_ctl io_ctl;
+ 
+ 	/*
+ 	 * Incremented when doing extent allocations and holding a read lock
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 1082fa92c145..26cc5d1aca4c 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -594,10 +594,6 @@ int btrfs_wait_on_delayed_iputs(struct btrfs_fs_info *fs_info);
+ int btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 			      u64 start, u64 num_bytes, u64 min_size,
+ 			      loff_t actual_len, u64 *alloc_hint);
+-int btrfs_prealloc_file_range_trans(struct inode *inode,
+-				    struct btrfs_trans_handle *trans, int mode,
+-				    u64 start, u64 num_bytes, u64 min_size,
+-				    loff_t actual_len, u64 *alloc_hint);
+ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct folio *locked_folio,
+ 			     u64 start, u64 end, struct writeback_control *wbc);
+ void btrfs_queue_writepage_fixup(struct btrfs_inode *inode, struct folio *folio);
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 3ba9ed4a39d0..fb6ff3db1241 100644
+index e2af75a205ea..336b546b0a94 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -2891,47 +2891,29 @@ bool btrfs_free_space_cache_v1_active(struct btrfs_fs_info *fs_info)
- 	return btrfs_super_cache_generation(fs_info->super_copy);
+@@ -164,78 +164,6 @@ struct inode *lookup_free_space_inode(struct btrfs_block_group *block_group,
+ 	return inode;
  }
  
--static int cleanup_free_space_cache_v1(struct btrfs_fs_info *fs_info,
--				       struct btrfs_trans_handle *trans)
-+int btrfs_cleanup_free_space_cache_v1(struct btrfs_fs_info *fs_info)
- {
--	struct btrfs_block_group *block_group;
-+	struct btrfs_trans_handle *trans;
- 	struct rb_node *node;
-+	int ret;
- 
- 	btrfs_info(fs_info, "cleaning free space cache v1");
- 
--	node = rb_first_cached(&fs_info->block_group_cache_tree);
--	while (node) {
--		int ret;
+-static int __create_free_space_inode(struct btrfs_root *root,
+-				     struct btrfs_trans_handle *trans,
+-				     struct btrfs_path *path,
+-				     u64 ino, u64 offset)
+-{
+-	struct btrfs_key key;
+-	struct btrfs_disk_key disk_key;
+-	struct btrfs_free_space_header *header;
+-	struct btrfs_inode_item *inode_item;
+-	struct extent_buffer *leaf;
+-	/* We inline CRCs for the free disk space cache */
+-	const u64 flags = BTRFS_INODE_NOCOMPRESS | BTRFS_INODE_PREALLOC |
+-			  BTRFS_INODE_NODATASUM | BTRFS_INODE_NODATACOW;
+-	int ret;
 -
--		block_group = rb_entry(node, struct btrfs_block_group, cache_node);
--		ret = btrfs_remove_free_space_inode(trans, NULL, block_group);
--		if (ret)
--			return ret;
--		node = rb_next(node);
+-	ret = btrfs_insert_empty_inode(trans, root, path, ino);
+-	if (ret)
+-		return ret;
+-
+-	leaf = path->nodes[0];
+-	inode_item = btrfs_item_ptr(leaf, path->slots[0],
+-				    struct btrfs_inode_item);
+-	btrfs_item_key(leaf, &disk_key, path->slots[0]);
+-	memzero_extent_buffer(leaf, (unsigned long)inode_item,
+-			     sizeof(*inode_item));
+-	btrfs_set_inode_generation(leaf, inode_item, trans->transid);
+-	btrfs_set_inode_size(leaf, inode_item, 0);
+-	btrfs_set_inode_nbytes(leaf, inode_item, 0);
+-	btrfs_set_inode_uid(leaf, inode_item, 0);
+-	btrfs_set_inode_gid(leaf, inode_item, 0);
+-	btrfs_set_inode_mode(leaf, inode_item, S_IFREG | 0600);
+-	btrfs_set_inode_flags(leaf, inode_item, flags);
+-	btrfs_set_inode_nlink(leaf, inode_item, 1);
+-	btrfs_set_inode_transid(leaf, inode_item, trans->transid);
+-	btrfs_set_inode_block_group(leaf, inode_item, offset);
+-	btrfs_release_path(path);
+-
+-	key.objectid = BTRFS_FREE_SPACE_OBJECTID;
+-	key.type = 0;
+-	key.offset = offset;
+-	ret = btrfs_insert_empty_item(trans, root, path, &key,
+-				      sizeof(struct btrfs_free_space_header));
+-	if (ret < 0) {
+-		btrfs_release_path(path);
+-		return ret;
 -	}
+-
+-	leaf = path->nodes[0];
+-	header = btrfs_item_ptr(leaf, path->slots[0],
+-				struct btrfs_free_space_header);
+-	memzero_extent_buffer(leaf, (unsigned long)header, sizeof(*header));
+-	btrfs_set_free_space_key(leaf, header, &disk_key);
+-	btrfs_release_path(path);
+-
 -	return 0;
 -}
 -
--int btrfs_set_free_space_cache_v1_active(struct btrfs_fs_info *fs_info, bool active)
+-int create_free_space_inode(struct btrfs_trans_handle *trans,
+-			    struct btrfs_block_group *block_group,
+-			    struct btrfs_path *path)
 -{
--	struct btrfs_trans_handle *trans;
+-	int ret;
+-	u64 ino;
+-
+-	ret = btrfs_get_free_objectid(trans->fs_info->tree_root, &ino);
+-	if (ret < 0)
+-		return ret;
+-
+-	return __create_free_space_inode(trans->fs_info->tree_root, trans, path,
+-					 ino, block_group->start);
+-}
+-
+ /*
+  * inode is an optional sink: if it is NULL, btrfs_remove_free_space_inode
+  * handles lookup, otherwise it takes ownership and iputs the inode.
+@@ -292,7 +220,6 @@ int btrfs_remove_free_space_inode(struct btrfs_trans_handle *trans,
+ }
+ 
+ int btrfs_truncate_free_space_cache(struct btrfs_trans_handle *trans,
+-				    struct btrfs_block_group *block_group,
+ 				    struct inode *vfs_inode)
+ {
+ 	struct btrfs_truncate_control control = {
+@@ -306,33 +233,6 @@ int btrfs_truncate_free_space_cache(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *root = inode->root;
+ 	struct extent_state *cached_state = NULL;
+ 	int ret = 0;
+-	bool locked = false;
+-
+-	if (block_group) {
+-		BTRFS_PATH_AUTO_FREE(path);
+-
+-		path = btrfs_alloc_path();
+-		if (!path) {
+-			ret = -ENOMEM;
+-			goto fail;
+-		}
+-		locked = true;
+-		mutex_lock(&trans->transaction->cache_write_mutex);
+-		if (!list_empty(&block_group->io_list)) {
+-			list_del_init(&block_group->io_list);
+-
+-			btrfs_wait_cache_io(trans, block_group, path);
+-			btrfs_put_block_group(block_group);
+-		}
+-
+-		/*
+-		 * now that we've truncated the cache away, its no longer
+-		 * setup or written
+-		 */
+-		spin_lock(&block_group->lock);
+-		block_group->disk_cache_state = BTRFS_DC_CLEAR;
+-		spin_unlock(&block_group->lock);
+-	}
+ 
+ 	btrfs_i_size_write(inode, 0);
+ 	truncate_pagecache(vfs_inode, 0);
+@@ -356,8 +256,6 @@ int btrfs_truncate_free_space_cache(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_update_inode(trans, inode);
+ 
+ fail:
+-	if (locked)
+-		mutex_unlock(&trans->transaction->cache_write_mutex);
+ 	if (ret)
+ 		btrfs_abort_transaction(trans, ret);
+ 
+@@ -490,21 +388,6 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
+ 	return 0;
+ }
+ 
+-static void io_ctl_set_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
+-{
+-	io_ctl_map_page(io_ctl, 1);
+-
+-	/*
+-	 * Skip the csum areas.  If we don't check crcs then we just have a
+-	 * 64bit chunk at the front of the first page.
+-	 */
+-	io_ctl->cur += (sizeof(u32) * io_ctl->num_pages);
+-	io_ctl->size -= sizeof(u64) + (sizeof(u32) * io_ctl->num_pages);
+-
+-	put_unaligned_le64(generation, io_ctl->cur);
+-	io_ctl->cur += sizeof(u64);
+-}
+-
+ static int io_ctl_check_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
+ {
+ 	u64 cache_gen;
+@@ -528,23 +411,6 @@ static int io_ctl_check_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
+ 	return 0;
+ }
+ 
+-static void io_ctl_set_crc(struct btrfs_io_ctl *io_ctl, int index)
+-{
+-	u32 *tmp;
+-	u32 crc = ~(u32)0;
+-	unsigned offset = 0;
+-
+-	if (index == 0)
+-		offset = sizeof(u32) * io_ctl->num_pages;
+-
+-	crc = crc32c(crc, io_ctl->orig + offset, PAGE_SIZE - offset);
+-	btrfs_crc32c_final(crc, (u8 *)&crc);
+-	io_ctl_unmap_page(io_ctl);
+-	tmp = page_address(io_ctl->pages[0]);
+-	tmp += index;
+-	*tmp = crc;
+-}
+-
+ static int io_ctl_check_crc(struct btrfs_io_ctl *io_ctl, int index)
+ {
+ 	u32 *tmp, val;
+@@ -574,76 +440,6 @@ static int io_ctl_check_crc(struct btrfs_io_ctl *io_ctl, int index)
+ 	return 0;
+ }
+ 
+-static int io_ctl_add_entry(struct btrfs_io_ctl *io_ctl, u64 offset, u64 bytes,
+-			    void *bitmap)
+-{
+-	struct btrfs_free_space_entry *entry;
+-
+-	if (!io_ctl->cur)
+-		return -ENOSPC;
+-
+-	entry = io_ctl->cur;
+-	put_unaligned_le64(offset, &entry->offset);
+-	put_unaligned_le64(bytes, &entry->bytes);
+-	entry->type = (bitmap) ? BTRFS_FREE_SPACE_BITMAP :
+-		BTRFS_FREE_SPACE_EXTENT;
+-	io_ctl->cur += sizeof(struct btrfs_free_space_entry);
+-	io_ctl->size -= sizeof(struct btrfs_free_space_entry);
+-
+-	if (io_ctl->size >= sizeof(struct btrfs_free_space_entry))
+-		return 0;
+-
+-	io_ctl_set_crc(io_ctl, io_ctl->index - 1);
+-
+-	/* No more pages to map */
+-	if (io_ctl->index >= io_ctl->num_pages)
+-		return 0;
+-
+-	/* map the next page */
+-	io_ctl_map_page(io_ctl, 1);
+-	return 0;
+-}
+-
+-static int io_ctl_add_bitmap(struct btrfs_io_ctl *io_ctl, void *bitmap)
+-{
+-	if (!io_ctl->cur)
+-		return -ENOSPC;
+-
+-	/*
+-	 * If we aren't at the start of the current page, unmap this one and
+-	 * map the next one if there is any left.
+-	 */
+-	if (io_ctl->cur != io_ctl->orig) {
+-		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
+-		if (io_ctl->index >= io_ctl->num_pages)
+-			return -ENOSPC;
+-		io_ctl_map_page(io_ctl, 0);
+-	}
+-
+-	copy_page(io_ctl->cur, bitmap);
+-	io_ctl_set_crc(io_ctl, io_ctl->index - 1);
+-	if (io_ctl->index < io_ctl->num_pages)
+-		io_ctl_map_page(io_ctl, 0);
+-	return 0;
+-}
+-
+-static void io_ctl_zero_remaining_pages(struct btrfs_io_ctl *io_ctl)
+-{
+-	/*
+-	 * If we're not on the boundary we know we've modified the page and we
+-	 * need to crc the page.
+-	 */
+-	if (io_ctl->cur != io_ctl->orig)
+-		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
+-	else
+-		io_ctl_unmap_page(io_ctl);
+-
+-	while (io_ctl->index < io_ctl->num_pages) {
+-		io_ctl_map_page(io_ctl, 1);
+-		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
+-	}
+-}
+-
+ static int io_ctl_read_entry(struct btrfs_io_ctl *io_ctl,
+ 			    struct btrfs_free_space *entry, u8 *type)
+ {
+@@ -1065,490 +861,6 @@ int load_free_space_cache(struct btrfs_block_group *block_group)
+ 	return ret;
+ }
+ 
+-static noinline_for_stack
+-int write_cache_extent_entries(struct btrfs_io_ctl *io_ctl,
+-			      struct btrfs_block_group *block_group,
+-			      int *entries, int *bitmaps,
+-			      struct list_head *bitmap_list)
+-{
+-	int ret;
+-	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
+-	struct btrfs_free_cluster *cluster = NULL;
+-	struct btrfs_free_cluster *cluster_locked = NULL;
+-	struct rb_node *node = rb_first(&ctl->free_space_offset);
+-	struct btrfs_trim_range *trim_entry;
+-
+-	/* Get the cluster for this block_group if it exists */
+-	if (!list_empty(&block_group->cluster_list)) {
+-		cluster = list_first_entry(&block_group->cluster_list,
+-					   struct btrfs_free_cluster, block_group_list);
+-	}
+-
+-	if (!node && cluster) {
+-		cluster_locked = cluster;
+-		spin_lock(&cluster_locked->lock);
+-		node = rb_first(&cluster->root);
+-		cluster = NULL;
+-	}
+-
+-	/* Write out the extent entries */
+-	while (node) {
+-		struct btrfs_free_space *e;
+-
+-		e = rb_entry(node, struct btrfs_free_space, offset_index);
+-		*entries += 1;
+-
+-		ret = io_ctl_add_entry(io_ctl, e->offset, e->bytes,
+-				       e->bitmap);
+-		if (ret)
+-			goto fail;
+-
+-		if (e->bitmap) {
+-			list_add_tail(&e->list, bitmap_list);
+-			*bitmaps += 1;
+-		}
+-		node = rb_next(node);
+-		if (!node && cluster) {
+-			node = rb_first(&cluster->root);
+-			cluster_locked = cluster;
+-			spin_lock(&cluster_locked->lock);
+-			cluster = NULL;
+-		}
+-	}
+-	if (cluster_locked) {
+-		spin_unlock(&cluster_locked->lock);
+-		cluster_locked = NULL;
+-	}
+-
+-	/*
+-	 * Make sure we don't miss any range that was removed from our rbtree
+-	 * because trimming is running. Otherwise after a umount+mount (or crash
+-	 * after committing the transaction) we would leak free space and get
+-	 * an inconsistent free space cache report from fsck.
+-	 */
+-	list_for_each_entry(trim_entry, &ctl->trimming_ranges, list) {
+-		ret = io_ctl_add_entry(io_ctl, trim_entry->start,
+-				       trim_entry->bytes, NULL);
+-		if (ret)
+-			goto fail;
+-		*entries += 1;
+-	}
+-
+-	return 0;
+-fail:
+-	if (cluster_locked)
+-		spin_unlock(&cluster_locked->lock);
+-	return -ENOSPC;
+-}
+-
+-static noinline_for_stack int
+-update_cache_item(struct btrfs_trans_handle *trans,
+-		  struct btrfs_root *root,
+-		  struct inode *inode,
+-		  struct btrfs_path *path, u64 offset,
+-		  int entries, int bitmaps)
+-{
+-	struct btrfs_key key;
+-	struct btrfs_free_space_header *header;
+-	struct extent_buffer *leaf;
 -	int ret;
 -
- 	/*
--	 * update_super_roots will appropriately set or unset
--	 * super_copy->cache_generation based on SPACE_CACHE and
--	 * BTRFS_FS_CLEANUP_SPACE_CACHE_V1. For this reason, we need a
--	 * transaction commit whether we are enabling space cache v1 and don't
--	 * have any other work to do, or are disabling it and removing free
--	 * space inodes.
-+	 * update_super_roots() zeroes super_copy->cache_generation while
-+	 * BTRFS_FS_CLEANUP_SPACE_CACHE_V1 is set, so this needs a commit.
- 	 */
- 	trans = btrfs_start_transaction(fs_info->tree_root, 0);
- 	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
- 
--	if (!active) {
--		set_bit(BTRFS_FS_CLEANUP_SPACE_CACHE_V1, &fs_info->flags);
--		ret = cleanup_free_space_cache_v1(fs_info, trans);
-+	set_bit(BTRFS_FS_CLEANUP_SPACE_CACHE_V1, &fs_info->flags);
-+	for (node = rb_first_cached(&fs_info->block_group_cache_tree); node;
-+	     node = rb_next(node)) {
-+		struct btrfs_block_group *block_group;
-+
-+		block_group = rb_entry(node, struct btrfs_block_group, cache_node);
-+		ret = btrfs_remove_free_space_inode(trans, NULL, block_group);
- 		if (unlikely(ret)) {
- 			btrfs_abort_transaction(trans, ret);
- 			btrfs_end_transaction(trans);
+-	key.objectid = BTRFS_FREE_SPACE_OBJECTID;
+-	key.type = 0;
+-	key.offset = offset;
+-
+-	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
+-	if (ret < 0) {
+-		btrfs_clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, inode->i_size - 1,
+-				       EXTENT_DELALLOC, NULL);
+-		return ret;
+-	}
+-	leaf = path->nodes[0];
+-	if (ret > 0) {
+-		struct btrfs_key found_key;
+-		ASSERT(path->slots[0]);
+-		path->slots[0]--;
+-		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+-		if (found_key.objectid != BTRFS_FREE_SPACE_OBJECTID ||
+-		    found_key.offset != offset) {
+-			btrfs_clear_extent_bit(&BTRFS_I(inode)->io_tree, 0,
+-					       inode->i_size - 1, EXTENT_DELALLOC,
+-					       NULL);
+-			btrfs_release_path(path);
+-			return -ENOENT;
+-		}
+-	}
+-
+-	BTRFS_I(inode)->generation = trans->transid;
+-	header = btrfs_item_ptr(leaf, path->slots[0],
+-				struct btrfs_free_space_header);
+-	btrfs_set_free_space_entries(leaf, header, entries);
+-	btrfs_set_free_space_bitmaps(leaf, header, bitmaps);
+-	btrfs_set_free_space_generation(leaf, header, trans->transid);
+-	btrfs_release_path(path);
+-
+-	return 0;
+-}
+-
+-static noinline_for_stack int write_pinned_extent_entries(
+-			    struct btrfs_trans_handle *trans,
+-			    struct btrfs_block_group *block_group,
+-			    struct btrfs_io_ctl *io_ctl,
+-			    int *entries)
+-{
+-	u64 start, extent_start, extent_end, len;
+-	const u64 block_group_end = btrfs_block_group_end(block_group);
+-	struct extent_io_tree *unpin = NULL;
+-	int ret;
+-
+-	/*
+-	 * We want to add any pinned extents to our free space cache
+-	 * so we don't leak the space
+-	 *
+-	 * We shouldn't have switched the pinned extents yet so this is the
+-	 * right one
+-	 */
+-	unpin = &trans->transaction->pinned_extents;
+-
+-	start = block_group->start;
+-
+-	while (start < block_group_end) {
+-		if (!btrfs_find_first_extent_bit(unpin, start,
+-						 &extent_start, &extent_end,
+-						 EXTENT_DIRTY, NULL))
+-			return 0;
+-
+-		/* This pinned extent is out of our range */
+-		if (extent_start >= block_group_end)
+-			return 0;
+-
+-		extent_start = max(extent_start, start);
+-		extent_end = min(block_group_end, extent_end + 1);
+-		len = extent_end - extent_start;
+-
+-		*entries += 1;
+-		ret = io_ctl_add_entry(io_ctl, extent_start, len, NULL);
+-		if (ret)
+-			return -ENOSPC;
+-
+-		start = extent_end;
+-	}
+-
+-	return 0;
+-}
+-
+-static noinline_for_stack int
+-write_bitmap_entries(struct btrfs_io_ctl *io_ctl, struct list_head *bitmap_list)
+-{
+-	struct btrfs_free_space *entry, *next;
+-	int ret;
+-
+-	/* Write out the bitmaps */
+-	list_for_each_entry_safe(entry, next, bitmap_list, list) {
+-		ret = io_ctl_add_bitmap(io_ctl, entry->bitmap);
+-		if (ret)
+-			return -ENOSPC;
+-		list_del_init(&entry->list);
+-	}
+-
+-	return 0;
+-}
+-
+-static int flush_dirty_cache(struct inode *inode)
+-{
+-	int ret;
+-
+-	ret = btrfs_wait_ordered_range(BTRFS_I(inode), 0, (u64)-1);
+-	if (ret)
+-		btrfs_clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, inode->i_size - 1,
+-				       EXTENT_DELALLOC, NULL);
+-
+-	return ret;
+-}
+-
+-static void noinline_for_stack
+-cleanup_bitmap_list(struct list_head *bitmap_list)
+-{
+-	struct btrfs_free_space *entry, *next;
+-
+-	list_for_each_entry_safe(entry, next, bitmap_list, list)
+-		list_del_init(&entry->list);
+-}
+-
+-static void noinline_for_stack
+-cleanup_write_cache_enospc(struct inode *inode,
+-			   struct btrfs_io_ctl *io_ctl,
+-			   struct extent_state **cached_state)
+-{
+-	io_ctl_drop_pages(io_ctl);
+-	btrfs_unlock_extent(&BTRFS_I(inode)->io_tree, 0, i_size_read(inode) - 1,
+-			    cached_state);
+-}
+-
+-static int __btrfs_wait_cache_io(struct btrfs_root *root,
+-				 struct btrfs_trans_handle *trans,
+-				 struct btrfs_block_group *block_group,
+-				 struct btrfs_io_ctl *io_ctl,
+-				 struct btrfs_path *path, u64 offset)
+-{
+-	int ret;
+-	struct inode *inode = io_ctl->inode;
+-
+-	if (!inode)
+-		return 0;
+-
+-	/* Flush the dirty pages in the cache file. */
+-	ret = flush_dirty_cache(inode);
+-	if (ret)
+-		goto out;
+-
+-	/* Update the cache item to tell everyone this cache file is valid. */
+-	ret = update_cache_item(trans, root, inode, path, offset,
+-				io_ctl->entries, io_ctl->bitmaps);
+-out:
+-	if (ret) {
+-		invalidate_inode_pages2(inode->i_mapping);
+-		BTRFS_I(inode)->generation = 0;
+-		if (block_group)
+-			btrfs_debug(root->fs_info,
+-	  "failed to write free space cache for block group %llu error %d",
+-				  block_group->start, ret);
+-	}
+-	btrfs_update_inode(trans, BTRFS_I(inode));
+-
+-	if (block_group) {
+-		/* the dirty list is protected by the dirty_bgs_lock */
+-		spin_lock(&trans->transaction->dirty_bgs_lock);
+-
+-		/* the disk_cache_state is protected by the block group lock */
+-		spin_lock(&block_group->lock);
+-
+-		/*
+-		 * only mark this as written if we didn't get put back on
+-		 * the dirty list while waiting for IO.   Otherwise our
+-		 * cache state won't be right, and we won't get written again
+-		 */
+-		if (!ret && list_empty(&block_group->dirty_list))
+-			block_group->disk_cache_state = BTRFS_DC_WRITTEN;
+-		else if (ret)
+-			block_group->disk_cache_state = BTRFS_DC_ERROR;
+-
+-		spin_unlock(&block_group->lock);
+-		spin_unlock(&trans->transaction->dirty_bgs_lock);
+-		io_ctl->inode = NULL;
+-		iput(inode);
+-	}
+-
+-	return ret;
+-
+-}
+-
+-int btrfs_wait_cache_io(struct btrfs_trans_handle *trans,
+-			struct btrfs_block_group *block_group,
+-			struct btrfs_path *path)
+-{
+-	return __btrfs_wait_cache_io(block_group->fs_info->tree_root, trans,
+-				     block_group, &block_group->io_ctl,
+-				     path, block_group->start);
+-}
+-
+-/*
+- * Write out cached info to an inode.
+- *
+- * @inode:       freespace inode we are writing out
+- * @ctl:         free space cache we are going to write out
+- * @block_group: block_group for this cache if it belongs to a block_group
+- * @io_ctl:      holds context for the io
+- * @trans:       the trans handle
+- *
+- * This function writes out a free space cache struct to disk for quick recovery
+- * on mount.  This will return 0 if it was successful in writing the cache out,
+- * or an errno if it was not.
+- */
+-static int __btrfs_write_out_cache(struct inode *inode,
+-				   struct btrfs_block_group *block_group,
+-				   struct btrfs_trans_handle *trans)
+-{
+-	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
+-	struct btrfs_io_ctl *io_ctl = &block_group->io_ctl;
+-	struct extent_state *cached_state = NULL;
+-	LIST_HEAD(bitmap_list);
+-	int entries = 0;
+-	int bitmaps = 0;
+-	int ret;
+-	bool must_iput = false;
+-	int i_size;
+-
+-	if (!i_size_read(inode))
+-		return -EIO;
+-
+-	WARN_ON(io_ctl->pages);
+-	ret = io_ctl_init(io_ctl, inode, 1);
+-	if (ret)
+-		return ret;
+-
+-	if (block_group->flags & BTRFS_BLOCK_GROUP_DATA) {
+-		down_write(&block_group->data_rwsem);
+-		spin_lock(&block_group->lock);
+-		if (block_group->delalloc_bytes) {
+-			block_group->disk_cache_state = BTRFS_DC_WRITTEN;
+-			spin_unlock(&block_group->lock);
+-			up_write(&block_group->data_rwsem);
+-			BTRFS_I(inode)->generation = 0;
+-			ret = 0;
+-			must_iput = true;
+-			goto out;
+-		}
+-		spin_unlock(&block_group->lock);
+-	}
+-
+-	/* Lock all pages first so we can lock the extent safely. */
+-	ret = io_ctl_prepare_pages(io_ctl, false);
+-	if (ret)
+-		goto out_unlock;
+-
+-	btrfs_lock_extent(&BTRFS_I(inode)->io_tree, 0, i_size_read(inode) - 1,
+-			  &cached_state);
+-
+-	io_ctl_set_generation(io_ctl, trans->transid);
+-
+-	mutex_lock(&ctl->cache_writeout_mutex);
+-	/* Write out the extent entries in the free space cache */
+-	spin_lock(&ctl->tree_lock);
+-	ret = write_cache_extent_entries(io_ctl, block_group, &entries, &bitmaps,
+-					 &bitmap_list);
+-	if (ret)
+-		goto out_nospc_locked;
+-
+-	/*
+-	 * Some spaces that are freed in the current transaction are pinned,
+-	 * they will be added into free space cache after the transaction is
+-	 * committed, we shouldn't lose them.
+-	 *
+-	 * If this changes while we are working we'll get added back to
+-	 * the dirty list and redo it.  No locking needed
+-	 */
+-	ret = write_pinned_extent_entries(trans, block_group, io_ctl, &entries);
+-	if (ret)
+-		goto out_nospc_locked;
+-
+-	/*
+-	 * At last, we write out all the bitmaps and keep cache_writeout_mutex
+-	 * locked while doing it because a concurrent trim can be manipulating
+-	 * or freeing the bitmap.
+-	 */
+-	ret = write_bitmap_entries(io_ctl, &bitmap_list);
+-	spin_unlock(&ctl->tree_lock);
+-	mutex_unlock(&ctl->cache_writeout_mutex);
+-	if (ret)
+-		goto out_nospc;
+-
+-	/* Zero out the rest of the pages just to make sure */
+-	io_ctl_zero_remaining_pages(io_ctl);
+-
+-	/* Everything is written out, now we dirty the pages in the file. */
+-	i_size = i_size_read(inode);
+-	for (int i = 0; i < round_up(i_size, PAGE_SIZE) / PAGE_SIZE; i++) {
+-		u64 dirty_start = i * PAGE_SIZE;
+-		u64 dirty_len = min_t(u64, dirty_start + PAGE_SIZE, i_size) - dirty_start;
+-
+-		ret = btrfs_dirty_folio(BTRFS_I(inode), page_folio(io_ctl->pages[i]),
+-					dirty_start, dirty_len, &cached_state, false);
+-		if (ret < 0)
+-			goto out_nospc;
+-	}
+-
+-	if (block_group->flags & BTRFS_BLOCK_GROUP_DATA)
+-		up_write(&block_group->data_rwsem);
+-	/*
+-	 * Release the pages and unlock the extent, we will flush
+-	 * them out later
+-	 */
+-	io_ctl_drop_pages(io_ctl);
+-	io_ctl_free(io_ctl);
+-
+-	btrfs_unlock_extent(&BTRFS_I(inode)->io_tree, 0, i_size_read(inode) - 1,
+-			    &cached_state);
+-
+-	/*
+-	 * at this point the pages are under IO and we're happy,
+-	 * The caller is responsible for waiting on them and updating
+-	 * the cache and the inode
+-	 */
+-	io_ctl->entries = entries;
+-	io_ctl->bitmaps = bitmaps;
+-
+-	ret = btrfs_fdatawrite_range(BTRFS_I(inode), 0, (u64)-1);
+-	if (ret)
+-		goto out;
+-
+-	return 0;
+-
+-out_nospc_locked:
+-	cleanup_bitmap_list(&bitmap_list);
+-	spin_unlock(&ctl->tree_lock);
+-	mutex_unlock(&ctl->cache_writeout_mutex);
+-
+-out_nospc:
+-	cleanup_write_cache_enospc(inode, io_ctl, &cached_state);
+-
+-out_unlock:
+-	if (block_group->flags & BTRFS_BLOCK_GROUP_DATA)
+-		up_write(&block_group->data_rwsem);
+-
+-out:
+-	io_ctl->inode = NULL;
+-	io_ctl_free(io_ctl);
+-	if (ret) {
+-		invalidate_inode_pages2(inode->i_mapping);
+-		BTRFS_I(inode)->generation = 0;
+-	}
+-	btrfs_update_inode(trans, BTRFS_I(inode));
+-	if (must_iput)
+-		iput(inode);
+-	return ret;
+-}
+-
+-int btrfs_write_out_cache(struct btrfs_trans_handle *trans,
+-			  struct btrfs_block_group *block_group,
+-			  struct btrfs_path *path)
+-{
+-	struct btrfs_fs_info *fs_info = trans->fs_info;
+-	struct inode *inode;
+-	int ret = 0;
+-
+-	spin_lock(&block_group->lock);
+-	if (block_group->disk_cache_state < BTRFS_DC_SETUP) {
+-		spin_unlock(&block_group->lock);
+-		return 0;
+-	}
+-	spin_unlock(&block_group->lock);
+-
+-	inode = lookup_free_space_inode(block_group, path);
+-	if (IS_ERR(inode))
+-		return 0;
+-
+-	ret = __btrfs_write_out_cache(inode, block_group, trans);
+-	if (ret) {
+-		btrfs_debug(fs_info,
+-	  "failed to write free space cache for block group %llu error %d",
+-			  block_group->start, ret);
+-		spin_lock(&block_group->lock);
+-		block_group->disk_cache_state = BTRFS_DC_ERROR;
+-		spin_unlock(&block_group->lock);
+-
+-		block_group->io_ctl.inode = NULL;
+-		iput(inode);
+-	}
+-
+-	/*
+-	 * if ret == 0 the caller is expected to call btrfs_wait_cache_io
+-	 * to wait for IO and put the inode
+-	 */
+-
+-	return ret;
+-}
+-
+ static inline unsigned long offset_to_bit(u64 bitmap_start, u32 unit,
+ 					  u64 offset)
+ {
 diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index 29166cc09b90..f5f18e397b13 100644
+index 53fe8e293af1..2432f1783f47 100644
 --- a/fs/btrfs/free-space-cache.h
 +++ b/fs/btrfs/free-space-cache.h
-@@ -136,7 +136,7 @@ int btrfs_trim_block_group_bitmaps(struct btrfs_block_group *block_group,
- void btrfs_trim_fully_remapped_block_group(struct btrfs_block_group *bg);
+@@ -105,23 +105,13 @@ int __init btrfs_free_space_init(void);
+ void __cold btrfs_free_space_exit(void);
+ struct inode *lookup_free_space_inode(struct btrfs_block_group *block_group,
+ 		struct btrfs_path *path);
+-int create_free_space_inode(struct btrfs_trans_handle *trans,
+-			    struct btrfs_block_group *block_group,
+-			    struct btrfs_path *path);
+ int btrfs_remove_free_space_inode(struct btrfs_trans_handle *trans,
+ 				  struct inode *inode,
+ 				  struct btrfs_block_group *block_group);
  
- bool btrfs_free_space_cache_v1_active(struct btrfs_fs_info *fs_info);
--int btrfs_set_free_space_cache_v1_active(struct btrfs_fs_info *fs_info, bool active);
-+int btrfs_cleanup_free_space_cache_v1(struct btrfs_fs_info *fs_info);
- /* Support functions for running our sanity tests */
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- bool btrfs_use_bitmap(struct btrfs_free_space_ctl *ctl,
+ int btrfs_truncate_free_space_cache(struct btrfs_trans_handle *trans,
+-				    struct btrfs_block_group *block_group,
+ 				    struct inode *inode);
+ int load_free_space_cache(struct btrfs_block_group *block_group);
+-int btrfs_wait_cache_io(struct btrfs_trans_handle *trans,
+-			struct btrfs_block_group *block_group,
+-			struct btrfs_path *path);
+-int btrfs_write_out_cache(struct btrfs_trans_handle *trans,
+-			  struct btrfs_block_group *block_group,
+-			  struct btrfs_path *path);
+ 
+ void btrfs_init_free_space_ctl(struct btrfs_block_group *block_group,
+ 			       struct btrfs_free_space_ctl *ctl);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3668cbc7598e..9c395d075a65 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9364,15 +9364,6 @@ int btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 					   NULL);
+ }
+ 
+-int btrfs_prealloc_file_range_trans(struct inode *inode,
+-				    struct btrfs_trans_handle *trans, int mode,
+-				    u64 start, u64 num_bytes, u64 min_size,
+-				    loff_t actual_len, u64 *alloc_hint)
+-{
+-	return __btrfs_prealloc_file_range(inode, mode, start, num_bytes,
+-					   min_size, actual_len, alloc_hint, trans);
+-}
+-
+ /*
+  * NOTE: in case you are adding MAY_EXEC check for directories:
+  * we are marking them with IOP_FASTPERM_MAY_EXEC, allowing path lookup to
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index da54db75e7a9..630a7ad8f8e1 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3357,7 +3357,7 @@ static int delete_block_group_cache(struct btrfs_block_group *block_group,
+ 		goto out;
+ 	}
+ 
+-	ret = btrfs_truncate_free_space_cache(trans, block_group, inode);
++	ret = btrfs_truncate_free_space_cache(trans, inode);
+ 
+ 	btrfs_end_transaction(trans);
+ 	btrfs_btree_balance_dirty(fs_info);
 
 -- 
 2.39.5

@@ -1,154 +1,197 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C5C4F5218BE
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 16:49:06 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D22D34F7CB8
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 16:54:59 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789663748; cv=none; b=Wdv6pwGrV/mbnmPjSvJ4XdJ/4LBucfZP+E6b6+DAEKD30Grzm8i8jrVx4G/j7DBJN0OeZflKd/IB98ryvU/ObrGjedWHi9CQ9Nsg+VseWAwTKI0AMliyknZp8jWwaJsjIfzdjsRbbOSqsPnyl9jKImsfl9nAVDQbhTUbhoOisl8=
+	t=1789664101; cv=none; b=pDrPDS7AeWQap3o/H7/4VALeKPjZ0bZvy33ayvkhyMRCse1cdHxtZ8uqkR1roINwEBRjPzJwOllcp87AoPCeTO7hyvCMTmeG3Z3UpLU4oBKCkpsZLC+5ZHTogOZ5sAQhCfLeLR4CRtValrO99j8bHX+NhCG4k2i3B+AAA8coRpk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789663748; c=relaxed/simple;
-	bh=QminicbzHkg5v7EplPy0vIBCmaGo4Jikzlu5sYZxKOQ=;
+	s=arc-20240116; t=1789664101; c=relaxed/simple;
+	bh=6/cASXodS9LYymq/6Zq4WeSBQIUXsJIS+pITtYteUkk=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=iwVTWO2yZfTowK+H1TCxQD0dAJOSsCFlOAQ29TFQLbE4sXFxQJlba9niMHgaQWGKuy2SekOHnAX6yupvfdzQVaxlvXMPUD1hKc4yx3CgpVNZSbgn4TPuCmllsIVJUmATxcsgaBXQMPM7oja1hk4bX65S2oDPeTQrYMbEeu0K6DA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Le2tpVzn; arc=none smtp.client-ip=100.103.45.18
+	 To:Cc:Content-Type; b=Z0M8vo+3n+DBD6+btCjWwHpdgoxRsL02TpaBLmbpRU2do8ClNQ6wWpoYYP2QtBTAsyxDU2/ZmvO2hGeLJfSvYi4i/lUyNQTOZu7fPIEJehOHbraNJDG4Z/aJ3xoWTlAVHrwxxCw77X8o1XXauZN6iG75qngWCJbepGqjJj1LeRw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=bThg6MAR; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Le2tpVzn"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6A3681F00893
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 16:49:06 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="bThg6MAR"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7BFD61F00898
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 16:54:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1789663746;
-	bh=wEyNmHxyXlKrn7yytdhdSxJDgeUKETROLN5Anv6BEyk=;
+	s=k20260515; t=1789664099;
+	bh=DfCDwRIk6zy0V5xQbBgaLpJ3tSjS2s4dUvyJ4TCvGIU=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=Le2tpVzn/A8lnASMFF0ex1w3i13rfZ96pLhW33URge88NETsGN6fwLlyfeLXldE8F
-	 Wl69InZt528LFUkQfOvlY/GD0pLxdyRqc4jvbvBHfRf4TwJ+ilOiuvcb4P6pWKzcRg
-	 2x50oKS123W5B9XiwkyCUFJ7yK/3lNh4wk/ZItDKVtyW+7361Bs1N0OIcydua7nqmv
-	 kKJPRryHmwZIfxVKi2zHVNMFej7GuA/W1zFni7Qe4gC61NB2QoAP5IsOgDQCf5dXUv
-	 U1y2IzXhkKx8gwiesNXGh4f6lX87qwa+VTJeLChMjzRrX0cvs5/joZhwZv0eXDuMsK
-	 bWqOdp/qO95pw==
-Received: by mail-ua2-f12.google.com with SMTP id a1e0cc1a2514c-97e7c72bfebso307936241.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 09:49:06 -0700 (PDT)
-X-Gm-Message-State: AFuF++msHf2+n5xonXUKwOyw2Beqzde8aARdZYalkTVrK5PVegtjcTQx
-	MN2pSPWho1kAPizr/pLziKz0BWpucNSxZ5cSAsvFGdb1CoizTc8s1gQmxIZEVm4V8X6sbPxhxhT
-	5dOggiFmopB1vzEVFsoysOH+wJRrpCeo=
-X-Received: by 2002:a05:6102:8099:b0:785:d308:cc0a with SMTP id
- ada2fe7eead31-7a028d61bbfmr7737621137.9.1789663745593; Thu, 17 Sep 2026
- 09:49:05 -0700 (PDT)
+	b=bThg6MARYtT7+ixm85ZMSHqz0IYPKic1sHPpHilOEtrl9yrzqw6XexgiSvB6yT7Tt
+	 Mmb2Bdyy604onvvSnBnCd4ZA9LPzxRP+ZjDIav0aCi5lAI6BkCJr/f6tLVGdm9AYaS
+	 Yl07nW5QMkeI1aebupK0YiSG6kzwuU/03Wq4kF/hbu+ew5/MrXne0sbETRBgeoWFPT
+	 fprZ0L6zb17RUdJ2stWzRj4t3iSBvfl4Wf/l0hNLofaSYn7azfRRGoY35E/m6sj25+
+	 2aWdSlTXpgIZrsYFS1qN0VkR+k7ndXVU/cnO0baU8X1+pLSQqyrHl1UOElNLcrzodi
+	 fJs7O7Ge6sgXg==
+Received: by mail-vs2-f12.google.com with SMTP id ada2fe7eead31-78565b4db77so618092137.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2026 09:54:59 -0700 (PDT)
+X-Gm-Message-State: AFuF++nEI8PtZ3aaOngttZF8k7RK6JNxl/sjRhHoATILP/x5nvDqrv/i
+	xpESz8TXMYIYGntWhQ2k2m9Uhw1hFtwR155h/Rp/dG0acM5rx1MmTprioL3q9FZ1yIZpUh+8wpG
+	ScqijYsZHkZ/9cKzZ0ONSZIzyAzxDiWE=
+X-Received: by 2002:a05:6102:a46:b0:7a1:f7c3:3a4b with SMTP id
+ ada2fe7eead31-7a1f7c33f66mr2379834137.24.1789664098708; Thu, 17 Sep 2026
+ 09:54:58 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1789494885.git.boris@bur.io> <6ffbf81411eae05272e54ce49460e030eb81f91f.1789494885.git.boris@bur.io>
-In-Reply-To: <6ffbf81411eae05272e54ce49460e030eb81f91f.1789494885.git.boris@bur.io>
+References: <cover.1789494885.git.boris@bur.io> <069b34c29713b4574ad37cfe55e728d555e019b2.1789494885.git.boris@bur.io>
+In-Reply-To: <069b34c29713b4574ad37cfe55e728d555e019b2.1789494885.git.boris@bur.io>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 17 Sep 2026 17:48:28 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H5--3_DbLSvSMaqy-gXw7GO2LJvRuKXPnaoA81mCQH+Cg@mail.gmail.com>
-X-Gm-Features: AcwNN1VHtFYgpbY6j8WwhVvr3UJD0lmm2i-xT3Q-neNPpDCa62GN3ng_6phxpBQ
-Message-ID: <CAL3q7H5--3_DbLSvSMaqy-gXw7GO2LJvRuKXPnaoA81mCQH+Cg@mail.gmail.com>
-Subject: Re: [PATCH v3 2/3] btrfs: skip unlocked reflink source flush if the
- inode has writers
+Date: Thu, 17 Sep 2026 17:54:21 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H7CimeRqMOiq3Gde9tt81iaoMdGzS3VLZiObh6ue3e4uA@mail.gmail.com>
+X-Gm-Features: AcwNN1WdXGlVE4IJex6F8pcQiXkDDh7NE3IUXuCuI4jyhOV6830UcpZHEvXOOJY
+Message-ID: <CAL3q7H7CimeRqMOiq3Gde9tt81iaoMdGzS3VLZiObh6ue3e4uA@mail.gmail.com>
+Subject: Re: [PATCH v3 3/3] btrfs: downgrade the reflink source inode lock for
+ tree walking
 To: Boris Burkov <boris@bur.io>
 Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, Sep 15, 2026 at 8:05=E2=80=AFPM Boris Burkov <boris@bur.io> wrote:
+On Tue, Sep 15, 2026 at 7:08=E2=80=AFPM Boris Burkov <boris@bur.io> wrote:
 >
-> The optimistic unlocked flushing is counter-productive if there is an
-> active writer dirtying pages, as it results in doubly writing back any
-> pages that get dirtied again before the locked flush. Therefore,
-> pessimize it slightly and don't do the unlocked flushing if we have
-> outstanding writable file descriptors or memory mappings. Since the
-> inode isn't locked, this is only advisory, any new mapping or fd that
-> sneaks in after the check but before the locking can still cause extra
-> writeback. But it trivially helps quite a bit in simple cases with a
-> long open file descriptor or mapping.
->
-> I tested this with two similar workloads. One was keeping and fd open
-> and doing continuous writes into the src file while cloning it and doing
-> lseek on it and the other was slightly meaner, constantly opening and
-> closing the fd to try to race this check.
->
-> Workload 1 shows a huge regression in write amplification and writers
-> and readers who experience userspace wall time stalls of 100ms+ with
-> just the pre-flush, but recovers to normal with this check.
->
-> Workload 2 is a smaller regression which is mostly helped but not fully
-> resolved with this check. So we must weigh this regression against the
-> benefit of the unlocked flush in the allegedly more common simpler case.
->
-> Workload 1: fd kept open, 60s of clone/write/lseek looping.
-> kernel        clones  clone mean s  device MiB/clone  writer stalls  read=
-er stalls
-> for-next         564         0.095               119             10      =
-       10
-> pre-flush (p1)   179         0.338               405             94      =
-       93
-> skip (p1+p2)     540         0.100               116              9      =
-        9
->
-> Workload 2: same writer, but closing and reopening the fd around each
-> 64 MiB write with some random sleeping to encourage racing.
-> kernel        clones  clone mean s  device MiB/clone  writer stalls  read=
-er stalls
-> for-next         740         0.070                83              9      =
-        9
-> pre-flush (p1)   255         0.224               246             27      =
-       26
-> skip (p1+p2)     518         0.107               121             11      =
-       11
->
-> Signed-off-by: Boris Burkov <boris@bur.io>
-> ---
->  fs/btrfs/reflink.c | 14 ++++++++++----
->  1 file changed, 10 insertions(+), 4 deletions(-)
->
-> diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-> index 24c0b226bc31..fe765ab27c82 100644
-> --- a/fs/btrfs/reflink.c
-> +++ b/fs/btrfs/reflink.c
-> @@ -950,13 +950,19 @@ loff_t btrfs_remap_file_range(struct file *src_file=
-, loff_t off,
->         /*
->          * Optimistically write out the src inode before taking locks.
->          * Consistency is properly ensured by the btrfs_wait_ordered_rang=
-e()
-> -        * inside btrfs_remap_file_range_prep().
-> +        * inside btrfs_remap_file_range_prep(). This optimization causes
-> +        * redundant writeback if there is a concurrent writer to the src=
- file
-> +        * so try to catch anyone holding the file open for writes and sk=
-ip
-> +        * the optimization in that case.
->          */
->         wb_start =3D ALIGN_DOWN(off, src_inode->root->fs_info->sectorsize=
-);
->         wb_len =3D calc_remap_wb_len(src_inode, off, len, remap_flags);
-> -       ret =3D btrfs_wait_ordered_range(src_inode, wb_start, wb_len);
-> -       if (ret < 0)
-> -               return ret;
-> +       if (atomic_read(&src_inode->vfs_inode.i_writecount) <=3D 0 &&
+> When doing a reflink, we are not writing to the src inode or modifying
+> it in any way, so it is counter-intuitive to have to lock it
+> exclusively. This has the cost of blocking other shared lock users of
+> the src file for the duration of all the writeback and reflinking.
 
-Instead of reading the counter directly, use inode_is_open_for_write() plea=
-se.
+This last sentence is a bit outdated, as we very often no longer wait
+for the duration of all writeback, since it usually happens before
+locking.
 
-With that change:
+Other than that:
 
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
 Thanks.
 
-> +           !mapping_writably_mapped(src_inode->vfs_inode.i_mapping)) {
-> +               ret =3D btrfs_wait_ordered_range(src_inode, wb_start, wb_=
-len);
-> +               if (ret < 0)
-> +                       return ret;
-> +       }
 >
->         if (same_inode) {
->                 btrfs_inode_lock(src_inode, BTRFS_ILOCK_MMAP);
+> There are two important gotchas to do with direct io that must be
+> addressed to make this idea work.
+>
+> The first gotcha is that dio writes that come in under EOF try to take
+> inode->i_rwsem shared, which would result in messed up views of the
+> extents in the reflinked file. Therefore, add "being used as a reflink
+> src" as another inode flag exception for the dio write shared tests that
+> already exist to check for other dangerous conditions. In order to
+> ensure that this flag is visible to the dio writer, reflink must first
+> take i_rwsem exclusive, then set the flag, then downgrade to shared.
+>
+> The second is that dio reads increment inode->i_dio_count which blocks
+> inode_dio_wait() in __generic_remap_file_range_prep(). Therefore, we
+> must remain exclusive to dio reads through finishing the prep or risk
+> starving the clone on a stream of dio readers. There is still O(extents)
+> work in btrfs_clone() which can be done without holding the lock
+> exclusive, so we should downgrade to shared and admit dio readers (and
+> other shared lock users like lseek) after we are finished with
+> inode_dio_wait().
+>
+> By running concurrent clones and lseeks or dio reads on a src file with
+> 32k extents on a vm, I can demonstrate 100ms+ stalls on the readers
+> without this patch and they go away entirely with the patch.
+>
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+>  fs/btrfs/btrfs_inode.h |  6 ++++++
+>  fs/btrfs/direct-io.c   |  7 +++++++
+>  fs/btrfs/reflink.c     | 17 +++++++++++++++--
+>  3 files changed, 28 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> index 46c62f980c24..03c00c99099d 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -99,6 +99,12 @@ enum {
+>          * range).
+>          */
+>         BTRFS_INODE_COW_WRITE_ERROR,
+> +       /*
+> +        * Set by reflink while it holds the source's VFS inode lock shar=
+ed.
+> +        * Direct IO writes also take that lock shared; one that finds th=
+is bit
+> +        * set after acquiring it must retry with the exclusive lock.
+> +        */
+> +       BTRFS_INODE_REFLINK_SRC,
+>         /*
+>          * Indicate this is a directory that points to a subvolume for wh=
+ich
+>          * there is no root reference item. That's a case like the follow=
+ing:
+> diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
+> index 3075d7992713..ed3914257d39 100644
+> --- a/fs/btrfs/direct-io.c
+> +++ b/fs/btrfs/direct-io.c
+> @@ -913,6 +913,13 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struc=
+t iov_iter *from)
+>                 goto relock;
+>         }
+>
+> +       if ((ilock_flags & BTRFS_ILOCK_SHARED) &&
+> +           test_bit(BTRFS_INODE_REFLINK_SRC, &BTRFS_I(inode)->runtime_fl=
+ags)) {
+> +               btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
+> +               ilock_flags &=3D ~BTRFS_ILOCK_SHARED;
+> +               goto relock;
+> +       }
+> +
+>         ret =3D generic_write_checks(iocb, from);
+>         if (ret <=3D 0) {
+>                 btrfs_inode_unlock(BTRFS_I(inode), ilock_flags);
+> diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+> index fe765ab27c82..72c1e0db57b7 100644
+> --- a/fs/btrfs/reflink.c
+> +++ b/fs/btrfs/reflink.c
+> @@ -939,6 +939,7 @@ loff_t btrfs_remap_file_range(struct file *src_file, =
+loff_t off,
+>         struct btrfs_inode *dst_inode =3D BTRFS_I(file_inode(dst_file));
+>         bool same_inode =3D dst_inode =3D=3D src_inode;
+>         u64 wb_start, wb_len;
+> +       bool src_downgraded =3D false;
+>         int ret;
+>
+>         if (btrfs_is_shutdown(src_inode->root->fs_info))
+> @@ -976,6 +977,12 @@ loff_t btrfs_remap_file_range(struct file *src_file,=
+ loff_t off,
+>         if (ret < 0 || len =3D=3D 0)
+>                 goto out_unlock;
+>
+> +       if (!same_inode) {
+> +               set_bit(BTRFS_INODE_REFLINK_SRC, &src_inode->runtime_flag=
+s);
+> +               downgrade_write(&src_inode->vfs_inode.i_rwsem);
+> +               src_downgraded =3D true;
+> +       }
+> +
+>         if (remap_flags & REMAP_FILE_DEDUP)
+>                 ret =3D btrfs_extent_same(src_inode, off, len, dst_inode,=
+ destoff);
+>         else
+> @@ -986,8 +993,14 @@ loff_t btrfs_remap_file_range(struct file *src_file,=
+ loff_t off,
+>                 btrfs_inode_unlock(src_inode, BTRFS_ILOCK_MMAP);
+>         } else {
+>                 btrfs_double_mmap_unlock(src_inode, dst_inode);
+> -               unlock_two_nondirectories(&src_inode->vfs_inode,
+> -                                         &dst_inode->vfs_inode);
+> +               if (src_downgraded) {
+> +                       clear_bit(BTRFS_INODE_REFLINK_SRC, &src_inode->ru=
+ntime_flags);
+> +                       inode_unlock_shared(&src_inode->vfs_inode);
+> +                       inode_unlock(&dst_inode->vfs_inode);
+> +               } else {
+> +                       unlock_two_nondirectories(&src_inode->vfs_inode,
+> +                                                 &dst_inode->vfs_inode);
+> +               }
+>         }
+>
+>         /*
 > --
 > 2.55.0
 >

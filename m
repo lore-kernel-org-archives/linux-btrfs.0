@@ -1,116 +1,151 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from fhigh-b7-smtp.messagingengine.com (fhigh-b7-smtp.messagingengine.com [202.12.124.158])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C892509EE6
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 17:32:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CB61B51C07E
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 17:36:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.158
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789752775; cv=none; b=BY9zQsEtdTe8MbiQuNI0HdZSZH/FtySvSCublEiEzRabzfQNl3o+7Svyic+Ze4yGazvENdjo91yz5pIFy64jtz9gbuxqM7ng2W1lyIc9SfogtmrKyulJybgmzs+J+Gzsb2BQVNskZfVFekAY1NmnHf+Uf31gEvELqZYodOiq/KE=
+	t=1789753022; cv=none; b=ITig7YKiocx90CBNuHPFrTHLDcfw5O5xZ/xvdKIRw8aCMllIlH3Wuk/2FoY2xG5GfqELUs9aHCJ7euUJ6kwWQW86eQqln6uVMWcVgxifzMVtyiC0s+oPQEah1xlXJgof9cyEhTNPvIMYc9REeQCiuEdIJALbUKGXDeCUJTxWKtM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789752775; c=relaxed/simple;
-	bh=3BwuemqTZztEeSCWJRdxs99PQi6Tb9Vmdzx9jj0jb9M=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=ENaYACPAF/4xxqOqQBFF73JijqDl/Q16RtSRNyGLOsRIvlo+ZEsIwCLGs/A3JYwJiYX7YjZRSoFwRpiDaa8eCrRBsx/temG4z1g5Uys1DsZzlHqtnBAhcGel5zWKKO6EkGpJH2ukgmZ1pc5FYbXIaPSqxu4b4dIHuOGgNYGNXug=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=k6c/TRVk; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1789753022; c=relaxed/simple;
+	bh=wxOSapx8DMkUps6NgP2ajM2KLXNA0MV27haunRBsSfA=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=mM4GC+nTdOoGH/23SOBHBzglHpVP1r9wSttih+iUJVBoKQmnoOKVM+hafGmFFCjh8UgmOnk0aRAJDDlDvx4TcrcdUGgTdwJ8u5USbCzcLcY8bkSXVTAdnVG7IXW6S1TCDJsgnFXyzq0eLmu8MihrUKkRktAA4IvRC7nnFIv+EZo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=ne3Tny7S; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=UEU6miNf; arc=none smtp.client-ip=202.12.124.158
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="k6c/TRVk"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0AA8F1F000FF
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 17:32:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1789752763;
-	bh=Hb1fxQuuorLTTna4+2iHL1FGESLJ9XPQ22Wl5ZC8NE8=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=k6c/TRVkotQ4diwVyUsfmYscasWwsc9otoZpT/6PD2L7qs5Qn4S1fYPKLvaM5cSjK
-	 xcn6Zu0ixQy93RldGNOH6kAO1vmk5GaI8D/Wt0BPhSW167v4hCVTX+Xu3CqmDUyFCw
-	 njglcdWR2wi3ih9tNVQSJ/4N4gUSDSoT+Atzmdq93r0YVXrY9Llr7/M7wvUqWJsjc0
-	 XrprE+mq+nyDbd3qVk6S6L+1CfeB+aPC2FiYTffjkVSyntIuqrftdYnJ0hGsYSetgI
-	 7c/qK84N7U8AbKQN+A+Q0B9ywNab6rr54G4xA3MyJeFDqUICqC8R8J4V1f8HNxFaMZ
-	 sMXHyuZn3UP7A==
-Received: by mail-vs2-f32.google.com with SMTP id 71dfb90a1353d-5c67e4d8d8aso654519e0c.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 10:32:43 -0700 (PDT)
-X-Gm-Message-State: AFuF++kAtvDax9+GNzqTOurv+fBgB9nE/jOg85ldaKpI1dheEt7G/g/z
-	rn13grG/ZXgDWenvJ6b4/uY02SBA62HGr5mCj4jG81C+OKZEwYlO2bndh0iR7dfTyFtF5zLZTgk
-	nsrlFZsYodgcGLjW36zgM2S3W7SB5T/U=
-X-Received: by 2002:a05:6122:2214:b0:5c9:18b1:b7ff with SMTP id
- 71dfb90a1353d-5c9b58e983emr1619210e0c.7.1789752762025; Fri, 18 Sep 2026
- 10:32:42 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="ne3Tny7S";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="UEU6miNf"
+Received: from phl-compute-07.internal (phl-compute-07.internal [10.202.2.47])
+	by mailfhigh.stl.internal (Postfix) with ESMTP id 97D4D7A00D5;
+	Fri, 18 Sep 2026 13:36:48 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-07.internal (MEProxy); Fri, 18 Sep 2026 13:36:48 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm2; t=1789753008; x=1789839408; bh=UHuz+2nguL
+	l4dgSwH/JNn79y7QXx5WkU9TI3YZ98orQ=; b=ne3Tny7SGPOxknb46L4hnbxmOz
+	xSYA58+QeZz3p6kg76+Qvw1tO5vf9u3VaOQE4aH5DHAg1NapKFEAULgvYMI/A/bM
+	K5d+fmzzM1U2baLunXfnhuFHsrTdOpxAiPViStR74QC5ztDNf+p41WkolY/zi+5Z
+	3572q/+Lbj7k8fxXXvPhklm8cd4cS3L5wpuBfG1ScItcKvemeZg5UvfnY4MtGVyT
+	owuFEk9h09S5JOhkJPtTsP6TA/aHZFMpJ2rnH9831shg1IjsFtKUQGQIxJumP9/N
+	AO/RnHU9mWwfDV3lh00gzf9r8N08UXVoMcfMBH+PIGCwiK49n+BDD0SUFrIg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
+	1789753008; x=1789839408; bh=UHuz+2nguLl4dgSwH/JNn79y7QXx5WkU9TI
+	3YZ98orQ=; b=UEU6miNfLr5tkCFvHxP5RHnr17TDtJAbidcnkNVQrUeCFng5bME
+	T9mRnI0tgb7mMF/sREIF1Cs/nxRpPzoTk5VaMO99oshT59h24AGIQuMlHEXUuF6Y
+	ug9q2o74R8rKevwTyhWslqrRqPq4koDFqw1cJg8pKbKxJ7wYp6BV5zz214lJBHEr
+	nSeh14fOGiGozvhumuYS7HxYU7WA5ooY9cq+VyVDlLRIUAasWKeLJSj3ravPXdNh
+	SdZTieKuMAb6vJKCJweZYogDMaeOTFhpC2/J3GR7JcFeHoQlazCTj7gdM6XDTWLi
+	DoIqpjcIt19Hsq3ZaB/SKGB39K5Au9wCBhw==
+X-ME-Sender: <xms:sHatasnTaAch-C7MyQbPrT2jWeX_adJHExSF2Jkjwyam6dDZHlcIqg>
+    <xme:sHatah1iyLlJ7GXeKB-wSFCxC5zdMsC90U9HTfUKaKn49k2z-wTmHt9iELizWTeOQ
+    Gc2VsVg1F-VLVt8i-7yrVnGiVb-ZwBHCz05PjrS5h2j1RAJRD-RdUuZ>
+X-ME-Received: <xmr:sHataoTKfO8A4r7ARC3EvHNrideCE8feTmuDXq7oKt-d5NkMQ_ZNLYw>
+X-ME-Proxy-Cause: dmFkZTFOOwOki6yrQm88hlXsrKVeCwH41OLnQVBNE4F2myfqWjgN84SAHIR7o7obLz47DV
+    eVTyPLURn4EMZqQNdg3d88GFQtano5bIl/EFUT1BP12/XbNmp7fv/z0HPoTFrX5ZEauYZF
+    gH94qfms2CI/JEhUDdyX3Jb3dxmB2qD2TIQzCcJezcglf2AhkxaGiX60mwWYZcBYkn536G
+    rU9SsAQzGwdDKN2uENYh/9lLH3Q2TdF68FCIkxWAYi6u2J9d19ULcU7mkTKpyRTpEkp4uT
+    G3L0NdK4cYayUvUCgJdXUdPh9eU0zTXSBqoMMNxBtN2MRl6PnC3DE4pYR2yU48ckPXo1qq
+    xKuNv/wiZ49WlfcwHv2MIy5H1VvC+sHKmS7+bCv1hgHLD16Awagk+APRD6LCqjvhhSEWf1
+    FpFWjznoKyoCvJtpQKWGxl9n7EyZl1uw+8yZmbko/I1niFiqk5YimOU2aNfZRgQo7cXSaV
+    1+uLYoYJXhCiMaxrRRVQcslbQdCsa8zIE9KNzF+LZxp6L/sHfOTsFgD5Eph+InbomgVw4G
+    aWkEk57L55TtfJ4fyQ/nJN1j2BSbuKtOXGeme/pQWvLNcJyPn1xTLYc4sPgCQs0c2+7HKn
+    LzyLwBEJtMZLjEpagGl/3ibA/wHgUYS51C6sukQEAHNm8eXVZpsGKVqQUKSA
+X-ME-Proxy: <xmx:sHatajsbn2fs0_CFYBBI8msVxmcXQVIoKE3ZoxMQKACaM1QmonsZgg>
+    <xmx:sHatatYXYD8yVqFQ_vR0RzpwNvaiuatdKLXjL40XQZ55yymXXxlvYQ>
+    <xmx:sHataotVNHyMjDZf6PjE4j58oGKXa_kKZcg-pV2JIS8L7DQsbqyMgA>
+    <xmx:sHatavEA3CgFUaQCZBuTZtLyrPkqg3rQVx_MbKekWNyl5hCU32uBnA>
+    <xmx:sHatao66CfI40pCeUWC_i_6KKuVCtEmpK_WzFtvht9CvnxDUsxymX1rU>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
+ 18 Sep 2026 13:36:47 -0400 (EDT)
+Date: Fri, 18 Sep 2026 10:36:55 -0700
+From: Boris Burkov <boris@bur.io>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/3] btrfs: fix barrier usage in
+ btrfs_record_root_in_trans()
+Message-ID: <20260918173655.GC2900089@zen.localdomain>
+References: <cover.1789734239.git.fdmanana@suse.com>
+ <ded35d39b9858ee6f20ee3358a8e592a36e8e33c.1789734246.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1789734239.git.fdmanana@suse.com> <410734082c3a544458920efe7be7a39222424aeb.1789734245.git.fdmanana@suse.com>
- <20260918171906.GB2900089@zen.localdomain>
-In-Reply-To: <20260918171906.GB2900089@zen.localdomain>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Fri, 18 Sep 2026 18:32:05 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H4dSDPm5Z3F1qwkFA-omHaCXLtyH5u7BOpkhOqAQ3knKg@mail.gmail.com>
-X-Gm-Features: AcwNN1VgMVBE_7KAkYLxQNA8HAXzvytvvIWNQq-AfPZ-5UwTvuPc3IlOFeBxvho
-Message-ID: <CAL3q7H4dSDPm5Z3F1qwkFA-omHaCXLtyH5u7BOpkhOqAQ3knKg@mail.gmail.com>
-Subject: Re: [PATCH 1/3] btrfs: clear BTRFS_ROOT_IN_TRANS_SETUP on early exit
- from record_root_in_trans()
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ded35d39b9858ee6f20ee3358a8e592a36e8e33c.1789734246.git.fdmanana@suse.com>
 
-On Fri, Sep 18, 2026 at 6:18=E2=80=AFPM Boris Burkov <boris@bur.io> wrote:
->
-> On Fri, Sep 18, 2026 at 01:28:09PM +0100, fdmanana@kernel.org wrote:
-> > From: Filipe Manana <fdmanana@suse.com>
-> >
-> > If we exit early because the transaction that last used the root alread=
-y
-> > matches the current transaction, we leave the BTRFS_ROOT_IN_TRANS_SETUP
-> > bit set in the root (which we just set right before the exit). While th=
-is
-> > does not cause any functional issue, it makes callers of
-> > btrfs_record_root_in_trans() always lock fs_info->reloc_mutex and call
->
-> I found "always" kind of confusing here. It's until one succeeds and
-> clears the bit right? It kind of makes it sound like it leaks it
-> forever.
+On Fri, Sep 18, 2026 at 01:28:10PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> The barrier usage in btrfs_record_root_in_trans() is wrong, as the writer
+> side, in record_root_in_trans(), sets BTRFS_ROOT_IN_TRANS_SETUP, does a
+> write barrier and then sets the root's last transaction. This means the
+> reader side must check the root's last transaction, issue a read barrier
+> and then check for BTRFS_ROOT_IN_TRANS_SETUP. However, currently we issue
+> a read barrier and then check the root's last transaction and the bit
+> BTRFS_ROOT_IN_TRANS_SETUP, which can be problematic because the CPU is
+> free to reorder the checks and the following can happen:
+> 
+> 1) Before reading the root's last_trans, it checks that
+>    BTRFS_ROOT_IN_TRANS_SETUP is not set.
+> 
+> 2) A writer sets BTRFS_ROOT_IN_TRANS_SETUP, does smp_wmb() and updates
+>    the root's last_trans.
+> 
+> 3) The reader then sees the root's last_trans matches the current
+>    transaction and falsely concludes the root setup is completes and
+>    returns without waiting for the writer task to complete the setup
+>    (calling btrfs_init_reloc_root()).
+> 
+> So fix the reading ordered as previously described: check the root's
+> last_trans, issue read barrier and then check BTRFS_ROOT_IN_TRANS_SETUP
+> (the reverse of what the writer side does).
 
-Yes, I can reword the sentence to:
+I think a comment on why we can't use release/acquire (u64) but that the
+non-atomicity is ok (we only check equality?) might be nice. Otherwise
+we are supposed to have some code like i_size_read(), right?
 
-"While this does not cause any functional issue, it makes callers of
-  btrfs_record_root_in_trans() lock fs_info->reloc_mutex and call
-  record_root_in_trans() for nothing, causing unnecessary lock contention,
-  until one of them clears the bit in record_root_in_trans()."
+Not blocking at all, just an observation, since those helpers are
+supposed to prevent this kind of bug.
 
-Thanks.
-
->
-> > record_root_in_trans() for nothing, causing unnecessary lock contention=
-.
-> > One caller of btrfs_record_root_in_trans() is start_transaction(), used=
- to
-> > start new transaction or joining an existing one, which is a hot path.
-> >
-> > So clear BTRFS_ROOT_IN_TRANS_SETUP on early exit.
-> >
-> > Assisted-by: LLM
-> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > ---
-> >  fs/btrfs/transaction.c | 1 +
-> >  1 file changed, 1 insertion(+)
-> >
-> > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> > index ca114235bbe1..c1555621ae4e 100644
-> > --- a/fs/btrfs/transaction.c
-> > +++ b/fs/btrfs/transaction.c
-> > @@ -432,6 +432,7 @@ static int record_root_in_trans(struct btrfs_trans_=
-handle *trans,
-> >               spin_lock(&fs_info->fs_roots_radix_lock);
-> >               if (btrfs_get_root_last_trans(root) =3D=3D trans->transid=
- && !force) {
-> >                       spin_unlock(&fs_info->fs_roots_radix_lock);
-> > +                     clear_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state=
-);
-> >                       return 0;
-> >               }
-> >               radix_tree_tag_set(&fs_info->fs_roots_radix,
-> > --
-> > 2.47.2
-> >
+> 
+> Assisted-by: LLM
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/transaction.c | 9 +++++----
+>  1 file changed, 5 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index c1555621ae4e..13203ea9e116 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -511,10 +511,11 @@ int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
+>  	 * see record_root_in_trans for comments about IN_TRANS_SETUP usage
+>  	 * and barriers
+>  	 */
+> -	smp_rmb();
+> -	if (btrfs_get_root_last_trans(root) == trans->transid &&
+> -	    !test_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state))
+> -		return 0;
+> +	if (btrfs_get_root_last_trans(root) == trans->transid) {
+> +		smp_rmb();
+> +		if (!test_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state))
+> +			return 0;
+> +	}
+>  
+>  	mutex_lock(&fs_info->reloc_mutex);
+>  	ret = record_root_in_trans(trans, root, false);
+> -- 
+> 2.47.2
+> 

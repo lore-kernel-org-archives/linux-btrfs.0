@@ -1,80 +1,81 @@
-Received: from fhigh-b8-smtp.messagingengine.com (fhigh-b8-smtp.messagingengine.com [202.12.124.159])
+Received: from fout-b1-smtp.messagingengine.com (fout-b1-smtp.messagingengine.com [202.12.124.144])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B33C4078DA;
-	Fri, 18 Sep 2026 19:13:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.159
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73C1351E43C;
+	Fri, 18 Sep 2026 19:15:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.144
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789758817; cv=none; b=PiJJXRphdQrkG03jIcFi1kQgdg1vAZYdOB/cMHtb8q6NOCD4p2dNNcV/yAncyvZVYDq4MbMHiY5HERpmZRqibGgmcv0C/qf6Cg9noaFLSbqWN0AJx2zEN0iFoY1iTTw2W0KmleNtclAssSlCRK1tPmd5EPTz8DIMswwUfoTY3Qw=
+	t=1789758958; cv=none; b=cbF3m9LS4jQfWo4zwTmglO8+hCKz6DJy/sMQ6Pu38OUnz5ciSP4HsuAUpt/4Yqjuw/9lqI6vB0jlHyjcE2wCakb0E0odTlHa6VqYA56T6dGqnZCdw1U+BL11b4h6uSsuZrCVCdf+gnF5iZDIVUrkrhZxYT8MbqO+LXMKAGlwFWo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789758817; c=relaxed/simple;
-	bh=ypWBO+e7Bovj7JbSht7N4ucJApYBb7+KAB606NK3mpo=;
+	s=arc-20240116; t=1789758958; c=relaxed/simple;
+	bh=p5WFh6dxNr3VyKKjQ9+/1pjidS0TxY0HBEYjnS/a9zk=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=DllgGNEQs5G/mFvS+UpSWjO3qEv3SA1iV58Q6Fvkk6OnvScR/7JR22ICOkSvSBt1y+x6C12TnPunhn0n/42sCnKrQNy0cZrB8ShTM3B8S4nGRlxAX+Zzgxp6BSuWPyc+bxEyXFKCWMoGjDf2RhdRLN7ebqkSVCF9zqBbf0SrgmI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=FnbU5zU8; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=UUTn6e0u; arc=none smtp.client-ip=202.12.124.159
+	 Content-Type:Content-Disposition:In-Reply-To; b=TBYZJ58iWzP1paVaE7FdWbGqqXGROALKQzrphfgXejCMwOuAeJPpjPC46KmMOs0Mbhu62GBejAfjsiOip7EFNqzcS5JWo7L4WAixXMLT4h8NjdCzX/yDWKGX0pN3pCpLfuLZOr5lc8eMTwR3Cv0p1EMJ4Qn8evAZrFmXDPQ8SIw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=KRtzX1aB; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=ftidCt9u; arc=none smtp.client-ip=202.12.124.144
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="FnbU5zU8";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="UUTn6e0u"
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="KRtzX1aB";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="ftidCt9u"
 Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 8D7C67A00B3;
-	Fri, 18 Sep 2026 15:13:32 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-02.internal (MEProxy); Fri, 18 Sep 2026 15:13:32 -0400
+	by mailfout.stl.internal (Postfix) with ESMTP id 0906B1D0004B;
+	Fri, 18 Sep 2026 15:15:51 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-02.internal (MEProxy); Fri, 18 Sep 2026 15:15:51 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
 	:content-type:content-type:date:date:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm2; t=1789758812; x=1789845212; bh=zbQw5bsCmw
-	yMqn3fZqqtDfVh5dJ9aftS0TuIvTXR55M=; b=FnbU5zU8zkxf2CJ6b9SOM7O5+F
-	AeAeHnc1tN68A3Xp2WMGNaHXHaAQgCKoERSxVx564cxlpfleiAyDRjwdbbOceRR4
-	zqDKGcOt4Gyx08Atrb50orQMbENoV4A3ruo1oRnx9ZgfXAxGUrhlxcV56TvFmTma
-	KerZeVLwp1Uv58lLDcWkSIPnUaPgqYk+oUPgy5UhJdB3AWhT8dhUdVhthn5OxY/A
-	EbA2fQeOnfj3dkYfPhTs2o0bspewHc9OmYeQ1Jg7kpb8HCciNbeK7QHRhomI6qrL
-	pMnho4JSJVZX+rAAxc7g2y4P0ygmzxgXIC/l8qfmvM3qn5tvLDyMJ1Wx991w==
+	:subject:to:to; s=fm2; t=1789758950; x=1789845350; bh=J9nWZf5AYr
+	tOVFVnkFY6HG7AFePU2WrnrLnsh6ZCK9Y=; b=KRtzX1aBQIRtz/iVynBdRwo4xc
+	K02yunkpfQiYm3zYnQj0RFcsDvlNHCpARstW9NLWR9JJ28ty6FcfIA3zhySZGyXF
+	mb6HVhFH0mnNnDDN9xSqXzEr3WsOoJPVkQ7ft/ZGTKyvGVNYMsV8NLUlPJmvbz3U
+	9TikEKttzSrAAKJX7OW98J58TPbeLlm/FXxig1k8pShN1k9nTLitINPZukSx+yWd
+	DKfXWwUIB+UuQVIxWJaQGUbQZJ+yrPq9YMSxRufnFc9utvJGzip6VI0tlbQGsX65
+	S/3OGKOrPcZZn+Cm40QSXQ1URujene0W0gyGXLjagKYZ3avXcp2cbdaKyXHA==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-type:content-type:date:date
 	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
 	:message-id:mime-version:references:reply-to:subject:subject:to
 	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
-	1789758812; x=1789845212; bh=zbQw5bsCmwyMqn3fZqqtDfVh5dJ9aftS0Tu
-	IvTXR55M=; b=UUTn6e0uVgP0OrUrqFo/FvNl1IRmSo3+7fmteb6UzbWoVqQ7VdQ
-	tIGMaoWCQP7XUgjKt9FJxLbuoDrjCVEhs7byxeOxxA/a1Hiqft9pwFlMXLv0oXrT
-	2ZCC3wldk+pOauK2aLpxv0d5//4ruzp0ct+7BOmQIBvmP2cZR8f4xMA1mV6O5IsP
-	XqcrV0mfOMU0jm7s7495lPQ4iZw+FrqAQOzHv6vdgeUcXYgb35LDG5bk6Kq2TJVe
-	HeDkQDzV28koMmyjU5jYDDalVFXo5h4eUXsiuH4WlUQOBVVoqVtY6uHiu7ypmCUP
-	vHWEKPPf92sjrWZBkiiLDTmUtZ4wToRS/Iw==
-X-ME-Sender: <xms:W42tamjhPT_vptwFrFKIJh7He6sFmm5Xy31pHqkYRt_ChMkTLI9M3g>
-    <xme:W42tamFkJRALQx4yMdh277_5zJhmsNaCChAdikzg5qBHy3mzavz4BUsj-8d6hjayB
-    Nwn3PwtKBGaBdmc93cUa3xi2wSvL8yrSQEvyKAfjqwtxwNSaiMXqsk>
-X-ME-Received: <xmr:W42takShE7N98vGuVS5KEvOXal9_CCwxk0k8EiOXEX3UxGQnOmyO-Gc>
-X-ME-Proxy-Cause: dmFkZTFYAgdrwYS9Q+qC2s0sfBujxpW3HYjRb9jmdB+U9OFh78SRfbKJK0tx2V5/J8DeQQ
-    rX9i9/jR8gamHkO/TJs56/AjkxHntCVOf97AQEKbve+aCUL0PblN+6oMNM6beRTKenM0en
-    pbW4aYhy73s4053WP1gLtb5CHQRCrqRliSLI0zQyT9NlWhQcN7ooJU5RtU2mwi5r1BM1+R
-    ad9QcpjXc5bBf2xYjy8tLlhzddsq7A+ps0JeCVf00ZJNi3ABmwbMr3alYAX6TcDfK37ahF
-    INEIPju3vJmHW58AhFsSNUe4qSCmZZU8XDLU+SsbnXLqSlXyZZJDVPCiAucWdQFvarKdnP
-    sEO2v8KpowI3aW74CZUFNSg23+rro41FveSuQGK3YmlQl8NBGJzTBDmLwy2slEuCCYbLi2
-    PXgZRvEksFGeAGHnVvE4WY9igSJJJFn+gG8BoJrBA7Wuu1JudR4LyOL295PZ2qqhsws7EX
-    QC/r/+CX+zXfuHD4b0fw4TmLgu/l3/obCox8A8MkXBPsQEgqaRZy4yEaHPfH6GDo+yzr4g
-    YyDsIOtXOowOEInQSiyrsIY1Ja7I1u9NzcM7Z8cTn1KsKK1Lis4K8z090WbAqothjAjnhS
-    6YhbFBkDLJffcyVupYzqxdJdbfgqNUmSk2+obDhsMvzKWRlmY3m9BNYrmMIA
-X-ME-Proxy: <xmx:W42tarzf1_mMNOj6HSE5kAt2laPkt1aoUNb64ahVh84ErojGdRF_bg>
-    <xmx:W42taoe5e8VgDLJyIOxAC3j4Mti6cTSxSnaYL6XVgw3cYXYBBgwXuQ>
-    <xmx:W42tamNGiTkYpDfGP1v4_8nCs7OBp0umdeOGzOFDv8yri1637nazxQ>
-    <xmx:W42tars6txRish0LExiG7c5cQdNHLq2mj4An-VomNiWtR4TtNKtmwQ>
-    <xmx:XI2tamzGAStdedKZfikY9rqhECcaCfAwxMJO-d_nH7HrxY26gsCHwJGK>
+	1789758950; x=1789845350; bh=J9nWZf5AYrtOVFVnkFY6HG7AFePU2WrnrLn
+	sh6ZCK9Y=; b=ftidCt9uSH6ZYJsWQciKfGdphAX4z2qCzMysoeZctgvphHNX9oP
+	2jITy2BR2ZcDvsvFneCc0s1RhFyT/enMpUgVMTNH+7STODdcsZpNyX1O2JH43XtS
+	Cwz0nv7ynUF4XgjM64ojr8rmwLkqHyERtS+WxyKD/ZjQX+GG4br2a1KD9SvsgDcy
+	87HUtDfkxtnuqUrm5yhd89Cor5kbhweZCe2jB+l/ckMBCkqc+3SkpJrawANzfY74
+	t5XOadTx0GjY+Y+n9AWdxzVMUi9lkm2eSMomrxFNi5EYctU139e0Xvamg62E0neB
+	abUGdx8MAF4vaDVU5zNSLtebG9OPIBrNLzA==
+X-ME-Sender: <xms:5o2tagJQ8sEAHWuTuM-keZcEm96epzf8uxePvhZF3GwYwUARb87HqQ>
+    <xme:5o2tavPXTlT20GRWRpICAI2z77vRUo_5j5C6o2KQTLuE3tT3mUF_gDpDUuNmuSbHC
+    2v1LWJ_ze0daWpH3AxPNIaDyDTIuCQfkOBomQQICjGwJG-Z23e2jBgG>
+X-ME-Received: <xmr:5o2tam4CJx1XzQ1U0FJZjRvGOce4YfOeE6Ynx4MlW-G8BtNCfSHkmFQ>
+X-ME-Proxy-Cause: dmFkZTE0AoeRETnm0A/ec5JkBzkAN6/QBdm2Q0BdpiiaNPJLk1gz78iQhps5wjxJp6zQE3
+    BzS+Sdqz5hTitB6pAP2yab9BAX5BC1DE+ztCbhkDv1/3QVGru42UI0Nny5Lt+T3LLNpYD3
+    AaXkN4/2s/P+sKm0kno5DT8CpH+LHHORAFOElbB8gi7TMPLd6nwhEgydcaK0AV/fw22kRz
+    g05B2VsO9Xg+87TC/8fPT3Ag4AGfdBoFk9UEgfAOqssr79KavS4u5GGdjQXD24It7hfCHy
+    vRo+hY8R9jmBalyPPaVeuzPG1eucSJGfKQyldXBCzE56epYg0w+6H1STAqXKyjo9iXkUec
+    xHq8YRZqmw5txZ5LP39nrz9cRhOMRKAFpn0KZTQp2sdyM3n7S0Uz0C/W9yoCkfys1o1OuU
+    tO/alA/xgabm3ALTVeAF8o6J4RU3u9AmlfSWjLvtAXF3hqDwhmrkYMioLCqBly3+Roh/LJ
+    nZS+xP3TA9G+st7eb3jXv5Gcq6nNiqObi9YnUyMwPe65h3UNEEJKSBRHFd7rmHPNWGxb7v
+    d7jFaCxXkEap3tPHTlKmeV4fxQQXae0M0wTzK02erTD1odbuXX0R6E80TDDedOkqi/pXFv
+    1M9B9gFdGDn/6C56zcBwO3Y5yMAQsqL5RntQp69SdMn19gtPv39H+gIV4KhA
+X-ME-Proxy: <xmx:5o2tap76G4xMzSahjDuOWzh0Q0b9UkdiPWl5pJSXnDdJZ_LJI6WyUA>
+    <xmx:5o2tasE3-gDotfuzyFjsuDEXQl7sRAycrByIB2YNThI9aj88JtJNQg>
+    <xmx:5o2tahUhRd1lopPynDlvAZmAwcVAF3lkRSpgcGnYxQ6zY0DvtY69_Q>
+    <xmx:5o2taoVER4r8MhY0aR9sJP0lp66OS8Dg0o8DOi0rmWuhRuMe2YVdcA>
+    <xmx:5o2tanSFbNxJgbOmdxKU5a5eOPP8RTEtm7aKOqPS7xeu9wHQX7fEj6md>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
- 18 Sep 2026 15:13:30 -0400 (EDT)
-Date: Fri, 18 Sep 2026 12:13:42 -0700
+ 18 Sep 2026 15:15:50 -0400 (EDT)
+Date: Fri, 18 Sep 2026 12:16:02 -0700
 From: Boris Burkov <boris@bur.io>
 To: Wentao Liang <vulab@iscas.ac.cn>
-Cc: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, wqu@suse.com, stable@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Fix root reference leak in
- handle_indirect_tree_backref()
-Message-ID: <20260918191342.GB2956775@zen.localdomain>
-References: <20260916171319.2086756-1-vulab@iscas.ac.cn>
+Cc: dsterba@suse.com, josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, naohiro.aota@wdc.com,
+	stable@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Fix block group reference leak in
+ btrfs_repair_one_zone()
+Message-ID: <20260918191602.GC2956775@zen.localdomain>
+References: <20260916171716.2087024-1-vulab@iscas.ac.cn>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -83,47 +84,53 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260916171319.2086756-1-vulab@iscas.ac.cn>
+In-Reply-To: <20260916171716.2087024-1-vulab@iscas.ac.cn>
 
-On Wed, Sep 16, 2026 at 05:13:19PM +0000, Wentao Liang wrote:
-> handle_indirect_tree_backref() walks up the tree from @cur, storing the
-> reference returned by btrfs_get_fs_root() in lower->root when the top
-> of the searched path is reached, and dropping it once a node already in
-> the backref cache is found.  If the walk instead reaches
-> BTRFS_MAX_LEVEL without hitting either of those two exits, the
-> reference is neither stored nor dropped and is leaked on return.
-
-Are you able to reproduce this bug? If so, can you include that
-information in the commit message.
-
+On Wed, Sep 16, 2026 at 05:17:16PM +0000, Wentao Liang wrote:
+> btrfs_repair_one_zone() hands the block group reference taken by
+> btrfs_lookup_block_group() over to relocating_repair_kthread(), which
+> drops it.  However the return value of kthread_run() is not checked,
+> so when the kernel thread fails to spawn, nothing executes the put and
+> the block group reference is leaked.
 > 
-> Drop the reference and return -EUCLEAN if the walk reaches
-> BTRFS_MAX_LEVEL without finding the root of the tree.
+> Check kthread_run() and drop the reference if the thread failed to
+> start.
 > 
-> Fixes: 1b60d2ec982a ("btrfs: backref: rename and move handle_one_tree_block()")
+> Fixes: f7ef5287a63d ("btrfs: zoned: relocate block group to repair IO failure in zoned filesystems")
 > Cc: stable@vger.kernel.org
+
+Reviewed-by: Boris Burkov <boris@bur.io>
+
 > Signed-off-by: Wentao Liang <vulab@iscas.ac.cn>
 > ---
->  fs/btrfs/backref.c | 6 ++++++
->  1 file changed, 6 insertions(+)
+>  fs/btrfs/volumes.c | 7 +++++--
+>  1 file changed, 5 insertions(+), 2 deletions(-)
 > 
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index 273924ca912c..e889fbec4fe1 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -3426,6 +3426,12 @@ static int handle_indirect_tree_backref(struct btrfs_trans_handle *trans,
->  		lower = upper;
->  		upper = NULL;
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index a88e68f90564..541bcd65a6f6 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -8770,6 +8770,7 @@ static int relocating_repair_kthread(void *data)
+>  bool btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical)
+>  {
+>  	struct btrfs_block_group *cache;
+> +	struct task_struct *task;
+>  
+>  	if (!btrfs_is_zoned(fs_info))
+>  		return false;
+> @@ -8787,8 +8788,10 @@ bool btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical)
+>  		return true;
 >  	}
-> +	/* We walked up to BTRFS_MAX_LEVEL without reaching the tree root. */
-> +	if (level == BTRFS_MAX_LEVEL) {
-> +		btrfs_put_root(root);
-> +		ret = -EUCLEAN;
-> +		goto out;
-> +	}
->  out:
->  	btrfs_release_path(path);
->  	return ret;
+>  
+> -	kthread_run(relocating_repair_kthread, cache,
+> -		    "btrfs-relocating-repair");
+> +	task = kthread_run(relocating_repair_kthread, cache,
+> +			   "btrfs-relocating-repair");
+> +	if (IS_ERR(task))
+> +		btrfs_put_block_group(cache);
+>  
+>  	return true;
+>  }
 > -- 
 > 2.34.1
 > 

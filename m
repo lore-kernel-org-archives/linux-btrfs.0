@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D9A64389108
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 12:28:20 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 996634EDCB9
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 12:28:21 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789734502; cv=none; b=KHD44pFfnrdtPxgdKfmAMEyJjpf9k0IF2BC3HXgELqfjX6y4rJ68Q/lMbbkJP4aLzfgIpIb6Ia7d7XALyoebH++9ZVLQUoEscHgky+fzdsbtXTuxEuiPWM8qND8j+MWZSSiDuhUIvQOnSSSf/wREI2NEWarYQHY1vXMqz5KbTlA=
+	t=1789734503; cv=none; b=pyyFwj0skt2Lxtj5IOzMRp37TvLQBepYV/KSlRPj8OSN0mLo9AoSRiXjeqLezO1TxPH98jpAIpqNHvvDJefF/RsZ6xnqFqSw5DXuxMlNgX2lGX6Hcu4B1YXBIAPyeXWVSpYYGuiJCkl7/EMzT8uxpmxiC5yBAPovpDTHKd/qQUc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789734502; c=relaxed/simple;
-	bh=MqOmhOE7nkh2n+CWZ5rRJrNrVnc2Wvpo3DmCYzxt5WM=;
+	s=arc-20240116; t=1789734503; c=relaxed/simple;
+	bh=wwU1HKhZuVWMJTs7TDT1UWalHSCydsA/yR6g+Z9AL/k=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=dLRwieaGQQrGT+xK4LNocpLKyfPv1cIz6etKppAG3C0/SQuvsPV8KHAWDH4lc8Kk7QYvNBVVT2fXkLT9qE9PBVcXLiNs4psMiTVJa6MQdFlMTz/m4WJGGSYtQDVZAC2VGWvDPteKBdos963eUywl1X/OO4zu8n2QAQcmMTTb1Zg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UFSsOrj5; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version; b=lZOc3qdTFlWuoyx2Fqw7CwaP/sDF/PjWVtxteT2SmdFX0oUyzaWHby43tp8nlEbPr3N1YkU3p3gukIaCG2Zdn624z6n5+kG2t5dO/xAe9I0E9gNpiGP7HTZi/19v69aCCmfeYbDdDY9Jp4MbV9H7O25nsbMaXjlbV5p1SUsvcHA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=X8xMopYd; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UFSsOrj5"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1E9C91F00893
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 12:28:19 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="X8xMopYd"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 06FEF1F00899
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 12:28:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1789734500;
-	bh=aApO/CdULidAWBAOiyqRScH6kLyyxEpKwRjDCmmc0V0=;
+	s=k20260515; t=1789734501;
+	bh=P5SR+IGF3UVyGTiENb8pSMWC3PtbbVeRcviYDducobM=;
 	h=From:To:Subject:Date:In-Reply-To:References;
-	b=UFSsOrj5lU8qv1IAgys47dMXOTEQWztlGgUdcC9bT/UIVAZz9XFb1ssGnLCJtE/bq
-	 lP/S1r6i1O3DKtaYzVYiFsfgXfnmX18stiYvH8E1Io2gD9J4Zfp7++9g6g02Fyqc99
-	 rsiCdRYdwuHxwJvP1Ccr+FgUwzn4QHhnwFjUp9aAlDHpW+o0jeVK4xK796IbtFP5ym
-	 jNf9ZPrtHkSZpabtmRGVGFGO53pLlMk2FGUQweZN3tnq1j2To4G6Z/Ib4T1lA+0R77
-	 r+P+kWeSeZFlIxRJDmlEbotPMeFFldRT5mRw2ExuV9AxSv1lg0LeS9E6HxM0tEZUI/
-	 OmOXAGyhxChDg==
+	b=X8xMopYdIAL5pGYxATJ+iXpvofWOeMUHdTtVIBXEOMHq1YWs3C6XUaePevgtivjlL
+	 DS5Z7M4865jk3ddZWnXnG9bHQ7GW6xYRBJ99pb5dCg8U6860fmO+6Uy0BqC566PgsV
+	 BLixo9jQZ/vHPXqrNbzZb4Eftrl21hn403qP/A/WE7rT//Lu6WkKhGdIpjVXb9cjtq
+	 lSvbmpyX31O9YZ3nnhWlQKRIqxbLqQicz3i43/yLQIk4C0i2zDr4jDJ4+HEJFeXXzd
+	 LlWmZLXXsZ5zLLzyN3g0xupH2xzkEiGX9gO7cHQ3l+qX05th3PnVCZ2uxUuFNhQlfz
+	 1Q60UPiBdiG4Q==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs: clear BTRFS_ROOT_IN_TRANS_SETUP on early exit from record_root_in_trans()
-Date: Fri, 18 Sep 2026 13:28:09 +0100
-Message-ID: <410734082c3a544458920efe7be7a39222424aeb.1789734245.git.fdmanana@suse.com>
+Subject: [PATCH 2/3] btrfs: fix barrier usage in btrfs_record_root_in_trans()
+Date: Fri, 18 Sep 2026 13:28:10 +0100
+Message-ID: <ded35d39b9858ee6f20ee3358a8e592a36e8e33c.1789734246.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1789734239.git.fdmanana@suse.com>
 References: <cover.1789734239.git.fdmanana@suse.com>
@@ -44,35 +44,56 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-If we exit early because the transaction that last used the root already
-matches the current transaction, we leave the BTRFS_ROOT_IN_TRANS_SETUP
-bit set in the root (which we just set right before the exit). While this
-does not cause any functional issue, it makes callers of
-btrfs_record_root_in_trans() always lock fs_info->reloc_mutex and call
-record_root_in_trans() for nothing, causing unnecessary lock contention.
-One caller of btrfs_record_root_in_trans() is start_transaction(), used to
-start new transaction or joining an existing one, which is a hot path.
+The barrier usage in btrfs_record_root_in_trans() is wrong, as the writer
+side, in record_root_in_trans(), sets BTRFS_ROOT_IN_TRANS_SETUP, does a
+write barrier and then sets the root's last transaction. This means the
+reader side must check the root's last transaction, issue a read barrier
+and then check for BTRFS_ROOT_IN_TRANS_SETUP. However, currently we issue
+a read barrier and then check the root's last transaction and the bit
+BTRFS_ROOT_IN_TRANS_SETUP, which can be problematic because the CPU is
+free to reorder the checks and the following can happen:
 
-So clear BTRFS_ROOT_IN_TRANS_SETUP on early exit.
+1) Before reading the root's last_trans, it checks that
+   BTRFS_ROOT_IN_TRANS_SETUP is not set.
+
+2) A writer sets BTRFS_ROOT_IN_TRANS_SETUP, does smp_wmb() and updates
+   the root's last_trans.
+
+3) The reader then sees the root's last_trans matches the current
+   transaction and falsely concludes the root setup is completes and
+   returns without waiting for the writer task to complete the setup
+   (calling btrfs_init_reloc_root()).
+
+So fix the reading ordered as previously described: check the root's
+last_trans, issue read barrier and then check BTRFS_ROOT_IN_TRANS_SETUP
+(the reverse of what the writer side does).
 
 Assisted-by: LLM
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/transaction.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/transaction.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index ca114235bbe1..c1555621ae4e 100644
+index c1555621ae4e..13203ea9e116 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -432,6 +432,7 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
- 		spin_lock(&fs_info->fs_roots_radix_lock);
- 		if (btrfs_get_root_last_trans(root) == trans->transid && !force) {
- 			spin_unlock(&fs_info->fs_roots_radix_lock);
-+			clear_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state);
- 			return 0;
- 		}
- 		radix_tree_tag_set(&fs_info->fs_roots_radix,
+@@ -511,10 +511,11 @@ int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
+ 	 * see record_root_in_trans for comments about IN_TRANS_SETUP usage
+ 	 * and barriers
+ 	 */
+-	smp_rmb();
+-	if (btrfs_get_root_last_trans(root) == trans->transid &&
+-	    !test_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state))
+-		return 0;
++	if (btrfs_get_root_last_trans(root) == trans->transid) {
++		smp_rmb();
++		if (!test_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state))
++			return 0;
++	}
+ 
+ 	mutex_lock(&fs_info->reloc_mutex);
+ 	ret = record_root_in_trans(trans, root, false);
 -- 
 2.47.2
 

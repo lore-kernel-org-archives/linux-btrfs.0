@@ -1,67 +1,67 @@
-Received: from mail-ed2-f12.google.com (mail-ed2-f12.google.com [74.125.228.76])
+Received: from mail-ed2-f35.google.com (mail-ed2-f35.google.com [74.125.228.99])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7D45C2E62A9
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 21:47:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.76
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 64C0C35201B
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 21:47:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.99
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789768031; cv=none; b=ESRGooaN0iiEwAE2cJG1Rzag+D8JEgIJkT1XSFoJWqQr1jGo12SB+NKgFj+FnzcrZsBWxhrKL9kG/wOkZYbcXC9KMWiuvfqv3Y6/0qwrc1sxL01HlL+421yYwmK2fOw1ETeDRmT+ieNlsdowH79GCwvorlr/odFV9ep7yjFUZis=
+	t=1789768045; cv=none; b=pya6ojJEs/v54htBi5MKFqWbBJpMtaiyJ2JLq1JNAvokWP8qSpmWDsAnSbvZfoYAtvGtCvGzstthl3BP/JVEXsTpj8WEIm+lGQv6/62YN7y4zU6UDKNdHVbAthpWmXJP5suPPANRXOqHooFZCrYtb+HUoKsUkDgXkof1a51f/V4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789768031; c=relaxed/simple;
-	bh=Q/NdhQnMQ9/VsWXEIcPbW4xL31vkR1NUAQBvh6/3cpw=;
+	s=arc-20240116; t=1789768045; c=relaxed/simple;
+	bh=Ds3zOmDxokP2drk9u1iVJBf5FyWeNnUj4j/CawtEzBA=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=u15O/Ai9gEoQZviP4X+2DWPNLCE1XPJT0Rw4V+p4J4TUzwsNHisgMyAkyrRCVIgpNV8sKJB0c1U9vjWg6fMJfqse414R1+lXrgG4ALw50FKuE1oCIpV779Xh0PQIKPt+VvboVSUwePh3WScLKF5s/rnG/Riy3p6h0/FdqHKGQzw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=WKA14ymR; arc=none smtp.client-ip=74.125.228.76
+	 In-Reply-To:Content-Type; b=jtFYNIU9WiP5JjSd/sjMYIBmBU7bcAPKUDQAae0Dr/J/ivGNAmc8qKdEBIR98X7E0bgqjJ4uaWq4IPp94yX1a/GMt2WYLvmDtx51RiUDY+44EG/3MtbltkZz5V0hMFKUHCXhHQEXkrLp7vmQ0ZoXEkVuexhTqlAlY8AS/Wjv+Ls=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Qyqu7e/i; arc=none smtp.client-ip=74.125.228.99
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="WKA14ymR"
-Received: by mail-ed2-f12.google.com with SMTP id 4fb4d7f45d1cf-6a996c8adf3so1881261a12.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 14:47:09 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Qyqu7e/i"
+Received: by mail-ed2-f35.google.com with SMTP id 4fb4d7f45d1cf-6a6056ac81fso1984974a12.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 14:47:23 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1789768028; x=1790372828; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1789768041; x=1790372841; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=87XH0Nypzn1s/HuP5xzyU6MpT7gXSg9cDLAye+I2x6M=;
-        b=WKA14ymRCfmeRrMTvQfaNUnMu9Y2xoaePhAxtBFPrObfH6Fd7dDfAYN30pp5+d3rU5
-         wyHK0YhoE0zzSZEIzUjKhPZ1qRLSvg+UfeWVkVg8nddhxpQVn6CHykmgnTO9gg1zD5Gl
-         mGMY4jFeTkwY6wVV/AHvWWT3UBMQoyK5sl8ct3rL76opxmGWOqZxvWx4UwwuFssqoOUu
-         DOZJxoL9LZTVX1Iv1xHsGVIi7cH769h2JCsaEIiTLl2vpCQVFyFfpiaP1jGH+MbyPQqc
-         gfkMaebcn3ACoBZajKakVnKP86KQbYttjTNZLIWQVuU3Zplfow8HQEzkM/r7F5FN83Af
-         zBmA==
+        bh=eH+RioRZ5RkDMU7w4RjfhJh5nWeMvS/VcsAp541LK/g=;
+        b=Qyqu7e/ik3SZ8UdZnKkCyHWHuE02uoSBKxAQDY0cG/0WY9farV5bQZ76H3ZfelSNkJ
+         S9/00cuCYkka0FhohXP6rm3hxiVFiJV7iX0fFC4YrkUEeRLp0TYXEG1ONAQkNoa3L78v
+         MThUOHVz6czZ218ivGIrnnzIITZH+SJ8HiV9GWJNLBN8pn31zuAuEKYNlsvv4Ylc+0jv
+         QpturXbDMLZBWM29QLoGE1jlsPYPQ7SUWoRUhH3xBX/1Korb8XWhDr3hObOuHRRAs0uR
+         qji7HBdCsDpO57svZStRuf5Ywe8cTbEKvHIdxVfEO+ronL+nqxXP8tBmOibOSjzdri3Z
+         HHcg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1789768028; x=1790372828;
+        d=1e100.net; s=20260707; t=1789768041; x=1790372841;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=87XH0Nypzn1s/HuP5xzyU6MpT7gXSg9cDLAye+I2x6M=;
-        b=0A+WBxldz5zGFXkE0FveVQOK3zQqJw9j2oSEczwRInZOyNLcY7hUApo6ypn71I+Du7
-         bBaNUUmRnp/bgdk6atA7ZsYgDsEZp0qb0+t4JRkIfaqfHXcsdiiLVieVCbSOWNHHWJgF
-         eBelyqYo3hX8WcoHhGT3isQ2Sn2uhJ0kHIbJycgcGt9cCXlAiu4Wo3PM/IbeS9liDRs5
-         GQkaRE1Egq9lw35TORxEkDSvThSRlmxkvh00y9rCRLNpsbg9G3t0C55Jx3EkutvSCRdS
-         ZbDiRKzeMgxMBB533Hd59Dxppfc4M0aXfFuf5mEBO3r+PXWYYAvHObiUerOuFHJbcH+p
-         PQCg==
-X-Forwarded-Encrypted: i=1; AKwUvBxqNaQL+tlYg8PkT4soCiVrpdRSUHZWtuQLHfuEdHugemEcuLVon+tNexuBEqa0ueBXychbqUZMJ1FZeg==@vger.kernel.org
-X-Gm-Message-State: AFuF++lLIgCx5Fo5dZ9JqCUykInyBAt06IAOVcTG0dNzmAxOqNnNQdNN
-	RjbUxw2RbGjZmc1kxLtXB7N1SKb+25rsDiVmhvZwuOMaLM8IitWhkUWl8FmaaOK2vPqJWQeESO4
-	x+2znRlw=
-X-Gm-Gg: AYBFou2sVvceJic+sWheDSmpUV3D10jbt1Z0PT4WsTAndmYJJ5Q4JGwz8kkX4Q0w0nf
-	XDEZqRj0YAUzwQocj09ie9j+F0XSnDBSoqhLEa2PmMcqnsU85i7B2y5GLiEMR0DsGbCf70UhMA/
-	2EUgvlPtfbEXYs8s+hPRjMv++/9PsHOU1RV8HG9EGo0rbMoZHh/7vAhNBl+LyvfMN3hxgoi6eaY
-	Zp0/qoz8Go/goxQwHn1gJYu+P6NCHHjT4RPb0XwiOcV7zTPq8l5cMNkOKx6vXmkqLeSG5I1LILE
-	hCrxyuNgb8BZE+6sbSU0tdrKtcTypxZV8o7JVCO8xpq3pydrI3+qwhbIaiaFOGVVBaODaAWAVI/
-	gUF4NIgMRpdLMzH1xRmXc+vwktcGDtIFOgYWd4EL0xnHywdr4QUoJhhOW1EZrstKF/p8kC4A4sS
-	EngAseN1np+d3ZWFrm7jJW59NWVqFbi1Zl5252+39RClPkU4MCS0jZuWbqbsdmIrY=
-X-Received: by 2002:a05:6402:158e:b0:6aa:19bd:dc9d with SMTP id 4fb4d7f45d1cf-6aa526f8035mr2522754a12.13.1789768027550;
-        Fri, 18 Sep 2026 14:47:07 -0700 (PDT)
+        bh=eH+RioRZ5RkDMU7w4RjfhJh5nWeMvS/VcsAp541LK/g=;
+        b=maaaxrY//63OGqAXyoZsG0iOc0orZABvcPB+mSAPMzjOxdOd9GyYCe0BIz/U7exDCn
+         kDRmWG9XijTmyvmhlP5IW+DBGT0a7+ZKlw5v5f05yYGxzOn18orWvoWJR1VNy8zpdaU2
+         MxtYMJwBp8+a05WxtxSkSwdwMkNlvrldQ8jAakpXIwHSpireVwsRP0yPaqRLhNE8Kb1i
+         ZqkanflOGygBf3iNf3ywLvlgigKlZRbhOCfO6KBoEFc/7kmNfwtyLoSSrlBVQYEQfhn0
+         3kHAlKaZAm13bFLCcex45DCW/3nd7HhRiRI2fttbnOdKBMUpHtLtKrgsbOKu3C2aLGz7
+         GvNA==
+X-Forwarded-Encrypted: i=1; AKwUvByzC2JBkg5REiOl9k+v8jOXSDI6OcpLc5jvYCPVmG31k/hvS4QIGQ+at1w0WctWW9gne/EhgrbZqMh2Xw==@vger.kernel.org
+X-Gm-Message-State: AFuF++k7zxTTBb9FQTiaNzPkhHU/8yRSRhjpKYE/yUajzyuqUfUnKntG
+	XNSK78w191gwbI0ZDXVNfhkTFK3J2ewJ6o6Xu5/rev7kkPbawHw542l6D/5hOZunIow60AU9WBk
+	8ELM4jRs=
+X-Gm-Gg: AYBFou38Pxi2oAaIMu1ODkzbIV8e0FT9ufAcG077xSJrRCETigAgNJKaPzMmKabQVC6
+	1uKw/aCRjDqv9z66aN1OOucoF+cjggAHFgIhPAnVNCJ5fjjlNIMqql9AwzCsat02mGpGVQ1q99k
+	RZ/xOZ/ME92WbyHwHoR/Togv2YWLHZUIjJ6OsiSvEgUiK2qJxknJ9mLLo/VSR3Z0W1vovefTznM
+	KxeZ3ILImb4/RpmRg2aJm9nThGK0pT3aKy6cLaWYY73tnyD35IGkuHljDvDrpMhg+V2RRz+d8py
+	V4tvMsYFfUQRZmKUwktCbbPATGse+2jBxFnvnrm/qGHXBN6xW5ka2gAKjEzwYsolp5eH8iCFICC
+	oQLvYFlynVmHtwG453I56CKnzmO6cowIHpm6qu1XkNyqWe7mHCk3gWnqlbYhWh9yCIZ39ci87Ki
+	VkNfE717NxTxd8W1jhaBO93sMnUC6p+k5xBPzE1O+9OHmeB543UjVWH10GYHT1eLI=
+X-Received: by 2002:a05:6402:440a:b0:6a8:e223:fee1 with SMTP id 4fb4d7f45d1cf-6aa531e36ffmr2951969a12.43.1789768041635;
+        Fri, 18 Sep 2026 14:47:21 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-39e6fb75539sm717966a91.3.2026.09.18.14.47.01
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2ddc179e253sm2070185ad.41.2026.09.18.14.47.18
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 18 Sep 2026 14:47:05 -0700 (PDT)
-Message-ID: <6ae96b86-24d0-4a27-bdb2-6c84b5918745@suse.com>
-Date: Sat, 19 Sep 2026 07:16:59 +0930
+        Fri, 18 Sep 2026 14:47:19 -0700 (PDT)
+Message-ID: <5a5fd42b-6949-4830-a8f5-72f584e7a098@suse.com>
+Date: Sat, 19 Sep 2026 07:17:16 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,11 +69,11 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 1/3] btrfs: clear BTRFS_ROOT_IN_TRANS_SETUP on early exit
- from record_root_in_trans()
+Subject: Re: [PATCH 3/3] btrfs: assert reloc mutex is held in
+ record_root_in_trans()
 To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
 References: <cover.1789734239.git.fdmanana@suse.com>
- <410734082c3a544458920efe7be7a39222424aeb.1789734245.git.fdmanana@suse.com>
+ <3fb8cf7a662a1612840b482754429fd3f5f3aaf2.1789734247.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -100,7 +100,7 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <410734082c3a544458920efe7be7a39222424aeb.1789734245.git.fdmanana@suse.com>
+In-Reply-To: <3fb8cf7a662a1612840b482754429fd3f5f3aaf2.1789734247.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
@@ -109,18 +109,10 @@ Content-Transfer-Encoding: 8bit
 在 2026/9/18 21:58, fdmanana@kernel.org 写道:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> If we exit early because the transaction that last used the root already
-> matches the current transaction, we leave the BTRFS_ROOT_IN_TRANS_SETUP
-> bit set in the root (which we just set right before the exit). While this
-> does not cause any functional issue, it makes callers of
-> btrfs_record_root_in_trans() always lock fs_info->reloc_mutex and call
-> record_root_in_trans() for nothing, causing unnecessary lock contention.
-> One caller of btrfs_record_root_in_trans() is start_transaction(), used to
-> start new transaction or joining an existing one, which is a hot path.
+> The fs_info->reloc_mutex is supposed to be held when record_root_in_trans()
+> is called and we mention that in a comment inside the function. Add a
+> lockdep assertion to check the lock is held.
 > 
-> So clear BTRFS_ROOT_IN_TRANS_SETUP on early exit.
-> 
-> Assisted-by: LLM
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
@@ -129,19 +121,20 @@ Thanks,
 Qu
 
 > ---
->   fs/btrfs/transaction.c | 1 +
->   1 file changed, 1 insertion(+)
+>   fs/btrfs/transaction.c | 2 ++
+>   1 file changed, 2 insertions(+)
 > 
 > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index ca114235bbe1..c1555621ae4e 100644
+> index 13203ea9e116..0a3913b61f16 100644
 > --- a/fs/btrfs/transaction.c
 > +++ b/fs/btrfs/transaction.c
-> @@ -432,6 +432,7 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
->   		spin_lock(&fs_info->fs_roots_radix_lock);
->   		if (btrfs_get_root_last_trans(root) == trans->transid && !force) {
->   			spin_unlock(&fs_info->fs_roots_radix_lock);
-> +			clear_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state);
->   			return 0;
->   		}
->   		radix_tree_tag_set(&fs_info->fs_roots_radix,
+> @@ -413,6 +413,8 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
+>   	struct btrfs_fs_info *fs_info = root->fs_info;
+>   	int ret = 0;
+>   
+> +	lockdep_assert_held(&fs_info->reloc_mutex);
+> +
+>   	if ((test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
+>   	    btrfs_get_root_last_trans(root) < trans->transid) || force) {
+>   		WARN_ON(!force && root->commit_root != root->node);
 

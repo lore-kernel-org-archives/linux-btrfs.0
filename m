@@ -1,36 +1,35 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2F1FC3E44ED
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 08:43:27 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC11D48595F
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2026 08:46:18 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789721010; cv=none; b=PU2dfG+N95xGI/vVLCh4EDdvJl1bVee8wpuwmHyStCw+zBTGoi90DD2Z1o9OA9JikSplry4/8emItA3nVgmBM64eMZIFKsy4a0u5i08K9YWjDlr1FBmCSCvc9M/9usFvyKMSk0ue+GKzKkXjS4j80xRQt84hdCXbbXiTBtkSlQk=
+	t=1789721180; cv=none; b=WM+0mkn6Pgykq19PPplOgfwM0B8Q5QGBehrjr6g5RnEmXxUynT3kezkWi4yGVYzOYCkabojG27lrVU22b0dTKjIA1UolCphIVvaI8svurHuOk0AUz08uQIeKQU21Ec9j3OcQSHTTRIKF4UHNYsy8BqGbJe/SmN5ZGJ7W/uxADSc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789721010; c=relaxed/simple;
-	bh=B8enl7XajpNalonsPTNgKNafhkdgqqD/Md62FHaEKmQ=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=r44H/mqNmYPQDmv55ENgr2vR7j2ByaW+WxJwJzFFuguftMs9SsLP9jCmW0OVTkxhBHYc7n4FzAunz7jmA5VdLpxbI0kmmnpc0ojs37RTMhGHTDFPW3jY4GwmNdQnet2pQ/3TGgu3vI7EQ0OkBvj7vSc1XaSG1UF0fi2yU+Nly7M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ScZxygwk; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1789721180; c=relaxed/simple;
+	bh=SnilOYhHPWLorvYiSKn18mmkmOJS7rbS2CLd8duTDyk=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=qCUarARM2BdkKEBFM2sNUoaI5ch2/J0K+FrloXtILSBTyPT6cYfnBxsrKP/jci6mcHB52oAnmCLVBk28rQnTCTUrLDJH/8fa19yly3DhVeixQb/X9DzfwpuXGWaFjNWb3MRHT1+vCePrgVwCG/WgWBFZ5pp/Czkuw0fTH8J4ALo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=mN3FPhM2; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ScZxygwk"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 82B6A1F000FF;
-	Fri, 18 Sep 2026 08:43:25 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="mN3FPhM2"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B7B201F0089A;
+	Fri, 18 Sep 2026 08:46:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1789721006;
-	bh=5j1ZVmoODEcnt056LhDW9rRHbMWXo37OrUcqNILKcwU=;
-	h=From:To:Cc:Subject:Date;
-	b=ScZxygwka8S4W21pTvCB0VD1eAZ77lzxKrkb//YhDSqv0vOEMQv3K6Rm3tT34v5XZ
-	 WiilUdeWeUYgyLuiW8u5cMdgF4hQI8xBY2gFB2ujAjqc/tIiYOdyI13XLsQIgmCeP3
-	 37JQpL43B/MbIl+BSHXLZ8T+8Q2dF58Ht2npyLfx0LWWjX9Gbi2vo2TVZkRssmFdbC
-	 PamHb3RAOvezhUBqFN90PPyZHaKz0F40Opy3Cu9pnAqIJtQwxmx1lc4HtPdXtAqPFd
-	 g7s7EDT/mL+vLzGs7jKkM2cxneILqj7/bhGPZu8TC0QLcADJCMj1ezVsTa8sWxHgVS
-	 rogmOOuz4ZTVw==
+	s=k20260515; t=1789721178;
+	bh=MbESS7J92GOVmxFo8OSOvdF59v7n2rIrOBipNWC3NYo=;
+	h=From:To:Subject:Date;
+	b=mN3FPhM2uVSIlIqm6dUTzrANn/6CUXZK210HO00IAdE9PrRZ59Zzy+e0Xh4Udw9dY
+	 sTxjhX83P+5rnrSclOtVtndl8Q0dhPeZiUl2qxaLJTsHq1FZs8rVOUSeGcs1qqNA9L
+	 uA4rT/VYXpOUPUv/QRhlej98c//PcFfLgYYssvOeJMR7GawKfKpQDLe86/CiK7hx4G
+	 Pz7asbBdBGZjpTiB4toqYTOuK+DfaEAEox8h3vzezG4BTDZJupGbk89/338plvN/t/
+	 U79ZUNhCv423dEivvKAFsPMoWTfDf0Erfa1u1HzoVXU39M/uU0qADIKtTfduo3F/lv
+	 wnRY0lKimAb8A==
 From: Anand Jain <asj@kernel.org>
 To: linux-btrfs@vger.kernel.org,
 	dsterba@suse.cz
-Cc: Your Name <you@example.com>
 Subject: [PATCH] btrfs-progs: docs: document the temp_fsid feature in btrfs(5)
-Date: Fri, 18 Sep 2026 16:42:43 +0800
+Date: Fri, 18 Sep 2026 16:46:12 +0800
 Message-ID: <b49b0307f3622febb1ae5c87db10b5de032ec967.1789720953.git.asj@kernel.org>
 X-Mailer: git-send-email 2.43.0
 Precedence: bulk
@@ -40,8 +39,7 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-
-From: Your Name <you@example.com>
+Message-ID: <20260918084612.ZxGVtNO9DAJfevT0EwV5BlMy-4qgIyRKK6TAZ5oNLtU@z>
 
 The temp_fsid feature (kernel 6.7) is missing from the FILESYSTEM
 FEATURES list in btrfs(5). It's exposed in sysfs

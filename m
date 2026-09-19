@@ -1,92 +1,140 @@
-Received: from mail-ed2-f35.google.com (mail-ed2-f35.google.com [74.125.228.99])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B588234DB72
-	for <linux-btrfs@vger.kernel.org>; Sat, 19 Sep 2026 19:53:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.99
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5A25B381EAD;
+	Sat, 19 Sep 2026 20:46:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789847611; cv=none; b=mmGNfJg0rKZtV4s7Ha8RNgx994p7pmtKZuj+9KUSFY24l8Vk1kezezhdvWmbrd5723/xxKStvdoQWdlh1a1OWZBsYv34P7//fR+6IakLECmJ59jBmzQ/XWwcKKqr0tIxAt1cESvoRs+n9Fyq7Rh/wKBt1iqew6+zBdHYwsvgfN8=
+	t=1789850795; cv=none; b=LO9XTcv1OMDu2QLP//zUNBVd6chhRIlMEuJnqcToirECX0zxodBzP0xPvl6sNRoZA9gt9V7SMv9af7ttMycopbMbJ3cyELJPPQgUkPiJmeEvPSzFbjK9/j0o7bBOta/60aEdN8R/B1Hw3okiguRCwJWhWTKpz4/C/KEOjRYUeqk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789847611; c=relaxed/simple;
-	bh=grPi4sL38mCO/zpcl4PDe5TmClgVRLK3Akq0l20mu58=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=ZgYyHRkuMYfushqwXfY7GqPrS59f4PhXcHY928EVAVeYNxPxe6jsxE5DtZtAa7Wrni0CQ3riBOviFd9iUoI2kLfrGZWhOYtiIWSxvk5ZZJUypZs4r86RJ5h5UJJP9jv/0JhfOoUIrCJrwwx9o9nMd23eWgrPOcyncEMs+V6QKYM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org; spf=pass smtp.mailfrom=linuxfoundation.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=Qj/b8MX6; arc=none smtp.client-ip=74.125.228.99
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linuxfoundation.org
+	s=arc-20240116; t=1789850795; c=relaxed/simple;
+	bh=nlJiER+kDXS3d2daiPSvVpFIPEQ+6sw6rHJaRPpLD6M=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=QbZedXHO2Lj5y4N3TDw4EHHSceJOZRaQ0SyEqHxkYIb1eniBHx1TlJbhPj6/i0v9x8qd1yj6fOI55I4aNDliDgg3FC1IklrBfU3Qvx34UVjcHo+AEI4ZwRokp/j1LDwwFL7mElb/HF8QDU/zogpfosjVwVKBavKQZ9npL0nLjDc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=F19q3Kq6; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=3htMDqVN; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=UiApHGCb; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=KKCvQmaH; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="Qj/b8MX6"
-Received: by mail-ed2-f35.google.com with SMTP id 4fb4d7f45d1cf-6aa06e51bc3so3014945a12.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 19 Sep 2026 12:53:28 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google; t=1789847607; x=1790452407; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=iGjddvv8oGsPTZlnHHs3B4nPTI0v+hJUCUNdoJx0o2A=;
-        b=Qj/b8MX658zvmi1rvQVYol/+zfivCykahq1OMB/Qc7I1wcerCRSNVBYrW0sSA2hO7g
-         ZinNjFMiD2cD+nOrAZ9CmQ670yBra+BnbPUj0metueV9jRQUIYKlnvY80JrEAsK9SzcI
-         1SAKmA54UWI7TwxMXc4Y61URB0fhIqJ1cHIZo=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1789847607; x=1790452407;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=iGjddvv8oGsPTZlnHHs3B4nPTI0v+hJUCUNdoJx0o2A=;
-        b=rgfchfQkTHB3SSwMQCI9gdKwEovis2jXukK+eqsfqJ26LOZTdcMfJIleSWmIagvy1T
-         shjf3iNVnc+Z69w8EjaX0j2y94u6VT/+qr4/2eIk04DKibah2g11dicL3AAruJNlePvW
-         wWWs0/LCsL1de5hDWysPpNsEiBEgs2UWUSeWjwAMDXdexdvneHziZhk5NEd84dpQxbis
-         khfBgJyJca2pG5uosLdhqspyNSry2JaKDrMY+oJG6uCAXdQ4KDH1n3lEgivur3xiRVua
-         Me47hzY0eEcxuh5OgdqJ7SktX/RuKDYeQE3bIWQ0zoTOJqYa5X/NTA6IrlRCSJDpjnzW
-         odQA==
-X-Gm-Message-State: AFuF++m+Y6DDAsTuY3NYoa26qH0UZBQFVEcl+1v4Mus/uH6kWQ9ZVdwG
-	KRFZZZz4wfey84chPs4SLPPNGhZTzE4YevcLMzQ8lIrvOEi4Sj+o0ePmIackx3SIOA3JIJq4yR4
-	8vVzVVQch8A==
-X-Gm-Gg: AYBFou1/QoQGnhrjOmJcuBGLqr/QZ7swbkk2Ey8Nz+g58rVnwfkP2jRCM796+k2/0Rr
-	3eqwqCRYCWNgAZaoRHHUG/0xNdJfkZ5IHvCfCBxByg63MihHQtFNR15OSTMPVVbqqHoMusFjSJN
-	kYkmmtZNvR9GSDPhg9SlTSqhJbN6cVFGV1MuxVr7J5g6+W07GmQ1M1G/pEFqrd8RmcxJIPAaEZl
-	iZAGxG423LGwSGsNaiBPojrmFhCkRN4lAdF6F+YChcQ56qXEKn137e2AXkfTgt8XAAJz8JO0fdJ
-	LIMpEFPo35tIpycAJbJGHi4PcADf1ce072+hW7Je2QrfWsLZc3jbEzrKchgmYJUSzk9zg/qpi8T
-	dzgK4Aeb4xYPQPIvThHg4mqaxp1gEjOJmpWps3UYTS4oovLaf4224sBpmB/T2ZyasOZTo1oXjL+
-	QnmYT2joeFya2T+TBEXWjTrBgxoKrdSW+xcLlaAaqIm1oLcDuE9qtVbCX0q4tjzDYreUV066YKJ
-	pjVDbE6tx751ruS1qVDq+qabKy8XntINXbTix6fDtg0ZrAl+g==
-X-Received: by 2002:a05:6402:2803:b0:6a7:ea53:f628 with SMTP id 4fb4d7f45d1cf-6aa569a0782mr4124352a12.39.1789847606898;
-        Sat, 19 Sep 2026 12:53:26 -0700 (PDT)
-Received: from mail-ej2-f12.google.com (mail-ej2-f12.google.com. [74.125.228.140])
-        by smtp.gmail.com with ESMTPSA id 4fb4d7f45d1cf-6aa67d819a7sm1579860a12.9.2026.09.19.12.53.26
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 19 Sep 2026 12:53:26 -0700 (PDT)
-Received: by mail-ej2-f12.google.com with SMTP id a640c23a62f3a-c254f705536so347854666b.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 19 Sep 2026 12:53:26 -0700 (PDT)
-X-Received: by 2002:a17:907:1ca4:b0:c28:599b:7782 with SMTP id
- a640c23a62f3a-c2a15b11ac5mr645905766b.21.1789847606342; Sat, 19 Sep 2026
- 12:53:26 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="F19q3Kq6";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="3htMDqVN";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="UiApHGCb";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="KKCvQmaH"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 6B85221D72;
+	Sat, 19 Sep 2026 20:46:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1789850784;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=UJMe82CQ3Djnx2A8rPKycYLGgzecxoVzpCYmqYJA/Gk=;
+	b=F19q3Kq61Uc2yaXnjoEtjooK49h5azwAWOVghKOIZiI4TFYEJhTlmHMikmMM6c7FU/MLid
+	EUW1/AD/kftYRr+TuLFQhR241dxbSB0HJ7DloCn5TbbGBfLjjEC/UrnHqcFVWl0XSIvBiC
+	YpcRzMv//MlXRba6y3vttkCRQygMarI=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1789850784;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=UJMe82CQ3Djnx2A8rPKycYLGgzecxoVzpCYmqYJA/Gk=;
+	b=3htMDqVNwXfBqjZJD7Lzxz2hhQv/IuauJ+9YqkspWgEuy4UnfjEcIquxF1U6wOiRDVieaS
+	70Vvv6tKuJPT6QDw==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=UiApHGCb;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=KKCvQmaH
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1789850780;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=UJMe82CQ3Djnx2A8rPKycYLGgzecxoVzpCYmqYJA/Gk=;
+	b=UiApHGCbDA7I98fMcOJAhQgxcrWYKpXo2jgP4ns6A8DzAfHgULruzAJPqW8CTw9woHsNqc
+	GUH1ceGHSS0++w6VZcInWlZLI/7Ukznln1Gly1rtAQbKrbvI9HJ1PB5lkkNuNudiQdQetw
+	+UzNSRYZ9whvMHDJEtywg1FOCqaITQA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1789850780;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=UJMe82CQ3Djnx2A8rPKycYLGgzecxoVzpCYmqYJA/Gk=;
+	b=KKCvQmaHHoHm7v+Nw0pNd5NOvzSQmggDDPpl3W0cT7oUttCmabSohbvilq5ucCcBwAG33U
+	+bEiZKHi93jiYBDA==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3EB8D13331;
+	Sat, 19 Sep 2026 20:46:20 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 3ljlBpz0rmoSPQAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Sat, 19 Sep 2026 20:46:20 +0000
+Date: Sat, 19 Sep 2026 22:46:14 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [GIT PULL] Btrfs fixes for 7.3-rc4
+Message-ID: <20260919204614.GY54722@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1789845496.git.dsterba@suse.com>
+ <CAHk-=wjwehxF3wP-vj23RXYH8RmK-Crmnq0g2wr6wNDet87S6g@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1789845496.git.dsterba@suse.com>
-In-Reply-To: <cover.1789845496.git.dsterba@suse.com>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Sat, 19 Sep 2026 12:53:08 -0700
-X-Gmail-Original-Message-ID: <CAHk-=wjwehxF3wP-vj23RXYH8RmK-Crmnq0g2wr6wNDet87S6g@mail.gmail.com>
-X-Gm-Features: AcwNN1VrFvZJwPY6pA8DloIwbZXRJ8ZGYBgUm8OdHOB-IzSkClOBfTvn11h5BKU
-Message-ID: <CAHk-=wjwehxF3wP-vj23RXYH8RmK-Crmnq0g2wr6wNDet87S6g@mail.gmail.com>
-Subject: Re: [GIT PULL] Btrfs fixes for 7.3-rc4
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAHk-=wjwehxF3wP-vj23RXYH8RmK-Crmnq0g2wr6wNDet87S6g@mail.gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Score: -4.21
+X-Rspamd-Queue-Id: 6B85221D72
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Level: 
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-4.21 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	TO_DN_SOME(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	MID_RHS_MATCH_FROM(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:email,suse.cz:dkim,suse.cz:replyto,suse.cz:mid]
+X-Spam-Flag: NO
 
-On Sat, 19 Sept 2026 at 12:44, David Sterba <dsterba@suse.com> wrote:
->
->   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.3-rc3-tag
+On Sat, Sep 19, 2026 at 12:53:08PM -0700, Linus Torvalds wrote:
+> On Sat, 19 Sept 2026 at 12:44, David Sterba <dsterba@suse.com> wrote:
+> >
+> >   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.3-rc3-tag
+> 
+> -ENOSUCHTAG.
+> 
+> I see a 'for-7.3-rc3' branch that has that top commit in it, but no
+> signed tags. Forgot to push?
 
--ENOSUCHTAG.
-
-I see a 'for-7.3-rc3' branch that has that top commit in it, but no
-signed tags. Forgot to push?
-
-                  Linus
+Yes, sorry, now pushed.

@@ -1,183 +1,92 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-ed2-f35.google.com (mail-ed2-f35.google.com [74.125.228.99])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DE4933815E3;
-	Sat, 19 Sep 2026 19:44:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B588234DB72
+	for <linux-btrfs@vger.kernel.org>; Sat, 19 Sep 2026 19:53:28 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.99
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789847091; cv=none; b=pFF/Np0i1vKrZdkWD7ZGvdz1JHnLsTEJiTzZgfqtmMi/Dg+G/gVwNqciz6a/gpsS4B73pVPXKpsUWUZlZ57QgGF/9Srgg6x4EvcstyaohDdaXJiMiO27F8/Tsdk9q1MNndQw5IVUs3JadFEQyLWfdv4avVIncentUUA37DD15VU=
+	t=1789847611; cv=none; b=mmGNfJg0rKZtV4s7Ha8RNgx994p7pmtKZuj+9KUSFY24l8Vk1kezezhdvWmbrd5723/xxKStvdoQWdlh1a1OWZBsYv34P7//fR+6IakLECmJ59jBmzQ/XWwcKKqr0tIxAt1cESvoRs+n9Fyq7Rh/wKBt1iqew6+zBdHYwsvgfN8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789847091; c=relaxed/simple;
-	bh=Ixu3UO9lZvjmGvkxIbVOSuDtQAsLTQwkWpcCBbb2pKg=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=RpPPvUczn5tVRR0HPeYtrtCTHLja2G3HyTDdrCWC6Yo9IUEs6yQ8FDqHDxYo+5PynDm8q48oCV7Wf2LNzYo+1EVtsyF3o9UQR4qsp5qywaCnLDOn5oeTocj585bTwFLx43vi2cjmXo3NhLNqj1Sg5bwb10QpsspST0DrQYA52Ms=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=mdKST0QH; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=mMnbP0Kh; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1789847611; c=relaxed/simple;
+	bh=grPi4sL38mCO/zpcl4PDe5TmClgVRLK3Akq0l20mu58=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=ZgYyHRkuMYfushqwXfY7GqPrS59f4PhXcHY928EVAVeYNxPxe6jsxE5DtZtAa7Wrni0CQ3riBOviFd9iUoI2kLfrGZWhOYtiIWSxvk5ZZJUypZs4r86RJ5h5UJJP9jv/0JhfOoUIrCJrwwx9o9nMd23eWgrPOcyncEMs+V6QKYM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org; spf=pass smtp.mailfrom=linuxfoundation.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=Qj/b8MX6; arc=none smtp.client-ip=74.125.228.99
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linuxfoundation.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="mdKST0QH";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="mMnbP0Kh"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 1836621DA7;
-	Sat, 19 Sep 2026 19:44:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789847082; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=vMnIzq0jeVhj82nzM1btMxW/JCXfgOB67xDr2BdpXgs=;
-	b=mdKST0QHR7gRFw1P6PjTLwjijesQYymAIn54kCttGfTsguA4LCghzSnhQUSOKZgCWh6Ybh
-	p11NYjNCa+aT7M7/DTq7/T3GIAkhSFaEp9AqGkXYJ6T/bEDO5v03A7JT4y3iJHjbNxZ8+1
-	XNU3QbgtW4WGoU7O47CHSw1FRG3yw8Y=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=mMnbP0Kh
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789847078; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=vMnIzq0jeVhj82nzM1btMxW/JCXfgOB67xDr2BdpXgs=;
-	b=mMnbP0Kh+8yWRAD0GDG5PiHlCGAtIlspy74y0LgqWui4rvpUyLuWWAXeL4zCHgfpyPBY6R
-	IiC3Hf8dotx2Jg2iX6GimJOMtEt/YxP/NKLfCrz3UTM3Ae3A41CzJvp6gbN8k0wsAbmgYO
-	/LKopzvdyA9PzZ+Bq/RqRsvhyUtLv/c=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B914D133CF;
-	Sat, 19 Sep 2026 19:44:37 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 6M/vIyXmrmpMfgAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Sat, 19 Sep 2026 19:44:37 +0000
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fixes for 7.3-rc4
-Date: Sat, 19 Sep 2026 21:44:31 +0200
-Message-ID: <cover.1789845496.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.55.0
+	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="Qj/b8MX6"
+Received: by mail-ed2-f35.google.com with SMTP id 4fb4d7f45d1cf-6aa06e51bc3so3014945a12.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Sep 2026 12:53:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google; t=1789847607; x=1790452407; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=iGjddvv8oGsPTZlnHHs3B4nPTI0v+hJUCUNdoJx0o2A=;
+        b=Qj/b8MX658zvmi1rvQVYol/+zfivCykahq1OMB/Qc7I1wcerCRSNVBYrW0sSA2hO7g
+         ZinNjFMiD2cD+nOrAZ9CmQ670yBra+BnbPUj0metueV9jRQUIYKlnvY80JrEAsK9SzcI
+         1SAKmA54UWI7TwxMXc4Y61URB0fhIqJ1cHIZo=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1789847607; x=1790452407;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=iGjddvv8oGsPTZlnHHs3B4nPTI0v+hJUCUNdoJx0o2A=;
+        b=rgfchfQkTHB3SSwMQCI9gdKwEovis2jXukK+eqsfqJ26LOZTdcMfJIleSWmIagvy1T
+         shjf3iNVnc+Z69w8EjaX0j2y94u6VT/+qr4/2eIk04DKibah2g11dicL3AAruJNlePvW
+         wWWs0/LCsL1de5hDWysPpNsEiBEgs2UWUSeWjwAMDXdexdvneHziZhk5NEd84dpQxbis
+         khfBgJyJca2pG5uosLdhqspyNSry2JaKDrMY+oJG6uCAXdQ4KDH1n3lEgivur3xiRVua
+         Me47hzY0eEcxuh5OgdqJ7SktX/RuKDYeQE3bIWQ0zoTOJqYa5X/NTA6IrlRCSJDpjnzW
+         odQA==
+X-Gm-Message-State: AFuF++m+Y6DDAsTuY3NYoa26qH0UZBQFVEcl+1v4Mus/uH6kWQ9ZVdwG
+	KRFZZZz4wfey84chPs4SLPPNGhZTzE4YevcLMzQ8lIrvOEi4Sj+o0ePmIackx3SIOA3JIJq4yR4
+	8vVzVVQch8A==
+X-Gm-Gg: AYBFou1/QoQGnhrjOmJcuBGLqr/QZ7swbkk2Ey8Nz+g58rVnwfkP2jRCM796+k2/0Rr
+	3eqwqCRYCWNgAZaoRHHUG/0xNdJfkZ5IHvCfCBxByg63MihHQtFNR15OSTMPVVbqqHoMusFjSJN
+	kYkmmtZNvR9GSDPhg9SlTSqhJbN6cVFGV1MuxVr7J5g6+W07GmQ1M1G/pEFqrd8RmcxJIPAaEZl
+	iZAGxG423LGwSGsNaiBPojrmFhCkRN4lAdF6F+YChcQ56qXEKn137e2AXkfTgt8XAAJz8JO0fdJ
+	LIMpEFPo35tIpycAJbJGHi4PcADf1ce072+hW7Je2QrfWsLZc3jbEzrKchgmYJUSzk9zg/qpi8T
+	dzgK4Aeb4xYPQPIvThHg4mqaxp1gEjOJmpWps3UYTS4oovLaf4224sBpmB/T2ZyasOZTo1oXjL+
+	QnmYT2joeFya2T+TBEXWjTrBgxoKrdSW+xcLlaAaqIm1oLcDuE9qtVbCX0q4tjzDYreUV066YKJ
+	pjVDbE6tx751ruS1qVDq+qabKy8XntINXbTix6fDtg0ZrAl+g==
+X-Received: by 2002:a05:6402:2803:b0:6a7:ea53:f628 with SMTP id 4fb4d7f45d1cf-6aa569a0782mr4124352a12.39.1789847606898;
+        Sat, 19 Sep 2026 12:53:26 -0700 (PDT)
+Received: from mail-ej2-f12.google.com (mail-ej2-f12.google.com. [74.125.228.140])
+        by smtp.gmail.com with ESMTPSA id 4fb4d7f45d1cf-6aa67d819a7sm1579860a12.9.2026.09.19.12.53.26
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sat, 19 Sep 2026 12:53:26 -0700 (PDT)
+Received: by mail-ej2-f12.google.com with SMTP id a640c23a62f3a-c254f705536so347854666b.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Sep 2026 12:53:26 -0700 (PDT)
+X-Received: by 2002:a17:907:1ca4:b0:c28:599b:7782 with SMTP id
+ a640c23a62f3a-c2a15b11ac5mr645905766b.21.1789847606342; Sat, 19 Sep 2026
+ 12:53:26 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: -3.01
-X-Rspamd-Queue-Id: 1836621DA7
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Level: 
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_CONTAINS_FROM(1.00)[];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_DN_SOME(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_COUNT_TWO(0.00)[2];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:dkim,suse.com:mid];
-	RCVD_TLS_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_THREE(0.00)[4];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
+References: <cover.1789845496.git.dsterba@suse.com>
+In-Reply-To: <cover.1789845496.git.dsterba@suse.com>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Sat, 19 Sep 2026 12:53:08 -0700
+X-Gmail-Original-Message-ID: <CAHk-=wjwehxF3wP-vj23RXYH8RmK-Crmnq0g2wr6wNDet87S6g@mail.gmail.com>
+X-Gm-Features: AcwNN1VrFvZJwPY6pA8DloIwbZXRJ8ZGYBgUm8OdHOB-IzSkClOBfTvn11h5BKU
+Message-ID: <CAHk-=wjwehxF3wP-vj23RXYH8RmK-Crmnq0g2wr6wNDet87S6g@mail.gmail.com>
+Subject: Re: [GIT PULL] Btrfs fixes for 7.3-rc4
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-Hi,
+On Sat, 19 Sept 2026 at 12:44, David Sterba <dsterba@suse.com> wrote:
+>
+>   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.3-rc3-tag
 
-please pull the following fixes. Among the regular fixes, there are two
-that were reported recently and have user impact:
+-ENOSUCHTAG.
 
-- filesystem id is now stable again on the default and common case (it
-  broke openconnect key derivation, while this is not secure, it's still
-  in use), the intention was to change id for the temp_fsid use case
+I see a 'for-7.3-rc3' branch that has that top commit in it, but no
+signed tags. Forgot to push?
 
-- fix detection of /dev/root and rename it after device scan, this broke
-  booting of initramdisk-less system with grub2 as the probe needs the
-  real device
-
-Regular fixes:
-
-- don't store compressed inline extent if the size is larger than
-  uncompressed
-
-- in zoned mode, handle activation of zones for all supported block
-  group profiles in case there are still free ones left
-
-- check space for a chunk item when reading sys array from superblock
-
-- allow using space reserves when removing verity items fails
-
-- fix error handling after free space tree rebuild fails
-
-- abort transaction if reflink or hole punching fails and it's not
-  possible to update the inode
-
-- properly protect block group iteration during device replace start
-
-- error message fixups
-
-----------------------------------------------------------------
-The following changes since commit 09f1294ee2abee7fe1c2d600671498b7642e0fe0:
-
-  btrfs: tree-checker: validate name length for extref items (2026-09-07 18:36:38 +0200)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.3-rc3-tag
-
-for you to fetch changes up to 72de4807ba84da485dda1a91572d66da9149e95a:
-
-  btrfs: derive f_fsid with dev_t only when temp_fsid is active (2026-09-17 19:45:12 +0200)
-
-----------------------------------------------------------------
-Anand Jain (1):
-      btrfs: derive f_fsid with dev_t only when temp_fsid is active
-
-Daniel Linjama (1):
-      btrfs: handle lack of space when cleaning up verity items
-
-Filipe Manana (5):
-      btrfs: tree-checker: print dev extent offset in error message
-      btrfs: tree-checker: fix error message regarding free space extent items
-      btrfs: fix creation of compressed inline extents that don't save space
-      btrfs: abort transaction on failure to update inode for hole punching and reflinking
-      btrfs: check if there is space for chunk item when validating sys chunk array
-
-Guanghui Yang (1):
-      btrfs: clear free space tree creation state on rebuild failure
-
-Hongling Zeng (1):
-      btrfs: take commit root semaphore when iterating in mark_block_group_to_copy()
-
-Johannes Thumshirn (1):
-      btrfs: zoned: handle RAID profiles in btrfs_can_activate_zone()
-
-Qu Wenruo (1):
-      btrfs: add "/dev/root" exception for device path update
-
- fs/btrfs/dev-replace.c     |  1 +
- fs/btrfs/disk-io.c         |  4 ++++
- fs/btrfs/file.c            |  4 +++-
- fs/btrfs/free-space-tree.c | 14 ++++++++++----
- fs/btrfs/inode.c           | 18 +++++++++++++++++-
- fs/btrfs/super.c           |  8 ++++++--
- fs/btrfs/tree-checker.c    |  4 ++--
- fs/btrfs/verity.c          | 18 ++++++++++++++++--
- fs/btrfs/volumes.c         | 33 ++++++++++++++++++++++++++++++++-
- fs/btrfs/zoned.c           |  5 +++++
- 10 files changed, 96 insertions(+), 13 deletions(-)
+                  Linus

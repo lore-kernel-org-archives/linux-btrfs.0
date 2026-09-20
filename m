@@ -1,33 +1,33 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4CADD4457DB;
-	Sun, 20 Sep 2026 14:10:59 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A79B523E334
+	for <linux-btrfs@vger.kernel.org>; Sun, 20 Sep 2026 14:13:16 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789913462; cv=none; b=ft1KPUH7vZv4paKZsurbhCk72+gu1jkiudfKN72BbKHNA8clNo6F1758BN9ytRnkbFCn9CVXMg2fzmmWoHyNxoC7f+CdhTmJ6wRAVbiyvK560xcMonXsmGEi4CaJhVuY8SmI6dBrLym9Yjh8po3/N/XQzMXRXCBF0bT1b0U+YKM=
+	t=1789913597; cv=none; b=PcGV5PMkAaTmvVCx5yMfEDO8b6VYdM3yzYPkglryPYg5pIvMDHSqpWwNuvHRSOCEF7jXjWglP3z+qpEZAG27RJz4RgRwsOuHxUlgl9YDnghGVNfbv7Dmd9xxKHCEwmV0qVQeOw9SZZOfOBMig5LiO/tLURJ7LcMJscvdvskrPQ4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789913462; c=relaxed/simple;
-	bh=fuAjbvT2P5F2Qk4ccyn3d9sWskgEXsTxS4Ljb7TEsJQ=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=Ce5i92tchC8iJqMrvLEuqQyYQbJdWBkC9Uii1lrSQdaJ+NjLQB10t3xyxHR/VU4zfMkjJsi+AF9983PIRxrTcQwjlTEb73Ewksyu59Iw6JbWG3cS6b1bc6gOAYN0iZvBpdLNpdFgj7Uyz4nfVk6HlW1ZzdezH9XLOhE2JkE/riE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Zpzlivn5; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1789913597; c=relaxed/simple;
+	bh=N2F3e9JjCBmitjnQ+fMXbBrWxbIet5t3V0qm2z7LA10=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=JI8saGK+T9pNiNEg9AB95AIuR4hQeKzZbg8giwC+rGKjD1r1yJHGrP3faO2/4oqA0N8PumN03i3MHwGUbS8UTCcVVWSMQ8WcuNIIKlMEuWci7txe0AxbOirAyu1GiZYPqzpeXJFL5P5x2MhvAol/bvvz8ulOiIENUPSkWuA1rK8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Bn60+jKO; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Zpzlivn5"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A3E3B1F000FF;
-	Sun, 20 Sep 2026 14:10:56 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Bn60+jKO"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8C8C51F000FF;
+	Sun, 20 Sep 2026 14:13:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1789913459;
-	bh=4Y5xmyAmPfzgG3Q+Ybd8EMMKAncWD+ziq1NmXrhXuIE=;
-	h=Date:Subject:To:References:From:In-Reply-To;
-	b=Zpzlivn5YHXzw2m3lhoNF3WlqPj+Ww6xGHCjAVYPJn7Lrz1QeSs4sIZLUrUD9TCQA
-	 uetAm9hKTnngSemAups5ZMm3zeoWML4zKpy67oXZMNx/Gx1KB8oe3Qg+dniEycHniA
-	 3EJ0EX7hvPt0o9V7mIzrSRSPAS0umRLYVL6xx6AArfR7p/iHB1PLLW0O/1lpQsDZpb
-	 SMVSlzgeX2XISabvlaCx/JmE701XmRqaL3BZlD0EelevDmKk91x1UZLxgRrjGKEqWY
-	 jF+P+PM+nPsfmUP9Y/IDbLJF3zg2e/C0VGRzinXT8+PGDfiJv7qn2ktwSOem7eTToH
-	 Nenjy96o8K5Ig==
-Message-ID: <e3aef511-a5fd-47ce-acf2-365cc58ba999@kernel.org>
-Date: Sun, 20 Sep 2026 22:10:54 +0800
+	s=k20260515; t=1789913596;
+	bh=B3DZMU3GLgNHWJlm3C8hi6QrXpo8CW5JNcMT0Zkvkkg=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To;
+	b=Bn60+jKOZ+4chmrFJOjOzgsLNW0vuqCXyi6DkIp+81rC2FSR6yPhDKQqdb9cNGJj3
+	 PT4+0jtnj/2956/2vubca32P4VrMrLt8t1wQaaycZbXfO6yPerzXT4BWAl9hYeGo3k
+	 98eMXG6t/1fnVya729RA8Mw6YWStDDcG/dS5yXVBSfTMvnfskxrV47BUifgnSFlcTB
+	 2H82pn2+0ZESltSXRtpMhdtRHxsNnJUp2e63dwBA77Rt4qtXeuDXJWRQ9w6s+A9dta
+	 ZQCxrgZMoXrajGAKQTL+GXpkJ7qOD0RMj2sgjwjl9t+QeySrqtKf7JzxuRaDa+WsYz
+	 COmvNEw+JIoIQ==
+Message-ID: <98db278c-5302-47ed-bd3e-a47ea6e7269d@kernel.org>
+Date: Sun, 20 Sep 2026 22:13:11 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -35,162 +35,43 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v8 09/13] fstests: verify libblkid resolution of duplicate
- UUIDs
-To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
- linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
- linux-f2fs-devel@lists.sourceforge.net, djwong@kernel.org
-References: <cover.1784949154.git.asj@kernel.org>
- <0e530686fa2bfb9a4b8ec4596484a4fec6d849e4.1784949155.git.asj@kernel.org>
- <apchlvgfbKJDX1rO@zlang-mailbox>
+Subject: Re: [PATCH 1/3] btrfs: derive f_fsid from on-disk fsuuid and dev_t
+To: David Sterba <dsterba@suse.com>
+Cc: Dave Hansen <dave.hansen@intel.com>, sashal@kernel.org,
+ linux-btrfs@vger.kernel.org, David Woodhouse <dwmw2@infradead.org>,
+ "Macieira, Thiago" <thiago.macieira@intel.com>
+References: <cover.1772095546.git.asj@kernel.org>
+ <fdea3f42827f512fcaa82f4dabe475e191d7ff2f.1772095546.git.asj@kernel.org>
+ <be0c08f5-2f31-40f5-8a3b-f2f58b3e00ff@intel.com>
+ <dc5401d6-19ec-4588-bc9c-a7a0084b299a@kernel.org>
+ <20260911172313.GA54722@twin.jikos.cz>
+ <d0bd13fa-9126-4efd-9166-ed6c1c08c24d@kernel.org>
+ <20260914131455.GH54722@suse.cz>
+ <847b96c6-9e39-4eef-889c-3985f7eb4e3a@kernel.org>
+ <20260917172636.GW54722@suse.cz>
 Content-Language: en-US
 From: Anand Suveer Jain <asj@kernel.org>
-In-Reply-To: <apchlvgfbKJDX1rO@zlang-mailbox>
+In-Reply-To: <20260917172636.GW54722@suse.cz>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 2/9/26 03:12, Zorro Lang wrote:
-> On Sat, Jul 25, 2026 at 03:39:06PM +0800, Anand Jain wrote:
->> Verify how findmnt, df (libblkid) resolve device paths when multiple
-> 
-> I didn't find the `df` test part in this test case.
-> 
-
-Hm, I think `df` was too basic and didn't add any real value, so I've
-removed it. I'll update the changelog accordingly.
-
-
->> block devices share the same FSUUID.
+On 18/9/26 01:26, David Sterba wrote:
+> On Wed, Sep 16, 2026 at 12:11:01AM +0800, Anand Suveer Jain wrote:
+>>> I don't see the temp_fsid documented (btrfs-progs) other than in the
+>>> changelogs and briefly in the sysfs file. This should be more visible as
+>>> a separate feature and with the known use cases.
 >>
->> Signed-off-by: Anand Jain <asj@kernel.org>
->> ---
->>  tests/generic/803     | 72 +++++++++++++++++++++++++++++++++++++++++++
->>  tests/generic/803.out |  6 ++++
->>  2 files changed, 78 insertions(+)
->>  create mode 100644 tests/generic/803
->>  create mode 100644 tests/generic/803.out
->>
->> diff --git a/tests/generic/803 b/tests/generic/803
->> new file mode 100644
->> index 000000000000..77901592366c
->> --- /dev/null
->> +++ b/tests/generic/803
->> @@ -0,0 +1,72 @@
->> +#! /bin/bash
->> +# SPDX-License-Identifier: GPL-2.0
->> +# Copyright (c) 2026 Anand Jain <asj@kernel.org>.  All Rights Reserved.
->> +#
->> +# FS QA Test 803
->> +# Check if the mountinfo based findmnt would resolve to the common uuid
->> +# as per the blkid (libblkid based).
->> +
->> +. ./common/preamble
->> +. ./common/filter
->> +
->> +_begin_fstest auto quick mount clone
->> +
->> +_require_test
->> +_require_block_device $TEST_DEV
->> +_require_loop
->> +
->> +_cleanup()
->> +{
->> +	cd /
->> +	rm -r -f $tmp.*
->> +	umount $mnt1 $mnt2 2>/dev/null
->> +	_loop_image_destroy "${devs[@]}" 2> /dev/null
->> +}
->> +
->> +# Normalize pool devices and mount points names
->> +filter_pool()
->> +{
->> +	sed -e "s|${devs[0]}|DEV1|g" -e "s|${mnt1}|MNT1|g" \
->> +	    -e "s|${devs[1]}|DEV2|g" -e "s|${mnt2}|MNT2|g" | _filter_spaces
->> +}
->> +
->> +# Setup base loop device and its clone
->> +devs=()
->> +_loop_image_create_clone devs
->> +mkdir -p $TEST_DIR/$seq
->> +mnt1=$TEST_DIR/$seq/mnt1
->> +mnt2=$TEST_DIR/$seq/mnt2
->> +mkdir -p $mnt1
->> +mkdir -p $mnt2
->> +
->> +# Get the uuid from the source device
->> +fsuuid=$(blkid -s UUID -o value ${devs[0]})
->> +
->> +# Mount both identical UUID filesystems simultaneously
->> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[0]} $mnt1 || \
->> +						_fail "Failed to mount dev1"
->> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[1]} $mnt2 || \
->> +						_fail "Failed to mount dev2"
->> +
->> +findmnt -o SOURCE,TARGET,UUID "${devs[0]}" | tail -n +2 | \
->> +				sed -e "s/${fsuuid}/FSUUID/g" | filter_pool
+>> Agreed. Do you think btrfs(5) is a good place to document temp_fsid?
 > 
+> Yes, please add a section and also explain the other filesystem ids and
+> how they're related. We can add references from other places using it
+> (sysfs, mount and others).
 
-> findmnt -n (or --noheadings) can be used here (and below) to avoid piping to
-> `tail -n +2`.
+Just to close the loop: the man page update was sent last week.
 
-applied.
-
-> 
->> +findmnt -o SOURCE,TARGET,UUID "${devs[1]}" | tail -n +2 | \
->> +				sed -e "s/${fsuuid}/FSUUID/g" | filter_pool
-> 
-> Same here
-
-applied
-
-> 
->> +
->> +# Btrfs assigned a random uuid for the clone fs before the fix.
->> +# Cycle mounts and reverse the initialization (source and clone fs) order.
->> +echo "**** mount cycle ****"
->> +_unmount $mnt1
->> +_unmount $mnt2
->> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[1]} $mnt2 || \
->> +						_fail "Failed to mount dev2"
->> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[0]} $mnt1 || \
->> +						_fail "Failed to mount dev1"
->> +
->> +findmnt -o SOURCE,TARGET,UUID "${devs[0]}" | tail -n +2 | \
->> +				sed -e "s/${fsuuid}/FSUUID/g" | filter_pool
-> 
-> Same here
-applied
-
-> 
->> +findmnt -o SOURCE,TARGET,UUID "${devs[1]}" | tail -n +2 | \
->> +				sed -e "s/${fsuuid}/FSUUID/g" | filter_pool
-> 
-> Same here
-applied
-
-> 
->> +	
->> +status=0
->> +exit
-> 
-> _exit 0
-applied
+ https://lore.kernel.org/linux-btrfs/20260918084612.ZxGVtNO9DAJfevT0EwV5BlMy-4qgIyRKK6TAZ5oNLtU@z/
 
 
-Thanks.>
->> diff --git a/tests/generic/803.out b/tests/generic/803.out
->> new file mode 100644
->> index 000000000000..3a130c662430
->> --- /dev/null
->> +++ b/tests/generic/803.out
->> @@ -0,0 +1,6 @@
->> +QA output created by 803
->> +DEV1 MNT1 FSUUID
->> +DEV2 MNT2 FSUUID
->> +**** mount cycle ****
->> +DEV1 MNT1 FSUUID
->> +DEV2 MNT2 FSUUID
->> -- 
->> 2.43.0
->>
+David (Sterba), once commit c2a74ed0494c is reverted, based on its final
+take, I will update the fstests test case on the mailing list accordingly.
 

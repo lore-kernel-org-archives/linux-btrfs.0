@@ -1,60 +1,67 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2BF0A479864
-	for <linux-btrfs@vger.kernel.org>; Sun, 20 Sep 2026 22:51:20 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DDDFE486B85
+	for <linux-btrfs@vger.kernel.org>; Sun, 20 Sep 2026 22:51:21 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789944681; cv=none; b=qPb0E1Ngba5oScTrCmk2lnWT8uvY7FWNcgTfGjbInOcOu4v5qnc1H+Urg9QtXdj+nmHpKOeJrN+ywulDykwwL0zkCPxZxlL/2c29B+jrhgpqF6p8I1zbGhXSYYzt3cSJVKCcVpr5ORTcxmZUC3WCSxCz6zHNhJki0/H1feK8EF0=
+	t=1789944683; cv=none; b=X4GRFOgF8UNSdGw8OGBwYwEMELQrJybV2qNnZPXFS/CuZpIxkzlFpHTX+LRc4O+QOtxn+kWwAMzL5mI2a5cdzy0/SkipQJw8+sM6tpvjbbXqoNxHGqqjaU8jHdvkSy02kHgbaHHiUZntm69r+AjmC6ipXonIQrXYYg4MR/ja5pw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789944681; c=relaxed/simple;
-	bh=z2r1kpn2KePKskx0zuRDS/W7aQPZdHpgLklku2Kv8mg=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=m74W1kNlbCUYBtjlcQrXx9Mc3BaeDYHKlprqnDezLui1fs8YPG/jesuNEYk6OOVeCTVA1WGPoKFx2cwAO57ZZovm5185PP6bN7s88DNGiSsVUuCDBYQTNOZWo4zQuDcnD/JMsmZubWiqh/YKtC70qS0UOG73BplGbP+2C1wi8eg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=blsko8Ul; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=tnJrKuF2; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1789944683; c=relaxed/simple;
+	bh=2QkhCNCHb2QZJVubyd1CRm4TgntDt/afNIvFKByChLA=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=knlTgfOXdnRvEY+eCEqABcBBlj1DIol9v4fF2GMBkEHAXo7Jo+GkKFkrPOLdTTDrwBHQ9UHQq5hJccveLPboV7EkArlyJOL/y4ZHiuaZMLmgD/0ceTVs2rlwdCbS4RkHOH/sKNK+5yZbgsxWul5Tv+HzSefx3TVa4SF+y5zBj0M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=GmaLwT2S; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=iPzgQ/Ar; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="blsko8Ul";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="tnJrKuF2"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GmaLwT2S";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="iPzgQ/Ar"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id F2C8521A70
-	for <linux-btrfs@vger.kernel.org>; Sun, 20 Sep 2026 22:51:03 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 8ABC121BFC
+	for <linux-btrfs@vger.kernel.org>; Sun, 20 Sep 2026 22:51:05 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789944668; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Opqkx4xUl2dtOq3pUTM1sjIb8FbG6KjfNt5HViHTMns=;
-	b=blsko8UlxJkIRKn0m249l/EeglCK83FErU1/y18h6sm3u7YoNTC0vtFpVQOv17GB5K5sOq
-	LTpO+8D0Vh2g3ysQmSDJIax5ybVdNpKGHNJKGnJ3IpIU9dxOjhGnhur8nubcBR9/3+aKYp
-	7bA9aWmd2/UE1jbsu5N2M/c2zM2lCt4=
+	t=1789944669; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=7gJADVzM9UlIxx590PZ9Pzgts2JMVR2Xck33nzOhYpM=;
+	b=GmaLwT2SMh209TNucpo6fACxkoCD2sVmL8O+CwN6dJCOob5oviTzDMyLsf/2SI5lfopr4S
+	jNXBIaYqlTXnaOUzC0SXTPJjB6AZaUfGKpYslAcb6Wz3vSwUdQniJH7o+90f1siKrQHEQl
+	qN/yJc2qLYZzOlS7NxtCyiOrw/RFxG8=
 Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=tnJrKuF2
+	dkim=pass header.d=suse.com header.s=susede1 header.b="iPzgQ/Ar"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789944664; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Opqkx4xUl2dtOq3pUTM1sjIb8FbG6KjfNt5HViHTMns=;
-	b=tnJrKuF2+nC848q+ztcd0cs15Ki3mrycPjnJVmdFRZW/6+sQSH/4hFrAuCW3lq8sVVMjeX
-	MB9l3+FQTye9mJkwsQ2qb2/iCUdIvCQgRLfpET3k/IZSzC1Qa+GI3yVNnYqkMmm9hDljEc
-	p8OS5rtswcgnbKTr7QKQEZRfuHYuvWs=
+	t=1789944665; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=7gJADVzM9UlIxx590PZ9Pzgts2JMVR2Xck33nzOhYpM=;
+	b=iPzgQ/Ar6U/fiaK9Z830kv2A7C6NlFe61VlnDcJTukljS2ZhyRWtxNF9tpe76OViL1LiQ/
+	+X6iMZ+K64Q+F5Fu013htE4IjSTkmAUi9w1IRChgnLnumdzz2W/r1opEkE0H1iUOje7bNa
+	uKy5rMowHbfVd10THJJud+tKHHyy5to=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id B465713793
-	for <linux-btrfs@vger.kernel.org>; Sun, 20 Sep 2026 22:51:02 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 51163139C3
+	for <linux-btrfs@vger.kernel.org>; Sun, 20 Sep 2026 22:51:04 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id imMtBFZjsGphXAAAD6G6ig
+	id imMtBFZjsGphXAAAD6G6ig:T2
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 20 Sep 2026 22:51:02 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 20 Sep 2026 22:51:04 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/2] btrfs: remove the tailing zeros from compressed inline extents
-Date: Mon, 21 Sep 2026 08:20:42 +0930
-Message-ID: <cover.1789944508.git.wqu@suse.com>
+Subject: [PATCH v2 1/2] btrfs: lzo: fix space saving checks
+Date: Mon, 21 Sep 2026 08:20:43 +0930
+Message-ID: <b3dc8e992c34424ce992a42c8fc48ba7ef27abbd.1789944508.git.wqu@suse.com>
 X-Mailer: git-send-email 2.55.0
+In-Reply-To: <cover.1789944508.git.wqu@suse.com>
+References: <cover.1789944508.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,93 +69,119 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Score: -3.01
+X-Rspamd-Queue-Id: 8ABC121BFC
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spam-Level: 
 X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: F2C8521A70
 X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
 	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	ARC_NA(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
-	FROM_HAS_DN(0.00)[];
+	ARC_NA(0.00)[];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	MIME_TRACE(0.00)[0:+];
-	FROM_EQ_ENVFROM(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:mid];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	DKIM_TRACE(0.00)[suse.com:+]
 X-Spam-Flag: NO
-X-Spam-Score: -3.01
 
-[CHANGELOG]
-v2:
-- Remove the block based space saving checks completely from lzo
-  Zlib and ZSTD do not have block based space saving in the first place.
-  It's the caller's responsibility to check, and inlined and regular
-  extents have different requirements.
+[BUG]
+Since commit 3be8a788eed3 ("btrfs: lzo: introduce lzo_compress_bio()
+helper"), the space saving check on lzo is broken:
 
-  This simplify the first patch a lot.
+- Space saving check is always done based on block size
+  This prevents lzo_compress_bio() to do any compression if the @len is
+  smaller than sectorsize.
 
-- Update the cover letter
-  Filipe's v3 fix is already merged, so we can not force push a fix but
-  to co-operate the v3 fix.
+  This prevents proper inlined extent creation.
 
-Commit 3eaf5f082c4c ("btrfs: extract inlined creation into a dedicated
-delalloc helper") changed the compression input from [0, i_size) to [0,
-blocksize), which caused two problems:
+- Space saving check is not including the padding zeros
+  If the remaining space in the output folio is not enough, we add
+  padding zeros (up to 3 bytes), which contributes to the total
+  compressed size.
 
-- Other tools unable to decompress the inlined extent
-  U-boot and btrfs-restore are affected, as they only allocated a buffer
-  which is @ram_bytes sized.
-  That buffer is too small to contain the decompressed data, which is
-  @sectorsize.
+  But that is not checked.
 
-  Those projects are fixed to have a more robust decompression routine
-  which can handle both cases now.
+[CAUSE]
 
-- Worse ratio for those compressed inline extent.
+The function copy_compressed_data_to_bio() is doing the space saving
+check wrong:
 
-  For the same 3K 0xcd filled range, the results are small but
-  observable, 48 vs 61 bytes.
+		/* With the range copied, we're larger than the original range. */
+		if (((*total_out + copy_len) >> sectorsize_bits) >=
+		    max_out >> sectorsize_bits)
 
-Filipe's v1 fix is very close to a proper fix, but btrfs will unable to
-create inlined extents for lzo.
-It turns out to be another bug in the copy_compressed_data_to_bio()
-function.
+- If the input length is smaller than sectorsize (inlined case)
+  Then @max_out >> sectorsize_bits returns 0, the above check always
+  returns true and copy_compressed_data_to_bio() always return -E2BIG and
+  failed to create an lzo compressed inlined extent.
 
-Which is doing a premature block size based space saving checks,
-meanwhile all other algorithms do not have block sized based checks, but
-only a simple "@compressed >= @input" check.
-Zlib and Zstd all rely on the caller to do proper space saving checks,
-as regular and inlined extents have different requirements.
+This check is LZO specific, as other algorithms do not have any block
+aligned check during compression.
+The remaining two algorithms are all relying on regular input/output
+size check, and the final common space saving check at
+compress_file_extent().
 
-So this series is to properly fix the bug, firstly fix the lzo
-regression which prevents inlined extent creation, then restore the old
-i_size based inline extent creation.
+And for the extra padding bytes, there is no space saving check at all.
 
-Qu Wenruo (2):
-  btrfs: lzo: fix space saving checks
-  btrfs: remove the trailing zeros from compressed inline extent
+[FIX]
+- Do a simpler space saving check
+  By just check if the compressed size meets or exceeds the input size.
+  If so reject it with -E2BIG.
 
- fs/btrfs/inode.c | 7 +------
- fs/btrfs/lzo.c   | 5 +++--
- 2 files changed, 4 insertions(+), 8 deletions(-)
+  With this fixed, lzo_compress_bio() can properly handle a range that is
+  smaller than a sector, which is required to get better compression ratio
+  for inlined extents.
 
+- Do space saving check before padding
+  This will ensure that the compressed size never meets or exceeds the
+  input size.
+
+Fixes: 3be8a788eed3 ("btrfs: lzo: introduce lzo_compress_bio() helper")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/lzo.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+index 2f0996692da0..4e7837dec332 100644
+--- a/fs/btrfs/lzo.c
++++ b/fs/btrfs/lzo.c
+@@ -224,8 +224,7 @@ static int copy_compressed_data_to_bio(struct btrfs_fs_info *fs_info,
+ 		u32 foffset = *total_out & (fsize - 1);
+ 
+ 		/* With the range copied, we're larger than the original range. */
+-		if (((*total_out + copy_len) >> sectorsize_bits) >=
+-		    max_out >> sectorsize_bits)
++		if (*total_out + copy_len >= max_out)
+ 			return -E2BIG;
+ 
+ 		if (!*out_folio) {
+@@ -253,6 +252,8 @@ static int copy_compressed_data_to_bio(struct btrfs_fs_info *fs_info,
+ 	ASSERT(*out_folio);
+ 
+ 	/* The remaining size is not enough, pad it with zeros */
++	if (*total_out + sector_bytes_left >= max_out)
++		return -E2BIG;
+ 	folio_zero_range(*out_folio, offset_in_folio(*out_folio, *total_out), sector_bytes_left);
+ 	return write_and_queue_folio(out_bio, out_folio, total_out, sector_bytes_left);
+ }
 -- 
 2.55.0
 

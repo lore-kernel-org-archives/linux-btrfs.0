@@ -1,119 +1,97 @@
-Received: from va-2-54.ptr.blmpb.com (va-2-54.ptr.blmpb.com [209.127.231.54])
+Received: from va-2-41.ptr.blmpb.com (va-2-41.ptr.blmpb.com [209.127.231.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 428A948A8C6
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 13:34:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 23C1345DF49
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 13:53:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.41
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789997702; cv=none; b=agWLLIZvffHHh3ho60xR/badTrr0RH+uM44KgMBtVJNYZNXcxU3Rqp/LpEyviEDfZv23J6QqjbFiC9LFZTH21aDNvkV2E14FkW4WYl/3D84tVuQ9xu9KB3wRSlNPNN6icQjs/EWY0R3Bur0eQrClCbAFgIfXLllV02GXXKE1fIM=
+	t=1789998816; cv=none; b=LE7CYQc/q4RmOSh0lprc+hTqiuyh9bSxZw1mFVelT9quW+DC4pl1ARm4fgb6WMXHxZSq9RNDRvDVso03YLbqcszMus1k7cbOjHAkB6wd/nvwfeE5a9cBMmyuYmdg5AOvwmAxNY/Jgi8YAqQZRdXfbylNp8600an/wxWZAsxfjvA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789997702; c=relaxed/simple;
-	bh=oskklBN/0+MkZ2YRWTYiy/bh6/jAfJYkDs1BJs9soK4=;
-	h=To:Mime-Version:Content-Type:Cc:References:From:Date:In-Reply-To:
-	 Subject:Message-Id; b=Q2SWKc9jlAKEJGd6miTbXnHJqY3ggdCFsRa/7X+jmJt0Drr9o4ahfekDeQESMkljz5y5VfXXVqFAnVpcKXRon0hSn9rSG0mFJATaz/e4Sd3oibinxLUQm1sDOFxrwQxEo+/y+9fh0vaayKuNSY8WW8EHNr7B9fP9sfLfKP/GarM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=EeM19PMT; arc=none smtp.client-ip=209.127.231.54
+	s=arc-20240116; t=1789998816; c=relaxed/simple;
+	bh=/zkzaLu6cP/5sOWEe20Wpkw38MGX75DpwvglDSE4x7c=;
+	h=Cc:Message-Id:Mime-Version:References:Subject:From:Date:
+	 In-Reply-To:Content-Type:To; b=u8NN7WRJSJPBbzQuoA6vcdwuxvtunp8/rr07trIXDvVn4OINcSR2q/Gz0wMe1jlj3SUWxqZd6kbcpfkbV4LU7qgiH2EIyUPEqxeLnF0+b4TpZiFkVadTjblSDGmrGvB7+vStzvgdODze8O4ujf9sc6/TesxSL6N0p1i6LH0Ju1s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=EMZ8yaRs; arc=none smtp.client-ip=209.127.231.41
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="EeM19PMT"
+	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="EMZ8yaRs"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1789997688;
+ s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1789998809;
   h=from:subject:mime-version:from:date:message-id:subject:to:cc:
  reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=x7FzZ/uTt+nwM8zey6wRE5yBAxxVXRO409QUqwJeRvw=;
- b=EeM19PMTxJuEIg5ZBN1MMjATtXYw9H4JvXCPg2jQ/DGclIt0n4iDLQLO/1YvB1ZuqC3ao6
- Tf+SViE+K9LWTdBOvZ4DFE6zMOz7fG5mq7/fzvP8gXuSQQU8N6JRg8KW0dBwkyJNMHUhYD
- z6PmiRJMhy+V7GtBGfSyFb73rjT8wniik3iHTxu8GaiiuLlpmOOfsZeuJnCtbXsvM1epQX
- HwBvJMw6ooUibyBcXWTJRW6LBbNzxcXIB6IYNz2CjcJ+9SgzK0kwxVQKZYGSL4S00gXtY9
- M8EFrc+Gw/lFMEHwQuvIBsZ9009mIP5xzmevT8miV6dHtSlwnrVjUhWqH9zGzg==
+ bh=JA/0xC4P5PXrjrY62tbyO9w0q1E67f9bo0tPZR518P0=;
+ b=EMZ8yaRsS/1oYvGG3PFeYUjfkPF8umV3AYeXOPOTge2SDBNSzqxO7u3p9rosW5YciFVlZg
+ fst/UdciyCdMIf6qJQM2xOKB7q2p16CnOggksqoSp+S8CYaKmENz16nyz77aAAc/XOY6vn
+ frf3DU7cfQQvPEbrCJeKKUGrE1k5r4WCBBwQIce2mARsp/Zp+y6EEGftR2JkbnM5vT4BvR
+ 7ajqdTiARG+nlysC9vGBgFfpTTXPN3q13kHvsLkX9YYetfr4fqgcjFCg/AkuOh6l21N9SK
+ +dpiSNY47Eri+2G+KxePspcSffsjnQvw3LFVIEKlPBbxWAuN/oEasT4Yx917qg==
+X-Lms-Return-Path: <lba+26ab136d9+7f8396+vger.kernel.org+zhudongjiang@fygo.io>
 X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
-User-Agent: Mozilla Thunderbird
-To: <dsterba@suse.cz>
+Received: from [192.168.8.64] ([183.34.169.232]) by smtp.larksuite.com with ESMTPS; Mon, 21 Sep 2026 13:53:28 +0000
+Cc: <linux-btrfs@vger.kernel.org>, <boris@bur.io>
+Message-Id: <82b37efe-7b21-46ad-b685-9ddfae3ad235@fygo.io>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: "Qu Wenruo" <wqu@suse.com>, <linux-btrfs@vger.kernel.org>, 
-	"Richard Weinberger" <richard@nod.at>
-Received: from [192.168.8.64] ([183.34.169.232]) by smtp.larksuite.com with ESMTPS; Mon, 21 Sep 2026 13:34:47 +0000
-References: <cfc34be50699e2e0e5c84e4d57345c7e0506caf8.1789974081.git.wqu@suse.com> <4c1c5779-5ba4-4c6b-9223-d48d1b1aad7b@fygo.io> <20260921131220.GE54722@twin.jikos.cz>
-From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
-Date: Mon, 21 Sep 2026 21:34:41 +0800
-X-Lms-Return-Path: <lba+26ab13277+21f32c+vger.kernel.org+zhudongjiang@fygo.io>
-In-Reply-To: <20260921131220.GE54722@twin.jikos.cz>
+References: <20260919040249.912597-1-zhudongjiang@fygo.io> <20260921132706.GG54722@twin.jikos.cz>
 Content-Transfer-Encoding: quoted-printable
-Subject: Re: [PATCH] btrfs: make qgroup rescan work to handle fs freezing
-Message-Id: <3f752a53-9cbc-4f1c-8430-49ed505abd39@fygo.io>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] btrfs: qgroup: use specific errors for simple quota rescan
+From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
+Date: Mon, 21 Sep 2026 21:53:22 +0800
+In-Reply-To: <20260921132706.GG54722@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8
+To: <dsterba@suse.cz>
 
-=E5=9C=A8 2026/9/21 21:12, David Sterba =E5=86=99=E9=81=93:
-> On Mon, Sep 21, 2026 at 04:36:51PM +0800, Dongjiang Zhu wrote:
->> =E5=9C=A8 2026/9/21 15:03, Qu Wenruo =E5=86=99=E9=81=93:
->>> [BUG]
->>> There is a bug report that a running qgroup rescan can fail a pm
->>> suspension:
->>>
->>>   [ T278489] Freezing remaining freezable tasks
->>>   [ T278489] Freezing remaining freezable tasks failed after 20.003 sec=
-onds (0 tasks refusing to freeze, wq_busy=3D1):
->>>   [ T278489] Showing freezable workqueues that are still busy:
->>>   [...]
->>>   [ T278489]   pwq 56: cpus=3D0-13 flags=3D0x4 nice=3D0 active=3D1 refc=
-nt=3D16
->>>   [ T278489]     in-flight: 205929:btrfs_work_helper [btrfs] for 111s
->>>
->>> [CAUSE]
->>> Btrfs qgroup rescan is running in a workqueue, and when the fs is
->>> frozen, btrfs_start_transaction() will sleep on sb_start_intwrite().
->>>
->>> But a sleeping workload still counts as active for the workqueue until
->>> the workload exits.
->>>
->>> So the qgroup rescan item will sleep on the frozen fs, and fail the pm
->>> suspension.
->>>
->>> [FIX]
->>> I strongly doubt whether we should even use a workqueue for the qgroup
->>> rescan workload, a kthread would be a more suitable choice and can hand=
-le
->>> fs and process freezing way better.
->>> But that will be a long term solution.
+=E5=9C=A8 2026/9/21 21:27, David Sterba =E5=86=99=E9=81=93:
+> On Sat, Sep 19, 2026 at 12:02:49PM +0800, Dongjiang Zhu wrote:
+>> With simple quotas enabled, running:
 >>
->> Hi Qu,
+>>   btrfs quota rescan /mnt
 >>
->> Thanks for working on this.
+>> fails with:
 >>
->> I recently posted an RFC series addressing qgroup rescan lifecycle
->> issues around quota disable/enable, error cleanup, and remounts [1].
+>>   ERROR: quota rescan failed: Invalid argument
 >>
->>  From the recent discussion, I got the impression that full qgroups
->> might be phased out or substantially reworked. Is that a fair
->> understanding?
+>> Starting a qgroup rescan is not supported in simple quota mode.
+>> Return -EOPNOTSUPP for new rescan requests so userspace can report
+>> "Operation not supported" instead.
+>>
+>> qgroup_rescan_init() is also called during mount to resume a rescan
+>> recorded in the qgroup status item. A RESCAN flag in simple quota mode
+>> represents an inconsistent persisted state, so return -EUCLEAN for this
+>> case and retain the warning for diagnostics.
 >=20
-> Do you have link to the dicussion? Phasing out current qgroups in the
-> full mode would be a functionality loss and we don't have a replacement.
-> On the design level, the qgroups are general enough to cover the COW
-> design, sharing. The compression was originally intended but IIRC we
-> don't account compressed extents separately.
->=20
-> Reworking could happen, the performance hit of qgroups in full mode has
-> been a problem since beginning, but I don't see any easy change there.
-> If the sematics change we'd need to add another mode, like we have the
-> simple quota mode.
+> I'm not sure EUCLEAN is a good choice here. It means the filesystem is
+> corrupted, which in a sense it is, but it's not from user inputs or
+> on-disk state. The 'init-flags' is from calls and this matches more the
+> assertion pattern.
 
 Hi David,
 
-I was referring to this discussion [1].
+Currently, the only caller passing init_flags =3D=3D 0 is
+btrfs_read_qgroup_config() during mount. It calls qgroup_rescan_init()
+only when RESCAN is set in the flags read from the on-disk qgroup
+status item.
 
-Perhaps I misunderstood Qu's comments about qgroups no longer being recomme=
-nded.
+If simple quota mode is also set, I would consider that an inconsistent
+on-disk state, which is why I chose -EUCLEAN.
 
-Thanks for clarifying.
+I observed this with the following sequence:
 
-[1] https://lore.kernel.org/linux-btrfs/mu8fq8a8.b9a9a1ae-dd6b-45a4-a415-5d=
-b853d61536@nod.at/T/
+1. Enable full qgroups and wait for the initial rescan to finish.
+2. Start another rescan.
+3. Disable quotas while the rescan worker is running.
+4. Enable simple quotas.
+5. Unmount and mount again.
+
+The worker can leave RESCAN set after quota disable. Enabling simple
+quotas then persists ON|SIMPLE_MODE|RESCAN in the new status item,
+which triggers this check on the next mount.
 
 Thanks,
 Dongjiang

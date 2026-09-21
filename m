@@ -1,67 +1,60 @@
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B5C33486BB4
-	for <linux-btrfs@vger.kernel.org>; Sun, 20 Sep 2026 22:51:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CE91E81ACD
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 00:44:59 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789944685; cv=none; b=Jq+Z1i2pnCwvM8PlWqaazMH7CTalt6gLaKr5SZd/oNJkKE8BLHXBemZAMNkSZOfEGDIUlZXvlL2iMaWv/Q/Lv/YuKJ7qts19lvyPRsv1JMnNZw43aW0Bcmp9fDZQkGHyOWMYHyrUxkG+4H4HPRIwLeS75zqV5d0oaGj1JItMfR0=
+	t=1789951501; cv=none; b=sdXTcHwSe5hb9tumewryYuETm8zUsr154QQr5D1bTRuE/v1QT73wL6sSeRufpDJVHHkQ27LrEBDnLeP/S/8Tgnihg3NwkdaYXH0yTzCp+R3GuBlixkmpmTUez+ekiCR0amXFW7R+XT8KPxbK+wclwgT0cInh3+JfJst8egoQv5g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789944685; c=relaxed/simple;
-	bh=d1NYB0LGfxIH9gNawNbkdz6JKw6ghjl3w4J8eJEENBA=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ObbE9NAfIe1MMOTKlCBPy5LDXmSYx3YiQo6eqkzs2xjjkIwqSSzRYeKZp7s1T6poxtJRSLBa67UFFcntQX9s/b+BVs/ZS6s3U5xs+eelWoBnBRM+fLEbPsKfH7EeQNRGMFO4FsN+e61Fa4WUgYaFnbRg8ZMIoo68u1MDK9dx+co=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=eFC5aHu3; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=k6kUYahA; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1789951501; c=relaxed/simple;
+	bh=RVJSnpnMOCT7r/dlKa9ZAHVHBDvy0M+HeGZghQA5QfM=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=N9ZEW7xCzOLZda6HxY7VZfpylMOqcucu6csk/vqUK8lm64hterjTrPr9Z0VcTIhnxwyYYBDOJ1o3Rc+kkmj/aUKnkMwIB3Kv6HkAY+IR/Ddrb9C/0rA45Zv6dGxeUtsXelOgkGCmues26GwgAZAJeAUo6YMo7Ri4v4Esv7Jw6YE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=RMTl3IL1; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=RMTl3IL1; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="eFC5aHu3";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="k6kUYahA"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="RMTl3IL1";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="RMTl3IL1"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 7931F1FF03;
-	Sun, 20 Sep 2026 22:51:07 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id DB4611F38A
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 00:44:57 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789944671; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=VKkiXM6j8Bcr6aGdx1TOTADfXwFUb2wBVzbH4FYDLsY=;
-	b=eFC5aHu3hFlaU5AqhkqRsTbMH6P7a3GqZK7UqRTOCdQ6u1UqFo59RaAiDtQvsOv6nRzFRQ
-	3JrTLOpZVQR1Nevxbwjo5Iks4E9PjDPY6j6kwYENYaaa46jsLJAcHsQBFSNZfsCS8Vmhqb
-	GjPuZrAPPvy2Hah9jxJ2MI3QeGfNsZ8=
+	t=1789951497; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=GzrDOfheLFiex6XldhLR7mmQEydGmSuBSf+JGntunrc=;
+	b=RMTl3IL1FQGXgyJs8MOnPi8Mva68ZRsdZUolEYzrfFO8XQYF/OPZV6D+/ijrdf8RGtYoV1
+	Q8YAO0C9Nh5RCzTPM8HzGMsijW5mx5p1guYJxloQbnlB8CZT5A7khIWsc9jxzQcGKePhB6
+	88FdcRPxCHpckzeJjLcG066oCfvWLk8=
 Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789944667; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=VKkiXM6j8Bcr6aGdx1TOTADfXwFUb2wBVzbH4FYDLsY=;
-	b=k6kUYahARKouARM676EEpB5HYzT96kY0NN3MxVFVJw4V/F1KVpc89oTfPYlAGiRnTSWDlf
-	Tl915KqtMDvyQqhWXw5H3Zm5c4V2tZw6faQXvfWfeqs0QaWzbieW9hFPShjnG26bt1vRfT
-	qLogYI6vJDKJkSHcK1WJOhw++AG75j0=
+	t=1789951497; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=GzrDOfheLFiex6XldhLR7mmQEydGmSuBSf+JGntunrc=;
+	b=RMTl3IL1FQGXgyJs8MOnPi8Mva68ZRsdZUolEYzrfFO8XQYF/OPZV6D+/ijrdf8RGtYoV1
+	Q8YAO0C9Nh5RCzTPM8HzGMsijW5mx5p1guYJxloQbnlB8CZT5A7khIWsc9jxzQcGKePhB6
+	88FdcRPxCHpckzeJjLcG066oCfvWLk8=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E1908139C7;
-	Sun, 20 Sep 2026 22:51:05 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9BF1513793
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 00:44:56 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id imMtBFZjsGphXAAAD6G6ig:T3
-	(envelope-from <wqu@suse.com>); Sun, 20 Sep 2026 22:51:05 +0000
+	id m/o+Ogd+sGqATwAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 00:44:56 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Hanabishi <i.r.e.c.c.a.k.u.n+kernel.org@gmail.com>
-Subject: [PATCH v2 2/2] btrfs: remove the trailing zeros from compressed inline extent
-Date: Mon, 21 Sep 2026 08:20:44 +0930
-Message-ID: <943e68a4d2c2dcbfbf509c540d5cdc31dff5d34f.1789944508.git.wqu@suse.com>
+Subject: [PATCH v3 0/2] btrfs: remove the tailing zeros from compressed inline extents
+Date: Mon, 21 Sep 2026 10:14:32 +0930
+Message-ID: <cover.1789951424.git.wqu@suse.com>
 X-Mailer: git-send-email 2.55.0
-In-Reply-To: <cover.1789944508.git.wqu@suse.com>
-References: <cover.1789944508.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,99 +62,206 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
 X-Spam-Score: -2.80
-X-Spam-Flag: NO
+X-Spam-Level: 
 X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
 	MIME_GOOD(-0.10)[text/plain];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	TAGGED_RCPT(0.00)[kernelorg];
 	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	FREEMAIL_CC(0.00)[gmail.com];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:mid];
-	RCVD_TLS_ALL(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_HAS_DN(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_DN_SOME(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com]
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
 
-[BEHAVIOR CHANGE]
-After commit 3eaf5f082c4c ("btrfs: extract inlined creation into a
-dedicated delalloc helper"), btrfs changed its behavior when generating
-compressed inlined extents.
+[CHANGELOG]
+v3:
+- Introduce an early i_size >= blocksize rejection to prevent race
+  Previously we allow inline extents for i_size == blocksize case, as
+  long as the compressed data can still be inlined.
 
-Previously the compression input was the file range [0, i_size), but
-after that commit the input is file range [0, sectorsize).
+  But that introduce a race with setsize(), which is masked by using
+  blocksize for compression.
 
-This means the decompression handling needs to have a buffer that is no
-smaller than sectorsize, or the decompression will fail.
+  When reverting back to using i_size for compression, we can get a much
+  larger i_size than expectation.
 
-This has already caused problems for other projects, like u-boot and
-btrfs-restore from btrfs-progs.
-Although those projects are fixed with a more robust decompression path,
-this kernel change also causes extra space usage for compressed inlined
-extents:
+  Close the race window by always requireing i_size < blocksize, which
+  makes btrfs_setsize() to always wait for the folio held by us before
+  updating the i_size.
 
- All doing a 3K writes with content filled with 0xcd
+  This unfortunately introduce a behavior change, so all the fixes tags
+  are dropped.
 
- Before:
-        item 6 key (257 EXTENT_DATA 0) itemoff 15794 itemsize 69
-                generation 9 type 0 (inline)
-                inline extent data size 48 ram_bytes 3072 compression 2 (lzo) encryption 0
+  This is exposed by Sashiko during review of v1 and v2 patchsets, and
+  reproduced once during fstests runs, resulting the following
+  warning without the new rejection:
 
- After:
-         item 6 key (257 EXTENT_DATA 0) itemoff 15781 itemsize 82
-                generation 9 type 0 (inline)
-                inline extent data size 61 ram_bytes 3072 compression 2 (lzo) encryption 0
+[  497.553473] BTRFS info (device dm-2 state M): use lzo compression, level 1
+[  497.599454] BTRFS info (device dm-2 state M): use zstd compression, level 3
+[  497.661405] ------------[ cut here ]------------
+[  497.661414] WARNING: zstd.c:41 at zstd_compress_bio+0x120a/0x1fb0 [btrfs], CPU#1: kworker/u47:5/3431
+[  497.666534] Modules linked in: dm_flakey btrfs(OE) nls_ascii nls_cp437 vfat fat i2c_i801 joydev psmouse pcspkr iTCO_wdt i2c_smbus mousedev xor raid6_pq loop vsock_loopback vmw_vsock_virtio_transport_common vmw_vsock_vmci_transport vsock vmw_vmci qemu_fw_cfg ext4 crc16 mbcache jbd2 dm_mod virtio_net net_failover serio_raw virtio_rng virtio_balloon virtio_gpu virtio_scsi failover virtio_dma_buf lpc_ich virtio_blk [last unloaded: btrfs]
+[  497.677435] CPU: 1 UID: 0 PID: 3431 Comm: kworker/u47:5 Tainted: G           OE       7.3.0-rc3-custom+ #464 PREEMPT(full)  8f6fa45f5906dd4b1abb78057674460bd6af91c9
+[  497.681556] Tainted: [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+[  497.683051] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 02/02/2022
+[  497.685450] Workqueue: writeback wb_workfn (flush-btrfs-222)
+[  497.687235] RIP: 0010:zstd_compress_bio+0x120a/0x1fb0 [btrfs]
+[  497.689061] Code: fd ff ff 48 89 ef e8 85 65 00 00 e9 db fd ff ff 48 89 df e8 38 e0 4b c2 e9 57 fe ff ff 48 89 d7 e8 2b e0 4b c2 e9 6f fa ff ff <0f> 0b e9 2c f0 ff ff e8 0a c5 ec c1 49 8d bf b8 01 00 00 48 b8 00
+[  497.694043] RSP: 0018:ffff88810a17ece8 EFLAGS: 00010202
+[  497.695504] RAX: 0000000000000011 RBX: ffff888102615e28 RCX: 0000001000000015
+[  497.697482] RDX: 0000000100000011 RSI: 0000000000000002 RDI: ffff88810a17ec58
+[  497.699455] RBP: 0000000000000011 R08: ffffffff846ca856 R09: ffff88810a17ec50
+[  497.701424] R10: ffffed102142fd8b R11: 0000000000000010 R12: 0000000000000003
+[  497.703444] R13: ffff888112695a00 R14: 000000000048f5e9 R15: ffff88819f5b0000
+[  497.705410] FS:  0000000000000000(0000) GS:ffff8882aed9b000(0000) knlGS:0000000000000000
+[  497.707610] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  497.709251] CR2: 000055967f60f000 CR3: 0000000111372000 CR4: 0000000000f50ef0
+[  497.711388] PKRU: 55555554
+[  497.712204] Call Trace:
+[  497.712923]  <TASK>
+[  497.713575]  ? _raw_spin_unlock_bh+0xe/0x20
+[  497.714781]  ? zstd_find_workspace.isra.0+0x283/0x8b0 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.717434]  ? kmem_cache_alloc_noprof+0x194/0x420
+[  497.718798]  ? zstd_get_workspace+0xde/0x2c0 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.721241]  ? zstd_get_workspace+0x2c0/0x2c0 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.723730]  ? __asan_memset+0x27/0x50
+[  497.724907]  ? btrfs_free_compr_folio+0x2c0/0x2c0 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.727535]  btrfs_compress_bio+0x683/0xb90 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.729989]  btrfs_run_delalloc_range+0x12d9/0x1ba0 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.732712]  ? extent_writepage_io+0xe40/0xe40 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.735231]  ? btrfs_copy_subpage_dirty_bitmap+0x98/0x620 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.737989]  ? submit_uncompressed_range+0x260/0x260 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.740665]  ? btrfs_folio_set_lock+0x15c/0x420 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.743162]  writepage_delalloc+0x7d8/0x1270 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.745646]  ? find_lock_delalloc_range+0x7b0/0x7b0 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.748277]  ? tag_pages_for_writeback+0x205/0x2d0
+[  497.749653]  ? folio_mkclean+0x163/0x3a0
+[  497.750784]  ? __traceiter_remove_migration_pte+0xb0/0xb0
+[  497.752297]  ? folio_wait_writeback+0xa8/0x200
+[  497.753574]  extent_write_cache_pages+0xb59/0x1e30 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.756187]  ? btrfs_do_readpage+0x2600/0x2600 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.758797]  btrfs_writepages+0x1c2/0x4a0 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.761179]  ? virtqueue_add_inbuf_ctx+0x2820/0x2820
+[  497.762655]  ? extent_write_locked_range+0x8f0/0x8f0 [btrfs 1621afd7f58f5561128c1bbfbe7eb177867269dc]
+[  497.765264]  ? blk_mq_tag_update_sched_shared_tags+0xf0/0xf0
+[  497.766854]  ? sg_init_table+0x19/0x60
+[  497.767967]  do_writepages+0x212/0x550
+[  497.769062]  ? _raw_spin_lock+0x84/0xe0
+[  497.770185]  ? writeback_set_ratelimit+0x120/0x120
+[  497.771574]  __writeback_single_inode+0xeb/0xba0
+[  497.772902]  ? _raw_spin_lock+0x84/0xe0
+[  497.774015]  ? sync_lazytime+0x330/0x330
+[  497.775167]  ? _raw_spin_unlock+0xe/0x20
+[  497.776288]  ? wbc_attach_and_unlock_inode+0x346/0x610
+[  497.777741]  writeback_sb_inodes+0x5a3/0xff0
+[  497.779007]  ? asm_common_interrupt+0x26/0x40
+[  497.780399]  ? __writeback_single_inode+0xba0/0xba0
+[  497.781862]  ? queue_io+0x2a3/0x480
+[  497.782957]  ? wb_update_bandwidth+0xd0/0xd0
+[  497.784258]  wb_writeback+0x1d9/0x780
+[  497.785338]  ? writeback_inodes_wb.constprop.0+0x1d0/0x1d0
+[  497.786935]  ? _raw_write_lock_irq+0xe0/0xe0
+[  497.788340]  ? psi_group_change+0x38d/0x750
+[  497.789711]  wb_workfn+0x1f6/0xc10
+[  497.790877]  ? _raw_spin_unlock+0xe/0x20
+[  497.792082]  ? sync_inode_metadata+0xd0/0xd0
+[  497.793392]  ? __schedule+0xe8d/0x5ec0
+[  497.794549]  ? max_active_store+0x100/0x100
+[  497.795838]  ? _raw_spin_lock_irq+0x8a/0xe0
+[  497.797113]  process_one_work+0x721/0x10b0
+[  497.798376]  ? io_schedule_timeout+0x130/0x130
+[  497.799801]  ? pwq_dec_nr_in_flight+0xfd0/0xfd0
+[  497.801092]  ? _raw_spin_lock_irq+0x8a/0xe0
+[  497.802271]  ? _raw_write_lock_irq+0xe0/0xe0
+[  497.803477]  worker_thread+0x536/0xda0
+[  497.804548]  ? rescuer_thread+0x1480/0x1480
+[  497.805905]  kthread+0x352/0x450
+[  497.806874]  ? recalc_sigpending+0x15c/0x200
+[  497.808114]  ? kthread_affine_node+0x300/0x300
+[  497.809389]  ret_from_fork+0x473/0x710
+[  497.810484]  ? exit_thread+0x70/0x70
+[  497.811537]  ? __switch_to+0x3ab/0xcf0
+[  497.812645]  ? kthread_affine_node+0x300/0x300
+[  497.813930]  ret_from_fork_asm+0x11/0x20
+[  497.815060]  </TASK>
+[  497.815718] ---[ end trace 0000000000000000 ]---
+[  497.817260] BTRFS warning (device dm-2): zstd compression level 3 failed, error 64 root 263 inode 264 offset 0
+[  497.840873] BTRFS info (device dm-2 state M): use no compression
 
-This behavior change also increased the lzo compressed size from 48 bytes to 61 bytes.
+v2:
+- Remove the block based space saving checks completely from lzo
+  Zlib and ZSTD do not have block based space saving in the first place.
+  It's the caller's responsibility to check, and inlined and regular
+  extents have different requirements.
 
-[FIX]
-The previous patch "btrfs: lzo: fix space saving checks which prevents
-inline extents" fixed a regression in lzo_compress_bio() where it doesn't
-properly handle ranges smaller than a sector.
+  This simplify the first patch a lot.
 
-With that regression fixed, we can finally pass the range [0, i_size) into
-btrfs_compress_bio(), and this gets rid of the trailing zeros,
-restoring the old behavior, along with the older and better
-compression ratio.
+- Update the cover letter
+  Filipe's v3 fix is already merged, so we can not force push a fix but
+  to co-operate the v3 fix.
 
-Fixes: 3eaf5f082c4c ("btrfs: extract inlined creation into a dedicated delalloc helper")
-Reported-by: Hanabishi <i.r.e.c.c.a.k.u.n+kernel.org@gmail.com>
-Link: https://lore.kernel.org/linux-btrfs/c97652a5-ac6b-4de6-aa23-3cdebc01d00b@gmail.com/
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/inode.c | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+Commit 3eaf5f082c4c ("btrfs: extract inlined creation into a dedicated
+delalloc helper") changed the compression input from [0, i_size) to [0,
+blocksize), which caused two problems:
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 53f4532593b3..5e083ea5c577 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2342,12 +2342,7 @@ static int run_delalloc_inline(struct btrfs_inode *inode, struct folio *locked_f
- 		} else if (inode->prop_compress) {
- 			compress_type = inode->prop_compress;
- 		}
--		/*
--		 * We need to pass blocksize and not i_size, otherwise we can't
--		 * create compressed inline extents for data smaller than sector
--		 * size with lzo.
--		 */
--		cb = btrfs_compress_bio(inode, 0, blocksize, compress_type, compress_level, 0);
-+		cb = btrfs_compress_bio(inode, 0, i_size, compress_type, compress_level, 0);
- 		if (IS_ERR(cb)) {
- 			cb = NULL;
- 			/* Just fall back to non-compressed case. */
+- Other tools unable to decompress the inlined extent
+  U-boot and btrfs-restore are affected, as they only allocated a buffer
+  which is @ram_bytes sized.
+  That buffer is too small to contain the decompressed data, which is
+  @sectorsize.
+
+  Those projects are fixed to have a more robust decompression routine
+  which can handle both cases now.
+
+- Worse ratio for those compressed inline extent.
+
+  For the same 3K 0xcd filled range, the results are small but
+  observable, 48 vs 61 bytes.
+
+Filipe's v1 fix is very close to a proper fix, but btrfs will unable to
+create inlined extents for lzo.
+It turns out to be another bug in the copy_compressed_data_to_bio()
+function.
+
+Which is doing a premature block size based space saving checks,
+meanwhile all other algorithms do not have block sized based checks, but
+only a simple "@compressed >= @input" check.
+Zlib and Zstd all rely on the caller to do proper space saving checks,
+as regular and inlined extents have different requirements.
+
+So this series is to properly fix the bug, firstly fix the lzo
+regression which prevents inlined extent creation, then restore the old
+i_size based inline extent creation.
+
+To prevent i_size being updated during writeback, add a new i_size <
+blocksize requirement, so btrfs_setsize() will always wait for us before
+updating the i_size during expansion.
+
+However this introduces a new behavior change, that we can no longer
+create block sized (ram_bytes) inlined extents.
+
+
+Qu Wenruo (2):
+  btrfs: lzo: fix space saving checks
+  btrfs: remove the trailing zeros from compressed inline extent
+
+ fs/btrfs/inode.c | 28 ++++++++++++++++++++++------
+ fs/btrfs/lzo.c   |  5 +++--
+ 2 files changed, 25 insertions(+), 8 deletions(-)
+
 -- 
 2.55.0
 

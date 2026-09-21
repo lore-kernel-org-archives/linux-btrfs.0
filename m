@@ -1,267 +1,112 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from va-2-19.ptr.blmpb.com (va-2-19.ptr.blmpb.com [209.127.231.19])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D3C8226656D
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 07:03:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7D93B439F77
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 08:37:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.19
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789974229; cv=none; b=IM7LgWJVR0jhhFRx1blD9tfoyJ4GcXe+kbWsBKSe6kmVipNStNVdlR7Z0DZ8GqnYyeylGfesDTla5DpJJ5p8FgUegikUCkZGZ/S+8RZp/yvC8dQY0l8Wm3KlPEjnbVt2uNCnlAxji2ZufeprpF+L+I68nA7djgFPwqT8pGrQDNc=
+	t=1789979826; cv=none; b=perolE5zbBc1cGXSNxAxyLwHsdOcT6YUJgM/kwJldiwl1cI6SvGd1ZPI+L3y5Vcpxol7338CAbU8HB1CoCEP20m1ZtKJ/B2S0m9qwZgoazCFOF5DMnh7sXRk5V1NcR1Sd+KBHi8k2DUfx4VYnZktKkt/c2Z97s3IPPYx5AXw4yw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789974229; c=relaxed/simple;
-	bh=oqmOp/uAGw0pXj7936Kr1oZZrQZaHlwx+Bge0t1OQ7o=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=vAn72ft3YGtfQaCgD+5QmVs8EScHURmoSIL6P5l/utQUZHpWxb84mMkNo4e6wNxpCXVGnBQBnYt/+OfK584svZh5TLsdUetBAVdBkMSw0RZk5mCMmcoTwPVyrckR2NA1XoEC9ArADVRDQdaYY7VN5nhBca1mOd5t+/2TarM83xI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=n9ED0tOk; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=qR7Ng5m4; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1789979826; c=relaxed/simple;
+	bh=/qU3XbDZvC7W3147vVjvAKiMiOZ3GaZoTFSnlceA7JU=;
+	h=To:From:Message-Id:Cc:Date:Mime-Version:In-Reply-To:Subject:
+	 Content-Type:References; b=gbeh9UKRuYIYPKSJMu4WFHp4LgLExl887Uj/EF0ce7Z3D/QNm3wwR8hjRTJz1mj7g4jP/gGGfrld9QCx3958mAIOvHwyA4pQXFlNeh19nABHvAhc04n6yRwABDYWtOlpXpN7K0bG+tJ/37d8ImMrlwNsp6CPFkFECDb+1MJpYvk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=SslXe0Tt; arc=none smtp.client-ip=209.127.231.19
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="n9ED0tOk";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qR7Ng5m4"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id A0D7B21B7A;
-	Mon, 21 Sep 2026 07:03:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789974221; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=6dFLkERqEqx+i+mtAEpFjKa0SGNJvFOK53Rdd9y7XK4=;
-	b=n9ED0tOkEIESlAbrf6Ux5QIuImE1i0Knjin9ScZx4XhvUBzqfA3mZY1hH6Y1NLXNctLS+n
-	1MdA/sA7wRAL5PrFTEYcScFcrhD9JXNtjtp/qJqjh9nBJ09i/x59uKf9SCL73Sn2XYqGBb
-	w46VYlMzfXyik1l8m9L3AWLgXs2Mrj8=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1789974217; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=6dFLkERqEqx+i+mtAEpFjKa0SGNJvFOK53Rdd9y7XK4=;
-	b=qR7Ng5m4WEvSqUHvstaCUF8lIzXSikSaigrDVI+rXrmNkeLvegPq0wxlIUv02v3WosyRg5
-	Wy5Kbuu2Y2autLBvdEreg+Ugtgy4CIwUuY+fUS17CcmUZrryv963asKk5yZk8mZvNyT0fv
-	fJ8/KfNXstrrvFRnGM97MfPvG1MhnG0=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3886B13793;
-	Mon, 21 Sep 2026 07:03:35 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id +yzXIsfWsGrhVQAAD6G6ig
-	(envelope-from <wqu@suse.com>); Mon, 21 Sep 2026 07:03:35 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Richard Weinberger <richard@nod.at>
-Subject: [PATCH] btrfs: make qgroup rescan work to handle fs freezing
-Date: Mon, 21 Sep 2026 16:33:17 +0930
-Message-ID: <cfc34be50699e2e0e5c84e4d57345c7e0506caf8.1789974081.git.wqu@suse.com>
-X-Mailer: git-send-email 2.55.0
+	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="SslXe0Tt"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1789979817;
+  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
+ reply-to:content-type:mime-version:in-reply-to:message-id;
+ bh=WXGrqiQP3Qcq5b10xtWjlbEsWO7CdxaiuZMQVAifQAk=;
+ b=SslXe0TtOWjI0S6HAHhOBduE3ju7aMto25GcZWVqcpwrYUD7Xo7no7TUfOv+2Wlxq7Gqxx
+ Af9Idff9zhXiotwYh0bonjbjSaydTAKPBp+vSrQgRgamfreqFC3j4cGGnnv9uxSbcekLMK
+ gZp9jKnZX4bHAL3wFOwGD8HB/kBWMQJs0e/PF2dYOKH7cMWD0UFBixSg0f0MDcUlqEhTWI
+ aim0o2S20FEY0jwQDtqtlgRES7iXHezfmTIE6JG/q9th8OqOaQ7m1r1OKVZCJw99Cq7i9g
+ 31LYtD35EaM3TZAmApak6FU6sHd2AS3pftviJGiBnsbYvRY3eP0gD9uGs9uHfw==
+Content-Transfer-Encoding: quoted-printable
+To: "Qu Wenruo" <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
+Message-Id: <4c1c5779-5ba4-4c6b-9223-d48d1b1aad7b@fygo.io>
+Received: from [192.168.8.64] ([183.34.169.232]) by smtp.larksuite.com with ESMTPS; Mon, 21 Sep 2026 08:36:56 +0000
+X-Lms-Return-Path: <lba+26ab0eca9+411e02+vger.kernel.org+zhudongjiang@fygo.io>
+Cc: "Richard Weinberger" <richard@nod.at>
+Date: Mon, 21 Sep 2026 16:36:51 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.994];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
+Mime-Version: 1.0
+In-Reply-To: <cfc34be50699e2e0e5c84e4d57345c7e0506caf8.1789974081.git.wqu@suse.com>
+X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
+Subject: Re: [PATCH] btrfs: make qgroup rescan work to handle fs freezing
+Content-Type: text/plain; charset=UTF-8
+User-Agent: Mozilla Thunderbird
+References: <cfc34be50699e2e0e5c84e4d57345c7e0506caf8.1789974081.git.wqu@suse.com>
 
-[BUG]
-There is a bug report that a running qgroup rescan can fail a pm
-suspension:
+=E5=9C=A8 2026/9/21 15:03, Qu Wenruo =E5=86=99=E9=81=93:
+> [BUG]
+> There is a bug report that a running qgroup rescan can fail a pm
+> suspension:
+>=20
+>   [ T278489] Freezing remaining freezable tasks
+>   [ T278489] Freezing remaining freezable tasks failed after 20.003 secon=
+ds (0 tasks refusing to freeze, wq_busy=3D1):
+>   [ T278489] Showing freezable workqueues that are still busy:
+>   [...]
+>   [ T278489]   pwq 56: cpus=3D0-13 flags=3D0x4 nice=3D0 active=3D1 refcnt=
+=3D16
+>   [ T278489]     in-flight: 205929:btrfs_work_helper [btrfs] for 111s
+>=20
+> [CAUSE]
+> Btrfs qgroup rescan is running in a workqueue, and when the fs is
+> frozen, btrfs_start_transaction() will sleep on sb_start_intwrite().
+>=20
+> But a sleeping workload still counts as active for the workqueue until
+> the workload exits.
+>=20
+> So the qgroup rescan item will sleep on the frozen fs, and fail the pm
+> suspension.
+>=20
+> [FIX]
+> I strongly doubt whether we should even use a workqueue for the qgroup
+> rescan workload, a kthread would be a more suitable choice and can handle
+> fs and process freezing way better.
+> But that will be a long term solution.
 
- [ T278489] Freezing remaining freezable tasks
- [ T278489] Freezing remaining freezable tasks failed after 20.003 seconds (0 tasks refusing to freeze, wq_busy=1):
- [ T278489] Showing freezable workqueues that are still busy:
- [...]
- [ T278489]   pwq 56: cpus=0-13 flags=0x4 nice=0 active=1 refcnt=16
- [ T278489]     in-flight: 205929:btrfs_work_helper [btrfs] for 111s
+Hi Qu,
 
-[CAUSE]
-Btrfs qgroup rescan is running in a workqueue, and when the fs is
-frozen, btrfs_start_transaction() will sleep on sb_start_intwrite().
+Thanks for working on this.
 
-But a sleeping workload still counts as active for the workqueue until
-the workload exits.
+I recently posted an RFC series addressing qgroup rescan lifecycle
+issues around quota disable/enable, error cleanup, and remounts [1].
 
-So the qgroup rescan item will sleep on the frozen fs, and fail the pm
-suspension.
+ From the recent discussion, I got the impression that full qgroups
+might be phased out or substantially reworked. Is that a fair
+understanding? Would focused lifecycle fixes like these still be
+useful in the meantime? I'd appreciate your thoughts on how best to
+continue this work.
 
-[FIX]
-I strongly doubt whether we should even use a workqueue for the qgroup
-rescan workload, a kthread would be a more suitable choice and can handle
-fs and process freezing way better.
-But that will be a long term solution.
+> [...]
+> The above fixes should interrupt the rescan, so that pm suspension won't
+> fail.
+> And since the INCONSISTENT flag is not cleared, the end user/tool should
+> re-start a rescan if they need uptodate qgroup numbers.
 
-For now fix the problems by:
+Also, the Sashiko review points out that RESCAN remains set when the
+worker stops for freezing, preventing a new rescan after thawing [2].
+This looks similar to the cleanup issue addressed by patch 4 in my
+series, where stopping due to quota disable also leaves RESCAN set.
 
-- make rescan_should_stop() to return true if the fs is frozen
-  This should handle most cases.
+[1]=20
+https://lore.kernel.org/linux-btrfs/cover.1789524388.git.zhudongjiang@fygo.=
+io/
+[2]=20
+https://sashiko.dev/#/patchset/cfc34be50699e2e0e5c84e4d57345c7e0506caf8.178=
+9974081.git.wqu%40suse.com
 
-- Use btrfs_try_start_transaction() to avoid sleeping on
-  sb_start_intwrite()
-
-  This is less common but still possible, and if we sleep on
-  sb_start_intwrite(), the workqueue will never have a chance to
-  deactivate.
-
-The above fixes should interrupt the rescan, so that pm suspension won't
-fail.
-And since the INCONSISTENT flag is not cleared, the end user/tool should
-re-start a rescan if they need uptodate qgroup numbers.
-
-And since we're here, also remove the "if (!trans) return;" check, and
-end the transaction if there is one, so that the error message is always
-shown.
-
-Reported-by: Richard Weinberger <richard@nod.at>
-Link: https://lore.kernel.org/linux-btrfs/mu8fq8a8.b9a9a1ae-dd6b-45a4-a415-5db853d61536@nod.at/
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c      | 14 ++++++++------
- fs/btrfs/transaction.c | 22 +++++++++++++++++++---
- fs/btrfs/transaction.h |  4 ++++
- 3 files changed, 31 insertions(+), 9 deletions(-)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 05e35eb126dc..0390a17561e2 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -3866,6 +3866,8 @@ static bool rescan_should_stop(struct btrfs_fs_info *fs_info)
- {
- 	if (btrfs_fs_closing(fs_info))
- 		return true;
-+	if (fs_info->sb->s_writers.frozen > SB_UNFROZEN)
-+		return true;
- 	if (test_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state))
- 		return true;
- 	if (!btrfs_qgroup_enabled(fs_info))
-@@ -3901,9 +3903,11 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 	path->skip_locking = true;
- 
- 	while (!ret && !(stopped = rescan_should_stop(fs_info))) {
--		trans = btrfs_start_transaction(fs_info->fs_root, 0);
-+		trans = btrfs_try_start_transaction(fs_info->fs_root, 0);
- 		if (IS_ERR(trans)) {
- 			ret = PTR_ERR(trans);
-+			if (ret == -EINTR)
-+				stopped = true;
- 			break;
- 		}
- 
-@@ -3934,7 +3938,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 	 * btrfs_quota_disable().
- 	 */
- 	if (did_leaf_rescans) {
--		trans = btrfs_start_transaction(fs_info->quota_root, 1);
-+		trans = btrfs_try_start_transaction(fs_info->quota_root, 1);
- 		if (IS_ERR(trans)) {
- 			ret = PTR_ERR(trans);
- 			trans = NULL;
-@@ -3963,10 +3967,8 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 	complete_all(&fs_info->qgroup_rescan_completion);
- 	mutex_unlock(&fs_info->qgroup_rescan_lock);
- 
--	if (!trans)
--		return;
--
--	btrfs_end_transaction(trans);
-+	if (trans)
-+		btrfs_end_transaction(trans);
- 
- 	if (stopped) {
- 		btrfs_info(fs_info, "qgroup scan paused");
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index ca114235bbe1..76787417331e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -559,7 +559,7 @@ static bool may_wait_transaction(struct btrfs_fs_info *fs_info, int type)
- 	if (test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags))
- 		return false;
- 
--	if (type == TRANS_START)
-+	if ((type & TRANS_START) == TRANS_START)
- 		return true;
- 
- 	return false;
-@@ -719,8 +719,17 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
- 	 * If we are ATTACH, it means we just want to catch the current
- 	 * transaction and commit it, so we needn't do sb_start_intwrite(). 
- 	 */
--	if (type & __TRANS_FREEZABLE)
--		sb_start_intwrite(fs_info->sb);
-+	if (type & __TRANS_FREEZABLE) {
-+		if (type & __TRANS_TRYLOCK) {
-+			if (!sb_start_intwrite_trylock(fs_info->sb)) {
-+				ret = -EINTR;
-+				kmem_cache_free(btrfs_trans_handle_cachep, h);
-+				goto alloc_fail;
-+			}
-+		} else {
-+			sb_start_intwrite(fs_info->sb);
-+		}
-+	}
- 
- 	if (may_wait_transaction(fs_info, type))
- 		wait_current_trans(fs_info, type);
-@@ -841,6 +850,13 @@ struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
- 				 BTRFS_RESERVE_FLUSH_ALL, true);
- }
- 
-+struct btrfs_trans_handle *btrfs_try_start_transaction(struct btrfs_root *root,
-+						       unsigned int num_items)
-+{
-+	return start_transaction(root, num_items, TRANS_TRY_START,
-+				 BTRFS_RESERVE_FLUSH_ALL, true);
-+}
-+
- struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
- 					struct btrfs_root *root,
- 					unsigned int num_items)
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 89153cd22596..a9da059d3806 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -127,9 +127,11 @@ enum {
- 	ENUM_BIT(__TRANS_JOIN_NOLOCK),
- 	ENUM_BIT(__TRANS_DUMMY),
- 	ENUM_BIT(__TRANS_JOIN_NOSTART),
-+	ENUM_BIT(__TRANS_TRYLOCK),
- };
- 
- #define TRANS_START		(__TRANS_START | __TRANS_FREEZABLE)
-+#define TRANS_TRY_START		(__TRANS_START | __TRANS_FREEZABLE | __TRANS_TRYLOCK)
- #define TRANS_ATTACH		(__TRANS_ATTACH)
- #define TRANS_JOIN		(__TRANS_JOIN | __TRANS_FREEZABLE)
- #define TRANS_JOIN_NOLOCK	(__TRANS_JOIN_NOLOCK)
-@@ -308,6 +310,8 @@ do {								\
- int btrfs_end_transaction(struct btrfs_trans_handle *trans);
- struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
- 						   unsigned int num_items);
-+struct btrfs_trans_handle *btrfs_try_start_transaction(struct btrfs_root *root,
-+						       unsigned int num_items);
- struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
- 					struct btrfs_root *root,
- 					unsigned int num_items);
--- 
-2.55.0
-
+Thanks,
+Dongjiang

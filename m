@@ -1,41 +1,41 @@
 Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 074464FC346
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 21:46:20 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9ABB532B108
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 21:49:06 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.19
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790027183; cv=none; b=lkovofM61+hoaUmRk/h1koj9V4+tP3Dc6jNE1NFPnJXt1ZpOmwQUkssu4k/MGbewEfqrIHRRSDp7QzPa0Dfe7JGeLCLInd+szvUMExlUs+DCAIUXZsxNfyNv4WhEkE357x3k4fJmEm681kCQBBzFiYrVySBLlrPgDX8UBOCDz6U=
+	t=1790027348; cv=none; b=BLSovf4V/b+kb68MTULRBNThgGmL+maY3Q1y/nN1rDBqXrD5udTlkNVPfA2V82g/FX9zQho5h0VSg5tNJ79BFGDowMcxZoJc7wyZhYx8HPGJG/R7knTTiUzWfy6hwTfKHj9gjJVUzejIdFZSzrwDJ2XNbkBxISHZVwJ6s40aJTg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790027183; c=relaxed/simple;
-	bh=imp/aAXlonqBSauYQTrozBOzTnWCO6KPEng+2X7+B5U=;
+	s=arc-20240116; t=1790027348; c=relaxed/simple;
+	bh=WeDb8mOVI6z7Nz/S8RXAIL1gmDhEUA7sJ7BTBOQPJ7Q=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=DctcjhA+Zq8st5nSM7cd/lFDW93VWeS3ne2MkDOEWiHiGRBBhPZoSgXIyu2unUXuxz8YZklKbJCcqhq8pWOBJMLkB2ycLdBDoEnqkKLJ28XkcLbp7iSUONZy5Mi7L5LoR7Xah6q55hA+aNvafRJ8tcvaHZyNHTYvLfX9d5weSco=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=gPh3pFfI; arc=none smtp.client-ip=212.227.15.19
+	 In-Reply-To:Content-Type; b=BbXLydxUZn3g4hqnMYlUw0WtrjdCrWFv15HZnbng3l0xEot7hXcZSDUSUItEh7O6XMUQlAvmcIhv3Ak+4R0drMi6CnBtrIOaPtSF48WrarOV4syLeqoK3+QEq0yyHT7pT2tIX50PqUPuPAeE+Bif0/U+UZFrfeQgy/05RApkO5M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=R3RlIn2d; arc=none smtp.client-ip=212.227.15.19
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="gPh3pFfI"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="R3RlIn2d"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1790027179; x=1790631979; i=quwenruo.btrfs@gmx.com;
-	bh=MS+kQy6mYp2AGtAVYJDxQvHCmSjDTTCEqA63e6hwxKo=;
+	s=s31663417; t=1790027344; x=1790632144; i=quwenruo.btrfs@gmx.com;
+	bh=+sjl9EyszGF94FHgFVRvedsVbNukuhgp40iZzbZBi+0=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=gPh3pFfIgDMg1vBbsrQXZ9lyTrrDAw9jePHGTu7WgmBhVI7huAmFR/B/hhzwMYNF
-	 019VzH6Er0g+vt35ekkh2sfvjE7X8lMBUOQ97czQUnX+g7G6y53j/b9Kkd7aGrw54
-	 7DjB/BZHtGYHebQPRHBuE/ciT4zI0I6+hrQeEUqd2MBpHZD6Cto2pYz5O8DiAEAMM
-	 x7GFjUK6jlwM+xg8RUQChztCRTubq7tdm6inFnpfDjIr7jJe3Um/QLJRG33HLrGk8
-	 nw4oXrUN2kSveFWhcRdOQ148fUr4HIE45dDk6gylIFvfOmoCsgqI2vaH9oCF1crRO
-	 d0pK7B39DoqZxzikRA==
+	b=R3RlIn2dKJrlW7dFeoTA46zM9iIuPl/FcnXfZO3qZ7TX8N+Ln9kfuIn+S1p5FXLt
+	 UDYKk9kWndTITdiRvrpDN7kcNXjD2UolL+CrJDTS25dSVV88bbaTOuCxdiA0ardzy
+	 75RoRlDmPaS4Y4p8RuYlBUj4jt9sjwybqajilWMuiwpBy37JbnTFIwHUawjhMxn4d
+	 PWX6BrUjxc5tWDEyLRQEhyOvPP8jEHVddnfUD14Xy8/K2htQBclMnuXeDz6iuQGsv
+	 foV6BfeyXel+uxSUx6/xGJOVzceQqeLylxwMt5WQHukfJnuVs2pkyiVxoJ8lOTnt5
+	 +VTJo4v8p1GXg8l7bA==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
 Received: from client.hidden.invalid by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MzhnH-1wmRbM39mb-00wVCq; Mon, 21
- Sep 2026 23:46:18 +0200
-Message-ID: <2c895064-f5bc-488b-8bbf-b6b9b7e842f6@gmx.com>
-Date: Tue, 22 Sep 2026 07:16:11 +0930
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MWzk3-1xF9nT2MTh-00YDB2; Mon, 21
+ Sep 2026 23:49:04 +0200
+Message-ID: <3259c715-8fd1-4644-abaf-6d983295d559@gmx.com>
+Date: Tue, 22 Sep 2026 07:18:59 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -44,12 +44,11 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
 Subject: Re: [PATCH] btrfs: make qgroup rescan work to handle fs freezing
-To: dsterba@suse.cz, Dongjiang Zhu <zhudongjiang@fygo.io>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
- Richard Weinberger <richard@nod.at>
-References: <cfc34be50699e2e0e5c84e4d57345c7e0506caf8.1789974081.git.wqu@suse.com>
- <4c1c5779-5ba4-4c6b-9223-d48d1b1aad7b@fygo.io>
- <20260921131220.GE54722@twin.jikos.cz>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, Richard Weinberger <richard@nod.at>
+References: <cover.1789981860.git.wqu@suse.com>
+ <cfc34be50699e2e0e5c84e4d57345c7e0506caf8.1789974081.git.wqu@suse.com>
+ <20260921131844.GF54722@twin.jikos.cz>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -76,178 +75,127 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
  +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
  HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260921131220.GE54722@twin.jikos.cz>
+In-Reply-To: <20260921131844.GF54722@twin.jikos.cz>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:oA9Sx/bxmAN5qZacq+FZIITHJkyEfArk9EQOw5+YKgFfXn4HnRQ
- kJnmPRejzzRdctk+NZ6ht9CeQmyj6rJFbTOuSNCuhS0jFmjSD1rY57rwEu/rqQqr9Q0aQrV
- 5sO3XDNN6MvyHog1rPBJZP08sXnHeZTx4h08nLjm9xk4G1z78JhLGO9GD03PLRkkdLo8ZM2
- Ey2Kb0zDKbQAa3EhvrOOw==
+X-Provags-ID: V03:K1:0RODuD02cTTUmUszPe8plv+i7QI9e380N3ijwJmkvHoe/AsRrfu
+ 4yV43/pyokW0lqMQ6Wnfd6cLMuCEVU/xHesYA4aQp2sXsCQnbijQju82ZX65ZQ/Fp48YKst
+ n3UWNP46EBfqXfXqzEi6Lvgq3BIaIBMcdg946aAIPhw+tkzck3ENOFZJEP4ET757luA0ZPW
+ ISpF/Klo1jJ405gGa+IBw==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:GMxJCbsnRfQ=;Jcl2H9BVz8mX08DWK596xZieGk8
- 9HpmRGnx03deU2GwgyoRPpFLCskNXEg7cLiY5W+IYY1G9LYjxEVRHW3Acw7eK5jEUGwSrtajl
- kHRD6FRx7TI7GeDs+BUiptyG+m6fsZdAA7LttJyvHRC6GjRMAJQKfRC5V8P8Z1ijbDBAfCawe
- e1Jf4bozrVuIhTlLtAm/+sOFFICmx4mSenktSP2NCXOM2K8pmnm2Kglsy0QPPekFFQ46y0J+z
- n200ygtK1cOpu9iUjtxnLWjOypQeyoI9dQ+Pjk9rDiKF3z92pXWbOXq16kTcjpmSywiHhL4nL
- glmsp64zh66+nMxNmLOgZBkuxy5GB2F/IJbmOmtvikHjHXEuzknmC0mUbchnKBdyc6Qz2GQ8G
- M4kEH91kLXllXOT8DJlLGWeAvmfhZXBpgl/9PXDuREET+JvKBq9To5RZJg1nCysTQEJyu+cD3
- i9jnoaORBl1v1OD1XbmpiqifoK1sX7uI2KE8JTFI3QyWissK8+2Fmiw6hRxmzgpQAX0eseQ6g
- hcjRIcbrMLHPt71Gk0+wcLoTU/gxUR09//1wEHC3AhOcfKGNblUG6HQdqYd8PYU4FfPzZxqMc
- YONS5PCvk1WY/1NR4dndnKB8eyEfRMg2+nNQoAM1agJ2088r3oT0BKpEbmoBQUHq7M4QsM+i5
- qF8mcVLkbYAhr/rqOyZiotctphSyGV7Z7uJk6D4TOWTtO9fxyee7EXyKcylG1KhsXznLXHho3
- +v6mHxZfrixAkc97Got2bahIM/rsCMtofVTB5W47zSWMSW6lBXTRRlTfY2rJzGlzHx3DGBhJo
- 0MgEf4Cic8GshJplYXcuImVZ//dzm68XVJ3zTOE+4z5ifRRqPYMyY4Py5rIkiwf+J6Sa3UVvG
- JBlY9Q0GFYfFNdKUkuUV0GrTcQwuY42N6jHNJvGxMKDOCPcBOGIRaWT2TCZaTTYjCHHASUAIq
- Zi2lJffDOQds4RSDMNJ9zfGKFpimzff+LIVrg+6TAnGcXQaQZJqJZUFmgY52XyxC72cfm5O/+
- jYMF71WqOtFIJNUynFaGzo2h7TaiyNHuOS6UKV+QiiFdgl5ot+CHBSrXTEAedFGFyatkO5Gl/
- wiMqqidqLJWPTZ6eqvoKatePXidvGmnaBF8FyJoqCu6t0bQOr4NusrkjhbtDDOOT0llbLD9i/
- R4AXV0eCuEdOqC7dCS/IsFZJMz9eQxG547Wez86OnDo3X/VpJrNpP7HJ7/XDBE+XuTjnxdPqQ
- 4iYlMXRFAicNNc0Oi85D4HVsI7ZwV6fnD0jz5x9sAMi79uMPKZvyh0YHl2Uk/M2l36/jIYhOf
- SAFZadjXD02w7b+b6hKdTqvwn72ikGYFYKU2b5RRvmjJPSLxQEo3/qh9vCsdM0aurtg/h82X0
- OfMs2AHsnqsk6DN4aaHfGjV9DOtzOfHma5VxGy2pfuQEd/QceU4BAzRzlcj3ypynRPWC+Ld+U
- M+Qk0xBA9C+x0hD8xCc3/gSA/k7+4NlvO0ljyygFVDdQAEon6FvVBSI9vGT8SSpsnrpMLK0Hj
- D6xEMaLksaQx+sJ6WOm7cxUTW18e5SkwGa7YdIpYl70goERKdY22NJaPpGzd+h1KZe5m9DL/A
- ncr47S5BXDc6mio1zegHS8gSzuFe906zIcDfpw62+7WAuWVyfmWgxH7yOsLMF6IvjklC+FPrv
- PceKjH8XT6pCe89v4kvTzJpalqpoJEZLtEk6/lj20TnDySBJpHCo6gmZDESEcFKxRjQLXVWxG
- 88IoZZYlm0HQ3G9BofbUkDCPLZxY4pqVbTT+9/PLQ+jUPL7aiSI90Dew+xxgtwxrtnPlsGFCG
- KINT0LA25hHM1b+MxwkhkxL+ax3O6oTVYm+vK6Q/C4EfcY9AoVundQyaFrtSUZep+lwUqUBt5
- dF1Id356Iq4R/GyyPepX1YacM2qxNMMx4bWZCFYTkH8DvWgV3YZqMx28au9RYZrkLucm7Q9U9
- zQ0Asyj3zxx6YmDiguiDAmN5QV8xjdfU5SfSW4t1FSByL0TTbQQrF8RZQkvBLsGwf3zvd28Qc
- m4KoZKCX4/C7BiLoyDN++bi4+qZ1UnaKVLrE3I2MsWn/ayHkZNfr9vSGJ/zaAsMR3CypRkDb5
- dR/TsHkoqD2SoOPA8jhWBr2ryN2pm5j4hg6BXfOn4ij8c67lT2LEEdlIgRM37GO8a6slaD4nC
- 3qIae0o/kbLFbiSs/I8jrp5pU2gQJ8yJTWTAW8xgbYr1gdod5STnjfF4pSxmcruZWZsj+t1d9
- 3RmjMfxhePaSlj09X0MdhbdaznA3oYX1qeAgPLdIFchWgh6/m4w3e8AB4kT1m7cnUVYv2xrgp
- 1th+mwg8PmbyQlldP6mLK68JTUsXOmIJ3/iCMhyi3B9I39i82r4uy+AGCCZvkqJHXcxM1zz6M
- S9XQfnjOpzJ9pX4woT/0CL0ubyOjyo4bc24cj0D/g3FezshN+0Wl+Z97JYQcP9bUpT8unNcHn
- b0wwQQ/S/wxK+6MYnFFVmAI29xBSIfjAfr0T9H1C0PbWDA3z8zn3TMudSuho326LNCp/asTPl
- 5KfogqeiwKXUb3Mw2nq6o+D7YRrosiaCqmGSNAu1uuu4GBZ4zL2m4jL4ywvNFKDdb8oWgdXSe
- usE33hkIhCJP81udHnrtLj9NzrcOdnzmYilrR6iVmX4RqSalPzSnkrTufIMFDH7ULiP3Pf+W7
- ze3GnYnTDXYSmtvdIbYTCJnjZXOpPhUWQmtPg0TgsxW1vqEMxxqMFzYJn+OWfyYBNk3xMkUmS
- RpyNDpu/B+Y1ye35zKiQmbx9fKQxESsFHVJos8txWoPhvz6nugQ3TlUtJS7156zqglExw+AeF
- YXSGp9QfV24tF/8rMWrRcLUPrR54y7x3wQMzhAxIupJY2fjANaC2BI32Th2Rn9E5Ykeg2+Bv1
- Iiwm6Sl4wKcOtRTtmXuwH///RLmNFUym4Oan27MSn5J8JWp4bk7Sq5Flz86OLrcYv3x3dSz2F
- 5Ik1VBUo0ze8wvAkYV2v47/c5C2pjMtv4ODKWVuwowWPFIPMXFQQgirtcqXJCoXdQPMdzINqf
- 9HAEl9l5WyWgi0mvNuJ8AotSetjjoZzX9AT2YViEQ9guoVeCo7OxWCO5rxuW1BEk1te6svKA2
- h3dNlzt+n1HA0EZfvN/El4ywr+usD1lEiuBnTGsTK85Fq6mt8ECJSrX4dPJrEEDyyDi8k14KB
- FK7TpFPoz+CGLpdcggJB0B+24m8FeOtZ8wmH+8mZOOjcL+8euL2CsMMggCuWDgNveUCfnoaRN
- +B6AGfv+9Y/qvQS00z9TJtZ+yGLhNWCTQ59yO9hBBSveIm2jx1r8boFdXn2fyJ3Qs3YbHp4E4
- ZbRRXqWAW7mjDfE+RUXAj/SezIoCmbeUbKxz7bhv6dHuYRuhxlJEVyGwuskn16193y3xIVqSp
- /mrMpcxR7qpdEu37yz38cRQDcelQgbS9mDeJliHMIfkA4hOUjsdw/EDlnW07kgmPkhY2lF3N1
- ctjVQa40zkqypkq7wizXR1Rfxt48Dt+wdNxo6oGjlBNbgU60K+thnCI26MhbDMa8YUWr7ahuZ
- 3kYl4YOK/zPUqPGLH3TfdK62yLsSoqPEN0hTK/ecT+qyjpi+wDn4AhqEBiXgsbg8flBsL8gHD
- US9t4xnVSVTVvmv7T628h0paQUORHg1ShpoFDaXdinULkVzw3L7pzFzQF5Mm9xh9HF18MLR/+
- YD71O+ER0dsQ4kxnIEeCjV2MpwDNIFBPuBJ30g8VPKRc1ER7YFBZ8bdrketPmU9+CfxCL4AQI
- gOZckH7sMy87bunZC+BaqyhKuEvHbeMeto2maCCl523Vbx2Z3u2jcZJID4Q4D3pZknHdfso/q
- hL5bvfx99GeXQ4acxtS1czAae5haNa20SbQ132JFmmhO1xMZU5xQzaSpotGsQZNRnsbjl2VnC
- a8qMDWeLW6Rojs4LFbYpOjP4VgvjbUKyi1cuZrNagwHsY/Cef3Pmjd3vbnDkgrm4P294ypt1H
- GEnGnojQJCIiVH7oMtZi7yjzoeLTny7Q+B+QG1ZG0hXRkWfwjsd+Xg7HROOmEmQJ1PLr99MCU
- SVq4502EedY4Boh7UPUdyk05WqHP/QpexeqjHUuMP0X5D+gkZ1YVoMwfrN8vuLQzhKf8KCydE
- bXa59b8gHu1fZ0xXSuDTRAQ/8NoQIvF7E1XmyI2568OMH52PnJ2uZMPMm9ExU4vULN7n9awjJ
- 3hZL1x3f1oTcv3Qn3DXGzys794d1x6UH4CDq1xXkzr0LSDkzvZz+REcEBtRiJ9H7ukaItcPTk
- P4n0etG5bGSC+KTg4qjBEV92jL7M4yJ6nB+hY2lfKmJowbhJMBqsTc0RQFJK6iHNRxfmoL166
- C8W0vjmwXm4rp6SmJZ2IZVyEbNjTCT8drtNsFCqvhWBlSTTPcTTw079yrrGmSp5eoAqSbj5Ml
- Y693et4DnTGTjozkKDFkPS1JEur/2Wt8apI2O13JhC0rUKBPDiXvUgOQFvOb7h075wIG9Tpfb
- fN30NfHzrJd1DS4A4bFELzS6BP2U4MUFNHM9U3EHBj1aBnk9GTIctbu5Uu0HMl4iSEoENkqlP
- Cu3afzLGLCS2xIYuRdjqTiNmnaoAan7/UzxNOzBiMvWy3T2JnHBrK6v+gfsuLNekHPosOWzEq
- FMywDIUYhj6U3L7FDu31DyW9YdbpbcJdXA0GdJSgfjdp3B0t68/e5dQWVfQaJVOxy+O5vtBY+
- p1b5SBlKMwvVseYZWV+oY32195RzOSHMbKhubnpdZF8Pl55P7wATOv1uGj2MO9Mswmuv8w3nh
- 9jwDaBJTPgIYwjx5C4NSnDi95xFovmX1pXRGbJSLXJpIeDoSMzWcKq9nMlGh/yhIKeFIpxEQ+
- XHSbZDHxcaG+dJC+gzMoP2LrpUJ3hNlYMAKTKJaWqmOjJMf778NE0cczzm1odoNMTSY6wv9kD
- jh3BmynqysqFGUAgrWPAYuvOz515ob61SxwwZ5IcrI7/ElrsNQ70yxHzPDJD5GxfcuvwD40kn
- 4I6kI12iSOiEm6s4Ht1ycZqXJRIzltP0h+JKVk62Pp0ujPGWoP5UUokM3+kOaKJH7sr8c/sjU
- 58V/0F9lXCUSe5XdxVnGa6aJa2u3MansHGSGnM2hGmEL5OYwZa3jqFabA6bPJjYMdQ5ypEp7s
- cz4299UZB3+eE4v0XfB8oE2vYXhxB4wvKcSKMNUvgPwbBWQz1k5PuhKRfv0X9jBdhNaNAP2cF
- GUCytP2fAiT+Lb3UL7RcWueCzmhpsaZMloqqetvI+FPF0STNeLEcuLjdooVqxr9WXbRA2losH
- Qt79UkSBpPNivnO2UFgCMrF6oFzMr061X1w6lIgTVwob7LI8n1ecjtJyzTt5PJOENglu8QS+2
- PPbL/WFtNzDg1FdX0Oy5m96X67S3GGgU1oMAWjLtkOWV+e4IqwTNfrBVJ61CAhExTiY1W5dqm
- PMyGj+I/Idn4NamL32IY5a1WeIRpeenudFusOHfn3B9ZngR/h9ubMuavnCYqffJ5oXSE/QoCd
- 6y8eyw+NLnysJDQziNnGHhx8JSOktsl0LD6JyZsGqDL6QAJ7+x6feBgNFy2AGETnGkhevJpk3
- NAf6IMHt++MmgxyB/Eh5YtYA9MrByow8/Wj9oZy2sO1UXq08HFxglApqPFp8C7baJWc9MNIk0
- hrREhWGzyJz/oTFjlRnC5YPFKB7whDib95tiO0DIjQsUKvNzghHtue+GECe3xZ7h4obg3OqO7
- skiIMrKct/xrQRMDknYBtoYYYIXmDHj3ZfXOUb4dsJB9M28u5f0dNg0nAfNm7jBt6Te7woqgi
- BXq1zTrTSNxz8iP0aZcCywsghLaPB/wIsvsIo4ngPLnwLiCFt6tVWuX4p1WYUc1zHgF3D6wsn
- jLO665pJTZnA0tDNZWdf4mZ9le6puq584itBCd/B4JI33JHM/yrquWEVDxTm0cQNxyqYb5HRj
- HdjmW4ZtN8zU8AtUFFtFzDuMe+r2o84nvJoY8k97w5uAYnBjJTauTfwwSn0rbx0nT0Sq4GCEv
- zkhUBWsFVw7vpAu0HSoIqzg76g2vLnEKwCRWuo51Ox2Sqb+w01lPH051/niaIUdaRnvygwN53
- i7J73qGYmjH7NvLxfQXRTshOUTbjf2OqhN3zgb0NTn5UmjPFOjJRLFJnD5ja4hslKSzzCM3ya
- 09u8oqS6HZmZlFVD4bBCs2h1XGKLTZOeryZ2ZKg7
+UI-OutboundReport: notjunk:1;M01:P0:VXOkmt+IW28=;CxqP7QBtqH8Y/8/X4xQL0+MlOS2
+ Zz6h8NjsT3502EfibcVNMilWjifaSeO8xKh1Yn+Zckj6TW0Y271jqiDO07bnoy31ZbMNq63Js
+ uafdGMfA9CWV7wIDBRg9j8TXAiUrbieDDgX/21bl96a/9s+vuGP3hJeh9Kh9khOywRXzIGVH3
+ +nxFEa91FzykdGXmr612BL4aCmvnyIfsqLlfF6YkKZtb0r4hBNXDu2sJEQjEes+rAdzo37Xj4
+ CVnCnKxCADtVH+YgQMJpi/p/UVcei4hbLrd7HqjLRThR0hBKPcuNvnRDRZeS7F7NrHTmlXwpa
+ w+qZOmJoVfGVx28bmTyh03Zg6z0q62r3EPY+TOImtFUcGpzxmBkQBwl2Af3UnIEu/jqy6AgdD
+ dECGg5oNKgrakhm2WXTllMiLWYhria87y5ufJU8h3pqCEv5twQ73DYdMWCa1JX1ziWHyvbKnT
+ WGMleM+4bKMg7ugLtpGDfbg4PqElySo9YS/UW9PkIC7f5AhpYSKMgN3vbO9JezC5VsZkx0NDz
+ 2UiOkPyS8LgYb0foLWyfL++hPsGbyoNIgiqnK99Zwt40d62VigBMYXlCbkYKKxljd5+kPpipf
+ e3DOfOEm0fjIyzSQ3KH1MgiLycmO4NwqflA441KsvUdhKHQH+dqKHuyM2bk14BcUtru7P8dQG
+ y197IPK+6VRDfZmA7ZKbITF2IJ+v6Sy9dezHNpE+mzHOiGukX2J8yeLivQlORSeYEaxx6des7
+ cN5JLA+DWgMxu15yzQJkkahxJoRlIEFXOJ4zHxrraGL9xjubhGFDInuXjK7SmEPuPN6/TkoWS
+ cT3SV1/7EhUZskXgVzebRwM8pDvJK5dHIZXNHPiakVFFOkTKcDmglTlN8YNpS1Xqk+30uQ3c0
+ aMtHhT/PSh2oy9nflZVrpDBWz7f+8EveI0hNjjO4jXnUgM1Rg38JJ6mbaRrX2ndmeQeJ6QIfN
+ /ygOAiQqOnOGRyveJ+MGCL6KpzBc6iVv4yweh5pjz0Okrqrf/WwK1GhN1oK7E2ctrjHuS7+4x
+ u2TMG9yfptfKC2gJQ5xqZ8gOoIDsjM1hUYhvqYHGzPesTQWa403RXhKLBmbGQC6TJjSiJ/m3H
+ 0f1OpWgdDfmd/pWKBrbiY1wxbIAEDbsQxjD3HPjXX9JHiRUvPQ8wtgTaJILIGNvIMOWgM/0Ap
+ fQCnMmsZ4BmtH5gWrR08sqg6OR/AM+LG5i4FwcS0rMPcbsqM2Zc+TIZ4QwBtdEMb+eYUWHxfO
+ BQEzT6Zbnqo8nqnNzY0PKfWEk9R3C5WlTHd2Wm3uzTLmO0gDVHDfokL0brAG9kV5qUqiTjIkE
+ XqLJpQW+ToXtHit5Y7R29+4aC/iqklWsPC5CEFVQsv5UXHtJjnrwmHQduDz8nRLJyxB9oVUsp
+ YFC4wLrmOipKO+/LcubDwNTNyzexdWRA26g0yQ4Yt+q9ZS7L+d1v/KmG0CTJNMrF1V3eNVe+0
+ jHMo9WmIcQyMeoGHSFzNwqUQrABsGLqB9Nez8lSCSenvLH9+TbsYrZ3OzjbTeKc6Bih6R+M70
+ FaIRVjv9WO5SshnLfe1rtY0OgKBlgxJtXbMGKsoOUPY+I20GuKcQp6p5QRiVcixS40UoWhBoI
+ GM53NhyjjBQ/4Enj/uPMgMyrN+JR2cRXEReDBRzHIW+Udl8WlOKXarjjcP1BblQhvdW9rUiGQ
+ hW3U9J3W/fPKXQX62c9nm4JUM9LdRpCnoZ4g697udi0NhwJchaaq/0T6OIekDLj/299Y11gz1
+ LnZ3/YmVmHOejKwBpgqfiJGWnUMxpVAujfpuO1fLLSmtGbNmct+BAFgPZayH1vi866u8FM828
+ wsgLffH0YokTAAkzdvCq0aR/wWYSBY6yJdEIgxpLnwZuRtOdw/eMMK3IO5JaEFQ/nKRGhS/C7
+ UiHJQ9eA3mNxVFK/b08omiyLasuh+SNE+NMVbkJxGtA2bz927DOs2l5fcQ5BUENca3okAjSsH
+ vszue6GR3Y1aOPXXnvM8uAJi+rdyF+FtRIv0sVLhUSDu8wH9lMAufUvw5q7NhX+/a37mue1pz
+ ByqVfcd4siY1oLqMt1lYyqPAeGHTHJtqgpseqWIbQisw492U1DWar6Y594o1RVYvSSgkBOOpN
+ 3tLJGIZaKEkGA7Qy2S1cU2JerSf4pORNprhE820kU63emLoay3ljKa1pLdAhKSprEcEgkBcRB
+ IOuMpJt8fWvAYV8oQbqcJmI2Mp1T7qmElBY387rSq8u0DG3c03jUFxOvDlt/1ECT20xR8LVDa
+ J8JvY7sskhB3T6vlB/CzH0JJPW8qgqLnOTS2IAfKOzbJn6zh3dPUNOyB7zPkybOLKwfMsHQ3h
+ air/ZE/CIjvKvUpu3Yg77TIbIXIybDnsF8xCOVYUH+cLXOMxrAX1ezbVHSeF0lOa1iWTUt53m
+ Kd9P8GIK66FpRe/euUf3vxB5sGN4HOFVITB4DkwYcSoISOI7vUxq1ZHD9+2kBYNFaGLtYF6af
+ uJhDy2qydE9k3NFk8SDuOoliCbadjsdo5yCor9pTMjwOKg2yYVMISUePWIgaaqkE9Wc/pOYEg
+ N3PuKAM2jaK6BJFdKFhgAlZMjjVYgvK0b95sxzu5swIqPI70ZKH6uYPqBBpIBCPpmzLCb1B/W
+ SvQqllFWHjrefg7Dsk1feTx40CO33YZKYc6kUEQbVnfeMCv8DuJABmTYZZVkQnr3SXqQHE5ED
+ x3Eus5EXfYGUL7mld2cSzuGJ0oOhYORziK8bP785P7M3nKguFMP1Xez469nTvRPQD9rknWXu2
+ cITu3J+KSciJyvexmS28j0QS4t6Ad09qurzKbpHA0D3JfihlmbwqZH6oWL7vIY69+0cSsmxQv
+ oxlZrDEifVcacuCICXU2bBcnIdMjqbdiOiTaCKMURDozRB4fi267BBYlvM9Wvl6wtskDqiXqU
+ fo72jmrwPXmk+7kRqhVqiVo2EzB+zhWX8i0cG3Cs7jgGoCiqvStgR9FNPxRolU+dxq1clSNE7
+ wL9mBvjZf81zt4wrGHtng6CA5org+1yUYWqkWu8+KBr84I5nfVLc0GjtndD/OfFg2XVVVjcUj
+ ucaKeju6d1ik/aKtJ4Kb2JBte+PWBW8SyAAzzINdmYNTGP+htvTh/p3L+dua1MeT6izRKJ6x2
+ cKVDgsj/C75LNibqEKUIX8g8QhEEZtE7OuqyIXNxcYqJ9owd1G6ftJM+O3gr4U4t2E2oOFo5u
+ IfPLt950L2136p52eNM18Kd9norKvCplVON9ICZER8fgcx0BJVdOM6skHouWzw25qrvjKPsZL
+ Hr0UaxIlpq65eGNPLxPL7trs+dEyijkCp0PacXAXF7UPl4CO4aSDDdHndYmWOvMXHOiGdak0P
+ yJO7IPDFAv9n4zCOL92/swh5C2TiNhZucVj7XRlheIAA1YJbEXQ8McUt3CJNSQWlNcVU9dmlC
+ ILbLcjVQXidm9QfSUdlBKjwvdsGa8dOCsCLmm6w6GX3moSATlTSDPG97YgaMKinOBXgo7oHYK
+ wuNtf41sqqosSvPS3aIFE+8Kq/E+4cJSaQLz2gdnCp1yeB9aceRje78bU610VGAbljTPBnkSX
+ PG00fd2ZSFdY2bzXcbNEl+M7THoqXA+73k+1NalkxwsXxsIDcBB5EjNrNurEV7aRriUtGX7Al
+ OC6qYdofrQ3C7WPyiTGCxkQyja0gXfxKIeuzJELEctz3CX6q2GbWIxvoCI7t2G/0rAoGQP8lE
+ Nved4BlBQDskxmUEdSr66wwF8P8PYGFkEFpwz1a8rZWGDpfu+zNnlgu4c2SecMSZe4FMq6QiM
+ xI24WZnVsDkLYDSau23zQyfMb6LWRcCBVQP+SsXWd7sBWX6ZiK9rL3XaRGnsD5zypF3iWjM3V
+ iXvQbhCPwQW05oGWTDy+QdRZZoSJLizvfZrqtjIcUUBVdwEOjoG/MFLC/NPEnRDo33hB9s41P
+ DBbKD8RoWcUufKXUHtBOM3CewZ1QMi47xncjk1Gofop2EJatq/palgRpD0FZm8reOKTw7x1vK
+ gHTjaJ2zWpl40kARcmJXjtdO7xtxWl0ta8NdoUJK6f3EzhDrLa7rPqsITZfRq6lxQCb8h1ns2
+ jjZCKSaXgD1HK45WSOhL+woLTwrPVHlCnKFkhsIFx/Kh+ycK/Nc8opEWYPJ0JfFdOeUzhesdR
+ VFWGL8mi7BXgd9flnmEwCAZDFWNToj0RwTXF2HiNfKFK5SJ45RSMLS/Bziv/Bia7HZWihe+hv
+ m5H/JisO9GbF0KIhVsH6sOniIdfRjpctdPOfYgr76dnRxbB6982zKrZDWjL687uvg7exjG4RN
+ 81Q8sTKtNUx3wqOpRlQmsNuzxq8315JhzY2gq718+iPuMvoGyX6Ns5JufcCQtPAEo6DVp64kh
+ V0nCt4cPrn8I6uC30CblfvhMFcFEV5KXSTJ2tS2tDmSnxTMK+mptwQrInbIpUvWdrKRnJVK17
+ ClYLlXU908Nwjs0TCfSVX60+oSJjYcm8SM8LNIqNM4OTDp3PhusphlS+WE9rkaVegEdcqqYBF
+ La5CtoZ+4fV+YvGdPsP1iOrKrH+E9YgSonkV9/FNZZYeNSf7b1vyLRc4kTOKMO9KSh8j62rHS
+ PlYz4rfWSniwCZbSNh3Xu73sdHYFeSMvYObwAm6HijBeYgjXuxBQKJLIWSdmkNM+/HJ6aksNl
+ ko7vpU8bC6fHHS3CbIMM1FqBqrjFqH8GZfiRzyNSmOvwBf/It/qVIIcTBrRP5iUz/4nqQSAGz
+ EN57ksK4bRtawghH075oXl+wiGwu9wQuEScqkZg8F6S8eEYS0mvGKhj4Ws2ketQKtBc4/t5Q7
+ dUcYTv9JujtnpXV0KmnA/SeZYawHh/f4csAH/jEKmz35ijwMhw+tNR2x/JZ4no27BI2SR+dKv
+ RrCXlQsInEDeJySFvR2M+dPuxNBCpi4HrQ16ZiCz2cgR9kIGm+ke9a5L/zHcjHAMHbTFQ8vuR
+ 7jGiTbBTCMbqi+U7GFd/8g3tY7cdUVYgaNd850nm+VDLSTW7n8RChmM4ft8ZMlRp1QKb9Piuv
+ SeMnOkQ/iNN0APxjrGljJjBWSjQDxvI+yOkgv/RzVpA0IzOUnAmFCrPEAaEJstcwUowkBtVgN
+ KjPuzi4Lsco7YLzYIydvbDmV+QBRlr3vm2kwVcVAUdAKuDVKLJwXiOZGWkYamH/J+iSgkmqYZ
+ HY5HTP+6dik+Gh+rgHFGIeuJmRPmtqWnQbY4QjzfLhJBWn/exUV8I7R8UFePve4aLwVpD4W9N
+ IFS0pZjXLT4iuPlY4yzrIvIWGmRx/WgIw86oFprbSiztOkjRrHWo7xrF8Q8/K8NfxKaDMx7C/
+ xPEOOxtADOZxOeiHWHhmww0ON+UaN+B9CnyBZzy6ukF4STTcfVvPVMQ4jWkGSUANQknLjms/M
+ yIysSdD2bbYLsTIqNMp2QG/ujn2B7ZjbMAstYVrldI/OP52aymD0j72dHCYpPa6qsUPc2s2Mm
+ yLH/RveLwn6qzkloSg6IFsG6VgKPBhiZHnguprdB5cdE1uBXDOV5NxuJcN9rWpuFVE16twvWn
+ jyb6UbN6LWc3E47eiQ4MJU2FSJQIGONfBrQBNGy1cOwCbcR2yJptNX3zzB/XhW/yNpZV8lJQW
+ J3sZT07enOAmzDHErRO5FmeOr7lRcv38dh2JWGeP9XjcdPDYYHYRsnW/am3AKoDw+yymQkolT
+ 2gDERUMrnr9wYVm/+CSyKBlo3w/3l4UOoPMYuNxi5AtQyJdJG+vvW4pnGCKMZI8gM3nAtdYji
+ IO1SamSjyt99qsXyhjPPuC11cHX++FvHslvJhR4Db9q5E6dl56Ndx40+zlwvRvoPxrcmmFsK5
+ mra1UCUAI1f3tGHWFSGULKIoDQpmO0TxHKlGUBLATcA+MBQj7Y4mIuWUAB1G0DXzM4X6O45eC
+ kO4ZeC8KQGLepCucDwCI+eBSKr/wIosGhbZTJ+vFou8yp1qpAbX+7xwTCl4o8KiPd8KdrYLz8
+ uMDE5rgm9SmC0rnWN1ufP9MmF4qwJP+gvhffioaFBuqoZjT3Ks+n5cR0pJl8+RpTsZY22BD1h
+ rohXPOQbY+Kzkp93ui+UvTC/SZz0exAhW2MltnUP6yuB7KM8cDukJg+okG0bqdX4AE2Oy02Gk
+ muSfzDtsZ5xj6XwnqIKX5WDS0RdpIk0i9dHjs6WfoKhM3ChvMEleLk8Ccv8tjrQSvEiTiGJCo
+ v6WX8uy98OBYmBa64KCWdd0+qKgBC5Cvsm3uIPAS
 
 
 
-=E5=9C=A8 2026/9/21 22:42, David Sterba =E5=86=99=E9=81=93:
-> On Mon, Sep 21, 2026 at 04:36:51PM +0800, Dongjiang Zhu wrote:
->> =E5=9C=A8 2026/9/21 15:03, Qu Wenruo =E5=86=99=E9=81=93:
->>> [BUG]
->>> There is a bug report that a running qgroup rescan can fail a pm
->>> suspension:
->>>
->>>    [ T278489] Freezing remaining freezable tasks
->>>    [ T278489] Freezing remaining freezable tasks failed after 20.003 s=
-econds (0 tasks refusing to freeze, wq_busy=3D1):
->>>    [ T278489] Showing freezable workqueues that are still busy:
->>>    [...]
->>>    [ T278489]   pwq 56: cpus=3D0-13 flags=3D0x4 nice=3D0 active=3D1 re=
-fcnt=3D16
->>>    [ T278489]     in-flight: 205929:btrfs_work_helper [btrfs] for 111s
->>>
->>> [CAUSE]
->>> Btrfs qgroup rescan is running in a workqueue, and when the fs is
->>> frozen, btrfs_start_transaction() will sleep on sb_start_intwrite().
->>>
->>> But a sleeping workload still counts as active for the workqueue until
->>> the workload exits.
->>>
->>> So the qgroup rescan item will sleep on the frozen fs, and fail the pm
->>> suspension.
->>>
->>> [FIX]
->>> I strongly doubt whether we should even use a workqueue for the qgroup
->>> rescan workload, a kthread would be a more suitable choice and can han=
-dle
->>> fs and process freezing way better.
->>> But that will be a long term solution.
->>
->> Hi Qu,
->>
->> Thanks for working on this.
->>
->> I recently posted an RFC series addressing qgroup rescan lifecycle
->> issues around quota disable/enable, error cleanup, and remounts [1].
->>
->>   From the recent discussion, I got the impression that full qgroups
->> might be phased out or substantially reworked. Is that a fair
->> understanding?
+=E5=9C=A8 2026/9/21 22:48, David Sterba =E5=86=99=E9=81=93:
+> On Mon, Sep 21, 2026 at 06:46:45PM +0930, Qu Wenruo wrote:
+>> --- a/fs/btrfs/transaction.c
+>> +++ b/fs/btrfs/transaction.c
+>> @@ -559,7 +559,7 @@ static bool may_wait_transaction(struct btrfs_fs_in=
+fo *fs_info, int type)
+>>   	if (test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags))
+>>   		return false;
+>>  =20
+>> -	if (type =3D=3D TRANS_START)
+>> +	if ((type & TRANS_START) =3D=3D TRANS_START)
 >=20
-> Do you have link to the dicussion? Phasing out current qgroups in the
-> full mode would be a functionality loss and we don't have a replacement.
-> On the design level, the qgroups are general enough to cover the COW
-> design, sharing. The compression was originally intended but IIRC we
-> don't account compressed extents separately.
+> This does not seem right, the type should be a single number, not a
+> bitmask
 
-The biggest problem is the insolvable nature of tracking the owner of=20
-every extent vs changing all extent owners in one snapshot=20
-creation/deletion.
-
-This means qgroup is only reliable with rigid subvolume layout, which is=
-=20
-never the common use case.
-
-And all the current workarounds are killing qgroup limit functionality,=20
-requiring endless rescans again and again.
+But TRANS_START is already defined as a bitmask.
 
 >=20
-> Reworking could happen, the performance hit of qgroups in full mode has
-> been a problem since beginning, but I don't see any easy change there.
-> If the sematics change we'd need to add another mode, like we have the
-> simple quota mode.
+>>   #define TRANS_START		(__TRANS_START | __TRANS_FREEZABLE)
+>> +#define TRANS_TRY_START		(__TRANS_START | __TRANS_FREEZABLE | __TRANS_=
+TRYLOCK)
+>=20
+> If you meant to distinguish normal start and 'try' start then it's check
+> for two values.
 
-For now the only major user of qgroup original mode is snapper (for=20
-subvolume cleanup policy), and we're already pushing snapper to not=20
-enable qgroup by default (although no good progress yet).
-
-I'm open to new designs like simple-quota, or maybe "reference" only=20
-accounting (making it almost the same as the quota files supported by=20
-all other fses).
-
-But I do not think full quota mode should be a feature that should be=20
-enabled by default.
+So what your recommended change?

@@ -1,86 +1,87 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 664763C3F5C;
-	Mon, 21 Sep 2026 12:49:47 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 243B43C4563;
+	Mon, 21 Sep 2026 12:55:20 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789994988; cv=none; b=i7KmAez+dpM1N7Pu+MkOs/zF2icLg3lvjNX5ga06WpH9xdvJGUtxFrYSe1FfBg+cr4VIG9j3uVLtKVf9xz0WFjXItmOKTKbRKkbauhaZxTye36aKFcpKb33q1k+WLzvnJ6fq+D1L9FJqtQItqIbAbnfGfRncijcyLb0bdW2JujU=
+	t=1789995322; cv=none; b=bk72lQHyaAn/QgDuYOzGvnxwCksCUyg+Xc797aHn/+ir3DLSObbXcVCPS8+xEkvywe/zOVStRbyjOGLs0nTVLvQ8yayEmYn5MAaDeYU3h94NevxtqRULYvE9VFkeKPZoBshblX8ry3GmGFLwEzaB5g+7QYgTGil0BYe1ROAB9Is=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789994988; c=relaxed/simple;
-	bh=GrGJO3m9j49Co+pGdq//2esF7gHhdq16xTas6Rwiprk=;
+	s=arc-20240116; t=1789995322; c=relaxed/simple;
+	bh=OSh3sXhZwy8pWGMgrj5o5cqYqNMnxGydsHdIyEvxb7E=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=oBFxA4hg85G0UGYLZZRoPyBe6g/aMm0zluVUlSCERkZYuf7s191i5yZzxGRRDtDDDG2Onv3MdqvP3Qm5Ebx1NE3mCV1t9sTjCPB2OfZv9iIWY/LEa63QjgMNWCmBI4QBTAL4Y1CT3QxyYaoW9ffXTe4UxVNlg2BSyQFxMqMqZmU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=my5aeO1U; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=HcPl4ODx; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=BtZLNI8c; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=IM+48rP5; arc=none smtp.client-ip=195.135.223.130
+	 Content-Type:Content-Disposition:In-Reply-To; b=AjFyiFl03Kb/WynRd0w79g4ftgn8yjFeGuIgkR8Bdr7kEJDqrtziuYTxFfgpWxASK5JO4f4hfHZWP6QQnCZYb/UF1YG87m7fTebUh2NOllA9/drsPbriCT8t8Wzu2RSJbBUQXpFuboh6d8Bksx1IUIHtdQy2h0NAFjLBo76sdmU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=04lg39jo; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=UK0HrAw2; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=mDFdaJpd; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=5ciDG+Ju; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="my5aeO1U";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="HcPl4ODx";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="BtZLNI8c";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="IM+48rP5"
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="04lg39jo";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="UK0HrAw2";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="mDFdaJpd";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="5ciDG+Ju"
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 5658D21AA2;
-	Mon, 21 Sep 2026 12:49:37 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 889C321A6E;
+	Mon, 21 Sep 2026 12:55:10 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1789994981;
+	t=1789995314;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=D6ydRcSAeF+DH0s85zWIWWyZ8vFTJT74/Uc1TvApogs=;
-	b=my5aeO1UQMs5O7m155UzVI1Qhzb3C7CgxTwsL4ysHuQMFBIKjkERf8StfJWVhSp8HuEI39
-	F9UBLq2O1vDsMu/UtwUKa5RKUd87SIK5qKXojVCBzXc71th6ZA7jU375XZYU2MMmHl4dQA
-	q1+yJkVLmiX3Xtg9PNKQq562ARV3xKA=
+	bh=SKloclEIQkofMQ62/pJyxJwJsl4EoZ+U1dPnW4VpfZE=;
+	b=04lg39joq1xcfY4IJuLQquGTWqtkapsaT54MkgPSZiOP9JnUL+Q0Gx4m5WMVIp0hUcxQXX
+	BXlopVygZkay8u+4E9j3ars/j4627j87Qnh6tCq8wlWStP+Vh/cogoQ4NLMlakd7EeXmF2
+	NJthGzzw0X+w58wxAlnFiXtnLDrXro4=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1789994981;
+	s=susede2_ed25519; t=1789995314;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=D6ydRcSAeF+DH0s85zWIWWyZ8vFTJT74/Uc1TvApogs=;
-	b=HcPl4ODxeYeDNu0ZqosCbobWEFhPFnUYizE5Jl6Q5vTxlfVEf1DVJDlw1EO7+8qRXJgX+o
-	gaPkT2G4QCUYd1Cg==
+	bh=SKloclEIQkofMQ62/pJyxJwJsl4EoZ+U1dPnW4VpfZE=;
+	b=UK0HrAw21V3OI442yq8Uo49s189ukQrzVD57hu3a4u5IWMWm7Uma3KF3IW20v8M7uTOxtc
+	qSA7na0uGm3FxwAQ==
 Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=BtZLNI8c;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=IM+48rP5
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=mDFdaJpd;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=5ciDG+Ju
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1789994977;
+	t=1789995310;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=D6ydRcSAeF+DH0s85zWIWWyZ8vFTJT74/Uc1TvApogs=;
-	b=BtZLNI8cnSMBuDBrxGjE1YgxWtpsjgqYrqVSBZoFwSqIaSLC+jQj5tUBUtJjCRrjq3uFj4
-	JBhWmcbo8cglD7j9lnU/dm9Gh/YBOlxdjTIWkGbdjtcS0jhvL+j9N7C6EiEjCc/f3xZ0zT
-	ZiwI11aHIIdMedrMvsnzfssM25rUG0Y=
+	bh=SKloclEIQkofMQ62/pJyxJwJsl4EoZ+U1dPnW4VpfZE=;
+	b=mDFdaJpdVWxD06ypqtjWtfXhzWANEL8sjclVhZAeCWkFYOxQs62wtjKbd4BiD9FfByOoEJ
+	84ckNLxg3mkbCo1AyVMl/duhvP2hOj1Xw5AGpf1PYjbTrDIc/Q04mmMTksum6Wla2k1hen
+	x1W0NQx87T94WotShcFCjO3OLZWVKms=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1789994977;
+	s=susede2_ed25519; t=1789995310;
 	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
 	 cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=D6ydRcSAeF+DH0s85zWIWWyZ8vFTJT74/Uc1TvApogs=;
-	b=IM+48rP5uK6VMZABDThq+i3PWGUrC57dO1d/JZR2VnCpnx7TWFJjkUwkxU/XlSa0c6rcRx
-	Bdgs5E85YgV7U1DA==
+	bh=SKloclEIQkofMQ62/pJyxJwJsl4EoZ+U1dPnW4VpfZE=;
+	b=5ciDG+JugkUCgklj3GmjCYb4rfMJqrPnz+bzJ7WEDOQj//kL9k43ya+zvfIeFq17wpvrW/
+	spd/e2ZQcYi0ekDg==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 297871368D;
-	Mon, 21 Sep 2026 12:49:37 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5BB5A1368D;
+	Mon, 21 Sep 2026 12:55:10 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id kCruAeEnsWriVQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 21 Sep 2026 12:49:37 +0000
-Date: Mon, 21 Sep 2026 14:49:27 +0200
+	id dkYQDi4psWp3XAAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Mon, 21 Sep 2026 12:55:10 +0000
+Date: Mon, 21 Sep 2026 14:55:09 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Yang Xiuwei <yangxiuwei@kylinos.cn>
-Cc: clm@fb.com, dsterba@suse.com, quwenruo.btrfs@gmx.com,
-	linux-btrfs@vger.kernel.org, io-uring@vger.kernel.org
-Subject: Re: [PATCH v3 0/5] btrfs: fix io_uring encoded IO cleanup
-Message-ID: <20260921124927.GC54722@twin.jikos.cz>
+To: "Peng Fan (OSS)" <peng.fan@oss.nxp.com>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+	linux-kernel@vger.kernel.org, Peng Fan <peng.fan@nxp.com>,
+	linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: use assign_bit() where applicable
+Message-ID: <20260921125509.GD54722@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20260819025436.1949152-1-yangxiuwei@kylinos.cn>
+References: <20260920022730.3145797-1-peng.fan@oss.nxp.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -89,10 +90,10 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260819025436.1949152-1-yangxiuwei@kylinos.cn>
+In-Reply-To: <20260920022730.3145797-1-peng.fan@oss.nxp.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 X-Spam-Score: -4.21
-X-Rspamd-Queue-Id: 5658D21AA2
+X-Rspamd-Queue-Id: 889C321A6E
 X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spam-Level: 
 X-Rspamd-Action: no action
@@ -104,74 +105,80 @@ X-Spamd-Result: default: False [-4.21 / 50.00];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	MIME_TRACE(0.00)[0:+];
 	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	MIME_TRACE(0.00)[0:+];
 	ARC_NA(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:dkim,suse.cz:replyto,twin.jikos.cz:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
-	RCVD_TLS_ALL(0.00)[];
 	TO_DN_SOME(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FREEMAIL_ENVRCPT(0.00)[gmx.com];
+	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
 	RCPT_COUNT_FIVE(0.00)[6];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	FREEMAIL_CC(0.00)[fb.com,suse.com,gmx.com,vger.kernel.org];
 	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
 	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	REPLYTO_DOM_NEQ_TO_DOM(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[nxp.com:email,twin.jikos.cz:mid,suse.cz:dkim,suse.cz:replyto,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
 	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	DKIM_TRACE(0.00)[suse.cz:+]
 X-Spam-Flag: NO
 
-On Wed, Aug 19, 2026 at 10:54:31AM +0800, Yang Xiuwei wrote:
-> Hi,
+On Sun, Sep 20, 2026 at 10:27:29AM +0800, Peng Fan (OSS) wrote:
+> From: Peng Fan <peng.fan@nxp.com>
 > 
-> Fixes for the io_uring ENCODED_READ / ENCODED_WRITE cleanup paths.
+> Convert open-coded if/else with set_bit/clear_bit and their
+> non-atomic __set_bit/__clear_bit variants to the assign_bit/__assign_bit
+> API.
 > 
-> 1. Always return -EIOCBQUEUED after endio so the caller and
->    btrfs_uring_read_finished() do not both clean up.
+> Done with Coccinelle semantic patch:
+>     // set_bit -> clear_bit => assign_bit
 > 
->    Link: https://lore.kernel.org/linux-btrfs/20260630091609.3414-1-samsun1006219@gmail.com/
+>     @@
+>     expression cond, bit, addr;
+>     @@
 > 
-> 2. btrfs_uring_read_extent() failure skipped kfree(data->iov).
+>     -if (cond)
+>     -        set_bit(bit, addr);
+>     -else
+>     -        clear_bit(bit, addr);
+>     +assign_bit(bit, addr, cond);
 > 
-> 3. Unlock inode/extent in the caller on read-extent failure.
+>     // clear_bit -> set_bit => assign_bit
 > 
-> 4. Do not stash encoded data in the cmd PDU across -EAGAIN.
+>     @@
+>     expression cond, bit, addr;
+>     @@
 > 
-> 5. Drop the unused REISSUE restore.
+>     -if (cond)
+>     -        clear_bit(bit, addr);
+>     -else
+>     -        set_bit(bit, addr);
+>     +assign_bit(bit, addr, !cond);
 > 
-> v2 also exported __import_iovec() and passed IO_URING_F_COMPAT.
-> That is not a bug with the current io_uring thread setup:
-> create_io_thread() copies TS_COMPAT, so import_iovec() already
-> sees compat iovecs. Passing the flag explicitly would still be a
-> cleanup, but this series does not take it.
+>     // __set_bit -> __clear_bit => __assign_bit
 > 
-> Testing:
-> - xfstests btrfs/333 passed.
-> - kmemleak after dropping the ring on NONBLOCK encoded write/read:
+>     @@
+>     expression cond, bit, addr;
+>     @@
 > 
->   unreferenced object (size 512):
->     comm "btrfs_uring_eag"
->     __kmalloc_cache_noprof+0x38f/0x4a0
->     btrfs_uring_encoded_write+0x78d/0x1790 [btrfs]
->     btrfs_uring_cmd+0x142/0x1d0 [btrfs]
->     io_uring_cmd+0x296/0x5e0
+>     -if (cond)
+>     -        __set_bit(bit, addr);
+>     -else
+>     -        __clear_bit(bit, addr);
+>     +__assign_bit(bit, addr, cond);
 > 
->   unreferenced object (size 512):
->     comm "btrfs_uring_eag"
->     __kmalloc_cache_noprof+0x38f/0x4a0
->     btrfs_uring_encoded_read+0x89a/0x12b0 [btrfs]
->     btrfs_uring_cmd+0x173/0x1d0 [btrfs]
->     io_uring_cmd+0x296/0x5e0
+>     // __clear_bit -> __set_bit => __assign_bit
 > 
->   After 4/5 the same repro is clean.
+>     @@
+>     expression cond, bit, addr;
+>     @@
 > 
-> Changes in v3:
-> - Drop the __import_iovec / IO_URING_F_COMPAT patches. 
-> - 3/5: drop a leftover goto out_fail from v2.
+>     -if (cond)
+>     -        __clear_bit(bit, addr);
+>     -else
+>     -        __set_bit(bit, addr);
+>     +__assign_bit(bit, addr, !cond);
+> 
+> Signed-off-by: Peng Fan <peng.fan@nxp.com>
 
 Added to for-next, thanks.
-
-IORING_URING_CMD_REISSUE is now only used in block layer code.

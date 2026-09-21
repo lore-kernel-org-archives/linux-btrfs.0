@@ -1,97 +1,169 @@
-Received: from va-2-41.ptr.blmpb.com (va-2-41.ptr.blmpb.com [209.127.231.41])
+Received: from mail-ed2-f26.google.com (mail-ed2-f26.google.com [74.125.228.90])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 23C1345DF49
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 13:53:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9542C4A1E01
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 13:57:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.90
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1789998816; cv=none; b=LE7CYQc/q4RmOSh0lprc+hTqiuyh9bSxZw1mFVelT9quW+DC4pl1ARm4fgb6WMXHxZSq9RNDRvDVso03YLbqcszMus1k7cbOjHAkB6wd/nvwfeE5a9cBMmyuYmdg5AOvwmAxNY/Jgi8YAqQZRdXfbylNp8600an/wxWZAsxfjvA=
+	t=1789999042; cv=none; b=JhemQi4FMsQleqicf3U1PW9bGYiHYYVU1qr3vqKZGrp00TPhkJiqlqDFAMGRi/WQVMWCVNy4HFhc9k9dhPdB20qLkWV0T8NjGXVnsbeNqWHuv59lgnwSBJx2H9xceEb5Qi09tol6qp/rh4emvt+c8VALVRQZHT4aui5RIUfQ7h4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1789998816; c=relaxed/simple;
-	bh=/zkzaLu6cP/5sOWEe20Wpkw38MGX75DpwvglDSE4x7c=;
-	h=Cc:Message-Id:Mime-Version:References:Subject:From:Date:
-	 In-Reply-To:Content-Type:To; b=u8NN7WRJSJPBbzQuoA6vcdwuxvtunp8/rr07trIXDvVn4OINcSR2q/Gz0wMe1jlj3SUWxqZd6kbcpfkbV4LU7qgiH2EIyUPEqxeLnF0+b4TpZiFkVadTjblSDGmrGvB7+vStzvgdODze8O4ujf9sc6/TesxSL6N0p1i6LH0Ju1s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=EMZ8yaRs; arc=none smtp.client-ip=209.127.231.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
+	s=arc-20240116; t=1789999042; c=relaxed/simple;
+	bh=05nQQn1fD5gOEpF/ULLHdZqTcDXLkNhHu9x2ubpJqaw=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=QoRh/g2I4kUk6Gcm6UZcsrFYf3P31GjII7OmAPCGGyaH01HTpIMyvEfHOR/KazLuPG4FBlk771iJgEgmK6E2b+czvCwB0HKiymFfaUJEmJbtVSRDFdWuPfHBfxnRbaTSZb5lefV34+qKkV8CqITAZKleO9XkSCiRAk4LAhRQXVs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=mzWI9N2G; arc=none smtp.client-ip=74.125.228.90
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="EMZ8yaRs"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1789998809;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=JA/0xC4P5PXrjrY62tbyO9w0q1E67f9bo0tPZR518P0=;
- b=EMZ8yaRsS/1oYvGG3PFeYUjfkPF8umV3AYeXOPOTge2SDBNSzqxO7u3p9rosW5YciFVlZg
- fst/UdciyCdMIf6qJQM2xOKB7q2p16CnOggksqoSp+S8CYaKmENz16nyz77aAAc/XOY6vn
- frf3DU7cfQQvPEbrCJeKKUGrE1k5r4WCBBwQIce2mARsp/Zp+y6EEGftR2JkbnM5vT4BvR
- 7ajqdTiARG+nlysC9vGBgFfpTTXPN3q13kHvsLkX9YYetfr4fqgcjFCg/AkuOh6l21N9SK
- +dpiSNY47Eri+2G+KxePspcSffsjnQvw3LFVIEKlPBbxWAuN/oEasT4Yx917qg==
-X-Lms-Return-Path: <lba+26ab136d9+7f8396+vger.kernel.org+zhudongjiang@fygo.io>
-X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
-Received: from [192.168.8.64] ([183.34.169.232]) by smtp.larksuite.com with ESMTPS; Mon, 21 Sep 2026 13:53:28 +0000
-Cc: <linux-btrfs@vger.kernel.org>, <boris@bur.io>
-Message-Id: <82b37efe-7b21-46ad-b685-9ddfae3ad235@fygo.io>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="mzWI9N2G"
+Received: by mail-ed2-f26.google.com with SMTP id 4fb4d7f45d1cf-6aa13e194easo4685495a12.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 06:57:19 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1789999037; x=1790603837; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=ofpT4h/xZOk97T1LnY16xox+YwsLCtjUsNXPXQGc7Q0=;
+        b=mzWI9N2GG3yCh33wQMPJzyAje6/w1azTh4oUjAdlzJOreyc1TK6YMNTV/hQZ9TK3Gd
+         CEyFT6JaVuVjed/fVn+ehu8kPa8HNUOBbo0dKThcMYqAxQ33Sj3C6fOg7tWRzo9WCdYB
+         CgktU7m3qHBLqKFnkA5IBAlERt+FmUYJlBApJNKVhbQFFUR5JGgAq2NbcjsWbRyg6SFr
+         8Cqy4Q2D+SN+vgDtmn38CUCnH3wPIvBSzJNJo61M9aWxru9kd6n65Lm/HaoGXxtsYsZY
+         9ms6vbHcQFg4jHmo+4f1jqR7dpXme2eRW7XmPC1nlYjnriBkw/EB1U5QYlSftufCNk/N
+         jkGA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1789999037; x=1790603837;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=ofpT4h/xZOk97T1LnY16xox+YwsLCtjUsNXPXQGc7Q0=;
+        b=rrmWEb+wlJGyvZKwnb+msqvMn2+kDUlNLl8sgy2CyCL6UkHllHUF2qo/KORcGzNnql
+         IO/tq9SOEphiYLn+mgj7CG7aquTdXGM1Ej6x9yTsxdL8LpA4JbY4ZQLg9NT+CyuH4skN
+         fjWW4NQNAQgFcq8GuUB7MgAqEGjcG5KfCEc81GFTTNdW3BULcppaf7MNFOuW2Q8frXbR
+         zDG3dG+KQ3b03KVPufAVECqq06p7jTHc0Yoa9Og3qWOO5kz8+W3Ifr1OOuIshuFHWTlT
+         EOQ1tD6DqX2+58pqByDoA2XlBu9WZeD2dG1Qt5bBCd4U7SW3OGDJ7zc3TU6iNOcI9uDB
+         qVhA==
+X-Forwarded-Encrypted: i=1; AKwUvByD4nSBIQTJL+77amDDlXh/lB3ChPh+HQe1iJ3k3Lh7bkmcl56ZLsumCQyVIUZFZiJ8bvfa8f11Y+E1dA==@vger.kernel.org
+X-Gm-Message-State: AFuF++mwjF4J1PkaNw9doyMa7pOPT8G+d5P1XSfLhQ1pwsjTtDhhNczp
+	HBgBcp7ui5QOv3GkUUvyb79lhsiwsDLwpGWJNBLrbQSKEVPvLOqCoMF9
+X-Gm-Gg: AYBFou2QMnosAhXW302LDlJB4f5g7caf8EamYNXhVLBWJhZ1kim61HIqQIvkoCBqBQR
+	ruWoYwNqOx1mtzGAEgFKsWfaBYcVIBokjRcIjTtulhJKy8aqDByTvtbBq+ze11gGcLQ4WEco2SP
+	FnhJNBNsT1bChaREjyqZdRIg86nRohng65ZYPngbe8gtgdoBGAG4+dgbR5HsrbUYQZQ1FgDpuS5
+	juTbnwkcWS/iI7Tmm+Rxm6DPvDlOAD8ck9rsC4yAM3KmHFfVU84F7h9uO3yNBZFPT2fOUUgxyW7
+	33doXeLqLRweFo5lTlDJuODw0nLbZHLssL1rMeSdyWMpmtjSyQS+3q8LHbDSuyBwWGMHzYWwBb1
+	AtSUDQQrieY3hNWD85tUwfrRIf5epGrQvmp0yzyW8DLPK3H8tkylhPx59BLUK5XhP/i1iBFya72
+	q0SMjXW71MLWuFmlep4us8wOKbiIK45qAgfRD51jUwMHLRhRVyTOIb1r0S1OX55rPTb28InDS1D
+	/k5ZoTQvjacHPZHLO7xxC3V/jGMR1Ku4+Ug5PO5Z3RMKqSPF65MvKO7lj+fLWQ9ghNXbU7csMhN
+	iTujZzjOlqyEdupRmUnHZUe3elbENcFYW+xn
+X-Received: by 2002:a05:6402:210f:b0:6a9:aead:4e98 with SMTP id 4fb4d7f45d1cf-6aa577f5cfdmr8215865a12.1.1789999036894;
+        Mon, 21 Sep 2026 06:57:16 -0700 (PDT)
+Received: from [10.54.182.141] (82-132-213-26.dab.02.net. [82.132.213.26])
+        by smtp.gmail.com with ESMTPSA id 4fb4d7f45d1cf-6aa67e0d3c5sm4446691a12.22.2026.09.21.06.57.09
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 21 Sep 2026 06:57:14 -0700 (PDT)
+Message-ID: <a8b01e56-bc86-412b-862c-d6a3efef2e6d@gmail.com>
+Date: Mon, 21 Sep 2026 14:57:05 +0100
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-References: <20260919040249.912597-1-zhudongjiang@fygo.io> <20260921132706.GG54722@twin.jikos.cz>
-Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: qgroup: use specific errors for simple quota rescan
-From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
-Date: Mon, 21 Sep 2026 21:53:22 +0800
-In-Reply-To: <20260921132706.GG54722@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8
-To: <dsterba@suse.cz>
+Subject: Re: [PATCH v4 01/14] dma-buf: introduce initial file I/O
+ infrastructure
+To: =?UTF-8?Q?Christian_K=C3=B6nig?= <christian.koenig@amd.com>,
+ Jens Axboe <axboe@kernel.dk>, Keith Busch <kbusch@kernel.org>,
+ Christoph Hellwig <hch@lst.de>, Sagi Grimberg <sagi@grimberg.me>,
+ linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-nvme@lists.infradead.org, linux-fsdevel@vger.kernel.org,
+ io-uring@vger.kernel.org, linux-media@vger.kernel.org,
+ dri-devel@lists.freedesktop.org, linaro-mm-sig@lists.linaro.org
+Cc: Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>,
+ Andrew Morton <akpm@linux-foundation.org>,
+ Sumit Semwal <sumit.semwal@linaro.org>, Nitesh Shetty
+ <nj.shetty@samsung.com>, Kanchan Joshi <joshi.k@samsung.com>,
+ Anuj Gupta <anuj20.g@samsung.com>, Tushar Gohad <tushar.gohad@intel.com>,
+ William Power <william.power@intel.com>, Phil Cayton
+ <phil.cayton@intel.com>, Jason Gunthorpe <jgg@nvidia.com>,
+ Damien Le Moal <dlemoal@kernel.org>, Alasdair Kergon <agk@redhat.com>,
+ Mike Snitzer <snitzer@kernel.org>, Mikulas Patocka <mpatocka@redhat.com>,
+ Benjamin Marzinski <bmarzins@redhat.com>,
+ Vishal Verma <vishal.l.verma@intel.com>, David Sterba <dsterba@suse.com>,
+ Ilya Dryomov <idryomov@gmail.com>, dm-devel@lists.linux.dev,
+ nvdimm@lists.linux.dev, linux-btrfs@vger.kernel.org,
+ ceph-devel@vger.kernel.org
+References: <cover.1785274111.git.asml.silence@gmail.com>
+ <bc20381e8daf85ac58811c344325d8192cde9d1e.1785274111.git.asml.silence@gmail.com>
+ <181b08be-04bc-4ae9-bb88-15321a82440f@amd.com>
+ <8285ede8-bebb-403a-8a37-b9987cd37a8f@gmail.com>
+ <0113c49a-a364-4df6-9ab4-681c789d9d3b@amd.com>
+Content-Language: en-US
+From: Pavel Begunkov <asml.silence@gmail.com>
+In-Reply-To: <0113c49a-a364-4df6-9ab4-681c789d9d3b@amd.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-=E5=9C=A8 2026/9/21 21:27, David Sterba =E5=86=99=E9=81=93:
-> On Sat, Sep 19, 2026 at 12:02:49PM +0800, Dongjiang Zhu wrote:
->> With simple quotas enabled, running:
+On 8/6/26 08:29, Christian König wrote:
+> On 8/5/26 12:59, Pavel Begunkov wrote:
+>> On 8/5/26 09:27, Christian König wrote:
+> 
+>>>> +
+>>>> +    dma_resv_lock(dmabuf->resv, NULL);
+>>>> +    ctx->dev_ops->unmap(ctx, map);
+>>>> +    dma_resv_unlock(dmabuf->resv);
+>>>> +
+>>>> +    dma_fence_put(&fence->base);
+>>>
+>>> You should probably set map->fence to NULL after that.
 >>
->>   btrfs quota rescan /mnt
+>> The map is freed two lines below, but I can add it as
+>> a defensive measure.
+> 
+> In that case it's ok, I've just haven't seen the kfree(map) below.
+> 
+>> ...
+>>>> +    ret = dma_resv_reserve_fences(dmabuf->resv, 1);
+>>>> +    if (WARN_ON_ONCE(ret)) {
+>>>> +        struct dma_fence *fence = &map->fence->base;
+>>>> +
+>>>> +        dma_fence_get(fence);
+>>>> +        percpu_ref_kill(&map->refs);
+>>>> +        dma_fence_wait(fence, false);
+>>>> +        dma_fence_put(fence);
+>>>> +        return;
+>>>> +    }
+>>>> +
+>>>> +    dma_resv_add_fence(dmabuf->resv, &map->fence->base,
+>>>> +               DMA_RESV_USAGE_KERNEL);
+>>>
+>>> That sequence is clearly incorrect!
+>>>
+>>> The fence must be created after dma_resv_reserve_fences(), otherwise you definately have an illegal memory operation here.
 >>
->> fails with:
+>> I'm not sure what you mean, can you elaborate? I only cared about
+>> pre-allocating it to avoid allocations here. We add / signal the fence
+>> only once, no reuse. The map is going to be killed here, and if we
+>> create a new map, it'll have its own fence.
 >>
->>   ERROR: quota rescan failed: Invalid argument
->>
->> Starting a qgroup rescan is not supported in simple quota mode.
->> Return -EOPNOTSUPP for new rescan requests so userspace can report
->> "Operation not supported" instead.
->>
->> qgroup_rescan_init() is also called during mount to resume a rescan
->> recorded in the qgroup status item. A RESCAN flag in simple quota mode
->> represents an inconsistent persisted state, so return -EUCLEAN for this
->> case and retain the warning for diagnostics.
->=20
-> I'm not sure EUCLEAN is a good choice here. It means the filesystem is
-> corrupted, which in a sense it is, but it's not from user inputs or
-> on-disk state. The 'init-flags' is from calls and this matches more the
-> assertion pattern.
+>> I can move the dma_fence_init() call here if that makes a difference?
+> 
+> Yeah that is a good start, but you might need a bit more.
+> 
+> Here is a summary of the usual procedure you need to follow when implementing a dma_fence backend:
+> 
+> 1. Allocate your operation object, in this case here it's your mapping I think.
+> 2. Prepare your operation, including all memory allocations.
+> 3. Call dma_resv_reserve_fences() to reserve a fence slot.
+> 4. Allocate and init your dma_fence object.
 
-Hi David,
+Looks I forgot it reply here, sorry for that. I killed dma fences in
+v6 in favour of synchronous waiting, it turned to be less trouble even
+outside of these fencing rules as I can rely on dma-resv lock less in
+the code.
 
-Currently, the only caller passing init_flags =3D=3D 0 is
-btrfs_read_qgroup_config() during mount. It calls qgroup_rescan_init()
-only when RESCAN is set in the flags read from the on-disk qgroup
-status item.
+-- 
+Pavel Begunkov
 
-If simple quota mode is also set, I would consider that an inconsistent
-on-disk state, which is why I chose -EUCLEAN.
-
-I observed this with the following sequence:
-
-1. Enable full qgroups and wait for the initial rescan to finish.
-2. Start another rescan.
-3. Disable quotas while the rescan worker is running.
-4. Enable simple quotas.
-5. Unmount and mount again.
-
-The worker can leave RESCAN set after quota disable. Enabling simple
-quotas then persists ON|SIMPLE_MODE|RESCAN in the new status item,
-which triggers this check on the next mount.
-
-Thanks,
-Dongjiang

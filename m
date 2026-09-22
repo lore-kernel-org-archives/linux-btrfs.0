@@ -1,204 +1,374 @@
-Received: from mx0a-00364e01.pphosted.com (mx0a-00364e01.pphosted.com [148.163.135.74])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B15A25B09D
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 01:43:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.135.74
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DADFF3EB0FF;
+	Tue, 22 Sep 2026 04:29:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790041387; cv=none; b=JWlVTha+9pRK6vhzstuMUzFQQGBKj0mlX0apphHQN8j4WyBYtre/wtvYgcKjxLF13T5T+2deodw5BX0GLotKQWjiLHTqdrDKaL+0EFmEfIM86q1QqsxCnc/7DzEP3Fb2/oTuES5SODjYCSXnfv4Rqe1zvhN7FfMjeXEnXk5DgKg=
+	t=1790051362; cv=none; b=CXdF7NrdMu4mWElbDphQffHnF+2ygyEsksQd5vqrcCCGBXYsUr1vxCImvoDbmwYawcSAowDYsh1VkN3ZLHP+5ZP9smjOjVzu9DBoOopwdEziUBwniO0lB+vyQXzqgsY7rrwmJfEiFkYi9Ey0e5oyUyD0vbRNntUyZkx6EtLzLnI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790041387; c=relaxed/simple;
-	bh=c2LmCu8cdXqCItINnBeiSwsRS1OJ5Mz68eYfM1pCaxk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Cvyc0VdhV9Epb3GUQGg7c1v9ou1zTgxR5q0I3LEnobDlBJQ13Y/A83ZG+vQxgPB8Q7kHz56HWnSqSMApnFF+ZNo2xxvNf4QqiaTcMc3ktWXCF4FV35TfJ551HFpmmoUOiMdf9a570vygWsLVHTofk1YBZz8nHkGG7mmY1laA3Os=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=mTBCpJOy; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=3c9Hh3QQ; arc=none smtp.client-ip=148.163.135.74
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
+	s=arc-20240116; t=1790051362; c=relaxed/simple;
+	bh=qFV5K/HugzkNwnsVmrFhjN5KFU6GtvcjXht7j4MSDfc=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=V4B+irhnjO0ET45zrEFQNjA6v/LDdGUNtyfwx00fuvHvhldk3kLVCfECfxuCv8eEA2cI2kfiZONAm3rcODI83h2D81hdCPQ/8lVUGzqG3F96l8JoUD5G7ATmY3GAxiAVji5p1kirYg7f1gIRqPRzWs+Z/KI70Zm7BFPveM+ozWk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=o1uX8BUb; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="mTBCpJOy";
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="3c9Hh3QQ"
-Received: from pps.filterd (m0167070.ppops.net [127.0.0.1])
-	by mx0a-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 68M0ZOhw111289
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 21:43:04 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
-	cc:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pps01; bh=KSUv
-	35Q6uQ78ZsYROYm0LB+h9p7UZYz9TOi1IegvsE4=; b=mTBCpJOyKBWRWMGQz0Gv
-	g3XJGfJ3JeXlRhMfoyeGegZCTqd1seKlVqP2khj6iSA5/EStOYkEQXQj22wzO7K4
-	RaSmy/g/6+urhCmyt38lGsJutFl0ZSSv3dgvQyPUVbsJVHpVzLAj4i72Gfx1W37x
-	uR9uqtcZKCPyTmkVDEmKAccpxN6/MDkL1wBEGrBWcTO1F22Z5aZkjWx+mQX3frv+
-	IDTsAtHDkc1j1PsdgDLtBzlc0i9u5lNFPpmlxINCsTnpEQ1I22InWYpmhxZ5E+8/
-	vPlW+3T2jaWDLwhA7jk0fiAcVHEqo5HH75+3vvUrCDDmhuVxjWnhish76M2xK0AS
-	iw==
-Received: from mail-qk1-f199.google.com (mail-qk1-f199.google.com [209.85.222.199])
-	by mx0a-00364e01.pphosted.com (PPS) with ESMTPS id 4gu70xvdac-1
-	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 21:43:04 -0400 (EDT)
-Received: by mail-qk1-f199.google.com with SMTP id af79cd13be357-936aa34873bso642784785a.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 18:43:04 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1790041383; x=1790646183; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=KSUv35Q6uQ78ZsYROYm0LB+h9p7UZYz9TOi1IegvsE4=;
-        b=3c9Hh3QQoNz3X2OOe7DZFgOa/52qU5SuldA5IvG1ai2sbggMgSSwtSQbRPwbNPQFlm
-         akhY2RuxKBKrzc5emZXGuyzNkNRkNSRf9ppZhkwdzEaU7Oj9TGh+olx2YiWTFtBuFpkp
-         vXMFFuwJ8ND1+Jltxiwl1Hq6A1cEQV6B+yROf/lYFS/MZ4ixUNjV2xYyzmb2EZVKMOxJ
-         /q7QthGDYCuF9hZmTeEkyqOEZ/n6Tjd1TD9+iKiIVJ1O4vejHXuaCXE9m0iZioPJRUcF
-         e+TqYm75ADBYTwj4IrpiM2u3xGOF0xLv3f9a1ej2gnKkEAtgEGXvpV9v0WWnyUDGUZqT
-         x0yw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790041383; x=1790646183;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=KSUv35Q6uQ78ZsYROYm0LB+h9p7UZYz9TOi1IegvsE4=;
-        b=Ykv8SRzg6V2dlb8ijba7ll4oQiRwDSDy8N9OPheWGux7DyAJytbups4BQ4+yO+iSni
-         h51jkxJc0ffYOwGqAliJ52TbeR9ncbZYu64IsAyAknOHpFUmiGUlm4DD6ctwkK4ICBSY
-         SsS2PoQykpbh0zotxmrOjdn8JA6r5E9VzFlBzusGCOJ42WiUwOfUN3DvZy/Y+cx6UhYL
-         79pg1tdjQY2WqQdiZlOBuBez3XO7Y+vgNxAlK0DLZHNy+W+2/JogyTf1gdRQdkQVBt8K
-         G1b8hTFqkhs4aCgtPmjWprwi0DCzL5wLovkH090e9/TkraclaYxY8KBQMGqyZglDhHmF
-         kqAA==
-X-Gm-Message-State: AFuF++k4ujAUmLfPJ1dLoNh+7Ux5Zbrn+IqOUtkgyDPRXuouBABTq5ke
-	dn4jEv+8jF+crs586V1TYIMTrutH5QmAcn0h16RNZk1RV91WzjQfXD5cF4lRDwOP09gJGPQbW9Z
-	4gSJicDlLT0Ztqr62zAtBPVJT6IFZ7hGjBAX51nqbPAbJMdcNd64sQ7GmEBNyygXPW5+v
-X-Gm-Gg: AYBFou3uLTogV/HPjG21pNgp6VjrZgKcR6mmrUC9J6tWZ0XxeBJuaKxD+iauZaHqzhx
-	9/dADToq/86VtZZIW/qr/8mdkzobbazkrIeB6csofZstid1bQoiix4QzDVXzUrazZB3TI2eHNcC
-	ISJysKpSU4JV2DJR1CmYDQVt1nbkfWgVaP4a4Jprw8lV6RiPh+/xf9ToKkHJC/vmEP3K0Ritnd7
-	jcRZbKaL0atrofICNEZFWnT1kj+kUNG9AO7I4QawoDO5WpXckFAbPZK89rIh+7ZUomipFiRJNkO
-	cBzxZ22cvhVUExaJHRved/Q865uSwFFRx40MnuMpP4c/bdwEpHjQWkxqpfgQ1kcslYe9I1ydLz3
-	HWNOmSiDM5MZq/f/iXg03yuKXgEWbhvxO5qbe2T8iaX2zKVvr
-X-Received: by 2002:a05:620a:4101:b0:939:8ecf:6025 with SMTP id af79cd13be357-93c15da261cmr346248985a.20.1790041383526;
-        Mon, 21 Sep 2026 18:43:03 -0700 (PDT)
-X-Received: by 2002:a05:620a:4101:b0:939:8ecf:6025 with SMTP id af79cd13be357-93c15da261cmr346247385a.20.1790041383075;
-        Mon, 21 Sep 2026 18:43:03 -0700 (PDT)
-Received: from [192.168.1.62] (dyn-160-39-33-242.dyn.columbia.edu. [160.39.33.242])
-        by smtp.gmail.com with ESMTPSA id af79cd13be357-93c1cf0dcd9sm16918185a.4.2026.09.21.18.43.02
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 21 Sep 2026 18:43:02 -0700 (PDT)
-Message-ID: <137069a5-f42b-4935-901d-60153d92c9d8@columbia.edu>
-Date: Mon, 21 Sep 2026 21:43:02 -0400
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="o1uX8BUb"
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 6B3771F000FF;
+	Tue, 22 Sep 2026 04:29:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1790051360;
+	bh=ztv4F61HSZ3KwajIQnl3uHBdxxdP/TCiacbWHOmAb5I=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=o1uX8BUbnCHJgtwFBxqVr+fGj++BROg8jaWuCTXLgu8GmkiSQSJ4m9V2Vlsbh+RcO
+	 7pnJr4hKg3xcGqBZ3NeA1ZWdBD9O99t3JvYu6HiBCOGLjTz3659/gIdEshHuCNFRz3
+	 ps0TyJFJI8K0E00/uTlnqjUKZIgLWZrFiJo7LBBQUsgXfDyAsiG/LQzo/twN1agXeL
+	 xJMWhEE/Ge418UsjZgPwrSm9COMxeqB0wpg7/2lzS+ZkCQuWB7iLkHUJTBMCffZrev
+	 5sR9SMBnbdPK2R09DOxrjB03ziF+ruJ5BZjTQk4jvFw7LZXGJY3JmQNuX81CUyiVf0
+	 8jM7qsTqi6iyw==
+Date: Mon, 21 Sep 2026 21:29:19 -0700
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: Andrey Albershteyn <aalbersh@kernel.org>
+Cc: ebiggers@kernel.org, hch@lst.de, Carlos Maiolino <cem@kernel.org>,
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org,
+	linux-xfs@vger.kernel.org, linux-unionfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+	linux-btrfs@vger.kernel.org, david@fromorbit.com
+Subject: Re: [PATCH v16 12/21] xfs: use read ioend for fsverity data
+ verification
+Message-ID: <20260922042919.GL2705364@frogsfrogsfrogs>
+References: <20260918111539.1003439-1-aalbersh@kernel.org>
+ <20260918111539.1003439-13-aalbersh@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v3 01/17] btrfs: stop enabling the v1 space cache from the
- on-disk state
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org
-References: <20260916-btrfs-remove-v1-space-cache-v3-0-10ebde03b96f@columbia.edu>
- <20260916-btrfs-remove-v1-space-cache-v3-1-10ebde03b96f@columbia.edu>
- <20260917041202.74A691F00893@smtp.kernel.org>
- <20260918095757.GX54722@suse.cz>
-Content-Language: en-US
-From: Tal Zussman <tz2294@columbia.edu>
-In-Reply-To: <20260918095757.GX54722@suse.cz>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-ORIG-GUID: _jcOM4vs8qMY9z6FusrN47eqlsNXgb1j
-X-Proofpoint-Spam-Info: AW1haW4tMjYwOTIyMDAyMSBTYWx0ZWRfXwE0EdUhE6zUH
- sjnmI+wkUGdUpPWwOn+WO71gO8Uf3CbTIEel0PqTTCYHIYpVPqg2j4xAMSX/yuaV+vvgSarrBSn
- N1b/oTziWqok1o0S8rIqNowlmQR1eLKpW29r2A0NuUVkfstWe7ui
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTIyMDAyMSBTYWx0ZWRfX2Zoz7mS3qPsM
- CUAmJAUx3+y6nsjnrqZ1V6fmPJMYQqJ/WnWjLWnbMLqeaUHR9qHqwduuVxotgIr3FOiMcFT+bBl
- kXiBbKPaQAmIuQdRmBQjiDJ0694s7UKVbi5HsTLkOUlddIhKEFt5HmqM7frKhy++ylfE4mx70LI
- s567MFSS3BzKA9SMmPJcQ405BPMF2ZchSsH8zZUg//Ipvx8xHonnCHvvCbRw1GRYfD9tW8E0HOr
- oEHdKtH/wIl35WK2tYrWgunxgkqP6e1S5UJnMd5+7FtZluvoSnjVpoFxmf2xBo6jpCNRuLlI0Mh
- fStYr2lC5KGGSY3+56BD/CbWym3bvnB0yovhhqcVXKzDf+juBbt+6H3/FXKfA8uOgCV1gVwYvtB
- bj8jsUY1x265Z5rMgkJd/OYoe9oD1HtOUtOiIe+u5H5ACQ1ySpRnajfKTPE8j/DveuJax9n0WpL
- DJ3GexOe2GqvsF4xC7A==
-X-Authority-Analysis: v=2.4 cv=R+6WitRX c=1 sm=1 tr=0 ts=6ab1dd28 cx=c_pps
- a=HLyN3IcIa5EE8TELMZ618Q==:117 a=GaPK54s0Se3oFqK5NkZy0g==:17
- a=IkcTkHD0fZMA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=svvvyxlR1OQQkelhaPoB:22
- a=VwQbUJbxAAAA:8 a=KDcxTFHVVmGa8HFdOuoA:9 a=QEXdDO2ut3YA:10
- a=bTQJ7kPSJx9SKPbeHEYW:22
-X-Proofpoint-GUID: _jcOM4vs8qMY9z6FusrN47eqlsNXgb1j
-X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11912
- signatures=596817
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- priorityscore=1501 impostorscore=10 suspectscore=0 clxscore=1015 phishscore=0
- malwarescore=0 adultscore=0 lowpriorityscore=10 bulkscore=10 spamscore=0
- classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
- reason=mlx scancount=1 engine=8.22.0-2609040000 definitions=main-2609220021
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260918111539.1003439-13-aalbersh@kernel.org>
 
-On 9/18/26 5:57 AM, David Sterba wrote:
-> On Thu, Sep 17, 2026 at 04:12:02AM +0000, sashiko-bot@kernel.org wrote:
->> Thank you for your contribution! Sashiko AI review found 1 potential issue(s) to consider:
->> - [Medium] btrfs: FREE_SPACE_TREE option leaks on invalid RO remounts
->> --
->> 
->> commit 6751f883b4d1cad106e74cd1b62922302a1c3544
->> Author: Tal Zussman <tz2294@columbia.edu>
->> 
->> btrfs: stop enabling the v1 space cache from the on-disk state
->> 
->> This commit prevents the v1 space cache from being automatically enabled
->> based on the on-disk state. Remounts of read-only filesystems with an old
->> cache no longer start a transaction, and space cache cleanup happens
->> unconditionally upon a read-write mount.
->> 
->> > diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->> > index 464129b1b0d4c..77443ded6db39 100644
->> > --- a/fs/btrfs/super.c
->> > +++ b/fs/btrfs/super.c
->> [ ... ]
->> > @@ -1535,10 +1529,6 @@ static int btrfs_reconfigure(struct fs_context *fc)
->> >  			btrfs_set_opt(fs_info->mount_opt, FREE_SPACE_TREE);
->> >  			btrfs_clear_opt(fs_info->mount_opt, SPACE_CACHE);
->> >  		}
->> > -		if (btrfs_free_space_cache_v1_active(fs_info)) {
->> > -			btrfs_clear_opt(fs_info->mount_opt, FREE_SPACE_TREE);
->> > -			btrfs_set_opt(fs_info->mount_opt, SPACE_CACHE);
->> > -		}
->> >  	}
->> >  
->> >  	ret = 0;
->> 
->> [Severity: Medium]
->> Does removing the v1 space cache check here allow the FREE_SPACE_TREE option
->> to leak on invalid read-only remounts?
->> 
->> If a user with a filesystem using the v1 space cache attempts a read-only
->> remount with "space_cache=v2", the kernel emits a warning that this is only
->> supported on a read-write remount and intends to reject it.
->> 
->> However, because the v1_active check that previously reverted the
->> FREE_SPACE_TREE option was removed without an unconditional fallback, the
->> option appears to silently leak into fs_info->mount_opt in
->> btrfs_reconfigure().
->> 
->> If the user later performs a standard read-write remount, could the kernel
->> see the leaked option and unexpectedly create the v2 free space tree?
+On Fri, Sep 18, 2026 at 01:15:24PM +0200, Andrey Albershteyn wrote:
+> Use read ioends for fsverity verification. Do not issue fsverity
+> metadata I/O through the same workqueue due to risk of a deadlock by a
+> filled workqueue.
 > 
-> This looks valid, though the consequences are not disatrous but still
-> unexpected to create FST.
+> Pass fsverity_info from iomap context down to the ioend as hashtable
+> lookups are expensive.
 > 
+> Add a simple helper to check that this is not fsverity metadata but file
+> data that needs verification.
+> 
+> Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
 
-So after looking at this some more, it seems like this "leak" already exists
-in a different case.
+Seems fine to me, though I would like to see hch's blessing on this
+since he's written more of the read ioend workqueue completion code.
 
-If a remount asks for space_cache=v2 and isn't going ro->rw, we warn that
-we can't change the free space tree, but the remount succeeds and the options
-don't get reset. On a filesystem with neither a free space tree or v1 cache,
-FREE_SPACE_TREE stays set and the next rw remount will create it.
+Reviewed-by: "Darrick J. Wong" <djwong@kernel.org>
 
-I think the simplest solution is to add:
+--D
 
-	} else {
-		btrfs_clear_opt(fs_info->mount_opt, FREE_SPACE_TREE);
-	}
-
-as part of this patch, replacing the deleted btrfs_free_space_cache_v1_active()
-check.
-
-Should I send v4 with that change?
-
-Thanks,
-Tal
+> ---
+>  fs/xfs/xfs_aops.c     | 13 +++++----
+>  fs/xfs/xfs_file.c     |  3 +-
+>  fs/xfs/xfs_fsverity.c | 11 ++++++++
+>  fs/xfs/xfs_fsverity.h | 14 ++++++++++
+>  fs/xfs/xfs_ioend.c    | 65 +++++++++++++++++++++++++++++++++++++++----
+>  fs/xfs/xfs_ioend.h    |  4 ++-
+>  fs/xfs/xfs_super.c    | 15 ++++++++++
+>  7 files changed, 112 insertions(+), 13 deletions(-)
+> 
+> diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
+> index 19640e4e3ed1..a36f840884b4 100644
+> --- a/fs/xfs/xfs_aops.c
+> +++ b/fs/xfs/xfs_aops.c
+> @@ -24,6 +24,7 @@
+>  #include "xfs_zone_alloc.h"
+>  #include "xfs_rtgroup.h"
+>  #include "xfs_fsverity.h"
+> +#include <linux/fsverity.h>
+>  
+>  struct xfs_writepage_ctx {
+>  	struct iomap_writepage_ctx ctx;
+> @@ -611,7 +612,7 @@ xfs_bio_submit_read(
+>  {
+>  	xfs_ioend_submit_read(iter->inode, ctx->read_ctx,
+>  			ctx->read_ctx_file_offset,
+> -			iomap_ioend_flags(&iter->iomap));
+> +			iomap_ioend_flags(&iter->iomap), ctx->vi);
+>  	ctx->read_ctx = NULL;
+>  }
+>  
+> @@ -623,11 +624,13 @@ static const struct iomap_read_ops xfs_iomap_read_ops = {
+>  
+>  static inline const struct iomap_read_ops *
+>  xfs_get_iomap_read_ops(
+> -	const struct address_space	*mapping)
+> +	const struct address_space	*mapping,
+> +	loff_t				pos)
+>  {
+>  	struct xfs_inode		*ip = XFS_I(mapping->host);
+>  
+> -	if (bdev_has_integrity_csum(xfs_inode_buftarg(ip)->bt_bdev))
+> +	if (bdev_has_integrity_csum(xfs_inode_buftarg(ip)->bt_bdev) ||
+> +	    xfs_fsverity_is_file_data(ip, pos))
+>  		return &xfs_iomap_read_ops;
+>  	return &iomap_bio_read_ops;
+>  }
+> @@ -639,7 +642,7 @@ xfs_vm_read_folio(
+>  {
+>  	struct iomap_read_folio_ctx	ctx = { .cur_folio = folio };
+>  
+> -	ctx.ops = xfs_get_iomap_read_ops(folio->mapping);
+> +	ctx.ops = xfs_get_iomap_read_ops(folio->mapping, folio_pos(folio));
+>  	iomap_read_folio(&xfs_read_iomap_ops, &ctx, NULL);
+>  	return 0;
+>  }
+> @@ -650,7 +653,7 @@ xfs_vm_readahead(
+>  {
+>  	struct iomap_read_folio_ctx	ctx = { .rac = rac };
+>  
+> -	ctx.ops = xfs_get_iomap_read_ops(rac->mapping),
+> +	ctx.ops = xfs_get_iomap_read_ops(rac->mapping, readahead_pos(rac));
+>  	iomap_readahead(&xfs_read_iomap_ops, &ctx, NULL);
+>  }
+>  
+> diff --git a/fs/xfs/xfs_file.c b/fs/xfs/xfs_file.c
+> index 07abf6e8783f..578ca6fb8292 100644
+> --- a/fs/xfs/xfs_file.c
+> +++ b/fs/xfs/xfs_file.c
+> @@ -225,7 +225,8 @@ xfs_dio_read_bounce_submit_io(
+>  	loff_t			file_offset)
+>  {
+>  	xfs_ioend_submit_read(iter->inode, bio, file_offset,
+> -			iomap_ioend_flags(&iter->iomap) | IOMAP_IOEND_DIRECT);
+> +			iomap_ioend_flags(&iter->iomap) | IOMAP_IOEND_DIRECT,
+> +			NULL);
+>  }
+>  
+>  static const struct iomap_dio_ops xfs_dio_read_bounce_ops = {
+> diff --git a/fs/xfs/xfs_fsverity.c b/fs/xfs/xfs_fsverity.c
+> index e30021c22683..525855fdd30d 100644
+> --- a/fs/xfs/xfs_fsverity.c
+> +++ b/fs/xfs/xfs_fsverity.c
+> @@ -14,9 +14,20 @@
+>  #include <linux/fsverity.h>
+>  #include <linux/iomap.h>
+>  
+> +struct kmem_cache *xfs_fsverity_ioend_cache;
+> +
+>  loff_t
+>  xfs_fsverity_metadata_offset(
+>  	const struct xfs_inode	*ip)
+>  {
+>  	return round_up(i_size_read(VFS_IC(ip)), XFS_FSVERITY_START_ALIGN);
+>  }
+> +
+> +bool
+> +xfs_fsverity_is_file_data(
+> +	const struct xfs_inode	*ip,
+> +	loff_t			offset)
+> +{
+> +	return fsverity_active(VFS_IC(ip)) &&
+> +			offset < xfs_fsverity_metadata_offset(ip);
+> +}
+> diff --git a/fs/xfs/xfs_fsverity.h b/fs/xfs/xfs_fsverity.h
+> index c2ab5af89370..836e3a4eb194 100644
+> --- a/fs/xfs/xfs_fsverity.h
+> +++ b/fs/xfs/xfs_fsverity.h
+> @@ -6,15 +6,29 @@
+>  #define __XFS_FSVERITY_H__
+>  
+>  #include "xfs_platform.h"
+> +#include <linux/iomap.h>
+>  
+>  #ifdef CONFIG_FS_VERITY
+>  loff_t xfs_fsverity_metadata_offset(const struct xfs_inode *ip);
+> +bool xfs_fsverity_is_file_data(const struct xfs_inode *ip, loff_t offset);
+>  #else
+>  static inline loff_t xfs_fsverity_metadata_offset(const struct xfs_inode *ip)
+>  {
+>  	WARN_ON_ONCE(1);
+>  	return ULLONG_MAX;
+>  }
+> +static inline bool xfs_fsverity_is_file_data(const struct xfs_inode *ip,
+> +					    loff_t offset)
+> +{
+> +	return false;
+> +}
+>  #endif	/* CONFIG_FS_VERITY */
+>  
+> +struct xfs_fsverity_ioend {
+> +	struct iomap_ioend	*ioend;
+> +	struct work_struct	work;
+> +};
+> +
+> +extern struct kmem_cache *xfs_fsverity_ioend_cache;
+> +
+>  #endif	/* __XFS_FSVERITY_H__ */
+> diff --git a/fs/xfs/xfs_ioend.c b/fs/xfs/xfs_ioend.c
+> index e70be5b86f0b..2f46855b052f 100644
+> --- a/fs/xfs/xfs_ioend.c
+> +++ b/fs/xfs/xfs_ioend.c
+> @@ -18,7 +18,26 @@
+>  #include "xfs_ioend.h"
+>  #include "xfs_error.h"
+>  #include "xfs_errortag.h"
+> +#include "xfs_fsverity.h"
+>  #include <linux/bio-integrity.h>
+> +#include <linux/fsverity.h>
+> +
+> +static void
+> +xfs_end_fsverity_io_read(
+> +	struct work_struct		*work)
+> +{
+> +	struct xfs_fsverity_ioend	*fsv_ioend =
+> +			container_of(work, struct xfs_fsverity_ioend, work);
+> +	struct iomap_ioend		*ioend = fsv_ioend->ioend;
+> +	struct bio			*bio = &ioend->io_bio;
+> +
+> +	kmem_cache_free(xfs_fsverity_ioend_cache, fsv_ioend);
+> +
+> +	if (!bio->bi_status)
+> +		fsverity_verify_bio(ioend->io_vi, bio);
+> +
+> +	iomap_finish_ioends(ioend, blk_status_to_errno(bio->bi_status));
+> +}
+>  
+>  static void
+>  xfs_dio_bounce_end_io(
+> @@ -93,12 +112,14 @@ xfs_read_bounce_and_resubmit(
+>  
+>  static void
+>  xfs_end_io_read(
+> -	struct bio		*bio)
+> +	struct bio			*bio)
+>  {
+> -	struct iomap_ioend	*ioend = iomap_ioend_from_bio(bio);
+> -	struct xfs_inode	*ip = XFS_I(ioend->io_inode);
+> -	struct xfs_mount	*mp = ip->i_mount;
+> -	int			error = blk_status_to_errno(bio->bi_status);
+> +	struct iomap_ioend		*ioend = iomap_ioend_from_bio(bio);
+> +	struct xfs_inode		*ip = XFS_I(ioend->io_inode);
+> +	struct xfs_mount		*mp = ip->i_mount;
+> +	int				error =
+> +			blk_status_to_errno(bio->bi_status);
+> +	struct xfs_fsverity_ioend	*fsv_ioend;
+>  
+>  	if (!error && (ioend->io_flags & IOMAP_IOEND_INTEGRITY)) {
+>  		error = iomap_ioend_integrity_verify(ioend);
+> @@ -117,6 +138,36 @@ xfs_end_io_read(
+>  		}
+>  	}
+>  
+> +	/*
+> +	 * If we have fsverity and block device integrity attached to this bio,
+> +	 * we need to run fsverity verification of data folios from a separate
+> +	 * fsverity workqueue. This is necessary to avoid deadlocking due to
+> +	 * fsverity issuing more reads of fsverity metadata which would be
+> +	 * processed by the same worker in the BIO completion workqueue.
+> +	 *
+> +	 * Without block device integrity, fsverity metadata IO will not use
+> +	 * ioends for completion.
+> +	 */
+> +	if (IS_ENABLED(CONFIG_FS_VERITY) && !error && ioend->io_vi &&
+> +			xfs_fsverity_is_file_data(ip, ioend->io_offset)) {
+> +		if (ioend->io_flags & IOMAP_IOEND_INTEGRITY) {
+> +			fsv_ioend = kmem_cache_zalloc(xfs_fsverity_ioend_cache,
+> +					GFP_KERNEL);
+> +			if (!fsv_ioend) {
+> +				iomap_finish_ioends(ioend, -ENOMEM);
+> +				return;
+> +			}
+> +			fsv_ioend->ioend = ioend;
+> +			INIT_WORK(&fsv_ioend->work, xfs_end_fsverity_io_read);
+> +
+> +			fsverity_enqueue_verify_work(&fsv_ioend->work);
+> +			return;
+> +		}
+> +
+> +		fsverity_verify_bio(ioend->io_vi, &ioend->io_bio);
+> +		error = blk_status_to_errno(ioend->io_bio.bi_status);
+> +	}
+> +
+>  	iomap_finish_ioends(ioend, error);
+>  }
+>  
+> @@ -125,13 +176,15 @@ xfs_ioend_submit_read(
+>  	struct inode		*inode,
+>  	struct bio		*bio,
+>  	loff_t			file_offset,
+> -	u16			ioend_flags)
+> +	u16			ioend_flags,
+> +	struct fsverity_info	*vi)
+>  {
+>  	struct xfs_inode	*ip = XFS_I(inode);
+>  	struct xfs_mount	*mp = ip->i_mount;
+>  	struct iomap_ioend	*ioend;
+>  
+>  	ioend = iomap_init_ioend(inode, bio, file_offset, ioend_flags);
+> +	ioend->io_vi = vi;
+>  	if ((ioend_flags & IOMAP_IOEND_DIRECT) &&
+>  	    READ_ONCE(mp->m_read_bounce) == XFS_READ_BOUNCE_ALWAYS) {
+>  		iomap_bounce_read(ioend, bdev_logical_block_size(bio->bi_bdev),
+> diff --git a/fs/xfs/xfs_ioend.h b/fs/xfs/xfs_ioend.h
+> index 7c2a1ea3e6ed..992c248a693a 100644
+> --- a/fs/xfs/xfs_ioend.h
+> +++ b/fs/xfs/xfs_ioend.h
+> @@ -2,6 +2,8 @@
+>  #ifndef __XFS_IOEND_H
+>  #define __XFS_IOEND_H
+>  
+> +#include <linux/fsverity.h>
+> +
+>  /*
+>   * Fast and loose check if this write could update the on-disk inode size.
+>   */
+> @@ -13,6 +15,6 @@ static inline bool xfs_ioend_is_append(struct iomap_ioend *ioend)
+>  
+>  void xfs_end_bio(struct bio *bio);
+>  void xfs_ioend_submit_read(struct inode *inode, struct bio *bio,
+> -		loff_t file_offset, u16 ioend_flags);
+> +		loff_t file_offset, u16 ioend_flags, struct fsverity_info *vi);
+>  
+>  #endif /* __XFS_IOEND_H */
+> diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
+> index fce1d2905c94..aca50130625e 100644
+> --- a/fs/xfs/xfs_super.c
+> +++ b/fs/xfs/xfs_super.c
+> @@ -2516,8 +2516,20 @@ xfs_init_caches(void)
+>  	if (!xfs_parent_args_cache)
+>  		goto out_destroy_xmi_cache;
+>  
+> +#ifdef CONFIG_FS_VERITY
+> +	xfs_fsverity_ioend_cache = kmem_cache_create("xfs_fsverity_ioend",
+> +					     sizeof(struct xfs_fsverity_ioend),
+> +					     0, 0, NULL);
+> +	if (!xfs_fsverity_ioend_cache)
+> +		goto out_destroy_fsverity_ioend_cache;
+> +#endif
+> +
+>  	return 0;
+>  
+> +#ifdef CONFIG_FS_VERITY
+> + out_destroy_fsverity_ioend_cache:
+> +	kmem_cache_destroy(xfs_fsverity_ioend_cache);
+> +#endif
+>   out_destroy_xmi_cache:
+>  	kmem_cache_destroy(xfs_xmi_cache);
+>   out_destroy_xmd_cache:
+> @@ -2580,6 +2592,9 @@ xfs_destroy_caches(void)
+>  	 * destroy caches.
+>  	 */
+>  	rcu_barrier();
+> +#ifdef CONFIG_FS_VERITY
+> +	kmem_cache_destroy(xfs_fsverity_ioend_cache);
+> +#endif
+>  	kmem_cache_destroy(xfs_parent_args_cache);
+>  	kmem_cache_destroy(xfs_xmd_cache);
+>  	kmem_cache_destroy(xfs_xmi_cache);
+> -- 
+> 2.54.0
+> 
+> 

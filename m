@@ -1,41 +1,86 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
+Received: from mx0a-00364e01.pphosted.com (mx0a-00364e01.pphosted.com [148.163.135.74])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9ABB532B108
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 21:49:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.19
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B15A25B09D
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 01:43:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.135.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790027348; cv=none; b=BLSovf4V/b+kb68MTULRBNThgGmL+maY3Q1y/nN1rDBqXrD5udTlkNVPfA2V82g/FX9zQho5h0VSg5tNJ79BFGDowMcxZoJc7wyZhYx8HPGJG/R7knTTiUzWfy6hwTfKHj9gjJVUzejIdFZSzrwDJ2XNbkBxISHZVwJ6s40aJTg=
+	t=1790041387; cv=none; b=JWlVTha+9pRK6vhzstuMUzFQQGBKj0mlX0apphHQN8j4WyBYtre/wtvYgcKjxLF13T5T+2deodw5BX0GLotKQWjiLHTqdrDKaL+0EFmEfIM86q1QqsxCnc/7DzEP3Fb2/oTuES5SODjYCSXnfv4Rqe1zvhN7FfMjeXEnXk5DgKg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790027348; c=relaxed/simple;
-	bh=WeDb8mOVI6z7Nz/S8RXAIL1gmDhEUA7sJ7BTBOQPJ7Q=;
+	s=arc-20240116; t=1790041387; c=relaxed/simple;
+	bh=c2LmCu8cdXqCItINnBeiSwsRS1OJ5Mz68eYfM1pCaxk=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=BbXLydxUZn3g4hqnMYlUw0WtrjdCrWFv15HZnbng3l0xEot7hXcZSDUSUItEh7O6XMUQlAvmcIhv3Ak+4R0drMi6CnBtrIOaPtSF48WrarOV4syLeqoK3+QEq0yyHT7pT2tIX50PqUPuPAeE+Bif0/U+UZFrfeQgy/05RApkO5M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=R3RlIn2d; arc=none smtp.client-ip=212.227.15.19
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	 In-Reply-To:Content-Type; b=Cvyc0VdhV9Epb3GUQGg7c1v9ou1zTgxR5q0I3LEnobDlBJQ13Y/A83ZG+vQxgPB8Q7kHz56HWnSqSMApnFF+ZNo2xxvNf4QqiaTcMc3ktWXCF4FV35TfJ551HFpmmoUOiMdf9a570vygWsLVHTofk1YBZz8nHkGG7mmY1laA3Os=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=mTBCpJOy; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=3c9Hh3QQ; arc=none smtp.client-ip=148.163.135.74
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="R3RlIn2d"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1790027344; x=1790632144; i=quwenruo.btrfs@gmx.com;
-	bh=+sjl9EyszGF94FHgFVRvedsVbNukuhgp40iZzbZBi+0=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=R3RlIn2dKJrlW7dFeoTA46zM9iIuPl/FcnXfZO3qZ7TX8N+Ln9kfuIn+S1p5FXLt
-	 UDYKk9kWndTITdiRvrpDN7kcNXjD2UolL+CrJDTS25dSVV88bbaTOuCxdiA0ardzy
-	 75RoRlDmPaS4Y4p8RuYlBUj4jt9sjwybqajilWMuiwpBy37JbnTFIwHUawjhMxn4d
-	 PWX6BrUjxc5tWDEyLRQEhyOvPP8jEHVddnfUD14Xy8/K2htQBclMnuXeDz6iuQGsv
-	 foV6BfeyXel+uxSUx6/xGJOVzceQqeLylxwMt5WQHukfJnuVs2pkyiVxoJ8lOTnt5
-	 +VTJo4v8p1GXg8l7bA==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MWzk3-1xF9nT2MTh-00YDB2; Mon, 21
- Sep 2026 23:49:04 +0200
-Message-ID: <3259c715-8fd1-4644-abaf-6d983295d559@gmx.com>
-Date: Tue, 22 Sep 2026 07:18:59 +0930
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="mTBCpJOy";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="3c9Hh3QQ"
+Received: from pps.filterd (m0167070.ppops.net [127.0.0.1])
+	by mx0a-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 68M0ZOhw111289
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 21:43:04 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
+	cc:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=pps01; bh=KSUv
+	35Q6uQ78ZsYROYm0LB+h9p7UZYz9TOi1IegvsE4=; b=mTBCpJOyKBWRWMGQz0Gv
+	g3XJGfJ3JeXlRhMfoyeGegZCTqd1seKlVqP2khj6iSA5/EStOYkEQXQj22wzO7K4
+	RaSmy/g/6+urhCmyt38lGsJutFl0ZSSv3dgvQyPUVbsJVHpVzLAj4i72Gfx1W37x
+	uR9uqtcZKCPyTmkVDEmKAccpxN6/MDkL1wBEGrBWcTO1F22Z5aZkjWx+mQX3frv+
+	IDTsAtHDkc1j1PsdgDLtBzlc0i9u5lNFPpmlxINCsTnpEQ1I22InWYpmhxZ5E+8/
+	vPlW+3T2jaWDLwhA7jk0fiAcVHEqo5HH75+3vvUrCDDmhuVxjWnhish76M2xK0AS
+	iw==
+Received: from mail-qk1-f199.google.com (mail-qk1-f199.google.com [209.85.222.199])
+	by mx0a-00364e01.pphosted.com (PPS) with ESMTPS id 4gu70xvdac-1
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 21:43:04 -0400 (EDT)
+Received: by mail-qk1-f199.google.com with SMTP id af79cd13be357-936aa34873bso642784785a.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2026 18:43:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=columbia.edu; s=lionmail; t=1790041383; x=1790646183; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=KSUv35Q6uQ78ZsYROYm0LB+h9p7UZYz9TOi1IegvsE4=;
+        b=3c9Hh3QQoNz3X2OOe7DZFgOa/52qU5SuldA5IvG1ai2sbggMgSSwtSQbRPwbNPQFlm
+         akhY2RuxKBKrzc5emZXGuyzNkNRkNSRf9ppZhkwdzEaU7Oj9TGh+olx2YiWTFtBuFpkp
+         vXMFFuwJ8ND1+Jltxiwl1Hq6A1cEQV6B+yROf/lYFS/MZ4ixUNjV2xYyzmb2EZVKMOxJ
+         /q7QthGDYCuF9hZmTeEkyqOEZ/n6Tjd1TD9+iKiIVJ1O4vejHXuaCXE9m0iZioPJRUcF
+         e+TqYm75ADBYTwj4IrpiM2u3xGOF0xLv3f9a1ej2gnKkEAtgEGXvpV9v0WWnyUDGUZqT
+         x0yw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1790041383; x=1790646183;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=KSUv35Q6uQ78ZsYROYm0LB+h9p7UZYz9TOi1IegvsE4=;
+        b=Ykv8SRzg6V2dlb8ijba7ll4oQiRwDSDy8N9OPheWGux7DyAJytbups4BQ4+yO+iSni
+         h51jkxJc0ffYOwGqAliJ52TbeR9ncbZYu64IsAyAknOHpFUmiGUlm4DD6ctwkK4ICBSY
+         SsS2PoQykpbh0zotxmrOjdn8JA6r5E9VzFlBzusGCOJ42WiUwOfUN3DvZy/Y+cx6UhYL
+         79pg1tdjQY2WqQdiZlOBuBez3XO7Y+vgNxAlK0DLZHNy+W+2/JogyTf1gdRQdkQVBt8K
+         G1b8hTFqkhs4aCgtPmjWprwi0DCzL5wLovkH090e9/TkraclaYxY8KBQMGqyZglDhHmF
+         kqAA==
+X-Gm-Message-State: AFuF++k4ujAUmLfPJ1dLoNh+7Ux5Zbrn+IqOUtkgyDPRXuouBABTq5ke
+	dn4jEv+8jF+crs586V1TYIMTrutH5QmAcn0h16RNZk1RV91WzjQfXD5cF4lRDwOP09gJGPQbW9Z
+	4gSJicDlLT0Ztqr62zAtBPVJT6IFZ7hGjBAX51nqbPAbJMdcNd64sQ7GmEBNyygXPW5+v
+X-Gm-Gg: AYBFou3uLTogV/HPjG21pNgp6VjrZgKcR6mmrUC9J6tWZ0XxeBJuaKxD+iauZaHqzhx
+	9/dADToq/86VtZZIW/qr/8mdkzobbazkrIeB6csofZstid1bQoiix4QzDVXzUrazZB3TI2eHNcC
+	ISJysKpSU4JV2DJR1CmYDQVt1nbkfWgVaP4a4Jprw8lV6RiPh+/xf9ToKkHJC/vmEP3K0Ritnd7
+	jcRZbKaL0atrofICNEZFWnT1kj+kUNG9AO7I4QawoDO5WpXckFAbPZK89rIh+7ZUomipFiRJNkO
+	cBzxZ22cvhVUExaJHRved/Q865uSwFFRx40MnuMpP4c/bdwEpHjQWkxqpfgQ1kcslYe9I1ydLz3
+	HWNOmSiDM5MZq/f/iXg03yuKXgEWbhvxO5qbe2T8iaX2zKVvr
+X-Received: by 2002:a05:620a:4101:b0:939:8ecf:6025 with SMTP id af79cd13be357-93c15da261cmr346248985a.20.1790041383526;
+        Mon, 21 Sep 2026 18:43:03 -0700 (PDT)
+X-Received: by 2002:a05:620a:4101:b0:939:8ecf:6025 with SMTP id af79cd13be357-93c15da261cmr346247385a.20.1790041383075;
+        Mon, 21 Sep 2026 18:43:03 -0700 (PDT)
+Received: from [192.168.1.62] (dyn-160-39-33-242.dyn.columbia.edu. [160.39.33.242])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-93c1cf0dcd9sm16918185a.4.2026.09.21.18.43.02
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 21 Sep 2026 18:43:02 -0700 (PDT)
+Message-ID: <137069a5-f42b-4935-901d-60153d92c9d8@columbia.edu>
+Date: Mon, 21 Sep 2026 21:43:02 -0400
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,159 +88,117 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: make qgroup rescan work to handle fs freezing
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, Richard Weinberger <richard@nod.at>
-References: <cover.1789981860.git.wqu@suse.com>
- <cfc34be50699e2e0e5c84e4d57345c7e0506caf8.1789974081.git.wqu@suse.com>
- <20260921131844.GF54722@twin.jikos.cz>
+Subject: Re: [PATCH v3 01/17] btrfs: stop enabling the v1 space cache from the
+ on-disk state
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+References: <20260916-btrfs-remove-v1-space-cache-v3-0-10ebde03b96f@columbia.edu>
+ <20260916-btrfs-remove-v1-space-cache-v3-1-10ebde03b96f@columbia.edu>
+ <20260917041202.74A691F00893@smtp.kernel.org>
+ <20260918095757.GX54722@suse.cz>
 Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCaqsNDQUJFJfy
- XgAKCRDCPZHzoSX+qPcICACxEFp2nh6g7JQyRkN855kqXeAYiWGZRWbCo+QQcGU0vjlm6s5K
- 4CRT8U6RtY0Ou1Ss/MYrpf3z0joYh0hoWDgiVqhUXLG5jM2FeBY6bHl8WHKsMOiVpcB6yJqu
- Umqira0lLmg0V+9zHkijuH9cqxIYURsDNNkUueMy3ZBBxLq14w5JFcqOU7tdHxa2NZoO/pck
- qEZSL9lrsmRFe2dzFnxw4nOhikr9tkAqQN2wpW2OG8D1oLNARDx3hnhMYj9pKZ0ICZDtl6J3
- ACi9ZIWLNGqwb8ayizmyKmCGouN0gLAuwGFq2qRpXGCxe2lTYknUk71CvBcCzFgCX8qlobxF
- NCYXzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20260921131844.GF54722@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:0RODuD02cTTUmUszPe8plv+i7QI9e380N3ijwJmkvHoe/AsRrfu
- 4yV43/pyokW0lqMQ6Wnfd6cLMuCEVU/xHesYA4aQp2sXsCQnbijQju82ZX65ZQ/Fp48YKst
- n3UWNP46EBfqXfXqzEi6Lvgq3BIaIBMcdg946aAIPhw+tkzck3ENOFZJEP4ET757luA0ZPW
- ISpF/Klo1jJ405gGa+IBw==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:VXOkmt+IW28=;CxqP7QBtqH8Y/8/X4xQL0+MlOS2
- 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
+From: Tal Zussman <tz2294@columbia.edu>
+In-Reply-To: <20260918095757.GX54722@suse.cz>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-ORIG-GUID: _jcOM4vs8qMY9z6FusrN47eqlsNXgb1j
+X-Proofpoint-Spam-Info: AW1haW4tMjYwOTIyMDAyMSBTYWx0ZWRfXwE0EdUhE6zUH
+ sjnmI+wkUGdUpPWwOn+WO71gO8Uf3CbTIEel0PqTTCYHIYpVPqg2j4xAMSX/yuaV+vvgSarrBSn
+ N1b/oTziWqok1o0S8rIqNowlmQR1eLKpW29r2A0NuUVkfstWe7ui
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwOTIyMDAyMSBTYWx0ZWRfX2Zoz7mS3qPsM
+ CUAmJAUx3+y6nsjnrqZ1V6fmPJMYQqJ/WnWjLWnbMLqeaUHR9qHqwduuVxotgIr3FOiMcFT+bBl
+ kXiBbKPaQAmIuQdRmBQjiDJ0694s7UKVbi5HsTLkOUlddIhKEFt5HmqM7frKhy++ylfE4mx70LI
+ s567MFSS3BzKA9SMmPJcQ405BPMF2ZchSsH8zZUg//Ipvx8xHonnCHvvCbRw1GRYfD9tW8E0HOr
+ oEHdKtH/wIl35WK2tYrWgunxgkqP6e1S5UJnMd5+7FtZluvoSnjVpoFxmf2xBo6jpCNRuLlI0Mh
+ fStYr2lC5KGGSY3+56BD/CbWym3bvnB0yovhhqcVXKzDf+juBbt+6H3/FXKfA8uOgCV1gVwYvtB
+ bj8jsUY1x265Z5rMgkJd/OYoe9oD1HtOUtOiIe+u5H5ACQ1ySpRnajfKTPE8j/DveuJax9n0WpL
+ DJ3GexOe2GqvsF4xC7A==
+X-Authority-Analysis: v=2.4 cv=R+6WitRX c=1 sm=1 tr=0 ts=6ab1dd28 cx=c_pps
+ a=HLyN3IcIa5EE8TELMZ618Q==:117 a=GaPK54s0Se3oFqK5NkZy0g==:17
+ a=IkcTkHD0fZMA:10 a=VdqzKS8jKosA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=svvvyxlR1OQQkelhaPoB:22
+ a=VwQbUJbxAAAA:8 a=KDcxTFHVVmGa8HFdOuoA:9 a=QEXdDO2ut3YA:10
+ a=bTQJ7kPSJx9SKPbeHEYW:22
+X-Proofpoint-GUID: _jcOM4vs8qMY9z6FusrN47eqlsNXgb1j
+X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11912
+ signatures=596817
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ priorityscore=1501 impostorscore=10 suspectscore=0 clxscore=1015 phishscore=0
+ malwarescore=0 adultscore=0 lowpriorityscore=10 bulkscore=10 spamscore=0
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2609040000 definitions=main-2609220021
 
+On 9/18/26 5:57 AM, David Sterba wrote:
+> On Thu, Sep 17, 2026 at 04:12:02AM +0000, sashiko-bot@kernel.org wrote:
+>> Thank you for your contribution! Sashiko AI review found 1 potential issue(s) to consider:
+>> - [Medium] btrfs: FREE_SPACE_TREE option leaks on invalid RO remounts
+>> --
+>> 
+>> commit 6751f883b4d1cad106e74cd1b62922302a1c3544
+>> Author: Tal Zussman <tz2294@columbia.edu>
+>> 
+>> btrfs: stop enabling the v1 space cache from the on-disk state
+>> 
+>> This commit prevents the v1 space cache from being automatically enabled
+>> based on the on-disk state. Remounts of read-only filesystems with an old
+>> cache no longer start a transaction, and space cache cleanup happens
+>> unconditionally upon a read-write mount.
+>> 
+>> > diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+>> > index 464129b1b0d4c..77443ded6db39 100644
+>> > --- a/fs/btrfs/super.c
+>> > +++ b/fs/btrfs/super.c
+>> [ ... ]
+>> > @@ -1535,10 +1529,6 @@ static int btrfs_reconfigure(struct fs_context *fc)
+>> >  			btrfs_set_opt(fs_info->mount_opt, FREE_SPACE_TREE);
+>> >  			btrfs_clear_opt(fs_info->mount_opt, SPACE_CACHE);
+>> >  		}
+>> > -		if (btrfs_free_space_cache_v1_active(fs_info)) {
+>> > -			btrfs_clear_opt(fs_info->mount_opt, FREE_SPACE_TREE);
+>> > -			btrfs_set_opt(fs_info->mount_opt, SPACE_CACHE);
+>> > -		}
+>> >  	}
+>> >  
+>> >  	ret = 0;
+>> 
+>> [Severity: Medium]
+>> Does removing the v1 space cache check here allow the FREE_SPACE_TREE option
+>> to leak on invalid read-only remounts?
+>> 
+>> If a user with a filesystem using the v1 space cache attempts a read-only
+>> remount with "space_cache=v2", the kernel emits a warning that this is only
+>> supported on a read-write remount and intends to reject it.
+>> 
+>> However, because the v1_active check that previously reverted the
+>> FREE_SPACE_TREE option was removed without an unconditional fallback, the
+>> option appears to silently leak into fs_info->mount_opt in
+>> btrfs_reconfigure().
+>> 
+>> If the user later performs a standard read-write remount, could the kernel
+>> see the leaked option and unexpectedly create the v2 free space tree?
+> 
+> This looks valid, though the consequences are not disatrous but still
+> unexpected to create FST.
+> 
 
+So after looking at this some more, it seems like this "leak" already exists
+in a different case.
 
-=E5=9C=A8 2026/9/21 22:48, David Sterba =E5=86=99=E9=81=93:
-> On Mon, Sep 21, 2026 at 06:46:45PM +0930, Qu Wenruo wrote:
->> --- a/fs/btrfs/transaction.c
->> +++ b/fs/btrfs/transaction.c
->> @@ -559,7 +559,7 @@ static bool may_wait_transaction(struct btrfs_fs_in=
-fo *fs_info, int type)
->>   	if (test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags))
->>   		return false;
->>  =20
->> -	if (type =3D=3D TRANS_START)
->> +	if ((type & TRANS_START) =3D=3D TRANS_START)
->=20
-> This does not seem right, the type should be a single number, not a
-> bitmask
+If a remount asks for space_cache=v2 and isn't going ro->rw, we warn that
+we can't change the free space tree, but the remount succeeds and the options
+don't get reset. On a filesystem with neither a free space tree or v1 cache,
+FREE_SPACE_TREE stays set and the next rw remount will create it.
 
-But TRANS_START is already defined as a bitmask.
+I think the simplest solution is to add:
 
->=20
->>   #define TRANS_START		(__TRANS_START | __TRANS_FREEZABLE)
->> +#define TRANS_TRY_START		(__TRANS_START | __TRANS_FREEZABLE | __TRANS_=
-TRYLOCK)
->=20
-> If you meant to distinguish normal start and 'try' start then it's check
-> for two values.
+	} else {
+		btrfs_clear_opt(fs_info->mount_opt, FREE_SPACE_TREE);
+	}
 
-So what your recommended change?
+as part of this patch, replacing the deleted btrfs_free_space_cache_v1_active()
+check.
+
+Should I send v4 with that change?
+
+Thanks,
+Tal

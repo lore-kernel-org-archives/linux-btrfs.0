@@ -1,208 +1,295 @@
 Received: from mail-wr2-f12.google.com (mail-wr2-f12.google.com [74.125.225.76])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB047549363
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 14:04:52 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E753C31E848
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 14:05:21 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.225.76
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790085894; cv=pass; b=qiHHtRmPd0gjCm+n4uQBaTOMDFMIDiBEnPRCqmTR9k0zc1tQSm2nhLYt9j+HC35DqWaobg8zqb8BAWLSEOwrCA3LRrNdUcVqH5cmFdnj7tAGOU/Op6JLh0vcITR9H3CC6UfNlVRJKf98UWBBkxIl0mZ7Ux+C53EICmI0lZMhW3c=
+	t=1790085924; cv=pass; b=fD7Rp8ABm3xGliDtUENSze/iAkXqGhTq6bjzCeiXtvxh92xQJ1Pa+OdEZs971Vwihxkf+zciOPLyDUT438SmRCEqTcDN154qZhRa0puXjo/GOvZx0uyOjRSWHsIa2DPHJEZcao6wdA3gM6Mghuf+4V4KUa4goH1FOBa+RHxJU9Q=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790085894; c=relaxed/simple;
-	bh=HmtpJAgxyWzEhX/Kivuz0S1dXZLqzMoX1yiDfvCKtBs=;
+	s=arc-20240116; t=1790085924; c=relaxed/simple;
+	bh=u7bMS2QsTN3HhDT/yBr8GHkY+yLGOO8Zk8HLIkizkfo=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=It8b6am6O8usZm09DsE+zmIRJPUI+1AZlfyV71i9KUXPBuJ2hE0+O4dHktj0JXaYAr0lxB4n6JU0XlgiUNOccD8Eubx4cuVc8idqNErOHzGdl4wGnzF2YpN+GoOk1bZrVbag90GLBPEBObNaQvzpmvGpjnIo3Ml2F2MvLgK+xxk=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=dGqCNwBa; arc=pass smtp.client-ip=74.125.225.76
+	 To:Cc:Content-Type; b=RECJNHkXsc9rB9xFxYByQEeENPtZnblHJSjZyVbR3dIXblquMC7ZzF5VWa0rJ0tcumKbFADgEFM9O2F6zV5eIRFRetcg038LUtS6S4QTC9kZVmHo3M+TU0wdD+hX6qkMGR4Alu7EIeGET/KobK/IrWxYukQmRqoCdE3Vd8TysnM=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=CfDyf+MT; arc=pass smtp.client-ip=74.125.225.76
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="dGqCNwBa"
-Received: by mail-wr2-f12.google.com with SMTP id ffacd0b85a97d-485b1d2874fso1563996f8f.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 07:04:52 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1790085891; cv=none;
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="CfDyf+MT"
+Received: by mail-wr2-f12.google.com with SMTP id ffacd0b85a97d-4843378fb37so2082608f8f.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 07:05:21 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1790085920; cv=none;
         d=google.com; s=arc-20260327;
-        b=GMfoB4CkIu7QSr874tTKRPqCD7QY5uVokkNKTAglV6Np7Lupu8Z3blBbUUTFU4Uo3s
-         0Iyl013HqEt2W/TnxO99YhXTzdSoznom5k9QvZVGK6FUBiKypFvO6CLjXi78yfv7HAZV
-         +EnhZmcx3KMS/jWt/4Nsez7n3Sv0tdAj+ZkEdOHykszUHn7IVK+whROnQWkuCYbGUrFt
-         FZddWs7pGL0vY9iXG8rIQo+xXQsJ0gjRnC/7PXfPemG0Hhur1xnpQuCewM0oJb2aBbqh
-         6swzcuqyNreSCazmfLnccrdljbidVwryf5Jyo42XWtiffFfhNGUhCGuoZqeux+c+e+6g
-         M10w==
+        b=Z6kHxudLaObBud6yUgcfZ5zsHTj9mvsHwYg9Vxxgwpc5U35zNqSTPD2UuUbulJDMXo
+         1ADgM6k8JPFBXseM1T3Q327c0upa1oIEHqd8M317ZmnMUSitmWNX/qJ54kx/fifpRhUd
+         RSGw2EtZ+89lT1uLQUMnOROgzfiOB7HXUrAHaFPbV3oryGnPlZgNJmmxszkkAEte7fFb
+         NUuIyALCx7kfMo9LM/z9T9KnbZUv5z6WTqaDRj27qD18MO37wo/yBBON/JxGoPvQcfue
+         2cP8HmMWznALlWEeQqrGAVxLi5m2Ys6OU44VZc97IbEhGHd2OWrtJVnZijNyWtAg3lSo
+         CELQ==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:dkim-signature;
-        bh=CAZT4Mc0RtafwpZHvhYs12WjFLpfTV2iCIMjczEtukc=;
-        fh=wYt0Fx7M+p6C5uQA5EZcgV098fT+naFtqXk4awOtHNY=;
-        b=R+0FR4bBkUX79+ij+xLrh9CU7+eOwYrDdHV+Fi5i+4/VCXeuJ/QjPFFq6cnGR734P7
-         E37x4EEqrkswRC7qQHbwHJXm76gYT7EAgHKkvJjNp7MsWDw1gQrVHzgPbdUUXl7fEySK
-         PY/l4Kuau1XHNwGpeVC9mzJpJ8Qq2+8ksiHoB9puTeg/wnY3r29+XgosdLM/oH0is548
-         w/avvUTMZ+5UmQfF1xQOOShlXyycs3Q3R1DfP90YnpcbCqBf3pu/5nBdhXrlyWaewmbG
-         LU6ETtF8kFQWGfwapLxpx7bCz6Z5ibu2U8WOHKfFKVh3uSJeZ9/dxLVeTpR8hbCTnbn2
-         ozcQ==;
+        bh=ZrtHB84b364jzwBBOljWxOCtEOH9Ysc3gFWF5Y09jm0=;
+        fh=7RpSx2EtEhxyT+577C3ji2myd76+0UlSbgba65jK25E=;
+        b=fgbkkAuNMO2DKPHWiXxyMBM40WHvSykUYISbJ9A9DBsOSzhwq3UAB4Z4ShYaFcHY3w
+         C3iH3Q/MOxw6k/UqR68JnOyc6gIyPnZViLEXbzqYOwdPC96ZtaLawvOlfMuBQLctn6XG
+         24fUUApquxDXSo8/tafiKWu1I+hd5xFTMtWkWdVTFUMtp4dDqMCXV3/L2vmd+GKPrVqQ
+         JNuJt2DcWTx2f9MlYoXTKU/Ml1owl1zLw1/uPRT0GWvomDe+XcvmFOTQiyEFdUuAZ8Cy
+         0tylLKeCQd1Y1NlZDLLQ60VvaG+siA2SI13MHGChNMMmggVevNAW0v85GYPVa4NCG0PP
+         6gHA==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1790085891; x=1790690691; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1790085920; x=1790690720; darn=vger.kernel.org;
         h=content-type:cc:to:subject:message-id:date:from:in-reply-to
          :references:mime-version:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=CAZT4Mc0RtafwpZHvhYs12WjFLpfTV2iCIMjczEtukc=;
-        b=dGqCNwBa0Xaq3jy4paXVSMBTT3MP2lYYULb9Z44yy0vkdbpC/0TNieXlYfrRijvAR2
-         FmgvSvR6c8lzvqqh/BURrpsdbO46Yzd2hgV8tpdFGwsvixIkm4sVpMKgd+5bNjPZ2vpR
-         bW+Q/cHTDqxjmhd/85X/NYbhWNZCNr0Py7emGirEG+76SSZAlJE7OIrNBX7ABd/RGtOm
-         PLnjYyRh78a7ZU295wEU4PIz2sUQVYUgtnFHUsPk+uoYhewXMPxkJ/mf3WTIODwzCY91
-         hjKNKNngiPhAn2JTjB0ObRRrzTb3U41X8jmzpecrXpsV+Li4cTxI4pi5sWSQRMzlTJJ2
-         bZhQ==
+        bh=ZrtHB84b364jzwBBOljWxOCtEOH9Ysc3gFWF5Y09jm0=;
+        b=CfDyf+MTCmv4aQBDyPn7h30jqSH6DJE210hWBVMGI5KYGsuu6nm12ks/c/rQGNTZzX
+         kCUmPPD3ORq91m53TVuAXAAz5qZYW3x4Rqm5SmcqNF+Hdh1iPI2yViMDvnexfNvp1qUh
+         pc0lpnS8PgmhJ46tz3+1W1uTAIadlNXtWVGHo3oxIPh9k7pqvc3eCzCWEn2Jd+CfwXN3
+         OTCAN+SbZIfKF7w9i7O0MzNf1esKMSGIkuo6BAUgVRJ6QuyK22oPXVLy/AmDvTGMqYYT
+         DXlNLrt9SKPci73qbXwvEFrBBbbPoLOOQhtji6hz6sJ9iEAteQMUBhj7mUIDKsLWtmCw
+         0h/w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790085891; x=1790690691;
+        d=1e100.net; s=20260707; t=1790085920; x=1790690720;
         h=content-type:cc:to:subject:message-id:date:from:in-reply-to
          :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to:content-type;
-        bh=CAZT4Mc0RtafwpZHvhYs12WjFLpfTV2iCIMjczEtukc=;
-        b=FBGbkiG+qrfs+tzAHc/jWR/40JFrIMVKSDKck6j6nxDjOMeH6O14WnC9kCNuAt24BP
-         ltLbuBPiNEeGYTmmm2lmwmj2BAcMHm5WkWJBioLzIpCLn9AGQnVRdWunaUvNTbW/dltc
-         kqB5cW3cnQQwn1+EJeNOCpeEsKrifCdBFTYZdutj4MLvKx1DGFShNd61RiuUdVqEfuhp
-         ddla4ulTM56elHfFQVWbE59it+mx4IKo7iN79wAOU9omeXv7DnCJZBaRIHfo0bA5h7Wz
-         DPtsQSNZq+xgkyc3ze+1Wdz8Q6O7HFDthxitoDNhBMd8/6gvVP7dHEXi2mXvCJdlJZS3
-         +jTg==
-X-Forwarded-Encrypted: i=1; AKwUvBwihQ90ca8jRLZKxkYd2LSx78G6oce3a2cFEa0ySe7rmLcgrNers2ASQKN/NvLU9MapSVowmf3+HWBs0g==@vger.kernel.org
-X-Gm-Message-State: AFuF++lrLHCzlk0tAhyus3hYtv2XrG/Jq1UiwFFexPH+Rg0DZBuQD1br
-	N83kNgF16ofOiz3OKd53fwYOoVuw2AmM1aoNDSQqiOhHGH2NBR1NMwgcZ0aUKuY8Xmln5st+ca7
-	4/2BLCL2+5Qv2SrOdkAckhyswI8fkLmfeNAo9Err1oQ==
-X-Gm-Gg: AYBFou22T3Ujvz6AXPR0i8RzNADLhekSPkx2EnI7AH8OqSn3vqGLgujUuFIXlks3F6m
-	i41nlaTmMhJWr5wrcsIvQqBSQE3uBwZE+U8FQg+1LA1cQCDWLwV7TWq50IaOa+sgpZoMRqNF1Bh
-	/HHm5NaBkpmFqsyffApdpulS8y87LcWMMXNCHFgYz4CQiOc1uJmjd6aUf7VftnWT7izt1ZypRGj
-	JWhV8AGnVaj9JvVVDOBQuw6HsjqHUthoXLv/ONKXYbUrdJSuYIfjmUVWXWJYYuobY+R7Vieq+Pk
-	rUZOUhAyq2+IcleafXpSAy9cfP9hYbSuWcvpZKKofbMBdmrP4m2keSQfT0gDCQaWV7PzlOK5E9m
-	Fe5g/zGO+vuPLGsD0cEfF+q0likrkPUHd4bqrp/Cab9Xrl3oDC9C2
-X-Received: by 2002:a05:6000:4384:b0:487:218b:bbc9 with SMTP id
- ffacd0b85a97d-48861021845mr4010977f8f.19.1790085891037; Tue, 22 Sep 2026
- 07:04:51 -0700 (PDT)
+        bh=ZrtHB84b364jzwBBOljWxOCtEOH9Ysc3gFWF5Y09jm0=;
+        b=T+DFZRTND9OLvWe6D7c4+j4CPJB4MsqEI2WrqTjIN6GQbphqLjXv3g3JUBR0OqnSYc
+         1UfViTYNveEZoOjhFgokCShFnX0ROvSSDv8gyGkekjvZT2QbveO4LuzhxkxxpVKGUs4l
+         /C+NOc48VX/C1HiQml2uC5UE7KBsjKNBnsffTkZf9kWJnWoD7JXUJZ+tyNdKuPUCFoqn
+         QTwArXzaJyqmvQVEXDriJKLAsCmlRLxBKWvH11aYO7/Z4QT69yNH9BXHmHEKsvN7ZAD3
+         7XIda6Xfn2LrnzgKF5N/19NtVnUIlddLS3Rn1r2wr4klbaVVs9vddwfcU+pypne58RJJ
+         zb0Q==
+X-Forwarded-Encrypted: i=1; AKwUvBz+usJBPfXhV01GbKZ90y+exH8b8vhJzeWxqJYk5yfGJcaUfx5oEmibt5usqNcO7BSr8RL/nAlnhswyVg==@vger.kernel.org
+X-Gm-Message-State: AFuF++kQZKC7IANZLdhEX7Y04Ueu+ca/zWFvkFrUA2bDGKnvRLjRmX0N
+	uK8F7aKUWXexf61rqhwp/eUvXIJ6T/aEyL34VEBw0KBvP3M2wchTa6ZDsGMUBTSH9FWRCyrsdl7
+	OeoC6oWtkVZ5ULDQzUfJXUEpaNrkAhxUB1uLkzfnRHg==
+X-Gm-Gg: AYBFou18A9bb1x7tT24SU8ghjgSZey/gwBL63bQDG35mII70I8J6rrZb82/iIMWNQTP
+	c+W6NUSwBiaXD5+4oOQIqow2jewkHHkZHjR2AfdnmIzTnCH3CdyMMBP8TUoTQbv3S34w0nWs/92
+	LmrpPxMV3AsI4JORF6AKVXeEF6b2ZIc5VnqyWLy4EIyAAiDnK8Aofn1w+DqVLuodN8RxBdpnqpo
+	cpq5RyrU56WX4JbN2g4sSqr+gbf53/A//6VpvPdPKRnorxyPwoyR9A/VizKRg3gkt3sqq40ynkF
+	D1VO1o+M9g5r1G4njdLLOT3kDQzp8sCqMXy+tX2wvmvrUgg7NXetr+aU+wzvYKwper4xUvTZZc1
+	09ISzqQwa3EA30q/68VGxXICkunw2X/xB0pF1DTFydIIK3IuNS723
+X-Received: by 2002:a05:6000:1884:b0:487:ee6:b76c with SMTP id
+ ffacd0b85a97d-4871e386891mr20725607f8f.56.1790085920335; Tue, 22 Sep 2026
+ 07:05:20 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260513085340.3673127-1-neelx@suse.com> <20260513085340.3673127-11-neelx@suse.com>
- <20260602031251.GG2295@sol> <CAPjX3Fer=5gfiBuB0Nk8rRdUZdhpk9txeBYtGFy=p6W-DmiVDQ@mail.gmail.com>
-In-Reply-To: <CAPjX3Fer=5gfiBuB0Nk8rRdUZdhpk9txeBYtGFy=p6W-DmiVDQ@mail.gmail.com>
+References: <20260513085340.3673127-1-neelx@suse.com> <20260513085340.3673127-12-neelx@suse.com>
+ <20260602032534.GH2295@sol>
+In-Reply-To: <20260602032534.GH2295@sol>
 From: Daniel Vacek <neelx@suse.com>
-Date: Tue, 22 Sep 2026 16:04:40 +0200
-X-Gm-Features: AclHuK_rkaWCmtwpyZjV91f4SPFL36vekOWvX2NiWI_NE1BZdnnwGwyNNNf5oUo
-Message-ID: <CAPjX3FdaOiWuTBp13mnOetOhi+qYH-5mNcLWLNv5YoD=bNgzqg@mail.gmail.com>
-Subject: Re: [PATCH v7 10/43] btrfs: start using fscrypt hooks
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: Chris Mason <mason@kernel.org>, Josef Bacik <josef@toxicpanda.com>, 
-	"Theodore Y. Ts'o" <tytso@mit.edu>, Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>, 
-	David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org, 
-	linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, Omar Sandoval <osandov@osandov.com>, 
-	Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Date: Tue, 22 Sep 2026 16:05:08 +0200
+X-Gm-Features: AclHuK9buEKOllKFAYM2m_CAJ3xVlO7s0lRsVrq1N6uymn8JCD10DYisCBeAGOs
+Message-ID: <CAPjX3FczT+7rBFbtu+t4FRg2_VCXO33BghmHAO4rD+mPA_5hDg@mail.gmail.com>
+Subject: Re: [PATCH v7 11/43] btrfs: add inode encryption contexts
+To: Eric Biggers <ebiggers@kernel.org>, Boris Burkov <boris@bur.io>, Chris Mason <mason@kernel.org>
+Cc: Josef Bacik <josef@toxicpanda.com>, "Theodore Y. Ts'o" <tytso@mit.edu>, 
+	Jaegeuk Kim <jaegeuk@kernel.org>, Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>, 
+	linux-block@vger.kernel.org, linux-fscrypt@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	Omar Sandoval <osandov@osandov.com>, Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 Content-Type: text/plain; charset="UTF-8"
 
-On Tue, 2 Jun 2026 at 05:14, Eric Biggers <ebiggers@kernel.org> wrote:
-> On Wed, May 13, 2026 at 10:52:44AM +0200, Daniel Vacek wrote:
-> > @@ -9041,20 +9063,28 @@ static int btrfs_symlink(struct mnt_idmap *idmap, struct inode *dir,
-> >       };
-> >       unsigned int trans_num_items;
-> >       int ret;
-> > -     int name_len;
-> >       int datasize;
-> >       unsigned long ptr;
-> >       struct btrfs_file_extent_item *ei;
-> >       struct extent_buffer *leaf;
-> > +     struct fscrypt_str disk_link;
-> > +     size_t max_len;
-> > +     u32 name_len = strlen(symname);
-> > +
-> > +     /*
-> > +      * BTRFS_MAX_INLINE_DATA_SIZE() isn't actually telling the truth, we actually
-> > +      * limit inline data extents to min(BTRFS_MAX_INLINE_DATA_SIZE(), sectorsize),
-> > +      * so adjust max_len given this wonderful bit of inconsistency.
-> > +      */
-> > +     max_len = min_t(size_t, BTRFS_MAX_INLINE_DATA_SIZE(fs_info), fs_info->sectorsize);
+On Tue, 2 Jun 2026 at 05:26, Eric Biggers <ebiggers@kernel.org> wrote:
+> On Wed, May 13, 2026 at 10:52:45AM +0200, Daniel Vacek wrote:
+> > From: Omar Sandoval <osandov@osandov.com>
 > >
-> > -     name_len = strlen(symname);
-> >       /*
-> > -      * Symlinks utilize uncompressed inline extent data, which should not
-> > -      * reach block size.
-> > +      * fscrypt sets disk_link.len to be len + 1, including a NUL terminator,
-> > +      * but we don't store that '\0' character.
-> >        */
-> > -     if (name_len > BTRFS_MAX_INLINE_DATA_SIZE(fs_info) ||
-> > -         name_len >= fs_info->sectorsize)
-> > -             return -ENAMETOOLONG;
-> > +     ret = fscrypt_prepare_symlink(dir, symname, name_len, max_len + 1, &disk_link);
-> > +     if (ret)
-> > +             return ret;
->
-> This is off by one from the other filesystems.  Yes, the way the other
-> filesystems do encrypted symlinks is weird, but this still doesn't fix
-> it, since the unnecessary 'struct fscrypt_symlink_data' is still stored.
-> If it's not being fixed completely, it should just be done the same way.
->
-> Did you do it this way because you're trying to squeeze out an extra
-> byte, to allow 4094-byte symlink targets instead of 4093 as the other
-> filesystems do?  Or did you do it this way because btrfs doesn't count a
-> nul terminator when checking unencrypted symlinks against
-> BTRFS_MAX_INLINE_DATA_SIZE(fs_info), and you needed to preserve that
-> behavior?  But at the same time, btrfs *does* count the nul terminator
-> when validating against 'fs_info->sectorsize', and this changes that
-> behavior.  So it's not clear what was intended here.
-
-This comes from Omar/Josef authored [v1] of the patchset from September 2023.
-I understand the intent was to utilize the last byte. But yeah, I
-think it's perfectly fine sticking to 4093 bytes limit as other FSes
-do. I'll drop the +1.
-
-[v1] https://lore.kernel.org/linux-btrfs/912762ca48efcc684cd5cdde99b5a78cd25f1078.1695750478.git.josef@toxicpanda.com/
-
-> > +     if (IS_ENCRYPTED(inode)) {
-> > +             ret = fscrypt_encrypt_symlink(inode, symname, name_len, &disk_link);
-> > +             if (ret) {
-> > +                     btrfs_abort_transaction(trans, ret);
-> > +                     btrfs_free_path(path);
-> > +                     discard_new_inode(inode);
-> > +                     inode = NULL;
-> > +                     goto out;
-> > +             }
-> > +     }
->
-> fscrypt_encrypt_symlink() already has an IS_ENCRYPTED(inode) check
-> built-in.
-
-Correct. I'll drop the check.
-
-> > +static const char *btrfs_get_link(struct dentry *dentry, struct inode *inode,
-> > +                               struct delayed_call *done)
+> > fscrypt stores a context item with encrypted inodes that contains the
+> > related encryption information.  fscrypt provides an arbitrary blob for
+> > the filesystem to store, and it does not clearly fit into an existing
+> > structure, so this goes in a new item type.
+> >
+> > Signed-off-by: Omar Sandoval <osandov@osandov.com>
+> > Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+> > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> > Signed-off-by: Daniel Vacek <neelx@suse.com>
+> > ---
+> >
+> > v7 changes:
+> >  * Fix a path leak as found by Chri's AI review.
+> > v6 changes:
+> >  * Shorten the inode context key macro name to BTRFS_FSCRYPT_INODE_CTX_KEY.
+> > v5: https://lore.kernel.org/linux-btrfs/5a88efb484b0874a7430b83bc6e5f6b9aa5858d5.1706116485.git.josef@toxicpanda.com/
+> > ---
+> >  fs/btrfs/fscrypt.c              | 116 ++++++++++++++++++++++++++++++++
+> >  fs/btrfs/fscrypt.h              |   2 +
+> >  fs/btrfs/inode.c                |  19 ++++++
+> >  fs/btrfs/ioctl.c                |   8 ++-
+> >  include/uapi/linux/btrfs_tree.h |  10 +++
+> >  5 files changed, 153 insertions(+), 2 deletions(-)
+> >
+> > diff --git a/fs/btrfs/fscrypt.c b/fs/btrfs/fscrypt.c
+> > index 6cfba7d94e72..c503f817cbe7 100644
+> > --- a/fs/btrfs/fscrypt.c
+> > +++ b/fs/btrfs/fscrypt.c
+> > @@ -1,10 +1,126 @@
+> >  // SPDX-License-Identifier: GPL-2.0
+> >
+> > +#include <linux/iversion.h>
+> >  #include "ctree.h"
+> > +#include "accessors.h"
+> >  #include "btrfs_inode.h"
+> > +#include "disk-io.h"
+> > +#include "fs.h"
+> >  #include "fscrypt.h"
+> > +#include "ioctl.h"
+> > +#include "messages.h"
+> > +#include "transaction.h"
+> > +#include "xattr.h"
+> > +
+> > +static int btrfs_fscrypt_get_context(struct inode *inode, void *ctx, size_t len)
 > > +{
-> > +     struct page *cpage;
-> > +     const char *paddr;
-> > +     struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+> > +     struct btrfs_key key = {
+> > +             .objectid = btrfs_ino(BTRFS_I(inode)),
+> > +             .type = BTRFS_FSCRYPT_INODE_CTX_KEY,
+> > +             .offset = 0,
+> > +     };
+> > +     struct btrfs_path *path;
+> > +     struct extent_buffer *leaf;
+> > +     unsigned long ptr;
+> > +     int ret;
 > > +
-> > +     if (!IS_ENCRYPTED(inode))
-> > +             return page_get_link(dentry, inode, done);
 > > +
-> > +     if (!dentry)
-> > +             return ERR_PTR(-ECHILD);
+> > +     path = btrfs_alloc_path();
+> > +     if (!path)
+> > +             return -ENOMEM;
 > > +
-> > +     cpage = read_mapping_page(inode->i_mapping, 0, NULL);
-> > +     if (IS_ERR(cpage))
-> > +             return ERR_CAST(cpage);
+> > +     ret = btrfs_search_slot(NULL, BTRFS_I(inode)->root, &key, path, 0, 0);
+> > +     if (ret) {
+> > +             len = -ENOENT;
+> > +             goto out;
+> > +     }
 > > +
-> > +     paddr = fscrypt_get_symlink(inode, page_address(cpage),
-> > +                                 BTRFS_MAX_INLINE_DATA_SIZE(fs_info), done);
-> > +     put_page(cpage);
+> > +     leaf = path->nodes[0];
+> > +     ptr = btrfs_item_ptr_offset(leaf, path->slots[0]);
+> > +     /* fscrypt provides max context length, but it could be less */
+> > +     len = min_t(size_t, len, btrfs_item_size(leaf, path->slots[0]));
+> > +     read_extent_buffer(leaf, ctx, ptr, len);
+> > +
+> > +out:
+> > +     btrfs_free_path(path);
+> > +     return len;
+> > +}
 >
-> This uses a different max_len from btrfs_symlink().
+> This doesn't conform to the calling convention for
+> fscrypt_operations::get_context, specifically in the cases where
+> -ENODATA and -ERANGE are expected.
+>
+>         /*
+>          * Get the fscrypt context of the given inode.
+>          *
+>          * @inode: the inode whose context to get
+>          * @ctx: the buffer into which to get the context
+>          * @len: length of the @ctx buffer in bytes
+>          *
+>          * Return: On success, returns the length of the context in bytes; this
+>          *         may be less than @len.  On failure, returns -ENODATA if the
+>          *         inode doesn't have a context, -ERANGE if the context is
+>          *         longer than @len, or another -errno code.
+>          */
+>         int (*get_context)(struct inode *inode, void *ctx, size_t len);
+>
+> It also seems to be assuming that any error from btrfs_search_slot()
+> means "not found", which isn't correct.
+>
+> The size_t variable called 'len' is also being used to store negative
+> errno values, which is weird.
 
-I'm not sure that matters. But unifying them shouldn't hurt.
+Those are valid points. I fixed the return codes and cleaned up the
+function a bit.
 
-> Speaking of symlinks, btrfs is also missing a hookup to
-> fscrypt_symlink_getattr().
+> > +static int btrfs_fscrypt_set_context(struct inode *inode, const void *ctx,
+> > +                                  size_t len, void *fs_data)
+> > +{
+> > +     struct btrfs_trans_handle *trans = fs_data;
+> > +     struct btrfs_key key = {
+> > +             .objectid = btrfs_ino(BTRFS_I(inode)),
+> > +             .type = BTRFS_FSCRYPT_INODE_CTX_KEY,
+> > +             .offset = 0,
+> > +     };
+> > +     struct btrfs_path *path = NULL;
+> > +     struct extent_buffer *leaf;
+> > +     unsigned long ptr;
+> > +     int ret;
+> > +
+> > +     if (!trans)
+> > +             trans = btrfs_start_transaction(BTRFS_I(inode)->root, 2);
+> > +     if (IS_ERR(trans))
+> > +             return PTR_ERR(trans);
+> > +
+> > +     path = btrfs_alloc_path();
+> > +     if (!path) {
+> > +             ret = -ENOMEM;
+> > +             goto out_err;
+> > +     }
+> > +
+> > +     ret = btrfs_search_slot(trans, BTRFS_I(inode)->root, &key, path, 0, 1);
+> > +     if (ret < 0)
+> > +             goto out_err;
+> > +
+> > +     if (ret > 0) {
+> > +             btrfs_release_path(path);
+> > +             ret = btrfs_insert_empty_item(trans, BTRFS_I(inode)->root, path, &key, len);
+> > +             if (ret)
+> > +                     goto out_err;
+> > +     }
+> > +
+> > +     leaf = path->nodes[0];
+> > +     ptr = btrfs_item_ptr_offset(leaf, path->slots[0]);
+> > +
+> > +     len = min_t(size_t, len, btrfs_item_size(leaf, path->slots[0]));
+> > +     write_extent_buffer(leaf, ctx, ptr, len);
+> > +     btrfs_mark_buffer_dirty(trans, leaf);
+> > +     btrfs_release_path(path);
+> > +
+> > +     if (fs_data)
+> > +             goto out_err;
+> > +
+> > +     BTRFS_I(inode)->flags |= BTRFS_INODE_ENCRYPT;
+> > +     btrfs_sync_inode_flags_to_i_flags(BTRFS_I(inode));
+> > +     inode_inc_iversion(inode);
+> > +     inode_set_ctime_current(inode);
+> > +     ret = btrfs_update_inode(trans, BTRFS_I(inode));
+> > +     if (ret)
+> > +             goto out_abort;
+> > +     btrfs_free_path(path);
+> > +     btrfs_end_transaction(trans);
+> > +     return 0;
+> > +out_abort:
+> > +     btrfs_abort_transaction(trans, ret);
+> > +out_err:
+> > +     if (!fs_data)
+> > +             btrfs_end_transaction(trans);
+> > +     btrfs_free_path(path);
+> > +     return ret;
+> > +}
+>
+> The 'len = min_t(size_t, len, btrfs_item_size(leaf, path->slots[0]));'
+> line seems scary, since it just truncates the data given.
 
-Uh, I was not aware of that. It seems like fstests is missing for this feature.
+Right. Actually let's refactor both functions and split the common part.
 
-Thanks a lot.
+> > @@ -199,7 +203,7 @@ static int check_fsflags(unsigned int old_flags, unsigned int flags)
+> >                     FS_NOATIME_FL | FS_NODUMP_FL | \
+> >                     FS_SYNC_FL | FS_DIRSYNC_FL | \
+> >                     FS_NOCOMP_FL | FS_COMPR_FL |
+> > -                   FS_NOCOW_FL))
+> > +                   FS_NOCOW_FL | FS_ENCRYPT_FL))
+> >               return -EOPNOTSUPP;
+>
+> Do you know why FS_VERITY_FL isn't in this mask?
+
+Not really. It seems that 41b37c51937e ("btrfs: initial fsverity
+support") did not add this flag. I'm not sure if that is a mistake or
+intentional. Maybe @Boris or @Chris would know?
 
 --nX
 

@@ -1,95 +1,95 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E507D52D2D6
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 08:56:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9935D23ED6A
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 09:00:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790067376; cv=none; b=XCjpTuA43TRkiQgaWTk74G3yvFxoQNSN89cG0fUdxiA5IFTK55V/piWGFAkdeb+1n74tAAFrbKkqSjzPNq7Pleq8P2DKPpfbXT5pL8kRAN2AxPg3Ngj+doIANzoF582ZHMC6rABrfbSAZuaooBEMpFQMcHFD2YPagtoVn49J73k=
+	t=1790067638; cv=none; b=j04PDIhYq7xtrYbRxByRZF1FhelM3c9VApp+ZQiZHjvUv9WJ8eTNOykJERLi99yaeqZ/RsrzBttzWcmgtFo2MqqzuIt+4pHzGdGZMzCyT2bur4Hp/oNMR3y0SRtVvsBnz3cTbShKSPEeehSaU52ox/PG8wOHLGZyTBjgRZY1nRw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790067376; c=relaxed/simple;
-	bh=dTZ74AujbnWToEkdYNhWDDknBgtfEGUv+/3pS6per/g=;
+	s=arc-20240116; t=1790067638; c=relaxed/simple;
+	bh=HmmHSOBi6Fqj+ayaB0kp+lUWkEfnbaCEl7Q3FaEXEB8=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=kh4/rWozljvysn7nuQZdr2HoPmIVgJhpyL9O2SIvv/v5rmEjFabWlcbDGHA9ftIz+RiafbLs7kWz8d1P6xqsef10KCbzBtzy4K27itIKi09KnS0N1DFk4+jAt0Dr+CMS5rc2fM3rmAOp9ldBzdzu1TabpkU+457eyfejcXtv8wo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=hPvvBF8U; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=eZbtqite; arc=none smtp.client-ip=170.10.129.124
+	 Content-Type:Content-Disposition:In-Reply-To; b=fxr/jyt3HBC16nZ7ACUt7mKCmC9NZuqvU9zXbX9f1e/AuNDAAE9ke/04KimVN2fwwgy5xaYYeXBHDLX74Yr2SXO4JUiFCGnLXx6QFGLEjAVeWmiMMeehlNEVMfFMyUqtxeoXEd73ib/dTnAdusUR+GxBhXmzFf3jGP6mQzxG9+M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=SnYZK+LM; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=dEfecw90; arc=none smtp.client-ip=170.10.133.124
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="hPvvBF8U";
-	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="eZbtqite"
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="SnYZK+LM";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="dEfecw90"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1790067373;
+	s=mimecast20190719; t=1790067635;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=ovEqrxQiNC1fApdCYwkn/e/ow08kQkdi30NnfIiXj3g=;
-	b=hPvvBF8UC2vymQ2BK4aaMJYkbHYv7IxK1cVV4bzFwLICa+Ra1xa7Pf/TEiI9w6FNkxeGDf
-	TBb47Eoa7EQavBcQNr1TNxWSjqergxD+JkARWeamm1/q8N9G0Nwo1iTAXtqvNTAf3sDhvU
-	yr4jrvhmfg46Cr2Ciy3xXnW98isuw58=
-Received: from mail-wr1-f69.google.com (mail-wr1-f69.google.com
- [209.85.221.69]) by relay.mimecast.com with ESMTP with STARTTLS
+	bh=8YJMnxCx7h1aVciSzhmVbEN46xY6rfHQRJ4daqV9A0s=;
+	b=SnYZK+LMDE7gGrg6l7IcDTNmdilwHNWT+A9W8Te1ofRL9Zr1CaKTdMm8KwHy+46xpFCjXW
+	u84pw0HkfUxXtFFswxPfyiS6tU6uzgNAwYhQSpjqIOPvgAfTspnn6+0/p2nvqnKIxpUGgW
+	ltO1EX/PmAJ5psyFvmEu4zyrSOutaxc=
+Received: from mail-ej1-f69.google.com (mail-ej1-f69.google.com
+ [209.85.218.69]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-611-qJEVEFZ0Pvu8wvboYAPyTQ-1; Tue, 22 Sep 2026 04:56:12 -0400
-X-MC-Unique: qJEVEFZ0Pvu8wvboYAPyTQ-1
-X-Mimecast-MFC-AGG-ID: qJEVEFZ0Pvu8wvboYAPyTQ_1790067371
-Received: by mail-wr1-f69.google.com with SMTP id ffacd0b85a97d-486f52ac21eso2553109f8f.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 01:56:12 -0700 (PDT)
+ us-mta-428-OiCzpQdwONKyYP0jUBYqeQ-1; Tue, 22 Sep 2026 05:00:34 -0400
+X-MC-Unique: OiCzpQdwONKyYP0jUBYqeQ-1
+X-Mimecast-MFC-AGG-ID: OiCzpQdwONKyYP0jUBYqeQ_1790067633
+Received: by mail-ej1-f69.google.com with SMTP id a640c23a62f3a-c210c66672eso487581466b.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 02:00:34 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redhat.com; s=google; t=1790067371; x=1790672171; darn=vger.kernel.org;
+        d=redhat.com; s=google; t=1790067633; x=1790672433; darn=vger.kernel.org;
         h=in-reply-to:content-disposition:content-type:mime-version
          :references:message-id:subject:cc:to:from:date:from:to:cc:subject
          :date:message-id:reply-to:content-type;
-        bh=ovEqrxQiNC1fApdCYwkn/e/ow08kQkdi30NnfIiXj3g=;
-        b=eZbtqitewffqEAtbuZvziZPr1toNvg5J/UstrD6538H1I0iyAiiDGGPPbtWAM1HcGV
-         lIUnJ1EHJIfDGY5LMGVjjjKJKB2Zuc1ec7j8tAHuhGiwKkIleUKRFjUZx24t3DTpSswJ
-         TH7+eZYGzF0+CQS4EhY0FqhNpjCuAat9FgJRxyY/hgBa9Cgt2YvpXv9hH/5rGcWAxwZ5
-         WpA6ceg3/mjQL4E9xXnCjMSakIMxHEq6CXZ0n5RYFtAuMebBxuP/AE9hEy+pGFGIrXUJ
-         oMwULrLe6l2XCjRk9u3et+3lf/vrFxFYu5cm3x5q3k0pvP8xg9tb1a4X3gCqUYhh6lG9
-         UEHw==
+        bh=8YJMnxCx7h1aVciSzhmVbEN46xY6rfHQRJ4daqV9A0s=;
+        b=dEfecw90byyjd4UIPI/J6VNySFo4NcC2qD+NZekmiNFbPXDjJ7+0irYnPP7DI3cInb
+         PrSALNg7tzt9wBMjtAXhQHCb7Q5fcCouXglQzdmSzdmv1q0dOnaDUXnDDhLUcrb3cqdZ
+         0GEpy3VaKMHMYlj7ElQ+iB55sNezg4dnm+v+lSKy6QHgpYd5Zqfq3O0DnOIZeSMTu5N7
+         4azx/xzj9DXH7qhBSl97pFg6PzjlGpzrQ/4ChW3a+eeiXOw60KT00AGhaFnnKJCHK9M+
+         WYjXQ4np1KKhUN1BYUUTcAAz/KtkB/t899hMRnheSaaO36A0aCOqhnmVDBxuj9X/jqVx
+         /fiw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790067371; x=1790672171;
+        d=1e100.net; s=20260707; t=1790067633; x=1790672433;
         h=in-reply-to:content-disposition:content-type:mime-version
          :references:message-id:subject:cc:to:from:date:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=ovEqrxQiNC1fApdCYwkn/e/ow08kQkdi30NnfIiXj3g=;
-        b=jtiyTEFCZy5RI5ombW0YpiCyDe7z6uczYGJH9CqnFNi3VAoBKxw78Kd8Zutpi9+XeY
-         9b7FzmEEvAoTTVJcOd0c1NFDT43JY7gVuYKbC501rZK8TKwlALJ9nwed+OP7fC9cnmNS
-         zf2H1kt2Gld6wkqIKF3IlmAM6ipiLBGokg9Ad2vrhntDocp4zIAdL2UCNae3jQW1UB4T
-         AR9MS3OnPPTmgpTJsL0THpLGquNDQ4ZNJihYfeUyyIIilg0MgImCzg4j9BGx5Y4MhSCJ
-         vogYWWNHqHkctn4MYUkYJYQGsXWDUqNcpOZJGne+qUoUuXsGLvNYpkXup41SGb5m0oeJ
-         uMbA==
-X-Forwarded-Encrypted: i=1; AKwUvBzUmgL0jbpIS0zj0/7plQ/VpHKfkocWa2XuP6pMATf0sAzV4wyjto8P5UXRIxwhIKWJEjjzoI7PZr7H/g==@vger.kernel.org
-X-Gm-Message-State: AFuF++nMPJK+pZOqsTmFECgx6VXElcM8ra0aTYaeWZjJ588pcKaJ7Yy2
-	fMG1fQTcBSUP76/PEDeayZciaz0uTx2gEF/eBf3GopuEm/PkqFvHXm0ZKaSRbcv5mm/onhbOsjF
-	cw6KtA7GDizEwMc94l8c0DN21Ni4SObOREpUuHRYcr2l47i7K/SGD5WXBtXh0lGM=
-X-Gm-Gg: AYBFou2BqZvsazLuHdnQT6SLnHPDytSlwK3jjlJLOrpBgHZ3zsOCMV6CMy9WPy0iiGj
-	NGA4WIVqLDzBDtNNIfRgJe46/em1v3gMsInBrPLy5OXrDl+3eO2yjShMRZgH7icNbFsiXMWWCoT
-	quyh+rkOouSIS/TO3ScSxCHEGgaAAj07hnr3piBdl0zr3g+mer+DojGY7ul9Snq0qgD9ymvm6Ck
-	ypYuGZcwL7W71xN2NRF0JmmJN+Tyj3VL+mQpyWV/GJHwhqTjwqFWgXTTImL5t6+eoz532sWzlIS
-	VSz9xwI1sjjWFn2R7OIB4AN6MWJMFBYpURmJ3XsXTtn5pbOzwt+lDQFLxtpwonsIgOgQ8HPin/I
-	TDZdu15NDsuC+6LHGFYmzzzaWZz8Opkh+6g==
-X-Received: by 2002:a5d:64e8:0:b0:484:3310:f394 with SMTP id ffacd0b85a97d-4871e25c7f7mr20485482f8f.23.1790067370997;
-        Tue, 22 Sep 2026 01:56:10 -0700 (PDT)
-X-Received: by 2002:a5d:64e8:0:b0:484:3310:f394 with SMTP id ffacd0b85a97d-4871e25c7f7mr20485428f8f.23.1790067370461;
-        Tue, 22 Sep 2026 01:56:10 -0700 (PDT)
+        bh=8YJMnxCx7h1aVciSzhmVbEN46xY6rfHQRJ4daqV9A0s=;
+        b=WRCxHl7cdAb8EEEcuolbHozL3qjLbZLhZp+62nlQt8Xgi6/g/n6XRaOxihzoKd96Kc
+         2YFVkO5Rn/quCPl6yKl9OPDAKDEWRkSRF2JWgBYv7RowRztKx8V1FOws/DydCS7o3BQB
+         NcPgpM7pn5QGM1/JtgNJ0phIefSS3S0ve9OasL+69DWgU26iJOmM1EoFH6tgFuPdKayJ
+         jwA2yp/ms89L/iLCIUntywD8/Qbr0VsLq3TwRDLN6dQcVJxJ+PCou2IA6YCBGlz6eTgk
+         eqXdDYl6uylaYXnGBdr4vQaDZjILE2a8N6POmr4Y9Orjt81IDzIsWlyqtfaEpK6avCug
+         fR2w==
+X-Forwarded-Encrypted: i=1; AKwUvBxrV3w7m+RtTYjiWt1/7ais643M/rs+eihm/40fJ6yPN56ZafEMUAys7vWMnkm8PNRqaGFLkjfLsgiMlQ==@vger.kernel.org
+X-Gm-Message-State: AFuF++mzV9wu3BLc3PZ+tck04vr4SW7xArsGTHku7L2Zat4j8LV+RjnH
+	+eIg7wwAl5dWaW/FrJBHxkJ8c5YSzuIwnMJXSz80XS9IiHYq/0i0zme5dghkQrkiP+Ha/lMFhc0
+	THtEswfeDgZ2MTdsyKWtUPoYH2SBUPi9aqmj5igaoFnYY+bVTBQH3lBaB9TXwlC0=
+X-Gm-Gg: AYBFou0FC83OKn+OUOztBbkHReOt521LnSlI4o29VYFByoSSfgE6xRsJCMXCFwO7dvj
+	D3rjWWl/EDdP4IE14TwjBt+eqz4NqWA8iWHrJPxfoky+IvQL8Ubf0KdNczai7u7hj4YvTouWK7G
+	97lMpzBwqZqhFqA9dtBMi+kFNVR/3uGsjgmSCnk/2crTn9w/4DVhs1MaY0ZgoD+ut6Ae73AEHT1
+	KozbqjSRLaV+4bgxBsOqta7RJdLbaxu8A9gc6yU73xAH11bB6vDUvZ0qaYDaLvRq8hMo7rM8Ywo
+	alsTuER8B5oS/RiKyzc5YzVZGWvRP6xJ7ZdjCw+6+Bp/jyVa6CohKjKQ6+ahq0xghjw8JQX4WkV
+	rQkpY66/7JScIyGUGI+E=
+X-Received: by 2002:a17:906:9fc1:b0:c29:4a1f:76be with SMTP id a640c23a62f3a-c2a15703413mr1217332866b.20.1790067627986;
+        Tue, 22 Sep 2026 02:00:27 -0700 (PDT)
+X-Received: by 2002:a17:906:9fc1:b0:c29:4a1f:76be with SMTP id a640c23a62f3a-c2a15703413mr1217326266b.20.1790067627294;
+        Tue, 22 Sep 2026 02:00:27 -0700 (PDT)
 Received: from aalbersh-thinkpadx1carbongen13.rmtcz.csb ([217.30.74.39])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-48862795083sm3236382f8f.33.2026.09.22.01.56.09
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-c2a9c4309c7sm51460566b.6.2026.09.22.02.00.26
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 22 Sep 2026 01:56:10 -0700 (PDT)
-Date: Tue, 22 Sep 2026 10:56:09 +0200
+        Tue, 22 Sep 2026 02:00:26 -0700 (PDT)
+Date: Tue, 22 Sep 2026 11:00:26 +0200
 From: Andrey Albershteyn <aalbersh@redhat.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Andrey Albershteyn <aalbersh@kernel.org>, djwong@kernel.org, 
-	ebiggers@kernel.org, hch@lst.de, Carlos Maiolino <cem@kernel.org>, 
-	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org, 
-	linux-unionfs@vger.kernel.org, linux-ext4@vger.kernel.org, 
-	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org, david@fromorbit.com
-Subject: Re: [PATCH v16 15/21] xfs: add fs-verity support
-Message-ID: <arI-5Ejg0Xw7OVmH@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
+To: "Darrick J. Wong" <djwong@kernel.org>
+Cc: Andrey Albershteyn <aalbersh@kernel.org>, ebiggers@kernel.org, 
+	hch@lst.de, Carlos Maiolino <cem@kernel.org>, fsverity@lists.linux.dev, 
+	linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org, linux-unionfs@vger.kernel.org, 
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
+	linux-btrfs@vger.kernel.org, david@fromorbit.com
+Subject: Re: [PATCH v16 00/21] fs-verity support for XFS with post EOF merkle
+ tree
+Message-ID: <arJC542mXklAeswE@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
 References: <20260918111539.1003439-1-aalbersh@kernel.org>
- <20260918111539.1003439-16-aalbersh@kernel.org>
- <arIszDCcy0VbRVFp@infradead.org>
+ <20260922045144.GP2705364@frogsfrogsfrogs>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -98,25 +98,29 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <arIszDCcy0VbRVFp@infradead.org>
+In-Reply-To: <20260922045144.GP2705364@frogsfrogsfrogs>
 
-On 2026-09-22 00:22:52, Christoph Hellwig wrote:
-> On Fri, Sep 18, 2026 at 01:15:27PM +0200, Andrey Albershteyn wrote:
-> > +	xfs_ilock(ip, XFS_ILOCK_EXCL);
-> > +	xfs_trans_ijoin(tp, ip, 0);
-> > +
-> > +	truncate_inode_pages(VFS_I(ip)->i_mapping, XFS_ISIZE(ip));
+On 2026-09-21 21:51:44, Darrick J. Wong wrote:
+> On Fri, Sep 18, 2026 at 01:15:12PM +0200, Andrey Albershteyn wrote:
+> > Hi all,
+> > 
+> > This is next revision of fsverity for XFS.
+> > 
+> > The main change from v15 is addion of kmem cache
+> > xfs_fsverity_ioend_cache instead of adding work_struct to iomap's ioend
+> > struct.
 > 
-> We can't call truncate_inode_pages with the ilock held.
-> 
-> I also don't see what this is trying to protect to start with.
-> 
+> FWIW, Sashiko found at least one or two bugs, but the reports only got
+> echoed to the ext4 list.  Perhaps it's time to discuss allowing it to
+> email linux-xfs for bugs that it claims to have found in xfs code?
 
-I added this to remove stale pages created post-EOF, so, writeback
-doesn't try to flush them latter (but now I see that writeback will
-fail to map them to extents anyway). Also, if EOF gets extended
-these pages would be exposed as they are up-to-date which would be
-unexpected garbage.
+I'm checking its report for fsverity series, but for other patches
+not that often. So, maybe it would be useful for "critical" and
+"high" priority issues (not sure if it's possible to configure it
+that way).
+
+*this time sashiko sent me a bunch of "no regression found" emails
+which I think are not necessary
 
 -- 
 - Andrey

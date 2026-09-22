@@ -1,288 +1,182 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oi2-f11.google.com (mail-oi2-f11.google.com [74.125.231.203])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7BB4E49DB8B;
-	Tue, 22 Sep 2026 18:46:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5438649F137
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 19:05:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.231.203
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790102810; cv=none; b=QvHqjn7bSZnvoV7QFEhe1GdqhPzXA/4LwQpTnM53Sdbowk+KaOXWttkL0/uKmekkfM16e2jb3CcfhxnjN2im5hOO/yK3qc7UqBg0OExbRrXbby/gosXYk0au+C4Zipf6znZnTFqv6cBDWGHVYVbgG3iNHq8GJyj7SL1Xr88OrgQ=
+	t=1790103932; cv=none; b=QLcU0oslJACJVC604/wjKS/8fJyvxQV/vAjtDs4et/t2jE6FBHpKEe9kg8NSz19VL7BeMHaprqa9rb1uKRVLhobvtzRxg+Pep/FaqiOnhSsD5/a3QMYRS8b2G8zX2hgK5Qg6n46oEs2R4GtYracqBnfT7pa22soFVPVyGFqZDe0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790102810; c=relaxed/simple;
-	bh=xVUD0ZyCN4GNdmTHQUT0S+wn1N1gac8eMzEqnfwMH7c=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=ckwJyqoA79FRnN/Q91g0AegiZoQhgidHv1I+iH4srn+pXDSxuQzW0UEs8ENztsL96W1Z1vwJxrRI3w97JgaJHObrHCLNHBl1Z4jPAOTkanxd3tZgJ9vPwuXbXHVdQz+OzOjmQx0QHxQZn38Q3Fe9iwj1I5qFp2iRnJ8+vz06F8E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dut+LyLp; arc=none smtp.client-ip=100.103.45.18
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dut+LyLp"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8BC821F000FF;
-	Tue, 22 Sep 2026 18:46:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1790102798;
-	bh=Ig8VuFNrCO8Wls7CC/e/hBr2ze3xti7Vw5G8bEeaGnI=;
-	h=From:Date:Subject:To:Cc;
-	b=dut+LyLpB0PkORA1l6MWijoICCxFj0TSWuMRDG4/JFfbj6I/st7nc4f+tAdeMvANO
-	 HoOa+/kVurhNM87Yy25BPU6XWuX2az+2x5ijkPBv1r8m98cYHBUSfvecvehyKvfY3I
-	 fE3pYoo+9SVemI4A+Sdl/ZvcMfe6XQK6U2CXVAS26HU88Xy9Jswnyp1vjcvaLZvQ33
-	 cfUB0guA3pkjd8tGjBo79jXx4TcudSTyRGVNTLZpE7U/QXJt7fT+653pdKwG9R6GB2
-	 f7Su3noiU6AkJdztAMlFjTT4l+qY9tns27e5yvER2aTNXJ3XgwwkhMtieZSQ7n+Mkw
-	 SJbY5aRidhDhw==
-From: Jeff Layton <jlayton@kernel.org>
-Date: Tue, 22 Sep 2026 14:46:22 -0400
-Subject: [PATCH fstests v3] btrfs: test graceful ENOMEM handling in
- synchronous dirops
+	s=arc-20240116; t=1790103932; c=relaxed/simple;
+	bh=B86huMO8Kjl1fU2kdxmDnEkEFV7i+6V+CdDYug9B1i4=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=n9j0RWI9nxWru460T55UTRqlIZ1gU22qjQs+8m2ye3IcV1nidIaRo1C9Rw7crApQzyGpPzVFzEobIpUhpWgqk3s24tx/pzn6TSoR+2NQjcIX/DxTxix3b6MKHQj1MpvO5n7NSAi/hq252qNy+hCDdWD2MjZxZLAiM4FkCfUNasY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=74.125.231.203
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oi2-f11.google.com with SMTP id 5614622812f47-4c650fea78aso93747b6e.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 12:05:30 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1790103929; x=1790708729;
+        h=content-type:to:from:subject:message-id:date:mime-version
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=O5ItLp/M4g9LkhaBxpPpARYoRzVNAes7m0iSglAZyeU=;
+        b=Z4hUfk5nob7dNyPMQgVbTEx3zzhTF5beGoppxY5OADqCEKdspLejorLSv1xIfCZUeo
+         UOWtUHD8pE0vN5Cd/fJHSFokuTX2WSmc7f7GUk3Oy4st/ozMk7J88pFkFIPOOqDu8q/A
+         3YNyoc1m+TeleErCD4gGbXxZjRlnTm9hJoaWkcGu0kHpPBbxesWLV1BoIspwf8KpTqYy
+         jUf8pEld2Y3XWHFlRHNKM+DPf/KFOSiYcgIozAKVPLGpqjWdOaUowyuk5wJTVuLkzr6L
+         kb/GXdPBGRzxrz05lWrFKMQ8upXE6tgZ6Yc+qGcePSW4ggKSJSMSaYGP3uCZg6yn4n2D
+         BMoA==
+X-Forwarded-Encrypted: i=1; AKwUvBxL0+xZ5vjmi+Mlj76ldfeb3c7vgKzR5yJAKGlxX7/kzeTfkx0qKR3DXO4AfI8AwUID4idnaD/MF6my1A==@vger.kernel.org
+X-Gm-Message-State: AFuF++kRrlS89tAYJsCn6GTcsTXD51q+FpYmRJUymsQIlDl2nVAEYPHI
+	w/VaPQ6Lynga583pf0K68nuPenOhKa4yemxiPp/ev5msjxljXyb1kRbTu74a9nZJJaBT2Q5qI9W
+	xpDlUgoaHS3AFkzk0gDGBKNODLjBO1vOkewDIbAEmpyIIY1j9QdRtcdfv4kI=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20260922-btrfs-enomem-v3-1-1be91fc173fc@kernel.org>
-X-B4-Tracking: v=1; b=H4sIAAAAAAAC/22NwQ7CIBAFf6XZsxjACurJ/zAeKN22RAuGJUTT9
- N8lnNR4nLzMvAUIo0OCU7NAxOzIBV9gt2nATsaPyFxfGCSXih/FnnUpDsTQhxlnhppzrQ9KCqG
- hKI+Ig3vW3AUGSkiJ4FqGyVEK8VVvsqjz/2IWTDBruFaCY2dNf75h9HjfhjjWUpaftv6xZbG5t
- baVWphetV/2uq5v/JbwNfAAAAA=
-X-Change-ID: 20260915-btrfs-enomem-e70077862117
-To: Zorro Lang <zlang@kernel.org>, Anand Jain <asj@kernel.org>, 
- Filipe Manana <fdmanana@suse.com>
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, 
- Jeff Layton <jlayton@kernel.org>
-X-Mailer: b4 0.14.3
-X-Developer-Signature: v=1; a=openpgp-sha256; l=7886; i=jlayton@kernel.org;
- h=from:subject:message-id; bh=xVUD0ZyCN4GNdmTHQUT0S+wn1N1gac8eMzEqnfwMH7c=;
- b=owEBbQKS/ZANAwAKAQAOaEEZVoIVAcsmYgBqss0InE6Sv7Dv2acOX/gexBdLzKEJ2pULiTwPY
- JVcAbSeJEGJAjMEAAEKAB0WIQRLwNeyRHGyoYTq9dMADmhBGVaCFQUCarLNCAAKCRAADmhBGVaC
- FWjND/wL4evmgpUmEdV6WRLvnIf6u5Pmg1pXl7Qr9084DI2QB6ubZzPlCR5nAeA3ngXMGe4omTG
- O4vGA/9CEKMDqZbQjRiCK30CTcPXsxYFYx42WbWiiaylOHPSLGycpgUjUa7VOBTYGRZWsBMwh8K
- YaamE9o+xq3fXePpE/haynDScmG81icw650gXwai02NPCX9NLXQGsMTQRtVm7YPZezHx5tyI1J6
- zp/GBtH/wemwSkQz0DARbxVAVry3qm+shxFQZTq1EgNfVWkNrNymGWfNieMBAOSBMbgD2op1vos
- Dne+Nym/GkIkCSUBaySRcYCQtPstGgLpTSsRTXa7Mnkk+0DmWziY06DuZhgmbRg4PshImm+AsEG
- 5L5Vr5nbpktVIwgdzE6/TQIeASP5eKN7SPDFQszPkCQzJeC0dmIuuz7WH++17srjF6OkDFyhwmo
- BWZOBcn3DQnQpGPUM+X83tTGzrmr2OLVTCuqTFf+eVvfJ3BfiTouFv4VqkO2DNS7a9M0dsiHTSK
- MOydD5qeMNIrTVK1vyJAmSfmAM/+oZrSw88hwnxHYEXZ9QC7qjCzu0/Hf9lG/ix9nsnNeTA8lGS
- XAJUzyFh6zOQIFizq7yyye48AerffPeCHo8a5Nc2aYsE/MaaPi9Ko4murRtZu+vxl3OM4IzbRM5
- f2xcFzf+3p2868g==
-X-Developer-Key: i=jlayton@kernel.org; a=openpgp;
- fpr=4BC0D7B24471B2A184EAF5D3000E684119568215
+X-Received: by 2002:a05:6820:81cb:b0:6b3:6bc7:2ea7 with SMTP id
+ 006d021491bc7-6d2cfd45015mr323140eaf.7.1790103929133; Tue, 22 Sep 2026
+ 12:05:29 -0700 (PDT)
+Date: Tue, 22 Sep 2026 12:05:29 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6ab2d179.e8212013.2d060.0001.GAE@google.com>
+Subject: [syzbot] [btrfs?] kernel BUG in wait_subpage_spinlock
+From: syzbot <syzbot+d6f123d4060990f0f3ff@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, mason@kernel.org, 
+	syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 
-Recently, we added some patches to allow btrfs to handle -ENOMEM errors
-in dir-morphing codepaths [1]. As part of that, we added fault injection
-knobs to a few functions so we could test that error handling.
+Hello,
 
-Add a test case that uses the fail_function facility to inject -ENOMEM
-into btrfs_prealloc_delayed_dir_index() and confirms that a
-dir-modifying operation returns ENOMEM to userspace without aborting the
-filesystem:
+syzbot found the following issue on:
 
-- mkdir fails with ENOMEM (not EROFS),
-- a subsequent create succeeds (fs is not read-only/aborted),
-- a mount cycle runs orphan cleanup and the automatic fsck confirms
-  consistency.
+HEAD commit:    5dd1818b15d9 Merge tag 'for-next-keys-v7.3-rc4' of git://g..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=1694d7f9580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=c3bddd52b22c2498
+dashboard link: https://syzkaller.appspot.com/bug?extid=d6f123d4060990f0f3ff
+compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
 
-The injection is global, so any other btrfs dir-entry creation can
-consume it first -- including the test's own $tmp redirection when /tmp
-is itself on btrfs. Pre-create that file and retry until the mkdir takes
-the error.
+Unfortunately, I don't have any reproducer for this issue yet.
 
-Add generic _require_function_error_injection / _inject_function_error /
-_uninject_function_error helpers to common/inject for driving the kernel
-fail_function interface.
+Downloadable assets:
+disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-5dd1818b.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/fa126b13cb66/vmlinux-5dd1818b.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/e10c187acaf6/bzImage-5dd1818b.xz
 
-[1]: https://lore.kernel.org/linux-btrfs/20260825-btrfs-enomem-v4-0-b9363fa8714a@kernel.org/
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+d6f123d4060990f0f3ff@syzkaller.appspotmail.com
 
-Assisted-by: LLM
-Reviewed-by: Zorro Lang <zlang@kernel.org>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Jeff Layton <jlayton@kernel.org>
----
-Changes in v3:
-- Call _require_debugfs in _require_function_error_injection
-- Add the test to the "dir" group
-- Uninject the error in _cleanup, so an interrupted test can't leak it
-- Use _exit 0 instead of setting status directly
-- Link to v2: https://lore.kernel.org/r/20260917-btrfs-enomem-v2-1-0ccc4271ad64@kernel.org
+BTRFS info (device loop0): space_info DATA+METADATA (sub-group id 0) has 24576 free, is not full
+BTRFS info (device loop0): space_info total=3276800, used=49152, pinned=16384, reserved=0, may_use=3186688, readonly=0 zone_unusable=0
+BTRFS info (device loop0): global_block_rsv: size 1048576 reserved 1048576
+BTRFS info (device loop0): trans_block_rsv: size 0 reserved 0
+BTRFS info (device loop0): chunk_block_rsv: size 0 reserved 0
+BTRFS info (device loop0): remap_block_rsv: size 0 reserved 0
+BTRFS info (device loop0): delayed_block_rsv: size 0 reserved 0
+BTRFS info (device loop0): delayed_refs_rsv: size 32768 reserved 32768
+assertion failed: folio_test_private(folio) && folio_get_private(folio), in fs/btrfs/inode.c:7616
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/inode.c:7616!
+Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
+CPU: 0 UID: 0 PID: 5325 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+RIP: 0010:wait_subpage_spinlock+0x380/0x390 fs/btrfs/inode.c:7616
+Code: 17 aa fd eb 05 e8 40 17 aa fd 48 c7 c7 00 d2 59 8c 48 c7 c6 c0 06 5a 8c 48 c7 c2 e0 d2 59 8c b9 c0 1d 00 00 e8 a1 f3 09 fd 90 <0f> 0b 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90
+RSP: 0018:ffffc9000f15e048 EFLAGS: 00010246
+RAX: 0000000000000061 RBX: ffffea0001508f00 RCX: 5c8637085c6b4a00
+RDX: 0000000000000000 RSI: 8000000000000000 RDI: 0000000000000000
+RBP: 1ffffd40002a11e0 R08: ffffc9000f15ddc7 R09: 1ffff92001e2bbb8
+R10: dffffc0000000000 R11: fffff52001e2bbb9 R12: 0000000000000002
+R13: 0000000000004000 R14: 0000000000000000 R15: dffffc0000000000
+FS:  00007fd4260436c0(0000) GS:ffff88808c2c3000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fd426062f68 CR3: 000000004387c000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ btrfs_invalidate_folio+0x26e/0xc50 fs/btrfs/inode.c:7698
+ extent_writepage fs/btrfs/extent_io.c:2058 [inline]
+ extent_write_cache_pages fs/btrfs/extent_io.c:2843 [inline]
+ btrfs_writepages+0x129f/0x28c0 fs/btrfs/extent_io.c:2975
+ do_writepages+0x338/0x560 mm/page-writeback.c:2560
+ filemap_writeback mm/filemap.c:387 [inline]
+ filemap_fdatawrite_range+0x1ef/0x2f0 mm/filemap.c:412
+ btrfs_start_ordered_extent_nowriteback+0x305/0x6e0 fs/btrfs/ordered-data.c:-1
+ btrfs_start_ordered_extent fs/btrfs/ordered-data.h:203 [inline]
+ btrfs_page_mkwrite+0x856/0x1a40 fs/btrfs/file.c:1909
+ do_page_mkwrite+0x147/0x310 mm/memory.c:3816
+ wp_page_shared mm/memory.c:4217 [inline]
+ do_wp_page+0x1a9c/0x4b80 mm/memory.c:4440
+ handle_pte_fault mm/memory.c:6582 [inline]
+ __handle_mm_fault mm/memory.c:6707 [inline]
+ handle_mm_fault+0x15d7/0x3750 mm/memory.c:6876
+ faultin_page mm/gup.c:1126 [inline]
+ __get_user_pages+0x1675/0x2750 mm/gup.c:1428
+ __get_user_pages_locked mm/gup.c:1752 [inline]
+ __gup_longterm_locked+0x1032/0x15c0 mm/gup.c:2471
+ gup_fast_fallback+0x1d92/0x20e0 mm/gup.c:3209
+ iov_iter_extract_user_pages lib/iov_iter.c:1776 [inline]
+ iov_iter_extract_pages+0x3a1/0x690 lib/iov_iter.c:1845
+ iov_iter_extract_bvecs+0x272/0xb40 lib/iov_iter.c:1957
+ bio_iov_iter_get_pages+0x5ae/0xee0 block/bio.c:1309
+ blkdev_iov_iter_get_pages block/fops.c:49 [inline]
+ __blkdev_direct_IO+0x661/0xf60 block/fops.c:219
+ blkdev_direct_IO+0x121d/0x17b0 block/fops.c:435
+ blkdev_read_iter+0x223/0x420 block/fops.c:816
+ aio_read+0x33a/0x4d0 fs/aio.c:1656
+ __io_submit_one fs/aio.c:-1 [inline]
+ io_submit_one+0x774/0x13d0 fs/aio.c:2106
+ __do_sys_io_submit fs/aio.c:2165 [inline]
+ __se_sys_io_submit+0x195/0x340 fs/aio.c:2135
+ do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
+ do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7fd42519e159
+Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007fd426042fe8 EFLAGS: 00000246 ORIG_RAX: 00000000000000d1
+RAX: ffffffffffffffda RBX: 00007fd425426090 RCX: 00007fd42519e159
+RDX: 00002000000000c0 RSI: 00000000000000ca RDI: 00007fd426022000
+RBP: 00007fd42523506b R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007fd425426128 R14: 00007fd425426090 R15: 00007ffec6e38c28
+ </TASK>
+Modules linked in:
+---[ end trace 0000000000000000 ]---
+RIP: 0010:wait_subpage_spinlock+0x380/0x390 fs/btrfs/inode.c:7616
+Code: 17 aa fd eb 05 e8 40 17 aa fd 48 c7 c7 00 d2 59 8c 48 c7 c6 c0 06 5a 8c 48 c7 c2 e0 d2 59 8c b9 c0 1d 00 00 e8 a1 f3 09 fd 90 <0f> 0b 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90
+RSP: 0018:ffffc9000f15e048 EFLAGS: 00010246
+RAX: 0000000000000061 RBX: ffffea0001508f00 RCX: 5c8637085c6b4a00
+RDX: 0000000000000000 RSI: 8000000000000000 RDI: 0000000000000000
+RBP: 1ffffd40002a11e0 R08: ffffc9000f15ddc7 R09: 1ffff92001e2bbb8
+R10: dffffc0000000000 R11: fffff52001e2bbb9 R12: 0000000000000002
+R13: 0000000000004000 R14: 0000000000000000 R15: dffffc0000000000
+FS:  00007fd4260436c0(0000) GS:ffff88808c2c3000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f2823e512c0 CR3: 000000004387c000 CR4: 0000000000352ef0
 
-Changes in v2:
-- Add _fixed_by_kernel_commit line
-- Clean up changelog
-- Link to v1: https://lore.kernel.org/r/20260915-btrfs-enomem-v1-1-ca07610ebcad@kernel.org
----
- common/inject       | 51 +++++++++++++++++++++++++++++
- tests/btrfs/354     | 92 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/354.out |  2 ++
- 3 files changed, 145 insertions(+)
-
-diff --git a/common/inject b/common/inject
-index 6b590804d1ea..fc63d3a32c8a 100644
---- a/common/inject
-+++ b/common/inject
-@@ -111,3 +111,54 @@ _scratch_inject_error()
- 		_fail "Cannot inject error ${type} value ${value}."
- 	fi
- }
-+
-+# Requires the kernel fail_function facility (CONFIG_FUNCTION_ERROR_INJECTION
-+# and CONFIG_FAIL_FUNCTION) and, if a function name is given, that the function
-+# is annotated with ALLOW_ERROR_INJECTION().
-+_require_function_error_injection()
-+{
-+	local func="$1"
-+
-+	_require_debugfs
-+	test -d "$DEBUGFS_MNT/fail_function" || \
-+		_notrun "$DEBUGFS_MNT/fail_function not found; CONFIG_FAIL_FUNCTION not enabled"
-+
-+	if [ -n "$func" ]; then
-+		grep -qw "$func" "$DEBUGFS_MNT/error_injection/list" 2>/dev/null || \
-+			_notrun "$func is not registered for error injection"
-+	fi
-+}
-+
-+# Inject a fixed return value into a kernel function via fail_function.
-+#   $1 - function name (must be ALLOW_ERROR_INJECTION annotated)
-+#   $2 - return value to inject (e.g. -12 for -ENOMEM)
-+#   $3 - number of times to fail (default 1)
-+_inject_function_error()
-+{
-+	local func="$1"
-+	local retval="$2"
-+	local times="${3:-1}"
-+
-+	# Writing the function name to "inject" creates its per-function dir.
-+	echo "$func" > "$DEBUGFS_MNT/fail_function/inject"
-+	# The retval file is an unsigned hex attribute (DEFINE_DEBUGFS_ATTRIBUTE
-+	# "%llx"), so a negative errno like -12 must be written as its unsigned
-+	# 64-bit (two's-complement) hex form; a bare "-12" is rejected with EINVAL.
-+	printf '%#x\n' "$retval" > "$DEBUGFS_MNT/fail_function/$func/retval"
-+	echo 100 > "$DEBUGFS_MNT/fail_function/probability"
-+	echo 0 > "$DEBUGFS_MNT/fail_function/interval"
-+	echo 0 > "$DEBUGFS_MNT/fail_function/space"
-+	echo 0 > "$DEBUGFS_MNT/fail_function/verbose"
-+	echo "$times" > "$DEBUGFS_MNT/fail_function/times"
-+}
-+
-+# Stop injecting errors into a kernel function set up by
-+# _inject_function_error().
-+_uninject_function_error()
-+{
-+	local func="$1"
-+
-+	echo 0 > "$DEBUGFS_MNT/fail_function/times" 2>/dev/null
-+	echo 0 > "$DEBUGFS_MNT/fail_function/probability" 2>/dev/null
-+	echo "!$func" > "$DEBUGFS_MNT/fail_function/inject" 2>/dev/null
-+}
-diff --git a/tests/btrfs/354 b/tests/btrfs/354
-new file mode 100755
-index 000000000000..a4d8fec41091
---- /dev/null
-+++ b/tests/btrfs/354
-@@ -0,0 +1,92 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 Jeff Layton.  All Rights Reserved.
-+#
-+# FS QA Test No. 354
-+#
-+# Verify that an -ENOMEM in the synchronous directory entry insertion path is
-+# returned to userspace without aborting the filesystem.
-+#
-+# btrfs pre-allocates the delayed dir index before modifying the btree, so a
-+# failure in btrfs_prealloc_delayed_dir_index() must surface as -ENOMEM from
-+# mkdir()/create()/etc. rather than a transaction abort. Use the fail_function
-+# facility to force that allocation to fail and confirm the fs survives.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick dir
-+
-+_cleanup()
-+{
-+	[ -n "$func" ] && _uninject_function_error $func
-+	cd /
-+	rm -r -f $tmp.*
-+}
-+
-+. ./common/inject
-+. ./common/filter
-+
-+_fixed_by_kernel_commit xxxxxxxxxxxx \
-+	"btrfs: handle ENOMEM from btrfs_insert_dir_item() without aborting"
-+
-+_require_scratch
-+# For the automatic fsck at unmount, which confirms the orphaned inode left by
-+# the failed operation is cleaned up and the fs is consistent.
-+_require_check_dmesg
-+_require_function_error_injection btrfs_prealloc_delayed_dir_index
-+
-+func=btrfs_prealloc_delayed_dir_index
-+
-+_scratch_mkfs >> $seqres.full 2>&1
-+_scratch_mount
-+
-+# Pre-create the stderr file. fail_function has no usable task filter, so the
-+# injection is global, and $tmp may well live on a btrfs filesystem itself. If
-+# the shell had to create this file it would insert a dir entry and swallow the
-+# injected failure before mkdir() ever ran.
-+touch $tmp.err
-+
-+# For the same reason any other btrfs dir-entry creation on the system can
-+# consume the one-shot failure, so retry until our mkdir is the operation that
-+# takes it.
-+err=""
-+for i in $(seq 1 20); do
-+	rm -rf "$SCRATCH_MNT/dir"
-+
-+	# Force a single -ENOMEM (-12) into the prealloc path.
-+	_inject_function_error $func -12 1
-+	mkdir "$SCRATCH_MNT/dir" 2>$tmp.err
-+	res=$?
-+	_uninject_function_error $func
-+
-+	# mkdir succeeded, so something else consumed the injected failure.
-+	# Note we must not leave the directory behind, or the next attempt
-+	# would fail with EEXIST rather than the injected error.
-+	if [ $res -eq 0 ]; then
-+		continue
-+	fi
-+
-+	err=$(cat $tmp.err)
-+	break
-+done
-+
-+if [ -z "$err" ]; then
-+	_notrun "injected error did not reach mkdir"
-+fi
-+
-+# The error returned to userspace must be ENOMEM, not EROFS (which would mean
-+# the transaction was aborted and the fs went read-only).
-+echo "$err" | grep -qi "cannot allocate memory" || \
-+	{ echo "unexpected error from mkdir:"; echo "$err" | _filter_scratch; }
-+
-+# The filesystem must still be usable: a create with injection disabled must
-+# succeed. On an aborted (read-only) fs this would fail with EROFS.
-+mkdir "$SCRATCH_MNT/dir2" || _fail "filesystem unusable after injected ENOMEM"
-+
-+# Cycle the mount to run orphan cleanup for the inode left behind by the failed
-+# mkdir, then keep using the fs to be sure it is healthy.
-+_scratch_cycle_mount
-+touch "$SCRATCH_MNT/dir2/file"
-+
-+echo "silence is golden"
-+
-+_exit 0
-diff --git a/tests/btrfs/354.out b/tests/btrfs/354.out
-new file mode 100644
-index 000000000000..afe30ed36fea
---- /dev/null
-+++ b/tests/btrfs/354.out
-@@ -0,0 +1,2 @@
-+QA output created by 354
-+silence is golden
 
 ---
-base-commit: a370dcbed43563f0462801e889e0eceb93c7cfad
-change-id: 20260915-btrfs-enomem-e70077862117
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
 
-Best regards,
--- 
-Jeff Layton <jlayton@kernel.org>
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
 
+If the report is already addressed, let syzbot know by replying with:
+#syz fix: exact-commit-title
+
+If you want to overwrite report's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
+
+If the report is a duplicate of another one, reply with:
+#syz dup: exact-subject-of-another-report
+
+If you want to undo deduplication, reply with:
+#syz undup

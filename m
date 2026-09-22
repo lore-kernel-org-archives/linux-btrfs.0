@@ -1,77 +1,73 @@
-Received: from mail-dl2-f43.google.com (mail-dl2-f43.google.com [74.125.229.171])
+Received: from mail-oi2-f12.google.com (mail-oi2-f12.google.com [74.125.231.204])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1478B491583
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 19:58:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.229.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 985AB4AA1FC
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 20:14:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.231.204
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790107130; cv=none; b=ixUBT5VH1/vgwGl/iyz2PY+pI1a1ZNgCWvVXyOTZMIi5Ww3UqmxN1YikSuceholbRYMSMQCP2GF6IlY/yG1uyHuupJJXOBWFLrksUPV/7D3bu6rVh2ADXwF6j1UFC8CL2BYpDa3eS1s+JdumVaon92JcDM1BqT3DRm7XPlluSiY=
+	t=1790108054; cv=none; b=DGc5nChnyXrKwXFUwx7gH+CZJZfNGm13cHPMqNorQEc390zlAlS3q1FY0UqJ1GSTzuB1CFO+tO4d3fCsYvEQHSzi+1L8LXgszfwda1Jm+Drfcv7iSCBntrMfvv491dmysVryInjWeV9BnvA/u/oHMn44HYWaTo/35N5tNARglwQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790107130; c=relaxed/simple;
-	bh=WKOh/3rPUbo6AQsl6PxuNwCtS+HOGnoHYPfAzkfTmTU=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=rELYLGoc1ww5qIMtr7nN+Ru0XGutHmYTGjEb+nJ7jzKa8DBY4jmeV0CehATQip/LKZqgQFIW8GiX1ygVZ8UuUCw1t7hbN0QUA9LWPn1llxcb6Sg9cENbsK0QMbatc1I1307Inpj3oszyPbeg8TfZs0fNLHjOyXHvyU0gtx8YsJo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=trailofbits.com; spf=pass smtp.mailfrom=trailofbits.com; dkim=pass (2048-bit key) header.d=trailofbits.com header.i=@trailofbits.com header.b=OPDp8dZC; arc=none smtp.client-ip=74.125.229.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=trailofbits.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=trailofbits.com
+	s=arc-20240116; t=1790108054; c=relaxed/simple;
+	bh=5UKG/dP6lznnkMEnlKiK0Wkfa01qdud7YXhwbaIE/SA=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=hYlkbG2LmAQWRpKd/0V9CeliCqgONLl0t0d+E7GvAw7KUNWjB04J7YXwaJnabKF2wDSljtNbpZPeS3lY5vtzIdi0ki25+6Qe5w+ndtKpYL/+JcFNELBHeg7eHh5VOqbVEsi9yHu8fVMz5jx0iQ9/vEsz+Y99SMbU0t5zDC0Czzc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=nlThqyHH; arc=none smtp.client-ip=74.125.231.204
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=trailofbits.com header.i=@trailofbits.com header.b="OPDp8dZC"
-Received: by mail-dl2-f43.google.com with SMTP id a92af1059eb24-14373bcc010so265382c88.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 12:58:42 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nlThqyHH"
+Received: by mail-oi2-f12.google.com with SMTP id 46e09a7af769-805c194bc92so466134a34.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 13:14:09 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=trailofbits.com; s=google; t=1790107121; x=1790711921; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1790108047; x=1790712847; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:message-id:date:subject:cc
          :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=BjX+mNuhQOmLJprMYKkZ8OPoLSpzkGrxDeWbqW/+m4I=;
-        b=OPDp8dZC9ud72KyV3bUT7MLbrU2d8SjsIphqH7MnBzipGVTwlWGpBzHB4iwE6YHaXX
-         na41k5QWFYXEGdHew5dek377TzotMn/0Haf7X7ztn+sTsZwfEXM87hao2bwQzhkJy1eH
-         XcfglYVNz/jHmPO4rIrM7o5/nmsIhmqQvbqetHlxRfdLR3Jxg5/+xNuy8F0H+z9X9TJl
-         3hDWS9zsCwfUz3bo9TSfsE6NsyxXKjGv7z7AtTwDwPq/NO4B1QAVjOOx8WfExJAvzeAf
-         3W4+90DTKoI2fR/oZg5rPo0OWBX1jANqf6gOKTUQRalfjzJs6mNURZjaW+VcgfN1TKc7
-         LTng==
+        bh=kIUFR2gU20VOIZQL1+09vW5Rk2cw6uqT6OqRrJtWoJo=;
+        b=nlThqyHHdEXYe2rHSzrgLNuzf8DaRejjE2zV0vTHySBoQ2J7WLoV49CATGHXKZ3qEo
+         s8Vu/60kOLx9D1iDQhBC78o84U9WfbsimQyo0GDxjb+DOr1u4UwO2LBCKYL9U+PUwH+i
+         xh/wg/bU3u3IbZSskuXg5ZiXgIzy0zwAqt9brWGAes2fJgq8W+WVEb4O2OSWwwLGvUTj
+         lOGF3rD/uwZufj4k8a6+9New0kww1nJ3bWwXk88FMZRmNoNg5Zyf7mr9WVOE3lXLAQcE
+         /25e1SKI1qa+rOUczqEz0yBvpTTN0lBJPHSmmS9byxGZbWas2DzVUTo8ZROoQ4oWiGaI
+         r/ew==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790107121; x=1790711921;
+        d=1e100.net; s=20260707; t=1790108047; x=1790712847;
         h=content-transfer-encoding:mime-version:message-id:date:subject:cc
          :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=BjX+mNuhQOmLJprMYKkZ8OPoLSpzkGrxDeWbqW/+m4I=;
-        b=vcdxJjeTtUq2rGfXDEiPhcUBurL83h1t0Wqak95O1EKT9O8aIyEtQersQx4cX9ici0
-         Vd89DAlJ5Y04meX9D1ZrfwLy3LCshYbEIA2sPKYwKlAordPa8bBzffvZWbA/rwe6jiZl
-         oG1YJ28FbyZUm0f0GujAYw7gDewomuAzIkCyZMFnEa62NsBwu1RtEsDiC6G2LwostT0n
-         ASDDEYkJDvG3LC/pZ/4kP2wjYB5MfwNxJlWXjF4xGXxG0h2zC6QaLPSoAfK65X2+huvk
-         JBEkRdhGEozfM5H9Hf67jrwoU2Y7g//1Tg3djJa+aObsNrLJZmPnzGMrhHT7rEfdvCID
-         LBeA==
-X-Forwarded-Encrypted: i=1; AKwUvBzyT8xBTCVn+UwiNbHFB5Vjr1qeaD0ykeQH1x/e+AHimWftNjYT4vCIlZ3ORLp1/9iULkcq6VeHdtGgtw==@vger.kernel.org
-X-Gm-Message-State: AFuF++mK4zCznqA7CWaWp6DOCnuStxGJDhp1i22voP3bnd0zWwWYKebf
-	sI14zikI9+4t+WahNN+HngZQSus6bhupwtaeiq8hYu0cYHF9omPS7OSQjn9TuNfks/c=
-X-Gm-Gg: AYBFou2rxwYVi9jYOYSp9aDrnGozso0irwDUG5N3ykrXjGBz6EdOThMXHPL1XFUa7yb
-	d4cg605WLDFUUx1Q+X4EmOzXiYiFmxwWmup35z9lki1y2Y+hn2Ni23bDSF2DVTBSn/uBiyofnzo
-	EM1S1pzwYVmWNDTF1X2/u/glTTCIERRLNoHlq61lUat7q+jPOp2P6DjILQd90t1YRIKpkMD0PLo
-	z9h9zOWrLoNpseb2lOelVUC5+Yg5NCeMvLbT3931qy906Lsb/u36WwTdLpCj/GMqDct29j+0UrM
-	fV4QNIPO2Pq3St5bjWY4Bcja9CrGlWFMC8u+wuQ8UPW8Iu42DhX17o6kxs91c5CQF7xTBJxaaON
-	LfmpnTfZTP6PYc2SdVQy51pr9V/Haa/aOdWTjAMXrwSuzxKQPtJcWOUiSlBMlBCOMQMJvTdlS9U
-	yr3urS93zfHJcPneMzfclN7zh/38QQPaRTuwMsEHF3sbae+74NuTc9tcqNK1FIPmijFLuZBgQbi
-	iUJyTph95PS2uHE0ttw8RhL9ebbGmmZNWDt3c2THINHZUycCS27gWB5u98+hSTsaRpWzFA=
-X-Received: by 2002:a05:701b:4591:20b0:144:fa79:174 with SMTP id a92af1059eb24-144fa79031emr52410c88.44.1790107120989;
-        Tue, 22 Sep 2026 12:58:40 -0700 (PDT)
-Received: from localhost.localdomain ([2603:8001:5f01:8bab:c016:77a6:d382:7611])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-33e975223fcsm459820eec.31.2026.09.22.12.58.39
-        (version=TLS1_3 cipher=TLS_CHACHA20_POLY1305_SHA256 bits=256/256);
-        Tue, 22 Sep 2026 12:58:40 -0700 (PDT)
-From: Artem Dinaburg <artem@trailofbits.com>
-To: stable@vger.kernel.org
-Cc: Artem Dinaburg <artem@trailofbits.com>,
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	Sasha Levin <sashal@kernel.org>,
-	Chris Mason <clm@fb.com>,
-	Josef Bacik <josef@toxicpanda.com>,
-	David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Christoph Hellwig <hch@lst.de>
-Subject: [PATCH 6.1.y] btrfs: don't check PageError in __extent_writepage
-Date: Tue, 22 Sep 2026 15:58:35 -0400
-Message-ID: <20260922195836.27193-1-artem@trailofbits.com>
-X-Mailer: git-send-email 2.55.0
+        bh=kIUFR2gU20VOIZQL1+09vW5Rk2cw6uqT6OqRrJtWoJo=;
+        b=tdaCYzzmUcYw+nNedwq/XWqDBuXveMUNf4tHoWxlGsh39XvsISTk8Vp9beTiOuYQig
+         o4G5756xXxvIjoNpfYp5lVNbdVBOgMFYvizbhCiNYlCOgDzGzNp4T4OJ5HOZ+tRlMF3Z
+         06/DGNi8ygjWxsO8YcO02qPW3cJJ/6c/RqXpC1NCBQL0Q+h+2pAcFVShce0DlusXnLBq
+         NgnDU37a6gVh0ThbgjsL2jn8YOqjYtEOfunw9V/NqwgqOsk3swLUCgAEgjneopOjszXC
+         g2b+b37SqothGYZDuJwDNVHtO/738H3OoBocduA7AHQoHKNjS0jLP78AZ/KgVVoEWhq7
+         afTA==
+X-Forwarded-Encrypted: i=1; AKwUvBylJrZFBKkQSmf2DOTO/OSPq7Ad0j+myuKMf62TAVycnteLHL+pq4XsL1vJoH8BtVhJrqRqBZx8U+z75Q==@vger.kernel.org
+X-Gm-Message-State: AFuF++mBZ9V3iUjJzcuieLVsfRaaYdvFjVadDLBsD0HcS6F/VBCTk9QD
+	SmoQoaRaWcCGSp3zjAjj8LqolrU1Et37/p93xQCQXGlTS1HMECsHjHNg
+X-Gm-Gg: AYBFou1+ZK0tsN0EkktuDQ4Bmc9FHpAtulkRHpD1FMic1bQKEPZJSgxZ1A5a/ANy0t2
+	+BvIIzGh6UdDbHAAfSOshzv6BWr/OLCBC60qaqdoIGLbi0yaKwp5G6YETHGa+5Jswe5XXTIJXFt
+	gajJ6dSX2KUC1cApstHosP1+EEbcnVJFKR50/jUEJxI4hSi4KJWJLH9SwBhs91aTcZzw9yuiVMb
+	gNq8aedlVfA42jxQqfOSiqcyXtABFn6et9qe5G/f1/3APNP+PgKMlnabku8fITieMM+EW7Os+Em
+	cVLWCObek7xbP4eyPyyMN2Tuswx896VA5nVuYElpt40s84aoJ/Rx43fAhcZfQrwWXnxynwC15Uv
+	vyolrH4HX2RgWfbjvdxk2JWK1OQNYwYwPNT6//pNK01afT8AXeS5MoyNPpYlmyeYlbOFlZxWpSe
+	92LZzjDUSLfz1bKBXdkypXjCUn9cwAtTTDXj1Gqpwj3v1s91DWUNGH7zzkKxOl+R8tRum54aTSV
+	A8sqnnK1/pEXPnG6w+LHhr1RzC5vNyn62Q6g79x3DykG/5ZMNQ=
+X-Received: by 2002:a05:6830:452a:b0:806:dbd8:9929 with SMTP id 46e09a7af769-815f1f4fa19mr750798a34.15.1790108047153;
+        Tue, 22 Sep 2026 13:14:07 -0700 (PDT)
+Received: from localhost ([2a03:2880:ff:44::])
+        by smtp.gmail.com with ESMTPSA id 46e09a7af769-81603ad13f7sm621240a34.7.2026.09.22.13.14.05
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 22 Sep 2026 13:14:06 -0700 (PDT)
+From: Joanne Koong <joannelkoong@gmail.com>
+To: dsterba@suse.com
+Cc: boris@bur.io,
+	loemra.dev@gmail.com,
+	fdmanana@suse.com,
+	wqu@suse.com,
+	linux-btrfs@vger.kernel.org
+Subject: [PATCH v1] btrfs: add LOGICAL_INO_V2 flag for avoiding the tree modification log
+Date: Tue, 22 Sep 2026 13:12:57 -0700
+Message-ID: <20260922201258.874070-1-joannelkoong@gmail.com>
+X-Mailer: git-send-email 2.52.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -80,102 +76,153 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-From: Christoph Hellwig <hch@lst.de>
+At Meta, we use the LOGICAL_INO_V2 ioctl to estimate sharing-aware space
+usage. We sample the logical address space and resolve each sample back
+to the inodes which reference it. The measurement is statistical, so
+with enough samples it gives good bounds on real usage.
 
-[ Upstream commit 3e92499e3b004baffb479d61e191b41b604ece9a ]
+Currently in the LOGICAL_INO_V2 ioctl path, iterate_extent_inodes()
+(which can walk backrefs either against the current trees or against the
+commit roots) acquires a tree modification log sequence number when
+walking the current trees, since those trees are being modified while
+the walk is in progress. The log is then enabled filesystem wide for as
+long as any such walk is running, and is only disabled again once the
+last walk has finished.
 
-__extent_writepage currenly sets PageError whenever any error happens,
-and the also checks for PageError to decide if to call error handling.
-This leads to very unclear responsibility for cleaning up on errors.
-In the VM and generic writeback helpers the basic idea is that once
-I/O is fired off all error handling responsibility is delegated to the
-end I/O handler.  But if that end I/O handler sets the PageError bit,
-and the submitter checks it, the bit could in some cases leak into the
-submission context for fast enough I/O.
+While it is enabled the cost impacts the whole filesystem, not only the
+caller. Modifications of interior nodes of the extent tree and of
+subvolume trees have to be recorded, serialized on a single filesystem
+wide lock. Delayed refs with a sequence number at or above the oldest
+active one can not be run (the run path bails out with -EAGAIN in
+btrfs_run_delayed_refs_for_head()), and metadata refs above it can not
+be merged, so they accumulate and that work is deferred to transaction
+commit.
 
-Fix this by simply not checking PageError and just using the local
-ret variable to check for submission errors.  This also fundamentally
-solves the long problem documented in a comment in __extent_writepage
-by never leaking the error bit into the submission context.
+Currently, userspace has no way to ask for anything cheaper. Whenever a
+transaction is running, the walk uses the tree modification log, even if
+the caller would tolerate results that could be up to one commit interval
+stale.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
+Give userspace this option by adding BTRFS_LOGICAL_INO_ARGS_COMMIT_ROOT,
+which makes the backref walk use the commit roots and therefore never
+enables the tree modification log. Behavior is unchanged unless the flag
+gets explicitly passed by userspace. iterate_extent_inodes() already
+takes a search_commit_root argument for this, which scrub, send and the
+data relocation warning path all pass as true. The flag simply plumbs it
+through to userspace.
 
-[ Backport to 6.1.y: apply the PageError-to-ret change in this tree's
-  pre-btrfs_bio_ctrl __extent_writepage(). ]
 Assisted-by: LLM
-Signed-off-by: Artem Dinaburg <artem@trailofbits.com>
+Signed-off-by: Joanne Koong <joannelkoong@gmail.com>
 ---
-Hi Greg, Sasha, and Btrfs maintainers,
+ fs/btrfs/backref.c         |  6 ++++--
+ fs/btrfs/backref.h         |  3 ++-
+ fs/btrfs/ioctl.c           |  9 +++++++--
+ include/uapi/linux/btrfs.h | 10 ++++++++++
+ 4 files changed, 23 insertions(+), 5 deletions(-)
 
-I am continuing with CVE backports still missing from 6.1.y.
-This fix is inherited by v6.6 and every later mainline release, but 6.1.y
-still has the affected code. The target-specific adjustment is described
-in the bracketed note above.
-
-Could you please queue it for 6.1.y?
-
-Thanks,
-Artem Dinaburg
-
-CVE: CVE-2023-53429
-
-Build: This patch was included in an x86_64 allmodconfig and
-CONFIG_WERROR=y build.
-It produced vmlinux and modules with no new warnings or errors.
-
-AI assistance: An LLM helped find, adapt, and validate this
-backport; I reviewed the patch and test output.
-
- fs/btrfs/extent_io.c | 33 +--------------------------------
- 1 file changed, 1 insertion(+), 32 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 28dbac0bfab2f9..aeea8930b973fd 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2299,38 +2299,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 		set_page_writeback(page);
- 		end_page_writeback(page);
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 1be632c742bd..364ec3ad7d8a 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -2549,7 +2549,8 @@ static int build_ino_list(u64 inum, u64 offset, u64 num_bytes, u64 root, void *c
+ }
+ 
+ int iterate_inodes_from_logical(u64 logical, struct btrfs_fs_info *fs_info,
+-				void *ctx, bool ignore_offset)
++				void *ctx, bool ignore_offset,
++				bool search_commit_root)
+ {
+ 	struct btrfs_backref_walk_ctx walk_ctx = { 0 };
+ 	int ret;
+@@ -2575,7 +2576,8 @@ int iterate_inodes_from_logical(u64 logical, struct btrfs_fs_info *fs_info,
+ 		walk_ctx.extent_item_pos = logical - found_key.objectid;
+ 	walk_ctx.fs_info = fs_info;
+ 
+-	return iterate_extent_inodes(&walk_ctx, false, build_ino_list, ctx);
++	return iterate_extent_inodes(&walk_ctx, search_commit_root,
++				     build_ino_list, ctx);
+ }
+ 
+ static int inode_to_path(u64 inum, u32 name_len, unsigned long name_off,
+diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
+index 179791de6b19..f8dc8a3723cf 100644
+--- a/fs/btrfs/backref.h
++++ b/fs/btrfs/backref.h
+@@ -226,7 +226,8 @@ int iterate_extent_inodes(struct btrfs_backref_walk_ctx *ctx,
+ 			  iterate_extent_inodes_t *iterate, void *user_ctx);
+ 
+ int iterate_inodes_from_logical(u64 logical, struct btrfs_fs_info *fs_info,
+-				void *ctx, bool ignore_offset);
++				void *ctx, bool ignore_offset,
++				bool search_commit_root);
+ 
+ int paths_from_inode(u64 inum, struct inode_fs_paths *ipath);
+ 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 52aab510aea0..63257f8fb897 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3286,6 +3286,7 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_ioctl_logical_ino_args AUTO_KFREE(loi);
+ 	struct btrfs_data_container AUTO_KVFREE(inodes);
+ 	bool ignore_offset;
++	bool search_commit_root;
+ 
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+@@ -3296,6 +3297,7 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_fs_info *fs_info,
+ 
+ 	if (version == 1) {
+ 		ignore_offset = false;
++		search_commit_root = false;
+ 		size = min_t(u32, loi->size, SZ_64K);
+ 	} else {
+ 		/* All reserved bits must be 0 for now */
+@@ -3303,10 +3305,12 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_fs_info *fs_info,
+ 			return -EINVAL;
+ 
+ 		/* Only accept flags we have defined so far */
+-		if (loi->flags & ~(BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET))
++		if (loi->flags & ~(BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET |
++				   BTRFS_LOGICAL_INO_ARGS_COMMIT_ROOT))
+ 			return -EINVAL;
+ 
+ 		ignore_offset = loi->flags & BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET;
++		search_commit_root = loi->flags & BTRFS_LOGICAL_INO_ARGS_COMMIT_ROOT;
+ 		size = min_t(u32, loi->size, SZ_16M);
  	}
--	/*
--	 * Here we used to have a check for PageError() and then set @ret and
--	 * call end_extent_writepage().
--	 *
--	 * But in fact setting @ret here will cause different error paths
--	 * between subpage and regular sectorsize.
--	 *
--	 * For regular page size, we never submit current page, but only add
--	 * current page to current bio.
--	 * The bio submission can only happen in next page.
--	 * Thus if we hit the PageError() branch, @ret is already set to
--	 * non-zero value and will not get updated for regular sectorsize.
--	 *
--	 * But for subpage case, it's possible we submit part of current page,
--	 * thus can get PageError() set by submitted bio of the same page,
--	 * while our @ret is still 0.
--	 *
--	 * So here we unify the behavior and don't set @ret.
--	 * Error can still be properly passed to higher layer as page will
--	 * be set error, here we just don't handle the IO failure.
--	 *
--	 * NOTE: This is just a hotfix for subpage.
--	 * The root fix will be properly ending ordered extent when we hit
--	 * an error during writeback.
--	 *
--	 * But that needs a bigger refactoring, as we not only need to grab the
--	 * submitted OE, but also need to know exactly at which bytenr we hit
--	 * the error.
--	 * Currently the full page based __extent_writepage_io() is not
--	 * capable of that.
--	 */
--	if (PageError(page))
-+	if (ret)
- 		end_extent_writepage(page, ret, page_start, page_end);
- 	if (epd->extent_locked) {
- 		/*
+ 
+@@ -3314,7 +3318,8 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_fs_info *fs_info,
+ 	if (IS_ERR(inodes))
+ 		return PTR_ERR(inodes);
+ 
+-	ret = iterate_inodes_from_logical(loi->logical, fs_info, inodes, ignore_offset);
++	ret = iterate_inodes_from_logical(loi->logical, fs_info, inodes,
++					  ignore_offset, search_commit_root);
+ 	if (ret == -EINVAL)
+ 		return -ENOENT;
+ 	if (ret < 0)
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 0a13baf3d8d1..b6f196bfa600 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -732,6 +732,16 @@ struct btrfs_ioctl_logical_ino_args {
+  */
+ #define BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET	(1ULL << 0)
+ 
++/*
++ * Resolve backrefs against the commit roots instead of the current trees.
++ *
++ * Resolving against the current trees is more expensive for the filesystem as
++ * a whole, not only for the caller. Callers that do not need to observe the
++ * currently running transaction should set this. The result can be up to one
++ * commit interval stale.
++ */
++#define BTRFS_LOGICAL_INO_ARGS_COMMIT_ROOT	(1ULL << 1)
++
+ enum btrfs_dev_stat_values {
+ 	/* disk I/O failure stats */
+ 	BTRFS_DEV_STAT_WRITE_ERRS, /* EIO or EREMOTEIO from lower layers */
 -- 
-2.39.5
+2.52.0
 

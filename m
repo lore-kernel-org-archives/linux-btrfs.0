@@ -1,96 +1,95 @@
 Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6CFD643F091
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 08:33:28 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E507D52D2D6
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 08:56:14 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790066014; cv=none; b=eTwKVaI6lI0DIcaepMlHi7qzDY+IZ8CWVAa4cicaxdpHkZYCMC5rXGrMZIv57i9Hd9v5KP0rH4+kIw4f8/rNA37Y7kwU4ecIQdSx6teIOyJtURsmEPwOj5lsvFsBKcDGdmeyEkBmKzD+wXs9SwizIELv2URKZzzRXKo0tPIln+U=
+	t=1790067376; cv=none; b=XCjpTuA43TRkiQgaWTk74G3yvFxoQNSN89cG0fUdxiA5IFTK55V/piWGFAkdeb+1n74tAAFrbKkqSjzPNq7Pleq8P2DKPpfbXT5pL8kRAN2AxPg3Ngj+doIANzoF582ZHMC6rABrfbSAZuaooBEMpFQMcHFD2YPagtoVn49J73k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790066014; c=relaxed/simple;
-	bh=zFEi4lXytmrVbgQRpPsKAIkx1xEMbo5uCPAVt3YHyCs=;
+	s=arc-20240116; t=1790067376; c=relaxed/simple;
+	bh=dTZ74AujbnWToEkdYNhWDDknBgtfEGUv+/3pS6per/g=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=hj1jUUWtrqZAlCQvucEI53dFsZEIsG2I/gmmTx17iwx750PdBVM7RM+9iTP7cyn3wC0VPmMPRBWoSxveeLRWkvbuj6353OB7UPSIzJGcbAQx2GUrHjn+Gl8FPwWpbDkHaLLv+y64/gO44vFhjKozCslAl1NAuf+CV9UsEyCIRTw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=VTOTiEQI; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=LBVmmMGc; arc=none smtp.client-ip=170.10.129.124
+	 Content-Type:Content-Disposition:In-Reply-To; b=kh4/rWozljvysn7nuQZdr2HoPmIVgJhpyL9O2SIvv/v5rmEjFabWlcbDGHA9ftIz+RiafbLs7kWz8d1P6xqsef10KCbzBtzy4K27itIKi09KnS0N1DFk4+jAt0Dr+CMS5rc2fM3rmAOp9ldBzdzu1TabpkU+457eyfejcXtv8wo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=hPvvBF8U; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=eZbtqite; arc=none smtp.client-ip=170.10.129.124
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="VTOTiEQI";
-	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="LBVmmMGc"
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="hPvvBF8U";
+	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="eZbtqite"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1790066006;
+	s=mimecast20190719; t=1790067373;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=w4z5ytHAoQC8UWkOcT2zO26c7SVy/93HRcvFS003K4I=;
-	b=VTOTiEQIl91Y6dYxZdf1v2iib8zKxLzjB3IZHRTN/8u1rNeymVxep4Oj/oZHQUvhv9KpdX
-	fFyZNAN7kdl4sxYrsUTNYy5Gby/73eCAmDrlBFgnE9H+RKfp29ZG7PSaKasouWYsezS2DM
-	dIAK6YXVaJ40hrMDorzora4Cee1HY04=
-Received: from mail-wm1-f70.google.com (mail-wm1-f70.google.com
- [209.85.128.70]) by relay.mimecast.com with ESMTP with STARTTLS
+	bh=ovEqrxQiNC1fApdCYwkn/e/ow08kQkdi30NnfIiXj3g=;
+	b=hPvvBF8UC2vymQ2BK4aaMJYkbHYv7IxK1cVV4bzFwLICa+Ra1xa7Pf/TEiI9w6FNkxeGDf
+	TBb47Eoa7EQavBcQNr1TNxWSjqergxD+JkARWeamm1/q8N9G0Nwo1iTAXtqvNTAf3sDhvU
+	yr4jrvhmfg46Cr2Ciy3xXnW98isuw58=
+Received: from mail-wr1-f69.google.com (mail-wr1-f69.google.com
+ [209.85.221.69]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-317-Q-kMHyLLNnu31GOndKuxwA-1; Tue, 22 Sep 2026 04:33:25 -0400
-X-MC-Unique: Q-kMHyLLNnu31GOndKuxwA-1
-X-Mimecast-MFC-AGG-ID: Q-kMHyLLNnu31GOndKuxwA_1790066004
-Received: by mail-wm1-f70.google.com with SMTP id 5b1f17b1804b1-49e73659ac5so54770995e9.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 01:33:25 -0700 (PDT)
+ us-mta-611-qJEVEFZ0Pvu8wvboYAPyTQ-1; Tue, 22 Sep 2026 04:56:12 -0400
+X-MC-Unique: qJEVEFZ0Pvu8wvboYAPyTQ-1
+X-Mimecast-MFC-AGG-ID: qJEVEFZ0Pvu8wvboYAPyTQ_1790067371
+Received: by mail-wr1-f69.google.com with SMTP id ffacd0b85a97d-486f52ac21eso2553109f8f.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2026 01:56:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redhat.com; s=google; t=1790066004; x=1790670804; darn=vger.kernel.org;
+        d=redhat.com; s=google; t=1790067371; x=1790672171; darn=vger.kernel.org;
         h=in-reply-to:content-disposition:content-type:mime-version
          :references:message-id:subject:cc:to:from:date:from:to:cc:subject
          :date:message-id:reply-to:content-type;
-        bh=w4z5ytHAoQC8UWkOcT2zO26c7SVy/93HRcvFS003K4I=;
-        b=LBVmmMGcFfV0EoAKs/RX1Baan56NHDQKph14iTQUxxvRsg2nGJROGvtASI1VEycKE8
-         riII0t0d6SEN1+0YVmwINKSCOh7VBb+CTWYJ/9B5uy6f9Hwizmzxfd9L/iQOAME7PLdb
-         NeeI6ubpqqwl9Zp5rFoiOctlCuEGG/9KrKNaGRHNiuUKuTDGea1BRHAGtLeJolPblSA5
-         M+HpioZPSOuq69r7UnVBquw9sDCun3Pb5MT07XDcndkRIjR1efmq4cgnzzhty0l6ugqg
-         7jBM2TKu6j/S0qKM70FrB4rRnXyc2JkjGq5NEiVRsFcitzMZrshRZYqACHGVqb/c0ruh
-         p0Hg==
+        bh=ovEqrxQiNC1fApdCYwkn/e/ow08kQkdi30NnfIiXj3g=;
+        b=eZbtqitewffqEAtbuZvziZPr1toNvg5J/UstrD6538H1I0iyAiiDGGPPbtWAM1HcGV
+         lIUnJ1EHJIfDGY5LMGVjjjKJKB2Zuc1ec7j8tAHuhGiwKkIleUKRFjUZx24t3DTpSswJ
+         TH7+eZYGzF0+CQS4EhY0FqhNpjCuAat9FgJRxyY/hgBa9Cgt2YvpXv9hH/5rGcWAxwZ5
+         WpA6ceg3/mjQL4E9xXnCjMSakIMxHEq6CXZ0n5RYFtAuMebBxuP/AE9hEy+pGFGIrXUJ
+         oMwULrLe6l2XCjRk9u3et+3lf/vrFxFYu5cm3x5q3k0pvP8xg9tb1a4X3gCqUYhh6lG9
+         UEHw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790066004; x=1790670804;
+        d=1e100.net; s=20260707; t=1790067371; x=1790672171;
         h=in-reply-to:content-disposition:content-type:mime-version
          :references:message-id:subject:cc:to:from:date:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=w4z5ytHAoQC8UWkOcT2zO26c7SVy/93HRcvFS003K4I=;
-        b=eK9fa3VSJjn9SOUvyhsUx1SmzaNJR2nhfBxtMz32OQ+gkssVh34a25M/kFPH7iUuxT
-         dTr95f2eXg8SXSFFYmEaW/2E4HVw7+c8jWxlRW1PTKZyHon1IkpGZj6t4FzCgI+1L4eK
-         LdNib9EZFRxaGevtCX3Bbus95gAmn53tq+L3GDa0H0xwb99nkxPQn30oDnOF4OUuDXJy
-         tTa1/ij17z10d34c2jVzZTPtPXu9H9XCnI/wGfZEbgtYC+3WzSuplK5teincJwgIqqWQ
-         QkDxPoQ5ILkkZ8bxPIkMqkdZdZWfcojy5pJ4eQL9kW2H9VqDLhTkK1LFLbJwTbaJ0Tyv
-         JHbA==
-X-Forwarded-Encrypted: i=1; AKwUvByxsWaXUwXx0mRU7XChY67lKTKMVoOC6JgbUAVo6IWrnx45esFAJUFIPNM5GUzWxR9ptYoe2k53cBpu6w==@vger.kernel.org
-X-Gm-Message-State: AFuF++ljGl39fvGxBhXfc2AecnmcrTPauWAdopirbKaHNXLIAygZD04B
-	8/oITTgIFZMu1yz0fITZRFm1fTZokJWg7Hvq68Y+n7Tc0h6Ob4sbJd9izww95+XkDy8/Zhy78fT
-	IEOD02BD5dzpeNjNHXjiHCtKZFMiaoFofrtAjGZJRa7/pPGYoy7dHwtXtDD7EYxg=
-X-Gm-Gg: AYBFou3/tjYH2JR1Joyw+DhkwMg6KSwKn0DhyXbAFlJa3+9pen4GQEBLPBTgjz1+WL/
-	FiWES4HkdqsofNopoLJLY7B/2XMGTlwdGSrRGOI+y3UcHaODfx5gOu8ip3nbRYx/mXw9XkxqFj+
-	q7CnY5fibx7RglO5+At3Yctv+W16KNPcDPTBBwJMp6DWy7GKpsvYtUr7w7oRIJmQJdMES8Erff3
-	R93zs0sG7UJ6mCN/GopTDe09ajb05XXCKGrCaDZphcguO0VeVymJaEMTX3tek4Zv0MToxnQTU2r
-	T6BL1Xw2mO4cmYAxufxtL9PwEgERwmFmp8KLmq1v3C0mOqhJDkiAxBIvCF2/W53FUtwCk3L7NeD
-	EiYbRZnx4GwpneOowwDby1SMqs14l2Jntlg==
-X-Received: by 2002:a05:600c:a42:b0:49e:6683:d23c with SMTP id 5b1f17b1804b1-49fc5594deemr183435045e9.0.1790066004104;
-        Tue, 22 Sep 2026 01:33:24 -0700 (PDT)
-X-Received: by 2002:a05:600c:a42:b0:49e:6683:d23c with SMTP id 5b1f17b1804b1-49fc5594deemr183434735e9.0.1790066003664;
-        Tue, 22 Sep 2026 01:33:23 -0700 (PDT)
+        bh=ovEqrxQiNC1fApdCYwkn/e/ow08kQkdi30NnfIiXj3g=;
+        b=jtiyTEFCZy5RI5ombW0YpiCyDe7z6uczYGJH9CqnFNi3VAoBKxw78Kd8Zutpi9+XeY
+         9b7FzmEEvAoTTVJcOd0c1NFDT43JY7gVuYKbC501rZK8TKwlALJ9nwed+OP7fC9cnmNS
+         zf2H1kt2Gld6wkqIKF3IlmAM6ipiLBGokg9Ad2vrhntDocp4zIAdL2UCNae3jQW1UB4T
+         AR9MS3OnPPTmgpTJsL0THpLGquNDQ4ZNJihYfeUyyIIilg0MgImCzg4j9BGx5Y4MhSCJ
+         vogYWWNHqHkctn4MYUkYJYQGsXWDUqNcpOZJGne+qUoUuXsGLvNYpkXup41SGb5m0oeJ
+         uMbA==
+X-Forwarded-Encrypted: i=1; AKwUvBzUmgL0jbpIS0zj0/7plQ/VpHKfkocWa2XuP6pMATf0sAzV4wyjto8P5UXRIxwhIKWJEjjzoI7PZr7H/g==@vger.kernel.org
+X-Gm-Message-State: AFuF++nMPJK+pZOqsTmFECgx6VXElcM8ra0aTYaeWZjJ588pcKaJ7Yy2
+	fMG1fQTcBSUP76/PEDeayZciaz0uTx2gEF/eBf3GopuEm/PkqFvHXm0ZKaSRbcv5mm/onhbOsjF
+	cw6KtA7GDizEwMc94l8c0DN21Ni4SObOREpUuHRYcr2l47i7K/SGD5WXBtXh0lGM=
+X-Gm-Gg: AYBFou2BqZvsazLuHdnQT6SLnHPDytSlwK3jjlJLOrpBgHZ3zsOCMV6CMy9WPy0iiGj
+	NGA4WIVqLDzBDtNNIfRgJe46/em1v3gMsInBrPLy5OXrDl+3eO2yjShMRZgH7icNbFsiXMWWCoT
+	quyh+rkOouSIS/TO3ScSxCHEGgaAAj07hnr3piBdl0zr3g+mer+DojGY7ul9Snq0qgD9ymvm6Ck
+	ypYuGZcwL7W71xN2NRF0JmmJN+Tyj3VL+mQpyWV/GJHwhqTjwqFWgXTTImL5t6+eoz532sWzlIS
+	VSz9xwI1sjjWFn2R7OIB4AN6MWJMFBYpURmJ3XsXTtn5pbOzwt+lDQFLxtpwonsIgOgQ8HPin/I
+	TDZdu15NDsuC+6LHGFYmzzzaWZz8Opkh+6g==
+X-Received: by 2002:a5d:64e8:0:b0:484:3310:f394 with SMTP id ffacd0b85a97d-4871e25c7f7mr20485482f8f.23.1790067370997;
+        Tue, 22 Sep 2026 01:56:10 -0700 (PDT)
+X-Received: by 2002:a5d:64e8:0:b0:484:3310:f394 with SMTP id ffacd0b85a97d-4871e25c7f7mr20485428f8f.23.1790067370461;
+        Tue, 22 Sep 2026 01:56:10 -0700 (PDT)
 Received: from aalbersh-thinkpadx1carbongen13.rmtcz.csb ([217.30.74.39])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-49fdab8ae6dsm74097995e9.0.2026.09.22.01.33.22
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-48862795083sm3236382f8f.33.2026.09.22.01.56.09
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 22 Sep 2026 01:33:23 -0700 (PDT)
-Date: Tue, 22 Sep 2026 10:33:22 +0200
+        Tue, 22 Sep 2026 01:56:10 -0700 (PDT)
+Date: Tue, 22 Sep 2026 10:56:09 +0200
 From: Andrey Albershteyn <aalbersh@redhat.com>
-To: "Darrick J. Wong" <djwong@kernel.org>
-Cc: Andrey Albershteyn <aalbersh@kernel.org>, ebiggers@kernel.org, 
-	hch@lst.de, Carlos Maiolino <cem@kernel.org>, fsverity@lists.linux.dev, 
-	linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org, linux-unionfs@vger.kernel.org, 
-	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, 
-	linux-btrfs@vger.kernel.org, david@fromorbit.com
-Subject: Re: [PATCH v16 14/21] xfs: don't remove written extents past EOF on
- fsverity inodes
-Message-ID: <arI9MpRVBZ0UEofK@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: Andrey Albershteyn <aalbersh@kernel.org>, djwong@kernel.org, 
+	ebiggers@kernel.org, hch@lst.de, Carlos Maiolino <cem@kernel.org>, 
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org, 
+	linux-unionfs@vger.kernel.org, linux-ext4@vger.kernel.org, 
+	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org, david@fromorbit.com
+Subject: Re: [PATCH v16 15/21] xfs: add fs-verity support
+Message-ID: <arI-5Ejg0Xw7OVmH@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
 References: <20260918111539.1003439-1-aalbersh@kernel.org>
- <20260918111539.1003439-15-aalbersh@kernel.org>
- <20260922043750.GN2705364@frogsfrogsfrogs>
+ <20260918111539.1003439-16-aalbersh@kernel.org>
+ <arIszDCcy0VbRVFp@infradead.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -99,110 +98,25 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20260922043750.GN2705364@frogsfrogsfrogs>
+In-Reply-To: <arIszDCcy0VbRVFp@infradead.org>
 
-On 2026-09-21 21:37:50, Darrick J. Wong wrote:
-> On Fri, Sep 18, 2026 at 01:15:26PM +0200, Andrey Albershteyn wrote:
-> > xfs_free_eofblocks() removes all extents past EOF unless the
-> > XFS_DIFLAG_PREALLOC or XFS_DIFLAG_APPEND flags are set. This is
-> > undesired for fsverity as it stores metadata beyond EOF. However, while
-> > merkle tree is being built, delayed preallocation and unwritten extents
-> > are used. After metadata construction is done, fsverity inodes becomes
-> > read-only and won't be changed anymore, none of these unwritten extents
-> > or preallocations in post EOF region will be used.
-> > 
-> > Let xfs_free_eofblocks() be called on fsverity inode as usual to remove
-> > anything which is not written extent. However, inodes which are
-> > undergoing merkle tree construction need to be skipped in case reclaim
-> > takes place.
-> > 
-> > Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
-> > ---
-> >  fs/xfs/xfs_bmap_util.c | 25 ++++++++++++++++++++++---
-> >  1 file changed, 22 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/fs/xfs/xfs_bmap_util.c b/fs/xfs/xfs_bmap_util.c
-> > index 268d159339d0..7fd951992557 100644
-> > --- a/fs/xfs/xfs_bmap_util.c
-> > +++ b/fs/xfs/xfs_bmap_util.c
-> > @@ -31,6 +31,7 @@
-> >  #include "xfs_rtbitmap.h"
-> >  #include "xfs_rtgroup.h"
-> >  #include "xfs_zone_alloc.h"
-> > +#include <linux/fsverity.h>
-> >  
-> >  /* Kernel only BMAP related definitions and functions */
-> >  
-> > @@ -553,6 +554,13 @@ xfs_can_free_eofblocks(
-> >  	if (last_fsb <= end_fsb)
-> >  		return false;
-> >  
-> > +	/*
-> > +	 * Don't clean fsverity inodes which have merkle tree being built, the
-> > +	 * merkle tree is written beyond EOF
-> > +	 */
-> > +	if (xfs_iflags_test(ip, XFS_VERITY_CONSTRUCTION))
-> > +		return false;
+On 2026-09-22 00:22:52, Christoph Hellwig wrote:
+> On Fri, Sep 18, 2026 at 01:15:27PM +0200, Andrey Albershteyn wrote:
+> > +	xfs_ilock(ip, XFS_ILOCK_EXCL);
+> > +	xfs_trans_ijoin(tp, ip, 0);
 > > +
-> >  	/*
-> >  	 * Check if there is an post-EOF extent to free.  If there are any
-> >  	 * delalloc blocks attached to the inode (data fork delalloc
-> > @@ -579,6 +587,9 @@ xfs_free_eofblocks(
-> >  	struct xfs_trans	*tp;
-> >  	struct xfs_mount	*mp = ip->i_mount;
-> >  	int			error;
-> > +	int			bmapi_flags = XFS_BMAPI_NODISCARD;
-> > +	bool			has_verity =
-> > +			ip->i_diflags2 & XFS_DIFLAG2_VERITY;
-> >  
-> >  	/* Attach the dquots to the inode up front. */
-> >  	error = xfs_qm_dqattach(ip);
-> > @@ -593,15 +604,20 @@ xfs_free_eofblocks(
-> >  	 *
-> >  	 * Note that this means we also leave speculative preallocations in
-> >  	 * place for preallocated files.
-> > +	 *
-> > +	 * Clean up delalloc reservations for fsverity too as those won't be
-> > +	 * used
-> >  	 */
-> > -	if (ip->i_diflags & (XFS_DIFLAG_PREALLOC | XFS_DIFLAG_APPEND)) {
-> > +	if (ip->i_diflags & (XFS_DIFLAG_PREALLOC | XFS_DIFLAG_APPEND) ||
-> > +			has_verity) {
-> >  		if (ip->i_delayed_blks) {
-> >  			xfs_bmap_punch_delalloc_range(ip, XFS_DATA_FORK,
-> >  				round_up(XFS_ISIZE(ip), mp->m_sb.sb_blocksize),
-> >  				LLONG_MAX, NULL);
-> >  		}
-> >  		xfs_inode_clear_eofblocks_tag(ip);
-> > -		return 0;
-> > +		if (!has_verity)
-> > +			return 0;
-> >  	}
-> >  
-> >  	error = xfs_trans_alloc(mp, &M_RES(mp)->tr_itruncate, 0, 0, 0, &tp);
-> > @@ -613,6 +629,9 @@ xfs_free_eofblocks(
-> >  	xfs_ilock(ip, XFS_ILOCK_EXCL);
-> >  	xfs_trans_ijoin(tp, ip, 0);
-> >  
-> > +	if (has_verity)
-> > +		bmapi_flags |= XFS_BMAPI_UNWRITTEN;
+> > +	truncate_inode_pages(VFS_I(ip)->i_mapping, XFS_ISIZE(ip));
 > 
-> This ought to have a comment explaining where post-eof unwritten extents
-> might come from:
+> We can't call truncate_inode_pages with the ilock held.
 > 
-> 	/*
-> 	 * If fs-verity fails to write the full metadata, it can leave
-> 	 * unwritten preallocations after EOF.  Clear all that out.
-> 	 */
-> 	if (has_verity)
-> 		bmapi_flags |= XFS_BMAPI_UNWRITTEN;
+> I also don't see what this is trying to protect to start with.
 > 
-> 
-> With that documented,
-> Reviewed-by: "Darrick J. Wong" <djwong@kernel.org>
 
-Sure, I will add the comment
-Thanks!
+I added this to remove stale pages created post-EOF, so, writeback
+doesn't try to flush them latter (but now I see that writeback will
+fail to map them to extents anyway). Also, if EOF gets extended
+these pages would be exposed as they are up-to-date which would be
+unexpected garbage.
 
 -- 
 - Andrey

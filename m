@@ -1,60 +1,67 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E17F43A7F7
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2026 05:45:05 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E062408017
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2026 05:45:08 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790142308; cv=none; b=GPAe7DdbrOT0KVGBZN2lCMKxJwoJNVfXdsL/LWq49DEwe0R2xdZem5h4Edqdq5tW0CKUyvbMF6TyslfqWM9LOPjpTdvoqeRUvm4CzovRHC1AVc049l6HhGr7BnCUIHvqYHwuQ3GdCpAtsTJx8PTVDQNzymiIrY/4hSFb7rr73R4=
+	t=1790142310; cv=none; b=BpYfiAux/HClyPC24at2hFS1fW9IYbnnSyuHVl3LF+uqaFKrt1bk1YqM3XFMd3lJDukFBrMrE9D5Z8r9+gKigHIomswf4YJ5s1pxL19DkubojztT+4/Y7JWBJ4QpVD/+3YiMmryXapXBQeRzjzY8S5anT/bRkomIxSM34Z+fyzA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790142308; c=relaxed/simple;
-	bh=VVCdNdLIysLLxbZC/SYIC7bkDuRgfRH0yzv5wIea0V0=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=SDURg3pVNzcPc0kr+k0900Wb1bNiCpHEq7M1bLEwCVcupg3za1W1X1lZF9cQAX20UE4dlXgKZZvj5bz1x+YAdP5aOFC/GIoAojt2C5SzMHdbwo9obJEGKK+ydw+V/+yk1gvx42NAjYPaleWI1O9cAcZX9FpEAeHdZlk+zokUz5k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=IxLDvqot; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=fgzUbhQQ; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1790142310; c=relaxed/simple;
+	bh=YwS4rRd22gw8bjRr+8ewD2LW8m2+gF49ah1Ll6+oYyo=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=I1wpNULLPGZK8UAQHf5J+d+2WnA5uqpzlWddQd3Ngxgh8S1wptamt08kC6TnoycBqxT7Pzh5g9oXgETsyhocXr85z8mb8Ey32Tjen7rrNIH51ipeJy+uGFB2Nuv0nNLUBiiiPOgRVupvobRmxHXFMw88VzTo43mlAOiX0Y4hZ7I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=lheCiKMc; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=DkGn9BEk; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="IxLDvqot";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="fgzUbhQQ"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="lheCiKMc";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="DkGn9BEk"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id BBDD621CDB
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2026 05:44:55 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id EFE9421D64
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2026 05:44:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1790142299; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=wqU8yFHM7DODFW1N6GKaHrNsmPJUiP3BaxPbwUKy0mI=;
-	b=IxLDvqotYtATUkPAsaLX7tXCEPKOP1D9Xz3hH9OzyYiVjYM21ZJtF+uprRiOm68wh9CWww
-	uMJRbp8Dy0/FI+n/2nEsvXkerGFISHgOZncC1puqG5UDopiGxBZv+DpJvIP2U3mnjVVLrk
-	WvQevs78Y86B0X3D7NyKBfJqVjY8JjE=
+	t=1790142303; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=vG7z+TDiyFoBNY7/PaHdVAV6nq6+91WSwA2DexSTb0o=;
+	b=lheCiKMcOpmBmf1nQAbKgaHRS2fZKkQnyxO01kFFJ8+tUyfCTiGdpTKaSqaDPeoTaxpFYO
+	ENG6wAsghNHPWkeY6Q9IdDgiuVQn/7hghVYfK4VV5jhyhc9nM33Tcwv/GC8eTEpt5BbWux
+	vnU1ugHewIoro7wGvX195R/fhtsMNH4=
 Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1790142295; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=wqU8yFHM7DODFW1N6GKaHrNsmPJUiP3BaxPbwUKy0mI=;
-	b=fgzUbhQQWfLY5Zjdg4IwZY5Y0kX8Juw1OpKAct+LMnT7cN6HRRGGhb2Nb8g4uc3c4uCnVs
-	U1kGc0jo4XzyLoYzCagA8Zcqa4WnzkEqxzJpLJg5pPF10sTw6dlvc1Xwly0J4tf9iYN5iq
-	oP9qX/c14am4x6NrtcK3Q3y8t8iIfyM=
+	t=1790142298; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=vG7z+TDiyFoBNY7/PaHdVAV6nq6+91WSwA2DexSTb0o=;
+	b=DkGn9BEkGsfGTnT7BNwoGTsDqbQsEFEwIm+c+NsCjX+3SppsW796+EWJcl07jOrYfdJr9M
+	OD2Ra21KoQijZA1Zz9IxR/tixfpki0laDJUOIOsza+d1qaOanm/AoHXle5psQG6OjuZK3c
+	ZTpe/K+y3albGHN0aZPHpJTixkt/JDY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7BECD134E8
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2026 05:44:54 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id AFCFC139EA
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2026 05:44:57 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 40aCMlVns2o/dgAAD6G6ig
+	id 40aCMlVns2o/dgAAD6G6ig:T3
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2026 05:44:54 +0000
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2026 05:44:57 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs: use kvmalloc() for cases where allocation can be more than one page
-Date: Wed, 23 Sep 2026 15:14:24 +0930
-Message-ID: <cover.1790142027.git.wqu@suse.com>
+Subject: [PATCH 2/3] btrfs: use kvzalloc() for btrfs_raid_bio::csum_buf
+Date: Wed, 23 Sep 2026 15:14:26 +0930
+Message-ID: <4d1fec79a4cc0301c27733be433d2bc195123a04.1790142027.git.wqu@suse.com>
 X-Mailer: git-send-email 2.55.0
+In-Reply-To: <cover.1790142027.git.wqu@suse.com>
+References: <cover.1790142027.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -62,9 +69,8 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Level: 
 X-Spam-Score: -2.80
-X-Spam-Flag: NO
+X-Spam-Level: 
 X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
@@ -80,50 +86,79 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
 	RCVD_TLS_ALL(0.00)[]
+X-Spam-Flag: NO
 
-There are still some cases where kmalloc() and its variants are called
-where the memory allocated can be multiple pages on x86_64.
+That member is to store the checksum for the full stripe, and for the
+following setup we can have a buffer size larger than 4K:
 
-Normally any kmalloc() with a size that <= PAGE_ALLOC_COSTLY_ORDER (3)
-should not fail that easily, so even we allocate a multi-page buffer
-using kmalloc() as long as it's not reaching 64K (4K page size) it
-should still be fine.
+ sectorsize 4K, csum type SHA256 (32 bytes per sector) and 10 data
+ stripes.
 
-Thus those cases are all very rare:
+ The csum_buf size would be:
 
-- An inlined extent larger than 4K
-  This can only be archived by a system with page size larger than 4K,
-  along with larger max_inline.
+ stripe_nsectors * nr_data * csum_size
+      16         *   10    *  32  = 5120
 
-  And still, only 64K sized inlined extent can really cause problems.
+This means kzalloc() will require 2 physical contiguous pages, which may
+not always be available if the available memory is highly fragmented.
 
-- Too many RAID56 data stripes with SHA256
-  To go beyond 4K, it only requires 9 data stripes, but to reach 64K
-  (order > 3) it requires 128 data stripes which is beyond sanity.
+However such allocation failure should be very rare, as small order
+(order <= 3) allocation is not that easy to fail.
 
-- Fragmented memory at btrfs module load time
-  This is in fact more common than the above 2 cases, but this requires
-  CONFIG_BTRFS_FS_RUN_SANITY_TESTS and load the module after the memory
-  is fragmented, it's still very rare.
-  
-So all of those fixes are just another bike shred problem, but
-considering it's not that hard to fix, so here comes the patches.
+To reach costly order (>= 4) it requires 128 data stripes, which is beyond
+sanity.
 
-Qu Wenruo (3):
-  btrfs: use kvmalloc() for btrfs_encoded_read_inline()
-  btrfs: use kvzalloc() for btrfs_raid_bio::csum_buf
-  btrfs: use kvmalloc() inside test_eb_bitmaps()
+Change the allocation to use kvzalloc() instead, so that if we need
+multiple pages as buffer, we still have a fallback that allocates single
+pages and maps them into a virtually contiguous buffer.
 
- fs/btrfs/inode.c                 | 4 ++--
- fs/btrfs/raid56.c                | 8 ++++----
- fs/btrfs/tests/extent-io-tests.c | 4 ++--
- 3 files changed, 8 insertions(+), 8 deletions(-)
+For most cases where the buffer is smaller than a page, the kvzalloc()
+should fallback to kzalloc(), with minimal overhead.
 
+Assisted-by: LLM (finding callsites doing multi-page kmalloc)
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/raid56.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 8ec24dbb180f..6e7ab0bb025a 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -946,7 +946,7 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t status)
+ 	struct bio *cur = bio_list_get(&rbio->bio_list);
+ 	struct bio *extra;
+ 
+-	kfree(rbio->csum_buf);
++	kvfree(rbio->csum_buf);
+ 	bitmap_free(rbio->csum_bitmap);
+ 	rbio->csum_buf = NULL;
+ 	rbio->csum_bitmap = NULL;
+@@ -2304,8 +2304,8 @@ static void fill_data_csums(struct btrfs_raid_bio *rbio)
+ 	    rbio->bioc->map_type & BTRFS_BLOCK_GROUP_METADATA)
+ 		return;
+ 
+-	rbio->csum_buf = kzalloc(rbio->nr_data * rbio->stripe_nsectors *
+-				 fs_info->csum_size, GFP_NOFS);
++	rbio->csum_buf = kvzalloc(rbio->nr_data * rbio->stripe_nsectors *
++				  fs_info->csum_size, GFP_NOFS);
+ 	rbio->csum_bitmap = bitmap_zalloc(rbio->nr_data * rbio->stripe_nsectors,
+ 					  GFP_NOFS);
+ 	if (!rbio->csum_buf || !rbio->csum_bitmap) {
+@@ -2340,7 +2340,7 @@ static void fill_data_csums(struct btrfs_raid_bio *rbio)
+ "sub-stripe write for full stripe %llu is not safe, failed to get csum: %d",
+ 			rbio->bioc->full_stripe_logical, ret);
+ no_csum:
+-	kfree(rbio->csum_buf);
++	kvfree(rbio->csum_buf);
+ 	bitmap_free(rbio->csum_bitmap);
+ 	rbio->csum_buf = NULL;
+ 	rbio->csum_bitmap = NULL;
 -- 
 2.55.0
 

@@ -1,28 +1,52 @@
-Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 982BC313547
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2026 02:36:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=174.142.148.226
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B04CD3546C0;
+	Wed, 23 Sep 2026 04:44:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.137.202.133
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790130989; cv=none; b=I7u0tCSYDyB4N/HGl7YVX90+qEWUZC49BAXNez3xyjWB/EJuhWUpoF2idw5ZeeYElZLD9JeHOStFTOOqt9lCPyG6MYidgs/8OL/K9Hw06nQRhWSg83oSJ1PCXqftfqO2ipXMzncMHRyZ9XUBglqtCgRi8amH28AXtu6rByrZ4I8=
+	t=1790138646; cv=none; b=iiLaDP0XHjF4nmMqJT77zRUfdcOxVbXSZo3rrHsjzljljBZ8rCUfyByz5r5R3DRdECPvCdUYcfeZPkorsoDACaIOJ5cOcmqLbpfhZRyWn2Db6FmBbb9y4p+PvEzPyaw2uPf8H/0RyLZZ/v20V2GYKLNFjOhJ7TmLIE9CPLoWuQw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790130989; c=relaxed/simple;
-	bh=1paIx0OJrLPJNOHIflzWw52KG2T5dhuY5FEdxRlnMy0=;
+	s=arc-20240116; t=1790138646; c=relaxed/simple;
+	bh=3K1In4nT3i2HdiuMdKKzMjhK07IZEuKn6Ukoh+Vhlys=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ihCQwldb+DQXUG/hcE5VU8jNUNoOmN9n/7RLmC+XDjJeEltQygk3lNnhTtiSiQ92JdRP3Mbtzqh6p6AuMj9kQytE3kZmg17wskUw2blDSeFhLmoZkKRueCvEHLqUgUeeaYIakhrz2TYbDdQBJVCcOC/F3HcPnm2mOin2ZvmVLXU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=umail.furryterror.org; spf=pass smtp.mailfrom=drax.hungrycats.org; arc=none smtp.client-ip=174.142.148.226
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=umail.furryterror.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=drax.hungrycats.org
-Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
-	id EF0EC1BDE185; Tue, 22 Sep 2026 22:28:53 -0400 (EDT)
-Date: Tue, 22 Sep 2026 22:28:53 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Joanne Koong <joannelkoong@gmail.com>
-Cc: dsterba@suse.com, boris@bur.io, loemra.dev@gmail.com, fdmanana@suse.com,
-	wqu@suse.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v1] btrfs: add LOGICAL_INO_V2 flag for avoiding the tree
- modification log
-Message-ID: <arM5ZbekdkYsCfke@hungrycats.org>
-References: <20260922201258.874070-1-joannelkoong@gmail.com>
+	 Content-Type:Content-Disposition:In-Reply-To; b=mRqzfC6h2lCUVHF1tmHdac/LLMvqHPInqAYsNCk88pz3Irf7hKDUUfe61gW4g4LjxEyyg3ZK+Av2MwFzdbPCR4SNtQTV5GBWAHnSjl7XSwdEv0jyiYG+G4sapk/R+iPAG4vmhUY4XVrhaWMGhSvLeCDGi2bMIPHObfaswb3vf50=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=JOydNZmk; arc=none smtp.client-ip=198.137.202.133
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=bombadil.srs.infradead.org
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="JOydNZmk"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+	:References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=3rrTkfCLkv5vG8mm0BkucV5d5ipKmcNjzN+oEKrrF4Y=; b=JOydNZmkvLmfHed3Px4rMYO9fW
+	ovH3G1XC9S1RqxA9m4xOFtseOap20xWrt11xXV9ro3mhmrMkwLiQYjNx9DJ5OU/jVvreTwXo7wkz7
+	E1RmjRTmmDGMGPxsBWYQg7xSUEeom5MHDX9CHR1Q4ZreWi/JrfahFI/iCKtQ8HNGSMoQ2dhqsLcdd
+	2SfRB5K4vBZ5g/6EgsFwSXMO/pALL7eqXnGTTnUKUmY+YTY/dtuus6GWDlk6fsqjUDYTUemDMYNPE
+	1Tcaegw/NCnx2HYskpeIz3PqJkEAbcypYR6nU9GSgrKqBcV4Y/NKFmDUOpnxl/f+lLsiPYVaScByF
+	3j9NSTaw==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.99.1 #2 (Red Hat Linux))
+	id 1x9Epv-0000000780Q-3ycD;
+	Wed, 23 Sep 2026 04:44:03 +0000
+Date: Tue, 22 Sep 2026 21:44:03 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Andrey Albershteyn <aalbersh@kernel.org>
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Andrey Albershteyn <aalbersh@redhat.com>, djwong@kernel.org,
+	ebiggers@kernel.org, hch@lst.de, Carlos Maiolino <cem@kernel.org>,
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org,
+	linux-xfs@vger.kernel.org, linux-unionfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+	linux-btrfs@vger.kernel.org, david@fromorbit.com
+Subject: Re: [PATCH v16 15/21] xfs: add fs-verity support
+Message-ID: <arNZE37P5khvkJYK@infradead.org>
+References: <20260918111539.1003439-1-aalbersh@kernel.org>
+ <20260918111539.1003439-16-aalbersh@kernel.org>
+ <arIszDCcy0VbRVFp@infradead.org>
+ <arI-5Ejg0Xw7OVmH@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
+ <arJ1dfejt4DyCsvG@infradead.org>
+ <arKAqsuSoxvM1yKt@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -31,176 +55,28 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-In-Reply-To: <20260922201258.874070-1-joannelkoong@gmail.com>
+In-Reply-To: <arKAqsuSoxvM1yKt@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 
-On Tue, Sep 22, 2026 at 01:12:57PM -0700, Joanne Koong wrote:
-> At Meta, we use the LOGICAL_INO_V2 ioctl to estimate sharing-aware space
-> usage. We sample the logical address space and resolve each sample back
-> to the inodes which reference it. The measurement is statistical, so
-> with enough samples it gives good bounds on real usage.
->=20
-> Currently in the LOGICAL_INO_V2 ioctl path, iterate_extent_inodes()
-> (which can walk backrefs either against the current trees or against the
-> commit roots) acquires a tree modification log sequence number when
-> walking the current trees, since those trees are being modified while
-> the walk is in progress. The log is then enabled filesystem wide for as
-> long as any such walk is running, and is only disabled again once the
-> last walk has finished.
->=20
-> While it is enabled the cost impacts the whole filesystem, not only the
-> caller. Modifications of interior nodes of the extent tree and of
-> subvolume trees have to be recorded, serialized on a single filesystem
-> wide lock. Delayed refs with a sequence number at or above the oldest
-> active one can not be run (the run path bails out with -EAGAIN in
-> btrfs_run_delayed_refs_for_head()), and metadata refs above it can not
-> be merged, so they accumulate and that work is deferred to transaction
-> commit.
->=20
-> Currently, userspace has no way to ask for anything cheaper. Whenever a
-> transaction is running, the walk uses the tree modification log, even if
-> the caller would tolerate results that could be up to one commit interval
-> stale.
->=20
-> Give userspace this option by adding BTRFS_LOGICAL_INO_ARGS_COMMIT_ROOT,
-> which makes the backref walk use the commit roots and therefore never
-> enables the tree modification log. Behavior is unchanged unless the flag
-> gets explicitly passed by userspace. iterate_extent_inodes() already
-> takes a search_commit_root argument for this, which scrub, send and the
-> data relocation warning path all pass as true. The flag simply plumbs it
-> through to userspace.
+On Tue, Sep 22, 2026 at 03:27:54PM +0200, Andrey Albershteyn wrote:
+> > 
+> > Yeah, but what is the ilock trying to protect against?  ilock is
+> > the innermost sleeping lock and protects modifications to the
+> > inode fields and the extent mapping.   Higher level synchronization
+> > is done using the iolock and the mmaplock (which is already taken
+> > here).
+> > 
+> 
+> hmm maybe I don't understand what you addressing here but don't I
+> need ilock for xfs_itruncate_extents() used with this transaction.
+> So, doing extent removal.
+> 
+> With this function I want to remove post EOF pages from pagecache
+> and then remove post EOF extents on that inode.
+> 
+> iolock is already hold, mmaplock is for pagecache truncation and
+> ilock for extents removal.
 
-I was about to send the same patch after tracking down some performance
-issues.  This is the same use case as btdu, and bees goes a lot faster
-without the tree mod log as well.  Much appreciated!
-
-> Assisted-by: LLM
-> Signed-off-by: Joanne Koong <joannelkoong@gmail.com>
-> ---
->  fs/btrfs/backref.c         |  6 ++++--
->  fs/btrfs/backref.h         |  3 ++-
->  fs/btrfs/ioctl.c           |  9 +++++++--
->  include/uapi/linux/btrfs.h | 10 ++++++++++
->  4 files changed, 23 insertions(+), 5 deletions(-)
->=20
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index 1be632c742bd..364ec3ad7d8a 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -2549,7 +2549,8 @@ static int build_ino_list(u64 inum, u64 offset, u64=
- num_bytes, u64 root, void *c
->  }
-> =20
->  int iterate_inodes_from_logical(u64 logical, struct btrfs_fs_info *fs_in=
-fo,
-> -				void *ctx, bool ignore_offset)
-> +				void *ctx, bool ignore_offset,
-> +				bool search_commit_root)
->  {
->  	struct btrfs_backref_walk_ctx walk_ctx =3D { 0 };
->  	int ret;
-> @@ -2575,7 +2576,8 @@ int iterate_inodes_from_logical(u64 logical, struct=
- btrfs_fs_info *fs_info,
->  		walk_ctx.extent_item_pos =3D logical - found_key.objectid;
->  	walk_ctx.fs_info =3D fs_info;
-> =20
-> -	return iterate_extent_inodes(&walk_ctx, false, build_ino_list, ctx);
-> +	return iterate_extent_inodes(&walk_ctx, search_commit_root,
-> +				     build_ino_list, ctx);
->  }
-> =20
->  static int inode_to_path(u64 inum, u32 name_len, unsigned long name_off,
-> diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
-> index 179791de6b19..f8dc8a3723cf 100644
-> --- a/fs/btrfs/backref.h
-> +++ b/fs/btrfs/backref.h
-> @@ -226,7 +226,8 @@ int iterate_extent_inodes(struct btrfs_backref_walk_c=
-tx *ctx,
->  			  iterate_extent_inodes_t *iterate, void *user_ctx);
-> =20
->  int iterate_inodes_from_logical(u64 logical, struct btrfs_fs_info *fs_in=
-fo,
-> -				void *ctx, bool ignore_offset);
-> +				void *ctx, bool ignore_offset,
-> +				bool search_commit_root);
-> =20
->  int paths_from_inode(u64 inum, struct inode_fs_paths *ipath);
-> =20
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 52aab510aea0..63257f8fb897 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -3286,6 +3286,7 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs=
-_fs_info *fs_info,
->  	struct btrfs_ioctl_logical_ino_args AUTO_KFREE(loi);
->  	struct btrfs_data_container AUTO_KVFREE(inodes);
->  	bool ignore_offset;
-> +	bool search_commit_root;
-> =20
->  	if (!capable(CAP_SYS_ADMIN))
->  		return -EPERM;
-> @@ -3296,6 +3297,7 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs=
-_fs_info *fs_info,
-> =20
->  	if (version =3D=3D 1) {
->  		ignore_offset =3D false;
-> +		search_commit_root =3D false;
->  		size =3D min_t(u32, loi->size, SZ_64K);
->  	} else {
->  		/* All reserved bits must be 0 for now */
-> @@ -3303,10 +3305,12 @@ static long btrfs_ioctl_logical_to_ino(struct btr=
-fs_fs_info *fs_info,
->  			return -EINVAL;
-> =20
->  		/* Only accept flags we have defined so far */
-> -		if (loi->flags & ~(BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET))
-> +		if (loi->flags & ~(BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET |
-> +				   BTRFS_LOGICAL_INO_ARGS_COMMIT_ROOT))
->  			return -EINVAL;
-> =20
->  		ignore_offset =3D loi->flags & BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET;
-> +		search_commit_root =3D loi->flags & BTRFS_LOGICAL_INO_ARGS_COMMIT_ROOT;
->  		size =3D min_t(u32, loi->size, SZ_16M);
->  	}
-> =20
-> @@ -3314,7 +3318,8 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs=
-_fs_info *fs_info,
->  	if (IS_ERR(inodes))
->  		return PTR_ERR(inodes);
-> =20
-> -	ret =3D iterate_inodes_from_logical(loi->logical, fs_info, inodes, igno=
-re_offset);
-> +	ret =3D iterate_inodes_from_logical(loi->logical, fs_info, inodes,
-> +					  ignore_offset, search_commit_root);
->  	if (ret =3D=3D -EINVAL)
->  		return -ENOENT;
->  	if (ret < 0)
-> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-> index 0a13baf3d8d1..b6f196bfa600 100644
-> --- a/include/uapi/linux/btrfs.h
-> +++ b/include/uapi/linux/btrfs.h
-> @@ -732,6 +732,16 @@ struct btrfs_ioctl_logical_ino_args {
->   */
->  #define BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET	(1ULL << 0)
-> =20
-> +/*
-> + * Resolve backrefs against the commit roots instead of the current tree=
-s.
-> + *
-> + * Resolving against the current trees is more expensive for the filesys=
-tem as
-> + * a whole, not only for the caller. Callers that do not need to observe=
- the
-> + * currently running transaction should set this. The result can be up t=
-o one
-> + * commit interval stale.
-> + */
-> +#define BTRFS_LOGICAL_INO_ARGS_COMMIT_ROOT	(1ULL << 1)
-> +
->  enum btrfs_dev_stat_values {
->  	/* disk I/O failure stats */
->  	BTRFS_DEV_STAT_WRITE_ERRS, /* EIO or EREMOTEIO from lower layers */
-> --=20
-> 2.52.0
->=20
->=20
+So there should be no reason to hold it over the call to
+truncate_inode_pages.  I.e., you should be able to move the locking
+and ijoin below that.

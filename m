@@ -1,312 +1,401 @@
-Received: from fhigh-b1-smtp.messagingengine.com (fhigh-b1-smtp.messagingengine.com [202.12.124.152])
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 019382C027C
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2026 17:36:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.152
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 383A54CC28B
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2026 22:14:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.22
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790271402; cv=none; b=PVC/CKGob0ZLe4pta3cwqRNJzzTequpRfAz2wqae/KAAFhgI+k22GHTPJgXK6FV3tcN3eoyh/Zz/5heTXyrNrQCublnlzaE3ik6onjE+n5MWUAaelFyfW7NqylunyJNSnVjdss5gyXlggggO2QQR67tMmir+vuHaSQ2XSiWrcj8=
+	t=1790288096; cv=none; b=iZOavNNXwobJhUI4TEplKewMkHLuq1srayKg+shj3aB6FVaE+F2WmLr+wEJqNXdGG1uO3t+nTNXCXWZgDGIgbAhKlPX6nASlfKRIFxmsIm//jILQClVBQRux8nzs9GT1hXY4raY4dleMQWDlU3DAGS+5Rsm6q/GBh+Nn0fYlZLQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790271402; c=relaxed/simple;
-	bh=9I9UhLKF4cXsEsdfjCkgGR4vR43RMu9o2VbADGesL7c=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=KwlWjBcaec69eRdFEP+lYskWtSD+klT3keb8V5G3oTvfe2jzPzXIdlOVD1XENXpmFW3gmaxiLrDxGjM/iGB/egun3nu4KQAYiKAqzRL2yMBmoKS1G8VJEVS2thufBCrRtESgWGEeXjJhNSte7u2seRl+L2JjDNKuMpl+MMRQl/A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=a4SEeo5v; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=vW+b3y2K; arc=none smtp.client-ip=202.12.124.152
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1790288096; c=relaxed/simple;
+	bh=GTAJJYP54EGkFksbONGyh/9W0GZ08KZZFRxEXyNuvIE=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=J9jWlNHCkrTxAKd5eaWkhkXjE8UJLUWguL/BTkp82BvEefZOJziDcWGOsnD/E+hHMUWykA/rZsfIYI59BP0ysGpRUuh/69Pg2E/n7ZvIlCmsQwSZb96Z1RI5LxUNSs5Cr6TVJizAnLVUC+Fn05U+vS9iYHO0oUxGR/BCJv0QZiY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=h/7sr/dv; arc=none smtp.client-ip=212.227.17.22
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="a4SEeo5v";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="vW+b3y2K"
-Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id EA29E7A0021;
-	Thu, 24 Sep 2026 13:36:39 -0400 (EDT)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-05.internal (MEProxy); Thu, 24 Sep 2026 13:36:40 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm2; t=1790271399; x=1790357799; bh=Zrl/sHnu0Y
-	tjARYl5Ml4OwYyPlhG1pn5MEcXhe1MbFA=; b=a4SEeo5vOAhvBVRZATEraCv9+w
-	vM/gfQyHjgfZhn6ZRkyfiptNQWkY6bBWa/keKnlZvqR0stKIW87BTJ1XazeZsNNT
-	esz7xT5veKWmTUd25fTaAFpWv+9bLK4qs1nHDiPUZrzJT+RTLJa10PufV2zDVW/R
-	t4rLarIE+2dpcURwhe+5fhxS83zG4MJpDP2M2A9ty0NLHrAUSbwXSLMdkV8H+iY1
-	/Qrs8daBLK5vYmgrcJibmxSzW5emWGNAaOLbtLld9bvHEkcrx5sgDBNHL4GEoBag
-	qKj1okEmRnaFkutxIuuzfS+x1e+TIWV6GKPmdPZ6yWGZvXTJCBFclgZIFh/A==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
-	1790271399; x=1790357799; bh=Zrl/sHnu0YtjARYl5Ml4OwYyPlhG1pn5MEc
-	Xhe1MbFA=; b=vW+b3y2KkfNj408BYm+jjt48MFq1BujYb3LUhjbhcCvWeKnJITZ
-	GJDGqZTsVtVTZoJLId2tiSs6DwqbVbcEGKFCsHaBP2MkZN158+72WUfSt93n0cBH
-	1PYq9R88oA0z5XP5cVD9eW1Ux0cvcA1ARflboZDRTBIJt/cNqMmK2q/70P+yO6p/
-	o2/3tcbCcflbNnpHWdO4wBEVg3SfY24UyiCBIy73jXjmBE94LZf7+TWuEIuUlyso
-	WcX5e8J5jrCEKhEoe+FA89BEYWeHrKBTuY6U42i+EBVp8OQecQTknfQ2HQWzQeQB
-	lEqS+gwjA2BqTCdM6o7c3EZ7twICgfOnTrQ==
-X-ME-Sender: <xms:p1-1aqj0qso2HBrsm6yoFjUneymJ6mth7gRrPbFtzteigGb9hCTQ6g>
-    <xme:p1-1ahC7DPaSeni1pwegTmnFI7wUZiJhgfJTC3TCw_SrZLMp1J2RbBtZ6t2dMrkXI
-    -Vig_txjT0fnVHVhDhM9H94_2qQ4W3vilfM9pWP9m5kFdXKASjLI8Ns>
-X-ME-Received: <xmr:p1-1avv7hLqMM7pXINZM2AYi7hPy-GPzx0EkimP7oWK0iTJJf7tx0qE>
-X-ME-Proxy-Cause: dmFkZTE1TwKDhEB61c7Ww8tPYOfi98zfg4Uo29wIg/J0M64NTdsVqOpDqaGTnuY0Mtt+kV
-    VQ3PtfnIwui5oZ52f/vAapktOmodixsCpvD+WCE6RCG0Eg4/RLBC5JiontbrD2pBXp5fOJ
-    EJdthkeabjTZ2kC/ayk76Uv1fvDMZLfHvnMgwu1ohY0cGkOy2xN5asbSsgz5YNSUS+3lzx
-    x7uQyBTigSXSTNT/w0jpCF3nK2seF+pFXoHbdfuvU/+Q6XxJYIq3rBExlGXTc+1/yzJETO
-    Xqm40M3JYAc3oGHUPfen5h5i3UQ60/AQoXebGPcxLyoBEi0qfu3oO0Mmevea9ZaN4dYBs4
-    Q7A8Wc62vi98i08tSPjcwtxYYkOI/oB67nLxpwG6V0g3epaGJGRuxYNlYH0NMGDWYgIpR2
-    4gwn8fjgTVfcrvS4SD1IwekJvMQ5ivgubAXtIMVRK2KORCeHlF/raU1VjwY5IrnOIQN6Vi
-    0OO8p/0q+i6uYQiGrnDZax/ENwZljN/erTUdbrXwEy/Z5k7xmS0KXL3MaDyHu2yE9/TO74
-    37/oFG7tZf+2eXpPwqnI+gLfaGRjFVaE4A3aV/8Vi0McdPMr4112ZPZaaNYbYb9embcxTD
-    Do9ma0Yi8FR3dsjO5Tan++xvbCvV2eafx+7ZOmdp5TkKeGvycqLPbkTVahIQ
-X-ME-Proxy: <xmx:p1-1auYUQQK1Hm7qHMvUFe6AC1o1cuVXF8M4mC6b_O-UzKChVFeQxQ>
-    <xmx:p1-1aqUHSxBg6D6KN2n6u-Nc0VaPCpHVAEWPLzLCPbnFpKD0vN4wrQ>
-    <xmx:p1-1aq5qhBhE3Q2XnMCuBEtbjVFPa-2FkGJMSyrPmrdFOSUX-fQcAw>
-    <xmx:p1-1athyNoCnFbVG_CZTFXckozKsqkqv3_B3UUkpZpo-iW0IQAzX4A>
-    <xmx:p1-1aotXu7g1r_PhiWPMw3XcDTCpV0ueGjw2hNGpip3qvjM9j68gjXWu>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 24 Sep 2026 13:36:39 -0400 (EDT)
-Date: Thu, 24 Sep 2026 10:36:41 -0700
-From: Boris Burkov <boris@bur.io>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 5/6] btrfs: implement uncompressed fallback for
- delayed bbio
-Message-ID: <20260924173641.GC2146908@zen.localdomain>
-References: <cover.1789687750.git.wqu@suse.com>
- <bc25ff663342a8edfc1b9b40e6e4e1ed9f0f75ec.1789687750.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="h/7sr/dv"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1790288087; x=1790892887; i=quwenruo.btrfs@gmx.com;
+	bh=1PZpNCzlN0ma3Rpa5UiSmIlIAKfVg/wQlSc7mkGauS4=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=h/7sr/dvkcVrETxgDAQGDin5Y5i8KUzrNQEt0QSv+CV9sa0SlL3mgmeLtYUVNnWd
+	 Aj7oYm5LA/KvylPlGgGH3+ByPJMo6ISrhLI+n8/uxzHhep9Oyr5xoZgLhBnam4cpE
+	 79QrDbaI6w61h66Xlhpc8E6iUU3dKgB5/oejc0DMLOUHlo2HVMxXWJxhN1fywp4yA
+	 qAbM05QfY9OT2XTOW2+y1PAsCVs2y7jmAWUJ7HjOc+dcHnS9/fx9i6qRFxsb/ChK2
+	 uGG0kAo+Gus28p7D63cv0kbRVPlk1P6NMoJX57o9Id2SOhx1IZVjihFN+G/cULgGQ
+	 0b5o+zERymMu/XR4qQ==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1N1Obb-1wlql32RVD-015BwR; Fri, 25
+ Sep 2026 00:14:47 +0200
+Message-ID: <7aeb8a6a-471f-4051-a1ab-b5741ad27b0f@gmx.com>
+Date: Fri, 25 Sep 2026 07:44:43 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <bc25ff663342a8edfc1b9b40e6e4e1ed9f0f75ec.1789687750.git.wqu@suse.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v4 4/6] btrfs: introduce compression for delayed bbio
+To: Boris Burkov <boris@bur.io>, Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <cover.1789687750.git.wqu@suse.com>
+ <8836d526f71544e21557b428cc697b44dc060d62.1789687750.git.wqu@suse.com>
+ <20260924173029.GB2146908@zen.localdomain>
+Content-Language: en-US
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCaqsNDQUJFJfy
+ XgAKCRDCPZHzoSX+qPcICACxEFp2nh6g7JQyRkN855kqXeAYiWGZRWbCo+QQcGU0vjlm6s5K
+ 4CRT8U6RtY0Ou1Ss/MYrpf3z0joYh0hoWDgiVqhUXLG5jM2FeBY6bHl8WHKsMOiVpcB6yJqu
+ Umqira0lLmg0V+9zHkijuH9cqxIYURsDNNkUueMy3ZBBxLq14w5JFcqOU7tdHxa2NZoO/pck
+ qEZSL9lrsmRFe2dzFnxw4nOhikr9tkAqQN2wpW2OG8D1oLNARDx3hnhMYj9pKZ0ICZDtl6J3
+ ACi9ZIWLNGqwb8ayizmyKmCGouN0gLAuwGFq2qRpXGCxe2lTYknUk71CvBcCzFgCX8qlobxF
+ NCYXzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
+ CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
+ B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
+ Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
+ +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
+ HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
+In-Reply-To: <20260924173029.GB2146908@zen.localdomain>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:SIbpcWjQ21HozlmHa8lfpnm9mAjNJPIzAJsZyIFhWDn97BBq/ji
+ 8Qxl9Hd0zE/w4CXi56HbN98Gl1CRsn1i9pZEB6Vc3YVx8BoSNDYzdMRyDHRkNdNr6ZYBEjD
+ 7b322f3z+3l8M+jwT+tEooB4NG1Lp90JOtrEO3w29sIk8k4fZo2eGqLGGTo4X68uwQmga+U
+ 8b/qR5q1BYXHAEnSDL2RQ==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:gqb6GenX+UE=;e4ecO63Kd9Tu4pBYYbLTLvoc93r
+ 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
+ t7ih
 
-On Fri, Sep 18, 2026 at 09:00:30AM +0930, Qu Wenruo wrote:
-> When compression fails (either bad ratio, fragmented free space, or
-> writeback path chooses to submit the bio early), we have to fall back to
-> uncompressed writes.
-> 
-> The uncompressed fallback is mostly the same as cow_file_range() but
-> with some changes:
-> 
-> - Endio function is slightly different from the compressed path
->   Only in the folio freeing handling.
-> 
-> - Uncompressed fallback error handling
->   Since at this stage, the folios already have WRITEBACK flag set, we do
->   not need to do the usual page unlock/end writeback, but just free the
->   reserved space and call it a day.
 
-Continuing the reserved space issue from patch 4, here, both finishing
-that bug and showing a second very similar one.
 
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/inode.c | 162 ++++++++++++++++++++++++++++++++++++++++++++++-
->  1 file changed, 160 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index fbc0e5426d45..f47106c3f9ed 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -7804,16 +7804,174 @@ static bool try_submit_compressed(struct btrfs_bio *parent)
->  	return false;
->  }
->  
-> +static void end_bbio_delayed_uncompressed(struct btrfs_bio *bbio)
-> +{
-> +	struct delayed_bio_private *dbp = bbio->private;
-> +	struct btrfs_bio *parent = dbp->delayed_bbio;
-> +	struct folio_iter fi;
-> +
-> +	bio_for_each_folio_all(fi, &bbio->bio)
-> +		folio_put(fi.folio);
-> +	btrfs_bio_end_io(parent, bbio->bio.bi_status);
-> +	bio_put(&bbio->bio);
-> +}
-> +
-> +static struct btrfs_bio *child_bbio_from_page_cache(struct btrfs_bio *parent,
-> +						    u64 fileoff, u32 len)
-> +{
-> +	struct btrfs_inode *inode = parent->inode;
-> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-> +	struct address_space *mapping = inode->vfs_inode.i_mapping;
-> +	struct btrfs_bio *bbio;
-> +	struct folio_iter fi;
-> +	u64 cur = fileoff;
-> +	int ret;
-> +
-> +	bbio = btrfs_bio_alloc(len >> fs_info->sectorsize_bits, REQ_OP_WRITE,
-> +			       inode, fileoff, end_bbio_delayed_uncompressed,
-> +			       parent->private);
-> +
-> +	while (cur < fileoff + len) {
-> +		struct folio *folio;
-> +		u32 cur_len;
-> +		bool queued;
-> +
-> +		folio = filemap_get_folio(mapping, cur >> PAGE_SHIFT);
-> +		if (IS_ERR(folio)) {
-> +			ret = PTR_ERR(folio);
-> +			goto error;
-> +		}
-> +		cur_len = min_t(u64, folio_next_pos(folio), fileoff + len) - cur;
-> +		queued = bio_add_folio(&bbio->bio, folio, cur_len,
-> +				    offset_in_folio(folio, cur));
-> +		/* There should be enough slots for the bio. */
-> +		if (WARN_ON(!queued)) {
-> +			ret = -EIO;
-> +			folio_put(folio);
-> +			goto error;
-> +		}
-> +		cur += cur_len;
-> +	}
-> +
-> +	return bbio;
-> +error:
-> +	bio_for_each_folio_all(fi, &bbio->bio)
-> +		folio_put(fi.folio);
-> +	bio_put(&bbio->bio);
-> +	return ERR_PTR(ret);
-> +}
-> +
-> +static int submit_one_uncompressed_range(struct btrfs_bio *parent, struct btrfs_key *ins,
-> +					 struct extent_state **cached, u64 file_offset,
-> +					 u32 num_bytes, u64 alloc_hint, u32 *ret_alloc_size)
-> +{
-> +	struct btrfs_inode *inode = parent->inode;
-> +	struct btrfs_root *root = inode->root;
-> +	struct btrfs_fs_info *fs_info = root->fs_info;
-> +	struct btrfs_ordered_extent *ordered;
-> +	struct btrfs_file_extent file_extent;
-> +	struct btrfs_bio *child = NULL;
-> +	struct extent_map *em;
-> +	u64 cur_end;
-> +	u32 cur_len = 0;
-> +	int ret;
-> +
+=E5=9C=A8 2026/9/25 03:00, Boris Burkov =E5=86=99=E9=81=93:
+> On Fri, Sep 18, 2026 at 09:00:29AM +0930, Qu Wenruo wrote:
+>> The compressed write path inside a delayed bbio is mostly the same as
+>> regular compression, but with some differences:
+>>
+>> - The error handling should not touch folio flags
+>>    It will be handled by the parent delayed bbio.
+>>    And those folios already have WRITEBACK flag set, not the LOCKED fla=
+g
+>>    of the async submission path.
+>>
+>> - A successful compression will lead to a child compressed bio
+>>    That compressed bio will be properly submitted, and if there are no
+>>    more pending IOs of the delayed bbio, end the delayed bbio.
+>>
+>>    There is a minor note, since we're going through the regular
+>>    extent_writepage_io() path, we can have multiple bbios for the same
+>>    delayed ordered extent.
+>>
+>>    This means we may have a slightly lower compression ratio if for
+>>    whatever reason the writeback path chooses to submit a smaller bio.
+>>
+>> - No sequential execution of data extent reservation
+>>    The existing async thread has one quirk related to the ordered
+>>    function execution, which is not suitable for this call site.
+>>
+>>    After the compressed bio is submitted, we can no longer touch the
+>>    child compressed bio (it could finish immediately and also finish th=
+e
+>>    parent delayed bbio).
+>>    Meanwhile the async ordered function needs different entries to hand=
+le
+>>    the workload and free involved structures.
+>>
+>>    These will be the major changes compared to the existing compressed
+>>    write.
+>>
+>> - No extra blkcg/write flag inheritance
+>>    This is a missing feature compared to the older async compression.
+>>    This needs to be implemented in the future, but priority shouldn't b=
+e
+>>    that high.
+>=20
+> I believe there is reservation double counting, detailed inline.
+>=20
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>   fs/btrfs/inode.c | 114 ++++++++++++++++++++++++++++++++++++++++++++++=
+-
+>>   1 file changed, 113 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>> index 2d6a581d977b..fbc0e5426d45 100644
+>> --- a/fs/btrfs/inode.c
+>> +++ b/fs/btrfs/inode.c
+>> @@ -7696,14 +7696,126 @@ struct extent_map *btrfs_create_delayed_em(str=
+uct btrfs_inode *inode,
+>>   	return em;
+>>   }
+>>  =20
+>> +static void end_bbio_delayed_compressed(struct btrfs_bio *bbio)
+>> +{
+>> +	struct delayed_bio_private *dbp =3D bbio->private;
+>> +	struct btrfs_bio *parent =3D dbp->delayed_bbio;
+>> +	struct folio_iter fi;
+>> +
+>> +	bio_for_each_folio_all(fi, &bbio->bio)
+>> +		btrfs_free_compr_folio(fi.folio);
+>> +	btrfs_bio_end_io(parent, bbio->bio.bi_status);
+>> +	bio_put(&bbio->bio);
+>> +}
+>> +
+>> +static bool try_submit_compressed(struct btrfs_bio *parent)
+>> +{
+>> +	struct delayed_bio_private *dbp =3D parent->private;
+>> +	struct btrfs_inode *inode =3D parent->inode;
+>> +	struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
+>> +	struct btrfs_key ins;
+>> +	struct compressed_bio *cb;
+>> +	struct extent_state *cached =3D NULL;
+>> +	struct extent_map *em;
+>> +	struct btrfs_ordered_extent *ordered;
+>> +	struct btrfs_file_extent file_extent;
+>> +	u64 alloc_hint;
+>> +	const u32 len =3D bio_get_size(&parent->bio);
+>> +	const u64 fileoff =3D parent->file_offset;
+>> +	const u64 end =3D fileoff + len - 1;
+>> +	u32 compressed_size;
+>> +	int compress_type =3D fs_info->compress_type;
+>> +	int compress_level =3D fs_info->compress_level;
+>> +	int ret;
+>> +
+>> +	if (!btrfs_inode_can_compress(inode) ||
+>> +	    !inode_need_compress(inode, fileoff, end, false))
+>> +		return false;
+>> +
+>> +	if (inode->defrag_compress > 0 &&
+>> +	    inode->defrag_compress < BTRFS_NR_COMPRESS_TYPES) {
+>> +		compress_type =3D inode->defrag_compress;
+>> +		compress_level =3D inode->defrag_compress_level;
+>> +	} else if (inode->prop_compress) {
+>> +		compress_type =3D inode->prop_compress;
+>> +	}
+>> +	cb =3D btrfs_compress_bio(inode, fileoff, len, compress_type,
+>> +				compress_level, 0);
+>> +	if (IS_ERR(cb))
+>> +		return false;
+>> +
+>> +	round_up_last_block(cb, fs_info->sectorsize);
+>> +	compressed_size =3D cb->bbio.bio.bi_iter.bi_size;
+>> +	/* If no space is saved, abort and mark the inode NOCOMPRESS. */
+>> +	if (compressed_size >=3D len) {
+>> +		if (!btrfs_test_opt(fs_info, FORCE_COMPRESS) &&
+>> +		    !inode->prop_compress)
+>> +			inode->flags |=3D BTRFS_INODE_NOCOMPRESS;
+>> +		cleanup_compressed_bio(cb);
+>> +		return false;
+>> +	}
+>> +
+>> +	alloc_hint =3D btrfs_get_extent_allocation_hint(inode, fileoff, len);
+>> +	ret =3D btrfs_reserve_extent(inode->root, len,
+>> +				   compressed_size, compressed_size,
+>> +				   0, alloc_hint, &ins, true, true);
+>=20
+> This consumes bytes_may_use and moves it to bytes_reserved
+>=20
+>> +	if (ret < 0) {
+>> +		cleanup_compressed_bio(cb);
+>> +		return false;
+>> +	}
+>> +	btrfs_lock_extent(&inode->io_tree, fileoff, end, &cached);
+>> +	file_extent.disk_bytenr =3D ins.objectid;
+>> +	file_extent.disk_num_bytes =3D ins.offset;
+>> +	file_extent.ram_bytes =3D len;
+>> +	file_extent.num_bytes =3D len;
+>> +	file_extent.offset =3D 0;
+>> +	file_extent.compression =3D cb->compress_type;
+>> +
+>> +	cb->bbio.bio.bi_iter.bi_sector =3D ins.objectid >> SECTOR_SHIFT;
+>> +	em =3D btrfs_create_io_em(inode, fileoff, &file_extent, BTRFS_ORDERED=
+_COMPRESSED);
+>> +	if (IS_ERR(em)) {
+>> +		ret =3D PTR_ERR(em);
+>> +		goto out_free_reserve;
+>> +	}
+>> +	btrfs_free_extent_map(em);
+>> +
+>> +	ordered =3D btrfs_alloc_ordered_extent(inode, fileoff, &file_extent,
+>> +					     1U << BTRFS_ORDERED_COMPRESSED);
+>> +	if (IS_ERR(ordered)) {
+>> +		btrfs_drop_extent_map_range(inode, fileoff, end, false);
+>> +		ret =3D PTR_ERR(ordered);
+>=20
+> Now this fails with ENOMEM
+>=20
+>> +		goto out_free_reserve;
+>> +	}
+>> +	cb->bbio.ordered =3D ordered;
+>> +	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+>> +	btrfs_unlock_extent(&inode->io_tree, fileoff, end, &cached);
+>> +
+>> +	cb->bbio.end_io =3D end_bbio_delayed_compressed;
+>> +	cb->bbio.private =3D dbp;
+>> +	atomic_inc(&parent->pending_ios);
+>> +	btrfs_submit_bbio(&cb->bbio, 0);
+>> +	return true;
+>> +
+>> +out_free_reserve:
+>> +	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+>=20
+> We free bytes_reserved, so bytes_may_use and bytes_reserved both no
+> longer reflect the reservation.
+>=20
+>> +	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, true);
+>> +	btrfs_unlock_extent(&inode->io_tree, fileoff, end, &cached);
+>> +	cleanup_compressed_bio(cb);
+>> +	return false;
+>=20
+> And fallback to uncompressed submission in run_delayed_bbio() which
+> calls btrfs_reserve_extent() again.
 
-Suppose the compressed try failed without reserving, like in the actual
-compression checks, then this reservation is currently valid and
-reasonable and not a double dip. (if compression succeeded and reserved
-then failed, this is the problematic one)
+Right, and that's also why the old async submission do not fallback to=20
+uncompressed submission.
 
-> +	ret = btrfs_reserve_extent(root, num_bytes, num_bytes, fs_info->sectorsize,
-> +				   0, alloc_hint, ins, true, true);
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	cur_len = ins->offset;
-> +	cur_end = file_offset + cur_len - 1;
-> +
-> +	file_extent.disk_bytenr = ins->objectid;
-> +	file_extent.disk_num_bytes = ins->offset;
-> +	file_extent.num_bytes = ins->offset;
-> +	file_extent.ram_bytes = ins->offset;
-> +	file_extent.offset = 0;
-> +	file_extent.compression = BTRFS_COMPRESS_NONE;
-> +
-> +	child = child_bbio_from_page_cache(parent, file_offset, cur_len);
-> +	if (IS_ERR(child)) {
-> +		ret = PTR_ERR(child);
-> +		child = NULL;
-> +		goto free_reserved;
-> +	}
-> +
-> +	btrfs_lock_extent(&inode->io_tree, file_offset, cur_end, cached);
-> +	em = btrfs_create_io_em(inode, file_offset, &file_extent, BTRFS_ORDERED_REGULAR);
-> +	if (IS_ERR(em)) {
-> +		ret = PTR_ERR(em);
-> +		btrfs_unlock_extent(&inode->io_tree, file_offset, cur_end, cached);
-> +		goto free_reserved;
-> +	}
-> +	btrfs_free_extent_map(em);
-> +	ordered = btrfs_alloc_ordered_extent(inode, file_offset, &file_extent,
-> +					     1U << BTRFS_ORDERED_REGULAR);
-> +	if (IS_ERR(ordered)) {
-> +		btrfs_drop_extent_map_range(inode, file_offset, cur_end, false);
-> +		btrfs_unlock_extent(&inode->io_tree, file_offset, cur_end, cached);
-> +		ret = PTR_ERR(ordered);
-> +		goto free_reserved;
+The old code only fallback after a btrfs_reserve_extent() failure, but=20
+treat later failures as regular errors.
 
-Now suppose this fails. We will have a missing OE range in the parent,
-so when we finish the parent, we will free its reservation (patch 1)
+So here we should also follow that behavior.
 
-> +	}
-> +	btrfs_dec_block_group_reservations(fs_info, ins->objectid);
-> +	btrfs_unlock_extent(&inode->io_tree, file_offset, cur_end, cached);
-> +
-> +	child->ordered = ordered;
-> +	child->private = parent->private;
-> +	child->end_io = end_bbio_delayed_uncompressed;
-> +	child->bio.bi_iter.bi_sector = ins->objectid >> SECTOR_SHIFT;
-> +	atomic_inc(&parent->pending_ios);
-> +	btrfs_submit_bbio(child, 0);
-> +	*ret_alloc_size = cur_len;
-> +	return 0;
-> +
-> +free_reserved:
-> +	if (child) {
-> +		struct folio_iter fi;
-> +
-> +		bio_for_each_folio_all(fi, &child->bio)
-> +			folio_put(fi.folio);
-> +		bio_put(&child->bio);
-> +	}
-> +	btrfs_qgroup_free_data(inode, NULL, file_offset, cur_len, NULL);
-> +	btrfs_dec_block_group_reservations(fs_info, ins->objectid);
+Thanks a lot for exposing this problem.
+Qu
 
-But we have already freed it here, so it is a double free.
+>=20
+>> +}
+>> +
+>>   static void run_delayed_bbio(struct work_struct *work)
+>>   {
+>>   	struct delayed_bio_private *dbp =3D container_of(work, struct delaye=
+d_bio_private, work);
+>>   	struct btrfs_bio *parent =3D dbp->delayed_bbio;
+>>  =20
+>> -	/* Compressed and uncompressed fallback is not yet implemented. */
+>> +	if (try_submit_compressed(parent))
+>> +		goto finish;
+>> +
+>> +	/* Uncompressed fallback is not yet implemented. */
+>>   	ASSERT(0);
+>=20
+> Sorry hard to reply across patches, but clearly it is still OK in this
+> version :)
+>=20
+>>  =20
+>> +finish:
+>>   	/*
+>>   	 * Any real compressed/uncompressed bios have increased
+>>   	 * parent->pending_ios, the last caller of btrfs_bio_end_io()
+>> --=20
+>> 2.55.0
+>>
+>=20
 
-> +	btrfs_free_reserved_extent(fs_info, ins->objectid, ins->offset, true);
-> +	ASSERT(ret != -EAGAIN);
-> +	return ret;
-> +}
-> +
->  static void run_delayed_bbio(struct work_struct *work)
->  {
->  	struct delayed_bio_private *dbp = container_of(work, struct delayed_bio_private, work);
->  	struct btrfs_bio *parent = dbp->delayed_bbio;
-> +	struct btrfs_key ins;
-> +	struct extent_state *cached = NULL;
-> +	const u32 uncompressed_size = bio_get_size(&parent->bio);
-> +	const u64 start = parent->file_offset;
-> +	const u64 end = start + uncompressed_size - 1;
-> +	u64 cur = start;
-> +	u64 alloc_hint;
-> +	int ret = 0;
->  
->  	if (try_submit_compressed(parent))
->  		goto finish;
->  
-> -	/* Uncompressed fallback is not yet implemented. */
-> -	ASSERT(0);
-> +	alloc_hint = btrfs_get_extent_allocation_hint(parent->inode, start,
-> +						      uncompressed_size);
-> +	while (cur < end) {
-> +		u32 cur_len;
-> +
-
-(re patch 4: this is the missing second reserving call)
-
-> +		ret = submit_one_uncompressed_range(parent, &ins, &cached,
-> +						    cur, end + 1 - cur,
-> +						    alloc_hint, &cur_len);
-> +		if (ret < 0) {
-> +			cmpxchg(&parent->status, BLK_STS_OK, errno_to_blk_status(ret));
-> +			goto finish;
-> +		}
-> +		cur += cur_len;
-> +		alloc_hint = ins.objectid + ins.offset;
-> +	}
->  
->  finish:
->  	/*
-> -- 
-> 2.55.0
-> 

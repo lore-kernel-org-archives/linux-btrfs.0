@@ -1,79 +1,79 @@
-Received: from fhigh-b1-smtp.messagingengine.com (fhigh-b1-smtp.messagingengine.com [202.12.124.152])
+Received: from fout-b2-smtp.messagingengine.com (fout-b2-smtp.messagingengine.com [202.12.124.145])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0B3A7414DFA
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2026 17:21:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.152
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9B64A222597
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2026 17:30:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.145
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790270481; cv=none; b=XoehkH+vx1eGCS1ZnwuymtOpg7+SMF9aWPwjyy2GnfE07fzrU2g5S7ocJ49WUYtBIjcDh/fj2e8iR7HCeeJT58yz7jyJEKGB6/NuQHamvgFz7WWV75G1FIYqvsZCqZMJ5LIGVs/tytcnrQN+b68/mF2+hAAnUxArXMoufgCxRH0=
+	t=1790271031; cv=none; b=V2Y6Iz7OP60wDk5GXkXbYU1IE+ZmscZPfIdjdu+LXCHDiP4Bq3UQj5/9+fWKnwFnUzI3TtVjlgE1HMo51fyCg59lLEsZznf76qjyHAsfzHsD2jmIaCAVbcn8ITiWpHd3QL8aJwbrJYFdQb/A6rj6OZlrrSqK6yJ3CMHxtv3ejp0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790270481; c=relaxed/simple;
-	bh=V6evc0W3qvLN8MV0KWleirqDiiUnk4Wk47prD+gId4k=;
+	s=arc-20240116; t=1790271031; c=relaxed/simple;
+	bh=cTcR8gAOEzCQoZKviGUs+zhO+7blfdbH1drNBEEWB0s=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=FzG58shh1HrMzfOVDlrOPwk//RmB93W1qMwLkuqWIkHFQmUXijogyMQ+EJUZEfcpAi6SINWxWQKysNgU0M9UZk3nvBphVOdqf+0CUc7GI/4D5UUIRCnwFywHrtjYWu8sk2KIcXj42m03/ecdmQkwwJIUAv1lQ8kWv2bvQt16xkA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=kpyrmjKy; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=Uzqh8W0N; arc=none smtp.client-ip=202.12.124.152
+	 Content-Type:Content-Disposition:In-Reply-To; b=EENvFAQn/oTGe8WG792KeeTH8+9DmmOaYmGej29Ogv/JQIL7QuWVN02CiV3udqPVkSA7rc4/5bVeXFqnXV/JxIrthA0uYtn4/ubCjQCUoGm/0xoZr/K5xvIUNdoogsY5douX3mcL/Skf+6B82dgciY1fWny8VWS3ompcmIdKphQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=Ueg+njt/; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=Uefv1mLv; arc=none smtp.client-ip=202.12.124.145
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="kpyrmjKy";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Uzqh8W0N"
-Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 10A977A00E9;
-	Thu, 24 Sep 2026 13:21:18 -0400 (EDT)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="Ueg+njt/";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Uefv1mLv"
+Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
+	by mailfout.stl.internal (Postfix) with ESMTP id D48F91D000DB;
+	Thu, 24 Sep 2026 13:30:28 -0400 (EDT)
 Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-04.internal (MEProxy); Thu, 24 Sep 2026 13:21:18 -0400
+  by phl-compute-01.internal (MEProxy); Thu, 24 Sep 2026 13:30:28 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
 	:content-type:content-type:date:date:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm2; t=1790270477; x=1790356877; bh=8jZK/JM6YN
-	67pAfDbOcMTQFLZ5ebNBT7olT5+z4nv3c=; b=kpyrmjKywwGjE27wRLWmI5O5Jl
-	RftNhmJa5OerSY+HU8SOTjDDr+FeM1nFzYlm8VVB4d3MY+GFJT2/sM/Q3KtKsdqT
-	+kpa0XjXFcUw9a8HhlFeVI5ursb0KdLWUebfe65opLiHHKCFGyLYWxR24P/+emxO
-	PceTy3xh7sYMcaXI8RPrSaPhSbAeUVsOxdVOUm7nUJHCv2HU2mRDjDlfJWRGJJ5E
-	IRQV8pPh3GpG7UPg+2A34Ma0EoecyejvDossIwJl7ncieXyL5EugC2wzbFW5CfCu
-	2T4a7M+TFRm5AOiMuRYkZSHtqFVVt62gA90N82prUzx84qDuXOmL7RK5htxg==
+	:subject:to:to; s=fm2; t=1790271028; x=1790357428; bh=MEZ4XbcnMu
+	8TCwl7tKcJ+M4GRzJMjwoHZfsE47wixuk=; b=Ueg+njt/WANKK9i8XOS45L3ZdQ
+	5NjNOCYIU8d53tScIw0bijGe60IxMwd2EZLbmfvUWMlWPm6WeyAL6aPhbH8hAQBC
+	8aMaPTJzsrfRTfjI6ycE4wnS/KB59u1StnnOzfOrVY0AOQ+4lxZrCwjrG1mVAjix
+	MUU+JFk0XZiRRKd+RQtpwjAGtA/QA/XMcPSwsp9r8POleHPsVKkXA034wl6qcXAs
+	ISW6hS+4ZH0spfj2+ArKrRTrSZfSr+YpnSqqbsczWHkCjw0LSPA6z/E6RTu+472X
+	+vGxtgxaWMZ0IxyqVMwnpqNn1AfhRKxkEhPpXJjSTbykKjrZSe+7siUYkn4w==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:cc:content-type:content-type:date:date
 	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
 	:message-id:mime-version:references:reply-to:subject:subject:to
 	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
-	1790270477; x=1790356877; bh=8jZK/JM6YN67pAfDbOcMTQFLZ5ebNBT7olT
-	5+z4nv3c=; b=Uzqh8W0N5mW7Bk+0jz6IFferWg+gI4uxxt1s1W2PgzkFQv78GXY
-	9brzX9iXfrMnTjJirMWUqZ33/KNvOEOgmewyG90YZvf83iXwvygbcCHidhNfiwZ2
-	gQiQDH3AEGRzp7NIjUBZD0LDmG/OLj/af+aCpOhXzLIljV162xeyujIwQM+9PfLs
-	uSdMDJVmziIZ39xchWTBZNQer6cgisWCrszEUe+YyLdoY/X0/IthiGh3yJEJEUO7
-	8wnA25Nb4z6108dLCWoN+A5LK5JZg029BMDd9lZD6teDVJj2qeF0k8c6xyzkQ14d
-	WlFIIKUMvK9kpvS24zhvBnVAeoNR33kRhug==
-X-ME-Sender: <xms:DVy1avtm1GAt9lmlQPCt4KF0PJyay0SdbOt5hInhA-Gg7JNBD9YFsg>
-    <xme:DVy1amf67IDdAd7BthwJk0Ec_VBrq4q21bdInPM_5li0A1r6-N49B729dW--qgEfL
-    LpRlcJ-YpjCrIWmXLG1ASEBlFLHd3cR3qNJQCeUjhjYCdee8L6pQ8qh>
-X-ME-Received: <xmr:DVy1agYeHCtzAb5qgSL1GWLlWje-rdMyReHu-dlLI4NVJD-1cBQnjtk>
-X-ME-Proxy-Cause: dmFkZTEoFuRlf+zm6ZkV8+S2mBpVOGfBZgYPNK9I+cxl6H28M7cXHcyNNmFo5OapHFPxN0
-    PN0GgVrqsEkRk0CajhN9VRk52RTaHogP/g8P7AHxquJHxCwUO3cHMO3GYpPSQ+r/UwC/hB
-    zkoHqfgmvd8J9hZx79YVH1IEO60d9VZQIYrLQ0Tv5hqZ3dRk55Jq4OOJ1AxYoPZV6gzj34
-    eVr+Nmh8lVZ1DObVYbM1T792P1ogO6Juk9eGRaEBZTztLqAJzy9p8TfcNZftGFTkHKOtz4
-    +bi/9BFfAy/Ns54fjbZD3jzaZ9RxHrte79rS+xVYkImRUPI6Ezz0YTREin5ZjcYjmU7qmm
-    UrIXz0+bTvjhRZA78OCsT5JvG6rwBzX9FnxYtIAbyhxdF42KE5/FSBxX68jjoYb4G9RZRi
-    yOwzMAjqJrvpMzPgIVK0ACXkcihPDMwG0EPCMdzGvBOdjfR5U3XS30sxTCuw0wSUe3dMhb
-    bpSTQRE9Gk9zrtR2Bd/Z632+0BhftdADSv9SXn5zqcjdtL6TgxsDMvEixkvnpm57qECNsd
-    M6id3T9yg8mMlRbZZydBKSlZ2u4Q7/dGF0UNwXtiKs1zRL5e2p3UnsbDnixPq6jjEJVO96
-    B8nAEi1FF4pbEgRdLTyM99VhxSWK6EIIXFkO3SWkiczl8WOEQvF/9kS5DWAw
-X-ME-Proxy: <xmx:DVy1apV1VKdJMcjaNwiKePCNCB_ku-NGYs_4LgVG95Qm8vGXgPk78g>
-    <xmx:DVy1aihsvKUZ_FfgBrrumsl8mGX-E11CWFTjj10rXioenfFuq50dWA>
-    <xmx:DVy1anXo3dy42sguIrAN2XlWUkWkqqoKKQLtjKJAfRTry92rYdw0OA>
-    <xmx:DVy1apPKxQZsm-9ZwiycuiEAY6zezXQmc3pQcCmW7BJzERFxx2dzDw>
-    <xmx:DVy1araArYcxlTNMIYskHghqQSsKnxOcMd82xf6zDmyxSZZcgaNzlc35>
+	1790271028; x=1790357428; bh=MEZ4XbcnMu8TCwl7tKcJ+M4GRzJMjwoHZfs
+	E47wixuk=; b=Uefv1mLvhiCtVEyn4yKnRm/MxzG3+/r+t9LQaiK2ygGmExcC/C6
+	Dgc/7MRFv8UyVjYlUFJRfRADaDKAXE5LDtJ+7k3YAZS64teGZ4D8aH1yQxF4Qr7l
+	t9csQF7B7R9XAKoj9yxcsfqsL0rXDkT7JVnAvg8VCtBc1YKas4ADl2p51ADLvXWm
+	uMbOf9qNXvaAcesZ2pkDiYOhKmfqCQRJ7N63YF7kPhvGAIiuCqYpY7X5PX/0nswf
+	G8aSYbyXF/tZdLyt4X03Y5E8i73X8yC5RaNWdNI22whv5s2pDCG4nlqqct72HB3M
+	6vX1HxVubVo0Avl0nQrqHY4qAJhrp0CIbyQ==
+X-ME-Sender: <xms:NF61auA007F2eEWs9wIsq-Nj4ODhGF8Ixpi6eEjbLOVywnw49JyEag>
+    <xme:NF61auhigk_w7R0QbUsRxKRP2L9t8RR8DKb8XZ48Y6xbhum8fjo_ijt4nBnVcor6f
+    ZVUNDiAEdy9Xo8gfaXrOmfCBKLUokG_gtIi4H_Ha2gUicierhyEmxpN>
+X-ME-Received: <xmr:NF61avOCiZHgs043HuNPuJk2M_D1Juilh5jyjTCWLN9ZI6NYO551TTI>
+X-ME-Proxy-Cause: dmFkZTGDX5bWLxUwfVch6/JDR6keSNRPPXmLkUkPKySFAhZm6WpXg8jFk3q2adz8J07w+6
+    MxKOVsOdiCAeNiNkXIkiT9V4s4jPj3X6EY0PWqxg8gIao9YuJ1g0cNq1QQe5BUo6AzvM4Z
+    zAiL65zDBUVZs05oEQCEznkQ+9eehi3GYToD6NKkq6FCSxebJjQygoRuB1srl4CwASE5OU
+    ts8B1D2cqORvXwDAzH5TtsyPAijP9DO7OBecB6THmzoK111z6wdQXk53LIiWNEWn/OfiPi
+    BsEDRsrC9S2MHy2UTyix5vkpVQbecrCgiwXuOC2+7dVhITPnDojpOFlKwvWhQWj9qww/Hj
+    pGsFUZxyI4vmdlJoM90DjxEHVwSBJejqgjQObM0dMGj1YTywaXHzhso7f2lOsCv0ymSCiQ
+    vUV/4qfco+A/J0XS6ngiPN9jen4+umPeFUDNyfnj1k0CX2gCo4F/I2aZEqrV849zLdUTdT
+    y0J9STebs1KN9nO98X2VveLlasOjAbz0/Jz3SnCSWiD20Ms+90EthNbB7X+q8YS7iduTB+
+    A35Ccksoa9FY5XQtaBb1bBTdNUXu5RglvWciz42y3cuAA320dcORcpoOS4yMqVzodkpezT
+    zgW+Kh8MfYSlYEmQQFujowg1NY3zKmwkMNPyLSF5ypRHoVzWXxLUnyuXx+8g
+X-ME-Proxy: <xmx:NF61an5cER2FRdM1fNuB-CtYE9yjsVRTS414RPcmkKVeqy1m_j0BoQ>
+    <xmx:NF61al0TbGuFBAUH-QhmAi9lyyU-o6Hpogz-G4GvsCcNJs8FnYEUqw>
+    <xmx:NF61aga4vfNyCIC4NadXzkSFsxtmW5iyX1JvzO4_G7FV4ylfS1TETA>
+    <xmx:NF61alBxOfAkBTDNHUd2Ar7Xo7A_d-LOdbxTn-Pz1W9-EiJNFHWu3A>
+    <xmx:NF61aoMzlHFoi-j61qp1cofEPXnhxcu8RZn1X480xHIcFhayi7isLbCS>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 24 Sep 2026 13:21:17 -0400 (EDT)
-Date: Thu, 24 Sep 2026 10:21:18 -0700
+ 24 Sep 2026 13:30:28 -0400 (EDT)
+Date: Thu, 24 Sep 2026 10:30:29 -0700
 From: Boris Burkov <boris@bur.io>
 To: Qu Wenruo <wqu@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 1/6] btrfs: add delayed ordered extent support
-Message-ID: <20260924172118.GA2146908@zen.localdomain>
+Subject: Re: [PATCH v4 4/6] btrfs: introduce compression for delayed bbio
+Message-ID: <20260924173029.GB2146908@zen.localdomain>
 References: <cover.1789687750.git.wqu@suse.com>
- <cc71ad3fcbd4564a7af97f8563500adac5730756.1789687750.git.wqu@suse.com>
+ <8836d526f71544e21557b428cc697b44dc060d62.1789687750.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -82,489 +82,204 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cc71ad3fcbd4564a7af97f8563500adac5730756.1789687750.git.wqu@suse.com>
+In-Reply-To: <8836d526f71544e21557b428cc697b44dc060d62.1789687750.git.wqu@suse.com>
 
-On Fri, Sep 18, 2026 at 09:00:26AM +0930, Qu Wenruo wrote:
-> A delayed ordered extent has the following features:
+On Fri, Sep 18, 2026 at 09:00:29AM +0930, Qu Wenruo wrote:
+> The compressed write path inside a delayed bbio is mostly the same as
+> regular compression, but with some differences:
 > 
-> - A new BTRFS_ORDERED_DELAYED flag
->   And this new flag must be set along with the BTRFS_ORDERED_REGULAR flag.
+> - The error handling should not touch folio flags
+>   It will be handled by the parent delayed bbio.
+>   And those folios already have WRITEBACK flag set, not the LOCKED flag
+>   of the async submission path.
 > 
-> - No allocation of any on-disk space
->   As a delayed ordered extent doesn't take any on-disk space yet, it
->   won't release any reserved data/meta space either.
+> - A successful compression will lead to a child compressed bio
+>   That compressed bio will be properly submitted, and if there are no
+>   more pending IOs of the delayed bbio, end the delayed bbio.
 > 
-> - Zero or more real OEs can be added to the parent
->   If a real OE is allocated, it must be inside the parent OE.
->   And such real OE will go through the regular data/meta space
->   reservation path.
+>   There is a minor note, since we're going through the regular
+>   extent_writepage_io() path, we can have multiple bbios for the same
+>   delayed ordered extent.
 > 
-> - Child OEs will not be added to the per-inode OE rb-tree nor
->   per-root list
->   Only the parent OE is added to the per-inode rb-tree and per-root
->   list.
->   So anything waiting for ordered extents should only work on the parent
->   one.
+>   This means we may have a slightly lower compression ratio if for
+>   whatever reason the writeback path chooses to submit a smaller bio.
 > 
->   There is a special corner case for btrfs_wait_ordered_extents(), as
->   delayed parent OEs have 0 disk_bytenr and disk_num_bytes, they will
->   be considered out of the [0, U64_MAX] range.
->   Thus we have to always wait for any delayed OEs of a root, no matter
->   if a block group range is given or not.
+> - No sequential execution of data extent reservation
+>   The existing async thread has one quirk related to the ordered
+>   function execution, which is not suitable for this call site.
 > 
-> - When the parent OE finishes, all children OEs will also be finished
->   And reserved space is all handled by the children OEs.
+>   After the compressed bio is submitted, we can no longer touch the
+>   child compressed bio (it could finish immediately and also finish the
+>   parent delayed bbio).
+>   Meanwhile the async ordered function needs different entries to handle
+>   the workload and free involved structures.
 > 
-> - Any range not covered by a child OE will be manually cleaned up
+>   These will be the major changes compared to the existing compressed
+>   write.
 > 
-> The above features allow us to use the existing ordered extent interfaces
-> to allocate new real OEs, and wait for them properly.
+> - No extra blkcg/write flag inheritance
+>   This is a missing feature compared to the older async compression.
+>   This needs to be implemented in the future, but priority shouldn't be
+>   that high.
+
+I believe there is reservation double counting, detailed inline. 
+
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/inode.c        |  76 +++++++++++++++++
->  fs/btrfs/ordered-data.c | 178 ++++++++++++++++++++++++++++++----------
->  fs/btrfs/ordered-data.h |  14 ++++
->  3 files changed, 224 insertions(+), 44 deletions(-)
+>  fs/btrfs/inode.c | 114 ++++++++++++++++++++++++++++++++++++++++++++++-
+>  1 file changed, 113 insertions(+), 1 deletion(-)
 > 
 > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 79f2181dc631..2421fe49b43b 100644
+> index 2d6a581d977b..fbc0e5426d45 100644
 > --- a/fs/btrfs/inode.c
 > +++ b/fs/btrfs/inode.c
-> @@ -3189,6 +3189,79 @@ static int insert_ordered_extent_file_extent(struct btrfs_trans_handle *trans,
->  					   update_inode_bytes, oe->qgroup_rsv);
+> @@ -7696,14 +7696,126 @@ struct extent_map *btrfs_create_delayed_em(struct btrfs_inode *inode,
+>  	return em;
 >  }
 >  
-> +static int finish_delayed_ordered(struct btrfs_ordered_extent *oe)
+> +static void end_bbio_delayed_compressed(struct btrfs_bio *bbio)
 > +{
-> +	struct btrfs_inode *inode = oe->inode;
-> +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-> +	struct btrfs_ordered_extent *child;
-> +	struct btrfs_ordered_extent *tmp;
-> +	struct extent_state *cached = NULL;
-> +	const u32 nr_bits = oe->num_bytes >> fs_info->sectorsize_bits;
-> +	bool io_error = test_bit(BTRFS_ORDERED_IOERR, &oe->flags);
-> +	u64 cur = oe->file_offset;
-> +	int ret = 0;
-> +	int saved_ret = 0;
+> +	struct delayed_bio_private *dbp = bbio->private;
+> +	struct btrfs_bio *parent = dbp->delayed_bbio;
+> +	struct folio_iter fi;
 > +
-> +	/* Finish each child OE. */
-> +	list_for_each_entry_safe(child, tmp, &oe->child_list, child_list) {
-> +		list_del_init(&child->child_list);
-> +		refcount_inc(&child->refs);
-> +
-> +		/* The range should have been marked in the bitmap. */
-> +		ASSERT(bitmap_test_range_all_set(oe->child_bitmap,
-> +			(child->file_offset - oe->file_offset) >> fs_info->sectorsize_bits,
-> +			child->num_bytes >> fs_info->sectorsize_bits));
-> +
-> +		if (io_error)
-> +			set_bit(BTRFS_ORDERED_IOERR, &child->flags);
-> +
-> +		ret = btrfs_finish_one_ordered(child);
-> +		if (ret && !saved_ret)
-> +			saved_ret = ret;
-> +	}
-> +
-> +	/* For ranges that don't have a child OE, manually clean them up. */
-> +	while (cur < oe->file_offset + oe->num_bytes) {
-> +		const u32 cur_bit = (cur - oe->file_offset) >> fs_info->sectorsize_bits;
-> +		u32 first_zero;
-> +		u32 next_set;
-> +		u64 range_start;
-> +		u64 range_end;
-> +		u32 range_len;
-> +
-> +		first_zero = find_next_zero_bit(oe->child_bitmap, nr_bits, cur_bit);
-> +		if (first_zero >= nr_bits)
-> +			break;
-> +		next_set = find_next_bit(oe->child_bitmap, nr_bits, first_zero);
-> +		ASSERT(next_set > first_zero);
-> +
-> +		range_start = oe->file_offset + (first_zero << fs_info->sectorsize_bits);
-> +		range_len = (next_set - first_zero) << fs_info->sectorsize_bits;
-> +		range_end = range_start + range_len - 1;
-> +
-> +		btrfs_lock_extent(&inode->io_tree, range_start, range_end, &cached);
-> +		/*
-> +		 * The range has reserved data/metadata but no real OE, thus we have
-> +		 * to manually release them.
-> +		 */
-> +		btrfs_delalloc_release_space(inode, NULL, range_start, range_len, true);
-> +		/*
-> +		 * Also need to remove/drop the pinned extent map range.
-> +		 * Here we do not want the extent map to stay, as they do not represent
-> +		 * any real extent on-disk.
-> +		 */
-> +		btrfs_drop_extent_map_range(inode, range_start, range_end, false);
-> +		btrfs_clear_extent_bit(&inode->io_tree, range_start, range_end,
-> +				EXTENT_LOCKED | EXTENT_DELALLOC_NEW | EXTENT_DEFRAG |
-> +				EXTENT_DO_ACCOUNTING, &cached);
-> +		cur = range_end + 1;
-> +	}
-> +	btrfs_remove_ordered_extent(oe);
-> +	btrfs_put_ordered_extent(oe);
-> +	btrfs_put_ordered_extent(oe);
-> +	return saved_ret;
+> +	bio_for_each_folio_all(fi, &bbio->bio)
+> +		btrfs_free_compr_folio(fi.folio);
+> +	btrfs_bio_end_io(parent, bbio->bio.bi_status);
+> +	bio_put(&bbio->bio);
 > +}
 > +
->  /*
->   * As ordered data IO finishes, this gets called so we can finish
->   * an ordered extent if the range of bytes in the file it covers are
-> @@ -3211,6 +3284,9 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
->  	bool clear_reserved_extent = true;
->  	unsigned int clear_bits = 0;
->  
-> +	if (test_bit(BTRFS_ORDERED_DELAYED, &ordered_extent->flags))
-> +		return finish_delayed_ordered(ordered_extent);
-> +
-
-I believe this needs to come after btrfs_lockdep_acquire() below and I
-was able to get a unbalance release warning with lockdep enabled.
-
->  	start = ordered_extent->file_offset;
->  	end = start + ordered_extent->num_bytes - 1;
->  
-> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-> index b32d4eabe0ab..b0469aad3486 100644
-> --- a/fs/btrfs/ordered-data.c
-> +++ b/fs/btrfs/ordered-data.c
-> @@ -155,6 +155,7 @@ static struct btrfs_ordered_extent *alloc_ordered_extent(
->  	u64 qgroup_rsv = 0;
->  	const bool is_nocow = (flags &
->  	       ((1U << BTRFS_ORDERED_NOCOW) | (1U << BTRFS_ORDERED_PREALLOC)));
-> +	const bool is_delayed = test_bit(BTRFS_ORDERED_DELAYED, &flags);
->  
->  	/* Only one type flag can be set. */
->  	ASSERT(has_single_bit_set(flags & BTRFS_ORDERED_EXCLUSIVE_FLAGS),
-> @@ -170,6 +171,17 @@ static struct btrfs_ordered_extent *alloc_ordered_extent(
->  	if (test_bit(BTRFS_ORDERED_ENCODED, &flags))
->  		ASSERT(test_bit(BTRFS_ORDERED_COMPRESSED, &flags));
->  
-> +	/*
-> +	 * DELAYED can only be set with REGULAR, no DIRECT/ENCODED, and should
-> +	 * not exceed BTRFS_MAX_COMPRESSED size.
-> +	 */
-> +	if (test_bit(BTRFS_ORDERED_DELAYED, &flags)) {
-> +		ASSERT(test_bit(BTRFS_ORDERED_REGULAR, &flags));
-> +		ASSERT(!test_bit(BTRFS_ORDERED_DIRECT, &flags));
-> +		ASSERT(!test_bit(BTRFS_ORDERED_ENCODED, &flags));
-> +		ASSERT(num_bytes <= BTRFS_MAX_COMPRESSED);
-> +	}
-> +
->  	/*
->  	 * For a NOCOW write we can free the qgroup reserve right now. For a COW
->  	 * one we transfer the reserved space from the inode's iotree into the
-> @@ -178,13 +190,16 @@ static struct btrfs_ordered_extent *alloc_ordered_extent(
->  	 * completing the ordered extent, when running the data delayed ref it
->  	 * creates, we free the reserved data with btrfs_qgroup_free_refroot().
->  	 */
-> -	if (is_nocow)
-> -		ret = btrfs_qgroup_free_data(inode, NULL, file_offset, num_bytes, &qgroup_rsv);
-> -	else
-> -		ret = btrfs_qgroup_release_data(inode, file_offset, num_bytes, &qgroup_rsv);
-> -
-> -	if (ret < 0)
-> -		return ERR_PTR(ret);
-> +	if (!is_delayed) {
-> +		if (is_nocow)
-> +			ret = btrfs_qgroup_free_data(inode, NULL, file_offset,
-> +						     num_bytes, &qgroup_rsv);
-> +		else
-> +			ret = btrfs_qgroup_release_data(inode, file_offset,
-> +							num_bytes, &qgroup_rsv);
-> +		if (ret < 0)
-> +			return ERR_PTR(ret);
-> +	}
->  
->  	entry = kmem_cache_zalloc(btrfs_ordered_extent_cache, GFP_NOFS);
->  	if (!entry) {
-> @@ -216,19 +231,23 @@ static struct btrfs_ordered_extent *alloc_ordered_extent(
->  	INIT_LIST_HEAD(&entry->root_extent_list);
->  	INIT_LIST_HEAD(&entry->work_list);
->  	INIT_LIST_HEAD(&entry->bioc_list);
-> +	INIT_LIST_HEAD(&entry->child_list);
->  	init_completion(&entry->completion);
-> +	RB_CLEAR_NODE(&entry->rb_node);
->  
->  	/*
->  	 * We don't need the count_max_extents here, we can assume that all of
->  	 * that work has been done at higher layers, so this is truly the
->  	 * smallest the extent is going to get.
->  	 */
-> -	spin_lock(&inode->lock);
-> -	btrfs_mod_outstanding_extents(inode, 1);
-> -	spin_unlock(&inode->lock);
-> +	if (!is_delayed) {
-> +		spin_lock(&inode->lock);
-> +		btrfs_mod_outstanding_extents(inode, 1);
-> +		spin_unlock(&inode->lock);
-> +	}
->  
->  out:
-> -	if (IS_ERR(entry) && !is_nocow)
-> +	if (IS_ERR(entry) && !is_nocow && !is_delayed)
->  		btrfs_qgroup_free_refroot(inode->root->fs_info,
->  					  btrfs_root_id(inode->root),
->  					  qgroup_rsv, BTRFS_QGROUP_RSV_DATA);
-> @@ -236,12 +255,43 @@ static struct btrfs_ordered_extent *alloc_ordered_extent(
->  	return entry;
->  }
->  
-> +static void add_child_oe(struct btrfs_ordered_extent *parent,
-> +			 struct btrfs_ordered_extent *child)
+> +static bool try_submit_compressed(struct btrfs_bio *parent)
 > +{
+> +	struct delayed_bio_private *dbp = parent->private;
 > +	struct btrfs_inode *inode = parent->inode;
 > +	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-> +	const u32 start_bit = (child->file_offset - parent->file_offset) >>
-> +			      fs_info->sectorsize_bits;
-> +	const u32 nr_bits = child->num_bytes >> fs_info->sectorsize_bits;
+> +	struct btrfs_key ins;
+> +	struct compressed_bio *cb;
+> +	struct extent_state *cached = NULL;
+> +	struct extent_map *em;
+> +	struct btrfs_ordered_extent *ordered;
+> +	struct btrfs_file_extent file_extent;
+> +	u64 alloc_hint;
+> +	const u32 len = bio_get_size(&parent->bio);
+> +	const u64 fileoff = parent->file_offset;
+> +	const u64 end = fileoff + len - 1;
+> +	u32 compressed_size;
+> +	int compress_type = fs_info->compress_type;
+> +	int compress_level = fs_info->compress_level;
+> +	int ret;
 > +
-> +	lockdep_assert_held(&inode->ordered_tree_lock);
-> +	/* Basic flags check for parent and child. */
-> +	ASSERT(test_bit(BTRFS_ORDERED_DELAYED, &parent->flags));
-> +	ASSERT(!test_bit(BTRFS_ORDERED_DELAYED, &child->flags));
+> +	if (!btrfs_inode_can_compress(inode) ||
+> +	    !inode_need_compress(inode, fileoff, end, false))
+> +		return false;
 > +
-> +	/* Child should not belong to any parent yet. */
-> +	ASSERT(list_empty(&child->child_list));
-> +
-> +	/* Child should be fully inside parent's range. */
-> +	ASSERT(child->file_offset >= parent->file_offset);
-> +	ASSERT(child->file_offset + child->num_bytes <=
-> +	       parent->file_offset + parent->num_bytes);
-> +
-> +	/* There should be no existing child in the range. */
-> +	ASSERT(bitmap_test_range_all_zero(parent->child_bitmap, start_bit, nr_bits));
-> +
-> +	list_add_tail(&child->child_list, &parent->child_list);
-> +
-> +	bitmap_set(parent->child_bitmap, start_bit, nr_bits);
-> +}
-> +
->  static void insert_ordered_extent(struct btrfs_ordered_extent *entry)
->  {
->  	struct btrfs_inode *inode = entry->inode;
->  	struct btrfs_root *root = inode->root;
->  	struct btrfs_fs_info *fs_info = root->fs_info;
->  	struct rb_node *node;
-> +	bool is_child = false;
->  
->  	trace_btrfs_ordered_extent_add(inode, entry);
->  
-> @@ -254,17 +304,25 @@ static void insert_ordered_extent(struct btrfs_ordered_extent *entry)
->  	spin_lock(&inode->ordered_tree_lock);
->  	node = tree_insert(&inode->ordered_tree, entry->file_offset,
->  			   &entry->rb_node);
-> -	if (unlikely(node)) {
-> +	if (node) {
->  		struct btrfs_ordered_extent *exist =
->  			rb_entry(node, struct btrfs_ordered_extent, rb_node);
->  
-> -		btrfs_panic(fs_info, -EEXIST,
-> +		if (test_bit(BTRFS_ORDERED_DELAYED, &exist->flags)) {
-> +			add_child_oe(exist, entry);
-> +			is_child = true;
-> +		} else {
-> +			btrfs_panic(fs_info, -EEXIST,
->  "overlapping ordered extents, existing oe file_offset %llu num_bytes %llu flags 0x%lx, new oe file_offset %llu num_bytes %llu flags 0x%lx",
->  			    exist->file_offset, exist->num_bytes, exist->flags,
->  			    entry->file_offset, entry->num_bytes, entry->flags);
-> +		}
->  	}
->  	spin_unlock(&inode->ordered_tree_lock);
->  
-> +	/* Child OE shouldn't be added to per-root oe list. */
-> +	if (is_child)
-> +		return;
->  	spin_lock(&root->ordered_extent_lock);
->  	list_add_tail(&entry->root_extent_list,
->  		      &root->ordered_extents);
-> @@ -337,6 +395,20 @@ struct btrfs_ordered_extent *btrfs_alloc_ordered_extent(
->  	return entry;
->  }
->  
-> +struct btrfs_ordered_extent *btrfs_alloc_delayed_ordered_extent(
-> +			struct btrfs_inode *inode, u64 file_offset, u32 length)
-> +{
-> +	struct btrfs_ordered_extent *entry;
-> +
-> +	entry = alloc_ordered_extent(inode, file_offset, length, length, 0, 0, 0,
-> +				     (1UL << BTRFS_ORDERED_REGULAR) |
-> +				     (1UL << BTRFS_ORDERED_DELAYED),
-> +				     BTRFS_COMPRESS_NONE);
-> +	if (!IS_ERR(entry))
-> +		insert_ordered_extent(entry);
-> +	return entry;
-> +}
-> +
->  /*
->   * Add a struct btrfs_ordered_sum into the list of checksums to be inserted
->   * when an ordered extent is finished.  If the list covers more than one
-> @@ -656,8 +728,9 @@ void btrfs_remove_ordered_extent(struct btrfs_ordered_extent *entry)
->  	struct btrfs_root *root = btrfs_inode->root;
->  	struct btrfs_fs_info *fs_info = root->fs_info;
->  	struct rb_node *node;
-> -	bool pending;
-> +	bool pending = false;
->  	bool freespace_inode;
-> +	const bool is_delayed = test_bit(BTRFS_ORDERED_DELAYED, &entry->flags);
->  
->  	/*
->  	 * If this is a free space inode the thread has not acquired the ordered
-> @@ -666,33 +739,37 @@ void btrfs_remove_ordered_extent(struct btrfs_ordered_extent *entry)
->  	freespace_inode = btrfs_is_free_space_inode(btrfs_inode);
->  
->  	btrfs_lockdep_acquire(fs_info, btrfs_trans_pending_ordered);
-> -	/* This is paired with alloc_ordered_extent(). */
-> -	spin_lock(&btrfs_inode->lock);
-> -	btrfs_mod_outstanding_extents(btrfs_inode, -1);
-> -	spin_unlock(&btrfs_inode->lock);
-> -	if (root != fs_info->tree_root) {
-> -		u64 release;
-> +	if (!is_delayed) {
-> +		/* This is paired with alloc_ordered_extent(). */
-> +		spin_lock(&btrfs_inode->lock);
-> +		btrfs_mod_outstanding_extents(btrfs_inode, -1);
-> +		spin_unlock(&btrfs_inode->lock);
->  
-> -		if (test_bit(BTRFS_ORDERED_ENCODED, &entry->flags))
-> -			release = entry->disk_num_bytes;
-> -		else
-> -			release = entry->num_bytes;
-> -		btrfs_delalloc_release_metadata(btrfs_inode, release,
-> +		if (root != fs_info->tree_root) {
-> +			u64 release;
-> +
-> +			if (test_bit(BTRFS_ORDERED_ENCODED, &entry->flags))
-> +				release = entry->disk_num_bytes;
-> +			else
-> +				release = entry->num_bytes;
-> +			btrfs_delalloc_release_metadata(btrfs_inode, release,
->  						test_bit(BTRFS_ORDERED_IOERR,
->  							 &entry->flags));
-> +		}
->  	}
-> -
->  	percpu_counter_add_batch(&fs_info->ordered_bytes, -entry->num_bytes,
->  				 fs_info->delalloc_batch);
->  
->  	spin_lock(&btrfs_inode->ordered_tree_lock);
-> -	node = &entry->rb_node;
-> -	rb_erase(node, &btrfs_inode->ordered_tree);
-> -	RB_CLEAR_NODE(node);
-> -	if (btrfs_inode->ordered_tree_last == node)
-> -		btrfs_inode->ordered_tree_last = NULL;
-> -	set_bit(BTRFS_ORDERED_COMPLETE, &entry->flags);
-> -	pending = test_and_clear_bit(BTRFS_ORDERED_PENDING, &entry->flags);
-> +	if (!RB_EMPTY_NODE(&entry->rb_node)) {
-> +		node = &entry->rb_node;
-> +		rb_erase(node, &btrfs_inode->ordered_tree);
-> +		RB_CLEAR_NODE(node);
-> +		if (btrfs_inode->ordered_tree_last == node)
-> +			btrfs_inode->ordered_tree_last = NULL;
-> +		set_bit(BTRFS_ORDERED_COMPLETE, &entry->flags);
-> +		pending = test_and_clear_bit(BTRFS_ORDERED_PENDING, &entry->flags);
+> +	if (inode->defrag_compress > 0 &&
+> +	    inode->defrag_compress < BTRFS_NR_COMPRESS_TYPES) {
+> +		compress_type = inode->defrag_compress;
+> +		compress_level = inode->defrag_compress_level;
+> +	} else if (inode->prop_compress) {
+> +		compress_type = inode->prop_compress;
 > +	}
->  	spin_unlock(&btrfs_inode->ordered_tree_lock);
+> +	cb = btrfs_compress_bio(inode, fileoff, len, compress_type,
+> +				compress_level, 0);
+> +	if (IS_ERR(cb))
+> +		return false;
+> +
+> +	round_up_last_block(cb, fs_info->sectorsize);
+> +	compressed_size = cb->bbio.bio.bi_iter.bi_size;
+> +	/* If no space is saved, abort and mark the inode NOCOMPRESS. */
+> +	if (compressed_size >= len) {
+> +		if (!btrfs_test_opt(fs_info, FORCE_COMPRESS) &&
+> +		    !inode->prop_compress)
+> +			inode->flags |= BTRFS_INODE_NOCOMPRESS;
+> +		cleanup_compressed_bio(cb);
+> +		return false;
+> +	}
+> +
+> +	alloc_hint = btrfs_get_extent_allocation_hint(inode, fileoff, len);
+> +	ret = btrfs_reserve_extent(inode->root, len,
+> +				   compressed_size, compressed_size,
+> +				   0, alloc_hint, &ins, true, true);
+
+This consumes bytes_may_use and moves it to bytes_reserved
+
+> +	if (ret < 0) {
+> +		cleanup_compressed_bio(cb);
+> +		return false;
+> +	}
+> +	btrfs_lock_extent(&inode->io_tree, fileoff, end, &cached);
+> +	file_extent.disk_bytenr = ins.objectid;
+> +	file_extent.disk_num_bytes = ins.offset;
+> +	file_extent.ram_bytes = len;
+> +	file_extent.num_bytes = len;
+> +	file_extent.offset = 0;
+> +	file_extent.compression = cb->compress_type;
+> +
+> +	cb->bbio.bio.bi_iter.bi_sector = ins.objectid >> SECTOR_SHIFT;
+> +	em = btrfs_create_io_em(inode, fileoff, &file_extent, BTRFS_ORDERED_COMPRESSED);
+> +	if (IS_ERR(em)) {
+> +		ret = PTR_ERR(em);
+> +		goto out_free_reserve;
+> +	}
+> +	btrfs_free_extent_map(em);
+> +
+> +	ordered = btrfs_alloc_ordered_extent(inode, fileoff, &file_extent,
+> +					     1U << BTRFS_ORDERED_COMPRESSED);
+> +	if (IS_ERR(ordered)) {
+> +		btrfs_drop_extent_map_range(inode, fileoff, end, false);
+> +		ret = PTR_ERR(ordered);
+
+Now this fails with ENOMEM
+
+> +		goto out_free_reserve;
+> +	}
+> +	cb->bbio.ordered = ordered;
+> +	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+> +	btrfs_unlock_extent(&inode->io_tree, fileoff, end, &cached);
+> +
+> +	cb->bbio.end_io = end_bbio_delayed_compressed;
+> +	cb->bbio.private = dbp;
+> +	atomic_inc(&parent->pending_ios);
+> +	btrfs_submit_bbio(&cb->bbio, 0);
+> +	return true;
+> +
+> +out_free_reserve:
+> +	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+
+We free bytes_reserved, so bytes_may_use and bytes_reserved both no
+longer reflect the reservation.
+
+> +	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, true);
+> +	btrfs_unlock_extent(&inode->io_tree, fileoff, end, &cached);
+> +	cleanup_compressed_bio(cb);
+> +	return false;
+
+And fallback to uncompressed submission in run_delayed_bbio() which
+calls btrfs_reserve_extent() again.
+
+> +}
+> +
+>  static void run_delayed_bbio(struct work_struct *work)
+>  {
+>  	struct delayed_bio_private *dbp = container_of(work, struct delayed_bio_private, work);
+>  	struct btrfs_bio *parent = dbp->delayed_bbio;
 >  
+> -	/* Compressed and uncompressed fallback is not yet implemented. */
+> +	if (try_submit_compressed(parent))
+> +		goto finish;
+> +
+> +	/* Uncompressed fallback is not yet implemented. */
+>  	ASSERT(0);
+
+Sorry hard to reply across patches, but clearly it is still OK in this
+version :)
+
+>  
+> +finish:
 >  	/*
-> @@ -724,17 +801,20 @@ void btrfs_remove_ordered_extent(struct btrfs_ordered_extent *entry)
->  
->  	btrfs_lockdep_release(fs_info, btrfs_trans_pending_ordered);
->  
-> -	spin_lock(&root->ordered_extent_lock);
-> -	list_del_init(&entry->root_extent_list);
-> -	root->nr_ordered_extents--;
-> -
->  	trace_btrfs_ordered_extent_remove(btrfs_inode, entry);
->  
-> -	if (!root->nr_ordered_extents) {
-> -		spin_lock(&fs_info->ordered_root_lock);
-> -		BUG_ON(list_empty(&root->ordered_root));
-> -		list_del_init(&root->ordered_root);
-> -		spin_unlock(&fs_info->ordered_root_lock);
-> +	spin_lock(&root->ordered_extent_lock);
-> +	/* For child OEs, they are not added to per-root OEs. */
-> +	if (!list_empty(&entry->root_extent_list)) {
-> +		list_del_init(&entry->root_extent_list);
-> +		root->nr_ordered_extents--;
-> +
-> +		if (!root->nr_ordered_extents) {
-> +			spin_lock(&fs_info->ordered_root_lock);
-> +			BUG_ON(list_empty(&root->ordered_root));
-> +			list_del_init(&root->ordered_root);
-> +			spin_unlock(&fs_info->ordered_root_lock);
-> +		}
->  	}
->  	spin_unlock(&root->ordered_extent_lock);
->  	wake_up(&entry->wait);
-> @@ -783,8 +863,18 @@ u64 btrfs_wait_ordered_extents(struct btrfs_root *root, u64 nr,
->  		ordered = list_first_entry(&splice, struct btrfs_ordered_extent,
->  					   root_extent_list);
->  
-> -		if (range_end <= ordered->disk_bytenr ||
-> -		    ordered->disk_bytenr + ordered->disk_num_bytes <= range_start) {
-> +		/*
-> +		 * Delayed OEs have 0 disk_bytenr and 0 disk_num_bytes, thus
-> +		 * they will be considered out of the [0, U64_MAX) range.
-> +		 * And we do not know where they will really land until the
-> +		 * writeback has finished.
-> +		 *
-> +		 * So here we must exclude delayed OEs from the block group
-> +		 * range check, and always wait for them.
-> +		 */
-> +		if (!test_bit(BTRFS_ORDERED_DELAYED, &ordered->flags) &&
-> +		    (range_end <= ordered->disk_bytenr ||
-> +		     ordered->disk_bytenr + ordered->disk_num_bytes <= range_start)) {
->  			list_move_tail(&ordered->root_extent_list, &skipped);
->  			cond_resched_lock(&root->ordered_extent_lock);
->  			continue;
-> diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-> index 8d5d5ba1e02f..ce0d3199b533 100644
-> --- a/fs/btrfs/ordered-data.h
-> +++ b/fs/btrfs/ordered-data.h
-> @@ -13,6 +13,7 @@
->  #include <linux/rbtree.h>
->  #include <linux/wait.h>
->  #include "async-thread.h"
-> +#include "compression.h"
->  
->  struct inode;
->  struct page;
-> @@ -87,6 +88,12 @@ enum {
->  	 */
->  	BTRFS_ORDERED_DIRECT,
->  
-> +	/*
-> +	 * Extra bit for delayed OE, can only be set for REGULAR.
-> +	 * Cannot be set with COMPRESSED/ENCODED/DIRECT.
-> +	 */
-> +	BTRFS_ORDERED_DELAYED,
-> +
->  	BTRFS_ORDERED_NR_FLAGS,
->  };
->  static_assert(BTRFS_ORDERED_NR_FLAGS <= BITS_PER_LONG);
-> @@ -155,6 +162,11 @@ struct btrfs_ordered_extent {
->  	/* a per root list of all the pending ordered extents */
->  	struct list_head root_extent_list;
->  
-> +	/* Child ordered extent list for delayed OE. */
-> +	struct list_head child_list;
-> +
-> +	unsigned long child_bitmap[BITS_TO_LONGS(BTRFS_MAX_COMPRESSED / BTRFS_MIN_BLOCKSIZE)];
-> +
->  	struct btrfs_work work;
->  
->  	struct completion completion;
-> @@ -192,6 +204,8 @@ struct btrfs_file_extent {
->  struct btrfs_ordered_extent *btrfs_alloc_ordered_extent(
->  			struct btrfs_inode *inode, u64 file_offset,
->  			const struct btrfs_file_extent *file_extent, unsigned long flags);
-> +struct btrfs_ordered_extent *btrfs_alloc_delayed_ordered_extent(
-> +			struct btrfs_inode *inode, u64 file_offset, u32 length);
->  void btrfs_add_ordered_sum(struct btrfs_ordered_extent *entry,
->  			   struct btrfs_ordered_sum *sum);
->  struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct btrfs_inode *inode,
+>  	 * Any real compressed/uncompressed bios have increased
+>  	 * parent->pending_ios, the last caller of btrfs_bio_end_io()
 > -- 
 > 2.55.0
 > 

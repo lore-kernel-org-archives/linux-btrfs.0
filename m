@@ -1,35 +1,35 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A06F23B6341
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 16:53:02 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8CB913B637C
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 16:54:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790355186; cv=none; b=tV91HpdxitnZIlveSlSt7giZSy7zX/FpKSNYX6TRYVsBexI3egWndSTJRHBXi+H6o9q4e0E1YyO8pEdwLfvMQybIR3x21tLOrlbZ7qQ6Zs2I8rlkIjJWzM08a4bNBLedo8LkTxO6s+3seepYJph0+yg1GJijq/Jh5DAMR0gvI2E=
+	t=1790355248; cv=none; b=tosdJVWekhF+EZRaRFgu+6JFMoxf8kgBU8WEoM1e10+dPQzOpwLAV/jbwPPSmBN9F/O+sgyPOgTS4adt3Yi0ox17KLfs9ZuCmQi4mUAk8lQDyVPZb4NprI3JN/+wDcKb58D/qZuOscjS9tuefwfwfO8UT6RGg6Fd/p1DKmrMLFo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790355186; c=relaxed/simple;
-	bh=lC6yIzgUittYx5I/xw+HQqmoxuMd4IkvmbTLbxGhQQ0=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=AOwmX2IREN321oZEFs6WCIpMyCtHCR/MMLPRs0ByXTJ8hxArSSEfKMsAla7UxWdFngQE9Yv7nKsuWOMnMZYhTD3WWKHRSllDP6+HpWRSw14DexRrv5YBunuipBJDQ82wNdTaFEKVjk+nBe/6K/d/A8lEGaC70S5O0i+ilFM57ac=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=iBT7rv1k; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1790355248; c=relaxed/simple;
+	bh=xuSyjf5sAlcDXVAeD6VYjb6ooKebpWRXAylTYYWQfGA=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=cWWUJRQ2fVa1YIQ5/1GUdo/7gQSqM/laDMrO/I2m3TXTv9e4dPPXfeTGPx6126fLJi2xAnoQTFnB5CWGr5UZkB+GT8k8M1bCwMSJiTIZ5K5RVIj9xO1dMoGrWYjSbKom77Xui8Htwd1W7ePd6qPQ2V4tTA+/wNK0pJKnKX/J8zw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=gK+iQQS6; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="iBT7rv1k"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D98E91F000FF
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 16:52:58 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="gK+iQQS6"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id DA1451F000FF
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 16:54:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1790355179;
-	bh=ehTXLkiHb8Z6p6FF4ZxGpihYbTGDK9s34r0hGS9Rzog=;
+	s=k20260515; t=1790355244;
+	bh=2nlx2MOzscIp+1DHL0Z21SFKeOcH4pF7kmKsDXFrz1E=;
 	h=From:To:Subject:Date;
-	b=iBT7rv1kkIyh2VJwW1E0shnD4Jj+571tMZnFK50OnGxLHksxHad3VaAwvQbhnC3Ju
-	 +08zu+kpmGJT2K45CF18uSTG9JkXr6iOXcaXwKLR2GDloGuv7mPnZgW1qJiZ9wratE
-	 xkxdacvq6hF6ee0ku/DV2j4DicTHVxRqZlPjrOvvvsD1ywx/QRkBpUwZR4xfvW5otV
-	 2xCrJD1AG+2AY3cbV/CznKcHLK4wwxS18x4FGRAiylDc+YS0gsDzm9ION6E7Pz19/R
-	 Sbskq1ZMcq8oJAo88RQlZ/uHLj2IuZLBRhvzL8+J8tivivWxvPZ1eCCYqPsGlCQE2h
-	 ApUaznIBPUqIQ==
+	b=gK+iQQS6CbB//0yIVy5ynXAs8YZERUOLGs/i1JhN9K2VfijotenvNf/yTs+f6uj+p
+	 1aBsBAuzSzvS/gtLaL9AG0PXfF2vkwGuJcn1FtZ09xLXLPY1mUqHYAfT9HDGTDIFAo
+	 LDP44nku2ch9ERcskGKibiVtOo5HcQM7GFlPqv1BnZ0s2k9SCdTAak0Ks9GKW1a/Z6
+	 5NAgmGKC/KIeBHzadF6Wy/wsoHAFx3tQfH7AGc4OLUa1KVBQfvVRNDEPl3ZintUsuv
+	 D9zDc5wM0JJHNyi0BkYOz9Rp28aPis3jEBEz+lTQIRyL2ElEdXSi5VV9CAJxyAMzq4
+	 L8jrHr/hEpFYQ==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: simplify dir item location setup in btrfs_insert_xattr_item()
-Date: Fri, 25 Sep 2026 17:52:56 +0100
-Message-ID: <8f24a85bf4a14292293a0e43c2522418f80f6a52.1790355077.git.fdmanana@suse.com>
+Subject: [PATCH] btrfs: fix lost error return value in btrfs_listxattr()
+Date: Fri, 25 Sep 2026 17:54:01 +0100
+Message-ID: <3a22684fd6ee950fdd7bf1a6119e87366e9a1de8.1790355229.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -41,49 +41,40 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The location (a btrfs_disk_key) of a btrfs_dir_item used for a xattr is
-always zeroed and we have a complex setup in btrfs_insert_xattr_item()
-where we declare an on stack btrfs_key, zero it out, convert it into a
-btrfs_disk_key, also declared on stack, and then pass that btrfs_disk_key
-to a btrfs_set_dir_item_key() call.
+If we input buffer does not have enough space to store the current xattr,
+we set 'iter_ret' to -ERANGE and then do "break", but that only exists the
+while loop over the xattrs in the current btrfs_dir_item, and then we
+continue the btrfs_for_each_slot() iteration, which overwrites the value
+of 'iter_ret' causing us to lose the error return value and proceed as if
+the buffer has enough space.
 
-We can simplify this, and save stack space (one btrfs_disk_key and one
-btrfs_key), by simply using memzero_extent_buffer().
+Fix this by returning -ERANGE directly (the path is automatically freed)
+instead of breaking from the while loop.
 
+Fixes: 184b3d190087 ("btrfs: use btrfs_for_each_slot in btrfs_listxattr")
+Assisted-by: LLM (found the bug)
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/dir-item.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ fs/btrfs/xattr.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index 3a90736915af..d39f85035b43 100644
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -62,8 +62,7 @@ int btrfs_insert_xattr_item(struct btrfs_trans_handle *trans,
- 	int ret = 0;
- 	struct btrfs_dir_item *dir_item;
- 	unsigned long name_ptr, data_ptr;
--	struct btrfs_key key, location;
--	struct btrfs_disk_key disk_key;
-+	struct btrfs_key key;
- 	struct extent_buffer *leaf;
- 	u32 data_size;
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index e8762e12f3e1..cb001a211f55 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -329,10 +329,8 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
+ 			if (!size)
+ 				goto next;
  
-@@ -79,11 +78,11 @@ int btrfs_insert_xattr_item(struct btrfs_trans_handle *trans,
- 					name, name_len);
- 	if (IS_ERR(dir_item))
- 		return PTR_ERR(dir_item);
--	memset(&location, 0, sizeof(location));
+-			if (!buffer || (name_len + 1) > size_left) {
+-			        iter_ret = -ERANGE;
+-				break;
+-			}
++			if (!buffer || (name_len + 1) > size_left)
++				return -ERANGE;
  
- 	leaf = path->nodes[0];
--	btrfs_cpu_key_to_disk(&disk_key, &location);
--	btrfs_set_dir_item_key(leaf, dir_item, &disk_key);
-+	memzero_extent_buffer(leaf, (unsigned long)dir_item +
-+			      offsetof(struct btrfs_dir_item, location),
-+			      sizeof(struct btrfs_disk_key));
- 	btrfs_set_dir_flags(leaf, dir_item, BTRFS_FT_XATTR);
- 	btrfs_set_dir_name_len(leaf, dir_item, name_len);
- 	btrfs_set_dir_transid(leaf, dir_item, trans->transid);
+ 			read_extent_buffer(leaf, buffer, name_ptr, name_len);
+ 			buffer[name_len] = '\0';
 -- 
 2.47.2
 

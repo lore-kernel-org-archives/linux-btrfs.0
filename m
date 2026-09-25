@@ -1,234 +1,220 @@
-Received: from mail-ej2-f43.google.com (mail-ej2-f43.google.com [74.125.228.171])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9E96A3AC0C8
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2026 22:17:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2C9E215746F
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 03:16:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790288277; cv=none; b=gCh82aH8f13IMG7LOWvvtvGR8uIxb41z5jcPNAEgPEESaciann1uWfu1OdVWsRi/jefI7WgpOCP5pfSu/8RRtgSBlHRXvVEwICXhjaodu9M3VeiXxe9F42NUZN2GMxcu7u5BzgcSiSrm+QdecYI+fAZFK3Ug25vU7Ug3J6Q5TiU=
+	t=1790306191; cv=none; b=L1GZsdSz6GVN2Eb3T42by2Vm7isxtSRwsKYDbAkwwu6Aotum8PBajK2kA7KlfH0yEszObTOr2akaxN6lCQEP3hHYMUNTsBI+Q2MvJ17vm84W5w+7HCxPR1v1It7EZxs2dD02JFnj+AnVerjPaoYBmOOb4iMhfBXBp2VTGaTXEc4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790288277; c=relaxed/simple;
-	bh=TVeYl3lfjyeYZ6Ai1IRdDDGhqsgBOOoq8b4KJVB7hTw=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Ze3lDruCQBUM9d/Noj2N5ai5bmROXReANnumlAnVa2+o+Ps2YUTD/dGT5y0xr8jmwVcLQZWl9f2XX33S1/5PVMwtQISRjomJv+Ywn5885C59Ztfbz3I1pU1mrVUkhZS1TFn23/3AVJfZ4w2uigvOHmW9AEiGcSuDzPf4AGAxHew=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=E+kukQyh; arc=none smtp.client-ip=74.125.228.171
+	s=arc-20240116; t=1790306191; c=relaxed/simple;
+	bh=TMspvbyesP2oAFOYIKOgK7WnaZc34bz58psnRljYo1I=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=SYbGwfIGvXSzQnR5tAWRIXAQs1soKMUhgEasxGGMFacB93YqDr7KpHZf2EVxr28WHS2sOxHE/0/IvugWH8+GDSGng5rM7kaBPgzRhRRNlEURbCvcNwTP5ZOyEMuDFSCfPrOLQ39Hp+AWzD/EQnpBONJ8H6eVLCKVxn1GvnWkYV0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=kK1hwSgt; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ua0VsQDx; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="E+kukQyh"
-Received: by mail-ej2-f43.google.com with SMTP id a640c23a62f3a-c254f55efe7so37439766b.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2026 15:17:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1790288274; x=1790893074; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=BcDkR9C4XLSztQOsEkSz9I898v48ijY37nZ0JuKK+/8=;
-        b=E+kukQyhUa4cByYa4gU2AEEBcTiB7DBOo4x0rv2T/ST1I80TWUOEyBHeu3H20sLtvE
-         SYYwHgfMdoQdRTI9iBS9tJoUV4e33EAFb8KU4qqCDZc1wJAq+7FPhJr7+m9/pmyyIr4w
-         uD0qE8QsPb4dSUtT2ctiNWpCJdDNbe6i3b6LXnKw3LmWChutjct/d/a8x40MtrZYqxjN
-         nFX+vuY6YVO9PVzLLRoBxqQkNkbk+50pP5vajeVS8JRl7HIrBgBib9ncg00bYBLbfjEe
-         Y3ZPqDMsO3ugB0vSKx/j7/rbP1Lpm/PwIpj1Ss6WlzAx8Dq/oHSqiAhQutgAtMzyotf+
-         MTXA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790288274; x=1790893074;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=BcDkR9C4XLSztQOsEkSz9I898v48ijY37nZ0JuKK+/8=;
-        b=WVTBJvZ7GSCx49jG9RW8Fhf6fBAQhWQ4hCK61Xkm8F3iOh1/2PKbrZlHR1ltjXC7uV
-         UNjXOYGN33E0u/m3gCjVIsBTX5AxTRdu/K0EP39RvV4pdHqC6xRHovdzhXvqPI7IkEwz
-         2A3A2/6nnmAISrk9Ydib+R0ZTAshB/Y1u1gNbYoFMCUpnp3X6ROvMA7jdXlI8Z3Im9TP
-         g9aBEELt0FtkHIbSYjCEKIcQvVJUwIZH77sdW8X84ObHmhFV8T1q2DDQmzyUFjziQGHB
-         ARWA/ykqlLiM/tI7nIyhRr00k1pU8LxKPx41y4qpANEftmeYUG+/EHxtsZi26moE967h
-         LLLg==
-X-Gm-Message-State: AFuF++mincGQb0/6U4rFREyfCSAm02c1Bsyh5WNBVi2m/isN9gdzAx14
-	7QCGzMFwWE8hYPyJdYIqD+x+bvOpGaKZ+2VXLVyH17ShKfpYEd9pbfI7S3LI1rC5pCiMnDoJtgx
-	RYzEZMUAqvw==
-X-Gm-Gg: AYBFou2vykKrGh6VuQSsv32H4vOUDQ77VLf/wOw6P2U4Xgnp+4q5SwbeAZYLFPDsqHW
-	ub3jR9CaAuBb5ZqcM3RdVvOv3Yl4TucsV6MAjfpKFGwbeJsRpxIeshwKCkH1g0LCnC8fLoxntKD
-	t1InUH7zdGUvddxW2k/yB0B0KRlX1/I5w+gSPiT6z8NH9gm2xUQTpOvaCwaswpuNk3VjK0ZkTyz
-	YWBYNzHG+5axHUXTdU+Y0x1N32uVxV7OHo9MCYHUphBdEh8VGrCTiGRYXZ4MCA1HsCg0wlUmRxL
-	b+bjF3jS5wyZ5SQR0YGSSzls9pnyXS/Yi4ykWjbA4iywDUDyFtzjxds/Y/AKcYoqR314/spzjMp
-	EXsQCuQrLUlN7KX/BD4z0dBiILRB3ZA8FldzcS/wvyOtgaHmMMeHVRItMV/RIb5Bi0okjg28CR1
-	8AnyGCLePnZ3tMD7I+NpTETCdOBbb6sMA8kuw2EsTrPZLG/WdqejIou2UmrgPaPu0=
-X-Received: by 2002:a17:906:dc95:b0:c1c:3b06:ed03 with SMTP id a640c23a62f3a-c2ac24d3548mr337495866b.23.1790288273595;
-        Thu, 24 Sep 2026 15:17:53 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-cc78796cf39sm300993a12.32.2026.09.24.15.17.51
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 24 Sep 2026 15:17:52 -0700 (PDT)
-Message-ID: <4a62c3e8-9b8e-465e-836f-75012992143c@suse.com>
-Date: Fri, 25 Sep 2026 07:47:49 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="kK1hwSgt";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ua0VsQDx"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id ADA41200CE
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 03:16:19 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1790306183; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=T8wGJcDxCoOsZz5w3W2GygFRdeHtn9NRjCrKyHIoqzo=;
+	b=kK1hwSgtSVXfqRVKQgn2DDIc0R+4jAHBW2KRNVrN7OwfW+k5lH7zyeSj+Ay/KR8DvCwekM
+	3vlyjw/TLHOIVv1xt83JGtt6NagyB+VvMMBDGPdVQ5RBOBkuF1TUh8OA07h3dBDmnVueB2
+	DQNuhF1OSAzELijBwRd4Ch+BKcz0TLw=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=ua0VsQDx
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1790306179; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=T8wGJcDxCoOsZz5w3W2GygFRdeHtn9NRjCrKyHIoqzo=;
+	b=ua0VsQDxwJe2UMjeSG5offsFJNnUipy6W4emAPvDYdWTTmcfeNaoQcS3udHBhl1XNwomUQ
+	EvmxalZ9Y50om3P0O5zgLtQqVTW2jeTgcHKsA6aIIxIjowpAuvGT0yYyaUT/oiCPbbY4C0
+	8xPQbH4iuBzj2ABSyGWC+WMjRvmALZk=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8FA11136F7
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 03:16:18 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id Fd3cN4HntWpbDQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 03:16:18 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v5 0/6] btrfs: delay compression to bbio submission time
+Date: Fri, 25 Sep 2026 12:45:49 +0930
+Message-ID: <cover.1790306139.git.wqu@suse.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v4 5/6] btrfs: implement uncompressed fallback for delayed
- bbio
-To: Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org
-References: <cover.1789687750.git.wqu@suse.com>
- <bc25ff663342a8edfc1b9b40e6e4e1ed9f0f75ec.1789687750.git.wqu@suse.com>
- <20260924173641.GC2146908@zen.localdomain>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
- Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
- SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
- YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
- 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
- vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260924173641.GC2146908@zen.localdomain>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spam-Level: 
+X-Rspamd-Action: no action
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: ADA41200CE
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	MIME_TRACE(0.00)[0:+];
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Spam-Flag: NO
+X-Spam-Score: -3.01
+
+[CHANGELOG]
+v5:
+- Fix an error handling path when compression writes failed after reserved
+  data extents
+  The current fallback behavior is different than the old async path,
+  and can lead to reserved space inbalance.
+
+  Follow the old async behavior that if an error is hit after reserved
+  a data extent, error out without falling back to uncompressed writes.
+
+- Fix an error handling path that both parent and failed child OEs are
+  doing the same cleanup twice
+  If a delayed child OE range hits some critical error without creating
+  an OE, e.g. failed to allocate the child OE itself, the child OE range
+  will be cleaned up.
+
+  But later parent OE will also cleanup any range that has no child OE,
+  it will clean the range again.
+
+  Fix it by changing the btrfs_ordered_extent::child_bitmap to
+  child_cleanup bitmap, which is initialized to all 1 when allocating
+  the OE, then cleared when:
+  * A new child OE is added
+  * A child OE range is already cleaned up
+    In either try_submit_compressed() or
+    submit_one_uncompressed_range().
+
+  So that the parent OE cleanup will skip any range that is covered by
+  an child OE or already cleaned up.
+
+- Fix reserved metadata space leak in child OE error path
+  If the child OE range failed to allocate an OE, the reserved metadata
+  space is not released, thus will require manual cleanup.
+
+- Fix a lockdep warning where the aquire and release is not paired
+
+- Mark the mapping as error when end_bbio_delayed() hit an error
+  To follow end_bbio_data_write().
+
+v4 RESEND:
+- Fix a conflict due to some rewording in for-next
+  Which prevents Sashiko to review the series.
+
+v4:
+- Fix a possible write path deadlock during reclaim
+  The delayed_bio_private structure is allocated during writeback, it
+  needs GFP_NOFS to avoid deadlock.
+
+- Use a dedicated workqueue for WQ_MEM_RECLAIM ability
+
+v3:
+- Various fixes to error handling
+  Mostly reported by LLM.
+
+- Use delayed bbios' pending_io to tracking child bbios
+  Which reduces the structure size of delayed_bio_private.
+
+- Extra full sync requirement for delayed writes
+  To avoid fast sync path to grab a delayed OE, which has no reliable
+  on-disk bytenr.
+
+v2:
+- Rebased to the latest for-next branch
+  Several minor conflicts:
+  * The removal of folio ordered flag
+  * The refactor of btrfs_mod_oustanding_extents()
+
+- Fix a random failure in btrfs/260
+  It turns out that the original filemap_flush() only triggers writeback
+  of dirty pages, but since our new compression happens after the bios
+  are submitted, there can be a race between inode->defrag_compression
+  clearing and compression path reading inode->defrag_compression.
+
+  This can cause btrfs to use the mount option other than the specified
+  defrag compression algo to do the compression.
+
+  Fix it by using filemap_write_and_wait_range(), which also avoids the
+  quirky double flush behavior.
+  
+- Fix a use-after-free bug where bio->bi_status is accessed after
+  bio_put()
+
+- Remove a mapping_set_error() call when try_submit_compressed() failed
+  As we still have uncompressed fallback, we should not set the mapping
+  as error.
+
+- Drop all allocated OEs along with the extent maps when
+  run_delalloc_delayed() failed
+  
+- Slightly reword the cover letter
+
+PoC->v1:
+- Fix the ordered extent leak caused by incorrect ref count of child OEs
+- Fix the reserved space leakage in ranges without a real OE
+- Fix the hang caused by incorrect extent lock/unlock pair
+  All exposed by fsstress runs
+
+- Fix the OE range check in btrfs_wait_ordered_extents() that affects
+  snapshot creation
+  All exposed by fstests runs
 
 
+Qu Wenruo (6):
+  btrfs: add delayed ordered extent support
+  btrfs: add skeleton for delayed btrfs bio
+  btrfs: introduce the skeleton of delayed bbio endio function
+  btrfs: introduce compression for delayed bbio
+  btrfs: implement uncompressed fallback for delayed bbio
+  btrfs: enable experimental delayed compression support
 
-在 2026/9/25 03:06, Boris Burkov 写道:
-> On Fri, Sep 18, 2026 at 09:00:30AM +0930, Qu Wenruo wrote:
->> When compression fails (either bad ratio, fragmented free space, or
->> writeback path chooses to submit the bio early), we have to fall back to
->> uncompressed writes.
->>
->> The uncompressed fallback is mostly the same as cow_file_range() but
->> with some changes:
->>
->> - Endio function is slightly different from the compressed path
->>    Only in the folio freeing handling.
->>
->> - Uncompressed fallback error handling
->>    Since at this stage, the folios already have WRITEBACK flag set, we do
->>    not need to do the usual page unlock/end writeback, but just free the
->>    reserved space and call it a day.
-> 
-> Continuing the reserved space issue from patch 4, here, both finishing
-> that bug and showing a second very similar one.
-> 
-[...]
->> +	btrfs_lock_extent(&inode->io_tree, file_offset, cur_end, cached);
->> +	em = btrfs_create_io_em(inode, file_offset, &file_extent, BTRFS_ORDERED_REGULAR);
->> +	if (IS_ERR(em)) {
->> +		ret = PTR_ERR(em);
->> +		btrfs_unlock_extent(&inode->io_tree, file_offset, cur_end, cached);
->> +		goto free_reserved;
->> +	}
->> +	btrfs_free_extent_map(em);
->> +	ordered = btrfs_alloc_ordered_extent(inode, file_offset, &file_extent,
->> +					     1U << BTRFS_ORDERED_REGULAR);
->> +	if (IS_ERR(ordered)) {
->> +		btrfs_drop_extent_map_range(inode, file_offset, cur_end, false);
->> +		btrfs_unlock_extent(&inode->io_tree, file_offset, cur_end, cached);
->> +		ret = PTR_ERR(ordered);
->> +		goto free_reserved;
-> 
-> Now suppose this fails. We will have a missing OE range in the parent,
-> so when we finish the parent, we will free its reservation (patch 1)
+ fs/btrfs/bio.c          |   1 +
+ fs/btrfs/bio.h          |   7 +
+ fs/btrfs/btrfs_inode.h  |   3 +
+ fs/btrfs/defrag.c       |  27 +-
+ fs/btrfs/disk-io.c      |   8 +-
+ fs/btrfs/extent_io.c    |  36 ++-
+ fs/btrfs/extent_map.h   |   9 +-
+ fs/btrfs/fs.h           |   5 +
+ fs/btrfs/inode.c        | 575 +++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/ordered-data.c | 185 ++++++++++---
+ fs/btrfs/ordered-data.h |  20 ++
+ 11 files changed, 810 insertions(+), 66 deletions(-)
 
-That's indeed another problem, and the layered OE is making the error 
-handling much more complex.
-
-I think for this double freeing between the child and parent cleanup, 
-the child should clear the bitmap after doing the cleanup.
-
-Thanks again for exposing this one,
-Qu
-
-> 
->> +	}
->> +	btrfs_dec_block_group_reservations(fs_info, ins->objectid);
->> +	btrfs_unlock_extent(&inode->io_tree, file_offset, cur_end, cached);
->> +
->> +	child->ordered = ordered;
->> +	child->private = parent->private;
->> +	child->end_io = end_bbio_delayed_uncompressed;
->> +	child->bio.bi_iter.bi_sector = ins->objectid >> SECTOR_SHIFT;
->> +	atomic_inc(&parent->pending_ios);
->> +	btrfs_submit_bbio(child, 0);
->> +	*ret_alloc_size = cur_len;
->> +	return 0;
->> +
->> +free_reserved:
->> +	if (child) {
->> +		struct folio_iter fi;
->> +
->> +		bio_for_each_folio_all(fi, &child->bio)
->> +			folio_put(fi.folio);
->> +		bio_put(&child->bio);
->> +	}
->> +	btrfs_qgroup_free_data(inode, NULL, file_offset, cur_len, NULL);
->> +	btrfs_dec_block_group_reservations(fs_info, ins->objectid);
-> 
-> But we have already freed it here, so it is a double free.
-> 
->> +	btrfs_free_reserved_extent(fs_info, ins->objectid, ins->offset, true);
->> +	ASSERT(ret != -EAGAIN);
->> +	return ret;
->> +}
->> +
->>   static void run_delayed_bbio(struct work_struct *work)
->>   {
->>   	struct delayed_bio_private *dbp = container_of(work, struct delayed_bio_private, work);
->>   	struct btrfs_bio *parent = dbp->delayed_bbio;
->> +	struct btrfs_key ins;
->> +	struct extent_state *cached = NULL;
->> +	const u32 uncompressed_size = bio_get_size(&parent->bio);
->> +	const u64 start = parent->file_offset;
->> +	const u64 end = start + uncompressed_size - 1;
->> +	u64 cur = start;
->> +	u64 alloc_hint;
->> +	int ret = 0;
->>   
->>   	if (try_submit_compressed(parent))
->>   		goto finish;
->>   
->> -	/* Uncompressed fallback is not yet implemented. */
->> -	ASSERT(0);
->> +	alloc_hint = btrfs_get_extent_allocation_hint(parent->inode, start,
->> +						      uncompressed_size);
->> +	while (cur < end) {
->> +		u32 cur_len;
->> +
-> 
-> (re patch 4: this is the missing second reserving call)
-> 
->> +		ret = submit_one_uncompressed_range(parent, &ins, &cached,
->> +						    cur, end + 1 - cur,
->> +						    alloc_hint, &cur_len);
->> +		if (ret < 0) {
->> +			cmpxchg(&parent->status, BLK_STS_OK, errno_to_blk_status(ret));
->> +			goto finish;
->> +		}
->> +		cur += cur_len;
->> +		alloc_hint = ins.objectid + ins.offset;
->> +	}
->>   
->>   finish:
->>   	/*
->> -- 
->> 2.55.0
->>
+-- 
+2.55.0
 

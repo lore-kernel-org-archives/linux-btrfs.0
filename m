@@ -1,450 +1,144 @@
-Received: from mail-dy2-f12.google.com (mail-dy2-f12.google.com [74.125.229.12])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D45A478E38
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 19:53:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.229.12
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 732C91DED42;
+	Fri, 25 Sep 2026 20:05:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790366036; cv=none; b=E+XboqADmq5Ta1EHNYvBn2PiEcpNt+bD+OJ9o2WRsG8THnz4KrNecQTf9pcYu/hVz6gdCoelRmv4BrQ9/5LPp1CxlJ1iBi4C1IRtkvog40Hp3+uvHUGlVY/8+oBbAtqugmYS0iFT7XA3jPgTqXNhnFrNUPY3uKZ7FZ8NAs3uznk=
+	t=1790366759; cv=none; b=dpSqZZKEQtsnrIThHPS7g3KP9X7+WIW658QAD2nxwSME2n+jDC6lONNOTB5HpE4bi1UpZd4uv1c5630P2ahNzP7g7YXg4YTyfVv+h+ViH2WuJd/dOh657dv4rTob2ec+SGXyO15ZwgFM0EDKEcp2qVGmnGC7NUBZ5bsyCAPP16s=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790366036; c=relaxed/simple;
-	bh=AQOacmGVZlv0a3CnWNzchghN2+mMizlL0IbVxE305+A=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Hx3BIMyOxRMw4kWBLgm6owHLhSXK+SfE7GyqXVRvPJZyKOX9OJbOjwaNLaqpYMt+UBN0oJVY3qCiOt9Q9o7VFprcwdwvweLKYzpbVxglT9rQ+GiR6Gw6wnutPzYbqRCi0zoGU/+HMe79bKTo7/ZnZ4FGIvXEMAAG9zDk0Z2cosI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=trailofbits.com; spf=pass smtp.mailfrom=trailofbits.com; dkim=pass (2048-bit key) header.d=trailofbits.com header.i=@trailofbits.com header.b=PVWKIZQ1; arc=none smtp.client-ip=74.125.229.12
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=trailofbits.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=trailofbits.com
+	s=arc-20240116; t=1790366759; c=relaxed/simple;
+	bh=l3ThGiJMgb9rhho1E3w4d7JnOgAw3D/u44OfMM7zZkM=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=UxB/iQ68BVf53wlQlxLmPmLWB3X0LLVKie7ioE0vNpgCridccGuIB9f+yov9n713CY2lN/m9J/AydlYV7Vtlqmtywlq7XUxPrHpinOvKz8U7LUtff5F4j3a07U51W/mNbea8QEqX+8b+RhqFJm5k76FoPyFNyr3keVbQYCeSqxY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=cWYZEVPP; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=trailofbits.com header.i=@trailofbits.com header.b="PVWKIZQ1"
-Received: by mail-dy2-f12.google.com with SMTP id 5a478bee46e88-328664ef791so703977eec.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 12:53:54 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=trailofbits.com; s=google; t=1790366033; x=1790970833; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=kK2zFCKpEmcSkmOrv9Iwn4hJtAiNMgCm+Ug0Ll+qJCo=;
-        b=PVWKIZQ1c0QDMAxC/wrIc/EQMNCsdjrkV6b+AvnVvWpKMOk5UO/DKvVrHjsT2/TlQC
-         e4N8DsVnEFYoZOj6mU43C56oq4dVISRBMsJ6DShtIdrUh4U6PyFYwKTtjm9he0X8o11n
-         916qJRuOVF/5Bp1618bcV87rX32/Avg9jgMoTItVwa6JFHBAd5pbkt7aCEIpOTSNsOTQ
-         VW+EB8M4fTjK+XZWMjZfUd1sgrDDnGGI+/XhRMNiLN4GchZ28bm9aZ0IDqJJ5G/W6o1K
-         hgBQEIFg1HZPiM/5eiPCkAOFMy/hcM2SNqb8SdaqCn+UA6GuQvKCTgcpw0cL4q5DeqbA
-         uA9A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790366033; x=1790970833;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=kK2zFCKpEmcSkmOrv9Iwn4hJtAiNMgCm+Ug0Ll+qJCo=;
-        b=JfVZDyQizghr6eI8ELYXUnjILhrEQpx1f3C8jrsAPIo9dNYhKiRQSsnlp+Ap+Wo/xj
-         YR1yt5vc7lDKMxp9JScixyhcLz4zedzB/suZVOprLICnNRsqn7vzkGLvDSw8kVgVmoO3
-         gGWZi2hS1jFlawM9tWxZDKk8UrVJNswmVRKokqUXMj6B8T+n0Y/KzseTZ3eI1TxcybaH
-         AEpERS1vO3YkZma25Wr7BbMqEYRtKSgse6m738iVFlpIfyy8nXiHJ3HEJ/cjoqCh9BrF
-         8zNimzX9fvFtFzZN4OXoVx4HQfbDoWllO9znMBteE3fn8Xqxz/PUlBuAmq4t+WI3riJj
-         6raQ==
-X-Forwarded-Encrypted: i=1; AKwUvBxJrpLzGVy4hMk9qn0pK3Y2O+Vwq0+yZyaPYawAlo3u6mmtbEHjQDAQkFQMfVVHpINO0SXxJ45heoslng==@vger.kernel.org
-X-Gm-Message-State: AFuF++kWssGuC9WWNobSAh57izwm1eUck++/Lx6e1Vrodp2XSveeO2Hw
-	O8741F/HGDl6HzE6uljNGMLAqQnuulhffJjqhszGbJfKsCzfWd+ouc7vnCja6rNU3KrxOQy6NWz
-	+wjKZj6o=
-X-Gm-Gg: AYBFou08P68o+IT4MaEt8EYafk16nYou0HBJA2sDD+gGCN/DAm6XYlFtvHGAtAyq+9+
-	tfSgTiO6emjqf/FDGtYNxcyUB9XHQQOHprHODrXZ87X8nlwDs2iAHsobLIBpAIwqVWh1g4Ox8o6
-	8+nqL3Ph76t20NO9MLt4xq72/gMA9wM8O9jFoKuWZgvfLmLhsCXyZ/dgEYpJzGBykt1f20Efr+a
-	YepkLA7rrHdcw8diTTq78N7Zx+vJmx1x5n+iPnGS6icgfQQgQqZ+eEBEYKJxPATvop7LgSQJhfS
-	xjLeozZ9z9d7PzHwmO9mkfSHDokS3fm/I1Q2jDE9ExuGMr36JTo/LvmS3MYgM2AZx7zRU+BC6JB
-	5hnlpvrPVstJCFyFT7N3Wd5yXf9AtcLjgyqhUH4DVDzIWJl3QfaU5WJzW0J1G24298M4dvYggW9
-	tU5PFIsWOnjp4BU4yVefb0i1XopMGcwBTTsR8GHkeox709Fgxk+8Imua6pGyWHSl+Xp804Nn0r0
-	y7NhtVrsn4S/oXQDH5RlmmQtYlzydb+I9tIGn7PszIsOlbkUO2p7L4AS/KMzta/gDbGYK38hggg
-	XaBq
-X-Received: by 2002:a05:7300:1c1e:b0:33e:5e42:942a with SMTP id 5a478bee46e88-3427324b07cmr1008761eec.22.1790366033294;
-        Fri, 25 Sep 2026 12:53:53 -0700 (PDT)
-Received: from localhost.localdomain ([2603:8001:5f01:8bab:c85b:dba:2dee:3972])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3413fc2413dsm7683403eec.0.2026.09.25.12.53.52
-        (version=TLS1_3 cipher=TLS_CHACHA20_POLY1305_SHA256 bits=256/256);
-        Fri, 25 Sep 2026 12:53:52 -0700 (PDT)
-From: Artem Dinaburg <artem@trailofbits.com>
-To: stable@vger.kernel.org
-Cc: Artem Dinaburg <artem@trailofbits.com>,
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	Sasha Levin <sashal@kernel.org>,
-	Boris Burkov <boris@bur.io>,
-	Filipe Manana <fdmanana@suse.com>,
-	Chris Mason <clm@fb.com>,
-	Josef Bacik <josef@toxicpanda.com>,
-	David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH 6.1.y] btrfs: insert tree mod log move in push_node_left
-Date: Fri, 25 Sep 2026 15:53:48 -0400
-Message-ID: <20260925195350.31328-1-artem@trailofbits.com>
-X-Mailer: git-send-email 2.55.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="cWYZEVPP"
+Received: by smtp.kernel.org (Postfix) with UTF8SMTPSA id 135FE1F000FF;
+	Fri, 25 Sep 2026 20:05:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1790366758;
+	bh=fp0fe0FsrKQjjUZo12CazaHcaNLawPYrmwzj2EW6jsk=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=cWYZEVPPSijyH/82gHfO7Rua92G4qyWpQrj8amr+cjrpVzjyZlhUap6SdwUOgXMpJ
+	 rEH1/tUZuTmZsjp1ss1ne3cxno1LMhuHruZJ4jEantwp7R86hIogkrca/XuT5U8VJX
+	 MGZfz63OPX7BWc7wHQhN/efWhO4syfKex4asquzq6X6rMwORsF745h8cSO7SV7dRmx
+	 +p8C3+chBqgEKxiMHQ/q7uSMjA8U5ff2VgShokcK9FlvCbnwoXp6WjtOtj7vWGfnpd
+	 uiFuNT/gp3zB4nZbwmGuKhZvHmMyPn984sLtfzzYMCT3pp1X7GGUsqdPE+WFb+UAuI
+	 2IwaRIFNvygBw==
+Date: Fri, 25 Sep 2026 13:05:57 -0700
+From: "Darrick J. Wong" <djwong@kernel.org>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] generic: test replacing a xattr with a larger value
+Message-ID: <20260925200557.GP6253@frogsfrogsfrogs>
+References: <8916aea263bc59af6cfb1accacc2eaf78aaffe89.1790354960.git.fdmanana@suse.com>
+ <7d2caec7b8ecd95ad63fcbbc7e1cc1c84ee50d7f.1790356355.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <7d2caec7b8ecd95ad63fcbbc7e1cc1c84ee50d7f.1790356355.git.fdmanana@suse.com>
 
-From: Boris Burkov <boris@bur.io>
+On Fri, Sep 25, 2026 at 06:16:36PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Test that replacing a xattr's value with a larger value works. This is a
+> test that exercises a specific scenario on btrfs where two xattrs are
+> stored in the same item, and for that to happen their names must result
+> in the same crc32c hash.
+> 
+> This was recently fixed by the following patch:
+> 
+>   "btrfs: fix xattr replace when multiple xattrs are packed in the same item"
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> 
+> V2: Fix missing _ on _fixed_by_fs_commit call.
+> 
+>  tests/generic/806     | 43 +++++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/806.out | 11 +++++++++++
+>  2 files changed, 54 insertions(+)
+>  create mode 100755 tests/generic/806
+>  create mode 100644 tests/generic/806.out
+> 
+> diff --git a/tests/generic/806 b/tests/generic/806
+> new file mode 100755
+> index 00000000..1fcf0145
+> --- /dev/null
+> +++ b/tests/generic/806
+> @@ -0,0 +1,43 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+> +#
+> +# FS QA Test 806
+> +#
+> +# Test replacing a xattr's value with a larger value.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick metadata attr
+> +
+> +. ./common/filter
+> +. ./common/attr
+> +
+> +_require_scratch
+> +_require_attrs
+> +
+> +_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
+> +   "btrfs: fix xattr replace when multiple xattrs are packed in the same item"
+> +
+> +_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
+> +_scratch_mount
+> +
+> +touch $SCRATCH_MNT/testfile
+> +
+> +# Add two xattrs that, on btrfs, have the same hash (crc32c) for their name
+> +# and therefore are packed into the same btrfs_dir_item.
+> +$SETFATTR_PROG -n user.foobar -v 123 $SCRATCH_MNT/testfile
+> +$SETFATTR_PROG -n user.WvG1c1Td -v qwerty $SCRATCH_MNT/testfile
 
-[ Upstream commit 5cead5422a0e3d13b0bcee986c0f5c4ebb94100b ]
+Heh, glad there's a test for this sort of collision thing. :)
+Reviewed-by: "Darrick J. Wong" <djwong@kernel.org>
 
-There is a fairly unlikely race condition in tree mod log rewind that
-can result in a kernel panic which has the following trace:
+--D
 
-  [530.569] BTRFS critical (device sda3): unable to find logical 0 length 4096
-  [530.585] BTRFS critical (device sda3): unable to find logical 0 length 4096
-  [530.602] BUG: kernel NULL pointer dereference, address: 0000000000000002
-  [530.618] #PF: supervisor read access in kernel mode
-  [530.629] #PF: error_code(0x0000) - not-present page
-  [530.641] PGD 0 P4D 0
-  [530.647] Oops: 0000 [#1] SMP
-  [530.654] CPU: 30 PID: 398973 Comm: below Kdump: loaded Tainted: G S         O  K   5.12.0-0_fbk13_clang_7455_gb24de3bdb045 #1
-  [530.680] Hardware name: Quanta Mono Lake-M.2 SATA 1HY9U9Z001G/Mono Lake-M.2 SATA, BIOS F20_3A15 08/16/2017
-  [530.703] RIP: 0010:__btrfs_map_block+0xaa/0xd00
-  [530.755] RSP: 0018:ffffc9002c2f7600 EFLAGS: 00010246
-  [530.767] RAX: ffffffffffffffea RBX: ffff888292e41000 RCX: f2702d8b8be15100
-  [530.784] RDX: ffff88885fda6fb8 RSI: ffff88885fd973c8 RDI: ffff88885fd973c8
-  [530.800] RBP: ffff888292e410d0 R08: ffffffff82fd7fd0 R09: 00000000fffeffff
-  [530.816] R10: ffffffff82e57fd0 R11: ffffffff82e57d70 R12: 0000000000000000
-  [530.832] R13: 0000000000001000 R14: 0000000000001000 R15: ffffc9002c2f76f0
-  [530.848] FS:  00007f38d64af000(0000) GS:ffff88885fd80000(0000) knlGS:0000000000000000
-  [530.866] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-  [530.880] CR2: 0000000000000002 CR3: 00000002b6770004 CR4: 00000000003706e0
-  [530.896] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-  [530.912] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-  [530.928] Call Trace:
-  [530.934]  ? btrfs_printk+0x13b/0x18c
-  [530.943]  ? btrfs_bio_counter_inc_blocked+0x3d/0x130
-  [530.955]  btrfs_map_bio+0x75/0x330
-  [530.963]  ? kmem_cache_alloc+0x12a/0x2d0
-  [530.973]  ? btrfs_submit_metadata_bio+0x63/0x100
-  [530.984]  btrfs_submit_metadata_bio+0xa4/0x100
-  [530.995]  submit_extent_page+0x30f/0x360
-  [531.004]  read_extent_buffer_pages+0x49e/0x6d0
-  [531.015]  ? submit_extent_page+0x360/0x360
-  [531.025]  btree_read_extent_buffer_pages+0x5f/0x150
-  [531.037]  read_tree_block+0x37/0x60
-  [531.046]  read_block_for_search+0x18b/0x410
-  [531.056]  btrfs_search_old_slot+0x198/0x2f0
-  [531.066]  resolve_indirect_ref+0xfe/0x6f0
-  [531.076]  ? ulist_alloc+0x31/0x60
-  [531.084]  ? kmem_cache_alloc_trace+0x12e/0x2b0
-  [531.095]  find_parent_nodes+0x720/0x1830
-  [531.105]  ? ulist_alloc+0x10/0x60
-  [531.113]  iterate_extent_inodes+0xea/0x370
-  [531.123]  ? btrfs_previous_extent_item+0x8f/0x110
-  [531.134]  ? btrfs_search_path_in_tree+0x240/0x240
-  [531.146]  iterate_inodes_from_logical+0x98/0xd0
-  [531.157]  ? btrfs_search_path_in_tree+0x240/0x240
-  [531.168]  btrfs_ioctl_logical_to_ino+0xd9/0x180
-  [531.179]  btrfs_ioctl+0xe2/0x2eb0
-
-This occurs when logical inode resolution takes a tree mod log sequence
-number, and then while backref walking hits a rewind on a busy node
-which has the following sequence of tree mod log operations (numbers
-filled in from a specific example, but they are somewhat arbitrary)
-
-  REMOVE_WHILE_FREEING slot 532
-  REMOVE_WHILE_FREEING slot 531
-  REMOVE_WHILE_FREEING slot 530
-  ...
-  REMOVE_WHILE_FREEING slot 0
-  REMOVE slot 455
-  REMOVE slot 454
-  REMOVE slot 453
-  ...
-  REMOVE slot 0
-  ADD slot 455
-  ADD slot 454
-  ADD slot 453
-  ...
-  ADD slot 0
-  MOVE src slot 0 -> dst slot 456 nritems 533
-  REMOVE slot 455
-  REMOVE slot 454
-  REMOVE slot 453
-  ...
-  REMOVE slot 0
-
-When this sequence gets applied via btrfs_tree_mod_log_rewind, it
-allocates a fresh rewind eb, and first inserts the correct key info for
-the 533 elements, then overwrites the first 456 of them, then decrements
-the count by 456 via the add ops, then rewinds the move by doing a
-memmove from 456:988->0:532. We have never written anything past 532, so
-that memmove writes garbage into the 0:532 range. In practice, this
-results in a lot of fully 0 keys. The rewind then puts valid keys into
-slots 0:455 with the last removes, but 456:532 are still invalid.
-
-When search_old_slot uses this eb, if it uses one of those invalid
-slots, it can then read the extent buffer and issue a bio for offset 0
-which ultimately panics looking up extent mappings.
-
-This bad tree mod log sequence gets generated when the node balancing
-code happens to do a balance_node_right followed by a push_node_left
-while logging in the tree mod log. Illustrated for ebs L and R (left and
-right):
-
-	L                 R
-  start:
-  [XXX|YYY|...]      [ZZZ|...|...]
-  balance_node_right:
-  [XXX|YYY|...]      [...|ZZZ|...] move Z to make room for Y
-  [XXX|...|...]      [YYY|ZZZ|...] copy Y from L to R
-  push_node_left:
-  [XXX|YYY|...]      [...|ZZZ|...] copy Y from R to L
-  [XXX|YYY|...]      [ZZZ|...|...] move Z into emptied space (NOT LOGGED!)
-
-This is because balance_node_right logs a move, but push_node_left
-explicitly doesn't. That is because logging the move would remove the
-overwritten src < dst range in the right eb, which was already logged
-when we called btrfs_tree_mod_log_eb_copy. The correct sequence would
-include a move from 456:988 to 0:532 after remove 0:455 and before
-removing 0:532. Reversing that sequence would entail creating keys for
-0:532, then moving those keys out to 456:988, then creating more keys
-for 0:455.
-
-i.e.,
-
-  REMOVE_WHILE_FREEING slot 532
-  REMOVE_WHILE_FREEING slot 531
-  REMOVE_WHILE_FREEING slot 530
-  ...
-  REMOVE_WHILE_FREEING slot 0
-  MOVE src slot 456 -> dst slot 0 nritems 533
-  REMOVE slot 455
-  REMOVE slot 454
-  REMOVE slot 453
-  ...
-  REMOVE slot 0
-  ADD slot 455
-  ADD slot 454
-  ADD slot 453
-  ...
-  ADD slot 0
-  MOVE src slot 0 -> dst slot 456 nritems 533
-  REMOVE slot 455
-  REMOVE slot 454
-  REMOVE slot 453
-  ...
-  REMOVE slot 0
-
-Fix this to log the move but avoid the double remove by putting all the
-logging logic in btrfs_tree_mod_log_eb_copy which has enough information
-to detect these cases and properly log moves, removes, and adds. Leave
-btrfs_tree_mod_log_insert_move to handle insert_ptr and delete_ptr's
-tree mod logging.
-
-(Un)fortunately, this is quite difficult to reproduce, and I was only
-able to reproduce it by adding sleeps in btrfs_search_old_slot that
-would encourage more log rewinding during ino_to_logical ioctls. I was
-able to hit the warning in the previous patch in the series without the
-fix quite quickly, but not after this patch.
-
-CC: stable@vger.kernel.org # 5.15+
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Boris Burkov <boris@bur.io>
-Signed-off-by: David Sterba <dsterba@suse.com>
-
-[ Backport to 6.1.y: retain the older btrfs_node_key_ptr_offset() call
-  signature and pass GFP_NOFS to alloc_tree_mod_elem(). The tree-mod-log
-  ordering change is otherwise identical to upstream. ]
-Assisted-by: LLM
-Signed-off-by: Artem Dinaburg <artem@trailofbits.com>
----
-Hi Greg, Sasha, and Btrfs maintainers,
-
-This is the 6.1.y backport of the fix for CVE-2023-53538. Linux 6.1
-still has the affected tree-mod-log rewind behavior, while the same fix
-shipped in 6.4.4 as commit 11f14402fe34. The upstream commit was also
-marked for stable kernels starting with 5.15.
-
-The fix is already present in every newer supported stable tree (6.6.y,
-6.12.y, 6.18.y, and 7.2.y), satisfying the newer-trees requirement. For
-context, it is still absent from 5.15.y and 5.10.y; this submission only
-asks for 6.1.y.
-
-The only adjustments are for two older 6.1 APIs, as described above.
-The move-record allocation and insertion order are unchanged from
-upstream.
-
-This is larger than the nominal stable patch-size guideline. The fix
-remains atomic because 6.4.4 carried it as one patch, and splitting out
-the allocation helper would create a behaviorless preparatory commit.
-
-Could you please queue it for 6.1.y?
-
-This was built on v6.1.188 using x86_64 allmodconfig and
-CONFIG_WERROR=y. It produced no compiler warnings or errors in the
-touched code.
-
-CVE: CVE-2023-53538
-
-AI assistance: An LLM helped identify, adapt, and validate this backport.
-
-Thanks,
-Artem Dinaburg
-
- fs/btrfs/ctree.c        | 10 +++---
- fs/btrfs/tree-mod-log.c | 73 ++++++++++++++++++++++++++++++++++++-----
- 2 files changed, 70 insertions(+), 13 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 9620bf289f78a0..36f54f0f21d832 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2653,8 +2653,8 @@ static int push_node_left(struct btrfs_trans_handle *trans,
- 
- 	if (push_items < src_nritems) {
- 		/*
--		 * Don't call btrfs_tree_mod_log_insert_move() here, key removal
--		 * was already fully logged by btrfs_tree_mod_log_eb_copy() above.
-+		 * btrfs_tree_mod_log_eb_copy handles logging the move, so we
-+		 * don't need to do an explicit tree mod log operation for it.
- 		 */
- 		memmove_extent_buffer(src, btrfs_node_key_ptr_offset(0),
- 				      btrfs_node_key_ptr_offset(push_items),
-@@ -2715,8 +2715,10 @@ static int balance_node_right(struct btrfs_trans_handle *trans,
- 		btrfs_abort_transaction(trans, ret);
- 		return ret;
- 	}
--	ret = btrfs_tree_mod_log_insert_move(dst, push_items, 0, dst_nritems);
--	BUG_ON(ret < 0);
-+	/*
-+	 * btrfs_tree_mod_log_eb_copy handles logging the move, so we don't
-+	 * need to do an explicit tree mod log operation for it.
-+	 */
- 	memmove_extent_buffer(dst, btrfs_node_key_ptr_offset(push_items),
- 				      btrfs_node_key_ptr_offset(0),
- 				      (dst_nritems) *
-diff --git a/fs/btrfs/tree-mod-log.c b/fs/btrfs/tree-mod-log.c
-index 8a3a14686d3e7e..2c190dcff51619 100644
---- a/fs/btrfs/tree-mod-log.c
-+++ b/fs/btrfs/tree-mod-log.c
-@@ -245,6 +245,26 @@ int btrfs_tree_mod_log_insert_key(struct extent_buffer *eb, int slot,
- 	return ret;
- }
- 
-+static struct tree_mod_elem *tree_mod_log_alloc_move(struct extent_buffer *eb,
-+						     int dst_slot, int src_slot,
-+						     int nr_items)
-+{
-+	struct tree_mod_elem *tm;
-+
-+	tm = kzalloc(sizeof(*tm), GFP_NOFS);
-+	if (!tm)
-+		return ERR_PTR(-ENOMEM);
-+
-+	tm->logical = eb->start;
-+	tm->slot = src_slot;
-+	tm->move.dst_slot = dst_slot;
-+	tm->move.nr_items = nr_items;
-+	tm->op = BTRFS_MOD_LOG_MOVE_KEYS;
-+	RB_CLEAR_NODE(&tm->node);
-+
-+	return tm;
-+}
-+
- int btrfs_tree_mod_log_insert_move(struct extent_buffer *eb,
- 				   int dst_slot, int src_slot,
- 				   int nr_items)
-@@ -262,18 +282,13 @@ int btrfs_tree_mod_log_insert_move(struct extent_buffer *eb,
- 	if (!tm_list)
- 		return -ENOMEM;
- 
--	tm = kzalloc(sizeof(*tm), GFP_NOFS);
--	if (!tm) {
--		ret = -ENOMEM;
-+	tm = tree_mod_log_alloc_move(eb, dst_slot, src_slot, nr_items);
-+	if (IS_ERR(tm)) {
-+		ret = PTR_ERR(tm);
-+		tm = NULL;
- 		goto free_tms;
- 	}
- 
--	tm->logical = eb->start;
--	tm->slot = src_slot;
--	tm->move.dst_slot = dst_slot;
--	tm->move.nr_items = nr_items;
--	tm->op = BTRFS_MOD_LOG_MOVE_KEYS;
--
- 	for (i = 0; i + dst_slot < src_slot && i < nr_items; i++) {
- 		tm_list[i] = alloc_tree_mod_elem(eb, i + dst_slot,
- 				BTRFS_MOD_LOG_KEY_REMOVE_WHILE_MOVING, GFP_NOFS);
-@@ -486,6 +501,10 @@ int btrfs_tree_mod_log_eb_copy(struct extent_buffer *dst,
- 	struct tree_mod_elem **tm_list_add, **tm_list_rem;
- 	int i;
- 	bool locked = false;
-+	struct tree_mod_elem *dst_move_tm = NULL;
-+	struct tree_mod_elem *src_move_tm = NULL;
-+	u32 dst_move_nr_items = btrfs_header_nritems(dst) - dst_offset;
-+	u32 src_move_nr_items = btrfs_header_nritems(src) - (src_offset + nr_items);
- 
- 	if (!tree_mod_need_log(fs_info, NULL))
- 		return 0;
-@@ -498,6 +517,26 @@ int btrfs_tree_mod_log_eb_copy(struct extent_buffer *dst,
- 	if (!tm_list)
- 		return -ENOMEM;
- 
-+	if (dst_move_nr_items) {
-+		dst_move_tm = tree_mod_log_alloc_move(dst, dst_offset + nr_items,
-+						      dst_offset, dst_move_nr_items);
-+		if (IS_ERR(dst_move_tm)) {
-+			ret = PTR_ERR(dst_move_tm);
-+			dst_move_tm = NULL;
-+			goto free_tms;
-+		}
-+	}
-+	if (src_move_nr_items) {
-+		src_move_tm = tree_mod_log_alloc_move(src, src_offset,
-+						      src_offset + nr_items,
-+						      src_move_nr_items);
-+		if (IS_ERR(src_move_tm)) {
-+			ret = PTR_ERR(src_move_tm);
-+			src_move_tm = NULL;
-+			goto free_tms;
-+		}
-+	}
-+
- 	tm_list_add = tm_list;
- 	tm_list_rem = tm_list + nr_items;
- 	for (i = 0; i < nr_items; i++) {
-@@ -520,6 +559,11 @@ int btrfs_tree_mod_log_eb_copy(struct extent_buffer *dst,
- 		goto free_tms;
- 	locked = true;
- 
-+	if (dst_move_tm) {
-+		ret = tree_mod_log_insert(fs_info, dst_move_tm);
-+		if (ret)
-+			goto free_tms;
-+	}
- 	for (i = 0; i < nr_items; i++) {
- 		ret = tree_mod_log_insert(fs_info, tm_list_rem[i]);
- 		if (ret)
-@@ -528,6 +572,11 @@ int btrfs_tree_mod_log_eb_copy(struct extent_buffer *dst,
- 		if (ret)
- 			goto free_tms;
- 	}
-+	if (src_move_tm) {
-+		ret = tree_mod_log_insert(fs_info, src_move_tm);
-+		if (ret)
-+			goto free_tms;
-+	}
- 
- 	write_unlock(&fs_info->tree_mod_log_lock);
- 	kfree(tm_list);
-@@ -535,6 +584,12 @@ int btrfs_tree_mod_log_eb_copy(struct extent_buffer *dst,
- 	return 0;
- 
- free_tms:
-+	if (dst_move_tm && !RB_EMPTY_NODE(&dst_move_tm->node))
-+		rb_erase(&dst_move_tm->node, &fs_info->tree_mod_log);
-+	kfree(dst_move_tm);
-+	if (src_move_tm && !RB_EMPTY_NODE(&src_move_tm->node))
-+		rb_erase(&src_move_tm->node, &fs_info->tree_mod_log);
-+	kfree(src_move_tm);
- 	for (i = 0; i < nr_items * 2; i++) {
- 		if (tm_list[i] && !RB_EMPTY_NODE(&tm_list[i]->node))
- 			rb_erase(&tm_list[i]->node, &fs_info->tree_mod_log);
-
-base-commit: 1a8763b93150b2c8f3992c27a5ce7857fee4ab0f
--- 
-2.39.5
+> +
+> +# Verify the xattrs are present.
+> +echo "xattrs before:"
+> +_getfattr --absolute-names --dump $SCRATCH_MNT/testfile | _filter_scratch
+> +
+> +# Now replace the value of the foobar xattr with a significantly larger value.
+> +$SETFATTR_PROG -n user.foobar -v abcdefghijklmnopqrstuvwxyz $SCRATCH_MNT/testfile
+> +
+> +# Check the xattrs have the expected values.
+> +echo "xattrs after:"
+> +_getfattr --absolute-names --dump $SCRATCH_MNT/testfile | _filter_scratch
+> +
+> +# success, all done
+> +_exit 0
+> diff --git a/tests/generic/806.out b/tests/generic/806.out
+> new file mode 100644
+> index 00000000..620a953e
+> --- /dev/null
+> +++ b/tests/generic/806.out
+> @@ -0,0 +1,11 @@
+> +QA output created by 806
+> +xattrs before:
+> +# file: SCRATCH_MNT/testfile
+> +user.WvG1c1Td="qwerty"
+> +user.foobar="123"
+> +
+> +xattrs after:
+> +# file: SCRATCH_MNT/testfile
+> +user.WvG1c1Td="qwerty"
+> +user.foobar="abcdefghijklmnopqrstuvwxyz"
+> +
+> -- 
+> 2.47.2
+> 
+> 

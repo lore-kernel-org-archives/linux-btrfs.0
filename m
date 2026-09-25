@@ -1,64 +1,64 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8A1E84248A0
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 06:16:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E891143BDC0
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 06:16:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790317013; cv=none; b=ZmWSyCDriw2qfNeA0do32gocNLXRbTKLqj2YkkVniylytEupSrUvqlwJtJlcei3HcZph5IlYZlNTW4pli9YOePvSauiAsl/pZGSz8HGO8uubcO/32EYP1TrOa0CXSSpE1+4SSFlX+SQn9BU9ZO+Ej1z6NTGR4j90Q+wJoa1YIlw=
+	t=1790317013; cv=none; b=fY5SGWoIikBwcMTf0j1xAksTF1VXndpwmHL0JSEpQ5DbINN8Ubm68dAhc7iC1B57+xgILSaE58wJK+6+wuGUlYxrV4jz3PT3L26AUXXVd2Mih+myoG0qhkrW9QY9V37MAORm4JXcBOgzTAuWb1oZtsazUtRQ5Ou9loP9oTMSCK8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1790317013; c=relaxed/simple;
-	bh=zru1qXt8w1GMV5V3M8wYbq/VsgI3loDfZ6E8Xpjs+mg=;
+	bh=YRaWb/8uP39xrgcVky9+m3QlLY4k86Xx6mas/JJqR9U=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=EZTc0vXScNSbIyPp0hwytfp0F0RqEru1JFptvWFPZ66fzrImfQILkIcXxpl9bRTT0DjnAO4bsApwZg0/AP6w2r5948HNcVaAF1SOYmypjIQgRaSF4zSMetdLKSIaOm994q9aHdG4Bdt0ldPu4wHS1sgUXrKTi3MuHbFVN60k5N8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YYjiKZ0P; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Cvgt4y2L; arc=none smtp.client-ip=195.135.223.130
+	 MIME-Version; b=f452LF/oJhMLmNxbbAlhFg5A5oGrEFMmiZEXKA054YjB69sXRzYW7UP5hoUa2fkueOI6SBn6o7gBEvzCCA/YL5TilycitCvhjogK5ap5HOzCE1pIxtRLC0fIBlLV8pgSqd41YHAcxjVEEH0VaIDELEirrPOcMsoVQQgN8DRwTus=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=P+6mJYkq; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Bda3mIBW; arc=none smtp.client-ip=195.135.223.131
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YYjiKZ0P";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Cvgt4y2L"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="P+6mJYkq";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Bda3mIBW"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 7008621D5D
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 06:16:31 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id D7C9C1FECB
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 06:16:32 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1790316995; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1790316997; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=/jhYLPeUEApvlPnQX21/IOVz8bYohj37oDvsHMVML/Q=;
-	b=YYjiKZ0PgcDqcfbI/9G3WIGbn2dxl76Fsa+gf4hsVRu2hW6ClmC9JX2t4fLJnTCFfNihqv
-	4qdi5lRvQAiAVaWhd3qrhqE72HxTwtg/rjJGR9ZPNxgeJt6KJBztMU6LX2tqP9TUavLOGu
-	20PZQ269xShs4f/jya1I/GNoIT2tiKI=
-Authentication-Results: smtp-out1.suse.de;
+	bh=pRUQT8okFU1o8mb5HbcmMDvv+PK1AD1kw0OkIj/lsw0=;
+	b=P+6mJYkqcrro454sJRZIxDgrLfVUzshToa9nMPiBpWG7OmKwoxjaCjAtCvVtjO8Dbc2gmc
+	HmLHzQHm6DsBM9g4XxhT7VOP0KO6xlAox5PPRX00UIpd4JaQ7lticb4uFMT3Wu21NMx/Go
+	yrmqvE4CSs2aITMsbUlW4tIaRAECNNg=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1790316991; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1790316992; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=/jhYLPeUEApvlPnQX21/IOVz8bYohj37oDvsHMVML/Q=;
-	b=Cvgt4y2LXp9ul6/GPnNEdzue/vnzKkcvquJEOR72OwW0RqUWr8DUrmPkcfUAtLjlDnwTkl
-	07DAECt/D/c/cNeW14kwwuJPfBuFkpXE/J2kQpKjYOqZtWIv3Z2n5gwfI5ZA6DpR+9qkqD
-	lYuvxUJA+YmjloYl9Fmq3M/xSs1OA0Q=
+	bh=pRUQT8okFU1o8mb5HbcmMDvv+PK1AD1kw0OkIj/lsw0=;
+	b=Bda3mIBWCrtSXRiN3/GIfgwFZfVFwmnJuOS5brR7+q5/IRKOXuJpek3b5r+Rx1XXfQB8If
+	iBgiynZuBz5jyVq/ATUWkbjcFVfKFxExzHz4pSOS3JNUqaLYeTq9Ns1t8/wS3E4/O7hY4s
+	dqZC/HE6IrQ9Em+frob2H8x8yKYLRZY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5F64513432
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 06:16:28 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 604B9136F7
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 06:16:30 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id HeJfCbIRtmpdQwAAD6G6ig:T6
+	id HeJfCbIRtmpdQwAAD6G6ig:T7
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 06:16:28 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 06:16:30 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v6 5/6] btrfs: implement uncompressed fallback for delayed bbio
-Date: Fri, 25 Sep 2026 15:45:58 +0930
-Message-ID: <f74a1eb27afea7f3650eca871a70e26a0af2e6a1.1790316897.git.wqu@suse.com>
+Subject: [PATCH v6 6/6] btrfs: enable experimental delayed compression support
+Date: Fri, 25 Sep 2026 15:45:59 +0930
+Message-ID: <6616d3970033f8939b766ab28a3f4c8eda958507.1790316897.git.wqu@suse.com>
 X-Mailer: git-send-email 2.55.0
 In-Reply-To: <cover.1790316897.git.wqu@suse.com>
 References: <cover.1790316897.git.wqu@suse.com>
@@ -69,14 +69,15 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
 X-Spam-Level: 
+X-Spam-Score: -2.80
+X-Spam-Flag: NO
 X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	NEURAL_HAM_SHORT(-0.20)[-0.997];
 	MIME_GOOD(-0.10)[text/plain];
 	ARC_NA(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
@@ -86,218 +87,237 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
 	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
 
-When compression fails (either bad ratio, fragmented free space) we have
-to fall back to uncompressed writes.
+Instead of the existing async submission path, the new delayed bbio will
+handle compressed writes by:
 
-The uncompressed fallback is mostly the same as cow_file_range() but
-with some changes:
+- Allocating delayed em/oe at run_delalloc_*() time
+  Thus no data extent is reserved at that time.
 
-- Endio function is slightly different from the compressed path
-  Only in the folio freeing handling.
+- Delayed bbio will be assembled at extent_writepage_io() time
 
-- Uncompressed fallback error handling
-  Since at this stage, the folios already have WRITEBACK flag set, we do
-  not need to do the usual page unlock/end writeback, but just free the
-  reserved space and call it a day.
+- Delayed bbio will be intercepted just before submission
+  Which will run compression (or fall back to uncompressed writes) in
+  workqueue.
+  Data extents will only be reserved at that time, and the delayed em
+  will be replaced by real ones.
+
+  Meanwhile the real OE will be added as a child of the parent delayed
+  OE, and when the parent OE finishes, the child OEs will be finished
+  with their file extents inserted.
+
+This has some benefits:
+
+- Higher concurrency
+  The old async submission held the folio and io tree range locked.
+  This meant we cannot even read the uptodate folio.
+
+  Furthermore although the compressed write is queued into a workqueue
+  for submission and extent_writepage_io() will skip the compressed
+  range, when we need to write the next folio of the compressed range,
+  we will need to wait for the folio to be unlocked.
+
+  This makes async submission less async.
+
+- Future DONTCACHE writes support
+  We do not support DONTCACHE because that feature requires writeback path
+  to clear the folio dirty and submit them sequentially.
+
+  Meanwhile async submission makes the writeback async, breaking the
+  sequential submission requirement.
+
+  This is also why we need complex per-block tracking for writeback
+  flags, while iomap only requires a counter tracking.
+
+  With the new delayed compression, the lifespan of a folio aligns with
+  DONTCACHE and iomap.
+
+However there is also a change to the fsync() behavior:
+
+- Now an inode with compressed write will require full sync
+  We cannot do any fast sync, as that will grab the info from OE
+  directly, but since delayed OE is just a placeholder, all the OE info
+  cannot be trusted until the parent OE is finished.
+
+There is an extra handling for defrag, where we have to write and wait
+for the defrag range.
+This is to avoid clearing inode->defrag_compress before the compression
+starts.
+
+Finally this new experimental feature is not yet compatible with zoned,
+so for zoned btrfs it will go through the old compression path.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/inode.c | 164 ++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 162 insertions(+), 2 deletions(-)
+ fs/btrfs/defrag.c    | 27 ++++++++++++++---
+ fs/btrfs/extent_io.c |  5 +++-
+ fs/btrfs/inode.c     | 71 ++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 95 insertions(+), 8 deletions(-)
 
+diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
+index 6ec5dd760d42..2ee447b3cfe3 100644
+--- a/fs/btrfs/defrag.c
++++ b/fs/btrfs/defrag.c
+@@ -1349,6 +1349,7 @@ int btrfs_defrag_file(struct btrfs_inode *inode, struct file_ra_state *ra,
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	unsigned long sectors_defragged = 0;
+ 	u64 isize = i_size_read(&inode->vfs_inode);
++	const u64 start = round_down(range->start, fs_info->sectorsize);
+ 	u64 cur;
+ 	u64 last_byte;
+ 	bool do_compress = (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS);
+@@ -1400,7 +1401,7 @@ int btrfs_defrag_file(struct btrfs_inode *inode, struct file_ra_state *ra,
+ 	}
+ 
+ 	/* Align the range */
+-	cur = round_down(range->start, fs_info->sectorsize);
++	cur = start;
+ 	last_byte = round_up(last_byte, fs_info->sectorsize) - 1;
+ 
+ 	/*
+@@ -1471,10 +1472,28 @@ int btrfs_defrag_file(struct btrfs_inode *inode, struct file_ra_state *ra,
+ 		 * need to be written back immediately.
+ 		 */
+ 		if (range->flags & BTRFS_DEFRAG_RANGE_START_IO) {
+-			filemap_flush(inode->vfs_inode.i_mapping);
+-			if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
+-				     &inode->runtime_flags))
++			/*
++			 * For experimental delayed writeback, we must wait
++			 * for the range to be fully written back before
++			 * clearing inode->defrag_compress.
++			 *
++			 * Regular filemap_flush() will only start writeback,
++			 * which will only create delayed OEs. But the real
++			 * compression is happening later.
++			 * This means if we just flush but not wait for writeback,
++			 * the inode->defrag_compress clearing can race with
++			 * compression, so the requested compression algorithm
++			 * is not applied.
++			 */
++			if (IS_ENABLED(CONFIG_BTRFS_EXPERIMENTAL) && !btrfs_is_zoned(fs_info)) {
++				filemap_write_and_wait_range(inode->vfs_inode.i_mapping,
++							     start, last_byte);
++			} else {
+ 				filemap_flush(inode->vfs_inode.i_mapping);
++				if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
++					     &inode->runtime_flags))
++					filemap_flush(inode->vfs_inode.i_mapping);
++			}
+ 		}
+ 		if (range->compress_type == BTRFS_COMPRESS_LZO)
+ 			btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a822f6635eba..970548df2dbc 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -899,8 +899,11 @@ static int submit_one_block(struct btrfs_bio_ctrl *bio_ctrl,
+ 	 * If we have accumulated decent amount of IO, send it to the block
+ 	 * layer so that IO can run while we are accumulating more folios to
+ 	 * write.
++	 *
++	 * This doesn't apply to delayed bbio which is going to be
++	 * compressed.
+ 	 */
+-	else if (bio_ctrl->wbc &&
++	else if (bio_ctrl->wbc && !bio_ctrl->bbio->is_delayed &&
+ 		 bio_ctrl->bbio->bio.bi_iter.bi_size >= fs_info->writeback_bio_size)
+ 		submit_one_bio(bio_ctrl);
+ 	return 0;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2a131e9283dd..fcf67a2e118d 100644
+index fcf67a2e118d..6474a31b7526 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -7869,10 +7869,159 @@ static int try_submit_compressed(struct btrfs_bio *parent)
- 	return ret;
+@@ -1659,6 +1659,68 @@ static bool run_delalloc_compressed(struct btrfs_inode *inode,
+ 	return true;
  }
  
-+static void end_bbio_delayed_uncompressed(struct btrfs_bio *bbio)
++static int run_delalloc_delayed(struct btrfs_inode *inode, struct folio *locked_folio,
++				u64 start, u64 end)
 +{
-+	struct delayed_bio_private *dbp = bbio->private;
-+	struct btrfs_bio *parent = dbp->delayed_bbio;
-+	struct folio_iter fi;
-+
-+	bio_for_each_folio_all(fi, &bbio->bio)
-+		folio_put(fi.folio);
-+	btrfs_bio_end_io(parent, bbio->bio.bi_status);
-+	bio_put(&bbio->bio);
-+}
-+
-+static struct btrfs_bio *child_bbio_from_page_cache(struct btrfs_bio *parent,
-+						    u64 fileoff, u32 len)
-+{
-+	struct btrfs_inode *inode = parent->inode;
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	struct address_space *mapping = inode->vfs_inode.i_mapping;
-+	struct btrfs_bio *bbio;
-+	struct folio_iter fi;
-+	u64 cur = fileoff;
-+	int ret;
-+
-+	bbio = btrfs_bio_alloc(len >> fs_info->sectorsize_bits, REQ_OP_WRITE,
-+			       inode, fileoff, end_bbio_delayed_uncompressed,
-+			       parent->private);
-+
-+	while (cur < fileoff + len) {
-+		struct folio *folio;
-+		u32 cur_len;
-+		bool queued;
-+
-+		folio = filemap_get_folio(mapping, cur >> PAGE_SHIFT);
-+		if (IS_ERR(folio)) {
-+			ret = PTR_ERR(folio);
-+			goto error;
-+		}
-+		cur_len = min_t(u64, folio_next_pos(folio), fileoff + len) - cur;
-+		queued = bio_add_folio(&bbio->bio, folio, cur_len,
-+				    offset_in_folio(folio, cur));
-+		/* There should be enough slots for the bio. */
-+		if (WARN_ON(!queued)) {
-+			ret = -EIO;
-+			folio_put(folio);
-+			goto error;
-+		}
-+		cur += cur_len;
-+	}
-+
-+	return bbio;
-+error:
-+	bio_for_each_folio_all(fi, &bbio->bio)
-+		folio_put(fi.folio);
-+	bio_put(&bbio->bio);
-+	return ERR_PTR(ret);
-+}
-+
-+static int submit_one_uncompressed_range(struct btrfs_bio *parent, struct btrfs_key *ins,
-+					 struct extent_state **cached, u64 file_offset,
-+					 u32 num_bytes, u64 alloc_hint, u32 *ret_alloc_size)
-+{
-+	struct btrfs_inode *inode = parent->inode;
 +	struct btrfs_root *root = inode->root;
 +	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_ordered_extent *ordered;
-+	struct btrfs_file_extent file_extent;
-+	struct btrfs_bio *child = NULL;
-+	struct extent_map *em;
-+	u64 cur_end;
-+	u32 cur_len = 0;
++	struct extent_state *cached = NULL;
++	u64 cur = start;
 +	int ret;
 +
-+	ret = btrfs_reserve_extent(root, num_bytes, num_bytes, fs_info->sectorsize,
-+				   0, alloc_hint, ins, true, true);
-+	if (ret < 0)
-+		return ret;
-+
-+	cur_len = ins->offset;
-+	cur_end = file_offset + cur_len - 1;
-+
-+	file_extent.disk_bytenr = ins->objectid;
-+	file_extent.disk_num_bytes = ins->offset;
-+	file_extent.num_bytes = ins->offset;
-+	file_extent.ram_bytes = ins->offset;
-+	file_extent.offset = 0;
-+	file_extent.compression = BTRFS_COMPRESS_NONE;
-+
-+	btrfs_lock_extent(&inode->io_tree, file_offset, cur_end, cached);
-+
-+	child = child_bbio_from_page_cache(parent, file_offset, cur_len);
-+	if (IS_ERR(child)) {
-+		ret = PTR_ERR(child);
-+		child = NULL;
-+		goto free_reserved;
++	if (btrfs_is_shutdown(fs_info)) {
++		ret = -EIO;
++		goto error;
 +	}
++	while (cur < end) {
++		struct extent_map *em;
++		struct btrfs_ordered_extent *oe;
++		u32 cur_len = min_t(u64, end + 1 - cur, BTRFS_MAX_COMPRESSED);
 +
-+	em = btrfs_create_io_em(inode, file_offset, &file_extent, BTRFS_ORDERED_REGULAR);
-+	if (IS_ERR(em)) {
-+		ret = PTR_ERR(em);
-+		goto free_reserved;
-+	}
-+	btrfs_free_extent_map(em);
-+	ordered = btrfs_alloc_ordered_extent(inode, file_offset, &file_extent,
-+					     1U << BTRFS_ORDERED_REGULAR);
-+	if (IS_ERR(ordered)) {
-+		ret = PTR_ERR(ordered);
-+		goto free_reserved;
-+	}
-+	btrfs_dec_block_group_reservations(fs_info, ins->objectid);
-+	btrfs_unlock_extent(&inode->io_tree, file_offset, cur_end, cached);
++		btrfs_lock_extent(&inode->io_tree, cur, cur + cur_len - 1, &cached);
++		em = btrfs_create_delayed_em(inode, cur, cur_len);
++		if (IS_ERR(em)) {
++			ret = PTR_ERR(em);
++			goto error;
++		}
++		btrfs_free_extent_map(em);
++		oe = btrfs_alloc_delayed_ordered_extent(inode, cur, cur_len);
++		if (IS_ERR(oe)) {
++			btrfs_drop_extent_map_range(inode, cur, cur + cur_len - 1, false);
++			ret = PTR_ERR(oe);
++			goto error;
++		}
++		btrfs_put_ordered_extent(oe);
 +
-+	child->ordered = ordered;
-+	child->private = parent->private;
-+	child->end_io = end_bbio_delayed_uncompressed;
-+	child->bio.bi_iter.bi_sector = ins->objectid >> SECTOR_SHIFT;
-+	atomic_inc(&parent->pending_ios);
-+	btrfs_submit_bbio(child, 0);
-+	*ret_alloc_size = cur_len;
++		cur += cur_len;
++	}
++	/*
++	 * Force the next fsync to wait for any delayed OE to finish,
++	 * as the fast path cannot handle delayed OE correctly.
++	 */
++	btrfs_set_inode_full_sync(inode);
++	extent_clear_unlock_delalloc(inode, start, end, locked_folio, &cached,
++				     EXTENT_LOCKED | EXTENT_DELALLOC,
++				     PAGE_UNLOCK);
 +	return 0;
-+
-+free_reserved:
-+	if (child) {
-+		struct folio_iter fi;
-+
-+		bio_for_each_folio_all(fi, &child->bio)
-+			folio_put(fi.folio);
-+		bio_put(&child->bio);
++error:
++	if (start < cur) {
++		btrfs_drop_extent_map_range(inode, start, cur - 1, false);
++		btrfs_cleanup_ordered_extents(inode, start, cur - start);
++		extent_clear_unlock_delalloc(inode, start, cur - 1, locked_folio, &cached,
++			EXTENT_LOCKED | EXTENT_DELALLOC,
++			PAGE_UNLOCK | PAGE_START_WRITEBACK | PAGE_END_WRITEBACK);
 +	}
-+	/* Check the comments at end of try_submit_compressed(). */
-+	btrfs_drop_extent_map_range(inode, file_offset, cur_end, false);
-+	btrfs_qgroup_free_data(inode, NULL, file_offset, cur_len, NULL);
-+	btrfs_dec_block_group_reservations(fs_info, ins->objectid);
-+	btrfs_free_reserved_extent(fs_info, ins->objectid, ins->offset, true);
-+	btrfs_delalloc_release_metadata(inode, cur_len, true);
-+	btrfs_clear_extent_bit(&inode->io_tree, file_offset, cur_end,
-+			       EXTENT_LOCKED | EXTENT_DELALLOC_NEW | EXTENT_DEFRAG,
-+			       cached);
-+	clear_cleanup_bitmap(parent->ordered, file_offset, cur_len);
-+	ASSERT(ret != -EAGAIN);
++	if (cur < end) {
++		extent_clear_unlock_delalloc(inode, cur, end, locked_folio, &cached,
++			EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DELALLOC_NEW |
++			EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
++			PAGE_UNLOCK | PAGE_START_WRITEBACK | PAGE_END_WRITEBACK);
++		btrfs_qgroup_free_data(inode, NULL, cur, end + 1 - cur, NULL);
++	}
 +	return ret;
 +}
 +
- static void run_delayed_bbio(struct work_struct *work)
- {
- 	struct delayed_bio_private *dbp = container_of(work, struct delayed_bio_private, work);
- 	struct btrfs_bio *parent = dbp->delayed_bbio;
-+	struct btrfs_key ins;
-+	struct extent_state *cached = NULL;
-+	const u32 uncompressed_size = bio_get_size(&parent->bio);
-+	const u64 start = parent->file_offset;
-+	const u64 end = start + uncompressed_size - 1;
-+	u64 cur = start;
-+	u64 alloc_hint;
- 	int ret;
+ /*
+  * Run the delalloc range from start to end, and write back any dirty pages
+  * covered by the range.
+@@ -2454,9 +2516,12 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct folio *locked_fol
+ 		return run_delalloc_nocow(inode, locked_folio, start, end);
  
- 	/* Parent OE must be set. */
-@@ -7882,8 +8031,19 @@ static void run_delayed_bbio(struct work_struct *work)
- 	if (ret <= 0)
- 		goto finish;
- 
--	/* Uncompressed fallback is not yet implemented. */
--	ASSERT(0);
-+	alloc_hint = btrfs_get_extent_allocation_hint(parent->inode, start,
-+						      uncompressed_size);
-+	while (cur < end) {
-+		u32 cur_len;
-+
-+		ret = submit_one_uncompressed_range(parent, &ins, &cached,
-+						    cur, end + 1 - cur,
-+						    alloc_hint, &cur_len);
-+		if (ret < 0)
-+			goto finish;
-+		cur += cur_len;
-+		alloc_hint = ins.objectid + ins.offset;
+ 	if (btrfs_inode_can_compress(inode) &&
+-	    inode_need_compress(inode, start, end, false) &&
+-	    run_delalloc_compressed(inode, locked_folio, start, end, wbc))
+-		return 1;
++	    inode_need_compress(inode, start, end, false)) {
++		if (IS_ENABLED(CONFIG_BTRFS_EXPERIMENTAL) && !zoned)
++			return run_delalloc_delayed(inode, locked_folio, start, end);
++		else if (run_delalloc_compressed(inode, locked_folio, start, end, wbc))
++			return 1;
 +	}
  
- finish:
- 	/*
+ 	if (zoned)
+ 		return run_delalloc_cow(inode, locked_folio, start, end, wbc, true);
 -- 
 2.55.0
 

@@ -1,206 +1,165 @@
-Received: from mail-ej2-f12.google.com (mail-ej2-f12.google.com [74.125.228.140])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mail.archlinux.org (mail.archlinux.org [95.216.189.61])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A0E6536D9E7
-	for <linux-btrfs@vger.kernel.org>; Sat, 26 Sep 2026 05:58:48 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.140
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8771640E8FC;
+	Sat, 26 Sep 2026 10:37:34 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=95.216.189.61
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790402331; cv=none; b=OayidvvbxqkoPg+HSt7mtkzq3K8Ag8VS1VUc7m4f7JlLTu8/yWyEpGIDsVRfdyKk2iqyjAZv7ZLVv3lPaE+sD+GRi8+w12A9THO44yNMtQWw/HPE1d/ECdQ76j9Pi0MdBrRlPqqZ9i0ep4IztOKRhABDcN+gd0QmLTCtPNbR+vE=
+	t=1790419059; cv=none; b=eeqQY257pw4QWxIAUY1fjB/f9apM6YBEq0DQdhTGHNHFN0Q1hhgOk339627TUvoq0KGR9J652j3TjyXQ7g5mJlReoGVtz+npyageT8owu3BmN2jUq5qk0se8FqUpnDJggTd9/X8qDISyPxHAYkf3WwU/QVXHJxBY/WO8LSTGCaQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790402331; c=relaxed/simple;
-	bh=B7ZZi1+CkoYMDPVqiu77qo4+K9oTgZr7dOowfG+dB1E=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=a5DOyF7fNpFyy8S0NV5GGvYOlq+Be+DW9zlVOgkYE8Aek5Fccsz9cjwjGoGpyXl1jB8ORBoC1p3h/Y5i4HeSKfU96kIxD/QFF+gmHgJQSgRNt0Wc8odC+E8B/eG1jIRvglGCl5elo7txYJqcv3Jkb88sxw+y8/gNaon0SmCk3gY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=gxkxg/PT; arc=none smtp.client-ip=74.125.228.140
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1790419059; c=relaxed/simple;
+	bh=4GVeqMERXyHpmGSmlHtJlc98rb5ykv8YtG7KQHafA6I=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=pVe1Cfdf7kJiuNfCrKZLleN7yauaDQMFlLLYozDzpkgTBISUClym85NvbKwq4+7Bpaz0eRDHKECJqrWsmiR1wj7mUGDUCvRWbHXmZdifyUSrKTL0/AFiqS/v+1Wg/QDq+WFXYcdU5udwb4TKmnMzNX+ZVjbahd/0HRgUVpuaRw4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=archlinux.org; spf=pass smtp.mailfrom=archlinux.org; dkim=permerror (0-bit key) header.d=archlinux.org header.i=@archlinux.org header.b=4JCWWDUT; dkim=pass (4096-bit key) header.d=archlinux.org header.i=@archlinux.org header.b=lTNYagwC; arc=none smtp.client-ip=95.216.189.61
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=archlinux.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=archlinux.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="gxkxg/PT"
-Received: by mail-ej2-f12.google.com with SMTP id a640c23a62f3a-c29703cb470so242446266b.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2026 22:58:48 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1790402327; x=1791007127; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=eRoOKu7wWDUfVEc6t+RlTgBMVjPXjuwtLo+K2bN36aA=;
-        b=gxkxg/PTkFDBHDVmJgJ0sIUOm6XS1V15sMeH9FJ6ChujSyFpNJlB4fCB7jvkQH2ilm
-         ZVxKblRphRXcD+Uyoc93GTw0JxoioxhHxPAeEgRAccZILhXsoFeK7AbgQXNvV+I80BWL
-         5B0wWAbrJzi8fTRhbNWQDkknXTeJUD3LlR7i1S4dqOgAwHzckcHZSSvLo8hAH7rI/9Ms
-         oN3eC/YpHh7ZG+MZmmymaQnz4Zmke6P3MQGJvwm9GBekPpMG5mccd+O0y7jTYgf1CLJ9
-         z2Extg08iyWFGyhILn+kMYWjwBNL/9YdFJvIYtrFXcv7oupFxATC1txWYIqlWhX6JoPL
-         HaXw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790402327; x=1791007127;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=eRoOKu7wWDUfVEc6t+RlTgBMVjPXjuwtLo+K2bN36aA=;
-        b=QoCUamydQgKdr2o2718W35LQhcODdz8D1xBd+fFw9XLR93NmzK+RIsU6K+LTOWV6mM
-         9kSqE2T248ImzKk0Msp7UKDLghg/bOj+5X+pyp653132nxIAkLYsxt752DeN87NP70vw
-         lzkH7FqF9+dqd3gQh3aT5D2ZKNiqlz+ZKcDOuBqOk0mSjl5mnGCkyUbCX3SIyUsXPFHK
-         VUj2B0Qv1PwGHIze/DofWRE9f0yXv/f8g51n1BIzrC+cldvLwuhiAFDMKgR+D7LNnY8O
-         Z+7RVAnhobgb8KMothzE1ERrPDsF8t4scHLqCe/WDSZMNUUi4P2wfhJatwu/FC0mOzPn
-         oh8w==
-X-Gm-Message-State: AFuF++nCdtbwXZYoqT7+9iP1ThhIKhhNL0TH53XtgYrri7SdvYgyGpKU
-	YJaeYg/eHJZQRuweT8aVbCISLO+JCN8ZZzSuU3xQvItWwpFb5OkfE1C7FyaCaZsEe+M=
-X-Gm-Gg: AYBFou1N9qYUJd4BOLkEdTJQzgZ68RTTAq0bW2ZFwjzI87cyb+8Mb4RnfYMkn2zQL15
-	8oBGzzHmkfESA3FlU4t+XEN7VH+ucyHwXUCL6rJZyn8my83RElUlo0YJ1BsbXB7yMOB1Qqsg9Rr
-	VIHD0FfQF/zCITBPGzfyCORu3Kb5IeGIQJdg9GVyiltR/GgDgjSxC4d25a1YMgNin7ui5/gEYeo
-	X87D5D3OiEa8MsK8UoxJqZRBDKxFcGQkbK6qJlibBuRGJT2qJ0UAClpws74hjUnTeF+mVUNYeQb
-	T2QZ4WYNEavL/HLO/MV5Y6yjDeVijKDyRJhtawp42f2LmVQbqoBz9rk+3EwbaM5a/7nq+IZRADb
-	XDMo1QVtZAlNaduQnAi54hmGp/4L60rlMH4vOzNDqSUF+0KMDIW0dX/VJ7Tr+eFFX2BwplZvziN
-	v2S8Ck7aZR+zdKVj0PukFHkSeqPWEEZ3uXxqxlPBEbstTsXh44ZCSrz1CqmOUtfsS/HpH0PU+q
-X-Received: by 2002:a17:907:9346:b0:c29:f5d8:9c80 with SMTP id a640c23a62f3a-c2ac22d5a02mr679182266b.47.1790402326784;
-        Fri, 25 Sep 2026 22:58:46 -0700 (PDT)
-Received: from [10.86.128.19] ([149.22.87.44])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3a0b998dbf2sm8161692a91.12.2026.09.25.22.58.43
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 25 Sep 2026 22:58:45 -0700 (PDT)
-Message-ID: <a76bf043-e379-4e7a-883b-cd2bfc1a5c05@suse.com>
-Date: Sat, 26 Sep 2026 15:28:40 +0930
+	dkim=permerror (0-bit key) header.d=archlinux.org header.i=@archlinux.org header.b="4JCWWDUT";
+	dkim=pass (4096-bit key) header.d=archlinux.org header.i=@archlinux.org header.b="lTNYagwC"
+From: George Hu <integral@archlinux.org>
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=archlinux.org;
+	s=dkim-ed25519; t=1790419048;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=P/cPyPSknvkI8/btH4kSPiddxwVWDItnGF0wVFHGT70=;
+	b=4JCWWDUTF8YH/tL1vFeYCB+wqu/CcKycDDBMiNawf8u42mYZyhdNXcFGwjhj6jzha42jAS
+	8dqGxhxDOvvU5+AA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=archlinux.org;
+	s=dkim-rsa; t=1790419048;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=P/cPyPSknvkI8/btH4kSPiddxwVWDItnGF0wVFHGT70=;
+	b=lTNYagwCaBrr0VWJZmOmgxsv+H81r8pZjxW2SAHD2aP0z7AKfFWupV9P3xXpqwKRL5CEGQ
+	EIvQPc6Wk7g0awrr8rV0I1S9FiFDwU+i/fdCz1oMZqolj2d+JAaNCxVbLWcZN1LCJhEz42
+	khjOWzYQsOo8WMWPf3X8ZNmo0WSWLkQquqZdEvnPjcXUWTxcz/JYEGb5RZnp1VndA0U7NI
+	HblVsaqpRAgv71vHMT9wzzZbapVnggnrbu3sYgJuEeuWj9SkpXd7nry72etpoH7baD7dTd
+	NUStNpFyp40ObddcBOB7Cf7dgvcphz44HuBigfWhcvAIqr+eQK7D35Ww3OxxlvIXvNVJ0x
+	LCkMenbeHkeqe0pdN6y+cj3ItP5/fkfZGAwitlT6Xk2Dp9XrFYTLTdbbKyOI1/KWUBXzbd
+	x4s0XazxjX3PbO+8pumgN2Ys3JbR8vMmLsw9g4aq4EdxIK5DAe8QrHjamXm6hvrYx+Fv+7
+	C6kg/TMQYGq/cHMFpF2ST3rnGk5VQP5b5TYAjWoQigF1NXk1nJo8KEaV0REvxcRtmQs6de
+	yDR30YT1dnAMWPPm0OyY/oT7WwrsfsJ78ORYEyBc2CBw8COAwQ5f96p5qtR5ChIatyaDPm
+	9ATdd4cFUtGp1r5V5k+GlwN9YFDpJ590jBFJHh2U0Mx8NN1IKLGw4=
+Authentication-Results: mail.archlinux.org;
+	auth=pass smtp.auth=integral smtp.mailfrom=integral@archlinux.org
+To: David Sterba <dsterba@suse.com>,
+	Chris Mason <mason@kernel.org>
+Cc: linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	George Hu <integral@archlinux.org>
+Subject: [PATCH] btrfs: use helper functions to check if a string has a given prefix
+Date: Sat, 26 Sep 2026 18:36:51 +0800
+Message-ID: <20260926103651.41722-1-integral@archlinux.org>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] generic: test replacing a xattr with a larger value
-To: fdmanana@kernel.org, fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org
-References: <8916aea263bc59af6cfb1accacc2eaf78aaffe89.1790354960.git.fdmanana@suse.com>
- <7d2caec7b8ecd95ad63fcbbc7e1cc1c84ee50d7f.1790356355.git.fdmanana@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
- Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
- SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
- YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
- 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
- vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <7d2caec7b8ecd95ad63fcbbc7e1cc1c84ee50d7f.1790356355.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
+Replace strncmp() prefix checks with strstarts() when only a boolean result
+is needed, and with str_has_prefix() when the prefix length is needed after
+a successful match.
 
+This makes prefix checks clearer and more concise.
 
-在 2026/9/26 02:46, fdmanana@kernel.org 写道:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Test that replacing a xattr's value with a larger value works. This is a
-> test that exercises a specific scenario on btrfs where two xattrs are
-> stored in the same item, and for that to happen their names must result
-> in the same crc32c hash.
-> 
-> This was recently fixed by the following patch:
-> 
->    "btrfs: fix xattr replace when multiple xattrs are packed in the same item"
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: George Hu <integral@archlinux.org>
+---
+ fs/btrfs/compression.c | 15 ++++-----------
+ fs/btrfs/compression.h |  2 +-
+ fs/btrfs/props.c       |  2 +-
+ fs/btrfs/super.c       |  5 ++---
+ fs/btrfs/xattr.c       |  3 +--
+ 5 files changed, 9 insertions(+), 18 deletions(-)
 
-Missing the "---" line, which makes b4 include the digest and changelog.
-
-Otherwise looks good to me.
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
-
-> 
-> V2: Fix missing _ on _fixed_by_fs_commit call.
-> 
->   tests/generic/806     | 43 +++++++++++++++++++++++++++++++++++++++++++
->   tests/generic/806.out | 11 +++++++++++
->   2 files changed, 54 insertions(+)
->   create mode 100755 tests/generic/806
->   create mode 100644 tests/generic/806.out
-> 
-> diff --git a/tests/generic/806 b/tests/generic/806
-> new file mode 100755
-> index 00000000..1fcf0145
-> --- /dev/null
-> +++ b/tests/generic/806
-> @@ -0,0 +1,43 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> +#
-> +# FS QA Test 806
-> +#
-> +# Test replacing a xattr's value with a larger value.
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick metadata attr
-> +
-> +. ./common/filter
-> +. ./common/attr
-> +
-> +_require_scratch
-> +_require_attrs
-> +
-> +_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
-> +   "btrfs: fix xattr replace when multiple xattrs are packed in the same item"
-> +
-> +_scratch_mkfs >>$seqres.full 2>&1 || _fail "mkfs failed"
-> +_scratch_mount
-> +
-> +touch $SCRATCH_MNT/testfile
-> +
-> +# Add two xattrs that, on btrfs, have the same hash (crc32c) for their name
-> +# and therefore are packed into the same btrfs_dir_item.
-> +$SETFATTR_PROG -n user.foobar -v 123 $SCRATCH_MNT/testfile
-> +$SETFATTR_PROG -n user.WvG1c1Td -v qwerty $SCRATCH_MNT/testfile
-> +
-> +# Verify the xattrs are present.
-> +echo "xattrs before:"
-> +_getfattr --absolute-names --dump $SCRATCH_MNT/testfile | _filter_scratch
-> +
-> +# Now replace the value of the foobar xattr with a significantly larger value.
-> +$SETFATTR_PROG -n user.foobar -v abcdefghijklmnopqrstuvwxyz $SCRATCH_MNT/testfile
-> +
-> +# Check the xattrs have the expected values.
-> +echo "xattrs after:"
-> +_getfattr --absolute-names --dump $SCRATCH_MNT/testfile | _filter_scratch
-> +
-> +# success, all done
-> +_exit 0
-> diff --git a/tests/generic/806.out b/tests/generic/806.out
-> new file mode 100644
-> index 00000000..620a953e
-> --- /dev/null
-> +++ b/tests/generic/806.out
-> @@ -0,0 +1,11 @@
-> +QA output created by 806
-> +xattrs before:
-> +# file: SCRATCH_MNT/testfile
-> +user.WvG1c1Td="qwerty"
-> +user.foobar="123"
-> +
-> +xattrs after:
-> +# file: SCRATCH_MNT/testfile
-> +user.WvG1c1Td="qwerty"
-> +user.foobar="abcdefghijklmnopqrstuvwxyz"
-> +
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index c62b5148d5ac..82d0413e6236 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -70,19 +70,12 @@ static struct compressed_bio *alloc_compressed_bio(struct btrfs_inode *inode,
+ 	return to_compressed_bio(bbio);
+ }
+ 
+-bool btrfs_compress_is_valid_type(const char *str, size_t len)
++bool btrfs_compress_is_valid_type(const char *str)
+ {
+-	int i;
+-
+-	for (i = 1; i < ARRAY_SIZE(btrfs_compress_types); i++) {
+-		size_t comp_len = strlen(btrfs_compress_types[i]);
+-
+-		if (len < comp_len)
+-			continue;
+-
+-		if (!strncmp(btrfs_compress_types[i], str, comp_len))
++	for (int i = 1; i < ARRAY_SIZE(btrfs_compress_types); i++)
++		if (strstarts(str, btrfs_compress_types[i]))
+ 			return true;
+-	}
++
+ 	return false;
+ }
+ 
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index 1022dc53ec51..1d8e12fcd488 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -131,7 +131,7 @@ extern const struct btrfs_compress_levels btrfs_lzo_compress;
+ extern const struct btrfs_compress_levels btrfs_zstd_compress;
+ 
+ const char* btrfs_compress_type2str(enum btrfs_compression_type type);
+-bool btrfs_compress_is_valid_type(const char *str, size_t len);
++bool btrfs_compress_is_valid_type(const char *str);
+ 
+ int btrfs_compress_heuristic(struct btrfs_inode *inode, u64 start, u64 end);
+ 
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index bb77d46376d4..c33930c58802 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -301,7 +301,7 @@ static int prop_compression_validate(const struct btrfs_inode *inode,
+ 	if (!value)
+ 		return 0;
+ 
+-	if (btrfs_compress_is_valid_type(value, len))
++	if (btrfs_compress_is_valid_type(value))
+ 		return 0;
+ 
+ 	if ((len == 2 && strncmp("no", value, 2) == 0) ||
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index ddb620ac241b..287cdc45bef8 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -263,10 +263,9 @@ static const struct fs_parameter_spec btrfs_fs_parameters[] = {
+ 
+ static bool btrfs_match_compress_type(const char *string, const char *type, bool may_have_level)
+ {
+-	const int len = strlen(type);
++	const size_t len = str_has_prefix(string, type);
+ 
+-	return (strncmp(string, type, len) == 0) &&
+-		((may_have_level && string[len] == ':') || string[len] == '\0');
++	return len && ((may_have_level && string[len] == ':') || string[len] == '\0');
+ }
+ 
+ static int btrfs_parse_compress(struct btrfs_fs_context *ctx,
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index ab55d10bd71f..9011d8096e2d 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -239,8 +239,7 @@ int btrfs_setxattr_trans(struct inode *inode, const char *name,
+ 		 * block_rsv of the handle and trigger a warning for the start
+ 		 * case.
+ 		 */
+-		ASSERT(strncmp(name, XATTR_SECURITY_PREFIX,
+-			       XATTR_SECURITY_PREFIX_LEN) == 0);
++		ASSERT(strstarts(name, XATTR_SECURITY_PREFIX));
+ 		trans = current->journal_info;
+ 	}
+ 
+-- 
+2.55.0
 

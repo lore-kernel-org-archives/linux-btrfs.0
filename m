@@ -1,181 +1,159 @@
-Received: from mail-ej2-f18.google.com (mail-ej2-f18.google.com [74.125.228.146])
+Received: from mail-oi1-f198.google.com (mail-oi1-f198.google.com [209.85.167.198])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E563E4A3843
-	for <linux-btrfs@vger.kernel.org>; Sat, 26 Sep 2026 21:22:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.146
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 60A8137DAD7
+	for <linux-btrfs@vger.kernel.org>; Sat, 26 Sep 2026 22:23:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.198
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790457743; cv=none; b=FkcT49pxAWF38rAr7XL9wTYXb81v8gAC8PBCAU3NIjKBmcYJ8FgyCNBIbmMiBwaEPgX56nT20to/62ln0sWrfTmZd8aOa0mOUAN3ccJqVaUcSpSRNRHNr/SBtHbrWcQdene+vkEpBrZ2YwmNIfzvJB0YU0+bPp3XJ4PdKARGIXQ=
+	t=1790461413; cv=none; b=He7B4L3o93YQ+xZz4XtysokSx7tLRcDGvMS0HLFhb0lCN7mqcUz9P9nBRUipmzZkC8WaYQwB8h6+TFf0jIhJRw83h5k+CYL+ht+bOq2MdzPHNsoGtbJdrTfGHEGApz2AIfRaIrfDGgoKng75DusTn59oJQ1pPLC96qgrhaaOh1c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790457743; c=relaxed/simple;
-	bh=2mTri71uNiEmsPH+mMJhT9tNhiUgh8M0ciZBOp6m704=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=OGejsKPG4iM5PtIfSfVatFtN/jh0+o+oAXlEZq9/dHvowrZMpHCuG1DjVi593R/WicjSkgdtNzxPF8urT9qmOxyGVTetQv61g70pqMZQab+Bi+6lRxYR/DKIbvG7k0pRY/sh4moESfuqN/1l25zaSahmbxBeN7pp+uHZes5rtdA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=NUnx0KhI; arc=none smtp.client-ip=74.125.228.146
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="NUnx0KhI"
-Received: by mail-ej2-f18.google.com with SMTP id a640c23a62f3a-c2b40e4744eso119058866b.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 Sep 2026 14:22:19 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1790457737; x=1791062537; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=skUUnKRXWcm12ROw8/UiYVb1bcscz3HcOKZ3b17jq10=;
-        b=NUnx0KhIBLr7/13BZeQgyBhqR7jcKzwWbcRD43EwK5F9dPCyEEyMp9oF77kVdTCero
-         NVvFbsQgn9NrZ8Pap9Zrz7ocFQQMc82NE3p+PoaBSU/K20rH+f+qnuzEBBUXBWPAoQXV
-         xSSqFCS8w9a0Ur2AH3BOJ8wg6dEA1v1bh0+rEGEsCBkrXqWoJUAFyOcktmTEMw3h5q1j
-         xrGE+1Sxu5RyszJ2d13vd5njPe1zsBLxbCF/P52dilmGJ/gUci4aPWgKAvq/zme98KaL
-         USIs5t43psGG2SMLURvIatXDeLiqKCOKWYa1rA75BhzlGRO8pW95VeM9qVjBhNQExjVu
-         7Ryg==
+	s=arc-20240116; t=1790461413; c=relaxed/simple;
+	bh=NPML9+6dXdZoN8Bk0OoABxJWQ+yVtxLx3/drBN0/cKc=;
+	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=JPDad3lt0HG2RivhnYG71xzdixcjesoinPCEkrPcP9xUMhLoCfnfF9fjNlvQWfGVCiOPvEAHLQtd1mAqS5cHJl6xrTAgfndGJFmPsEP1oUqrwNI+ddcqT8Ed4PUxr0h8pQ2gqqV7vgT5V+cqxpgEoiC1p6NHUWgBOCxJEPwN+3A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.198
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-oi1-f198.google.com with SMTP id 5614622812f47-4c467e19391so4259012b6e.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Sep 2026 15:23:31 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790457737; x=1791062537;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=skUUnKRXWcm12ROw8/UiYVb1bcscz3HcOKZ3b17jq10=;
-        b=2JIfJ6W4VpNTHBW9Qn8uaAdN10Kspl1J/FRMZmgAo9TFdn0VQ7fl8F18zo4xa9bqY7
-         TNhyyTBZDZYG0CB5lcPE+klsDftv/rI2eI8h72lw30x3oJGaYDgqX25Ak7Us4CLepSzB
-         cdLLVKJgbqbV328+otq3pIsgMw3En3u0q6QADOUcXDOrFtHmOMx20pMrQLkY13facPLv
-         7csZwcHJIZaHxco3haMkSMe7XwHY503uKnViPhXCWl2cy/zVHBP6H0OCd9yW0oX0EBgK
-         IrK48TXpmFQ3f1swzb5ZgzxfZmHGddB9beyRPjmWsm/lieMdaH1qvGKKc0mtvXQcbBsA
-         +Ghw==
-X-Forwarded-Encrypted: i=1; AKwUvBzIMeKB4iU2tbKcB8+fAzlCGW95I5jaH6tf+onDPFTSGbCw76HdzWLrBVohdOxGmmgoCIvwGDSsLFtelQ==@vger.kernel.org
-X-Gm-Message-State: AFuF++lJ9ToAIZTNVxcx0FJqif0WnyY1zCKr+LD1uxgMzFQDk9vSf2fK
-	R23yvf7NFkm3cW7r4m+NI1gJonUeOc4MKBFj3GUn93UleC9Xml89zOhAYJu+djEOkx4=
-X-Gm-Gg: AYBFou2PkQvkn4TMlesGVdjX1HrjtKxhXxnA4a2ped5nTJZZH07CPnAWQ/rchTY3VW8
-	QI5+tsnXxV4K8vg4A6gSh2PVQwA8rGHEW120Teb3lqzU6SYPe7yPlaZNTqAsf2QdfWBDQ8vzB7L
-	NMViTirqDLwO83M1efq5fzkgzdCDielaQAOqImGq2lGY7+/yJyQpBqm3jutuizP0wZtTM6CobDw
-	6qPGpT54UHf+dVJqoSqNnsgf+EZe+YPNgvDcZIMNjy5ZJOHP89iY0j6TSf4IMUQ2OlBoIa4Mfij
-	jaJzOILSlflLWjYWiqZDteUqqzniJwS3Pgv6rY5EWUOXDbRnwL52CmO9+jCv9abHb9ZH197+tgR
-	x/HqmrEscpYAuK+2qPN0HwSacTbGSXZqMMXMXoFeM62Q7iOkIm/wlPcChZkbL04EzbwerpLSMMF
-	KJmqWuHNW6NGfSjoD7REThXKzEvhSONsC0jWVvEtj7PhKVYDxyR114sFXUFqFJY0c=
-X-Received: by 2002:a17:907:c317:b0:c26:1649:47ab with SMTP id a640c23a62f3a-c2ac53c3702mr751964866b.33.1790457737059;
-        Sat, 26 Sep 2026 14:22:17 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-cc78794331fsm2678892a12.20.2026.09.26.14.22.11
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 26 Sep 2026 14:22:14 -0700 (PDT)
-Message-ID: <18af260e-b53e-4156-a6a3-e34d9b3b6293@suse.com>
-Date: Sun, 27 Sep 2026 06:52:09 +0930
+        d=1e100.net; s=20260707; t=1790461410; x=1791066210;
+        h=content-type:to:from:subject:message-id:date:mime-version
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=zgnMvF8k80MkelLr8yx24geDiGOybqGlTuTOlprauxA=;
+        b=aTO2Sg9jmMN1IJCoO+RYazyRAtKt0zzphvEQuUYKlVrRBnXFXqLK/zoUA0011fobxs
+         GJQBOytO16HLc26tjSpBrmgTOW1PjdUFHjyVjxjF3lllRD1C9Vme1N+PMEzd6qmZfoC5
+         GWmrrPDH7uvmRgj7itAj4QjIV2KU6LjHpD3fUpAidkWvGZBaAhYFmq36u2Fd1jh3AHGl
+         KFfB1n8dcYN2VomIhU531EQ1KL1W/y71pqbDWepRvXH4TyKa050RJFXQSfwzkjLTxGNE
+         JrsnHMhHCi9B9YA5jA/0LLoSWx4vUvQLoHDgI7neklrCqEz/MBD6nBS6CHVSsTrGdR2v
+         cJjA==
+X-Forwarded-Encrypted: i=1; AKwUvBzglC5BcciINvqrLiU92f9aB/1WIOOA4Cq8eEINT5lRh+9MFTi1f7bxaYMYyC74viQUUe5nStpRa1jO3w==@vger.kernel.org
+X-Gm-Message-State: AFuF++nsbe4pAAGbGI4YQFMAcOO6QMNmknZmJoySspdXMHDDfJbOZouV
+	Za4SBJwh0sW7QvaYYC+M0v+Q8N+PbTeVkMo5hryDhcMZekbfD78/JBxezmrDsxTeGIqsfyhAmjh
+	F/4BitH/aDbqz4IFiD2rPPqQL7Zb/fS5nho2336ca2vb7FADUEC3RMenjtcE=
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: use strstarts() and str_has_prefix() for prefix
- checks
-To: George Hu <integral@archlinux.org>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, mason@kernel.org
-References: <a7d68d73-3ba1-46d3-a6c9-5ee213e5b551@suse.com>
- <20260926122217.22759-1-integral@archlinux.org>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
- Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
- SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
- YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
- 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
- vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20260926122217.22759-1-integral@archlinux.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+X-Received: by 2002:a05:6808:4fe0:b0:4d6:90d3:e187 with SMTP id
+ 5614622812f47-4d72ea5cc31mr10616995b6e.48.1790461410569; Sat, 26 Sep 2026
+ 15:23:30 -0700 (PDT)
+Date: Sat, 26 Sep 2026 15:23:30 -0700
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6ab845e2.e548f532.1ca396.0034.GAE@google.com>
+Subject: [syzbot] [btrfs?] WARNING in btrfs_add_reserved_bytes (2)
+From: syzbot <syzbot+9f330950ca662bc43bf0@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, mason@kernel.org, 
+	syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
+
+Hello,
+
+syzbot found the following issue on:
+
+HEAD commit:    165768bb7026 Merge tag 'firewire-fixes-7.3-rc5' of git://g..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=16701205580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=2b924f079099ba6e
+dashboard link: https://syzkaller.appspot.com/bug?extid=9f330950ca662bc43bf0
+compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=17920205580000
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=177ed205580000
+
+Downloadable assets:
+disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-165768bb.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/8937d1c35787/vmlinux-165768bb.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/04f73e6326ff/bzImage-165768bb.xz
+mounted in repro: https://storage.googleapis.com/syzbot-assets/959597fde8f7/mount_0.gz
+  fsck result: OK (log: https://syzkaller.appspot.com/x/fsck.log?x=1208e2c9580000)
+
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+9f330950ca662bc43bf0@syzkaller.appspotmail.com
+
+------------[ cut here ]------------
+1
+WARNING: fs/btrfs/space-info.h:286 at btrfs_space_info_update_bytes_may_use fs/btrfs/space-info.h:286 [inline], CPU#0: syz-executor/5443
+WARNING: fs/btrfs/space-info.h:286 at btrfs_add_reserved_bytes+0x51b/0x8b0 fs/btrfs/block-group.c:4029, CPU#0: syz-executor/5443
+Modules linked in:
+CPU: 0 UID: 0 PID: 5443 Comm: syz-executor Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+RIP: 0010:btrfs_space_info_update_bytes_may_use fs/btrfs/space-info.h:286 [inline]
+RIP: 0010:btrfs_add_reserved_bytes+0x51b/0x8b0 fs/btrfs/block-group.c:4029
+Code: ac 24 80 00 00 00 74 08 48 89 ef e8 2f b4 f6 fd 4c 8b 75 00 4c 89 f7 4c 89 ee e8 30 14 85 fd 4d 39 ee 73 18 e8 56 11 85 fd 90 <0f> 0b 90 45 31 f6 eb 2e e8 48 11 85 fd e9 f8 fb ff ff e8 3e 11 85
+RSP: 0018:ffffc90001e1ec10 EFLAGS: 00010293
+RAX: ffffffff8442dbba RBX: 1ffff1100889b910 RCX: ffff888000bc4b00
+RDX: 0000000000000000 RSI: 0000000000001000 RDI: 0000000000000000
+RBP: ffff8880444dc880 R08: ffffffff907a847f R09: 1ffffffff20f508f
+R10: dffffc0000000000 R11: fffffbfff20f5090 R12: ffff8880444dc800
+R13: 0000000000001000 R14: 0000000000000000 R15: ffff8880444dc820
+FS:  000055559168c500(0000) GS:ffff88808c2bf000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00005555916a7a28 CR3: 000000001f9a3000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ find_free_extent+0x3ff4/0x5cd0 fs/btrfs/extent-tree.c:4776
+ btrfs_reserve_extent+0x349/0x850 fs/btrfs/extent-tree.c:4904
+ btrfs_alloc_tree_block+0x1ed/0x1160 fs/btrfs/extent-tree.c:5375
+ btrfs_force_cow_block+0x562/0x1bf0 fs/btrfs/ctree.c:501
+ btrfs_cow_block+0x3f1/0xaf0 fs/btrfs/ctree.c:696
+ btrfs_search_slot+0xd70/0x2d20 fs/btrfs/ctree.c:-1
+ btrfs_insert_empty_items+0xa3/0x1a0 fs/btrfs/ctree.c:4310
+ btrfs_insert_delayed_item fs/btrfs/delayed-inode.c:755 [inline]
+ btrfs_insert_delayed_items fs/btrfs/delayed-inode.c:832 [inline]
+ __btrfs_commit_inode_delayed_items+0xb0e/0x1ec0 fs/btrfs/delayed-inode.c:1115
+ __btrfs_run_delayed_items+0x1d0/0x420 fs/btrfs/delayed-inode.c:1158
+ btrfs_commit_transaction+0x844/0x3170 fs/btrfs/transaction.c:2383
+ sync_filesystem+0x1d2/0x240 fs/sync.c:66
+ generic_shutdown_super+0x77/0x2d0 fs/super.c:734
+ kill_anon_super+0x3b/0x70 fs/super.c:1356
+ btrfs_kill_super+0x41/0x50 fs/btrfs/super.c:2152
+ deactivate_locked_super+0xbc/0x110 fs/super.c:589
+ cleanup_mnt+0x3d3/0x460 fs/namespace.c:1317
+ task_work_run+0x1d9/0x270 kernel/task_work.c:233
+ resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
+ __exit_to_user_mode_loop kernel/entry/common.c:70 [inline]
+ exit_to_user_mode_loop+0x204/0x770 kernel/entry/common.c:101
+ __exit_to_user_mode_prepare include/linux/irq-entry-common.h:207 [inline]
+ syscall_exit_to_user_mode_prepare include/linux/irq-entry-common.h:230 [inline]
+ syscall_exit_to_user_mode include/linux/entry-common.h:343 [inline]
+ do_syscall_64+0x328/0x520 arch/x86/entry/syscall_64.c:89
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f68fe39f397
+Code: a2 c7 05 5c 43 25 00 00 00 00 00 eb 96 e8 e1 12 00 00 90 31 f6 e9 09 00 00 00 66 0f 1f 84 00 00 00 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 e8 ff ff ff f7 d8 64 89 02 b8
+RSP: 002b:00007fffcd75c7e8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 00007f68fe4344bb RCX: 00007f68fe39f397
+RDX: 0000000000000000 RSI: 0000000000000009 RDI: 00007fffcd75c8a0
+RBP: 00007fffcd75c8a0 R08: 00007fffcd75d8a0 R09: 00000000ffffffff
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007fffcd75d930
+R13: 00007f68fe4344bb R14: 000000000006482c R15: 00007fffcd75d970
+ </TASK>
 
 
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
 
-在 2026/9/26 21:52, George Hu 写道:
-> Replace strncmp() prefix checks with strstarts() when only a boolean result
-> is needed, and with str_has_prefix() when the prefix length is needed after
-> a successful match.
-> 
-> This makes prefix checks clearer and more concise.
-> 
-> Signed-off-by: George Hu <integral@archlinux.org>
-> ---
-> V1 -> V2:
->   - Avoid replacing strncmp() with strstarts() when the parameter is
->     not NUL terminated
->   - Revise subject
-> 
->   fs/btrfs/super.c | 5 ++---
->   fs/btrfs/xattr.c | 3 +--
->   2 files changed, 3 insertions(+), 5 deletions(-)
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index ddb620ac241b..287cdc45bef8 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -263,10 +263,9 @@ static const struct fs_parameter_spec btrfs_fs_parameters[] = {
->   
->   static bool btrfs_match_compress_type(const char *string, const char *type, bool may_have_level)
->   {
-> -	const int len = strlen(type);
-> +	const size_t len = str_has_prefix(string, type);
->   
-> -	return (strncmp(string, type, len) == 0) &&
-> -		((may_have_level && string[len] == ':') || string[len] == '\0');
-> +	return len && ((may_have_level && string[len] == ':') || string[len] == '\0');
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
 
-For this call site, both strings are NUL terminated so there is no 
-problem about accessing beyond boundary.
+If the report is already addressed, let syzbot know by replying with:
+#syz fix: exact-commit-title
 
-But to be honest, I don't think this improves the readability.
+If you want syzbot to run the reproducer, reply with:
+#syz test: git://repo/address.git branch-or-commit-hash
+If you attach or paste a git patch, syzbot will apply it before testing.
 
-I still have to check what str_has_prefix() really returns to understand 
-the code, as the function is not a common helper and just by the name I 
-don't get what if it will return.
+If you want to overwrite report's subsystems, reply with:
+#syz set subsystems: new-subsystem
+(See the list of subsystem names on the web dashboard)
 
->   }
->   
->   static int btrfs_parse_compress(struct btrfs_fs_context *ctx,
-> diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-> index ab55d10bd71f..9011d8096e2d 100644
-> --- a/fs/btrfs/xattr.c
-> +++ b/fs/btrfs/xattr.c
-> @@ -239,8 +239,7 @@ int btrfs_setxattr_trans(struct inode *inode, const char *name,
->   		 * block_rsv of the handle and trigger a warning for the start
->   		 * case.
->   		 */
-> -		ASSERT(strncmp(name, XATTR_SECURITY_PREFIX,
-> -			       XATTR_SECURITY_PREFIX_LEN) == 0);
-> +		ASSERT(strstarts(name, XATTR_SECURITY_PREFIX));
+If the report is a duplicate of another one, reply with:
+#syz dup: exact-subject-of-another-report
 
-@name is not NUL-terminated, thus even the old code is not safe.
-
-The only thing saving us here is that we should have a security XATTR 
-passed in, thus the name must have the "security." prefix and not cause 
-access-beyond-boundary.
-
-Again, I do not think it's a good idea to use strstarts() with any 
-non-NUL-terminated strings.
-
-
->   		trans = current->journal_info;
->   	}
->   
-
+If you want to undo deduplication, reply with:
+#syz undup

@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 257202DFA3A
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2873A36195A
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790572550; cv=none; b=eMgc+ojKLUB8gQZCk+e2fueSv7Xg8W6oN/6AppIImGlO4M+X1hLY/pGsf+eWXOx9n7wtrG4JgJpaL0Jg9cplngS558FrF+DFsoHhK80T98CPLGtubvoT84LBT/9Yf/rzOESqkrpbxfKsLJZy3Ya0d8ZlaaKw7Emjdop8gNK1hTw=
+	t=1790572552; cv=none; b=UhHs1va/J8eDILsaQQWLdIuv7rrToM6Pry5m8C6KiR7W6y9YpdRYrU192GECLr4mmp5DZyWgOvSuHG0KQPkwavZHwQDw36o5iHBhOSHH5bgrRFTSg9TsmYA+wECfhstOr7wJBo10TYiFriQmAB5NBL8rLSLuvyoH3f+oJd/Nb7g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790572550; c=relaxed/simple;
-	bh=BlOOA6bfbv42C1xw0QBmu0TS5wZssT+5b8+HO9tBxEU=;
+	s=arc-20240116; t=1790572552; c=relaxed/simple;
+	bh=AA0qG7eHaStmrlhGczdpKoudqs3xisRvYXPiUzQxQNc=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=EtvLF+bQxi7dUWCIxXJRJfKukIIR0AYXlMEGLohQu4d7cfiJQNPHCSG1UYOnuS0qoF1bjAmleHlq6Lc6xP4CcNxRHHsBexH3eyPHTJMoC+H8itA/T9vz2SsDIsD7X8p6ddK2M6fVJ80yHxspK+SNm/vQbhH711pxV2b6kmB+v3k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dWiEkKZE; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=ZiAOLMEL; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=hZRtW0eJ5HAvw0h0RJb89m/fmg/QpzJnDjwIialovw1dR0Lr3Igd3tilDtHzUHYHupx6h8BuyoIIJFvE27xwaAochEe8BrdecjqRjhnT4VS0E7mLQrvE95eRPq6Irewg4ZZeWKd3bf0dhxEbzjdI/FFLuXsvnTxx00ziEzxCXO8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=Rltrf0Sb; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=DdWW7eyZ; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dWiEkKZE";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="ZiAOLMEL"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Rltrf0Sb";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="DdWW7eyZ"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id A446C1F7D9
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:37 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 0F81521C67
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1790572541; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1790572544; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=fYLryw7cxROTu/cUeZ3nuB1K2CbdbDnTpGHu7pRWs7Y=;
-	b=dWiEkKZE3L9Ctgx0EtW/Yij8quywtMlR9EMHKswKbxtNwIjMvVjBh4y0f+ze4e8gUHwPDf
-	uiYD/pFdmsEP+J2U3fz+frU1u8aYfMMCROgpuxU+nL0OD1gLPWjKjWWpjj23zMR0JBIN4b
-	B2+zOmJHurVHcXo7cphLIBPryY13DyE=
-Authentication-Results: smtp-out2.suse.de;
-	none
+	bh=x3BosaA/3WzdvMcnJPsups2VOEQvGy80VpAEwqOOw6k=;
+	b=Rltrf0Sbea0tnpQoDXs9HVlbL6PQV/UEnJhGcgAkKJxT9rcVqA3j2pUQQfW+oiwVdshN/5
+	JQFKbPT9FvFpa79ibY6Ejyvs5ZPIsUZ8Nn4UphteKHr+Lk4XK32mRkcDRUTvhuv+gPKgpC
+	uN3zYybyGWnCTuV6cayy5aDhKx+qo0I=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=DdWW7eyZ
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1790572537; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1790572540; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=fYLryw7cxROTu/cUeZ3nuB1K2CbdbDnTpGHu7pRWs7Y=;
-	b=ZiAOLMEL6wncgFoy4hoW2tSC4ByKpu2YKXTGO8AlkaGmiEPSaIoedTRd8DtKiNlEiCnQ4D
-	B5V8i4S6xpIbucafVIeOrzhsrzcA0wlC3Jxj1jVafXvA0RyrFdjhK5Yr8rNb4nTer2aI68
-	Ubii/PJnzR22JllMOJYwk16UofDYX8E=
+	bh=x3BosaA/3WzdvMcnJPsups2VOEQvGy80VpAEwqOOw6k=;
+	b=DdWW7eyZqM0nAEglkvHHzWjG7jhik+upZNKeDCMOyh47Zv+pOAIl7P2znxfSA8ZA0zPbIf
+	k4Ol1baDkPyXKY2WE/9x/batuNc5ipdSOnfjyUbqL7sSVtFRnskLT5EC9zR7t+icKX1rzV
+	njrfRtamkAMDN5xBTSlDjLBTzTNCx/M=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3024A1340F
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:35 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2E31113418
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:37 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id PBZ2F/X3uWrlLwAAD6G6ig:T2
+	id PBZ2F/X3uWrlLwAAD6G6ig:T3
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:35 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:37 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: read a folio extent-by-extent instead of block-by-block
-Date: Mon, 28 Sep 2026 14:45:09 +0930
-Message-ID: <d25071e07851da72d2de7f8a93932566cdd5cb3b.1790571994.git.wqu@suse.com>
+Subject: [PATCH 2/2] btrfs: write back a folio extent-by-extent instead of block-by-block
+Date: Mon, 28 Sep 2026 14:45:10 +0930
+Message-ID: <9a2b5d0cc86ffcb7bd411cf36c33263a0e4bf06b.1790571994.git.wqu@suse.com>
 X-Mailer: git-send-email 2.55.0
 In-Reply-To: <cover.1790571994.git.wqu@suse.com>
 References: <cover.1790571994.git.wqu@suse.com>
@@ -69,381 +69,462 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Score: -2.80
+X-Spam-Score: -3.01
+X-Rspamd-Queue-Id: 0F81521C67
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
 	MIME_TRACE(0.00)[0:+];
+	RCPT_COUNT_ONE(0.00)[1];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DKIM_TRACE(0.00)[suse.com:+];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_COUNT_TWO(0.00)[2];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:mid,suse.com:email];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
 X-Spam-Flag: NO
 
-The current folio read is still based on a block-by-block iteration.
-For a large folio (can be as large as 2M for 4K page size,
+The current dirty folio writeback is still based on a block-by-block
+iteration. For a large folio (can be as large as 2M for 4K page size,
 EXPERIMENTAL builds), this means we will do 512 checks for each block.
 
 For non-experimental builds, we can still do 64 block checks for a large
 folio.
 
 Meanwhile for a lot of cases, the whole folio may belong to a single
-extent map, thus we can submit the full folio in just one go,
+ordered extent, thus we can submit the full folio in just one go,
 without checking each block.
 
-Optimize the folio read behavior to do an extent-by-extent
+Optimize the folio writeback behavior to do an extent-by-extent
 submission, this is done by:
 
-- Introduce a btrfs_folio_find_next_read_range() helper
-  This is just a wrapper to return the current contig range inside the
-  uptodate sub-bitmap.
+- Introduce a helper, truncate_ordered_extents_beyond_eof()
+  The older behavior simplified the beyond-EOF OE truncation a lot, now
+  we need to iterate through all OEs beyond the EOF and truncate them.
 
-  This helper also returns if the range is uptodate or not.
+  Since we need to iterate all the OEs, it's not a good idea to nest the
+  loop inside the existing location.
 
-- Change submit_one_block() to submit_folio_blocks()
-  Which adds a new @len parameter.
+  Use a dedicated truncate_ordered_extents_beyond_eof() to do the
+  iteration.
 
-- Change btrfs_do_readpage() to handle the extent range
-  This includes clamping the read range to both the extent map and range
-  end.
+- Introduce a helper, find_next_write_range()
+  This is to iterate the btrfs_bio::submit_bitmap, to find the next
+  contig range.
 
-There is also a micro-benchmark, checking the runtime of
-btrfs_do_readpage().
+  The helper will return a bool to indicate if the range should be
+  submitted.
+  If not, the caller is responsible to skip to the next range.
 
-The workload is fio doing sequential buffered read with 64K blocksize:
+- Open-code submit_write_sector()
+  Now we need to split the write range according to the OE boundary,
+  there is no benefit use submit_write_sector() for the extent based
+  iteration.
 
- fio --name=buffered-seqread --rw=read --bs=64k --size=1G --direct=0 --ioengine=psync \
-     --loops=16 --group_reporting --filename=/mnt/btrfs/foobar
+  Open-code it so we have better control on each range to submit.
 
-The sequential buffered read is the best case scenario, as readahead
-will try very hard with large folios passed in.
+- Do extent-by-extent iteration for extent_writepage_io()
+  If we reached EOF, truncate_ordered_extents_beyond_eof() will handle
+  the OE truncation.
 
-Before the patch:
+  The range is provided by find_next_write_range(), and truncated by the
+  following factors:
+  * i_size boundary
+    If the range crosses i_size, the one part inside i_size will be
+    handled as usual. The remaining beyond EOF range is handled in the
+    next iteration.
+
+  * Ordered extent boundary
+
+There is also a micro benchmark, showing the best case scenario.
+
+The workload is a very simple xfs_io write, looped 16 times:
+
+ xfs_io -f -c "pwrite -b 2m 0 4G" -c sync $mnt/foobar'
+
+This will make the system to use the largest page cache
+folio size (2M on x86_64).
+
+The benchmark is measuring the runtime of extent_writepage_io(), the
+unit is nanoseconds:
+
+Before:
 
  @dist:
- [256, 512)           989 |@@@@@@                                              |
- [512, 1K)            995 |@@@@@@                                              |
- [1K, 2K)             490 |@@@                                                 |
- [2K, 4K)              26 |                                                    |
- [4K, 8K)             269 |@                                                   |
- [8K, 16K)             63 |                                                    |
- [16K, 32K)           133 |                                                    |
- [32K, 64K)          7747 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
- [64K, 128K)          244 |@                                                   |
- [128K, 256K)           3 |                                                    |
- [256K, 512K)          28 |                                                    |
- [512K, 1M)            53 |                                                    |
+ [32K, 64K)          7011 |@@@@@@@@@@@@@@@@@                                   |
+ [64K, 128K)        21262 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+ [128K, 256K)        1154 |@@                                                  |
+ [256K, 512K)        1820 |@@@@                                                |
+ [512K, 1M)           613 |@                                                   |
+ [1M, 2M)             361 |                                                    |
+ [2M, 4M)             252 |                                                    |
+ [4M, 8M)             189 |                                                    |
+ [8M, 16M)             14 |                                                    |
+ [16M, 32M)            90 |                                                    |
+ [32M, 64M)             2 |                                                    |
 
- @stats: { .count = 11040, .average = 32897, .total = 363190054 }
+ @stats: { .count = 32768, .average = 258736, .total = 8478269576 }
 
-After the patch:
+After:
 
- [256, 512)          1788 |@@@@@@@@@@@@@@@@@                                   |
- [512, 1K)           5387 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
- [1K, 2K)            1599 |@@@@@@@@@@@@@@@                                     |
- [2K, 4K)              80 |                                                    |
- [4K, 8K)            1793 |@@@@@@@@@@@@@@@@@                                   |
- [8K, 16K)            334 |@@@                                                 |
- [16K, 32K)            26 |                                                    |
- [32K, 64K)            27 |                                                    |
- [64K, 128K)            2 |                                                    |
- [128K, 256K)           0 |                                                    |
- [256K, 512K)           7 |                                                    |
- [512K, 1M)             1 |                                                    |
+ @dist:
+ [512, 1K)              1 |                                                    |
+ [1K, 2K)            5633 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@                        |
+ [2K, 4K)            5886 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@                      |
+ [4K, 8K)           10116 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+ [8K, 16K)           1975 |@@@@@@@@@@                                          |
+ [16K, 32K)          7326 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@               |
+ [32K, 64K)           986 |@@@@@                                               |
+ [64K, 128K)           93 |                                                    |
+ [128K, 256K)          24 |                                                    |
+ [256K, 512K)         207 |@                                                   |
+ [512K, 1M)            43 |                                                    |
+ [1M, 2M)              31 |                                                    |
+ [2M, 4M)             109 |                                                    |
+ [4M, 8M)              33 |                                                    |
+ [8M, 16M)             10 |                                                    |
+ [16M, 32M)           293 |@                                                   |
+ [32M, 64M)             2 |                                                    |
 
- @stats: { .count = 11044, .average = 2432, .total = 26864686 }
+ @stats: { .count = 32768, .average = 256208, .total = 8395437757 }
 
-The count doesn't change much, so the folio size passed in is almost the
-same for both runs.
-But average runtime changes from 32us to 2us for the best case
-situation.
+The average doesn't change much, but we have a much better distribution,
+most runs are below 32us, meanwhile the old runs have no runtime below
+32us.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 62 ++++++++++++++++++++++++++------------------
- fs/btrfs/subpage.c   | 49 ++++++++++++++++++++++++++++++++++
- fs/btrfs/subpage.h   |  4 +++
- 3 files changed, 90 insertions(+), 25 deletions(-)
+ fs/btrfs/extent_io.c | 254 +++++++++++++++++++++++++------------------
+ 1 file changed, 148 insertions(+), 106 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 55e9144d4759..05e6a97dc15d 100644
+index 05e6a97dc15d..70265ca335bd 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -110,14 +110,14 @@ struct btrfs_bio_ctrl {
- 	 * make the decision when submitting the bio.
- 	 *
- 	 * The pattern between do_readpage(), submit_one_bio() and
--	 * submit_one_block() is quite subtle, so tracking this is tricky.
-+	 * submit_folio_blocks() is quite subtle, so tracking this is tricky.
- 	 *
- 	 * As we process extent E, we might submit a bio with existing built up
- 	 * extents before adding E to a new bio, or we might just add E to the
- 	 * bio. As a result, E's generation could apply to the current bio or
- 	 * to the next one, so we need to be careful to update the bio_ctrl's
- 	 * generation with E's only when we are sure E is added to bio_ctrl->bbio
--	 * in submit_one_block().
-+	 * in submit_folio_blocks().
- 	 *
- 	 * See the comment in btrfs_lookup_bio_sums() for more detail on the
- 	 * need for this optimization.
-@@ -800,6 +800,7 @@ static int alloc_new_bio(struct btrfs_inode *inode,
-  * @disk_bytenr: logical bytenr where the read/write will be
-  * @folio:	 the folio the block belongs to
-  * @pg_offset:	 the offset inside the folio
-+ * @len:	 the length of the range.
-  * @read_em_generation: generation of the extent_map we are submitting
-  *			(only used for read)
-  *
-@@ -811,16 +812,15 @@ static int alloc_new_bio(struct btrfs_inode *inode,
-  * Return 0 if the block is queued or submitted.
-  * Return <0 for error.
-  */
--static int submit_one_block(struct btrfs_bio_ctrl *bio_ctrl,
--			    u64 disk_bytenr, struct folio *folio,
--			    unsigned long pg_offset, u64 read_em_generation)
-+static int submit_folio_blocks(struct btrfs_bio_ctrl *bio_ctrl,
-+			       u64 disk_bytenr, struct folio *folio,
-+			       size_t pg_offset, size_t len, u64 read_em_generation)
+@@ -1811,99 +1811,60 @@ static struct btrfs_ordered_extent *get_oe_from_bbio(const struct btrfs_bio *bbi
+ 	return oe;
+ }
+ 
+-/*
+- * Return 0 if we have submitted or queued the sector for submission.
+- * Return <0 for critical errors, and the involved sector will be cleaned up.
+- *
+- * Caller should make sure filepos < i_size and handle filepos >= i_size case.
+- */
+-static int submit_write_sector(struct btrfs_inode *inode,
+-			       struct folio *folio,
+-			       u64 filepos, struct btrfs_bio_ctrl *bio_ctrl,
+-			       loff_t i_size)
++static void truncate_ordered_extents_beyond_eof(struct btrfs_inode *inode,
++						u64 file_offset, u32 len)
  {
- 	struct btrfs_inode *inode = folio_to_inode(folio);
- 	const struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	const u32 blocksize = fs_info->sectorsize;
- 	loff_t file_offset = folio_pos(folio) + pg_offset;
+-	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+-	struct btrfs_ordered_extent *oe;
+-	u64 block_start;
+-	u64 disk_bytenr;
+-	u64 extent_offset;
+-	const u32 sectorsize = fs_info->sectorsize;
+-	int ret;
++	u64 cur = file_offset;
++	const u64 next_off = file_offset + len;
  
--	ASSERT(pg_offset + blocksize <= folio_size(folio));
-+	ASSERT(pg_offset + len <= folio_size(folio));
- 	ASSERT(bio_ctrl->end_io_func);
+-	ASSERT(IS_ALIGNED(filepos, sectorsize));
++	while (cur < next_off) {
++		struct btrfs_ordered_extent *ordered;
  
- 	if (bio_ctrl->bbio &&
-@@ -837,7 +837,7 @@ static int submit_one_block(struct btrfs_bio_ctrl *bio_ctrl,
- 			return ret;
- 	}
+-	/* @filepos >= i_size case should be handled by the caller. */
+-	ASSERT(filepos < i_size);
+-
+-	/* Try to reuse the existing OE from bbio first. */
+-	oe = get_oe_from_bbio(bio_ctrl->bbio, filepos);
+-	if (!oe)
+-		oe = btrfs_lookup_ordered_extent(inode, filepos);
+-	if (unlikely(!oe)) {
+-		/*
+-		 * bio_ctrl may contain a bio crossing several folios.
+-		 * Submit it immediately so that the bio has a chance
+-		 * to finish normally, other than marked as error.
+-		 */
+-		submit_one_bio(bio_ctrl);
++		ordered = btrfs_lookup_first_ordered_range(inode, cur, next_off - cur);
++		if (!ordered)
++			break;
  
--	if (!bio_add_folio(&bio_ctrl->bbio->bio, folio, blocksize, pg_offset)) {
-+	if (!bio_add_folio(&bio_ctrl->bbio->bio, folio, len, pg_offset)) {
- 		/* bio full: move on to a new one */
- 		submit_one_bio(bio_ctrl);
- 		goto again;
-@@ -848,10 +848,10 @@ static int submit_one_block(struct btrfs_bio_ctrl *bio_ctrl,
- 	 * generation in the max generation calculation.
- 	 */
- 	bio_ctrl->generation = max(bio_ctrl->generation, read_em_generation);
--	bio_ctrl->next_file_offset += blocksize;
-+	bio_ctrl->next_file_offset += len;
- 
- 	if (bio_ctrl->wbc)
--		wbc_account_cgroup_owner(bio_ctrl->wbc, folio, blocksize);
-+		wbc_account_cgroup_owner(bio_ctrl->wbc, folio, len);
- 
- 	/*
- 	 * len_to_oe_boundary defaults to U32_MAX, which isn't folio or sector
-@@ -863,7 +863,7 @@ static int submit_one_block(struct btrfs_bio_ctrl *bio_ctrl,
- 	 * extent size (128MiB).
- 	 *
- 	 * When len_to_oe_boundary is U32_MAX, decreasing the length by
--	 * blocksize will never make it reach 0, thus skipping the later
-+	 * @len will never make it reach 0, thus skipping the later
- 	 * submit_one_bio() call.  So if len_to_oe_boundary() is not tracking
- 	 * an OE, do not decrease it.
- 	 *
-@@ -872,7 +872,7 @@ static int submit_one_block(struct btrfs_bio_ctrl *bio_ctrl,
- 	 * extents.
- 	 */
- 	if (bio_ctrl->len_to_oe_boundary != U32_MAX)
--		bio_ctrl->len_to_oe_boundary -= blocksize;
-+		bio_ctrl->len_to_oe_boundary -= len;
- 
- 	/* Ordered extent boundary: move on to a new bio. */
- 	if (bio_ctrl->len_to_oe_boundary == 0)
-@@ -1035,12 +1035,13 @@ static int btrfs_do_readpage(struct folio *folio, struct extent_map **em_cached,
- 	struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
- 	u64 start = folio_pos(folio);
- 	const u64 end = start + folio_size(folio) - 1;
-+	const u64 fnext = folio_next_pos(folio);
-+	u64 cur = start;
- 	u64 extent_offset;
- 	u64 locked_end;
- 	u64 last_byte = i_size_read(inode);
- 	struct extent_map *em;
- 	int ret = 0;
--	const size_t blocksize = fs_info->sectorsize;
- 
- 	if (bio_ctrl->ractl)
- 		locked_end = readahead_pos(bio_ctrl->ractl) + readahead_length(bio_ctrl->ractl) - 1;
-@@ -1062,24 +1063,29 @@ static int btrfs_do_readpage(struct folio *folio, struct extent_map **em_cached,
- 	}
- 	bio_ctrl->end_io_func = end_bbio_data_read;
- 	begin_folio_read(fs_info, folio);
--	for (u64 cur = start; cur <= end; cur += blocksize) {
-+	while (cur < fnext) {
- 		enum btrfs_compression_type compress_type = BTRFS_COMPRESS_NONE;
--		unsigned long pg_offset = offset_in_folio(folio, cur);
- 		bool force_bio_submit = false;
-+		bool uptodate;
-+		u32 cur_len;
-+		unsigned int pg_offset;
- 		u64 disk_bytenr;
- 		u64 block_start;
- 		u64 em_gen;
- 
--		ASSERT(IS_ALIGNED(cur, fs_info->sectorsize));
- 		if (cur >= last_byte) {
--			folio_zero_range(folio, pg_offset, end - cur + 1);
-+			folio_zero_range(folio, offset_in_folio(folio, cur), end - cur + 1);
- 			end_folio_read(vi, folio, true, cur, end - cur + 1);
- 			break;
- 		}
--		if (btrfs_folio_test_uptodate(fs_info, folio, cur, blocksize)) {
--			end_folio_read(vi, folio, true, cur, blocksize);
-+		uptodate = btrfs_folio_find_next_read_range(fs_info, folio, cur, &cur_len);
-+		if (uptodate) {
-+			end_folio_read(vi, folio, true, cur, cur_len);
-+			cur += cur_len;
- 			continue;
- 		}
-+		pg_offset = offset_in_folio(folio, cur);
-+
  		/*
- 		 * Search extent map for the whole locked range.
- 		 * This will allow btrfs_get_extent() to return a larger hole
-@@ -1160,18 +1166,22 @@ static int btrfs_do_readpage(struct folio *folio, struct extent_map **em_cached,
- 		bio_ctrl->last_em_start = em->start;
- 
- 		em_gen = em->generation;
-+		cur_len = min_t(u64, btrfs_extent_map_end(em) - cur, cur_len);
- 		btrfs_free_extent_map(em);
- 		em = NULL;
- 
- 		/* we've found a hole, just zero and go on */
- 		if (block_start == EXTENT_MAP_HOLE) {
--			folio_zero_range(folio, pg_offset, blocksize);
--			end_folio_read(vi, folio, true, cur, blocksize);
-+			folio_zero_range(folio, pg_offset, cur_len);
-+			end_folio_read(vi, folio, true, cur, cur_len);
-+			cur += cur_len;
- 			continue;
- 		}
- 		/* the get_extent function already copied into the folio */
- 		if (block_start == EXTENT_MAP_INLINE) {
--			end_folio_read(vi, folio, true, cur, blocksize);
-+			ASSERT(cur_len == fs_info->sectorsize);
-+			end_folio_read(vi, folio, true, cur, cur_len);
-+			cur += cur_len;
- 			continue;
- 		}
- 
-@@ -1182,9 +1192,11 @@ static int btrfs_do_readpage(struct folio *folio, struct extent_map **em_cached,
- 
- 		if (force_bio_submit)
- 			submit_one_bio(bio_ctrl);
--		ret = submit_one_block(bio_ctrl, disk_bytenr, folio, pg_offset, em_gen);
-+		ret = submit_folio_blocks(bio_ctrl, disk_bytenr, folio,
-+					  pg_offset, cur_len, em_gen);
- 		/* Read submission should not fail. */
- 		ASSERT(ret == 0);
-+		cur += cur_len;
+-		 * When submission failed, we should still clear the folio dirty.
+-		 * Or the folio will be written back again but without any
+-		 * ordered extent.
++		 * The whole range [file_offset, file_offset + len) should all have
++		 * OE coverage.
++		 * Thus every found OE must cover @cur, there should be no gap.
+ 		 */
+-		btrfs_folio_clear_dirty(fs_info, folio, filepos, sectorsize);
+-		btrfs_folio_set_writeback(fs_info, folio, filepos, sectorsize);
+-		btrfs_folio_clear_writeback(fs_info, folio, filepos, sectorsize);
+-
+-		/*
+-		 * Since there is no bio submitted to finish the ordered
+-		 * extent, we have to manually finish this sector.
+-		 */
+-		btrfs_mark_ordered_io_finished(inode, filepos, fs_info->sectorsize,
+-					       false);
+-		btrfs_err_rl(fs_info,
+-		"no ordered extent for root %lld ino %llu filepos %llu",
+-			     btrfs_root_id(inode->root), btrfs_ino(inode),
+-			     filepos);
+-		return -EUCLEAN;
++		ASSERT(in_range(cur, ordered->file_offset, ordered->num_bytes));
++		spin_lock(&inode->ordered_tree_lock);
++		set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
++		ordered->truncated_len = min(ordered->truncated_len,
++					     cur - ordered->file_offset);
++		cur = ordered->file_offset + ordered->num_bytes;
++		spin_unlock(&inode->ordered_tree_lock);
++		btrfs_put_ordered_extent(ordered);
  	}
- 	return 0;
- }
-@@ -1879,8 +1891,8 @@ static int submit_write_sector(struct btrfs_inode *inode,
- 	 */
- 	ASSERT(folio_test_writeback(folio));
++}
  
--	ret = submit_one_block(bio_ctrl, disk_bytenr, folio,
--			       offset_in_folio(folio, filepos), 0);
-+	ret = submit_folio_blocks(bio_ctrl, disk_bytenr, folio,
-+				  offset_in_folio(folio, filepos), sectorsize, 0);
- 	if (unlikely(ret < 0)) {
- 		btrfs_folio_clear_writeback(fs_info, folio, filepos, sectorsize);
- 		btrfs_mark_ordered_io_finished(inode, filepos, fs_info->sectorsize,
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index ebf18efe1ea3..308e51719f3a 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -364,6 +364,55 @@ static void btrfs_folio_mark_dirty(struct folio *folio)
- 	filemap_dirty_folio(mapping, folio);
- }
- 
-+/*
-+ * Find the first contig range that covers @start in the uptodate-bitmap.
-+ *
-+ * @start:		The file offset to start the search.
-+ * @len_ret:		The length in bytes of the found range.
-+ *
-+ * Return true if the range is uptodate, otherwise return false.
-+ *
-+ * This interface is a little weird, normally we should just locate the
-+ * non-uptodate range to read, but the read path needs to unlock the uptodate
-+ * range too, so we need to return every contig range in the uptodate sub-bitmap.
-+ */
-+bool btrfs_folio_find_next_read_range(struct btrfs_fs_info *fs_info,
-+				      struct folio *folio,
-+				      u64 start, u32 *len_ret)
+-	extent_offset = filepos - oe->file_offset;
+-	ASSERT(filepos < oe->file_offset + oe->num_bytes);
+-	ASSERT(IS_ALIGNED(oe->file_offset, sectorsize));
+-	ASSERT(IS_ALIGNED(oe->num_bytes, sectorsize));
+-	ASSERT(oe->compress_type == BTRFS_COMPRESS_NONE);
+-	ASSERT(!test_bit(BTRFS_ORDERED_COMPRESSED, &oe->flags));
++static bool find_next_write_range(struct btrfs_fs_info *fs_info,
++				  struct folio *folio,
++				  unsigned long *submit_bitmap,
++				  u64 start, u32 *len_ret)
 +{
 +	const u64 fpos = folio_pos(folio);
 +	const u64 fnext = folio_next_pos(folio);
-+	const u32 fsize = folio_size(folio);
 +	const u32 blocks_per_folio = btrfs_blocks_per_folio(fs_info, folio);
-+	const unsigned int bitmap_end = blocks_per_folio * (btrfs_bitmap_nr_uptodate + 1);
-+	struct btrfs_folio_state *bfs = folio_get_private(folio);
-+	unsigned long flags;
-+	unsigned int start_bit;
++	unsigned int start_bit = (start - fpos) >> fs_info->sectorsize_bits;
 +	unsigned int next_bit;
 +	bool ret;
-+
+ 
+-	block_start = oe->disk_bytenr + oe->offset;
+-	disk_bytenr = block_start + extent_offset;
 +	ASSERT(IS_ALIGNED(start, fs_info->sectorsize));
 +	/* Search start should be inside the folio. */
 +	ASSERT(start >= fpos && start < fnext);
-+
-+	if (blocks_per_folio == 1) {
-+		*len_ret = fsize;
-+		return folio_test_uptodate(folio);
-+	}
-+	ASSERT(bfs);
-+	start_bit = subpage_calc_start_bit(fs_info, folio, uptodate,
-+					   start, fs_info->sectorsize);
-+	spin_lock_irqsave(&bfs->lock, flags);
-+	ret = test_bit(start_bit, bfs->bitmaps);
+ 
+-	btrfs_put_ordered_extent(oe);
+-
+-	btrfs_folio_clear_dirty(fs_info, folio, filepos, sectorsize);
+-	btrfs_folio_set_writeback(fs_info, folio, filepos, sectorsize);
+-	/*
+-	 * Above call should set the whole folio with writeback flag, even
+-	 * just for a single subpage sector.
+-	 * As long as the folio is properly locked and the range is correct,
+-	 * we should always get the folio with writeback flag.
+-	 */
+-	ASSERT(folio_test_writeback(folio));
+-
+-	ret = submit_folio_blocks(bio_ctrl, disk_bytenr, folio,
+-				  offset_in_folio(folio, filepos), sectorsize, 0);
+-	if (unlikely(ret < 0)) {
+-		btrfs_folio_clear_writeback(fs_info, folio, filepos, sectorsize);
+-		btrfs_mark_ordered_io_finished(inode, filepos, fs_info->sectorsize,
+-					       false);
+-		btrfs_err_rl(fs_info,
+-		"failed to queue sector for root %lld ino %llu filepos %llu: %pe",
+-			     btrfs_root_id(inode->root),
+-			     btrfs_ino(inode), filepos, ERR_PTR(ret));
+-		return ret;
+-	}
+-	return 0;
++	ret = test_bit(start_bit, submit_bitmap);
 +	if (ret)
-+		next_bit = find_next_zero_bit(bfs->bitmaps, bitmap_end, start_bit);
++		next_bit = find_next_zero_bit(submit_bitmap, blocks_per_folio,
++					      start_bit);
 +	else
-+		next_bit = find_next_bit(bfs->bitmaps, bitmap_end, start_bit);
-+	spin_unlock_irqrestore(&bfs->lock, flags);
++		next_bit = find_next_bit(submit_bitmap, blocks_per_folio,
++					 start_bit);
 +	*len_ret = (next_bit - start_bit) << fs_info->sectorsize_bits;
 +	return ret;
-+}
-+
- /*
-  * The set helper of the dirty ops, so it only runs for folios without a
-  * fixup bitmap: for those the folio flag is the whole fixup state, and this
-diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
-index 9b106a73d682..6669f1da9ef4 100644
---- a/fs/btrfs/subpage.h
-+++ b/fs/btrfs/subpage.h
-@@ -174,6 +174,10 @@ DECLARE_BTRFS_SUBPAGE_OPS(uptodate);
- DECLARE_BTRFS_SUBPAGE_OPS(dirty);
- DECLARE_BTRFS_SUBPAGE_OPS(writeback);
+ }
  
-+bool btrfs_folio_find_next_read_range(struct btrfs_fs_info *fs_info,
-+				      struct folio *folio,
-+				      u64 start, u32 *len_ret);
-+
  /*
-  * Fixup bit helpers.
-  *
+@@ -1923,12 +1884,12 @@ static noinline_for_stack int extent_writepage_io(struct btrfs_inode *inode,
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	bool submitted_io = false;
+ 	int found_error = 0;
++	const u32 blocksize = fs_info->sectorsize;
+ 	const u64 end = start + len;
+ 	const u64 folio_start = folio_pos(folio);
+ 	const u64 folio_end = folio_start + folio_size(folio);
+-	const unsigned int blocks_per_folio = btrfs_blocks_per_folio(fs_info, folio);
++	const u64 rounded_isize = round_up(i_size, blocksize);
+ 	u64 cur;
+-	int bit;
+ 	int ret = 0;
+ 
+ 	ASSERT(start >= folio_start, "start=%llu folio_start=%llu", start, folio_start);
+@@ -1954,27 +1915,26 @@ static noinline_for_stack int extent_writepage_io(struct btrfs_inode *inode,
+ 
+ 	bio_ctrl->end_io_func = end_bbio_data_write;
+ 
+-	for_each_set_bit(bit, bio_ctrl->submit_bitmap, blocks_per_folio) {
+-		cur = folio_pos(folio) + (bit << fs_info->sectorsize_bits);
++	cur = start;
++	while (cur < end) {
++		struct btrfs_ordered_extent *oe;
++		u64 block_start;
++		u64 disk_bytenr;
++		u64 extent_offset;
++		u32 cur_len;
++		bool dirty;
+ 
+-		if (cur >= i_size) {
+-			struct btrfs_ordered_extent *ordered;
++		dirty = find_next_write_range(fs_info, folio, bio_ctrl->submit_bitmap,
++					      cur, &cur_len);
++		if (!dirty) {
++			cur += cur_len;
++			continue;
++		}
+ 
+-			ordered = btrfs_lookup_first_ordered_range(inode, cur,
+-								   fs_info->sectorsize);
+-			/*
+-			 * We have just run delalloc before getting here, so
+-			 * there must be an ordered extent.
+-			 */
+-			ASSERT(ordered != NULL);
+-			spin_lock(&inode->ordered_tree_lock);
+-			set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
+-			ordered->truncated_len = min(ordered->truncated_len,
+-						     cur - ordered->file_offset);
+-			spin_unlock(&inode->ordered_tree_lock);
+-			btrfs_put_ordered_extent(ordered);
+-
+-			btrfs_mark_ordered_io_finished(inode, cur, fs_info->sectorsize, true);
++		/* Beyond EOF, no need to submit IO. */
++		if (cur >= rounded_isize) {
++			truncate_ordered_extents_beyond_eof(inode, cur, cur_len);
++			btrfs_mark_ordered_io_finished(inode, cur, cur_len, true);
+ 			/*
+ 			 * This range is beyond i_size, thus we don't need to
+ 			 * bother writing back.
+@@ -1983,15 +1943,97 @@ static noinline_for_stack int extent_writepage_io(struct btrfs_inode *inode,
+ 			 * writeback the sectors with subpage dirty bits,
+ 			 * causing writeback without ordered extent.
+ 			 */
+-			btrfs_folio_clear_dirty(fs_info, folio, cur, fs_info->sectorsize);
++			btrfs_folio_clear_dirty(fs_info, folio, cur, cur_len);
++			cur += cur_len;
+ 			continue;
+ 		}
+-		ret = submit_write_sector(inode, folio, cur, bio_ctrl, i_size);
++
++		/*
++		 * The range covers the last byte. Limit the range to the
++		 * rounded_isize, and submit the range inside rounded_isize first.
++		 */
++		if (cur + cur_len > rounded_isize && cur < rounded_isize)
++			cur_len = min_t(u64, cur_len, rounded_isize - cur);
++
++		/* @cur >= i_size case should be handled. */
++		ASSERT(cur < i_size);
++
++		/* Try to reuse the existing OE from bbio first. */
++		oe = get_oe_from_bbio(bio_ctrl->bbio, cur);
++		if (!oe)
++			oe = btrfs_lookup_ordered_extent(inode, cur);
++		if (unlikely(!oe)) {
++			/*
++			 * bio_ctrl may contain a bio crossing several folios.
++			 * Submit it immediately so that the bio has a chance
++			 * to finish normally, rather than being marked as error.
++			 */
++			submit_one_bio(bio_ctrl);
++
++			/*
++			 * When submission failed, we should still clear the
++			 * folio dirty. Or the folio will be written back again
++			 * but without any ordered extent.
++			 */
++			btrfs_folio_clear_dirty(fs_info, folio, cur, cur_len);
++			btrfs_folio_set_writeback(fs_info, folio, cur, cur_len);
++			btrfs_folio_clear_writeback(fs_info, folio, cur, cur_len);
++
++			/*
++			 * Since there is no bio submitted to finish the ordered
++			 * extent, we have to manually finish this sector.
++			 */
++			btrfs_mark_ordered_io_finished(inode, cur, cur_len, false);
++			btrfs_err_rl(fs_info,
++			"no ordered extent for root %lld ino %llu filepos %llu",
++				     btrfs_root_id(inode->root), btrfs_ino(inode), cur);
++			if (!found_error)
++				found_error = -EUCLEAN;
++			/* The next block may have valid OE, so only skip one block. */
++			cur += blocksize;
++			continue;
++		}
++
++		extent_offset = cur - oe->file_offset;
++		ASSERT(cur < oe->file_offset + oe->num_bytes);
++		ASSERT(IS_ALIGNED(oe->file_offset, blocksize));
++		ASSERT(IS_ALIGNED(oe->num_bytes, blocksize));
++		ASSERT(oe->compress_type == BTRFS_COMPRESS_NONE);
++		ASSERT(!test_bit(BTRFS_ORDERED_COMPRESSED, &oe->flags));
++
++		block_start = oe->disk_bytenr + oe->offset;
++		disk_bytenr = block_start + extent_offset;
++
++		cur_len = min_t(u64, oe->file_offset + oe->num_bytes - cur,
++				cur_len);
++		btrfs_put_ordered_extent(oe);
++
++		btrfs_folio_clear_dirty(fs_info, folio, cur, cur_len);
++		btrfs_folio_set_writeback(fs_info, folio, cur, cur_len);
++		/*
++		 * Above call should set the whole folio with writeback flag, even
++		 * just for a single subpage sector.
++		 * As long as the folio is properly locked and the range is correct,
++		 * we should always get the folio with writeback flag.
++		 */
++		ASSERT(folio_test_writeback(folio));
++
++		ret = submit_folio_blocks(bio_ctrl, disk_bytenr, folio,
++					  offset_in_folio(folio, cur),
++					  cur_len, 0);
+ 		if (unlikely(ret < 0)) {
++			btrfs_folio_clear_writeback(fs_info, folio, cur, cur_len);
++			btrfs_mark_ordered_io_finished(inode, cur, cur_len, false);
++			btrfs_err_rl(fs_info,
++			"failed to queue sector for root %lld ino %llu filepos %llu: %pe",
++				     btrfs_root_id(inode->root),
++				     btrfs_ino(inode), cur, ERR_PTR(ret));
+ 			if (!found_error)
+ 				found_error = ret;
++			cur += cur_len;
+ 			continue;
+ 		}
++		cur += cur_len;
+ 		submitted_io = true;
+ 	}
+ 
 -- 
 2.55.0
 

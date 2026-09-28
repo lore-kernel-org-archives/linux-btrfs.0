@@ -1,262 +1,322 @@
-Received: from fout-a6-smtp.messagingengine.com (fout-a6-smtp.messagingengine.com [103.168.172.149])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm2-f13.google.com (mail-wm2-f13.google.com [74.125.225.141])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0A6A54ED1A8
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 20:04:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.149
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 090904C33D6
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 21:59:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790625854; cv=none; b=WlqYZFKhgkQ9TxcD593ID2HUtlPZqNAje4gunqjhqoJNgh3t6Fh8PXKzfkLNg1bI6JCxOlCaFEekA4UFK2bxLrpxE27V3jaJh46WycOj4fk2S3xWy5nD0452g1PY5i1XsWHU8MUBD1Uijymk9qbdR4KLN00YM/bShUre//kj5ps=
+	t=1790632749; cv=none; b=qs5ksywjTRG9ZhoELsggT8zZtTsYNMBgOTrSadPXEMhBwLz8j7ao88BM5r1cRqoIDupVJLH5jlF+XKnUicUxMcYwqpXN5xANH6vFT581fqF3HX1/LLsxANWUrgsfVLLDxCInWFh1tFJBU9l7MsuCrQJovsM/oW56IHkUfJd1jas=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790625854; c=relaxed/simple;
-	bh=uJRGzr6F3r+bdwR7XLAi4qoMNqpI5zhjDZpBsyIXRz0=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Z/ueSjZSzchll7iM7OjItizSoomcjsf9IMkApYPjSgfF2gY1zSgi+b2yMLJ7qeYZC+TpK6GkGF17b0p9WKRFu26TqfbYk2NNNNfuCVeI1xo8zUvFhVaNYEa3Oiee0CVze7NTdh9DZ9tw5XxVw6IwwnqODUmp8AX1SQyazTY2Olc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=ozVzIbFH; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=SGRrPmDn; arc=none smtp.client-ip=103.168.172.149
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1790632749; c=relaxed/simple;
+	bh=JTkZ8iO5TojJ0b+y+8HP96WhBFRVhrd5WKuFaL+85Es=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=E16CuEIEFTtJ5riVFoCQ9iydD0lPBrF5W46N5TB2/bFY+dvSVqgLPNxE1KEPnnhX6hFlKId5Mup4kaIr5fU4tLh+QgMNDCLJnV3DpEw6J8tpyA25ESgBOyzmRi4O1ZGetYjkmXD9lr2IjEcrxy/y1j4CL+Q8qGMx6qDg/r5/Ih8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=BvhzwYdL; arc=none smtp.client-ip=74.125.225.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="ozVzIbFH";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="SGRrPmDn"
-Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
-	by mailfout.phl.internal (Postfix) with ESMTP id DC4C8EC00A4;
-	Mon, 28 Sep 2026 16:04:10 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-04.internal (MEProxy); Mon, 28 Sep 2026 16:04:10 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-transfer-encoding:content-type:content-type:date:date
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm2; t=1790625850;
-	 x=1790712250; bh=w+SPbA60KHsIF2JLXBYdUeAoz3yreevbEjMw/+t6F1M=; b=
-	ozVzIbFH3EdSqQOFFyKqQxeCf2OrQhLqVuc4WFIKV9IUHXv3dLT3uEpUqXIHaJhe
-	9sjODTzaLsK8mqSlsvY9m7SkoxrCpZ4o1lpiaqCWiqtBPNtfSYGMlDJSmlTEkFjI
-	30uRepCj37zOvj9e1sd188Yd9mtleW2ZFJ/JNjgE265f5LttX+MnD1R0i3Y/SX66
-	Fvs+5/8S6piT8uwPNVkRibaUp1ORVRv+nY9nXt+37xsYOGdFwaprKnl4+Q8ZajiA
-	xaiFyZdqwKH5JKFmgknthpKqQpOWX0KMaAJsRjjCw6CD6iZSSJWL/jj2gjeOIeYF
-	qyUb+I3eJ+7xODiWXintzw==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1790625850; x=
-	1790712250; bh=w+SPbA60KHsIF2JLXBYdUeAoz3yreevbEjMw/+t6F1M=; b=S
-	GRrPmDnnBi1VieW1d8BhwyQ3hLBUeu/zV1g4lgSVy9DehQvaRx9mLoml3UOH6vOA
-	7FhNs0WZQSSy5BZg7tVeTNjhM1ZKy+uqWG5DNgSfBu1huvMGruiBNwBVQSqMo0qt
-	QE3Ts77ma+xBIZz52wd4DNYH3CfDdEnDBIJPub67Jehffq9WSjbm1ZA7bwCbgFhq
-	cK0LI4BNay2xoW0cIYKrbUepnJMvFEx8X+fUrvW9/sGIAKn+FLPs47yWXXdTjxi6
-	VioRF4ebxH/h7Talzbo7e/tEsy5lE4yZpra0B9u1sHfN9vF6IMb6uKj9ztKPseKv
-	i518EJEFZBQ1kECWjRZzw==
-X-ME-Sender: <xms:Osi6albStsNvT8PINU4i1_A0dTXdkCwfleIIgcJy6jYhUuJtbC_n2g>
-    <xme:Osi6aj3K6sJ5kZxoPIbVOsxhc92JazYZexNw31EuPupd9WInzanJOTdMjN2PsHO9M
-    GIsWfTnzC_HDYaa1uttbWKxdPwvZzMtgbg7mssbeWtz3qrj7My8bpE>
-X-ME-Received: <xmr:Osi6alXyZHqx2ZHiGqSa-YubOauMJBxQSapBpHHW09GWDzxj5g4B12I>
-X-ME-Proxy-Cause: dmFkZTFwiaZCNZ8Jo06syCzqcqaCOT088sO2+Q/83dBXSZBTGd7GnuqJmjo7lvdhzj9qhI
-    GEX/oEDGoo/COU20rr073LWOUcP8p4urbWelyaRovwyY7cN6x0Pb1DnXIKx04zPY8dd6Gu
-    1zqdwqVwv0C/uMHs+Md5r6YRhc7lAHjBbU593AyQE2WHsWQFVInirToX9OyA2/RmcGOZA/
-    pa9ec+UU04S8XRTx0ah6EqgWh8VXyaeciG4hwRZp2wBIe9bnP360kNYlhA3Ok+QjG3HmXb
-    GsR4/uc+HMvQErZLPBFpsezGP8PHzIBm0vbyFKi2yk8MYAsZZeSGIOHy0ayo4VPTqarDjI
-    JwBcqop1wJMJUoTb6WZWiaDclHnOZcRfSm7yNd/RtpdvVYt168iJTSVYZXxhqZx1UWSxtx
-    MK7ZVRaCgyTJQx7LC40i43PTcwGIfd9/2BbkK5+L8qE/BbiAggTO2Tsz2o14N26oFby4Jd
-    RqdcMBMQXK7CmxUaRylPnzdAQKRKn8NOMN6R4urnxJLl8X3KTXNR/kQ3dU+pOPNLv3xnGe
-    3R3vtO34to8ReAAPRxFp78NI8l7SPjSwsUJv8X9gDNHbPpVHXV3Pole3HYD7rfD+5SSh9L
-    TC+F9AEMX+hjLcuMH+h8IwH0XWWew1vsfC6O3HCeqrp3oKxTDrDDLjH29Ztw
-X-ME-Proxy: <xmx:Osi6atUP2tMtIpN3K3ob_rTAFJKEbacuQLZxkXAI0F8HlTkJRY9wWQ>
-    <xmx:Osi6akeXz9YH6m3FEUktiQjNiTeI3pa9ut8z0gZpDItbQl2w4tPl9w>
-    <xmx:Osi6amW0UgoQy3jFDTqZH5yTy5cE3LiDHqd1hkVsJsmIDYDZ5mVTyA>
-    <xmx:Osi6ateWOAS9mx2Z_bi-Sj-iZvHlEhjTl8yhszTP_WGgZKP2OfXo4Q>
-    <xmx:Osi6amVoxz9l_AsTgA3zo3fr7T__8gCwzKIEh1o0ENPD4MlbsSK42lUT>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 28 Sep 2026 16:04:10 -0400 (EDT)
-Date: Mon, 28 Sep 2026 13:04:05 -0700
-From: Boris Burkov <boris@bur.io>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 1/2] btrfs: allocate additional SYSTEM space earlier
-Message-ID: <20260928200405.GA1853679@zen.localdomain>
-References: <cover.1790095812.git.boris@bur.io>
- <c68f903b219f964552a86fe969011cf819ef470d.1790095812.git.boris@bur.io>
- <CAL3q7H6rt2HxM59bAGM1ao2tOUYcEWCTdxAT9_MWBXfJEyrf-g@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="BvhzwYdL"
+Received: by mail-wm2-f13.google.com with SMTP id 5b1f17b1804b1-49e7bcb94d3so26167375e9.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 14:59:06 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1790632745; x=1791237545; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=8gUCTjWRArg7XG8udPABK3T4ssyv2d91SWVxVNBbNR8=;
+        b=BvhzwYdLVLGScd8DJHoXpOEiMh/sGJOIyiHmfCN2lARTNZ2vhArlX9ICifalpkTWK2
+         YXRSgj0sLim+xBv+8Fn5flahM2IyX9XOCcpKcKQ/hanb0H1jC5LitoD18InyHTNv1etx
+         W8dvn7XzMBzC9LeTeHourNsussGxi5cKx2LaF7/EK1mdazN5RuvSvmCMSqS35VNMjfo5
+         bp8rlDA7WA0CHdeDbLJ2P0MO0x1O5+d47Rtr4mL2rU2oUkr1husa8y9xdEkg+cGKAn8e
+         TznV1wxBybstR5GDC08nkCkXZDa2sfQ2PxfBk04rNpUlh6+NhFalQaQHO5clIUfcYNu7
+         zhxw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1790632745; x=1791237545;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=8gUCTjWRArg7XG8udPABK3T4ssyv2d91SWVxVNBbNR8=;
+        b=HVU6qDuTQ3iRSOK5NIEw263DNTZ7Jfi3ySoJF3Y+tyAg/64ziQ0qs0kox3MlVklrRQ
+         7xCs83iPpWVm1sEw1OVSLgL7KdwiYsa2quu9zHZscJnzUtcDQXmzWikzAMINIPzBby6I
+         aTKdyPu6wdmbmSL1Fr0cfCCQQXqEOL4/CDBFwWSt5f4mFfdNZU0KtP2M8dXvMEchKKn7
+         /EtkF6NQM6FvptURiqaQGf4FO/hlG5/CT/7HcgJNeAxzsLuPYlqSMDHGfjWicR0jBlmS
+         XBJ1BXf5V+rOkrDKwXQC5aGNJQSkFbw2aB0KynFG41/r6Oj73QzIF51ra7ChbWrgo0Z8
+         nraA==
+X-Gm-Message-State: AFuF++lWfM2Q4LoZfG4hm9Jm7VlDRBc5Q5pTi9tmWA9Rxzm0viBd5DRv
+	vPUS/obgJEjqJUcX2Yy38zh8RIrn18crCkOkVD00WUnBbsxW9zMqSKoeQlJA02p8fTpt9QiitdD
+	V+Pf7n7zhPA==
+X-Gm-Gg: AYBFou3B6UJzuTKvh8dK9ffbMBioRO0PWarN67mQda8ezJxlShFjkFNARaQDSPyYM/E
+	WDjsztTpqe26pYKr8h5PBh6IeTL4PZjkjHhFIGjCPUD/usNgjTIcjjsPIHlb0WPZnnX/qmlzEmc
+	zvSt+KHF5g6ZY9176H7X+DWeWTlcpn9IuzVZIqr4umZKz1N21ZoqFpSpQ3vQEC8LITBOWQ6Rvh8
+	see2X+VFnKrmtUYkpQlpzueA5L11wJRyvR6n8AJbcfC5We2aASWcO0o0JvANILOkBx7LVg9Llcv
+	NmnpUCeTji6A/cMYgan8TQpvq8SGGRfRUAFHAH54/QTgJEycG6x1HKrTJ2f76TqbiKOwSmhjFI+
+	cSDRe0hryu0IywaC3n1TgR6Fgr5uvf247Vy4nsYzWRwZgaEepJJGqQmJsU4pZ+9NjJ5MiiMyk5u
+	RonB7bul9syXrx10G6jgo3TYCDFiepLIsWPvCyx1t2BlcUH1vAshKnvgPKazce/eG5
+X-Received: by 2002:a05:600c:4745:b0:49d:10d6:fd55 with SMTP id 5b1f17b1804b1-49fe66abd7fmr256583735e9.1.1790632744751;
+        Mon, 28 Sep 2026 14:59:04 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-cc794ef8befsm4387609a12.12.2026.09.28.14.59.02
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 28 Sep 2026 14:59:03 -0700 (PDT)
+Message-ID: <0638f593-0dba-46d4-a786-cdc1f2b365b7@suse.com>
+Date: Tue, 29 Sep 2026 07:29:00 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2 1/3] btrfs: move __TRANS_* and TRANS_* flags out of
+ transaction.h
+To: Filipe Manana <fdmanana@kernel.org>
+Cc: linux-btrfs@vger.kernel.org
+References: <cover.1790229298.git.wqu@suse.com>
+ <f8b46621fa212642c4d961f790bac84ec42adb49.1790229298.git.wqu@suse.com>
+ <CAL3q7H5MNUCakyQSzYQgBcrb79qtYDEHGfsrjoaHTAkRv=Kz_A@mail.gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
+ Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
+ SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
+ YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
+ 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
+ vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <CAL3q7H5MNUCakyQSzYQgBcrb79qtYDEHGfsrjoaHTAkRv=Kz_A@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAL3q7H6rt2HxM59bAGM1ao2tOUYcEWCTdxAT9_MWBXfJEyrf-g@mail.gmail.com>
 
-On Mon, Sep 28, 2026 at 11:58:00AM +0100, Filipe Manana wrote:
-> On Tue, Sep 22, 2026 at 5:57 PM Boris Burkov <boris@bur.io> wrote:
-> >
-> > Currently, reserve_chunk_space() allocates a new system chunk when the
-> > space left is smaller than the reservation for a single chunk tree
-> > update.
-> >
-> > Therefore, a filesystem in single metadata mode on a very large block
-> > device can accumulate tens of thousands (TB) of chunks while never
-> > allocating more than the original 4MiB SYSTEM block group created by
-> > mkfs. If it then fills up (with large fallocates for example) and then
-> > that data is freed, en-masse, we end up trying to delete thousands of
-> > block groups in a single transaction in btrfs_delete_unused_bgs().
-> >
-> > This process touches most of the nodes and leaves of the chunk tree,
-> > essentially trying to allocate roughly double the current usage of the
-> > chunk tree for cow. When this runs into needing a fresh system chunk,
-> > the fs is full of the empty bgs and we abort with ENOSPC in
-> > btrfs_remove_chunk() like:
-> >
-> >   BTRFS error (device loop0 state A): Transaction 30733 aborted (-ENOSPC)
-> >   space_info SYSTEM (sub-group id 0) has 0 free, is not full
-> >   space_info total=4194304, used=3276800, pinned=0, reserved=917504, may_use=0, readonly=0 zone_unusable=0
-> >   BTRFS: error (device loop0 state A) in btrfs_remove_chunk:3643: errno=-28 No space left
-> >
-> > This was seen on a 30TiB production filesystem with 10TiB of unused
-> > block groups and reproduces on a 30TiB sparse loop device: mkfs with
-> > -m single, fallocate 1GiB files until ENOSPC, delete two of every three
-> > adjacent files, sync.
-> >
-> > To fix this, we should allocate the (relatively tiny) system chunks a
-> > little bit more eagerly. If we do it when it is half full, we ensure we
-> > can delete all of the block groups in one go. To fill up half of a 4MiB
-> > system bg requires thousands of block_groups so this should only affect
-> > very large fileystems.
-> >
-> > Assisted-by: LLM
-> > Signed-off-by: Boris Burkov <boris@bur.io>
-> > ---
-> >  fs/btrfs/block-group.c | 26 ++++++++++++++++++++++++--
-> >  1 file changed, 24 insertions(+), 2 deletions(-)
-> >
-> > diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> > index 2eb09c9901c9..cf26dbeaabdb 100644
-> > --- a/fs/btrfs/block-group.c
-> > +++ b/fs/btrfs/block-group.c
-> > @@ -1574,6 +1574,19 @@ static bool btrfs_link_bg_list(struct btrfs_block_group *bg, struct list_head *l
-> >         return added;
-> >  }
-> >
-> > +/*
-> > + * Compute an upper bound on the bytes needed to modify every leaf in the chunk
-> > + * tree. Normally, we could just allocate a new system chunk then, but that can
-> > + * fail if there is no free space for a new dev extent. This can happen when
-> > + * we fill up a large filesystem then rapidly delete a large portion of it.
-> > + */
-> > +static u64 system_space_needed(struct btrfs_space_info *sinfo)
-> > +{
-> > +       lockdep_assert_held(&sinfo->lock);
-> > +
-> > +       return btrfs_space_info_used(sinfo, true) + sinfo->bytes_used;
-> > +}
-> > +
-> >  /*
-> >   * Process the unused_bgs list and remove any that don't have any allocated
-> >   * space inside of them.
-> > @@ -1661,6 +1674,9 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
-> >                 if (btrfs_is_block_group_used(block_group) ||
-> >                     (block_group->ro && !(block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED)) ||
-> >                     list_is_singular(&block_group->list) ||
-> > +                   ((block_group->flags & BTRFS_BLOCK_GROUP_SYSTEM) &&
-> > +                    space_info->total_bytes - block_group->length <
-> > +                    system_space_needed(space_info)) ||
-> >                     test_bit(BLOCK_GROUP_FLAG_FULLY_REMAPPED, &block_group->runtime_flags)) {
-> >                         /*
-> >                          * We want to bail if we made new allocations or have
-> > @@ -1674,6 +1690,10 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
-> >                          * next block group of this type would be created with a
-> >                          * "single" profile (even if we're in a raid fs) because
-> >                          * fs_info->avail_*_alloc_bits would be 0.
-> > +                        *
-> > +                        * Also bail out if this is a system block group that
-> > +                        * system_space_needed() relies on to ensure head room for
-> > +                        * mass deletion.
-> >                          */
-> >                         trace_btrfs_skip_unused_block_group(block_group);
-> >                         spin_unlock(&block_group->lock);
-> > @@ -4509,6 +4529,7 @@ static void reserve_chunk_space(struct btrfs_trans_handle *trans,
-> >         struct btrfs_fs_info *fs_info = trans->fs_info;
-> >         struct btrfs_space_info *info;
-> >         u64 left;
-> > +       bool low;
-> >         int ret = 0;
-> >
-> >         /*
-> > @@ -4520,6 +4541,7 @@ static void reserve_chunk_space(struct btrfs_trans_handle *trans,
-> >         info = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_SYSTEM);
-> >         spin_lock(&info->lock);
-> >         left = info->total_bytes - btrfs_space_info_used(info, true);
-> > +       low = left < bytes || info->total_bytes < system_space_needed(info);
-> >         spin_unlock(&info->lock);
-> >
-> >         if (left < bytes && btrfs_test_opt(fs_info, ENOSPC_DEBUG)) {
-> > @@ -4528,7 +4550,7 @@ static void reserve_chunk_space(struct btrfs_trans_handle *trans,
-> >                 btrfs_dump_space_info(info, 0, false);
-> >         }
-> >
-> > -       if (left < bytes) {
-> > +       if (low) {
-> >                 u64 flags = btrfs_system_alloc_profile(fs_info);
-> >                 struct btrfs_block_group *bg;
-> >                 struct btrfs_space_info *space_info;
-> > @@ -4572,7 +4594,7 @@ static void reserve_chunk_space(struct btrfs_trans_handle *trans,
-> >                 }
-> >         }
-> >
-> > -       if (!ret) {
-> > +       if (!ret || left >= bytes) {
+
+
+在 2026/9/29 03:57, Filipe Manana 写道:
+> On Thu, Sep 24, 2026 at 7:00 AM Qu Wenruo <wqu@suse.com> wrote:
+>>
+>> Among all those flags, only __TRANS_DUMMY is used outside of
+>> transaction.[ch], and there are only two places using it:
+>>
+>> - find_parent_nodes()
+>>    Introduce a helper, btrfs_trans_is_dummy(), for this call site.
+>>
+>> - btrfs_init_dummy_trans()
+>>    Move the function into transaction.[ch], and hide it behind
+>>    CONFIG_BTRFS_FS_RUN_SANITY_TESTS.
+>>
+>> With the above changes, we can hide __TRANS_* and TRANS_* flags inside
+>> transaction.c. This allows us to modify those flags in the future
+>> without causing any changes to existing callers.
+>>
+>> After the flags relocation, now we can also hide __TRANS_DUMMY behind
+>> CONFIG_BTRFS_FS_RUN_SANITY_TESTS.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>   fs/btrfs/backref.c           |  2 +-
+>>   fs/btrfs/tests/btrfs-tests.c |  9 ---------
+>>   fs/btrfs/tests/btrfs-tests.h |  2 --
+>>   fs/btrfs/transaction.c       | 36 ++++++++++++++++++++++++++++++++++++
+>>   fs/btrfs/transaction.h       | 29 +++++++++++------------------
+>>   5 files changed, 48 insertions(+), 30 deletions(-)
+>>
+>> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+>> index 1be632c742bd..939511629ecc 100644
+>> --- a/fs/btrfs/backref.c
+>> +++ b/fs/btrfs/backref.c
+>> @@ -1432,7 +1432,7 @@ static int find_parent_nodes(struct btrfs_backref_walk_ctx *ctx,
+>>                  goto out;
+>>          }
+>>
+>> -       if (ctx->trans && likely(ctx->trans->type != __TRANS_DUMMY) &&
+>> +       if (ctx->trans && likely(!btrfs_trans_is_dummy(ctx->trans)) &&
+>>              ctx->time_seq != BTRFS_SEQ_LAST) {
+>>                  /*
+>>                   * We have a specific time_seq we care about and trans which
+>> diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
+>> index 6287d940323d..cebc9a17b94d 100644
+>> --- a/fs/btrfs/tests/btrfs-tests.c
+>> +++ b/fs/btrfs/tests/btrfs-tests.c
+>> @@ -247,15 +247,6 @@ void btrfs_init_dummy_transaction(struct btrfs_transaction *trans, struct btrfs_
+>>          spin_lock_init(&trans->delayed_refs.lock);
+>>   }
+>>
+>> -void btrfs_init_dummy_trans(struct btrfs_trans_handle *trans,
+>> -                           struct btrfs_fs_info *fs_info)
+>> -{
+>> -       memset(trans, 0, sizeof(*trans));
+>> -       trans->transid = 1;
+>> -       trans->type = __TRANS_DUMMY;
+>> -       trans->fs_info = fs_info;
+>> -}
+>> -
+>>   int btrfs_run_sanity_tests(void)
+>>   {
+>>          int ret, i;
+>> diff --git a/fs/btrfs/tests/btrfs-tests.h b/fs/btrfs/tests/btrfs-tests.h
+>> index cea58fe84a6d..a16855138105 100644
+>> --- a/fs/btrfs/tests/btrfs-tests.h
+>> +++ b/fs/btrfs/tests/btrfs-tests.h
+>> @@ -59,8 +59,6 @@ btrfs_alloc_dummy_block_group(struct btrfs_fs_info *fs_info, unsigned long lengt
+>>   void btrfs_free_dummy_block_group(struct btrfs_block_group *cache);
+>>   DEFINE_FREE(btrfs_free_dummy_block_group, struct btrfs_block_group *,
+>>              btrfs_free_dummy_block_group(_T));
+>> -void btrfs_init_dummy_trans(struct btrfs_trans_handle *trans,
+>> -                           struct btrfs_fs_info *fs_info);
+>>   void btrfs_init_dummy_transaction(struct btrfs_transaction *trans, struct btrfs_fs_info *fs_info);
+>>   struct btrfs_device *btrfs_alloc_dummy_device(struct btrfs_fs_info *fs_info);
+>>
+>> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+>> index ca114235bbe1..4181f3897a30 100644
+>> --- a/fs/btrfs/transaction.c
+>> +++ b/fs/btrfs/transaction.c
+>> @@ -38,6 +38,26 @@
+>>
+>>   static struct kmem_cache *btrfs_trans_handle_cachep;
+>>
+>> +enum {
+>> +       ENUM_BIT(__TRANS_FREEZABLE),
+>> +       ENUM_BIT(__TRANS_START),
+>> +       ENUM_BIT(__TRANS_ATTACH),
+>> +       ENUM_BIT(__TRANS_JOIN),
+>> +       ENUM_BIT(__TRANS_JOIN_NOLOCK),
+>> +#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+>> +       ENUM_BIT(__TRANS_DUMMY),
+>> +#endif
+>> +       ENUM_BIT(__TRANS_JOIN_NOSTART),
+>> +};
+>> +
+>> +#define TRANS_START            (__TRANS_START | __TRANS_FREEZABLE)
+>> +#define TRANS_ATTACH           (__TRANS_ATTACH)
+>> +#define TRANS_JOIN             (__TRANS_JOIN | __TRANS_FREEZABLE)
+>> +#define TRANS_JOIN_NOLOCK      (__TRANS_JOIN_NOLOCK)
+>> +#define TRANS_JOIN_NOSTART     (__TRANS_JOIN_NOSTART)
+>> +
+>> +#define TRANS_EXTWRITERS       (__TRANS_START | __TRANS_ATTACH)
+>> +
+>>   /*
+>>    * Transaction states and transitions
+>>    *
+>> @@ -139,6 +159,22 @@ static const unsigned int btrfs_blocked_trans_types[TRANS_STATE_MAX] = {
+>>                                             __TRANS_JOIN_NOSTART),
+>>   };
+>>
+>> +#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+>> +bool btrfs_trans_is_dummy(const struct btrfs_trans_handle *trans)
+>> +{
 > 
-> So this hunk I have trouble understanding it, because if left >= bytes
-> should always be true at this point, as if if left < bytes we have
-> allocated a system chunk (if we haven't then ret has an error value).
+> So most of our exported transaction functions have names like:
+> 
+> btrfs_end_transaction()
+> btrfs_commit_transaction()
+> btrfs_start_transaction()
+> btrfs_abort_transaction()
+> etc
+> 
+> So I would suggest, for consistency, naming it as:  btrfs_is_dummy_transaction()
 
-It is a bit confusing and I am not sure how to make it as nice as
-possible. So the condition is:
+That sounds good.
+> 
+>> +       return trans->type == __TRANS_DUMMY;
+>> +}
+>> +
+>> +void btrfs_init_dummy_trans(struct btrfs_trans_handle *trans,
+>> +                           struct btrfs_fs_info *fs_info)
+>> +{
+> 
+> And here; btrfs_init_dummy_transaction()
 
-  low = left < bytes || info->total_bytes < system_space_needed(info)
-  ...
-  if (low) {
-  ...
-  }
+Unfortunately we already have one in the selftests with the same name, 
+but using btrfs_transaction as the first parameter.
 
-So ret != 0 implies low is true, but not necessarily left < bytes.
-Basically the idea is that if the chunk allocation designed to protect
-the chunk space in the future fails but we still have enough for right
-now (ret && left >= bytes) then we can still add bytes to the block_rsv.
+Thus I'm afraid I have to keep this name.
 
-Would it help if I tried to give separate names to the two conditions
-and did something like:
-
-needs_space = left < bytes
-wants_space = total < system_space_target()
-low = needs_space || wants_space
-
-...
-
-if (!ret || !needs_space) {
- ...
-}
-
-So rename system_space_needed() to system_space_target() or something
-like that, and then differentiate the minimum to add to the block_rsv
-more clearly from the desire to add a system chunk? The current
-system_space_needed() is kinda misleaded cause with writeback re-cowing,
-we might use more than that in a txn anyway so it is not a hard
-guarantee.
-
-Thanks for the review,
-Boris
+Thanks,
+Qu
 
 > 
-> Otherwise it looks good (as well as the second patch).
+> Otherwise:
+> 
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
 > 
 > Thanks.
 > 
-> >                 ret = btrfs_block_rsv_add(fs_info,
-> >                                           &fs_info->chunk_block_rsv,
-> >                                           bytes, BTRFS_RESERVE_NO_FLUSH);
-> > --
-> > 2.55.0
-> >
-> >
+>> +       memset(trans, 0, sizeof(*trans));
+>> +       trans->transid = 1;
+>> +       trans->type = __TRANS_DUMMY;
+>> +       trans->fs_info = fs_info;
+>> +}
+>> +#endif
+>> +
+>>   void btrfs_put_transaction(struct btrfs_transaction *transaction)
+>>   {
+>>          if (refcount_dec_and_test(&transaction->use_count)) {
+>> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+>> index 89153cd22596..9eb92b1ad54d 100644
+>> --- a/fs/btrfs/transaction.h
+>> +++ b/fs/btrfs/transaction.h
+>> @@ -119,24 +119,6 @@ struct btrfs_transaction {
+>>          wait_queue_head_t pending_wait;
+>>   };
+>>
+>> -enum {
+>> -       ENUM_BIT(__TRANS_FREEZABLE),
+>> -       ENUM_BIT(__TRANS_START),
+>> -       ENUM_BIT(__TRANS_ATTACH),
+>> -       ENUM_BIT(__TRANS_JOIN),
+>> -       ENUM_BIT(__TRANS_JOIN_NOLOCK),
+>> -       ENUM_BIT(__TRANS_DUMMY),
+>> -       ENUM_BIT(__TRANS_JOIN_NOSTART),
+>> -};
+>> -
+>> -#define TRANS_START            (__TRANS_START | __TRANS_FREEZABLE)
+>> -#define TRANS_ATTACH           (__TRANS_ATTACH)
+>> -#define TRANS_JOIN             (__TRANS_JOIN | __TRANS_FREEZABLE)
+>> -#define TRANS_JOIN_NOLOCK      (__TRANS_JOIN_NOLOCK)
+>> -#define TRANS_JOIN_NOSTART     (__TRANS_JOIN_NOSTART)
+>> -
+>> -#define TRANS_EXTWRITERS       (__TRANS_START | __TRANS_ATTACH)
+>> -
+>>   /*
+>>    * Number of extent buffers a transaction handle tracks for writeback
+>>    * inhibition. The CLOCK reference bits pack into a u32 so this must not exceed
+>> @@ -305,6 +287,17 @@ do {                                                               \
+>>                                    __LINE__, __error);           \
+>>   } while (0)
+>>
+>> +#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+>> +bool btrfs_trans_is_dummy(const struct btrfs_trans_handle *trans);
+>> +void btrfs_init_dummy_trans(struct btrfs_trans_handle *trans,
+>> +                           struct btrfs_fs_info *fs_info);
+>> +#else
+>> +static inline bool btrfs_trans_is_dummy(const struct btrfs_trans_handle *trans)
+>> +{
+>> +       return false;
+>> +}
+>> +#endif
+>> +
+>>   int btrfs_end_transaction(struct btrfs_trans_handle *trans);
+>>   struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
+>>                                                     unsigned int num_items);
+>> --
+>> 2.55.0
+>>
+>>
+

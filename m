@@ -1,307 +1,131 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8EE33246788;
-	Mon, 28 Sep 2026 00:17:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 14B4C36195A
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790554680; cv=none; b=GE0/DKeKPOmaA7v36+aYLKSlF/N36GSBSpjVLsVxkdNpQxq2CAw5hSrQ+W/nLbqnfX5B/8CbtMsPYp+v1NZ4MgP/NsYoL+WGTYb1yiYFShedfYsOQWO+iu3F+yPeRekFaF+raOVx5NuF40WgzNwBQ1COTywe5ywuKQNwuCHrLPQ=
+	t=1790572549; cv=none; b=qdYwHqP8lUPT/8dG5IbXrGoKKw/ZmYCUFuwEcYBjhYfhFc2D1edIhm7GOKKVn31HvsZglCRnRJr42S3lYqBSw+7uwrHGLTqzrBmn+mReDu8hqMtF85gdzOr9bUM7ASw3dxm9w5lAL/h7SCfcb9bJI1DCcgnRjqfhuAkbB/KX2Xc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790554680; c=relaxed/simple;
-	bh=SQrhgKaTPMx1AI8+vN/pA3pIoyGE2f9oz8iUxF25JU8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:Cc:From:
-	 In-Reply-To:Content-Type; b=FG8/QwOInL3r8uR/R9q3aUyAo6/CZsBr9JNyuywL04xr4JfIvgEIxTsnl4d+O5B+EiuH901GSJKhMIRvnT9qvOQFd0Ybm0MPM5dCAhSc8Ua2gIYh1avAo/R3eNf+vEVN5zHCe2DUR5rHYpQRRwvotfyJv0MgnBZiJT9X/Z7YhO0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SiOeEEbe; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1790572549; c=relaxed/simple;
+	bh=d/FkP1oroXBJa/IodRfysr3RAUNJY2y2KaWETvMRWsw=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=Bl2Sqqa8vS7y7vl8pl/f6q7hqbjYWcEMbzICf7Uke/f7PMb2JXSwjnAw3iFrKkQq06coLMENN4Tp+G5tEDg8eR3mhEtGg2RZQcSoB4j2ffL4LB/GT3sQEXLT+11qkKmQHj494ozpOJ4G72hxGhGbmgy7HvE+lKjoE1+EsHe3Ej4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=RnA0Vw8q; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=pwEm0U9p; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SiOeEEbe"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 780701F00899;
-	Mon, 28 Sep 2026 00:17:57 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1790554679;
-	bh=BrvjgngQVWWsLu8FybQ5949ekW2GT1BmcozWeYv5iBo=;
-	h=Date:Subject:To:References:Cc:From:In-Reply-To;
-	b=SiOeEEbe8GD/H8hvlMJPAymuwbvZGf4VKIRo+AnDu92s5DARo7VpUXKQINbb9P4qv
-	 c/SBdEGZG2vHvhuU1fYYEY/JeSb1j3e5ULeX6zME3kIXY0O1JJ7nZ71C1Wwx/nzf/v
-	 YYqRqAYwkkpmkDf+UCmAK69f7uFlJ0Dvtk0rjnHLNJzx3Kh5u97XH0iZiX/IguYe5Z
-	 9X9Cp9Y9GSwLkq69sx1m3Dy21tPolE8owVQtH2u1a6yxbgkCTvf7zrUQdeM/NDVIoZ
-	 QOVK0H9bUGug2hkS59JnxK67ItlNJec2PR0fzdj47dvbxBG31v9PSkG8peOOqcCiSX
-	 vPVTw0QRCeKdA==
-Message-ID: <944e99e2-c927-43cc-b4d5-f810a31cce96@kernel.org>
-Date: Mon, 28 Sep 2026 08:17:55 +0800
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="RnA0Vw8q";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="pwEm0U9p"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id A7EE521CF3
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:35 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1790572539; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=cQHiwrZGV/g7mp6Q7FkjPyqxo5R3MSlHPJv0ypGds40=;
+	b=RnA0Vw8qjlD/ZS8rkcvWm8xb7K22eUw3NZrvcGlQlG4bUQyKqUcivEP2x0NYmoU5aulTE+
+	aIA5LcU4CPfmYr14yH9K209SgR7q8a3eh3qC5dq+W83ns6FPE6YplQk9GS0MSmjgqNMYsy
+	L/9diaWrK5LjryEBJl0IzpTMcDm7U6Q=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=pwEm0U9p
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1790572535; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=cQHiwrZGV/g7mp6Q7FkjPyqxo5R3MSlHPJv0ypGds40=;
+	b=pwEm0U9p8ntQWL46KsJ2/Ax4XBD7I6Qtx0Hvt1WGKyfT+5EGe6xOcx1GAodmn7HKq+bRny
+	6IPjJfX0uMJELZLRvXTCklPDli4dEaUuC5W5RmacTjya/1awuC5ynqIxo0dpU8ZzZH9g1E
+	fR31J6bZKl783Pvw8zP++0NROysBAmo=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 32A05133F1
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:33 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id PBZ2F/X3uWrlLwAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 05:15:33 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: go extent-by-extent for buffered reads and writes
+Date: Mon, 28 Sep 2026 14:45:08 +0930
+Message-ID: <cover.1790571994.git.wqu@suse.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v8 10/13] fstests: verify IMA isolation on cloned
- filesystems
-To: Zorro Lang <zlang@kernel.org>
-References: <cover.1784949154.git.asj@kernel.org>
- <e2ba3b5cf7e17bf87e7e832222d72bcbf8b904f8.1784949155.git.asj@kernel.org>
- <apcmEu9jmi3wljdW@zlang-mailbox>
-Content-Language: en-US
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
- linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
- linux-xfs@vger.kernel.org, djwong@kernel.org
-From: Anand Suveer Jain <asj@kernel.org>
-In-Reply-To: <apcmEu9jmi3wljdW@zlang-mailbox>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
+X-Spam-Score: -3.01
+X-Rspamd-Queue-Id: A7EE521CF3
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Level: 
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-3.01 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCPT_COUNT_ONE(0.00)[1];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DKIM_TRACE(0.00)[suse.com:+];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:mid,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
+X-Spam-Flag: NO
 
-On 2/9/26 03:58, Zorro Lang wrote:
-> On Sat, Jul 25, 2026 at 03:39:07PM +0800, Anand Jain wrote:
->> Add testcase to verify IMA measurement isolation when multiple devices
->> share the same FSUUID.
->>
->> Signed-off-by: Anand Jain <asj@kernel.org>
->> ---
->>  tests/generic/804     | 108 ++++++++++++++++++++++++++++++++++++++++++
->>  tests/generic/804.out |  10 ++++
->>  2 files changed, 118 insertions(+)
->>  create mode 100644 tests/generic/804
->>  create mode 100644 tests/generic/804.out
->>
->> diff --git a/tests/generic/804 b/tests/generic/804
->> new file mode 100644
->> index 000000000000..ced32e6d79dd
->> --- /dev/null
->> +++ b/tests/generic/804
->> @@ -0,0 +1,108 @@
->> +#! /bin/bash
->> +# SPDX-License-Identifier: GPL-2.0
->> +# Copyright (c) 2026 Anand Jain <asj@kernel.org>.  All Rights Reserved.
->> +#
->> +# FS QA Test 804
->> +# Verify IMA isolation on cloned filesystems:
->> +# . Mount two devices sharing the same FSUUID (cloned).
->> +# . Apply an IMA policy to measure files based on that FSUUID.
->> +# . Create unique files on each mount point to trigger measurements.
->> +# . Confirm the IMA log correctly attributes events to the respective mounts.
->> +
->> +. ./common/preamble
->> +. ./common/filter
->> +
->> +_begin_fstest auto quick clone
->> +
->> +_require_test
->> +_require_block_device $TEST_DEV
->> +_require_loop
->> +
->> +_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
->> +	"btrfs: use on-disk uuid for s_uuid in temp_fsid mounts"
->> +_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
->> +	"btrfs: derive f_fsid from on-disk fsuuid and dev_t"
->> +
->> +_cleanup()
->> +{
->> +	cd /
->> +	rm -r -f $tmp.*
->> +	_unmount $mnt1 2>/dev/null
->> +	_unmount $mnt2 2>/dev/null
->> +	_loop_image_destroy "${devs[@]}" 2> /dev/null
->> +}
->> +
->> +# Normalize device names and mount points
->> +filter_pool()
->> +{
->> +	sed -e "s|${devs[0]}|DEV1|g" -e "s|$mnt1|MNT1|g" \
->> +	    -e "s|${devs[1]}|DEV2|g" -e "s|$mnt2|MNT2|g" | _filter_spaces
->> +}
->> +
->> +# Core helper to set IMA policy and check measurement logs
->> +do_ima()
->> +{
->> +	local ima_policy="/sys/kernel/security/ima/policy"
->> +	local ima_log="/sys/kernel/security/ima/ascii_runtime_measurements"
->> +	local fsuuid
->> +	local mnt=$1
->> +	local enable=$2
->> +
->> +	# Since the in-memory IMA audit log is only cleared upon reboot,
->> +	# use unique random filenames to avoid log collisions.
->> +	local foofile=$(mktemp --dry-run foobar_XXXXX)
->> +
->> +	echo $mnt $enable | filter_pool
->> +
->> +	[ -w "$ima_policy" ] || _notrun "IMA policy not writable"
-> 
-> How about a _require_security_ima to make sure there's securityfs
-> and IMA supporting in current kernel.
-> 
+Although we have large data folio support for a while, the buffered
+reads and writes are still iterating a large folio block-by-block.
 
-sure. added.
+For a large block sized buffered IO, the large folio has a very high
+chance to contain only one single extent.
 
-_require_security_ima()
-{
-        [ -d /sys/kernel/security ] || _notrun "kernel doesn't support
-securityfs"
+In that case, although doing block-by-block checks is good for
+readability, it's not really performant.
 
-        # securityfs may not be mounted yet on the host; mount it
-        # in a scratch location just to probe for IMA support.
-        local se_mnt="${TEST_MNT}/${seq}/se_mnt"
-        local has_ima=1
+The series changes the behavior to do extent-by-extent iteration
+instead, this can bring a very slight performance improve.
 
-        mkdir -p "${se_mnt}"
-        _mount -t securityfs securityfs "${se_mnt}" 2>/dev/null ||
-_notrun "cannot mount securityfs"
+For best case scenario, the runtime to submit a folio read can be
+reduced from 32us to 2.5us, and a much better distribution.
 
-        [ -d "${se_mnt}/ima" ] || has_ima=0
-        [ -w "${se_mnt}/ima/policy" ] || _notrun "IMA policy not writable"
+For writes it's not that obvious for the average runtime, but an obvious
+improvment to the distribution.
 
-        _unmount "${se_mnt}"
+My current guess for the lack of write performance improment is more
+bio_add_folio() failure thus more bio allocations.
 
-        [ $has_ima -eq 1 ] || _notrun "kernel doesn't support IMA"
-}
+Qu Wenruo (2):
+  btrfs: read a folio extent-by-extent instead of block-by-block
+  btrfs: write back a folio extent-by-extent instead of block-by-block
 
+ fs/btrfs/extent_io.c | 312 +++++++++++++++++++++++++------------------
+ fs/btrfs/subpage.c   |  49 +++++++
+ fs/btrfs/subpage.h   |   4 +
+ 3 files changed, 236 insertions(+), 129 deletions(-)
 
->> +
->> +	fsuuid=$(blkid -s UUID -o value ${devs[0]})
->> +
->> +	# Load IMA policy to measure file access specifically for this
->> +	# filesystem UUID.
->> +	if [[ $enable -eq 1 ]]; then
->> +		echo "measure func=FILE_CHECK fsuuid=$fsuuid" > "$ima_policy" || \
-> 
-> I'm not sure if we should have this test, especially add it into
-> auto and quick group. Once an IMA policy is loaded, there is no way to
-> clear or roll it back, and I am concerned it might potentially interfere
-> with subsequent tests.
-> 
-
-Removed quick and auto. Looks like we need to gate it behind an opt-in
-group or restrict it to disposable/reboot-per-run environments. New
-group? I'm concerned it's getting too complicated and I see no other choice.
-
-
-> Hmm... how about use `unshare` command to rewrite the do_ima as do_ima_in_ns?
-> For example:
-> do_ima_in_ns()
-> {
-> 	...
-> 
->     unshare -U -m -p --fork --map-root-user bash <<EOF
-> 		mount -t securityfs securityfs /sys/kernel/security
->         ima_policy="/sys/kernel/security/ima/policy"
->         ima_log="/sys/kernel/security/ima/ascii_runtime_measurements"
->         echo "measure func=FILE_CHECK fsuuid=$uuid" > "\$ima_policy" || exit 1
->         ...
-> EOF
->     ret=$?
-> }
-
-
-A new namespace doesn't help undo the loaded IMA policy; I don't see the
-point of using unshare.
-
-I have the following code using unshare, which works fine. I dropped -U
-and --map-root-user (since fstests needs to run as root). I'm okay with
-including unshare, but I still don't see why.
-
-
---------
-        unshare -m -p --fork bash <<-EOF | filter_pool | sed
-"s/$foofile/FOOBAR_FILE/"
-                ima_policy="/sys/kernel/security/ima/policy"
-
-ima_log="/sys/kernel/security/ima/ascii_runtime_measurements"
-
-                mount -t securityfs securityfs /sys/kernel/security ||
-exit 1
-
-                # Load IMA policy to measure file access specifically
-for this
-                # filesystem UUID.
-                if [ $enable -eq 1 ]; then
-                        echo "measure func=FILE_CHECK fsuuid=$fsuuid" >
-"\$ima_policy" || exit 1
-                fi
-
-                # Create a file to trigger measurement and verify its
-entry in
-                # the IMA log.
-                echo "test_data" > $mnt/$foofile
-
-                # IMA log extract
-                grep $foofile "\$ima_log" | awk '{ print \$5 }'
-
-                echo "dbg: $mnt $fsuuid $foofile" >> $seqres.full
-                tail -1 "\$ima_log" >> $seqres.full
-                echo >> $seqres.full
-        EOF
---------
-
-
-
-Thanks.
-
-
-> 
-> Thanks,
-> Zorro
-> 
->> +			_notrun "Policy rejected"
->> +	fi
->> +
->> +	# Create a file to trigger measurement and verify its entry in
->> +	# the IMA log.
->> +	echo "test_data" > $mnt/$foofile
->> +
->> +	# IMA log extract
->> +	grep $foofile "$ima_log" | awk '{ print $5 }' | filter_pool | \
->> +						sed "s/$foofile/FOOBAR_FILE/"
->> +
->> +	echo "dbg: $mnt $fsuuid $foofile" >> $seqres.full
->> +	cat $ima_log | tail -1 >> $seqres.full
->> +	echo >> $seqres.full
->> +}
->> +
->> +# Initialize loop base and cloned instances
->> +devs=()
->> +_loop_image_create_clone devs
->> +mnt1=$TEST_DIR/$seq/mnt1
->> +mnt2=$TEST_DIR/$seq/mnt2
->> +mkdir -p $mnt1
->> +mkdir -p $mnt2
->> +
->> +# Concurrently mount both clones
->> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[0]} $mnt1 || \
->> +						_fail "Failed to mount dev1"
->> +_mount $(_common_dev_mount_options) $(_clone_mount_option) ${devs[1]} $mnt2 || \
->> +						_fail "Failed to mount dev2"
->> +
->> +#  IMA response on baseline and clone configuration
->> +do_ima $mnt1 1
->> +do_ima $mnt2 0
->> +
->> +# Cycle mount on the second device.
->> +echo mount cycle
->> +_unmount $mnt2
->> +_mount $mount_opts ${devs[1]} $mnt2 || _fail "Failed to mount dev2"
->> +
->> +do_ima $mnt1 0
->> +do_ima $mnt2 0
->> +
->> +status=0
->> +exit
->> diff --git a/tests/generic/804.out b/tests/generic/804.out
->> new file mode 100644
->> index 000000000000..9804181d6c17
->> --- /dev/null
->> +++ b/tests/generic/804.out
->> @@ -0,0 +1,10 @@
->> +QA output created by 804
->> +MNT1 1
->> +MNT1/FOOBAR_FILE
->> +MNT2 0
->> +MNT2/FOOBAR_FILE
->> +mount cycle
->> +MNT1 0
->> +MNT1/FOOBAR_FILE
->> +MNT2 0
->> +MNT2/FOOBAR_FILE
->> -- 
->> 2.43.0
->>
+-- 
+2.55.0
 

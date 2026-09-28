@@ -1,53 +1,53 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5A20437F31D
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 18:33:08 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF055388860
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 18:34:40 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790620390; cv=none; b=ZvVSC1pcXiZWhMAhRzAFwyd965e1rbLoz/T/BdBGdDTGYgt8rZck3phzBlO47IuqElVdtCIpIk8NZeBiTlIgDtyv1ctxLjsuLM6bRdAbLriQ465+PUUyTxMEqF7buAZ4fQ4XygLwr0KD4xo+FsGI9oBxttIPOvvsRlzLgGRCY0A=
+	t=1790620482; cv=none; b=ngwBPC4+9X6kTihCBgr0LfquI/7Y2Om/y2N0f07yfbNnY1YngXs4fd+rQyV045vCyhAQCoyf7tyLeyl5c38QkoG1frRyy/6YaYRwLuZe24KykfyPj9uPB18esCROouNb90/D9xoiWaBkx6irBjb6+n8bUVPz1WvPwSlUufGCM5E=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790620390; c=relaxed/simple;
-	bh=F4t9gixp2PQFHNIf3XpzGTgkzScJ7JnOU7nnBkzAKB4=;
+	s=arc-20240116; t=1790620482; c=relaxed/simple;
+	bh=Ch/l9BEXIvj+MJvgxbhHHvReoRMdp7ZV7lBHvHDvxBw=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=VDbyuxEwtUtCPT17wtQKgU48HzqjaGpQNgGj0k7iQjPSWxx75golgyNYwXu+yOPoP4kTYKapXkRvr91fnAxKNogYSkBD7uPytEQ5xfP3SxAtIX3O6X5txBBn3n/8sihxWEh9ShSw9IZOZnuW5XmMtlaDDKUHtD4K4zt0b8oHjck=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QYfOY7p5; arc=none smtp.client-ip=100.103.45.18
+	 To:Cc:Content-Type; b=riJpS/dfoKJ1qctwLsiuoiwcQIHJsY1hVpZslkOOtR7clgF77iCZ37xN9SKoWTnB+JHRRun40DWMQT1UZS6YfSLwB0PszsEjzNKlQcBsoQzxdNqxi/JnyAJ4P1lc4WToQE3NbshKPyQ7m6wUSBzRGl6CJtMhLdU2KB/ikFgItdw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=kptFicth; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QYfOY7p5"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 112831F000FF
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 18:33:08 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="kptFicth"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A11FF1F00893
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 18:34:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1790620388;
-	bh=dsHov0P0BAAq898pPxhMTP2B+zSh43Qgcs7pFXlEQ1s=;
+	s=k20260515; t=1790620480;
+	bh=d3BeyuyHtxUbcF7fyJ6ugIHejkrYFTuHOi8kWJ6pZ+g=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=QYfOY7p55cxZ/NaCaxjr23bQ9cjh6ajSeK5t1Vbw37tnEB2guoQVbGz88fENC5PPf
-	 cY7R128DHzAaA6ormrNNXStLkpw+mZjdhFcUvZ37CuvnIbELQq+a8NWQelFfZ6jm0w
-	 eReLhHr6Omo0ogGHo5rjFpgi99xgNrN9nJ2m/n9LQc8YHleSVcQEmR44ZIpebzjHZZ
-	 y3IfFgg+nOFtLvnp6x73O31eZOD5TmaLlZ1UN8iP3LMlWX0HltlPkl0tScdjIgRuE8
-	 NsOXKodUuOY+LefzC5ineBteVuton0ip2uXMfTFXCY6OQJ4qzr/Psjj4Kc/Ft2JloS
-	 l484ftRr77LWw==
-Received: by mail-ua2-f12.google.com with SMTP id a1e0cc1a2514c-97e7c72bfe7so990788241.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 11:33:08 -0700 (PDT)
-X-Gm-Message-State: AFq9FYK292Ogt0UUXwJljh7W/opikZS6coZ7E9YWo/FVN+/kBbQJYOgw
-	r+Z6b2pihPegnLy16uUTN4Qcg9EAUKeu/7DGo0brtV+TpjKBIdLiL1wTXcM56YGv5poVEpY2vV/
-	b7gcBfhxBOnY7lOxAFXxO+OFV/985Tys=
-X-Received: by 2002:a05:6102:2d08:b0:7a2:2632:ee08 with SMTP id
- ada2fe7eead31-7b1c770de8fmr2751706137.23.1790620387296; Mon, 28 Sep 2026
- 11:33:07 -0700 (PDT)
+	b=kptFicth/Tu6Eplrjs9JNlqzafqmPP+zI/xoduwPht6H6E1JvMNZeaJSY637dF9ug
+	 rSqWkyppaI6TzSuNFvuXKyCGIiBvq0djLmTYO1sto3X3BijQW1UaWaCAolI/DqhuU2
+	 FpDCefNDWvSiWy1c4pFM6YNPbmdpoB0hQbEpHWiqjHf96nvTFKzbienUzHZl47SO3l
+	 M2ZtIngE3+WarXPokMmAEsO/NSLsIlL9ZXIzG2gf5hY0kK3Ra7uEBihy0cB44UhlZT
+	 48InIC9WYK4NBuQ5PvB9z10ZHOu2sjtUrmtcmcUxNSBBbUE8H/NJaf5Dbx5Pi+GoMj
+	 kMHXLqJBJmCuA==
+Received: by mail-vs2-f39.google.com with SMTP id 71dfb90a1353d-5cd1d9d65e2so2115137e0c.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2026 11:34:40 -0700 (PDT)
+X-Gm-Message-State: AFq9FYKowoi6tfZJ9PYflm8EcQT57Q5otihWmI+gUZFNJ5ggRBuqfpb0
+	vYMyQ80hEsRRtBUwZoyI7vT5ua48TFTVbYACTW6CTpSEhkIFZzjGpD6pKT0RXfzWDcdVUOeELpZ
+	8vy2/uqUoQSooVYwjnxINZ/MDI7aPWVw=
+X-Received: by 2002:a67:e703:0:b0:7a7:36ac:b17a with SMTP id
+ ada2fe7eead31-7af1e4f6353mr4590946137.20.1790620479869; Mon, 28 Sep 2026
+ 11:34:39 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1790229298.git.wqu@suse.com> <0eae09fa05791ff4079a10f778c02cc0da0653b0.1790229298.git.wqu@suse.com>
-In-Reply-To: <0eae09fa05791ff4079a10f778c02cc0da0653b0.1790229298.git.wqu@suse.com>
+References: <cover.1790229298.git.wqu@suse.com> <35418bcbdb67010774673ae2e4c434e0755a9849.1790229298.git.wqu@suse.com>
+In-Reply-To: <35418bcbdb67010774673ae2e4c434e0755a9849.1790229298.git.wqu@suse.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 28 Sep 2026 19:32:30 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H51sixGzyORoDR5eLqzp2Krem0ir57UsYTAEzgefRW6Ww@mail.gmail.com>
-X-Gm-Features: AclHuK8E25U9A16O714L6wuFTuOV-6v_Z6J-bbKs3TVSMeoY-Wd4zNb8Fl4bEdA
-Message-ID: <CAL3q7H51sixGzyORoDR5eLqzp2Krem0ir57UsYTAEzgefRW6Ww@mail.gmail.com>
-Subject: Re: [PATCH v2 2/3] btrfs: remove __TRANS_FREEZABLE
+Date: Mon, 28 Sep 2026 19:34:03 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H6m9-Fq69XYWOYg46KhyQ2ic6DCK1Rm1sN5YfzkZ2hp4Q@mail.gmail.com>
+X-Gm-Features: AclHuK8dpaajrihK4XW__iw5FcqW1EUshYKBsDbC0O1IStoxEmnhjmUOkOTicQo
+Message-ID: <CAL3q7H6m9-Fq69XYWOYg46KhyQ2ic6DCK1Rm1sN5YfzkZ2hp4Q@mail.gmail.com>
+Subject: Re: [PATCH v2 3/3] btrfs: remove __TRANS_* flags
 To: Qu Wenruo <wqu@suse.com>
 Cc: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
@@ -55,135 +55,188 @@ Content-Transfer-Encoding: quoted-printable
 
 On Thu, Sep 24, 2026 at 7:01=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
 >
-> Inside transaction.c most TRANS_* flags are just a single bit, but there
-> are 2 exceptions:
+> After patch "btrfs: remove __TRANS_FREEZABLE", each TRANS_* flag is just
+> the corresponding single-bit __TRANS_* flag.
 >
-> - TRANS_START
->   Which is (__TRANS_START | __TRANS_FREEZABLE)
+> There is no need to split __TRANS_* and TRANS_* flags, just remove
+> __TRANS_* flags and use TRANS_* flags instead.
 >
-> - TRANS_JOIN
->   Which is (__TRANS_JOIN | __TRANS_FREEZABLE)
+> Since every TRANS_* flag is a single bit, do extra cleanups:
 >
-> The extra __TRANS_FREEZABLE flag indicates that those operations need
-> to acquire sb intwrite lock to handle fs freezing.
+> - Add an ASSERT() in start_transaction()
+>   To make sure there is only a single bit set in @type
 >
-> However since there are only two operations requiring sb intwrite lock,
-> there is no need to introduce a dedicated flag for it, we can introduce
-> a new TRANS_SB_INTWRITER_MASK to cover the only two cases, then use that
-> new mask to determine whether the type requires sb intwrite lock.
->
-> This makes all TRANS_* flags a single bit.
+> - Rename TRANS_EXTWRITERS to TRANS_EXTWRITERS_MASK
+>   To follow the naming scheme that a multi-bit value has the _MASK
+>   suffix.
 >
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/transaction.c | 20 ++++++++++++--------
->  1 file changed, 12 insertions(+), 8 deletions(-)
+>  fs/btrfs/transaction.c | 77 ++++++++++++++++++++----------------------
+>  1 file changed, 37 insertions(+), 40 deletions(-)
 >
 > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 4181f3897a30..d73c8723ed70 100644
+> index d73c8723ed70..2532b7b27f9a 100644
 > --- a/fs/btrfs/transaction.c
 > +++ b/fs/btrfs/transaction.c
-> @@ -39,7 +39,6 @@
+> @@ -39,26 +39,20 @@
 >  static struct kmem_cache *btrfs_trans_handle_cachep;
 >
 >  enum {
-> -       ENUM_BIT(__TRANS_FREEZABLE),
->         ENUM_BIT(__TRANS_START),
->         ENUM_BIT(__TRANS_ATTACH),
->         ENUM_BIT(__TRANS_JOIN),
-> @@ -50,12 +49,15 @@ enum {
->         ENUM_BIT(__TRANS_JOIN_NOSTART),
+> -       ENUM_BIT(__TRANS_START),
+> -       ENUM_BIT(__TRANS_ATTACH),
+> -       ENUM_BIT(__TRANS_JOIN),
+> -       ENUM_BIT(__TRANS_JOIN_NOLOCK),
+> +       ENUM_BIT(TRANS_START),
+> +       ENUM_BIT(TRANS_ATTACH),
+> +       ENUM_BIT(TRANS_JOIN),
+> +       ENUM_BIT(TRANS_JOIN_NOLOCK),
+>  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+> -       ENUM_BIT(__TRANS_DUMMY),
+> +       ENUM_BIT(TRANS_DUMMY),
+>  #endif
+> -       ENUM_BIT(__TRANS_JOIN_NOSTART),
+> +       ENUM_BIT(TRANS_JOIN_NOSTART),
 >  };
 >
-> -#define TRANS_START            (__TRANS_START | __TRANS_FREEZABLE)
-> +#define TRANS_START            (__TRANS_START)
->  #define TRANS_ATTACH           (__TRANS_ATTACH)
-> -#define TRANS_JOIN             (__TRANS_JOIN | __TRANS_FREEZABLE)
-> +#define TRANS_JOIN             (__TRANS_JOIN)
+> -#define TRANS_START            (__TRANS_START)
+> -#define TRANS_ATTACH           (__TRANS_ATTACH)
+> -#define TRANS_JOIN             (__TRANS_JOIN)
+> -#define TRANS_JOIN_NOLOCK      (__TRANS_JOIN_NOLOCK)
+> -#define TRANS_JOIN_NOSTART     (__TRANS_JOIN_NOSTART)
 
-So after this change, can't we rename the enum members to remove the
-__ prefix and get rid of these #defines?
-Since none of them are ORed combinations anymore...
-
-Anyway:
+Ok, so this does what I asked for in the review of the previous patch,
+so forget the previous comment.
 
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
 Thanks.
 
->  #define TRANS_JOIN_NOLOCK      (__TRANS_JOIN_NOLOCK)
->  #define TRANS_JOIN_NOSTART     (__TRANS_JOIN_NOSTART)
+> -
+>  /* Those types need to hold sb intwrite lock. */
+> -#define TRANS_SB_INTWRITER_MASK (__TRANS_START | __TRANS_JOIN)
+> +#define TRANS_SB_INTWRITER_MASK (TRANS_START | TRANS_JOIN)
 >
-> +/* Those types need to hold sb intwrite lock. */
-> +#define TRANS_SB_INTWRITER_MASK (__TRANS_START | __TRANS_JOIN)
-> +
->  #define TRANS_EXTWRITERS       (__TRANS_START | __TRANS_ATTACH)
+> -#define TRANS_EXTWRITERS       (__TRANS_START | __TRANS_ATTACH)
+> +#define TRANS_EXTWRITERS_MASK  (TRANS_START | TRANS_ATTACH)
 >
 >  /*
-> @@ -746,6 +748,8 @@ start_transaction(struct btrfs_root *root, unsigned i=
-nt num_items,
->         }
+>   * Transaction states and transitions
+> @@ -139,32 +133,32 @@ enum {
+>  static const unsigned int btrfs_blocked_trans_types[TRANS_STATE_MAX] =3D=
+ {
+>         [TRANS_STATE_RUNNING]           =3D 0U,
+>         [TRANS_STATE_COMMIT_PREP]       =3D 0U,
+> -       [TRANS_STATE_COMMIT_START]      =3D (__TRANS_START | __TRANS_ATTA=
+CH),
+> -       [TRANS_STATE_COMMIT_DOING]      =3D (__TRANS_START |
+> -                                          __TRANS_ATTACH |
+> -                                          __TRANS_JOIN |
+> -                                          __TRANS_JOIN_NOSTART),
+> -       [TRANS_STATE_UNBLOCKED]         =3D (__TRANS_START |
+> -                                          __TRANS_ATTACH |
+> -                                          __TRANS_JOIN |
+> -                                          __TRANS_JOIN_NOLOCK |
+> -                                          __TRANS_JOIN_NOSTART),
+> -       [TRANS_STATE_SUPER_COMMITTED]   =3D (__TRANS_START |
+> -                                          __TRANS_ATTACH |
+> -                                          __TRANS_JOIN |
+> -                                          __TRANS_JOIN_NOLOCK |
+> -                                          __TRANS_JOIN_NOSTART),
+> -       [TRANS_STATE_COMPLETED]         =3D (__TRANS_START |
+> -                                          __TRANS_ATTACH |
+> -                                          __TRANS_JOIN |
+> -                                          __TRANS_JOIN_NOLOCK |
+> -                                          __TRANS_JOIN_NOSTART),
+> +       [TRANS_STATE_COMMIT_START]      =3D (TRANS_START | TRANS_ATTACH),
+> +       [TRANS_STATE_COMMIT_DOING]      =3D (TRANS_START |
+> +                                          TRANS_ATTACH |
+> +                                          TRANS_JOIN |
+> +                                          TRANS_JOIN_NOSTART),
+> +       [TRANS_STATE_UNBLOCKED]         =3D (TRANS_START |
+> +                                          TRANS_ATTACH |
+> +                                          TRANS_JOIN |
+> +                                          TRANS_JOIN_NOLOCK |
+> +                                          TRANS_JOIN_NOSTART),
+> +       [TRANS_STATE_SUPER_COMMITTED]   =3D (TRANS_START |
+> +                                          TRANS_ATTACH |
+> +                                          TRANS_JOIN |
+> +                                          TRANS_JOIN_NOLOCK |
+> +                                          TRANS_JOIN_NOSTART),
+> +       [TRANS_STATE_COMPLETED]         =3D (TRANS_START |
+> +                                          TRANS_ATTACH |
+> +                                          TRANS_JOIN |
+> +                                          TRANS_JOIN_NOLOCK |
+> +                                          TRANS_JOIN_NOSTART),
+>  };
 >
->         /*
-> +        * Only TRANS_START and TRANS_JOIN require sb intwrite lock.
-> +        *
->          * If we are JOIN_NOLOCK we're already committing a transaction a=
-nd
->          * waiting on this guy, so we don't need to do the sb_start_intwr=
-ite
->          * because we're already holding a ref.  We need this because we =
-could
-> @@ -755,7 +759,7 @@ start_transaction(struct btrfs_root *root, unsigned i=
-nt num_items,
->          * If we are ATTACH, it means we just want to catch the current
->          * transaction and commit it, so we needn't do sb_start_intwrite(=
-).
->          */
-> -       if (type & __TRANS_FREEZABLE)
-> +       if (type & TRANS_SB_INTWRITER_MASK)
->                 sb_start_intwrite(fs_info->sb);
+>  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+>  bool btrfs_trans_is_dummy(const struct btrfs_trans_handle *trans)
+>  {
+> -       return trans->type =3D=3D __TRANS_DUMMY;
+> +       return trans->type =3D=3D TRANS_DUMMY;
+>  }
 >
->         if (may_wait_transaction(fs_info, type))
-> @@ -857,7 +861,7 @@ start_transaction(struct btrfs_root *root, unsigned i=
-nt num_items,
->         return h;
+>  void btrfs_init_dummy_trans(struct btrfs_trans_handle *trans,
+> @@ -172,7 +166,7 @@ void btrfs_init_dummy_trans(struct btrfs_trans_handle=
+ *trans,
+>  {
+>         memset(trans, 0, sizeof(*trans));
+>         trans->transid =3D 1;
+> -       trans->type =3D __TRANS_DUMMY;
+> +       trans->type =3D TRANS_DUMMY;
+>         trans->fs_info =3D fs_info;
+>  }
+>  #endif
+> @@ -261,21 +255,21 @@ static noinline void switch_commit_roots(struct btr=
+fs_trans_handle *trans)
+>  static inline void extwriter_counter_inc(struct btrfs_transaction *trans=
+,
+>                                          unsigned int type)
+>  {
+> -       if (type & TRANS_EXTWRITERS)
+> +       if (type & TRANS_EXTWRITERS_MASK)
+>                 atomic_inc(&trans->num_extwriters);
+>  }
 >
->  join_fail:
-> -       if (type & __TRANS_FREEZABLE)
-> +       if (type & TRANS_SB_INTWRITER_MASK)
->                 sb_end_intwrite(fs_info->sb);
->         kmem_cache_free(btrfs_trans_handle_cachep, h);
->  alloc_fail:
-> @@ -1138,7 +1142,7 @@ static int __btrfs_end_transaction(struct btrfs_tra=
-ns_handle *trans,
+>  static inline void extwriter_counter_dec(struct btrfs_transaction *trans=
+,
+>                                          unsigned int type)
+>  {
+> -       if (type & TRANS_EXTWRITERS)
+> +       if (type & TRANS_EXTWRITERS_MASK)
+>                 atomic_dec(&trans->num_extwriters);
+>  }
 >
->         btrfs_trans_release_chunk_metadata(trans);
+>  static inline void extwriter_counter_init(struct btrfs_transaction *tran=
+s,
+>                                           unsigned int type)
+>  {
+> -       atomic_set(&trans->num_extwriters, ((type & TRANS_EXTWRITERS) ? 1=
+ : 0));
+> +       atomic_set(&trans->num_extwriters, ((type & TRANS_EXTWRITERS_MASK=
+) ? 1 : 0));
+>  }
 >
-> -       if (trans->type & __TRANS_FREEZABLE)
-> +       if (trans->type & TRANS_SB_INTWRITER_MASK)
->                 sb_end_intwrite(info->sb);
+>  static inline int extwriter_counter_read(struct btrfs_transaction *trans=
+)
+> @@ -662,11 +656,14 @@ start_transaction(struct btrfs_root *root, unsigned=
+ int num_items,
+>         bool do_chunk_alloc =3D false;
+>         int ret;
 >
->         /*
-> @@ -2150,7 +2154,7 @@ static void cleanup_transaction(struct btrfs_trans_=
-handle *trans, int err)
->                 fs_info->running_transaction =3D NULL;
->         spin_unlock(&fs_info->trans_lock);
+> +       /* The type must be a single TRANS_* bit set. */
+> +       ASSERT(is_power_of_2(type));
+> +
+>         if (unlikely(BTRFS_FS_ERROR(fs_info)))
+>                 return ERR_PTR(-EROFS);
 >
-> -       if (trans->type & __TRANS_FREEZABLE)
-> +       if (trans->type & TRANS_SB_INTWRITER_MASK)
->                 sb_end_intwrite(fs_info->sb);
->         btrfs_put_transaction(cur_trans);
->         btrfs_put_transaction(cur_trans);
-> @@ -2682,7 +2686,7 @@ int btrfs_commit_transaction(struct btrfs_trans_han=
-dle *trans)
->         btrfs_put_transaction(cur_trans);
->         btrfs_put_transaction(cur_trans);
->
-> -       if (trans->type & __TRANS_FREEZABLE)
-> +       if (trans->type & TRANS_SB_INTWRITER_MASK)
->                 sb_end_intwrite(fs_info->sb);
->
->         btrfs_scrub_continue(fs_info);
+>         if (current->journal_info) {
+> -               WARN_ON(type & TRANS_EXTWRITERS);
+> +               WARN_ON(type & TRANS_EXTWRITERS_MASK);
+>                 h =3D current->journal_info;
+>                 refcount_inc(&h->use_count);
+>                 WARN_ON(refcount_read(&h->use_count) > 2);
 > --
 > 2.55.0
 >

@@ -1,92 +1,91 @@
-Received: from va-2-60.ptr.blmpb.com (va-2-60.ptr.blmpb.com [209.127.231.60])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mailgw.kylinos.cn (mailgw.kylinos.cn [124.126.103.232])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1CC3937A821
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2026 04:33:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.60
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BC9F4377A93
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2026 07:15:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=124.126.103.232
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790656423; cv=none; b=U1g2m6iavG0UcUdZ288M0tlFAvZeP7b1qklXipmyi0ha2kzh2zawdg95TxiYIMj7wnGMF5jSeyXkjVlKwJunLYMaBkO5udiMP5oebAQvqH2Z4XSpK25vCoExQ9SAV68LwocmHspTwYNSn1SQP47lJpwitzH8QyUW/dBZ6M0kT2A=
+	t=1790666116; cv=none; b=Wumw3rPzir+AQ/q6CL2uPIIFNnrh343Lp0VRYPcLWLXPXi4YghpuMCbLkinMtMV6m4IVDFXVnGOcKS69dNJ0qihgJf2k30Ysfhj68ZwwRaVMnHCoU7Oxg+0P9UdU9Gm9lHVjkzIwB8M2/EXz4WDRmh0a/JiTsP6IzsycbP+3oUw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790656423; c=relaxed/simple;
-	bh=NMuRxajFxwKYAXK9ArsorGbUohYZKZjb15h9d67zcsU=;
-	h=To:Content-Type:From:Subject:References:Date:Message-Id:
-	 Mime-Version:In-Reply-To; b=EW3M8E4W+d7m/vTqHvm2QqkDoyHqIgvN9/etytE7BvUOOo4rwi704FOpIFYU/8E8Jp6jTD4teP0FFQc68cmK3xEqge3F1tUyVNyyad66oR0YteboxmIpj08LJL165yWBkaEcZh8gxuItjv7eHFrYnyqWmhoNqfEUm/jWRczXH5M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=OW213ao1; arc=none smtp.client-ip=209.127.231.60
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="OW213ao1"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1790656281;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=Nktp1vxaXNUfSzQGOg3Ym5Y8XH3CfCjvDTF57f3Kk9M=;
- b=OW213ao1rJ8gKu5AbGnlGuRgtZAMyEVK7tMrzuJw9+bKNSUfKjoWNl13Oo5kigUf6sq/it
- sUBZDSjbJkuQW/QT2cZAg6TugNbnYD0G/7nDikDbNlb4vHUdut6JMQ08hpVF7Ey43B2sF2
- v+fVDNz0DEe5mBLC8OdB1Z1A6gxZKMhUFNT75xCZ8qgKqPccYWXSkf6SDne5QIUp/gTDls
- elp4p3HYXjhP+cPct5v4cK9fk5UJgrhrYUaknmNPOYbK6z1P2sWbJ6KCp0l7VTCTkWZfNe
- QIvla6p9N1QFsEVjzADb1apJmFTQ7wkn5mT6FyzWd6xBUOZ6Gwa7Etq9wBGSTQ==
-X-Original-From: Sun YangKai <sunyangkai@fygo.io>
-To: "Boris Burkov" <boris@bur.io>, <linux-btrfs@vger.kernel.org>, 
-	<kernel-team@fb.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-From: "Sun YangKai" <sunyangkai@fygo.io>
-Subject: Re: [PATCH 0/6] btrfs: allocator perf improvements
-References: <cover.1790641462.git.boris@bur.io>
-Date: Tue, 29 Sep 2026 12:31:16 +0800
-Message-Id: <5736105a-5ba3-463d-90a7-5c70bb034621@fygo.io>
+	s=arc-20240116; t=1790666116; c=relaxed/simple;
+	bh=vfbxUg6SlYp2OeBFuOasI5dwETXS9AyxC2+3usPZmRU=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=rFFn2eucpow4QGfzsbpXJe6GDu5PR9NtMuc/PnG8p1V4OE7yHrxQlBwm4286IesmpZEw7RYcsFFupSze3mzlwkP36mXX451bdF7W+UPU+8MR/FJRzlERKdscqd9Imi+Nr8HnIee7XdzS30kvvz+3zJqFnQKuuaA9wBoq0YIBxRc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=kylinos.cn; arc=none smtp.client-ip=124.126.103.232
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kylinos.cn
+X-UUID: 7cb0f56cbbd511f19a56ed5b684f684d-20260929
+X-CTIC-Tags:
+	HR_CC_AS_FROM, HR_CC_COUNT, HR_CC_DOMAIN_COUNT, HR_CC_NAME, HR_CTE_8B
+	HR_CTT_MISS, HR_DATE_H, HR_DATE_WKD, HR_DATE_ZONE, HR_FROM_DIGIT_LEN
+	HR_FROM_NAME, HR_SJ_LANG, HR_SJ_LEN, HR_SJ_LETTER, HR_SJ_NOR_SYM
+	HR_SJ_PHRASE, HR_SJ_PHRASE_LEN, HR_SJ_WS, HR_TO_COUNT, HR_TO_DOMAIN_COUNT
+	HR_TO_NO_NAME, IP_UNTRUSTED, SRC_UNTRUSTED, IP_UNFAMILIAR, SRC_UNFAMILIAR
+	SA_TRUSTED, SA_EXISTED, SN_UNTRUSTED, SN_UNFAMILIAR, SPF_NOPASS
+	DKIM_NOPASS, DMARC_NOPASS, CIE_BAD, CIE_GOOD_SPF, CIE_UNKNOWN
+	GTI_FG_BS, GTI_RG_INFO, GTI_C_BU, AMN_GOOD, ABX_MISS_RDNS
+X-CID-P-RULE: Release_Ham
+X-CID-O-INFO: VERSION:1.3.19,REQID:f5c34f6a-0512-4168-9960-de2f90d3c238,IP:10,
+	URL:0,TC:0,Content:0,EDM:25,RT:0,SF:0,FILE:0,BULK:0,RULE:Release_Ham,ACTIO
+	N:release,TS:35
+X-CID-INFO: VERSION:1.3.19,REQID:f5c34f6a-0512-4168-9960-de2f90d3c238,IP:10,UR
+	L:0,TC:0,Content:0,EDM:25,RT:0,SF:0,FILE:0,BULK:0,RULE:Release_Ham,ACTION:
+	release,TS:35
+X-CID-META: VersionHash:7db8b62,CLOUDID:aa79655bdf9e1e18a6ffafb087518c48,BulkI
+	D:260929134348DHO2SX9R,BulkQuantity:4,SF:17|19|66|78|102|127|136|865|898,T
+	C:nil,Content:0|15|16|50|99,EDM:5|-100,IP:-2,URL:0,File:nil,RT:nil,Bulk:40
+	,QS:nil,BEC:nil,COL:0,OSI:0,OSA:0,AV:0,LES:1,SPR:NO,DKR:0,DKP:0,BRR:0,BRE:
+	0,ARC:0
+X-CID-BVR: 2,SSN|SDN
+X-CID-BAS: 2,SSN|SDN,0,_
+X-CID-FACTOR: TF_CID_SPAM_SNR,TF_CID_SPAM_FAS,TF_CID_SPAM_FSD
+X-CID-RHF: D41D8CD98F00B204E9800998ECF8427E
+X-UUID: 7cb0f56cbbd511f19a56ed5b684f684d-20260929
+X-User: liuhuan01@kylinos.cn
+Received: from fs [(39.144.27.18)] by mailgw.kylinos.cn
+	(envelope-from <liuhuan01@kylinos.cn>)
+	(Generic MTA with TLSv1.3 TLS_AES_256_GCM_SHA384 256/256)
+	with ESMTP id 1295927409; Tue, 29 Sep 2026 15:15:01 +0800
+From: liuh0329 <liuhuan01@kylinos.cn>
+To: linux-btrfs@vger.kernel.org
+Cc: liuh0329 <liuhuan01@kylinos.cn>
+Subject: [PATCH] btrfs-progs: receive: fix unused variable warning without LZO
+Date: Tue, 29 Sep 2026 15:14:22 +0800
+Message-ID: <20260929071421.1114640-2-liuhuan01@kylinos.cn>
+X-Mailer: git-send-email 2.54.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Content-Language: en-US
-X-Lms-Return-Path: <lba+26abb3f18+762e79+vger.kernel.org+sunyangkai@fygo.io>
-Received: from [192.168.10.251] ([183.34.163.142]) by smtp.larksuite.com with ESMTPS; Tue, 29 Sep 2026 04:31:19 +0000
-In-Reply-To: <cover.1790641462.git.boris@bur.io>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
-On 2026/9/29 08:28, Boris Burkov wrote:
-> Working on the bugs to do with large fs-es and unused block groups
-> 
-> https://lore.kernel.org/linux-btrfs/20260916230447.GA1706558@zen.localdomain/T/#t
-> and
-> https://lore.kernel.org/linux-btrfs/cover.1790641111.git.boris@bur.io/T/#t
-> 
-> revealed some low hanging fruit in allocation performance for very large
-> mostly full fs-es. The gist is to try to skip unnecessary operations per block
-> group which adds up with 10s of thousands of obviously skippable block
-> groups. Running 20k fallocates in a loop on a sparse file fs improved from
-> ~40s to ~7s.
+When btrfs-progs is built without LZO support, sector_shift is still
+declared in decompress_and_write(), while all its uses are guarded by
+COMPRESSION_LZO. This results in an unused variable warning.
 
-Hi Boris,
+Guard the declaration with COMPRESSION_LZO as well.
 
-Glad to see this patchset resolves the long existing blockgroup 
-allocator performance issue and I'm really impressed by the numbers of 
-performance improvement.
+Fixes: 345731fff32d ("btrfs-progs: receive: optional build for lzo, zstd")
+Signed-off-by: liuh0329 <liuhuan01@kylinos.cn>
+---
+ cmds/receive.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-IMO we currently go along the list to look for a proper bg that have 
-enough free space, which means we may have to go through thousands of 
-bgs during the allocation, I wonder if it is worthy to use a more 
-efficient method like something sorted by bg's free space to improve the 
-lookup process?
+diff --git a/cmds/receive.c b/cmds/receive.c
+index 49103ea3..14a9ba03 100644
+--- a/cmds/receive.c
++++ b/cmds/receive.c
+@@ -1186,7 +1186,9 @@ static int decompress_and_write(struct btrfs_receive *rctx,
+ {
+ 	int ret = 0;
+ 	char *unencoded_data;
++#if COMPRESSION_LZO
+ 	int sector_shift = 0;
++#endif
+ 	u64 written = 0;
+ 
+ 	unencoded_data = calloc(unencoded_len, 1);
+-- 
+2.54.0
 
-Please correct me if I got anything wrong.
-
-And thanks for bringing these great patches.
-
-Sun Yangkai
-
-> Boris Burkov (6):
->    btrfs: skip unhelpful size class relaxing allocation loops
->    btrfs: don't take block group references in find_free_extent()
->    btrfs: remove redundant checks in find_free_extent() hint path
->    btrfs: factor the find_free_extent() block group skip into a helper
->    btrfs: find_free_extent checks full block groups unlocked
->    btrfs: find_free_extent checks size class unlocked
-> 
->   fs/btrfs/extent-tree.c | 88 +++++++++++++++++++++++++++++-------------
->   fs/btrfs/extent-tree.h |  3 ++
->   2 files changed, 65 insertions(+), 26 deletions(-)

@@ -1,78 +1,78 @@
 Received: from fout-a8-smtp.messagingengine.com (fout-a8-smtp.messagingengine.com [103.168.172.151])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5DB2A49620
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2026 00:28:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 03B67349CF8
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2026 00:28:24 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.151
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790641704; cv=none; b=kD66LjBaVrWYXrp8tcsGbiVhr5oa4ZIMolAPhYi+n2A/Ho/af5hThN1nyfuDyXvnz4BoaD5oBDwQDAk1NtnbCUjOpCIquTBoZyp57W/AjvxEekWh9rhMrU+60IgTQo9JmIB2xCsQGMVgcxTW/FmO7CW6XQuszMhlkt1ZmERlu4U=
+	t=1790641706; cv=none; b=NsN4t2r2nHVi+xug5SuM2pQqYXZOK01FokQzX6/wkttcjDW5kFIRTulDJ0FeLnqEFxF0XO6XOCxq/Vqg5br0I0x6e1E60Nia40+LSLJtsG7O1ZwS7xpyqn9IhreuJmKlTMJjzNlcxe/i5mxmnCaHnQbOp+XRzWD38an1Qrapa3o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790641704; c=relaxed/simple;
-	bh=IVUvgINjICdCTj2eHNGN6UE91EA04gkcbryRkXZDc5I=;
+	s=arc-20240116; t=1790641706; c=relaxed/simple;
+	bh=C4SKYvsjwofceDM8kMvIl5OrAV7bigzadtuMke43JM4=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=oUAnVzGTGpe2uX7iLzaoI1VlBN5MpPcK7Rt6kDZO9Ctnyde2oBMAvqUdyHUkDBlEzsTzEj8lluUMEnOQeNPCqllC/p0+ALBSrGFMlWIHuZhJ/y25onfeAVx80dVjyN5EStcQ+6SribRc2hY1jqZ6JUcAx7Sb0ATBmAVatkVLMao=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=b/k56M1l; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=wnG9e7H8; arc=none smtp.client-ip=103.168.172.151
+	 MIME-Version; b=X98EM48TwQENKmvfk3PYWukmNu3eQduJSvYLEhq4joEjU0duKWaJ2NGmu4ZZ2t/zn1sXbJ7k29iIoUnrloZtQVOFGHD7Vx7DGmCQxPyONh03Cd6gCcfiR8mbebsQ68xHVi0zJ/1g/zAdMsZZUHvv1rNdAmrkn2b+sUiZ8Jg42pc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=YcP7wpPQ; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=Lz0ikTIy; arc=none smtp.client-ip=103.168.172.151
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="b/k56M1l";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="wnG9e7H8"
-Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
-	by mailfout.phl.internal (Postfix) with ESMTP id 81DEEEC0174;
-	Mon, 28 Sep 2026 20:28:22 -0400 (EDT)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="YcP7wpPQ";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Lz0ikTIy"
+Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
+	by mailfout.phl.internal (Postfix) with ESMTP id 0A2B2EC01CA;
+	Mon, 28 Sep 2026 20:28:24 -0400 (EDT)
 Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-04.internal (MEProxy); Mon, 28 Sep 2026 20:28:22 -0400
+  by phl-compute-03.internal (MEProxy); Mon, 28 Sep 2026 20:28:24 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
 	:content-transfer-encoding:content-type:date:date:from:from
 	:in-reply-to:in-reply-to:message-id:mime-version:references
-	:reply-to:subject:subject:to:to; s=fm2; t=1790641702; x=
-	1790728102; bh=37qC+qjz/xTh29tTGvKdBxySB/f0KRcdEeTXv4XJF98=; b=b
-	/k56M1lYrZHlVVAa44XCJkldYluRnZRfsqGX+ktVm8VnXIVhmKdnKd+MmBf9w+ly
-	B5NcJUvQFLCKbaG8FKpYnBtcHcrkKtcptMRLnA21Mn23rXUhQKiW89HvlQh+n3Gx
-	Ow2J8hofZH0BUENCoQ5cF2dvHeal3mGoSGk9+F1JQBtKz3eJxa6opEpTZ/zWOyV7
-	gZzlfB3fiwd1f88QxWD3qDFat0j3Mxy2El9YPj5XEbtSE/SH959/1GnSk9FoKMPw
-	r23iO2FOLqd2UzNqnu7cK4duqgLg7RHi9Watxi4OGJYvQ0qovhL2EYhetG6MJxq9
-	13ZdQDCT0nByyh9Oetaxw==
+	:reply-to:subject:subject:to:to; s=fm2; t=1790641704; x=
+	1790728104; bh=tEoqHBui4HPEx4D8wrfIs3TR//gJ59qrLicYn9yHfME=; b=Y
+	cP7wpPQTnz6nymjD8JLVrRvj1w9I61vbHYRWlZW6TwpbgAYl9+0v/jGU+aZdY4xj
+	gFEmgYqQoyYehizF4fyaeKj18NfBcGYJOaSDX1oCpatgfKZ5T/FQFG/sTXkDaDAX
+	kBkgv74sYKP0EwlpDbI9q6AT6kVxSgvAzLNCLtaB01hKyjewx+gP8q8UfXWgFXQs
+	ju1omu53tHzPpMMhDGSZk2E9N2hko1MqAGKCsa6Ecbzf5yh8doC0u1RBldOBRxL1
+	aeD/4q1VIuKENNcfyooI9Ghy/5c4In9vozvK/DyGMJsoIH4NMC4E5G2TFihsjTYQ
+	lkZOx0JqDxwpW/iOnYrxg==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:content-transfer-encoding:content-type
 	:date:date:feedback-id:feedback-id:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
 	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-	fm1; t=1790641702; x=1790728102; bh=37qC+qjz/xTh29tTGvKdBxySB/f0
-	KRcdEeTXv4XJF98=; b=wnG9e7H814Gi99Moe5fzVgcv8SqB0gWCa6R8I6tM9GlE
-	ykSq0DNtuiu5s5REM8xLUA7FvDWEJRPOLpHFEUruxTMrZDQLtePTaA84ON5xVLN9
-	+Cx43hHjCNGh4Lh/7ncn22mVhRNqD8Bh3W2Qr4qavVYzsLOzDq37Yp3+oHEWdvFI
-	342qNnSlzBncpO2R2hOfbpU3+r6A4H5I2eNpieHZbd0URJ5S3XhOB6D/W4q/gesF
-	/Xqa3aRYfN32Dw5vBelHkdfFOj+ikMHMCbhmu685H7cDT4aiAzkoRjIMFbpeu8qE
-	vAFcfTYeX8uznRm6QUgAHE7G6shzSDBSb3FEF4JzDQ==
-X-ME-Sender: <xms:Jga7aqwbk9cYE56ntNkuLsjln-54nVgGJ30jaueC2vPjkF7QqHc7uw>
-    <xme:Jga7asTvondGOL5mEwBwnfseCS2nif4P4jX0SZsgl-ktmCAyNMwPHxAlgLYhRO5WE
-    BK4N8KA-7J_XB_pVJAv33Xa8lWTrTvliNSVpf56xx39MFtD2SXAeTDK>
-X-ME-Received: <xmr:Jga7ap8kw4jp5MoCSd6-yRdE2a3rT-8lOY9AB3fLnr3L6PwclYXncvo>
+	fm1; t=1790641704; x=1790728104; bh=tEoqHBui4HPEx4D8wrfIs3TR//gJ
+	59qrLicYn9yHfME=; b=Lz0ikTIyqCriV1dI0jd7ij2iusamLw2aJttK9Gss99oL
+	ZbhmooC3qfXjulOVpQrF8/BTQakogqm40kn2xmk6j58qx9nmM5R/5RpvfGpZPjEQ
+	/FVV592oJx2B5l63HVP5AuXu8WTgN++qIz+VbJvu6i8gIfMgb86WjOqrrPOda/8O
+	HwRKRr9HjfqyUXA/GdFUPBDIMTDXFVxy9Z/IY3nI9V/Xf3Z8qkuAB+gClKDb1hry
+	wslkDDhAG2QqFcMkTx3dYy4EsbLBTg5aRaRL661YXtSHEfX8H/+/jN80ZaF86D3V
+	aejYK837LzVFshNPqyT3PIt+r1ilPRl8Wf1ppvOEMg==
+X-ME-Sender: <xms:Jwa7agYAYkw0T-TsteiTF3SIY_NBDAvt0gktWKCdZ4v4onijtZmCXg>
+    <xme:Jwa7ahYG26N21l7Ob6jfNm73mHuI220-5EHtFE8CbdZqlMADecMzSsQprM_nbEdN0
+    iJL4v_ywca-hhdThb9wSVLTMxW9bltZiePPO63EqzMPRF004JJokKBp>
+X-ME-Received: <xmr:Jwa7aolRSnB5glnwZDs6Yd65J7FOBe5hRzqXRhWYTJ5eKawE_gXkLNw>
 X-ME-Proxy-Cause: dmFkZTExuF93JGdXfiGgW7nhIqu51hI8C5kNPxAejyYwywaiQdYYJWeJi45RH2Q3gCPa55
     VjA+ay/YFd/3pyl8KBeEfpt9QEJvrAosJUDjL4V6R+2haUET5XnHu73J4Q5b45C4HB/iIz
     RNT2T1+2L2LIxqlgyrrQlkjjODfNAxhX0/mc/NasjTh10Z3dHNiS/LO8GoXPoTpyRa+/jQ
     eSwiMTT1t6iRITMpyX7CIBaOxBehrbpLtNmxtIblZXMQrQUB1/pzyoZXtqtaUj7R82UdMI
-    6d9FjH8VfZhN/8J8o+38loyKAtAaePXcnHUstIw4xJhFl+boltZk+r8HvaJoa84gUlwKRh
-    1iXM96WozZ+DwdxAjuRk27QNMfn2oTrfBrXumGRe/shLAzynpTHj13XFWrLJJ6YJW/I41d
-    0vdybWDdH70CaLohKC1DChMnKmAhvDDedin91/Ov3CBs7NZ/CMLeO4lRNutMgc1zZgfBw6
-    IqfLW6oaaHa5k5idhUNE98g6N0E+6WKFh4wrSiNPEcFgTQX6Hv0afw5GmRX9Jp5lO8oaob
-    tYZgufrOC0yvZFtaR6hHxh1oyDeKbzTqWwq0qR3mOZrEWuceXXTGoCIXS9zteLdumdMI7+
-    CHQAJYjiCF14aTrg3faOpy4slTia3eIKK06kFHO5vNplZpceufzkrZNECz1g
-X-ME-Proxy: <xmx:Jga7arq6a1oH5zaWU2gFzNnhlS0v_X2rtlV9g6fkTwEjHMdb7Se9zw>
-    <xmx:Jga7auka4KIOV8ak5RvtVyDITmWFdzW7gNXdKVQiqbdiDdQn-V7dDg>
-    <xmx:Jga7aqK2_Ct46lcNWlmeVsnS0XmawEmL4IbuN6DAIGL4x86EKZphMQ>
-    <xmx:Jga7arwBnHuz5IC7rS9SmXsBVCDtq1m9-cAmhL6aY-pOV1ksU6bvnA>
-    <xmx:Jga7asxp8kNl6gUA0fLyw_KwIoRntH8iDRkr0BClmdCzq4Eip-qIO5T_>
+    6d9FjH8VfZhN/8J8o+38loyKAtAaePXcnHUstIw4xJhFl+boltZk+r8HvaJoa84gUlwKLd
+    0+jNly+VbToDaz8F8KSJCwQynzbgzi/A++RxAb45VqbWfR+SFf0k+FIqfuwsC7GQM3bBxt
+    NADZ3KTSsUckBrIVf6xNdjOG8rJ/3N6fJIxH6J6f1NbEEB46PwilJTAJVUeIZA/HAKUyKB
+    vAQK3kYf5l8MaLOwjoL3O/QNN/tzJRizPoVC6a8knjS1/5RljF9MjzhTauuyeFnG+Slizi
+    PPoeEv3Dyk9f8PAohHCWzWfrjgvglz0OnjZtpY0JlfGMIEFzpgNtpLvWklmk6hkPrFqcq0
+    CsKSipZmphAa7bUKmHM58E1oHE5baMTHNOnX8/GPXlXPHs9/IXsPHe6mXdmA
+X-ME-Proxy: <xmx:Jwa7alwWDLWBQbZ3dQ1OMsVPaWG_mnO7CJ8BguYJqwgDOlIB3oXbDA>
+    <xmx:Jwa7auOq0kDTo-QwEG71FNobUNUm5vfAzIto_dhVO8gjmoEisBanKg>
+    <xmx:Jwa7ahSgFuDQlr80cWpZOKzHPKjQKmcyImiJR9rBdjcLl37NGlGCUA>
+    <xmx:Jwa7akbTeIPpx9ja_DUypvvYfLOlkByBCicHVouCiChLZTAFYm4YJA>
+    <xmx:KAa7aqaN3SCpMyR4R_Vp2qfiGvRcvU3LovYU2LreQcY4xlJM8eTjvLRr>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 28 Sep 2026 20:28:22 -0400 (EDT)
+ 28 Sep 2026 20:28:23 -0400 (EDT)
 From: Boris Burkov <boris@bur.io>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Subject: [PATCH 4/6] btrfs: factor the find_free_extent() block group skip into a helper
-Date: Mon, 28 Sep 2026 17:28:05 -0700
-Message-ID: <2fadeb4d674909534bd0ca44be25d6f3a97b7224.1790641462.git.boris@bur.io>
+Subject: [PATCH 5/6] btrfs: find_free_extent checks full block groups unlocked
+Date: Mon, 28 Sep 2026 17:28:06 -0700
+Message-ID: <9b2ec3bafee9195d4fcb5e82a0f054068192f237.1790641462.git.boris@bur.io>
 X-Mailer: git-send-email 2.55.0
 In-Reply-To: <cover.1790641462.git.boris@bur.io>
 References: <cover.1790641462.git.boris@bur.io>
@@ -84,57 +84,59 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-find_free_extent() is already quite unwieldy so I believe a well defined
-"usability check" is a helpful thing to pull out into a named static
-function just to break things down into easier to grok components.
+No matter how you slice it, a block group with less free space than the
+allocation requires cannot satisfy the allocation, so we can skip it. We
+can do this check without taking a lock because it saying yes does *not*
+mean that we definitely do find the space locked properly later when
+doing the real allocation. But racing with a free and skipping here,
+even if we might have said yes could still have raced the same way with
+the lock and the allocation still would have failed. On top of that,
+this has many fallbacks like the multiple find_free_extent loops and the
+fact that on failure we reduce the allocation size and try again.
 
-No functional change.
+This helps improve performance on a common case where we have many full
+block groups in a large filesystem and want to rapidly skip them.
 
+Measured on a 30T single-device filesystem on a tmpfs-backed loop device:
+  20k sequential 1G fallocates:                           26.9s -> 6.7s
+  sync of 20k new 64K files after 20k full 1G bgs:        12.7s -> 3.7s
+  sync of 20k new 64K files after 20k 1000M fallocates:   12.6s -> 13.2s
+
+Assisted-by: LLM
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/extent-tree.c | 21 +++++++++++++--------
- 1 file changed, 13 insertions(+), 8 deletions(-)
+ fs/btrfs/extent-tree.c | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c4f46d361b0b..01cab703ef3b 100644
+index 01cab703ef3b..d96de10348c1 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -4321,6 +4321,18 @@ static int can_allocate_chunk(struct btrfs_fs_info *fs_info,
- 	}
- }
- 
-+static bool find_free_extent_skip_block_group(struct btrfs_block_group *block_group,
-+					      struct find_free_extent_ctl *ffe_ctl)
-+{
-+	if (likely(!block_group->ro && !(block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED)))
-+		return false;
-+	if (ffe_ctl->for_treelog)
-+		btrfs_clear_treelog_bg(block_group);
-+	if (ffe_ctl->for_data_reloc)
-+		btrfs_clear_data_reloc_bg(block_group);
-+	return true;
-+}
+@@ -4324,7 +4324,23 @@ static int can_allocate_chunk(struct btrfs_fs_info *fs_info,
+ static bool find_free_extent_skip_block_group(struct btrfs_block_group *block_group,
+ 					      struct find_free_extent_ctl *ffe_ctl)
+ {
+-	if (likely(!block_group->ro && !(block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED)))
++	bool skip = block_group->ro || (block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED);
 +
- /*
-  * Return >0 means caller needs to re-search for free extent
-  * Return 0 means we have the needed free extent.
-@@ -4678,15 +4690,8 @@ static noinline int find_free_extent(struct btrfs_root *root,
- 		ffe_ctl->hinted = false;
- 		ffe_ctl->search_start = block_group->start;
- check_block_group:
--		/* If the block group is read-only, we can skip it entirely. */
--		if (unlikely(block_group->ro ||
--			     (block_group->flags & BTRFS_BLOCK_GROUP_REMAPPED))) {
--			if (ffe_ctl->for_treelog)
--				btrfs_clear_treelog_bg(block_group);
--			if (ffe_ctl->for_data_reloc)
--				btrfs_clear_data_reloc_bg(block_group);
-+		if (find_free_extent_skip_block_group(block_group, ffe_ctl))
- 			continue;
--		}
- 
- 		btrfs_lock_block_group(block_group, ffe_ctl->delalloc);
- 
++	/*
++	 * caching_thread() sets FINISHED under a a separate block_group->lock
++	 * critical section after it is done populating, so smp_load_acquire
++	 * guarantees we see the block group as populated by caching.
++	 */
++	if (!skip && smp_load_acquire(&block_group->cached) == BTRFS_CACHE_FINISHED) {
++		u64 free_space = data_race(block_group->free_space_ctl->free_space);
++
++		if (free_space < ffe_ctl->num_bytes) {
++			ffe_ctl->total_free_space = max(ffe_ctl->total_free_space,
++							free_space);
++			skip = true;
++		}
++	}
++	if (!skip)
+ 		return false;
+ 	if (ffe_ctl->for_treelog)
+ 		btrfs_clear_treelog_bg(block_group);
 -- 
 2.55.0
 
